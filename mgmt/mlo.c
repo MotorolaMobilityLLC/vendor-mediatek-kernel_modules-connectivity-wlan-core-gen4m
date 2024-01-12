@@ -646,75 +646,6 @@ uint8_t *mldGenerateBasicCommonInfo(
 	return (uint8_t *)common;
 }
 
-void mldSetMldIdFromRnrMlParam(uint8_t *aucBSSID, struct IE_RNR *rnr,
-	struct MULTI_LINK_INFO *prMlInfo)
-{
-	uint8_t i, j;
-	uint8_t ucMldParamOffset, ucMldId, ucMldLinkId, ucBssParamChangeCount;
-	uint16_t u2TbttInfoCount, u2TbttInfoLength;
-	uint32_t u4MldParam = 0;
-	uint8_t band;
-	uint8_t *pos = NULL;
-
-	if (!rnr)
-		return;
-
-	pos = rnr->aucInfoField;
-	do {
-		struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField =
-			(struct NEIGHBOR_AP_INFO_FIELD *)pos;
-
-		/* get channel number for this neighborAPInfo */
-		scanOpClassToBand(prNeighborAPInfoField->ucOpClass, &band);
-		u2TbttInfoCount = ((prNeighborAPInfoField->u2TbttInfoHdr &
-					TBTT_INFO_HDR_COUNT)
-					>> TBTT_INFO_HDR_COUNT_OFFSET)
-					+ 1;
-		u2TbttInfoLength = (prNeighborAPInfoField->u2TbttInfoHdr &
-					TBTT_INFO_HDR_LENGTH)
-					>> TBTT_INFO_HDR_LENGTH_OFFSET;
-
-		for (i = 0; i < u2TbttInfoCount; i++) {
-			j = i * u2TbttInfoLength;
-
-			if (u2TbttInfoLength == 10) {
-				ucMldParamOffset = 7;
-			} else if (u2TbttInfoLength >= 16 &&
-					  u2TbttInfoLength <= 255) {
-				ucMldParamOffset = 13;
-			} else {
-				continue;
-			}
-
-			/* Directly copy 4 bytes content, but MLD param is only
-			 * 3 bytes actually. We will only use 3 bytes content.
-			 */
-			kalMemCopy(&u4MldParam, &prNeighborAPInfoField->
-				aucTbttInfoSet[j + ucMldParamOffset],
-				sizeof(u4MldParam));
-			ucMldId = (u4MldParam & MLD_PARAM_MLD_ID_MASK);
-			ucMldLinkId = (u4MldParam & MLD_PARAM_LINK_ID_MASK) >>
-				MLD_PARAM_LINK_ID_SHIFT;
-			ucBssParamChangeCount =
-				(u4MldParam &
-				MLD_PARAM_BSS_PARAM_CHANGE_COUNT_MASK) >>
-				MLD_PARAM_BSS_PARAM_CHANGE_COUNT_SHIFT;
-
-			if (EQUAL_MAC_ADDR(aucBSSID,
-			       &prNeighborAPInfoField->aucTbttInfoSet[j + 1])) {
-				prMlInfo->ucMldId = ucMldId;
-				DBGLOG(ML, INFO,
-					MACSTR " MldId=%d\n LinkId=%d",
-					MAC2STR(aucBSSID), ucMldId,
-					ucMldLinkId);
-				return;
-			}
-		}
-
-		pos += (4 + (u2TbttInfoCount * u2TbttInfoLength));
-	} while (pos < ((uint8_t *)rnr) + IE_SIZE(rnr));
-}
-
 void mldHandleRnrMlParam(struct IE_RNR *rnr,
 	struct MULTI_LINK_INFO *prMlInfo, uint8_t fgOverride)
 {
@@ -785,8 +716,7 @@ void mldHandleRnrMlParam(struct IE_RNR *rnr,
 				"MldId=%d, MldLinkId=%d, BssParChangeCount=%d\n",
 				ucMldId, ucMldLinkId, ucBssParamChangeCount);
 
-			if (ucMldId != prMlInfo->ucMldId ||
-			    ucMldLinkId == prMlInfo->ucLinkId)
+			if (ucMldId != prMlInfo->ucMldId)
 				continue;
 
 			if (!fgOverride) {
@@ -807,8 +737,7 @@ void mldHandleRnrMlParam(struct IE_RNR *rnr,
 						ucMldLinkId);
 					continue;
 				}
-				prProfile =
-				  &prMlInfo->
+				prProfile = &prMlInfo->
 				  rStaProfiles[prMlInfo->ucProfNum++];
 				prProfile->ucLinkId = ucMldLinkId;
 			}
@@ -838,39 +767,20 @@ void mldHandleRnrMlParam(struct IE_RNR *rnr,
 }
 
 uint32_t mldGenerateMlProbeReqIE(struct BSS_DESC *prBssDesc, uint8_t *pucIE,
-	uint32_t u4IELength, uint8_t fgPerSta)
+	uint32_t u4IELength, uint8_t fgPerSta, uint8_t ucMldId)
 {
 	uint16_t u2Offset = 0;
 	uint8_t *ie;
 	uint16_t ie_len;
 	struct MULTI_LINK_INFO parse, *info = &parse;
 	struct IE_RNR *rnr;
-	uint8_t *ml, *pos;
+	uint8_t *pos;
 	struct IE_MULTI_LINK_CONTROL *common;
 	uint8_t i;
 
-	ml = (uint8_t *) mldFindMlIE(prBssDesc->pucIeBuf,
-		prBssDesc->u2IELength, ML_CTRL_TYPE_BASIC);
-	if (!ml) {
-		DBGLOG(ML, INFO, "probe resp but no ml\n");
-		return 0;
-	}
-
 	/* parsing rnr & ml */
 	kalMemSet(info, 0, sizeof(*info));
-	MLD_PARSE_BASIC_MLIE(info, ml,
-		IE_SIZE(ml),
-		prBssDesc->aucBSSID,
-		prBssDesc->fgSeenProbeResp ?
-		MAC_FRAME_PROBE_RSP : MAC_FRAME_BEACON);
-
-	if (!info->ucValid) {
-		DBGLOG(ML, INFO, "ml ie not valid\n");
-		return 0;
-	}
-
-	/* reset profile num, will fill it from RNR */
-	info->ucProfNum = 0;
+	info->ucMldId = ucMldId;
 
 	if (fgPerSta) {
 		ie = prBssDesc->pucIeBuf;
@@ -881,8 +791,6 @@ uint32_t mldGenerateMlProbeReqIE(struct BSS_DESC *prBssDesc, uint8_t *pucIE,
 
 			rnr = (struct IE_RNR *)ie;
 
-			mldSetMldIdFromRnrMlParam(prBssDesc->aucBSSID,
-						rnr, info);
 			mldHandleRnrMlParam(rnr, info, TRUE);
 		}
 	}
@@ -914,6 +822,11 @@ uint32_t mldGenerateMlProbeReqIE(struct BSS_DESC *prBssDesc, uint8_t *pucIE,
 		struct IE_ML_STA_CONTROL *sta_ctrl;
 		struct STA_PROFILE *prProfile = &info->rStaProfiles[i];
 
+		if (prProfile->rChnlInfo.eBand == prBssDesc->eBand &&
+		    prProfile->rChnlInfo.ucChannelNum ==
+			prBssDesc->ucChannelNum)
+			continue;
+
 		sta_ctrl = (struct IE_ML_STA_CONTROL *)pos;
 		/* Subelement ID 0: Per-STA Profile */
 		sta_ctrl->ucSubID = 0;
@@ -937,19 +850,21 @@ uint32_t mldGenerateMlProbeReqIE(struct BSS_DESC *prBssDesc, uint8_t *pucIE,
 }
 
 uint32_t mldFillScanIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
-	uint8_t *pucIE, uint32_t u4IELength, uint8_t fgPerSta)
+	uint8_t *pucIE, uint32_t u4IELength, uint8_t fgPerSta, uint8_t ucMldId)
 {
 	uint16_t len = 0;
 
-	len += mldGenerateMlProbeReqIE(prBssDesc, pucIE, u4IELength, fgPerSta);
+	len += mldGenerateMlProbeReqIE(prBssDesc, pucIE,
+		u4IELength, fgPerSta, ucMldId);
 
 	return len;
 }
 
 uint8_t mldDupProfileSkipIE(uint8_t *pucBuf)
 {
-	return (IE_ID(pucBuf) == ELEM_ID_RESERVED &&
-		IE_ID_EXT(pucBuf) == ELEM_EXT_ID_MLD);
+	return IE_ID(pucBuf) == ELEM_ID_MBSSID ||
+	       IE_ID(pucBuf) == ELEM_ID_MBSSID_INDEX ||
+	       BE_IS_ML_CTRL_TYPE(pucBuf, ML_CTRL_TYPE_BASIC);
 }
 
 uint8_t mldDupStaProfileSkipIE(uint8_t *pucBuf)
@@ -2613,7 +2528,7 @@ struct SW_RFB *mldDupMbssNonTxProfile(struct ADAPTER *prAdapter,
 }
 
 uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter,
-	struct SW_RFB *prDst, struct SW_RFB *prSrc,
+	struct SW_RFB *prDst, struct SW_RFB *prSrc, const uint8_t *ml,
 	struct STA_PROFILE *prSta, struct BSS_DESC *prBssDesc,
 	struct STA_RECORD *prStaRec, const char *pucDesc)
 {
@@ -2709,8 +2624,7 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter,
 	if (fctrl == MAC_FRAME_PROBE_RSP || fctrl == MAC_FRAME_BEACON) {
 		struct IE_MULTI_LINK_CONTROL *src, *dst;
 
-		src = (struct IE_MULTI_LINK_CONTROL *)
-			mldFindMlIE(ie, ie_len, ML_CTRL_TYPE_BASIC);
+		src = (struct IE_MULTI_LINK_CONTROL *) ml;
 		dst = (struct IE_MULTI_LINK_CONTROL *)(pos + offset);
 
 		if (!src) {
@@ -2770,7 +2684,7 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 	struct SW_RFB *rfb;
 	int offset = sortGetPayloadOffset(prAdapter, prSrc->pvHeader);
 	uint8_t i, ret;
-	const uint8_t *ml, *ssid;
+	const uint8_t *ml, *ssid, *start, *end;
 	struct PARAM_SSID rSsid;
 
 	if (offset < 0 || offset > prSrc->u2PacketLen)
@@ -2778,16 +2692,26 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 
 	QUEUE_INITIALIZE(que);
 
-	ml = mldFindMlIE((uint8_t *)prSrc->pvHeader + offset,
-		prSrc->u2PacketLen - offset, ML_CTRL_TYPE_BASIC);
-	if (!ml)
-		return NULL;
+	start = (uint8_t *)prSrc->pvHeader + offset;
+	end = (uint8_t *)prSrc->pvHeader + prSrc->u2PacketLen;
 
-	/* parsing rnr & ml */
-	MLD_PARSE_BASIC_MLIE(info, ml,
-		(uint8_t *)prSrc->pvHeader + prSrc->u2PacketLen - (uint8_t *)ml,
-		mgmt->aucBSSID,
-		mgmt->u2FrameCtrl & MASK_FRAME_TYPE);
+	/* ML probe resp for MLO + MBSSID can have 2 ML elem */
+	for (i = 0; i < 2; i++) {
+		ml = mldFindMlIE(start, end - start, ML_CTRL_TYPE_BASIC);
+		if (!ml)
+			return NULL;
+
+		/* parsing rnr & ml */
+		MLD_PARSE_BASIC_MLIE(info, ml, end - ml,
+			mgmt->aucBSSID, mgmt->u2FrameCtrl & MASK_FRAME_TYPE);
+
+		/* complete ml elem found */
+		if (info->ucProfNum != 0)
+			break;
+
+		/* next start after ml ie*/
+		start = ml + IE_SIZE(ml);
+	}
 
 	if (info->ucProfNum == 0) {
 		DBGLOG(ML, LOUD, "no per sta profile\n");
@@ -2801,8 +2725,6 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 			continue;
 
 		rnr = (struct IE_RNR *)ie;
-
-		mldSetMldIdFromRnrMlParam(mgmt->aucBSSID, rnr, info);
 		mldHandleRnrMlParam(rnr, info, FALSE);
 	}
 
@@ -2825,6 +2747,15 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 		if (EQUAL_MAC_ADDR(mgmt->aucBSSID, sta->aucLinkAddr))
 			continue;
 
+		/* if already exist, try to update bssdesc */
+		prBssDesc = scanSearchBssDescByLinkIdMldAddrSsid(prAdapter,
+			sta->ucLinkId, info->aucMldAddr,
+			ssid ? TRUE : FALSE, &rSsid);
+		/* already have complete profile, no need to dup */
+		if (prBssDesc &&
+		    wlanNumBitSet(prBssDesc->rMlInfo.u2ValidLinks) > 1)
+			continue;
+
 #if CFG_RFB_TRACK
 		rfb = nicRxAcquireRFB(prAdapter, 1, RFB_TRACK_MLO);
 #else /* CFG_RFB_TRACK */
@@ -2833,11 +2764,7 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 		if (!rfb)
 			break;
 
-		/* if already exist, try to update bssdesc */
-		prBssDesc = scanSearchBssDescByLinkIdMldAddrSsid(prAdapter,
-			sta->ucLinkId, info->aucMldAddr,
-			ssid ? TRUE : FALSE, &rSsid);
-		ret = mldDupByMlStaProfile(prAdapter, rfb, prSrc,
+		ret = mldDupByMlStaProfile(prAdapter, rfb, prSrc, ml,
 			sta, prBssDesc, NULL, __func__);
 		if (ret == WLAN_STATUS_SUCCESS) {
 			QUEUE_INSERT_TAIL(que, &rfb->rQueEntry);
@@ -2857,13 +2784,16 @@ void mldProcessBeaconAndProbeResp(
 
 	QUEUE_INITIALIZE(que);
 
-#if CFG_SUPPORT_802_11V_MBSSID && !CFG_SUPPORT_802_11V_MBSSID_OFFLOAD
-	rfb = mldDupMbssNonTxProfile(prAdapter, prSrc);
-	QUEUE_INSERT_TAIL_ALL(que, rfb);
-#endif
-
 	rfb = mldDupProbeRespSwRfb(prAdapter, prSrc);
 	QUEUE_INSERT_TAIL_ALL(que, rfb);
+
+#if CFG_SUPPORT_802_11V_MBSSID && !CFG_SUPPORT_802_11V_MBSSID_OFFLOAD
+	/* duplicate after ml probe resp. if done, skip mbss */
+	if (!rfb) {
+		rfb = mldDupMbssNonTxProfile(prAdapter, prSrc);
+		QUEUE_INSERT_TAIL_ALL(que, rfb);
+	}
+#endif
 
 	while(QUEUE_IS_NOT_EMPTY(que)) {
 		QUEUE_REMOVE_HEAD(que, rfb, struct SW_RFB *);
@@ -2942,7 +2872,7 @@ struct SW_RFB *mldDupAssocSwRfb(struct ADAPTER *prAdapter,
 		goto fail;
 	}
 
-	ret = mldDupByMlStaProfile(prAdapter, rfb, prSrc,
+	ret = mldDupByMlStaProfile(prAdapter, rfb, prSrc, ml,
 		sta, NULL, prStaRec, __func__);
 	if (ret == WLAN_STATUS_SUCCESS)
 		return rfb;
@@ -2966,6 +2896,11 @@ int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
 		prAdapter->rWifiVar.ucEnableMlo,
 		prAdapter->rWifiVar.u2NonApMldEMLCap,
 		prAdapter->rWifiVar.u2ApMldEMLCap);
+
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"ForceRrmMloScan:%d\n",
+		prAdapter->rWifiVar.fgForceRrmMloScan);
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,

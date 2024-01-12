@@ -165,6 +165,10 @@ void scnInit(struct ADAPTER *prAdapter)
 	LINK_INITIALIZE(&prScanInfo->rNeighborAPInfoList);
 #endif
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	LINK_INITIALIZE(&prScanInfo->rMldAPInfoList);
+#endif
+
 	kalMemZero(&(prScanInfo->rSlotInfo), sizeof(struct CHNL_IDLE_SLOT));
 
 #if CFG_SUPPORT_SCAN_LOG
@@ -215,9 +219,6 @@ void scnFreeAllPendingScanRquests(struct ADAPTER *prAdapter)
 void scnUninit(struct ADAPTER *prAdapter)
 {
 	struct SCAN_INFO *prScanInfo;
-#if (CFG_SUPPORT_WIFI_RNR == 1)
-	struct NEIGHBOR_AP_INFO *prNeighborAPInfo;
-#endif
 
 	ASSERT(prAdapter);
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
@@ -251,9 +252,20 @@ void scnUninit(struct ADAPTER *prAdapter)
 
 #if (CFG_SUPPORT_WIFI_RNR == 1)
 	while (!LINK_IS_EMPTY(&prScanInfo->rNeighborAPInfoList)) {
+		struct NEIGHBOR_AP_INFO *prNeighborAPInfo;
+
 		LINK_REMOVE_HEAD(&prScanInfo->rNeighborAPInfoList,
 			prNeighborAPInfo, struct NEIGHBOR_AP_INFO *);
 		cnmMemFree(prAdapter, prNeighborAPInfo);
+	}
+#endif
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	while (!LINK_IS_EMPTY(&prScanInfo->rMldAPInfoList)) {
+		struct MLD_AP_INFO *prMldAPInfo;
+
+		LINK_REMOVE_HEAD(&prScanInfo->rMldAPInfoList,
+			prMldAPInfo, struct MLD_AP_INFO *);
+		cnmMemFree(prAdapter, prMldAPInfo);
 	}
 #endif
 }				/* end of scnUninit() */
@@ -1463,11 +1475,16 @@ void scanParseMldIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 		if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_EML_CAPA_PRESENT)
 			prBssDesc->rMlInfo.u2EmlCap = rMlInfo.u2EmlCap;
 
+		if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_MLD_ID_PRESENT)
+			prBssDesc->rMlInfo.ucMldId = rMlInfo.ucMldId;
+
 		if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_MLD_CAPA_PRESENT) {
 			prBssDesc->rMlInfo.u2MldCap = rMlInfo.u2MldCap;
 			prBssDesc->rMlInfo.ucMaxSimuLinks =
 				(rMlInfo.u2MldCap & BITS(0, 3));
 		}
+
+		prBssDesc->rMlInfo.u2ValidLinks = rMlInfo.u2ValidLinks;
 
 		DBGLOG(ML, TRACE,
 			"MldAddr="MACSTR",BSS="MACSTR
@@ -2128,7 +2145,8 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 					&prNeighborAPInfo->rLinkEntry);
 				ucNewLink = FALSE;
 			}
-			log_dbg(SCN, INFO, "RnR for ch[%d,%d,%d,%d]Match[%d %d %d %d][%d %d %d %d] (IE Length:%d)into list(%d)\n",
+			log_dbg(SCN, TRACE,
+				    "RnR for ch[%d,%d,%d,%d]Match[%d %d %d %d][%d %d %d %d] (IE Length:%d)into list(%d)\n",
 				    prScanParam->arChnlInfoList[0].ucChannelNum,
 				    prScanParam->arChnlInfoList[1].ucChannelNum,
 				    prScanParam->arChnlInfoList[2].ucChannelNum,
@@ -2144,7 +2162,8 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 				    prScanParam->u2IELen,
 				    prScanInfo->rNeighborAPInfoList.u4NumElem);
 
-			log_dbg(SCN, INFO, "RnrIe " MACSTR " " MACSTR " " MACSTR
+			log_dbg(SCN, TRACE,
+					"RnrIe " MACSTR " " MACSTR " " MACSTR
 					" " MACSTR "\n",
 					MAC2STR(prScanParam->aucBSSID[0]),
 					MAC2STR(prScanParam->aucBSSID[1]),

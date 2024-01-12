@@ -264,11 +264,6 @@ struct CMD_VALIDATE_POLICY get_tsf_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
 				 .min = 0, .max = MAX_BSSID_NUM - 1}
 };
 
-struct CMD_VALIDATE_POLICY set_ml_probereq_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
-	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_STRING, .len = 17},
-	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_U32, .min = 0, .max = U32_MAX}
-};
-
 struct CMD_VALIDATE_POLICY set_trx_ba_size_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
 	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_STRING, .min = 2, .max = 6},
 	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_U16, .min = 0, .max = U16_MAX}
@@ -1611,10 +1606,9 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{
 		.pcCmdStr  = CMD_SET_ML_PROBEREQ,
 		.pfHandler = priv_driver_set_ml_probereq,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(4),
-		.policy    = set_ml_probereq_policy,
-		.u4PolicySize = ARRAY_SIZE(set_ml_probereq_policy)
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(5),
+		.policy    = NULL
 	},
 	{
 		.pcCmdStr  = CMD_GET_ML_CAPA,

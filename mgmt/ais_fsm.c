@@ -2457,6 +2457,22 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(struct ADAPTER *prAdapter,
 
 		}
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		/* If target connected AP has MultiLink
+		 * (ucMaxSimuLinks > 0, 0 means only 1 device),
+		 * but we only scan one link(ucLinkNum=1), need to send
+		 * ML probe request to get completed ML info first.
+		 */
+		if (aisNeedMloScan(prAdapter,
+				prBssDescSet, ucBssIndex)) {
+			prAisFsmInfo->ucMlProbeSendCount++;
+			prAisFsmInfo->ucMlProbeEnable = TRUE;
+			prAisFsmInfo->prMlProbeBssDesc =
+				prBssDescSet->aprBssDesc[0];
+			return AIS_STATE_LOOKING_FOR;
+		}
+#endif
+
 		return AIS_STATE_ROAMING;
 #else
 		return AIS_STATE_NORMAL_TR;
@@ -6250,9 +6266,10 @@ aisFsmScanRequestAdv(struct ADAPTER *prAdapter,
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
 	DBGLOG(SCN, TRACE,
-		"[AIS%d][%d] eCurrentState=%d rrm=%d\n",
+		"[AIS%d][%d] eCurrentState=%d rrm=%d mlo=%d\n",
 		prAisFsmInfo->ucAisIndex, ucBssIndex,
-		prAisFsmInfo->eCurrentState, prRequestIn->fgIsRrm);
+		prAisFsmInfo->eCurrentState, prRequestIn->fgIsRrm,
+		prRequestIn->fgNeedMloScan);
 
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR) {
 		/* 802.1x might not finished yet, pend it for
@@ -6822,6 +6839,12 @@ void aisFsmRunEventRoamingRoam(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	ais->ucConnTrialCount++;
 	ais->fgTargetChnlScanIssued = FALSE;
 	ais->ucIsStaRoaming = TRUE;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	ais->ucMlProbeSendCount = 0;
+	ais->ucMlProbeEnable = FALSE;
+	ais->prMlProbeBssDesc = NULL;
+#endif
 
 #if CFG_EXT_ROAMING_WTC
 	aisWtcSearchHandleBssDesc(
@@ -9458,7 +9481,7 @@ static uint32_t aisScanGenMlScanReq(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
 	struct BSS_DESC *prBssDesc;
-	uint8_t aucIe[100];
+	uint8_t aucIe[MAX_BAND_IE_LENGTH];
 	uint32_t u4ScanIELen = 0;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -9473,7 +9496,7 @@ static uint32_t aisScanGenMlScanReq(struct ADAPTER *prAdapter,
 	/* Generate ML probe request IE */
 	kalMemZero(aucIe, sizeof(aucIe));
 	u4ScanIELen = mldFillScanIE(prAdapter, prBssDesc,
-		aucIe, sizeof(aucIe), TRUE);
+		aucIe, sizeof(aucIe), FALSE, prBssDesc->rMlInfo.ucMldId);
 	prScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
 	prScanReqMsg->ucSSIDType = SCAN_REQ_SSID_WILDCARD;
 
@@ -9493,13 +9516,15 @@ static uint32_t aisScanGenMlScanReq(struct ADAPTER *prAdapter,
 				sizeof(prScanReqMsg->ucBssidMatchSsidInd));
 
 	/* MaskExtend set to ENUM_SCN_ML_PROBE */
+	prScanReqMsg->ucScnFuncMask |= ENUM_SCN_USE_PADDING_AS_BSSID;
 	prScanReqMsg->u4ScnFuncMaskExtend |= ENUM_SCN_ML_PROBE;
 
 	/* Copy ML probe request IE */
-	kalMemZero(prScanReqMsg->aucIE, MAX_IE_LENGTH);
-	if (u4ScanIELen > 0)
-		kalMemCopy(prScanReqMsg->aucIE, aucIe, u4ScanIELen);
-	prScanReqMsg->u2IELen = (uint16_t)u4ScanIELen;
+	kalMemZero(prScanReqMsg->aucIEMl, MAX_BAND_IE_LENGTH);
+	if (u4ScanIELen > 0) {
+		kalMemCopy(prScanReqMsg->aucIEMl, aucIe, u4ScanIELen);
+		prScanReqMsg->u2IELenMl = (uint16_t)u4ScanIELen;
+	}
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -9621,6 +9646,10 @@ static void aisScanProcessReqParam(struct ADAPTER *prAdapter,
 		prRmReq->rBcnRmParam.eState = RM_ON_GOING;
 	}
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prScanReqMsg->fgNeedMloScan = prScanRequest->fgNeedMloScan;
+#endif
+
 	if (!kalIsZeroEtherAddr(prScanRequest->aucBSSID))
 		COPY_MAC_ADDR(prScanReqMsg->aucBSSID, prScanRequest->aucBSSID);
 
@@ -9647,7 +9676,12 @@ static void aisScanProcessReqParam(struct ADAPTER *prAdapter,
 			prScanReqMsg->ucSSIDNum = 0;
 		} else {
 			prScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
-			prScanReqMsg->ucSSIDType = SCAN_REQ_SSID_SPECIFIED;
+			if (prScanRequest->ucSSIDType)
+				prScanReqMsg->ucSSIDType =
+					prScanRequest->ucSSIDType;
+			else
+				prScanReqMsg->ucSSIDType =
+					SCAN_REQ_SSID_SPECIFIED;
 			prScanReqMsg->ucShortSSIDNum =
 						prScanRequest->ucShortSsidNum;
 			prScanReqMsg->ucSSIDNum = prScanRequest->u4SsidNum;

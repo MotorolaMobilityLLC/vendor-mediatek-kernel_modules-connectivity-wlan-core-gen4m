@@ -193,6 +193,7 @@ void scanAddPerBandIE(struct ADAPTER *prAdapter,
 #if defined(CFG_SUPPORT_UNIFIED_COMMAND) && (CFG_SUPPORT_802_11BE_MLO == 1)
 	uint16_t len = prScanParam->u2IELen;
 
+	len += prScanParam->u2IELenMl;
 	len += prScanParam->u2IELen2G4 + prScanParam->u2IELen5G;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	len += prScanParam->u2IELen6G;
@@ -204,6 +205,12 @@ void scanAddPerBandIE(struct ADAPTER *prAdapter,
 		return;
 	}
 
+	if (prScanParam->u2IELenMl > 0 &&
+	    prScanParam->u2IELenMl <= MAX_BAND_IE_LENGTH) {
+		prCmdScanReq->u2IELenMl = prScanParam->u2IELenMl;
+		kalMemCopy(prCmdScanReq->aucIEMl,
+			prScanParam->aucIEMl, prScanParam->u2IELenMl);
+	}
 	if (prScanParam->u2IELen2G4 > 0 &&
 	    prScanParam->u2IELen2G4 <= MAX_BAND_IE_LENGTH) {
 		prCmdScanReq->u2IELen2G4 = prScanParam->u2IELen2G4;
@@ -537,9 +544,6 @@ void scnFsmMsgAbort(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 	struct SCAN_INFO *prScanInfo;
 	struct SCAN_PARAM *prScanParam;
 	struct CMD_SCAN_CANCEL rCmdScanCancel;
-#if (CFG_SUPPORT_WIFI_RNR == 1)
-	struct NEIGHBOR_AP_INFO *prNeighborAPInfo;
-#endif
 	ASSERT(prMsgHdr);
 
 	prScanCancel = (struct MSG_SCN_SCAN_CANCEL *) prMsgHdr;
@@ -550,12 +554,24 @@ void scnFsmMsgAbort(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 	if (prScanInfo->eCurrentState != SCAN_STATE_IDLE) {
 #if (CFG_SUPPORT_WIFI_RNR == 1)
 		while (!LINK_IS_EMPTY(&prScanInfo->rNeighborAPInfoList)) {
+			struct NEIGHBOR_AP_INFO *prNeighborAPInfo;
+
 			LINK_REMOVE_HEAD(&prScanInfo->rNeighborAPInfoList,
 				prNeighborAPInfo, struct NEIGHBOR_AP_INFO *);
 
 			cnmMemFree(prAdapter, prNeighborAPInfo);
 		}
 #endif
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		while (!LINK_IS_EMPTY(&prScanInfo->rMldAPInfoList)) {
+			struct MLD_AP_INFO *prMldAPInfo;
+
+			LINK_REMOVE_HEAD(&prScanInfo->rMldAPInfoList,
+				prMldAPInfo, struct MLD_AP_INFO *);
+			cnmMemFree(prAdapter, prMldAPInfo);
+		}
+#endif
+
 		if (prScanCancel->ucSeqNum == prScanParam->ucSeqNum &&
 			prScanCancel->ucBssIndex == prScanParam->ucBssIndex) {
 			enum ENUM_SCAN_STATUS eStatus = SCAN_STATUS_DONE;
@@ -824,6 +840,14 @@ void scnFsmHandleScanMsgV2(struct ADAPTER *prAdapter,
 #endif /* CFG_MTK_FPGA_PLATFORM */
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prScanParam->fgCollectMldAP = prScanReqMsg->fgNeedMloScan;
+
+	if (prScanReqMsg->u2IELenMl > 0 &&
+	    prScanParam->u2IELenMl <= MAX_BAND_IE_LENGTH) {
+		prScanParam->u2IELenMl = prScanReqMsg->u2IELenMl;
+		kalMemCopy(prScanParam->aucIEMl,
+			prScanReqMsg->aucIEMl, prScanParam->u2IELenMl);
+	}
 	if (prScanReqMsg->u2IELen2G4 > 0 &&
 	    prScanParam->u2IELen2G4 <= MAX_BAND_IE_LENGTH) {
 		prScanParam->u2IELen2G4 = prScanReqMsg->u2IELen2G4;
@@ -929,6 +953,159 @@ void scnFsmRemovePendingMsg(struct ADAPTER *prAdapter, uint8_t ucSeqNum,
 	}
 }
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint8_t scnNeedMloScan(struct ADAPTER *prAdapter, uint8_t ucSeqNum)
+{
+	struct SCAN_INFO *prScanInfo;
+	struct SCAN_PARAM *prScanParam;
+	struct MLD_AP_INFO *prMldAPInfo, *prMldAPInfoNext;
+	struct BSS_DESC *prBssDesc;
+	uint16_t i;
+
+	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+	prScanParam = &prScanInfo->rScanParam;
+
+	/* add to mld ap list for mlo scan later */
+	if (prScanParam->fgCollectMldAP) {
+		struct LINK *prScanResult = &prScanInfo->rBSSDescList;
+
+		/* reset mld ap list */
+		LINK_INITIALIZE(&prScanInfo->rMldAPInfoList);
+		prScanParam->fgCollectMldAP = FALSE;
+
+		LINK_FOR_EACH_ENTRY(prBssDesc, prScanResult, rLinkEntry,
+			struct BSS_DESC) {
+			if (!prBssDesc->rMlInfo.fgValid)
+				continue;
+
+			for (i = 0; i < prScanParam->ucChannelListNum; i++) {
+				if (prScanParam->arChnlInfoList[i].eBand
+					== prBssDesc->eBand &&
+				    prScanParam->arChnlInfoList[i].ucChannelNum
+					== prBssDesc->ucChannelNum)
+					break;
+			}
+			/* skip ap which is not in chnl list */
+			if (i == prScanParam->ucChannelListNum)
+				continue;
+
+			prMldAPInfo =
+			    (struct MLD_AP_INFO *)cnmMemAlloc(prAdapter,
+			    RAM_TYPE_BUF, sizeof(struct MLD_AP_INFO));
+			if (!prMldAPInfo)
+				goto cleanup;
+
+			kalMemZero(prMldAPInfo, sizeof(struct MLD_AP_INFO));
+			prMldAPInfo->prBssDesc = prBssDesc;
+
+			LINK_INSERT_TAIL(
+				&prScanInfo->rMldAPInfoList,
+				&prMldAPInfo->rLinkEntry);
+			DBGLOG(ML, INFO,
+				"Push MldAddr="MACSTR",BSS="MACSTR
+				",LinkID=%d,MaxSimu=%d,EmlCap=0x%x,MldCap=0x%x,MldType=%d,Total=%d\n",
+				MAC2STR(prBssDesc->rMlInfo.aucMldAddr),
+				MAC2STR(prBssDesc->aucBSSID),
+				prBssDesc->rMlInfo.ucLinkIndex,
+				prBssDesc->rMlInfo.ucMaxSimuLinks,
+				prBssDesc->rMlInfo.u2EmlCap,
+				prBssDesc->rMlInfo.u2MldCap,
+				prBssDesc->rMlInfo.fgMldType,
+				prScanInfo->rMldAPInfoList.u4NumElem);
+		}
+	}
+
+	/* traverse through pending request list */
+	LINK_FOR_EACH_ENTRY_SAFE(prMldAPInfo,
+				 prMldAPInfoNext,
+				 &prScanInfo->rMldAPInfoList, rLinkEntry,
+				 struct MLD_AP_INFO) {
+		uint8_t aucIe[MAX_BAND_IE_LENGTH] = {0};
+		uint32_t u4ScanIELen = 0;
+		struct AIS_FSM_INFO *prAisFsmInfo;
+
+		LINK_REMOVE_KNOWN_ENTRY(&prScanInfo->rMldAPInfoList,
+			&prMldAPInfo->rLinkEntry);
+		prBssDesc = prMldAPInfo->prBssDesc;
+		cnmMemFree(prAdapter, prMldAPInfo);
+
+		DBGLOG(ML, INFO,
+			"Pop MldAddr="MACSTR",BSS="MACSTR
+			",LinkID=%d,MaxSimu=%d,EmlCap=0x%x,MldCap=0x%x,MldType=%d,Total=%d\n",
+			MAC2STR(prBssDesc->rMlInfo.aucMldAddr),
+			MAC2STR(prBssDesc->aucBSSID),
+			prBssDesc->rMlInfo.ucLinkIndex,
+			prBssDesc->rMlInfo.ucMaxSimuLinks,
+			prBssDesc->rMlInfo.u2EmlCap,
+			prBssDesc->rMlInfo.u2MldCap,
+			prBssDesc->rMlInfo.fgMldType,
+			prScanInfo->rMldAPInfoList.u4NumElem);
+
+		u4ScanIELen = mldFillScanIE(prAdapter,
+			prBssDesc, aucIe, sizeof(aucIe), FALSE,
+			prBssDesc->rMlInfo.ucMldId);
+		if (u4ScanIELen == 0)
+			continue;
+
+		prScanParam->ucSeqNum = ucSeqNum;
+
+		prScanParam->eScanType = SCAN_TYPE_ACTIVE_SCAN;
+		prScanParam->ucSSIDType = SCAN_REQ_SSID_SPECIFIED_ONLY;
+
+		/* Not to handle RNR IE in this scan*/
+		prScanParam->fgOobRnrParseEn = FALSE;
+
+		/* Assign channel and BSSID */
+		prScanParam->eScanChannel = SCAN_CHANNEL_SPECIFIED;
+		prScanParam->ucChannelListNum = 1;
+		prScanParam->arChnlInfoList[0].eBand =
+			prBssDesc->eBand;
+		prScanParam->arChnlInfoList[0].ucChannelNum =
+			prBssDesc->ucChannelNum;
+		prScanParam->ucBssidMatchCh[0] =
+			prBssDesc->ucChannelNum;
+		COPY_MAC_ADDR(prScanParam->aucBSSID[0],
+			prBssDesc->aucBSSID);
+
+		/* No BssidMatchSsid, set to default value */
+		kalMemSet(prScanParam->ucBssidMatchSsidInd,
+			CFG_SCAN_OOB_MAX_NUM,
+			sizeof(prScanParam->ucBssidMatchSsidInd));
+
+		/* MaskExtend set to ENUM_SCN_ML_PROBE */
+		prScanParam->ucScnFuncMask |= ENUM_SCN_USE_PADDING_AS_BSSID;
+		prScanParam->u4ScnFuncMaskExtend |= ENUM_SCN_ML_PROBE;
+
+		/* Copy ML probe request IE */
+		kalMemCopy(prScanParam->aucIEMl, aucIe, u4ScanIELen);
+		prScanParam->u2IELenMl = (uint16_t)u4ScanIELen;
+
+		/* Restart ScanDone timer to avoid mlo scan
+		 * causing scan timeout
+		 */
+		prAisFsmInfo = aisGetAisFsmInfo(prAdapter,
+				prScanParam->ucBssIndex);
+		cnmTimerStopTimer(prAdapter,
+				&prAisFsmInfo->rScanDoneTimer);
+		cnmTimerStartTimer(prAdapter,
+				&prAisFsmInfo->rScanDoneTimer,
+				SEC_TO_MSEC(AIS_SCN_DONE_TIMEOUT_SEC));
+
+		/* go for next scan */
+		scnFsmSteps(prAdapter, SCAN_STATE_SCANNING);
+		return TRUE;
+	}
+
+cleanup:
+	while (!LINK_IS_EMPTY(&prScanInfo->rMldAPInfoList)) {
+		LINK_REMOVE_HEAD(&prScanInfo->rMldAPInfoList,
+			prMldAPInfo, struct MLD_AP_INFO *);
+		cnmMemFree(prAdapter, prMldAPInfo);
+	}
+	return FALSE;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief
@@ -1011,13 +1188,13 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 	if (prScanInfo->eCurrentState == SCAN_STATE_SCANNING
 		&& prScanDone->ucSeqNum == prScanParam->ucSeqNum) {
 #if (CFG_SUPPORT_WIFI_RNR == 1)
-		struct NEIGHBOR_AP_INFO *prNeighborAPInfo;
-		struct AIS_FSM_INFO *prAisFsmInfo;
-		struct NEIGHBOR_AP_PARAM *prNeighborParam;
-		uint8_t aucNullAddr[] = NULL_MAC_ADDR;
-		uint8_t i = 0;
-
 		if (!LINK_IS_EMPTY(&prScanInfo->rNeighborAPInfoList)) {
+			struct NEIGHBOR_AP_INFO *prNeighborAPInfo;
+			struct AIS_FSM_INFO *prAisFsmInfo;
+			struct NEIGHBOR_AP_PARAM *prNeighborParam;
+			uint8_t aucNullAddr[] = NULL_MAC_ADDR;
+			uint8_t i = 0;
+
 			LINK_REMOVE_HEAD(&prScanInfo->rNeighborAPInfoList,
 			prNeighborAPInfo, struct NEIGHBOR_AP_INFO *);
 
@@ -1112,6 +1289,11 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 			scnFsmSteps(prAdapter, SCAN_STATE_SCANNING);
 			return;
 		}
+#endif
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (scnNeedMloScan(prAdapter, prScanDone->ucSeqNum))
+			return;
 #endif
 
 		scanRemoveBssDescsByPolicy(prAdapter,

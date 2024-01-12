@@ -5370,7 +5370,7 @@ int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 	struct ADAPTER *prAdapter = NULL;
 	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
 	uint8_t aucMacAddr[MAC_ADDR_LEN] = {0};
-	uint32_t u4BufLen, rStatus, u4Freq, u4PerSta;
+	uint32_t u4BufLen, rStatus, u4Freq, u4PerSta, u4MldId;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
@@ -5386,6 +5386,8 @@ int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 
 	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 4) {
 		struct BSS_DESC *prBssDesc;
+		uint32_t u4SsidNum = 0;
+		struct PARAM_SSID rSsid;
 
 		DBGLOG(REQ, INFO, "argc %i, cmd [%s]\n", i4Argc, apcArgv[1]);
 		wlanHwAddrToBin(apcArgv[1], &aucMacAddr[0]);
@@ -5401,6 +5403,18 @@ int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 			DBGLOG(REQ, ERROR, "parse ucType error %d\n",
 					i4BytesWritten);
 			return -1;
+		}
+		i4BytesWritten = kalkStrtou32(apcArgv[4], 0, &u4MldId);
+		if (i4BytesWritten) {
+			DBGLOG(REQ, ERROR, "parse ucType error %d\n",
+					i4BytesWritten);
+			return -1;
+		}
+
+		if (i4Argc >= 5) {
+			u4SsidNum = 1;
+			COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
+				  apcArgv[5], strlen(apcArgv[5]));
 		}
 
 		prBssDesc = scanSearchBssDescByBssid(prAdapter, aucMacAddr);
@@ -5422,7 +5436,7 @@ int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 		prScanRequest->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
 		prScanRequest->u4IELength = mldFillScanIE(prAdapter,
 			prBssDesc, prScanRequest->aucIEBuf,
-			sizeof(prScanRequest->aucIEBuf), u4PerSta);
+			sizeof(prScanRequest->aucIEBuf), u4PerSta, u4MldId);
 		prScanRequest->arChannel[0].ucChannelNum =
 					nicFreq2ChannelNum(u4Freq * 1000);
 		prScanRequest->ucBssidMatchCh[0] =
@@ -5437,11 +5451,20 @@ int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 #endif
 		prScanRequest->u4ChannelNum = 1;
 		prScanRequest->ucBssIndex = 0;
+		prScanRequest->ucScnFuncMask |= ENUM_SCN_USE_PADDING_AS_BSSID;
 		prScanRequest->u4ScnFuncMaskExtend |= ENUM_SCN_ML_PROBE;
 		COPY_MAC_ADDR(prScanRequest->aucExtBssid[0], aucMacAddr);
 		kalMemSet(prScanRequest->ucBssidMatchSsidInd,
 				CFG_SCAN_OOB_MAX_NUM,
 				sizeof(prScanRequest->ucBssidMatchSsidInd));
+		if (u4SsidNum) {
+			prScanRequest->u4SsidNum = 1;
+			kalMemCopy(prScanRequest->rSsid, &rSsid, sizeof(rSsid));
+			prScanRequest->ucSSIDType =
+				SCAN_REQ_SSID_SPECIFIED_ONLY;
+			/* notify fw that bssid 0 match SSID 0 */
+			prScanRequest->ucBssidMatchSsidInd[0] = 0;
+		}
 
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetBssidListScanAdv,
 			prScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV),

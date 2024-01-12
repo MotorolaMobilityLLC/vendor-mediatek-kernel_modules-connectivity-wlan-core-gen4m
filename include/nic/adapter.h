@@ -870,6 +870,7 @@ struct WIFI_VAR {
 	uint16_t u2NonApMldEMLCap;
 	uint16_t u2ApMldEMLCap;
 	uint32_t u4AisEHTNumber;
+	uint8_t fgForceRrmMloScan;
 #endif
 	uint8_t ucApHt;
 	uint8_t ucApVht;

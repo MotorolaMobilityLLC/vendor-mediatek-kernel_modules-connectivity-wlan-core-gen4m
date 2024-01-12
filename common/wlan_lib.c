@@ -7135,6 +7135,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"EhtTbSndFBRateLimit", FEATURE_DISABLED);
 	if (!pucKey)
 		prWifiVar->ucPresetLinkId = MLD_LINK_ID_NONE;
+	INIT_UINT(prWifiVar->fgForceRrmMloScan,
+		"ForceRrmMloScan", FEATURE_DISABLED);
 	INIT_UINT(prWifiVar->ucMldLinkMax, "MldLinkMax", MLD_LINK_MAX);
 	INIT_UINT(prWifiVar->ucStaMldLinkMax, "StaMldLinkMax", MLD_LINK_MAX);
 	INIT_UINT(prWifiVar->ucP2pMldLinkMax, "P2pMldLinkMax", MLD_LINK_MAX);
@@ -7169,6 +7171,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"NonApMldEML", FEATURE_DISABLED);
 	INIT_UINT(prWifiVar->ucApMldEMLSupport,
 		"ApMldEML", FEATURE_DISABLED);
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldBssUpdateCapAll(prAdapter);
 	INIT_UINT(prWifiVar->ucT2LMNegotiationSupport,
@@ -10359,6 +10362,15 @@ int32_t wlanHwAddrToBin(int8_t *txt, uint8_t *addr)
 	}
 
 	return pos - txt;
+}
+
+int32_t wlanNumBitSet(uint32_t val)
+{
+	int32_t c;
+
+	for (c = 0; val; c++)
+		val &= val - 1;
+	return c;
 }
 
 u_int8_t wlanIsChipNoAck(struct ADAPTER *prAdapter)

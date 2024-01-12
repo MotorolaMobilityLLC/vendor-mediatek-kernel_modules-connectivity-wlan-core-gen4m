@@ -244,6 +244,8 @@ struct ML_INFO {
 	uint8_t fgValid;
 	uint8_t aucMldAddr[MAC_ADDR_LEN];
 	uint8_t ucLinkIndex;
+	uint8_t ucMldId;
+	uint16_t u2ValidLinks;
 	uint8_t ucMaxSimuLinks;
 	uint16_t u2EmlCap;
 	uint16_t u2MldCap;
@@ -571,6 +573,9 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 	uint8_t aucIE[MAX_IE_LENGTH];
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
+	uint8_t fgCollectMldAP;
+	uint16_t u2IELenMl;
+	uint8_t aucIEMl[MAX_BAND_IE_LENGTH];
 	uint16_t u2IELen2G4;
 	uint8_t aucIE2G4[MAX_BAND_IE_LENGTH];
 	uint16_t u2IELen5G;
@@ -631,6 +636,10 @@ struct SCAN_INFO {
 	struct LINK rFreeBSSDescList;
 
 	struct LINK rPendingMsgList;
+
+#if CFG_SUPPORT_802_11BE_MLO
+	struct LINK rMldAPInfoList;
+#endif
 
 	/* Sparse Channel Detection */
 	u_int8_t fgIsSparseChannelValid;
@@ -751,6 +760,9 @@ struct MSG_SCN_SCAN_REQ_V2 {
 	uint8_t aucIE[MAX_IE_LENGTH];
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
+	uint8_t fgNeedMloScan;
+	uint16_t u2IELenMl;
+	uint8_t aucIEMl[MAX_BAND_IE_LENGTH];
 	uint16_t u2IELen2G4;
 	uint8_t	aucIE2G4[MAX_BAND_IE_LENGTH];
 	uint16_t u2IELen5G;
@@ -841,6 +853,13 @@ struct NEIGHBOR_AP_PARAM {
 struct NEIGHBOR_AP_INFO {
 	struct LINK_ENTRY rLinkEntry;
 	struct NEIGHBOR_AP_PARAM rNeighborParam;
+};
+#endif
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+struct MLD_AP_INFO {
+	struct LINK_ENTRY rLinkEntry;
+	struct BSS_DESC *prBssDesc;
 };
 #endif
 

@@ -707,19 +707,31 @@ uint32_t nicUniCmdScanTagIe(struct ADAPTER *ad, uint8_t *buf,
 	pos = buf;
 	end = buf + sizeof(struct UNI_CMD_SCAN_IE) + 600;
 
-	if (cmd->u2IELen) {
-		if (pos + fix + ALIGN_4(cmd->u2IELen) < end) {
+	if (cmd->u2IELen + cmd->u2IELenMl > 0) {
+		if (pos + fix + ALIGN_4(cmd->u2IELen + cmd->u2IELenMl) < end) {
 			tag = (struct UNI_CMD_SCAN_IE *)pos;
 			tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_IE;
-			tag->u2Length = fix + ALIGN_4(cmd->u2IELen);
-			tag->u2IELen = cmd->u2IELen;
+			tag->u2Length = fix +
+				ALIGN_4(cmd->u2IELen + cmd->u2IELenMl);
+			tag->u2IELen = cmd->u2IELen + cmd->u2IELenMl;
 			tag->ucBand = BAND_NULL;
-			kalMemCopy(tag->aucIEBuffer, cmd->aucIE, cmd->u2IELen);
+			if (cmd->u2IELen)
+				kalMemCopy(tag->aucIEBuffer,
+					cmd->aucIE, cmd->u2IELen);
+			if (cmd->u2IELenMl) {
+				kalMemCopy(tag->aucIEBuffer + cmd->u2IELen,
+					cmd->aucIEMl, cmd->u2IELenMl);
+
+				DBGLOG(INIT, INFO, "Dump ML IE\n");
+				DBGLOG_MEM8(INIT, INFO,
+					cmd->aucIEMl, cmd->u2IELenMl);
+			}
 			pos += tag->u2Length;
 		} else {
 			DBGLOG(INIT, ERROR, "no space for default IE\n");
 		}
 	}
+
 	if (cmd->u2IELen2G4) {
 		if (pos + fix + ALIGN_4(cmd->u2IELen2G4) < end) {
 			tag = (struct UNI_CMD_SCAN_IE *)pos;
