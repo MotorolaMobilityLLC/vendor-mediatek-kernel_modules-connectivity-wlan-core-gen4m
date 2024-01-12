@@ -530,8 +530,8 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_RESOURCES;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	beGenerateAuthMldIE(prAdapter, prStaRec, ucBssIndex, prFalseAuthSwRfb,
-		prMsduInfo, authComposeAuthFrame);
+	beGenerateAuthMldIE(prAdapter, prStaRec, ucBssIndex,
+		prFalseAuthSwRfb, prMsduInfo);
 #endif
 
 	/* 4 <6> Inform TXM  to send this Authentication frame. */

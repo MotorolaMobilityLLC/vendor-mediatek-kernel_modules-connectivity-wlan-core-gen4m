@@ -9372,13 +9372,9 @@ int kalVendorExternalAuthRequest(IN struct ADAPTER *prAdapter,
 	info->id = GRID_EXTERNAL_AUTH;
 	info->len = sizeof(struct PARAM_EXTERNAL_AUTH_INFO) - 2;
 	info->action = NL80211_EXTERNAL_AUTH_START;
-	if (mldIsMultiLinkFormed(prAdapter, prStaRec)) {
-		COPY_MAC_ADDR(info->bssid, prStaRec->aucMldAddr);
-		info->len += beGenerateExternalAuthMldIE(
-			prAdapter, prStaRec, info->ext_ie);
-	} else {
-		COPY_MAC_ADDR(info->bssid, prStaRec->aucMacAddr);
-	}
+	COPY_MAC_ADDR(info->bssid, prStaRec->aucMldAddr);
+	info->len += beGenerateExternalAuthMldIE(
+		prAdapter, prStaRec, info->ext_ie);
 	COPY_SSID(info->ssid, info->ssid_len, conn->aucSSID, conn->ucSSIDLen);
 	info->ssid[info->ssid_len] = '\0';
 	info->key_mgmt_suite = RSN_AKM_SUITE_SAE;
