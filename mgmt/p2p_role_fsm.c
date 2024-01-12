@@ -4036,6 +4036,7 @@ static void initAcsParams(IN struct ADAPTER *prAdapter,
 			DBGLOG(REQ, INFO, "[%d] band=%d, ch=%d\n", i,
 				prRfChannelInfo->eBand,
 				prRfChannelInfo->ucChannelNum);
+			prAcsReqInfo->ucBand |= BIT(prRfChannelInfo->eBand);
 			prRfChannelInfo++;
 		}
 	}
@@ -4210,15 +4211,14 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 				prAisBssInfo);
 			goto exit;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		} else if (prAdapter->fgIsHwSupport6G &&
-			!prAdapter->rWifiVar.fgDisable6GBand) {
-			/* Prefer 5G + 6G */
+		} else if (prAdapter->fgIsHwSupport6G) {
+			/* Trim 5G + 6G PSC channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_6G) | BIT(BAND_5G));
 			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
 #endif
 		} else if (prAdapter->fgEnable5GBand) {
-			/* Prefer 5G band first */
+			/* Trim 5G channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_5G));
 			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
@@ -4226,6 +4226,19 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_2G4));
 			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
+		}
+	} else if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11A) {
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (prAdapter->fgIsHwSupport6G) {
+			/* Trim 5G + 6G PSC channels */
+			trimAcsScanList(prAdapter, prMsgAcsRequest,
+				prAcsReqInfo, BIT(BAND_6G) | BIT(BAND_5G));
+		} else
+#endif
+		if (prAdapter->fgEnable5GBand) {
+			/* Trim 5G channels */
+			trimAcsScanList(prAdapter, prMsgAcsRequest,
+				prAcsReqInfo, BIT(BAND_5G));
 		}
 	}
 

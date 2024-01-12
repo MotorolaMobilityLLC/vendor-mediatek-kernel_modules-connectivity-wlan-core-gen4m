@@ -1233,11 +1233,6 @@ struct WIFI_VAR {
 	uint8_t ucNanCommittedDw;
 	unsigned char fgNoPmf;
 #endif
-
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	uint8_t fgDisable6GBand;
-#endif
-
 };
 
 /* cnm_timer module */

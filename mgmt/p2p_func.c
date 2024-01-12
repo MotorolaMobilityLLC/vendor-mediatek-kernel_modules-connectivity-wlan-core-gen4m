@@ -6879,8 +6879,6 @@ void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
 		IN struct PARAM_GET_CHN_INFO *prLteSafeChnInfo,
 		IN struct P2P_ACS_REQ_INFO *prAcsReqInfo)
 {
-	uint8_t eBandSel;
-	enum ENUM_BAND eBandPrefer;
 	uint32_t u4LteSafeChnMask_2G = -1;
 
 	if (!prAdapter || !prAcsReqInfo)
@@ -6888,16 +6886,14 @@ void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
 
 	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11B ||
 			prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11G) {
-		eBandSel = BIT(BAND_2G4);
-		eBandPrefer = BAND_2G4;
+		prAcsReqInfo->eBand = BAND_2G4;
 	} else {
-		eBandSel = BIT(BAND_5G);
-		eBandPrefer = BAND_5G;
+		prAcsReqInfo->eBand = BAND_5G;
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		if (!prAdapter->rWifiVar.fgDisable6GBand) {
-			eBandSel |= BIT(BAND_6G);
-			eBandPrefer = BAND_6G; /* prefer 6G */
+		if ((prAcsReqInfo->ucBand & BIT(BAND_6G)) &&
+			prAdapter->fgIsHwSupport6G) {
+			prAcsReqInfo->eBand = BAND_6G; /* Prefer 6G */
 		}
 #endif
 	}
@@ -6905,7 +6901,7 @@ void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
 	if (!prLteSafeChnInfo)
 		goto error;
 
-	if (eBandSel & BIT(BAND_2G4)) {
+	if (prAcsReqInfo->ucBand & BIT(BAND_2G4)) {
 		struct LTE_SAFE_CHN_INFO *prLteSafeChnList;
 		struct RF_CHANNEL_INFO aucChannelList[MAX_2G_BAND_CHN_NUM];
 		uint8_t ucNumOfChannel;
@@ -6949,7 +6945,7 @@ void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
 #endif
 	}
 
-	if (eBandSel & BIT(BAND_5G)) {
+	if (prAcsReqInfo->ucBand & BIT(BAND_5G)) {
 		/* Add support for 5G FW mask */
 		struct LTE_SAFE_CHN_INFO *prLteSafeChnList =
 			&prLteSafeChnInfo->rLteSafeChnList;
@@ -6965,7 +6961,7 @@ void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	if (eBandSel & BIT(BAND_6G)) {
+	if (prAcsReqInfo->ucBand & BIT(BAND_6G)) {
 		/* Add support for 6G FW mask */
 		struct LTE_SAFE_CHN_INFO *prLteSafeChnList =
 			&prLteSafeChnInfo->rLteSafeChnList;
@@ -6982,9 +6978,8 @@ void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
 #endif
 
 error:
-	prAcsReqInfo->eBand = eBandPrefer;
 	prAcsReqInfo->ucPrimaryCh = p2pFunGetAcsBestCh(prAdapter,
-			eBandPrefer,
+			prAcsReqInfo->eBand,
 			prAcsReqInfo->eChnlBw,
 			prAcsReqInfo->u4LteSafeChnMask_2G,
 			prAcsReqInfo->u4LteSafeChnMask_5G_1,
