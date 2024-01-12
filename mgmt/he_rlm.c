@@ -153,6 +153,51 @@ uint8_t g_au8RlmHeCfgContellIdx[4][4][2] = {
 *                              F U N C T I O N S
 ********************************************************************************
 */
+uint8_t _heGetBssBandBw(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	enum ENUM_BAND eBand)
+{
+	uint8_t ucMaxBandwidth = MAX_BW_20MHZ;
+
+	if (IS_BSS_AIS(prBssInfo)) {
+		if (eBand == BAND_2G4)
+			ucMaxBandwidth = prAdapter->rWifiVar.ucSta2gBandwidth;
+		else
+			ucMaxBandwidth = prAdapter->rWifiVar.ucSta5gBandwidth;
+
+		if (ucMaxBandwidth > prAdapter->rWifiVar.ucStaBandwidth)
+			ucMaxBandwidth = prAdapter->rWifiVar.ucStaBandwidth;
+	} else if (IS_BSS_P2P(prBssInfo)) {
+		/* AP mode */
+		if (p2pFuncIsAPMode(
+				prAdapter->rWifiVar.prP2PConnSettings[
+					prBssInfo->u4PrivateData])) {
+			if (prBssInfo->eBand == BAND_2G4)
+				ucMaxBandwidth = prAdapter->rWifiVar
+					.ucAp2gBandwidth;
+			else
+				ucMaxBandwidth = prAdapter->rWifiVar
+					.ucAp5gBandwidth;
+
+			if (ucMaxBandwidth
+				> prAdapter->rWifiVar.ucApBandwidth)
+				ucMaxBandwidth = prAdapter->rWifiVar
+					.ucApBandwidth;
+		}
+		/* P2P mode */
+		else {
+			if (prBssInfo->eBand == BAND_2G4)
+				ucMaxBandwidth = prAdapter->rWifiVar
+					.ucP2p2gBandwidth;
+			else
+				ucMaxBandwidth = prAdapter->rWifiVar
+					.ucP2p5gBandwidth;
+		}
+	}
+
+	return ucMaxBandwidth;
+}
+
 uint32_t heRlmCalculateHeCapIELen(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex,
@@ -390,6 +435,8 @@ static void heRlmFillHeCapIE(
 	prHeCap->ucId = ELEM_ID_RESERVED;
 	prHeCap->ucExtId = ELEM_EXT_ID_HE_CAP;
 
+	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+
 	/* MAC capabilities */
 	HE_RESET_MAC_CAP(prHeCap->ucHeMacCap);
 
@@ -400,25 +447,30 @@ static void heRlmFillHeCapIE(
 	HE_SET_MAC_CAP_OM_CTRL(prHeCap->ucHeMacCap);
 
 #if (CFG_SUPPORT_TWT == 1)
-	if (IS_FEATURE_ENABLED(prWifiVar->ucTWTRequester))
+	if (IS_BSS_AIS(prBssInfo) &&
+		IS_FEATURE_ENABLED(prWifiVar->ucTWTRequester))
 		HE_SET_MAC_CAP_TWT_REQ(prHeCap->ucHeMacCap);
 #endif
 
 	/* PHY capabilities */
 	HE_RESET_PHY_CAP(prHeCap->ucHePhyCap);
 
-	if (prWifiVar->ucSta2gBandwidth >= MAX_BW_40MHZ
+	if (_heGetBssBandBw(prAdapter, prBssInfo, BAND_2G4)
+		>= MAX_BW_40MHZ
 		&& prBssInfo->fgAssoc40mBwAllowed)
 		HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW40_2G(prHeCap->ucHePhyCap);
 
-	if (prWifiVar->ucSta5gBandwidth >= MAX_BW_40MHZ)
+	if (_heGetBssBandBw(prAdapter, prBssInfo, BAND_5G)
+		>= MAX_BW_40MHZ)
 		HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW40_BW80_5G(
 			prHeCap->ucHePhyCap);
 
-	if (prWifiVar->ucSta5gBandwidth >= MAX_BW_160MHZ)
+	if (_heGetBssBandBw(prAdapter, prBssInfo, BAND_5G)
+		>= MAX_BW_160MHZ)
 		HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW160_5G(prHeCap->ucHePhyCap);
 
-	if (prWifiVar->ucSta5gBandwidth >= MAX_BW_80_80_MHZ)
+	if (_heGetBssBandBw(prAdapter, prBssInfo, BAND_5G)
+		>= MAX_BW_80_80_MHZ)
 		HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW80P80_5G(prHeCap->ucHePhyCap);
 
 	if (IS_FEATURE_ENABLED(prWifiVar->ucRxLdpc) &&
@@ -427,12 +479,14 @@ static void heRlmFillHeCapIE(
 
 	if (IS_FEATURE_ENABLED(prWifiVar->ucTxStbc)) {
 		HE_SET_PHY_CAP_STBC_TX_LT_OR_EQ_80M(prHeCap->ucHePhyCap);
-		HE_SET_PHY_CAP_STBC_TX_GT_80M(prHeCap->ucHePhyCap);
+		if (IS_BSS_AIS(prBssInfo))
+			HE_SET_PHY_CAP_STBC_TX_GT_80M(prHeCap->ucHePhyCap);
 	}
 
 	if (IS_FEATURE_ENABLED(prWifiVar->ucRxStbc)) {
 		HE_SET_PHY_CAP_STBC_RX_LT_OR_EQ_80M(prHeCap->ucHePhyCap);
-		HE_SET_PHY_CAP_STBC_RX_GT_80M(prHeCap->ucHePhyCap);
+		if (IS_BSS_AIS(prBssInfo))
+			HE_SET_PHY_CAP_STBC_RX_GT_80M(prHeCap->ucHePhyCap);
 	}
 
 #if CFG_SUPPORT_BFEE
@@ -481,7 +535,6 @@ static void heRlmFillHeCapIE(
 	heRlmFillMCSMap(prAdapter, prBssInfo, prHeSupportedMcsSet);
 	u4OverallLen += sizeof(struct _HE_SUPPORTED_MCS_FIELD);
 
-	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
 	if (ucMaxBw >= MAX_BW_160MHZ) {
 		prHeSupportedMcsSet = (struct _HE_SUPPORTED_MCS_FIELD *)
 			(((uint8_t *) prHeCap) + u4OverallLen);
