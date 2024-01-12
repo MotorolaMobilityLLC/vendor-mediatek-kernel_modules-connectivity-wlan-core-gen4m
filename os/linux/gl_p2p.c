@@ -1182,7 +1182,7 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 #if CFG_ENABLE_UNIFY_WIPHY
 		prNetDevPriv->ucIsP2p = FALSE;
 #endif
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 		prNetDevPriv->ucMddpSupport = TRUE;
 #else
 		prNetDevPriv->ucMddpSupport = FALSE;
@@ -1839,7 +1839,7 @@ struct net_device_stats *p2pGetStats(IN struct net_device *prDev)
 			netdev_priv(prDev);
 	kalMemCopy(&prNetDevPrivate->stats, &prDev->stats,
 			sizeof(struct net_device_stats));
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 	mddpGetMdStats(prDev);
 #endif
 
