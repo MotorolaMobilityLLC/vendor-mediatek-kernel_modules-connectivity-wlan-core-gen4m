@@ -93,6 +93,7 @@
 #define IPV4_HDR_LEN                            20
 #define IPV4_ADDR_LEN                           4
 
+#define IPV6_HDR_PAYLOAD_LEN_OFFSET             4
 #define IPV6_HDR_IP_PROTOCOL_OFFSET             6
 #define IPV6_HDR_IP_SRC_ADDR_OFFSET             8
 #define IPV6_HDR_IP_DST_ADDR_OFFSET             24

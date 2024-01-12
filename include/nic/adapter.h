@@ -2662,6 +2662,7 @@ struct ADAPTER {
 #if CFG_SUPPORT_PKT_OFLD
 	u_int8_t ucRxDataMode;
 #endif
+	bool fgIsInSuspendMode;
 
 #if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
 	struct FW_LOG_IDX_DATA *prFwLogIdx;

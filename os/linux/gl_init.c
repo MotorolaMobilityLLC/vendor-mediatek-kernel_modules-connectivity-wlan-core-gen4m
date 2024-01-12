@@ -73,9 +73,14 @@
 #include "que_mgt.h"
 #endif
 
+#if (CFG_SUPPORT_IGMP_OFLD == 1)
+#include <linux/igmp.h>
+#endif
+
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 #include "rlm_domain.h"
 #endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -3011,19 +3016,14 @@ static void wlanSetMulticastListWorkQueue(
 	if (u4PacketFilter & PARAM_PACKET_FILTER_MULTICAST) {
 		/* Prepare multicast address list */
 		struct netdev_hw_addr *ha;
-		uint8_t *prMCAddrList = NULL;
 		uint32_t i = 0;
+		struct PARAM_MULTICAST_LIST rMcAddrList;
+
+		kalMemZero(&rMcAddrList,
+				sizeof(struct PARAM_MULTICAST_LIST));
 
 		down(&g_halt_sem);
 		if (g_u4HaltFlag) {
-			up(&g_halt_sem);
-			return;
-		}
-
-		prMCAddrList = kalMemAlloc(MAX_NUM_GROUP_ADDR * ETH_ALEN,
-					   VIR_MEM_TYPE);
-		if (!prMCAddrList) {
-			DBGLOG(INIT, WARN, "prMCAddrList memory alloc fail!\n");
 			up(&g_halt_sem);
 			return;
 		}
@@ -3033,8 +3033,10 @@ static void wlanSetMulticastListWorkQueue(
 
 		netdev_for_each_mc_addr(ha, prDev) {
 			if (i < MAX_NUM_GROUP_ADDR) {
-				kalMemCopy((prMCAddrList + i * ETH_ALEN),
-					   GET_ADDR(ha), ETH_ALEN);
+				kalMemCopy(
+					&rMcAddrList.aucMcAddrList[
+						i * MAC_ADDR_LEN],
+					GET_ADDR(ha), MAC_ADDR_LEN);
 				DBGLOG(INIT, LOUD, "%u MAC: "MACSTR"\n",
 					i, MAC2STR(GET_ADDR(ha)));
 				i++;
@@ -3045,18 +3047,31 @@ static void wlanSetMulticastListWorkQueue(
 
 		up(&g_halt_sem);
 
-		kalIoctlByBssIdx(prGlueInfo,
-			 wlanoidSetMulticastList, prMCAddrList, (i * ETH_ALEN),
-			 &u4SetInfoLen, ucBssIndex);
+		rMcAddrList.ucBssIdx = ucBssIndex;
+		rMcAddrList.ucAddrNum = i;
 
-		kalMemFree(prMCAddrList, VIR_MEM_TYPE,
-			   MAX_NUM_GROUP_ADDR * ETH_ALEN);
+		rStatus = kalIoctlByBssIdx(prGlueInfo,
+			wlanoidSetMulticastList,
+			&rMcAddrList,
+			sizeof(struct PARAM_MULTICAST_LIST),
+			&u4SetInfoLen,
+			ucBssIndex);
 	} else if (u4PacketFilter & PARAM_PACKET_FILTER_ALL_MULTICAST) {
+		struct PARAM_MULTICAST_LIST rMcAddrList;
+
+		kalMemZero(&rMcAddrList,
+				sizeof(struct PARAM_MULTICAST_LIST));
+
+		rMcAddrList.ucBssIdx = ucBssIndex;
+		rMcAddrList.ucAddrNum = 0;
+
 		DBGLOG(INIT, INFO,
 			"Clear previous MAR settings to rx all mc pkt\n");
 		rStatus = kalIoctlByBssIdx(prGlueInfo,
-			 wlanoidSetMulticastList, NULL, 0,
-			 &u4SetInfoLen, ucBssIndex);
+				wlanoidSetMulticastList,
+				&rMcAddrList,
+				sizeof(struct PARAM_MULTICAST_LIST),
+				&u4SetInfoLen, ucBssIndex);
 	}
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(REQ, ERROR,
@@ -4690,6 +4705,153 @@ void wlanNetDestroy(struct wireless_dev *prWdev)
 
 }				/* end of wlanNetDestroy() */
 
+#if (CFG_SUPPORT_IGMP_OFLD == 1)
+
+#define IGMP_RESP_TYPE				0x22
+#define IGMP_RESP_PREFIX_SIZE			8
+#define IGMP_RESP_TYPE_OFFSET			0
+#define IGMP_RESP_GRP_ADDR_COUNT_OFFSET		6
+#define IGMP_RESP_GRP_TYPE_OFFSET		0
+#define IGMP_RESP_GRP_SRC_COUNT_OFFSET		2
+#define IGMP_RESP_GRP_MC_ADDR_OFFSET		4
+
+void wlanSetMcGroupList(struct GLUE_INFO *prGlueInfo,
+	struct net_device *prDev,
+	uint8_t fgEnable,
+	uint8_t *prNum,
+	uint8_t *prAddrList)
+{
+	uint16_t u2GroupAddrCount = 0, u2TotalLen = 0;
+	uint8_t *prOfldBuf = NULL, *prPos = NULL;
+	uint32_t u4SetInfoLen = 0;
+	struct PARAM_OFLD_INFO rInfo;
+
+	struct in_device *in_dev;
+	struct ip_mc_list *pmc = NULL;
+
+	uint8_t i;
+	uint8_t aucMcIpMask[IPV4_ADDR_LEN] = {255, 128, 0, 0};
+	uint8_t aucMcAddr[MAC_ADDR_LEN]	 = {
+			0x01, 0x00, 0x5E, 0x00, 0x00, 0x00};
+	uint8_t aucDstMcAddr[MAC_ADDR_LEN] = {
+			0x01, 0x00, 0x5E, 0x00, 0x00, 0x01};
+
+	kalMemZero(&rInfo, sizeof(struct PARAM_OFLD_INFO));
+	rInfo.ucType = PKT_OFLD_TYPE_IGMP;
+
+	if (fgEnable) {
+
+		down(&g_halt_sem);
+		if (g_u4HaltFlag) {
+			up(&g_halt_sem);
+			return;
+		}
+
+		in_dev = __in_dev_get_rtnl(prDev);
+
+		rInfo.ucOp = PKT_OFLD_OP_ENABLE;
+
+		for (pmc = rtnl_dereference(in_dev->mc_list);
+			pmc != NULL; pmc = rtnl_dereference(pmc->next_rcu)) {
+			uint8_t ucType = 0;
+			struct ip_sf_list *psf, *psf_next, **psf_list;
+
+			if (htonl(pmc->multiaddr) == 0xe0000001)
+				continue;
+
+			if (u2GroupAddrCount == 0) {
+				prOfldBuf = &rInfo.aucBuf[0];
+				kalMemZero(prOfldBuf, PKT_OFLD_BUF_SIZE);
+				prOfldBuf[IGMP_RESP_TYPE_OFFSET] =
+					IGMP_RESP_TYPE;
+				prPos = prOfldBuf + IGMP_RESP_PREFIX_SIZE;
+				u2TotalLen += IGMP_RESP_PREFIX_SIZE;
+			}
+			if (pmc->sfcount[MCAST_EXCLUDE])
+				ucType = IGMPV3_MODE_IS_EXCLUDE;
+			else
+				ucType = IGMPV3_MODE_IS_INCLUDE;
+
+			psf_list = &pmc->sources;
+
+			prPos[IGMP_RESP_GRP_TYPE_OFFSET] = ucType;
+			prPos += IGMP_RESP_GRP_MC_ADDR_OFFSET;
+			u2TotalLen += IGMP_RESP_GRP_MC_ADDR_OFFSET;
+			kalMemCopy(prPos, &pmc->multiaddr, IPV4_ADDR_LEN);
+			DBGLOG(INIT, TRACE, "Addr %d.%d.%d.%d.\n",
+				prPos[0], prPos[1], prPos[2], prPos[3]);
+
+			if (prAddrList &&
+					u2GroupAddrCount < MAX_NUM_GROUP_ADDR) {
+				kalMemCopy(
+				&prAddrList[MAC_ADDR_LEN * u2GroupAddrCount],
+				aucMcAddr, MAC_ADDR_LEN);
+
+				for (i = 0; i < IPV4_ADDR_LEN; i++) {
+					prAddrList[
+					MAC_ADDR_LEN * u2GroupAddrCount + i + 2]
+						|= prPos[i] & (~aucMcIpMask[i]);
+				}
+			}
+			prPos += IPV4_ADDR_LEN;
+			u2TotalLen += IPV4_ADDR_LEN;
+			if (*psf_list) {
+				uint16_t u2SrcCnt = 0;
+
+				for (psf = *psf_list; psf; psf = psf_next) {
+					psf_next = psf->sf_next;
+					kalMemCopy(prPos, &psf->sf_inaddr,
+							IPV4_ADDR_LEN);
+
+					DBGLOG(INIT, TRACE,
+						"Src Addr %d.%d.%d.%d.\n",
+						prPos[0], prPos[1],
+						prPos[2], prPos[3]);
+
+					prPos += IPV4_ADDR_LEN;
+					u2TotalLen += IPV4_ADDR_LEN;
+					u2SrcCnt++;
+				}
+
+				WLAN_SET_FIELD_BE16(
+					&prPos[IGMP_RESP_GRP_SRC_COUNT_OFFSET],
+					u2SrcCnt);
+			}
+			u2GroupAddrCount++;
+		}
+
+		up(&g_halt_sem);
+		if (u2GroupAddrCount > 0) {
+			if (prNum) {
+				kalMemCopy(
+				&prAddrList[MAC_ADDR_LEN * u2GroupAddrCount],
+				aucDstMcAddr, MAC_ADDR_LEN);
+				*prNum = u2GroupAddrCount + 1;
+			}
+
+			WLAN_SET_FIELD_BE16(
+				&prOfldBuf[IGMP_RESP_GRP_ADDR_COUNT_OFFSET],
+				u2GroupAddrCount);
+
+			rInfo.u4TotalLen = (prPos - prOfldBuf);
+			rInfo.u4BufLen = rInfo.u4TotalLen;
+
+			kalIoctl(prGlueInfo,
+				wlanoidSetOffloadInfo, &rInfo,
+				sizeof(struct PARAM_OFLD_INFO),
+				&u4SetInfoLen);
+		}
+	} else {
+		rInfo.ucOp = PKT_OFLD_OP_DISABLE;
+		kalIoctl(prGlueInfo,
+				wlanoidSetOffloadInfo, &rInfo,
+				sizeof(struct PARAM_OFLD_INFO),
+				&u4SetInfoLen);
+	}
+
+}
+
+#endif /* CFG_SUPPORT_IGMP_OFLD */
 void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 			u_int8_t fgEnable)
 {
@@ -4700,6 +4862,12 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 
 	if (!prGlueInfo)
 		return;
+
+	prGlueInfo->prAdapter->fgIsInSuspendMode = fgEnable;
+
+#if CFG_SUPPORT_PKT_OFLD
+	nicAbnormalWakeupMonReset(prGlueInfo->prAdapter);
+#endif
 
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 		prDev = wlanGetAisNetDev(prGlueInfo, u4Idx);
@@ -4720,14 +4888,38 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 #if (!CFG_SUPPORT_DROP_ALL_MC_PACKET && !CFG_WOW_SUPPORT)
 		if (fgEnable) {
 			/* Prepare IPv6 RA packet when suspend */
-			uint8_t MC_address[ETH_ALEN] = {0x33, 0x33, 0, 0, 0, 1};
+			struct PARAM_MULTICAST_LIST rMcAddrList;
+			uint8_t ucNum = 0;
+			uint8_t aucDefaultAddr[MAC_ADDR_LEN] = {
+					0x33, 0x33, 0, 0, 0, 1};
 
-			kalIoctl(prGlueInfo, wlanoidSetMulticastList,
-					MC_address, ETH_ALEN, &u4SetInfoLen);
+			kalMemZero(&rMcAddrList,
+					sizeof(struct PARAM_MULTICAST_LIST));
+
+#if (CFG_SUPPORT_IGMP_OFLD == 1)
+			DBGLOG(INIT, WARN,
+					"Processing u4Idx %d\n", u4Idx);
+			wlanSetMcGroupList(prGlueInfo, prDev, TRUE,
+						&ucNum,
+						&rMcAddrList.aucMcAddrList[0]);
+#endif
+			if (ucNum < MAX_NUM_GROUP_ADDR) {
+				kalMemCopy(
+					&rMcAddrList.aucMcAddrList[
+						ucNum * MAC_ADDR_LEN],
+					aucDefaultAddr, MAC_ADDR_LEN);
+				ucNum++;
+			}
+			rMcAddrList.ucBssIdx = u4Idx;
+			rMcAddrList.ucAddrNum = ucNum;
+			kalIoctl(prGlueInfo,
+				wlanoidSetMulticastList, &rMcAddrList,
+				sizeof(struct PARAM_MULTICAST_LIST),
+				&u4SetInfoLen);
 		} else if (u4PacketFilter & PARAM_PACKET_FILTER_MULTICAST) {
 			/* Prepare multicast address list when resume */
 			struct netdev_hw_addr *ha;
-			uint8_t *prMCAddrList = NULL;
+			struct PARAM_MULTICAST_LIST rMcAddrList;
 			uint32_t i = 0;
 
 			down(&g_halt_sem);
@@ -4736,14 +4928,8 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 				return;
 			}
 
-			prMCAddrList = kalMemAlloc(
-				MAX_NUM_GROUP_ADDR * ETH_ALEN, VIR_MEM_TYPE);
-			if (!prMCAddrList) {
-				DBGLOG(INIT, WARN,
-					"prMCAddrList memory alloc fail!\n");
-				up(&g_halt_sem);
-				continue;
-			}
+			kalMemZero(&rMcAddrList,
+					sizeof(struct PARAM_MULTICAST_LIST));
 
 			/* Avoid race condition with kernel net subsystem */
 			netif_addr_lock_bh(prDev);
@@ -4751,8 +4937,9 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 			netdev_for_each_mc_addr(ha, prDev) {
 				if (i < MAX_NUM_GROUP_ADDR) {
 					kalMemCopy(
-						(prMCAddrList + i * ETH_ALEN),
-						ha->addr, ETH_ALEN);
+						&rMcAddrList.aucMcAddrList[
+							i * MAC_ADDR_LEN],
+						ha->addr, MAC_ADDR_LEN);
 					i++;
 				}
 			}
@@ -4761,11 +4948,18 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 
 			up(&g_halt_sem);
 
+			rMcAddrList.ucBssIdx = u4Idx;
+			rMcAddrList.ucAddrNum = i;
 			kalIoctl(prGlueInfo, wlanoidSetMulticastList,
-				prMCAddrList, (i * ETH_ALEN), &u4SetInfoLen);
+				&rMcAddrList,
+				sizeof(struct PARAM_MULTICAST_LIST),
+				 &u4SetInfoLen);
 
-			kalMemFree(prMCAddrList, VIR_MEM_TYPE,
-				MAX_NUM_GROUP_ADDR * ETH_ALEN);
+#if (CFG_SUPPORT_IGMP_OFLD == 1)
+			wlanSetMcGroupList(prGlueInfo, prDev, FALSE,
+						NULL, NULL);
+#endif /* CFG_SUPPORT_IGMP_OFLD */
+
 		}
 #endif
 
