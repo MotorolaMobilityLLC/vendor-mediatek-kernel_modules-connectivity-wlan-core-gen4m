@@ -4667,7 +4667,7 @@ int mtk_cfg80211_vendor_get_trx_stats(struct wiphy *wiphy,
 					goto err_handle_label;
 				break;
 			case WIFI_ATTRIBUTE_STATS_TX_TAG_LIST:
-				if (ucTxNum != 0) {
+				if (ucTxNum != 0 && !arIndTx) {
 					arIndTx = (uint32_t *)kalMemAlloc(
 						ucTxNum * sizeof(uint32_t),
 						VIR_MEM_TYPE);
@@ -4687,7 +4687,7 @@ int mtk_cfg80211_vendor_get_trx_stats(struct wiphy *wiphy,
 					goto err_handle_label;
 				break;
 			case WIFI_ATTRIBUTE_STATS_RX_TAG_LIST:
-				if (ucRxNum != 0) {
+				if (ucRxNum != 0 && !arIndRx) {
 					arIndRx = (uint32_t *)kalMemAlloc(
 						ucRxNum * sizeof(uint32_t),
 						VIR_MEM_TYPE);
@@ -4707,7 +4707,7 @@ int mtk_cfg80211_vendor_get_trx_stats(struct wiphy *wiphy,
 					goto err_handle_label;
 				break;
 			case WIFI_ATTRIBUTE_STATS_CGS_TAG_LIST:
-				if (ucCgsNum != 0) {
+				if (ucCgsNum != 0 && !arIndCgs) {
 					arIndCgs = (uint32_t *)kalMemAlloc(
 						ucCgsNum * sizeof(uint32_t),
 						VIR_MEM_TYPE);
@@ -4742,7 +4742,8 @@ int mtk_cfg80211_vendor_get_trx_stats(struct wiphy *wiphy,
 		u4TxTlvSize + u4RxTlvSize + u4CgsTlvSize);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
-		return -ENOMEM;
+		i4Status = -ENOMEM;
+		goto err_handle_label;
 	}
 
 	if (unlikely(nla_put_u8(skb, WIFI_ATTRIBUTE_STATS_VERSION,
@@ -4787,7 +4788,14 @@ int mtk_cfg80211_vendor_get_trx_stats(struct wiphy *wiphy,
 				     u4CgsTlvSize, aucTlvList) < 0))
 			goto err_handle_label;
 	}
-	kalMemFree(aucTlvList, u4MaxTlvSize, VIR_MEM_TYPE);
+	if (aucTlvList != NULL)
+		kalMemFree(aucTlvList, u4MaxTlvSize, VIR_MEM_TYPE);
+	if (arIndTx != NULL)
+		kalMemFree(arIndTx, ucTxNum * sizeof(uint32_t), VIR_MEM_TYPE);
+	if (arIndRx != NULL)
+		kalMemFree(arIndRx, ucRxNum * sizeof(uint32_t), VIR_MEM_TYPE);
+	if (arIndCgs != NULL)
+		kalMemFree(arIndCgs, ucCgsNum * sizeof(uint32_t), VIR_MEM_TYPE);
 	return cfg80211_vendor_cmd_reply(skb);
 
 err_handle_label:
