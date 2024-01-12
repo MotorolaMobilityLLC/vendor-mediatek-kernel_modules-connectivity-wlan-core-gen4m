@@ -446,3 +446,26 @@ nanRegConvertNanChnlInfo(union _NAN_BAND_CHNL_CTRL rChnlInfo,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+enum ENUM_BAND
+nanRegGetNanChnlBand(union _NAN_BAND_CHNL_CTRL rNanChnlInfo) {
+	enum ENUM_BAND eBand = BAND_NULL;
+
+	if (rNanChnlInfo.rChannel.u4Type ==
+		NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL) {
+		if (rNanChnlInfo.rChannel.u4PrimaryChnl < 36)
+			eBand = BAND_2G4;
+		else
+			eBand = BAND_5G;
+	} else {
+		if (rNanChnlInfo.rBand.u4BandIdMask &
+			BIT(NAN_SUPPORTED_BAND_ID_2P4G))
+			eBand = BAND_2G4;
+		else if (rNanChnlInfo.rBand.u4BandIdMask &
+			BIT(NAN_SUPPORTED_BAND_ID_5G))
+			eBand = BAND_5G;
+	}
+
+	return eBand;
+}
+
