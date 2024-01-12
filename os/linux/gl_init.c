@@ -1480,7 +1480,17 @@ int wlanHardStartXmit(struct sk_buff *prSkb,
 struct net_device_stats *wlanGetStats(IN struct net_device
 				      *prDev)
 {
-	return (struct net_device_stats *)kalGetStats(prDev);
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
+
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+			netdev_priv(prDev);
+	kalMemCopy(&prNetDevPrivate->stats, &prDev->stats,
+			sizeof(struct net_device_stats));
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	mddpGetMdStats(prDev);
+#endif
+
+	return (struct net_device_stats *) kalGetStats(prDev);
 }				/* end of wlanGetStats() */
 
 void wlanDebugInit(void)
@@ -2018,6 +2028,12 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 			prNetDevPrivate->ucBssIdx = u4Idx;
 #if CFG_ENABLE_UNIFY_WIPHY
 			prNetDevPrivate->ucIsP2p = FALSE;
+#endif
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+			/* only wlan0 supports mddp */
+			prNetDevPrivate->ucMddpSupport = (u4Idx == 0);
+#else
+			prNetDevPrivate->ucMddpSupport = FALSE;
 #endif
 			wlanBindBssIdxToNetInterface(prGlueInfo,
 				     u4Idx,

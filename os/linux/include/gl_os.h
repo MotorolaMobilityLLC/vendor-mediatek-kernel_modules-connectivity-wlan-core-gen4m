@@ -901,10 +901,12 @@ struct NETDEV_PRIVATE_GLUE_INFO {
 #if CFG_ENABLE_UNIFY_WIPHY
 	u_int8_t ucIsP2p;
 #endif
+	u_int8_t ucMddpSupport;
 #if CFG_SUPPORT_RX_GRO
 	struct napi_struct napi;
 	OS_SYSTIME tmGROFlushTimeout;
 #endif
+	struct net_device_stats stats;
 };
 
 struct PACKET_PRIVATE_DATA {
