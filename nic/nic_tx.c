@@ -5028,4 +5028,94 @@ void nicTxHandleRoamingDone(struct ADAPTER *prAdapter,
 #endif
 }
 
+int32_t nicTxGetVectorInfo(IN char *pcCommand, IN int i4TotalLen,
+				   IN struct TX_VECTOR_BBP_LATCH *prTxV)
+{
+	uint8_t rate, txmode, frmode, sgi, ldpc, nsts, stbc, txpwr;
+	int32_t i4BytesWritten = 0;
+
+	rate = TX_VECTOR_GET_TX_RATE(prTxV);
+	txmode = TX_VECTOR_GET_TX_MODE(prTxV);
+	frmode = TX_VECTOR_GET_TX_FRMODE(prTxV);
+	nsts = TX_VECTOR_GET_TX_NSTS(prTxV) + 1;
+	sgi = TX_VECTOR_GET_TX_SGI(prTxV);
+	ldpc = TX_VECTOR_GET_TX_LDPC(prTxV);
+	stbc = TX_VECTOR_GET_TX_STBC(prTxV);
+	txpwr = TX_VECTOR_GET_TX_PWR(prTxV);
+
+	if (prTxV->u4TxV[0] == 0xFFFFFFFF) {
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%s\n", "Last TX Rate", " = ", "N/A");
+	} else {
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s", "Last TX Rate", " = ");
+
+		if (txmode == TX_RATE_MODE_CCK)
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s, ", rate < 4 ? HW_TX_RATE_CCK_STR[rate] :
+					HW_TX_RATE_CCK_STR[4]);
+		else if (txmode == TX_RATE_MODE_OFDM)
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s, ", nicHwRateOfdmStr(rate));
+		else if ((txmode == TX_RATE_MODE_HTMIX) ||
+			 (txmode == TX_RATE_MODE_HTGF))
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"MCS%d, ", rate);
+		else
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s%d_MCS%d, ", stbc ? "NSTS" : "NSS",
+				nsts, rate);
+
+		if (txmode == TX_RATE_MODE_HE_ER)
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten, "%s, ",
+				frmode > 0 ? "106-RU" : "242-RU");
+		else
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten, "%s, ",
+				frmode < 4 ? HW_TX_RATE_BW[frmode] :
+				HW_TX_RATE_BW[4]);
+
+		if (txmode == TX_RATE_MODE_CCK)
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s, ", rate < 4 ? "LP" : "SP");
+		else if (txmode == TX_RATE_MODE_OFDM)
+			;
+		else if ((txmode == TX_RATE_MODE_HTMIX) ||
+			 (txmode == TX_RATE_MODE_HTGF) ||
+			 (txmode == TX_RATE_MODE_VHT) ||
+			 (txmode == TX_RATE_MODE_PLR))
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s, ", sgi == 0 ? "LGI" : "SGI");
+		else
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s, ", sgi == 0 ? "LGI" :
+				(sgi == 1 ? "SGI" : "MGI"));
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "%s%s%s\n",
+			txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
+			stbc ? ", STBC, " : ", ", ldpc == 0 ? "BCC" : "LDPC");
+	}
+
+	return i4BytesWritten;
+}
 

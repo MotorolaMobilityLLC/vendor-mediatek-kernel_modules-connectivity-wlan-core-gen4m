@@ -2000,6 +2000,10 @@ uint32_t nicTxResourceGetPleFreeCount(IN struct ADAPTER *prAdapter,
 u_int8_t nicTxResourceIsPleCtrlNeeded(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucTC);
 void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter);
+
+int32_t nicTxGetVectorInfo(IN char *pcCommand, IN int i4TotalLen,
+			IN struct TX_VECTOR_BBP_LATCH *prTxV);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
