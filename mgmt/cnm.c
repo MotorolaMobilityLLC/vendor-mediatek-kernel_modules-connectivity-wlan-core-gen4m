@@ -2274,8 +2274,13 @@ void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 				&(g_arBssOpControl[ucBssLoopIndex].
 				arReqPool[CNM_OPMODE_REQ_DBDC]);
 			prOpModeReq->fgEnable = TRUE;
+#if (CFG_SUPPORT_DBDC_DOWNGRADE_NSS == 1)
 			prOpModeReq->ucOpRxNss = 1;
 			prOpModeReq->ucOpTxNss = 1;
+#else
+			prOpModeReq->ucOpRxNss = DEFAULT_NSS;
+			prOpModeReq->ucOpTxNss = DEFAULT_NSS;
+#endif
 		}
 		cnmUpdateDbdcSetting(prAdapter, TRUE);
 
