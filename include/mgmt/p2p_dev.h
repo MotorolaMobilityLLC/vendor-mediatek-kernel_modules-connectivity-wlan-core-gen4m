@@ -227,7 +227,7 @@ void p2pDevFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
 void p2pDevFsmRunEventScanRequest(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr);
 void p2pDevFsmRunEventScanAbort(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr);
+		IN uint8_t ucBssIdx);
 
 void
 p2pDevFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
