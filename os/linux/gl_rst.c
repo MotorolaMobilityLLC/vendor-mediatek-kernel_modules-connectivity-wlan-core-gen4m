@@ -609,7 +609,7 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 	int ret = 0;
 #endif
 
-	if (kalIsResetting() || !prAdapter)
+	if (kalIsResetting())
 		goto exit;
 
 #if CFG_MTK_MDDP_SUPPORT
@@ -633,9 +633,6 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 			DBGLOG(INIT, WARN, "WMT is code dumping !\n");
 #endif
 
-	prChipInfo = prAdapter->chip_info;
-	prDbgOps = prChipInfo->prDebugOps;
-
 	dump_stack();
 	DBGLOG(INIT, ERROR,
 		"Trigger chip reset in %s#%u, bus[%d] flag[0x%x] reason[%s]\n",
@@ -645,11 +642,16 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 		u4RstFlag,
 		apucRstReason[eResetReason]);
 
-	if (prDbgOps && prDbgOps->dumpBusHangCr)
-		prDbgOps->dumpBusHangCr(prAdapter);
+	if (prAdapter) {
+		prChipInfo = prAdapter->chip_info;
+		prDbgOps = prChipInfo->prDebugOps;
 
-	prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
-	halPrintHifDbgInfo(prAdapter);
+		if (prDbgOps && prDbgOps->dumpBusHangCr)
+			prDbgOps->dumpBusHangCr(prAdapter);
+
+		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
+		halPrintHifDbgInfo(prAdapter);
+	}
 
 #if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 	rst->rst_trigger_flag = u4RstFlag;
@@ -670,7 +672,7 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 	}
 
 	g_Coredump_source = COREDUMP_SOURCE_WF_DRIVER;
-	if (!prChipInfo->trigger_fw_assert) {
+	if (!prAdapter || !prChipInfo->trigger_fw_assert) {
 		DBGLOG(INIT, ERROR,
 			"No impl. of trigger_fw_assert API\n");
 		goto exit;
