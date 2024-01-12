@@ -229,15 +229,6 @@
 /* Define concurrent network channel number, using by CNM/CMD */
 #define MAX_OP_CHNL_NUM			3
 
-/* Stat CMD will have different format due to different algorithm support */
-#if (defined(MT6632) || defined(MT7668))
-#define CFG_SUPPORT_RA_GEN			0
-#define CFG_SUPPORT_TXPOWER_INFO		0
-#else
-#define CFG_SUPPORT_RA_GEN			1
-#define CFG_SUPPORT_TXPOWER_INFO		1
-#endif
-
 #if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
 #define AGG_RANGE_SEL_NUM		15
 #else

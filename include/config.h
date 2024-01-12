@@ -25,6 +25,19 @@
  */
 
 /*******************************************************************************
+ *                                 M A C R O S
+ *******************************************************************************
+ */
+#define WM_RAM_TYPE_MOBILE			0
+#define WM_RAM_TYPE_CE				1
+
+#define IS_MOBILE_SEGMENT \
+	(CONFIG_WM_RAM_TYPE == WM_RAM_TYPE_MOBILE)
+
+#define IS_CE_SEGMENT \
+	(CONFIG_WM_RAM_TYPE == WM_RAM_TYPE_CE)
+
+/*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
  */
@@ -2406,6 +2419,64 @@
 #define CFG_SUPPORT_TDLS_ADJUST_BW	0
 #endif
 
+/*------------------------------------------------------------------------------
+ * Stat CMD will have different format due to different algorithm support
+ *------------------------------------------------------------------------------
+ */
+#if (defined(MT6632) || defined(MT7668))
+#define CFG_SUPPORT_RA_GEN			0
+#define CFG_SUPPORT_TXPOWER_INFO		0
+#else
+#define CFG_SUPPORT_RA_GEN			1
+#define CFG_SUPPORT_TXPOWER_INFO		1
+#endif
+
+/*------------------------------------------------------------------------------
+ * Flags of gl_rst.h
+ *------------------------------------------------------------------------------
+ */
+#if defined(_HIF_SDIO)
+/* #ifdef CONFIG_X86 */
+/*Kernel-3.10-ARM did not provide X86_FLAG & HIF shouldn't bind platform*/
+#if (CFG_MTK_ANDROID_WMT)
+#define MTK_WCN_HIF_SDIO		1
+#else
+#define MTK_WCN_HIF_SDIO		0
+#endif
+#else
+#define MTK_WCN_HIF_SDIO		0
+#endif
+
+#if defined(_HIF_AXI)
+#ifdef LINUX
+#ifdef CONFIG_X86
+#define MTK_WCN_HIF_AXI			0
+#else
+#define MTK_WCN_HIF_AXI			1
+#endif
+#else
+#define MTK_WCN_HIF_AXI			0
+#endif
+#else
+#define MTK_WCN_HIF_AXI			0
+#endif
+
+#if defined(_HIF_PCIE)
+#if IS_MOBILE_SEGMENT
+#define MTK_WCN_HIF_PCIE		1
+#else
+#define MTK_WCN_HIF_PCIE		0
+#endif
+#else
+#define MTK_WCN_HIF_PCIE		0
+#endif
+
+#if (MTK_WCN_HIF_SDIO == 1) || (MTK_WCN_HIF_AXI == 1) || (MTK_WCN_HIF_PCIE == 1)
+#define CFG_WMT_RESET_API_SUPPORT   1
+#else
+#define CFG_WMT_RESET_API_SUPPORT   0
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -2418,11 +2489,6 @@
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
- *******************************************************************************
- */
-
-/*******************************************************************************
- *                                 M A C R O S
  *******************************************************************************
  */
 
