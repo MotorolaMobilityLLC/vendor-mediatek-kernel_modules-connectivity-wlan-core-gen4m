@@ -2745,32 +2745,11 @@ nanSecNotify4wayTerminate(struct _NAN_NDP_INSTANCE_T *prNdp) {
 		g_prNanHapdData->conf->ssid.wpa_psk = NULL;
 	} else { /* NAN_NDP_RESPONDER */
 		/* Orignal clean up */
-		if (g_prNanWpaSupp == NULL || g_prNanWpaSupp->wpa == NULL) {
-			DBGLOG(NAN, ERROR,
-				"[%s] g_prNanWpaSupp is NULL\n",
-				__func__);
-			return 0;
-		}
-
-		g_prNanWpaSupp->wpa->rx_replay_counter_set = 0;
-		os_memset(g_prNanWpaSupp->wpa->rx_replay_counter, 0,
-			  WPA_REPLAY_COUNTER_LEN);
-		g_prNanWpaSupp->wpa->msg_3_of_4_ok = 0;
-
-		g_prNanWpaSupp->wpa->ptk_set = 0;
-		os_memset(&g_prNanWpaSupp->wpa->ptk, 0,
-			  sizeof(g_prNanWpaSupp->wpa->ptk));
-		g_prNanWpaSupp->wpa->tptk_set = 0;
-		os_memset(&g_prNanWpaSupp->wpa->tptk, 0,
-			  sizeof(g_prNanWpaSupp->wpa->tptk));
-		os_memset(&g_prNanWpaSupp->wpa->gtk, 0,
-			  sizeof(g_prNanWpaSupp->wpa->gtk));
 
 		/* NAN clean up */
 		nanSecStaSmBufReset(prNdp->prResponderSecSmInfo);
 		DBGLOG(NAN, INFO, "reset prResponderSecSmInfo=%p\n",
 				prNdp->prResponderSecSmInfo);
-		kalMemZero(prNdp->prResponderSecSmInfo, sizeof(struct wpa_sm));
 
 		/* Keep NDP index info */
 		prNdp->prResponderSecSmInfo->pvNdp = (void *)prNdp;
