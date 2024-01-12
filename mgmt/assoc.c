@@ -1564,8 +1564,8 @@ uint32_t assocProcessRxAssocReqFrameImpl(
 					 aucInfoElem[0]);
 
 		pucIEStart = pucIE =
-		    ((struct WLAN_REASSOC_REQ_FRAME *)(prSwRfb->
-						       pvHeader))->aucInfoElem;
+		    ((struct WLAN_REASSOC_REQ_FRAME *)prAssocReqFrame)->
+					 aucInfoElem;
 	} else {
 		prStaRec->fgIsReAssoc = FALSE;
 
