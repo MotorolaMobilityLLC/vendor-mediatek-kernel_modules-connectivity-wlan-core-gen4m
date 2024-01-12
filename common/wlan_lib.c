@@ -5459,6 +5459,32 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	prWifiVar->fgTdlsBufferSTASleep = (BOOLEAN) wlanCfgGetUint32(prAdapter, "TdlsBufferSTASleep", FEATURE_DISABLED);
 	/* Support USB Whole chip reset recover */
 	prWifiVar->fgChipResetRecover = (BOOLEAN) wlanCfgGetUint32(prAdapter, "ChipResetRecover", FEATURE_DISABLED);
+
+	prWifiVar->u4PerfMonUpdatePeriod =
+		(UINT_32) wlanCfgGetUint32(prAdapter, "PerfMonPeriod", PERF_MON_UPDATE_INTERVAL);
+
+	prWifiVar->u4PerfMonTpTh[0] =
+		(UINT_32) wlanCfgGetUint32(prAdapter, "PerfMonLv1", 20);
+	prWifiVar->u4PerfMonTpTh[1] =
+		(UINT_32) wlanCfgGetUint32(prAdapter, "PerfMonLv2", 50);
+	prWifiVar->u4PerfMonTpTh[2] =
+		(UINT_32) wlanCfgGetUint32(prAdapter, "PerfMonLv3", 135);
+	prWifiVar->u4PerfMonTpTh[3] =
+		(UINT_32) wlanCfgGetUint32(prAdapter, "PerfMonLv4", 180);
+	prWifiVar->u4PerfMonTpTh[4] =
+		(UINT_32) wlanCfgGetUint32(prAdapter, "PerfMonLv5", 250);
+	prWifiVar->u4PerfMonTpTh[5] =
+		(UINT_32) wlanCfgGetUint32(prAdapter, "PerfMonLv6", 300);
+	prWifiVar->u4PerfMonTpTh[6] =
+		(UINT_32) wlanCfgGetUint32(prAdapter, "PerfMonLv7", 400);
+	prWifiVar->u4PerfMonTpTh[7] =
+		(UINT_32) wlanCfgGetUint32(prAdapter, "PerfMonLv8", 500);
+	prWifiVar->u4PerfMonTpTh[8] =
+		(UINT_32) wlanCfgGetUint32(prAdapter, "PerfMonLv9", 600);
+	prWifiVar->u4PerfMonTpTh[9] =
+		(UINT_32) wlanCfgGetUint32(prAdapter, "PerfMonLv10", 700);
+	prWifiVar->u4BoostCpuTh =
+			(UINT_32) wlanCfgGetUint32(prAdapter, "BoostCpuTh", 1);
 }
 
 VOID wlanCfgSetSwCtrl(IN P_ADAPTER_T prAdapter)

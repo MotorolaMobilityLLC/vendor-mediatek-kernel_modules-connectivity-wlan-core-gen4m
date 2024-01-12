@@ -171,6 +171,13 @@ extern struct delayed_work sched_workq;
 				    RADIOTAP_FIELD_VENDOR)
 #endif
 
+#define PERF_MON_DISABLE_BIT    (0)
+#define PERF_MON_STOP_BIT       (1)
+#define PERF_MON_RUNNING_BIT    (2)
+
+#define PERF_MON_UPDATE_INTERVAL (1000)
+#define PERF_MON_TP_MAX_THRESHOLD (10)
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -377,6 +384,14 @@ typedef struct _MONITOR_RADIOTAP_T {
 } __packed MONITOR_RADIOTAP_T, *P_MONITOR_RADIOTAP_T;
 #endif
 
+struct KAL_HALT_CTRL_T {
+	struct semaphore lock;
+	struct task_struct *owner;
+	BOOLEAN fgHalt;
+	BOOLEAN fgHeldByKalIoctl;
+	OS_SYSTIME u4HoldStart;
+};
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -391,6 +406,14 @@ typedef struct _MONITOR_RADIOTAP_T {
 *                                 M A C R O S
 ********************************************************************************
 */
+
+#define KAL_SET_BIT(bitOffset, value)				set_bit(bitOffset, &value)
+#define KAL_CLR_BIT(bitOffset, value)				clear_bit(bitOffset, &value)
+#define KAL_TEST_AND_CLEAR_BIT(bitOffset, value)	test_and_clear_bit(bitOffset, &value)
+#define KAL_TEST_BIT(bitOffset, value)				test_bit(bitOffset, &value)
+#define SUSPEND_FLAG_FOR_WAKEUP_REASON	(0)
+#define SUSPEND_FLAG_CLEAR_WHEN_RESUME	(1)
+
 
 /*----------------------------------------------------------------------------*/
 /* Macros of getting current thread id                                        */
@@ -765,6 +788,16 @@ do { \
 	{ \
 		(_Interval) += KAL_GET_TIME_INTERVAL(); \
 	}
+
+/*----------------------------------------------------------------------------*/
+/* Macros of show stack operations for using in Driver Layer                  */
+/*----------------------------------------------------------------------------*/
+#ifdef CONFIG_X86
+#define kal_show_stack(_task, _sp)
+#else
+#define kal_show_stack(_task, _sp) \
+	show_stack(_task, _sp)
+#endif
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -1175,8 +1208,28 @@ UINT_64 kalGetBootTime(VOID);
 int kalMetInitProcfs(IN P_GLUE_INFO_T prGlueInfo);
 int kalMetRemoveProcfs(void);
 
+INT_32 kalHaltLock(UINT_32 waitMs);
+INT_32 kalHaltTryLock(VOID);
+VOID kalHaltUnlock(VOID);
+VOID kalSetHalted(BOOLEAN fgHalt);
+BOOLEAN kalIsHalted(VOID);
+
 VOID kalFreeTxMsduWorker(struct work_struct *work);
 VOID kalFreeTxMsdu(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
+VOID nicConfigProcSetCamCfgWrite(BOOLEAN enabled);
+
+INT_32 kalPerMonInit(IN P_GLUE_INFO_T prGlueInfo);
+INT_32 kalPerMonDisable(IN P_GLUE_INFO_T prGlueInfo);
+INT_32 kalPerMonEnable(IN P_GLUE_INFO_T prGlueInfo);
+INT_32 kalPerMonStart(IN P_GLUE_INFO_T prGlueInfo);
+INT_32 kalPerMonStop(IN P_GLUE_INFO_T prGlueInfo);
+INT_32 kalPerMonDestroy(IN P_GLUE_INFO_T prGlueInfo);
+VOID kalPerMonHandler(IN P_ADAPTER_T prAdapter, ULONG ulParam);
+UINT_32 kalPerMonGetInfo(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_32 u4Max);
+INT_32 kalBoostCpu(IN P_ADAPTER_T prAdapter, IN UINT_32 u4TarPerfLevel, IN UINT_32 u4BoostCpuTh);
+INT_32 kalSetCpuNumFreq(UINT_32 u4CoreNum, UINT_32 u4Freq);
+INT_32 kalFbNotifierReg(IN P_GLUE_INFO_T prGlueInfo);
+VOID kalFbNotifierUnReg(VOID);
 
 #if KERNEL_VERSION(3, 0, 0) <= LINUX_VERSION_CODE
 /* since: 0b5c9db1b11d3175bb42b80663a9f072f801edf5 */

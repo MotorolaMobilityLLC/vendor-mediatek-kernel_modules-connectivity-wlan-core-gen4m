@@ -846,6 +846,10 @@ typedef struct _WIFI_VAR_T {
 	UINT_32	u4DeQuePercentHT40Nss1;
 	UINT_32	u4DeQuePercentHT20Nss1;
 
+	UINT_32 u4PerfMonUpdatePeriod;
+	UINT_32 u4PerfMonTpTh[PERF_MON_TP_MAX_THRESHOLD];
+	UINT_32	u4BoostCpuTh;
+
 	BOOLEAN fgTdlsBufferSTASleep; /* Support TDLS 5.5.4.2 optional case */
 	BOOLEAN fgChipResetRecover;
 	PARAM_POWER_MODE ePowerMode;
@@ -928,6 +932,28 @@ typedef struct _WIFI_FEM_CFG_T {
 	/* Reserved  */
 	UINT_32 au4Reserved[4];
 } WIFI_FEM_CFG_T, *P_WIFI_FEM_CFG_T;
+/*
+ * State Machine:
+ * -->STOP: No Tx/Rx traffic
+ * -->DISABLE: Screen is off
+ * -->RUNNING: Screen is on && Tx/Rx traffic is active
+ */
+struct PERF_MONITOR_T {
+	TIMER_T rPerfMonTimer;
+	ULONG ulPerfMonFlag;
+	ULONG ulLastTxBytes;
+	ULONG ulLastRxBytes;
+	ULONG ulP2PLastRxBytes;
+	ULONG ulP2PLastTxBytes;
+	ULONG ulThroughput; /* in bps */
+	ULONG ulWlanTxTp; /* in Bps */
+	ULONG ulWlanRxTp; /* in Bps */
+	ULONG ulP2PTxTp; /* in Bps */
+	ULONG ulP2PRxTp; /* in Bps */
+	UINT_32 u4UpdatePeriod; /* in ms */
+	UINT_32 u4TarPerfLevel;
+	UINT_32 u4CurrPerfLevel;
+};
 
 /*
  * Major ADAPTER structure
@@ -1238,6 +1264,8 @@ struct _ADAPTER_T {
 	/* Smar Gear */
 	UINT_8 ucSmarGearSupportSisoOnly;
 	UINT_8 ucSmartGearWfPathSupport;
+
+	struct PERF_MONITOR_T rPerMonitor;
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
@@ -1254,6 +1282,10 @@ struct _ADAPTER_T {
 *                                 M A C R O S
 ********************************************************************************
 */
+
+#define SUSPEND_FLAG_FOR_WAKEUP_REASON (0)
+#define SUSPEND_FLAG_CLEAR_WHEN_RESUME (1)
+
 /* Macros for argument _BssIndex */
 #define IS_NET_ACTIVE(_prAdapter, _BssIndex) \
 	((_prAdapter)->aprBssInfo[(_BssIndex)]->fgIsNetActive)
