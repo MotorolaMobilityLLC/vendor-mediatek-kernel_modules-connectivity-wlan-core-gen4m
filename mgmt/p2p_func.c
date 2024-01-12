@@ -812,7 +812,7 @@ p2pFuncTxMgmtFrame(IN P_ADAPTER_T prAdapter,
 
 		/* Drop this frame if BSS inactive */
 		if (!IS_NET_ACTIVE(prAdapter, ucBssIndex)) {
-			p2pDevFsmRunEventMgmtFrameTxDone(prAdapter, prMgmtTxMsdu, TX_RESULT_DROPPED_IN_DRIVER);
+			p2pDevFsmRunEventMgmtFrameTxDone(prAdapter, prMgmtTxMsdu, TX_RESULT_INACTIVE_BSS);
 			cnmMgtPktFree(prAdapter, prMgmtTxMsdu);
 			fgDrop = TRUE;
 			break;
@@ -832,7 +832,7 @@ p2pFuncTxMgmtFrame(IN P_ADAPTER_T prAdapter,
 			DBGLOG(P2P, TRACE, "TX Probe Resposne Frame\n");
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 			if ((!nicTxIsMgmtResourceEnough(prAdapter)) || (prBssInfo->fgIsNetAbsent)) {
-				DBGLOG(P2P, TRACE, "Drop Tx probe response due to resource issue\n");
+				DBGLOG(P2P, INFO, "Drop Tx probe response due to resource issue\n");
 				fgDrop = TRUE;
 
 				break;
@@ -843,6 +843,7 @@ p2pFuncTxMgmtFrame(IN P_ADAPTER_T prAdapter,
 			/* and AP do not need send it after STA left */
 			nicTxSetPktLifeTime(prMgmtTxMsdu, 100);
 			prMgmtTxMsdu = p2pFuncProcessP2pProbeRsp(prAdapter, ucBssIndex, prMgmtTxMsdu);
+
 			/*
 			 * Not check prMsduInfo sanity as p2pFuncProcessP2pProbeRsp will always
 			 * return a MsduInfo
@@ -852,7 +853,6 @@ p2pFuncTxMgmtFrame(IN P_ADAPTER_T prAdapter,
 					(ULONG) prMgmtTxMsdu->u2FrameLength + MAC_TX_RESERVED_FIELD);
 			/* Restore cookie as it will be corrupted in p2pFuncProcessP2pProbeRsp */
 			*pu8GlCookie = u8GlCookie;
-
 			ucRetryLimit = 6;
 			break;
 		default:
@@ -3578,7 +3578,8 @@ P_MSDU_INFO_T p2pFuncProcessP2pProbeRsp(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBs
 
 		u2EstimateSize += u2EstimatedExtraIELen;
 		if ((u2EstimateSize) > (prRetMsduInfo->u2FrameLength)) {
-			prRetMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimateSize);
+			/* add sizeof(UINT_64) for Cookie */
+			prRetMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimateSize + sizeof(UINT_64));
 
 			if (prRetMsduInfo == NULL) {
 				DBGLOG(P2P, WARN, "No packet for sending new probe response, use original one\n");
