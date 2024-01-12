@@ -7496,8 +7496,13 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 
 			keep_alive |= netif_carrier_ok(prDevHandler);
 		} else {
+			/* Reset last statistic of TRX if wlan is not
+			 * under connected state.
+			 */
 			latestTxBytes[i] = 0;
 			latestRxBytes[i] = 0;
+			prPerMonitor->ulLastTxBytes[i] = 0;
+			prPerMonitor->ulLastRxBytes[i] = 0;
 		}
 		/* reset */
 		txDiffBytes[i] = 0;
