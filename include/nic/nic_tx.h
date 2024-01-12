@@ -2077,7 +2077,6 @@ uint32_t nicTxGetMaxCmdPageCntPerFrame(IN struct ADAPTER *prAdapter);
 
 /* TX Direct functions : BEGIN */
 void nicTxDirectStartCheckQTimer(IN struct ADAPTER *prAdapter);
-void nicTxDirectClearSkbQ(IN struct ADAPTER *prAdapter);
 void nicTxDirectClearHifQ(IN struct ADAPTER *prAdapter);
 void nicTxDirectClearStaPsQ(IN struct ADAPTER *prAdapter,
 	uint8_t ucStaRecIndex);

@@ -12139,8 +12139,8 @@ uint32_t kalTxDirectStartXmit(struct sk_buff *prSkb,
 
 end:
 	if (skb_queue_len(&prGlueInfo->rTxDirectSkbQueue))
-		kalTxDirectStartCheckQTimer(prGlueInfo,
-			TX_DIRECT_CHECK_INTERVAL);
+		mod_timer(&prGlueInfo->rTxDirectSkbTimer,
+			  jiffies + TX_DIRECT_CHECK_INTERVAL);
 
 	spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 	return ret;
