@@ -131,6 +131,7 @@
 
 /* dwell time setting, should align FW setting */
 #define SCAN_CHANNEL_DWELL_TIME_MIN_MSEC         (42)
+#define SCAN_SPLIT_PACKETS_THRESHOLD		(30)
 
 /* dwell time setting, reduce APP trigger scan dwell time to 20 */
 #define SCAN_CHANNEL_MIN_DWELL_TIME_MSEC_APP	(20)
@@ -584,9 +585,9 @@ struct SCAN_INFO {
 	uint16_t	au2ChannelScanTime[64];
 	/* Support AP Selection */
 	uint32_t u4ScanUpdateIdx;
-
 	/* Scan log cache */
 	struct SCAN_LOG_CACHE rScanLogCache;
+
 #if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
 	uint8_t		ucScnZeroMdrdyTimes;
 	uint8_t		ucScnZeroMdrdySerCnt;
@@ -594,6 +595,9 @@ struct SCAN_INFO {
 	uint8_t		ucScnTimeoutTimes;
 	uint8_t		ucScnTimeoutSubsysResetCnt;
 #endif
+
+	/*Skip DFS channel scan or not */
+	u_int8_t	fgSkipDFS;
 };
 
 /* Incoming Mailbox Messages */
@@ -820,6 +824,8 @@ uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter,
 void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 			    IN enum ENUM_BSS_TYPE eBSSType,
 			    IN struct BSS_DESC *SpecificprBssDesc);
+
+bool scnEnableSpilitScan(struct ADAPTER *prAdapter);
 
 /*----------------------------------------------------------------------------*/
 /* Routines in scan_fsm.c                                                     */

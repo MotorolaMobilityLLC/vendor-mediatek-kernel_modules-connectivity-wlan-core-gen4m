@@ -1329,6 +1329,8 @@ struct PERF_MONITOR {
 	unsigned long ulLastRxBytes[BSS_DEFAULT_NUM];
 	unsigned long ulLastTxPackets[BSS_DEFAULT_NUM];
 	unsigned long ulLastRxPackets[BSS_DEFAULT_NUM];
+	unsigned long ulTxPacketsDiffLastSec[BSS_DEFAULT_NUM];
+	unsigned long ulRxPacketsDiffLastSec[BSS_DEFAULT_NUM];
 	uint64_t ulThroughput; /* in bps */
 	unsigned long ulTxTp[BSS_DEFAULT_NUM]; /* in Bps */
 	unsigned long ulRxTp[BSS_DEFAULT_NUM]; /* in Bps */

@@ -1071,6 +1071,7 @@ struct PARAM_SSID {
 /* use 6*4 = 24 bytes as bssid of being scanned ap */
 #define CMD_SCAN_REQ_V2_FUNC_USE_PADDING_AS_BSSID	BIT(3)
 #define CMD_SCAN_REQ_V2_FUNC_RANDOM_PROBE_REQ_SN_MASK	BIT(4)
+#define CMD_SCAN_REQ_V2_FUNC_SPLIT_SCAN_MASK		BIT(5)
 
 struct CMD_SCAN_REQ_V2 {
 	uint8_t          ucSeqNum;
