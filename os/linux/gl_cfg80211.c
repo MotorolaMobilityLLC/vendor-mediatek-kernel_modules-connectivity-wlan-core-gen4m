@@ -266,6 +266,7 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 		case WLAN_CIPHER_SUITE_AES_CMAC:
 			rKey.ucCipher = CIPHER_SUITE_BIP;
 			break;
+#if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 		case WLAN_CIPHER_SUITE_GCMP_256:
 			rKey.ucCipher = CIPHER_SUITE_GCMP_256;
 			break;
@@ -273,6 +274,7 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 			DBGLOG(RSN, INFO,
 				"[TODO] Set BIP-GMAC-256, SW should handle it ...\n");
 			return 0;
+#endif
 		default:
 			ASSERT(FALSE);
 		}
@@ -1363,6 +1365,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 			prWpaInfo->u4CipherPairwise =
 							IW_AUTH_CIPHER_CCMP;
 			break;
+#if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 		case WLAN_CIPHER_SUITE_BIP_GMAC_256:
 			prWpaInfo->u4CipherPairwise =
 							IW_AUTH_CIPHER_GCMP256;
@@ -1371,6 +1374,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 			prWpaInfo->u4CipherPairwise =
 							IW_AUTH_CIPHER_GCMP256;
 			break;
+#endif
 		case WLAN_CIPHER_SUITE_GCMP:
 			prWpaInfo->u4CipherPairwise =
 							IW_AUTH_CIPHER_GCMP128;
@@ -1409,6 +1413,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 			prWpaInfo->u4CipherGroup =
 							IW_AUTH_CIPHER_CCMP;
 			break;
+#if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 		case WLAN_CIPHER_SUITE_BIP_GMAC_256:
 			prWpaInfo->u4CipherGroup  =
 							IW_AUTH_CIPHER_GCMP256;
@@ -1417,6 +1422,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 			prWpaInfo->u4CipherGroup =
 							IW_AUTH_CIPHER_GCMP256;
 			break;
+#endif
 		case WLAN_CIPHER_SUITE_GCMP:
 			prWpaInfo->u4CipherGroup =
 							IW_AUTH_CIPHER_GCMP128;

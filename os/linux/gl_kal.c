@@ -4688,7 +4688,7 @@ int main_thread(void *data)
 
 			rStatus = kalSyncTimeToFW(prGlueInfo->prAdapter,
 				(unsigned int)time.tv_sec,
-				(unsigned int)NSEC_TO_USEC(time.tv_nsec));
+				(unsigned int)KAL_GET_USEC(time));
 			if (rStatus == WLAN_STATUS_FAILURE)
 				DBGLOG(INIT, WARN,
 					"Failed to sync kernel time to FW.");
@@ -9227,7 +9227,7 @@ kalSyncTimeToFWByIoctl(void)
 
 		ktime_get_real_ts64(&time);
 		second = (unsigned int)time.tv_sec;
-		usecond = (unsigned int)NSEC_TO_USEC(time.tv_nsec);
+		usecond = (unsigned int)KAL_GET_USEC(time);
 
 		setupTimeParameter(&rChipConfigInfo, sizeof(rChipConfigInfo),
 				second, usecond);
@@ -9295,11 +9295,11 @@ void kalPrintUTC(char *msg_buf, int msg_buf_size)
 			"android time %d-%02d-%02d %02d:%02d:%02d.%03d",
 			sched_clock(), tm.tm_year + 1900, tm.tm_mon + 1,
 			tm.tm_mday, tm.tm_hour, tm.tm_min,
-			tm.tm_sec, (unsigned int)(tv.tv_nsec/1000),
+			tm.tm_sec, (unsigned int)KAL_GET_USEC(tv),
 			tm_android.tm_year + 1900, tm_android.tm_mon + 1,
 			tm_android.tm_mday, tm_android.tm_hour,
 			tm_android.tm_min, tm_android.tm_sec,
-			(unsigned int)(tv_android.tv_nsec/1000));
+			(unsigned int)KAL_GET_USEC(tv_android));
 		if (ret < 0) {
 			kalPrintLog("[%u] snprintf failed, ret: %d",
 				__LINE__, ret);

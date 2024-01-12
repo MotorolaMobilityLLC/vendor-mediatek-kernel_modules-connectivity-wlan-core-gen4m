@@ -814,9 +814,9 @@ u_int8_t kalIsWholeChipResetting(void)
 void glReset_timeinit(struct timespec64 *rNowTs, struct timespec64 *rLastTs)
 {
 	rNowTs->tv_sec = 0;
-	rNowTs->tv_nsec = 0;
+	KAL_GET_PTIME_OF_USEC_OR_NSEC(rNowTs) = 0;
 	rLastTs->tv_sec = 0;
-	rLastTs->tv_nsec = 0;
+	KAL_GET_PTIME_OF_USEC_OR_NSEC(rLastTs) = 0;
 }
 
 bool IsOverRstTimeThreshold(
@@ -826,24 +826,32 @@ bool IsOverRstTimeThreshold(
 	bool fgIsTimeout = FALSE;
 
 	rTimeout.tv_sec = 30;
-	rTimeout.tv_nsec = 0;
+	KAL_GET_TIME_OF_USEC_OR_NSEC(rTimeout) = 0;
 	ktime_get_ts64(rNowTs);
 	DBGLOG(INIT, INFO,
 		"Reset happen time :%d.%d, last happen time :%d.%d\n",
 		rNowTs->tv_sec,
-		rNowTs->tv_nsec,
+		KAL_GET_PTIME_OF_USEC_OR_NSEC(rNowTs),
 		rLastTs->tv_sec,
-		rLastTs->tv_nsec);
+		KAL_GET_PTIME_OF_USEC_OR_NSEC(rLastTs));
 	if (rLastTs->tv_sec != 0) {
 		/* Ignore now time < token time */
 		if (halTimeCompare(rNowTs, rLastTs) > 0) {
 			rTime.tv_sec = rNowTs->tv_sec - rLastTs->tv_sec;
-			rTime.tv_nsec = rNowTs->tv_nsec;
-			if (rLastTs->tv_nsec > rNowTs->tv_nsec) {
+			KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) =
+				KAL_GET_PTIME_OF_USEC_OR_NSEC(rNowTs);
+			if (KAL_GET_PTIME_OF_USEC_OR_NSEC(rLastTs) >
+				KAL_GET_PTIME_OF_USEC_OR_NSEC(rNowTs)) {
 				rTime.tv_sec -= 1;
-				rTime.tv_nsec += SEC_TO_NSEC(1);
+				KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) +=
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+					SEC_TO_NSEC(1);
+#else
+					SEC_TO_USEC(1);
+#endif
 			}
-			rTime.tv_nsec -= rLastTs->tv_nsec;
+			KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) -=
+				KAL_GET_PTIME_OF_USEC_OR_NSEC(rLastTs);
 			if (halTimeCompare(&rTime, &rTimeout) >= 0)
 				fgIsTimeout = TRUE;
 			else
@@ -852,9 +860,9 @@ bool IsOverRstTimeThreshold(
 		DBGLOG(INIT, INFO,
 			"Reset rTimeout :%d.%ld, calculate time :%d.%ld\n",
 			rTimeout.tv_sec,
-			rTimeout.tv_nsec,
+			KAL_GET_TIME_OF_USEC_OR_NSEC(rTimeout),
 			rTime.tv_sec,
-			rTime.tv_nsec);
+			KAL_GET_TIME_OF_USEC_OR_NSEC(rTime));
 	}
 	return fgIsTimeout;
 }
@@ -978,7 +986,8 @@ void glResetSubsysRstProcedure(
 	}
 	if (g_SubsysRstCnt == 1) {
 		rLastTs->tv_sec = rNowTs->tv_sec;
-		rLastTs->tv_nsec = rNowTs->tv_nsec;
+		KAL_GET_PTIME_OF_USEC_OR_NSEC(rLastTs) =
+			KAL_GET_PTIME_OF_USEC_OR_NSEC(rNowTs);
 	}
 	g_IsTriggerTimeout = FALSE;
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)

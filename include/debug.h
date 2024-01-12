@@ -835,7 +835,6 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter,
 	u_int8_t fgDumpTxd);
 void halShowDmaschInfo(IN struct ADAPTER *prAdapter);
 void haldumpMacInfo(IN struct ADAPTER *prAdapter);
-void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint8_t *tmac_info);
 void halShowTxdInfo(
 	struct ADAPTER *prAdapter,
 	u_int32_t fid);

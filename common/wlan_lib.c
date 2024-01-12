@@ -8027,7 +8027,7 @@ void wlanCfgSetChipSyncTime(IN struct ADAPTER *prAdapter)
 	/* UTC time second unit */
 	second = (unsigned int)time.tv_sec;
 	/* UTC time microsecond unit */
-	usecond = (unsigned int)NSEC_TO_USEC(time.tv_nsec);
+	usecond = (unsigned int)KAL_GET_USEC(time);
 	prAdapter->u4FWLastUpdateTime = second;
 
 	kalMemZero(aucValue, WLAN_CFG_VALUE_LEN_MAX);
