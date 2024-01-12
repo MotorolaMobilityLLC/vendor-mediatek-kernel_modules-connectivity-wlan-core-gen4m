@@ -7,6 +7,8 @@
 #define _P2P_FUNC_H
 
 #define P2P_OFF_CHNL_TX_DEFAULT_TIME_MS                      1000
+#define GO_CSA_ACTION_FRAME_LIFE_TIME_MARGIN_MS		     50
+#define GO_CSA_ACTION_FRAME_MINIMUM_LIFE_TIME_MS	     100
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 extern struct P2P_RADAR_INFO g_rP2pRadarInfo;

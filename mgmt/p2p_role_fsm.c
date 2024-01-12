@@ -3576,7 +3576,6 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	uint32_t u4CacTimeMs;
-	uint8_t ucVhtChannelWidthAfterCsa = VHT_OP_CHANNEL_WIDTH_20_40;
 #endif
 	uint8_t ucTokenID = 0;
 	struct LINK *prClientList;
@@ -3672,32 +3671,6 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 					&prBssInfo->ucOpTxNss);
 
 				nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
-
-				p2pFuncCsaUpdateGcStaRec(prBssInfo);
-
-				/* Indicate op mode change to update BW/NSS.
-				 * Note that we have to temporarily set VHT
-				 * channel width to the one before CSA.
-				 * Otherwise, op mode change will not work.
-				 */
-				ucVhtChannelWidthAfterCsa =
-					prBssInfo->ucVhtChannelWidth;
-				prBssInfo->ucVhtChannelWidth =
-					prBssInfo->ucVhtChannelWidthBeforeCsa;
-
-				rlmChangeOperationMode(
-					prAdapter, prBssInfo->ucBssIndex,
-					rlmGetBssOpBwByOwnAndPeerCapability(
-						prAdapter, prBssInfo),
-					prBssInfo->ucOpRxNss,
-					prBssInfo->ucOpTxNss,
-					TRUE,
-					rlmDummyChangeOpHandler);
-
-				/* Restore VHT channel width after CSA */
-				prBssInfo->ucVhtChannelWidth =
-					ucVhtChannelWidthAfterCsa;
-
 				/* Indicate channel switch to kernel */
 				prAdapter->prGlueInfo->
 					prP2PInfo[prBssInfo->u4PrivateData]->

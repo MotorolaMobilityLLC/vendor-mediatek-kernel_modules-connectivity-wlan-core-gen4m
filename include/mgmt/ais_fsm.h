@@ -952,9 +952,6 @@ void aisCheckApRemoval(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 /* CSA Handler                                                                */
 /*----------------------------------------------------------------------------*/
-void aisUpdateParamsForCSA(struct ADAPTER *prAdapter,
-	struct BSS_INFO *prBssInfo);
-
 void aisReqJoinChPrivilegeForCSA(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
 	struct BSS_INFO *prBss,
