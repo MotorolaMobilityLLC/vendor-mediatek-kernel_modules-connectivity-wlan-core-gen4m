@@ -1033,6 +1033,8 @@ uint32_t rlmDomainExtractSingleSkuInfoFromFirmware(
 u_int8_t regd_is_single_sku_en(void);
 u_int8_t rlmDomainIsLegalChannel(struct ADAPTER *prAdapter,
 				 enum ENUM_BAND eBand, uint8_t ucChannel);
+u_int8_t rlmDomainIsLegalDfsChannel(struct ADAPTER *prAdapter,
+		enum ENUM_BAND eBand, uint8_t ucChannel);
 enum ENUM_CHNL_EXT rlmSelectSecondaryChannelType(
 	struct ADAPTER *prAdapter, enum ENUM_BAND band,
 	u8 primary_ch);

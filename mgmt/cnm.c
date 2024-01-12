@@ -1145,17 +1145,11 @@ uint8_t cnmDecideSapNewChannel(
 uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 	IN uint8_t ch_num, IN uint8_t ucRoleIdx)
 {
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct BSS_INFO *prBssInfo = NULL;
 	uint8_t ucBssIdx = 0;
 	struct RF_CHANNEL_INFO rRfChnlInfo;
-	struct MSG_P2P_SET_NEW_CHANNEL *prP2pSetNewChannelMsg =
-		(struct MSG_P2P_SET_NEW_CHANNEL *) NULL;
-	struct MSG_P2P_BEACON_UPDATE *prP2pBcnUpdateMsg =
-		(struct MSG_P2P_BEACON_UPDATE *) NULL;
 
 	ASSERT(ch_num);
-	ASSERT(prGlueInfo);
 
 	if (p2pFuncRoleToBssIdx(
 		prAdapter, ucRoleIdx, &ucBssIdx) !=
@@ -1170,33 +1164,15 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 
 
 	if (prBssInfo->ucPrimaryChannel != ch_num) {
-
-		/* allocate chandef buffer to inform Kernel */
-		if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef == NULL) {
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef =
-				(struct cfg80211_chan_def *)
-				cnmMemAlloc(prAdapter,
-				RAM_TYPE_BUF, sizeof(struct cfg80211_chan_def));
-
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan =
-				(struct ieee80211_channel *)
-				cnmMemAlloc(prAdapter,
-				RAM_TYPE_BUF, sizeof(struct ieee80211_channel));
-		}
-
-		/* Build New CH Info */
 		rRfChnlInfo.ucChannelNum = ch_num;
 		rRfChnlInfo.eBand =
 			(rRfChnlInfo.ucChannelNum <= 14)
 			? BAND_2G4 : BAND_5G;
-
-		/* Heritage BW from Old connection*/
 		rRfChnlInfo.ucChnlBw = MAX_BW_20MHZ;
 		rRfChnlInfo.u2PriChnlFreq =
-			nicChannelNum2Freq((uint32_t)ch_num) / 1000;
+			nicChannelNum2Freq(ch_num) / 1000;
 		rRfChnlInfo.u4CenterFreq1 =
-			nicGetVhtS1(rRfChnlInfo.ucChannelNum,
-				prBssInfo->ucVhtChannelWidth);
+			rRfChnlInfo.u2PriChnlFreq;
 		rRfChnlInfo.u4CenterFreq2 = 0;
 
 		DBGLOG(REQ, INFO,
@@ -1207,116 +1183,7 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 			rRfChnlInfo.u2PriChnlFreq,
 			rRfChnlInfo.u4CenterFreq1);
 
-		/* fill in chinfo to chandef */
-
-		prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan->center_freq
-			= rRfChnlInfo.u2PriChnlFreq;
-		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandef->center_freq1 = rRfChnlInfo.u4CenterFreq1;
-		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandef->center_freq2 = rRfChnlInfo.u4CenterFreq2;
-
-		if (rRfChnlInfo.ucChnlBw == ((uint8_t)MAX_BW_20MHZ))
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->width
-				= NL80211_CHAN_WIDTH_20;
-		else if (rRfChnlInfo.ucChnlBw == ((uint8_t)MAX_BW_40MHZ))
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->width
-				= NL80211_CHAN_WIDTH_40;
-		else if (rRfChnlInfo.ucChnlBw == ((uint8_t)MAX_BW_80MHZ))
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->width
-				= NL80211_CHAN_WIDTH_80;
-		else
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->width
-				= NL80211_CHAN_WIDTH_20;
-
-		if (rRfChnlInfo.eBand == BAND_5G)
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->
-				chan->band = KAL_BAND_5GHZ;
-		else
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->
-				chan->band = KAL_BAND_2GHZ;
-
-		/* Copy NEW CHINFO to Adapter */
-		p2pFuncSetChannel(prAdapter,
-			ucRoleIdx, &rRfChnlInfo);
-
-		p2pFuncSetDfsState(DFS_STATE_INACTIVE);
-
-		/* Set CSA IE parameters */
-		prAdapter->rWifiVar.fgCsaInProgress = TRUE;
-		prAdapter->rWifiVar.ucChannelSwitchMode = 1;
-		prAdapter->rWifiVar.ucNewChannelNumber =
-			rRfChnlInfo.ucChannelNum;
-		prAdapter->rWifiVar.ucChannelSwitchCount = 5;
-
-		/* Set new channel parameters */
-		prP2pSetNewChannelMsg = (struct MSG_P2P_SET_NEW_CHANNEL *)
-			cnmMemAlloc(prAdapter,
-			RAM_TYPE_MSG, sizeof(*prP2pSetNewChannelMsg));
-
-		if (prP2pSetNewChannelMsg == NULL) {
-			ASSERT(FALSE);
-			return -1;
-		}
-
-		prP2pSetNewChannelMsg->rMsgHdr.eMsgId =
-			MID_MNY_P2P_SET_NEW_CHANNEL;
-
-		switch (rRfChnlInfo.ucChnlBw) {
-		case MAX_BW_20MHZ:
-		case MAX_BW_40MHZ:
-			prP2pSetNewChannelMsg->eChannelWidth
-				= CW_20_40MHZ;
-			break;
-		case MAX_BW_80MHZ:
-			prP2pSetNewChannelMsg->eChannelWidth
-				= CW_80MHZ;
-			break;
-		default:
-			prP2pSetNewChannelMsg->eChannelWidth
-				= CW_20_40MHZ;
-			break;
-		}
-
-		prP2pSetNewChannelMsg->ucRoleIdx = ucRoleIdx;
-
-		prP2pSetNewChannelMsg->ucBssIndex = ucBssIdx;
-
-		mboxSendMsg(prAdapter,
-			MBOX_ID_0,
-			(struct MSG_HDR *) prP2pSetNewChannelMsg,
-			MSG_SEND_METHOD_BUF);
-
-		/* Update beacon */
-		prP2pBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *)
-			cnmMemAlloc(prAdapter,
-			RAM_TYPE_MSG,
-			sizeof(struct MSG_P2P_BEACON_UPDATE));
-
-		if (prP2pBcnUpdateMsg == NULL) {
-			ASSERT(FALSE);
-			return -1;
-		}
-		kalMemZero(prP2pBcnUpdateMsg,
-			sizeof(struct MSG_P2P_BEACON_UPDATE));
-
-		prP2pBcnUpdateMsg->ucRoleIndex = ucRoleIdx;
-		prP2pBcnUpdateMsg->rMsgHdr.eMsgId =
-			MID_MNY_P2P_BEACON_UPDATE;
-
-		prP2pBcnUpdateMsg->u4BcnHdrLen = 0;
-		prP2pBcnUpdateMsg->pucBcnHdr = NULL;
-
-		prP2pBcnUpdateMsg->u4BcnBodyLen = 0;
-		prP2pBcnUpdateMsg->pucBcnBody = NULL;
-
-
-		kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
-
-		mboxSendMsg(prAdapter,
-			MBOX_ID_0,
-			(struct MSG_HDR *) prP2pBcnUpdateMsg,
-			MSG_SEND_METHOD_BUF);
+		cnmSapChannelSwitchReq(prAdapter, &rRfChnlInfo, ucRoleIdx);
 
 		/* Record Last Channel Switch Time */
 		GET_CURRENT_SYSTIME(&g_rLastCsaSysTime);
@@ -3464,17 +3331,125 @@ struct BSS_INFO *cnmGetSapBssInfo(IN struct ADAPTER *prAdapter)
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		if (prBssInfo &&
-			IS_BSS_ACTIVE(prBssInfo) &&
-			IS_NET_ACTIVE(prAdapter,
-			prBssInfo->ucBssIndex) &&
 			IS_BSS_P2P(prBssInfo) &&
 			p2pFuncIsAPMode(
 			prAdapter->rWifiVar.prP2PConnSettings
-			[prBssInfo->u4PrivateData]))
+			[prBssInfo->u4PrivateData]) &&
+			IS_NET_PWR_STATE_ACTIVE(
+			prAdapter,
+			prBssInfo->ucBssIndex))
 			return prBssInfo;
 	}
 
 	return NULL;
+}
+
+uint8_t cnmSapChannelSwitchReq(IN struct ADAPTER *prAdapter,
+	IN struct RF_CHANNEL_INFO *prRfChannelInfo,
+	IN uint8_t ucRoleIdx)
+{
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct GL_P2P_INFO *prGlueP2pInfo = NULL;
+	struct MSG_P2P_SET_NEW_CHANNEL *prP2pSetNewChannelMsg =
+		(struct MSG_P2P_SET_NEW_CHANNEL *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
+		(struct P2P_CONNECTION_REQ_INFO *) NULL;
+	uint8_t ucBssIdx = 0;
+
+	DBGLOG(P2P, INFO,
+		"role(%d) c=%d b=%d opw=%d\n",
+		ucRoleIdx,
+		prRfChannelInfo->ucChannelNum,
+		prRfChannelInfo->eBand,
+		prRfChannelInfo->ucChnlBw);
+
+	/* Free chandef buffer */
+	if (!prGlueInfo) {
+		DBGLOG(P2P, WARN, "glue info is not active\n");
+		goto error;
+	}
+	prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+	if (!prGlueP2pInfo) {
+		DBGLOG(P2P, WARN, "p2p glue info is not active\n");
+		goto error;
+	}
+	if (prGlueP2pInfo->chandef != NULL) {
+		if (prGlueP2pInfo->chandef->chan) {
+			cnmMemFree(prGlueInfo->prAdapter,
+			    prGlueP2pInfo->chandef->chan);
+			prGlueP2pInfo->chandef->chan = NULL;
+		}
+		cnmMemFree(prGlueInfo->prAdapter,
+			prGlueP2pInfo->chandef);
+		prGlueP2pInfo->chandef = NULL;
+	}
+
+	/* Fill conn info */
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, ucRoleIdx);
+	if (!prP2pRoleFsmInfo)
+		goto error;
+	prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+	if (!prP2pConnReqInfo)
+		goto error;
+
+	prP2pConnReqInfo->rChannelInfo.ucChannelNum =
+		prRfChannelInfo->ucChannelNum;
+	prP2pConnReqInfo->rChannelInfo.eBand =
+		prRfChannelInfo->eBand;
+	prP2pConnReqInfo->eChnlBw =
+		prRfChannelInfo->ucChnlBw;
+
+	p2pFuncSetDfsState(DFS_STATE_INACTIVE);
+
+	if (p2pFuncRoleToBssIdx(
+		prAdapter, ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS) {
+		DBGLOG(P2P, WARN, "Incorrect role index");
+		goto error;
+	}
+
+	/* Set CSA IE */
+	prAdapter->rWifiVar.fgCsaInProgress = TRUE;
+	prAdapter->rWifiVar.ucChannelSwitchMode = 1;
+	prAdapter->rWifiVar.ucNewChannelNumber =
+		prRfChannelInfo->ucChannelNum;
+	prAdapter->rWifiVar.ucChannelSwitchCount = 5;
+
+	/* Set new channel */
+	prP2pSetNewChannelMsg = (struct MSG_P2P_SET_NEW_CHANNEL *)
+		cnmMemAlloc(prAdapter,
+		RAM_TYPE_MSG, sizeof(*prP2pSetNewChannelMsg));
+	if (prP2pSetNewChannelMsg == NULL) {
+		DBGLOG(P2P, WARN,
+			"prP2pSetNewChannelMsg alloc fail\n");
+		goto error;
+	}
+
+	prP2pSetNewChannelMsg->rMsgHdr.eMsgId =
+		MID_MNY_P2P_SET_NEW_CHANNEL;
+	prP2pSetNewChannelMsg->eChannelWidth =
+		(enum ENUM_CHANNEL_WIDTH)
+		rlmGetVhtOpBwByBssOpBw(prRfChannelInfo->ucChnlBw);
+	prP2pSetNewChannelMsg->ucRoleIdx = ucRoleIdx;
+	prP2pSetNewChannelMsg->ucBssIndex = ucBssIdx;
+	mboxSendMsg(prAdapter,
+		MBOX_ID_0,
+		(struct MSG_HDR *) prP2pSetNewChannelMsg,
+		MSG_SEND_METHOD_BUF);
+
+	kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
+
+	/* Update Beacon */
+	bssUpdateBeaconContent(prAdapter, ucBssIdx);
+
+	return 0;
+
+error:
+
+	return -1;
 }
 
 
