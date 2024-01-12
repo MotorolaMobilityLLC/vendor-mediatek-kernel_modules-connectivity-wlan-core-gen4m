@@ -1091,6 +1091,8 @@
 	244
 #define ELEM_ID_RESERVED \
 	255	/* Reserved */
+#define ELEM_ID_MAX_NUM \
+	256
 
 #define ELEM_EXT_ID_ESP	\
 	11 /* Estimated Service Parameters */
@@ -1978,6 +1980,9 @@ enum BEACON_REPORT_DETAIL {
 
 /* 9.4.2.295b.2 Basic variant Multi-Link element */
 #define ML_CTRL_TYPE_MASK				BITS(0, 2)
+#define ML_CTRL_TYPE_SHIFT				0
+#define ML_ELEMENT_TYPE_BASIC				0
+#define ML_ELEMENT_TYPE_PROBE_REQ			1
 #define ML_CTRL_PRE_BMP_MASK				BITS(4, 15)
 #define ML_CTRL_PRE_BMP_SHIFT				4
 #define ML_CTRL_MLD_MAC_ADDR_PRESENT			BIT(0)
@@ -1988,7 +1993,9 @@ enum BEACON_REPORT_DETAIL {
 #define ML_CTRL_MLD_CAPA_PRESENT			BIT(5)
 
 /* Figure 9-788eo - STA Control field format */
+#define SUB_IE_MLD_PER_STA_PROFILE			0
 #define ML_STA_CTRL_LINK_ID_MASK			BITS(0, 3)
+#define ML_STA_CTRL_LINK_ID_SHIFT			0
 #define ML_STA_CTRL_COMPLETE_PROFILE			BIT(4)
 #define ML_STA_CTRL_MAC_ADDR_PRESENT			BIT(5)
 #define ML_STA_CTRL_BCN_INTV_PRESENT			BIT(6)

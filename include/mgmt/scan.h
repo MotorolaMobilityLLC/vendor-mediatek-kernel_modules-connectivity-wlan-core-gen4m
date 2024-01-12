@@ -145,9 +145,6 @@
 #define SCAN_CHANNEL_DWELL_TIME_OCE         (42 + 28)
 
 #define MLD_LINK_MAX				3
-#define ML_ELEMENT_TYPE_BASIC			0
-#define ML_ELEMENT_TYPE_PROBE_REQ		1
-#define SUB_IE_MLD_PER_STA_PROFILE		0
 #define MAX_LEN_OF_MLIE				255
 
 /*----------------------------------------------------------------------------*/
