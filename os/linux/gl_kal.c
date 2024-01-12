@@ -7325,9 +7325,9 @@ int32_t kalRequestFirmware(const uint8_t *pucPath,
 	       pucPath);
 
 	if (ucIsZeroPadding)
-		u4Size = fw->size + 1;
+		u4Size = (uint32_t) fw->size + 1;
 	else
-		u4Size = fw->size;
+		u4Size = (uint32_t) fw->size;
 
 	pucData = kalMemAlloc(u4Size, VIR_MEM_TYPE);
 	if (pucData == NULL) {
