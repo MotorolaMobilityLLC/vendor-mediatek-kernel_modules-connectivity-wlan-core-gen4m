@@ -3692,7 +3692,7 @@ static uint8_t wlanNvramBufHandler(void *ctx,
 		return -EFAULT;
 
 	if (length > sizeof(g_aucNvram)) {
-		DBGLOG(INIT, ERROR, "is over nvrm size %d\n",
+		DBGLOG(INIT, ERROR, "is over nvrm size %zu\n",
 			sizeof(g_aucNvram));
 		return -EINVAL;
 	}

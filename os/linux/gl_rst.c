@@ -1725,7 +1725,7 @@ bool IsOverRstTimeThreshold(
 	KAL_GET_TIME_OF_USEC_OR_NSEC(rTimeout) = 0;
 	ktime_get_ts64(rNowTs);
 	DBGLOG(INIT, INFO,
-		"Reset happen time :%d.%d, last happen time :%d.%d\n",
+		"Reset happen time :%ld.%ld, last happen time :%ld.%ld\n",
 		rNowTs->tv_sec,
 		KAL_GET_PTIME_OF_USEC_OR_NSEC(rNowTs),
 		rLastTs->tv_sec,
@@ -1738,7 +1738,7 @@ bool IsOverRstTimeThreshold(
 				fgIsTimeout = FALSE;
 		}
 		DBGLOG(INIT, INFO,
-			"Reset rTimeout :%d.%ld, calculate time :%d.%ld\n",
+			"Reset rTimeout :%ld.%ld, calculate time :%ld.%ld\n",
 			rTimeout.tv_sec,
 			KAL_GET_TIME_OF_USEC_OR_NSEC(rTimeout),
 			rTime.tv_sec,
