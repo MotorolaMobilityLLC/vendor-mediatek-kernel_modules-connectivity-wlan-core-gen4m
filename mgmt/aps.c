@@ -718,7 +718,7 @@ static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 		a = 0;
 		b = 0;
 	}
-	tput = (uint32_t)((uint64_t)ideal * (a * rcpi + b) / 60000);
+	tput = (uint32_t)((uint64_t)ideal * (uint64_t)(a * rcpi + b) / 60000);
 	est = PERCENTAGE(airTime, 255) * tput / 100;
 
 	if (aps->ucConsiderEsp) {
@@ -2310,17 +2310,24 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 	}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	/* pick by bssid or bssid by upper layer */
+	if (policy == CONNECT_BY_BSSID)
+		goto done;
+
+	/* pick by mld_addr or link_id by wifi.cfg,
+	 * and avoid picking the poor-quality link.
+	 */
 	for (i = 1; i < set->ucLinkNum; i++) {
 		uint8_t *found = NULL;
 		struct BSS_DESC *bss;
 
 		bss = set->aprBssDesc[i];
-		if (policy == CONNECT_BY_BSSID &&
-		     EQUAL_MAC_ADDR(bss->aucBSSID, conn->aucBSSID)) {
+		if (set->aprBssDesc[0]->ucJoinFailureCount >=
+		    AIS_ROAMING_CONNECTION_TRIAL_LIMIT &&
+		    bss->ucJoinFailureCount <
+		    set->aprBssDesc[0]->ucJoinFailureCount) {
 			set->aprBssDesc[i] = set->aprBssDesc[0];
 			set->aprBssDesc[0] = bss;
-			found = "bssid";
+			found = "bad_main_link";
 		} else if (IS_FEATURE_ENABLED(ad->rWifiVar.ucStaPreferMldAddr)
 			   && EQUAL_MAC_ADDR(bss->aucBSSID, ap->aucAddr)) {
 			set->aprBssDesc[i] = set->aprBssDesc[0];
@@ -2331,12 +2338,8 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 			set->aprBssDesc[i] = set->aprBssDesc[0];
 			set->aprBssDesc[0] = bss;
 			found = "link_id";
-		} else if (policy == CONNECT_BY_BSSID_HINT &&
-			   EQUAL_MAC_ADDR(bss->aucBSSID, conn->aucBSSIDHint)) {
-			set->aprBssDesc[i] = set->aprBssDesc[0];
-			set->aprBssDesc[0] = bss;
-			found = "bssid_hint";
 		}
+
 		if (found != NULL) {
 			DBGLOG(APS, INFO, MACSTR
 				" link_id=%d max_links=%d Setup for %s\n",

@@ -25,7 +25,6 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-#define AIS_ROAMING_CONNECTION_TRIAL_LIMIT  2
 #define AIS_JOIN_TIMEOUT                    7
 
 #if (CFG_SUPPORT_HE_ER == 1)
