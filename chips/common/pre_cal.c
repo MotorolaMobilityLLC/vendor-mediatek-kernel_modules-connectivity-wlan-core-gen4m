@@ -676,7 +676,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 #endif
 	}
 
-	wlanSendInitSetQueryCmdImpl(prAdapter,
+	u4Status = wlanSendInitSetQueryCmdImpl(prAdapter,
 		INIT_CMD_ID_PHY_ACTION, prCmd, u4CmdSize,
 		TRUE, FALSE,
 		INIT_EVENT_ID_PHY_ACTION, prEvent, u4EvtSize,
