@@ -3207,6 +3207,7 @@ p2pFuncBeaconUpdate(struct ADAPTER *prAdapter,
 
 		p2pFuncParseBeaconContent(prAdapter,
 			prP2pBssInfo,
+			prBcnFrame->aucBSSID,
 			(uint8_t *) prBcnFrame->aucInfoElem,
 			(prBcnMsduInfo->u2FrameLength -
 			OFFSET_OF(struct WLAN_BEACON_FRAME, aucInfoElem)));
@@ -4715,6 +4716,7 @@ u_int8_t p2pFuncIsAPMode(struct P2P_CONNECTION_SETTINGS *prP2pConnSettings)
 void
 p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prP2pBssInfo,
+		uint8_t aucBSSID[],
 		uint8_t *pucIEInfo, uint32_t u4IELen)
 {
 	uint8_t *pucIE = (uint8_t *) NULL;
@@ -5143,31 +5145,42 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS ||
-				IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_OP)
+			    IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_OP)
 				prP2pBssInfo->ucPhyTypeSet |=
 					PHY_TYPE_SET_802_11BE;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_MLD) {
+				struct MULTI_LINK_INFO rMlInfo;
+
+				MLD_PARSE_BASIC_MLIE(&rMlInfo, pucIE,
+					IE_SIZE(pucIE), /* no need fragment */
+					aucBSSID,
+					MAC_FRAME_BEACON);
+			}
+#endif
 #endif
 			break;
 
-			case ELEM_ID_TX_PWR_ENVELOPE:
-				if (prP2pSpecificBssInfo->u2TpeIeLen +
-				    IE_SIZE(pucIE) > MAX_TPE_IE_LENGTH) {
-					DBGLOG(P2P, ERROR,
-					"TPE IE length %d %d exceeds %d\n",
-					prP2pSpecificBssInfo->u2TpeIeLen,
-					IE_SIZE(pucIE),
-					MAX_TPE_IE_LENGTH);
+		case ELEM_ID_TX_PWR_ENVELOPE:
+			if (prP2pSpecificBssInfo->u2TpeIeLen +
+			    IE_SIZE(pucIE) > MAX_TPE_IE_LENGTH) {
+				DBGLOG(P2P, ERROR,
+				"TPE IE length %d %d exceeds %d\n",
+				prP2pSpecificBssInfo->u2TpeIeLen,
+				IE_SIZE(pucIE),
+				MAX_TPE_IE_LENGTH);
 
-					prP2pSpecificBssInfo->u2TpeIeLen = 0;
-					return;
-				}
-				kalMemCopy(
-					prP2pSpecificBssInfo->aucTpeIeBuffer +
-					prP2pSpecificBssInfo->u2TpeIeLen,
-					pucIE, IE_SIZE(pucIE));
-				prP2pSpecificBssInfo->u2TpeIeLen
-					+= IE_SIZE(pucIE);
-				break;
+				prP2pSpecificBssInfo->u2TpeIeLen = 0;
+				return;
+			}
+			kalMemCopy(
+				prP2pSpecificBssInfo->aucTpeIeBuffer +
+				prP2pSpecificBssInfo->u2TpeIeLen,
+				pucIE, IE_SIZE(pucIE));
+			prP2pSpecificBssInfo->u2TpeIeLen
+				+= IE_SIZE(pucIE);
+			break;
 
 		case ELEM_ID_RNR:
 #if (CFG_SUPPORT_802_11BE_MLO == 1)

@@ -164,6 +164,9 @@ struct SUB_IE_MULTI_LINK_CONTROL {
 #define BE_IS_ML_STA_CTRL_PRESENCE_NSTR(_u2ctrl) \
 	(_u2ctrl & ML_STA_CTRL_NSTR_LINK_PAIR_PRESENT)
 
+#define BE_IS_ML_STA_CTRL_PRESENCE_BSS_PARA_CHANGE_COUNT(_u2ctrl) \
+	(_u2ctrl & ML_STA_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT)
+
 /* BE D3.0 Figure 9-1002n - STA Control field format of the Basic Multi-Link
  * Element
  */
