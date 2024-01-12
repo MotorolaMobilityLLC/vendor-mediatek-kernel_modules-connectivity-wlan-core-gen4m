@@ -19001,8 +19001,8 @@ int8_t *RxStatPerBand[] = {
 	"phy_mdy_cnt_cck	: 0x%08x\n",
 	"phy_mdy_cnt_ofdm: 0x%08x\n",
 #if (CFG_SUPPORT_CONNAC3X == 1) /* band info v1*/
-	"aci_hit_low	: 0x%08x",
-	"aci_hit_high	: 0x%08x"
+	"aci_hit_low	: 0x%08x\n",
+	"aci_hit_high	: 0x%08x\n"
 #endif
 };
 
@@ -19049,13 +19049,16 @@ int32_t priv_driver_rx_stat_parser(
 		DBGLOG(REQ, LOUD, "i4TypeLen is %x\n", i4TypeLen);
 
 		/*Get Sub Len*/
-		while (j) {
-			i++;
-			j = j >> 1;
-		}
+		if (i4Type != 0) {
+			while (j) {
+				i++;
+				j = j >> 1;
+			}
 
-		if (i != 0)
-			i4SubLen = i4TypeLen / i;
+			if (i != 0)
+				i4SubLen = i4TypeLen / i;
+		} else
+			i4SubLen = i4TypeLen;
 
 		i = 0;
 		DBGLOG(REQ, LOUD, "i4SubLen is %x\n", i4SubLen);
