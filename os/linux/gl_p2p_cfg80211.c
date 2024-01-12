@@ -114,13 +114,8 @@
  ******************************************************************************
  */
 
-#if CFG_ENABLE_UNIFY_WIPHY
-#define P2P_WIPHY_PRIV(_wiphy, _priv) \
-	(_priv = (struct GLUE_INFO *) wiphy_priv(_wiphy))
-#else
 #define P2P_WIPHY_PRIV(_wiphy, _priv) \
 	(_priv = *((struct GLUE_INFO **) wiphy_priv(_wiphy)))
-#endif
 
 /******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
@@ -488,7 +483,7 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	struct MSG_P2P_ACTIVE_DEV_BSS *prMsgActiveBss =
 		(struct MSG_P2P_ACTIVE_DEV_BSS *) NULL;
 
-	prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
+	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 	if (prGlueInfo == NULL)
 		return -EINVAL;
 

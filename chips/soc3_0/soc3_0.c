@@ -1214,7 +1214,7 @@ int soc3_0_Trigger_fw_assert(void)
 	struct ADAPTER *prAdapter = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
-	prGlueInfo = (struct GLUE_INFO *)wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
 
 	soc3_0_CheckBusHang(NULL, FALSE);
@@ -1265,7 +1265,7 @@ void soc3_0_CheckBusHangUT(void)
 	uint32_t u4Value = 0;
 	uint32_t RegValue = 0;
 
-	prGlueInfo = (struct GLUE_INFO *)wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
 
 	HAL_MCR_RD(prAdapter, 0x7c00162c, &u4Value);
@@ -3248,8 +3248,7 @@ int32_t soc3_0_wlanPowerOnInit(
 
 		if (eDownloadItem == ENUM_WLAN_POWER_ON_DOWNLOAD_EMI) {
 			if (fgSimplifyResetFlow) {
-				prGlueInfo = (struct GLUE_INFO *)
-					wiphy_priv(wlanGetWiphy());
+				WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 				prAdapter = prGlueInfo->prAdapter;
 
 				if (prChipInfo->pwrondownload) {
@@ -3275,8 +3274,7 @@ int32_t soc3_0_wlanPowerOnInit(
 				i4Status = -NET_CREATE_FAIL;
 			} else {
 				/* Set the ioaddr to HIF Info */
-				prGlueInfo = (struct GLUE_INFO *)
-					wiphy_priv(prWdev->wiphy);
+				WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
 
 				prAdapter = prGlueInfo->prAdapter;
 
@@ -3345,7 +3343,7 @@ int32_t soc3_0_wlanPowerOnInit(
 		}
 
 		/* Set the ioaddr to HIF Info */
-		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
+		WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
 
 		/* Should we need this??? to be conti... */
 		gPrDev = prGlueInfo->prDevHandler;

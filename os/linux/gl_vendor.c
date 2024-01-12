@@ -511,7 +511,7 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 	if ((data == NULL) || (data_len == 0))
 		return -EINVAL;
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	WIPHY_PRIV(wiphy, prGlueInfo);
 	if (!prGlueInfo)
 		return -EINVAL;
 
@@ -608,7 +608,7 @@ int mtk_cfg80211_vendor_enable_roaming(struct wiphy *wiphy,
 	ASSERT(wiphy);	/* change to if (wiphy == NULL) then return? */
 	ASSERT(wdev);	/* change to if (wiphy == NULL) then return? */
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	WIPHY_PRIV(wiphy, prGlueInfo);
 	if (!prGlueInfo)
 		return -EFAULT;
 
@@ -635,7 +635,7 @@ int mtk_cfg80211_vendor_get_rtt_capabilities(
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	WIPHY_PRIV(wiphy, prGlueInfo);
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
 			sizeof(rRttCapabilities));
@@ -756,7 +756,7 @@ int mtk_cfg80211_vendor_set_band(struct wiphy *wiphy,
 
 	attr = (struct nlattr *)data;
 	setBand = nla_get_u32(attr);
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
 
 	DBGLOG(REQ, INFO, "Vendor Set Band value=%d\r\n", setBand);
@@ -809,7 +809,7 @@ int mtk_cfg80211_vendor_set_roaming_param(struct wiphy *wiphy,
 	ASSERT(wiphy);
 	ASSERT(wdev);
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	WIPHY_PRIV(wiphy, prGlueInfo);
 	if (!prGlueInfo)
 		return -EFAULT;
 
@@ -920,7 +920,7 @@ int mtk_cfg80211_vendor_set_roaming_policy(
 
 	attr = (struct nlattr *)data;
 	setRoaming = nla_get_u32(attr);
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	WIPHY_PRIV(wiphy, prGlueInfo);
 	ucBssIndex = wlanGetBssIdx(wdev->netdev);
 	ASSERT(prGlueInfo);
 
@@ -999,7 +999,7 @@ int mtk_cfg80211_vendor_set_rssi_monitoring(
 	       rRSSIMonitor.max_rssi_value, rRSSIMonitor.min_rssi_value,
 	       rRSSIMonitor.enable);
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
 
 	rStatus = kalIoctl(prGlueInfo,
@@ -1111,7 +1111,7 @@ int mtk_cfg80211_vendor_packet_keep_alive_start(
 	       prPkt->ucDstMacAddr[2], prPkt->ucDstMacAddr[3],
 	       prPkt->ucDstMacAddr[4], prPkt->ucDstMacAddr[5]);
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
 
 	rStatus = kalIoctl(prGlueInfo,
@@ -1166,7 +1166,7 @@ int mtk_cfg80211_vendor_packet_keep_alive_stop(
 	DBGLOG(REQ, INFO, "enable=%d, index=%d\r\n",
 	       prPkt->enable, prPkt->index);
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
 
 	rStatus = kalIoctl(prGlueInfo,
@@ -1218,7 +1218,7 @@ int mtk_cfg80211_vendor_get_version(struct wiphy *wiphy,
 	} else if (attrlist->nla_type == LOGGER_ATTRIBUTE_FW_VER) {
 		struct ADAPTER *prAdapter;
 
-		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+		WIPHY_PRIV(wiphy, prGlueInfo);
 		ASSERT(prGlueInfo);
 		prAdapter = prGlueInfo->prAdapter;
 		if (prAdapter) {
@@ -1337,7 +1337,7 @@ int mtk_cfg80211_vendor_event_rssi_beyond_range(
 	ASSERT(wiphy);
 	ASSERT(wdev);
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
 
 	DBGLOG(REQ, TRACE, "vendor command rssi=%d\r\n", rssi);
@@ -1409,14 +1409,7 @@ int mtk_cfg80211_vendor_set_tx_power_scenario(struct wiphy *wiphy,
 	ASSERT(wiphy);
 	ASSERT(wdev);
 
-#if CFG_ENABLE_UNIFY_WIPHY
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-#else	/* CFG_ENABLE_UNIFY_WIPHY */
-	if (wdev == gprWdev)	/* wlan0 */
-		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-	else
-		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
-#endif	/* CFG_ENABLE_UNIFY_WIPHY */
+	WIPHY_PRIV(wiphy, prGlueInfo);
 
 	if (!prGlueInfo)
 		return -EFAULT;
@@ -1600,14 +1593,7 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 		goto exit;
 	}
 
-#if CFG_ENABLE_UNIFY_WIPHY
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-#else	/* CFG_ENABLE_UNIFY_WIPHY */
-	if (wdev == gprWdev)	/* wlan0 */
-		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-	else
-		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
-#endif	/* CFG_ENABLE_UNIFY_WIPHY */
+	WIPHY_PRIV(wiphy, prGlueInfo);
 
 	if (!prGlueInfo) {
 		DBGLOG(REQ, ERROR, "get glue structure fail.\n");
@@ -1942,7 +1928,7 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 	}
 	rParam.ucBssIdx = 0; /* prNetDevPrivate->ucBssIdx; */
 	rParam.prLinkQualityInfo = &rLinkQualityInfo;
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	WIPHY_PRIV(wiphy, prGlueInfo);
 	i4Status = kalIoctl(prGlueInfo, wlanoidGetLinkQualityInfo,
 		 &rParam, sizeof(struct PARAM_GET_LINK_QUALITY_INFO),
 		 TRUE, FALSE, FALSE, &u4BufLen);

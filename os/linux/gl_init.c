@@ -1680,9 +1680,9 @@ void wlanSchedScanStoppedWorkQueue(struct work_struct *work)
 	 * sched_scan_mtx dead lock issue
 	 */
 #if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
-	cfg80211_sched_scan_stopped(priv_to_wiphy(prGlueInfo), 0);
+	cfg80211_sched_scan_stopped(wlanGetWiphy(), 0);
 #else
-	cfg80211_sched_scan_stopped(priv_to_wiphy(prGlueInfo));
+	cfg80211_sched_scan_stopped(wlanGetWiphy());
 #endif
 	DBGLOG(SCN, INFO,
 	       "cfg80211_sched_scan_stopped event send done WorkQueue thread return from wlanSchedScanStoppedWorkQueue\n");
@@ -2411,7 +2411,7 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 		if (!prWdev)
 			break;
 
-		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
+		WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
 		prAdapter = prGlueInfo->prAdapter;
 		i4DevIdx = wlanGetDevIdx(prWdev->netdev);
 		if (i4DevIdx < 0) {
@@ -2496,7 +2496,7 @@ static void wlanNetUnregister(struct wireless_dev *prWdev)
 		return;
 	}
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
+	WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
 
 #if !CFG_SUPPORT_PERSIST_NETDEV
 	{
@@ -2641,6 +2641,7 @@ static void wlanCreateWirelessDevice(void)
 	struct wireless_dev *prWdev[KAL_AIS_NUM] = {NULL};
 	unsigned int u4SupportSchedScanFlag = 0;
 	uint32_t u4Idx = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
 
 	/* 4 <1.1> Create wireless_dev */
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
@@ -2655,10 +2656,10 @@ static void wlanCreateWirelessDevice(void)
 	}
 	/* 4 <1.2> Create wiphy */
 #if CFG_ENABLE_UNIFY_WIPHY
-	prWiphy = wiphy_new(&mtk_cfg_ops, sizeof(struct GLUE_INFO));
+	prWiphy = wiphy_new(&mtk_cfg_ops, sizeof(struct GLUE_INFO *));
 #else
 	prWiphy = wiphy_new(&mtk_wlan_ops,
-			    sizeof(struct GLUE_INFO));
+			    sizeof(struct GLUE_INFO *));
 #endif
 
 	if (!prWiphy) {
@@ -2666,6 +2667,15 @@ static void wlanCreateWirelessDevice(void)
 		       "Allocating memory to wiphy device failed\n");
 		goto free_wdev;
 	}
+
+	/* Allocate GLUE_INFO and set priv as pointer to glue structure */
+	prGlueInfo = kalMemAlloc(sizeof(struct GLUE_INFO), VIR_MEM_TYPE);
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR,
+		       "Allocating memory to GLUE_INFO failed\n");
+		goto free_wiphy;
+	}
+	*((struct GLUE_INFO **) wiphy_priv(prWiphy)) = prGlueInfo;
 
 	/* 4 <1.3> configure wireless_dev & wiphy */
 	prWiphy->iface_combinations = p_mtk_iface_combinations_sta;
@@ -2816,7 +2826,7 @@ static void wlanCreateWirelessDevice(void)
 
 	if (wiphy_register(prWiphy) < 0) {
 		DBGLOG(INIT, ERROR, "wiphy_register error\n");
-		goto free_wiphy;
+		goto free_glue_info;
 	}
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 		prWdev[u4Idx]->wiphy = prWiphy;
@@ -2829,6 +2839,8 @@ static void wlanCreateWirelessDevice(void)
 	DBGLOG(INIT, INFO, "Create wireless device success\n");
 	return;
 
+free_glue_info:
+	kalMemFree(prGlueInfo, VIR_MEM_TYPE, sizeof(struct GLUE_INFO));
 free_wiphy:
 	wiphy_free(prWiphy);
 free_wdev:
@@ -2848,6 +2860,7 @@ free_wdev:
 /*----------------------------------------------------------------------------*/
 static void wlanDestroyAllWdev(void)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
 #if CFG_ENABLE_UNIFY_WIPHY
 	/* There is only one wiphy, avoid that double free the wiphy */
 	struct wiphy *wiphy = NULL;
@@ -2855,6 +2868,9 @@ static void wlanDestroyAllWdev(void)
 #if CFG_ENABLE_WIFI_DIRECT
 	int i = 0;
 #endif
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	kalMemFree(prGlueInfo, VIR_MEM_TYPE, sizeof(struct GLUE_INFO));
 
 #if CFG_ENABLE_WIFI_DIRECT
 	/* free P2P wdev */
@@ -3037,7 +3053,7 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 	set_wiphy_dev(prWdev->wiphy, prDev);
 
 	/* 4 <2> Create Glue structure */
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
+	WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
 	kalMemZero(prGlueInfo, sizeof(struct GLUE_INFO));
 
 	/* 4 <2.1> Create Adapter structure */
@@ -3254,7 +3270,7 @@ void wlanNetDestroy(struct wireless_dev *prWdev)
 	}
 
 	/* prGlueInfo is allocated with net_device */
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
+	WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
 
 	/* prWdev: base AIS dev
@@ -5354,7 +5370,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			break;
 		}
 		/* 4 <2.5> Set the ioaddr to HIF Info */
-		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
+		WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
 		gPrDev = prGlueInfo->prDevHandler;
 
 		/* 4 <4> Setup IRQ */
@@ -5938,8 +5954,7 @@ static int initWlan(void)
 	if (gprWdev[0] == NULL)
 		return -ENOMEM;
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(
-			     wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (gprWdev[0]) {
 		/* P2PDev and P2PRole[0] share the same Wdev */
 		if (glP2pCreateWirelessDevice(prGlueInfo) == TRUE)
@@ -5967,8 +5982,7 @@ static int initWlan(void)
 #if (CFG_CHIP_RESET_SUPPORT)
 	glResetInit(prGlueInfo);
 #endif
-	kalFbNotifierReg((struct GLUE_INFO *) wiphy_priv(
-				 wlanGetWiphy()));
+	kalFbNotifierReg(prGlueInfo);
 	wlanRegisterNetdevNotifier();
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
@@ -6006,7 +6020,7 @@ static void exitWlan(void)
 	struct wiphy *wiphy = NULL;
 
 	wiphy = wlanGetWiphy();
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	WIPHY_PRIV(wiphy, prGlueInfo);
 
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 		if (gprNetdev[u4Idx]) {
