@@ -20,6 +20,7 @@ struct WLAN_PINCTRL_OPS {
 static inline int32_t wlan_pinctrl_init(struct mt66xx_chip_info *chip_info)
 {
 	if (!chip_info ||
+	    !chip_info->pinctrl_ops ||
 	    !chip_info->pinctrl_ops->init)
 		return 0;
 
@@ -30,6 +31,7 @@ static inline int32_t wlan_pinctrl_action(struct mt66xx_chip_info *chip_info,
 	enum WLAN_PINCTRL_MSG msg)
 {
 	if (!chip_info ||
+	    !chip_info->pinctrl_ops ||
 	    !chip_info->pinctrl_ops->action)
 		return 0;
 
