@@ -4978,7 +4978,8 @@ uint32_t nicUniCmdSetIcsSniffer(struct ADAPTER *ad,
 	tag->ucModule = cmd->ucModule;
 	tag->ucFilter = cmd->ucFilter;
 	tag->ucOperation = cmd->ucOperation;
-	kalMemCopy(&tag->ucCondition, cmd, sizeof(tag->ucCondition));
+	kalMemCopy(&tag->ucCondition, &cmd->ucCondition,
+		sizeof(tag->ucCondition));
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
