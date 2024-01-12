@@ -665,6 +665,8 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 
 void aisFsmStateAbort_JOIN(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
+void aisFsmStateAbort_SCAN_All(struct ADAPTER *prAdapter);
+
 void aisFsmStateAbort_SCAN(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 void aisFsmStateAbort_NORMAL_TR(struct ADAPTER

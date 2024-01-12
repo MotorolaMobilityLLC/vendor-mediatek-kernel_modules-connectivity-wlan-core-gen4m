@@ -1923,6 +1923,26 @@ void aisFsmStateAbort_JOIN(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief Process of SCAN Abort for all ais bss
+ *
+ * @param (none)
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void aisFsmStateAbort_SCAN_All(struct ADAPTER *prAdapter)
+{
+	u_int8_t ucIdx = 0;
+
+	for (ucIdx = 0; ucIdx < KAL_AIS_NUM; ucIdx++) {
+		if (prAdapter->rWifiVar.rScanInfo.eCurrentState
+			== SCAN_STATE_SCANNING) {
+			aisFsmStateAbort_SCAN(prAdapter, ucIdx);
+		}
+	}
+}
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief Process of SCAN Abort
  *
  * @param (none)
@@ -3878,11 +3898,11 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 		kal_fallthrough;
 	case AIS_STATE_SCAN:
 		/* Do abort SCAN */
-		aisFsmStateAbort_SCAN(prAdapter, ucBssIndex);
+		aisFsmStateAbort_SCAN_All(prAdapter);
 		break;
 	case AIS_STATE_LOOKING_FOR:
 		/* Do abort SCAN */
-		aisFsmStateAbort_SCAN(prAdapter, ucBssIndex);
+		aisFsmStateAbort_SCAN_All(prAdapter);
 
 		/* in case roaming is triggered */
 		fgIsCheckConnected = TRUE;

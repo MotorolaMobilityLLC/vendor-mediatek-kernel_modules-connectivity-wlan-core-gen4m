@@ -7632,23 +7632,20 @@ int32_t wlanOnAtReset(void)
 		/* Clear pending request (SCAN). */
 		scnFreeAllPendingScanRquests(prAdapter);
 
+		/* If scan state is SCAN_STATE_SCANNING, means
+		 * that have scan req not done before SER.
+		 * Abort this request to prevent scan fail
+		 * (scan state back to IDLE).
+		 */
+		aisFsmStateAbort_SCAN_All(prAdapter);
 		/* Send disconnect */
 		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+
 			if (!AIS_MAIN_BSS_INFO(prAdapter, u4Idx))
 				continue;
 
 			/* Clear pending request (AIS). */
 			aisFsmFlushRequest(prAdapter, u4Idx);
-
-			/* If scan state is SCAN_STATE_SCANNING, means
-			 * that have scan req not done before SER.
-			 * Abort this request to prevent scan fail
-			 * (scan state back to IDLE).
-			 */
-			if (prAdapter->rWifiVar.rScanInfo.eCurrentState
-				== SCAN_STATE_SCANNING) {
-				aisFsmStateAbort_SCAN(prAdapter, u4Idx);
-			};
 
 			rStatus = kalIoctlByBssIdx(prGlueInfo,
 				wlanoidSetDisassociate,
