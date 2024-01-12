@@ -352,6 +352,9 @@ static struct cfg80211_ops mtk_wlan_ops = {
 	.del_station = mtk_cfg80211_del_station,
 #endif
 	.scan = mtk_cfg80211_scan,
+#if KERNEL_VERSION(4, 5, 0) <= CFG80211_VERSION_CODE
+	.abort_scan = mtk_cfg80211_abort_scan,
+#endif
 	.connect = mtk_cfg80211_connect,
 	.disconnect = mtk_cfg80211_disconnect,
 	.join_ibss = mtk_cfg80211_join_ibss,
