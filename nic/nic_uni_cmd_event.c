@@ -10462,6 +10462,9 @@ void nicUniEventAddKeyDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			break;
 		}
 	}
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	mldCheckStarecList(ad);
+#endif
 }
 
 static void nicUniEventPpStat(

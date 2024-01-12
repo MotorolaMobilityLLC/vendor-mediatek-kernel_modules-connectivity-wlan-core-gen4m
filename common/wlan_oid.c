@@ -2883,6 +2883,7 @@ wlanSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	DBGLOG_MEM8(RSN, TRACE, &prNewKey->rKeyRSC, sizeof(uint64_t));
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
+	mldCheckStarecList(prAdapter);
 	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
 	/* KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE */
 	if (prNewKey->i4LinkId != MLD_LINK_ID_NONE) {
