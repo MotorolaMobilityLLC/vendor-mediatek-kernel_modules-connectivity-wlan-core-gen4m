@@ -175,11 +175,11 @@ void StatsEnvTxTime2Hif(IN struct ADAPTER *prAdapter,
 			IN struct MSDU_INFO *prMsduInfo);
 
 void StatsEnvRxTime2Host(IN struct ADAPTER *prAdapter,
-	struct sk_buff *prSkb, void *prNetDev);
+	void *pvPacket, void *prNetDev);
 
 void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb);
 
-void StatsTxPktInfoDisplay(struct sk_buff *prSkb);
+void StatsTxPktInfoDisplay(void *pvPacket);
 
 void StatsResetTxRx(void);
 

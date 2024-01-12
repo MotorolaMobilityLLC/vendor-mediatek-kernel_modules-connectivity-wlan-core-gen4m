@@ -225,40 +225,6 @@ void kal_vfree(void *addr)
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
-void *kal_skb_push(struct sk_buff *skb, unsigned int len)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	return NULL;
-}
-
-unsigned char *kal_skb_put(struct sk_buff *skb, unsigned int len)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	return NULL;
-}
-
-uint32_t kal_skb_headroom(struct sk_buff *skb)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	return 0;
-}
-
-void kal_skb_reset_tail_pointer(struct sk_buff *skb)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
-void kal_skb_trim(struct sk_buff *skb, unsigned int len)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
-struct sk_buff *kal_dev_alloc_skb(unsigned int length)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	return NULL;
-}
-
 int kal_test_and_clear_bit(unsigned long bit, unsigned long *p)
 {
 	unsigned int res;
