@@ -708,6 +708,7 @@ u_int8_t secIsRobustActionFrame(struct ADAPTER *prAdapter, void *prPacket)
 	case CATEGORY_ROBUST_AV_STREAMING_ACTION:
 	case CATEGORY_VENDOR_SPECIFIC_PROTECTED_ACTION:
 	case CATEGORY_PROTECTED_EHT_ACTION:
+		DBGLOG(RSN, TRACE, "category %d\n", prActFrame->ucCategory);
 		return TRUE;
 	default:
 		return FALSE;
