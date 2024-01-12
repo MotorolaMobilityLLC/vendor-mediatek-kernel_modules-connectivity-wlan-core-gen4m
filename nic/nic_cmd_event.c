@@ -4435,6 +4435,15 @@ bool nicBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
+#if CFG_SUPPORT_DFS
+	if (prBssInfo->CSAParams.u4MaxSwitchTime != 0) {
+		DBGLOG(RSN, INFO,
+			"DFS/Extra CSA is on-going, time:%d, filter out BTO event\n",
+			prBssInfo->CSAParams.u4MaxSwitchTime);
+		return FALSE;
+	}
+#endif
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && defined(CFG_SUPPORT_UNIFIED_COMMAND)
 	if (ucBcnTimeoutReason != UNI_ENUM_BCN_MLINK_NULL_FRAME_THRESHOLD) {
 		DBGLOG(ML, INFO, "Only single link BTO reason=%d",

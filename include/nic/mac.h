@@ -2829,6 +2829,15 @@ struct IE_EX_CHANNEL_SWITCH {
 	uint8_t ucChannelSwitchCount;
 } __KAL_ATTRIB_PACKED__;
 
+/* 9.4.2.217 Max Channel Switch Time element*/
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_MAX_CHANNEL_SWITCH_TIME {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucExtId;
+	uint8_t ucChannelSwitchTime[3];
+} __KAL_ATTRIB_PACKED__;
+
 __KAL_ATTRIB_PACKED_FRONT__
 struct IE_TIMEOUT_INTERVAL {
 	uint8_t ucId;
