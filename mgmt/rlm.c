@@ -1007,26 +1007,26 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	struct IE_EXT_CAP *prExtCap;
 	u_int8_t fg40mAllowed, fgAppendVhtCap;
 	struct STA_RECORD *prStaRec;
-	struct CONNECTION_SETTINGS *prConnSettings;
-	const uint8_t *extCapConn;
+	struct CONNECTION_SETTINGS *prConnSettings = NULL;
+	const uint8_t *extCapConn = NULL;
 	uint32_t extCapIeLen = 0;
-#if CFG_SUPPORT_PASSPOINT
-	struct HS20_INFO *prHS20Info = aisGetHS20Info(
-			prAdapter, prBssInfo->ucBssIndex);
-#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
 
 	fg40mAllowed = prBssInfo->fgAssoc40mBwAllowed;
-	prConnSettings = aisGetConnSettings(prAdapter, prBssInfo->ucBssIndex);
-	extCapConn = kalFindIeMatchMask(ELEM_ID_EXTENDED_CAP,
-				       prConnSettings->pucAssocIEs,
-				       prConnSettings->assocIeLen,
-				       NULL, 0, 0, NULL);
-	if (extCapConn && IS_BSS_AIS(prBssInfo)) {
-		extCapIeLen = ELEM_HDR_LEN + RSN_IE(extCapConn)->ucLength;
-		DBGLOG_MEM8(SAA, INFO, extCapConn, extCapIeLen);
+	if (IS_BSS_AIS(prBssInfo)) {
+		prConnSettings =
+			aisGetConnSettings(prAdapter, prBssInfo->ucBssIndex);
+		extCapConn = kalFindIeMatchMask(ELEM_ID_EXTENDED_CAP,
+					       prConnSettings->pucAssocIEs,
+					       prConnSettings->assocIeLen,
+					       NULL, 0, 0, NULL);
+		if (extCapConn) {
+			extCapIeLen =
+				ELEM_HDR_LEN + RSN_IE(extCapConn)->ucLength;
+			DBGLOG_MEM8(SAA, INFO, extCapConn, extCapIeLen);
+		}
 	}
 
 	/* Add Extended Capabilities IE */
@@ -1077,19 +1077,6 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 			    ELEM_EXT_CAP_TWT_REQUESTER_BIT);
 #endif
-#endif
-
-#if CFG_SUPPORT_PASSPOINT
-	if (prHS20Info && prHS20Info->fgConnectHS20AP == TRUE) {
-		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-			    ELEM_EXT_CAP_INTERWORKING_BIT);
-		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-			    ELEM_EXT_CAP_QOSMAPSET_BIT);
-		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-			    ELEM_EXT_CAP_BSS_TRANSITION_BIT);
-		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
-			    ELEM_EXT_CAP_WNM_NOTIFICATION_BIT);
-	}
 #endif
 
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT

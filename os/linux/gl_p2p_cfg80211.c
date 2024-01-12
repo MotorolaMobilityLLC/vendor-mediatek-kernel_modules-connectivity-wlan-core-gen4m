@@ -1280,6 +1280,11 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 
 		DBGLOG(P2P, TRACE, "Finish IE Buffer.\n");
 
+		COPY_MAC_ADDR(prMsgScanRequest->aucBSSID, request->bssid);
+
+		DBGLOG(P2P, TRACE, "Finish BSSID="MACSTR"\n",
+			MAC2STR(request->bssid));
+
 		/* Abort previous scan */
 		rStatus = kalIoctl(prGlueInfo, wlanoidAbortP2pScan,
 			&ucBssIdx, sizeof(ucBssIdx), &u4SetInfoLen);

@@ -4352,7 +4352,7 @@ void aisUpdateAllBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 			break;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		prSwRfb = mldDuplicateAssocSwRfb(prAdapter,
+		prSwRfb = mldDupAssocSwRfb(prAdapter,
 			prAssocRspSwRfb, prStaRec);
 		if (prSwRfb) {
 			aisUpdateBssInfoForJOIN(prAdapter,
@@ -5954,7 +5954,7 @@ void aisUpdateBssInfoForRoamingAllAP(IN struct ADAPTER *prAdapter,
 			break;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		prSwRfb = mldDuplicateAssocSwRfb(prAdapter,
+		prSwRfb = mldDupAssocSwRfb(prAdapter,
 			prAssocRspSwRfb, prStaRec);
 		if (prSwRfb) {
 			aisUpdateBssInfoForRoamingAP(prAdapter,
@@ -7817,6 +7817,9 @@ u_int8_t clearAxBlacklist(IN struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct LINK *prBlacklist;
 	struct AX_BLACKLIST_ITEM *prBlacklistItem, *prBlacklistItemNext;
+
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
+		return FALSE;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 

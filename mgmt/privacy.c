@@ -758,10 +758,9 @@ u_int8_t secIsWepBss(IN struct ADAPTER *prAdapter,
 {
 	enum ENUM_WEP_STATUS eEncStatus;
 
-	eEncStatus = aisGetEncStatus(prAdapter,
-		prBssInfo->ucBssIndex);
-
 	if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
+		eEncStatus = aisGetEncStatus(prAdapter,
+			prBssInfo->ucBssIndex);
 		if (eEncStatus ==
 		    ENUM_ENCRYPTION1_ENABLED)
 			return TRUE;

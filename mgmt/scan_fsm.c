@@ -430,7 +430,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		kalMemCopy(prCmdScanReq->aucIE, prScanParam->aucIE,
 			sizeof(uint8_t) * prCmdScanReq->u2IELen);
 
-	log_dbg(SCN, TRACE, "ScanReqV2: ScanType=%d,BSS=%u,SSIDType=%d,Num=%u,Ext=%u,ChannelType=%d,Num=%d,Ext=%u,Seq=%u,Ver=%u,Dw=%u,Min=%u,Func=(0x%X,0x%X),Mac="
+	log_dbg(SCN, TRACE, "ScanReqV2: ScanType=%d,BSS=%u,SSIDType=%d,Num=%u,Ext=%u,ChannelType=%d,Num=%d,Ext=%u,Seq=%u,Ver=%u,Dw=%u,Min=%u,IELen=%d,Func=(0x%X,0x%X),Mac="
 		MACSTR ",BSSID:"MACSTR"\n",
 		prCmdScanReq->ucScanType,
 		prCmdScanReq->ucBssIndex,
@@ -443,6 +443,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		prCmdScanReq->ucSeqNum, prCmdScanReq->auVersion[0],
 		prCmdScanReq->u2ChannelDwellTime,
 		prCmdScanReq->u2ChannelMinDwellTime,
+		prCmdScanReq->u2IELen,
 		prCmdScanReq->ucScnFuncMask,
 		prCmdScanReq->u4ScnFuncMaskExtend,
 		MAC2STR(prCmdScanReq->aucRandomMac),
@@ -1302,7 +1303,7 @@ bool scnEnableSplitScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 		}
 	}
 	/* Enable Pre-condition: not in roaming, avoid roaming scan too long */
-	if (ucBssIndex < KAL_AIS_NUM) {
+	if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
 		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 		if (prAisFsmInfo &&
 		    prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&

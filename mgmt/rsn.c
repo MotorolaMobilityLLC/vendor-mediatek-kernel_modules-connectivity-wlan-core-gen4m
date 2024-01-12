@@ -1573,7 +1573,6 @@ void rsnGenerateWPAIE(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex;
 	struct BSS_INFO *prBssInfo;
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
-	enum ENUM_PARAM_AUTH_MODE eAuthMode;
 
 	DEBUGFUNC("rsnGenerateWPAIE");
 
@@ -1581,8 +1580,6 @@ void rsnGenerateWPAIE(IN struct ADAPTER *prAdapter,
 				 prMsduInfo->prPacket + (unsigned long)
 				 prMsduInfo->u2FrameLength);
 	ucBssIndex = prMsduInfo->ucBssIndex;
-	eAuthMode =
-	    aisGetAuthMode(prAdapter, ucBssIndex);
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 	prP2pSpecificBssInfo =
 		prAdapter->rWifiVar.
@@ -1593,26 +1590,15 @@ void rsnGenerateWPAIE(IN struct ADAPTER *prAdapter,
 	if (_addWPAIE_impl(prAdapter, prMsduInfo))
 		return;
 
+	if ((IS_BSS_AIS(prBssInfo) &&
+	    (aisGetAuthMode(prAdapter, ucBssIndex) == AUTH_MODE_WPA ||
+	     aisGetAuthMode(prAdapter, ucBssIndex) == AUTH_MODE_WPA_PSK))
 #if CFG_ENABLE_WIFI_DIRECT
-	if ((prAdapter->fgIsP2PRegistered &&
-	     GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->
-			eNetworkType == NETWORK_TYPE_P2P &&
-	     kalP2PGetTkipCipher(prAdapter->prGlueInfo,
-				 (uint8_t) prBssInfo->u4PrivateData)) ||
-	    (GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->
-			eNetworkType == NETWORK_TYPE_AIS &&
-	     (eAuthMode ==
-			AUTH_MODE_WPA ||
-	      eAuthMode ==
-			AUTH_MODE_WPA_PSK))) {
-#else
-	if (GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->
-			eNetworkType == NETWORK_TYPE_AIS &&
-	    (eAuthMode ==
-			AUTH_MODE_WPA ||
-	     eAuthMode ==
-			AUTH_MODE_WPA_PSK)) {
+	    || (prAdapter->fgIsP2PRegistered && IS_BSS_P2P(prBssInfo) &&
+		 kalP2PGetTkipCipher(prAdapter->prGlueInfo,
+				 (uint8_t) prBssInfo->u4PrivateData))
 #endif
+	) {
 		if (prAdapter->fgIsP2PRegistered && prP2pSpecificBssInfo
 		    && (prP2pSpecificBssInfo->u2WpaIeLen != 0)) {
 			kalMemCopy(pucBuffer,
