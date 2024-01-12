@@ -192,12 +192,12 @@ struct eht_bf_info {
 	uint8_t max_ltf_num_mu;
 };
 
-struct GNU_PACKED eht_phy_capinfo {
+struct eht_phy_capinfo {
 	uint32_t phy_capinfo_1;
 	uint32_t phy_capinfo_2;
-};
+} __KAL_ATTRIB_PACKED__;
 
- #define SET_CAP_BITS(_cap, _capinfo, _value)\
+#define SET_CAP_BITS(_cap, _capinfo, _value)\
 {\
 	_capinfo &= ~_cap##_MASK;\
 	_capinfo |= ((_value << _cap##_SHIFT)\
