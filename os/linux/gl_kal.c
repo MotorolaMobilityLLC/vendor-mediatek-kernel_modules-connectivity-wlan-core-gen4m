@@ -4359,6 +4359,9 @@ int hif_thread(void *data)
 	}
 #endif
 
+	prGlueInfo->hif_thread = NULL;
+	prGlueInfo->u4HifThreadPid = 0xffffffff;
+
 	return 0;
 }
 
@@ -4486,6 +4489,9 @@ int rx_thread(void *data)
 		DBGLOG(INIT, STATE, "[SER][L0] SQC hang!\n");
 	}
 #endif
+
+	prGlueInfo->rx_thread = NULL;
+	prGlueInfo->u4RxThreadPid = 0xffffffff;
 
 	return 0;
 }
@@ -4920,6 +4926,9 @@ int main_thread(void *data)
 		DBGLOG(INIT, STATE, "[SER][L0] SQC hang!\n");
 	}
 #endif
+
+	prGlueInfo->main_thread = NULL;
+	prGlueInfo->u4TxThreadPid = 0xffffffff;
 
 	return 0;
 
