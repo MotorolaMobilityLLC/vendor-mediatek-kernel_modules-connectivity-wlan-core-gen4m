@@ -142,9 +142,7 @@
  *------------------------------------------------------------------------------
  */
 
-#ifndef LINUX
-#define CFG_SUPPORT_CFG_FILE	0
-#else
+#ifndef CFG_SUPPORT_CFG_FILE
 #define CFG_SUPPORT_CFG_FILE	1
 #endif
 
@@ -1168,7 +1166,9 @@
 
 #define CFG_SUPPORT_MTK_SYNERGY			1
 
-#define CFG_SUPPORT_RXSMM_WHITELIST		1
+#ifndef CFG_SUPPORT_RXSMM_WHITELIST
+#define CFG_SUPPORT_RXSMM_WHITELIST		0
+#endif
 
 #define CFG_SUPPORT_VHT_IE_IN_2G		1
 
