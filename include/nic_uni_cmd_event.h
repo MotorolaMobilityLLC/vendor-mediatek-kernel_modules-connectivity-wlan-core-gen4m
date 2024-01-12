@@ -5374,6 +5374,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_BASIC_STATISTICS {
 	uint16_t     u2Tag;
 	uint16_t     u2Length;
+	uint32_t     u4HwMacAwakeDuration; /* SlotIdleHwAwake */
 	uint64_t     u8TransmittedFragmentCount;
 	uint64_t     u8MulticastTransmittedFrameCount;
 	uint64_t     u8FailedCount;
@@ -5388,7 +5389,6 @@ struct UNI_EVENT_BASIC_STATISTICS {
 	uint64_t     u8FCSErrorCount;
 	uint64_t     u8MdrdyCnt;
 	uint64_t     u8ChnlIdleCnt;
-	uint32_t     u4HwMacAwakeDuration; /* SlotIdleHwAwake */
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
