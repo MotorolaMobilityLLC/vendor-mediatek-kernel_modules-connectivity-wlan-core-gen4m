@@ -72,7 +72,7 @@
 #include "coda/soc3_0/wf_wfdma_host_dma0.h"
 #include "coda/soc3_0/wf_wfdma_host_dma1.h"
 
-#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
+#if 1 /* (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1) */
 #include "coda/soc3_0/conn_infra_cfg.h"
 #endif
 

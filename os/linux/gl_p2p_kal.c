@@ -909,7 +909,6 @@ void kalP2PIndicateSDRequest(IN struct GLUE_INFO *prGlueInfo,
 	/* indicate IWEVP2PSDREQ event */
 	wireless_send_event(prGlueInfo->prP2PInfo[0]->prDevHandler,
 		IWEVCUSTOM, &evt, aucBuffer);
-
 }				/* end of kalP2PIndicateSDRequest() */
 
 /*---------------------------------------------------------------------------*/
@@ -938,7 +937,6 @@ void kalP2PIndicateSDResponse(IN struct GLUE_INFO *prGlueInfo,
 	/* indicate IWEVP2PSDREQ event */
 	wireless_send_event(prGlueInfo->prP2PInfo[0]->prDevHandler,
 		IWEVCUSTOM, &evt, aucBuffer);
-
 }				/* end of kalP2PIndicateSDResponse() */
 
 /*---------------------------------------------------------------------------*/
@@ -970,7 +968,6 @@ void kalP2PIndicateTXDone(IN struct GLUE_INFO *prGlueInfo,
 	/* indicate IWEVP2PSDREQ event */
 	wireless_send_event(prGlueInfo->prP2PInfo[0]->prDevHandler,
 		IWEVCUSTOM, &evt, aucBuffer);
-
 }				/* end of kalP2PIndicateSDResponse() */
 
 struct net_device *kalP2PGetDevHdlr(struct GLUE_INFO *prGlueInfo)
