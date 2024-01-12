@@ -533,6 +533,7 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(struct ADAPTER *prAdapter,
 
 	prStaRec->ucStaState = STA_STATE_1;
 	prStaRec->ucJoinFailureCount = 0;
+	prStaRec->ucAuthAlgNum = AUTH_ALGORITHM_NUM;
 
 	/* 4 <2> Update information from BSS_DESC_T to current P_STA_RECORD_T */
 	prStaRec->u2CapInfo = prBssDesc->u2CapInfo;

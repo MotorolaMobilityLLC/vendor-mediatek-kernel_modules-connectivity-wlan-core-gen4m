@@ -2127,8 +2127,7 @@ void rsnGenerateRSNIEImpl(struct ADAPTER *prAdapter,
 		entry = aisSearchPmkidEntry(prAdapter, prStaRec, ucBssIndex);
 
 		/* Fill PMKID Count and List field */
-		if (entry && prStaRec->ucAuthAlgNum ==
-		    (uint8_t) AUTH_ALGORITHM_NUM_OPEN_SYSTEM) {
+		if (entry) {
 			uint8_t *pmk = entry->rBssidInfo.arPMKID;
 
 			RSN_IE(pucBuffer)->ucLength = 38;

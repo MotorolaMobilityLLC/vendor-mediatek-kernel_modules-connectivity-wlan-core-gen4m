@@ -1112,8 +1112,13 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 		prFilsCacheId, /* cache id */
 		prAisBssInfo->ucBssIndex); /* pmksa of main link*/
 
-	/* do not use invalid PMKID */
-	if (entry && rsnApInvalidPMK(entry->u2StatusCode))
+	/* Do not use PMKID if
+	 * 1. it is invalid
+	 * 2. auth type is SAE
+	 */
+	if (entry &&
+		(rsnApInvalidPMK(entry->u2StatusCode) ||
+		 prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_SAE))
 		entry = NULL;
 
 	return entry;
