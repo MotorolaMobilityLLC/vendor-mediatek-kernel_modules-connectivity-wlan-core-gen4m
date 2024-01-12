@@ -423,6 +423,7 @@ struct BUS_INFO {
 		u_int32_t intrBitMask);
 	void (*hifRst)(struct GLUE_INFO *prGlueInfo);
 	void (*initPcieInt)(struct GLUE_INFO *prGlueInfo);
+	void (*powerOffPcieMac)(struct ADAPTER *prAdapter);
 	void (*hwControlVote)(struct ADAPTER *prAdapter,
 		uint8_t enable, uint32_t u4WifiUser);
 #if CFG_SUPPORT_WIFI_SLEEP_COUNT
