@@ -1288,7 +1288,7 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 		kal_gro_flush(prGlueInfo->prAdapter, prNetDev);
 		spin_unlock_bh(&prNetDevPrivate->napi_spinlock);
 		preempt_enable();
-		DBGLOG_LIMITED(INIT, INFO, "napi_gro_receive:%p\n", prNetDev);
+		DBGLOG_LIMITED(INIT, TRACE, "napi_gro_receive:%p\n", prNetDev);
 		return WLAN_STATUS_SUCCESS;
 	}
 #endif
