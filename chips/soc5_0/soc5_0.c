@@ -3630,11 +3630,11 @@ static void soc5_0_DumpOtherCr(struct ADAPTER *prAdapter)
 	 * host ck
 	 * Read 0x1000_6E04[4] should be 1’b0 (conn_clk_dis)
 	 */
-	connac2x_DbgCrRead(prAdapter, 0x10006178, &u4Val);
+	connac2x_DbgCrRead(NULL, 0x10006178, &u4Val);
 	DBGLOG(INIT, INFO, "0x10006178=[%x]\n", u4Val);
-	connac2x_DbgCrRead(prAdapter, 0x10006EF4, &u4Val);
+	connac2x_DbgCrRead(NULL, 0x10006EF4, &u4Val);
 	DBGLOG(INIT, INFO, "0x10006EF4=[%x]\n", u4Val);
-	connac2x_DbgCrRead(prAdapter, 0x10006E04, &u4Val);
+	connac2x_DbgCrRead(NULL, 0x10006E04, &u4Val);
 	DBGLOG(INIT, INFO, "0x10006E04=[%x]\n", u4Val);
 
 	/* Connsys reset status
@@ -3642,21 +3642,21 @@ static void soc5_0_DumpOtherCr(struct ADAPTER *prAdapter)
 	 *    Read 0x1000_7200[31:24] should be 8’h88  (ap_sw_rst_b)
 	 * b. Read 0x1000_6E04[0] should be 1’b1 (ap_sw_rst_b)
 	 */
-	connac2x_DbgCrRead(prAdapter, 0x10007200, &u4Val);
+	connac2x_DbgCrRead(NULL, 0x10007200, &u4Val);
 	DBGLOG(INIT, INFO, "0x10007200=[%x]\n", u4Val);
 
 	/* Sleep protect status
 	 * a. Read 0x1000_1228[19] should be 1’b0 (ap2conn_slpprot_rx_rdy)
 	 * b. Read 0x1000_1228[13] should be 1’b0 (ap2conn_slpprot_tx_rdy)
 	 */
-	connac2x_DbgCrRead(prAdapter, 0x10001228, &u4Val);
+	connac2x_DbgCrRead(NULL, 0x10001228, &u4Val);
 	DBGLOG(INIT, INFO, "0x10001228=[%x]\n", u4Val);
 
 	/* Infra bus hang status
 	 * a. Read 0x1002_3000 ([8] should be 1’b0) (infra bus timeout irq)
 	 * b. Read 0x1002_3408 ~ 0x1002_3474
 	 */
-	connac2x_DbgCrRead(prAdapter, 0x10023000, &u4Val);
+	connac2x_DbgCrRead(NULL, 0x10023000, &u4Val);
 	DBGLOG(INIT, INFO, "0x10023000=[%x]\n", u4Val);
 	connac2x_DumpCrRange(NULL, 0x10023408, 27, "Infra bus hang status");
 }
