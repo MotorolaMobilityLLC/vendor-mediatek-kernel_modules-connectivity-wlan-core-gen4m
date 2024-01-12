@@ -425,6 +425,7 @@ static void heRlmFillHeCapIE(
 	struct BSS_INFO *prBssInfo,
 	struct MSDU_INFO *prMsduInfo)
 {
+	enum ENUM_BAND eHePhyCapBand = BAND_5G;
 	struct _IE_HE_CAP_T *prHeCap;
 	struct _HE_SUPPORTED_MCS_FIELD *prHeSupportedMcsSet;
 	uint32_t u4OverallLen = OFFSET_OF(struct _IE_HE_CAP_T, aucVarInfo[0]);
@@ -488,16 +489,24 @@ static void heRlmFillHeCapIE(
 		&& prBssInfo->fgAssoc40mBwAllowed)
 		HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW40_2G(prHeCap->ucHePhyCap);
 
-	if (heGetBssBandBw(prAdapter, prBssInfo, BAND_5G)
-		>= MAX_BW_40MHZ)
-		HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW40_BW80_5G(
-			prHeCap->ucHePhyCap);
+	/* If current Bss band is 6G, use 6G BW to set PHY CAP, otherwise
+	 * use 5G BW to set it. Prevent that ucSta5gBandwidth is differet with
+	 * ucSta6gBandwidth
+	 */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prBssInfo->eBand == BAND_6G)
+		eHePhyCapBand = BAND_6G;
+#endif
 
-	if (heGetBssBandBw(prAdapter, prBssInfo, BAND_5G)
+	if (heGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand)
+		>= MAX_BW_40MHZ)
+		HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW40_BW80_5G(prHeCap->ucHePhyCap);
+
+	if (heGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand)
 		>= MAX_BW_160MHZ)
 		HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW160_5G(prHeCap->ucHePhyCap);
 
-	if (heGetBssBandBw(prAdapter, prBssInfo, BAND_5G)
+	if (heGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand)
 		>= MAX_BW_80_80_MHZ)
 		HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW80P80_5G(prHeCap->ucHePhyCap);
 
