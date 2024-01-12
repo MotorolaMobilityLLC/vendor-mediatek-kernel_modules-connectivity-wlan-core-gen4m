@@ -310,9 +310,11 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 	/* Queue Empty Status */
 	DBGLOG(HAL, INFO, "PSE Queue Empty Status:\n");
 	DBGLOG(HAL, INFO,
-		"\tQUEUE_EMPTY(0x820680b0): 0x%08x\n", pse_stat);
+		"\tQUEUE_EMPTY(0x820680b0): 0x%08x\n",
+		pse_stat);
 	DBGLOG(HAL, INFO,
-		"\tQUEUE_EMPTY(0x820680b4): 0x%08x\n", pse_queue_empty_mask);
+		"\tQUEUE_EMPTY_MASK(0x820680b4): 0x%08x\n",
+		pse_queue_empty_mask);
 	DBGLOG(HAL, INFO,
 		"\t\tCPU Q0/1/2/3 empty=%d/%d/%d/%d\n",
 		 pse_stat & 0x1, ((pse_stat & 0x2) >> 1),
@@ -1214,6 +1216,7 @@ static char *q_idx_lmac_str[] = {"WMM0_AC0", "WMM0_AC1", "WMM0_AC2", "WMM0_AC3",
 void halGetPsePayload(IN struct ADAPTER *prAdapter, uint32_t fid,
 		uint32_t *result)
 {
+#ifdef CONNAC2X2
 	uint32_t i = 0, target = 0, remap = 0, remain = 0;
 
 	DBGLOG(HAL, INFO, "Dump fid=%u PSE payload\n", fid);
@@ -1226,11 +1229,13 @@ void halGetPsePayload(IN struct ADAPTER *prAdapter, uint32_t fid,
 		HAL_MCR_RD(prAdapter, (AP2CONN_ADDR_MAP0 + remain + (i * 4)),
 				&result[i]);
 	dumpMemory32(result, 64);
+#endif
 }
 
 void halGetPleTxdInfo(IN struct ADAPTER *prAdapter, uint32_t fid,
 		uint32_t *result)
 {
+#ifdef CONNAC2X2
 	uint32_t i = 0, target = 0, remap = 0, remain = 0;
 
 	DBGLOG(HAL, INFO, "Dump fid=%u PLE TXD\n", fid);
@@ -1243,6 +1248,7 @@ void halGetPleTxdInfo(IN struct ADAPTER *prAdapter, uint32_t fid,
 		HAL_MCR_RD(prAdapter, (AP2CONN_ADDR_MAP0 + remain + (i * 4)),
 				&result[i]);
 	dumpMemory32(result, 64);
+#endif
 }
 
 void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info)
