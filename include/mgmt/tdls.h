@@ -167,6 +167,7 @@ enum TDLS_FRM_ACTION_ID {
 /* 7.3.2.62 Link Identifier element */
 #define ELEM_ID_LINK_IDENTIFIER						101
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_LINK_IDENTIFIER {
 	uint8_t ucId;
 	uint8_t ucLength;

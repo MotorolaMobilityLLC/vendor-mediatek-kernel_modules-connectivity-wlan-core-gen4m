@@ -1174,6 +1174,7 @@ struct NIC_EFUSE_ADDRESS {
 	uint32_t u4EfuseEndAddress;   /* Efuse End Address */
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct TPUT_FACTOR_LIST_T {
 	/** Event source: TPUT_EVENT_START ~ */
 	uint32_t u4EvtId;
@@ -1184,6 +1185,7 @@ struct TPUT_FACTOR_LIST_T {
 	uint8_t Cont[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct TPUT_SUB_FACTOR_T {
 	/** sub header */
 	uint8_t ucTag;
@@ -1193,6 +1195,7 @@ struct TPUT_SUB_FACTOR_T {
 	uint8_t Cont[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct TPUT_BKRS_FACTOR_T {
 	/** Collection type: TPUT_COLL_CMD_INIT ~ */
 	uint32_t u4EvtId;

@@ -86,6 +86,7 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct STAREC_COMMON_T {
 	/* Basic STA record (Group0) */
 	uint16_t u2Tag;		/* Tag = 0x00 */
@@ -98,6 +99,7 @@ struct STAREC_COMMON_T {
 	uint16_t u2ExtraInfo;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct CMD_STAREC_UPDATE_T {
 	uint8_t	ucBssIndex;
 	uint8_t	ucWlanIdx;
@@ -123,6 +125,7 @@ struct EXT_CMD_CR4_DMASHDL_DVT_T {
 };
 #endif /* CFG_SUPPORT_DMASHDL_SYSDVT */
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct CMD_BSSINFO_UPDATE_T {
 	uint8_t	ucBssIndex;
 	uint8_t	ucReserve;
@@ -133,6 +136,7 @@ struct CMD_BSSINFO_UPDATE_T {
 
 
 /* TAG ID 0x00: */
+__KAL_ATTRIB_PACKED_FRONT__
 struct BSSINFO_CONNECT_OWN_DEV_T {
 	/* BSS connect to own dev (Tag0) */
 	uint16_t u2Tag;		/* Tag = 0x00 */
@@ -145,6 +149,7 @@ struct BSSINFO_CONNECT_OWN_DEV_T {
 } __KAL_ATTRIB_PACKED__;
 
 /* TAG ID 0x01: */
+__KAL_ATTRIB_PACKED_FRONT__
 struct BSSINFO_BASIC_T {
 	/* Basic BSS information (Tag1) */
 	uint16_t u2Tag;		/* Tag = 0x01 */
@@ -163,6 +168,7 @@ struct BSSINFO_BASIC_T {
 } __KAL_ATTRIB_PACKED__;
 
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct CMD_DEVINFO_UPDATE_T {
 	uint8_t ucOwnMacIdx;
 	uint8_t ucReserve;
@@ -171,6 +177,7 @@ struct CMD_DEVINFO_UPDATE_T {
 	uint8_t aucBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct CMD_DEVINFO_ACTIVE_T {
 	uint16_t u2Tag;		/* Tag = 0x00 */
 	uint16_t u2Length;

@@ -359,6 +359,7 @@ enum NAN_NDP_ROLE {
  */
 
 /* NAN Information Header */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_IE_T {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -368,6 +369,7 @@ struct _NAN_IE_T {
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN Action Frame */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ACTION_FRAME_T {
 	/* action MAC header */
 	uint16_t u2FrameCtrl;
@@ -387,6 +389,7 @@ struct _NAN_ACTION_FRAME_T {
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN SDF Action Frame */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_SDF_FRAME_T {
 	/* action MAC header */
 	uint16_t u2FrameCtrl;
@@ -405,6 +408,7 @@ struct _NAN_SDF_FRAME_T {
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN attribute general format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_HDR_T {
 	uint8_t ucAttrId;
 	uint16_t u2Length;
@@ -412,6 +416,7 @@ struct _NAN_ATTR_HDR_T {
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN attribute definitions */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_DEVICE_CAPABILITY_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_DEVICE_CAPABILITY */
 	uint16_t u2Length;
@@ -424,6 +429,7 @@ struct _NAN_ATTR_DEVICE_CAPABILITY_T {
 	uint8_t ucCapabilities;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_NDP_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_NDP */
 	uint16_t u2Length;
@@ -438,18 +444,21 @@ struct _NAN_ATTR_NDP_T {
 	uint8_t aucNDPSpecificInfo[1]; /*to be defined*/
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_NDPE_GENERAL_TLV_T {
 	uint8_t ucType;
 	uint16_t u2Length;
 	uint8_t aucValue[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T {
 	uint8_t ucType; /* NAN_ATTR_NDPE_TLV_TYPE_IPV6_LINK_LOCAL */
 	uint16_t u2Length;
 	uint8_t aucInterfaceId[8];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_NDPE_SVC_INFO_TLV_T {
 	uint8_t ucType; /* NAN_ATTR_NDPE_TLV_TYPE_SERVICE_INFO */
 	uint16_t u2Length;
@@ -457,6 +466,7 @@ struct _NAN_ATTR_NDPE_SVC_INFO_TLV_T {
 	uint8_t aucBody[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T {
 	uint8_t ucType; /* NAN_ATTR_NDPE_TLV_TYPE_SERVICE_INFO */
 	uint16_t u2Length;
@@ -465,6 +475,7 @@ struct _NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T {
 	uint8_t aucBody[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_NDPE_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_NDP_EXTENSION */
 	uint16_t u2Length;
@@ -480,6 +491,7 @@ struct _NAN_ATTR_NDPE_T {
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN Cluster attribute format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_CLUSTER_T {
 	uint8_t ucId;
 	uint16_t u2Length;
@@ -489,6 +501,7 @@ struct _NAN_ATTR_CLUSTER_T {
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN Master Indication Attribute format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_MASTER_INDICATION_T {
 	uint8_t ucId;
 	uint16_t u2Length;
@@ -496,12 +509,14 @@ struct _NAN_ATTR_MASTER_INDICATION_T {
 	uint8_t ucRandomFactor;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_AVAILABILITY_ENTRY_T {
 	uint16_t u2Length;
 	uint16_t u2EntryControl;
 	uint8_t aucTimeBitmapAndBandChnlEntry[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_NAN_AVAILABILITY_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_NAN_AVAILABILITY */
 	uint16_t u2Length;
@@ -510,6 +525,7 @@ struct _NAN_ATTR_NAN_AVAILABILITY_T {
 	uint8_t aucAvailabilityEntryList[1]; /* NAN_AVAILABILITY_ENTRY_T */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_SCHEDULE_ENTRY_T {
 	uint8_t ucMapID;
 	uint16_t u2TimeBitmapControl;
@@ -517,6 +533,7 @@ struct _NAN_SCHEDULE_ENTRY_T {
 	uint8_t aucTimeBitmap[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_NDC_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_NDC */
 	uint16_t u2Length;
@@ -526,6 +543,7 @@ struct _NAN_ATTR_NDC_T {
 	/* in structure of NAN_SCHEDULE_ENTRY_T */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_NDL_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_NDL */
 	uint16_t u2Length;
@@ -538,6 +556,7 @@ struct _NAN_ATTR_NDL_T {
 	uint8_t aucImmutableSchedule[1]; /* optional: NAN_SCHEDULE_ENTRY_T */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_NDL_QOS_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_NDL_QOS */
 	uint16_t u2Length;
@@ -545,6 +564,7 @@ struct _NAN_ATTR_NDL_QOS_T {
 	uint16_t u2MaxLatency;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_UNALIGNED_SCHEDULE_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_UNALIGNED_SCHEDULE */
 	uint16_t u2Length;
@@ -558,6 +578,7 @@ struct _NAN_ATTR_UNALIGNED_SCHEDULE_T {
 	/* ULW Control (O) + BandID/ChannelEntry*/
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_ELEMENT_CONTAINER_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_ELEMENT_CONTAINER */
 	uint16_t u2Length;
@@ -565,11 +586,13 @@ struct _NAN_ATTR_ELEMENT_CONTAINER_T {
 	uint8_t aucElements[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_CIPHER_SUITE_ATTRIBUTE_T {
 	uint8_t ucCipherSuiteID;
 	uint8_t ucPublishID;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_CIPHER_SUITE_INFO_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_CIPHER_SUITE_INFO */
 	uint16_t u2Length;
@@ -577,6 +600,7 @@ struct _NAN_ATTR_CIPHER_SUITE_INFO_T {
 	uint8_t aucCipherSuiteList[1]; /* NAN_CIPHER_SUITE_ATTRIBUTE_T */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_SECURITY_CONTEXT_ID_T {
 	uint16_t u2SecurityContextIDTypeLength;
 	uint8_t ucSecurityContextIDType;
@@ -584,12 +608,14 @@ struct _NAN_SECURITY_CONTEXT_ID_T {
 	uint8_t aucSecurityContextID[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_SECURITY_CONTEXT_INFO_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_SECURITY_CONTEXT_INFO */
 	uint16_t u2Length;
 	uint8_t aucSecurityContextIDList[1]; /* NAN_SECURITY_CONTEXT_ID_T */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_SHARED_KEY_DESCRIPTOR_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_SHARED_KEY_DESCRIPTOR */
 	uint16_t u2Length;
@@ -598,6 +624,7 @@ struct _NAN_ATTR_SHARED_KEY_DESCRIPTOR_T {
 } __KAL_ATTRIB_PACKED__;
 
 /** NAN 2.0 Table 82 */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_BAND_CHNL_LIST_T {
 	uint8_t ucType : 1;
 	uint8_t ucNonContiguous : 1;
@@ -607,6 +634,7 @@ struct _NAN_BAND_CHNL_LIST_T {
 } __KAL_ATTRIB_PACKED__;
 
 /** NAN 2.0 Table 84 */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_CHNL_ENTRY_T {
 	uint8_t ucOperatingClass;
 	uint16_t u2ChannelBitmap;
@@ -614,6 +642,7 @@ struct _NAN_CHNL_ENTRY_T {
 	uint16_t u2AuxChannelBitmap;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_FTM_PARAMETERS_T {
 	uint32_t max_burst_duration : 4;
 	uint32_t min_delata_ftm : 6;
@@ -623,6 +652,7 @@ struct _NAN_ATTR_FTM_PARAMETERS_T {
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN Ranging Info attribute format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_RANGING_INFO_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_RANGING_INFORMATION */
 	uint16_t u2Length;
@@ -631,6 +661,7 @@ struct _NAN_ATTR_RANGING_INFO_T {
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN Ranging Setup attribute format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_RANGING_SETUP_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_RANGING_SETUP */
 	uint16_t u2Length;
@@ -644,12 +675,14 @@ struct _NAN_ATTR_RANGING_SETUP_T {
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN FTM Range Report attribute format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_FTM_RANGE_REPORT_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_FTM_RANGING_REPORT */
 	uint16_t u2Length;
 	uint8_t aucFtmRangeReport[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_SDA_T {
 	uint8_t ucAttribID;
 	uint16_t u2Len;
@@ -660,6 +693,7 @@ struct _NAN_ATTR_SDA_T {
 	uint8_t ucANASDFdetail[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_SDEA_T {
 	uint8_t ucAttribID;
 	uint16_t u2Len;

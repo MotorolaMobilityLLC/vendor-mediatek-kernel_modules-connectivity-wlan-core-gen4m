@@ -17,6 +17,7 @@
 
 #define TXM_UT_CONTENT_LEN 20
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _WLAN_TX_UT_FRAME_T {
 	/* TX UT MAC header */
 	uint16_t u2FrameCtrl;		   /* Frame Control */
