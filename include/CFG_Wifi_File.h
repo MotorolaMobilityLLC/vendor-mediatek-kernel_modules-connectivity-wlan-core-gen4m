@@ -523,7 +523,12 @@ struct WIFI_CFG_PARAM_STRUCT {
 	uint8_t ucRegChannelListIndex;
 	uint8_t aucRegSubbandInfo[36];
 	uint8_t ucEnable5GBand;	/* move from 256+ offset to here */
-	uint8_t aucReserved0[256 - 241];
+	uint8_t ucNeedCheckLDO;
+	uint8_t ucDefaultTestMode;
+	uint8_t ucSupportCoAnt;
+	uint8_t aucReserved0[12];
+	/* NVRAM offset[256] ~ offset[255] */
+	/* uint8_t aucReserved0[256 - 241]; */
 
 	uint8_t ucTypeID0;
 	uint8_t ucTypeLen0LSB;

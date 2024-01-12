@@ -2291,7 +2291,10 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	if (prFwDlOps->phyAction)
 		prFwDlOps->phyAction(prAdapter);
 
-	DBGLOG(INIT, TRACE, "FW download Start\n");
+	if (prChipInfo->coantVFE28En)
+		prChipInfo->coantVFE28En(prAdapter);
+
+	DBGLOG(INIT, INFO, "FW download Start\n");
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	if (prChipInfo->coexpccifon) {
 		rPccifstatus = prChipInfo->coexpccifon();
