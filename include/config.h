@@ -1438,8 +1438,6 @@
  * Flags of Sniffer SUPPORT
  *------------------------------------------------------------------------------
  */
-#define CFG_DUAL_P2PLIKE_INTERFACE         1
-
 #define RUNNING_P2P_MODE 0
 #define RUNNING_AP_MODE 1
 #define RUNNING_DUAL_AP_MODE 2

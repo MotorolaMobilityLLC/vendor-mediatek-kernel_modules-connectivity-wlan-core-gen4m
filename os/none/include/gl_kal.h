@@ -50,16 +50,7 @@ extern int g_u4WlanInitFlag;
  */
 /* Define how many concurrent operation networks. */
 #define KAL_AIS_NUM           1
-
-#if CFG_DUAL_P2PLIKE_INTERFACE
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-#define KAL_P2P_NUM             2
-#else
-#define KAL_P2P_NUM             2
-#endif
-#else
-#define KAL_P2P_NUM             1
-#endif
+#define KAL_P2P_NUM	      2
 
 /* Threading */
 #if CFG_SUPPORT_MULTITHREAD

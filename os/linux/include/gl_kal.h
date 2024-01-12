@@ -81,21 +81,17 @@ extern struct platform_device *g_prPlatDev;
  *                              C O N S T A N T S
  *******************************************************************************
  */
-/* Define how many concurrent operation networks. */
-#if CFG_SUPPORT_DUAL_STA
-#define KAL_AIS_NUM           2
+
+#ifdef CFG_STA_NUM
+#define KAL_AIS_NUM CFG_STA_NUM
 #else
-#define KAL_AIS_NUM           1
+#define KAL_AIS_NUM 2
 #endif
 
-#if CFG_DUAL_P2PLIKE_INTERFACE
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-#define KAL_P2P_NUM             2
+#ifdef CFG_P2P_NUM
+#define KAL_P2P_NUM CFG_P2P_NUM
 #else
-#define KAL_P2P_NUM             2
-#endif
-#else
-#define KAL_P2P_NUM             1
+#define KAL_P2P_NUM 2
 #endif
 
 #define OID_HDLR_REC_NUM	5
