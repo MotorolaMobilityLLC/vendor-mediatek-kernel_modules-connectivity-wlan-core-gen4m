@@ -6944,7 +6944,6 @@ void wlanBindBssIdxToNetInterface(struct GLUE_INFO *prGlueInfo,
 	/* prGlueInfo->aprBssIdxToNetInterfaceInfo[ucBssIndex] = prNetIfInfo; */
 }
 
-#if CFG_SUPPORT_NAN
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is to GET BSS index for a network interface.
@@ -6969,7 +6968,7 @@ uint8_t wlanGetBssIdxByNetInterface(struct GLUE_INFO *prGlueInfo,
 
 	return ucIdx;
 }
-#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is to GET network interface for a BSS.
