@@ -1366,11 +1366,33 @@ static bool is_critical_packet(struct net_device *dev,
 #endif
 }
 
+static inline u16 kernel_ndev_select_queue(
+	struct net_device *dev,
+	struct sk_buff *skb,
+	void *fallback)
+{
+	u16 queue_index = 0;
+
+#if KERNEL_VERSION(5, 2, 0) <= LINUX_VERSION_CODE
+	queue_index = netdev_pick_tx(dev, skb, NULL);
+#elif KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE
+	select_queue_fallback_t select_queue = fallback;
+
+	queue_index = select_queue(dev, skb);
+#else
+	queue_index = __netdev_pick_tx(dev, skb);
+#endif
+	return queue_index;
+}
+
 static inline u16 mtk_wlan_ndev_select_queue(
 	struct net_device *dev,
-	struct sk_buff *skb)
+	struct sk_buff *skb,
+	void *fallback)
 {
+#if !CFG_KERNEL_MAPPING_TXQ
 	static u16 ieee8021d_to_queue[8] = { 1, 0, 0, 1, 2, 2, 3, 3 };
+#endif
 	u16 queue_index = 0;
 
 	/* cfg80211_classify8021d returns 0~7 */
@@ -1379,10 +1401,20 @@ static inline u16 mtk_wlan_ndev_select_queue(
 #else
 	skb->priority = cfg80211_classify8021d(skb, NULL);
 #endif
+
+#if CFG_KERNEL_MAPPING_TXQ
+	queue_index = kernel_ndev_select_queue(dev, skb, fallback);
+#else
 	queue_index = ieee8021d_to_queue[skb->priority];
+#endif
+
 	if (is_critical_packet(dev, skb, queue_index)) {
 		skb->priority = WMM_UP_VO_INDEX;
+#if CFG_KERNEL_MAPPING_TXQ
+		queue_index = kernel_ndev_select_queue(dev, skb, fallback);
+#else
 		queue_index = ieee8021d_to_queue[skb->priority];
+#endif
 	}
 
 	return queue_index;
