@@ -1,12 +1,6 @@
-/* SPDX-License-Identifier: GPL-2.0 */
-
+/* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (c) 2020 MediaTek Inc.
- */
-/*
- * Id:
- * //Department/DaVinci/TRUNK/MT6620_5931_WiFi_Driver/os/linux/
- * include/gl_p2p_os.h#28
+ * Copyright (c) 2021 MediaTek Inc.
  */
 
 /*! \file   gl_nan_os.h

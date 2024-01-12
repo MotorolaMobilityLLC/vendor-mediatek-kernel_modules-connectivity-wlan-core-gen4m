@@ -1,8 +1,8 @@
-/* SPDX-License-Identifier: GPL-2.0 */
-
+/* SPDX-License-Identifier: BSD-2-Clause */
 /*
  * Copyright (c) 2021 MediaTek Inc.
  */
+
 #include "gl_os.h"
 #include "debug.h"
 #include "precomp.h"

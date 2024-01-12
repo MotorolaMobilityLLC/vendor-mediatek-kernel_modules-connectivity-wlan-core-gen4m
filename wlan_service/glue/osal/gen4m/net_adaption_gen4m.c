@@ -1,7 +1,8 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (c) 2019 MediaTek Inc.
+ * Copyright (c) 2021 MediaTek Inc.
  */
+
 #include "net_adaption.h"
 #define GEM4M_NET_ADAPTION_SUPPORT 0
 #if GEM4M_NET_ADAPTION_SUPPORT

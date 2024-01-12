@@ -1,3 +1,8 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (c) 2021 MediaTek Inc.
+ */
+
 #ifndef __WF_LWTBL_REGS_H__
 #define __WF_LWTBL_REGS_H__
 #ifdef __cplusplus

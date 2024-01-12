@@ -1,15 +1,9 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (c) 2021 MediaTek Inc.
+ */
 
 /*! \file   wsys_cmd_handler.h
-*/
-
-/*****************************************************************************
-* Copyright (c) 2017 MediaTek Inc.
-*
-* All rights reserved. Copying, compilation, modification, distribution
-* or any other use whatsoever of this material is strictly prohibited
-* except in accordance with a Software License Agreement with
-* MediaTek Inc.
-******************************************************************************
 */
 
 /*****************************************************************************

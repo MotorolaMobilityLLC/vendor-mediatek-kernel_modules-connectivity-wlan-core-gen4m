@@ -1,7 +1,6 @@
-/* SPDX-License-Identifier: GPL-2.0
- *
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
  * Copyright (c) 2021 MediaTek Inc.
- *
  */
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)

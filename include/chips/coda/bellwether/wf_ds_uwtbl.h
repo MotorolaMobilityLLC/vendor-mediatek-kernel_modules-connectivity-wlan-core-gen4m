@@ -1,3 +1,8 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (c) 2021 MediaTek Inc.
+ */
+
 // generate by structure_parser.py at 2021-03-11 08:58:35
 #ifndef __WF_UWTBL_REGS_H__
 #define __WF_UWTBL_REGS_H__

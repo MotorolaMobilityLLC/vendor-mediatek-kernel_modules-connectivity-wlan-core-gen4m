@@ -1,8 +1,8 @@
-/* SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause */
-
+/* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (c) 2020 MediaTek Inc.
+ * Copyright (c) 2021 MediaTek Inc.
  */
+
 /*
  * EAPOL definitions shared between hostapd and wpa_supplicant
  * Copyright (c) 2002-2007, Jouni Malinen <j@w1.fi>

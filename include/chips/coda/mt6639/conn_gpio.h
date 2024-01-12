@@ -1,8 +1,7 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: BSD-2-Clause */
 /*
  * Copyright (c) 2021 MediaTek Inc.
  */
-
 
 #ifndef __CONN_GPIO_REGS_H__
 #define __CONN_GPIO_REGS_H__

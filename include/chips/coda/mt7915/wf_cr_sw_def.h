@@ -1,16 +1,9 @@
-/* [File] : wf_cr_sw_def.h */
-/* [Copyright] : Copyright (C) 2018 Mediatek Incorportion. All rights reserved.
-*/
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (c) 2021 MediaTek Inc.
+ */
 
-/*******************************************************************************
-* Copyright (c) 2009 MediaTek Inc.
-*
-* All rights reserved. Copying, compilation, modification, distribution
-* or any other use whatsoever of this material is strictly prohibited
-* except in accordance with a Software License Agreement with
-* MediaTek Inc.
-********************************************************************************
-*/
+ /* [File] : wf_cr_sw_def.h */
 
 /*******************************************************************************
 * LEGAL DISCLAIMER

@@ -1,7 +1,8 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: BSD-2-Clause */
 /*
  * Copyright (c) 2021 MediaTek Inc.
  */
+
 /*! \file   mt7925.c
 *    \brief  Internal driver stack will export
 *    the required procedures here for GLUE Layer.

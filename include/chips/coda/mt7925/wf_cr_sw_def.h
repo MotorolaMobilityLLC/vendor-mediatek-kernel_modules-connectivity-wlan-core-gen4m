@@ -1,3 +1,8 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (c) 2021 MediaTek Inc.
+ */
+
 #ifndef _WF_CR_SW_DEF_H
 #define _WF_CR_SW_DEF_H
 #define WF_SW_DEF_CR_BASE \
