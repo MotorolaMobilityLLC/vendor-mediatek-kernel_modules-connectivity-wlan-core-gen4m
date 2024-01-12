@@ -214,6 +214,7 @@ CONFIG_ROM_CODE_DOWNLOAD=y
 CONFIG_MLD_LINK_MAX=2
 CONFIG_DBDC_MODE=1
 CONFIG_MTK_WIFI_6G_SUPPORT=y
+CONFIG_NSS=4
 endif
 
 ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
@@ -246,8 +247,12 @@ endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
     ccflags-y += -DCFG_SUPPORT_CONNAC3X=1
+    ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_NSS=0
+    ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_BW=0
 else
     ccflags-y += -DCFG_SUPPORT_CONNAC3X=0
+    ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_NSS=1
+    ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_BW=1
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT), y)
@@ -273,6 +278,10 @@ endif
 
 ifneq ($(CONFIG_DBDC_MODE),)
     ccflags-y += -DCFG_DBDC_MODE=$(CONFIG_DBDC_MODE)
+endif
+
+ifneq ($(CONFIG_NSS),)
+    ccflags-y += -DCFG_NSS=$(CONFIG_NSS)
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT), y)
