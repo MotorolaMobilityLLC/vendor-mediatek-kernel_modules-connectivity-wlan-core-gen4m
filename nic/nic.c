@@ -5516,6 +5516,9 @@ uint32_t nicApplyNetworkAddress(struct ADAPTER
 {
 	uint32_t i;
 
+	_Static_assert(KAL_AIS_NUM < 8,
+		"Large KAL_AIS_NUM would cause out-of-range bit XOR");
+
 	ASSERT(prAdapter);
 
 	/* copy to adapter */
@@ -5586,14 +5589,14 @@ uint32_t nicApplyNetworkAddress(struct ADAPTER
 	kalUpdateMACAddress(prAdapter->prGlueInfo,
 			    prAdapter->rWifiVar.aucMacAddress[0]);
 
-	if (KAL_AIS_NUM > 1) {
+	for (i = 1; i < KAL_AIS_NUM; i++) {
 		/* Generate from wlan0 MAC */
-		COPY_MAC_ADDR(prAdapter->rWifiVar.aucMacAddress[1],
+		COPY_MAC_ADDR(prAdapter->rWifiVar.aucMacAddress[i],
 			prAdapter->rWifiVar.aucMacAddress);
-		/* Update wlan1 address */
-		prAdapter->rWifiVar.aucMacAddress[1][3] ^= BIT(1);
-		DBGLOG(NIC, INFO, "WLAN1 mac: " MACSTR "\n",
-			MAC2STR(prAdapter->rWifiVar.aucMacAddress[1]));
+		/* Update wlan#i address */
+		prAdapter->rWifiVar.aucMacAddress[i][3] ^= BIT(i);
+		DBGLOG(NIC, INFO, "WLAN%d mac: " MACSTR "\n",
+			i, MAC2STR(prAdapter->rWifiVar.aucMacAddress[i]));
 	}
 
 	return WLAN_STATUS_SUCCESS;
