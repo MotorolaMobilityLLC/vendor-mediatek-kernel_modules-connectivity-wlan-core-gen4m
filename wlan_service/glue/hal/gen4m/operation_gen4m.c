@@ -1294,7 +1294,7 @@ static void mt_op_set_manual_he_tb_value(
 	else
 		cmm.field.ltf_sym_midiam = ltf_sym_code[ru_sta->nss];
 	cmm.field.gi_ltf = configs->sgi;
-	cmm.field.ul_bw = tm_bw_hqa_mapping_at((u_int32) configs->bw);
+	cmm.field.ul_bw = tm_bw_hqa_mapping_at((u_int32) configs->per_pkt_bw);
 	cmm.field.stbc = configs->stbc;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
@@ -1494,7 +1494,7 @@ static void mt_op_set_manual_eht_tb_value(
 		cmm.field.ltf_sym_midiam = ltf_sym_code[nss];
 	cmm.field.gi_ltf = configs->sgi;
 
-	mapping_bw = tm_bw_hqa_mapping_at((u_int32) configs->bw);
+	mapping_bw = tm_bw_hqa_mapping_at((u_int32) configs->per_pkt_bw);
 	if (mapping_bw >= PROACTIVE_BW320)
 		cmm.field.ul_bw = PROACTIVE_BW160;
 	else
