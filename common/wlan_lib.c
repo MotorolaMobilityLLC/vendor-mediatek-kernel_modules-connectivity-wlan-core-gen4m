@@ -8573,6 +8573,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 
 #endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+	INIT_INT(prWifiVar->icTxPwrEnvLmtMin, "TxPwrEnvLmtMin",
+		TX_PWR_ENV_LMT_MIN);
+#endif
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)

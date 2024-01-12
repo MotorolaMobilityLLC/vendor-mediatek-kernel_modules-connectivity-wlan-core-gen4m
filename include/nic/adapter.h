@@ -1433,6 +1433,9 @@ struct WIFI_VAR {
 #endif
 
 	uint16_t u2ListenInterval;
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+	int8_t icTxPwrEnvLmtMin;
+#endif
 };
 
 /* cnm_timer module */
