@@ -3986,7 +3986,35 @@ p2pFuncValidateAuth(struct ADAPTER *prAdapter,
 			prP2pBssInfo->eCurrentOPMode);
 		return FALSE;
 	}
-
+	if (bssGetClientCount(prAdapter, prP2pBssInfo)
+		>= P2P_MAXIMUM_CLIENT_COUNT
+#if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
+		|| kalP2PMaxClients(prAdapter->prGlueInfo,
+		bssGetClientCount(prAdapter, prP2pBssInfo),
+		(uint8_t) prP2pBssInfo->u4PrivateData)
+#endif
+	) {
+		/* GROUP limit full. */
+		/* P2P 3.2.8 */
+		DBGLOG(P2P, WARN,
+			"Group Limit Full. (%d)\n",
+			bssGetClientCount(prAdapter, prP2pBssInfo));
+		*pu2StatusCode = STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD;
+		return FALSE;
+	}
+#if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
+	/* Hotspot Blacklist */
+	if (kalP2PCmpBlackList(prAdapter->prGlueInfo,
+		prAuthFrame->aucSrcAddr,
+		(uint8_t) prP2pBssInfo->u4PrivateData)
+		|| !p2pRoleProcessACLInspection(prAdapter,
+		prAuthFrame->aucSrcAddr, prP2pBssInfo->ucBssIndex)) {
+		DBGLOG(P2P, WARN, "in block list.\n");
+		*pu2StatusCode
+			= STATUS_CODE_ASSOC_DENIED_OUTSIDE_STANDARD;
+		return FALSE;
+	}
+#endif
 	prStaRec = cnmGetStaRecByAddress(prAdapter,
 		prP2pBssInfo->ucBssIndex, prAuthFrame->aucSrcAddr);
 
@@ -4066,40 +4094,6 @@ p2pFuncValidateAuth(struct ADAPTER *prAdapter,
 
 	}
 
-	if (bssGetClientCount(prAdapter, prP2pBssInfo)
-		>= P2P_MAXIMUM_CLIENT_COUNT
-#if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
-		|| kalP2PMaxClients(prAdapter->prGlueInfo,
-		bssGetClientCount(prAdapter, prP2pBssInfo),
-		(uint8_t) prP2pBssInfo->u4PrivateData)
-#endif
-	) {
-		/* GROUP limit full. */
-		/* P2P 3.2.8 */
-		DBGLOG(P2P, WARN,
-			"Group Limit Full. (%d)\n",
-			bssGetClientCount(prAdapter, prP2pBssInfo));
-		cnmStaRecFree(prAdapter, prStaRec);
-		*pu2StatusCode = STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD;
-		return TRUE;
-	}
-#if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
-	else {
-		/* Hotspot Blacklist */
-		if (kalP2PCmpBlackList(prAdapter->prGlueInfo,
-			prAuthFrame->aucSrcAddr,
-			(uint8_t) prP2pBssInfo->u4PrivateData)
-			|| !p2pRoleProcessACLInspection(prAdapter,
-			prStaRec->aucMacAddr, prP2pBssInfo->ucBssIndex)) {
-			DBGLOG(P2P, WARN, "in block list.\n");
-			cnmStaRecFree(prAdapter, prStaRec);
-			*pu2StatusCode
-				= STATUS_CODE_ASSOC_DENIED_OUTSIDE_STANDARD;
-			return FALSE;
-		}
-
-	}
-#endif
 	/* prStaRec->eStaType = STA_TYPE_INFRA_CLIENT; */
 	prStaRec->eStaType = STA_TYPE_P2P_GC;
 

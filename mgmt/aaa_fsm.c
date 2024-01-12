@@ -421,6 +421,8 @@ bow_proc:
 					AUTH_TRANSACTION_SEQ_2,
 					u2StatusCode);
 		if (rStatus != WLAN_STATUS_SUCCESS) {
+			if (prStaRec)
+				cnmStaRecFree(prAdapter, prStaRec);
 			DBGLOG(AAA, WARN, "Send Auth Fail!\n");
 			return;
 		}
