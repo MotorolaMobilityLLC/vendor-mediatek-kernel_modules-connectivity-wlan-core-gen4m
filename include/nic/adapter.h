@@ -844,6 +844,8 @@ struct WIFI_VAR {
 	uint8_t ucStaVht;
 #if (CFG_SUPPORT_802_11AX == 1)
 	uint8_t ucStaHe;
+	uint8_t ucApSelAxWeight;
+	uint8_t ucApSelAxScoreDiv;
 #endif
 	uint8_t ucApHt;
 	uint8_t ucApVht;
@@ -1832,3 +1834,4 @@ struct ADAPTER {
  */
 
 #endif /* _ADAPTER_H */
+

@@ -54,6 +54,10 @@
 #define _AP_SELECTION_H
 
 /* Support AP Selection */
+#if (CFG_SUPPORT_802_11AX == 1)
+#define AX_SEL_DEF_WEIGHT		(0)
+#define AX_SEL_DEF_DIVIDER		(1)
+#endif
 struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
@@ -64,3 +68,4 @@ uint8_t scanBeaconTimeoutFilterPolicyForAis(struct ADAPTER *prAdapter,
 u_int8_t scanApOverload(uint16_t status, uint16_t reason);
 
 #endif
+
