@@ -1868,8 +1868,8 @@ uint32_t wlanPowerOffWifi(struct ADAPTER *prAdapter)
  * \retval WLAN_STATUS_SUCCESS
  */
 /*----------------------------------------------------------------------------*/
-uint32_t wlanProcessCommandQueue(struct ADAPTER
-				 *prAdapter, struct QUE *prCmdQue)
+uint32_t wlanProcessCommandQueue(struct ADAPTER *prAdapter,
+				 struct QUE *prCmdQue)
 {
 	uint32_t rStatus;
 	struct QUE rTempCmdQue, rMergeCmdQue, rStandInCmdQue;
@@ -1879,7 +1879,7 @@ uint32_t wlanProcessCommandQueue(struct ADAPTER
 	struct MSDU_INFO *prMsduInfo;
 	enum ENUM_FRAME_ACTION eFrameAction = FRAME_ACTION_DROP_PKT;
 #if CFG_DBG_MGT_BUF
-	struct MEM_TRACK *prMemTrack = NULL;
+	struct MEM_TRACK *prMemTrack;
 #endif
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -1906,21 +1906,17 @@ uint32_t wlanProcessCommandQueue(struct ADAPTER
 	while (prQueueEntry) {
 		prCmdInfo = (struct CMD_INFO *) prQueueEntry;
 #if CFG_DBG_MGT_BUF
+		prMemTrack = NULL;
 		if (prCmdInfo->pucInfoBuffer &&
-				!IS_FROM_BUF(prAdapter,
-					prCmdInfo->pucInfoBuffer)) {
-			prMemTrack =
-				(struct MEM_TRACK *)
-					((uint8_t *)prCmdInfo->pucInfoBuffer -
-						sizeof(struct MEM_TRACK));
-
-			if (prMemTrack) {
-				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-				/* 0x11 means the CmdId drop in driver
-				 */
-				prMemTrack->u2CmdIdAndWhere |= 0x1100;
-			}
+		    !IS_FROM_BUF(prAdapter, prCmdInfo->pucInfoBuffer)) {
+			prMemTrack = CONTAINER_OF(
+				(uint8_t (*)[])prCmdInfo->pucInfoBuffer,
+				struct MEM_TRACK, aucData);
 		}
+
+		/* 0x11 means the CmdId drop in driver */
+		if (prMemTrack)
+			prMemTrack->ucWhere = 0x11;
 #endif
 		switch (prCmdInfo->eCmdType) {
 		case COMMAND_TYPE_NETWORK_IOCTL:
@@ -1953,12 +1949,9 @@ uint32_t wlanProcessCommandQueue(struct ADAPTER
 			       prCmdInfo->eCmdType, prCmdInfo->ucCID,
 			       prCmdInfo->ucCmdSeqNum);
 #if CFG_DBG_MGT_BUF
-			if (prMemTrack) {
-				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-				/* 0x12 means the CmdId drop in driver
-				 */
-				prMemTrack->u2CmdIdAndWhere |= 0x1200;
-			}
+			/* 0x12 means the CmdId drop in driver */
+			if (prMemTrack)
+				prMemTrack->ucWhere = 0x12;
 #endif
 			wlanReleaseCommand(prAdapter, prCmdInfo,
 					   TX_RESULT_DROPPED_IN_DRIVER);
@@ -1969,12 +1962,9 @@ uint32_t wlanProcessCommandQueue(struct ADAPTER
 			       prCmdInfo->eCmdType, prCmdInfo->ucCID,
 			       prCmdInfo->ucCmdSeqNum);
 #if CFG_DBG_MGT_BUF
-			if (prMemTrack) {
-				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-				/* 0x13 means the CmdId queue back to rCmdQueue
-				 */
-				prMemTrack->u2CmdIdAndWhere |= 0x1300;
-			}
+			/* 0x13 means the CmdId queue back to rCmdQueue */
+			if (prMemTrack)
+				prMemTrack->ucWhere = 0x13;
 #endif
 			QUEUE_INSERT_TAIL(prMergeCmdQue, prQueueEntry);
 		} else if (eFrameAction == FRAME_ACTION_TX_PKT) {
@@ -2227,11 +2217,11 @@ uint32_t wlanSendCommandMthread(struct ADAPTER
 
 #if CFG_DBG_MGT_BUF
 	if (prCmdInfo->pucInfoBuffer &&
-			!IS_FROM_BUF(prAdapter, prCmdInfo->pucInfoBuffer))
+	    !IS_FROM_BUF(prAdapter, prCmdInfo->pucInfoBuffer)) {
 		prMemTrack =
-			(struct MEM_TRACK *)
-				((uint8_t *)prCmdInfo->pucInfoBuffer -
-					sizeof(struct MEM_TRACK));
+			CONTAINER_OF((uint8_t (*)[])prCmdInfo->pucInfoBuffer,
+				     struct MEM_TRACK, aucData);
+	}
 #endif
 
 	prTempCmdQue = &rTempCmdQue;
@@ -2239,17 +2229,15 @@ uint32_t wlanSendCommandMthread(struct ADAPTER
 
 	do {
 		/* <0> card removal check */
-		if (kalIsCardRemoved(prAdapter->prGlueInfo) == TRUE
-		    || fgIsBusAccessFailed == TRUE) {
+		if (kalIsCardRemoved(prAdapter->prGlueInfo) == TRUE ||
+		    fgIsBusAccessFailed == TRUE) {
 			rStatus = WLAN_STATUS_FAILURE;
 #if CFG_DBG_MGT_BUF
-			if (prMemTrack) {
-				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-				/* 0x14 means the CmdId can't enqueue to
-				 *  TxCmdQueue due to card removal
-				 */
-				prMemTrack->u2CmdIdAndWhere |= 0x1400;
-			}
+			/* 0x14 means the CmdId can't enqueue to TxCmdQueue
+			 * due to card removal
+			 */
+			if (prMemTrack)
+				prMemTrack->ucWhere = 0x14;
 #endif
 			break;
 		}
@@ -2269,13 +2257,11 @@ uint32_t wlanSendCommandMthread(struct ADAPTER
 			       prCmdInfo->ucCmdSeqNum, ucTC);
 #endif
 #if CFG_DBG_MGT_BUF
-			if (prMemTrack) {
-				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-				/* 0x15 means the CmdId can't enqueue
-				 *  to TxCmdQueue due to out of resource
-				 */
-				prMemTrack->u2CmdIdAndWhere |= 0x1500;
-			}
+			/* 0x15 means the CmdId can't enqueue to TxCmdQueue
+			 * due to out of resource
+			 */
+			if (prMemTrack)
+				prMemTrack->ucWhere = 0x15;
 #endif
 
 			break;
@@ -2297,13 +2283,11 @@ uint32_t wlanSendCommandMthread(struct ADAPTER
 		}
 
 #if CFG_DBG_MGT_BUF
-		if (prMemTrack) {
-			prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-			/* 0x20 means the CmdId is in TxCmdQueue
-			 *  and is waiting for main_thread handling
-			 */
-			prMemTrack->u2CmdIdAndWhere |= 0x2000;
-		}
+		/* 0x20 means the CmdId is in TxCmdQueue and is waiting for
+		 * main_thread handling
+		 */
+		if (prMemTrack)
+			prMemTrack->ucWhere = 0x20;
 #endif
 
 		QUEUE_INSERT_TAIL(prTempCmdQue, prCmdInfo);
@@ -2373,20 +2357,14 @@ void wlanTxCmdDoneCb(struct ADAPTER *prAdapter,
 	if (!prCmdInfo->fgSetQuery || prCmdInfo->fgNeedResp) {
 #if CFG_DBG_MGT_BUF
 		if (prCmdInfo->pucInfoBuffer &&
-				!IS_FROM_BUF(prAdapter,
-					prCmdInfo->pucInfoBuffer))
-			prMemTrack =
-				(struct MEM_TRACK *)
-					((uint8_t *)prCmdInfo->pucInfoBuffer -
-						sizeof(struct MEM_TRACK));
+		    !IS_FROM_BUF(prAdapter, prCmdInfo->pucInfoBuffer))
+			prMemTrack = CONTAINER_OF(
+					(uint8_t (*)[])prCmdInfo->pucInfoBuffer,
+					struct MEM_TRACK, aucData);
 
-		if (prMemTrack) {
-			prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-			/* 0x50 means the CmdId is sent to
-			 * WFDMA by HIF
-			 */
-			prMemTrack->u2CmdIdAndWhere |= 0x5000;
-		}
+		/* 0x50 means the CmdId is sent to WFDMA by HIF */
+		if (prMemTrack)
+			prMemTrack->ucWhere = 0x50;
 #endif
 
 #if CFG_TX_CMD_SMART_SEQUENCE
@@ -2472,26 +2450,19 @@ uint32_t wlanTxCmdMthread(struct ADAPTER *prAdapter)
 #if CFG_DBG_MGT_BUF
 		prMemTrack = NULL;
 		if (prCmdInfo->pucInfoBuffer &&
-				!IS_FROM_BUF(prAdapter,
-					prCmdInfo->pucInfoBuffer))
-			prMemTrack =
-				(struct MEM_TRACK *)
-					((uint8_t *)prCmdInfo->pucInfoBuffer -
-						sizeof(struct MEM_TRACK));
+		    !IS_FROM_BUF(prAdapter, prCmdInfo->pucInfoBuffer)) {
+			prMemTrack = CONTAINER_OF(
+					(uint8_t (*)[])prCmdInfo->pucInfoBuffer,
+					struct MEM_TRACK, aucData);
+		}
+
 		if (prMemTrack) {
-			if (!prCmdInfo->fgSetQuery || prCmdInfo->fgNeedResp) {
-				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-				/* 0x30 means the CmdId needs to send to
-				 * FW via HIF
-				 */
-				prMemTrack->u2CmdIdAndWhere |= 0x3000;
-			} else {
-				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-				/* 0x40 means the CmdId enqueues to
-				 * TxCmdDone queue
-				 */
-				prMemTrack->u2CmdIdAndWhere |= 0x4000;
-			}
+			/* 0x30 means the CmdId needs to send to FW via HIF */
+			/* 0x40 means the CmdId enqueues to TxCmdDone queue */
+			if (!prCmdInfo->fgSetQuery || prCmdInfo->fgNeedResp)
+				prMemTrack->ucWhere = 0x30;
+			else
+				prMemTrack->ucWhere = 0x40;
 		}
 #endif
 

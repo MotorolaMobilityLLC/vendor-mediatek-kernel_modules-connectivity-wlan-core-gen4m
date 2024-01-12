@@ -1031,10 +1031,35 @@ struct CMD_PEER_UPDATE {
 #endif
 
 #if CFG_DBG_MGT_BUF
+/**
+ * struct MEM_TRACK - A structure for tracking dynamic allocated memory
+ *
+ * DO NOT attempt to reorder the structure to eliminate the slop, which might
+ * break the byte alignment assumption of aucData.
+ *
+ * @rLinkEntry: link entry linked all the allocated memory
+ * @ucCmdId: Command ID
+ * @ucWhere: log the processed location of the memory block
+ *  0x10: the CmdId enqueue to rCmdQueue and is waiting for main_thread handling
+ *  0x11: the CmdId drop in driver
+ *  0x12: the CmdId drop in driver
+ *  0x13: the CmdId queue back to rCmdQueue
+ *  0x14: the CmdId can't enqueue to TxCmdQueue due to card removal
+ *  0x15: the CmdId can't enqueue to TxCmdQueue due to out of resource
+ *  0x20: the CmdId is in TxCmdQueue and is waiting for main_thread handling
+ *  0x30: the CmdId needs to send to FW via HIF
+ *  0x40: the CmdId enqueues to TxCmdDone queue
+ *  0x50: the CmdId is sent to WFDMA by HIF
+ *  0x60: the CmdId is in PendingCmdQuene and already report to module
+ * @pucFileAndLine: the caller information of the memory block
+ * @aucData: returned memory pointer to the caller
+ */
 struct MEM_TRACK {
 	struct LINK_ENTRY rLinkEntry;
-	uint16_t u2CmdIdAndWhere;
-	uint8_t *pucFileAndLine;
+	uint8_t ucCmdId;
+	uint8_t ucWhere; /* followed by slop, but it doesn't matter */
+	uint8_t *pucFileAndLine; /* A pointer here forces aucData aligned */
+	uint8_t aucData[];
 };
 #endif
 /*******************************************************************************

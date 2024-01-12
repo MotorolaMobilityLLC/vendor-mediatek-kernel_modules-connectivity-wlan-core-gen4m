@@ -331,7 +331,7 @@ void nicReleaseAdapterMemory(struct ADAPTER *prAdapter)
 			/* Skip this ASSERT if chip is no ACK */
 			if (prAdapter->u4MemFreeDynamicCount !=
 					prAdapter->u4MemAllocDynamicCount) {
-				struct MEM_TRACK *prMemTrack = NULL;
+				struct MEM_TRACK *prMemTrack;
 
 				DBGLOG(MEM, INFO,
 					"u4MemFreeDynamicCount %d u4MemAllocDynamicCount %d\n",
@@ -346,10 +346,8 @@ void nicReleaseAdapterMemory(struct ADAPTER *prAdapter)
 					DBGLOG(MEM, ERROR,
 						"file:line %s, cmd id: %u, where: %u\n",
 						prMemTrack->pucFileAndLine,
-						prMemTrack->u2CmdIdAndWhere &
-							0x00FF,
-						(prMemTrack->u2CmdIdAndWhere &
-							0xFF00) >> 8);
+						prMemTrack->ucCmdId,
+						prMemTrack->ucWhere);
 				}
 			}
 			ASSERT(prAdapter->u4MemFreeDynamicCount ==
@@ -894,18 +892,17 @@ struct CMD_INFO *nicGetPendingCmdInfo(struct ADAPTER *prAdapter,
 		}
 #if CFG_DBG_MGT_BUF
 		if (prCmdInfo->pucInfoBuffer &&
-		    !IS_FROM_BUF(prAdapter, prCmdInfo->pucInfoBuffer))
-			prMemTrack = (struct MEM_TRACK *)
-					((uint8_t *)prCmdInfo->pucInfoBuffer -
-						sizeof(struct MEM_TRACK));
-
-		if (prMemTrack) {
-			prMemTrack->u2CmdIdAndWhere &= 0x00FF;
-			/* 0x60 means the CmdId is in PendingCmdQuene
-			 *  and already report to module
-			 */
-			prMemTrack->u2CmdIdAndWhere |= 0x6000;
+		    !IS_FROM_BUF(prAdapter, prCmdInfo->pucInfoBuffer)) {
+			prMemTrack = CONTAINER_OF(
+					(uint8_t (*)[])prCmdInfo->pucInfoBuffer,
+					struct MEM_TRACK, aucData);
 		}
+
+		/* 0x60 means the CmdId is in PendingCmdQuene and already
+		 * report to module
+		 */
+		if (prMemTrack)
+			prMemTrack->ucWhere = 0x60;
 #endif
 	}
 
