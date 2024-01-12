@@ -1515,7 +1515,7 @@ void asicRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 	IN OUT struct SW_RFB *prRetSwRfb)
 {
 	struct HW_MAC_RX_STS_GROUP_3 *prGroup3;
-	uint32_t *prRxV = NULL;
+	uint32_t *prRxV = NULL; /* pointer to destination buffer to store RxV */
 
 	if (prRetSwRfb->ucStaRecIdx >= CFG_STA_REC_NUM) {
 		DBGLOG(RX, LOUD,
@@ -1631,7 +1631,7 @@ void asicRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 	ASSERT(prSwRfb);
 
 	prGlueInfo = prAdapter->prGlueInfo;
-	status = wlanGetRxRate(prGlueInfo, ucBssIndex, &u4PhyRate, NULL,
+	status = wlanGetRxRateByBssid(prGlueInfo, ucBssIndex, &u4PhyRate, NULL,
 			&rRxRateInfo);
 	/* ucRate(500kbs) = u4PhyRate(100kbps) */
 	if (status < 0 || u4PhyRate == 0)
