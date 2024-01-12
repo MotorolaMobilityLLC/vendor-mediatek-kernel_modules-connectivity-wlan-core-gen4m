@@ -2646,6 +2646,9 @@ uint32_t nicUniCmdBssInfoTagMBSSID(struct ADAPTER *ad,
 	tag->ucMaxBSSIDIndicator = cmd->ucMaxBSSIDIndicator;
 	tag->ucMBSSIDIndex = cmd->ucMBSSIDIndex;
 
+	DBGLOG(INIT, TRACE, "MBSS: MaxBSSIDIndicator=%d, MBSSIDIndex=%d\n",
+		tag->ucMaxBSSIDIndicator, tag->ucMBSSIDIndex);
+
 	return tag->u2Length;
 }
 
