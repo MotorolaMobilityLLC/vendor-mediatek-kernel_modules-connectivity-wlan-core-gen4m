@@ -895,7 +895,7 @@ void halWpdmaFreeMsduTasklet(unsigned long data);
 #endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 
 #define KAL_HIF_TXRING_LOCK_DECLARATION() \
-	unsigned long __ulHifTxRingFlags
+	unsigned long __ulHifTxRingFlags = 0
 
 #define KAL_HIF_TXRING_LOCK(prTxRing) \
 	kalAcquireHifTxRingLock(prTxRing, &__ulHifTxRingFlags)

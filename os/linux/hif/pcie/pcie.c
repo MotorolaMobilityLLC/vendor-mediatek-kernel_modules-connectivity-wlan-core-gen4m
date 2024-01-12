@@ -1029,6 +1029,8 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 			ret);
 		goto err_free_iomap;
 	}
+
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_MSI_SUPPORT)
 	if (u4MaxMsiNum > 1 && ret == prMsiInfo->u4MaxMsiNum) {
 		prMsiInfo->fgMsiEnabled = TRUE;
 		prMsiInfo->u4MsiNum = ret;
@@ -1036,6 +1038,10 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		prMsiInfo->fgMsiEnabled = FALSE;
 		prMsiInfo->u4MsiNum = 1;
 	}
+#else
+	prMsiInfo->fgMsiEnabled = FALSE;
+	prMsiInfo->u4MsiNum = 1;
+#endif
 	DBGLOG(INIT, INFO, "ret=%d, fgMsiEnabled=%d, u4MsiNum=%d\n",
 		ret, prMsiInfo->fgMsiEnabled, prMsiInfo->u4MsiNum);
 
@@ -1049,7 +1055,8 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	g_prDev = pdev;
 	prChipInfo->pdev = (void *)pdev;
-	prChipInfo->CSRBaseAddress = pcim_iomap_table(pdev)[0];
+	prChipInfo->CSRBaseAddress = pcim_iomap_table(pdev) ?
+		pcim_iomap_table(pdev)[0] : NULL;
 
 	DBGLOG(INIT, INFO, "ioremap for device %s, region 0x%lX @ 0x%lX\n",
 		pci_name(pdev), (unsigned long) pci_resource_len(pdev, 0),
