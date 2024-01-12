@@ -1180,7 +1180,6 @@ authSendDeauthFrame(struct ADAPTER *prAdapter,
 		}
 	}
 #endif
-	nicTxSetPktLifeTime(prAdapter, prMsduInfo, 100);
 	nicTxSetPktRetryLimit(prMsduInfo, TX_DESC_TX_COUNT_NO_LIMIT);
 	nicTxSetForceRts(prMsduInfo, TRUE);
 
