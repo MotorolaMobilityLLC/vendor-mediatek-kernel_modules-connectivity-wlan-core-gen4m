@@ -2139,6 +2139,8 @@ uint32_t nicUniCmdPmEnable(struct ADAPTER *ad,
 	tag->u2Length = sizeof(*tag);
 	tag->u2BcnInterval = cmd->u2BeaconInterval;
 	tag->ucDtimPeriod = cmd->ucDtimPeriod;
+	tag->ucBmpDeliveryAC = cmd->ucBmpDeliveryAC;
+	tag->ucBmpTriggerAC = cmd->ucBmpTriggerAC;
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
@@ -2672,6 +2674,12 @@ uint32_t nicUniCmdSetWmmPsTestParams(struct ADAPTER *ad,
 	wmm->u2Length = sizeof(*wmm);
 	wmm->ucIsEnterPsAtOnce = cmd->ucIsEnterPsAtOnce;
 	wmm->ucIsDisableUcTrigger = cmd->ucIsDisableUcTrigger;
+
+	DBGLOG(INIT, INFO, "DeAC=%x BmpTrigAC=%x Once=%d DisUcTrig=%d\n",
+		uapsd->ucBmpDeliveryAC,
+		uapsd->ucBmpTriggerAC,
+		wmm->ucIsEnterPsAtOnce,
+		wmm->ucIsDisableUcTrigger);
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
