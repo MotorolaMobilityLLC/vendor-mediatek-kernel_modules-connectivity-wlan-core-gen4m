@@ -936,6 +936,10 @@ uint32_t halRxUSBReceiveEvent(struct ADAPTER *prAdapter, u_int8_t fgFillUrb)
 	int ret;
 
 	while (1) {
+		if (prAdapter == NULL ||
+		    GLUE_GET_REF_CNT(prAdapter->fgIsIntEnable) == 0)
+			break;
+
 		prUsbReq = glUsbDequeueReq(prHifInfo, &prHifInfo->rRxEventFreeQ, &prHifInfo->rRxEventQLock);
 		if (prUsbReq == NULL)
 			return WLAN_STATUS_RESOURCES;
@@ -1035,6 +1039,10 @@ uint32_t halRxUSBReceiveWdt(struct ADAPTER *prAdapter)
 	int ret;
 
 	while (1) {
+		if (prAdapter == NULL ||
+		    GLUE_GET_REF_CNT(prAdapter->fgIsIntEnable) == 0)
+			break;
+
 		prUsbReq = glUsbDequeueReq(prHifInfo, &prHifInfo->rRxWdtFreeQ,
 					   &prHifInfo->rRxWdtQLock);
 		if (prUsbReq == NULL)
@@ -1082,6 +1090,14 @@ void halRxUSBReceiveWdtComplete(struct urb *urb)
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 
+	if (!(prHifInfo->state == USB_STATE_LINK_UP ||
+			prHifInfo->state == USB_STATE_PRE_RESUME ||
+			prHifInfo->state == USB_STATE_PRE_SUSPEND)) {
+		glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxWdtFreeQ, prUsbReq,
+						&prHifInfo->rRxWdtQLock, FALSE);
+		return;
+	}
+
 	if (urb->status == -ESHUTDOWN || urb->status == -ENOENT) {
 		glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxWdtFreeQ, prUsbReq,
 						&prHifInfo->rRxWdtQLock, FALSE);
@@ -1126,6 +1142,10 @@ uint32_t halRxUSBReceiveData(struct ADAPTER *prAdapter)
 	prHifInfo = &prGlueInfo->rHifInfo;
 
 	while (1) {
+		if (prAdapter == NULL ||
+		    GLUE_GET_REF_CNT(prAdapter->fgIsIntEnable) == 0)
+			break;
+
 		prUsbReq = glUsbDequeueReq(prHifInfo, &prHifInfo->rRxDataFreeQ, &prHifInfo->rRxDataQLock);
 		if (prUsbReq == NULL)
 			return WLAN_STATUS_RESOURCES;
@@ -1390,6 +1410,8 @@ void halEnableInterrupt(struct ADAPTER *prAdapter)
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
 
+	GLUE_SET_REF_CNT(1, prAdapter->fgIsIntEnable);
+
 	halRxUSBReceiveData(prAdapter);
 	if (prHifInfo->eEventEpType != EVENT_EP_TYPE_DATA_EP)
 		halRxUSBReceiveEvent(prAdapter, TRUE);
@@ -1401,8 +1423,6 @@ void halEnableInterrupt(struct ADAPTER *prAdapter)
 #endif
 
 	glUdmaRxAggEnable(prGlueInfo, TRUE);
-
-	GLUE_SET_REF_CNT(1, prAdapter->fgIsIntEnable);
 } /* end of halEnableInterrupt() */
 
 /*----------------------------------------------------------------------------*/
@@ -1423,6 +1443,8 @@ void halDisableInterrupt(struct ADAPTER *prAdapter)
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
 
+	GLUE_SET_REF_CNT(0, prAdapter->fgIsIntEnable);
+
 	usb_kill_anchored_urbs(&prHifInfo->rRxDataAnchor);
 	usb_kill_anchored_urbs(&prHifInfo->rRxEventAnchor);
 #if CFG_CHIP_RESET_SUPPORT
@@ -1433,8 +1455,6 @@ void halDisableInterrupt(struct ADAPTER *prAdapter)
 
 	if (!wlanIsChipNoAck(prAdapter))
 		glUdmaRxAggEnable(prGlueInfo, FALSE);
-
-	GLUE_SET_REF_CNT(0, prAdapter->fgIsIntEnable);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1892,7 +1912,11 @@ void halSerHifReset(struct ADAPTER *prAdapter)
 
 void halProcessRxInterrupt(struct ADAPTER *prAdapter)
 {
-	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	struct GL_HIF_INFO *prHifInfo;
+
+	if (prAdapter == NULL || prAdapter->prGlueInfo == NULL)
+		return;
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	/* Process complete data */
 	halRxUSBProcessEventDataComplete(prAdapter, &prHifInfo->rRxDataCompleteQ,
