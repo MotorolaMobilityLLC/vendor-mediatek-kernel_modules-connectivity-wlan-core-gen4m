@@ -1519,15 +1519,13 @@ saaSendDisconnectMsgHandler(IN struct ADAPTER *prAdapter,
 		if (!prAisAbortMsg)
 			return;
 
-		prAisAbortMsg->rMsgHdr.eMsgId =
-			MID_SAA_AIS_FSM_ABORT;
-		prAisAbortMsg->ucReasonOfDisconnect =
-			eFrmType == FRM_DEAUTH ?
+		prAisAbortMsg->rMsgHdr.eMsgId =	MID_SAA_AIS_FSM_ABORT;
+		prAisAbortMsg->ucReasonOfDisconnect = eFrmType == FRM_DEAUTH ?
 				DISCONNECT_REASON_CODE_DEAUTHENTICATED :
 				DISCONNECT_REASON_CODE_DISASSOCIATED;
 		prAisAbortMsg->fgDelayIndication = fgIsTxAllowed;
-		prAisAbortMsg->ucBssIndex =
-			prStaRec->ucBssIndex;
+		prAisAbortMsg->ucBssIndex = prStaRec->ucBssIndex;
+		prAisAbortMsg->u2DeauthReason = prStaRec->u2ReasonCode;
 		mboxSendMsg(prAdapter, MBOX_ID_0,
 			    (struct MSG_HDR *) prAisAbortMsg,
 			    MSG_SEND_METHOD_BUF);
