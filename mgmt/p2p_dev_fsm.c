@@ -90,35 +90,38 @@ UINT_8 p2pDevFsmInit(IN P_ADAPTER_T prAdapter)
 
 		prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_P2P, TRUE);
 
-		COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr, prAdapter->rMyMacAddr);
-		prP2pBssInfo->aucOwnMacAddr[0] ^= 0x2;	/* change to local administrated address */
+		if (prP2pBssInfo != NULL) {
+			COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr, prAdapter->rMyMacAddr);
+			prP2pBssInfo->aucOwnMacAddr[0] ^= 0x2;	/* change to local administrated address */
 
-		prP2pDevFsmInfo->ucBssIndex = prP2pBssInfo->ucBssIndex;
+			prP2pDevFsmInfo->ucBssIndex = prP2pBssInfo->ucBssIndex;
 
-		prP2pBssInfo->eCurrentOPMode = OP_MODE_P2P_DEVICE;
-		prP2pBssInfo->ucConfigAdHocAPMode = AP_MODE_11G_P2P;
-		prP2pBssInfo->u2HwDefaultFixedRateCode = RATE_OFDM_6M;
+			prP2pBssInfo->eCurrentOPMode = OP_MODE_P2P_DEVICE;
+			prP2pBssInfo->ucConfigAdHocAPMode = AP_MODE_11G_P2P;
+			prP2pBssInfo->u2HwDefaultFixedRateCode = RATE_OFDM_6M;
 
-		prP2pBssInfo->eBand = BAND_2G4;
-		prP2pBssInfo->eDBDCBand = ENUM_BAND_0;
-		prP2pBssInfo->ucWmmQueSet =
-			(prAdapter->rWifiVar.ucDbdcMode == DBDC_MODE_DISABLED) ? DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
+			prP2pBssInfo->eBand = BAND_2G4;
+			prP2pBssInfo->eDBDCBand = ENUM_BAND_0;
+			if (prAdapter->rWifiVar.ucDbdcMode == DBDC_MODE_DISABLED)
+				prP2pBssInfo->ucWmmQueSet = DBDC_5G_WMM_INDEX;
+			else
+				prP2pBssInfo->ucWmmQueSet = DBDC_2G_WMM_INDEX;
 
-		prP2pBssInfo->ucPhyTypeSet = prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11GN;
+			prP2pBssInfo->ucPhyTypeSet = prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11GN;
 
-		prP2pBssInfo->ucNonHTBasicPhyType = (UINT_8)
-		    rNonHTApModeAttributes[prP2pBssInfo->ucConfigAdHocAPMode].ePhyTypeIndex;
-		prP2pBssInfo->u2BSSBasicRateSet =
-		    rNonHTApModeAttributes[prP2pBssInfo->ucConfigAdHocAPMode].u2BSSBasicRateSet;
+			prP2pBssInfo->ucNonHTBasicPhyType = (UINT_8)
+			    rNonHTApModeAttributes[prP2pBssInfo->ucConfigAdHocAPMode].ePhyTypeIndex;
+			prP2pBssInfo->u2BSSBasicRateSet =
+			    rNonHTApModeAttributes[prP2pBssInfo->ucConfigAdHocAPMode].u2BSSBasicRateSet;
 
-		prP2pBssInfo->u2OperationalRateSet =
-		    rNonHTPhyAttributes[prP2pBssInfo->ucNonHTBasicPhyType].u2SupportedRateSet;
-		prP2pBssInfo->u4PrivateData = 0;/* TH3 Huang */
+			prP2pBssInfo->u2OperationalRateSet =
+			    rNonHTPhyAttributes[prP2pBssInfo->ucNonHTBasicPhyType].u2SupportedRateSet;
+			prP2pBssInfo->u4PrivateData = 0;/* TH3 Huang */
 
-		rateGetDataRatesFromRateSet(prP2pBssInfo->u2OperationalRateSet,
+			rateGetDataRatesFromRateSet(prP2pBssInfo->u2OperationalRateSet,
 					    prP2pBssInfo->u2BSSBasicRateSet,
 					    prP2pBssInfo->aucAllSupportedRates, &prP2pBssInfo->ucAllSupportedRatesLen);
-
+		}
 		prP2pChnlReqInfo = &prP2pDevFsmInfo->rChnlReqInfo;
 		LINK_INITIALIZE(&prP2pChnlReqInfo->rP2pChnlReqLink);
 
@@ -686,6 +689,8 @@ p2pDevFsmRunEventChnlGrant(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr, IN
 
 	do {
 		ASSERT((prAdapter != NULL) && (prMsgHdr != NULL) && (prP2pDevFsmInfo != NULL));
+		if ((prAdapter == NULL) || (prMsgHdr == NULL) || (prP2pDevFsmInfo == NULL))
+			break;
 
 		prMsgChGrant = (P_MSG_CH_GRANT_T) prMsgHdr;
 		prChnlReqInfo = &(prP2pDevFsmInfo->rChnlReqInfo);
