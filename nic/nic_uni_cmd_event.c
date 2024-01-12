@@ -174,6 +174,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
 	[EXT_CMD_ID_BF_ACTION] = nicUniCmdBFAction,
 	[EXT_CMD_ID_SER] = nicUniCmdSerAction,
 	[EXT_CMD_ID_GET_MAC_INFO] = nicUniCmdGetTsf,
+	[EXT_CMD_ID_DEVINFO_UPDATE] = nicUniUpdateDevInfo,
 };
 
 static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
@@ -2762,6 +2763,43 @@ uint32_t nicUniCmdGetTsf(struct ADAPTER *ad,
  	tag->ucDbdcIdx = ENUM_BAND_AUTO;
 	tag->ucHwBssidIndex = cmd->rExtraArgument.rTsfArg.ucHwBssidIndex;
 	tag->ucBssIndex = twt->ucBssIdx;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniUpdateDevInfo(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_DEV_INFO_UPDATE *cmd;
+	struct CMD_DEVINFO_ACTIVE *data;
+	struct UNI_CMD_DEVINFO *uni_cmd;
+	struct UNI_CMD_DEVINFO_ACTIVE *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_DEVINFO) +
+			       sizeof(struct UNI_CMD_DEVINFO_ACTIVE);
+
+	if (info->ucCID != CMD_ID_LAYER_0_EXT_MAGIC_NUM ||
+	    info->ucExtCID != EXT_CMD_ID_DEVINFO_UPDATE)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_DEV_INFO_UPDATE *) info->pucInfoBuffer;
+	data = (struct CMD_DEVINFO_ACTIVE *) cmd->aucBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_DEVINFO, max_cmd_len,
+			nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_DEVINFO *) entry->pucInfoBuffer;
+	uni_cmd->ucOwnMacIdx = cmd->ucOwnMacIdx;
+	uni_cmd->ucDbdcIdx = cmd->ucDbdcIdx;
+
+	tag = (struct UNI_CMD_DEVINFO_ACTIVE *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_DEVINFO_TAG_ACTIVE;
+	tag->u2Length = sizeof(*tag);
+	tag->ucActive = data->ucActive;
+	COPY_MAC_ADDR(tag->aucOwnMacAddr, data->aucOwnMacAddr);
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
