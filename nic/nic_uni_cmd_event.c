@@ -5885,8 +5885,8 @@ uint32_t nicUniCmdSR(struct ADAPTER *ad,
 
 		max_cmd_len += sizeof(struct UNI_CMD_SR_CAP);
 		entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SR,
-			max_cmd_len, nicUniCmdEventSetCommon,
-			nicUniCmdTimeoutCommon);
+			max_cmd_len, NULL,
+			NULL);
 		if (!entry)
 			return WLAN_STATUS_RESOURCES;
 
