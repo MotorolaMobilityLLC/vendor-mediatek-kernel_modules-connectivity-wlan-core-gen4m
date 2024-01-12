@@ -264,7 +264,7 @@ static uint32_t BssInfoUpdateConnectOwnDev(
 	/* Append this feature */
 	kalMemCopy(pMsgBuf,
 		(char *)&rBssInfo,
-		sizeof(struct BSSINFO_BASIC_T));
+		sizeof(struct BSSINFO_CONNECT_OWN_DEV_T));
 	return 0;
 }
 
