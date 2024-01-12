@@ -63,7 +63,8 @@
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
 */
-#define CFG_SUPPORT_VCODE_VDFS 0
+#define CFG_SUPPORT_VCODE_VDFS	0
+#define CFG_WF_BUS_HANG_CHECK	0
 
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
@@ -1112,9 +1113,9 @@ int soc3_0_Trigger_fw_assert(void)
 	int ret = 0;
 	int value;
 	uint32_t waitRet = 0;
-#if 0
-	ret = soc3_0_CheckBusHang();
-#endif
+
+	ret = soc3_0_CheckBusHang(FALSE);
+
 	if (ret != 0) {
 		g_IsWfsysBusHang = TRUE;
 		return ret;
@@ -1145,57 +1146,6 @@ int soc3_0_Trigger_fw_assert(void)
 		ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
 	}
 	return ret;
-}
-
-int soc3_0_CheckWfBusHang(void)
-{
-	uint32_t u4Value = 0;
-	uint32_t RegValue = 0;
-	int isHang = 0;
-/*
-* Write Address : 0x1806_009c[6:0],   Data : 0x60 default 0x00
-* Write Address : 0x1806_009c[28],    Data : 0x1  default 0x0
-*  (wf_mcu_dbg enable)
-* Write Address : 0x1806_0094[20],    Data : 0x1  default 0x0
-*  (enable wf monflg debug)
-* Write Address : 0x1806_0094[4:0],   Data : 0x7  default 0x0
-*  (switch monflg mux)
-* Read Address : 0x1806_021c[0] shoulde be 1'b1 = Hang
-*/
-
-	wf_ioremap_read(0x1806009c, &u4Value);
-	RegValue = u4Value&BITS(7, 31) + 0x60;
-	wf_ioremap_write(0x1806009c, RegValue);
-
-	wf_ioremap_read(0x1806009c, &u4Value);
-	RegValue = u4Value|BIT(28);
-	wf_ioremap_write(0x1806009c, RegValue);
-
-	wf_ioremap_read(0x18060094, &u4Value);
-	RegValue = u4Value|BIT(20);
-	wf_ioremap_write(0x18060094, RegValue);
-
-	wf_ioremap_read(0x18060094, &u4Value);
-	RegValue = u4Value&BITS(5, 31) + 0x7;
-	wf_ioremap_write(0x18060094, RegValue);
-
-	wf_ioremap_read(0x1806021c, &u4Value);
-
-	if ((u4Value&BIT(0)) != 0) {
-		DBGLOG(HAL, ERROR,
-			"Bus hang WF dump: 0x1806021c = 0x%08x\n",
-			u4Value);
-
-		isHang = 0;	/* always return 0 for development */
-	} else {
-		DBGLOG(HAL, INFO,
-			"Bus hang WF dump: 0x1806021c = 0x%08x\n",
-			u4Value);
-
-		isHang = 0;	/* always return 0 for development */
-	}
-
-	return isHang;
 }
 
 void soc3_0_CheckBusHangUT(void)
@@ -1232,31 +1182,124 @@ void soc3_0_CheckBusHangUT(void)
 	HAL_MCR_RD(prAdapter, 0x7c060000, &u4Value);
 }
 
-int soc3_0_CheckBusHang(void)
+int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 {
-	int ret = 0;
+	int ret = 1;
+	uint8_t conninfra_reset = FALSE;
+#if (CFG_WF_BUS_HANG_CHECK == 1)
+	uint32_t u4Value = 0;
+	uint32_t RegValue = 0;
+#endif
 
-	ret = conninfra_is_bus_hang();
+	do {
+/*
+* 1. Check "AP2CONN_INFRA ON step is ok"
+*   & Check "AP2CONN_INFRA OFF step is ok"
+*/
+		if (conninfra_is_bus_hang() > 0) {
+			conninfra_reset = TRUE;
+
+			DBGLOG(HAL, ERROR,
+				"conninfra_is_bus_hang, CR dump, Chip reset\n");
+			break;
+		}
+
+#if (CFG_WF_BUS_HANG_CHECK == 1)
+
+/*
+* 2. Check MCU wake up and setting mux sel done CR (mailbox)
+*  - 0x1806_0260[31] should be 1'b1  (FW view 0x8900_0100[31])
+*/
+
+		wf_ioremap_read(0x18060260, &u4Value);
+
+		if ((u4Value&BIT(31)) != BIT(31)) {
+			DBGLOG(HAL, ERROR,
+				"Bus hang check: 0x18060260 = 0x%08x\n",
+				u4Value);
+		}
+
+/*
+* 3. Check wf_mcusys bus hang irq status (need set debug ctrl enable first,
+*     ref sheet "Debug ctrl setting")
+*  - if(bus hang), then
+*  a) WF MCU: wf_mcusys_vdnr_timeout_irq_b, FW: Trigger subssy reset /
+*     Whole Chip Reset(conn2ap hang)
+*  b) Driver dump CRs of sheet "Debug ctrl setting"
+*
+* Write Address : 0x1806_009c[6:0]	, Data : 0x60	default 0x00
+* Write Address : 0x1806_009c[28]	, Data : 0x1	default 0x0
+*  (wf_mcu_dbg enable)
+* Write Address : 0x1806_0094[4:0]	, Data : 0x7	default 0x0
+*  (switch monflg mux)
+* Write Address : 0x1806_0094[20]	, Data : 0x1	default 0x1
+*  (enable wf monflg debug)
+* Read Address : 0x1806_021c[0] shoulde be 1'b0
+*/
+
+		wf_ioremap_read(0x1806009c, &u4Value);
+		RegValue = u4Value&BITS(7, 31) + 0x60;
+		wf_ioremap_write(0x1806009c, RegValue);
+
+		wf_ioremap_read(0x1806009c, &u4Value);
+		RegValue = u4Value|BIT(28);
+		wf_ioremap_write(0x1806009c, RegValue);
+
+		wf_ioremap_read(0x18060094, &u4Value);
+		RegValue = u4Value&BITS(5, 31) + 0x7;
+		wf_ioremap_write(0x18060094, RegValue);
+
+		wf_ioremap_read(0x18060094, &u4Value);
+		RegValue = u4Value|BIT(20);
+		wf_ioremap_write(0x18060094, RegValue);
+
+		wf_ioremap_read(0x1806021c, &u4Value);
+
+		if ((u4Value&BIT(0)) == BIT(0)) {
+			DBGLOG(HAL, ERROR,
+				"Bus hang check: 0x1806021c = 0x%08x\n",
+				u4Value);
+		}
+
+/*
+* 4. Check conn2wf sleep protect
+*  - 0x1800_1620[3] (sleep protect enable raedy), should be 1'b0
+*/
+		wf_ioremap_read(0x18001620, &u4Value);
+
+		if ((u4Value&BIT(3)) == BIT(3)) {
+			DBGLOG(HAL, ERROR,
+				"Bus hang check: 0x18001620 = 0x%08x\n",
+				u4Value);
+		}
+
+/*
+* 5. check wfsys bus clock
+*  - 0x1806_0000[14] , 1: means bus no clock, 0: ok
+*/
+		wf_ioremap_read(0x18060000, &u4Value);
+
+		if ((u4Value&BIT(14)) == BIT(14)) {
+			DBGLOG(HAL, ERROR,
+				"Bus hang check: 0x18060000 = 0x%08x\n",
+				u4Value);
+		}
+
+#endif /* (CFG_WF_BUS_HANG_CHECK == 1) */
+
+		DBGLOG(HAL, INFO,
+			"Bus hang check: Done\n");
+
+		ret = 0;
+	} while (FALSE);
 
 	if (ret > 0) {
-		DBGLOG(HAL, ERROR,
-			"conninfra_is_bus_hang, CR dump, Chip reset\n");
-
-		conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, "bus hang");
-		return ret;
-	}
-
-	ret = soc3_0_CheckWfBusHang();
-
-	if (ret != 0) {
-		DBGLOG(HAL, ERROR,
-			"soc3_0_CheckWfBusHang, WFSYS reset\n");
-
-		conninfra_trigger_whole_chip_rst(
-			CONNDRV_TYPE_WIFI,
-			"wifi bus hang");
-
-		return ret;
+		if (conninfra_reset)
+			conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI,
+				"bus hang");
+		else if (ucWfResetEnable)
+			conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI,
+				"wifi bus hang");
 	}
 
 	return ret;
@@ -3375,35 +3418,16 @@ int soc3_0_wlanPreCal(void)
 
 	do {
 #if defined(_HIF_AXI)
-		/* AXI goes over here, to be conti... */
 		prChipInfo = ((struct mt66xx_hif_driver_data *)
 			pvDriverData)->chip_info;
 		pvData = (void *)prChipInfo->pdev;
-
-		/* we should call axi_enable_device(
-		*        (struct platform_device *)pvData);
-		* since it is invoked from within hifAxiProbe()::axi.c,
-		* before calling pfWlanProbe(), to be conti...
-		*/
 #endif
 
 #if defined(_HIF_PCIE)
 		prChipInfo = ((struct mt66xx_hif_driver_data *)
 			pvDriverData)->chip_info;
 		pvData = (void *)prChipInfo->pdev;
-
-		/* no need pci_enable_device(dev),
-		* it has already been done in PCI driver's probe() function
-		*/
 #endif
-
-		/* [1]Copy from wlanProbe()::Begin */
-		/* Initialize the IO port of the interface */
-		/* GeorgeKuo: pData has different meaning for _HIF_XXX:
-		* _HIF_EHPI: pointer to memory base variable, which will be
-		*      initialized by glBusInit().
-		* _HIF_SDIO: bus driver handle
-		*/
 
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 	    wlanDebugTC4Init();
@@ -3440,25 +3464,13 @@ int soc3_0_wlanPreCal(void)
 		}
 
 	    prGlueInfo->i4DevIdx = i4DevIdx;
-
 	    prAdapter = prGlueInfo->prAdapter;
-	    /* [1]Copy from wlanProbe()::End */
-
-	    /* [2]Copy from wlanProbe()->wlanOnPreAdapterStart()::Begin */
-	    /* Init Chip Capability */
 	    prChipInfo = prAdapter->chip_info;
 
 		if (prChipInfo->asicCapInit != NULL)
 			prChipInfo->asicCapInit(prAdapter);
 
 	    nicpmWakeUpWiFi(prAdapter);
-	    /* [2]Copy from wlanProbe()->wlanOnPreAdapterStart()::End */
-
-		/* [3]Copy from
-		* wlanProbe()
-		*	->wlanAdapterStart()
-		*		->wlanOnPreAllocAdapterMem()::Begin
-		*/
 
 		prAdapter->u4OwnFailedCount = 0;
 		prAdapter->u4OwnFailedLogCount = 0;
@@ -3565,20 +3577,18 @@ int soc3_0_wlanPreCal(void)
 
 	switch (eFailReason) {
 	case BUS_INIT_FAIL:
-	break;
+		break;
 
 	case NET_CREATE_FAIL:
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 		wlanDebugTC4Uninit();  /* Uninit for TC4 debug */
 #endif
-
 		break;
 
 	case BUS_SET_IRQ_FAIL:
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 		wlanDebugTC4Uninit();  /* Uninit for TC4 debug */
 #endif
-
 		wlanWakeLockUninit(prGlueInfo);
 		wlanNetDestroy(prWdev);
 		break;
@@ -3594,6 +3604,10 @@ int soc3_0_wlanPreCal(void)
 #endif
 
 		wlanWakeLockUninit(prGlueInfo);
+
+		if (eFailReason != ALLOC_ADAPTER_MEM_FAIL)
+			nicReleaseAdapterMemory(prAdapter);
+
 		wlanNetDestroy(prWdev);
 		break;
 
@@ -3612,6 +3626,7 @@ int soc3_0_wlanPreCal(void)
 #endif
 
 		wlanWakeLockUninit(prGlueInfo);
+		nicReleaseAdapterMemory(prAdapter);
 		wlanNetDestroy(prWdev);
 		break;
 
@@ -3632,6 +3647,7 @@ int soc3_0_wlanPreCal(void)
 #endif
 
 		wlanWakeLockUninit(prGlueInfo);
+		nicReleaseAdapterMemory(prAdapter);
 		wlanNetDestroy(prWdev);
 		break;
 
