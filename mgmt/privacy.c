@@ -1327,11 +1327,11 @@ void secPrivacyDumpWTBL(struct ADAPTER *prAdapter)
 
 	prWtbl = prAdapter->rWifiVar.arWtbl;
 
-	DBGLOG(RSN, TRACE, "The Wlan index\n");
+	DBGLOG(RSN, INFO, "The Wlan index\n");
 
 	for (i = 0; i < WTBL_SIZE; i++) {
 		if (prWtbl[i].ucUsed)
-			DBGLOG(RSN, TRACE,
+			DBGLOG(RSN, INFO,
 			       "#%d Used=%d  BSSIdx=%d keyid=%d P=%d STA=%d Addr="
 			       MACSTR "\n", i, prWtbl[i].ucUsed,
 			       prWtbl[i].ucBssIndex, prWtbl[i].ucKeyId,

@@ -592,10 +592,14 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	struct MSDU_TOKEN_INFO *prTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
 	struct MSDU_TOKEN_HISTORY_INFO *prHistory;
+	struct STA_RECORD *prStaRec;
+	struct BSS_INFO *prBssInfo;
 	struct timespec64 rNowTs, rTime, rLongest, rTimeout;
 	uint32_t u4Idx = 0, u4TokenId = 0;
 	bool fgIsTimeout = false;
 	struct WIFI_VAR *prWifiVar;
+	uint8_t ucStaIdx = 0;
+	bool fgIsSAPorGO = false;
 
 	ASSERT(prAdapter);
 	ASSERT(prAdapter->prGlueInfo);
@@ -642,14 +646,33 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	if (fgIsTimeout) {
 		prToken = &prTokenInfo->arToken[u4TokenId];
 
+		secPrivacyDumpWTBL(prAdapter);
+
+		if (wlanGetStaIdxByWlanIdx(prAdapter, prToken->ucWlanIndex,
+			&ucStaIdx) == WLAN_STATUS_SUCCESS) {
+			cnmDumpStaRec(prAdapter, ucStaIdx);
+
+			prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaIdx);
+
+			if (prStaRec != NULL) {
+				bssDumpBssInfo(prAdapter, prStaRec->ucBssIndex);
+
+				prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					prStaRec->ucBssIndex);
+				if (prBssInfo && (prBssInfo->eCurrentOPMode
+					== OP_MODE_ACCESS_POINT))
+					fgIsSAPorGO = true;
+			}
+		}
+
 		DBGLOG(HAL, INFO,
-				"TokenId[%u] Wlan_Idx[%u] timeout[sec:%ld]\n",
-				u4TokenId,
-				prToken->ucWlanIndex,
-				rLongest.tv_sec);
+				"TokenId[%u] Wlan_Idx[%u] timeout[sec:%ld] SAP_GO[%u]\n",
+				u4TokenId, prToken->ucWlanIndex,
+				rLongest.tv_sec, fgIsSAPorGO);
 
 		if (prToken->prPacket)
 			DBGLOG_MEM32(HAL, INFO, prToken->prPacket, 64);
+
 		prHistory->au4List[prHistory->u4CurIdx].u4LongestId = u4TokenId;
 		prHistory->au4List[prHistory->u4CurIdx].u4UsedCnt =
 			prTokenInfo->u4UsedCnt;
