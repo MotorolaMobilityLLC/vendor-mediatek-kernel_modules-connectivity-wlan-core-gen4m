@@ -2811,6 +2811,15 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 	WLAN_GET_FIELD_BE16(&aucLookAheadBuf[ucEthTypeLenOffset],
 			    &u2EtherTypeLen);
 
+#if CFG_WIFI_TX_ETH_CHK_EMPTY_PAYLOAD
+	if (unlikely(u4PacketLen == ETHER_HEADER_LEN &&
+		     u2EtherTypeLen >= ETHER_TYPE_MIN)) {
+		DBGLOG(TX, WARN,
+		       "Drop 802.3 header only but no payload packet\n");
+		return FALSE;
+	}
+#endif
+
 	/* 4 <1> Skip 802.1Q header (VLAN Tagging) */
 	if (u2EtherTypeLen == ETH_P_VLAN) {
 		prTxPktInfo->u2Flag |= BIT(ENUM_PKT_VLAN_EXIST);
