@@ -1109,7 +1109,7 @@ uint32_t bssUpdateBeaconContentEx(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	struct MSDU_INFO *prMsduInfo;
 	struct WLAN_BEACON_FRAME *prBcnFrame;
-	uint32_t i, result;
+	uint32_t i;
 
 	DEBUGFUNC("bssUpdateBeaconContent");
 	DBGLOG(INIT, LOUD, "\n");
@@ -1161,36 +1161,20 @@ uint32_t bssUpdateBeaconContentEx(IN struct ADAPTER *prAdapter,
 
 	prBcnFrame = (struct WLAN_BEACON_FRAME *)prMsduInfo->prPacket;
 
-	DBGLOG(P2P, TRACE, "Dump beacon content to FW.\n");
+	DBGLOG(P2P, TRACE, "Dump beacon content to FW, method:%d\n", eMethod);
 	if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
 		dumpMemory8((uint8_t *) prMsduInfo->prPacket,
 			(uint32_t) prMsduInfo->u2FrameLength);
 	}
 
-	result = nicUpdateBeaconIETemplate(prAdapter,
-				 IE_UPD_METHOD_UPDATE_ALL,
+	return nicUpdateBeaconIETemplate(prAdapter,
+				 eMethod,
 				 ucBssIndex,
 				 prBssInfo->u2CapInfo,
 				 (uint8_t *) prBcnFrame->aucInfoElem,
 				 prMsduInfo->u2FrameLength -
 				 OFFSET_OF(struct WLAN_BEACON_FRAME,
 					   aucInfoElem));
-
-	if (eMethod == IE_UPD_METHOD_UNSOL_PROBE_RSP) {
-		DBGLOG(P2P, TRACE, "Dump unsolicited probe response to FW\n");
-
-		/* Update unsolicited probe response as beacon content */
-		result = nicUpdateBeaconIETemplate(prAdapter,
-					 IE_UPD_METHOD_UNSOL_PROBE_RSP,
-					 ucBssIndex,
-					 prBssInfo->u2CapInfo,
-					 (uint8_t *) prBcnFrame->aucInfoElem,
-					 prMsduInfo->u2FrameLength -
-					 OFFSET_OF(struct WLAN_BEACON_FRAME,
-						   aucInfoElem));
-	}
-
-	return result;
 }				/* end of bssUpdateBeaconContent() */
 
 /*----------------------------------------------------------------------------*/
