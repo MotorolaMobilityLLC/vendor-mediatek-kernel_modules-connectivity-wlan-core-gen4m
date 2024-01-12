@@ -1487,6 +1487,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 				event->u4RstFlag,
 				event->u4Line,
 				event->pucFuncName);
+		prAdapter->fgRstDrvOwn = TRUE;
 		glSetRstReason(RST_MDDP_MD_TRIGGER_EXCEPTION);
 		GL_USER_DEFINE_RESET_TRIGGER(prAdapter,
 			RST_MDDP_MD_TRIGGER_EXCEPTION,
@@ -1550,6 +1551,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 				event->u4Reason == MD_INIT_FAIL ||
 				event->u4Reason == MD_STATE_ABNORMAL ||
 				event->u4Reason == MD_TX_CMD_FAIL) {
+			prAdapter->fgRstDrvOwn = TRUE;
 			glSetRstReason(RST_MDDP_MD_TRIGGER_EXCEPTION);
 			GL_USER_DEFINE_RESET_TRIGGER(prAdapter,
 				RST_MDDP_MD_TRIGGER_EXCEPTION,

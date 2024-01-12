@@ -551,8 +551,13 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 #if IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
 		if (test_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
 			&prAdapter->prGlueInfo->fgIsInSuspend)) {
-			DBGLOG(INIT, INFO, "Bypass timeout in suspend\n");
+			DBGLOG(INIT, LOUD, "Bypass timeout in suspend\n");
 			u4CurrTick = kalGetTimeTick();
+		} else if (test_and_clear_bit(SUSPEND_FLAG_FOR_WAKEUP_REASON,
+			&prAdapter->prGlueInfo->fgIsInSuspend)) {
+			/* Do driver own again when resume */
+			HAL_LP_OWN_CLR(prAdapter, &fgResult);
+			fgResult = FALSE;
 		} else
 #endif /* IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
 		{

@@ -2067,6 +2067,7 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 
 	/* debug only */
 	if (ad->fgRstDrvOwn) {
+		DBGLOG(HAL, INFO, "[KL]: Reset by Driver own, do BT dump.\n");
 		readable = FALSE;
 		fgIsBusAccessFailed = TRUE;
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
