@@ -1424,6 +1424,19 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		}
 	}
 
+#if CFG_SUPPORT_NCHO
+	if (prAdapter->rNchoInfo.fgNCHOEnabled) {
+		if (!(BIT(prBssDesc->eBand) &
+			prAdapter->rNchoInfo.ucRoamBand)) {
+			DBGLOG(APS, WARN,
+				MACSTR" band(%s) is not in NCHO roam band\n",
+				MAC2STR(prBssDesc->aucBSSID),
+				apucBandStr[prBssDesc->eBand]);
+			return FALSE;
+		}
+	}
+#endif
+
 	if (!(prBssDesc->ucPhyTypeSet &
 		(prAdapter->rWifiVar.ucAvailablePhyTypeSet))) {
 		DBGLOG(APS, WARN,

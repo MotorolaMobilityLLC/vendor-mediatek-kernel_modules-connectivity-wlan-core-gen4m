@@ -4814,6 +4814,10 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 	rsnStopSaQuery(prAdapter, ucBssIndex);
 #endif
 
+#if CFG_SUPPORT_NCHO
+	aisFsmNotifyManageChannelList(prAdapter, ucBssIndex);
+#endif
+
 #if CFG_SUPPORT_802_11K
 	/* clear query done flag */
 	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
@@ -7495,79 +7499,6 @@ void aisFsmRunEventMgmtFrameTx(struct ADAPTER *prAdapter,
 exit:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* aisFsmRunEventMgmtFrameTx */
-
-#if CFG_SUPPORT_NCHO
-void aisFsmRunEventNchoActionFrameTx(struct ADAPTER *prAdapter,
-				     struct MSG_HDR *prMsgHdr)
-{
-	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct BSS_INFO *prAisBssInfo = (struct BSS_INFO *)NULL;
-	struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg =
-	    (struct MSG_MGMT_TX_REQUEST *)NULL;
-	struct MSDU_INFO *prMgmtFrame = (struct MSDU_INFO *)NULL;
-	struct _ACTION_VENDOR_SPEC_FRAME_T *prVendorSpec = NULL;
-	uint8_t *pucFrameBuf = (uint8_t *) NULL;
-	struct NCHO_INFO *prNchoInfo = NULL;
-	uint16_t u2PktLen = 0;
-	uint8_t ucBssIndex = 0;
-
-	do {
-		prMgmtTxMsg = (struct MSG_MGMT_TX_REQUEST *)prMsgHdr;
-
-		ucBssIndex = prMgmtTxMsg->ucBssIdx;
-
-		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-		prNchoInfo = &(prAdapter->rNchoInfo);
-		prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-
-		if (prAisFsmInfo == NULL)
-			break;
-
-		u2PktLen =
-		    (uint16_t) OFFSET_OF(struct _ACTION_VENDOR_SPEC_FRAME_T,
-					 aucElemInfo[0]) +
-		    prNchoInfo->rParamActionFrame.i4len + MAC_TX_RESERVED_FIELD;
-		prMgmtFrame = cnmMgtPktAlloc(prAdapter, u2PktLen);
-		if (prMgmtFrame == NULL) {
-			DBGLOG(REQ, ERROR,
-			       "NCHO there is no memory for prMgmtFrame\n");
-			break;
-		}
-		prMgmtTxMsg->prMgmtMsduInfo = prMgmtFrame;
-
-		pucFrameBuf =
-		    (uint8_t *) ((uintptr_t)prMgmtFrame->prPacket +
-				 MAC_TX_RESERVED_FIELD);
-		prVendorSpec =
-		    (struct _ACTION_VENDOR_SPEC_FRAME_T *)pucFrameBuf;
-		prVendorSpec->u2FrameCtrl = MAC_FRAME_ACTION;
-		prVendorSpec->u2Duration = 0;
-		prVendorSpec->u2SeqCtrl = 0;
-		COPY_MAC_ADDR(prVendorSpec->aucDestAddr,
-			      prNchoInfo->rParamActionFrame.aucBssid);
-		COPY_MAC_ADDR(prVendorSpec->aucSrcAddr,
-			      prAisBssInfo->aucOwnMacAddr);
-		COPY_MAC_ADDR(prVendorSpec->aucBSSID, prAisBssInfo->aucBSSID);
-
-		kalMemCopy(prVendorSpec->aucElemInfo,
-			   prNchoInfo->rParamActionFrame.aucData,
-			   prNchoInfo->rParamActionFrame.i4len);
-
-		prMgmtFrame->u2FrameLength = u2PktLen;
-
-		aisFuncTxMgmtFrame(prAdapter,
-				   &prAisFsmInfo->rMgmtTxInfo,
-				   prMgmtTxMsg->prMgmtMsduInfo,
-				   prMgmtTxMsg->u8Cookie,
-				   ucBssIndex);
-
-	} while (FALSE);
-
-	if (prMsgHdr)
-		cnmMemFree(prAdapter, prMsgHdr);
-
-}				/* aisFsmRunEventNchoActionFrameTx */
-#endif
 
 void aisFsmRunEventChannelTimeout(struct ADAPTER *prAdapter,
 				  uintptr_t ulParamPtr)

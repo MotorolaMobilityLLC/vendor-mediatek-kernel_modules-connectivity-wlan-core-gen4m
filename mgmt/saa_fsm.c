@@ -1532,6 +1532,15 @@ saaSendDisconnectMsgHandler(struct ADAPTER *prAdapter,
 		 */
 		fgIsTxAllowed = prStaRec->fgIsTxAllowed;
 
+#if CFG_SUPPORT_NCHO
+		/* Disconnect directly under NCHO mode */
+		if (prAdapter && prAdapter->rNchoInfo.fgNCHOEnabled) {
+			DBGLOG(RSN, INFO,
+				"Disconnect directly due to NCHO enabled\n");
+			fgIsTxAllowed = FALSE;
+		}
+#endif
+
 		/* NOTE(Kevin): Change state immediately to
 		 * avoid starvation of MSG buffer because of too
 		 * many deauth frames before changing the STA

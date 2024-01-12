@@ -1115,6 +1115,12 @@ authSendDeauthFrame(struct ADAPTER *prAdapter,
 	    (MAC_TX_RESERVED_FIELD + WLAN_MAC_MGMT_HEADER_LEN +
 	     REASON_CODE_FIELD_LEN);
 
+#if CFG_SUPPORT_ASSURANCE
+	/* Assurance */
+	if (prAdapter->u4DeauthIeFromUpperLength)
+		u2EstimatedFrameLen += prAdapter->u4DeauthIeFromUpperLength;
+#endif
+
 	/* Allocate a MSDU_INFO_T */
 	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
 	if (prMsduInfo == NULL) {
@@ -1178,6 +1184,10 @@ authSendDeauthFrame(struct ADAPTER *prAdapter,
 		     WLAN_MAC_MGMT_HEADER_LEN,
 		     WLAN_MAC_MGMT_HEADER_LEN + REASON_CODE_FIELD_LEN,
 		     pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
+
+#if CFG_SUPPORT_ASSURANCE
+	deauth_build_nonwfa_vend_ie(prAdapter, prMsduInfo);
+#endif
 
 #if CFG_SUPPORT_802_11W
 	/* AP PMF */

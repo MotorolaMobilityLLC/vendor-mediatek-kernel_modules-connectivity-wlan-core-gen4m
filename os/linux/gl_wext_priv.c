@@ -10737,6 +10737,10 @@ int priv_driver_set_band(struct net_device *prNetDev, char *pcCommand,
 	enum ENUM_BAND eBand = BAND_NULL;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	int32_t u4Ret = 0;
+#if CFG_SUPPORT_NCHO
+	uint32_t u4BufLen = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+#endif
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -10761,6 +10765,15 @@ int priv_driver_set_band(struct net_device *prNetDev, char *pcCommand,
 			eBand = BAND_2G4;
 
 		prAdapter->aePreferBand[KAL_NETWORK_TYPE_AIS_INDEX] = eBand;
+
+#if CFG_SUPPORT_NCHO
+		/* Handle NCHO setband */
+		rStatus = kalIoctl(prGlueInfo,
+			wlanoidSetNchoBand,
+			&ucBand, sizeof(ucBand), &u4BufLen);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+#endif
 	}
 
 	return 0;

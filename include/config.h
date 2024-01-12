@@ -1784,8 +1784,8 @@
  * CFG_SUPPORT_NCHO_AUTO_ENABLE: sub-feature depends with CFG_SUPPORT_NCHO
  *------------------------------------------------------------------------------
  */
-#define CFG_SUPPORT_NCHO		0
-#define CFG_SUPPORT_NCHO_AUTO_ENABLE	0
+#define CFG_SUPPORT_NCHO	(CFG_EXT_FEATURE)
+#define CFG_SUPPORT_ASSURANCE	(CFG_EXT_FEATURE)
 #define CFG_SUPPORT_LLW_SCAN		(CFG_EXT_FEATURE)
 
 /*------------------------------------------------------------------------------

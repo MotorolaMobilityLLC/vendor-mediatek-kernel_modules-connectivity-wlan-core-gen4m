@@ -239,6 +239,11 @@ extern struct ADAPTER *g_prAdapter;
 #include "agent.h"
 #endif
 
+#if CFG_EXT_FEATURE
+#include "log_ext.h"
+#include "roaming_ext.h"
+#endif
+
 extern u_int8_t fgIsMcuOff;
 extern u_int8_t fgIsBusAccessFailed;
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
