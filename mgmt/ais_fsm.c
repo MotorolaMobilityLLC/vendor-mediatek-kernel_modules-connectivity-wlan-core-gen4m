@@ -3694,20 +3694,24 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 	    ucReasonOfDisconnect != DISCONNECT_REASON_CODE_TEST_MODE)
 		wmmNotifyDisconnected(prAdapter, ucBssIndex);
 
-#if CFG_ENABLE_WIFI_DIRECT
 	if (fgDelayIndication) {
-		uint8_t p2p = cnmP2pIsActive(prAdapter);
 		uint8_t join = timerPendingTimer(
 				&prAisFsmInfo->rJoinTimeoutTimer);
 
-		if (p2p || join) {
+		if (join) {
 			fgDelayIndication = FALSE;
 			DBGLOG(AIS, INFO,
-				"delay indication not allowed due to p2p=%d, join=%d",
-				p2p, join);
+				"delay indication not allowed due to join");
 		}
-	}
+
+#if CFG_ENABLE_WIFI_DIRECT && (CFG_TC10_FEATURE == 1)
+		if (cnmP2pIsActive(prAdapter)) {
+			fgDelayIndication = FALSE;
+			DBGLOG(AIS, INFO,
+				"delay indication not allowed due to p2p");
+		}
 #endif
+	}
 
 	/* 4 <2> Abort current job. */
 	switch (prAisFsmInfo->eCurrentState) {
