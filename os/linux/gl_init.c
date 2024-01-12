@@ -2627,7 +2627,7 @@ void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo,
 		ARRAY_SIZE(mtk_5ghz_channels),
 		&ucNumOfChannel, aucChannelList);
 
-	if (ucRoleIdx >= 0 && ucRoleIdx < KAL_P2P_NUM)
+	if (ucRoleIdx < KAL_P2P_NUM)
 		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
 	else
 		prGlueP2pInfo = prGlueInfo->prP2PInfo[0];
