@@ -857,6 +857,12 @@ ifeq ($(CONFIG_MTK_WIFI_11BE_MLO_SUPPORT), y)
     else
         ccflags-y += -DCFG_SUPPORT_ML_RECONFIG=0
     endif
+    # Setup MLD info before auth/assoc only for STA
+    ifeq ($(CONFIG_MLD_INFO_PRESETUP), y)
+        ccflags-y += -DCFG_MLD_INFO_PRESETUP=1
+    else
+        ccflags-y += -DCFG_MLD_INFO_PRESETUP=0
+    endif
 else
     ccflags-y += -DCFG_SUPPORT_802_11BE_MLO=0
     ccflags-y += -DCFG_SUPPORT_ML_RECONFIG=0

@@ -3728,6 +3728,93 @@ int8_t mldStarecSetSetupIdx(struct ADAPTER *prAdapter,
 	return 0;
 }
 
+#if (CFG_MLD_INFO_PRESETUP == 1)
+static uint32_t mldUpdatePerLinkMlo(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec)
+{
+	struct BSS_INFO *prBssInfo;
+
+	ASSERT(prAdapter);
+	ASSERT(prStaRec);
+	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
+
+	if (!IS_NET_ACTIVE(prAdapter, prStaRec->ucBssIndex)) {
+		DBGLOG(ML, INFO, "Network is not activated\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(ML, INFO, "prBssInfo is NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (!IS_BSS_ACTIVE(prBssInfo)) {
+		DBGLOG(ML, INFO, "prBssInfo is not activated\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	if (nicUniCmdSetBssMld(prAdapter, prBssInfo) !=
+			WLAN_STATUS_SUCCESS) {
+		DBGLOG(ML, ERROR, "BSS MLD update failed.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+	if (nicUniCmdSetStarecMld(prAdapter, prStaRec) !=
+			WLAN_STATUS_SUCCESS) {
+		DBGLOG(ML, ERROR, "STA_REC ML INFO update failed.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+	return WLAN_STATUS_SUCCESS;
+#else
+	DBGLOG(ML, WARN, "NOT supported.\n");
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This utility function is used to setup MLD info and form MLO.
+ *        This only used in STA mode currently.
+ *
+ * @param prAdapter          Pointer of ADAPTER_T
+ *        prStaRec           Pointer of STA_RECORD
+ *
+ * @retval 0
+ * @retval -EINVAL
+ */
+/*----------------------------------------------------------------------------*/
+int8_t mldSetupMlInfo(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec)
+{
+	int8_t status = 0;
+	struct MLD_STA_RECORD *prMldStarec;
+	struct STA_RECORD *prCurrStarec;
+	struct LINK *prStarecList;
+
+	prMldStarec = mldStarecGetByStarec(prAdapter, prStaRec);
+	if (!prMldStarec)
+		return -EINVAL;
+
+	prStarecList = &prMldStarec->rStarecList;
+	if (!prStarecList)
+		return -EINVAL;
+
+	LINK_FOR_EACH_ENTRY(prCurrStarec, prStarecList,
+			rLinkEntryMld, struct STA_RECORD) {
+		if (!prCurrStarec)
+			break;
+		if (mldUpdatePerLinkMlo(prAdapter, prCurrStarec) !=
+				WLAN_STATUS_SUCCESS) {
+			status = -EINVAL;
+			break;
+		}
+	}
+
+	return status;
+}
+#endif /* CFG_MLD_INFO_PRESETUP */
+
 void mldStarecLogRxData(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
 	uint8_t ucHwBandIdx)
