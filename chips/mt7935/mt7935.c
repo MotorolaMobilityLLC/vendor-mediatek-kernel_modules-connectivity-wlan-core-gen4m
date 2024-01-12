@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (c) 2021 MediaTek Inc.
+ * Copyright (c) 2023 MediaTek Inc.
  */
 
-/*! \file   mt6653.c
+/*! \file   mt7935.c
 *    \brief  Internal driver stack will export
 *    the required procedures here for GLUE Layer.
 *
@@ -11,40 +11,40 @@
      from MediaTek 802.11 Wireless LAN driver stack to GLUE Layer.
 */
 
-#ifdef MT6653
+#ifdef MT7935
 
 #include "precomp.h"
-#include "mt6653.h"
-#include "coda/mt6653/cb_ckgen_top.h"
-#include "coda/mt6653/cb_infra_misc0.h"
-#include "coda/mt6653/cb_infra_rgu.h"
-#include "coda/mt6653/cb_infra_slp_ctrl.h"
-#include "coda/mt6653/cbtop_gpio_sw_def.h"
-#include "coda/mt6653/conn_bus_cr.h"
-#include "coda/mt6653/conn_cfg.h"
-#include "coda/mt6653/conn_dbg_ctl.h"
-#include "coda/mt6653/conn_host_csr_top.h"
-#include "coda/mt6653/conn_semaphore.h"
-#include "coda/mt6653/wf_cr_sw_def.h"
-#include "coda/mt6653/wf_top_cfg.h"
-#include "coda/mt6653/wf_wfdma_ext_wrap_csr.h"
-#include "coda/mt6653/wf_wfdma_host_dma0.h"
-#include "coda/mt6653/wf_wfdma_mcu_dma0.h"
-#include "coda/mt6653/wf_pse_top.h"
-#include "coda/mt6653/pcie_mac_ireg.h"
-#include "coda/mt6653/conn_mcu_bus_cr.h"
-#include "coda/mt6653/conn_bus_cr_von.h"
-#include "coda/mt6653/conn_host_csr_top.h"
-#include "coda/mt6653/vlp_uds_ctrl.h"
-#include "coda/mt6653/mawd_reg.h"
-#include "coda/mt6653/wf_rro_top.h"
-#include "coda/mt6653/wf_top_cfg_on.h"
-#include "hal_dmashdl_mt6653.h"
-#include "coda/mt6653/wf2ap_conn_infra_on_ccif4.h"
-#include "coda/mt6653/ap2wf_conn_infra_on_ccif4.h"
-#include "coda/mt6653/wf_top_cfg_on.h"
-#include "coda/mt6653/wf_wtblon_top.h"
-#include "coda/mt6653/wf_uwtbl_top.h"
+#include "mt7935.h"
+#include "coda/mt7935/cb_ckgen_top.h"
+#include "coda/mt7935/cb_infra_misc0.h"
+#include "coda/mt7935/cb_infra_rgu.h"
+#include "coda/mt7935/cb_infra_slp_ctrl.h"
+#include "coda/mt7935/cbtop_gpio_sw_def.h"
+#include "coda/mt7935/conn_bus_cr.h"
+#include "coda/mt7935/conn_cfg.h"
+#include "coda/mt7935/conn_dbg_ctl.h"
+#include "coda/mt7935/conn_host_csr_top.h"
+#include "coda/mt7935/conn_semaphore.h"
+#include "coda/mt7935/wf_cr_sw_def.h"
+#include "coda/mt7935/wf_top_cfg.h"
+#include "coda/mt7935/wf_wfdma_ext_wrap_csr.h"
+#include "coda/mt7935/wf_wfdma_host_dma0.h"
+#include "coda/mt7935/wf_wfdma_mcu_dma0.h"
+#include "coda/mt7935/wf_pse_top.h"
+#include "coda/mt7935/pcie_mac_ireg.h"
+#include "coda/mt7935/conn_mcu_bus_cr.h"
+#include "coda/mt7935/conn_bus_cr_von.h"
+#include "coda/mt7935/conn_host_csr_top.h"
+#include "coda/mt7935/vlp_uds_ctrl.h"
+#include "coda/mt7935/mawd_reg.h"
+#include "coda/mt7935/wf_rro_top.h"
+#include "coda/mt7935/wf_top_cfg_on.h"
+#include "hal_dmashdl_mt7935.h"
+#include "coda/mt7935/wf2ap_conn_infra_on_ccif4.h"
+#include "coda/mt7935/ap2wf_conn_infra_on_ccif4.h"
+#include "coda/mt7935/wf_top_cfg_on.h"
+#include "coda/mt7935/wf_wtblon_top.h"
+#include "coda/mt7935/wf_uwtbl_top.h"
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #include "connv3.h"
 #endif
@@ -86,113 +86,114 @@
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-static uint32_t mt6653GetFlavorVer(uint8_t *flavor);
+static uint32_t mt7935GetFlavorVer(uint8_t *flavor);
 
-static void mt6653_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
+static void mt7935_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
 	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx);
 
-static void mt6653_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
+static void mt7935_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx);
 
 #if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
-static void mt6653_ConstructDspName(struct GLUE_INFO *prGlueInfo,
+static void mt7935_ConstructDspName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx);
 #endif
 
 #if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
-static void mt6653_ConstructIdxLogBinName(struct GLUE_INFO *prGlueInfo,
+static void mt7935_ConstructIdxLogBinName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName);
 #endif
 
 #if defined(_HIF_PCIE)
-static uint8_t mt6653SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
+static uint8_t mt7935SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo, uint32_t u4SwRingIdx);
 
-static bool mt6653WfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
+static bool mt7935WfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
 		bool fgAllocMem);
 
-static void mt6653ProcessTxInterrupt(
+static void mt7935ProcessTxInterrupt(
 		struct ADAPTER *prAdapter);
 
-static void mt6653ProcessRxInterrupt(
+static void mt7935ProcessRxInterrupt(
 	struct ADAPTER *prAdapter);
 
-static void mt6653WfdmaManualPrefetch(
+static void mt7935WfdmaManualPrefetch(
 	struct GLUE_INFO *prGlueInfo);
 
-static void mt6653ReadIntStatusByMsi(struct ADAPTER *prAdapter,
+static void mt7935ReadIntStatusByMsi(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus);
 
-static void mt6653ReadIntStatus(struct ADAPTER *prAdapter,
+static void mt7935ReadIntStatus(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus);
 
 #if (CFG_SUPPORT_PCIE_PLAT_INT_FLOW == 1)
-static void mt6653EnableInterruptViaPcie(struct ADAPTER *prAdapter);
-static void mt6653DisableInterruptViaPcie(struct ADAPTER *prAdapter);
+static void mt7935EnableInterruptViaPcie(struct ADAPTER *prAdapter);
+static void mt7935DisableInterruptViaPcie(struct ADAPTER *prAdapter);
 #endif
-static void mt6653EnableInterrupt(struct ADAPTER *prAdapter);
-static void mt6653DisableInterrupt(struct ADAPTER *prAdapter);
+static void mt7935EnableInterrupt(struct ADAPTER *prAdapter);
+static void mt7935DisableInterrupt(struct ADAPTER *prAdapter);
 
-static void mt6653ConfigIntMask(struct GLUE_INFO *prGlueInfo,
+static void mt7935ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable);
 
-static void mt6653ConfigWfdmaRxRingThreshold(
+static void mt7935ConfigWfdmaRxRingThreshold(
 	struct ADAPTER *prAdapter, uint32_t u4Num, u_int8_t fgIsData);
 
-static void mt6653WpdmaConfig(struct GLUE_INFO *prGlueInfo,
+static void mt7935WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable, bool fgResetHif);
 
 #if CFG_MTK_WIFI_WFDMA_WB
-static void mt6653ProcessTxInterruptByEmi(struct ADAPTER *prAdapter);
-static void mt6653ProcessRxInterruptByEmi(struct ADAPTER *prAdapter);
-static void mt6653ReadIntStatusByEmi(struct ADAPTER *prAdapter,
+/* TODO: update wfdma wb */
+static void mt7935ProcessTxInterruptByEmi(struct ADAPTER *prAdapter);
+static void mt7935ProcessRxInterruptByEmi(struct ADAPTER *prAdapter);
+static void mt7935ReadIntStatusByEmi(struct ADAPTER *prAdapter,
 				     uint32_t *pu4IntStatus);
-static void mt6653ConfigEmiIntMask(struct GLUE_INFO *prGlueInfo,
+static void mt7935ConfigEmiIntMask(struct GLUE_INFO *prGlueInfo,
 				   u_int8_t enable);
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 
-static void mt6653SetupMcuEmiAddr(struct ADAPTER *prAdapter);
+static void mt7935SetupMcuEmiAddr(struct ADAPTER *prAdapter);
 
-static void mt6653WfdmaTxRingExtCtrl(
+static void mt7935WfdmaTxRingExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_TX_RING *prTxRing,
 	u_int32_t index);
-static void mt6653WfdmaRxRingExtCtrl(
+static void mt7935WfdmaRxRingExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_RX_RING *rx_ring,
 	u_int32_t index);
 
-static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo);
+static void mt7935InitPcieInt(struct GLUE_INFO *prGlueInfo);
 
 #if CFG_SUPPORT_PCIE_ASPM
-static void mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
+static void mt7935ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 #endif
 
-static void mt6653ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
+static void mt7935ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
 
-static u_int8_t mt6653_get_sw_interrupt_status(struct ADAPTER *prAdapter,
+static u_int8_t mt7935_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *pu4Status);
 
-static void mt6653_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
+static void mt7935_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
 	uint32_t sec,
 	uint32_t usec);
-static uint32_t mt6653_ccif_get_interrupt_status(struct ADAPTER *ad);
-static void mt6653_ccif_set_fw_log_read_pointer(struct ADAPTER *ad,
+static uint32_t mt7935_ccif_get_interrupt_status(struct ADAPTER *ad);
+static void mt7935_ccif_set_fw_log_read_pointer(struct ADAPTER *ad,
 	enum ENUM_FW_LOG_CTRL_TYPE type,
 	uint32_t read_pointer);
-static uint32_t mt6653_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
+static uint32_t mt7935_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
 	enum ENUM_FW_LOG_CTRL_TYPE type);
-static int32_t mt6653_ccif_trigger_fw_assert(struct ADAPTER *ad);
+static int32_t mt7935_ccif_trigger_fw_assert(struct ADAPTER *ad);
 
-static int32_t mt6653_trigger_fw_assert(struct ADAPTER *prAdapter);
-static uint32_t mt6653_mcu_init(struct ADAPTER *ad);
-static void mt6653_mcu_deinit(struct ADAPTER *ad);
-static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter);
-static int mt6653ConnacPccifOff(struct ADAPTER *prAdapter);
-static int mt6653_CheckBusHang(void *priv, uint8_t rst_enable);
-static uint32_t mt6653_wlanDownloadPatch(struct ADAPTER *prAdapter);
-static void mt6653WiFiNappingCtrl(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
+static int32_t mt7935_trigger_fw_assert(struct ADAPTER *prAdapter);
+static uint32_t mt7935_mcu_init(struct ADAPTER *ad);
+static void mt7935_mcu_deinit(struct ADAPTER *ad);
+static int mt7935ConnacPccifOn(struct ADAPTER *prAdapter);
+static int mt7935ConnacPccifOff(struct ADAPTER *prAdapter);
+static int mt7935_CheckBusHang(void *priv, uint8_t rst_enable);
+static uint32_t mt7935_wlanDownloadPatch(struct ADAPTER *prAdapter);
+static void mt7935WiFiNappingCtrl(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 #endif
 
 /*******************************************************************************
@@ -205,19 +206,19 @@ static void mt6653WiFiNappingCtrl(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 ********************************************************************************
 */
 
-struct ECO_INFO mt6653_eco_table[] = {
+struct ECO_INFO mt7935_eco_table[] = {
 	/* HW version,  ROM version,    Factory version */
 	{0x00, 0x00, 0xA, 0x1},	/* E1 */
 	{0x00, 0x00, 0x0, 0x0}	/* End of table */
 };
 
-uint8_t *apucmt6653FwName[] = {
-	(uint8_t *) CFG_FW_FILENAME "_6653",
+uint8_t *apucmt7935FwName[] = {
+	(uint8_t *) CFG_FW_FILENAME "_7935",
 	NULL
 };
 
 #if defined(_HIF_PCIE)
-struct PCIE_CHIP_CR_MAPPING mt6653_bus2chip_cr_mapping[] = {
+struct PCIE_CHIP_CR_MAPPING mt7935_bus2chip_cr_mapping[] = {
 	/* chip addr, bus addr, range */
 	{0x830c0000, 0x00000, 0x1000}, /* WF_MCU_BUS_CR_REMAP */
 	{0x54000000, 0x02000, 0x1000},  /* WFDMA PCIE0 MCU DMA0 */
@@ -291,72 +292,60 @@ struct PCIE_CHIP_CR_MAPPING mt6653_bus2chip_cr_mapping[] = {
 	{0x70000000, 0x1e0000, 0x9000},
 	{0x70020000, 0x1f0000, 0x10000}, /* Reserved for CBTOP, can't switch */
 #endif
-	{0x7c500000, MT6653_PCIE2AP_REMAP_BASE_ADDR, 0x200000}, /* remap */
+	{0x7c500000, MT7935_PCIE2AP_REMAP_BASE_ADDR, 0x200000}, /* remap */
 	{0x0, 0x0, 0x0} /* End */
 };
 #endif
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-struct pcie2ap_remap mt6653_pcie2ap_remap = {
+struct pcie2ap_remap mt7935_pcie2ap_remap = {
 	.reg_base = CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_0_76_CR_PCIE2AP_PUBLIC_REMAPPING_WF_06_ADDR,
 	.reg_mask = CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_0_76_CR_PCIE2AP_PUBLIC_REMAPPING_WF_06_MASK,
 	.reg_shift = CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_0_76_CR_PCIE2AP_PUBLIC_REMAPPING_WF_06_SHFT,
-	.base_addr = MT6653_PCIE2AP_REMAP_BASE_ADDR
+	.base_addr = MT7935_PCIE2AP_REMAP_BASE_ADDR
 };
 
-struct ap2wf_remap mt6653_ap2wf_remap = {
+struct ap2wf_remap mt7935_ap2wf_remap = {
 	.reg_base = CONN_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_ADDR,
 	.reg_mask = CONN_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_MASK,
 	.reg_shift = CONN_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_SHFT,
-	.base_addr = MT6653_REMAP_BASE_ADDR
+	.base_addr = MT7935_REMAP_BASE_ADDR
 };
 
-struct PCIE_CHIP_CR_REMAPPING mt6653_bus2chip_cr_remapping = {
-	.pcie2ap = &mt6653_pcie2ap_remap,
-	.ap2wf = &mt6653_ap2wf_remap,
+struct PCIE_CHIP_CR_REMAPPING mt7935_bus2chip_cr_remapping = {
+	.pcie2ap = &mt7935_pcie2ap_remap,
+	.ap2wf = &mt7935_ap2wf_remap,
 };
 
-struct wfdma_group_info mt6653_wfmda_host_tx_group[] = {
+struct wfdma_group_info mt7935_wfmda_host_tx_group[] = {
 	{"P0T0:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_CTRL0_ADDR, true},
 	{"P0T1:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING1_CTRL0_ADDR, true},
 	{"P0T2:AP DATA2", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING2_CTRL0_ADDR, true},
 	{"P0T3:AP DATA3", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING3_CTRL0_ADDR, true},
 	{"P0T3:AP DATA4", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING4_CTRL0_ADDR, true},
 	{"P0T3:AP DATA5", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING5_CTRL0_ADDR, true},
-	{"P0T8:MD DATA0", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING8_CTRL0_ADDR},
-	{"P0T9:MD DATA1", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING9_CTRL0_ADDR},
-	{"P0T10:MD DATA2", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING10_CTRL0_ADDR},
-	{"P0T11:MD DATA3", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING11_CTRL0_ADDR},
-	{"P0T14:MD CMD", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING14_CTRL0_ADDR},
 	{"P0T15:AP CMD", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING15_CTRL0_ADDR},
 	{"P0T16:FWDL", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING16_CTRL0_ADDR},
 };
 
-struct wfdma_group_info mt6653_wfmda_host_rx_group[] = {
-	{"P0R4:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_CTRL0_ADDR, true},
-	{"P0R7:AP EVT/TDONE", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_CTRL0_ADDR,
-	 true},
-	{"P0R5:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING5_CTRL0_ADDR, true},
-	{"P0R8:AP ICS", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING8_CTRL0_ADDR, true},
-	{"P0R6:AP DATA2", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING6_CTRL0_ADDR, true},
-	{"P0R9:MD DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING9_CTRL0_ADDR},
-	{"P0R10:MD DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING10_CTRL0_ADDR},
-	{"P0R11:MD DATA2", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING11_CTRL0_ADDR},
-	{"P0R12:MD EVT/TDONE", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING12_CTRL0_ADDR},
-	{"P0R13:MD ICS", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING13_CTRL0_ADDR},
+struct wfdma_group_info mt7935_wfmda_host_rx_group[] = {
+	{"P0R4:DATA", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_CTRL0_ADDR, true},
+	{"P0R7:EVT", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_CTRL0_ADDR, true},
+	{"P0R6:HPPDATA", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING6_CTRL0_ADDR, true},
+	{"P0R5:TDone", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING5_CTRL0_ADDR, true},
+	{"P0R8:ICS", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING8_CTRL0_ADDR, true},
+	{"P0R9:Coredump", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING9_CTRL0_ADDR, true},
+	{"P0R10:Fw log", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING10_CTRL0_ADDR, true},
 };
 
-struct wfdma_group_info mt6653_wfmda_wm_tx_group[] = {
-	{"P0T6:LMAC TXD", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING6_CTRL0_ADDR},
+struct wfdma_group_info mt7935_wfmda_wm_tx_group[] = {
 };
 
-struct wfdma_group_info mt6653_wfmda_wm_rx_group[] = {
+struct wfdma_group_info mt7935_wfmda_wm_rx_group[] = {
 	{"P0R0:FWDL", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING0_CTRL0_ADDR},
-	{"P0R2:TXD0", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING2_CTRL0_ADDR},
-	{"P0R3:TXD1", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING3_CTRL0_ADDR},
 };
 
-struct pse_group_info mt6653_pse_group[] = {
+struct pse_group_info mt7935_pse_group[] = {
 	{"HIF0(TX data)", WF_PSE_TOP_PG_HIF0_GROUP_ADDR,
 		WF_PSE_TOP_HIF0_PG_INFO_ADDR},
 	{"HIF1(Talos CMD)", WF_PSE_TOP_PG_HIF1_GROUP_ADDR,
@@ -381,7 +370,7 @@ struct pse_group_info mt6653_pse_group[] = {
 #endif /*_HIF_PCIE || _HIF_AXI */
 
 #if defined(_HIF_PCIE)
-struct pcie_msi_layout mt6653_pcie_msi_layout[] = {
+struct pcie_msi_layout mt7935_pcie_msi_layout[] = {
 #if (WFDMA_AP_MSI_NUM == 8)
 	{"conn_hif_tx_data0_int", mtk_pci_isr,
 	 mtk_pci_isr_tx_data0_thread, AP_INT, 0},
@@ -463,9 +452,9 @@ struct pcie_msi_layout mt6653_pcie_msi_layout[] = {
 };
 #endif
 
-struct BUS_INFO mt6653_bus_info = {
+struct BUS_INFO mt7935_bus_info = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-	.top_cfg_base = MT6653_TOP_CFG_BASE,
+	.top_cfg_base = MT7935_TOP_CFG_BASE,
 
 	/* host_dma0 for TXP */
 	.host_dma0_base = WF_WFDMA_HOST_DMA0_BASE,
@@ -493,13 +482,9 @@ struct BUS_INFO mt6653_bus_info = {
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_5_MASK |
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_6_MASK |
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_7_MASK |
-#if CFG_ENABLE_MAWD_MD_RING
+	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_8_MASK |
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_9_MASK |
-	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_10_MASK |
-	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_11_MASK |
-	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_12_MASK |
-#endif
-	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_8_MASK),
+	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_10_MASK),
 
 	.host_tx_ring_base = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_CTRL0_ADDR,
 	.host_tx_ring_ext_ctrl_base =
@@ -543,8 +528,8 @@ struct BUS_INFO mt6653_bus_info = {
 	.mawd_settings6 = MAWD_SETTING6,
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
-	.bus2chip = mt6653_bus2chip_cr_mapping,
-	.bus2chip_remap = &mt6653_bus2chip_cr_remapping,
+	.bus2chip = mt7935_bus2chip_cr_mapping,
+	.bus2chip_remap = &mt7935_bus2chip_cr_remapping,
 	.max_static_map_addr = 0x00200000,
 
 	.tx_ring_fwdl_idx = CONNAC3X_FWDL_TX_RING_IDX,
@@ -552,81 +537,76 @@ struct BUS_INFO mt6653_bus_info = {
 	.tx_ring0_data_idx = 0,
 	.tx_ring1_data_idx = 1,
 	.tx_ring2_data_idx = 2,
-#if CFG_ENABLE_MAWD_MD_RING
-	.tx_ring3_data_idx = 8,
-	.tx_prio_data_idx = 9,
-	.tx_altx_data_idx = 10,
-	.rx_data_ring_num = 6,
-	.rx_evt_ring_num = 3,
-	.rx_data_ring_size = 1024,
-#else
 	.tx_ring3_data_idx = 3,
 	.tx_prio_data_idx = 4,
 	.tx_altx_data_idx = 5,
-	.rx_data_ring_num = 3,
-	.rx_evt_ring_num = 2,
+	.rx_data_ring_num = 2,
+	.rx_evt_ring_num = 5,
 	.rx_data_ring_size = 3072,
-#endif /* CFG_ENABLE_MAWD_MD_RING */
 	.rx_evt_ring_size = 128,
 	.rx_data_ring_prealloc_size = 1024,
 	.fw_own_clear_addr = CONNAC3X_BN0_IRQ_STAT_ADDR,
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
 	.fgCheckDriverOwnInt = FALSE,
 	.u4DmaMask = 34,
-	.wfmda_host_tx_group = mt6653_wfmda_host_tx_group,
-	.wfmda_host_tx_group_len = ARRAY_SIZE(mt6653_wfmda_host_tx_group),
-	.wfmda_host_rx_group = mt6653_wfmda_host_rx_group,
-	.wfmda_host_rx_group_len = ARRAY_SIZE(mt6653_wfmda_host_rx_group),
-	.wfmda_wm_tx_group = mt6653_wfmda_wm_tx_group,
-	.wfmda_wm_tx_group_len = ARRAY_SIZE(mt6653_wfmda_wm_tx_group),
-	.wfmda_wm_rx_group = mt6653_wfmda_wm_rx_group,
-	.wfmda_wm_rx_group_len = ARRAY_SIZE(mt6653_wfmda_wm_rx_group),
-	.prDmashdlCfg = &rMt6653DmashdlCfg,
-#if (DBG_DISABLE_ALL_INFO == 0)
-	.prPleTopCr = &rMt6653PleTopCr,
-	.prPseTopCr = &rMt6653PseTopCr,
-	.prPpTopCr = &rMt6653PpTopCr,
-#endif
-	.prPseGroup = mt6653_pse_group,
-	.u4PseGroupLen = ARRAY_SIZE(mt6653_pse_group),
-	.pdmaSetup = mt6653WpdmaConfig,
-#if defined(_HIF_PCIE) && (CFG_SUPPORT_PCIE_PLAT_INT_FLOW == 1)
-	.enableInterrupt = mt6653EnableInterruptViaPcie,
-	.disableInterrupt = mt6653DisableInterruptViaPcie,
+	.wfmda_host_tx_group = mt7935_wfmda_host_tx_group,
+	.wfmda_host_tx_group_len = ARRAY_SIZE(mt7935_wfmda_host_tx_group),
+	.wfmda_host_rx_group = mt7935_wfmda_host_rx_group,
+	.wfmda_host_rx_group_len = ARRAY_SIZE(mt7935_wfmda_host_rx_group),
+	.wfmda_wm_tx_group = mt7935_wfmda_wm_tx_group,
+	.wfmda_wm_tx_group_len = ARRAY_SIZE(mt7935_wfmda_wm_tx_group),
+	.wfmda_wm_rx_group = mt7935_wfmda_wm_rx_group,
+	.wfmda_wm_rx_group_len = ARRAY_SIZE(mt7935_wfmda_wm_rx_group),
+	.prDmashdlCfg = &rMt7935DmashdlCfg,
+#if (CFG_MT7935_NEED_UPDATE == 1)
+	.prPleTopCr = NULL,
+	.prPseTopCr = NULL,
+	.prPpTopCr = NULL,
 #else
-	.enableInterrupt = mt6653EnableInterrupt,
-	.disableInterrupt = mt6653DisableInterrupt,
+	.prPleTopCr = &rMt7935PleTopCr,
+	.prPseTopCr = &rMt7935PseTopCr,
+	.prPpTopCr = &rMt7935PpTopCr,
+#endif
+	.prPseGroup = mt7935_pse_group,
+	.u4PseGroupLen = ARRAY_SIZE(mt7935_pse_group),
+	.pdmaSetup = mt7935WpdmaConfig,
+#if defined(_HIF_PCIE) && (CFG_SUPPORT_PCIE_PLAT_INT_FLOW == 1)
+	.enableInterrupt = mt7935EnableInterruptViaPcie,
+	.disableInterrupt = mt7935DisableInterruptViaPcie,
+#else
+	.enableInterrupt = mt7935EnableInterrupt,
+	.disableInterrupt = mt7935DisableInterrupt,
 #endif
 #if CFG_MTK_WIFI_WFDMA_WB
-	.configWfdmaIntMask = mt6653ConfigEmiIntMask,
+	.configWfdmaIntMask = mt7935ConfigEmiIntMask,
 #else
-	.configWfdmaIntMask = mt6653ConfigIntMask,
+	.configWfdmaIntMask = mt7935ConfigIntMask,
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
-	.configWfdmaRxRingTh = mt6653ConfigWfdmaRxRingThreshold,
+	.configWfdmaRxRingTh = mt7935ConfigWfdmaRxRingThreshold,
 #if defined(_HIF_PCIE)
-	.initPcieInt = mt6653InitPcieInt,
+	.initPcieInt = mt7935InitPcieInt,
 #if CFG_SUPPORT_PCIE_ASPM
-	.configPcieAspm = mt6653ConfigPcieAspm,
+	.configPcieAspm = mt7935ConfigPcieAspm,
 #endif
 	.pdmaStop = asicConnac3xWfdmaStop,
 	.pdmaPollingIdle = asicConnac3xWfdmaPollingAllIdle,
 	.pcie_msi_info = {
-		.prMsiLayout = mt6653_pcie_msi_layout,
-		.u4MaxMsiNum = ARRAY_SIZE(mt6653_pcie_msi_layout),
+		.prMsiLayout = mt7935_pcie_msi_layout,
+		.u4MaxMsiNum = ARRAY_SIZE(mt7935_pcie_msi_layout),
 	},
-	.showDebugInfo = mt6653ShowPcieDebugInfo,
+	.showDebugInfo = mt7935ShowPcieDebugInfo,
 #endif /* _HIF_PCIE */
 #if CFG_MTK_WIFI_WFDMA_WB
-	.processTxInterrupt = mt6653ProcessTxInterruptByEmi,
-	.processRxInterrupt = mt6653ProcessRxInterruptByEmi,
+	.processTxInterrupt = mt7935ProcessTxInterruptByEmi,
+	.processRxInterrupt = mt7935ProcessRxInterruptByEmi,
 #else
-	.processTxInterrupt = mt6653ProcessTxInterrupt,
-	.processRxInterrupt = mt6653ProcessRxInterrupt,
+	.processTxInterrupt = mt7935ProcessTxInterrupt,
+	.processRxInterrupt = mt7935ProcessRxInterrupt,
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
-	.tx_ring_ext_ctrl = mt6653WfdmaTxRingExtCtrl,
-	.rx_ring_ext_ctrl = mt6653WfdmaRxRingExtCtrl,
+	.tx_ring_ext_ctrl = mt7935WfdmaTxRingExtCtrl,
+	.rx_ring_ext_ctrl = mt7935WfdmaRxRingExtCtrl,
 	/* null wfdmaManualPrefetch if want to disable manual mode */
-	.wfdmaManualPrefetch = mt6653WfdmaManualPrefetch,
+	.wfdmaManualPrefetch = mt7935WfdmaManualPrefetch,
 	.lowPowerOwnRead = asicConnac3xLowPowerOwnRead,
 	.lowPowerOwnSet = asicConnac3xLowPowerOwnSet,
 	.lowPowerOwnClear = asicConnac3xLowPowerOwnClear,
@@ -635,20 +615,20 @@ struct BUS_INFO mt6653_bus_info = {
 	.softwareInterruptMcu = asicConnac3xSoftwareInterruptMcu,
 	.hifRst = asicConnac3xHifRst,
 #if defined(_HIF_PCIE) && (WFDMA_AP_MSI_NUM == 8)
-	.devReadIntStatus = mt6653ReadIntStatusByMsi,
+	.devReadIntStatus = mt7935ReadIntStatusByMsi,
 #else
 #if CFG_MTK_WIFI_WFDMA_WB
-	.devReadIntStatus = mt6653ReadIntStatusByEmi,
+	.devReadIntStatus = mt7935ReadIntStatusByEmi,
 #else
-	.devReadIntStatus = mt6653ReadIntStatus,
+	.devReadIntStatus = mt7935ReadIntStatus,
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 #endif /* _HIF_PCIE */
-	.setRxRingHwAddr = mt6653SetRxRingHwAddr,
-	.wfdmaAllocRxRing = mt6653WfdmaAllocRxRing,
-	.setupMcuEmiAddr = mt6653SetupMcuEmiAddr,
+	.setRxRingHwAddr = mt7935SetRxRingHwAddr,
+	.wfdmaAllocRxRing = mt7935WfdmaAllocRxRing,
+	.setupMcuEmiAddr = mt7935SetupMcuEmiAddr,
 #endif /*_HIF_PCIE || _HIF_AXI */
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-	.DmaShdlInit = mt6653DmashdlInit,
+	.DmaShdlInit = mt7935DmashdlInit,
 #endif
 
 #if defined(_HIF_NONE)
@@ -658,17 +638,17 @@ struct BUS_INFO mt6653_bus_info = {
 };
 
 #if CFG_ENABLE_FW_DOWNLOAD
-struct FWDL_OPS_T mt6653_fw_dl_ops = {
-	.constructFirmwarePrio = mt6653_ConstructFirmwarePrio,
-	.constructPatchName = mt6653_ConstructPatchName,
+struct FWDL_OPS_T mt7935_fw_dl_ops = {
+	.constructFirmwarePrio = mt7935_ConstructFirmwarePrio,
+	.constructPatchName = mt7935_ConstructPatchName,
 #if CFG_SUPPORT_SINGLE_FW_BINARY
 	.parseSingleBinaryFile = wlanParseSingleBinaryFile,
 #endif
 #if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
-	.constrcutIdxLogBin = mt6653_ConstructIdxLogBinName,
+	.constrcutIdxLogBin = mt7935_ConstructIdxLogBinName,
 #endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
 #if defined(_HIF_PCIE)
-	.downloadPatch = mt6653_wlanDownloadPatch,
+	.downloadPatch = mt7935_wlanDownloadPatch,
 #endif
 	.downloadFirmware = wlanConnacFormatDownload,
 	.downloadByDynMemMap = NULL,
@@ -681,8 +661,8 @@ struct FWDL_OPS_T mt6653_fw_dl_ops = {
 	.phyAction = NULL,
 #endif
 #if defined(_HIF_PCIE)
-	.mcu_init = mt6653_mcu_init,
-	.mcu_deinit = mt6653_mcu_deinit,
+	.mcu_init = mt7935_mcu_init,
+	.mcu_deinit = mt7935_mcu_deinit,
 #endif
 #if CFG_SUPPORT_WIFI_DL_BT_PATCH
 	.constructBtPatchName = asicConnac3xConstructBtPatchName,
@@ -693,13 +673,13 @@ struct FWDL_OPS_T mt6653_fw_dl_ops = {
 #endif
 	.getFwVerInfo = wlanParseRamCodeReleaseManifest,
 #if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
-	.constructDspName = mt6653_ConstructDspName,
+	.constructDspName = mt7935_ConstructDspName,
 	.downloadDspFw = wlanDownloadDspFw,
 #endif
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 
-struct TX_DESC_OPS_T mt6653_TxDescOps = {
+struct TX_DESC_OPS_T mt7935_TxDescOps = {
 	.fillNicAppend = fillNicTxDescAppend,
 	.fillHifAppend = fillTxDescAppendByHostV2,
 	.fillTxByteCount = fillConnac3xTxDescTxByteCount,
@@ -708,53 +688,97 @@ struct TX_DESC_OPS_T mt6653_TxDescOps = {
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 };
 
-struct RX_DESC_OPS_T mt6653_RxDescOps = {0};
+struct RX_DESC_OPS_T mt7935_RxDescOps = {0};
 
-#if (DBG_DISABLE_ALL_INFO == 0)
-struct CHIP_DBG_OPS mt6653_DebugOps = {
+struct CHIP_DBG_OPS mt7935_DebugOps = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
+#if (CFG_MT7935_NEED_UPDATE == 1)
+	.showPdmaInfo = NULL,
+#else
 	.showPdmaInfo = connac3x_show_wfdma_info,
 #endif
+#endif
+#if (CFG_MT7935_NEED_UPDATE == 1)
+	.showPseInfo = NULL,
+	.showPleInfo = NULL,
+	.showTxdInfo = NULL,
+	.showWtblInfo = NULL,
+	.showUmacWtblInfo = NULL,
+#else
 	.showPseInfo = connac3x_show_pse_info,
 	.showPleInfo = connac3x_show_ple_info,
 	.showTxdInfo = connac3x_show_txd_Info,
 	.showWtblInfo = connac3x_show_wtbl_info,
 	.showUmacWtblInfo = connac3x_show_umac_wtbl_info,
+#endif
 	.showCsrInfo = NULL,
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
+#if (CFG_MT7935_NEED_UPDATE == 1)
+	.showDmaschInfo = NULL,
+#else
 	.showDmaschInfo = connac3x_show_dmashdl_info,
+#endif
 #endif
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.getFwDebug = NULL,
+#if (CFG_MT7935_NEED_UPDATE == 1)
+	.setFwDebug = NULL,
+#else
 	.setFwDebug = connac3x_set_ple_int_no_read,
+#endif
 #endif
 	.showHifInfo = NULL,
 	.printHifDbgInfo = NULL,
+#if (CFG_MT7935_NEED_UPDATE == 1)
+	.show_rx_rate_info = NULL,
+	.show_rx_rssi_info = NULL,
+	.show_stat_info = NULL,
+	.get_tx_info_from_txv = NULL,
+#else
 	.show_rx_rate_info = connac3x_show_rx_rate_info,
 	.show_rx_rssi_info = connac3x_show_rx_rssi_info,
 	.show_stat_info = connac3x_show_stat_info,
 	.get_tx_info_from_txv = connac3x_get_tx_info_from_txv,
+#endif
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
+#if (CFG_MT7935_NEED_UPDATE == 1)
+	.show_mld_info = NULL,
+#else
 	.show_mld_info = connac3x_show_mld_info,
 #endif
+#endif
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-	.show_wfdma_dbg_probe_info = mt6653_show_wfdma_dbg_probe_info,
-	.show_wfdma_wrapper_info = mt6653_show_wfdma_wrapper_info,
-	.dumpwfsyscpupcr = mt6653_dumpWfsyscpupcr,
-	.dumpBusHangCr = mt6653_DumpBusHangCr,
+#if (CFG_MT7935_NEED_UPDATE == 1)
+	.show_wfdma_dbg_probe_info = NULL,
+	.show_wfdma_wrapper_info = NULL,
+	.dumpwfsyscpupcr = NULL,
+	.dumpBusHangCr = NULL,
+#else
+	.show_wfdma_dbg_probe_info = mt7935_show_wfdma_dbg_probe_info,
+	.show_wfdma_wrapper_info = mt7935_show_wfdma_wrapper_info,
+	.dumpwfsyscpupcr = mt7935_dumpWfsyscpupcr,
+	.dumpBusHangCr = mt7935_DumpBusHangCr,
+#endif
 #endif
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
-	.get_rx_rate_info = mt6653_get_rx_rate_info,
+#if (CFG_MT7935_NEED_UPDATE == 1)
+	.get_rx_rate_info = NULL,
+#else
+	.get_rx_rate_info = mt7935_get_rx_rate_info,
+#endif
 #endif
 #if CFG_SUPPORT_LLS
-	.get_rx_link_stats = mt6653_get_rx_link_stats,
+	.get_rx_link_stats = mt7935_get_rx_link_stats,
 #endif
+#if (CFG_MT7935_NEED_UPDATE == 1)
+	.dumpTxdInfo = NULL,
+#else
 	.dumpTxdInfo = connac3x_dump_tmac_info,
+#endif
 };
-#endif /* DBG_DISABLE_ALL_INFO */
 
 #if CFG_SUPPORT_QA_TOOL
-struct ATE_OPS_T mt6653_AteOps = {
+struct ATE_OPS_T mt7935_AteOps = {
 	/* ICapStart phase out , wlan_service instead */
 	.setICapStart = connacSetICapStart,
 	/* ICapStatus phase out , wlan_service instead */
@@ -765,23 +789,23 @@ struct ATE_OPS_T mt6653_AteOps = {
 #if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1)
 	.getICapDataDumpCmdEvent = nicExtCmdEventSolicitICapIQData,
 #endif
-	.icapRiseVcoreClockRate = mt6653_icapRiseVcoreClockRate,
-	.icapDownVcoreClockRate = mt6653_icapDownVcoreClockRate,
+	.icapRiseVcoreClockRate = mt7935_icapRiseVcoreClockRate,
+	.icapDownVcoreClockRate = mt7935_icapDownVcoreClockRate,
 };
 #endif /* CFG_SUPPORT_QA_TOOL */
 
 #if defined(_HIF_PCIE)
 #if (CFG_MTK_FPGA_PLATFORM == 0)
-static struct CCIF_OPS mt6653_ccif_ops = {
-	.get_interrupt_status = mt6653_ccif_get_interrupt_status,
-	.notify_utc_time_to_fw = mt6653_ccif_notify_utc_time_to_fw,
-	.set_fw_log_read_pointer = mt6653_ccif_set_fw_log_read_pointer,
-	.get_fw_log_read_pointer = mt6653_ccif_get_fw_log_read_pointer,
-	.trigger_fw_assert = mt6653_ccif_trigger_fw_assert,
+static struct CCIF_OPS mt7935_ccif_ops = {
+	.get_interrupt_status = mt7935_ccif_get_interrupt_status,
+	.notify_utc_time_to_fw = mt7935_ccif_notify_utc_time_to_fw,
+	.set_fw_log_read_pointer = mt7935_ccif_set_fw_log_read_pointer,
+	.get_fw_log_read_pointer = mt7935_ccif_get_fw_log_read_pointer,
+	.trigger_fw_assert = mt7935_ccif_trigger_fw_assert,
 };
 #endif
 #if CFG_MTK_WIFI_FW_LOG_MMIO
-static struct FW_LOG_OPS mt6653_fw_log_mmio_ops = {
+static struct FW_LOG_OPS mt7935_fw_log_mmio_ops = {
 	.init = fwLogMmioInitMcu,
 	.deinit = fwLogMmioDeInitMcu,
 	.start = fwLogMmioStart,
@@ -791,7 +815,7 @@ static struct FW_LOG_OPS mt6653_fw_log_mmio_ops = {
 #endif
 
 #if CFG_MTK_WIFI_FW_LOG_EMI
-static struct FW_LOG_OPS mt6653_fw_log_emi_ops = {
+static struct FW_LOG_OPS mt7935_fw_log_emi_ops = {
 	.init = fw_log_emi_init,
 	.deinit = fw_log_emi_deinit,
 	.start = fw_log_emi_start,
@@ -803,7 +827,7 @@ static struct FW_LOG_OPS mt6653_fw_log_emi_ops = {
 #endif
 
 #if CFG_SUPPORT_THERMAL_QUERY
-struct thermal_sensor_info mt6653_thermal_sensor_info[] = {
+struct thermal_sensor_info mt7935_thermal_sensor_info[] = {
 	{"wifi_adie_0", THERMAL_TEMP_TYPE_ADIE, 0},
 	{"wifi_ddie_0", THERMAL_TEMP_TYPE_DDIE, 0},
 	{"wifi_ddie_1", THERMAL_TEMP_TYPE_DDIE, 1},
@@ -834,7 +858,7 @@ struct thermal_sensor_info mt6653_thermal_sensor_info[] = {
  * 17: md_rx_blk_ing_magic_cnt	(default = 0)
  * 18: ap_rx_blk_ing_magic_cnt	(default = 0)
  */
-uint32_t mt6653_mawd_idx_patch[] = {
+uint32_t mt7935_mawd_idx_patch[] = {
 	0, 0, 0, 0,
 	0, 0, 0, 0,
 	0, 0, 0, 0,
@@ -843,26 +867,24 @@ uint32_t mt6653_mawd_idx_patch[] = {
 };
 #endif
 
-struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
-	.bus_info = &mt6653_bus_info,
+struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
+	.bus_info = &mt7935_bus_info,
 #if CFG_ENABLE_FW_DOWNLOAD
-	.fw_dl_ops = &mt6653_fw_dl_ops,
+	.fw_dl_ops = &mt7935_fw_dl_ops,
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 #if CFG_SUPPORT_QA_TOOL
-	.prAteOps = &mt6653_AteOps,
+	.prAteOps = &mt7935_AteOps,
 #endif /* CFG_SUPPORT_QA_TOOL */
-	.prTxDescOps = &mt6653_TxDescOps,
-	.prRxDescOps = &mt6653_RxDescOps,
-#if (DBG_DISABLE_ALL_INFO == 0)
-	.prDebugOps = &mt6653_DebugOps,
-#endif
-	.chip_id = MT6653_CHIP_ID,
+	.prTxDescOps = &mt7935_TxDescOps,
+	.prRxDescOps = &mt7935_RxDescOps,
+	.prDebugOps = &mt7935_DebugOps,
+	.chip_id = MT7935_CHIP_ID,
 	.should_verify_chip_id = FALSE,
 	.sw_sync0 = Connac3x_CONN_CFG_ON_CONN_ON_MISC_ADDR,
 	.sw_ready_bits = WIFI_FUNC_NO_CR4_READY_BITS,
 	.sw_ready_bit_offset =
 		Connac3x_CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT,
-	.patch_addr = MT6653_PATCH_START_ADDR,
+	.patch_addr = MT7935_PATCH_START_ADDR,
 	.is_support_cr4 = FALSE,
 	.is_support_wacpu = FALSE,
 #if defined(_HIF_PCIE)
@@ -871,27 +893,27 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.is_support_sdo = TRUE,
 	.is_support_rro = TRUE,
 	.mawd_cr_backup_offset = 128,
-	.mawd_idx_patch = mt6653_mawd_idx_patch,
+	.mawd_idx_patch = mt7935_mawd_idx_patch,
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	.is_en_wfdma_no_mmio_read = FALSE,
 #endif /* _HIF_PCIE */
 #if CFG_MTK_WIFI_WFDMA_WB
 	.is_support_wfdma_write_back = TRUE,
 #endif
-	.txd_append_size = MT6653_TX_DESC_APPEND_LENGTH,
-	.hif_txd_append_size = MT6653_HIF_TX_DESC_APPEND_LENGTH,
-	.rxd_size = MT6653_RX_DESC_LENGTH,
-	.init_evt_rxd_size = MT6653_RX_INIT_DESC_LENGTH,
+	.txd_append_size = MT7935_TX_DESC_APPEND_LENGTH,
+	.hif_txd_append_size = MT7935_HIF_TX_DESC_APPEND_LENGTH,
+	.rxd_size = MT7935_RX_DESC_LENGTH,
+	.init_evt_rxd_size = MT7935_RX_INIT_DESC_LENGTH,
 	.pse_header_length = CONNAC3X_NIC_TX_PSE_HEADER_LENGTH,
 	.init_event_size = CONNAC3X_RX_INIT_EVENT_LENGTH,
-	.eco_info = mt6653_eco_table,
+	.eco_info = mt7935_eco_table,
 	.isNicCapV1 = FALSE,
 	.is_support_efuse = TRUE,
 	.top_hcr = CONNAC3X_TOP_HCR,
 	.top_hvr = CONNAC3X_TOP_HVR,
 	.top_fvr = CONNAC3X_TOP_FVR,
 #if (CFG_SUPPORT_802_11AX == 1)
-	.arb_ac_mode_addr = MT6653_ARB_AC_MODE_ADDR,
+	.arb_ac_mode_addr = MT7935_ARB_AC_MODE_ADDR,
 #endif
 	.asicCapInit = asicConnac3xCapInit,
 #if CFG_ENABLE_FW_DOWNLOAD
@@ -907,8 +929,8 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
 	.u4LmacWtblDUAddr = CONNAC3X_WIFI_LWTBL_BASE,
 	.u4UmacWtblDUAddr = CONNAC3X_WIFI_UWTBL_BASE,
-	.coexpccifon = mt6653ConnacPccifOn,
-	.coexpccifoff = mt6653ConnacPccifOff,
+	.coexpccifon = mt7935ConnacPccifOn,
+	.coexpccifoff = mt7935ConnacPccifOff,
 #if CFG_MTK_MDDP_SUPPORT
 	.isSupportMddpAOR = false,
 	.isSupportMddpSHM = true,
@@ -934,7 +956,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
 		BIT(CHIP_CAPA_FW_LOG_TIME_SYNC_BY_CCIF) |
 		BIT(CHIP_CAPA_XTAL_TRIM),
-	.checkbushang = mt6653_CheckBusHang,
+	.checkbushang = mt7935_CheckBusHang,
 	.rEmiInfo = {
 #if CFG_MTK_ANDROID_EMI
 		.type = EMI_ALLOC_TYPE_LK,
@@ -945,25 +967,25 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	},
 #if CFG_SUPPORT_THERMAL_QUERY
 	.thermal_info = {
-		.sensor_num = ARRAY_SIZE(mt6653_thermal_sensor_info),
-		.sensor_info = mt6653_thermal_sensor_info,
+		.sensor_num = ARRAY_SIZE(mt7935_thermal_sensor_info),
+		.sensor_info = mt7935_thermal_sensor_info,
 	},
 #endif
-	.trigger_fw_assert = mt6653_trigger_fw_assert,
+	.trigger_fw_assert = mt7935_trigger_fw_assert,
 	.fw_log_info = {
 #if CFG_MTK_WIFI_FW_LOG_MMIO
-		.ops = &mt6653_fw_log_mmio_ops,
+		.ops = &mt7935_fw_log_mmio_ops,
 #endif
 #if CFG_MTK_WIFI_FW_LOG_EMI
 		.base = 0x538000,
-		.ops = &mt6653_fw_log_emi_ops,
+		.ops = &mt7935_fw_log_emi_ops,
 #endif
 		.path = ENUM_LOG_READ_POINTER_PATH_CCIF,
 	},
 #if (CFG_MTK_FPGA_PLATFORM == 0)
-	.ccif_ops = &mt6653_ccif_ops,
+	.ccif_ops = &mt7935_ccif_ops,
 #endif
-	.get_sw_interrupt_status = mt6653_get_sw_interrupt_status,
+	.get_sw_interrupt_status = mt7935_get_sw_interrupt_status,
 #else
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
 		BIT(CHIP_CAPA_XTAL_TRIM),
@@ -982,24 +1004,24 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.fgIsSupportL0p5Reset = FALSE,
 #endif
 	.u4MinTxLen = 2,
-	.wifiNappingCtrl = mt6653WiFiNappingCtrl,
+	.wifiNappingCtrl = mt7935WiFiNappingCtrl,
 };
 
-struct mt66xx_hif_driver_data mt66xx_driver_data_mt6653 = {
-	.chip_info = &mt66xx_chip_info_mt6653,
+struct mt66xx_hif_driver_data mt66xx_driver_data_mt7935 = {
+	.chip_info = &mt66xx_chip_info_mt7935,
 };
 
-void mt6653_icapRiseVcoreClockRate(void)
+void mt7935_icapRiseVcoreClockRate(void)
 {
 	DBGLOG(HAL, STATE, "icapRiseVcoreClockRate skip\n");
 }
 
-void mt6653_icapDownVcoreClockRate(void)
+void mt7935_icapDownVcoreClockRate(void)
 {
 	DBGLOG(HAL, STATE, "icapDownVcoreClockRate skip\n");
 }
 
-static void mt6653_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
+static void mt7935_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
 	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
 {
@@ -1008,13 +1030,13 @@ static void mt6653_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
 
 	kalMemZero(aucFlavor, sizeof(aucFlavor));
-	mt6653GetFlavorVer(&aucFlavor[0]);
+	mt7935GetFlavorVer(&aucFlavor[0]);
 
 #if CFG_SUPPORT_SINGLE_FW_BINARY
-	/* Type 0. mt6653_wifi.bin */
+	/* Type 0. mt7935_wifi.bin */
 	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 			CFG_FW_NAME_MAX_LEN,
-			"mt6653_wifi.bin");
+			"mt7935_wifi.bin");
 	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 		(*pucNameIdx) += 1;
 	else
@@ -1022,10 +1044,10 @@ static void mt6653_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			"[%u] kalSnprintf failed, ret: %d\n",
 			__LINE__, ret);
 
-	/* Type 1. mt6653_wifi_flavor.bin */
+	/* Type 1. mt7935_wifi_flavor.bin */
 	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 			CFG_FW_NAME_MAX_LEN,
-			"mt6653_wifi_%s.bin",
+			"mt7935_wifi_%s.bin",
 			aucFlavor);
 	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 		(*pucNameIdx) += 1;
@@ -1035,13 +1057,13 @@ static void mt6653_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			__LINE__, ret);
 #endif
 
-	/* Type 2. WIFI_RAM_CODE_MT6653_1_1.bin */
+	/* Type 2. WIFI_RAM_CODE_MT7935_1_1.bin */
 	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 			CFG_FW_NAME_MAX_LEN,
 			"WIFI_RAM_CODE_MT%x_%s_%u.bin",
-			MT6653_CHIP_ID,
+			MT7935_CHIP_ID,
 			aucFlavor,
-			MT6653_ROM_VERSION);
+			MT7935_ROM_VERSION);
 	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 		(*pucNameIdx) += 1;
 	else
@@ -1049,7 +1071,7 @@ static void mt6653_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			"[%u] kalSnprintf failed, ret: %d\n",
 			__LINE__, ret);
 
-	for (ucIdx = 0; apucmt6653FwName[ucIdx]; ucIdx++) {
+	for (ucIdx = 0; apucmt7935FwName[ucIdx]; ucIdx++) {
 		if ((*pucNameIdx + 3) >= ucMaxNameIdx) {
 			/* the table is not large enough */
 			DBGLOG(INIT, ERROR,
@@ -1058,10 +1080,10 @@ static void mt6653_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			continue;
 		}
 
-		/* Type 3. WIFI_RAM_CODE_6653.bin */
+		/* Type 3. WIFI_RAM_CODE_7935.bin */
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 				CFG_FW_NAME_MAX_LEN, "%s.bin",
-				apucmt6653FwName[ucIdx]);
+				apucmt7935FwName[ucIdx]);
 		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 			(*pucNameIdx) += 1;
 		else
@@ -1071,20 +1093,20 @@ static void mt6653_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	}
 }
 
-static void mt6653_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
+static void mt7935_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx)
 {
 	int ret = 0;
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
 
 	kalMemZero(aucFlavor, sizeof(aucFlavor));
-	mt6653GetFlavorVer(&aucFlavor[0]);
+	mt7935GetFlavorVer(&aucFlavor[0]);
 
 #if CFG_SUPPORT_SINGLE_FW_BINARY
-	/* Type 0. mt6653_wifi.bin */
+	/* Type 0. mt7935_wifi.bin */
 	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 			CFG_FW_NAME_MAX_LEN,
-			"mt6653_wifi.bin");
+			"mt7935_wifi.bin");
 	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 		(*pucNameIdx) += 1;
 	else
@@ -1092,10 +1114,10 @@ static void mt6653_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 			"[%u] kalSnprintf failed, ret: %d\n",
 			__LINE__, ret);
 
-	/* Type 1. mt6653_wifi_flavor.bin */
+	/* Type 1. mt7935_wifi_flavor.bin */
 	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 			CFG_FW_NAME_MAX_LEN,
-			"mt6653_wifi_%s.bin",
+			"mt7935_wifi_%s.bin",
 			aucFlavor);
 	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 		(*pucNameIdx) += 1;
@@ -1105,13 +1127,13 @@ static void mt6653_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 			__LINE__, ret);
 #endif
 
-	/* Type 2. WIFI_MT6653_PATCH_MCU_1_1_hdr.bin */
+	/* Type 2. WIFI_MT7935_PATCH_MCU_1_1_hdr.bin */
 	ret = kalSnprintf(apucName[(*pucNameIdx)],
 			  CFG_FW_NAME_MAX_LEN,
 			  "WIFI_MT%x_PATCH_MCU_%s_%u_hdr.bin",
-			  MT6653_CHIP_ID,
+			  MT7935_CHIP_ID,
 			  aucFlavor,
-			  MT6653_ROM_VERSION);
+			  MT7935_ROM_VERSION);
 	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 		(*pucNameIdx) += 1;
 	else
@@ -1119,10 +1141,10 @@ static void mt6653_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 			"[%u] kalSnprintf failed, ret: %d\n",
 			__LINE__, ret);
 
-	/* Type 3. mt6653_patch_e1_hdr.bin */
+	/* Type 3. mt7935_patch_e1_hdr.bin */
 	ret = kalSnprintf(apucName[(*pucNameIdx)],
 			  CFG_FW_NAME_MAX_LEN,
-			  "mt6653_patch_e1_hdr.bin");
+			  "mt7935_patch_e1_hdr.bin");
 	if (ret < 0 || ret >= CFG_FW_NAME_MAX_LEN)
 		DBGLOG(INIT, ERROR,
 			"[%u] kalSnprintf failed, ret: %d\n",
@@ -1130,22 +1152,22 @@ static void mt6653_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 }
 
 #if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
-static void mt6653_ConstructDspName(struct GLUE_INFO *prGlueInfo,
+static void mt7935_ConstructDspName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx)
 {
 	int ret = 0;
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
 
 	kalMemZero(aucFlavor, sizeof(aucFlavor));
-	mt6653GetFlavorVer(&aucFlavor[0]);
+	mt7935GetFlavorVer(&aucFlavor[0]);
 
-	/* Type 1. WIFI_MT6653_PHY_RAM_CODE_1_1_hdr.bin */
+	/* Type 1. WIFI_MT7935_PHY_RAM_CODE_1_1_hdr.bin */
 	ret = kalSnprintf(apucName[(*pucNameIdx)],
 			  CFG_FW_NAME_MAX_LEN,
 			  "WIFI_MT%x_PHY_RAM_CODE_%s_%u.bin",
-			  MT6653_CHIP_ID,
+			  MT7935_CHIP_ID,
 			  aucFlavor,
-			  MT6653_ROM_VERSION);
+			  MT7935_ROM_VERSION);
 	if (ret < 0 || ret >= CFG_FW_NAME_MAX_LEN)
 		DBGLOG(INIT, ERROR,
 			"[%u] kalSnprintf failed, ret: %d\n",
@@ -1156,21 +1178,21 @@ static void mt6653_ConstructDspName(struct GLUE_INFO *prGlueInfo,
 #endif
 
 #if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
-static void mt6653_ConstructIdxLogBinName(struct GLUE_INFO *prGlueInfo,
+static void mt7935_ConstructIdxLogBinName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName)
 {
 	int ret = 0;
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
 
-	mt6653GetFlavorVer(&aucFlavor[0]);
+	mt7935GetFlavorVer(&aucFlavor[0]);
 
-	/* ex: WIFI_RAM_CODE_MT6653_2_1_idxlog.bin */
+	/* ex: WIFI_RAM_CODE_MT7935_2_1_idxlog.bin */
 	ret = kalSnprintf(apucName[0],
 			  CFG_FW_NAME_MAX_LEN,
 			  "WIFI_RAM_CODE_MT%x_%s_%u_idxlog.bin",
-			  MT6653_CHIP_ID,
+			  MT7935_CHIP_ID,
 			  aucFlavor,
-			  MT6653_ROM_VERSION);
+			  MT7935_ROM_VERSION);
 
 	if (ret < 0 || ret >= CFG_FW_NAME_MAX_LEN)
 		DBGLOG(INIT, ERROR,
@@ -1180,17 +1202,19 @@ static void mt6653_ConstructIdxLogBinName(struct GLUE_INFO *prGlueInfo,
 #endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
 
 #if defined(_HIF_PCIE)
-static uint8_t mt6653SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
+static uint8_t mt7935SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo, uint32_t u4SwRingIdx)
 {
 	uint32_t offset = 0;
 
 	/*
-	 * RX_RING_DATA0   (RX_Ring4) - Band0 Rx Data
-	 * RX_RING_DATA1   (RX_Ring5) - Band1 Rx Data
-	 * RX_RING_DATA2   (RX_Ring6) - Band2 Rx Data
-	 * RX_RING_EVT     (RX_Ring7) - Band0 Tx Free Done Event / Rx Event
-	 * RX_RING_TXDONE0 (RX_Ring8) - ICS / RXPRT
+	 * RX_RING_DATA0   (RX_Ring4) - Rx Data
+	 * RX_RING_DATA1   (RX_Ring6) - HPP Rx Data
+	 * RX_RING_EVT     (RX_Ring7) - Rx Event
+	 * RX_RING_TXDONE0 (RX_Ring5) - Tx Free Done Event
+	 * RX_RING_TXDONE1 (RX_Ring8) - ICS / RXPRT
+	 * RX_RING_TXDONE2 (RX_Ring9) - Coredump event
+	 * RX_RING_WAEVT0  (RX_Ring10) - FW log
 	*/
 	switch (u4SwRingIdx) {
 	case RX_RING_EVT:
@@ -1200,31 +1224,20 @@ static uint8_t mt6653SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 		offset = 4;
 		break;
 	case RX_RING_DATA1:
-		offset = 5;
-		break;
-	case RX_RING_DATA2:
 		offset = 6;
 		break;
 	case RX_RING_TXDONE0:
-		offset = 8;
-		break;
-#if CFG_ENABLE_MAWD_MD_RING
-	case RX_RING_DATA3:
-		offset = 9;
-		break;
-	case RX_RING_DATA4:
-		offset = 10;
-		break;
-	case RX_RING_DATA5:
-		offset = 11;
+		offset = 5;
 		break;
 	case RX_RING_TXDONE1:
-		offset = 12;
+		offset = 8;
 		break;
 	case RX_RING_TXDONE2:
-		offset = 13;
+		offset = 9;
 		break;
-#endif
+	case RX_RING_WAEVT0:
+		offset = 10;
+		break;
 	default:
 		return FALSE;
 	}
@@ -1234,12 +1247,12 @@ static uint8_t mt6653SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 	return TRUE;
 }
 
-static bool mt6653WfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
+static bool mt7935WfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
 		bool fgAllocMem)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 
-	/* Band1 Data Rx path */
+	/* HPP Data Rx path */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
 			RX_RING_DATA1, prHifInfo->u4RxDataRingSize,
 			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
@@ -1247,57 +1260,41 @@ static bool mt6653WfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
 		return false;
 	}
 
-	/* Band2 Data Rx path */
-	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_DATA2, prHifInfo->u4RxDataRingSize,
-			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
-		DBGLOG(HAL, ERROR, "AllocRxRing[5] fail\n");
-		return false;
-	}
-
-	/* ICS log */
+	/* TX Free Done */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
 			RX_RING_TXDONE0, prHifInfo->u4RxEvtRingSize,
 			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[3] fail\n");
 		return false;
 	}
-#if CFG_ENABLE_MAWD_MD_RING
-	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_DATA3, prHifInfo->u4RxDataRingSize,
-			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
-		DBGLOG(HAL, ERROR, "AllocRxRing[9] fail\n");
-		return false;
-	}
-	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_DATA4, prHifInfo->u4RxDataRingSize,
-			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
-		DBGLOG(HAL, ERROR, "AllocRxRing[10] fail\n");
-		return false;
-	}
-	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_DATA5, prHifInfo->u4RxDataRingSize,
-			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
-		DBGLOG(HAL, ERROR, "AllocRxRing[11] fail\n");
-		return false;
-	}
+
+	/* ICS log */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
 			RX_RING_TXDONE1, prHifInfo->u4RxEvtRingSize,
 			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[4] fail\n");
 		return false;
 	}
+
+	/* Coredump */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
 			RX_RING_TXDONE2, prHifInfo->u4RxEvtRingSize,
 			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[6] fail\n");
 		return false;
 	}
-#endif /* CFG_ENABLE_MAWD_MD_RING */
+
+	/* Fw log */
+	if (!halWpdmaAllocRxRing(prGlueInfo,
+			RX_RING_WAEVT0, prHifInfo->u4RxEvtRingSize,
+			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocRxRing[7] fail\n");
+		return false;
+	}
 	return true;
 }
 
-static void mt6653ProcessTxInterrupt(
+static void mt7935ProcessTxInterrupt(
 		struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -1351,7 +1348,7 @@ static void mt6653ProcessTxInterrupt(
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0 */
 }
 
-static void mt6653ProcessRxDataInterrupt(struct ADAPTER *prAdapter)
+static void mt7935ProcessRxDataInterrupt(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
@@ -1368,19 +1365,8 @@ static void mt6653ProcessRxDataInterrupt(struct ADAPTER *prAdapter)
 		if ((u4Sta &
 		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_4_MASK) ||
 		    (u4Sta &
-		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_5_MASK) ||
-		    (u4Sta &
 		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_6_MASK))
 			halRroReadRxData(prAdapter);
-#if CFG_ENABLE_MAWD_MD_RING
-		if ((u4Sta &
-		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_9_MASK) ||
-		    (u4Sta &
-		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_10_MASK) ||
-		    (u4Sta &
-		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_11_MASK))
-			halRroReadRxData(prAdapter);
-#endif /* CFG_ENABLE_MAWD_MD_RING */
 	} else
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 #endif /* _HIF_PCIE || _HIF_AXI */
@@ -1391,58 +1377,42 @@ static void mt6653ProcessRxDataInterrupt(struct ADAPTER *prAdapter)
 			halRxReceiveRFBs(prAdapter, RX_RING_DATA0, TRUE);
 
 		if ((u4Sta &
-		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_5_MASK) ||
+		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_6_MASK) ||
 		    (KAL_TEST_BIT(RX_RING_DATA1, prAdapter->ulNoMoreRfb)))
 			halRxReceiveRFBs(prAdapter, RX_RING_DATA1, TRUE);
-
-		if ((u4Sta &
-		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_6_MASK) ||
-		    (KAL_TEST_BIT(RX_RING_DATA2, prAdapter->ulNoMoreRfb)))
-			halRxReceiveRFBs(prAdapter, RX_RING_DATA2, TRUE);
-
-#if CFG_ENABLE_MAWD_MD_RING
-		if ((u4Sta &
-		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_9_MASK) ||
-		    (KAL_TEST_BIT(RX_RING_DATA3, prAdapter->ulNoMoreRfb)))
-			halRxReceiveRFBs(prAdapter, RX_RING_DATA3, TRUE);
-
-		if ((u4Sta &
-		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_10_MASK) ||
-		    (KAL_TEST_BIT(RX_RING_DATA4, prAdapter->ulNoMoreRfb)))
-			halRxReceiveRFBs(prAdapter, RX_RING_DATA4, TRUE);
-
-		if ((u4Sta &
-		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_11_MASK) ||
-		    (KAL_TEST_BIT(RX_RING_DATA5, prAdapter->ulNoMoreRfb)))
-			halRxReceiveRFBs(prAdapter, RX_RING_DATA5, TRUE);
-#endif /* CFG_ENABLE_MAWD_MD_RING */
 	}
 }
 
-static void mt6653ProcessRxInterrupt(struct ADAPTER *prAdapter)
+static void mt7935ProcessRxInterrupt(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	uint32_t u4Sta = prHifInfo->u4IntStatus;
+
+	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_5_MASK) ||
+	    (KAL_TEST_BIT(RX_RING_TXDONE0, prAdapter->ulNoMoreRfb)))
+		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0, FALSE);
 
 	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_7_MASK) ||
 	    (KAL_TEST_BIT(RX_RING_EVT, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_EVT, FALSE);
 
 	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_8_MASK) ||
-	    (KAL_TEST_BIT(RX_RING_TXDONE0, prAdapter->ulNoMoreRfb)))
-		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0, FALSE);
-
-#if CFG_ENABLE_MAWD_MD_RING
-	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_12_MASK) ||
 	    (KAL_TEST_BIT(RX_RING_TXDONE1, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE1, FALSE);
-#endif /* CFG_ENABLE_MAWD_MD_RING */
 
-	mt6653ProcessRxDataInterrupt(prAdapter);
+	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_9_MASK) ||
+	    (KAL_TEST_BIT(RX_RING_TXDONE2, prAdapter->ulNoMoreRfb)))
+		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE2, FALSE);
+
+	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_10_MASK) ||
+	    (KAL_TEST_BIT(RX_RING_WAEVT0, prAdapter->ulNoMoreRfb)))
+		halRxReceiveRFBs(prAdapter, RX_RING_WAEVT0, FALSE);
+
+	mt7935ProcessRxDataInterrupt(prAdapter);
 }
 
-static void mt6653SetTRXRingPriorityInterrupt(struct ADAPTER *prAdapter)
+static void mt7935SetTRXRingPriorityInterrupt(struct ADAPTER *prAdapter)
 {
 	uint32_t u4Val = 0;
 
@@ -1466,7 +1436,7 @@ static void mt6653SetTRXRingPriorityInterrupt(struct ADAPTER *prAdapter)
 		WF_WFDMA_HOST_DMA0_WPDMA_INT_TX_PRI_SEL_ADDR, u4Val);
 }
 
-static void mt6653WfdmaManualPrefetch(
+static void mt7935WfdmaManualPrefetch(
 	struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
@@ -1485,81 +1455,34 @@ static void mt6653WfdmaManualPrefetch(
 		u4WrVal += u4RxDataPrefetchBase;
 	}
 
-	/* Rx Evt/ICS */
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_EXT_CTRL_ADDR;
-	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING8_EXT_CTRL_ADDR;
+	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING10_EXT_CTRL_ADDR;
 	     u4Addr += 0x4) {
 		u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
 		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 		u4WrVal += u4PrefetchBase;
 	}
-
-#if CFG_MTK_MDDP_SUPPORT || CFG_ENABLE_MAWD_MD_RING
-	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING9_EXT_CTRL_ADDR;
-	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING11_EXT_CTRL_ADDR;
-	     u4Addr += 0x4) {
-		u4WrVal = (u4WrVal & 0xFFFF0000) | u4RxDataPrefetchCnt;
-		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
-		u4WrVal += u4RxDataPrefetchBase;
-	}
-
-	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING12_EXT_CTRL_ADDR;
-	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING13_EXT_CTRL_ADDR;
-	     u4Addr += 0x4) {
-		u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
-		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
-		u4WrVal += u4PrefetchBase;
-	}
-#endif
 
 	/* Tx ring */
-	/* fw download reuse tx data ring */
-	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING16_EXT_CTRL_ADDR;
-	u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
-	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
-
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_EXT_CTRL_ADDR;
-		 u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_TX_RING3_EXT_CTRL_ADDR;
+		 u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_TX_RING5_EXT_CTRL_ADDR;
 	     u4Addr += 0x4) {
 		u4WrVal = (u4WrVal & 0xFFFF0000) | u4TxDataPrefetchCnt;
 		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 		u4WrVal += u4TxDataPrefetchBase;
 	}
-	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING4_EXT_CTRL_ADDR;
-		 u4Addr <=
-			WF_WFDMA_HOST_DMA0_WPDMA_TX_RING5_EXT_CTRL_ADDR;
-		 u4Addr += 0x4) {
-		u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
-		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
-		u4WrVal += u4PrefetchBase;
-	}
-
-#if CFG_MTK_MDDP_SUPPORT || CFG_ENABLE_MAWD_MD_RING
-	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING8_EXT_CTRL_ADDR;
-	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_TX_RING9_EXT_CTRL_ADDR;
-	     u4Addr += 0x4) {
-		u4WrVal = (u4WrVal & 0xFFFF0000) | u4TxDataPrefetchCnt;
-		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
-		u4WrVal += u4TxDataPrefetchBase;
-	}
-
-	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING10_EXT_CTRL_ADDR;
-	u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
-	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
-	u4WrVal += u4PrefetchBase;
-
-	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING14_EXT_CTRL_ADDR;
-	u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
-	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
-	u4WrVal += u4PrefetchBase;
-#endif
 
 	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING15_EXT_CTRL_ADDR;
 	u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 	u4WrVal += u4PrefetchBase;
 
-	mt6653SetTRXRingPriorityInterrupt(prAdapter);
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING16_EXT_CTRL_ADDR;
+	u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
+	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
+	u4WrVal += u4PrefetchBase;
+
+	mt7935SetTRXRingPriorityInterrupt(prAdapter);
 
 	/* reset dma TRX idx */
 	HAL_MCR_WR(prAdapter,
@@ -1569,7 +1492,7 @@ static void mt6653WfdmaManualPrefetch(
 }
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-static void mt6653ReadOffloadIntStatus(struct ADAPTER *prAdapter,
+static void mt7935ReadOffloadIntStatus(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -1605,7 +1528,7 @@ static void mt6653ReadOffloadIntStatus(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 #if defined(_HIF_PCIE)
-static void mt6653ReadIntStatusByMsi(struct ADAPTER *prAdapter,
+static void mt7935ReadIntStatusByMsi(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -1670,12 +1593,12 @@ static void mt6653ReadIntStatusByMsi(struct ADAPTER *prAdapter,
 			   u4WrValue);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	mt6653ReadOffloadIntStatus(prAdapter, pu4IntStatus);
+	mt7935ReadOffloadIntStatus(prAdapter, pu4IntStatus);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 #endif
 
-static void mt6653ReadIntStatus(struct ADAPTER *prAdapter,
+static void mt7935ReadIntStatus(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -1718,11 +1641,11 @@ static void mt6653ReadIntStatus(struct ADAPTER *prAdapter,
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrValue);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	mt6653ReadOffloadIntStatus(prAdapter, pu4IntStatus);
+	mt7935ReadOffloadIntStatus(prAdapter, pu4IntStatus);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
-static void mt6653ConfigIntMask(struct GLUE_INFO *prGlueInfo,
+static void mt7935ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
@@ -1741,6 +1664,8 @@ static void mt6653ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA6_MASK |
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA7_MASK |
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA8_MASK |
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA9_MASK |
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA10_MASK |
 #if (CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0)
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA0_MASK |
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA1_MASK |
@@ -1770,7 +1695,7 @@ static void mt6653ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 }
 
 #if CFG_MTK_WIFI_WFDMA_WB
-static void mt6653ReadIntStatusByEmi(struct ADAPTER *prAdapter,
+static void mt7935ReadIntStatusByEmi(struct ADAPTER *prAdapter,
 				     uint32_t *pu4IntStatus)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -1847,11 +1772,11 @@ static void mt6653ReadIntStatusByEmi(struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	mt6653ReadOffloadIntStatus(prAdapter, pu4IntStatus);
+	mt7935ReadOffloadIntStatus(prAdapter, pu4IntStatus);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
-static void mt6653ProcessTxInterruptByEmi(struct ADAPTER *prAdapter)
+static void mt7935ProcessTxInterruptByEmi(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
@@ -1896,7 +1821,7 @@ static void mt6653ProcessTxInterruptByEmi(struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0 */
 }
 
-static void mt6653ProcessRxDataInterruptByEmi(struct ADAPTER *prAdapter)
+static void mt7935ProcessRxDataInterruptByEmi(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
@@ -1925,28 +1850,10 @@ static void mt6653ProcessRxDataInterruptByEmi(struct ADAPTER *prAdapter)
 		if ((u4Sta & BIT(12)) ||
 		    (KAL_TEST_BIT(RX_RING_DATA1, prAdapter->ulNoMoreRfb)))
 			halRxReceiveRFBs(prAdapter, RX_RING_DATA1, TRUE);
-
-		if ((u4Sta & BIT(13)) ||
-		    (KAL_TEST_BIT(RX_RING_DATA2, prAdapter->ulNoMoreRfb)))
-			halRxReceiveRFBs(prAdapter, RX_RING_DATA2, TRUE);
-
-#if CFG_ENABLE_MAWD_MD_RING
-		if ((u4Sta & BIT(24)) ||
-		    (KAL_TEST_BIT(RX_RING_DATA3, prAdapter->ulNoMoreRfb)))
-			halRxReceiveRFBs(prAdapter, RX_RING_DATA3, TRUE);
-
-		if ((u4Sta & BIT(25)) ||
-		    (KAL_TEST_BIT(RX_RING_DATA4, prAdapter->ulNoMoreRfb)))
-			halRxReceiveRFBs(prAdapter, RX_RING_DATA4, TRUE);
-
-		if ((u4Sta & BIT(26)) ||
-		    (KAL_TEST_BIT(RX_RING_DATA5, prAdapter->ulNoMoreRfb)))
-			halRxReceiveRFBs(prAdapter, RX_RING_DATA5, TRUE);
-#endif /* CFG_ENABLE_MAWD_MD_RING */
 	}
 }
 
-static void mt6653ProcessRxInterruptByEmi(struct ADAPTER *prAdapter)
+static void mt7935ProcessRxInterruptByEmi(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
@@ -1970,10 +1877,10 @@ static void mt6653ProcessRxInterruptByEmi(struct ADAPTER *prAdapter)
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE2, FALSE);
 #endif /* CFG_ENABLE_MAWD_MD_RING */
 
-	mt6653ProcessRxDataInterruptByEmi(prAdapter);
+	mt7935ProcessRxDataInterruptByEmi(prAdapter);
 }
 
-static void mt6653ConfigEmiIntMask(struct GLUE_INFO *prGlueInfo,
+static void mt7935ConfigEmiIntMask(struct GLUE_INFO *prGlueInfo,
 				   u_int8_t enable)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
@@ -2093,7 +2000,7 @@ static void mt6653ConfigEmiIntMask(struct GLUE_INFO *prGlueInfo,
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 
 #if defined(_HIF_PCIE) && (CFG_SUPPORT_PCIE_PLAT_INT_FLOW == 1)
-static void mt6653EnableInterruptViaPcie(struct ADAPTER *prAdapter)
+static void mt7935EnableInterruptViaPcie(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct BUS_INFO *prBusInfo = prChipInfo->bus_info;
@@ -2118,13 +2025,13 @@ static void mt6653EnableInterruptViaPcie(struct ADAPTER *prAdapter)
 	asicConnac3xEnablePlatformIRQ(prAdapter);
 }
 
-static void mt6653DisableInterruptViaPcie(struct ADAPTER *prAdapter)
+static void mt7935DisableInterruptViaPcie(struct ADAPTER *prAdapter)
 {
 	asicConnac3xDisablePlatformIRQ(prAdapter);
 }
 #endif
 
-static void mt6653EnableInterrupt(struct ADAPTER *prAdapter)
+static void mt7935EnableInterrupt(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 
@@ -2133,7 +2040,7 @@ static void mt6653EnableInterrupt(struct ADAPTER *prAdapter)
 	asicConnac3xEnablePlatformIRQ(prAdapter);
 }
 
-static void mt6653DisableInterrupt(struct ADAPTER *prAdapter)
+static void mt7935DisableInterrupt(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 
@@ -2142,7 +2049,7 @@ static void mt6653DisableInterrupt(struct ADAPTER *prAdapter)
 	asicConnac3xDisablePlatformIRQ(prAdapter);
 }
 
-static void mt6653WpdmaMsiConfig(struct ADAPTER *prAdapter)
+static void mt7935WpdmaMsiConfig(struct ADAPTER *prAdapter)
 {
 /*
  * ilog2(WFDMA_AP_MSI 1) = WFDMA_AP_MSI_NUM for CR shitf
@@ -2246,7 +2153,7 @@ static void mt6653WpdmaMsiConfig(struct ADAPTER *prAdapter)
 #endif
 }
 
-static void mt6653ConfigWfdmaRxRingThreshold(
+static void mt7935ConfigWfdmaRxRingThreshold(
 	struct ADAPTER *prAdapter, uint32_t u4Th, u_int8_t fgIsData)
 {
 	uint32_t u4Addr = 0, u4Val = 0, u4Num = 2;
@@ -2273,7 +2180,7 @@ exit:
 	       fgIsData, u4Val);
 }
 
-static void mt6653WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)
+static void mt7935WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
@@ -2306,7 +2213,7 @@ static void mt6653WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)
 	       prWifiVar->u4DlyIntCnt);
 }
 
-static void mt6653WpdmaConfigExt0(struct ADAPTER *prAdapter)
+static void mt7935WpdmaConfigExt0(struct ADAPTER *prAdapter)
 {
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
@@ -2324,7 +2231,7 @@ static void mt6653WpdmaConfigExt0(struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
-static void mt6653WpdmaConfigExt1(struct ADAPTER *prAdapter)
+static void mt7935WpdmaConfigExt1(struct ADAPTER *prAdapter)
 {
 	uint32_t u4Addr = 0, u4Val = 0;
 
@@ -2336,7 +2243,7 @@ static void mt6653WpdmaConfigExt1(struct ADAPTER *prAdapter)
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 }
 
-static void mt6653WpdmaConfigExt2(struct ADAPTER *prAdapter)
+static void mt7935WpdmaConfigExt2(struct ADAPTER *prAdapter)
 {
 	uint32_t u4Addr = 0, u4Val = 0;
 
@@ -2346,7 +2253,7 @@ static void mt6653WpdmaConfigExt2(struct ADAPTER *prAdapter)
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 }
 
-static void mt6653WfdmaControl(struct ADAPTER *prAdapter, u_int8_t fgEn)
+static void mt7935WfdmaControl(struct ADAPTER *prAdapter, u_int8_t fgEn)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	union WPDMA_GLO_CFG_STRUCT *prGloCfg = &prHifInfo->GloCfg;
@@ -2373,14 +2280,14 @@ static void mt6653WfdmaControl(struct ADAPTER *prAdapter, u_int8_t fgEn)
 	prHifInfo->GloCfg.word = prGloCfg->word;
 }
 
-static void mt6653WpdmaConfig(struct GLUE_INFO *prGlueInfo,
+static void mt7935WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable, bool fgResetHif)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct BUS_INFO *prBusInfo = prChipInfo->bus_info;
 
-	mt6653WfdmaControl(prAdapter, enable);
+	mt7935WfdmaControl(prAdapter, enable);
 
 	if (!enable)
 		return;
@@ -2390,19 +2297,19 @@ static void mt6653WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		prBusInfo->configWfdmaIntMask(prGlueInfo, TRUE);
 
 #if defined(_HIF_PCIE)
-	mt6653WpdmaMsiConfig(prAdapter);
+	mt7935WpdmaMsiConfig(prAdapter);
 #endif
-	mt6653ConfigWfdmaRxRingThreshold(prAdapter, 0, FALSE);
+	mt7935ConfigWfdmaRxRingThreshold(prAdapter, 0, FALSE);
 
-	mt6653WpdmaConfigExt0(prAdapter);
-	mt6653WpdmaConfigExt1(prAdapter);
-	mt6653WpdmaConfigExt2(prAdapter);
+	mt7935WpdmaConfigExt0(prAdapter);
+	mt7935WpdmaConfigExt1(prAdapter);
+	mt7935WpdmaConfigExt2(prAdapter);
 
-	mt6653WpdmaDlyInt(prGlueInfo);
+	mt7935WpdmaDlyInt(prGlueInfo);
 }
 
 #if CFG_MTK_WIFI_WFDMA_WB
-static void mt6653WfdmaTxRingWbExtCtrl(
+static void mt7935WfdmaTxRingWbExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_TX_RING *prTxRing,
 	uint32_t u4Idx)
@@ -2477,7 +2384,7 @@ static void mt6653WfdmaTxRingWbExtCtrl(
 	*prTxRing->pu2EmiIdx = 0;
 }
 
-static void mt6653WfdmaRxRingWbExtCtrl(
+static void mt7935WfdmaRxRingWbExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_RX_RING *prRxRing,
 	uint32_t u4Idx)
@@ -2551,7 +2458,7 @@ static void mt6653WfdmaRxRingWbExtCtrl(
 }
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 
-static void mt6653WfdmaTxRingExtCtrl(
+static void mt7935WfdmaTxRingExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_TX_RING *prTxRing,
 	u_int32_t index)
@@ -2606,11 +2513,11 @@ static void mt6653WfdmaTxRingExtCtrl(
 		prTxRing, index);
 
 #if CFG_MTK_WIFI_WFDMA_WB
-	mt6653WfdmaTxRingWbExtCtrl(prGlueInfo, prTxRing, index);
+	mt7935WfdmaTxRingWbExtCtrl(prGlueInfo, prTxRing, index);
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 }
 
-static void mt6653WfdmaRxRingExtCtrl(
+static void mt7935WfdmaRxRingExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_RX_RING *prRxRing,
 	u_int32_t index)
@@ -2638,31 +2545,20 @@ static void mt6653WfdmaRxRingExtCtrl(
 		u4RingIdx = 4;
 		break;
 	case RX_RING_DATA1:
-		u4RingIdx = 5;
-		break;
-	case RX_RING_DATA2:
 		u4RingIdx = 6;
 		break;
 	case RX_RING_TXDONE0:
-		u4RingIdx = 8;
-		break;
-#if CFG_ENABLE_MAWD_MD_RING
-	case RX_RING_DATA3:
-		u4RingIdx = 9;
-		break;
-	case RX_RING_DATA4:
-		u4RingIdx = 10;
-		break;
-	case RX_RING_DATA5:
-		u4RingIdx = 11;
+		u4RingIdx = 5;
 		break;
 	case RX_RING_TXDONE1:
-		u4RingIdx = 12;
+		u4RingIdx = 8;
 		break;
 	case RX_RING_TXDONE2:
-		u4RingIdx = 13;
+		u4RingIdx = 9;
 		break;
-#endif /* CFG_ENABLE_MAWD_MD_RING */
+	case RX_RING_WAEVT0:
+		u4RingIdx = 10;
+		break;
 	default:
 		DBGLOG(RX, ERROR, "Error index=%d\n", index);
 		return;
@@ -2690,11 +2586,11 @@ static void mt6653WfdmaRxRingExtCtrl(
 		prRxRing, index);
 
 #if CFG_MTK_WIFI_WFDMA_WB
-	mt6653WfdmaRxRingWbExtCtrl(prGlueInfo, prRxRing, index);
+	mt7935WfdmaRxRingWbExtCtrl(prGlueInfo, prRxRing, index);
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 }
 
-static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo)
+static void mt7935InitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t value = 0;
 
@@ -2712,7 +2608,7 @@ static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo)
 }
 
 #if CFG_SUPPORT_PCIE_ASPM
-static void mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
+static void mt7935ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	uint32_t u4Val = 0;
@@ -2752,7 +2648,7 @@ static void mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 }
 #endif
 
-static void mt6653ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
+static void mt7935ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t u4Addr, u4Val = 0;
 
@@ -2768,7 +2664,7 @@ static void mt6653ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 	}
 }
 
-static void mt6653SetupMcuEmiAddr(struct ADAPTER *prAdapter)
+static void mt7935SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 {
 	phys_addr_t base = emi_mem_get_phy_base(prAdapter->chip_info);
 	uint32_t size = emi_mem_get_size(prAdapter->chip_info);
@@ -2783,18 +2679,18 @@ static void mt6653SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 		   ((uint32_t)base >> 16));
 
 	HAL_MCR_WR(prAdapter,
-		   MT6653_EMI_SIZE_ADDR,
+		   MT7935_EMI_SIZE_ADDR,
 		   size);
 }
 
-static u_int8_t mt6653_get_sw_interrupt_status(struct ADAPTER *prAdapter,
+static u_int8_t mt7935_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *pu4Status)
 {
 	*pu4Status = ccif_get_interrupt_status(prAdapter);
 	return TRUE;
 }
 
-static uint32_t mt6653_ccif_get_interrupt_status(struct ADAPTER *ad)
+static uint32_t mt7935_ccif_get_interrupt_status(struct ADAPTER *ad)
 {
 	uint32_t u4Status = 0;
 
@@ -2808,7 +2704,7 @@ static uint32_t mt6653_ccif_get_interrupt_status(struct ADAPTER *ad)
 	return u4Status;
 }
 
-static void mt6653_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
+static void mt7935_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
 	uint32_t sec,
 	uint32_t usec)
 {
@@ -2830,7 +2726,7 @@ exit:
 	RECLAIM_POWER_CONTROL_TO_PM(ad, FALSE);
 }
 
-static void mt6653_ccif_set_fw_log_read_pointer(struct ADAPTER *ad,
+static void mt7935_ccif_set_fw_log_read_pointer(struct ADAPTER *ad,
 	enum ENUM_FW_LOG_CTRL_TYPE type,
 	uint32_t read_pointer)
 {
@@ -2844,7 +2740,7 @@ static void mt6653_ccif_set_fw_log_read_pointer(struct ADAPTER *ad,
 	HAL_MCR_WR(ad, u4Addr, read_pointer);
 }
 
-static uint32_t mt6653_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
+static uint32_t mt7935_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
 	enum ENUM_FW_LOG_CTRL_TYPE type)
 {
 	uint32_t u4Addr = 0, u4Value = 0;
@@ -2859,7 +2755,7 @@ static uint32_t mt6653_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
 	return u4Value;
 }
 
-static int32_t mt6653_ccif_trigger_fw_assert(struct ADAPTER *ad)
+static int32_t mt7935_ccif_trigger_fw_assert(struct ADAPTER *ad)
 {
 	HAL_MCR_WR(ad,
 		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_TCHNUM_ADDR,
@@ -2868,7 +2764,7 @@ static int32_t mt6653_ccif_trigger_fw_assert(struct ADAPTER *ad)
 	return 0;
 }
 
-u_int8_t mt6653_is_ap2conn_off_readable(struct ADAPTER *ad)
+u_int8_t mt7935_is_ap2conn_off_readable(struct ADAPTER *ad)
 {
 #define MAX_POLLING_COUNT		4
 
@@ -2898,7 +2794,7 @@ u_int8_t mt6653_is_ap2conn_off_readable(struct ADAPTER *ad)
 	HAL_MCR_RD(ad,
 		   CONN_CFG_IP_VERSION_IP_VERSION_ADDR,
 		   &value);
-	if (value != MT6653_CONNINFRA_VERSION_ID) {
+	if (value != MT7935_CONNINFRA_VERSION_ID) {
 		DBGLOG(HAL, ERROR,
 			"Conninfra ver id: 0x%08x\n",
 			value);
@@ -2916,7 +2812,7 @@ u_int8_t mt6653_is_ap2conn_off_readable(struct ADAPTER *ad)
 	return TRUE;
 }
 
-u_int8_t mt6653_is_conn2wf_readable(struct ADAPTER *ad)
+u_int8_t mt7935_is_conn2wf_readable(struct ADAPTER *ad)
 {
 	uint32_t value = 0;
 
@@ -2933,7 +2829,7 @@ u_int8_t mt6653_is_conn2wf_readable(struct ADAPTER *ad)
 	HAL_MCR_RD(ad,
 		   WF_TOP_CFG_IP_VERSION_ADDR,
 		   &value);
-	if (value != MT6653_WF_VERSION_ID) {
+	if (value != MT7935_WF_VERSION_ID) {
 		DBGLOG(HAL, ERROR,
 			"WF ver id: 0x%08x\n",
 			value);
@@ -2960,7 +2856,7 @@ u_int8_t mt6653_is_conn2wf_readable(struct ADAPTER *ad)
 	return TRUE;
 }
 
-static u_int8_t mt6653_check_recovery_needed(struct ADAPTER *ad)
+static u_int8_t mt7935_check_recovery_needed(struct ADAPTER *ad)
 {
 	uint32_t u4Value = 0;
 	u_int8_t fgResult = FALSE;
@@ -3004,7 +2900,7 @@ exit:
 	return fgResult;
 }
 
-static uint32_t mt6653_mcu_reinit(struct ADAPTER *ad)
+static uint32_t mt7935_mcu_reinit(struct ADAPTER *ad)
 {
 #define CONNINFRA_ID_MAX_POLLING_COUNT		10
 
@@ -3012,10 +2908,10 @@ static uint32_t mt6653_mcu_reinit(struct ADAPTER *ad)
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 	/* Check recovery needed */
-	if (mt6653_check_recovery_needed(ad) == FALSE)
+	if (mt7935_check_recovery_needed(ad) == FALSE)
 		goto exit;
 
-	DBGLOG(INIT, INFO, "mt6653_mcu_reinit.\n");
+	DBGLOG(INIT, INFO, "mt7935_mcu_reinit.\n");
 
 	/* Force on conninfra */
 	HAL_MCR_WR(ad,
@@ -3027,7 +2923,7 @@ static uint32_t mt6653_mcu_reinit(struct ADAPTER *ad)
 		HAL_MCR_RD(ad, CONN_CFG_IP_VERSION_IP_VERSION_ADDR,
 			&u4Value);
 
-		if (u4Value == MT6653_CONNINFRA_VERSION_ID)
+		if (u4Value == MT7935_CONNINFRA_VERSION_ID)
 			break;
 
 		u4PollingCnt++;
@@ -3086,12 +2982,12 @@ exit:
 }
 
 #if (CFG_MTK_ANDROID_WMT == 0)
-static uint32_t mt6653_mcu_reset(struct ADAPTER *ad)
+static uint32_t mt7935_mcu_reset(struct ADAPTER *ad)
 {
 	uint32_t u4Value = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
-	DBGLOG(INIT, INFO, "mt6653_mcu_reset..\n");
+	DBGLOG(INIT, INFO, "mt7935_mcu_reset..\n");
 
 	HAL_MCR_RD(ad,
 		CB_INFRA_RGU_WF_SUBSYS_RST_ADDR,
@@ -3141,8 +3037,9 @@ static void set_cbinfra_remap(struct ADAPTER *ad)
 }
 #endif
 
-static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
+static uint32_t mt7935_mcu_init(struct ADAPTER *ad)
 {
+#if (0)
 #define MCU_IDLE		0x1D1E
 
 	uint32_t u4Value = 0, u4PollingCnt = 0;
@@ -3159,7 +3056,7 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 #endif
 
 #if (CFG_MTK_ANDROID_WMT == 0) && (CFG_MTK_FPGA_PLATFORM == 0)
-	rStatus = mt6653_mcu_reset(ad);
+	rStatus = mt7935_mcu_reset(ad);
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		goto dump;
 #endif
@@ -3195,11 +3092,11 @@ dump:
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, ERROR, "u4Value: 0x%x\n",
 			u4Value);
-		mt6653_dumpWfsyscpupcr(ad);
-		mt6653_dumpPcGprLog(ad);
-		mt6653_dumpN45CoreReg(ad);
-		mt6653_dumpWfTopReg(ad);
-		mt6653_dumpWfBusReg(ad);
+		mt7935_dumpWfsyscpupcr(ad);
+		mt7935_dumpPcGprLog(ad);
+		mt7935_dumpN45CoreReg(ad);
+		mt7935_dumpWfTopReg(ad);
+		mt7935_dumpWfBusReg(ad);
 
 		/* Clock detection for ULPOSC */
 		HAL_MCR_WR(ad,
@@ -3233,9 +3130,12 @@ dump:
 
 exit:
 	return rStatus;
+#else
+	return 0;
+#endif
 }
 
-static void mt6653_mcu_deinit(struct ADAPTER *ad)
+static void mt7935_mcu_deinit(struct ADAPTER *ad)
 {
 #define MAX_WAIT_COREDUMP_COUNT 10
 
@@ -3257,7 +3157,7 @@ static void mt6653_mcu_deinit(struct ADAPTER *ad)
 		ad->chip_info->coexpccifoff(ad);
 }
 
-static int32_t mt6653_trigger_fw_assert(struct ADAPTER *prAdapter)
+static int32_t mt7935_trigger_fw_assert(struct ADAPTER *prAdapter)
 {
 	int32_t ret = 0;
 
@@ -3273,7 +3173,7 @@ static int32_t mt6653_trigger_fw_assert(struct ADAPTER *prAdapter)
 #define MCIF_EMI_MEMORY_SIZE 128
 #define MCIF_EMI_COEX_SWMSG_OFFSET 0xF8518000
 #define MCIF_EMI_BASE_OFFSET 0xE4
-static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter)
+static int mt7935ConnacPccifOn(struct ADAPTER *prAdapter)
 {
 #if CFG_MTK_CCCI_SUPPORT
 	uint32_t mcif_emi_base, u4Val = 0;
@@ -3333,7 +3233,7 @@ static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter)
 	writel(0x4D434D4D, vir_addr + 0x7C);
 
 	u4Val = readl(vir_addr + MCIF_EMI_BASE_OFFSET);
-	HAL_MCR_WR(prAdapter, MT6653_MCIF_MD_STATE_WHEN_WIFI_ON_ADDR, u4Val);
+	HAL_MCR_WR(prAdapter, MT7935_MCIF_MD_STATE_WHEN_WIFI_ON_ADDR, u4Val);
 
 	DBGLOG(INIT, TRACE, "MCIF_EMI_BASE_OFFSET=[0x%08x]\n", u4Val);
 	DBGLOG_MEM128(HAL, TRACE, vir_addr, MCIF_EMI_MEMORY_SIZE);
@@ -3345,7 +3245,7 @@ static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter)
 	return 0;
 }
 
-static int mt6653ConnacPccifOff(struct ADAPTER *prAdapter)
+static int mt7935ConnacPccifOff(struct ADAPTER *prAdapter)
 {
 #if CFG_MTK_CCCI_SUPPORT
 	uint32_t mcif_emi_base;
@@ -3377,7 +3277,7 @@ static int mt6653ConnacPccifOff(struct ADAPTER *prAdapter)
 	return 0;
 }
 
-static int mt6653_CheckBusHang(void *priv, uint8_t rst_enable)
+static int mt7935_CheckBusHang(void *priv, uint8_t rst_enable)
 {
 	struct ADAPTER *ad = priv;
 	u_int8_t readable = FALSE;
@@ -3387,8 +3287,8 @@ static int mt6653_CheckBusHang(void *priv, uint8_t rst_enable)
 		goto exit;
 	}
 
-	if (mt6653_is_ap2conn_off_readable(ad) &&
-	    mt6653_is_conn2wf_readable(ad))
+	if (mt7935_is_ap2conn_off_readable(ad) &&
+	    mt7935_is_conn2wf_readable(ad))
 		readable = TRUE;
 	else
 		readable = FALSE;
@@ -3397,7 +3297,7 @@ exit:
 	return readable ? 0 : 1;
 }
 
-static uint32_t mt6653_wlanDownloadPatch(struct ADAPTER *prAdapter)
+static uint32_t mt7935_wlanDownloadPatch(struct ADAPTER *prAdapter)
 {
 	uint32_t status  = wlanDownloadPatch(prAdapter);
 
@@ -3408,7 +3308,7 @@ static uint32_t mt6653_wlanDownloadPatch(struct ADAPTER *prAdapter)
 }
 #endif /* _HIF_PCIE */
 
-static uint32_t mt6653GetFlavorVer(uint8_t *flavor)
+static uint32_t mt7935GetFlavorVer(uint8_t *flavor)
 {
 	uint32_t ret = WLAN_STATUS_FAILURE;
 	uint32_t u4StrLen = 0;
@@ -3438,7 +3338,7 @@ static uint32_t mt6653GetFlavorVer(uint8_t *flavor)
 	return ret;
 }
 
-static void mt6653WiFiNappingCtrl(
+static void mt7935WiFiNappingCtrl(
 	struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
@@ -3481,4 +3381,4 @@ static void mt6653WiFiNappingCtrl(
 		   CONN_HOST_CSR_TOP_ADDR_CR_CONN_AON_TOP_RESERVE_ADDR,
 		   u4value);
 }
-#endif  /* MT6653 */
+#endif  /* MT7935 */

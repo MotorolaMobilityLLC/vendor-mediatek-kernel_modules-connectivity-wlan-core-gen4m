@@ -95,6 +95,12 @@
 #define NIC7990_PCIe_DEVICE_ID 0x7990
 #define NIC7927_PCIe_DEVICE_ID 0x7927
 #define NIC7925_PCIe_DEVICE_ID 0x7925
+#define NIC7935_PCIe_DEVICE_ID1 0x3107 /* used for FPGA */
+#ifdef CFG_COMBO_SLT_GOLDEN
+#define NIC7935_PCIe_DEVICE_ID2 0xF935 /* used for SLT golden */
+#else
+#define NIC7935_PCIe_DEVICE_ID2 0x7935 /* used for asic & FPGA */
+#endif
 
 static const struct pci_device_id mtk_pci_ids[] = {
 #ifdef MT6632
@@ -178,6 +184,12 @@ static const struct pci_device_id mtk_pci_ids[] = {
 	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7925_PCIe_DEVICE_ID),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7925},
 #endif /* MT7925 */
+#ifdef MT7935
+	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7935_PCIe_DEVICE_ID1),
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7935},
+	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7935_PCIe_DEVICE_ID2),
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7935},
+#endif /* MT7935 */
 	{ /* end: all zeroes */ },
 };
 
@@ -191,6 +203,8 @@ static const struct platform_device_id mtk_axi_ids[] = {
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt6653
 #elif defined(MT6655)
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt6655
+#elif defined(MT7935)
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7935
 #endif
 	},
 

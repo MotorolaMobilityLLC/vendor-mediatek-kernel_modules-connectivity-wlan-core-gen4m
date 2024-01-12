@@ -244,9 +244,9 @@ void bssDetermineStaRecPhyTypeSet(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE == 1)
 	uint8_t ucEhtOption = FEATURE_ENABLED;
 #endif
+	uint32_t u4Cipher;
 #if (CFG_SUPPORT_802_11AX == 1)
 	uint8_t ucHeOption = FEATURE_ENABLED;
-	uint32_t u4Cipher;
 
 	/* 802.11 AX blacklist */
 	if (queryAxBlocklist(prAdapter, prBssDesc->aucBSSID,

@@ -52,6 +52,12 @@
 #include "coda/mt7925/wf_ds_uwtbl.h"
 #include "coda/mt7925/wf_ds_lwtbl.h"
 #endif
+#ifdef MT7935
+#include "coda/mt7935/wf_wtblon_top.h"
+#include "coda/mt7935/wf_uwtbl_top.h"
+#include "coda/mt7935/wf_ds_uwtbl.h"
+#include "coda/mt7935/wf_ds_lwtbl.h"
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
