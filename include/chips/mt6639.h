@@ -160,6 +160,7 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad);
 void mt6639_dumpPcGprLog(struct ADAPTER *ad);
 void mt6639_dumpN45CoreReg(struct ADAPTER *ad);
 void mt6639_dumpWfTopReg(struct ADAPTER *ad);
+void mt6639_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad);
 void mt6639_dumpWfBusReg(struct ADAPTER *ad);
 void mt6639_dumpCbtopReg(struct ADAPTER *ad);
 

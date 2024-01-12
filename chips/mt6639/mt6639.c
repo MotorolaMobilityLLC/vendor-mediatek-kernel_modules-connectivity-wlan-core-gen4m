@@ -820,6 +820,9 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 	.get_rx_link_stats = mt6639_get_rx_link_stats,
 #endif
 	.dumpTxdInfo = connac3x_dump_tmac_info,
+#if defined(_HIF_PCIE)
+	.dumpWfBusSectionA = mt6639_dumpHostVdnrTimeoutInfo,
+#endif
 };
 
 #if CFG_SUPPORT_QA_TOOL
