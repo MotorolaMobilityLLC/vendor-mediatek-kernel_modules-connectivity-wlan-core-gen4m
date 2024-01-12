@@ -1571,7 +1571,8 @@ OS_OBJS := 	$(OS_DIR)gl_init.o \
 		$(OS_DIR)gl_emi.o \
 		$(OS_DIR)gl_csi.o \
 		$(OS_DIR)gl_ics.o \
-		$(OS_DIR)gl_reg_rule.o
+		$(OS_DIR)gl_reg_rule.o \
+		$(OS_DIR)gl_cmd_validate.o
 	ifeq ($(WMT_SUPPORT), y)
 		OS_OBJS += $(OS_DIR)gl_sys_lock.o
 	endif

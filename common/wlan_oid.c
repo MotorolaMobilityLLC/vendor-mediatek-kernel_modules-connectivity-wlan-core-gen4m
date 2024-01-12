@@ -15570,7 +15570,7 @@ wlanoidDisableTdlsPs(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 
 	kalMemSet(&rTdlsPs, 0, sizeof(struct CMD_TDLS_PS_T));
-	rTdlsPs.ucIsEnablePs = *(uint8_t *)pvSetBuffer - '0';
+	rTdlsPs.ucIsEnablePs = *(uint8_t *)pvSetBuffer;
 	DBGLOG(OID, INFO, "enable tdls ps %d\n",
 	       rTdlsPs.ucIsEnablePs);
 	return wlanSendSetQueryCmd(prAdapter,
