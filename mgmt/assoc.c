@@ -2194,14 +2194,14 @@ void assocGenerateMDIE(struct ADAPTER *prAdapter,
 	enum ENUM_PARAM_AUTH_MODE eAuthMode;
 	struct FT_IES *prFtIEs;
 	struct GL_WPA_INFO *prWpaInfo;
-	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_INFO *prBssInfo;
+	uint8_t *prMDIE = NULL;
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
 		return;
 
 	eAuthMode = aisGetAuthMode(prAdapter, ucBssIndex);
-	prFtIEs = aisGetFtIe(prAdapter, ucBssIndex);
+	prFtIEs = aisGetFtIe(prAdapter, ucBssIndex, AIS_FT_R1);
 	prWpaInfo = aisGetWpaInfo(prAdapter, ucBssIndex);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
@@ -2212,7 +2212,7 @@ void assocGenerateMDIE(struct ADAPTER *prAdapter,
 	    !(eAuthMode == AUTH_MODE_OPEN &&
 	      prWpaInfo->u4WpaVersion == IW_AUTH_WPA_VERSION_DISABLED &&
 	      prWpaInfo->u4AuthAlg == IW_AUTH_ALG_FT)) { /* Non-RSN FT */
-		DBGLOG(SAA, ERROR, "Don't gen MDIE\n");
+		DBGLOG(SAA, TRACE, "Don't gen MDIE\n");
 		return;
 	}
 
@@ -2220,40 +2220,27 @@ void assocGenerateMDIE(struct ADAPTER *prAdapter,
 		DBGLOG(SAA, ERROR, "prFtIEs is null\n");
 		return;
 	}
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
-	if (prConnSettings->assocIeLen > 0) {
-		const uint8_t *mdieConn;
-
-		mdieConn = kalFindIeMatchMask(ELEM_ID_MOBILITY_DOMAIN,
-					      prConnSettings->pucAssocIEs,
-					      prConnSettings->assocIeLen,
-					      NULL, 0, 0, NULL);
-		/* skip appending MDIE due to it is already in assoc req ie */
-		if (mdieConn)
-			return;
-	}
 
 	if (!prFtIEs->prMDIE) {
 		struct BSS_DESC *prBssDesc =
-		    aisGetTargetBssDesc(prAdapter, ucBssIndex);
-		uint8_t *pucIE = prBssDesc->pucIeBuf;
-		uint16_t u2IeLen = prBssDesc->u2IELength;
-		uint16_t u2IeOffSet = 0;
+			aisGetTargetBssDesc(prAdapter, ucBssIndex);
 
-		IE_FOR_EACH(pucIE, u2IeLen, u2IeOffSet)
-		{
-			if (IE_ID(pucIE) == ELEM_ID_MOBILITY_DOMAIN) {
-				/* IE size for MD IE is fixed, it is 5 */
-				prMsduInfo->u2FrameLength += 5;
-				kalMemCopy(pucBuffer, pucIE, 5);
-				break;
-			}
-		}
+		if (prBssDesc)
+			prMDIE = (uint8_t *) kalFindIeExtIE(
+				ELEM_ID_MOBILITY_DOMAIN, 0,
+				prBssDesc->pucIeBuf,
+				prBssDesc->u2IELength);
+	} else {
+		prMDIE = (uint8_t *)prFtIEs->prMDIE;
+	}
+
+	if (!prMDIE) {
+		DBGLOG(SAA, ERROR, "FT: can't find MDIE\n");
 		return;
 	}
-	prMsduInfo->u2FrameLength +=
-		5; /* IE size for MD IE is fixed, it is 5 */
-	kalMemCopy(pucBuffer, prFtIEs->prMDIE, 5);
-	DBGLOG(SAA, TRACE, "FT: Generate MD IE\n");
+
+	prMsduInfo->u2FrameLength += 5; /* IE size for MD IE is fixed, it's 5 */
+	kalMemCopy(pucBuffer, prMDIE, 5);
+	DBGLOG(SAA, INFO, "FT: Generate MDIE\n");
 }
 

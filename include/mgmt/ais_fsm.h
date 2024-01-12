@@ -93,6 +93,9 @@
 #define AIS_BTM_DIS_IMMI_STATE_2	    2
 #define AIS_BTM_DIS_IMMI_STATE_3	    3
 
+#define AIS_FT_R0		0
+#define AIS_FT_R1		1
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -344,7 +347,8 @@ struct CONNECTION_SETTINGS {
 	uint8_t non_wfa_vendor_ie_buf[NON_WFA_VENDOR_IE_MAX_LEN];
 
 	/* 11R */
-	struct FT_IES rFtIeForTx;
+	struct FT_IES rFtIeR0;
+	struct FT_IES rFtIeR1;
 	struct FT_EVENT_PARAMS rFtEventParam;
 
 	/* CR1486, CR1640 */
@@ -1079,7 +1083,8 @@ uint8_t *
 struct FT_IES *
 	aisGetFtIe(
 	struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex);
+	uint8_t ucBssIndex,
+	uint8_t ucR0R1);
 
 struct FT_EVENT_PARAMS *
 	aisGetFtEventParam(

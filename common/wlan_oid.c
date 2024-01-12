@@ -1474,30 +1474,9 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 		}
 	}
 
-	/* Check former assocIE to prevent memory leakage in situations like
-	* upper layer requests connection without disconnecting first, ...
-	*/
-	if (prConnSettings->assocIeLen > 0) {
-		kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
-			prConnSettings->assocIeLen);
-		prConnSettings->assocIeLen = 0;
-		prConnSettings->pucAssocIEs = NULL;
-	}
-
-	if (pParamConn->u4IesLen > 0) {
-		prConnSettings->assocIeLen = pParamConn->u4IesLen;
-		prConnSettings->pucAssocIEs =
-			kalMemAlloc(prConnSettings->assocIeLen, VIR_MEM_TYPE);
-
-		if (prConnSettings->pucAssocIEs) {
-			kalMemCopy(prConnSettings->pucAssocIEs,
-				pParamConn->pucIEs, prConnSettings->assocIeLen);
-		} else {
-			DBGLOG(INIT, INFO,
-				"allocate memory for prConnSettings->pucAssocIEs failed!\n");
-				prConnSettings->assocIeLen = 0;
-		}
-	}
+	wlanoidUpdateConnect(prAdapter,
+			pvSetBuffer, u4SetBufferLen,
+			pu4SetInfoLen);
 
 	if (fgEqualSsid || fgEqualBssid)
 		prAisAbortMsg->fgDelayIndication = TRUE;
@@ -1551,36 +1530,34 @@ wlanoidUpdateConnect(struct ADAPTER *prAdapter,
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	pParamConn = (struct PARAM_CONNECT *) pvSetBuffer;
 
-	switch (prConnSettings->eAuthMode) {
-	case AUTH_MODE_WPA3_OWE:
-		/*Should update Diffie-Hallmen params*/
-		if (prConnSettings->assocIeLen > 0) {
-			kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
-				prConnSettings->assocIeLen);
-			prConnSettings->assocIeLen = 0;
-			prConnSettings->pucAssocIEs = NULL;
-		}
-
-		if (pParamConn->u4IesLen > 0) {
-			prConnSettings->assocIeLen = pParamConn->u4IesLen;
-			prConnSettings->pucAssocIEs =
-				kalMemAlloc(prConnSettings->assocIeLen,
-					    VIR_MEM_TYPE);
-
-			if (prConnSettings->pucAssocIEs) {
-				kalMemCopy(prConnSettings->pucAssocIEs,
-					    pParamConn->pucIEs,
-					    prConnSettings->assocIeLen);
-			} else {
-				DBGLOG(INIT, INFO,
-					"allocate mem for prConnSettings->pucAssocIEs failed\n");
-					prConnSettings->assocIeLen = 0;
-			}
-		}
-		break;
-	default:
-		break;
+	/* Check former assocIE to prevent memory leakage in situations like
+	* upper layer requests connection without disconnecting first, ...
+	*/
+	if (prConnSettings->assocIeLen > 0) {
+		kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
+			prConnSettings->assocIeLen);
+		prConnSettings->assocIeLen = 0;
+		prConnSettings->pucAssocIEs = NULL;
 	}
+
+	/*Should update Diffie-Hallmen params*/
+	if (pParamConn->u4IesLen > 0) {
+		prConnSettings->assocIeLen = pParamConn->u4IesLen;
+		prConnSettings->pucAssocIEs =
+			kalMemAlloc(prConnSettings->assocIeLen,
+				    VIR_MEM_TYPE);
+
+		if (prConnSettings->pucAssocIEs) {
+			kalMemCopy(prConnSettings->pucAssocIEs,
+				    pParamConn->pucIEs,
+				    prConnSettings->assocIeLen);
+		} else {
+			DBGLOG(INIT, INFO,
+				"allocate mem for prConnSettings->pucAssocIEs failed\n");
+				prConnSettings->assocIeLen = 0;
+		}
+	}
+
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -16010,7 +15987,7 @@ uint32_t wlanoidUpdateFtIes(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	const uint8_t *pucIe = NULL;
 	struct STA_RECORD *prStaRec = NULL;
 	struct MSG_SAA_FT_CONTINUE *prFtContinueMsg = NULL;
-	uint8_t ucBssIndex = 0;
+	uint8_t ucBssIndex = 0, ucR0R1 = 0;
 
 
 	if (!pvSetBuffer || u4SetBufferLen == 0) {
@@ -16023,9 +16000,22 @@ uint32_t wlanoidUpdateFtIes(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	prStaRec = aisGetTargetStaRec(prAdapter, ucBssIndex);
-	kalGetFtIeParam(pvSetBuffer, &u2MD, &u4IeFtLen, &pucIe);
+	if (!prStaRec) {
+		DBGLOG(OID, WARN, "FT: invalid StaRec\n");
+		return WLAN_STATUS_SUCCESS;
+	}
 
-	prFtIes = aisGetFtIe(prAdapter, ucBssIndex);
+	kalGetFtIeParam(pvSetBuffer, &u2MD, &u4IeFtLen, &pucIe);
+	/*
+	 * state = STA_STATE_3: update R0 for next auth frame
+	 * state = STA_STATE_1: update R1 for upcoming assoc frame
+	 */
+	ucR0R1 = prStaRec->ucStaState == STA_STATE_1 ? AIS_FT_R1 : AIS_FT_R0;
+
+	DBGLOG(OID, INFO, "FT: STA state:%d for %s\n",
+		prStaRec->ucStaState, ucR0R1 == AIS_FT_R0 ? "R0" : "R1");
+
+	prFtIes = aisGetFtIe(prAdapter, ucBssIndex, ucR0R1);
 	if (!prFtIes) {
 		DBGLOG(OID, ERROR, "FT: bss%d is not ais\n", ucBssIndex);
 		return WLAN_STATUS_INVALID_DATA;
@@ -16088,12 +16078,12 @@ uint32_t wlanoidUpdateFtIes(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	}
 
 	DBGLOG(OID, INFO,
-	       "FT: MdId %d IesLen %u, MDIE %d FTIE %d RSN %d TIE %d\n",
+	       "FT: MdId 0x%x IesLen %u, MDIE %d FTIE %d RSN %d TIE %d\n",
 	       u2MD, prFtIes->u4IeLength, !!prFtIes->prMDIE,
 	       !!prFtIes->prFTIE, !!prFtIes->prRsnIE, !!prFtIes->prTIE);
 
 	/* check if SAA is waiting to send Reassoc req */
-	if (!prStaRec || prStaRec->ucAuthTranNum != AUTH_TRANSACTION_SEQ_2 ||
+	if (prStaRec->ucAuthTranNum != AUTH_TRANSACTION_SEQ_2 ||
 		!prStaRec->fgIsReAssoc || prStaRec->ucStaState != STA_STATE_1)
 		return WLAN_STATUS_SUCCESS;
 

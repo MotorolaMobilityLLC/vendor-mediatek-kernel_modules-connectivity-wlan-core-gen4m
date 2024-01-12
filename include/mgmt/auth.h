@@ -116,6 +116,12 @@ authProcessRxAuthFrame(struct ADAPTER *prAdapter,
 void authAddMDIE(struct ADAPTER *prAdapter,
 		 struct MSDU_INFO *prMsduInfo);
 
+uint32_t authCalculateFTIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
+			     struct STA_RECORD *prStaRec);
+
+void authAddFTIE(struct ADAPTER *prAdapter,
+		 struct MSDU_INFO *prMsduInfo);
+
 uint32_t authCalculateRSNIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 			       struct STA_RECORD *prStaRec);
 
@@ -123,7 +129,7 @@ void authAddRSNIE(struct ADAPTER *prAdapter,
 		  struct MSDU_INFO *prMsduInfo);
 
 uint32_t authAddRSNIE_impl(struct ADAPTER *prAdapter,
-		  struct MSDU_INFO *prMsduInfo);
+		  struct MSDU_INFO *prMsduInfo, uint8_t ucR0R1);
 
 void authHandleFtIEs(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 		     struct IE_HDR *prIEHdr);
