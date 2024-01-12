@@ -3779,7 +3779,11 @@ u_int8_t cnmWmmIndexDecision(
 
 #else
 	/* Follow the same rule with cnmUpdateDbdcSetting */
-	if (prBssInfo->eBand == BAND_5G)
+	if (prBssInfo->eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		|| prBssInfo->eBand == BAND_6G
+#endif
+	)
 		return DBDC_5G_WMM_INDEX;
 	else
 		return (prAdapter->rWifiVar.eDbdcMode ==
