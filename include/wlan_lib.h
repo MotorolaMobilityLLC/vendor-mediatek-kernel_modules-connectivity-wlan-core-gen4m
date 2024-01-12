@@ -1604,6 +1604,11 @@ void wlanSetAcpiState(IN struct ADAPTER *prAdapter,
 uint8_t wlanGetEcoVersion(IN struct ADAPTER *prAdapter);
 
 /*----------------------------------------------------------------------------*/
+/* get Rom version                                                            */
+/*----------------------------------------------------------------------------*/
+uint8_t wlanGetRomVersion(IN struct ADAPTER *prAdapter);
+
+/*----------------------------------------------------------------------------*/
 /* set preferred band configuration corresponding to network type             */
 /*----------------------------------------------------------------------------*/
 void wlanSetPreferBandByNetwork(IN struct ADAPTER *prAdapter,
