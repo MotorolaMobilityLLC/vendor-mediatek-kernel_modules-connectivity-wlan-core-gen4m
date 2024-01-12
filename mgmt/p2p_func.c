@@ -215,7 +215,6 @@ void p2pFuncRequestScan(IN struct ADAPTER *prAdapter,
 				(sizeof(struct PARAM_SSID) *
 				prScanReqInfo->ucSsidNum)));
 		if (!prScanReqV2) {
-			ASSERT(0);	/* Can't trigger SCAN FSM */
 			DBGLOG(P2P, ERROR,
 				"p2pFuncRequestScan: Memory allocation fail, can not send SCAN MSG to scan module\n");
 			break;
@@ -354,7 +353,6 @@ void p2pFuncCancelScan(IN struct ADAPTER *prAdapter,
 			 */
 			DBGLOG(P2P, TRACE,
 				"Buffer not enough, can not cancel scan.\n");
-			ASSERT(FALSE);
 			break;
 		}
 		kalMemZero(prScanCancelMsg,
@@ -478,7 +476,6 @@ void p2pFuncGCJoin(IN struct ADAPTER *prAdapter,
 
 		if (!prJoinReqMsg) {
 			DBGLOG(P2P, TRACE, "Allocation Join Message Fail\n");
-			ASSERT(FALSE);
 			return;
 		}
 
@@ -1161,7 +1158,6 @@ p2pFuncStartGO(IN struct ADAPTER *prAdapter,
 			sizeof(*prCmdRddOnOffCtrl));
 
 		if (!prCmdRddOnOffCtrl) {
-			ASSERT(FALSE);
 			break;
 		}
 
@@ -1602,7 +1598,6 @@ void p2pFuncReleaseCh(IN struct ADAPTER *prAdapter,
 			cnmMemAlloc(prAdapter,
 			RAM_TYPE_MSG, sizeof(struct MSG_CH_ABORT));
 		if (!prMsgChRelease) {
-			ASSERT(0);	/* Can't release Channel to CNM */
 			break;
 		}
 
@@ -1650,7 +1645,6 @@ void p2pFuncAcquireCh(IN struct ADAPTER *prAdapter,
 
 		if (!prMsgChReq) {
 			/* Can't indicate CNM for channel acquiring */
-			ASSERT(0);
 			break;
 		}
 
@@ -3143,7 +3137,6 @@ u_int8_t p2pFuncRetryJOIN(IN struct ADAPTER *prAdapter,
 			cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 			sizeof(struct MSG_SAA_FSM_START));
 		if (!prJoinReqMsg) {
-			ASSERT(0);	/* Can't trigger SAA FSM */
 			break;
 		}
 
@@ -3352,7 +3345,6 @@ void p2pFuncResetStaRecStatus(IN struct ADAPTER *prAdapter,
 {
 	do {
 		if ((prAdapter == NULL) || (prStaRec == NULL)) {
-			ASSERT(FALSE);
 			break;
 		}
 
@@ -3444,7 +3436,6 @@ u_int8_t p2pFuncValidateAssocReq(IN struct ADAPTER *prAdapter,
 		if (prP2pBssInfo == NULL) {
 			DBGLOG(P2P, ERROR,
 				"RX ASSOC frame without BSS active / BSSID match\n");
-			ASSERT(FALSE);
 			break;
 		}
 
@@ -3455,7 +3446,6 @@ u_int8_t p2pFuncValidateAssocReq(IN struct ADAPTER *prAdapter,
 			 * while RX AUTH frame.
 			 */
 			fgReplyAssocResp = FALSE;
-			ASSERT(FALSE);
 			break;
 		}
 		ASSERT(prSwRfb->prRxStatusGroup3);

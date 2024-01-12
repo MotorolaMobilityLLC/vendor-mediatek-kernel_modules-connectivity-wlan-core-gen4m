@@ -844,9 +844,6 @@ void cnmChMngrAbortPrivilege(struct ADAPTER *prAdapter,
 	prCmdBody = (struct CMD_CH_PRIVILEGE *)
 		    cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
 				sizeof(struct CMD_CH_PRIVILEGE));
-	ASSERT(prCmdBody);
-
-	/* To do: exception handle */
 	if (!prCmdBody) {
 		log_dbg(CNM, ERROR,
 		       "ChAbort: fail to get buf (net=%d, token=%d)\n",
@@ -933,9 +930,6 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 	prChResp = (struct MSG_CH_GRANT *)
 		   cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 			       sizeof(struct MSG_CH_GRANT));
-	ASSERT(prChResp);
-
-	/* To do: exception handle */
 	if (!prChResp) {
 		log_dbg(CNM, ERROR,
 		       "ChGrant: fail to get buf (net=%d, token=%d)\n",
