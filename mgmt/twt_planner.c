@@ -394,14 +394,14 @@ struct _TWT_FLOW_T *twtPlannerFlowFindById(
 	if ((eTwtType == ENUM_TWT_TYPE_RTWT) ||
 		(eTwtType == ENUM_TWT_TYPE_BTWT)) {
 		if (ucFlowId >= RTWT_MAX_FLOW_NUM) {
-			DBGLOG(TWT_PLANNER, ERROR, "Invalid RTWT flow id %u\n",
+			DBGLOG(TWT_PLANNER, ERROR, "Invalid RTWT flow id %d\n",
 			ucFlowId);
 
 			return NULL;
 		}
 	} else {
 		if (ucFlowId >= TWT_MAX_FLOW_NUM) {
-			DBGLOG(TWT_PLANNER, ERROR, "Invalid TWT flow id %u\n",
+			DBGLOG(TWT_PLANNER, ERROR, "Invalid TWT flow id %d\n",
 				ucFlowId);
 
 			return NULL;
@@ -424,8 +424,17 @@ struct _TWT_FLOW_T *twtPlannerFlowFindById(
 #endif
 
 	/* ITWT/MLTWT/local emulate */
-	default:
+	case ENUM_TWT_TYPE_DEFAULT:
+	case ENUM_TWT_TYPE_ITWT:
+	case ENUM_TWT_TYPE_MLTWT:
 		prTWTFlow = &(prStaRec->arTWTFlow[ucFlowId]);
+
+		break;
+
+	/* If we reach here, it should be an incorrect TWT type */
+	default:
+		DBGLOG(TWT_PLANNER, ERROR, "Invalid TWT type %d\n",
+			eTwtType);
 
 		break;
 	}
@@ -1547,8 +1556,6 @@ void twtPlannerGetTsfDone(
 
 	case TWT_GET_TSF_FOR_RESUME_AGRT:
 		ucNextTWTSize = prGetTsfCtxt->rNextTWT.ucNextTWTSize;
-
-		u8NextTWT = u8CurTsf + prGetTsfCtxt->rNextTWT.u8NextTWT;
 
 		/* To have mantissa alignment from TWT wake time::Begin */
 		prTWTFlow = twtPlannerFlowFindById(
