@@ -551,8 +551,7 @@ void kalAcquireSpinLock(IN struct GLUE_INFO *prGlueInfo,
 	ASSERT(plFlags);
 
 	if (rLockCategory < SPIN_LOCK_NUM) {
-		DBGLOG(INIT, LOUD, "SPIN_LOCK[%u] Try to acquire\n",
-		       rLockCategory);
+		/*DBGLOG(INIT, LOUD, "SPIN_LOCK[%u] Acq\n", rLockCategory);*/
 #if CFG_USE_SPIN_LOCK_BOTTOM_HALF
 		spin_lock_bh(&prGlueInfo->rSpinLock[rLockCategory]);
 #else /* !CFG_USE_SPIN_LOCK_BOTTOM_HALF */
@@ -562,8 +561,7 @@ void kalAcquireSpinLock(IN struct GLUE_INFO *prGlueInfo,
 
 		*plFlags = ulFlags;
 
-		DBGLOG(INIT, LOUD, "SPIN_LOCK[%u] Acquired\n",
-		       rLockCategory);
+		/*DBGLOG(INIT, LOUD, "SPIN_LOCK[%u] Acqed\n", rLockCategory);*/
 	}
 
 }				/* end of kalAcquireSpinLock() */
@@ -594,7 +592,7 @@ void kalReleaseSpinLock(IN struct GLUE_INFO *prGlueInfo,
 		spin_unlock_irqrestore(
 			&prGlueInfo->rSpinLock[rLockCategory], ulFlags);
 #endif /* !CFG_USE_SPIN_LOCK_BOTTOM_HALF */
-		DBGLOG(INIT, LOUD, "SPIN_UNLOCK[%u]\n", rLockCategory);
+		/* DBGLOG(INIT, LOUD, "SPIN_UNLOCK[%u]\n", rLockCategory); */
 	}
 
 }				/* end of kalReleaseSpinLock() */
@@ -2988,8 +2986,6 @@ uint8_t GET_IOCTL_BSSIDX(
 		ucBssIndex = prIoReq->ucBssIndex;
 	}
 
-	DBGLOG(OID, LOUD, "ucBssIndex = %d\n", ucBssIndex);
-
 	return ucBssIndex;
 }
 
@@ -3003,9 +2999,6 @@ void SET_IOCTL_BSSIDX(
 		prIoReq =
 			&(prAdapter->prGlueInfo
 			->OidEntry);
-
-		DBGLOG(OID, LOUD,
-			"ucBssIndex = %d\n", ucBssIndex);
 
 		prIoReq->ucBssIndex = ucBssIndex;
 	}

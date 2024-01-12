@@ -1212,8 +1212,6 @@ u_int8_t scnFsmSchedScanStopRequest(IN struct ADAPTER *prAdapter)
 	ucBssIndex =
 		prAdapter->rWifiVar.rScanInfo.rSchedScanParam.ucBssIndex;
 
-	log_dbg(SCN, INFO, "ucBssIndex = %d\n", ucBssIndex);
-
 	if (aisGetAisBssInfo(prAdapter,
 		ucBssIndex) == NULL) {
 		log_dbg(SCN, WARN,
