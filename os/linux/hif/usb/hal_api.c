@@ -1234,12 +1234,18 @@ void halRxUSBProcessEventDataComplete(IN struct ADAPTER *prAdapter,
 			goto next_urb;
 		}
 
-		if (prAdapter->fgIsWfsysReset) {
+#if CFG_CHIP_RESET_SUPPORT
+		spin_lock_bh(&prAdapter->rWfsysResetLock);
+		if (prAdapter->eWfsysResetState != WFSYS_RESET_STATE_IDLE) {
+			spin_unlock_bh(&prAdapter->rWfsysResetLock);
+
 			DBGLOG(RX, ERROR,
 			       "skip rx urb process due to L0.5 reset\n");
 
 			goto next_urb;
 		}
+		spin_unlock_bh(&prAdapter->rWfsysResetLock);
+#endif /*CFG_CHIP_RESET_SUPPORT */
 
 		pucBufAddr = prBufCtrl->pucBuf + prBufCtrl->u4ReadSize;
 		u4BufLen = prUrb->actual_length - prBufCtrl->u4ReadSize;
@@ -1292,6 +1298,8 @@ void halRxUSBProcessWdtComplete(IN struct ADAPTER *prAdapter,
 	uint8_t *pucBufAddr;
 	uint32_t u4BufLen;
 
+#define USB_WATCHDOG_TIMEOUT_EVENT        0xFF
+
 	/* Process complete WDT interrupt */
 	prUsbReq = glUsbDequeueReq(prHifInfo, prCompleteQ, prLock);
 	while (prUsbReq) {
@@ -1315,8 +1323,9 @@ void halRxUSBProcessWdtComplete(IN struct ADAPTER *prAdapter,
 		pucBufAddr = prBufCtrl->pucBuf + prBufCtrl->u4ReadSize;
 		u4BufLen = prUrb->actual_length - prBufCtrl->u4ReadSize;
 
-		if (u4BufLen == 1 && pucBufAddr[0] == 0xFF)
-			schedule_work(&prGlueInfo->rWfsysResetWork);
+		if (u4BufLen == 1 &&
+		    pucBufAddr[0] == USB_WATCHDOG_TIMEOUT_EVENT)
+			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_WDT);
 		else {
 			DBGLOG(RX, ERROR, "receive unexpected WDT packet\n");
 			dumpMemory8(pucBufAddr, u4BufLen);

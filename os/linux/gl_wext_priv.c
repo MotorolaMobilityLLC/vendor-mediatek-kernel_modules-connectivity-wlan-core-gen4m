@@ -14646,7 +14646,7 @@ static int priv_driver_set_rst_hang(IN struct net_device *prNetDev,
 		if (fgIsResetHangState == SER_L0_HANG_RST_CMD_TRG) {
 			DBGLOG(REQ, STATE, "[SER][L0] cmd trigger\n");
 			GL_USER_DEFINE_RESET_TRIGGER(NULL, RST_CMD_TRIGGER,
-						     RST_FLAG_CHIP_RESET);
+						     RST_FLAG_DO_WHOLE_RESET);
 		}
 
 	} else {

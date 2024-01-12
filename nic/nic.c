@@ -5366,6 +5366,8 @@ void nicSerInit(IN struct ADAPTER *prAdapter, IN const u_int8_t bAtResetFlow)
 #if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
 	if (prAdapter->chip_info->fgIsSupportL0p5Reset) {
 		if (!bAtResetFlow) {
+			spin_lock_init(&prAdapter->rWfsysResetLock);
+			glSetWfsysResetState(prAdapter, WFSYS_RESET_STATE_IDLE);
 			INIT_WORK(&prAdapter->prGlueInfo->rWfsysResetWork,
 				  WfsysResetHdlr);
 		}

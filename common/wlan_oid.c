@@ -8962,7 +8962,13 @@ wlanoidSetDisassociate(IN struct ADAPTER *prAdapter,
 	prAdapter->fgIsRadioOff = TRUE;
 #endif
 
+#if (CFG_SUPPORT_SUPPLICANT_SME == 1)
+	prAdapter->fgSuppSmeLinkDownPend = TRUE;
+
+	return WLAN_STATUS_PENDING;
+#else
 	return WLAN_STATUS_SUCCESS;
+#endif
 }				/* wlanoidSetDisassociate */
 
 /*----------------------------------------------------------------------------*/
@@ -15920,7 +15926,7 @@ uint32_t wlanoidSetSer(IN struct ADAPTER *prAdapter,
 
 	case SER_USER_CMD_L0P5_RECOVER:
 		GL_USER_DEFINE_RESET_TRIGGER(prAdapter, RST_CMD_TRIGGER,
-				RST_FLAG_DO_ACTIVE_L0P5_RESET);
+				RST_FLAG_DO_L0P5_RESET);
 		break;
 
 	case SER_USER_CMD_L1_RECOVER:
