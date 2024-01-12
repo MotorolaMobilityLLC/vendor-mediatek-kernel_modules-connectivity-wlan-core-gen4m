@@ -1609,6 +1609,19 @@ void glBusRelease(void *pvData)
 {
 }
 
+
+/* same as pci_msi_set_enable function in kernel */
+static void glBusSetMsiEnable(struct pci_dev *dev, int enable)
+{
+	uint16_t u2Control;
+
+	pci_read_config_word(dev, dev->msi_cap + PCI_MSI_FLAGS, &u2Control);
+	u2Control &= ~PCI_MSI_FLAGS_ENABLE;
+	if (enable)
+		u2Control |= PCI_MSI_FLAGS_ENABLE;
+	pci_write_config_word(dev, dev->msi_cap + PCI_MSI_FLAGS, u2Control);
+}
+
 static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 	struct GLUE_INFO *prGlueInfo,
 	struct BUS_INFO *prBusInfo)
@@ -1824,10 +1837,6 @@ static void glBusFreeMsiIrq(struct pci_dev *pdev,
 {
 #if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
 	struct pcie_msi_info *prMsiInfo = NULL;
-#if (CFG_MTK_ANDROID_WMT == 1) && defined(MT6639)
-	struct ADAPTER *prAdapter = NULL;
-	uint32_t u4Value = 0;
-#endif
 	uint8_t dbg[512];
 	uint32_t written = 0;
 	uint8_t i = 0;
@@ -1837,18 +1846,8 @@ static void glBusFreeMsiIrq(struct pci_dev *pdev,
 	prMsiInfo = &prBusInfo->pcie_msi_info;
 	kalMemZero(dbg, sizeof(dbg));
 
-#if (CFG_MTK_ANDROID_WMT == 1) && defined(MT6639)
-	prAdapter = prGlueInfo->prAdapter;
-	/* conninfra CR: 0x7c060010 = 0x70007154: cb-infra CR */
-	HAL_MCR_RD(prAdapter, 0x70007154, &u4Value);
-	DBGLOG(HAL, TRACE, "Dump 0x70007154 = 0x%08x\n", u4Value);
-#endif
 	KAL_REC_TIME_START();
-#if (CFG_MTK_ANDROID_WMT == 1) && defined(MT6639)
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
-	mtk_pcie_dump_link_info(0);
-#endif
-#endif
+
 	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
 		struct pcie_msi_layout *prMsiLayout =
 			&prMsiInfo->prMsiLayout[i];
@@ -1923,6 +1922,8 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	prMsiInfo = &prBusInfo->pcie_msi_info;
 	pdev = prHifInfo->pdev;
+
+	glBusSetMsiEnable(pdev, 0);
 
 	if (prMsiInfo->fgMsiEnabled)
 		glBusFreeMsiIrq(pdev, prGlueInfo, prBusInfo);
