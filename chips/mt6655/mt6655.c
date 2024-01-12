@@ -397,7 +397,8 @@ struct BUS_INFO mt6655_bus_info = {
 		.prMsiLayout = mt6655_pcie_msi_layout,
 		.u4MaxMsiNum = ARRAY_SIZE(mt6655_pcie_msi_layout),
 	},
-#endif
+	.showDebugInfo = halPcieShowDebugInfo,
+#endif /* _HIF_PCIE */
 	.processTxInterrupt = mt6655ProcessTxInterrupt,
 	.processRxInterrupt = mt6655ProcessRxInterrupt,
 	.tx_ring_ext_ctrl = asicConnac3xWfdmaTxRingExtCtrl,
@@ -475,6 +476,8 @@ struct CHIP_DBG_OPS mt6655_DebugOps = {
 	.showCsrInfo = NULL,
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.showDmaschInfo = connac3x_show_dmashdl_info,
+	.getFwDebug = connac3x_get_ple_int,
+	.setFwDebug = connac3x_set_ple_int,
 #endif
 	.showHifInfo = NULL,
 	.printHifDbgInfo = NULL,

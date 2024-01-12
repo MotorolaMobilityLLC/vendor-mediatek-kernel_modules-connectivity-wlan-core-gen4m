@@ -1294,10 +1294,19 @@ struct MTK_WCN_WLAN_CB_INFO {
 	KAL_MB_RW(); \
 	__ret; \
 })
+#define GLUE_FENCE_ATOMIC_NO_RETUEN(op, args...) \
+({ \
+	KAL_MB_RW(); \
+	op(args); \
+	KAL_MB_RW(); \
+})
 #define GLUE_INC_REF_CNT(_refCount) \
 	GLUE_FENCE_ATOMIC(atomic_add_return, 1, ((atomic_t *)&(_refCount)))
 #define GLUE_DEC_REF_CNT(_refCount) \
 	GLUE_FENCE_ATOMIC(atomic_sub_return, 1, ((atomic_t *)&(_refCount)))
+#define GLUE_SET_REF_CNT(_value, _refCount) \
+	GLUE_FENCE_ATOMIC_NO_RETUEN( \
+		atomic_set, ((atomic_t *)&(_refCount)), _value)
 #define GLUE_GET_REF_CNT(_refCount)  \
 	GLUE_FENCE_ATOMIC(atomic_read, ((atomic_t *)&(_refCount)))
 #define GLUE_ADD_REF_CNT(_value, _refCount) \

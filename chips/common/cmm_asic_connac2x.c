@@ -986,8 +986,6 @@ void asicConnac2xEnablePlatformIRQ(IN struct ADAPTER *prAdapter)
 
 	ASSERT(prAdapter);
 
-	prAdapter->fgIsIntEnable = TRUE;
-
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	enable_irq(prHifInfo->u4IrqId);
 }
@@ -1000,8 +998,6 @@ void asicConnac2xDisablePlatformIRQ(IN struct ADAPTER *prAdapter)
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	disable_irq_nosync(prHifInfo->u4IrqId);
-
-	prAdapter->fgIsIntEnable = FALSE;
 }
 
 #if defined(_HIF_AXI)
@@ -1029,8 +1025,6 @@ void asicConnac2xEnableExtInterrupt(
 		u4HostWpdamBase = CONNAC2X_HOST_WPDMA_1_BASE;
 	else
 		u4HostWpdamBase = CONNAC2X_HOST_WPDMA_0_BASE;
-
-	prAdapter->fgIsIntEnable = TRUE;
 
 	IntMask.word = 0;
 	IntMask.field_conn2x_ext.wfdma0_rx_done_0 = 1;
@@ -1102,8 +1096,6 @@ void asicConnac2xDisableExtInterrupt(
 	HAL_MCR_RD(prAdapter,
 		CONNAC2X_WPDMA_EXT_INT_MASK(CONNAC2X_HOST_EXT_CONN_HIF_WRAP),
 		&IntMask.word);
-
-	prAdapter->fgIsIntEnable = FALSE;
 
 	DBGLOG(HAL, TRACE, "%s\n", __func__);
 

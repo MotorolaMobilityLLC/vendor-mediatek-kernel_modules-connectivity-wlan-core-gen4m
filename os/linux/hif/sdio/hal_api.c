@@ -351,8 +351,10 @@ void halEnableInterrupt(IN struct ADAPTER *prAdapter)
 	/* Not to enable interrupt if there is pending interrupt */
 	fgIsPendingInt = prAdapter->prGlueInfo->rHifInfo.fgIsPendingInt;
 
-	if (!fgIsPendingInt)
-		prAdapter->fgIsIntEnable = TRUE;	/* NOTE(Kevin): It must be placed before MCR GINT write. */
+	if (!fgIsPendingInt) {
+		/* NOTE(Kevin): It must be placed before MCR GINT write. */
+		GLUE_SET_REF_CNT(1, prAdapter->fgIsIntEnable);
+	}
 
 	/* If need enable INT and also set LPOwn at the same time. */
 	if (prAdapter->fgIsIntEnableWithLPOwnSet) {
@@ -395,8 +397,7 @@ void halDisableInterrupt(IN struct ADAPTER *prAdapter)
 
 	HAL_BYTE_WR(prAdapter, MCR_WHLPCR, WHLPCR_INT_EN_CLR);
 
-	prAdapter->fgIsIntEnable = FALSE;
-
+	GLUE_SET_REF_CNT(0, prAdapter->fgIsIntEnable);
 }
 
 

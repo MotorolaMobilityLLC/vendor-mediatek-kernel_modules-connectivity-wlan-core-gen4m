@@ -80,8 +80,9 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+#define PCIE_ISR_DEBUG_LOG                0
 #define AXI_CFG_PREALLOC_MEMORY_BUFFER    1
-#define AXI_ISR_DEBUG_LOG                 1
+#define AXI_ISR_DEBUG_LOG                 0
 #define AXI_TX_MAX_SIZE_PER_FRAME         (NIC_TX_MAX_SIZE_PER_FRAME +      \
 					   NIC_TX_DESC_AND_PADDING_LENGTH)
 #define AXI_TX_CMD_BUFF_SIZE              4096
@@ -439,6 +440,7 @@ struct BUS_INFO {
 		uint8_t ucType, u_int8_t fgEnable);
 	void (*enableFwDlMode)(struct ADAPTER *prAdapter);
 	void (*setupMcuEmiAddr)(struct ADAPTER *prAdapter);
+	void (*showDebugInfo)(struct GLUE_INFO *prGlueInfo);
 
 	struct SW_WFDMA_INFO rSwWfdmaInfo;
 
@@ -544,7 +546,7 @@ void halPciePreSuspendDone(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void halPciePreSuspendTimeout(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo);
-
+void halPcieShowDebugInfo(struct GLUE_INFO *prGlueInfo);
 int32_t glBusFunOn(void);
 void glBusFunOff(void);
 

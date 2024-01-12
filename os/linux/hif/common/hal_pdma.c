@@ -339,7 +339,7 @@ void halEnableInterrupt(IN struct ADAPTER *prAdapter)
 	if (prBusInfo->enableInterrupt)
 		prBusInfo->enableInterrupt(prAdapter);
 
-	prAdapter->fgIsIntEnable = TRUE;
+	GLUE_SET_REF_CNT(1, prAdapter->fgIsIntEnable);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -362,7 +362,7 @@ void halDisableInterrupt(IN struct ADAPTER *prAdapter)
 	if (prBusInfo->disableInterrupt)
 		prBusInfo->disableInterrupt(prAdapter);
 
-	prAdapter->fgIsIntEnable = FALSE;
+	GLUE_SET_REF_CNT(0, prAdapter->fgIsIntEnable);
 }
 
 static u_int8_t halDriverOwnCheckCR4(struct ADAPTER *prAdapter)
@@ -4408,7 +4408,7 @@ void halDumpHifStats(IN struct ADAPTER *prAdapter)
 			"I[%u %u %u %u]",
 			GLUE_GET_REF_CNT(prHifStats->u4HwIsrCount),
 			GLUE_GET_REF_CNT(prHifStats->u4SwIsrCount),
-			prAdapter->fgIsIntEnable,
+			GLUE_GET_REF_CNT(prAdapter->fgIsIntEnable),
 			GLUE_GET_REF_CNT(prGlueInfo->u4RxTaskScheduleCnt));
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
 			" T[%u %u %u / %u %u %u %u]",
