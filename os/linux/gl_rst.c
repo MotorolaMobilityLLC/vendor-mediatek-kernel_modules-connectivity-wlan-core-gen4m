@@ -99,6 +99,7 @@ uint32_t g_u4WlanRstThreadPid;
 wait_queue_head_t g_waitq_rst;
 unsigned long g_ulFlag;/* GLUE_FLAG_XXX */
 struct completion g_RstComp;
+struct completion g_triggerComp;
 KAL_WAKE_LOCK_T g_IntrWakeLock;
 struct task_struct *wlan_reset_thread;
 static int g_rst_data;
@@ -212,6 +213,7 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 	KAL_WAKE_LOCK_INIT(NULL, &g_IntrWakeLock, "WLAN Reset");
 	init_waitqueue_head(&g_waitq_rst);
 	init_completion(&g_RstComp);
+	init_completion(&g_triggerComp);
 	wlan_reset_thread = kthread_run(wlan_reset_thread_main,
 					&g_rst_data, "wlan_rst_thread");
 	g_SubsysRstCnt = 0;
@@ -264,18 +266,20 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 	uint16_t u2FwOwnVersion;
 	uint16_t u2FwPeerVersion;
 #if (CFG_SUPPORT_CONNINFRA == 1)
-	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	struct mt66xx_chip_info *prChipInfo;
 #endif
 	dump_stack();
 	if (kalIsResetting())
 		return fgResult;
 
 	fgIsResetting = TRUE;
+#if (CFG_SUPPORT_CONNINFRA == 0)
 	if (eResetReason != RST_BT_TRIGGER)
 		DBGLOG(INIT, STATE, "[SER][L0] wifi trigger eResetReason=%d\n",
 								eResetReason);
 	else
 		DBGLOG(INIT, STATE, "[SER][L0] BT trigger\n");
+#endif
 
 #if CFG_WMT_RESET_API_SUPPORT
 	if (u4RstFlag & RST_FLAG_DO_CORE_DUMP)
@@ -284,7 +288,7 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 #endif
 	if (prAdapter == NULL)
 		prAdapter = wifi_rst.prGlueInfo->prAdapter;
-
+	prChipInfo = prAdapter->chip_info;
 	u2FwOwnVersion = prAdapter->rVerInfo.u2FwOwnVersion;
 	u2FwPeerVersion = prAdapter->rVerInfo.u2FwPeerVersion;
 
