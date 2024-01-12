@@ -6456,108 +6456,6 @@ uint32_t wlanServiceExit(struct GLUE_INFO *prGlueInfo)
 }
 #endif
 
-#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
-#define ICS_LOG_CMD_ON_OFF        0
-#define ICS_LOG_CMD_SET_LEVEL     1
-
-enum ENUM_ICS_LOG_LEVEL_T {
-	ENUM_ICS_LOG_LEVEL_DISABLE,
-	ENUM_ICS_LOG_LEVEL_MAC,
-};
-
-static uint32_t u4IcsLogOnOffCache;
-static uint32_t u4IcsLogLevelCache = ENUM_ICS_LOG_LEVEL_DISABLE;
-
-static void ics_log_event_notification(int cmd, int value)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct ADAPTER *prAdapter = NULL;
-	struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT rSniffer;
-	uint32_t u4BufLen = 0;
-	uint32_t rStatus;
-
-	/*
-	 * Special code that matches App behavior:
-	 * 1. set ics log level
-	 * 2. set on/off (if fwlog on, then icslog also get on)
-	 */
-	if (cmd == ICS_LOG_CMD_ON_OFF) {
-		u4IcsLogOnOffCache = value;
-		if (u4IcsLogOnOffCache == 1 &&
-			u4IcsLogLevelCache == ENUM_ICS_LOG_LEVEL_DISABLE) {
-			DBGLOG(INIT, TRACE, "IcsLv is disable!!!\n");
-			u4IcsLogOnOffCache = 0;
-		}
-	} else if (cmd == ICS_LOG_CMD_SET_LEVEL) {
-		u4IcsLogLevelCache = value;
-		if (u4IcsLogLevelCache == ENUM_ICS_LOG_LEVEL_DISABLE) {
-			DBGLOG(INIT, TRACE, "IcsLv set to disable.\n");
-			u4IcsLogOnOffCache = 0;
-		} else {
-			DBGLOG(INIT, TRACE, "IcsLv set to MAC ICS.\n");
-			u4IcsLogOnOffCache = 1;
-		}
-	}
-
-	if (kalIsHalted()) {
-		DBGLOG(INIT, INFO, "device not ready return");
-		return;
-	}
-
-	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
-	if (!prGlueInfo) {
-		DBGLOG(INIT, INFO, "prGlueInfo is NULL return");
-		return;
-	}
-
-	prAdapter = prGlueInfo->prAdapter;
-	if (!prAdapter) {
-		DBGLOG(INIT, INFO, "prAdapter is NULL return");
-		return;
-	}
-
-	if (cmd == ICS_LOG_CMD_ON_OFF || cmd == ICS_LOG_CMD_SET_LEVEL) {
-		/* band0 */
-		kalMemZero(&rSniffer, sizeof(
-			struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT));
-		rSniffer.ucModule = 2;
-		rSniffer.ucAction = u4IcsLogOnOffCache;
-		rSniffer.ucFilter = 0;
-		rSniffer.ucOperation = 0;
-		rSniffer.ucCondition[0] = 2;
-		rSniffer.ucCondition[1] = ENUM_BAND_0;
-		rSniffer.ucCondition[2] = 0;
-		rSniffer.ucCondition[3] = 0;
-		rSniffer.ucCondition[4] = 0;
-		rSniffer.ucCondition[5] = 0;
-
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetIcsSniffer,
-			&rSniffer, sizeof(rSniffer), &u4BufLen);
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			DBGLOG(INIT, INFO,
-				"wlanoidSetIcsSniffer band0 failed");
-
-		/* band1 */
-		rSniffer.ucCondition[1] = ENUM_BAND_1;
-
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetIcsSniffer,
-			&rSniffer, sizeof(rSniffer), &u4BufLen);
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			DBGLOG(INIT, INFO,
-				"wlanoidSetIcsSniffer band1 failed");
-
-		DBGLOG(INIT, INFO,
-			"[Cmd:Value]=[%d:%d] IcsLog[Lv:OnOff]=[%u:%u]\n",
-			cmd, value,
-			u4IcsLogLevelCache, u4IcsLogOnOffCache);
-	} else {
-		DBGLOG(INIT, INFO,
-			"[Cmd:Value]=[%d:%d] Unknown cmd\n",
-			cmd, value);
-	}
-}
-#endif /* CFG_SUPPORT_ICS */
-
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 static uint32_t u4LogOnOffCache;
 static uint32_t u4LogLevelCache = -1;
@@ -7212,7 +7110,7 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	ics_log_event_notification((int)ICS_LOG_CMD_ON_OFF,
-		u4IcsLogOnOffCache);
+		ics_get_onoff());
 #endif
 #endif
 

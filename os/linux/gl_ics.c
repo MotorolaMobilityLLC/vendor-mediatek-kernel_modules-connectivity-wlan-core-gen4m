@@ -3,65 +3,112 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
-#include "gl_os.h"
-#include "debug.h"
-#include "precomp.h"
+#include "gl_ics.h"
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
-#include <linux/init.h>
-#include <linux/module.h>
-#include <linux/types.h>
-#include <linux/kernel.h>
-#include <linux/fs.h>
-#include <linux/cdev.h>
-#include <linux/sched.h>
-#include <asm/current.h>
-#include <linux/uaccess.h>
-#include <linux/fcntl.h>
-#include <linux/poll.h>
-#include <linux/time.h>
-#include <linux/delay.h>
-#include <linux/netdevice.h>
-#include <linux/inetdevice.h>
-#include <linux/string.h>
-#include "gl_ics.h"
-#include "wlan_ring.h"
-
-#define ICS_LOG_SIZE (128*1024)
-#define ICS_WAIT_READY_MAX_CNT 2000
-#define ICS_WAIT_READY_SLEEP_TIME 100
-#define FW_LOG_ICS_DRIVER_NAME "fw_log_ics"
-
-#define ICS_FW_LOG_IOC_MAGIC        (0xfc)
-#define ICS_FW_LOG_IOCTL_ON_OFF     _IOW(ICS_FW_LOG_IOC_MAGIC, 0, int)
-#define ICS_FW_LOG_IOCTL_SET_LEVEL  _IOW(ICS_FW_LOG_IOC_MAGIC, 1, int)
-
-#define ICS_LOG_CMD_ON_OFF        0
-#define ICS_LOG_CMD_SET_LEVEL     1
-
-struct ics_ring {
-	/* ring related variable */
-	struct wlan_ring ring_cache;
-	size_t ring_size;
-	void *ring_base;
-};
-
-struct ics_dev {
-	/* device related variable */
-	struct cdev cdev;
-	dev_t devno;
-	struct class *driver_class;
-	struct device *class_dev;
-	int major;
-	/* functional variable */
-	struct ics_ring iRing;
-	struct semaphore ioctl_mtx;
-	ics_fwlog_event_func_cb pfFwEventFuncCB;
-	wait_queue_head_t wq;
-};
 
 /* global variable of ics log */
 static struct ics_dev *gIcsDev;
+
+u_int8_t ics_get_onoff(void)
+{
+	struct ICS_LOG_CACHE *prLogCache;
+
+	if (!gIcsDev) {
+		DBGLOG(ICS, ERROR, "gIcsDev is NULL\n");
+		return FALSE;
+	}
+
+	prLogCache = &gIcsDev->rIcsLogCache;
+	return prLogCache->fgOnOff;
+}
+
+static u_int8_t ics_set_onoff(int cmd, int value)
+{
+	struct ICS_LOG_CACHE *prLogCache;
+
+	if (!gIcsDev) {
+		DBGLOG(ICS, ERROR, "gIcsDev is NULL\n");
+		return FALSE;
+	}
+
+	if (cmd != ICS_LOG_CMD_ON_OFF && cmd != ICS_LOG_CMD_SET_LEVEL) {
+		DBGLOG(ICS, INFO, "Unknown cmd [Cmd:Value]=[%d:%d]\n",
+					cmd, value);
+		return FALSE;
+	}
+
+	prLogCache = &gIcsDev->rIcsLogCache;
+	/*
+	 * Special code that matches App behavior:
+	 * 1. set ics log level
+	 * 2. set on/off (if fwlog on, then icslog also get on)
+	 */
+	if (cmd == ICS_LOG_CMD_ON_OFF) {
+		prLogCache->fgOnOff = (value == 1) ? TRUE : FALSE;
+		if (prLogCache->ucLevel == ENUM_ICS_LOG_LEVEL_DISABLE) {
+			if (prLogCache->fgOnOff == TRUE)
+				DBGLOG(ICS, TRACE, "IcsLv is disable!!!\n");
+			prLogCache->fgOnOff = FALSE;
+		}
+	} else if (cmd == ICS_LOG_CMD_SET_LEVEL) {
+		prLogCache->ucLevel = value;
+		if (prLogCache->ucLevel == ENUM_ICS_LOG_LEVEL_DISABLE) {
+			DBGLOG(ICS, TRACE, "IcsLv set to disable.\n");
+			prLogCache->fgOnOff = FALSE;
+		} else {
+			DBGLOG(ICS, TRACE, "IcsLv set to MAC ICS.\n");
+			prLogCache->fgOnOff = TRUE;
+		}
+	}
+
+	DBGLOG(ICS, INFO, "[Cmd:Value]=[%d:%d] IcsLog[Lv:OnOff]=[%u:%u]\n",
+		cmd, value, prLogCache->ucLevel, prLogCache->fgOnOff);
+
+	return TRUE;
+}
+
+void ics_log_event_notification(int cmd, int value)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT rSniffer = {0};
+	uint32_t u4BufLen = 0;
+	uint32_t rStatus;
+	uint8_t ucBand;
+
+	if (!ics_set_onoff(cmd, value))
+		return;
+
+	if (kalIsHalted()) {
+		DBGLOG(ICS, INFO, "device not ready return");
+		return;
+	}
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (!prGlueInfo) {
+		DBGLOG(ICS, ERROR, "prGlueInfo is NULL return");
+		return;
+	}
+
+	kalMemZero(&rSniffer,
+		sizeof(struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT));
+	rSniffer.ucModule = 2;
+	rSniffer.ucAction = ics_get_onoff();
+	rSniffer.ucCondition[0] = 2;
+
+	/* Enable/Disable ICS for all band */
+	for (ucBand = ENUM_BAND_0; ucBand < ENUM_BAND_NUM; ucBand++) {
+		rSniffer.ucCondition[1] = ucBand;
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetIcsSniffer,
+			&rSniffer, sizeof(rSniffer), &u4BufLen);
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(ICS, ERROR,
+				"wlanoidSetIcsSniffer Band[%u] failed\n",
+				ucBand);
+		}
+	}
+}
 
 /* ring related function */
 static int ics_ring_init(struct ics_ring *iRing, size_t size)

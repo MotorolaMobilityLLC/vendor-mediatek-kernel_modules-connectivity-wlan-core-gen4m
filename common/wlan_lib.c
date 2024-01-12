@@ -1920,9 +1920,47 @@ uint32_t wlanCheckWifiFunc(struct ADAPTER *prAdapter,
 	return u4Status;
 }
 
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+void wlanSendIcsOffCmd(struct ADAPTER *ad, enum ENUM_MBMC_BN eBand)
+{
+	uint32_t u4Status;
+	struct CMD_ICS_SNIFFER_INFO rIcsCmd = {0};
+
+	rIcsCmd.ucModule = 2;
+	rIcsCmd.ucAction = 0; /* turn off */
+	rIcsCmd.ucCondition[0] = 2;
+	rIcsCmd.ucCondition[1] = eBand;
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	u4Status = wlanSendSetQueryCmdHelper(
+#else
+	u4Status = wlanSendSetQueryCmdAdv(
+#endif
+		ad, CMD_ID_SET_ICS_SNIFFER, 0,
+		TRUE, FALSE, TRUE,
+		nicCmdEventSetCommon, nicOidCmdTimeoutCommon,
+		sizeof(struct CMD_ICS_SNIFFER_INFO),
+		(uint8_t *)&rIcsCmd,
+		NULL, 0,
+		CMD_SEND_METHOD_REQ_RESOURCE);
+
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		DBGLOG(INIT, ERROR, "Ics Off Failed ret:%u\n", u4Status);
+}
+#endif /* CFG_SUPPORT_ICS */
+
 uint32_t wlanPowerOffWifi(struct ADAPTER *prAdapter)
 {
 	uint32_t rStatus;
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+	uint8_t ucBand;
+
+	for (ucBand = ENUM_BAND_0; ucBand < ENUM_BAND_NUM; ucBand++) {
+		/* turn off ICS for each band */
+		wlanSendIcsOffCmd(prAdapter, ucBand);
+	}
+#endif /* CFG_SUPPORT_ICS */
+
 	/* Hif power off wifi */
 	rStatus = halHifPowerOffWifi(prAdapter);
 	prAdapter->fgIsCr4FwDownloaded = FALSE;
