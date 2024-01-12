@@ -6189,7 +6189,7 @@ int32_t wlanOnAtReset(void)
 
 		/* Send disconnect */
 		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-			if (!wlanGetAisNetDev(prGlueInfo, u4Idx))
+			if (!AIS_MAIN_BSS_INFO(prAdapter, u4Idx))
 				continue;
 
 			/* Clear pending request (AIS). */
