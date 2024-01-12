@@ -343,7 +343,7 @@ void p2pFuncRequestScan(struct ADAPTER *prAdapter,
 		mboxSendMsg(prAdapter,
 			MBOX_ID_0,
 			(struct MSG_HDR *) prScanReqV2,
-			MSG_SEND_METHOD_BUF);
+			MSG_SEND_METHOD_UNBUF);
 
 	} while (FALSE);
 }				/* p2pFuncRequestScan */
@@ -389,7 +389,7 @@ void p2pFuncCancelScan(struct ADAPTER *prAdapter,
 		mboxSendMsg(prAdapter,
 			MBOX_ID_0,
 			(struct MSG_HDR *) prScanCancelMsg,
-			MSG_SEND_METHOD_BUF);
+			MSG_SEND_METHOD_UNBUF);
 	} while (FALSE);
 }				/* p2pFuncCancelScan */
 
@@ -2124,7 +2124,7 @@ void p2pFuncReleaseCh(struct ADAPTER *prAdapter,
 		mboxSendMsg(prAdapter,
 			MBOX_ID_0,
 			(struct MSG_HDR *) prMsgChRelease,
-			MSG_SEND_METHOD_BUF);
+			MSG_SEND_METHOD_UNBUF);
 
 	} while (FALSE);
 }				/* p2pFuncReleaseCh */
@@ -2186,7 +2186,7 @@ void p2pFuncAcquireCh(struct ADAPTER *prAdapter,
 		mboxSendMsg(prAdapter,
 			MBOX_ID_0,
 			(struct MSG_HDR *) prMsgChReq,
-			MSG_SEND_METHOD_BUF);
+			MSG_SEND_METHOD_UNBUF);
 
 		prChnlReqInfo->fgIsChannelRequested = TRUE;
 
