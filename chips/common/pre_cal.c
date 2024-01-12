@@ -34,6 +34,7 @@
  *******************************************************************************
  */
 #if CFG_MTK_ANDROID_EMI
+u_int8_t *gEmiCalResult;
 uint32_t gEmiCalSize;
 uint32_t gEmiCalOffset;
 u_int8_t gEmiCalNoUseEmiData;
@@ -54,11 +55,18 @@ uint32_t wlanAccessCalibrationEMI(struct ADAPTER *prAdapter,
 	struct INIT_EVENT_PHY_ACTION_RSP *pCalEvent,
 	uint8_t backupEMI)
 {
+#define TURN_ON_EMI_BACKUP 1
+
 	uint32_t u4Status = WLAN_STATUS_FAILURE;
 
 #if CFG_MTK_ANDROID_EMI
 	do {
 		if (backupEMI == TRUE) {
+			if (!pCalEvent) {
+				DBGLOG(INIT, ERROR, "pCalEvent null\n");
+				break;
+			}
+
 			if (pCalEvent->u4EmiLength == 0) {
 				DBGLOG(INIT, ERROR, "gEmiCalSize 0\n");
 				break;
@@ -73,14 +81,66 @@ uint32_t wlanAccessCalibrationEMI(struct ADAPTER *prAdapter,
 				pCalEvent->u4EmiAddress);
 			gEmiCalSize = pCalEvent->u4EmiLength;
 
+			/*** backup calibration result ******/
+			if (gEmiCalNoUseEmiData == TRUE) {
+				DBGLOG(INIT, INFO, "No EMI backup.\n");
+				u4Status = WLAN_STATUS_SUCCESS;
+				break;
+			}
+
+			if (gEmiCalResult != NULL) {
+				kalMemFree(gEmiCalResult,
+					VIR_MEM_TYPE,
+					gEmiCalSize);
+				gEmiCalResult = NULL;
+			}
+
+			gEmiCalResult = kalMemAlloc(gEmiCalSize, VIR_MEM_TYPE);
+
+			if (gEmiCalResult == NULL) {
+				DBGLOG(INIT, ERROR,
+					"gEmiCalResult kalMemAlloc NULL\n");
+				break;
+			}
+
+			DBGLOG(INIT, INFO,
+				"Offset(0x%x), Size(0x%x), NoUse(%d), backup(%d)\n",
+					gEmiCalOffset, gEmiCalSize,
+					gEmiCalNoUseEmiData, backupEMI);
+
+#if (TURN_ON_EMI_BACKUP == 1)
+			emi_mem_read(prAdapter->chip_info,
+				gEmiCalOffset, gEmiCalResult,
+				gEmiCalSize);
+#endif
 			u4Status = WLAN_STATUS_SUCCESS;
 		} else {
-			if (gEmiCalNoUseEmiData == TRUE)
+			if (gEmiCalNoUseEmiData == TRUE) {
 				DBGLOG(INIT, INFO, "No EMI restore.\n");
+				u4Status = WLAN_STATUS_SUCCESS;
+			}
 			else if (gEmiCalOffset == 0 || gEmiCalSize == 0)
 				DBGLOG(INIT, INFO, "No EMI restore data.\n");
-			else
+			else {
+				if (gEmiCalResult == NULL) {
+					DBGLOG(INIT, ERROR,
+						"gEmiCalResult NULL\n");
+					break;
+				}
+
+				DBGLOG(INIT, INFO,
+					"Offset(0x%x), Size(0x%x), NoUse(%d), backup(%d)\n",
+					gEmiCalOffset, gEmiCalSize,
+					gEmiCalNoUseEmiData, backupEMI);
+
+#if (TURN_ON_EMI_BACKUP == 1)
+				/*** restore calibration result ******/
+				emi_mem_write(prAdapter->chip_info,
+					gEmiCalOffset, gEmiCalResult,
+					gEmiCalSize);
+#endif
 				u4Status = WLAN_STATUS_SUCCESS;
+			}
 		}
 	} while (FALSE);
 #endif /* CFG_MTK_ANDROID_EMI */
@@ -723,6 +783,11 @@ int wlan_precal_pwron_v1(void)
 {
 	DBGLOG(INIT, INFO, "\n");
 
+#if CFG_MTK_ANDROID_EMI
+	/* CONNAC 2 use backup /restore EMI */
+	gEmiCalNoUseEmiData = FALSE;
+#endif
+
 	wfsys_lock();
 
 	return 0;
@@ -762,6 +827,12 @@ int wlan_precal_pwron_v2(void)
 	int32_t ret = 0;
 
 	DBGLOG(INIT, INFO, "\n");
+
+#if CFG_MTK_ANDROID_EMI
+	// CONNAC 3 , no use backup /restore EMI
+	// (FW no use CRC , can't change region)
+	gEmiCalNoUseEmiData = TRUE;
+#endif
 
 	if (!wfsys_is_locked())
 		wfsys_lock();
