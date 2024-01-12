@@ -3940,7 +3940,7 @@ uint32_t rsnCalculateFTIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 {
 	struct FT_IES *prFtIEs = aisGetFtIe(prAdapter, ucBssIdx);
 
-	if (!prFtIEs || !prFtIEs->prFTIE ||
+	if (!prFtIEs || !prFtIEs->prFTIE || !prStaRec ||
 	    !rsnIsFtOverTheAir(prAdapter, ucBssIdx, prStaRec->ucIndex))
 		return 0;
 	return IE_SIZE(prFtIEs->prFTIE);
