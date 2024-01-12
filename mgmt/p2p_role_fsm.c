@@ -4067,12 +4067,12 @@ static void indicateAcsResultByAisCh(IN struct ADAPTER *prAdapter,
 		prAcsReqInfo->eChnlBw = MAX_BW_20MHZ;
 	}
 
-	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11ANY) {
-		if (prAisBssInfo->eBand == BAND_2G4)
-			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
-		else
-			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
-	}
+	prAcsReqInfo->eBand = prAisBssInfo->eBand;
+	if (prAcsReqInfo->eBand == BAND_2G4)
+		prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
+	else
+		prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
+
 	p2pFunIndicateAcsResult(prAdapter->prGlueInfo,
 			prAcsReqInfo);
 }
