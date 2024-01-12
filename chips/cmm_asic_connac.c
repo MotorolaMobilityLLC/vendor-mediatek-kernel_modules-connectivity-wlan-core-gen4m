@@ -159,6 +159,7 @@ VOID asicCapInit(IN P_ADAPTER_T prAdapter)
 		prChipInfo->u4ExtraTxByteCount = EXTRA_TXD_SIZE_FOR_TX_BYTE_COUNT;
 		prChipInfo->u4HifDmaShdlBaseAddr = USB_HIF_DMASHDL_BASE;
 		asicUsbDmaShdlInit(prAdapter);
+		asicUdmaTxTimeoutEnable(prAdapter);
 		break;
 #endif /* _HIF_USB */
 #if defined(_HIF_SDIO)
@@ -443,6 +444,22 @@ VOID asicUsbDmaShdlInit(IN P_ADAPTER_T prAdapter)
 	*/
 	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_SHDL_SET0(u4BaseAddr), 0x6501234f);
 	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_SHDL_SET1(u4BaseAddr), 0xedcba987);
+}
+
+VOID asicUdmaTxTimeoutEnable(IN P_ADAPTER_T prAdapter)
+{
+	P_BUS_INFO prBusInfo;
+	UINT_32 u4Value;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	HAL_MCR_RD(prAdapter, prBusInfo->u4UdmaWlCfg_1_Addr, &u4Value);
+	u4Value &= ~UDMA_WLCFG_1_TX_TIMEOUT_LIMIT_MASK;
+	u4Value |= UDMA_WLCFG_1_TX_TIMEOUT_LIMIT(prBusInfo->u4UdmaTxTimeout);
+	HAL_MCR_WR(prAdapter, prBusInfo->u4UdmaWlCfg_1_Addr, u4Value);
+
+	HAL_MCR_RD(prAdapter, prBusInfo->u4UdmaWlCfg_0_Addr, &u4Value);
+	u4Value |= UDMA_WLCFG_0_TX_TIMEOUT_EN_MASK;
+	HAL_MCR_WR(prAdapter, prBusInfo->u4UdmaWlCfg_0_Addr, u4Value);
 }
 
 VOID fillUsbHifTxDesc(IN PUINT_8 * pDest, IN PUINT_16 pInfoBufLen)

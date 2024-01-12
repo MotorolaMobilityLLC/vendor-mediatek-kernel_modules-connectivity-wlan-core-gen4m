@@ -294,6 +294,7 @@ typedef struct _BUS_INFO {
 	const UINT_32 u4UdmaWlCfg_0_Addr;
 	const UINT_32 u4UdmaWlCfg_1_Addr;
 	UINT_32 u4UdmaWlCfg_0;
+	UINT_32 u4UdmaTxTimeout; /* UDMA Tx time out limit, unit: us */
 } BUS_INFO, *P_BUS_INFO;
 
 /*******************************************************************************
