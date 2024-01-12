@@ -1053,6 +1053,29 @@ WLAN_STATUS p2pFuncRoleToBssIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucRoleIdx, O
 	return rWlanStatus;
 }				/* p2pFuncRoleToBssIdx */
 
+P_P2P_ROLE_FSM_INFO_T p2pFuncGetRoleByBssIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
+{
+	INT_32 i = 0;
+	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T)NULL;
+
+	do {
+		ASSERT_BREAK((prAdapter != NULL));
+
+		for (i = 0 ; i < BSS_P2P_NUM; i++) {
+			if (!prAdapter->rWifiVar.aprP2pRoleFsmInfo[i])
+				continue;
+
+			if (prAdapter->rWifiVar.aprP2pRoleFsmInfo[i]->ucBssIndex == ucBssIndex)
+				break;
+		}
+		if (i < BSS_P2P_NUM)
+			prP2pRoleFsmInfo = prAdapter->rWifiVar.aprP2pRoleFsmInfo[i];
+
+	} while (FALSE);
+
+	return prP2pRoleFsmInfo;
+}
+
 /* /////////////////////////////////   MT6630 CODE END //////////////////////////////////////////////// */
 
 VOID
@@ -1837,6 +1860,10 @@ VOID p2pFuncSetChannel(IN P_ADAPTER_T prAdapter, IN UINT_8 ucRoleIdx, IN P_RF_CH
 
 		prP2pConnReqInfo->rChannelInfo.ucChannelNum = prRfChannelInfo->ucChannelNum;
 		prP2pConnReqInfo->rChannelInfo.eBand = prRfChannelInfo->eBand;
+		prP2pConnReqInfo->eChnlBw = prRfChannelInfo->ucChnlBw;
+		prP2pConnReqInfo->u2PriChnlFreq = prRfChannelInfo->u2PriChnlFreq;
+		prP2pConnReqInfo->u4CenterFreq1 = prRfChannelInfo->u4CenterFreq1;
+		prP2pConnReqInfo->u4CenterFreq2 = prRfChannelInfo->u4CenterFreq2;
 
 	} while (FALSE);
 }				/* p2pFuncSetChannel */

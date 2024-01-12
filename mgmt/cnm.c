@@ -756,6 +756,9 @@ static UINT_8 cnmGetAPBwPermitted(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
 
 		for (i = 0 ; i < BSS_P2P_NUM; i++) {
 
+			if (!prAdapter->rWifiVar.aprP2pRoleFsmInfo[i])
+				continue;
+
 			if (prAdapter->rWifiVar.aprP2pRoleFsmInfo[i]->ucBssIndex == ucBssIndex)
 				break;
 
@@ -875,6 +878,8 @@ UINT_8 cnmGetBssMaxBw(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
 	UINT_8 ucMaxBandwidth = MAX_BW_80_80_MHZ; /*chip capability*/
 	P_BSS_DESC_T    prBssDesc = NULL;
 	ENUM_BAND_T eBand = BAND_NULL;
+	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
+	P_P2P_CONNECTION_REQ_INFO_T prP2pConnReqInfo = (P_P2P_CONNECTION_REQ_INFO_T) NULL;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
@@ -906,13 +911,19 @@ UINT_8 cnmGetBssMaxBw(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
 		/* AP mode */
 		if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[prBssInfo->u4PrivateData])) {
 
-			if (prBssInfo->eBand == BAND_2G4)
-				ucMaxBandwidth = prAdapter->rWifiVar.ucAp2gBandwidth;
-			else
-				ucMaxBandwidth = prAdapter->rWifiVar.ucAp5gBandwidth;
+			prP2pRoleFsmInfo = p2pFuncGetRoleByBssIdx(prAdapter, ucBssIndex);
+			if (!prAdapter->rWifiVar.ucApChnlDefFromCfg && prP2pRoleFsmInfo) {
+				prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+				ucMaxBandwidth = prP2pConnReqInfo->eChnlBw;
+			} else {
+				if (prBssInfo->eBand == BAND_2G4)
+					ucMaxBandwidth = prAdapter->rWifiVar.ucAp2gBandwidth;
+				else
+					ucMaxBandwidth = prAdapter->rWifiVar.ucAp5gBandwidth;
 
-			if (ucMaxBandwidth > prAdapter->rWifiVar.ucApBandwidth)
-				ucMaxBandwidth = prAdapter->rWifiVar.ucApBandwidth;
+				if (ucMaxBandwidth > prAdapter->rWifiVar.ucApBandwidth)
+					ucMaxBandwidth = prAdapter->rWifiVar.ucApBandwidth;
+			}
 		}
 		/* P2P mode */
 		else {
@@ -924,6 +935,13 @@ UINT_8 cnmGetBssMaxBw(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
 	}
 
 	return ucMaxBandwidth;
+}
+
+
+UINT_8 cnmGetBssMaxBwToChnlBW(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
+{
+	UINT_8 ucMaxBandwidth = cnmGetBssMaxBw(prAdapter, ucBssIndex);
+	return ucMaxBandwidth == MAX_BW_20MHZ ? ucMaxBandwidth:(ucMaxBandwidth - 1);
 }
 
 /*----------------------------------------------------------------------------*/

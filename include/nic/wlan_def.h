@@ -613,6 +613,10 @@ typedef enum _ENUM_DBDC_BN_T {
 /* Provide supported channel list to other components in array format */
 typedef struct _RF_CHANNEL_INFO_T {
 	ENUM_BAND_T eBand;
+	UINT_32 u4CenterFreq1; /* To record Channel Center Frequency Segment 0 (MHz) from CFG80211 */
+	UINT_32 u4CenterFreq2; /* To record Channel Center Frequency Segment 1 (MHz) from CFG80211 */
+	UINT_16 u2PriChnlFreq; /* To record primary channel frequency (MHz) from CFG80211 */
+	UINT_8 ucChnlBw; /* To record channel bandwidth from CFG80211 */
 	UINT_8 ucChannelNum;
 } RF_CHANNEL_INFO_T, *P_RF_CHANNEL_INFO_T;
 

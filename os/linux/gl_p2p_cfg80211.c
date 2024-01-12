@@ -119,15 +119,110 @@
 ********************************************************************************
 */
 
-BOOLEAN
-mtk_p2p_cfg80211func_channel_format_switch(IN struct ieee80211_channel *channel,
-					   IN enum nl80211_channel_type channel_type,
-					   IN P_RF_CHANNEL_INFO_T prRfChnlInfo, IN P_ENUM_CHNL_EXT_T prChnlSco);
-
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
 */
+
+BOOLEAN
+mtk_p2p_cfg80211func_channel_sco_switch(IN enum nl80211_channel_type channel_type,
+					   IN P_ENUM_CHNL_EXT_T prChnlSco)
+{
+	BOOLEAN fgIsValid = FALSE;
+
+	do {
+		if (prChnlSco) {
+
+			switch (channel_type) {
+			case NL80211_CHAN_NO_HT:
+				*prChnlSco = CHNL_EXT_SCN;
+				break;
+			case NL80211_CHAN_HT20:
+				*prChnlSco = CHNL_EXT_SCN;
+				break;
+			case NL80211_CHAN_HT40MINUS:
+				*prChnlSco = CHNL_EXT_SCA;
+				break;
+			case NL80211_CHAN_HT40PLUS:
+				*prChnlSco = CHNL_EXT_SCB;
+				break;
+			default:
+				ASSERT(FALSE);
+				*prChnlSco = CHNL_EXT_SCN;
+				break;
+			}
+		}
+
+		fgIsValid = TRUE;
+	} while (FALSE);
+
+	return fgIsValid;
+}
+
+BOOLEAN
+mtk_p2p_cfg80211func_channel_format_switch(IN struct cfg80211_chan_def *channel_def,
+					   IN struct ieee80211_channel *channel,
+					   IN P_RF_CHANNEL_INFO_T prRfChnlInfo)
+{
+	BOOLEAN fgIsValid = FALSE;
+
+	do {
+		if (channel == NULL)
+			break;
+
+		if (prRfChnlInfo) {
+			prRfChnlInfo->ucChannelNum = nicFreq2ChannelNum(channel->center_freq * 1000);
+
+			switch (channel->band) {
+			case IEEE80211_BAND_2GHZ:
+				prRfChnlInfo->eBand = BAND_2G4;
+				break;
+			case IEEE80211_BAND_5GHZ:
+				prRfChnlInfo->eBand = BAND_5G;
+				break;
+			default:
+				prRfChnlInfo->eBand = BAND_2G4;
+				break;
+			}
+
+		}
+
+		if (channel_def && prRfChnlInfo) {
+
+			switch (channel_def->width) {
+			case NL80211_CHAN_WIDTH_20_NOHT:
+			case NL80211_CHAN_WIDTH_20:
+				prRfChnlInfo->ucChnlBw = MAX_BW_20MHZ;
+				break;
+			case NL80211_CHAN_WIDTH_40:
+				prRfChnlInfo->ucChnlBw = MAX_BW_40MHZ;
+				break;
+			case NL80211_CHAN_WIDTH_80:
+				prRfChnlInfo->ucChnlBw = MAX_BW_80MHZ;
+				break;
+			case NL80211_CHAN_WIDTH_80P80:
+				prRfChnlInfo->ucChnlBw = MAX_BW_80_80_MHZ;
+				break;
+			case NL80211_CHAN_WIDTH_160:
+				prRfChnlInfo->ucChnlBw = MAX_BW_160MHZ;
+				break;
+			default:
+				prRfChnlInfo->ucChnlBw = MAX_BW_20MHZ;
+				break;
+			}
+			prRfChnlInfo->u2PriChnlFreq = channel->center_freq;
+			prRfChnlInfo->u4CenterFreq1 = channel_def->center_freq1;
+			prRfChnlInfo->u4CenterFreq2 = channel_def->center_freq2;
+		}
+
+		fgIsValid = TRUE;
+
+	} while (FALSE);
+
+	return fgIsValid;
+}
+
+/* mtk_p2p_cfg80211func_channel_format_switch */
 
 INT_32 mtk_Netdev_To_RoleIdx(P_GLUE_INFO_T prGlueInfo, struct net_device *ndev, PUINT_8 pucRoleIdx)
 {
@@ -1105,7 +1200,7 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 			break;
 
 		if (chandef) {
-			mtk_p2p_cfg80211func_channel_format_switch(chandef->chan, chandef->width, &rRfChnlInfo, NULL);
+			mtk_p2p_cfg80211func_channel_format_switch(chandef, chandef->chan, &rRfChnlInfo);
 
 			/* Follow the channel info from wifi.cfg prior to hostapd.conf */
 			{
@@ -1287,7 +1382,7 @@ static int mtk_p2p_cfg80211_start_radar_detection_impl(struct wiphy *wiphy, stru
 
 
 		if (chandef) {
-			mtk_p2p_cfg80211func_channel_format_switch(chandef->chan, chandef->width, &rRfChnlInfo, NULL);
+			mtk_p2p_cfg80211func_channel_format_switch(chandef, chandef->chan, &rRfChnlInfo);
 
 			p2pFuncSetChannel(prGlueInfo->prAdapter, ucRoleIdx, &rRfChnlInfo);
 		} else
@@ -1399,8 +1494,8 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 			break;
 
 		if (params) {
-			mtk_p2p_cfg80211func_channel_format_switch(params->chandef.chan,
-								params->chandef.width, &rRfChnlInfo, NULL);
+			mtk_p2p_cfg80211func_channel_format_switch(&params->chandef,
+								params->chandef.chan, &rRfChnlInfo);
 
 			p2pFuncSetChannel(prGlueInfo->prAdapter, ucRoleIdx, &rRfChnlInfo);
 		} else
@@ -1750,9 +1845,9 @@ int mtk_p2p_cfg80211_remain_on_channel(struct wiphy *wiphy,
 		prMsgChnlReq->u4Duration = duration;
 		prMsgChnlReq->eChnlReqType = CH_REQ_TYPE_P2P_LISTEN;
 
-		mtk_p2p_cfg80211func_channel_format_switch(chan,
-							   NL80211_CHAN_NO_HT,
-							   &prMsgChnlReq->rChannelInfo, &prMsgChnlReq->eChnlSco);
+		mtk_p2p_cfg80211func_channel_format_switch(NULL, chan,
+							   &prMsgChnlReq->rChannelInfo);
+		mtk_p2p_cfg80211func_channel_sco_switch(NL80211_CHAN_NO_HT, &prMsgChnlReq->eChnlSco);
 
 		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prMsgChnlReq, MSG_SEND_METHOD_BUF);
 
@@ -1852,9 +1947,9 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 			DBGLOG(P2P, TRACE, "   Off channel TRUE\n");
 			prMsgTxReq->fgIsOffChannel = TRUE;
 
-			mtk_p2p_cfg80211func_channel_format_switch(params->chan,
-								   NL80211_CHAN_NO_HT,
-								   &prMsgTxReq->rChannelInfo, &prMsgTxReq->eChnlExt);
+			mtk_p2p_cfg80211func_channel_format_switch(NULL, params->chan,
+								   &prMsgTxReq->rChannelInfo);
+			mtk_p2p_cfg80211func_channel_sco_switch(NL80211_CHAN_NO_HT, &prMsgTxReq->eChnlExt);
 		} else {
 			prMsgTxReq->fgIsOffChannel = FALSE;
 		}
@@ -1961,9 +2056,9 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 			DBGLOG(P2P, TRACE, "   Off channel TRUE\n");
 			prMsgTxReq->fgIsOffChannel = TRUE;
 
-			mtk_p2p_cfg80211func_channel_format_switch(chan,
-								   NL80211_CHAN_NO_HT,
-								   &prMsgTxReq->rChannelInfo, &prMsgTxReq->eChnlExt);
+			mtk_p2p_cfg80211func_channel_format_switch(NULL, chan,
+								   &prMsgTxReq->rChannelInfo);
+			mtk_p2p_cfg80211func_channel_sco_switch(NL80211_CHAN_NO_HT, &prMsgTxReq->eChnlExt);
 		} else {
 			prMsgTxReq->fgIsOffChannel = FALSE;
 		}
@@ -2303,9 +2398,9 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev, struct
 			}
 		}
 
-		mtk_p2p_cfg80211func_channel_format_switch(sme->channel,
-							   NL80211_CHAN_NO_HT,
-							   &prConnReqMsg->rChannelInfo, &prConnReqMsg->eChnlSco);
+		mtk_p2p_cfg80211func_channel_format_switch(NULL, sme->channel,
+							   &prConnReqMsg->rChannelInfo);
+		mtk_p2p_cfg80211func_channel_sco_switch(NL80211_CHAN_NO_HT, &prConnReqMsg->eChnlSco);
 
 		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prConnReqMsg, MSG_SEND_METHOD_BUF);
 
@@ -2447,7 +2542,7 @@ int mtk_p2p_cfg80211_set_channel(IN struct wiphy *wiphy, struct cfg80211_chan_de
 
 		prGlueInfo = *((P_GLUE_INFO_T *) wiphy_priv(wiphy));
 
-		mtk_p2p_cfg80211func_channel_format_switch(chandef->chan, chandef->width, &rRfChnlInfo, NULL);
+		mtk_p2p_cfg80211func_channel_format_switch(chandef, chandef->chan, &rRfChnlInfo);
 
 		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
 			break;
@@ -2577,65 +2672,6 @@ void mtk_p2p_cfg80211_mgmt_frame_register(IN struct wiphy *wiphy,
 	} while (FALSE);
 
 }				/* mtk_p2p_cfg80211_mgmt_frame_register */
-
-BOOLEAN
-mtk_p2p_cfg80211func_channel_format_switch(IN struct ieee80211_channel *channel,
-					   IN enum nl80211_channel_type channel_type,
-					   IN P_RF_CHANNEL_INFO_T prRfChnlInfo, IN P_ENUM_CHNL_EXT_T prChnlSco)
-{
-	BOOLEAN fgIsValid = FALSE;
-
-	do {
-		if (channel == NULL)
-			break;
-
-		if (prRfChnlInfo) {
-			prRfChnlInfo->ucChannelNum = nicFreq2ChannelNum(channel->center_freq * 1000);
-
-			switch (channel->band) {
-			case IEEE80211_BAND_2GHZ:
-				prRfChnlInfo->eBand = BAND_2G4;
-				break;
-			case IEEE80211_BAND_5GHZ:
-				prRfChnlInfo->eBand = BAND_5G;
-				break;
-			default:
-				prRfChnlInfo->eBand = BAND_2G4;
-				break;
-			}
-
-		}
-
-		if (prChnlSco) {
-
-			switch (channel_type) {
-			case NL80211_CHAN_NO_HT:
-				*prChnlSco = CHNL_EXT_SCN;
-				break;
-			case NL80211_CHAN_HT20:
-				*prChnlSco = CHNL_EXT_SCN;
-				break;
-			case NL80211_CHAN_HT40MINUS:
-				*prChnlSco = CHNL_EXT_SCA;
-				break;
-			case NL80211_CHAN_HT40PLUS:
-				*prChnlSco = CHNL_EXT_SCB;
-				break;
-			default:
-				ASSERT(FALSE);
-				*prChnlSco = CHNL_EXT_SCN;
-				break;
-			}
-		}
-
-		fgIsValid = TRUE;
-
-	} while (FALSE);
-
-	return fgIsValid;
-}
-
-/* mtk_p2p_cfg80211func_channel_format_switch */
 
 #ifdef CONFIG_NL80211_TESTMODE
 
