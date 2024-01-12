@@ -3895,7 +3895,7 @@ static void wlanNetUnregister(struct wireless_dev *prWdev)
 			struct net_device *ndev =
 				wlanGetAisNetDev(prGlueInfo, u4Idx);
 
-			if (ndev) {
+			if (ndev && ndev->reg_state == NETREG_REGISTERED) {
 				wlanClearDevIdx(ndev);
 				unregister_netdev(ndev);
 			}
