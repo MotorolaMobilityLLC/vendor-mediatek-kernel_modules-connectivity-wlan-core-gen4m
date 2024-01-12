@@ -1915,8 +1915,7 @@ void kalP2PSetMaxClients(IN struct GLUE_INFO *prGlueInfo,
 		return;
 
 	if (u4MaxClient == 0 ||
-		prGlueInfo->prP2PInfo[ucRoleIndex]->ucMaxClients
-		>= P2P_MAXIMUM_CLIENT_COUNT)
+		u4MaxClient >= P2P_MAXIMUM_CLIENT_COUNT)
 		prGlueInfo->prP2PInfo[ucRoleIndex]->ucMaxClients =
 			P2P_MAXIMUM_CLIENT_COUNT;
 	else
@@ -1941,7 +1940,7 @@ u_int8_t kalP2PMaxClients(IN struct GLUE_INFO *prGlueInfo,
 	if (prGlueInfo->prP2PInfo[ucRoleIndex] &&
 		prGlueInfo->prP2PInfo[ucRoleIndex]->ucMaxClients) {
 		if ((uint8_t) u4NumClient
-			> prGlueInfo->prP2PInfo[ucRoleIndex]->ucMaxClients)
+			>= prGlueInfo->prP2PInfo[ucRoleIndex]->ucMaxClients)
 			return TRUE;
 		else
 			return FALSE;
