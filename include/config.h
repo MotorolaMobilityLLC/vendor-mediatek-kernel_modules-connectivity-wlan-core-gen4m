@@ -2904,6 +2904,14 @@
 #endif
 
 /*------------------------------------------------------------------------------
+ * New used for update pacing shift for tweak TCP small queue budget
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_UPDATE_PACING_SHIFT_SUPPORT
+#define CFG_UPDATE_PACING_SHIFT_SUPPORT 0
+#endif
+
+/*------------------------------------------------------------------------------
  * Tx power limit channel definition:
  * 0 : Center Channel (config in rlm_txpwr_data_emi_cent.h)
  * 1 : Primary Channel (config in rlm_txpwr_data_emi_pri.h)

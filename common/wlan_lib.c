@@ -8659,6 +8659,18 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4RecoveryMsiRxCnt, "RecoveryMsiRxCnt", 5);
 	INIT_UINT(prWifiVar->u4RecoveryMsiTime, "RecoveryMsiTime", 1000);
 
+#if CFG_UPDATE_PACING_SHIFT_SUPPORT
+	/* Default TCP Small queue budget is ~1 ms of data (1sec >> 10).
+	 * u4PacingShift is used to update the scaling factor for TSQ.
+	 * This implies that a smaller value of u4PacingShift allows for a
+	 * larger TSQ budget.
+	 * For instance, if u4PacingShift is set to 1, the TSQ budget could be
+	 * equivalent to 500ms of data (1sec >> 1).
+	 * The value of u4PacingShift can be set within the range of 1 to 10.
+	 */
+	INIT_INT(prWifiVar->u4PacingShift, "PacingShift", 0);
+#endif
+
 #if CFG_SUPPORT_TPUT_FACTOR
 	prWifiVar->fgTputFactorDump = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "TputFactorDump", FEATURE_ENABLED);
