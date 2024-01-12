@@ -2809,20 +2809,13 @@ uint32_t __nicRxSetupRFB(struct ADAPTER *prAdapter,
 	if (!prSwRfb->pvPacket) {
 		kalMemZero(prSwRfb, sizeof(struct SW_RFB));
 #if CFG_SUPPORT_RX_PAGE_POOL
-		pvPacket = kalAllocRxSkb(&pucRecvBuff);
-#if (CFG_SUPPORT_HOST_OFFLOAD == 0)
-		if (!pvPacket) {
-			pvPacket = kalPacketAlloc(
-				prAdapter->prGlueInfo,
-				CFG_RX_MAX_MPDU_SIZE,
-				FALSE, &pucRecvBuff);
-		}
-#endif
+		pvPacket = kalAllocRxSkb(
+			prAdapter->prGlueInfo, &pucRecvBuff);
 #else
 		pvPacket = kalPacketAlloc(
 			prAdapter->prGlueInfo, CFG_RX_MAX_MPDU_SIZE,
 			FALSE, &pucRecvBuff);
-#endif
+#endif /* CFG_SUPPORT_RX_PAGE_POOL */
 		if (pvPacket == NULL)
 			return WLAN_STATUS_RESOURCES;
 

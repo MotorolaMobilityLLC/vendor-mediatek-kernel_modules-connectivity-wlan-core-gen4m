@@ -764,7 +764,10 @@ u_int8_t mtk_get_aer_triggered(void)
 #endif
 }
 
-static int32_t setupPlatDevIrq(struct platform_device *pdev, uint32_t *pu4IrqId)
+static int32_t setupPlatDevIrq(
+	struct platform_device *pdev,
+	struct GLUE_INFO *prGlueInfo,
+	uint32_t *pu4IrqId)
 {
 	uint32_t u4IrqId = 0;
 	int ret = 0;
@@ -773,7 +776,7 @@ static int32_t setupPlatDevIrq(struct platform_device *pdev, uint32_t *pu4IrqId)
 	int en_wake_ret = 0;
 #endif
 
-	if (!pdev)
+	if (!pdev || !prGlueInfo)
 		return -1;
 
 #ifdef CONFIG_OF
@@ -798,7 +801,7 @@ static int32_t setupPlatDevIrq(struct platform_device *pdev, uint32_t *pu4IrqId)
 		mtk_wifi_isr_thread,
 		IRQF_SHARED,
 		mtk_wifi_driver.driver.name,
-		platform_get_drvdata(pdev));
+		&prGlueInfo->rHifInfo);
 	if (ret != 0) {
 		DBGLOG(INIT, INFO, "request_irq(%u) ERROR(%d)\n",
 		       u4IrqId, ret);
@@ -816,14 +819,17 @@ exit:
 	return ret;
 }
 
-void freePlatDevIrq(struct platform_device *pdev, uint32_t u4IrqId)
+void freePlatDevIrq(
+	struct platform_device *pdev,
+	struct GLUE_INFO *prGlueInfo,
+	uint32_t u4IrqId)
 {
-	if (!pdev || !u4IrqId)
+	if (!pdev || !prGlueInfo || !u4IrqId)
 		return;
 
 	synchronize_irq(u4IrqId);
 	irq_set_affinity_hint(u4IrqId, NULL);
-	devm_free_irq(&pdev->dev, u4IrqId, platform_get_drvdata(pdev));
+	devm_free_irq(&pdev->dev, u4IrqId, &prGlueInfo->rHifInfo);
 }
 
 static int wifiDmaSetup(struct platform_device *pdev,
@@ -1827,33 +1833,30 @@ err:
 /*----------------------------------------------------------------------------*/
 static irqreturn_t mtk_wifi_isr(int irq, void *dev_instance)
 {
-	struct ADAPTER *prAdapter;
-	struct GL_HIF_INFO *prHifInfo;
+	struct GL_HIF_INFO *prHifInfo = (struct GL_HIF_INFO *)dev_instance;
 
-	prAdapter = (struct ADAPTER *)dev_instance;
-	if (!prAdapter)
-		goto exit;
+	if (!prHifInfo)
+		return IRQ_NONE;
 
-	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	if (KAL_TEST_BIT(HIF_MAWD_INT_BIT, prHifInfo->ulHifIntEnBits))
+		return IRQ_NONE;
+
+	disable_irq_nosync(irq);
 	KAL_SET_BIT(HIF_MAWD_INT_BIT, prHifInfo->ulHifIntEnBits);
 
-exit:
-	disable_irq_nosync(irq);
-	return IRQ_HANDLED;
+	return IRQ_WAKE_THREAD;
 }
 
 static irqreturn_t mtk_wifi_isr_thread(int irq, void *dev_instance)
 {
-	struct ADAPTER *prAdapter;
+	struct GL_HIF_INFO *prHifInfo = (struct GL_HIF_INFO *)dev_instance;
 	struct GLUE_INFO *prGlueInfo;
 
-	prAdapter = (struct ADAPTER *)dev_instance;
-	if (!prAdapter) {
-		DBGLOG(HAL, WARN, "NULL prAdapter.\n");
-		return IRQ_HANDLED;
-	}
+	if (!prHifInfo)
+		return IRQ_NONE;
 
-	prGlueInfo = get_glue_info_isr(prAdapter->prGlueInfo, irq, -1);
+	prGlueInfo = CONTAINER_OF(prHifInfo, struct GLUE_INFO, rHifInfo);
+	prGlueInfo = get_glue_info_isr((void *)prGlueInfo, irq, -1);
 	if (!prGlueInfo)
 		return IRQ_NONE;
 
@@ -1926,7 +1929,7 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 		prBusInfo->initPcieInt(prGlueInfo);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	setupPlatDevIrq(g_prPlatDev, &prHifInfo->u4IrqId_1);
+	setupPlatDevIrq(g_prPlatDev, prGlueInfo, &prHifInfo->u4IrqId_1);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD */
 
 exit:
@@ -2033,7 +2036,7 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 		glBusFreeLegacyIrq(pdev, prGlueInfo, prBusInfo);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	freePlatDevIrq(g_prPlatDev, prHifInfo->u4IrqId_1);
+	freePlatDevIrq(g_prPlatDev, prGlueInfo, prHifInfo->u4IrqId_1);
 	prHifInfo->u4IrqId_1 = 0;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD */
 

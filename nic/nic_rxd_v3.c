@@ -297,6 +297,8 @@ void nic_rxd_v3_fill_rfb(
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
 		prSwRfb->u4TcpUdpIpCksStatus =
 			HAL_MAC_CONNAC3X_RX_STATUS_GET_CHECKSUM(prRxStatus);
+		DBGLOG(RX, LOUD, "u4TcpUdpIpCksStatus[0x%x]\n",
+		       prSwRfb->u4TcpUdpIpCksStatus);
 	}
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */

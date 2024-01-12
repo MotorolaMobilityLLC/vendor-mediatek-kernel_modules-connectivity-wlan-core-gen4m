@@ -1825,22 +1825,22 @@ static void mt6653LowPowerOwnRead(
 static void mt6653ReadOffloadIntStatus(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus)
 {
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-	uint32_t u4RegValue = 0, u4WrValue = 0, u4Addr = 0;
+	uint32_t u4RegValue = 0, u4WrValue = 0, u4Addr = 0, u4MawdOffSet;
 
 	if (!IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
 		return;
 
 	u4WrValue = 0;
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
-		u4Addr = MAWD_AP_INTERRUPT_SETTING0;
-		HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4RegValue);
-		if (u4RegValue & BIT(0)) {
+		u4MawdOffSet = prChipInfo->u4HostCsrOffset;
+		if (KAL_TEST_BIT(1, prHifInfo->ulHifIntEnBits)) {
 			*pu4IntStatus |= WHISR_RX0_DONE_INT;
-			u4WrValue = u4RegValue & BIT(0);
+			u4WrValue = BIT(0);
 		}
-		u4Addr = MAWD_AP_INTERRUPT_SETTING1;
+		u4Addr = MAWD_AP_INTERRUPT_SETTING1 + u4MawdOffSet;
 	} else {
 		u4Addr = WF_RRO_TOP_HOST_INT_STS_ADDR;
 		HAL_RMCR_RD(OFFLOAD_READ, prAdapter, u4Addr, &u4RegValue);
@@ -1853,7 +1853,8 @@ static void mt6653ReadOffloadIntStatus(struct ADAPTER *prAdapter,
 		}
 	}
 	prHifInfo->u4OffloadIntStatus = u4WrValue;
-	HAL_MCR_WR(prAdapter, u4Addr, u4WrValue);
+	if (u4WrValue)
+		HAL_MCR_WR(prAdapter, u4Addr, u4WrValue);
 }
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
@@ -2552,17 +2553,28 @@ static void mt6653WpdmaConfigExt0(struct ADAPTER *prAdapter)
 {
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-	uint32_t u4Addr = 0, u4Val = 0;
-
-	if (!IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo))
-		return;
+	uint32_t u4Addr = 0, u4Val = 0, u4DefVal = 0;
 
 	/* enable SDO */
 	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_ADDR;
 	/* default settings */
-	u4Val = 0x28C004DF |
+	u4DefVal = 0x28C004DF;
+	u4Val = u4DefVal;
+
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo)) {
+		u4Val |=
 		WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_CSR_SDO_DISP_MODE_MASK;
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+	}
+
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
+		u4Val |=
+		WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_CSR_RX_WB_RXD_MASK;
+	}
+#endif
+
+	if (u4Val != u4DefVal)
+		HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
@@ -2843,8 +2855,8 @@ static void mt6653WfdmaTxRingExtCtrl(
 	HAL_MCR_WR(prAdapter, prTxRing->hw_desc_base_ext,
 		   CONNAC3X_TX_RING_DISP_MAX_CNT);
 
-	asicConnac3xWfdmaTxRingBasePtrExtCtrl(prGlueInfo,
-		prTxRing, index);
+	asicConnac3xWfdmaTxRingBasePtrExtCtrl(
+		prGlueInfo, prTxRing, index, prTxRing->u4RingSize);
 
 #if CFG_MTK_WIFI_WFDMA_WB
 	mt6653WfdmaTxRingWbExtCtrl(prGlueInfo, prTxRing, index);
@@ -2859,7 +2871,7 @@ static void mt6653WfdmaRxRingExtCtrl(
 	struct ADAPTER *prAdapter;
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
-	uint32_t u4Offset = 0, u4RingIdx = 0;
+	uint32_t u4Offset = 0, u4RingIdx = 0, u4Val = 0;
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	struct WIFI_VAR *prWifiVar;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
@@ -2882,20 +2894,16 @@ static void mt6653WfdmaRxRingExtCtrl(
 	HAL_MCR_WR(prAdapter, prRxRing->hw_desc_base_ext,
 		   CONNAC3X_RX_RING_DISP_MAX_CNT);
 
+	u4Val = prRxRing->u4RingSize;
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	/* enable wfdma magic cnt */
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro) &&
-	    halIsDataRing(RX_RING, index)) {
-		uint32_t u4Val = 0;
-
-		u4Val = prRxRing->u4RingSize |
-			WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL1_MGC_ENA_MASK;
-		HAL_MCR_WR(prAdapter, prRxRing->hw_cnt_addr, u4Val);
-	}
+	    halIsDataRing(RX_RING, index))
+		u4Val |= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL1_MGC_ENA_MASK;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
-	asicConnac3xWfdmaRxRingBasePtrExtCtrl(prGlueInfo,
-		prRxRing, index);
+	asicConnac3xWfdmaRxRingBasePtrExtCtrl(
+		prGlueInfo, prRxRing, index, u4Val);
 
 #if CFG_MTK_WIFI_WFDMA_WB
 	mt6653WfdmaRxRingWbExtCtrl(prGlueInfo, prRxRing, index);

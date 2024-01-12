@@ -1460,7 +1460,7 @@ u_int8_t kalIncPagePoolPageNum(void);
 u_int8_t kalDecPagePoolPageNum(void);
 u_int8_t kalSetPagePoolPageNum(uint32_t u4Num);
 #endif
-struct sk_buff *kalAllocRxSkb(uint8_t **ppucData);
+struct sk_buff *kalAllocRxSkb(struct GLUE_INFO *prGlueInfo, uint8_t **ppucData);
 u_int8_t kalCreateHifSkbList(struct mt66xx_chip_info *prChipInfo);
 void kalReleaseHifSkbList(void);
 struct sk_buff *kalAllocHifSkb(void);

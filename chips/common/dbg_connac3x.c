@@ -2688,33 +2688,13 @@ void connac3x_show_rro_info(struct ADAPTER *prAdapter)
 			       u4Addr, u4Val);
 		}
 
-		for (u4Idx = MAWD_MD_INTERRUPT_SETTING0;
-		     u4Idx <= MAWD_AP_INTERRUPT_SETTING1; u4Idx += 4) {
+		for (u4Idx = MAWD_SOFTRESET;
+		     u4Idx <= MAWD_REG_BUSY_LATCH; u4Idx += 4) {
 			u4Addr = u4Idx + u4MawdOffSet;
 			HAL_RMCR_RD(OFFLOAD_DBG, prAdapter, u4Addr, &u4Val);
 			DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]",
 			       u4Addr, u4Val);
 		}
-
-		for (u4Idx = MAWD_MD_INTERRUPT_SETTING0;
-		     u4Idx <= MAWD_AP_INTERRUPT_SETTING1; u4Idx += 4) {
-			u4Addr = u4Idx + u4MawdOffSet;
-			HAL_RMCR_RD(OFFLOAD_DBG, prAdapter, u4Addr, &u4Val);
-			DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]",
-			       u4Addr, u4Val);
-		}
-
-		for (u4Idx = MAWD_AXI_SLEEP_PROT_SETTING;
-		     u4Idx <= MAWD_INDEX_DBG_REG3; u4Idx += 4) {
-			u4Addr = u4Idx + u4MawdOffSet;
-			HAL_RMCR_RD(OFFLOAD_DBG, prAdapter, u4Addr, &u4Val);
-			DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]",
-			       u4Addr, u4Val);
-		}
-
-		u4Idx = MAWD_INDEX_DBG_REG0 + u4MawdOffSet;
-		HAL_RMCR_RD(OFFLOAD_DBG, prAdapter, u4Idx, &u4Val);
-		DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
 
 		for (u4Idx = 0; u4Idx <= 0x10; u4Idx++) {
 			HAL_MCR_WR(prAdapter,

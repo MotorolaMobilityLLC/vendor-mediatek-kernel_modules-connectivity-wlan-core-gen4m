@@ -683,53 +683,53 @@ u_int8_t asicConnac3xWfdmaWaitIdle(
 void asicConnac3xWfdmaTxRingBasePtrExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_TX_RING *tx_ring,
-	u_int32_t index)
+	u_int32_t index,
+	u_int32_t u4DefVal)
 {
 	struct BUS_INFO *prBusInfo;
-	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct ADAPTER *prAdapter;
 	uint32_t phy_addr_ext = 0;
-	u_int32_t u4RegValue = 0;
 
-	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prAdapter = prGlueInfo->prAdapter;
+	prBusInfo = prAdapter->chip_info->bus_info;
 
 	if (prBusInfo->u4DmaMask <= 32)
-		return;
+		goto end;
 
 	phy_addr_ext = (((uint64_t)tx_ring->Cell[0].AllocPa >>
 			DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK) << 16;
 
-	u4RegValue = tx_ring->u4RingSize & MT_RING_CNT_MASK;
-	phy_addr_ext |= u4RegValue;
-	DBGLOG(HAL, TRACE, "phy_addr_ext=0x%x\n", phy_addr_ext);
-
+end:
 	HAL_MCR_WR(prAdapter, tx_ring->hw_cnt_addr,
-			phy_addr_ext);
+		   u4DefVal | phy_addr_ext);
+
+	DBGLOG(HAL, TRACE, "phy_addr_ext=0x%x\n", phy_addr_ext);
 }
 
 void asicConnac3xWfdmaRxRingBasePtrExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_RX_RING *rx_ring,
-	u_int32_t index)
+	u_int32_t index,
+	u_int32_t u4DefVal)
 {
 	struct BUS_INFO *prBusInfo;
-	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct ADAPTER *prAdapter;
 	uint32_t phy_addr_ext = 0;
-	u_int32_t u4RegValue = 0;
 
-	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prAdapter = prGlueInfo->prAdapter;
+	prBusInfo = prAdapter->chip_info->bus_info;
 
 	if (prBusInfo->u4DmaMask <= 32)
-		return;
+		goto end;
 
 	phy_addr_ext = (((uint64_t)rx_ring->Cell[0].AllocPa >>
 			DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK) << 16;
 
-	u4RegValue = rx_ring->u4RingSize & MT_RING_CNT_MASK;
-	phy_addr_ext |= u4RegValue;
-	DBGLOG(HAL, TRACE, "phy_addr_ext=0x%x\n", phy_addr_ext);
-
+end:
 	HAL_MCR_WR(prAdapter, rx_ring->hw_cnt_addr,
-			phy_addr_ext);
+		   u4DefVal | phy_addr_ext);
+
+	DBGLOG(HAL, TRACE, "phy_addr_ext=0x%x\n", phy_addr_ext);
 }
 
 
@@ -785,8 +785,8 @@ void asicConnac3xWfdmaTxRingExtCtrl(
 		prBusInfo->host_tx_ring_ext_ctrl_base + ext_offset;
 	HAL_MCR_WR(prAdapter, tx_ring->hw_desc_base_ext,
 		   CONNAC3X_TX_RING_DISP_MAX_CNT);
-	asicConnac3xWfdmaTxRingBasePtrExtCtrl(prGlueInfo,
-		tx_ring, index);
+	asicConnac3xWfdmaTxRingBasePtrExtCtrl(
+		prGlueInfo, tx_ring, index, tx_ring->u4RingSize);
 }
 
 void asicConnac3xWfdmaRxRingExtCtrl(
@@ -829,8 +829,8 @@ void asicConnac3xWfdmaRxRingExtCtrl(
 
 	HAL_MCR_WR(prAdapter, rx_ring->hw_desc_base_ext,
 		   CONNAC3X_RX_RING_DISP_MAX_CNT);
-	asicConnac3xWfdmaRxRingBasePtrExtCtrl(prGlueInfo,
-		rx_ring, index);
+	asicConnac3xWfdmaRxRingBasePtrExtCtrl(
+		prGlueInfo, rx_ring, index, rx_ring->u4RingSize);
 }
 
 #if CFG_MTK_WIFI_WFDMA_WB
@@ -984,9 +984,8 @@ void asicConnac3xEnablePlatformIRQ(struct ADAPTER *prAdapter)
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	/* IrqId_1 is MAWD interrupt */
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd) &&
-	    KAL_TEST_AND_CLEAR_BIT(1, prHifInfo->ulHifIntEnBits)) {
+	    KAL_TEST_AND_CLEAR_BIT(1, prHifInfo->ulHifIntEnBits))
 		enable_irq(prHifInfo->u4IrqId_1);
-	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
@@ -1007,14 +1006,6 @@ void asicConnac3xDisablePlatformIRQ(struct ADAPTER *prAdapter)
 	disable_irq_nosync(prHifInfo->u4IrqId);
 	KAL_SET_BIT(0, prHifInfo->ulHifIntEnBits);
 #endif
-
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	/* IrqId_1 is MAWD interrupt */
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
-		disable_irq_nosync(prHifInfo->u4IrqId_1);
-		KAL_SET_BIT(1, prHifInfo->ulHifIntEnBits);
-	}
-#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
 #if defined(_HIF_AXI)

@@ -2634,8 +2634,8 @@ static void mt7935WfdmaTxRingExtCtrl(
 	HAL_MCR_WR(prAdapter, prTxRing->hw_desc_base_ext,
 		   CONNAC3X_TX_RING_DISP_MAX_CNT);
 
-	asicConnac3xWfdmaTxRingBasePtrExtCtrl(prGlueInfo,
-		prTxRing, index);
+	asicConnac3xWfdmaTxRingBasePtrExtCtrl(
+		prGlueInfo, prTxRing, index, prTxRing->u4RingSize);
 
 #if CFG_MTK_WIFI_WFDMA_WB
 	mt7935WfdmaTxRingWbExtCtrl(prGlueInfo, prTxRing, u4RingIdx);
@@ -2667,8 +2667,8 @@ static void mt7935WfdmaRxRingExtCtrl(
 	HAL_MCR_WR(prAdapter, prRxRing->hw_desc_base_ext,
 		   CONNAC3X_RX_RING_DISP_MAX_CNT);
 
-	asicConnac3xWfdmaRxRingBasePtrExtCtrl(prGlueInfo,
-		prRxRing, index);
+	asicConnac3xWfdmaRxRingBasePtrExtCtrl(
+		prGlueInfo, prRxRing, index, prRxRing->u4RingSize);
 
 #if CFG_MTK_WIFI_WFDMA_WB
 	mt7935WfdmaRxRingWbExtCtrl(prGlueInfo, prRxRing, u4RingIdx);
