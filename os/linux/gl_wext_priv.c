@@ -13757,6 +13757,14 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 				 wlanoidShowDmaschInfo,
 				 (void *) pcCommand, i4TotalLen,
 				 FALSE, FALSE, TRUE, &i4BytesWritten);
+#if CFG_SUPPORT_EASY_DEBUG
+		} else if (strnicmp(pcCommand, CMD_FW_PARAM,
+				strlen(CMD_FW_PARAM)) == 0) {
+			kalIoctl(prGlueInfo, wlanoidSetFwParam,
+				 (void *)(pcCommand + 13),
+				 i4TotalLen - 13, FALSE, FALSE, FALSE,
+				 &i4BytesWritten);
+#endif /* CFG_SUPPORT_EASY_DEBUG */
 			} else if (strnicmp(pcCommand, CMD_GET_WFDMA_INFO,
 					strlen(CMD_GET_WFDMA_INFO)) == 0) {
 				kalIoctl(prGlueInfo,
