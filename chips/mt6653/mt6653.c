@@ -980,6 +980,7 @@ enum HIF_DEV_REG_REASON mt6653ValidMmioReadReason[] = {
 	HIF_DEV_REG_OFFLOAD_READ,
 	HIF_DEV_REG_OFFLOAD_HOST,
 	HIF_DEV_REG_OFFLOAD_DBG,
+	HIF_DEV_REG_CCIF_READ,
 	HIF_DEV_REG_PLAT_DBG,
 	HIF_DEV_REG_WTBL_DBG,
 	HIF_DEV_REG_OID_DBG,
@@ -1158,6 +1159,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.u4MinTxLen = 2,
 	.wifiNappingCtrl = mt6653WiFiNappingCtrl,
 #if CFG_NEW_HIF_DEV_REG_IF
+	.fgIsWarnInvalidMmioRead = TRUE,
 	.isValidMmioReadReason = connac3xIsValidMmioReadReason,
 	.prValidMmioReadReason = mt6653ValidMmioReadReason,
 	.u4ValidMmioReadReasonSize = ARRAY_SIZE(mt6653ValidMmioReadReason),
