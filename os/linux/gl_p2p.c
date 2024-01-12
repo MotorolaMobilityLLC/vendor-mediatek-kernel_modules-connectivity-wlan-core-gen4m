@@ -645,8 +645,15 @@ void p2pFreeMemSafe(struct GLUE_INFO *prGlueInfo,
 	kalMemFree(prTmpMemInfo, VIR_MEM_TYPE, size);
 }
 
+/*---------------------------------------------------------------------------*/
+/*!
+ * \param
+ *  [in] prGlueInfo		Pointer to glue info
+ *  [in] fgIsRtnlLockAcquired	Is the rtnl lock already hold or not.
+ */
+/*---------------------------------------------------------------------------*/
 u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
-		u_int8_t fgIsRtnlLockAcquired)
+		uint8_t fgIsRtnlLockAcquired)
 {
 	u_int8_t fgDoRegister = FALSE;
 	struct net_device *prDevHandler = NULL;
@@ -719,8 +726,6 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 		if (i4RetReg < 0) {
 			DBGLOG(INIT, WARN,
 				"unable to register netdevice for p2p\n");
-			/* free dev in glUnregisterP2P() */
-			/* free_netdev(prGlueInfo->prP2PInfo->prDevHandler); */
 			ret = FALSE;
 		} else {
 			GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
@@ -741,7 +746,7 @@ fail:
 }
 
 u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
-		u_int8_t fgIsRtnlLockAcquired)
+		uint8_t fgIsRtnlLockAcquired)
 {
 	u_int8_t fgDoUnregister = FALSE;
 	uint8_t ucRoleIdx;
@@ -1096,6 +1101,16 @@ exit:
 	return 0;
 }
 
+static void mtk_p2p_vif_destructor(struct net_device *dev)
+{
+	if (dev) {
+		DBGLOG(P2P, INFO, "free %s[%p]\n", dev->name, dev);
+		free_netdev(dev);
+	} else {
+		DBGLOG(P2P, WARN, "dev is NULL\n");
+	}
+}
+
 /*---------------------------------------------------------------------------*/
 /*!
  * \brief Register for cfg80211 for Wi-Fi Direct
@@ -1208,6 +1223,12 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 			"Set p2p role[%d] mac to " MACSTR " fgIsApMode(%d)\n",
 			i, MAC2STR(rMacAddr), fgIsApMode);
 
+#if KERNEL_VERSION(4, 14, 0) <= CFG80211_VERSION_CODE
+		prP2pDev->priv_destructor = mtk_p2p_vif_destructor;
+#else
+		prP2pDev->destructor = mtk_p2p_vif_destructor;
+#endif
+
 #if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
 		eth_hw_addr_set(prP2pDev, rMacAddr);
 #else
@@ -1217,7 +1238,7 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 
 		if (glSetupP2P(prGlueInfo, prP2pWdev, prP2pDev, i,
 			fgIsApMode, fgSkipRole) != 0) {
-			DBGLOG(INIT, WARN, "glSetupP2P FAILED\n");
+			DBGLOG(INIT, WARN, "glSetupP2P[%u] FAILED\n", i);
 			free_netdev(prP2pDev);
 			return FALSE;
 		}
@@ -1235,10 +1256,7 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	return TRUE;
-#if 0
-err_reg_netdev:
-	free_netdev(prGlueInfo->prP2PInfo->prDevHandler);
-#endif
+
 err_alloc_netdev:
 	return FALSE;
 }				/* end of glRegisterP2P() */
@@ -1300,7 +1318,8 @@ u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
  *           FALSE
  */
 /*---------------------------------------------------------------------------*/
-u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
+u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx,
+	uint8_t fgIsRtnlLockAcquired)
 {
 	uint8_t ucRoleIdx;
 	struct ADAPTER *prAdapter;
@@ -1339,7 +1358,7 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 			 * But the netdev had be unregistered at
 			 * p2pNetUnregister(). EXCEPTION!!
 			 */
-			p2pRoleFsmUninit(prGlueInfo->prAdapter, ucRoleIdx);
+			p2pRoleFsmUninit(prAdapter, ucRoleIdx);
 		}
 	}
 
@@ -1383,20 +1402,31 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 			if (wlanIsAisDev(prP2PInfo->prDevHandler))
 				gprP2pRoleWdev[ucRoleIdx] = NULL;
 			else {
-				GLUE_RELEASE_SPIN_LOCK(prGlueInfo,
-					SPIN_LOCK_NET_DEV);
-				if (prP2PInfo->prDevHandler->reg_state
-					== NETREG_REGISTERED) {
+				if (prAdapter->rP2PNetRegState ==
+					ENUM_NET_REG_STATE_REGISTERED) {
 					DBGLOG(INIT, WARN,
 						"Force unregister netdev\n");
-					unregister_netdev(
-						prP2PInfo->prDevHandler);
-					prGlueInfo->prAdapter->rP2PNetRegState =
+					prAdapter->rP2PNetRegState =
+					    ENUM_NET_REG_STATE_UNREGISTERING;
+					GLUE_RELEASE_SPIN_LOCK(prGlueInfo,
+						SPIN_LOCK_NET_DEV);
+					if (fgIsRtnlLockAcquired)
+						unregister_netdevice(
+						    prP2PInfo->prDevHandler);
+					else
+						unregister_netdev(
+						    prP2PInfo->prDevHandler);
+					GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo,
+						SPIN_LOCK_NET_DEV);
+					prAdapter->rP2PNetRegState =
 						ENUM_NET_REG_STATE_UNREGISTERED;
+				} else if (prAdapter->rP2PNetRegState !=
+					ENUM_NET_REG_STATE_UNREGISTERED) {
+					DBGLOG(P2P, WARN,
+						"p2p dev[%u] not unregister done. net_state=%d\n",
+						ucRoleIdx,
+						prAdapter->rP2PNetRegState);
 				}
-				free_netdev(prP2PInfo->prDevHandler);
-				GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo,
-					SPIN_LOCK_NET_DEV);
 			}
 			prP2PInfo->prDevHandler = NULL;
 		}

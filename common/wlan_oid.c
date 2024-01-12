@@ -13315,22 +13315,19 @@ wlanoidSetP2pMode(struct ADAPTER *prAdapter,
 		  void *pvSetBuffer, uint32_t u4SetBufferLen,
 		  uint32_t *pu4SetInfoLen) {
 	uint32_t status = WLAN_STATUS_SUCCESS;
-	struct PARAM_CUSTOM_P2P_SET_STRUCT *prSetP2P =
-		(struct PARAM_CUSTOM_P2P_SET_STRUCT *) NULL;
-	/* P_MSG_P2P_NETDEV_REGISTER_T prP2pNetdevRegMsg =
-	 *				P_MSG_P2P_NETDEV_REGISTER_T)NULL;
-	 */
+	struct PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT *prSetP2P = NULL;
+
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
 
-	*pu4SetInfoLen = sizeof(struct PARAM_CUSTOM_P2P_SET_STRUCT);
+	*pu4SetInfoLen = sizeof(struct PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT);
 	if (u4SetBufferLen < sizeof(struct
-				    PARAM_CUSTOM_P2P_SET_STRUCT)) {
+				    PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT)) {
 		DBGLOG(REQ, WARN, "Invalid length %u\n", u4SetBufferLen);
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
 
-	prSetP2P = (struct PARAM_CUSTOM_P2P_SET_STRUCT *)
+	prSetP2P = (struct PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT *)
 		   pvSetBuffer;
 
 	DBGLOG(P2P, TRACE, "Set P2P enable[%d] mode[%d]\n",
@@ -13374,7 +13371,8 @@ wlanoidSetP2pMode(struct ADAPTER *prAdapter,
 
 	} else {
 		if (prAdapter->fgIsP2PRegistered)
-			p2pRemove(prAdapter->prGlueInfo);
+			p2pRemove(prAdapter->prGlueInfo,
+				prSetP2P->fgIsRtnlLockAcquired);
 
 	}
 
@@ -13454,9 +13452,6 @@ wlanoidSetNANMode(struct ADAPTER *prAdapter, void *pvSetBuffer,
 {
 	uint32_t status = WLAN_STATUS_SUCCESS;
 	uint32_t *prEnable = (uint32_t *)NULL;
-	/* P_MSG_P2P_NETDEV_REGISTER_T prP2pNetdevRegMsg =
-	 * (P_MSG_P2P_NETDEV_REGISTER_T)NULL;
-	 */
 
 	if (!prAdapter || !pu4SetInfoLen || !pvSetBuffer)
 		return WLAN_STATUS_FAILURE;

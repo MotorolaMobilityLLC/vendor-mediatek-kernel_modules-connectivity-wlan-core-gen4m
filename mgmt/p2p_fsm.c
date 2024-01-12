@@ -218,7 +218,7 @@ void p2pFsmRunEventNetDeviceRegister(struct ADAPTER *prAdapter,
 			ASSERT(prAdapter->fgIsP2PRegistered);
 	} else {
 		if (prAdapter->fgIsP2PRegistered)
-			p2pRemove(prAdapter->prGlueInfo);
+			p2pRemove(prAdapter->prGlueInfo, FALSE);
 	}
 
 	cnmMemFree(prAdapter, prMsgHdr);

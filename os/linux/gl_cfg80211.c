@@ -6124,7 +6124,7 @@ mtk_oid_uninit_ap_role(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	}
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-	glUnregisterP2P(prAdapter->prGlueInfo, u4Idx);
+	glUnregisterP2P(prAdapter->prGlueInfo, u4Idx, FALSE);
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	gPrP2pDev[u4Idx] = NULL;

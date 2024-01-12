@@ -707,20 +707,21 @@ __priv_set_int(struct net_device *prNetDev,
 
 #if CFG_ENABLE_WIFI_DIRECT
 	case PRIV_CMD_P2P_MODE: {
-		struct PARAM_CUSTOM_P2P_SET_STRUCT rSetP2P;
+		struct PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT rSetP2P;
 		uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 
 		rSetP2P.u4Enable = pu4IntBuf[1];
 		rSetP2P.u4Mode = pu4IntBuf[2];
+		rSetP2P.fgIsRtnlLockAcquired = TRUE;
 #if 1
 		if (!rSetP2P.u4Enable)
 			p2pNetUnregister(prGlueInfo, TRUE);
 
 		/* pu4IntBuf[0] is used as input SubCmd */
 		rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetP2pMode,
-				(void *)&rSetP2P,
-				sizeof(struct PARAM_CUSTOM_P2P_SET_STRUCT),
-				&u4BufLen);
+			(void *)&rSetP2P,
+			sizeof(struct PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT),
+			&u4BufLen);
 
 		if ((rSetP2P.u4Enable)
 		    && (rWlanStatus == WLAN_STATUS_SUCCESS))
@@ -10754,7 +10755,7 @@ int priv_driver_set_ap_start(struct net_device *prNetDev, char *pcCommand,
 			     int i4TotalLen)
 {
 
-	struct PARAM_CUSTOM_P2P_SET_STRUCT rSetP2P;
+	struct PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT rSetP2P;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
 	uint32_t u4Ret;
@@ -10778,6 +10779,8 @@ int priv_driver_set_ap_start(struct net_device *prNetDev, char *pcCommand,
 			rSetP2P.u4Enable = 0;
 		} else
 			rSetP2P.u4Enable = 1;
+
+		rSetP2P.fgIsRtnlLockAcquired = TRUE;
 
 		set_p2p_mode_handler(prNetDev, rSetP2P);
 	}
@@ -12404,17 +12407,6 @@ int priv_driver_set_ap_set_cfg(struct net_device *prNetDev,
 	DBGLOG(REQ, INFO,
 		"[CFG] CH = %d, MAX_SCB = %d\n",
 		i4Channel, i4MaxCount);
-
-	/* Stop ap */
-#if 0
-	{
-		struct PARAM_CUSTOM_P2P_SET_STRUCT rSetP2P;
-
-		rSetP2P.u4Mode = 0;
-		rSetP2P.u4Enable = 0;
-		set_p2p_mode_handler(prNetDev, rSetP2P);
-	}
-#endif
 
 	return i4BytesWritten;
 
