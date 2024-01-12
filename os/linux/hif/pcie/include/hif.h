@@ -166,7 +166,6 @@ typedef struct _GL_HIF_INFO_T {
 	/* Shared memory of all 1st pre-allocated
 	 * TxBuf associated with each TXD
 	 */
-	RTMP_DMABUF TxBufSpace[NUM_OF_TX_RING];
 	RTMP_DMABUF TxDescRing[NUM_OF_TX_RING];	/* Shared memory for Tx descriptors */
 	RTMP_TX_RING TxRing[NUM_OF_TX_RING];	/* AC0~3 + HCCA */
 	spinlock_t TxRingLock[NUM_OF_TX_RING];	/* Rx Ring spinlock */

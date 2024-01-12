@@ -1018,10 +1018,9 @@ VOID halWpdmaAllocRing(P_GLUE_INFO_T prGlueInfo)
 	dma_addr_t RingBasePa;
 	PVOID RingBaseVa;
 	INT_32 index, num;
-	TXD_STRUCT *pTxD;
 	RTMP_TX_RING *pTxRing;
 	RTMP_DMABUF *pDmaBuf;
-	RTMP_DMACB *dma_cb;
+	RTMP_DMACB *prDmaCb;
 	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo;
 
 	do {
@@ -1031,9 +1030,6 @@ VOID halWpdmaAllocRing(P_GLUE_INFO_T prGlueInfo)
 		 *   issue, I intentional set them all to 64 bytes
 		 */
 		for (num = 0; num < NUM_OF_TX_RING; num++) {
-			dma_addr_t BufBasePa;
-			PVOID BufBaseVa;
-
 			/*
 			 *  Allocate Tx ring descriptor's memory
 			 */
@@ -1050,53 +1046,20 @@ VOID halWpdmaAllocRing(P_GLUE_INFO_T prGlueInfo)
 			RingBaseVa = pDmaBuf->AllocVa;
 
 			/*
-			  * Allocate all 1st TXBuf's memory for this TxRing
-			 */
-			halWpdmaAllocRingDesc(prGlueInfo, &prHifInfo->TxBufSpace[num],
-						 TX_RING_SIZE * TX_DMA_1ST_BUFFER_SIZE);
-			if (prHifInfo->TxBufSpace[num].AllocVa == NULL) {
-				DBGLOG(HAL, ERROR, "Failed to allocate a big buffer\n");
-				break;
-			}
-
-			/* Zero init this memory block */
-			kalMemZero(prHifInfo->TxBufSpace[num].AllocVa, prHifInfo->TxBufSpace[num].AllocSize);
-
-			/* Save PA & VA for further operation */
-			BufBasePa = prHifInfo->TxBufSpace[num].AllocPa;
-			BufBaseVa = prHifInfo->TxBufSpace[num].AllocVa;
-
-			/*
 			 * Initialize Tx Ring Descriptor and associated buffer memory
 			 */
 			pTxRing = &prHifInfo->TxRing[num];
 			for (index = 0; index < TX_RING_SIZE; index++) {
-				dma_cb = &pTxRing->Cell[index];
-				dma_cb->pPacket = NULL;
-				dma_cb->pBuffer = NULL;
+				prDmaCb = &pTxRing->Cell[index];
+				prDmaCb->pPacket = NULL;
+				prDmaCb->pBuffer = NULL;
 				/* Init Tx Ring Size, Va, Pa variables */
-				dma_cb->AllocSize = TXD_SIZE;
-				dma_cb->AllocVa = RingBaseVa;
-				dma_cb->AllocPa = RingBasePa;
-
-				/* Setup Tx Buffer size & address. only 802.11 header will store in this space */
-				pDmaBuf = &dma_cb->DmaBuf;
-				pDmaBuf->AllocSize = TX_DMA_1ST_BUFFER_SIZE;
-				pDmaBuf->AllocVa = BufBaseVa;
-				pDmaBuf->AllocPa = BufBasePa;
-
-				/* link the pre-allocated TxBuf to TXD */
-				pTxD = (TXD_STRUCT *) dma_cb->AllocVa;
-				pTxD->SDPtr0 = BufBasePa;
-				/* advance to next ring descriptor address */
-				pTxD->DMADONE = 1;
+				prDmaCb->AllocSize = TXD_SIZE;
+				prDmaCb->AllocVa = RingBaseVa;
+				prDmaCb->AllocPa = RingBasePa;
 
 				RingBasePa += TXD_SIZE;
 				RingBaseVa = (PUCHAR) RingBaseVa + TXD_SIZE;
-
-				/* advance to next TxBuf address */
-				BufBasePa += TX_DMA_1ST_BUFFER_SIZE;
-				BufBaseVa = (PUCHAR) BufBaseVa + TX_DMA_1ST_BUFFER_SIZE;
 			}
 
 			DBGLOG(HAL, TRACE, "TxRing[%d]: total %d entry allocated\n", num, index);
@@ -1115,7 +1078,6 @@ VOID halWpdmaAllocRing(P_GLUE_INFO_T prGlueInfo)
 		prHifInfo->TxRing[index].TxSwUsedIdx = 0;
 		prHifInfo->TxRing[index].TxCpuIdx = 0;
 	}
-
 }
 
 VOID halWpdmaFreeRing(P_GLUE_INFO_T prGlueInfo)
@@ -1165,11 +1127,8 @@ VOID halWpdmaFreeRing(P_GLUE_INFO_T prGlueInfo)
 		halWpdmaFreeRingDesc(prGlueInfo, &prHifInfo->RxDescRing[j]);
 	}
 
-	for (num = 0; num < NUM_OF_TX_RING; num++) {
-		halWpdmaFreeRingDesc(prGlueInfo, &prHifInfo->TxBufSpace[num]);
-
+	for (num = 0; num < NUM_OF_TX_RING; num++)
 		halWpdmaFreeRingDesc(prGlueInfo, &prHifInfo->TxDescRing[num]);
-	}
 }
 
 /*----------------------------------------------------------------------------*/
