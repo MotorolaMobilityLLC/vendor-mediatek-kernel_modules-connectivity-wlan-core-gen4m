@@ -326,11 +326,11 @@ static int32_t mddpRegisterCb(void)
 	int32_t ret = 0;
 
 	switch (g_wifi_boot_mode) {
-	case RECOVERY_BOOT:
-		g_fgMddpEnabled = FALSE;
+	case NORMAL_BOOT:
+		g_fgMddpEnabled = TRUE;
 		break;
 	default:
-		g_fgMddpEnabled = TRUE;
+		g_fgMddpEnabled = FALSE;
 		break;
 	}
 	gMddpFunc.wifi_handle = &gMddpWFunc;
