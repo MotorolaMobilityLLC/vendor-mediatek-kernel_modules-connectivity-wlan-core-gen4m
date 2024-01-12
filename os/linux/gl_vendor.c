@@ -165,6 +165,30 @@ const struct nla_policy nla_get_preferred_freq_list_policy[
 #endif
 };
 
+const struct nla_policy
+	nla_p2p_listen_offload_policy
+	[QCA_WLAN_VENDOR_ATTR_P2P_LO_MAX + 1] = {
+	[QCA_WLAN_VENDOR_ATTR_P2P_LO_CHANNEL] = {
+		.type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_P2P_LO_PERIOD] = {
+		.type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_P2P_LO_INTERVAL] = {
+		.type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_P2P_LO_COUNT] = {
+		.type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_P2P_LO_DEVICE_TYPES] = {
+		.type = NLA_BINARY, .len = 80},
+	[QCA_WLAN_VENDOR_ATTR_P2P_LO_VENDOR_IE] = {
+		.type = NLA_BINARY, .len = 512},
+	[QCA_WLAN_VENDOR_ATTR_P2P_LO_CTRL_FLAG] = {
+		.type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_P2P_LO_CHANNEL] = {
+		.type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_P2P_LO_STOP_REASON] = {
+		.type = NLA_U8 },
+};
+
+
 const struct nla_policy nla_get_acs_policy[
 		WIFI_VENDOR_ATTR_ACS_MAX + 1] = {
 	[WIFI_VENDOR_ATTR_ACS_HW_MODE] = { .type = NLA_U8 },
@@ -2984,6 +3008,10 @@ int mtk_cfg80211_vendor_get_features(struct wiphy *wiphy,
 	feature_flags[(VENDOR_FEATURE_SUPPORT_HW_MODE_ANY / 8)] |=
 			(1 << (VENDOR_FEATURE_SUPPORT_HW_MODE_ANY % 8));
 #endif
+#if CFG_SUPPORT_P2P_LISTEN_OFFLOAD
+	feature_flags[(VENDOR_FEATURE_P2P_LISTEN_OFFLOAD / 8)] |=
+			(1 << (VENDOR_FEATURE_P2P_LISTEN_OFFLOAD % 8));
+#endif
 
 	for (i = 0; i < ((NUM_VENDOR_FEATURES + 7) / 8); i++) {
 		DBGLOG(REQ, TRACE, "Dump feature flags[%d]=0x%x.\n", i,
@@ -3897,3 +3925,212 @@ err_handle:
 	return -ENOMEM;
 }
 #endif
+
+int mtk_cfg80211_vendor_p2p_listen_offload_start(
+	struct wiphy *wiphy,
+	struct wireless_dev *wdev,
+	const void *data,
+	int data_len)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct GLUE_INFO *prGlueInfo;
+	struct nlattr *tb
+		[QCA_WLAN_VENDOR_ATTR_P2P_LO_MAX + 1] = {};
+	struct MSG_P2P_LISTEN_OFFLOAD *prMsg;
+	uint32_t msg_size;
+	uint8_t *buf;
+
+	if (!wiphy || !wdev || !data || !data_len) {
+		DBGLOG(REQ, ERROR, "input data null.\n");
+		rStatus = -EINVAL;
+		goto exit;
+	}
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (!prGlueInfo) {
+		DBGLOG(REQ, ERROR, "get glue structure fail.\n");
+		rStatus = -EFAULT;
+		goto exit;
+	}
+
+	if (NLA_PARSE(tb, QCA_WLAN_VENDOR_ATTR_P2P_LO_MAX,
+		data,
+		data_len,
+		nla_p2p_listen_offload_policy)) {
+		DBGLOG(REQ, ERROR, "Invalid ATTR.\n");
+		rStatus = -EINVAL;
+		goto exit;
+	}
+
+	if (!tb[QCA_WLAN_VENDOR_ATTR_P2P_LO_CHANNEL] ||
+		!tb[QCA_WLAN_VENDOR_ATTR_P2P_LO_PERIOD] ||
+		!tb[QCA_WLAN_VENDOR_ATTR_P2P_LO_INTERVAL] ||
+		!tb[QCA_WLAN_VENDOR_ATTR_P2P_LO_COUNT] ||
+		!tb[QCA_WLAN_VENDOR_ATTR_P2P_LO_DEVICE_TYPES] ||
+		!tb[QCA_WLAN_VENDOR_ATTR_P2P_LO_VENDOR_IE]) {
+		DBGLOG(REQ, ERROR, "Invalid ATTR.\n");
+		rStatus = -EINVAL;
+		goto exit;
+	}
+
+	msg_size = sizeof(struct MSG_P2P_LISTEN_OFFLOAD);
+	prMsg = cnmMemAlloc(prGlueInfo->prAdapter,
+			RAM_TYPE_MSG, msg_size);
+	if (prMsg == NULL) {
+		DBGLOG(REQ, ERROR, "allocate msg req. fail.\n");
+		rStatus = -ENOMEM;
+		goto exit;
+	}
+
+	kalMemSet(prMsg, 0, msg_size);
+
+	prMsg->rMsgHdr.eMsgId = MID_MNY_P2P_LISTEN_OFFLOAD_START;
+	prMsg->rInfo.ucBssIndex =
+		prGlueInfo->prAdapter->ucP2PDevBssIdx;
+	prMsg->rInfo.u4DevId = 0;
+	prMsg->rInfo.u4flags = 1;
+
+	if (tb[QCA_WLAN_VENDOR_ATTR_P2P_LO_CTRL_FLAG])
+		prMsg->rInfo.u4flags =
+		nla_get_u32(tb[QCA_WLAN_VENDOR_ATTR_P2P_LO_CTRL_FLAG]);
+
+	prMsg->rInfo.u4Freq = nla_get_u32(tb
+		[QCA_WLAN_VENDOR_ATTR_P2P_LO_CHANNEL]);
+	if ((prMsg->rInfo.u4Freq != 2412) &&
+		(prMsg->rInfo.u4Freq != 2437) &&
+		(prMsg->rInfo.u4Freq != 2462)) {
+		DBGLOG(REQ, ERROR,
+			"Invalid listening channel: %d",
+			prMsg->rInfo.u4Freq);
+		rStatus = -EINVAL;
+		goto exit;
+	}
+
+	prMsg->rInfo.u4Period = nla_get_u32(tb
+		[QCA_WLAN_VENDOR_ATTR_P2P_LO_PERIOD]);
+	if (!((prMsg->rInfo.u4Period > 0) &&
+		(prMsg->rInfo.u4Period < UINT_MAX))) {
+		rStatus = -EINVAL;
+		goto exit;
+	}
+
+	prMsg->rInfo.u4Interval = nla_get_u32(tb
+		[QCA_WLAN_VENDOR_ATTR_P2P_LO_INTERVAL]);
+	if (!((prMsg->rInfo.u4Interval > 0) &&
+		(prMsg->rInfo.u4Interval < UINT_MAX))) {
+		rStatus = -EINVAL;
+		goto exit;
+	}
+
+	prMsg->rInfo.u4Count = nla_get_u32(tb
+		[QCA_WLAN_VENDOR_ATTR_P2P_LO_COUNT]);
+	if (!((prMsg->rInfo.u4Count >= 0) &&
+		(prMsg->rInfo.u4Count < UINT_MAX))) {
+		rStatus = -EINVAL;
+		goto exit;
+	}
+
+	buf = nla_data(tb
+		[QCA_WLAN_VENDOR_ATTR_P2P_LO_DEVICE_TYPES]);
+	if (!buf) {
+		DBGLOG(REQ, ERROR, "Invalid aucDevice");
+		rStatus = -EINVAL;
+		goto exit;
+	} else
+		kalMemCopy(&prMsg->rInfo.aucDevice,
+			buf, sizeof(prMsg->rInfo.aucDevice));
+
+	prMsg->rInfo.u2DevLen = nla_len(tb
+		[QCA_WLAN_VENDOR_ATTR_P2P_LO_DEVICE_TYPES]);
+	if (!((prMsg->rInfo.u2DevLen >= 0) &&
+		(prMsg->rInfo.u2DevLen < MAX_UEVENT_LEN))) {
+		DBGLOG(REQ, ERROR, "Invalid u2DevLen");
+		rStatus = -EINVAL;
+		goto exit;
+	}
+
+	buf = nla_data(tb
+		[QCA_WLAN_VENDOR_ATTR_P2P_LO_VENDOR_IE]);
+	if (!buf) {
+		DBGLOG(REQ, ERROR, "Invalid aucIE");
+		rStatus = -EINVAL;
+		goto exit;
+	} else
+		kalMemCopy(&prMsg->rInfo.aucIE,
+			buf, sizeof(prMsg->rInfo.aucIE));
+
+	prMsg->rInfo.u2IELen = nla_len(tb
+		[QCA_WLAN_VENDOR_ATTR_P2P_LO_VENDOR_IE]);
+	if (prMsg->rInfo.u2IELen > MAX_IE_LENGTH) {
+		DBGLOG(REQ, ERROR, "Invalid u2IELen");
+		rStatus = -EINVAL;
+		goto exit;
+	}
+
+	DBGLOG(REQ, INFO,
+		"p2p_lo, f: %d, period: %d, interval: %d, count: %d",
+		prMsg->rInfo.u4Freq,
+		prMsg->rInfo.u4Period,
+		prMsg->rInfo.u4Interval,
+		prMsg->rInfo.u4Count);
+
+	mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prMsg,
+			MSG_SEND_METHOD_BUF);
+
+exit:
+
+	return rStatus;
+}
+
+int mtk_cfg80211_vendor_p2p_listen_offload_stop(
+	struct wiphy *wiphy,
+	struct wireless_dev *wdev,
+	const void *data,
+	int data_len)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct MSG_P2P_LISTEN_OFFLOAD *prMsg;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t msg_size;
+
+	if (!wiphy || !wdev) {
+		DBGLOG(REQ, ERROR, "input data null.\n");
+		rStatus = -EINVAL;
+		goto exit;
+	}
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (!prGlueInfo) {
+		DBGLOG(REQ, ERROR, "get glue structure fail.\n");
+		rStatus = -EFAULT;
+		goto exit;
+	}
+
+	msg_size = sizeof(struct MSG_P2P_LISTEN_OFFLOAD);
+	prMsg = cnmMemAlloc(prGlueInfo->prAdapter,
+			RAM_TYPE_MSG, msg_size);
+	if (prMsg == NULL) {
+		DBGLOG(REQ, ERROR, "allocate msg req. fail.\n");
+		rStatus = -ENOMEM;
+		goto exit;
+	}
+
+	kalMemSet(prMsg, 0, msg_size);
+	prMsg->rMsgHdr.eMsgId = MID_MNY_P2P_LISTEN_OFFLOAD_STOP;
+	prMsg->rInfo.ucBssIndex =
+		prGlueInfo->prAdapter->ucP2PDevBssIdx;
+
+	DBGLOG(REQ, INFO, "p2p_lo stop");
+
+	mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prMsg,
+			MSG_SEND_METHOD_BUF);
+
+exit:
+
+	return rStatus;
+}
+

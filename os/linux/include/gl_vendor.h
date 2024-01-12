@@ -56,6 +56,8 @@
 #define QCA_NL80211_VENDOR_SUBCMD_ROAMING 9
 #define QCA_NL80211_VENDOR_SUBCMD_ROAM 64
 #define QCA_NL80211_VENDOR_SUBCMD_SETBAND 105
+#define QCA_NL80211_VENDOR_SUBCMD_P2P_LISTEN_OFFLOAD_START 122
+#define QCA_NL80211_VENDOR_SUBCMD_P2P_LISTEN_OFFLOAD_STOP 123
 /* End of QCA-OUI subcmds */
 
 #define NL80211_VENDOR_SUBCMD_GET_APF_CAPABILITIES 14
@@ -193,6 +195,7 @@ enum WIFI_VENDOR_EVENT {
 	WIFI_EVENT_SUBCMD_NAN,
 	WIFI_EVENT_SUBCMD_NDP,
 	WIFI_EVENT_SUBCMD_CSI,
+	WIFI_EVENT_P2P_LISTEN_OFFLOAD,
 	/* Always add at the end.*/
 };
 
@@ -383,6 +386,22 @@ enum WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST {
 		WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_LAST - 1
 };
 
+enum QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD {
+	QCA_WLAN_VENDOR_ATTR_P2P_LO_INVALID = 0,
+	QCA_WLAN_VENDOR_ATTR_P2P_LO_CHANNEL,
+	QCA_WLAN_VENDOR_ATTR_P2P_LO_PERIOD,
+	QCA_WLAN_VENDOR_ATTR_P2P_LO_INTERVAL,
+	QCA_WLAN_VENDOR_ATTR_P2P_LO_COUNT,
+	QCA_WLAN_VENDOR_ATTR_P2P_LO_DEVICE_TYPES,
+	QCA_WLAN_VENDOR_ATTR_P2P_LO_VENDOR_IE,
+	QCA_WLAN_VENDOR_ATTR_P2P_LO_CTRL_FLAG,
+	QCA_WLAN_VENDOR_ATTR_P2P_LO_STOP_REASON,
+	/* keep last */
+	QCA_WLAN_VENDOR_ATTR_P2P_LO_AFTER_LAST,
+	QCA_WLAN_VENDOR_ATTR_P2P_LO_MAX =
+	QCA_WLAN_VENDOR_ATTR_P2P_LO_AFTER_LAST - 1
+};
+
 enum WIFI_VENDOR_ATTR_ACS {
 	WIFI_VENDOR_ATTR_ACS_CHANNEL_INVALID = 0,
 	WIFI_VENDOR_ATTR_ACS_PRIMARY_CHANNEL = 1,
@@ -521,6 +540,9 @@ extern const struct nla_policy nla_string_cmd_policy[
 extern const struct nla_policy qca_roaming_param_policy[
 	QCA_ATTR_ROAMING_PARAM_MAX + 1];
 #endif
+
+extern const struct nla_policy nla_p2p_listen_offload_policy[
+	QCA_WLAN_VENDOR_ATTR_P2P_LO_MAX + 1];
 
 extern const struct nla_policy nla_get_apf_policy[
 		APF_ATTRIBUTE_MAX + 1];
@@ -1283,6 +1305,14 @@ int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len);
 #endif
+
+int mtk_cfg80211_vendor_p2p_listen_offload_start(
+		struct wiphy *wiphy, struct wireless_dev *wdev,
+		const void *data, int data_len);
+
+int mtk_cfg80211_vendor_p2p_listen_offload_stop(
+		struct wiphy *wiphy, struct wireless_dev *wdev,
+		const void *data, int data_len);
 
 int mtk_cfg80211_vendor_dfs_capability(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len);

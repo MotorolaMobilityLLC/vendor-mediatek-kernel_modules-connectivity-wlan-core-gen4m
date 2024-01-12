@@ -108,6 +108,8 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_SET_NOA_PARAM] = nicUniCmdSetP2pNoa,
 	[CMD_ID_SET_OPPPS_PARAM] = nicUniCmdSetP2pOppps,
 	[CMD_ID_SET_P2P_GC_CSA] = nicUniCmdSetP2pGcCsa,
+	[CMD_ID_SET_P2P_LO_START] = nicUniCmdSetP2pLoStart,
+	[CMD_ID_SET_P2P_LO_STOP] = nicUniCmdSetP2pLoStop,
 	[CMD_ID_SET_AP_CONSTRAINT_PWR_LIMIT] = nicUniCmdSetApConstraintPwrLimit,
 	[CMD_ID_SET_RRM_CAPABILITY] = nicUniCmdSetRrmCapability,
 	[CMD_ID_SET_COUNTRY_POWER_LIMIT] = nicUniCmdSetCountryPwrLimit,
@@ -4911,6 +4913,90 @@ uint32_t nicUniCmdSetP2pGcCsa(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t nicUniCmdSetP2pLoStart(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_SET_P2P_LO_START_STRUCT *cmd;
+	struct UNI_CMD_P2P *uni_cmd;
+	struct UNI_CMD_SET_P2P_LO_START_PARAM *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_P2P) +
+		sizeof(struct UNI_CMD_SET_P2P_LO_START_PARAM);
+
+	if (info->ucCID != CMD_ID_SET_P2P_LO_START ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_SET_P2P_LO_START_STRUCT *)
+		info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_P2P,
+		max_cmd_len, nicUniCmdEventSetCommon,
+		nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_P2P *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_SET_P2P_LO_START_PARAM *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_P2P_TAG_SET_LO_START;
+	tag->u2Length = sizeof(*tag);
+	tag->ucBssIndex = cmd->ucBssIndex;
+	tag->u2ListenPrimaryCh = cmd->u2ListenPrimaryCh;
+	tag->u2Period = cmd->u2Period;
+	tag->u2Interval = cmd->u2Interval;
+	tag->u2Count = cmd->u2Count;
+	tag->u4IELen = cmd->u4IELen;
+	kalMemCopy(tag->aucIE, cmd->aucIE, tag->u4IELen);
+
+	DBGLOG(INIT, INFO,
+		"p2p_lo, b: %d, c: %d, p: %d, i: %d, count: %d\n",
+		tag->ucBssIndex,
+		tag->u2ListenPrimaryCh,
+		tag->u2Period,
+		tag->u2Interval,
+		tag->u2Count);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdSetP2pLoStop(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_SET_P2P_LO_STOP_STRUCT *cmd;
+	struct UNI_CMD_P2P *uni_cmd;
+	struct UNI_CMD_SET_P2P_LO_STOP_PARAM *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_P2P) +
+		sizeof(struct UNI_CMD_SET_P2P_LO_STOP_PARAM);
+
+	if (info->ucCID != CMD_ID_SET_P2P_LO_STOP ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_SET_P2P_LO_STOP_STRUCT *)
+		info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_P2P,
+		max_cmd_len, nicUniCmdEventSetCommon,
+		nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_P2P *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_SET_P2P_LO_STOP_PARAM *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_P2P_TAG_SET_LO_STOP;
+	tag->u2Length = sizeof(*tag);
+	tag->ucBssIndex = cmd->ucBssIndex;
+
+	DBGLOG(REQ, INFO, "p2p_lo stop: %d\n", tag->ucBssIndex);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 uint32_t nicUniCmdSetApConstraintPwrLimit(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
@@ -9081,6 +9167,19 @@ void nicUniEventP2p(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 			RUN_RX_EVENT_HANDLER(EVENT_ID_UPDATE_NOA_PARAMS,
 								&legacy);
+		}
+			break;
+		case UNI_EVENT_P2P_TAG_LO_STOP_PARAM: {
+			struct UNI_EVENT_P2P_LO_STOP_PARAM *lostop =
+				(struct UNI_EVENT_P2P_LO_STOP_PARAM *)tag;
+			struct EVENT_P2P_LO_STOP_T legacy = {0};
+
+			legacy.ucBssIndex = lostop->ucBssIndex;
+			legacy.u4Reason = lostop->u4Reason;
+			legacy.u2ListenCount = lostop->u2ListenCount;
+
+			RUN_RX_EVENT_HANDLER(EVENT_ID_P2P_LO_STOP,
+				&legacy);
 		}
 			break;
 		case UNI_EVENT_P2P_TAG_GC_CSA_PARAM: {

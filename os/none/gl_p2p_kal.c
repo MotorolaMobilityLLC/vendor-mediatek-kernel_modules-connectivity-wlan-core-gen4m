@@ -80,4 +80,13 @@ u_int8_t kalGetP2pDevScanSpecificSSID(struct GLUE_INFO *prGlueInfo)
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 	return 0;
 }
+
+void kalP2pIndicateListenOffloadEvent(
+	struct GLUE_INFO *prGlueInfo,
+	uint32_t event)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return NULL;
+}
+
 #endif /* CFG_ENABLE_WIFI_DIRECT */

@@ -317,6 +317,11 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 #if (CFG_SUPPORT_NAN == 1)
 	{MID_CNM_NAN_CH_GRANT, nanDevSendEnableRequest},
 #endif
+
+#if CFG_ENABLE_WIFI_DIRECT
+	{MID_MNY_P2P_LISTEN_OFFLOAD_START, p2pDevFsmListenOffloadStart},
+	{MID_MNY_P2P_LISTEN_OFFLOAD_STOP, p2pDevFsmListenOffloadStop},
+#endif
 };
 
 /*******************************************************************************

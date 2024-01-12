@@ -164,6 +164,9 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_CSA_DONE, cnmCsaDoneEvent},
 	{EVENT_ID_GC_CSA, cnmPeerGcCsaHandler},
 #endif
+#if CFG_ENABLE_WIFI_DIRECT
+	{EVENT_ID_P2P_LO_STOP, p2pDevListenOffloadStopHandler},
+#endif
 	{EVENT_ID_UPDATE_COEX_PHYRATE, nicEventUpdateCoexPhyrate},
 	{EVENT_ID_UPDATE_COEX_STATUS, nicEventUpdateCoexStatus},
 	{EVENT_ID_TX_ADDBA, qmHandleEventTxAddBa},

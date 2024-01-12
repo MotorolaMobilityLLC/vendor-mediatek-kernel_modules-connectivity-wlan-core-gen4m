@@ -14,7 +14,8 @@ static uint8_t *apucDebugP2pDevState[P2P_DEV_STATE_NUM] = {
 	(uint8_t *) DISP_STRING("P2P_DEV_STATE_SCAN"),
 	(uint8_t *) DISP_STRING("P2P_DEV_STATE_REQING_CHANNEL"),
 	(uint8_t *) DISP_STRING("P2P_DEV_STATE_CHNL_ON_HAND"),
-	(uint8_t *) DISP_STRING("P2P_DEV_STATE_OFF_CHNL_TX")
+	(uint8_t *) DISP_STRING("P2P_DEV_STATE_OFF_CHNL_TX"),
+	(uint8_t *) DISP_STRING("P2P_DEV_STATE_LISTEN_OFFLOAD")
 };
 
 /*lint -restore */
@@ -436,6 +437,22 @@ p2pDevFsmStateTransition(struct ADAPTER *prAdapter,
 					eNextState);
 			}
 			break;
+		case P2P_DEV_STATE_LISTEN_OFFLOAD:
+			if (!fgIsLeaveState) {
+				fgIsLeaveState =
+					p2pDevStateInit_LISTEN_OFFLOAD(
+					prAdapter,
+					prP2pDevFsmInfo,
+					&(prP2pDevFsmInfo->rLoInfo),
+					&eNextState);
+			} else {
+				p2pDevStateAbort_LISTEN_OFFLOAD(
+					prAdapter,
+					prP2pDevFsmInfo,
+					&(prP2pDevFsmInfo->rLoInfo),
+					eNextState);
+			}
+			break;
 		default:
 			/* Unexpected state. */
 			ASSERT(FALSE);
@@ -501,6 +518,10 @@ void p2pDevFsmRunEventTimeout(struct ADAPTER *prAdapter,
 		case P2P_DEV_STATE_OFF_CHNL_TX:
 			p2pDevFsmStateTransition(prAdapter, prP2pDevFsmInfo,
 					P2P_DEV_STATE_OFF_CHNL_TX);
+			break;
+		case P2P_DEV_STATE_LISTEN_OFFLOAD:
+			p2pDevFsmStateTransition(prAdapter, prP2pDevFsmInfo,
+					P2P_DEV_STATE_LISTEN_OFFLOAD);
 			break;
 		default:
 			ASSERT(FALSE);
@@ -1440,5 +1461,91 @@ void p2pDevDbdcSwDelayTimeout(struct ADAPTER *prAdapter,
 	}
 }
 #endif
+
+void p2pDevFsmListenOffloadStart(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr)
+{
+	struct MSG_P2P_LISTEN_OFFLOAD *prMsg =
+		(struct MSG_P2P_LISTEN_OFFLOAD *) NULL;
+
+	prMsg = (struct MSG_P2P_LISTEN_OFFLOAD *)
+		prMsgHdr;
+
+	do {
+		struct P2P_DEV_FSM_INFO *fsm =
+			(struct P2P_DEV_FSM_INFO *) NULL;
+
+		if (!prAdapter)
+			break;
+
+		fsm = prAdapter->rWifiVar.prP2pDevFsmInfo;
+		if (!fsm)
+			break;
+
+		kalMemCopy(&fsm->rLoInfo,
+			&prMsg->rInfo,
+			sizeof(struct P2P_LISTEN_OFFLOAD_INFO));
+
+		p2pDevFsmStateTransition(prAdapter,
+			fsm,
+			P2P_DEV_STATE_LISTEN_OFFLOAD);
+	} while (FALSE);
+
+	cnmMemFree(prAdapter, prMsgHdr);
+}
+
+void p2pDevFsmListenOffloadStopImpl(
+	struct ADAPTER *prAdapter,
+	uint32_t event)
+{
+	do {
+		struct P2P_DEV_FSM_INFO *fsm =
+			(struct P2P_DEV_FSM_INFO *) NULL;
+
+		if (!prAdapter)
+			break;
+
+		fsm = prAdapter->rWifiVar.prP2pDevFsmInfo;
+		if (!fsm)
+			break;
+#ifdef LINUX
+		if (event !=
+			P2P_LO_STOPPED_REASON_NOT_SUPPORTED)
+			kalP2pIndicateListenOffloadEvent(
+				prAdapter->prGlueInfo,
+				event);
+#endif
+		p2pDevFsmRunEventAbort(prAdapter, fsm);
+	} while (FALSE);
+}
+
+void p2pDevFsmListenOffloadStop(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr)
+{
+	p2pDevFsmListenOffloadStopImpl(
+		prAdapter,
+		P2P_LO_STOPPED_REASON_RECV_STOP_CMD);
+
+	cnmMemFree(prAdapter, prMsgHdr);
+}
+
+void p2pDevListenOffloadStopHandler(
+	struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent)
+{
+	struct EVENT_P2P_LO_STOP_T *lostop;
+
+	if (!prAdapter || !prEvent)
+		return;
+
+	lostop = (struct EVENT_P2P_LO_STOP_T *)
+		&prEvent->aucBuffer;
+
+	p2pDevFsmListenOffloadStopImpl(
+		prAdapter,
+		lostop->u4Reason);
+}
 
 #endif /* CFG_ENABLE_WIFI_DIRECT */

@@ -210,6 +210,9 @@ p2pDevStateAbort_REQING_CHANNEL(struct ADAPTER *prAdapter,
 		case P2P_DEV_STATE_OFF_CHNL_TX:
 			/* OffChannel TX case. */
 			break;
+		case P2P_DEV_STATE_LISTEN_OFFLOAD:
+			/* Listen offload case. */
+			break;
 		default:
 			/* Un-expected state transition. */
 			DBGLOG(P2P, ERROR,
@@ -430,4 +433,95 @@ p2pDevStateAbort_OFF_CHNL_TX(struct ADAPTER *prAdapter,
 			prAdapter->ucP2PDevBssIdx,
 			prChnlReqInfo);
 }				/* p2pDevSateAbort_OFF_CHNL_TX */
+
+u_int8_t
+p2pDevStateInit_LISTEN_OFFLOAD(
+	struct ADAPTER *prAdapter,
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo,
+	struct P2P_LISTEN_OFFLOAD_INFO *pLoInfo)
+{
+	struct CMD_SET_P2P_LO_START_STRUCT *prCmd;
+
+	do {
+		if (!prAdapter)
+			return FALSE;
+
+		prCmd = (struct CMD_SET_P2P_LO_START_STRUCT *)
+			cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+			sizeof(*prCmd));
+		if (!prCmd) {
+			DBGLOG(P2P, ERROR,
+				"cnmMemAlloc for prCmd failed!\n");
+			return FALSE;
+		}
+
+		prCmd->ucBssIndex = pLoInfo->ucBssIndex;
+		prCmd->u2ListenPrimaryCh =
+			nicFreq2ChannelNum(pLoInfo->u4Freq * 1000);
+		prCmd->u2Period = pLoInfo->u4Period;
+		prCmd->u2Interval = pLoInfo->u4Interval;
+		prCmd->u2Count = pLoInfo->u4Count;
+		prCmd->u4IELen = pLoInfo->u2IELen;
+
+		/* TODO: Gen MTK probe resp */
+		kalMemCopy(prCmd->aucIE,
+			pLoInfo->aucIE,
+			pLoInfo->u2IELen);
+
+		wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_SET_P2P_LO_START,
+			TRUE,
+			FALSE,
+			FALSE,
+			NULL,
+			NULL,
+			sizeof(*prCmd),
+			(uint8_t *) prCmd,
+			NULL,
+			0);
+
+		cnmMemFree(prAdapter, prCmd);
+	} while (FALSE);
+
+	return FALSE;
+}
+
+void p2pDevStateAbort_LISTEN_OFFLOAD(
+	struct ADAPTER *prAdapter,
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo,
+	struct P2P_LISTEN_OFFLOAD_INFO *pLoInfo,
+	enum ENUM_P2P_DEV_STATE eNextState)
+{
+	struct CMD_SET_P2P_LO_STOP_STRUCT *prCmd;
+
+	do {
+		if (!prAdapter)
+			break;
+
+		prCmd = (struct CMD_SET_P2P_LO_STOP_STRUCT *)
+			cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+			sizeof(*prCmd));
+		if (!prCmd) {
+			DBGLOG(P2P, ERROR,
+				"cnmMemAlloc for prCmd failed!\n");
+			break;
+		}
+
+		prCmd->ucBssIndex = pLoInfo->ucBssIndex;
+
+		wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_SET_P2P_LO_STOP,
+			TRUE,
+			FALSE,
+			FALSE,
+			NULL,
+			NULL,
+			sizeof(*prCmd),
+			(uint8_t *) prCmd,
+			NULL,
+			0);
+
+		cnmMemFree(prAdapter, prCmd);
+	} while (FALSE);
+}
 #endif /* CFG_ENABLE_WIFI_DIRECT */
