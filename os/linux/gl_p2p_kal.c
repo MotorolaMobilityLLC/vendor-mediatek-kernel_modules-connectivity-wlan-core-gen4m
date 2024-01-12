@@ -2524,7 +2524,7 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 	struct GL_P2P_INFO *prP2PInfo;
 	struct net_device *prNetdevice = (struct net_device *) NULL;
 	uint8_t role_idx = 0;
-#if (CFG_ADVANCED_80211_MLO == 1)
+#if (CFG_ADVANCED_80211_MLO == 1 && CFG_SUPPORT_802_11BE_MLO == 0)
 	uint8_t linkIdx = 0;
 #endif
 
@@ -2679,7 +2679,13 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 
 	/* Ch notify */
 #if (CFG_ADVANCED_80211_MLO == 1)
-	cfg80211_ch_switch_notify(prNetdevice, &prP2PInfo->chandefCsa, linkIdx);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	cfg80211_ch_switch_notify(prNetdevice, &prP2PInfo->chandefCsa,
+		prBssInfo->ucLinkIndex);
+#else
+	cfg80211_ch_switch_notify(prNetdevice, &prP2PInfo->chandefCsa,
+		linkIdx);
+#endif
 #else
 	cfg80211_ch_switch_notify(prNetdevice, &prP2PInfo->chandefCsa);
 #endif
