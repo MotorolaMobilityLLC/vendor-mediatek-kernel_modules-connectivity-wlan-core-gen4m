@@ -815,10 +815,11 @@ struct UNI_CMD_STAREC_STATE_INFO {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t ucStaState;
+	uint8_t audPaddings[3];
 	uint32_t u4Flags;
 	uint8_t ucVhtOpMode;   /* VHT operting mode, bit 7: Rx NSS Type, bit 4-6: Rx NSS, bit 0-1: Channel Width */
 	uint8_t ucActionType;
-	uint8_t aucReserve[1];
+	uint8_t audPaddings2[2];
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_TXBF_PFMU_STA_INFO {
