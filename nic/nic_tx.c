@@ -5855,7 +5855,7 @@ uint32_t nicTxDirectStartXmit(struct sk_buff *prSkb,
 		prMsduInfo = cnmPktAlloc(prAdapter, 0);
 
 		if (prMsduInfo == NULL) {
-			DBGLOG(TX, INFO, "cnmPktAlloc NULL\n");
+			DBGLOG(TX, LOUD, "cnmPktAlloc NULL\n");
 			skb_queue_tail(&prAdapter->rTxDirectSkbQueue, prSkb);
 
 			ret = WLAN_STATUS_SUCCESS;

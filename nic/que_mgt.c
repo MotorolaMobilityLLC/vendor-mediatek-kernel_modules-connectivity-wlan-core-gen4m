@@ -4197,16 +4197,19 @@ u_int8_t qmAmsduAttackDetection(IN struct ADAPTER *prAdapter,
 #define __STR_FMT__ \
 	"QM: FromDS:%d ToDS:%d TID:%u SN:%u PF:%u" \
 	" TA:" MACSTR " RA:" MACSTR " DA:" MACSTR " SA:" MACSTR " Drop:%d"
-			DBGLOG(QM, TRACE,
-				__STR_FMT__,
-				RXM_IS_FROM_DS(u2FrameCtrl),
-				RXM_IS_TO_DS(u2FrameCtrl),
-				ucTid, prSwRfb->u2SSN,
-				prSwRfb->ucPayloadFormat,
-				MAC2STR(pucTaAddr), MAC2STR(pucRaAddr),
-				MAC2STR(pucDaAddr), MAC2STR(pucSaAddr),
-				fgDrop
-				);
+			if (fgDrop)
+				DBGLOG(QM, INFO,
+					__STR_FMT__,
+					RXM_IS_FROM_DS(u2FrameCtrl),
+					RXM_IS_TO_DS(u2FrameCtrl),
+					ucTid, prSwRfb->u2SSN,
+					prSwRfb->ucPayloadFormat,
+					MAC2STR(pucTaAddr),
+					MAC2STR(pucRaAddr),
+					MAC2STR(pucDaAddr),
+					MAC2STR(pucSaAddr),
+					fgDrop
+					);
 #undef __STR_FMT__
 		}
 
