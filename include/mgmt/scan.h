@@ -163,8 +163,8 @@
 #define SCAN_BATCH_REQ_RESULT               BIT(2)
 #endif
 
-#define SCAN_NLO_CHECK_SSID_ONLY    0x00000001
-#define SCAN_NLO_DEFAULT_INTERVAL           30000
+#define SCAN_NLO_CHECK_SSID_ONLY            (0x01)
+#define SCAN_NLO_DEFAULT_INTERVAL           (30000)
 
 #define	SCN_CTRL_SCAN_CHANNEL_LISTEN_TIME_ENABLE		BIT(1)
 #define	SCN_CTRL_IGNORE_AIS_FIX_CHANNEL		BIT(1)
@@ -402,24 +402,11 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 };
 
 struct NLO_PARAM {	/* Used by SCAN FSM */
-	struct SCAN_PARAM rScanParam;
-
-	/* NLO */
-	u_int8_t fgStopAfterIndication;
-	uint8_t ucFastScanIteration;
-	uint16_t u2FastScanPeriod;
-	uint16_t u2SlowScanPeriod;
-
-	/* Match SSID */
-	uint8_t ucMatchSSIDNum;
+	uint8_t ucSeqNum;
+	uint8_t ucBssIndex;              /* Network Type */
+	u_int8_t fgStopAfterIndication;  /* always FALSE */
+	uint8_t ucMatchSSIDNum;          /* Match SSID */
 	struct BSS_DESC *aprPendingBssDescToInd[SCN_SSID_MATCH_MAX_NUM];
-	uint8_t ucMatchSSIDLen[SCN_SSID_MATCH_MAX_NUM];
-	uint8_t aucMatchSSID[SCN_SSID_MATCH_MAX_NUM][ELEM_MAX_LEN_SSID];
-
-	uint8_t aucCipherAlgo[SCN_SSID_MATCH_MAX_NUM];
-	uint16_t au2AuthAlgo[SCN_SSID_MATCH_MAX_NUM];
-	uint8_t aucChannelHint[SCN_SSID_MATCH_MAX_NUM][SCN_NLO_NETWORK_CHANNEL_NUM];
-
 };
 
 struct SCAN_INFO {
@@ -460,7 +447,6 @@ struct SCAN_INFO {
 	uint8_t			aucChannelMDRDYCnt[64];
 	/* Beacon and Probe Response Count in each Channel  */
 	uint8_t			aucChannelBAndPCnt[64];
-
 };
 
 /* Incoming Mailbox Messages */
@@ -725,13 +711,6 @@ u_int8_t scnQuerySparseChannel(IN struct ADAPTER *prAdapter, enum ENUM_BAND *prS
 /*----------------------------------------------------------------------------*/
 /* OID/IOCTL Handling                                                         */
 /*----------------------------------------------------------------------------*/
-u_int8_t
-scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
-		       IN uint8_t ucSsidNum,
-		       IN struct PARAM_SSID *prSsid, IN uint32_t u4IeLength, IN uint8_t *pucIe, IN uint16_t u2Interval);
-
-u_int8_t scnFsmSchedScanStopRequest(IN struct ADAPTER *prAdapter);
-
 #if CFG_SUPPORT_PASSPOINT
 struct BSS_DESC *scanSearchBssDescByBssidAndLatestUpdateTime(IN struct ADAPTER *prAdapter, IN uint8_t aucBSSID[]);
 #endif /* CFG_SUPPORT_PASSPOINT */
@@ -739,6 +718,23 @@ struct BSS_DESC *scanSearchBssDescByBssidAndLatestUpdateTime(IN struct ADAPTER *
 #if CFG_SUPPORT_AGPS_ASSIST
 void scanReportScanResultToAgps(struct ADAPTER *prAdapter);
 #endif
+
+#if CFG_SUPPORT_SCHED_SCAN
+u_int8_t scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
+			IN struct PARAM_SCHED_SCAN_REQUEST *prSchedScanRequest);
+
+u_int8_t scnFsmSchedScanStopRequest(IN struct ADAPTER *prAdapter);
+
+u_int8_t scnFsmPSCNAction(IN struct ADAPTER *prAdapter,
+			IN enum ENUM_PSCAN_ACT ucPscanAct);
+
+u_int8_t scnFsmPSCNSetParam(IN struct ADAPTER *prAdapter,
+			IN struct CMD_SET_PSCAN_PARAM *prCmdPscnParam);
+
+void scnSetSchedScanPlanIntoPSCN(IN struct ADAPTER *prAdapter,
+			IN struct CMD_SET_PSCAN_PARAM *prCmdPscnParam);
+
+#endif /* CFG_SUPPORT_SCHED_SCAN */
 
 void scanLogEssResult(struct ADAPTER *prAdapter);
 void scanInitEssResult(struct ADAPTER *prAdapter);

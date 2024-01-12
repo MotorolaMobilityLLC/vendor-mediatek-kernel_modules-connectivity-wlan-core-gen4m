@@ -1986,13 +1986,21 @@ struct PARAM_SCAN_REQUEST_ADV {
 /*--------------------------------------------------------------*/
 /*! \brief CFG80211 Scheduled Scan Request Container            */
 /*--------------------------------------------------------------*/
+#if CFG_SUPPORT_SCHED_SCAN
 struct PARAM_SCHED_SCAN_REQUEST {
-	uint32_t u4SsidNum;
-	struct PARAM_SSID arSsid[CFG_SCAN_SSID_MATCH_MAX_NUM];
+	uint32_t u4SsidNum;         /* passed in the probe_reqs */
+	struct PARAM_SSID arSsid[CFG_SCAN_HIDDEN_SSID_MAX_NUM];
+	uint32_t u4MatchSsidNum;   /* matched for a scan request */
+	struct PARAM_SSID arMatchSsid[CFG_SCAN_SSID_MATCH_MAX_NUM];
+	int8_t acRssiThold[CFG_SCAN_SSID_MATCH_MAX_NUM];
+	int32_t i4MinRssiThold;
 	uint32_t u4IELength;
 	uint8_t *pucIE;
-	uint16_t u2ScanInterval;	/* in milliseconds */
+	uint16_t u2ScanInterval;	/* in second */
+	uint8_t ucChnlNum;
+	uint8_t *pucChannels;
 };
+#endif /* CFG_SUPPORT_SCHED_SCAN */
 
 #if CFG_SUPPORT_PASSPOINT
 struct PARAM_HS20_SET_BSSID_POOL {
@@ -2015,6 +2023,15 @@ struct PARAM_CUSTOM_MONITOR_SET_STRUCT {
 	uint8_t aucResv[9];
 };
 #endif
+
+/*--------------------------------------------------------------*/
+/*! \brief PSCN Scan Request Container            */
+/*--------------------------------------------------------------*/
+
+enum ENUM_PSCAN_ACT {
+	PSCAN_ACT_DISABLE = 0,
+	PSCAN_ACT_ENABLE,
+};
 
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
 /*--------------------------------------------------------------*/
@@ -2802,6 +2819,7 @@ uint32_t
 wlanoidSetGtkRekeyData(IN struct ADAPTER *prAdapter,
 		       IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
 
+#if CFG_SUPPORT_SCHED_SCAN
 uint32_t
 wlanoidSetStartSchedScan(IN struct ADAPTER *prAdapter,
 			 IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
@@ -2809,6 +2827,7 @@ wlanoidSetStartSchedScan(IN struct ADAPTER *prAdapter,
 uint32_t
 wlanoidSetStopSchedScan(IN struct ADAPTER *prAdapter,
 			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+#endif /* CFG_SUPPORT_SCHED_SCAN */
 
 #if CFG_M0VE_BA_TO_DRIVER
 uint32_t wlanoidResetBAScoreboard(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN uint32_t u4SetBufferLen);

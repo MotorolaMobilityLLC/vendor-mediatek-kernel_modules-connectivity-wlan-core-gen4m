@@ -11294,6 +11294,7 @@ wlanoidSetGtkRekeyData(IN struct ADAPTER *prAdapter,
 
 }				/* wlanoidSetGtkRekeyData */
 
+#if CFG_SUPPORT_SCHED_SCAN
 /*----------------------------------------------------------------------------*/
 /*!
 * \brief This routine is called to request starting of schedule scan
@@ -11348,12 +11349,8 @@ wlanoidSetStartSchedScan(IN struct ADAPTER *prAdapter,
 
 	prSchedScanRequest = (struct PARAM_SCHED_SCAN_REQUEST *) pvSetBuffer;
 
-	if (scnFsmSchedScanRequest(prAdapter,
-				   (uint8_t) (prSchedScanRequest->u4SsidNum),
-				   prSchedScanRequest->arSsid,
-				   prSchedScanRequest->u4IELength,
-				   prSchedScanRequest->pucIE, prSchedScanRequest->u2ScanInterval) == TRUE)
-		return WLAN_STATUS_PENDING;
+	if (scnFsmSchedScanRequest(prAdapter, prSchedScanRequest) == TRUE)
+		return WLAN_STATUS_SUCCESS;
 	else
 		return WLAN_STATUS_FAILURE;
 }
@@ -11382,14 +11379,19 @@ uint32_t
 wlanoidSetStopSchedScan(IN struct ADAPTER *prAdapter,
 			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen)
 {
+	uint32_t ret;
 	ASSERT(prAdapter);
 
 	/* ask SCN module to stop scan request */
 	if (scnFsmSchedScanStopRequest(prAdapter) == TRUE)
-		return WLAN_STATUS_PENDING;
-	else
-		return WLAN_STATUS_FAILURE;
+		ret = WLAN_STATUS_SUCCESS;
+	else {
+		DBGLOG(REQ, WARN, "scnFsmSchedScanStopRequest failed.\n");
+		ret = WLAN_STATUS_FAILURE;
+	}
+	return ret;
 }
+#endif /* CFG_SUPPORT_SCHED_SCAN */
 
 #if CFG_M0VE_BA_TO_DRIVER
 /*----------------------------------------------------------------------------*/

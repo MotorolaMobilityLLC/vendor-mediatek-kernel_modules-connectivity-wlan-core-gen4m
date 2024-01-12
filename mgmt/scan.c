@@ -1821,7 +1821,7 @@ uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prB
 	nicAddScanResult(prAdapter,
 			 rMacAddr,
 			 &rSsid,
-			 prWlanBeaconFrame->u2CapInfo & CAP_INFO_PRIVACY ? 1 : 0,
+			 prWlanBeaconFrame->u2CapInfo,
 			 RCPI_TO_dBm(prBssDesc->ucRCPI),
 			 eNetworkType,
 			 &rConfiguration,
@@ -2012,7 +2012,8 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter, IN struct S
 		if (prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE || prBssDesc->eBSSType == BSS_TYPE_IBSS) {
 			/* for AIS, send to host */
 			prAdapter->rWlanInfo.u4ScanDbgTimes3++;
-			if (prConnSettings->fgIsScanReqIssued) {
+			if (prConnSettings->fgIsScanReqIssued
+					|| prScanInfo->fgNloScanning) {
 				u_int8_t fgAddToScanResult;
 
 				fgAddToScanResult = scanCheckBssIsLegal(prAdapter, prBssDesc);
