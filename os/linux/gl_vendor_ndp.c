@@ -716,11 +716,14 @@ nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	kalMemZero(&rNanCmdDataResponse, sizeof(rNanCmdDataResponse));
 	/* Decision status */
 	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_RESPONSE_CODE]) {
-		rNanCmdDataResponse.ucDecisionStatus =
-			nla_get_u32(tb[MTK_WLAN_VENDOR_ATTR_NDP_RESPONSE_CODE]);
-#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
-		rNanCmdDataResponse.ucDecisionStatus = NAN_DP_REQUEST_ACCEPT;
-#endif
+		if (nla_get_u32(tb[MTK_WLAN_VENDOR_ATTR_NDP_RESPONSE_CODE])
+				== NAN_DP_REQUEST_AUTO)
+			rNanCmdDataResponse.ucDecisionStatus =
+				NAN_DP_REQUEST_ACCEPT;
+		else
+			rNanCmdDataResponse.ucDecisionStatus =
+				nla_get_u32(
+				tb[MTK_WLAN_VENDOR_ATTR_NDP_RESPONSE_CODE]);
 	}
 
 	/* Instance ID */
