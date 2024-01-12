@@ -2001,8 +2001,7 @@ void nicTxPrintMetRTP(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4PacketLen, IN u_int8_t bFreeSkb);
 
 void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
-	IN struct EVENT_TX_DONE *prTxDone);
-
+	IN struct WIFI_EVENT *prEvent);
 
 void nicTxChangeDataPortByAc(
 	struct ADAPTER *prAdapter,

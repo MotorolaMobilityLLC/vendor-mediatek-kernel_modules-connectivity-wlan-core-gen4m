@@ -3353,12 +3353,15 @@ u_int8_t nicTxProcessMngPacket(IN struct ADAPTER *prAdapter,
 }
 
 void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
-			     IN struct EVENT_TX_DONE *prTxDone)
+			     IN struct WIFI_EVENT *prEvent)
 {
+	struct EVENT_TX_DONE *prTxDone;
 	struct MSDU_INFO *prMsduInfo;
 	struct TX_CTRL *prTxCtrl = &prAdapter->rTxCtrl;
 	char *prBw = "INVALID";
 	char *prTxResult = "UNDEFINED";
+
+	prTxDone = (struct EVENT_TX_DONE *) (prEvent->aucBuffer);
 
 /* fos_change begin */
 #if CFG_SUPPORT_EXCEPTION_STATISTICS

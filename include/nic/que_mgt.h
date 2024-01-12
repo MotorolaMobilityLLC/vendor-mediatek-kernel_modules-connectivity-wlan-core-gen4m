@@ -1071,13 +1071,13 @@ u_int8_t qmCompareSnIsLessThan(IN uint32_t u4SnLess,
 			       IN uint32_t u4SnGreater);
 
 void qmHandleEventTxAddBa(IN struct ADAPTER *prAdapter,
-			  IN struct EVENT_TX_ADDBA *prEventTxAddBa);
+			  IN struct WIFI_EVENT *prEvent);
 
 void qmHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
-			  IN struct EVENT_RX_ADDBA *prEventRxAddBa);
+			  IN struct WIFI_EVENT *prEvent);
 
 void qmHandleEventRxDelBa(IN struct ADAPTER *prAdapter,
-			  IN struct EVENT_RX_DELBA *prEventRxDelBa);
+			  IN struct WIFI_EVENT *prEvent);
 
 struct RX_BA_ENTRY *qmLookupRxBaEntry(IN struct ADAPTER
 	*prAdapter, IN uint8_t ucStaRecIdx, IN uint8_t ucTid);
@@ -1161,18 +1161,18 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(IN struct ADAPTER
 	IN enum ENUM_FRAME_TYPE_IN_CMD_Q eFrameType,
 	IN uint16_t u2FrameLength);
 
-void qmHandleEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
-	IN struct EVENT_BSS_ABSENCE_PRESENCE *prEventBssStatus);
+void qmHandleEventBssAbsencePresence(IN struct ADAPTER
+				     *prAdapter, IN struct WIFI_EVENT *prEvent);
 
-void qmHandleEventStaChangePsMode(IN struct ADAPTER *prAdapter,
-	IN struct EVENT_STA_CHANGE_PS_MODE *prEventStaChangePsMode);
+void qmHandleEventStaChangePsMode(IN struct ADAPTER
+				  *prAdapter, IN struct WIFI_EVENT *prEvent);
 
 void mqmProcessAssocReq(IN struct ADAPTER *prAdapter,
 			IN struct SW_RFB *prSwRfb, IN uint8_t *pucIE,
 			IN uint16_t u2IELength);
 
-void qmHandleEventStaUpdateFreeQuota(IN struct ADAPTER *prAdapter,
-	IN struct EVENT_STA_UPDATE_FREE_QUOTA *prEventStaUpdateFreeQuota);
+void qmHandleEventStaUpdateFreeQuota(IN struct ADAPTER
+				     *prAdapter, IN struct WIFI_EVENT *prEvent);
 
 void
 qmUpdateFreeQuota(IN struct ADAPTER *prAdapter,

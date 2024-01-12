@@ -3439,65 +3439,15 @@ void nicEventSchedScanDone(IN struct ADAPTER *prAdapter,
 		(struct EVENT_SCHED_SCAN_DONE *) (prEvent->aucBuffer));
 }
 
-void nicEventTxDone(IN struct ADAPTER *prAdapter,
-		      IN struct WIFI_EVENT *prEvent)
-{
-	nicTxProcessTxDoneEvent(prAdapter,
-		(struct EVENT_TX_DONE *) (prEvent->aucBuffer));
-}
-
-void nicEventChPrivilege(IN struct ADAPTER *prAdapter,
-		      IN struct WIFI_EVENT *prEvent)
-{
-	cnmChMngrHandleChEvent(prAdapter,
-		(struct EVENT_CH_PRIVILEGE *) (prEvent->aucBuffer));
-}
-
-void nicEventCnmOpModeChange(IN struct ADAPTER *prAdapter,
-		      IN struct WIFI_EVENT *prEvent)
-{
-	cnmOpmodeEventHandler(prAdapter,
-		(struct EVENT_OPMODE_CHANGE *) (prEvent->aucBuffer));
-}
-
-void nicEventDbdcSwitchDone(IN struct ADAPTER *prAdapter,
-			IN struct WIFI_EVENT *prEvent)
-{
-	cnmDbdcEventHwSwitchDone(prAdapter);
-}
-
-void nicEventRxAddBa(IN struct ADAPTER *prAdapter,
-			IN struct WIFI_EVENT *prEvent)
-{
-	qmHandleEventRxAddBa(prAdapter,
-		(struct EVENT_RX_ADDBA *) (prEvent->aucBuffer));
-}
-
-void nicEventRxDelBa(IN struct ADAPTER *prAdapter,
-			IN struct WIFI_EVENT *prEvent)
-{
-	qmHandleEventRxDelBa(prAdapter,
-		(struct EVENT_RX_DELBA *) (prEvent->aucBuffer));
-}
-
-void nicEventTxAddBa(IN struct ADAPTER *prAdapter,
-			IN struct WIFI_EVENT *prEvent)
-{
-	qmHandleEventTxAddBa(prAdapter,
-		(struct EVENT_TX_ADDBA *) (prEvent->aucBuffer));
-}
-
-void nicEventSleepNotify(IN struct ADAPTER *prAdapter,
+void nicEventSleepyNotify(IN struct ADAPTER *prAdapter,
 			  IN struct WIFI_EVENT *prEvent)
 {
-	nicEventSleepNotifyImpl(prAdapter,
-		(struct EVENT_SLEEPY_INFO *) (prEvent->aucBuffer));
-}
-
-void nicEventSleepNotifyImpl(struct ADAPTER *prAdapter,
-	struct EVENT_SLEEPY_INFO *prEventSleepyNotify)
-{
 #if !defined(_HIF_USB)
+	struct EVENT_SLEEPY_INFO *prEventSleepyNotify;
+
+	prEventSleepyNotify = (struct EVENT_SLEEPY_INFO *) (
+				      prEvent->aucBuffer);
+
 	prAdapter->fgWiFiInSleepyState = (u_int8_t) (
 			prEventSleepyNotify->ucSleepyState);
 
@@ -3726,17 +3676,14 @@ bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter,
 void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 			   IN struct WIFI_EVENT *prEvent)
 {
-	nicEventBeaconTimeoutImpl(prAdapter,
-		(struct EVENT_BSS_BEACON_TIMEOUT *) (prEvent->aucBuffer));
-}
-
-void nicEventBeaconTimeoutImpl(IN struct ADAPTER *prAdapter,
-		IN struct EVENT_BSS_BEACON_TIMEOUT *prEventBssBeaconTimeout)
-{
 	DBGLOG(NIC, INFO, "EVENT_ID_BSS_BEACON_TIMEOUT\n");
 
 	if (prAdapter->fgDisBcnLostDetection == FALSE) {
 		struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
+		struct EVENT_BSS_BEACON_TIMEOUT *prEventBssBeaconTimeout;
+
+		prEventBssBeaconTimeout = (struct EVENT_BSS_BEACON_TIMEOUT
+					   *) (prEvent->aucBuffer);
 
 		if (prEventBssBeaconTimeout->ucBssIndex >=
 		    prAdapter->ucHwBssIdNum)
@@ -3826,27 +3773,6 @@ void nicEventUpdateNoaParams(IN struct ADAPTER *prAdapter,
 #else
 	ASSERT(0);
 #endif
-}
-
-void nicEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
-			     IN struct WIFI_EVENT *prEvent)
-{
-	qmHandleEventBssAbsencePresence(prAdapter,
-		(struct EVENT_BSS_ABSENCE_PRESENCE *) prEvent->aucBuffer);
-}
-
-void nicEventStaChangePsMode(IN struct ADAPTER *prAdapter,
-			     IN struct WIFI_EVENT *prEvent)
-{
-	qmHandleEventStaChangePsMode(prAdapter,
-		(struct EVENT_STA_CHANGE_PS_MODE *) prEvent->aucBuffer);
-}
-
-void nicEventStaUpdateFreeQuota(IN struct ADAPTER *prAdapter,
-			     IN struct WIFI_EVENT *prEvent)
-{
-	qmHandleEventStaUpdateFreeQuota(prAdapter,
-		(struct EVENT_STA_UPDATE_FREE_QUOTA *) prEvent->aucBuffer);
 }
 
 void nicEventStaAgingTimeout(IN struct ADAPTER *prAdapter,
@@ -3965,11 +3891,15 @@ void nicEventUpdateBcmDebug(IN struct ADAPTER *prAdapter,
 #endif
 }
 
-void nicEventAddPkeyDoneImpl(IN struct ADAPTER *prAdapter,
-			 IN struct EVENT_ADD_KEY_DONE_INFO *prKeyDone)
+void nicEventAddPkeyDone(IN struct ADAPTER *prAdapter,
+			 IN struct WIFI_EVENT *prEvent)
 {
+	struct EVENT_ADD_KEY_DONE_INFO *prKeyDone;
 	struct STA_RECORD *prStaRec = NULL;
 	uint8_t ucKeyId;
+
+	prKeyDone = (struct EVENT_ADD_KEY_DONE_INFO *) (
+			    prEvent->aucBuffer);
 
 	DBGLOG(RSN, INFO, "EVENT_ID_ADD_PKEY_DONE BSSIDX=%d " MACSTR
 	       "\n",
@@ -4015,14 +3945,6 @@ void nicEventAddPkeyDoneImpl(IN struct ADAPTER *prAdapter,
 		qmUpdateStaRec(prAdapter, prStaRec);
 	}
 }
-
-void nicEventAddPkeyDone(IN struct ADAPTER *prAdapter,
-			 IN struct WIFI_EVENT *prEvent)
-{
-	nicEventAddPkeyDoneImpl(prAdapter,
-		(struct EVENT_ADD_KEY_DONE_INFO *) (prEvent->aucBuffer));
-}
-
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 struct PARAM_CAL_BACKUP_STRUCT_V2	g_rCalBackupDataV2;
@@ -4197,14 +4119,18 @@ void nicEventRddSendPulse(IN struct ADAPTER *prAdapter,
 	nicEventRddPulseDump(prAdapter, prEvent->aucBuffer);
 }
 
-void nicEventUpdateCoexPhyrateImpl(IN struct ADAPTER *prAdapter,
-		IN struct EVENT_UPDATE_COEX_PHYRATE *prEventUpdateCoexPhyrate)
+void nicEventUpdateCoexPhyrate(IN struct ADAPTER *prAdapter,
+			       IN struct WIFI_EVENT *prEvent)
 {
 	uint8_t i;
+	struct EVENT_UPDATE_COEX_PHYRATE *prEventUpdateCoexPhyrate;
 
 	ASSERT(prAdapter);
 
 	DBGLOG(NIC, LOUD, "%s\n", __func__);
+
+	prEventUpdateCoexPhyrate = (struct EVENT_UPDATE_COEX_PHYRATE
+				    *)(prEvent->aucBuffer);
 
 	for (i = 0; i < (prAdapter->ucHwBssIdNum + 1); i++) {
 		prAdapter->aprBssInfo[i]->u4CoexPhyRateLimit =
@@ -4221,23 +4147,6 @@ void nicEventUpdateCoexPhyrateImpl(IN struct ADAPTER *prAdapter,
 	DBGLOG_LIMITED(NIC, INFO, "Smart Gear SISO:%d, WF:%d\n",
 	       prAdapter->ucSmarGearSupportSisoOnly,
 	       prAdapter->ucSmartGearWfPathSupport);
-
-}
-
-void nicEventUpdateCoexPhyrate(IN struct ADAPTER *prAdapter,
-			       IN struct WIFI_EVENT *prEvent)
-{
-	nicEventUpdateCoexPhyrateImpl(prAdapter,
-		(struct EVENT_UPDATE_COEX_PHYRATE *)(prEvent->aucBuffer));
-}
-
-void nicEventIdcReport(IN struct ADAPTER *prAdapter,
-			       IN struct WIFI_EVENT *prEvent)
-{
-#if CFG_SUPPORT_IDC_CH_SWITCH
-	cnmIdcDetectHandler(prAdapter,
-		(struct EVENT_LTE_SAFE_CHN *)(prEvent->aucBuffer));
-#endif
 }
 
 void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
