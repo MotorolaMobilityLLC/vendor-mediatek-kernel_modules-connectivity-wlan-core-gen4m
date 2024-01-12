@@ -650,6 +650,7 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_HE_ER == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #endif
+	struct AIS_BLACKLIST_ITEM *prBlackList;
 
 	DEBUGFUNC("aisFsmStateInit_JOIN()");
 
@@ -809,8 +810,13 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 			DBGLOG(AIS, TRACE, "FT: RSN FT roaming\n");
 			break;
 		case AUTH_MODE_WPA3_SAE:
+				prBlackList =
+					aisQueryBlackList(prAdapter, prBssDesc);
 			if (rsnSearchPmkidEntry(prAdapter, prBssDesc->aucBSSID,
-						ucBssIndex)) {
+						ucBssIndex)
+				&&
+				(!prBlackList || prBlackList->u2AuthStatus
+					!= STATUS_INVALID_PMKID)) {
 				prAisFsmInfo->ucAvailableAuthTypes =
 					(uint8_t) AUTH_TYPE_OPEN_SYSTEM;
 				DBGLOG(AIS, INFO,
@@ -2987,6 +2993,19 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 					       MAC2STR(prBssDesc->aucBSSID),
 					       prBssDesc->ucJoinFailureCount,
 					       prBssDesc->rJoinFailTime);
+				}
+
+				if (prStaRec->u2StatusCode
+					== STATUS_INVALID_PMKID) {
+					struct AIS_BLACKLIST_ITEM *prBlackList =
+						aisAddBlacklist(prAdapter,
+							prBssDesc);
+					if (prBlackList) {
+						prBlackList->u2AuthStatus =
+							prStaRec->u2StatusCode;
+						DBGLOG(AIS, INFO,
+						    "Add blacklist due to STATUS_INVALID_PMKID\n");
+					}
 				}
 
 				/* Support AP Selection */
