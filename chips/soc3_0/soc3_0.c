@@ -1398,6 +1398,12 @@ static void soc3_0_DumpPcLrLog(struct ADAPTER *prAdapter)
 		soc3_0_CrRead(prAdapter, u4Cr, &log[i]);
 	}
 
+	/* restore */
+	u4Cr = 0x18060090;
+	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+	RegValue = (0x3F<<2) | (u4Value&BITS(0, 1)) | (u4Value&BITS(8, 31));
+	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+
 	soc3_0_DumpMemory32(log, HANG_PC_LOG_NUM, "PC log");
 
 	/* GPR log */
@@ -1428,13 +1434,20 @@ static void soc3_0_DumpPcLrLog(struct ADAPTER *prAdapter)
 		soc3_0_CrRead(prAdapter, u4Cr, &log[i]);
 	}
 
+	/* restore */
+	u4Cr = 0x18060090;
+	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+	RegValue = (0x3F<<8) | (u4Value&BITS(0, 7)) | (u4Value&BITS(14, 31));
+	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+
 	soc3_0_DumpMemory32(log, HANG_PC_LOG_NUM, "GPR log");
 }
 
 static void soc3_0_DumpN10CoreReg(struct ADAPTER *prAdapter)
 {
-#define	HANG_N10_CORE_LOG_NUM	40
+#define	HANG_N10_CORE_LOG_NUM	38
 	uint32_t u4Cr, i;
+	uint32_t u4Value = 0;
 	uint32_t RegValue = 0;
 	uint32_t log[HANG_N10_CORE_LOG_NUM];
 
@@ -1443,30 +1456,31 @@ static void soc3_0_DumpN10CoreReg(struct ADAPTER *prAdapter)
 
 	memset(log, 0, HANG_N10_CORE_LOG_NUM);
 
+/*
+*	[31:26]: gpr_index_sel (set different sets of gpr) = 0
+*	[13:8]: gpr buffer index setting
+*		(set as 0x3F to select the current selected GPR)
+*/
 	u4Cr = 0x18060090;
-	RegValue = 0x00002000;
-	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 
-	u4Cr = 0x18060208;
-	soc3_0_CrRead(prAdapter, u4Cr, &log[0]);
+	u4Value = (0x3F<<8) | (u4Value&BITS(0, 7)) | (u4Value&BITS(14, 31));
 
-	u4Cr = 0x18060090;
-	RegValue = 0x00002100;
-	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+	for (i = 0; i < HANG_N10_CORE_LOG_NUM; i++) {
 
-	u4Cr = 0x18060208;
-	soc3_0_CrRead(prAdapter, u4Cr, &log[1]);
-
-	for (i = 2, RegValue = 0x00003F00; i < HANG_N10_CORE_LOG_NUM; i++) {
+		RegValue = (i<<26) | (u4Value&BITS(0, 25));
 
 		u4Cr = 0x18060090;
 		soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 		u4Cr = 0x18060208;
 		soc3_0_CrRead(prAdapter, u4Cr, &log[i]);
-
-		RegValue += 0x04000000;
 	}
+
+	/* restore */
+	u4Cr = 0x18060090;
+	RegValue = (30<<26) | (u4Value&BITS(0, 25));
+	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 	soc3_0_DumpMemory32(log, HANG_N10_CORE_LOG_NUM, "N10 core register");
 }
@@ -1703,12 +1717,12 @@ void soc3_0_DumpWFDMACr(struct ADAPTER *prAdapter)
 
 static void soc3_0_DumpHostCr(struct ADAPTER *prAdapter)
 {
+	soc3_0_DumpWfsyscpupcr(prAdapter);	/* first dump */
 	soc3_0_DumpPcLrLog(prAdapter);
 	soc3_0_DumpN10CoreReg(prAdapter);
 	soc3_0_DumpOtherCr(prAdapter);
 	soc3_0_DumpHwDebugFlag(prAdapter);
 	soc3_0_DumpSpecifiedWfTop(prAdapter);
-	soc3_0_DumpWfsyscpupcr(prAdapter);
 	soc3_0_DumpWFDMACr(prAdapter);
 } /* soc3_0_DumpHostCr */
 
