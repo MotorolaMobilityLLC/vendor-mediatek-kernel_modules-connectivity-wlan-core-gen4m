@@ -1906,6 +1906,9 @@ s_int32 mt_serv_get_antswap_capability(
 
 	ret = ops->op_get_antswap_capability(
 			serv_test->test_winfo,
+#if (CFG_SUPPORT_CONNAC3X == 1)
+			serv_test->ctrl_band_idx,
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
 			antswap_support);
 
 	return ret;
