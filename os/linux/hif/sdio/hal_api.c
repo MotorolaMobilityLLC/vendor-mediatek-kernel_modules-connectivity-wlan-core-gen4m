@@ -1241,14 +1241,16 @@ halRxEnhanceReadBuffer(IN struct ADAPTER *prAdapter,
 
 		/* 4 <2> if the RFB dw size or packet size is zero */
 		if (u4PktLen == 0) {
-			DBGLOG(RX, ERROR, "Packet Length = %lu\n", u4PktLen);
+			DBGLOG(RX, ERROR, "Packet Length = %u\n",
+				u4PktLen);
 			ASSERT(0);
 			break;
 		}
 		/* 4 <3> if the packet is too large or too small */
 		/* ToDo[6630]: adjust CFG_RX_MAX_PKT_SIZE */
 		if (u4PktLen > CFG_RX_MAX_PKT_SIZE) {
-			DBGLOG(RX, TRACE, "Read RX Packet Lentgh Error (%lu)\n", u4PktLen);
+			DBGLOG(RX, TRACE, "Read RX Packet Lentgh Error (%u)\n",
+				u4PktLen);
 			ASSERT(0);
 			break;
 		}
@@ -1901,7 +1903,8 @@ uint32_t halAllocateIOBuffer(IN struct ADAPTER *prAdapter)
 		kalAllocateIOBuffer(sizeof(struct ENHANCE_MODE_DATA_STRUCT));
 
 	if (prHifInfo->prSDIOCtrl == NULL) {
-		DBGLOG(HAL, ERROR, "Could not allocate %d bytes for interrupt response.\n",
+		DBGLOG(HAL, ERROR,
+			"Could not allocate %u bytes for interrupt response.\n",
 			sizeof(struct ENHANCE_MODE_DATA_STRUCT));
 
 		return WLAN_STATUS_RESOURCES;
@@ -1986,7 +1989,8 @@ void halPrintFirmwareAssertInfo(IN struct ADAPTER *prAdapter)
 
 	aucAssertFile[6] = '\0';
 
-	LOG_FUNC("[%s][wifi][Firmware] Assert at \"%s\" #%ld\n\n", NIC_NAME, aucAssertFile, line);
+	LOG_FUNC("[%s][wifi][Firmware] Assert at \"%s\" #%u\n\n",
+		NIC_NAME, aucAssertFile, line);
 
 }
 
