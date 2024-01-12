@@ -412,8 +412,10 @@ static void heRlmFillHeCapIE(
 #if (CFG_RX_PPE_THRESHOLD == 1)
 	uint8_t *pPPEThreshold;
 #endif
+#if CFG_SUPPORT_BFEE
 	uint8_t ucSupportedNss =
 		wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex) - 1;
+#endif
 	u_int8_t fgTxStbcEn = TRUE;
 
 	struct AIS_FSM_INFO *prAisFsmInfo =
@@ -576,6 +578,7 @@ static void heRlmFillHeCapIE(
 	}
 #endif
 	if ((fgBfEn == TRUE) && (IS_FEATURE_ENABLED(prWifiVar->ucStaHeBfee))) {
+		HE_SET_PHY_CAP_NDP_4X_HE_LTF(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_SU_BFMEE(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_BFMEE_STS_LT_OR_EQ_80M(prHeCap->ucHePhyCap, 3);
 		if (cnmGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand)
@@ -587,6 +590,7 @@ static void heRlmFillHeCapIE(
 		HE_SET_PHY_CAP_CODE_BOOK_7_5_MU_FB(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_TRIG_SU_BF_FB(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_TRIG_MU_BF_PARTIAL_BW_FB(prHeCap->ucHePhyCap);
+		HE_SET_PHY_CAP_TRIG_CQI_FB(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_SU_MU_4X_HE_LTF(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_MAX_NC(prHeCap->ucHePhyCap, ucSupportedNss);
 	}
@@ -596,7 +600,6 @@ static void heRlmFillHeCapIE(
 	if (IS_FEATURE_ENABLED(prWifiVar->ucStaHeSuBfer)) {
 		HE_SET_PHY_CAP_SU_BFMER(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_NUM_OF_SND_DIM_LT_OR_EQ_80M(prHeCap->ucHePhyCap, 1);
-		HE_SET_PHY_CAP_TRIG_SU_BF_FB(prHeCap->ucHePhyCap);
 	}
 #endif
 

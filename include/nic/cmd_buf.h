@@ -214,7 +214,6 @@ wlanSendSetQueryCmdAdv(IN struct ADAPTER *prAdapter,
 		    IN uint32_t u4SetQueryBufferLen,
 		    enum EUNM_CMD_SEND_METHOD eMethod);
 
-#if CFG_SUPPORT_TX_BF
 uint32_t
 wlanSendSetQueryExtCmd(IN struct ADAPTER *prAdapter,
 		       uint8_t ucCID,
@@ -227,7 +226,6 @@ wlanSendSetQueryExtCmd(IN struct ADAPTER *prAdapter,
 		       uint32_t u4SetQueryInfoLen,
 		       uint8_t *pucInfoBuffer, OUT void *pvSetQueryBuffer,
 		       IN uint32_t u4SetQueryBufferLen);
-#endif
 
 uint32_t wlanSendInitCmd(IN struct ADAPTER *prAdapter,
 		    uint8_t ucCID,

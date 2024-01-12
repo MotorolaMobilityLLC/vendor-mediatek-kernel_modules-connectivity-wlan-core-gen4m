@@ -147,6 +147,7 @@
 
 /* HE PHY Capablilites byte2 */
 #define HE_PHY_CAP2_MIDAMBLE_TXRX_MAX_NSTS_SHFT        0
+#define HE_PHY_CAP2_NDP_4X_HE_LTF                      BIT(1)
 #define HE_PHY_CAP2_NDP_4X_HE_LTF_SHFT                 1
 #define HE_PHY_CAP2_STBC_TX_LT_OR_EQ_80M               BIT(2)
 #define HE_PHY_CAP2_STBC_TX_LT_OR_EQ_80M_SHFT          2
@@ -200,6 +201,7 @@
 #define HE_PHY_CAP6_TRIG_SU_BF_FB_SHFT                 2
 #define HE_PHY_CAP6_TRIG_MU_BF_PARTIAL_BW_FB           BIT(3)
 #define HE_PHY_CAP6_TRIG_MU_BF_PARTIAL_BW_FB_SHFT      3
+#define HE_PHY_CAP6_TRIG_CQI_FB                        BIT(4)
 #define HE_PHY_CAP6_TRIG_CQI_FB_SHFT                   4
 #define HE_PHY_CAP6_PARTIAL_BW_EXTENDED_RANGE          BIT(5)
 #define HE_PHY_CAP6_PARTIAL_BW_EXTENDED_RANGE_SHFT     5
@@ -510,6 +512,9 @@ enum ENUM_HEBA_TYPE {
 #define HE_UNSET_PHY_CAP_LDPC_CODING_IN_PAYLOAD(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[1] &= ~HE_PHY_CAP1_LDPC_CODING_IN_PAYLOAD)
 
+#define HE_SET_PHY_CAP_NDP_4X_HE_LTF(_aucHePhyCapInfo) \
+	(_aucHePhyCapInfo[2] |= HE_PHY_CAP2_NDP_4X_HE_LTF)
+
 #define HE_SET_PHY_CAP_STBC_TX_LT_OR_EQ_80M(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[2] |= HE_PHY_CAP2_STBC_TX_LT_OR_EQ_80M)
 
@@ -623,8 +628,8 @@ enum ENUM_HEBA_TYPE {
 #define HE_SET_PHY_CAP_TRIG_MU_BF_PARTIAL_BW_FB(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[6] |= HE_PHY_CAP6_TRIG_MU_BF_PARTIAL_BW_FB)
 
-#define HE_SET_PHY_CAP_HE_PHY_CAP6_TRIG_MU_BF_PARTIAL_BW_FB(_aucHePhyCapInfo) \
-	(_aucHePhyCapInfo[6] |= HE_PHY_CAP6_TRIG_MU_BF_PARTIAL_BW_FB)
+#define HE_SET_PHY_CAP_TRIG_CQI_FB(_aucHePhyCapInfo) \
+	(_aucHePhyCapInfo[6] |= HE_PHY_CAP6_TRIG_CQI_FB)
 
 #define HE_SET_PHY_CAP_PARTIAL_BW_EXTENDED_RANGE(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[6] |= HE_PHY_CAP6_PARTIAL_BW_EXTENDED_RANGE)

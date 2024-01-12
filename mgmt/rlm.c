@@ -1514,7 +1514,9 @@ static void rlmFillVhtCapIE(struct ADAPTER *prAdapter,
 	struct VHT_SUPPORTED_MCS_FIELD *prVhtSupportedMcsSet;
 	uint8_t i;
 	uint8_t ucMaxBw;
+#if CFG_SUPPORT_BFEE
 	struct STA_RECORD *prStaRec;
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
