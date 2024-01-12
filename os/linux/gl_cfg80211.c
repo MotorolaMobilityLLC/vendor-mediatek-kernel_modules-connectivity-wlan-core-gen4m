@@ -3631,7 +3631,7 @@ static int mtk_wlan_cfg_testmode_cmd(struct wiphy *wiphy,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct NL80211_DRIVER_TEST_MODE_PARAMS *prParams = NULL;
-	int32_t i4Status;
+	int32_t i4Status = 0;
 
 	ASSERT(wiphy);
 
