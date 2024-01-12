@@ -1460,9 +1460,10 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 		netif_carrier_on(prDevHandler);
 
 		do {
-
 			uint8_t aucSsid[PARAM_MAX_LEN_SSID + 1] = {0};
+			struct BSS_INFO *prBssInfo;
 
+			prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 			/* print message on console */
 			SET_IOCTL_BSSIDX(prGlueInfo->prAdapter, ucBssIndex);
 			wlanQueryInformation(prGlueInfo->prAdapter,
@@ -1474,10 +1475,9 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			DBGLOG(INIT, INFO,
 				"[wifi] %s netif_carrier_on [ssid:%s " MACSTR
 				"], Mac:" MACSTR "\n",
-				prGlueInfo->prDevHandler->name, aucSsid,
+				prDevHandler->name, aucSsid,
 				MAC2STR(arBssid),
-				MAC2STR(
-				prGlueInfo->prAdapter->rWifiVar.aucMacAddress));
+				MAC2STR(prBssInfo->aucOwnMacAddr));
 
 		} while (0);
 

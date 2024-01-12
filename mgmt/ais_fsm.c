@@ -2311,7 +2311,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 
 			DBGLOG(RLM, INFO,
 			       "AIS req CH for CH:%d, Bw:%d, s1=%d\n",
-			       prAisBssInfo->ucPrimaryChannel,
+			       prMsgChReq->ucPrimaryChannel,
 			       prMsgChReq->eRfChannelWidth,
 			       prMsgChReq->ucRfCenterFreqSeg1);
 			prMsgChReq->ucRfCenterFreqSeg2 = 0;
