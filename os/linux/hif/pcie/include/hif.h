@@ -73,6 +73,7 @@
 #define PCI_SPEED_MASK  0xf
 #define LINK_RETRAIN_TIMEOUT HZ
 #endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -131,7 +132,9 @@ struct HIF_MEM_OPS {
 	void (*freeBuf)(void *pucSrc, uint32_t u4Len);
 	void (*freePacket)(struct GL_HIF_INFO *prHifInfo,
 			   void *pvPacket, uint32_t u4Num);
-	struct HIF_MEM *(*getRsvEmi)(struct GL_HIF_INFO *prHifInfo);
+	struct HIF_MEM *(*getWifiMiscRsvEmi)(
+				struct mt66xx_chip_info *prChipInfo,
+				enum WIFI_MISC_MEM_BLOCK_NAME u4idx);
 	void (*dumpTx)(struct GL_HIF_INFO *prHifInfo,
 		       struct RTMP_TX_RING *prTxRing,
 		       uint32_t u4Idx, uint32_t u4DumpLen);
