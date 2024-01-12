@@ -1533,12 +1533,12 @@ u_int8_t kalWSCGetActiveState(IN struct GLUE_INFO
 /* RSSI Updating                                                              */
 /*----------------------------------------------------------------------------*/
 #ifdef CFG_REMIND_IMPLEMENT
-#define kalUpdateRSSI(_prGlueInfo, _eNetTypeIdx, _cRssi, _cLinkQuality) \
+#define kalUpdateRSSI(_prGlueInfo, _ucBssIndex, _cRssi, _cLinkQuality) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 #else
 void
 kalUpdateRSSI(IN struct GLUE_INFO *prGlueInfo,
-	      IN enum ENUM_KAL_NETWORK_TYPE_INDEX eNetTypeIdx,
+	      IN uint8_t ucBssIndex,
 	      IN int8_t cRssi,
 	      IN int8_t cLinkQuality);
 #endif
