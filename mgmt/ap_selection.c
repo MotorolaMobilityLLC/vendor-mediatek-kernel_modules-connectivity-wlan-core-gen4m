@@ -1819,6 +1819,11 @@ uint8_t scanCheckNeedDriverRoaming(
 	GET_CURRENT_SYSTIME(&roam->rRoamingDiscoveryUpdateTime);
 
 #if CFG_SUPPORT_DRIVER_ROAMING
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	/* No need to roam if we are under MLO */
+	if (aisGetLinkNum(ais) > 1)
+		return FALSE;
+#endif
 	/*
 	 * try to select AP only when roaming is enabled and rssi is bad
 	 */

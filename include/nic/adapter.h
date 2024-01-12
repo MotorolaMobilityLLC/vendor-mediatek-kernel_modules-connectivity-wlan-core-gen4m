@@ -1987,7 +1987,11 @@ struct ADAPTER {
 #endif
 #if CFG_SUPPORT_EXCEPTION_STATISTICS
 	uint32_t total_beacon_timeout_count;
-	uint32_t beacon_timeout_count[BEACON_TIMEOUT_DUE_2_NUM];
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	uint32_t beacon_timeout_count[UNI_ENUM_BCN_TIMEOUT_REASON_MAX_NUM];
+#else
+	uint32_t beacon_timeout_count[BEACON_TIMEOUT_REASON_NUM];
+#endif
 	uint32_t total_tx_done_fail_count;
 	uint32_t tx_done_fail_count[TX_RESULT_NUM];
 	uint32_t total_deauth_rx_count;

@@ -761,9 +761,11 @@
 /* Peer does not support the requested cipher suite */
 #define REASON_CODE_PEER_CIPHER_UNSUPPORTED         45
 /* for beacon timeout, defined by mediatek */
-#define REASON_CODE_BEACON_TIMEOUT		              100
+#define REASON_CODE_BEACON_TIMEOUT		    100
 /* for power control, op mode change fail neeed to disconnect */
-#define REASON_CODE_OP_MODE_CHANGE_FAIL		          101
+#define REASON_CODE_OP_MODE_CHANGE_FAIL		    101
+/* For ARP no response detection */
+#define REASON_CODE_ARP_NO_RESPONSE                 102
 
 /* 7.3.1.8 AID field */
 #define AID_FIELD_LEN                               2
