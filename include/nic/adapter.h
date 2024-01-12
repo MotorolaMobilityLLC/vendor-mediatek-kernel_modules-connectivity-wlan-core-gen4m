@@ -849,7 +849,9 @@ struct WIFI_VAR {
 	uint8_t aucMtkFeature[4];
 	u_int8_t ucGbandProbe256QAM;
 #endif
-
+#if CFG_SUPPORT_VHT_IE_IN_2G
+	uint8_t ucVhtIeIn2g;
+#endif
 	u_int8_t fgCsaInProgress;
 	uint8_t ucChannelSwitchMode;
 	uint8_t ucNewChannelNumber;
