@@ -4150,6 +4150,12 @@ u_int8_t qmAmsduAttackDetection(struct ADAPTER *prAdapter,
 	/* 802.11 header RA */
 	ucBssIndex = prSwRfb->prStaRec->ucBssIndex;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(QM, ERROR, "prBssInfo NULL for BssIndex:%u\n",
+				ucBssIndex);
+		return FALSE;
+	}
+
 	pucRaAddr = &prBssInfo->aucOwnMacAddr[0];
 
 	/* DA and SA */
@@ -4158,6 +4164,10 @@ u_int8_t qmAmsduAttackDetection(struct ADAPTER *prAdapter,
 
 	if (RXM_IS_QOS_DATA_FRAME(u2FrameCtrl)) {
 		ucTid = prSwRfb->ucTid;
+		if (ucTid >= TID_NUM) {
+			DBGLOG(QM, ERROR, "Invalid Tid:%u\n", ucTid);
+			return FALSE;
+		}
 	} else {
 		/* for non-qos data, use TID_NUM as tid */
 		ucTid = TID_NUM;
