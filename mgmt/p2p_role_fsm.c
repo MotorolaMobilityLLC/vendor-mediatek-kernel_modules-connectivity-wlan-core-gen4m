@@ -3492,7 +3492,6 @@ p2pRoleAddTxReq2Queue(IN struct ADAPTER *prAdapter,
 	if (prTmpOffChnlTxReq == NULL) {
 		DBGLOG(P2P, ERROR,
 				"Allocate TX request buffer fails.\n");
-		ASSERT(FALSE);
 		return FALSE;
 	}
 
