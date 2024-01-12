@@ -7435,7 +7435,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 			prAdapter->rWifiVar.u4PerfMonUpdatePeriod;
 #if CFG_SUPPORT_PERF_IND
 		/* Only routine start timer when Tput exist*/
-		if (u4CurrentTp > 0)
+		if (u4CurrentTp > PERF_MON_TP_CONDITION)
 			cnmTimerStartTimer(prGlueInfo->prAdapter,
 					&prPerMonitor->rPerfMonTimer,
 					prPerMonitor->u4UpdatePeriod);
