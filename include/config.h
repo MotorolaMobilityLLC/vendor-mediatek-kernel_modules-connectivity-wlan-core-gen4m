@@ -2170,10 +2170,6 @@
 
 #define CFG_SUPPORT_DISABLE_DATA_DDONE_INTR   1
 
-#ifndef CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT
-#define CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT 0
-#endif
-
 /*------------------------------------------------------------------------------
  * Flags of ATF (ARM Trusted firmware) Support
  *------------------------------------------------------------------------------

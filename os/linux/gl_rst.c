@@ -74,9 +74,7 @@
 #include <linux/workqueue.h>
 
 #include "precomp.h"
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 #include "gl_coredump.h"
-#endif
 #include "gl_fw_log.h"
 #include "gl_rst.h"
 
@@ -168,9 +166,7 @@ const uint8_t *apucRstAction[] = {
 	DISP_STRING("RST_FLAG_DO_L1_RESET")
 };
 
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 u_int8_t g_IsNeedWaitCoredump = FALSE;
-#endif
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
@@ -182,9 +178,7 @@ static enum _ENUM_CHIP_RESET_REASON_TYPE_T eResetReason;
 static struct RESET_STRUCT wifi_rst;
 u_int8_t fgIsResetting = FALSE;
 u_int8_t fgIsDrvTriggerWholeChipReset = FALSE;
-#if (CFG_SUPPORT_CONNINFRA == 1)
-enum ENUM_WF_RST_SOURCE g_eWfRstSource = WF_RST_SOURCE_NONE;
-#endif
+uint8_t g_ucWfRstSource;
 u_int8_t fgIsRstPreventFwOwn = FALSE;
 #endif
 
@@ -291,10 +285,6 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 
 #if CFG_WMT_RESET_API_SUPPORT
 #if (CFG_SUPPORT_CONNINFRA == 1)
-
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-	fw_log_connsys_coredump_init();
-#endif
 	update_driver_reset_status(fgIsResetting);
 	KAL_WAKE_LOCK_INIT(NULL, g_IntrWakeLock, "WLAN Reset");
 	init_waitqueue_head(&g_waitq_rst);
@@ -306,6 +296,7 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 	g_SubsysRstCnt = 0;
 #endif /* CFG_SUPPORT_CONNINFRA */
 #endif
+	wifi_coredump_init(prGlueInfo);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -320,15 +311,12 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 /*----------------------------------------------------------------------------*/
 void glResetUninit(void)
 {
+	wifi_coredump_deinit();
 #if CFG_WMT_RESET_API_SUPPORT
 	/* 1. Deregister reset callback */
 #if (CFG_SUPPORT_CONNINFRA == 0)
 	mtk_wcn_wmt_msgcb_unreg(WMTDRV_TYPE_WIFI);
 #else
-
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-	fw_log_connsys_coredump_deinit();
-#endif
 
 	set_bit(GLUE_FLAG_HALT_BIT, &g_ulFlag);
 	wake_up_interruptible(&g_waitq_rst);
@@ -544,6 +532,7 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 		if (u4RstFlag & RST_FLAG_DO_WHOLE_RESET) {
 			glResetWholeChipResetTrigger(g_reason);
 		} else {
+			g_ucWfRstSource = RST_SOURCE_WIFI_DRIVER;
 			if (prChipInfo->triggerfwassert)
 				prChipInfo->triggerfwassert();
 		}
@@ -1381,10 +1370,10 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 		}
 		fgIsDrvTriggerWholeChipReset = FALSE;
 		g_IsWholeChipRst = TRUE;
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+
 		if (!prGlueInfo->u4ReadyFlag)
 			g_IsNeedWaitCoredump = TRUE;
-#endif
+
 		kalSetRstEvent();
 	}
 	wait_for_completion(&g_RstOffComp);
@@ -1533,22 +1522,16 @@ void glResetSubsysRstProcedure(
 		 * g_SubsysRstCnt > 3, > 30 sec,
 		 * need to update rLastTs, still do wfsys reset
 		 */
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 			if (eResetReason >= RST_REASON_MAX)
 				eResetReason = 0;
 			if (g_fgRstRecover == TRUE)
 				g_fgRstRecover = FALSE;
 			else {
-				if (g_eWfRstSource == WF_RST_SOURCE_FW)
-					fw_log_connsys_coredump_start(
-						-1, NULL);
-				else
-					fw_log_connsys_coredump_start(
-						CONNDRV_TYPE_WIFI,
-						apucRstReason[eResetReason]);
+				wifi_coredump_start(
+					g_ucWfRstSource,
+					apucRstReason[eResetReason]);
 			}
 			g_IsNeedWaitCoredump = FALSE;
-#endif
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 			if (g_IsWfsysBusHang == TRUE)
@@ -1582,21 +1565,16 @@ void glResetSubsysRstProcedure(
 			glResetWholeChipResetTrigger(g_reason);
 		}
 	} else {
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 		if (eResetReason >= RST_REASON_MAX)
 			eResetReason = 0;
 		if (g_fgRstRecover == TRUE)
 			g_fgRstRecover = FALSE;
 		else {
-			if (g_eWfRstSource == WF_RST_SOURCE_FW)
-				fw_log_connsys_coredump_start(-1, NULL);
-			else
-				fw_log_connsys_coredump_start(
-					CONNDRV_TYPE_WIFI,
-					apucRstReason[eResetReason]);
+			wifi_coredump_start(
+				g_ucWfRstSource,
+				apucRstReason[eResetReason]);
 		}
 		g_IsNeedWaitCoredump = FALSE;
-#endif
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 			if (g_IsWfsysBusHang == TRUE)
@@ -1628,9 +1606,7 @@ void glResetSubsysRstProcedure(
 		KAL_GET_PTIME_OF_USEC_OR_NSEC(rLastTs) =
 			KAL_GET_PTIME_OF_USEC_OR_NSEC(rNowTs);
 	}
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-	g_eWfRstSource = WF_RST_SOURCE_NONE;
-#endif
+	g_ucWfRstSource = RST_SOURCE_WIFI_NONE;
 }
 
 int wlan_reset_thread_main(void *data)
@@ -1681,14 +1657,13 @@ int wlan_reset_thread_main(void *data)
 #endif
 
 			if (g_IsWholeChipRst) {
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 				if (eResetReason >= RST_REASON_MAX)
 					eResetReason = 0;
-				fw_log_connsys_coredump_start(
+				wifi_coredump_start(
 					g_WholeChipRstType,
 					g_WholeChipRstReason);
 				g_IsNeedWaitCoredump = FALSE;
-#endif
+
 				if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
 					glResetMsgHandler(WMTMSG_TYPE_RESET,
 						WMTRSTMSG_RESET_START);

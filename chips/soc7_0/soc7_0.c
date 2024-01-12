@@ -1567,11 +1567,11 @@ static int wf_pwr_off_consys_mcu(struct ADAPTER *prAdapter)
 	int check;
 	int value = 0;
 	int polling_count;
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+#if (CFG_WIFI_COREDUMP_SUPPORT == 1)
 	int retryCount = 0;
 #endif
 
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+#if (CFG_WIFI_COREDUMP_SUPPORT == 1)
 	while (g_IsNeedWaitCoredump) {
 		kalMsleep(100);
 		retryCount++;

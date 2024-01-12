@@ -97,11 +97,6 @@ struct coredump_ctx {
 	u_int8_t initialized;
 	bushang_chk_func_cb fn_check_bus_hang;
 	struct coredump_mem mem;
-
-	struct cdev cdev;
-	dev_t devno;
-	struct class *driver_class;
-	struct device *class_dev;
 };
 
 #if CFG_WIFI_COREDUMP_SUPPORT
