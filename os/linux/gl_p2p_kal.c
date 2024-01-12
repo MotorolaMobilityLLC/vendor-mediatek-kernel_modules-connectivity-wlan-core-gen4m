@@ -2751,6 +2751,12 @@ void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 		chandef.center_freq1,
 		chandef.center_freq2);
 
+	/* Notify hostapd channel switch started only for AP mode
+	 * to avoid duplicated csa
+	 */
+	if (prP2PInfo->prWdev->iftype != NL80211_IFTYPE_AP)
+		goto queue_ctrl;
+
 #if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
 	cfg80211_ch_switch_started_notify(prNetdevice, &chandef,
 				  ucLinkIdx, ucCsaCount, fgQuiet, 0);
@@ -2769,6 +2775,7 @@ void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 	cfg80211_ch_switch_started_notify(prNetdevice, &chandef, ucCsaCount);
 #endif
 
+queue_ctrl:
 	if (fgQuiet)
 		netif_tx_stop_all_queues(prNetdevice);
 }
