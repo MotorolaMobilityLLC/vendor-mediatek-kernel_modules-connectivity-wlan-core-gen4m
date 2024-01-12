@@ -5616,6 +5616,7 @@ void nicUniEventRfTestHandler(IN struct ADAPTER
 	struct ICAP_INFO_T *prIcapInfo;
 	struct UNI_EVENT_RF_TEST_RESULT *prRfResult;
 	struct EXT_EVENT_RBIST_CAP_STATUS_T *prCapStatus;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
@@ -5640,37 +5641,41 @@ void nicUniEventRfTestHandler(IN struct ADAPTER
 				prCapStatus = (struct EXT_EVENT_RBIST_CAP_STATUS_T *)
 							(tag + sizeof(struct UNI_EVENT_RF_TEST_TLV));
 
-				DBGLOG(RFTEST, INFO,
-					"iCapDone=%d, icap state=%d\n",
-					prCapStatus->u4CapDone,
-					prAdapter->rIcapInfo.eIcapState);
+				DBGLOG(RFTEST, INFO, "%s:iCapDone=%d\n",
+						__func__,
+					   prCapStatus->u4CapDone);
 
-				if (prCapStatus->u4CapDone &&
-					prIcapInfo->eIcapState != ICAP_STATE_FW_DUMP_DONE) {
+				if (prCapStatus->u4CapDone)
+					/* Rsp to QAtool ok */
+					prAdapter->ucICapDone = 1;
+				else
+					/* Rsp to QAtool wait */
+					prAdapter->ucICapDone = 0;
 
-					wlanoidRfTestICapRawDataProc(prAdapter,
-					 0 /*prCapStatus->u4CapStartAddr*/,
-					 0 /*prCapStatus->u4TotalBufferSize*/);
+				DBGLOG(RFTEST, INFO, "%s:pAd->ucICapDone=%d\n",
+						__func__,
+					   prAdapter->ucICapDone);
 
-					prIcapInfo->eIcapState = ICAP_STATE_FW_DUMPING;
-
-				}
 			} else if (prRfResult->u4FuncIndex == GET_ICAP_RAW_DATA) {
 
-				DBGLOG(RFTEST, INFO,
-					"u4FuncIndex=%d, icap state=%d\n",
-					prRfResult->u4FuncIndex,
-					prAdapter->rIcapInfo.eIcapState);
+				DBGLOG(RFTEST, INFO, "%s:u4FuncIndex=%d\n",
+						__func__,
+					   prRfResult->u4FuncIndex);
 
-				if (prAteOps->getRbistDataDumpEvent) {
-					prAteOps->getRbistDataDumpEvent(prAdapter,
+#if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1)
+				if (prAteOps->getICapDataDumpCmdEvent) {
+					prAteOps->getICapDataDumpCmdEvent(
+							prAdapter,
+							prCmdInfo,
 							tag + sizeof(struct UNI_EVENT_RF_TEST_TLV));
-
-					if (prIcapInfo->eIcapState != ICAP_STATE_FW_DUMP_DONE)
-						wlanoidRfTestICapRawDataProc(prAdapter,
-						0 /*prCapStatus->u4CapStartAddr*/,
-						0 /*prCapStatus->u4TotalBufferSize*/);
 				}
+#else
+			if (prAteOps->getRbistDataDumpEvent) {
+				prAteOps->getRbistDataDumpEvent(
+				prAdapter,
+				tag + sizeof(struct UNI_EVENT_RF_TEST_TLV));
+			}
+#endif
 
 			} else {
 				DBGLOG(NIC, WARN, "Unknown funcIdx rf test event = %d\n",
@@ -5685,6 +5690,13 @@ void nicUniEventRfTestHandler(IN struct ADAPTER
 			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
 			break;
 		}
+	}
+
+	if (prCmdInfo->fgIsOid) {
+		kalOidComplete(prGlueInfo,
+				prCmdInfo,
+				sizeof(struct CMD_TEST_CTRL_EXT_T),
+				WLAN_STATUS_SUCCESS);
 	}
 
 }

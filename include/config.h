@@ -233,6 +233,12 @@
 /* Enable QA Tool Support */
 #define CFG_SUPPORT_QA_TOOL	1
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+#define CFG_SUPPORT_ICAP_SOLICITED_EVENT	1
+#else
+#define CFG_SUPPORT_ICAP_SOLICITED_EVENT	0
+#endif
+
 /* Enable TX BF Support */
 #define CFG_SUPPORT_TX_BF	1
 

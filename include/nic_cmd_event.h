@@ -3757,7 +3757,12 @@ uint32_t nicCmdEventCasanLoadType(IN struct ADAPTER *prAdapter,
 					IN uint8_t *pucEventBuf);
 
 void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
-			   IN uint8_t *pucEventBuf);
+				IN uint8_t *pucEventBuf);
+#if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1)
+void nicExtCmdEventSolicitICapIQData(IN struct ADAPTER *prAdapter,
+					IN struct CMD_INFO *prCmdInfo,
+					IN uint8_t *pucEventBuf);
+#endif
 void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 			 IN struct WIFI_EVENT *prEvent);
 void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,

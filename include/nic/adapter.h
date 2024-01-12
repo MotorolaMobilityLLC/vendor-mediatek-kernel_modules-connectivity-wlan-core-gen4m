@@ -1734,7 +1734,12 @@ struct ADAPTER {
 	uint8_t ucSmartGearWfPathSupport;
 
 	struct PERF_MONITOR rPerMonitor;
+
+	/* ICAP */
+	u_int8_t ucICapDone;
 	struct ICAP_INFO_T rIcapInfo;
+	struct RBIST_DUMP_IQ_T QAICapInfo;
+	struct EXT_EVENT_RBIST_DUMP_DATA_T IcapDumpEvent;
 	struct RECAL_INFO_T rReCalInfo;
 
 	/* Support change QM RX BA entry miss timeout (unit: ms) dynamically */

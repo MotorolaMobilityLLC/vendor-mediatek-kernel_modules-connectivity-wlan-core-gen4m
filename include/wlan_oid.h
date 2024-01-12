@@ -2062,7 +2062,11 @@ struct RBIST_DUMP_IQ_T {
 	uint32_t u4IQType;
 	uint32_t u4IcapCnt; /*IQ Sample Count*/
 	uint32_t u4IcapDataLen;
+#if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1)
+	int32_t *pIcapData;
+#else
 	uint8_t *pucIcapData;
+#endif
 };
 
 
@@ -2071,7 +2075,9 @@ struct RBIST_DUMP_RAW_DATA_T {
 	uint32_t u4AddrOffset;
 	uint32_t u4Bank;
 	uint32_t u4BankSize;/* Uint:Kbytes */
-	uint32_t u4Reserved[8];
+	uint32_t u4WFNum;
+	uint32_t u4IQType;
+	uint32_t u4Reserved[6];
 };
 
 /* FuncIndex */
@@ -3701,6 +3707,14 @@ wlanoidExtRfTestICapStatus(IN struct ADAPTER *prAdapter,
 void wlanoidRfTestICapRawDataProc(IN struct ADAPTER *prAdapter,
 				  uint32_t u4CapStartAddr,
 				  uint32_t u4TotalBufferSize);
+
+#if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1)
+uint32_t
+wlanoidRfTestICapCopyDataToQA(IN struct ADAPTER *prAdapter,
+			   IN void *pvSetBuffer,
+			   IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen);
+#endif
 
 #if CFG_SUPPORT_WAPI
 uint32_t
