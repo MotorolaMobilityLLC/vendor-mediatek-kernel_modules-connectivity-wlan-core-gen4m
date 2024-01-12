@@ -4029,7 +4029,7 @@ struct UNI_CMD_FRM_IND_FROM_HOST_PARM {
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
-struct UNI_CMD_TESTMODE_CTRL {
+struct UNI_CMD_TESTMODE {
 	/* fix field*/
 	uint8_t aucPadding[4];
 
@@ -4038,15 +4038,17 @@ struct UNI_CMD_TESTMODE_CTRL {
 	*
 	*   TAG                            | ID  | structure
 	*   -------------------------------|-----|--------------
-	*   UNI_CMD_TESTMODE_TAG_RF_CTRL   | 0x0 | UNI_CMD_TESTMODE_RF_CTRL
+	*   UNI_CMD_TESTMODE_TAG_CTRL      | 0x0 | UNI_CMD_TESTMODE_CTRL
 	*   UNI_CMD_TESTMODE_TAG_LISTMODE  | 0x1 | UNI_CMD_TESTMODE_LISTMODE
+	*   UNI_CMD_TESTMODE_TAG_XO_CAL    | 0x2 | UNI_CMD_TESTMODE_XO_CAL
 	*/
 } __KAL_ATTRIB_PACKED__;
 
 /** testmode RF test command TLV List */
 enum ENUM_UNI_CMD_TESTMODE_CTRL_TAG {
-	UNI_CMD_TESTMODE_TAG_RF_CTRL = 0x0,
+	UNI_CMD_TESTMODE_TAG_CTRL = 0x0,
 	UNI_CMD_TESTMODE_TAG_LISTMODE = 0x1,
+	UNI_CMD_TESTMODE_TAG_XO_CAL = 0x2,
 	UNI_CMD_TESTMODE_TAG_NUM
 };
 
@@ -4054,7 +4056,7 @@ enum ENUM_UNI_CMD_TESTMODE_CTRL_TAG {
  * @{
  */
 /**
- * This structure is used for UNI_CMD_TESTMODE_TAG_RF_CTRL(0x00)
+ * This structure is used for UNI_CMD_TESTMODE_TAG_CTRL(0x00)
  * of UNI_CMD_ID_TESTMODE_CTRL command (0x46)
  * to set testmode RF parameter.
  * @version Supported from ver:1.0.0.0
@@ -4071,7 +4073,7 @@ enum ENUM_UNI_CMD_TESTMODE_CTRL_TAG {
  */
 /* Set testmode RF parameter cmd struct (Tag 0x00) */
 __KAL_ATTRIB_PACKED_FRONT__
-struct UNI_CMD_TESTMODE_RF_CTRL {
+struct UNI_CMD_TESTMODE_CTRL {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 
@@ -4095,7 +4097,7 @@ struct UNI_CMD_TESTMODE_RF_CTRL {
  * to set testmode listmode.
  * @version Supported from ver:1.0.0.0
  *
- * @param[in] u2Tag         should be 0x00
+ * @param[in] u2Tag         should be 0x01
  * @param[in] u2Length      the length of this TLV
  * @param[in] aucData       list mode data
  */
@@ -4105,6 +4107,35 @@ struct UNI_CMD_TESTMODE_LISTMODE {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t aucData[TESTMODE_LISTMODE_DATA_LEN];
+} __KAL_ATTRIB_PACKED__;
+
+/** @addtogroup UNI_CMD_ID_TESTMODE_XO_CAL
+ * @{
+ */
+/**
+ * This structure is used for UNI_CMD_TESTMODE_TAG_XO_CAL(0x02)
+ * of UNI_CMD_ID_TESTMODE_CTRL command (0x46)
+ * to set testmode Xtal calibration.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag         should be 0x02
+ * @param[in] u2Length      the length of this TLV
+ * @param[in] rXoReq        XO request parameters
+ */
+/* Set testmode XO calibratrion cmd struct (Tag 0x02) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_TESTMODE_XO_CAL_REQ {
+	uint32_t u4CalType;
+	uint32_t u4ClkSrc;
+	uint32_t u4Mode;
+	uint32_t u4TargetReq;
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_TESTMODE_XO_CAL {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	struct UNI_CMD_TESTMODE_XO_CAL_REQ rXoReq;
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -6774,24 +6805,26 @@ struct UNI_EVENT_TESTMODE_CTRL {
 	/*tlv */
 	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
 	*
-	*   TAG                          | ID  | structure
-	*   -----------------------------|-----|--------------
-	*   UNI_EVENT_RF_TEST_RESULT_TAG | 0x0 | UNI_EVENT_TESTMODE_CTRL
+	*   TAG                           | ID  | structure
+	*   ------------------------------|-----|--------------
+	*   UNI_EVENT_TESTMODE_TAG_RESULT | 0x0 | UNI_EVENT_TESTMODE_RESULT_TLV
+	*   UNI_EVENT_TESTMODE_TAG_XO_CAL | 0x1 | UNI_EVENT_TESTMODE_XO_CAL
 	*/
 } __KAL_ATTRIB_PACKED__;
 /** @} */
 
 /* testmode RF test event tag */
-enum UNI_EVENT_TESTMODE_CTRL_TAG {
-	UNI_EVENT_RF_TEST_RESULT_TAG,
-	UNI_EVENT_TESTMODE_CTRL_NUM
+enum UNI_EVENT_TESTMODE_TAG {
+	UNI_EVENT_TESTMODE_TAG_RESULT = 0x0,
+	UNI_EVENT_TESTMODE_TAG_XO_CAL = 0x1,
+	UNI_EVENT_TESTMODE_TAG_NUM
 };
 
 /** @addtogroup UNI_EVENT_ID_TESTMODE_CTRL
  * @{
  */
 /**
- * This structure is used for UNI_EVENT_RF_TEST_RESULT tag(0x0) of
+ * This structure is used for UNI_EVENT_TESTMODE_RESULT tag(0x0) of
  * UNI_EVENT_ID_TESTMODE_CTRL event (0x46)
  * to report testmode RF status.
  * @version Supported from ver:1.0.0.0
@@ -6802,7 +6835,7 @@ enum UNI_EVENT_TESTMODE_CTRL_TAG {
  */
 /* Testmode RF status (Tag0) */
 __KAL_ATTRIB_PACKED_FRONT__
-struct UNI_EVENT_RF_TEST_TLV {
+struct UNI_EVENT_TESTMODE_RESULT_TLV {
     uint16_t u2Tag;
     uint16_t u2Length;
 
@@ -6811,10 +6844,47 @@ struct UNI_EVENT_RF_TEST_TLV {
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
-struct UNI_EVENT_RF_TEST_RESULT {
+struct UNI_EVENT_TESTMODE_RESULT {
 	uint32_t u4FuncIndex;
 	uint32_t u4PayloadLength;
 	uint8_t  aucEvent[0];
+} __KAL_ATTRIB_PACKED__;
+/** @} */
+
+/** @addtogroup UNI_EVENT_ID_TESTMODE_CTRL
+ * @{
+ */
+/**
+ * This structure is used for UNI_EVENT_TESTMODE_TAG_XO_CAL (0x1) of
+ * UNI_EVENT_ID_TESTMODE_CTRL event (0x46)
+ * to report testmode XO calibration data.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag                should be 0x01
+ * @param[in] u2Length             the length of this TLV
+ * @param[in] rXoCal              the XO calibration data
+ */
+/* Testmode XO calibration data (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_TESTMODE_XO_CAL_DATA {
+	uint32_t u4AxmFreq;
+	uint32_t u4AxmC1Freq;
+	uint32_t u4AxmC2Freq;
+	uint32_t u4AxmC1Comp;
+	uint32_t u4AxmC2Comp;
+
+	uint32_t u4BtmFreq;
+	uint32_t u4BtmC1Freq;
+	uint32_t u4BtmC2Freq;
+	uint32_t u4BtmC1Comp;
+	uint32_t u4BtmC2Comp;
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_TESTMODE_XO_CAL {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	struct UNI_EVENT_TESTMODE_XO_CAL_DATA	rXoCal;
 } __KAL_ATTRIB_PACKED__;
 /** @} */
 
@@ -8195,6 +8265,11 @@ uint32_t nicUniCmdTestmodeListmode(struct ADAPTER *ad,
 #endif
 uint32_t nicUniCmdTestmodeCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+#if CFG_SUPPORT_XONVRAM
+uint32_t nicUniCmdTestmodeXOCal(struct ADAPTER *ad,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen);
+#endif /* CFG_SUPPORT_XONVRAM */
 #if CFG_SUPPORT_QA_TOOL
 uint32_t nicUniExtCmdTestmodeCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
@@ -8362,6 +8437,10 @@ void nicUniEventAllStatsOneCmd(struct ADAPTER
 #endif
 void nicUniEventQueryRfTestATInfo(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+#if CFG_SUPPORT_XONVRAM
+void nicUniEventRfTestXoCal(struct ADAPTER *ad,
+	struct CMD_INFO *cmd, uint8_t *event);
+#endif /* CFG_SUPPORT_XONVRAM */
 void nicUniEventQueryRxStatAll(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 void nicUniEventQueryRxStatAllCon3(struct ADAPTER

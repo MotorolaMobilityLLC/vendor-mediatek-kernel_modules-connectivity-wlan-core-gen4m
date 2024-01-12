@@ -6443,11 +6443,11 @@ uint32_t nicUniCmdTestmodeCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
 	struct CMD_TEST_CTRL *cmd;
-	struct UNI_CMD_TESTMODE_CTRL *uni_cmd;
-	struct UNI_CMD_TESTMODE_RF_CTRL *tag;
+	struct UNI_CMD_TESTMODE *uni_cmd;
+	struct UNI_CMD_TESTMODE_CTRL *tag;
 	struct WIFI_UNI_CMD_ENTRY *entry;
-	uint32_t max_cmd_len = sizeof(struct UNI_CMD_TESTMODE_CTRL) +
-	     		       sizeof(struct UNI_CMD_TESTMODE_RF_CTRL);
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_TESTMODE) +
+				sizeof(struct UNI_CMD_TESTMODE_CTRL);
 
 	if (info->ucCID != CMD_ID_TEST_CTRL)
 		return WLAN_STATUS_NOT_ACCEPTED;
@@ -6493,9 +6493,9 @@ uint32_t nicUniCmdTestmodeCtrl(struct ADAPTER *ad,
 	if (!entry)
 		return WLAN_STATUS_RESOURCES;
 
-	uni_cmd = (struct UNI_CMD_TESTMODE_CTRL *) entry->pucInfoBuffer;
-	tag = (struct UNI_CMD_TESTMODE_RF_CTRL *) uni_cmd->aucTlvBuffer;
-	tag->u2Tag = UNI_CMD_TESTMODE_TAG_RF_CTRL;
+	uni_cmd = (struct UNI_CMD_TESTMODE *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_TESTMODE_CTRL *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_TESTMODE_TAG_CTRL;
 	tag->u2Length = sizeof(*tag);
 	tag->ucAction = cmd->ucAction;
 	kalMemCopy(&tag->u, &cmd->u, sizeof(cmd->u));
@@ -6505,12 +6505,58 @@ uint32_t nicUniCmdTestmodeCtrl(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if CFG_SUPPORT_XONVRAM
+uint32_t nicUniCmdTestmodeXOCal(struct ADAPTER *ad,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen)
+{
+	struct TEST_MODE_XO_CAL *data = pvQueryBuffer;
+	struct UNI_CMD_TESTMODE *uni_cmd;
+	struct UNI_CMD_TESTMODE_XO_CAL *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_TESTMODE_CTRL) +
+		sizeof(struct UNI_CMD_TESTMODE_XO_CAL);
+	uint32_t status = WLAN_STATUS_SUCCESS;
+
+	uni_cmd = (struct UNI_CMD_TESTMODE *) cnmMemAlloc(ad,
+			RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(RFTEST, ERROR,
+		       "Allocate UNI_CMD_TESTMODE_CTRL ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_TESTMODE_XO_CAL *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_TESTMODE_TAG_XO_CAL;
+	tag->u2Length = sizeof(*tag);
+	tag->rXoReq.u4CalType = data->u4CalType;
+	tag->rXoReq.u4ClkSrc = data->u4ClkSrc;
+	tag->rXoReq.u4Mode = data->u4Mode;
+	tag->rXoReq.u4TargetReq = data->u4TargetReq;
+
+	status = wlanSendSetQueryUniCmd(ad,
+					UNI_CMD_ID_TESTMODE_CTRL,
+					FALSE,
+					TRUE,
+					TRUE,
+					nicUniEventRfTestXoCal,
+					nicUniCmdTimeoutCommon,
+					max_cmd_len,
+					(void *)uni_cmd,
+					pvQueryBuffer,
+					u4QueryBufferLen);
+
+	cnmMemFree(ad, uni_cmd);
+	return status;
+}
+#endif /* CFG_SUPPORT_XONVRAM */
+
 #if CFG_SUPPORT_QA_TOOL
 #if (CONFIG_WLAN_SERVICE == 1)
 uint32_t nicUniCmdTestmodeListmode(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
-	struct UNI_CMD_TESTMODE_CTRL *uni_cmd;
+	struct UNI_CMD_TESTMODE *uni_cmd;
 	struct UNI_CMD_TESTMODE_LISTMODE *tag;
 	struct WIFI_UNI_CMD_ENTRY *entry;
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_TESTMODE_CTRL) +
@@ -6529,7 +6575,7 @@ uint32_t nicUniCmdTestmodeListmode(struct ADAPTER *ad,
 	if (!entry)
 		return WLAN_STATUS_RESOURCES;
 
-	uni_cmd = (struct UNI_CMD_TESTMODE_CTRL *) entry->pucInfoBuffer;
+	uni_cmd = (struct UNI_CMD_TESTMODE *) entry->pucInfoBuffer;
 	tag = (struct UNI_CMD_TESTMODE_LISTMODE *) uni_cmd->aucTlvBuffer;
 	tag->u2Tag = UNI_CMD_TESTMODE_TAG_LISTMODE;
 	tag->u2Length = sizeof(*tag);
@@ -6549,11 +6595,11 @@ uint32_t nicUniExtCmdTestmodeCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
 	struct CMD_TEST_CTRL_EXT_T *cmd;
-	struct UNI_CMD_TESTMODE_CTRL *uni_cmd;
-	struct UNI_CMD_TESTMODE_RF_CTRL *tag;
+	struct UNI_CMD_TESTMODE *uni_cmd;
+	struct UNI_CMD_TESTMODE_CTRL *tag;
 	struct WIFI_UNI_CMD_ENTRY *entry = NULL;
-	uint32_t max_cmd_len = sizeof(struct UNI_CMD_TESTMODE_CTRL) +
-							sizeof(struct UNI_CMD_TESTMODE_RF_CTRL);
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_TESTMODE) +
+				sizeof(struct UNI_CMD_TESTMODE_CTRL);
 
 	DBGLOG(NIC, INFO, "nicUniExtCmdTestmodeCtrl\n");
 
@@ -6590,9 +6636,9 @@ uint32_t nicUniExtCmdTestmodeCtrl(struct ADAPTER *ad,
 	if (!entry)
 		return WLAN_STATUS_RESOURCES;
 
-	uni_cmd = (struct UNI_CMD_TESTMODE_CTRL *) entry->pucInfoBuffer;
-	tag = (struct UNI_CMD_TESTMODE_RF_CTRL *) uni_cmd->aucTlvBuffer;
-	tag->u2Tag = UNI_CMD_TESTMODE_TAG_RF_CTRL;
+	uni_cmd = (struct UNI_CMD_TESTMODE *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_TESTMODE_CTRL *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_TESTMODE_TAG_CTRL;
 	tag->u2Length = sizeof(*tag);
 	tag->ucAction = cmd->ucAction;
 	kalMemCopy(&tag->u, &cmd->u, sizeof(tag->u));
@@ -8728,7 +8774,7 @@ void nicUniEventRfTestHandler(struct ADAPTER
 	struct ATE_OPS_T *prAteOps = NULL;
 #endif
 	struct ICAP_INFO_T *prIcapInfo;
-	struct UNI_EVENT_RF_TEST_RESULT *prRfResult;
+	struct UNI_EVENT_TESTMODE_RESULT *prRfResult;
 	struct EXT_EVENT_RBIST_CAP_STATUS_T *prCapStatus;
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 
@@ -8747,15 +8793,18 @@ void nicUniEventRfTestHandler(struct ADAPTER
 		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 
 		switch (TAG_ID(tag)) {
-		case UNI_EVENT_RF_TEST_RESULT_TAG: {
+		case UNI_EVENT_TESTMODE_TAG_RESULT: {
 
-			prRfResult = (struct UNI_EVENT_RF_TEST_RESULT *)
-				(tag + sizeof(struct UNI_EVENT_RF_TEST_TLV));
+			prRfResult = (struct UNI_EVENT_TESTMODE_RESULT *)
+			(tag + sizeof(struct UNI_EVENT_TESTMODE_RESULT_TLV));
 
 			if (prRfResult->u4FuncIndex == GET_ICAP_CAPTURE_STATUS) {
 
-				prCapStatus = (struct EXT_EVENT_RBIST_CAP_STATUS_T *)
-							(tag + sizeof(struct UNI_EVENT_RF_TEST_TLV));
+				prCapStatus =
+					(struct EXT_EVENT_RBIST_CAP_STATUS_T *)
+					(tag +
+					sizeof(
+					struct UNI_EVENT_TESTMODE_RESULT_TLV));
 
 				DBGLOG(RFTEST, INFO, "%s:iCapDone=%d\n",
 						__func__,
@@ -8781,15 +8830,18 @@ void nicUniEventRfTestHandler(struct ADAPTER
 #if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1)
 				if (prAteOps->getICapDataDumpCmdEvent) {
 					prAteOps->getICapDataDumpCmdEvent(
-							prAdapter,
-							prCmdInfo,
-							tag + sizeof(struct UNI_EVENT_RF_TEST_TLV));
+					prAdapter,
+					prCmdInfo,
+					tag +
+					sizeof(
+					struct UNI_EVENT_TESTMODE_RESULT_TLV));
 				}
 #else
 			if (prAteOps->getRbistDataDumpEvent) {
 				prAteOps->getRbistDataDumpEvent(
 				prAdapter,
-				tag + sizeof(struct UNI_EVENT_RF_TEST_TLV));
+				tag +
+				sizeof(struct UNI_EVENT_TESTMODE_RESULT_TLV));
 			}
 #endif
 #endif
@@ -9345,11 +9397,49 @@ void nicUniEventQueryRfTestATInfo(struct ADAPTER
 	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *)pucEventBuf;
 	struct UNI_EVENT_TESTMODE_CTRL *evt =
 		(struct UNI_EVENT_TESTMODE_CTRL *)uni_evt->aucBuffer;
-	struct UNI_EVENT_RF_TEST_TLV *tag =
-		(struct UNI_EVENT_RF_TEST_TLV *)evt->aucTlvBuffer;
+	struct UNI_EVENT_TESTMODE_RESULT_TLV *tag =
+		(struct UNI_EVENT_TESTMODE_RESULT_TLV *)evt->aucTlvBuffer;
 
 	nicCmdEventQueryRfTestATInfo(prAdapter, prCmdInfo, tag->aucBuffer);
 }
+
+#if CFG_SUPPORT_XONVRAM
+void nicUniEventRfTestXoCal(struct ADAPTER *ad,
+	struct CMD_INFO *cmd, uint8_t *event)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *)event;
+	struct UNI_EVENT_TESTMODE_CTRL *evt;
+	struct UNI_EVENT_TESTMODE_XO_CAL *tag;
+	struct TEST_MODE_XO_CAL *response;
+
+	uni_evt = (struct WIFI_UNI_EVENT *) event;
+	if (uni_evt->ucEID != UNI_EVENT_ID_TESTMODE_CTRL)
+		return;
+
+	evt = (struct UNI_EVENT_TESTMODE_CTRL *)uni_evt->aucBuffer;
+
+	tag = (struct UNI_EVENT_TESTMODE_XO_CAL *)evt->aucTlvBuffer;
+	if (tag->u2Tag != UNI_EVENT_TESTMODE_TAG_XO_CAL)
+		return;
+
+	if (cmd->pvInformationBuffer) {
+		response = cmd->pvInformationBuffer;
+		response->u4AxmFreq = tag->rXoCal.u4AxmFreq;
+		response->u4AxmC1Freq = tag->rXoCal.u4AxmC1Freq;
+		response->u4AxmC2Freq = tag->rXoCal.u4AxmC2Freq;
+		response->u4AxmC1Comp = tag->rXoCal.u4AxmC1Comp;
+		response->u4AxmC2Comp = tag->rXoCal.u4AxmC2Comp;
+		response->u4BtmFreq = tag->rXoCal.u4BtmFreq;
+		response->u4BtmC1Freq = tag->rXoCal.u4BtmC1Freq;
+		response->u4BtmC2Freq = tag->rXoCal.u4BtmC2Freq;
+		response->u4BtmC1Comp = tag->rXoCal.u4BtmC1Comp;
+		response->u4BtmC2Comp = tag->rXoCal.u4BtmC2Comp;
+	}
+
+	kalOidComplete(ad->prGlueInfo, cmd, cmd->u4InformationBufferLength,
+		WLAN_STATUS_SUCCESS);
+}
+#endif /* CFG_SUPPORT_XONVRAM */
 
 #if CFG_SUPPORT_QA_TOOL
 #if (CFG_SUPPORT_CONNAC3X == 0)
