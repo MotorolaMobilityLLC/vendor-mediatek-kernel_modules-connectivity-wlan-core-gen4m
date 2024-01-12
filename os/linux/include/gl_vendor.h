@@ -1208,9 +1208,10 @@ struct WIFI_RADIO_CHANNEL_STAT {
 	struct STATS_LLS_CHANNEL_STAT channel[STATS_LLS_CH_NUM];
 };
 
-/* IFACE_NUM as BSSID_NUM to retrived statistics by interface; or sum up else */
+/* IFACE_NUM as LLX_BSS_NUM to retrieved statistics by interface; or sum up */
+#define LLX_BSS_NUM 4 /* TODO: depends on definition from FW */
 #if (CFG_SUPPORT_CONNAC3X == 1)
-#define IFACE_NUM BSSID_NUM
+#define IFACE_NUM LLX_BSS_NUM
 #else
 #define IFACE_NUM 1
 #endif
