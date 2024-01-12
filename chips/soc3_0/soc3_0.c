@@ -1018,14 +1018,15 @@ void soc3_0_DumpWfsysCpupcr(struct ADAPTER *prAdapter)
 {
 	uint32_t i = 0, u4Value = 0, u4Value_2 = 0;
 
+	if (prAdapter == NULL)
+		return;
+
 	for (i = 0; i < 5; i++) {
 		HAL_MCR_RD(prAdapter, WFSYS_CPUPCR_ADDR, &u4Value);
 		HAL_MCR_RD(prAdapter, WFSYS_LP_ADDR, &u4Value_2);
 		DBGLOG(HAL, INFO,
 			"MCU PC: 0x%08x, MCU LP: 0x%08x\n", u4Value, u4Value_2);
-
 	}
-
 }
 
 int wf_ioremap_read(size_t addr, unsigned int *val)
@@ -1059,6 +1060,23 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val)
 	DBGLOG(INIT, TRACE, "Write CONSYS 0x%08x=0x%08x.\n", addr, val);
 
 	return 0;
+}
+
+void soc3_0_CrRead(struct ADAPTER *prAdapter, size_t addr, unsigned int *val)
+{
+	if (prAdapter == NULL)
+		wf_ioremap_read(addr, val);
+	else
+		HAL_MCR_RD(prAdapter, (addr|0x64000000), val);
+}
+
+void soc3_0_CrWrite(struct ADAPTER *prAdapter,
+	phys_addr_t addr, unsigned int val)
+{
+	if (prAdapter == NULL)
+		wf_ioremap_write(addr, val);
+	else
+		HAL_MCR_WR(prAdapter, (addr|0x64000000), val);
 }
 
 void soc3_0_DumpWfsysdebugflag(void)
@@ -1113,39 +1131,37 @@ int soc3_0_Trigger_fw_assert(void)
 	int ret = 0;
 	int value;
 	uint32_t waitRet = 0;
-
-	ret = soc3_0_CheckBusHang(TRUE);
-
-	if (ret != 0) {
-		DBGLOG(INIT, INFO, "Do nothing due to bus hang.\n");
-		g_IsWfsysBusHang = TRUE;
-		return ret;
-	} else {
-		DBGLOG(HAL, INFO, "Trigger fw assert start.\n");
-		wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
-		value &= 0xFFFFFF7F;
-		ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
-		waitRet = wait_for_completion_timeout(&g_triggerComp,
-				MSEC_TO_JIFFIES(WIFI_TRIGGER_ASSERT_TIMEOUT));
-		if (waitRet > 0) {
+	soc3_0_CheckBusHang(NULL, FALSE);
+	if (g_IsWfsysBusHang == TRUE) {
+		DBGLOG(HAL, INFO,
+			"Already trigger conninfra whole chip reset.\n");
+		return 0;
+	}
+	DBGLOG(HAL, INFO, "Trigger fw assert start.\n");
+	wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
+	value &= 0xFFFFFF7F;
+	ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
+	waitRet = wait_for_completion_timeout(&g_triggerComp,
+			MSEC_TO_JIFFIES(WIFI_TRIGGER_ASSERT_TIMEOUT));
+	if (waitRet > 0) {
 		/* Case 1: No timeout. */
-			soc3_0_DumpWfsysInfo();
-			DBGLOG(INIT, INFO, "Trigger assert successfully.\n");
-		} else {
+		soc3_0_DumpWfsysInfo();
+		DBGLOG(INIT, INFO, "Trigger assert successfully.\n");
+	} else {
 		/* Case 2: timeout */
-			DBGLOG(INIT, ERROR,
-				"Trigger assert more than 2 seconds, need to trigger rst self\n");
+		DBGLOG(INIT, ERROR,
+			"Trigger assert more than 2 seconds, need to trigger rst self\n");
 			soc3_0_DumpWfsysInfo();
 			soc3_0_DumpWfsysdebugflag();
 			g_IsTriggerTimeout = TRUE;
-		}
-#if (CFG_SUPPORT_CONNINFRA == 1)
-		kalSetRstEvent();
-#endif
-		wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
-		value |= 0x80;
-		ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
 	}
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	kalSetRstEvent();
+#endif
+	wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
+	value |= 0x80;
+	ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
+
 	return ret;
 }
 
@@ -1219,21 +1235,22 @@ static void soc3_0_DumpMemory32(uint32_t *pu4StartAddr,
 	}
 }
 
-static uint32_t soc3_0_DumpHwDebugFlagSub(uint32_t RegValue)
+static uint32_t soc3_0_DumpHwDebugFlagSub(struct ADAPTER *prAdapter,
+	uint32_t RegValue)
 {
 	uint32_t u4Cr;
 	uint32_t u4Value = 0;
 
 	u4Cr = 0x1806009C;
-	wf_ioremap_write(u4Cr, RegValue);
+	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 	u4Cr = 0x1806021C;
-	wf_ioremap_read(u4Cr, &u4Value);
+	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 
 	return u4Value;
 }
 
-static void soc3_0_DumpHwDebugFlag(void)
+static void soc3_0_DumpHwDebugFlag(struct ADAPTER *prAdapter)
 {
 #define	HANG_HW_FLAG_NUM		7
 
@@ -1246,20 +1263,20 @@ static void soc3_0_DumpHwDebugFlag(void)
 
 	u4Cr = 0x18060094;
 	RegValue = 0x00139CE7;
-	wf_ioremap_write(u4Cr, RegValue);
+	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
-	log[0] = soc3_0_DumpHwDebugFlagSub(0x366CD932);
-	log[1] = soc3_0_DumpHwDebugFlagSub(0x36AD5A34);
-	log[2] = soc3_0_DumpHwDebugFlagSub(0x36EDDB36);
-	log[3] = soc3_0_DumpHwDebugFlagSub(0x3972E54A);
-	log[4] = soc3_0_DumpHwDebugFlagSub(0x39B3664C);
-	log[5] = soc3_0_DumpHwDebugFlagSub(0x7C387060);
-	log[6] = soc3_0_DumpHwDebugFlagSub(0x7C78F162);
+	log[0] = soc3_0_DumpHwDebugFlagSub(prAdapter, 0x366CD932);
+	log[1] = soc3_0_DumpHwDebugFlagSub(prAdapter, 0x36AD5A34);
+	log[2] = soc3_0_DumpHwDebugFlagSub(prAdapter, 0x36EDDB36);
+	log[3] = soc3_0_DumpHwDebugFlagSub(prAdapter, 0x3972E54A);
+	log[4] = soc3_0_DumpHwDebugFlagSub(prAdapter, 0x39B3664C);
+	log[5] = soc3_0_DumpHwDebugFlagSub(prAdapter, 0x7C387060);
+	log[6] = soc3_0_DumpHwDebugFlagSub(prAdapter, 0x7C78F162);
 
 	soc3_0_DumpMemory32(log, HANG_HW_FLAG_NUM, "HW Debug flag");
 }
 
-static void soc3_0_DumpPcLrLog(void)
+static void soc3_0_DumpPcLrLog(struct ADAPTER *prAdapter)
 {
 #define	HANG_PC_LOG_NUM			32
 	uint32_t u4Cr, u4Index, i;
@@ -1282,12 +1299,12 @@ static void soc3_0_DumpPcLrLog(void)
 	*/
 
 	u4Cr = 0x18060090;
-	wf_ioremap_read(u4Cr, &u4Value);
+	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 	RegValue = (0x20<<2) | (u4Value&BITS(0, 1)) | (u4Value&BITS(8, 31));
-	wf_ioremap_write(u4Cr, RegValue);
+	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 	u4Cr = 0x18060204;
-	wf_ioremap_read(u4Cr, &u4Value);
+	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 	u4Index = (u4Value&BITS(17, 21)) >> 17;
 
 	for (i = 0; i < HANG_PC_LOG_NUM; i++) {
@@ -1298,13 +1315,13 @@ static void soc3_0_DumpPcLrLog(void)
 			u4Index = 0;
 
 		u4Cr = 0x18060090;
-		wf_ioremap_read(u4Cr, &u4Value);
+		soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 		RegValue = (u4Index<<2) | (u4Value&BITS(0, 1)) |
 			(u4Value&BITS(8, 31));
-		wf_ioremap_write(u4Cr, RegValue);
+		soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 		u4Cr = 0x18060204;
-		wf_ioremap_read(u4Cr, &log[i]);
+		soc3_0_CrRead(prAdapter, u4Cr, &log[i]);
 	}
 
 	soc3_0_DumpMemory32(log, HANG_PC_LOG_NUM, "PC log");
@@ -1312,12 +1329,12 @@ static void soc3_0_DumpPcLrLog(void)
 	/* GPR log */
 
 	u4Cr = 0x18060090;
-	wf_ioremap_read(u4Cr, &u4Value);
+	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 	RegValue = (0x20<<8) | (u4Value&BITS(0, 7)) | (u4Value&BITS(14, 31));
-	wf_ioremap_write(u4Cr, RegValue);
+	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 	u4Cr = 0x18060208;
-	wf_ioremap_read(u4Cr, &u4Value);
+	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 	u4Index = (u4Value&BITS(17, 21)) >> 17;
 
 	for (i = 0; i < HANG_PC_LOG_NUM; i++) {
@@ -1328,19 +1345,19 @@ static void soc3_0_DumpPcLrLog(void)
 			u4Index = 0;
 
 		u4Cr = 0x18060090;
-		wf_ioremap_read(u4Cr, &u4Value);
+		soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 		RegValue = (u4Index<<8) | (u4Value&BITS(0, 7)) |
 			(u4Value&BITS(14, 31));
-		wf_ioremap_write(u4Cr, RegValue);
+		soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 		u4Cr = 0x18060208;
-		wf_ioremap_read(u4Cr, &log[i]);
+		soc3_0_CrRead(prAdapter, u4Cr, &log[i]);
 	}
 
 	soc3_0_DumpMemory32(log, HANG_PC_LOG_NUM, "GPR log");
 }
 
-static void soc3_0_DumpN10CoreReg(void)
+static void soc3_0_DumpN10CoreReg(struct ADAPTER *prAdapter)
 {
 #define	HANG_N10_CORE_LOG_NUM	40
 	uint32_t u4Cr, i;
@@ -1352,25 +1369,25 @@ static void soc3_0_DumpN10CoreReg(void)
 
 	u4Cr = 0x18060090;
 	RegValue = 0x00002000;
-	wf_ioremap_write(u4Cr, RegValue);
+	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 	u4Cr = 0x18060208;
-	wf_ioremap_read(u4Cr, &log[0]);
+	soc3_0_CrRead(prAdapter, u4Cr, &log[0]);
 
 	u4Cr = 0x18060090;
 	RegValue = 0x00002100;
-	wf_ioremap_write(u4Cr, RegValue);
+	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 	u4Cr = 0x18060208;
-	wf_ioremap_read(u4Cr, &log[1]);
+	soc3_0_CrRead(prAdapter, u4Cr, &log[1]);
 
 	for (i = 2, RegValue = 0x00003F00; i < HANG_N10_CORE_LOG_NUM; i++) {
 
 		u4Cr = 0x18060090;
-		wf_ioremap_write(u4Cr, RegValue);
+		soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 		u4Cr = 0x18060208;
-		wf_ioremap_read(u4Cr, &log[i]);
+		soc3_0_CrRead(prAdapter, u4Cr, &log[i]);
 
 		RegValue += 0x04000000;
 	}
@@ -1378,7 +1395,7 @@ static void soc3_0_DumpN10CoreReg(void)
 	soc3_0_DumpMemory32(log, HANG_N10_CORE_LOG_NUM, "N10 core register");
 }
 
-static void soc3_0_DumpOtherCr(void)
+static void soc3_0_DumpOtherCr(struct ADAPTER *prAdapter)
 {
 #define	HANG_OTHER_LOG_NUM		2
 
@@ -1389,7 +1406,7 @@ static void soc3_0_DumpOtherCr(void)
 		"Host_CSR - mailbox and other CRs");
 
 	for (i = 0, u4Cr = 0x18060260; i < HANG_OTHER_LOG_NUM; i++) {
-		wf_ioremap_read(u4Cr, &log[i]);
+		soc3_0_CrRead(prAdapter, u4Cr, &log[i]);
 
 		u4Cr += 0x04;
 	}
@@ -1397,7 +1414,7 @@ static void soc3_0_DumpOtherCr(void)
 	soc3_0_DumpMemory32(log, HANG_OTHER_LOG_NUM, "mailbox and other CRs");
 }
 
-static void soc3_0_DumpSpecifiedWfTop(void)
+static void soc3_0_DumpSpecifiedWfTop(struct ADAPTER *prAdapter)
 {
 #define	HANG_TOP_LOG_NUM		2
 
@@ -1412,65 +1429,66 @@ static void soc3_0_DumpSpecifiedWfTop(void)
 /* 0x1806009C[28]=1	write	enable wf_mcu_misc */
 
 	u4Cr = 0x1806009C;
-	wf_ioremap_read(u4Cr, &u4Value);
+	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 	RegValue = u4Value | BIT(28);
-	wf_ioremap_write(u4Cr, RegValue);
+	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 /* 0x1806009C[27:0]=0xC387060	write	select {FLAG_4[9:2],FLAG_27[9:2]} */
 
 	u4Cr = 0x1806009C;
-	wf_ioremap_read(u4Cr, &u4Value);
+	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 	RegValue = 0xC387060 | (u4Value&BITS(28, 31));
-	wf_ioremap_write(u4Cr, RegValue);
+	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 /* 0x18060094[20]=1	write	enable wf_monflg_on */
 
 	u4Cr = 0x18060094;
-	wf_ioremap_read(u4Cr, &u4Value);
+	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 	RegValue = u4Value | BIT(20);
-	wf_ioremap_write(u4Cr, RegValue);
+	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 /* 0x18060094[19:0]=0x39CE7	write	select wf_mcusys_dbg */
 
 	u4Cr = 0x18060094;
-	wf_ioremap_read(u4Cr, &u4Value);
+	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 	RegValue = 0x39CE7 | (u4Value&BITS(20, 31));
-	wf_ioremap_write(u4Cr, RegValue);
+	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 /* 0x1806_021c[31:0]	Read	get {FLAG_4[9:2],FLAG_27[9:2]} */
 
 	u4Cr = 0x1806021c;
-	wf_ioremap_read(u4Cr, &log[0]);
+	soc3_0_CrRead(prAdapter, u4Cr, &log[0]);
 
 /* 0x1806009C[27:0]=0xC78F162	write	select {FlAG_23[7:0],FlAG_6[9:2]} */
 
 	u4Cr = 0x1806009C;
-	wf_ioremap_read(u4Cr, &u4Value);
+	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 	RegValue = 0xC78F162 | (u4Value&BITS(28, 31));
-	wf_ioremap_write(u4Cr, RegValue);
+	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 
 /* 0x1806_021c[31:0]	Read	get {FlAG_23[7:0],FlAG_6[9:2]} */
 
 	u4Cr = 0x1806021c;
-	wf_ioremap_read(u4Cr, &log[1]);
+	soc3_0_CrRead(prAdapter, u4Cr, &log[1]);
 
 	soc3_0_DumpMemory32(log, HANG_TOP_LOG_NUM,
 		"specified WF TOP monflg on");
 }
 
-static void soc3_0_DumpHostCr(void)
+static void soc3_0_DumpHostCr(struct ADAPTER *prAdapter)
 {
-	soc3_0_DumpPcLrLog();
-	soc3_0_DumpN10CoreReg();
-	soc3_0_DumpOtherCr();
-	soc3_0_DumpHwDebugFlag();
-	soc3_0_DumpSpecifiedWfTop();
+	soc3_0_DumpPcLrLog(prAdapter);
+	soc3_0_DumpN10CoreReg(prAdapter);
+	soc3_0_DumpOtherCr(prAdapter);
+	soc3_0_DumpHwDebugFlag(prAdapter);
+	soc3_0_DumpSpecifiedWfTop(prAdapter);
+	soc3_0_DumpWfsysCpupcr(prAdapter);
 }
 
-int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
+int soc3_0_CheckBusHang(struct ADAPTER *prAdapter,
+	uint8_t ucWfResetEnable)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
 	int ret = 1;
 	int conninfra_hang_ret = 0;
 	uint8_t conninfra_reset = FALSE;
@@ -1478,7 +1496,8 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 	uint32_t u4Value = 0;
 	uint32_t RegValue = 0;
 
-	prGlueInfo = (struct GLUE_INFO *)wiphy_priv(wlanGetWiphy());
+	if (prAdapter == NULL)
+		DBGLOG(HAL, INFO, "prAdapter NULL\n");
 
 	do {
 /*
@@ -1508,14 +1527,14 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 			break;
 		}
 
-		if (prGlueInfo->prAdapter->fgIsFwDownloaded) {
+		if ((prAdapter != NULL) && (prAdapter->fgIsFwDownloaded)) {
 /*
 * 2. Check MCU wake up and setting mux sel done CR (mailbox)
 *  - 0x1806_0260[31] should be 1'b1  (FW view 0x8900_0100[31])
 */
 
 			u4Cr = 0x18060260;
-			wf_ioremap_read(u4Cr, &u4Value);
+			soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 
 			if ((u4Value&BIT(31)) != BIT(31)) {
 				DBGLOG(HAL, ERROR,
@@ -1543,27 +1562,27 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 */
 
 			u4Cr = 0x1806009c;
-			wf_ioremap_read(u4Cr, &u4Value);
+			soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 			RegValue = (u4Value&BITS(7, 31)) | 0x60;
-			wf_ioremap_write(u4Cr, RegValue);
+			soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 			u4Cr = 0x1806009c;
-			wf_ioremap_read(u4Cr, &u4Value);
+			soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 			RegValue = u4Value|BIT(28);
-			wf_ioremap_write(u4Cr, RegValue);
+			soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 			u4Cr = 0x18060094;
-			wf_ioremap_read(u4Cr, &u4Value);
+			soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 			RegValue = (u4Value&BITS(5, 31)) | 0x7;
-			wf_ioremap_write(u4Cr, RegValue);
+			soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 			u4Cr = 0x18060094;
-			wf_ioremap_read(u4Cr, &u4Value);
+			soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 			RegValue = u4Value|BIT(20);
-			wf_ioremap_write(u4Cr, RegValue);
+			soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
 
 			u4Cr = 0x1806021c;
-			wf_ioremap_read(u4Cr, &u4Value);
+			soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 
 			if ((u4Value&BIT(0)) == BIT(0)) {
 				DBGLOG(HAL, ERROR,
@@ -1571,7 +1590,6 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 					u4Cr, u4Value);
 				break;
 			}
-
 		} else {
 			DBGLOG(HAL, INFO,
 				"Before fgIsFwDownloaded\n");
@@ -1582,7 +1600,7 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 *  - 0x1800_1620[3] (sleep protect enable raedy), should be 1'b0
 */
 		u4Cr = 0x18001620;
-		wf_ioremap_read(u4Cr, &u4Value);
+		soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 
 		if ((u4Value&BIT(3)) == BIT(3)) {
 			DBGLOG(HAL, ERROR,
@@ -1596,7 +1614,7 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 *  - 0x1806_0000[15] , 1: means bus no clock, 0: ok
 */
 		u4Cr = 0x18060000;
-		wf_ioremap_read(u4Cr, &u4Value);
+		soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
 
 		if ((u4Value&BIT(15)) == BIT(15)) {
 			DBGLOG(HAL, ERROR,
@@ -1623,7 +1641,7 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 			(conninfra_hang_ret !=
 				CONNINFRA_AP2CONN_TX_SLP_PROT_ERR) &&
 			(conninfra_hang_ret != CONNINFRA_AP2CONN_CLK_ERR))
-			soc3_0_DumpHostCr();
+			soc3_0_DumpHostCr(prAdapter);
 
 		if (conninfra_reset) {
 			g_IsWfsysBusHang = TRUE;
@@ -1927,6 +1945,9 @@ int wf_pwr_on_consys_mcu(void)
 			"Check CONNSYS power-on completion fail.\n");
 		return ret;
 	}
+
+	conninfra_config_setup();
+
 	/* Disable conn_infra off domain force on 0x180601A4[0] = 1'b0 */
 	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
 	value &= 0xFFFFFFFE;
@@ -2233,7 +2254,6 @@ int soc3_0_Trigger_whole_chip_rst(char *reason)
 void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 {
 	int value;
-
 	HAL_MCR_WR(prAdapter,
 		   CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
 		   CONN_MCU_CONFG_HS_BASE);
@@ -2241,7 +2261,7 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		  (CONN_INFRA_CFG_AP2WF_BUS_ADDR + 0xc0),
 		  &value);
 
-	DBGLOG(HAL, ERROR, "SW INT happended!!!!!(0x%x)\n", value);
+	DBGLOG(HAL, INFO, "SW INT happended!!!!!(0x%x)\n", value);
 	HAL_MCR_WR(prAdapter,
 		  (CONN_INFRA_CFG_AP2WF_BUS_ADDR + 0xc8),
 		  value);
