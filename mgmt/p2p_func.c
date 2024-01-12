@@ -5017,6 +5017,11 @@ p2pFuncKeepOnConnection(struct ADAPTER *prAdapter,
 		p2pFillLinkBssDesc(prAdapter,
 			prP2pRoleFsmInfo, &set);
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (set.ucLinkNum > 1)
+			p2pLinkInitGCRole(prAdapter);
+#endif
+
 		if (prTargetBss == NULL) {
 			/* Update scan parameter... to scan target device. */
 			/* TODO: Need refine. */
