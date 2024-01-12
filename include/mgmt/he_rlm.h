@@ -178,7 +178,6 @@ extern uint8_t  g_fgHTSMPSEnabled;
  *                  F U N C T I O N   D E C L A R A T I O N S
  ******************************************************************************
  */
-
 u_int32_t heRlmCalculateHeCapIELen(
 	struct ADAPTER *prAdapter,
 	u_int8_t ucBssIndex,
@@ -200,6 +199,8 @@ void heRlmRspGenerateHeCapIE(
 void heRlmRspGenerateHeOpIE(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
+uint8_t heRlmPeerMaxBwCap(
+	uint8_t *pucChannelWidthSet);
 void heRlmRecHeCapInfo(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,

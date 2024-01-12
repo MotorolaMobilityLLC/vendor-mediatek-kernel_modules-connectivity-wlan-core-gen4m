@@ -1203,6 +1203,24 @@ uint32_t heRlmFillNANHeOpIE(
 
 #endif
 
+uint8_t heRlmPeerMaxBwCap(
+	uint8_t *pucChannelWidthSet)
+{
+	uint8_t width = MAX_BW_20MHZ;
+
+	if (HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW40_2G(pucChannelWidthSet))
+		width = MAX_BW_40MHZ;
+	if (HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW40_BW80_5G(pucChannelWidthSet)) {
+		width = MAX_BW_80MHZ;
+		if (HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW80P80_5G(pucChannelWidthSet))
+			width = MAX_BW_160MHZ;
+		if (HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW160_5G(pucChannelWidthSet))
+			width = MAX_BW_160MHZ;
+	}
+
+	return width;
+}
+
 static uint16_t heRlmGetHeMcsMap(uint8_t *pSrc)
 {
 	uint16_t u2McsMap;
