@@ -686,8 +686,13 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 #if CFG_REPORT_MAX_TX_RATE
 	/*rewrite LinkSpeed with Max LinkSpeed*/
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
-			       wlanoidQueryMaxLinkSpeed, &rLinkSpeed,
-			       sizeof(rLinkSpeed),
+			       wlanoidQueryMaxLinkSpeed,
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+			       &prAdapter->rLinkQuality,
+#else
+			       &rLinkSpeed,
+#endif
+			       sizeof(struct PARAM_LINK_SPEED_EX),
 			       &u4BufLen, ucBssIndex);
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
