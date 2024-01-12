@@ -1468,6 +1468,8 @@ struct thermal_sensor_info {
 	const uint8_t sendor_idx;
 	void *tzd;
 	void *priv;
+	uint32_t last_query_time;
+	int32_t last_query_temp;
 };
 
 struct thermal_info {
