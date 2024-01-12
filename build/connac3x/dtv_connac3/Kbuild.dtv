@@ -1,7 +1,6 @@
 ##############################################################
 # Common settings
 ##############################################################
-MTK_COMBO_CHIP             = MT6639
 HIF                        = usb
 CONFIG_MTK_WIFI_ONLY       = m
 CONFIG_MTK_COMBO           = m
@@ -10,10 +9,16 @@ CONFIG_MTK_COMBO_COMM      = m
 CONFIG_MTK_COMBO_COMM_UART = m
 CONFIG_MTK_COMBO_COMM_SDIO = m
 CONFIG_MT_WIFI_CHRDEV      = m
-WIFI_TARGET               := connac3
-WLAN_CHIP_ID              := mt6639
 WM_RAM                    := ce
 CFG_DIR                   := $(KO_CODE_PATH)/configs
+MTK_COMBO_CHIP            := MT6639
+WIFI_TARGET               := mt7927
+WLAN_CHIP_ID              := 6639
+ifneq ($(findstring owl,$(LOCAL_MODULE)),)
+MTK_COMBO_CHIP            := MT7925
+WIFI_TARGET               := mt7925
+WLAN_CHIP_ID              := 7925
+endif
 
 ifeq ($(HIF),)
     HIF=usb
@@ -21,8 +26,8 @@ endif
 CONFIG_MTK_COMBO_WIFI_HIF=$(HIF)
 
 MODULE_NAME               := wlan_$(WIFI_TARGET)
-MODULE_NAME_PREALLOC      := mtprealloc_$(WIFI_TARGET)
-MODULE_NAME_RESET         := mtreset_$(WIFI_TARGET)
+MODULE_NAME_PREALLOC      := mtprealloc_connac3
+MODULE_NAME_RESET         := mtreset_connac3
 
 ##############################################################
 #/***** Special Settings for DTV start ******/
@@ -56,6 +61,9 @@ ifneq ($(filter MT7902,$(MTK_COMBO_CHIP)),)
 endif
 ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
    PLATFORM_FLAGS += -DCFG_WIFI_CFG_FN='"wifi_mt6639.cfg"'
+endif
+ifneq ($(filter MT7925,$(MTK_COMBO_CHIP)),)
+   PLATFORM_FLAGS += -DCFG_WIFI_CFG_FN='"wifi_mt7925.cfg"'
 endif
 endif
 
