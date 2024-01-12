@@ -796,7 +796,7 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 	dev_active_tag->u2Tag = UNI_CMD_DEVINFO_TAG_ACTIVE;
 	dev_active_tag->u2Length = sizeof(*dev_active_tag);
 	dev_active_tag->ucActive = cmd->ucActive;
-	dev_active_tag->ucMLOLinkIdx = cmd->ucMLOLinkIdx;
+	dev_active_tag->ucMldLinkIdx = cmd->ucMldLinkIdx;
 	COPY_MAC_ADDR(dev_active_tag->aucOwnMacAddr, cmd->aucBssMacAddr);
 
 	/* update bssinfo */
@@ -828,7 +828,7 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 	phy_mode = nicUniCmdBssInfoPhyMode(bss->ucPhyTypeSet);
 	bss_basic_tag->ucPhyMode = phy_mode & 0xff;
 	bss_basic_tag->ucPhyModeExt = (phy_mode >> 8) & 0xff;
-	bss_basic_tag->ucMLOLinkIdx = cmd->ucMLOLinkIdx;
+	bss_basic_tag->ucMldLinkIdx = cmd->ucMldLinkIdx;
 
 	DBGLOG(INIT, INFO,
 		"%s DevInfo[OMAC=%d, DBDC=%d], BssInfo%d[DBDC=%d, OMAC=%d, WMM=%d, ConnType=%d, ConnState=%d, BcIdx=%d, PhyMode=0x%x, PhyModeEx=0x%x]\n",

@@ -30,20 +30,15 @@
 #define BE_GET_ML_CTRL_PRESENCE(_u2ctrl) \
 	((_u2ctrl & ML_CTRL_PRE_BMP_MASK) >> ML_CTRL_PRE_BMP_SHIFT)
 
-#define BE_SET_ML_CTRL_PRESENCE_MLD_MAC(_u2ctrl) \
-	(_u2ctrl |= (ML_CTRL_MLD_MAC_ADDR_PRESENT << ML_CTRL_PRE_BMP_SHIFT))
-
-#define BE_UNSET_ML_CTRL_PRESENCE_MLD_MAC(_u2ctrl) \
-	(_u2ctrl &= ~(ML_CTRL_MLD_MAC_ADDR_PRESENT << ML_CTRL_PRE_BMP_SHIFT))
-
 #define BE_IS_ML_CTRL_PRESENCE_MLD_MAC(_u2ctrl) \
 	(_u2ctrl & (ML_CTRL_MLD_MAC_ADDR_PRESENT << ML_CTRL_PRE_BMP_SHIFT))
 
-#define BE_SET_ML_CTRL_PRESENCE_MLD_CAP(_u2ctrl) \
-	(_u2ctrl |= (ML_CTRL_MLD_CAPA_PRESENT << ML_CTRL_PRE_BMP_SHIFT))
+#define BE_IS_ML_CTRL_PRESENCE_LINK_ID(_u2ctrl) \
+	(_u2ctrl & (ML_CTRL_LINK_ID_INFO_PRESENT << ML_CTRL_PRE_BMP_SHIFT))
 
-#define BE_UNSET_ML_CTRL_PRESENCE_MLD_CAP(_u2ctrl) \
-	(_u2ctrl &= ~(ML_CTRL_MLD_CAPA_PRESENT << ML_CTRL_PRE_BMP_SHIFT))
+#define BE_IS_ML_CTRL_PRESENCE_BSS_PARA_CHANGE_COUNT(_u2ctrl) \
+	(_u2ctrl & (ML_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT << \
+		ML_CTRL_PRE_BMP_SHIFT))
 
 #define BE_IS_ML_CTRL_PRESENCE_MLD_CAP(_u2ctrl) \
 	(_u2ctrl & (ML_CTRL_MLD_CAPA_PRESENT << ML_CTRL_PRE_BMP_SHIFT))
@@ -68,6 +63,9 @@ struct IE_MULTI_LINK_CONTROL {
 	& (ML_STA_CTRL_LINK_ID_MASK)); \
 }
 
+#define BE_SET_ML_STA_CTRL_FIELD(_u2ctrl, _ctrl_type) \
+	(_u2ctrl = _ctrl_type)
+
 #define BE_SET_ML_STA_CTRL_COMPLETE_PROFILE(_u2ctrl) \
 	(_u2ctrl |= ML_STA_CTRL_COMPLETE_PROFILE)
 
@@ -87,9 +85,20 @@ struct IE_MULTI_LINK_CONTROL {
 #define BE_UNSET_ML_STA_CTRL_PRESENCE_MAC(_u2ctrl) \
 	(_u2ctrl &= ~ML_STA_CTRL_MAC_ADDR_PRESENT)
 
+#define BE_IS_ML_STA_CTRL_COMPLETE(_u2ctrl) \
+	(_u2ctrl & ML_STA_CTRL_COMPLETE_PROFILE)
+
 #define BE_IS_ML_STA_CTRL_PRESENCE_MAC(_u2ctrl) \
 	(_u2ctrl & ML_STA_CTRL_MAC_ADDR_PRESENT)
 
+#define BE_IS_ML_STA_CTRL_PRESENCE_BCN_INTV(_u2ctrl) \
+	(_u2ctrl & ML_STA_CTRL_BCN_INTV_PRESENT)
+
+#define BE_IS_ML_STA_CTRL_PRESENCE_DTIM(_u2ctrl) \
+	(_u2ctrl & ML_STA_CTRL_DTIM_INFO_PRESENT)
+
+#define BE_IS_ML_STA_CTRL_PRESENCE_NSTR(_u2ctrl) \
+	(_u2ctrl & ML_STA_CTRL_NSTR_LINK_PAIR_PRESENT)
 
 struct IE_MULTI_LINK_INFO_STA_CONTROL {
 	u_int8_t ucSubID;	/* 0: Per-STA Profile */
@@ -98,31 +107,55 @@ struct IE_MULTI_LINK_INFO_STA_CONTROL {
 	u_int8_t aucStaInfo[0];
 } __KAL_ATTRIB_PACKED__;
 
-void beReqGenerateMLIE(
-	struct ADAPTER *prAdapter,
-	struct MSDU_INFO *prMsduInfo,
-	u_int8_t type,
-	struct APPEND_VAR_IE_ENTRY ieArrayTable[],
-	uint16_t txIENums);
+struct IE_NON_INHERITANCE {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucExtId;
+	uint8_t aucList[0];
+} __KAL_ATTRIB_PACKED__;
 
-struct IE_MULTI_LINK_CONTROL *beReqGenerateMultiLinkCommonInfo(
+typedef struct MSDU_INFO* (*PFN_COMPOSE_ASSOC_IE_FUNC) (struct ADAPTER *,
+	struct STA_RECORD *);
+
+typedef struct MSDU_INFO* (*PFN_COMPOSE_AUTH_IE_FUNC) (struct ADAPTER *,
+	  struct STA_RECORD *, uint8_t, struct SW_RFB *, uint16_t, uint16_t);
+
+typedef struct MSDU_INFO* (*PFN_COMPOSE_BEACON_IE_FUNC) (struct ADAPTER *,
+	uint8_t);
+
+void beGenerateAssocMldIE(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct MSDU_INFO *prMsduInfo,
+	PFN_COMPOSE_ASSOC_IE_FUNC pfnComposeIE);
+
+void beGenerateAuthMldIE(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucBssIndex,
+	struct SW_RFB *prRecvAuthSwRfb,
+	struct MSDU_INFO *prMsduInfo,
+	PFN_COMPOSE_AUTH_IE_FUNC pfnComposeIE);
+
+void beGenerateBeaconMldIE(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	uint8_t ucComplete,
+	struct MSDU_INFO *prMsduInfo,
+	PFN_COMPOSE_BEACON_IE_FUNC pfnComposeIE);
+
+struct IE_MULTI_LINK_CONTROL *beGenerateMldCommonInfo(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
 
-void beReqGenerateMultiLinkSTAInfo(
+void beGenerateMldSTAInfo(
 	struct ADAPTER *prAdapter,
-	struct MSDU_INFO *prMsduInfo,
 	struct IE_MULTI_LINK_CONTROL *prMultiLinkControlIE,
-	u_int8_t type,
-	struct APPEND_VAR_IE_ENTRY ieArrayTable[],
-	uint16_t txIENums);
-
-enum ENUM_MLO_CONNECT {
-	TYPE_AUTH,
-	TYPE_ASSOC,
-	TYPE_NUM
-};
-
+	struct MSDU_INFO *prMsduInfo,
+	uint32_t u4BeginOffset,
+	uint32_t u4PrimaryLength,
+	struct MSDU_INFO *prMsduInfoSta,
+	uint8_t ucBssIndex);
 
 int8_t mldBssRegister(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,

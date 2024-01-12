@@ -287,7 +287,7 @@ struct UNI_CMD_DEVINFO_ACTIVE {
 	uint16_t u2Tag;                   // Tag = 0x00
 	uint16_t u2Length;
 	uint8_t ucActive;
-	uint8_t ucMLOLinkIdx;
+	uint8_t ucMldLinkIdx;
 	uint8_t aucOwnMacAddr[6];
 } __KAL_ATTRIB_PACKED__;
 
@@ -360,7 +360,7 @@ struct UNI_CMD_BSSINFO_BASIC {
 	uint16_t u2StaRecIdxOfAP;
 	uint16_t u2NonHTBasicPhyType;
 	uint8_t  ucPhyModeExt;
-	uint8_t  ucMLOLinkIdx;
+	uint8_t  ucMldLinkIdx;
 }__KAL_ATTRIB_PACKED__;
 
 /* BssInfo RA information (Tag1) */

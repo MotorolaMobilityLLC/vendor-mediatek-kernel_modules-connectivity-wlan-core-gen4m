@@ -1289,6 +1289,8 @@
 	54 /* Operating Channel Information */
 #define ELEM_EXT_ID_MBSS_CONFIG \
 	55 /* Multiple BSSD Configuration */
+#define ELEM_EXT_ID_NON_INHERITANCE \
+	56 /* Non-Inheritance */
 #define ELEM_EXT_ID_HE_6G_BAND_CAP \
 	59 /* HE 6G Band Capabilities */
 #define ELEM_EXT_ID_UL_MU_Power_CAP \
@@ -1301,7 +1303,17 @@
 	92 /* Rejected Groups */
 #define ELEM_EXT_ID_ACTC \
 	93 /* Anti-Clogging Token Container */
-
+/*
+ * Refer to Draft P802.11be_D0.4 @20210419
+ * ID value is not defined yet.
+ * Assume use to use EXT ID.
+ */
+#define EID_EXT_EHT_TID2LNK_MAP \
+	252 /* EHT TID2LNK */
+#define EID_EXT_EHT_OP \
+	253 /* EHT Operation */
+#define EID_EXT_EHT_CAPS \
+	254 /* EHT Capabilities */
 #define ELEM_EXT_ID_MLD \
 	255 /* TEST: Multi-Link element */
 #define ELEM_EXT_ID_MAX_NUM \
