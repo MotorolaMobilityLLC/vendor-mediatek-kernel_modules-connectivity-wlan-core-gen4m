@@ -4919,7 +4919,7 @@ uint32_t nicUniCmdSetNvramSettings(struct ADAPTER *ad,
 {
 	uint8_t fgIsFragCmd = !!(ad->chip_info->is_support_nvram_fragment);
 
-	DBGLOG(RX, INFO, "fgIsFragCmd[%d]", fgIsFragCmd);
+	DBGLOG(RX, LOUD, "fgIsFragCmd[%d]", fgIsFragCmd);
 
 	if (fgIsFragCmd)
 		return nicUniCmdNvramFragmentHandler(ad, info);
