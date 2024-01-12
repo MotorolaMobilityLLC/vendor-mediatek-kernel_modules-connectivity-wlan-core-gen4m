@@ -500,6 +500,8 @@ uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
 {
 	uint32_t u4Val = 0;
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	uint32_t u4Idx = 0;
+	uint32_t u4NonZeroMemCnt = 0;
 
 	if ((eDlIdx == IMG_DL_IDX_PATCH) || (eDlIdx == IMG_DL_IDX_N9_FW)) {
 #if defined(SOC3_0)
@@ -545,6 +547,27 @@ uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
 		HAL_MCR_WR(prAdapter,
 			CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
 			u4Addr);
+
+		if (eDlIdx == IMG_DL_IDX_PATCH) {
+			do {
+				u4Val = 0;
+
+				HAL_MCR_RD(prAdapter,
+				(CONN_INFRA_CFG_AP2WF_BUS_ADDR +
+				(u4Idx * 4)),	&u4Val);
+
+				if (u4Val != 0)
+					u4NonZeroMemCnt++;
+			} while (u4Idx++ < 20);
+
+			if (u4NonZeroMemCnt != 0) {
+				DBGLOG(INIT, WARN,
+					"[MJ]ROM patch exists(%d)!\n",
+					u4NonZeroMemCnt);
+
+				return WLAN_STATUS_NOT_ACCEPTED;
+			}
+		}
 
 		/* because
 		* soc3_0_bus2chip_cr_mapping =
