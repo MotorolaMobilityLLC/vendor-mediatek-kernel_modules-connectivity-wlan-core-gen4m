@@ -1302,6 +1302,12 @@ uint32_t authCalculateRSNIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 void authAddRSNIE(IN struct ADAPTER *prAdapter,
 		  IN OUT struct MSDU_INFO *prMsduInfo)
 {
+	authAddRSNIE_impl(prAdapter, prMsduInfo);
+}
+
+uint32_t authAddRSNIE_impl(IN struct ADAPTER *prAdapter,
+		  IN OUT struct MSDU_INFO *prMsduInfo)
+{
 	uint8_t *pucBuffer =
 		(uint8_t *)prMsduInfo->prPacket + prMsduInfo->u2FrameLength;
 	uint32_t ucRSNIeSize = 0;
@@ -1314,9 +1320,11 @@ void authAddRSNIE(IN struct ADAPTER *prAdapter,
 	    !IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx)) ||
 	    !prFtIEs->prRsnIE || (eAuthMode != AUTH_MODE_WPA2_FT &&
 				  eAuthMode != AUTH_MODE_WPA2_FT_PSK))
-		return;
+		return FALSE;
+
 	ucRSNIeSize = IE_SIZE(prFtIEs->prRsnIE);
 	prMsduInfo->u2FrameLength += ucRSNIeSize;
 	kalMemCopy(pucBuffer, prFtIEs->prRsnIE, ucRSNIeSize);
+	return TRUE;
 }
 

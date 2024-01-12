@@ -1475,8 +1475,7 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 	uint8_t *cp;
 	/* UINT_8                ucExpendedLen = 0; */
 	uint8_t *pucBuffer;
-	uint8_t ucBssIndex, isWPA3;
-	uint32_t i;
+	uint8_t ucBssIndex;
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
 	enum ENUM_PARAM_AUTH_MODE eAuthMode;
@@ -1489,21 +1488,13 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 				 prMsduInfo->u2FrameLength);
 	/* Todo:: network id */
 	ucBssIndex = prMsduInfo->ucBssIndex;
-	prAisSpecBssInfo =
-		aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
-	eAuthMode =
-	    aisGetAuthMode(prAdapter, ucBssIndex);
-	isWPA3 = eAuthMode == AUTH_MODE_WPA3_SAE ||
-	     rsnSearchAKMSuite(prAdapter, RSN_CIPHER_SUITE_OWE, &i, ucBssIndex);
-	/* for Fast Bss Transition,  we reuse the RSN Element composed in
-	 * userspace
-	 */
-	if ((eAuthMode == AUTH_MODE_WPA2_FT ||
-	     eAuthMode == AUTH_MODE_WPA2_FT_PSK) &&
-	     aisGetFtIe(prAdapter, ucBssIndex)->prRsnIE) {
-		authAddRSNIE(prAdapter, prMsduInfo);
+	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+	eAuthMode = aisGetAuthMode(prAdapter, ucBssIndex);
+
+	/* For FT, we reuse the RSN Element composed in userspace */
+	if (authAddRSNIE_impl(prAdapter, prMsduInfo))
 		return;
-	}
+
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
 	if (
