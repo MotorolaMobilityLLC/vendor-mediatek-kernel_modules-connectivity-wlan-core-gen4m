@@ -719,24 +719,27 @@ u_int8_t rsnIsSuitableBSS(IN struct ADAPTER *prAdapter,
 
 	for (i = 0; i < prBssRsnInfo->u4PairwiseKeyCipherSuiteCount;
 		i++) {
-		if (((prAdapter->rWifiVar.rConnSettings.
+		if ((prAdapter->rWifiVar.rConnSettings.
 			rRsnInfo.au4PairwiseKeyCipherSuite[0]
-			& 0x000000FF) !=
+			& 0x000000FF) ==
 			GET_SELECTOR_TYPE(
-			prBssRsnInfo->au4PairwiseKeyCipherSuite[i]))
-			&& (i == prBssRsnInfo->u4PairwiseKeyCipherSuiteCount -
-			1)) {
+			prBssRsnInfo->au4PairwiseKeyCipherSuite[i])) {
+			break;
+		} else if (i ==
+			prBssRsnInfo->u4PairwiseKeyCipherSuiteCount - 1) {
 			DBGLOG(RSN, WARN, "Break by PairwiseKeyCipherSuite\n");
 			return FALSE;
 		}
 	}
 
 	for (i = 0; i < prBssRsnInfo->u4AuthKeyMgtSuiteCount; i++) {
-		if (((prAdapter->rWifiVar.rConnSettings.
+		if ((prAdapter->rWifiVar.rConnSettings.
 			rRsnInfo.au4AuthKeyMgtSuite[0]
-			& 0x000000FF) !=
-			GET_SELECTOR_TYPE(prBssRsnInfo->au4AuthKeyMgtSuite[i]))
-			&& (i == prBssRsnInfo->u4AuthKeyMgtSuiteCount - 1)) {
+			& 0x000000FF) ==
+			GET_SELECTOR_TYPE(
+			prBssRsnInfo->au4AuthKeyMgtSuite[i])) {
+			break;
+		} else if (i == prBssRsnInfo->u4AuthKeyMgtSuiteCount - 1) {
 			DBGLOG(RSN, WARN, "Break by AuthKeyMgtSuite\n");
 			return FALSE;
 		}
