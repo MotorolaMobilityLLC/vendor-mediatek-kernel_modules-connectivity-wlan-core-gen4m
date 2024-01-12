@@ -107,6 +107,7 @@ uint8_t *apucRstReason[RST_REASON_MAX] = {
 	(uint8_t *) DISP_STRING("RST_DEVAPC"),
 	(uint8_t *) DISP_STRING("RST_PCIE_NOT_READY"),
 	(uint8_t *) DISP_STRING("Chip reset by AER"),
+	(uint8_t *) DISP_STRING("RST_MMIO_READ"),
 };
 
 const uint8_t *apucRstAction[] = {

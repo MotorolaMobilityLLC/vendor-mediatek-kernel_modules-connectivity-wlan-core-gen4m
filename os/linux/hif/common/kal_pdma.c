@@ -1423,6 +1423,11 @@ check:
 		DBGLOG(HAL, ERROR,
 		       "Read invalid register. reg[0x%08x] rsn[%d] mod[%u].\n",
 		       u4Reg, eReason, u4Mod);
+		if (prChipInfo->fgIsResetInvalidMmioRead) {
+			GL_USER_DEFINE_RESET_TRIGGER(
+				prGlueInfo->prAdapter,
+				RST_MMIO_READ, RST_FLAG_WF_RESET);
+		}
 		return FALSE;
 	}
 

@@ -850,7 +850,6 @@ struct thermal_sensor_info mt7935_thermal_sensor_info[] = {
 
 #if CFG_NEW_HIF_DEV_REG_IF
 enum HIF_DEV_REG_REASON mt7935ValidMmioReadReason[] = {
-	HIF_DEV_REG_HIF_READ,
 	HIF_DEV_REG_HIF_DBG,
 	HIF_DEV_REG_HIF_EXTDBG,
 	HIF_DEV_REG_ONOFF_READ,
@@ -858,12 +857,17 @@ enum HIF_DEV_REG_REASON mt7935ValidMmioReadReason[] = {
 	HIF_DEV_REG_RESET_READ,
 	HIF_DEV_REG_COREDUMP_DBG,
 	HIF_DEV_REG_LPOWN_READ,
-	HIF_DEV_REG_SER_READ,
-	HIF_DEV_REG_CCIF_READ,
 	HIF_DEV_REG_PLAT_DBG,
 	HIF_DEV_REG_UMAC_DBG,
 	HIF_DEV_REG_WTBL_DBG,
 	HIF_DEV_REG_OID_DBG,
+#if (CFG_MTK_FPGA_PLATFORM == 1)
+	HIF_DEV_REG_HIF_RING,
+#endif
+#if (CFG_MTK_WIFI_WFDMA_WB == 0)
+	HIF_DEV_REG_HIF_READ,
+	HIF_DEV_REG_SER_READ,
+#endif
 };
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 
@@ -1009,6 +1013,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 	.u4MinTxLen = 2,
 	.wifiNappingCtrl = mt7935WiFiNappingCtrl,
 #if CFG_NEW_HIF_DEV_REG_IF
+	.fgIsResetInvalidMmioRead = TRUE,
 	.isValidMmioReadReason = connac3xIsValidMmioReadReason,
 	.prValidMmioReadReason = mt7935ValidMmioReadReason,
 	.u4ValidMmioReadReasonSize = ARRAY_SIZE(mt7935ValidMmioReadReason),
@@ -2039,9 +2044,9 @@ static u_int8_t mt7935CheckWfdmaCidxFetchTimeout(struct GLUE_INFO *prGlueInfo)
 
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
 		prTxRing = &prHifInfo->TxRing[u4Idx];
-		HAL_GET_RING_CIDX(HIF_READ, prAdapter,
+		HAL_GET_RING_CIDX(HIF_RING, prAdapter,
 				  prTxRing, &prTxRing->TxCpuIdx);
-		HAL_GET_RING_DIDX(HIF_READ, prAdapter,
+		HAL_GET_RING_DIDX(HIF_RING, prAdapter,
 				  prTxRing, &prTxRing->TxDmaIdx);
 
 		if (prTxRing->TxCpuIdx != prTxRing->TxDmaIdx)

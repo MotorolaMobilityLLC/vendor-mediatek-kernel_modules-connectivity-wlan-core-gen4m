@@ -3337,7 +3337,7 @@ void halWpdmaProcessDataDmaDoneByIdx(struct ADAPTER *prAdapter,
 	if (prTxRing->u4UsedCnt == 0)
 		return;
 
-	HAL_GET_RING_DIDX(HIF_READ, prAdapter, prTxRing, &u4DmaIdx);
+	HAL_GET_RING_DIDX(HIF_RING, prAdapter, prTxRing, &u4DmaIdx);
 	u4SwIdx = prTxRing->TxSwUsedIdx;
 	if (u4DmaIdx > u4SwIdx) {
 		u4Diff = u4DmaIdx - u4SwIdx;
@@ -3478,7 +3478,7 @@ uint32_t halWpdmaGetRxDmaDoneCnt(struct GLUE_INFO *prGlueInfo,
 		goto exit;
 	}
 
-	HAL_GET_RING_DIDX(HIF_READ, prAdapter, prRxRing,
+	HAL_GET_RING_DIDX(HIF_RING, prAdapter, prRxRing,
 			  &prRxRing->RxDmaIdx);
 	u4CpuIdx = prRxRing->RxCpuIdx;
 	u4DmaIdx = prRxRing->RxDmaIdx;
