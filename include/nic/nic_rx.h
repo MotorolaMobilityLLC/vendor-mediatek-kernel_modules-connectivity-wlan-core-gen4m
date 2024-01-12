@@ -558,6 +558,7 @@ enum ENUM_RX_PKT_DESTINATION {
 
 enum ENUM_RFB_TRACK_STATUS {
 	RFB_TRACK_INIT,
+	RFB_TRACK_UNUSE,
 	RFB_TRACK_FREE,
 	RFB_TRACK_HIF,
 	RFB_TRACK_RX,
@@ -569,6 +570,7 @@ enum ENUM_RFB_TRACK_STATUS {
 	RFB_TRACK_REORDERING_OUT,
 	RFB_TRACK_INDICATED,
 	RFB_TRACK_PACKET_SETUP,
+	RFB_TRACK_ADJUST_UNUSE,
 	RFB_TRACK_MLO,
 	RFB_TRACK_FAIL,
 	RFB_TRACK_STATUS_NUM
@@ -977,6 +979,9 @@ struct RX_CTRL {
 	struct QUE rFreeSwRfbList;
 	struct QUE rReceivedRfbList;
 	struct QUE rIndicatedRfbList;
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+	struct QUE rUnUseRfbList;
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 
 #if CFG_SDIO_RX_AGG
 	uint8_t *pucRxCoalescingBufPtr;
@@ -1133,6 +1138,13 @@ struct ACTION_FRAME_SIZE_MAP {
 
 #define RX_GET_INDICATED_RFB_CNT(prRxCtrl) \
 	((prRxCtrl)->rIndicatedRfbList.u4NumElem)
+
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+#define RX_GET_UNUSE_RFB_CNT(prRxCtrl) \
+	((prRxCtrl)->rUnUseRfbList.u4NumElem)
+#else /* CFG_DYNAMIC_RFB_ADJUSTMENT */
+#define RX_GET_UNUSE_RFB_CNT(prRxCtrl) (0)
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 
 #define FILE_AND_LINE_NUMBER \
 	(__FILE__ ":" STRLINE(__LINE__))
@@ -1690,4 +1702,12 @@ void nicRxRfbTrackUpdate(struct ADAPTER *prAdapter,
 	uint8_t *fileAndLine);
 void nicRxRfbTrackCheck(struct ADAPTER *prAdapter);
 #endif /* CFG_RFB_TRACK */
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+void nicRxSetRfbCntByLevel(struct ADAPTER *prAdapter, uint32_t u4Lv);
+u_int8_t nicRxIncRfbCnt(struct ADAPTER *prAdapter);
+u_int8_t nicRxDecRfbCnt(struct ADAPTER *prAdapter);
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
+uint32_t nicRxGetUnUseCnt(struct ADAPTER *prAdapter);
+void nicRxSetUnUseCnt(struct ADAPTER *prAdapter,
+	uint32_t u4UnUseCnt, u_int8_t fgAdjustNow);
 #endif /* _NIC_RX_H */

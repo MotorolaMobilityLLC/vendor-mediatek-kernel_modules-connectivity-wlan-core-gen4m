@@ -135,6 +135,8 @@ extern struct platform_device *g_prPlatDev;
 #define PERF_MON_COEX_TP_THRESHOLD (100)
 #define PERF_MON_MCC_TP_THRESHOLD	(50)
 
+#define PERF_MON_RFB_MAX_THRESHOLD (3)
+
 /* By wifi.cfg first. If it is not set 1s by default; 100ms on more. */
 #define TX_LATENCY_STATS_UPDATE_INTERVAL (0)
 #define TX_LATENCY_STATS_CONTINUOUS_FAIL_THREHOLD (10)
@@ -341,6 +343,7 @@ enum ENUM_MUTEX_CATEGORY_E {
 	MUTEX_CSI_STA_LIST,
 	MUTEX_FW_LOG,
 	MUTEX_WF_VOTE,
+	MUTEX_DYNAMIC_RFB,
 	MUTEX_NUM
 };
 

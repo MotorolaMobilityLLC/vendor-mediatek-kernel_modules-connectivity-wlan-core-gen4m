@@ -9853,7 +9853,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 
 #if CFG_RFB_TRACK
 #define RRB_TRACK_TEMPLATE \
-	"RfbTrack[%u:%u:%u:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d] "
+	"RfbTrack[%u:%u:%u:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d] "
 #else /* CFG_RFB_TRACK */
 #define RRB_TRACK_TEMPLATE ""
 #endif /* CFG_RFB_TRACK */
@@ -9900,6 +9900,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		prAdapter->rWifiVar.u4RfbTrackInterval,
 		prAdapter->rWifiVar.u4RfbTrackTimeout,
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_INIT),
+		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_UNUSE),
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_FREE),
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_HIF),
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_RX),
@@ -9912,6 +9913,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 			RFB_TRACK_REORDERING_OUT),
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_INDICATED),
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_PACKET_SETUP),
+		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_ADJUST_UNUSE),
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_MLO),
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_FAIL),
 #endif /* CFG_RFB_TRACK */
@@ -10004,7 +10006,7 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 	/*Calculate current throughput*/
 	struct PERF_MONITOR *prPerMonitor;
 	uint32_t u4Idx = 0;
-	uint8_t	i =	0;
+	uint8_t i = 0;
 	uint64_t maxTput = 0;
 	bool keep_alive = FALSE;
 	struct net_device *prDevHandler = NULL;
@@ -15012,18 +15014,37 @@ void kalRxRfbReturnWork(struct work_struct *work)
 {
 	struct GLUE_INFO *prGlueInfo =
 		container_of(work, struct GLUE_INFO, rRxRfbRetWork);
-#if CFG_SUPPORT_DYNAMIC_PAGE_POOL
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+#if CFG_SUPPORT_DYNAMIC_PAGE_POOL
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+	uint32_t u4RfbCnt = 0, u4RfbDelta = 0, u4Idx;
 
+	for (u4Idx = 0; u4Idx < PERF_MON_RFB_MAX_THRESHOLD; u4Idx++) {
+		if (kalGetTpMbps(prAdapter, PKT_PATH_ALL) <
+		    prAdapter->rWifiVar.u4RfbBoostTpTh[u4Idx])
+			break;
+	}
+	if (u4Idx < PERF_MON_RFB_MAX_THRESHOLD)
+		u4RfbCnt = prAdapter->rWifiVar.u4RfbUnUseCnt[u4Idx];
+
+	/* set to target level or max level */
+	if ((u4Idx > prAdapter->u4RfbUnUseCntLv) ||
+	    (u4RfbCnt < nicRxGetUnUseCnt(prAdapter))) {
+		nicRxSetRfbCntByLevel(prAdapter, u4Idx);
+	} else {
+		u4RfbDelta = u4RfbCnt - nicRxGetUnUseCnt(prAdapter);
+		if (RX_GET_FREE_RFB_CNT(&prAdapter->rRxCtrl) > u4RfbDelta)
+			nicRxDecRfbCnt(prAdapter);
+	}
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 	if (prBusInfo->u4WfdmaTh)
 		kalIncPagePoolPageNum();
 	else
 		kalDecPagePoolPageNum();
 #endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 
-	TRACE(wlanReturnPacketDelaySetupTasklet((uintptr_t)prGlueInfo),
-	      "RxRfbReturnWork");
+	TRACE(wlanReturnPacketDelaySetup(prAdapter), "RxRfbReturnWork");
 }
 
 void kalRxRfbReturnWorkInit(struct GLUE_INFO *pr)
@@ -15054,7 +15075,7 @@ void kalRxRfbReturnWorkSchedule(struct GLUE_INFO *pr)
 		return;
 	}
 
-	i4Cpu = pr->i4TxFreeMsduCpu;
+	i4Cpu = pr->i4RxRfbRetCpu;
 	if (i4Cpu == -1) {
 		queue_work(pr->prRxRfbRetWorkQueue,
 			&pr->rRxRfbRetWork);
