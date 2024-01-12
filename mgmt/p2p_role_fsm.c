@@ -1771,6 +1771,8 @@ void p2pRoleFsmDelIface(
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	struct GL_P2P_INFO *prP2pInfo = (struct GL_P2P_INFO *) NULL;
+	struct P2P_CONNECTION_REQ_INFO *prConnReqInfo = NULL;
+	const uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
 	uint32_t u4ConnType;
 
 	prGlueInfo = prAdapter->prGlueInfo;
@@ -1790,6 +1792,7 @@ void p2pRoleFsmDelIface(
 	}
 
 	prP2pBssInfo = prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
+	prConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 	u4ConnType = bssInfoConnType(prAdapter, prP2pBssInfo);
 
 	DBGLOG(P2P, INFO,
@@ -1890,6 +1893,10 @@ void p2pRoleFsmDelIface(
 		p2pFuncInitConnectionSettings(prAdapter,
 			prAdapter->rWifiVar.prP2PConnSettings[ucRoleIdx],
 			FALSE);
+
+		if (!EQUAL_MAC_ADDR(aucZeroMacAddr, prConnReqInfo->aucBssid))
+			kalP2pUnlinkBss(prAdapter->prGlueInfo,
+					prConnReqInfo->aucBssid);
 
 		p2pRoleFsmDelIfaceDone(prAdapter, ucRoleIdx);
 	}
