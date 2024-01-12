@@ -2432,6 +2432,13 @@ struct ADAPTER {
 
 	u_int8_t fgEnDbgPowerMode;
 
+#if WLAN_INCLUDE_SYS
+	u_int8_t fgEnRfTestMode;
+	u_int8_t fgEn6eSafeMode;
+	u_int8_t fg6eOffSpecNotShow;
+	uint16_t u2CurCountryCode;
+#endif
+
 	struct HIF_STATS rHifStats;
 
 	struct TX_LATENCY_REPORT_STATS rMsduReportStats;

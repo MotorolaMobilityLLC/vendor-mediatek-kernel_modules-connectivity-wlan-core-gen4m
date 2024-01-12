@@ -1041,6 +1041,22 @@ uint8_t rsnKeyMgmtWpa3for6g(struct ADAPTER *ad,
 		(prBss->fgIERSNX &&
 			prBss->u2RsnxCap & BIT(WLAN_RSNX_CAPAB_SAE_H2E));
 
+#if WLAN_INCLUDE_SYS
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (ad->fgEnRfTestMode) {
+		DBGLOG(RSN, INFO,
+			"RF test mode for 6G: all security type is allowed\n");
+		return TRUE;
+	}
+
+	if (ad->fgEn6eSafeMode) {
+		DBGLOG(RSN, INFO,
+			"safe mode for 6G: all security type is allowed\n");
+		return TRUE;
+	}
+#endif
+#endif
+
 	return (fgIsOWE || fgIsSAEH2E);
 }
 
