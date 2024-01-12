@@ -3930,11 +3930,9 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 	struct SCAN_LOG_ELEM_BSS *pBss = NULL;
 #if CFG_SHOW_FULL_MACADDR
 	/* XXXXXXXXXXXX */
-	const char *fmt = "%02x%02x%02x%02x%02x%02x";
 	const uint8_t dataLen = 12;
 #else
 	/* XXXXsumXX */
-	const char *fmt = "%02x%02x%03x%02x";
 	const uint8_t dataLen = 9;
 #endif
 
@@ -3971,7 +3969,7 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 
 #if CFG_SHOW_FULL_MACADDR
 		idx += kalSnprintf(logBuf+idx, dataLen+1,
-			fmt,
+			"%02x%02x%02x%02x%02x%02x",
 			((uint8_t *)pBss->aucBSSID)[0],
 			((uint8_t *)pBss->aucBSSID)[1],
 			((uint8_t *)pBss->aucBSSID)[2],
@@ -3980,7 +3978,7 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 			((uint8_t *)pBss->aucBSSID)[5]);
 #else
 		idx += kalSnprintf(logBuf+idx, dataLen+1,
-			fmt,
+			"%02x%02x%03x%02x",
 			((uint8_t *)pBss->aucBSSID)[0],
 			((uint8_t *)pBss->aucBSSID)[1],
 			((uint8_t *)pBss->aucBSSID)[2] +
