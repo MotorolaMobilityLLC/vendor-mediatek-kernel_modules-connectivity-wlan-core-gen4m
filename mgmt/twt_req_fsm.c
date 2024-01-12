@@ -119,7 +119,7 @@ twtReqFsmSteps(
 	uint8_t ucTWTFlowId,
 	void *pParam)
 {
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 	enum _ENUM_TWT_REQUESTER_STATE_T ePreState;
 	uint8_t fgIsTransition;
 #if (CFG_TWT_STA_DIRECT_TEARDOWN == 1)
