@@ -286,6 +286,18 @@ void kalP2PIndicateSecCheckRsp(struct GLUE_INFO *prGlueInfo,
 		uint16_t u2RspLen);
 #endif
 
+#if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
+void kalIdcRegisterRilNotifier(void);
+void kalIdcUnregisterRilNotifier(void);
+#endif
+#if CFG_SUPPORT_IDC_RIL_BRIDGE
+void kalSetRilBridgeChannelInfo(
+	struct ADAPTER *prAdapter,
+	uint8_t ucRat,
+	uint32_t u4Band,
+	uint32_t u4Channel);
+#endif
+
 /******************************************************************************
  *                              F U N C T I O N S
  ******************************************************************************

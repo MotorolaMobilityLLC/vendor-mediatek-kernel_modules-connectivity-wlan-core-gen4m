@@ -22,6 +22,11 @@
 #include "gl_wext.h"
 
 #if CFG_ENABLE_WIFI_DIRECT
+#if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
+#include <net/cnss_utils.h>
+#include <linux/dev_ril_bridge.h>
+#endif
+
 /******************************************************************************
  *                              C O N S T A N T S
  ******************************************************************************
@@ -2916,4 +2921,154 @@ nla_put_failure:
 	if (vendor_event)
 		kfree_skb(vendor_event);
 }
+
+#if CFG_SUPPORT_IDC_RIL_BRIDGE
+#if !CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
+struct dev_ril_bridge_msg {
+	unsigned int dev_id;
+	unsigned int data_len;
+	void *data;
+};
+#endif
+
+void kalSetRilBridgeChannelInfo(
+	struct ADAPTER *prAdapter,
+	uint8_t ucRat,
+	uint32_t u4Band,
+	uint32_t u4Channel)
+{
+	struct CMD_SET_IDC_RIL_BRIDGE *prCmd;
+	uint16_t u2CmdBufLen = 0;
+
+	do {
+		if (!prAdapter)
+			break;
+
+		u2CmdBufLen =
+			sizeof(struct CMD_SET_IDC_RIL_BRIDGE);
+
+		prCmd = (struct CMD_SET_IDC_RIL_BRIDGE *)
+			cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+			u2CmdBufLen);
+		if (!prCmd) {
+			DBGLOG(P2P, ERROR,
+				"cnmMemAlloc for prCmd failed!\n");
+			break;
+		}
+
+		prCmd->ucRat = ucRat;
+		prCmd->u4Band = u4Band;
+		prCmd->u4Channel = u4Channel;
+
+		DBGLOG(INIT, TRACE,
+			"Update CP channel info [%d,%d,%d]\n",
+			prCmd->ucRat,
+			prCmd->u4Band,
+			prCmd->u4Channel);
+
+		wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_SET_IDC_RIL,
+			TRUE,
+			FALSE,
+			FALSE,
+			NULL,
+			NULL,
+			u2CmdBufLen,
+			(uint8_t *) prCmd,
+			NULL,
+			0);
+
+		cnmMemFree(prAdapter, prCmd);
+	} while (FALSE);
+}
+
+static int g_init_ril_notifier;
+static int kalIdcRilNotifier(
+	struct notifier_block *nb,
+	unsigned long size,
+	void *buf)
+{
+	struct dev_ril_bridge_msg *msg;
+	struct CMD_SET_IDC_RIL_BRIDGE *cmd;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	if (!g_init_ril_notifier) {
+		DBGLOG(INIT, ERROR,
+			"Not init ril notifier\n");
+		return NOTIFY_DONE;
+	}
+
+	prGlueInfo = wlanGetGlueInfo();
+	if (!prGlueInfo ||
+		!prGlueInfo->prAdapter) {
+		DBGLOG(INIT, WARN,
+			   "prGlueInfo invalid!!\n");
+		return NOTIFY_DONE;
+	}
+
+	DBGLOG(INIT, LOUD,
+		"ril notification size %d\n", size);
+
+	msg = (struct dev_ril_bridge_msg *)buf;
+
+	DBGLOG(INIT, LOUD,
+		"dev_id : %d, data_len : %d\n",
+		msg->dev_id, msg->data_len);
+
+	if (msg->dev_id == IDC_RIL_CHANNEL_INFO
+		&& msg->data_len ==
+		sizeof(struct CMD_SET_IDC_RIL_BRIDGE)) {
+
+		cmd = (struct CMD_SET_IDC_RIL_BRIDGE *)msg->data;
+
+		DBGLOG(INIT, TRACE,
+			"Update CP channel info [%d,%d,%d]\n",
+			cmd->ucRat, cmd->u4Band, cmd->u4Channel);
+
+		/* rat mode : LTE (3), NR5G (7) */
+		if ((cmd->ucRat == IDC_RIL_BRIDGE_LTE) ||
+			(cmd->ucRat == IDC_RIL_BRIDGE_NR))
+			kalSetRilBridgeChannelInfo(
+				prGlueInfo->prAdapter,
+				cmd->ucRat,
+				cmd->u4Band,
+				cmd->u4Channel);
+
+		return NOTIFY_OK;
+	}
+
+	return NOTIFY_DONE;
+}
+#endif
+#if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
+static struct notifier_block g_ril_notifier_block = {
+	.notifier_call = kalIdcRilNotifier,
+};
+
+void kalIdcRegisterRilNotifier(void)
+{
+	if (!g_init_ril_notifier) {
+		int val = 1;
+
+		register_dev_ril_bridge_event_notifier(
+			&g_ril_notifier_block);
+
+		dev_ril_bridge_send_msg(
+			IDC_RIL_CHANNEL_INFO,
+			sizeof(int), &val);
+
+		g_init_ril_notifier = 1;
+	}
+}
+
+void kalIdcUnregisterRilNotifier(void)
+{
+	if (!g_init_ril_notifier) {
+		unregister_dev_ril_bridge_event_notifier(
+			&g_ril_notifier_block);
+		g_init_ril_notifier = 0;
+	}
+}
+#endif
+
 #endif /* CFG_ENABLE_WIFI_DIRECT */

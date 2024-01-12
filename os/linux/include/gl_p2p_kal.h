@@ -391,4 +391,16 @@ int32_t kalGetMulAPIfIdx(struct GLUE_INFO *prGlueInfo,
 void *kalGetP2pDevScanReq(struct GLUE_INFO *prGlueInfo);
 u_int8_t kalGetP2pDevScanSpecificSSID(struct GLUE_INFO *prGlueInfo);
 
+#if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
+void kalIdcRegisterRilNotifier(void);
+void kalIdcUnregisterRilNotifier(void);
+#endif
+#if CFG_SUPPORT_IDC_RIL_BRIDGE
+void kalSetRilBridgeChannelInfo(
+	struct ADAPTER *prAdapter,
+	uint8_t ucRat,
+	uint32_t u4Band,
+	uint32_t u4Channel);
+#endif
+
 #endif /* _GL_P2P_KAL_H */

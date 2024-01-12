@@ -3355,6 +3355,7 @@ reqExtSetAcpiDevicePowerState(struct GLUE_INFO
 #endif
 #if CFG_SUPPORT_IDC_CH_SWITCH
 #define CMD_SET_IDC_BMP		"SetIdcBmp"
+#define CMD_SET_IDC_RIL		"SET_RIL_BRIDGE"
 #endif
 
 #define CMD_PNODEBUG_SET	"PNODEBUG"
@@ -12161,6 +12162,58 @@ int priv_driver_set_idc_bmp(struct net_device *prNetDev,
 error:
 
 	return -1;
+}
+
+int priv_driver_set_idc_ril_bridge(
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Channel = 0;
+	uint32_t u4Band = 0;
+	uint32_t u4Ret = 0;
+	uint32_t ucRat = 0;
+	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
+		return -1;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+		ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS)
+		return -1;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= 4) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &ucRat);
+		u4Ret = kalkStrtou32(apcArgv[2], 0, &u4Band);
+		u4Ret = kalkStrtou32(apcArgv[3], 0, &u4Channel);
+
+		DBGLOG(REQ, INFO, "u4Ret is %d\n", u4Ret);
+		DBGLOG(REQ, INFO,
+			"Update CP channel info [%d,%d,%d]\n",
+			ucRat,
+			u4Band,
+			u4Channel);
+
+#if CFG_SUPPORT_IDC_RIL_BRIDGE
+		kalSetRilBridgeChannelInfo(
+			prGlueInfo->prAdapter,
+			ucRat,
+			u4Band,
+			u4Channel);
+#endif
+	} else {
+		DBGLOG(REQ, INFO, "Input insufficent\n");
+	}
+
+	return 0;
 }
 
 #endif
@@ -21694,6 +21747,13 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
 		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_5,
 		.policy    = u8_policy
+	},
+	{
+		.pcCmdStr  = CMD_SET_IDC_RIL,
+		.pfHandler = priv_driver_set_idc_ril_bridge,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_4,
+		.policy    = u32_policy
 	},
 #endif
 #if CFG_WOW_SUPPORT

@@ -88,6 +88,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_SET_IP_ADDRESS] = nicUniCmdOffloadIPV4,
 	[CMD_ID_SET_IPV6_ADDRESS] = nicUniCmdOffloadIPV6,
 	[CMD_ID_GET_LTE_CHN] = nicUniCmdGetIdcChnl,
+#if CFG_SUPPORT_IDC_RIL_BRIDGE
+	[CMD_ID_SET_IDC_RIL] = nicUniCmdSetIdcRilBridge,
+#endif
 #if CFG_SUPPORT_ROAMING
 	[CMD_ID_ROAMING_TRANSIT] = nicUniCmdRoaming,
 #endif
@@ -4412,6 +4415,49 @@ uint32_t nicUniCmdGetIdcChnl(struct ADAPTER *ad,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+#if CFG_SUPPORT_IDC_RIL_BRIDGE
+uint32_t nicUniCmdSetIdcRilBridge(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_SET_IDC_RIL_BRIDGE *cmd;
+	struct UNI_CMD_IDC *uni_cmd;
+	struct UNI_CMD_RIL_BRIDGE *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len =
+		sizeof(struct UNI_CMD_IDC) +
+		sizeof(struct UNI_CMD_RIL_BRIDGE);
+
+	if (info->ucCID != CMD_ID_SET_IDC_RIL ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_SET_IDC_RIL_BRIDGE *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_IDC,
+		max_cmd_len,
+		NULL,
+		NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_IDC *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_RIL_BRIDGE *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_IDC_TAG_RIL_BRIDGE;
+	tag->u2Length = sizeof(*tag);
+
+	tag->ucRat = cmd->ucRat;
+	tag->u4Band = cmd->u4Band;
+	tag->u4Channel = cmd->u4Channel;
+
+	DBGLOG(INIT, INFO,
+		"Update CP channel info [%d,%d,%d]\n",
+		cmd->ucRat, cmd->u4Band, cmd->u4Channel);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
 
 uint32_t nicUniCmdSetSGParam(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)

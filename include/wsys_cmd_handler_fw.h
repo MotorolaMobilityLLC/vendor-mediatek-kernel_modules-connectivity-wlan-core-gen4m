@@ -389,6 +389,9 @@ enum ENUM_CMD_ID {
 	CMD_ID_SET_P2P_LO_START    = 0xE2, /* 0xE2 (Set) */
 	CMD_ID_SET_P2P_LO_STOP     = 0xE3, /* 0xE3 (Set) */
 
+#if CFG_SUPPORT_IDC_RIL_BRIDGE
+	CMD_ID_SET_IDC_RIL         = 0xE4, /* 0xE4 (Set) */
+#endif
 	CMD_ID_NAN_EXT_CMD = 0XEB,
 
 	CMD_ID_LAYER_0_EXT_MAGIC_NUM    = 0xED,
@@ -1182,6 +1185,18 @@ struct CMD_SET_P2P_LO_STOP_STRUCT {
 	uint8_t ucBssIndex;
 	uint8_t aucReserved[3];
 };
+
+#if CFG_SUPPORT_IDC_RIL_BRIDGE
+#define IDC_RIL_CHANNEL_INFO (0x01)
+#define IDC_RIL_BRIDGE_LTE (3)
+#define IDC_RIL_BRIDGE_NR (7)
+
+struct CMD_SET_IDC_RIL_BRIDGE {
+	uint8_t ucRat; /* LTE or NR */
+	uint32_t u4Band;
+	uint32_t u4Channel;
+};
+#endif
 
 struct CMD_CUSTOM_UAPSD_PARAM_STRUCT {
 	uint8_t  fgEnAPSD;
