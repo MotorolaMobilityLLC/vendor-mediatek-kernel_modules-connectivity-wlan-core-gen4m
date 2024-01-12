@@ -139,6 +139,9 @@ static u_int8_t rlmCheckOpChangeParamValid(struct ADAPTER *prAdapter,
 					   uint8_t ucOpRxNss,
 					   uint8_t ucOpTxNss);
 
+static void rlmUpdateParamsForCSA(struct ADAPTER *prAdapter,
+			   struct BSS_INFO *prBssInfo);
+
 static void rlmChangeOperationModeAfterCSA(
 					struct ADAPTER *prAdapter,
 					struct BSS_INFO *prBssInfo);
@@ -3884,6 +3887,19 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	}
 #endif
 
+	/* Do not write prBssInfo->ucVhtChannelWidth directly
+	 * in rlmReviseMaxBw, otherwise it will cause the following
+	 * struct members being overwritten unexpectly.
+	 */
+	eChannelWidth = (enum ENUM_CHANNEL_WIDTH)
+		prBssInfo->ucVhtChannelWidth;
+	rlmReviseMaxBw(prAdapter, prBssInfo->ucBssIndex,
+		&prBssInfo->eBssSCO,
+		&eChannelWidth,
+		&prBssInfo->ucVhtChannelFrequencyS1,
+		&prBssInfo->ucPrimaryChannel);
+	prBssInfo->ucVhtChannelWidth = (uint8_t)eChannelWidth;
+
 	/* Receive new beacon after channel switch */
 	if (!HAS_CH_SWITCH_PARAMS(prCSAParams) &&
 			prCSAParams->ucCsaMode < MODE_NUM) {
@@ -3906,10 +3922,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				prBssDesc->e6GPwrMode);
 #endif
 
-		if (IS_BSS_AIS(prBssInfo)) {
-			aisUpdateParamsForCSA(prAdapter, prBssInfo);
-			rlmChangeOperationModeAfterCSA(prAdapter, prBssInfo);
-		}
+		rlmUpdateParamsForCSA(prAdapter, prBssInfo);
+		rlmChangeOperationModeAfterCSA(prAdapter, prBssInfo);
 
 		if (prCSAParams->fgHasStopTx) {
 			qmSetStaRecTxAllowed(prAdapter, prStaRec, TRUE);
@@ -3918,19 +3932,6 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 		rlmResetCSAParams(prBssInfo, TRUE);
 	}
-
-	/* Do not write prBssInfo->ucVhtChannelWidth directly
-	 * in rlmReviseMaxBw, otherwise it will cause the following
-	 * struct members being overwritten unexpectly.
-	 */
-	eChannelWidth = (enum ENUM_CHANNEL_WIDTH)
-		prBssInfo->ucVhtChannelWidth;
-	rlmReviseMaxBw(prAdapter, prBssInfo->ucBssIndex,
-		&prBssInfo->eBssSCO,
-		&eChannelWidth,
-		&prBssInfo->ucVhtChannelFrequencyS1,
-		&prBssInfo->ucPrimaryChannel);
-	prBssInfo->ucVhtChannelWidth = (uint8_t)eChannelWidth;
 
 	rlmRevisePreferBandwidthNss(prAdapter, prBssInfo->ucBssIndex, prStaRec);
 
@@ -6911,6 +6912,12 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		prCSAParams = &prBssInfo->CSAParams;
 		ucCurrentCsaCount = MAX_CSA_COUNT;
 
+		if (prBssInfo->fgIsSwitchingChnl) {
+			DBGLOG(RLM, WARN,
+			       "[CSA Mgt] Still waiting for CSA to be done, drop it");
+			break;
+		}
+
 		IE_FOR_EACH(pucIE, u2IELength, u2Offset)
 		{
 			switch (IE_ID(pucIE)) {
@@ -7086,6 +7093,12 @@ void rlmProcessPublicActionExCsa(struct ADAPTER *prAdapter,
 		return;
 
 	prCSAParams = &prBssInfo->CSAParams;
+	if (prBssInfo->fgIsSwitchingChnl) {
+		DBGLOG(RLM, WARN,
+		       "[CSA Mgt] Still waiting for CSA to be done, drop it");
+		return;
+	}
+
 	u2IELength = prSwRfb->u2PacketLen -
 		(uint16_t)OFFSET_OF(struct ACTION_EX_CHANNEL_SWITCH_FRAME,
 				aucInfoElem[0]);
@@ -7211,8 +7224,7 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 			? BAND_2G4 : BAND_5G;
 
 	/* Store VHT Channel width for later op mode operation */
-	prBssInfo->ucVhtChannelWidthBeforeCsa =
-		prBssInfo->ucVhtChannelWidth;
+	prBssInfo->ucVhtChannelWidthBeforeCsa = prBssInfo->ucVhtChannelWidth;
 
 	prBssInfo->ucVhtChannelWidth = prCSAParams->ucVhtBw;
 	prBssInfo->ucVhtChannelFrequencyS1 = prCSAParams->ucVhtS1;
@@ -7233,6 +7245,7 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 		}
 	}
 
+	prBssInfo->eBssScoBeforeCsa = prBssInfo->eBssSCO;
 	if (HAS_SCO_PARAMS(prCSAParams))
 		prBssInfo->eBssSCO = prCSAParams->eSco;
 
@@ -8368,7 +8381,12 @@ uint8_t rlmGetBssOpBwByOwnAndPeerCapability(struct ADAPTER *prAdapter,
 	ucOpMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
 
 #if CFG_SUPPORT_802_11AC
-	if (RLM_NET_IS_11AC(prBssInfo)) { /* VHT */
+	/* VHT && EHT */
+	if (RLM_NET_IS_11AC(prBssInfo)
+#if (CFG_SUPPORT_802_11BE == 1)
+	    || RLM_NET_IS_11BE(prBssInfo)
+#endif
+	    ) {
 		switch (prStaRec->ucVhtOpChannelWidth) {
 		case VHT_OP_CHANNEL_WIDTH_320_1:
 			ucBssOpBw = MAX_BW_320_1MHZ;
@@ -9020,10 +9038,55 @@ rlmChangeOperationMode(
 	return OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function will update the contain of BSS_INFO_T and STA_RECORD_T
+ *        for AIS network once reciving new beacon after CSA.
+ *
+ * @param[in] prBssInfo              Pointer to AIS BSS_INFO_T
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void rlmUpdateParamsForCSA(struct ADAPTER *prAdapter,
+				struct BSS_INFO *prBssInfo)
+{
+	struct STA_RECORD *prStaRec;
+	struct BSS_DESC *prBssDesc;
+
+	prStaRec = prBssInfo->prStaRecOfAP;
+	prBssDesc = scanSearchBssDescByBssid(prAdapter, prStaRec->aucMacAddr);
+
+	if (!prBssDesc) {
+		DBGLOG(AIS, ERROR,
+			"Can't find " MACSTR "\n",
+			MAC2STR(prStaRec->aucMacAddr));
+		return;
+	}
+
+	/* <1> Update information from BSS_DESC to current P_STA_RECORD */
+	bssUpdateStaRecFromBssDesc(prAdapter, prBssDesc, prStaRec);
+
+	/* <2> Setup PHY Attributes and Basic Rate Set/Operational
+	 * Rate Set
+	 */
+	prBssInfo->ucPhyTypeSet = prStaRec->ucDesiredPhyTypeSet;
+	prBssInfo->ucNonHTBasicPhyType = prStaRec->ucNonHTBasicPhyType;
+	prBssInfo->u2OperationalRateSet = prStaRec->u2OperationalRateSet;
+	prBssInfo->u2BSSBasicRateSet = prStaRec->u2BSSBasicRateSet;
+
+	nicTxUpdateBssDefaultRate(prBssInfo);
+	nicTxUpdateStaRecDefaultRate(prAdapter, prStaRec);
+	cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
+
+	cnmDumpStaRec(prAdapter, prStaRec->ucIndex);
+}				/* end of aisUpdateParamsForCSA() */
+
 void rlmChangeOperationModeAfterCSA(
 	struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 {
-	uint8_t ucVhtChannelWidthAfterCsa = VHT_OP_CHANNEL_WIDTH_20_40;
+	uint8_t ucVhtChannelWidthAfterCsa;
+	enum ENUM_CHNL_EXT eBssScoAfterCsa;
 
 	if (!prBssInfo)
 		return;
@@ -9031,16 +9094,19 @@ void rlmChangeOperationModeAfterCSA(
 	ucVhtChannelWidthAfterCsa = prBssInfo->ucVhtChannelWidth;
 	prBssInfo->ucVhtChannelWidth = prBssInfo->ucVhtChannelWidthBeforeCsa;
 
+	eBssScoAfterCsa = prBssInfo->eBssSCO;
+	prBssInfo->eBssSCO = prBssInfo->eBssScoBeforeCsa;
+
 	DBGLOG(RLM, INFO,
-		"op mode change to BW[%d]-RxNss[%d]-TxNss[%d], before csa BW[%d], after csa BW[%d]\n",
-		rlmGetBssOpBwByOwnAndPeerCapability(prAdapter, prBssInfo),
-		prBssInfo->ucOpRxNss,
-		prBssInfo->ucOpTxNss,
+		"op mode change from BW[%d] to BW[%d]-RxNss[%d]-TxNss[%d]",
 		prBssInfo->ucVhtChannelWidth,
-		ucVhtChannelWidthAfterCsa);
+		ucVhtChannelWidthAfterCsa,
+		prBssInfo->ucOpRxNss,
+		prBssInfo->ucOpTxNss);
 	rlmChangeOperationMode(
 		prAdapter, prBssInfo->ucBssIndex,
-		rlmGetBssOpBwByOwnAndPeerCapability(prAdapter, prBssInfo),
+		rlmGetBssOpBwByChannelWidth(eBssScoAfterCsa,
+					    ucVhtChannelWidthAfterCsa),
 		prBssInfo->ucOpRxNss,
 		prBssInfo->ucOpTxNss,
 		TRUE,
@@ -9048,6 +9114,7 @@ void rlmChangeOperationModeAfterCSA(
 
 	/* Restore VHT channel width after CSA */
 	prBssInfo->ucVhtChannelWidth = ucVhtChannelWidthAfterCsa;
+	prBssInfo->eBssSCO = eBssScoAfterCsa;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -9633,6 +9700,10 @@ static void __rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
 	struct ACTION_CHANNEL_SWITCH_FRAME *prFrame;
 	uint16_t u2EstimatedFrameLen;
 	uint8_t *start, *pos;
+#if CFG_ENABLE_WIFI_DIRECT
+	uint32_t u4LifeTimeout, u4MaxLifeTimeout;
+	uint32_t u4MarginTimeout = GO_CSA_ACTION_FRAME_LIFE_TIME_MARGIN_MS;
+#endif
 
 	if (!prBssInfo || !prStarec)
 		return;
@@ -9710,6 +9781,22 @@ static void __rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
 		     rlmSendChannelSwitchTxDone,
 		     MSDU_RATE_MODE_AUTO);
 
+#if CFG_ENABLE_WIFI_DIRECT
+	/* GC not expects to receive after csa timeout */
+	u4MaxLifeTimeout = prAdapter->rWifiVar.ucChannelSwitchCount *
+		prBssInfo->u2BeaconInterval;
+
+	if (u4MaxLifeTimeout > u4MarginTimeout)
+		u4LifeTimeout = u4MaxLifeTimeout - u4MarginTimeout;
+	else
+		u4LifeTimeout = 0;
+
+	if (u4LifeTimeout < GO_CSA_ACTION_FRAME_MINIMUM_LIFE_TIME_MS)
+		u4LifeTimeout = GO_CSA_ACTION_FRAME_MINIMUM_LIFE_TIME_MS;
+
+	nicTxSetPktLifeTime(prAdapter, prMsduInfo, u4LifeTimeout);
+#endif
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	nicTxConfigPktControlFlag(prMsduInfo,
 			MSDU_CONTROL_FLAG_FORCE_LINK |
@@ -9747,6 +9834,10 @@ static void __rlmSendExChannelSwitchFrame(struct ADAPTER *prAdapter,
 	struct ACTION_EX_CHANNEL_SWITCH_FRAME *prFrame;
 	uint16_t u2EstimatedFrameLen;
 	uint8_t *start, *pos;
+#if CFG_ENABLE_WIFI_DIRECT
+	uint32_t u4LifeTimeout, u4MaxLifeTimeout;
+	uint32_t u4MarginTimeout = GO_CSA_ACTION_FRAME_LIFE_TIME_MARGIN_MS;
+#endif
 
 	if (!prBssInfo || !prStarec)
 		return;
@@ -9807,6 +9898,22 @@ static void __rlmSendExChannelSwitchFrame(struct ADAPTER *prAdapter,
 		     (uint16_t)(pos - start),
 		     rlmSendExChannelSwitchTxDone,
 		     MSDU_RATE_MODE_AUTO);
+
+#if CFG_ENABLE_WIFI_DIRECT
+	/* GC not expects to receive after csa timeout */
+	u4MaxLifeTimeout = prAdapter->rWifiVar.ucChannelSwitchCount *
+		prBssInfo->u2BeaconInterval;
+
+	if (u4MaxLifeTimeout > u4MarginTimeout)
+		u4LifeTimeout = u4MaxLifeTimeout - u4MarginTimeout;
+	else
+		u4LifeTimeout = 0;
+
+	if (u4LifeTimeout < GO_CSA_ACTION_FRAME_MINIMUM_LIFE_TIME_MS)
+		u4LifeTimeout = GO_CSA_ACTION_FRAME_MINIMUM_LIFE_TIME_MS;
+
+	nicTxSetPktLifeTime(prAdapter, prMsduInfo, u4LifeTimeout);
+#endif
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	nicTxConfigPktControlFlag(prMsduInfo,
