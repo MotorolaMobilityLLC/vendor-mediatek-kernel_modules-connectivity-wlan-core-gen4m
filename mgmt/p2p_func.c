@@ -7186,6 +7186,12 @@ void p2pFuncSwitchSapChannel(
 
 #if CFG_SUPPORT_DBDC
 	fgDbDcModeEn = prAdapter->rWifiVar.fgDbDcModeEn;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	/* Go SCC for 5G+6G */
+	if ((eStaBand == BAND_5G && eSapBand == BAND_6G) ||
+		(eStaBand == BAND_6G && eSapBand == BAND_5G))
+		fgDbDcModeEn = FALSE;
+#endif
 #endif
 
 	/* Check channel no */
