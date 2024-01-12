@@ -2041,7 +2041,7 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 
 	if (fgIsPureAp)
 		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
-	else /* if (rlmUpdateParamsForAP(prAdapter, prBssInfo, FALSE) == FALSE) */
+	else if (rlmUpdateParamsForAP(prAdapter, prBssInfo, FALSE) == FALSE)
 		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
