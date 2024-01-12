@@ -1374,7 +1374,7 @@ else
     ccflags-y += -DCFG_MTK_WIFI_AER_L05_RESET=0
 endif
 
-ifeq ($CONFIG_SUPPORT_CE_COREDUMP), y)
+ifeq ($(CONFIG_SUPPORT_CE_COREDUMP), y)
     ccflags-y += -DCFG_CE_ASSERT_DUMP=1
 else
     ccflags-y += -DCFG_CE_ASSERT_DUMP=0
