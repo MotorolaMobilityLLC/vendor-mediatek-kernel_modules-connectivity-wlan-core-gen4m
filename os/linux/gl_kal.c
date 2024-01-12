@@ -1085,15 +1085,17 @@ void *kalPacketAlloc(struct GLUE_INFO *prGlueInfo,
 		     u_int8_t fgIsTx,
 		     uint8_t **ppucData)
 {
-	struct mt66xx_chip_info *prChipInfo;
-	struct sk_buff *prSkb;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct sk_buff *prSkb = NULL;
 	uint32_t u4TxHeadRoomSize = 0;
 
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	glGetChipInfo((void **)&prChipInfo);
 
 	if (fgIsTx) {
-		u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
-			prChipInfo->txd_append_size;
+		if (prChipInfo) {
+			u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
+				prChipInfo->txd_append_size;
+		}
 	} else {
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 		u4TxHeadRoomSize = CFG_RADIOTAP_HEADROOM;
@@ -1113,8 +1115,11 @@ void *kalPacketAlloc(struct GLUE_INFO *prGlueInfo,
 		*ppucData = (uint8_t *) (prSkb->data);
 
 		kalResetPacket(prGlueInfo, (void *) prSkb);
-		RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
-			   RX_PACKET_ALLOC_COUNT);
+
+		if (prGlueInfo) {
+			RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+				RX_PACKET_ALLOC_COUNT);
+		}
 	}
 #if DBG
 	{

@@ -609,7 +609,11 @@ struct BUS_INFO mt6653_bus_info = {
 #else
 	.fgCheckDriverOwnInt = FALSE,
 #endif /* CFG_MTK_WIFI_DRV_OWN_INT_MODE */
+#if (CFG_MTK_ANDROID_WMT == 1)
+	.u4DmaMask = 36,
+#else /* !CFG_MTK_ANDROID_WMT */
 	.u4DmaMask = 34,
+#endif /* !CFG_MTK_ANDROID_WMT */
 	.wfmda_host_tx_group = mt6653_wfmda_host_tx_group,
 	.wfmda_host_tx_group_len = ARRAY_SIZE(mt6653_wfmda_host_tx_group),
 	.wfmda_host_rx_group = mt6653_wfmda_host_rx_group,

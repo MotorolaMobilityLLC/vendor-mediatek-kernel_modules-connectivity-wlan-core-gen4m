@@ -774,8 +774,12 @@ void *halZeroCopyPathAllocRxBuf(struct GL_HIF_INFO *prHifInfo,
 			    struct RTMP_DMABUF *prDmaBuf,
 			    uint32_t u4Num, uint32_t u4Idx)
 {
-	struct sk_buff *pkt = dev_alloc_skb(prDmaBuf->AllocSize);
+	struct sk_buff *pkt = NULL;
 	dma_addr_t rAddr;
+
+	pkt = (struct sk_buff *)kalPacketAlloc(NULL,
+		     prDmaBuf->AllocSize, FALSE,
+		     (uint8_t **)&prDmaBuf->AllocVa);
 
 	if (!pkt) {
 		DBGLOG(HAL, ERROR, "can't allocate rx %lu size packet\n",
@@ -785,10 +789,6 @@ void *halZeroCopyPathAllocRxBuf(struct GL_HIF_INFO *prHifInfo,
 		return NULL;
 	}
 
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
-	skb_reserve(pkt, CFG_RADIOTAP_HEADROOM);
-#endif
-	prDmaBuf->AllocVa = (void *)pkt->data;
 	memset(prDmaBuf->AllocVa, 0, prDmaBuf->AllocSize);
 
 	rAddr = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev, prDmaBuf->AllocVa,
@@ -884,12 +884,12 @@ bool halZeroCopyPathCopyRxData(struct GL_HIF_INFO *prHifInfo,
 			     (dma_addr_t)prDmaBuf->AllocPa,
 			     prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
 
-#if CFG_SUPPORT_RX_PAGE_POOL
+#if (CFG_SUPPORT_PAGE_POOL_USE_CMA == 1)
 	if (!prSkb->pp_recycle) {
 		halCopyPathCopyRxData(prHifInfo, pRxCell, prDmaBuf, prSwRfb);
 		goto dma_map;
 	}
-#endif
+#endif /* CFG_SUPPORT_PAGE_POOL_USE_CMA */
 
 	pRxPacket = pRxCell->pPacket;
 	ASSERT(pRxPacket);
@@ -898,9 +898,10 @@ bool halZeroCopyPathCopyRxData(struct GL_HIF_INFO *prHifInfo,
 	prSwRfb->pvPacket = pRxPacket;
 	prDmaBuf->AllocVa = ((struct sk_buff *)pRxCell->pPacket)->data;
 
-#if CFG_SUPPORT_RX_PAGE_POOL
+#if (CFG_SUPPORT_PAGE_POOL_USE_CMA == 1)
 dma_map:
-#endif
+#endif /* CFG_SUPPORT_PAGE_POOL_USE_CMA */
+
 	if (!halDmaMapSingleRetry(prHifInfo, prDmaBuf->AllocVa,
 				  prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE,
 				  &rAddr)) {

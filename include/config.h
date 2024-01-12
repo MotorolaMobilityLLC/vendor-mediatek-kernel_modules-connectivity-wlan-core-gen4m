@@ -2321,6 +2321,10 @@
 #define CFG_MTK_WIFI_MBU			0
 #endif
 
+#ifndef CFG_SUPPORT_PAGE_POOL_USE_CMA
+#define CFG_SUPPORT_PAGE_POOL_USE_CMA        0
+#endif
+
 #ifndef CFG_MTK_WIFI_MISC_RSV_MEM
 #define CFG_MTK_WIFI_MISC_RSV_MEM		0
 #endif
