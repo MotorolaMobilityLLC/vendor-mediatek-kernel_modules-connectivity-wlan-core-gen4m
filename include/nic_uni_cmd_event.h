@@ -241,6 +241,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_GAMING_MODE          = 0x63, /* Gaming Mode */
 	UNI_CMD_ID_MDNS_RECORD		= 0x64, /* Keep alive */
 	UNI_CMD_ID_LP_DBG_CTRL		= 0x71, /* LP */
+	UNI_CMD_ID_UWB_COEX		= 0x75, /* UWB COEX */
 };
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -2061,6 +2062,40 @@ struct UNI_CMD_RIL_BRIDGE {
 	uint8_t    aucReserved1[2];
 	uint32_t   u4Band;
 	uint32_t   u4Channel;
+} __KAL_ATTRIB_PACKED__;
+#endif
+
+#if CFG_SUPPORT_UWB_COEX
+/* UWB COEX command (0x75) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_UWB_COEX {
+	uint8_t ucReserved[4];
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* UWB COEX config Tag */
+enum ENUM_UNI_CMD_UWB_COEX_TAG {
+	UNI_CMD_UWB_COEX_TAG_ENABLE = 0,
+	UNI_CMD_UWB_COEX_TAG_SET_PREPARE_TIME = 1,
+	UNI_CMD_UWB_COEX_TAG_NUM
+};
+
+/* UWB COEX Setting (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_UWB_COEX_ENABLE {
+	uint16_t   u2Tag;
+	uint16_t   u2Length;
+	uint32_t   u4Enable;
+	uint32_t   u4StartCh;
+	uint32_t   u4EndCh;
+} __KAL_ATTRIB_PACKED__;
+
+/* UWB COEX Setting (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_UWB_COEX_PREPARE {
+	uint16_t   u2Tag;
+	uint16_t   u2Length;
+	uint32_t   u4Time;
 } __KAL_ATTRIB_PACKED__;
 #endif
 
@@ -7346,6 +7381,12 @@ uint32_t nicUniCmdGetIdcChnl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 #if CFG_SUPPORT_IDC_RIL_BRIDGE
 uint32_t nicUniCmdSetIdcRilBridge(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif
+#if CFG_SUPPORT_UWB_COEX
+uint32_t nicUniCmdSetUwbCoexEnable(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetUwbCoexPrepare(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 #endif
 uint32_t nicUniCmdSetSGParam(struct ADAPTER *ad,

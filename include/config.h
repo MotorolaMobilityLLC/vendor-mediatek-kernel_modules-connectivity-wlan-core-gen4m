@@ -101,6 +101,8 @@
 #define CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY (0)
 #endif
 
+#define CFG_SUPPORT_UWB_COEX  (CFG_SUPPORT_IDC_RIL_BRIDGE)
+
 #if (CFG_SUPPORT_DFS == 1)	/* Add by Enlai */
 /* Quiet (802.11h) */
 #define CFG_SUPPORT_QUIET	0

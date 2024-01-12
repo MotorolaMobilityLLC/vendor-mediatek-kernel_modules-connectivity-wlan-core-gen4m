@@ -834,6 +834,40 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.u4PolicySize = ARRAY_SIZE(u32_policy)
 	},
 #endif
+#if CFG_SUPPORT_UWB_COEX
+	{
+		.pcCmdStr  = CMD_SET_UWBCX_ENABLE,
+		.pfHandler = priv_driver_set_uwbcx_enable,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(4),
+		.policy    = u32_policy,
+		.u4PolicySize = ARRAY_SIZE(u32_policy)
+	},
+	{
+		.pcCmdStr  = CMD_SET_UWBCX_PREPARE_TIME,
+		.pfHandler = priv_driver_set_uwbcx_prepare,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = u32_policy,
+		.u4PolicySize = ARRAY_SIZE(u32_policy)
+	},
+	{
+		.pcCmdStr  = CMD_GET_UWBCX_ENABLE,
+		.pfHandler = priv_driver_get_uwbcx_enable,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+	{
+		.pcCmdStr  = CMD_GET_UWBCX_PREPARE_TIME,
+		.pfHandler = priv_driver_get_uwbcx_prepare,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif
 #if CFG_WOW_SUPPORT
 	{
 		.pcCmdStr  = CMD_WOW_START,
