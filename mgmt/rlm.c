@@ -1203,8 +1203,8 @@ void rlmGenerateHtTPEIE(
 	struct STA_RECORD *prStaRec;
 	uint8_t ucPhyTypeSet;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsduInfo);
+	if (!prAdapter || !prMsduInfo)
+		return;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
@@ -1843,8 +1843,8 @@ void rlmGenerateVhtTPEIE(
 	struct STA_RECORD *prStaRec;
 	uint8_t ucPhyTypeSet;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsduInfo);
+	if (!prAdapter || !prMsduInfo)
+		return;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 

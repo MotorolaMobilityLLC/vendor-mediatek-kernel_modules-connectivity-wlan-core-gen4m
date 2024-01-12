@@ -756,9 +756,11 @@ void p2pLinkAcquireChJoin(
 
 		if (i == 0)
 			prSubReq = prMsgChReq;
+#if (MLD_LINK_MAX > 1)
 		else
 			prSubReq = (struct MSG_CH_REQ *)
 				&prMsgChReq->aucBuffer[i];
+#endif
 
 		p2pFuncReleaseCh(prAdapter,
 			prBss->ucBssIndex,
@@ -776,9 +778,11 @@ void p2pLinkAcquireChJoin(
 		prSubReq->ucRfCenterFreqSeg1 = prChnlReqInfo->ucCenterFreqS1;
 		prSubReq->ucRfCenterFreqSeg2 = prChnlReqInfo->ucCenterFreqS2;
 #if CFG_SUPPORT_DBDC
+#if (MLD_LINK_MAX > 1)
 		if (ucReqChNum >= 2)
 			prSubReq->eDBDCBand = ENUM_BAND_ALL;
 		else
+#endif
 			prSubReq->eDBDCBand = ENUM_BAND_AUTO;
 #endif /*CFG_SUPPORT_DBDC*/
 	}

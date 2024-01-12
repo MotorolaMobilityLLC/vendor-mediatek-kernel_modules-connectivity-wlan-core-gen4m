@@ -1275,7 +1275,10 @@ uint8_t secGetBssIdxByWlanIdx(struct ADAPTER *prAdapter, uint8_t ucWlanIdx)
 uint8_t secGetBssIdxByRfb(IN struct ADAPTER *prAdapter,
 	IN struct SW_RFB *prSwRfb) {
 
-	if (prAdapter && prSwRfb) {
+	if (!prAdapter)
+		return AIS_DEFAULT_BSS_INDEX;
+
+	if (prSwRfb) {
 		uint8_t	ucBssIndex =
 			secGetBssIdxByWlanIdx(prAdapter,
 			prSwRfb->ucWlanIdx);
