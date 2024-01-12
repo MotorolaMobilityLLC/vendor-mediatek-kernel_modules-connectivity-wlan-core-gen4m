@@ -5884,7 +5884,6 @@ void mqmProcessAssocReq(IN struct ADAPTER *prAdapter,
 					pucIE, &u4Flags))
 					prStaRec->u4Flags = u4Flags;
 #endif
-
 				break;
 
 			case ELEM_ID_HT_CAP:
@@ -5971,6 +5970,9 @@ void mqmProcessAssocRsp(IN struct ADAPTER *prAdapter,
 	uint16_t u2Offset;
 	uint8_t *pucIEStart;
 	uint32_t u4Flags;
+#if CFG_SUPPORT_RXSMM_WHITELIST
+	uint8_t  fgRxsmmEnable;
+#endif
 
 	DEBUGFUNC("mqmProcessAssocRsp");
 
@@ -6011,6 +6013,12 @@ void mqmProcessAssocRsp(IN struct ADAPTER *prAdapter,
 				if (rlmParseCheckMTKOuiIE(prAdapter,
 					pucIE, &u4Flags))
 					prStaRec->u4Flags = u4Flags;
+#endif
+
+#if CFG_SUPPORT_RXSMM_WHITELIST
+				if (rlmParseCheckRxsmmOuiIE(prAdapter,
+					pucIE, &fgRxsmmEnable))
+					prStaRec->fgRxsmmEnable = fgRxsmmEnable;
 #endif
 
 				break;
