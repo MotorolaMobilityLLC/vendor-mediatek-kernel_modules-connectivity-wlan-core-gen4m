@@ -2082,8 +2082,11 @@ u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo)
 	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
-	if (prGlueInfo->prAdapter->fgEnLowLatencyMode ||
-		wlanWfdEnabled(prGlueInfo->prAdapter))
+	if (wlanWfdEnabled(prGlueInfo->prAdapter)
+#if (CFG_SUPPORT_LOWLATENCY_MODE == 1)
+	    || prGlueInfo->prAdapter->fgEnLowLatencyMode
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+	   )
 		goto tx_data;
 
 	if (KAL_TEST_AND_CLEAR_BIT(
