@@ -2250,6 +2250,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			 * handler run worngly
 			 */
 
+			kalMemZero(&set, sizeof(struct BSS_DESC_SET));
 			/* Support AP Selection */
 			if (prAisFsmInfo->ucJoinFailCntAfterScan >=
 				SCN_BSS_JOIN_FAIL_THRESOLD) {
@@ -2864,6 +2865,7 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	uint8_t ucReasonOfDisconnect;
 	u_int8_t fgDelayIndication;
+	uint16_t u2DeauthReason;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	uint8_t ucBssIndex = 0;
 
@@ -2873,6 +2875,8 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 	prAisAbortMsg = (struct MSG_AIS_ABORT *)prMsgHdr;
 	ucReasonOfDisconnect = prAisAbortMsg->ucReasonOfDisconnect;
 	fgDelayIndication = prAisAbortMsg->fgDelayIndication;
+	u2DeauthReason = prAisAbortMsg->u2DeauthReason;
+
 	ucBssIndex = prAisAbortMsg->ucBssIndex;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -2893,7 +2897,7 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 	if (ucReasonOfDisconnect == DISCONNECT_REASON_CODE_DEAUTHENTICATED ||
 	    ucReasonOfDisconnect == DISCONNECT_REASON_CODE_DISASSOCIATED)
 		aisFsmAddBlockList(prAdapter, prAisFsmInfo,
-			prAisAbortMsg->u2DeauthReason);
+			u2DeauthReason);
 
 	/* to support user space triggered roaming */
 	if (ucReasonOfDisconnect == DISCONNECT_REASON_CODE_ROAMING &&
@@ -3177,6 +3181,7 @@ void aisRestoreAllLink(IN struct ADAPTER *ad,
 		if (!prAisBssInfo)
 			break;
 
+		kalMemZero(&rSsid, sizeof(struct PARAM_SSID));
 		COPY_SSID(rSsid.aucSsid,
 			  rSsid.u4SsidLen,
 			  prAisBssInfo->aucSSID,

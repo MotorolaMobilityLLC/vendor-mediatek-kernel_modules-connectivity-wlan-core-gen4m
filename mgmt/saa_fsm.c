@@ -614,6 +614,11 @@ void saaFsmRunEventStart(IN struct ADAPTER *prAdapter,
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 						  prStaRec->ucBssIndex);
 
+		if (!prBssInfo) {
+			DBGLOG(SAA, ERROR, "prBssInfo is null\n");
+			return;
+		}
+
 		if ((prAdapter->rWifiVar.ucAvailablePhyTypeSet &
 		     PHY_TYPE_SET_802_11N) &&
 		    (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N)) {
@@ -944,7 +949,8 @@ struct STA_RECORD *saaFsmFindStaRec(IN struct ADAPTER *prAdapter,
 
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 
-			if (EQUAL_MAC_ADDR(prBssInfo->aucOwnMacAddr,
+			if (prBssInfo &&
+				EQUAL_MAC_ADDR(prBssInfo->aucOwnMacAddr,
 				mgmt->aucDestAddr))
 				break;
 

@@ -2034,6 +2034,10 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  prStaRec->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(RSN, ERROR, "prBssInfo is null\n");
+		return;
+	}
 	*pu2StatusCode = STATUS_CODE_INVALID_INFO_ELEMENT;
 
 	if (rsnParseRsnIE(prAdapter, prIe, &rRsnIe)) {
@@ -2303,6 +2307,10 @@ struct PMKID_ENTRY *rsnSearchPmkidEntry(IN struct ADAPTER *prAdapter,
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(RSN, ERROR, "prBssInfo is null\n");
+		return NULL;
+	}
 	cache = &prBssInfo->rPmkidCache;
 
 	LINK_FOR_EACH_ENTRY(entry, cache, rLinkEntry, struct PMKID_ENTRY) {
@@ -2386,6 +2394,10 @@ uint32_t rsnSetPmkid(IN struct ADAPTER *prAdapter,
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		prPmkid->ucBssIdx);
+	if (!prBssInfo) {
+		DBGLOG(RSN, ERROR, "prBssInfo is null\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
 	cache = &prBssInfo->rPmkidCache;
 
 	entry = rsnSearchPmkidEntry(prAdapter, prPmkid->arBSSID,
@@ -2468,6 +2480,11 @@ uint32_t rsnFlushPmkid(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 
 	prBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(RSN, ERROR, "prBssInfo is null\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	cache = &prBssInfo->rPmkidCache;
 
 	DBGLOG(RSN, TRACE, "[%d] Flush Pmkid total:%d\n",
@@ -3135,6 +3152,11 @@ void rsnGenerateWSCIEForAssocRsp(struct ADAPTER *prAdapter,
 	DBGLOG(RSN, TRACE, "WPS: Building WPS IE for (Re)Association Response");
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 
+	if (!prP2pBssInfo) {
+		DBGLOG(RSN, ERROR, "prP2pBssInfo is null\n");
+		return;
+	}
+
 	if (prP2pBssInfo->eNetworkType != NETWORK_TYPE_P2P)
 		return;
 
@@ -3288,6 +3310,11 @@ uint8_t rsnApCheckSaQueryTimeout(IN struct ADAPTER
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 						  prStaRec->ucBssIndex);
 
+		if (!prBssInfo) {
+			DBGLOG(RSN, ERROR, "prBssInfo is null\n");
+			return 1;
+		}
+
 		/* refer to p2pRoleFsmRunEventRxDeauthentication */
 		if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
 			if (bssRemoveClient(prAdapter, prBssInfo, prStaRec)) {
@@ -3343,6 +3370,10 @@ void rsnApStartSaQueryTimer(IN struct ADAPTER *prAdapter,
 		return;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(RSN, ERROR, "prBssInfo is null\n");
+		return;
+	}
 
 	if (prStaRec->rPmfCfg.u4SAQueryCount > 0
 	    && rsnApCheckSaQueryTimeout(prAdapter, prStaRec)) {
@@ -3493,6 +3524,11 @@ void rsnApSaQueryRequest(IN struct ADAPTER *prAdapter,
 		return;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(RSN, ERROR, "prBssInfo is null\n");
+		return;
+	}
+
 	prRxFrame = (struct ACTION_SA_QUERY_FRAME *)
 	    prSwRfb->pvHeader;
 	if (!prRxFrame)

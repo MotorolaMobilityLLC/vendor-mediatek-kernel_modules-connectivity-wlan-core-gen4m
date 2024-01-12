@@ -2424,6 +2424,10 @@ void rlmRevisePreferBandwidthNss(struct ADAPTER *prAdapter,
 #define AR_IS_STA_2SS_AC(prStaRec) ((AR_STA_2AC_MCS(prStaRec) != BITS(0, 1)))
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(RLM, ERROR, "prBssInfo is null\n");
+		return;
+	}
 
 	eChannelWidth = prBssInfo->ucVhtChannelWidth;
 
@@ -5882,6 +5886,8 @@ static void tpcComposeReportFrame(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prStaRec);
 
+	if (prStaRec->ucBssIndex >= MAX_BSSID_NUM)
+		return;
 	prBssInfo = &prAdapter->rWifiVar.arBssInfoPool[prStaRec->ucBssIndex];
 	ASSERT(prBssInfo);
 
@@ -5956,6 +5962,9 @@ static void msmtComposeReportFrame(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 	ASSERT(prStaRec);
+
+	if (prStaRec->ucBssIndex >= MAX_BSSID_NUM)
+		return;
 
 	prBssInfo = &prAdapter->rWifiVar.arBssInfoPool[prStaRec->ucBssIndex];
 	ASSERT(prBssInfo);
@@ -6097,6 +6106,10 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	}
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(RLM, ERROR, "prBssInfo is null\n");
+		return;
+	}
 
 	DBGLOG_MEM8(RLM, INFO, pucIE, u2IELength);
 	switch (ucAction) {

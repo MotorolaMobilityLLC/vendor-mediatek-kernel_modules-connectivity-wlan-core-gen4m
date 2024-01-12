@@ -421,6 +421,10 @@ struct MSDU_INFO* authComposeAuthFrame(IN struct ADAPTER *prAdapter,
 	if (prStaRec) {
 		prBssInfo =
 		    GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+		if (!prBssInfo) {
+			DBGLOG(SAA, ERROR, "prBssInfo is null\n");
+			return NULL;
+		}
 
 		pucTransmitAddr = prBssInfo->aucOwnMacAddr;
 
@@ -984,6 +988,11 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex = prAdapter->ucHwBssIdNum;
 	uint8_t aucBMC[] = BC_MAC_ADDR;
 
+
+	if (!prBssInfo) {
+		DBGLOG(SAA, ERROR, "prBssInfo is null\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
 	/* NOTE(Kevin): The best way to reply the Deauth is according to
 	 * the incoming data frame
 	 */
@@ -1020,6 +1029,10 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 		/* Check if corresponding BSS is able to send Deauth */
 		for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+			if (!prBssInfo) {
+				DBGLOG(SAA, ERROR, "prBssInfo is null\n");
+				continue;
+			}
 
 			if (IS_NET_ACTIVE(prAdapter, i) &&
 			    (EQUAL_MAC_ADDR
@@ -1039,6 +1052,10 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 	} else if (prStaRec) {
 		prBssInfo =
 		    GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+		if (!prBssInfo) {
+			DBGLOG(SAA, ERROR, "prBssInfo is null\n");
+			return WLAN_STATUS_INVALID_DATA;
+		}
 		ucStaRecIdx = prStaRec->ucIndex;
 		ucBssIndex = prBssInfo->ucBssIndex;
 
@@ -1129,6 +1146,10 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo =
 			GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
+		if (!prBssInfo) {
+			DBGLOG(SAA, ERROR, "prBssInfo is null\n");
+			return WLAN_STATUS_INVALID_DATA;
+		}
 		/* PMF certification 4.3.3.1, 4.3.3.2 send unprotected
 		 * deauth reason 6/7
 		 * if (AP mode & not for PMF reply case) OR (STA PMF)
