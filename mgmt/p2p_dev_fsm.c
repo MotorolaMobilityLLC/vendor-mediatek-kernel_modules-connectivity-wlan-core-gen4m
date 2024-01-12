@@ -1292,14 +1292,11 @@ p2pDevFsmNotifyP2pRx(struct ADAPTER *prAdapter, uint8_t p2pFrameType,
 		return;
 	}
 
-	if (prAdapter->prP2pInfo->eConnState != P2P_CNN_NORMAL)
-		return;
-
+	prAdapter->prP2pInfo->eConnState = p2pFrameType + 1;
 	if (fgNeedWaitRspFrame) {
 		DBGLOG(P2P, INFO,
 			"Extend channel duration, p2pFrameType: %d.\n",
 			p2pFrameType);
-		prAdapter->prP2pInfo->eConnState = p2pFrameType + 1;
 	}
 }
 

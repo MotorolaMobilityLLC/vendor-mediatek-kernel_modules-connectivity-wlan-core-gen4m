@@ -1484,10 +1484,7 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 			ucRetryLimit, u4TxLifeTimeInMs);
 
 		eConnState = p2pFuncTagMgmtFrame(prMgmtTxMsdu, u8GlCookie);
-
-		if (p2pFuncNeedWaitRsp(prAdapter,
-				prAdapter->prP2pInfo->eConnState))
-			prAdapter->prP2pInfo->eConnState = eConnState;
+		prAdapter->prP2pInfo->eConnState = eConnState;
 
 		/* Bufferable MMPDUs are suggested to be queued */
 		/* when GC is sleeping according to SPEC, */
