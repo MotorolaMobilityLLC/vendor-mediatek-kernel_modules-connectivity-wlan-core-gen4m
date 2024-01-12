@@ -1064,6 +1064,8 @@ typedef void(*PFN_HANDLE_IE_FUNC) (struct ADAPTER *,
 typedef void(*PFN_VERIFY_IE_FUNC) (struct ADAPTER *,
 	struct SW_RFB *, struct IE_HDR *,
 	uint16_t *);
+typedef uint8_t(*PFN_SKIP_IE_FUNC) (struct ADAPTER *,
+		struct STA_RECORD *, struct IE_HDR *);
 typedef uint32_t(*PFN_CALCULATE_VAR_IE_LEN_FUNC) (
 	struct ADAPTER *, uint8_t, struct STA_RECORD *);
 
@@ -1086,6 +1088,11 @@ struct HANDLE_IE_ENTRY {
 struct VERIFY_IE_ENTRY {
 	uint8_t ucElemID;
 	PFN_VERIFY_IE_FUNC pfnVarifyIE;
+};
+
+struct SKIP_IE_ENTRY {
+	uint8_t ucElemID;
+	PFN_SKIP_IE_FUNC pfnSkipIE;
 };
 
 /*----------------------------------------------------------------------------*/
@@ -1312,13 +1319,8 @@ enum ENUM_ROAMING_REASON {
 
 /* max number of supported cipher suites */
 #define MAX_NUM_SUPPORTED_CIPHER_SUITES 11
-#if CFG_SUPPORT_802_11W
 /* max number of supported AKM suites */
 #define MAX_NUM_SUPPORTED_AKM_SUITES    18
-#else
-/* max number of supported AKM suites */
-#define MAX_NUM_SUPPORTED_AKM_SUITES    16
-#endif
 
 /* Structure of RSN Information */
 __KAL_ATTRIB_PACKED_FRONT__

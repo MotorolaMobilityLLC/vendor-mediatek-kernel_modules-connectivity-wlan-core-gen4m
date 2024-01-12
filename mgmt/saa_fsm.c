@@ -115,7 +115,7 @@ saaFsmSteps(struct ADAPTER *prAdapter,
 		switch (prStaRec->eAuthAssocState) {
 		case AA_STATE_IDLE:
 			DBGLOG(SAA, TRACE,
-				"FT: authAlgNum %d, AuthTranNum %d\n",
+				"authAlgNum %d, AuthTranNum %d\n",
 				prStaRec->ucAuthAlgNum,
 				prStaRec->ucAuthTranNum);
 			if (prStaRec->ucAuthAlgNum ==

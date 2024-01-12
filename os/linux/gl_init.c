@@ -3894,6 +3894,10 @@ static void wlanCreateWirelessDevice(void)
 	prWiphy->flags = WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL
 			| u4SupportSchedScanFlag;
 
+#if (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE)
+	prWiphy->max_num_akm_suites = RSN_MAX_NR_AKN_SUITES;
+#endif
+
 #if (CFG_SUPPORT_ROAMING == 1)
 	prWiphy->flags |= WIPHY_FLAG_SUPPORTS_FW_ROAM;
 #endif /* CFG_SUPPORT_ROAMING */

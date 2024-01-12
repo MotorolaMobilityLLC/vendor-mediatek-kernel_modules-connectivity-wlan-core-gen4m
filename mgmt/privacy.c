@@ -88,22 +88,6 @@ void secInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prBssInfo->u4RsnSelectedPairwiseCipher = 0;
 	prBssInfo->u4RsnSelectedAKMSuite = 0;
 
-#if 0				/* CFG_ENABLE_WIFI_DIRECT */
-	prBssInfo = &prAdapter->rWifiVar.arBssInfo[NETWORK_TYPE_P2P];
-
-	prBssInfo->u4RsnSelectedGroupCipher = RSN_CIPHER_SUITE_CCMP;
-	prBssInfo->u4RsnSelectedPairwiseCipher = RSN_CIPHER_SUITE_CCMP;
-	prBssInfo->u4RsnSelectedAKMSuite = RSN_AKM_SUITE_PSK;
-#endif
-
-#if 0				/* CFG_ENABLE_BT_OVER_WIFI */
-	prBssInfo = &prAdapter->rWifiVar.arBssInfo[NETWORK_TYPE_BOW];
-
-	prBssInfo->u4RsnSelectedGroupCipher = RSN_CIPHER_SUITE_CCMP;
-	prBssInfo->u4RsnSelectedPairwiseCipher = RSN_CIPHER_SUITE_CCMP;
-	prBssInfo->u4RsnSelectedAKMSuite = RSN_AKM_SUITE_PSK;
-#endif
-
 	prMib->
 	    dot11RSNAConfigPairwiseCiphersTable[0].dot11RSNAConfigPairwiseCipher
 	    = WPA_CIPHER_SUITE_WEP40;
@@ -161,7 +145,7 @@ void secInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [7].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_FT_PSK;
 	prMib->dot11RSNAConfigAuthenticationSuitesTable
-	    [8].dot11RSNAConfigAuthenticationSuite = WFA_AKM_SUITE_OSEN;
+	    [8].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_OSEN;
 	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [9].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_SAE;
 	prMib->dot11RSNAConfigAuthenticationSuitesTable
@@ -174,13 +158,16 @@ void secInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [13].dot11RSNAConfigAuthenticationSuite =
 		RSN_AKM_SUITE_SAE_EXT_KEY;
-#if CFG_SUPPORT_802_11W
 	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [14].dot11RSNAConfigAuthenticationSuite =
-	    RSN_AKM_SUITE_802_1X_SHA256;
+		RSN_AKM_SUITE_802_1X_SHA256;
 	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [15].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_PSK_SHA256;
-#endif
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
+	    [16].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_FT_OVER_SAE;
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
+	    [17].dot11RSNAConfigAuthenticationSuite =
+		RSN_AKM_SUITE_FT_SAE_EXT_KEY;
 
 	for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++) {
 		prMib->dot11RSNAConfigAuthenticationSuitesTable
@@ -197,17 +184,6 @@ void secInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prAisSpecBssInfo->fgCounterMeasure = FALSE;
 	prBssInfo->ucBcDefaultKeyIdx = 0xff;
 	prBssInfo->fgBcDefaultKeyExist = FALSE;
-
-#if 0
-	for (i = 0; i < WTBL_SIZE; i++) {
-		g_prWifiVar->arWtbl[i].ucUsed = FALSE;
-		g_prWifiVar->arWtbl[i].prSta = NULL;
-		g_prWifiVar->arWtbl[i].ucNetTypeIdx = NETWORK_TYPE_INDEX_NUM;
-
-	}
-	nicPrivacyInitialize((uint8_t) NETWORK_TYPE_INDEX_NUM);
-#endif
-
 }				/* secInit */
 
 /*----------------------------------------------------------------------------*/

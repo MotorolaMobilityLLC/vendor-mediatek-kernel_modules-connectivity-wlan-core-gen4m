@@ -794,6 +794,8 @@
 #define STATUS_CODE_ASSOC_DENIED_NO_SHORT_SLOT_TIME 25
 /* Assoc denied due to requesting STA not supporting DSSS-OFDM */
 #define STATUS_CODE_ASSOC_DENIED_NO_DSSS_OFDM       26
+/* R0KH unreachable */
+#define STATUS_CODE_R0KH_UNREACHABLE                28
 #if CFG_SUPPORT_802_11W
 /*  IEEE 802.11w, Assoc denied due to the SA query */
 #define STATUS_CODE_ASSOC_REJECTED_TEMPORARILY      30

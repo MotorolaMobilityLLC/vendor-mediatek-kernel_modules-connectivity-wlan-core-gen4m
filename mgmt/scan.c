@@ -4647,24 +4647,6 @@ void scanParseVHTOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
 			   (uint8_t *)&prBssDesc->eChannelWidth);
 }
 
-uint8_t scanApOverload(uint16_t status, uint16_t reason)
-{
-	switch (status) {
-	case STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD:
-	case STATUS_CODE_ASSOC_DENIED_BANDWIDTH:
-	case STATUS_CODE_ASSOC_DENIED_OUTSIDE_STANDARD:
-	case STATUS_CODE_AUTH_TIMEOUT:
-	case STATUS_CODE_ASSOC_TIMEOUT:
-		return TRUE;
-	}
-	switch (reason) {
-	case REASON_CODE_DISASSOC_LACK_OF_BANDWIDTH:
-	case REASON_CODE_DISASSOC_AP_OVERLOAD:
-		return TRUE;
-	}
-	return FALSE;
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Check if Adaptive 11r  IE exists in Vendor Cisco IE.

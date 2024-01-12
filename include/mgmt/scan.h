@@ -371,6 +371,7 @@ struct BSS_DESC {
 	uint32_t u4RsnSelectedGroupCipher;
 	uint32_t u4RsnSelectedPairwiseCipher;
 	uint32_t u4RsnSelectedAKMSuite;
+	enum ENUM_PARAM_AUTH_MODE eRsnSelectedAuthMode;
 
 	uint16_t u2RsnCap;
 	uint16_t u2RsnxCap;
@@ -386,12 +387,6 @@ struct BSS_DESC {
 	u_int8_t fgIEWPA;
 	u_int8_t fgIEOsen;
 	u_int8_t fgIERSNX;
-
-	/*! \brief RSN parameters selected for connection */
-	/*! \brief The Select score for final AP selection,
-	 *  0, no sec, 1,2,3 group cipher is WEP, TKIP, CCMP
-	 */
-	uint8_t ucEncLevel;
 
 #if CFG_ENABLE_WIFI_DIRECT
 	u_int8_t fgIsP2PPresent;
@@ -1074,7 +1069,6 @@ void scanCheckEpigramVhtIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc);
 void scanParseVHTCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc);
 void scanParseVHTOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc);
 
-uint8_t scanApOverload(uint16_t status, uint16_t reason);
 void scanCheckAdaptive11rIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc);
 void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 	uint8_t *pucIE, struct BSS_DESC *prBssDesc,
