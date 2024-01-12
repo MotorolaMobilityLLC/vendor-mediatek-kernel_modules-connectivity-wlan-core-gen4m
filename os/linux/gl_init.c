@@ -5099,22 +5099,20 @@ static uint32_t u4IcsLogLevelCache = ENUM_ICS_LOG_LEVEL_MAC;
 
 static void ics_log_event_notification(int cmd, int value)
 {
-	struct net_device *prDev = gPrDev;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT rSniffer;
 	uint32_t u4BufLen = 0;
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 
-	DBGLOG(INIT, INFO, "gPrDev=%p, cmd=%d, value=%d\n",
-		gPrDev, cmd, value);
+	DBGLOG(INIT, INFO, "cmd=%d, value=%d\n", cmd, value);
 
-	if (kalIsHalted() || !prDev) {
+	if (kalIsHalted()) {
 		DBGLOG(INIT, INFO, "device not ready return");
 		return;
 	}
 
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
 	if (!prGlueInfo) {
 		DBGLOG(INIT, INFO, "prGlueInfo is NULL return");
 		return;
@@ -5327,12 +5325,10 @@ static void consys_log_event_notification(int cmd, int value)
 	struct CMD_CONNSYS_FW_LOG rFwLogCmd;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
-	struct net_device *prDev = gPrDev;
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 	uint32_t u4BufLen;
 
-	DBGLOG(INIT, INFO, "gPrDev=%p, cmd=%d, value=%d\n",
-		gPrDev, cmd, value);
+	DBGLOG(INIT, INFO, "cmd=%d, value=%d\n", cmd, value);
 
 	if (cmd == FW_LOG_CMD_ON_OFF) {
 		u4LogOnOffCache = value;
@@ -5356,9 +5352,7 @@ static void consys_log_event_notification(int cmd, int value)
 		return;
 	}
 
-	prGlueInfo = (prDev != NULL) ?
-		*((struct GLUE_INFO **) netdev_priv(prDev)) : NULL;
-	DBGLOG(INIT, TRACE, "prGlueInfo=%p\n", prGlueInfo);
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
 	if (!prGlueInfo) {
 		DBGLOG(INIT, INFO,
 			"prGlueInfo == NULL return, u4LogOnOffCache=%d\n",
@@ -5390,17 +5384,13 @@ int connsys_power_event_notification(
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
-	struct net_device *prDev = gPrDev;
 	uint32_t *prLevel;
 	struct conn_pwr_event_max_temp *prTempInfo;
 	int ret = -1;
 
-	prGlueInfo = (prDev != NULL) ?
-		*((struct GLUE_INFO **) netdev_priv(prDev)) : NULL;
-	DBGLOG(INIT, TRACE, "prGlueInfo=%p\n", prGlueInfo);
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
 	if (!prGlueInfo) {
-		DBGLOG(INIT, INFO,
-			"prGlueInfo == NULL return\n");
+		DBGLOG(INIT, INFO, "prGlueInfo is NULL return");
 		return ret;
 	}
 

@@ -187,15 +187,13 @@ static int32_t g_i4NextDriverReadLen;
 static ssize_t procCoreDumpRead(struct file *file, char __user *buf,
 			size_t count, loff_t *f_pos)
 {
-	struct GLUE_INFO *prGlueInfo;
+	struct GLUE_INFO *prGlueInfo = g_prGlueInfo_proc;
 	struct ADAPTER *prAdapter;
 	struct sk_buff *skb = NULL;
 	int copyLen = 0;
 	unsigned long ret_len = 0;
 
 	KAL_SPIN_LOCK_DECLARATION();
-
-	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(gPrDev));
 
 	if (!prGlueInfo) {
 		pr_err("procCfgRead prGlueInfo is  NULL\n");
@@ -243,10 +241,8 @@ out:
 
 static unsigned int procCoreDumpPoll(struct file *file, poll_table *wait)
 {
-	struct GLUE_INFO *prGlueInfo;
+	struct GLUE_INFO *prGlueInfo = g_prGlueInfo_proc;
 	unsigned int mask = 0;
-
-	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(gPrDev));
 
 	if (!prGlueInfo) {
 		pr_err("procCoreDumpPoll prGlueInfo is  NULL\n");
@@ -1185,8 +1181,7 @@ static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER  *prAdapter = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
-	unsigned char ucBssIndex;
-	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
+	unsigned char ucBssIndex = AIS_DEFAULT_BSS_INDEX;
 	uint32_t status;
 	struct PARAM_CMD_GET_TXPWR_TBL pwr_tbl;
 	struct POWER_LIMIT *tx_pwr_tbl = pwr_tbl.tx_pwr_tbl;
@@ -1220,15 +1215,6 @@ static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
 	}
 
 	prAdapter = prGlueInfo->prAdapter;
-
-	prNetDevPrivate =
-		(struct NETDEV_PRIVATE_GLUE_INFO *) netdev_priv(gPrDev);
-	if (prNetDevPrivate->prGlueInfo != prGlueInfo) {
-		DBGLOG(REQ, WARN, "glue info are not the same");
-		return -EFAULT;
-	}
-
-	ucBssIndex = prNetDevPrivate->ucBssIdx;
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 	if (!prBssInfo) {
 		DBGLOG(REQ, WARN, "can't get the BssInfo from adapter");
