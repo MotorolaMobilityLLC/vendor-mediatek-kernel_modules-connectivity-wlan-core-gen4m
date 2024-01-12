@@ -4540,7 +4540,20 @@ uint32_t ServiceWlanOid(void *winfos,
 #endif /* (CFG_SUPPORT_802_11BE == 1) */
 
 		/* ph_cap.ant_num */
-		capability->ph_cap.ant_num = prAdapter->rWifiVar.ucNSS;
+
+		if (prTestWinfo->chip_id == 0x7925) {
+			/* Chips which support MIMO/DBDC */
+			if (prTestWinfo->dbdc_mode == TEST_DBDC_ENABLE)
+				capability->ph_cap.ant_num =
+					prAdapter->rWifiVar.ucNSS / 2;
+			else
+				capability->ph_cap.ant_num =
+					prAdapter->rWifiVar.ucNSS;
+		} else {
+			/* Chips which only support DBDC */
+			capability->ph_cap.ant_num =
+					prAdapter->rWifiVar.ucNSS;
+		}
 
 		/* ph_cap.dbdc */
 		if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED)
@@ -4575,21 +4588,36 @@ uint32_t ServiceWlanOid(void *winfos,
 #endif /* (CFG_SUPPORT_802_11BE == 1) */
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
-
-		if (prTestWinfo->chip_id == 0x7903) {
-			/* band0 (2.4G) */
-			capability->ph_cap.channel_band_dbdc = BIT(1)+BIT(2);
-			/* band2 (5G+6G) */
-			capability->ph_cap.channel_band_dbdc_ext = BIT(0);
-		}
-		else {
-			/* band0 (2.4G) band1 (5G+6G) */
-			capability->ph_cap.channel_band_dbdc = BIT(0)+BIT(17)+BIT(18);
-			/* band3 (2.4G+5G+6G) */
-			capability->ph_cap.channel_band_dbdc_ext = BIT(16)+BIT(17)+BIT(18);
+		if (prTestWinfo->dbdc_mode == TEST_DBDC_DISABLE) {
+			/* Chips which support MIMO/DBDC */
+			if (prTestWinfo->chip_id == 0x7925) {
+				/* band0 (2.4G+5G+6G) */
+				capability->ph_cap.channel_band_dbdc =
+					BIT(0)+BIT(1)+BIT(2);
+			}
+		} else {
+			/* Chips which only support DBDC */
+			if (prTestWinfo->chip_id == 0x7903) {
+				/* band0 (2.4G) */
+				capability->ph_cap.channel_band_dbdc =
+					BIT(1)+BIT(2);
+				/* band2 (5G+6G) */
+				capability->ph_cap.channel_band_dbdc_ext =
+					BIT(0);
+			} else if (prTestWinfo->chip_id == 0x7925) {
+				/* band0 (5G+6G) band1 (2.4G+5G+6G) */
+				capability->ph_cap.channel_band_dbdc =
+					BIT(1)+BIT(2)+BIT(16)+BIT(17)+BIT(18);
+			} else {
+				/* band0 (2.4G) band1 (5G+6G) */
+				capability->ph_cap.channel_band_dbdc =
+					BIT(0)+BIT(17)+BIT(18);
+				/* band3 (2.4G+5G+6G) */
+				capability->ph_cap.channel_band_dbdc_ext =
+					BIT(16)+BIT(17)+BIT(18);
+			}
 		}
 #else
-
 		/* ph_cap.channel_band_dbdc */
 		if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED) {
 			/* band0 (2.4G + 5G) */
@@ -4625,6 +4653,9 @@ uint32_t ServiceWlanOid(void *winfos,
 		if (prAdapter->chip_info->chip_capability
 			& BIT(CHIP_CAPA_XTAL_TRIM))
 			capability->ext_cap.feature1 |= BIT(3);
+
+		if (prTestWinfo->chip_id == 0x7925)
+			capability->ext_cap.feature1 |= BIT(4);
 
 		return WLAN_STATUS_SUCCESS;
 #if CFG_SUPPORT_QA_TOOL
