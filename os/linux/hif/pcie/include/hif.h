@@ -131,11 +131,15 @@ struct HIF_MEM_OPS {
 			   struct RTMP_DMACB *pRxCell,
 			   struct RTMP_DMABUF *prDmaBuf,
 			   struct SW_RFB *prSwRfb);
-	phys_addr_t (*mapTxBuf)(struct GL_HIF_INFO *prHifInfo,
+	phys_addr_t (*mapTxDataBuf)(struct GL_HIF_INFO *prHifInfo,
+			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len);
+	phys_addr_t (*mapTxCmdBuf)(struct GL_HIF_INFO *prHifInfo,
 			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len);
 	phys_addr_t (*mapRxBuf)(struct GL_HIF_INFO *prHifInfo,
 			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len);
-	void (*unmapTxBuf)(struct GL_HIF_INFO *prHifInfo,
+	void (*unmapTxDataBuf)(struct GL_HIF_INFO *prHifInfo,
+			   phys_addr_t rDmaAddr, uint32_t u4Len);
+	void (*unmapTxCmdBuf)(struct GL_HIF_INFO *prHifInfo,
 			   phys_addr_t rDmaAddr, uint32_t u4Len);
 	void (*unmapRxBuf)(struct GL_HIF_INFO *prHifInfo,
 			   phys_addr_t rDmaAddr, uint32_t u4Len);
@@ -143,7 +147,8 @@ struct HIF_MEM_OPS {
 			 struct RTMP_DMABUF *prDescRing);
 	void (*freeExtBuf)(struct GL_HIF_INFO *prHifInfo,
 			   struct RTMP_DMABUF *prDescRing);
-	void (*freeBuf)(void *pucSrc, uint32_t u4Len);
+	void (*freeDataBuf)(void *pucSrc, uint32_t u4Len);
+	void (*freeCmdBuf)(void *pucSrc, uint32_t u4Len);
 	void (*freePacket)(struct GL_HIF_INFO *prHifInfo,
 			   void *pvPacket, uint32_t u4Num);
 	struct HIF_MEM *(*getWifiMiscRsvEmi)(
@@ -656,6 +661,11 @@ int mtk_pcie_retrain(struct pci_dev *dev);
 #endif
 #endif
 u_int8_t mtk_get_aer_triggered(void);
+void glUpdateRxCopyMemOps(
+	struct HIF_MEM_OPS *prMemOps);
+int halSetMemOps(
+	struct platform_device *prPlatDev,
+	struct HIF_MEM_OPS *prMemOps);
 
 /*******************************************************************************
  *                              F U N C T I O N S

@@ -1200,11 +1200,11 @@ void halUninitMsduTokenInfo(struct ADAPTER *prAdapter)
 		prToken = &prTokenInfo->arToken[u4Idx];
 
 		if (prToken->fgInUsed) {
-			if (prMemOps->unmapTxBuf) {
-				prMemOps->unmapTxBuf(
+			if (prMemOps->unmapTxDataBuf) {
+				prMemOps->unmapTxDataBuf(
 					prHifInfo, prToken->rPktDmaAddr,
 					prToken->u4PktDmaLength);
-				prMemOps->unmapTxBuf(
+				prMemOps->unmapTxDataBuf(
 					prHifInfo, prToken->rDmaAddr,
 					prToken->u4DmaLength);
 			}
@@ -1220,8 +1220,8 @@ void halUninitMsduTokenInfo(struct ADAPTER *prAdapter)
 		}
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
-		if (prMemOps->freeBuf)
-			prMemOps->freeBuf(prToken->prPacket,
+		if (prMemOps->freeDataBuf)
+			prMemOps->freeDataBuf(prToken->prPacket,
 					  prToken->u4DmaLength);
 		prToken->prPacket = NULL;
 #endif
@@ -1378,11 +1378,11 @@ static void halResetMsduToken(struct ADAPTER *prAdapter)
 	for (u4Idx = 0; u4Idx < prTokenInfo->u4TokenNum; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];
 		if (prToken->fgInUsed) {
-			if (prMemOps->unmapTxBuf) {
-				prMemOps->unmapTxBuf(
+			if (prMemOps->unmapTxDataBuf) {
+				prMemOps->unmapTxDataBuf(
 					prHifInfo, prToken->rPktDmaAddr,
 					prToken->u4PktDmaLength);
-				prMemOps->unmapTxBuf(
+				prMemOps->unmapTxDataBuf(
 					prHifInfo, prToken->rDmaAddr,
 					prToken->u4DmaLength);
 				prToken->rPktDmaAddr = 0;
@@ -1864,11 +1864,11 @@ u_int8_t halProcessToken(struct ADAPTER *prAdapter,
 		       halGetMsduTokenFreeCnt(prAdapter));
 #endif
 
-	if (prMemOps->unmapTxBuf) {
-		prMemOps->unmapTxBuf(prHifInfo,
+	if (prMemOps->unmapTxDataBuf) {
+		prMemOps->unmapTxDataBuf(prHifInfo,
 				     prTokenEntry->rPktDmaAddr,
 				     prTokenEntry->u4PktDmaLength);
-		prMemOps->unmapTxBuf(prHifInfo,
+		prMemOps->unmapTxDataBuf(prHifInfo,
 				     prTokenEntry->rDmaAddr,
 				     prTokenEntry->u4DmaLength);
 	}
@@ -2205,8 +2205,8 @@ void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
 	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
 		prChipInfo->txd_append_size;
 
-	if (prMemOps->mapTxBuf) {
-		rPhyAddr = prMemOps->mapTxBuf(
+	if (prMemOps->mapTxDataBuf) {
+		rPhyAddr = prMemOps->mapTxDataBuf(
 			prHifInfo, pucBufferTxD, u4TxHeadRoomSize,
 			prMsduInfo->u2FrameLength);
 	} else {
@@ -2922,14 +2922,24 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 
 			pPacket = pTxRing->Cell[j].pPacket;
 			pBuffer = pTxRing->Cell[j].pBuffer;
-			if (prMemOps->unmapTxBuf && pPacket)
-				prMemOps->unmapTxBuf(
-					prHifInfo, pTxRing->Cell[j].PacketPa,
-					pTxD->SDLen0);
+			if (halIsDataRing(TX_RING, i)) {
+				if (prMemOps->unmapTxDataBuf && pPacket)
+					prMemOps->unmapTxDataBuf(prHifInfo,
+						pTxRing->Cell[j].PacketPa,
+						pTxD->SDLen0);
+				if (prMemOps->freeDataBuf && pBuffer)
+					prMemOps->freeDataBuf(pBuffer,
+						pTxD->SDLen0);
+			} else {
+				if (prMemOps->unmapTxCmdBuf && pPacket)
+					prMemOps->unmapTxCmdBuf(prHifInfo,
+						pTxRing->Cell[j].PacketPa,
+						pTxD->SDLen0);
+				if (prMemOps->freeCmdBuf && pBuffer)
+					prMemOps->freeCmdBuf(pBuffer,
+						pTxD->SDLen0);
+			}
 			pTxRing->Cell[j].pPacket = NULL;
-
-			if (prMemOps->freeBuf && pBuffer)
-				prMemOps->freeBuf(pBuffer, pTxD->SDLen0);
 			pTxRing->Cell[j].pBuffer = NULL;
 		}
 
@@ -3264,12 +3274,13 @@ void halWpdmaProcessCmdDmaDone(struct GLUE_INFO *prGlueInfo,
 			u2Port, u4DmaIdx, u4SwIdx, pTxD->DMADONE,
 			prTxRing->Cell[u4SwIdx].pPacket, prTxRing->u4UsedCnt);
 
-		if (prMemOps->unmapTxBuf && PacketPa)
-			prMemOps->unmapTxBuf(prHifInfo, PacketPa, pTxD->SDLen0);
+		if (prMemOps->unmapTxCmdBuf && PacketPa)
+			prMemOps->unmapTxCmdBuf(prHifInfo, PacketPa,
+				pTxD->SDLen0);
 
 		pTxD->DMADONE = 0;
-		if (prMemOps->freeBuf && pBuffer)
-			prMemOps->freeBuf(pBuffer, 0);
+		if (prMemOps->freeCmdBuf && pBuffer)
+			prMemOps->freeCmdBuf(pBuffer, 0);
 		prTxRing->Cell[u4SwIdx].pBuffer = NULL;
 		prTxRing->Cell[u4SwIdx].pPacket = NULL;
 		prTxRing->u4UsedCnt--;
@@ -3567,8 +3578,8 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 
 	if (prTxRing->TxCpuIdx >= prTxRing->u4RingSize) {
 		DBGLOG(HAL, ERROR, "Error TxCpuIdx[%u]\n", prTxRing->TxCpuIdx);
-		if (prMemOps->freeBuf)
-			prMemOps->freeBuf(pucSrc, u4TotalLen);
+		if (prMemOps->freeCmdBuf)
+			prMemOps->freeCmdBuf(pucSrc, u4TotalLen);
 		ret = CMD_TX_RESULT_FAILED;
 		goto unlock;
 	}
@@ -3582,8 +3593,8 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 	    !prMemOps->copyCmd(prHifInfo, pTxCell, pucSrc,
 			       prCmdInfo->pucTxd, prCmdInfo->u4TxdLen,
 			       prCmdInfo->pucTxp, prCmdInfo->u4TxpLen)) {
-		if (prMemOps->freeBuf)
-			prMemOps->freeBuf(pucSrc, u4TotalLen);
+		if (prMemOps->freeCmdBuf)
+			prMemOps->freeCmdBuf(pucSrc, u4TotalLen);
 		ASSERT(0);
 		ret = CMD_TX_RESULT_FAILED;
 		goto unlock;
@@ -3753,8 +3764,8 @@ static bool halFlushToken(struct GLUE_INFO *prGlueInfo,
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
 
-	if (prMemOps->mapTxBuf) {
-		prToken->rDmaAddr = prMemOps->mapTxBuf(
+	if (prMemOps->mapTxDataBuf) {
+		prToken->rDmaAddr = prMemOps->mapTxDataBuf(
 			prHifInfo, prToken->prPacket, 0, prToken->u4DmaLength);
 		if (!prToken->rDmaAddr)
 			return false;

@@ -568,9 +568,11 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	prMemOps->copyEvent = halCopyPathCopyEvent;
 	prMemOps->copyTxData = halCopyPathCopyTxData;
 	prMemOps->copyRxData = halCopyPathCopyRxData;
-	prMemOps->mapTxBuf = NULL;
+	prMemOps->mapTxDataBuf = NULL;
+	prMemOps->mapTxCmdBuf = NULL;
 	prMemOps->mapRxBuf = NULL;
-	prMemOps->unmapTxBuf = NULL;
+	prMemOps->unmapTxDataBuf = NULL;
+	prMemOps->unmapTxCmdBuf = NULL;
 	prMemOps->unmapRxBuf = NULL;
 	prMemOps->freeDesc = NULL;
 	prMemOps->freeBuf = NULL;
