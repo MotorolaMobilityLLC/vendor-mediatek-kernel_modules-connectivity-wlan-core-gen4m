@@ -1484,7 +1484,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 		if (prMdInfo->buf_len != sizeof(
 				struct wsvc_md_event_exception_t)) {
 			DBGLOG(INIT, ERROR,
-				"Invalid args from MD, expect %u but %u\n",
+				"Invalid args from MD, expect %lu but %u\n",
 				sizeof(struct wsvc_md_event_exception_t),
 				prMdInfo->buf_len);
 			ret = -EINVAL;
