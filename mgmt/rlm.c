@@ -128,8 +128,17 @@ static u_int8_t rlmCheckOpChangeParamValid(struct ADAPTER *prAdapter,
 					   uint8_t ucChannelWidth,
 					   uint8_t ucOpRxNss,
 					   uint8_t ucOpTxNss);
+
+static void rlmChangeOperationModeAfterCSA(
+					struct ADAPTER *prAdapter,
+					struct BSS_INFO *prBssInfo);
+
 static void rlmRecOpModeBwForClient(uint8_t ucVhtOpModeChannelWidth,
 				    struct BSS_INFO *prBssInfo);
+
+static void rlmRecHtOpForClient(struct IE_HT_OP *prHtOp,
+			struct BSS_INFO *prBssInfo,
+			uint8_t *pucPrimaryChannel);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -2836,7 +2845,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	uint16_t u2Offset;
 	struct STA_RECORD *prStaRec;
 	struct IE_HT_CAP *prHtCap;
-	struct IE_HT_OP *prHtOp;
+	struct IE_HT_OP *prHtOp = NULL;
 	struct IE_OBSS_SCAN_PARAM *prObssScnParam;
 	uint8_t ucERP, ucPrimaryChannel;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
@@ -2999,77 +3008,12 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			break;
 
 		case ELEM_ID_HT_OP:
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			if (prBssInfo->eBand == BAND_6G) {
-				DBGLOG(SCN, WARN, "Ignore HT OP IE at 6G\n");
+			if (IE_LEN(pucIE) != (sizeof(struct IE_HT_OP) - 2))
 				break;
-			}
-#endif
-			if (!RLM_NET_IS_11N(prBssInfo) ||
-			    IE_LEN(pucIE) != (sizeof(struct IE_HT_OP) - 2))
-				break;
+
 			prHtOp = (struct IE_HT_OP *)pucIE;
-			/* Workaround that some APs fill primary channel field
-			 * by its
-			 * secondary channel, but its DS IE is correct 20110610
-			 */
-			if (ucPrimaryChannel == 0)
-				ucPrimaryChannel = prHtOp->ucPrimaryChannel;
-			prBssInfo->ucHtOpInfo1 = prHtOp->ucInfo1;
-			prBssInfo->u2HtOpInfo2 = prHtOp->u2Info2;
-			prBssInfo->u2HtOpInfo3 = prHtOp->u2Info3;
-
-			/*Backup peer HT OP Info*/
-			prStaRec->ucHtPeerOpInfo1 = prHtOp->ucInfo1;
-			prStaRec->u2HtPeerOpInfo2 = prHtOp->u2Info2;
-
-			if (!prBssInfo->fg40mBwAllowed) {
-				DBGLOG(RLM, TRACE, "ucHtOpInfo1 reset\n");
-				prBssInfo->ucHtOpInfo1 &=
-					~(HT_OP_INFO1_SCO |
-					  HT_OP_INFO1_STA_CHNL_WIDTH);
-			}
-
-			if ((prBssInfo->ucHtOpInfo1 & HT_OP_INFO1_SCO) !=
-			    CHNL_EXT_RES) {
-				prBssInfo->eBssSCO = (enum ENUM_CHNL_EXT)(
-					prBssInfo->ucHtOpInfo1 &
-					HT_OP_INFO1_SCO);
-				DBGLOG(RLM, TRACE, "SCO updated by HT OP: %d\n",
-					prBssInfo->eBssSCO);
-			}
-
-			/* Revise by own OP BW */
-			if (prBssInfo->fgIsOpChangeChannelWidth &&
-			    prBssInfo->ucOpChangeChannelWidth == MAX_BW_20MHZ) {
-				prBssInfo->ucHtOpInfo1 &=
-					~(HT_OP_INFO1_SCO |
-					  HT_OP_INFO1_STA_CHNL_WIDTH);
-				prBssInfo->eBssSCO = CHNL_EXT_SCN;
-				DBGLOG(RLM, TRACE,
-					"SCO updated by own OP BW\n");
-			}
-
-			prBssInfo->eHtProtectMode = (enum ENUM_HT_PROTECT_MODE)(
-				prBssInfo->u2HtOpInfo2 &
-				HT_OP_INFO2_HT_PROTECTION);
-
-			/* To do: process regulatory class 16 */
-			if ((prBssInfo->u2HtOpInfo2 &
-			     HT_OP_INFO2_OBSS_NON_HT_STA_PRESENT) &&
-			    0 /* && regulatory class is 16 */)
-				prBssInfo->eGfOperationMode =
-					GF_MODE_DISALLOWED;
-			else if (prBssInfo->u2HtOpInfo2 &
-				 HT_OP_INFO2_NON_GF_HT_STA_PRESENT)
-				prBssInfo->eGfOperationMode = GF_MODE_PROTECT;
-			else
-				prBssInfo->eGfOperationMode = GF_MODE_NORMAL;
-
-			prBssInfo->eRifsOperationMode =
-				(prBssInfo->ucHtOpInfo1 & HT_OP_INFO1_RIFS_MODE)
-					? RIFS_MODE_NORMAL
-					: RIFS_MODE_DISALLOWED;
+			rlmRecHtOpForClient(prHtOp,
+				prBssInfo, &ucPrimaryChannel);
 
 			break;
 
@@ -3275,6 +3219,14 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 					DBGLOG(RLM, EVENT,
 						"[CSA] TxAllowed = FALSE\n");
 				}
+			}
+
+			prCSAParams->ucCsaMode = prCSAIE->ucChannelSwitchMode;
+			if (prCSAParams->ucCsaMode > MODE_NUM) {
+				DBGLOG(RLM, WARN,
+					"[CSA] invalid ChannelSwitchMode = %d, follow mode 0\n",
+					prCSAParams->ucCsaMode);
+				prCSAParams->ucCsaMode = MODE_ALLOW_TX;
 			}
 
 #ifdef CFG_DFS_CHSW_FORCE_BW20
@@ -3832,7 +3784,9 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	}
 #endif
 
-	if (!HAS_CH_SWITCH_PARAMS(prCSAParams) && prCSAParams->fgHasStopTx) {
+	/* Receive new beacon after channel switch */
+	if (!HAS_CH_SWITCH_PARAMS(prCSAParams) &&
+			prCSAParams->ucCsaMode < MODE_NUM) {
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 		struct BSS_DESC *prBssDesc = NULL;
 
@@ -3851,11 +3805,23 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				prBssInfo->ucBssIndex,
 				prBssDesc->e6GPwrMode);
 #endif
-		/* AP */
-		qmSetStaRecTxAllowed(prAdapter, prStaRec, TRUE);
 
-		DBGLOG(RLM, EVENT, "[CSA] TxAllowed = TRUE\n");
-		prCSAParams->fgHasStopTx = FALSE;
+		if (IS_BSS_AIS(prBssInfo)) {
+			aisUpdateParamsForCSA(prAdapter, prBssInfo);
+			/* ucHtOpInfo1 depends on fg40mBwAllowed, which may be
+			 * updated after CSA. Thus, should update HtOp again.
+			 */
+			rlmRecHtOpForClient(prHtOp, prBssInfo,
+						&ucPrimaryChannel);
+			rlmChangeOperationModeAfterCSA(prAdapter, prBssInfo);
+		}
+
+		if (prCSAParams->fgHasStopTx) {
+			qmSetStaRecTxAllowed(prAdapter, prStaRec, TRUE);
+			DBGLOG(RLM, EVENT, "[CSA] TxAllowed = TRUE\n");
+		}
+
+		rlmResetCSAParams(prBssInfo, TRUE);
 	}
 
 	/* Do not write prBssInfo->ucVhtChannelWidth directly
@@ -4515,6 +4481,88 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 #endif
 
 	return fgNewParameter;
+}
+
+static void rlmRecHtOpForClient(struct IE_HT_OP *prHtOp,
+				struct BSS_INFO *prBssInfo,
+				uint8_t *pucPrimaryChannel)
+{
+	struct STA_RECORD *prStaRec;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prBssInfo->eBand == BAND_6G) {
+		DBGLOG(SCN, WARN, "Ignore HT OP IE at 6G\n");
+		return;
+	}
+#endif
+	if (!prHtOp || !prBssInfo || !RLM_NET_IS_11N(prBssInfo))
+		return;
+
+	prStaRec = prBssInfo->prStaRecOfAP;
+	if (!prStaRec)
+		return;
+
+	/* Workaround that some APs fill primary channel field
+	 * by its
+	 * secondary channel, but its DS IE is correct 20110610
+	 */
+	if (*pucPrimaryChannel  == 0)
+		*pucPrimaryChannel  = prHtOp->ucPrimaryChannel;
+	prBssInfo->ucHtOpInfo1 = prHtOp->ucInfo1;
+	prBssInfo->u2HtOpInfo2 = prHtOp->u2Info2;
+	prBssInfo->u2HtOpInfo3 = prHtOp->u2Info3;
+
+	/*Backup peer HT OP Info*/
+	prStaRec->ucHtPeerOpInfo1 = prHtOp->ucInfo1;
+	prStaRec->u2HtPeerOpInfo2 = prHtOp->u2Info2;
+
+	if (!prBssInfo->fg40mBwAllowed) {
+		DBGLOG(RLM, TRACE, "ucHtOpInfo1 reset\n");
+		prBssInfo->ucHtOpInfo1 &=
+			~(HT_OP_INFO1_SCO |
+			  HT_OP_INFO1_STA_CHNL_WIDTH);
+	}
+
+	if ((prBssInfo->ucHtOpInfo1 & HT_OP_INFO1_SCO) !=
+	    CHNL_EXT_RES) {
+		prBssInfo->eBssSCO = (enum ENUM_CHNL_EXT)(
+			prBssInfo->ucHtOpInfo1 &
+			HT_OP_INFO1_SCO);
+		DBGLOG(RLM, TRACE, "SCO updated by HT OP: %d\n",
+			prBssInfo->eBssSCO);
+	}
+
+	/* Revise by own OP BW */
+	if (prBssInfo->fgIsOpChangeChannelWidth &&
+	    prBssInfo->ucOpChangeChannelWidth == MAX_BW_20MHZ) {
+		prBssInfo->ucHtOpInfo1 &=
+			~(HT_OP_INFO1_SCO |
+			  HT_OP_INFO1_STA_CHNL_WIDTH);
+		prBssInfo->eBssSCO = CHNL_EXT_SCN;
+		DBGLOG(RLM, TRACE,
+			"SCO updated by own OP BW\n");
+	}
+
+	prBssInfo->eHtProtectMode = (enum ENUM_HT_PROTECT_MODE)(
+		prBssInfo->u2HtOpInfo2 &
+		HT_OP_INFO2_HT_PROTECTION);
+
+	/* To do: process regulatory class 16 */
+	if ((prBssInfo->u2HtOpInfo2 &
+	     HT_OP_INFO2_OBSS_NON_HT_STA_PRESENT) &&
+	    0 /* && regulatory class is 16 */)
+		prBssInfo->eGfOperationMode =
+			GF_MODE_DISALLOWED;
+	else if (prBssInfo->u2HtOpInfo2 &
+		 HT_OP_INFO2_NON_GF_HT_STA_PRESENT)
+		prBssInfo->eGfOperationMode = GF_MODE_PROTECT;
+	else
+		prBssInfo->eGfOperationMode = GF_MODE_NORMAL;
+
+	prBssInfo->eRifsOperationMode =
+		(prBssInfo->ucHtOpInfo1 & HT_OP_INFO1_RIFS_MODE)
+			? RIFS_MODE_NORMAL
+			: RIFS_MODE_DISALLOWED;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6418,6 +6466,14 @@ void rlmProcessExCsaIE(struct ADAPTER *prAdapter,
 		}
 	}
 
+	prCSAParams->ucCsaMode = ucChannelSwitchMode;
+	if (prCSAParams->ucCsaMode > MODE_NUM) {
+		DBGLOG(RLM, WARN,
+			"[ECSA] invalid ChannelSwitchMode = %d, follow mode 0\n",
+			prCSAParams->ucCsaMode);
+		prCSAParams->ucCsaMode = MODE_ALLOW_TX;
+	}
+
 	DBGLOG(RLM, INFO,
 		"[ECSA] bw[%d], channel[%d], s1[%d]\n",
 		prCSAParams->ucVhtBw,
@@ -6603,6 +6659,16 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 					}
 				}
 
+				prCSAParams->ucCsaMode =
+				 prChannelSwitchAnnounceIE->ucChannelSwitchMode;
+
+				if (prCSAParams->ucCsaMode > MODE_NUM) {
+					DBGLOG(RLM, WARN,
+						"[CSA] invalid ChannelSwitchMode = %d, follow mode 0\n",
+						prCSAParams->ucCsaMode);
+					prCSAParams->ucCsaMode = MODE_ALLOW_TX;
+				}
+
 				DBGLOG(RLM, INFO,
 					"[CSA Mgt] switch channel [%d]->[%d]\n",
 					prBssInfo->ucPrimaryChannel,
@@ -6649,9 +6715,10 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 					ucCurrentCsaCount);
 			prCSAParams->ucCsaCount = ucCurrentCsaCount;
 			DBGLOG(RLM, INFO,
-				"[CSA Mgt] Channel switch Countdown: %d msecs\n",
+				"[CSA Mgt] Channel switch Countdown: %d msecs, Mode: %d\n",
 				prBssInfo->u2BeaconInterval *
-					prCSAParams->ucCsaCount);
+					prCSAParams->ucCsaCount,
+				prCSAParams->ucCsaMode);
 		}
 
 		break;
@@ -6746,10 +6813,11 @@ void rlmProcessPublicActionExCsa(struct ADAPTER *prAdapter,
 	}
 }
 
-void rlmResetCSAParams(struct BSS_INFO *prBssInfo, uint8_t fgClearStopTx)
+void rlmResetCSAParams(struct BSS_INFO *prBssInfo, uint8_t fgClearAll)
 {
 	struct SWITCH_CH_AND_BAND_PARAMS *prCSAParams;
 	uint8_t fgHasStopTx;
+	uint8_t ucCsaMode;
 
 	if (!prBssInfo) {
 		DBGLOG(RLM, ERROR, "Reset CSA params failed, Bssinfo null!");
@@ -6758,10 +6826,14 @@ void rlmResetCSAParams(struct BSS_INFO *prBssInfo, uint8_t fgClearStopTx)
 
 	prCSAParams = &(prBssInfo->CSAParams);
 	fgHasStopTx = prCSAParams->fgHasStopTx;
+	ucCsaMode = prCSAParams->ucCsaMode;
 	kalMemZero(prCSAParams, sizeof(struct SWITCH_CH_AND_BAND_PARAMS));
 	prCSAParams->ucCsaCount = MAX_CSA_COUNT;
-	if (!fgClearStopTx)
+	prCSAParams->ucCsaMode = MODE_NUM;
+	if (!fgClearAll) {
 		prCSAParams->fgHasStopTx = fgHasStopTx;
+		prCSAParams->ucCsaMode = ucCsaMode;
+	}
 	DBGLOG(RLM, TRACE, "Reset CSA count to %u for BSS%d fgHasStopTx=%d",
 		prCSAParams->ucCsaCount, prBssInfo->ucBssIndex,
 		prCSAParams->fgHasStopTx);
@@ -6838,10 +6910,11 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 	if (prBssDesc) {
 		DBGLOG(RLM, INFO,
 		       "DFS: BSS: " MACSTR
-		       " Desc found, channel from %u to %u with sco:%u\n ",
+		       " Desc found, channel from %u to %u (band:%u) with sco:%u\n ",
 		       MAC2STR(prBssInfo->aucBSSID),
 		       prBssDesc->ucChannelNum, prCSAParams->ucCsaNewCh,
-		       prBssInfo->eBssSCO);
+		       prBssInfo->eBand, prBssInfo->eBssSCO);
+
 		prBssDesc->ucChannelNum = prBssInfo->ucPrimaryChannel;
 		prBssDesc->eChannelWidth = prBssInfo->ucVhtChannelWidth;
 		prBssDesc->ucCenterFreqS1 = prBssInfo->ucVhtChannelFrequencyS1;
@@ -6899,7 +6972,24 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 #endif
 	}
 
-	rlmSyncOperationParams(prAdapter, prBssInfo);
+	if (IS_BSS_AIS(prBssInfo) &&
+		!prBssInfo->fgIsAisSwitchingChnl) {
+		struct AIS_FSM_INFO *prAisFsmInfo;
+
+		prAisFsmInfo = aisGetAisFsmInfo(
+			prAdapter, prBssInfo->ucBssIndex);
+
+		/* Indicate PM abort to sync BSS state with FW */
+		nicPmIndicateBssAbort(prAdapter, prBssInfo->ucBssIndex);
+		/* Defer ucDTIMPeriod updating to when beacon is received */
+		prBssInfo->ucDTIMPeriod = 0;
+		/* Release channel if CSA immediately before set authorized */
+		aisFsmReleaseCh(prAdapter, prBssInfo->ucBssIndex);
+
+		prBssInfo->fgIsAisSwitchingChnl = TRUE;
+		aisReqJoinChPrivilegeForCSA(prAdapter, prAisFsmInfo,
+			prBssInfo, &prAisFsmInfo->ucSeqNumOfChReq);
+	}
 
 	rlmResetCSAParams(prBssInfo, FALSE);
 }
@@ -8603,6 +8693,35 @@ rlmChangeOperationMode(
 	return OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE;
 }
 
+void rlmChangeOperationModeAfterCSA(
+	struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
+{
+	uint8_t ucVhtChannelWidthAfterCsa = VHT_OP_CHANNEL_WIDTH_20_40;
+
+	if (!prBssInfo)
+		return;
+
+	ucVhtChannelWidthAfterCsa = prBssInfo->ucVhtChannelWidth;
+	prBssInfo->ucVhtChannelWidth = prBssInfo->ucVhtChannelWidthBeforeCsa;
+
+	DBGLOG(RLM, INFO,
+		"op mode change to BW[%d]-RxNss[%d]-TxNss[%d], before csa BW[%d], after csa BW[%d]\n",
+		rlmGetBssOpBwByOwnAndPeerCapability(prAdapter, prBssInfo),
+		prBssInfo->ucOpRxNss,
+		prBssInfo->ucOpTxNss,
+		prBssInfo->ucVhtChannelWidth,
+		ucVhtChannelWidthAfterCsa);
+	rlmChangeOperationMode(
+		prAdapter, prBssInfo->ucBssIndex,
+		rlmGetBssOpBwByOwnAndPeerCapability(prAdapter, prBssInfo),
+		prBssInfo->ucOpRxNss,
+		prBssInfo->ucOpTxNss,
+		TRUE,
+		rlmDummyChangeOpHandler);
+
+	/* Restore VHT channel width after CSA */
+	prBssInfo->ucVhtChannelWidth = ucVhtChannelWidthAfterCsa;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

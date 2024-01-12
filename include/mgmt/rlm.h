@@ -215,6 +215,12 @@ struct SUB_ELEMENT_LIST {
 };
 
 #if CFG_SUPPORT_DFS
+enum ENUM_CHNL_SWITCH_MODE {
+	MODE_ALLOW_TX,
+	MODE_DISALLOW_TX,
+	MODE_NUM
+};
+
 struct SWITCH_CH_AND_BAND_PARAMS {
 	enum ENUM_BAND eCsaBand;
 	uint8_t ucCsaNewCh;
@@ -225,6 +231,7 @@ struct SWITCH_CH_AND_BAND_PARAMS {
 	enum ENUM_CHNL_EXT eSco;
 	uint8_t ucBssIndex;
 	uint8_t fgHasStopTx;
+	enum ENUM_CHNL_SWITCH_MODE ucCsaMode;
 	uint32_t u4MaxSwitchTime;
 };
 #endif
@@ -449,7 +456,7 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter,
 void rlmProcessPublicAction(struct ADAPTER *prAdapter,
 			     struct SW_RFB *prSwRfb);
 
-void rlmResetCSAParams(struct BSS_INFO *prBssInfo, uint8_t fgClearStopTx);
+void rlmResetCSAParams(struct BSS_INFO *prBssInfo, uint8_t fgClearAll);
 
 void rlmCsaTimeout(struct ADAPTER *prAdapter,
 				uintptr_t ulParamPtr);

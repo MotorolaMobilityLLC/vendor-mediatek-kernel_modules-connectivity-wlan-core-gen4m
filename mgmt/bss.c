@@ -542,18 +542,12 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(struct ADAPTER *prAdapter,
 	prStaRec->ucJoinFailureCount = 0;
 	prStaRec->ucAuthAlgNum = AUTH_ALGORITHM_NUM;
 
-	/* 4 <2> Update information from BSS_DESC_T to current P_STA_RECORD_T */
-	prStaRec->u2CapInfo = prBssDesc->u2CapInfo;
-
-	prStaRec->u2OperationalRateSet = prBssDesc->u2OperationalRateSet;
-	prStaRec->u2BSSBasicRateSet = prBssDesc->u2BSSBasicRateSet;
-
-	bssDetermineStaRecPhyTypeSet(prAdapter, prBssDesc, prStaRec);
-
-	ucNonHTPhyTypeSet =
-	    prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11ABG;
+	/* 4 <2,3> Update information from BSS_DESC to current P_STA_RECORD */
+	bssUpdateStaRecFromBssDesc(prAdapter, prBssDesc, prStaRec);
 
 	/* Check for Target BSS's non HT Phy Types */
+	ucNonHTPhyTypeSet =
+	    prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11ABG;
 	if (ucNonHTPhyTypeSet) {
 
 		if (ucNonHTPhyTypeSet & PHY_TYPE_BIT_ERP) {
@@ -589,18 +583,6 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(struct ADAPTER *prAdapter,
 			(prStaRec->u2OperationalRateSet & RATE_SET_ALL_ABG);
 	}
 
-	/* 4 <3> Update information from BSS_DESC_T to current P_STA_RECORD_T */
-	if (IS_AP_STA(prStaRec)) {
-		/* do not need to parse IE for DTIM,
-		 * which have been parsed before inserting into struct BSS_DESC
-		 */
-		if (prBssDesc->ucDTIMPeriod)
-			prStaRec->ucDTIMPeriod = prBssDesc->ucDTIMPeriod;
-		else
-			prStaRec->ucDTIMPeriod = 0;
-		/* Means that TIM was not parsed. */
-
-	}
 	/* 4 <4> Update default value */
 	prStaRec->fgDiagnoseConnection = FALSE;
 
@@ -2547,6 +2529,44 @@ void bssCreateStaRecFromAuth(struct ADAPTER *prAdapter)
 void bssUpdateStaRecFromAssocReq(struct ADAPTER *prAdapter)
 {
 
+}
+
+void bssUpdateStaRecFromBssDesc(struct ADAPTER *prAdapter,
+				struct BSS_DESC *prBssDesc,
+				struct STA_RECORD *prStaRec)
+{
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIndex;
+
+	if (!prBssDesc || !prStaRec)
+		return;
+
+	ucBssIndex = prStaRec->ucBssIndex;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(BSS, ERROR, "prBssInfo is null\n");
+		return;
+	}
+
+	/* 4 <2> Update information from BSS_DESC_T to current P_STA_RECORD_T */
+	prStaRec->u2CapInfo = prBssDesc->u2CapInfo;
+
+	prStaRec->u2OperationalRateSet = prBssDesc->u2OperationalRateSet;
+	prStaRec->u2BSSBasicRateSet = prBssDesc->u2BSSBasicRateSet;
+
+	bssDetermineStaRecPhyTypeSet(prAdapter, prBssDesc, prStaRec);
+
+	/* 4 <3> Update information from BSS_DESC_T to current P_STA_RECORD_T */
+	if (IS_AP_STA(prStaRec)) {
+		/* do not need to parse IE for DTIM,
+		 * which have been parsed before inserting into struct BSS_DESC
+		 */
+		if (prBssDesc->ucDTIMPeriod)
+			prStaRec->ucDTIMPeriod = prBssDesc->ucDTIMPeriod;
+		else
+			prStaRec->ucDTIMPeriod = 0;
+		/* Means that TIM was not parsed. */
+	}
 }
 
 void bssDumpBssInfo(struct ADAPTER *prAdapter, uint8_t ucBssIndex)

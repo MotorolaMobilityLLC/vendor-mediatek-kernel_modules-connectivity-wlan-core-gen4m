@@ -10049,8 +10049,8 @@ uint32_t nicUniUpdateStaRecFastAll(
 	if (!ad || !bss)
 		return WLAN_STATUS_FAILURE;
 
-	if (IS_BSS_AIS(bss) ||
-	   (IS_BSS_GC(bss) && !bss->prStaRecOfAP)
+	if ((IS_BSS_AIS(bss) && !bss->fgIsAisSwitchingChnl)
+	   || (IS_BSS_GC(bss) && !bss->prStaRecOfAP)
 #if CFG_ENABLE_WIFI_DIRECT
 	   || (IS_BSS_APGO(bss) && !bssGetClientCount(ad, bss)))
 #else
@@ -10162,9 +10162,10 @@ void nicUniUpdateMbmcIdx(struct ADAPTER *ad,
 	struct BSS_INFO *prBssInfo = GET_BSS_INFO_BY_INDEX(ad,
 		ucBssIdx);
 
-	DBGLOG(CNM, INFO, "ucBssIdx=%d, ucBandIdx=%d\n", ucBssIdx, ucBandIdx);
-
 	if (prBssInfo) {
+		DBGLOG(CNM, INFO, "ucBssIdx=%d, eHwBandIdx=%d, ucBandIdx=%d\n",
+			ucBssIdx, prBssInfo->eHwBandIdx, ucBandIdx);
+
 		if (prBssInfo->eHwBandIdx != ucBandIdx &&
 		    prBssInfo->eHwBandIdx != ENUM_BAND_AUTO)
 			nicUniUpdateStaRecFastAll(ad, prBssInfo);
@@ -10173,7 +10174,9 @@ void nicUniUpdateMbmcIdx(struct ADAPTER *ad,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		mldBssUpdateBandIdxBitmap(ad, prBssInfo);
 #endif
-	}
+	} else
+		DBGLOG(CNM, INFO, "ucBssIdx=%d, ucBandIdx=%d\n",
+			ucBssIdx, ucBandIdx);
 }
 
 void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
