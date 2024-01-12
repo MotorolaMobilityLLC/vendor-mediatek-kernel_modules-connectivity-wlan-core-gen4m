@@ -1389,11 +1389,13 @@ void halCopyPathAllocTxDesc(struct GL_HIF_INFO *prHifInfo,
 void halCopyPathAllocRxDesc(struct GL_HIF_INFO *prHifInfo,
 			    struct RTMP_DMABUF *prDescRing,
 			    uint32_t u4Num);
-#if (CFG_MTK_ANDROID_WMT == 1)
+#if CFG_SUPPORT_WIFI_RSV_MEM
 int halAllocHifMem(struct platform_device *pdev,
 		   struct mt66xx_hif_driver_data *prDriverData);
 void halFreeHifMem(struct platform_device *pdev,
 		  enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx);
+#endif
+#if (CFG_MTK_ANDROID_WMT == 1)
 void halCopyPathAllocExtBuf(struct GL_HIF_INFO *prHifInfo,
 			    struct RTMP_DMABUF *prDescRing,
 			    uint32_t u4Align);

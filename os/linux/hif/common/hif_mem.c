@@ -100,7 +100,7 @@ struct HIF_PREALLOC_MEM {
 	struct HIF_MEM rMsduBuf[HIF_TX_MSDU_TOKEN_NUM];
 	uint32_t u4MsduBufIdx;
 #endif
-#if (CFG_MTK_ANDROID_WMT == 1)
+#if CFG_SUPPORT_WIFI_RSV_MEM
 	phys_addr_t pucRsvMemBase[WIFI_RSV_MEM_MAX_NUM];
 	void *pucRsvMemVirBase[WIFI_RSV_MEM_MAX_NUM];
 	uint64_t u4RsvMemSize[WIFI_RSV_MEM_MAX_NUM];
@@ -150,13 +150,13 @@ struct wifi_tx_cma_context {
  *******************************************************************************
  */
 static struct HIF_PREALLOC_MEM grMem;
-#if (CFG_MTK_ANDROID_WMT == 1)
+#if CFG_SUPPORT_WIFI_RSV_MEM
 #ifdef CONFIG_OF
 static unsigned long long gWifiRsvMemSize[WIFI_RSV_MEM_MAX_NUM];
 #endif /* CONFIG_OF */
 /* Assume reserved memory size < BIT(32) */
 static struct wifi_rsrv_mem wifi_rsrv_mems[WIFI_RSV_MEM_MAX_NUM][32];
-#endif /* CFG_MTK_ANDROID_WMT */
+#endif /* CFG_SUPPORT_WIFI_RSV_MEM */
 
 #if CFG_MTK_WIFI_SW_EMI_RING
 struct HIF_MEM g_rRsvEmiMem;
@@ -236,7 +236,7 @@ int halInitResvMem(struct platform_device *pdev,
 #endif
 }
 
-#if (CFG_MTK_ANDROID_WMT == 1)
+#if CFG_SUPPORT_WIFI_RSV_MEM
 static bool halAllocRsvMemAlign(uint32_t u4Size,
 		struct HIF_MEM *prMem, uint32_t u4Align,
 		enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx)
@@ -521,7 +521,9 @@ void halFreeHifMem(struct platform_device *pdev,
 			(dma_addr_t) wifi_rsrv_mems[u4RsvMemIdx][i].phy_base);
 	}
 }
+#endif /* CFG_SUPPORT_WIFI_RSV_MEM */
 
+#if (CFG_MTK_ANDROID_WMT == 1)
 void halCopyPathAllocExtBuf(struct GL_HIF_INFO *prHifInfo,
 			    struct RTMP_DMABUF *prDescRing,
 			    uint32_t u4Align)
