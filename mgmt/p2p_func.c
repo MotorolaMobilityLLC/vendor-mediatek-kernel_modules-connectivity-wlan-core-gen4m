@@ -7758,6 +7758,10 @@ void p2pFuncCrossBandChannelSwitchCheck(
 	uint8_t *ucSapChannelNum,
 	enum ENUM_BAND *eStaBand,
 	enum ENUM_BAND *eSapBand,
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	enum ENUM_MBMC_BN eStaHwBand,
+	enum ENUM_MBMC_BN eSapHwBand,
+#endif
 	u_int8_t *fgDbDcModeEn)
 {
 
@@ -7765,9 +7769,16 @@ void p2pFuncCrossBandChannelSwitchCheck(
 	*fgDbDcModeEn = (prAdapter->rWifiVar.eDbdcMode !=
 		ENUM_DBDC_MODE_DISABLED);
 #if (CFG_SUPPORT_WIFI_6G == 1)	/* Go SCC for 5G+6G */
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	if (((*eStaBand == BAND_5G && *eSapBand == BAND_6G) ||
+		(*eStaBand == BAND_6G && *eSapBand == BAND_5G)) &&
+		(eStaHwBand == eSapHwBand))
+		*fgDbDcModeEn = FALSE;
+#else
 	if ((*eStaBand == BAND_5G && *eSapBand == BAND_6G) ||
 		(*eStaBand == BAND_6G && *eSapBand == BAND_5G))
 		*fgDbDcModeEn = FALSE;
+#endif
 #if CFG_CH_SELECT_ENHANCEMENT
 	if ((prAdapter->rWifiVar.eDbdcMode !=
 		ENUM_DBDC_MODE_DISABLED) &&
@@ -7835,7 +7846,10 @@ void p2pFuncSwitchSapChannel(
 	uint8_t ucSapChannelNum = 0;
 	enum ENUM_BAND eStaBand = BAND_NULL;
 	enum ENUM_BAND eSapBand = BAND_NULL;
-
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	enum ENUM_MBMC_BN eStaHwBand = ENUM_BAND_NUM;
+	enum ENUM_MBMC_BN eSapHwBand = ENUM_BAND_NUM;
+#endif
 #if CFG_SUPPORT_DFS_MASTER && CFG_SUPPORT_IDC_CH_SWITCH
 	fgEnable = TRUE;
 #endif
@@ -7972,14 +7986,39 @@ void p2pFuncSwitchSapChannel(
 	}
 #endif
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	eStaHwBand = prAisBssInfo->eHwBandIdx;
+	eSapHwBand = prP2pBssInfo->eHwBandIdx;
+	DBGLOG(P2P, INFO, "StaHwBand(%d) and SapHwBand(%d)\n",
+		eStaHwBand, eSapHwBand);
+#endif
+
 	p2pFuncCrossBandChannelSwitchCheck(
 		prAdapter, prP2pBssInfo,
 		&ucStaChannelNum, &ucSapChannelNum,
 		&eStaBand, &eSapBand,
+#if (CFG_SUPPORT_CONNAC3X == 1)
+		eStaHwBand, eSapHwBand,
+#endif
 		&fgDbDcModeEn);
 
 
 	/* Check channel no */
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	if (ucStaChannelNum == ucSapChannelNum &&
+		eStaHwBand == eSapHwBand) {
+		/* Do nothing, i.e. SCC */
+		DBGLOG(P2P, INFO, "[SCC] Keep StaCH(%d)\n", ucStaChannelNum);
+		goto exit;
+	} else if (fgDbDcModeEn == TRUE
+		&& (eStaHwBand != eSapHwBand) && !fgIsSapDfs) {
+		/* Do nothing, i.e. DBDC */
+		DBGLOG(P2P, INFO,
+			"[DBDC] Keep StaCH(%d), SapCH(%d)(dfs: %u)\n",
+			ucStaChannelNum, ucSapChannelNum, fgIsSapDfs);
+		goto exit;
+	}
+#else
 	if (ucStaChannelNum == ucSapChannelNum) {
 		/* Do nothing, i.e. SCC */
 		DBGLOG(P2P, INFO, "[SCC] Keep StaCH(%d)\n", ucStaChannelNum);
@@ -7991,7 +8030,9 @@ void p2pFuncSwitchSapChannel(
 			"[DBDC] Keep StaCH(%d), SapCH(%d)(dfs: %u)\n",
 			ucStaChannelNum, ucSapChannelNum, fgIsSapDfs);
 		goto exit;
-	} else {
+	}
+#endif
+	else {
 		/* Otherwise, switch to STA channel, i.e. SCC */
 
 		struct RF_CHANNEL_INFO rRfChnlInfo;
