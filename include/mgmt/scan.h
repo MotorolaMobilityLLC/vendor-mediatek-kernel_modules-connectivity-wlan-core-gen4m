@@ -192,32 +192,6 @@
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
-struct IE_ML_PER_STA_PROFILE_INFO {
-	uint16_t u2StaCtrl;
-	/* Include STA info and STA profile */
-	uint8_t aucMultiLinkVarIe[0];
-};
-
-struct IE_MULTI_LINK_INFO {
-	uint16_t u2MlCtrl;
-	/* Include Common info and Link info */
-	uint8_t aucMultiLinkVarIe[0];
-};
-
-struct STA_PROFILE {
-	uint8_t ucLinkId;
-	uint8_t aucLinkAddr[MAC_ADDR_LEN];
-	struct RF_CHANNEL_INFO rChnlInfo;
-	uint8_t ucChangeSeq;
-	uint8_t ucValid;
-	uint8_t aucIEbuf[256];
-};
-
-struct MULTI_LINK_INFO {
-	uint8_t aucMldAddr[MAC_ADDR_LEN];
-	uint8_t ucLinkNum;
-	struct STA_PROFILE rStaProfiles[MLD_LINK_MAX];
-};
 
 enum ENUM_SCAN_TYPE {
 	SCAN_TYPE_PASSIVE_SCAN = 0,
@@ -815,6 +789,8 @@ extern const char aucScanLogPrefix[][SCAN_LOG_PREFIX_MAX_LEN];
 	} while (0)
 #endif /* DBG_DISABLE_ALL_LOG */
 
+#define IS_6G_PSC_CHANNEL(_ch) \
+	(((_ch - 5) % 16) == 0)
 #define IS_6G_OP_CLASS(_opClass) \
 	((_opClass >= 131) && (_opClass <= 135))
 
@@ -1072,6 +1048,6 @@ void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
 	IN enum ENUM_BAND eHwBand);
 #endif
 
-void scanOpClassToBand(uint8_t ucOpClass, enum nl80211_band *band);
+void scanOpClassToBand(uint8_t ucOpClass, uint8_t *band);
 
 #endif /* _SCAN_H */

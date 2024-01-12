@@ -1100,36 +1100,12 @@ assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter,
 		/* Update the information in the structure used to query and set
 		 *  OID_802_11_ASSOCIATION_INFORMATION.
 		 */
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		uint16_t u2IELength;
-		int8_t *pucIE;
-		uint16_t u2Offset = 0;
-#endif
 		kalUpdateReAssocRspInfo(prAdapter->prGlueInfo,
 					(uint8_t *) &
 					prAssocRspFrame->u2CapInfo,
 					prSwRfb->u2PacketLen -
 						prSwRfb->u2HeaderLen,
 					prStaRec->ucBssIndex);
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		/* TODO: check MLIE in STA profile for accepted AP MLD */
-		u2IELength = prSwRfb->u2PacketLen -
-			(uint16_t) OFFSET_OF(struct WLAN_ASSOC_RSP_FRAME,
-								aucInfoElem[0]);
-		pucIE = prAssocRspFrame->aucInfoElem;
-
-		IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
-			if (IE_ID(pucIE) == ELEM_ID_RESERVED
-				&& IE_ID_EXT(pucIE) == ELEM_EXT_ID_MLD) {
-				//struct MULTI_LINK_INFO rMlInfo;
-				//kalMemZero(&rMlInfo, sizeof(struct MULTI_LINK_INFO));
-				//scanEhtParsingMldElement(&rMlInfo, pucIE);
-				//assign rMlInfo->rStaProfiles[MLD_LINK_MAX] to each starec and seperate prSwRfb
-				/* TODO: mark AP MLD in assoc rep setup completed */
-			}
-		}
-#endif
 	}
 	/* 4 <5> Update CAP_INFO and ASSOC_ID */
 	if (u2RxStatusCode == STATUS_CODE_SUCCESSFUL) {
