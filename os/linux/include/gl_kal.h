@@ -254,8 +254,6 @@ struct BOOST_INFO {
 	u_int8_t fgWifiNappingForceDis;
 };
 
-#define WORK_ALL_CPU_OK 999
-
 enum ENUM_SPIN_LOCK_CATEGORY_E {
 	SPIN_LOCK_FSM = 0,
 
