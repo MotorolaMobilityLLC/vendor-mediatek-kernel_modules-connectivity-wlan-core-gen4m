@@ -2334,6 +2334,7 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		break;
 	}
 
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
 	/* Indicatre CAC */
 	if ((eBand == BAND_5G) &&
 		(rlmDomainIsLegalDfsChannel(
@@ -2354,6 +2355,7 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 			nicChannelNum2Freq(ucSeg0Ch, eBand) / 1000,
 			eBand);
 	}
+#endif
 
 	DBGLOG(P2P, INFO,
 		"r=%d, b=%d, c=%d, s=%d, s0=%d, s1=%d, ch_w=%d, h=%d\n",
