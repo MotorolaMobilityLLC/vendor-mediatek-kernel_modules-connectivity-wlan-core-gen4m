@@ -111,7 +111,8 @@ uint32_t wlanGetDataMode(IN struct ADAPTER *prAdapter,
 void wlanGetHarvardFwInfo(IN struct ADAPTER *prAdapter,
 	IN uint8_t u4SecIdx, IN enum ENUM_IMG_DL_IDX_T eDlIdx,
 	OUT uint32_t *pu4Addr, OUT uint32_t *pu4Len,
-	OUT uint32_t *pu4DataMode, OUT u_int8_t *pfgIsEMIDownload)
+	OUT uint32_t *pu4DataMode, OUT u_int8_t *pfgIsEMIDownload,
+	OUT u_int8_t *pfgIsNotDownload)
 {
 	struct TAILER_FORMAT_T *prTailer;
 
@@ -125,12 +126,14 @@ void wlanGetHarvardFwInfo(IN struct ADAPTER *prAdapter,
 	*pu4DataMode = wlanGetDataMode(prAdapter, eDlIdx,
 				       prTailer->feature_set);
 	*pfgIsEMIDownload = FALSE;
+	*pfgIsNotDownload = FALSE;
 }
 
 void wlanGetConnacFwInfo(IN struct ADAPTER *prAdapter,
 	IN uint8_t u4SecIdx, IN enum ENUM_IMG_DL_IDX_T eDlIdx,
 	OUT uint32_t *pu4Addr, OUT uint32_t *pu4Len,
-	OUT uint32_t *pu4DataMode, OUT u_int8_t *pfgIsEMIDownload)
+	OUT uint32_t *pu4DataMode, OUT u_int8_t *pfgIsEMIDownload,
+	OUT u_int8_t *pfgIsNotDownload)
 {
 	struct TAILER_REGION_FORMAT_T *prTailer =
 			&prAdapter->rVerInfo.rRegionTailers[u4SecIdx];
@@ -141,6 +144,8 @@ void wlanGetConnacFwInfo(IN struct ADAPTER *prAdapter,
 				       prTailer->ucFeatureSet);
 	*pfgIsEMIDownload = prTailer->ucFeatureSet &
 			    DOWNLOAD_CONFIG_EMI;
+	*pfgIsNotDownload = prTailer->ucFeatureSet &
+			    FW_FEATURE_NOT_DOWNLOAD;
 }
 
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
@@ -597,6 +602,7 @@ uint32_t wlanImageSectionDownloadStage(
 	uint32_t u4SecIdx, u4Offset = 0;
 	uint32_t u4Addr, u4Len, u4DataMode = 0;
 	u_int8_t fgIsEMIDownload = FALSE;
+	u_int8_t fgIsNotDownload = FALSE;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct patch_dl_target target;
@@ -657,13 +663,16 @@ uint32_t wlanImageSectionDownloadStage(
 		     u4SecIdx++, u4Offset += u4Len) {
 			prChipInfo->fw_dl_ops->getFwInfo(prAdapter, u4SecIdx,
 				eDlIdx, &u4Addr,
-				&u4Len, &u4DataMode, &fgIsEMIDownload);
+				&u4Len, &u4DataMode, &fgIsEMIDownload,
+				&fgIsNotDownload);
 
 			DBGLOG(INIT, INFO,
 			       "DL Offset[%u] addr[0x%08x] len[%u] datamode[0x%08x]\n",
 			       u4Offset, u4Addr, u4Len, u4DataMode);
 
-			if (fgIsEMIDownload)
+			if (fgIsNotDownload)
+				continue;
+			else if (fgIsEMIDownload)
 				u4Status = wlanDownloadEMISection(prAdapter,
 					u4Addr, u4Len,
 					pvFwImageMapFile + u4Offset);
