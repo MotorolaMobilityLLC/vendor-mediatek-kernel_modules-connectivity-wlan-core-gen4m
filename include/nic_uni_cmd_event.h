@@ -7169,21 +7169,13 @@ enum UNI_EVENT_FW_DROP_SSN_TAG {
 	UNI_EVENT_FW_DROP_SSN_INFO_TAG_NUM
 };
 
-struct UNI_STORED_FW_DROP_SSN_INFO {
-	uint16_t u2SSN;
-	uint8_t ucTid;
-	uint8_t ucWlanIdx;
-	uint8_t ucAmsduFormat;
-	uint8_t aucPadding[3];
-};
-
 struct UNI_EVENT_FW_DROP_SSN_INFO {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	/* event body */
 	uint8_t ucDrpPktNum;
 	uint8_t aucPadding[3];
-	struct UNI_STORED_FW_DROP_SSN_INFO
+	struct EVENT_STORED_FW_DROP_SSN_INFO
 		arSSN[FW_DROP_SSN_MAX];
 };
 #endif /* CFG_SUPPORT_FW_DROP_SSN */

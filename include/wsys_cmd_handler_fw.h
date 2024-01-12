@@ -578,6 +578,7 @@ enum ENUM_EVENT_ID {
 #if (CFG_SUPPORT_PKT_OFLD == 1)
 	EVENT_ID_PKT_OFLD = 0xA2,
 #endif /* CFG_SUPPORT_PKT_OFLD */
+	EVENT_ID_FW_DROP_SSN = 0xA3,
 	EVENT_ID_CAL_BACKUP_IN_HOST_V2 = 0xAE,
 	/* 0xAE (Query - CMD_ID_CAL_BACKUP) */
 	EVENT_ID_CAL_ALL_DONE = 0xAF,   /* 0xAF (FW Cal All Done Event) */
@@ -1597,6 +1598,24 @@ struct EVENT_BAR_DELAY {
 		arBAR[BAR_DELAY_INDICATION_BA_MAX];
 };
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
+
+#if CFG_SUPPORT_FW_DROP_SSN
+struct EVENT_STORED_FW_DROP_SSN_INFO {
+	uint16_t u2SSN;
+	uint8_t ucTid;
+	uint8_t ucWlanIdx;
+	uint8_t ucAmsduFormat;
+	uint8_t aucPadding[3];
+};
+
+struct EVENT_FW_DROP_SSN_INFO {
+	/* event body */
+	uint8_t ucDrpPktNum;
+	uint8_t aucPadding[3];
+	struct EVENT_STORED_FW_DROP_SSN_INFO
+		arSSN[FW_DROP_SSN_MAX];
+};
+#endif /* CFG_SUPPORT_FW_DROP_SSN */
 
 struct LINK_QUALITY {
 	int8_t       cRssi; /* AIS Network. */
