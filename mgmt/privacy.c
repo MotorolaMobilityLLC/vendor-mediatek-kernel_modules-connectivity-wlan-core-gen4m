@@ -292,6 +292,14 @@ u_int8_t secCheckClassError(IN struct ADAPTER *prAdapter,
 			    (prSwRfb->u2RxByteCount > 64) ? 64 :
 			    prSwRfb->u2RxByteCount);
 
+		if (EAPOL_KEY_NOT_KEY !=
+			secGetEapolKeyType((uint8_t *) prSwRfb->pvHeader)) {
+			DBGLOG(RSN, WARN,
+			       "EAPOL key found, return TRUE back");
+
+			return TRUE;
+		}
+
 		/* if (IS_NET_ACTIVE(prAdapter, ucBssIndex)) { */
 		authSendDeauthFrame(prAdapter,
 				    NULL, NULL, prSwRfb,
