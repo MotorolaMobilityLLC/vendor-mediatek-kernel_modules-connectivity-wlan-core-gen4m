@@ -505,6 +505,9 @@ ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
 else
     CONFIG_MTK_WIFI_NAN=n
 endif
+ifeq ($(CONFIG_MTK_WIFI_CONNAC3X_DS_VER), 3600)
+    ccflags-y += -DCFG_CONNAC3X_DS_VER=3600
+endif
 ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
 ccflags-y += -DCFG_MLO_LINK_PLAN_MODE=1
 ccflags-y += -DCONFIG_MTK_WIFI_BW320

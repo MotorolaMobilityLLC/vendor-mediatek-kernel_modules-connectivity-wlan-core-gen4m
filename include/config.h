@@ -1279,6 +1279,12 @@
 #define CFG_TX_HIF_CREDIT_FEATURE		0
 #endif
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+#ifndef CFG_CONNAC3X_DS_VER
+#define CFG_CONNAC3X_DS_VER		2
+#endif
+#endif
+
 #ifndef CFG_TX_MGMT_BY_DATA_Q
 #if (CFG_SUPPORT_CONNAC3X == 1)
 #define CFG_TX_MGMT_BY_DATA_Q		1
