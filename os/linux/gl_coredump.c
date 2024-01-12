@@ -688,10 +688,10 @@ static int __coredump_handle_print_buff(struct coredump_ctx *ctx,
 	ret = emi_mem_read(chip_info,
 		mem->print_buff_offset,
 		mem->print_buff,
-		mem->print_buff_len);
+		mem->print_buff_len - 1);
 	if (ret)
 		goto exit;
-	mem->print_buff[mem->print_buff_len] = '\0';
+	mem->print_buff[mem->print_buff_len - 1] = '\0';
 
 exit:
 	return ret;
@@ -713,10 +713,10 @@ static int __coredump_handle_dump_buff(struct coredump_ctx *ctx,
 	ret = emi_mem_read(chip_info,
 		mem->dump_buff_offset,
 		mem->dump_buff,
-		mem->dump_buff_len);
+		mem->dump_buff_len - 1);
 	if (ret)
 		goto exit;
-	mem->dump_buff[mem->dump_buff_len] = '\0';
+	mem->dump_buff[mem->dump_buff_len - 1] = '\0';
 
 	pos = kalStrStr(mem->dump_buff, PRINT_MSG_END);
 	if (!pos) {
