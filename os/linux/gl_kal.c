@@ -5803,10 +5803,12 @@ uint32_t kalScheduleFlushRxBaEntry(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t rc = WLAN_STATUS_NOT_ACCEPTED;
 
+#if (CFG_SUPPORT_RX_GRO == 1) && (CFG_SUPPORT_RX_NAPI == 1)
 	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
 		kal_napi_schedule(&prGlueInfo->napi);
 		rc = WLAN_STATUS_SUCCESS;
 	}
+#endif
 
 	return rc;
 }

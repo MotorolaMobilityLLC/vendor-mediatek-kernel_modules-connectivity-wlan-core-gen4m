@@ -444,6 +444,8 @@ ccflags-y += -DCFG_WIFI_TX_FIXED_RATE_NO_VTA=1
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
     ccflags-y += -DCFG_HIF_NUM_OF_QM_RX_PKT_NUM=2048
     ccflags-y += -DCFG_SFD_DYNAMIC_ADJUST_NETIF_TH
+    ccflags-y += -DCFG_SUPPORT_RX_NAPI=0
+    ccflags-y += -DCFG_SUPPORT_RX_GRO=0
 endif
 endif
 
