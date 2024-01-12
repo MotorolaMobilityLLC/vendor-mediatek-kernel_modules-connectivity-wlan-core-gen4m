@@ -15619,10 +15619,12 @@ u_int8_t kalIsChFlagMatch(uint32_t uFlags,
 	}
 }
 
+#if CFG_SUPPORT_TASKLET_FREE_MSDU
 void kalTxFreeMsduTaskSchedule(struct GLUE_INFO *prGlueInfo)
 {
 	tasklet_schedule(&prGlueInfo->rTxMsduRetTask);
 }
+#endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 
 inline struct GL_WORK *kalGetWork(struct GLUE_INFO *pr,
 	enum ENUM_WORK eWork)

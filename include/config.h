@@ -2340,7 +2340,12 @@
  * Linux version only. Force remove for other platform
  *------------------------------------------------------------------------------
  */
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 #define CFG_SUPPORT_TASKLET_FREE_MSDU	1
+#else
+#define CFG_SUPPORT_TASKLET_FREE_MSDU	0
+#endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */
+
 #ifndef LINUX
 #undef CFG_SUPPORT_TASKLET_FREE_MSDU
 #define CFG_SUPPORT_TASKLET_FREE_MSDU	0
