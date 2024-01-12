@@ -13960,58 +13960,14 @@ uint32_t wlanSendFwLogControlCmd(IN struct ADAPTER *prAdapter,
 				uint32_t u4SetQueryInfoLen,
 				int8_t *pucInfoBuffer)
 {
-	uint32_t status = WLAN_STATUS_SUCCESS;
-	struct GLUE_INFO *prGlueInfo;
-	struct CMD_INFO *prCmdInfo;
-	struct mt66xx_chip_info *prChipInfo;
-	uint8_t *pucCmfBuf;
-	uint16_t cmd_size;
-
-	ASSERT(prAdapter);
-
-	prGlueInfo = prAdapter->prGlueInfo;
-	prChipInfo = prAdapter->chip_info;
-	cmd_size = prChipInfo->u2CmdTxHdrSize + u4SetQueryInfoLen;
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
-	if (!prCmdInfo) {
-		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T FAILED ID[0x%x]\n",
-			ucCID);
-		return WLAN_STATUS_FAILURE;
-	}
-
-	/* Setup common CMD Info Packet */
-	prCmdInfo->eCmdType = COMMAND_TYPE_NETWORK_IOCTL;
-	prCmdInfo->u2InfoBufLen = cmd_size;
-	prCmdInfo->pfCmdDoneHandler = pfCmdDoneHandler;
-	prCmdInfo->pfCmdTimeoutHandler = pfCmdTimeoutHandler;
-	prCmdInfo->ucCID = ucCID;
-	prCmdInfo->fgSetQuery = TRUE;
-	prCmdInfo->fgNeedResp = FALSE;
-	prCmdInfo->fgIsOid = FALSE;
-	prCmdInfo->u4SetInfoLen = u4SetQueryInfoLen;
-
-	NIC_FILL_CMD_TX_HDR(prAdapter,
-		prCmdInfo->pucInfoBuffer,
-		prCmdInfo->u2InfoBufLen,
-		prCmdInfo->ucCID,
-		CMD_PACKET_TYPE_ID,
-		&prCmdInfo->ucCmdSeqNum,
-		prCmdInfo->fgSetQuery, &pucCmfBuf, FALSE, 0, S2D_INDEX_CMD_H2N);
-	if (u4SetQueryInfoLen > 0 && pucInfoBuffer != NULL)
-		kalMemCopy(pucCmfBuf, pucInfoBuffer,
-			   u4SetQueryInfoLen);
-
-	if (wlanSendCommand(prAdapter,
-			prCmdInfo) != WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, ERROR,
-			"Fail to transmit commandID[0x%x]\n",
-			ucCID);
-		status = WLAN_STATUS_FAILURE;
-	}
-
-	cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
-
-	return status;
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	return wlanSendSetQueryCmdHelper(
+#else
+	return wlanSendSetQueryCmdAdv(
+#endif
+		prAdapter, ucCID, 0, TRUE, FALSE, FALSE,
+		pfCmdDoneHandler, pfCmdTimeoutHandler, u4SetQueryInfoLen,
+		pucInfoBuffer, NULL, 0, CMD_SEND_METHOD_REQ_RESOURCE);
 }
 
 #if (CFG_SUPPORT_DYNAMIC_EDCCA == 1)
