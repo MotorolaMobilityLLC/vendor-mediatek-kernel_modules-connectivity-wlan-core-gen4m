@@ -138,7 +138,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_GET_STATISTICS] = nicUniCmdGetStatistics,
 	[CMD_ID_GET_LINK_QUALITY] = nicUniCmdGetLinkQuality,
 	[CMD_ID_GET_BUG_REPORT] = nicUniCmdGetBugReport,
-	[CMD_ID_PERF_IND] = nicUniCmdNotSupport, // TODO: wait for FW ready
+	[CMD_ID_PERF_IND] = nicUniCmdPerfInd,
 	[CMD_ID_SG_PARAM] = nicUniCmdSetSGParam,
 	[CMD_ID_SET_MONITOR] = nicUniCmdSetMonitor,
 	[CMD_ID_ADD_REMOVE_KEY] = nicUniCmdInstallKey,
@@ -3909,11 +3909,10 @@ uint32_t nicUniCmdPerfInd(struct ADAPTER *ad,
 	if (!entry)
 		return WLAN_STATUS_RESOURCES;
 
-	// TODO: uni cmd
 	uni_cmd = (struct UNI_CMD_PERF_IND *) entry->pucInfoBuffer;
 	tag = (struct UNI_CMD_PERF_IND_PARM *) uni_cmd->aucTlvBuffer;
-	/* tag->u2Tag = UNI_CMD_PERF_IND_TAG_PARM; */
-	/* tag->u2Length = sizeof(*tag); */
+	tag->u2Tag = UNI_CMD_PERF_IND_TAG_PARM;
+	tag->u2Length = sizeof(*tag);
 	tag->ucCmdVer = cmd->ucCmdVer;
 	tag->u2CmdLen = cmd->u2CmdLen;
 	tag->u4VaildPeriod = cmd->u4VaildPeriod;

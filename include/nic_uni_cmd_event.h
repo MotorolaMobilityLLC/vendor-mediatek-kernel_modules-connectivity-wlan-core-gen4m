@@ -2905,6 +2905,8 @@ enum ENUM_UNI_CMD_PERF_IND_TAG {
 };
 
 struct UNI_CMD_PERF_IND_PARM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
 	uint8_t ucCmdVer;
 	uint8_t aucPadding0[1];
 	uint16_t u2CmdLen;       // cmd size including common part and body.
@@ -2919,10 +2921,10 @@ struct UNI_CMD_PERF_IND_PARM {
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_ID_FRM_IND_FROM_HOST {
-    /*fixed field*/
-    uint8_t aucPadding[4];
-    /* tlv */
-    uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	/*fixed field*/
+	uint8_t aucPadding[4];
+	/* tlv */
+	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
         *
         *  TAG                          | ID   | structure
         *  -------------                | -----| -------------
@@ -2932,26 +2934,26 @@ struct UNI_CMD_ID_FRM_IND_FROM_HOST {
 
 /* RDD set command Tag */
 enum ENUM_UNI_CMD_FRM_IND_FROM_HOST_TAG {
-    UNI_CMD_FRM_IND_FROM_HOST_TAG_PARM = 0,
-    UNI_CMD_FRM_IND_FROM_HOST_TAG_NUM
+	UNI_CMD_FRM_IND_FROM_HOST_TAG_PARM = 0,
+	UNI_CMD_FRM_IND_FROM_HOST_TAG_NUM
 };
 
 struct UNI_CMD_FRM_IND_FROM_HOST_PARM {
-    uint8_t  ucCmdVer;
-    uint8_t  aucPadding0[1];
-    uint16_t u2CmdLen;       // cmd size including common part and body.
-    uint8_t  ucStaIdx;
-    uint8_t  ucBssIdx;
-    uint8_t  ucTransmitType;
-    uint8_t  ucProtocolType;
-    uint8_t  ucProtocolSubType;
-    uint8_t  ucRateValid;
-    uint8_t  aucPadding1[2];
-    uint32_t u4Rate;
-    uint32_t u4Len;
-    uint8_t  TxS;
-    uint8_t  aucPadding3[3];
-    uint8_t  aucPadding4[64];
+	uint8_t  ucCmdVer;
+	uint8_t  aucPadding0[1];
+	uint16_t u2CmdLen;
+	uint8_t  ucStaIdx;
+	uint8_t  ucBssIdx;
+	uint8_t  ucTransmitType;
+	uint8_t  ucProtocolType;
+	uint8_t  ucProtocolSubType;
+	uint8_t  ucRateValid;
+	uint8_t  aucPadding1[2];
+	uint32_t u4Rate;
+	uint32_t u4Len;
+	uint8_t  TxS;
+	uint8_t  aucPadding3[3];
+	uint8_t  aucPadding4[64];
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_TESTMODE_CTRL {
