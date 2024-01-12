@@ -1094,9 +1094,6 @@ void asicConnac3xLowPowerOwnClear(
 		HAL_MCR_WR(prAdapter,
 			CONNAC3X_BN0_LPCTL_ADDR,
 			PCIE_LPCR_HOST_CLR_OWN);
-
-		if (prAdapter->rWifiVar.u4DrvOwnMode == 1)
-			kalMdelay(10);
 	}
 
 	*pfgResult = TRUE;
@@ -1381,7 +1378,7 @@ void asicConnac3xWfdmaInitForUSB(
 
 	prChipInfo->is_support_dma_shdl = wlanCfgGetUint32(prAdapter,
 				    "DmaShdlEnable",
-				    FEATURE_ENABLED);
+				    FEATURE_ENABLED, FEATURE_DEBUG_ONLY);
 	if (!prChipInfo->is_support_dma_shdl) {
 		/*
 		 *	To disable 0x7C0252B0[6] DMASHDL

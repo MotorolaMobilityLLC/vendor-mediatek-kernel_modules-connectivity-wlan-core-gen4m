@@ -527,6 +527,14 @@ enum ENUM_FEATURE_OPTION {
 	FEATURE_FORCE_ENABLED
 };
 
+/* This enum indicates whether the config accessible in user load */
+enum ENUM_FEATURE_SUPPORT_SCOPE {
+	/* Accessible in user load */
+	FEATURE_TO_CUSTOMER,
+	/* Unaccessible in user load */
+	FEATURE_DEBUG_ONLY
+};
+
 /* This enum is for later added feature options which use command reserved field
  * as option switch
  */
@@ -1317,7 +1325,6 @@ enum ENUM_TX_RESULT_CODE {
 struct WLAN_CFG_ENTRY {
 	uint8_t aucKey[WLAN_CFG_KEY_LEN_MAX];
 	uint8_t aucValue[WLAN_CFG_VALUE_LEN_MAX];
-	WLAN_CFG_SET_CB pfSetCb;
 	void *pPrivate;
 	uint32_t u4Flags;
 };
@@ -2064,26 +2071,25 @@ struct WLAN_CFG_ENTRY *wlanCfgGetEntry(struct ADAPTER *prAdapter,
 
 uint32_t
 wlanCfgGet(struct ADAPTER *prAdapter, const int8_t *pucKey, int8_t *pucValue,
-	   int8_t *pucValueDef, uint32_t u4Flags);
+	   int8_t *pucValueDef, uint32_t u4Flags,
+	   enum ENUM_FEATURE_SUPPORT_SCOPE fgIsDebugUsed);
 
 void wlanCfgRecordValue(struct ADAPTER *prAdapter,
 			const int8_t *pucKey, uint32_t u4Value);
 
 uint32_t wlanCfgGetUint32(struct ADAPTER *prAdapter, const int8_t *pucKey,
-			  uint32_t u4ValueDef);
+			  uint32_t u4ValueDef,
+			  enum ENUM_FEATURE_SUPPORT_SCOPE fgIsDebugUsed);
 
 int32_t wlanCfgGetInt32(struct ADAPTER *prAdapter, const int8_t *pucKey,
-			int32_t i4ValueDef);
+			int32_t i4ValueDef,
+			enum ENUM_FEATURE_SUPPORT_SCOPE fgIsDebugUsed);
 
 uint32_t wlanCfgSetUint32(struct ADAPTER *prAdapter, const int8_t *pucKey,
 			  uint32_t u4Value);
 
 uint32_t wlanCfgSet(struct ADAPTER *prAdapter, const int8_t *pucKey,
 		    int8_t *pucValue, uint32_t u4Flags);
-
-uint32_t wlanCfgSetCb(struct ADAPTER *prAdapter, const int8_t *pucKey,
-		      WLAN_CFG_SET_CB pfSetCb, void *pPrivate,
-		      uint32_t u4Flags);
 
 #if CFG_SUPPORT_EASY_DEBUG
 uint32_t wlanCfgParse(struct ADAPTER *prAdapter, uint8_t *pucConfigBuf,

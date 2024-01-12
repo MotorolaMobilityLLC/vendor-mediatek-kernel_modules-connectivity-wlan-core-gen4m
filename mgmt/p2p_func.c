@@ -8052,9 +8052,6 @@ p2pFunGetTopPreferFreqByBand(struct ADAPTER *prAdapter,
 	uint8_t ucNumOfChannel = 0;
 	uint8_t i;
 	struct RF_CHANNEL_INFO *aucChannelList = NULL;
-#if (CFG_SUPPORT_P2PGO_ACS == 1)
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-#endif
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	uint8_t isVlpSupport = 0;
 #endif
@@ -8071,19 +8068,15 @@ p2pFunGetTopPreferFreqByBand(struct ADAPTER *prAdapter,
 			sizeof(struct RF_CHANNEL_INFO) * ucMaxChnNum);
 
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
-	if (prWifiVar->ucP2pGoACS == FEATURE_ENABLED) {
-		p2pFunGetAcsBestChList(prAdapter,
-				BIT(eBandPrefer), eMaxBW,
-				BITS(0, 31), BITS(0, 31),
-				BITS(0, 31), BITS(0, 31),
-				&ucNumOfChannel, aucChannelList);
-
-	} else
+	p2pFunGetAcsBestChList(prAdapter,
+			BIT(eBandPrefer), eMaxBW,
+			BITS(0, 31), BITS(0, 31),
+			BITS(0, 31), BITS(0, 31),
+			&ucNumOfChannel, aucChannelList);
+#else
+	rlmDomainGetChnlList(prAdapter, eBandPrefer, TRUE,
+		ucMaxChnNum, &ucNumOfChannel, aucChannelList);
 #endif
-	{
-		rlmDomainGetChnlList(prAdapter, eBandPrefer, TRUE,
-			ucMaxChnNum, &ucNumOfChannel, aucChannelList);
-	}
 
 	for (i = 0; i < ucNumOfChannel && i < ucTopPreferNum; i++) {
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)

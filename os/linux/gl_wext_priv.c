@@ -10229,13 +10229,15 @@ int priv_driver_get_cfg(struct net_device *prNetDev, char *pcCommand,
 
 	if (i4Argc >= 2) {
 		/* by wlanoid ? */
-		if (wlanCfgGet(prAdapter, apcArgv[1], aucValue,
-			NULL, WLAN_CFG_DEFAULT) == WLAN_STATUS_SUCCESS) {
+		if (wlanCfgGet(prAdapter, apcArgv[1], aucValue, NULL,
+			       WLAN_CFG_DEFAULT, FEATURE_TO_CUSTOMER)
+					== WLAN_STATUS_SUCCESS) {
 			kalStrnCpy(pcCommand, aucValue, WLAN_CFG_VALUE_LEN_MAX);
 			i4BytesWritten = kalStrnLen(pcCommand,
 				WLAN_CFG_VALUE_LEN_MAX);
-		} else if (wlanCfgGet(prAdapter, apcArgv[1], aucValue,
-			NULL, WLAN_CFG_REC) == WLAN_STATUS_SUCCESS) {
+		} else if (wlanCfgGet(prAdapter, apcArgv[1], aucValue, NULL,
+				      WLAN_CFG_REC, FEATURE_TO_CUSTOMER)
+						== WLAN_STATUS_SUCCESS) {
 			kalStrnCpy(pcCommand, aucValue, WLAN_CFG_VALUE_LEN_MAX);
 			i4BytesWritten = kalStrnLen(pcCommand,
 				WLAN_CFG_VALUE_LEN_MAX);

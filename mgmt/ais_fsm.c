@@ -2596,18 +2596,14 @@ void aisMultiStaSetQuoteTime(struct ADAPTER *prAdapter, uint8_t fgSetQuoteTime)
 		kalSnprintf(aucWlanQuoteTime, sizeof(aucWlanQuoteTime),
 			"MccDualStaAIS0QuotaTimeInUs %d",
 			prAdapter->u4MultiStaPrimaryInterface ==
-			AIS_DEFAULT_INDEX ?
-			prAdapter->rWifiVar.u4MultiStaPrimaryQuoteTime :
-			prAdapter->rWifiVar.u4MultiStaSecondaryQuoteTime);
+			AIS_DEFAULT_INDEX ? 300000 : 120000);
 		aisSendChipConfigCmd(prAdapter, aucWlanQuoteTime);
 
 		kalMemZero(aucWlanQuoteTime, sizeof(aucWlanQuoteTime));
 		kalSnprintf(aucWlanQuoteTime, sizeof(aucWlanQuoteTime),
 			"MccDualStaAIS1QuotaTimeInUs %d",
 			prAdapter->u4MultiStaPrimaryInterface ==
-			AIS_SECONDARY_INDEX ?
-			prAdapter->rWifiVar.u4MultiStaPrimaryQuoteTime :
-			prAdapter->rWifiVar.u4MultiStaSecondaryQuoteTime);
+			AIS_SECONDARY_INDEX ? 300000 : 120000);
 		aisSendChipConfigCmd(prAdapter, aucWlanQuoteTime);
 	}
 }

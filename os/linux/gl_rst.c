@@ -2027,8 +2027,6 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 
 		prAdapter = prGlueInfo->prAdapter;
 		prWifiVar = &prAdapter->rWifiVar;
-		if (prWifiVar->fgRstRecover == 1)
-			g_fgRstRecover = TRUE;
 	}
 
 	fgIsTimeout = IsOverRstTimeThreshold(rNowTs, rLastTs);

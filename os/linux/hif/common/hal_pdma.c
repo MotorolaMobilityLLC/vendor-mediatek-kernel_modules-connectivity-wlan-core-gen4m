@@ -578,10 +578,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 #endif /* !CFG_SUPPORT_RX_WORK */
 
 #if IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
-		if (prAdapter->rWifiVar.u4DrvOwnMode == 1) {
-			DBGLOG(INIT, TRACE, "delay 10ms DRIVER OWN Start\n");
-			HAL_LP_OWN_RD(prAdapter, &fgResult);
-		} else if (prAdapter->fgIsWiFiOnDrvOwn) {
+		if (prAdapter->fgIsWiFiOnDrvOwn) {
 			DBGLOG(INIT, TRACE, "WIFI On DRIVER OWN Start\n");
 			HAL_LP_OWN_RD(prAdapter, &fgResult);
 		} else if (prBusInfo->fgCheckDriverOwnInt) {

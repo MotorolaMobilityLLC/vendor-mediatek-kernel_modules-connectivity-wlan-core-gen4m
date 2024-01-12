@@ -962,11 +962,9 @@ struct WIFI_VAR {
 	uint8_t ucRTWTSupport;
 	uint8_t ucRTWTStautProtect;
 #endif
-	uint8_t ucTspec;
 	uint8_t ucUapsd;
 	uint8_t ucStaUapsd;
 	uint8_t ucApUapsd;
-	uint8_t ucP2pUapsd;
 
 	uint8_t ucTxShortGI;
 	uint8_t ucRxShortGI;
@@ -1082,7 +1080,6 @@ struct WIFI_VAR {
 
 #if CFG_SUPPORT_MTK_SYNERGY
 	uint8_t ucMtkOui;
-	uint32_t u4MtkOuiCap;
 	uint8_t aucMtkFeature[4];
 	u_int8_t ucGbandProbe256QAM;
 #endif
@@ -1138,14 +1135,12 @@ struct WIFI_VAR {
 	uint32_t u4DbdcP2pLisSwDelayTime;
 #endif
 	uint8_t u4ScanCtrl;
-	uint8_t ucScanChannelListenTime;
 
 #if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
 	uint8_t ucEfuseBufferModeCal;
 #endif
 	uint8_t ucCalTimingCtrl;
 	uint8_t ucWow;
-	uint8_t ucOffload;
 	uint8_t ucAdvPws; /* enable LP multiple DTIM function, default enable */
 	uint8_t ucWowOnMdtim; /* multiple DTIM if WOW enable, default 1 */
 	uint8_t ucWowOffMdtim; /* multiple DTIM if WOW disable, default 3 */
@@ -1162,7 +1157,6 @@ struct WIFI_VAR {
 	uint32_t u4WfdSccBalanceRatio;
 	int32_t i4BssCount[MAX_BSSID_NUM];
 #endif
-	uint32_t u4DrvOwnMode; /* 0: default, 1: delay 10ms */
 	uint8_t u4SwTestMode;
 	uint8_t	ucCtrlFlagAssertPath;
 	uint8_t	ucCtrlFlagDebugLevel;
@@ -1243,7 +1237,6 @@ struct WIFI_VAR {
 
 	u_int8_t fgNvramCheckEn; /* nvram checking in scan result*/
 
-	uint8_t fgRstRecover;
 	u_int8_t fgEnableSerL0;
 	enum ENUM_FEATURE_OPTION_IN_SER eEnableSerL0p5;
 	enum ENUM_FEATURE_OPTION_IN_SER eEnableSerL1;
@@ -1302,9 +1295,6 @@ struct WIFI_VAR {
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
 	uint32_t u4RxHighTputTh;
 
-#if CFG_SUPPORT_IOT_AP_BLOCKLIST
-	uint8_t fgEnDefaultIotApRule;
-#endif
 	uint32_t u4MsduReportTimeout;
 	uint32_t u4MsduReportTimeoutSerTime;
 
@@ -1331,9 +1321,6 @@ struct WIFI_VAR {
 	uint8_t ucSGCfg;
 	uint8_t ucSG24GFavorANT;
 	uint8_t ucSG5GFavorANT;
-#endif
-#if (CFG_SUPPORT_P2PGO_ACS == 1)
-	uint8_t ucP2pGoACS;
 #endif
 	uint8_t fgReuseRSNIE;
 
@@ -1463,8 +1450,6 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_DHCP_RESET_BA_WINDOW
 	u_int8_t fgDhcpResetBaWindow;
 #endif /* CFG_SUPPORT_DHCP_RESET_BA_WINDOW */
-	uint32_t u4MultiStaPrimaryQuoteTime;
-	uint32_t u4MultiStaSecondaryQuoteTime;
 #if (CFG_EXT_ROAMING == 1)
 	uint8_t ucRCMinRoamDetla;
 	uint8_t ucRCDelta;
@@ -1575,7 +1560,7 @@ struct WIFI_VAR {
 	u_int8_t fgEnableRroAdvDump;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
-	u_int8_t fgIcmpTxs;
+	u_int8_t fgIcmpTxDone;
 
 	uint8_t ucUdpTspecUp;
 	uint8_t ucTcpTspecUp;

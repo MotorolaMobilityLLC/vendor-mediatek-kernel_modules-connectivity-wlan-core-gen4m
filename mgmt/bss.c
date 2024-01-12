@@ -2854,11 +2854,6 @@ uint32_t bssGetIotApAction(struct ADAPTER *prAdapter,
 		if (prIotApRule->u2MatchFlag == 0)
 			continue;
 
-		/*Check if default rule is allowed*/
-		if (!prAdapter->rWifiVar.fgEnDefaultIotApRule &&
-			(prIotApRule->ucVersion & BIT(7)))
-			continue;
-
 		/*Match Vendor OUI*/
 		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_OUI)) {
 			pucIe = kalFindIeMatchMask(

@@ -2880,10 +2880,6 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 		rCmdSetBssInfo.ucBssColorInfo = prBssInfo->ucBssColorInfo;
 		rCmdSetBssInfo.u2HeBasicMcsSet =
 			prBssInfo->u2HeBasicMcsSet;
-		if (IS_BSS_AIS(prBssInfo) &&
-		    IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucVcoreBoostEnable))
-			DBGLOG(BSS, INFO, "VcoreBoost[%d]\n",
-				kalCheckVcoreBoost(prAdapter, ucBssIndex));
 	}
 #endif
 
