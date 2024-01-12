@@ -661,10 +661,14 @@ void soc3_0_WfdmaAxiCtrl(
 void soc3_0_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx)
 {
-	snprintf(apucName[(*pucNameIdx)], SOC3_0_FILE_NAME_MAX,
+	int ret = 0;
+
+	ret = kalSnprintf(apucName[(*pucNameIdx)], SOC3_0_FILE_NAME_MAX,
 					"soc3_0_patch_wmmcu_1_%x_hdr.bin",
 					wlanGetEcoVersion(
 						prGlueInfo->prAdapter));
+	if (ret < 0 || ret >= CFG_FW_NAME_MAX_LEN)
+		DBGLOG(INIT, ERROR, "kalSnprintf failed, ret: %d\n", ret);
 }
 
 struct BUS_INFO soc3_0_bus_info = {
@@ -1101,12 +1105,12 @@ void soc3_0_DumpWfsyscpupcr(struct ADAPTER *prAdapter)
 		HAL_MCR_RD(prAdapter, WFSYS_CPUPCR_ADDR, &var_pc);
 		HAL_MCR_RD(prAdapter, WFSYS_LP_ADDR, &var_lp);
 
-		snprintf(log_buf_pc[i], CPUPCR_BUF_SZ, "%llu.%06llu/0x%08x;",
+		kalSnprintf(log_buf_pc[i], CPUPCR_BUF_SZ, "%llu.%06llu/0x%08x;",
 					log_sec,
 					log_nsec,
 					var_pc);
 
-		snprintf(log_buf_lp[i], CPUPCR_BUF_SZ, "%llu.%06llu/0x%08x;",
+		kalSnprintf(log_buf_lp[i], CPUPCR_BUF_SZ, "%llu.%06llu/0x%08x;",
 					log_sec,
 					log_nsec,
 					var_lp);
@@ -1288,7 +1292,7 @@ static void soc3_0_DumpMemory32(uint32_t *pu4StartAddr,
 
 	while (u4Count > 0) {
 
-		snprintf(buf, TMP_BUF_SZ, "%08x", pu4StartAddr[0]);
+		kalSnprintf(buf, TMP_BUF_SZ, "%08x", pu4StartAddr[0]);
 
 		if (u4Count > ONE_LINE_MAX_COUNT)
 			endCount = ONE_LINE_MAX_COUNT;
@@ -1296,7 +1300,7 @@ static void soc3_0_DumpMemory32(uint32_t *pu4StartAddr,
 			endCount = u4Count;
 
 		for (i = 1; i < endCount; i++) {
-			snprintf(tmp, TMP_BUF_SZ, " %08x", pu4StartAddr[i]);
+			kalSnprintf(tmp, TMP_BUF_SZ, " %08x", pu4StartAddr[i]);
 			strncat(buf, tmp, strlen(tmp));
 		}
 
@@ -2788,45 +2792,67 @@ void soc3_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
 	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
 {
+	int ret = 0;
 	uint8_t ucIdx = 0;
 
 	for (ucIdx = 0; apucsoc3_0FwName[ucIdx]; ucIdx++) {
-		if ((*pucNameIdx + 3) < ucMaxNameIdx) {
-			/* Type 1. WIFI_RAM_CODE_soc1_0_1_1 */
-			snprintf(*(apucName + (*pucNameIdx)),
-					CFG_FW_NAME_MAX_LEN, "%s_%u_%u",
-					apucsoc3_0FwName[ucIdx],
-					CFG_WIFI_IP_SET,
-					wlanGetEcoVersion(
-						prGlueInfo->prAdapter));
-			(*pucNameIdx) += 1;
-
-			/* Type 2. WIFI_RAM_CODE_soc1_0_1_1.bin */
-			snprintf(*(apucName + (*pucNameIdx)),
-					CFG_FW_NAME_MAX_LEN, "%s_%u_%u.bin",
-					apucsoc3_0FwName[ucIdx],
-					CFG_WIFI_IP_SET,
-					wlanGetEcoVersion(
-						prGlueInfo->prAdapter));
-			(*pucNameIdx) += 1;
-
-			/* Type 3. WIFI_RAM_CODE_soc1_0 */
-			snprintf(*(apucName + (*pucNameIdx)),
-					CFG_FW_NAME_MAX_LEN, "%s",
-					apucsoc3_0FwName[ucIdx]);
-			(*pucNameIdx) += 1;
-
-			/* Type 4. WIFI_RAM_CODE_soc1_0.bin */
-			snprintf(*(apucName + (*pucNameIdx)),
-					CFG_FW_NAME_MAX_LEN, "%s.bin",
-					apucsoc3_0FwName[ucIdx]);
-			(*pucNameIdx) += 1;
-		} else {
+		if ((*pucNameIdx + 3) >= ucMaxNameIdx) {
 			/* the table is not large enough */
 			DBGLOG(INIT, ERROR,
 				"kalFirmwareImageMapping >> file name array is not enough.\n");
 			ASSERT(0);
+			continue;
 		}
+
+		/* Type 1. WIFI_RAM_CODE_soc1_0_1_1 */
+		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
+				CFG_FW_NAME_MAX_LEN, "%s_%u_%u",
+				apucsoc3_0FwName[ucIdx],
+				CFG_WIFI_IP_SET,
+				wlanGetEcoVersion(
+					prGlueInfo->prAdapter));
+		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+			(*pucNameIdx) += 1;
+		else
+			DBGLOG(INIT, ERROR,
+					"[%u] kalSnprintf failed, ret: %d\n",
+					__LINE__, ret);
+
+		/* Type 2. WIFI_RAM_CODE_soc1_0_1_1.bin */
+		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
+				CFG_FW_NAME_MAX_LEN, "%s_%u_%u.bin",
+				apucsoc3_0FwName[ucIdx],
+				CFG_WIFI_IP_SET,
+				wlanGetEcoVersion(
+					prGlueInfo->prAdapter));
+		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+			(*pucNameIdx) += 1;
+		else
+			DBGLOG(INIT, ERROR,
+					"[%u] kalSnprintf failed, ret: %d\n",
+					__LINE__, ret);
+
+		/* Type 3. WIFI_RAM_CODE_soc1_0 */
+		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
+				CFG_FW_NAME_MAX_LEN, "%s",
+				apucsoc3_0FwName[ucIdx]);
+		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+			(*pucNameIdx) += 1;
+		else
+			DBGLOG(INIT, ERROR,
+					"[%u] kalSnprintf failed, ret: %d\n",
+					__LINE__, ret);
+
+		/* Type 4. WIFI_RAM_CODE_soc1_0.bin */
+		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
+				CFG_FW_NAME_MAX_LEN, "%s.bin",
+				apucsoc3_0FwName[ucIdx]);
+		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+			(*pucNameIdx) += 1;
+		else
+			DBGLOG(INIT, ERROR,
+					"[%u] kalSnprintf failed, ret: %d\n",
+					__LINE__, ret);
 	}
 }
 
@@ -2901,7 +2927,7 @@ soc3_0_kalFirmwareImageMapping(
 				prChipInfo->fw_dl_ops->constructPatchName(
 					prGlueInfo, apucName, &idx);
 			else
-				snprintf(apucName[idx], SOC3_0_FILE_NAME_MAX,
+				kalSnprintf(apucName[idx], SOC3_0_FILE_NAME_MAX,
 					"soc3_0_patch_wmmcu_1_%x_hdr.bin",
 					wlanGetEcoVersion(
 						prGlueInfo->prAdapter));
@@ -2909,7 +2935,7 @@ soc3_0_kalFirmwareImageMapping(
 		} else if (eDlIdx == IMG_DL_IDX_MCU_ROM_EMI) {
 			/* construct the file name for MCU ROM EMI */
 			/* soc3_0_ram_wmmcu_1_1_hdr.bin */
-			snprintf(apucName[idx], SOC3_0_FILE_NAME_MAX,
+			kalSnprintf(apucName[idx], SOC3_0_FILE_NAME_MAX,
 					"soc3_0_ram_wmmcu_1_%x_hdr.bin",
 					wlanGetEcoVersion(
 						prGlueInfo->prAdapter));
@@ -2918,7 +2944,7 @@ soc3_0_kalFirmwareImageMapping(
 		} else if (eDlIdx == IMG_DL_IDX_WIFI_ROM_EMI) {
 			/* construct the file name for WiFi ROM EMI */
 			/* soc3_0_ram_wifi_1_1_hdr.bin */
-			snprintf(apucName[idx], SOC3_0_FILE_NAME_MAX,
+			kalSnprintf(apucName[idx], SOC3_0_FILE_NAME_MAX,
 					"soc3_0_ram_wifi_1_%x_hdr.bin",
 					wlanGetEcoVersion(
 						prGlueInfo->prAdapter));

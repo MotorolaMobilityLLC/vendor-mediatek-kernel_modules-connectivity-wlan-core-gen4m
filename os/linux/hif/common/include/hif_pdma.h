@@ -377,7 +377,7 @@ struct MSDU_TOKEN_ENTRY {
 };
 
 struct MSDU_TOKEN_INFO {
-	int32_t i4UsedCnt;
+	uint32_t u4UsedCnt;
 	struct MSDU_TOKEN_ENTRY *aprTokenStack[HIF_TX_MSDU_TOKEN_NUM];
 	spinlock_t rTokenLock;
 	struct MSDU_TOKEN_ENTRY arToken[HIF_TX_MSDU_TOKEN_NUM];
