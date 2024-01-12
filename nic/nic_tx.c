@@ -2242,6 +2242,8 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 #endif
 
 	while (QUEUE_IS_NOT_EMPTY(prQue)) {
+		u_int8_t fgTxDoneHandler;
+
 		QUEUE_REMOVE_HEAD(prQue, prMsduInfo, struct MSDU_INFO *);
 
 		if (!halTxIsDataBufEnough(prAdapter, prMsduInfo)) {
@@ -2249,6 +2251,9 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 				(struct QUE_ENTRY *) prMsduInfo);
 			break;
 		}
+
+		fgTxDoneHandler = prMsduInfo->pfTxDoneHandler ?
+				TRUE : FALSE;
 
 #if !CFG_SUPPORT_MULTITHREAD
 		nicTxFillDataDesc(prAdapter, prMsduInfo);
@@ -2261,7 +2266,16 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 					       PHASE_HIF_TX);
 		}
 
-		if (prMsduInfo->pfTxDoneHandler) {
+		if (!fgTxDoneHandler)
+			wlanTxProfilingTagMsdu(prAdapter, prMsduInfo,
+						TX_PROF_TAG_DRV_TX_DONE);
+
+#if (CFG_SUPPORT_STATISTICS == 1)
+		StatsEnvTxTime2Hif(prAdapter, prMsduInfo);
+#endif
+		HAL_WRITE_TX_DATA(prAdapter, prMsduInfo);
+
+		if (fgTxDoneHandler) {
 			KAL_SPIN_LOCK_DECLARATION();
 
 			/* Record native packet pointer for Tx done log */
@@ -2289,14 +2303,7 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 			cnmTimerStartTimer(prAdapter,
 				&prMsduInfo->rLifetimeTimer,
 				NIC_TX_REMAINING_LIFE_TIME);
-		} else
-			wlanTxProfilingTagMsdu(prAdapter, prMsduInfo,
-						TX_PROF_TAG_DRV_TX_DONE);
-
-#if (CFG_SUPPORT_STATISTICS == 1)
-		StatsEnvTxTime2Hif(prAdapter, prMsduInfo);
-#endif
-		HAL_WRITE_TX_DATA(prAdapter, prMsduInfo);
+		}
 	}
 
 	HAL_KICK_TX_DATA(prAdapter);
