@@ -2277,7 +2277,7 @@ uint8_t aisNeedMloScan(struct ADAPTER *prAdapter,
 		prAdapter->rWifiVar.ucMlProbeRetryLimit)
 		return FALSE;
 
-	if (!mldIsMloFeatureEnabled(prAdapter, NETWORK_TYPE_AIS, FALSE) ||
+	if (!mldIsMloFeatureEnabled(prAdapter, NETWORK_TYPE_AIS, ucBssIndex) ||
 	    !aisSecondLinkAvailable(prAdapter, ucBssIndex))
 		return FALSE;
 

@@ -1249,7 +1249,7 @@ void scanFillSecondaryLink(struct ADAPTER *prAdapter,
 	if (!prMainBssDesc || !prMainBssDesc->rMlInfo.fgValid)
 		return;
 
-	if (!mldIsMloFeatureEnabled(prAdapter, NETWORK_TYPE_AIS, FALSE))
+	if (!mldIsMloFeatureEnabled(prAdapter, NETWORK_TYPE_AIS, ucBssIndex))
 		return;
 
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
