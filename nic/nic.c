@@ -1260,6 +1260,7 @@ nicMediaStateChange(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
 	struct BSS_INFO *prBssInfo;
+	struct WLAN_INFO *prWlanInfo;
 
 	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
@@ -1274,6 +1275,8 @@ nicMediaStateChange(struct ADAPTER *prAdapter,
 		DBGLOG(NIC, ERROR, "prBssInfo is null\n");
 		return WLAN_STATUS_FAILURE;
 	}
+
+	prWlanInfo = &prAdapter->rWlanInfo;
 
 	switch (prBssInfo->eNetworkType) {
 	case NETWORK_TYPE_AIS:
@@ -1290,8 +1293,7 @@ nicMediaStateChange(struct ADAPTER *prAdapter,
 					WLAN_STATUS_MEDIA_DISCONNECT, NULL,
 					0, ucBssIndex);
 
-				prAdapter->rWlanInfo.u4SysTime =
-					kalGetTimeTick();
+				prWlanInfo->u4SysTime = kalGetTimeTick();
 			}
 
 			/* reset buffered link quality information */
@@ -1328,7 +1330,7 @@ nicMediaStateChange(struct ADAPTER *prAdapter,
 				}
 			}
 
-			prAdapter->rWlanInfo.u4SysTime = kalGetTimeTick();
+			prWlanInfo->u4SysTime = kalGetTimeTick();
 
 			/* sanity check */
 			if (unlikely(prConnectionStatus->ucSsidLen >
@@ -1359,7 +1361,7 @@ nicMediaStateChange(struct ADAPTER *prAdapter,
 			prCurrBssid->
 				rConfiguration.u4DSConfig =
 				prConnectionStatus->u4FreqInKHz;
-			prAdapter->rWlanInfo.ucNetworkType[ucBssIndex] =
+			prWlanInfo->ucNetworkType[ucBssIndex] =
 				prConnectionStatus->ucNetworkType;
 			prCurrBssid->eOpMode
 				= (enum ENUM_PARAM_OP_MODE)
@@ -3381,6 +3383,7 @@ nicConfigProcSetCamCfgWrite(struct ADAPTER *prAdapter,
 	enum PARAM_POWER_MODE ePowerMode;
 	struct CMD_PS_PROFILE rPowerSaveMode = {0};
 	struct BSS_INFO *prBssInfo;
+	struct WLAN_INFO *prWlanInfo;
 
 	if ((!prAdapter))
 		return WLAN_STATUS_FAILURE;
@@ -3391,16 +3394,18 @@ nicConfigProcSetCamCfgWrite(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
+	prWlanInfo = &prAdapter->rWlanInfo;
+
 	rPowerSaveMode.ucBssIndex = ucBssIndex;
 
 	if (enabled) {
-		prAdapter->rWlanInfo.fgEnSpecPwrMgt = TRUE;
+		prWlanInfo->fgEnSpecPwrMgt = TRUE;
 		ePowerMode = Param_PowerModeCAM;
 		rPowerSaveMode.ucPsProfile = (uint8_t) ePowerMode;
 		DBGLOG(INIT, INFO, "Enable CAM BssIndex:%d, PowerMode:%d\n",
 		       ucBssIndex, rPowerSaveMode.ucPsProfile);
 	} else {
-		prAdapter->rWlanInfo.fgEnSpecPwrMgt = FALSE;
+		prWlanInfo->fgEnSpecPwrMgt = FALSE;
 		rPowerSaveMode.ucPsProfile = (uint8_t) prBssInfo->ePwrMode;
 		DBGLOG(INIT, INFO,
 		       "Disable CAM BssIndex:%d, PowerMode:%d\n",
@@ -4549,17 +4554,19 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 	uint32_t u4BufferSize;
 	/* Privicy setting 0: Open / 1: WEP/WPA/WPA2 enabled */
 	uint32_t u4Privacy = u2CapInfo & CAP_INFO_PRIVACY ? 1 : 0;
+	struct WLAN_INFO *prWlanInfo;
 
 	ASSERT(prAdapter);
 
+	prWlanInfo = &prAdapter->rWlanInfo;
+
 	rWeakestRssi = (int32_t) INT_MAX;
-	u4BufferSize = ARRAY_SIZE(
-			       prAdapter->rWlanInfo.aucScanIEBuf);
+	u4BufferSize = ARRAY_SIZE(prWlanInfo->aucScanIEBuf);
 
 	bReplace = FALSE;
 
 	/* decide to replace or add */
-	for (i = 0; i < prAdapter->rWlanInfo.u4ScanResultNum; i++) {
+	for (i = 0; i < prWlanInfo->u4ScanResultNum; i++) {
 		uint8_t j;
 		u_int8_t bUnMatch = TRUE;
 
@@ -4571,8 +4578,7 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 
 			prCurrBssid = aisGetCurrBssId(prAdapter,
 				AIS_MAIN_BSS_INDEX(prAdapter, j));
-			if (EQUAL_MAC_ADDR
-				(prAdapter->rWlanInfo.
+			if (EQUAL_MAC_ADDR(prWlanInfo->
 				arScanResult[i].arMacAddress,
 				prCurrBssid->arMacAddress)) {
 				bUnMatch = FALSE;
@@ -4581,99 +4587,75 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 		}
 
 		/* find weakest entry && not connected one */
-		if (bUnMatch
-		    && prAdapter->rWlanInfo.arScanResult[i].rRssi <
-		    rWeakestRssi) {
+		if (bUnMatch &&
+		    prWlanInfo->arScanResult[i].rRssi < rWeakestRssi) {
 			u4IdxWeakest = i;
-			rWeakestRssi
-				= prAdapter->rWlanInfo.arScanResult[i].rRssi;
+			rWeakestRssi = prWlanInfo->arScanResult[i].rRssi;
 		}
 
-		if (prAdapter->rWlanInfo.arScanResult[i].eOpMode == eOpMode
-		    &&
-		    EQUAL_MAC_ADDR(&(prAdapter->rWlanInfo.
-					arScanResult[i].arMacAddress), rMacAddr)
-		    &&
-		    (EQUAL_SSID
-		     (prAdapter->rWlanInfo.arScanResult[i].rSsid.aucSsid,
-		      prAdapter->rWlanInfo.arScanResult[i].rSsid.u4SsidLen,
-		      prSsid->aucSsid, prSsid->u4SsidLen)
-		     || prAdapter->rWlanInfo.arScanResult[i].rSsid.u4SsidLen ==
-		     0)) {
+		if (prWlanInfo->arScanResult[i].eOpMode == eOpMode &&
+		    EQUAL_MAC_ADDR(&(prWlanInfo->arScanResult[i].arMacAddress),
+				   rMacAddr) &&
+		    (EQUAL_SSID(prWlanInfo->arScanResult[i].rSsid.aucSsid,
+				prWlanInfo->arScanResult[i].rSsid.u4SsidLen,
+				prSsid->aucSsid, prSsid->u4SsidLen) ||
+		     prWlanInfo->arScanResult[i].rSsid.u4SsidLen == 0)) {
 			/* replace entry */
 			bReplace = TRUE;
 
 			/* free IE buffer then zero */
 			nicFreeScanResultIE(prAdapter, i);
-			kalMemZero(&(prAdapter->rWlanInfo.arScanResult[i]),
+			kalMemZero(&(prWlanInfo->arScanResult[i]),
 				   OFFSET_OF(struct PARAM_BSSID_EX, aucIEs));
 
 			/* then fill buffer */
-			prAdapter->rWlanInfo.arScanResult[i].u4Length =
+			prWlanInfo->arScanResult[i].u4Length =
 				sizeof(struct PARAM_BSSID_EX) + u2IELength;
-			COPY_MAC_ADDR(
-				prAdapter->rWlanInfo.arScanResult[i].
-				arMacAddress,
+			COPY_MAC_ADDR(prWlanInfo->arScanResult[i].arMacAddress,
 				rMacAddr);
-			COPY_SSID(
-				prAdapter->rWlanInfo.arScanResult[i].rSsid.
-				aucSsid,
-				prAdapter->rWlanInfo.arScanResult[i].rSsid.
-				u4SsidLen,
-				prSsid->aucSsid, prSsid->u4SsidLen);
-			prAdapter->rWlanInfo.arScanResult[i].u4Privacy
-				= u4Privacy;
-			prAdapter->rWlanInfo.arScanResult[i].rRssi = rRssi;
-			prAdapter->rWlanInfo.arScanResult[i].eNetworkTypeInUse =
+			COPY_SSID(prWlanInfo->arScanResult[i].rSsid.aucSsid,
+				  prWlanInfo->arScanResult[i].rSsid.u4SsidLen,
+				  prSsid->aucSsid, prSsid->u4SsidLen);
+			prWlanInfo->arScanResult[i].u4Privacy = u4Privacy;
+			prWlanInfo->arScanResult[i].rRssi = rRssi;
+			prWlanInfo->arScanResult[i].eNetworkTypeInUse =
 				eNetworkType;
-			kalMemCopy(&
-				(prAdapter->rWlanInfo.arScanResult[i].
-				rConfiguration),
-				prConfiguration,
-				sizeof(struct PARAM_802_11_CONFIG));
-			prAdapter->rWlanInfo.arScanResult[i].eOpMode = eOpMode;
-			kalMemCopy((
-				prAdapter->rWlanInfo.
-				arScanResult[i].rSupportedRates),
-				rSupportedRates, (sizeof(uint8_t) *
-				PARAM_MAX_LEN_RATES_EX));
-			prAdapter->rWlanInfo.arScanResult[i].u4IELength =
+			kalMemCopy(&prWlanInfo->arScanResult[i].rConfiguration,
+				   prConfiguration,
+				   sizeof(struct PARAM_802_11_CONFIG));
+			prWlanInfo->arScanResult[i].eOpMode = eOpMode;
+			kalMemCopy(prWlanInfo->arScanResult[i].rSupportedRates,
+				   rSupportedRates,
+				   sizeof(uint8_t) * PARAM_MAX_LEN_RATES_EX);
+			prWlanInfo->arScanResult[i].u4IELength =
 				(uint32_t) u2IELength;
 
 			/* IE - allocate buffer and update pointer */
 			if (u2IELength > 0) {
 				if (ALIGN_4(u2IELength) +
-				    prAdapter->rWlanInfo.u4ScanIEBufferUsage
+				    prWlanInfo->u4ScanIEBufferUsage
 						<= u4BufferSize) {
-					kalMemCopy(&
-						(prAdapter->rWlanInfo.
-						aucScanIEBuf[prAdapter->
-						rWlanInfo.
-						u4ScanIEBufferUsage]),
-						pucIEBuf,
-						u2IELength);
+					kalMemCopy(&prWlanInfo->aucScanIEBuf[
+					       prWlanInfo->u4ScanIEBufferUsage],
+					       pucIEBuf,
+					       u2IELength);
 
-					prAdapter->rWlanInfo.
-					apucScanResultIEs[i]
-						=	&(prAdapter->rWlanInfo.
-						  aucScanIEBuf[prAdapter->
-						  rWlanInfo.
-						  u4ScanIEBufferUsage]);
+					prWlanInfo->apucScanResultIEs[i] =
+					       &prWlanInfo->aucScanIEBuf[
+					       prWlanInfo->u4ScanIEBufferUsage];
 
-					prAdapter->rWlanInfo.u4ScanIEBufferUsage
+					prWlanInfo->u4ScanIEBufferUsage
 						+= ALIGN_4(u2IELength);
 				} else {
 					/* buffer is not enough */
-					prAdapter->rWlanInfo.
-					arScanResult[i].u4Length -= u2IELength;
-					prAdapter->rWlanInfo.
-					arScanResult[i].u4IELength = 0;
-					prAdapter->rWlanInfo.
-					apucScanResultIEs[i] = NULL;
+					prWlanInfo->arScanResult[i].u4Length -=
+						u2IELength;
+					prWlanInfo->arScanResult[i].u4IELength =
+						0;
+					prWlanInfo->apucScanResultIEs[i] = NULL;
 				}
 			} else {
-				prAdapter->rWlanInfo.
-				apucScanResultIEs[i] = NULL;
+				prWlanInfo->apucScanResultIEs[i] = NULL;
 			}
 
 			break;
@@ -4681,157 +4663,121 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 	}
 
 	if (bReplace == FALSE) {
-		if (prAdapter->rWlanInfo.u4ScanResultNum <
-		    (CFG_MAX_NUM_BSS_LIST - 1)) {
-			i = prAdapter->rWlanInfo.u4ScanResultNum;
+		if (prWlanInfo->u4ScanResultNum < (CFG_MAX_NUM_BSS_LIST - 1)) {
+			i = prWlanInfo->u4ScanResultNum;
 
 			/* zero */
-			kalMemZero(&(prAdapter->rWlanInfo.arScanResult[i]),
+			kalMemZero(&(prWlanInfo->arScanResult[i]),
 				   OFFSET_OF(struct PARAM_BSSID_EX, aucIEs));
 
 			/* then fill buffer */
-			prAdapter->rWlanInfo.arScanResult[i].u4Length =
+			prWlanInfo->arScanResult[i].u4Length =
 				sizeof(struct PARAM_BSSID_EX) + u2IELength;
-			COPY_MAC_ADDR(
-				prAdapter->rWlanInfo.arScanResult[i].
-				arMacAddress,
-				rMacAddr);
-			COPY_SSID(
-				prAdapter->rWlanInfo.arScanResult[i].
-				rSsid.aucSsid,
-				prAdapter->rWlanInfo.arScanResult[i].
-				rSsid.u4SsidLen,
-				prSsid->aucSsid, prSsid->u4SsidLen);
-			prAdapter->rWlanInfo.arScanResult[i].
-				u4Privacy = u4Privacy;
-			prAdapter->rWlanInfo.arScanResult[i].rRssi = rRssi;
-			prAdapter->rWlanInfo.arScanResult[i].eNetworkTypeInUse =
+			COPY_MAC_ADDR(prWlanInfo->arScanResult[i].arMacAddress,
+				      rMacAddr);
+			COPY_SSID(prWlanInfo->arScanResult[i].rSsid.aucSsid,
+				  prWlanInfo->arScanResult[i].rSsid.u4SsidLen,
+				  prSsid->aucSsid, prSsid->u4SsidLen);
+			prWlanInfo->arScanResult[i].u4Privacy = u4Privacy;
+			prWlanInfo->arScanResult[i].rRssi = rRssi;
+			prWlanInfo->arScanResult[i].eNetworkTypeInUse =
 				eNetworkType;
-			kalMemCopy(&
-				(prAdapter->rWlanInfo.arScanResult[i].
-				rConfiguration),
-				prConfiguration,
-				sizeof(struct PARAM_802_11_CONFIG));
-			prAdapter->rWlanInfo.arScanResult[i].eOpMode = eOpMode;
-			kalMemCopy((
-				prAdapter->rWlanInfo.arScanResult[i].
-				rSupportedRates),
-				rSupportedRates, (sizeof(uint8_t) *
-				PARAM_MAX_LEN_RATES_EX));
-			prAdapter->rWlanInfo.arScanResult[i].u4IELength =
+			kalMemCopy(&prWlanInfo->arScanResult[i].rConfiguration,
+				   prConfiguration,
+				   sizeof(struct PARAM_802_11_CONFIG));
+			prWlanInfo->arScanResult[i].eOpMode = eOpMode;
+			kalMemCopy(prWlanInfo->arScanResult[i].rSupportedRates,
+				   rSupportedRates,
+				   (sizeof(uint8_t) * PARAM_MAX_LEN_RATES_EX));
+			prWlanInfo->arScanResult[i].u4IELength =
 				(uint32_t) u2IELength;
 
 			/* IE - allocate buffer and update pointer */
 			if (u2IELength > 0) {
 				if (ALIGN_4(u2IELength) +
-				    prAdapter->rWlanInfo.u4ScanIEBufferUsage
+				    prWlanInfo->u4ScanIEBufferUsage
 							<= u4BufferSize) {
-					kalMemCopy(&
-						(prAdapter->rWlanInfo.
-						aucScanIEBuf[prAdapter->
-						rWlanInfo.
-						u4ScanIEBufferUsage]),
-						pucIEBuf,
-						u2IELength);
+					kalMemCopy(&prWlanInfo->aucScanIEBuf[
+					       prWlanInfo->u4ScanIEBufferUsage],
+					       pucIEBuf,
+					       u2IELength);
 
-					prAdapter->rWlanInfo.
-						apucScanResultIEs[i]
-						=	&(prAdapter->rWlanInfo.
-						  aucScanIEBuf[prAdapter->
-						  rWlanInfo.
-						  u4ScanIEBufferUsage]);
+					prWlanInfo->apucScanResultIEs[i] =
+					       &prWlanInfo->aucScanIEBuf[
+					       prWlanInfo->u4ScanIEBufferUsage];
 
-					prAdapter->rWlanInfo.u4ScanIEBufferUsage
-						+= ALIGN_4(u2IELength);
+					prWlanInfo->u4ScanIEBufferUsage +=
+						ALIGN_4(u2IELength);
 				} else {
 					/* buffer is not enough */
-					prAdapter->rWlanInfo.arScanResult[i].
-					u4Length -= u2IELength;
-					prAdapter->rWlanInfo.arScanResult[i].
-					u4IELength = 0;
-					prAdapter->rWlanInfo.
-					apucScanResultIEs[i] = NULL;
+					prWlanInfo->arScanResult[i].u4Length -=
+						u2IELength;
+					prWlanInfo->arScanResult[i].u4IELength =
+						0;
+					prWlanInfo->apucScanResultIEs[i] = NULL;
 				}
 			} else {
-				prAdapter->rWlanInfo.apucScanResultIEs[i]
-					= NULL;
+				prWlanInfo->apucScanResultIEs[i] = NULL;
 			}
 
-			prAdapter->rWlanInfo.u4ScanResultNum++;
+			prWlanInfo->u4ScanResultNum++;
 		} else if (rWeakestRssi != (int32_t) INT_MAX) {
 			/* replace weakest one */
 			i = u4IdxWeakest;
 
 			/* free IE buffer then zero */
 			nicFreeScanResultIE(prAdapter, i);
-			kalMemZero(&(prAdapter->rWlanInfo.arScanResult[i]),
+			kalMemZero(&(prWlanInfo->arScanResult[i]),
 				   OFFSET_OF(struct PARAM_BSSID_EX, aucIEs));
 
 			/* then fill buffer */
-			prAdapter->rWlanInfo.arScanResult[i].u4Length =
+			prWlanInfo->arScanResult[i].u4Length =
 				sizeof(struct PARAM_BSSID_EX) + u2IELength;
-			COPY_MAC_ADDR(
-				prAdapter->rWlanInfo.arScanResult[i].
-				arMacAddress,
-				rMacAddr);
-			COPY_SSID(
-				prAdapter->rWlanInfo.arScanResult[i].
-				rSsid.aucSsid,
-				prAdapter->rWlanInfo.arScanResult[i].
-				rSsid.u4SsidLen,
-				prSsid->aucSsid, prSsid->u4SsidLen);
-			prAdapter->rWlanInfo.arScanResult[i].u4Privacy
-				= u4Privacy;
-			prAdapter->rWlanInfo.arScanResult[i].rRssi = rRssi;
-			prAdapter->rWlanInfo.arScanResult[i].eNetworkTypeInUse =
+			COPY_MAC_ADDR(prWlanInfo->arScanResult[i].arMacAddress,
+				      rMacAddr);
+			COPY_SSID(prWlanInfo->arScanResult[i].rSsid.aucSsid,
+				  prWlanInfo->arScanResult[i].rSsid.u4SsidLen,
+				  prSsid->aucSsid, prSsid->u4SsidLen);
+			prWlanInfo->arScanResult[i].u4Privacy = u4Privacy;
+			prWlanInfo->arScanResult[i].rRssi = rRssi;
+			prWlanInfo->arScanResult[i].eNetworkTypeInUse =
 				eNetworkType;
-			kalMemCopy(&(prAdapter->rWlanInfo.
-				arScanResult[i].rConfiguration),
-				prConfiguration,
-				sizeof(struct PARAM_802_11_CONFIG));
-			prAdapter->rWlanInfo.arScanResult[i].eOpMode = eOpMode;
-			kalMemCopy((
-				prAdapter->rWlanInfo.arScanResult[i].
-				rSupportedRates),
-				rSupportedRates, (sizeof(uint8_t) *
-				PARAM_MAX_LEN_RATES_EX));
-			prAdapter->rWlanInfo.arScanResult[i].u4IELength =
+			kalMemCopy(&prWlanInfo->arScanResult[i].rConfiguration,
+				   prConfiguration,
+				   sizeof(struct PARAM_802_11_CONFIG));
+			prWlanInfo->arScanResult[i].eOpMode = eOpMode;
+			kalMemCopy(prWlanInfo->arScanResult[i].rSupportedRates,
+				   rSupportedRates,
+				   (sizeof(uint8_t) * PARAM_MAX_LEN_RATES_EX));
+			prWlanInfo->arScanResult[i].u4IELength =
 				(uint32_t) u2IELength;
 
 			if (u2IELength > 0) {
 				/* IE - allocate buffer and update pointer */
 				if (ALIGN_4(u2IELength) +
-				    prAdapter->rWlanInfo.u4ScanIEBufferUsage
+				    prWlanInfo->u4ScanIEBufferUsage
 							<= u4BufferSize) {
-					kalMemCopy(&
-						   (prAdapter->rWlanInfo.
-						    aucScanIEBuf[
-						    prAdapter->rWlanInfo.
-						    u4ScanIEBufferUsage]),
-						   pucIEBuf,
-						   u2IELength);
+					kalMemCopy(&prWlanInfo->aucScanIEBuf[
+					       prWlanInfo->u4ScanIEBufferUsage],
+					       pucIEBuf,
+					       u2IELength);
 
-					prAdapter->rWlanInfo.
-					apucScanResultIEs[i]
-						= &(prAdapter->rWlanInfo.
-						  aucScanIEBuf[prAdapter->
-						  rWlanInfo.
-						  u4ScanIEBufferUsage]);
+					prWlanInfo->apucScanResultIEs[i] =
+					       &prWlanInfo->aucScanIEBuf[
+					       prWlanInfo->u4ScanIEBufferUsage];
 
-					prAdapter->rWlanInfo.u4ScanIEBufferUsage
-						+= ALIGN_4(u2IELength);
+					prWlanInfo->u4ScanIEBufferUsage +=
+						ALIGN_4(u2IELength);
 				} else {
 					/* buffer is not enough */
-					prAdapter->rWlanInfo.arScanResult[i].
-					u4Length -= u2IELength;
-					prAdapter->rWlanInfo.arScanResult[i].
-					u4IELength = 0;
-					prAdapter->rWlanInfo.
-					apucScanResultIEs[i] = NULL;
+					prWlanInfo->arScanResult[i].u4Length -=
+						u2IELength;
+					prWlanInfo->arScanResult[i].u4IELength =
+						0;
+					prWlanInfo->apucScanResultIEs[i] = NULL;
 				}
 			} else {
-				prAdapter->rWlanInfo.apucScanResultIEs[i]
-					= NULL;
+				prWlanInfo->apucScanResultIEs[i] = NULL;
 			}
 		}
 	}
@@ -4853,39 +4799,39 @@ void nicFreeScanResultIE(struct ADAPTER *prAdapter,
 	uint32_t i;
 	uint8_t *pucPivot, *pucMovePivot;
 	uint32_t u4MoveSize, u4FreeSize, u4ReserveSize;
+	struct WLAN_INFO *prWlanInfo;
 
 	ASSERT(prAdapter);
 	ASSERT(u4Idx < CFG_MAX_NUM_BSS_LIST);
 
-	if (prAdapter->rWlanInfo.arScanResult[u4Idx].u4IELength == 0
-	    || prAdapter->rWlanInfo.apucScanResultIEs[u4Idx] == NULL) {
+	prWlanInfo = &prAdapter->rWlanInfo;
+
+	if (prWlanInfo->arScanResult[u4Idx].u4IELength == 0 ||
+	    prWlanInfo->apucScanResultIEs[u4Idx] == NULL) {
 		return;
 	}
 
-	u4FreeSize = ALIGN_4(
-		prAdapter->rWlanInfo.arScanResult[u4Idx].u4IELength);
+	u4FreeSize = ALIGN_4(prWlanInfo->arScanResult[u4Idx].u4IELength);
 
-	pucPivot = prAdapter->rWlanInfo.apucScanResultIEs[u4Idx];
+	pucPivot = prWlanInfo->apucScanResultIEs[u4Idx];
 	pucMovePivot = (uint8_t *) ((uintptr_t) (
-		prAdapter->rWlanInfo.apucScanResultIEs[u4Idx]) +
-		u4FreeSize);
+		prWlanInfo->apucScanResultIEs[u4Idx]) + u4FreeSize);
 
 	u4ReserveSize = ((uintptr_t) pucPivot) -
-		(uintptr_t) (&(prAdapter->rWlanInfo.aucScanIEBuf[0]));
-	u4MoveSize = prAdapter->rWlanInfo.u4ScanIEBufferUsage -
+		(uintptr_t) (&(prWlanInfo->aucScanIEBuf[0]));
+	u4MoveSize = prWlanInfo->u4ScanIEBufferUsage -
 		     u4ReserveSize - u4FreeSize;
 
 	/* 1. rest of buffer to move forward */
 	kalMemCopy(pucPivot, pucMovePivot, u4MoveSize);
 
 	/* 1.1 modify pointers */
-	for (i = 0; i < prAdapter->rWlanInfo.u4ScanResultNum; i++) {
+	for (i = 0; i < prWlanInfo->u4ScanResultNum; i++) {
 		if (i != u4Idx) {
-			if (prAdapter->rWlanInfo.apucScanResultIEs[i] >=
-			    pucMovePivot) {
-				prAdapter->rWlanInfo.apucScanResultIEs[i] =
+			if (prWlanInfo->apucScanResultIEs[i] >= pucMovePivot) {
+				prWlanInfo->apucScanResultIEs[i] =
 					(uint8_t *) ((uintptr_t) (
-						prAdapter->rWlanInfo.
+						prWlanInfo->
 						apucScanResultIEs[i])
 						- u4FreeSize);
 			}
@@ -4893,11 +4839,11 @@ void nicFreeScanResultIE(struct ADAPTER *prAdapter,
 	}
 
 	/* 1.2 reset the freed one */
-	prAdapter->rWlanInfo.arScanResult[u4Idx].u4IELength = 0;
-	prAdapter->rWlanInfo.apucScanResultIEs[i] = NULL;
+	prWlanInfo->arScanResult[u4Idx].u4IELength = 0;
+	prWlanInfo->apucScanResultIEs[i] = NULL;
 
 	/* 2. reduce IE buffer usage */
-	prAdapter->rWlanInfo.u4ScanIEBufferUsage -= u4FreeSize;
+	prWlanInfo->u4ScanIEBufferUsage -= u4FreeSize;
 
 }
 

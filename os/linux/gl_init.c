@@ -8322,8 +8322,7 @@ static void wlanRemove(void)
 	/* Destroy wakelock */
 	wlanWakeLockUninit(prGlueInfo);
 
-	kalMemSet(&(prGlueInfo->prAdapter->rWlanInfo), 0,
-		  sizeof(struct WLAN_INFO));
+	kalMemSet(&prAdapter->rWlanInfo, 0, sizeof(struct WLAN_INFO));
 
 #if CFG_ENABLE_WIFI_DIRECT
 	if (prGlueInfo->prAdapter->fgIsP2PRegistered) {

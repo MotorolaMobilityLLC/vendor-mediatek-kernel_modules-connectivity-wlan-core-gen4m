@@ -528,7 +528,7 @@ wlanoidQueryP2pPowerSaveProfile(struct ADAPTER *prAdapter,
 		/* TODO: FIXME */
 		/* *(enum PARAM_POWER_MODE *) pvQueryBuffer =
 		 * (enum PARAM_POWER_MODE)
-		 *(prAdapter->rWlanInfo.
+		 *(prWlanInfo->
 		 *	arPowerSaveMode[prAdapter->ucP2PDevBssIdx].ucPsProfile);
 		 */
 		/* *pu4QueryInfoLen = sizeof(PARAM_POWER_MODE); */

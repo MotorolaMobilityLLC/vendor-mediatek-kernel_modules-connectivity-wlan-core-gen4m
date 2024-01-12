@@ -1254,6 +1254,7 @@ void nicCmdEventLeaveRfTest(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4Idx = 0;
+	struct WLAN_INFO *prWlanInfo;
 
 	/* Block until firmware completed leaving from RF test mode */
 	kalMsleep(500);
@@ -1301,6 +1302,7 @@ void nicCmdEventLeaveRfTest(struct ADAPTER *prAdapter,
 	/* 6. set driver-land variable */
 	prAdapter->fgTestMode = FALSE;
 
+	prWlanInfo = &prAdapter->rWlanInfo;
 	/* 7. Indicate as disconnected */
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 		if (!wlanGetAisNetDev(prAdapter->prGlueInfo, u4Idx))
@@ -1316,8 +1318,7 @@ void nicCmdEventLeaveRfTest(struct ADAPTER *prAdapter,
 				WLAN_STATUS_MEDIA_DISCONNECT,
 				NULL, 0, AIS_MAIN_BSS_INDEX(prAdapter, u4Idx));
 
-			prAdapter->rWlanInfo.u4SysTime =
-				kalGetTimeTick();
+			prWlanInfo->u4SysTime = kalGetTimeTick();
 		}
 	}
 #if CFG_SUPPORT_NVRAM
@@ -4410,7 +4411,7 @@ void nicEventMicErrorInfo(struct ADAPTER *prAdapter,
 	prAuthEvent->arRequest[0].u4Length = sizeof(
 			struct PARAM_AUTH_REQUEST);
 	kalMemCopy((void *) prAuthEvent->arRequest[0].arBssid,
-		   (void *) prAdapter->rWlanInfo.rCurrBssId.arMacAddress,
+		   (void *) prWlanInfo->rCurrBssId.arMacAddress,
 		   PARAM_MAC_ADDR_LEN);
 
 	if (prMicError->u4Flags != 0)

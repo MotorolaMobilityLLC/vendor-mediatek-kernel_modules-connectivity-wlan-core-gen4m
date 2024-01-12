@@ -841,8 +841,7 @@ void wlanOnPreAllocAdapterMem(struct ADAPTER *prAdapter,
 		prAdapter->fgSetLogLevel = true;
 
 		/* Initialize rWlanInfo */
-		kalMemSet(&(prAdapter->rWlanInfo), 0,
-			sizeof(struct WLAN_INFO));
+		kalMemSet(&prAdapter->rWlanInfo, 0, sizeof(struct WLAN_INFO));
 
 		/* Initialize aprBssInfo[].
 		 * Important: index shall be same
@@ -962,6 +961,7 @@ void wlanOnPostFirmwareReady(struct ADAPTER *prAdapter,
 		struct REG_INFO *prRegInfo)
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct WLAN_INFO *prWlanInfo;
 
 	DBGLOG(INIT, TRACE, "start.\n");
 	/* OID timeout timer initialize */
@@ -1008,11 +1008,11 @@ void wlanOnPostFirmwareReady(struct ADAPTER *prAdapter,
 		prAdapter->fgDisStaAgingTimeoutDetection = TRUE;
 #endif
 
+	prWlanInfo = &prAdapter->rWlanInfo;
+
 	/* Load compile time constant */
-	prAdapter->rWlanInfo.u2BeaconPeriod =
-		CFG_INIT_ADHOC_BEACON_INTERVAL;
-	prAdapter->rWlanInfo.u2AtimWindow =
-		CFG_INIT_ADHOC_ATIM_WINDOW;
+	prWlanInfo->u2BeaconPeriod = CFG_INIT_ADHOC_BEACON_INTERVAL;
+	prWlanInfo->u2AtimWindow = CFG_INIT_ADHOC_ATIM_WINDOW;
 
 #if 1				/* set PM parameters */
 	prAdapter->u4PsCurrentMeasureEn =
@@ -1099,10 +1099,10 @@ void wlanOnPostFirmwareReady(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_PWR_MGT
 			prAdapter->u4PowerMode = prRegInfo->u4PowerMode;
 #if CFG_ENABLE_WIFI_DIRECT
-			prAdapter->rWlanInfo.
+			prWlanInfo->
 			arPowerSaveMode[NETWORK_TYPE_P2P_INDEX].ucNetTypeIndex
 				= NETWORK_TYPE_P2P_INDEX;
-			prAdapter->rWlanInfo.
+			prWlanInfo->
 			arPowerSaveMode[NETWORK_TYPE_P2P_INDEX].ucPsProfile
 				= ENUM_PSP_FAST_SWITCH;
 #endif
@@ -4086,10 +4086,9 @@ void wlanClearScanningResult(struct ADAPTER *prAdapter,
 	struct PARAM_BSSID_EX *prCurrBssid;
 
 	ASSERT(prAdapter);
-	prWlanInfo = &(prAdapter->rWlanInfo);
+	prWlanInfo = &prAdapter->rWlanInfo;
 
-	prCurrBssid = aisGetCurrBssId(prAdapter,
-		ucBssIndex);
+	prCurrBssid = aisGetCurrBssId(prAdapter, ucBssIndex);
 
 	/* clear scanning result */
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
@@ -4098,23 +4097,23 @@ void wlanClearScanningResult(struct ADAPTER *prAdapter,
 
 		for (i = 0; i < prWlanInfo->u4ScanResultNum; i++) {
 
-		if (EQUAL_MAC_ADDR(
-		    prCurrBssid->arMacAddress,
-		    prWlanInfo->arScanResult[i].arMacAddress)) {
+			if (!EQUAL_MAC_ADDR(prCurrBssid->arMacAddress,
+				    prWlanInfo->arScanResult[i].arMacAddress))
+				continue;
+
 			fgKeepCurrOne = TRUE;
 
 			if (i != 0) {
 				/* copy structure */
-				kalMemCopy(
-				    &(prWlanInfo->arScanResult[0]),
-				    &(prWlanInfo->arScanResult[i]),
-				    OFFSET_OF(struct PARAM_BSSID_EX,
-					      aucIEs));
+				kalMemCopy(prWlanInfo->arScanResult,
+					   &prWlanInfo->arScanResult[i],
+					   OFFSET_OF(struct PARAM_BSSID_EX,
+						     aucIEs));
 			}
 
 			if (prWlanInfo->arScanResult[i].u4IELength > 0) {
 				if (prWlanInfo->apucScanResultIEs[i] !=
-				    &(prWlanInfo->aucScanIEBuf[0])) {
+				    prWlanInfo->aucScanIEBuf) {
 
 				/* move IEs to head */
 				kalMemCopy(prWlanInfo->aucScanIEBuf,
@@ -4125,15 +4124,14 @@ void wlanClearScanningResult(struct ADAPTER *prAdapter,
 
 				/* modify IE pointer */
 				prWlanInfo->apucScanResultIEs[0] =
-					&(prWlanInfo->aucScanIEBuf[0]);
+					prWlanInfo->aucScanIEBuf;
 
 			} else {
 				prWlanInfo->apucScanResultIEs[0] = NULL;
 			}
 
 			break;
-		} /* if */
-		} /* for */
+		}
 	}
 
 	if (fgKeepCurrOne == TRUE) {
@@ -4164,7 +4162,7 @@ void wlanClearBssInScanningResult(struct ADAPTER
 	struct WLAN_INFO *prWlanInfo;
 
 	ASSERT(prAdapter);
-	prWlanInfo = &(prAdapter->rWlanInfo);
+	prWlanInfo = &prAdapter->rWlanInfo;
 
 	/* clear scanning result */
 	i = 0;
