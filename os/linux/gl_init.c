@@ -6103,7 +6103,7 @@ int32_t wlanOffAtReset(void)
 	 */
 	wlanReleasePendingOid(prGlueInfo->prAdapter, 1);
 
-	flush_delayed_work(&workq);
+	cancel_delayed_work_sync(&workq);
 
 	flush_delayed_work(&sched_workq);
 
@@ -6892,6 +6892,8 @@ static void wlanRemove(void)
 
 	flush_delayed_work(&sched_workq);
 
+	cancel_delayed_work_sync(&workq);
+
 #if CFG_AP_80211KVR_INTERFACE
 	cancel_delayed_work_sync(&prAdapter->prGlueInfo->rChanNoiseControlWork);
 	cancel_delayed_work_sync(&prAdapter->prGlueInfo->rChanNoiseGetInfoWork);
@@ -7007,8 +7009,6 @@ static void wlanRemove(void)
 
 	/* 4 <6> Unregister the card */
 	wlanNetUnregister(prDev->ieee80211_ptr);
-
-	flush_delayed_work(&workq);
 
 	if (prAdapter->chip_info->fw_dl_ops->mcu_deinit)
 		prAdapter->chip_info->fw_dl_ops->mcu_deinit(prAdapter);
