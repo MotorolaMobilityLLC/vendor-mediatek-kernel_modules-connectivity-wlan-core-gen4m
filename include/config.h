@@ -2088,6 +2088,10 @@
 
 #define CFG_SUPPORT_DISABLE_DATA_DDONE_INTR   1
 
+#ifndef CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT
+#define CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT 0
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
