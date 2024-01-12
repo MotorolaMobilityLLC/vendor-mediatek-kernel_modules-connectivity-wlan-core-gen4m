@@ -344,6 +344,7 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 	SPIN_LOCK_HIF_REMAP,
 	SPIN_LOCK_SW_EMI_RING,
 	SPIN_LOCK_PMKID,
+	SPIN_LOCK_MSDUIFO,
 	SPIN_LOCK_NUM
 };
 
@@ -914,6 +915,10 @@ static inline void kalCfg80211VendorEvent(void *pvPacket)
 	kfifo_in((_prFiFoQ), &(_rObj), sizeof(_rObj))
 #define KAL_FIFO_OUT(_prFiFoQ, _rObj) \
 	kfifo_out((_prFiFoQ), &(_rObj), sizeof(_rObj))
+#define KAL_FIFO_IN_LOCKED(_prFiFoQ, _rObj, _lock) \
+	kfifo_in_locked((_prFiFoQ), &(_rObj), sizeof(_rObj), (_lock))
+#define KAL_FIFO_OUT_LOCKED(_prFiFoQ, _rObj, _lock) \
+	kfifo_out_locked((_prFiFoQ), &(_rObj), sizeof(_rObj), (_lock))
 #define KAL_FIFO_LEN(_prFiFoQ) \
 	kfifo_len((_prFiFoQ))
 #define KAL_FIFO_AVAIL(_prFiFoQ) \

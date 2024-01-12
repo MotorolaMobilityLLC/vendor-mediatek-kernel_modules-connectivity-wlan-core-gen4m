@@ -3840,10 +3840,19 @@ void halWpdmaFreeMsduWork(struct GLUE_INFO *prGlueInfo)
 	struct MSDU_INFO *prMsduInfo;
 	struct QUE rTxMsduRetQue;
 	struct QUE *prTxMsduRetQue = &rTxMsduRetQue;
-
+#if !CFG_TX_DIRECT_VIA_HIF_THREAD
+	spinlock_t *prSpinLock = &prGlueInfo->rSpinLock[SPIN_LOCK_MSDUIFO];
+#endif
 	QUEUE_INITIALIZE(prTxMsduRetQue);
 
-	while (KAL_FIFO_OUT(&prGlueInfo->rTxMsduRetFifo, prMsduInfo)) {
+#if !CFG_TX_DIRECT_VIA_HIF_THREAD
+	while (KAL_FIFO_OUT_LOCKED(
+			&prGlueInfo->rTxMsduRetFifo,
+			prMsduInfo, prSpinLock)) {
+#else
+	while (KAL_FIFO_OUT(&prGlueInfo->rTxMsduRetFifo,
+			prMsduInfo)) {
+#endif
 		if (!prMsduInfo) {
 			DBGLOG(RX, ERROR, "prMsduInfo null\n");
 			break;
@@ -3862,6 +3871,9 @@ void halWpdmaFreeMsduWork(struct GLUE_INFO *prGlueInfo)
 static inline uint32_t halEnqueueMsduInfo(struct GLUE_INFO *pr,
 			struct MSDU_INFO *prMsduInfo)
 {
+#if !CFG_TX_DIRECT_VIA_HIF_THREAD
+	spinlock_t *prSpinLock = &pr->rSpinLock[SPIN_LOCK_MSDUIFO];
+#endif
 	/*
 	 * MSDU_INFO with pfTxDoneHandler should not FIFO_IN into
 	 * rTxMsduRetFifo, otherwise it will cause double enqueue issue and
@@ -3875,7 +3887,14 @@ static inline uint32_t halEnqueueMsduInfo(struct GLUE_INFO *pr,
 		goto end;
 
 	if (pr->prTxMsduRetFifoBuf &&
-		KAL_FIFO_IN(&pr->rTxMsduRetFifo, prMsduInfo)) {
+#if !CFG_TX_DIRECT_VIA_HIF_THREAD
+		KAL_FIFO_IN_LOCKED(
+			&pr->rTxMsduRetFifo,
+			prMsduInfo, prSpinLock)) {
+#else
+		KAL_FIFO_IN(&pr->rTxMsduRetFifo,
+			prMsduInfo)) {
+#endif
 		kalTxFreeMsduTaskSchedule(pr);
 		return WLAN_STATUS_SUCCESS;
 	}
