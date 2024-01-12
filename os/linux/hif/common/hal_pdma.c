@@ -579,7 +579,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 		} else if (prBusInfo->fgCheckDriverOwnInt) {
 			if (test_bit(GLUE_FLAG_DRV_OWN_INT_BIT,
 				&prAdapter->prGlueInfo->ulFlag)) {
-				DBGLOG(INIT, INFO,
+				DBGLOG(INIT, TRACE,
 					"DRIVER OWN Interrupt Start\n");
 				fgResult = TRUE;
 			}
@@ -884,8 +884,13 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 		prAdapter->fgIsFwOwn = TRUE;
 		prHifInfo->fgIsBackupIntSta = false;
 
-		DBGLOG(INIT, INFO, "FW OWN:%u, IntSta:0x%08x\n",
-		       fgResult, prHifInfo->u4WakeupIntSta);
+		/* call from ICS log not print in default */
+		if (prHifInfo->u4WakeupIntSta & BIT(15))
+			DBGLOG(INIT, TRACE, "FW OWN:%u, IntSta:0x%08x\n",
+			fgResult, prHifInfo->u4WakeupIntSta);
+		else
+			DBGLOG(INIT, INFO, "FW OWN:%u, IntSta:0x%08x\n",
+			fgResult, prHifInfo->u4WakeupIntSta);
 		prHifInfo->u4WakeupIntSta = 0;
 	}
 

@@ -1609,7 +1609,7 @@ rlmDomainGetChnlList(struct ADAPTER *prAdapter,
 
 				if (!kalIsValidChnl(prAdapter->prGlueInfo, ch,
 						prSubband->ucBand)) {
-					DBGLOG(RLM, INFO,
+					DBGLOG(RLM, TRACE,
 						   "Not support ch%d!\n", ch);
 					continue;
 				}

@@ -2922,7 +2922,7 @@ static void wlanSetMulticastList(struct net_device *prDev)
 		return;
 	}
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, TRACE,
 		       "Bss[%d] set multicast list.\n",
 		       prNetDevPrivate->ucBssIdx);
 
