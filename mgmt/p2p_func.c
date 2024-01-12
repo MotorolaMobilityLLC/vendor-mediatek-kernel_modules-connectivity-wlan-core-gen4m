@@ -1850,6 +1850,14 @@ SKIP_START_RDD:
 			kalIdcGetRilInfo();
 #endif
 
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+		if (prBssInfo->eBand == BAND_6G) {
+			rlmDomain6GPwrModeUpdate(prAdapter,
+				prBssInfo->ucBssIndex,
+				PWR_MODE_6G_VLP);
+		}
+#endif
+
 		kalP2PTxCarrierOn(prAdapter->prGlueInfo, prBssInfo);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -2634,6 +2642,19 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 			prBssInfo->eBand) / 1000,
 		prBssInfo->eBand
 		);
+#endif
+
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	if (prBssInfo->eBand == BAND_6G) {
+		rlmDomain6GPwrModeUpdate(prAdapter,
+			prBssInfo->ucBssIndex,
+			PWR_MODE_6G_VLP);
+	} else if (prBssInfo->eBand == BAND_2G4 ||
+		prBssInfo->eBand == BAND_5G) {
+		rlmDomain6GPwrModeUpdate(prAdapter,
+			prBssInfo->ucBssIndex,
+			PWR_MODE_6G_LPI);
+	}
 #endif
 
 	kalP2pIndicateChnlSwitch(prAdapter, prBssInfo);
@@ -7861,6 +7882,9 @@ p2pFunGetTopPreferFreqByBand(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	uint8_t isVlpSupport = 0;
+#endif
 
 	aucChannelList = (struct RF_CHANNEL_INFO *) kalMemAlloc(
 			sizeof(struct RF_CHANNEL_INFO) * ucMaxChnNum,
@@ -7888,10 +7912,23 @@ p2pFunGetTopPreferFreqByBand(struct ADAPTER *prAdapter,
 			ucMaxChnNum, &ucNumOfChannel, aucChannelList);
 	}
 
-	for (i = 0; i < ucNumOfChannel && i < ucTopPreferNum; i++)
+	for (i = 0; i < ucNumOfChannel && i < ucTopPreferNum; i++) {
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+		if (aucChannelList[i].eBand == BAND_6G &&
+		    rlmDomain6GPwrModeCountrySupportChk(
+		    aucChannelList[i].eBand,
+		    aucChannelList[i].ucChannelNum,
+		    COUNTRY_CODE_TW, PWR_MODE_6G_VLP,
+		    &isVlpSupport) == WLAN_STATUS_SUCCESS &&
+		    isVlpSupport == FALSE) {
+			ucTopPreferNum++;
+			continue;
+		}
+#endif
 		*(pu4Freq + i) = nicChannelNum2Freq(
 			aucChannelList[i].ucChannelNum,
 			aucChannelList[i].eBand) / 1000;
+	}
 
 	kalMemFree(aucChannelList, VIR_MEM_TYPE,
 			sizeof(struct RF_CHANNEL_INFO) * ucMaxChnNum);
