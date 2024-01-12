@@ -10820,34 +10820,89 @@ int32_t kalPerMonSetForceEnableFlag(uint8_t uFlag)
 	return 0;
 }
 
-static int wlan_fb_notifier_callback(struct notifier_block
-				     *self, unsigned long event, void *data)
+#if CFG_MTK_ANDROID_WMT && \
+	KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+enum ENUM_WLAN_FB_EVENT kalGetMtkDispEvent(unsigned long event, void *data)
 {
-	struct fb_event *evdata = data;
 	int32_t blank = 0;
-	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)
-				       wlan_fb_notifier_priv_data;
+	int32_t *pData = (int32_t *)data;
+	enum ENUM_WLAN_FB_EVENT eEvent = WLAN_FB_EVENT_IGNORE;
 
-	/* If we aren't interested in this event, skip it immediately ... */
-	if ((event != FB_EVENT_BLANK) || !prGlueInfo)
-		return 0;
+	if (event != MTK_DISP_EARLY_EVENT_BLANK)
+		goto end;
 
-	if (kalHaltTryLock())
-		return 0;
+	blank = *pData;
 
-	if (kalIsHalted()) {
-		kalHaltUnlock();
-		return 0;
-	}
+	if (blank == MTK_DISP_BLANK_UNBLANK)
+		eEvent = WLAN_FB_EVENT_UNBLANK;
+	else if (blank == MTK_DISP_BLANK_POWERDOWN)
+		eEvent = WLAN_FB_EVENT_POWERDOWN;
+
+	/* use KAL_TRACE to print caller (request by mtk disp owner) */
+	DBGLOG(SW4, INFO, "%pS: event[%lu], blank[%d] eEvent[%u]\n",
+		KAL_TRACE, event, blank, eEvent);
+end:
+	return eEvent;
+}
+#else /* CFG_MTK_ANDROID_WMT */
+enum ENUM_WLAN_FB_EVENT kalGetFbEvent(unsigned long event, void *data)
+{
+	int32_t blank = 0;
+	struct fb_event *evdata = data;
+	enum ENUM_WLAN_FB_EVENT eEvent = WLAN_FB_EVENT_IGNORE;
+
+	if (event != FB_EVENT_BLANK)
+		goto end;
 
 	blank = *(int32_t *)evdata->data;
 
-	switch (blank) {
-	case FB_BLANK_UNBLANK:
+	if (blank == FB_BLANK_UNBLANK)
+		eEvent = WLAN_FB_EVENT_UNBLANK;
+	else if (blank == FB_BLANK_POWERDOWN)
+		eEvent = WLAN_FB_EVENT_POWERDOWN;
+
+	/* use KAL_TRACE to print caller (request by mtk disp owner) */
+	DBGLOG(SW4, INFO, "%pS: event[%lu] blank[%d] eEvent[%u]\n",
+		KAL_TRACE, event, blank, eEvent);
+end:
+	return eEvent;
+}
+#endif /* CFG_MTK_ANDROID_WMT */
+
+static int wlan_fb_notifier_callback(struct notifier_block
+				     *self, unsigned long event, void *data)
+{
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)
+				       wlan_fb_notifier_priv_data;
+	enum ENUM_WLAN_FB_EVENT eEvent = WLAN_FB_EVENT_IGNORE;
+
+	if (!prGlueInfo)
+		goto end;
+
+#if CFG_MTK_ANDROID_WMT && \
+	KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	eEvent = kalGetMtkDispEvent(event, data);
+#else /* CFG_MTK_ANDROID_WMT */
+	eEvent = kalGetFbEvent(event, data);
+#endif /* CFG_MTK_ANDROID_WMT */
+
+	if (eEvent == WLAN_FB_EVENT_IGNORE)
+		goto end;
+
+	if (kalHaltTryLock())
+		goto end;
+
+	if (kalIsHalted()) {
+		kalHaltUnlock();
+		goto end;
+	}
+
+	switch (eEvent) {
+	case WLAN_FB_EVENT_UNBLANK:
 		kalPerMonEnable(prGlueInfo);
 		wlan_fb_power_down = FALSE;
 		break;
-	case FB_BLANK_POWERDOWN:
+	case WLAN_FB_EVENT_POWERDOWN:
 		wlan_fb_power_down = TRUE;
 		if (!wlan_perf_monitor_force_enable)
 			kalPerMonDisable(prGlueInfo);
@@ -10857,6 +10912,8 @@ static int wlan_fb_notifier_callback(struct notifier_block
 	}
 
 	kalHaltUnlock();
+	DBGLOG(SW4, INFO, "%s: end\n", __func__);
+end:
 	return 0;
 }
 
@@ -10866,7 +10923,13 @@ int32_t kalFbNotifierReg(struct GLUE_INFO *prGlueInfo)
 
 	wlan_fb_notifier_priv_data = prGlueInfo;
 
+#if CFG_MTK_ANDROID_WMT && \
+	KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	i4Ret = mtk_disp_notifier_register("wlan_fb_notifier",
+			&wlan_fb_notifier);
+#else
 	i4Ret = fb_register_client(&wlan_fb_notifier);
+#endif
 	if (i4Ret)
 		DBGLOG(SW4, WARN, "Register wlan_fb_notifier failed:%d\n",
 		       i4Ret);
@@ -10877,7 +10940,12 @@ int32_t kalFbNotifierReg(struct GLUE_INFO *prGlueInfo)
 
 void kalFbNotifierUnReg(void)
 {
+#if CFG_MTK_ANDROID_WMT && \
+	KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	mtk_disp_notifier_unregister(&wlan_fb_notifier);
+#else
 	fb_unregister_client(&wlan_fb_notifier);
+#endif
 	wlan_fb_notifier_priv_data = NULL;
 }
 

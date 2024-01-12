@@ -436,6 +436,13 @@ struct KAL_THREAD_SCHEDSTATS {
 	unsigned long long iowait;
 };
 
+enum ENUM_WLAN_FB_EVENT {
+	WLAN_FB_EVENT_IGNORE,
+	WLAN_FB_EVENT_POWERDOWN, /* screen on */
+	WLAN_FB_EVENT_UNBLANK,   /* screen off */
+	WLAN_FB_EVENT_NUM
+};
+
 #if CFG_SUPPORT_DATA_STALL
 enum ENUM_VENDOR_DRIVER_EVENT {
 	EVENT_TEST_MODE,
