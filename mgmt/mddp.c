@@ -183,6 +183,98 @@ static void mddpClrFuncV2(struct MDDP_SETTINGS *prSettings, uint32_t u4Bit)
 	wf_ioremap_write(prSettings->u4SyncClrAddr, u4Bit);
 }
 
+static void mddpRdFuncSHM(struct MDDP_SETTINGS *prSettings, uint32_t *pu4Val)
+{
+	struct mddpw_sys_stat_t *prSysStat = NULL;
+
+	if (gMddpWFunc.get_sys_stat) {
+		if (gMddpWFunc.get_sys_stat(&prSysStat)) {
+			DBGLOG(NIC, ERROR, "get_sys_stat Error.\n");
+			goto exit;
+		}
+		if (prSysStat == NULL) {
+			DBGLOG(NIC, ERROR, "prSysStat Null.\n");
+			goto exit;
+		}
+	} else {
+		DBGLOG(NIC, ERROR, "get_sys_stat callback NOT exist.\n");
+		goto exit;
+	}
+
+	*pu4Val = 0;
+	if (prSysStat->md_stat[0] & prSettings->u4MdOnBit)
+		*pu4Val |= prSettings->u4MdOnBit;
+
+exit:
+	DBGLOG(QM, INFO,
+		"md_stat: %u, Val: %u\n",
+		prSysStat->md_stat[0], *pu4Val);
+}
+
+static void mddpSetFuncSHM(struct MDDP_SETTINGS *prSettings, uint32_t u4Bit)
+{
+	uint32_t u4Value = 0;
+	struct mddpw_sys_stat_t *prSysStat = NULL;
+
+	if (gMddpWFunc.get_sys_stat) {
+		if (gMddpWFunc.get_sys_stat(&prSysStat)) {
+			DBGLOG(NIC, ERROR, "get_sys_stat Error.\n");
+			goto exit;
+		}
+		if (prSysStat == NULL) {
+			DBGLOG(NIC, ERROR, "prSysStat Null.\n");
+			goto exit;
+		}
+	} else {
+		DBGLOG(NIC, ERROR, "get_sys_stat callback NOT exist.\n");
+		goto exit;
+	}
+
+	if (u4Bit & MD_SHM_AP_STAT_BIT) {
+		u4Value = u4Bit & ~MD_SHM_AP_STAT_BIT;
+		prSysStat->ap_stat[0] |= u4Value;
+	} else
+		prSysStat->md_stat[0] |= u4Value;
+
+exit:
+	DBGLOG(QM, INFO,
+		"u4Bit: %u, ap_stat[0]: %u, md_stat[0]: %u val: %u\n",
+		u4Bit, prSysStat->ap_stat[0],
+		prSysStat->md_stat[0], u4Value);
+}
+
+static void mddpClrFuncSHM(struct MDDP_SETTINGS *prSettings, uint32_t u4Bit)
+{
+	uint32_t u4Value = 0;
+	struct mddpw_sys_stat_t *prSysStat = NULL;
+
+	if (gMddpWFunc.get_sys_stat) {
+		if (gMddpWFunc.get_sys_stat(&prSysStat)) {
+			DBGLOG(NIC, ERROR, "get_sys_stat Error.\n");
+			goto exit;
+		}
+		if (prSysStat == NULL) {
+			DBGLOG(NIC, ERROR, "prSysStat Null.\n");
+			goto exit;
+		}
+	} else {
+		DBGLOG(NIC, ERROR, "get_sys_stat callback NOT exist.\n");
+		goto exit;
+	}
+
+	if (u4Bit & MD_SHM_AP_STAT_BIT) {
+		u4Value = u4Bit & ~MD_SHM_AP_STAT_BIT;
+		prSysStat->ap_stat[0] &= ~u4Value;
+	} else
+		prSysStat->md_stat[0] &= ~u4Value;
+
+exit:
+	DBGLOG(QM, INFO,
+		"u4Bit: %u, ap_stat[%u]: %u, md_stat[%u]: %u\n",
+		u4Bit, u4Value, prSysStat->ap_stat[0],
+		u4Value, prSysStat->md_stat[0]);
+}
+
 static int32_t mddpRegisterCb(void)
 {
 	int32_t ret = 0;
@@ -538,7 +630,7 @@ int32_t mddpNotifyDrvOwnTimeoutTime(void)
 	uint32_t u32DrvOwnTimeoutTime = LP_OWN_BACK_FAILED_LOG_SKIP_MS;
 	uint8_t *buff = NULL;
 
-	DBGLOG(INIT, INFO, "MD notify Drv Own Timeout time.\n");
+	DBGLOG(INIT, INFO, "Wi-Fi Notify MD Drv Own Timeout time.\n");
 
 	if (!gMddpWFunc.notify_drv_info) {
 		DBGLOG(NIC, ERROR, "notify_drv_info callback NOT exist.\n");
@@ -608,8 +700,12 @@ int32_t mddpNotifyWifiOnEnd(void)
 	if (g_rSettings.rOps.set)
 		g_rSettings.rOps.set(&g_rSettings, g_rSettings.u4WifiOnBit);
 
-	if (g_rSettings.rOps.clr)
-		g_rSettings.rOps.clr(&g_rSettings, g_rSettings.u4MdOnBit);
+	if (g_rSettings.u4MDDPSupportMode == MDDP_SUPPORT_AOP) {
+		if (g_rSettings.rOps.clr)
+			g_rSettings.rOps.clr(&g_rSettings,
+				g_rSettings.u4MdOnBit);
+	}
+
 #if (CFG_SUPPORT_CONNAC2X == 0)
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_END);
 #else
@@ -634,8 +730,11 @@ void mddpNotifyWifiOffStart(void)
 	mtk_ccci_register_md_state_cb(NULL);
 
 	DBGLOG(INIT, INFO, "md off start.\n");
-	if (g_rSettings.rOps.set)
-		g_rSettings.rOps.set(&g_rSettings, g_rSettings.u4MdOffBit);
+	if (g_rSettings.u4MDDPSupportMode == MDDP_SUPPORT_AOP) {
+		if (g_rSettings.rOps.set)
+			g_rSettings.rOps.set(&g_rSettings,
+				g_rSettings.u4MdOffBit);
+	}
 
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_OFF_START);
 	if (ret == 0)
@@ -644,13 +743,20 @@ void mddpNotifyWifiOffStart(void)
 
 void mddpNotifyWifiOffEnd(void)
 {
+	int32_t u4ClrBits = 0;
+
 	if (!mddpIsSupportMcifWifi())
 		return;
+
+	if (g_rSettings.u4MDDPSupportMode == MDDP_SUPPORT_SHM)
+		u4ClrBits = g_rSettings.u4WifiOnBit;
+	else
+		u4ClrBits = g_rSettings.u4WifiOnBit | g_rSettings.u4MdInitBit;
 
 	if (g_rSettings.rOps.clr) {
 		g_rSettings.rOps.clr(
 			&g_rSettings,
-			g_rSettings.u4WifiOnBit | g_rSettings.u4MdInitBit);
+			u4ClrBits);
 	}
 
 	mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_OFF_END);
@@ -891,7 +997,6 @@ static bool wait_for_md_on_complete(void)
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
 		return false;
 	}
-
 	if (mddpIsCasanFWload() == TRUE)
 		u4MDOnTimeoutTime = MD_ON_OFF_TIMEOUT_CASAN;
 
@@ -932,7 +1037,17 @@ void setMddpSupportRegister(IN struct ADAPTER *prAdapter)
 
 	prChipInfo = prAdapter->chip_info;
 
-	if (prChipInfo->isSupportMddpAOR) {
+
+	if (prChipInfo->isSupportMddpSHM) {
+		g_rSettings.rOps.rd = mddpRdFuncSHM;
+		g_rSettings.rOps.set = mddpSetFuncSHM;
+		g_rSettings.rOps.clr = mddpClrFuncSHM;
+		g_rSettings.u4MdInitBit = MD_SHM_MD_INIT_BIT;
+		g_rSettings.u4MdOnBit = MD_SHM_MD_ON_BIT;
+		g_rSettings.u4MdOffBit = MD_SHM_MD_OFF_BIT;
+		g_rSettings.u4WifiOnBit = MD_SHM_WIFI_ON_BIT;
+		g_rSettings.u4MDDPSupportMode = MDDP_SUPPORT_SHM;
+	} else if (prChipInfo->isSupportMddpAOR) {
 		g_rSettings.rOps.rd = mddpRdFunc;
 		g_rSettings.rOps.set = mddpSetFuncV2;
 		g_rSettings.rOps.clr = mddpClrFuncV2;
@@ -940,9 +1055,10 @@ void setMddpSupportRegister(IN struct ADAPTER *prAdapter)
 		g_rSettings.u4SyncSetAddr = MD_AOR_SET_CR_ADDR;
 		g_rSettings.u4SyncClrAddr = MD_AOR_CLR_CR_ADDR;
 		g_rSettings.u4MdInitBit = MD_AOR_MD_INIT_BIT;
-		g_rSettings.u4MdOnBit = MD_AOR_MD_RDY_BIT;
+		g_rSettings.u4MdOnBit = MD_AOR_MD_ON_BIT;
 		g_rSettings.u4MdOffBit = MD_AOR_MD_OFF_BIT;
 		g_rSettings.u4WifiOnBit = MD_AOR_WIFI_ON_BIT;
+		g_rSettings.u4MDDPSupportMode = MDDP_SUPPORT_AOP;
 	} else {
 		g_rSettings.rOps.rd = mddpRdFunc;
 		g_rSettings.rOps.set = mddpSetFuncV1;
@@ -950,6 +1066,7 @@ void setMddpSupportRegister(IN struct ADAPTER *prAdapter)
 		g_rSettings.u4SyncAddr = MD_STATUS_SYNC_CR;
 		g_rSettings.u4MdOnBit = MD_STATUS_ON_SYNC_BIT;
 		g_rSettings.u4MdOffBit = MD_STATUS_OFF_SYNC_BIT;
+		g_rSettings.u4MDDPSupportMode = MDDP_SUPPORT_AOP;
 	}
 
 #if (CFG_SUPPORT_CONNAC2X == 0)
@@ -999,6 +1116,12 @@ static void notifyMdCrash2FW(void)
 	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
 		DBGLOG(INIT, ERROR, "Invalid drv state.\n");
 		return;
+	}
+
+	if (g_rSettings.u4MDDPSupportMode == MDDP_SUPPORT_SHM) {
+		if (g_rSettings.rOps.clr)
+			g_rSettings.rOps.clr(&g_rSettings,
+				g_rSettings.u4MdOnBit);
 	}
 
 	/*

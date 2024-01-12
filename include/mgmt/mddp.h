@@ -49,8 +49,14 @@
 #define MD_AOR_RD_CR_ADDR  0x10001BF4
 #define MD_AOR_MD_INIT_BIT BIT(8)
 #define MD_AOR_MD_OFF_BIT  BIT(9)
-#define MD_AOR_MD_RDY_BIT  BIT(10)
+#define MD_AOR_MD_ON_BIT   BIT(10)
 #define MD_AOR_WIFI_ON_BIT BIT(11)
+
+#define MD_SHM_AP_STAT_BIT BIT(4)
+#define MD_SHM_MD_INIT_BIT BIT(8) /* md_stat */
+#define MD_SHM_MD_OFF_BIT  BIT(9)
+#define MD_SHM_MD_ON_BIT   BIT(10)
+#define MD_SHM_WIFI_ON_BIT (BIT(11) | MD_SHM_AP_STAT_BIT) /* ap_stat */
 
 #if (CFG_SUPPORT_CONNAC2X == 0)
 /* Use SER dummy register for mddp support flag */
@@ -65,6 +71,13 @@
  *******************************************************************************
  */
 struct MDDP_SETTINGS;
+
+enum ENUM_MDDP_SUPPORT_MODE {
+	MDDP_SUPPORT_SHM = 0,
+	MDDP_SUPPORT_AOP,
+	MDDP_SUPPORT_NUM
+};
+
 
 struct MDDP_STATUS_SYNC_OPS {
 	void (*rd)(struct MDDP_SETTINGS *prSettings, uint32_t *pu4Val);
@@ -81,6 +94,7 @@ struct MDDP_SETTINGS {
 	uint32_t u4MdOnBit;
 	uint32_t u4MdOffBit;
 	uint32_t u4WifiOnBit;
+	enum ENUM_MDDP_SUPPORT_MODE u4MDDPSupportMode;
 };
 
 /*******************************************************************************
