@@ -4940,6 +4940,7 @@ uint32_t nicUniCmdSetP2pLoStart(struct ADAPTER *ad,
 
 	cmd = (struct CMD_SET_P2P_LO_START_STRUCT *)
 		info->pucInfoBuffer;
+	max_cmd_len += cmd->u4IELen;
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_P2P,
 		max_cmd_len, nicUniCmdEventSetCommon,
 		nicUniCmdTimeoutCommon);
