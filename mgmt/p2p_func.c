@@ -1096,8 +1096,16 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 
 		nicTxSetPktRetryLimit(prMgmtTxMsdu, ucRetryLimit);
 
-		nicTxConfigPktControlFlag(prMgmtTxMsdu,
-			MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
+		/* Bufferable MMPDUs are suggested to be queued */
+		/* when GC is sleeping according to SPEC, */
+		/* instead of being sent to ALTX Q. */
+
+		/* GO discoverability REQ needs to be sent to GC */
+		/* when GC is awake due to P2P-6.1.10 cert fail */
+
+		if (!p2pFuncIsBufferableMMPDU(prMgmtTxMsdu))
+			nicTxConfigPktControlFlag(prMgmtTxMsdu,
+				MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
 
 		if (p2pFuncNeedWaitRsp(prAdapter,
 				prAdapter->prP2pInfo->eConnState))
@@ -7038,5 +7046,35 @@ p2pFunChnlSwitchNotifyDone(IN struct ADAPTER *prAdapter)
 	prP2pCsaDoneMsg->ucBssIndex = prBssInfo->ucBssIndex;
 	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *) prP2pCsaDoneMsg,
 			MSG_SEND_METHOD_BUF);
+}
+
+uint8_t p2pFuncIsBufferableMMPDU(IN struct MSDU_INFO *prMgmtTxMsdu)
+{
+	struct WLAN_MAC_HEADER *prWlanHdr = (struct WLAN_MAC_HEADER *) NULL;
+	uint16_t u2TxFrameCtrl;
+	uint8_t fgIsBufferableMMPDU;
+
+	prWlanHdr = (struct WLAN_MAC_HEADER *)
+		((unsigned long) prMgmtTxMsdu->prPacket +
+		MAC_TX_RESERVED_FIELD);
+
+	if (!prWlanHdr) {
+		DBGLOG(P2P, ERROR, "prWlanHdr is NULL\n");
+		return FALSE;
+	}
+	u2TxFrameCtrl = prWlanHdr->u2FrameCtrl & MASK_FRAME_TYPE;
+
+	switch (u2TxFrameCtrl) {
+	case MAC_FRAME_ACTION:
+	case MAC_FRAME_DISASSOC:
+	case MAC_FRAME_DEAUTH:
+		fgIsBufferableMMPDU = TRUE;
+		break;
+	default:
+		fgIsBufferableMMPDU = FALSE;
+		break;
+	}
+	DBGLOG(P2P, TRACE, "fgIsBufferableMMPDU = %u\n", fgIsBufferableMMPDU);
+	return fgIsBufferableMMPDU;
 }
 
