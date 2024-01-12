@@ -1289,6 +1289,7 @@ static void rrmHandleBeaconReqSubelem(
 	data->ssidLen = 0;
 	data->reportDetail = BEACON_REPORT_DETAIL_ALL_FIELDS_AND_ELEMENTS;
 	data->reportIeIdsLen = 0;
+	data->reportExtIeIdsLen = 0;
 	data->apChannelsLen = 0;
 
 	elemsLen = request->ucLength - 3 -
@@ -1379,6 +1380,28 @@ static void rrmHandleBeaconReqSubelem(
 			data->reportIeIdsLen = slen;
 			break;
 		}
+		case BEACON_REQUEST_SUBELEM_EXT_REQUEST:
+		{
+
+			if (data->reportDetail !=
+			    BEACON_REPORT_DETAIL_REQUESTED_ONLY) {
+				DBGLOG(RRM, WARN,
+					"unexpected report detail is %u",
+					   data->reportDetail);
+				break;
+			}
+
+			if (!slen) {
+				DBGLOG(RRM, WARN, "subelem %u Wrong len %u",
+					subelems[0], slen);
+				break;
+			}
+
+			data->reportExtIeIds = &subelems[2];
+			data->reportExtIeIdsLen = slen;
+			break;
+		}
+
 		case BEACON_REQUEST_SUBELEM_AP_CHANNEL:
 		{
 			uint8_t *strbuf, *pos, *end;
@@ -1429,16 +1452,26 @@ static void rrmHandleBeaconReqSubelem(
 	}
 }
 
-uint8_t rrmCheckReportId(uint8_t id, uint8_t *ie, uint8_t len)
+uint8_t rrmCheckReportId(uint8_t *ie, struct BCN_RM_PARAMS *data)
 {
-	uint8_t i;
+	uint16_t i;
 
-	if (ie && len > 0) {
-		for (i = 0; i < len; i++) {
-			if (id == ie[i])
+
+	if (data->reportIeIds) {
+		for (i = 0; i < data->reportIeIdsLen; i++) {
+			if (IE_ID(ie) == data->reportIeIds[i])
 				return TRUE;
 		}
 	}
+
+	if (data->reportExtIeIds) {
+		for (i = 0; i < data->reportExtIeIdsLen; i++) {
+			if (IE_ID(ie) == ELEM_ID_RESERVED &&
+			    IE_ID_EXT(ie) == data->reportExtIeIds[i])
+				return TRUE;
+		}
+	}
+
 	return FALSE;
 }
 
@@ -1498,8 +1531,7 @@ int rrmBeaconRepAddFrameBody(struct BCN_RM_PARAMS *data,
 	 */
 	while (ies_len > 2 && 2U + ies[1] <= ies_len && rem_len > 0) {
 		if (detail == BEACON_REPORT_DETAIL_ALL_FIELDS_AND_ELEMENTS ||
-		    rrmCheckReportId(ies[0], data->reportIeIds,
-				data->reportIeIdsLen)) {
+		    rrmCheckReportId(ies, data)) {
 			uint8_t elen = ies[1];
 
 			if (2 + elen > buf + buf_len - pos ||
