@@ -2016,6 +2016,11 @@ uint32_t nicUniCmdRemoveStaRec(struct ADAPTER *ad,
 	struct UNI_CMD_STAREC *uni_cmd;
 	struct UNI_CMD_STAREC_REMOVE_INFO *tag;
 	struct WIFI_UNI_CMD_ENTRY *entry;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct UNI_CMD_STAREC_MLD_TEARDOWN *mld_teardown;
+	struct STA_RECORD *sta;
+	struct MLD_STA_RECORD *mld_sta;
+#endif
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC) +
 	     		       sizeof(struct UNI_CMD_STAREC_REMOVE_INFO);
 	uint32_t widx;
@@ -2036,6 +2041,14 @@ uint32_t nicUniCmdRemoveStaRec(struct ADAPTER *ad,
 		widx = UNI_CMD_STAREC_INVALID_WTBL_IDX;
 	}
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	sta = cnmGetStaRecByIndex(ad, cmd->ucStaIndex);
+	mld_sta = mldStarecGetByStarec(ad, sta);
+
+	if (mld_sta)
+		max_cmd_len += sizeof(struct UNI_CMD_STAREC_MLD_TEARDOWN);
+#endif
+
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_STAREC_INFO,
 			max_cmd_len, NULL, NULL);
 	if (!entry)
@@ -2049,6 +2062,21 @@ uint32_t nicUniCmdRemoveStaRec(struct ADAPTER *ad,
 	tag->u2Tag = UNI_CMD_STAREC_TAG_REMOVE;
 	tag->u2Length = sizeof(*tag);
 	tag->ucActionType = cmd->ucActionType;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (mld_sta) {
+		mld_teardown = (struct UNI_CMD_STAREC_MLD_TEARDOWN *)
+				(uni_cmd->aucTlvBuffer + sizeof(*tag));
+		mld_teardown->u2Tag = UNI_CMD_STAREC_TAG_MLD_TEARDOWN;
+		mld_teardown->u2Length = sizeof(*mld_teardown);
+
+		DBGLOG(INIT, INFO,
+			"Teardown mld_sta(%d) bss(%d) sta(%d)\n",
+			mld_sta->ucIdx,
+			sta->ucBssIndex,
+			sta->ucIndex);
+	}
+#endif
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 

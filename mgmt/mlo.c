@@ -3656,10 +3656,6 @@ void mldStarecFree(struct ADAPTER *prAdapter,
 {
 	DBGLOG(ML, INFO, "prMldStarec: %d\n", prMldStarec->ucIdx);
 
-#ifdef CFG_SUPPORT_UNIFIED_COMMAND
-	nicUniCmdMldStaTeardown(prAdapter, prStaRec);
-#endif
-
 	kalMemZero(prMldStarec, sizeof(struct MLD_STA_RECORD));
 	prMldStarec->fgIsInUse = FALSE;
 
