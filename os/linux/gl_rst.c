@@ -688,7 +688,7 @@ void glRstSetRstEndEvent(void)
 
 int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 {
-	bool bRet = TRUE;
+	bool bRet = 0;
 	struct GLUE_INFO *prGlueInfo;
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
