@@ -664,8 +664,10 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	prMemOps->freeDesc = pcieFreeDesc;
 	prMemOps->freeBuf = pcieFreeBuf;
 	prMemOps->freePacket = pcieFreePacket;
+#if 0
 	prMemOps->dumpTx = pcieDumpTx;
 	prMemOps->dumpRx = pcieDumpRx;
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
