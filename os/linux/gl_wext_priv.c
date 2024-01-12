@@ -2972,7 +2972,6 @@ priv_get_string(IN struct net_device *prNetDev,
 	int32_t i, pos = 0;
 	char *buf = pcExtra;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
 
 	if (!prNetDev || !prIwReqData) {
 		DBGLOG(REQ, INFO,
@@ -3049,6 +3048,7 @@ priv_get_string(IN struct net_device *prNetDev,
 		struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
 		struct PARAM_HW_MIB_INFO *prHwMibInfo;
 		struct PARAM_LINK_SPEED_EX rLinkSpeed;
+		uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
 
 		pSwDbgCtrl = (struct CMD_SW_DBG_CTRL *)aucBuffer;
 		prRxCtrl = &prGlueInfo->prAdapter->rRxCtrl;
@@ -14005,7 +14005,7 @@ static int priv_driver_set_twtparams(
 
 		if (!prBssInfo) {
 			DBGLOG(REQ, INFO, "Find no MLTWT setup link\n");
-		
+
 			return -1;
 		}
 
@@ -14049,7 +14049,7 @@ static int priv_driver_set_twtparams(
 		prTWTParams->fgProtect = (au4Setting[6]) ? TRUE : FALSE;
 		prTWTParams->ucMinWakeDur = (uint8_t) au4Setting[7];
 		prTWTParams->u2WakeIntvalMantiss = au4Setting[8];
-		
+
 		rTWTCtrl.ucBssIdx = prBssInfo->ucBssIndex;
 		rTWTCtrl.ucCtrlAction = au4Setting[0];
 		rTWTCtrl.ucTWTFlowId = au4Setting[1];
@@ -14085,7 +14085,7 @@ static int priv_driver_set_twtparams(
 			DBGLOG(REQ, INFO,
 				"Find no MLTWT target link %d\n",
 				au4Setting[9]);
-		
+
 			return -1;
 		}
 
@@ -14112,7 +14112,7 @@ static int priv_driver_set_twtparams(
 		 *	au2Setting[7]: Nominal Minimum TWT Wake Duration
 		 *	au2Setting[8]: TWT Wake Interval Mantissa
 		 *	au2Setting[9]: MLTWT link ID
-		 *	au2Setting[10]: MLTWT param last: 0(No)|1(Yes) 
+		 *	au2Setting[10]: MLTWT param last: 0(No)|1(Yes)
 		 */
 		if (au4Setting[1] >= TWT_MAX_FLOW_NUM ||
 			au4Setting[2] > TWT_SETUP_CMD_ID_DEMAND ||
@@ -14133,7 +14133,7 @@ static int priv_driver_set_twtparams(
 		prTWTParams->fgProtect = (au4Setting[6]) ? TRUE : FALSE;
 		prTWTParams->ucMinWakeDur = (uint8_t) au4Setting[7];
 		prTWTParams->u2WakeIntvalMantiss = au4Setting[8];
-		
+
 		rTWTCtrl.ucBssIdx = prBssInfo->ucBssIndex;
 		rTWTCtrl.ucCtrlAction = au4Setting[0];
 		rTWTCtrl.ucTWTFlowId = au4Setting[1];
