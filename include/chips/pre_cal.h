@@ -9,6 +9,7 @@ extern struct platform_device *g_prPlatDev;
 
 extern void update_pre_cal_status(uint8_t fgIsPreCal);
 extern int8_t get_pre_cal_status(void);
+extern void update_wr_mtx_down_up_status(uint8_t ucDownUp);
 extern void wlanWakeLockInit(struct GLUE_INFO *prGlueInfo);
 extern void wlanWakeLockUninit(struct GLUE_INFO *prGlueInfo);
 extern struct wireless_dev *wlanNetCreate(void *pvData, void *pvDriverData);
