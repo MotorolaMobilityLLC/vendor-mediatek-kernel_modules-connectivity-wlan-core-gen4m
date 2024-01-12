@@ -247,6 +247,10 @@ enum ENUM_MSG_ID {
 	MID_TWT_REQ_IND_INFOFRM,
 	MID_TWT_PARAMS_SET,
 #endif
+#if (CFG_SUPPORT_802_11AX == 1)
+	/* SM Power Save Requester Support */
+	MID_SMPS_ACTION_SET,
+#endif
 #if (CFG_SUPPORT_TWT_HOTSPOT == 1)
 	MID_TWT_RESP_PARAMS_SET,
 	MID_TWT_RESP_SETUP_AGRT_TO_FW,
@@ -407,6 +411,13 @@ struct _MSG_TWT_HOTSPOT_PARAMS_SET_T {
 };
 #endif
 
+#endif
+
+#if (CFG_SUPPORT_802_11AX == 1)
+struct _MSG_SMPS_PARAMS_SET_T {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	struct _SMPS_CTRL_T rSMPSCtrl;
+};
 #endif
 
 struct MSG_CANCEL_TX_WAIT_REQUEST {

@@ -121,6 +121,8 @@
 #define HE_MAC_CAP5_SUBCHANNEL_SEL_TX_SHFT             2
 #define HE_MAC_CAP5_UL_2X996TONE_RU_SHFT               3
 #define HE_MAC_CAP5_OM_CNTL_ULMUDATE_DISABLE_RX_SHFT   4
+#define HE_MAC_CAP5_DYNAMIC_SMPS                       BIT(5)
+#define HE_MAC_CAP5_DYNAMIC_SMPS_SHFT                  5
 
 /* HE CAP - HE PHY Capabilities Information field */
 #define HE_PHY_CAP_BYTE_NUM                            11
@@ -416,6 +418,7 @@
 #define HE_6G_CAP_INFO_MAX_MPDU_LEN_OFFSET             6
 /* B9-B10: SM Power Save */
 #define HE_6G_CAP_INFO_SM_POWER_SAVE                   BITS(9, 10)
+#define HE_6G_CAP_INFO_SM_POWER_SAVE_OFFSET            9
 /* B11: RD Responder */
 #define HE_6G_CAP_INFO_RD_RESPONDER                    BIT(11)
 /* B12/B13: Rx/TX Antenna Pattern Consistency */
@@ -476,9 +479,14 @@ enum ENUM_HEBA_TYPE {
 #define HE_IS_MAC_CAP_FLEXIBLE_TWT_SHDL(_aucHeMacCapInfo) \
 	(_aucHeMacCapInfo[3] & HE_MAC_CAP3_FLEXIBLE_TWT_SHDL)
 
-
 #define HE_SET_MAC_CAP_OM_CTRL(_aucHeMacCapInfo) \
 	(_aucHeMacCapInfo[3] |=  HE_MAC_CAP3_OM_CTRL)
+
+#define HE_SET_MAC_CAP_DYNAMIC_SMPS(_aucHeMacCapInfo) \
+	(_aucHeMacCapInfo[5] |=  HE_MAC_CAP5_DYNAMIC_SMPS)
+
+#define HE_UNSET_MAC_CAP_DYNAMIC_SMPS(_aucHeMacCapInfo) \
+	(_aucHeMacCapInfo[5] &=  ~HE_MAC_CAP5_DYNAMIC_SMPS)
 
 #define HE_SET_MAC_CAP_MAX_AMPDU_LEN_EXP(_aucHeMacCapInfo, _val) \
 { \

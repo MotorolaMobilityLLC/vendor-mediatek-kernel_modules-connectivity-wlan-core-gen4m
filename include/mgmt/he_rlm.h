@@ -110,6 +110,15 @@
 	_aucHePhyCapInfo[6] = (u_int8_t)HE_PHY_CAP6_INFO_DEFAULT_VAL; \
 }
 
+
+/* Definitions for action control of SMPS params */
+enum {
+	SMPS_ACTION_UPDATE_HT_CAP = 0,
+	SMPS_ACTION_UPDATE_HE_CAP = 1,
+	SMPS_ACTION_SEND_ACTION_FRAME = 2,
+	SMPS_ACTION_MAX
+};
+
 /******************************************************************************
  *                             D A T A   T Y P E S
  ******************************************************************************
@@ -146,6 +155,9 @@ struct HE_A_CTRL_OM_T {
  *                            P U B L I C   D A T A
  ******************************************************************************
  */
+#if (CFG_SUPPORT_802_11AX == 1)
+extern uint8_t  g_fgHTSMPSEnabled;
+#endif
 
 /******************************************************************************
  *                           P R I V A T E   D A T A
@@ -199,6 +211,22 @@ uint32_t heRlmSendHtcNullFrame(
 	IN uint8_t ucUP,
 	IN PFN_TX_DONE_HANDLER pfTxDoneHandler);
 uint8_t heRlmMaxBwToHeBw(uint8_t ucMaxBw);
+
+#if (CFG_SUPPORT_802_11AX == 1)
+uint32_t heRlmSMPSTxDone(
+	IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo,
+	IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+
+void heRlmSendSMPSActionFrame(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec);
+
+void heRlmProcessSMPSAction(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+#endif
+
 #if (CFG_SUPPORT_WIFI_6G == 1)
 void heRlmRecHe6GCapInfo(
 	struct ADAPTER *prAdapter,

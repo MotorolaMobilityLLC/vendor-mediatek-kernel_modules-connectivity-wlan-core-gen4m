@@ -79,6 +79,11 @@ extern uint32_t g_au4Offset[2][2];
 extern uint32_t g_au4IQData[256];
 #endif
 
+#if (CFG_SUPPORT_802_11AX == 1)
+extern uint8_t  g_fgSigmaCMDHt;
+extern uint8_t  g_ucHtSMPSCapValue;
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************

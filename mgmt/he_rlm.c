@@ -134,6 +134,15 @@ uint8_t g_au8RlmHeCfgContellIdx[4][4][2] = {
 	 {CONSTELL_IDX_BPSK, CONSTELL_IDX_NONE} }	/* RU idx 3 */
 };
 
+#if (CFG_SUPPORT_802_11AX == 1)
+uint8_t  g_ucHtSMPSCapValue = 5;
+uint8_t  g_ucHeSMPSCapValue = 5;
+uint8_t  g_ucHtSMPS6GCapValue = 5;
+uint8_t  g_fgSigmaCMDHt = 2;
+uint8_t  g_fgSigmaCMDHe = 2;
+uint8_t  g_fgSigmaCMD6g = 2;
+#endif
+
 /*******************************************************************************
 *                           P R I V A T E   D A T A
 ********************************************************************************
@@ -499,6 +508,16 @@ static void heRlmFillHeCapIE(
 		HE_SET_MAC_CAP_BTWT_SUPT(prHeCap->ucHeMacCap);
 #endif
 
+#if (CFG_SUPPORT_802_11AX == 1)
+	if ((g_ucHeSMPSCapValue == 5) &&
+		(IS_FEATURE_ENABLED(prWifiVar->ucHeDynamicSMPS)))
+		HE_SET_MAC_CAP_DYNAMIC_SMPS(prHeCap->ucHeMacCap);
+	else if ((g_ucHeSMPSCapValue == 1) && (g_fgSigmaCMDHe == 1))
+		HE_SET_MAC_CAP_DYNAMIC_SMPS(prHeCap->ucHeMacCap);
+	else if ((g_ucHeSMPSCapValue == 0) && (g_fgSigmaCMDHe == 1))
+		HE_UNSET_MAC_CAP_DYNAMIC_SMPS(prHeCap->ucHeMacCap);
+#endif
+
 	/* PHY capabilities */
 	HE_RESET_PHY_CAP(prHeCap->ucHePhyCap);
 
@@ -858,6 +877,24 @@ static void heRlmFillHe6gBandCapIE(struct ADAPTER *prAdapter,
 		prHe6gBandCap->u2CapInfo &=
 			~HE_6G_CAP_INFO_SM_POWER_SAVE;
 	}
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	if ((g_ucHtSMPS6GCapValue == 5) && (g_fgHTSMPSEnabled == 0xFF)) {
+		prHe6gBandCap->u2CapInfo |= HE_6G_CAP_INFO_SM_POWER_SAVE;
+	} else if ((g_ucHtSMPS6GCapValue == 5) && (g_fgHTSMPSEnabled == 1)) {
+		prHe6gBandCap->u2CapInfo &=
+			(~HE_6G_CAP_INFO_SM_POWER_SAVE);
+		prHe6gBandCap->u2CapInfo |=
+		(1 << HE_6G_CAP_INFO_SM_POWER_SAVE_OFFSET);
+	} else if (g_ucHtSMPS6GCapValue == 3 && g_fgSigmaCMD6g == 1)
+		prHe6gBandCap->u2CapInfo |= HE_6G_CAP_INFO_SM_POWER_SAVE;
+	else if (g_ucHtSMPS6GCapValue == 1 && g_fgSigmaCMD6g == 1) {
+		prHe6gBandCap->u2CapInfo &=
+			(~HE_6G_CAP_INFO_SM_POWER_SAVE);
+		(prHe6gBandCap->u2CapInfo) |=
+			(1 << HE_6G_CAP_INFO_SM_POWER_SAVE_OFFSET);
+	}
+#endif
 
 	ASSERT(IE_SIZE(prHe6gBandCap) <=
 		(ELEM_HDR_LEN + ELEM_MAX_LEN_HE_6G_CAP));
@@ -1512,6 +1549,165 @@ void heRlmInit(
 	/* It can be disabled by wifi.cfg or iwpriv command */
 	prHeCfg->fgTwtRequesterEnable = TRUE;
 }
+
+
+#if (CFG_SUPPORT_802_11AX == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t heRlmSMPSTxDone(IN struct ADAPTER *prAdapter,
+			      IN struct MSDU_INFO *prMsduInfo,
+			      IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Send SM Power Save frame (HT action frame)
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+void heRlmSendSMPSActionFrame(struct ADAPTER *prAdapter,
+			     struct STA_RECORD *prStaRec)
+{
+	struct MSDU_INFO *prMsduInfo;
+	struct ACTION_SM_POWER_SAVE_FRAME *prTxFrame;
+	struct BSS_INFO *prBssInfo;
+	uint16_t u2EstimatedFrameLen;
+	PFN_TX_DONE_HANDLER pfTxDoneHandler = (PFN_TX_DONE_HANDLER)NULL;
+
+	/* Sanity Check*/
+	if (!prStaRec)
+		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo)
+		return;
+
+	/* Calculate MSDU buffer length */
+	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD +
+			      sizeof(struct ACTION_SM_POWER_SAVE_FRAME);
+
+	/* Alloc MSDU_INFO */
+	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(prAdapter,
+							u2EstimatedFrameLen);
+
+	if (!prMsduInfo)
+		return;
+
+	kalMemZero(prMsduInfo->prPacket, u2EstimatedFrameLen);
+
+	prTxFrame = prMsduInfo->prPacket;
+
+	/* Fill frame ctrl */
+	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+
+	COPY_MAC_ADDR(prTxFrame->aucDestAddr, prStaRec->aucMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
+
+	/* 3 Compose the frame body's frame */
+	prTxFrame->ucCategory = CATEGORY_HT_ACTION;
+	prTxFrame->ucAction = ACTION_HT_SM_POWER_SAVE;
+
+	/* Set SM power save enabled*/
+	prTxFrame->ucSmPowerCtrl |= HT_SM_POWER_SAVE_CONTROL_ENABLED;
+
+	/* Static SM power save mode */
+	prTxFrame->ucSmPowerCtrl |= HT_SM_POWER_SAVE_CONTROL_SM_MODE;
+
+	if (prBssInfo->pfOpChangeHandler)
+		pfTxDoneHandler = heRlmSMPSTxDone;
+
+	/* 4 Update information of MSDU_INFO_T */
+	TX_SET_MMPDU(prAdapter, prMsduInfo, prBssInfo->ucBssIndex,
+		     prStaRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
+		     sizeof(struct ACTION_SM_POWER_SAVE_FRAME), pfTxDoneHandler,
+		     MSDU_RATE_MODE_AUTO);
+
+	/* 5 Enqueue the frame to send this action frame. */
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+}
+
+
+void heRlmProcessSMPSAction(
+	struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
+{
+	struct _MSG_SMPS_PARAMS_SET_T *prSMPSParamSetMsg;
+	struct _SMPS_CTRL_T rSMPSCtrl, *prSMPSCtrl = &rSMPSCtrl;
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+	uint8_t ucBssIdx;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	if (!prAdapter) {
+		DBGLOG(RLM, ERROR, "prAdapter is NULL\n");
+		return;
+	}
+
+	if (!prMsgHdr) {
+		DBGLOG(RLM, ERROR, "prMsgHdr is NULL\n");
+		return;
+	}
+
+	prSMPSParamSetMsg = (struct _MSG_SMPS_PARAMS_SET_T *) prMsgHdr;
+	kalMemCopy(prSMPSCtrl, &prSMPSParamSetMsg->rSMPSCtrl,
+			sizeof(*prSMPSCtrl));
+
+	cnmMemFree(prAdapter, prMsgHdr);
+
+	/* Find the BSS info */
+	ucBssIdx = prSMPSCtrl->ucBssIdx;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+
+	switch (prSMPSCtrl->ucCtrlAction) {
+
+	case SMPS_ACTION_UPDATE_HT_CAP:
+		g_ucHtSMPSCapValue = prSMPSCtrl->rSMPSParams.ucHtHeCap;
+		g_ucHtSMPS6GCapValue = prSMPSCtrl->rSMPSParams.ucHtHeCap;
+		g_fgSigmaCMDHt = 1;
+		g_fgSigmaCMD6g = 1;
+		break;
+
+	case SMPS_ACTION_UPDATE_HE_CAP:
+		/* Update HE SMPS Capability*/
+		prWifiVar->ucHeDynamicSMPS = prSMPSCtrl->rSMPSParams.ucHtHeCap;
+		g_ucHeSMPSCapValue = prSMPSCtrl->rSMPSParams.ucHtHeCap;
+		g_fgSigmaCMDHe = 1;
+		break;
+
+	case SMPS_ACTION_SEND_ACTION_FRAME:
+
+		/* Get the STA Record */
+		prStaRec = prBssInfo->prStaRecOfAP;
+		if (!prStaRec) {
+			DBGLOG(RLM, INFO, "No AP STA Record\n");
+			return;
+		}
+
+		DBGLOG(RLM, INFO, "SMPS_ACTION_SEND_ACTION_FRAME\n");
+		heRlmSendSMPSActionFrame(prAdapter, prStaRec);
+		break;
+
+	default:
+		DBGLOG(RLM, INFO,
+			"Action %u not supported\n", prSMPSCtrl->ucCtrlAction);
+		break;
+	}
+}
+#endif
 
 #if (CFG_SUPPORT_BTWT == 1)
 void heRlmRecBTWTparams(
