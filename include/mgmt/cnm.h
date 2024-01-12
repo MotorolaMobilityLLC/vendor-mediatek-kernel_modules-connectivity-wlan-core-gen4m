@@ -386,7 +386,7 @@ struct BSS_INFO *cnmGetP2pBssInfo(IN struct ADAPTER *prAdapter);
 
 bool cnmIsMccMode(IN struct ADAPTER *prAdapter);
 
-#if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 int cnmPowerControl(struct ADAPTER *prAdapter, uint8_t level);
 
 void cnmPowerControlErrorHandling(
