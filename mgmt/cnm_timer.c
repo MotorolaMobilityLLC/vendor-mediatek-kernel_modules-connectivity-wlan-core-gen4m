@@ -233,7 +233,7 @@ cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
 #if DBG
 	/* Note: NULL function pointer is permitted for HEM POWER */
 	if (pfFunc == NULL)
-		DBGLOG(CNM, WARN, "Init timer with NULL callback function!\n");
+		log_dbg(CNM, WARN, "Init timer with NULL callback function!\n");
 
 	ASSERT(prAdapter->rRootTimer.rLinkHead.prNext);
 	{
@@ -253,7 +253,7 @@ cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
 #endif
 	if (prTimer->pfMgmtTimeOutFunc == pfFunc
 		&& prTimer->rLinkEntry.prNext) {
-		DBGLOG(CNM, WARN, "re-init timer, func %p\n", pfFunc);
+		log_dbg(CNM, WARN, "re-init timer, func %p\n", pfFunc);
 		kal_show_stack(NULL, NULL);
 	}
 
@@ -442,7 +442,7 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 		prTimer = LINK_ENTRY(prLinkEntry, struct TIMER, rLinkEntry);
 		ASSERT(prTimer);
 		if (prLinkEntry->prNext == NULL)
-			DBGLOG(CNM, WARN, "timer was re-inited, func %p\n",
+			log_dbg(CNM, WARN, "timer was re-inited, func %p\n",
 				prTimer->pfMgmtTimeOutFunc);
 
 		/* Check if this entry is timeout. */

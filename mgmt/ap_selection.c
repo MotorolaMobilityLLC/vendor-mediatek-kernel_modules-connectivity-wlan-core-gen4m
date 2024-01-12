@@ -152,7 +152,7 @@ static uint16_t scanCalculateScoreByChnlInfo(
 				u2Score += WEIGHT_IDX_AP_NUM * (BSS_FULL_SCORE -
 					prEssChnlInfo[i].ucApNum *
 					SCORE_PER_AP);
-			DBGLOG(SCN, TRACE, "channel %d, AP num %d\n",
+			log_dbg(SCN, TRACE, "channel %d, AP num %d\n",
 				ucChannel, prEssChnlInfo[i].ucApNum);
 			break;
 		}
@@ -175,7 +175,7 @@ static uint16_t scanCalculateScoreByBandwidth(struct ADAPTER *prAdapter,
 	else
 		u2Score = 10;
 
-	DBGLOG(SCN, TRACE, "ht %d, eband %d, esco %d, u2Score %d\n",
+	log_dbg(SCN, TRACE, "ht %d, eband %d, esco %d, u2Score %d\n",
 		prBssDesc->fgIsHTPresent, prBssDesc->eBand, prBssDesc->eSco,
 		u2Score);
 
@@ -186,7 +186,7 @@ static uint16_t scanCalculateScoreByClientCnt(struct BSS_DESC *prBssDesc)
 {
 	uint16_t u2Score = 0;
 
-	DBGLOG(SCN, TRACE, "Exist bss load %d, sta cnt %d\n",
+	log_dbg(SCN, TRACE, "Exist bss load %d, sta cnt %d\n",
 			prBssDesc->fgExsitBssLoadIE, prBssDesc->u2StaCnt);
 
 	if (!prBssDesc->fgExsitBssLoadIE || prBssDesc->u2StaCnt >
@@ -212,18 +212,14 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 	 * but Candidate is suitable, don't replace
 	 */
 	if (u2CurrMiss > 2 && u2CurrMiss > u2CandMiss) {
-#define __STR_FMT__ "Scan Miss count of CurrBss > 2, and Candidate <= 2\n"
-		DBGLOG(SCN, INFO, __STR_FMT__);
-#undef __STR_FMT__
+		log_dbg(SCN, INFO, "Scan Miss count of CurrBss > 2, and Candidate <= 2\n");
 		return FALSE;
 	}
 	/* 1.2 Scan missing count of Candidate is too more,
 	 * but CurrBss is suitable, replace
 	 */
 	if (u2CandMiss > 2 && u2CandMiss > u2CurrMiss) {
-#define __STR_FMT__ "Scan Miss count of Candidate > 2, and CurrBss <= 2\n"
-		DBGLOG(SCN, INFO, __STR_FMT__);
-#undef __STR_FMT__
+		log_dbg(SCN, INFO, "Scan Miss count of Candidate > 2, and CurrBss <= 2\n");
 		return TRUE;
 	}
 	/* 1.3 Hard connecting RSSI check */
@@ -292,7 +288,7 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 {
 	if (!(prBssDesc->ucPhyTypeSet &
 		(prAdapter->rWifiVar.ucAvailablePhyTypeSet))) {
-		DBGLOG(SCN, WARN,
+		log_dbg(SCN, WARN,
 			"SEARCH: Ignore unsupported ucPhyTypeSet = %x\n",
 			prBssDesc->ucPhyTypeSet);
 		return FALSE;
@@ -302,13 +298,13 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	if (fgIsFixedChannel &&
 		(eBand != prBssDesc->eBand || ucChannel !=
 		prBssDesc->ucChannelNum)) {
-		DBGLOG(SCN, INFO, "Fix channel required band %d, channel %d\n",
+		log_dbg(SCN, INFO, "Fix channel required band %d, channel %d\n",
 			eBand, ucChannel);
 		return FALSE;
 	}
 	if (!rlmDomainIsLegalChannel(prAdapter, prBssDesc->eBand,
 		prBssDesc->ucChannelNum)) {
-		DBGLOG(SCN, WARN, "Band %d channel %d is not legal\n",
+		log_dbg(SCN, WARN, "Band %d channel %d is not legal\n",
 			prBssDesc->eBand, prBssDesc->ucChannelNum);
 		return FALSE;
 	}
@@ -321,7 +317,7 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	if (!rsnPerformPolicySelection(prAdapter, prBssDesc))
 		return FALSE;
 	if (prAdapter->rWifiVar.rAisSpecificBssInfo.fgCounterMeasure) {
-		DBGLOG(SCN, WARN, "Skip while at counter measure period!!!\n");
+		log_dbg(SCN, WARN, "Skip while at counter measure period!!!\n");
 		return FALSE;
 	}
 	return TRUE;
@@ -443,7 +439,7 @@ struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter)
 	int8_t cRssi = -128;
 
 	if (!prAdapter) {
-		DBGLOG(SCN, ERROR, "prAdapter is NULL!\n");
+		log_dbg(SCN, ERROR, "prAdapter is NULL!\n");
 		return NULL;
 	}
 	prAisSpecificBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
@@ -457,7 +453,7 @@ struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter)
 		cnmAisInfraChannelFixed(prAdapter, &eBand, &ucChannel);
 #endif
 	aisRemoveTimeoutBlacklist(prAdapter);
-	DBGLOG(SCN, INFO, "%s: ConnectionPolicy = %d\n",
+	log_dbg(SCN, INFO, "%s: ConnectionPolicy = %d\n",
 		__func__,
 		prConnSettings->eConnectionPolicy);
 
@@ -480,11 +476,9 @@ try_again:
 			if (prBssDesc->prBlack) {
 				if (prBssDesc->prBlack->fgIsInFWKBlacklist ==
 					TRUE)
-#define __STR_FMT__ "%s(%pM) is in FWK blacklist, skip it\n"
-					DBGLOG(SCN, INFO, __STR_FMT__,
+					log_dbg(SCN, INFO, "%s(%pM) is in FWK blacklist, skip it\n",
 						prBssDesc->aucSSID,
 						prBssDesc->aucBSSID);
-#undef __STR_FMT__
 				continue;
 			}
 		} else if (!prBssDesc->prBlack)
@@ -494,12 +488,9 @@ try_again:
 			 * if we are trying blacklist
 			 */
 			if (prBssDesc->prBlack->fgIsInFWKBlacklist == TRUE) {
-#define __STR_FMT__ \
-	"Although trying blacklist, %s(%pM) is in FWK blacklist, skip it\n"
-				DBGLOG(SCN, INFO, __STR_FMT__,
+				log_dbg(SCN, INFO, "Although trying blacklist, %s(%pM) is in FWK blacklist, skip it\n",
 					prBssDesc->aucSSID,
 					prBssDesc->aucBSSID);
-#undef __STR_FMT__
 				continue;
 			}
 			u2BlackListScore = WEIGHT_IDX_BLACK_LIST *
@@ -559,20 +550,16 @@ try_again:
 		if (prCandBssDesc->fgIsConnected && !fgSearchBlackList &&
 			prEssLink->u4NumElem > 0) {
 			fgSearchBlackList = TRUE;
-			DBGLOG(SCN, INFO, "Can't roam out, try blacklist\n");
+			log_dbg(SCN, INFO, "Can't roam out, try blacklist\n");
 			goto try_again;
 		}
 		if (prConnSettings->eConnectionPolicy == CONNECT_BY_BSSID)
-#define __STR_FMT__ \
-"Selected %pM %d base on ssid,when find %s, %pM in %d bssid,fix channel %d.\n"
-			DBGLOG(SCN, INFO,
-				__STR_FMT__,
+			log_dbg(SCN, INFO, "Selected %pM %d base on ssid,when find %s, %pM in %d bssid,fix channel %d.\n",
 				prCandBssDesc->aucBSSID,
 				RCPI_TO_dBm(prCandBssDesc->ucRCPI),
 				prConnSettings->aucSSID,
 				prConnSettings->aucBSSID,
 				prEssLink->u4NumElem, ucChannel);
-#undef __STR_FMT__
 		else
 			log_dbg(SCN, INFO,
 				"Selected %pM, cRSSI[%d] 5G[%d] Score %d when find %s, %pM in %d BSSes, fix channel %d.\n",
@@ -585,29 +572,23 @@ try_again:
 
 		return prCandBssDesc;
 	} else if (prCandBssDescForLowRssi) {
-#define __STR_FMT__ \
-"Selected %pM, Score %d when find %s, %pM in %d BSSes, fix channel %d.\n"
-		DBGLOG(SCN, INFO, __STR_FMT__,
+		log_dbg(SCN, INFO, "Selected %pM, Score %d when find %s, %pM in %d BSSes, fix channel %d.\n",
 			prCandBssDescForLowRssi->aucBSSID,
 			u2CandBssScoreForLowRssi, prConnSettings->aucSSID,
 			prConnSettings->aucBSSID, prEssLink->u4NumElem,
 			ucChannel);
-#undef __STR_FMT__
 		return prCandBssDescForLowRssi;
 	}
 
 	/* if No Candidate BSS is found, try BSSes which are in blacklist */
 	if (!fgSearchBlackList && prEssLink->u4NumElem > 0) {
 		fgSearchBlackList = TRUE;
-		DBGLOG(SCN, INFO, "No Bss is found, Try blacklist\n");
+		log_dbg(SCN, INFO, "No Bss is found, Try blacklist\n");
 		goto try_again;
 	}
-#define __STR_FMT__ \
-"Selected None when find %s, %pM in %d BSSes, fix channel %d.\n"
-	DBGLOG(SCN, INFO, __STR_FMT__,
+	log_dbg(SCN, INFO, "Selected None when find %s, %pM in %d BSSes, fix channel %d.\n",
 		prConnSettings->aucSSID, prConnSettings->aucBSSID,
 		prEssLink->u4NumElem, ucChannel);
-#undef __STR_FMT__
 	return NULL;
 }
 
@@ -631,7 +612,7 @@ void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter)
 	uint8_t j = 0;
 
 	if (prConnSettings->ucSSIDLen == 0) {
-		DBGLOG(SCN, INFO, "No Ess are expected to connect\n");
+		log_dbg(SCN, INFO, "No Ess are expected to connect\n");
 		return;
 	}
 	kalMemZero(prEssChnlInfo, CFG_MAX_NUM_OF_CHNL_INFO *
@@ -691,7 +672,7 @@ LINK_PEEK_HEAD(prCurEssLink,
 			}
 	}
 #endif
-	DBGLOG(SCN, INFO, "Find %s in %d BSSes, result %d\n",
+	log_dbg(SCN, INFO, "Find %s in %d BSSes, result %d\n",
 		prConnSettings->aucSSID, prBSSDescList->u4NumElem,
 		prCurEssLink->u4NumElem);
 }

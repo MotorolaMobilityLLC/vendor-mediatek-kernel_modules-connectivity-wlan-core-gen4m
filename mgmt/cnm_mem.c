@@ -168,7 +168,7 @@ struct MSDU_INFO *cnmPktAllocWrapper(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo;
 
 	prMsduInfo = cnmPktAlloc(prAdapter, u4Length);
-	DBGLOG(MEM, LOUD, "Alloc MSDU_INFO[0x%p] by [%s]\n",
+	log_dbg(MEM, LOUD, "Alloc MSDU_INFO[0x%p] by [%s]\n",
 		prMsduInfo, pucStr);
 
 	return prMsduInfo;
@@ -186,7 +186,8 @@ struct MSDU_INFO *cnmPktAllocWrapper(struct ADAPTER *prAdapter,
 void cnmPktFreeWrapper(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 	uint8_t *pucStr)
 {
-	DBGLOG(MEM, LOUD, "Free MSDU_INFO[0x%p] by [%s]\n", prMsduInfo, pucStr);
+	log_dbg(MEM, LOUD, "Free MSDU_INFO[0x%p] by [%s]\n",
+		prMsduInfo, pucStr);
 
 	cnmPktFree(prAdapter, prMsduInfo);
 }
@@ -236,21 +237,17 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 	}
 #if DBG
 	if (prMsduInfo == NULL) {
-		DBGLOG(MEM, WARN, "\n");
-		DBGLOG(MEM, WARN, "MgtDesc#=%ld\n", prQueList->u4NumElem);
+		log_dbg(MEM, WARN, "\n");
+		log_dbg(MEM, WARN, "MgtDesc#=%ld\n", prQueList->u4NumElem);
 
 #if CFG_DBG_MGT_BUF
-#define __STR_FMT__ \
-"rMgtBufInfo: alloc#=%ld, free#=%ld, null#=%ld\n"
-
-		DBGLOG(MEM, WARN, __STR_FMT__,
+		log_dbg(MEM, WARN, "rMgtBufInfo: alloc#=%ld, free#=%ld, null#=%ld\n",
 			prAdapter->rMgtBufInfo.u4AllocCount,
 			prAdapter->rMgtBufInfo.u4FreeCount,
 			prAdapter->rMgtBufInfo.u4AllocNullCount);
-#undef __STR_FMT__
 #endif
 
-		DBGLOG(MEM, WARN, "\n");
+		log_dbg(MEM, WARN, "\n");
 	}
 #endif
 
@@ -352,7 +349,7 @@ void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType,
 	ASSERT(prAdapter);
 
 	if (u4Length == 0) {
-		DBGLOG(MEM, WARN,
+		log_dbg(MEM, WARN,
 			"%s: Length to be allocated is ZERO, skip!\n",
 			__func__);
 		return NULL;
@@ -658,7 +655,7 @@ void cnmStaRecFree(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
 	if (!prStaRec)
 		return;
 
-	DBGLOG(RSN, INFO, "cnmStaRecFree %d\n", prStaRec->ucIndex);
+	log_dbg(RSN, INFO, "cnmStaRecFree %d\n", prStaRec->ucIndex);
 
 	ucStaRecIndex = prStaRec->ucIndex;
 	ucBssIndex = prStaRec->ucBssIndex;
@@ -847,12 +844,12 @@ void cnmStaRecChangeState(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec
 		return;
 
 	if (!prStaRec) {
-		DBGLOG(MEM, WARN, "%s: StaRec is NULL, skip!\n", __func__);
+		log_dbg(MEM, WARN, "%s: StaRec is NULL, skip!\n", __func__);
 		return;
 	}
 
 	if (!prStaRec->fgIsInUse) {
-		DBGLOG(MEM, WARN, "%s: StaRec[%u] is not in use, skip!\n",
+		log_dbg(MEM, WARN, "%s: StaRec[%u] is not in use, skip!\n",
 			__func__, prStaRec->ucIndex);
 		return;
 	}
@@ -949,12 +946,12 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		return;
 
 	if (!prStaRec) {
-		DBGLOG(MEM, WARN, "%s: StaRec is NULL, skip!\n", __func__);
+		log_dbg(MEM, WARN, "%s: StaRec is NULL, skip!\n", __func__);
 		return;
 	}
 
 	if (!prStaRec->fgIsInUse) {
-		DBGLOG(MEM, WARN, "%s: StaRec[%u] is not in use, skip!\n",
+		log_dbg(MEM, WARN, "%s: StaRec[%u] is not in use, skip!\n",
 			__func__, prStaRec->ucIndex);
 		return;
 	}
@@ -972,10 +969,8 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 
 	/* To do: exception handle */
 	if (!prCmdContent) {
-#define __STR_FMT__ \
-"%s: CMD_ID_UPDATE_STA_RECORD command allocation failed\n"
-		DBGLOG(MEM, WARN, __STR_FMT__, __func__);
-#undef __STR_FMT__
+		log_dbg(MEM, WARN, "%s: CMD_ID_UPDATE_STA_RECORD command allocation failed\n",
+			__func__);
 
 		return;
 	}
@@ -1110,19 +1105,15 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	} else
 		prCmdContent->ucRtsPolicy = RTS_POLICY_LEGACY;
 
-#define __STR_FMT__ \
-"Update StaRec[%u] WIDX[%u] State[%u] Type[%u] BssIdx[%u] AID[%u]\n"
-
-	DBGLOG(REQ, INFO, __STR_FMT__,
+	log_dbg(REQ, INFO, "Update StaRec[%u] WIDX[%u] State[%u] Type[%u] BssIdx[%u] AID[%u]\n",
 		prCmdContent->ucStaIndex,
 		prCmdContent->ucWlanIndex,
 		prCmdContent->ucStaState,
 		prCmdContent->ucStaType,
 		prCmdContent->ucBssIndex,
 		prCmdContent->u2AssocId);
-#undef __STR_FMT__
 
-	DBGLOG(REQ, INFO, "Update StaRec[%u] QoS[%u] UAPSD[%u]\n",
+	log_dbg(REQ, INFO, "Update StaRec[%u] QoS[%u] UAPSD[%u]\n",
 		prCmdContent->ucStaIndex,
 		prCmdContent->ucIsQoS,
 		prCmdContent->ucIsUapsdSupported);
@@ -1143,7 +1134,7 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	cnmMemFree(prAdapter, prCmdContent);
 
 	if (rStatus != WLAN_STATUS_PENDING) {
-		DBGLOG(MEM, WARN,
+		log_dbg(MEM, WARN,
 			"%s: CMD_ID_UPDATE_STA_RECORD result 0x%08x\n",
 			__func__, rStatus);
 	}
@@ -1187,7 +1178,7 @@ cnmStaSendRemoveCmd(struct ADAPTER *prAdapter,
 	    );
 
 	if (rStatus != WLAN_STATUS_PENDING) {
-		DBGLOG(MEM, WARN,
+		log_dbg(MEM, WARN,
 			"%s: CMD_ID_REMOVE_STA_RECORD result 0x%08x\n",
 			__func__, rStatus);
 	}
@@ -1252,7 +1243,7 @@ void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx)
 	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIdx);
 
 	if (!prStaRec) {
-		DBGLOG(SW4, INFO, "Invalid StaRec index[%u], skip dump!\n",
+		log_dbg(SW4, INFO, "Invalid StaRec index[%u], skip dump!\n",
 			ucStaRecIdx);
 		return;
 	}
@@ -1262,7 +1253,7 @@ void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx)
 
 	ASSERT(prBssInfo);
 
-	DBGLOG(SW4, INFO, "============= DUMP STA[%u] ===========\n",
+	log_dbg(SW4, INFO, "============= DUMP STA[%u] ===========\n",
 		ucStaRecIdx);
 	/* [1]STA_IDX                  [2]BSS_IDX
 	 * [3]MAC                      [4]TYPE
@@ -1286,10 +1277,7 @@ void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx)
 	 * [39]aucRxMcsBitmask
 	 */
 
-#define __STR_FMT__ \
-"[1][%u],[2][%u],[3][%pM],[4][%s %s],[5][%u],[6][%u],[7][%u],[8][%u],[9][%u/%u],[10][%u]\n"
-
-	DBGLOG(SW4, INFO, __STR_FMT__,
+	log_dbg(SW4, INFO, "[1][%u],[2][%u],[3][%pM],[4][%s %s],[5][%u],[6][%u],[7][%u],[8][%u],[9][%u/%u],[10][%u]\n",
 		prStaRec->ucIndex,
 		prStaRec->ucBssIndex,
 		MAC2STR(prStaRec->aucMacAddr),
@@ -1302,12 +1290,8 @@ void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx)
 		(prStaRec->ucDesiredPhyTypeSet
 			& PHY_TYPE_SET_802_11AC) ? TRUE : FALSE,
 		prStaRec->u2AssocId);
-#undef __STR_FMT__
 
-#define __STR_FMT__ \
-"[11][%u],[12][%u],[13][%u],[14][0x%x],[15][0x%x],[16][0x%x],[17][0x%x],[18][0x%x],[19][0x%x],[20][0x%x]\n"
-
-	DBGLOG(SW4, INFO, __STR_FMT__,
+	log_dbg(SW4, INFO, "[11][%u],[12][%u],[13][%u],[14][0x%x],[15][0x%x],[16][0x%x],[17][0x%x],[18][0x%x],[19][0x%x],[20][0x%x]\n",
 		prStaRec->fgIsWmmSupported,
 		prStaRec->fgIsUapsdSupported,
 		secIsProtectedBss(prAdapter, prBssInfo),
@@ -1318,12 +1302,8 @@ void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx)
 		prStaRec->u2OperationalRateSet,
 		prStaRec->u2DesiredNonHTRateSet,
 		prStaRec->u2HwDefaultFixedRateCode);
-#undef __STR_FMT__
 
-#define __STR_FMT__ \
-"[21][0x%x],[22][0x%x],[23][0x%x],[24][0x%x],[25][%u],[26][0x%x],[27][0x%x],[28][0x%x],[29][0x%x],[30][%u]\n"
-
-	DBGLOG(SW4, TRACE, __STR_FMT__,
+	log_dbg(SW4, TRACE, "[21][0x%x],[22][0x%x],[23][0x%x],[24][0x%x],[25][%u],[26][0x%x],[27][0x%x],[28][0x%x],[29][0x%x],[30][%u]\n",
 		prStaRec->u2HtCapInfo,
 		prStaRec->u2HtExtendedCap,
 		prStaRec->u4TxBeamformingCap,
@@ -1334,12 +1314,8 @@ void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx)
 		prStaRec->u2VhtRxMcsMap,
 		prStaRec->ucVhtOpMode,
 		prStaRec->ucRCPI);
-#undef __STR_FMT__
 
-#define __STR_FMT__ \
-"[31][%u],[32][%u],[33][%u],[34][%u/%u],[35][%u:%u:%u:%u],[36][%x/%x],[37][%u],[38][%u/%u],[39][0x%x][0x%x]\n"
-
-	DBGLOG(SW4, INFO, __STR_FMT__,
+	log_dbg(SW4, INFO, "[31][%u],[32][%u],[33][%u],[34][%u/%u],[35][%u:%u:%u:%u],[36][%x/%x],[37][%u],[38][%u/%u],[39][0x%x][0x%x]\n",
 		prStaRec->fgIsInPS,
 		prStaRec->fgIsTxAllowed,
 		prStaRec->fgIsTxKeyReady,
@@ -1356,14 +1332,10 @@ void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx)
 		prStaRec->ucFreeQuotaForNonDelivery,
 		prStaRec->aucRxMcsBitmask[0],
 		prStaRec->aucRxMcsBitmask[1]);
-#undef __STR_FMT__
 
 	for (i = 0; i < CFG_RX_MAX_BA_TID_NUM; i++) {
 		if (prStaRec->aprRxReorderParamRefTbl[i]) {
-#define __STR_FMT__ \
-"TID[%u],Valid[%u],WinStart/End[%u/%u],WinSize[%u],ReOrderQueLen[%u],Bubble Exist[%u],SN[%u]\n"
-
-			DBGLOG(SW4, INFO, __STR_FMT__,
+			log_dbg(SW4, INFO, "TID[%u],Valid[%u],WinStart/End[%u/%u],WinSize[%u],ReOrderQueLen[%u],Bubble Exist[%u],SN[%u]\n",
 				prStaRec->aprRxReorderParamRefTbl[i]
 					->ucTid,
 				prStaRec->aprRxReorderParamRefTbl[i]
@@ -1380,10 +1352,9 @@ void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx)
 					->fgHasBubble,
 				prStaRec->aprRxReorderParamRefTbl[i]
 					->u2FirstBubbleSn);
-#undef __STR_FMT__
 		}
 	}
-	DBGLOG(SW4, INFO, "============= DUMP END ===========\n");
+	log_dbg(SW4, INFO, "============= DUMP END ===========\n");
 }
 
 uint32_t cnmDumpMemoryStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf,
@@ -1404,27 +1375,23 @@ uint32_t cnmDumpMemoryStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf,
 
 	prBufInfo = &prAdapter->rMsgBufInfo;
 
-#define __STR_FMT__ \
-"MSG memory count: alloc[%u] free[%u] null[%u] bitmap[0x%08x]\n"
-
-	LOGBUF(pucBuf, u4Max, u4Len, __STR_FMT__,
+	LOGBUF(pucBuf, u4Max, u4Len,
+		"MSG memory count: alloc[%u] free[%u] null[%u] bitmap[0x%08x]\n"
+		,
 		prBufInfo->u4AllocCount,
 		prBufInfo->u4FreeCount,
 		prBufInfo->u4AllocNullCount,
 		(uint32_t) prBufInfo->rFreeBlocksBitmap);
-#undef __STR_FMT__
 
 	prBufInfo = &prAdapter->rMgtBufInfo;
 
-#define __STR_FMT__ \
-"MGT memory count: alloc[%u] free[%u] null[%u] bitmap[0x%08x]\n"
-
-	LOGBUF(pucBuf, u4Max, u4Len, __STR_FMT__,
+	LOGBUF(pucBuf, u4Max, u4Len,
+		"MGT memory count: alloc[%u] free[%u] null[%u] bitmap[0x%08x]\n"
+		,
 		prBufInfo->u4AllocCount,
 		prBufInfo->u4FreeCount,
 		prBufInfo->u4AllocNullCount,
 		(uint32_t) prBufInfo->rFreeBlocksBitmap);
-#undef __STR_FMT__
 
 	LOGBUF(pucBuf, u4Max, u4Len, "============= DUMP END =============\n");
 
@@ -1558,7 +1525,7 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 
 	prAisBssInfo = prAdapter->prAisBssInfo;
 	if (prAisBssInfo == NULL) {
-		DBGLOG(MEM, ERROR, "%s: prAisBssInfo is NULL!\n"
+		log_dbg(MEM, ERROR, "%s: prAisBssInfo is NULL!\n"
 				, __func__);
 		return TDLS_STATUS_FAIL;
 	}

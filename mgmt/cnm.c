@@ -210,13 +210,13 @@ static struct DBDC_INFO_T g_rDbdcInfo;
 	}
 
 #define DBDC_FSM_MSG_WRONG_EVT(_eEvent) \
-	DBGLOG(CNM, WARN, \
+	log_dbg(CNM, WARN, \
 		"[DBDC] Should not reveice evt %u during state %u\n", \
 		_eEvent, \
 		g_rDbdcInfo.eDbdcFsmCurrState)
 
 #define DBDC_FSM_MSG_ERROR_EVT(_eEvent) \
-	DBGLOG(CNM, ERROR, "[DBDC] Reveice evt %u during state %u\n", \
+	log_dbg(CNM, ERROR, "[DBDC] Reveice evt %u during state %u\n", \
 		_eEvent, \
 		g_rDbdcInfo.eDbdcFsmCurrState)
 
@@ -461,7 +461,7 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 	if (cnmDBDCIsReqPeivilegeLock()) {
 		LINK_INSERT_TAIL(&g_rDbdcInfo.rPendingMsgList,
 				 &prMsgHdr->rLinkEntry);
-		DBGLOG(CNM, INFO,
+		log_dbg(CNM, INFO,
 		       "[DBDC] ChReq: queued BSS %u Token %u REQ\n",
 		       prMsgChReq->ucBssIndex, prMsgChReq->ucTokenID);
 		return;
@@ -475,7 +475,7 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 
 	/* To do: exception handle */
 	if (!prCmdBody) {
-		DBGLOG(CNM, ERROR,
+		log_dbg(CNM, ERROR,
 		       "ChReq: fail to get buf (net=%d, token=%d)\n",
 		       prMsgChReq->ucBssIndex, prMsgChReq->ucTokenID);
 
@@ -483,7 +483,7 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 		return;
 	}
 
-	DBGLOG(CNM, INFO,
+	log_dbg(CNM, INFO,
 	       "ChReq net=%d token=%d b=%d c=%d s=%d w=%d s1=%d s2=%d\n",
 	       prMsgChReq->ucBssIndex, prMsgChReq->ucTokenID,
 	       prMsgChReq->eRfBand, prMsgChReq->ucPrimaryChannel,
@@ -522,7 +522,7 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 
 	/* For monkey testing 20110901 */
 	if (prCmdBody->ucBssIndex > prAdapter->ucHwBssIdNum)
-		DBGLOG(CNM, ERROR,
+		log_dbg(CNM, ERROR,
 		       "CNM: ChReq with wrong netIdx=%d\n\n",
 		       prCmdBody->ucBssIndex);
 
@@ -599,13 +599,9 @@ void cnmChMngrAbortPrivilege(struct ADAPTER *prAdapter,
 					&g_rDbdcInfo.rPendingMsgList,
 					&prPendingMsg->rMsgHdr.rLinkEntry);
 
-#define __STR_FMT__ \
-"[DBDC] ChAbort: remove BSS %u Token %u REQ)\n"
-
-				DBGLOG(CNM, INFO, __STR_FMT__,
+				log_dbg(CNM, INFO, "[DBDC] ChAbort: remove BSS %u Token %u REQ)\n",
 					prPendingMsg->ucBssIndex,
 					prPendingMsg->ucTokenID);
-#undef __STR_FMT__
 
 				cnmMemFree(prAdapter, prPendingMsg);
 				cnmMemFree(prAdapter, prMsgHdr);
@@ -632,7 +628,7 @@ void cnmChMngrAbortPrivilege(struct ADAPTER *prAdapter,
 
 	/* To do: exception handle */
 	if (!prCmdBody) {
-		DBGLOG(CNM, ERROR,
+		log_dbg(CNM, ERROR,
 		       "ChAbort: fail to get buf (net=%d, token=%d)\n",
 		       prMsgChAbort->ucBssIndex, prMsgChAbort->ucTokenID);
 
@@ -646,7 +642,7 @@ void cnmChMngrAbortPrivilege(struct ADAPTER *prAdapter,
 	prCmdBody->ucDBDCBand = (uint8_t)
 				prMsgChAbort->eDBDCBand;
 
-	DBGLOG(CNM, INFO, "ChAbort net=%d token=%d dbdc=%u\n",
+	log_dbg(CNM, INFO, "ChAbort net=%d token=%d dbdc=%u\n",
 	       prCmdBody->ucBssIndex, prCmdBody->ucTokenID,
 	       prCmdBody->ucDBDCBand);
 
@@ -655,7 +651,7 @@ void cnmChMngrAbortPrivilege(struct ADAPTER *prAdapter,
 
 	/* For monkey testing 20110901 */
 	if (prCmdBody->ucBssIndex > prAdapter->ucHwBssIdNum)
-		DBGLOG(CNM, ERROR,
+		log_dbg(CNM, ERROR,
 		       "CNM: ChAbort with wrong netIdx=%d\n\n",
 		       prCmdBody->ucBssIndex);
 
@@ -721,14 +717,14 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 
 	/* To do: exception handle */
 	if (!prChResp) {
-		DBGLOG(CNM, ERROR,
+		log_dbg(CNM, ERROR,
 		       "ChGrant: fail to get buf (net=%d, token=%d)\n",
 		       prEventBody->ucBssIndex, prEventBody->ucTokenID);
 
 		return;
 	}
 
-	DBGLOG(CNM, INFO,
+	log_dbg(CNM, INFO,
 	       "ChGrant net=%d token=%d ch=%d sco=%d u4GrantInterval=%d\n",
 	       prEventBody->ucBssIndex, prEventBody->ucTokenID,
 	       prEventBody->ucPrimaryChannel,
@@ -798,7 +794,7 @@ void cnmRadarDetectEvent(IN struct ADAPTER *prAdapter,
 	struct MSG_P2P_RADAR_DETECT *prP2pRddDetMsg;
 	uint8_t ucBssIndex;
 
-	DBGLOG(CNM, INFO, "cnmRadarDetectEvent.\n");
+	log_dbg(CNM, INFO, "cnmRadarDetectEvent.\n");
 
 	prEventBody = (struct EVENT_RDD_REPORT *)(
 			      prEvent->aucBuffer);
@@ -808,7 +804,7 @@ void cnmRadarDetectEvent(IN struct ADAPTER *prAdapter,
 				     RAM_TYPE_MSG, sizeof(*prP2pRddDetMsg));
 
 	if (!prP2pRddDetMsg) {
-		DBGLOG(CNM, ERROR,
+		log_dbg(CNM, ERROR,
 		       "cnmMemAlloc for prP2pRddDetMsg failed!\n");
 		return;
 	}
@@ -873,7 +869,7 @@ void cnmCsaDoneEvent(IN struct ADAPTER *prAdapter,
 	struct MSG_P2P_CSA_DONE *prP2pCsaDoneMsg;
 	uint8_t ucBssIndex;
 
-	DBGLOG(CNM, INFO, "cnmCsaDoneEvent.\n");
+	log_dbg(CNM, INFO, "cnmCsaDoneEvent.\n");
 
 	prP2pCsaDoneMsg = (struct MSG_P2P_CSA_DONE *)
 			  cnmMemAlloc(
@@ -881,7 +877,7 @@ void cnmCsaDoneEvent(IN struct ADAPTER *prAdapter,
 				  RAM_TYPE_MSG, sizeof(*prP2pCsaDoneMsg));
 
 	if (!prP2pCsaDoneMsg) {
-		DBGLOG(CNM, ERROR,
+		log_dbg(CNM, ERROR,
 		       "cnmMemAlloc for prP2pCsaDoneMsg failed!\n");
 		return;
 	}
@@ -973,7 +969,7 @@ u_int8_t cnmAisInfraChannelFixed(struct ADAPTER
 
 	if (prWifiVar->u4ScanCtrl &
 	    SCN_CTRL_DEFAULT_SCAN_CTRL) {
-		/* DBGLOG(CNM, INFO, "ByPass AIS channel Fix check\n");*/
+		/* log_dbg(CNM, INFO, "ByPass AIS channel Fix check\n");*/
 		return FALSE;
 	}
 
@@ -981,7 +977,7 @@ u_int8_t cnmAisInfraChannelFixed(struct ADAPTER
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 #if 0
-		DBGLOG(INIT, INFO,
+		log_dbg(INIT, INFO,
 		       "%s BSS[%u] active[%u] netType[%u]\n",
 		       __func__, i, prBssInfo->fgIsNetActive,
 		       prBssInfo->eNetworkType);
@@ -1537,12 +1533,8 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 		if (ucBssIndex >= prAdapter->ucHwBssIdNum) {
 			/* there is no NETWORK_TYPE_MBSS used before */
 
-#define __STR_FMT__ \
-"[Warning] too much Bss in use, take reserve OwnMac(%d)for usage!\n"
-
-			DBGLOG(INIT, WARN, __STR_FMT__,
+			log_dbg(INIT, WARN, "[Warning] too much Bss in use, take reserve OwnMac(%d)for usage!\n",
 				ucOwnMacIdx);
-#undef __STR_FMT__
 			ucOwnMacIdx = 0;
 		}
 
@@ -1649,7 +1641,7 @@ void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 		break;
 
 	default:
-		DBGLOG(CNM, ERROR, "[DBDC]Incorrect DBDC mode %u\n",
+		log_dbg(CNM, ERROR, "[DBDC]Incorrect DBDC mode %u\n",
 		       prAdapter->rWifiVar.eDbdcMode);
 		break;
 	}
@@ -1695,7 +1687,7 @@ static u_int8_t cnmDbdcIsAGConcurrent(
 			fgAGConcurrent = TRUE;	/*A+G*/
 	}
 
-	DBGLOG(CNM, INFO, "[DBDC] BSS AG[%u.%u.%u.%u][%u]\n",
+	log_dbg(CNM, INFO, "[DBDC] BSS AG[%u.%u.%u.%u][%u]\n",
 	       eBssBand[BSSID_0],
 	       eBssBand[BSSID_1],
 	       eBssBand[BSSID_2],
@@ -1753,16 +1745,12 @@ static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
 					cnmDbdcOpModeChangeDoneCallback :
 					NULL);
 
-#define __STR_FMT__ \
-"[DBDC] BSS index[%u] to BW %u NSS %u Mode:%s, status %u\n"
-
-			DBGLOG(CNM, INFO, __STR_FMT__,
+			log_dbg(CNM, INFO, "[DBDC] BSS index[%u] to BW %u NSS %u Mode:%s, status %u\n",
 				ucBssIndex,
 				ucOpBw,
 				ucNss,
 				IS_BSS_CLIENT(prBssInfo) ? "Client" : "Master",
 				eBssOpmodeChange);
-#undef __STR_FMT__
 
 			switch (eBssOpmodeChange) {
 			case OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_WAIT:
@@ -1822,7 +1810,7 @@ void cnmDbdcOpModeChangeDoneCallback(
 		g_rDbdcInfo.eBssOpModeState[ucBssIndex] =
 			ENUM_OPMODE_STATE_FAIL;
 
-	DBGLOG(CNM, INFO, "[DBDC] OPMODE STATE [%u/%u/%u/%u]\n",
+	log_dbg(CNM, INFO, "[DBDC] OPMODE STATE [%u/%u/%u/%u]\n",
 	       g_rDbdcInfo.eBssOpModeState[BSSID_0],
 	       g_rDbdcInfo.eBssOpModeState[BSSID_1],
 	       g_rDbdcInfo.eBssOpModeState[BSSID_2],
@@ -1873,7 +1861,7 @@ void cnmUpdateDbdcSetting(IN struct ADAPTER *prAdapter,
 	struct CMD_DBDC_SETTING *prCmdBody;
 	uint32_t				rStatus = WLAN_STATUS_SUCCESS;
 
-	DBGLOG(CNM, INFO, "[DBDC] %s\n",
+	log_dbg(CNM, INFO, "[DBDC] %s\n",
 	       fgDbdcEn ? "Enable" : "Disable");
 
 	/* Send event to FW */
@@ -1924,7 +1912,7 @@ cnmDbdcFsmSteps(
 	g_rDbdcInfo.eDbdcFsmCurrState = eNextState;
 	g_rDbdcInfo.eDbdcFsmNextState = eNextState;
 
-	DBGLOG(CNM, INFO, "[DBDC] event %d state %d->%d\n",
+	log_dbg(CNM, INFO, "[DBDC] event %d state %d->%d\n",
 	       eEvent,
 	       g_rDbdcInfo.eDbdcFsmPrevState,
 	       g_rDbdcInfo.eDbdcFsmCurrState);
@@ -1956,7 +1944,7 @@ static void
 cnmDBDCFsmActionReqPeivilegeLock(void)
 {
 	g_rDbdcInfo.fgReqPrivelegeLock = TRUE;
-	DBGLOG(CNM, INFO, "[DBDC] ReqPrivelege Lock!!\n");
+	log_dbg(CNM, INFO, "[DBDC] ReqPrivelege Lock!!\n");
 }
 
 static void
@@ -1966,7 +1954,7 @@ cnmDBDCFsmActionReqPeivilegeUnLock(IN struct ADAPTER *prAdapter)
 	struct MSG_HDR *prMsgHdr;
 
 	g_rDbdcInfo.fgReqPrivelegeLock = FALSE;
-	DBGLOG(CNM, INFO, "[DBDC] ReqPrivelege Unlock!!\n");
+	log_dbg(CNM, INFO, "[DBDC] ReqPrivelege Unlock!!\n");
 
 	while (!LINK_IS_EMPTY(&g_rDbdcInfo.rPendingMsgList)) {
 
@@ -1976,13 +1964,9 @@ cnmDBDCFsmActionReqPeivilegeUnLock(IN struct ADAPTER *prAdapter)
 		if (prMsgHdr) {
 			prPendingMsg = (struct MSG_CH_REQ *)prMsgHdr;
 
-#define __STR_FMT__ \
-"[DBDC] ChReq: send queued REQ of BSS %u Token %u\n"
-
-			DBGLOG(CNM, INFO, __STR_FMT__,
+			log_dbg(CNM, INFO, "[DBDC] ChReq: send queued REQ of BSS %u Token %u\n",
 				prPendingMsg->ucBssIndex,
 				prPendingMsg->ucTokenID);
-#undef __STR_FMT__
 
 			cnmChMngrRequestPrivilege(prAdapter,
 						  &prPendingMsg->rMsgHdr);
@@ -2017,7 +2001,7 @@ static void
 cnmDbdcFsmEntryFunc_ENABLE_GUARD(IN struct ADAPTER *prAdapter)
 {
 	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer)) {
-		DBGLOG(CNM, WARN,
+		log_dbg(CNM, WARN,
 		       "[DBDC] Guard Timer type %u should not exist, stop it\n",
 		       g_rDbdcInfo.eDdbcGuardTimerType);
 		cnmTimerStopTimer(prAdapter,
@@ -2038,7 +2022,7 @@ static void
 cnmDbdcFsmEntryFunc_DISABLE_GUARD(IN struct ADAPTER *prAdapter)
 {
 	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer)) {
-		DBGLOG(CNM, WARN,
+		log_dbg(CNM, WARN,
 		       "[DBDC] Guard Timer type %u should not exist, stop it\n",
 		       g_rDbdcInfo.eDdbcGuardTimerType);
 		cnmTimerStopTimer(prAdapter,
@@ -2226,12 +2210,8 @@ cnmDbdcFsmEventHandler_ENABLE_IDLE(
 	case DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG:
 		/* start DBDC disable countdown timer */
 		if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer)) {
-#define __STR_FMT__ \
-"[DBDC] Guard Timer type %u should not exist, stop it\n"
-
-			DBGLOG(CNM, WARN, __STR_FMT__,
+			log_dbg(CNM, WARN, "[DBDC] Guard Timer type %u should not exist, stop it\n",
 				g_rDbdcInfo.eDdbcGuardTimerType);
-#undef __STR_FMT__
 			cnmTimerStopTimer(prAdapter,
 					  &g_rDbdcInfo.rDbdcGuardTimer);
 			g_rDbdcInfo.eDdbcGuardTimerType =
@@ -2502,7 +2482,7 @@ void cnmGetDbdcCapability(
 		break;
 	}
 
-	DBGLOG(CNM, INFO,
+	log_dbg(CNM, INFO,
 	       "[DBDC] BSS%u RF%u CH%u Nss%u get Wmm%u Nss%u\n",
 	       ucBssIndex,
 	       eRfBand,
@@ -2555,10 +2535,10 @@ void cnmDbdcEnableDecision(
 	IN uint8_t		ucChangedBssIndex,
 	IN enum ENUM_BAND	eRfBand)
 {
-	DBGLOG(CNM, INFO, "[DBDC] BSS %u Rf %u", ucChangedBssIndex, eRfBand);
+	log_dbg(CNM, INFO, "[DBDC] BSS %u Rf %u", ucChangedBssIndex, eRfBand);
 
 	if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DYNAMIC) {
-		DBGLOG(CNM, INFO, "[DBDC Debug] DBDC Mode %u Return",
+		log_dbg(CNM, INFO, "[DBDC Debug] DBDC Mode %u Return",
 		       prAdapter->rWifiVar.eDbdcMode);
 		return;
 	}
@@ -2568,7 +2548,7 @@ void cnmDbdcEnableDecision(
 		    g_rDbdcInfo.eDdbcGuardTimerType ==
 		    ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME) {
 			/* update timer for connection retry */
-			DBGLOG(CNM, INFO, "[DBDC] DBDC guard time extend\n");
+			log_dbg(CNM, INFO, "[DBDC] DBDC guard time extend\n");
 			cnmTimerStopTimer(prAdapter,
 					  &g_rDbdcInfo.rDbdcGuardTimer);
 			cnmTimerStartTimer(prAdapter,
@@ -2581,12 +2561,12 @@ void cnmDbdcEnableDecision(
 	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer) &&
 		g_rDbdcInfo.eDdbcGuardTimerType
 		== ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME) {
-		DBGLOG(CNM, INFO, "[DBDC Debug] Guard Time Return");
+		log_dbg(CNM, INFO, "[DBDC Debug] Guard Time Return");
 		return;
 	}
 
 	if (eRfBand != BAND_2G4 && eRfBand != BAND_5G) {
-		DBGLOG(CNM, INFO, "[DBDC Debug] Wrong RF band Return");
+		log_dbg(CNM, INFO, "[DBDC Debug] Wrong RF band Return");
 		return;
 	}
 
@@ -2608,12 +2588,12 @@ void cnmDbdcDisableDecision(IN struct ADAPTER
 			    *prAdapter,
 			    IN uint8_t ucChangedBssIndex)
 {
-	DBGLOG(CNM, INFO, "[DBDC Debug] BSS %u",
+	log_dbg(CNM, INFO, "[DBDC Debug] BSS %u",
 	       ucChangedBssIndex);
 
 	if (prAdapter->rWifiVar.eDbdcMode !=
 	    ENUM_DBDC_MODE_DYNAMIC) {
-		DBGLOG(CNM, INFO, "[DBDC Debug] DBDC Mode %u Return",
+		log_dbg(CNM, INFO, "[DBDC Debug] DBDC Mode %u Return",
 		       prAdapter->rWifiVar.eDbdcMode);
 		return;
 	}
@@ -2623,7 +2603,7 @@ void cnmDbdcDisableDecision(IN struct ADAPTER
 		    g_rDbdcInfo.eDdbcGuardTimerType ==
 		    ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME) {
 			/* update timer for connection retry */
-			DBGLOG(CNM, INFO, "[DBDC] DBDC guard time extend\n");
+			log_dbg(CNM, INFO, "[DBDC] DBDC guard time extend\n");
 			cnmTimerStopTimer(prAdapter,
 					  &g_rDbdcInfo.rDbdcGuardTimer);
 			cnmTimerStartTimer(prAdapter,
@@ -2636,7 +2616,7 @@ void cnmDbdcDisableDecision(IN struct ADAPTER
 	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer) &&
 	    g_rDbdcInfo.eDdbcGuardTimerType ==
 	    ENUM_DBDC_GUARD_TIMER_DISABLE_COUNT_DOWN) {
-		DBGLOG(CNM, INFO,
+		log_dbg(CNM, INFO,
 		       "[DBDC Debug] Disable Countdown Return");
 		return;
 	}
@@ -2644,7 +2624,7 @@ void cnmDbdcDisableDecision(IN struct ADAPTER
 	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer) &&
 	    g_rDbdcInfo.eDdbcGuardTimerType ==
 	    ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME) {
-		DBGLOG(CNM, INFO, "[DBDC Debug] Guard Time Return");
+		log_dbg(CNM, INFO, "[DBDC Debug] Guard Time Return");
 		return;
 	}
 
@@ -2666,12 +2646,12 @@ void cnmDbdcGuardTimerCallback(IN struct ADAPTER
 			       *prAdapter,
 			       IN unsigned long plParamPtr)
 {
-	DBGLOG(CNM, INFO, "[DBDC Debug] Timer %u",
+	log_dbg(CNM, INFO, "[DBDC Debug] Timer %u",
 	       g_rDbdcInfo.eDdbcGuardTimerType);
 
 	if (prAdapter->rWifiVar.eDbdcMode !=
 	    ENUM_DBDC_MODE_DYNAMIC) {
-		DBGLOG(CNM, INFO, "[DBDC Debug] DBDC Mode %u Return",
+		log_dbg(CNM, INFO, "[DBDC Debug] DBDC Mode %u Return",
 		       prAdapter->rWifiVar.eDbdcMode);
 		return;
 	}
@@ -2693,7 +2673,7 @@ void cnmDbdcGuardTimerCallback(IN struct ADAPTER
 				       DBDC_FSM_EVENT_DISABLE_COUNT_DOWN_TO);
 
 	} else
-		DBGLOG(CNM, ERROR, "[DBDC] WRONG DBDC TO TYPE %u\n",
+		log_dbg(CNM, ERROR, "[DBDC] WRONG DBDC TO TYPE %u\n",
 		       g_rDbdcInfo.eDdbcGuardTimerType);
 }
 
@@ -2739,7 +2719,7 @@ void cnmDbdcEventHwSwitchDone(IN struct ADAPTER
 		   ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE) {
 		fgDbdcEn = FALSE;
 	} else {
-		DBGLOG(CNM, ERROR,
+		log_dbg(CNM, ERROR,
 		       "[DBDC] switch event happen in state %u\n",
 		       g_rDbdcInfo.eDbdcFsmCurrState);
 		return;
