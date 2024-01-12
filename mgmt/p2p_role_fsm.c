@@ -2535,8 +2535,11 @@ void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 	/* In case the network is already activated, we need to re-activate
 	 * the network. Otherwise, the connection may be failed in dbdc cases.
 	 */
-	if (IS_NET_ACTIVE(prAdapter, bss->ucBssIndex))
-		nicDeactivateNetwork(prAdapter, bss->ucBssIndex);
+	if (IS_NET_ACTIVE(prAdapter, bss->ucBssIndex)) {
+		p2pDeactivateAllLink(prAdapter,
+			prP2pRoleFsmInfo,
+			TRUE);
+	}
 
 	SET_NET_PWR_STATE_ACTIVE(prAdapter, bss->ucBssIndex);
 

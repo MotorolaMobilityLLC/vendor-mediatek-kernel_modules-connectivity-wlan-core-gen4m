@@ -360,34 +360,14 @@ p2pRoleStateAbort_GC_JOIN(struct ADAPTER *prAdapter,
 	do {
 
 		if (prJoinInfo->fgIsJoinComplete == FALSE) {
-			struct MSG_SAA_FSM_ABORT *prJoinAbortMsg =
-				(struct MSG_SAA_FSM_ABORT *) NULL;
-
-			prJoinAbortMsg =
-				(struct MSG_SAA_FSM_ABORT *) cnmMemAlloc(
-					prAdapter,
-					RAM_TYPE_MSG,
-					sizeof(struct MSG_SAA_FSM_ABORT));
-			if (!prJoinAbortMsg) {
-				DBGLOG(P2P, TRACE,
-					"Fail to allocate join abort message buffer\n");
-				ASSERT(FALSE);
-				return;
-			}
-
-			prJoinAbortMsg->rMsgHdr.eMsgId = MID_P2P_SAA_FSM_ABORT;
-			prJoinAbortMsg->ucSeqNum = prJoinInfo->ucSeqNumOfReqMsg;
-			prJoinAbortMsg->prStaRec = prJoinInfo->prTargetStaRec;
-
 			/* Reset the flag to clear target BSS state */
 			p2pTargetBssDescResetConnecting(prAdapter,
 				prP2pRoleFsmInfo);
 
-			mboxSendMsg(prAdapter,
-				MBOX_ID_0,
-				(struct MSG_HDR *) prJoinAbortMsg,
-				MSG_SEND_METHOD_BUF);
-
+			p2pLinkStaRecFree(prAdapter,
+				prJoinInfo->prTargetStaRec,
+				GET_BSS_INFO_BY_INDEX(prAdapter,
+					prP2pRoleFsmInfo->ucBssIndex));
 		}
 
 		/* Stop Join Timer. */
