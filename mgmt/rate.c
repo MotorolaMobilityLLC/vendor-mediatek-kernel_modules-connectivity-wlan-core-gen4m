@@ -188,10 +188,6 @@ rateGetRateSetFromIEs(IN struct IE_SUPPORTED_RATE *prIeSupportedRate,
 	uint8_t ucRate;
 	uint32_t i, j;
 
-	ASSERT(pu2OperationalRateSet);
-	ASSERT(pu2BSSBasicRateSet);
-	ASSERT(pfgIsUnknownBSSBasicRate);
-
 	if (prIeSupportedRate) {
 		/* NOTE(Kevin): Buffalo WHR-G54S's supported rate set
 		 *   IE exceed 8.
@@ -293,11 +289,6 @@ rateGetDataRatesFromRateSet(IN uint16_t u2OperationalRateSet,
 {
 	uint32_t i, j;
 
-	ASSERT(pucDataRates);
-	ASSERT(pucDataRatesLen);
-
-	ASSERT(u2BSSBasicRateSet == (u2OperationalRateSet & u2BSSBasicRateSet));
-
 	for (i = RATE_1M_SW_INDEX, j = 0; i < RATE_NUM_SW; i++) {
 		if (u2OperationalRateSet & BIT(i)) {
 
@@ -332,8 +323,6 @@ u_int8_t rateGetHighestRateIndexFromRateSet(IN uint16_t u2RateSet,
 {
 	int32_t i;
 
-	ASSERT(pucHighestRateIndex);
-
 	for (i = RATE_54M_SW_INDEX; i >= RATE_1M_SW_INDEX; i--) {
 		if (u2RateSet & BIT(i)) {
 			*pucHighestRateIndex = (uint8_t) i;
@@ -360,8 +349,6 @@ u_int8_t rateGetLowestRateIndexFromRateSet(IN uint16_t u2RateSet,
 					   OUT uint8_t *pucLowestRateIndex)
 {
 	uint32_t i;
-
-	ASSERT(pucLowestRateIndex);
 
 	for (i = RATE_1M_SW_INDEX; i <= RATE_54M_SW_INDEX; i++) {
 		if (u2RateSet & BIT(i)) {
