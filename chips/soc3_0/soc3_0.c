@@ -1111,6 +1111,7 @@ int soc3_0_Trigger_fw_assert(void)
 	ret = soc3_0_CheckBusHang();
 #endif
 	if (ret != 0) {
+		g_IsWfsysBusHang = TRUE;
 		return ret;
 	} else {
 		DBGLOG(HAL, INFO, "Trigger fw assert start.\n");
