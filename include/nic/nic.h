@@ -149,6 +149,12 @@ enum ENUM_ECO_VER {
 	ECO_VER_3
 };
 
+enum ENUM_REMOVE_BY_MSDU_TPYE {
+	MSDU_REMOVE_BY_WLAN_INDEX = 0,
+	MSDU_REMOVE_BY_BSS_INDEX,
+	ENUM_REMOVE_BY_MSDU_TPYE_NUM
+};
+
 /* Test mode bitmask of disable flag */
 #define TEST_MODE_DISABLE_ONLINE_SCAN  BIT(0)
 #define TEST_MODE_DISABLE_ROAMING      BIT(1)
@@ -239,8 +245,8 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(
 	IN struct ADAPTER *prAdapter, IN uint8_t ucWlanIndex,
 	IN uint8_t ucSeqNum);
 
-void nicFreePendingTxMsduInfoByBssIdx(IN struct ADAPTER
-				      *prAdapter, IN uint8_t ucBssIndex);
+void nicFreePendingTxMsduInfo(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucIndex, IN enum ENUM_REMOVE_BY_MSDU_TPYE ucFreeType);
 
 uint8_t nicIncreaseCmdSeqNum(IN struct ADAPTER *prAdapter);
 
