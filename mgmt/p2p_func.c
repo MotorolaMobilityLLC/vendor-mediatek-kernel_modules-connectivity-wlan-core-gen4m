@@ -3010,6 +3010,10 @@ p2pFuncDisconnect(IN struct ADAPTER *prAdapter,
 			    P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 					prP2pBssInfo->u4PrivateData);
 
+#if CFG_TC10_FEATURE
+			/* Store last sta deauth reason */
+			prP2pBssInfo->u2DeauthReason = u2ReasonCode;
+#endif
 			kalP2PGOStationUpdate(prAdapter->prGlueInfo,
 				prP2pRoleFsmInfo->ucRoleIndex, prStaRec, FALSE);
 
