@@ -353,19 +353,19 @@ void statsParseUDPInfo(struct sk_buff *skb, uint8_t *pucEthBody,
 						    &u4Opt);
 				switch (u4Opt & 0xffffff00) {
 				case 0x35010100:
-					snprintf(buf, 49, "DISCOVERY");
+					kalSnprintf(buf, 49, "DISCOVERY");
 					break;
 				case 0x35010200:
-					snprintf(buf, 49, "OFFER");
+					kalSnprintf(buf, 49, "OFFER");
 					break;
 				case 0x35010300:
-					snprintf(buf, 49, "REQUEST");
+					kalSnprintf(buf, 49, "REQUEST");
 					break;
 				case 0x35010500:
-					snprintf(buf, 49, "ACK");
+					kalSnprintf(buf, 49, "ACK");
 					break;
 				case 0x35010600:
-					snprintf(buf, 49, "NAK");
+					kalSnprintf(buf, 49, "NAK");
 					break;
 				}
 			}
