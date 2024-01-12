@@ -465,7 +465,6 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7935;
 #define WIFI_CFG_SYNC0_RDY_OFFSET		(16)
 
 #define PCIE_HIF_BASE					0x4000
-#define PCIE_NEW_HIF_BASE				0x7c030000
 
 /* HIF Sys Revision */
 #define HIF_SYS_REV		(PCIE_HIF_BASE + 0x0000)
