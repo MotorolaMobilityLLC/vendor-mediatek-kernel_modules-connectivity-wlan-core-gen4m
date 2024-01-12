@@ -417,6 +417,14 @@ uint32_t mt6639dmashdlQuotaDecision(struct ADAPTER *prAdapter,
 			)
 			continue;
 
+#if CFG_SUPPORT_NAN
+		/* NAN will not tx traffic on 2.4G */
+		if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN &&
+				prBssInfo->eBand == BAND_2G4) {
+			continue;
+		}
+#endif
+
 		ucBandCount[prBssInfo->eBand]++;
 
 		if (prBssInfo->ucWmmQueSet == ucWmmIndex) {
