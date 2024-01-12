@@ -1749,11 +1749,14 @@ uint32_t assocProcessRxAssocReqFrameImpl(
 	}			/* end of IE_FOR_EACH */
 
 	/*
-	 * According to TGn & TGac 4.2.44, AP should not bring HT/VHT Cap IE in
-	 * the IE of Assoc resp, if the STA request to use TKIP cipher
+	 * According to TGn & TGac 4.2.44, AP should not bring HT/VHT/HE/EHT
+	 * Cap IE in the IE of Assoc resp, if the STA request to use TKIP cipher
 	 */
 	if (fgIsTKIP && !prWifiVar->ucApAllowHtVhtTkip)
-		prStaRec->ucPhyTypeSet &= ~(PHY_TYPE_BIT_VHT | PHY_TYPE_BIT_HT);
+		prStaRec->ucPhyTypeSet &= ~(PHY_TYPE_BIT_HT |
+					    PHY_TYPE_BIT_VHT |
+					    PHY_TYPE_BIT_HE |
+					    PHY_TYPE_BIT_EHT);
 
 	/* parsing for WMM related information (2010/12/21) */
 	mqmProcessAssocReq(prAdapter, prSwRfb, pucIEStart, u2IELength);
