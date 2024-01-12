@@ -3123,11 +3123,6 @@ uint32_t nicQmUpdateMUEdcaParams(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(QM, INFO, "Update MU EDCA parameters for BSS[%u]\n", ucBssIndex);
 
-	DBGLOG(QM, EVENT, "sizeof(CMD_MU_EDCA_PARAMS_T): %d\n",
-		sizeof(struct _CMD_MU_EDCA_PARAMS_T));
-	DBGLOG(QM, EVENT, "sizeof(CMD_MQM_UPDATE_MU_EDCA_PARMS_T): %d\n",
-		sizeof(struct _CMD_MQM_UPDATE_MU_EDCA_PARMS_T));
-
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	rCmdUpdateMUEdcaParms.ucBssIndex = (uint8_t) ucBssIndex;
 
@@ -3174,10 +3169,8 @@ uint32_t nicRlmUpdateSRParams(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
-	DBGLOG(RLM, INFO,
-		"Update Spatial Reuse parameters for BSS[%u] size: %d\n",
-			ucBssIndex,
-			sizeof(struct _CMD_RLM_UPDATE_SR_PARMS_T));
+	DBGLOG(RLM, INFO, "Update Spatial Reuse parameters for BSS[%u]\n",
+		ucBssIndex);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	rCmdUpdateSRParms.ucBssIndex = ucBssIndex;
