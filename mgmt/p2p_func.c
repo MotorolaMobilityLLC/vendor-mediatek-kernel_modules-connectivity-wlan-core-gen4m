@@ -6278,7 +6278,8 @@ void p2pFuncSwitchSapChannel(
 	} else {
 		/* Get current channel info */
 		ucStaChannelNum = prAisBssInfo->ucPrimaryChannel;
-		eStaBand = prAisBssInfo->eBand;
+		eStaBand = (prAisBssInfo->ucPrimaryChannel <= 14)
+			? BAND_2G4 : BAND_5G;
 #if CFG_SUPPORT_SAP_DFS_CHANNEL
 		/* restore DFS channels table */
 		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
