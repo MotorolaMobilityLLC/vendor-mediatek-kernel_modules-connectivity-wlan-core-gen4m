@@ -153,6 +153,7 @@
 #define VOW_CONTROL             (PLE_BASE + 0x370)
 #define AIRTIME_DRR_SIZE        (PLE_BASE + 0x374)
 
+#define PLE_PAYLOAD_BASE 0xA0000000
 
 enum ENUM_UMAC_PORT {
 	ENUM_UMAC_HIF_PORT_0         = 0,

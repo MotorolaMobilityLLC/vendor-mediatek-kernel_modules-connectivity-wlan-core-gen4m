@@ -83,6 +83,9 @@
 #define PSE_PG_PLE_GROUP			(PSE_BASE + 0x190)
 #define PSE_PLE_PG_INFO			    (PSE_BASE + 0x194)
 
+#define PSE_RL_BUF_CTRL_0			(PSE_BASE + 0x1a0)
+#define PSE_RL_BUF_CTRL_1			(PSE_BASE + 0x1a4)
+
 /* Indirect path for read/write */
 #define PSE_FL_QUE_CTRL_0			(PSE_BASE + 0x1b0)
 #define PSE_FL_QUE_CTRL_1			(PSE_BASE + 0x1b4)
@@ -269,6 +272,8 @@
 #define PSE_RTA_RD_RW (1 << 16)
 #define PSE_RTA_RD_KICK_BUSY (1 << 31)
 #define GET_PSE_RTA_RD_KICK_BUSY(p) (((p) & PSE_RTA_RD_KICK_BUSY) >> 31)
+
+#define PSE_PAYLOAD_BASE 0xB0000000
 
 #endif /* _PSE */
 
