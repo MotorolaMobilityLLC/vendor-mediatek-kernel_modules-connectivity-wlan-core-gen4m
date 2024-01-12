@@ -1350,7 +1350,6 @@
 #define ELEM_EXT_ID_MAX_NUM \
 	256 /* EXT_ID: 0-255 */
 
-#if CFG_SUPPORT_MBO
 
 #define MBO_IE_VENDOR_TYPE 0x506f9a16
 #define MBO_OUI_TYPE 22
@@ -1387,7 +1386,6 @@ enum MBO_TRANSITION_REJECT_REASON {
 	MBO_TRANSITION_REJECT_REASON_SERVICES = 6,
 };
 
-#endif /* CFG_SUPPORT_MBO */
 
 /* 7.3.2.1 SSID element */
 #define ELEM_MAX_LEN_SSID                           32

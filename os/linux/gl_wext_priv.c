@@ -16584,10 +16584,9 @@ static int priv_driver_efuse_ops(IN struct net_device *prNetDev,
 	int32_t i4Parameter = 0;
 	uint32_t u4Efuse_addr = 0;
 	uint8_t ucEfuse_value = 0;
-
+	uint32_t u4Offset = 0;
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	uint32_t u4Offset = 0;
 	uint32_t u4BufLen = 0;
 	uint8_t  u4Index = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
