@@ -313,7 +313,7 @@ void rttReportDone(struct ADAPTER *prAdapter)
 	if (!pvPacket)
 		complete = FALSE;
 
-	while (!LINK_IS_EMPTY(&rttInfo->rResultList)) {
+	while (!LINK_IS_EMPTY(&rttInfo->rResultList) && complete) {
 		uint32_t size;
 		struct WIFI_RTT_RESULT *r = NULL;
 
