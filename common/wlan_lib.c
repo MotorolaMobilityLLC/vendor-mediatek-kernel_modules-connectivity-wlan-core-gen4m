@@ -7890,13 +7890,13 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->eEnableSerL0p5 = (enum ENUM_FEATURE_OPTION_IN_SER)
 				     wlanCfgGetUint32(prAdapter,
 						      "EnableSerL0p5",
-						      FEATURE_OPT_SER_MONITOR);
+						      FEATURE_OPT_SER_ENABLE);
 
 	/* for L1 SER */
 	prWifiVar->eEnableSerL1 = (enum ENUM_FEATURE_OPTION_IN_SER)
 				     wlanCfgGetUint32(prAdapter,
 							  "EnableSerL1",
-						      FEATURE_OPT_SER_MONITOR);
+						      FEATURE_OPT_SER_ENABLE);
 
 	/* for L0 SER using WDT on some legacy CE USB project like MT7668 and
 	 * MT7663. The difference between fgEnableSerL0 and fgChipResetRecover
