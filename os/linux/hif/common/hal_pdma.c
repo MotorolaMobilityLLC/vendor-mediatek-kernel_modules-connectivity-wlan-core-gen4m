@@ -3780,8 +3780,9 @@ void halRxTasklet(unsigned long data)
 	}
 
 	/* do nothing if wifi is not ready */
-	if (prGlueInfo->u4ReadyFlag == 0) {
-		tasklet_schedule(&prGlueInfo->rRxTask);
+	if (prGlueInfo->fgRxTaskReady == FALSE) {
+		DBGLOG(INIT, INFO,
+		       "Not ready yet, ignore pending interrupt\n");
 		return;
 	}
 
@@ -3798,10 +3799,16 @@ void halRxTasklet(unsigned long data)
 	} else {
 		/* DBGLOG(INIT, INFO, ("HIF Interrupt!\n")); */
 		prGlueInfo->TaskIsrCnt++;
-		wlanIST(prGlueInfo->prAdapter, fgEnInt);
+		wlanIST(prGlueInfo->prAdapter, FALSE);
 	}
 
 	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_TASKLET_COUNT);
+
+	if (kalRxTaskletWorkDone(prGlueInfo, fgEnInt)) {
+		/* interrupt is not enabled, keep int bit */
+		KAL_SET_BIT(GLUE_FLAG_RX_DIRECT_INT_BIT,
+			prGlueInfo->ulFlag);
+	}
 }
 
 void halTxCompleteTasklet(unsigned long data)
@@ -4277,6 +4284,7 @@ static void halDumpMsduReportStats(IN struct ADAPTER *prAdapter)
 
 void halDumpHifStats(IN struct ADAPTER *prAdapter)
 {
+	struct GLUE_INFO *prGlueInfo;
 	struct HIF_STATS *prHifStats;
 	struct GL_HIF_INFO *prHifInfo;
 	struct RTMP_TX_RING *prTxRing;
@@ -4290,14 +4298,16 @@ void halDumpHifStats(IN struct ADAPTER *prAdapter)
 	if (!prAdapter)
 		return;
 
+	prGlueInfo = prAdapter->prGlueInfo;
+
 	halDumpMsduReportStats(prAdapter);
 
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
-	if (prAdapter->prGlueInfo->fgIsEnableMon)
+	if (prGlueInfo->fgIsEnableMon)
 		return;
 #endif
 	prHifStats = &prAdapter->rHifStats;
-	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prHifInfo = &prGlueInfo->rHifInfo;
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prTxCtrl = &prAdapter->rTxCtrl;
 
@@ -4313,10 +4323,11 @@ void halDumpHifStats(IN struct ADAPTER *prAdapter)
 			prAdapter->rWifiVar.u4PerfMonUpdatePeriod * HZ / 1000;
 
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
-			"I[%u %u %d]",
+			"I[%u %u %u %u]",
 			GLUE_GET_REF_CNT(prHifStats->u4HwIsrCount),
 			GLUE_GET_REF_CNT(prHifStats->u4SwIsrCount),
-			prAdapter->fgIsIntEnable);
+			prAdapter->fgIsIntEnable,
+			GLUE_GET_REF_CNT(prGlueInfo->u4RxTaskScheduleCnt));
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
 			" T[%u %u %u / %u %u %u %u]",
 			GLUE_GET_REF_CNT(prHifStats->u4CmdInCount),
