@@ -4890,6 +4890,10 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 		if (met_tag_init() != 0)
 			DBGLOG(INIT, ERROR, "MET_TAG_INIT error!\n");
 #endif
+
+#if CFG_SUPPORT_TPENHANCE_MODE
+		wlanTpeInit(prGlueInfo);
+#endif /* CFG_SUPPORT_TPENHANCE_MODE */
 	}
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
@@ -5734,6 +5738,10 @@ static void wlanRemove(void)
 
 	/*backup EM mode cfg setting*/
 	wlanBackupEmCfgSetting(prAdapter);
+
+#if CFG_SUPPORT_TPENHANCE_MODE
+	wlanTpeUninit(prGlueInfo);
+#endif /* CFG_SUPPORT_TPENHANCE_MODE */
 
 	/* complete possible pending oid, which may block wlanRemove some time
 	 * and then whole chip reset may failed

@@ -452,6 +452,9 @@ enum ENUM_PKT_FLAG {
 	ENUM_PKT_ICMP,		/* ICMP */
 	ENUM_PKT_TDLS,		/* TDLS */
 	ENUM_PKT_DNS,		/* DNS */
+#if CFG_SUPPORT_TPENHANCE_MODE
+	ENUM_PKT_TCP_ACK,
+#endif /* CFG_SUPPORT_TPENHANCE_MODE */
 
 	ENUM_PKT_FLAG_NUM
 };
@@ -713,6 +716,9 @@ struct GLUE_INFO {
 	struct delayed_work rRxPktDeAggWork;
 
 	struct timer_list tickfn;
+#if CFG_SUPPORT_TPENHANCE_MODE
+	struct timer_list PeriodSecTimer;
+#endif /* CFG_SUPPORT_TPENHANCE_MODE */
 
 #if CFG_SUPPORT_EXT_CONFIG
 	uint16_t au2ExtCfg[256];	/* NVRAM data buffer */
@@ -847,6 +853,15 @@ struct GLUE_INFO {
 #if CFG_SUPPORT_NAN
 	struct sock *NetLinkSK;
 #endif
+
+#if CFG_SUPPORT_TPENHANCE_MODE
+	/* Tp Enhance */
+	struct QUE rTpeAckQueue;
+	uint32_t u4TpeMaxPktNum;
+	uint64_t u8TpeTimestamp;
+	uint32_t u4TpeTimeout;
+	struct timer_list rTpeTimer;
+#endif /* CFG_SUPPORT_TPENHANCE_MODE */
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id,
