@@ -1889,6 +1889,9 @@ void nicEventHifCtrl(IN struct ADAPTER *prAdapter,
 {
 	struct EVENT_HIF_CTRL *prEventHifCtrl;
 	struct BUS_INFO *prBusInfo;
+#if defined(_HIF_SDIO)
+	struct GL_HIF_INFO *prHifInfo;
+#endif
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prEventHifCtrl = (struct EVENT_HIF_CTRL *) (
@@ -1921,6 +1924,18 @@ void nicEventHifCtrl(IN struct ADAPTER *prAdapter,
 	}
 #endif
 
+#if defined(_HIF_SDIO)
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	if (prEventHifCtrl->ucHifSuspend) {
+		/* if SDIO get suspend event, change to PRE_SUSPEND_DONE */
+		glSdioSetState(prHifInfo, SDIO_STATE_PRE_SUSPEND_DONE);
+	} else {
+		/* if SDIO get resume event, change to LINK_UP */
+		glSdioSetState(prHifInfo, SDIO_STATE_LINK_UP);
+	}
+#endif
+
 #if defined(_HIF_PCIE)
 	/* if PCIE suspend, polling sequence */
 	if (prEventHifCtrl->ucHifType == ENUM_HIF_TYPE_PCIE) {
@@ -1945,9 +1960,6 @@ void nicEventHifCtrl(IN struct ADAPTER *prAdapter,
 	}
 #endif
 
-#if defined(_HIF_SDIO)
-	/* TODO */
-#endif
 }
 
 #if CFG_SUPPORT_BUILD_DATE_CODE
