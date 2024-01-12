@@ -2047,8 +2047,12 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 			}
 			/* P2P mode */
 			else {
-				prBssDesc =
-				    prP2pRoleFsmInfo->rJoinInfo.prTargetBssDesc;
+				if (prP2pRoleFsmInfo) {
+					prBssDesc =
+						prP2pRoleFsmInfo
+						->rJoinInfo.prTargetBssDesc;
+				}
+
 				if (prBssDesc)
 					eBand = prBssDesc->eBand;
 				else
