@@ -508,6 +508,33 @@ enum {
 #endif /* CFG_SUPPORT_MU_MIMO */
 #endif /* CFG_SUPPORT_QA_TOOL */
 
+
+enum ENUM_SCN_FUNC_MASK {
+	ENUM_SCN_RANDOM_MAC_EN = (1 << 0),
+	ENUM_SCN_DBDC_SCAN_DIS = (1 << 1),
+	ENUM_SCN_DBDC_SCAN_TYPE3 = (1 << 2),
+	ENUM_SCN_USE_PADDING_AS_BSSID = (1 << 3),
+	ENUM_SCN_RANDOM_SN_EN = (1 << 4),
+	ENUM_SCN_SPLIT_SCAN_EN = (1 << 5),
+	ENUM_SCN_FENCE_SCAN_EN = (1 << 6),
+	ENUM_SCN_OCE_SCAN_EN = (1 << 7),
+};
+
+enum ENUM_SCN_FUNC_EXT_MASK {
+	ENUM_SCN_MDT_SCAN = (1 << 0),
+	ENUM_SCN_ML_PROBE = (1 << 1),
+};
+
+enum ENUM_SCN_SOURCE_MASK {
+	ENUM_SCN_NORMAL = (1 << 0),
+	ENUM_SCN_ROMAING = (1 << 1),
+	/* FW trigger scan */
+	ENUM_SCN_SOURCE_FW = (1 << 2),
+	/* Sensor hub trigger scan */
+	ENUM_SCN_SOURCE_FENCE = (1 << 3),
+	ENUM_SCN_SOURCE_MASK_NUM
+};
+
 #if CFG_WOW_SUPPORT
 
 /* Filter Flag */
@@ -587,40 +614,6 @@ enum _ENUM_FUNCTION_SELECT {
 	FUNCTION_ALL_TOMCU		= 12,
 };
 
-enum ENUM_PF_OPCODE {
-	PF_OPCODE_ADD = 0,
-	PF_OPCODE_DEL,
-	PF_OPCODE_ENABLE,
-	PF_OPCODE_DISABLE,
-	PF_OPCODE_NUM
-};
-
-enum ENUM_SCN_FUNC_MASK {
-	ENUM_SCN_RANDOM_MAC_EN = (1 << 0),
-	ENUM_SCN_DBDC_SCAN_DIS = (1 << 1),
-	ENUM_SCN_DBDC_SCAN_TYPE3 = (1 << 2),
-	ENUM_SCN_USE_PADDING_AS_BSSID = (1 << 3),
-	ENUM_SCN_RANDOM_SN_EN = (1 << 4),
-	ENUM_SCN_SPLIT_SCAN_EN = (1 << 5),
-	ENUM_SCN_FENCE_SCAN_EN = (1 << 6),
-	ENUM_SCN_OCE_SCAN_EN = (1 << 7),
-};
-
-enum ENUM_SCN_FUNC_EXT_MASK {
-	ENUM_SCN_MDT_SCAN = (1 << 0),
-	ENUM_SCN_ML_PROBE = (1 << 1),
-};
-
-enum ENUM_SCN_SOURCE_MASK {
-	ENUM_SCN_NORMAL = (1 << 0),
-	ENUM_SCN_ROMAING = (1 << 1),
-	/* FW trigger scan */
-	ENUM_SCN_SOURCE_FW = (1 << 2),
-	/* Sensor hub trigger scan */
-	ENUM_SCN_SOURCE_FENCE = (1 << 3),
-	ENUM_SCN_SOURCE_MASK_NUM
-};
-
 struct CMD_PACKET_FILTER_CAP {
 	uint8_t			ucCmd;
 	uint16_t			packet_cap_type;
@@ -665,6 +658,14 @@ struct CMD_PACKET_FILTER_CAP {
 #endif /*CFG_WOW_SUPPORT*/
 
 #if CFG_SUPPORT_WIFI_HOST_OFFLOAD
+enum ENUM_PF_OPCODE {
+	PF_OPCODE_ADD = 0,
+	PF_OPCODE_DEL,
+	PF_OPCODE_ENABLE,
+	PF_OPCODE_DISABLE,
+	PF_OPCODE_NUM
+};
+
 struct CMD_TCP_GENERATOR {
 	enum ENUM_PF_OPCODE eOpcode;
 	uint32_t u4ReplyId;

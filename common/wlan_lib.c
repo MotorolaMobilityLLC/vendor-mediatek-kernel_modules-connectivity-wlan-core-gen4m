@@ -12521,7 +12521,9 @@ void wlanSuspendPmHandle(struct GLUE_INFO *prGlueInfo)
 	uint8_t idx, i;
 	struct STA_RECORD *prStaRec;
 	struct RX_BA_ENTRY *prRxBaEntry;
+#if CFG_WOW_SUPPORT
 	enum PARAM_POWER_MODE ePwrMode;
+#endif
 	struct BSS_INFO *prAisBssInfo = NULL;
 	struct WIFI_VAR *prWifiVar = NULL;
 	uint8_t ucKekZeroCnt = 0;
@@ -12627,8 +12629,9 @@ void wlanSuspendPmHandle(struct GLUE_INFO *prGlueInfo)
 			prRxBaEntry = prStaRec->aprRxReorderParamRefTbl[i];
 			if (!prRxBaEntry || !(prRxBaEntry->fgIsValid))
 				continue;
-
+#if CFG_WOW_SUPPORT
 			prRxBaEntry->fgFirstSnToWinStart = TRUE;
+#endif
 		}
 	}
 
@@ -13882,6 +13885,31 @@ void wlanReleaseAllTxCmdQueue(struct ADAPTER *prAdapter)
 #endif
 }
 
+void
+wlanWaitCfg80211SuspendDone(struct GLUE_INFO *prGlueInfo)
+{
+	uint8_t u1Count = 0;
+
+	if (prGlueInfo->prAdapter == NULL)
+		return;
+
+	while (!(KAL_TEST_BIT(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
+		prGlueInfo->prAdapter->ulSuspendFlag))) {
+		if (u1Count > HIF_SUSPEND_MAX_WAIT_TIME) {
+			DBGLOG(HAL, ERROR, "cfg80211 not suspend\n");
+			/* no cfg80211 suspend called */
+			/* do pre-suspend flow here */
+			aisPreSuspendFlow(prGlueInfo->prAdapter);
+			p2pRoleProcessPreSuspendFlow(prGlueInfo->prAdapter);
+			break;
+		}
+		kalUsleep_range(5000, 6000);
+		u1Count++;
+		DBGLOG(HAL, TRACE, "wait cfg80211 suspend %d\n", u1Count);
+	}
+}
+#endif /* #if (CFG_WOW_SUPPORT == 1) */
+
 void wlanSetConnsysFwLog(struct ADAPTER *prAdapter)
 {
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
@@ -13924,30 +13952,6 @@ void wlanSetConnsysFwLog(struct ADAPTER *prAdapter)
 	}
 #endif
 }
-
-void
-wlanWaitCfg80211SuspendDone(struct GLUE_INFO *prGlueInfo)
-{
-	uint8_t u1Count = 0;
-
-	if (prGlueInfo->prAdapter == NULL)
-		return;
-
-	while (!(KAL_TEST_BIT(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
-		prGlueInfo->prAdapter->ulSuspendFlag))) {
-		if (u1Count > HIF_SUSPEND_MAX_WAIT_TIME) {
-			DBGLOG(HAL, ERROR, "cfg80211 not suspend\n");
-			/* no cfg80211 suspend called, do pre-suspend flow here */
-			aisPreSuspendFlow(prGlueInfo->prAdapter);
-			p2pRoleProcessPreSuspendFlow(prGlueInfo->prAdapter);
-			break;
-		}
-		kalUsleep_range(5000, 6000);
-		u1Count++;
-		DBGLOG(HAL, TRACE, "wait cfg80211 suspend %d\n", u1Count);
-	}
-}
-#endif /* #if (CFG_WOW_SUPPORT == 1) */
 
 uint32_t wlanSendFwLogControlCmd(struct ADAPTER *prAdapter,
 				uint8_t ucCID,

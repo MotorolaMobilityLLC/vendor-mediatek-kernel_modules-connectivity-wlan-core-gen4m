@@ -318,10 +318,12 @@ static int mtk_usb_resume(struct usb_interface *intf)
 		glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_LINK_UP);
 		halEnableInterrupt(prGlueInfo->prAdapter);
 
+#if CFG_WOW_SUPPORT
 		if (prGlueInfo->prAdapter->rWifiVar.ucWow) {
 			DBGLOG(HAL, EVENT, "leave WOW flow\n");
 			kalWowProcess(prGlueInfo, FALSE);
 		}
+#endif
 	}
 
 	prGlueInfo->fgIsInSuspendMode = FALSE;
@@ -370,10 +372,11 @@ static int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 	/* Stop upper layers calling the device hard_start_xmit routine. */
 	netif_tx_stop_all_queues(prGlueInfo->prDevHandler);
 
+#if CFG_WOW_SUPPORT
 	/* wait wiphy device do cfg80211 suspend done, then start hif suspend */
 	if (IS_FEATURE_ENABLED(prGlueInfo->prAdapter->rWifiVar.ucWow))
 		wlanWaitCfg80211SuspendDone(prGlueInfo);
-
+#endif
 	/* change to pre-Suspend state & block cfg80211 ops */
 	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_PRE_SUSPEND);
 
@@ -407,11 +410,13 @@ static int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 	halDisableInterrupt(prGlueInfo->prAdapter);
 	halTxCancelAllSending(prGlueInfo->prAdapter);
 
+#if CFG_WOW_SUPPORT
 	/* pending cmd will be kept in queue and no one to handle it after HIF resume.
 	 * In STR, it will result in cmd buf full and then cmd buf alloc fail .
 	 */
 	if (IS_FEATURE_ENABLED(prGlueInfo->prAdapter->rWifiVar.ucWow))
 		wlanReleaseAllTxCmdQueue(prGlueInfo->prAdapter);
+#endif
 
 	DBGLOG(HAL, STATE, "mtk_usb_suspend() done!\n");
 

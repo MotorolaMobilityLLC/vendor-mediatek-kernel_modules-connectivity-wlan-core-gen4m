@@ -258,7 +258,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_BF] = nicUniEventBF,
 #endif
 	[UNI_EVENT_ID_PP] = nicUniEventPpCb,
+#if CFG_WOW_SUPPORT
 	[UNI_EVENT_ID_WOW] = nicUniEventWow,
+#endif
 	[UNI_EVENT_ID_CSI] = nicUniEventCsiData,
 	[UNI_EVENT_ID_SR] = nicUniEventSR,
 	[UNI_EVENT_ID_SPECTRUM] = nicUniEventPhyIcsRawData,
@@ -9318,6 +9320,7 @@ void nicUniEventBF(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 }
 #endif
 
+#if CFG_WOW_SUPPORT
 void nicUniEventWow(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
 	uint16_t tags_len;
@@ -9387,6 +9390,7 @@ void nicUniEventWow(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 	}
 }
+#endif
 
 void nicUniEventCsiData(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {

@@ -14118,7 +14118,7 @@ uint32_t
 wlanoidAisPreSuspend(struct ADAPTER *prAdapter,
 		void *pvSetBuffer, uint32_t u4SetBufferLen,
 		uint32_t *pu4SetInfoLen) {
-
+#if CFG_WOW_SUPPORT
 	struct WIFI_VAR *prWifiVar = NULL;
 	struct BSS_INFO *prAisBssInfo = NULL;
 
@@ -14128,7 +14128,6 @@ wlanoidAisPreSuspend(struct ADAPTER *prAdapter,
 	*pu4SetInfoLen = 0;
 	prWifiVar = &prAdapter->rWifiVar;
 
-#if CFG_WOW_SUPPORT
 	aisPreSuspendFlow(prAdapter);
 	p2pRoleProcessPreSuspendFlow(prAdapter);
 
