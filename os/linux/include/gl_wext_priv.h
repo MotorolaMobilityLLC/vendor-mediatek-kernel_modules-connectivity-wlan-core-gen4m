@@ -498,7 +498,7 @@ priv_ate_set(struct net_device *prNetDev,
 	     union iwreq_data *prIwReqData, char *pcExtra);
 #endif
 
-#if CFG_SUPPORT_NAN
+#if CFG_SUPPORT_NAN_PRIV
 int priv_nan_struct(struct net_device *prNetDev,
 		    struct iw_request_info *prIwReqInfo,
 		    union iwreq_data *prIwReqData, char *pcExtra);
