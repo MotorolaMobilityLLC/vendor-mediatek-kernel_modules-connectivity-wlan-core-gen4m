@@ -1400,6 +1400,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7961 = {
 	.init_evt_rxd_size = MT7961_RX_DESC_LENGTH,
 	.pse_header_length = CONNAC2X_NIC_TX_PSE_HEADER_LENGTH,
 	.init_event_size = CONNAC2X_RX_INIT_EVENT_LENGTH,
+	.event_hdr_size = CONNAC2X_RX_EVENT_HDR_LENGTH,
 	.eco_info = mt7961_eco_table,
 	.isNicCapV1 = FALSE,
 	.top_hcr = CONNAC2X_TOP_HCR,
