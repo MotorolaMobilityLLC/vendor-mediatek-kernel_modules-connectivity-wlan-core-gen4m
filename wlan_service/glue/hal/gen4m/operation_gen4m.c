@@ -2560,7 +2560,8 @@ s_int32 mt_op_get_rx_stat_band(
 		rx_st_band->mac_rx_len_mismatch =
 			SERV_OS_NTOHL(test_hqa_rx_stat.mac_rx_len_mismatch) +
 			SERV_OS_NTOHL(backup_band0_info.mac_rx_len_mismatch);
-		rx_st_band->mac_rx_fcs_ok_cnt = 0;
+		rx_st_band->mac_rx_fcs_ok_cnt = rx_st_band->mac_rx_mdrdy_cnt -
+			rx_st_band->mac_rx_fcs_err_cnt;
 		rx_st_band->phy_rx_fcs_err_cnt_cck =
 			SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_fcs_err_cnt_cck);
 		rx_st_band->phy_rx_fcs_err_cnt_ofdm =
@@ -2611,7 +2612,8 @@ s_int32 mt_op_get_rx_stat_band(
 			test_hqa_rx_stat.mac_rx_len_mismatch_band1) +
 			SERV_OS_NTOHL(
 			backup_band1_info.mac_rx_len_mismatch);
-		rx_st_band->mac_rx_fcs_ok_cnt = 0;
+		rx_st_band->mac_rx_fcs_ok_cnt = rx_st_band->mac_rx_mdrdy_cnt -
+			rx_st_band->mac_rx_fcs_err_cnt;
 		rx_st_band->phy_rx_fcs_err_cnt_cck =
 			SERV_OS_NTOHL(
 			test_hqa_rx_stat.phy_rx_fcs_err_cnt_cck_band1);
