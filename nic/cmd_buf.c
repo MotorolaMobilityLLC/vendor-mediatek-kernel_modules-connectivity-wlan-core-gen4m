@@ -201,7 +201,7 @@ struct CMD_INFO *cmdBufAllocateCmdInfo(IN struct ADAPTER
 				       *prAdapter, IN uint32_t u4Length)
 #endif
 {
-	struct CMD_INFO *prCmdInfo;
+	struct CMD_INFO *prCmdInfo = NULL;
 
 	KAL_SPIN_LOCK_DECLARATION();
 

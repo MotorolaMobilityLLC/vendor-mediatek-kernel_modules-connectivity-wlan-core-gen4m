@@ -696,13 +696,13 @@ void qmDeactivateStaRec(IN struct ADAPTER *prAdapter,
 void qmFreeAllByBssIdx(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 {
 
-	struct QUE_MGT *prQM;
-	struct QUE *prQue;
+	struct QUE_MGT *prQM = NULL;
+	struct QUE *prQue = NULL;
 	struct QUE rNeedToFreeQue;
 	struct QUE rTempQue;
-	struct QUE *prNeedToFreeQue;
-	struct QUE *prTempQue;
-	struct MSDU_INFO *prMsduInfo;
+	struct QUE *prNeedToFreeQue = NULL;
+	struct QUE *prTempQue = NULL;
+	struct MSDU_INFO *prMsduInfo = NULL;
 
 	prQM = &prAdapter->rQM;
 	prQue = &prQM->arTxQueue[TX_QUEUE_INDEX_BMCAST];

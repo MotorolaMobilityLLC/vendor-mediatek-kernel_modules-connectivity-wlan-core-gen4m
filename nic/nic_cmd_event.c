@@ -3580,7 +3580,7 @@ void nicExtEventPhyIcsRawData(struct ADAPTER *prAdapter,
 	struct ICS_BIN_LOG_HDR *prIcsBinLogHeader;
 	void *pvPacket = NULL;
 	uint32_t u4Size = 0, Idxi = 0;
-	uint8_t *pucRecvBuff;
+	uint8_t *pucRecvBuff = NULL;
 	ssize_t ret;
 
 	if (!prAdapter) {

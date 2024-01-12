@@ -496,7 +496,7 @@ struct TX_DESC_OPS_T mt6639_TxDescOps = {
 	.fillTxByteCount = fillConnac3xTxDescTxByteCount,
 };
 
-struct RX_DESC_OPS_T mt6639_RxDescOps = {};
+struct RX_DESC_OPS_T mt6639_RxDescOps = {0};
 
 struct CHIP_DBG_OPS mt6639_DebugOps = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)

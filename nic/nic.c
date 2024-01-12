@@ -4878,7 +4878,7 @@ void nicUpdateLinkQuality(IN struct ADAPTER *prAdapter,
 	struct LINK_SPEED_EX_ *prLq;
 
 #if (CFG_TWT_SMART_STA == 1)
-	struct _MSG_TWT_PARAMS_SET_T *prTWTParamSetMsg;
+	struct _MSG_TWT_PARAMS_SET_T *prTWTParamSetMsg = NULL;
 	struct _TWT_CTRL_T rTWTCtrl;
 #endif
 

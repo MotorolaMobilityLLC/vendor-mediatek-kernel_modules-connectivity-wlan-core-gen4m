@@ -214,7 +214,7 @@ void cnmPktFreeWrapper(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 /*----------------------------------------------------------------------------*/
 struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 {
-	struct MSDU_INFO *prMsduInfo;
+	struct MSDU_INFO *prMsduInfo = NULL;
 	struct QUE *prQueList;
 	uint32_t u4TxHeadRoomSize = 0;
 
@@ -632,7 +632,7 @@ void cnmStaRecInit(struct ADAPTER *prAdapter)
 struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 	enum ENUM_STA_TYPE eStaType, uint8_t ucBssIndex, uint8_t *pucMacAddr)
 {
-	struct STA_RECORD *prStaRec;
+	struct STA_RECORD *prStaRec = NULL;
 	uint16_t i, k;
 
 	ASSERT(prAdapter);
@@ -913,7 +913,7 @@ struct STA_RECORD *cnmGetStaRecByIndex(struct ADAPTER *prAdapter,
 struct STA_RECORD *cnmGetStaRecByAddress(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, uint8_t *pucPeerMacAddr)
 {
-	struct STA_RECORD *prStaRec;
+	struct STA_RECORD *prStaRec = NULL;
 	uint16_t i;
 
 	ASSERT(prAdapter);
@@ -2211,7 +2211,7 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 struct STA_RECORD *cnmGetTdlsPeerByAddress(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, uint8_t aucPeerMACAddress[])
 {
-	struct STA_RECORD *prStaRec;
+	struct STA_RECORD *prStaRec = NULL;
 	uint16_t i;
 
 	ASSERT(prAdapter);

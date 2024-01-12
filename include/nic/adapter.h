@@ -556,10 +556,10 @@ struct BSS_INFO {
 	struct LINK rPmkidCache;
 
 	enum ENUM_MBMC_BN eBandIdx;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	/* TODO other code block  use this in uni_cmd_event.c w/o define */
 	uint8_t ucGroupMldId;
 	uint8_t ucOwnMldId;
-#endif
+
 	uint8_t ucVhtChannelWidthBackup;
 
 	uint16_t u2MaxIdlePeriod;

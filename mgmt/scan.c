@@ -2077,7 +2077,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_HE_ER == 1)
 	struct _IE_HE_OP_T *prHeOp;
 #endif
-	struct _IE_HE_CAP_T *prHeCap;
+	struct _IE_HE_CAP_T *prHeCap = NULL;
 #endif
 
 	ASSERT(prAdapter);

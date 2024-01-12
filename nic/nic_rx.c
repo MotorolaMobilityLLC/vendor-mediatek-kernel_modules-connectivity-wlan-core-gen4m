@@ -1428,7 +1428,7 @@ void nicRxProcessForwardPkt(IN struct ADAPTER *prAdapter,
 void nicRxProcessGOBroadcastPkt(IN struct ADAPTER
 				*prAdapter, IN struct SW_RFB *prSwRfb)
 {
-	struct SW_RFB *prSwRfbDuplicated;
+	struct SW_RFB *prSwRfbDuplicated = NULL;
 	struct TX_CTRL *prTxCtrl;
 	struct RX_CTRL *prRxCtrl;
 
@@ -2252,7 +2252,7 @@ static void nicRxProcessIcsLog(IN struct ADAPTER *prAdapter,
 	struct ICS_BIN_LOG_HDR *prIcsBinLogHeader;
 	void *pvPacket = NULL;
 	uint32_t u4Size = 0;
-	uint8_t *pucRecvBuff;
+	uint8_t *pucRecvBuff = NULL;
 	ssize_t ret;
 
 	ASSERT(prAdapter);
@@ -2549,7 +2549,7 @@ uint32_t nicRxSetupRFB(IN struct ADAPTER *prAdapter,
 		       IN struct SW_RFB *prSwRfb)
 {
 	void *pvPacket;
-	uint8_t *pucRecvBuff;
+	uint8_t *pucRecvBuff = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
