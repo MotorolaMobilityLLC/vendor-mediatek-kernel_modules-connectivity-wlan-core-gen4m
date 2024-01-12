@@ -380,7 +380,7 @@ void radiotapFillRadiotap(struct ADAPTER *prAdapter,
 			    struct SW_RFB *prSwRfb)
 {
 	struct RX_CTRL *prRxCtrl = &prAdapter->rRxCtrl;
-	struct IEEE80211_RADIOTAP_INFO radiotapInfo;
+	struct IEEE80211_RADIOTAP_INFO radiotapInfo = {0};
 	struct IEEE80211_RADIOTAP_HEADER *header;
 	struct IEEE80211_RADIOTAP_FIELD_FUNC radiotap_fill_func[IEEE80211_RADIOTAP_SUPPORT_NUM];
 	struct RX_DESC_OPS_T *prRxDescOps = prAdapter->chip_info->prRxDescOps;
