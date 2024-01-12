@@ -6028,6 +6028,10 @@ int main_thread(void *data)
 			GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
 						 RST_SER_TIMEOUT);
 
+		if (test_and_clear_bit(GLUE_FLAG_TX_TIMEOUT_DUMP_BIT,
+				&prGlueInfo->ulFlag))
+			kalTxTimeoutDump(prGlueInfo->prAdapter);
+
 		kalSyncTimeToFW(prGlueInfo->prAdapter, FALSE);
 
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
@@ -6122,6 +6126,26 @@ int main_thread(void *data)
 
 	return 0;
 
+}
+
+void kalTxTimeoutDump(struct ADAPTER *prAdapter)
+{
+	struct STA_RECORD *prStaRec;
+
+	secPrivacyDumpWTBL(prAdapter);
+
+	cnmDumpStaRec(prAdapter, prAdapter->ucTxTimeoutStaIdx);
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prAdapter->ucTxTimeoutStaIdx);
+
+	if (prStaRec != NULL)
+		bssDumpBssInfo(prAdapter, prStaRec->ucBssIndex);
+}
+
+void kalSetTxTimeoutDump(struct GLUE_INFO *pr)
+{
+	set_bit(GLUE_FLAG_TX_TIMEOUT_DUMP_BIT, &pr->ulFlag);
+	wake_up_interruptible(&pr->waitq);
 }
 
 /*----------------------------------------------------------------------------*/

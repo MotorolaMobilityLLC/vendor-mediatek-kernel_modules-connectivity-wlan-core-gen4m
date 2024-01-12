@@ -2205,6 +2205,8 @@ struct ADAPTER {
 	/* WLAN Info for DRIVER_CORE OID query */
 	struct WLAN_INFO rWlanInfo;
 
+	uint8_t ucTxTimeoutStaIdx;
+
 #if CFG_SUPPORT_NAN
 	enum ENUM_NET_REG_STATE rNanNetRegState;
 	unsigned char fgIsNANRegistered;

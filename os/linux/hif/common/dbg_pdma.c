@@ -652,23 +652,22 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	if (fgIsTimeout) {
 		prToken = &prTokenInfo->arToken[u4TokenId];
 
-		secPrivacyDumpWTBL(prAdapter);
-
 		if (wlanGetStaIdxByWlanIdx(prAdapter, prToken->ucWlanIndex,
 			&ucStaIdx) == WLAN_STATUS_SUCCESS) {
-			cnmDumpStaRec(prAdapter, ucStaIdx);
-
 			prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaIdx);
 
 			if (prStaRec != NULL) {
-				bssDumpBssInfo(prAdapter, prStaRec->ucBssIndex);
-
 				prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					prStaRec->ucBssIndex);
 				if (prBssInfo && (prBssInfo->eCurrentOPMode
 					== OP_MODE_ACCESS_POINT))
 					fgIsSAPorGO = true;
 			}
+
+			/* Save tx timeout StaIdx */
+			prAdapter->ucTxTimeoutStaIdx = ucStaIdx;
+			/* Set bit to dump in main thread  */
+			kalSetTxTimeoutDump(prAdapter->prGlueInfo);
 		}
 
 		DBGLOG(HAL, INFO,
