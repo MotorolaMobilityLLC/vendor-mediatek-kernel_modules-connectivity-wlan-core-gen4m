@@ -2083,6 +2083,15 @@ void p2pRoleFsmRunEventSetNewChannel(IN struct ADAPTER *prAdapter,
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prMsgP2pSetNewChannelMsg->ucRoleIdx);
 
+	if (prP2pBssInfo &&
+		kalP2pIsStoppingAp(prAdapter,
+		prP2pBssInfo)) {
+		DBGLOG(P2P, ERROR,
+			"BSS %d is disabled.\n",
+			prP2pBssInfo->ucBssIndex);
+		goto error;
+	}
+
 	if (!prP2pRoleFsmInfo) {
 		DBGLOG(P2P, ERROR,
 			"Corresponding P2P Role FSM empty: %d.\n",
@@ -2648,6 +2657,20 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 				cnmTimerStartTimer(prAdapter,
 					&(prCurrStaRec->rDeauthTxDoneTimer),
 					P2P_DEAUTH_TIMEOUT_TIME_MS);
+#if CFG_SUPPORT_802_11W
+			} else if (prP2pBssInfo
+				->u4RsnSelectedAKMSuite ==
+				RSN_AKM_SUITE_SAE) {
+				if (!completion_done(
+					&prP2pRoleFsmInfo->rDeauthComp)) {
+					DBGLOG(P2P, TRACE,
+						"Complete rDeauthComp\n");
+					complete(&prP2pRoleFsmInfo
+						->rDeauthComp);
+				}
+				prP2pRoleFsmInfo
+					->encryptedDeauthIsInProcess = FALSE;
+#endif
 			}
 #if 0
 			LINK_FOR_EACH(prLinkEntry, prStaRecOfClientList) {
