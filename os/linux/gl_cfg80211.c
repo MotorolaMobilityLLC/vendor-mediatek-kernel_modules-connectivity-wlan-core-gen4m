@@ -3278,7 +3278,7 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 	 * Ignore the CORE's WW setting when using local data base of regulatory rules
 	 */
 	if ((pRequest->initiator == NL80211_REGDOM_SET_BY_CORE) &&
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 15, 0)
+#if KERNEL_VERSION(3, 14, 0) > LINUX_VERSION_CODE
 		(pWiphy->flags & WIPHY_FLAG_CUSTOM_REGULATORY))
 #else
 		(pWiphy->regulatory_flags & REGULATORY_CUSTOM_REG))
@@ -3410,7 +3410,7 @@ cfg80211_regd_set_wiphy(IN struct wiphy *prWiphy)
 	/*
 	 * clear REGULATORY_CUSTOM_REG flag
 	 */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 15, 0)
+#if KERNEL_VERSION(3, 14, 0) > LINUX_VERSION_CODE
 	/*tells kernel that assign WW as default*/
 	prWiphy->flags &= ~(WIPHY_FLAG_CUSTOM_REGULATORY);
 #else
@@ -3425,7 +3425,7 @@ cfg80211_regd_set_wiphy(IN struct wiphy *prWiphy)
 	 * set REGULATORY_CUSTOM_REG flag
 	 */
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 15, 0)
+#if KERNEL_VERSION(3, 14, 0) > LINUX_VERSION_CODE
 	/*tells kernel that assign WW as default*/
 	prWiphy->flags |= (WIPHY_FLAG_CUSTOM_REGULATORY);
 #else
