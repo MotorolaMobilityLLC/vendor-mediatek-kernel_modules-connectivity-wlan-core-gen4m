@@ -1628,6 +1628,11 @@ struct WIFI_VAR {
 	uint32_t u4MinTempQueryTime;
 	/* Minimum value for 802.11h TPC Txpower limit */
 	int8_t icRegPwrLmtMin;
+
+#if CFG_MTK_WIFI_WFDMA_WB
+	uint32_t u4WfdmaCidxFetchTimeout;
+	u_int8_t fgWfdmaCidxFetchDbg;
+#endif /* CFG_MTK_WIFI_WFDMA_WB */
 };
 
 /* cnm_timer module */
@@ -1870,6 +1875,11 @@ struct HIF_STATS {
 	uint32_t u4DataRxCount; /* data from DMA to hif_thread */
 	uint32_t u4TxDataRegCnt;
 	uint32_t u4RxDataRegCnt;
+#if CFG_MTK_WIFI_WFDMA_WB
+	uint32_t u4CidxFetchByCmd;
+	uint32_t u4CidxFetchByNewTx;
+	uint32_t u4CidxFetchByTimeout;
+#endif /* CFG_MTK_WIFI_WFDMA_WB */
 };
 
 struct OID_HANDLER_RECORD {

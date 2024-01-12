@@ -2547,6 +2547,7 @@ bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 	 */
 	pTxRing = &prHifInfo->TxRing[u4Num];
 	pTxRing->u4RingSize = u4Size;
+	pTxRing->u4RingIdx = u4Num;
 	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
 		prTxCell = &pTxRing->Cell[u4Idx];
 		prTxCell->pPacket = NULL;
@@ -2681,6 +2682,7 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 	pRxRing = &prHifInfo->RxRing[u4Num];
 	pRxRing->u4BufSize = u4BufSize;
 	pRxRing->u4RingSize = u4Size;
+	pRxRing->u4RingIdx = u4Num;
 	pRxRing->fgRxSegPkt = FALSE;
 	pRxRing->pvPacket = NULL;
 	pRxRing->u4PacketLen = 0;
@@ -5912,6 +5914,12 @@ void halUpdateHifConfig(struct ADAPTER *prAdapter)
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 
+#if CFG_MTK_WIFI_WFDMA_WB
+	if (prChipInfo->is_support_wfdma_cidx_fetch &&
+	    prChipInfo->runWfdmaCidxFetch)
+		prChipInfo->runWfdmaCidxFetch(prAdapter->prGlueInfo);
+#endif /* CFG_ENABLE_MAWD_MD_RING */
+
 	if (prBusInfo->fgUpdateWfdmaTh) {
 		prBusInfo->fgUpdateWfdmaTh = FALSE;
 		if (prBusInfo->configWfdmaRxRingTh) {
@@ -6161,6 +6169,16 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 				   (i == HIF_DEV_REG_MAX - 1) ? "] " : ",");
 	}
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
+#if CFG_MTK_WIFI_WFDMA_WB
+	if (prAdapter->chip_info->is_support_wfdma_cidx_fetch) {
+		pos += kalSnprintf(
+			buf + pos, u4BufferSize - pos,
+			"cfetch[%u][%u][%u]",
+			GLUE_INC_REF_CNT(prHifStats->u4CidxFetchByCmd),
+			GLUE_GET_REF_CNT(prHifStats->u4CidxFetchByNewTx),
+			GLUE_GET_REF_CNT(prHifStats->u4CidxFetchByTimeout));
+	}
+#endif /* CFG_MTK_WIFI_WFDMA_WB */
 
 	DBGLOG(HAL, INFO, "%s\n", buf);
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
