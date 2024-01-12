@@ -2150,9 +2150,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 					} else
 #endif
 					{
-					    SET_NET_ACTIVE(prAdapter,
-						prAisBssInfo->
-						ucBssIndex);
 					    /* sync with firmware */
 					    nicActivateNetwork(prAdapter,
 						prAisBssInfo->ucBssIndex);
@@ -2168,8 +2165,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 
 					if (prAdapter->rWifiVar.
 						rScanInfo.fgSchedScanning) {
-						SET_NET_ACTIVE(prAdapter,
-						prAisBssInfo->ucBssIndex);
 						nicActivateNetwork(prAdapter,
 						prAisBssInfo->ucBssIndex);
 					}
@@ -2281,15 +2276,11 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 		case AIS_STATE_ONLINE_SCAN:
 		case AIS_STATE_LOOKING_FOR:
 
-			if (!IS_NET_ACTIVE
-			    (prAdapter, prAisBssInfo->ucBssIndex)) {
-				SET_NET_ACTIVE(prAdapter,
-					       prAisBssInfo->ucBssIndex);
-
+			if (!IS_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex))
 				/* sync with firmware */
 				nicActivateNetwork(prAdapter,
 						   prAisBssInfo->ucBssIndex);
-			}
+
 			prScanRequest = &(prAisFsmInfo->rScanRequest);
 
 			/* IE length decision */
@@ -2584,13 +2575,11 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 					break;
 
 				/* for secondary link */
-				if (!IS_NET_ACTIVE(prAdapter, bss->ucBssIndex)) {
-					SET_NET_ACTIVE(prAdapter,
-						       bss->ucBssIndex);
+				if (!IS_NET_ACTIVE(prAdapter, bss->ucBssIndex))
 					/* sync with firmware */
 					nicActivateNetwork(prAdapter,
 						NETWORK_ID(bss->ucBssIndex, i));
-				}
+
 				/* stop Tx due to we need to connect a new AP. even the
 				 ** new AP is operating on the same channel with current
 				 ** , we still need to stop Tx, because firmware should
@@ -2785,28 +2774,19 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			break;
 
 		case AIS_STATE_REMAIN_ON_CHANNEL:
-			if (!IS_NET_ACTIVE(prAdapter,
-					   prAisBssInfo->ucBssIndex)) {
-				SET_NET_ACTIVE(prAdapter,
-					       prAisBssInfo->ucBssIndex);
-
+			if (!IS_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex))
 				/* sync with firmware */
 				nicActivateNetwork(prAdapter,
 						   prAisBssInfo->ucBssIndex);
-			}
 
 			break;
 
 		case AIS_STATE_OFF_CHNL_TX:
-			if (!IS_NET_ACTIVE(prAdapter,
-				prAisBssInfo->ucBssIndex)) {
-				SET_NET_ACTIVE(prAdapter,
-					prAisBssInfo->ucBssIndex);
-
+			if (!IS_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex))
 				/* sync with firmware */
 				nicActivateNetwork(prAdapter,
 					prAisBssInfo->ucBssIndex);
-			}
+
 			if (!aisState_OFF_CHNL_TX(prAdapter, ucBssIndex)) {
 				if (prAisBssInfo->eConnectionState ==
 						MEDIA_STATE_CONNECTED)
@@ -7677,11 +7657,9 @@ void aisDeactivateAllLink(IN struct ADAPTER *prAdapter,
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		struct BSS_INFO *bss = prAisFsmInfo->aprLinkInfo[i].prBssInfo;
 
-		if (bss && IS_NET_ACTIVE(prAdapter, bss->ucBssIndex)) {
-			UNSET_NET_ACTIVE(prAdapter, bss->ucBssIndex);
+		if (bss && IS_NET_ACTIVE(prAdapter, bss->ucBssIndex))
 			nicDeactivateNetwork(prAdapter,
 				NETWORK_ID(bss->ucBssIndex, i));
-		}
 	}
 }
 

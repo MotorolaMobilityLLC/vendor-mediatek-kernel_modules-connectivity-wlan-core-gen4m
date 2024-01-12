@@ -539,7 +539,6 @@ uint32_t bowCmdSetupConnection(IN struct ADAPTER *prAdapter, IN struct BT_OVER_W
 #endif
 
 		/*Active BoW Network */
-		SET_NET_ACTIVE(prAdapter, prBowFsmInfo->ucBssIndex);
 		SET_NET_PWR_STATE_ACTIVE(prAdapter, prBowFsmInfo->ucBssIndex);
 		nicActivateNetwork(prAdapter, prBowFsmInfo->ucBssIndex);
 
@@ -1466,8 +1465,6 @@ void bowStopping(IN struct ADAPTER *prAdapter)
 		/*temp solution for FW hal_pwr_mgt.c#3037 ASSERT */
 		nicDeactivateNetwork(prAdapter, prBowBssInfo->ucBssIndex);
 		SET_NET_PWR_STATE_IDLE(prAdapter, prBowBssInfo->ucBssIndex);
-		UNSET_NET_ACTIVE(prAdapter, prBowBssInfo->ucBssIndex);
-
 	}
 
 }
