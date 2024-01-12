@@ -1672,6 +1672,10 @@ struct ADAPTER {
 	struct LINK rTxPwr_DefaultList;
 	struct LINK rTxPwr_DynamicList;
 #endif
+
+#if CFG_DBG_MGT_BUF
+	struct LINK rMemTrackLink;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

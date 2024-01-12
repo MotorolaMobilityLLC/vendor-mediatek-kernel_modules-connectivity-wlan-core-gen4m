@@ -341,8 +341,13 @@ void cnmMemInit(struct ADAPTER *prAdapter)
  * \retval NULL     Fail to allocat memory
  */
 /*----------------------------------------------------------------------------*/
+#if CFG_DBG_MGT_BUF
+void *cnmMemAllocX(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType,
+	IN uint32_t u4Length, uint8_t *fileAndLine)
+#else
 void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType,
 	IN uint32_t u4Length)
+#endif
 {
 	struct BUF_INFO *prBufInfo;
 	uint32_t rRequiredBitmap;
@@ -435,7 +440,24 @@ void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType,
 	KAL_RELEASE_SPIN_LOCK(prAdapter, eLockBufCat);
 
 #ifdef LINUX
+#if CFG_DBG_MGT_BUF
+	pvMemory = (void *) kalMemAlloc(u4Length + sizeof(struct MEM_TRACK),
+		PHY_MEM_TYPE);
+	if (pvMemory) {
+		struct MEM_TRACK *prMemTrack = (struct MEM_TRACK *)pvMemory;
+
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MGT_BUF);
+		LINK_INSERT_TAIL(
+			&prAdapter->rMemTrackLink, &prMemTrack->rLinkEntry);
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MGT_BUF);
+		prMemTrack->pucFileAndLine = fileAndLine;
+		prMemTrack->u2CmdIdAndWhere = 0x0000;
+		pvMemory = (void *)(prMemTrack + 1);
+		kalMemZero(pvMemory, u4Length);
+	}
+#else
 	pvMemory = (void *) kalMemAlloc(u4Length, PHY_MEM_TYPE);
+#endif
 #else
 	pvMemory = (void *) NULL;
 #endif
@@ -498,8 +520,19 @@ void cnmMemFree(IN struct ADAPTER *prAdapter, IN void *pvMemory)
 		eRamType = RAM_TYPE_BUF;
 	} else {
 #ifdef LINUX
+#if CFG_DBG_MGT_BUF
+		struct MEM_TRACK *prTrack = (struct MEM_TRACK *)
+			((uint8_t *)pvMemory - sizeof(struct MEM_TRACK));
+
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MGT_BUF);
+		LINK_REMOVE_KNOWN_ENTRY(
+			&prAdapter->rMemTrackLink, &prTrack->rLinkEntry);
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MGT_BUF);
+		kalMemFree(prTrack, PHY_MEM_TYPE, 0);
+#else
 		/* For Linux, it is supported because size is not needed */
 		kalMemFree(pvMemory, PHY_MEM_TYPE, 0);
+#endif
 #else
 		/* For Windows, it is not supported because of
 		 * no size argument

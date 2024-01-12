@@ -1009,6 +1009,14 @@ struct CMD_PEER_UPDATE {
 };
 
 #endif
+
+#if CFG_DBG_MGT_BUF
+struct MEM_TRACK {
+	struct LINK_ENTRY rLinkEntry;
+	uint16_t u2CmdIdAndWhere;
+	uint8_t *pucFileAndLine;
+};
+#endif
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -1023,6 +1031,8 @@ struct CMD_PEER_UPDATE {
  *                                 M A C R O S
  *******************************************************************************
  */
+#define STRL(x) #x
+#define STRLINE(x) STRL(x)
 
 #if CFG_DBG_MGT_BUF
 #define cnmMgtPktAlloc(_prAdapter, _u4Length) \
@@ -1030,6 +1040,16 @@ struct CMD_PEER_UPDATE {
 
 #define cnmMgtPktFree(_prAdapter, _prMsduInfo) \
 	cnmPktFreeWrapper((_prAdapter), (_prMsduInfo), (uint8_t *)__func__)
+
+#define cnmMemAlloc(_prAdapter, eRameType, u4Length) \
+	cnmMemAllocX(_prAdapter, eRameType, u4Length, \
+		__FILE__ ":" STRLINE(__LINE__))
+
+#define IS_FROM_BUF(_prAdapter, pucInfoBuffer) \
+	(((uint8_t *)(pucInfoBuffer) >= \
+		(uint8_t *)_prAdapter->rMgtBufInfo.pucBuf) && \
+	((uint8_t *)(pucInfoBuffer) < \
+		(uint8_t *)_prAdapter->rMgtBufInfo.pucBuf + MGT_BUFFER_SIZE))
 #else
 #define cnmMgtPktAlloc cnmPktAlloc
 #define cnmMgtPktFree cnmPktFree
@@ -1053,8 +1073,14 @@ void cnmPktFree(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
 
 void cnmMemInit(IN struct ADAPTER *prAdapter);
 
+#if CFG_DBG_MGT_BUF
+void *cnmMemAllocX(IN struct ADAPTER *prAdapter,
+	IN enum ENUM_RAM_TYPE eRamType, IN uint32_t u4Length,
+	uint8_t *fileAndLine);
+#else
 void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType,
 	IN uint32_t u4Length);
+#endif
 
 void cnmMemFree(IN struct ADAPTER *prAdapter, IN void *pvMemory);
 
