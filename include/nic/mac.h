@@ -1303,19 +1303,16 @@
 	92 /* Rejected Groups */
 #define ELEM_EXT_ID_ACTC \
 	93 /* Anti-Clogging Token Container */
-/*
- * Refer to Draft P802.11be_D0.4 @20210419
- * ID value is not defined yet.
- * Assume use to use EXT ID.
- */
-#define EID_EXT_EHT_TID2LNK_MAP \
-	252 /* EHT TID2LNK */
-#define EID_EXT_EHT_OP \
-	253 /* EHT Operation */
-#define EID_EXT_EHT_CAPS \
-	254 /* EHT Capabilities */
+#define ELEM_EXT_ID_EHT_OP \
+	106 /* EHT Operation */
 #define ELEM_EXT_ID_MLD \
-	255 /* TEST: Multi-Link element */
+	107 /* Multi-Link element */
+#define ELEM_EXT_ID_EHT_CAPS \
+	108 /* EHT Capabilities */
+#define ELEM_EXT_ID_TID2LNK_MAP \
+	109 /* TID2LNK */
+#define ELEM_EXT_ID_MLT \
+	110 /* Multi-link Traffic */
 #define ELEM_EXT_ID_MAX_NUM \
 	256 /* EXT_ID: 0-255 */
 
@@ -2214,12 +2211,11 @@ enum BEACON_REPORT_DETAIL {
 #define ML_ELEMENT_TYPE_PROBE_REQ			1
 #define ML_CTRL_PRE_BMP_MASK				BITS(4, 15)
 #define ML_CTRL_PRE_BMP_SHIFT				4
-#define ML_CTRL_MLD_MAC_ADDR_PRESENT			BIT(0)
-#define ML_CTRL_LINK_ID_INFO_PRESENT			BIT(1)
-#define ML_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT		BIT(2)
-#define ML_CTRL_MEDIUM_SYN_DELAY_INFO_PRESENT		BIT(3)
-#define ML_CTRL_EML_CAPA_PRESENT			BIT(4)
-#define ML_CTRL_MLD_CAPA_PRESENT			BIT(5)
+#define ML_CTRL_LINK_ID_INFO_PRESENT			BIT(0)
+#define ML_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT		BIT(1)
+#define ML_CTRL_MEDIUM_SYN_DELAY_INFO_PRESENT		BIT(2)
+#define ML_CTRL_EML_CAPA_PRESENT			BIT(3)
+#define ML_CTRL_MLD_CAPA_PRESENT			BIT(4)
 
 /* Figure 9-788eo - STA Control field format */
 #define SUB_IE_MLD_PER_STA_PROFILE			0

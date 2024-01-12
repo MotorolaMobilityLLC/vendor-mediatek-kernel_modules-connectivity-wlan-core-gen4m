@@ -1379,9 +1379,7 @@ void scanEhtParsingMldElement(IN struct BSS_DESC *prBssDesc, IN uint8_t *pucIE)
 		return;
 
 	/* Check ML control that which common info exist */
-	if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_MLD_MAC_ADDR_PRESENT)
-		COPY_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr,
-			prMlInfo->aucMldAddr);
+	COPY_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr, prMlInfo->aucMldAddr);
 
 	if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_LINK_ID_INFO_PRESENT)
 		prBssDesc->rMlInfo.ucLinkIndex = rMlInfo.ucLinkId;
@@ -2936,7 +2934,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		case ELEM_ID_RESERVED:
 #if (CFG_SUPPORT_802_11BE == 1)
 			/* TODO */
-			if (IE_ID_EXT(pucIE) == EID_EXT_EHT_CAPS)
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS)
 				prBssDesc->fgIsEHTPresent = TRUE;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_MLD)

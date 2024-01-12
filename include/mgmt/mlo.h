@@ -30,9 +30,6 @@
 #define BE_GET_ML_CTRL_PRESENCE(_u2ctrl) \
 	((_u2ctrl & ML_CTRL_PRE_BMP_MASK) >> ML_CTRL_PRE_BMP_SHIFT)
 
-#define BE_IS_ML_CTRL_PRESENCE_MLD_MAC(_u2ctrl) \
-	(_u2ctrl & (ML_CTRL_MLD_MAC_ADDR_PRESENT << ML_CTRL_PRE_BMP_SHIFT))
-
 #define BE_IS_ML_CTRL_PRESENCE_LINK_ID(_u2ctrl) \
 	(_u2ctrl & (ML_CTRL_LINK_ID_INFO_PRESENT << ML_CTRL_PRE_BMP_SHIFT))
 
@@ -144,6 +141,7 @@ struct STA_PROFILE {
 struct MULTI_LINK_INFO {
 	uint8_t ucValid;
 	uint8_t	ucMlCtrlPreBmp;
+	uint8_t ucCommonInfoLength;
 	uint8_t aucMldAddr[MAC_ADDR_LEN];
 	uint8_t ucLinkId;
 	uint8_t ucBssParaChangeCount;

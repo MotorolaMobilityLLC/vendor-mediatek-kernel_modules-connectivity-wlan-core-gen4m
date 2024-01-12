@@ -292,8 +292,7 @@ struct IE_MULTI_LINK_CONTROL *beGenerateMldCommonInfo(
 
 	/* filling control field */
 	BE_SET_ML_CTRL_TYPE(common->u2Ctrl, ML_ELEMENT_TYPE_BASIC);
-	present = ML_CTRL_MLD_MAC_ADDR_PRESENT |
-		  ML_CTRL_MLD_CAPA_PRESENT;
+	present = ML_CTRL_MLD_CAPA_PRESENT;
 
 	if (frame_ctrl == MAC_FRAME_PROBE_RSP ||
 	    frame_ctrl == MAC_FRAME_BEACON) {
@@ -305,11 +304,10 @@ struct IE_MULTI_LINK_CONTROL *beGenerateMldCommonInfo(
 
 	/* filling common info field*/
 	cp = common->aucCommonInfo;
+	cp++; /* reserve for common info length */
 
-	if (BE_IS_ML_CTRL_PRESENCE_MLD_MAC(common->u2Ctrl)) {
-		COPY_MAC_ADDR(cp, mld_bssinfo->aucOwnMldAddr);
-		cp += MAC_ADDR_LEN;
-	}
+	COPY_MAC_ADDR(cp, mld_bssinfo->aucOwnMldAddr);
+	cp += MAC_ADDR_LEN;
 
 	if (BE_IS_ML_CTRL_PRESENCE_LINK_ID(common->u2Ctrl))
 		*cp++ = bss->ucLinkIndex;
@@ -322,6 +320,8 @@ struct IE_MULTI_LINK_CONTROL *beGenerateMldCommonInfo(
 		cp += 2;
 	}
 
+	/* update common info length, ie length, frame length */
+	*common->aucCommonInfo = cp - common->aucCommonInfo;
 	common->ucLength = cp - (uint8_t *) common - ELEM_HDR_LEN;
 	prMsduInfo->u2FrameLength += IE_SIZE(common);
 
@@ -607,15 +607,14 @@ void beParsingMldElement(IN struct MULTI_LINK_INFO *prMlInfo, IN uint8_t *pucIE)
 	}
 
 	prMlInfo->ucMlCtrlPreBmp = ucMlCtrlPreBmp;
+	prMlInfo->ucCommonInfoLength = *pos++;
 
 	/* Check ML control that which common info exist */
-	if (ucMlCtrlPreBmp & ML_CTRL_MLD_MAC_ADDR_PRESENT) {
-		COPY_MAC_ADDR(prMlInfo->aucMldAddr, pos);
-		log_dbg(SCN, INFO, "MLD common Info MAC addr = "MACSTR"",
-			MAC2STR(prMlInfo->aucMldAddr));
-		prMlInfo->ucValid = TRUE;
-		pos += MAC_ADDR_LEN;
-	}
+	COPY_MAC_ADDR(prMlInfo->aucMldAddr, pos);
+	log_dbg(SCN, INFO, "MLD common Info MAC addr = "MACSTR"",
+		MAC2STR(prMlInfo->aucMldAddr));
+	pos += MAC_ADDR_LEN;
+
 	if (ucMlCtrlPreBmp & ML_CTRL_LINK_ID_INFO_PRESENT) {
 		prMlInfo->ucLinkId = *pos;
 		log_dbg(SCN, INFO, "ML common Info LinkID = %d",
@@ -646,6 +645,18 @@ void beParsingMldElement(IN struct MULTI_LINK_INFO *prMlInfo, IN uint8_t *pucIE)
 		log_dbg(SCN, INFO, "ML common Info MLD capa = 0x%x",
 			prMlInfo->u2MldCap);
 		pos += 2;
+	}
+
+	if (pos - prMlInfoIe->aucMultiLinkVarIe !=
+			prMlInfo->ucCommonInfoLength) {
+		prMlInfo->ucValid = FALSE;
+		log_dbg(SCN, WARN,
+			"invalid ML control len: real %d != expected %d",
+			pos - prMlInfoIe->aucMultiLinkVarIe,
+			prMlInfo->ucCommonInfoLength);
+		return;
+	} else {
+		prMlInfo->ucValid = TRUE;
 	}
 
 	/* pos point to link info, recusive parse it */
