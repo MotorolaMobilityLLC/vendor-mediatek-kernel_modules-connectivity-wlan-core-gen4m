@@ -2125,7 +2125,7 @@ static void mt6653WpdmaMsiConfig(struct ADAPTER *prAdapter)
 #endif
 
 	/* configure MSI number */
-	u4Value |= ((WFDMA_AP_MSI_SETTING_VAL <<
+	u4Value = ((WFDMA_AP_MSI_SETTING_VAL <<
 		WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie0_msi_num_SHFT) &
 		WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie0_msi_num_MASK);
 #if CFG_MTK_MDDP_SUPPORT
