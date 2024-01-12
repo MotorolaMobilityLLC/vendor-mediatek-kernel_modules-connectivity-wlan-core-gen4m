@@ -115,7 +115,7 @@ void halSwWfdmaInit(struct GLUE_INFO *prGlueInfo)
 		gConEmiPhyBaseFinal + prSwWfdmaInfo->u4EmiOffset,
 		SW_WFDMA_EMI_SIZE,
 		"WIFI-SW-WFDMA");
-	pucEmiBaseAddr = ioremap_nocache(
+	pucEmiBaseAddr = ioremap(
 		gConEmiPhyBaseFinal + prSwWfdmaInfo->u4EmiOffset,
 		SW_WFDMA_EMI_SIZE);
 
