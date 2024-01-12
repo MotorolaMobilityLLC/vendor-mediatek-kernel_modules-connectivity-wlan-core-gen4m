@@ -2178,7 +2178,7 @@ struct cfg80211_bss * kalInformConnectionBss(struct ADAPTER *prAdapter,
 	struct ieee80211_channel *prChannel, uint8_t *arBssid,
 	uint8_t ucBssIndex)
 {
-	uint8_t *pos = NULL, *buf = NULL;
+	uint8_t *pos = NULL;
 	uint16_t len = 0;
 	struct BSS_DESC *prBssDesc = NULL;
 	struct STA_RECORD *prStaRec;
@@ -2220,7 +2220,6 @@ struct cfg80211_bss * kalInformConnectionBss(struct ADAPTER *prAdapter,
 		RCPI_TO_dBm(prBssDesc->ucRCPI) * 100, /* MBM */
 		GFP_KERNEL);
 #endif
-	cnmMemFree(prAdapter, buf);
 
 	return bss;
 }
@@ -2615,6 +2614,161 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 	}
 
 	return WLAN_STATUS_SUCCESS;
+}
+
+void kalInformFtEvent(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIndex)
+{
+	struct ADAPTER *prAdapter;
+	struct net_device *prDevHandler;
+	struct FT_EVENT_PARAMS *ft_param;
+	struct cfg80211_ft_event_params ft_event = {0};
+	uint8_t *buf, *pos;
+	uint16_t len;
+
+	prAdapter = prGlueInfo->prAdapter;
+	prDevHandler = wlanGetNetDev(prGlueInfo, ucBssIndex);
+	ft_param = aisGetFtEventParam(prAdapter, ucBssIndex);
+
+	if (!prDevHandler) {
+		DBGLOG(INIT, ERROR,
+			"ucBssIndex=%u, prDevHandler=%p\n",
+			ucBssIndex, prDevHandler);
+		return;
+	}
+
+	if (!ft_param->pcIe || !ft_param->u2IeLen || !ft_param->prTargetAp) {
+		DBGLOG(INIT, INFO, "invalid ft param\n");
+		return;
+	}
+
+	len = ft_param->u2IeLen + 255; /* 255 for mtk mlo link info */
+	buf = kalMemZAlloc(len, VIR_MEM_TYPE);
+	if (buf == NULL) {
+		DBGLOG(INIT, INFO, "Can't allocate memory\n");
+		return;
+	}
+	kalMemCopy(buf, ft_param->pcIe, ft_param->u2IeLen);
+	pos = buf + ft_param->u2IeLen;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (mldIsMultiLinkFormed(prAdapter, ft_param->prTargetAp)) {
+		struct MLD_BSS_INFO *mld_bssinfo;
+		struct BSS_INFO *bssinfo =
+			aisGetAisBssInfo(prAdapter, ucBssIndex);
+		struct MLD_STA_RECORD *mld_starec;
+		struct STA_RECORD *starec;
+		uint8_t *vendor_ie = pos;
+		uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
+		struct IE_MTK_PRE_WIFI7 *pre;
+		struct IE_MULTI_LINK_CONTROL *common;
+		uint16_t present = 0;
+
+		mld_bssinfo = mldBssGetByBss(prAdapter, bssinfo);
+		mld_starec = mldStarecGetByStarec(prAdapter,
+			ft_param->prTargetAp);
+
+		/* Vendor[PRE_WIFI7[ML[STA Profile * N]]] */
+
+		MTK_OUI_IE(vendor_ie)->ucId = ELEM_ID_VENDOR;
+		MTK_OUI_IE(vendor_ie)->ucLength = ELEM_MIN_LEN_MTK_OUI;
+		MTK_OUI_IE(vendor_ie)->aucOui[0] = aucMtkOui[0];
+		MTK_OUI_IE(vendor_ie)->aucOui[1] = aucMtkOui[1];
+		MTK_OUI_IE(vendor_ie)->aucOui[2] = aucMtkOui[2];
+		MTK_OUI_IE(vendor_ie)->aucCapability[0] |=
+			MTK_SYNERGY_CAP_SUPPORT_TLV;
+		pos += IE_SIZE(vendor_ie);
+
+		pre = (struct IE_MTK_PRE_WIFI7 *) pos;
+		pre->ucId = MTK_OUI_ID_PRE_WIFI7;
+		pre->ucLength = 2;
+		pre->ucVersion0 = 0;
+		pre->ucVersion1 = 2;
+		pos += IE_SIZE(pre);
+
+		common = (struct IE_MULTI_LINK_CONTROL *) pos;
+		common->ucId = ELEM_ID_RESERVED;
+		common->ucExtId = ELEM_EXT_ID_MLD;
+
+		present |= ML_CTRL_LINK_ID_INFO_PRESENT;
+
+		BE_SET_ML_CTRL_TYPE(common->u2Ctrl, ML_CTRL_TYPE_BASIC);
+		BE_SET_ML_CTRL_PRESENCE(common->u2Ctrl, present);
+
+		/* filling common info field*/
+		pos = common->aucCommonInfo;
+		pos++; /* reserve for common info length */
+
+		COPY_MAC_ADDR(pos, mld_bssinfo->aucOwnMldAddr);
+		pos += MAC_ADDR_LEN;
+		*pos++ = bssinfo->ucLinkIndex;
+
+		/* update common info length, ie length, frame length */
+		*common->aucCommonInfo = pos - common->aucCommonInfo;
+		common->ucLength = pos - (uint8_t *) common - ELEM_HDR_LEN;
+
+		/* use starec lists to loop all new roaming target APs */
+		LINK_FOR_EACH_ENTRY(starec, &mld_starec->rStarecList,
+			rLinkEntryMld, struct STA_RECORD) {
+			struct IE_ML_STA_CONTROL *sta_ctrl =
+				(struct IE_ML_STA_CONTROL *) pos;
+			uint16_t control = 0;
+
+			bssinfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					starec->ucBssIndex);
+
+			if (bssinfo->ucBssIndex == ucBssIndex)
+				continue;
+
+			sta_ctrl->ucSubID = SUB_IE_MLD_PER_STA_PROFILE;
+
+			/* filling STA control field (fixed length) */
+			BE_SET_ML_STA_CTRL_LINK_ID(control,
+				bssinfo->ucLinkIndex);
+
+			/*
+			 * meaningful if NSTR Link Pair Present is 1
+			 * Bitmap subfield: 0 = 1 octet, 1 = 2 octets
+			 */
+			control |= (ML_STA_CTRL_MAC_ADDR_PRESENT);
+
+			BE_SET_ML_STA_CTRL_FIELD(sta_ctrl->u2StaCtrl, control);
+
+			/* filling STA info field (varied length) */
+			pos = sta_ctrl->aucStaInfo;
+			pos++; /* reserved for sta info length */
+
+			COPY_MAC_ADDR(pos, bssinfo->aucOwnMacAddr);
+			pos += MAC_ADDR_LEN;
+
+			*sta_ctrl->aucStaInfo = pos - sta_ctrl->aucStaInfo;
+			sta_ctrl->ucLength = pos - (uint8_t *)sta_ctrl - 2;
+			common->ucLength += IE_SIZE(sta_ctrl);
+		}
+
+		pre->ucLength += IE_SIZE(common);
+		MTK_OUI_IE(vendor_ie)->ucLength += IE_SIZE(pre);
+
+		DBGLOG(INIT, INFO, "FT: MTK_PRE_WIFI7");
+		DBGLOG_MEM8(INIT, INFO, vendor_ie, IE_SIZE(vendor_ie));
+	}
+#endif
+
+	ft_event.ies = buf;
+	ft_event.ies_len = pos - buf;
+#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
+	ft_event.target_ap =
+		cnmStaRecAuthAddr(prAdapter,
+			ft_param->prTargetAp);
+#else
+	ft_event.target_ap =
+		ft_param->prTargetAp->aucMacAddr;
+#endif
+	ft_event.ric_ies = ft_param->pcRicIes;
+	ft_event.ric_ies_len = ft_param->u2RicIesLen;
+
+	cfg80211_ft_event(prDevHandler, &ft_event);
+
+	kalMemFree(buf, VIR_MEM_TYPE, len);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3046,28 +3200,7 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 				break;
 			}
 			case ENUM_STATUS_TYPE_FT_AUTH_STATUS: {
-				struct FT_EVENT_PARAMS *prFtParam =
-						aisGetFtEventParam(prAdapter,
-						ucBssIndex);
-				struct cfg80211_ft_event_params rFtEvent = {0};
-
-				rFtEvent.ies = prFtParam->pcIe;
-				rFtEvent.ies_len = prFtParam->u2IeLen;
-#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
-				rFtEvent.target_ap =
-					cnmStaRecAuthAddr(prAdapter,
-						prFtParam->prTargetAp);
-#else
-				rFtEvent.target_ap =
-					prFtParam->prTargetAp->aucMacAddr;
-#endif
-				rFtEvent.ric_ies =
-						prFtParam->pcRicIes;
-				rFtEvent.ric_ies_len =
-						prFtParam->u2RicIesLen;
-
-				cfg80211_ft_event(prDevHandler,
-						  &rFtEvent);
+				kalInformFtEvent(prGlueInfo, ucBssIndex);
 			}
 				break;
 
