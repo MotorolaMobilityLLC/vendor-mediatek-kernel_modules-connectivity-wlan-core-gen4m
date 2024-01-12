@@ -2171,6 +2171,9 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 		}
 	} else if (ucIpProto == IP_PRO_ICMP) {
 		/* the number of ICMP packets is seldom so we print log here */
+		uint16_t u2IpId =
+			(pucIpHdr[IPV4_ADDR_LEN] << 8) |
+			pucIpHdr[IPV4_ADDR_LEN + 1];
 		pucIcmp = &pucIpHdr[20];
 
 		ucIcmpType = pucIcmp[0];
@@ -2183,8 +2186,9 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 		ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
 		GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
 		DBGLOG(TX, INFO,
-		       "<TX> ICMP: Type %d, Id 0x04%x, Seq BE 0x%04x, SeqNo: %d\n",
-		       ucIcmpType, u2IcmpId, u2IcmpSeq, ucSeqNo);
+			"<TX> ICMP: IPID[0x%04x] Type %d, Id 0x%04x, Seq BE 0x%04x, SeqNo: %d\n",
+			u2IpId, ucIcmpType, u2IcmpId,
+			u2IcmpSeq, ucSeqNo);
 		prTxPktInfo->u2Flag |= BIT(ENUM_PKT_ICMP);
 	}
 	return TRUE;
