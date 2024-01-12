@@ -48,7 +48,7 @@
  *******************************************************************************
  */
 uint8_t g_enableNAN = TRUE;
-uint8_t g_disableNAN = TRUE;
+uint8_t g_disableNAN = FALSE;
 uint8_t g_deEvent = FALSE;
 uint8_t g_aucNanServiceName[NAN_MAX_SERVICE_NAME_LEN];
 uint8_t g_aucNanServiceId[6];
@@ -404,7 +404,7 @@ wlanoidGetNANCapabilitiesRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		pNanCapabilitiesRsp->fwHeader.transactionId;
 	nanCapabilitiesRsp.status = 0;
 	nanCapabilitiesRsp.max_concurrent_nan_clusters = 1;
-	nanCapabilitiesRsp.max_service_name_len = NAN_FW_MAX_SERVICE_NAME_LEN;
+	nanCapabilitiesRsp.max_service_name_len = NAN_MAX_SERVICE_NAME_LEN;
 	nanCapabilitiesRsp.max_match_filter_len = NAN_FW_MAX_MATCH_FILTER_LEN;
 	nanCapabilitiesRsp.max_service_specific_info_len =
 		NAN_MAX_SERVICE_SPECIFIC_INFO_LEN;
@@ -1097,7 +1097,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 #endif
 
 		for (u4DelayIdx = 0; u4DelayIdx < 5; u4DelayIdx++) {
-			if (g_disableNAN == TRUE) {
+			/* Do not block to disable if not enable */
+			if (g_disableNAN == TRUE || g_enableNAN == TRUE) {
 				g_disableNAN = FALSE;
 				break;
 			}
@@ -1284,7 +1285,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			switch (outputTlv.type) {
 			case NAN_TLV_TYPE_SERVICE_NAME:
 				if (outputTlv.length >
-					NAN_FW_MAX_SERVICE_NAME_LEN) {
+					NAN_MAX_SERVICE_NAME_LEN) {
 					DBGLOG(NAN, ERROR,
 						"outputTlv.length is invalid!\n");
 					kfree(pNanPublishRsp);
@@ -1648,7 +1649,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			switch (outputTlv.type) {
 			case NAN_TLV_TYPE_SERVICE_NAME:
 				if (outputTlv.length >
-					NAN_FW_MAX_SERVICE_NAME_LEN) {
+					NAN_MAX_SERVICE_NAME_LEN) {
 					DBGLOG(NAN, ERROR,
 						"outputTlv.length is invalid!\n");
 					kfree(pNanSubscribeReq);

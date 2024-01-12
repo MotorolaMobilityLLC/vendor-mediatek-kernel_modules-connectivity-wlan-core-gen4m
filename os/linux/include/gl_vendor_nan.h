@@ -747,7 +747,7 @@ enum NanInternalStatusType {
  * BIT2 - Disable followUp indication received (OTA).
  * BIT3 - Disable publishReplied indication.
  */
-#define GET_PUB_REPLY_IND_FLAG(flags) ((flags & PUB_REPLY_IND_FLAG) << 3)
+#define GET_PUB_REPLY_IND_FLAG(flags) (!(flags & PUB_REPLY_IND_FLAG) << 3)
 #define GET_PUB_FOLLOWUP_RX_IND_DISABLE_FLAG(flags)                            \
 	(((flags & PUB_FOLLOWUP_RX_IND_DISABLE_FLAG) >> 26) << 2)
 #define GET_PUB_MATCH_EXPIRED_IND_DISABLE_FLAG(flags)                          \

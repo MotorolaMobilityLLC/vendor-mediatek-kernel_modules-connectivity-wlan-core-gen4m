@@ -112,9 +112,6 @@ struct NanFWPublishRequest {
 	 * value 0 will	   default to 1.
 	 */
 	uint16_t period;
-	uint16_t service_name_len; /* length of service name */
-	/* UTF-8 encoded string identifying the service */
-	uint8_t service_name[NAN_FW_MAX_SERVICE_NAME_LEN];
 
 	/* number of OTA Publish, 0 means forever until canceled */
 	uint8_t publish_count;
@@ -295,10 +292,6 @@ struct NanFWSubscribeRequest {
 
 	/* If this value is 0 this field is not used by the DE.*/
 	uint8_t subscribe_count;
-
-	/* UTF-8 encoded string identifying the service */
-	uint8_t service_name[NAN_FW_MAX_SERVICE_NAME_LEN];
-	uint16_t service_name_len; /* length of service name */
 
 	/* Sequence of values which further specify the published
 	 * service beyond the service name
