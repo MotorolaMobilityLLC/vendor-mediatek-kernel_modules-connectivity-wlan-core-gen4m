@@ -4051,13 +4051,16 @@ void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 					prBssDesc->ucMaxBSSIDIndicator;
 		prAisBssInfo->ucMBSSIDIndex = prBssDesc->ucMBSSIDIndex;
 #endif
+
+		prAisBssInfo->ucDTIMPeriod = prBssDesc->ucDTIMPeriod;
+		prAisBssInfo->fgTIMPresent = prBssDesc->fgTIMPresent;
 	}
 
 	/* NOTE: Defer ucDTIMPeriod updating to when beacon is received
 	 * after connection
 	 */
-	prAisBssInfo->ucDTIMPeriod = 0;
-	prAisBssInfo->fgTIMPresent = TRUE;
+	//prAisBssInfo->ucDTIMPeriod = 0;
+	//prAisBssInfo->fgTIMPresent = TRUE;
 	prAisBssInfo->u2ATIMWindow = 0;
 
 	prAisBssInfo->ucBeaconTimeoutCount = AIS_BEACON_TIMEOUT_COUNT_INFRA;
@@ -4086,6 +4089,7 @@ void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 	/* inside scanProcessBeaconAndProbeResp() after 1st beacon
 	 * is received
 	 */
+	nicPmIndicateBssConnected(prAdapter, ucBssIndex);
 }				/* end of aisUpdateBssInfoForJOIN() */
 
 #if CFG_SUPPORT_ADHOC
