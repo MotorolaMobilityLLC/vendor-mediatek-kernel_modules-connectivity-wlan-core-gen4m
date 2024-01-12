@@ -452,10 +452,14 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 #if IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
 			if (in_interrupt())
 				DBGLOG(INIT, INFO, "Skip reset in tasklet\n");
-			else
-#endif
+			else {
+				prAdapter->fgRstDrvOwn = TRUE;
+#else  /* !IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
+			{
+#endif /* IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
 				GL_DEFAULT_RESET_TRIGGER(prAdapter,
 					RST_DRV_OWN_FAIL);
+			}
 		}
 		GET_CURRENT_SYSTIME(&prAdapter->rLastOwnFailedLogTime);
 	}
@@ -502,6 +506,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 
 	DBGLOG(INIT, TRACE, "DRIVER OWN Start\n");
 	KAL_REC_TIME_START();
+	prAdapter->fgRstDrvOwn = FALSE;
 
 	u4CurrTick = kalGetTimeTick();
 	i = 0;

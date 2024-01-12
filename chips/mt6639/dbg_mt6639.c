@@ -2054,7 +2054,7 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 	u_int8_t readable = TRUE;
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	int ret = 0;
-	u_int8_t dumpViaBt = fgIsBusAccessFailed && fgTriggerDebugSop;
+	u_int8_t dumpViaBt = 0;
 #endif
 
 	if (!ad) {
@@ -2065,10 +2065,18 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 	chip_info = ad->chip_info;
 	debug_ops = chip_info->prDebugOps;
 
-	if (debug_ops && debug_ops->dumpPcieStatus)
+	/* debug only */
+	if (ad->fgRstDrvOwn) {
+		readable = FALSE;
+		fgIsBusAccessFailed = TRUE;
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+		fgTriggerDebugSop = TRUE;
+#endif
+	} else if (debug_ops && debug_ops->dumpPcieStatus)
 		readable = debug_ops->dumpPcieStatus(ad->prGlueInfo);
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	dumpViaBt = fgIsBusAccessFailed && fgTriggerDebugSop;
 	if (readable == FALSE && !dumpViaBt)
 		return;
 #else
