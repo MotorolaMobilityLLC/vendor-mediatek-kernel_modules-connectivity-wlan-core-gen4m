@@ -17,7 +17,7 @@ PWD=$(shell pwd)
 DRIVER_DIR=$(PWD)
 
 # For Connfem
-KBUILD_EXTRA_SYMBOLS += $(PWD)/Module.symvers
+KBUILD_EXTRA_SYMBOLS += $(PWD)/../connfem/Module.symvers
 export KBUILD_EXTRA_SYMBOLS
 
 export CONFIG_MTK_WIFI_ONLY=m
