@@ -12446,16 +12446,16 @@ wlanSuspendRekeyOffload(struct GLUE_INFO *prGlueInfo, uint8_t ucRekeyMode)
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4Rslt = WLAN_STATUS_FAILURE;
 	struct GL_WPA_INFO *prWpaInfo;
-	struct BSS_INFO *prAisBssInfo = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
 
 	if (!prGlueInfo)
 		return WLAN_STATUS_NOT_ACCEPTED;
 
-	prAisBssInfo = aisGetConnectedBssInfo(
+	prBssInfo = aisGetConnectedBssInfo(
 		prGlueInfo->prAdapter);
 
 	/* prAisBssInfo exist only when connect, skip if disconnect */
-	if (!prAisBssInfo)
+	if (!prBssInfo)
 		return u4Rslt;
 
 	prGtkData =
@@ -12468,10 +12468,10 @@ wlanSuspendRekeyOffload(struct GLUE_INFO *prGlueInfo, uint8_t ucRekeyMode)
 	kalMemZero(prGtkData, sizeof(struct PARAM_GTK_REKEY_DATA));
 
 	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter,
-		prAisBssInfo->ucBssIndex);
+		prBssInfo->ucBssIndex);
 
 	DBGLOG(RSN, INFO, "GTK Rekey ucRekeyMode = %d, BssIndex = %d\n",
-		ucRekeyMode, prAisBssInfo->ucBssIndex);
+		ucRekeyMode, prBssInfo->ucBssIndex);
 
 	/* if enable, FW rekey offload. if disable, rekey back to supplicant */
 	prGtkData->ucRekeyMode = ucRekeyMode;
@@ -12496,47 +12496,43 @@ wlanSuspendRekeyOffload(struct GLUE_INFO *prGlueInfo, uint8_t ucRekeyMode)
 			prWpaInfo->aucReplayCtr,
 			NL80211_REPLAY_CTR_LEN);
 
-		prGtkData->ucBssIndex =
-			prAisBssInfo->ucBssIndex;
+		prGtkData->ucBssIndex =	prBssInfo->ucBssIndex;
 
 		prGtkData->u4Proto = NL80211_WPA_VERSION_2;
-		if (prWpaInfo->u4WpaVersion ==
-					IW_AUTH_WPA_VERSION_WPA)
+		if (prWpaInfo->u4WpaVersion == IW_AUTH_WPA_VERSION_WPA)
 			prGtkData->u4Proto = NL80211_WPA_VERSION_1;
 
-		if (prWpaInfo->u4CipherPairwise ==
-					IW_AUTH_CIPHER_TKIP)
+		if (GET_SELECTOR_TYPE(prBssInfo->
+			u4RsnSelectedPairwiseCipher) == CIPHER_SUITE_TKIP)
 			prGtkData->u4PairwiseCipher = BIT(3);
-		else if (prWpaInfo->u4CipherPairwise ==
-					IW_AUTH_CIPHER_CCMP)
+		else if (GET_SELECTOR_TYPE(prBssInfo->
+			u4RsnSelectedPairwiseCipher) == CIPHER_SUITE_CCMP)
 			prGtkData->u4PairwiseCipher = BIT(4);
 		else {
 			kalMemFree(prGtkData, VIR_MEM_TYPE,
-				sizeof(struct PARAM_GTK_REKEY_DATA));
-			return WLAN_STATUS_SUCCESS;
+				   sizeof(struct PARAM_GTK_REKEY_DATA));
+			return 0;
 		}
 
-		if (prWpaInfo->u4CipherGroup ==
-					IW_AUTH_CIPHER_TKIP)
-			prGtkData->u4GroupCipher    = BIT(3);
-		else if (prWpaInfo->u4CipherGroup ==
-					IW_AUTH_CIPHER_CCMP)
-			prGtkData->u4GroupCipher    = BIT(4);
+		if (GET_SELECTOR_TYPE(prBssInfo->
+			u4RsnSelectedGroupCipher) == CIPHER_SUITE_TKIP)
+			prGtkData->u4GroupCipher = BIT(3);
+		else if (GET_SELECTOR_TYPE(prBssInfo->
+			u4RsnSelectedGroupCipher) == CIPHER_SUITE_CCMP)
+			prGtkData->u4GroupCipher = BIT(4);
 		else {
 			kalMemFree(prGtkData, VIR_MEM_TYPE,
-				sizeof(struct PARAM_GTK_REKEY_DATA));
-			return WLAN_STATUS_SUCCESS;
+				   sizeof(struct PARAM_GTK_REKEY_DATA));
+			return 0;
 		}
 
-		prGtkData->u4KeyMgmt = prWpaInfo->u4KeyMgmt;
+		prGtkData->u4KeyMgmt = prBssInfo->u4RsnSelectedAKMSuite;
 		prGtkData->u4MgmtGroupCipher = 0;
-
 	}
 
 	if (ucRekeyMode == GTK_REKEY_CMD_MODE_OFLOAD_OFF) {
 		/* inform FW disable EAPOL offload */
-		prGtkData->ucBssIndex =
-			prAisBssInfo->ucBssIndex;
+		prGtkData->ucBssIndex =	prBssInfo->ucBssIndex;
 		DBGLOG(RSN, INFO, "Disable EAPOL offload\n");
 	}
 

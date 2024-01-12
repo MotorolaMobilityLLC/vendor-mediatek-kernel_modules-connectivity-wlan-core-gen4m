@@ -1310,12 +1310,7 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 			break;
 
 		case AUTH_MODE_WPA3_SAE:
-			if (prWpaInfo->u4AuthAlg == IW_AUTH_ALG_SAE) {
-				DBGLOG(AIS, INFO,
-				       "JOIN INIT: eAuthMode == AUTH_MODE_SAE\n");
-				prAisFsmInfo->ucAvailableAuthTypes =
-					(uint8_t) AUTH_TYPE_SAE;
-			} else if (!aisSearchPmkidEntry(prAdapter,
+			if (!aisSearchPmkidEntry(prAdapter,
 					prStaRec, ucBssIndex)) {
 				prAisFsmInfo->ucAvailableAuthTypes =
 					(uint8_t) AUTH_TYPE_SAE;
@@ -2064,8 +2059,11 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 	uint8_t i;
 	struct BSS_INFO *prMainBss;
 	struct CONNECTION_SETTINGS *prConnSettings;
+	struct GL_WPA_INFO *prWpaInfo;
+
 
 	prConnSettings = &prAisFsmInfo->rConnSettings;
+	prWpaInfo = &prAisFsmInfo->rWpaInfo;
 	/* main bss must assign wmm first */
 	prMainBss = aisGetMainLinkBssInfo(prAisFsmInfo);
 	cnmWmmIndexDecision(prAdapter, prMainBss);
@@ -2093,6 +2091,7 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 		}
 
 		prConnSettings->eAuthMode = prBssDesc->eRsnSelectedAuthMode;
+		prWpaInfo->u4WpaVersion = prBssDesc->u4RsnSelectedProto;
 		prAisBssInfo->u4RsnSelectedGroupCipher =
 			prBssDesc->u4RsnSelectedGroupCipher;
 		prAisBssInfo->u4RsnSelectedPairwiseCipher =
@@ -2610,62 +2609,28 @@ u_int8_t aisScanChannelFixed(struct ADAPTER *prAdapter, enum ENUM_BAND *prBand,
 static uint8_t aisFsmUpdateRsnSetting(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBss, uint8_t ucBssIndex)
 {
-	struct RSN_INFO *prBssRsnInfo = NULL;
 	enum ENUM_PARAM_AUTH_MODE eAuthMode;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
 
 	eAuthMode = aisGetAuthMode(prAdapter, ucBssIndex);
 	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 
-	if (eAuthMode == AUTH_MODE_WPA ||
-	    eAuthMode == AUTH_MODE_WPA_PSK ||
-	    eAuthMode == AUTH_MODE_WPA_NONE) {
-		prBssRsnInfo = &prBss->rWPAInfo;
-	} else if (rsnKeyMgmtRsn(eAuthMode)) {
-		prBssRsnInfo = &prBss->rRSNInfo;
 #if CFG_SUPPORT_PASSPOINT
-	} else if (eAuthMode == AUTH_MODE_WPA_OSEN) {
-		if (prBss->fgIERSN) {
-			prBssRsnInfo = &prBss->rRSNInfo;
-			aisGetConnSettings(prAdapter, ucBssIndex)
-				->fgAuthOsenWithRSN = TRUE;
-		} else {
-			aisGetConnSettings(prAdapter, ucBssIndex)
-				->fgAuthOsenWithRSN = FALSE;
-		}
+	if (eAuthMode == AUTH_MODE_WPA_OSEN) {
+		aisGetConnSettings(prAdapter, ucBssIndex)
+			->fgAuthOsenWithRSN = prBss->fgIERSN;
 		DBGLOG(AIS, INFO, "OSEN: OSEN=%d, RSN=%d\n",
 			prBss->fgIEOsen, prBss->fgIERSN);
+	}
 #endif
-	}
 
-	if (!prBssRsnInfo) {
-		DBGLOG(AIS, WARN, "bss%d no rsninfo\n", ucBssIndex);
-		return FALSE;
-	}
 
 #if CFG_SUPPORT_802_11W
-	DBGLOG(AIS, INFO, "[MFP] MFP setting = %d\n",
-	       kalGetMfpSetting(prAdapter->prGlueInfo, ucBssIndex));
-
-	if (kalGetMfpSetting(prAdapter->prGlueInfo, ucBssIndex) ==
-	    RSN_AUTH_MFP_REQUIRED) {
-		prAisSpecificBssInfo->fgMgmtProtection = TRUE;
-	} else if (kalGetMfpSetting(prAdapter->prGlueInfo, ucBssIndex) ==
-		   RSN_AUTH_MFP_OPTIONAL) {
-		if (prBssRsnInfo->u2RsnCap & (ELEM_WPA_CAP_MFPR |
-					      ELEM_WPA_CAP_MFPC))
-			prAisSpecificBssInfo->fgMgmtProtection = TRUE;
-		else
-			prAisSpecificBssInfo->fgMgmtProtection = FALSE;
-	} else {
-		prAisSpecificBssInfo->fgMgmtProtection = FALSE;
-	}
+	prAisSpecificBssInfo->fgMgmtProtection = prBss->u4RsnSelectedPmf;
 
 	DBGLOG(AIS, INFO,
-	       "setting=%d, Cap=%d, CapPresent=%d, MgmtProtection = %d\n",
+	       "setting=%d,MgmtProtection = %d\n",
 	       kalGetMfpSetting(prAdapter->prGlueInfo, ucBssIndex),
-	       prBssRsnInfo->u2RsnCap,
-	       prBssRsnInfo->fgRsnCapPresent,
 	       prAisSpecificBssInfo->fgMgmtProtection);
 #endif
 
@@ -3923,13 +3888,21 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 	enum ENUM_CHANNEL_WIDTH eRfChannelWidth;
 	enum ENUM_CHNL_EXT eRfSco;
 	struct CONNECTION_SETTINGS *prConnSettings;
+	struct GL_WPA_INFO *prWpaInfo;
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
 
 	if (!prBssInfo || !prBssDesc)
 		return;
 
+	prAisSpecificBssInfo = aisGetAisSpecBssInfo(ad, prBssInfo->ucBssIndex);
 	prConnSettings = aisGetConnSettings(ad, prBssInfo->ucBssIndex);
-	prConnSettings->eAuthMode = prBssDesc->eRsnSelectedAuthMode;
+	prWpaInfo = aisGetWpaInfo(ad, prBssInfo->ucBssIndex);
 
+#if CFG_SUPPORT_802_11W
+	prAisSpecificBssInfo->fgMgmtProtection = prBssDesc->u4RsnSelectedPmf;
+#endif
+	prConnSettings->eAuthMode = prBssDesc->eRsnSelectedAuthMode;
+	prWpaInfo->u4WpaVersion = prBssDesc->u4RsnSelectedProto;
 	prBssInfo->u4RsnSelectedGroupCipher =
 		prBssDesc->u4RsnSelectedGroupCipher;
 	prBssInfo->u4RsnSelectedPairwiseCipher =
@@ -5426,7 +5399,8 @@ void aisUpdateBssInfoForCreateIBSS(struct ADAPTER *prAdapter,
 
 	if (prConnSettings->eEncStatus == ENUM_ENCRYPTION1_ENABLED ||
 	    prConnSettings->eEncStatus == ENUM_ENCRYPTION2_ENABLED ||
-	    prConnSettings->eEncStatus == ENUM_ENCRYPTION3_ENABLED) {
+	    prConnSettings->eEncStatus == ENUM_ENCRYPTION3_ENABLED ||
+	    prConnSettings->eEncStatus == ENUM_ENCRYPTION4_ENABLED) {
 		prAisBssInfo->fgIsProtection = TRUE;
 	} else {
 		prAisBssInfo->fgIsProtection = FALSE;

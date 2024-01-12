@@ -63,6 +63,8 @@ struct APPEND_VAR_IE_ENTRY txAssocReqIETable[] = {
 	,			/* 221 */
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN + 4), NULL, rsnGenerateRSNIE}
 	,			/* 48 */
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL, rsnGenerateWPAIE}
+	,			/* 221 */
 #if CFG_SUPPORT_802_11AC
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP), NULL, rlmReqGenerateVhtCapIE}
 	,			/*191 */
@@ -191,7 +193,9 @@ struct APPEND_VAR_IE_ENTRY txAssocRespIETable[] = {
  *******************************************************************************
  */
 
-uint8_t assocSkipRSNXIe(struct ADAPTER *prAdapter,
+static uint8_t assocSkipRSNXIe(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec, struct IE_HDR *prIe);
+static uint8_t assocSkipWpaIe(struct ADAPTER *prAdapter,
 		struct STA_RECORD *prStaRec, struct IE_HDR *prIe);
 
 /*******************************************************************************
@@ -208,6 +212,7 @@ static struct SKIP_IE_ENTRY g_assocSkipIEs[] = {
 	{ELEM_ID_EXTENDED_CAP, NULL},
 	{ELEM_ID_MOBILITY_DOMAIN, NULL},
 	{ELEM_ID_RSNX, assocSkipRSNXIe},
+	{ELEM_ID_WPA, assocSkipWpaIe},
 };
 
 /*----------------------------------------------------------------------------*/
@@ -779,7 +784,7 @@ uint32_t assocSendReAssocReqFrame(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }				/* end of assocSendReAssocReqFrame() */
 
-uint8_t assocSkipRSNXIe(struct ADAPTER *prAdapter,
+static uint8_t assocSkipRSNXIe(struct ADAPTER *prAdapter,
 		struct STA_RECORD *prStaRec, struct IE_HDR *prIe)
 {
 	uint8_t ucBssIndex = prStaRec->ucBssIndex;
@@ -792,6 +797,28 @@ uint8_t assocSkipRSNXIe(struct ADAPTER *prAdapter,
 		if (prTargetBss && !prTargetBss->fgIERSNX)
 			return TRUE;
 	}
+
+	return FALSE;
+}
+
+static uint8_t assocSkipWpaIe(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec, struct IE_HDR *prIe)
+{
+	uint8_t aucWfaOui[] = VENDOR_OUI_WFA;
+	struct WPA_INFO_ELEM *prWpaIE = (struct WPA_INFO_ELEM *) NULL;
+
+	prWpaIE = (struct WPA_INFO_ELEM *) prIe;
+
+	if (prWpaIE->ucLength <= ELEM_MIN_LEN_WFA_OUI_TYPE_SUBTYPE)
+		return FALSE;
+
+	if (kalMemCmp(prWpaIE->aucOui, aucWfaOui, sizeof(aucWfaOui)))
+		return FALSE;
+
+	/* skip wpa ie, fill by driver */
+	if (prWpaIE->ucOuiType == VENDOR_OUI_TYPE_WPA &&
+	    prWpaIE->u2Version == 1)
+		return TRUE;
 
 	return FALSE;
 }
