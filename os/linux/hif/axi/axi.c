@@ -434,10 +434,12 @@ static int mtk_axi_probe(struct platform_device *pdev)
 	if (ret)
 		goto exit;
 
+#if (CFG_MTK_ANDROID_WMT == 1)
 	emi_mem_init(prChipInfo, pdev);
 	ret = halAllocHifMem(pdev, prDriverData);
 	if (ret)
 		goto exit;
+#endif
 
 exit:
 	DBGLOG(INIT, INFO, "mtk_axi_probe() done, ret: %d\n", ret);
@@ -451,7 +453,9 @@ static int mtk_axi_remove(struct platform_device *pdev)
 	struct mt66xx_chip_info *prChipInfo = prDriverData->chip_info;
 
 	axiCsrIounmap(pdev, prChipInfo);
+#if (CFG_MTK_ANDROID_WMT == 1)
 	halFreeHifMem(pdev, WIFI_RSV_MEM_WFDMA);
+#endif
 	emi_mem_uninit(prChipInfo, pdev);
 	platform_set_drvdata(pdev, NULL);
 	return 0;

@@ -956,11 +956,11 @@ static int mtk_axi_probe(struct platform_device *pdev)
 
 #if (CFG_MTK_ANDROID_WMT == 1)
 	emi_mem_init(prChipInfo, pdev);
-#endif
 
 	ret = halAllocHifMem(pdev, prDriverData);
 	if (ret)
 		goto exit;
+#endif
 
 #if (CFG_SUPPORT_RX_PAGE_POOL == 1) && (CFG_SUPPORT_DYNAMIC_PAGE_POOL == 0)
 	kalCreateHifSkbList(prChipInfo);
@@ -992,8 +992,8 @@ static int mtk_axi_remove(struct platform_device *pdev)
 #if CFG_SUPPORT_THERMAL_QUERY
 	thermal_cbs_unregister(pdev);
 #endif
-	halFreeHifMem(pdev, WIFI_RSV_MEM_WFDMA);
 #if (CFG_MTK_ANDROID_WMT == 1)
+	halFreeHifMem(pdev, WIFI_RSV_MEM_WFDMA);
 	emi_mem_uninit(prChipInfo, pdev);
 #endif
 #if (CFG_SUPPORT_RX_PAGE_POOL == 1) && (CFG_SUPPORT_DYNAMIC_PAGE_POOL == 0)
@@ -1071,7 +1071,9 @@ exit:
 
 static int mtk_wifi_misc_remove(struct platform_device *pdev)
 {
+#if (CFG_MTK_ANDROID_WMT == 1)
 	halFreeHifMem(pdev, WIFI_RSV_MEM_WIFI_MISC);
+#endif
 	platform_set_drvdata(pdev, NULL);
 	return 0;
 }
@@ -1586,7 +1588,10 @@ static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 		DBGLOG(HAL, TRACE, "Use pre-alloc mem ops instead.\n");
 		prMemOps->allocTxDesc = halCopyPathAllocTxDesc;
 		prMemOps->allocRxDesc = halCopyPathAllocRxDesc;
+#if (CFG_MTK_ANDROID_WMT == 1)
 		prMemOps->allocExtBuf = halCopyPathAllocExtBuf;
+		prMemOps->freeExtBuf = halCopyPathFreeExtBuf;
+#endif
 		prMemOps->allocTxCmdBuf = halCopyPathAllocTxCmdBuf;
 		prMemOps->allocTxDataBuf = halCopyPathAllocTxDataBuf;
 		prMemOps->allocRxEvtBuf = halCopyPathAllocRxBuf;
@@ -1597,7 +1602,6 @@ static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 		prMemOps->mapTxBuf = NULL;
 		prMemOps->unmapTxBuf = NULL;
 		prMemOps->freeDesc = NULL;
-		prMemOps->freeExtBuf = halCopyPathFreeExtBuf;
 		prMemOps->freeBuf = NULL;
 		prMemOps->dumpTx = halCopyPathDumpTx;
 

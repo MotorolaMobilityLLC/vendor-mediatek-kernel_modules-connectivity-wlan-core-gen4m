@@ -1299,19 +1299,23 @@ static inline void halMawdPwrOff(void) {}
 
 int halInitResvMem(struct platform_device *pdev,
 		enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx);
-int halAllocHifMem(struct platform_device *pdev,
-		   struct mt66xx_hif_driver_data *prDriverData);
-void halFreeHifMem(struct platform_device *pdev,
-		  enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx);
 void halCopyPathAllocTxDesc(struct GL_HIF_INFO *prHifInfo,
 			    struct RTMP_DMABUF *prDescRing,
 			    uint32_t u4Num);
 void halCopyPathAllocRxDesc(struct GL_HIF_INFO *prHifInfo,
 			    struct RTMP_DMABUF *prDescRing,
 			    uint32_t u4Num);
+#if (CFG_MTK_ANDROID_WMT == 1)
+int halAllocHifMem(struct platform_device *pdev,
+		   struct mt66xx_hif_driver_data *prDriverData);
+void halFreeHifMem(struct platform_device *pdev,
+		  enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx);
 void halCopyPathAllocExtBuf(struct GL_HIF_INFO *prHifInfo,
 			    struct RTMP_DMABUF *prDescRing,
 			    uint32_t u4Align);
+void halCopyPathFreeExtBuf(struct GL_HIF_INFO *prHifInfo,
+			   struct RTMP_DMABUF *prDescRing);
+#endif
 bool halCopyPathAllocTxCmdBuf(struct RTMP_DMABUF *prDmaBuf,
 			      uint32_t u4Num, uint32_t u4Idx);
 void halCopyPathAllocTxDataBuf(struct MSDU_TOKEN_ENTRY *prToken,
@@ -1334,8 +1338,6 @@ bool halCopyPathCopyRxData(struct GL_HIF_INFO *prHifInfo,
 			   struct RTMP_DMACB *pRxCell,
 			   struct RTMP_DMABUF *prDmaBuf,
 			   struct SW_RFB *prSwRfb);
-void halCopyPathFreeExtBuf(struct GL_HIF_INFO *prHifInfo,
-			   struct RTMP_DMABUF *prDescRing);
 void halCopyPathDumpTx(struct GL_HIF_INFO *prHifInfo,
 		       struct RTMP_TX_RING *prTxRing,
 		       uint32_t u4Idx, uint32_t u4DumpLen);
