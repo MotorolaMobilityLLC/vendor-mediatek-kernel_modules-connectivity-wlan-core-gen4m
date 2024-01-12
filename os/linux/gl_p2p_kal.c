@@ -1380,6 +1380,8 @@ void kalP2PIndicateMgmtTxStatus(IN struct GLUE_INFO *prGlueInfo,
 			struct BSS_INFO *prP2pBssInfo =
 				GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
 				prMsduInfo->ucBssIndex);
+			if (prP2pBssInfo == NULL)
+				return;
 
 			prGlueP2pInfo =
 				prGlueInfo->prP2PInfo

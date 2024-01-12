@@ -664,8 +664,7 @@ uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 				GET_BSS_INFO_BY_INDEX(prAdapter,
 					prStaRec->ucBssIndex);
 
-			if (prBssInfo->fgIsNetActive) {
-
+			if (prBssInfo && prBssInfo->fgIsNetActive) {
 				/* 4 <2.1> Validate Assoc Req Frame and
 				 * get Status Code
 				 */

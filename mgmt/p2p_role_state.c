@@ -246,10 +246,13 @@ p2pRoleStateInit_AP_CHNL_DETECTION(IN struct ADAPTER *prAdapter,
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 		ASSERT_BREAK((prAdapter != NULL) && (prScanReqInfo != NULL)
 			     && (prConnReqInfo != NULL) && (prBssInfo != NULL));
-
+		if (!prBssInfo)
+			return;
 		prP2pSpecificBssInfo =
 			prAdapter->rWifiVar
 				.prP2pSpecificBssInfo[prBssInfo->u4PrivateData];
+		if (!prP2pSpecificBssInfo)
+			return;
 
 		if ((cnmPreferredChannel(prAdapter,
 					 &eBand,
