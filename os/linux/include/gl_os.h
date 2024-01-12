@@ -126,6 +126,9 @@
 #include <linux/timer.h>	/* struct timer_list */
 #include <linux/jiffies.h>	/* jiffies */
 #include <linux/delay.h>	/* udelay and mdelay macro */
+#include <linux/sched.h>
+#include <linux/rtc.h>
+#include <linux/limits.h>
 
 #ifdef CONFIG_ANDROID
 #if (KERNEL_VERSION(4, 9, 0) <= LINUX_VERSION_CODE)
@@ -221,6 +224,14 @@
 
 #if KERNEL_VERSION(3, 8, 0) <= CFG80211_VERSION_CODE
 #include <uapi/linux/nl80211.h>
+#endif
+
+#ifdef UDP_SKT_WIFI
+#if (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
+#include <linux/trace_events.h>
+#else
+#include <linux/ftrace_event.h>
+#endif
 #endif
 
 #include "gl_typedef.h"
@@ -1255,6 +1266,9 @@ extern void connectivity_arch_setup_dma_ops(
 	struct device *dev, u64 dma_base,
 	u64 size, struct iommu_ops *iommu,
 	bool coherent);
+extern void connectivity_export_show_stack(struct task_struct *tsk,
+	unsigned long *sp);
 #endif
 
+int wlanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev);
 #endif /* _GL_OS_H */
