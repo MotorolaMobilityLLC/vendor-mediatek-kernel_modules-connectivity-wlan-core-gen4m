@@ -1174,6 +1174,7 @@ static u_int8_t is_coredump_source_valid(enum COREDUMP_SOURCE_TYPE source)
 
 static int __coredump_start(struct coredump_ctx *ctx,
 	enum COREDUMP_SOURCE_TYPE source,
+	enum ENUM_COREDUMP_BY_CHIP_RESET_TYPE_T type,
 	char *reason,
 	u_int8_t force_dump)
 {
@@ -1220,6 +1221,10 @@ static int __coredump_start(struct coredump_ctx *ctx,
 	if (ret)
 		goto deinit;
 
+	/* To do:
+	 * 1. save DFD pre dump
+	 * 2. dump EMI
+	 */
 	ret = __coredump_handle_dump_buff(ctx, chip_info);
 	if (ret)
 		goto deinit;
@@ -1242,13 +1247,48 @@ static int __coredump_start(struct coredump_ctx *ctx,
 #endif
 
 deinit:
-	__coredump_deinit(ctx);
+	if (type != ENUM_COREDUMP_BY_CHIP_RST_DFD_DUMP)
+		__coredump_deinit(ctx);
 exit:
 	return ret;
 }
 
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+int wifi_coredump_post_start(void)
+{
+	struct coredump_ctx *ctx = &g_coredump_ctx;
+	struct mt66xx_chip_info *chip_info;
+	int ret = 0;
+
+	if (!ctx->initialized) {
+		DBGLOG(INIT, WARN,
+			"Skip coredump due to NOT initialized.\n");
+		goto deinit;
+	}
+
+	ctx->processing = TRUE;
+
+	glGetChipInfo((void **)&chip_info);
+	if (!chip_info) {
+		DBGLOG(INIT, ERROR, "chip info is NULL\n");
+		goto deinit;
+	}
+
+	/* To do:dfd dump */
+	ret = __coredump_handle_dump_buff(ctx, chip_info);
+	if (ret)
+		goto deinit;
+
+deinit:
+	__coredump_deinit(ctx);
+	ctx->processing = FALSE;
+	return ret;
+}
+#endif
+
 void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
 	char *reason,
+	enum ENUM_COREDUMP_BY_CHIP_RESET_TYPE_T type,
 	u_int8_t force_dump)
 {
 	struct coredump_ctx *ctx = &g_coredump_ctx;
@@ -1273,7 +1313,7 @@ void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
 		connsys_coredump_clean(ctx->handler);
 	}
 #elif IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	__coredump_start(ctx, source, reason, force_dump);
+	__coredump_start(ctx, source, type, reason, force_dump);
 #endif
 	ctx->processing = FALSE;
 }

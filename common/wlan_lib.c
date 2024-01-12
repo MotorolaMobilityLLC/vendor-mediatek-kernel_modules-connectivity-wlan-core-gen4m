@@ -1242,6 +1242,7 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 		INIT_ADAPTER_FAIL,
 		INIT_HIFINFO_FAIL,
 		SET_CHIP_ECO_INFO_FAIL,
+		PRE_ON_PROCESS_DONE,
 		COPY_XONVRAM_FAIL,
 		RAM_CODE_DOWNLOAD_FAIL,
 		WAIT_FIRMWARE_READY_FAIL,
@@ -1338,6 +1339,14 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 			eFailReason = INIT_HIFINFO_FAIL;
 			break;
 		}
+
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+		if (fgIsPreOnProcessing) {
+			/* wlanShowDFDInfo(prAdapter); */
+			DBGLOG(INIT, INFO, "Get DFD dump Info\n");
+			eFailReason = PRE_ON_PROCESS_DONE;
+		}
+#endif
 
 		fw_log_init(prAdapter);
 
@@ -1539,10 +1548,12 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 			/* release allocated memory */
 			switch (eFailReason) {
 			case WAIT_FIRMWARE_READY_FAIL:
-			case COPY_XONVRAM_FAIL:
 			case RAM_CODE_DOWNLOAD_FAIL:
+			case COPY_XONVRAM_FAIL:
 			case SET_CHIP_ECO_INFO_FAIL:
 				fw_log_deinit(prAdapter);
+			kal_fallthrough;
+			case PRE_ON_PROCESS_DONE:
 				halHifSwInfoUnInit(prAdapter->prGlueInfo);
 			kal_fallthrough;
 			case INIT_HIFINFO_FAIL:

@@ -2708,6 +2708,9 @@ static void register_connv3_cbs(void)
 #if CFG_CHIP_RESET_SUPPORT
 	cb.rst_cb.pre_whole_chip_rst = wlan_pre_whole_chip_rst_v3;
 	cb.rst_cb.post_whole_chip_rst = wlan_post_whole_chip_rst_v3;
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+	cb.rst_cb.post_reset_on = wlan_post_reset_on_v3;
+#endif
 #endif
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);

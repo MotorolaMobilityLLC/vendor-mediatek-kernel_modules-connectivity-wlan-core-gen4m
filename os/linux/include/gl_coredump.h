@@ -53,6 +53,13 @@ enum COREDUMP_STATE {
 	COREDUMP_STATE_NUM
 };
 
+enum ENUM_COREDUMP_BY_CHIP_RESET_TYPE_T {
+	ENUM_COREDUMP_BY_CHIP_RST_LEGACY_MODE = 0x0,
+	ENUM_COREDUMP_BY_CHIP_RST_PMIC_FALUT_B,
+	ENUM_COREDUMP_BY_CHIP_RST_DFD_DUMP,
+	ENUM_COREDUMP_BY_CHIP_RESET_TYPE_NUM
+};
+
 struct mem_region {
 	uint8_t name[5];
 	u_int8_t ready;
@@ -126,7 +133,11 @@ int wifi_coredump_init(void *priv);
 void wifi_coredump_deinit(void);
 void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
 	char *reason,
+	enum ENUM_COREDUMP_BY_CHIP_RESET_TYPE_T type,
 	u_int8_t force_dump);
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+int wifi_coredump_post_start(void);
+#endif
 void coredump_register_bushang_chk_cb(bushang_chk_func_cb cb);
 #if CFG_SUPPORT_CONNINFRA || IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 enum consys_drv_type coredump_src_to_conn_type(enum COREDUMP_SOURCE_TYPE src);

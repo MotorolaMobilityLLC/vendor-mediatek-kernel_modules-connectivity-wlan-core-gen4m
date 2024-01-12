@@ -108,6 +108,9 @@ struct wireless_dev *gprWdev[KAL_AIS_NUM];
 #if CFG_MTK_ANDROID_WMT
 u_int8_t g_IsPlatCbsRegistered = FALSE;
 #endif
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+bool fgIsPreOnProcessing = FALSE;
+#endif
 #if CFG_AP_80211KVR_INTERFACE
 #define NETLINK_OSS_KERNEL 25
 struct sock *nl_sk;
@@ -8346,6 +8349,24 @@ WLAN_REMOVE_RETURN:
 	glReseProbeRemoveDone(prGlueInfo, 0, FALSE);
 	GLUE_SET_REF_CNT(0, g_wlanRemoving);
 }				/* end of wlanRemove() */
+
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+int wlanFuncPreOnImpl(void)
+{
+	struct mt66xx_chip_info *chip = NULL;
+
+	/* should be PRE_ON_PROCESS_DONE */
+	fgIsPreOnProcessing = TRUE;
+
+	glBusFuncOn();
+	glGetChipInfo((void **)&chip);
+	if (chip)
+		wlan_pinctrl_action(chip, WLAN_PINCTRL_MSG_FUNC_OFF);
+
+	fgIsPreOnProcessing = FALSE;
+	return 0;
+}
+#endif
 
 int wlanFuncOnImpl(void)
 {

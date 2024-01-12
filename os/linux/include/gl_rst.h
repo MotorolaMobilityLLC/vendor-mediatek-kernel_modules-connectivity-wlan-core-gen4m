@@ -280,11 +280,14 @@ int glRstwlanPostWholeChipReset(void);
 #endif /* CFG_SUPPORT_CONNINFRA */
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
-	char *reason);
+	char *reason, unsigned int reset_type);
 int wlan_post_whole_chip_rst_v3(void);
 int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 	char *reason);
 int wlan_post_whole_chip_rst_v2(void);
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+int wlan_post_reset_on_v3(unsigned int type);
+#endif
 #endif
 u_int8_t kalIsWholeChipResetting(void);
 void glSetRstReasonString(char *reason);
