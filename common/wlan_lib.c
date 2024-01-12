@@ -896,7 +896,7 @@ WLAN_STATUS wlanCheckWifiFunc(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgRdyChk)
 			HAL_WIFI_FUNC_GET_STATUS(prAdapter, u4Result);
 			DBGLOG(INIT, ERROR, "Waiting for %s: Timeout, Status=0x%08x\n",
 				fgRdyChk?"ready bit":"power off", u4Result);
-
+			GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP | RST_FLAG_PREVENT_POWER_OFF);
 			u4Status = WLAN_STATUS_FAILURE;
 
 			break;
@@ -1743,10 +1743,8 @@ VOID wlanReleasePendingOid(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
 				       "No response from chip for %u times, set NoAck flag!\n",
 				       prAdapter->ucOidTimeoutCount);
 #if 0
-#if CFG_CHIP_RESET_SUPPORT
 				glGetRstReason(RST_OID_TIMEOUT);
 				GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
-#endif
 #endif
 			}
 
@@ -2536,6 +2534,7 @@ WLAN_STATUS wlanAccessRegisterStatus(IN P_ADAPTER_T prAdapter, IN UINT_8 ucCmdSe
 					     ucPortIdx,
 					     prEvent,
 					     u4EventLen, &u4RxPktLength) != WLAN_STATUS_SUCCESS) {
+			GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP | RST_FLAG_PREVENT_POWER_OFF);
 			u4Status = WLAN_STATUS_FAILURE;
 		} else {
 			prInitHifRxHeader = (P_INIT_HIF_RX_HEADER_T) prEvent;
@@ -2545,11 +2544,13 @@ WLAN_STATUS wlanAccessRegisterStatus(IN P_ADAPTER_T prAdapter, IN UINT_8 ucCmdSe
 				&& (ucSetQuery == 1)) ||
 				((prInitHifRxHeader->rInitWifiEvent.ucEID != INIT_EVENT_ID_ACCESS_REG)
 				&& (ucSetQuery == 0))) {
+				GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP | RST_FLAG_PREVENT_POWER_OFF);
 				u4Status = WLAN_STATUS_FAILURE;
 				DBGLOG(INIT, ERROR,
 					"wlanAccessRegisterStatus: incorrect ucEID. ucSetQuery = 0x%x\n", ucSetQuery);
 			} else if (prInitHifRxHeader->rInitWifiEvent.ucSeqNum != ucCmdSeqNum) {
 				u4Status = WLAN_STATUS_FAILURE;
+				GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP | RST_FLAG_PREVENT_POWER_OFF);
 				DBGLOG(INIT, ERROR,
 					"wlanAccessRegisterStatus: incorrect ucCmdSeqNum. = 0x%x\n", ucCmdSeqNum);
 			} else {
@@ -4266,9 +4267,17 @@ WLAN_STATUS wlanCheckSystemConfiguration(IN P_ADAPTER_T prAdapter)
 	const UINT_8 aucZeroMacAddr[] = NULL_MAC_ADDR;
 	BOOLEAN fgIsConfExist = TRUE;
 	BOOLEAN fgGenErrMsg = FALSE;
-	BOOLEAN fgNvramCheckEn = FALSE;
 	P_REG_INFO_T prRegInfo = NULL;
-	P_WIFI_VER_INFO_T prVerInfo = NULL;
+#if 0
+	const UINT_8 aucBCAddr[] = BC_MAC_ADDR;
+	P_WLAN_BEACON_FRAME_T prBeacon = NULL;
+	P_IE_SSID_T prSsid = NULL;
+	UINT_32 u4ErrCode = 0;
+	UINT_8 aucErrMsg[32];
+	PARAM_SSID_T rSsid;
+	PARAM_802_11_CONFIG_T rConfiguration;
+	PARAM_RATES_EX rSupportedRates;
+#endif
 #endif
 
 	DEBUGFUNC("wlanCheckSystemConfiguration");
@@ -4284,55 +4293,37 @@ WLAN_STATUS wlanCheckSystemConfiguration(IN P_ADAPTER_T prAdapter)
 
 #if (CFG_SW_NVRAM_VERSION_CHECK == 1)
 	prRegInfo = kalGetConfiguration(prAdapter->prGlueInfo);
-	prVerInfo = &prAdapter->rVerInfo;
 
 #if (CFG_SUPPORT_PWR_LIMIT_COUNTRY == 1)
-	if (fgIsConfExist == TRUE &&
-		(prVerInfo->u2Part1CfgPeerVersion > CFG_DRV_OWN_VERSION ||
-		prVerInfo->u2Part2CfgPeerVersion > CFG_DRV_OWN_VERSION ||
-		prVerInfo->u2Part1CfgOwnVersion < CFG_DRV_PEER_VERSION ||
-		prVerInfo->u2Part2CfgOwnVersion < CFG_DRV_PEER_VERSION || /* NVRAM */
-		prVerInfo->u2FwPeerVersion > CFG_DRV_OWN_VERSION ||
-		prVerInfo->u2FwOwnVersion < CFG_DRV_PEER_VERSION ||
-		(prAdapter->fgIsEmbbededMacAddrValid == FALSE &&
-		(IS_BMCAST_MAC_ADDR(prRegInfo->aucMacAddr) ||
-		EQUAL_MAC_ADDR(aucZeroMacAddr, prRegInfo->aucMacAddr))) ||
-		prRegInfo->ucTxPwrValid == 0 ||
-		prAdapter->fgIsPowerLimitTableValid == FALSE))
+	if (fgIsConfExist == TRUE && (prAdapter->rVerInfo.u2Part1CfgPeerVersion > CFG_DRV_OWN_VERSION
+					  || prAdapter->rVerInfo.u2Part2CfgPeerVersion > CFG_DRV_OWN_VERSION
+					  || prAdapter->rVerInfo.u2Part1CfgOwnVersion < CFG_DRV_PEER_VERSION
+					  || prAdapter->rVerInfo.u2Part2CfgOwnVersion < CFG_DRV_PEER_VERSION/* NVRAM */
+				      || prAdapter->rVerInfo.u2FwPeerVersion > CFG_DRV_OWN_VERSION
+				      || prAdapter->rVerInfo.u2FwOwnVersion < CFG_DRV_PEER_VERSION
+				      || (prAdapter->fgIsEmbbededMacAddrValid == FALSE &&
+					  (IS_BMCAST_MAC_ADDR(prRegInfo->aucMacAddr)
+					  || EQUAL_MAC_ADDR(aucZeroMacAddr, prRegInfo->aucMacAddr)))
+				      || prRegInfo->ucTxPwrValid == 0
+					  || prAdapter->fgIsPowerLimitTableValid == FALSE))
 		fgGenErrMsg = TRUE;
 #else
-	if (fgIsConfExist == TRUE &&
-		(prVerInfo->u2Part1CfgPeerVersion > CFG_DRV_OWN_VERSION ||
-		prVerInfo->u2Part2CfgPeerVersion > CFG_DRV_OWN_VERSION ||
-		prVerInfo->u2Part1CfgOwnVersion < CFG_DRV_PEER_VERSION ||
-		prVerInfo->u2Part2CfgOwnVersion < CFG_DRV_PEER_VERSION || /* NVRAM */
-		prVerInfo->u2FwPeerVersion > CFG_DRV_OWN_VERSION ||
-		prVerInfo->u2FwOwnVersion < CFG_DRV_PEER_VERSION ||
-		(prAdapter->fgIsEmbbededMacAddrValid == FALSE &&
-		(IS_BMCAST_MAC_ADDR(prRegInfo->aucMacAddr) ||
-		EQUAL_MAC_ADDR(aucZeroMacAddr, prRegInfo->aucMacAddr))) ||
-		prRegInfo->ucTxPwrValid == 0))
+	if (fgIsConfExist == TRUE && (prAdapter->rVerInfo.u2Part1CfgPeerVersion > CFG_DRV_OWN_VERSION
+					  || prAdapter->rVerInfo.u2Part2CfgPeerVersion > CFG_DRV_OWN_VERSION
+					  || prAdapter->rVerInfo.u2Part1CfgOwnVersion < CFG_DRV_PEER_VERSION
+					  || prAdapter->rVerInfo.u2Part2CfgOwnVersion < CFG_DRV_PEER_VERSION/* NVRAM */
+				      || prAdapter->rVerInfo.u2FwPeerVersion > CFG_DRV_OWN_VERSION
+				      || prAdapter->rVerInfo.u2FwOwnVersion < CFG_DRV_PEER_VERSION
+				      || (prAdapter->fgIsEmbbededMacAddrValid == FALSE &&
+					  (IS_BMCAST_MAC_ADDR(prRegInfo->aucMacAddr)
+					  || EQUAL_MAC_ADDR(aucZeroMacAddr, prRegInfo->aucMacAddr)))
+				      || prRegInfo->ucTxPwrValid == 0))
 		fgGenErrMsg = TRUE;
 #endif
 #endif
-
-	fgNvramCheckEn = prAdapter->rWifiVar.fgNvramCheckEn;
-	DBGLOG(INIT, INFO, "%s: fgNvramCheckEn=%d\n", __func__, fgNvramCheckEn);
-	if (fgGenErrMsg == TRUE && fgNvramCheckEn == TRUE) {
-
-		const UINT_8 aucBCAddr[] = BC_MAC_ADDR;
-		P_WLAN_BEACON_FRAME_T prBeacon = NULL;
-		P_IE_SSID_T prSsid = NULL;
-		UINT_32 u4ErrCode = 0;
-		UINT_8 aucErrMsg[32];
-		PARAM_SSID_T rSsid;
-		PARAM_802_11_CONFIG_T rConfiguration;
-		PARAM_RATES_EX rSupportedRates;
-
-		prBeacon = cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
-			sizeof(WLAN_BEACON_FRAME_T) + sizeof(IE_SSID_T));
-		if (prBeacon == NULL)
-			return WLAN_STATUS_SUCCESS; /* do not care */
+#if 0/* remove NVRAM WARNING in scan result */
+	if (fgGenErrMsg == TRUE) {
+		prBeacon = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, sizeof(WLAN_BEACON_FRAME_T) + sizeof(IE_SSID_T));
 
 		/* initialization */
 		kalMemZero(prBeacon, sizeof(WLAN_BEACON_FRAME_T) + sizeof(IE_SSID_T));
@@ -4358,22 +4349,19 @@ WLAN_STATUS wlanCheckSystemConfiguration(IN P_ADAPTER_T prAdapter)
 
 		/* rSupportedRates initialization */
 		kalMemZero(rSupportedRates, sizeof(PARAM_RATES_EX));
-
+	}
 #if (CFG_NVRAM_EXISTENCE_CHECK == 1)
-#define NVRAM_ERR_MSG "NVRAM WARNING: Err = 0x00"
-		if (kalIsConfigurationExist(prAdapter->prGlueInfo) == FALSE) {
-			COPY_SSID(prSsid->aucSSID, prSsid->ucLength, NVRAM_ERR_MSG,
-				(UINT_8) (strlen(NVRAM_ERR_MSG)));
+#define NVRAM_ERR_MSG "NVRAM WARNING: Err = 0x01"
+	if (kalIsConfigurationExist(prAdapter->prGlueInfo) == FALSE) {
+		COPY_SSID(prSsid->aucSSID, prSsid->ucLength, NVRAM_ERR_MSG, (UINT_8) (strlen(NVRAM_ERR_MSG)));
 
-			kalIndicateBssInfo(prAdapter->prGlueInfo,
+		kalIndicateBssInfo(prAdapter->prGlueInfo,
 				   (PUINT_8) prBeacon,
-				   OFFSET_OF(WLAN_BEACON_FRAME_T, aucInfoElem) +
-				   OFFSET_OF(IE_SSID_T, aucSSID) + prSsid->ucLength, 1, 0);
+				   OFFSET_OF(WLAN_BEACON_FRAME_T,
+					     aucInfoElem) + OFFSET_OF(IE_SSID_T, aucSSID) + prSsid->ucLength, 1, 0);
 
-			COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
-				NVRAM_ERR_MSG, strlen(NVRAM_ERR_MSG));
-
-			nicAddScanResult(prAdapter,
+		COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen, NVRAM_ERR_MSG, strlen(NVRAM_ERR_MSG));
+		nicAddScanResult(prAdapter,
 				 prBeacon->aucBSSID,
 				 &rSsid,
 				 0,
@@ -4382,65 +4370,62 @@ WLAN_STATUS wlanCheckSystemConfiguration(IN P_ADAPTER_T prAdapter)
 				 &rConfiguration,
 				 NET_TYPE_INFRA,
 				 rSupportedRates,
-				 OFFSET_OF(WLAN_BEACON_FRAME_T, aucInfoElem) +
-				 OFFSET_OF(IE_SSID_T, aucSSID) +
+				 OFFSET_OF(WLAN_BEACON_FRAME_T, aucInfoElem) + OFFSET_OF(IE_SSID_T,
+											 aucSSID) +
 				 prSsid->ucLength - WLAN_MAC_MGMT_HEADER_LEN,
 				 (PUINT_8) ((ULONG) (prBeacon) + WLAN_MAC_MGMT_HEADER_LEN));
-		}
+	}
 #endif
 
 #if (CFG_SW_NVRAM_VERSION_CHECK == 1)
 #define VER_ERR_MSG     "NVRAM WARNING: Err = 0x%02X"
-		if (fgIsConfExist == TRUE) { /* NVRAM */
-			if ((prVerInfo->u2Part1CfgPeerVersion > CFG_DRV_OWN_VERSION ||
-				prVerInfo->u2Part2CfgPeerVersion > CFG_DRV_OWN_VERSION ||
-				prVerInfo->u2Part1CfgOwnVersion < CFG_DRV_PEER_VERSION ||
-				prVerInfo->u2Part2CfgOwnVersion < CFG_DRV_PEER_VERSION ||
-				prVerInfo->u2FwPeerVersion > CFG_DRV_OWN_VERSION ||
-				prVerInfo->u2FwOwnVersion < CFG_DRV_PEER_VERSION))
-				u4ErrCode |= NVRAM_ERROR_VERSION_MISMATCH;
+	if (fgIsConfExist == TRUE) {
+		if ((prAdapter->rVerInfo.u2Part1CfgPeerVersion > CFG_DRV_OWN_VERSION
+			 || prAdapter->rVerInfo.u2Part2CfgPeerVersion > CFG_DRV_OWN_VERSION
+			 || prAdapter->rVerInfo.u2Part1CfgOwnVersion < CFG_DRV_PEER_VERSION
+			 || prAdapter->rVerInfo.u2Part2CfgOwnVersion < CFG_DRV_PEER_VERSION	/* NVRAM */
+		     || prAdapter->rVerInfo.u2FwPeerVersion > CFG_DRV_OWN_VERSION
+		     || prAdapter->rVerInfo.u2FwOwnVersion < CFG_DRV_PEER_VERSION))
+			u4ErrCode |= NVRAM_ERROR_VERSION_MISMATCH;
 
-			if (prRegInfo->ucTxPwrValid == 0)
-				u4ErrCode |= NVRAM_ERROR_INVALID_TXPWR;
+		if (prRegInfo->ucTxPwrValid == 0)
+			u4ErrCode |= NVRAM_ERROR_INVALID_TXPWR;
 
-			if (prAdapter->fgIsEmbbededMacAddrValid == FALSE &&
-				(IS_BMCAST_MAC_ADDR(prRegInfo->aucMacAddr) ||
-				EQUAL_MAC_ADDR(aucZeroMacAddr, prRegInfo->aucMacAddr))) {
-				u4ErrCode |= NVRAM_ERROR_INVALID_MAC_ADDR;
-			}
-#if CFG_SUPPORT_PWR_LIMIT_COUNTRY
-			if (prAdapter->fgIsPowerLimitTableValid == FALSE)
-				u4ErrCode |= NVRAM_POWER_LIMIT_TABLE_INVALID;
-#endif
-			if (u4ErrCode != 0) {
-				sprintf(aucErrMsg, VER_ERR_MSG, (unsigned int)u4ErrCode);
-				COPY_SSID(prSsid->aucSSID, prSsid->ucLength,
-					aucErrMsg, (UINT_8) (strlen(aucErrMsg)));
-
-				kalIndicateBssInfo(prAdapter->prGlueInfo,
-					(PUINT_8) prBeacon,
-					OFFSET_OF(WLAN_BEACON_FRAME_T, aucInfoElem) +
-					OFFSET_OF(IE_SSID_T, aucSSID) + prSsid->ucLength, 1, 0);
-
-				COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
-					NVRAM_ERR_MSG, strlen(NVRAM_ERR_MSG));
-
-				nicAddScanResult(prAdapter, prBeacon->aucBSSID, &rSsid, 0, 0,
-					 PARAM_NETWORK_TYPE_FH, &rConfiguration,
-					 NET_TYPE_INFRA, rSupportedRates,
-					 OFFSET_OF(WLAN_BEACON_FRAME_T, aucInfoElem) +
-					 OFFSET_OF(IE_SSID_T, aucSSID) + prSsid->ucLength -
-					 WLAN_MAC_MGMT_HEADER_LEN,
-					 (PUINT_8) ((ULONG) (prBeacon) +
-					 WLAN_MAC_MGMT_HEADER_LEN));
-			}
+		if (prAdapter->fgIsEmbbededMacAddrValid == FALSE && (IS_BMCAST_MAC_ADDR(prRegInfo->aucMacAddr)
+								     || EQUAL_MAC_ADDR(aucZeroMacAddr,
+										       prRegInfo->aucMacAddr))) {
+			u4ErrCode |= NVRAM_ERROR_INVALID_MAC_ADDR;
 		}
+#if CFG_SUPPORT_PWR_LIMIT_COUNTRY
+		if (prAdapter->fgIsPowerLimitTableValid == FALSE)
+			u4ErrCode |= NVRAM_POWER_LIMIT_TABLE_INVALID;
+#endif
+		if (u4ErrCode != 0) {
+			sprintf(aucErrMsg, VER_ERR_MSG, (unsigned int)u4ErrCode);
+			COPY_SSID(prSsid->aucSSID, prSsid->ucLength, aucErrMsg, (UINT_8) (strlen(aucErrMsg)));
+
+			kalIndicateBssInfo(prAdapter->prGlueInfo,
+					   (PUINT_8) prBeacon,
+					   OFFSET_OF(WLAN_BEACON_FRAME_T,
+						     aucInfoElem) + OFFSET_OF(IE_SSID_T,
+									      aucSSID) + prSsid->ucLength, 1, 0);
+
+			COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen, NVRAM_ERR_MSG, strlen(NVRAM_ERR_MSG));
+			nicAddScanResult(prAdapter, prBeacon->aucBSSID, &rSsid, 0, 0,
+					 PARAM_NETWORK_TYPE_FH, &rConfiguration, NET_TYPE_INFRA,
+					 rSupportedRates, OFFSET_OF(WLAN_BEACON_FRAME_T,
+								    aucInfoElem) +
+					 OFFSET_OF(IE_SSID_T,
+						   aucSSID) + prSsid->ucLength -
+					 WLAN_MAC_MGMT_HEADER_LEN,
+					 (PUINT_8) ((ULONG) (prBeacon) + WLAN_MAC_MGMT_HEADER_LEN));
+		}
+	}
 #endif
 
-		if (prBeacon != NULL)
-			cnmMemFree(prAdapter, prBeacon);
-	}
-
+	if (fgGenErrMsg == TRUE)
+		cnmMemFree(prAdapter, prBeacon);
+#endif
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -5535,16 +5520,13 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	prWifiVar->u4PerfMonTpTh[9] =
 		(UINT_32) wlanCfgGetUint32(prAdapter, "PerfMonLv10", 700);
 	prWifiVar->u4BoostCpuTh =
-			(UINT_32) wlanCfgGetUint32(prAdapter, "BoostCpuTh", 4);
+			(UINT_32) wlanCfgGetUint32(prAdapter, "BoostCpuTh", 1);
 
 	/*
 	 * For Certification purpose,forcibly set
 	 * "Compressed Steering Number of Beamformer Antennas Supported" to our own capability.
 	 */
 	prWifiVar->fgForceSTSNum = (UINT_8)wlanCfgGetUint32(prAdapter, "ForceSTSNum", 0);
-	/* nvram checking in scan result*/
-	prWifiVar->fgNvramCheckEn =
-		(BOOLEAN) wlanCfgGetUint32(prAdapter, "NvramCheckEn", FEATURE_ENABLED);
 }
 
 VOID wlanCfgSetSwCtrl(IN P_ADAPTER_T prAdapter)

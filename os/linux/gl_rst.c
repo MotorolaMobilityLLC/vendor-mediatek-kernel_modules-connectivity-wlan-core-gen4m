@@ -276,7 +276,6 @@ BOOLEAN glResetTrigger(P_ADAPTER_T prAdapter, UINT_32 u4RstFlag, const PUINT_8 p
 {
 	BOOLEAN fgResult = TRUE;
 
-#if CFG_WMT_RESET_API_SUPPORT
 	if (kalIsResetting() || fgResetTriggered) {
 		DBGLOG(INIT, ERROR,
 		       "Skip trigger chip reset in %s line %u, during resetting! Chip[%04X E%u]\n",
@@ -306,7 +305,6 @@ BOOLEAN glResetTrigger(P_ADAPTER_T prAdapter, UINT_32 u4RstFlag, const PUINT_8 p
 		wifi_rst.rst_trigger_flag = u4RstFlag;
 		schedule_work(&(wifi_rst.rst_trigger_work));
 	}
-#endif
 
 	return fgResult;
 }
