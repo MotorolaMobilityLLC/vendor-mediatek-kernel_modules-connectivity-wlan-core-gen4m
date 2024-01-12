@@ -2331,10 +2331,11 @@ void p2pRoleFsmRunEventCsaDone(struct ADAPTER *prAdapter,
 					   prP2pBssInfo->ucLinkIndex));
 			nicUpdateBss(prAdapter,
 				prP2pBssInfo->ucBssIndex);
-			nicActivateNetwork(prAdapter,
-				NETWORK_ID(prP2pBssInfo->ucBssIndex,
-					   prP2pBssInfo->ucLinkIndex));
-
+			p2pChangeMediaState(prAdapter, prP2pBssInfo,
+				MEDIA_STATE_DISCONNECTED);
+			nicUpdateBssEx(prAdapter,
+				prP2pBssInfo->ucBssIndex,
+				FALSE);
 #if CFG_SUPPORT_DBDC
 			CNM_DBDC_ADD_DECISION_INFO(rDbdcDecisionInfo,
 				prP2pBssInfo->ucBssIndex,

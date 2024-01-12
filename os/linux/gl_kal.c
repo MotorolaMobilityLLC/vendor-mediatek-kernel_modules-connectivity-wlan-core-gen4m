@@ -11231,6 +11231,8 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 #else
 	cfg80211_ch_switch_notify(prDevHandler, &chandef);
 #endif
+	/* Check SAP channel */
+	p2pFuncSwitchSapChannel(prGlueInfo->prAdapter);
 }
 #endif
 
