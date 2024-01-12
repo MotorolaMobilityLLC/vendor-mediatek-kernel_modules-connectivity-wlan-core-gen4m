@@ -99,7 +99,6 @@ typedef void(*PROCESS_RX_UNI_EVENT_FUNCTION) (struct ADAPTER *,
  */
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
-	[0 ... CMD_ID_END - 1] = NULL,
 	[CMD_ID_SCAN_REQ_V2] = nicUniCmdScanReqV2,
 	[CMD_ID_SCAN_CANCEL] = nicUniCmdScanCancel,
 	[CMD_ID_SET_SCAN_SCHED_ENABLE] = nicUniCmdSchedScanEnable,
@@ -199,7 +198,6 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
-	[0 ... EXT_CMD_ID_END - 1] = NULL,
 	[EXT_CMD_ID_TWT_AGRT_UPDATE] = nicUniCmdTwtArgtUpdate,
 	[EXT_CMD_ID_STAREC_UPDATE] = nicUniCmdStaRecUpdateExt,
 	[EXT_CMD_ID_BF_ACTION] = nicUniCmdBFAction,
@@ -219,7 +217,6 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
 };
 
 static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
-	[0 ... UNI_EVENT_ID_NUM - 1] = NULL,
 	[UNI_EVENT_ID_SCAN_DONE] = nicUniEventScanDone,
 	[UNI_EVENT_ID_CNM] = nicUniEventChMngrHandleChEvent,
 	[UNI_EVENT_ID_MBMC] = nicUniEventMbmcHandleEvent,
