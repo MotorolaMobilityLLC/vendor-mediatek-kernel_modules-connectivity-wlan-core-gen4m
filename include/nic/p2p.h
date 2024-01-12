@@ -79,10 +79,12 @@
 #endif
 
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
-#define DEFAULT_P2P_PROBERESP_RETRY_LIMIT (6)
+#define DEFAULT_P2P_PROBERESP_RETRY_LIMIT (2)
 #else
 #define DEFAULT_P2P_PROBERESP_RETRY_LIMIT (2)
 #endif
+
+#define DEFAULT_P2P_PROBERESP_LIFE_TIME 500
 
 /******************************************************************************
  *                                 M A C R O S

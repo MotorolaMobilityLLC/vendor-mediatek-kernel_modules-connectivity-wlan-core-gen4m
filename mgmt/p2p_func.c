@@ -1229,7 +1229,8 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 	/* P_MSDU_INFO_T prTxMsduInfo = (P_MSDU_INFO_T)NULL; */
 	struct WLAN_MAC_HEADER *prWlanHdr = (struct WLAN_MAC_HEADER *) NULL;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
-	uint8_t ucRetryLimit = 30;	/* TX_DESC_TX_COUNT_NO_LIMIT; */
+	uint8_t ucRetryLimit = 0;
+	uint32_t u4TxLifeTimeInMs = 0;
 	u_int8_t fgDrop = FALSE;
 	struct BSS_INFO *prBssInfo;
 	uint64_t *pu8GlCookie = (uint64_t *) NULL;
@@ -1354,6 +1355,7 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 			*pu8GlCookie = u8GlCookie;
 			ucRetryLimit =
 				prAdapter->rWifiVar.u4ProbeRspRetryLimit;
+			u4TxLifeTimeInMs = DEFAULT_P2P_PROBERESP_LIFE_TIME;
 			DBGLOG(P2P, TRACE,
 				"Dump probe response content to FW.\n");
 			DBGLOG_MEM8(P2P, TRACE, prMgmtTxMsdu->prPacket,
@@ -1441,9 +1443,14 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 			p2pDevFsmRunEventMgmtFrameTxDone,
 			MSDU_RATE_MODE_AUTO);
 
-		nicTxSetPktRetryLimit(prMgmtTxMsdu, ucRetryLimit);
+		if (ucRetryLimit)
+			nicTxSetPktRetryLimit(prMgmtTxMsdu, ucRetryLimit);
+		if (u4TxLifeTimeInMs)
+			nicTxSetPktLifeTime(prAdapter,
+				prMgmtTxMsdu, u4TxLifeTimeInMs);
 
-		DBGLOG(P2P, LOUD, "ucRetryLimit = %d\n", ucRetryLimit);
+		DBGLOG(P2P, LOUD, "ucRetryLimit = %u, u4TxLifeTimeInMs = %u\n",
+			ucRetryLimit, u4TxLifeTimeInMs);
 
 		eConnState = p2pFuncTagMgmtFrame(prMgmtTxMsdu, u8GlCookie);
 
