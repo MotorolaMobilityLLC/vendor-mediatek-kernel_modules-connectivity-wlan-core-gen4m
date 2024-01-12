@@ -640,7 +640,12 @@
 #elif (CFG_SUPPORT_CONNAC3X == 1)
 #define CFG_TX_MAX_PKT_NUM                      8192
 #elif (CFG_SUPPORT_CONNAC2X == 1)
-#define CFG_TX_MAX_PKT_NUM                      2048
+/* As the driver permits CFG_TX_STOP_NETIF_PER_QUEUE_THRESHOLD data packets
+ * per BSS,
+ * an expansion to twice the size of CFG_TX_STOP_NETIF_PER_QUEUE_THRESHOLD
+ * MSDU_INFO is required. This adjustment aims to stabilize the MCC throughput.
+ */
+#define CFG_TX_MAX_PKT_NUM      (CFG_TX_STOP_NETIF_PER_QUEUE_THRESHOLD * 2)
 #else
 #define CFG_TX_MAX_PKT_NUM                      1024
 #endif
