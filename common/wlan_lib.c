@@ -1144,10 +1144,6 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 						"nicAllocateAdapterMemory Error!\n");
 				u4Status = WLAN_STATUS_FAILURE;
 				eFailReason = ALLOC_ADAPTER_MEM_FAIL;
-#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
-				mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
-						"[Wi-Fi On] nicAllocateAdapterMemory Error!");
-#endif
 				break;
 			}
 
@@ -1171,9 +1167,11 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			DBGLOG(INIT, ERROR, "nicpmSetDriverOwn() failed!\n");
 			u4Status = WLAN_STATUS_FAILURE;
 			eFailReason = DRIVER_OWN_FAIL;
-#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
-			mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
-				"[Wi-Fi On] nicpmSetDriverOwn() failed!");
+			glSetRstReason(RST_WIFI_ON_DRV_OWN_FAIL);
+#if (CFG_SUPPORT_CONNINFRA == 0)
+			GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+#else
+			GL_RESET_TRIGGER(prAdapter, RST_FLAG_WF_RESET);
 #endif
 			break;
 		}
@@ -1237,9 +1235,11 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		u4Status = wlanDownloadFW(prAdapter);
 		if (u4Status != WLAN_STATUS_SUCCESS) {
 			eFailReason = RAM_CODE_DOWNLOAD_FAIL;
-#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
-			mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
-				"[Wi-Fi On] [Ram code download fail!]");
+			glSetRstReason(RST_FW_DL_FAIL);
+#if (CFG_SUPPORT_CONNINFRA == 0)
+			GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+#else
+			GL_RESET_TRIGGER(prAdapter, RST_FLAG_WF_RESET);
 #endif
 			break;
 		}
@@ -1646,13 +1646,9 @@ uint32_t wlanCheckWifiFunc(IN struct ADAPTER *prAdapter,
 			DBGLOG(INIT, ERROR,
 			       "Waiting for %s: Timeout, Status=0x%08x\n",
 			       fgRdyChk ? "ready bit" : "power off", u4Result);
-#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
-			mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
-				"[Wi-Fi] [Read WCIR_WLAN_READY fail!]");
-#else
+			glSetRstReason(RST_CHECK_READY_BIT_TIMEOUT);
 			GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP |
 					RST_FLAG_PREVENT_POWER_OFF);
-#endif
 			u4Status = WLAN_STATUS_FAILURE;
 			break;
 		}
@@ -3252,9 +3248,11 @@ uint32_t wlanSendNicPowerCtrlCmd(IN struct ADAPTER
 	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
 	if (!prCmdInfo) {
 		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
-#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
-		mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
-			"[Wi-Fi Off] Allocate CMD_INFO_T ==> FAILED.");
+		glSetRstReason(RST_ALLOC_CMD_FAIL);
+#if (CFG_SUPPORT_CONNINFRA == 0)
+		GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+#else
+		GL_RESET_TRIGGER(prAdapter, RST_FLAG_WF_RESET);
 #endif
 		return WLAN_STATUS_FAILURE;
 	}
@@ -3314,10 +3312,6 @@ uint32_t wlanSendNicPowerCtrlCmd(IN struct ADAPTER
 		     ucTC) != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, ERROR,
 		       "Fail to transmit CMD_NIC_POWER_CTRL command\n");
-#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
-			mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
-				"[Wi-Fi Off] Fail to transmit CMD_NIC_POWER_CTRL command");
-#endif
 		status = WLAN_STATUS_FAILURE;
 	}
 
@@ -3601,6 +3595,7 @@ uint32_t wlanAccessRegisterStatus(IN struct ADAPTER *prAdapter,
 			u4Status = WLAN_STATUS_FAILURE;
 		} else if (nicRxWaitResponse(prAdapter, ucPortIdx, prEvent,
 		    u4EventLen, &u4RxPktLength) != WLAN_STATUS_SUCCESS) {
+			glSetRstReason(RST_ACCESS_REG_FAIL);
 			GL_RESET_TRIGGER(prAdapter,
 					 RST_FLAG_DO_CORE_DUMP |
 					 RST_FLAG_PREVENT_POWER_OFF);
@@ -3614,6 +3609,7 @@ uint32_t wlanAccessRegisterStatus(IN struct ADAPTER *prAdapter,
 			     (ucSetQuery == 1)) ||
 			    ((prInitEvent->ucEID != INIT_EVENT_ID_ACCESS_REG)
 				&& (ucSetQuery == 0))) {
+				glSetRstReason(RST_ACCESS_REG_FAIL);
 				GL_RESET_TRIGGER(prAdapter,
 						 RST_FLAG_DO_CORE_DUMP |
 						 RST_FLAG_PREVENT_POWER_OFF);
@@ -3623,6 +3619,7 @@ uint32_t wlanAccessRegisterStatus(IN struct ADAPTER *prAdapter,
 				       ucSetQuery);
 			} else if (prInitEvent->ucSeqNum != ucCmdSeqNum) {
 				u4Status = WLAN_STATUS_FAILURE;
+				glSetRstReason(RST_ACCESS_REG_FAIL);
 				GL_RESET_TRIGGER(prAdapter,
 						 RST_FLAG_DO_CORE_DUMP |
 						 RST_FLAG_PREVENT_POWER_OFF);

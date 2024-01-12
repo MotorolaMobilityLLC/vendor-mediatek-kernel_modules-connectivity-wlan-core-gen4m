@@ -1443,6 +1443,7 @@ scnDoZeroMdrdyRecoveryCheck(IN struct ADAPTER *prAdapter,
 					== MEDIA_STATE_DISCONNECTED) {
 					prScanInfo->
 						ucScnZeroMdrdySubsysResetCnt++;
+					glSetRstReason(RST_SCAN_RECOVERY);
 					GL_RESET_TRIGGER(prAdapter,
 						RST_FLAG_CHIP_RESET);
 				}
@@ -1489,6 +1490,7 @@ scnDoScanTimeoutRecoveryCheck(IN struct ADAPTER *prAdapter,
 		if (prScanInfo->ucScnTimeoutSubsysResetCnt < 1 &&
 		   prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED) {
 			prScanInfo->ucScnTimeoutSubsysResetCnt++;
+			glSetRstReason(RST_SCAN_RECOVERY);
 			GL_RESET_TRIGGER(prAdapter,
 				RST_FLAG_CHIP_RESET);
 		}
