@@ -1170,8 +1170,7 @@ uint8_t *mldGenerateBasicCompleteProfile(
 	 * meaningful if NSTR Link Pair Present is 1
 	 * Bitmap subfield: 0 = 1 octet, 1 = 2 octets
 	 */
-	control |= (ML_STA_CTRL_MAC_ADDR_PRESENT |
-		    ML_STA_CTRL_NSTR_LINK_PAIR_PRESENT);
+	control |= (ML_STA_CTRL_MAC_ADDR_PRESENT);
 
 	BE_SET_ML_STA_CTRL_FIELD(sta_ctrl->u2StaCtrl, control);
 
