@@ -330,6 +330,9 @@ extern void update_driver_loaded_status(uint8_t loaded);
 #if (CFG_SUPPORT_CONNINFRA == 1)
 #define GLUE_FLAG_RST_START BIT(18)
 #define GLUE_FLAG_RST_START_BIT 18
+#define GLUE_FLAG_RST_END BIT(19)
+#define GLUE_FLAG_RST_END_BIT 19
+
 #endif
 #define GLUE_BOW_KFIFO_DEPTH        (1024)
 /* #define GLUE_BOW_DEVICE_NAME        "MT6620 802.11 AMP" */
