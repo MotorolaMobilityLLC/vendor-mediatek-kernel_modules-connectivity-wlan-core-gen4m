@@ -1366,7 +1366,7 @@ wlanoidSetUApsdParam(struct ADAPTER *prAdapter,
 	prPmProfSetupInfo->ucUapsdSp = prUapsdParam->ucMaxSpLen;
 
 #if CFG_SUPPORT_MULTITHREAD
-#if defined(CONFIG_ANDROID)
+#if CFG_MTK_ANDROID_WMT
 	if (prAdapter->prGlueInfo)
 		fgIsOid = (prAdapter->prGlueInfo->u4TxThreadPid
 				!= KAL_GET_CURRENT_THREAD_ID());

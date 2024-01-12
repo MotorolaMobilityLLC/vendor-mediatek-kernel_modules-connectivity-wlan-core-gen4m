@@ -130,13 +130,6 @@ extern u_int8_t fgTriggerDebugSop;
 
 #define DRV_NAME "["CHIP_NAME"]: "
 
-/* Define if target platform is Android.
- * It should already be defined in Android kernel source
- */
-#ifndef CONFIG_ANDROID
-/* #define CONFIG_ANDROID      0 */
-#endif
-
 /* for CFG80211 IE buffering mechanism */
 #define	CFG_CFG80211_IE_BUF_LEN		(512)
 #define	GLUE_INFO_WSCIE_LENGTH		(500)

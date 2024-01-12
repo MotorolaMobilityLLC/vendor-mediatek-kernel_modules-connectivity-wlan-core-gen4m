@@ -1924,7 +1924,7 @@ int wlan_reset_thread_main(void *data)
 	struct timespec64 rNowTs, rLastTs;
 	int ret = 0;
 
-#if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
+#if CFG_ENABLE_WAKE_LOCK
 	KAL_WAKE_LOCK_T *prWlanRstThreadWakeLock;
 
 	KAL_WAKE_LOCK_INIT(NULL,
@@ -2019,7 +2019,7 @@ int wlan_reset_thread_main(void *data)
 		}
 	}
 
-#if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
+#if CFG_ENABLE_WAKE_LOCK
 	if (KAL_WAKE_LOCK_ACTIVE(NULL,
 				 prWlanRstThreadWakeLock))
 		KAL_WAKE_UNLOCK(NULL, prWlanRstThreadWakeLock);

@@ -59,14 +59,6 @@
 
 #define DRV_NAME "["CHIP_NAME"]: "
 
-/* Define if target platform is Android.
- * It should already be defined in Android kernel source
- */
-#ifndef CONFIG_ANDROID
-/* #define CONFIG_ANDROID      0 */
-
-#endif
-
 #define	CONTROL_BUFFER_SIZE		(1025)
 /* for CFG80211 IE buffering mechanism */
 #define	CFG_CFG80211_IE_BUF_LEN		(640)
@@ -95,13 +87,11 @@
 #include <linux/rtc.h>
 #include <linux/limits.h>
 
-#ifdef CONFIG_ANDROID
 #if (KERNEL_VERSION(4, 9, 0) <= LINUX_VERSION_CODE)
 #include <linux/device.h>
 #include <linux/pm_wakeup.h>
 #else
 #include <linux/wakelock.h>
-#endif
 #endif
 
 #if KERNEL_VERSION(2, 6, 12) < LINUX_VERSION_CODE

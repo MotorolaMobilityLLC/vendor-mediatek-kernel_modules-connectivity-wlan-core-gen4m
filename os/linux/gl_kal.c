@@ -2824,7 +2824,7 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 
 #else
 
-#ifdef CONFIG_ANDROID
+#if CFG_MTK_ANDROID_WMT
 #if KERNEL_VERSION(3, 10, 0) == LINUX_VERSION_CODE
 			/* Don't indicate disconnection to upper layer for
 			 * ANDROID kernel 3.10

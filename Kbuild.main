@@ -1131,6 +1131,7 @@ ifeq ($(WMT_SUPPORT), y)
     ifeq ($(CONFIG_ARCH_MEDIATEK),y)
         CONFIG_MODIFY_TX_POWER_BY_BAT_VOLT=y
     endif
+    ccflags-y += -DCFG_ENABLE_WAKE_LOCK=1
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO), y)

@@ -253,13 +253,6 @@
 #define RX_REORDER_WAIT_FOR_LAST_FRAG 1
 #endif
 
-/* Mobile(must Android) need default 1 */
-#if defined(CONFIG_ANDROID)
-#ifndef CFG_ENABLE_WAKE_LOCK
-#define CFG_ENABLE_WAKE_LOCK	1
-#endif
-#endif
-
 /* CE default 0, if need, define 1 in makefile */
 #ifndef CFG_ENABLE_WAKE_LOCK
 #define CFG_ENABLE_WAKE_LOCK	0
