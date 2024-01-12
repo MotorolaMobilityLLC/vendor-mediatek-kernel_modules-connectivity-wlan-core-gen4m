@@ -1130,6 +1130,13 @@ void heRlmRecHeCapInfo(
 		HE_UNSET_PHY_CAP_MU_BFMER(prStaRec->ucHePhyCapInfo);
 	}
 
+	/* Check LDPC setting */
+	if (IS_FEATURE_DISABLED(prWifiVar->ucTxLdpc)) {
+		/* Only check TxLdpc due to this setting only affect the RA */
+		HE_UNSET_PHY_CAP_LDPC_CODING_IN_PAYLOAD(
+			prStaRec->ucHePhyCapInfo);
+	}
+
 	/* Set HE Rx Mcs Map upon peer's capability and our capability */
 	u4Offset = heRlmRecHeMcsMap(prAdapter, prStaRec, prHeCap);
 
