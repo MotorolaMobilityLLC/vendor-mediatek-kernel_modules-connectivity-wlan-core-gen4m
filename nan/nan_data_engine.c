@@ -3515,6 +3515,8 @@ void nanSetNdpPmkid(
 
 	DBGLOG(NAN, LOUD, "%X\n", pmkid[i]);
 	kalMemCopy(prNanCmdDataRequest->aucScid, pmkid, 16);
+	dumpMemory8(
+		prNanCmdDataRequest->aucScid, NAN_SCID_DEFAULT_LEN);
 }
 
 /*----------------------------------------------------------------------------*/
