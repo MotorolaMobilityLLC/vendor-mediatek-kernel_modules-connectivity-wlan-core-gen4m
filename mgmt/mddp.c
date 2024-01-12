@@ -688,6 +688,63 @@ exit:
 	return ret;
 }
 
+int32_t mddpNotifyMDUnifiedCmdVer(void)
+{
+	struct mddpw_drv_notify_info_t *prNotifyInfo;
+	struct mddpw_drv_info_t *prDrvInfo;
+	int32_t ret = 0;
+	uint32_t u32BufSize = 0;
+	uint32_t u32UnifiedCmdVer = 0;
+	uint8_t *buff = NULL;
+
+	DBGLOG(INIT, INFO, "Notify MD Unified Cmd version.\n");
+
+	if (!gMddpWFunc.notify_drv_info) {
+		DBGLOG(NIC, ERROR, "notify_drv_info callback NOT exist.\n");
+		ret = -1;
+		goto exit;
+	}
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	u32UnifiedCmdVer = 1;
+#else
+	u32UnifiedCmdVer = 0;
+#endif
+
+	u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
+			sizeof(struct mddpw_drv_info_t) + sizeof(uint32_t));
+
+	buff = kalMemAlloc(u32BufSize, VIR_MEM_TYPE);
+
+	if (buff == NULL) {
+		DBGLOG(NIC, ERROR, "buffer allocation failed.\n");
+		ret = -ENODEV;
+		goto exit;
+	}
+
+	prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
+	prNotifyInfo->version = 0;
+	prNotifyInfo->buf_len = sizeof(struct mddpw_drv_info_t) +
+			sizeof(uint32_t);
+	prNotifyInfo->info_num = 1;
+	prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
+	prDrvInfo->info_id = 6;
+	prDrvInfo->info_len = sizeof(uint32_t);
+
+	kalMemCopy((uint32_t *) &(prDrvInfo->info[0]), &u32UnifiedCmdVer,
+			sizeof(uint32_t));
+
+	ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
+
+exit:
+	if (buff)
+		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
+
+	DBGLOG(INIT, INFO, "ret: %d, Ver: %u.\n",
+				   ret, u32UnifiedCmdVer);
+	return ret;
+}
+
 void mddpNotifyWifiOnStart(void)
 {
 	if (!mddpIsSupportMcifWifi())
@@ -707,6 +764,9 @@ int32_t mddpNotifyWifiOnEnd(void)
 
 	/* Notify Driver own timeout time before Wi-Fi on end */
 	mddpNotifyDrvOwnTimeoutTime();
+
+	/* Notify MD Unified Cmd version */
+	mddpNotifyMDUnifiedCmdVer();
 
 	if (g_rSettings.rOps.set)
 		g_rSettings.rOps.set(&g_rSettings, g_rSettings.u4WifiOnBit);
