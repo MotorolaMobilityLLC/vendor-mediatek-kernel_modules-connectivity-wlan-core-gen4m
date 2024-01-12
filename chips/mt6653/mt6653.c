@@ -660,7 +660,7 @@ struct BUS_INFO mt6653_bus_info = {
 		.prMsiLayout = mt6653_pcie_msi_layout,
 		.u4MaxMsiNum = ARRAY_SIZE(mt6653_pcie_msi_layout),
 	},
-	.showDebugInfo = mt6653ShowPcieDebugInfo,
+	.showDebugInfo = NULL,
 #endif /* _HIF_PCIE */
 #if CFG_MTK_WIFI_WFDMA_WB
 	.processTxInterrupt = mt6653ProcessTxInterruptByEmi,
@@ -2904,22 +2904,6 @@ static void mt6653WfdmaRxRingExtCtrl(
 
 static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
-}
-
-static void mt6653ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
-{
-	uint32_t u4Addr, u4Val = 0;
-
-	if (!in_interrupt()) {
-		u4Addr = 0x112F0184;
-		wf_ioremap_read(u4Addr, &u4Val);
-		DBGLOG(HAL, INFO, "PCIE CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
-		for (u4Addr = 0x112F0C04; u4Addr <= 0x112F0C1C; u4Addr += 4) {
-			wf_ioremap_read(u4Addr, &u4Val);
-			DBGLOG(HAL, INFO, "PCIE CR [0x%08x]=[0x%08x]",
-			       u4Addr, u4Val);
-		}
-	}
 }
 
 static void mt6653SetupMcuEmiAddr(struct ADAPTER *prAdapter)
