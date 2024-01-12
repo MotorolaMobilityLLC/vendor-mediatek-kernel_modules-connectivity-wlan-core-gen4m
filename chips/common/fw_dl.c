@@ -1888,12 +1888,12 @@ uint32_t wlanFwImageDownload(struct ADAPTER
 		wlanReadRamCodeReleaseManifest(pucManifestBuffer,
 			&u4ManifestSize, FW_VERSION_MAX_LEN);
 
-		kalMemZero(&prAdapter->rVerInfo.aucReleaseManifest,
+		kalMemZero(prAdapter->rVerInfo.aucReleaseManifest,
 			sizeof(prAdapter->rVerInfo.aucReleaseManifest));
-		kalMemCopy(&prAdapter->rVerInfo.aucReleaseManifest,
+		kalMemCopy(prAdapter->rVerInfo.aucReleaseManifest,
 			pucManifestBuffer, u4ManifestSize);
 		DBGLOG(INIT, INFO, "aucReleaseManifest fw_ver=%s\n",
-			&prAdapter->rVerInfo.aucReleaseManifest);
+			prAdapter->rVerInfo.aucReleaseManifest);
 
 		kalMemFree(pucManifestBuffer, VIR_MEM_TYPE, FW_VERSION_MAX_LEN);
 	}

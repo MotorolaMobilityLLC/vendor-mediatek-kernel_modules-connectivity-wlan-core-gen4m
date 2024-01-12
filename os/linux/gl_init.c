@@ -7242,8 +7242,10 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	}
 
 #if CFG_SUPPORT_PCIE_GEN_SWITCH
-	prBusInfo = prChipInfo->bus_info;
-	prBusInfo->pcie_current_speed = PCIE_GEN3;
+	if (prChipInfo && prChipInfo->bus_info) {
+		prBusInfo = prChipInfo->bus_info;
+		prBusInfo->pcie_current_speed = PCIE_GEN3;
+	}
 #endif
 
 	return i4Status;
