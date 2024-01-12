@@ -81,10 +81,6 @@
 #define AIS_FSM_STATE_SEARCH_ACTION_PHASE_1	1
 #define AIS_FSM_STATE_SEARCH_ACTION_PHASE_2	2
 
-#if (CFG_SUPPORT_HE_ER == 1)
-#define AP_TX_POWER		  20
-#endif
-
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -153,42 +149,6 @@ static void aisResetBssTranstionMgtParam(struct AIS_SPECIFIC_BSS_INFO
 	kalMemZero(prBtmParam, sizeof(*prBtmParam));
 #endif
 }
-
-#if (CFG_SUPPORT_HE_ER == 1)
-uint8_t aisCheckPowerMatchERCondition(IN struct ADAPTER *prAdapter,
-	IN struct BSS_DESC *prBssDesc)
-{
-	int8_t txpwr;
-	int8_t icBeaconRSSI;
-
-	icBeaconRSSI = RCPI_TO_dBm(prBssDesc->ucRCPI);
-	wlanGetMiniTxPower(prAdapter, prBssDesc->eBand, PHY_MODE_OFDM, &txpwr);
-
-	DBGLOG(AIS, INFO, "ER: STA Tx power:%x, AP Tx power:%x, Bcon RSSI:%x\n",
-		txpwr, AP_TX_POWER, icBeaconRSSI);
-
-	return ((txpwr - (AP_TX_POWER - icBeaconRSSI)) < -95);
-}
-
-bool aisCheckUsingERRate(IN struct ADAPTER *prAdapter,
-	IN struct BSS_DESC *prBssDesc)
-{
-	bool fgIsStaUseERRate = false;
-
-	if ((prBssDesc->fgIsERSUDisable == 0) &&
-		(prBssDesc->ucDCMMaxConRx > 0) &&
-		(prBssDesc->eBand == BAND_5G) &&
-		(aisCheckPowerMatchERCondition(prAdapter, prBssDesc))) {
-		fgIsStaUseERRate = TRUE;
-	}
-
-	DBGLOG(AIS, INFO, "ER: ER disable:%x, max rx:%x, band:%x, use ER:%x\n",
-		prBssDesc->fgIsERSUDisable, prBssDesc->ucDCMMaxConRx,
-		prBssDesc->eBand, fgIsStaUseERRate);
-
-	return fgIsStaUseERRate;
-}
-#endif
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief the function is used to initialize the value of the connection
@@ -621,9 +581,6 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	struct MSG_SAA_FSM_START *prJoinReqMsg;
 	struct GL_WPA_INFO *prWpaInfo;
-#if (CFG_SUPPORT_HE_ER == 1)
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-#endif
 
 	DEBUGFUNC("aisFsmStateInit_JOIN()");
 
@@ -744,15 +701,6 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 		prAisBssInfo->eBand = prBssDesc->eBand;
 		prAisBssInfo->ucPrimaryChannel = prBssDesc->ucChannelNum;
 
-#if (CFG_SUPPORT_HE_ER == 1)
-		prStaRec->fgIsExtendedRange = FALSE;
-
-		if (IS_FEATURE_ENABLED(prWifiVar->u4ExtendedRange)) {
-			/* check using the ER rate or not */
-			prStaRec->fgIsExtendedRange =
-			aisCheckUsingERRate(prAdapter, prBssDesc);
-		}
-#endif
 	} else {
 		DBGLOG(AIS, LOUD, "JOIN INIT: AUTH TYPE = %d for Roaming\n",
 		       prAisSpecificBssInfo->ucRoamingAuthTypes);
