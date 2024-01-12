@@ -240,8 +240,9 @@ uint32_t nanNdpResponderRspEvent(struct ADAPTER *prAdapter,
 				 uint32_t rTxDoneStatus);
 
 uint32_t nanNdpEndRspEvent(struct ADAPTER *prAdapter,
-			   struct _NAN_NDP_INSTANCE_T *prNDP,
-			   uint32_t rTxDoneStatus);
+				 enum _ENUM_DP_PROTOCOL_REASON_CODE_T eReason,
+				 uint16_t u2TransId,
+				 uint32_t rTxDoneStatus);
 
 int32_t nanNdiCreateHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb);
 
