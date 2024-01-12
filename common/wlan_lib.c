@@ -8320,7 +8320,7 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 		prAdapter, "SapAddTPEIE", FEATURE_DISABLED);
 #endif
 	prWifiVar->ucDfsRegion = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "DfsRegion", NL80211_DFS_UNSET);
+		prAdapter, "DfsRegion", 0);
 	if (prWifiVar->ucDfsRegion)
 		rlmDomainSetDfsRegion(prWifiVar->ucDfsRegion);
 

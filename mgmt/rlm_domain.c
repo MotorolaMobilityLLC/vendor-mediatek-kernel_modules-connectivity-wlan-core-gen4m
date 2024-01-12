@@ -331,53 +331,6 @@ struct mtk_regd_control g_mtk_regd_control = {
 	.state = REGD_STATE_UNDEFINED
 };
 
-#if CFG_SUPPORT_BW320
-#define BW_6G 320
-#define BW_5G 160
-#elif CFG_SUPPORT_BW160
-#define BW_5G 160
-#define BW_6G 160
-#else
-#define BW_5G 80
-#define BW_6G 80
-#endif
-
-#if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
-#if (CFG_SUPPORT_WIFI_6G == 1)
-const struct ieee80211_regdomain default_regdom_ww = {
-	.n_reg_rules = 5,
-	.alpha2 = "99",
-	.reg_rules = {
-	/* channels 1..13 */
-	REG_RULE_LIGHT(2412-10, 2472+10, 40, 0),
-	/* channels 14 */
-	REG_RULE_LIGHT(2484-10, 2484+10, 20, 0),
-	/* channel 36..64 */
-	REG_RULE_LIGHT(5150-10, 5350+10, BW_5G, 0),
-	/* channel 100..165 */
-	REG_RULE_LIGHT(5470-10, 5850+10, BW_5G, 0),
-	/* 6G channel 1..17 */
-	REG_RULE_LIGHT(5935-10, 7135+10, BW_6G, 0),
-	}
-};
-#else
-const struct ieee80211_regdomain default_regdom_ww = {
-	.n_reg_rules = 4,
-	.alpha2 = "99",
-	.reg_rules = {
-	/* channels 1..13 */
-	REG_RULE_LIGHT(2412-10, 2472+10, 40, 0),
-	/* channels 14 */
-	REG_RULE_LIGHT(2484-10, 2484+10, 20, 0),
-	/* channel 36..64 */
-	REG_RULE_LIGHT(5150-10, 5350+10, BW_5G, 0),
-	/* channel 100..165 */
-	REG_RULE_LIGHT(5470-10, 5850+10, BW_5G, 0),
-	}
-};
-#endif
-#endif
-
 struct TX_PWR_LIMIT_SECTION {
 	uint8_t ucSectionNum;
 	const char *arSectionNames[TX_PWR_LIMIT_SECTION_NUM];
@@ -1407,7 +1360,7 @@ rlmDomainGetChnlList_V2(struct ADAPTER *prAdapter,
 	ucNum = 0;
 	for (; i < max_count; i++) {
 		prCh = rlmDomainGetActiveChannels() + i;
-		if (fgNoDfs && (prCh->eFlags & IEEE80211_CHAN_RADAR))
+		if (fgNoDfs && kalIsChFlagMatch(prCh->eFlags, CHAN_RADAR))
 			continue; /*not match*/
 
 		if (i < rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ))
@@ -2427,7 +2380,7 @@ uint32_t
 rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
 	uint32_t u4CountryCode)
 {
-	const struct ieee80211_regdomain *pRegdom = NULL;
+	const void *pRegdom = NULL;
 	char acCountryCodeStr[MAX_COUNTRY_CODE_LEN + 1] = {0};
 	uint32_t u4FinalCountryCode = u4CountryCode;
 
@@ -2438,7 +2391,7 @@ rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
 		DBGLOG(RLM, ERROR,
 	       "Cannot find the %s RegDomain. Set to default WW\n",
 	       acCountryCodeStr);
-		pRegdom = &default_regdom_ww;
+		pRegdom = kalGetDefaultRegWW();
 		u4FinalCountryCode = COUNTRY_CODE_WW;
 	}
 
@@ -8972,12 +8925,12 @@ void rlmDomainSetCountryCode(char *alpha2, u8 size_of_alpha2)
 	g_mtk_regd_control.alpha2 = rlmDomainAlpha2ToU32(alpha2, max);
 }
 
-void rlmDomainSetDfsRegion(enum nl80211_dfs_regions dfs_region)
+void rlmDomainSetDfsRegion(u8 dfs_region)
 {
 	g_mtk_regd_control.dfs_region = dfs_region;
 }
 
-enum nl80211_dfs_regions rlmDomainGetDfsRegion(void)
+u8 rlmDomainGetDfsRegion(void)
 {
 	return g_mtk_regd_control.dfs_region;
 }
@@ -9164,8 +9117,8 @@ void rlmExtractChannelInfo(u32 max_ch_count,
 
 }
 
-const struct ieee80211_regdomain
-*rlmDomainSearchRegdomainFromLocalDataBase(char *alpha2)
+const void *rlmDomainSearchRegdomainFromLocalDataBase(
+	char *alpha2)
 {
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 	u8 idx;
@@ -9191,10 +9144,10 @@ const struct ieee80211_regdomain
 }
 
 
-const struct ieee80211_regdomain *rlmDomainGetLocalDefaultRegd(void)
+const void *rlmDomainGetLocalDefaultRegd(void)
 {
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
-	return &default_regdom_ww;
+	return kalGetDefaultRegWW();
 #else
 	return NULL;
 #endif
@@ -9253,14 +9206,11 @@ uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 			eBand, channelNum, pCh->eFlags);
 
 		/* Max BW */
-		if ((pCh->eFlags & IEEE80211_CHAN_NO_160MHZ)
-						== IEEE80211_CHAN_NO_160MHZ)
+		if (kalIsChFlagMatch(pCh->eFlags, CHAN_NO_160MHZ))
 			channelBw = MAX_BW_80MHZ;
-		if ((pCh->eFlags & IEEE80211_CHAN_NO_80MHZ)
-						== IEEE80211_CHAN_NO_80MHZ)
+		if (kalIsChFlagMatch(pCh->eFlags, CHAN_NO_80MHZ))
 			channelBw = MAX_BW_40MHZ;
-		if ((pCh->eFlags & IEEE80211_CHAN_NO_HT40)
-						== IEEE80211_CHAN_NO_HT40)
+		if (kalIsChFlagMatch(pCh->eFlags, CHAN_NO_HT40))
 			channelBw = MAX_BW_20MHZ;
 	}
 

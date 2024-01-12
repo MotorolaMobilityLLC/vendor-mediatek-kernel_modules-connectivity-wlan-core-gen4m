@@ -2234,27 +2234,7 @@ void p2pFuncStartRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 	prCmdRddOnOffCtrl->ucRddIdx = rlmDomainGetDfsDbdcBand();
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	switch (rlmDomainGetDfsRegion()) {
-	case NL80211_DFS_FCC:
-		prCmdRddOnOffCtrl->ucSetVal = ENUM_RDM_FCC;
-		break;
-	case NL80211_DFS_ETSI:
-		prCmdRddOnOffCtrl->ucSetVal = ENUM_RDM_CE;
-		break;
-	case NL80211_DFS_JP:
-		prCmdRddOnOffCtrl->ucSetVal = ENUM_RDM_JAP;
-		break;
-	case NL80211_DFS_UNSET:
-		DBGLOG(P2P, ERROR,
-			"rlmDomainGetDfsRegion is NL80211_DFS_UNSET!\n");
-		break;
-	default:
-		prCmdRddOnOffCtrl->ucSetVal = rlmDomainGetDfsRegion();
-		DBGLOG(P2P, INFO,
-			"ucSetVal: %d\n", prCmdRddOnOffCtrl->ucSetVal);
-		break;
-	}
-
+	prCmdRddOnOffCtrl->ucSetVal = kalGetRdmVal(rlmDomainGetDfsRegion());
 	if (rlmDomainIsSameCountryCode("KR", 2))
 		prCmdRddOnOffCtrl->ucSetVal = ENUM_RDM_KR;
 #endif
@@ -2564,7 +2544,7 @@ u_int8_t p2pFuncCheckWeatherRadarBand(
 	eChnlSco = prChnlReqInfo->eChnlSco;
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	if (rlmDomainGetDfsRegion() == NL80211_DFS_ETSI) {
+	if (kalIsETSIDfsRegin()) {
 		if (eChannelWidth >= VHT_OP_CHANNEL_WIDTH_80) {
 			if (ucCenterFreqS1 >= 114 && ucCenterFreqS1 <= 128)
 				return TRUE;

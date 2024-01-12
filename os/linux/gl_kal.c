@@ -11766,8 +11766,7 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 void
-kalApplyCustomRegulatory(
-	const struct ieee80211_regdomain *pRegdom)
+kalApplyCustomRegulatory(const void *pRegdom)
 {
 	struct wiphy *pWiphy;
 	u32 band_idx, ch_idx;
@@ -11793,7 +11792,8 @@ kalApplyCustomRegulatory(
 	}
 
 	/* update to kernel */
-	wiphy_apply_custom_regulatory(pWiphy, pRegdom);
+	wiphy_apply_custom_regulatory(pWiphy,
+		(const struct ieee80211_regdomain *)pRegdom);
 }
 #endif
 
@@ -14271,3 +14271,121 @@ void kalVnfInit(struct ADAPTER *prAdapter)
 	DBGLOG(SW4, INFO, "VOLT_INFO init\n");
 }
 #endif /* CFG_VOLT_INFO */
+
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
+#if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
+
+#if CFG_SUPPORT_BW320
+#define BW_6G 320
+#define BW_5G 160
+#elif CFG_SUPPORT_BW160
+#define BW_5G 160
+#define BW_6G 160
+#else
+#define BW_5G 80
+#define BW_6G 80
+#endif
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+const struct ieee80211_regdomain default_regdom_ww = {
+	.n_reg_rules = 5,
+	.alpha2 = "99",
+	.reg_rules = {
+	/* channels 1..13 */
+	REG_RULE_LIGHT(2412-10, 2472+10, 40, 0),
+	/* channels 14 */
+	REG_RULE_LIGHT(2484-10, 2484+10, 20, 0),
+	/* channel 36..64 */
+	REG_RULE_LIGHT(5150-10, 5350+10, BW_5G, 0),
+	/* channel 100..165 */
+	REG_RULE_LIGHT(5470-10, 5850+10, BW_5G, 0),
+	/* 6G channel 1..17 */
+	REG_RULE_LIGHT(5935-10, 7135+10, BW_6G, 0),
+	}
+};
+#else
+const struct ieee80211_regdomain default_regdom_ww = {
+	.n_reg_rules = 4,
+	.alpha2 = "99",
+	.reg_rules = {
+	/* channels 1..13 */
+	REG_RULE_LIGHT(2412-10, 2472+10, 40, 0),
+	/* channels 14 */
+	REG_RULE_LIGHT(2484-10, 2484+10, 20, 0),
+	/* channel 36..64 */
+	REG_RULE_LIGHT(5150-10, 5350+10, BW_5G, 0),
+	/* channel 100..165 */
+	REG_RULE_LIGHT(5470-10, 5850+10, BW_5G, 0),
+	}
+};
+#endif
+
+const void *kalGetDefaultRegWW(void)
+{
+	return &default_regdom_ww;
+}
+#endif
+
+uint8_t kalGetRdmVal(uint8_t dfs_region)
+{
+	uint8_t retVal = 0;
+
+	switch (dfs_region) {
+	case NL80211_DFS_FCC:
+		retVal = ENUM_RDM_FCC;
+		break;
+	case NL80211_DFS_ETSI:
+		retVal = ENUM_RDM_CE;
+		break;
+	case NL80211_DFS_JP:
+		retVal = ENUM_RDM_JAP;
+		break;
+	case NL80211_DFS_UNSET:
+		DBGLOG(P2P, ERROR,
+			"rlmDomainGetDfsRegion is NL80211_DFS_UNSET!\n");
+		break;
+	default:
+		retVal = rlmDomainGetDfsRegion();
+		DBGLOG(P2P, INFO,
+			"ucSetVal: %d\n", retVal);
+		break;
+	}
+
+	if (rlmDomainIsSameCountryCode("KR", 2))
+		retVal = ENUM_RDM_KR;
+
+	return retVal;
+}
+
+u_int8_t kalIsETSIDfsRegin(void)
+{
+	return rlmDomainGetDfsRegion() == NL80211_DFS_ETSI ? TRUE : FALSE;
+}
+
+#endif
+
+u_int8_t kalIsChFlagMatch(uint32_t uFlags,
+	enum CHAN_FLAGS matchFlag)
+{
+#define IEEE80211_CHAN_NO_HT40 \
+		(IEEE80211_CHAN_NO_HT40PLUS | IEEE80211_CHAN_NO_HT40MINUS)
+
+	switch (matchFlag) {
+	case CHAN_RADAR:
+		return ((uFlags & IEEE80211_CHAN_RADAR)
+				== IEEE80211_CHAN_RADAR) ? TRUE : FALSE;
+	case CHAN_NO_HT40:
+		return ((uFlags & IEEE80211_CHAN_NO_HT40)
+				== IEEE80211_CHAN_NO_HT40) ? TRUE : FALSE;
+	case CHAN_NO_80MHZ:
+		return ((uFlags & IEEE80211_CHAN_NO_80MHZ)
+				== IEEE80211_CHAN_NO_80MHZ) ? TRUE : FALSE;
+	case CHAN_NO_160MHZ:
+		return ((uFlags & IEEE80211_CHAN_NO_160MHZ)
+				== IEEE80211_CHAN_NO_160MHZ) ? TRUE : FALSE;
+	default:
+		return FALSE;
+
+	}
+}
+

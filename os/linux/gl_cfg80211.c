@@ -4894,7 +4894,7 @@ mtk_reg_notify(struct wiphy *pWiphy,
 
 	rlmDomainCountryCodeUpdate(prAdapter, u4CountryCode);
 
-	rlmDomainSetDfsRegion(pRequest->dfs_region);
+	rlmDomainSetDfsRegion((u8)pRequest->dfs_region);
 }
 
 void
@@ -4938,7 +4938,8 @@ cfg80211_regd_set_wiphy(struct wiphy *prWiphy)
 	/* assigned a defautl one */
 	if (rlmDomainGetLocalDefaultRegd())
 		wiphy_apply_custom_regulatory(prWiphy,
-					      rlmDomainGetLocalDefaultRegd());
+		(const struct ieee80211_regdomain *)
+			rlmDomainGetLocalDefaultRegd());
 #endif
 
 

@@ -11494,15 +11494,13 @@ int priv_driver_get_channels(struct net_device *prNetDev,
 				       " ACTIVE");
 
 			/* Max BW */
-			if ((pCh->eFlags & IEEE80211_CHAN_NO_160MHZ) ==
-			    IEEE80211_CHAN_NO_160MHZ)
+			if (kalIsChFlagMatch(pCh->eFlags, CHAN_NO_160MHZ))
 				maxbw = 80;
-			if ((pCh->eFlags & IEEE80211_CHAN_NO_80MHZ) ==
-			    IEEE80211_CHAN_NO_80MHZ)
+			if (kalIsChFlagMatch(pCh->eFlags, CHAN_NO_80MHZ))
 				maxbw = 40;
-			if ((pCh->eFlags & IEEE80211_CHAN_NO_HT40) ==
-			    IEEE80211_CHAN_NO_HT40)
+			if (kalIsChFlagMatch(pCh->eFlags, CHAN_NO_HT40))
 				maxbw = 20;
+
 			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 			       " BW_%dMHz", maxbw);
 
