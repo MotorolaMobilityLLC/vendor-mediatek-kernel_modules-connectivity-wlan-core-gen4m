@@ -4767,9 +4767,11 @@ int mtk_cfg80211_vendor_get_usable_channel(
 	kalMemZero(aucChannelList,
 		sizeof(struct RF_CHANNEL_INFO)*MAX_CHN_NUM);
 
-	if (band & BIT(0)) /* 2.4G band */
+	if (band & BIT(0)) {/* 2.4G band */
 		rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_2G4, TRUE,
 			MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
+	} else
+		ucNumOfChannel = 0;
 
 	kalMemZero(channels_2g, sizeof(channels_2g));
 	u2CountryCode = prGlueInfo->prAdapter->rWifiVar.u2CountryCode;
@@ -4792,7 +4794,9 @@ int mtk_cfg80211_vendor_get_usable_channel(
 	if (band & BIT(1)) {/* 5G band without DFS channels */
 		rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_5G, TRUE,
 			MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
-	}
+	} else
+		ucNumOfChannel = 0;
+
 	kalMemZero(channels_5g, sizeof(channels_5g));
 	u2CountryCode = prGlueInfo->prAdapter->rWifiVar.u2CountryCode;
 	for (i = 0, j = 0; i < ucNumOfChannel; i++) {
@@ -4824,9 +4828,12 @@ int mtk_cfg80211_vendor_get_usable_channel(
 
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	if (band & BIT(2)) /* 6G band */
+	if (band & BIT(2)) {/* 6G band */
 		rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_6G, TRUE,
 			MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
+	} else
+		ucNumOfChannel = 0;
+
 	kalMemZero(channels_6g, sizeof(channels_6g));
 	u2CountryCode = prGlueInfo->prAdapter->rWifiVar.u2CountryCode;
 	for (i = 0, j = 0; i < ucNumOfChannel; i++) {
