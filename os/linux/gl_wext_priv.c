@@ -19032,7 +19032,7 @@ int8_t *RxStatPerBand[] = {
 #if (CFG_SUPPORT_CONNAC3X == 1) /* band info v1*/
 	"aci_hit_low	: 0x%08x\n",
 	"aci_hit_high	: 0x%08x\n",
-	"phy_pd_alr		: 0x%08x\n"	/* band info v2*/
+	"phy_pd_alr		: 0x%08x\n",	/* band info v2*/
 	"mac_u2m_mpdu_cnt	: 0x%08x\n"	/* band info v2*/
 #endif
 };
