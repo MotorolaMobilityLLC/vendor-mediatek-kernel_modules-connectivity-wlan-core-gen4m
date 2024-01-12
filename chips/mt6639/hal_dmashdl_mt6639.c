@@ -419,9 +419,15 @@ uint32_t mt6639dmashdlQuotaDecision(struct ADAPTER *prAdapter,
 			continue;
 
 #if CFG_SUPPORT_NAN
-		/* NAN will not tx traffic on 2.4G */
+		/* NAN will not tx traffic without NDP */
 		if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN &&
-				prBssInfo->eBand == BAND_2G4) {
+				!nanGetSpecificBssInfobyBand(
+				prAdapter, prBssInfo->eBand)->fgIsNdp) {
+			DBGLOG(NAN, INFO, "[%s] Bypass NAN BN:%d\n",
+				__func__, prBssInfo->eBand,
+				nanGetNdpCntByBand(prAdapter, prBssInfo->eBand),
+				nanGetSpecificBssInfobyBand(prAdapter,
+					prBssInfo->eBand)->fgIsNdp);
 			continue;
 		}
 #endif

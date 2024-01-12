@@ -4140,7 +4140,8 @@ nanDataEngineEnrollNMIContext(struct ADAPTER *prAdapter,
 	fgSecurityRequired = prTargetNdpSA->fgSecurityRequired;
 
 	eBand = nanSchedGetSchRecBandByMac(prAdapter, pucPeerNMI);
-	ucBssIndex = nanGetBssIdxbyBand(prAdapter, eBand);
+	ucBssIndex = nanGetSpecificBssInfobyBand(
+		prAdapter, eBand)->ucBssIndex;
 
 	if (nanDataEngineAllocStaRec(prAdapter, prNDL, ucBssIndex, pucPeerNMI,
 				     prNDP->ucRCPI, &prNdpCxt->prNanStaRec) !=
@@ -4493,7 +4494,8 @@ nanDataEngineEnrollNDPContext(struct ADAPTER *prAdapter,
 		DBGLOG(NAN, WARN,
 			"Search peerSchRec fail, use NMI, band:%d\n", eBand);
 	}
-	ucBssIndex = nanGetBssIdxbyBand(prAdapter, eBand);
+	ucBssIndex = nanGetSpecificBssInfobyBand(
+		prAdapter, eBand)->ucBssIndex;
 
 	if (nanDataEngineAllocStaRec(prAdapter, prNDL, ucBssIndex,
 				     prNDP->aucPeerNDIAddr, prNDP->ucRCPI,
@@ -4530,6 +4532,18 @@ nanDataEngineEnrollNDPContext(struct ADAPTER *prAdapter,
 	}
 
 	nanDataEngineEnrollNMIContext(prAdapter, prNDL, prNDP);
+
+	if (nanGetNdpCntByBand(prAdapter, eBand) >= 1)
+		nanGetSpecificBssInfobyBand(
+			prAdapter, eBand)->fgIsNdp = 1;
+
+	DBGLOG(NAN, INFO, "[%s] BSS:%d BN:%d NDP:%d fgNdp:%d\n",
+			__func__, ucBssIndex, eBand,
+			nanGetNdpCntByBand(prAdapter, eBand),
+			nanGetSpecificBssInfobyBand(
+				prAdapter, eBand)->fgIsNdp);
+
+	nicUpdateBssEx(prAdapter, ucBssIndex, FALSE);
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Summary\n", __func__);
@@ -4589,12 +4603,28 @@ nanDataEngineUnrollNDPContext(struct ADAPTER *prAdapter,
 	struct _NAN_NDP_INSTANCE_T *prTargetNdpSA;
 	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
 	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
+	enum ENUM_BAND eBand = BAND_NULL;
+	uint8_t ucBssIndex;
 
 	if ((prNDL == NULL) || (prNDP == NULL))
 		return WLAN_STATUS_FAILURE;
 
 	if (prNDP->prContext == NULL)
 		return WLAN_STATUS_FAILURE;
+
+	eBand = nanSchedGetSchRecBandByMac(prAdapter, prNDP->aucPeerNDIAddr);
+	if (eBand == BAND_NULL) {
+		/* Workaround: use NMI address to find peerSchRec,
+		* if search by NDI fail
+		*/
+		eBand = nanSchedGetSchRecBandByMac(prAdapter,
+				prNDL->aucPeerMacAddr);
+		DBGLOG(NAN, WARN,
+			"Search peerSchRec fail, use NMI, band:%d\n", eBand);
+	}
+
+	ucBssIndex = nanGetSpecificBssInfobyBand(
+		prAdapter, eBand)->ucBssIndex;
 
 	nanDataEngineUnrollNMIContext(prAdapter, prNDL, prNDP);
 
@@ -4681,6 +4711,18 @@ nanDataEngineUnrollNDPContext(struct ADAPTER *prAdapter,
 		}
 	}
 	prNDP->prContext = NULL;
+
+	if (nanGetNdpCntByBand(prAdapter, eBand) == 0)
+		nanGetSpecificBssInfobyBand(
+			prAdapter, eBand)->fgIsNdp = 0;
+
+	DBGLOG(NAN, INFO, "[%s] BSS:%d BN:%d NDP:%d fgNdp:%d\n",
+				__func__, ucBssIndex, eBand,
+				nanGetNdpCntByBand(prAdapter, eBand),
+				nanGetSpecificBssInfobyBand(
+					prAdapter, eBand)->fgIsNdp);
+
+	nicUpdateBssEx(prAdapter, ucBssIndex, FALSE);
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Summary\n", __func__);

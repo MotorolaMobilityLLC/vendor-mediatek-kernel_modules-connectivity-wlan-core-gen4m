@@ -2209,6 +2209,51 @@ nanGetPeerPrimaryChnlBySlot(struct ADAPTER *prAdapter, uint32_t u4SchIdx,
 	return rRmtChnlInfo.rChannel.u4PrimaryChnl;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Count Inused NDP by Band
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t
+nanGetNdpCntByBand(struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand)
+{
+	uint8_t ucNdlIndex = 0;
+	uint8_t ucNdpIndex = 0;
+	uint8_t ucCnt = 0;
+	struct _NAN_NDL_INSTANCE_T *prNDL = NULL;
+	struct _NAN_PEER_SCHEDULE_RECORD_T
+		*prPeerSchRecord = NULL;
+
+	for (ucNdlIndex = 0; ucNdlIndex < NAN_MAX_SUPPORT_NDL_NUM;
+			ucNdlIndex++) {
+		if (prAdapter->rDataPathInfo.arNDL[ucNdlIndex].fgNDLValid ==
+			TRUE) {
+			prNDL = &(prAdapter->rDataPathInfo.arNDL[ucNdlIndex]);
+
+			prPeerSchRecord = nanSchedLookupPeerSchRecord(prAdapter,
+							prNDL->aucPeerMacAddr);
+			if (!prPeerSchRecord)
+				continue;
+			if (prPeerSchRecord->eBand == eBand) {
+				for (ucNdpIndex = 0; ucNdpIndex
+					< NAN_MAX_SUPPORT_NDP_NUM;
+						ucNdpIndex++) {
+					if (prNDL->arNDP[ucNdpIndex].fgNDPValid
+						== TRUE)
+						ucCnt += 1;
+				}
+			}
+		}
+	}
+
+	return ucCnt;
+}
+
 uint8_t
 nanGetPeerMaxBw(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr) {
 	uint8_t ucBw = 20;

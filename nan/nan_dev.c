@@ -43,6 +43,7 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 			      prNANInfo->prDevHandler->dev_addr);
 		prNANSpecInfo->ucBssIndex = prnanBssInfo->ucBssIndex;
 		prNANSpecInfo->u4ModuleUsed = 0;
+		prNANSpecInfo->fgIsNdp = 0;
 		prnanBssInfo->eCurrentOPMode = OP_MODE_NAN;
 
 		eNanMode = NAN_MODE_MIXED_11BG;
@@ -258,9 +259,9 @@ nanGetSpecificBssInfo(struct ADAPTER *prAdapter,
 	return prAdapter->rWifiVar.aprNanSpecificBssInfo[eIndex];
 }
 
-uint8_t
-nanGetBssIdxbyBand(struct ADAPTER *prAdapter,
-		      enum ENUM_BAND eBand) {
+struct _NAN_SPECIFIC_BSS_INFO_T *
+nanGetSpecificBssInfobyBand(struct ADAPTER *prAdapter,
+				enum ENUM_BAND eBand) {
 	uint8_t ucIdx = 0;
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo;
 	struct BSS_INFO *prBssInfo;
@@ -270,7 +271,7 @@ nanGetBssIdxbyBand(struct ADAPTER *prAdapter,
 		DBGLOG(NAN, WARN, "no band info\n");
 		prNANSpecInfo = nanGetSpecificBssInfo(
 				prAdapter, NAN_BSS_INDEX_BAND0);
-		return prNANSpecInfo->ucBssIndex;
+		return prNANSpecInfo;
 	}
 
 	for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
@@ -283,7 +284,8 @@ nanGetBssIdxbyBand(struct ADAPTER *prAdapter,
 			break;
 	}
 
-	return prNANSpecInfo->ucBssIndex;
+	return prNANSpecInfo;
+
 }
 
 void
