@@ -543,6 +543,11 @@ void p2pRoleFsmStateTransition(struct ADAPTER *prAdapter,
 		struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 		enum ENUM_P2P_ROLE_STATE eNextState);
 
+void p2pRoleFsmStateTransitionImpl(struct ADAPTER *prAdapter,
+		struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+		uint8_t ucBssIdx,
+		enum ENUM_P2P_ROLE_STATE eNextState);
+
 void p2pRoleFsmRunEventMgmtTx(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr);
 

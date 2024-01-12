@@ -475,9 +475,9 @@ void p2pRoleFsmUninitLink(struct ADAPTER *prAdapter,
 	cnmFreeBssInfo(prAdapter, prP2pBssInfo);
 }
 
-void
-p2pRoleFsmStateTransition(struct ADAPTER *prAdapter,
+void p2pRoleFsmStateTransitionImpl(struct ADAPTER *prAdapter,
 		struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+		uint8_t ucBssIdx,
 		enum ENUM_P2P_ROLE_STATE eNextState)
 {
 	u_int8_t fgIsTransitionOut = (u_int8_t) FALSE;
@@ -531,9 +531,10 @@ p2pRoleFsmStateTransition(struct ADAPTER *prAdapter,
 
 		if (!fgIsTransitionOut) {
 			DBGLOG(P2P, STATE,
-				"[P2P_ROLE][%d]TRANSITION(Bss%d): [%s] -> [%s]\n",
+				"[P2P_ROLE][%d]TRANSITION(Bss%d)(LinkBss%d): [%s] -> [%s]\n",
 				prP2pRoleFsmInfo->ucRoleIndex,
 				prP2pRoleFsmInfo->ucBssIndex,
+				ucBssIdx,
 				p2pRoleFsmGetFsmState
 				(prP2pRoleFsmInfo->eCurrentState),
 				p2pRoleFsmGetFsmState(eNextState));
@@ -642,13 +643,12 @@ p2pRoleFsmStateTransition(struct ADAPTER *prAdapter,
 		case P2P_ROLE_STATE_SWITCH_CHANNEL:
 			if (!fgIsTransitionOut) {
 				p2pRoleStateInit_SWITCH_CHANNEL(prAdapter,
-					prP2pRoleFsmInfo->ucBssIndex,
+					ucBssIdx,
 					&(prP2pRoleFsmInfo->rChnlReqInfo[0]));
 			} else {
 				p2pRoleStateAbort_SWITCH_CHANNEL(prAdapter,
-					prBssInfo,
-					prP2pRoleFsmInfo,
-					eNextState);
+					ucBssIdx,
+					&(prP2pRoleFsmInfo->rChnlReqInfo[0]));
 			}
 			break;
 #endif
@@ -657,7 +657,17 @@ p2pRoleFsmStateTransition(struct ADAPTER *prAdapter,
 			break;
 		}
 	} while (fgIsTransitionOut);
+}
 
+void
+p2pRoleFsmStateTransition(struct ADAPTER *prAdapter,
+		struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+		enum ENUM_P2P_ROLE_STATE eNextState)
+{
+	p2pRoleFsmStateTransitionImpl(prAdapter,
+				      prP2pRoleFsmInfo,
+				      prP2pRoleFsmInfo->ucBssIndex,
+				      eNextState);
 }				/* p2pRoleFsmStateTransition */
 
 void p2pRoleFsmRunEventTimeout(struct ADAPTER *prAdapter,
@@ -2454,7 +2464,7 @@ void p2pCsaControlFlow(struct ADAPTER *prAdapter,
 		struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
 {
 #if CFG_SUPPORT_DBDC
-		struct DBDC_DECISION_INFO rDbdcDecisionInfo = {0};
+	struct DBDC_DECISION_INFO rDbdcDecisionInfo = {0};
 #endif
 
 	/* Indicate PM abort to sync BSS state with FW */
@@ -2518,20 +2528,26 @@ void p2pRoleFsmRunEventCsaDone(struct ADAPTER *prAdapter,
 	DBGLOG(P2P, INFO, "CSA from band: %d to %d\n",
 		prP2pBssInfo->eBand,
 		prChnlReqInfo->eBand);
-	if (prClientList && prClientList->u4NumElem > 0) {
-		LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
-				rLinkEntry, struct STA_RECORD) {
-			qmSetStaRecTxAllowed(prAdapter,
-				prCurrStaRec, FALSE);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (!IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter, prP2pBssInfo)))
+#endif
+	{
+		if (prClientList && prClientList->u4NumElem > 0) {
+			LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
+					rLinkEntry, struct STA_RECORD) {
+				qmSetStaRecTxAllowed(prAdapter,
+					prCurrStaRec, FALSE);
+			}
 		}
+		p2pCsaControlFlow(prAdapter,
+				prP2pBssInfo,
+				prChnlReqInfo);
 	}
-	p2pCsaControlFlow(prAdapter,
-			prP2pBssInfo,
-			prChnlReqInfo);
 
-	p2pRoleFsmStateTransition(prAdapter,
-		prP2pRoleFsmInfo,
-		P2P_ROLE_STATE_SWITCH_CHANNEL);
+	p2pRoleFsmStateTransitionImpl(prAdapter,
+				      prP2pRoleFsmInfo,
+				      prP2pBssInfo->ucBssIndex,
+				      P2P_ROLE_STATE_SWITCH_CHANNEL);
 
 	cnmTimerStopTimer(prAdapter, &prP2pBssInfo->rP2pCsaDoneTimer);
 
@@ -3704,9 +3720,10 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 				prClientList,
 				prBssInfo->eBand);
 
-			p2pRoleFsmStateTransition(prAdapter,
-				prP2pRoleFsmInfo,
-				P2P_ROLE_STATE_IDLE);
+			p2pRoleFsmStateTransitionImpl(prAdapter,
+						      prP2pRoleFsmInfo,
+						      prBssInfo->ucBssIndex,
+						      P2P_ROLE_STATE_IDLE);
 			break;
 #endif
 		case P2P_ROLE_STATE_OFF_CHNL_TX:
