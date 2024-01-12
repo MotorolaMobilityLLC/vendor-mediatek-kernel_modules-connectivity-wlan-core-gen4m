@@ -48,9 +48,6 @@ extern const uint8_t *apucNetworkType[NETWORK_TYPE_NUM];
 #define BSS_PROBE_RESP_USE_P2P_DEV_ADDR             BIT(0)
 #define BSS_PROBE_RESP_INCLUDE_P2P_IE               BIT(1)
 
-#define MAX_BSS_INDEX           HW_BSSID_NUM
-#define P2P_DEV_BSS_INDEX       MAX_BSS_INDEX
-
 #define IS_BSS_ALIVE(_prAdapter, _prBssInfo) \
 	(_prBssInfo->fgIsInUse && \
 	_prBssInfo->fgIsNetActive && \
@@ -81,7 +78,7 @@ extern const uint8_t *apucNetworkType[NETWORK_TYPE_NUM];
  *                                 M A C R O S
  *******************************************************************************
  */
-#define IS_BSS_INDEX_VALID(_ucBssIndex)     ((_ucBssIndex) <= P2P_DEV_BSS_INDEX)
+#define IS_BSS_INDEX_VALID(_ucBssIndex)     ((_ucBssIndex) <= MAX_BSSID_NUM)
 
 #define GET_BSS_INFO_BY_INDEX(_prAdapter, _ucBssIndex) \
 	(IS_BSS_INDEX_VALID(_ucBssIndex) ? \

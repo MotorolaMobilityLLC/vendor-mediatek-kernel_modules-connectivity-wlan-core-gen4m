@@ -1705,7 +1705,7 @@ heRlmComposeHtcNullFrame(
 	ASSERT(prStaRec);
 	ucBssIndex = prStaRec->ucBssIndex;
 
-	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
+	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
 
 	ASSERT(pucBuffer);
 

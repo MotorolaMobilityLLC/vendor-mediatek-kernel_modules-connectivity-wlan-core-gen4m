@@ -4846,7 +4846,7 @@ int priv_driver_get_tsf_value(
 		ucBssIdx = 0;
 	}
 
-	if (ucBssIdx >= MAX_BSS_INDEX) {
+	if (ucBssIdx >= MAX_BSSID_NUM) {
 		DBGLOG(REQ, ERROR, "invalid bss index %d\n", ucBssIdx);
 		return -1;
 	}
@@ -10710,7 +10710,7 @@ int priv_driver_get_linkspeed(struct net_device *prNetDev,
 	if (!netif_carrier_ok(prNetDev))
 		return -1;
 
-	if (ucBssIndex >= BSSID_NUM)
+	if (ucBssIndex >= MAX_BSSID_NUM)
 		return -EFAULT;
 
 	kalMemSet(&rLinkSpeed, 0, sizeof(rLinkSpeed));
@@ -12132,7 +12132,7 @@ int priv_driver_set_ap_nss(struct net_device *prNetDev,
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
 	ucBssIndex = wlanGetBssIdx(prNetDev);
-	if (ucBssIndex >= BSSID_NUM)
+	if (ucBssIndex >= MAX_BSSID_NUM)
 		return -EFAULT;
 
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
@@ -15735,7 +15735,7 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 				   i4TotalLen - i4BytesWritten, "\n");
 
-	for (ucBssIdx = BSSID_0; ucBssIdx < (BSSID_NUM+1); ucBssIdx++) {
+	for (ucBssIdx = BSSID_0; ucBssIdx < (BSSID_NUM + 1); ucBssIdx++) {
 
 		prBssInfo = prGlueInfo->prAdapter->aprBssInfo[ucBssIdx];
 		if (!prBssInfo)

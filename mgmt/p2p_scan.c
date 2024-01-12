@@ -102,7 +102,7 @@ scanP2pProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prP2pBssInfo =
 			(struct BSS_INFO *) NULL;
 
-		for (u4Idx = 0; u4Idx < prAdapter->ucHwBssIdNum; u4Idx++) {
+		for (u4Idx = 0; u4Idx < prAdapter->ucSwBssIdNum; u4Idx++) {
 			/* Check BSS for P2P. */
 			/* Check BSSID. */
 			prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,

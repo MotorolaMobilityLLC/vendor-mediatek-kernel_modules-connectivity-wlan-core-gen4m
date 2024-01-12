@@ -856,7 +856,7 @@ struct STA_RECORD *saaFsmFindStaRec(struct ADAPTER *prAdapter,
 
 	do {
 		for (ucBssIdx = 0;
-			ucBssIdx < prAdapter->ucHwBssIdNum; ucBssIdx++) {
+			ucBssIdx < prAdapter->ucSwBssIdNum; ucBssIdx++) {
 			if (!IS_NET_ACTIVE(prAdapter, ucBssIdx))
 				continue;
 

@@ -227,7 +227,7 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 					sizeof(struct P2P_ROLE_FSM_INFO));
 			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, ucRoleIdx) =
 				NULL;
-			return MAX_BSS_INDEX;
+			return MAX_BSSID_NUM;
 		}
 
 		prP2pBssInfo->rPmProfSetupInfo.ucBmpDeliveryAC =
@@ -3693,7 +3693,7 @@ void p2pRoleUpdateACLEntry(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 
 	ASSERT(prAdapter);
 
-	if ((!prAdapter) || (ucBssIdx > prAdapter->ucHwBssIdNum))
+	if ((!prAdapter) || (ucBssIdx > prAdapter->ucSwBssIdNum))
 		return;
 
 	DBGLOG(P2P, TRACE, "Update ACL Entry ucBssIdx = %d\n", ucBssIdx);
@@ -3777,7 +3777,7 @@ u_int8_t p2pRoleProcessACLInspection(struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
-	if ((!prAdapter) || (!pMacAddr) || (ucBssIdx > prAdapter->ucHwBssIdNum))
+	if ((!prAdapter) || (!pMacAddr) || (ucBssIdx > prAdapter->ucSwBssIdNum))
 		return FALSE;
 
 	prP2pBssInfo = prAdapter->aprBssInfo[ucBssIdx];
@@ -5205,7 +5205,7 @@ void p2pRoleProcessPreSuspendFlow(struct ADAPTER *prAdapter)
 	* return;
 	*/
 
-	for (ucIdx = 0; ucIdx < MAX_BSS_INDEX; ucIdx++) {
+	for (ucIdx = 0; ucIdx < MAX_BSSID_NUM; ucIdx++) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucIdx);
 		if (!prBssInfo)
 			continue;

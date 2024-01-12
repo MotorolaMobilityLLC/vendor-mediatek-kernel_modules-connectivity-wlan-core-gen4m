@@ -367,13 +367,13 @@ struct GL_SCAN_CACHE_INFO {
 
 #if CFG_SUPPORT_PERF_IND
 struct GL_PERF_IND_INFO {
-	uint32_t u4CurTxBytes[BSSID_NUM]; /* Byte */
-	uint32_t u4CurRxBytes[BSSID_NUM]; /* Byte */
-	uint16_t u2CurRxRate[BSSID_NUM]; /* Unit 500 Kbps */
-	uint8_t ucCurRxRCPI0[BSSID_NUM];
-	uint8_t ucCurRxRCPI1[BSSID_NUM];
-	uint8_t ucCurRxNss[BSSID_NUM]; /* 1NSS Data Counter */
-	uint8_t ucCurRxNss2[BSSID_NUM]; /* 2NSS Data Counter */
+	uint32_t u4CurTxBytes[MAX_BSSID_NUM]; /* Byte */
+	uint32_t u4CurRxBytes[MAX_BSSID_NUM]; /* Byte */
+	uint16_t u2CurRxRate[MAX_BSSID_NUM]; /* Unit 500 Kbps */
+	uint8_t ucCurRxRCPI0[MAX_BSSID_NUM];
+	uint8_t ucCurRxRCPI1[MAX_BSSID_NUM];
+	uint8_t ucCurRxNss[MAX_BSSID_NUM]; /* 1NSS Data Counter */
+	uint8_t ucCurRxNss2[MAX_BSSID_NUM]; /* 2NSS Data Counter */
 };
 #endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
 

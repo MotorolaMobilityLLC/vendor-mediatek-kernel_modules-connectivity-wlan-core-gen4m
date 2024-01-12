@@ -607,13 +607,13 @@ struct GL_SCAN_CACHE_INFO {
 
 #if CFG_SUPPORT_PERF_IND
 	struct GL_PERF_IND_INFO {
-		uint32_t u4CurTxBytes[BSSID_NUM]; /* Byte */
-		uint32_t u4CurRxBytes[BSSID_NUM]; /* Byte */
-		uint16_t u2CurRxRate[BSSID_NUM]; /* Unit 500 Kbps */
-		uint8_t ucCurRxRCPI0[BSSID_NUM];
-		uint8_t ucCurRxRCPI1[BSSID_NUM];
-		uint8_t ucCurRxNss[BSSID_NUM]; /* 1NSS Data Counter */
-		uint8_t ucCurRxNss2[BSSID_NUM]; /* 2NSS Data Counter */
+		uint32_t u4CurTxBytes[MAX_BSSID_NUM]; /* Byte */
+		uint32_t u4CurRxBytes[MAX_BSSID_NUM]; /* Byte */
+		uint16_t u2CurRxRate[MAX_BSSID_NUM]; /* Unit 500 Kbps */
+		uint8_t ucCurRxRCPI0[MAX_BSSID_NUM];
+		uint8_t ucCurRxRCPI1[MAX_BSSID_NUM];
+		uint8_t ucCurRxNss[MAX_BSSID_NUM]; /* 1NSS Data Counter */
+		uint8_t ucCurRxNss2[MAX_BSSID_NUM]; /* 2NSS Data Counter */
 	};
 #endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
 
@@ -647,7 +647,7 @@ struct GLUE_INFO {
 	/* struct net_device_stats rNetDevStats; */
 
 	/* Wireless statistics struct net_device */
-	struct iw_statistics rIwStats[BSSID_NUM];
+	struct iw_statistics rIwStats[MAX_BSSID_NUM];
 
 	/* spinlock to sync power save mechanism */
 	spinlock_t rSpinLock[SPIN_LOCK_NUM];
@@ -888,11 +888,11 @@ struct GLUE_INFO {
 	uint32_t u4AmpduRefNum[CFG_MONITOR_BAND_NUM];
 #endif
 
-	int32_t i4RssiCache[BSSID_NUM];
-	uint32_t u4TxLinkSpeedCache[BSSID_NUM];
-	uint32_t u4RxLinkSpeedCache[BSSID_NUM];
-	uint32_t u4TxBwCache[BSSID_NUM];
-	uint32_t u4RxBwCache[BSSID_NUM];
+	int32_t i4RssiCache[MAX_BSSID_NUM];
+	uint32_t u4TxLinkSpeedCache[MAX_BSSID_NUM];
+	uint32_t u4RxLinkSpeedCache[MAX_BSSID_NUM];
+	uint32_t u4TxBwCache[MAX_BSSID_NUM];
+	uint32_t u4RxBwCache[MAX_BSSID_NUM];
 	uint32_t u4FcsErrorCache;
 
 #if CFG_AP_80211KVR_INTERFACE

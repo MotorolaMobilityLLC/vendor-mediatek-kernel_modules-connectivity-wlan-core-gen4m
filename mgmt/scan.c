@@ -1257,7 +1257,7 @@ void scanRemoveBssDescByBandAndNetwork(struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 	ASSERT(eBand <= BAND_NUM);
-	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
+	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prBSSDescList = &prScanInfo->rBSSDescList;
@@ -3999,7 +3999,7 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 				sizeof(prScanInfo->au4ChannelBitMap));
 		}
 
-	for (u4Idx = 0; u4Idx < prAdapter->ucHwBssIdNum; u4Idx++) {
+	for (u4Idx = 0; u4Idx < prAdapter->ucSwBssIdNum; u4Idx++) {
 		struct BSS_INFO *prAisBssInfo = prAdapter->aprBssInfo[u4Idx];
 		struct CONNECTION_SETTINGS *prConnSettings;
 

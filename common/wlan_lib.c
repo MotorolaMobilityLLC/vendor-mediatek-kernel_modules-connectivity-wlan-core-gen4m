@@ -806,8 +806,9 @@ void wlanOnPreAllocAdapterMem(struct ADAPTER *prAdapter,
 		/* 4 <0> Reset variables in ADAPTER_T */
 		/* prAdapter->fgIsFwOwn = TRUE; */
 		prAdapter->fgIsEnterD3ReqIssued = FALSE;
-		prAdapter->ucHwBssIdNum = MAX_BSSID_NUM;
-		prAdapter->ucWmmSetNum = MAX_BSSID_NUM;
+		prAdapter->ucHwBssIdNum = HW_BSSID_NUM;
+		prAdapter->ucSwBssIdNum = MAX_BSSID_NUM;
+		prAdapter->ucWmmSetNum = HW_BSSID_NUM;
 		prAdapter->ucP2PDevBssIdx = MAX_BSSID_NUM;
 		prAdapter->ucWtblEntryNum = WTBL_SIZE;
 		prAdapter->ucTxDefaultWlanIndex = prAdapter->ucWtblEntryNum - 1;
@@ -857,7 +858,7 @@ void wlanOnPreAllocAdapterMem(struct ADAPTER *prAdapter,
 	prAdapter->fgIsPostponeTxEAPOLM3 = FALSE;
 
 	if (bAtResetFlow) {
-		for (i = 0; i < (prAdapter->ucHwBssIdNum + 1); i++)
+		for (i = 0; i < (prAdapter->ucSwBssIdNum + 1); i++)
 			UNSET_NET_ACTIVE(prAdapter, i);
 
 #if CFG_CE_ASSERT_DUMP
@@ -5255,7 +5256,7 @@ void wlanSetPreferBandByNetwork(struct ADAPTER *prAdapter,
 {
 	ASSERT(prAdapter);
 	ASSERT(eBand <= BAND_NUM);
-	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
+	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
 
 
 	/* 1. set prefer band according to network type */
@@ -5293,7 +5294,7 @@ uint8_t wlanGetChannelNumberByNetwork(struct ADAPTER
 	struct BSS_INFO *prBssInfo;
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
+	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
@@ -5324,7 +5325,7 @@ uint32_t wlanGetBandIndexByNetwork(struct ADAPTER
 	struct BSS_INFO *prBssInfo;
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
+	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
@@ -5647,7 +5648,7 @@ void wlanDumpBssStatistics(struct ADAPTER *prAdapter,
 	struct WIFI_WMM_AC_STAT arLLStats[WMM_AC_INDEX_NUM];
 	uint8_t ucIdx;
 
-	if (ucBssIdx > prAdapter->ucHwBssIdNum) {
+	if (ucBssIdx > prAdapter->ucSwBssIdNum) {
 		DBGLOG(SW4, INFO, "Invalid BssInfo index[%u], skip dump!\n",
 		       ucBssIdx);
 		return;
@@ -5739,7 +5740,7 @@ void __wlanDumpAllBssStatistics(struct ADAPTER *prAdapter)
 
 	/* wlanUpdateAllBssStatistics(prAdapter); */
 
-	for (ucIdx = 0; ucIdx < prAdapter->ucHwBssIdNum; ucIdx++) {
+	for (ucIdx = 0; ucIdx < prAdapter->ucSwBssIdNum; ucIdx++) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucIdx);
 		if (prBssInfo && !IS_BSS_ACTIVE(prBssInfo)) {
 			DBGLOG(SW4, TRACE,
@@ -6294,7 +6295,7 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 #endif
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-	if (unlikely(ucBssIndex >= BSSID_NUM))
+	if (unlikely(ucBssIndex >= MAX_BSSID_NUM))
 		return WLAN_STATUS_INVALID_DATA;
 
 	DBGLOG(NIC, TRACE, "lastAllStatsUpdateTime:%u\n",
@@ -6935,7 +6936,7 @@ void wlanBindBssIdxToNetInterface(struct GLUE_INFO *prGlueInfo,
 {
 	struct NET_INTERFACE_INFO *prNetIfInfo;
 
-	if (ucBssIndex >= prGlueInfo->prAdapter->ucHwBssIdNum) {
+	if (ucBssIndex >= prGlueInfo->prAdapter->ucSwBssIdNum) {
 		DBGLOG(INIT, ERROR,
 		       "Array index out of bound, ucBssIndex=%u\n", ucBssIndex);
 		return;
@@ -6968,7 +6969,7 @@ uint8_t wlanGetBssIdxByNetInterface(struct GLUE_INFO *prGlueInfo,
 {
 	uint8_t ucIdx = 0;
 
-	for (ucIdx = 0; ucIdx < HW_BSSID_NUM; ucIdx++) {
+	for (ucIdx = 0; ucIdx < MAX_BSSID_NUM; ucIdx++) {
 		if (prGlueInfo->arNetInterfaceInfo[ucIdx].pvNetInterface ==
 		    pvNetInterface)
 			break;
@@ -10218,7 +10219,7 @@ void wlanChipRstPreAct(struct ADAPTER *prAdapter)
 	prAdapter->fgIsChipAssert = TRUE;
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_CHIP_RST);
 
-	for (i4BssIdx = 0; i4BssIdx < prAdapter->ucHwBssIdNum;
+	for (i4BssIdx = 0; i4BssIdx < prAdapter->ucSwBssIdNum;
 	     i4BssIdx++) {
 		prBssInfo = prAdapter->aprBssInfo[i4BssIdx];
 
@@ -11659,7 +11660,7 @@ wlanGetSpeIdx(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	enum ENUM_BAND eBand = BAND_NULL;
 
-	if (ucBssIndex > prAdapter->ucHwBssIdNum) {
+	if (ucBssIndex > prAdapter->ucSwBssIdNum) {
 		DBGLOG(SW4, INFO, "Invalid BssInfo index[%u], skip dump!\n",
 		       ucBssIndex);
 		return ucRetValSpeIdx;
@@ -11835,7 +11836,7 @@ wlanGetSupportNss(struct ADAPTER *prAdapter,
 		ucRetValNss = prAdapter->rWifiVar.ucNSS;
 
 #if CFG_SISO_SW_DEVELOP
-	if (ucBssIndex > prAdapter->ucHwBssIdNum) {
+	if (ucBssIndex > prAdapter->ucSwBssIdNum) {
 		DBGLOG(SW4, INFO, "Invalid BssInfo index[%u], skip dump!\n",
 		       ucBssIndex);
 		return ucRetValNss;

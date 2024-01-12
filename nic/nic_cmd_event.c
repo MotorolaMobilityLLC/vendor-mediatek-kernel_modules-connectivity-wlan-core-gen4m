@@ -890,7 +890,7 @@ void nicCmdEventQueryLinkQuality(struct ADAPTER *prAdapter,
 	DBGLOG(NIC, TRACE, "Cmd=%p, pvInformationBuffer=%p",
 		prCmdInfo, prCmdInfo->pvInformationBuffer);
 
-	for (i = 0; i < BSSID_NUM; i++) {
+	for (i = 0; i < 4; i++) {
 		struct LINK_SPEED_EX_ *prLq;
 
 		if (!prLinkQuality->rLq[i].ucIsLQ0Rdy)
@@ -4685,7 +4685,7 @@ void nicEventBeaconTimeout(struct ADAPTER *prAdapter,
 					   *) (prEvent->aucBuffer);
 
 		if (prEventBssBeaconTimeout->ucBssIndex >=
-		    prAdapter->ucHwBssIdNum ||
+		    prAdapter->ucSwBssIdNum ||
 		    prEventBssBeaconTimeout->ucBssIndex >=
 		    MAX_BSSID_NUM) {
 			DBGLOG(NIC, ERROR, "ucBssIndex out of range!\n");

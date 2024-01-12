@@ -1588,7 +1588,7 @@ p2pFuncStartGO(struct ADAPTER *prAdapter,
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prBssInfo != NULL));
 
-		if (prBssInfo->ucBssIndex >= prAdapter->ucHwBssIdNum) {
+		if (prBssInfo->ucBssIndex >= prAdapter->ucSwBssIdNum) {
 			DBGLOG(P2P, ERROR,
 				"P2P BSS exceed the number of P2P interface number.");
 			ASSERT(FALSE);
@@ -3704,7 +3704,7 @@ struct BSS_INFO *p2pFuncBSSIDFindBssInfo(struct ADAPTER *prAdapter,
 		ASSERT_BREAK((prAdapter != NULL) && (pucBSSID != NULL));
 
 		for (ucBssIdx = 0;
-			ucBssIdx < prAdapter->ucHwBssIdNum; ucBssIdx++) {
+			ucBssIdx < prAdapter->ucSwBssIdNum; ucBssIdx++) {
 			if (!IS_NET_ACTIVE(prAdapter, ucBssIdx))
 				continue;
 
@@ -6107,7 +6107,7 @@ uint32_t p2pFuncCalculateP2p_IELenForBeacon(struct ADAPTER *prAdapter,
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL)
-			&& (ucBssIdx < prAdapter->ucHwBssIdNum));
+			&& (ucBssIdx < prAdapter->ucSwBssIdNum));
 
 		prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
 
@@ -8792,7 +8792,7 @@ uint8_t p2pFuncIsBufferableMMPDU(struct ADAPTER *prAdapter,
 		 * and band0 may only support 2.4G for some platform.
 		 * Set FORCE_TX in case p2p_device TX 5G/6G fail.
 		 */
-		if (prMgmtTxMsdu->ucBssIndex == P2P_DEV_BSS_INDEX) {
+		if (prMgmtTxMsdu->ucBssIndex == prAdapter->ucP2PDevBssIdx) {
 			fgIsBufferableMMPDU = FALSE;
 			break;
 		}

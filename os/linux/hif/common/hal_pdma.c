@@ -5732,7 +5732,7 @@ static void dumpTxDelayAverage(uint32_t (*au4TxAverage)[BSSID_NUM + 1])
 		p = buf;
 		p += kalSnprintf(p, sizeof(buf) - (p - buf),
 				"%c", delayTypeChar[t]);
-		for (b = 0; b < BSSID_NUM+1; b++) {
+		for (b = 0; b < BSSID_NUM + 1; b++) {
 			p += kalSnprintf(p, sizeof(buf) - (p - buf),
 			"%c%u", b == 0 ? ':' : ',', au4TxAverage[t][b]);
 		}

@@ -1908,6 +1908,7 @@ struct ADAPTER {
 	struct BSS_INFO *aprSapBssInfo[KAL_P2P_NUM];
 
 	uint8_t ucHwBssIdNum;
+	uint8_t ucSwBssIdNum;
 	uint8_t ucWmmSetNum;
 	uint8_t ucWtblEntryNum;
 	uint8_t ucTxDefaultWlanIndex;

@@ -1389,7 +1389,7 @@ int32_t halShowStatInfo(struct ADAPTER *prAdapter,
 				   &u4BufLen, ucBssIndex);
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(REQ, WARN, "unable to retrieve rssi\n");
-		if (ucBssIndex < BSSID_NUM)
+		if (ucBssIndex < MAX_BSSID_NUM)
 			rRssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
 
 		rSwCtrlInfo.u4Data = 0;

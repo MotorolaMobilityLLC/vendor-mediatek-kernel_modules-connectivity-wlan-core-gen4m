@@ -545,7 +545,7 @@ glSetupNAN(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prNanWdev,
 
 		ucBssIndex = nanDevInit(prGlueInfo->prAdapter, u4Idx);
 
-		if (ucBssIndex == MAX_BSS_INDEX) {
+		if (ucBssIndex == MAX_BSSID_NUM) {
 			DBGLOG(INIT, ERROR, "No BSS can be used!!\n");
 			nanFreeInfo(prGlueInfo, u4Idx);
 			return -1;

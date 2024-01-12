@@ -6865,7 +6865,7 @@ void aisFsmRoamingDisconnectPrevAP(struct ADAPTER *prAdapter,
 	/* 4 <4.1> sync. with firmware */
 	/* Virtial BSSID */
 	if (prTargetStaRec)
-		prTargetStaRec->ucBssIndex = (prAdapter->ucHwBssIdNum + 1);
+		prTargetStaRec->ucBssIndex = (prAdapter->ucSwBssIdNum + 1);
 	if (prNewBssDesc)
 		COPY_MAC_ADDR(prAisBssInfo->aucBSSID, prNewBssDesc->aucBSSID);
 	nicUpdateBss(prAdapter, prAisBssInfo->ucBssIndex);
@@ -8464,7 +8464,7 @@ struct BSS_INFO *aisGetConnectedBssInfo(
 	if (!prAdapter)
 		return NULL;
 
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		if (prBssInfo &&

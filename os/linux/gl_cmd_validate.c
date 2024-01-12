@@ -255,7 +255,7 @@ struct CMD_VALIDATE_POLICY set_dual_sta_usecase_policy[
 
 struct CMD_VALIDATE_POLICY get_tsf_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
 	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8,
-				 .min = 0, .max = MAX_BSS_INDEX - 1}
+				 .min = 0, .max = MAX_BSSID_NUM - 1}
 };
 
 struct CMD_VALIDATE_POLICY set_ml_probereq_policy[COMMON_CMD_SET_ARG_NUM(3)] = {

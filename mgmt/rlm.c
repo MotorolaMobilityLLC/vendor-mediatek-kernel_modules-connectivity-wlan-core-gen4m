@@ -178,7 +178,7 @@ void rlmFsmEventUninit(struct ADAPTER *prAdapter)
 
 	ASSERT(prAdapter);
 
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		/* Note: all RLM timers will also be stopped.
@@ -4395,7 +4395,7 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	 * Note2: If we are GO, concurrent AIS AP should detect it and reflect
 	 *        action in its Beacon, so AIS STA just follows Beacon from AP.
 	 */
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		if (IS_BSS_BOW(prBssInfo))
@@ -5117,7 +5117,7 @@ void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 	if (!prStaRec)
 		return;
-	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
+	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucSwBssIdNum);
 
 	prBssInfo = prAdapter->aprBssInfo[prStaRec->ucBssIndex];
 
@@ -6241,7 +6241,7 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	if (!prStaRec)
 		return;
 
-	if (prStaRec->ucBssIndex > prAdapter->ucHwBssIdNum)
+	if (prStaRec->ucBssIndex > prAdapter->ucSwBssIdNum)
 		return;
 
 	prActFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
@@ -7804,7 +7804,7 @@ rlmChangeOperationMode(
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	/* Sanity check */
-	if (ucBssIndex >= prAdapter->ucHwBssIdNum)
+	if (ucBssIndex >= prAdapter->ucSwBssIdNum)
 		return OP_CHANGE_STATUS_INVALID;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);

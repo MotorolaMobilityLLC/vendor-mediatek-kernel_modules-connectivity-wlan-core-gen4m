@@ -1454,7 +1454,7 @@ bool scnEnableSplitScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	/* Enable condition 2: (TX + RX) packets in last 1s > 30,
 	 * exclude P2P device because prPerMonitor not include P2P device
 	 */
-	if (ucBssIndex < P2P_DEV_BSS_INDEX && IS_BSS_ACTIVE(prBssInfo)) {
+	if (ucBssIndex < MAX_BSSID_NUM && IS_BSS_ACTIVE(prBssInfo)) {
 		ulTrxPacketsDiffTotal +=
 			(prPerMonitor->ulTxPacketsDiffLastSec[ucBssIndex] +
 			prPerMonitor->ulRxPacketsDiffLastSec[ucBssIndex]);

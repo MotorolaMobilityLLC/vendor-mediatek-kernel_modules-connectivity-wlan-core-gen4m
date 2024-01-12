@@ -163,7 +163,7 @@ do { \
 				uint8_t *pucMicKey = NULL; \
 				ucBssIndex = \
 					prCurrSwRfb->prStaRec->ucBssIndex; \
-				ASSERT(ucBssIndex < prAdapter->ucHwBssIdNum); \
+				ASSERT(ucBssIndex < prAdapter->ucSwBssIdNum); \
 				prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, \
 					ucBssIndex); \
 				ASSERT(prBssInfo); \
@@ -6294,7 +6294,7 @@ void mqmProcessBcn(struct ADAPTER *prAdapter,
 
 	fgNewParameter = FALSE;
 
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
 		if (!prBssInfo || !IS_BSS_ACTIVE(prBssInfo))
@@ -7934,7 +7934,7 @@ uint32_t qmDumpQueueStatus(struct ADAPTER *prAdapter,
 #endif
 
 #if defined(LINUX)
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		LOGBUF(pucBuf, u4Max, u4Len,
 			"P BSS[%u] QLen[%u:%u:%u:%u]\n", i,
 			prGlueInfo->ai4TxPendingFrameNumPerQueue[i][0],

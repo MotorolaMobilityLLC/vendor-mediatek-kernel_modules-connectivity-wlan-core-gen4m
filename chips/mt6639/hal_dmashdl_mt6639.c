@@ -413,7 +413,7 @@ uint32_t mt6639dmashdlQuotaDecision(struct ADAPTER *prAdapter,
 	enum ENUM_BAND eOtherBand = BAND_NULL;
 
 	for (ucBssIndex = 0;
-		ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
+		ucBssIndex < prAdapter->ucSwBssIdNum; ucBssIndex++) {
 
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 

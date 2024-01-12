@@ -1598,15 +1598,6 @@ wlanoidSetInfrastructureMode(struct ADAPTER *prAdapter,
 
 	prConnSettings->fgWapiMode = FALSE;
 
-#if 0 /* STA record remove at AIS_ABORT nicUpdateBss and DISCONNECT */
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
-		prBssInfo = prAdapter->aprBssInfo[i];
-		if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS)
-			cnmStaFreeAllStaByNetwork(prAdapter,
-						  prBssInfo->ucBssIndex, 0);
-	}
-#endif
-
 	/* prWlanTable = prAdapter->rWifiVar.arWtbl; */
 	/* prWlanTable[prAisBssInfo->ucBMCWlanIndex].ucKeyId = 0; */
 
@@ -4034,7 +4025,7 @@ wlanoidQueryRssi(struct ADAPTER *prAdapter,
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) ||
-	    ucBssIndex == P2P_DEV_BSS_INDEX)
+	    ucBssIndex == prAdapter->ucP2PDevBssIdx)
 		return WLAN_STATUS_NOT_SUPPORTED;
 
 	if (u4QueryBufferLen)
@@ -4400,7 +4391,7 @@ wlanoidQueryLinkSpeed(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-	if (unlikely(ucBssIndex >= BSSID_NUM))
+	if (unlikely(ucBssIndex >= MAX_BSSID_NUM))
 		return WLAN_STATUS_INVALID_DATA;
 	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
 	rUpdateDeltaTime = kalGetTimeTick() - prLq->rLinkRateUpdateTime;
@@ -9025,7 +9016,7 @@ wlanoidSet802dot11PowerSaveProfile(struct ADAPTER *
 		       prPowerMode->ePowerMode);
 		return WLAN_STATUS_INVALID_DATA;
 	} else if (prPowerMode->ucBssIdx >=
-		   prAdapter->ucHwBssIdNum) {
+		   prAdapter->ucSwBssIdNum) {
 		DBGLOG(REQ, WARN,
 		       "Set power mode error: Invalid BSS index(%u)\n",
 		       prPowerMode->ucBssIdx);
@@ -15810,7 +15801,7 @@ uint32_t wlanoidGetWifiType(struct ADAPTER *prAdapter,
 		   sizeof(prParamGetWifiType->arWifiTypeName));
 	pNameBuf = &prParamGetWifiType->arWifiTypeName[0];
 	ucMaxCopySize = sizeof(prParamGetWifiType->arWifiTypeName) - 1;
-	if (ucBssIdx > prAdapter->ucHwBssIdNum) {
+	if (ucBssIdx > prAdapter->ucSwBssIdNum) {
 		DBGLOG(OID, ERROR, "invalid bss index: %u\n", ucBssIdx);
 		return WLAN_STATUS_INVALID_DATA;
 	}
