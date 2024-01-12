@@ -7588,6 +7588,12 @@ void p2pFuncSwitchSapChannel(
 					eStaBand, eHwMode);
 				goto exit;
 			}
+		} else if (prAdapter->rWifiVar.fgSapChannelSwitchPolicy ==
+				P2P_CHANNEL_SWITCH_POLICY_NONE) {
+			DBGLOG(P2P, INFO,
+				"SKIP SAP Channel Switch\n",
+				eStaBand);
+			goto exit;
 		}
 
 		DBGLOG(P2P, INFO,
