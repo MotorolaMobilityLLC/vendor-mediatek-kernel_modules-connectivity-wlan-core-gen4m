@@ -222,18 +222,24 @@ static void mtk_p2p_need_remove_iface(
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct P2P_ROLE_FSM_INFO *fsm =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct MLD_BSS_INFO *mld =
+		(struct MLD_BSS_INFO *) NULL;
 
 	fsm = p2pGetDefaultRoleFsmInfo(prAdapter,
 		IFTYPE_P2P_CLIENT);
 
-	/* Remove MLO GC before starting SAP */
-	if (fsm &&
-		(p2pGetGCBssNum(fsm) > 1) &&
-		(type == NL80211_IFTYPE_AP)) {
-		mtk_p2p_cfg80211_del_iface_impl(
-			wiphy,
-			gprP2pRoleWdev[P2P_MAIN_ROLE_INDEX],
-			false);
+	/* Remove MLO GC/MLO GO before starting SAP */
+	if (fsm && (type == NL80211_IFTYPE_AP)) {
+		mld = p2pGetMldBssInfo(
+			prAdapter, fsm);
+
+		if (mld &&
+			mld->rBssList.u4NumElem > 1)
+			mtk_p2p_cfg80211_del_iface_impl(
+				wiphy,
+				gprP2pRoleWdev
+				[P2P_MAIN_ROLE_INDEX],
+				false);
 	}
 #endif
 }
