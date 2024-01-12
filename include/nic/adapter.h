@@ -1683,6 +1683,7 @@ struct WIFI_VAR {
 	uint32_t u4MinTempQueryTime;
 	/* Minimum value for 802.11h TPC Txpower limit */
 	int8_t icRegPwrLmtMin;
+	int8_t icRegPwrLmtMax;
 
 #if CFG_MTK_WIFI_WFDMA_WB
 	uint32_t u4WfdmaCidxFetchTimeout;

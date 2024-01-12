@@ -8656,7 +8656,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 	INIT_INT(prWifiVar->icRegPwrLmtMin, "RegPwrLmtMin",
 		TX_PWR_REG_LMT_MIN);
-
+	INIT_INT(prWifiVar->icRegPwrLmtMax, "RegPwrLmtMax",
+		TX_PWR_REG_LMT_MAX);
 #if CFG_MTK_WIFI_WFDMA_WB
 	INIT_UINT(prWifiVar->u4WfdmaCidxFetchTimeout,
 		  "WfdmaCidxFetchTimeout", 500);
