@@ -247,7 +247,7 @@
 #define CFG_SUPPORT_RX_AMSDU	1
 
 /* Enable Detection for 2021 Frag/AGG Attack from WFA */
-/* #define CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION 1 */
+#define CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION 1
 
 /* Enable handling BA Request advance SSN before data in previous window */
 #define CFG_SUPPORT_RX_OOR_BAR	1
