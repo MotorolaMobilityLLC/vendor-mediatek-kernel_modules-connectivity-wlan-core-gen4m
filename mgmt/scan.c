@@ -2786,7 +2786,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			if (IE_LEN(prBssLoad) !=
 				(sizeof(struct IE_BSS_LOAD) - 2)) {
 				DBGLOG(SCN, WARN,
-					"HE_CAP IE_LEN err(%d)->(%d)!\n",
+					"HE_CAP IE_LEN err(%lu)->(%d)!\n",
 					(sizeof(struct IE_BSS_LOAD) - 2),
 					IE_LEN(prBssLoad));
 				break;
@@ -4147,7 +4147,7 @@ void scanLogCacheAddBSS(struct LINK *prList,
 				return;
 		} else {
 			scanlog_dbg(prefix, ERROR,
-				"pSavedBss(0x%x) or bssid(0x%x) is NULL\n",
+				"pSavedBss(%p) or bssid(%p) is NULL\n",
 				pSavedBss, bssId);
 			return;
 		}
@@ -4407,7 +4407,7 @@ void scanParseVHTCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
 	/* Error handling */
 	if (IE_LEN(prVhtCap) != (sizeof(struct IE_VHT_CAP) - 2)) {
 		DBGLOG(SCN, WARN,
-			"VhtCap wrong length!(%d)->(%d)\n",
+			"VhtCap wrong length!(%lu)->(%d)\n",
 			(sizeof(struct IE_VHT_CAP) - 2),
 			IE_LEN(prVhtCap));
 		return;

@@ -2299,7 +2299,7 @@ rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
 		/* Check Central Channel Valid or Not */
 	} else if (eChannelWidth == CW_320MHZ) {
 		//TODO: add checking for 320MHZ
-		DBGLOG(RLM, TRACE, "CW320\n", eChannelWidth);
+		DBGLOG(RLM, TRACE, "CW320\n");
 	} else {
 		DBGLOG(RLM, ERROR, "Wrong BW =%d\n", eChannelWidth);
 		fgValidChannel = FALSE;
