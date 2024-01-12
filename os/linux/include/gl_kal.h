@@ -2409,7 +2409,6 @@ uint32_t kalGetChannelFrequency(
 		uint8_t ucChannel,
 		uint8_t ucBand);
 
-enum ENUM_BAND kalOperatingClassToBand(uint16_t u2OpClass);
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 u_int8_t kalFillChannels(
 	struct GLUE_INFO *prGlueInfo,
