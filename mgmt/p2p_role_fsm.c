@@ -3643,7 +3643,6 @@ error:
 			&prOffChnlTxReq->rLinkEntry);
 	cnmMgtPktFree(prAdapter, prOffChnlTxReq->prMgmtTxMsdu);
 	cnmMemFree(prAdapter, prOffChnlTxReq);
-	ASSERT(FALSE);
 }				/* p2pRoleHandleOffchnlTxReq */
 
 void p2pRoleFsmRunEventMgmtTx(IN struct ADAPTER *prAdapter,
