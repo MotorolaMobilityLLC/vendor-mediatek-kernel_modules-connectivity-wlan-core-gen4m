@@ -7521,12 +7521,11 @@ int mtk_cfg_suspend(struct wiphy *wiphy,
 	 */
 	if (prGlueInfo->prAdapter &&
 	    prGlueInfo->prAdapter->chip_info->fgIsSupportL0p5Reset) {
-		spin_lock_bh(&prGlueInfo->prAdapter->rWfsysResetLock);
-
+		KAL_ACQUIRE_SPIN_LOCK_BH(prGlueInfo->prAdapter,
+			SPIN_LOCK_WFSYS_RESET);
 		prGlueInfo->prAdapter->fgIsCfgSuspend = TRUE;
-
-		spin_unlock_bh(&prGlueInfo->prAdapter->rWfsysResetLock);
-
+		KAL_RELEASE_SPIN_LOCK_BH(prGlueInfo->prAdapter,
+			SPIN_LOCK_WFSYS_RESET);
 		cancel_work_sync(&prGlueInfo->rWfsysResetWork);
 	}
 #endif
@@ -7559,12 +7558,11 @@ int mtk_cfg_resume(struct wiphy *wiphy)
 	 */
 	if (prGlueInfo->prAdapter &&
 	    prGlueInfo->prAdapter->chip_info->fgIsSupportL0p5Reset) {
-		spin_lock_bh(&prGlueInfo->prAdapter->rWfsysResetLock);
-
+		KAL_ACQUIRE_SPIN_LOCK_BH(prGlueInfo->prAdapter,
+			SPIN_LOCK_WFSYS_RESET);
 		prGlueInfo->prAdapter->fgIsCfgSuspend = FALSE;
-
-		spin_unlock_bh(&prGlueInfo->prAdapter->rWfsysResetLock);
-
+		KAL_RELEASE_SPIN_LOCK_BH(prGlueInfo->prAdapter,
+			SPIN_LOCK_WFSYS_RESET);
 		cancel_work_sync(&prGlueInfo->rWfsysResetWork);
 
 		if (glReSchWfsysReset(prGlueInfo->prAdapter))

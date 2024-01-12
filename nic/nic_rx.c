@@ -3612,7 +3612,6 @@ void nicRxProcessPacketType(
 {
 	struct RX_CTRL *prRxCtrl;
 	struct mt66xx_chip_info *prChipInfo;
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prChipInfo = prAdapter->chip_info;
@@ -3620,13 +3619,13 @@ void nicRxProcessPacketType(
 	switch (prSwRfb->ucPacketType) {
 	case RX_PKT_TYPE_RX_DATA:
 		if (HAL_IS_RX_DIRECT(prAdapter)) {
-			spin_lock_bh(&prGlueInfo->rSpinLock[
-				SPIN_LOCK_RX_DIRECT]);
+			KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter,
+				SPIN_LOCK_RX_DIRECT);
 			nicRxProcessDataPacket(
 				prAdapter,
 				prSwRfb);
-			spin_unlock_bh(&prGlueInfo->rSpinLock[
-				SPIN_LOCK_RX_DIRECT]);
+			KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+				SPIN_LOCK_RX_DIRECT);
 		} else {
 			nicRxProcessDataPacket(
 				prAdapter,
@@ -3671,12 +3670,12 @@ void nicRxProcessPacketType(
 				prSwRfb->prRxStatus);
 			if ((prSwRfb->ucOFLD) || (prSwRfb->fgHdrTran)) {
 				if (HAL_IS_RX_DIRECT(prAdapter)) {
-					spin_lock_bh(&prGlueInfo->rSpinLock[
-						SPIN_LOCK_RX_DIRECT]);
+					KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter,
+						SPIN_LOCK_RX_DIRECT);
 					nicRxProcessDataPacket(
 							prAdapter, prSwRfb);
-					spin_unlock_bh(&prGlueInfo->rSpinLock[
-						SPIN_LOCK_RX_DIRECT]);
+					KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+						SPIN_LOCK_RX_DIRECT);
 				} else {
 					nicRxProcessDataPacket(
 							prAdapter, prSwRfb);

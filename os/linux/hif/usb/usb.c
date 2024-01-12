@@ -2075,12 +2075,12 @@ u_int8_t kalCheckWfsysResetPostpone(struct GLUE_INFO *prGlueInfo)
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 
-	spin_lock_bh(&prGlueInfo->prAdapter->rWfsysResetLock);
+	spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_WFSYS_RESET]);
 
 	if (prGlueInfo->prAdapter->fgIsCfgSuspend)
 		fgPostpone = TRUE;
 
-	spin_unlock_bh(&prGlueInfo->prAdapter->rWfsysResetLock);
+	spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_WFSYS_RESET]);
 
 	if (fgPostpone)
 		goto END;

@@ -252,33 +252,6 @@ do { \
 	} \
 } while (0)
 #endif
-
-#define RX_DIRECT_REORDER_LOCK(pad, dbg) \
-do { \
-	struct GLUE_INFO *_glue = pad->prGlueInfo; \
-	if (!HAL_IS_RX_DIRECT(pad) || !_glue) \
-		break; \
-	if (dbg) \
-		DBGLOG(QM, EVENT, "RX_DIRECT_REORDER_LOCK %d\n", __LINE__); \
-	if (irqs_disabled()) \
-		spin_lock(&_glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]); \
-	else \
-		spin_lock_bh(&_glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]); \
-} while (0)
-
-#define RX_DIRECT_REORDER_UNLOCK(pad, dbg) \
-do { \
-	struct GLUE_INFO *_glue = pad->prGlueInfo; \
-	if (!HAL_IS_RX_DIRECT(pad) || !_glue) \
-		break; \
-	if (dbg) \
-		DBGLOG(QM, EVENT, "RX_DIRECT_REORDER_UNLOCK %u\n", __LINE__); \
-	if (irqs_disabled()) \
-		spin_unlock(&_glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]); \
-	else \
-		spin_unlock_bh(&_glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]);\
-} while (0)
-
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -866,8 +839,9 @@ struct SW_RFB *qmFlushRxQueues(IN struct ADAPTER *prAdapter)
 	prSwRfbListHead = prSwRfbListTail = NULL;
 
 	DBGLOG(QM, TRACE, "QM: Enter qmFlushRxQueues()\n");
+	if (HAL_IS_RX_DIRECT(prAdapter))
+		RX_DIRECT_REORDER_LOCK(prAdapter->prGlueInfo, 0);
 
-	RX_DIRECT_REORDER_LOCK(prAdapter, 0);
 	for (i = 0; i < CFG_NUM_OF_RX_BA_AGREEMENTS; i++) {
 		if (QUEUE_IS_NOT_EMPTY(&
 			(prQM->arRxBaTable[i].rReOrderQue))) {
@@ -907,7 +881,9 @@ struct SW_RFB *qmFlushRxQueues(IN struct ADAPTER *prAdapter)
 			continue;
 		}
 	}
-	RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
+
+	if (HAL_IS_RX_DIRECT(prAdapter))
+		RX_DIRECT_REORDER_UNLOCK(prAdapter->prGlueInfo, 0);
 
 	if (prSwRfbListTail) {
 		/* Terminate the MSDU_INFO list with a NULL pointer */
@@ -956,7 +932,9 @@ struct SW_RFB *qmFlushStaRxQueue(IN struct ADAPTER *prAdapter,
 	 * prCurrSwRfb->eDst equals RX_PKT_DESTINATION_HOST
 	 */
 	if (prReorderQueParm) {
-		RX_DIRECT_REORDER_LOCK(prAdapter, 0);
+		if (HAL_IS_RX_DIRECT(prAdapter))
+			RX_DIRECT_REORDER_LOCK(prAdapter->prGlueInfo, 0);
+
 		if (QUEUE_IS_NOT_EMPTY(&(prReorderQueParm->rReOrderQue))) {
 
 			prSwRfbListHead = (struct SW_RFB *)
@@ -968,7 +946,9 @@ struct SW_RFB *qmFlushStaRxQueue(IN struct ADAPTER *prAdapter,
 
 			QUEUE_INITIALIZE(&(prReorderQueParm->rReOrderQue));
 		}
-		RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
+
+		if (HAL_IS_RX_DIRECT(prAdapter))
+			RX_DIRECT_REORDER_UNLOCK(prAdapter->prGlueInfo, 0);
 	}
 
 	if (prSwRfbListTail) {
@@ -4362,7 +4342,8 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 	prReorderQueParm->u4SeqNo = u4SeqNo;
 #endif
 
-	RX_DIRECT_REORDER_LOCK(prAdapter, 0);
+	if (HAL_IS_RX_DIRECT(prAdapter))
+		RX_DIRECT_REORDER_LOCK(prAdapter->prGlueInfo, 0);
 
 #if CFG_WOW_SUPPORT
 	/* After resuming, WinStart and WinEnd are obsolete and unsync
@@ -4387,7 +4368,10 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 	/* Insert reorder packet */
 	qmInsertReorderPkt(prAdapter, prSwRfb, prReorderQueParm,
 		prReturnedQue);
-	RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
+
+	if (HAL_IS_RX_DIRECT(prAdapter))
+		RX_DIRECT_REORDER_UNLOCK(prAdapter->prGlueInfo, 0);
+
 }
 
 void qmProcessBarFrame(IN struct ADAPTER *prAdapter,
@@ -5231,9 +5215,13 @@ void qmHandleReorderBubbleTimeout(IN struct ADAPTER *prAdapter,
 		prReorderQueParm->u2FirstBubbleSn);
 
 	prGlueInfo = prAdapter->prGlueInfo;
-	spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
+
+	KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter,
+		SPIN_LOCK_RX_DIRECT);
 	qmHandleEventCheckReorderBubble(prAdapter, prReorderQueParm);
-	spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
+	KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+		SPIN_LOCK_RX_DIRECT);
+
 }
 
 void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
@@ -5269,7 +5257,8 @@ void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 
 	prReorderQue = &(prReorderQueParm->rReOrderQue);
 
-	RX_DIRECT_REORDER_LOCK(prAdapter, 0);
+	if (HAL_IS_RX_DIRECT(prAdapter))
+		RX_DIRECT_REORDER_LOCK(prAdapter->prGlueInfo, 0);
 
 	if (QUEUE_IS_EMPTY(prReorderQue)) {
 		prReorderQueParm->fgHasBubble = FALSE;
@@ -5278,7 +5267,9 @@ void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 			"QM:(Bub Check Cancel) STA[%u] TID[%u], Bubble has been filled\n",
 			prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid);
 
-		RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
+		if (HAL_IS_RX_DIRECT(prAdapter))
+			RX_DIRECT_REORDER_UNLOCK(prAdapter->prGlueInfo, 0);
+
 		return;
 	}
 
@@ -5315,7 +5306,9 @@ void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 			prReorderQueParm->u2WinEnd);
 
 		prReorderQueParm->fgHasBubble = FALSE;
-		RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
+
+		if (HAL_IS_RX_DIRECT(prAdapter))
+			RX_DIRECT_REORDER_UNLOCK(prAdapter->prGlueInfo, 0);
 
 		/* process prReturnedQue after unlock prReturnedQue */
 		if (QUEUE_IS_NOT_EMPTY(prReturnedQue)) {
@@ -5359,7 +5352,9 @@ void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 			prReorderQueParm->u2FirstBubbleSn,
 			prReorderQueParm->u2WinStart,
 			prReorderQueParm->u2WinEnd);
-		RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
+
+		if (HAL_IS_RX_DIRECT(prAdapter))
+			RX_DIRECT_REORDER_UNLOCK(prAdapter->prGlueInfo, 0);
 
 		cnmTimerStartTimer(prAdapter,
 			&(prReorderQueParm->rReorderBubbleTimer),
@@ -9440,7 +9435,8 @@ void qmHandleRxReorderWinShift(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
-	RX_DIRECT_REORDER_LOCK(prAdapter, 0);
+	if (HAL_IS_RX_DIRECT(prAdapter))
+		RX_DIRECT_REORDER_LOCK(prAdapter->prGlueInfo, 0);
 
 	u4WinStart = (uint32_t) (prReorderQueParm->u2WinStart);
 	u4WinEnd = (uint32_t) (prReorderQueParm->u2WinEnd);
@@ -9478,7 +9474,9 @@ void qmHandleRxReorderWinShift(IN struct ADAPTER *prAdapter,
 			ucTid, u4SSN, u4WinStart, u4WinEnd);
 	}
 
-	RX_DIRECT_REORDER_UNLOCK(prAdapter, 0);
+	if (HAL_IS_RX_DIRECT(prAdapter))
+		RX_DIRECT_REORDER_UNLOCK(prAdapter->prGlueInfo, 0);
+
 }
 
 void qmCheckRxEAPOLM3(IN struct ADAPTER *prAdapter,

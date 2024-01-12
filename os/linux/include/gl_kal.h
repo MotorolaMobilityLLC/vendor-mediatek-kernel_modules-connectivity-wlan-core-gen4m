@@ -300,6 +300,12 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 	SPIN_LOCK_CORE_DUMP,
 #endif
 	SPIN_LOCK_FW_LOG,
+#if CFG_CHIP_RESET_SUPPORT
+	SPIN_LOCK_WFSYS_RESET,
+#endif
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+	SPIN_LOCK_TX_MGMT_DIRECT_Q,
+#endif
 	SPIN_LOCK_NUM
 };
 
@@ -507,6 +513,29 @@ struct PWR_LEVEL_HANDLER_ELEMENT {
 	kalReleaseTxDirectHifQLock(prGlueInfo, ucBssIndex, ucHifTc, \
 		__ulHifQFlags)
 
+#define KAL_ACQUIRE_SPIN_LOCK_BH(_prAdapter, _rLockCategory)   \
+	kalAcquireSpinLockBh(((struct ADAPTER *)_prAdapter)->prGlueInfo,  \
+	_rLockCategory)
+
+#define KAL_RELEASE_SPIN_LOCK_BH(_prAdapter, _rLockCategory)   \
+	kalReleaseSpinLockBh(((struct ADAPTER *)_prAdapter)->prGlueInfo,  \
+	_rLockCategory)
+
+#if defined(_HIF_USB)
+#define KAL_HIF_STATE_LOCK(prGlueInfo) \
+	kalAcquiretHifStateLock(prGlueInfo, &__ulFlags)
+
+#define KAL_HIF_STATE_UNLOCK(prGlueInfo) \
+	kalReleaseHifStateLock(prGlueInfo, __ulFlags)
+#endif
+
+#define KAL_ACQUIRE_SPIN_LOCK_IRQ(_prAdapter, _rLockCategory)   \
+	kalAcquireSpinLockIrq(((struct ADAPTER *)_prAdapter)->prGlueInfo,  \
+	_rLockCategory, &__ulFlags)
+
+#define KAL_RELEASE_SPIN_LOCK_IRQ(_prAdapter, _rLockCategory)   \
+	kalReleaseSpinLockIrq(((struct ADAPTER *)_prAdapter)->prGlueInfo,  \
+	_rLockCategory, __ulFlags)
 /*----------------------------------------------------------------------------*/
 /* Macros of MUTEX operations for using in Driver Layer                   */
 /*----------------------------------------------------------------------------*/
@@ -1260,6 +1289,46 @@ do { \
 
 #endif
 
+#define TX_DIRECT_LOCK(glue) \
+do { \
+	if (irqs_disabled()) \
+		spin_lock(&glue->rSpinLock[SPIN_LOCK_TX_DIRECT]); \
+	else \
+		spin_lock_bh(&glue->rSpinLock[SPIN_LOCK_TX_DIRECT]); \
+} while (0)
+
+#define TX_DIRECT_UNLOCK(glue) \
+do { \
+	if (irqs_disabled()) \
+		spin_unlock(&glue->rSpinLock[SPIN_LOCK_TX_DIRECT]); \
+	else \
+		spin_unlock_bh(&glue->rSpinLock[SPIN_LOCK_TX_DIRECT]);\
+} while (0)
+
+#define RX_DIRECT_REORDER_LOCK(glue, dbg) \
+do { \
+	if (!glue) \
+		break; \
+	if (dbg) \
+		DBGLOG(QM, EVENT, "RX_DIRECT_REORDER_LOCK %d\n", __LINE__); \
+	if (irqs_disabled()) \
+		spin_lock(&glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]); \
+	else \
+		spin_lock_bh(&glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]); \
+} while (0)
+
+#define RX_DIRECT_REORDER_UNLOCK(glue, dbg) \
+do { \
+	if (!glue) \
+		break; \
+	if (dbg) \
+		DBGLOG(QM, EVENT, "RX_DIRECT_REORDER_UNLOCK %u\n", __LINE__); \
+	if (irqs_disabled()) \
+		spin_unlock(&glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]); \
+	else \
+		spin_unlock_bh(&glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]);\
+} while (0)
+
 /*----------------------------------------------------------------------------*/
 /* Macros of wiphy operations for using in Driver Layer                       */
 /*----------------------------------------------------------------------------*/
@@ -1297,6 +1366,25 @@ void kalReleaseTxDirectHifQLock(IN struct GLUE_INFO *prGlueInfo,
 			IN uint8_t ucBssIndex,
 			IN uint8_t ucHifTc,
 			IN unsigned long ulHifQFlags);
+void kalAcquireSpinLockBh(struct GLUE_INFO *prGlueInfo,
+			 enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory);
+
+void kalReleaseSpinLockBh(struct GLUE_INFO *prGlueInfo,
+			 enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory);
+
+void kalAcquireSpinLockIrq(struct GLUE_INFO *prGlueInfo,
+			enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory,
+			unsigned long *plFlags);
+
+void kalReleaseSpinLockIrq(struct GLUE_INFO *prGlueInfo,
+			enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory,
+			unsigned long ulFlags);
+
+void kalAcquiretHifStateLock(struct GLUE_INFO *prGlueInfo,
+			unsigned long *plFlags);
+
+void kalReleaseHifStateLock(struct GLUE_INFO *prGlueInfo,
+			unsigned long ulFlags);
 
 void kalUpdateMACAddress(IN struct GLUE_INFO *prGlueInfo,
 			 IN uint8_t *pucMacAddr);

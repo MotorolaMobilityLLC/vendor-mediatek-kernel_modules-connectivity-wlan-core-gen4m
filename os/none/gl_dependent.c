@@ -225,42 +225,6 @@ void kal_vfree(void *addr)
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
-bool kal_irqs_disabled(void)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	return false;
-}
-
-void kal_spin_lock(spinlock_t *lock)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
-void kal_spin_unlock(spinlock_t *lock)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
-void kal_spin_lock_bh(spinlock_t *lock)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
-void kal_spin_unlock_bh(spinlock_t *lock)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
-void kal_spin_lock_irqsave(spinlock_t *lock, unsigned long flags)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
-void kal_spin_unlock_irqrestore(spinlock_t *lock, unsigned long flags)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
 void *kal_skb_push(struct sk_buff *skb, unsigned int len)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);

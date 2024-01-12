@@ -5638,14 +5638,13 @@ aisDeauthXmitCompleteBss(IN struct ADAPTER *prAdapter,
 
 #if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
 	if (prAdapter->chip_info->fgIsSupportL0p5Reset) {
-		spin_lock_bh(&prAdapter->rWfsysResetLock);
-
+		KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_WFSYS_RESET);
 		if (prAdapter->eWfsysResetState == WFSYS_RESET_STATE_REINIT) {
 			DBGLOG(AIS, INFO, "during L0.5 reset reinit state\n");
 
 			fgIsReset = TRUE;
 		}
-		spin_unlock_bh(&prAdapter->rWfsysResetLock);
+		KAL_RELEASE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_WFSYS_RESET);
 	}
 #endif /* CFG_CHIP_RESET_SUPPORT */
 

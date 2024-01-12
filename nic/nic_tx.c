@@ -4044,7 +4044,6 @@ uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
 	uint32_t u4TxDescAppendSize = 0;
 	uint32_t u4TotLen = 0;
 	uint8_t fgNotifyHif = FALSE;
-	unsigned long flags;
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -4152,13 +4151,12 @@ uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
 			prMsduInfoHead->prTxP = prMsduInfoHead->prPacket;
 			prMsduInfoHead->prPacket = pkt;
 
-			spin_lock_irqsave(
-				&prAdapter->rMgmtDirectHifQueueLock, flags);
+			KAL_ACQUIRE_SPIN_LOCK_IRQ(prAdapter,
+				SPIN_LOCK_TX_MGMT_DIRECT_Q);
 			QUEUE_INSERT_TAIL(&prAdapter->rMgmtDirectTxQueue,
 				(struct QUE_ENTRY *) prMsduInfoHead);
-			spin_unlock_irqrestore(
-				&prAdapter->rMgmtDirectHifQueueLock, flags);
-
+			KAL_RELEASE_SPIN_LOCK_IRQ(prAdapter,
+				SPIN_LOCK_TX_MGMT_DIRECT_Q);
 			prMsduInfoHead = prNextMsduInfo;
 		}
 	} else
@@ -4334,7 +4332,7 @@ uint32_t nicTxMgmtDirectTxMsduMthread(IN struct ADAPTER *prAdapter)
 	struct QUE *prMgmtQueue = &prAdapter->rMgmtDirectTxQueue;
 	struct QUE rTempHifQueue;
 	struct QUE *prTempHifQueue;
-	unsigned long flags;
+	KAL_SPIN_LOCK_DECLARATION();
 	struct MSDU_INFO *prMsduInfo;
 	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
 	bool fgSetHifTx = FALSE;
@@ -4342,11 +4340,11 @@ uint32_t nicTxMgmtDirectTxMsduMthread(IN struct ADAPTER *prAdapter)
 	prTempHifQueue = &rTempHifQueue;
 	QUEUE_INITIALIZE(prTempHifQueue);
 
-	spin_lock_irqsave(&prAdapter->rMgmtDirectHifQueueLock,
-		flags);
+	KAL_ACQUIRE_SPIN_LOCK_IRQ(prAdapter,
+		SPIN_LOCK_TX_MGMT_DIRECT_Q);
 	QUEUE_MOVE_ALL(prTempHifQueue, prMgmtQueue);
-	spin_unlock_irqrestore(&prAdapter->rMgmtDirectHifQueueLock,
-		flags);
+	KAL_RELEASE_SPIN_LOCK_IRQ(prAdapter,
+		SPIN_LOCK_TX_MGMT_DIRECT_Q);
 
 	while (1) {
 		if (QUEUE_IS_NOT_EMPTY(prTempHifQueue)) {
@@ -4399,11 +4397,11 @@ uint32_t nicTxMgmtDirectTxMsduMthread(IN struct ADAPTER *prAdapter)
 		HAL_KICK_TX_DATA(prAdapter);
 
 	if (QUEUE_IS_NOT_EMPTY(prTempHifQueue)) {
-		spin_lock_irqsave(
-			&prAdapter->rMgmtDirectHifQueueLock, flags);
+		KAL_ACQUIRE_SPIN_LOCK_IRQ(prAdapter,
+			SPIN_LOCK_TX_MGMT_DIRECT_Q);
 		QUEUE_CONCATENATE_QUEUES_HEAD(prMgmtQueue, prTempHifQueue);
-		spin_unlock_irqrestore(
-			&prAdapter->rMgmtDirectHifQueueLock, flags);
+		KAL_RELEASE_SPIN_LOCK_IRQ(prAdapter,
+			SPIN_LOCK_TX_MGMT_DIRECT_Q);
 	}
 
 	return WLAN_STATUS_SUCCESS;
@@ -5092,26 +5090,24 @@ void nicTxDirectClearHifQ(IN struct ADAPTER *prAdapter)
 			prHifQueue = NIC_GET_TX_DIRECT_HIFQ(prAdapter,
 					ucBssIndex, ucHifTc);
 
-			spin_lock_bh(
-				 &prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+			KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter,
+				SPIN_LOCK_TX_DIRECT);
+
 			if (QUEUE_IS_NOT_EMPTY(prHifQueue)) {
 				KAL_TX_DIRECT_HIFQ_LOCK(prGlueInfo,
 					ucBssIndex, ucHifTc);
 				QUEUE_MOVE_ALL(prNeedToFreeQue, prHifQueue);
 				KAL_TX_DIRECT_HIFQ_UNLOCK(prGlueInfo,
 					ucBssIndex, ucHifTc);
-				spin_unlock_bh(
-					&prGlueInfo->rSpinLock[
-						SPIN_LOCK_TX_DIRECT]);
-
+				KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+					SPIN_LOCK_TX_DIRECT);
 				wlanProcessQueuedMsduInfo(prAdapter,
 					(struct MSDU_INFO *)
 						QUEUE_GET_HEAD(
 							prNeedToFreeQue));
 			} else {
-				spin_unlock_bh(
-					&prGlueInfo->rSpinLock[
-						SPIN_LOCK_TX_DIRECT]);
+				KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+					SPIN_LOCK_TX_DIRECT);
 			}
 		}
 	}
@@ -5119,7 +5115,6 @@ void nicTxDirectClearHifQ(IN struct ADAPTER *prAdapter)
 #else /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 void nicTxDirectClearHifQ(IN struct ADAPTER *prAdapter)
 {
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	uint8_t ucHifTc = 0;
 	struct QUE rNeedToFreeQue;
 	struct QUE *prNeedToFreeQue = &rNeedToFreeQue;
@@ -5127,21 +5122,21 @@ void nicTxDirectClearHifQ(IN struct ADAPTER *prAdapter)
 	QUEUE_INITIALIZE(prNeedToFreeQue);
 
 	for (ucHifTc = 0; ucHifTc < TC_NUM; ucHifTc++) {
-		spin_lock_bh(
-			 &prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+		KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter,
+			SPIN_LOCK_TX_DIRECT);
+
 		if (QUEUE_IS_NOT_EMPTY(
 			    &prAdapter->rTxDirectHifQueue[ucHifTc])) {
 			QUEUE_MOVE_ALL(prNeedToFreeQue,
 				       &prAdapter->rTxDirectHifQueue[ucHifTc]);
-			spin_unlock_bh(
-				&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
-
+			KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+				SPIN_LOCK_TX_DIRECT);
 			wlanProcessQueuedMsduInfo(prAdapter,
 				(struct MSDU_INFO *)
 					QUEUE_GET_HEAD(prNeedToFreeQue));
 		} else {
-			spin_unlock_bh(
-				&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+			KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+				SPIN_LOCK_TX_DIRECT);
 		}
 	}
 }
@@ -5150,73 +5145,58 @@ void nicTxDirectClearHifQ(IN struct ADAPTER *prAdapter)
 void nicTxDirectClearStaPsQ(IN struct ADAPTER *prAdapter,
 			    uint8_t ucStaRecIndex)
 {
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct QUE rNeedToFreeQue;
 	struct QUE *prNeedToFreeQue = &rNeedToFreeQue;
-	spinlock_t *prSpinLock = &prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT];
-	bool fgIrqDisabled = irqs_disabled();
-
 	QUEUE_INITIALIZE(prNeedToFreeQue);
-	if (fgIrqDisabled)
-		spin_lock(prSpinLock);
-	else
-		spin_lock_bh(prSpinLock);
+
+	TX_DIRECT_LOCK(prAdapter->prGlueInfo);
+
 	if (QUEUE_IS_NOT_EMPTY(
 		    &prAdapter->rStaPsQueue[ucStaRecIndex])) {
 		QUEUE_MOVE_ALL(prNeedToFreeQue,
 			       &prAdapter->rStaPsQueue[ucStaRecIndex]);
-		if (fgIrqDisabled)
-			spin_unlock(prSpinLock);
-		else
-			spin_unlock_bh(prSpinLock);
-
+		TX_DIRECT_UNLOCK(prAdapter->prGlueInfo);
 		wlanProcessQueuedMsduInfo(prAdapter,
 			(struct MSDU_INFO *) QUEUE_GET_HEAD(prNeedToFreeQue));
 	} else {
-		if (fgIrqDisabled)
-			spin_unlock(prSpinLock);
-		else
-			spin_unlock_bh(prSpinLock);
+		TX_DIRECT_UNLOCK(prAdapter->prGlueInfo);
 	}
 }
 
 void nicTxDirectClearBssAbsentQ(IN struct ADAPTER
 				*prAdapter, uint8_t ucBssIndex)
 {
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct QUE rNeedToFreeQue;
 	struct QUE *prNeedToFreeQue = &rNeedToFreeQue;
 
 	QUEUE_INITIALIZE(prNeedToFreeQue);
-	spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+
+	KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter,
+		SPIN_LOCK_TX_DIRECT);
+
 	if (QUEUE_IS_NOT_EMPTY(
 		    &prAdapter->rBssAbsentQueue[ucBssIndex])) {
 		QUEUE_MOVE_ALL(prNeedToFreeQue,
 			       &prAdapter->rBssAbsentQueue[ucBssIndex]);
-		spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
-
+		KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+			SPIN_LOCK_TX_DIRECT);
 		wlanProcessQueuedMsduInfo(prAdapter,
 			(struct MSDU_INFO *) QUEUE_GET_HEAD(prNeedToFreeQue));
 	} else {
-	    spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+		KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+			SPIN_LOCK_TX_DIRECT);
 	}
 }
 
 void nicTxDirectClearStaPendQ(IN struct ADAPTER *prAdapter,
 			    uint8_t ucStaRecIdx)
 {
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct QUE rNeedToFreeQue;
 	struct QUE *prNeedToFreeQue = &rNeedToFreeQue;
-	spinlock_t *prSpinLock = &prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT];
-	bool fgIrqDisabled = irqs_disabled();
 
 	QUEUE_INITIALIZE(prNeedToFreeQue);
 
-	if (fgIrqDisabled)
-		spin_lock(prSpinLock);
-	else
-		spin_lock_bh(prSpinLock);
+	TX_DIRECT_LOCK(prAdapter->prGlueInfo);
 
 	if (QUEUE_IS_NOT_EMPTY(
 		    &prAdapter->rStaPendQueue[ucStaRecIdx])) {
@@ -5224,10 +5204,7 @@ void nicTxDirectClearStaPendQ(IN struct ADAPTER *prAdapter,
 			       &prAdapter->rStaPendQueue[ucStaRecIdx]);
 	}
 
-	if (fgIrqDisabled)
-		spin_unlock(prSpinLock);
-	else
-		spin_unlock_bh(prSpinLock);
+	TX_DIRECT_UNLOCK(prAdapter->prGlueInfo);
 
 	if (QUEUE_IS_NOT_EMPTY(prNeedToFreeQue)) {
 		wlanProcessQueuedMsduInfo(prAdapter,
