@@ -117,7 +117,6 @@ struct HS20_INFO {
 	uint8_t ucNumBssidPoolEntry;
 	u_int8_t fgIsHS2SigmaMode;
 
-	uint8_t ucHotspotConfig;
 	u_int8_t fgConnectHS20AP;
 
 };

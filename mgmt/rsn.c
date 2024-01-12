@@ -3702,7 +3702,7 @@ u_int8_t rsnParseOsenIE(struct ADAPTER *prAdapter,
 					  &prOsenInfo->au4AuthKeyMgtSuite[i]);
 			pucAuthSuite += 4;
 
-			DBGLOG(RSN, TRACE, "RSN: AKM suite [%d]: 0x%x\n", i
+			DBGLOG(RSN, TRACE, "RSN: AKM suite [%d]: 0x%x\n", i,
 				SWAP32(prOsenInfo->au4AuthKeyMgtSuite[i]));
 		}
 	} else {

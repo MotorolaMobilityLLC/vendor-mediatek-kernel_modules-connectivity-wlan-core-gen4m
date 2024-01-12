@@ -381,16 +381,9 @@ ccflags-y += -DCFG_CFG80211_VERSION=$(VERSION)
 $(info DCFG_CFG80211_VERSION=$(VERSION))
 endif
 
-
-ifeq ($(CONFIG_MTK_PASSPOINT_R2_SUPPORT), y)
-    ccflags-y += -DCFG_SUPPORT_PASSPOINT=1
-    ccflags-y += -DCFG_HS20_DEBUG=1
-    ccflags-y += -DCFG_ENABLE_GTK_FRAME_FILTER=1
-else
-    ccflags-y += -DCFG_SUPPORT_PASSPOINT=0
-    ccflags-y += -DCFG_HS20_DEBUG=0
-    ccflags-y += -DCFG_ENABLE_GTK_FRAME_FILTER=0
-endif
+ccflags-y += -DCFG_SUPPORT_PASSPOINT=1
+ccflags-y += -DCFG_HS20_DEBUG=1
+ccflags-y += -DCFG_ENABLE_GTK_FRAME_FILTER=1
 
 MTK_MET_PROFILING_SUPPORT = yes
 ifeq ($(MTK_MET_PROFILING_SUPPORT), yes)
