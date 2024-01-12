@@ -50,9 +50,7 @@ struct IE_ORDER_TABLE_INFO {
  *                           P R I V A T E   D A T A
  ******************************************************************************
  */
-
 uint16_t AUTH_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
-	[0 ... ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM - 1] = SORT_ORDER_UNKNOWN,
 	/* Challenge text */
 	[ELEM_ID_CHALLENGE_TEXT] = 10,
 	/* RSN */
@@ -87,7 +85,6 @@ uint16_t AUTH_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
 
 /* 802.11-2020: Table 9-34 Association Request frame body */
 uint16_t ASSOC_REQ_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
-	[0 ... ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM - 1] = SORT_ORDER_UNKNOWN,
 	/* SSID */
 	[ELEM_ID_SSID] = 3,
 	/* Supported Rates and BSS Membership Selectors */
@@ -199,7 +196,6 @@ uint16_t ASSOC_REQ_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
 };
 
 uint16_t ASSOC_RSP_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
-	[0 ... ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM - 1] = SORT_ORDER_UNKNOWN,
 	/* Supported Rates and BSS Membership Selectors */
 	[ELEM_ID_SUP_RATES] = 4,
 	/* Extended Supported Rates and BSS Membership Selectors */
@@ -339,7 +335,6 @@ uint16_t ASSOC_RSP_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
 };
 
 uint16_t REASSOC_REQ_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
-	[0 ... ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM - 1] = SORT_ORDER_UNKNOWN,
 	/* SSID */
 	[ELEM_ID_SSID] = 4,
 	/* Supported Rates and BSS Membership Selectors */
@@ -454,7 +449,6 @@ uint16_t REASSOC_REQ_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
 };
 
 uint16_t REASSOC_RSP_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
-	[0 ... ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM - 1] = SORT_ORDER_UNKNOWN,
 	/* Supported Rates and BSS Membership Selectors */
 	[ELEM_ID_SUP_RATES] = 4,
 	/* Extended Supported Rates and BSS Membership Selectors */
@@ -601,7 +595,6 @@ uint16_t REASSOC_RSP_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
 };
 
 uint16_t PROBE_RSP_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
-	[0 ... ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM - 1] = SORT_ORDER_UNKNOWN,
 	/* SSID */
 	[ELEM_ID_SSID] = 4,
 	/* Supported Rates and BSS Membership Selectors */
@@ -819,7 +812,6 @@ uint16_t PROBE_RSP_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
 };
 
 uint16_t BEACON_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
-	[0 ... ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM - 1] = SORT_ORDER_UNKNOWN,
 	/* SSID */
 	[ELEM_ID_SSID] = 4,
 	/* Supported Rates and BSS Membership Selectors */
@@ -1149,6 +1141,46 @@ done:
 		MAX_IE_NUM * sizeof(struct IE_ORDER_TABLE_INFO));
 }
 
+/*
+ * Cannot use range designated assign ... in array
+ * for porting to other system
+ * mgmt is common part
+ * not all compiler support ... assign array initialize. Only c99 extension
+ */
+static void _initSortTable(uint16_t *ieTable, uint32_t size)
+{
+	uint32_t i = 0;
+
+	for (i = 0; i < size; i++) {
+		if (ieTable[i] == 0)
+			ieTable[i] = SORT_ORDER_UNKNOWN;
+	}
+}
+
+static void initSortTable(void)
+{
+	/*
+	 * All variables with static storage duration are guaranteed
+	 * to be initailized to their respective zero value and assigned once
+	 */
+	static uint8_t ucSortTblInited;
+
+#define INIT_SORT(x) _initSortTable(x##_IE_ORDER, ARRAY_SIZE(x##_IE_ORDER))
+
+	if (ucSortTblInited == 1)
+		return;
+
+	INIT_SORT(AUTH);
+	INIT_SORT(ASSOC_REQ);
+	INIT_SORT(ASSOC_RSP);
+	INIT_SORT(REASSOC_REQ);
+	INIT_SORT(REASSOC_RSP);
+	INIT_SORT(PROBE_RSP);
+	INIT_SORT(BEACON);
+
+	ucSortTblInited = 1;
+}
+
 void sortMgmtFrameIE(IN struct ADAPTER *prAdapter,
 		    IN struct MSDU_INFO *prMsduInfo)
 {
@@ -1158,6 +1190,8 @@ void sortMgmtFrameIE(IN struct ADAPTER *prAdapter,
 
 	struct WLAN_MAC_MGMT_HEADER *prMgmtFrame;
 	uint16_t u2TxFrameCtrl;
+
+	initSortTable();
 
 	prMgmtFrame = (struct WLAN_MAC_MGMT_HEADER *)(prMsduInfo->prPacket);
 	u2TxFrameCtrl = prMgmtFrame->u2FrameCtrl;
