@@ -3177,15 +3177,18 @@ uint8_t rsnApCheckSaQueryTimeout(IN struct ADAPTER
  */
 /*----------------------------------------------------------------------------*/
 void rsnApStartSaQueryTimer(IN struct ADAPTER *prAdapter,
-			    IN struct STA_RECORD *prStaRec,
 			    IN unsigned long ulParamPtr)
 {
+	struct STA_RECORD *prStaRec = (struct STA_RECORD *) ulParamPtr;
 	struct BSS_INFO *prBssInfo;
 	struct MSDU_INFO *prMsduInfo;
 	struct ACTION_SA_QUERY_FRAME *prTxFrame;
 	uint16_t u2PayloadLen;
 
 	DBGLOG(RSN, INFO, "MFP: AP Start Sa Query timer\n");
+
+	if (!prStaRec)
+		return;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
@@ -3286,8 +3289,8 @@ void rsnApStartSaQuery(IN struct ADAPTER *prAdapter,
 			  (unsigned long) prStaRec);
 
 		if (prStaRec->rPmfCfg.u4SAQueryCount == 0)
-			rsnApStartSaQueryTimer(prAdapter, prStaRec,
-						(unsigned long)NULL);
+			rsnApStartSaQueryTimer(prAdapter,
+						(unsigned long)prStaRec);
 	}
 }
 
