@@ -4769,7 +4769,59 @@ int mtk_cfg80211_del_station(struct wiphy *wiphy,
  * \retval WLAN_STATUS_INVALID_LENGTH
  */
 /*----------------------------------------------------------------------------*/
-#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(6, 4, 0) <= CFG80211_VERSION_CODE
+int
+mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy,
+		       struct net_device *dev, const u8 *peer,
+		       int link_id, u8 action_code, u8 dialog_token,
+		       u16 status_code, u32 peer_capability,
+		       bool initiator, const u8 *buf, size_t len)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct TDLS_CMD_LINK_MGT rCmdMgt;
+	uint32_t u4BufLen;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint8_t ucBssIndex = 0;
+
+	ucBssIndex = wlanGetBssIdx(dev);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+		return -EINVAL;
+
+	/* sanity check */
+	if ((wiphy == NULL) || (peer == NULL) || (buf == NULL))
+		return -EINVAL;
+
+	/* init */
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (prGlueInfo == NULL)
+		return -EINVAL;
+
+	kalMemZero(&rCmdMgt, sizeof(rCmdMgt));
+	rCmdMgt.u2StatusCode = status_code;
+	rCmdMgt.u4SecBufLen = len;
+	rCmdMgt.ucDialogToken = dialog_token;
+	rCmdMgt.ucActionCode = action_code;
+	kalMemCopy(&(rCmdMgt.aucPeer), peer, 6);
+
+	if  (len > TDLS_SEC_BUF_LENGTH) {
+		DBGLOG(REQ, WARN, "%s:len > TDLS_SEC_BUF_LENGTH\n", __func__);
+		return -EINVAL;
+	}
+
+	kalMemCopy(&(rCmdMgt.aucSecBuf), buf, len);
+	rCmdMgt.ucBssIdx = ucBssIndex;
+	rStatus = kalIoctl(prGlueInfo, TdlsexLinkMgt, &rCmdMgt,
+		 sizeof(struct TDLS_CMD_LINK_MGT),
+		 &u4BufLen);
+
+	DBGLOG(REQ, INFO, "rStatus: %x", rStatus);
+
+	if (rStatus == WLAN_STATUS_SUCCESS)
+		return 0;
+	else
+		return -EINVAL;
+}
+#elif KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 int
 mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy,
 		       struct net_device *dev,
@@ -7126,7 +7178,13 @@ int mtk_cfg_tdls_oper(struct wiphy *wiphy,
 	return mtk_cfg80211_tdls_oper(wiphy, ndev, peer, oper);
 }
 
-#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_tdls_mgmt(struct wiphy *wiphy,
+		      struct net_device *dev, const u8 *peer,
+		      int link_id, u8 action_code, u8 dialog_token,
+		      u16 status_code, u32 peer_capability,
+		      bool initiator, const u8 *buf, size_t len)
+#elif KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg_tdls_mgmt(struct wiphy *wiphy,
 		      struct net_device *dev,
 		      const u8 *peer, u8 action_code, u8 dialog_token,
@@ -7166,7 +7224,11 @@ int mtk_cfg_tdls_mgmt(struct wiphy *wiphy,
 	}
 #endif
 
-#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(6, 4, 0) <= CFG80211_VERSION_CODE
+	return mtk_cfg80211_tdls_mgmt(wiphy, dev, peer, link_id, action_code,
+			dialog_token, status_code, peer_capability, initiator,
+			buf, len);
+#elif KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 	return mtk_cfg80211_tdls_mgmt(wiphy, dev, peer, action_code,
 			dialog_token, status_code, peer_capability, initiator,
 			buf, len);
