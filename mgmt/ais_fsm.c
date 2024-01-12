@@ -4789,7 +4789,6 @@ void aisFsmScanRequest(IN struct ADAPTER *prAdapter,
 		prAisFsmInfo->eCurrentState, prConnSettings->fgIsScanReqIssued);
 	if (!prConnSettings->fgIsScanReqIssued) {
 		prConnSettings->fgIsScanReqIssued = TRUE;
-		scanInitEssResult(prAdapter);
 		kalMemZero(prScanRequest,
 			   sizeof(struct PARAM_SCAN_REQUEST_ADV));
 		prScanRequest->pucIE = prAisFsmInfo->aucScanIEBuf;
@@ -4890,7 +4889,6 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter,
 
 	if (!prConnSettings->fgIsScanReqIssued) {
 		prConnSettings->fgIsScanReqIssued = TRUE;
-		scanInitEssResult(prAdapter);
 
 		kalMemCopy(prScanRequest, prRequestIn,
 			   sizeof(struct PARAM_SCAN_REQUEST_ADV));
