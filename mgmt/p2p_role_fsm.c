@@ -1971,9 +1971,9 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
 			kalP2PTxCarrierOn(prAdapter->prGlueInfo,
 					prP2pBssInfo);
 		} else {
-		p2pRoleFsmRunEventStartAP(prAdapter,
-			(struct MSG_HDR *)
-			&prP2pConnReqInfo->rMsgStartAp);
+			p2pRoleFsmRunEventStartAP(prAdapter,
+				(struct MSG_HDR *)
+				&prP2pConnReqInfo->rMsgStartAp);
 		}
 	}
 
