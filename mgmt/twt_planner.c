@@ -2080,6 +2080,9 @@ void twtPlannerRxNegoResult(
 			prStaRec,
 			ucTWTFlowId);
 
+		/* Disable SCAN during TWT activity */
+		prAdapter->fgEnOnlineScan = FALSE;
+
 		return;
 	}
 
@@ -2363,6 +2366,9 @@ void twtPlannerTeardownDone(
 				prAdapter,
 				prStaRec,
 				ucTWTFlowId);
+
+			/* Enable SCAN after TWT agrt has been tear down */
+			prAdapter->fgEnOnlineScan = TRUE;
 
 			return;
 		}
