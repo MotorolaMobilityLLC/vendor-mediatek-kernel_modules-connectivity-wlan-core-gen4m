@@ -1004,10 +1004,13 @@ int32_t nicGetTxRateInfo(IN char *pcCommand, IN int i4TotalLen,
 				"%s, ", rate < 4 ? "LP" : "SP");
 		else if (txmode == TX_RATE_MODE_OFDM)
 			;
-		else if ((txmode == TX_RATE_MODE_HTMIX) ||
-			 (txmode == TX_RATE_MODE_HTGF) ||
-			 (txmode == TX_RATE_MODE_VHT) ||
-			 (txmode == TX_RATE_MODE_PLR))
+		else if (
+#if CFG_SUPPORT_802_11AX == 1
+			 txmode == TX_RATE_MODE_PLR ||
+#endif
+			 txmode == TX_RATE_MODE_HTMIX ||
+			 txmode == TX_RATE_MODE_HTGF ||
+			 txmode == TX_RATE_MODE_VHT)
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
