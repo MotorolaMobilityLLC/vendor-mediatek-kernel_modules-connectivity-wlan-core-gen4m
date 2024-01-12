@@ -2381,6 +2381,59 @@ void cnmFreeBssInfo(struct ADAPTER *prAdapter,
 	prBssInfo->fgIsInUse = FALSE;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This utility function is used to check MCC
+ *
+ * @param prAdapter          Pointer of ADAPTER_T
+ *
+ * @retval current network is MCC mode
+ */
+/*----------------------------------------------------------------------------*/
+bool cnmIsMccMode(struct ADAPTER *prAdapter)
+{
+	struct BSS_INFO *prBssInfo;
+	uint32_t u4Idx;
+	uint8_t ucLast2GChNum = 0, ucLast5GChNum = 0;
+	bool fgIs2GMcc = false, fgIs5GMcc = false;
+
+	ASSERT(prAdapter);
+
+	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
+		prBssInfo = prAdapter->aprBssInfo[u4Idx];
+
+		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
+			continue;
+
+		if (prBssInfo->eBand == BAND_2G4) {
+			if (ucLast2GChNum != 0 &&
+			    ucLast2GChNum != prBssInfo->ucPrimaryChannel)
+				fgIs2GMcc = true;
+			ucLast2GChNum = prBssInfo->ucPrimaryChannel;
+		} else if (prBssInfo->eBand == BAND_5G) {
+			if (ucLast5GChNum != 0 &&
+			    ucLast5GChNum != prBssInfo->ucPrimaryChannel)
+				fgIs5GMcc = true;
+			ucLast5GChNum = prBssInfo->ucPrimaryChannel;
+		}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (prBssInfo->eBand == BAND_6G) {
+			/* Use the same handler as 5G channel */
+			if (ucLast5GChNum != 0 &&
+			    ucLast5GChNum != prBssInfo->ucPrimaryChannel)
+				fgIs5GMcc = true;
+			ucLast5GChNum = prBssInfo->ucPrimaryChannel;
+		}
+#endif
+	}
+
+	if (fgIs2GMcc || fgIs5GMcc)
+		return true;
+
+	return !prAdapter->rWifiVar.fgDbDcModeEn &&
+		(ucLast2GChNum != 0 && ucLast5GChNum != 0);
+}
+
 #if CFG_SUPPORT_DBDC
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2682,58 +2735,6 @@ static u_int8_t cnmDbdcIsConcurrent(
 #endif
 
 	return fgDBDCConcurrent;
-}
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This utility function is used to check MCC
- *
- * @param prAdapter          Pointer of ADAPTER_T
- *
- * @retval current network is MCC mode
- */
-
-bool cnmIsMccMode(struct ADAPTER *prAdapter)
-{
-	struct BSS_INFO *prBssInfo;
-	uint32_t u4Idx;
-	uint8_t ucLast2GChNum = 0, ucLast5GChNum = 0;
-	bool fgIs2GMcc = false, fgIs5GMcc = false;
-
-	ASSERT(prAdapter);
-
-	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
-		prBssInfo = prAdapter->aprBssInfo[u4Idx];
-
-		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
-			continue;
-
-		if (prBssInfo->eBand == BAND_2G4) {
-			if (ucLast2GChNum != 0 &&
-			    ucLast2GChNum != prBssInfo->ucPrimaryChannel)
-				fgIs2GMcc = true;
-			ucLast2GChNum = prBssInfo->ucPrimaryChannel;
-		} else if (prBssInfo->eBand == BAND_5G) {
-			if (ucLast5GChNum != 0 &&
-			    ucLast5GChNum != prBssInfo->ucPrimaryChannel)
-				fgIs5GMcc = true;
-			ucLast5GChNum = prBssInfo->ucPrimaryChannel;
-		}
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (prBssInfo->eBand == BAND_6G) {
-			/* Use the same handler as 5G channel */
-			if (ucLast5GChNum != 0 &&
-			    ucLast5GChNum != prBssInfo->ucPrimaryChannel)
-				fgIs5GMcc = true;
-			ucLast5GChNum = prBssInfo->ucPrimaryChannel;
-		}
-#endif
-	}
-
-	if (fgIs2GMcc || fgIs5GMcc)
-		return true;
-
-	return !prAdapter->rWifiVar.fgDbDcModeEn &&
-		(ucLast2GChNum != 0 && ucLast5GChNum != 0);
 }
 
 uint8_t cnmGetDbdcNss(struct ADAPTER *prAdapter,
