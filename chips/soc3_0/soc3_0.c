@@ -1419,7 +1419,7 @@ int wf_pwr_on_consys_mcu(void)
 	value &= 0xFFFFFFFE;
 	wf_ioremap_write(CONN_INFRA_WF_SLP_CTRL_R_ADDR, value);
 	/* Polling WF_SLP_CTRL ready
-	 * (polling "10 times" and each polling interval is "0.5ms")
+	 * (polling "100 times" and each polling interval is "0.5ms")
 	 * Address: 0x1800_1620[3] (CONN_INFRA_WF_SLP_CTRL_R_OFFSET[3])
 	 * Data: 1'b0
 	 * Action: polling
@@ -1428,7 +1428,7 @@ int wf_pwr_on_consys_mcu(void)
 	check = 0;
 	polling_count = 0;
 	while ((value & 0x00000008) != 0) {
-		if (polling_count > 10) {
+		if (polling_count > 100) {
 			check = -1;
 			ret = -1;
 			break;
@@ -1453,7 +1453,7 @@ int wf_pwr_on_consys_mcu(void)
 	value &= 0xFFFFFFFE;
 	wf_ioremap_write(CONN_INFRA_WFDMA_SLP_CTRL_R_ADDR, value);
 	/* Polling wfsys_rgu_off_hreset_rst_b
-	 * (polling "10 times" and each polling interval is "0.5ms")
+	 * (polling "100 times" and each polling interval is "0.5ms")
 	 * Address: 0x1800_1624[3] (CONN_INFRA_WFDMA_SLP_CTRL_R_OFFSET[3])
 	 * Data: 1'b0
 	 * Action: polling
@@ -1462,7 +1462,7 @@ int wf_pwr_on_consys_mcu(void)
 	check = 0;
 	polling_count = 0;
 	while ((value & 0x00000008) != 0) {
-		if (polling_count > 10) {
+		if (polling_count > 100) {
 			check = -1;
 			ret = -1;
 			break;
@@ -1626,7 +1626,7 @@ int wf_pwr_off_consys_mcu(void)
 	wf_ioremap_write(CONN_INFRA_WF_SLP_CTRL_R_ADDR, value);
 
 	/* Polling WF_SLP_CTRL ready
-	 * (polling "10 times" and each polling interval is "0.5ms")
+	 * (polling "100 times" and each polling interval is "0.5ms")
 	 * Address: 0x1800_1620[3] (CONN_INFRA_WF_SLP_CTRL_R_OFFSET[3])
 	 * Data: 1'b1
 	 * Action: polling
@@ -1635,7 +1635,7 @@ int wf_pwr_off_consys_mcu(void)
 	check = 0;
 	polling_count = 0;
 	while ((value & 0x00000008) == 0) {
-		if (polling_count > 10) {
+		if (polling_count > 100) {
 			check = -1;
 			ret = -1;
 			break;
@@ -1662,7 +1662,7 @@ int wf_pwr_off_consys_mcu(void)
 	wf_ioremap_write(CONN_INFRA_WFDMA_SLP_CTRL_R_ADDR, value);
 
 	/* Polling wfsys_rgu_off_hreset_rst_b
-	 * (polling "10 times" and each polling interval is "0.5ms")
+	 * (polling "100 times" and each polling interval is "0.5ms")
 	 * Address: 0x1800_1624[3] (CONN_INFRA_WFDMA_SLP_CTRL_R_OFFSET[3])
 	 * Data: 1'b1
 	 * Action: polling
@@ -1671,7 +1671,7 @@ int wf_pwr_off_consys_mcu(void)
 	check = 0;
 	polling_count = 0;
 	while ((value & 0x00000008) == 0) {
-		if (polling_count > 10) {
+		if (polling_count > 100) {
 			check = -1;
 			ret = -1;
 			break;
@@ -1726,6 +1726,11 @@ int wf_pwr_off_consys_mcu(void)
 			value);
 		return ret;
 	}
+	/* Reset WFSYS semaphore 0x18000018[0] = 1'b0 */
+	wf_ioremap_read(WFSYS_SW_RST_B_ADDR, &value);
+	value &= 0xFFFFFFFE;
+	wf_ioremap_write(WFSYS_SW_RST_B_ADDR, value);
+
 	/*Disable A-die top_ck_en (use common API)(clear driver & FW resource)*/
 	conninfra_adie_top_ck_en_off(CONNSYS_ADIE_CTL_FW_WIFI);
 
