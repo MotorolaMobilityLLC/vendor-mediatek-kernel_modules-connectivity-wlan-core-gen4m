@@ -392,22 +392,52 @@ static void mt7961ReadIntStatus(
 	uint32_t u4RegValue;
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+	union WPDMA_INT_STA_STRUCT *prIntrStatus;
 
 	*pu4IntStatus = 0;
+	prIntrStatus = (union WPDMA_INT_STA_STRUCT *)&u4RegValue;
 
 	HAL_MCR_RD(prAdapter,
 		WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR, &u4RegValue);
 
 	if (HAL_IS_CONNAC2X_EXT_RX_DONE_INTR(u4RegValue,
 				       prBusInfo->host_int_rxdone_bits))
-	*pu4IntStatus |= WHISR_RX0_DONE_INT;
+		*pu4IntStatus |= WHISR_RX0_DONE_INT;
 
 	if (HAL_IS_CONNAC2X_EXT_TX_DONE_INTR(u4RegValue,
 				       prBusInfo->host_int_txdone_bits))
-	*pu4IntStatus |= WHISR_TX_DONE_INT;
+		*pu4IntStatus |= WHISR_TX_DONE_INT;
 
 	if (u4RegValue & CONNAC_MCU_SW_INT)
-	*pu4IntStatus |= WHISR_D2H_SW_INT;
+		*pu4IntStatus |= WHISR_D2H_SW_INT;
+
+	if (prAdapter->u4NoMoreRfb)
+		*pu4IntStatus |= WHISR_RX0_DONE_INT;
+
+	if (prAdapter->u4NoMoreRfb & BIT(RX_RING_EVT_IDX_1)) {
+		prIntrStatus->field_conn2x_single.wfdma0_rx_done_0 = 1;
+		DBGLOG(HAL, ERROR, "retry process RX_RING_EVT_IDX_1\n");
+	}
+
+	if (prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA_IDX_0)) {
+		prIntrStatus->field_conn2x_single.wfdma0_rx_done_2 = 1;
+		DBGLOG(HAL, ERROR, "retry process RX_RING_DATA_IDX_0\n");
+	}
+
+	if (prAdapter->u4NoMoreRfb & BIT(WFDMA0_RX_RING_IDX_2)) {
+		prIntrStatus->field_conn2x_single.wfdma0_rx_done_3 = 1;
+		DBGLOG(HAL, ERROR, "retry process WFDMA0_RX_RING_IDX_2\n");
+	}
+
+	if (prAdapter->u4NoMoreRfb & BIT(WFDMA0_RX_RING_IDX_3)) {
+		prIntrStatus->field_conn2x_single.wfdma0_rx_done_4 = 1;
+		DBGLOG(HAL, ERROR, "retry process WFDMA0_RX_RING_IDX_3\n");
+	}
+
+	if (prAdapter->u4NoMoreRfb & BIT(WFDMA1_RX_RING_IDX_0)) {
+		prIntrStatus->field_conn2x_single.wfdma0_rx_done_5 = 1;
+		DBGLOG(HAL, ERROR, "retry process WFDMA1_RX_RING_IDX_0\n");
+	}
 
 	prHifInfo->u4IntStatus = u4RegValue;
 
