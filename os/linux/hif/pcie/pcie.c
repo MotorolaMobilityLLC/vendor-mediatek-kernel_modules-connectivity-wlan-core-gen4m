@@ -1363,6 +1363,7 @@ void glUnregisterBus(remove_card pfRemove)
 
 static void glUpdateRxCopyMemOps(struct HIF_MEM_OPS *prMemOps)
 {
+	prMemOps->allocRxDataBuf = halCopyPathAllocRxBuf;
 	prMemOps->copyRxData = halCopyPathCopyRxData;
 	prMemOps->mapRxBuf = NULL;
 	prMemOps->unmapRxBuf = NULL;
@@ -1428,7 +1429,6 @@ static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 #if (CFG_SUPPORT_RX_ZERO_COPY == 1)
 		prMemOps->dumpRx = halZeroCopyPathDumpRx;
 #else
-		prMemOps->allocRxDataBuf = halCopyPathAllocRxBuf;
 		glUpdateRxCopyMemOps(prMemOps);
 #endif /* CFG_SUPPORT_RX_ZERO_COPY == 1 */
 	}
