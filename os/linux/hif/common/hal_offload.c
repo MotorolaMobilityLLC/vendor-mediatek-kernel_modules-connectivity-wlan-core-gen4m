@@ -57,7 +57,7 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-#if (CFG_MTK_FPGA_PLATFORM == 1)
+#if CFG_MTK_FPGA_PLATFORM
 #define MAWD_WFDMA_HIGH_ADDR	0x4
 #define MAWD_WFDMA_LOW_ADDR	0x0
 #else
@@ -614,7 +614,7 @@ void halRroMawdInit(struct GLUE_INFO *prGlueInfo)
 	u4Val = MAWD_WFDMA_HIGH_ADDR;
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
-#if (CFG_MTK_FPGA_PLATFORM == 1)
+#if CFG_MTK_FPGA_PLATFORM
 	/* set remapping CR for MAWD in connsys FPGA */
 	HAL_MCR_WR(prAdapter, 0x7C023118, 0x1);
 #endif

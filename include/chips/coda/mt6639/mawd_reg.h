@@ -6,7 +6,7 @@
 #ifndef __MAWD_REG_H__
 #define __MAWD_REG_H__
 
-#if (CFG_MTK_FPGA_PLATFORM == 1)
+#if CFG_MTK_FPGA_PLATFORM
 #define MAWD_REG_BASE			0x47000
 #else
 #define MAWD_REG_BASE			0x18047000
