@@ -349,17 +349,18 @@ struct PARAM_RX_STAT {
 };
 
 struct TESTMODE_CAP {
-	uint8_t version;
+	uint8_t version; /*0*/
 	uint8_t support_mimo;
 	uint8_t support_dbdc;
 	uint8_t support_emlsr;
 	uint8_t adie_num;
-	uint8_t band_num;
+	uint8_t band_num;/*5*/
 	uint8_t phy_num;
 	uint8_t mimo_band0_supported_band;
 	uint8_t dbdc_band0_supported_band;
 	uint8_t dbdc_band1_supported_band;
-	uint8_t reserved[22];
+	uint8_t mimo_band1_supported_band;/*10*/
+	uint8_t reserved[21];
 };
 
 extern struct TESTMODE_CAP g_HqaCap;

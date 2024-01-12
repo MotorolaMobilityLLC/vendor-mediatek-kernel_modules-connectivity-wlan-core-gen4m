@@ -1882,13 +1882,11 @@ static s_int32 hqa_get_tx_info(
 				TEST_DBDC_BAND0);
 	tx_cnt0 = SERV_OS_HTONL(tx_cnt0);
 /* #ifdef DBDC_MODE  */
-#if 1
-	if (IS_TEST_DBDC(serv_test->test_winfo)) {
-		tx_cnt1 = CONFIG_GET_PARAM(serv_test, tx_stat.tx_done_cnt,
-					TEST_DBDC_BAND1);
-		tx_cnt1 = SERV_OS_HTONL(tx_cnt1);
-	}
-#endif
+
+	tx_cnt1 = CONFIG_GET_PARAM(serv_test, tx_stat.tx_done_cnt,
+				TEST_DBDC_BAND1);
+	tx_cnt1 = SERV_OS_HTONL(tx_cnt1);
+
 	/* Update hqa_frame with response: status (2 bytes) */
 	sys_ad_move_mem((hqa_frame->data + 2),
 			&tx_cnt0, sizeof(tx_cnt0));
@@ -2409,10 +2407,6 @@ static s_int32 hqa_get_rx_statistics_all(
 	/* check dbdc mode condition */
 	dbdc_mode = IS_TEST_DBDC(serv_test->test_winfo);
 
-	/* sanity check for band index param */
-	if ((!dbdc_mode) && (band_idx != TEST_DBDC_BAND0))
-		goto error2;
-
 	/* check wifi path combination for specific band */
 	ret = mt_serv_get_wf_path_comb(serv_test,
 			band_idx,
@@ -2524,13 +2518,6 @@ static s_int32 hqa_get_rx_statistics_all(
 error1:
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 		("%s: memory allocation fail for rx stat.\n",
-		__func__));
-	update_hqa_frame(hqa_frame, 2, ret);
-	return ret;
-
-error2:
-	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
-		("%s: invalid band index for non-dbdc mode.\n",
 		__func__));
 	update_hqa_frame(hqa_frame, 2, ret);
 	return ret;
@@ -3201,7 +3188,7 @@ static s_int32 hqa_get_band_mode(
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
 		("%s: band_type=%u\n",
-		__func__, band_type));
+		__func__, band_state->band_type));
 
 	band_type = SERV_OS_HTONL(band_state->band_type);
 
