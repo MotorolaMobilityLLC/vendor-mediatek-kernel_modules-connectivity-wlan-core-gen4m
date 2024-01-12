@@ -174,6 +174,15 @@ static uint8_t *apucEepromName[] = {
 };
 #endif
 
+/* For running on X86 UT environment */
+#if defined(UT_TEST_MODE) && defined(CFG_BUILD_X86_PLATFORM)
+phys_addr_t gConEmiPhyBase;
+EXPORT_SYMBOL(gConEmiPhyBase);
+
+unsigned long long gConEmiSize;
+EXPORT_SYMBOL(gConEmiSize);
+#endif
+
 int CFG80211_Suspend(struct wiphy *wiphy,
 		     struct cfg80211_wowlan *wow)
 {
@@ -3722,6 +3731,23 @@ static int initWlan(void)
 {
 	int ret = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
+#if defined(UT_TEST_MODE) && defined(CFG_BUILD_X86_PLATFORM)
+	/* Refer 6765 dts setting */
+	char *ptr = NULL;
+
+	gConEmiSize = 0x400000;
+	ptr = kmalloc(gConEmiSize, GFP_KERNEL);
+	if (!ptr) {
+		DBGLOG(INIT, INFO,
+		       "initWlan try to allocate 0x%x bytes memory error\n",
+		       gConEmiSize);
+		return -EINVAL;
+	}
+	memset(ptr, 0, gConEmiSize);
+	gConEmiPhyBase = (phys_addr_t)ptr;
+#endif
+
+
 
 	DBGLOG(INIT, INFO, "initWlan\n");
 
@@ -3820,6 +3846,9 @@ static void exitWlan(void)
 
 #if WLAN_INCLUDE_PROC
 	procUninitProcFs();
+#endif
+#if defined(UT_TEST_MODE) && defined(CFG_BUILD_X86_PLATFORM)
+	kfree((const void *)gConEmiPhyBase);
 #endif
 	DBGLOG(INIT, INFO, "exitWlan\n");
 

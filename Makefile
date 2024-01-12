@@ -16,7 +16,7 @@ ccflags-y += -DDRIVER_BUILD_DATE='"$(DRIVER_BUILD_DATE)"'
 # ---------------------------------------------------
 # Compile Options
 # ---------------------------------------------------
-WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -UCONNAC2X2
+WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -UCONNAC2X2 -UUT_TEST_MODE
 # '-D' and '-U' options are processed in the order they are given on the command line.
 # All '-imacros file' and '-include file' options are processed after all '-D' and '-U' options.
 ccflags-y += $(WLAN_CHIP_LIST)
@@ -91,6 +91,11 @@ else
     ccflags-y += -DCFG_BUILT_IN_DRIVER=0
 endif
 
+ifneq ($(findstring UT_TEST_MODE,$(MTK_COMBO_CHIP)),)
+ccflags-y:=$(filter-out -UUT_TEST_MODE,$(ccflags-y))
+ccflags-y += -DUT_TEST_MODE
+endif
+
 CONFIG_MTK_WIFI_MCC_SUPPORT=y
 ifeq ($(CONFIG_MTK_WIFI_MCC_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_CHNL_CONFLICT_REVISE=0
@@ -123,6 +128,9 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
     ccflags-y += -D_HIF_USB=1
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
     ccflags-y += -D_HIF_AXI=1
+else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), ut)
+    # Increase frame size to 2048 because of ‘cfg80211_connect_result’ exceed stack size
+    ccflags-y += -D_HIF_UT=1 -Wno-unused-function -Wno-unused-variable -Wframe-larger-than=2048
 else
     $(error Unsuppoted HIF=$(CONFIG_MTK_COMBO_WIFI_HIF)!!)
 endif
@@ -202,6 +210,8 @@ ccflags-y += -I$(src)/os/linux/hif/common/include
 ccflags-y += -I$(src)/os/linux/hif/axi/include
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
 ccflags-y += -I$(src)/os/linux/hif/usb/include
+else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), ut)
+ccflags-y += -I$(src)/test -I$(src)/test/lib/include -I$(src)/test/testcases -I$(src)/test/lib/hif
 endif
 
 ifneq ($(PLATFORM_FLAGS), )
@@ -237,6 +247,8 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
 HIF_DIR	    := os/linux/hif/axi/
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
 HIF_DIR	    := os/linux/hif/usb/
+else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), ut)
+HIF_DIR	    := test/lib/hif/
 endif
 NIC_DIR     := nic/
 MGMT_DIR    := mgmt/
@@ -385,6 +397,9 @@ HIF_OBJS :=  $(HIF_COMMON_DIR)hal_pdma.o \
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
 HIF_OBJS :=  $(HIF_DIR)usb.o \
              $(HIF_DIR)hal_api.o
+else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), ut)
+HIF_OBJS :=  $(HIF_DIR)ut.o \
+             $(HIF_DIR)hal_api.o
 endif
 
 # ---------------------------------------------------
@@ -414,4 +429,6 @@ $(MODULE_NAME)-objs  += $(HIF_OBJS)
 $(MODULE_NAME)-objs  += $(MGMT_OBJS)
 $(MODULE_NAME)-objs  += $(CHIPS_OBJS)
 
-
+ifneq ($(findstring UT_TEST_MODE,$(MTK_COMBO_CHIP)),)
+include $(src)/test/ut.make
+endif

@@ -506,6 +506,9 @@ void mboxRcvAllMsg(IN struct ADAPTER *prAdapter,
 			DBGLOG(CNM, ERROR, "prMsg is NULL\n");
 			continue;
 		}
+#ifdef UT_TEST_MODE
+		if (testMBoxRcv(prAdapter, prMsg))
+#endif
 		MBOX_HNDL_MSG(prAdapter, prMsg);
 	}
 
