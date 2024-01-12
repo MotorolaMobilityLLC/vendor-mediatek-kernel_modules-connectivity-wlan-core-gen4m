@@ -563,6 +563,7 @@ struct AIS_FSM_INFO {
 	struct MLD_BSS_INFO *prMldBssInfo;
 	uint8_t ucMlProbeSendCount;
 	uint8_t ucMlProbeEnable;
+	struct BSS_DESC *prMlProbeBssDesc;
 #endif
 };
 
