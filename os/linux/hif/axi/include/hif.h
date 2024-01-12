@@ -308,6 +308,8 @@ struct BUS_INFO {
 		struct GLUE_INFO *prGlueInfo,
 		bool fgAllocMem);
 	void (*setPdmaIntMask)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
+
+	struct SW_WFDMA_INFO rSwWfdmaInfo;
 };
 
 struct HIF_MEM {

@@ -189,6 +189,15 @@
 
 #define HIF_DEFAULT_BSS_FREE_CNT	64
 
+#define SW_WFDMA_CMD_NUM		4
+#define SW_WFDMA_CMD_PKT_SIZE		1600
+#define SW_WFDMA_EMI_OFFSET		0x974ffc
+#define SW_WFDMA_EMI_SIZE	(SW_WFDMA_CMD_NUM * SW_WFDMA_CMD_PKT_SIZE + 8)
+#define SW_WFDMA_MD_PCCIF_START		0x1024D008
+#define SW_WFDMA_MD_PCCIF_TCHNUM	0x1024D00C
+#define SW_WFDMA_CCIF_CHANNEL_NUM	4
+
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -418,10 +427,44 @@ struct AMSDU_MAC_TX_DESC {
 	uint32_t u4DW7;
 };
 
-
 struct ERR_RECOVERY_CTRL_T {
 	uint8_t eErrRecovState;
 	uint32_t u4Status;
+};
+
+struct SW_WFDMA_INFO;
+
+struct SW_WFDMAD {
+	uint8_t aucBuf[SW_WFDMA_CMD_NUM][SW_WFDMA_CMD_PKT_SIZE];
+	uint32_t u4DrvIdx;
+	uint32_t u4FwIdx;
+};
+
+struct SW_WFDMA_OPS {
+	void (*init)(struct SW_WFDMA_INFO *prSwWfdmaInfo);
+	void (*uninit)(struct SW_WFDMA_INFO *prSwWfdmaInfo);
+	void (*reset)(struct SW_WFDMA_INFO *prSwWfdmaInfo);
+	void (*backup)(struct GLUE_INFO *prGlueInfo);
+	void (*restore)(struct GLUE_INFO *prGlueInfo);
+	void (*getCidx)(IN struct GLUE_INFO *prGlueInfo, uint32_t *pu4Cidx);
+	void (*setCidx)(IN struct GLUE_INFO *prGlueInfo, uint32_t u4Cidx);
+	void (*getDidx)(IN struct GLUE_INFO *prGlueInfo, uint32_t *pu4Didx);
+	bool (*writeCmd)(struct GLUE_INFO *prGlueInfo);
+	void (*processDmaDone)(struct GLUE_INFO *prGlueInfo);
+	void (*dumpDebugLog)(struct GLUE_INFO *prGlueInfo);
+};
+
+struct SW_WFDMA_INFO {
+	struct SW_WFDMA_OPS rOps;
+	struct SW_WFDMAD *prDmad;
+	struct SW_WFDMAD rBackup;
+	bool fgIsSupportSwWfdma;
+	bool fgIsEnSwWfdma;
+	void *pucIoremapAddr;
+	uint32_t u4CpuIdx;
+	uint32_t u4DmaIdx;
+	uint32_t u4MaxCnt;
+	uint8_t aucCID[SW_WFDMA_CMD_NUM];
 };
 
 /*******************************************************************************
@@ -509,4 +552,16 @@ int wf_ioremap_read(size_t addr, unsigned int *val);
 int wf_ioremap_write(phys_addr_t addr, unsigned int val);
 void halEnableSlpProt(struct GLUE_INFO *prGlueInfo);
 void halDisableSlpProt(struct GLUE_INFO *prGlueInfo);
+
+void halSwWfdmaInit(struct SW_WFDMA_INFO *prSwWfdmaInfo);
+void halSwWfdmaUninit(struct SW_WFDMA_INFO *prSwWfdmaInfo);
+void halSwWfdmaReset(struct SW_WFDMA_INFO *prSwWfdmaInfo);
+void halSwWfdmaBackup(struct GLUE_INFO *prGlueInfo);
+void halSwWfdmaRestore(struct GLUE_INFO *prGlueInfo);
+void halSwWfdmaGetCidx(struct GLUE_INFO *prGlueInfo, uint32_t *pu4Cidx);
+void halSwWfdmaSetCidx(struct GLUE_INFO *prGlueInfo, uint32_t u4Cidx);
+void halSwWfdmaGetDidx(struct GLUE_INFO *prGlueInfo, uint32_t *pu4Didx);
+bool halSwWfdmaWriteCmd(struct GLUE_INFO *prGlueInfo);
+void halSwWfdmaProcessDmaDone(IN struct GLUE_INFO *prGlueInfo);
+void halSwWfdmaDumpDebugLog(struct GLUE_INFO *prGlueInfo);
 #endif /* HIF_PDMA_H__ */
