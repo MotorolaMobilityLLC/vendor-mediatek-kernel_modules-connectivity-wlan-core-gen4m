@@ -1505,7 +1505,7 @@ void wlanOffClearAllQueues(IN struct ADAPTER *prAdapter)
 	DBGLOG(INIT, INFO, "wlanOffClearAllQueues(): start.\n");
 
 	/* Release all CMD/MGMT/CmdData frame in command queue */
-	kalClearCommandQueue(prAdapter->prGlueInfo);
+	kalClearCommandQueue(prAdapter->prGlueInfo, TRUE);
 
 	/* Release all CMD in pending command queue */
 	wlanClearPendingCommandQueue(prAdapter);
@@ -2801,6 +2801,14 @@ void wlanClearPendingCommandQueue(IN struct ADAPTER *prAdapter)
 	}
 }
 
+void wlanReleaseCommand(IN struct ADAPTER *prAdapter,
+			IN struct CMD_INFO *prCmdInfo,
+			IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	wlanReleaseCommandEx(prAdapter, prCmdInfo, rTxDoneStatus, TRUE);
+}
+
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function will release thd CMD_INFO upon its attribution
@@ -2812,9 +2820,10 @@ void wlanClearPendingCommandQueue(IN struct ADAPTER *prAdapter)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void wlanReleaseCommand(IN struct ADAPTER *prAdapter,
+void wlanReleaseCommandEx(IN struct ADAPTER *prAdapter,
 			IN struct CMD_INFO *prCmdInfo,
-			IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+			IN enum ENUM_TX_RESULT_CODE rTxDoneStatus,
+			IN u_int8_t fgIsNeedHandler)
 {
 	struct TX_CTRL *prTxCtrl;
 	struct MSDU_INFO *prMsduInfo;
@@ -2864,9 +2873,13 @@ void wlanReleaseCommand(IN struct ADAPTER *prAdapter,
 		    prCmdInfo->ucCmdSeqNum);
 
 		/* invoke callbacks */
-		if (prMsduInfo->pfTxDoneHandler != NULL)
-			prMsduInfo->pfTxDoneHandler(prAdapter, prMsduInfo,
-						    rTxDoneStatus);
+		if (fgIsNeedHandler) {
+			if (prMsduInfo->pfTxDoneHandler != NULL)
+				prMsduInfo->pfTxDoneHandler(prAdapter,
+					prMsduInfo, rTxDoneStatus);
+		} else {
+			nicDumpMsduInfo(prMsduInfo);
+		}
 
 		if (prCmdInfo->eCmdType == COMMAND_TYPE_MANAGEMENT_FRAME)
 			GLUE_DEC_REF_CNT(prTxCtrl->i4TxMgmtPendingNum);
@@ -13595,7 +13608,7 @@ void wlanReleaseAllTxCmdQueue(struct ADAPTER *prAdapter)
 	wlanReleasePendingOid(prAdapter, 1);
 
 	/* Release all CMD/MGMT/CmdData frame in command queue */
-	kalClearCommandQueue(prAdapter->prGlueInfo);
+	kalClearCommandQueue(prAdapter->prGlueInfo, TRUE);
 
 	/* Release all CMD in pending command queue */
 	wlanClearPendingCommandQueue(prAdapter);
