@@ -168,8 +168,10 @@
 
 /* HE PHY Capablilites byte3 */
 #define HE_PHY_CAP3_DCM_MAX_CONSTELLATION_TX_SHFT      0
+#define HE_PHY_CAP3_DCM_MAX_CONSTELLATION_TX_MASK	   BITS(0, 1)
 #define HE_PHY_CAP3_DCM_MAX_NSS_TX_SHFT                2
 #define HE_PHY_CAP3_DCM_MAX_CONSTELLATION_RX_SHFT      3
+#define HE_PHY_CAP3_DCM_MAX_CONSTELLATION_RX_MASK	   BITS(3, 4)
 #define HE_PHY_CAP3_DCM_MAX_NSS_RX_SHFT                5
 #define HE_PHY_CAP3_UL_HE_MU_PPDU_SHFT                 6
 #define HE_PHY_CAP3_SU_BFMER                           BIT(7)
@@ -202,6 +204,7 @@
 #define HE_PHY_CAP6_TRIG_MU_BF_PARTIAL_BW_FB           BIT(3)
 #define HE_PHY_CAP6_TRIG_MU_BF_PARTIAL_BW_FB_SHFT      3
 #define HE_PHY_CAP6_TRIG_CQI_FB_SHFT                   4
+#define HE_PHY_CAP6_PARTIAL_BW_EXTENDED_RANGE          BIT(5)
 #define HE_PHY_CAP6_PARTIAL_BW_EXTENDED_RANGE_SHFT     5
 #define HE_PHY_CAP6_PARTIAL_BW_DL_MU_MIMO_SHFT         6
 #define HE_PHY_CAP6_PPE_THRESHOLD                      BIT(7)
@@ -219,10 +222,12 @@
 #define HE_PHY_CAP7_STBC_RX_GT_80M_SHFT                7
 
 /* HE PHY Capablilites byte8 */
+#define HE_PHY_CAP8_ER_SU_4X_HE_LTF                    BIT(0)
 #define HE_PHY_CAP8_ER_SU_4X_HE_LTF_SHFT               0
 #define HE_PHY_CAP8_20M_IN_40M_HE_PPDU_2G_SHFT         1
 #define HE_PHY_CAP8_20M_IN_160M_HE_PPDU_SHFT           2
 #define HE_PHY_CAP8_80M_IN_160M_HE_PPDU_SHFT           3
+#define HE_PHY_CAP8_ER_SU_PPDU_1X_HE_LTF               BIT(4)
 #define HE_PHY_CAP8_ER_SU_PPDU_1X_HE_LTF_SHFT          4
 #define HE_PHY_CAP8_MIDAMBLE_RX_2X_1X_HE_LTF_SHFT      5
 #define HE_PHY_CAP8_DCM_MAX_BW_SHFT                    6
@@ -276,19 +281,21 @@
 #define HE_OP_BYTE_NUM                                 3
 
 /* HE Operation Parameters - byte0 */
+#define HE_OP_PARAM0_DEFAULT_PE_DUR_MASK                BITS(0, 2)
 #define HE_OP_PARAM0_DEFAULT_PE_DUR_SHFT                0
 #define HE_OP_PARAM0_TWT_REQUIRED_SHFT                  3
-#define HE_OP_PARAM0_TXOP_DUR_RTS_THRESHOLD_DEFAULT     BITS(4, 7)
+#define HE_OP_PARAM0_TXOP_DUR_RTS_THRESHOLD_MASK        BITS(4, 7)
 #define HE_OP_PARAM0_TXOP_DUR_RTS_THRESHOLD_SHFT        4
 
 /* HE Operation Parameters - byte1 */
-#define HE_OP_PARAM1_TXOP_DUR_RTS_THRESHOLD_DEFAULT     BITS(0, 5)
+#define HE_OP_PARAM1_TXOP_DUR_RTS_THRESHOLD_MASK        BITS(0, 5)
 #define HE_OP_PARAM1_TXOP_DUR_RTS_THRESHOLD_SHFT        0
 #define HE_OP_PARAM1_VHT_OP_INFO_PRESENT                BIT(6)
 #define HE_OP_PARAM1_VHT_OP_INFO_PRESENT_SHFT           6
 #define HE_OP_PARAM1_CO_LOCATED_BSS_SHFT                7
 
 /* HE Operation Parameters - byte2 */
+#define HE_OP_PARAM2_ER_SU_DISABLE_MASK					BIT(0)
 #define HE_OP_PARAM2_ER_SU_DISABLE_SHFT                 0
 
 /* HE Operation element - BSS Color Information */
@@ -428,6 +435,38 @@ enum ENUM_HEBA_TYPE {
 #define HE_UNSET_PHY_CAP_SU_BFMER(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[3] &= ~HE_PHY_CAP3_SU_BFMER)
 
+/* set to 0 if DCM is not supported */
+/* set to 1 for BPSK */
+/* set to 2 for QPSK */
+/* set to 3 for 16-QAM */
+#define HE_SET_PHY_CAP_DCM_MAX_CONSTELLATION_TX(_aucHePhyCapInfo, _ucVal) \
+{ \
+	_aucHePhyCapInfo[3] &= ~(HE_PHY_CAP3_DCM_MAX_CONSTELLATION_TX_MASK); \
+	_aucHePhyCapInfo[3] |= \
+		((_ucVal << HE_PHY_CAP3_DCM_MAX_CONSTELLATION_TX_SHFT) \
+			& HE_PHY_CAP3_DCM_MAX_CONSTELLATION_TX_MASK); \
+}
+
+/* set to 0 if DCM is not supported */
+/* set to 1 for BPSK */
+/* set to 2 for QPSK */
+/* set to 3 for 16-QAM */
+#define HE_SET_PHY_CAP_DCM_MAX_CONSTELLATION_RX(_aucHePhyCapInfo, _ucVal) \
+{ \
+	_aucHePhyCapInfo[3] &= ~(HE_PHY_CAP3_DCM_MAX_CONSTELLATION_RX_MASK); \
+	_aucHePhyCapInfo[3] |= \
+		((_ucVal << HE_PHY_CAP3_DCM_MAX_CONSTELLATION_RX_SHFT) \
+			& HE_PHY_CAP3_DCM_MAX_CONSTELLATION_RX_MASK); \
+}
+
+#define HE_GET_PHY_CAP_DCM_MAX_CONSTELLATION_TX(_aucHePhyCapInfo) \
+	((_aucHePhyCapInfo[3] & HE_PHY_CAP3_DCM_MAX_CONSTELLATION_TX_MASK) \
+	>> HE_PHY_CAP3_DCM_MAX_CONSTELLATION_TX_SHFT)
+
+#define HE_GET_PHY_CAP_DCM_MAX_CONSTELLATION_RX(_aucHePhyCapInfo) \
+	((_aucHePhyCapInfo[3] & HE_PHY_CAP3_DCM_MAX_CONSTELLATION_RX_MASK) \
+	>> HE_PHY_CAP3_DCM_MAX_CONSTELLATION_RX_SHFT)
+
 #define HE_SET_PHY_CAP_SU_BFMEE(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[4] |= HE_PHY_CAP4_SU_BFMEE)
 
@@ -463,6 +502,13 @@ enum ENUM_HEBA_TYPE {
 #define HE_SET_PHY_CAP_HE_PHY_CAP6_TRIG_MU_BF_PARTIAL_BW_FB(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[6] |= HE_PHY_CAP6_TRIG_MU_BF_PARTIAL_BW_FB)
 
+#define HE_SET_PHY_CAP_PARTIAL_BW_EXTENDED_RANGE(_aucHePhyCapInfo) \
+	(_aucHePhyCapInfo[6] |= HE_PHY_CAP6_PARTIAL_BW_EXTENDED_RANGE)
+
+#define HE_GET_PHY_CAP_PARTIAL_BW_EXTENDED_RANGE(_aucHePhyCapInfo) \
+	((_aucHePhyCapInfo[6] & HE_PHY_CAP6_PARTIAL_BW_EXTENDED_RANGE) \
+		>> HE_PHY_CAP6_PARTIAL_BW_EXTENDED_RANGE_SHFT)
+
 #define HE_IS_PHY_CAP_PPE_THRESHOLD(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[6] & HE_PHY_CAP6_PPE_THRESHOLD)
 
@@ -478,6 +524,20 @@ enum ENUM_HEBA_TYPE {
 
 #define HE_SET_PHY_CAP_STBC_RX_GT_80M(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[7] |= HE_PHY_CAP7_STBC_RX_GT_80M)
+
+#define HE_SET_PHY_CAP_ER_SU_4X_HE_LTF(_aucHePhyCapInfo) \
+	(_aucHePhyCapInfo[8] |= HE_PHY_CAP8_ER_SU_4X_HE_LTF)
+
+#define HE_GET_PHY_CAP_ER_SU_4X_HE_LTF(_aucHePhyCapInfo) \
+	((_aucHePhyCapInfo[8] & HE_PHY_CAP8_ER_SU_4X_HE_LTF) \
+		>> HE_PHY_CAP8_ER_SU_4X_HE_LTF_SHFT)
+
+#define HE_SET_PHY_CAP_ER_SU_PPDU_1X_HE_LTF(_aucHePhyCapInfo) \
+	(_aucHePhyCapInfo[8] |= HE_PHY_CAP8_ER_SU_PPDU_1X_HE_LTF)
+
+#define HE_GET_PHY_CAP_ER_SU_PPDU_1X_HE_LTF(_aucHePhyCapInfo) \
+	((_aucHePhyCapInfo[8] & HE_PHY_CAP8_ER_SU_PPDU_1X_HE_LTF) \
+		>> HE_PHY_CAP8_ER_SU_PPDU_1X_HE_LTF_SHFT)
 
 /* should use macro to access field of HE OP*/
 #define HE_IS_VHT_OP_INFO_PRESENT(_aucHeOpParams) \
@@ -587,6 +647,16 @@ enum ENUM_HEBA_TYPE {
 #define HE_GET_HTC_HE_UPH_MIN_TX_PWR_FLAG(_u4HTC) \
 	((_u4HTC & HTC_HE_UPH_MIN_TX_PWR_FLAG) \
 		>> HTC_HE_UPH_MIN_TX_PWR_FLAG_SHIFT)
+
+/* should use macro to access field of HE OP*/
+#define HE_RESET_HE_OP(_aucHeOpInfo) \
+	memset(_aucHeOpInfo, 0, HE_OP_BYTE_NUM)
+
+#define HE_SET_OP_PARAM_ER_SU_DISABLE(_aucHeOpParams) \
+	(_aucHeOpParams[2] |= HE_OP_PARAM2_ER_SU_DISABLE_MASK)
+
+#define HE_IS_ER_SU_DISABLE(_aucHeOpParams) \
+	(_aucHeOpParams[2] & HE_OP_PARAM2_ER_SU_DISABLE_MASK)
 
 struct _IE_HE_CAP_T {
 	u_int8_t  ucId;

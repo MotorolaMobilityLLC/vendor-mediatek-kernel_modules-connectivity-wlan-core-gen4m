@@ -455,19 +455,24 @@ void soc3_0asicConnac2xProcessRxInterrupt(
 	union WPDMA_INT_STA_STRUCT rIntrStatus;
 
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
-	if (rIntrStatus.field_conn2x_ext.wfdma1_rx_done_0)
+	if (rIntrStatus.field_conn2x_ext.wfdma1_rx_done_0 ||
+		(prAdapter->u4NoMoreRfb & BIT(WFDMA1_RX_RING_IDX_0)))
 		halRxReceiveRFBs(prAdapter, WFDMA1_RX_RING_IDX_0, FALSE);
 
-	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_0)
+	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_0 ||
+		(prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA_IDX_0)))
 		halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0, TRUE);
 
-	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_1)
+	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_1 ||
+		(prAdapter->u4NoMoreRfb & BIT(RX_RING_EVT_IDX_1)))
 		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, TRUE);
 
-	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_2)
+	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_2 ||
+		(prAdapter->u4NoMoreRfb & BIT(WFDMA0_RX_RING_IDX_2)))
 		halRxReceiveRFBs(prAdapter, WFDMA0_RX_RING_IDX_2, TRUE);
 
-	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_3)
+	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_3 ||
+		(prAdapter->u4NoMoreRfb & BIT(WFDMA0_RX_RING_IDX_3)))
 		halRxReceiveRFBs(prAdapter, WFDMA0_RX_RING_IDX_3, TRUE);
 }
 
