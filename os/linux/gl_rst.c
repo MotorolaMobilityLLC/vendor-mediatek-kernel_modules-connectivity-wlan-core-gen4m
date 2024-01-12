@@ -1469,7 +1469,7 @@ void glResetSubsysRstProcedure(struct GLUE_INFO *prGlueInfo,
 	}
 
 	fgIsTimeout = IsOverRstTimeThreshold(rNowTs, rLastTs);
-	if (g_IsWfsysBusHang == TRUE) {
+	if (g_IsWfsysBusHang == TRUE && prAdapter) {
 		struct CHIP_DBG_OPS *debug_ops = prAdapter->chip_info->prDebugOps;
 
 		if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
