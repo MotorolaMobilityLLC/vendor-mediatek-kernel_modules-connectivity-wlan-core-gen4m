@@ -255,6 +255,13 @@ p2pDevStateInit_CHNL_ON_HAND(IN struct ADAPTER *prAdapter,
 					prChnlReqInfo->eBand,
 					prChnlReqInfo->eChnlSco,
 					prChnlReqInfo->u4MaxInterval);
+			if (prP2pDevFsmInfo->rQueuedActionFrame.u2Length > 0) {
+				kalP2pIndicateQueuedMgmtFrame(
+					prAdapter->prGlueInfo,
+					&prP2pDevFsmInfo->rQueuedActionFrame);
+				p2pFunCleanQueuedMgmtFrame(prAdapter,
+					&prP2pDevFsmInfo->rQueuedActionFrame);
+			}
 		}
 	} while (FALSE);
 }				/* p2pDevStateInit_CHNL_ON_HAND */
@@ -285,6 +292,8 @@ p2pDevStateAbort_CHNL_ON_HAND(IN struct ADAPTER *prAdapter,
 
 			p2pFuncReleaseCh(prAdapter,
 				prP2pDevFsmInfo->ucBssIndex, prChnlReqInfo);
+			p2pFunCleanQueuedMgmtFrame(prAdapter,
+					&prP2pDevFsmInfo->rQueuedActionFrame);
 		}
 	} while (FALSE);
 }				/* p2pDevStateAbort_CHNL_ON_HAND */

@@ -187,6 +187,9 @@ struct P2P_DEV_FSM_INFO {
 
 	/* Packet filter for P2P module. */
 	uint32_t u4P2pPacketFilter;
+
+	/* Queued p2p action frame */
+	struct P2P_QUEUED_ACTION_FRAME rQueuedActionFrame;
 };
 
 struct MSG_P2P_NETDEV_REGISTER {
@@ -260,5 +263,6 @@ void p2pDevFsmRunEventActiveDevBss(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr);
 
 void
-p2pDevFsmNotifyP2pRx(IN struct ADAPTER *prAdapter, uint8_t p2pFrameType);
+p2pDevFsmNotifyP2pRx(IN struct ADAPTER *prAdapter, uint8_t p2pFrameType,
+		u_int8_t *prFgBufferFrame);
 

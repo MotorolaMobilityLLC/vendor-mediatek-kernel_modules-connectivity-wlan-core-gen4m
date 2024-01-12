@@ -1981,3 +1981,55 @@ void kalP2pUnlinkBss(IN struct GLUE_INFO *prGlueInfo, IN uint8_t aucBSSID[])
 			aucBSSID, FALSE, NULL) != NULL)
 		scanRemoveBssDescByBssid(prGlueInfo->prAdapter, aucBSSID);
 }
+
+void kalP2pIndicateQueuedMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
+		IN struct P2P_QUEUED_ACTION_FRAME *prFrame)
+{
+	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
+	struct net_device *prNetdevice = (struct net_device *) NULL;
+
+	if ((prGlueInfo == NULL) || (prFrame == NULL)) {
+		ASSERT(FALSE);
+		return;
+	}
+
+	DBGLOG(P2P, INFO, "Indicate queued p2p action frame.\n");
+
+	if (prFrame->prHeader == NULL || prFrame->u2Length == 0) {
+		DBGLOG(P2P, WARN, "Frame pointer is null or length is 0.\n");
+		return;
+	}
+
+	prGlueP2pInfo = prGlueInfo->prP2PInfo[prFrame->ucRoleIdx];
+	prNetdevice = prGlueP2pInfo->prDevHandler;
+
+#if (KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE)
+	cfg80211_rx_mgmt(
+		/* struct net_device * dev, */
+		prNetdevice->ieee80211_ptr,
+		prFrame->u4Freq,
+		0,
+		prFrame->prHeader,
+		prFrame->u2Length,
+		NL80211_RXMGMT_FLAG_ANSWERED);
+#elif (KERNEL_VERSION(3, 12, 0) <= CFG80211_VERSION_CODE)
+	cfg80211_rx_mgmt(
+		/* struct net_device * dev, */
+		prNetdevice->ieee80211_ptr,
+		prFrame->u4Freq,
+		0,
+		prFrame->prHeader,
+		prFrame->u2Length,
+		NL80211_RXMGMT_FLAG_ANSWERED,
+		GFP_ATOMIC);
+#else
+	cfg80211_rx_mgmt(
+		/* struct net_device * dev, */
+		prNetdevice->ieee80211_ptr,
+		prFrame->u4Freq,
+		0,
+		prFrame->prHeader,
+		prFrame->u2Length,
+		GFP_ATOMIC);
+#endif
+}

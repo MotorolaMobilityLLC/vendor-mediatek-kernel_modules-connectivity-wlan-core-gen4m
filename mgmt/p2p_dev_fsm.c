@@ -263,6 +263,9 @@ void p2pDevFsmUninit(IN struct ADAPTER *prAdapter)
 		cnmTimerStopTimer(prAdapter,
 			&(prP2pDevFsmInfo->rP2pFsmTimeoutTimer));
 
+		p2pFunCleanQueuedMgmtFrame(prAdapter,
+				&prP2pDevFsmInfo->rQueuedActionFrame);
+
 		/* Abort device FSM */
 		p2pDevFsmStateTransition(prAdapter,
 			prP2pDevFsmInfo,
@@ -838,6 +841,9 @@ void p2pDevFsmRunEventChannelAbort(IN struct ADAPTER *prAdapter,
 
 		DBGLOG(P2P, TRACE, "p2pDevFsmRunEventChannelAbort\n");
 
+		p2pFunCleanQueuedMgmtFrame(prAdapter,
+				&prP2pDevFsmInfo->rQueuedActionFrame);
+
 		/* If channel is not requested,
 		 * it may due to channel is released.
 		 */
@@ -1182,14 +1188,23 @@ void p2pDevFsmRunEventActiveDevBss(IN struct ADAPTER *prAdapter,
 }				/* p2pDevFsmRunEventActiveDevBss */
 
 void
-p2pDevFsmNotifyP2pRx(IN struct ADAPTER *prAdapter, uint8_t p2pFrameType)
+p2pDevFsmNotifyP2pRx(IN struct ADAPTER *prAdapter, uint8_t p2pFrameType,
+		u_int8_t *prFgBufferFrame)
 {
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 		(struct P2P_DEV_FSM_INFO *) NULL;
 
 	prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
-	if (prP2pDevFsmInfo->eCurrentState != P2P_DEV_STATE_CHNL_ON_HAND)
+	if (prP2pDevFsmInfo->eCurrentState != P2P_DEV_STATE_CHNL_ON_HAND) {
+		switch (p2pFrameType) {
+		case P2P_INVITATION_REQ:
+			*prFgBufferFrame = TRUE;
+			break;
+		default:
+			break;
+		}
 		return;
+	}
 
 	if (prAdapter->prP2pInfo->eConnState != P2P_CNN_NORMAL)
 		return;
