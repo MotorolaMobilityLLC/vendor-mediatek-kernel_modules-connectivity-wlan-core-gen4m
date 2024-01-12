@@ -1560,6 +1560,84 @@ uint8_t nicGetHe6gS2(IN uint8_t ucPrimaryChannel,
 }
 #endif
 
+#if (CFG_SUPPORT_802_11BE == 1)
+/* In EHT mode S2 (CCFS1) apply central CH for BW160 and BW320,
+ * apply 0 for the rest (e.g. BW20/40/80)
+ */
+uint8_t nicGetEhtS2(IN enum ENUM_BAND eBand,
+	IN uint8_t ucPrimaryChannel,
+	IN uint8_t ucBandwidth)
+{
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (eBand == BAND_6G)
+		return nicGetEht6gS2(ucPrimaryChannel, ucBandwidth);
+#endif
+	/* 2.4G/5G case: only BW160 to be considered */
+	if (ucBandwidth == VHT_OP_CHANNEL_WIDTH_160) {
+		return nicGetVhtS1(ucPrimaryChannel,
+			VHT_OP_CHANNEL_WIDTH_160);
+	} else {
+		return 0;
+	}
+}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+uint8_t nicGetEht6gS2(IN uint8_t ucPrimaryChannel,
+	IN uint8_t ucBandwidth)
+{
+	if (ucBandwidth == VHT_OP_CHANNEL_WIDTH_160) {
+		return nicGetHe6gS1(ucPrimaryChannel,
+			VHT_OP_CHANNEL_WIDTH_160);
+	} else if (ucBandwidth == VHT_OP_CHANNEL_WIDTH_320) {
+		return nicGetHe6gS1(ucPrimaryChannel,
+			VHT_OP_CHANNEL_WIDTH_320);
+	} else {
+		return 0;
+	}
+}
+#endif
+
+/* In EHT mode S1 (CCFS0) apply central CH of BW80 for BW160,
+ * central CH of BW160 for BW320 respectively,
+ * apply central CH of each for the rest (e.g. BW20/40/80)
+ */
+uint8_t nicGetEhtS1(IN enum ENUM_BAND eBand,
+	IN uint8_t ucPrimaryChannel,
+	IN uint8_t ucBandwidth)
+{
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (eBand == BAND_6G)
+		return nicGetEht6gS1(ucPrimaryChannel, ucBandwidth);
+#endif
+	/*2.4G/5G case: only BW160 to be considered */
+	if (ucBandwidth == VHT_OP_CHANNEL_WIDTH_160) {
+		return nicGetVhtS1(ucPrimaryChannel,
+			VHT_OP_CHANNEL_WIDTH_80);
+	} else {
+		return nicGetVhtS1(ucPrimaryChannel,
+			ucBandwidth);
+	}
+}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+uint8_t nicGetEht6gS1(IN uint8_t ucPrimaryChannel,
+	IN uint8_t ucBandwidth)
+{
+	if (ucBandwidth == VHT_OP_CHANNEL_WIDTH_160) {
+		return nicGetHe6gS1(ucPrimaryChannel,
+			VHT_OP_CHANNEL_WIDTH_80);
+	} else if (ucBandwidth == VHT_OP_CHANNEL_WIDTH_320) {
+		return nicGetHe6gS1(ucPrimaryChannel,
+			VHT_OP_CHANNEL_WIDTH_160);
+	} else {
+		return nicGetHe6gS1(ucPrimaryChannel,
+			ucBandwidth);
+	}
+}
+#endif
+
+#endif /* CFG_SUPPORT_802_11BE */
+
 uint8_t nicGetS1(IN enum ENUM_BAND eBand,
 	IN uint8_t ucPrimaryChannel,
 	IN uint8_t ucBandwidth)
