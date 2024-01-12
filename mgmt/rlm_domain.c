@@ -1085,7 +1085,7 @@ u_int8_t rlmIsValidChnl(struct ADAPTER *prAdapter, uint8_t ucNumOfChannel,
 	struct wiphy *prWiphy;
 
 	prGlueInfo = prAdapter->prGlueInfo;
-	prWiphy = priv_to_wiphy(prGlueInfo);
+	prWiphy = wlanGetWiphy();
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (eBand == BAND_6G) {
@@ -1317,7 +1317,7 @@ void rlmDomainSendDomainInfoCmd_V2(struct ADAPTER *prAdapter)
 	struct wiphy *pWiphy;
 
 
-	pWiphy = priv_to_wiphy(prAdapter->prGlueInfo);
+	pWiphy = wlanGetWiphy();
 	if (pWiphy->bands[KAL_BAND_2GHZ] != NULL)
 		max_channel_count += pWiphy->bands[KAL_BAND_2GHZ]->n_channels;
 	if (pWiphy->bands[KAL_BAND_5GHZ] != NULL)
@@ -3657,7 +3657,7 @@ rlmDomainSendTxPwrLimitPerRateCmd(struct ADAPTER *prAdapter,
 	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE
 		*prTxPwrLimitPerRateCmd[KAL_NUM_BANDS] = {0};
 
-	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
+	wiphy = wlanGetWiphy();
 	if (rlmDomainInitTxPwrLimitPerRateCmd(
 		prAdapter, wiphy, prTxPwrLimitPerRateCmd) !=
 		WLAN_STATUS_SUCCESS)
@@ -3684,7 +3684,7 @@ rlmDomainSendTxBfBackoffCmd(struct ADAPTER *prAdapter,
 	struct CMD_TXPWR_TXBF_SET_BACKOFF
 		*prTxBfBackoffCmd = NULL;
 
-	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
+	wiphy = wlanGetWiphy();
 
 	if (rlmDomainInitTxBfBackoffCmd(
 		prAdapter, wiphy, &prTxBfBackoffCmd) !=
@@ -6196,7 +6196,7 @@ void rlmDomainSendInfoToFirmware(IN struct ADAPTER *prAdapter)
 	}
 
 	g_mtk_regd_control.pGlueInfo = prAdapter->prGlueInfo;
-	mtk_reg_notify(priv_to_wiphy(prAdapter->prGlueInfo), prReq);
+	mtk_reg_notify(wlanGetWiphy(), prReq);
 #endif
 }
 
@@ -6231,12 +6231,12 @@ void rlmDomainOidSetCountry(IN struct ADAPTER *prAdapter, char *country,
 	if (rlmDomainIsUsingLocalRegDomainDataBase()) {
 		rlmDomainSetTempCountryCode(country, size_of_country);
 		request.initiator = NL80211_REGDOM_SET_BY_DRIVER;
-		mtk_reg_notify(priv_to_wiphy(prAdapter->prGlueInfo), &request);
+		mtk_reg_notify(wlanGetWiphy(), &request);
 	} else {
 		DBGLOG(RLM, INFO,
 		       "%s(): Using driver hint to query CRDA getting regd.\n",
 		       __func__);
-		regulatory_hint(priv_to_wiphy(prAdapter->prGlueInfo), country);
+		regulatory_hint(wlanGetWiphy(), country);
 	}
 #endif
 }
