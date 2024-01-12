@@ -149,6 +149,12 @@ ifeq ($(WIFI_ENABLE_GCOV), y)
 GCOV_PROFILE := y
 endif
 
+ifneq ($(filter 6765, $(WLAN_CHIP_ID)),)
+    ccflags-y += -DCFG_SUPPORT_DUAL_STA=0
+else
+    ccflags-y += -DCFG_SUPPORT_DUAL_STA=1
+endif
+
 ifeq ($(MTK_ANDROID_WMT), y)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
 else ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
