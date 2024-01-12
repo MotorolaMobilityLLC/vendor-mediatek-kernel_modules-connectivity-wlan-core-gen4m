@@ -1424,9 +1424,12 @@ uint32_t nicChannelNum2Freq(uint32_t u4ChannelNum, enum ENUM_BAND eBand)
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (eBand == BAND_6G) {
-		if (u4ChannelNum >= 1 && u4ChannelNum <= 233)
-			u4ChannelInMHz = 5950 + u4ChannelNum * 5;
-		else
+		if (u4ChannelNum >= 1 && u4ChannelNum <= 233) {
+			if (u4ChannelNum == 2)
+				u4ChannelInMHz = 5935;
+			else
+				u4ChannelInMHz = 5950 + u4ChannelNum * 5;
+		} else
 			u4ChannelInMHz = 0;
 	} else
 #endif
@@ -1622,6 +1625,8 @@ uint32_t nicFreq2ChannelNum(uint32_t u4FreqInKHz)
 			u4FreqInMHz = u4FreqInKHz / 1000;
 			if ((u4FreqInMHz > 5950) && (u4FreqInMHz <= 7115))
 				return ((u4FreqInMHz - 5950) / 5);
+			else if (u4FreqInMHz == 5935)
+				return 2;
 		}
 #endif
 		DBGLOG(BSS, INFO, "Return Invalid Channelnum = 0.\n");
@@ -5948,7 +5953,12 @@ void nicRxdChNumTranslate(
 {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if ((eBand == BAND_6G) && (pucHwChannelNum != NULL))
-		*pucHwChannelNum = (((*pucHwChannelNum-181) << 2) + 1);
+		if (*pucHwChannelNum != 15)
+			*pucHwChannelNum =
+				(((*pucHwChannelNum - 181) << 2) + 1);
+		/* 6 GHz channel 2, RXV channel will assign to 2 */
+		else
+			*pucHwChannelNum = 2;
 #endif
 }
 

@@ -702,7 +702,8 @@ static struct ieee80211_channel mtk_2ghz_channels[] = {
 	#define CHAN6G(_channel, _flags)				\
 	{								\
 		.band               = KAL_BAND_6GHZ,			\
-		.center_freq        = (5950 + (5 * (_channel))),	\
+		.center_freq        =	\
+			((_channel == 2) ? (5935) : (5950 + (5 * (_channel)))),\
 		.freq_offset        = 0,				\
 		.hw_value           = (_channel),			\
 		.flags              = (_flags),				\
@@ -713,7 +714,8 @@ static struct ieee80211_channel mtk_2ghz_channels[] = {
 	#define CHAN6G(_channel, _flags)				\
 	{								\
 		.band               = KAL_BAND_6GHZ,			\
-		.center_freq        = (5950 + (5 * (_channel))),	\
+		.center_freq        =	\
+			((_channel == 2) ? (5935) : (5950 + (5 * (_channel)))),\
 		.hw_value           = (_channel),			\
 		.flags              = (_flags),				\
 		.max_antenna_gain   = 0,				\
@@ -757,6 +759,7 @@ static struct ieee80211_channel mtk_5ghz_channels[] = {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 static struct ieee80211_channel mtk_6ghz_channels[] = {
 	/* UNII-5 */
+	CHAN6G(2, 0),
 	CHAN6G(1, 0),
 	CHAN6G(5, 0),
 	CHAN6G(9, 0),
