@@ -3186,6 +3186,7 @@ uint32_t nicTxFlush(IN struct ADAPTER *prAdapter)
 
 	if (HAL_IS_TX_DIRECT(prAdapter)) {
 		nicTxDirectClearAllStaPsQ(prAdapter);
+		nicTxDirectClearAllStaPendQ(prAdapter);
 	} else {
 		/* ask Per STA/AC queue to be fllushed
 		 * and return all queued packets
@@ -4671,6 +4672,41 @@ void nicTxDirectClearBssAbsentQ(IN struct ADAPTER
 	}
 }
 
+void nicTxDirectClearStaPendQ(IN struct ADAPTER *prAdapter,
+			    uint8_t ucStaRecIdx)
+{
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct QUE rNeedToFreeQue;
+	struct QUE *prNeedToFreeQue = &rNeedToFreeQue;
+	spinlock_t *prSpinLock = &prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT];
+	bool fgIrqDisabled = irqs_disabled();
+
+	QUEUE_INITIALIZE(prNeedToFreeQue);
+
+	if (fgIrqDisabled)
+		spin_lock(prSpinLock);
+	else
+		spin_lock_bh(prSpinLock);
+
+	if (QUEUE_IS_NOT_EMPTY(
+		    &prAdapter->rStaPendQueue[ucStaRecIdx])) {
+		QUEUE_MOVE_ALL(prNeedToFreeQue,
+			       &prAdapter->rStaPendQueue[ucStaRecIdx]);
+	}
+
+	if (fgIrqDisabled)
+		spin_unlock(prSpinLock);
+	else
+		spin_unlock_bh(prSpinLock);
+
+	if (QUEUE_IS_NOT_EMPTY(prNeedToFreeQue)) {
+		wlanProcessQueuedMsduInfo(prAdapter,
+			(struct MSDU_INFO *) QUEUE_GET_HEAD(prNeedToFreeQue));
+	}
+
+	prAdapter->u4StaPendBitmap &= ~BIT(ucStaRecIdx);
+}
+
 void nicTxDirectClearAllStaPsQ(IN struct ADAPTER *prAdapter)
 {
 	uint8_t ucStaRecIndex;
@@ -4694,6 +4730,19 @@ void nicTxDirectClearAllStaPsQ(IN struct ADAPTER *prAdapter)
 	}
 }
 
+void nicTxDirectClearAllStaPendQ(IN struct ADAPTER *prAdapter)
+{
+	uint8_t ucIdx; /* StaRec Index */
+
+	for (ucIdx = 0; ucIdx < CFG_STA_REC_NUM; ++ucIdx) {
+		if (prAdapter->u4StaPendBitmap == 0)
+			break;
+
+		if (QUEUE_IS_NOT_EMPTY(&prAdapter->rStaPendQueue[ucIdx]))
+			nicTxDirectClearStaPendQ(prAdapter, ucIdx);
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*
  * \brief This function is to check the StaRec is in Ps or not,
@@ -4701,24 +4750,24 @@ void nicTxDirectClearAllStaPsQ(IN struct ADAPTER *prAdapter)
  *        stage respectively.
  *
  * \param[in] prAdapter   Pointer of Adapter
- * \param[in] ucStaRecIndex  Indictate which StaRec to be checked
+ * \param[in] prStaRec    Pointer of StaRec
  * \param[in] prQue       Pointer of MsduInfo queue which to be processed
  *
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
 static void nicTxDirectCheckStaPsQ(IN struct ADAPTER
-	*prAdapter, uint8_t ucStaRecIndex, struct QUE *prQue)
+	*prAdapter, struct STA_RECORD *prStaRec, struct QUE *prQue)
 {
-	struct STA_RECORD *prStaRec;	/* The current focused STA */
 	struct MSDU_INFO *prMsduInfo;
 	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
+	uint8_t ucStaRecIndex;
 	u_int8_t fgReturnStaPsQ = FALSE;
 
-	if (ucStaRecIndex >= CFG_STA_REC_NUM)
+	if (prStaRec == NULL)
 		return;
 
-	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIndex);
+	ucStaRecIndex = prStaRec->ucIndex;
 
 	QUEUE_CONCATENATE_QUEUES(
 		&prAdapter->rStaPsQueue[ucStaRecIndex], prQue);
@@ -4728,11 +4777,6 @@ static void nicTxDirectCheckStaPsQ(IN struct ADAPTER
 
 	if (prMsduInfo == NULL) {
 		DBGLOG(TX, INFO, "prMsduInfo empty\n");
-		return;
-	}
-
-	if (prStaRec == NULL) {
-		DBGLOG(TX, INFO, "prStaRec empty\n");
 		return;
 	}
 
@@ -4882,6 +4926,133 @@ static void nicTxDirectCheckBssAbsentQ(IN struct ADAPTER
 
 /*----------------------------------------------------------------------------*/
 /*
+ * \brief This function is for fgIsTxAllowed == TRUE.
+ *        The data frame can start tx when the key is added.
+ *
+ * \param[in] prAdapter   Pointer of Adapter
+ * \param[in] prMsduInfo  The prMsduInfo that is wait for tx
+ * \param[in] ucStaRecIndex  Indictate which StaRec to be checked
+ * \param[in] prQue       Pointer of MsduInfo queue which to be processed
+ *
+ * \retval none
+ */
+/*----------------------------------------------------------------------------*/
+static void nicTxDirectDequeueStaPendQ(IN struct ADAPTER *prAdapter,
+				uint8_t ucStaIdx, struct QUE *prQue)
+{
+	KAL_SPIN_LOCK_DECLARATION();
+
+	/* ucStaIdx has been checked in nicTxDirectCheckStaPsPendQ */
+
+	if (prAdapter == NULL)
+		return;
+
+	/* the add key done case (include OPEN security) */
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	if (QUEUE_IS_NOT_EMPTY(
+		&prAdapter->rStaPendQueue[ucStaIdx])) {
+		DBGLOG(TX, TRACE, "start tx pending q!\n");
+		QUEUE_CONCATENATE_QUEUES_HEAD(prQue,
+			&prAdapter->rStaPendQueue[ucStaIdx]);
+	}
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	prAdapter->u4StaPendBitmap &= ~BIT(ucStaIdx);
+}
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief This function is for fgIsTxAllowed == FALSE.
+ *        The Non-EAPol data frame shouldn't tx without the key added,
+ *        if the sta isn't OPEN security.
+ *
+ * \param[in] prAdapter   Pointer of Adapter
+ * \param[in] prMsduInfo  The prMsduInfo that is wait for tx
+ * \param[in] ucStaRecIndex  Indictate which StaRec to be checked
+ * \param[in] prQue       Pointer of MsduInfo queue which to be processed
+ *
+ * \retval none
+ */
+/*----------------------------------------------------------------------------*/
+static void nicTxDirectEnqueueStaPendQ(IN struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo, uint8_t ucStaIdx, struct QUE *prQue)
+{
+	struct BSS_INFO *prBssInfo;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	/* the add key isn't completed case */
+	if ((prMsduInfo == NULL) || (prAdapter == NULL))
+		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prMsduInfo->ucBssIndex);
+
+	if (prBssInfo == NULL) {
+		DBGLOG(TX, INFO, "prBssInfo is NULL\n");
+		return;
+	}
+
+	if (secIsProtectedBss(prAdapter, prBssInfo) &&
+	    (prMsduInfo->fgIs802_1x) && (prMsduInfo->fgIs802_1x_NonProtected)) {
+		/* The EAPoL frame can't be blocked. */
+		DBGLOG(TX, TRACE, "Is EAPoL frame\n");
+	} else {
+		DBGLOG(TX, TRACE, "fgIsTxAllowed isn't TRUE!\n");
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+		QUEUE_CONCATENATE_QUEUES(
+			&prAdapter->rStaPendQueue[ucStaIdx], prQue);
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+
+		prAdapter->u4StaPendBitmap |= BIT(ucStaIdx);
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief This function is to check the StaRec is in pending/PS state or not,
+ *        and store MsduInfo(s) or sent MsduInfo(s) to the next
+ *        stage respectively.
+ *        Avoid the data frame tx before the add key done.
+ *
+ * \param[in] prAdapter   Pointer of Adapter
+ * \param[in] prMsduInfo  The prMsduInfo that is wait for tx
+ * \param[in] ucStaRecIndex  Indictate which StaRec to be checked
+ * \param[in] prQue       Pointer of MsduInfo queue which to be processed
+ *
+ * \retval none
+ */
+/*----------------------------------------------------------------------------*/
+static void nicTxDirectCheckStaPsPendQ(IN struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo, uint8_t ucStaIdx, struct QUE *prQue)
+{
+	struct STA_RECORD *prStaRec;	/* The current focused STA */
+
+	if (ucStaIdx >= CFG_STA_REC_NUM)
+		return;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaIdx);
+
+	if (prStaRec == NULL) {
+		DBGLOG(TX, INFO, "prStaRec empty\n");
+		return;
+	}
+
+	if (prStaRec->fgIsTxAllowed == TRUE) {
+		/* dequeue pending Queue */
+		if (prAdapter->u4StaPendBitmap & BIT(ucStaIdx))
+			nicTxDirectDequeueStaPendQ(prAdapter, ucStaIdx, prQue);
+
+		/* handle PS queue */
+		nicTxDirectCheckStaPsQ(prAdapter, prStaRec, prQue);
+	} else {
+		/* enqueue to pending queue */
+		nicTxDirectEnqueueStaPendQ(prAdapter, prMsduInfo,
+					   ucStaIdx, prQue);
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Get Tc for hif port mapping.
  *
  * \param[in] prMsduInfo  Pointer of the MsduInfo
@@ -4918,7 +5089,7 @@ static uint8_t nicTxDirectGetHifTc(struct MSDU_INFO
  * \retval WLAN_STATUS
  */
 /*----------------------------------------------------------------------------*/
-static uint32_t nicTxDirectStartXmitMain(struct sk_buff
+uint32_t nicTxDirectStartXmitMain(struct sk_buff
 		*prSkb, struct MSDU_INFO *prMsduInfo,
 		struct ADAPTER *prAdapter,
 		uint8_t ucCheckTc, uint8_t ucStaRecIndex,
@@ -4927,7 +5098,7 @@ static uint32_t nicTxDirectStartXmitMain(struct sk_buff
 	struct STA_RECORD *prStaRec;	/* The current focused STA */
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucTC = 0, ucHifTc = 0;
-	struct QUE *prTxQue;
+	struct QUE *prTxQue = NULL;
 	u_int8_t fgDropPacket = FALSE;
 	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
 	struct QUE rProcessingQue;
@@ -5051,9 +5222,9 @@ static uint32_t nicTxDirectStartXmitMain(struct sk_buff
 		QUEUE_INSERT_TAIL(prProcessingQue,
 				  (struct QUE_ENTRY *) prMsduInfo);
 
-		/* Power-save STA handling */
-		nicTxDirectCheckStaPsQ(prAdapter, prMsduInfo->ucStaRecIndex,
-				       prProcessingQue);
+		/* Power-save & TxAllowed STA handling */
+		nicTxDirectCheckStaPsPendQ(prAdapter, prMsduInfo,
+				prMsduInfo->ucStaRecIndex, prProcessingQue);
 
 		/* Absent BSS handling */
 		nicTxDirectCheckBssAbsentQ(prAdapter,
@@ -5096,9 +5267,12 @@ static uint32_t nicTxDirectStartXmitMain(struct sk_buff
 	} else {
 		if (ucStaRecIndex != 0xff || ucBssIndex != 0xff) {
 			/* Power-save STA handling */
-			if (ucStaRecIndex != 0xff)
-				nicTxDirectCheckStaPsQ(prAdapter, ucStaRecIndex,
-						       prProcessingQue);
+			if (ucStaRecIndex != 0xff) {
+				nicTxDirectCheckStaPsPendQ(prAdapter,
+						NULL,
+						ucStaRecIndex,
+						prProcessingQue);
+			}
 
 			/* Absent BSS handling */
 			if (ucBssIndex != 0xff)
@@ -5257,13 +5431,25 @@ void nicTxDirectTimerCheckHifQ(unsigned long data)
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 #endif
 	uint8_t ucHifTc = 0;
-	uint32_t u4StaPsBitmap, u4BssAbsentBitmap;
+	uint32_t u4StaPsBitmap, u4BssAbsentBitmap, u4StaPendBitmap;
 	uint8_t ucStaRecIndex, ucBssIndex;
 
 	spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 
 	u4StaPsBitmap = prAdapter->u4StaPsBitmap;
 	u4BssAbsentBitmap = prAdapter->u4BssAbsentBitmap;
+	u4StaPendBitmap = prAdapter->u4StaPendBitmap;
+
+	if (u4StaPendBitmap)
+		for (ucStaRecIndex = 0; ucStaRecIndex < CFG_STA_REC_NUM;
+		     ++ucStaRecIndex) {
+			if (u4StaPendBitmap & BIT(ucStaRecIndex)) {
+				nicTxDirectStartXmitMain(NULL, NULL, prAdapter,
+					0xff, ucStaRecIndex, 0xff);
+				DBGLOG(TX, INFO, "Check pending Queue idx=%u\n",
+					ucStaRecIndex);
+			}
+		}
 
 	if (u4StaPsBitmap)
 		for (ucStaRecIndex = 0; ucStaRecIndex < CFG_STA_REC_NUM;
