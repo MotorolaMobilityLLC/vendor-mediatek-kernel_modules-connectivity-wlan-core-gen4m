@@ -10923,6 +10923,22 @@ int32_t __weak kalPlatOpsInit(void)
 }
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+#if (CFG_MTK_FPGA_PLATFORM == 1)
+u_int8_t __weak kalIsSupportMawd(void)
+{
+	return TRUE;
+}
+
+u_int8_t __weak kalIsSupportSdo(void)
+{
+	return FALSE;
+}
+
+u_int8_t __weak kalIsSupportRro(void)
+{
+	return TRUE;
+}
+#else
 u_int8_t __weak kalIsSupportMawd(void)
 {
 	return FALSE;
@@ -10937,7 +10953,8 @@ u_int8_t __weak kalIsSupportRro(void)
 {
 	return FALSE;
 }
-#endif
+#endif /* CFG_MTK_FPGA_PLATFORM */
+#endif /* CFG_SUPPORT_HOST_OFFLOAD */
 
 uint32_t __weak kalGetTxBigCpuMask(void)
 {
