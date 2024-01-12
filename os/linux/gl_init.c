@@ -4178,6 +4178,9 @@ int connsys_power_event_notification(
 		prMsgLevelNotify->rMsgHdr.eMsgId = MID_CNS_DRV_PWR_LEVEL;
 		prMsgLevelNotify->level = *prLevel;
 
+		DBGLOG(INIT, INFO, "New power level: %d\n",
+					prMsgLevelNotify->level);
+
 		mboxSendMsg(prAdapter, MBOX_ID_0,
 				(struct MSG_HDR *) prMsgLevelNotify,
 				MSG_SEND_METHOD_BUF);
@@ -4200,6 +4203,10 @@ int connsys_power_event_notification(
 		prMsgPwrNotify->rMsgHdr.eMsgId = MID_CNS_DRV_PWR_TEMP;
 		prMsgPwrNotify->u4MaxTemp = prTempInfo->max_temp;
 		prMsgPwrNotify->u4RecoveryTemp = prTempInfo->recovery_temp;
+
+		DBGLOG(INIT, INFO, "New max temp: %d/New recovery temp: %d",
+					prMsgPwrNotify->u4MaxTemp,
+					prMsgPwrNotify->u4RecoveryTemp);
 
 		mboxSendMsg(prAdapter, MBOX_ID_0,
 				(struct MSG_HDR *) prMsgPwrNotify,
