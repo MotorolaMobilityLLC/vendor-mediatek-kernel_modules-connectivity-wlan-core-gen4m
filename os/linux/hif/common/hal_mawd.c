@@ -36,6 +36,11 @@
 #include "coda/mt6639/wf_rro_top.h"
 #endif
 
+#ifdef MT6655
+#include "coda/mt6655/mawd_reg.h"
+#include "coda/mt6655/wf_rro_top.h"
+#endif
+
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 
 /*******************************************************************************
