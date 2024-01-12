@@ -24,6 +24,8 @@
 #include "coda/mt6639/mawd_reg.h"
 #include "coda/mt6639/wf_rro_top.h"
 #include "hal_dmashdl_mt6639.h"
+#include "coda/mt6639/wf2ap_conn_infra_on_ccif4.h"
+#include "coda/mt6639/ap2wf_conn_infra_on_ccif4.h"
 
 #define CFG_SUPPORT_VCODE_VDFS 0
 
@@ -62,7 +64,7 @@ static void mt6639_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 static void mt6639_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx);
 
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+#if defined(_HIF_PCIE)
 static uint8_t mt6639SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo, uint32_t u4SwRingIdx);
 
@@ -94,10 +96,12 @@ static void mt6639WfdmaRxRingExtCtrl(
 	struct RTMP_RX_RING *rx_ring,
 	u_int32_t index);
 
-#if defined(_HIF_PCIE)
 static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo);
+
+static void mt6639_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
+	uint32_t sec,
+	uint32_t usec);
 #endif
-#endif /*_HIF_PCIE || _HIF_AXI */
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -473,6 +477,12 @@ struct ATE_OPS_T mt6639_AteOps = {
 };
 #endif /* CFG_SUPPORT_QA_TOOL */
 
+#if defined(_HIF_PCIE)
+static struct CCIF_OPS mt6639_ccif_ops = {
+	.notify_utc_time_to_fw = mt6639_ccif_notify_utc_time_to_fw,
+};
+#endif
+
 struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.bus_info = &mt6639_bus_info,
 #if CFG_ENABLE_FW_DOWNLOAD
@@ -539,6 +549,17 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.asicUsbInit = asicConnac3xWfdmaInitForUSB,
 	.asicUsbInit_ic_specific = NULL,
 #endif
+#if defined(_HIF_PCIE)
+#if IS_MOBILE_SEGMENT
+	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
+		BIT(CHIP_CAPA_FW_LOG_TIME_SYNC_BY_CCIF),
+#else
+	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC),
+#endif
+	.ccif_ops = &mt6639_ccif_ops,
+#else
+	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC),
+#endif /* _HIF_PCIE */
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt6639 = {
@@ -725,7 +746,7 @@ static void mt6639_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 			__LINE__, ret);
 }
 
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+#if defined(_HIF_PCIE)
 static uint8_t mt6639SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo, uint32_t u4SwRingIdx)
 {
@@ -1020,7 +1041,6 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 	       u4WrVal);
 }
 
-#if defined(_HIF_PCIE)
 static void mt6639WpdmaMsiConfig(struct ADAPTER *prAdapter)
 {
 #define WFDMA_AP_MSI_NUM		8
@@ -1088,7 +1108,6 @@ static void mt6639WpdmaMsiConfig(struct ADAPTER *prAdapter)
 		WF_WFDMA_EXT_WRAP_CSR_MSI_INT_CFG3_ADDR,
 		u4Value);
 }
-#endif
 
 static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable, bool fgResetHif)
@@ -1181,7 +1200,6 @@ static void mt6639WfdmaRxRingExtCtrl(
 		   CONNAC3X_RX_RING_DISP_MAX_CNT);
 }
 
-#if defined(_HIF_PCIE)
 static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t value = 0;
@@ -1198,7 +1216,6 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 		PCIE_MAC_IREG_IMASK_HOST_ADDR,
 		value);
 }
-#endif
 
 static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 {
@@ -1209,7 +1226,22 @@ static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 		   CONNAC3X_CONN_CFG_ON_CONN_ON_EMI_ADDR,
 		   ((uint32_t)prHifInfo->rMcuEmiMem.pa >> 16));
 }
-#endif /*_HIF_PCIE || _HIF_AXI */
+
+static void mt6639_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
+	uint32_t sec,
+	uint32_t usec)
+{
+	HAL_MCR_WR(ad,
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_DUMMY1_ADDR,
+		sec);
+	HAL_MCR_WR(ad,
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_DUMMY2_ADDR,
+		usec);
+	HAL_MCR_WR(ad,
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_TCHNUM_ADDR,
+		SW_INT_TIME_SYNC);
+}
+#endif
 
 static uint32_t mt6639GetFlavorVer(struct ADAPTER *prAdapter)
 {

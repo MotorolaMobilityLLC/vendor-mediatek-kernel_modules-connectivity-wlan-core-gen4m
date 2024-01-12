@@ -743,8 +743,6 @@ int wlanPreCalPwrOn(void)
 	struct mt66xx_hif_driver_data *prDriverData =
 		get_platform_driver_data();
 	struct mt66xx_chip_info *prChipInfo;
-	struct timespec64 time;
-	uint32_t rStatus = 0;
 
 	while (update_wr_mtx_down_up_status(0, 0)) {
 		if (get_wifi_process_status())
@@ -932,27 +930,7 @@ int wlanPreCalPwrOn(void)
 			}
 		}
 
-	if (prChipInfo->chip_capability & BIT(CHIP_CAPA_FW_LOG_TIME_SYNC)) {
-		ktime_get_real_ts64(&time);
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
-		rStatus = kalSyncTimeToFW(prAdapter, TRUE,
-			(unsigned int)time.tv_sec,
-			(unsigned int)NSEC_TO_USEC(time.tv_nsec));
-#else
-		rStatus = kalSyncTimeToFW(prAdapter, TRUE,
-			(unsigned int)time.tv_sec,
-			time.tv_usec);
-#endif
-
-		if (rStatus != WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, WARN,
-				"Failed to sync kernel time to FW: unhandled CMD ID 0x%x.\n",
-					INIT_CMD_ID_LOG_TIME_SYNC);
-		} else {
-			prGlueInfo->prAdapter->u4FWLastUpdateTime =
-				(unsigned int)time.tv_sec;
-		}
-	}
+		kalSyncTimeToFW(prAdapter, TRUE);
 
 		wlanSendPhyAction(prAdapter,
 			HAL_PHY_ACTION_TAG_NVRAM,

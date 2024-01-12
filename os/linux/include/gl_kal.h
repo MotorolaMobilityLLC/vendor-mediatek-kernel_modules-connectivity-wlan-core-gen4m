@@ -2014,7 +2014,7 @@ void setTimeParameter(
 	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT *prChipConfigInfo,
 	int chipConfigInfoSize, unsigned int second, unsigned int usecond);
 uint32_t kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
-	IN u_int8_t fgInitCmd, unsigned int second, unsigned int usecond);
+	IN u_int8_t fgInitCmd);
 void kalSyncTimeToFWByIoctl(void);
 
 void kalUpdateCompHdlrRec(IN struct ADAPTER *prAdapter,

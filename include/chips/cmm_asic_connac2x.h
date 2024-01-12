@@ -1184,14 +1184,6 @@ struct SDIO_HIF_TX_HEADER {
 };
 #endif /* defined(_HIF_SDIO) */
 
-enum {
-	SW_INT_FW_LOG = 0,
-	SW_INT_SUBSYS_RESET,
-	SW_INT_WHOLE_RESET,
-	SW_INT_SW_WFDMA,
-	SW_INT_TIME_SYNC,
-};
-
 #if (CFG_SUPPORT_CONNINFRA == 1)
 extern u_int8_t g_IsWfsysBusHang;
 extern struct completion g_triggerComp;

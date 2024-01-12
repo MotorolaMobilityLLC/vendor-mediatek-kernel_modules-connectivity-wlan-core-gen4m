@@ -299,6 +299,7 @@
 #include "ais_fsm.h"
 
 #include "adapter.h"
+#include "ccif.h"
 
 #if (CFG_SUPPORT_802_11BE == 1)
 #include "eht_ie.h"
