@@ -2602,6 +2602,32 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 }
 #endif
 
+static void rsnMicErrorSendMsg(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prSta, u_int8_t fgFlags)
+{
+	struct MSG_MIC_ERROR *prMicErrorMsg;
+
+	prMicErrorMsg = (struct MSG_MIC_ERROR *) cnmMemAlloc(prAdapter,
+		RAM_TYPE_MSG, sizeof(struct MSG_MIC_ERROR));
+	if (!prMicErrorMsg) {
+		DBGLOG(RSN, WARN, "cnmMemAlloc Fail\n");
+		return;
+	}
+
+	prMicErrorMsg->rMsgHdr.eMsgId = MID_RSN_MIC_FAIL;
+	prMicErrorMsg->prStaRec = prSta;
+	prMicErrorMsg->fgFlags = fgFlags;
+
+	DBGLOG(RSN, LOUD,
+		"Handle Msg eMsgId:%u ucBssidx:%u fgFlags:%u\n",
+		prMicErrorMsg->rMsgHdr.eMsgId,
+		prMicErrorMsg->prStaRec->ucBssIndex,
+		prMicErrorMsg->fgFlags);
+
+	mboxSendMsg(prAdapter, MBOX_ID_0,
+		(struct MSG_HDR *) prMicErrorMsg, MSG_SEND_METHOD_BUF);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to generate an authentication event to NDIS.
@@ -2666,11 +2692,12 @@ void rsnTkipHandleMICFailure(struct ADAPTER *prAdapter,
 	/* P_AIS_SPECIFIC_BSS_INFO_T prAisSpecBssInfo; */
 
 #if 1
-	rsnGenMicErrorEvent(prAdapter, prSta, fgErrorKeyType);
+	rsnMicErrorSendMsg(prAdapter, prSta, fgErrorKeyType);
 
 	/* Generate authentication request event. */
 	DBGLOG(RSN, INFO,
-	       "Generate TKIP MIC error event (type: 0%d)\n", fgErrorKeyType);
+	       "Send TKIP MIC error event msg to main thread (type: 0%d)\n",
+	       fgErrorKeyType);
 #else
 	ASSERT(prSta);
 
@@ -2708,6 +2735,25 @@ void rsnTkipHandleMICFailure(struct ADAPTER *prAdapter,
 		     u4RsnaCurrentMICFailTime);
 #endif
 }				/* rsnTkipHandleMICFailure */
+
+void rsnMicErrorHandleMsg(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
+{
+	struct MSG_MIC_ERROR *prMicErrorMsg;
+
+	prMicErrorMsg = (struct MSG_MIC_ERROR *)prMsgHdr;
+
+	DBGLOG(RSN, LOUD,
+		"Handle Msg eMsgId:%u ucBssidx:%u fgFlags:%u\n",
+		prMicErrorMsg->rMsgHdr.eMsgId,
+		prMicErrorMsg->prStaRec->ucBssIndex,
+		prMicErrorMsg->fgFlags);
+
+	rsnGenMicErrorEvent(prAdapter, prMicErrorMsg->prStaRec,
+				prMicErrorMsg->fgFlags);
+
+	cnmMemFree(prAdapter, prMsgHdr);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
