@@ -134,6 +134,10 @@ struct EHT_OP_INFO {
 #define SET_EHT_MAC_CAP_RESTRICTED_TWT(_aucMacCapInfo) \
 		(_aucMacCapInfo[0] |= EHT_MAC_CAP_RESTRICTED_TWT)
 
+#define GET_EHT_MAC_CAP_RESTRICTED_TWT(_aucMacCapInfo) \
+		(_aucMacCapInfo[0] & EHT_MAC_CAP_RESTRICTED_TWT)
+
+
 /*
  * Indicates support for transmission and
  * reception of SCS Descriptor elements containing

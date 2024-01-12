@@ -3012,6 +3012,14 @@ uint32_t nicUniCmdTwtArgtUpdate(struct ADAPTER *ad,
 	kalMemCopy(tag->au2StaList, cmd->au2StaList, sizeof(tag->au2StaList));
 #endif
 
+#if (CFG_SUPPORT_RTWT == 1)
+	/* DW7 RTWT traffic info */
+	tag->ucTrafficInfoPresent = cmd->ucTrafficInfoPresent;
+	tag->ucDlUlBmpValid = cmd->ucDlUlBmpValid;
+	tag->ucDlBmp = cmd->ucDlBmp;
+	tag->ucUlBmp = cmd->ucUlBmp;
+#endif
+
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
 	return WLAN_STATUS_SUCCESS;

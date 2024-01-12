@@ -762,6 +762,15 @@ struct MDNS_INFO_T {
 #endif
 
 #if (CFG_SUPPORT_TWT == 1)
+enum _ENUM_TWT_TYPE_T {
+	ENUM_TWT_TYPE_DEFAULT = 0, /* for local emu */
+	ENUM_TWT_TYPE_ITWT,
+	ENUM_TWT_TYPE_BTWT,
+	ENUM_TWT_TYPE_MLTWT,
+	ENUM_TWT_TYPE_RTWT,
+	ENUM_TWT_TYPE_NUM
+};
+
 enum _TWT_GET_TSF_REASON {
 	TWT_GET_TSF_FOR_ADD_AGRT_BYPASS = 1,
 	TWT_GET_TSF_FOR_ADD_AGRT = 2,
@@ -771,6 +780,8 @@ enum _TWT_GET_TSF_REASON {
 	TWT_GET_TSF_FOR_ADD_AGRT_ML_TWT_ONE_BY_ONE = 6,
 	TWT_GET_TSF_FOR_END_AGRT_ML_TWT_ONE_BY_ONE = 7,
 	TWT_GET_TSF_FOR_CNM_TEARDOWN_GRANTED = 8,
+	TWT_GET_TSF_FOR_ADD_AGRT_RTWT = 9,
+	TWT_GET_TSF_FOR_JOIN_AGRT_RTWT = 10,
 	TWT_GET_TSF_REASON_MAX
 };
 
@@ -791,7 +802,25 @@ struct _TWT_PARAMS_T {
 	uint8_t ucWakeIntvalExponent;
 	uint8_t fgByPassNego;
 	uint16_t u2WakeIntvalMantiss;
+	/* TWT target wake time from iwpriv command parameter */
+	uint16_t u2TWT;
+	/*
+	 * Final target wake time calculation
+	 * u8twt_interval = (u_int64_t)(u2WakeIntvalMantiss
+	 *                              < ucWakeIntvalExponent)
+	 * u8Temp = u8CurTsf + u8twt_interval
+	 * u8Mod = kal_mod64(u8Temp, u8twt_interval)
+	 * u8TWT = u8CurTsf + u8twt_interval - u8Mod
+	 * the u8TWT thus obtained is the final target wakeup time
+	 * on which the underlying F/W + H/W operates
+	 */
 	uint64_t u8TWT;
+#if (CFG_SUPPORT_RTWT == 1)
+	uint8_t ucTrafficInfoPresent;
+	uint8_t ucDlUlBmpValid;
+	uint8_t ucDlBmp;
+	uint8_t ucUlBmp;
+#endif
 #ifdef CFG_SUPPORT_TWT_EXT
 	uint32_t u4DesiredWakeTime;
 	uint32_t u4WakeIntvalMin;
@@ -813,6 +842,7 @@ struct _TWT_CTRL_T {
 	uint8_t ucMLTWT_Param_Last;
 	struct _TWT_PARAMS_T rTWTParams;
 	struct _NEXT_TWT_INFO_T rNextTWT;
+	u_int8_t fgTeardownAll;
 };
 
 #if (CFG_SUPPORT_TWT_HOTSPOT == 1)

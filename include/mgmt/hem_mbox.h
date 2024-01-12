@@ -218,6 +218,12 @@ enum ENUM_MSG_ID {
 	MID_BTWT_REQ_FSM_TEARDOWN,
 	MID_BTWT_REQ_IND_TEARDOWN_DONE,
 #endif
+#if (CFG_SUPPORT_RTWT == 1)
+	MID_RTWT_REQ_FSM_START,
+	MID_RTWT_REQ_FSM_JOIN,
+	MID_RTWT_REQ_FSM_TEARDOWN,
+	MID_RTWT_REQ_IND_TEARDOWN_DONE,
+#endif
 #if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
 	MID_ML_TWT_REQ_FSM_START_ALL_LINKS,
 	MID_ML_TWT_REQ_FSM_START_ONE_BY_ONE,
@@ -337,6 +343,7 @@ struct _MSG_TWT_REQFSM_START_T {
 struct _MSG_TWT_REQFSM_IND_RESULT_T {
 	struct MSG_HDR rMsgHdr;	/* Must be the first member */
 	struct STA_RECORD *prStaRec;
+	enum _ENUM_TWT_TYPE_T eTwtType;
 	u_int8_t ucTWTFlowId;
 };
 
@@ -344,6 +351,7 @@ struct _MSG_TWT_REQFSM_TEARDOWN_T {
 	struct MSG_HDR rMsgHdr;	/* Must be the first member */
 	struct STA_RECORD *prStaRec;
 	u_int8_t ucTWTFlowId;
+	u_int8_t fgTeardownAll;
 };
 
 struct _MSG_TWT_REQFSM_SUSPEND_T {

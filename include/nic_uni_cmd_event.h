@@ -1987,6 +1987,13 @@ struct UNI_CMD_TWT_ARGT_UPDATE {
 #if 0
 	uint16_t     au2StaList[UNI_TWT_GRP_MAX_MEMBER_CNT];
 #endif
+#if (CFG_SUPPORT_RTWT == 1)
+	/* DW7 RTWT traffic info */
+	uint8_t ucTrafficInfoPresent;
+	uint8_t ucDlUlBmpValid;
+	uint8_t ucDlBmp;
+	uint8_t ucUlBmp;
+#endif
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__

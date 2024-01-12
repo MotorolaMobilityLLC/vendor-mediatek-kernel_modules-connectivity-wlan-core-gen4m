@@ -66,16 +66,16 @@
 #endif
 
 #if (CFG_SUPPORT_TWT == 1)
-#define CMD_TWT_ACTION_FIFTEEN_PARAMS      15
+#define CMD_TWT_ACTION_SIXTEEN_PARAMS  16
+#define CMD_TWT_ACTION_FIFTEEN_PARAMS  15
 #define CMD_TWT_ACTION_TWELVE_PARAMS   12
 #define CMD_TWT_ACTION_TEN_PARAMS      10
-#define CMD_TWT_ACTION_THREE_PARAMS    3
+#define CMD_TWT_ACTION_NINE_PARAMS     9
 #define CMD_TWT_ACTION_SIX_PARAMS      6
-#ifndef CFG_SUPPORT_TWT_EXT
-#define CMD_TWT_MAX_PARAMS CMD_TWT_ACTION_TWELVE_PARAMS
-#else
+#define CMD_TWT_ACTION_FIVE_PARAMS     5
+#define CMD_TWT_ACTION_FOUR_PARAMS     4
+#define CMD_TWT_ACTION_THREE_PARAMS    3
 #define CMD_TWT_MAX_PARAMS CMD_TWT_ACTION_FIFTEEN_PARAMS
-#endif
 #endif
 
 #define TO_STR(value) #value
@@ -16781,13 +16781,14 @@ int priv_driver_set_twtparams(
 	int i4TotalLen)
 {
 	struct ADAPTER *prAdapter = NULL;
+	struct WIFI_VAR *prWifiVar = NULL;
 #if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
 	struct BSS_INFO *prBssInfo = NULL;
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
 #endif
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX_LONG] = { 0 };
-	struct _TWT_CTRL_T rTWTCtrl;
+	struct _TWT_CTRL_T rTWTCtrl = {0};
 	struct _TWT_PARAMS_T *prTWTParams;
 	uint16_t i;
 	int32_t u4Ret = 0;
@@ -16812,22 +16813,27 @@ int priv_driver_set_twtparams(
 	/* Check param number and convert TWT params to integer type */
 	if ((i4Argc == CMD_TWT_ACTION_TEN_PARAMS) ||
 		(i4Argc == CMD_TWT_ACTION_THREE_PARAMS) ||
+		(i4Argc == CMD_TWT_ACTION_FIVE_PARAMS) ||
 		(i4Argc == CMD_TWT_ACTION_SIX_PARAMS) ||
+		(i4Argc == CMD_TWT_ACTION_NINE_PARAMS) ||
+		(i4Argc == CMD_TWT_ACTION_TWELVE_PARAMS) ||
 #ifdef CFG_SUPPORT_TWT_EXT
 		(i4Argc == CMD_TWT_ACTION_FIFTEEN_PARAMS) ||
 #endif
-		(i4Argc == CMD_TWT_ACTION_TWELVE_PARAMS)) {
+		(i4Argc == CMD_TWT_ACTION_SIXTEEN_PARAMS)) {
 		for (i = 0; i < (i4Argc - 1); i++) {
 			u4Ret = kalkStrtou32(apcArgv[i + 1],
 				0, &(au4Setting[i]));
 
 			if (u4Ret)
-				DBGLOG(REQ, INFO, "Argv error ret=%d\n", u4Ret);
+				DBGLOG(REQ, ERROR, "Argv error %d\n", u4Ret);
 		}
 	} else {
-		DBGLOG(REQ, INFO, "set_twtparams wrong argc : %d\n", i4Argc);
+		DBGLOG(REQ, ERROR, "set_twtparams wrong argc : %d\n", i4Argc);
 		return -1;
 	}
+
+	prWifiVar = &prAdapter->rWifiVar;
 
 	if (IS_TWT_PARAM_ACTION_RESUME(au4Setting[0]) &&
 		(i4Argc == CMD_TWT_ACTION_SIX_PARAMS)) {
@@ -16839,7 +16845,7 @@ int priv_driver_set_twtparams(
 
 		if (au4Setting[1] >= TWT_MAX_FLOW_NUM) {
 			/* Simple sanity check failure */
-			DBGLOG(REQ, INFO, "Invalid TWT Params\n");
+			DBGLOG(REQ, ERROR, "Invalid TWT Params\n");
 			return -1;
 		}
 
@@ -16859,14 +16865,14 @@ int priv_driver_set_twtparams(
 		rTWTCtrl.rNextTWT.u8NextTWT = u8Val;
 	} else if (IS_TWT_PARAM_ACTION_TESTBED_CONFIG(au4Setting[0]) &&
 		(i4Argc == CMD_TWT_ACTION_THREE_PARAMS)) {
-			DBGLOG(REQ, INFO, "Action=%d\n", au4Setting[0]);
-			DBGLOG(REQ, INFO, "IsTestBed=%d\n", au4Setting[1]);
+		DBGLOG(REQ, INFO, "Action=%d\n", au4Setting[0]);
+		DBGLOG(REQ, INFO, "IsTestBed=%d\n", au4Setting[1]);
 
-			g_IsWfaTestBed = (uint8_t)au4Setting[1];
+		g_IsWfaTestBed = (uint8_t)au4Setting[1];
 
-			g_IsTwtLogo = 1;
+		g_IsTwtLogo = 1;
 
-			return 0;
+		return 0;
 	} else if ((IS_TWT_PARAM_ACTION_DEL(au4Setting[0]) ||
 		IS_TWT_PARAM_ACTION_SUSPEND(au4Setting[0]) ||
 		IS_TWT_PARAM_ACTION_ADD_BTWT(au4Setting[0]))
@@ -16877,7 +16883,7 @@ int priv_driver_set_twtparams(
 
 		if (au4Setting[1] >= TWT_MAX_FLOW_NUM) {
 			/* Simple sanity check failure */
-			DBGLOG(REQ, INFO, "Invalid TWT Params\n");
+			DBGLOG(REQ, ERROR, "Invalid TWT Params\n");
 			return -1;
 		}
 
@@ -16889,13 +16895,13 @@ int priv_driver_set_twtparams(
 	else if (IS_TWT_PARAM_ACTION_ADD_ML_TWT_ALL_LINKS(au4Setting[0])
 		&& (i4Argc == CMD_TWT_ACTION_TEN_PARAMS)) {
 		/* Add ML-TWT all links sharing the same TWT param */
-        /* Get BSSINFO of ML setup link */
+		/* Get BSSINFO of ML setup link */
 		prBssInfo = GET_BSS_INFO_BY_INDEX(
 						prAdapter,
 						prNetDevPrivate->ucBssIdx);
 
 		if (!prBssInfo) {
-			DBGLOG(REQ, INFO, "MLTWT Invalid BSS_INFO \n");
+			DBGLOG(REQ, ERROR, "MLTWT Invalid BSS_INFO\n");
 
 			return -1;
 		}
@@ -16903,7 +16909,7 @@ int priv_driver_set_twtparams(
 		prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
 
 		if (!prMldBssInfo) {
-			DBGLOG(REQ, INFO, "MLTWT Invalid MLD_BSS_INFO\n");
+			DBGLOG(REQ, ERROR, "MLTWT Invalid MLD_BSS_INFO\n");
 
 			return -1;
 		}
@@ -16915,12 +16921,12 @@ int priv_driver_set_twtparams(
 						TRUE);
 
 		if (!prBssInfo) {
-			DBGLOG(REQ, INFO, "Find no MLTWT setup link\n");
+			DBGLOG(REQ, ERROR, "Find no MLTWT setup link\n");
 
 			return -1;
 		}
 
-		DBGLOG(REQ, INFO, "MLTWT Action bitmap=%d\n", au4Setting[0]);
+		DBGLOG(REQ, INFO, "MLTWT Action =%d\n", au4Setting[0]);
 		DBGLOG(REQ, INFO,
 			"MLTWT Flow ID=%d Setup Command=%d Trig enabled=%d\n",
 			au4Setting[1], au4Setting[2], au4Setting[3]);
@@ -16929,9 +16935,10 @@ int priv_driver_set_twtparams(
 			au4Setting[4], au4Setting[5]);
 		DBGLOG(REQ, INFO, "MLTWT Protection enabled=%d Duration=%d\n",
 			au4Setting[6], au4Setting[7]);
-		DBGLOG(REQ, INFO, "MLTWT Wake Interval Mantissa=%d\n", au4Setting[8]);
+		DBGLOG(REQ, INFO, "MLTWT Wake Interval Mantissa=%d\n",
+					au4Setting[8]);
 		/*
-		 *	au2Setting[0]: Whether bypassing nego or not
+		 *	au2Setting[0]: MLTWT all in one command
 		 *	au2Setting[1]: TWT Flow ID
 		 *	au2Setting[2]: TWT Setup Command
 		 *	au2Setting[3]: Trigger enabled
@@ -16945,7 +16952,7 @@ int priv_driver_set_twtparams(
 			au4Setting[2] > TWT_SETUP_CMD_ID_DEMAND ||
 			au4Setting[5] > TWT_MAX_WAKE_INTVAL_EXP) {
 			/* Simple sanity check failure */
-			DBGLOG(REQ, INFO, "Invalid ML-TWT Params\n");
+			DBGLOG(REQ, ERROR, "Invalid ML-TWT Params\n");
 
 			return -1;
 		}
@@ -16968,13 +16975,13 @@ int priv_driver_set_twtparams(
 	} else if (IS_TWT_PARAM_ACTION_ADD_ML_TWT_ONE_BY_ONE(au4Setting[0])
 		&& (i4Argc == CMD_TWT_ACTION_TWELVE_PARAMS)) {
 		/* Add ML-TWT distinct link one by one */
-        /* Get BSSINFO of ML setup link */
+		/* Get BSSINFO of ML setup link */
 		prBssInfo = GET_BSS_INFO_BY_INDEX(
 						prAdapter,
 						prNetDevPrivate->ucBssIdx);
 
 		if (!prBssInfo) {
-			DBGLOG(REQ, INFO, "MLTWT Invalid BSS_INFO \n");
+			DBGLOG(REQ, ERROR, "MLTWT Invalid BSS_INFO\n");
 
 			return -1;
 		}
@@ -16982,7 +16989,7 @@ int priv_driver_set_twtparams(
 		prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
 
 		if (!prMldBssInfo) {
-			DBGLOG(REQ, INFO, "MLTWT Invalid MLD_BSS_INFO\n");
+			DBGLOG(REQ, ERROR, "MLTWT Invalid MLD_BSS_INFO\n");
 
 			return -1;
 		}
@@ -16994,14 +17001,14 @@ int priv_driver_set_twtparams(
 						TRUE);
 
 		if (!prBssInfo) {
-			DBGLOG(REQ, INFO,
+			DBGLOG(REQ, ERROR,
 				"Find no MLTWT target link %d\n",
 				au4Setting[9]);
 
 			return -1;
 		}
 
-		DBGLOG(REQ, INFO, "MLTWT Action bitmap=%d\n", au4Setting[0]);
+		DBGLOG(REQ, INFO, "MLTWT Action =%d\n", au4Setting[0]);
 		DBGLOG(REQ, INFO,
 			"MLTWT Flow ID=%d Setup Command=%d Trig enabled=%d\n",
 			au4Setting[1], au4Setting[2], au4Setting[3]);
@@ -17010,11 +17017,12 @@ int priv_driver_set_twtparams(
 			au4Setting[4], au4Setting[5]);
 		DBGLOG(REQ, INFO, "ML Protection enabled=%d Duration=%d\n",
 			au4Setting[6], au4Setting[7]);
-		DBGLOG(REQ, INFO, "MLTWT Wake Interval Mantissa=%d\n", au4Setting[8]);
+		DBGLOG(REQ, INFO, "MLTWT Wake Interval Mantissa=%d\n",
+					au4Setting[8]);
 		DBGLOG(REQ, INFO, "MLTWT target link ID=%d\n", au4Setting[9]);
 		DBGLOG(REQ, INFO, "MLTWT param last=%d\n", au4Setting[10]);
 		/*
-		 *	au2Setting[0]: Whether bypassing nego or not
+		 *	au2Setting[0]: MLTWT one by one command
 		 *	au2Setting[1]: TWT Flow ID
 		 *	au2Setting[2]: TWT Setup Command
 		 *	au2Setting[3]: Trigger enabled
@@ -17030,7 +17038,7 @@ int priv_driver_set_twtparams(
 			au4Setting[2] > TWT_SETUP_CMD_ID_DEMAND ||
 			au4Setting[5] > TWT_MAX_WAKE_INTVAL_EXP) {
 			/* Simple sanity check failure */
-			DBGLOG(REQ, INFO, "Invalid ML-TWT Params\n");
+			DBGLOG(REQ, ERROR, "Invalid ML-TWT Params\n");
 
 			return -1;
 		}
@@ -17053,9 +17061,375 @@ int priv_driver_set_twtparams(
 		rTWTCtrl.ucMLTWT_Param_Last = au4Setting[10];
 	}
 #endif
-	else if ((i4Argc == CMD_TWT_ACTION_TEN_PARAMS) &&
-				(IS_TWT_PARAM_ACTION_ADD_BYPASS(au4Setting[0]) ||
-				IS_TWT_PARAM_ACTION_ADD(au4Setting[0]))) {
+#if (CFG_SUPPORT_RTWT == 1)
+	else if ((i4Argc == CMD_TWT_ACTION_SIXTEEN_PARAMS) &&
+			IS_TWT_PARAM_ACTION_ADD_RTWT(au4Setting[0])) {
+		DBGLOG(REQ, INFO, "RTWT Action=%d\n", au4Setting[0]);
+		DBGLOG(REQ, INFO,
+			"RTWT Flow ID=%d Setup Command=%d Trig enabled=%d\n",
+			au4Setting[1], au4Setting[2], au4Setting[3]);
+		DBGLOG(REQ, INFO,
+			"RTWT Unannounced enabled=%d Wake Interval Exponent=%d\n",
+			au4Setting[4], au4Setting[5]);
+		DBGLOG(REQ, INFO, "RTWT Protection enabled=%d Duration=%d\n",
+			au4Setting[6], au4Setting[7]);
+		DBGLOG(REQ, INFO, "RTWT Interval Mantissa=%d\n", au4Setting[8]);
+		DBGLOG(REQ, INFO, "RTWT Target Wake Time=%d\n", au4Setting[9]);
+		DBGLOG(REQ, INFO, "RTWT traffic info=%d\n", au4Setting[10]);
+		DBGLOG(REQ, INFO, "RTWT TID Bitmap Valid=%d\n", au4Setting[11]);
+		DBGLOG(REQ, INFO, "RTWT DL TID Bitmap=%d\n", au4Setting[12]);
+		DBGLOG(REQ, INFO, "RTWT UL TID Bitmap=%d\n", au4Setting[13]);
+		DBGLOG(REQ, INFO, "RTWT target link ID=%d\n", au4Setting[14]);
+
+		/*
+		 * au4Setting[0]: ADD RTWT command
+		 * au4Setting[1]: RTWT Flow ID
+		 * au4Setting[2]: RTWT Setup Command
+		 * au4Setting[3]: RTWT Trigger enabled
+		 * au4Setting[4]: RTWT Unannounced enabled
+		 * au4Setting[5]: RTWT Wake Interval Exponent
+		 * au4Setting[6]: RTWT Protection enabled
+		 * au4Setting[7]: RTWT Nominal Minimum TWT Wake Duration
+		 * au4Setting[8]: RTWT Wake Interval Mantissa
+		 * au4Setting[9]: RTWT Target Wake Time
+		 * au4Setting[10]: RTWT traffic info present
+		 * au4Setting[11]: RTWT DL/UL TID Bitmap Valid
+		 * au4Setting[12]: RTWT DL TID Bitmap
+		 * au4Setting[13]: RTWT UL TID Bitmap
+		 * au4Setting[14]: RTWT target link ID
+		 * , whereas au4Setting[14] = 0 also indicates single link MLD
+		 * , since MLO link ID is assigned from AP MLD, for single link
+		 * , single link MLD case, link ID 0 implicitly refers to
+		 * prNetDevPrivate->ucBssIdx, the BSS_INFO[0] by most default.
+		 */
+
+		if (au4Setting[1] >= RTWT_MAX_FLOW_NUM ||
+			au4Setting[2] > TWT_SETUP_CMD_ID_DEMAND ||
+			au4Setting[5] > TWT_MAX_WAKE_INTVAL_EXP) {
+			/* Simple sanity check failure */
+			DBGLOG(REQ, INFO, "Invalid RTWT Params\n");
+
+			return -1;
+		}
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(
+						prAdapter,
+						prNetDevPrivate->ucBssIdx);
+
+		if (!prBssInfo) {
+			DBGLOG(REQ, ERROR, "RTWT Invalid BSS_INFO\n");
+
+			return -1;
+		}
+
+		prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+		if (!prMldBssInfo) {
+			DBGLOG(REQ, ERROR, "RTWT Invalid MLD_BSS_INFO\n");
+
+			return -1;
+		}
+
+		prBssInfo = mldGetBssInfoByLinkID(
+						prAdapter,
+						prMldBssInfo,
+						au4Setting[14],
+						TRUE);
+
+		if (!prBssInfo) {
+			if (au4Setting[14] > 0) {
+				DBGLOG(REQ, ERROR,
+					"Find no RTWT target link %d\n",
+					au4Setting[14]);
+
+				return -1;
+			}
+
+			/*
+			 * au4Setting[14]: RTWT target link ID
+			 * , whereas au4Setting[14] = 0 also indicates
+			 * single link MLD, since MLO link ID is assigned
+			 * from AP MLD, for single link, single link MLD
+			 * case, link ID 0 implicitly refers to
+			 * prNetDevPrivate->ucBssIdx, the BSS_INFO[0] by
+			 * most default.
+			 */
+			prBssInfo = GET_BSS_INFO_BY_INDEX(
+					prAdapter,
+					prNetDevPrivate->ucBssIdx);
+
+			if (!prBssInfo) {
+				DBGLOG(REQ, ERROR,
+					"RTWT Invalid BSS_INFO add\n");
+
+				return -1;
+			}
+
+			DBGLOG(REQ, ERROR,
+				"Single link MLD RTWT %d\n", au4Setting[14]);
+		}
+
+		DBGLOG(REQ, WARN, "BSS[%d] of RTWT target link ID %d\n",
+			prBssInfo->ucBssIndex, au4Setting[14]);
+
+		prTWTParams = &(rTWTCtrl.rTWTParams);
+		kalMemSet(prTWTParams, 0, sizeof(struct _TWT_PARAMS_T));
+		prTWTParams->fgReq = TRUE;
+		prTWTParams->ucSetupCmd = (uint8_t) au4Setting[2];
+		prTWTParams->fgTrigger = (au4Setting[3]) ? TRUE : FALSE;
+		prTWTParams->fgUnannounced = (au4Setting[4]) ? TRUE : FALSE;
+		prTWTParams->ucWakeIntvalExponent = (uint8_t) au4Setting[5];
+		prTWTParams->fgProtect = (au4Setting[6]) ? TRUE : FALSE;
+		prTWTParams->ucMinWakeDur = (uint8_t) au4Setting[7];
+		prTWTParams->u2WakeIntvalMantiss = (uint16_t)au4Setting[8];
+		prTWTParams->fgByPassNego = FALSE;
+		prTWTParams->u2TWT = (uint16_t)au4Setting[9];
+		prTWTParams->u8TWT = 0;
+		prTWTParams->ucTrafficInfoPresent = (uint8_t) au4Setting[10];
+		prTWTParams->ucDlUlBmpValid = (uint8_t) au4Setting[11];
+		prTWTParams->ucDlBmp = (uint8_t) au4Setting[12];
+		prTWTParams->ucUlBmp = (uint8_t) au4Setting[13];
+
+		rTWTCtrl.ucBssIdx = prBssInfo->ucBssIndex;
+		rTWTCtrl.ucCtrlAction = au4Setting[0];
+		rTWTCtrl.ucTWTFlowId = au4Setting[1];
+	} else if (
+		IS_TWT_PARAM_ACTION_JOIN_RTWT(au4Setting[0])
+		&& (i4Argc == CMD_TWT_ACTION_NINE_PARAMS)) {
+		/*
+		 * au4Setting[0]: RTWT Join command
+		 * au4Setting[1]: RTWT Flow ID
+		 * au4Setting[2]: RTWT Setup Command
+		 * au4Setting[3]: RTWT traffic info present
+		 * au4Setting[4]: RTWT DL/UL TID Bitmap Valid
+		 * au4Setting[5]: RTWT DL TID Bitmap
+		 * au4Setting[6]: RTWT UL TID Bitmap
+		 * au4Setting[7]: RTWT target link ID
+		 * , whereas au4Setting[7] = 0 also indicates single link MLD
+		 * , since MLO link ID is assigned from AP MLD, for single link
+		 * , single link MLD case, link ID 0 implicitly refers to
+		 * prNetDevPrivate->ucBssIdx, the BSS_INFO[0] by most default.
+		 */
+
+		DBGLOG(REQ, INFO, "Action=%d\n", au4Setting[0]);
+		DBGLOG(REQ, INFO, "RTWT Flow ID=%d\n", au4Setting[1]);
+		DBGLOG(REQ, INFO, "Setup Command=%d\n", au4Setting[2]);
+		DBGLOG(REQ, INFO, "RTWT traffic info=%d\n", au4Setting[3]);
+		DBGLOG(REQ, INFO, "RTWT TID Bitmap Valid=%d\n", au4Setting[4]);
+		DBGLOG(REQ, INFO, "RTWT DL TID Bitmap=%d\n", au4Setting[5]);
+		DBGLOG(REQ, INFO, "RTWT UL TID Bitmap=%d\n", au4Setting[6]);
+		DBGLOG(REQ, INFO, "RTWT target link ID=%d\n", au4Setting[7]);
+
+		if (au4Setting[1] >= RTWT_MAX_FLOW_NUM) {
+			/* Simple sanity check failure */
+			DBGLOG(REQ, ERROR, "Invalid RTWT flow ID\n");
+
+			return -1;
+		}
+
+		/* Get BSSINFO of ML setup link */
+		prBssInfo = GET_BSS_INFO_BY_INDEX(
+						prAdapter,
+						prNetDevPrivate->ucBssIdx);
+
+		if (!prBssInfo) {
+			DBGLOG(REQ, ERROR, "RTWT Invalid BSS_INFO\n");
+
+			return -1;
+		}
+
+		prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+		if (!prMldBssInfo) {
+			DBGLOG(REQ, ERROR, "RTWT Invalid MLD_BSS_INFO\n");
+
+			return -1;
+		}
+
+		prBssInfo = mldGetBssInfoByLinkID(
+						prAdapter,
+						prMldBssInfo,
+						au4Setting[7],
+						TRUE);
+
+		if (!prBssInfo) {
+			if (au4Setting[7] > 0) {
+				DBGLOG(REQ, ERROR,
+					"Find no RTWT target link %d\n",
+					au4Setting[7]);
+
+				return -1;
+			}
+
+			/*
+			 * au4Setting[7]: RTWT target link ID
+			 * , whereas au4Setting[7] = 0 also indicates
+			 * single link MLD, since MLO link ID is assigned
+			 * from AP MLD, for single link, single link MLD
+			 * case, link ID 0 implicitly refers to
+			 * prNetDevPrivate->ucBssIdx, the BSS_INFO[0] by
+			 * most default.
+			 */
+			prBssInfo = GET_BSS_INFO_BY_INDEX(
+						prAdapter,
+						prNetDevPrivate->ucBssIdx);
+
+			if (!prBssInfo) {
+				DBGLOG(REQ, ERROR,
+					"RTWT Invalid BSS_INFO join\n");
+
+				return -1;
+			}
+
+			DBGLOG(REQ, INFO,
+				"Single link MLD RTWT %d\n", au4Setting[7]);
+		}
+
+		DBGLOG(REQ, INFO, "BSS[%d] of RTWT target link ID %d\n",
+			prBssInfo->ucBssIndex, au4Setting[7]);
+
+		/*
+		 * We only need these, as to the left parameters should
+		 * be picked up from beacon IE
+		 */
+		prTWTParams = &(rTWTCtrl.rTWTParams);
+		kalMemSet(prTWTParams, 0, sizeof(struct _TWT_PARAMS_T));
+		prTWTParams->fgReq = TRUE;
+		prTWTParams->ucSetupCmd = (uint8_t) au4Setting[2];
+		prTWTParams->fgByPassNego = FALSE;
+		prTWTParams->u2TWT = 0;
+		prTWTParams->u8TWT = 0;
+		prTWTParams->ucTrafficInfoPresent = (uint8_t) au4Setting[3];
+		prTWTParams->ucDlUlBmpValid = (uint8_t) au4Setting[4];
+		prTWTParams->ucDlBmp = (uint8_t) au4Setting[5];
+		prTWTParams->ucUlBmp = (uint8_t) au4Setting[6];
+
+		rTWTCtrl.ucBssIdx = prBssInfo->ucBssIndex;
+		rTWTCtrl.ucCtrlAction = (uint8_t)au4Setting[0];
+		rTWTCtrl.ucTWTFlowId = (uint8_t)au4Setting[1];
+	} else if (IS_TWT_PARAM_ACTION_DEL(au4Setting[0])
+		&& (i4Argc == CMD_TWT_ACTION_FIVE_PARAMS)) {
+		/*
+		 * au4Setting[0]: RTWT teardown command
+		 * au4Setting[1]: RTWT Flow ID
+		 * au4Setting[2]: RTWT teardown all = 0|1
+		 * au4Setting[3]: RTWT target link ID
+		 * , whereas au4Setting[3] = 0 also indicates single link MLD
+		 * , since MLO link ID is assigned from AP MLD, for single link
+		 * , single link MLD case, link ID 0 implicitly refers to
+		 * prNetDevPrivate->ucBssIdx, the BSS_INFO[0] by most default.
+		 */
+		DBGLOG(REQ, INFO, "Action=%d\n", au4Setting[0]);
+		DBGLOG(REQ, INFO, "RTWT Flow ID=%d\n", au4Setting[1]);
+		DBGLOG(REQ, INFO, "Teardown all=%d\n", au4Setting[2]);
+		DBGLOG(REQ, INFO, "RTWT target link ID=%d\n", au4Setting[3]);
+
+		if (au4Setting[1] >= RTWT_MAX_FLOW_NUM) {
+			/* Simple sanity check failure */
+			DBGLOG(REQ, ERROR, "Invalid RTWT Params\n");
+
+			return -1;
+		}
+
+		/* Get BSSINFO of ML setup link */
+		prBssInfo = GET_BSS_INFO_BY_INDEX(
+						prAdapter,
+						prNetDevPrivate->ucBssIdx);
+
+		if (!prBssInfo) {
+			DBGLOG(REQ, ERROR, "RTWT Invalid BSS_INFO\n");
+
+			return -1;
+		}
+
+		prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+		if (!prMldBssInfo) {
+			DBGLOG(REQ, ERROR, "RTWT Invalid MLD_BSS_INFO\n");
+
+			return -1;
+		}
+
+		prBssInfo = mldGetBssInfoByLinkID(
+						prAdapter,
+						prMldBssInfo,
+						au4Setting[3],
+						TRUE);
+
+		if (!prBssInfo) {
+			if (au4Setting[3] > 0) {
+				DBGLOG(REQ, ERROR,
+					"Find no RTWT target link %d\n",
+					au4Setting[3]);
+
+				return -1;
+			}
+
+			/*
+			 * au4Setting[3]: RTWT target link ID
+			 * , whereas au4Setting[3] = 0 also indicates
+			 * single link MLD, since MLO link ID is assigned
+			 * from AP MLD, for single link, single link MLD
+			 * case, link ID 0 implicitly refers to
+			 * prNetDevPrivate->ucBssIdx, the BSS_INFO[0] by
+			 * most default.
+			 */
+			prBssInfo = GET_BSS_INFO_BY_INDEX(
+						prAdapter,
+						prNetDevPrivate->ucBssIdx);
+
+			if (!prBssInfo) {
+				DBGLOG(REQ, ERROR,
+					"RTWT Invalid BSS_INFO teardown\n");
+
+				return -1;
+			}
+
+			DBGLOG(REQ, INFO,
+				"Single link MLD RTWT %d\n", au4Setting[3]);
+		}
+
+		DBGLOG(REQ, INFO, "BSS[%d] of RTWT target link ID %d\n",
+			prBssInfo->ucBssIndex, au4Setting[3]);
+
+		rTWTCtrl.ucBssIdx = prBssInfo->ucBssIndex;
+		rTWTCtrl.ucCtrlAction = (uint8_t)au4Setting[0];
+		rTWTCtrl.ucTWTFlowId = (uint8_t)au4Setting[1];
+		rTWTCtrl.fgTeardownAll = (u_int8_t)au4Setting[2];
+	}
+#endif
+	else if ((IS_TWT_PARAM_ACTION_ENABLE_ITWT(au4Setting[0]) ||
+			IS_TWT_PARAM_ACTION_ENABLE_INF_FRAME(au4Setting[0]))
+			&& (i4Argc == CMD_TWT_ACTION_THREE_PARAMS)) {
+		DBGLOG(REQ, INFO, "iTWT=%d\n", au4Setting[0]);
+		DBGLOG(REQ, INFO, "en=%d\n", au4Setting[1]);
+
+		prWifiVar->ucTWTRequester = (uint8_t)au4Setting[1];
+
+		return 0;
+	} else if (IS_TWT_PARAM_ACTION_ENABLE_BTWT(au4Setting[0])
+			&& (i4Argc == CMD_TWT_ACTION_THREE_PARAMS)) {
+		DBGLOG(REQ, INFO, "BTWT=%d\n", au4Setting[0]);
+		DBGLOG(REQ, INFO, "en=%d\n", au4Setting[1]);
+
+#if (CFG_SUPPORT_BTWT == 1)
+		prWifiVar->ucBTWTSupport = (uint8_t)au4Setting[1];
+#endif
+
+		return 0;
+	} else if (IS_TWT_PARAM_ACTION_ENABLE_RTWT(au4Setting[0])
+			&& (i4Argc == CMD_TWT_ACTION_THREE_PARAMS)) {
+		DBGLOG(REQ, INFO, "RTWT=%d\n", au4Setting[0]);
+		DBGLOG(REQ, INFO, "en=%d\n", au4Setting[1]);
+
+#if (CFG_SUPPORT_RTWT == 1)
+		prWifiVar->ucRTWTSupport = (uint8_t)au4Setting[1];
+#endif
+
+		return 0;
+	} else if ((i4Argc == CMD_TWT_ACTION_TEN_PARAMS) &&
+			(IS_TWT_PARAM_ACTION_ADD_BYPASS(au4Setting[0]) ||
+			IS_TWT_PARAM_ACTION_ADD(au4Setting[0]))) {
 		DBGLOG(REQ, INFO, "Action bitmap=%d\n", au4Setting[0]);
 		DBGLOG(REQ, INFO,
 			"TWT Flow ID=%d Setup Command=%d Trig enabled=%d\n",
@@ -17081,7 +17455,7 @@ int priv_driver_set_twtparams(
 			au4Setting[2] > TWT_SETUP_CMD_ID_DEMAND ||
 			au4Setting[5] > TWT_MAX_WAKE_INTVAL_EXP) {
 			/* Simple sanity check failure */
-			DBGLOG(REQ, INFO, "Invalid TWT Params\n");
+			DBGLOG(REQ, ERROR, "Invalid TWT Params\n");
 			return -1;
 		}
 
@@ -17161,6 +17535,7 @@ int priv_driver_set_twtparams(
 #endif
 	else {
 		DBGLOG(REQ, INFO, "wrong argc for update agrt: %d\n", i4Argc);
+
 		return -1;
 	}
 

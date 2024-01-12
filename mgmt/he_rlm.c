@@ -2004,13 +2004,22 @@ void heRlmRecBTWTparams(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	struct _IE_BTWT_T *prBTWTIE = NULL;
 	const uint8_t *pucBTWT_PARAMS_HEAD = NULL;
 	const uint8_t *pucBTWT_PARAMS = NULL;
+	struct _IE_BTWT_PARAMS_T *p_IE_BTWT_PARAMS = NULL;
 	struct _TWT_PARAMS_T  *prTWT_PARAMS = NULL;
 	uint8_t ucBtwtId = 0;
 	uint64_t u8TargetWakeTime = 0;
 	uint64_t u8Temp = 0;
 	uint64_t u8twt_interval = 0;
 	uint64_t u8Mod = 0;
-	struct BSS_INFO *prBssInfo = NULL;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucRecommendation = 0;
+	struct _TWT_FLOW_T *prTWTFlow = NULL;
+#if (CFG_SUPPORT_RTWT == 1)
+	/* The RTWT IE handling must be backward compatible with BTWT IE */
+	struct _IE_RTWT_PARAMS_T *p_IE_RTWT_PARAMS = NULL;
+	uint8_t ucRtwtTfInfoLen = 0;
+	struct _TWT_PARAMS_T  rRTWT_PARAMS = {0};
+#endif
 
 	if (prAdapter == NULL)
 		return;
@@ -2026,128 +2035,283 @@ void heRlmRecBTWTparams(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	if (GET_BTWT_CTRL_NEGO(prBTWTIE->ucCtrl) != 0x2)
 		return;
 
-	u4Offset = OFFSET_OF(
-		struct _IE_BTWT_T,
-		u2ReqType);
+	u4Offset = OFFSET_OF(struct _IE_BTWT_T,	u2ReqType);
 
 	DBGLOG(RLM, WARN, "(struct _IE_BTWT_T, u2ReqType)=%d\n", u4Offset);
 
 	pucBTWT_PARAMS_HEAD = pucIE + u4Offset;
+
+	if (pucBTWT_PARAMS_HEAD == NULL)
+		return;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
 	if (prBssInfo == NULL)
 		return;
 
-	/* parse BTWT IE and insert BTWT param into */
-	/* prStaRec->arTWTFlow[flow_id].rTWTPeerParams */
+	/*
+	 * The RTWT IE handling must be backward compatible with BTWT IE
+	 * [1]parse BTWT IE and insert BTWT param into
+	 *    prStaRec->arBTWTFlow[ID==0].rTWTPeerParams and
+	 *    prStaRec->arBTWTFlow[Otherwise].rTWTParams
+	 * [2]parse RTWT IE and insert RTWT param into
+	 *    prStaRec->arRTWTFlow[ID!=0].rTWTParams,
+	 *    RTWT not operate on ID=0!!!!!!
+	 */
 	for (pucBTWT_PARAMS = pucBTWT_PARAMS_HEAD, u4Offset = 0;
 		(pucBTWT_PARAMS != NULL) &&
 		(u4Offset < (prBTWTIE->ucLength - 1));
+#if (CFG_SUPPORT_RTWT == 1)
+		pucBTWT_PARAMS += sizeof(struct _IE_BTWT_PARAMS_T)
+					+ ucRtwtTfInfoLen,
+		u4Offset += sizeof(struct _IE_BTWT_PARAMS_T)
+				+ ucRtwtTfInfoLen
+#else
 		pucBTWT_PARAMS += sizeof(struct _IE_BTWT_PARAMS_T),
-		u4Offset += sizeof(struct _IE_BTWT_PARAMS_T)) {
+		u4Offset += sizeof(struct _IE_BTWT_PARAMS_T)
+#endif
+		) {
+		p_IE_BTWT_PARAMS = (struct _IE_BTWT_PARAMS_T *)pucBTWT_PARAMS;
+
 		DBGLOG_MEM8(RLM, WARN,
 			pucBTWT_PARAMS, sizeof(struct _IE_BTWT_PARAMS_T));
-#if 0
+
 		DBGLOG(RLM, WARN,
 			"BTWT ReqType=%x TWT=%x MinWakeDur=%x\n",
-			((struct _IE_BTWT_PARAMS_T *)pucBTWT_PARAMS)->u2ReqType,
-			((struct _IE_BTWT_PARAMS_T *)pucBTWT_PARAMS)->u2TWT,
-			(((struct _IE_BTWT_PARAMS_T *)pucBTWT_PARAMS)
-				->ucMinWakeDur);
+			p_IE_BTWT_PARAMS->u2ReqType,
+			p_IE_BTWT_PARAMS->u2TWT,
+			p_IE_BTWT_PARAMS->ucMinWakeDur);
 
 		DBGLOG(RLM, WARN,
 			"BTWT WakeIntMantissa=%x BTWTInfo=%x\n",
-			((struct _IE_BTWT_PARAMS_T *)pucBTWT_PARAMS)
-				->u2WakeIntvalMantiss,
-			((struct _IE_BTWT_PARAMS_T *)pucBTWT_PARAMS)
-				->u2BTWTInfo);
+			p_IE_BTWT_PARAMS->u2WakeIntvalMantiss,
+			p_IE_BTWT_PARAMS->u2BTWTInfo);
+
+		ucBtwtId = GET_BTWT_ID(p_IE_BTWT_PARAMS->u2BTWTInfo);
+
+		ucRecommendation = GET_BTWT_RECOMMENDATION(
+					p_IE_BTWT_PARAMS->u2ReqType);
+
+		DBGLOG(RLM, WARN, "BTWT[%d] Ofset=%d recomd=%d\n",
+			ucBtwtId, u4Offset, ucRecommendation);
+
+		if (ucBtwtId >= TWT_MAX_FLOW_NUM) {
+			DBGLOG(RLM, ERROR,
+				"BTWT[%d] Ofset=%d recomd=%d out of range\n",
+				ucBtwtId, u4Offset, ucRecommendation);
+
+			break;
+		}
+
+		/*
+		 * We need to consider the case AP supports both BTWT and RTWT
+		 * , where BTWT[0|1|2..] and RTWT[1|2|3...], only BTWT support
+		 * BTWT_ID = 0!!!
+		 */
+#if (CFG_SUPPORT_RTWT == 1)
+		if (ucRecommendation == 0)
+#endif
+			prTWTFlow = &prStaRec->arBTWTFlow[ucBtwtId];
+#if (CFG_SUPPORT_RTWT == 1)
+		else
+			prTWTFlow = &prStaRec->arRTWTFlow[ucBtwtId];
 #endif
 
-		ucBtwtId = GET_BTWT_ID(
-		((struct _IE_BTWT_PARAMS_T *)pucBTWT_PARAMS)->u2BTWTInfo);
-
-		DBGLOG(RLM, WARN, "BTWT[%d] Ofset=%d\n", ucBtwtId, u4Offset);
-
-		if (ucBtwtId >= TWT_MAX_FLOW_NUM)
-			break;
-
+		/*
+		 * Native join BTWT_ID[0], otherwise keep whatever TWT
+		 * parameters in prStaRec->arBTWTFlow[ucBtwtId].rTWTParams,
+		 * this holds for both BTWT and RTWT.
+		 */
 		if (ucBtwtId == 0)
 			prTWT_PARAMS =
-				&prStaRec->arTWTFlow[ucBtwtId].rTWTPeerParams;
+				&prTWTFlow->rTWTPeerParams;
 		else
 			prTWT_PARAMS =
-				&prStaRec->arTWTFlow[ucBtwtId].rTWTParams;
+				&prTWTFlow->rTWTParams;
 
 		if (prTWT_PARAMS == NULL)
 			break;
 
-		prStaRec->arTWTFlow[ucBtwtId].fgIsBTWT = 0x1;
-
-		prTWT_PARAMS->ucMinWakeDur =
-			((struct _IE_BTWT_PARAMS_T *)
-				pucBTWT_PARAMS)->ucMinWakeDur;
-		prTWT_PARAMS->u2WakeIntvalMantiss =
-			((struct _IE_BTWT_PARAMS_T *)
-				pucBTWT_PARAMS)->u2WakeIntvalMantiss;
-		prTWT_PARAMS->fgReq = 0x1;
-		prTWT_PARAMS->ucSetupCmd = 0x0;
-		prTWT_PARAMS->fgTrigger = GET_TWT_RT_TRIGGER(
-			((struct _IE_BTWT_PARAMS_T *)
-				pucBTWT_PARAMS)->u2ReqType);
-		prTWT_PARAMS->fgUnannounced = GET_TWT_RT_FLOW_TYPE(
-			((struct _IE_BTWT_PARAMS_T *)
-				pucBTWT_PARAMS)->u2ReqType);
-		prTWT_PARAMS->ucWakeIntvalExponent =
-			GET_TWT_RT_WAKE_INTVAL_EXP(
-			((struct _IE_BTWT_PARAMS_T *)pucBTWT_PARAMS)
-			->u2ReqType);
-		prTWT_PARAMS->fgProtect = 0x0;
-
-		if (prStaRec->arTWTFlow[ucBtwtId].eBtwtState
-				== ENUM_BTWT_FLOW_STATE_DEFAULT) {
-			if (ucBtwtId == 0) {
-				u8TargetWakeTime = (prStaRec->au4Timestamp[0] |
-					(((uint64_t)(prStaRec->au4Timestamp[1]))
-					<< 32));
-				u8twt_interval = (((u_int64_t)
-					prTWT_PARAMS->u2WakeIntvalMantiss)
-					<< prTWT_PARAMS->ucWakeIntvalExponent);
-				u8Temp = u8TargetWakeTime + u8twt_interval;
-				u8Mod = kal_mod64(u8Temp, u8twt_interval);
-				prTWT_PARAMS->u8TWT = (u8TargetWakeTime +
-					(u8twt_interval - u8Mod));
-
-				btwtPlannerAddAgrtTbl(prAdapter, prBssInfo,
-					prStaRec, prTWT_PARAMS, ucBtwtId, FALSE,
-					NULL, NULL);
-			} else {
-				prTWT_PARAMS->u8TWT = 0;
-			}
-#if 0
-			DBGLOG(RLM, WARN,
-				"BTWT[%d] %x, %x, %x, %x, %x, %x %x, %x, %x, %x\n",
-				ucBtwtId,
-				prTWT_PARAMS->ucMinWakeDur,
-				prTWT_PARAMS->u2WakeIntvalMantiss,
-				prTWT_PARAMS->fgTrigger,
-				prTWT_PARAMS->fgUnannounced,
-				prTWT_PARAMS->ucWakeIntvalExponent,
-				(prTWT_PARAMS->u8TWT & 0x00000000FFFFFFFF),
-				((prTWT_PARAMS->u8TWT &
-				0xFFFFFFFF00000000) >> 32),
-				prStaRec->au4Timestamp[0],
-				prStaRec->au4Timestamp[1],
-				((struct _IE_BTWT_PARAMS_T *)pucBTWT_PARAMS)
-				->u2TWT
-				);
+#if (CFG_SUPPORT_RTWT == 1)
+		if (ucRecommendation == 0) {
 #endif
 
+			prTWTFlow->eTwtType = ENUM_TWT_TYPE_BTWT;
+
+			prTWT_PARAMS->ucSetupCmd = 0x0; /* Request TWT by WFA */
+
+#if (CFG_SUPPORT_RTWT == 1)
+
+			ucRtwtTfInfoLen = 0;
+		} else {
+			prTWTFlow->eTwtType = ENUM_TWT_TYPE_RTWT;
+
+			prTWT_PARAMS->ucSetupCmd = 0x2; /* Demand TWT by WFA */
+
+			if (GET_BTWT_RTWT_TRAFFIC_INFO_PRESENT(
+						((struct _IE_BTWT_PARAMS_T *)
+						pucBTWT_PARAMS)->u2BTWTInfo)) {
+				ucRtwtTfInfoLen =
+					RTWT_TRAFFIC_INFO_BYTE_LENGTH;
+
+				/*
+				 * Cast _IE_BTWT_PARAMS_T to _IE_RTWT_PARAMS_T,
+				 * RTWT = BTWT + RTWT traffic info(3 bytes)
+				 */
+				p_IE_RTWT_PARAMS =
+				(struct _IE_RTWT_PARAMS_T *)pucBTWT_PARAMS;
+
+				prTWT_PARAMS->ucTrafficInfoPresent = 1;
+				prTWT_PARAMS->ucDlUlBmpValid =
+				p_IE_RTWT_PARAMS->uc_arRTWTTrafficInfo[0];
+				prTWT_PARAMS->ucDlBmp =
+				p_IE_RTWT_PARAMS->uc_arRTWTTrafficInfo[1];
+				prTWT_PARAMS->ucUlBmp =
+				p_IE_RTWT_PARAMS->uc_arRTWTTrafficInfo[2];
+			} else {
+				ucRtwtTfInfoLen = 0;
+				prTWT_PARAMS->ucTrafficInfoPresent = 0;
+				prTWT_PARAMS->ucDlUlBmpValid = 0;
+				prTWT_PARAMS->ucDlBmp = 0;
+				prTWT_PARAMS->ucUlBmp = 0;
+			}
 		}
 
-		if (GET_BTWT_LAST_BCAST((
-			(struct _IE_BTWT_PARAMS_T *)pucBTWT_PARAMS)->u2ReqType)
-			== 0x1)
+#endif
+
+		prTWT_PARAMS->ucMinWakeDur = p_IE_BTWT_PARAMS->ucMinWakeDur;
+		prTWT_PARAMS->u2WakeIntvalMantiss =
+			p_IE_BTWT_PARAMS->u2WakeIntvalMantiss;
+		prTWT_PARAMS->u8TWT = 0;
+		prTWT_PARAMS->fgReq = 0x1;
+		prTWT_PARAMS->fgTrigger = GET_TWT_RT_TRIGGER(
+						p_IE_BTWT_PARAMS->u2ReqType);
+		prTWT_PARAMS->fgUnannounced = GET_TWT_RT_FLOW_TYPE(
+						p_IE_BTWT_PARAMS->u2ReqType);
+		prTWT_PARAMS->ucWakeIntvalExponent =
+					GET_TWT_RT_WAKE_INTVAL_EXP(
+						p_IE_BTWT_PARAMS->u2ReqType);
+		prTWT_PARAMS->fgProtect = 0x0;
+
+		if ((prTWTFlow->eTwtType == ENUM_TWT_TYPE_BTWT) &&
+			(prTWTFlow->eBtwtState
+				== ENUM_BTWT_FLOW_STATE_DEFAULT) &&
+			(ucBtwtId == 0)) {
+			u8TargetWakeTime = (prStaRec->au4Timestamp[0] |
+				(((uint64_t)(prStaRec->au4Timestamp[1]))
+				<< 32));
+
+			u8twt_interval = (((u_int64_t)
+					prTWT_PARAMS->u2WakeIntvalMantiss)
+					<< prTWT_PARAMS->ucWakeIntvalExponent);
+
+			u8Temp = u8TargetWakeTime + u8twt_interval;
+
+			u8Mod = kal_mod64(u8Temp, u8twt_interval);
+
+			prTWT_PARAMS->u8TWT = (u8TargetWakeTime +
+						(u8twt_interval - u8Mod));
+
+			/* BTWT[0] by default join */
+			btwtPlannerAddAgrtTbl(prAdapter, prBssInfo,
+				prStaRec, prTWT_PARAMS, ucBtwtId, FALSE,
+				NULL, NULL);
+		}
+
+		/*
+		 * By WFA RTWT test plan, the RTWT 5.52.1 STAUT stops TXOP
+		 * before each active RTWT service period start, because
+		 * STAUT's RTXT has not yet activated, the uplink traffic
+		 * has been asked not to overlap with active RTWT service
+		 * period start.
+		 *
+		 * We need to setup a local bypass TWT to skip the active
+		 * RTWT service period start and with a shrinkaged interval.
+		 *
+		 * We only do this in WFA logo test!!!
+		 */
+
+#if (CFG_SUPPORT_RTWT == 1)
+		if ((g_IsTwtLogo == 1) && (g_IsWfaTestBed == 0) &&
+			(prTWTFlow->eTwtType == ENUM_TWT_TYPE_RTWT) &&
+			(IS_FEATURE_ENABLED(
+				prAdapter->rWifiVar.ucRTWTStautProtect))) {
+			/*
+			 * To etimate current active RTWT target time
+			 */
+			u8TargetWakeTime = (prStaRec->au4Timestamp[0] |
+				(((uint64_t)(prStaRec->au4Timestamp[1]))
+				<< 32));
+
+			u8twt_interval = (((u_int64_t)
+					prTWT_PARAMS->u2WakeIntvalMantiss)
+					<< prTWT_PARAMS->ucWakeIntvalExponent);
+
+			u8Temp = u8TargetWakeTime + u8twt_interval;
+
+			u8Mod = kal_mod64(u8Temp, u8twt_interval);
+
+			if (twtPlannerDrvAgrtFindWithTwtType(
+				prAdapter,
+				prBssInfo->ucBssIndex,
+				ucBtwtId,
+				/*
+				 * We'd like to know if bypass nego has
+				 * been setup previously!!
+				 */
+				1,
+				ENUM_TWT_TYPE_RTWT) >= TWT_AGRT_MAX_NUM) {
+				/*
+				 * If we reach here, we are safe to add
+				 * local bypass nego of ucBtwtId.
+				 */
+				kalMemCopy(&rRTWT_PARAMS, prTWT_PARAMS,
+					sizeof(struct _TWT_PARAMS_T));
+
+				/*
+				 * For WFA RTWT 5.52.1, alive RTWT schedule:
+				 *     32 * 255 = 8.160ms SP in 32ms interval
+				 *
+				 * We setup local bypass nego:
+				 *     112 * 255 = 28.560ms SP in 32ms interval
+				 *
+				 * We'd likt to shift 2ms away!!!
+				 */
+				rRTWT_PARAMS.ucMinWakeDur = 112;
+
+				rRTWT_PARAMS.u8TWT = (u8TargetWakeTime +
+						(u8twt_interval - u8Mod));
+
+				rRTWT_PARAMS.u8TWT += 2048;
+
+				rRTWT_PARAMS.fgByPassNego = 1;
+
+				rtwtPlannerAddAgrtTbl(
+					prAdapter, prBssInfo,
+					prStaRec, &rRTWT_PARAMS,
+					ucBtwtId, FALSE,
+					NULL, NULL);
+			}
+		}
+#endif
+
+		DBGLOG(RLM, WARN,
+			"%sTWT[%d] %x, %x, %x, %x, %x, %x %x, %x, %x, %x\n",
+			(prTWTFlow->eTwtType == ENUM_TWT_TYPE_BTWT) ? "B":"R",
+			ucBtwtId,
+			prTWT_PARAMS->ucMinWakeDur,
+			prTWT_PARAMS->u2WakeIntvalMantiss,
+			prTWT_PARAMS->fgTrigger,
+			prTWT_PARAMS->fgUnannounced,
+			prTWT_PARAMS->ucWakeIntvalExponent,
+			(prTWT_PARAMS->u8TWT & 0x00000000FFFFFFFF),
+			((prTWT_PARAMS->u8TWT &
+			0xFFFFFFFF00000000) >> 32),
+			prStaRec->au4Timestamp[0],
+			prStaRec->au4Timestamp[1],
+			p_IE_BTWT_PARAMS->u2TWT);
+
+		if (GET_BTWT_LAST_BCAST(p_IE_BTWT_PARAMS->u2ReqType) == 0x1)
 			break;
 	}
 }
