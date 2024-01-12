@@ -152,6 +152,9 @@ uint32_t ehtRlmCalculateCapIELen(
 				struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD);
 		}
         }
+
+	// TODO: add variable IE length for EHT PPE threshold
+
 	return u4OverallLen;
 }
 
@@ -216,7 +219,7 @@ static void ehtRlmFillCapIE(
 	uint32_t phy_cap_2 = 0;
 	uint32_t u4OverallLen = OFFSET_OF(struct IE_EHT_CAP, aucVarInfo[0]);
 	uint8_t eht_mcs15_mru = EHT_MCS15_MRU_106_or_52_w_26_tone;
-	uint8_t eht_bw, ucSupportedNss = 0;;
+	uint8_t eht_bw, ucSupportedNss = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -228,15 +231,20 @@ static void ehtRlmFillCapIE(
 	prEhtCap->ucId = ELEM_ID_RESERVED;
 	prEhtCap->ucExtId = EID_EXT_EHT_CAPS;
 
-        eht_bw = _ehtGetBssBandBw(prAdapter, prBssInfo, prBssInfo->eBand);
+	eht_bw = _ehtGetBssBandBw(prAdapter, prBssInfo, prBssInfo->eBand);
 	ucSupportedNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
 
 	/* MAC capabilities */
 	EHT_RESET_MAC_CAP(prEhtCap->ucEhtMacCap);
 
-	SET_EHT_MAC_CAP_NSEP_PRI_ACCESS(prEhtCap->ucEhtMacCap);
-	SET_EHT_MAC_CAP_OM_CTRL(prEhtCap->ucEhtMacCap);
-	SET_EHT_MAC_CAP_TXOP_SHARING(prEhtCap->ucEhtMacCap);
+	/* NSEP: not support for the time being */
+	/* SET_EHT_MAC_CAP_NSEP_PRI_ACCESS(prEhtCap->ucEhtMacCap); */
+	/* OM_CTRL: default support for AP; configurable for STA */
+	if (IS_BSS_APGO(prBssInfo)) {
+		SET_EHT_MAC_CAP_OM_CTRL(prEhtCap->ucEhtMacCap);
+	}
+	/* TXOP_SHARING: not support */
+	/* SET_EHT_MAC_CAP_TXOP_SHARING(prEhtCap->ucEhtMacCap); */
 
 	/* PHY capabilities */
 	EHT_RESET_PHY_CAP(prEhtCap->ucEhtPhyCap);
@@ -257,7 +265,7 @@ static void ehtRlmFillCapIE(
 		else
 			phy_cap_1 |= DOT11BE_PHY_CAP_242_TONE_RU_WT_20M;
 	} else {
-		phy_cap_2 |= DOT11BE_PHY_CAP_PPE_THRLD_PRESENT;
+		/* phy_cap_2 |= DOT11BE_PHY_CAP_PPE_THRLD_PRESENT; */
 	}
 
 	if (eht_bw >= MAX_BW_80MHZ) {
@@ -286,7 +294,7 @@ static void ehtRlmFillCapIE(
 	}
 
 	phy_cap_1 |= DOT11BE_PHY_CAP_NDP_4X_EHT_LTF_3DOT2US_GI;
-        /* phy_cap_1 &= ~DOT11BE_PHY_CAP_PARTIAL_BW_UL_MU_MIMO; */
+	/* phy_cap_1 &= ~DOT11BE_PHY_CAP_PARTIAL_BW_UL_MU_MIMO; */
 	phy_cap_1 |= DOT11BE_PHY_CAP_SU_BFER;
 	phy_cap_1 |= DOT11BE_PHY_CAP_SU_BFEE;
 	phy_cap_1 |= DOT11BE_PHY_CAP_NG16_SU_FEEDBACK;
@@ -303,7 +311,7 @@ static void ehtRlmFillCapIE(
         phy_cap_2 |= DOT11BE_PHY_CAP_NON_TRIGED_CQI_FEEDBACK;
 	phy_cap_2 |= DOT11BE_PHY_CAP_TX_1024QAM_4096QAM_LE_242_TONE_RU;
 	phy_cap_2 |= DOT11BE_PHY_CAP_RX_1024QAM_4096QAM_LE_242_TONE_RU;
-	phy_cap_2 |= DOT11BE_PHY_CAP_PPE_THRLD_PRESENT;
+	/* phy_cap_2 |= DOT11BE_PHY_CAP_PPE_THRLD_PRESENT; */
 	phy_cap_2 |= DOT11BE_PHY_CAP_EHT_MU_PPDU_4X_EHT_LTF_DOT8US_GI;
 	SET_DOT11BE_PHY_CAP_MAX_EHT_LTF_NUM(phy_cap_2, 0x0B);
 	phy_cap_2 |= DOT11BE_PHY_CAP_EHT_DUP_6G;
@@ -316,7 +324,7 @@ static void ehtRlmFillCapIE(
 	/* phy_cap_2 &= ~DOT11BE_PHY_CAP_MU_BFER_320M; */
 
 	SET_DOT11BE_PHY_CAP_COMMON_NOMINAL_PKT_PAD(phy_cap_2,
-		COMMON_NOMINAL_PAD_0_US);
+		COMMON_NOMINAL_PAD_16_US);
 
 	SET_DOT11BE_PHY_CAP_MCS_15(phy_cap_2, eht_mcs15_mru);
 
@@ -326,10 +334,15 @@ static void ehtRlmFillCapIE(
 	eht_phy_cap.phy_capinfo_1 = (phy_cap_1);
 	eht_phy_cap.phy_capinfo_2 = (phy_cap_2);
 
-	memcpy(prEhtCap->ucEhtPhyCap, &eht_phy_cap, sizeof(eht_phy_cap));
+	memcpy(prEhtCap->ucEhtPhyCap, &phy_cap_1,
+		sizeof(phy_cap_1));
+	memcpy(prEhtCap->ucEhtPhyCap + 4, &phy_cap_2,
+		sizeof(phy_cap_2));
 
-        /* Set EHT MCS MAP & NSS */
-        if (eht_bw == MAX_BW_20MHZ) {
+	DBGLOG_MEM8(RLM, INFO, prEhtCap, IE_SIZE(prEhtCap));
+
+	/* Set EHT MCS MAP & NSS */
+	if (eht_bw == MAX_BW_20MHZ) {
 		uint8_t *prEhtSupportedBw20McsSet = NULL;
 
 		prEhtSupportedBw20McsSet =
@@ -340,7 +353,7 @@ static void ehtRlmFillCapIE(
 	} else {
 		uint8_t *prEhtSupportedBw80McsSet = NULL;
 
-	        if (eht_bw >= MAX_BW_80MHZ) {
+		if (eht_bw >= MAX_BW_80MHZ) {
 			prEhtSupportedBw80McsSet =
 				(((uint8_t *) prEhtCap) + u4OverallLen);
 			ehtRlmFillBW80MCSMap(
@@ -364,8 +377,11 @@ static void ehtRlmFillCapIE(
 			u4OverallLen += sizeof(
 				struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD);
 		}
-        }
-        /* Set EHT PPE Thresholds */
+	}
+	/* Set EHT PPE Thresholds */
+	if (phy_cap_2 & DOT11BE_PHY_CAP_PPE_THRLD_PRESENT) {
+		// TODO: add EHT PPE threshold
+	}
 
 	prEhtCap->ucLength = u4OverallLen - ELEM_HDR_LEN;
 	prMsduInfo->u2FrameLength += IE_SIZE(prEhtCap);
@@ -578,6 +594,11 @@ void ehtRlmRecOperation(
 			"HE_OP IE_LEN err(%d)!\n", IE_LEN(prEhtOp));
 		return;
 	}
+
+	// TODO: The format of EHT operation Information subfield is missing in spec D1.1
+	// assume receiving EHT BW320 if EHT operation present for testing purpose
+	prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_320;
+	DBGLOG(RLM, INFO, "assuming VHT channel width 320\n");
 
 	memcpy(prBssInfo->ucEhtOpParams, prEhtOp->ucEhtOpParams,
 		HE_OP_BYTE_NUM);

@@ -1293,6 +1293,10 @@
 #define CFG_SUPPORT_BW160 0
 #endif
 
+#ifndef CFG_SUPPORT_BW320
+#define CFG_SUPPORT_BW320 0
+#endif
+
 /*------------------------------------------------------------------------------
  * Direct Control for RF/PHY/BB/MAC for Manual Configuration via command/api
  *------------------------------------------------------------------------------

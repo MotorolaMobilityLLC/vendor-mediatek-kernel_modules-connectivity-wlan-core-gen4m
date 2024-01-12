@@ -1485,7 +1485,7 @@ enum BEACON_REPORT_DETAIL {
 #define VHT_OP_CHANNEL_WIDTH_80             1
 #define VHT_OP_CHANNEL_WIDTH_160            2
 #define VHT_OP_CHANNEL_WIDTH_80P80          3
-#define VHT_OP_CHANNEL_WIDTH_320            7
+#define VHT_OP_CHANNEL_WIDTH_320            4
 
 /*8.4.1.50 Operating Mode Field*/
 #define VHT_OP_MODE_CHANNEL_WIDTH                   BITS(0, 1)
@@ -1504,6 +1504,7 @@ enum BEACON_REPORT_DETAIL {
 #define VHT_OP_MODE_CHANNEL_WIDTH_40                1
 #define VHT_OP_MODE_CHANNEL_WIDTH_80                2
 #define VHT_OP_MODE_CHANNEL_WIDTH_160_80P80         3
+#define VHT_OP_MODE_CHANNEL_WIDTH_320               4
 
 /* 8.4.1.22 SM Power Control field*/
 #define HT_SM_POWER_SAVE_CONTROL_ENABLED            BIT(0)

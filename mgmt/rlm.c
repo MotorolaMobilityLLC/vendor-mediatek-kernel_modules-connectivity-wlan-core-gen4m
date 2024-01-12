@@ -2300,7 +2300,8 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	}
 
 	if (ucCurrentBandwidth > ucMaxBandwidth) {
-		DBGLOG(RLM, INFO, "Decreasse the BW to (%d)\n", ucMaxBandwidth);
+		DBGLOG(RLM, INFO, "Decreasse the BW from (%d) to (%d)\n",
+			ucCurrentBandwidth, ucMaxBandwidth);
 
 		if (ucMaxBandwidth <= MAX_BW_40MHZ) {
 			/*BW20 * BW40*/
@@ -2320,7 +2321,14 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 				/* modify S1 for Bandwidth 160 downgrade 80 case
 				 */
 				if (ucCurrentBandwidth == MAX_BW_160MHZ)
-					*pucS1 = rlmReviseChFreqS1(prBssInfo,
+					*pucS1 = rlmReviseChFreqS1_160to80(prBssInfo,
+							*pucPrimaryCh, *pucS1,
+							ucMaxBandwidth);
+			} else if (ucMaxBandwidth == MAX_BW_160MHZ) {
+				/* modify S1 for Bandwidth 320 downgrade 160 case
+				 */
+				if (ucCurrentBandwidth == MAX_BW_320MHZ)
+					*pucS1 = rlmReviseChFreqS1_320to160(prBssInfo,
 							*pucPrimaryCh, *pucS1,
 							ucMaxBandwidth);
 			}
@@ -2340,7 +2348,7 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-uint8_t rlmReviseChFreqS1(IN struct BSS_INFO *prBssInfo,
+uint8_t rlmReviseChFreqS1_160to80(IN struct BSS_INFO *prBssInfo,
 	IN uint8_t ucPrimaryCh, IN uint8_t ucOriginS1,
 	IN uint8_t ucMaxBandwidth)
 {
@@ -2409,6 +2417,45 @@ uint8_t rlmReviseChFreqS1(IN struct BSS_INFO *prBssInfo,
 			"Decreasse the BW160 to BW80, shift S1 to (%d)\n",
 			ucS1);
 	}
+	if (ucS1 != 0)
+		return ucS1;
+	else
+		return ucOriginS1;
+}
+
+uint8_t rlmReviseChFreqS1_320to160(IN struct BSS_INFO *prBssInfo,
+	IN uint8_t ucPrimaryCh, IN uint8_t ucOriginS1,
+	IN uint8_t ucMaxBandwidth)
+{
+	uint8_t ucS1 = 0;
+
+	/* BW320 only for 6G */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prBssInfo->eBand == BAND_6G) {
+		if ((ucPrimaryCh >= 1) && (ucPrimaryCh <= 29))
+			ucS1 = 15;
+		else if ((ucPrimaryCh >= 33) && (ucPrimaryCh <= 61))
+			ucS1 = 47;
+		else if ((ucPrimaryCh >= 65) && (ucPrimaryCh <= 93))
+			ucS1 = 79;
+		else if ((ucPrimaryCh >= 97) && (ucPrimaryCh <= 125))
+			ucS1 = 111;
+		else if ((ucPrimaryCh >= 129) && (ucPrimaryCh <= 157))
+			ucS1 = 143;
+		else if ((ucPrimaryCh >= 161) && (ucPrimaryCh <= 189))
+			ucS1 = 175;
+		else if ((ucPrimaryCh >= 193) && (ucPrimaryCh <= 221))
+			ucS1 = 207;
+		else
+			DBGLOG(RLM, ERROR,
+				"Check connect 160 downgrade (%d) case\n",
+				ucMaxBandwidth);
+		DBGLOG(RLM, ERROR,
+			"Decreasse the BW160 to BW80, shift S1 to (%d)\n",
+			ucS1);
+	}
+#endif
+
 	if (ucS1 != 0)
 		return ucS1;
 	else
@@ -6614,6 +6661,9 @@ static uint8_t rlmGetOpModeBwByVhtAndHtOpInfo(struct BSS_INFO *prBssInfo)
 	case VHT_OP_CHANNEL_WIDTH_160:
 	case VHT_OP_CHANNEL_WIDTH_80P80:
 		ucOpModeBw = VHT_OP_MODE_CHANNEL_WIDTH_160_80P80;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_320:
+		ucOpModeBw = VHT_OP_MODE_CHANNEL_WIDTH_320;
 		break;
 	default:
 		DBGLOG(RLM, WARN, "%s: unexpected VHT channel width: %d\n",
