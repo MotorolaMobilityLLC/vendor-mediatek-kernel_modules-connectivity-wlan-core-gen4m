@@ -1167,6 +1167,11 @@ void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info)
 			 txd_0->p_idx == P_IDX_LMAC ?
 				q_idx_lmac_str[q_idx] : q_idx_mcu_str[q_idx]);
 	DBGLOG(HAL, INFO, "\t\tTxByteCnt=%d\n", txd_0->TxByteCount);
+	DBGLOG(HAL, INFO, "\t\tIpChkSumOffload=%d\n", txd_0->IpChkSumOffload);
+	DBGLOG(HAL, INFO, "\t\tUdpTcpChkSumOffload=%d\n",
+						txd_0->UdpTcpChkSumOffload);
+	DBGLOG(HAL, INFO, "\t\tEthTypeOffset=%d\n", txd_0->EthTypeOffset);
+
 	DBGLOG(HAL, INFO, "\tTMAC_TXD_1:\n");
 	DBGLOG(HAL, INFO, "\t\twlan_idx=%d\n", txd_1->wlan_idx);
 	DBGLOG(HAL, INFO, "\t\tHdrFmt=%d(%s)\n",

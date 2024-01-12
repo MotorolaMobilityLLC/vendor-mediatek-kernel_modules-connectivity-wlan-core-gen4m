@@ -1489,6 +1489,25 @@ struct CMD_PS_PROFILE {
 	uint8_t aucReserved[2];
 };
 
+#if CFG_SUPPORT_LOWLATENCY_MODE
+/* CMD_ID_SET_LOW_LATENCY_MODE */
+struct LOW_LATENCY_MODE_SETTING {
+	u_int8_t fgEnable; /* Low Latency mode on/off */
+	u_int8_t fgTxDupDetect; /* Start/stop Tx dup detect */
+	u_int8_t fgTxDupCertQuery; /* Get Tx Dup Certificate */
+	uint8_t aucReserved[5];
+};
+
+struct CMD_LOW_LATENCY_MODE_HEADER {
+	uint8_t ucVersion;
+	uint8_t ucType;
+	uint8_t ucMagicCode;
+	uint8_t ucBufferLen;
+	struct LOW_LATENCY_MODE_SETTING rSetting;
+};
+#endif
+
+
 #if CFG_SUPPORT_P2P_RSSI_QUERY
 /* EVENT_LINK_QUALITY */
 struct EVENT_LINK_QUALITY_EX {
@@ -2810,6 +2829,19 @@ struct EXT_EVENT_MAX_AMSDU_LENGTH_UPDATE {
 	uint8_t ucAmsduLen;
 };
 
+struct EVENT_LOW_LATENCY_INFO {
+	/* DWORD_0 - Common Part */
+	uint8_t  ucEvtVer;
+	uint8_t  aucPadding0[1];
+	uint16_t u2EvtLen;
+
+	/* DWORD_1 - afterwards */
+	u_int8_t  fgTxDupCert;
+	u_int8_t  fgTxDupEnable;
+	uint8_t  aucPadding1[2];
+	uint8_t  aucPayload[1024];
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -3121,6 +3153,12 @@ void nicCmdEventSetAddKey(IN struct ADAPTER *prAdapter,
 void nicOidCmdTimeoutSetAddKey(IN struct ADAPTER *prAdapter,
 			       IN struct CMD_INFO *prCmdInfo);
 #endif
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
+		  IN struct WIFI_EVENT *prEvent);
+#endif
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

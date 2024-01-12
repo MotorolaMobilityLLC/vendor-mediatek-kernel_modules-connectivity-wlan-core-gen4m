@@ -3192,7 +3192,8 @@ void kalClearSecurityFrames(IN struct GLUE_INFO *prGlueInfo)
 	while (prQueueEntry) {
 		prCmdInfo = (struct CMD_INFO *) prQueueEntry;
 
-		if (prCmdInfo->eCmdType == COMMAND_TYPE_SECURITY_FRAME) {
+		if (prCmdInfo->eCmdType == COMMAND_TYPE_SECURITY_FRAME ||
+			prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME) {
 			if (prCmdInfo->pfCmdTimeoutHandler)
 				prCmdInfo->pfCmdTimeoutHandler(
 					prGlueInfo->prAdapter, prCmdInfo);
@@ -3257,7 +3258,8 @@ void kalClearSecurityFramesByBssIdx(IN struct GLUE_INFO
 		prMsduInfo = prCmdInfo->prMsduInfo;
 		fgFree = FALSE;
 
-		if (prCmdInfo->eCmdType == COMMAND_TYPE_SECURITY_FRAME
+		if ((prCmdInfo->eCmdType == COMMAND_TYPE_SECURITY_FRAME ||
+			prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME)
 		    && prMsduInfo) {
 			if (prMsduInfo->ucBssIndex == ucBssIndex)
 				fgFree = TRUE;
@@ -3454,6 +3456,78 @@ void kalClearCommandQueue(IN struct GLUE_INFO *prGlueInfo)
 	}
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is used to check use packet data into command Queue flow
+ *
+ * \param prAdapter     Pointer of prAdapter Structure
+ * \param prAdapter     Pointer of prAdapter Structure
+ * \retval is TRUE (run command Data path flow) or FALSE (not use)
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t kalIsCommandDataPath(IN struct ADAPTER
+				  *prAdapter, IN void *prPacket)
+{
+	struct sk_buff *skb = (struct sk_buff *)prPacket;
+
+	if (prAdapter->rWifiVar.ucLowLatencyCmdData == 0)
+		return FALSE;
+
+	if (!prAdapter->fgTxDupCertificate)
+		return FALSE;
+
+	if (!prAdapter->fgEnTxDupDetect)
+		return FALSE;
+
+	/* Only detect for special mark packet */
+	if (!prAdapter->rWifiVar.ucLowLatencyCmdDataAllPacket &&
+	    !(skb->mark & BIT(NIC_TX_SKB_DUP_DETECT_MARK_BIT))) {
+		DBGLOG_LIMITED(TX, TRACE,
+			"mark flag=[%x]\n", skb->mark);
+		return FALSE;
+	}
+
+	/* Not send special mark flag packets via command path */
+	if (GLUE_IS_PKT_FLAG_SET(prPacket)) {
+		DBGLOG_LIMITED(TX, TRACE,
+			"Packet flag=[%d]\n", GLUE_IS_PKT_FLAG_SET(prPacket));
+		return FALSE;
+	}
+
+	/* Only handle checksum calculated packets, must not enable
+	 * checksum offload for command data packet. Refer to
+	 * kalQueryTxChksumOffloadParam()
+	 */
+	if (skb->ip_summed != CHECKSUM_NONE) {
+		DBGLOG_LIMITED(TX, TRACE,
+			"Packet checksum not calculated, ip_summed=[%d]",
+			skb->ip_summed);
+		return FALSE;
+	}
+
+	if (prAdapter->tmTxDataInterval > 0 &&
+	    !CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+				prAdapter->tmTxDataInterval, 10)) {
+		DBGLOG_LIMITED(TX, TRACE, "Packet interval too close");
+		return FALSE;
+	}
+	GET_CURRENT_SYSTIME(&prAdapter->tmTxDataInterval);
+
+	DBGLOG_LIMITED(TX, INFO,
+	       "Change data to cmd data frame. Packet flag=[%d], ip_summed=[%d] mark=[%x]\n",
+		GLUE_IS_PKT_FLAG_SET(prPacket),
+		skb->ip_summed,
+		skb->mark);
+
+	DBGLOG_LIMITED(TX, INFO,
+	       "Change data to cmd data frame. Packet flag=[%d], ip_summed=[%d] mark=[%x]\n",
+		GLUE_IS_PKT_FLAG_SET(prPacket),
+		skb->ip_summed,
+		skb->mark);
+
+	return TRUE;
+}
+
 uint32_t kalProcessTxPacket(struct GLUE_INFO *prGlueInfo,
 			    struct sk_buff *prSkb)
 {
@@ -3475,7 +3549,19 @@ uint32_t kalProcessTxPacket(struct GLUE_INFO *prGlueInfo,
 		} else {
 			u4Status = WLAN_STATUS_RESOURCES;
 		}
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	/* Data frame use command path */
+	} else if (kalIsCommandDataPath(prGlueInfo->prAdapter,
+						(void *) prSkb)) {
+		u4Status = wlanProcessCmdDataFrame(prGlueInfo->prAdapter,
+					       (void *) prSkb);
+		if (u4Status == WLAN_STATUS_SUCCESS)
+			GLUE_INC_REF_CNT(
+				prGlueInfo->i4TxPendingSecurityFrameNum);
+
 	}
+#endif
 	/* Handle normal frame */
 	else
 		u4Status = wlanEnqueueTxPacket(prGlueInfo->prAdapter,
@@ -6443,8 +6529,10 @@ int kalMetRemoveProcfs(void)
 
 #if CFG_SUPPORT_DATA_STALL
 u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
-					enum ENUM_VENDOR_DRIVER_EVENT event,
-					uint8_t ucBssIdx)
+				uint32_t event,
+				uint16_t dataLen,
+				uint8_t ucBssIdx,
+				u_int8_t fgForceReport)
 {
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
@@ -6452,33 +6540,38 @@ u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
 	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
-	wdev = ((prAdapter->prGlueInfo)->prDevHandler)->ieee80211_ptr;
+	wdev = (wlanGetNetDev(prAdapter->prGlueInfo,
+		ucBssIdx))->ieee80211_ptr;
 
 	if (!wiphy || !wdev || !prWifiVar)
 		return -EINVAL;
 
-	if (prAdapter->tmReportinterval > 0 &&
-		!CHECK_FOR_TIMEOUT(kalGetTimeTick(),
-		prAdapter->tmReportinterval,
-		prWifiVar->u4ReportEventInterval*1000)) {
-		return -ETIME;
+	if (!fgForceReport) {
+		if (prAdapter->tmReportinterval > 0 &&
+			!CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+			prAdapter->tmReportinterval,
+			prWifiVar->u4ReportEventInterval*1000)) {
+			return -ETIME;
+		}
+		GET_CURRENT_SYSTIME(&prAdapter->tmReportinterval);
 	}
-	GET_CURRENT_SYSTIME(&prAdapter->tmReportinterval);
 
 	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
-		(uint16_t)(sizeof(uint8_t)*2),
+		dataLen,
 		WIFI_EVENT_DRIVER_ERROR, GFP_KERNEL);
-
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "%s allocate skb failed\n", __func__);
 		return -ENOMEM;
 	}
 
-	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_ERROR_REASON
-		, sizeof(uint8_t), &event) < 0) ||
-		unlikely(nla_put(skb, WIFI_ATTRIBUTE_BSS_INDEX
-			, sizeof(uint8_t), &ucBssIdx) < 0))
+	if (dataLen > 0 &&
+		unlikely(nla_put(skb, WIFI_ATTRIBUTE_ERROR_REASON
+		, dataLen, &event) < 0))
 		goto nla_put_failure;
+
+	DBGLOG(INIT, ERROR, "DPP event to cfg80211[id:%d][len:%d][F:%d]:%d\n",
+		WIFI_EVENT_DRIVER_ERROR,
+		dataLen, fgForceReport, event);
 
 	cfg80211_vendor_event(skb, GFP_KERNEL);
 	return TRUE;
@@ -7299,7 +7392,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 		/* test mode event */
 		if (prWifiVar->u4ReportEventInterval == 0)
 			KAL_REPORT_ERROR_EVENT(prAdapter,
-				EVENT_TEST_MODE, 0);
+				EVENT_TEST_MODE, 0, 0,  FALSE);
 #endif
 	prPerMonitor->u4TarPerfLevel = PERF_MON_TP_MAX_THRESHOLD;
 	for (u4Idx = 0; u4Idx < PERF_MON_TP_MAX_THRESHOLD;
