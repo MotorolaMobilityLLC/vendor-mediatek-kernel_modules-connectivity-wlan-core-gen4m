@@ -189,6 +189,11 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 					VHT_OP_CHANNEL_WIDTH_20_40;
 			}
 		}
+	} else if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_HE) {
+		ucMaxBw = cnmOpModeGetMaxBw(prAdapter,
+			prBssInfo);
+
+		rlmFillVhtOpInfoByBssOpBw(prBssInfo, ucMaxBw);
 	}
 
 #if (CFG_SUPPORT_802_11AX == 1)
