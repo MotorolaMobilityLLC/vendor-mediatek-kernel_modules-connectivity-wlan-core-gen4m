@@ -2974,9 +2974,7 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 				p2pFuncKeepOnConnection(prAdapter,
 					prAdapter->aprBssInfo
 						[prP2pRoleFsmInfo->ucBssIndex],
-					prConnReqInfo,
-					&prP2pRoleFsmInfo->rChnlReqInfo,
-					&prP2pRoleFsmInfo->rScanReqInfo);
+					prP2pRoleFsmInfo);
 			if ((prP2pJoinInfo->prTargetBssDesc) == NULL) {
 				eNextState = P2P_ROLE_STATE_SCAN;
 			} else {
