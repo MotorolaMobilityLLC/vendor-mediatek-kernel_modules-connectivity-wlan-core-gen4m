@@ -26,7 +26,7 @@ nanDevInit(IN struct ADAPTER *prAdapter, uint8_t ucIdx) {
 	}
 
 	prnanBssInfo = cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_NAN,
-					    MLD_GROUP_NONE, 0, FALSE);
+					    MLD_GROUP_NONE, FALSE);
 	prNANSpecInfo =
 		prAdapter->rWifiVar.aprNanSpecificBssInfo[ucIdx];
 	prNANInfo = prAdapter->prGlueInfo->aprNANDevInfo[ucIdx];
