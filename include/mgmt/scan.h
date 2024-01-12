@@ -819,6 +819,8 @@ extern const char aucScanLogPrefix[][SCAN_LOG_PREFIX_MAX_LEN];
 /*----------------------------------------------------------------------------*/
 /* Routines in scan.c                                                         */
 /*----------------------------------------------------------------------------*/
+void scnFreeAllPendingScanRquests(IN struct ADAPTER *prAdapter);
+
 void scnInit(IN struct ADAPTER *prAdapter);
 
 void scnUninit(IN struct ADAPTER *prAdapter);
