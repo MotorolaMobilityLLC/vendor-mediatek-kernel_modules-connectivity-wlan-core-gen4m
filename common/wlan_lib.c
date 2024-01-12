@@ -8076,10 +8076,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4FpgaSpeedFactor,	"FpgaSpeedFactor", 0);
 #endif
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	INIT_UINT(prWifiVar->fgEnableMawd, "EnableMawd", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgEnableMawd, "EnableMawd", FEATURE_ENABLED);
 	INIT_UINT(prWifiVar->fgEnableMawdTx, "EnableMawdTx", FEATURE_DISABLED);
 	INIT_UINT(prWifiVar->fgEnableSdo, "EnableSdo", FEATURE_ENABLED);
-	INIT_UINT(prWifiVar->fgEnableRro, "EnableRro", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgEnableRro, "EnableRro", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgEnableRroDbg, "EnableRroDbg", FEATURE_ENABLED);
 
 	if (IS_FEATURE_FORCE_ENABLED(prWifiVar->fgEnableMawd))
 		prWifiVar->fgEnableMawd = FEATURE_ENABLED;
