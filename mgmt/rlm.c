@@ -984,7 +984,11 @@ static void rlmFillHtCapIE(struct ADAPTER *prAdapter,
 	ASSERT(prBssInfo);
 	ASSERT(prMsduInfo);
 
-	fg40mAllowed = prBssInfo->fgAssoc40mBwAllowed;
+	if (IS_BSS_APGO(prBssInfo))
+		fg40mAllowed = prBssInfo->fgAssoc40mBwAllowed;
+	else
+		fg40mAllowed = cnmGetBssMaxBw(prAdapter,
+			prBssInfo->ucBssIndex) >= MAX_BW_40MHZ;
 
 	prHtCap = (struct IE_HT_CAP *)(((uint8_t *)prMsduInfo->prPacket) +
 				       prMsduInfo->u2FrameLength);
@@ -1142,7 +1146,12 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
 
-	fg40mAllowed = prBssInfo->fgAssoc40mBwAllowed;
+	if (IS_BSS_APGO(prBssInfo))
+		fg40mAllowed = prBssInfo->fgAssoc40mBwAllowed;
+	else
+		fg40mAllowed = cnmGetBssMaxBw(prAdapter,
+			prBssInfo->ucBssIndex) >= MAX_BW_40MHZ;
+
 	if (IS_BSS_AIS(prBssInfo)) {
 		prConnSettings =
 			aisGetConnSettings(prAdapter, prBssInfo->ucBssIndex);
