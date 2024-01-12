@@ -4604,6 +4604,13 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 
 	/* do nothing if wifi is not ready */
 	if (prGlueInfo->fgRxTaskReady == FALSE) {
+		if (GLUE_GET_REF_CNT(
+			prGlueInfo->u4RxTaskScheduleCnt) == 1)
+			GLUE_DEC_REF_CNT(prGlueInfo->u4RxTaskScheduleCnt);
+		else
+			DBGLOG(INIT, ERROR, "unexpect RxTaskSchdule Cnt: %u\n",
+				GLUE_GET_REF_CNT(
+				prGlueInfo->u4RxTaskScheduleCnt));
 		DBGLOG_LIMITED(INIT, INFO,
 		       "Not ready yet, ignore pending interrupt\n");
 		return;
