@@ -1329,10 +1329,25 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 	} else if (pParamConn->pucBssidHint) {
 		if (!EQUAL_MAC_ADDR(aucZeroMacAddr, pParamConn->pucBssidHint)
 			&& IS_UCAST_MAC_ADDR(pParamConn->pucBssidHint)) {
-			prConnSettings->eConnectionPolicy =
-				CONNECT_BY_BSSID_HINT;
-			COPY_MAC_ADDR(prConnSettings->aucBSSIDHint,
-				pParamConn->pucBssidHint);
+			if (ucBssIndex <
+				prAdapter->rWifiVar.u4AisRoamingNumber) {
+				prConnSettings->eConnectionPolicy =
+					CONNECT_BY_BSSID_HINT;
+				COPY_MAC_ADDR(prConnSettings->aucBSSIDHint,
+					pParamConn->pucBssidHint);
+			} else {
+				prConnSettings->eConnectionPolicy =
+					CONNECT_BY_BSSID;
+				prConnSettings->fgIsConnByBssidIssued = TRUE;
+				COPY_MAC_ADDR(prConnSettings->aucBSSID,
+						pParamConn->pucBssidHint);
+				if (EQUAL_MAC_ADDR(
+				    prCurrBssid->arMacAddress,
+				    pParamConn->pucBssidHint))
+					fgEqualBssid = TRUE;
+				DBGLOG(INIT, INFO,
+					"Force to use bssid (%d)", ucBssIndex);
+			}
 		}
 	} else
 		DBGLOG(INIT, INFO, "No Bssid set\n");
