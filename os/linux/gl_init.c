@@ -8178,7 +8178,8 @@ static void wlanRemove(void)
 
 #if CFG_SUPPORT_PERSIST_NETDEV
 	for (i = 0; i < KAL_AIS_NUM; i++) {
-		if (gprWdev[i] && gprWdev[i]->netdev) {
+		if (gprWdev[i] && gprWdev[i]->netdev &&
+		    gprWdev[i]->netdev->reg_state == NETREG_REGISTERED) {
 			netif_device_detach(gprWdev[i]->netdev);
 			if (i != AIS_DEFAULT_INDEX) {
 #if (CFG_TESTMODE_FWDL_SUPPORT == 1)
