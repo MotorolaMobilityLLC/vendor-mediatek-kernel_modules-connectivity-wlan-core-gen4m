@@ -771,6 +771,10 @@ int mtk_cfg80211_vendor_set_band(struct wiphy *wiphy,
 		band = BAND_5G;
 	else if (setBand == QCA_SETBAND_2G)
 		band = BAND_2G4;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (setBand == QCA_SETBAND_6G)
+		band = BAND_6G;
+#endif
 	else
 		band = BAND_NULL;
 
