@@ -476,10 +476,6 @@ struct GLUE_INFO {
 	struct GL_P2P_INFO *prP2PInfo[KAL_P2P_NUM];
 #endif
 
-#if CFG_SUPPORT_SNIFFER
-	u_int8_t fgIsEnableMon;
-#endif
-
 	u_int8_t fgIsInSuspendMode;
 
 	/* registry info */
@@ -503,6 +499,20 @@ struct GLUE_INFO {
 	/* not necessary for built */
 	/* TODO: os-related */
 	uint32_t u4ReadyFlag;	/* check if card is ready */
+
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	uint8_t fgIsEnableMon;
+	uint8_t ucPriChannel;
+	uint8_t ucChannelS1;
+	uint8_t ucChannelS2;
+	uint8_t ucBand;
+	uint8_t ucChannelWidth;
+	uint8_t ucSco;
+	uint8_t ucBandIdx;
+	uint8_t fgDropFcsErrorFrame;
+	uint16_t u2Aid;
+	uint32_t u4AmpduRefNum;
+#endif
 #if 0
 
 	/* Device */
@@ -731,12 +741,6 @@ struct GLUE_INFO {
 #if CFG_MET_PACKET_TRACE_SUPPORT
 	u_int8_t fgMetProfilingEn;
 	uint16_t u2MetUdpPort;
-#endif
-
-#if CFG_SUPPORT_SNIFFER
-	u_int8_t fgIsEnableMon;
-	struct net_device *prMonDevHandler;
-	struct work_struct monWork;
 #endif
 
 	int32_t i4RssiCache;

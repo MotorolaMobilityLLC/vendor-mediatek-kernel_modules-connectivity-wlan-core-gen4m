@@ -286,6 +286,12 @@ ifeq ($(WIFI_ENABLE_GCOV), y)
     GCOV_PROFILE := y
 endif
 
+ifeq ($(SNIFFER_RADIOTAP), y)
+    ccflags-y += -DCFG_SUPPORT_SNIFFER_RADIOTAP
+    ccflags-y += -DCFG_SUPPORT_BW160
+    ccflags-y += -DCFG_SUPPORT_PDMA_SCATTER
+endif
+
 ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=3
 
 ifneq ($(filter 6765, $(WLAN_CHIP_ID)),)
@@ -610,7 +616,8 @@ NIC_OBJS := 	$(NIC_DIR)nic.o \
 		$(NIC_DIR)cmd_buf.o \
 		$(NIC_DIR)que_mgt.o \
 		$(NIC_DIR)nic_cmd_event.o \
-		$(NIC_DIR)nic_umac.o
+		$(NIC_DIR)nic_umac.o \
+		$(NIC_DIR)radiotap.o
 
 ifeq ($(CONFIG_MTK_WIFI_UNIFIED_COMMND_SUPPORT), y)
 NIC_OBJS += $(NIC_DIR)nic_uni_cmd_event.o
