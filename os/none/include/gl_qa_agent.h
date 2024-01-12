@@ -337,6 +337,7 @@ struct PARAM_RX_STAT {
 	struct TESTMODE_RX_STAT_USER_EXT1 rInfoUserExt1[UNI_TM_MAX_USER_NUM];
 };
 
+/* do not re-order for FW compatible */
 struct TESTMODE_CAP {
 	uint8_t version;/*0*/
 	uint8_t support_mimo;
@@ -349,7 +350,12 @@ struct TESTMODE_CAP {
 	uint8_t dbdc_band0_supported_band;
 	uint8_t dbdc_band1_supported_band;
 	uint8_t mimo_band1_supported_band;/*10*/
-	uint8_t reserved[21];
+
+	uint8_t support_tbtc;
+	uint8_t tbtc_band2_supported_band;
+	uint8_t tbtc_band3_supported_band;
+
+	uint8_t reserved[18];
 };
 
 extern struct TESTMODE_CAP g_HqaCap;

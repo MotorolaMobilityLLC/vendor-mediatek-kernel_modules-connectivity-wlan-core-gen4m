@@ -4545,15 +4545,17 @@ uint32_t ServiceWlanOid(void *winfos,
 		if (g_HqaCap.version > 0) {
 			if (prTestWinfo->dbdc_mode == TEST_DBDC_DISABLE) {
 				/* Chips which support MIMO/DBDC */
-				/* band0 (2.4G+5G+6G) */
 				capability->ph_cap.channel_band_dbdc =
 				g_HqaCap.mimo_band0_supported_band |
 				(g_HqaCap.mimo_band1_supported_band << 16);
 			} else {
-				/* band0 (5G+6G) band1 (2.4G+5G+6G) */
 				capability->ph_cap.channel_band_dbdc =
 				g_HqaCap.dbdc_band0_supported_band |
 				(g_HqaCap.dbdc_band1_supported_band << 16);
+
+				capability->ph_cap.channel_band_dbdc_ext =
+				g_HqaCap.tbtc_band2_supported_band |
+				(g_HqaCap.tbtc_band3_supported_band << 16);
 			}
 		} else {
 			/* Chips which only support DBDC */
