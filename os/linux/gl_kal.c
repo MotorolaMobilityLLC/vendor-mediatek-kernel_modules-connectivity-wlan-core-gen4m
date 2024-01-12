@@ -15004,6 +15004,10 @@ static int get_connsys_thermal_temp(void *data, int *temp)
 	uint32_t status = WLAN_STATUS_SUCCESS;
 	u_int8_t fgCache = FALSE;
 
+	/* Acquire Wi-Fi lock first to prevent from the case
+	 * that this function is called during Wi-Fi off.
+	 */
+	wfsys_lock();
 	if (!wlanIsDriverReady(glue,
 			       WLAN_DRV_READY_CHECK_WLAN_ON)) {
 		status = WLAN_STATUS_FAILURE;
@@ -15044,7 +15048,7 @@ exit:
 		sensor->name,
 		fgCache,
 		*temp);
-
+	wfsys_unlock();
 	return 0;
 }
 
