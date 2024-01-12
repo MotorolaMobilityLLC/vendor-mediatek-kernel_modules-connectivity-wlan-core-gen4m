@@ -33,7 +33,8 @@ struct EMI_MEM_INFO {
 	phys_addr_t pa;
 	void *va;
 	uint32_t size;
-	u_int8_t initialized;
+	uint8_t initialized;
+	uint8_t isReqMemRegSuccess;
 };
 
 struct mt66xx_chip_info;

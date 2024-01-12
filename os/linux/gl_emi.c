@@ -185,16 +185,16 @@ int32_t emi_mem_init(struct mt66xx_chip_info *chip, void *dev)
 
 	if (emi_is_remap_type(emi->type)) {
 		struct resource *res;
-
+		emi->isReqMemRegSuccess = FALSE;
 		res = request_mem_region(emi->pa, emi->size, EMI_NAME);
 		if (!res) {
-			DBGLOG(HAL, ERROR,
+			DBGLOG(HAL, WARN,
 				"request_mem_region failed, pa(0x%llx) size(0x%x) name(%s)\n",
 				(uint64_t)emi->pa,
 				emi->size,
 				EMI_NAME);
-			ret = -EBUSY;
-			goto exit;
+		} else {
+			emi->isReqMemRegSuccess = TRUE;
 		}
 		emi->va = ioremap(emi->pa, emi->size);
 	}
@@ -246,7 +246,8 @@ void emi_mem_uninit(struct mt66xx_chip_info *chip, void *dev)
 	default:
 		if (emi_is_remap_type(emi->type)) {
 			iounmap(emi->va);
-			release_mem_region(emi->pa, emi->size);
+			if (emi->isReqMemRegSuccess)
+				release_mem_region(emi->pa, emi->size);
 		}
 		break;
 	}
