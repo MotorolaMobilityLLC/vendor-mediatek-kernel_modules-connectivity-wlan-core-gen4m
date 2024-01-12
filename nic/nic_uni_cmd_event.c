@@ -10199,6 +10199,7 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 	uint8_t fail_cnt = 0;
 	uint8_t bss_idx = MAX_BSSID_NUM + 1;
 	uint8_t req_type = CH_REQ_TYPE_NUM;
+	uint8_t s1 = 0;
 
 	DBGLOG_MEM8(CNM, TRACE, data, data_len);
 
@@ -10228,6 +10229,7 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 			/* for CH_GRANT_INFO */
 			bss_idx = grant->ucBssIndex;
 			req_type = grant->ucReqType;
+			s1 = grant->ucRfCenterFreqSeg1;
 
 			nicUniUpdateMbmcIdx(ad, grant->ucBssIndex,
 				grant->ucDBDCBand);
@@ -10279,7 +10281,32 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 				 req_type == CH_REQ_TYPE_GO_START_BSS)) {
 				prBssInfo->ucGrantTxNss = info->ucTxNss;
 				prBssInfo->ucGrantRxNss = info->ucRxNss;
-				prBssInfo->ucGrantBW = info->ucChannelWidth;
+
+				switch (info->ucChannelWidth) {
+				case UNI_CMD_CNM_CHANNEL_WIDTH_20_40MHZ:
+					prBssInfo->ucGrantBW = MAX_BW_20MHZ;
+					break;
+				case UNI_CMD_CNM_CHANNEL_WIDTH_80MHZ:
+					prBssInfo->ucGrantBW = MAX_BW_80MHZ;
+					break;
+				case UNI_CMD_CNM_CHANNEL_WIDTH_160MHZ:
+					prBssInfo->ucGrantBW = MAX_BW_160MHZ;
+					break;
+				case UNI_CMD_CNM_CHANNEL_WIDTH_80P80MHZ:
+					prBssInfo->ucGrantBW = MAX_BW_80_80_MHZ;
+					break;
+				case UNI_CMD_CNM_CHANNEL_WIDTH_320MHZ:
+					prBssInfo->ucGrantBW =
+						rlmGetVhtOpBw320ByS1(s1) ==
+						VHT_OP_CHANNEL_WIDTH_320_1 ?
+						MAX_BW_320_1MHZ :
+						MAX_BW_320_2MHZ;
+					break;
+				default:
+					prBssInfo->ucGrantBW = MAX_BW_20MHZ;
+				break;
+				}
+
 				DBGLOG(CNM, INFO,
 					"Channel granted TxNss = %d, RxNss = %d, BW = %d\n",
 					prBssInfo->ucGrantTxNss,

@@ -2387,6 +2387,9 @@ uint32_t nicDeactivateNetworkEx(struct ADAPTER *prAdapter,
 				       (uint8_t *)&rCmdActivateCtrl, NULL, 0);
 
 	if (fgClearStaRec) {
+		prBssInfo->ucGrantTxNss = 0;
+		prBssInfo->ucGrantRxNss = 0;
+		prBssInfo->ucGrantBW = MAX_BW_UNKNOWN;
 		prBssInfo->eHwBandIdx = ENUM_BAND_AUTO;
 		prBssInfo->eBackupHwBandIdx = ENUM_BAND_AUTO;
 

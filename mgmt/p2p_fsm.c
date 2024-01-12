@@ -164,13 +164,6 @@ void p2pFsmRunEventChGrant(struct ADAPTER *prAdapter,
 			prAdapter, prP2pBssInfo->u4PrivateData);
 		DBGLOG(P2P, TRACE, "P2P Run Event Channel Grant\n");
 
-#if ((CFG_SISO_SW_DEVELOP == 1) || (CFG_SUPPORT_SPE_IDX_CONTROL == 1))
-		/* Driver record granted CH in BSS info */
-		prP2pBssInfo->fgIsGranted = TRUE;
-		prP2pBssInfo->eBandGranted = prMsgChGrant->eRfBand;
-		prP2pBssInfo->ucPrimaryChannelGranted =
-			prMsgChGrant->ucPrimaryChannel;
-#endif
 #if CFG_ENABLE_CSA_BLOCK_SCAN
 		if (p2pFuncIsCsaBlockScan(prAdapter) == TRUE) {
 			cnmTimerStopTimer(prAdapter,

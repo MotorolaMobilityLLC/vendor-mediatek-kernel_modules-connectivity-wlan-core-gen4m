@@ -792,9 +792,6 @@ void cnmChMngrAbortPrivilege(struct ADAPTER *prAdapter,
 	struct MSG_CH_ABORT *prMsgChAbort;
 	struct CMD_CH_PRIVILEGE *prCmdBody;
 	uint32_t rStatus;
-#if CFG_SISO_SW_DEVELOP
-	struct BSS_INFO *prBssInfo;
-#endif
 #if CFG_SUPPORT_DBDC
 	struct LINK_ENTRY *prLinkEntry_pendingMsg;
 	struct MSG_CH_REQ *prPendingMsg;
@@ -886,15 +883,6 @@ void cnmChMngrAbortPrivilege(struct ADAPTER *prAdapter,
 				     );
 
 	/* ASSERT(rStatus == WLAN_STATUS_PENDING); */
-
-#if CFG_SISO_SW_DEVELOP
-	prBssInfo =
-		prAdapter->aprBssInfo[prMsgChAbort->ucBssIndex];
-	/* Driver clear granted CH in BSS info */
-	prBssInfo->fgIsGranted = FALSE;
-	prBssInfo->eBandGranted = BAND_NULL;
-	prBssInfo->ucPrimaryChannelGranted = 0;
-#endif
 
 	cnmMemFree(prAdapter, prCmdBody);
 	cnmMemFree(prAdapter, prMsgHdr);

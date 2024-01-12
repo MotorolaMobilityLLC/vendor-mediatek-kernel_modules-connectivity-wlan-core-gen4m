@@ -2232,6 +2232,14 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 			prBssDesc->u4RsnSelectedAKMSuite;
 		prAisBssInfo->eBand = prBssDesc->eBand;
 
+		/* backup and reset grant NSS/BW */
+		prAisBssInfo->ucBackupGrantTxNss = prAisBssInfo->ucGrantTxNss;
+		prAisBssInfo->ucGrantTxNss = 0;
+		prAisBssInfo->ucBackupGrantRxNss = prAisBssInfo->ucGrantRxNss;
+		prAisBssInfo->ucGrantRxNss = 0;
+		prAisBssInfo->ucBackupGrantBW = prAisBssInfo->ucGrantBW;
+		prAisBssInfo->ucGrantBW = MAX_BW_UNKNOWN;
+
 #if CFG_SUPPORT_REPLAY_DETECTION
 		kalMemZero(&prAisBssInfo->rDetRplyInfo,
 			sizeof(struct GL_DETECT_REPLAY_INFO));
@@ -4080,6 +4088,10 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 	eRfChannelWidth = prBssDesc->eChannelWidth;
 	ucRfCenterFreqSeg1 = nicGetS1(prBssDesc->eBand, ucPrimaryChannel,
 		eRfChannelWidth);
+
+	prBssInfo->ucGrantTxNss = prBssInfo->ucBackupGrantTxNss;
+	prBssInfo->ucGrantRxNss = prBssInfo->ucBackupGrantRxNss;
+	prBssInfo->ucGrantBW = prBssInfo->ucBackupGrantBW;
 
 	rlmReviseMaxBw(ad, prBssInfo->ucBssIndex, &eRfSco, &eRfChannelWidth,
 		&ucRfCenterFreqSeg1, &ucPrimaryChannel);
@@ -6485,13 +6497,6 @@ void aisFsmRunEventChGrant(struct ADAPTER *prAdapter,
 	prAisSpecificBssInfo =
 		aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
-
-#if CFG_SISO_SW_DEVELOP
-	/* Driver record granted CH in BSS info */
-	prAisBssInfo->fgIsGranted = TRUE;
-	prAisBssInfo->eBandGranted = prMsgChGrant->eRfBand;
-	prAisBssInfo->ucPrimaryChannelGranted = prMsgChGrant->ucPrimaryChannel;
-#endif
 
 	/* 1. free message */
 	cnmMemFree(prAdapter, prMsgHdr);

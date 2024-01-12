@@ -518,12 +518,12 @@ struct BSS_INFO {
 	uint32_t u4CoexPhyRateLimit;
 	enum ENUM_COEX_MODE eCoexMode;
 
-	u_int8_t fgIsGranted;
-	enum ENUM_BAND eBandGranted;
-	uint8_t ucPrimaryChannelGranted;
 	uint8_t ucGrantTxNss;
 	uint8_t ucGrantRxNss;
 	uint8_t ucGrantBW;
+	uint8_t ucBackupGrantTxNss;
+	uint8_t ucBackupGrantRxNss;
+	uint8_t ucBackupGrantBW;
 	struct PARAM_CUSTOM_ACL rACL;
 #if CFG_SUPPORT_802_11W
 	/* AP PMF */

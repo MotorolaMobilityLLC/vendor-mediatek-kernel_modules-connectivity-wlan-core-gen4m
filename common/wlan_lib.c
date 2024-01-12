@@ -12072,10 +12072,7 @@ wlanGetSpeIdx(struct ADAPTER *prAdapter,
 	 */
 	if (prAdapter->chip_info->eDefaultDbdcMode == ENUM_DBDC_MODE_STATIC ||
 	    !prAdapter->rWifiVar.fgDbDcModeEn) {
-		if (prBssInfo->fgIsGranted)
-			eBand = prBssInfo->eBandGranted;
-		else
-			eBand = prBssInfo->eBand;
+		eBand = prBssInfo->eBand;
 
 		if (eBand == BAND_2G4) {
 			if (IS_WIFI_2G4_SISO(prAdapter)) {
@@ -12135,9 +12132,9 @@ wlanGetSpeIdx(struct ADAPTER *prAdapter,
 				eWfPathFavor);
 	}
 	DBGLOG(INIT, TRACE,
-		"SpeIdx:%d,D:%d,G=%d,RfBand=%d,Bss=%d,HwBand=%d,BkHwBand=%d\n",
+		"SpeIdx:%d,D:%d,RfBand=%d,Bss=%d,HwBand=%d,BkHwBand=%d\n",
 		ucRetValSpeIdx, prAdapter->rWifiVar.fgDbDcModeEn,
-		prBssInfo->fgIsGranted, eBand, ucBssIndex,
+		eBand, ucBssIndex,
 		prBssInfo->eHwBandIdx, prBssInfo->eBackupHwBandIdx);
 #endif
 	return ucRetValSpeIdx;
@@ -12263,10 +12260,7 @@ wlanGetSupportNss(struct ADAPTER *prAdapter,
 	 * depend 2.4G/5G support SISO/MIMO
 	 * retrun accurate value
 	 */
-	if (prBssInfo->fgIsGranted)
-		eBand = prBssInfo->eBandGranted;
-	else
-		eBand = prBssInfo->eBand;
+	eBand = prBssInfo->eBand;
 
 	if ((eBand == BAND_2G4) && IS_WIFI_2G4_SISO(prAdapter))
 		ucRetValNss = 1;
@@ -12276,8 +12270,8 @@ wlanGetSupportNss(struct ADAPTER *prAdapter,
 	else if ((eBand == BAND_6G) && IS_WIFI_6G_SISO(prAdapter))
 		ucRetValNss = 1;
 #endif
-	DBGLOG(INIT, TRACE, "Nss=%d,G=%d,B=%d,Bss=%d\n",
-	       ucRetValNss, prBssInfo->fgIsGranted, eBand, ucBssIndex);
+	DBGLOG(INIT, TRACE, "Nss=%d,B=%d,Bss=%d\n",
+	       ucRetValNss, eBand, ucBssIndex);
 #endif
 
 	return ucRetValNss;
