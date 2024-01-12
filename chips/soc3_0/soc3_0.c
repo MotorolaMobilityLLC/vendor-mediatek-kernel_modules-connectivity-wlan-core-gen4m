@@ -1202,10 +1202,11 @@ void soc3_0_CheckBusHangUT(void)
 static void soc3_0_DumpMemory32(uint32_t *pu4StartAddr,
 		  uint32_t u4Count, char *info)
 {
-#define ONE_LINE_MAX_COUNT 16
+#define ONE_LINE_MAX_COUNT	16
+#define TMP_BUF_SZ			20
 	uint32_t i, endCount;
 	char buf[ONE_LINE_MAX_COUNT*10];
-	char tmp[20];
+	char tmp[TMP_BUF_SZ] = {'\0'};
 
 	ASSERT(pu4StartAddr);
 
@@ -1213,7 +1214,7 @@ static void soc3_0_DumpMemory32(uint32_t *pu4StartAddr,
 
 	while (u4Count > 0) {
 
-		sprintf(buf, "%08x", pu4StartAddr[0]);
+		snprintf(buf, TMP_BUF_SZ, "%08x", pu4StartAddr[0]);
 
 		if (u4Count > ONE_LINE_MAX_COUNT)
 			endCount = ONE_LINE_MAX_COUNT;
@@ -1221,8 +1222,8 @@ static void soc3_0_DumpMemory32(uint32_t *pu4StartAddr,
 			endCount = u4Count;
 
 		for (i = 1; i < endCount; i++) {
-			sprintf(tmp, " %08x", pu4StartAddr[i]);
-			strcat(buf, tmp);
+			snprintf(tmp, TMP_BUF_SZ, " %08x", pu4StartAddr[i]);
+			strncat(buf, tmp, strlen(tmp));
 		}
 
 		LOG_FUNC("%s\n", buf);
@@ -1286,6 +1287,8 @@ static void soc3_0_DumpPcLrLog(struct ADAPTER *prAdapter)
 
 	DBGLOG(HAL, LOUD,
 		"Host_CSR - dump PC log / LR log");
+
+	memset(log, 0, HANG_PC_LOG_NUM);
 
 	/* PC log
 	* dbg_pc_log_sel	Write	0x1806_0090 [7:2]	6'h20
@@ -1367,6 +1370,8 @@ static void soc3_0_DumpN10CoreReg(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, LOUD,
 		"Host_CSR - read N10 core register");
 
+	memset(log, 0, HANG_N10_CORE_LOG_NUM);
+
 	u4Cr = 0x18060090;
 	RegValue = 0x00002000;
 	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
@@ -1405,6 +1410,8 @@ static void soc3_0_DumpOtherCr(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, LOUD,
 		"Host_CSR - mailbox and other CRs");
 
+	memset(log, 0, HANG_OTHER_LOG_NUM);
+
 	for (i = 0, u4Cr = 0x18060260; i < HANG_OTHER_LOG_NUM; i++) {
 		soc3_0_CrRead(prAdapter, u4Cr, &log[i]);
 
@@ -1425,6 +1432,8 @@ static void soc3_0_DumpSpecifiedWfTop(struct ADAPTER *prAdapter)
 
 	DBGLOG(HAL, LOUD,
 		"Host_CSR - specified WF TOP monflg on");
+
+	memset(log, 0, HANG_TOP_LOG_NUM);
 
 /* 0x1806009C[28]=1	write	enable wf_mcu_misc */
 
@@ -1708,7 +1717,7 @@ void soc3_0_DumpPwrStatedebuglog(void)
 int wf_pwr_on_consys_mcu(void)
 {
 	int check;
-	int value;
+	int value = 0;
 	int ret = 0;
 	unsigned int polling_count;
 
