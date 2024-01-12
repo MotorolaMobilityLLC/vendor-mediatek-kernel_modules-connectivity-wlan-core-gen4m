@@ -39,7 +39,7 @@ ifeq ($(WLAN_BUILD_COMMON), true)
 	WLAN_CHIP_ID := 6855
 	WIFI_CHIP := SOC2_1X1
 	WIFI_IP_SET := 1
-	CONNAC_VER :=
+	CONNAC_VER := 1_0
 	WIFI_NAME := wlan_drv_gen4m_6855
 	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi.ko
 	include $(LOCAL_PATH)/build_wlan_drv.mk
@@ -49,10 +49,11 @@ ifeq ($(WLAN_BUILD_COMMON), true)
 	WIFI_CHIP := BELLWETHER
 	CONNAC_VER := 3_0
 	WIFI_HIF := pcie
-	WIFI_WMT := n
+	WIFI_WMT := y
 	WIFI_EMI := n
 	WIFI_NAME := wlan_drv_gen4m_bellwether
-	WIFI_CHRDEV_MODULE :=
+	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi_connac3.ko
+	CONFIG_MTK_PLATFORM := mt6983
 	include $(LOCAL_PATH)/build_wlan_drv.mk
 else
 	WIFI_NAME := wlan_drv_gen4m

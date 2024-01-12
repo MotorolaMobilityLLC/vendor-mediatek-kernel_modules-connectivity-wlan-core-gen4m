@@ -1061,7 +1061,7 @@ int connac3x_get_rx_rate_info(
 
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 void fw_log_bug_hang_register(void *);
 #endif
 

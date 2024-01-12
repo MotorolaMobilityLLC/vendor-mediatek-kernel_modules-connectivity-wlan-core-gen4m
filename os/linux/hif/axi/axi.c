@@ -349,94 +349,6 @@ int hifAxiRemove(void)
 	return 0;
 }
 
-#if CFG_MTK_ANDROID_WMT
-#if (CFG_SUPPORT_CONNINFRA == 0)
-static int hifAxiGetBusCnt(void)
-{
-	if (!g_prGlueInfo)
-		return 0;
-
-	return g_prGlueInfo->rHifInfo.u4HifCnt;
-}
-
-static int hifAxiClrBusCnt(void)
-{
-	if (g_prGlueInfo)
-		g_prGlueInfo->rHifInfo.u4HifCnt = 0;
-
-	return 0;
-}
-
-static int hifAxiSetMpuProtect(bool enable)
-{
-#if CFG_MTK_ANDROID_EMI
-	kalSetEmiMpuProtection(gConEmiPhyBaseFinal, enable);
-#endif
-	return 0;
-}
-
-
-static int hifAxiIsWifiDrvOwn(void)
-{
-	if (!g_prGlueInfo || !g_prGlueInfo->prAdapter)
-		return 0;
-
-	return (g_prGlueInfo->prAdapter->fgIsFwOwn == FALSE) ? 1 : 0;
-}
-
-static void register_wmt_cb(void)
-{
-	struct _MTK_WCN_WMT_WLAN_CB_INFO rWmtCb;
-
-	memset(&rWmtCb, 0, sizeof(struct _MTK_WCN_WMT_WLAN_CB_INFO));
-	rWmtCb.wlan_probe_cb = hifAxiProbe;
-	rWmtCb.wlan_remove_cb = hifAxiRemove;
-	rWmtCb.wlan_bus_cnt_get_cb = hifAxiGetBusCnt;
-	rWmtCb.wlan_bus_cnt_clr_cb = hifAxiClrBusCnt;
-	rWmtCb.wlan_emi_mpu_set_protection_cb = hifAxiSetMpuProtect;
-	rWmtCb.wlan_is_wifi_drv_own_cb = hifAxiIsWifiDrvOwn;
-
-	mtk_wcn_wmt_wlan_reg(&rWmtCb);
-}
-
-#else
-
-static void register_conninfra_cb(void)
-{
-	struct MTK_WCN_WLAN_CB_INFO rWlanCb;
-	struct sub_drv_ops_cb conninfra_wf_cb;
-
-	memset(&rWlanCb, 0, sizeof(struct MTK_WCN_WLAN_CB_INFO));
-	rWlanCb.wlan_probe_cb = hifAxiProbe;
-	rWlanCb.wlan_remove_cb = hifAxiRemove;
-	mtk_wcn_wlan_reg(&rWlanCb);
-
-	memset(&conninfra_wf_cb, 0, sizeof(struct sub_drv_ops_cb));
-	conninfra_wf_cb.rst_cb.pre_whole_chip_rst =
-			glRstwlanPreWholeChipReset;
-	conninfra_wf_cb.rst_cb.post_whole_chip_rst =
-			glRstwlanPostWholeChipReset;
-	conninfra_wf_cb.time_change_notify = kalSyncTimeToFWByIoctl;
-#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
-	/* Register conninfra call back */
-	conninfra_wf_cb.pre_cal_cb.pwr_on_cb = wlanPreCalPwrOn;
-	conninfra_wf_cb.pre_cal_cb.do_cal_cb = wlanPreCal;
-	conninfra_wf_cb.pre_cal_cb.get_cal_result_cb = wlanGetCalResultCb;
-#endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
-
-	conninfra_sub_drv_ops_register(CONNDRV_TYPE_WIFI,
-		&conninfra_wf_cb);
-
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	/* Register callbacks for connsys power throttling feature. */
-	conn_pwr_register_event_cb(CONN_PWR_DRV_WIFI,
-			(CONN_PWR_EVENT_CB)connsys_power_event_notification);
-#endif
-}
-
-#endif
-#endif /* CFG_MTK_ANDROID_WMT */
-
 static int axiDmaSetup(struct platform_device *pdev,
 		struct mt66xx_hif_driver_data *prDriverData)
 {
@@ -910,16 +822,6 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 	ret = axiAllocHifMem(pdev, prDriverData);
 	if (ret)
 		goto exit;
-#endif
-
-#if CFG_MTK_ANDROID_WMT
-#if (CFG_SUPPORT_CONNINFRA == 0)
-	register_wmt_cb();
-#else
-	register_conninfra_cb();
-#endif
-#else
-	hifAxiProbe();
 #endif
 
 exit:
@@ -1748,3 +1650,15 @@ static void axiDumpRx(struct GL_HIF_INFO *prHifInfo,
 					0, prDmaBuf->AllocSize);
 }
 #endif /* AXI_CFG_PREALLOC_MEMORY_BUFFER */
+
+int32_t glBusFunOn(void)
+{
+	return hifAxiProbe();
+}
+
+void glBusFunOff(void)
+{
+	hifAxiRemove();
+	g_fgDriverProbed = FALSE;
+}
+

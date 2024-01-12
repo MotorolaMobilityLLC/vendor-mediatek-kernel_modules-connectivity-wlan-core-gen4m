@@ -95,7 +95,7 @@
 #if (CFG_SUPPORT_ICS == 1)
 #include "ics.h"
 #endif
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 #include "fw_log_wifi.h"
 #endif
 
@@ -4622,7 +4622,7 @@ static void ics_log_event_notification(int cmd, int value)
 
 #endif /* CFG_SUPPORT_ICS */
 
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 static uint32_t u4LogOnOffCache;
 static uint32_t u4LogLevelCache = -1;
 
@@ -4783,7 +4783,7 @@ static void consys_log_event_notification(int cmd, int value)
 	if (cmd == FW_LOG_CMD_ON_OFF) {
 		u4LogOnOffCache = value;
 
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 #if (CFG_SUPPORT_CONNINFRA == 1)
 		if (u4LogOnOffCache == 0) {
 			fw_log_wifi_irq_handler();
@@ -5296,7 +5296,7 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	kalSetHalted(FALSE);
 
 
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 #if (CFG_SUPPORT_ICS == 1)
 	ics_log_event_notification((int)ICS_LOG_CMD_ON_OFF,
 		u4IcsLogOnOffCache);
@@ -5316,7 +5316,7 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	wlanProbeSuccessForLowLatency(prAdapter);
 #endif
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 	if (prAdapter->chip_info->checkbushang) {
 		fw_log_bug_hang_register(prAdapter->chip_info->checkbushang);
 	}
@@ -6382,6 +6382,129 @@ void WfsysResetHdlr(struct work_struct *work)
 }
 #endif /* CFG_CHIP_RESET_SUPPORT */
 
+#if CFG_MTK_ANDROID_WMT
+static int wlanFunOn(void)
+{
+	int ret = 0;
+
+	glBusFunOn();
+
+	return ret;
+}
+
+static int wlanFunOff(void)
+{
+	glBusFunOff();
+	return 0;
+}
+
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+static int wlanWmtCbGetBusCnt(void)
+{
+	struct wireless_dev *prWdev = gprWdev[0];
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
+	if (!prGlueInfo)
+		return 0;
+
+	return prGlueInfo->rHifInfo.u4HifCnt;
+}
+
+static int wlanWmtCbClrBusCnt(void)
+{
+	struct wireless_dev *prWdev = gprWdev[0];
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
+	if (prGlueInfo)
+		prGlueInfo->rHifInfo.u4HifCnt = 0;
+
+	return 0;
+}
+
+static int wlanWmtCbSetMpuProtect(bool enable)
+{
+#if CFG_MTK_ANDROID_EMI
+	kalSetEmiMpuProtection(gConEmiPhyBaseFinal, enable);
+#endif
+	return 0;
+}
+
+static int wlanWmtCbIsWifiDrvOwn(void)
+{
+	struct wireless_dev *prWdev = gprWdev[0];
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
+	if (!prGlueInfo || !prGlueInfo->prAdapter)
+		return 0;
+
+	return (prGlueInfo->prAdapter->fgIsFwOwn == FALSE) ? 1 : 0;
+}
+
+static void wlanRegWmtCb(void)
+{
+	struct _MTK_WCN_WMT_WLAN_CB_INFO rWmtCb;
+
+	memset(&rWmtCb, 0, sizeof(struct _MTK_WCN_WMT_WLAN_CB_INFO));
+	rWmtCb.wlan_probe_cb = wlanFunOn;
+	rWmtCb.wlan_remove_cb = wlanFunOff;
+	rWmtCb.wlan_bus_cnt_get_cb = wlanWmtCbGetBusCnt;
+	rWmtCb.wlan_bus_cnt_clr_cb = wlanWmtCbClrBusCnt;
+	rWmtCb.wlan_emi_mpu_set_protection_cb = wlanWmtCbSetMpuProtect;
+	rWmtCb.wlan_is_wifi_drv_own_cb = wlanWmtCbIsWifiDrvOwn;
+
+	mtk_wcn_wmt_wlan_reg(&rWmtCb);
+}
+
+#else
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+static void wlanRegConninfraCb(void)
+{
+	struct sub_drv_ops_cb conninfra_wf_cb;
+
+	memset(&conninfra_wf_cb, 0, sizeof(struct sub_drv_ops_cb));
+	conninfra_wf_cb.rst_cb.pre_whole_chip_rst =
+			glRstwlanPreWholeChipReset;
+	conninfra_wf_cb.rst_cb.post_whole_chip_rst =
+			glRstwlanPostWholeChipReset;
+	conninfra_wf_cb.time_change_notify = kalSyncTimeToFWByIoctl;
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+	/* Register conninfra call back */
+	conninfra_wf_cb.pre_cal_cb.pwr_on_cb = wlanPreCalPwrOn;
+	conninfra_wf_cb.pre_cal_cb.do_cal_cb = wlanPreCal;
+	conninfra_wf_cb.pre_cal_cb.get_cal_result_cb = wlanGetCalResultCb;
+#endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
+
+	conninfra_sub_drv_ops_register(CONNDRV_TYPE_WIFI,
+		&conninfra_wf_cb);
+
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+	/* Register callbacks for connsys power throttling feature. */
+	conn_pwr_register_event_cb(CONN_PWR_DRV_WIFI,
+			(CONN_PWR_EVENT_CB)connsys_power_event_notification);
+#endif
+}
+#endif
+
+static void wlanRegWmtCdevCb(void)
+{
+	struct MTK_WCN_WLAN_CB_INFO rWlanCb;
+
+	memset(&rWlanCb, 0, sizeof(struct MTK_WCN_WLAN_CB_INFO));
+	rWlanCb.wlan_probe_cb = wlanFunOn;
+	rWlanCb.wlan_remove_cb = wlanFunOff;
+	mtk_wcn_wlan_reg(&rWlanCb);
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	wlanRegConninfraCb();
+#endif
+}
+#endif
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Driver entry point when the driver is configured as a Linux Module,
@@ -6413,15 +6536,15 @@ static int initWlan(void)
 	gConEmiPhyBase = (phys_addr_t)ptr;
 #endif
 
-#if CFG_MTK_ANDROID_WMT
+#if (CFG_MTK_ANDROID_EMI == 1)
 	gConEmiPhyBaseFinal = gConEmiPhyBase;
 	gConEmiSizeFinal = gConEmiSize;
-#endif
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	conninfra_get_phy_addr(
 		&gConEmiPhyBaseFinal,
 		(unsigned int *)&gConEmiSizeFinal);
+#endif
 #endif
 
 	DBGLOG(INIT, INFO, "initWlan\n");
@@ -6465,23 +6588,25 @@ static int initWlan(void)
 
 	gPrDev = NULL;
 
-#if CFG_MTK_ANDROID_WMT && (CFG_SUPPORT_CONNINFRA == 0)
-	mtk_wcn_wmt_mpu_lock_aquire();
-#endif
 	ret = ((glRegisterBus(wlanProbe,
 			      wlanRemove) == WLAN_STATUS_SUCCESS) ? 0 : -EIO);
-#if CFG_MTK_ANDROID_EMI
-	/* Set WIFI EMI protection to consys permitted on system boot up */
-	kalSetEmiMpuProtection(gConEmiPhyBaseFinal, true);
-#endif
-#if CFG_MTK_ANDROID_WMT && (CFG_SUPPORT_CONNINFRA == 0)
-	mtk_wcn_wmt_mpu_lock_release();
-#endif
-
 	if (ret == -EIO) {
 		kalUninitIOBuffer();
 		return ret;
 	}
+
+#if CFG_MTK_ANDROID_WMT
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+	wlanRegWmtCb();
+#else
+	wlanRegWmtCdevCb();
+#endif /* CFG_SUPPORT_CONNAC1X */
+#else
+	ret = glBusFunOn();
+	if (ret)
+		DBGLOG(INIT, ERROR, "glBusFunOn failed.\n");
+#endif /* CFG_MTK_ANDROID_WMT */
+
 #if (CFG_CHIP_RESET_SUPPORT)
 	glResetInit(prGlueInfo);
 #endif
@@ -6492,7 +6617,7 @@ static int initWlan(void)
 	kalBatNotifierReg(prGlueInfo);
 #endif
 
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	wifi_fwlog_event_func_register(consys_log_event_notification);
 #endif
 
@@ -6505,9 +6630,9 @@ static int initWlan(void)
 	if (ret < 0) {
 		DBGLOG(INIT, INFO, "ics log node init failed!");
 		return ret;
+	} else {
+		wifi_ics_event_func_register(ics_log_event_notification);
 	}
-
-	wifi_ics_event_func_register(ics_log_event_notification);
 #endif /* CFG_SUPPORT_ICS */
 
 	g_u4WlanInitFlag = 1;
@@ -6561,6 +6686,9 @@ static void exitWlan(void)
 		wlanPowerOffWifi(prGlueInfo->prAdapter);
 #endif
 
+#if (CFG_MTK_ANDROID_WMT == 0)
+	glBusFunOff();
+#endif
 	glUnregisterBus(wlanRemove);
 #if CFG_SUPPORT_PERSIST_NETDEV
 

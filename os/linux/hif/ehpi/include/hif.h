@@ -137,6 +137,15 @@ void glBusFreeIrq(void *pvData, void *pvCookie);
 
 void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode);
 
+static inline int32_t glBusFunOn(void)
+{
+	return 0;
+}
+
+static inline void glBusFunOff(void)
+{
+}
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

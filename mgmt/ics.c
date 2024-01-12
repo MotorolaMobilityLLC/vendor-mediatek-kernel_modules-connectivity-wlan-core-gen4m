@@ -316,7 +316,7 @@ int IcsInit(void)
 		result, gIcsDev->major);
 
 	if (result < 0)
-		return result;
+		goto free_dev;
 
 	gIcsDev->driver_class = class_create(THIS_MODULE,
 		FW_LOG_ICS_DRIVER_NAME);
@@ -371,6 +371,7 @@ class_destroy:
 	class_destroy(gIcsDev->driver_class);
 unregister_chrdev_region:
 	unregister_chrdev_region(gIcsDev->devno, 1);
+free_dev:
 	kfree(gIcsDev);
 return_fn:
 	return result;

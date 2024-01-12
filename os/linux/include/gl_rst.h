@@ -160,7 +160,7 @@ struct RESET_STRUCT {
 #endif
 };
 
-#if CFG_WMT_RESET_API_SUPPORT
+#if CFG_CHIP_RESET_SUPPORT
 #if (CFG_SUPPORT_CONNINFRA == 1)
 /* duplicated from wmt_exp.h for better driver isolation */
 enum ENUM_WMTDRV_TYPE {
@@ -212,6 +212,7 @@ enum ENUM_WF_RST_SOURCE {
 #if CFG_WMT_RESET_API_SUPPORT
 extern int wifi_reset_start(void);
 extern int wifi_reset_end(enum ENUM_RESET_STATUS);
+#endif /* CFG_WMT_RESET_API_SUPPORT */
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 extern int hifAxiRemove(void);
@@ -221,7 +222,6 @@ extern int32_t get_wifi_process_status(void);
 extern int32_t get_wifi_powered_status(void);
 #endif /* CFG_SUPPORT_CONNINFRA */
 
-#endif /* CFG_WMT_RESET_API_SUPPORT */
 #endif /* CFG_CHIP_RESET_SUPPORT */
 
 /*******************************************************************************
@@ -287,8 +287,6 @@ extern u_int8_t fgIsResetHangState;
 extern uint64_t u8ResetTime;
 extern u_int8_t fgSimplifyResetFlow;
 extern char *g_reason;
-#else
-
 #endif
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -314,18 +312,13 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 
 #if CFG_WMT_RESET_API_SUPPORT
 int32_t glIsWmtCodeDump(void);
-#endif
 #if (CFG_SUPPORT_CONNINFRA == 1)
-
 int wlan_reset_thread_main(void *data);
 int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason);
 int glRstwlanPostWholeChipReset(void);
 u_int8_t kalIsWholeChipResetting(void);
 void glSetRstReasonString(char *reason);
-
-#endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
-
-#else
-
-#endif
+#endif /* CFG_SUPPORT_CONNINFRA */
+#endif /* CFG_WMT_RESET_API_SUPPORT */
+#endif /* CFG_CHIP_RESET_SUPPORT */
 #endif /* _GL_RST_H */

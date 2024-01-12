@@ -76,7 +76,7 @@
 #include "precomp.h"
 #include "gl_rst.h"
 
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 #include "fw_log_wifi.h"
 #endif
 
@@ -102,6 +102,7 @@ uint64_t u8ResetTime;
 u_int8_t fgIsResetHangState = SER_L0_HANG_RST_NONE;
 #endif
 
+#if CFG_WMT_RESET_API_SUPPORT
 #if (CFG_SUPPORT_CONNINFRA == 1)
 uint32_t g_u4WlanRstThreadPid;
 wait_queue_head_t g_waitq_rst;
@@ -125,9 +126,9 @@ u_int8_t g_IsWfsysResetOnFail = FALSE;
 u_int8_t g_IsWfsysRstDone = TRUE;
 u_int8_t g_fgRstRecover = FALSE;
 #endif
+#endif
 
-#if (CFG_WMT_RESET_API_SUPPORT || CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-static uint8_t *apucRstReason[RST_REASON_MAX] = {
+uint8_t *apucRstReason[RST_REASON_MAX] = {
 	(uint8_t *) DISP_STRING("RST_UNKNOWN"),
 	(uint8_t *) DISP_STRING("RST_PROCESS_ABNORMAL_INT"),
 	(uint8_t *) DISP_STRING("RST_DRV_OWN_FAIL"),
@@ -152,7 +153,6 @@ static uint8_t *apucRstReason[RST_REASON_MAX] = {
 	(uint8_t *) DISP_STRING("RST_MDDP_MD_TRIGGER_EXCEPTION"),
 	(uint8_t *) DISP_STRING("RST_FWK_TRIGGER")
 };
-#endif
 
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 u_int8_t g_IsNeedWaitCoredump = FALSE;
@@ -261,6 +261,7 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 	fgIsResetting = FALSE;
 	wifi_rst.prGlueInfo = prGlueInfo;
 
+#if CFG_WMT_RESET_API_SUPPORT
 #if (CFG_SUPPORT_CONNINFRA == 1)
 
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
@@ -275,8 +276,8 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 	wlan_reset_thread = kthread_run(wlan_reset_thread_main,
 					&g_rst_data, "wlan_rst_thread");
 	g_SubsysRstCnt = 0;
-
 #endif /* CFG_SUPPORT_CONNINFRA */
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -456,6 +457,7 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst)
 		DBGLOG(INIT, INFO, "Force down the reset flag.\n");
 		fgSimplifyResetFlow = FALSE;
 	}
+#if CFG_WMT_RESET_API_SUPPORT
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	if (ret != 0) {
 		g_IsWfsysResetOnFail = TRUE;
@@ -469,6 +471,7 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst)
 			"Wi-Fi reset on success, set flag(%d).\n",
 			g_IsWfsysResetOnFail);
 	}
+#endif
 #endif
 	if (mtk_cfg80211_vendor_event_reset_triggered(
 					(uint32_t) eResetReason) != 0)
@@ -660,7 +663,7 @@ static u_int8_t glResetMsgHandler(enum ENUM_WMTMSG_TYPE eMsgType,
 			switch (MsgBody) {
 			case WMTRSTMSG_RESET_START:
 				DBGLOG(INIT, WARN, "Whole chip reset start!\n");
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 				fw_log_wifi_irq_handler();
 #endif
 				fgIsResetting = TRUE;
@@ -685,7 +688,7 @@ static u_int8_t glResetMsgHandler(enum ENUM_WMTMSG_TYPE eMsgType,
 				break;
 			case WMTRSTMSG_0P5RESET_START:
 				DBGLOG(INIT, WARN, "WF chip reset start!\n");
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 				fw_log_wifi_irq_handler();
 #endif
 				fgIsResetting = TRUE;

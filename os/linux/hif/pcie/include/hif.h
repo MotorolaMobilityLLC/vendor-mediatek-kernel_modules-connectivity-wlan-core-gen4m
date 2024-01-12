@@ -415,13 +415,16 @@ void glGetDev(void *ctx, struct device **dev);
 
 void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev);
 
-static struct mt66xx_hif_driver_data *get_platform_driver_data(void);
+struct mt66xx_hif_driver_data *get_platform_driver_data(void);
 
 void glGetChipInfo(void **prChipInfo);
 void halPciePreSuspendDone(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void halPciePreSuspendTimeout(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo);
+
+int32_t glBusFunOn(void);
+void glBusFunOff(void);
 
 /*******************************************************************************
  *                              F U N C T I O N S
