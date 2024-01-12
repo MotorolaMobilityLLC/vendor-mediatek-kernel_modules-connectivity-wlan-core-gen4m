@@ -7015,6 +7015,14 @@ VOID wlanCfgSetCountryCode(IN P_ADAPTER_T prAdapter)
 		prAdapter->rWifiVar.rConnSettings.u2CountryCode =
 		    (((UINT_16) aucValue[0]) << 8) | ((UINT_16) aucValue[1]);
 
+		DBGLOG(INIT, TRACE, "u2CountryCode=0x%04x\n",
+			   prAdapter->rWifiVar.rConnSettings.u2CountryCode);
+
+		if (regd_is_single_sku_en()) {
+			rlmDomainOidSetCountry(prAdapter, aucValue, 2);
+			return;
+		}
+
 		/* Force to re-search country code in country domains */
 		prAdapter->prDomainInfo = NULL;
 		rlmDomainSendCmd(prAdapter, TRUE);

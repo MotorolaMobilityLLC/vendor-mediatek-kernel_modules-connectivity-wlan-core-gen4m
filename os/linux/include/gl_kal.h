@@ -427,6 +427,24 @@ typedef struct _MONITOR_RADIOTAP_T {
 #define KAL_GET_PKT_ARRIVAL_TIME(_p)            GLUE_GET_PKT_ARRIVAL_TIME(_p)
 
 /*----------------------------------------------------------------------------*/
+/* Macros for kernel related defines                      */
+/*----------------------------------------------------------------------------*/
+#if KERNEL_VERSION(3, 14, 0) > LINUX_VERSION_CODE
+#define IEEE80211_CHAN_PASSIVE_FLAG	IEEE80211_CHAN_PASSIVE_SCAN
+#define IEEE80211_CHAN_PASSIVE_STR		"PASSIVE"
+#else
+#define IEEE80211_CHAN_PASSIVE_FLAG	IEEE80211_CHAN_NO_IR
+#define IEEE80211_CHAN_PASSIVE_STR		"NO_IR"
+#endif
+
+/* Consider on some Android platform, using request_firmware_direct()
+ * may cause system failed to load firmware. So we still use
+ * request_firmware().
+ */
+#define REQUEST_FIRMWARE(_fw, _name, _dev) \
+	request_firmware(_fw, _name, _dev)
+
+/*----------------------------------------------------------------------------*/
 /* Macros of wake_lock operations for using in Driver Layer                   */
 /*----------------------------------------------------------------------------*/
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)

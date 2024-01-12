@@ -3211,7 +3211,11 @@ enum regd_state regd_state_machine(IN struct regulatory_request *pRequest)
 		return rlmDomainStateTransition(REGD_STATE_SET_WW_CORE, pRequest);
 
 	case NL80211_REGDOM_SET_BY_COUNTRY_IE:
-		DBGLOG(RLM, INFO, "regd_state_machine: SET_BY_COUNTRY_IE\n");
+		DBGLOG(RLM, WARN, "regd_state_machine: SET_BY_COUNTRY_IE\n");
+		DBGLOG(RLM, WARN, "regd_state_machine: SET_BY_COUNTRY_IE\n");
+		DBGLOG(RLM, WARN, "regd_state_machine: SET_BY_COUNTRY_IE\n");
+
+		return rlmDomainStateTransition(REGD_STATE_SET_COUNTRY_IE, pRequest);
 
 	default:
 		return rlmDomainStateTransition(REGD_STATE_INVALID, pRequest);
@@ -3226,14 +3230,6 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 	P_ADAPTER_T prAdapter;
 	u8 send_cmd_request = 0;
 	enum regd_state old_state;
-
-
-	/*
-	 * Check if firmawre support single sku
-	 */
-	if (!regd_is_single_sku_en())
-		return; /*no need to do the followings*/
-
 
 
 	if (!pWiphy) {
@@ -3289,19 +3285,23 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 	/*
 	 * State machine transition
 	 */
-	DBGLOG(RLM, INFO, "request->alpha2 = %s, initiator = %x\n", pRequest->alpha2, pRequest->initiator);
+	DBGLOG(RLM, INFO, "request->alpha2=%s, initiator=%x, intersect=%d\n",
+			pRequest->alpha2, pRequest->initiator, pRequest->intersect);
 
 	old_state = rlmDomainGetCtrlState();
 	regd_state_machine(pRequest);
 
-	if (rlmDomainGetCtrlState() == old_state)
-		return; /*the same state. no need to go further process*/
-	else if (rlmDomainIsCtrlStateEqualTo(REGD_STATE_INVALID)) {
-		DBGLOG(RLM, ERROR, "\n%s():\n---> ERROR. Transit to invalid state.\n", __func__);
-		DBGLOG(RLM, ERROR, "---> ERROR. Ignore country code updateing.\n");
-		DBGLOG(RLM, ERROR, "---> ERROR.\n ");
+	if (rlmDomainGetCtrlState() == old_state) {
+		if (old_state == REGD_STATE_SET_COUNTRY_USER &&
+		    !(rlmDomainIsSameCountryCode(pRequest->alpha2, sizeof(pRequest->alpha2))))
+			DBGLOG(RLM, INFO, "Set by user to NEW country code\n");
+		else
+			/* Change to same state or same country, ignore */
+			return;
+	} else if (rlmDomainIsCtrlStateEqualTo(REGD_STATE_INVALID)) {
+		DBGLOG(RLM, ERROR, "\n%s():\n---> WARNING. Transit to invalid state.\n", __func__);
+		DBGLOG(RLM, ERROR, "---> WARNING.\n ");
 		rlmDomianAssert(0);
-		return; /*error state*/
 	}
 
 
@@ -3389,6 +3389,13 @@ DOMAIN_SEND_CMD:
 	prAdapter = prGlueInfo->prAdapter;
 	if (!prAdapter)
 		return; /*interface is not up yet.*/
+
+
+	/*
+	 * Check if firmawre support single sku
+	 */
+	if (!regd_is_single_sku_en())
+		return; /*no need to send information to firmware due to firmware is not supported*/
 
 
 	/*
