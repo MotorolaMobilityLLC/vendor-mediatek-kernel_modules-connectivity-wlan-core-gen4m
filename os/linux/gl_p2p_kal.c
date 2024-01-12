@@ -161,18 +161,10 @@ kalP2PUpdateAssocInfo(IN struct GLUE_INFO *prGlueInfo,
 
 	if (fgReassocRequest) {
 		if (u4FrameBodyLen < 15) {
-			/*
-			 *  printk(KERN_WARNING
-			 *  "frameBodyLen too short:%ld\n", frameBodyLen);
-			 */
 			return;
 		}
 	} else {
 		if (u4FrameBodyLen < 9) {
-			/*
-			 *  printk(KERN_WARNING
-			 *  "frameBodyLen too short:%ld\n", frameBodyLen);
-			 */
 			return;
 		}
 	}
@@ -194,15 +186,12 @@ kalP2PUpdateAssocInfo(IN struct GLUE_INFO *prGlueInfo,
 
 	/* do supplicant a favor, parse to the start of WPA/RSN IE */
 	if (wextSrchDesiredWPSIE(cp, u4FrameBodyLen, 0xDD, &pucDesiredIE)) {
-		/* printk("wextSrchDesiredWPSIE!!\n"); */
 		/* WPS IE found */
 	} else if (wextSrchDesiredWPAIE(cp,
 			u4FrameBodyLen, 0x30, &pucDesiredIE)) {
-		/* printk("wextSrchDesiredWPAIE!!\n"); */
 		/* RSN IE found */
 	} else if (wextSrchDesiredWPAIE(cp,
 			u4FrameBodyLen, 0xDD, &pucDesiredIE)) {
-		/* printk("wextSrchDesiredWPAIE!!\n"); */
 		/* WPA IE found */
 	} else {
 		/* no WPA/RSN IE found, skip this event */
@@ -374,9 +363,6 @@ kalP2PSetRole(IN struct GLUE_INFO *prGlueInfo,
 			ucRole, 1 /* persistence or not */, '0', '0');
 
 	evt.data.length = strlen(aucBuffer);
-
-	/* if (pucSSID) */
-	/* printk("P2P GO SSID DIRECT-%c%c\n", pucSSID[7], pucSSID[8]); */
 
 	/* indicate in IWECUSTOM event */
 	wireless_send_event(prGlueInfo->prP2PInfo[0]->prDevHandler,
