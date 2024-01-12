@@ -2292,7 +2292,7 @@ void rlmModifyHE6GBwPara(uint8_t ucHe6gChannelWidth,
 			*pucHe6gChannelFrequencyS2 = 0;
 		}
 	} else if (ucHe6gChannelWidth == CW_20_40MHZ) {
-		if (ucS1Origin != 0 || ucS2Origin != 0) {
+		if (ucS2Origin != 0) {
 			DBGLOG(RLM, WARN,
 				"S1/S2 for 6G BW20/40 is out of spec, S1[%d->0] S2[%d->0]\n",
 				ucS1Origin, ucS2Origin);
