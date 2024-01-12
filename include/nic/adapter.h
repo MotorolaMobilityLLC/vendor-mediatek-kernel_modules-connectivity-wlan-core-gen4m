@@ -1597,6 +1597,8 @@ struct WIFI_VAR {
 	/* used to limit query duration for low power */
 	int32_t i4MaxTempLimit;
 	uint32_t u4MinTempQueryTime;
+	/* Minimum value for 802.11h TPC Txpower limit */
+	int8_t icRegPwrLmtMin;
 };
 
 /* cnm_timer module */

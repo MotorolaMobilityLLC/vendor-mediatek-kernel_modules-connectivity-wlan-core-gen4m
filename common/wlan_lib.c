@@ -8454,6 +8454,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4MinTempQueryTime, "ThermalMinTempQueryTime",
 		  MIN_TEMP_QUERY_TIME);
 #endif
+	INIT_INT(prWifiVar->icRegPwrLmtMin, "RegPwrLmtMin",
+		TX_PWR_REG_LMT_MIN);
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)

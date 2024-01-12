@@ -8512,24 +8512,31 @@ void rlmSetMaxTxPwrLimit(struct ADAPTER *prAdapter, int8_t cLimit,
 {
 	struct CMD_SET_AP_CONSTRAINT_PWR_LIMIT rTxPwrLimit;
 	int8_t icPwrLmt = 0;
+	int8_t icMinPwrLmt = 0;
+
+	if (!prAdapter)
+		return;
 
 	kalMemZero(&rTxPwrLimit, sizeof(rTxPwrLimit));
 	rTxPwrLimit.ucCmdVer =  0x1;
 	rTxPwrLimit.ucPwrSetEnable =  ucEnable;
+	icMinPwrLmt = prAdapter->rWifiVar.icRegPwrLmtMin;
 
 	if (ucEnable) {
 		icPwrLmt = cLimit * 2; /* Convert to unit 0.5dBm */
 		if (icPwrLmt > MAX_TX_POWER) {
 			DBGLOG(RLM, INFO,
-				"LM: Target MaxPwr %d Higher than Capability, reset to capability\n"
-				, icPwrLmt);
+				"LM: Target MaxPwr %d too big, use default[%d]\n"
+				, icPwrLmt,
+				MAX_TX_POWER);
 			icPwrLmt = MAX_TX_POWER;
 		}
-		if (icPwrLmt < MIN_TX_POWER) {
+		if (icPwrLmt < icMinPwrLmt) {
 			DBGLOG(RLM, INFO,
-				"LM: Target MinPwr %d Lower than Capability, reset to capability\n"
-				, icPwrLmt);
-			icPwrLmt = MIN_TX_POWER;
+				"LM: Target MinPwr %d too low, use default[%d]\n"
+				, icPwrLmt
+				, icMinPwrLmt);
+			icPwrLmt = icMinPwrLmt;
 		}
 		rTxPwrLimit.cMaxTxPwr = icPwrLmt;
 		rTxPwrLimit.cMinTxPwr = MIN_TX_POWER;
