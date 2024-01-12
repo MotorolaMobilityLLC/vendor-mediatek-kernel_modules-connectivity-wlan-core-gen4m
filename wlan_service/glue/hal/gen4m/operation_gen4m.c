@@ -1133,7 +1133,10 @@ s_int32 mt_op_start_tx(
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	struct test_ru_info *ru_sta = &configs->ru_info_list[0];
 	struct param_mtk_wifi_test_struct rf_at_info;
-	u_int32 i, tx_cnt = 0, buf_len = 0;
+	u_int32 tx_cnt = 0, buf_len = 0;
+#if (CFG_WAIT_TSSI_READY == 1)
+	u_char i;
+#endif
 
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
@@ -1227,7 +1230,9 @@ s_int32 mt_op_start_tx(
 		RF_AT_FUNCID_COMMAND, RF_AT_COMMAND_STARTTX);
 
 	/* For production line test, get tx count for wait calibration ready */
+#if (CFG_WAIT_TSSI_READY == 1)
 	for (i = 0; i < 100; i++) {
+#endif
 		if (band_idx == TEST_DBDC_BAND0)
 			rf_at_info.func_idx = RF_AT_FUNCID_TXED_COUNT;
 		else
@@ -1247,10 +1252,9 @@ s_int32 mt_op_start_tx(
 			break;
 
 		msleep(20);
-#else
-		break;
-#endif
 	}
+#endif
+
 
 	return ret;
 }
