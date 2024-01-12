@@ -150,6 +150,7 @@ struct FWDL_OPS_T {
 		OUT u_int8_t *pfgIsNotDownload);
 	unsigned int (*getFwDlInfo)(struct ADAPTER *prAdapter,
 		char *pcBuf, int i4TotalLen);
+	uint32_t (*phyAction)(IN struct ADAPTER *prAdapter);
 };
 
 #if (CFG_UMAC_GENERATION >= 0x20)

@@ -412,6 +412,7 @@ struct FWDL_OPS_T mt6632_fw_dl_ops = {
 	.downloadByDynMemMap = NULL,
 	.getFwInfo = wlanGetHarvardFwInfo,
 	.getFwDlInfo = mt6632GetFwDlInfo,
+	.phyAction = NULL,
 };
 
 struct TX_DESC_OPS_T mt6632TxDescOps = {
