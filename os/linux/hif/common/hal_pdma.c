@@ -1541,7 +1541,7 @@ void halTxDelayTimeout(unsigned long arg)
 	struct ADAPTER *prAdapter = NULL;
 #if CFG_SUPPORT_HRTIMER
 	struct GL_HIF_INFO *prHifInfo =
-		container_of(timer, struct GL_HIF_INFO, rTxDelayTimer);
+		CONTAINER_OF(timer, struct GL_HIF_INFO, rTxDelayTimer);
 	struct GLUE_INFO *prGlueInfo =
 		(struct GLUE_INFO *)prHifInfo->rTxDelayTimerData;
 #else /* CFG_SUPPORT_HRTIMER == 0 */

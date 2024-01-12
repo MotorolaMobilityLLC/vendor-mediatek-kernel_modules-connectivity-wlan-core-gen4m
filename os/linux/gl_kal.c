@@ -6675,7 +6675,7 @@ uint8_t kalUpdateBssTimestamp(struct GLUE_INFO *prGlueInfo)
 		log_dbg(REQ, ERROR, "wiphy is null\n");
 		return 1;
 	}
-	rdev = container_of(wiphy, struct cfg80211_registered_device, wiphy);
+	rdev = CONTAINER_OF(wiphy, struct cfg80211_registered_device, wiphy);
 
 	log_dbg(REQ, INFO, "Update scan timestamp: %llu (%llu)\n",
 		new_timestamp, le64_to_cpu(new_timestamp));
@@ -9443,8 +9443,8 @@ void kalFreeTxMsduWorker(struct work_struct *work)
 	if (g_u4HaltFlag)
 		return;
 
-	prGlueInfo = ENTRY_OF(work, struct GLUE_INFO,
-			      rTxMsduFreeWork);
+	prGlueInfo = CONTAINER_OF(work, struct GLUE_INFO,
+				  rTxMsduFreeWork);
 	prAdapter = prGlueInfo->prAdapter;
 
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag))
@@ -13399,8 +13399,8 @@ uint8_t kalNapiRxDirectUninit(struct GLUE_INFO *prGlueInfo)
 static int kalNapiPollSwRfb(struct napi_struct *napi, int budget)
 {
 	uint32_t work_done = 1;
-	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)
-		container_of(napi, struct GLUE_INFO, napi);
+	struct GLUE_INFO *prGlueInfo =
+		CONTAINER_OF(napi, struct GLUE_INFO, napi);
 	struct ADAPTER *prAdapter;
 	static int32_t i4UserCnt;
 	struct SW_RFB *prSwRfb;
@@ -13490,8 +13490,8 @@ int kalNapiPoll(struct napi_struct *napi, int budget)
 #if CFG_SUPPORT_RX_NAPI
 	int work_done = 0;
 	struct sk_buff *prSkb = NULL;
-	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)
-		container_of(napi, struct GLUE_INFO, napi);
+	struct GLUE_INFO *prGlueInfo =
+		CONTAINER_OF(napi, struct GLUE_INFO, napi);
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct RX_BA_ENTRY *prReorderQueParm;
 
@@ -16031,8 +16031,7 @@ inline struct GLUE_INFO *kalWorkGetGlueInfo(
 	struct GLUE_INFO *pr;
 	struct WORK_CONTAINER *prWorkContainer;
 
-	prWorkContainer = container_of(work,
-			struct WORK_CONTAINER, rWork);
+	prWorkContainer = CONTAINER_OF(work, struct WORK_CONTAINER, rWork);
 	pr = prWorkContainer->pr;
 	return pr;
 }
@@ -16042,8 +16041,7 @@ inline enum ENUM_WORK_INDEX kalWorkGetIdx(
 {
 	struct WORK_CONTAINER *prWorkContainer;
 
-	prWorkContainer = container_of(work,
-			struct WORK_CONTAINER, rWork);
+	prWorkContainer = CONTAINER_OF(work, struct WORK_CONTAINER, rWork);
 	return prWorkContainer->eIdx;
 }
 
@@ -16053,8 +16051,7 @@ inline uint32_t kalWorkCheckState(struct work_struct *work)
 	struct GLUE_INFO *pr;
 	struct GL_WORK *prWork;
 
-	prWorkContainer = container_of(work,
-			struct WORK_CONTAINER, rWork);
+	prWorkContainer = CONTAINER_OF(work, struct WORK_CONTAINER, rWork);
 	pr = prWorkContainer->pr;
 	prWork = kalGetWork(pr, prWorkContainer->eWork);
 	if (prWorkContainer->eIdx != prWork->eWorkIdx) {

@@ -2174,7 +2174,8 @@ void halProcessSoftwareInterrupt(struct ADAPTER *prAdapter)
 
 void halDeAggRxPktWorker(struct work_struct *work)
 {
-	struct GLUE_INFO *prGlueInfo = ENTRY_OF(work, struct GLUE_INFO, rRxPktDeAggWork);
+	struct GLUE_INFO *prGlueInfo = CONTAINER_OF(work, struct GLUE_INFO,
+						    rRxPktDeAggWork.work);
 
 	tasklet_schedule(&prGlueInfo->rRxTask);
 }

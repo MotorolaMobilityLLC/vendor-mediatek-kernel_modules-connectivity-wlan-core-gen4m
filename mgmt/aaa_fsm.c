@@ -1155,7 +1155,8 @@ void aaaMulAPAgentChanNoiseInitWorkHandler(
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
-	prGlueInfo = ENTRY_OF(work, struct GLUE_INFO, rChanNoiseControlWork);
+	prGlueInfo = CONTAINER_OF(work, struct GLUE_INFO,
+				  rChanNoiseControlWork);
 
 	/* Disable traffic report and noise histogram */
 	rStatus = aaaMulAPAgentChanNoiseControl(prGlueInfo, FALSE);
@@ -1198,7 +1199,8 @@ void  aaaMulAPAgentChanNoiseCollectionWorkHandler(
 	struct T_MULTI_AP_BSS_METRICS_RESP *sBssMetricsResp = NULL;
 	int32_t i4Ret = 0;
 
-	prGlueInfo = ENTRY_OF(work, struct GLUE_INFO, rChanNoiseGetInfoWork);
+	prGlueInfo = CONTAINER_OF(work, struct GLUE_INFO,
+				  rChanNoiseGetInfoWork);
 
 	cmd_traffic = (struct CMD_RLM_AIRTIME_MON *)
 		kalMemAlloc(sizeof(*cmd_traffic), VIR_MEM_TYPE);
