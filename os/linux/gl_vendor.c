@@ -3954,6 +3954,21 @@ struct wifi_iface_limit sta_ap_nan[] = {
 	},
 };
 
+struct wifi_iface_limit sta_p2p_nan[] = {
+	{
+		.max_limit = 1,
+		.iface_mask = BIT(WIFI_INTERFACE_TYPE_STA),
+	},
+	{
+		.max_limit = 1,
+		.iface_mask = BIT(WIFI_INTERFACE_TYPE_P2P),
+	},
+	{
+		.max_limit = 1,
+		.iface_mask = BIT(WIFI_INTERFACE_TYPE_NAN),
+	},
+};
+
 struct mtk_wifi_iface_combination mtk_ifaces_combinations[] = {
 	{
 		.max_ifaces = 2,
@@ -3976,9 +3991,14 @@ struct mtk_wifi_iface_combination mtk_ifaces_combinations[] = {
 		.iface_limits = sta_ap_p2p,
 	},
 	{
-		.max_ifaces = 2,
+		.max_ifaces = 3,
 		.num_iface_limits = ARRAY_SIZE(sta_ap_nan),
 		.iface_limits = sta_ap_nan,
+	},
+	{
+		.max_ifaces = 3,
+		.num_iface_limits = ARRAY_SIZE(sta_p2p_nan),
+		.iface_limits = sta_p2p_nan,
 	},
 };
 #else
