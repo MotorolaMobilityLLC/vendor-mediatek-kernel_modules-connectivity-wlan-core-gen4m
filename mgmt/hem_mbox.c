@@ -70,6 +70,10 @@
  */
 #include "precomp.h"
 
+#if (CFG_SUPPORT_802_11AX == 1)
+#include "he_rlm.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -191,7 +195,9 @@ static uint8_t *apucDebugMsg[] = {
 	(uint8_t *) DISP_STRING("MID_TWT_REQ_IND_INFOFRM"),
 	(uint8_t *) DISP_STRING("MID_TWT_PARAMS_SET"),
 #endif
-
+#if (CFG_SUPPORT_802_11AX == 1)
+	(uint8_t *) DISP_STRING("MID_SMPS_ACTION_SET"),
+#endif
 };
 
 /*lint -restore */
@@ -332,7 +338,9 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_TWT_REQ_IND_INFOFRM, twtPlannerRxInfoFrm},
 	{MID_TWT_PARAMS_SET, twtPlannerSetParams},
 #endif
-
+#if (CFG_SUPPORT_802_11AX == 1)
+	{MID_SMPS_ACTION_SET, heRlmProcessSMPSAction},
+#endif
 #if (CFG_SUPPORT_TWT_HOTSPOT == 1)
 	{MID_TWT_RESP_PARAMS_SET, twtHotspotPlannerSetParams},
 	{MID_TWT_RESP_SETUP_AGRT_TO_FW, twtHotspotPlannerSetupAgrtToFW},

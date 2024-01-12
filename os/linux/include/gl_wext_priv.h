@@ -456,6 +456,10 @@ enum AGG_RANGE_TYPE_T {
 extern uint8_t g_IsWfaTestBed;
 extern uint8_t g_IsTwtLogo;
 
+#if (CFG_SUPPORT_802_11AX == 1)
+extern uint8_t  g_fgHTSMPSEnabled;
+#endif
+
 /*******************************************************************************
  *			P R I V A T E   D A T A
  *******************************************************************************

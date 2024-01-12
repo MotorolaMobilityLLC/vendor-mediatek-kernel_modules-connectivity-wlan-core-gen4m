@@ -96,6 +96,9 @@ enum ENUM_OP_NOTIFY_STATE_T {
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
+#if (CFG_SUPPORT_802_11AX == 1)
+uint8_t  g_fgHTSMPSEnabled = 0xFF;
+#endif
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
@@ -922,6 +925,24 @@ static void rlmFillHtCapIE(struct ADAPTER *prAdapter,
 		wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex))
 		prHtCap->u2HtCapInfo &=
 			~HT_CAP_INFO_SM_POWER_SAVE; /*Set as static power save*/
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	if ((g_ucHtSMPSCapValue == 5) && (g_fgHTSMPSEnabled == 0xFF)) {
+		prHtCap->u2HtCapInfo |= HT_CAP_INFO_SM_POWER_SAVE;
+	} else if ((g_ucHtSMPSCapValue == 5) && (g_fgHTSMPSEnabled == 1)) {
+		prHtCap->u2HtCapInfo &=
+			(~HT_CAP_INFO_SM_POWER_SAVE);
+		(prHtCap->u2HtCapInfo) |=
+				(1 << HT_CAP_INFO_SM_POWER_SAVE_OFFSET);
+	} else if ((g_ucHtSMPSCapValue == 3) && (g_fgSigmaCMDHt == 1)) {
+		prHtCap->u2HtCapInfo |= HT_CAP_INFO_SM_POWER_SAVE;
+	} else if ((g_ucHtSMPSCapValue == 1) && (g_fgSigmaCMDHt == 1)) {
+		prHtCap->u2HtCapInfo &=
+			(~HT_CAP_INFO_SM_POWER_SAVE);
+		(prHtCap->u2HtCapInfo) |=
+				(1 << HT_CAP_INFO_SM_POWER_SAVE_OFFSET);
+	}
+#endif
 
 	prHtCap->ucAmpduParam = AMPDU_PARAM_DEFAULT_VAL;
 
