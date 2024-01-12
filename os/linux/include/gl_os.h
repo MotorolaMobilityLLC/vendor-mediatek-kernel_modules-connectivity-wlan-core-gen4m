@@ -1375,6 +1375,10 @@ static inline u16 kernel_ndev_select_queue(
 
 #if KERNEL_VERSION(5, 2, 0) <= LINUX_VERSION_CODE
 	queue_index = netdev_pick_tx(dev, skb, NULL);
+#elif KERNEL_VERSION(4, 19, 0) <= LINUX_VERSION_CODE
+	select_queue_fallback_t select_queue = fallback;
+
+	queue_index = select_queue(dev, skb, NULL);
 #elif KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE
 	select_queue_fallback_t select_queue = fallback;
 
