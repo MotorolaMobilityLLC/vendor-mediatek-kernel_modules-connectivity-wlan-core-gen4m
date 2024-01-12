@@ -403,6 +403,14 @@ enum ENUM_CMD_TX_RESULT {
 	CMD_TX_RESULT_NUM
 };
 
+#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
+enum ENUM_PKT_PATH {
+	PKT_PATH_TX = 0,
+	PKT_PATH_RX,
+	PKT_PATH_ALL
+};
+#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
+
 typedef int(*PFN_PWR_LEVEL_HANDLER)(struct ADAPTER *, uint8_t);
 
 struct PWR_LEVEL_HANDLER_ELEMENT {
@@ -1813,6 +1821,14 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 uint32_t kalPerMonGetInfo(IN struct ADAPTER *prAdapter,
 			  IN uint8_t *pucBuf,
 			  IN uint32_t u4Max);
+#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
+uint32_t kalGetTpMbps(struct ADAPTER *prAdapter,
+	enum ENUM_PKT_PATH ePath,
+	uint8_t ucBssIdx);
+u_int8_t kalIsTputMode(struct ADAPTER *prAdapter,
+	enum ENUM_PKT_PATH ePath,
+	uint8_t ucBssIdx);
+#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
 int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		    IN uint32_t u4TarPerfLevel,
 		    IN uint32_t u4BoostCpuTh);

@@ -9200,6 +9200,61 @@ uint32_t kalPerMonGetInfo(IN struct ADAPTER *prAdapter,
 	return u4Len;
 }
 
+#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
+uint32_t kalGetTpMbps(struct ADAPTER *prAdapter,
+	enum ENUM_PKT_PATH ePath,
+	uint8_t ucBssIdx)
+{
+	uint32_t u4TpMbps = 0;
+	struct PERF_MONITOR *perf;
+
+	if (!prAdapter
+		|| ucBssIdx >= MAX_BSSID_NUM
+		|| ePath > PKT_PATH_ALL)
+		return 0;
+
+	perf = &prAdapter->rPerMonitor;
+
+	/* Get Tp per BSS */
+	if (ePath == PKT_PATH_TX)
+		u4TpMbps = (perf->ulTxTp[ucBssIdx] >> 17);
+	else if (ePath == PKT_PATH_RX)
+		u4TpMbps = (perf->ulRxTp[ucBssIdx] >> 17);
+	else /* PKT_PATH_ALL */
+		u4TpMbps = (perf->ulTxTp[ucBssIdx] >> 17)
+			+ (perf->ulRxTp[ucBssIdx] >> 17);
+
+	return u4TpMbps;
+}
+
+u_int8_t kalIsTputMode(struct ADAPTER *prAdapter,
+	enum ENUM_PKT_PATH ePath,
+	uint8_t ucBssIdx)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint32_t u4TpMbps = 0;
+	uint8_t ucRet = FALSE;
+	uint8_t i = 0;
+
+	if (!prAdapter
+		|| ucBssIdx > MAX_BSSID_NUM
+		|| ePath > PKT_PATH_ALL)
+		return FALSE;
+
+	if (ucBssIdx == MAX_BSSID_NUM) {
+		for (i = 0; i < MAX_BSSID_NUM; i++)
+			u4TpMbps +=
+				kalGetTpMbps(prAdapter, ePath, i);
+	} else
+		u4TpMbps = kalGetTpMbps(prAdapter, ePath, ucBssIdx);
+
+	if (u4TpMbps > prWifiVar->u4TputThresholdMbps)
+		ucRet = TRUE;
+
+	return ucRet;
+}
+#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
+
 int32_t __weak kalBoostCpu(IN struct ADAPTER *prAdapter,
 			   IN uint32_t u4TarPerfLevel, IN uint32_t u4BoostCpuTh)
 {

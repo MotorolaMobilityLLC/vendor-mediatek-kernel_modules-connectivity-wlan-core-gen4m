@@ -737,16 +737,31 @@ u_int8_t halTxIsDataBufEnough(IN struct ADAPTER *prAdapter,
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct RTMP_TX_RING *prTxRing;
 	uint16_t u2Port;
+#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
+	uint8_t ucTryCnt = 2; /* May need to try one more time */
+#else
+	uint8_t ucTryCnt = 1;
+#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
 
 	u2Port = halTxRingDataSelect(prAdapter, prMsduInfo);
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
-	if ((prHifInfo->u4TxDataQLen[u2Port] <
-	     halGetMsduTokenFreeCnt(prAdapter)) &&
-	    (prTxRing->u4UsedCnt + prHifInfo->u4TxDataQLen[u2Port] + 1
-	     < TX_RING_SIZE))
-		return TRUE;
+	while (TRUE) {
+		if ((prHifInfo->u4TxDataQLen[u2Port] <
+		     halGetMsduTokenFreeCnt(prAdapter)) &&
+		    (prTxRing->u4UsedCnt + prHifInfo->u4TxDataQLen[u2Port] + 1
+		     < TX_RING_SIZE))
+			return TRUE;
+
+		ucTryCnt--;
+		if (!ucTryCnt)
+			break;
+
+		/* Try to update from HAL */
+		halWpdmaProcessDataDmaDone(
+				prAdapter->prGlueInfo, u2Port);
+	}
 
 	DBGLOG(HAL, TRACE,
 		"Low Tx Data Resource Tok[%u] Ring%d[%u] List[%u]\n",

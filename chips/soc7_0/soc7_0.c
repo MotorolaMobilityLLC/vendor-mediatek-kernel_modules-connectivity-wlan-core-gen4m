@@ -351,8 +351,12 @@ struct BUS_INFO soc7_0_bus_info = {
 	.host_int_status_addr = WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR,
 
 	.host_int_txdone_bits =
-		(CONNAC2X_WFDMA_TX_DONE_INT0 | CONNAC2X_WFDMA_TX_DONE_INT1 |
-		CONNAC2X_WFDMA_TX_DONE_INT2 | CONNAC2X_WFDMA_TX_DONE_INT3 |
+		(
+#if (CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0)
+		CONNAC2X_WFDMA_TX_DONE_INT0 | CONNAC2X_WFDMA_TX_DONE_INT1 |
+		CONNAC2X_WFDMA_TX_DONE_INT2 |
+#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0 */
+		CONNAC2X_WFDMA_TX_DONE_INT3 |
 		CONNAC2X_WFDMA_TX_DONE_INT16 | CONNAC2X_WFDMA_TX_DONE_INT17),
 	.host_int_rxdone_bits =
 		(CONNAC2X_WFDMA_RX_DONE_INT0 | CONNAC2X_WFDMA_RX_DONE_INT1 |
@@ -980,11 +984,15 @@ static void soc7_0ReadIntStatus(struct ADAPTER *prAdapter,
 		u4WrValue |= (u4RegValue & CONNAC_MCU_SW_INT);
 	}
 
+#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
+	prHifInfo->u4IntStatus = u4WrValue;
+#else
 	prHifInfo->u4IntStatus = u4RegValue;
+#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
 
 	/* clear interrupt */
 	HAL_MCR_WR(prAdapter,
-		WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR, u4WrValue);
+		WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR, u4RegValue);
 }
 
 static void soc7_0configWfDmaIntMask(struct GLUE_INFO *prGlueInfo,
@@ -1006,9 +1014,11 @@ static void soc7_0configWfDmaIntMask(struct GLUE_INFO *prGlueInfo,
 		IntMask.field_conn2x_single.wfdma0_rx_done_1 = 1;
 		IntMask.field_conn2x_single.wfdma0_rx_done_2 = 1;
 		IntMask.field_conn2x_single.wfdma0_rx_done_3 = 1;
+#if (CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0)
 		IntMask.field_conn2x_single.wfdma0_tx_done_0 = 1;
 		IntMask.field_conn2x_single.wfdma0_tx_done_1 = 1;
 		IntMask.field_conn2x_single.wfdma0_tx_done_2 = 1;
+#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0 */
 		IntMask.field_conn2x_single.wfdma0_tx_done_17 = 1;
 		IntMask.field_conn2x_single.wfdma0_tx_done_16 = 1;
 	}
