@@ -693,7 +693,8 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 		prAdapter->u4HifChkFlag |= HIF_DRV_SER;
 
 		if (IS_FEATURE_ENABLED(prWifiVar->ucWarningTxTimeout))
-			kalSendAeeWarning("HAL", "Tx timeout > %ds, Warning\n",
+			kalSendAeeWarning("Tx Timeout",
+				"Tx timeout > %ds, Warning\n",
 				prWifiVar->u4MsduReportTimeoutSerTime);
 		DBGLOG(HAL, INFO, "Timeout > %ds, trigger SER\n",
 		       prWifiVar->u4MsduReportTimeoutSerTime);
