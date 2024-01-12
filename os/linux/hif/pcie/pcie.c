@@ -803,8 +803,9 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 	prChipInfo->u4HostCsrOffset = (uint32_t)g_u8CsrOffset;
 	prChipInfo->u4HostCsrSize = g_u4CsrSize;
 
-	DBGLOG(INIT, INFO, "CSRBaseAddress:0x%lX ioremap region 0x%X @ 0x%lX\n",
-	       CSRBaseAddress, g_u4CsrSize, g_u8CsrOffset);
+	DBGLOG(INIT, INFO,
+	       "CSRBaseAddress:0x%llX ioremap region 0x%X @ 0x%llX\n",
+	       (uint64_t)CSRBaseAddress, g_u4CsrSize, g_u8CsrOffset);
 
 	return true;
 }
@@ -950,15 +951,14 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	}
 
 	for (i = 0; i <= PCI_STD_RESOURCE_END; i++) {
-		if (pci_resource_len(pdev, i) == 0)
-			continue;
 		ret = pcim_iomap_regions(pdev, BIT(i), pci_name(pdev));
-		if (ret) {
-			DBGLOG(INIT, INFO,
-			       "pcim_iomap_regions failed, ret=%d\n", ret);
-			goto out;
-		}
-		break;
+		if (ret == 0)
+			break;
+	}
+	if (i > PCI_STD_RESOURCE_END) {
+		DBGLOG(INIT, INFO,
+		       "pcim_iomap_regions failed, ret=%d\n", ret);
+		goto out;
 	}
 
 	fgIsBusAccessFailed = FALSE;
@@ -1019,7 +1019,7 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	prChipInfo->CSRBaseAddress = pcim_iomap_table(pdev) ?
 		pcim_iomap_table(pdev)[i] : NULL;
 
-	DBGLOG(INIT, INFO, "ioremap for device %s[i], region 0x%lX @ 0x%lX\n",
+	DBGLOG(INIT, INFO, "ioremap for device %s[%d], region 0x%lX @ 0x%lX\n",
 	       pci_name(pdev), i, (unsigned long) pci_resource_len(pdev, i),
 	       (unsigned long) pci_resource_start(pdev, i));
 
@@ -1782,14 +1782,14 @@ static void glBusFreeMsiIrq(struct pci_dev *pdev,
 
 		written += kalSnprintf(dbg + written,
 				       sizeof(dbg) - written,
-				       "[%d] %lu, ",
+				       "[%d] %llu, ",
 				       irqn,
 				       KAL_GET_TIME_INTERVAL());
 	}
 	KAL_REC_TIME_END();
 
 	DBGLOG(INIT, INFO,
-		"Total: %lu us, %s\n",
+		"Total: %llu us, %s\n",
 		KAL_GET_TIME_INTERVAL(),
 		dbg);
 #endif

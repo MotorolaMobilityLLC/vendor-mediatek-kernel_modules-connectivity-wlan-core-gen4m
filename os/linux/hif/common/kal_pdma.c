@@ -1757,7 +1757,7 @@ static struct TX_CMD_REQ *kalCloneCmd(struct GLUE_INFO *prGlueInfo,
 	prCmdReq->rCmdInfo.pucTxd = aucBuff;
 	aucBuff += u4Size;
 
-	if (u4Size < TX_BUFFER_NORMSIZE) {
+	if (prCmdInfo->u4TxdLen < TX_BUFFER_NORMSIZE) {
 		u4Size = prCmdInfo->u4TxpLen;
 		if ((u4Size + prCmdInfo->u4TxdLen) > TX_BUFFER_NORMSIZE)
 			u4Size = TX_BUFFER_NORMSIZE - prCmdInfo->u4TxdLen;
@@ -2571,7 +2571,8 @@ int wf_ioremap_read(phys_addr_t addr, unsigned int *val)
 
 	*val = readl(vir_addr);
 	iounmap(vir_addr);
-	DBGLOG(INIT, TRACE, "Read CONSYS 0x%08x=0x%08x.\n", addr, *val);
+	DBGLOG(INIT, TRACE, "Read CONSYS 0x%08x=0x%08x.\n",
+	       (uint32_t)addr, *val);
 
 	return 0;
 }
@@ -2595,7 +2596,8 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val)
 
 	writel(val, vir_addr);
 	iounmap(vir_addr);
-	DBGLOG(INIT, TRACE, "Write CONSYS 0x%08x=0x%08x.\n", addr, val);
+	DBGLOG(INIT, TRACE, "Write CONSYS 0x%08x=0x%08x.\n",
+	       (uint32_t)addr, val);
 #endif
 	return 0;
 }
