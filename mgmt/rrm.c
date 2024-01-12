@@ -202,15 +202,26 @@ void rrmFreeMeasurementResources(struct ADAPTER *prAdapter,
 	if (fgHasBcnReqTimer)
 		cnmTimerStopTimer(prAdapter, &rBeaconReqTimer);
 
-	kalMemFree(prRmReq->pucReqIeBuf, VIR_MEM_TYPE, prRmReq->u2ReqIeBufLen);
-	kalMemFree(prRmRep->pucReportFrameBuff, VIR_MEM_TYPE,
-		   RM_REPORT_FRAME_MAX_LENGTH);
+	if (prRmReq->pucReqIeBuf)
+		kalMemFree(prRmReq->pucReqIeBuf, VIR_MEM_TYPE,
+			prRmReq->u2ReqIeBufLen);
+
+	if (prRmRep->pucReportFrameBuff)
+		kalMemFree(prRmRep->pucReportFrameBuff, VIR_MEM_TYPE,
+			RM_REPORT_FRAME_MAX_LENGTH);
+
 	while (!LINK_IS_EMPTY(prReportLink)) {
 		LINK_REMOVE_HEAD(prReportLink, prReportEntry,
 				 struct RM_MEASURE_REPORT_ENTRY *);
-		kalMemFree(prReportEntry->pucMeasReport,
-			VIR_MEM_TYPE, prReportEntry->u2MeasReportLen);
-		kalMemFree(prReportEntry, VIR_MEM_TYPE, sizeof(*prReportEntry));
+
+		if (prReportEntry->pucMeasReport)
+			kalMemFree(prReportEntry->pucMeasReport,
+				VIR_MEM_TYPE,
+				prReportEntry->u2MeasReportLen);
+		if (prReportEntry)
+			kalMemFree(prReportEntry,
+				VIR_MEM_TYPE,
+				sizeof(*prReportEntry));
 	}
 	kalMemZero(prRmReq, sizeof(*prRmReq));
 	kalMemZero(prRmRep, sizeof(*prRmRep));
