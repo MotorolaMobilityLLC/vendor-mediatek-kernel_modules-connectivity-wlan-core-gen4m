@@ -17805,3 +17805,76 @@ wlanoidSet6GPwrMode(struct ADAPTER *prAdapter,
 	return rStatus;
 }	/* wlanoidSet6GPwrMode */
 #endif
+
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is use to generate power limit data, write data to EMI
+ *        and send cmd to FW update cache table.
+ *        Note : Because share memory with FW, so we need to make sure race
+ *               condition scenrio - concurrent fw read/driver write.
+ *
+ * \param[in] prAdapter Pointer to the Adapter structure.
+ * \param[in] pvSetBuffer A pointer to the buffer that holds the data to be set.
+ * \param[in] u4SetBufferLen The length of the set buffer.
+ * \param[out] pu4SetInfoLen If the call is successful, returns the number of
+ *                           bytes read from the set buffer. If the call failed
+ *                           due to invalid length of the set buffer, returns
+ *                           the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_FAILURE
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidSendPwrLimitToEmi(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen)
+{
+	/***************ANT Power Setting******************/
+	rlmDomainSendAntPowerSetting(prAdapter);
+
+	/***************Country Power limit****************/
+	/* Step 1  -  Patch power limit type*/
+	rlmDomainPatchPwrLimitType();
+
+	/* Step 2  -  Fill country code */
+	rlmDomainSetPwrLimitCountryCode(
+		prAdapter,
+		rlmDomainPwrLmtGetMatchCountryCode(
+			prAdapter,
+			prAdapter->rWifiVar.u2CountryCode)
+	);
+
+	/* Step 3  -  Fill pwr limit header */
+	rlmDomainSetPwrLimitHeader(prAdapter);
+
+	/* Step 4  -  Build pwr limit payload */
+	rlmDomainSetPwrLimitPayload(prAdapter);
+
+	/* Step 5  -  Show power limit after loading default and config table*/
+	rlmDomainDumpAllPwrLmtData("Old", prAdapter);
+
+	/* Step 6  -  Compare with dynamic power setting */
+	rlmDomainApplyDynPwrSetting(prAdapter);
+
+	/* Step 7  -  Show power limit after campare dynamic power setting*/
+	rlmDomainDumpAllPwrLmtData("Final", prAdapter);
+
+	/* Step 8  -  Write EMI raw data & Send EMI CMD info*/
+	if (rlmDomainIsFWInReadEmiDataProcess(prAdapter) == FALSE) {
+		rlmDomainWritePwrLimitToEmi(prAdapter);
+	} else {
+		/*  If driver has new data, and fw is reading
+		 *  driver writing at this time may cause race condition
+		 *  So we cache new data, and we will trigger again
+		 *  when fw event coming.
+		 */
+		rlmDoaminSetPwrLmtNewDataFlag(prAdapter, TRUE);
+		DBGLOG(INIT, INFO,
+			"FW is reading EMI, Cache and wait FW response\n");
+	}
+	return 0;
+}
+#endif

@@ -1150,11 +1150,7 @@ void wlanOnPostFirmwareReady(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	wlanAdapterStartForLowLatency(prAdapter);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
-#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
-	/* dynamic tx power control load configuration */
-	/* note: call this API after loading NVRAM */
-	txPwrCtrlLoadConfig(prAdapter);
-#endif
+
 #if (CFG_WIFI_GET_MCS_INFO == 1)
 	prAdapter->fgIsMcsInfoValid = FALSE;
 #endif

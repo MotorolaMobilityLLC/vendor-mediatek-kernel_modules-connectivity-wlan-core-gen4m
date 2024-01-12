@@ -381,6 +381,9 @@
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 #define CMD_SET_6G_POWER_MODE		"SET_6G_PWR_MODE"
 #endif /*CFG_SUPPORT_WIFI_6G_PWR_MODE */
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+#define CMD_GET_POWER_LIMIT		"GET_POWER_LIMIT"
+#endif /*#if CFG_SUPPORT_PWR_LMT_EMI == 1*/
 /*------------------------------------------------------------------------------
  *  nl80211 vendor string command
  *------------------------------------------------------------------------------

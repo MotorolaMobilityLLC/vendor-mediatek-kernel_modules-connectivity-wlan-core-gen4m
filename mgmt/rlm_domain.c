@@ -21,10 +21,20 @@
 #include "precomp.h"
 #include "rlm_txpwr_init.h"
 #include "gl_kal.h"
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+#include "hif_pdma.h"
+#endif
 
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 #include "he_ie.h"
 #endif
+
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+#include "rlm_txpwr_limit_emi.h"
+#else
+#include "rlm_txpwr_limit.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -54,6 +64,24 @@ char *g_au1TxPwrOperationLabel[] = {
 	"power level",
 	"power offset"
 };
+
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+char *g_au1TxPwrRFBand[PWR_LIMIT_RF_BAND_NUM] = {
+	"2.4G", /* PWR_LIMIT_RF_BAND_2G4 */
+	"5G", /* PWR_LIMIT_RF_BAND_5G */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	"6G", /* PWR_LIMIT_RF_BAND_6G */
+#endif /* CFG_SUPPORT_WIFI_6G == 1 */
+};
+
+char *g_au1TxPwrProtocol[PWR_LIMIT_PROTOCOL_NUM] = {
+	"LEGACY", /* PWR_LIMIT_PROTOCOL_LEGACY */
+	"HE", /* PWR_LIMIT_PROTOCOL_HE */
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+	"EHT", /* PWR_LIMIT_PROTOCOL_EHT */
+#endif /* CFG_SUPPORT_PWR_LIMIT_EHT == 1 */
+};
+#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
 
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
 typedef int32_t (*PFN_TX_PWR_TAG_PARA_FUNC) (
@@ -1338,6 +1366,49 @@ static const uint16_t g_u2IndoorType2[] = {
 };
 #endif
 
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT_INFO
+	g_rlmPowerLimitDefaultTable[PWR_LIMIT_DEFAULT_BASE_NUM] = {
+		PWR_LMT_TBL_REG(g_rRlmPowerLimitDefault),
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+		PWR_LMT_TBL_REG(g_rRlmPowerLimitDefault_VLP),
+		PWR_LMT_TBL_REG(g_rRlmPowerLimitDefault_SP)
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE == 1*/
+};
+
+
+struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_INFO
+	g_rlmPowerLimitConfigTable[PWR_LIMIT_CONFIG_BASE_NUM] = {
+	{
+		PWR_LMT_TBL_REG(g_rRlmPowerLimitConfigurationLegacy),
+		PWR_LMT_TBL_REG(g_rRlmPowerLimitConfigurationHE),
+		PWR_LMT_TBL_REG(g_rRlmPowerLimitConfigurationEHT),
+	},
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	{
+		PWR_LMT_TBL_REG(g_rRlmPowerLimitConfigurationLegacy_6G),
+		PWR_LMT_TBL_REG(g_rRlmPowerLimitConfigurationHE_6G),
+		PWR_LMT_TBL_REG(g_rRlmPowerLimitConfigurationEHT_6G),
+	},
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	{
+		PWR_LMT_TBL_REG(g_rRlmPowerLimitConfigurationLegacy_6G_VLP),
+		PWR_LMT_TBL_REG(g_rRlmPowerLimitConfigurationHE_6G_SP),
+		PWR_LMT_TBL_REG(g_rRlmPowerLimitConfigurationEHT_6G_SP),
+	},
+	{
+		PWR_LMT_TBL_REG(g_rRlmPowerLimitConfigurationLegacy_6G_SP),
+		PWR_LMT_TBL_REG(g_rRlmPowerLimitConfigurationHE_6G_SP),
+		PWR_LMT_TBL_REG(g_rRlmPowerLimitConfigurationEHT_6G_SP),
+	},
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE == 1 */
+#endif /* CFG_SUPPORT_WIFI_6G == 1 */
+};
+
+struct PWR_LIMIT_INFO
+	g_RlmPwrLimitInfo[PWR_LIMIT_RF_BAND_NUM][PWR_LIMIT_PROTOCOL_NUM] = {0};
+
+#endif /*#if ((CFG_SUPPORT_PWR_LMT_EMI == 1)*/
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -1361,11 +1432,164 @@ static uint32_t rlmDomainGetSubBandIdx(
 	uint8_t ucCenterCh,
 	uint8_t *pu1SubBandIdx);
 #endif
+
+static uint8_t rlmDomainGetSubBandPwrLimit(
+	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *prPwrLimitSubBand,
+	uint32_t sub_band_idx);
+
+static void txPwrCtrlSetAllRatePwrLimit(
+	struct TX_PWR_CTRL_CHANNEL_SETTING *prChnlSet,
+	uint8_t op,
+	uint8_t value);
+
+static void txPwrCtrlSetSingleRatePwrLimit(
+	struct TX_PWR_CTRL_CHANNEL_SETTING *prChnlSet,
+	enum ENUM_PWR_CFG_RATE_TAG eRateTag,
+	uint8_t ofset,
+	uint8_t op,
+	uint8_t value);
+
+static uint32_t txPwrCtrlApplyAntPowerSettings(
+	struct ADAPTER *prAdapter,
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd);
+
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+
+static enum ENUM_BAND rlmDomainConvertRFBandEnum(
+	enum ENUM_PWR_LIMIT_RF_BAND eRFBandIndex);
+
+static enum ENUM_PWR_LIMIT_DEFINE rlmDomainPwrLmtGetChannelDefine(
+	void);
+
+static enum ENUM_PWR_LIMIT_CONFIG_BASE rlmDomainPwrLmtGetConfigBase(
+	struct ADAPTER *prAdapter,
+	enum ENUM_PWR_LIMIT_RF_BAND eRfBandIndex);
+
+static void rlmDomainDumpPwrLimitEmiPayload(
+	struct ADAPTER *prAdapter,
+	enum ENUM_PWR_LIMIT_RF_BAND eRF,
+	enum ENUM_PWR_LIMIT_PROTOCOL eProt);
+
+static void rlmDomainBuildDefaultPwrLimitPayload_Legacy(
+	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *prPwrLmtDefaultTable,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	struct PWR_LIMIT_INFO rPerPwrLimitInfo);
+
+static void rlmDomainBuildConfigPwrLimitPayload_Legacy(
+	struct ADAPTER *prAdapter,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	enum ENUM_PWR_LIMIT_RF_BAND eRFBandIndex);
+
+static void rlmDomainDumpPwrLimitPayload_Legacy(
+	char *message,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	enum ENUM_PWR_LIMIT_RF_BAND eRFBandIndex);
+
+static void rlmDomainApplyDynSettings_Legacy(
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	struct TX_PWR_CTRL_ELEMENT *prCurElement,
+	uint8_t *bandedgeParam,
+	enum ENUM_PWR_LIMIT_RF_BAND eRFBandIndex);
+
+static void rlmDomainWriteTxPwrEmiData_Legacy(
+	uint32_t channel_index,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	char *prTxPowrEmiAddress,
+	uint32_t *u4Size);
+
+static void rlmDomainBuildDefaultPwrLimitPayload_HE(
+	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *prPwrLmtDefaultTable,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	struct PWR_LIMIT_INFO rPerPwrLimitInfo);
+
+static void rlmDomainBuildConfigPwrLimitPayload_HE(
+	struct ADAPTER *prAdapter,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	enum ENUM_PWR_LIMIT_RF_BAND eRFBandIndex);
+
+static void rlmDomainDumpPwrLimitPayload_HE(
+	char *message,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	enum ENUM_PWR_LIMIT_RF_BAND eRFBandIndex);
+
+static void rlmDomainApplyDynSettings_HE(
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	struct TX_PWR_CTRL_ELEMENT *prCurElement,
+	uint8_t *bandedgeParam,
+	enum ENUM_PWR_LIMIT_RF_BAND eRFBandIndex);
+
+static void rlmDomainWriteTxPwrEmiData_HE(
+	uint32_t channel_index,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	char *prTxPowrEmiAddress,
+	uint32_t *u4Size
+);
+
+static void rlmDomainBuildDefaultPwrLimitPayload_EHT(
+	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *prPwrLmtDefaultTable,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	struct PWR_LIMIT_INFO rPerPwrLimitInfo);
+
+static void rlmDomainBuildConfigPwrLimitPayload_EHT(
+	struct ADAPTER *prAdapter,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	enum ENUM_PWR_LIMIT_RF_BAND eRFBandIndex);
+
+static void rlmDomainDumpPwrLimitPayload_EHT(
+	char *message,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	enum ENUM_PWR_LIMIT_RF_BAND eRFBandIndex);
+
+static void rlmDomainApplyDynSettings_EHT(
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	struct TX_PWR_CTRL_ELEMENT *prCurElement,
+	uint8_t *bandedgeParam,
+	enum ENUM_PWR_LIMIT_RF_BAND eRFBandIndex);
+
+static void rlmDomainWriteTxPwrEmiData_EHT(
+	uint32_t channel_index,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	char *prTxPowrEmiAddress,
+	uint32_t *u4Size
+);
+
+static uint32_t txPwrCtrlApplyDynPwrSetting(
+	struct ADAPTER *prAdapter,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	uint8_t *bandedgeParam,
+	enum ENUM_PWR_LIMIT_TYPE eLimitType,
+	enum ENUM_PWR_LIMIT_RF_BAND eRFBandIndex);
+
+#endif /*#if ((CFG_SUPPORT_PWR_LMT_EMI == 1)*/
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
  */
-
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+struct PWR_LIMIT_HANDLER_INFO g_rRlmPwrLimitHandler[PWR_LIMIT_TYPE_NUM] = {
+	{
+		rlmDomainBuildDefaultPwrLimitPayload_Legacy,
+		rlmDomainBuildConfigPwrLimitPayload_Legacy,
+		rlmDomainDumpPwrLimitPayload_Legacy,
+		rlmDomainApplyDynSettings_Legacy,
+		rlmDomainWriteTxPwrEmiData_Legacy,
+	},
+	{
+		rlmDomainBuildDefaultPwrLimitPayload_HE,
+		rlmDomainBuildConfigPwrLimitPayload_HE,
+		rlmDomainDumpPwrLimitPayload_HE,
+		rlmDomainApplyDynSettings_HE,
+		rlmDomainWriteTxPwrEmiData_HE
+	},
+	{
+		rlmDomainBuildDefaultPwrLimitPayload_EHT,
+		rlmDomainBuildConfigPwrLimitPayload_EHT,
+		rlmDomainDumpPwrLimitPayload_EHT,
+		rlmDomainApplyDynSettings_EHT,
+		rlmDomainWriteTxPwrEmiData_EHT
+	},
+};
+#endif
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief
@@ -3463,10 +3687,15 @@ error:
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-rlmDomainCheckPowerLimitValid(struct ADAPTER *prAdapter,
-			      struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
-						rPowerLimitTableConfiguration,
-			      uint8_t ucPwrLimitNum)
+rlmDomainCheckPowerLimitValid(
+	struct ADAPTER *prAdapter,
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY
+#else
+	struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
+#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
+		rPowerLimitTableConfiguration,
+	uint8_t ucPwrLimitNum)
 {
 	uint16_t i;
 	u_int8_t fgValid = TRUE;
@@ -3483,7 +3712,6 @@ rlmDomainCheckPowerLimitValid(struct ADAPTER *prAdapter,
 	return fgValid;
 
 }
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief 1.Check if power limit configuration table valid(channel intervel)
@@ -3496,24 +3724,39 @@ rlmDomainCheckPowerLimitValid(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void rlmDomainCheckCountryPowerLimitTable(struct ADAPTER *prAdapter)
 {
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+#define PwrLmtConf g_rRlmPowerLimitConfigurationLegacy
+#define PerPwrLmtConfSize \
+	sizeof(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY)
+#define LEGACY_PWR_LIMIT_NUM PWR_LIMIT_LEGACY_NUM
+#else
 #define PwrLmtConf g_rRlmPowerLimitConfiguration
-	uint16_t i, j;
+#define PerPwrLmtConfSize \
+	sizeof(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION)
+#define LEGACY_PWR_LIMIT_NUM PWR_LIMIT_NUM
+#endif
+
+	uint16_t i, j, k;
 	uint16_t u2CountryCodeTable, u2CountryCodeCheck;
 	u_int8_t fgChannelValid = FALSE;
 	u_int8_t fgPowerLimitValid = FALSE;
 	u_int8_t fgEntryRepetetion = FALSE;
 	u_int8_t fgTableValid = TRUE;
+	char ucMsgBuf[PWR_BUF_LEN] = {0};
+	u_int8_t ucMsgOfs = 0;
+	u_int8_t ucUpBound = 0;
+	u_int8_t ucLowBound = 0;
 
 	/*1.Configuration Table Check */
 	for (i = 0; i < sizeof(PwrLmtConf) /
-	     sizeof(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION); i++) {
+	     PerPwrLmtConfSize; i++) {
 		/*Table Country Code */
 		WLAN_GET_FIELD_BE16(&PwrLmtConf[i].aucCountryCode[0],
 				    &u2CountryCodeTable);
 
 		/*<1>Repetition Entry Check */
 		for (j = i + 1; j < sizeof(PwrLmtConf) /
-		     sizeof(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION);
+		     PerPwrLmtConfSize;
 		     j++) {
 
 			WLAN_GET_FIELD_BE16(&PwrLmtConf[j].aucCountryCode[0],
@@ -3539,48 +3782,39 @@ void rlmDomainCheckCountryPowerLimitTable(struct ADAPTER *prAdapter)
 		fgPowerLimitValid =
 		    rlmDomainCheckPowerLimitValid(prAdapter,
 						  PwrLmtConf[i],
-						  PWR_LIMIT_NUM);
+						  LEGACY_PWR_LIMIT_NUM);
 
 		if (fgChannelValid == FALSE || fgPowerLimitValid == FALSE) {
 			fgTableValid = FALSE;
-#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
-			DBGLOG(RLM, LOUD,
-				"Domain: CC=%c%c, Ch=%d, Limit: %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d, Valid:%d,%d\n",
-				PwrLmtConf[i].aucCountryCode[0],
-				PwrLmtConf[i].aucCountryCode[1],
-				PwrLmtConf[i].ucCentralCh,
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_CCK_L],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_CCK_H],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_OFDM_L],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_OFDM_H],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_20M_L],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_20M_H],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_40M_L],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_40M_H],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_80M_L],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_80M_H],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_160M_L],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_160M_H],
-				fgChannelValid,
-				fgPowerLimitValid);
+
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+			ucUpBound = PWR_LIMIT_LEGACY_CCK_L;
+			ucLowBound = PWR_LIMIT_LEGACY_160M_H;
 #else
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+			ucUpBound = PWR_LIMIT_CCK_L;
+			ucLowBound = PWR_LIMIT_160M_H;
+#else
+			ucUpBound = PWR_LIMIT_CCK;
+			ucLowBound = PWR_LIMIT_160M_H;
+#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1*/
+#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
+
+			for (k = ucUpBound; k < ucLowBound; k++) {
+				ucMsgOfs += snprintf(ucMsgBuf + ucMsgOfs,
+					PWR_BUF_LEN - ucMsgOfs,
+					"%d,",
+					PwrLmtConf[i].aucPwrLimit[k]);
+			}
+
 			DBGLOG(RLM, LOUD,
-				"Domain: CC=%c%c, Ch=%d, Limit: %d,%d,%d,%d,%d,%d,%d,%d,%d, Valid:%d,%d\n",
+				"Domain: CC=%c%c, Ch=%d, Limit: %s, Valid:%d,%d\n",
 				PwrLmtConf[i].aucCountryCode[0],
 				PwrLmtConf[i].aucCountryCode[1],
 				PwrLmtConf[i].ucCentralCh,
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_CCK],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_20M_L],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_20M_H],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_40M_L],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_40M_H],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_80M_L],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_80M_H],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_160M_L],
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_160M_H],
+				ucMsgBuf,
 				fgChannelValid,
 				fgPowerLimitValid);
-#endif
 		}
 
 		if (u2CountryCodeTable == COUNTRY_CODE_NULL) {
@@ -3628,8 +3862,9 @@ void rlmDomainCheckCountryPowerLimitTable(struct ADAPTER *prAdapter)
 	if (fgEntryRepetetion == FALSE)
 		DBGLOG(RLM, TRACE, "Domain: Default Table no Repetiton.\n");
 #undef PwrLmtConf
+#undef PerPwrLmtConfSize
+#undef LEGACY_PWR_LIMIT_NUM
 }
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief
@@ -3708,6 +3943,7 @@ uint16_t rlmDomainPwrLimitDefaultTableDecision(struct ADAPTER *prAdapter,
 		}
 	}
 
+	DBGLOG(RLM, TRACE, "u2TableIndex = [%d]\n", u2TableIndex);
 	return u2TableIndex;
 }
 /*----------------------------------------------------------------------------*/
@@ -3723,6 +3959,7 @@ uint16_t rlmDomainPwrLimitDefaultTableDecision(struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
+#if (CFG_SUPPORT_PWR_LMT_EMI == 0)
 void
 rlmDomainGetStartEndIdx(enum ENUM_PWR_LIMIT_TYPE eType,
 		uint8_t *pu1StartIdx, uint8_t *pu1EndIdx)
@@ -3828,6 +4065,7 @@ rlmDomainGetStartEndIdx(enum ENUM_PWR_LIMIT_TYPE eType,
 		break;
 	}
 }
+#endif /*#if (CFG_SUPPORT_PWR_LMT_EMI == 1)*/
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Get default table subband txpower index
@@ -3895,6 +4133,7 @@ rlmDomainGetSubBandDefPwrIdx(enum ENUM_PWR_LMT_SUBBAND eSubBandIdx,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
+#if (CFG_SUPPORT_PWR_LMT_EMI == 0)
 void
 rlmDomainBuildCmdByDefaultTable(struct ADAPTER *prAdapter,
 	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
@@ -4619,7 +4858,9 @@ rlmDomainBuildCmdByDefaultTable(struct ADAPTER *prAdapter,
 				eType);
 
 }
+#endif /*#if (CFG_SUPPORT_PWR_LMT_EMI == 0)*/
 
+#if (CFG_SUPPORT_PWR_LMT_EMI == 0)
 void rlmDomainCopyFromConfigTable(struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit,
 	struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION *prPwrLimitConfig)
 {
@@ -4635,6 +4876,7 @@ void rlmDomainCopyFromConfigTable(struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit,
 		   PWR_LIMIT_NUM);
 #endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING */
 }
+#endif /*#if (CFG_SUPPORT_PWR_LMT_EMI == 0)*/
 
 static void PwrLmtTblArbitrator(int8_t *target,
 	int8_t *compare,
@@ -4655,6 +4897,7 @@ static void PwrLmtTblArbitrator(int8_t *target,
 	}
 }
 
+#if (CFG_SUPPORT_PWR_LMT_EMI == 0)
 static void rlmDomainCompareFromConfigTable(int8_t *prPwrLmt,
 	int8_t *prPwrLmtConf,
 	enum ENUM_PWR_LIMIT_TYPE eType)
@@ -4730,7 +4973,7 @@ static void rlmDomainCompareFromConfigTable(int8_t *prPwrLmt,
 	/* Choose min value from defarult table & Conf table */
 	PwrLmtTblArbitrator(prPwrLmt, prPwrLmtConf, size);
 }
-
+#endif /*#if (CFG_SUPPORT_PWR_LMT_EMI == 0)*/
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Fill power limit CMD by Power Limit Configurartion Table
@@ -4741,6 +4984,7 @@ static void rlmDomainCompareFromConfigTable(int8_t *prPwrLmt,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
+#if (CFG_SUPPORT_PWR_LMT_EMI == 0)
 void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 			struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd)
 {
@@ -5195,6 +5439,7 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 		}
 	}
 }
+#endif /*#if (CFG_SUPPORT_PWR_LMT_EMI == 0)*/
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 #if (CFG_SUPPORT_SINGLE_SKU_6G == 1)
@@ -7140,6 +7385,7 @@ void txPwrOperate(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
 		*operand1 = MIN_TX_POWER;
 }
 
+#if (CFG_SUPPORT_PWR_LMT_EMI == 0)
 uint32_t txPwrArbitrator(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
 			 void *pvBuf,
 			 struct TX_PWR_CTRL_CHANNEL_SETTING *prChlSetting,
@@ -7214,7 +7460,7 @@ uint32_t txPwrArbitrator(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
 			if (prChlSetting->op6E[rateIdx]
 				!= PWR_CTRL_TYPE_NO_ACTION) {
 				txPwrOperate(eCtrlType, prRateOfs + rateIdx,
-					&prChlSetting->i8PwrLimit6E[rateIdx]);
+				&prChlSetting->i8PwrLimit6E[rateIdx]);
 			}
 		}
 	} else if (eType >= PWR_LIMIT_TYPE_COMP_LEGACY_6G_1 &&
@@ -7277,6 +7523,7 @@ uint32_t txPwrArbitrator(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
 	}
 	return 0;
 }
+#endif /*#if (CFG_SUPPORT_PWR_LMT_EMI == 0)*/
 
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
 uint8_t txPwrIsAntTagSet(
@@ -7504,15 +7751,22 @@ uint32_t txPwrApplyOneSettingPwrAnt(
 	uint8_t fgAllT6GSet = 0;
 	uint8_t fgChainCompSet = 0;
 	uint8_t fgChainAbsSet = 0;
-
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	enum ENUM_CMD_PWR_LIMIT_TYPE eType;
+#else
 	enum ENUM_PWR_LIMIT_TYPE eType;
+#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
 
 	if (!prCurElement || !prCmd)
 		return 1;
 
 	eType = prCmd->ucLimitType;
 
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	if (eType != PWR_LIMIT_CMD_TYPE_ANT_V2)
+#else
 	if (eType != PWR_LIMIT_TYPE_COMP_ANT_V2)
+#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
 		return 0;
 
 	prCmdPwrAnt = &(prCmd->u.rChPwrLimtAnt[0]);
@@ -7574,6 +7828,8 @@ uint32_t txPwrApplyOneSettingPwrAnt(
 	return 0;
 }
 #endif /* CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG */
+
+#if (CFG_SUPPORT_PWR_LMT_EMI == 0)
 uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 			      struct TX_PWR_CTRL_ELEMENT *prCurElement,
 			      uint8_t *bandedgeParam)
@@ -7847,7 +8103,37 @@ uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 	}
 	return 0;
 }
+#endif /*#if (CFG_SUPPORT_PWR_LMT_EMI == 0)*/
 
+uint32_t txPwrCtrlApplyAntPowerSettings(struct ADAPTER *prAdapter,
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd)
+{
+	struct LINK_ENTRY *prCur, *prNext;
+	struct TX_PWR_CTRL_ELEMENT *element = NULL;
+	struct LINK *aryprlist[2] = {
+		&prAdapter->rTxPwr_DefaultList,
+		&prAdapter->rTxPwr_DynamicList
+	};
+	int32_t i;
+
+	/* show the tx power ctrl applied list */
+	txPwrCtrlShowList(prAdapter, 1, "applied list");
+
+	for (i = 0; i < ARRAY_SIZE(aryprlist); i++) {
+		LINK_FOR_EACH_SAFE(prCur, prNext, aryprlist[i]) {
+			element = LINK_ENTRY(prCur,
+				struct TX_PWR_CTRL_ELEMENT, node);
+
+			if (element->fgApplied == TRUE)
+				txPwrApplyOneSettingPwrAnt(prCmd, element);
+
+		}
+	}
+
+	return 0;
+}
+
+#if (CFG_SUPPORT_PWR_LMT_EMI == 0)
 uint32_t txPwrCtrlApplySettings(struct ADAPTER *prAdapter,
 			struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 			uint8_t *bandedgeParam)
@@ -7875,6 +8161,7 @@ uint32_t txPwrCtrlApplySettings(struct ADAPTER *prAdapter,
 
 	return 0;
 }
+#endif /*#if (CFG_SUPPORT_PWR_LMT_EMI == 0)*/
 
 uint32_t txPwrCfgParsingRateTag(char *pcContTmp, uint8_t count)
 {
@@ -7888,30 +8175,30 @@ uint32_t txPwrCfgParsingRateTag(char *pcContTmp, uint8_t count)
 	count = count - 1;
 
 	if (kalStrCmp(pcContTmp, PWR_CTRL_RATE_TAG_KEY_LEGACY) == 0 &&
-		count == PWR_LIMIT_NUM)
+		count == PWR_LIMIT_PARSER_LEGACY_NUM)
 		u1Result = PWR_CFG_RATE_TAG_HIT_LEGACY;
 	else if (kalStrCmp(pcContTmp, PWR_CTRL_RATE_TAG_KEY_AX160) == 0 &&
-		count == PWR_LIMIT_HE_BW160_NUM)
+		count == PWR_LIMIT_PARSER_HE160_NUM)
 		u1Result = PWR_CFG_RATE_TAG_HIT_HE;
 	else if (kalStrCmp(pcContTmp, PWR_CTRL_RATE_TAG_KEY_HE) == 0 &&
-		count == PWR_LIMIT_HE_BW160_NUM)
+		count == PWR_LIMIT_PARSER_HE160_NUM)
 		u1Result = PWR_CFG_RATE_TAG_HIT_HE;
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	else if (kalStrCmp(pcContTmp, PWR_CTRL_RATE_TAG_KEY_EHT) == 0 &&
-		count == PWR_LIMIT_EHT_NUM)
+		count == PWR_LIMIT_PARSER_EHT_NUM)
 		u1Result = PWR_CFG_RATE_TAG_HIT_EHT;
 #endif
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	else if (kalStrCmp(pcContTmp,
 			PWR_CTRL_RATE_TAG_KEY_LEGACY6G) == 0 &&
-		count == PWR_LIMIT_LEGACY_6G_NUM)
+		count == PWR_LIMIT_PARSER_LEGACY_NUM)
 		u1Result = PWR_CFG_RATE_TAG_HIT_LEGACY6G;
 	else if (kalStrCmp(pcContTmp, PWR_CTRL_RATE_TAG_KEY_HE6G) == 0 &&
-		count == PWR_LIMIT_6E_NUM)
+		count == PWR_LIMIT_PARSER_HE160_NUM)
 		u1Result = PWR_CFG_RATE_TAG_HIT_HE6G;
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	else if (kalStrCmp(pcContTmp, PWR_CTRL_RATE_TAG_KEY_EHT6G) == 0 &&
-		count == PWR_LIMIT_EHT_6G_NUM)
+		count == PWR_LIMIT_PARSER_EHT6G_NUM)
 		u1Result = PWR_CFG_RATE_TAG_HIT_EHT6G;
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #endif /* CFG_SUPPORT_WIFI_6G  */
@@ -7920,6 +8207,176 @@ uint32_t txPwrCfgParsingRateTag(char *pcContTmp, uint8_t count)
 
 	DBGLOG(RLM, TRACE, "Parse rate tag result[%d]\n", u1Result);
 	return u1Result;
+}
+static void txPwrCtrlSetAllRatePwrLimit(
+	struct TX_PWR_CTRL_CHANNEL_SETTING *prChnlSet,
+	uint8_t op,
+	uint8_t value
+)
+{
+
+	int8_t power = 0;
+	uint8_t i = 0;
+
+	if (op == 2)
+		power = 0 - value;
+	else
+		power = value;
+
+	/* Legacy */
+	for (i = 0;
+		i < sizeof(prChnlSet->i8PwrLimit) / sizeof(uint8_t);
+		i++) {
+		prChnlSet->op[i] = op;
+		prChnlSet->i8PwrLimit[i] = power;
+	}
+	/* HE */
+	for (i = 0;
+		i < sizeof(prChnlSet->i8PwrLimitHE) / sizeof(uint8_t);
+		i++) {
+		prChnlSet->opHE[i] = op;
+		prChnlSet->i8PwrLimitHE[i] = power;
+	}
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+	/* EHT */
+	for (i = 0;
+		i < sizeof(prChnlSet->i8PwrLimitEHT) / sizeof(uint8_t);
+		i++) {
+		prChnlSet->opEHT[i] = op;
+		prChnlSet->i8PwrLimitEHT[i] = power;
+	}
+#endif /*CFG_SUPPORT_PWR_LIMIT_EHT*/
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	/* Legacy 6G*/
+	for (i = 0;
+		i < sizeof(prChnlSet->i8PwrLimitLegacy_6G) / sizeof(uint8_t);
+		i++) {
+		prChnlSet->opLegacy_6G[i] = op;
+		prChnlSet->i8PwrLimitLegacy_6G[i] = power;
+	}
+	/* HE 6G*/
+	for (i = 0;
+		i < sizeof(prChnlSet->i8PwrLimit6E) / sizeof(uint8_t);
+		i++) {
+		prChnlSet->op6E[i] = op;
+		prChnlSet->i8PwrLimit6E[i] = power;
+	}
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+	/* EHT 6G*/
+	for (i = 0;
+		i < sizeof(prChnlSet->i8PwrLimitEHT_6G) / sizeof(uint8_t);
+		i++) {
+		prChnlSet->opEHT_6G[i] = op;
+		prChnlSet->i8PwrLimitEHT_6G[i] = power;
+	}
+#endif /*CFG_SUPPORT_PWR_LIMIT_EHT*/
+#endif /*CFG_SUPPORT_WIFI_6G*/
+}
+
+static void txPwrCtrlSetSingleRatePwrLimit(
+	struct TX_PWR_CTRL_CHANNEL_SETTING *prChnlSet,
+	enum ENUM_PWR_CFG_RATE_TAG eRateTag,
+	uint8_t ofset,
+	uint8_t op,
+	uint8_t value
+)
+{
+
+	int8_t pwr = 0;
+
+#if ((CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 0) \
+	&& (CFG_SUPPORT_PWR_LMT_EMI == 1))
+	uint8_t i = 0;
+#endif
+
+	if (op == 2)
+		pwr = 0 - value;
+	else
+		pwr = value;
+
+	switch (eRateTag) {
+	case PWR_CFG_RATE_TAG_HIT_LEGACY:
+#if ((CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 0) \
+	&& (CFG_SUPPORT_PWR_LMT_EMI == 1))
+		/* support pwr limit emi, merge legacy V1&V2
+		 * extend CCK to CCK L/H, OFDM L/H
+		 */
+		if (ofset == 0) {
+			for (i = 0; i <= 3; i++) {
+				prChnlSet->op[ofset + i] = op;
+				prChnlSet->i8PwrLimit[ofset + i] = pwr;
+			}
+		} else {
+			prChnlSet->op[ofset + 3] = op;
+			prChnlSet->i8PwrLimit[ofset + 3] = pwr;
+		}
+#else
+		{
+			prChnlSet->op[ofset] = op;
+			prChnlSet->i8PwrLimit[ofset] = pwr;
+		}
+#endif
+		break;
+
+	case PWR_CFG_RATE_TAG_HIT_HE:
+		prChnlSet->opHE[ofset] = op;
+		prChnlSet->i8PwrLimitHE[ofset] = pwr;
+		break;
+
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+	case PWR_CFG_RATE_TAG_HIT_EHT:
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+		/* support pwr limit emi, merge EHT / EHT6G
+		 * Skip RU996X4 setting.
+		 */
+		if (ofset > PWR_LIMIT_EHT_RU996X2_U)
+			ofset = ofset + 3;
+#endif /*CFG_SUPPORT_PWR_LMT_EMI*/
+		prChnlSet->opEHT[ofset] = op;
+		prChnlSet->i8PwrLimitEHT[ofset] = pwr;
+		break;
+#endif /*CFG_SUPPORT_PWR_LIMIT_EHT*/
+
+	case PWR_CFG_RATE_TAG_HIT_LEGACY6G:
+#if ((CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 0) \
+	&& (CFG_SUPPORT_PWR_LMT_EMI == 1))
+		/* support pwr limit emi, merge legacy V1&V2
+		 * extend CCK to CCK L/H, OFDM L/H
+		 */
+		if (ofset == 0) {
+			for (i = 0; i <= 3; i++) {
+				prChnlSet->opLegacy_6G[ofset + i] = op;
+				prChnlSet->i8PwrLimitLegacy_6G[ofset + i] = pwr;
+			}
+		} else {
+			prChnlSet->opLegacy_6G[ofset + 3] = op;
+			prChnlSet->i8PwrLimitLegacy_6G[ofset + 3] = pwr;
+		}
+#else
+		{
+			prChnlSet->opLegacy_6G[ofset] = op;
+			prChnlSet->i8PwrLimitLegacy_6G[ofset] = pwr;
+		}
+#endif
+		break;
+
+	case PWR_CFG_RATE_TAG_HIT_HE6G:
+		prChnlSet->op6E[ofset] = op;
+		prChnlSet->i8PwrLimit6E[ofset] = pwr;
+		break;
+
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+	case PWR_CFG_RATE_TAG_HIT_EHT6G:
+		prChnlSet->opEHT_6G[ofset] = op;
+		prChnlSet->i8PwrLimitEHT_6G[ofset] = pwr;
+		break;
+
+#endif /*CFG_SUPPORT_PWR_LIMIT_EHT*/
+	default:
+		break;
+	}
+
 }
 
 struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
@@ -7939,7 +8396,7 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 	uint32_t u4RollBackStep = 0;
 	char carySeperator[2] = { 0, 0 };
 	enum ENUM_PWR_CFG_RATE_TAG u1RateTag = 0;
-	char *pacParsePwrAC[PWR_CFG_PRAM_NUM_AC] = {
+	char *pacParsePwrAC[PWR_LIMIT_PARSER_LEGACY_NUM] = {
 #if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
 		"CCKL",
 		"CCKH",
@@ -7957,7 +8414,7 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 		"HT160L",
 		"HT160H"
 		};
-	char *pacParsePwrAX[PWR_LIMIT_HE_BW160_NUM] = {
+	char *pacParsePwrAX[PWR_LIMIT_PARSER_HE160_NUM] = {
 		"RU26L",
 		"RU26H",
 		"RU26U",
@@ -7981,7 +8438,7 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 		"RU1992U"
 		};
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
-	char *pacParsePwrEHT[PWR_LIMIT_EHT_NUM] = {
+	char *pacParsePwrEHT[PWR_LIMIT_PARSER_EHT_NUM] = {
 		"EHT26L",
 		"EHT26H",
 		"EHT26U",
@@ -8020,7 +8477,7 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 		"EHT996_484_242U"
 		};
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	char *pacParsePwrEHT_6G[PWR_LIMIT_EHT_6G_NUM] = {
+	char *pacParsePwrEHT_6G[PWR_LIMIT_PARSER_EHT6G_NUM] = {
 		"EHT26L",
 		"EHT26H",
 		"EHT26U",
@@ -8229,23 +8686,23 @@ skipLabel:
 			pcContTmp++;
 		}
 
-		if ((count != PWR_LIMIT_NUM) &&
+		if ((count != PWR_LIMIT_PARSER_LEGACY_NUM) &&
 			/* include keyword : LEGACY */
-			(count != PWR_LIMIT_NUM + 1) &&
-			(count != PWR_LIMIT_HE_NUM) &&
+			(count != PWR_LIMIT_PARSER_LEGACY_NUM + 1) &&
+			(count != PWR_LIMIT_PARSER_HE_NUM) &&
 			/* include keyword : HE or AX160 */
-			(count != PWR_LIMIT_HE_BW160_NUM + 1) &&
+			(count != PWR_LIMIT_PARSER_HE160_NUM + 1) &&
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 			/* include keyword : EHT */
-			(count != PWR_LIMIT_EHT_NUM + 1) &&
+			(count != PWR_LIMIT_PARSER_EHT_NUM  + 1) &&
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #if (CFG_SUPPORT_WIFI_6G == 1)
-			(count != PWR_LIMIT_6E_NUM) &&
+			(count != PWR_LIMIT_PARSER_HE160_NUM) &&
 			/* include keyword : LEGACY6G */
-			(count != PWR_LIMIT_LEGACY_6G_NUM + 1) &&
+			(count != PWR_LIMIT_PARSER_LEGACY_NUM + 1) &&
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 			/* include keyword : EHT6G */
-			(count != PWR_LIMIT_EHT_6G_NUM + 1) &&
+			(count != PWR_LIMIT_PARSER_EHT6G_NUM + 1) &&
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #endif /* CFG_SUPPORT_WIFI_6G */
 			(count != PWR_CFG_PRAM_NUM_ALL_RATE)) {
@@ -8393,7 +8850,7 @@ skipLabel:
 				}
 				prTmpSetting->channelParam[0] = value;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-				if (count == PWR_LIMIT_6E_NUM
+				if (count == PWR_LIMIT_PARSER_HE160_NUM
 					|| (u1RateTag ==
 						PWR_CFG_RATE_TAG_HIT_LEGACY6G)
 					|| (u1RateTag ==
@@ -8425,7 +8882,7 @@ skipLabel:
 				prTmpSetting->channelParam[0] = value;
 				prTmpSetting->channelParam[1] =	value2;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-				if (count == PWR_LIMIT_6E_NUM
+				if (count == PWR_LIMIT_PARSER_HE160_NUM
 					|| (u1RateTag ==
 						PWR_CFG_RATE_TAG_HIT_LEGACY6G)
 					|| (u1RateTag ==
@@ -8452,50 +8909,14 @@ skipLabel:
 					   pcContOld);
 				goto clearLabel;
 			}
-
-			for (j = 0; j < PWR_CFG_PRAM_NUM_AC; j++) {
-				prTmpSetting->op[j] = op;
-				prTmpSetting->i8PwrLimit[j] = (op != 2) ?
-							value : (0 - value);
-			}
-
-			for (j = 0; j < PWR_LIMIT_HE_BW160_NUM; j++) {
-				prTmpSetting->opHE[j] = op;
-				prTmpSetting->i8PwrLimitHE[j] = (op != 2) ?
-							value : (0 - value);
-			}
-#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
-			for (j = 0; j < PWR_LIMIT_EHT_NUM; j++) {
-				prTmpSetting->opEHT[j] = op;
-				prTmpSetting->i8PwrLimitEHT[j] = (op != 2) ?
-							value : (0 - value);
-			}
-#endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			for (j = 0; j < PWR_LIMIT_6E_NUM; j++) {
-				prTmpSetting->op6E[j] = op;
-				prTmpSetting->i8PwrLimit6E[j] = (op != 2) ?
-							value : (0 - value);
-			}
-			for (j = 0; j < PWR_LIMIT_LEGACY_6G_NUM; j++) {
-				prTmpSetting->opLegacy_6G[j] = op;
-				prTmpSetting->i8PwrLimitLegacy_6G[j]
-					= (op != 2) ? value : (0 - value);
-			}
-#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
-			for (j = 0; j < PWR_LIMIT_EHT_6G_NUM; j++) {
-				prTmpSetting->opEHT_6G[j] = op;
-				prTmpSetting->i8PwrLimitEHT_6G[j] = (op != 2) ?
-							value : (0 - value);
-			}
-#endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
-#endif /* CFG_SUPPORT_WIFI_6G */
+			txPwrCtrlSetAllRatePwrLimit(prTmpSetting, op, value);
 			goto skipLabel2;
-		} else  if (count == PWR_LIMIT_NUM ||
+
+		} else  if (count == PWR_LIMIT_PARSER_LEGACY_NUM ||
 			u1RateTag == PWR_CFG_RATE_TAG_HIT_LEGACY) {
-			for (j = 0; j < PWR_CFG_PRAM_NUM_AC; j++) {
+			for (j = 0; j < PWR_LIMIT_PARSER_LEGACY_NUM; j++) {
 				/* parse cck/20L/20H .. 160L/160H setting */
-				if (j == PWR_CFG_PRAM_NUM_AC - 1)
+				if (j == PWR_LIMIT_PARSER_LEGACY_NUM - 1)
 					carySeperator[0] = ']';
 				else
 					carySeperator[0] = ',';
@@ -8508,10 +8929,12 @@ skipLabel:
 						pacParsePwrAC[j], pcContOld);
 					goto clearLabel;
 				}
-				prTmpSetting->op[j] =
-					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
-				prTmpSetting->i8PwrLimit[j] =
-					(op != 2) ? value : (0 - value);
+
+				txPwrCtrlSetSingleRatePwrLimit(
+					prTmpSetting,
+					PWR_CFG_RATE_TAG_HIT_LEGACY,
+					j, op, value);
+
 				if ((prTmpSetting->op[j]
 					== PWR_CTRL_TYPE_POSITIVE) &&
 					(ucOperation
@@ -8525,10 +8948,10 @@ skipLabel:
 				}
 			}
 			goto skipLabel2;
-		} else if (count == PWR_LIMIT_HE_NUM) {
-			for (j = 0; j < PWR_LIMIT_HE_NUM; j++) {
+		} else if (count == PWR_LIMIT_PARSER_HE_NUM) {
+			for (j = 0; j < PWR_LIMIT_PARSER_HE_NUM; j++) {
 				/* parse RU26L ...  RU996U setting */
-				if (j == PWR_LIMIT_HE_NUM - 1)
+				if (j == PWR_LIMIT_PARSER_HE_NUM - 1)
 					carySeperator[0] = ']';
 				else
 					carySeperator[0] = ',';
@@ -8542,10 +8965,11 @@ skipLabel:
 						pcContOld);
 					goto clearLabel;
 				}
-				prTmpSetting->opHE[j] =
-					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
-				prTmpSetting->i8PwrLimitHE[j] =
-					(op != 2) ? value : (0 - value);
+
+				txPwrCtrlSetSingleRatePwrLimit(
+					prTmpSetting, PWR_CFG_RATE_TAG_HIT_HE,
+					j, op, value);
+
 				if ((prTmpSetting->opHE[j]
 					== PWR_CTRL_TYPE_POSITIVE) &&
 					(ucOperation
@@ -8562,9 +8986,9 @@ skipLabel:
 		}
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 		else if (u1RateTag == PWR_CFG_RATE_TAG_HIT_EHT) {
-			for (j = 0; j < PWR_LIMIT_EHT_NUM; j++) {
+			for (j = 0; j < PWR_LIMIT_PARSER_EHT_NUM; j++) {
 				/* parse EHT26L ...  EHT996_484_242U setting */
-				if (j == PWR_LIMIT_EHT_NUM - 1)
+				if (j == PWR_LIMIT_PARSER_EHT_NUM - 1)
 					carySeperator[0] = ']';
 				else
 					carySeperator[0] = ',';
@@ -8578,10 +9002,10 @@ skipLabel:
 						pcContOld);
 					goto clearLabel;
 				}
-				prTmpSetting->opEHT[j] =
-					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
-				prTmpSetting->i8PwrLimitEHT[j] =
-					(op != 2) ? value : (0 - value);
+				txPwrCtrlSetSingleRatePwrLimit(
+					prTmpSetting, PWR_CFG_RATE_TAG_HIT_EHT,
+					j, op, value);
+
 				if ((prTmpSetting->opEHT[j]
 					== PWR_CTRL_TYPE_POSITIVE) &&
 					(ucOperation
@@ -8598,11 +9022,11 @@ skipLabel:
 		}
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (count == PWR_LIMIT_6E_NUM ||
+		else if (count == PWR_LIMIT_PARSER_HE160_NUM ||
 			u1RateTag == PWR_CFG_RATE_TAG_HIT_HE6G) {
-			for (j = 0; j < PWR_LIMIT_6E_NUM; j++) {
+			for (j = 0; j < PWR_LIMIT_PARSER_HE160_NUM; j++) {
 				/* parse RU26L ...  RU996U setting */
-				if (j == PWR_LIMIT_6E_NUM - 1)
+				if (j == PWR_LIMIT_PARSER_HE160_NUM - 1)
 					carySeperator[0] = ']';
 				else
 					carySeperator[0] = ',';
@@ -8616,10 +9040,10 @@ skipLabel:
 						pcContOld);
 					goto clearLabel;
 				}
-				prTmpSetting->op6E[j] =
-					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
-				prTmpSetting->i8PwrLimit6E[j] =
-					(op != 2) ? value : (0 - value);
+				txPwrCtrlSetSingleRatePwrLimit(
+					prTmpSetting, PWR_CFG_RATE_TAG_HIT_HE6G,
+					j, op, value);
+
 				if ((prTmpSetting->op6E[j]
 					== PWR_CTRL_TYPE_POSITIVE) &&
 					(ucOperation
@@ -8634,9 +9058,9 @@ skipLabel:
 			}
 			goto skipLabel2;
 		} else if (u1RateTag == PWR_CFG_RATE_TAG_HIT_LEGACY6G) {
-			for (j = 0; j < PWR_LIMIT_LEGACY_6G_NUM; j++) {
+			for (j = 0; j < PWR_LIMIT_PARSER_LEGACY_NUM; j++) {
 				/* parse cck/20L/20H .. 160L/160H setting */
-				if (j == PWR_LIMIT_LEGACY_6G_NUM - 1)
+				if (j == PWR_LIMIT_PARSER_LEGACY_NUM - 1)
 					carySeperator[0] = ']';
 				else
 					carySeperator[0] = ',';
@@ -8650,10 +9074,11 @@ skipLabel:
 						pcContOld);
 					goto clearLabel;
 				}
-				prTmpSetting->opLegacy_6G[j] =
-					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
-				prTmpSetting->i8PwrLimitLegacy_6G[j] =
-					(op != 2) ? value : (0 - value);
+				txPwrCtrlSetSingleRatePwrLimit(
+					prTmpSetting,
+					PWR_CFG_RATE_TAG_HIT_LEGACY6G,
+					j, op, value);
+
 				if ((prTmpSetting->opLegacy_6G[j]
 					== PWR_CTRL_TYPE_POSITIVE) &&
 					(ucOperation
@@ -8670,9 +9095,9 @@ skipLabel:
 		}
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 		else if (u1RateTag == PWR_CFG_RATE_TAG_HIT_EHT6G) {
-			for (j = 0; j < PWR_LIMIT_EHT_6G_NUM; j++) {
+			for (j = 0; j < PWR_LIMIT_PARSER_EHT6G_NUM; j++) {
 				/* parse EHT26L ...  EHT996X3_484U setting */
-				if (j == PWR_LIMIT_EHT_6G_NUM - 1)
+				if (j == PWR_LIMIT_PARSER_EHT6G_NUM - 1)
 					carySeperator[0] = ']';
 				else
 					carySeperator[0] = ',';
@@ -8686,10 +9111,11 @@ skipLabel:
 						pcContOld);
 					goto clearLabel;
 				}
-				prTmpSetting->opEHT_6G[j] =
-					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
-				prTmpSetting->i8PwrLimitEHT_6G[j] =
-					(op != 2) ? value : (0 - value);
+				txPwrCtrlSetSingleRatePwrLimit(
+					prTmpSetting,
+					PWR_CFG_RATE_TAG_HIT_EHT6G,
+					j, op, value);
+
 				if ((prTmpSetting->opEHT_6G[j]
 					== PWR_CTRL_TYPE_POSITIVE) &&
 					(ucOperation
@@ -8707,9 +9133,9 @@ skipLabel:
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #endif /* CFG_SUPPORT_WIFI_6G */
 		else if (u1RateTag == PWR_CFG_RATE_TAG_HIT_HE) {
-			for (j = 0; j < PWR_LIMIT_HE_BW160_NUM; j++) {
+			for (j = 0; j < PWR_LIMIT_PARSER_HE160_NUM; j++) {
 				/* parse RU26L ...  RU996U setting */
-				if (j == PWR_LIMIT_HE_BW160_NUM - 1)
+				if (j == PWR_LIMIT_PARSER_HE160_NUM - 1)
 					carySeperator[0] = ']';
 				else
 					carySeperator[0] = ',';
@@ -8723,10 +9149,10 @@ skipLabel:
 						pcContOld);
 					goto clearLabel;
 				}
-				prTmpSetting->opHE[j] =
-					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
-				prTmpSetting->i8PwrLimitHE[j] =
-					(op != 2) ? value : (0 - value);
+				txPwrCtrlSetSingleRatePwrLimit(
+					prTmpSetting, PWR_CFG_RATE_TAG_HIT_HE,
+					j, op, value);
+
 				if ((prTmpSetting->opHE[j]
 					== PWR_CTRL_TYPE_POSITIVE) &&
 					(ucOperation
@@ -9104,6 +9530,27 @@ void txPwrCtrlLoadConfig(struct ADAPTER *prAdapter)
 
 void txPwrCtrlInit(struct ADAPTER *prAdapter)
 {
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	uint32_t i;
+#endif
+
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	prAdapter->prPwrLimit =
+		(struct SET_COUNTRY_CHANNEL_POWER_LIMIT **) kalMemAlloc(
+			sizeof(struct SET_COUNTRY_CHANNEL_POWER_LIMIT *)
+			* PWR_LIMIT_RF_BAND_NUM,
+			VIR_MEM_TYPE);
+
+	for (i = 0; i < PWR_LIMIT_RF_BAND_NUM; i++) {
+		prAdapter->prPwrLimit[i] =
+			(struct SET_COUNTRY_CHANNEL_POWER_LIMIT *) kalMemAlloc(
+				sizeof(struct SET_COUNTRY_CHANNEL_POWER_LIMIT)
+				* PWR_LIMIT_PROTOCOL_NUM,
+				VIR_MEM_TYPE);
+	}
+#endif
+
+
 	LINK_INITIALIZE(&prAdapter->rTxPwr_DefaultList);
 	LINK_INITIALIZE(&prAdapter->rTxPwr_DynamicList);
 }
@@ -9137,10 +9584,25 @@ void txPwrCtrlUninit(struct ADAPTER *prAdapter)
 			}
 		}
 	}
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	for (i = 0; i < PWR_LIMIT_RF_BAND_NUM; i++) {
+		kalMemFree(
+			prAdapter->prPwrLimit[i],
+			VIR_MEM_TYPE,
+			sizeof(struct SET_COUNTRY_CHANNEL_POWER_LIMIT)
+			* PWR_LIMIT_PROTOCOL_NUM);
+	}
+	kalMemFree(
+		prAdapter->prPwrLimit,
+		VIR_MEM_TYPE,
+		sizeof(struct SET_COUNTRY_CHANNEL_POWER_LIMIT *)
+		* PWR_LIMIT_RF_BAND_NUM);
+#endif
 }
 /* dynamic tx power control: end **********************************************/
 #endif /* CFG_SUPPORT_DYNAMIC_PWR_LIMIT */
 
+#if (CFG_SUPPORT_PWR_LMT_EMI == 0)
 void rlmDomainShowPwrLimitPerCh(char *message,
 	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd)
 {
@@ -9420,7 +9882,10 @@ void rlmDomainShowPwrLimitPerCh(char *message,
 		}
 	}
 }
+#endif /*#if (CFG_SUPPORT_PWR_LMT_EMI == 0)*/
 
+
+#if (CFG_SUPPORT_PWR_LMT_EMI == 0)
 void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 {
 	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd = NULL;
@@ -10405,6 +10870,7 @@ err:
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #endif /* CFG_SUPPORT_WIFI_6G */
 }
+#endif /*CFG_SUPPORT_PWR_LMT_EMI*/
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 /*----------------------------------------------------------------------------*/
 /*!
@@ -11315,4 +11781,1805 @@ void rlm_get_alpha2(char *alpha2)
 }
 EXPORT_SYMBOL(rlm_get_alpha2);
 #endif
+#endif
+
+static uint8_t rlmDomainGetSubBandPwrLimit(
+	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *prPwrLimitSubBand,
+	uint32_t sub_band_idx)
+{
+
+	uint8_t u1PwrIdx = 0;
+	uint8_t ucPwrLimit = 0;
+
+	rlmDomainGetSubBandDefPwrIdx(sub_band_idx, &u1PwrIdx);
+	/* cLmtBand need reset by each channel */
+	ucPwrLimit = prPwrLimitSubBand->aucPwrLimitSubBand[u1PwrIdx];
+	if (prPwrLimitSubBand->aucPwrLimitSubBand[u1PwrIdx]
+		> MAX_TX_POWER) {
+		DBGLOG(RLM, WARN,
+		"SubBand[%d] Pwr(%d) > Max (%d)",
+		u1PwrIdx,
+		prPwrLimitSubBand->aucPwrLimitSubBand[u1PwrIdx],
+		MAX_TX_POWER);
+		ucPwrLimit = MAX_TX_POWER;
+	}
+
+	return ucPwrLimit;
+}
+
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
+{
+	struct GLUE_INFO *prGlueInfo;
+	uint32_t u4Status, u4BufLen = 0;
+	static const char TARGET_THREAD[] = "main_thread";
+
+	DBGLOG(RLM, INFO, "TxPower limt EMI Type!! Thread: [%s]\n",
+		KAL_GET_CURRENT_THREAD_NAME());
+
+
+	prGlueInfo = prAdapter->prGlueInfo;
+
+	if (kalStrCmp(TARGET_THREAD, KAL_GET_CURRENT_THREAD_NAME()) != 0) {
+		u4Status = kalIoctl(prGlueInfo,
+			wlanoidSendPwrLimitToEmi,
+			NULL,
+			0,
+			&u4BufLen);
+	} else {
+		u4Status = wlanoidSendPwrLimitToEmi(prAdapter,
+			NULL,
+			0,
+			&u4BufLen);
+	}
+}
+
+uint32_t txPwrCtrlApplyDynPwrSetting(struct ADAPTER *prAdapter,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	uint8_t *bandedgeParam,
+	enum ENUM_PWR_LIMIT_TYPE eLimitType,
+	enum ENUM_PWR_LIMIT_RF_BAND eRFBand)
+{
+	struct LINK_ENTRY *prCur, *prNext;
+	struct TX_PWR_CTRL_ELEMENT *element = NULL;
+	struct LINK *aryprlist[2] = {
+		&prAdapter->rTxPwr_DefaultList,
+		&prAdapter->rTxPwr_DynamicList
+	};
+	int32_t i;
+
+	/* show the tx power ctrl applied list */
+	txPwrCtrlShowList(prAdapter, 1, "applied list");
+
+	for (i = 0; i < ARRAY_SIZE(aryprlist); i++) {
+		LINK_FOR_EACH_SAFE(prCur, prNext, aryprlist[i]) {
+			element = LINK_ENTRY(prCur,
+				struct TX_PWR_CTRL_ELEMENT, node);
+
+			if (element->fgApplied == TRUE) {
+				g_rRlmPwrLimitHandler[eLimitType].pfApplyDynSet(
+					prPerPwrLimit,
+					element,
+					bandedgeParam,
+					eRFBand
+				);
+			}
+
+		}
+	}
+
+	return 0;
+}
+
+bool rlmDomainPwrLmtEmiStatusCtrl(struct ADAPTER *prAdapter,
+	enum ENUM_TX_PWR_EMI_STATUS_ACTION action)
+{
+	bool ret = FALSE;
+#if CFG_ENABLE_WAKE_LOCK
+	(KAL_WAKE_LOCK_T *)rTxWakeLock =
+		prAdapter->prGlueInfo->rTxPowerEmiWakeLock;
+#endif
+	static const char * const au1PwrLmtStatusAction[] = {
+		"REQUEST_CHANNEL_START",
+		"REQUEST_CHANNEL_END",
+		"UPDATE_CMD",
+		"UPDATE_EVENT",
+		"CHECK",
+	};
+
+	/*********************************************************************/
+	/* (1)req cmd -> (2)update cmd  -> (3)req end  -> (4)update done     */
+	/* count++    ->                -> count--     ->                    */
+	/* wake lock  -> cache data     -> wake unlock -> send cache data    */
+	/* 1.Make sure host is wakeup between (1) ~ (3).                     */
+	/* 2.This design is based on pwr limit cmd/event must appear in pairs*/
+	/*********************************************************************/
+
+	DBGLOG(RLM, INFO,
+		"[In]TxPower wakelock ctrl : action :%s, counter[%d], ret:%d",
+		au1PwrLmtStatusAction[action],
+		prAdapter->u4PwrLmtLockCounter,
+		ret);
+
+	switch (action) {
+	case TX_PWR_EMI_STATUS_ACTION_UPDATE_CMD:
+	case TX_PWR_EMI_STATUS_ACTION_REQUEST_CHANNEL_START:
+		prAdapter->u4PwrLmtLockCounter++;
+		if (prAdapter->u4PwrLmtLockCounter == 1) {
+#if CFG_ENABLE_WAKE_LOCK
+			if (!KAL_WAKE_LOCK_ACTIVE(prAdapter, rTxWakeLock)) {
+				DBGLOG(RLM, INFO, "Start wake lock!");
+				KAL_WAKE_LOCK(prAdapter, rTxWakeLock);
+			}
+#endif
+		}
+		break;
+	case TX_PWR_EMI_STATUS_ACTION_UPDATE_EVENT:
+	case TX_PWR_EMI_STATUS_ACTION_REQUEST_CHANNEL_END:
+		prAdapter->u4PwrLmtLockCounter--;
+		if (prAdapter->u4PwrLmtLockCounter == 0) {
+#if CFG_ENABLE_WAKE_LOCK
+			if (KAL_WAKE_LOCK_ACTIVE(prAdapter, rTxWakeLock)) {
+				DBGLOG(RLM, INFO, "Stop wake lock!");
+				KAL_WAKE_UNLOCK(prAdapter, rTxWakeLock);
+			}
+#endif
+			rlmDomainSendCachePwrLmtData(prAdapter);
+		}
+		break;
+	case TX_PWR_EMI_STATUS_ACTION_CHECK:
+		if (prAdapter->u4PwrLmtLockCounter > 0)
+			ret = TRUE;
+		else
+			ret = FALSE;
+		break;
+	default:
+		break;
+	}
+
+	DBGLOG(RLM, INFO,
+		"[Out]TxPower wakelock ctrl : action :%s, counter[%d], ret:%d",
+		au1PwrLmtStatusAction[action],
+		prAdapter->u4PwrLmtLockCounter,
+		ret);
+
+	return ret;
+}
+
+void rlmDoaminSetPwrLmtNewDataFlag(struct ADAPTER *prAdapter, bool en)
+{
+	prAdapter->fgPwrLmtCacheExist = en;
+}
+bool rlmDoaminGetPwrLmtNewDataFlag(struct ADAPTER *prAdapter)
+{
+	return prAdapter->fgPwrLmtCacheExist;
+}
+
+void rlmDomainConnectionNotifiey(
+	struct ADAPTER *prAdapter,
+	enum ENUM_CONNECTION_NOTIFIED_REASON reason)
+{
+	DBGLOG(RLM, WARN, "CNM notify to - Tx Power, reason :%d", reason);
+
+	if (reason == CNM_REQUEST_CHANNEL)
+		rlmDomainPwrLmtCNMReqChNotify(prAdapter);
+}
+
+bool rlmDomainIsFWInReadEmiDataProcess(struct ADAPTER *prAdapter)
+{
+	return rlmDomainPwrLmtEmiStatusCtrl(
+		prAdapter, TX_PWR_EMI_STATUS_ACTION_CHECK);
+}
+
+static bool rlmDomainIsNeedToDoArbitrator(
+	uint32_t channel,
+	uint32_t rng_start,
+	uint32_t rng_end,
+	uint8_t *bandedgeParam,
+	enum ENUM_TX_POWER_CTRL_CHANNEL_TYPE eChanneltype,
+	enum ENUM_PWR_LIMIT_RF_BAND eRFBandIndex
+)
+{
+	bool fgNeedArbitrator = FALSE;
+
+	if (eChanneltype == PWR_CTRL_CHNL_TYPE_ALL) {
+		fgNeedArbitrator = true;
+		return fgNeedArbitrator;
+	}
+
+	if (eRFBandIndex <= PWR_LIMIT_RF_BAND_5G) {
+		switch (eChanneltype) {
+		case PWR_CTRL_CHNL_TYPE_NORMAL:
+			if (channel == rng_start)
+				fgNeedArbitrator = TRUE;
+			break;
+		case PWR_CTRL_CHNL_TYPE_RANGE:
+			if ((channel >= rng_start) && (channel <= rng_end))
+				fgNeedArbitrator = TRUE;
+			break;
+		case PWR_CTRL_CHNL_TYPE_2G4:
+			if (channel <= 14)
+				fgNeedArbitrator = TRUE;
+			break;
+		case PWR_CTRL_CHNL_TYPE_5G:
+			if (channel > 14)
+				fgNeedArbitrator = TRUE;
+			break;
+		case PWR_CTRL_CHNL_TYPE_BANDEDGE_2G4:
+			if ((channel == *bandedgeParam) ||
+				(channel == *(bandedgeParam + 1)))
+				fgNeedArbitrator = TRUE;
+			break;
+		case PWR_CTRL_CHNL_TYPE_BANDEDGE_5G:
+			if ((channel == *bandedgeParam + 2) ||
+				(channel == *(bandedgeParam + 3)))
+				fgNeedArbitrator = TRUE;
+			break;
+		case PWR_CTRL_CHNL_TYPE_5G_BAND1:
+			if ((channel >= UNII1_LOWER_BOUND) &&
+				(channel <= UNII1_UPPER_BOUND))
+				fgNeedArbitrator = TRUE;
+			break;
+		case PWR_CTRL_CHNL_TYPE_5G_BAND2:
+			if ((channel >= UNII2A_LOWER_BOUND) &&
+				(channel <= UNII2A_UPPER_BOUND))
+				fgNeedArbitrator = TRUE;
+			break;
+		case PWR_CTRL_CHNL_TYPE_5G_BAND3:
+			if ((channel >= UNII2C_LOWER_BOUND) &&
+				(channel <= UNII2C_UPPER_BOUND))
+				fgNeedArbitrator = TRUE;
+			break;
+		case PWR_CTRL_CHNL_TYPE_5G_BAND4:
+			if ((channel >= UNII3_LOWER_BOUND) &&
+				(channel <= UNII3_UPPER_BOUND))
+				fgNeedArbitrator = TRUE;
+			break;
+		default:
+				break;
+		}
+	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (eRFBandIndex == PWR_LIMIT_RF_BAND_6G) {
+		switch (eChanneltype) {
+		case PWR_CTRL_CHNL_TYPE_6G:
+			fgNeedArbitrator = TRUE;
+			break;
+		case PWR_CTRL_CHNL_TYPE_6G_NORMAL:
+			if (channel == rng_start)
+				fgNeedArbitrator = TRUE;
+			break;
+		case PWR_CTRL_CHNL_TYPE_6G_BAND1:
+			if ((channel >= UNII5A_LOWER_BOUND) &&
+				(channel <= UNII5B_UPPER_BOUND))
+				fgNeedArbitrator = TRUE;
+			break;
+		case PWR_CTRL_CHNL_TYPE_6G_BAND2:
+			if ((channel >= UNII6_LOWER_BOUND) &&
+				(channel <= UNII6_UPPER_BOUND))
+				fgNeedArbitrator = TRUE;
+			break;
+		case PWR_CTRL_CHNL_TYPE_6G_BAND3:
+			if ((channel >= UNII7A_LOWER_BOUND) &&
+				(channel <= UNII7B_UPPER_BOUND))
+				fgNeedArbitrator = TRUE;
+			break;
+		case PWR_CTRL_CHNL_TYPE_6G_BAND4:
+			if ((channel >= UNII8_LOWER_BOUND) &&
+				(channel <= UNII8_UPPER_BOUND))
+				fgNeedArbitrator = TRUE;
+			break;
+		case PWR_CTRL_CHNL_TYPE_6G_RANGE:
+			if ((channel >= rng_start) &&
+				(channel <= rng_end))
+				fgNeedArbitrator = TRUE;
+			break;
+		default:
+			break;
+		}
+	}
+#endif /*CFG_SUPPORT_WIFI_6G*/
+
+	return fgNeedArbitrator;
+}
+
+static enum ENUM_PWR_LIMIT_DEFINE rlmDomainPwrLmtGetChannelDefine(void)
+{
+	enum ENUM_PWR_LIMIT_DEFINE ePwrLmtDef;
+
+	/*  Primary channel or Center channel defination */
+#if (COUNTRY_CHANNEL_TXPOWER_LIMIT_CHANNEL_DEFINE == 1)
+	ePwrLmtDef = PWR_LIMIT_DEFINE_PRIMARY_CHANNEL;
+#else
+	ePwrLmtDef = PWR_LIMIT_DEFINE_CENTER_CHANNEL;
+#endif
+
+	return ePwrLmtDef;
+}
+
+static enum ENUM_PWR_LIMIT_DEFAULT_BASE rlmDomainPwrLmtGetDefaultBase(
+	struct ADAPTER *prAdapter)
+{
+
+	enum ENUM_PWR_LIMIT_DEFAULT_BASE eDefaultPwrLmtBase =
+		PWR_LIMIT_DEFAULT_BASE_NORMAL;
+
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrModeType = PWR_MODE_6G_VLP;
+
+	e6GPwrModeType = rlmDomainPwrLmt6GPwrModeGet(prAdapter);
+	if (e6GPwrModeType == PWR_MODE_6G_VLP)
+		eDefaultPwrLmtBase = PWR_LIMIT_DEFAULT_BASE_VLP;
+	else if (e6GPwrModeType == PWR_MODE_6G_SP)
+		eDefaultPwrLmtBase = PWR_LIMIT_DEFAULT_BASE_SP;
+#endif
+
+	return eDefaultPwrLmtBase;
+}
+
+static enum ENUM_PWR_LIMIT_CONFIG_BASE rlmDomainPwrLmtGetConfigBase(
+	struct ADAPTER *prAdapter,
+	enum ENUM_PWR_LIMIT_RF_BAND eRfBandIndex)
+{
+
+	enum ENUM_PWR_LIMIT_CONFIG_BASE eConfigPwrLmtBase =
+		PWR_LIMIT_CONFIG_BASE_2G4_5G;
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrModeType = PWR_MODE_6G_VLP;
+#endif
+
+	if (eRfBandIndex == PWR_LIMIT_RF_BAND_6G) {
+		eConfigPwrLmtBase = PWR_LIMIT_CONFIG_BASE_6G;
+
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+		e6GPwrModeType = rlmDomainPwrLmt6GPwrModeGet(prAdapter);
+		if (e6GPwrModeType == PWR_MODE_6G_VLP)
+			eConfigPwrLmtBase = PWR_LIMIT_CONFIG_BASE_6G_VLP;
+		else if (e6GPwrModeType == PWR_MODE_6G_SP)
+			eConfigPwrLmtBase = PWR_LIMIT_CONFIG_BASE_6G_SP;
+#endif
+
+	}
+
+	return eConfigPwrLmtBase;
+}
+
+static enum ENUM_BAND rlmDomainConvertRFBandEnum(
+	enum ENUM_PWR_LIMIT_RF_BAND eRFBandIndex)
+{
+	if (eRFBandIndex == PWR_LIMIT_RF_BAND_2G4)
+		return BAND_2G4;
+	else if (eRFBandIndex == PWR_LIMIT_RF_BAND_5G)
+		return BAND_5G;
+	else if (eRFBandIndex == PWR_LIMIT_RF_BAND_6G)
+		return BAND_6G;
+	else
+		return BAND_NULL;
+}
+
+void rlmDomainPatchPwrLimitType(void)
+{
+	PWR_LMT_2G_INFO_REGISTER(
+		PWR_LIMIT_TYPE_LEGACY, 1, PWR_LIMIT_PROTOCOL_LEGACY);
+	PWR_LMT_2G_INFO_REGISTER(
+		PWR_LIMIT_TYPE_HE, 1, PWR_LIMIT_PROTOCOL_HE);
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+	PWR_LMT_2G_INFO_REGISTER(
+		PWR_LIMIT_TYPE_EHT, 1, PWR_LIMIT_PROTOCOL_EHT);
+#endif /*CFG_SUPPORT_PWR_LIMIT_EHT*/
+
+	PWR_LMT_5G_INFO_REGISTER(
+		PWR_LIMIT_TYPE_LEGACY, 1, PWR_LIMIT_PROTOCOL_LEGACY);
+	PWR_LMT_5G_INFO_REGISTER(
+		PWR_LIMIT_TYPE_HE, 1, PWR_LIMIT_PROTOCOL_HE);
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+	PWR_LMT_5G_INFO_REGISTER(
+		PWR_LIMIT_TYPE_EHT, 1, PWR_LIMIT_PROTOCOL_EHT);
+#endif /*CFG_SUPPORT_PWR_LIMIT_EHT*/
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	PWR_LMT_6G_INFO_REGISTER(
+		PWR_LIMIT_TYPE_LEGACY, 1, PWR_LIMIT_PROTOCOL_LEGACY);
+	PWR_LMT_6G_INFO_REGISTER(
+		PWR_LIMIT_TYPE_HE, 1, PWR_LIMIT_PROTOCOL_HE);
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+	PWR_LMT_6G_INFO_REGISTER(
+		PWR_LIMIT_TYPE_EHT, 1, PWR_LIMIT_PROTOCOL_EHT);
+#endif /*CFG_SUPPORT_PWR_LIMIT_EHT*/
+#endif /*CFG_SUPPORT_WIFI_6G*/
+}
+
+void rlmDomainSendCachePwrLmtData(struct ADAPTER *prAdapter)
+{
+	if (rlmDoaminGetPwrLmtNewDataFlag(prAdapter) == TRUE) {
+		DBGLOG(NIC, INFO, "Send Tx Power Limit Cache Data !!\n");
+		rlmDomainWritePwrLimitToEmi(prAdapter);
+		rlmDoaminSetPwrLmtNewDataFlag(prAdapter, FALSE);
+	} else {
+		DBGLOG(NIC, INFO, "No cache data !!\n");
+	}
+
+}
+void rlmDomainPowerLimitEmiEvent(struct ADAPTER *prAdapter,
+		uint8_t *pucEventBuf)
+{
+	uint8_t u4SenarioType;
+
+	u4SenarioType = *pucEventBuf;
+
+	DBGLOG(NIC, INFO, "u4SenarioType = %d!\n", u4SenarioType);
+
+	if (u4SenarioType == TX_PWR_EMI_SCENARIO_TYPE_UPDATE) {
+		rlmDomainPwrLmtEmiStatusCtrl(prAdapter,
+			TX_PWR_EMI_STATUS_ACTION_UPDATE_EVENT);
+	} else if (u4SenarioType == TX_PWR_EMI_SCENARIO_TYPE_CONNECTION) {
+		rlmDomainPwrLmtEmiStatusCtrl(prAdapter,
+			TX_PWR_EMI_STATUS_ACTION_REQUEST_CHANNEL_END);
+	}
+
+}
+
+void rlmDomainSendPwrLimitEmiInfo(struct ADAPTER *prAdapter,
+	struct CMD_EMI_POWER_LIMIT_FORMAT *prTxPwrEmiFormat)
+{
+	uint32_t rStatus = 0;
+
+	prTxPwrEmiFormat->u1ScenarioType = TX_PWR_EMI_SCENARIO_TYPE_UPDATE;
+
+	rStatus = wlanSendSetQueryCmd(prAdapter,
+		CMD_ID_SET_PWR_LIMIT_EMI_INFO,
+		TRUE,
+		FALSE,
+		FALSE,
+		NULL,
+		NULL,
+		sizeof(struct CMD_EMI_POWER_LIMIT_FORMAT),
+		(uint8_t *) prTxPwrEmiFormat,
+		NULL,
+		0
+	);
+
+	rlmDomainPwrLmtEmiStatusCtrl(prAdapter,
+		TX_PWR_EMI_STATUS_ACTION_UPDATE_CMD);
+}
+
+void rlmDomainPwrLmtCNMReqChNotify(struct ADAPTER *prAdapter)
+{
+	uint32_t rStatus = 0;
+	struct CMD_EMI_POWER_LIMIT_FORMAT rTxPwrEmiFormat = {0};
+
+	rTxPwrEmiFormat.u1ScenarioType =
+		TX_PWR_EMI_SCENARIO_TYPE_CONNECTION;
+
+	rStatus = wlanSendSetQueryCmd(prAdapter,
+		CMD_ID_SET_PWR_LIMIT_EMI_INFO,
+		TRUE,
+		FALSE,
+		FALSE,
+		NULL,
+		NULL,
+		sizeof(struct CMD_EMI_POWER_LIMIT_FORMAT),
+		(uint8_t *) &rTxPwrEmiFormat,
+		NULL,
+		0
+	);
+
+	rlmDomainPwrLmtEmiStatusCtrl(prAdapter,
+		TX_PWR_EMI_STATUS_ACTION_REQUEST_CHANNEL_START);
+}
+
+void rlmDomainWritePwrLimitToEmi(struct ADAPTER *prAdapter)
+{
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT **prPwrLimit =
+		prAdapter->prPwrLimit;
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit;
+	enum ENUM_PWR_LIMIT_RF_BAND eRF = PWR_LIMIT_RF_BAND_2G4;
+	enum ENUM_PWR_LIMIT_PROTOCOL eProt = PWR_LIMIT_PROTOCOL_LEGACY;
+	struct PWR_LIMIT_INFO rPerPwrLimitInfo;
+	enum ENUM_PWR_LIMIT_TYPE eLimitType;
+	struct EMI_POWER_LIMIT_INFO *prPerTxpwrEmiInfo;
+	struct CMD_EMI_POWER_LIMIT_FORMAT *prEmiFormat;
+	uint32_t offset = 0, size = 0, u4ChIdx = 0;
+	uint8_t *prTxPowrEmiAddress = NULL;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct HIF_MEM *prMem = NULL;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	struct HIF_MEM_OPS *prMemOps = &prHifInfo->rMemOps;
+
+	if (prMemOps->getWifiMiscRsvEmi) {
+		prMem = prMemOps->getWifiMiscRsvEmi(prChipInfo,
+			WIFI_MISC_MEM_BLOCK_TX_POWER);
+		prTxPowrEmiAddress = (uint8_t *)prMem->va;
+	}
+#endif
+
+	if (prTxPowrEmiAddress == NULL) {
+		DBGLOG(NIC, INFO, "TXP EMI Address is NULL\n");
+		return;
+	}
+
+	/*write emi*/
+	PWR_LIMIT_FOR_EACH_RF_BAND(eRF) {
+		prPerPwrLimit = &(prPwrLimit[eRF][0]);
+		for (u4ChIdx = 0; u4ChIdx < prPerPwrLimit->ucNum; u4ChIdx++) {
+			PWR_LIMIT_FOR_EACH_PROTOCOL(eProt) {
+
+				prPerPwrLimit =
+					&(prPwrLimit[eRF][eProt]);
+				rPerPwrLimitInfo =
+					g_RlmPwrLimitInfo[eRF][eProt];
+				eLimitType =
+					rPerPwrLimitInfo.eLimitType;
+				prPerTxpwrEmiInfo =
+					&(prAdapter->rTxpwrEmiInfo[eRF][eProt]);
+
+				g_rRlmPwrLimitHandler[eLimitType].pfWriteEmi(
+					u4ChIdx,
+					prPerPwrLimit,
+					prTxPowrEmiAddress + offset,
+					&size
+				);
+
+				if (u4ChIdx == 0) {
+					prPerTxpwrEmiInfo->u4EmiAddrOffset =
+						offset;
+					prPerTxpwrEmiInfo->u1LimitType =
+						eLimitType;
+					prPerTxpwrEmiInfo->u1Size =
+						size;
+					prPerTxpwrEmiInfo->u2ChannelNum =
+						prPerPwrLimit->ucNum;
+				}
+
+				offset += size;
+			}
+		}
+	}
+
+	PWR_LIMIT_FOR_EACH_RF_BAND(eRF) {
+		PWR_LIMIT_FOR_EACH_PROTOCOL(eProt) {
+			rlmDomainDumpPwrLimitEmiPayload(prAdapter, eRF, eProt);
+		}
+	}
+
+	/* EMI_POWER_LIMIT_FORMAT */
+	prEmiFormat = (struct CMD_EMI_POWER_LIMIT_FORMAT *) kalMemAlloc(
+		sizeof(struct CMD_EMI_POWER_LIMIT_FORMAT), VIR_MEM_TYPE);
+
+	prEmiFormat->u1RFBandNum = PWR_LIMIT_RF_BAND_NUM;
+	prEmiFormat->u1ProtocolNum = PWR_LIMIT_PROTOCOL_NUM;
+	prEmiFormat->u1ApplyMethod = rlmDomainPwrLmtGetChannelDefine();
+	prEmiFormat->u1ScenarioType = TX_PWR_EMI_SCENARIO_TYPE_UPDATE;
+	kalMemCopy(&prEmiFormat->rTxpwrEmiInfo,
+		&prAdapter->rTxpwrEmiInfo, sizeof(prAdapter->rTxpwrEmiInfo));
+
+	PWR_LIMIT_FOR_EACH_RF_BAND(eRF) {
+		PWR_LIMIT_FOR_EACH_PROTOCOL(eProt) {
+			DBGLOG(RLM, TRACE,
+			"TXP EMI INFO[%d][%d] [%d,%d,%d,%d]\n",
+			eRF, eProt,
+			prEmiFormat->rTxpwrEmiInfo[eRF][eProt].u4EmiAddrOffset,
+			prEmiFormat->rTxpwrEmiInfo[eRF][eProt].u1LimitType,
+			prEmiFormat->rTxpwrEmiInfo[eRF][eProt].u1Size,
+			prEmiFormat->rTxpwrEmiInfo[eRF][eProt].u2ChannelNum);
+		}
+	}
+
+	rlmDomainSendPwrLimitEmiInfo(prAdapter, prEmiFormat);
+}
+
+static void rlmDomainDumpPwrLimitEmiPayload(
+	struct ADAPTER *prAdapter,
+	enum ENUM_PWR_LIMIT_RF_BAND eRF,
+	enum ENUM_PWR_LIMIT_PROTOCOL eProt
+)
+{
+	uint32_t i, size, u4Offset, u4ChIdx, u4ChNum, u4MsgOffset = 0;
+	uint32_t u4PerChDataSize = 0;
+	enum ENUM_PWR_LIMIT_TYPE eLimitType;
+	char debugBuf[PWR_BUF_LEN];
+	struct EMI_POWER_LIMIT_INFO *prPerTxpwrEmiInfo;
+	uint8_t *prTxPowrEmiAddress = NULL;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct HIF_MEM *prMem = NULL;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	struct HIF_MEM_OPS *prMemOps = &prHifInfo->rMemOps;
+
+	if (prMemOps->getWifiMiscRsvEmi) {
+		prMem = prMemOps->getWifiMiscRsvEmi(prChipInfo,
+			WIFI_MISC_MEM_BLOCK_TX_POWER);
+		prTxPowrEmiAddress = (uint8_t *)prMem->va;
+	}
+#endif
+
+	if (prTxPowrEmiAddress == NULL) {
+		DBGLOG(NIC, INFO, "TXP EMI Address is NULL\n");
+		return;
+	}
+
+	PWR_LIMIT_FOR_EACH_PROTOCOL(i) {
+		u4PerChDataSize += prAdapter->rTxpwrEmiInfo[eRF][i].u1Size;
+	}
+
+	prPerTxpwrEmiInfo = &(prAdapter->rTxpwrEmiInfo[eRF][eProt]);
+
+	u4Offset = prPerTxpwrEmiInfo->u4EmiAddrOffset;
+	eLimitType = prPerTxpwrEmiInfo->u1LimitType;
+	size = prPerTxpwrEmiInfo->u1Size;
+	u4ChNum = prPerTxpwrEmiInfo->u2ChannelNum;
+
+	for (u4ChIdx = 0; u4ChIdx < u4ChNum; u4ChIdx++) {
+
+		u4MsgOffset +=
+			kalScnprintf(
+				debugBuf + u4MsgOffset,
+				PWR_BUF_LEN - u4MsgOffset,
+				"Channel[%d], Data:",
+				prTxPowrEmiAddress[u4Offset]
+			);
+
+		for (i = 1; i < size; i++) {
+			u4MsgOffset +=
+				kalScnprintf(
+					debugBuf + u4MsgOffset,
+					PWR_BUF_LEN - u4MsgOffset,
+					" %2d,",
+					prTxPowrEmiAddress[u4Offset + i]
+				);
+		}
+
+		if (u4MsgOffset >= 1)
+			debugBuf[u4MsgOffset - 1] = '\0';
+		else
+			debugBuf[0] = '\0';
+
+		u4MsgOffset = 0;
+		u4Offset += u4PerChDataSize;
+
+		DBGLOG(RLM, LOUD,
+			"%s ,%s, ofs/LmtType/Size/ChNum:[%d,%d,%d,%d],%s\n",
+			g_au1TxPwrRFBand[eRF],
+			g_au1TxPwrProtocol[eProt],
+			prPerTxpwrEmiInfo->u4EmiAddrOffset,
+			prPerTxpwrEmiInfo->u1LimitType,
+			prPerTxpwrEmiInfo->u1Size,
+			prPerTxpwrEmiInfo->u2ChannelNum,
+			debugBuf);
+
+		kalMemZero(debugBuf, PWR_BUF_LEN);
+	}
+
+}
+
+int32_t rlmDomainReadPwrLimitEmiData(
+	struct ADAPTER *prAdapter,
+	char *pcCommand,
+	int32_t i4TotalLen,
+	uint32_t u4RFBand,
+	uint32_t u4Channel
+)
+{
+	uint32_t i, j, size, offset, channel, channel_num;
+	enum ENUM_PWR_LIMIT_TYPE eLimitType;
+	int i4BytesWritten = 0;
+	struct EMI_POWER_LIMIT_INFO *prPerTxpwrEmiInfo;
+	enum ENUM_PWR_LIMIT_PROTOCOL eProt;
+	uint32_t u4PerChDataSize = 0;
+	uint8_t *prTxPowrEmiAddress = NULL;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct HIF_MEM *prMem = NULL;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	struct HIF_MEM_OPS *prMemOps = &prHifInfo->rMemOps;
+
+	if (prMemOps->getWifiMiscRsvEmi) {
+		prMem = prMemOps->getWifiMiscRsvEmi(prChipInfo,
+			WIFI_MISC_MEM_BLOCK_TX_POWER);
+		prTxPowrEmiAddress = (uint8_t *)prMem->va;
+	}
+#endif
+
+	if (prTxPowrEmiAddress == NULL) {
+		DBGLOG(NIC, INFO, "TXP EMI Address is NULL\n");
+		return i4BytesWritten;
+	}
+
+	if (u4RFBand >= PWR_LIMIT_RF_BAND_NUM)
+		return i4BytesWritten;
+
+	PWR_LIMIT_FOR_EACH_PROTOCOL(eProt) {
+		u4PerChDataSize +=
+			prAdapter->rTxpwrEmiInfo[u4RFBand][eProt].u1Size;
+	}
+
+	PWR_LIMIT_FOR_EACH_PROTOCOL(eProt) {
+		prPerTxpwrEmiInfo =
+			&(prAdapter->rTxpwrEmiInfo[u4RFBand][eProt]);
+		offset = prPerTxpwrEmiInfo->u4EmiAddrOffset;
+		eLimitType = prPerTxpwrEmiInfo->u1LimitType;
+		size = prPerTxpwrEmiInfo->u1Size;
+		channel_num = prPerTxpwrEmiInfo->u2ChannelNum;
+
+		i4BytesWritten +=
+			kalScnprintf(pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"\n TX POWER LIMIT DATA [%s][%s] ofs/Type/Size/ChNum:[%d,%d,%d,%d]\n",
+				g_au1TxPwrRFBand[u4RFBand],
+				g_au1TxPwrProtocol[eProt],
+				offset,
+				eLimitType,
+				size,
+				channel_num
+			);
+
+		for (i = 0; i < channel_num; i++) {
+			channel = prTxPowrEmiAddress[offset];
+
+			if (channel != u4Channel)
+				continue;
+
+			i4BytesWritten +=
+				kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"  ==> Channel[%d], Data:",
+					prTxPowrEmiAddress[offset]
+				);
+
+			for (j = 1; j < size; j++) {
+				i4BytesWritten +=
+					kalScnprintf(
+						pcCommand + i4BytesWritten,
+						i4TotalLen - i4BytesWritten,
+						"%2d,",
+						prTxPowrEmiAddress[offset + j]
+					);
+			}
+			i4BytesWritten +=
+				kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"\n"
+				);
+
+			break;
+		}
+			offset += u4PerChDataSize;
+	}
+
+	return i4BytesWritten;
+}
+
+void rlmDomainApplyDynPwrSetting(
+	struct ADAPTER *prAdapter)
+{
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT **prPwrLimit =
+		prAdapter->prPwrLimit;
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit;
+	enum ENUM_PWR_LIMIT_RF_BAND eRF = PWR_LIMIT_RF_BAND_2G4;
+	enum ENUM_PWR_LIMIT_PROTOCOL eProt = PWR_LIMIT_PROTOCOL_LEGACY;
+	struct PWR_LIMIT_INFO rPerPwrLimitInfo;
+	enum ENUM_PWR_LIMIT_TYPE eLimitType;
+	struct DOMAIN_INFO_ENTRY *prDomainInfo;
+	uint8_t bandedgeParam[4] = { 0, 0, 0, 0 };
+
+	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
+	if (prDomainInfo) {
+		bandedgeParam[0] = prDomainInfo->rSubBand[0].ucFirstChannelNum;
+		bandedgeParam[1] = bandedgeParam[0] +
+			prDomainInfo->rSubBand[0].ucNumChannels - 1;
+	}
+
+	PWR_LIMIT_FOR_EACH_RF_BAND(eRF) {
+		PWR_LIMIT_FOR_EACH_PROTOCOL(eProt) {
+
+			prPerPwrLimit = &(prPwrLimit[eRF][eProt]);
+			rPerPwrLimitInfo = g_RlmPwrLimitInfo[eRF][eProt];
+			eLimitType = rPerPwrLimitInfo.eLimitType;
+
+			txPwrCtrlApplyDynPwrSetting(
+				prAdapter,
+				prPerPwrLimit,
+				bandedgeParam,
+				eLimitType,
+				eRF
+			);
+		}
+	}
+}
+
+void rlmDomainDumpAllPwrLmtData(
+	char *message,
+	struct ADAPTER *prAdapter)
+{
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT **prPwrLimit =
+		prAdapter->prPwrLimit;
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit;
+	enum ENUM_PWR_LIMIT_RF_BAND eRF = PWR_LIMIT_RF_BAND_2G4;
+	enum ENUM_PWR_LIMIT_PROTOCOL eProt = PWR_LIMIT_PROTOCOL_LEGACY;
+	struct PWR_LIMIT_INFO rPerPwrLimitInfo;
+	enum ENUM_PWR_LIMIT_TYPE eLimitType;
+
+	PWR_LIMIT_FOR_EACH_PROTOCOL(eProt) {
+		PWR_LIMIT_FOR_EACH_RF_BAND(eRF) {
+			prPerPwrLimit = &(prPwrLimit[eRF][eProt]);
+			rPerPwrLimitInfo = g_RlmPwrLimitInfo[eRF][eProt];
+			eLimitType = rPerPwrLimitInfo.eLimitType;
+
+			g_rRlmPwrLimitHandler[eLimitType].pfDumpData(
+				message,
+				prPerPwrLimit,
+				eRF
+			);
+
+		}
+	}
+}
+
+void rlmDomainSetPwrLimitHeader(
+	struct ADAPTER *prAdapter)
+{
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT **prPwrLimit =
+		prAdapter->prPwrLimit;
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit;
+	struct PWR_LIMIT_INFO rPerPwrLimitInfo;
+	enum ENUM_PWR_LIMIT_RF_BAND eRF = PWR_LIMIT_RF_BAND_2G4;
+	enum ENUM_PWR_LIMIT_PROTOCOL eProt = PWR_LIMIT_PROTOCOL_LEGACY;
+
+	PWR_LIMIT_FOR_EACH_RF_BAND(eRF) {
+		PWR_LIMIT_FOR_EACH_PROTOCOL(eProt) {
+			prPerPwrLimit = &(prPwrLimit[eRF][eProt]);
+			rPerPwrLimitInfo = g_RlmPwrLimitInfo[eRF][eProt];
+
+			/* ucNum */
+			prPerPwrLimit->ucNum = 0;
+
+			/* ucLimitType and ucVersion */
+			prPerPwrLimit->ucLimitType =
+				rPerPwrLimitInfo.eLimitType;
+			prPerPwrLimit->ucVersion =
+				rPerPwrLimitInfo.ucVersion;
+
+			DBGLOG(RLM, INFO,
+				"rf[%d]protocol[%d]limit_type[%d]ver[%d]\n",
+				eRF, eProt,
+				prPerPwrLimit->ucLimitType,
+				prPerPwrLimit->ucVersion
+			);
+
+		}
+	}
+}
+
+void rlmDomainSetPwrLimitPayload(struct ADAPTER *prAdapter)
+{
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT **prPwrLimit =
+		prAdapter->prPwrLimit;
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit;
+	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *prPwrLimitDefaultTable;
+	struct PWR_LIMIT_INFO rPerPwrLimitInfo;
+	enum ENUM_PWR_LIMIT_RF_BAND eRF = PWR_LIMIT_RF_BAND_2G4;
+	enum ENUM_PWR_LIMIT_PROTOCOL eProt = PWR_LIMIT_PROTOCOL_LEGACY;
+	enum ENUM_PWR_LIMIT_DEFAULT_BASE eDefBase;
+	enum ENUM_PWR_LIMIT_TYPE eLimitType;
+	uint16_t u2TblIndex = 0;
+
+	eDefBase = rlmDomainPwrLmtGetDefaultBase(prAdapter);
+
+	u2TblIndex = rlmDomainPwrLimitDefaultTableDecision(prAdapter,
+		prAdapter->rWifiVar.u2CountryCode);
+
+	if (u2TblIndex == POWER_LIMIT_TABLE_NULL) {
+		DBGLOG(RLM, ERROR,
+			"Can't find any table index!\n");
+		return;
+	}
+
+	prPwrLimitDefaultTable =
+		PWR_LIMIT_COUNTRY_DEF_TBL(eDefBase, u2TblIndex);
+
+	PWR_LIMIT_FOR_EACH_RF_BAND(eRF) {
+		PWR_LIMIT_FOR_EACH_PROTOCOL(eProt) {
+
+			prPerPwrLimit = &(prPwrLimit[eRF][eProt]);
+			rPerPwrLimitInfo = g_RlmPwrLimitInfo[eRF][eProt];
+			eLimitType = rPerPwrLimitInfo.eLimitType;
+
+			/* Sub band power limit */
+			g_rRlmPwrLimitHandler[eLimitType].pfLoadDefTbl(
+				prPwrLimitDefaultTable,
+				prPerPwrLimit,
+				rPerPwrLimitInfo
+			);
+
+			/* Channel & rate power limit */
+			g_rRlmPwrLimitHandler[eLimitType].pfLoadCfgTbl(
+				prAdapter,
+				prPerPwrLimit,
+				eRF
+			);
+		}
+	}
+}
+
+uint8_t *rlmDomainPwrLmtGetMatchCountryCode(
+	struct ADAPTER *prAdapter,
+	uint16_t u2CountryCode)
+{
+	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *prPwrLimitDefaultTable;
+	uint16_t u2TblIndex;
+	uint8_t *pu1PwrLmtCountryCode;
+	enum ENUM_PWR_LIMIT_DEFAULT_BASE eDefBase;
+
+	u2TblIndex =
+	    rlmDomainPwrLimitDefaultTableDecision(prAdapter,
+		prAdapter->rWifiVar.u2CountryCode);
+
+	if (u2TblIndex == POWER_LIMIT_TABLE_NULL) {
+		DBGLOG(RLM, ERROR,
+			"Can't find any table index!\n");
+		return NULL;
+	}
+
+	eDefBase = rlmDomainPwrLmtGetDefaultBase(prAdapter);
+
+	prPwrLimitDefaultTable =
+		PWR_LIMIT_COUNTRY_DEF_TBL(eDefBase, u2TblIndex);
+
+	pu1PwrLmtCountryCode = &prPwrLimitDefaultTable->aucCountryCode[0];
+
+	return pu1PwrLmtCountryCode;
+}
+
+void rlmDomainSendAntPowerSetting(struct ADAPTER *prAdapter)
+{
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmdAnt = NULL;
+	struct CMD_CHANNEL_POWER_LIMIT_ANT *prPwrLmtAnt = NULL;
+	uint32_t u4SetQueryInfoLenAnt = 0, u4SetCmdTableMaxSize = 0, i, rStatus;
+
+	u4SetCmdTableMaxSize =
+		sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT);
+
+	prCmdAnt = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4SetCmdTableMaxSize);
+	if (!prCmdAnt) {
+		DBGLOG(RLM, ERROR, "Domain: Alloc cmd buffer failed\n");
+		goto err;
+	}
+	kalMemZero(prCmdAnt, u4SetCmdTableMaxSize);
+
+	prCmdAnt->ucCategoryId = POWER_LIMIT_TABLE_CTRL;
+	prCmdAnt->ucNum = 0;
+	prCmdAnt->fgPwrTblKeep = TRUE;
+	/* ANT number if PWR_LIMIT_TYPE_COMP_ANT*/
+	prCmdAnt->ucLimitType = PWR_LIMIT_CMD_TYPE_ANT_V2;
+	prCmdAnt->ucVersion = 1;
+
+	txPwrCtrlApplyAntPowerSettings(prAdapter, prCmdAnt);
+
+	prPwrLmtAnt = &prCmdAnt->u.rChPwrLimtAnt[0];
+	DBGLOG(RLM, TRACE, "ANT Config #%d", prCmdAnt->ucNum);
+	for (i = 0; i < prCmdAnt->ucNum; i++) {
+		DBGLOG(RLM, TRACE,
+			"Final ANT Cfg%d Tag[%d]Ant[%d]Band[%d]Val[%d]\n",
+			i,
+			prPwrLmtAnt[i].cTagIdx,
+			prPwrLmtAnt[i].cAntIdx,
+			prPwrLmtAnt[i].cBandIdx,
+			prPwrLmtAnt[i].cValue);
+
+		if (prPwrLmtAnt[i].cTagIdx == -1)
+			break;
+	}
+
+	u4SetQueryInfoLenAnt =
+		sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT);
+
+	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+				CMD_ID_SET_COUNTRY_POWER_LIMIT, /* ucCID */
+				TRUE,	/* fgSetQuery */
+				FALSE,	/* fgNeedResp */
+				FALSE,	/* fgIsOid */
+				NULL,	/* pfCmdDoneHandler */
+				NULL,	/* pfCmdTimeoutHandler */
+				u4SetQueryInfoLenAnt,	/* u4SetQueryInfoLen */
+				(uint8_t *) prCmdAnt,	/* pucInfoBuffer */
+				NULL,	/* pvSetQueryBuffer */
+				0	/* u4SetQueryBufferLen */
+			);
+	if (rStatus != WLAN_STATUS_PENDING)
+		DBGLOG(RLM, ERROR, "Power limit revise 0x%08x\n", rStatus);
+
+err:
+	cnmMemFree(prAdapter, prCmdAnt);
+#endif /*CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG*/
+}
+
+void rlmDomainSetPwrLimitCountryCode(
+	struct ADAPTER *prAdapter,
+	uint8_t *pu1PwrLmtCountryCode)
+{
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT **prPwrLimit =
+		prAdapter->prPwrLimit;
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit;
+	enum ENUM_PWR_LIMIT_RF_BAND eRF = PWR_LIMIT_RF_BAND_2G4;
+	enum ENUM_PWR_LIMIT_PROTOCOL eProt = PWR_LIMIT_PROTOCOL_LEGACY;
+
+	PWR_LIMIT_FOR_EACH_RF_BAND(eRF) {
+		PWR_LIMIT_FOR_EACH_PROTOCOL(eProt) {
+			prPerPwrLimit = &(prPwrLimit[eRF][eProt]);
+			WLAN_GET_FIELD_BE16(pu1PwrLmtCountryCode,
+				&prPerPwrLimit->u2CountryCode);
+		}
+	}
+}
+
+static void rlmDomainBuildDefaultPwrLimitPayload_Legacy(
+	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *prDefTbl,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	struct PWR_LIMIT_INFO rPerPwrLimitInfo)
+{
+	struct CHANNEL_POWER_LIMIT_LEGACY *prChPwrLimit_Legacy;
+	uint32_t u4SubBandIdx, u4Channel = 0;
+	uint8_t ucPwr = 0, ucIdx = 0;
+	bool fgPwrUnit = false;
+
+	prChPwrLimit_Legacy = &prPerPwrLimit->u.rLegacy[0];
+
+	PWR_LIMIT_FOR_EACH_SUBBAND(u4SubBandIdx, rPerPwrLimitInfo) {
+
+		ucPwr = rlmDomainGetSubBandPwrLimit(prDefTbl, u4SubBandIdx);
+		rlmDomainGetSubBandDefPwrIdx(u4SubBandIdx, &ucIdx);
+		fgPwrUnit = prDefTbl->ucPwrUnit & BIT(ucIdx);
+
+		PWR_LIMIT_FOR_EACH_SUB_BAND_CHANNEL(u4Channel, u4SubBandIdx) {
+
+			prChPwrLimit_Legacy->ucCentralCh = u4Channel;
+
+			if (fgPwrUnit) {
+				/*BW20*/
+				prChPwrLimit_Legacy->cPwrLimitCCK_L = ucPwr;
+				prChPwrLimit_Legacy->cPwrLimitCCK_H = ucPwr;
+				prChPwrLimit_Legacy->cPwrLimitOFDM_L = ucPwr;
+				prChPwrLimit_Legacy->cPwrLimitOFDM_H = ucPwr;
+				prChPwrLimit_Legacy->cPwrLimit20L = ucPwr;
+				prChPwrLimit_Legacy->cPwrLimit20H = ucPwr;
+				prChPwrLimit_Legacy->cPwrLimitCCK_L = ucPwr;
+
+				/*BW40*/
+				PWR_LIMIT_ACCUMULATE(ucPwr, 6);
+				prChPwrLimit_Legacy->cPwrLimit40L = ucPwr;
+				prChPwrLimit_Legacy->cPwrLimit40H = ucPwr;
+
+				/*BW80*/
+				PWR_LIMIT_ACCUMULATE(ucPwr, 6);
+				prChPwrLimit_Legacy->cPwrLimit80L = ucPwr;
+				prChPwrLimit_Legacy->cPwrLimit80H = ucPwr;
+
+				/*BW160*/
+				PWR_LIMIT_ACCUMULATE(ucPwr, 6);
+				prChPwrLimit_Legacy->cPwrLimit160L = ucPwr;
+				prChPwrLimit_Legacy->cPwrLimit160H = ucPwr;
+
+			} else {
+				kalMemSet(&prChPwrLimit_Legacy->cPwrLimitCCK_L,
+					ucPwr, PWR_LIMIT_LEGACY_NUM);
+			}
+
+			prPerPwrLimit->ucNum++;
+			prChPwrLimit_Legacy++;
+		}
+	}
+};
+
+static void rlmDomainBuildConfigPwrLimitPayload_Legacy(
+	struct ADAPTER *prAdapter,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	enum ENUM_PWR_LIMIT_RF_BAND eRF)
+{
+	struct CHANNEL_POWER_LIMIT_LEGACY *prChPwrLimit_Legacy;
+	struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY *prCfgPwrLmt;
+	enum ENUM_PWR_LIMIT_CONFIG_BASE eCfgTblBase;
+	uint16_t u2CountryCodeTable = COUNTRY_CODE_NULL;
+	uint32_t u4ChIdx = 0, u4TableNum = 0, i = 0;
+	bool fgChannelValid = FALSE;
+
+	eCfgTblBase = rlmDomainPwrLmtGetConfigBase(prAdapter, eRF);
+
+	prCfgPwrLmt =
+		g_rlmPowerLimitConfigTable[eCfgTblBase].Legacy.table;
+	u4TableNum =
+		g_rlmPowerLimitConfigTable[eCfgTblBase].Legacy.table_num;
+
+	for (u4ChIdx = 0; u4ChIdx < prPerPwrLimit->ucNum; u4ChIdx++) {
+
+		prChPwrLimit_Legacy = &prPerPwrLimit->u.rLegacy[u4ChIdx];
+
+		for (i = 0; i < u4TableNum; i++) {
+
+			WLAN_GET_FIELD_BE16(
+				&prCfgPwrLmt[i].aucCountryCode[0],
+				&u2CountryCodeTable);
+
+			fgChannelValid =
+				rlmDomainCheckChannelEntryValid(
+					prAdapter,
+					rlmDomainConvertRFBandEnum(eRF),
+					prCfgPwrLmt[i].ucCentralCh
+				);
+
+			if (u2CountryCodeTable == COUNTRY_CODE_NULL)
+				break;	/*end of configuration table */
+			else if (u2CountryCodeTable
+				!= prPerPwrLimit->u2CountryCode)
+				continue;
+			else if (fgChannelValid == FALSE)
+				continue;
+			else if (prChPwrLimit_Legacy->ucCentralCh
+				!= prCfgPwrLmt[i].ucCentralCh)
+				continue;
+
+			PwrLmtTblArbitrator(
+				&prChPwrLimit_Legacy->cPwrLimitCCK_L,
+				&prCfgPwrLmt[i].aucPwrLimit[0],
+				PWR_LIMIT_LEGACY_NUM);
+		}
+	}
+}
+
+static void rlmDomainDumpPwrLimitPayload_Legacy(
+	char *message,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	enum ENUM_PWR_LIMIT_RF_BAND eRF)
+{
+	struct CHANNEL_POWER_LIMIT_LEGACY *prChPwrLimit_Legacy;
+	char msgLimit[PWR_BUF_LEN];
+	uint32_t u4MsgOfs = 0, j = 0, u4ChIdx = 0;
+	int8_t *pcRatePwr;
+
+	for (u4ChIdx = 0; u4ChIdx < prPerPwrLimit->ucNum; u4ChIdx++) {
+		prChPwrLimit_Legacy = &prPerPwrLimit->u.rLegacy[u4ChIdx];
+		pcRatePwr = &prChPwrLimit_Legacy->cPwrLimitCCK_L;
+
+		kalMemZero(msgLimit, sizeof(char) * PWR_BUF_LEN);
+		u4MsgOfs = 0;
+
+		/*message head*/
+		u4MsgOfs +=
+			snprintf(
+				msgLimit + u4MsgOfs,
+				PWR_BUF_LEN - u4MsgOfs,
+				"Legacy ch=%d, %s,Limit=",
+				prChPwrLimit_Legacy->ucCentralCh,
+				g_au1TxPwrRFBand[eRF]
+			);
+
+		/*message body*/
+		for (j = PWR_LIMIT_LEGACY_CCK_L; j < PWR_LIMIT_LEGACY_NUM; j++)
+			u4MsgOfs +=
+				snprintf(msgLimit + u4MsgOfs,
+					PWR_BUF_LEN - u4MsgOfs,
+					"%d,",
+					*(pcRatePwr + j)
+				);
+
+		/*message tail*/
+		if (u4MsgOfs >= 1)
+			msgLimit[u4MsgOfs - 1] = '\0';
+		else
+			msgLimit[0] = '\0';
+
+		DBGLOG(RLM, LOUD, "%s:%s\n", message, msgLimit);
+	}
+}
+
+static void rlmDomainApplyDynSettings_Legacy(
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	struct TX_PWR_CTRL_ELEMENT *prCurElement,
+	uint8_t *bandedgeParam,
+	enum ENUM_PWR_LIMIT_RF_BAND eRF)
+{
+	struct CHANNEL_POWER_LIMIT_LEGACY *prChPwrLimit_Legacy;
+	struct TX_PWR_CTRL_CHANNEL_SETTING *prChlSetting = NULL;
+	uint32_t u4ChIdx = 0, u4SetIdx = 0, u4OfsIdx = 0;
+	uint32_t u4EleSetCount = prCurElement->settingCount;
+	int8_t *pcRefValPtr, *pcApplyValPtr;
+	bool fgNeedArbitrator = FALSE;
+	enum ENUM_TX_POWER_CTRL_VALUE_SIGN *pcApplyOpPtr;
+
+	for (u4ChIdx = 0; u4ChIdx < prPerPwrLimit->ucNum; u4ChIdx++) {
+		prChPwrLimit_Legacy = &prPerPwrLimit->u.rLegacy[u4ChIdx];
+		pcRefValPtr = &prChPwrLimit_Legacy->cPwrLimitCCK_L;
+
+		for (u4SetIdx = 0; u4SetIdx < u4EleSetCount; u4SetIdx++) {
+
+			prChlSetting = &prCurElement->rChlSettingList[u4SetIdx];
+
+			fgNeedArbitrator =
+				rlmDomainIsNeedToDoArbitrator(
+					prChPwrLimit_Legacy->ucCentralCh,
+					prChlSetting->channelParam[0],
+					prChlSetting->channelParam[1],
+					bandedgeParam,
+					prChlSetting->eChnlType,
+					eRF
+				);
+
+			if (!fgNeedArbitrator)
+				continue;
+
+			pcApplyOpPtr =
+				prChlSetting->op;
+			pcApplyValPtr =
+				prChlSetting->i8PwrLimit;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (eRF == PWR_LIMIT_RF_BAND_6G) {
+				pcApplyOpPtr =
+					prChlSetting->opLegacy_6G;
+				pcApplyValPtr =
+					prChlSetting->i8PwrLimitLegacy_6G;
+			}
+#endif
+
+			for (u4OfsIdx = PWR_LIMIT_LEGACY_CCK_L;
+				u4OfsIdx < PWR_LIMIT_LEGACY_NUM;
+				u4OfsIdx++) {
+				if (pcApplyOpPtr[u4OfsIdx]
+					!= PWR_CTRL_TYPE_NO_ACTION) {
+					txPwrOperate(prCurElement->eCtrlType,
+						pcRefValPtr + u4OfsIdx,
+						pcApplyValPtr + u4OfsIdx);
+				}
+			}
+		}
+	}
+}
+
+static void rlmDomainWriteTxPwrEmiData_Legacy(
+	uint32_t channel_index,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	char *prTxPowrEmiAddress,
+	uint32_t *u4Size
+)
+{
+	struct CHANNEL_POWER_LIMIT_LEGACY *prChPwrLimit_Legacy;
+	*u4Size = sizeof(struct CHANNEL_POWER_LIMIT_LEGACY);
+	prChPwrLimit_Legacy = &prPerPwrLimit->u.rLegacy[channel_index];
+	kalMemCopy(prTxPowrEmiAddress, prChPwrLimit_Legacy, *u4Size);
+}
+
+static void rlmDomainBuildDefaultPwrLimitPayload_HE(
+	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *prDefTbl,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	struct PWR_LIMIT_INFO rPerPwrLimitInfo)
+{
+	struct CHANNEL_POWER_LIMIT_HE *prChPwrLimit_HE;
+	uint32_t u4SubBandIdx = 0, u4Channel = 0;
+	uint8_t ucPwr = 0, ucIdx = 0;
+	bool fgPwrUnit = false;
+
+	prChPwrLimit_HE = &prPerPwrLimit->u.rHE[0];
+
+	PWR_LIMIT_FOR_EACH_SUBBAND(u4SubBandIdx, rPerPwrLimitInfo) {
+
+		ucPwr = rlmDomainGetSubBandPwrLimit(prDefTbl, u4SubBandIdx);
+		rlmDomainGetSubBandDefPwrIdx(u4SubBandIdx, &ucIdx);
+		fgPwrUnit = prDefTbl->ucPwrUnit & BIT(ucIdx);
+
+		PWR_LIMIT_FOR_EACH_SUB_BAND_CHANNEL(u4Channel, u4SubBandIdx) {
+
+			prChPwrLimit_HE->ucCentralCh = u4Channel;
+
+			if (fgPwrUnit) {
+				/*BW20*/
+				prChPwrLimit_HE->cPwrLimitRU26L = ucPwr;
+				prChPwrLimit_HE->cPwrLimitRU26H = ucPwr;
+				prChPwrLimit_HE->cPwrLimitRU26U = ucPwr;
+				prChPwrLimit_HE->cPwrLimitRU52L = ucPwr;
+				prChPwrLimit_HE->cPwrLimitRU52H = ucPwr;
+				prChPwrLimit_HE->cPwrLimitRU52U = ucPwr;
+				prChPwrLimit_HE->cPwrLimitRU106L = ucPwr;
+				prChPwrLimit_HE->cPwrLimitRU106H = ucPwr;
+				prChPwrLimit_HE->cPwrLimitRU106U = ucPwr;
+				prChPwrLimit_HE->cPwrLimitRU242L = ucPwr;
+				prChPwrLimit_HE->cPwrLimitRU242H = ucPwr;
+				prChPwrLimit_HE->cPwrLimitRU242U = ucPwr;
+
+				/*BW40*/
+				PWR_LIMIT_ACCUMULATE(ucPwr, 6);
+				prChPwrLimit_HE->cPwrLimitRU484L = ucPwr;
+				prChPwrLimit_HE->cPwrLimitRU484H = ucPwr;
+				prChPwrLimit_HE->cPwrLimitRU484U = ucPwr;
+
+				/*BW80*/
+				PWR_LIMIT_ACCUMULATE(ucPwr, 6);
+				prChPwrLimit_HE->cPwrLimitRU996L = ucPwr;
+				prChPwrLimit_HE->cPwrLimitRU996H = ucPwr;
+				prChPwrLimit_HE->cPwrLimitRU996U = ucPwr;
+
+				/*BW160*/
+				PWR_LIMIT_ACCUMULATE(ucPwr, 6);
+				prChPwrLimit_HE->cPwrLimitRU1992L = ucPwr;
+				prChPwrLimit_HE->cPwrLimitRU1992H = ucPwr;
+				prChPwrLimit_HE->cPwrLimitRU1992U = ucPwr;
+
+			} else {
+				kalMemSet(&prChPwrLimit_HE->cPwrLimitRU26L,
+					ucPwr, PWR_LIMIT_HE_NUM);
+			}
+
+			prPerPwrLimit->ucNum++;
+			prChPwrLimit_HE++;
+		}
+	}
+}
+
+
+static void rlmDomainBuildConfigPwrLimitPayload_HE(
+	struct ADAPTER *prAdapter,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	enum ENUM_PWR_LIMIT_RF_BAND eRFBand)
+{
+	struct CHANNEL_POWER_LIMIT_HE *prChPwrLimit_HE;
+	struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE *prCfgPwrLmt;
+	enum ENUM_PWR_LIMIT_CONFIG_BASE eCfgTblBase;
+	uint16_t u2CountryCodeTable = COUNTRY_CODE_NULL;
+	uint32_t u4ChIdx = 0, u4TableNum, i;
+	bool fgChannelValid = FALSE;
+
+	eCfgTblBase = rlmDomainPwrLmtGetConfigBase(prAdapter, eRFBand);
+
+	prCfgPwrLmt =
+		g_rlmPowerLimitConfigTable[eCfgTblBase].HE.table;
+	u4TableNum =
+		g_rlmPowerLimitConfigTable[eCfgTblBase].HE.table_num;
+
+	for (u4ChIdx = 0; u4ChIdx < prPerPwrLimit->ucNum; u4ChIdx++) {
+
+		prChPwrLimit_HE = &prPerPwrLimit->u.rHE[u4ChIdx];
+
+		for (i = 0; i < u4TableNum; i++) {
+
+			WLAN_GET_FIELD_BE16(
+				&prCfgPwrLmt[i].aucCountryCode[0],
+				&u2CountryCodeTable);
+
+			fgChannelValid =
+				rlmDomainCheckChannelEntryValid(
+					prAdapter,
+					rlmDomainConvertRFBandEnum(eRFBand),
+					prCfgPwrLmt[i].ucCentralCh
+				);
+
+			if (u2CountryCodeTable == COUNTRY_CODE_NULL)
+				break;	/*end of configuration table */
+			else if (u2CountryCodeTable !=
+				prPerPwrLimit->u2CountryCode)
+				continue;
+			else if (fgChannelValid == FALSE)
+				continue;
+			else if (prChPwrLimit_HE->ucCentralCh !=
+				prCfgPwrLmt[i].ucCentralCh)
+				continue;
+
+			PwrLmtTblArbitrator(
+				&prChPwrLimit_HE->cPwrLimitRU26L,
+				&prCfgPwrLmt[i].aucPwrLimit[0],
+				PWR_LIMIT_HE_NUM);
+		}
+	}
+}
+
+static void rlmDomainDumpPwrLimitPayload_HE(
+	char *message,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	enum ENUM_PWR_LIMIT_RF_BAND eRF)
+{
+	struct CHANNEL_POWER_LIMIT_HE *prChPwrLimit_HE;
+	char msgLimit[PWR_BUF_LEN];
+	uint32_t u4MsgOfs = 0, j = 0, u4ChIdx = 0;
+	int8_t *pcRatePwr;
+
+	for (u4ChIdx = 0; u4ChIdx < prPerPwrLimit->ucNum; u4ChIdx++) {
+		prChPwrLimit_HE = &prPerPwrLimit->u.rHE[u4ChIdx];
+		pcRatePwr = &prChPwrLimit_HE->cPwrLimitRU26L;
+
+		kalMemZero(msgLimit, sizeof(char) * PWR_BUF_LEN);
+		u4MsgOfs = 0;
+
+		/*message head*/
+		u4MsgOfs +=
+			snprintf(msgLimit + u4MsgOfs,
+				PWR_BUF_LEN - u4MsgOfs,
+				"HE ch=%d, %s, Limit=",
+				prChPwrLimit_HE->ucCentralCh,
+				g_au1TxPwrRFBand[eRF]
+			);
+
+		/*message body*/
+		for (j = PWR_LIMIT_HE_RU26_L; j < PWR_LIMIT_HE_NUM ; j++)
+			u4MsgOfs +=
+				snprintf(msgLimit + u4MsgOfs,
+					PWR_BUF_LEN - u4MsgOfs,
+					"%d,",
+					*(pcRatePwr + j)
+				);
+
+		/*message tail*/
+		if (u4MsgOfs >= 1)
+			msgLimit[u4MsgOfs - 1] = '\0';
+		else
+			msgLimit[0] = '\0';
+
+		DBGLOG(RLM, LOUD, "%s:%s\n", message, msgLimit);
+	}
+}
+
+static void rlmDomainApplyDynSettings_HE(
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	struct TX_PWR_CTRL_ELEMENT *prCurElement,
+	uint8_t *bandedgeParam,
+	enum ENUM_PWR_LIMIT_RF_BAND eRF)
+{
+	struct CHANNEL_POWER_LIMIT_HE *prChPwrLimit_HE;
+	struct TX_PWR_CTRL_CHANNEL_SETTING *prChlSetting = NULL;
+	uint32_t u4ChIdx = 0, u4SetIdx = 0, u4OfsIdx = 0;
+	uint32_t u4EleSetCount = prCurElement->settingCount;
+	int8_t *pcRefValPtr, *pcApplyValPtr;
+	bool fgNeedArbitrator = FALSE;
+	enum ENUM_TX_POWER_CTRL_VALUE_SIGN *pcApplyOpPtr;
+
+	for (u4ChIdx = 0; u4ChIdx < prPerPwrLimit->ucNum; u4ChIdx++) {
+		prChPwrLimit_HE = &prPerPwrLimit->u.rHE[u4ChIdx];
+		pcRefValPtr = &prChPwrLimit_HE->cPwrLimitRU26L;
+
+		for (u4SetIdx = 0; u4SetIdx < u4EleSetCount; u4SetIdx++) {
+
+			prChlSetting = &prCurElement->rChlSettingList[u4SetIdx];
+
+			fgNeedArbitrator =
+				rlmDomainIsNeedToDoArbitrator(
+					prChPwrLimit_HE->ucCentralCh,
+					prChlSetting->channelParam[0],
+					prChlSetting->channelParam[1],
+					bandedgeParam,
+					prChlSetting->eChnlType,
+					eRF
+				);
+
+
+			if (!fgNeedArbitrator)
+				continue;
+
+			pcApplyOpPtr =
+				prChlSetting->opHE;
+			pcApplyValPtr =
+				prChlSetting->i8PwrLimitHE;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (eRF == PWR_LIMIT_RF_BAND_6G) {
+				pcApplyOpPtr =
+					prChlSetting->op6E;
+				pcApplyValPtr =
+					prChlSetting->i8PwrLimit6E;
+			}
+#endif
+			for (u4OfsIdx = PWR_LIMIT_HE_RU26_L;
+				u4OfsIdx < PWR_LIMIT_HE_NUM;
+				u4OfsIdx++) {
+				if (pcApplyOpPtr[u4OfsIdx]
+					!= PWR_CTRL_TYPE_NO_ACTION) {
+					txPwrOperate(prCurElement->eCtrlType,
+						pcRefValPtr + u4OfsIdx,
+						pcApplyValPtr + u4OfsIdx);
+				}
+			}
+		}
+	}
+}
+
+static void rlmDomainWriteTxPwrEmiData_HE(
+	uint32_t channel_index,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	char *prTxPowrEmiAddress,
+	uint32_t *u4Size
+)
+{
+	struct CHANNEL_POWER_LIMIT_HE *prChPwrLimit_HE;
+	*u4Size = sizeof(struct CHANNEL_POWER_LIMIT_HE);
+	prChPwrLimit_HE = &prPerPwrLimit->u.rHE[channel_index];
+	kalMemCopy(prTxPowrEmiAddress, prChPwrLimit_HE, *u4Size);
+}
+
+static void rlmDomainBuildDefaultPwrLimitPayload_EHT(
+	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *prDefTbl,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	struct PWR_LIMIT_INFO rPerPwrLimitInfo)
+{
+	struct CHANNEL_POWER_LIMIT_EHT *prChPwrLimit_EHT;
+	uint32_t u4SubBandIdx, u4Channel = 0;
+	uint8_t ucPwr = 0, ucIdx = 0;
+	bool fgPwrUnit = false;
+
+	prChPwrLimit_EHT = &prPerPwrLimit->u.rEHT[0];
+
+	PWR_LIMIT_FOR_EACH_SUBBAND(u4SubBandIdx, rPerPwrLimitInfo) {
+
+		ucPwr = rlmDomainGetSubBandPwrLimit(prDefTbl, u4SubBandIdx);
+		rlmDomainGetSubBandDefPwrIdx(u4SubBandIdx, &ucIdx);
+		fgPwrUnit = prDefTbl->ucPwrUnit & BIT(ucIdx);
+
+		PWR_LIMIT_FOR_EACH_SUB_BAND_CHANNEL(u4Channel, u4SubBandIdx) {
+
+			prChPwrLimit_EHT->ucCentralCh = u4Channel;
+
+			if (fgPwrUnit) {
+				/*BW20*/
+				prChPwrLimit_EHT->cPwrLimitEHT26L = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT26H = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT26U = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT52L = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT52H = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT52U = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT106L = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT106H = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT106U = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT242L = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT242H = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT242U = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT26_52L = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT26_52H = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT26_52U = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT26_106L = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT26_106H = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT26_106U = ucPwr;
+
+				/*BW40*/
+				PWR_LIMIT_ACCUMULATE(ucPwr, 6);
+				prChPwrLimit_EHT->cPwrLimitEHT484L = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT484H = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT484U = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT484_242L = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT484_242H = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT484_242U = ucPwr;
+
+				/*BW80*/
+				PWR_LIMIT_ACCUMULATE(ucPwr, 6);
+				prChPwrLimit_EHT->cPwrLimitEHT996L = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996H = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996U = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996_484L = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996_484H = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996_484U = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996_484_242L
+					= ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996_484_242H
+					= ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996_484_242U
+					= ucPwr;
+
+				/*BW160*/
+				PWR_LIMIT_ACCUMULATE(ucPwr, 6);
+				prChPwrLimit_EHT->cPwrLimitEHT996X2L = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996X2H = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996X2U = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996X2_484L
+					= ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996X2_484H
+					= ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996X2_484U
+					= ucPwr;
+
+				/*BW320*/
+				PWR_LIMIT_ACCUMULATE(ucPwr, 6);
+				prChPwrLimit_EHT->cPwrLimitEHT996X3L = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996X3H = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996X3U = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996X3_484L
+					= ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996X3_484H
+					= ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996X3_484U
+					= ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996X4L = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996X4H = ucPwr;
+				prChPwrLimit_EHT->cPwrLimitEHT996X4U = ucPwr;
+
+			} else {
+				kalMemSet(&prChPwrLimit_EHT->cPwrLimitEHT26L,
+					ucPwr, PWR_LIMIT_EHT_NUM);
+			}
+
+			prPerPwrLimit->ucNum++;
+			prChPwrLimit_EHT++;
+		}
+	}
+}
+
+static void rlmDomainBuildConfigPwrLimitPayload_EHT(
+	struct ADAPTER *prAdapter,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	enum ENUM_PWR_LIMIT_RF_BAND eRFBand)
+{
+	struct CHANNEL_POWER_LIMIT_EHT *prChPwrLimit_EHT;
+	struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT *prCfgPwrLmt;
+	enum ENUM_PWR_LIMIT_CONFIG_BASE eCfgTblBase;
+	uint16_t u2CountryCodeTable = COUNTRY_CODE_NULL;
+	uint32_t u4ChIdx = 0, u4TableNum = 0, i = 0;
+	bool fgChannelValid = FALSE;
+
+	eCfgTblBase = rlmDomainPwrLmtGetConfigBase(prAdapter, eRFBand);
+
+	prCfgPwrLmt =
+		g_rlmPowerLimitConfigTable[eCfgTblBase].EHT.table;
+	u4TableNum =
+		g_rlmPowerLimitConfigTable[eCfgTblBase].EHT.table_num;
+
+	for (u4ChIdx = 0; u4ChIdx < prPerPwrLimit->ucNum; u4ChIdx++) {
+
+		prChPwrLimit_EHT = &prPerPwrLimit->u.rEHT[u4ChIdx];
+
+		for (i = 0; i < u4TableNum; i++) {
+
+			WLAN_GET_FIELD_BE16(
+				&prCfgPwrLmt[i].aucCountryCode[0],
+				&u2CountryCodeTable);
+
+			fgChannelValid =
+				rlmDomainCheckChannelEntryValid(
+					prAdapter,
+					rlmDomainConvertRFBandEnum(eRFBand),
+					prCfgPwrLmt[i].ucCentralCh
+				);
+
+			if (u2CountryCodeTable == COUNTRY_CODE_NULL)
+				break;	/*end of configuration table */
+			else if (u2CountryCodeTable
+				!= prPerPwrLimit->u2CountryCode)
+				continue;
+			else if (fgChannelValid == FALSE)
+				continue;
+			else if (prChPwrLimit_EHT->ucCentralCh
+				!= prCfgPwrLmt[i].ucCentralCh)
+				continue;
+
+			PwrLmtTblArbitrator(
+				&prChPwrLimit_EHT->cPwrLimitEHT26L,
+				&prCfgPwrLmt[i].aucPwrLimit[0],
+				PWR_LIMIT_EHT_NUM);
+		}
+	}
+}
+
+static void rlmDomainDumpPwrLimitPayload_EHT(
+	char *message,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	enum ENUM_PWR_LIMIT_RF_BAND eRF)
+{
+	struct CHANNEL_POWER_LIMIT_EHT *prChPwrLimit_EHT;
+	char msgLimit[PWR_BUF_LEN];
+	uint32_t u4MsgOfs = 0, j = 0, u4ChIdx = 0;
+	int8_t *pcRatePwr;
+
+	for (u4ChIdx = 0; u4ChIdx < prPerPwrLimit->ucNum; u4ChIdx++) {
+		prChPwrLimit_EHT = &prPerPwrLimit->u.rEHT[u4ChIdx];
+		pcRatePwr = &prChPwrLimit_EHT->cPwrLimitEHT26L;
+
+		kalMemZero(msgLimit, sizeof(char) * PWR_BUF_LEN);
+		u4MsgOfs = 0;
+
+		/*message head*/
+		u4MsgOfs +=
+			snprintf(msgLimit + u4MsgOfs,
+				PWR_BUF_LEN - u4MsgOfs,
+				"EHT ch=%d,%s, Limit=",
+				prChPwrLimit_EHT->ucCentralCh,
+				g_au1TxPwrRFBand[eRF]
+			);
+
+		/*message body*/
+		for (j = PWR_LIMIT_EHT_RU26_L; j < PWR_LIMIT_EHT_NUM ; j++)
+			u4MsgOfs +=
+				snprintf(msgLimit + u4MsgOfs,
+					PWR_BUF_LEN - u4MsgOfs,
+					"%d,",
+					*(pcRatePwr + j)
+				);
+
+		/*message tail*/
+		if (u4MsgOfs >= 1)
+			msgLimit[u4MsgOfs - 1] = '\0';
+		else
+			msgLimit[0] = '\0';
+
+		DBGLOG(RLM, LOUD, "%s:%s\n", message, msgLimit);
+	}
+}
+
+static void rlmDomainApplyDynSettings_EHT(
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	struct TX_PWR_CTRL_ELEMENT *prCurElement,
+	uint8_t *bandedgeParam,
+	enum ENUM_PWR_LIMIT_RF_BAND eRF)
+{
+	struct CHANNEL_POWER_LIMIT_EHT *prChPwrLimit_EHT;
+	struct TX_PWR_CTRL_CHANNEL_SETTING *prChlSetting = NULL;
+	uint32_t u4ChIdx = 0, u4SetIdx = 0, u4OfsIdx = 0;
+	uint32_t u4EleSetCount = prCurElement->settingCount;
+	int8_t *pcRefValPtr, *pcApplyValPtr;
+	bool fgNeedArbitrator = FALSE;
+	enum ENUM_TX_POWER_CTRL_VALUE_SIGN *pcApplyOpPtr;
+
+	for (u4ChIdx = 0; u4ChIdx < prPerPwrLimit->ucNum; u4ChIdx++) {
+		prChPwrLimit_EHT = &prPerPwrLimit->u.rEHT[u4ChIdx];
+		pcRefValPtr = &prChPwrLimit_EHT->cPwrLimitEHT26L;
+
+		for (u4SetIdx = 0; u4SetIdx < u4EleSetCount; u4SetIdx++) {
+
+			prChlSetting = &prCurElement->rChlSettingList[u4SetIdx];
+
+			fgNeedArbitrator =
+				rlmDomainIsNeedToDoArbitrator(
+					prChPwrLimit_EHT->ucCentralCh,
+					prChlSetting->channelParam[0],
+					prChlSetting->channelParam[1],
+					bandedgeParam,
+					prChlSetting->eChnlType,
+					eRF
+				);
+
+			if (!fgNeedArbitrator)
+				continue;
+
+			pcApplyOpPtr =
+				prChlSetting->opEHT;
+			pcApplyValPtr =
+				prChlSetting->i8PwrLimitEHT;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (eRF == PWR_LIMIT_RF_BAND_6G) {
+				pcApplyOpPtr =
+					prChlSetting->opEHT_6G;
+				pcApplyValPtr =
+					prChlSetting->i8PwrLimitEHT_6G;
+			}
+#endif
+
+			for (u4OfsIdx = PWR_LIMIT_EHT_RU26_L;
+				u4OfsIdx < PWR_LIMIT_EHT_NUM;
+				u4OfsIdx++) {
+				if (pcApplyOpPtr[u4OfsIdx]
+					!= PWR_CTRL_TYPE_NO_ACTION) {
+					txPwrOperate(prCurElement->eCtrlType,
+						pcRefValPtr + u4OfsIdx,
+						pcApplyValPtr + u4OfsIdx);
+				}
+			}
+		}
+	}
+}
+
+static void rlmDomainWriteTxPwrEmiData_EHT(
+	uint32_t channel_index,
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT *prPerPwrLimit,
+	char *prTxPowrEmiAddress,
+	uint32_t *u4Size
+)
+{
+	struct CHANNEL_POWER_LIMIT_EHT *prChPwrLimit_EHT;
+	*u4Size = sizeof(struct CHANNEL_POWER_LIMIT_EHT);
+	prChPwrLimit_EHT = &prPerPwrLimit->u.rEHT[channel_index];
+	kalMemCopy(prTxPowrEmiAddress, prChPwrLimit_EHT, *u4Size);
+}
+
 #endif

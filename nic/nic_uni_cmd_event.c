@@ -186,6 +186,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #if CFG_SUPPORT_WIFI_POWER_METRICS
 	[CMD_ID_POWER_METRICS] = nicUniCmdPowerMetricsStatSetParam,
 #endif
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	[CMD_ID_SET_PWR_LIMIT_EMI_INFO] = nicUniCmdPowerLimitEmiInfo,
+#endif
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -284,9 +287,13 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 #if CFG_SUPPORT_WIFI_POWER_METRICS
 	[UNI_EVENT_ID_POWER_METRICS] = nicUniEventPowerMetricsStatGetInfo,
 #endif
+
 #if CFG_MTK_MDDP_SUPPORT
 	[UNI_EVENT_ID_MDDP] = nicUniEventMddp,
 #endif /* CFG_MTK_MDDP_SUPPORT */
+
+	[UNI_EVENT_ID_TXPOWER] = nicUniEventTxPower,
+
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -6840,7 +6847,7 @@ uint32_t nicUniCmdTxPowerCtrl(struct ADAPTER *ad,
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_TXPOWER, max_cmd_len,
-		tag_id == TX_POWER_SHOW_INFO ? nicUniEventTxPowerInfo :
+		tag_id == TX_POWER_SHOW_INFO ? nicUniCmdEventTxPowerInfo :
 		nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
 	if (!entry)
 		return WLAN_STATUS_RESOURCES;
@@ -8143,6 +8150,49 @@ uint32_t nicUniCmdSetSapSus(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif
+
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+uint32_t nicUniCmdPowerLimitEmiInfo(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_EMI_POWER_LIMIT_FORMAT *cmd;
+	struct UNI_CMD_POWER_LIMIT *uni_cmd;
+	struct UNI_CMD_SET_PWR_LIMIT_EMI_INFO *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_POWER_LIMIT) +
+		sizeof(struct UNI_CMD_SET_PWR_LIMIT_EMI_INFO);
+
+	if (info->ucCID != CMD_ID_SET_PWR_LIMIT_EMI_INFO)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_EMI_POWER_LIMIT_FORMAT *)
+		info->pucInfoBuffer;
+
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_POWER_LIMIT,
+		max_cmd_len,
+		NULL,
+		NULL);
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_POWER_LIMIT *) entry->pucInfoBuffer;
+
+	tag = (struct UNI_CMD_SET_PWR_LIMIT_EMI_INFO *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_POWER_LIMIT_EMI_INFO;
+
+	tag->u2Length = sizeof(tag->u2Tag)
+		+ sizeof(tag->u2Length)
+		+ info->u4SetQueryInfoLen;
+
+	kalMemCopy(&tag->config, cmd, info->u4SetQueryInfoLen);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -9658,7 +9708,7 @@ void nicUniEventLinkStats(struct ADAPTER *prAdapter,
 #endif
 }
 
-void nicUniEventTxPowerInfo(struct ADAPTER
+void nicUniCmdEventTxPowerInfo(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 #if (CFG_SUPPORT_TXPOWER_INFO == 1)
@@ -12808,3 +12858,34 @@ void nicUniEventMddp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		DBGLOG(NIC, ERROR, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 }
 #endif /* CFG_MTK_MDDP_SUPPORT */
+
+void nicUniEventTxPower(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_TXPOWER);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+			case UNI_EVENT_TXPOWER_POWER_LIMIT_EMI_STATUS: {
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+				rlmDomainPowerLimitEmiEvent(ad, TAG_DATA(tag));
+#endif
+			}
+				break;
+			default: {
+				DBGLOG(NIC, WARN, "invalid tag = %d\n",
+					TAG_ID(tag));
+			}
+				break;
+		}
+	}
+
+}

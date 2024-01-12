@@ -365,6 +365,7 @@ enum ENUM_CMD_ID {
 	CMD_ID_PF_CF_COALESCING_INT = 0xB2,    /* 0xB2 (Set) */
 #endif
 	CMD_ID_LP_DBG_CTRL = 0xB3,             /* 0xB3 (Set / Query) */
+	CMD_ID_SET_PWR_LIMIT_EMI_INFO = 0xB4,   /* 0xB4 (Set)*/
 
 	CMD_ID_ACCESS_REG           = 0xc0, /* 0xc0 (Set / Query) */
 	CMD_ID_MAC_MCAST_ADDR,              /* 0xc1 (Set / Query) */

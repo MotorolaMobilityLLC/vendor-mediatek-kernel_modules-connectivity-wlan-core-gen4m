@@ -2883,6 +2883,14 @@
 #define CFG_SUPPORT_HRTIMER 0
 #endif
 
+/*------------------------------------------------------------------------------
+ * Tx power limit channel definition:
+ * 0 : Center Channel (config in rlm_txpwr_data_emi_cent.h)
+ * 1 : Primary Channel (config in rlm_txpwr_data_emi_pri.h)
+ *------------------------------------------------------------------------------
+ */
+#define COUNTRY_CHANNEL_TXPOWER_LIMIT_CHANNEL_DEFINE 0
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

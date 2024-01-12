@@ -2825,8 +2825,14 @@ struct ADAPTER {
 	u_int8_t fg6GPwrModeForce;
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE == 1 */
 	OS_SYSTIME rRsnFwDumpTime;
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	struct SET_COUNTRY_CHANNEL_POWER_LIMIT **prPwrLimit;
+	struct EMI_POWER_LIMIT_INFO
+		rTxpwrEmiInfo[PWR_LIMIT_RF_BAND_NUM][PWR_LIMIT_PROTOCOL_NUM];
+	bool fgPwrLmtCacheExist;
+	u_int32_t u4PwrLmtLockCounter;
+#endif
 };				/* end of _ADAPTER_T */
-
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

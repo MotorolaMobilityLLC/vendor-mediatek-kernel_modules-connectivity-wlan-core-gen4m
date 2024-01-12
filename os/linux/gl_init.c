@@ -4386,6 +4386,10 @@ void wlanWakeLockInit(struct GLUE_INFO *prGlueInfo)
 	KAL_WAKE_LOCK_INIT(NULL, prGlueInfo->prDrvOwnWakeLock,
 			   "WLAN Drv Own");
 #endif
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	KAL_WAKE_LOCK_INIT(NULL, prGlueInfo->rTxPowerEmiWakeLock,
+			   "Tx Power");
+#endif
 #endif
 }
 
@@ -4413,6 +4417,14 @@ void wlanWakeLockUninit(struct GLUE_INFO *prGlueInfo)
 		KAL_WAKE_UNLOCK(NULL, prGlueInfo->prDrvOwnWakeLock);
 	KAL_WAKE_LOCK_DESTROY(NULL, prGlueInfo->prDrvOwnWakeLock);
 #endif
+
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	if (KAL_WAKE_LOCK_ACTIVE(NULL,
+				 prGlueInfo->rTxPowerEmiWakeLock))
+		KAL_WAKE_UNLOCK(NULL, prGlueInfo->rTxPowerEmiWakeLock);
+	KAL_WAKE_LOCK_DESTROY(NULL, prGlueInfo->rTxPowerEmiWakeLock);
+#endif
+
 #endif
 }
 
@@ -7780,6 +7792,13 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		prGlueInfo->rBowInfo.fgIsNetRegistered = FALSE;
 		prGlueInfo->rBowInfo.fgIsRegistered = FALSE;
 		glRegisterAmpc(prGlueInfo);
+#endif
+
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
+		/* dynamic tx power control load configuration */
+		/* note: call this API after loading NVRAM */
+		/* note: call this API after main thread is start */
+		txPwrCtrlLoadConfig(prAdapter);
 #endif
 
 #if (CONFIG_WLAN_SERVICE == 1)
