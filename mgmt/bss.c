@@ -251,9 +251,9 @@ void bssDetermineStaRecPhyTypeSet(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11AX == 1)
 	uint8_t ucHeOption = FEATURE_ENABLED;
 
-	/* 802.11 AX blacklist */
+	/* 802.11 AX blocklist */
 	if (queryAxBlocklist(prAdapter, prBssDesc->aucBSSID,
-			     prStaRec->ucBssIndex, BLACKLIST_AX_TO_AC)) {
+			     prStaRec->ucBssIndex, BLOCKLIST_AX_TO_AC)) {
 		DBGLOG(BSS, INFO,
 		    "BSSID " MACSTR " is in AX blocklist!\n",
 		    MAC2STR(prBssDesc->aucBSSID));
@@ -2699,7 +2699,7 @@ void bssProcessErTxModeEvent(struct ADAPTER *prAdapter,
 }
 #endif
 
-#if CFG_SUPPORT_IOT_AP_BLACKLIST
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief get IOT AP handle action.

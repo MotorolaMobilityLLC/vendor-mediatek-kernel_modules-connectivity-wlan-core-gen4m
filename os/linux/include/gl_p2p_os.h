@@ -183,7 +183,7 @@ struct GL_P2P_INFO {
 #endif
 
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
-	uint8_t aucblackMACList[P2P_MAXIMUM_CLIENT_COUNT][PARAM_MAC_ADDR_LEN];
+	uint8_t aucBlockMACList[P2P_MAXIMUM_CLIENT_COUNT][PARAM_MAC_ADDR_LEN];
 	uint8_t ucMaxClients;
 #endif
 

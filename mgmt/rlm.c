@@ -54,8 +54,8 @@ uint8_t  g_fgHTSMPSEnabled = 0xFF;
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-#if CFG_SUPPORT_RXSMM_WHITELIST
-uint8_t Rxsmm_Iot_Whitelist[]
+#if CFG_SUPPORT_RXSMM_ALLOWLIST
+uint8_t Rxsmm_Iot_Allowlist[]
 	[VENDOR_OUI_RXSMM_OUI_IE_NUM] = {
 	{0xF8, 0x32, 0xE4}
 };
@@ -840,7 +840,7 @@ u_int8_t rlmParseCheckMTKOuiIE(struct ADAPTER *prAdapter, const uint8_t *pucBuf,
 
 #endif
 
-#if CFG_SUPPORT_RXSMM_WHITELIST
+#if CFG_SUPPORT_RXSMM_ALLOWLIST
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is used to check MTK Vendor Specific OUI
@@ -863,7 +863,7 @@ u_int8_t rlmParseCheckRxsmmOuiIE(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_MTK_SYNERGY
 	for (u1RxsmmListIdx = 0;
-		u1RxsmmListIdx < ARRAY_SIZE(Rxsmm_Iot_Whitelist);
+		u1RxsmmListIdx < ARRAY_SIZE(Rxsmm_Iot_Allowlist);
 		u1RxsmmListIdx++) {
 
 		prMtkOuiIE = (struct IE_MTK_OUI *)pucBuf;
@@ -873,11 +873,11 @@ u_int8_t rlmParseCheckRxsmmOuiIE(struct ADAPTER *prAdapter,
 		else if (IE_LEN(pucBuf) < ELEM_MIN_LEN_MTK_OUI)
 			continue;
 		else if (prMtkOuiIE->aucOui[0] !=
-			Rxsmm_Iot_Whitelist[u1RxsmmListIdx][0] ||
+			Rxsmm_Iot_Allowlist[u1RxsmmListIdx][0] ||
 			 prMtkOuiIE->aucOui[1] !=
-			 Rxsmm_Iot_Whitelist[u1RxsmmListIdx][1] ||
+			 Rxsmm_Iot_Allowlist[u1RxsmmListIdx][1] ||
 			 prMtkOuiIE->aucOui[2] !=
-			 Rxsmm_Iot_Whitelist[u1RxsmmListIdx][2])
+			 Rxsmm_Iot_Allowlist[u1RxsmmListIdx][2])
 			continue;
 
 		*pfgRxsmmEnable = TRUE;
@@ -2725,7 +2725,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 #endif
 	u_int8_t IsfgHtCapChange = FALSE;
 
-#if CFG_SUPPORT_RXSMM_WHITELIST
+#if CFG_SUPPORT_RXSMM_ALLOWLIST
 	u_int8_t fgRxsmmEnable = FALSE;
 #endif
 
@@ -3437,7 +3437,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 		case ELEM_ID_VENDOR:
 			rlmParseMtkOui(prAdapter, prStaRec, prBssInfo, pucIE);
-#if CFG_SUPPORT_RXSMM_WHITELIST
+#if CFG_SUPPORT_RXSMM_ALLOWLIST
 			if (rlmParseCheckRxsmmOuiIE(prAdapter,
 				pucIE, &fgRxsmmEnable))
 				prStaRec->fgRxsmmEnable =

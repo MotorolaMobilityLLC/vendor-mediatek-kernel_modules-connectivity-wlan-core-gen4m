@@ -696,8 +696,8 @@ struct STA_RECORD {
 	uint16_t u2MaxLinkSpeed;	/* unit is 0.5 Mbps */
 	uint16_t u2MinLinkSpeed;
 	uint32_t u4Flags;	/* reserved for MTK Synergies */
-#if CFG_SUPPORT_RXSMM_WHITELIST
-	u_int8_t fgRxsmmEnable;	/* WhiteList for RxSMM enable */
+#if CFG_SUPPORT_RXSMM_ALLOWLIST
+	u_int8_t fgRxsmmEnable;	/* AllowList for RxSMM enable */
 #endif
 
 #if CFG_SUPPORT_TDLS

@@ -293,20 +293,20 @@ kalP2PCacStartedUpdate(struct GLUE_INFO *prGlueInfo,
 
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
 
-u_int8_t kalP2PSetBlackList(struct GLUE_INFO *prGlueInfo,
+u_int8_t kalP2PSetBlockList(struct GLUE_INFO *prGlueInfo,
 		uint8_t rbssid[PARAM_MAC_ADDR_LEN],
 		u_int8_t fgIsblock,
 		uint8_t ucRoleIndex);
 
-u_int8_t kalP2PResetBlackList(struct GLUE_INFO *prGlueInfo,
+u_int8_t kalP2PResetBlockList(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucRoleIndex);
 
 #if CFG_AP_80211KVR_INTERFACE
-void kalP2PCatBlackList(struct GLUE_INFO *prGlueInfo,
+void kalP2PCatBlockList(struct GLUE_INFO *prGlueInfo,
 		bool flag);
 #endif
 
-u_int8_t kalP2PCmpBlackList(struct GLUE_INFO *prGlueInfo,
+u_int8_t kalP2PCmpBlockList(struct GLUE_INFO *prGlueInfo,
 		uint8_t rbssid[PARAM_MAC_ADDR_LEN],
 		uint8_t ucRoleIndex);
 

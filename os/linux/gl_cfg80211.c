@@ -5354,7 +5354,7 @@ int testmode_reassoc(struct wiphy *wiphy,
 	return rStatus;
 }
 
-int testmode_set_ax_blacklist(struct wiphy *wiphy,
+int testmode_set_ax_blocklist(struct wiphy *wiphy,
 		struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)
 {
 	int32_t i4Argc = 0;
@@ -5362,7 +5362,7 @@ int testmode_set_ax_blacklist(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
 	uint32_t u4BufLen;
-	struct PARAM_AX_BLACKLIST rBlacklist = { 0 };
+	struct PARAM_AX_BLOCKLIST rBlocklist = { 0 };
 	int32_t i4BytesWritten = -1;
 	uint8_t ucType = 0;
 	uint8_t i = 0;
@@ -5383,8 +5383,8 @@ int testmode_set_ax_blacklist(struct wiphy *wiphy,
 					i4BytesWritten);
 
 
-		rBlacklist.ucType = ucType;
-		rBlacklist.ucCount = (i4Argc - 2);
+		rBlocklist.ucType = ucType;
+		rBlocklist.ucCount = (i4Argc - 2);
 		for (i = 2; i < i4Argc; i++) {
 			DBGLOG(REQ, TRACE,
 				"argc %i, cmd [%s]\n", i4Argc, apcArgv[i]);
@@ -5395,20 +5395,20 @@ int testmode_set_ax_blacklist(struct wiphy *wiphy,
 				continue;
 			}
 
-			if (index >= ARRAY_SIZE(rBlacklist.aucList)) {
+			if (index >= ARRAY_SIZE(rBlocklist.aucList)) {
 				DBGLOG(REQ, WARN,
 				    "Could only set %d BSSID in blocklist!\n",
-				    ARRAY_SIZE(rBlacklist.aucList));
-				rBlacklist.ucCount =
-					ARRAY_SIZE(rBlacklist.aucList);
+				    ARRAY_SIZE(rBlocklist.aucList));
+				rBlocklist.ucCount =
+					ARRAY_SIZE(rBlocklist.aucList);
 				break;
 			}
-			COPY_MAC_ADDR(&rBlacklist.aucList[index],
+			COPY_MAC_ADDR(&rBlocklist.aucList[index],
 					aucMacAddr);
 			index++;
 		}
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetAxBlocklist,
-			&rBlacklist, sizeof(struct PARAM_AX_BLACKLIST),
+			&rBlocklist, sizeof(struct PARAM_AX_BLOCKLIST),
 			&u4BufLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS)

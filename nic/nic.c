@@ -4439,7 +4439,7 @@ void nicInitMGMT(struct ADAPTER *prAdapter,
 	}
 
 	/* Support AP Selection */
-	LINK_MGMT_INIT(&prAdapter->rWifiVar.rBlackList);
+	LINK_MGMT_INIT(&prAdapter->rWifiVar.rBlockList);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	LINK_MGMT_INIT(&prAdapter->rWifiVar.rMldBlockList);
@@ -4478,8 +4478,8 @@ void nicUninitMGMT(struct ADAPTER *prAdapter)
 	}
 
 	/* Support AP Selection */
-	LINK_MGMT_UNINIT(&prAdapter->rWifiVar.rBlackList,
-			 struct AIS_BLACKLIST_ITEM, VIR_MEM_TYPE);
+	LINK_MGMT_UNINIT(&prAdapter->rWifiVar.rBlockList,
+			 struct AIS_BLOCKLIST_ITEM, VIR_MEM_TYPE);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	LINK_MGMT_UNINIT(&prAdapter->rWifiVar.rMldBlockList,

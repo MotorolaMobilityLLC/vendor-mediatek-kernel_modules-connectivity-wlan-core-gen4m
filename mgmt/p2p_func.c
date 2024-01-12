@@ -3993,8 +3993,8 @@ p2pFuncValidateAuth(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
-	/* Hotspot Blacklist */
-	if (kalP2PCmpBlackList(prAdapter->prGlueInfo,
+	/* Hotspot Blocklist */
+	if (kalP2PCmpBlockList(prAdapter->prGlueInfo,
 		prAuthFrame->aucSrcAddr,
 		(uint8_t) prP2pBssInfo->u4PrivateData)
 		|| !p2pRoleProcessACLInspection(prAdapter,
@@ -4190,7 +4190,7 @@ u_int8_t p2pFuncValidateAssocReq(struct ADAPTER *prAdapter,
 	 *      only accept the peer we do the GO formation previously.
 	 *  b. If we are in OPERATION state, only accept
 	 *      the other peer when P2P_GROUP_LIMIT is 0.
-	 *  3. Check Black List here.
+	 *  3. Check Block List here.
 	 */
 
 	do {

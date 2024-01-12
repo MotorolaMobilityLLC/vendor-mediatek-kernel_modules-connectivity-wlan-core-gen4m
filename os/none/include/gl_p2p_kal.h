@@ -410,12 +410,12 @@ kalP2PCacStartedUpdate(struct GLUE_INFO *prGlueInfo,
 
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
 
-u_int8_t kalP2PSetBlackList(struct GLUE_INFO *prGlueInfo,
+u_int8_t kalP2PSetBlockList(struct GLUE_INFO *prGlueInfo,
 		uint8_t rbssid[PARAM_MAC_ADDR_LEN],
 		u_int8_t fgIsblock,
 		uint8_t ucRoleIndex);
 
-#define kalP2PResetBlackList(_prGlueInfo, _ucRoleIndex) \
+#define kalP2PResetBlockList(_prGlueInfo, _ucRoleIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
 void kalP2PSetMaxClients(struct GLUE_INFO *prGlueInfo,
@@ -423,13 +423,13 @@ void kalP2PSetMaxClients(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucRoleIndex);
 
 #ifdef CFG_REMIND_IMPLEMENT
-#define kalP2PCmpBlackList(_prGlueInfo, _rbssid, _ucRoleIndex) \
+#define kalP2PCmpBlockList(_prGlueInfo, _rbssid, _ucRoleIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
 #define kalP2PMaxClients(_prGlueInfo, _u4NumClient, _ucRoleIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 #else
-u_int8_t kalP2PCmpBlackList(struct GLUE_INFO *prGlueInfo,
+u_int8_t kalP2PCmpBlockList(struct GLUE_INFO *prGlueInfo,
 		uint8_t rbssid[PARAM_MAC_ADDR_LEN],
 		uint8_t ucRoleIndex);
 

@@ -1119,7 +1119,7 @@ struct CMD_UPDATE_STA_RECORD {
 #else
 	uint8_t  aucPadding4[32];
 #endif
-#if CFG_SUPPORT_RXSMM_WHITELIST
+#if CFG_SUPPORT_RXSMM_ALLOWLIST
 	uint8_t  u1RxsmmEnable;
 #endif
 };

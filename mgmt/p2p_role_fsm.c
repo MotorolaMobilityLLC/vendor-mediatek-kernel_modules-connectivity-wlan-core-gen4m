@@ -2034,7 +2034,7 @@ SKIP_END_RDD:
 
 	rsnFlushPmkid(prAdapter, prP2pBssInfo->ucBssIndex);
 
-	kalP2PResetBlackList(prAdapter->prGlueInfo,
+	kalP2PResetBlockList(prAdapter->prGlueInfo,
 		prP2pStopApMsg->ucRoleIdx);
 
 	if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_REQING_CHANNEL) {

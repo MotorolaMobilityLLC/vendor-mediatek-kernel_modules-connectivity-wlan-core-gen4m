@@ -1842,16 +1842,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.u4PolicySize = 0
 	},
 	{
-		.pcCmdStr  = CMD_WHITELIST_STA,
-		.pfHandler = priv_driver_MulAPAgent_set_white_sta,
+		.pcCmdStr  = CMD_ALLOWLIST_STA,
+		.pfHandler = priv_driver_MulAPAgent_set_allow_sta,
 		.argPolicy = VERIFY_MIN_ARG_NUM,
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
 	{
-		.pcCmdStr  = CMD_BLACKLIST_STA,
-		.pfHandler = priv_driver_MulAPAgent_set_Black_sta,
+		.pcCmdStr  = CMD_BLOCKLIST_STA,
+		.pfHandler = priv_driver_MulAPAgent_set_block_sta,
 		.argPolicy = VERIFY_MIN_ARG_NUM,
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
 		.policy    = NULL,
@@ -2337,8 +2337,8 @@ struct STR_CMD_HANDLER str_cmd_handlers[] = {
 		.u4PolicySize = ARRAY_SIZE(reassoc_policy)
 	},
 	{
-		.pcCmdStr  = CMD_SET_AX_BLACKLIST,
-		.pfHandler = testmode_set_ax_blacklist,
+		.pcCmdStr  = CMD_SET_AX_BLOCKLIST,
+		.pfHandler = testmode_set_ax_blocklist,
 		.argPolicy = VERIFY_MIN_ARG_NUM,
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
 		.policy    = u8_policy,

@@ -457,7 +457,7 @@ struct BSS_DESC {
 	OS_SYSTIME rJoinFailTime;
 
 	/* Support AP Selection */
-	struct AIS_BLACKLIST_ITEM *prBlack;
+	struct AIS_BLOCKLIST_ITEM *prBlock;
 	uint16_t u2Score;
 	uint32_t u4Tput;
 	uint8_t fgPicked;
@@ -887,7 +887,7 @@ struct BSS_DESC_SET {
 	uint8_t ucLinkNum; /* must smaller than MLD_LINK_MAX */
 	uint8_t fgIsMatchBssid;
 	uint8_t fgIsMatchBssidHint;
-	uint8_t fgIsAllLinkInBlackList;
+	uint8_t fgIsAllLinkInBlockList;
 	uint8_t fgIsAllLinkConnected;
 	struct BSS_DESC *aprBssDesc[MLD_LINK_MAX];
 };

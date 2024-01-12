@@ -5357,7 +5357,7 @@ void nicEventUpdateCoexStatus(struct ADAPTER *prAdapter,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint8_t ucAisIndex;
 	bool fgIsBAND2G4Coex = FALSE;
-	bool fgHitBlackList = FALSE;
+	bool fgHitBlockList = FALSE;
 
 	ASSERT(prAdapter);
 
@@ -5393,7 +5393,7 @@ void nicEventUpdateCoexStatus(struct ADAPTER *prAdapter,
 		prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
-		fgHitBlackList = (bssGetIotApAction(prAdapter, prBssDesc) ==
+		fgHitBlockList = (bssGetIotApAction(prAdapter, prBssDesc) ==
 				  WLAN_IOT_AP_COEX_DIS_RX_AMPDU);
 
 #if (CFG_SUPPORT_APS == 1)
@@ -5408,13 +5408,13 @@ void nicEventUpdateCoexStatus(struct ADAPTER *prAdapter,
 		 * 2. Coex mode in Event = TDD
 		 * 3. CoexFlag in Event is TRUE
 		 * 4. Bss Band is 2G
-		 * 5. BssDesc hit Blacklist
+		 * 5. BssDesc hit Blocklist
 		 */
 		if (prBssInfo->eCoexMode != COEX_TDD_MODE &&
 		    eCoexMode == COEX_TDD_MODE &&
 		    fgIsBAND2G4Coex == TRUE &&
 		    prBssInfo->eBand == BAND_2G4 &&
-		    fgHitBlackList == TRUE) {
+		    fgHitBlockList == TRUE) {
 			/*Set Rx BA size=1*/
 			prAdapter->rWifiVar.ucRxHtBaSize = 1;
 			prAdapter->rWifiVar.ucRxVhtBaSize = 1;
@@ -5430,7 +5430,7 @@ void nicEventUpdateCoexStatus(struct ADAPTER *prAdapter,
 		} else if (prBssInfo->eCoexMode == COEX_TDD_MODE &&
 			   eCoexMode != COEX_TDD_MODE &&
 			   prBssInfo->eBand == BAND_2G4 &&
-			   fgHitBlackList == TRUE) {
+			   fgHitBlockList == TRUE) {
 			/*restore Tx BA size setting*/
 			prAdapter->rWifiVar.ucRxHtBaSize =
 				WLAN_LEGACY_MAX_BA_SIZE;

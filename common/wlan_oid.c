@@ -8297,7 +8297,7 @@ wlanoidSetMulticastList(struct ADAPTER *prAdapter,
 		   prMcAddrList->ucAddrNum * MAC_ADDR_LEN);
 
 	DBGLOG(OID, INFO,
-		"BssIdx %d allow white list: total=%d MAC0="MACSTR" MAC1="MACSTR
+		"BssIdx %d allow list: total=%d MAC0="MACSTR" MAC1="MACSTR
 		" MAC2="MACSTR" MAC3="MACSTR" MAC4="MACSTR"\n",
 		rCmdMacMcastAddr.ucBssIndex,
 		rCmdMacMcastAddr.u4NumOfGroupAddr,
@@ -16366,7 +16366,7 @@ uint32_t wlanoidSetAxBlocklist(struct ADAPTER *prAdapter,
 		     uint32_t u4SetBufferLen,
 		     uint32_t *pu4SetInfoLen)
 {
-	struct PARAM_AX_BLACKLIST *pParamAxBlacklist;
+	struct PARAM_AX_BLOCKLIST *pParamAxBlocklist;
 	uint8_t count = 0;
 	uint8_t ucBssIndex = 0;
 	uint8_t i = 0;
@@ -16378,18 +16378,18 @@ uint32_t wlanoidSetAxBlocklist(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_LENGTH;
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-	pParamAxBlacklist = (struct PARAM_AX_BLACKLIST *) pvSetBuffer;
-	count = pParamAxBlacklist->ucCount;
+	pParamAxBlocklist = (struct PARAM_AX_BLOCKLIST *) pvSetBuffer;
+	count = pParamAxBlocklist->ucCount;
 
-	clearAxBlocklist(prAdapter, ucBssIndex, pParamAxBlacklist->ucType);
+	clearAxBlocklist(prAdapter, ucBssIndex, pParamAxBlocklist->ucType);
 	for (i = 0; i < count ; i++) {
-		COPY_MAC_ADDR(aucTemp, &pParamAxBlacklist->aucList[i]);
+		COPY_MAC_ADDR(aucTemp, &pParamAxBlocklist->aucList[i]);
 		addAxBlocklist(prAdapter, aucTemp, ucBssIndex,
-				pParamAxBlacklist->ucType);
+				pParamAxBlocklist->ucType);
 		DBGLOG(OID, INFO,
 			"Set BSSID " MACSTR " into %s blocklist!\n",
 			MAC2STR(aucTemp),
-			pParamAxBlacklist->ucType == 0 ? "AX" : "+HTC");
+			pParamAxBlocklist->ucType == 0 ? "AX" : "+HTC");
 	}
 
 	return WLAN_STATUS_SUCCESS;

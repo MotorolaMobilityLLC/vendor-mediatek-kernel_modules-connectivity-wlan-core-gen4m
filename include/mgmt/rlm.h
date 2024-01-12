@@ -336,7 +336,7 @@ uint16_t rlmGenerateMTKChipCapIE(uint8_t *pucBuf, uint16_t u2FrameLength,
 u_int8_t rlmParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 			const uint8_t *pucBuf,  struct STA_RECORD *prStaRec);
 
-#if CFG_SUPPORT_RXSMM_WHITELIST
+#if CFG_SUPPORT_RXSMM_ALLOWLIST
 u_int8_t rlmParseCheckRxsmmOuiIE(struct ADAPTER *prAdapter,
 		const uint8_t *pucBuf, u_int8_t *pfgRxsmmEnable);
 #endif

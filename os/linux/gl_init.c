@@ -6988,7 +6988,7 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	wlanFeatureToFw(prGlueInfo->prAdapter, WLAN_CFG_EM, NULL);
 #endif
 
-#if CFG_SUPPORT_IOT_AP_BLACKLIST
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
 	wlanCfgLoadIotApRule(prAdapter);
 	wlanCfgDumpIotApRule(prAdapter);
 #endif

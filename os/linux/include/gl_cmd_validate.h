@@ -308,8 +308,8 @@
 #endif /* CFG_SUPPORT_DMASHDL_SYSDVT */
 #endif /* CFG_SUPPORT_WIFI_SYSDVT */
 #if CFG_AP_80211KVR_INTERFACE
-#define CMD_WHITELIST_STA		"White_sta"
-#define CMD_BLACKLIST_STA		"Black_sta"
+#define CMD_ALLOWLIST_STA		"Allow_sta"
+#define CMD_BLOCKLIST_STA		"Block_sta"
 #define CMD_BSS_STATUS_REPORT		"BssStatus"
 #define CMD_BSS_REPORT_INFO		"BssReportInfo"
 #define CMD_STA_REPORT_INFO		"StaReportInfo"
@@ -367,8 +367,8 @@
 #define CMD_STA_BTM_REQUEST		"BTMRequest"
 #endif /* CFG_AP_80211V_SUPPORT */
 #if CFG_AP_80211KVR_INTERFACE
-#define CMD_WHITELIST_STA		"White_sta"
-#define CMD_BLACKLIST_STA		"Black_sta"
+#define CMD_ALLOWLIST_STA		"Allow_sta"
+#define CMD_BLOCKLIST_STA		"Block_sta"
 #define CMD_BSS_STATUS_REPORT		"BssStatus"
 #define CMD_BSS_REPORT_INFO		"BssReportInfo"
 #define CMD_STA_REPORT_INFO		"StaReportInfo"
@@ -395,7 +395,7 @@
 #else
 #define CMD_REASSOC				"REASSOC"
 #endif
-#define CMD_SET_AX_BLACKLIST                    "SET_AX_BLACKLIST"
+#define CMD_SET_AX_BLOCKLIST                    "SET_AX_BLOCKLIST"
 #define CMD_RTT_GET_CAP				"RttGetCap"
 #define CMD_REPORT_VENDOR_SPECIFIED		"EnVendorSpecifiedRpt"
 #define CMD_FORCE_STBC				"FORCE_STBC"

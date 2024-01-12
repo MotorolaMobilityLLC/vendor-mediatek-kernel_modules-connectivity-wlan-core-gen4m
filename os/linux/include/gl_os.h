@@ -962,7 +962,7 @@ struct GLUE_INFO {
 
 	/* FW Roaming */
 	/* store the FW roaming enable state which FWK determines */
-	/* if it's = 0, ignore the black/whitelists settings from FWK */
+	/* if it's = 0, ignore the block/allowlists settings from FWK */
 	uint32_t u4FWRoamingEnable;
 
 	/*service for test mode*/
