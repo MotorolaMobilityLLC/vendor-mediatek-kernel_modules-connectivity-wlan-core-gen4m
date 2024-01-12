@@ -331,7 +331,7 @@ void nic_txd_v2_compose(
 		ucEtherTypeOffsetInWord);
 
 	ucTarPort = nicTxGetTxDestPortIdxByTc(prMsduInfo->ucTC);
-#if defined(SOC3_0)
+#if (CFG_SUPPORT_FORCE_ALTX == 1)
 	if (ucTarPort == PORT_INDEX_MCU &&
 		prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_FORCE_TX) {
 		/* To MCU packet with always tx flag */
