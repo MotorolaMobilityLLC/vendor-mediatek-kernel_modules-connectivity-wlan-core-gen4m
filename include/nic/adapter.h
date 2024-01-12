@@ -1105,6 +1105,10 @@ struct WIFI_VAR {
 	int8_t cTpEnhanceRSSI;
 	uint32_t u4TpEnhanceThreshold;
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
+
+#if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
+	uint32_t u4BackoffLevel;
+#endif
 };
 
 /* cnm_timer module */
