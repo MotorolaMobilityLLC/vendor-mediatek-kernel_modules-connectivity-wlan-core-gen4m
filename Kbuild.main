@@ -1506,6 +1506,11 @@ ifeq ($(CONFIG_MTK_WIFI_EXT), y)
     ifeq ($(CONFIG_MTK_WIFI_TWT_SUPPORT), y)
         ccflags-y += -DCFG_SUPPORT_TWT_EXT=1
     endif
+    ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
+        CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
+        CONFIG_MTK_WIFI_IGMP_OFLD_SUPPORT=y
+        CONFIG_MTK_WIFI_RA_OFLD_SUPPORT=y
+    endif
 else
     ccflags-y += -DCFG_EXT_FEATURE=0
     ccflags-y += -DCFG_EXT_SCAN=0
@@ -1840,6 +1845,17 @@ ifeq ($(CONFIG_MTK_WIFI_APF_SUPPORT), y)
 ccflags-y += -DCFG_SUPPORT_APF=1
 else
 ccflags-y += -DCFG_SUPPORT_APF=0
+endif
+ifeq ($(CONFIG_MTK_WIFI_IGMP_OFLD_SUPPORT), y)
+ccflags-y += -DCFG_SUPPORT_IGMP_OFLD=1
+else
+ccflags-y += -DCFG_SUPPORT_IGMP_OFLD=0
+endif
+ifeq ($(CONFIG_MTK_WIFI_RA_OFLD_SUPPORT), y)
+ccflags-y += -DCFG_SUPPORT_RA_OFLD=1
+ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
+else
+ccflags-y += -DCFG_SUPPORT_RA_OFLD=0
 endif
 else
 ccflags-y += -DCFG_SUPPORT_PKT_OFLD=0

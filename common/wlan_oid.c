@@ -8137,39 +8137,28 @@ uint32_t
 wlanoidSetMulticastList(struct ADAPTER *prAdapter,
 			void *pvSetBuffer, uint32_t u4SetBufferLen,
 			uint32_t *pu4SetInfoLen) {
+	struct PARAM_MULTICAST_LIST *prMcAddrList;
 	struct CMD_MAC_MCAST_ADDR rCmdMacMcastAddr;
-	uint8_t ucBssIndex = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
-
-	/* The data must be a multiple of the Ethernet address size. */
-	if ((u4SetBufferLen % MAC_ADDR_LEN)) {
-		DBGLOG(REQ, WARN, "Invalid MC list length %u\n",
-		       u4SetBufferLen);
-
-		*pu4SetInfoLen = (((u4SetBufferLen + MAC_ADDR_LEN) - 1) /
-				  MAC_ADDR_LEN) * MAC_ADDR_LEN;
-
-		return WLAN_STATUS_INVALID_LENGTH;
-	}
-
-	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-
-	*pu4SetInfoLen = u4SetBufferLen;
-
-	/* Verify if we can support so many multicast addresses. */
-	if (u4SetBufferLen > MAX_NUM_GROUP_ADDR * MAC_ADDR_LEN) {
-		DBGLOG(REQ, WARN, "Too many MC addresses\n");
-
-		return WLAN_STATUS_MULTICAST_FULL;
-	}
 
 	/* NOTE(Kevin): Windows may set u4SetBufferLen == 0 &&
 	 * pvSetBuffer == NULL to clear exist Multicast List.
 	 */
 	if (u4SetBufferLen)
 		ASSERT(pvSetBuffer);
+
+	prMcAddrList = (struct PARAM_MULTICAST_LIST *) pvSetBuffer;
+
+	*pu4SetInfoLen = u4SetBufferLen;
+
+	/* Verify if we can support so many multicast addresses. */
+	if (prMcAddrList->ucAddrNum > MAX_NUM_GROUP_ADDR) {
+		DBGLOG(REQ, WARN, "Too many MC addresses\n");
+
+		return WLAN_STATUS_MULTICAST_FULL;
+	}
 
 	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
 		DBGLOG(REQ, WARN,
@@ -8179,15 +8168,15 @@ wlanoidSetMulticastList(struct ADAPTER *prAdapter,
 	}
 
 	kalMemZero(&rCmdMacMcastAddr, sizeof(rCmdMacMcastAddr));
-	rCmdMacMcastAddr.u4NumOfGroupAddr = u4SetBufferLen /
-					    MAC_ADDR_LEN;
-	rCmdMacMcastAddr.ucBssIndex =
-		ucBssIndex;
-	kalMemCopy(rCmdMacMcastAddr.arAddress, pvSetBuffer,
-		   u4SetBufferLen);
+	rCmdMacMcastAddr.u4NumOfGroupAddr = prMcAddrList->ucAddrNum;
+	rCmdMacMcastAddr.ucBssIndex = prMcAddrList->ucBssIdx;
+	kalMemCopy(rCmdMacMcastAddr.arAddress, prMcAddrList->aucMcAddrList,
+		   prMcAddrList->ucAddrNum * MAC_ADDR_LEN);
+
 	DBGLOG(OID, INFO,
-		"MCAST allow list: total=%d MAC0="MACSTR" MAC1="MACSTR
+		"BssIdx %d allow white list: total=%d MAC0="MACSTR" MAC1="MACSTR
 		" MAC2="MACSTR" MAC3="MACSTR" MAC4="MACSTR"\n",
+		rCmdMacMcastAddr.ucBssIndex,
 		rCmdMacMcastAddr.u4NumOfGroupAddr,
 		MAC2STR(rCmdMacMcastAddr.arAddress[0]),
 		MAC2STR(rCmdMacMcastAddr.arAddress[1]),

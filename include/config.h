@@ -2129,6 +2129,26 @@
 #endif
 
 /*------------------------------------------------------------------------------
+ * Flag used for RA offload support.
+ * Value 0: Do not enable RA offload.
+ * Value 1: Enable RA offload.
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_RA_OFLD
+#define CFG_SUPPORT_RA_OFLD 0
+#endif
+
+/*------------------------------------------------------------------------------
+ * Flag used for IGMP offload support.
+ * Value 0: Do not enable IGMP offload.
+ * Value 1: Enable IGMP offload.
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_IGMP_OFLD
+#define CFG_SUPPORT_IGMP_OFLD 0
+#endif
+
+/*------------------------------------------------------------------------------
  * Support NAN or not.
  *------------------------------------------------------------------------------
  */

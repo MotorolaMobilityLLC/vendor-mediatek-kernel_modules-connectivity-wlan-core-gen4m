@@ -7543,6 +7543,8 @@ uint32_t nicUniCmdPktOfldOp(struct ADAPTER *ad,
 			tag->u2Tag = UNI_CMD_PKT_OFLD_TAG_APF_QUERY;
 		else
 			tag->u2Tag = UNI_CMD_PKT_OFLD_TAG_APF_INSTALL;
+	} else if (prInfo->ucType == PKT_OFLD_TYPE_IGMP) {
+		tag->u2Tag = UNI_CMD_PKT_OFLD_TAG_IGMP_OFLD;
 	}
 
 	tag->u2Length = sizeof(*tag);

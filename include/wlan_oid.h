@@ -3378,6 +3378,12 @@ enum ENUM_AX_BLACKLIST_TYPE {
 	BLACKLIST_NUM
 };
 
+struct PARAM_MULTICAST_LIST {
+	uint8_t ucBssIdx;
+	uint8_t ucAddrNum;
+	uint8_t aucMcAddrList[MAX_NUM_GROUP_ADDR * MAC_ADDR_LEN];
+};
+
 #if (CFG_SUPPORT_PKT_OFLD == 1)
 struct PARAM_OFLD_INFO {
 	/*restrict buffer size to 1500 bytes*/
