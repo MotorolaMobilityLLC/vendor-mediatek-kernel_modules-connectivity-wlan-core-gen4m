@@ -53,7 +53,11 @@
 #define AIS_BMC_MIN_TIMEOUT_VALID           TRUE
 
 #define AIS_JOIN_CH_GRANT_THRESHOLD         10
+#if CFG_MTK_FPGA_PLATFORM
+#define AIS_JOIN_CH_REQUEST_INTERVAL        40000
+#else
 #define AIS_JOIN_CH_REQUEST_INTERVAL        4000
+#endif
 #define AIS_SCN_DONE_TIMEOUT_SEC            15 /* 15 for 2.4G + 5G */	/* 5 */
 #define AIS_SCN_REPORT_SEQ_NOT_SET          (0xFFFF)
 

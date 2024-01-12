@@ -34,11 +34,14 @@
 #define TX_ASSOCIATION_RETRY_TIMEOUT_TU             100	/* TU. */
 
 /* Wait for a response to a transmitted authentication-request MMPDU. */
-#define DOT11_AUTHENTICATION_RESPONSE_TIMEOUT_TU    512	/* TU. */
-
+#define DOT11_AUTHENTICATION_RESPONSE_TIMEOUT_TU    512/* TU. */
+#if CFG_MTK_FPGA_PLATFORM
+/* Wait for a response to a transmitted association-request MMPDU. */
+#define DOT11_ASSOCIATION_RESPONSE_TIMEOUT_TU       5120/* TU. */
+#else
 /* Wait for a response to a transmitted association-request MMPDU. */
 #define DOT11_ASSOCIATION_RESPONSE_TIMEOUT_TU       512	/* TU. */
-
+#endif
 /* Wait for a response to a transmitted SAE authentication MMPDU. */
 /* 2000 msec is the default value on 802.11-REVmd-D0.5 */
 #define DOT11_RSNA_SAE_RETRANS_PERIOD_TU	2000
@@ -53,8 +56,11 @@
 /* Maximum Retry Count for accept a JOIN request. */
 #define JOIN_MAX_RETRY_FAILURE_COUNT                2	/* Times */
 
+#if CFG_MTK_FPGA_PLATFORM
+#define TX_AUTHENTICATION_RESPONSE_TIMEOUT_TU        5120 /* TU. */
+#else
 #define TX_AUTHENTICATION_RESPONSE_TIMEOUT_TU        512 /* TU. */
-
+#endif
 #define TX_ASSOCIATE_TIMEOUT_TU        2048 /* TU. */
 #define JOIN_MAX_RETRY_OVERLOAD_RN		    1	/* Times */
 
