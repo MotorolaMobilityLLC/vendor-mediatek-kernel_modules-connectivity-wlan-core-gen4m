@@ -3673,18 +3673,8 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 				p2pFuncStartRdd(prAdapter,
 					prMsgChGrant->ucBssIndex);
 
-			if (p2pFuncCheckWeatherRadarBand(prChnlReqInfo))
-				u4CacTimeMs =
-					P2P_AP_CAC_WEATHER_CHNL_HOLD_TIME_MS;
-			else
-				u4CacTimeMs =
-					prP2pRoleFsmInfo->rChnlReqInfo
+			u4CacTimeMs = prP2pRoleFsmInfo->rChnlReqInfo
 						.u4MaxInterval;
-
-			if (p2pFuncIsManualCac())
-				u4CacTimeMs = p2pFuncGetDriverCacTime() * 1000;
-			else
-				p2pFuncSetDriverCacTime(u4CacTimeMs/1000);
 
 			cnmTimerStartTimer(prAdapter,
 				&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
