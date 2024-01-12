@@ -4302,6 +4302,8 @@ uint32_t ServiceRfTestInit(void *winfos)
 	return rStatus;
 
 }
+
+#if CFG_SUPPORT_QA_TOOL
 uint32_t ServiceIcapInit(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
@@ -4411,6 +4413,7 @@ uint32_t ServiceIcapDeInit(struct ADAPTER *prAdapter)
 
 	return u4Status;
 }
+#endif
 uint32_t ServiceWlanOid(void *winfos,
 	 uint32_t oidType,
 	 void *param,
@@ -4420,14 +4423,17 @@ uint32_t ServiceWlanOid(void *winfos,
 {
 	int32_t i4Status = 0;
 	uint32_t u4BufLen2;
+#if CFG_SUPPORT_QA_TOOL
 	uint32_t *resp = NULL;
+	struct hqa_m_rx_stat *prStatsData = NULL;
+#endif
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct RECAL_INFO_T *prReCalInfo = NULL;
 	boolean fgRead, fgWaitResp, fgCmd;
 	PFN_OID_HANDLER_FUNC pfnOidHandler = NULL;
 	struct test_wlan_info *prTestWinfo;
-	struct hqa_m_rx_stat *prStatsData = NULL;
+
 #if CFG_SUPPORT_ANT_SWAP
 	struct mt66xx_chip_info *prChipInfo = NULL;
 #endif
@@ -4458,7 +4464,7 @@ uint32_t ServiceWlanOid(void *winfos,
 	fgRead = FALSE;
 	fgWaitResp = FALSE;
 	fgCmd = TRUE;
-
+#if CFG_SUPPORT_QA_TOOL
 	if (prAdapter->fgTestMode == FALSE) {
 		/* workaround for meta tool */
 		DBGLOG(RFTEST, INFO,
@@ -4476,8 +4482,10 @@ uint32_t ServiceWlanOid(void *winfos,
 			"Test Mode Start Workaround for META2!\n");
 
 	}
+#endif
 
 	switch (oidType) {
+#if CFG_SUPPORT_QA_TOOL
 	case OP_WLAN_OID_SET_TEST_MODE_START:
 		DBGLOG(RFTEST, INFO, "Test Mode Start Bellwether!\n");
 		ServiceRfTestInit(winfos);
@@ -4503,6 +4511,7 @@ uint32_t ServiceWlanOid(void *winfos,
 		fgWaitResp = TRUE;
 		fgCmd = TRUE;
 		break;
+#endif
 	case OP_WLAN_OID_GET_CAPABILITY:
 		capability = (struct test_capability *)rsp_data;
 		kalMemSet(capability, 0, sizeof(struct test_capability));
@@ -4610,6 +4619,7 @@ uint32_t ServiceWlanOid(void *winfos,
 			capability->ext_cap.feature1 |= BIT(3);
 
 		return WLAN_STATUS_SUCCESS;
+#if CFG_SUPPORT_QA_TOOL
 	/* ICAP Operation Function -- Start*/
 	case OP_WLAN_OID_SET_TEST_ICAP_MODE:
 		pfnOidHandler = wlanoidRftestSetTestIcapMode;
@@ -4666,7 +4676,7 @@ uint32_t ServiceWlanOid(void *winfos,
 		fgCmd = FALSE;
 		break;
 	/* ICAP Operation Function -- END*/
-
+#endif
 	case OP_WLAN_OID_SET_MCR_WRITE:
 		pfnOidHandler = wlanoidSetMcrWrite;
 		fgRead = TRUE;
@@ -4720,7 +4730,7 @@ uint32_t ServiceWlanOid(void *winfos,
 		return WLAN_STATUS_SUCCESS;
 
 	case OP_WLAN_OID_LIST_MODE:
-
+#if CFG_SUPPORT_QA_TOOL
 		kalIoctl(prGlueInfo,
 					wlanoidListMode,
 					param, /* pvInfoBuf */
@@ -4736,9 +4746,9 @@ uint32_t ServiceWlanOid(void *winfos,
 					&g_HqaListModeStatus,
 					sizeof(g_HqaListModeStatus));
 		*u4BufLen = paramLen;
+#endif
 
 		return WLAN_STATUS_SUCCESS;
-
 	case OP_WLAN_OID_NUM:
 	default:
 		return WLAN_STATUS_FAILURE;
@@ -4750,6 +4760,7 @@ uint32_t ServiceWlanOid(void *winfos,
 		paramLen, /* u4InfoBufLen */
 		u4BufLen); /* pu4QryInfoLen */
 
+#if CFG_SUPPORT_QA_TOOL
 	if ((prStatsData) &&
 		(oidType == OP_WLAN_OID_QUERY_RX_STATISTICS)) {
 #if (CFG_SUPPORT_CONNAC3X == 0)
@@ -4781,7 +4792,7 @@ uint32_t ServiceWlanOid(void *winfos,
 					0, 0);
 	}
 #endif
-
+#endif
 	return i4Status;
 }
 #endif

@@ -3241,7 +3241,7 @@ struct UNI_CMD_PP_EN_CTRL_T {
 	uint8_t    u1Reserved[2];
 } __KAL_ATTRIB_PACKED__;
 
-
+#if CFG_SUPPORT_TX_BF
 /* BF command (0x33) */
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BF {
@@ -3385,6 +3385,17 @@ struct UNI_CMD_BF_PFMU_MEM_RLS {
 	uint8_t ucReserved[2];
 };
 
+/* BF read BF StaRec (Tag11) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_BF_STAREC_READ {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint16_t u2WlanIdx;
+	uint8_t  au1Reserved[2];
+} __KAL_ATTRIB_PACKED__;
+
+#endif
+
 struct UNI_CMD_STAREC_MANUAL_ASSOC {
 	/*
 	 *	uint8_t              ucBssIndex;
@@ -3408,14 +3419,6 @@ struct UNI_CMD_STAREC_MANUAL_ASSOC {
 	uint8_t ucaid;
 };
 
-/* BF read BF StaRec (Tag11) */
-__KAL_ATTRIB_PACKED_FRONT__
-struct UNI_CMD_BF_STAREC_READ {
-	uint16_t u2Tag;
-	uint16_t u2Length;
-	uint16_t u2WlanIdx;
-	uint8_t  au1Reserved[2];
-} __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_THERMAL {
@@ -5735,6 +5738,7 @@ enum ENUM_UNI_EVENT_BF_TAG {
 	UNI_EVENT_BF_TAG_NUM
 };
 
+#if CFG_SUPPORT_TX_BF
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_BF_STA_REC {
 	uint16_t u2Tag;
@@ -5751,6 +5755,7 @@ struct UNI_EVENT_BF_PFMU_READ {
 	union PFMU_PROFILE_TAG1 ru4TxBfPFMUTag1;
 	union PFMU_PROFILE_TAG2 ru4TxBfPFMUTag2;
 };
+#endif
 
 #define UNI_THERMAL_PROTECT_TYPE_NTX_CTRL	0
 #define UNI_THERMAL_PROTECT_TYPE_DUTY_CTRL	1
@@ -6830,8 +6835,10 @@ uint32_t nicUniCmdTwtArgtUpdate(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdStaRecUpdateExt(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+#if CFG_SUPPORT_TX_BF
 uint32_t nicUniCmdBFAction(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif
 uint32_t nicUniCmdSerAction(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 #if (CFG_SUPPORT_TWT == 1)
@@ -6908,16 +6915,20 @@ uint32_t nicUniCmdSetCountryPwrLimitPerRate(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetNvramSettings(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+#if CFG_SUPPORT_QA_TOOL
 #if (CONFIG_WLAN_SERVICE == 1)
 uint32_t nicUniCmdTestmodeListmode(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 #endif /* (CONFIG_WLAN_SERVICE == 1) */
+#endif
 uint32_t nicUniCmdTestmodeCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+#if CFG_SUPPORT_QA_TOOL
 uint32_t nicUniExtCmdTestmodeCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdTestmodeRxStat(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif
 uint32_t nicUniCmdSetTxAmpdu(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetRxAmpdu(struct ADAPTER *ad,
@@ -6997,10 +7008,13 @@ void nicUniCmdStaRecHandleEventPkt(struct ADAPTER
 void nicUniEventQueryIdcChnl(struct ADAPTER *prAdapter,
 		struct CMD_INFO *prCmdInfo,
 		uint8_t *pucEventBuf);
+#if CFG_SUPPORT_TX_BF
 void nicUniEventBFStaRec(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+#endif
 void nicUniCmdEventQueryMcrRead(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+
 #if (CFG_SUPPORT_TWT == 1)
 void nicUniCmdEventGetTsfDone(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
@@ -7113,8 +7127,10 @@ void nicUniEventHifCtrl(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventNan(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+#if CFG_SUPPORT_TX_BF
 void nicUniEventBF(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+#endif
 void nicUniEventSR(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventWow(struct ADAPTER *ad,

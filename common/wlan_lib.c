@@ -636,16 +636,20 @@ PFN_OID_HANDLER_FUNC apfnOidQueryHandlerWOHwAccess[] = {
 
 /* OID set handlers allowed in RF test mode */
 PFN_OID_HANDLER_FUNC apfnOidSetHandlerAllowedInRFTest[] = {
+#if CFG_SUPPORT_QA_TOOL
 	wlanoidRftestSetTestMode,
 	wlanoidRftestSetAbortTestMode,
 	wlanoidRftestSetAutoTest,
+#endif
 	wlanoidSetMcrWrite,
 	wlanoidSetEepromWrite
 };
 
 /* OID query handlers allowed in RF test mode */
 PFN_OID_HANDLER_FUNC apfnOidQueryHandlerAllowedInRFTest[] = {
+#if CFG_SUPPORT_QA_TOOL
 	wlanoidRftestQueryAutoTest,
+#endif
 	wlanoidQueryMcrRead,
 	wlanoidQueryEepromRead
 }
@@ -653,8 +657,10 @@ PFN_OID_HANDLER_FUNC apfnOidQueryHandlerAllowedInRFTest[] = {
 ;
 
 PFN_OID_HANDLER_FUNC apfnOidWOTimeoutCheck[] = {
+#if CFG_SUPPORT_QA_TOOL
 	wlanoidRftestSetTestMode,
 	wlanoidRftestSetAbortTestMode,
+#endif
 	wlanoidSetAcpiDevicePowerState,
 };
 
@@ -1134,7 +1140,9 @@ void wlanOnPostFirmwareReady(struct ADAPTER *prAdapter,
 #endif
 	/* QA_TOOL and ICAP info struct */
 	prAdapter->rIcapInfo.eIcapState = ICAP_STATE_INIT;
+#if CFG_SUPPORT_QA_TOOL
 	prAdapter->rIcapInfo.u2DumpIndex = 0;
+#endif
 	prAdapter->rIcapInfo.u4CapNode = 0;
 
 	/* MGMT Initialization */
@@ -6564,7 +6572,7 @@ uint32_t wlanQueryNicCapabilityV2(struct ADAPTER *prAdapter)
 	}
 
 	/* Fill capability for different Chip version */
-	if (chip_id == HQA_CHIP_ID_6632) {
+	if (chip_id == 0x6632) {
 		/* 6632 only */
 		prAdapter->fgIsSupportBufferBinSize16Byte = TRUE;
 		prAdapter->fgIsSupportDelayCal = FALSE;

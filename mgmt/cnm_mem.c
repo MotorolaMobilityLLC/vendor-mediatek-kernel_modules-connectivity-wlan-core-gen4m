@@ -1053,8 +1053,13 @@ static void cnmStaRecHandleEventPkt(struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
+#if CFG_SUPPORT_TX_BF
 void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	struct TXBF_PFMU_STA_INFO *prTxBfPfmuStaInfo, u_int8_t fgNeedResp)
+#else
+void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
+	 void *prTxBfPfmuStaInfo, u_int8_t fgNeedResp)
+#endif
 {
 	struct CMD_UPDATE_STA_RECORD *prCmdContent;
 	uint32_t rStatus;
@@ -1095,11 +1100,12 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	/* Reset command buffer */
 	kalMemZero(prCmdContent, sizeof(struct CMD_UPDATE_STA_RECORD));
 
+#if CFG_SUPPORT_TX_BF
 	if (prTxBfPfmuStaInfo) {
 		memcpy(&prCmdContent->u2PfmuId, prTxBfPfmuStaInfo,
 			sizeof(struct TXBF_PFMU_STA_INFO));
 	}
-
+#endif
 	prCmdContent->ucStaIndex = prStaRec->ucIndex;
 	prCmdContent->ucStaType = (uint8_t) prStaRec->eStaType;
 	kalMemCopy(&prCmdContent->aucMacAddr[0], &prStaRec->aucMacAddr[0],

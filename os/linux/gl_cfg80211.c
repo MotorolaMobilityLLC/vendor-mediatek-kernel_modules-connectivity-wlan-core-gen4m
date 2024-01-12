@@ -1016,7 +1016,9 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 	struct ADAPTER *prAdapter = NULL;
 #endif
 	uint8_t ucBssIndex = 0;
+#if (CFG_SUPPORT_QA_TOOL == 1)
 	GLUE_SPIN_LOCK_DECLARATION();
+#endif
 
 	if (kalIsResetting())
 		return -EBUSY;

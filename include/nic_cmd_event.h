@@ -142,13 +142,6 @@
 #define TXPOWER_EVENT_SHOW_ALL_RATE_TXPOWER_INFO    0x5
 #endif
 
-#if CFG_SUPPORT_QA_TOOL
-#define IQ_FILE_LINE_OFFSET     18
-#define IQ_FILE_IQ_STR_LEN	 8
-#define RTN_IQ_DATA_LEN         1024	/* return 1k per packet */
-
-#define MCAST_WCID_TO_REMOVE	0
-
 /* Network type */
 #define NETWORK_INFRA	BIT(16)
 #define NETWORK_P2P	BIT(17)
@@ -166,125 +159,17 @@
 #define STA_TYPE_WDS 	BIT(4)
 
 /* Connection type */
-#define CONNECTION_INFRA_STA		(STA_TYPE_STA|NETWORK_INFRA)
+#define CONNECTION_INFRA_STA	(STA_TYPE_STA|NETWORK_INFRA)
 #define CONNECTION_INFRA_AP		(STA_TYPE_AP|NETWORK_INFRA)
 #define CONNECTION_P2P_GC		(STA_TYPE_STA|NETWORK_P2P)
 #define CONNECTION_P2P_GO		(STA_TYPE_AP|NETWORK_P2P)
-#define CONNECTION_P2P_DEVICE		(NETWORK_P2P)
+#define CONNECTION_P2P_DEVICE	(NETWORK_P2P)
 #define CONNECTION_MESH_STA		(STA_TYPE_STA|NETWORK_MESH)
 #define CONNECTION_MESH_AP		(STA_TYPE_AP|NETWORK_MESH)
-#define CONNECTION_IBSS_ADHOC		(STA_TYPE_ADHOC|NETWORK_IBSS)
-#define CONNECTION_NAN                  (NETWORK_NAN)
+#define CONNECTION_IBSS_ADHOC	(STA_TYPE_ADHOC|NETWORK_IBSS)
+#define CONNECTION_NAN			(NETWORK_NAN)
 #define CONNECTION_TDLS			(STA_TYPE_TDLS|NETWORK_INFRA)
 #define CONNECTION_WDS			(STA_TYPE_WDS|NETWORK_WDS)
-
-#define ICAP_CONTENT_ADC		0x10000006
-#define ICAP_CONTENT_TOAE		0x7
-#define ICAP_CONTENT_SPECTRUM	0xB
-#define ICAP_CONTENT_RBIST		0x10
-#define ICAP_CONTENT_DCOC		0x20
-#define ICAP_CONTENT_FIIQ		0x48
-#define ICAP_CONTENT_FDIQ		0x49
-
-#define MAX_UEVENT_LEN	300
-
-#if CFG_SUPPORT_BUFFER_MODE
-
-struct CMD_EFUSE_BUFFER_MODE {
-	uint8_t ucSourceMode;
-	uint8_t ucCount;
-	uint8_t ucCmdType;  /* 0:6632, 1: 7668 */
-	uint8_t ucReserved;
-	uint8_t aBinContent[MAX_EEPROM_BUFFER_SIZE];
-};
-
-struct CMD_EFUSE_BUFFER_MODE_CONNAC_T {
-	uint8_t ucSourceMode;
-	uint8_t ucContentFormat;
-	uint16_t u2Count;
-#if defined MT7915 || defined MT7961
-	uint8_t aBinContent[BUFFER_BIN_PAGE_SIZE];
-#else
-	uint8_t aBinContent[MAX_EEPROM_BUFFER_SIZE];
-#endif
-};
-
-/*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/
-struct CMD_ACCESS_EFUSE {
-	uint32_t u4Address;
-	uint32_t u4Valid;
-	uint8_t aucData[16];
-};
-
-struct CMD_EFUSE_FREE_BLOCK {
-	uint8_t  ucGetFreeBlock;
-	uint8_t  ucVersion;
-	uint8_t  ucDieIndex;
-	uint8_t  ucReserved;
-};
-
-struct CMD_GET_TX_POWER {
-	uint8_t ucTxPwrType;
-	uint8_t ucCenterChannel;
-	uint8_t ucDbdcIdx; /* 0:Band 0, 1: Band1 */
-	uint8_t ucBand; /* 0:G-band 1: A-band*/
-	uint8_t ucReserved[4];
-};
-
-/*#endif*/
-
-#endif /* CFG_SUPPORT_BUFFER_MODE */
-
-
-struct CMD_SET_TX_TARGET_POWER {
-	int8_t cTxPwr2G4Cck;       /* signed, in unit of 0.5dBm */
-	int8_t cTxPwr2G4Dsss;      /* signed, in unit of 0.5dBm */
-	uint8_t ucTxTargetPwr;		/* Tx target power base for all*/
-	uint8_t ucReserved;
-
-	int8_t cTxPwr2G4OFDM_BPSK;
-	int8_t cTxPwr2G4OFDM_QPSK;
-	int8_t cTxPwr2G4OFDM_16QAM;
-	int8_t cTxPwr2G4OFDM_Reserved;
-	int8_t cTxPwr2G4OFDM_48Mbps;
-	int8_t cTxPwr2G4OFDM_54Mbps;
-
-	int8_t cTxPwr2G4HT20_BPSK;
-	int8_t cTxPwr2G4HT20_QPSK;
-	int8_t cTxPwr2G4HT20_16QAM;
-	int8_t cTxPwr2G4HT20_MCS5;
-	int8_t cTxPwr2G4HT20_MCS6;
-	int8_t cTxPwr2G4HT20_MCS7;
-
-	int8_t cTxPwr2G4HT40_BPSK;
-	int8_t cTxPwr2G4HT40_QPSK;
-	int8_t cTxPwr2G4HT40_16QAM;
-	int8_t cTxPwr2G4HT40_MCS5;
-	int8_t cTxPwr2G4HT40_MCS6;
-	int8_t cTxPwr2G4HT40_MCS7;
-
-	int8_t cTxPwr5GOFDM_BPSK;
-	int8_t cTxPwr5GOFDM_QPSK;
-	int8_t cTxPwr5GOFDM_16QAM;
-	int8_t cTxPwr5GOFDM_Reserved;
-	int8_t cTxPwr5GOFDM_48Mbps;
-	int8_t cTxPwr5GOFDM_54Mbps;
-
-	int8_t cTxPwr5GHT20_BPSK;
-	int8_t cTxPwr5GHT20_QPSK;
-	int8_t cTxPwr5GHT20_16QAM;
-	int8_t cTxPwr5GHT20_MCS5;
-	int8_t cTxPwr5GHT20_MCS6;
-	int8_t cTxPwr5GHT20_MCS7;
-
-	int8_t cTxPwr5GHT40_BPSK;
-	int8_t cTxPwr5GHT40_QPSK;
-	int8_t cTxPwr5GHT40_16QAM;
-	int8_t cTxPwr5GHT40_MCS5;
-	int8_t cTxPwr5GHT40_MCS6;
-	int8_t cTxPwr5GHT40_MCS7;
-};
-
 
 /*
  * Definitions for extension CMD_ID
@@ -451,6 +336,121 @@ enum NDIS_802_11_WEP_STATUS {
 #endif /* WAPI_SUPPORT */
 };
 #endif
+
+#define MAX_UEVENT_LEN	300
+
+#if CFG_SUPPORT_BUFFER_MODE
+
+struct CMD_EFUSE_BUFFER_MODE {
+	uint8_t ucSourceMode;
+	uint8_t ucCount;
+	uint8_t ucCmdType;  /* 0:6632, 1: 7668 */
+	uint8_t ucReserved;
+	uint8_t aBinContent[MAX_EEPROM_BUFFER_SIZE];
+};
+
+struct CMD_EFUSE_BUFFER_MODE_CONNAC_T {
+	uint8_t ucSourceMode;
+	uint8_t ucContentFormat;
+	uint16_t u2Count;
+#if defined MT7915 || defined MT7961
+	uint8_t aBinContent[BUFFER_BIN_PAGE_SIZE];
+#else
+	uint8_t aBinContent[MAX_EEPROM_BUFFER_SIZE];
+#endif
+};
+
+/*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/
+struct CMD_ACCESS_EFUSE {
+	uint32_t u4Address;
+	uint32_t u4Valid;
+	uint8_t aucData[16];
+};
+
+struct CMD_EFUSE_FREE_BLOCK {
+	uint8_t  ucGetFreeBlock;
+	uint8_t  ucVersion;
+	uint8_t  ucDieIndex;
+	uint8_t  ucReserved;
+};
+
+struct CMD_GET_TX_POWER {
+	uint8_t ucTxPwrType;
+	uint8_t ucCenterChannel;
+	uint8_t ucDbdcIdx; /* 0:Band 0, 1: Band1 */
+	uint8_t ucBand; /* 0:G-band 1: A-band*/
+	uint8_t ucReserved[4];
+};
+
+/*#endif*/
+
+#endif /* CFG_SUPPORT_BUFFER_MODE */
+
+#if CFG_SUPPORT_QA_TOOL
+#define IQ_FILE_LINE_OFFSET     18
+#define IQ_FILE_IQ_STR_LEN	 8
+#define RTN_IQ_DATA_LEN         1024	/* return 1k per packet */
+
+#define MCAST_WCID_TO_REMOVE	0
+
+
+#define ICAP_CONTENT_ADC		0x10000006
+#define ICAP_CONTENT_TOAE		0x7
+#define ICAP_CONTENT_SPECTRUM	0xB
+#define ICAP_CONTENT_RBIST		0x10
+#define ICAP_CONTENT_DCOC		0x20
+#define ICAP_CONTENT_FIIQ		0x48
+#define ICAP_CONTENT_FDIQ		0x49
+
+
+struct CMD_SET_TX_TARGET_POWER {
+	int8_t cTxPwr2G4Cck;       /* signed, in unit of 0.5dBm */
+	int8_t cTxPwr2G4Dsss;      /* signed, in unit of 0.5dBm */
+	uint8_t ucTxTargetPwr;		/* Tx target power base for all*/
+	uint8_t ucReserved;
+
+	int8_t cTxPwr2G4OFDM_BPSK;
+	int8_t cTxPwr2G4OFDM_QPSK;
+	int8_t cTxPwr2G4OFDM_16QAM;
+	int8_t cTxPwr2G4OFDM_Reserved;
+	int8_t cTxPwr2G4OFDM_48Mbps;
+	int8_t cTxPwr2G4OFDM_54Mbps;
+
+	int8_t cTxPwr2G4HT20_BPSK;
+	int8_t cTxPwr2G4HT20_QPSK;
+	int8_t cTxPwr2G4HT20_16QAM;
+	int8_t cTxPwr2G4HT20_MCS5;
+	int8_t cTxPwr2G4HT20_MCS6;
+	int8_t cTxPwr2G4HT20_MCS7;
+
+	int8_t cTxPwr2G4HT40_BPSK;
+	int8_t cTxPwr2G4HT40_QPSK;
+	int8_t cTxPwr2G4HT40_16QAM;
+	int8_t cTxPwr2G4HT40_MCS5;
+	int8_t cTxPwr2G4HT40_MCS6;
+	int8_t cTxPwr2G4HT40_MCS7;
+
+	int8_t cTxPwr5GOFDM_BPSK;
+	int8_t cTxPwr5GOFDM_QPSK;
+	int8_t cTxPwr5GOFDM_16QAM;
+	int8_t cTxPwr5GOFDM_Reserved;
+	int8_t cTxPwr5GOFDM_48Mbps;
+	int8_t cTxPwr5GOFDM_54Mbps;
+
+	int8_t cTxPwr5GHT20_BPSK;
+	int8_t cTxPwr5GHT20_QPSK;
+	int8_t cTxPwr5GHT20_16QAM;
+	int8_t cTxPwr5GHT20_MCS5;
+	int8_t cTxPwr5GHT20_MCS6;
+	int8_t cTxPwr5GHT20_MCS7;
+
+	int8_t cTxPwr5GHT40_BPSK;
+	int8_t cTxPwr5GHT40_QPSK;
+	int8_t cTxPwr5GHT40_16QAM;
+	int8_t cTxPwr5GHT40_MCS5;
+	int8_t cTxPwr5GHT40_MCS6;
+	int8_t cTxPwr5GHT40_MCS7;
+};
 
 #if CFG_SUPPORT_MU_MIMO
 enum {
@@ -1630,55 +1630,6 @@ struct EVENT_DUMP_MEM {
 	uint8_t aucBuffer[1];
 };
 
-#if CFG_SUPPORT_QA_TOOL
-#if (CFG_SUPPORT_CONNAC3X == 0)
-struct CMD_ACCESS_RX_STAT {
-	uint32_t u4SeqNum;
-	uint32_t u4TotalNum;
-};
-
-struct EVENT_ACCESS_RX_STAT {
-	uint32_t u4SeqNum;
-	uint32_t u4TotalNum;
-	uint32_t au4Buffer[1];
-};
-
-#else
-struct CMD_ACCESS_RX_STAT {
-	uint16_t u2SeqNum;
-	uint8_t ucDbdcIdx;
-	/* bit[0] in event structure will tell new / old firmware format */
-	uint8_t ucData;
-	uint32_t u4TotalNum;
-};
-
-struct EVENT_ACCESS_RX_STAT {
-	uint16_t u2SeqNum;
-	uint8_t ucDbdcIdx;
-	/* bit[0] in event structure will tell new / old firmware format */
-	uint8_t	ucData;
-	uint32_t u4TotalNum;
-	uint32_t au4Buffer[1];
-};
-#endif
-#if CFG_SUPPORT_TX_BF
-union CMD_TXBF_ACTION {
-	struct PROFILE_TAG_READ rProfileTagRead;
-	struct PROFILE_TAG_WRITE rProfileTagWrite;
-	struct PROFILE_DATA_READ rProfileDataRead;
-	struct PROFILE_DATA_WRITE rProfileDataWrite;
-	struct PROFILE_PN_READ rProfilePnRead;
-	struct PROFILE_PN_WRITE rProfilePnWrite;
-	struct TX_BF_SOUNDING_START rTxBfSoundingStart;
-	struct TX_BF_SOUNDING_STOP rTxBfSoundingStop;
-	struct TX_BF_TX_APPLY rTxBfTxApply;
-	struct TX_BF_PFMU_MEM_ALLOC rTxBfPfmuMemAlloc;
-	struct TX_BF_PFMU_MEM_RLS rTxBfPfmuMemRls;
-#if CFG_SUPPORT_TX_BF_FPGA
-	struct TX_BF_PROFILE_SW_TAG_WRITE rTxBfProfileSwTagWrite;
-#endif
-};
-
 #define CMD_DEVINFO_UPDATE_HDR_SIZE 8
 struct CMD_DEV_INFO_UPDATE {
 	uint8_t ucOwnMacIdx;
@@ -1710,6 +1661,24 @@ struct CMD_STAREC_UPDATE {
 	uint8_t aucBuffer[0];
 };
 
+#if CFG_SUPPORT_TX_BF
+union CMD_TXBF_ACTION {
+	struct PROFILE_TAG_READ rProfileTagRead;
+	struct PROFILE_TAG_WRITE rProfileTagWrite;
+	struct PROFILE_DATA_READ rProfileDataRead;
+	struct PROFILE_DATA_WRITE rProfileDataWrite;
+	struct PROFILE_PN_READ rProfilePnRead;
+	struct PROFILE_PN_WRITE rProfilePnWrite;
+	struct TX_BF_SOUNDING_START rTxBfSoundingStart;
+	struct TX_BF_SOUNDING_STOP rTxBfSoundingStop;
+	struct TX_BF_TX_APPLY rTxBfTxApply;
+	struct TX_BF_PFMU_MEM_ALLOC rTxBfPfmuMemAlloc;
+	struct TX_BF_PFMU_MEM_RLS rTxBfPfmuMemRls;
+#if CFG_SUPPORT_TX_BF_FPGA
+	struct TX_BF_PROFILE_SW_TAG_WRITE rTxBfProfileSwTagWrite;
+#endif
+};
+
 struct EXT_EVENT_BF_STATUS_T {
 	uint8_t ucEventCategoryID;
 	uint8_t ucBw;
@@ -1724,6 +1693,40 @@ struct EVENT_PFMU_TAG_READ {
 	union PFMU_PROFILE_TAG2 ru4TxBfPFMUTag2;
 };
 
+#endif
+
+#if (CFG_SUPPORT_CONNAC3X == 0)
+struct CMD_ACCESS_RX_STAT {
+	uint32_t u4SeqNum;
+	uint32_t u4TotalNum;
+};
+
+struct EVENT_ACCESS_RX_STAT {
+	uint32_t u4SeqNum;
+	uint32_t u4TotalNum;
+	uint32_t au4Buffer[1];
+};
+
+#else
+struct CMD_ACCESS_RX_STAT {
+	uint16_t u2SeqNum;
+	uint8_t ucDbdcIdx;
+	/* bit[0] in event structure will tell new / old firmware format */
+	uint8_t ucData;
+	uint32_t u4TotalNum;
+};
+
+struct EVENT_ACCESS_RX_STAT {
+	uint16_t u2SeqNum;
+	uint8_t ucDbdcIdx;
+	/* bit[0] in event structure will tell new / old firmware format */
+	uint8_t	ucData;
+	uint32_t u4TotalNum;
+	uint32_t au4Buffer[1];
+};
+#endif
+
+#if CFG_SUPPORT_QA_TOOL
 #if CFG_SUPPORT_MU_MIMO
 struct EVENT_HQA_GET_QD {
 	uint32_t u4EventId;
@@ -1781,7 +1784,6 @@ union CMD_MUMIMO_ACTION {
 	} unMuMimoParam;
 };
 #endif /* CFG_SUPPORT_MU_MIMO */
-#endif /* CFG_SUPPORT_TX_BF */
 #endif /* CFG_SUPPORT_QA_TOOL */
 
 struct CMD_SW_DBG_CTRL {
@@ -4103,11 +4105,6 @@ void nicCmdEventQueryMcrRead(struct ADAPTER *prAdapter,
 void nicCmdEventQueryCfgRead(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 
-#if CFG_SUPPORT_QA_TOOL
-void nicCmdEventQueryRxStatistics(struct ADAPTER
-				  *prAdapter, struct CMD_INFO *prCmdInfo,
-				  uint8_t *pucEventBuf);
-
 #if CFG_SUPPORT_TX_BF
 void nicCmdEventPfmuDataRead(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
@@ -4115,6 +4112,12 @@ void nicCmdEventPfmuDataRead(struct ADAPTER *prAdapter,
 void nicCmdEventPfmuTagRead(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 #endif /* CFG_SUPPORT_TX_BF */
+
+#if CFG_SUPPORT_QA_TOOL
+void nicCmdEventQueryRxStatistics(struct ADAPTER
+				  *prAdapter, struct CMD_INFO *prCmdInfo,
+				  uint8_t *pucEventBuf);
+
 #if CFG_SUPPORT_MU_MIMO
 void nicCmdEventGetQd(struct ADAPTER *prAdapter,
 		      struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
@@ -4519,10 +4522,12 @@ void nicCmdEventQuerySerInfo(struct ADAPTER *prAdapter,
 			     struct CMD_INFO *prCmdInfo,
 			     uint8_t *pucEventBuf);
 
+#if CFG_SUPPORT_QA_TOOL
 #if (CONFIG_WLAN_SERVICE == 1)
 void nicCmdEventListmode(struct ADAPTER
 				  *prAdapter, struct CMD_INFO *prCmdInfo,
 				  uint8_t *pucEventBuf);
+#endif
 #endif
 
 #if (CFG_VOLT_INFO == 1)

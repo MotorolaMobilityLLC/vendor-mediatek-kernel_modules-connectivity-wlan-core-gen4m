@@ -738,7 +738,111 @@ struct PARAM_MDVT_STRUCT {
 	uint32_t u4CaseId;
 };
 
-#if CFG_SUPPORT_QA_TOOL
+struct STAREC_COMMON {
+	/* Basic STA record (Group0) */
+	uint16_t u2Tag;		/* Tag = 0x00 */
+	uint16_t u2Length;
+	uint32_t u4ConnectionType;
+	uint8_t ucConnectionState;
+	uint8_t ucIsQBSS;
+	uint16_t u2AID;
+	uint8_t aucPeerMacAddr[6];
+	uint16_t u2ExtraInfo;
+};
+
+/* Device information (Tag0) */
+struct CMD_DEVINFO_ACTIVE {
+	uint16_t u2Tag;		/* Tag = 0x00 */
+	uint16_t u2Length;
+	uint8_t ucActive;
+	uint8_t ucBandNum;
+	uint8_t aucOwnMacAddr[6];
+	uint8_t ucOwnMacIdx;
+	uint8_t aucReserve[3];
+};
+
+struct BSSINFO_BASIC {
+	/* Basic BSS information (Tag1) */
+	uint16_t u2Tag;		/* Tag = 0x01 */
+	uint16_t u2Length;
+	uint32_t u4NetworkType;
+	uint8_t ucActive;
+	uint8_t ucReserve0;
+	uint16_t u2BcnInterval;
+	uint8_t aucBSSID[6];
+	uint8_t ucWmmIdx;
+	uint8_t ucDtimPeriod;
+	uint8_t ucBcMcWlanidx;	/* indicate which wlan-idx used for MC/BC
+				 * transmission.
+				 */
+	uint8_t ucCipherSuit;
+	uint8_t acuReserve[6];
+};
+
+struct BSSINFO_CONNECT_OWN_DEV {
+	uint16_t u2Tag;	/* Tag = 0x00 */
+	uint16_t u2Length;
+	uint8_t  ucHwBSSIndex;
+	uint8_t  ucOwnMacIdx;
+	uint8_t  ucDbdcIdx;
+	uint8_t  aucReserve;
+	uint32_t u4ConnectionType;
+	uint32_t u4Reserved;
+};
+
+/* Ext DevInfo Tag */
+enum EXT_ENUM_DEVINFO_TAG_HANDLE {
+	DEV_INFO_ACTIVE = 0,
+	DEV_INFO_BSSID,
+	DEV_INFO_MAX_NUM
+};
+
+/* STA record TLV tag */
+enum EXT_ENUM_STAREC_TAG_HANDLE {
+	STA_REC_BASIC = 0,
+	STA_REC_RA,
+	STA_REC_RA_COMMON_INFO,
+	STA_REC_RA_UPDATE,
+	STA_REC_BF,
+	STA_REC_MAUNAL_ASSOC,
+	STA_REC_BA = 6,
+	STA_REC_MAX_NUM
+};
+
+enum {
+	BSS_INFO_OWN_MAC = 0,
+	BSS_INFO_BASIC = 1,
+	BSS_INFO_RF_CH = 2,
+	BSS_INFO_PM = 3,
+	BSS_INFO_UAPSD = 4,
+	BSS_INFO_ROAM_DETECTION = 5,
+	BSS_INFO_LQ_RM = 6,
+	BSS_INFO_EXT_BSS = 7,
+	BSS_INFO_BROADCAST_INFO = 8,
+	BSS_INFO_SYNC_MODE = 9,
+	BSS_INFO_MAX_NUM
+};
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+struct UNI_BASIC_BSSINFO_UPDATE {
+	uint8_t ucOwnMacIdx;
+	uint8_t ucBssIdx;
+	uint8_t ucBandIdx;
+	uint8_t ucBssId[MAC_ADDR_LEN];
+};
+#endif
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+struct PARAM_CUSTOM_SET_RDD_REPORT {
+	uint8_t ucDbdcIdx; /* 0:Band 0, 1: Band1 */
+};
+
+struct PARAM_CUSTOM_SET_RADAR_DETECT_MODE {
+	/* 0:Switch channel, 1: Don't switch channel */
+	uint8_t ucRadarDetectMode;
+};
+#endif
+
 #if CFG_SUPPORT_BUFFER_MODE
 struct BIN_CONTENT {
 	uint16_t u2Addr;
@@ -786,113 +890,6 @@ struct PARAM_CUSTOM_GET_TX_POWER {
 /*#endif*/
 
 #endif /* CFG_SUPPORT_BUFFER_MODE */
-
-struct PARAM_CUSTOM_SET_TX_TARGET_POWER {
-	int8_t cTxPwr2G4Cck;	/* signed, in unit of 0.5dBm */
-	int8_t cTxPwr2G4Dsss;	/* signed, in unit of 0.5dBm */
-	uint8_t ucTxTargetPwr;	/* Tx target power base for all*/
-	uint8_t ucReserved;
-
-	int8_t cTxPwr2G4OFDM_BPSK;
-	int8_t cTxPwr2G4OFDM_QPSK;
-	int8_t cTxPwr2G4OFDM_16QAM;
-	int8_t cTxPwr2G4OFDM_Reserved;
-	int8_t cTxPwr2G4OFDM_48Mbps;
-	int8_t cTxPwr2G4OFDM_54Mbps;
-
-	int8_t cTxPwr2G4HT20_BPSK;
-	int8_t cTxPwr2G4HT20_QPSK;
-	int8_t cTxPwr2G4HT20_16QAM;
-	int8_t cTxPwr2G4HT20_MCS5;
-	int8_t cTxPwr2G4HT20_MCS6;
-	int8_t cTxPwr2G4HT20_MCS7;
-
-	int8_t cTxPwr2G4HT40_BPSK;
-	int8_t cTxPwr2G4HT40_QPSK;
-	int8_t cTxPwr2G4HT40_16QAM;
-	int8_t cTxPwr2G4HT40_MCS5;
-	int8_t cTxPwr2G4HT40_MCS6;
-	int8_t cTxPwr2G4HT40_MCS7;
-
-	int8_t cTxPwr5GOFDM_BPSK;
-	int8_t cTxPwr5GOFDM_QPSK;
-	int8_t cTxPwr5GOFDM_16QAM;
-	int8_t cTxPwr5GOFDM_Reserved;
-	int8_t cTxPwr5GOFDM_48Mbps;
-	int8_t cTxPwr5GOFDM_54Mbps;
-
-	int8_t cTxPwr5GHT20_BPSK;
-	int8_t cTxPwr5GHT20_QPSK;
-	int8_t cTxPwr5GHT20_16QAM;
-	int8_t cTxPwr5GHT20_MCS5;
-	int8_t cTxPwr5GHT20_MCS6;
-	int8_t cTxPwr5GHT20_MCS7;
-
-	int8_t cTxPwr5GHT40_BPSK;
-	int8_t cTxPwr5GHT40_QPSK;
-	int8_t cTxPwr5GHT40_16QAM;
-	int8_t cTxPwr5GHT40_MCS5;
-	int8_t cTxPwr5GHT40_MCS6;
-	int8_t cTxPwr5GHT40_MCS7;
-};
-
-#if (CFG_SUPPORT_DFS_MASTER == 1)
-struct PARAM_CUSTOM_SET_RDD_REPORT {
-	uint8_t ucDbdcIdx; /* 0:Band 0, 1: Band1 */
-};
-
-struct PARAM_CUSTOM_SET_RADAR_DETECT_MODE {
-	/* 0:Switch channel, 1: Don't switch channel */
-	uint8_t ucRadarDetectMode;
-};
-#endif
-
-#if (CFG_SUPPORT_CONNAC3X == 0)
-struct PARAM_CUSTOM_ACCESS_RX_STAT {
-	uint32_t u4SeqNum;
-	uint32_t u4TotalNum;
-};
-#else
-struct PARAM_CUSTOM_ACCESS_RX_STAT {
-	uint16_t u2SeqNum;
-	uint8_t ucDbdcIdx;
-	/* bit[0] in event structure will tell new / old firmware format */
-	uint8_t	ucData;
-	uint32_t u4TotalNum;
-};
-#endif
-/* Ext DevInfo Tag */
-enum EXT_ENUM_DEVINFO_TAG_HANDLE {
-	DEV_INFO_ACTIVE = 0,
-	DEV_INFO_BSSID,
-	DEV_INFO_MAX_NUM
-};
-
-/*  STA record TLV tag */
-enum EXT_ENUM_STAREC_TAG_HANDLE {
-	STA_REC_BASIC = 0,
-	STA_REC_RA,
-	STA_REC_RA_COMMON_INFO,
-	STA_REC_RA_UPDATE,
-	STA_REC_BF,
-	STA_REC_MAUNAL_ASSOC,
-	STA_REC_BA = 6,
-	STA_REC_MAX_NUM
-};
-
-enum {
-	BSS_INFO_OWN_MAC = 0,
-	BSS_INFO_BASIC = 1,
-	BSS_INFO_RF_CH = 2,
-	BSS_INFO_PM = 3,
-	BSS_INFO_UAPSD = 4,
-	BSS_INFO_ROAM_DETECTION = 5,
-	BSS_INFO_LQ_RM = 6,
-	BSS_INFO_EXT_BSS = 7,
-	BSS_INFO_BROADCAST_INFO = 8,
-	BSS_INFO_SYNC_MODE = 9,
-	BSS_INFO_MAX_NUM
-};
 
 #if CFG_SUPPORT_TX_BF
 enum BF_ACTION_CATEGORY {
@@ -1526,15 +1523,6 @@ struct PROFILE_TAG_READ {
 	uint8_t ucBandIdx;
 };
 
-#ifdef CFG_SUPPORT_UNIFIED_COMMAND
-struct UNI_BASIC_BSSINFO_UPDATE {
-	uint8_t ucOwnMacIdx;
-	uint8_t ucBssIdx;
-	uint8_t ucBandIdx;
-	uint8_t ucBssId[MAC_ADDR_LEN];
-};
-#endif
-
 struct PROFILE_TAG_WRITE {
 	uint8_t ucTxBfCategory;
 	uint8_t ucPfmuId;
@@ -1584,47 +1572,6 @@ enum BF_SOUNDING_MODE {
 	TXCMD_TB_PER_BRP_SOUNDING,
 	TXCMD_TB_SOUNDING,
 	SOUNDING_MAX
-};
-
-/* Device information (Tag0) */
-struct CMD_DEVINFO_ACTIVE {
-	uint16_t u2Tag;		/* Tag = 0x00 */
-	uint16_t u2Length;
-	uint8_t ucActive;
-	uint8_t ucBandNum;
-	uint8_t aucOwnMacAddr[6];
-	uint8_t ucOwnMacIdx;
-	uint8_t aucReserve[3];
-};
-
-struct BSSINFO_BASIC {
-	/* Basic BSS information (Tag1) */
-	uint16_t u2Tag;		/* Tag = 0x01 */
-	uint16_t u2Length;
-	uint32_t u4NetworkType;
-	uint8_t ucActive;
-	uint8_t ucReserve0;
-	uint16_t u2BcnInterval;
-	uint8_t aucBSSID[6];
-	uint8_t ucWmmIdx;
-	uint8_t ucDtimPeriod;
-	uint8_t ucBcMcWlanidx;	/* indicate which wlan-idx used for MC/BC
-				 * transmission.
-				 */
-	uint8_t ucCipherSuit;
-	uint8_t acuReserve[6];
-};
-
-struct BSSINFO_CONNECT_OWN_DEV
-{
-    uint16_t u2Tag;      /* Tag = 0x00 */
-    uint16_t u2Length;
-    uint8_t  ucHwBSSIndex;
-    uint8_t  ucOwnMacIdx;
-    uint8_t  ucDbdcIdx;
-    uint8_t  aucReserve;
-    uint32_t u4ConnectionType;
-    uint32_t u4Reserved;
 };
 
 struct TXBF_PFMU_STA_INFO {
@@ -1678,18 +1625,6 @@ struct STA_REC_UPD_ENTRY {
 	uint8_t ucRsv;
 };
 
-struct STAREC_COMMON {
-	/* Basic STA record (Group0) */
-	uint16_t u2Tag;		/* Tag = 0x00 */
-	uint16_t u2Length;
-	uint32_t u4ConnectionType;
-	uint8_t ucConnectionState;
-	uint8_t ucIsQBSS;
-	uint16_t u2AID;
-	uint8_t aucPeerMacAddr[6];
-	uint16_t u2ExtraInfo;
-};
-
 struct CMD_STAREC_BF {
 	uint16_t u2Tag;		/* Tag = 0x02 */
 	uint16_t u2Length;
@@ -1697,29 +1632,6 @@ struct CMD_STAREC_BF {
 	uint8_t ucReserved[3];
 };
 
-/* QA tool: maunal assoc */
-struct CMD_MANUAL_ASSOC_STRUCT {
-	/*
-	 *	uint8_t              ucBssIndex;
-	 *	uint8_t              ucWlanIdx;
-	 *	uint16_t             u2TotalElementNum;
-	 *	uint32_t             u4Reserve;
-	 */
-	/* extension */
-	uint16_t u2Tag;		/* Tag = 0x05 */
-	uint16_t u2Length;
-	uint8_t aucMac[MAC_ADDR_LEN];
-	uint8_t ucType;
-	uint8_t ucWtbl;
-	uint8_t ucOwnmac;
-	uint8_t ucMode;
-	uint8_t ucBw;
-	uint8_t ucNss;
-	uint8_t ucPfmuId;
-	uint8_t ucMarate;
-	uint8_t ucSpeIdx;
-	uint8_t ucaid;
-};
 
 struct TX_BF_SOUNDING_START {
 	uint8_t ucTxBfCategory;
@@ -1819,6 +1731,72 @@ struct PARAM_CUSTOM_PFMU_TAG_READ_STRUCT {
 	union PFMU_PROFILE_TAG1 ru4TxBfPFMUTag1;
 	union PFMU_PROFILE_TAG2 ru4TxBfPFMUTag2;
 };
+#endif /* CFG_SUPPORT_TX_BF */
+
+#if CFG_SUPPORT_QA_TOOL
+struct PARAM_CUSTOM_SET_TX_TARGET_POWER {
+	int8_t cTxPwr2G4Cck;	/* signed, in unit of 0.5dBm */
+	int8_t cTxPwr2G4Dsss;	/* signed, in unit of 0.5dBm */
+	uint8_t ucTxTargetPwr;	/* Tx target power base for all*/
+	uint8_t ucReserved;
+
+	int8_t cTxPwr2G4OFDM_BPSK;
+	int8_t cTxPwr2G4OFDM_QPSK;
+	int8_t cTxPwr2G4OFDM_16QAM;
+	int8_t cTxPwr2G4OFDM_Reserved;
+	int8_t cTxPwr2G4OFDM_48Mbps;
+	int8_t cTxPwr2G4OFDM_54Mbps;
+
+	int8_t cTxPwr2G4HT20_BPSK;
+	int8_t cTxPwr2G4HT20_QPSK;
+	int8_t cTxPwr2G4HT20_16QAM;
+	int8_t cTxPwr2G4HT20_MCS5;
+	int8_t cTxPwr2G4HT20_MCS6;
+	int8_t cTxPwr2G4HT20_MCS7;
+
+	int8_t cTxPwr2G4HT40_BPSK;
+	int8_t cTxPwr2G4HT40_QPSK;
+	int8_t cTxPwr2G4HT40_16QAM;
+	int8_t cTxPwr2G4HT40_MCS5;
+	int8_t cTxPwr2G4HT40_MCS6;
+	int8_t cTxPwr2G4HT40_MCS7;
+
+	int8_t cTxPwr5GOFDM_BPSK;
+	int8_t cTxPwr5GOFDM_QPSK;
+	int8_t cTxPwr5GOFDM_16QAM;
+	int8_t cTxPwr5GOFDM_Reserved;
+	int8_t cTxPwr5GOFDM_48Mbps;
+	int8_t cTxPwr5GOFDM_54Mbps;
+
+	int8_t cTxPwr5GHT20_BPSK;
+	int8_t cTxPwr5GHT20_QPSK;
+	int8_t cTxPwr5GHT20_16QAM;
+	int8_t cTxPwr5GHT20_MCS5;
+	int8_t cTxPwr5GHT20_MCS6;
+	int8_t cTxPwr5GHT20_MCS7;
+
+	int8_t cTxPwr5GHT40_BPSK;
+	int8_t cTxPwr5GHT40_QPSK;
+	int8_t cTxPwr5GHT40_16QAM;
+	int8_t cTxPwr5GHT40_MCS5;
+	int8_t cTxPwr5GHT40_MCS6;
+	int8_t cTxPwr5GHT40_MCS7;
+};
+
+#if (CFG_SUPPORT_CONNAC3X == 0)
+struct PARAM_CUSTOM_ACCESS_RX_STAT {
+	uint32_t u4SeqNum;
+	uint32_t u4TotalNum;
+};
+#else
+struct PARAM_CUSTOM_ACCESS_RX_STAT {
+	uint16_t u2SeqNum;
+	uint8_t ucDbdcIdx;
+	/* bit[0] in event structure will tell new / old firmware format */
+	uint8_t	ucData;
+	uint32_t u4TotalNum;
+};
+#endif
 
 #if CFG_SUPPORT_MU_MIMO
 struct PARAM_CUSTOM_SHOW_GROUP_TBL_ENTRY_STRUCT {
@@ -2005,7 +1983,31 @@ struct PARAM_CUSTOM_MUMIMO_ACTION_STRUCT {
 	} unMuMimoParam;
 };
 #endif /* CFG_SUPPORT_MU_MIMO */
-#endif /* CFG_SUPPORT_TX_BF */
+
+/* QA tool: maunal assoc */
+struct CMD_MANUAL_ASSOC_STRUCT {
+	/*
+	 *	uint8_t              ucBssIndex;
+	 *	uint8_t              ucWlanIdx;
+	 *	uint16_t             u2TotalElementNum;
+	 *	uint32_t             u4Reserve;
+	 */
+	/* extension */
+	uint16_t u2Tag;		/* Tag = 0x05 */
+	uint16_t u2Length;
+	uint8_t aucMac[MAC_ADDR_LEN];
+	uint8_t ucType;
+	uint8_t ucWtbl;
+	uint8_t ucOwnmac;
+	uint8_t ucMode;
+	uint8_t ucBw;
+	uint8_t ucNss;
+	uint8_t ucPfmuId;
+	uint8_t ucMarate;
+	uint8_t ucSpeIdx;
+	uint8_t ucaid;
+};
+
 #endif /* CFG_SUPPORT_QA_TOOL */
 
 struct PARAM_CUSTOM_MEM_DUMP_STRUCT {
@@ -3983,7 +3985,6 @@ wlanoidQueryLinkSpeedEx(struct ADAPTER *prAdapter,
 			  uint32_t u4QueryBufferLen,
 			  uint32_t *pu4QueryInfoLen);
 
-#if CFG_SUPPORT_QA_TOOL
 #if CFG_SUPPORT_BUFFER_MODE
 uint32_t wlanoidSetEfusBufferMode(struct ADAPTER
 				  *prAdapter,
@@ -4026,11 +4027,6 @@ wlanoidQueryGetTxPower(struct ADAPTER *prAdapter,
 /*#endif*/
 
 #endif /* CFG_SUPPORT_BUFFER_MODE */
-uint32_t
-wlanoidQueryRxStatistics(struct ADAPTER *prAdapter,
-			 void *pvQueryBuffer,
-			 uint32_t u4QueryBufferLen,
-			 uint32_t *pu4QueryInfoLen);
 
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 uint32_t
@@ -4069,11 +4065,24 @@ wlanoidUninitAisFsm(struct ADAPTER *prAdapter,
 		     uint32_t u4SetBufferLen,
 		     uint32_t *pu4SetInfoLen);
 
+#if CFG_SUPPORT_QA_TOOL
+uint32_t
+wlanoidQueryRxStatistics(struct ADAPTER *prAdapter,
+			 void *pvQueryBuffer,
+			 uint32_t u4QueryBufferLen,
+			 uint32_t *pu4QueryInfoLen);
+
 uint32_t
 wlanoidManualAssoc(struct ADAPTER *prAdapter,
 		   void *pvSetBuffer,
 		   uint32_t u4SetBufferLen,
 		   uint32_t *pu4SetInfoLen);
+
+uint32_t wlanoidMuMimoAction(struct ADAPTER *prAdapter,
+			     void *pvSetBuffer,
+			     uint32_t u4SetBufferLen,
+			     uint32_t *pu4SetInfoLen);
+#endif /* CFG_SUPPORT_QA_TOOL */
 
 #if CFG_SUPPORT_TX_BF
 uint32_t
@@ -4081,11 +4090,6 @@ wlanoidTxBfAction(struct ADAPTER *prAdapter,
 		  void *pvSetBuffer,
 		  uint32_t u4SetBufferLen,
 		  uint32_t *pu4SetInfoLen);
-
-uint32_t wlanoidMuMimoAction(struct ADAPTER *prAdapter,
-			     void *pvSetBuffer,
-			     uint32_t u4SetBufferLen,
-			     uint32_t *pu4SetInfoLen);
 
 uint32_t wlanoidStaRecUpdate(struct ADAPTER *prAdapter,
 			     void *pvSetBuffer,
@@ -4103,7 +4107,6 @@ uint32_t wlanoidStaRecBFRead(struct ADAPTER *prAdapter,
 			       uint32_t *pu4SetInfoLen);
 
 #endif /* CFG_SUPPORT_TX_BF */
-#endif /* CFG_SUPPORT_QA_TOOL */
 
 #if CFG_SUPPORT_SMART_GEAR
 uint32_t
@@ -4836,11 +4839,13 @@ wlanoidSetDbdcEnable(struct ADAPTER *prAdapter,
 		     uint32_t *pu4SetInfoLen);
 #endif /*#if CFG_SUPPORT_DBDC*/
 
+#if CFG_SUPPORT_QA_TOOL
 uint32_t
 wlanoidQuerySetTxTargetPower(struct ADAPTER *prAdapter,
 			     void *pvSetBuffer,
 			     uint32_t u4SetBufferLen,
 			     uint32_t *pu4SetInfoLen);
+#endif
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 uint32_t

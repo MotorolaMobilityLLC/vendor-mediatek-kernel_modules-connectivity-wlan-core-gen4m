@@ -90,6 +90,7 @@
  *****************************************************************************
  */
 /* export to other common part file */
+#if CFG_SUPPORT_QA_TOOL
 struct PARAM_RX_STAT g_HqaRxStat;
 #if (CFG_SUPPORT_CONNAC3X == 0)
 uint32_t u4RxStatSeqNum;
@@ -100,6 +101,8 @@ uint16_t u2RxStatSeqNum;
 #if (CONFIG_WLAN_SERVICE == 1)
 struct list_mode_event g_HqaListModeStatus;
 #endif
+#endif
+
 /*****************************************************************************
  *                           P R I V A T E   D A T A
  *****************************************************************************

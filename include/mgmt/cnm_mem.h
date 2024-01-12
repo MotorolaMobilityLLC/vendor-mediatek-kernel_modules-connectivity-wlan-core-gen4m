@@ -1108,8 +1108,13 @@ struct STA_RECORD *cnmGetTdlsPeerByAddress(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, uint8_t aucPeerMACAddress[]);
 #endif
 
+#if CFG_SUPPORT_TX_BF
 void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	 struct TXBF_PFMU_STA_INFO *prTxBfPfmuStaInfo, u_int8_t fgNeedResp);
+#else
+void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
+	 void *prTxBfPfmuStaInfo, u_int8_t fgNeedResp);
+#endif
 
 /*******************************************************************************
  *                              F U N C T I O N S
