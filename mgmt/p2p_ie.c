@@ -81,6 +81,8 @@ uint32_t p2pCalculate_IEForAssocReq(struct ADAPTER *prAdapter,
 				 prStaRec->ucBssIndex, prStaRec);
 		}
 #endif
+
+		u4RetValue += (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP);
 	} while (FALSE);
 
 	return u4RetValue;
@@ -155,6 +157,8 @@ void p2pGenerate_IEForAssocReq(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_MTK_SYNERGY
 		rlmGenerateMTKOuiIE(prAdapter, prMsduInfo);
 #endif
+
+		rlmReqGenerateExtCapIE(prAdapter, prMsduInfo);
 	} while (FALSE);
 
 	return;
