@@ -1310,9 +1310,10 @@ uint32_t wlanConfigWifiFunc(IN struct ADAPTER *prAdapter,
 
 	u4Status = wlanConfigWifiFuncStatus(prAdapter, ucCmdSeqNum);
 
-	if (u4Status != WLAN_STATUS_SUCCESS)
+	if (u4Status != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, INFO, "FW_START EVT failed\n");
-	else
+		GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+	} else
 		DBGLOG(INIT, INFO, "FW_START EVT success!!\n");
 
 exit:
