@@ -643,8 +643,20 @@ scanSearchBssDescByBssidAndSsid(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-	return prDstBssDesc;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (!prDstBssDesc) {
+		LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
+			rLinkEntry, struct BSS_DESC) {
 
+			if (!prBssDesc->rMlInfo.fgValid)
+				continue;
+			if ((EQUAL_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr, aucBSSID)))
+				return prBssDesc;
+		}
+	}
+#endif
+
+	return prDstBssDesc;
 }	/* end of scanSearchBssDescByBssid() */
 
 /*----------------------------------------------------------------------------*/
@@ -1368,6 +1380,7 @@ void scanEhtParsingMldElement(IN struct BSS_DESC *prBssDesc, IN const uint8_t *p
 {
 	struct MULTI_LINK_INFO rMlInfo;
 	struct MULTI_LINK_INFO *prMlInfo = &rMlInfo;
+	uint8_t i;
 
 	kalMemSet(prMlInfo, 0, sizeof(rMlInfo));
 	beParseMldElement(prMlInfo, pucIE, prBssDesc->aucBSSID, "SCAN");
@@ -1382,6 +1395,12 @@ void scanEhtParsingMldElement(IN struct BSS_DESC *prBssDesc, IN const uint8_t *p
 
 	if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_LINK_ID_INFO_PRESENT)
 		prBssDesc->rMlInfo.ucLinkIndex = rMlInfo.ucLinkId;
+
+	prBssDesc->rMlInfo.ucLinkNum = prMlInfo->ucLinkNum;
+	for (i = 0; i < prMlInfo->ucLinkNum; i++) {
+		COPY_MAC_ADDR(prBssDesc->rMlInfo.aucLinkAddrs[i],
+			prMlInfo->rStaProfiles[i].aucLinkAddr);
+	}
 }
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 

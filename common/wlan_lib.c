@@ -6840,6 +6840,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		"EhtAmsduInAmpduTx", FEATURE_ENABLED);
 	prWifiVar->ucStaEhtBfee = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"StaEHTBfee", FEATURE_ENABLED);
+	prWifiVar->ucLinkIdForKey = 0xff;
 #endif
 
 	prWifiVar->ucApHt = (uint8_t) wlanCfgGetUint32(prAdapter, "ApHT",

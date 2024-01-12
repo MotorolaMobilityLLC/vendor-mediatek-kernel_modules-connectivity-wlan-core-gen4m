@@ -1208,41 +1208,73 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 }
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-void scanFillSecondaryLink(struct ADAPTER *prAdapter,
-	struct BSS_DESC_SET *prBssDescSet, uint8_t ucBssIndex)
+uint8_t scanSanityCheckSecondary(struct ADAPTER *prAdapter,
+	struct BSS_DESC_SET *prBssDescSet, struct BSS_DESC *prBssDesc,
+	enum ENUM_ROAMING_REASON eRoamReason, uint8_t ucBssIndex)
 {
-	struct LINK *prBSSDescList =
-		&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
+	uint8_t i;
+
+	if (!scanSanityCheckBssDesc(prAdapter, prBssDesc, 0, 0, FALSE,
+					eRoamReason, ucBssIndex))
+		return FALSE;
+
+	for (i = 0; i < prBssDescSet->ucLinkNum; i++) {
+		if (prBssDesc->eBand == prBssDescSet->aprBssDesc[i]->eBand)
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+void scanFillSecondaryLink(struct ADAPTER *prAdapter,
+	struct BSS_DESC_SET *prBssDescSet, enum ENUM_ROAMING_REASON eRoamReason,
+	uint8_t ucBssIndex)
+{
 	struct BSS_DESC *prBssDesc = NULL;
 	struct BSS_DESC *prMainBssDesc = prBssDescSet->prMainBssDesc;
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo = NULL;
+	struct LINK *prEssLink = NULL;
+	uint8_t ucAisIdx = AIS_INDEX(prAdapter, ucBssIndex);
 	uint8_t i;
 
 	if (!prMainBssDesc || !prMainBssDesc->rMlInfo.fgValid)
 		return;
 
-	/* setup secondary link */
-	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
-		struct BSS_DESC) {
+	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+	prEssLink = &prAisSpecificBssInfo->rCurEssLink;
 
-		/* break if reach the limit num of links */
-		if (prBssDescSet->ucLinkNum >= MLD_LINK_MAX)
-			break;
+	for (i = 1; i < MLD_LINK_MAX; ++i) {
+		uint16_t u2ScoreTotal = 0;
+		uint16_t u2CandBssScore = 0;
+		struct BSS_DESC *prCandBssDesc = NULL;
 
-		if (!prBssDesc->rMlInfo.fgValid ||
-		    EQUAL_MAC_ADDR(prMainBssDesc->aucBSSID,
-				prBssDesc->aucBSSID) ||
-		    !EQUAL_MAC_ADDR(prMainBssDesc->rMlInfo.aucMldAddr,
-				prBssDesc->rMlInfo.aucMldAddr) ||
-		    !rsnPerformPolicySelection(prAdapter, prBssDesc,
-				ucBssIndex))
-			continue;
+		/* setup secondary link */
+		LINK_FOR_EACH_ENTRY(prBssDesc, prEssLink,
+				rLinkEntryEss[ucAisIdx], struct BSS_DESC) {
+			if (!prBssDesc->rMlInfo.fgValid ||
+			    EQUAL_MAC_ADDR(prMainBssDesc->aucBSSID,
+					prBssDesc->aucBSSID) ||
+			    !EQUAL_MAC_ADDR(prMainBssDesc->rMlInfo.aucMldAddr,
+					prBssDesc->rMlInfo.aucMldAddr) ||
+			    !scanSanityCheckSecondary(prAdapter, prBssDescSet,
+					prBssDesc, eRoamReason, ucBssIndex))
+				continue;
 
-		/* Record same Mld list */
-		prBssDescSet->aprBssDesc[prBssDescSet->ucLinkNum] = prBssDesc;
-		prBssDescSet->ucLinkNum++;
+			u2ScoreTotal = scanCalculateTotalScore(prAdapter,
+				prBssDesc, eRoamReason, ucBssIndex);
+			if (u2ScoreTotal > u2CandBssScore) {
+				u2CandBssScore = u2ScoreTotal;
+				prCandBssDesc = prBssDesc;
+			}
+		}
+
+		if (prCandBssDesc) {
+			prBssDescSet->aprBssDesc[i] = prCandBssDesc;
+			prBssDescSet->ucLinkNum++;
+		}
 	}
 
-	/* prefer bssid = mld addr */
+	/* prefer bssid mld addr */
 	for (i = 0; i < prBssDescSet->ucLinkNum; i++) {
 		prBssDesc = prBssDescSet->aprBssDesc[i];
 		if (EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
@@ -1506,7 +1538,7 @@ done:
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			scanFillSecondaryLink(prAdapter,
-				prBssDescSet, ucBssIndex);
+				prBssDescSet, eRoamReason, ucBssIndex);
 #endif
 		} else {
 			prBssDescSet->ucLinkNum = 0;

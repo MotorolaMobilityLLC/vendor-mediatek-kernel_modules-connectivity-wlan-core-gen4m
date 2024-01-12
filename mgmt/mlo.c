@@ -1811,7 +1811,7 @@ void mldStarecDump(struct ADAPTER *prAdapter)
 	DBGLOG(ML, INFO, "========== END ==========\n");
 }
 
-static struct MLD_STA_RECORD *mldStarecGetByAddr(struct ADAPTER *prAdapter,
+struct MLD_STA_RECORD *mldStarecGetByAddr(struct ADAPTER *prAdapter,
 	uint8_t aucMacAddr[])
 {
 	const uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;

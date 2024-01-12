@@ -1751,6 +1751,10 @@ void kalRemoveBss(struct GLUE_INFO *prGlueInfo,
 #if CFG_SUPPORT_WPA3
 int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
 			   IN uint8_t uBssIndex);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+int kalVendorExternalAuthRequest(IN struct ADAPTER *prAdapter,
+			   IN uint8_t uBssIndex);
+#endif
 #endif
 
 #if CFG_SUPPORT_NAN

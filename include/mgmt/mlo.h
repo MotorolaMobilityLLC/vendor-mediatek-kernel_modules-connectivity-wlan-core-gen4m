@@ -261,6 +261,9 @@ void mldStarecFree(struct ADAPTER *prAdapter,
 struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
 
+struct MLD_STA_RECORD *mldStarecGetByAddr(struct ADAPTER *prAdapter,
+	uint8_t aucMacAddr[]);
+
 int8_t mldStarecSetSetupIdx(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
 
