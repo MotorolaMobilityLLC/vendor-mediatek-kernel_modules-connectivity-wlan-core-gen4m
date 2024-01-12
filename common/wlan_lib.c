@@ -134,7 +134,6 @@ PFN_OID_HANDLER_FUNC apfnOidQueryHandlerWOHwAccess[] = {
 	wlanoidQueryInfrastructureMode,
 	wlanoidQueryAuthMode,
 	wlanoidQueryEncryptionStatus,
-	wlanoidQueryPmkid,
 	wlanoidQueryNetworkTypeInUse,
 	wlanoidQueryBssidList,
 	wlanoidQueryAcpiDevicePowerState,

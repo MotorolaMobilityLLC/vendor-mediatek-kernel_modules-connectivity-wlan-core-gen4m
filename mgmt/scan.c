@@ -2004,11 +2004,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				prBssDesc->fgIERSN = TRUE;
 				prBssDesc->u2RsnCap
 					= prBssDesc->rRSNInfo.u2RsnCap;
-				if (prAdapter->rWifiVar.rConnSettings.eAuthMode
-					== AUTH_MODE_WPA2) {
-					rsnCheckPmkidCache(prAdapter,
-						prBssDesc);
-				}
+				rsnCheckPmkidCache(prAdapter, prBssDesc);
 			}
 			break;
 

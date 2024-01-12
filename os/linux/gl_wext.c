@@ -1099,82 +1099,6 @@ u_int8_t wextSrchDesiredRoamingConsortiumIE(
 
 #endif /* CFG_SUPPORT_PASSPOINT */
 
-u_int8_t wextSrchOkcAndPMKID(IN uint8_t *pucIEStart,
-			     IN int32_t i4TotalIeLen, OUT uint8_t **ppucPMKID,
-			     OUT uint8_t *okc)
-{
-	int32_t i4InfoElemLen;
-	uint8_t ucDone = 0;
-
-	ASSERT(pucIEStart);
-	ASSERT(ppucPMKID);
-	ASSERT(okc);
-	*okc = 0;
-	*ppucPMKID = NULL;
-	while (i4TotalIeLen >= 2) {
-		i4InfoElemLen = (int32_t) pucIEStart[1] + 2;
-		if (i4InfoElemLen > i4TotalIeLen)
-			break;
-		if (pucIEStart[0] == ELEM_ID_VENDOR) {
-			if (pucIEStart[1] != 4 || pucIEStart[2] != 0
-			    || pucIEStart[3] != 0x8 || pucIEStart[4] != 0x22)
-				goto check_next;
-			*okc = pucIEStart[5];
-			ucDone |= 1;
-		} else if (pucIEStart[0] == ELEM_ID_RSN) {
-			/*
-			 * RSN IE:
-			 * EID(1), Len(1), Version(2), GrpCipher(4),
-			 * PairCipherCnt(2), PairCipherList(PairCipherCnt * 4),
-			 * AKMCnt(2), AkmList(4*AkmCnt), RSNCap(2), PMKIDCnt(2),
-			 * PMKIDList(16*PMKIDCnt), GrpMgtCipher(4)
-			 */
-			uint16_t u2CipherCnt = 0;
-			uint16_t u2AkmCnt = 0;
-			int32_t i4LenToCheck = 8;
-
-			/* if no Pairwise Cipher Count field, bypass */
-			if (i4InfoElemLen < i4LenToCheck + 2)
-				goto check_next;
-			u2CipherCnt = *(uint16_t *)&pucIEStart[i4LenToCheck];
-			i4LenToCheck +=
-				2; /* include length of Pairwise Cipher Count
-				    * field
-				    */
-			i4LenToCheck += u2CipherCnt *
-					4; /* include cipher list field */
-			/* if no AKM Count, bypass */
-			if (i4InfoElemLen < i4LenToCheck + 2)
-				goto check_next;
-			u2AkmCnt = *(uint16_t *)&pucIEStart[i4LenToCheck];
-			i4LenToCheck += 2; /* include length of AKM Count */
-			i4LenToCheck += u2AkmCnt * 4 +
-					2; /* include akm list field */
-			/*
-			 * if IE length is
-			 *	10 + u2CipherCnt * 4 + 2 + u2AkmCnt * 4 + 2 + 6,
-			 * means PMKID count field is zero, and Group Mgmt
-			 * Cipher may be exist
-			 */
-			if (i4InfoElemLen <= i4LenToCheck + 6)
-				goto check_next;
-			*ppucPMKID = pucIEStart +
-				     i4LenToCheck; /* return PMKID field and
-						    * started at PMKID count
-						    */
-			ucDone |= 2;
-		}
-		if (ucDone == 3)
-			return TRUE;
-		/* check desired EID */
-		/* Select next information element. */
-check_next:
-		i4TotalIeLen -= i4InfoElemLen;
-		pucIEStart += i4InfoElemLen;
-	}
-	return FALSE;
-}
-
 #if CFG_SUPPORT_WPS
 /*----------------------------------------------------------------------------*/
 /*!
@@ -4491,57 +4415,27 @@ wext_support_ioctl_SIOCSIWPMKSA_Action(IN struct net_device
 					 netdev_priv(prDev));
 	uint32_t rStatus;
 	uint32_t u4BufLen;
-	struct PARAM_PMKID *prPmkid;
+	struct PARAM_PMKID pmkid;
 
 	switch (ioMode) {
 	case IW_PMKSA_ADD:
-		prPmkid = (struct PARAM_PMKID *) kalMemAlloc(8 + sizeof(
-					struct PARAM_BSSID_INFO), VIR_MEM_TYPE);
-		if (!prPmkid) {
-			DBGLOG(INIT, INFO,
-			       "Can not alloc memory for IW_PMKSA_ADD\n");
-			*ret = -ENOMEM;
-			break;
-		}
+		kalMemCopy(pmkid.arBSSID,
+			((struct iw_pmksa *)prExtraBuf)->bssid.sa_data,
+			PARAM_MAC_ADDR_LEN);
+		kalMemCopy(pmkid.arPMKID,
+			((struct iw_pmksa *)prExtraBuf)->pmkid, IW_PMKID_LEN);
 
-		prPmkid->u4Length = 8 + sizeof(struct PARAM_BSSID_INFO);
-		prPmkid->u4BSSIDInfoCount = 1;
-		kalMemCopy(prPmkid->arBSSIDInfo->aucBssid,
-			   ((struct iw_pmksa *)prExtraBuf)->bssid.sa_data,
-			   6);
-		kalMemCopy(prPmkid->arBSSIDInfo->arPMKID,
-			   ((struct iw_pmksa *)prExtraBuf)->pmkid,
-			   IW_PMKID_LEN);
-
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetPmkid, prPmkid,
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetPmkid, &pmkid,
 				   sizeof(struct PARAM_PMKID),
 				   FALSE, FALSE, TRUE, &u4BufLen);
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(INIT, INFO, "add pmkid error:%x\n", rStatus);
-
-		kalMemFree(prPmkid, VIR_MEM_TYPE,
-			   8 + sizeof(struct PARAM_BSSID_INFO));
 		break;
 	case IW_PMKSA_FLUSH:
-		prPmkid = (struct PARAM_PMKID *) kalMemAlloc(8,
-				VIR_MEM_TYPE);
-		if (!prPmkid) {
-			DBGLOG(INIT, INFO,
-			       "Can not alloc memory for IW_PMKSA_FLUSH\n");
-			*ret = -ENOMEM;
-			break;
-		}
-
-		prPmkid->u4Length = 8;
-		prPmkid->u4BSSIDInfoCount = 0;
-
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetPmkid, prPmkid,
-				   sizeof(struct PARAM_PMKID),
+		rStatus = kalIoctl(prGlueInfo, wlanoidFlushPmkid, NULL, 0,
 				   FALSE, FALSE, TRUE, &u4BufLen);
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(INIT, INFO, "flush pmkid error:%x\n", rStatus);
-
-		kalMemFree(prPmkid, VIR_MEM_TYPE, 8);
 		break;
 	default:
 		break;

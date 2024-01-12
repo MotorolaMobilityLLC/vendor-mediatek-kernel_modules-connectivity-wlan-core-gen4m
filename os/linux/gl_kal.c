@@ -1540,6 +1540,10 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 		if (pStatus) {
 			switch (pStatus->eStatusType) {
 			case ENUM_STATUS_TYPE_AUTHENTICATION:
+			{
+				struct PARAM_INDICATION_EVENT *prEvent =
+				(struct PARAM_INDICATION_EVENT *) pvBuf;
+
 				/*
 				 *  printk(KERN_NOTICE
 				 *      "ENUM_STATUS_TYPE_AUTHENTICATION:
@@ -1549,13 +1553,13 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 				 *      pAuth->Request[0].Flags);
 				 */
 				/* indicate (UC/GC) MIC ERROR event only */
-				if ((pAuth->arRequest[0].u4Flags ==
+				if ((prEvent->rAuthReq.u4Flags ==
 				     PARAM_AUTH_REQUEST_PAIRWISE_ERROR) ||
-				    (pAuth->arRequest[0].u4Flags ==
+				    (prEvent->rAuthReq.u4Flags ==
 				     PARAM_AUTH_REQUEST_GROUP_ERROR)) {
 					cfg80211_michael_mic_failure(
 					    prGlueInfo->prDevHandler, NULL,
-					    (pAuth->arRequest[0].u4Flags ==
+					    (prEvent->rAuthReq.u4Flags ==
 					    PARAM_AUTH_REQUEST_PAIRWISE_ERROR)
 						? NL80211_KEYTYPE_PAIRWISE :
 						NL80211_KEYTYPE_GROUP,
@@ -1563,37 +1567,30 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 					wext_indicate_wext_event(prGlueInfo,
 					    IWEVMICHAELMICFAILURE,
 					    (unsigned char *)
-						&pAuth->arRequest[0],
-					    pAuth->arRequest[0].u4Length);
+						&prEvent->rAuthReq,
+					    prEvent->rAuthReq.u4Length);
 				}
 				break;
-
+			}
 			case ENUM_STATUS_TYPE_CANDIDATE_LIST:
-			  {
-				uint32_t i = 0;
+			{
+				struct PARAM_INDICATION_EVENT *prEvent =
+				(struct PARAM_INDICATION_EVENT *) pvBuf;
 
-				struct PARAM_PMKID_CANDIDATE
-					*prPmkidCand =
-					    (struct PARAM_PMKID_CANDIDATE *)
-						&pPmkid->arCandidateList[0];
+				cfg80211_pmksa_candidate_notify(
+					prGlueInfo->prDevHandler,
+					1000,
+					prEvent->rCandi.arBSSID,
+					prEvent->rCandi.u4Flags,
+					GFP_KERNEL);
 
-				for (i = 0; i < pPmkid->u4NumCandidates; i++) {
-					cfg80211_pmksa_candidate_notify(
-						prGlueInfo->prDevHandler,
-						1000,
-						prPmkidCand[i].arBSSID,
-						prPmkidCand[i].u4Flags,
-						GFP_KERNEL);
-
-					wext_indicate_wext_event(
-						prGlueInfo,
-						IWEVPMKIDCAND,
-						(unsigned char *)
-						&pPmkid->arCandidateList[i],
-						pPmkid->u4NumCandidates);
-				}
-			  }
+				wext_indicate_wext_event(
+					prGlueInfo,
+					IWEVPMKIDCAND,
+					(unsigned char *) &prEvent->rCandi,
+					sizeof(struct PARAM_PMKID_CANDIDATE));
 				break;
+			}
 			case ENUM_STATUS_TYPE_FT_AUTH_STATUS:
 				cfg80211_ft_event(prGlueInfo->prDevHandler,
 						  &prGlueInfo->rFtEventParam);

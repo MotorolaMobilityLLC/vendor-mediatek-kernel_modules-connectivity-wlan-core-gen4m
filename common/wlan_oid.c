@@ -2636,18 +2636,6 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 				}
 			}
 #endif
-			if ((prCmdKey->ucAlgorithmId == CIPHER_SUITE_CCMP) &&
-			    rsnCheckPmkidCandicate(prAdapter)) {
-				DBGLOG(RSN, TRACE,
-					"Add key: Prepare a timer to indicate candidate PMKID Candidate\n");
-				cnmTimerStopTimer(prAdapter,
-				  &prAisSpecBssInfo->rPreauthenticationTimer);
-				cnmTimerStartTimer(prAdapter,
-				  &prAisSpecBssInfo->rPreauthenticationTimer,
-				  SEC_TO_MSEC(
-					WAIT_TIME_IND_PMKID_CANDICATE_SEC));
-			}
-
 			if (prCmdKey->ucAlgorithmId == CIPHER_SUITE_TKIP) {
 				/* Todo:: Support AP mode defragment */
 				/* for pairwise key only */
@@ -3489,77 +3477,6 @@ wlanoidSetEncryptionStatus(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This routine is called to test the driver.
- *
- * \param[in] prAdapter Pointer to the Adapter structure.
- * \param[in] pvSetBuffer A pointer to the buffer that holds the data to be set.
- * \param[in] u4SetBufferLen The length of the set buffer.
- * \param[out] pu4SetInfoLen If the call is successful, returns the number of
- *                          bytes read from the set buffer. If the call failed
- *                          due to invalid length of the set buffer, returns
- *                          the amount of storage needed.
- *
- * \retval WLAN_STATUS_SUCCESS
- * \retval WLAN_STATUS_INVALID_LENGTH
- * \retval WLAN_STATUS_INVALID_DATA
- */
-/*----------------------------------------------------------------------------*/
-uint32_t
-wlanoidSetTest(IN struct ADAPTER *prAdapter,
-	       IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
-	       OUT uint32_t *pu4SetInfoLen) {
-	struct PARAM_802_11_TEST *prTest;
-	void *pvTestData;
-	void *pvStatusBuffer;
-	uint32_t u4StatusBufferSize;
-
-	DEBUGFUNC("wlanoidSetTest");
-
-	ASSERT(prAdapter);
-
-	ASSERT(pu4SetInfoLen);
-	ASSERT(pvSetBuffer);
-
-	*pu4SetInfoLen = u4SetBufferLen;
-
-	prTest = (struct PARAM_802_11_TEST *) pvSetBuffer;
-
-	DBGLOG(REQ, TRACE, "Test - Type %u\n", prTest->u4Type);
-
-	switch (prTest->u4Type) {
-	case 1:		/* Type 1: generate an authentication event */
-		pvTestData = (void *) &prTest->u.AuthenticationEvent;
-		pvStatusBuffer = (void *)
-				 prAdapter->aucIndicationEventBuffer;
-		u4StatusBufferSize = prTest->u4Length - 8;
-		if (u4StatusBufferSize > sizeof(
-			    prTest->u.AuthenticationEvent))
-			return WLAN_STATUS_INVALID_LENGTH;
-		break;
-
-	case 2:		/* Type 2: generate an RSSI status indication */
-		pvTestData = (void *) &prTest->u.RssiTrigger;
-		pvStatusBuffer = (void *)
-				 &prAdapter->rWlanInfo.rCurrBssId.rRssi;
-		u4StatusBufferSize = sizeof(int32_t);
-		break;
-
-	default:
-		return WLAN_STATUS_INVALID_DATA;
-	}
-
-	/* Get the contents of the StatusBuffer from the test structure. */
-	kalMemCopy(pvStatusBuffer, pvTestData, u4StatusBufferSize);
-
-	kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
-				     WLAN_STATUS_MEDIA_SPECIFIC_INDICATION,
-				     pvStatusBuffer, u4StatusBufferSize);
-
-	return WLAN_STATUS_SUCCESS;
-}				/* wlanoidSetTest */
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief This routine is called to query the driver's WPA2 status.
  *
  * \param[in] prAdapter Pointer to the Adapter structure.
@@ -3600,7 +3517,6 @@ wlanoidQueryCapability(IN struct ADAPTER *prAdapter,
 
 	prCap->u4Length = *pu4QueryInfoLen;
 	prCap->u4Version = 2;	/* WPA2 */
-	prCap->u4NoOfPMKIDs = CFG_MAX_PMKID_CACHE;
 	prCap->u4NoOfAuthEncryptPairsSupported = 14;
 
 	prAuthenticationEncryptionSupported =
@@ -3684,67 +3600,6 @@ wlanoidQueryCapability(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This routine is called to query the PMKID in the PMK cache.
- *
- * \param[in] prAdapter Pointer to the Adapter structure.
- * \param[out] pvQueryBuffer A pointer to the buffer that holds the result of
- *                           the query.
- * \param[in] u4QueryBufferLen The length of the query buffer.
- * \param[out] pu4QueryInfoLen If the call is successful, returns the number of
- *                             bytes written into the query buffer. If the call
- *                             failed due to invalid length of the query buffer,
- *                             returns the amount of storage needed.
- *
- * \retval WLAN_STATUS_SUCCESS
- * \retval WLAN_STATUS_INVALID_LENGTH
- */
-/*----------------------------------------------------------------------------*/
-uint32_t
-wlanoidQueryPmkid(IN struct ADAPTER *prAdapter,
-		  OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
-		  OUT uint32_t *pu4QueryInfoLen) {
-	uint32_t i;
-	struct PARAM_PMKID *prPmkid;
-	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
-
-	DEBUGFUNC("wlanoidQueryPmkid");
-
-	ASSERT(prAdapter);
-	ASSERT(pu4QueryInfoLen);
-	if (u4QueryBufferLen)
-		ASSERT(pvQueryBuffer);
-
-	prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
-
-	*pu4QueryInfoLen = OFFSET_OF(struct PARAM_PMKID,
-				     arBSSIDInfo) +
-			   prAisSpecBssInfo->u4PmkidCacheCount * sizeof(
-				   struct PARAM_BSSID_INFO);
-
-	if (u4QueryBufferLen < *pu4QueryInfoLen)
-		return WLAN_STATUS_INVALID_LENGTH;
-
-	prPmkid = (struct PARAM_PMKID *) pvQueryBuffer;
-
-	prPmkid->u4Length = *pu4QueryInfoLen;
-	prPmkid->u4BSSIDInfoCount =
-		prAisSpecBssInfo->u4PmkidCacheCount;
-
-	for (i = 0; i < prAisSpecBssInfo->u4PmkidCacheCount; i++) {
-		kalMemCopy(prPmkid->arBSSIDInfo[i].aucBssid,
-			prAisSpecBssInfo->arPmkidCache[i].rBssidInfo.aucBssid,
-			(sizeof(uint8_t) * PARAM_MAC_ADDR_LEN));
-		kalMemCopy(prPmkid->arBSSIDInfo[i].arPMKID,
-			prAisSpecBssInfo->arPmkidCache[i].rBssidInfo.arPMKID,
-			(sizeof(uint8_t) * 16));
-	}
-
-	return WLAN_STATUS_SUCCESS;
-
-}				/* wlanoidQueryPmkid */
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief This routine is called to set the PMKID to the PMK cache in the
  *        driver.
  *
@@ -3756,149 +3611,86 @@ wlanoidQueryPmkid(IN struct ADAPTER *prAdapter,
  *                           due to invalid length of the set buffer, returns
  *                           the amount of storage needed.
  *
- * \retval WLAN_STATUS_SUCCESS
- * \retval WLAN_STATUS_BUFFER_TOO_SHORT
- * \retval WLAN_STATUS_INVALID_DATA
+ * \retval status
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
 wlanoidSetPmkid(IN struct ADAPTER *prAdapter,
 		IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen) {
-	uint32_t i, j;
+		OUT uint32_t *pu4SetInfoLen)
+{
 	struct PARAM_PMKID *prPmkid;
-	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
-
-	DEBUGFUNC("wlanoidSetPmkid");
 
 	DBGLOG(REQ, INFO, "wlanoidSetPmkid\n");
 
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
+	ASSERT(pvSetBuffer);
 
 	*pu4SetInfoLen = u4SetBufferLen;
+	prPmkid = (struct PARAM_PMKID *) pvSetBuffer;
+	if (u4SetBufferLen < sizeof(struct PARAM_PMKID))
+		return WLAN_STATUS_INVALID_DATA;
+	return rsnSetPmkid(prAdapter, prPmkid);
+} /* wlanoidSetPmkid */
 
-	/* It's possibble BSSIDInfoCount is zero, because OS wishes to clean
-	 * PMKID
-	 */
-	if (u4SetBufferLen < OFFSET_OF(struct PARAM_PMKID,
-				       arBSSIDInfo))
-		return WLAN_STATUS_BUFFER_TOO_SHORT;
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to delete the PMKID in the PMK cache.
+ *
+ * \param[in] prAdapter Pointer to the Adapter structure.
+ * \param[in] pvSetBuffer A pointer to the buffer that holds the data to be set.
+ * \param[in] u4SetBufferLen The length of the set buffer.
+ * \param[out] pu4SetInfoLen If the call is successful, returns the number of
+ *                           bytes read from the set buffer. If the call failed
+ *                           due to invalid length of the set buffer, returns
+ *                           the amount of storage needed.
+ *
+ * \retval status
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidDelPmkid(IN struct ADAPTER *prAdapter,
+		IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		OUT uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_PMKID *prPmkid;
 
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
 	ASSERT(pvSetBuffer);
+
+	*pu4SetInfoLen = u4SetBufferLen;
 	prPmkid = (struct PARAM_PMKID *) pvSetBuffer;
 
-	if (u4SetBufferLen <
-	    ((prPmkid->u4BSSIDInfoCount * sizeof(struct
-			    PARAM_BSSID_INFO)) + OFFSET_OF(struct PARAM_PMKID,
-					    arBSSIDInfo)))
+	if (u4SetBufferLen < sizeof(struct PARAM_PMKID))
 		return WLAN_STATUS_INVALID_DATA;
+	return rsnDelPmkid(prAdapter, prPmkid);
+} /* wlanoidDelPmkid */
 
-	if (prPmkid->u4BSSIDInfoCount > CFG_MAX_PMKID_CACHE)
-		return WLAN_STATUS_INVALID_DATA;
-
-	DBGLOG(REQ, INFO, "Count %u\n", prPmkid->u4BSSIDInfoCount);
-
-	prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
-
-	/* This OID replace everything in the PMKID cache. */
-	if (prPmkid->u4BSSIDInfoCount == 0) {
-		prAisSpecBssInfo->u4PmkidCacheCount = 0;
-		kalMemZero(prAisSpecBssInfo->arPmkidCache,
-			   sizeof(struct PMKID_ENTRY) * CFG_MAX_PMKID_CACHE);
-	}
-	if ((prAisSpecBssInfo->u4PmkidCacheCount +
-	     prPmkid->u4BSSIDInfoCount > CFG_MAX_PMKID_CACHE)) {
-		prAisSpecBssInfo->u4PmkidCacheCount = 0;
-		kalMemZero(prAisSpecBssInfo->arPmkidCache,
-			   sizeof(struct PMKID_ENTRY) * CFG_MAX_PMKID_CACHE);
-	}
-
-	/*
-	 *  The driver can only clear its PMKID cache whenever it make a media
-	 *  disconnect indication. Otherwise, it must change the PMKID cache
-	 *  only when set through this OID.
-	 */
-	for (i = 0; i < prPmkid->u4BSSIDInfoCount; i++) {
-		/* Search for desired BSSID. If desired BSSID is found,
-		 *  then set the PMKID
-		 */
-		if (!rsnSearchPmkidEntry(prAdapter,
-		    (uint8_t *) prPmkid->arBSSIDInfo[i].aucBssid, &j)) {
-			/* No entry found for the specified BSSID, so add one
-			 * entry
-			 */
-			if (prAisSpecBssInfo->u4PmkidCacheCount <
-			    CFG_MAX_PMKID_CACHE - 1) {
-				j = prAisSpecBssInfo->u4PmkidCacheCount;
-				kalMemCopy(
-					prAisSpecBssInfo->arPmkidCache[j]
-					.rBssidInfo.aucBssid,
-					prPmkid->arBSSIDInfo[i].aucBssid,
-					(sizeof(uint8_t) * PARAM_MAC_ADDR_LEN));
-				prAisSpecBssInfo->u4PmkidCacheCount++;
-			} else {
-				j = CFG_MAX_PMKID_CACHE;
-			}
-		}
-
-		if (j < CFG_MAX_PMKID_CACHE) {
-			kalMemCopy(
-				prAisSpecBssInfo->arPmkidCache[j].rBssidInfo
-				.arPMKID,
-				prPmkid->arBSSIDInfo[i].arPMKID,
-				(sizeof(uint8_t) * 16));
-			DBGLOG(RSN, TRACE,
-			       "Add BSSID " MACSTR " idx=%u PMKID value " MACSTR
-			       "\n",
-			       MAC2STR(prAisSpecBssInfo->arPmkidCache[j]
-			       .rBssidInfo.aucBssid),
-			       j,
-			       MAC2STR(prAisSpecBssInfo->arPmkidCache[j]
-			       .rBssidInfo.arPMKID));
-			prAisSpecBssInfo->arPmkidCache[j].fgPmkidExist = TRUE;
-		}
-	}
-
-	if (prAdapter->rWifiVar.rConnSettings.fgOkcEnabled) {
-		struct BSS_DESC *prBssDesc =
-				prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
-		uint8_t *pucPmkID = NULL;
-
-		if ((prPmkid->u4Length & BIT(31)) ||
-		    (prBssDesc && EQUAL_MAC_ADDR(
-		    prPmkid->arBSSIDInfo[0].aucBssid, prBssDesc->aucBSSID))) {
-			if (j == CFG_MAX_PMKID_CACHE) {
-				j = 0;
-				kalMemCopy(
-					prAisSpecBssInfo->arPmkidCache[0]
-					.rBssidInfo.aucBssid,
-					prPmkid->arBSSIDInfo[0].aucBssid,
-					(sizeof(uint8_t) * PARAM_MAC_ADDR_LEN));
-				kalMemCopy(
-					prAisSpecBssInfo->arPmkidCache[0]
-					.rBssidInfo.arPMKID,
-					prPmkid->arBSSIDInfo[0].arPMKID,
-					(sizeof(uint8_t) * 16));
-				prAisSpecBssInfo->arPmkidCache[0].fgPmkidExist
-									= TRUE;
-			}
-			pucPmkID = prAisSpecBssInfo->arPmkidCache[j].rBssidInfo
-				   .arPMKID;
-			log_dbg(RSN, INFO, MACSTR " OKC PMKID %02x%02x%02x%02x%02x%02x%02x%02x...\n",
-				MAC2STR(prAisSpecBssInfo->
-				arPmkidCache[j].rBssidInfo.aucBssid),
-				pucPmkID[0], pucPmkID[1],
-				pucPmkID[2], pucPmkID[3],
-				pucPmkID[4], pucPmkID[5],
-				pucPmkID[6], pucPmkID[7]);
-		}
-		aisFsmRunEventSetOkcPmk(prAdapter);
-	}
-
-	return WLAN_STATUS_SUCCESS;
-
-}				/* wlanoidSetPmkid */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to delete all the PMKIDs in the PMK cache.
+ *
+ * \param[in] prAdapter Pointer to the Adapter structure.
+ * \param[in] pvSetBuffer A pointer to the buffer that holds the data to be set.
+ * \param[in] u4SetBufferLen The length of the set buffer.
+ * \param[out] pu4SetInfoLen If the call is successful, returns the number of
+ *                           bytes read from the set buffer. If the call failed
+ *                           due to invalid length of the set buffer, returns
+ *                           the amount of storage needed.
+ *
+ * \retval status
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidFlushPmkid(IN struct ADAPTER *prAdapter,
+		IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		OUT uint32_t *pu4SetInfoLen)
+{
+	ASSERT(prAdapter);
+	return rsnFlushPmkid(prAdapter);
+} /* wlanoidFlushPmkid */
 
 /*----------------------------------------------------------------------------*/
 /*!
