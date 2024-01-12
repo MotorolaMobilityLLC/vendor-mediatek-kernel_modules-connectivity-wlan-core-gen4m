@@ -2279,6 +2279,32 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.u4PolicySize = ARRAY_SIZE(set_6g_pwr_mode_policy)
 	},
 #endif
+#if CFG_SUPPORT_WED_PROXY
+	{
+		.pcCmdStr  = CMD_SET_WED_ENABLE,
+		.pfHandler = priv_driver_set_wed_enable,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+	{
+		.pcCmdStr  = CMD_SET_DRV_MCR_DIRECTLY,
+		.pfHandler = priv_driver_set_drv_mcr_directly,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
+		.policy    = set_mcr_policy,
+		.u4PolicySize = ARRAY_SIZE(set_mcr_policy)
+	},
+	{
+		.pcCmdStr  = CMD_GET_DRV_MCR_DIRECTLY,
+		.pfHandler = priv_driver_get_drv_mcr_directly,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(2),
+		.policy    = get_mcr_policy,
+		.u4PolicySize = ARRAY_SIZE(get_mcr_policy)
+	},
+#endif
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
 	{
 		.pcCmdStr  = CMD_GET_POWER_LIMIT,

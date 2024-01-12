@@ -2811,6 +2811,14 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
 HIF_OBJS :=  $(HIF_DIR)none.o
 endif
 
+# wed support
+ifeq ($(CONFIG_MTK_WIFI_WED), y)
+HIF_OBJS += $(HIF_COMMON_DIR)hal_wed.o
+ccflags-y += -DCFG_SUPPORT_WED_PROXY=1
+else
+ccflags-y += -DCFG_SUPPORT_WED_PROXY=0
+endif
+
 # ---------------------------------------------------
 # Platform Objects List
 # ---------------------------------------------------

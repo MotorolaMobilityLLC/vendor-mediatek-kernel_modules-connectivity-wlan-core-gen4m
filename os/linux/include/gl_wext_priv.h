@@ -1051,6 +1051,14 @@ int priv_driver_phy_ctrl(struct net_device *prNetDev,
 int priv_driver_set_6g_pwr_mode(struct net_device *prNetDev, char *pcCommand,
 			int i4TotalLen);
 #endif
+#if CFG_SUPPORT_WED_PROXY
+int priv_driver_set_wed_enable(struct net_device *prNetDev,
+		char *pcCommand, int i4TotalLen);
+int priv_driver_set_drv_mcr_directly(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_get_drv_mcr_directly(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+#endif
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
 int priv_driver_get_power_limit_emi_data(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);

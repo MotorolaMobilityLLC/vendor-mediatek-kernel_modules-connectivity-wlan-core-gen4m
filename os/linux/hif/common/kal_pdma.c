@@ -1043,7 +1043,11 @@ static u_int8_t _kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 #endif
 	/* Static mapping */
 	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
+#if CFG_SUPPORT_WED_PROXY
+		WARP_PROXY_IO_READ32(prGlueInfo, u4BusAddr, pu4Value);
+#else
 		RTMP_IO_READ32(prChipInfo, u4BusAddr, pu4Value);
+#endif
 #if IS_ENABLED(CFG_SUPPORT_CONNAC1X) || (CFG_SUPPORT_CONNAC2X == 1)
 		if (prGlueInfo &&
 		    kalIsChipDead(prGlueInfo, u4Register, pu4Value)) {
@@ -1250,7 +1254,11 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 	}
 #else
 	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
+#if CFG_SUPPORT_WED_PROXY
+		WARP_PROXY_IO_WRITE32(prGlueInfo, u4BusAddr, u4Value);
+#else
 		RTMP_IO_WRITE32(prChipInfo, u4BusAddr, u4Value);
+#endif
 	} else {
 		if (kalDevRegL1Remap(&u4Register))
 			kalDevRegL1Write(prGlueInfo, prChipInfo, u4Register,
@@ -1483,6 +1491,178 @@ u_int8_t kalDevRegReadRange(
 	return _kalDevRegReadRange(glue, reg, buf, total_size);
 }
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
+
+#if CFG_SUPPORT_WED_PROXY
+u_int8_t kalDevRegReadDirectly(struct GLUE_INFO *prGlueInfo,
+		       uint32_t u4Register, uint32_t *pu4Value)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
+	uint32_t u4BusAddr = u4Register;
+
+	if (!pu4Value) {
+		DBGLOG(INIT, ERROR, "pu4Value is NULL.\n");
+		return FALSE;
+	}
+
+	if (prGlueInfo) {
+		prHifInfo = &prGlueInfo->rHifInfo;
+		prAdapter = prGlueInfo->prAdapter;
+		if (!prAdapter) {
+			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+			return FALSE;
+		}
+	}
+	DBGLOG(NIC, TRACE, "enter\n");
+	glGetChipInfo((void **)&prChipInfo);
+	if (!prChipInfo)
+		return FALSE;
+
+	if (kalIsHostReg(prChipInfo, u4Register)) {
+		RTMP_HOST_IO_READ32(prChipInfo, u4Register, pu4Value);
+		return TRUE;
+	}
+
+	if (fgIsBusAccessFailed) {
+		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+		if (is_wifi_coredump_processing())
+			return FALSE;
+		else if (fgTriggerDebugSop && kalIsResetting()) {
+			return kalDevRegReadViaBT(prGlueInfo,
+				u4Register, pu4Value);
+		}
+#endif
+		return FALSE;
+	}
+
+	prBusInfo = prChipInfo->bus_info;
+
+	if (prHifInfo && !prHifInfo->fgIsDumpLog &&
+	    prBusInfo->isValidRegAccess &&
+	    !prBusInfo->isValidRegAccess(prAdapter, u4Register)) {
+		/* Don't print log when resetting */
+		if (prAdapter && !wlanIsChipNoAck(prAdapter)) {
+			DBGLOG(HAL, ERROR,
+			       "Invalid access! Get CR[0x%08x/0x%08x] value[0x%08x]\n",
+			       u4Register, u4BusAddr, *pu4Value);
+		}
+		*pu4Value = HIF_DEADFEED_VALUE;
+		return FALSE;
+	}
+
+	/* Static mapping */
+	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
+		RTMP_IO_READ32(prChipInfo, u4BusAddr, pu4Value);
+	} else {
+		if (kalDevRegL1Remap(&u4Register))
+			kalDevRegL1Read(prGlueInfo, prChipInfo, u4Register,
+				pu4Value);
+		else
+			kalDevRegL2Read(prGlueInfo, prChipInfo, u4Register,
+				pu4Value);
+	}
+
+	return TRUE;
+}
+
+u_int8_t kalDevRegWriteDirectly(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Register, uint32_t u4Value)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
+	uint32_t u4BusAddr = u4Register;
+
+	if (prGlueInfo) {
+		prHifInfo = &prGlueInfo->rHifInfo;
+		prAdapter = prGlueInfo->prAdapter;
+		if (!prAdapter) {
+			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+			return FALSE;
+		}
+	}
+
+	glGetChipInfo((void **)&prChipInfo);
+	if (!prChipInfo)
+		return FALSE;
+
+	prBusInfo = prChipInfo->bus_info;
+
+	if (kalIsHostReg(prChipInfo, u4Register)) {
+		RTMP_HOST_IO_WRITE32(prChipInfo, u4Register, u4Value);
+		return TRUE;
+	}
+
+	if (fgIsBusAccessFailed) {
+		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+		if (is_wifi_coredump_processing())
+			return FALSE;
+		else if (fgTriggerDebugSop && kalIsResetting()) {
+			return kalDevRegWriteViaBT(prGlueInfo,
+				u4Register, u4Value);
+		}
+#endif
+		return FALSE;
+	}
+
+	if (prHifInfo && !prHifInfo->fgIsDumpLog &&
+	    prBusInfo->isValidRegAccess &&
+	    !prBusInfo->isValidRegAccess(prAdapter, u4Register)) {
+		/* Don't print log when resetting */
+		if (prAdapter && !wlanIsChipNoAck(prAdapter)) {
+			DBGLOG(HAL, ERROR,
+			       "Invalid access! Set CR[0x%08x/0x%08x] value[0x%08x]\n",
+			       u4Register, u4BusAddr, u4Value);
+		}
+		return FALSE;
+	}
+
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+	if ((u4Register >= 0x18050000 && u4Register <= 0x18051000) ||
+	    (u4Register >= 0x7c050000 && u4Register <= 0x7c051000) ||
+	    (u4Register >= 0x7c000000 && u4Register < 0x7c001000) ||
+	    (u4Register >= 0x18000000 && u4Register < 0x18001000)) {
+		dump_stack();
+		kalSendAeeException("WLAN",
+			"Corrupt conninfra cmdbt:  reg: 0x%08x, val: 0x%08x\n",
+			u4Register, u4Value);
+	}
+#endif
+
+	/* Static mapping */
+#if (CFG_WLAN_ATF_SUPPORT == 1)
+	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
+		kalSendAtfSmcCmd(SMC_WLAN_DEV_REG_WR_CR_OPID,
+			prChipInfo->u4CsrOffset + u4BusAddr,
+			u4Value, 0);
+	} else {
+		DBGLOG(INIT, ERROR, "Write CONSYS ERROR 0x%08x=0x%08x.\n",
+			u4Register, u4Value);
+	}
+#else
+	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
+		RTMP_IO_WRITE32(prChipInfo, u4BusAddr, u4Value);
+	} else {
+		if (kalDevRegL1Remap(&u4Register))
+			kalDevRegL1Write(prGlueInfo, prChipInfo, u4Register,
+				u4Value);
+		else
+			kalDevRegL2Write(prGlueInfo, prChipInfo, u4Register,
+				u4Value);
+	}
+#endif
+
+	if (prHifInfo)
+		prHifInfo->u4HifCnt++;
+
+	return TRUE;
+}
+#endif
 
 #if CFG_MTK_WIFI_SW_EMI_RING
 u_int8_t kalDevRegReadByEmi(struct GLUE_INFO *prGlueInfo,

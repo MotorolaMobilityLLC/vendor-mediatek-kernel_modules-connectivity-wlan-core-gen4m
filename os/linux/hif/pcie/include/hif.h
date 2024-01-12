@@ -316,6 +316,10 @@ struct GL_HIF_INFO {
 	uint32_t u4MmioReadHistoryIdx;
 	uint32_t u4MmioReadReasonCnt[HIF_DEV_REG_MAX];
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
+#if CFG_SUPPORT_WED_PROXY
+	irq_handler_t irq_handler;
+	irq_handler_t irq_handler_thread;
+#endif
 };
 
 struct BUS_INFO {

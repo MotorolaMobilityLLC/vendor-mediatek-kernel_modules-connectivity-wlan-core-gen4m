@@ -28,6 +28,10 @@ u_int8_t mtk_is_wfdma_ready(struct GLUE_INFO *prGlueInfo, uint8_t ucRingNum)
 	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 	if (!IS_FEATURE_ENABLED(prWifiVar->fgEnWfdmaNoMmioRead))
 		return TRUE;
+#if CFG_SUPPORT_WED_PROXY
+	if (IsWedAttached() == TRUE)
+		return TRUE;
+#endif
 
 	return halIsWfdmaRxRingReady(prGlueInfo, ucRingNum);
 }

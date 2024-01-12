@@ -8502,6 +8502,11 @@ uint32_t nicUniCmdRttRangeRequest(struct ADAPTER *ad,
 uint32_t nicUniCmdGetTputFactor(struct ADAPTER *ad, uint32_t u4WtblFlag);
 #endif
 
+#if CFG_SUPPORT_WED_PROXY
+uint32_t nicUniCmdStaRecConnType(struct ADAPTER *ad,
+		uint32_t legacy_sta_type);
+#endif
+
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
 uint32_t nicUniCmdPowerLimitEmiInfo(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);

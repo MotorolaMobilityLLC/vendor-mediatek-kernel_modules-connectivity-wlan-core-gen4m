@@ -1339,6 +1339,10 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 
 	spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
 
+#if CFG_SUPPORT_WED_PROXY
+	WARP_TOKEN_TO_OFFSET(prToken, HIF_TX_MSDU_TOKEN_NUM);
+#endif
+
 	DBGLOG(HAL, LOUD,
 		       "Acquire Entry[0x%p] Tok[%u] Buf[%p] Len[%u]\n",
 		       prToken, prToken->u4Token,
@@ -1836,6 +1840,13 @@ u_int8_t halProcessToken(struct ADAPTER *prAdapter,
 	struct RTMP_DMACB *prTxCell;
 	struct RTMP_TX_RING *prTxRing;
 
+#if CFG_SUPPORT_WED_PROXY
+	/* filter those token which is WED own */
+	if (u4Token < HIF_TX_MSDU_TOKEN_NUM)
+		return FALSE;
+	WARP_OFFSET_TO_TOKEN(u4Token, HIF_TX_MSDU_TOKEN_NUM);
+#endif
+
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
 	prTokenInfo = &prHifInfo->rTokenInfo;
@@ -1992,6 +2003,12 @@ void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
 	struct timespec64 rNowTs;
 	uint8_t ucBssIndex;
 
+#if CFG_SUPPORT_WED_PROXY
+	/* filter those token which is WED own */
+	if (u4Token < HIF_TX_MSDU_TOKEN_NUM)
+		return;
+	WARP_OFFSET_TO_TOKEN(u4Token, HIF_TX_MSDU_TOKEN_NUM);
+#endif
 	if (u4Token >= prTokenInfo->u4TokenNum)
 		return;
 
@@ -2424,7 +2441,12 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 			break;
 
 		if (fgRxData) {
+#if CFG_SUPPORT_WED_PROXY
+			fgStatus = wedDevReadData(prAdapter->prGlueInfo,
+					u4Port, prSwRfb);
+#else
 			fgStatus = kalDevReadData(prGlueInfo, u4Port, prSwRfb);
+#endif
 		} else {
 			pucBuf = prSwRfb->pucRecvBuff;
 			ASSERT(pucBuf);
@@ -3506,7 +3528,11 @@ uint32_t halWpdmaGetRxDmaDoneCnt(struct GLUE_INFO *prGlueInfo,
 	if (u4MaxCnt == 0)
 		goto exit;
 
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnWfdmaNoMmioRead)) {
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnWfdmaNoMmioRead)
+#if CFG_SUPPORT_WED_PROXY
+	    && (IsWedAttached() == FALSE)
+#endif
+	) {
 		u4CpuIdx = prRxRing->RxCpuIdx;
 		INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
 		while (halIsWfdmaRxReady(prRxRing, u4CpuIdx)) {

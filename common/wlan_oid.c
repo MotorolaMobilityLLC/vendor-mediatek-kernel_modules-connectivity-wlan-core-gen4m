@@ -6540,6 +6540,74 @@ wlanoidSetDrvMcrWrite(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }				/* wlanoidSetMcrWrite */
 
+#if CFG_SUPPORT_WED_PROXY
+uint32_t
+wlanoidQueryDrvMcrReadDirectly(struct ADAPTER *prAdapter,
+		       void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+		       uint32_t *pu4QueryInfoLen)
+{
+	struct PARAM_CUSTOM_MCR_RW_STRUCT *prMcrRdInfo;
+
+	DBGLOG(INIT, LOUD, "\n");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4QueryInfoLen);
+	if (u4QueryBufferLen)
+		ASSERT(pvQueryBuffer);
+
+	*pu4QueryInfoLen = sizeof(struct PARAM_CUSTOM_MCR_RW_STRUCT);
+	if (u4QueryBufferLen < sizeof(struct PARAM_CUSTOM_MCR_RW_STRUCT))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	prMcrRdInfo = (struct PARAM_CUSTOM_MCR_RW_STRUCT *)pvQueryBuffer;
+
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	kalDevRegReadDirectly(prAdapter->prGlueInfo,
+			      (prMcrRdInfo->u4McrOffset & BITS(2, 31)),
+			      &prMcrRdInfo->u4McrData);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+
+	DBGLOG(INIT, TRACE,
+	       "DRV MCR Read: Offset = %#08x, Data = %#08x\n",
+	       prMcrRdInfo->u4McrOffset, prMcrRdInfo->u4McrData);
+
+	return WLAN_STATUS_SUCCESS;
+}  /* end of wlanoidQueryMcrRead() */
+
+uint32_t
+wlanoidSetDrvMcrWriteDirectly(struct ADAPTER *prAdapter,
+		      void *pvSetBuffer, uint32_t u4SetBufferLen,
+		      uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_CUSTOM_MCR_RW_STRUCT *prMcrWrInfo;
+
+	DBGLOG(INIT, LOUD, "\n");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = sizeof(struct PARAM_CUSTOM_MCR_RW_STRUCT);
+	if (u4SetBufferLen < sizeof(struct PARAM_CUSTOM_MCR_RW_STRUCT))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ASSERT(pvSetBuffer);
+
+	prMcrWrInfo = (struct PARAM_CUSTOM_MCR_RW_STRUCT *)pvSetBuffer;
+
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	kalDevRegWriteDirectly(prAdapter->prGlueInfo,
+			       prMcrWrInfo->u4McrOffset & BITS(2, 31),
+			       prMcrWrInfo->u4McrData);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+
+	DBGLOG(INIT, TRACE,
+	       "DRV MCR Write: Offset = %#08x, Data = %#08x\n",
+	       prMcrWrInfo->u4McrOffset, prMcrWrInfo->u4McrData);
+
+	return WLAN_STATUS_SUCCESS;
+}  /* wlanoidSetMcrWrite */
+#endif
+
 #if CFG_MTK_WIFI_SW_EMI_RING
 uint32_t wlanoidQueryEmiMcrRead(
 	struct ADAPTER *prAdapter,
@@ -17938,5 +18006,51 @@ wlanoidSendPwrLimitToEmi(struct ADAPTER *prAdapter,
 			"FW is reading EMI, Cache and wait FW response\n");
 	}
 	return 0;
+}
+#endif
+
+#if CFG_SUPPORT_WED_PROXY
+uint32_t
+wlanoidWedAttachWarp(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct net_device *prDev = NULL;
+
+	ASSERT(prAdapter);
+	ASSERT(pvSetBuffer);
+
+	if (u4SetBufferLen < sizeof(struct net_device *))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	prDev = (struct net_device *)pvSetBuffer;
+
+	wedAttachWarp(prAdapter, prDev, WED_ATTACH_IFON);
+
+	return rStatus;
+}
+
+uint32_t
+wlanoidWedDetachWarp(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct net_device *prDev = NULL;
+
+	ASSERT(prAdapter);
+	ASSERT(pvSetBuffer);
+
+	if (u4SetBufferLen < sizeof(struct net_device *))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	prDev = (struct net_device *)pvSetBuffer;
+
+	wedDetachWarp(prAdapter, prDev, WED_DETACH_IFDOWN);
+
+	return rStatus;
 }
 #endif

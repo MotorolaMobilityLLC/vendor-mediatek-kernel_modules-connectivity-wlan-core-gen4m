@@ -407,6 +407,12 @@
 #define CMD_FORCE_STBC				"FORCE_STBC"
 #define CMD_FORCE_MRC				"FORCE_MRC"
 
+#if CFG_SUPPORT_WED_PROXY
+#define CMD_SET_WED_ENABLE			"SET_WED_ENABLE"
+#define CMD_SET_DRV_MCR_DIRECTLY		"SET_DRV_MCR_DIRECTLY"
+#define CMD_GET_DRV_MCR_DIRECTLY		"GET_DRV_MCR_DIRECTLY"
+#endif
+
 /*****************************************************************************
 *                             D A T A   T Y P E S
 ******************************************************************************

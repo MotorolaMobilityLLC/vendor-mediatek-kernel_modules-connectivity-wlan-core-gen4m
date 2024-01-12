@@ -8702,6 +8702,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		INIT_STR(prWifiVar->aucDmaMaxQuota, "DmaMaxQuota", aucBuf);
 	}
 #endif
+#if CFG_SUPPORT_WED_PROXY
+	INIT_UINT(prWifiVar->fgEnableWed, "EnableWed", FEATURE_ENABLED);
+#endif
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)

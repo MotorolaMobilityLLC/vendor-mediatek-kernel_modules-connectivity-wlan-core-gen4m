@@ -918,7 +918,7 @@ static void handle_host_rpt_v5_v6(struct ADAPTER *prAdapter,
 	struct tx_free_done_rpt *rpt,
 	struct QUE *prFreeQueue)
 {
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+#if (defined(_HIF_PCIE) || defined(_HIF_AXI)) && (CFG_SUPPORT_WED_PROXY == 0)
 	struct MSDU_TOKEN_INFO *prTokenInfo =
 		&prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
 #endif
@@ -976,7 +976,7 @@ static void handle_host_rpt_v5_v6(struct ADAPTER *prAdapter,
 			msdu1 = HAL_TX_FREE_DONE_GET_MSDU_ID1(*pos);
 
 			if (msdu0 != WF_TX_FREE_DONE_EVENT_MSDU_ID0_MASK) {
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+#if (defined(_HIF_PCIE) || defined(_HIF_AXI)) && (CFG_SUPPORT_WED_PROXY == 0)
 				if (msdu0 >= prTokenInfo->u4TokenNum) {
 					DBGLOG(HAL, ERROR,
 						"Invalid MSDU0 [%u]\n",
@@ -991,7 +991,7 @@ static void handle_host_rpt_v5_v6(struct ADAPTER *prAdapter,
 			}
 
 			if (msdu1 != WF_TX_FREE_DONE_EVENT_MSDU_ID0_MASK) {
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+#if (defined(_HIF_PCIE) || defined(_HIF_AXI)) && (CFG_SUPPORT_WED_PROXY == 0)
 				if (msdu1 >= prTokenInfo->u4TokenNum) {
 					DBGLOG(HAL, ERROR,
 						"Invalid MSDU1 [%u]\n",

@@ -1486,38 +1486,18 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx,
 /*----------------------------------------------------------------------------*/
 static int p2pOpen(struct net_device *prDev)
 {
-/* P_GLUE_INFO_T prGlueInfo = NULL; */
-/* P_ADAPTER_T prAdapter = NULL; */
-/* P_MSG_P2P_FUNCTION_SWITCH_T prFuncSwitch; */
+	struct GLUE_INFO *prGlueInfo = NULL;
+#if CFG_SUPPORT_WED_PROXY
+	uint32_t u4BufLen = 0;
+#endif
 
 	ASSERT(prDev);
-
-#if 0 /* Move after device name set. (mtk_p2p_set_local_dev_info) */
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 	ASSERT(prGlueInfo);
 
-	prAdapter = prGlueInfo->prAdapter;
-	ASSERT(prAdapter);
-
-	/* 1. switch P2P-FSM on */
-	/* 1.1 allocate for message */
-	prFuncSwitch = (P_MSG_P2P_FUNCTION_SWITCH_T) cnmMemAlloc(prAdapter,
-			RAM_TYPE_MSG, sizeof(MSG_P2P_FUNCTION_SWITCH_T));
-
-	if (!prFuncSwitch) {
-		ASSERT(0);	/* Can't trigger P2P FSM */
-		return -ENOMEM;
-	}
-
-	/* 1.2 fill message */
-	prFuncSwitch->rMsgHdr.eMsgId = MID_MNY_P2P_FUN_SWITCH;
-	prFuncSwitch->fgIsFuncOn = TRUE;
-
-	/* 1.3 send message */
-	mboxSendMsg(prAdapter,
-		MBOX_ID_0,
-		(struct MSG_HDR *) prFuncSwitch,
-		MSG_SEND_METHOD_BUF);
+#if CFG_SUPPORT_WED_PROXY
+	kalIoctlByBssIdx(prGlueInfo, wlanoidWedAttachWarp, prDev,
+		sizeof(struct net_device *), &u4BufLen, wlanGetBssIdx(prDev));
 #endif
 
 	/* 2. carrier on & start TX queue */
@@ -1558,6 +1538,9 @@ static int p2pStop(struct net_device *prDev)
 /* P_MSG_P2P_FUNCTION_SWITCH_T prFuncSwitch; */
 
 	GLUE_SPIN_LOCK_DECLARATION();
+#endif
+#if CFG_SUPPORT_WED_PROXY
+	uint32_t u4BufLen = 0;
 #endif
 
 	ASSERT(prDev);
@@ -1626,6 +1609,11 @@ static int p2pStop(struct net_device *prDev)
 
 #ifdef CONFIG_WIRELESS_EXT
 	prDev->wireless_handlers = NULL;
+#endif
+
+#if CFG_SUPPORT_WED_PROXY
+	kalIoctlByBssIdx(prGlueInfo, wlanoidWedDetachWarp, prDev,
+		sizeof(struct net_device *), &u4BufLen, wlanGetBssIdx(prDev));
 #endif
 
 	return 0;

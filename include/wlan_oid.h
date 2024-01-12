@@ -4298,6 +4298,20 @@ wlanoidSetDrvMcrWrite(struct ADAPTER *prAdapter,
 		      uint32_t u4SetBufferLen,
 		      uint32_t *pu4SetInfoLen);
 
+#if CFG_SUPPORT_WED_PROXY
+uint32_t
+wlanoidQueryDrvMcrReadDirectly(struct ADAPTER *prAdapter,
+		       void *pvQueryBuffer,
+		       uint32_t u4QueryBufferLen,
+		       uint32_t *pu4QueryInfoLen);
+
+uint32_t
+wlanoidSetDrvMcrWriteDirectly(struct ADAPTER *prAdapter,
+		      void *pvSetBuffer,
+		      uint32_t u4SetBufferLen,
+		      uint32_t *pu4SetInfoLen);
+#endif
+
 uint32_t
 wlanoidQueryEmiMcrRead(struct ADAPTER *prAdapter,
 		       void *pvQueryBuffer,
@@ -5515,5 +5529,18 @@ uint32_t
 wlanoidSetATXOP(struct ADAPTER *prAdapter,
 			   void *pvSetBuffer, uint32_t u4SetBufferLen,
 			   uint32_t *pu4SetInfoLen);
+
+#if CFG_SUPPORT_WED_PROXY
+uint32_t
+wlanoidWedAttachWarp(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen);
+uint32_t
+wlanoidWedDetachWarp(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen);
+#endif
 
 #endif /* _WLAN_OID_H */

@@ -1370,6 +1370,10 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		prCmdContent->ucIsQoS,
 		prCmdContent->ucIsUapsdSupported);
 
+#if CFG_SUPPORT_WED_PROXY
+	wedStaRecUpdate(prAdapter, prStaRec);
+#endif
+
 	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
 		CMD_ID_UPDATE_STA_RECORD,		/* ucCID */
 		TRUE,					/* fgSetQuery */
