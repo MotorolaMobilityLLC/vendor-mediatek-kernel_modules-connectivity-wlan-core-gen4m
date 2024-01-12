@@ -3562,9 +3562,10 @@ uint32_t nicQmUpdateWmmParms(struct ADAPTER *prAdapter,
 	 *   to enqueue data from HIF to HW.
 	 *  (Should revise if HIF can have separate queue for each AC)
 	 */
-	if (rCmdUpdateWmmParms.arACQueParms[AC1].u2Aifsn
-		< rCmdUpdateWmmParms.arACQueParms[AC2].u2Aifsn) {
-
+	if ((rCmdUpdateWmmParms.arACQueParms[AC1].u2Aifsn
+		< rCmdUpdateWmmParms.arACQueParms[AC2].u2Aifsn) ||
+		 (rCmdUpdateWmmParms.arACQueParms[AC1].u2CWmin
+			< rCmdUpdateWmmParms.arACQueParms[AC2].u2CWmin)) {
 		/* Use round-robbin queuing in HIF */
 		prAdapter->rWifiVar.ucTxMsduQueue = 1;
 
