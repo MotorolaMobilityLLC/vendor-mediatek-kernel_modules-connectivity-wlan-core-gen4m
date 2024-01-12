@@ -82,8 +82,6 @@ extern const struct WFA_DESENSE_CHANNEL_LIST desenseChList[BAND_NUM];
 struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
 	enum ENUM_ROAMING_REASON eRoamReason,
 	uint8_t ucBssIndex, struct BSS_DESC_SET *prBssDescSet);
-void apsUpdateEssApList(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
-void apsResetEssApList(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 #endif
 

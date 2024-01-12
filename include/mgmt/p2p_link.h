@@ -29,7 +29,7 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 
 int8_t p2pMldBssInit(struct ADAPTER *prAdapter);
 
-void p2MldBssUninit(struct ADAPTER *prAdapter);
+void p2pMldBssUninit(struct ADAPTER *prAdapter);
 
 #endif
 
@@ -37,6 +37,8 @@ void p2MldBssUninit(struct ADAPTER *prAdapter);
 void p2pLinkInitGCRole(IN struct ADAPTER *prAdapter);
 
 void p2pLinkUninitGCRole(IN struct ADAPTER *prAdapter);
+
+uint8_t p2pGetGCBssNum(IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo);
 #endif
 
 void p2pTargetBssDescResetConnecting(

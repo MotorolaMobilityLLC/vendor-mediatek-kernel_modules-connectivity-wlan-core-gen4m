@@ -179,11 +179,6 @@ void mldGenerateAssocIE(
 	struct MSDU_INFO *prMsduInfo,
 	PFN_COMPOSE_ASSOC_IE_FUNC pfnComposeIE);
 
-uint8_t mldGenerateExternalAuthIE(
-	struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStaRec,
-	uint8_t *pucBuf);
-
 void mldGenerateProbeRspIE(
 	struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 	uint8_t ucBssIdx, uint8_t fgComplete,
@@ -196,8 +191,6 @@ struct IE_MULTI_LINK_CONTROL *mldGenerateBasicCommonInfo(
 
 void mldGenerateMlProbeReqIE(uint8_t *pucIE,
 	uint32_t *u4IELength, uint8_t ucMldId);
-
-uint8_t mldIsMlProbeReq(const uint8_t *pucIE);
 
 void mldGenerateBasicCompleteProfile(
 	struct ADAPTER *prAdapter,
@@ -301,7 +294,11 @@ void mldStarecFree(struct ADAPTER *prAdapter,
 struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
 
-struct MLD_STA_RECORD *mldStarecGetByAddr(struct ADAPTER *prAdapter,
+struct MLD_STA_RECORD *mldStarecGetByMldAddr(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
+	uint8_t aucMacAddr[]);
+
+struct MLD_STA_RECORD *mldStarecGetByLinkAddr(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
 	uint8_t aucMacAddr[]);
 
@@ -328,5 +325,8 @@ uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,
 uint8_t mldIsMloFeatureEnabled(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t fgIsApMode);
+
+uint8_t mldSingleLink(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, uint8_t ucBssIndex);
 
 #endif /* !_MLO_H */

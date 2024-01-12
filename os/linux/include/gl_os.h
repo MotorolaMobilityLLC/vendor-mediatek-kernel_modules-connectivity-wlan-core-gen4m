@@ -118,7 +118,7 @@
 #endif
 
 /* for CFG80211 IE buffering mechanism */
-#define	CFG_CFG80211_IE_BUF_LEN		(512)
+#define	CFG_CFG80211_IE_BUF_LEN		(640)
 #define	GLUE_INFO_WSCIE_LENGTH		(500)
 /* for non-wfa vendor specific IE buffer */
 #define NON_WFA_VENDOR_IE_MAX_LEN	(128)
