@@ -2839,8 +2839,24 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		case ELEM_ID_RESERVED:
 #if (CFG_SUPPORT_802_11BE == 1)
 			/* TODO */
-			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS)
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS) {
 				prBssDesc->fgIsEHTPresent = TRUE;
+				DBGLOG(SCN, INFO,
+					"BSSID:" MACSTR
+					" SSID:%s, EHT CAP IE\n",
+					MAC2STR(prBssDesc->aucBSSID),
+					prBssDesc->aucSSID);
+				DBGLOG_MEM8(SCN, INFO, pucIE, IE_SIZE(pucIE));
+			}
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_OP) {
+				DBGLOG(SCN, INFO,
+					"BSSID:" MACSTR
+					" SSID:%s, EHT OP IE\n",
+					MAC2STR(prBssDesc->aucBSSID),
+					prBssDesc->aucSSID);
+				DBGLOG_MEM8(SCN, INFO, pucIE, IE_SIZE(pucIE));
+			}
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_MLD)
 				scanEhtParsingMldElement(prBssDesc,
@@ -2898,20 +2914,13 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 						prBssDesc->ucDCMMaxConRx,
 						prBssDesc->fgIsERSUDisable);
 				}
-#if (CFG_SUPPORT_WIFI_6G == 1)
-				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP)
-					scanParseHEOpIE(pucIE,
-						prBssDesc, eHwBand);
-#endif /* CFG_SUPPORT_WIFI_6G == 1 */
-
-#else
-
-#if (CFG_SUPPORT_WIFI_6G == 1)
-				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP)
-					scanParseHEOpIE(pucIE,
-						prBssDesc, eHwBand);
-#endif /* CFG_SUPPORT_WIFI_6G == 1 */
 #endif /* CFG_SUPPORT_HE_ER == 1 */
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP)
+					scanParseHEOpIE(pucIE,
+						prBssDesc, eHwBand);
+#endif /* CFG_SUPPORT_WIFI_6G == 1 */
 			}
 
 #if CFG_SUPPORT_MBO

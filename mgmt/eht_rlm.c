@@ -202,6 +202,7 @@ static void ehtRlmFillCapIE(
 	}
 #endif
 
+	eht_bw = cnmGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand);
 	if (!IS_BSS_APGO(prBssInfo)) {
 		phy_cap_2 |= DOT11BE_PHY_CAP_PARTIAL_BW_DL_MU_MIMO;
 
@@ -213,7 +214,6 @@ static void ehtRlmFillCapIE(
 		/* phy_cap_2 |= DOT11BE_PHY_CAP_PPE_THRLD_PRESENT; */
 	}
 
-	eht_bw = cnmGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand);
 	if (eht_bw >= MAX_BW_40MHZ) {
 		eht_mcs15_mru |= EHT_MCS15_MRU_484_w_242_tone_80M;
 		/* set 3 to support AP NSS 4 */
@@ -275,7 +275,7 @@ static void ehtRlmFillCapIE(
 	SET_DOT11BE_PHY_CAP_MCS_15(phy_cap_2, eht_mcs15_mru);
 
 	DBGLOG(RLM, INFO,
-		"[%d] eht_bw=%d, phy_cap_1=%u, phy_cap_2=%u\n",
+		"[%d] eht_bw=%d, phy_cap_1=0x%x, phy_cap_2=0x%x\n",
 		prBssInfo->ucBssIndex,
 		eht_bw, phy_cap_1, phy_cap_2);
 
@@ -286,8 +286,6 @@ static void ehtRlmFillCapIE(
 		sizeof(phy_cap_1));
 	memcpy(prEhtCap->ucEhtPhyCap + 4, &phy_cap_2,
 		sizeof(phy_cap_2));
-
-	DBGLOG_MEM8(RLM, INFO, prEhtCap, IE_SIZE(prEhtCap));
 
 	/* Set EHT MCS MAP & NSS */
 	if (eht_bw == MAX_BW_20MHZ) {
@@ -333,6 +331,8 @@ static void ehtRlmFillCapIE(
 
 	prEhtCap->ucLength = u4OverallLen - ELEM_HDR_LEN;
 	prMsduInfo->u2FrameLength += IE_SIZE(prEhtCap);
+
+	DBGLOG_MEM8(RLM, INFO, prEhtCap, IE_SIZE(prEhtCap));
 }
 
 void ehtRlmReqGenerateCapIE(

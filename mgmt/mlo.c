@@ -484,7 +484,6 @@ void mldGenerateMlProbeReqIE(uint8_t *pucIE,
 	*u4IELength += common->ucLength;
 }
 
-
 uint8_t mldDupSkipIE(uint8_t *pucBuf)
 {
 	if (IE_ID(pucBuf) == ELEM_ID_RNR ||
@@ -496,6 +495,24 @@ uint8_t mldDupSkipIE(uint8_t *pucBuf)
 	     IE_ID_EXT(pucBuf) == ELEM_EXT_ID_NON_INHERITANCE))
 		return TRUE;
 	return FALSE;
+}
+
+void mldDumpIE(uint8_t *pucBuf, uint16_t u2IEsBufLen, uint8_t *pucDesc)
+{
+	uint16_t u2Offset = 0;
+
+	if (pucDesc)
+		DBGLOG(ML, INFO, "%s  === BEGIN ===\n", pucDesc);
+
+	IE_FOR_EACH(pucBuf, u2IEsBufLen, u2Offset) {
+		DBGLOG(ML, INFO, "IE(%d, %d) size=%d",
+			IE_ID(pucBuf), IE_ID(pucBuf) == ELEM_ID_RESERVED ?
+			IE_ID_EXT(pucBuf) : 0, IE_SIZE(pucBuf));
+		dumpMemory8(pucBuf, IE_SIZE(pucBuf));
+	}
+
+	if (pucDesc)
+		DBGLOG(ML, INFO, "%s  === END ===\n", pucDesc);
 }
 
 void mldGenerateBasicCompleteProfile(
@@ -643,6 +660,10 @@ void mldGenerateBasicCompleteProfile(
 	pucBuf = (uint8_t *)prMsduInfoSta->prPacket + u4BeginOffset;
 	u2IEsBufLen = prMsduInfoSta->u2FrameLength - u4BeginOffset;
 
+	mldDumpIE((uint8_t *)start, u4PrimaryLength, "Primary");
+	mldDumpIE((uint8_t *)pucBuf, u2IEsBufLen, "Secondary");
+
+	DBGLOG(ML, INFO, "Bss%d compose ML Link%d profile\n", ucBssIndex, link);
 	IE_FOR_EACH(pucBuf, u2IEsBufLen, u2Offset) {
 		if (mldDupSkipIE(pucBuf))
 			continue;
@@ -667,11 +688,13 @@ void mldGenerateBasicCompleteProfile(
 			/* primary not found, copy it */
 			kalMemCopy(cp, pucBuf, IE_SIZE(pucBuf));
 			cp += IE_SIZE(pucBuf);
+			DBGLOG_MEM8(ML, INFO, pucBuf, IE_SIZE(pucBuf));
 		} else {
 			if (kalMemCmp(pucBuf, primary, IE_SIZE(primary))) {
 				/* different ie, copy and move to next primary */
 				kalMemCopy(cp, pucBuf, IE_SIZE(pucBuf));
 				cp += IE_SIZE(pucBuf);
+				DBGLOG_MEM8(ML, INFO, pucBuf, IE_SIZE(pucBuf));
 				if (IE_ID(pucBuf) != ELEM_ID_VENDOR)
 					start = primary + IE_SIZE(primary);
 			} else {
@@ -726,7 +749,7 @@ void mldGenerateBasicCompleteProfile(
 
 	if (neid > 0 || nexid > 0) {
 		non_inh->ucId = ELEM_ID_RESERVED;
-		non_inh->ucLength = ELEM_HDR_LEN + 3 + neid + nexid;
+		non_inh->ucLength = 3 + neid + nexid;
 		non_inh->ucExtId = ELEM_EXT_ID_NON_INHERITANCE;
 		cp = non_inh->aucList;
 		*cp++ = neid;
@@ -735,6 +758,9 @@ void mldGenerateBasicCompleteProfile(
 		*cp++ = nexid;
 		for (i = 0; i < nexid; i++)
 			*cp++ = nexid_arr[i];
+		DBGLOG(ML, INFO, "Bss%d compose ML Link%d non inheritance IE\n",
+			ucBssIndex, link);
+		DBGLOG_MEM8(ML, INFO, non_inh, IE_SIZE(non_inh));
 	}
 
 DONE:
@@ -1132,13 +1158,21 @@ uint8_t mldNonInheritElement(uint8_t *ie, struct IE_NON_INHERITANCE *ninh_elem)
 	}
 
 	if (IE_ID(ie) == ELEM_ID_RESERVED) {
-		for (i = 0; i < ninh_ext_num; i++)
-			if (ninh_ext[i] == IE_ID_EXT(ie))
+		for (i = 0; i < ninh_ext_num; i++) {
+			if (ninh_ext[i] == IE_ID_EXT(ie)) {
+				DBGLOG(ML, INFO, "IE(%d, %d) non inh\n",
+					IE_ID(ie), IE_ID_EXT(ie));
 				return TRUE;
+			}
+		}
 	} else {
-		for (i = 0; i < ninh_num; i++)
-			if (ninh[i] == IE_ID(ie))
+		for (i = 0; i < ninh_num; i++) {
+			if (ninh[i] == IE_ID(ie)) {
+				DBGLOG(ML, INFO, "IE(%d, %d) non inh\n",
+					IE_ID(ie), 0);
 				return TRUE;
+			}
+		}
 	}
 
 	return FALSE;
@@ -1177,6 +1211,8 @@ int mldParseProfile(uint8_t *ie, uint32_t len, uint8_t *prof,
 		case ELEM_ID_RESERVED:
 			if (IE_ID_EXT(prof) == ELEM_EXT_ID_NON_INHERITANCE) {
 				ninh = NON_INHERITANCE_IE(prof);
+				DBGLOG(ML, INFO, "Non Inheritance IE\n");
+				dumpMemory8(prof, IE_SIZE(prof));
 				break;
 			}
 			/* fallthrough */
@@ -1256,10 +1292,10 @@ int mldParseProfile(uint8_t *ie, uint32_t len, uint8_t *prof,
 			}
 
 			if (i < profile_count) {
-				/*found ie in profile, use profile version*/
+				/* found ie in profile, use profile version */
 				out[ie_count++] = prof_ies[i];
 				prof_ies[i] = NULL;
-			} else { /*not found, use ie from transmitted beacon*/
+			} else { /* not found, use ie from transmitted beacon */
 				if (!mldNonInheritElement(ie, ninh))
 					out[ie_count++] = ie;
 			}
@@ -1761,7 +1797,7 @@ struct SW_RFB *mldDuplicateAssocSwRfb(struct ADAPTER *prAdapter,
 
 	kalMemSet(info, 0, sizeof(*info));
 	mldParseBasicMlIE(info, ml, mgmt->aucBSSID,
-		mgmt->u2FrameCtrl & MASK_FRAME_TYPE, "DupAssocRsp");
+		mgmt->u2FrameCtrl & MASK_FRAME_TYPE, "DupAssoc");
 
 	for (i = 0; i < info->ucLinkNum; i++) {
 		sta = &info->rStaProfiles[i];

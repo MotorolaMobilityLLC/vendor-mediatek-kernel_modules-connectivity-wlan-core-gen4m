@@ -1901,6 +1901,8 @@ uint32_t assocProcessRxAssocReqFrameImpl(
 	}
 #endif
 
+	rlmProcessAssocReq(prAdapter, prSwRfb, pucIEStart, u2IELength);
+
 	*pu2StatusCode = u2StatusCode;
 
 	return WLAN_STATUS_SUCCESS;
