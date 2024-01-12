@@ -1073,7 +1073,7 @@ WLAN_STATUS p2pFuncRoleToBssIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucRoleIdx, O
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (pucBssIdx != NULL));
 
-		if (ucRoleIdx > BSS_P2P_NUM) {
+		if (ucRoleIdx >= BSS_P2P_NUM) {
 			rWlanStatus = WLAN_STATUS_FAILURE;
 			break;
 		}
