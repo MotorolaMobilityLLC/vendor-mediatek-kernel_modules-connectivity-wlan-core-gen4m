@@ -355,7 +355,8 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 	temp += kalStrLen(temp);
 
 	for (i = 0; i < WLAN_CFG_ENTRY_NUM_MAX; i++) {
-		prWlanCfgEntry = wlanCfgGetEntryByIndex(prAdapter, i, 0);
+		prWlanCfgEntry =
+			wlanCfgGetEntryByIndex(prAdapter, i, WLAN_CFG_DEFAULT);
 
 		if ((!prWlanCfgEntry) || (prWlanCfgEntry->aucKey[0] == '\0'))
 			break;
@@ -387,8 +388,8 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 	}
 
 	for (i = 0; i < WLAN_CFG_REC_ENTRY_NUM_MAX; i++) {
-		prWlanCfgEntry = wlanCfgGetEntryByIndex(prAdapter, i, 1);
-
+		prWlanCfgEntry =
+			wlanCfgGetEntryByIndex(prAdapter, i, WLAN_CFG_REC);
 
 		if ((!prWlanCfgEntry) || (prWlanCfgEntry->aucKey[0] == '\0'))
 			break;
