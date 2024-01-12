@@ -106,11 +106,6 @@
 #include "he_ie.h"
 #endif
 
-#if (CFG_SUPPORT_802_11BE == 1)
-#include "eht_ie.h"
-#include "mlo.h"
-#endif
-
 #if CFG_SUPPORT_SWCR
 #include "swcr.h"
 #endif
@@ -303,6 +298,11 @@
 #include "ais_fsm.h"
 
 #include "adapter.h"
+
+#if (CFG_SUPPORT_802_11BE == 1)
+#include "eht_ie.h"
+#include "mlo.h"
+#endif
 
 #include "que_mgt.h"
 #include "rftest.h"

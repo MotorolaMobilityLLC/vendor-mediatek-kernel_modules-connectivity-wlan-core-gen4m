@@ -439,6 +439,8 @@
 
 #define HW_BSSID_NUM			4	/* HW BSSID number by chip */
 
+#define INVALID_OMAC_IDX		0xFF
+
 /*------------------------------------------------------------------------------
  * Flags for workaround
  *------------------------------------------------------------------------------
@@ -1597,6 +1599,18 @@
 
 #ifndef CFG_MTK_FPGA_PLATFORM
 #define CFG_MTK_FPGA_PLATFORM			0
+#endif
+
+#ifdef CFG_MLD_LINK_MAX
+#define MLD_LINK_MAX (CFG_MLD_LINK_MAX)
+#else
+#define MLD_LINK_MAX 1
+#endif
+
+#ifdef CFG_DBDC_MODE
+#define DEFAULT_DBDC_MODE (CFG_DBDC_MODE)
+#else
+#define DEFAULT_DBDC_MODE ENUM_DBDC_MODE_DYNAMIC
 #endif
 
 /*******************************************************************************

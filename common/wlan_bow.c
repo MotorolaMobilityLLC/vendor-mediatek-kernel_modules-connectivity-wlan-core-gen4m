@@ -1400,7 +1400,8 @@ uint8_t bowInit(IN struct ADAPTER *prAdapter)
 
 	ASSERT(prAdapter);
 
-	prBowBssInfo = cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_BOW, TRUE);
+	prBowBssInfo = cnmGetBssInfoAndInit(prAdapter,
+		NETWORK_TYPE_BOW, MLD_GROUP_NONE, 0, TRUE);
 
 	/*Initiate BSS_INFO_T - common part -move from bowstarting */
 	BSS_INFO_INIT(prAdapter, prBowBssInfo);
@@ -2842,7 +2843,7 @@ void bowRequestCh(IN struct ADAPTER *prAdapter)
 
 		prMsgChReq->rMsgHdr.eMsgId = MID_MNY_CNM_CH_REQ;
 		prMsgChReq->ucBssIndex = prBowFsmInfo->ucBssIndex;
-		prMsgChReq->ucTokenID = ++prBowFsmInfo->ucSeqNumOfChReq;
+		prMsgChReq->ucTokenID = prBowFsmInfo->ucSeqNumOfChReq = cnmIncreaseTokenId(prAdapter);
 		prMsgChReq->eReqType = CH_REQ_TYPE_JOIN;
 #if 0
 		prMsgChReq->u4MaxInterval = BOW_JOIN_CH_REQUEST_INTERVAL;

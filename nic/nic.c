@@ -2011,10 +2011,14 @@ uint32_t nicUpdateBssEx(IN struct ADAPTER *prAdapter,
 #endif
 
 	DBGLOG(BSS, INFO,
-	       "Update Bss[%u] ConnState[%u] OPmode[%u] BSSID[" MACSTR
-	       "] AuthMode[%u] EncStatus[%u] IotAct[%u]\n", ucBssIndex,
+	       "Update Bss[%u] OMAC[%u] WMM[%u] ConnState[%u] OPmode[%u] "
+	       "BSSID[" MACSTR "] AuthMode[%u] EncStatus[%u] IotAct[%u]\n",
+	       ucBssIndex,
+	       prBssInfo->ucOwnMacIndex,
+	       rCmdSetBssInfo.ucWmmSet,
 	       prBssInfo->eConnectionState,
-	       prBssInfo->eCurrentOPMode, MAC2STR(prBssInfo->aucBSSID),
+	       prBssInfo->eCurrentOPMode,
+	       MAC2STR(prBssInfo->aucBSSID),
 	       rCmdSetBssInfo.ucAuthMode,
 	       rCmdSetBssInfo.ucEncStatus,
 	       rCmdSetBssInfo.ucIotApAct);
@@ -2171,6 +2175,17 @@ uint32_t nicPmIndicateBssConnected(IN struct ADAPTER
 	} else {
 		rCmdIndicatePmBssConnected.fgIsUapsdConnection = 0;
 	}
+
+	DBGLOG(INIT, INFO,
+		"Bss%d dtim=%d,aid=%d,bcn_int=%d,atim=%d,bmp_d=%d,bmp_t=%d,uapsd=%d\n",
+		rCmdIndicatePmBssConnected.ucBssIndex,
+		rCmdIndicatePmBssConnected.ucDtimPeriod,
+		rCmdIndicatePmBssConnected.u2AssocId,
+		rCmdIndicatePmBssConnected.u2BeaconInterval,
+		rCmdIndicatePmBssConnected.u2AtimWindow,
+		rCmdIndicatePmBssConnected.ucBmpDeliveryAC,
+		rCmdIndicatePmBssConnected.ucBmpTriggerAC,
+		rCmdIndicatePmBssConnected.fgIsUapsdConnection);
 
 	return wlanSendSetQueryCmd(prAdapter,
 	   CMD_ID_INDICATE_PM_BSS_CONNECTED,
@@ -3315,6 +3330,9 @@ void nicInitMGMT(IN struct ADAPTER *prAdapter,
 	/* register for power level control */
 	kalPwrLevelHdlrRegister(prAdapter, cnmPowerControl);
 #endif
+	mldBssInit(prAdapter);
+	mldStarecInit(prAdapter);
+
 	/* CNM Module - initialization */
 	cnmInit(prAdapter);
 
@@ -3372,6 +3390,8 @@ void nicUninitMGMT(IN struct ADAPTER *prAdapter)
 	/* CNM Module - uninitialization */
 	cnmUninit(prAdapter);
 
+	mldStarecUninit(prAdapter);
+	mldBssUninit(prAdapter);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4858,6 +4878,8 @@ uint32_t nicApplyNetworkAddress(IN struct ADAPTER
 	/* copy to adapter */
 	COPY_MAC_ADDR(prAdapter->rMyMacAddr,
 		      prAdapter->rWifiVar.aucMacAddress);
+	DBGLOG(NIC, INFO, "WLAN0 mac: " MACSTR "\n",
+		MAC2STR(prAdapter->rMyMacAddr));
 
 	/* 4 <3> Update new MAC address to all 3 networks */
 	COPY_MAC_ADDR(prAdapter->rWifiVar.aucDeviceAddress,
@@ -4871,6 +4893,8 @@ uint32_t nicApplyNetworkAddress(IN struct ADAPTER
 		prAdapter->rWifiVar.aucInterfaceAddress[i][0] |= 0x2;
 		prAdapter->rWifiVar.aucInterfaceAddress[i][0] ^=
 			i << MAC_ADDR_LOCAL_ADMIN;
+		DBGLOG(NIC, INFO, "P2P_INF[%d] mac: " MACSTR "\n",
+			i, MAC2STR(prAdapter->rWifiVar.aucInterfaceAddress[i]));
 	}
 
 #if CFG_ENABLE_WIFI_DIRECT
@@ -4882,6 +4906,8 @@ uint32_t nicApplyNetworkAddress(IN struct ADAPTER
 					prAdapter->rWifiVar.arBssInfoPool[i].
 					aucOwnMacAddr,
 					prAdapter->rWifiVar.aucDeviceAddress);
+				DBGLOG(NIC, INFO, "P2P_DEV[%d] mac: " MACSTR "\n",
+					i, MAC2STR(prAdapter->rWifiVar.arBssInfoPool[i].aucOwnMacAddr));
 			}
 		}
 	}
@@ -4909,14 +4935,16 @@ uint32_t nicApplyNetworkAddress(IN struct ADAPTER
 #endif
 
 	kalUpdateMACAddress(prAdapter->prGlueInfo,
-			    prAdapter->rWifiVar.aucMacAddress);
+			    prAdapter->rWifiVar.aucMacAddress[0]);
 
 	if (KAL_AIS_NUM > 1) {
 		/* Generate from wlan0 MAC */
-		COPY_MAC_ADDR(prAdapter->rWifiVar.aucMacAddress1,
+		COPY_MAC_ADDR(prAdapter->rWifiVar.aucMacAddress[1],
 			prAdapter->rWifiVar.aucMacAddress);
 		/* Update wlan1 address */
-		prAdapter->rWifiVar.aucMacAddress1[3] ^= BIT(1);
+		prAdapter->rWifiVar.aucMacAddress[1][3] ^= BIT(1);
+		DBGLOG(NIC, INFO, "WLAN1 mac: " MACSTR "\n",
+			MAC2STR(prAdapter->rWifiVar.aucMacAddress[1]));
 	}
 
 	return WLAN_STATUS_SUCCESS;

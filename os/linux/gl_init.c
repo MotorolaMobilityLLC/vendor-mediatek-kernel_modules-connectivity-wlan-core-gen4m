@@ -2430,9 +2430,6 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 #else
 			prNetDevPrivate->ucMddpSupport = FALSE;
 #endif
-			wlanBindBssIdxToNetInterface(prGlueInfo,
-				     u4Idx,
-				     (void *)gprWdev[u4Idx]->netdev);
 #if CFG_SUPPORT_PERSIST_NETDEV
 			if (gprNetdev[u4Idx]->reg_state == NETREG_REGISTERED)
 				continue;
@@ -4670,7 +4667,7 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 				AIS_MAIN_BSS_INDEX(prAdapter, 1));
 			if (prDevHandler) {
 				kalMemCopy(prDevHandler->dev_addr,
-					&prAdapter->rWifiVar.aucMacAddress1,
+					&prAdapter->rWifiVar.aucMacAddress[1],
 					ETH_ALEN);
 				kalMemCopy(prDevHandler->perm_addr,
 					prDevHandler->dev_addr,

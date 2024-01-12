@@ -1742,6 +1742,7 @@ void p2pFuncAcquireCh(IN struct ADAPTER *prAdapter,
 		prMsgChReq->ucRfCenterFreqSeg2 = prChnlReqInfo->ucCenterFreqS2;
 #if CFG_SUPPORT_DBDC
 		prMsgChReq->eDBDCBand = ENUM_BAND_AUTO;
+#endif /*CFG_SUPPORT_DBDC*/
 
 		DBGLOG(P2P, INFO,
 		   "p2pFuncAcquireCh: P2P Request channel on band %u, tokenID: %d, cookie: 0x%llx.\n",
@@ -1749,7 +1750,6 @@ void p2pFuncAcquireCh(IN struct ADAPTER *prAdapter,
 		   prMsgChReq->ucTokenID,
 		   prChnlReqInfo->u8Cookie);
 
-#endif /*CFG_SUPPORT_DBDC*/
 		/* Channel request join BSSID. */
 
 		mboxSendMsg(prAdapter,

@@ -417,6 +417,8 @@ struct AIS_FSM_INFO {
 	u_int8_t fgIsChannelRequested;
 	u_int8_t fgIsChannelGranted;
 
+	uint8_t ucChReqNum;
+
 	uint8_t ucAvailableAuthTypes; /* Used for AUTH_MODE_AUTO_SWITCH */
 
 	struct AIS_LINK_INFO aprLinkInfo[MLD_LINK_MAX];
@@ -531,6 +533,8 @@ struct AIS_FSM_INFO {
 
 	struct LINK rAxBlacklist;
 	struct LINK rHeHtcBlacklist;
+
+	struct MLD_BSS_INFO *prMldBssInfo;
 };
 
 struct AIS_OFF_CHNL_TX_REQ_INFO {
@@ -676,7 +680,9 @@ void aisPostponedEventOfDisconnTimeout(IN struct ADAPTER *prAdapter,
 				IN uint8_t ucBssIndex);
 
 void aisUpdateAllBssInfoForJOIN(IN struct ADAPTER *prAdapter,
-	struct AIS_FSM_INFO *prAisFsmInfo, struct SW_RFB *prAssocRspSwRfb);
+	struct AIS_FSM_INFO *prAisFsmInfo,
+	struct SW_RFB *prAssocRspSwRfb,
+	struct STA_RECORD *prSetupStaRec);
 
 void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 			     struct STA_RECORD *prStaRec,

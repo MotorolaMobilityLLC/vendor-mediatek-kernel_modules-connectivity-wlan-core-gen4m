@@ -3816,16 +3816,16 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 				sizeof(prScanInfo->au4ChannelBitMap));
 		}
 
-	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-		uint8_t ucBssIndex = AIS_MAIN_BSS_INDEX(prAdapter, u4Idx);
+	for (u4Idx = 0; u4Idx < prAdapter->ucHwBssIdNum; u4Idx++) {
+		struct BSS_INFO *prAisBssInfo = prAdapter->aprBssInfo[u4Idx];
 		struct CONNECTION_SETTINGS *prConnSettings =
-			aisGetConnSettings(prAdapter, ucBssIndex);
-		struct BSS_INFO *prAisBssInfo =
-			aisGetAisBssInfo(prAdapter, ucBssIndex);
+			aisGetConnSettings(prAdapter, prAisBssInfo->ucBssIndex);
+
+		if (!IS_BSS_INDEX_AIS(prAdapter, prAisBssInfo->ucBssIndex))
+			continue;
 
 		/* 4 <1.1> Beacon Change Detection for Connected BSS */
-		if ((prAisBssInfo != NULL) &&
-		    (prAisBssInfo->eConnectionState ==
+		if ((prAisBssInfo->eConnectionState ==
 		     MEDIA_STATE_CONNECTED) &&
 		    ((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE
 		    && prConnSettings->eOPMode != NET_TYPE_IBSS)
@@ -3876,11 +3876,10 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 #endif
 		}
 		/* 4 <1.1> Update AIS_BSS_INFO */
-		if ((prAisBssInfo != NULL) &&
-		    ((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE &&
+		if ((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE &&
 		      prConnSettings->eOPMode != NET_TYPE_IBSS)
 		     || (prBssDesc->eBSSType == BSS_TYPE_IBSS
-		     && prConnSettings->eOPMode != NET_TYPE_INFRA))) {
+		     && prConnSettings->eOPMode != NET_TYPE_INFRA)) {
 			if (prAisBssInfo->eConnectionState
 				== MEDIA_STATE_CONNECTED) {
 
@@ -3889,8 +3888,9 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 				 * hidden SSID, and would have different
 				 * BSS descriptor
 				 */
-				log_dbg(SCN, TRACE, "DTIMPeriod[%u] Present[%u] BSSID["
+				log_dbg(SCN, TRACE, "BSS%d DTIMPeriod[%u] Present[%u] BSSID["
 					MACSTR "]\n",
+				       prAisBssInfo->ucBssIndex,
 				       prAisBssInfo->ucDTIMPeriod,
 				       prAisBssInfo->fgTIMPresent,
 				       MAC2STR(prBssDesc->aucBSSID));

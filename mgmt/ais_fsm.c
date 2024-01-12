@@ -137,10 +137,15 @@ void aisFsmRoamingDisconnectPrevAllAP(IN struct ADAPTER *prAdapter,
 				   IN struct AIS_FSM_INFO *prAisFsmInfo);
 void aisUpdateBssInfoForRoamingAllAP(IN struct ADAPTER *prAdapter,
 				IN struct AIS_FSM_INFO *prAisFsmInfo,
-				IN struct SW_RFB *prAssocRspSwRfb);
+				IN struct SW_RFB *prAssocRspSwRfb,
+				IN struct STA_RECORD *prSetupStaRec);
 void aisChangeAllMediaState(IN struct ADAPTER *prAdapter,
 		IN struct AIS_FSM_INFO *prAisFsmInfo,
 		IN enum ENUM_PARAM_MEDIA_STATE);
+
+static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *prAisFsmInfo,
+	uint8_t *ucChTokenId);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -328,24 +333,23 @@ void aisInitializeConnectionSettings(IN struct ADAPTER *prAdapter,
 } /* end of aisFsmInitializeConnectionSettings() */
 
 void aisInitBssInfo(IN struct ADAPTER *prAdapter,
-	IN struct AIS_FSM_INFO *prAisFsmInfo, IN struct BSS_INFO *prAisBssInfo)
+	IN struct AIS_FSM_INFO *prAisFsmInfo,
+	IN struct BSS_INFO *prAisBssInfo,
+	IN uint8_t ucLinkIdx)
 {
 	uint8_t i;
-
-	/* update MAC address */
-	COPY_MAC_ADDR(prAisBssInfo->aucOwnMacAddr, prAdapter->rMyMacAddr);
 
 	/* 4 <1.2> Initiate PWR STATE */
 	SET_NET_PWR_STATE_IDLE(prAdapter, prAisBssInfo->ucBssIndex);
 
 	/* 4 <2> Initiate BSS_INFO_T - common part */
 	BSS_INFO_INIT(prAdapter, prAisBssInfo);
-	if (prAisFsmInfo->ucAisIndex == AIS_DEFAULT_INDEX)
-		COPY_MAC_ADDR(prAisBssInfo->aucOwnMacAddr,
-			prAdapter->rWifiVar.aucMacAddress);
-	else
-		COPY_MAC_ADDR(prAisBssInfo->aucOwnMacAddr,
-			prAdapter->rWifiVar.aucMacAddress1);
+	/* update MAC address */
+	COPY_MAC_ADDR(prAisBssInfo->aucOwnMacAddr,
+		prAdapter->rWifiVar.aucMacAddress[prAisFsmInfo->ucAisIndex]);
+	prAisBssInfo->aucOwnMacAddr[5] ^= ucLinkIdx << BIT(1);
+	DBGLOG(AIS, INFO, "ucLinkIdx: %d, mac: " MACSTR "\n",
+		ucLinkIdx, MAC2STR(prAisBssInfo->aucOwnMacAddr));
 
 	/* 4 <3> Initiate BSS_INFO_T - private part */
 	/* TODO */
@@ -404,6 +408,7 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 {
 	IN struct AIS_FSM_INFO *prAisFsmInfo =
 		aisFsmGetInstance(prAdapter, ucAisIndex);
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
@@ -425,9 +430,14 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 	if (ucAisIndex == AIS_DEFAULT_INDEX)
 		prAdapter->rWifiVar.prDefaultAisFsmInfo = prAisFsmInfo;
 
+	mldBssAlloc(prAdapter, &prMldBssInfo);
+	prAisFsmInfo->prMldBssInfo = prMldBssInfo;
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		prAisBssInfo = cnmGetBssInfoAndInit(prAdapter,
-				NETWORK_TYPE_AIS, ucAisIndex, FALSE);
+			NETWORK_TYPE_AIS,
+			prMldBssInfo != NULL ? prMldBssInfo->ucGroupMldId : MLD_GROUP_NONE,
+			ucAisIndex,
+			FALSE);
 		if (!prAisBssInfo) {
 			DBGLOG(AIS, ERROR,
 				"aisFsmInit failed because prAisBssInfo is NULL, return.\n");
@@ -435,7 +445,11 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 		}
 
 		aisSetLinkBssInfo(prAisFsmInfo, prAisBssInfo, i);
-		aisInitBssInfo(prAdapter, prAisFsmInfo, prAisBssInfo);
+		aisInitBssInfo(prAdapter, prAisFsmInfo, prAisBssInfo, i);
+		wlanBindBssIdxToNetInterface(prAdapter->prGlueInfo,
+			prAisBssInfo->ucBssIndex,
+			(void *)gprWdev[ucAisIndex]->netdev);
+		mldBssRegister(prAdapter, prMldBssInfo, prAisBssInfo);
 	}
 
 	aisClearAllLink(prAisFsmInfo);
@@ -681,11 +695,14 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 				prAisBssInfo->prBeacon = NULL;
 			}
 
+			mldBssUnregister(prAdapter, prAisFsmInfo->prMldBssInfo,
+				prAisBssInfo);
 			cnmFreeBssInfo(prAdapter, prAisBssInfo);
 			aisSetLinkBssInfo(prAisFsmInfo, NULL, i);
 		}
-
 	}
+	mldBssFree(prAdapter, prAisFsmInfo->prMldBssInfo);
+	prAisFsmInfo->prMldBssInfo = NULL;
 } /* end of aisFsmUninit() */
 
 /*----------------------------------------------------------------------------*/
@@ -732,7 +749,8 @@ bool aisFsmIsBeaconTimeout(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
-	struct AIS_FSM_INFO *prAisFsmInfo, uint8_t ucLinkIndex)
+	struct AIS_FSM_INFO *prAisFsmInfo,
+	uint8_t ucLinkIndex)
 {
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
@@ -973,10 +991,6 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 	/* 4 <5> Overwrite Connection Setting for eConnectionPolicy
 	 * == ANY (Used by Assoc Req)
 	 */
-	if (prBssDesc->ucSSIDLen)
-		COPY_SSID(prConnSettings->aucSSID, prConnSettings->ucSSIDLen,
-			  prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
-
 
 	nicRxClearFrag(prAdapter, prStaRec);
 
@@ -989,6 +1003,10 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 	/* only setup link needs to do SAA */
 	if (ucLinkIndex != 0)
 		return;
+
+	if (prBssDesc->ucSSIDLen)
+		COPY_SSID(prConnSettings->aucSSID, prConnSettings->ucSSIDLen,
+			  prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
 
 	/* 4 <6> Send a Msg to trigger SAA to start JOIN process. */
 	prJoinReqMsg =
@@ -1472,6 +1490,10 @@ void aisFillBssInfoFromBssDesc(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prAisBssInfo;
 	struct BSS_DESC *prBssDesc;
 
+	prAisBssInfo = aisGetMainLinkBssInfo(prAisFsmInfo);
+	if (prAisBssInfo->fgIsWmmInited == FALSE)
+		prAisBssInfo->ucWmmQueSet = cnmWmmIndexDecision(prAdapter, prAisBssInfo);
+
 	for (i = 0; i < prBssDescSet->ucLinkNum; i++) {
 		prAisBssInfo = prAisFsmInfo->aprLinkInfo[i].prBssInfo;
 		prBssDesc = prBssDescSet->aprBssDesc[i];
@@ -1483,9 +1505,10 @@ void aisFillBssInfoFromBssDesc(IN struct ADAPTER *prAdapter,
 		prAisBssInfo->u4RsnSelectedAKMSuite =
 			prBssDesc->u4RsnSelectedAKMSuite;
 		prAisBssInfo->eBand = prBssDesc->eBand;
-		if (prAisBssInfo->fgIsWmmInited == FALSE)
-			prAisBssInfo->ucWmmQueSet =
-			   cnmWmmIndexDecision(prAdapter, prAisBssInfo);
+		if (prAisBssInfo->fgIsWmmInited == FALSE) {
+			prAisBssInfo->fgIsWmmInited = TRUE;
+			prAisBssInfo->ucWmmQueSet = aisGetMainLinkBssInfo(prAisFsmInfo)->ucWmmQueSet;
+		}
 
 		prAisBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
 		aisSetLinkBssDesc(prAisFsmInfo, prBssDesc, i);
@@ -1499,6 +1522,12 @@ void aisFillBssInfoFromBssDesc(IN struct ADAPTER *prAdapter,
 			prBssDesc->ucChannelNum,
 			prAisBssInfo->ucWmmQueSet);
 #endif /*CFG_SUPPORT_DBDC*/
+		DBGLOG(AIS, INFO, "[%d] mac: " MACSTR ", band: %d, ch: %d, wmm: %d\n",
+			i,
+			MAC2STR(prBssDesc->aucBSSID),
+			prBssDesc->eBand,
+			prBssDesc->ucChannelNum,
+			prAisBssInfo->ucWmmQueSet);
 	}
 }
 
@@ -1758,11 +1787,10 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 	struct AIS_REQ_HDR *prAisReq;
 	struct ROAMING_INFO *prRoamingFsmInfo = NULL;
 	enum ENUM_BAND eBand = BAND_2G4;
-
 	uint8_t ucChannel = 1;
 	uint16_t u2ScanIELen;
 	u_int8_t fgIsTransition = (u_int8_t) FALSE;
-	uint8_t ucRfBw, i;
+	uint8_t i;
 	enum ENUM_AIS_STATE eNewState;
 
 	DEBUGFUNC("aisFsmSteps()");
@@ -2248,69 +2276,9 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 									FALSE;
 			}
 
-			/* send message to CNM for acquiring channel */
-			prMsgChReq =
-			    (struct MSG_CH_REQ *)cnmMemAlloc(prAdapter,
-				RAM_TYPE_MSG,
-				sizeof(struct MSG_CH_REQ));
-			if (!prMsgChReq) {
-				DBGLOG(AIS, ERROR, "Can't indicate CNM\n");
-				return;
-			}
-
-			prMsgChReq->rMsgHdr.eMsgId = MID_MNY_CNM_CH_REQ;
-			prMsgChReq->ucBssIndex =
-			    prAisBssInfo->ucBssIndex;
-			prMsgChReq->ucTokenID = ++prAisFsmInfo->ucSeqNumOfChReq;
-			prMsgChReq->eReqType = CH_REQ_TYPE_JOIN;
-			prMsgChReq->u4MaxInterval =
-					AIS_JOIN_CH_REQUEST_INTERVAL;
-			prMsgChReq->ucPrimaryChannel =
-			       aisGetMainLinkBssDesc(prAisFsmInfo)->ucChannelNum;
-			prMsgChReq->eRfSco =
-				aisGetMainLinkBssDesc(prAisFsmInfo)->eSco;
-			prMsgChReq->eRfBand =
-				aisGetMainLinkBssDesc(prAisFsmInfo)->eBand;
-#if CFG_SUPPORT_DBDC
-			prMsgChReq->eDBDCBand = ENUM_BAND_AUTO;
-#endif /*CFG_SUPPORT_DBDC */
-			/* To do: check if 80/160MHz bandwidth is needed here */
-			/* Decide RF BW by own OP and Peer OP BW */
-			ucRfBw =
-			    cnmGetDbdcBwCapability(prAdapter,
-						   prAisBssInfo->ucBssIndex);
-			/* Revise to VHT OP BW */
-			ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
-			if (ucRfBw >
-			    aisGetMainLinkBssDesc(prAisFsmInfo)->eChannelWidth)
-				ucRfBw = aisGetMainLinkBssDesc(prAisFsmInfo)
-								->eChannelWidth;
-
-			prMsgChReq->eRfChannelWidth = ucRfBw;
-			/* TODO: BW80+80 support */
-			prMsgChReq->ucRfCenterFreqSeg1 = nicGetS1(
-				prMsgChReq->eRfBand,
-			    prMsgChReq->ucPrimaryChannel,
-				prMsgChReq->eRfChannelWidth);
-
-			DBGLOG(RLM, INFO,
-			       "AIS req CH for CH:%d, Bw:%d, s1=%d\n",
-			       prMsgChReq->ucPrimaryChannel,
-			       prMsgChReq->eRfChannelWidth,
-			       prMsgChReq->ucRfCenterFreqSeg1);
-			prMsgChReq->ucRfCenterFreqSeg2 = 0;
-
-			rlmReviseMaxBw(prAdapter, prAisBssInfo->ucBssIndex,
-				       &prMsgChReq->eRfSco,
-				       (enum ENUM_CHANNEL_WIDTH *)
-				       &prMsgChReq->eRfChannelWidth,
-				       &prMsgChReq->ucRfCenterFreqSeg1,
-				       &prMsgChReq->ucPrimaryChannel);
-
-			mboxSendMsg(prAdapter, MBOX_ID_0,
-				    (struct MSG_HDR *)prMsgChReq,
-				    MSG_SEND_METHOD_BUF);
-
+			aisReqJoinChPrivilege(prAdapter,
+				prAisFsmInfo,
+				&prAisFsmInfo->ucSeqNumOfChReq);
 			prAisFsmInfo->fgIsChannelRequested = TRUE;
 			break;
 
@@ -2327,9 +2295,9 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 						   &bss->ucOpRxNss,
 						   &bss->ucOpTxNss);
 				aisFsmStateInit_JOIN(prAdapter,
-						prAisFsmInfo, i);
+						prAisFsmInfo,
+						i);
 			}
-
 
 			break;
 		}
@@ -2442,11 +2410,13 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			/* zero-ize */
 			kalMemZero(prMsgChReq, sizeof(struct MSG_CH_REQ));
 
+			prAisFsmInfo->ucSeqNumOfChReq = cnmIncreaseTokenId(prAdapter);
+
 			/* filling */
 			prMsgChReq->rMsgHdr.eMsgId = MID_MNY_CNM_CH_REQ;
 			prMsgChReq->ucBssIndex =
 			    prAisBssInfo->ucBssIndex;
-			prMsgChReq->ucTokenID = ++prAisFsmInfo->ucSeqNumOfChReq;
+			prMsgChReq->ucTokenID = prAisFsmInfo->ucSeqNumOfChReq;
 			prMsgChReq->eReqType =
 					prAisFsmInfo->rChReqInfo.eReqType;
 			prMsgChReq->u4MaxInterval =
@@ -2462,6 +2432,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				    (struct MSG_HDR *)prMsgChReq,
 				    MSG_SEND_METHOD_BUF);
 
+			prAisFsmInfo->ucChReqNum = 1;
 			prAisFsmInfo->fgIsChannelRequested = TRUE;
 
 			break;
@@ -3367,7 +3338,8 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 				/* 3. Update bss based on roaming staRec */
 				aisUpdateBssInfoForRoamingAllAP(prAdapter,
 							     prAisFsmInfo,
-							     prAssocRspSwRfb);
+							     prAssocRspSwRfb,
+							     prStaRec);
 #endif /* CFG_SUPPORT_ROAMING */
 			} else {
 				if (aisFsmIsInProcessPostpone(prAdapter,
@@ -3386,7 +3358,9 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 				/* For temp solution, need to refine */
 				/* 4 <1.4> Update BSS_INFO_T */
 				aisUpdateAllBssInfoForJOIN(prAdapter,
-					prAisFsmInfo, prAssocRspSwRfb);
+					prAisFsmInfo,
+					prAssocRspSwRfb,
+					prStaRec);
 
 				/* 4 <1.6> Indicate Connected Event to Host
 				 * immediately.
@@ -4114,7 +4088,8 @@ void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 
 	/* 3 <3> Update BSS_INFO_T from SW_RFB_T (Association Resp Frame) */
 	/* 4 <3.1> Setup BSSID */
-	COPY_MAC_ADDR(prAisBssInfo->aucBSSID, prAssocRspFrame->aucBSSID);
+	/* TODO: mlo, Use BSSID in assoc resp frame instead */
+	COPY_MAC_ADDR(prAisBssInfo->aucBSSID, prBssDesc->aucBSSID);
 
 	u2IELength =
 	    (uint16_t) ((prAssocRspSwRfb->u2PacketLen -
@@ -4166,16 +4141,6 @@ void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 	secPostUpdateAddr(prAdapter,
 		aisGetAisBssInfo(prAdapter, ucBssIndex));
 
-	/* for secondary link */
-	if (!IS_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex)) {
-		SET_NET_ACTIVE(prAdapter,
-			       prAisBssInfo->ucBssIndex);
-
-		/* sync with firmware */
-		nicActivateNetwork(prAdapter,
-				   prAisBssInfo->ucBssIndex);
-	}
-
 	/* 4 <4.3> Sync with firmware for BSS-INFO */
 	nicUpdateBss(prAdapter, ucBssIndex);
 
@@ -4188,7 +4153,9 @@ void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 }				/* end of aisUpdateBssInfoForJOIN() */
 
 void aisUpdateAllBssInfoForJOIN(IN struct ADAPTER *prAdapter,
-	struct AIS_FSM_INFO *prAisFsmInfo, struct SW_RFB *prAssocRspSwRfb)
+	struct AIS_FSM_INFO *prAisFsmInfo,
+	struct SW_RFB *prAssocRspSwRfb,
+	struct STA_RECORD *prSetupStaRec)
 {
 	uint8_t i;
 
@@ -4201,6 +4168,8 @@ void aisUpdateAllBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 		if (!prTargetStaRec)
 			break;
 
+		/* TODO: mlo, get AID from assoc resp frame */
+		prTargetStaRec->u2AssocId = prSetupStaRec->u2AssocId;
 		aisUpdateBssInfoForJOIN(prAdapter,
 			prTargetStaRec, prAssocRspSwRfb);
 
@@ -5291,7 +5260,6 @@ void aisFsmReleaseCh(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 
 	if (prAisFsmInfo->fgIsChannelGranted == TRUE
 	    || prAisFsmInfo->fgIsChannelRequested == TRUE) {
-
 		prAisFsmInfo->fgIsChannelRequested = FALSE;
 		prAisFsmInfo->fgIsChannelGranted = FALSE;
 
@@ -5305,12 +5273,20 @@ void aisFsmReleaseCh(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 			return;
 		}
 
+		kalMemZero(prMsgChAbort, sizeof(struct MSG_CH_ABORT));
 		prMsgChAbort->rMsgHdr.eMsgId = MID_MNY_CNM_CH_ABORT;
 		prMsgChAbort->ucBssIndex = ucBssIndex;
 		prMsgChAbort->ucTokenID = prAisFsmInfo->ucSeqNumOfChReq;
 #if CFG_SUPPORT_DBDC
 		prMsgChAbort->eDBDCBand = ENUM_BAND_AUTO;
 #endif /*CFG_SUPPORT_DBDC */
+		prMsgChAbort->ucExtraChReqNum = prAisFsmInfo->ucChReqNum - 1;
+
+		DBGLOG(AIS, INFO, "ucBssIndex: %d, ucTokenID: 0x%x, ucExtraChReqNum: %d\n",
+			prMsgChAbort->ucBssIndex,
+			prMsgChAbort->ucTokenID,
+			prMsgChAbort->ucExtraChReqNum);
+
 		mboxSendMsg(prAdapter, MBOX_ID_0,
 			    (struct MSG_HDR *)prMsgChAbort,
 			    MSG_SEND_METHOD_BUF);
@@ -5753,7 +5729,8 @@ void aisUpdateBssInfoForRoamingAP(IN struct ADAPTER *prAdapter,
 
 void aisUpdateBssInfoForRoamingAllAP(IN struct ADAPTER *prAdapter,
 				IN struct AIS_FSM_INFO *prAisFsmInfo,
-				IN struct SW_RFB *prAssocRspSwRfb)
+				IN struct SW_RFB *prAssocRspSwRfb,
+				IN struct STA_RECORD *prSetupStaRec)
 {
 	uint8_t i;
 
@@ -5763,6 +5740,9 @@ void aisUpdateBssInfoForRoamingAllAP(IN struct ADAPTER *prAdapter,
 
 		if (!prTargetStaRec)
 			break;
+
+		/* TODO: mlo, get AID from assoc resp frame */
+		prTargetStaRec->u2AssocId = prSetupStaRec->u2AssocId;
 
 		aisUpdateBssInfoForRoamingAP(prAdapter,
 			prTargetStaRec, prAssocRspSwRfb);
@@ -7694,4 +7674,88 @@ void aisPreSuspendFlow(IN struct ADAPTER *prAdapter)
 		}
 	}
 #endif
+}
+
+static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *prAisFsmInfo,
+	uint8_t *ucChTokenId)
+{
+	struct MSG_CH_REQ *prMsgChReq = NULL;
+	struct MSG_CH_REQ *prSubReq = NULL;
+	uint8_t ucReqChNum = 0;
+	uint32_t u4MsgSz;
+	uint8_t i = 0;
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct BSS_INFO *prBss = aisGetLinkBssInfo(prAisFsmInfo, i);
+		struct BSS_DESC *prBssDesc = aisGetLinkBssDesc(prAisFsmInfo, i);
+
+		if (!prBss || !prBssDesc)
+			continue;
+
+		ucReqChNum++;
+	}
+
+	u4MsgSz = sizeof(struct MSG_CH_REQ) +
+		sizeof(struct MSG_CH_REQ) * ucReqChNum;
+	prMsgChReq = (struct MSG_CH_REQ *)cnmMemAlloc(prAdapter,
+		RAM_TYPE_MSG,
+		u4MsgSz);
+	if (!prMsgChReq) {
+		DBGLOG(AIS, ERROR, "Alloc CH req msg failed.\n");
+		return;
+	}
+	kalMemZero(prMsgChReq, u4MsgSz);
+
+	*ucChTokenId = cnmIncreaseTokenId(prAdapter);
+	prAisFsmInfo->ucChReqNum = ucReqChNum;
+	prMsgChReq->ucExtraChReqNum = prAisFsmInfo->ucChReqNum - 1;
+
+	for (i = 0; i < ucReqChNum; i++) {
+		struct BSS_INFO *prBss = aisGetLinkBssInfo(prAisFsmInfo, i);
+		struct BSS_DESC *prBssDesc = aisGetLinkBssDesc(prAisFsmInfo, i);
+		uint8_t ucRfBw;
+
+		if (!prBss || !prBssDesc)
+			continue;
+
+		if (i == 0)
+			prSubReq = prMsgChReq;
+		else
+			prSubReq = (struct MSG_CH_REQ *)&prMsgChReq->aucBuffer[i];
+
+		prSubReq->ucBssIndex = prBss->ucBssIndex;
+#if CFG_SUPPORT_DBDC
+		if (ucReqChNum >= 2)
+			prSubReq->eDBDCBand = ENUM_BAND_ALL;
+		else
+			prSubReq->eDBDCBand = ENUM_BAND_AUTO;
+#endif
+		prSubReq->ucTokenID = *ucChTokenId;
+		prSubReq->eReqType = CH_REQ_TYPE_JOIN;
+		prSubReq->u4MaxInterval = AIS_JOIN_CH_REQUEST_INTERVAL;
+		prSubReq->ucPrimaryChannel = prBssDesc->ucChannelNum;
+		prSubReq->eRfSco = prBssDesc->eSco;
+		prSubReq->eRfBand = prBssDesc->eBand;
+		ucRfBw = cnmGetDbdcBwCapability(prAdapter, prBss->ucBssIndex);
+		ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
+		if (ucRfBw > prBssDesc->eChannelWidth)
+			ucRfBw = prBssDesc->eChannelWidth;
+		prSubReq->eRfChannelWidth = ucRfBw;
+		prSubReq->ucRfCenterFreqSeg1 = nicGetS1(prSubReq->eRfBand,
+			prSubReq->ucPrimaryChannel,
+			prSubReq->eRfChannelWidth);
+		prSubReq->ucRfCenterFreqSeg2 = 0;
+
+		rlmReviseMaxBw(prAdapter,
+			prSubReq->ucBssIndex,
+			&prSubReq->eRfSco,
+			&prSubReq->eRfChannelWidth,
+			&prSubReq->ucRfCenterFreqSeg1,
+			&prSubReq->ucPrimaryChannel);
+	}
+
+	mboxSendMsg(prAdapter, MBOX_ID_0,
+		    (struct MSG_HDR *)prMsgChReq,
+		    MSG_SEND_METHOD_BUF);
 }

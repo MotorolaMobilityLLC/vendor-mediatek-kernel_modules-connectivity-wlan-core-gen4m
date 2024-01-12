@@ -208,6 +208,8 @@ CONFIG_NUM_OF_WFDMA_TX_RING=0
 CONFIG_MTK_WIFI_UNIFIED_COMMND_SUPPORT=y
 CONFIG_MTK_WIFI_TWT_SUPPORT=y
 CONFIG_ROM_CODE_DOWNLOAD=y
+CONFIG_MLD_LINK_MAX=2
+CONFIG_DBDC_MODE=1
 endif
 
 ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
@@ -220,6 +222,8 @@ CONFIG_NUM_OF_WFDMA_RX_RING=2
 CONFIG_NUM_OF_WFDMA_TX_RING=0
 CONFIG_MTK_WIFI_UNIFIED_COMMND_SUPPORT=y
 CONFIG_MTK_WIFI_TWT_SUPPORT=y
+CONFIG_MLD_LINK_MAX=2
+CONFIG_DBDC_MODE=1
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
@@ -248,8 +252,15 @@ endif
 
 ifeq ($(CONFIG_MTK_WIFI_11BE_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_802_11BE=1
+    ifneq ($(CONFIG_MLD_LINK_MAX),)
+        ccflags-y += -DCFG_MLD_LINK_MAX=$(CONFIG_MLD_LINK_MAX)
+    endif
 else
     ccflags-y += -DCFG_SUPPORT_802_11BE=0
+endif
+
+ifneq ($(CONFIG_DBDC_MODE),)
+    ccflags-y += -DCFG_DBDC_MODE=$(CONFIG_DBDC_MODE)
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT), y)
@@ -318,7 +329,7 @@ else
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_UNIFIED_COMMND_SUPPORT), y)
-ccflags-y += -DCFG_SUPPORT_UNIFIED_COMMAND
+    ccflags-y += -DCFG_SUPPORT_UNIFIED_COMMAND
 endif
 
 ifeq ($(CONFIG_MTK_FPGA_PLATFORM), y)
@@ -692,7 +703,6 @@ MGMT_OBJS := 	$(MGMT_DIR)ais_fsm.o \
 		$(MGMT_DIR)wmm.o \
 		$(MGMT_DIR)mddp.o \
 		$(MGMT_DIR)thrm.o \
-		$(MGMT_DIR)mlo.o \
 
 # ---------------------------------------------------
 # Chips Objects List
@@ -864,7 +874,8 @@ MGMT_OBJS += $(MGMT_DIR)he_ie.o \
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_11BE_SUPPORT), y)
-MGMT_OBJS += $(MGMT_DIR)eht_rlm.o
+MGMT_OBJS += $(MGMT_DIR)eht_rlm.o \
+             $(MGMT_DIR)mlo.o
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_TWT_SUPPORT), y)

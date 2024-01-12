@@ -516,9 +516,12 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
 		 */
 	}
 #if (CFG_SUPPORT_802_11BE == 1)
-	// TODO: alloc ucMldStaIndex
-	prStaRec->ucLinkIndex = prBssDesc->rMlInfo.fgValid ?
-		prBssDesc->rMlInfo.ucLinkIndex : MLD_LINK_INDEX_NOT_FOUND;
+	if (prBssDesc->rMlInfo.fgValid) {
+		prStaRec->ucLinkIndex = prBssDesc->rMlInfo.fgValid ?
+			prBssDesc->rMlInfo.ucLinkIndex : MLD_LINK_INDEX_NOT_FOUND;
+		COPY_MAC_ADDR(prStaRec->aucMldAddr, prBssDesc->rMlInfo.aucMldAddr);
+		mldStarecRegister(prAdapter, prStaRec);
+	}
 #endif
 
 	/* 4 <2> Update information from BSS_DESC_T to current P_STA_RECORD_T */

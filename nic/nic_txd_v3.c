@@ -272,6 +272,7 @@ void nic_txd_v3_compose(
 	struct HW_MAC_CONNAC3X_TX_DESC *prTxDesc;
 	struct STA_RECORD *prStaRec;
 	struct BSS_INFO *prBssInfo;
+	struct MLD_STA_RECORD *prMldSta;
 	u_int32_t u4TxDescAndPaddingLength;
 	u_int8_t ucWmmQueSet, ucTarQueue, ucTarPort;
 	uint8_t ucEtherTypeOffsetInWord;
@@ -292,6 +293,7 @@ void nic_txd_v3_compose(
 	prTxDesc = (struct HW_MAC_CONNAC3X_TX_DESC *) prTxDescBuffer;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+	prMldSta = mldStarecGetByStarec(prAdapter, prStaRec);
 
 	u4TxDescAndPaddingLength = u4TxDescLength + NIC_TX_DESC_PADDING_LENGTH;
 
@@ -333,15 +335,18 @@ void nic_txd_v3_compose(
 
 	/** DW1 **/
 	/* MLDID-legacy */
-	{
-		prMsduInfo->ucWlanIndex = nicTxGetWlanIdx(prAdapter,
-			prMsduInfo->ucBssIndex, prMsduInfo->ucStaRecIndex);
+	prMsduInfo->ucWlanIndex = nicTxGetWlanIdx(prAdapter,
+		prMsduInfo->ucBssIndex, prMsduInfo->ucStaRecIndex);
+	if (prMldSta) {
 		HAL_MAC_CONNAC3X_TXD_SET_MLD_ID(
-			prTxDesc, prMsduInfo->ucWlanIndex);
+			prTxDesc,
+			(prMsduInfo->ucUserPriority & 0xf) % 2 == 0 ?
+				prMldSta->u2PrimaryMldId : prMldSta->u2SecondMldId);
+	} else {
+		HAL_MAC_CONNAC3X_TXD_SET_MLD_ID(
+			prTxDesc,
+			prMsduInfo->ucWlanIndex);
 	}
-
-	/* MLDID-by TID */
-	// TODO: ADD MLDID by TID
 
 	/* Header format */
 	if (prMsduInfo->fgIs802_11) {
@@ -482,6 +487,8 @@ void nic_txd_v3_compose(
 
 	/* Msdu count */
 	HAL_MAC_CONNAC3X_TXD_SET_MSDU_COUNT(prTxDesc, 1);
+
+	HAL_MAC_CONNAC3X_TXD_SET_DA_SRC_SELECTION(prTxDesc);
 
 	/** DW7 **/
 	HAL_MAC_CONNAC3X_TXD_SET_TXD_LENGTH(prTxDesc, TXD_LEN_1_PAGE);
