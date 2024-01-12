@@ -158,6 +158,10 @@ static int priv_driver_set_power_control(IN struct net_device *prNetDev,
 			      IN char *pcCommand,
 			      IN int i4TotalLen);
 #endif
+
+static int priv_driver_set_sw_wfdma(
+	IN struct net_device *prNetDev,
+	IN char *pcCommand, IN int i4TotalLen);
 /*******************************************************************************
  *                       P R I V A T E   D A T A
  *******************************************************************************
@@ -3074,6 +3078,9 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_WHOLE_CHIP_RESET "SET_WHOLE_CHIP_RESET"
 #define CMD_SET_WFSYS_RESET      "SET_WFSYS_RESET"
 #endif
+
+#define CMD_SET_SW_WFDMA         "SET_SW_WFDMA"
+
 static uint8_t g_ucMiracastMode = MIRACAST_MODE_OFF;
 
 struct cmd_tlv {
@@ -13699,6 +13706,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_SET_STA1NSS, priv_driver_set_sta1ss},
 	{CMD_SET_NVRAM, priv_driver_set_nvram},
 	{CMD_GET_NVRAM, priv_driver_get_nvram},
+	{CMD_SET_SW_WFDMA, priv_driver_set_sw_wfdma},
 };
 
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
@@ -14288,3 +14296,56 @@ static int priv_driver_set_power_control(IN struct net_device *prNetDev,
 	return 0;
 }
 #endif
+
+static int priv_driver_set_sw_wfdma(
+	IN struct net_device *prNetDev,
+	IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo;
+	uint32_t u4CfgSetNum = 0, u4Ret = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+
+	struct PARAM_CUSTOM_KEY_CFG_STRUCT rKeyCfgInfo;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL)
+		return -1; /* WLAN_STATUS_ADAPTER_NOT_READY */
+
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+
+	kalMemZero(&rKeyCfgInfo, sizeof(rKeyCfgInfo));
+
+	wlanCleanAllEmCfgSetting(prAdapter);
+
+
+	if (i4Argc >= 2) {
+		u4Ret = kalkStrtou32(apcArgv[1], 10, &u4CfgSetNum);
+		if (u4Ret != 0) {
+			DBGLOG(REQ, ERROR,
+			       "apcArgv[2] format fail erro code:%d\n",
+			       u4Ret);
+			return -1;
+		}
+
+		DBGLOG(REQ, INFO, "SwWfdma=%d\n", u4CfgSetNum);
+		prSwWfdmaInfo->fgIsEnSwWfdma = u4CfgSetNum != 0;
+	}
+	return i4BytesWritten;
+}				/* priv_driver_set_sw_wfdma */
