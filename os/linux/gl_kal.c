@@ -12635,3 +12635,38 @@ void kalConfigChksumOffload(
 			prGlueInfo->prDevHandler->features);
 }
 #endif
+
+#if CFG_TX_DIRECT_VIA_HIF_THREAD
+void kalAcquireTxDirectHifQLock(IN struct GLUE_INFO *prGlueInfo,
+			IN uint8_t ucBssIndex,
+			IN uint8_t ucHifTc,
+			OUT unsigned long *plHifQFlags)
+{
+	unsigned long ulHifQFlags = 0;
+
+	if (unlikely(prGlueInfo == NULL)) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
+		return;
+	}
+
+	spin_lock_irqsave(
+		&prGlueInfo->rTxDirectHifQueueLock[ucBssIndex][ucHifTc],
+		ulHifQFlags);
+	*plHifQFlags = ulHifQFlags;
+}
+
+void kalReleaseTxDirectHifQLock(IN struct GLUE_INFO *prGlueInfo,
+			IN uint8_t ucBssIndex,
+			IN uint8_t ucHifTc,
+			IN unsigned long ulHifQFlags)
+{
+	if (unlikely(prGlueInfo == NULL)) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
+		return;
+	}
+
+	spin_unlock_irqrestore(
+		&prGlueInfo->rTxDirectHifQueueLock[ucBssIndex][ucHifTc],
+		ulHifQFlags);
+}
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */

@@ -831,7 +831,7 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 	QUEUE_INITIALIZE(&prAdapter->rTxP1Queue);
 #else
 	for (i = 0; i < MAX_BSSID_NUM; i++)
-		for (j = 0; j < TX_PORT_NUM; j++)
+		for (j = 0; j < TC_NUM; j++)
 			QUEUE_INITIALIZE(&prAdapter->rTxPQueue[i][j]);
 #endif
 	QUEUE_INITIALIZE(&prAdapter->rRxQueue);
@@ -2657,8 +2657,8 @@ void wlanClearDataQueue(IN struct ADAPTER *prAdapter)
 		KAL_RELEASE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
 #else
 
-		struct QUE qDataPort[MAX_BSSID_NUM][TX_PORT_NUM];
-		struct QUE *prDataPort[MAX_BSSID_NUM][TX_PORT_NUM];
+		struct QUE qDataPort[MAX_BSSID_NUM][TC_NUM];
+		struct QUE *prDataPort[MAX_BSSID_NUM][TC_NUM];
 		struct MSDU_INFO *prMsduInfo;
 		int32_t i, j;
 
@@ -2668,7 +2668,7 @@ void wlanClearDataQueue(IN struct ADAPTER *prAdapter)
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
 		for (i = 0; i < MAX_BSSID_NUM; i++) {
-			for (j = 0; j < TX_PORT_NUM; j++) {
+			for (j = 0; j < TC_NUM; j++) {
 				prDataPort[i][j] = &qDataPort[i][j];
 				QUEUE_INITIALIZE(prDataPort[i][j]);
 			}
@@ -2677,7 +2677,7 @@ void wlanClearDataQueue(IN struct ADAPTER *prAdapter)
 		/* <1> Move whole list of CMD_INFO to temp queue */
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 		for (i = 0; i < MAX_BSSID_NUM; i++) {
-			for (j = 0; j < TX_PORT_NUM; j++) {
+			for (j = 0; j < TC_NUM; j++) {
 				QUEUE_MOVE_ALL(prDataPort[i][j],
 					&prAdapter->rTxPQueue[i][j]);
 				kalTraceEvent("Move TxPQueue%d_%d %d", i, j,
@@ -2688,7 +2688,7 @@ void wlanClearDataQueue(IN struct ADAPTER *prAdapter)
 
 		/* <2> Return sk buffer */
 		for (i = 0; i < MAX_BSSID_NUM; i++) {
-			for (j = 0; j < TX_PORT_NUM; j++) {
+			for (j = 0; j < TC_NUM; j++) {
 				if (!QUEUE_GET_HEAD(prDataPort[i][j]))
 					continue;
 				nicTxReleaseMsduResource(prAdapter,
@@ -7340,7 +7340,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	u4TxHifRes = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "TxHifResCtl", 0x00114211);
 	prWifiVar->u4TxHifRes = u4TxHifRes;
-	for (u4Idx = 0; u4Idx < TX_PORT_NUM && u4TxHifRes; u4Idx++) {
+	for (u4Idx = 0; u4Idx < TC_NUM && u4TxHifRes; u4Idx++) {
 		prAdapter->au4TxHifResCtl[u4Idx] = u4TxHifRes & BITS(0, 3);
 		u4TxHifRes = u4TxHifRes >> 4;
 	}

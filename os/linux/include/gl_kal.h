@@ -499,6 +499,16 @@ struct PWR_LEVEL_HANDLER_ELEMENT {
 	kalReleaseSpinLock(((struct ADAPTER *)_prAdapter)->prGlueInfo,  \
 	_rLockCategory, __ulFlags)
 
+#define KAL_TX_DIRECT_HIFQ_LOCK_DECLARATION() unsigned long __ulHifQFlags
+
+#define KAL_TX_DIRECT_HIFQ_LOCK(prGlueInfo, ucBssIndex, ucHifTc) \
+	kalAcquireTxDirectHifQLock(prGlueInfo, ucBssIndex, ucHifTc, \
+		&__ulHifQFlags)
+
+#define KAL_TX_DIRECT_HIFQ_UNLOCK(prGlueInfo, ucBssIndex, ucHifTc) \
+	kalReleaseTxDirectHifQLock(prGlueInfo, ucBssIndex, ucHifTc, \
+		__ulHifQFlags)
+
 /*----------------------------------------------------------------------------*/
 /* Macros of MUTEX operations for using in Driver Layer                   */
 /*----------------------------------------------------------------------------*/
@@ -1279,6 +1289,16 @@ void kalAcquireSpinLock(IN struct GLUE_INFO *prGlueInfo,
 void kalReleaseSpinLock(IN struct GLUE_INFO *prGlueInfo,
 			IN enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory,
 			IN unsigned long ulFlags);
+
+void kalAcquireTxDirectHifQLock(IN struct GLUE_INFO *prGlueInfo,
+			IN uint8_t ucBssIndex,
+			IN uint8_t ucHifTc,
+			OUT unsigned long *plHifQFlags);
+
+void kalReleaseTxDirectHifQLock(IN struct GLUE_INFO *prGlueInfo,
+			IN uint8_t ucBssIndex,
+			IN uint8_t ucHifTc,
+			IN unsigned long ulHifQFlags);
 
 void kalUpdateMACAddress(IN struct GLUE_INFO *prGlueInfo,
 			 IN uint8_t *pucMacAddr);

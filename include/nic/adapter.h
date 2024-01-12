@@ -1633,9 +1633,10 @@ struct ADAPTER {
 
 	#define TX_DIRECT_CHECK_INTERVAL	(1000 * HZ / USEC_PER_SEC)
 
-	struct QUE rTxDirectHifQueue[TX_PORT_NUM];
 #if CFG_TX_DIRECT_VIA_HIF_THREAD
-	spinlock_t rTxDirectHifQueueLock[TX_PORT_NUM];
+	struct QUE rTxDirectHifQueue[MAX_BSSID_NUM][TC_NUM];
+#else
+	struct QUE rTxDirectHifQueue[TC_NUM];
 #endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 
 	struct QUE rStaPsQueue[CFG_STA_REC_NUM];
@@ -1659,7 +1660,7 @@ struct ADAPTER {
 	struct QUE rTxP0Queue;
 	struct QUE rTxP1Queue;
 #else
-	struct QUE rTxPQueue[MAX_BSSID_NUM][TX_PORT_NUM];
+	struct QUE rTxPQueue[MAX_BSSID_NUM][TC_NUM];
 #endif
 	struct QUE rRxQueue;
 	struct QUE rTxDataDoneQueue;
@@ -1986,7 +1987,7 @@ struct ADAPTER {
 	} rWmmQuotaReqCS[MAX_BSSID_NUM];
 
 	/* TX HIF Control falgs */
-	uint32_t au4TxHifResCtl[TX_PORT_NUM];
+	uint32_t au4TxHifResCtl[TC_NUM];
 	uint32_t u4TxHifResCtlIdx;
 	uint32_t u4TxHifResCtlNum;
 

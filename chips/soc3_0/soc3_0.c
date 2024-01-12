@@ -3445,7 +3445,7 @@ int32_t soc3_0_wlanPowerOnInit(
 		QUEUE_INITIALIZE(&prAdapter->rTxP1Queue);
 #else
 		for (i = 0; i < MAX_BSSID_NUM; i++)
-			for (j = 0; j < TX_PORT_NUM; j++)
+			for (j = 0; j < TC_NUM; j++)
 				QUEUE_INITIALIZE(&prAdapter->rTxPQueue[i][j]);
 #endif
 		QUEUE_INITIALIZE(&prAdapter->rRxQueue);
