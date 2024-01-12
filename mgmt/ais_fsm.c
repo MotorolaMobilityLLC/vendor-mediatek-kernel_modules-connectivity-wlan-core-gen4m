@@ -3844,8 +3844,13 @@ void aisRestoreAllLink(struct ADAPTER *ad, struct AIS_FSM_INFO *ais)
 #endif
 
 		/* Free STA-REC */
-		if (prStaRec != prAisBssInfo->prStaRecOfAP)
+		if (prStaRec != prAisBssInfo->prStaRecOfAP) {
+			/* reset to idle to avoid re-entrance by
+			 * saaFsmRunEventTxDone if there's pending auth/assoc
+			 */
+			prStaRec->eAuthAssocState = AA_STATE_IDLE;
 			cnmStaRecFree(ad, prStaRec);
+		}
 
 		/* free bssinfo if it's not connected */
 		if (i != AIS_MAIN_LINK_INDEX &&
