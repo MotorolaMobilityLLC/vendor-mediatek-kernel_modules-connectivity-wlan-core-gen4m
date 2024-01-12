@@ -1691,127 +1691,134 @@ kalP2PGOStationUpdate(struct GLUE_INFO *prGlueInfo,
 	struct GL_P2P_INFO *prP2pGlueInfo = (struct GL_P2P_INFO *) NULL;
 	uint8_t aucBssid[MAC_ADDR_LEN];
 	struct BSS_INFO *prBssInfo = NULL;
+	struct station_info rStationInfo = {0};
 #if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE) || \
 	(CFG_ADVANCED_80211_MLO == 1)
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	struct MLD_STA_RECORD *mld_sta;
+	struct MLD_BSS_INFO *prMldBss;
+	struct MLD_STA_RECORD *prMldSta;
 #endif
 #endif
 
-	do {
-		if ((prGlueInfo == NULL) || (prCliStaRec == NULL)
-			|| (ucRoleIndex >= KAL_P2P_NUM))
-			break;
+	if ((prGlueInfo == NULL) || (prCliStaRec == NULL) ||
+	    (ucRoleIndex >= KAL_P2P_NUM))
+		return;
 
-		prP2pGlueInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
+	prP2pGlueInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
 
-		if ((prP2pGlueInfo == NULL) ||
-		    (prP2pGlueInfo->aprRoleHandler == NULL)) {
-			/* This case may occur when the usb is unplugged */
-			break;
-		}
+	if ((prP2pGlueInfo == NULL) ||
+	    (prP2pGlueInfo->aprRoleHandler == NULL)) {
+		/* This case may occur when the usb is unplugged */
+		return;
+	}
 
-		COPY_MAC_ADDR(aucBssid,
-			prCliStaRec->aucMacAddr);
+	COPY_MAC_ADDR(aucBssid, prCliStaRec->aucMacAddr);
 
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
-			prCliStaRec->ucBssIndex);
-		if (!prBssInfo)
-			break;
-
-		if (fgIsNew) {
-			struct station_info rStationInfo;
-
-			if (prCliStaRec->fgIsConnected == TRUE) {
-				DBGLOG(P2P, WARN,
-					"Skip duplicate notify " MACSTR "\n",
-					MAC2STR(prCliStaRec->aucMacAddr));
-				break;
-			}
-
-			DBGLOG(P2P, INFO,
-				"Notify new_sta, mac=" MACSTR "\n",
-				MAC2STR(prCliStaRec->aucMacAddr));
-
-			prCliStaRec->fgIsConnected = TRUE;
-
-			kalMemZero(&rStationInfo, sizeof(rStationInfo));
-
-#if KERNEL_VERSION(4, 0, 0) > CFG80211_VERSION_CODE
-			rStationInfo.filled = STATION_INFO_ASSOC_REQ_IES;
-#endif
-#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
-			rStationInfo.generation = ++prP2pGlueInfo->i4Generation;
-#endif
-			rStationInfo.assoc_req_ies = prCliStaRec->pucAssocReqIe;
-			rStationInfo.assoc_req_ies_len =
-				prCliStaRec->u2AssocReqIeLen;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
+					  prCliStaRec->ucBssIndex);
+	if (!prBssInfo)
+		return;
 
 #if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE) || \
 		(CFG_ADVANCED_80211_MLO == 1)
-			if (prCliStaRec->pucAssocRespIe &&
-			    prCliStaRec->u2AssocRespIeLen) {
-				rStationInfo.assoc_resp_ies =
-					prCliStaRec->pucAssocRespIe;
-				rStationInfo.assoc_resp_ies_len =
-					prCliStaRec->u2AssocRespIeLen;
-			}
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-			mld_sta = mldStarecGetByStarec(prGlueInfo->prAdapter,
-				prCliStaRec);
-			if (IS_MLD_STAREC_MULTI(mld_sta)) {
-				DBGLOG(P2P, INFO,
-					"link_id=%d, mld_addr=" MACSTR "\n",
-					prBssInfo->ucLinkIndex,
-					MAC2STR(mld_sta->aucPeerMldAddr));
+	prMldBss = mldBssGetByBss(prGlueInfo->prAdapter,
+				  prBssInfo);
+	prMldSta = mldStarecGetByStarec(prGlueInfo->prAdapter,
+					prCliStaRec);
+#endif
+#endif
 
+	DBGLOG(P2P, INFO, "role=%u mac="MACSTR" new=%d\n",
+		ucRoleIndex,
+		MAC2STR(prCliStaRec->aucMacAddr),
+		fgIsNew);
+
+	if (fgIsNew) {
+		if (prCliStaRec->fgIsConnected == TRUE) {
+			DBGLOG(P2P, WARN,
+				"Skip duplicate notify " MACSTR "\n",
+				MAC2STR(prCliStaRec->aucMacAddr));
+			return;
+		}
+
+		prCliStaRec->fgIsConnected = TRUE;
+
+#if KERNEL_VERSION(4, 0, 0) > CFG80211_VERSION_CODE
+		rStationInfo.filled = STATION_INFO_ASSOC_REQ_IES;
+#endif
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
+		rStationInfo.generation = ++prP2pGlueInfo->i4Generation;
+#endif
+		rStationInfo.assoc_req_ies = prCliStaRec->pucAssocReqIe;
+		rStationInfo.assoc_req_ies_len =
+			prCliStaRec->u2AssocReqIeLen;
+
+#if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE) || \
+	(CFG_ADVANCED_80211_MLO == 1)
+		if (prCliStaRec->pucAssocRespIe &&
+		    prCliStaRec->u2AssocRespIeLen) {
+			rStationInfo.assoc_resp_ies =
+				prCliStaRec->pucAssocRespIe;
+			rStationInfo.assoc_resp_ies_len =
+				prCliStaRec->u2AssocRespIeLen;
+		}
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (IS_MLD_BSSINFO_MULTI(prMldBss) || prMldSta) {
+			rStationInfo.mlo_params_valid = true;
+			rStationInfo.assoc_link_id =
+				prBssInfo->ucLinkIndex;
+			if (prMldSta)
+				COPY_MAC_ADDR(rStationInfo.mld_addr,
+					      prMldSta->aucPeerMldAddr);
+		}
+#endif
+#endif
+
+		cfg80211_new_sta(prP2pGlueInfo->aprRoleHandler,
+			aucBssid,
+			&rStationInfo, GFP_KERNEL);
+	} else {
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
+		++prP2pGlueInfo->i4Generation;
+#endif
+		/* FIXME: The exception occurs at wlanRemove, and
+		 *    check GLUE_FLAG_HALT is the temporarily solution.
+		 */
+		if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag) == 0) {
+			/* sae hostapd new_sta, when auth fail,
+			 * driver need del_sta
+			 */
+			if (prCliStaRec->fgIsConnected == FALSE &&
+			    !rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite) &&
+			    prBssInfo->u4RsnSelectedAKMSuite !=
+					RSN_AKM_SUITE_OWE)
+				return;
+			prCliStaRec->fgIsConnected = FALSE;
+
+#if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE) || \
+	(CFG_ADVANCED_80211_MLO == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			if (IS_MLD_BSSINFO_MULTI(prMldBss) || prMldSta) {
 				rStationInfo.mlo_params_valid = true;
 				rStationInfo.assoc_link_id =
 					prBssInfo->ucLinkIndex;
-				COPY_MAC_ADDR(rStationInfo.mld_addr,
-					mld_sta->aucPeerMldAddr);
+				if (prMldSta)
+					COPY_MAC_ADDR(rStationInfo.mld_addr,
+						      prMldSta->aucPeerMldAddr);
 			}
 #endif
 #endif
 
-			cfg80211_new_sta(prP2pGlueInfo->aprRoleHandler,
-				/* struct net_device * dev, */
-				aucBssid,
-				&rStationInfo, GFP_KERNEL);
-		} else {
-#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
-			++prP2pGlueInfo->i4Generation;
-#endif
-			/* FIXME: The exception occurs at wlanRemove, and
-			 *    check GLUE_FLAG_HALT is the temporarily solution.
-			 */
-			if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)
-				== 0) {
-				/* sae hostapd new_sta, when auth fail,
-				 * driver need del_sta
-				 */
-				if (prCliStaRec->fgIsConnected == FALSE &&
-				    !rsnKeyMgmtSae(
-					prBssInfo->u4RsnSelectedAKMSuite) &&
-				    prBssInfo->u4RsnSelectedAKMSuite !=
-						RSN_AKM_SUITE_OWE)
-					break;
-				prCliStaRec->fgIsConnected = FALSE;
-				cfg80211_del_sta(prP2pGlueInfo->aprRoleHandler,
-					/* struct net_device * dev, */
-					aucBssid, GFP_KERNEL);
-			}
-#if CFG_STAINFO_FEATURE
-			kalMemCopy(&prGlueInfo->prAdapter->rSapLastStaRec,
-				prCliStaRec, sizeof(struct STA_RECORD));
-			prGlueInfo->prAdapter->fgSapLastStaRecSet = 1;
-#endif
+			cfg80211_del_sta_sinfo(prP2pGlueInfo->aprRoleHandler,
+				aucBssid, &rStationInfo, GFP_KERNEL);
 		}
-
-	} while (FALSE);
-
-	return;
-
+#if CFG_STAINFO_FEATURE
+		kalMemCopy(&prGlueInfo->prAdapter->rSapLastStaRec,
+			prCliStaRec, sizeof(struct STA_RECORD));
+		prGlueInfo->prAdapter->fgSapLastStaRecSet = 1;
+#endif
+	}
 }				/* kalP2PGOStationUpdate */
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
