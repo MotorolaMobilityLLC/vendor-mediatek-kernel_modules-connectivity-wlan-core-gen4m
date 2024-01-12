@@ -2418,7 +2418,8 @@ int _mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 
 		if (offchan) {
 			prMsgTxReq->fgIsOffChannel = TRUE;
-
+			memset(&prMsgTxReq->rChannelInfo, 0,
+					sizeof(struct RF_CHANNEL_INFO));
 			kalChannelFormatSwitch(NULL, chan,
 					&prMsgTxReq->rChannelInfo);
 			kalChannelScoSwitch(NL80211_CHAN_NO_HT,

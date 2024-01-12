@@ -1424,6 +1424,8 @@ void p2pDevFsmRunEventTxCancelWait(IN struct ADAPTER *prAdapter,
 
 	if (fgIsCookieFound == TRUE || prP2pDevFsmInfo->eCurrentState ==
 			P2P_DEV_STATE_OFF_CHNL_TX) {
+		p2pFunClearAllTxReq(prAdapter,
+				&(prP2pDevFsmInfo->rMgmtTxInfo));
 		p2pDevFsmRunEventAbort(prAdapter, prP2pDevFsmInfo);
 	}
 
