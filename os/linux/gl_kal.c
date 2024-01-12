@@ -3079,15 +3079,13 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 			wlanReleasePendingOid(prGlueInfo->prAdapter, 0);
 		}
 #endif
+		/* note: do not dump main_thread's call stack here, */
+		/*       because it may be running on other cpu.    */
 		DBGLOG(OID, WARN,
-			"duration:%llums, sched(x%llu/r%llu/i%llu)\n",
+			"wait main_thread timeout, duration:%llums, sched(x%llu/r%llu/i%llu)\n",
 			schedstats.time, schedstats.exec,
 			schedstats.runnable, schedstats.iowait);
-		DBGLOG(OID, ERROR,
-				"wait main_thread timeout, show backtrace:\n");
 
-		kal_show_stack(prGlueInfo->prAdapter,
-			prGlueInfo->main_thread, NULL);
 		ret = WLAN_STATUS_FAILURE;
 	}
 
