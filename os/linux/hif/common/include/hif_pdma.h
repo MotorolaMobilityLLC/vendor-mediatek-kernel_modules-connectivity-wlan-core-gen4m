@@ -77,8 +77,12 @@
 #define HIF_NUM_OF_QM_RX_PKT_NUM		10240
 #define HIF_PLE_PAGE_SIZE			0xBC0
 #define HIF_AMSDU_COUNT				4
+#ifdef MT6653
+#define HIF_TX_MSDU_TOKEN_NUM			28000
+#else
 #define HIF_TX_MSDU_TOKEN_NUM \
 	(HIF_PLE_PAGE_SIZE * HIF_AMSDU_COUNT)
+#endif
 /* ToDo fine tune for owl EHT160 */
 #elif defined(CONFIG_MTK_WIFI_HE160) || defined(CONFIG_MTK_WIFI_EHT160)
 #define TX_RING_SIZE				1024
