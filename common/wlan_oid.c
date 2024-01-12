@@ -1342,9 +1342,9 @@ wlanoidUpdateConnect(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex = 0;
 	struct PARAM_CONNECT *pParamConn;
 
-	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	pParamConn = (struct PARAM_CONNECT *) pvSetBuffer;
+	ucBssIndex = pParamConn->ucBssIdx;
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
 	/* no need to replace conn ie for test mode */
 	if (pParamConn->fgTestMode)

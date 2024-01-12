@@ -4251,8 +4251,8 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 
 	if ((params->sta_flags_set & BIT(
 		     NL80211_STA_FLAG_AUTHORIZED))) {
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetAuthorized,
-			(void *) mac, MAC_ADDR_LEN, &u4BufLen);
+		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetAuthorized,
+			(void *) mac, MAC_ADDR_LEN, &u4BufLen, ucBssIndex);
 
 		DBGLOG(REQ, INFO, "rStatus: %x", rStatus);
 	}
@@ -4408,8 +4408,9 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 
 	if ((params->sta_flags_set & BIT(
 		     NL80211_STA_FLAG_AUTHORIZED))) {
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetAuthorized,
-			(void *) mac, MAC_ADDR_LEN, FALSE, &u4BufLen);
+		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetAuthorized,
+			(void *) mac, MAC_ADDR_LEN,
+			FALSE, &u4BufLen, ucBssIndex);
 	}
 
 	if (params->supported_rates == NULL)
@@ -7407,8 +7408,10 @@ int mtk_cfg_update_connect_params(struct wiphy *wiphy,
 	if (changed & UPDATE_ASSOC_IES && sme->ie && sme->ie_len) {
 		struct PARAM_CONNECT rNewSsid;
 
+		kalMemZero(&rNewSsid, sizeof(rNewSsid));
 		rNewSsid.pucIEs = (uint8_t *)sme->ie;
 		rNewSsid.u4IesLen = sme->ie_len;
+		rNewSsid.ucBssIdx = ucBssIndex;
 		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidUpdateConnect,
 			   (void *)&rNewSsid, sizeof(struct PARAM_CONNECT),
 			   &u4BufLen, ucBssIndex);
