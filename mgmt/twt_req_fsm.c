@@ -136,6 +136,9 @@ twtReqFsmSteps(
 	struct _TWT_PARAMS_T *prTWTParams = NULL;
 	struct _NEXT_TWT_INFO_T rNextTWTInfo_Suspend = {0};
 	struct _NEXT_TWT_INFO_T *prNextTWTInfo = NULL;
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+	struct _TWT_FLOW_T *prTWTFlow = NULL;
+#endif
 
 	if (!prAdapter) {
 		DBGLOG(TWT_REQUESTER, ERROR,
@@ -187,15 +190,35 @@ twtReqFsmSteps(
 
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
 				/*
-				 * To cancel previous setup CNM abort timer
+				 * For the corner case CNM abort occurs before
+				 * AP resp, while AP resp call stack executes
+				 * faster than twtReqFsmSetupEventTimeout()
+				 * calls twtReqFsmSteps(), at this moment,
+				 * we should take break the Setup accept!!!!
 				 */
-				twtReqFsmWaitRspTimeoutDeInit(
-					prAdapter,
-					prStaRec,
-					ePreState,
-					eNextState,
-					ucTWTFlowId,
-					preTwtType);
+				if ((*preTwtType) == ENUM_TWT_TYPE_ITWT) {
+					prTWTFlow = twtPlannerFlowFindById(
+							prStaRec,
+							ucTWTFlowId,
+							*preTwtType);
+
+					if (prTWTFlow == NULL) {
+						DBGLOG(TWT_REQUESTER, ERROR,
+							"invalid prTWTFlow %d\n",
+							ucTWTFlowId);
+
+						return;
+					}
+
+					if (prTWTFlow->eTwtCnmState ==
+						TWT_CNM_STATE_ABORT) {
+						DBGLOG(TWT_REQUESTER, STATE,
+						"TWT[%d] already timeout!!\n",
+						prTWTFlow->ucTWTFlowId);
+
+						return;
+					}
+				}
 #endif
 
 				twtReqFsmSendEvent(prAdapter, prStaRec,
@@ -273,11 +296,12 @@ twtReqFsmSteps(
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
 			/*
 			 * To setup CNM abort timer in case AP no resp
+			 * and cover the whole TWT setup agreetment flow
 			 */
-			twtReqFsmWaitRspTimeoutInit(
+			twtReqFsmSetupTimeoutStateCfg(
 				prAdapter,
 				prStaRec,
-				TWT_REQ_STATE_WAIT_RSP,
+				TWT_CNM_STATE_WAIT_RESP,
 				ucTWTFlowId,
 				(enum _ENUM_TWT_TYPE_T *)pParam);
 #endif
@@ -1021,6 +1045,35 @@ twtReqFsmRunEventTxDone(
 
 		twtReqFsmSteps(prAdapter, prStaRec, eNextState,
 			ucTWTFlowId, &eTwtType);
+
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+		/*
+		 * Upon TWT teardown done, inform F/W
+		 * to abort CNM request under CNM + TWT,
+		 * because the F/W CNM would assert!!!
+		 */
+		twtPlannerAbortCnmGranted(
+				prAdapter,
+				prBssInfo,
+				prStaRec,
+				ucTWTFlowId,
+				FALSE,
+				NULL,
+				NULL);
+
+		/*
+		 * We should stop teardown timeout flow,
+		 * [1]For teardown failure case, CNM has been aborted
+		 *    by above twtPlannerAbortCnmGranted()
+		 * [2]For teardown success case, no more need the
+		 *    teardown timeout flow
+		 */
+		if (timerPendingTimer(
+			&(prStaRec->rTwtFsmTeardownTimeoutTimer)))
+			cnmTimerStopTimer(
+				prAdapter,
+				&(prStaRec->rTwtFsmTeardownTimeoutTimer));
+#endif
 
 		break;
 
@@ -2227,10 +2280,98 @@ void mltwtReqFsmSync(
 #endif
 
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
-void twtReqFsmWaitRspTimeoutInit(
+u_int32_t
+twtReqFsmRunEventRejectTxDone(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	struct STA_RECORD *prStaRec;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucTWTFlowId;
+	enum _ENUM_TWT_REQUESTER_STATE_T eNextState;
+	enum _ENUM_TWT_TYPE_T eTwtType = ENUM_TWT_TYPE_DEFAULT;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prAdapter\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prMsduInfo) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prMsduInfo\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+
+	if (!prStaRec) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"EVENT-TXDONE: No valid STA Record\n");
+
+		return WLAN_STATUS_INVALID_PACKET;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	if (prBssInfo == NULL) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"EVENT-TXDONE: No valid BSS_INFO\n");
+
+		return WLAN_STATUS_INVALID_PACKET;
+	}
+
+	DBGLOG(TWT_REQUESTER, WARN,
+		"EVENT-TX DONE [status: %d][seq: %d]: Current Time = %d\n",
+		rTxDoneStatus, prMsduInfo->ucTxSeqNum, kalGetTimeTick());
+
+	/*
+	 * if (rTxDoneStatus == TX_RESULT_SUCCESS)
+	 * Even it is a failure TWT teardown case,
+	 * the state machine goes to TWT_REQ_STATE_IDLE
+	 */
+	eNextState = TWT_REQ_STATE_IDLE;
+
+	ucTWTFlowId = twtGetTxTeardownFlowId(prMsduInfo);
+
+	if ((ucTWTFlowId == TWT_INCORRECT_FLOW_ID) ||
+		(ucTWTFlowId >= TWT_MAX_FLOW_NUM)) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"TWT_INCORRECT_FLOW_ID %d\n",
+			ucTWTFlowId);
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	eTwtType = ENUM_TWT_TYPE_ITWT;
+
+	twtReqFsmSteps(prAdapter, prStaRec, eNextState,
+		ucTWTFlowId, &eTwtType);
+
+	twtPlannerAbortCnmGranted(
+		prAdapter,
+		prBssInfo,
+		prStaRec,
+		ucTWTFlowId,
+		FALSE,
+		NULL,
+		NULL);
+
+	if (timerPendingTimer(&(prStaRec->rTwtFsmWaitRespTimeoutTimer)))
+		cnmTimerStopTimer(
+			prAdapter,
+			&(prStaRec->rTwtFsmWaitRespTimeoutTimer));
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void twtReqFsmSetupTimeoutInit(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
-	enum _ENUM_TWT_REQUESTER_STATE_T eCurState,
+	enum _ENUM_TWT_CNM_STATE_T eCurState,
 	u_int8_t ucTWTFlowId,
 	enum _ENUM_TWT_TYPE_T *preTwtType)
 {
@@ -2289,7 +2430,7 @@ void twtReqFsmWaitRspTimeoutInit(
 
 	prTWTFlow->prOwnStaRec = prStaRec;
 	prTWTFlow->ucTWTFlowId = ucTWTFlowId;
-	prTWTFlow->eTwtState = eCurState;
+	prTWTFlow->eTwtCnmState = eCurState;
 
 	if (timerPendingTimer(&(prStaRec->rTwtFsmWaitRespTimeoutTimer)))
 		cnmTimerStopTimer(
@@ -2299,7 +2440,7 @@ void twtReqFsmWaitRspTimeoutInit(
 	cnmTimerInitTimer(
 		prAdapter,
 		&(prStaRec->rTwtFsmWaitRespTimeoutTimer),
-		(PFN_MGMT_TIMEOUT_FUNC)twtReqFsmWaitRspEventTimeout,
+		(PFN_MGMT_TIMEOUT_FUNC)twtReqFsmSetupEventTimeout,
 		(uintptr_t)prTWTFlow);
 
 	cnmTimerStartTimer(
@@ -2308,16 +2449,15 @@ void twtReqFsmWaitRspTimeoutInit(
 		prWifiVar->u4TwtCnmAbortTimeoutMs);
 
 	DBGLOG(TWT_REQUESTER, STATE,
-		"TWT[%d] wait rsp timeout %d init\n",
+		"TWT[%d] setup timeout %d init state %d\n",
 		ucTWTFlowId,
-		prWifiVar->u4TwtCnmAbortTimeoutMs);
+		prWifiVar->u4TwtCnmAbortTimeoutMs,
+		eCurState);
 }
 
-void twtReqFsmWaitRspTimeoutDeInit(
+void twtReqFsmSetupTimeoutDeInit(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
-	enum _ENUM_TWT_REQUESTER_STATE_T ePreState,
-	enum _ENUM_TWT_REQUESTER_STATE_T eNextState,
 	u_int8_t ucTWTFlowId,
 	enum _ENUM_TWT_TYPE_T *preTwtType)
 {
@@ -2333,22 +2473,6 @@ void twtReqFsmWaitRspTimeoutDeInit(
 	if (!prStaRec) {
 		DBGLOG(TWT_REQUESTER, ERROR,
 			"invalid prStaRec\n");
-
-		return;
-	}
-
-	if (ePreState != TWT_REQ_STATE_WAIT_RSP) {
-		DBGLOG(TWT_REQUESTER, ERROR,
-			"invalid TWT[%d] pre state %d\n",
-			ucTWTFlowId, ePreState);
-
-		return;
-	}
-
-	if (eNextState != TWT_REQ_STATE_IDLE) {
-		DBGLOG(TWT_REQUESTER, ERROR,
-			"invalid TWT[%d] next state %d\n",
-			ucTWTFlowId, eNextState);
 
 		return;
 	}
@@ -2381,16 +2505,89 @@ void twtReqFsmWaitRspTimeoutDeInit(
 		return;
 	}
 
-	if (timerPendingTimer(&(prStaRec->rTwtFsmWaitRespTimeoutTimer)))
+	prTWTFlow->eTwtCnmState = TWT_CNM_STATE_DEFAULT;
+
+	if (timerPendingTimer(&(prStaRec->rTwtFsmWaitRespTimeoutTimer))) {
 		cnmTimerStopTimer(
 			prAdapter,
 			&(prStaRec->rTwtFsmWaitRespTimeoutTimer));
 
-	DBGLOG(TWT_REQUESTER, STATE,
-		"TWT[%d] wait rsp timeout de-init\n", ucTWTFlowId);
+		DBGLOG(TWT_REQUESTER, STATE,
+			"TWT[%d] setup timeout de-init\n", ucTWTFlowId);
+	}
 }
 
-void twtReqFsmWaitRspEventTimeout(
+void twtReqFsmSetupTimeoutStateCfg(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	enum _ENUM_TWT_CNM_STATE_T eCurState,
+	u_int8_t ucTWTFlowId,
+	enum _ENUM_TWT_TYPE_T *preTwtType)
+{
+	struct WIFI_VAR *prWifiVar = NULL;
+	struct _TWT_FLOW_T *prTWTFlow = NULL;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prAdapter\n");
+
+		return;
+	}
+
+	prWifiVar = &prAdapter->rWifiVar;
+
+	if (!prWifiVar) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prWifiVar\n");
+
+		return;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prStaRec\n");
+
+		return;
+	}
+
+	if (preTwtType == NULL) {
+		DBGLOG(TWT_REQUESTER, ERROR, "invalid pParam\n");
+
+		return;
+	}
+
+	if ((*preTwtType) != ENUM_TWT_TYPE_ITWT) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"incorrect preTwtType %d\n",
+			(u_int8_t)(*preTwtType));
+
+		return;
+	}
+
+	prTWTFlow = twtPlannerFlowFindById(
+			prStaRec,
+			ucTWTFlowId,
+			*preTwtType);
+
+	if (prTWTFlow == NULL) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prTWTFlow %d\n",
+			ucTWTFlowId);
+
+		return;
+	}
+
+	prTWTFlow->prOwnStaRec = prStaRec;
+	prTWTFlow->ucTWTFlowId = ucTWTFlowId;
+	prTWTFlow->eTwtCnmState = eCurState;
+
+	DBGLOG(TWT_REQUESTER, STATE,
+		"TWT[%d] setup timeout state %d\n",
+		ucTWTFlowId,
+		eCurState);
+}
+
+void twtReqFsmSetupEventTimeout(
 	struct ADAPTER *prAdapter,
 	uintptr_t ulParamPtr)
 {
@@ -2432,15 +2629,20 @@ void twtReqFsmWaitRspEventTimeout(
 		return;
 	}
 
-	if (prTWTFlow->eTwtState == TWT_REQ_STATE_WAIT_RSP) {
+	if (prTWTFlow->eTwtCnmState == TWT_CNM_STATE_WAIT_RESP) {
 		DBGLOG(TWT_REQUESTER, STATE,
 			"TWT[%d] wait resp timeout state %d, teardown\n",
 			prTWTFlow->ucTWTFlowId,
-			prTWTFlow->eTwtState);
+			prTWTFlow->eTwtCnmState);
 
 		twtSendTeardownFrame(
 			prAdapter, prStaRec, prTWTFlow->ucTWTFlowId, NULL);
 	}
+
+	/*
+	 * if we reach this point, we are aborting the CNM channel grant
+	 */
+	prTWTFlow->eTwtCnmState = TWT_CNM_STATE_ABORT;
 
 	DBGLOG(TWT_REQUESTER, STATE,
 		"TWT[%d] wait resp timeout, abort CNM chnl grant!!\n",
@@ -2460,12 +2662,223 @@ void twtReqFsmWaitRspEventTimeout(
 	 * NULL in final parameter to twtReqFsmSteps, would not
 	 * cause MID_TWT_REQ_IND_RESULT for any TWT resp processing
 	 * , since we are no wait resp timeout!!!
+	 *
+	 * Total 3 TWT_CNM_STATE would be input:
+	 * [1]TWT_CNM_STATE_DEFAULT: TWT STA in get current TSF done
+	 * [2]TWT_CNM_STATE_WAIT_RESP: TWT STA in wait resp from AP
+	 * [3]TWT_CNM_STATE_ADD_AGRT: TWT STA in setup success
 	 */
-	twtReqFsmSteps(
+	if (prTWTFlow->eTwtCnmState != TWT_CNM_STATE_ADD_AGRT)
+		twtReqFsmSteps(
+			prAdapter,
+			prStaRec,
+			TWT_REQ_STATE_IDLE,
+			prTWTFlow->ucTWTFlowId,
+			NULL);
+}
+
+void twtReqFsmTeardownTimeoutInit(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	u_int8_t ucTWTFlowId,
+	enum _ENUM_TWT_TYPE_T *preTwtType)
+{
+	struct WIFI_VAR *prWifiVar = NULL;
+	struct _TWT_FLOW_T *prTWTFlow = NULL;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prAdapter\n");
+
+		return;
+	}
+
+	prWifiVar = &prAdapter->rWifiVar;
+
+	if (!prWifiVar) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prWifiVar\n");
+
+		return;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prStaRec\n");
+
+		return;
+	}
+
+	if (preTwtType == NULL) {
+		DBGLOG(TWT_REQUESTER, ERROR, "invalid pParam\n");
+
+		return;
+	}
+
+	if ((*preTwtType) != ENUM_TWT_TYPE_ITWT) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"incorrect preTwtType %d\n",
+			(u_int8_t)(*preTwtType));
+
+		return;
+	}
+
+	prTWTFlow = twtPlannerFlowFindById(
+			prStaRec,
+			ucTWTFlowId,
+			*preTwtType);
+
+	if (prTWTFlow == NULL) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prTWTFlow %d\n",
+			ucTWTFlowId);
+
+		return;
+	}
+
+	prTWTFlow->prOwnStaRec = prStaRec;
+	prTWTFlow->ucTWTFlowId = ucTWTFlowId;
+	prTWTFlow->eTwtCnmState = TWT_CNM_STATE_DEFAULT;
+
+	if (timerPendingTimer(&(prStaRec->rTwtFsmTeardownTimeoutTimer)))
+		cnmTimerStopTimer(
+			prAdapter,
+			&(prStaRec->rTwtFsmTeardownTimeoutTimer));
+
+	cnmTimerInitTimer(
 		prAdapter,
+		&(prStaRec->rTwtFsmTeardownTimeoutTimer),
+		(PFN_MGMT_TIMEOUT_FUNC)twtReqFsmTeardownEventTimeout,
+		(uintptr_t)prTWTFlow);
+
+	cnmTimerStartTimer(
+		prAdapter,
+		&(prStaRec->rTwtFsmTeardownTimeoutTimer),
+		prWifiVar->u4TwtCnmAbortTimeoutMs);
+
+	DBGLOG(TWT_REQUESTER, STATE,
+		"TWT[%d] teardown timeout %d init\n",
+		ucTWTFlowId,
+		prWifiVar->u4TwtCnmAbortTimeoutMs);
+}
+
+void twtReqFsmTeardownTimeoutDeInit(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	u_int8_t ucTWTFlowId,
+	enum _ENUM_TWT_TYPE_T *preTwtType)
+{
+	struct _TWT_FLOW_T *prTWTFlow = NULL;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prStaRec\n");
+
+		return;
+	}
+
+	if (preTwtType == NULL) {
+		DBGLOG(TWT_REQUESTER, ERROR, "invalid pParam\n");
+
+		return;
+	}
+
+	/* this indicates individual TWT */
+	if ((*preTwtType) != ENUM_TWT_TYPE_ITWT) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"incorrect preTwtType %d\n",
+			(u_int8_t)(*preTwtType));
+
+		return;
+	}
+
+	prTWTFlow = twtPlannerFlowFindById(
+			prStaRec,
+			ucTWTFlowId,
+			*preTwtType);
+
+	if (prTWTFlow == NULL) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prTWTFlow %d\n",
+			ucTWTFlowId);
+
+		return;
+	}
+
+	prTWTFlow->eTwtCnmState = TWT_CNM_STATE_DEFAULT;
+
+	if (timerPendingTimer(&(prStaRec->rTwtFsmTeardownTimeoutTimer))) {
+		cnmTimerStopTimer(
+			prAdapter,
+			&(prStaRec->rTwtFsmTeardownTimeoutTimer));
+
+		DBGLOG(TWT_REQUESTER, STATE,
+			"TWT[%d] teardown timeout de-init\n", ucTWTFlowId);
+	}
+}
+
+void twtReqFsmTeardownEventTimeout(
+	struct ADAPTER *prAdapter,
+	uintptr_t ulParamPtr)
+{
+	struct STA_RECORD *prStaRec = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct _TWT_FLOW_T *prTWTFlow = NULL;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prAdapter\n");
+
+		return;
+	}
+
+	prTWTFlow = (struct _TWT_FLOW_T *)ulParamPtr;
+
+	if (prTWTFlow == NULL) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prTWTFlow\n");
+
+		return;
+	}
+
+	prTWTFlow->eTwtCnmState = TWT_CNM_STATE_ABORT;
+
+	prStaRec = prTWTFlow->prOwnStaRec;
+
+	if (!prStaRec) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prStaRec\n");
+
+		return;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	if (prBssInfo == NULL) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid BSS_INFO\n");
+
+		return;
+	}
+
+	DBGLOG(TWT_REQUESTER, STATE,
+		"TWT[%d] teardown timeout, abort CNM chnl grant!!\n",
+		prTWTFlow->ucTWTFlowId);
+
+	twtPlannerAbortCnmGranted(
+		prAdapter,
+		prBssInfo,
 		prStaRec,
-		TWT_REQ_STATE_IDLE,
 		prTWTFlow->ucTWTFlowId,
+		FALSE,
+		NULL,
 		NULL);
 }
 #endif

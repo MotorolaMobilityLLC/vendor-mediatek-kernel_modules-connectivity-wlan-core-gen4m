@@ -7355,7 +7355,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucTWTResponder, "TWTResponder", FEATURE_DISABLED);
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
 	INIT_UINT(prWifiVar->u4TwtCnmAbortTimeoutMs,
-				"TwtCnmAbortTimeoutMs", 50);
+			"TwtCnmAbortTimeoutMs",
+			TWT_CNM_GRANT_DEFAULT_INTERVAL_MS);
 #endif
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	INIT_UINT(prWifiVar->ucTWTStaBandBitmap,
