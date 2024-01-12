@@ -1964,10 +1964,15 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 		return WLAN_STATUS_SUCCESS;
 	}
 #endif /* CFG_SUPPORT_RX_GRO */
+
+#if KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE
+	netif_rx(prSkb);
+#else
 	if (!in_interrupt())
 		netif_rx_ni(prSkb);
 	else
 		netif_rx(prSkb);
+#endif
 
 	return WLAN_STATUS_SUCCESS;
 }
