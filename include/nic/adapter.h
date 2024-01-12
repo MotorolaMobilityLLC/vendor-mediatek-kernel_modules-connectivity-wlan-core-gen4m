@@ -1591,12 +1591,7 @@ struct ADAPTER {
 
 	#define TX_DIRECT_CHECK_INTERVAL	(1000 * HZ / USEC_PER_SEC)
 
-#if CFG_TX_DIRECT_VIA_HIF_THREAD
-	struct QUE rTxDirectHifQueue[MAX_BSSID_NUM][TC_NUM];
-#else
 	struct QUE rTxDirectHifQueue[TC_NUM];
-#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
-
 	struct QUE rStaPsQueue[CFG_STA_REC_NUM];
 	uint32_t u4StaPsBitmap;
 	struct QUE rBssAbsentQueue[MAX_BSSID_NUM + 1];

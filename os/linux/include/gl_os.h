@@ -288,10 +288,6 @@
 #include "agent.h"
 #endif
 
-#if CFG_TX_DIRECT_VIA_HIF_THREAD
-#include "wlan_typedef.h"
-#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
-
 extern u_int8_t fgIsBusAccessFailed;
 extern const struct ieee80211_iface_combination
 	*p_mtk_iface_combinations_sta;
@@ -376,11 +372,8 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 #define GLUE_FLAG_RX_DIRECT_INT_BIT             (23)
 #define GLUE_FLAG_RX_DIRECT_INT                 BIT(23)
 
-#define GLUE_FLAG_TX_DIRECT_HIF_TX_BIT          (24)
-#define GLUE_FLAG_TX_DIRECT_HIF_TX              BIT(24)
-
-#define GLUE_FLAG_MGMT_DIRECT_HIF_TX_BIT          (25)
-#define GLUE_FLAG_MGMT_DIRECT_HIF_TX              BIT(25)
+#define GLUE_FLAG_MGMT_DIRECT_HIF_TX_BIT        (24)
+#define GLUE_FLAG_MGMT_DIRECT_HIF_TX            BIT(24)
 
 #define GLUE_BOW_KFIFO_DEPTH        (1024)
 /* #define GLUE_BOW_DEVICE_NAME        "MT6620 802.11 AMP" */
@@ -761,10 +754,6 @@ struct GLUE_INFO {
 	/* check if HIF port is ready to accept a new Msdu */
 	kal_timer_list rTxDirectHifTimer;
 	struct sk_buff_head rTxDirectSkbQueue;
-
-#if CFG_TX_DIRECT_VIA_HIF_THREAD
-	spinlock_t rTxDirectHifQueueLock[MAX_BSSID_NUM][TC_NUM];
-#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 
 #if CFG_SUPPORT_EXT_CONFIG
 	uint16_t au2ExtCfg[256];	/* NVRAM data buffer */
