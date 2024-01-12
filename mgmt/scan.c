@@ -337,13 +337,13 @@ void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 	/*print channel info for debugging */
 	uint32_t au4ChannelBitMap[SCAN_CHANNEL_BITMAP_ARRAY_LEN];
 	struct SCAN_INFO *prScanInfo;
+	bool fgIsLowSpanScan = FALSE;
 #if CFG_SUPPORT_FULL2PARTIAL_SCAN
 	uint8_t fgIsFull2Partial = FALSE;
 	OS_SYSTIME rCurrentTime;
 
 	GET_CURRENT_SYSTIME(&rCurrentTime);
 #endif /* CFG_SUPPORT_FULL2PARTIAL_SCAN */
-	bool fgIsLowSpanScan = FALSE;
 
 	ASSERT(u4ScanChannelNum <= MAXIMUM_OPERATION_CHANNEL_LIST);
 
