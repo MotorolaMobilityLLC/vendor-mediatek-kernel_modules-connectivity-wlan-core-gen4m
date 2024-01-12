@@ -855,10 +855,6 @@ int glUsbSubmitUrb(struct GL_HIF_INFO *prHifInfo, struct urb *urb,
 	unsigned long flags;
 	uint32_t ret = 0;
 
-	if (type == SUBMIT_TYPE_RX_EVENT || type == SUBMIT_TYPE_RX_DATA ||
-	    type == SUBMIT_TYPE_RX_WDT)
-		return usb_submit_urb(urb, GFP_ATOMIC);
-
 	spin_lock_irqsave(&prHifInfo->rStateLock, flags);
 	if (type == SUBMIT_TYPE_TX_CMD) {
 		if (!(prHifInfo->state == USB_STATE_LINK_UP ||
