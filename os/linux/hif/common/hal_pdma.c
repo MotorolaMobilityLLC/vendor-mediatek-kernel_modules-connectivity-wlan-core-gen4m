@@ -458,11 +458,19 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 		prAdapter->u4OwnFailedLogCount++;
 		if (prAdapter->u4OwnFailedLogCount >
 		    LP_OWN_BACK_FAILED_RESET_CNT) {
-			if (prChipDbgOps->showCsrInfo)
-				prChipDbgOps->showCsrInfo(prAdapter);
-			if (prChipDbgOps->dumpBusHangCr)
-				prChipDbgOps->dumpBusHangCr(prAdapter);
-			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_DRV_OWN_FAIL);
+			if (IS_MOBILE_SEGMENT && in_interrupt()) {
+				DBGLOG(INIT, INFO,
+					"Skip reset in tasklet\n");
+			} else {
+				if (prChipDbgOps->showCsrInfo)
+					prChipDbgOps->showCsrInfo(
+							prAdapter);
+				if (prChipDbgOps->dumpBusHangCr)
+					prChipDbgOps->dumpBusHangCr(
+							prAdapter);
+				GL_DEFAULT_RESET_TRIGGER(prAdapter,
+						RST_DRV_OWN_FAIL);
+			}
 		}
 		GET_CURRENT_SYSTIME(&prAdapter->rLastOwnFailedLogTime);
 	}
@@ -489,6 +497,7 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	uint32_t i, u4CurrTick;
 	u_int8_t fgTimeout;
 	u_int8_t fgResult;
+	u_int8_t fgIsDriverOwnTimeout = FALSE;
 
 	KAL_TIME_INTERVAL_DECLARATION();
 
@@ -558,12 +567,19 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 		} else if ((i > LP_OWN_BACK_FAILED_RETRY_CNT) &&
 			   (kalIsCardRemoved(prAdapter->prGlueInfo) ||
 			    fgIsBusAccessFailed || fgTimeout)) {
-			halDriverOwnTimeout(prAdapter, u4CurrTick, fgTimeout);
+			fgIsDriverOwnTimeout = TRUE;
 			fgStatus = FALSE;
 			break;
 		}
 
 		i++;
+	}
+
+	if (fgIsDriverOwnTimeout) {
+		if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
+			goto end;
+		else
+			halDriverOwnTimeout(prAdapter, u4CurrTick, fgTimeout);
 	}
 
 #if !CFG_CONTROL_ASPM_BY_FW
@@ -602,6 +618,13 @@ end:
 			&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_SET_OWN]);
 	else
 		KAL_RELEASE_MUTEX(prAdapter, MUTEX_SET_OWN);
+
+	if (fgIsDriverOwnTimeout) {
+		if (HAL_IS_TX_DIRECT(prAdapter) ||
+				HAL_IS_RX_DIRECT(prAdapter))
+			halDriverOwnTimeout(prAdapter,
+					u4CurrTick, fgTimeout);
+	}
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (prChipInfo->is_support_mawd &&
