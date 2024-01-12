@@ -577,7 +577,8 @@ void nic_txd_v2_compose(
 		HAL_MAC_CONNAC2X_TXD_SET_FIXED_RATE_ENABLE(prTxDesc);
 
 #if (CFG_SUPPORT_HE_ER == 1)
-		if (prBssInfo->fgIsTxErStarted == TRUE) {
+		if (prBssInfo->ucErMode == RA_DCM ||
+			prBssInfo->ucErMode == RA_ER_106) {
 			/* 2 HE LTF */
 			HAL_MAC_CONNAC2X_TXD_SET_HE_LTF(prTxDesc, 1);
 			/* 1.6us GI */
