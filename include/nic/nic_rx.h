@@ -1042,11 +1042,6 @@ struct RX_CTRL {
 	uint64_t au8RROStatistics[RRO_COUNTER_NUM + 1];
 #endif /* CFG_SUPPORT_HOST_OFFLOAD */
 
-#if CFG_HIF_STATISTICS
-	uint32_t u4TotalRxAccessNum;
-	uint32_t u4TotalRxPacketNum;
-#endif
-
 #if CFG_HIF_RX_STARVATION_WARNING
 	uint32_t u4QueuedCnt;
 	uint32_t u4DequeuedCnt;

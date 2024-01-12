@@ -927,8 +927,6 @@
 #define CFG_DBG_MGT_BUF                         1
 #endif
 
-#define CFG_HIF_STATISTICS                      0
-
 #define CFG_HIF_RX_STARVATION_WARNING           0
 
 #define CFG_RX_PKTS_DUMP                        0

@@ -271,11 +271,6 @@ void nicTxInitialize(struct ADAPTER *prAdapter)
 	QUEUE_INITIALIZE(&prTxCtrl->rTxMgmtTxingQueue);
 	prTxCtrl->i4TxMgmtPendingNum = 0;
 
-#if CFG_HIF_STATISTICS
-	prTxCtrl->u4TotalTxAccessNum = 0;
-	prTxCtrl->u4TotalTxPacketNum = 0;
-#endif
-
 	prTxCtrl->i4PendingFwdFrameCount = 0;
 	prTxCtrl->i4PendingFwdFrameWMMCount[WMM_AC_BE_INDEX] = 0;
 	prTxCtrl->i4PendingFwdFrameWMMCount[WMM_AC_BK_INDEX] = 0;
@@ -2804,11 +2799,6 @@ uint32_t nicTxMsduQueue(struct ADAPTER *prAdapter,
 
 	prHifStats = &prAdapter->rHifStats;
 	prTxCtrl = &prAdapter->rTxCtrl;
-
-#if CFG_HIF_STATISTICS
-	prTxCtrl->u4TotalTxAccessNum++;
-	prTxCtrl->u4TotalTxPacketNum += prQue->u4NumElem;
-#endif
 
 	prDataTemp = &qDataTemp;
 	QUEUE_INITIALIZE(prDataTemp);

@@ -404,11 +404,6 @@ void nicRxInitialize(struct ADAPTER *prAdapter)
 	prRxCtrl->pucRxCoalescingBufPtr =
 		prAdapter->pucCoalescingBufCached;
 
-#if CFG_HIF_STATISTICS
-	prRxCtrl->u4TotalRxAccessNum = 0;
-	prRxCtrl->u4TotalRxPacketNum = 0;
-#endif
-
 #if CFG_HIF_RX_STARVATION_WARNING
 	prRxCtrl->u4QueuedCnt = 0;
 	prRxCtrl->u4DequeuedCnt = 0;
