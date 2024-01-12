@@ -3036,6 +3036,22 @@ int set_p2p_mode_handler(struct net_device *netdev,
 	}
 #endif /*CFG_MTK_ANDROID_WMT*/
 
+	/* Remember original ifindex for reset case */
+	if (kalIsResetting()) {
+		struct GL_P2P_INFO *prP2PInfo = NULL;
+		int i = 0;
+
+		for (i = 0 ; i < KAL_P2P_NUM; i++) {
+			prP2PInfo = prGlueInfo->prP2PInfo[i];
+
+			if (!prP2PInfo || !prP2PInfo->prDevHandler)
+				continue;
+
+			g_u4DevIdx[i] =
+				prP2PInfo->prDevHandler->ifindex;
+		}
+	}
+
 	/* Resetting p2p mode if registered to avoid launch KE */
 	if (p2pmode.u4Enable
 		&& prGlueInfo->prAdapter->fgIsP2PRegistered
