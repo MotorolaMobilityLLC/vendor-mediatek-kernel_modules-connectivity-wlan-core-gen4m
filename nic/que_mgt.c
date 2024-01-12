@@ -8918,21 +8918,19 @@ void qmHandleRxArpPackets(struct ADAPTER *prAdapter,
 #endif /* CFG_QM_ARP_MONITOR_MSG */
 }
 
-void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
-	struct SW_RFB *prSwRfb)
+void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
-	uint8_t *pucData = NULL;
-	struct BOOTP_PROTOCOL *prDhcp = NULL;
+	uint8_t *pucData;
+	struct DHCP_PROTOCOL *prDhcp;
 	uint32_t dhcpLen = 0;
 	uint8_t ucBssIndex;
 
-	pucData = (uint8_t *)prSwRfb->pvHeader;
+	pucData = prSwRfb->pvHeader;
 	if (!pucData)
 		return;
 
-	/* check if pkt is dhcp from server */
-	prDhcp = (struct BOOTP_PROTOCOL *)qmGetDhcpPkt(pucData,
-			prSwRfb->u2PacketLen, TRUE, &dhcpLen);
+	/* check if pkt is DHCP from server */
+	prDhcp = qmGetDhcpPkt(pucData, prSwRfb->u2PacketLen, TRUE, &dhcpLen);
 	if (!prDhcp)
 		return;
 
@@ -8967,14 +8965,14 @@ end:
 	return pucEthBody;
 }
 
-uint8_t *qmGetUdpPkt(uint8_t *pucData, uint16_t u2PacketLen,
-	uint32_t *pUdpLen)
+struct UDP_HEADER *qmGetUdpPkt(uint8_t *pucData, uint16_t u2PacketLen,
+		uint32_t *pUdpLen)
 {
 	uint16_t u2EtherType = 0;
 	uint8_t *pucEthBody = NULL;
-	uint8_t *pucUdpPkt = NULL;
+	struct UDP_HEADER *pUdp = NULL;
 	uint32_t ipHLen = 0;
-	uint32_t udpLen = 0;
+	uint16_t u2UdpLen = 0;
 
 	/* check if pkt at least have eth/ip/udp header to read */
 	if (u2PacketLen < (ETHER_HEADER_LEN + IP_HEADER_LEN + UDP_HDR_LEN) ||
@@ -9000,29 +8998,28 @@ uint8_t *qmGetUdpPkt(uint8_t *pucData, uint16_t u2PacketLen,
 		goto end;
 
 	/* check if udp payload safe to read */
-	pucUdpPkt = &pucEthBody[ipHLen];
-	udpLen = pucUdpPkt[4] << 8 | pucUdpPkt[5];
-	if (unlikely(u2PacketLen < ETHER_HEADER_LEN + ipHLen + udpLen)) {
-		pucUdpPkt = NULL;
-		udpLen = 0;
+	pUdp = (struct UDP_HEADER *)&pucEthBody[ipHLen];
+	u2UdpLen = NTOHS(pUdp->u2Length);
+	if (unlikely(u2PacketLen < ETHER_HEADER_LEN + ipHLen + u2UdpLen)) {
+		pUdp = NULL;
+		u2UdpLen = 0;
 		goto end;
 	}
 end:
 	if (pUdpLen)
-		*pUdpLen = udpLen;
-	return pucUdpPkt;
+		*pUdpLen = u2UdpLen;
+	return pUdp;
 }
 
-uint8_t *qmGetDhcpPkt(uint8_t *pucData, uint16_t u2PacketLen,
+struct DHCP_PROTOCOL *qmGetDhcpPkt(uint8_t *pucData, uint16_t u2PacketLen,
 	u_int8_t fgFromServer, uint32_t *pDhcpLen)
 {
-	uint8_t *pucUdpPkt = NULL;
+	struct UDP_HEADER *pucUdpPkt = NULL;
 	uint32_t udpLen = 0;
 	uint32_t dhcpLen = 0;
 	uint16_t u2UdpDstPort;
 	uint16_t u2UdpSrcPort;
-	uint8_t *pucDhcpPkt = NULL;
-	struct BOOTP_PROTOCOL *prDhcp = NULL;
+	struct DHCP_PROTOCOL *prDhcp = NULL;
 	uint32_t u4DhcpMagicCode = 0;
 
 	pucUdpPkt = qmGetUdpPkt(pucData, u2PacketLen, &udpLen);
@@ -9030,40 +9027,36 @@ uint8_t *qmGetDhcpPkt(uint8_t *pucData, uint16_t u2PacketLen,
 		goto end;
 
 	/* check udp port is dhcp */
-	u2UdpDstPort = (pucUdpPkt[2] << 8) | pucUdpPkt[3];
-	u2UdpSrcPort = (pucUdpPkt[0] << 8) | pucUdpPkt[1];
-	if (fgFromServer) {
-		if (u2UdpSrcPort != UDP_PORT_DHCPS ||
-			u2UdpDstPort != UDP_PORT_DHCPC)
-			goto end;
-	} else {
-		if (u2UdpSrcPort != UDP_PORT_DHCPC ||
-			u2UdpDstPort != UDP_PORT_DHCPS)
-			goto end;
-	}
-
-	if (udpLen < (UDP_HDR_LEN + sizeof(struct BOOTP_PROTOCOL) +
-		DHCP_OPTIONS_SZ_MIN))
+	u2UdpDstPort = NTOHS(pucUdpPkt->u2DstPort);
+	u2UdpSrcPort = NTOHS(pucUdpPkt->u2SrcPort);
+	if (fgFromServer &&
+	    (u2UdpSrcPort != UDP_PORT_DHCPS || u2UdpDstPort != UDP_PORT_DHCPC))
 		goto end;
 
-	prDhcp = (struct BOOTP_PROTOCOL *)&pucUdpPkt[UDP_HDR_LEN];
-	WLAN_GET_FIELD_BE32(&prDhcp->aucOptions[0],
-		&u4DhcpMagicCode);
+	if (!fgFromServer &&
+	    (u2UdpSrcPort != UDP_PORT_DHCPC || u2UdpDstPort != UDP_PORT_DHCPS))
+		goto end;
+
+	if (udpLen < UDP_HDR_LEN + sizeof(struct DHCP_PROTOCOL))
+		goto end;
+
+	prDhcp = (struct DHCP_PROTOCOL *)pucUdpPkt->aucData;
+	u4DhcpMagicCode = NTOHL(prDhcp->u4MagicCookie);
 	if (u4DhcpMagicCode != DHCP_MAGIC_NUMBER) {
-		DBGLOG(INIT, WARN,
-			"dhcp wrong magic number, magic code: %d\n",
+		DBGLOG(INIT, WARN, "dhcp wrong magic number, magic code: %d\n",
 			u4DhcpMagicCode);
+		prDhcp = NULL;
 		goto end;
 	}
 
 	dhcpLen = udpLen - UDP_HDR_LEN;
-	pucDhcpPkt = (uint8_t *) prDhcp;
 
 	DBGLOG(QM, LOUD, "Len:%u dhcpLen:%u\n", u2PacketLen, dhcpLen);
 end:
 	if (pDhcpLen)
 		*pDhcpLen = dhcpLen;
-	return pucDhcpPkt;
+
+	return prDhcp;
 }
 
 void qmArpMonitorHandleTxArpPkt(struct ADAPTER *prAdapter,
@@ -9202,13 +9195,13 @@ void qmArpMonitorHandleRxArpPkt(struct ADAPTER *prAdapter,
 void qmArpMonitorHandleRxDhcpPkt(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, uint8_t *pucData, uint16_t u2PacketLen)
 {
-	struct BOOTP_PROTOCOL *prDhcp = NULL;
+	struct DHCP_PROTOCOL *prDhcp;
 	uint32_t dhcpLen = 0;
 	uint8_t dhcpTypeGot = 0;
 	uint8_t dhcpGatewayGot = 0;
 	uint32_t i = 0;
 	const uint16_t MAX_DHCP_OPT_LEN = ETHER_MAX_PKT_SZ - ETHER_HEADER_LEN -
-		IP_HEADER_LEN - UDP_HDR_LEN - sizeof(struct BOOTP_PROTOCOL);
+		IP_HEADER_LEN - UDP_HDR_LEN - sizeof(struct DHCP_PROTOCOL);
 
 	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
 		DBGLOG(QM, WARN, "Invalid BssIndex %u\n", ucBssIndex);
@@ -9216,23 +9209,22 @@ void qmArpMonitorHandleRxDhcpPkt(struct ADAPTER *prAdapter,
 	}
 
 	/* check if pkt is dhcp from server */
-	prDhcp = (struct BOOTP_PROTOCOL *)qmGetDhcpPkt(pucData, u2PacketLen,
-							TRUE, &dhcpLen);
+	prDhcp = qmGetDhcpPkt(pucData, u2PacketLen, TRUE, &dhcpLen);
 	if (!prDhcp)
 		return;
 
 	DBGLOG(QM, LOUD, "BssIdx:%u dhcpLen:%u\n", ucBssIndex, dhcpLen);
 
 	/* start from the beginning of dhcp option */
-	while (sizeof(struct BOOTP_PROTOCOL) + i < dhcpLen &&
-	       sizeof(struct BOOTP_PROTOCOL) + i < MAX_DHCP_OPT_LEN) {
-		/* Because DHCP is a variant of BOOTP identified by the
+	while (sizeof(struct DHCP_PROTOCOL) + i < dhcpLen &&
+	       sizeof(struct DHCP_PROTOCOL) + i < MAX_DHCP_OPT_LEN) {
+		/* Because DHCP is a variant of DHCP identified by the
 		 * MAGIC COOKIE at the beginning of option field in
-		 * struct BOOTP_PROTOCOL,
-		 * the DHCP magic cookie was count in the options field
-		 * so need to use [4 + i] to skip it
+		 * struct DHCP_PROTOCOL,
+		 * we define the fixed MAGIC COOKIE outside option field in
+		 * DHCP_PROTOCOL to focus on the real DHCP options.
 		 */
-		switch (prDhcp->aucOptions[4 + i]) {
+		switch (prDhcp->aucDhcpOption[i]) {
 		case DHCP_OPTION_ROUTER:
 			/*  Code  Len      Address 1           Address 2
 			 * +----+----+----+----+----+----+----+----+----+----+
@@ -9240,9 +9232,9 @@ void qmArpMonitorHandleRxDhcpPkt(struct ADAPTER *prAdapter,
 			 * +----+----+----+----+----+----+----+----+----+----+
 			 */
 			/* both dhcp ack and offer will update it */
-			if (IS_NON_ZERO_IP_ADDR(&prDhcp->aucOptions[i + 6])) {
+			if (IS_NONZERO_IP_ADDR(&prDhcp->aucDhcpOption[i + 2])) {
 				COPY_IP_ADDR(gatewayIp,
-						&prDhcp->aucOptions[i + 6]);
+						&prDhcp->aucDhcpOption[i + 2]);
 
 				DBGLOG(INIT, TRACE, "Gateway ip: " IPV4STR "\n",
 					IPV4TOSTR(&gatewayIp[0]));
@@ -9256,16 +9248,16 @@ void qmArpMonitorHandleRxDhcpPkt(struct ADAPTER *prAdapter,
 			 * | 53 |  1 | 1-8|
 			 * +----+----+----+
 			 */
-			if (prDhcp->aucOptions[6 + i] != DHCPOFFER &&
-			    prDhcp->aucOptions[6 + i] != DHCPACK) {
+			if (prDhcp->aucDhcpOption[2 + i] != DHCPOFFER &&
+			    prDhcp->aucDhcpOption[2 + i] != DHCPACK) {
 				DBGLOG(INIT, WARN,
 					"wrong dhcp message type, type: %d\n",
-				  prDhcp->aucOptions[i + 6]);
+				  prDhcp->aucDhcpOption[i + 6]);
 				if (dhcpGatewayGot)
 					kalMemZero(gatewayIp,
 						sizeof(gatewayIp));
 				return;
-			} else if (prDhcp->aucOptions[6 + i] == DHCPACK) {
+			} else if (prDhcp->aucDhcpOption[2 + i] == DHCPACK) {
 				/* Check if join timer is ticking, then release
 				 * channel privilege and stop join timer.
 				 */
@@ -9288,8 +9280,8 @@ void qmArpMonitorHandleRxDhcpPkt(struct ADAPTER *prAdapter,
 		if (dhcpGatewayGot && dhcpTypeGot)
 			return;
 
-		/* [5 + i] points to Len field; +2 for Code & Len field  */
-		i += prDhcp->aucOptions[5 + i] + 2;
+		/* [1 + i] points to Len field; +2 for Code & Len field  */
+		i += prDhcp->aucDhcpOption[1 + i] + 2;
 	}
 
 	DBGLOG(INIT, WARN,

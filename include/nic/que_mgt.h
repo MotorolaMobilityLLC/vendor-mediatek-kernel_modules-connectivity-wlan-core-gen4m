@@ -1289,7 +1289,7 @@ void qmArpMonitorHandlePkt(struct ADAPTER *prAdapter,
 	uint8_t *pucData, uint16_t u2PacketLen);
 #endif /* CFG_QM_ARP_MONITOR_MSG */
 uint8_t *qmGetArpPkt(uint8_t *pucData, uint16_t u2PacketLen);
-uint8_t *qmGetDhcpPkt(uint8_t *pucData, uint16_t u2PacketLen,
+struct DHCP_PROTOCOL *qmGetDhcpPkt(uint8_t *pucData, uint16_t u2PacketLen,
 	u_int8_t fgFromServer, uint32_t *pDhcpLen);
 #endif
 

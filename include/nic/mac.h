@@ -150,10 +150,9 @@
 #define UDP_HDR_DST_PORT_OFFSET                 2
 #define UDP_HDR_UDP_CSUM_OFFSET                 6
 
-#define IP_PORT_BOOTP_SERVER                    67
-#define IP_PORT_BOOTP_CLIENT                    68
+#define IP_PORT_DHCP_SERVER                     67
+#define IP_PORT_DHCP_CLIENT                     68
 
-#define DHCP_OPTIONS_SZ_MIN                     4
 #define DHCP_MAGIC_NUMBER                       0x63825363
 
 #define ARP_PKT_LEN                             28
@@ -2429,7 +2428,16 @@ struct ETH_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
-struct BOOTP_PROTOCOL {
+struct UDP_HEADER {
+	uint16_t u2SrcPort;
+	uint16_t u2DstPort;
+	uint16_t u2Length;
+	uint16_t u2Checksum;
+	uint8_t aucData[];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct DHCP_PROTOCOL {
 	uint8_t ucOperation;
 	uint8_t ucHdrType;
 	uint8_t ucHdrLen;
@@ -2444,7 +2452,8 @@ struct BOOTP_PROTOCOL {
 	uint8_t aucCHAddr[16];
 	uint8_t aucServerName[64];
 	uint8_t aucFileName[128];
-	uint8_t aucOptions[0];
+	uint32_t u4MagicCookie;
+	uint8_t aucDhcpOption[]; /* after fixed cookie opt */
 } __KAL_ATTRIB_PACKED__;
 
 enum DHCP_MESSAGE_TYPE {
@@ -4712,7 +4721,7 @@ struct WLAN_DEAUTH_FRAME_WITH_MIC {
 	kalMemCopy(_pucDestAddr, _pucSrcAddr, IPV4_ADDR_LEN)
 
 /* The macro to check if the IP address is ALL ZERO */
-#define IS_NON_ZERO_IP_ADDR(_pucIpAddr) \
+#define IS_NONZERO_IP_ADDR(_pucIpAddr) \
 	((_pucIpAddr)[0] || (_pucIpAddr)[1] || \
 	 (_pucIpAddr)[2] || (_pucIpAddr)[3])
 
