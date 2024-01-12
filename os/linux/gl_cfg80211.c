@@ -4108,6 +4108,12 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 	struct ADAPTER *prAdapter;
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucBssIndex = 0;
+#if KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE
+	struct link_station_parameters *prLinkParams =
+			&(params->link_sta_params);
+#else
+	struct station_parameters *prLinkParams = params;
+#endif
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
@@ -4131,19 +4137,19 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 			(void *) mac, MAC_ADDR_LEN, &u4BufLen);
 	}
 
-	if (params->supported_rates == NULL)
+	if (prLinkParams->supported_rates == NULL)
 		return 0;
 
 	/* init */
 	kalMemZero(&rCmdUpdate, sizeof(rCmdUpdate));
 	kalMemCopy(rCmdUpdate.aucPeerMac, mac, 6);
 
-	if (params->supported_rates != NULL) {
+	if (prLinkParams->supported_rates != NULL) {
 
-		u4Temp = params->supported_rates_len;
+		u4Temp = prLinkParams->supported_rates_len;
 		if (u4Temp > CMD_PEER_UPDATE_SUP_RATE_MAX)
 			u4Temp = CMD_PEER_UPDATE_SUP_RATE_MAX;
-		kalMemCopy(rCmdUpdate.aucSupRate, params->supported_rates,
+		kalMemCopy(rCmdUpdate.aucSupRate, prLinkParams->supported_rates,
 			   u4Temp);
 		rCmdUpdate.u2SupRateLen = u4Temp;
 	}
@@ -4166,39 +4172,40 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 		rCmdUpdate.u2ExtCapLen = u4Temp;
 	}
 
-	if (params->ht_capa != NULL) {
+	if (prLinkParams->ht_capa != NULL) {
 
-		rCmdUpdate.rHtCap.u2CapInfo = params->ht_capa->cap_info;
+		rCmdUpdate.rHtCap.u2CapInfo = prLinkParams->ht_capa->cap_info;
 		rCmdUpdate.rHtCap.ucAmpduParamsInfo =
-			params->ht_capa->ampdu_params_info;
+			prLinkParams->ht_capa->ampdu_params_info;
 		rCmdUpdate.rHtCap.u2ExtHtCapInfo =
-			params->ht_capa->extended_ht_cap_info;
+			prLinkParams->ht_capa->extended_ht_cap_info;
 		rCmdUpdate.rHtCap.u4TxBfCapInfo =
-			params->ht_capa->tx_BF_cap_info;
+			prLinkParams->ht_capa->tx_BF_cap_info;
 		rCmdUpdate.rHtCap.ucAntennaSelInfo =
-			params->ht_capa->antenna_selection_info;
+			prLinkParams->ht_capa->antenna_selection_info;
 		kalMemCopy(rCmdUpdate.rHtCap.rMCS.arRxMask,
-			   params->ht_capa->mcs.rx_mask,
+			   prLinkParams->ht_capa->mcs.rx_mask,
 			   sizeof(rCmdUpdate.rHtCap.rMCS.arRxMask));
 
 		rCmdUpdate.rHtCap.rMCS.u2RxHighest =
-			params->ht_capa->mcs.rx_highest;
+			prLinkParams->ht_capa->mcs.rx_highest;
 		rCmdUpdate.rHtCap.rMCS.ucTxParams =
-			params->ht_capa->mcs.tx_params;
+			prLinkParams->ht_capa->mcs.tx_params;
 		rCmdUpdate.fgIsSupHt = TRUE;
 	}
 
 	/* vht */
-	if (params->vht_capa != NULL) {
-		rCmdUpdate.rVHtCap.u4CapInfo = params->vht_capa->vht_cap_info;
+	if (prLinkParams->vht_capa != NULL) {
+		rCmdUpdate.rVHtCap.u4CapInfo =
+				prLinkParams->vht_capa->vht_cap_info;
 		rCmdUpdate.rVHtCap.rVMCS.u2RxMcsMap =
-				params->vht_capa->supp_mcs.rx_mcs_map;
+				prLinkParams->vht_capa->supp_mcs.rx_mcs_map;
 		rCmdUpdate.rVHtCap.rVMCS.u2RxHighest =
-				params->vht_capa->supp_mcs.rx_highest;
+				prLinkParams->vht_capa->supp_mcs.rx_highest;
 		rCmdUpdate.rVHtCap.rVMCS.u2TxMcsMap =
-				params->vht_capa->supp_mcs.tx_mcs_map;
+				prLinkParams->vht_capa->supp_mcs.tx_mcs_map;
 		rCmdUpdate.rVHtCap.rVMCS.u2TxHighest =
-				params->vht_capa->supp_mcs.tx_highest;
+				prLinkParams->vht_capa->supp_mcs.tx_highest;
 		rCmdUpdate.fgIsSupVht = TRUE;
 	}
 
