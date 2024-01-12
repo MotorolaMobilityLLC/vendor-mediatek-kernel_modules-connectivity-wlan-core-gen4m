@@ -17,7 +17,7 @@
 #ifndef _MDDP_H
 #define _MDDP_H
 
-#ifdef CONFIG_MTK_MDDP_SUPPORT
+#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
@@ -77,6 +77,7 @@ void mddpNotifyWifiOnStart(void);
 int32_t mddpNotifyWifiOnEnd(void);
 void mddpNotifyWifiOffStart(void);
 void mddpNotifyWifiOffEnd(void);
+void mddpNotifyWifiReset(void);
 void setMddpSupportRegister(IN struct ADAPTER *prAdapter);
 void mddpMdStateChangedCb(enum MD_STATE old_state,
 		enum MD_STATE new_state);
