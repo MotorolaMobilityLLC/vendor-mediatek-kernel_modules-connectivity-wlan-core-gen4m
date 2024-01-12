@@ -182,7 +182,8 @@
 #define HIF_TX_PAYLOAD_LENGTH				72
 
 #define HIF_MSDU_REPORT_RETURN_TIMEOUT		10	/* sec */
-#define HIF_SER_TIMEOUT				10000	/* msec */
+#define HIF_SER_TIMEOUT				1000	/* msec */
+#define HIF_SER_MAX_TIMEOUT_CNT			10	/* msec */
 #define HIF_SER_POWER_OFF_RETRY_COUNT		100
 #define HIF_SER_POWER_OFF_RETRY_TIME		10	/* msec */
 
@@ -714,6 +715,7 @@ struct ERR_RECOVERY_CTRL_T {
 	uint8_t eErrRecovState;
 	uint32_t u4Status;
 	uint32_t u4BackupStatus;
+	uint32_t u4TimeoutCnt;
 };
 
 struct SW_WFDMA_INFO;

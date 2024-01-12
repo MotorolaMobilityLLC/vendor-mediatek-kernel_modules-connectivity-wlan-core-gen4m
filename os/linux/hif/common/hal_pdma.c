@@ -36,6 +36,9 @@
 #include "gl_kal.h"
 #include "host_csr.h"
 
+#if CFG_MTK_MDDP_SUPPORT
+#include "mddp.h"
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -1583,6 +1586,7 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	prAdapter->ucSerState = SER_IDLE_DONE;
 	prHifInfo->rErrRecoveryCtl.eErrRecovState = ERR_RECOV_STOP_IDLE;
 	prHifInfo->rErrRecoveryCtl.u4Status = 0;
+	prHifInfo->rErrRecoveryCtl.u4TimeoutCnt = 0;
 	prHifInfo->GloCfg.word = 0;
 
 #if (KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE)
@@ -4245,6 +4249,28 @@ void halProcessSoftwareInterrupt(struct ADAPTER *prAdapter)
 	else
 		halDefaultProcessSoftwareInterrupt(prAdapter);
 }
+
+static void halSerRecovery(struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct BUS_INFO *prBusInfo = NULL;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	DBGLOG(HAL, TRACE, "do SER recovery\n");
+
+#if CFG_SUPPORT_MULTITHREAD
+	kalSetSerIntEvent(prAdapter->prGlueInfo);
+#else
+	nicProcessSoftwareInterrupt(prAdapter);
+#endif
+#if CFG_MTK_MDDP_SUPPORT
+	if (prBusInfo->getMdSwIntSta)
+		mddpNotifyCheckSer(prBusInfo->getMdSwIntSta(prAdapter));
+#endif
+}
+
 #if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
 void halHwRecoveryTimeout(struct timer_list *timer)
 #else
@@ -4268,27 +4294,47 @@ void halHwRecoveryTimeout(unsigned long arg)
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
 
+	halSerRecovery(prAdapter);
+
 	DBGLOG(HAL, ERROR,
-	       "SER timer Timeout. ErrState[%d] Status[0x%x] Backup[0x%x]\n",
+	       "SER timer Timeout. ErrState[%d] Status[0x%x] Backup[0x%x] Cnt[%d]\n",
 	       prErrRecoveryCtrl->eErrRecovState,
 	       prErrRecoveryCtrl->u4Status,
-	       prErrRecoveryCtrl->u4BackupStatus);
+	       prErrRecoveryCtrl->u4BackupStatus,
+	       prErrRecoveryCtrl->u4TimeoutCnt);
 
+	prErrRecoveryCtrl->u4TimeoutCnt++;
+	if (prErrRecoveryCtrl->u4TimeoutCnt > HIF_SER_MAX_TIMEOUT_CNT) {
 #if CFG_CHIP_RESET_SUPPORT
-	kalSetSerTimeoutEvent(prGlueInfo);
+		kalSetSerTimeoutEvent(prGlueInfo);
 #endif
+		return;
+	}
+
+	mod_timer(&prHifInfo->rSerTimer,
+		  jiffies + HIF_SER_TIMEOUT * HZ / MSEC_PER_SEC);
 }
 
 void halSetDrvSer(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo;
+	struct GL_HIF_INFO *prHifInfo;
 
 	ASSERT(prAdapter);
 	ASSERT(prAdapter->prGlueInfo);
 
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prAdapter->chip_info->bus_info;
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	if (prHifInfo->rErrRecoveryCtl.eErrRecovState !=
+	    ERR_RECOV_STOP_IDLE) {
+		DBGLOG(HAL, INFO, "In SER, skip SER event\n");
+		return;
+	}
+
+	halSerRecovery(prAdapter);
 
 	DBGLOG(HAL, INFO, "Set Driver Ser\n");
 	if (prBusInfo->softwareInterruptMcu)
@@ -4306,6 +4352,7 @@ static void halStartSerTimer(struct ADAPTER *prAdapter)
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prHifInfo->rErrRecoveryCtl.u4TimeoutCnt = 0;
 	mod_timer(&prHifInfo->rSerTimer,
 		  jiffies + HIF_SER_TIMEOUT * HZ / MSEC_PER_SEC);
 	DBGLOG(HAL, INFO, "Start SER timer\n");

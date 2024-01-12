@@ -657,6 +657,7 @@ struct BUS_INFO mt6639_bus_info = {
 	.wakeUpWiFi = asicWakeUpWiFi,
 	.processSoftwareInterrupt = asicConnac3xProcessSoftwareInterrupt,
 	.softwareInterruptMcu = asicConnac3xSoftwareInterruptMcu,
+	.getMdSwIntSta = asicConnac3xGetMdSoftwareInterruptStatus,
 	.hifRst = asicConnac3xHifRst,
 #if defined(_HIF_PCIE) && (WFDMA_AP_MSI_NUM == 8)
 	.devReadIntStatus = mt6639ReadIntStatusByMsi,

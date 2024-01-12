@@ -85,6 +85,7 @@
 #define CONNAC3X_WPDMA_INT_STA(__BASE)                ((__BASE) + 0x0200)
 #define CONNAC3X_WPDMA_INT_MASK(__BASE)               ((__BASE) + 0x0204)
 #define CONNAC3X_WPDMA_RST_DTX_PTR(__BASE)            ((__BASE) + 0x020C)
+#define CONNAC3X_WPDMA_MCU2MD_SW_INT_STA(__BASE)      ((__BASE) + 0x0250)
 #define CONNAC3X_WPDMA_RST_DRX_PTR(__BASE)            ((__BASE) + 0x0280)
 
 
@@ -1248,6 +1249,8 @@ void asicConnac3xLowPowerOwnClear(
 	struct ADAPTER *prAdapter,
 	uint8_t *pfgResult);
 void asicConnac3xProcessSoftwareInterrupt(
+	struct ADAPTER *prAdapter);
+uint32_t asicConnac3xGetMdSoftwareInterruptStatus(
 	struct ADAPTER *prAdapter);
 void asicConnac3xSoftwareInterruptMcu(
 	struct ADAPTER *prAdapter, u_int32_t intrBitMask);

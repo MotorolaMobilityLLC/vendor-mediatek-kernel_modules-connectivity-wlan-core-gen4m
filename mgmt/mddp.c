@@ -59,6 +59,20 @@ enum ENUM_MDDPW_MD_INFO {
 	MDDPW_MD_EVENT_COMMUNICATION = 4,
 };
 
+enum wsvc_drv_info_id {
+	WSVC_DRVINFO_NONE                  = 0,
+	WSVC_DRVINFO_LOCAL_MAC             = 1,
+	WSVC_DRVINFO_WIFI_ONOFF            = 2,
+	WSVC_DRVINFO_TXD_TEMPLATE          = 3,
+	WSVC_DRVINFO_QUERY_MD_INFO         = 4,
+	WSVC_DRVINFO_DRVOWN_TIME_SET       = 5,
+	WSVC_DRVINFO_WIFI_UNIFIED_CMD_VER  = 6,
+	WSVC_DRVINFO_PCIE_L_LOCK_SUCCESS   = 7,
+	WSVC_DRVINFO_PCIE_L_UNLOCK_SUCCESS = 8,
+	WSVC_DRVINFO_CHECK_SER             = 9,
+	WSVC_DRVINFO_INVALID_ID            = 10,
+};
+
 /* MDDPW_MD_INFO_DRV_EXCEPTION */
 struct wsvc_md_event_exception_t {
 	uint32_t u4RstReason;
@@ -87,6 +101,10 @@ struct wsvc_md_event_comm_t {
 	uint32_t dump_payload[32];
 	uint8_t  dump_size;
 	char pucFuncName[64];
+};
+
+struct wsv_check_ser_info_t {
+	uint32_t sn;
 };
 
 struct mddpw_drv_handle_t gMddpWFunc = {
@@ -149,6 +167,7 @@ u_int8_t g_fgMddpEnabled = TRUE;
 struct MDDP_SETTINGS g_rSettings;
 enum ENUM_MDDPW_DRV_INFO_STATUS g_eMddpStatus;
 struct mutex rMddpLock;
+u_int32_t g_u4CheckSerCnt;
 
 struct mddpw_net_stat_ext_t stats;
 #if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
@@ -844,7 +863,7 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 			NIC_TX_DESC_LONG_FORMAT_LENGTH;
 	prNotifyInfo->info_num = 1;
 	prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
-	prDrvInfo->info_id = 3; /* MDDPW_DRV_INFO_TXD; */
+	prDrvInfo->info_id = WSVC_DRVINFO_TXD_TEMPLATE;
 	prDrvInfo->info_len = (sizeof(struct mddpw_txd_t) +
 			NIC_TX_DESC_LONG_FORMAT_LENGTH);
 	prMddpTxd = (struct mddp_txd_t *) &(prDrvInfo->info[0]);
@@ -923,7 +942,7 @@ int32_t mddpNotifyWifiStatus(enum ENUM_MDDPW_DRV_INFO_STATUS status)
 				sizeof(bool);
 		prNotifyInfo->info_num = 1;
 		prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
-		prDrvInfo->info_id = MDDPW_DRV_INFO_NOTIFY_WIFI_ONOFF;
+		prDrvInfo->info_id = WSVC_DRVINFO_WIFI_ONOFF;
 		prDrvInfo->info_len = WIFI_ONOFF_NOTIFICATION_LEN;
 		prDrvInfo->info[0] = status;
 
@@ -937,6 +956,57 @@ int32_t mddpNotifyWifiStatus(enum ENUM_MDDPW_DRV_INFO_STATUS status)
 		ret = -1;
 	}
 
+	return ret;
+}
+
+int32_t mddpNotifyCheckSer(uint32_t u4Status)
+{
+	struct mddpw_drv_notify_info_t *prNotifyInfo;
+	struct mddpw_drv_info_t *prDrvInfo;
+	struct wsv_check_ser_info_t *prSerInfo;
+	uint32_t u4BufSize = 0;
+	uint8_t *buff = NULL;
+	int32_t ret = 0;
+
+	if (!u4Status) {
+		ret = -1;
+		goto exit;
+	}
+
+	if (!gMddpWFunc.notify_drv_info) {
+		DBGLOG(INIT, ERROR, "notify_drv_info is NULL.\n");
+		ret = -1;
+		goto exit;
+	}
+
+	u4BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
+		      sizeof(struct mddpw_drv_info_t) +
+		      sizeof(struct wsv_check_ser_info_t));
+	buff = kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
+	if (buff == NULL) {
+		DBGLOG(NIC, ERROR, "Can't allocate buffer.\n");
+		ret = -1;
+		goto exit;
+	}
+
+	prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
+	prNotifyInfo->version = 0;
+	prNotifyInfo->buf_len = sizeof(struct mddpw_drv_info_t) +
+		sizeof(struct wsv_check_ser_info_t);
+	prNotifyInfo->info_num = 1;
+	prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
+	prDrvInfo->info_id = WSVC_DRVINFO_CHECK_SER;
+	prDrvInfo->info_len = sizeof(struct wsv_check_ser_info_t);
+	prSerInfo = (struct wsv_check_ser_info_t *) &(prDrvInfo->info[0]);
+	prSerInfo->sn = g_u4CheckSerCnt;
+	g_u4CheckSerCnt++;
+
+	ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
+	DBGLOG(NIC, INFO, "check ser sn: %u, sta:0x%08x, ret: %d.\n",
+	       prSerInfo->sn, u4Status, ret);
+	kalMemFree(buff, VIR_MEM_TYPE, u4BufSize);
+
+exit:
 	return ret;
 }
 
@@ -1005,7 +1075,7 @@ int32_t mddpNotifyDrvOwnTimeoutTime(void)
 			sizeof(uint32_t);
 	prNotifyInfo->info_num = 1;
 	prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
-	prDrvInfo->info_id = 5; /* WSVC_DRVINFO_DRVOWN_TIME_SET */
+	prDrvInfo->info_id = WSVC_DRVINFO_DRVOWN_TIME_SET;
 	prDrvInfo->info_len = sizeof(uint32_t);
 
 	kalMemCopy((uint32_t *) &(prDrvInfo->info[0]), &u32DrvOwnTimeoutTime,
@@ -1067,10 +1137,12 @@ int32_t mddpNotifyMDPCIeL12Status(uint32_t u32Enable)
 	}
 
 	if (!u32Enable) {
-		u32InfoId = 7; /* Disable L1ss */
+		/* Disable L1ss */
+		u32InfoId = WSVC_DRVINFO_PCIE_L_LOCK_SUCCESS;
 		GLUE_INC_REF_CNT(prAdapter->u4MddpPCIeL12SeqNum);
 	} else
-		u32InfoId = 8; /* Enable L1ss */
+		/* Enable L1ss */
+		u32InfoId = WSVC_DRVINFO_PCIE_L_UNLOCK_SUCCESS;
 
 	prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
 	prNotifyInfo->version = 0;
@@ -1137,7 +1209,7 @@ int32_t mddpNotifyMDUnifiedCmdVer(void)
 			sizeof(uint32_t);
 	prNotifyInfo->info_num = 1;
 	prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
-	prDrvInfo->info_id = 6;
+	prDrvInfo->info_id = WSVC_DRVINFO_WIFI_UNIFIED_CMD_VER;
 	prDrvInfo->info_len = sizeof(uint32_t);
 
 	kalMemCopy((uint32_t *) &(prDrvInfo->info[0]), &u32UnifiedCmdVer,
