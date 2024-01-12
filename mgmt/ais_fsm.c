@@ -2660,10 +2660,10 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			 * to end-user even time out.
 			 */
 			cnmTimerStartTimer(prAdapter,
-					   &prAisFsmInfo->rDeauthDoneTimer,
-					   (prAisFsmInfo->fgIsScanning
-					    || prAisBssInfo->fgIsNetAbsent) ?
-					   1000 : 100);
+					&prAisFsmInfo->rDeauthDoneTimer,
+					(prAisFsmInfo->fgIsScanning ||
+					 isNetAbsent(prAdapter, prAisBssInfo)) ?
+					1000 : 100);
 			break;
 
 		case AIS_STATE_REQ_REMAIN_ON_CHANNEL:

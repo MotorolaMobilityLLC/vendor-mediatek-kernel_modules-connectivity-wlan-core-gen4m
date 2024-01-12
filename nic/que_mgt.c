@@ -1741,7 +1741,7 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 
 			/* fgIsInPS */
 			/* Absent BSS handling */
-			if (prBssInfo->fgIsNetAbsent) {
+			if (isNetAbsent(prAdapter, prBssInfo)) {
 				if (u4MaxForwardFrameCountLimit >
 					prBssInfo->ucBssFreeQuota)
 					u4MaxForwardFrameCountLimit =
@@ -1917,7 +1917,7 @@ skip_dequeue:
 					(*pucPsStaFreeQuota) = 0;
 			}
 
-			if (prBssInfo->fgIsNetAbsent) {
+			if (isNetAbsent(prAdapter, prBssInfo)) {
 				if (prBssInfo->ucBssFreeQuota >=
 					u4CurStaForwardFrameCount)
 					prBssInfo->ucBssFreeQuota -=
@@ -2121,7 +2121,7 @@ qmDequeueTxPacketsFromGlobalQueue(IN struct ADAPTER *prAdapter,
 			prDequeuedPkt->ucBssIndex);
 
 		if (IS_BSS_ACTIVE(prBssInfo)) {
-			if (!prBssInfo->fgIsNetAbsent
+			if (!isNetAbsent(prAdapter, prBssInfo)
 #if (CFG_TX_RSRC_WMM_ENHANCE == 1)
 				&& ucTC == prDequeuedPkt->ucTC
 #endif
@@ -2913,7 +2913,7 @@ void qmUpdateAverageTxQueLen(IN struct ADAPTER *prAdapter)
 
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					prStaRec->ucBssIndex);
-			if (!prBssInfo || prBssInfo->fgIsNetAbsent)
+			if (!prBssInfo || isNetAbsent(prAdapter, prBssInfo))
 				continue;
 
 			/* If the STA is activated,
@@ -2965,8 +2965,8 @@ void qmUpdateAverageTxQueLen(IN struct ADAPTER *prAdapter)
 					/* If the STA is activated,
 					 * get the queue length
 					 */
-					if ((prStaRec->fgIsValid) &&
-						(!prBssInfo->fgIsNetAbsent))
+					if (prStaRec->fgIsValid &&
+					    !isNetAbsent(prAdapter, prBssInfo))
 						u4CurrQueLen +=
 							(prStaRec->
 							arTxQueue[u4Tc].
@@ -7095,7 +7095,7 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(IN struct ADAPTER *prAdapter,
 		}
 
 		/* 4 <3> Queue, if BSS is absent, drop probe response */
-		if (prBssInfo->fgIsNetAbsent) {
+		if (isNetAbsent(prAdapter, prBssInfo)) {
 			if (prMsduInfo && isProbeResponse(prMsduInfo)) {
 				DBGLOG(TX, TRACE,
 					"Drop probe response (BSS[%u] Absent)\n",
@@ -7217,12 +7217,18 @@ void qmHandleEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
 	if (!prBssInfo->fgIsNetAbsent) {
 		/* ToDo:: QM_DBG_CNT_INC */
 		QM_DBG_CNT_INC(&(prAdapter->rQM), QM_DBG_CNT_27);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		prAdapter->u4BssAbsentBitmap &= ~BIT(prBssInfo->ucBssIndex);
+#endif
 	} else {
 		/* ToDo:: QM_DBG_CNT_INC */
 		QM_DBG_CNT_INC(&(prAdapter->rQM), QM_DBG_CNT_28);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		prAdapter->u4BssAbsentBitmap |= BIT(prBssInfo->ucBssIndex);
+#endif
 	}
 	/* From Absent to Present */
-	if ((fgIsNetAbsentOld) && (!prBssInfo->fgIsNetAbsent)) {
+	if (fgIsNetAbsentOld && !prBssInfo->fgIsNetAbsent) {
 		if (HAL_IS_TX_DIRECT(prAdapter)) {
 			nicTxDirectStartCheckQTimer(prAdapter);
 			/* To process the Mgmt frame which is queued

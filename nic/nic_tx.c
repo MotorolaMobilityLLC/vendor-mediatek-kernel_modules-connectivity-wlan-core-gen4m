@@ -1657,8 +1657,9 @@ void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
 #endif
 		for (k = 0; k < BSS_DEFAULT_NUM; k++) {
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
-			while (!prBssInfo->fgIsNetAbsent && QUEUE_IS_NOT_EMPTY(
-				&(prAdapter->rTxPQueue[i][j]))) {
+			while (!isNetAbsent(prAdapter, prBssInfo) &&
+			       QUEUE_IS_NOT_EMPTY(
+				       &(prAdapter->rTxPQueue[i][j]))) {
 				KAL_ACQUIRE_SPIN_LOCK(prAdapter,
 					SPIN_LOCK_TX_PORT_QUE);
 				QUEUE_MOVE_ALL(prDataPort[i][j],
@@ -1810,7 +1811,8 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 		/* Dequeue each TCQ to dataQ by round-robin  */
 		/* Check each TCQ is empty or not */
 		u4IsNotAllQueneEmpty = BITS(0, TC_NUM - 1);
-		while (!prBssInfo->fgIsNetAbsent && u4IsNotAllQueneEmpty) {
+		while (!isNetAbsent(prAdapter, prBssInfo) &&
+		       u4IsNotAllQueneEmpty) {
 			u4Idx = prAdapter->u4TxHifResCtlIdx;
 			prTxQue = &(prAdapter->rTxPQueue[i][u4Idx]);
 			if (QUEUE_IS_NOT_EMPTY(prTxQue)) {
@@ -5345,6 +5347,28 @@ static void nicTxDirectCheckStaPsQ(IN struct ADAPTER
 	prAdapter->u4StaPsBitmap &= ~BIT(ucStaRecIndex);
 }
 
+u_int8_t isNetAbsent(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
+{
+	u_int8_t netAbsent = prBssInfo->fgIsNetAbsent;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+
+	if (!netAbsent) /* fast check, in most cases all links are available */
+		return FALSE;
+
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	if (!prMldBssInfo) /* non-MLO */
+		return netAbsent;
+
+	if ((prMldBssInfo->u4BssBitmap & prAdapter->u4BssAbsentBitmap) ==
+		prMldBssInfo->u4BssBitmap)
+		return TRUE;
+	return FALSE;
+#else
+	return netAbsent;
+#endif
+}
+
 /*----------------------------------------------------------------------------*/
 /*
  * \brief This function is to check the Bss is net absent or not,
@@ -5379,7 +5403,7 @@ static void nicTxDirectCheckBssAbsentQ(IN struct ADAPTER
 		return;
 	}
 
-	if (prBssInfo->fgIsNetAbsent) {
+	if (isNetAbsent(prAdapter, prBssInfo)) {
 		KAL_SPIN_LOCK_DECLARATION();
 
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
@@ -5411,11 +5435,11 @@ static void nicTxDirectCheckBssAbsentQ(IN struct ADAPTER
 			QUEUE_INSERT_HEAD(
 				&prAdapter->rBssAbsentQueue[ucBssIndex],
 				(struct QUE_ENTRY *) prMsduInfo);
-			prAdapter->u4BssAbsentBitmap |= BIT(ucBssIndex);
+			prAdapter->u4BssAbsentTxBufferBitmap |= BIT(ucBssIndex);
 			return;
 		}
 	} else {
-		if (prAdapter->u4BssAbsentBitmap)
+		if (prAdapter->u4BssAbsentTxBufferBitmap)
 			DBGLOG(TX, INFO, "fgIsNetAbsent END!\n");
 		QUEUE_INSERT_TAIL(prQue, (struct QUE_ENTRY *) prMsduInfo);
 		if (QUEUE_IS_NOT_EMPTY(
@@ -5423,7 +5447,7 @@ static void nicTxDirectCheckBssAbsentQ(IN struct ADAPTER
 			QUEUE_CONCATENATE_QUEUES(prQue,
 				&prAdapter->rBssAbsentQueue[ucBssIndex]);
 	}
-	prAdapter->u4BssAbsentBitmap &= ~BIT(ucBssIndex);
+	prAdapter->u4BssAbsentTxBufferBitmap &= ~BIT(ucBssIndex);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5936,14 +5960,14 @@ uint32_t nicTxDirectStartXmitMain(struct sk_buff
 /*----------------------------------------------------------------------------*/
 void nicTxDirectTimerCheckHifQ(IN struct ADAPTER *prAdapter)
 {
-	uint32_t u4StaPsBitmap, u4BssAbsentBitmap, u4StaPendBitmap;
+	uint32_t u4StaPsBitmap, u4BssAbsentTxBufferBitmap, u4StaPendBitmap;
 	uint8_t ucStaRecIndex, ucBssIndex;
 #if !CFG_TX_DIRECT_VIA_HIF_THREAD
 	uint8_t ucHifTc = 0;
 #endif
 
 	u4StaPsBitmap = prAdapter->u4StaPsBitmap;
-	u4BssAbsentBitmap = prAdapter->u4BssAbsentBitmap;
+	u4BssAbsentTxBufferBitmap = prAdapter->u4BssAbsentTxBufferBitmap;
 	u4StaPendBitmap = prAdapter->u4StaPendBitmap;
 
 	if (u4StaPendBitmap) {
@@ -5974,18 +5998,18 @@ void nicTxDirectTimerCheckHifQ(IN struct ADAPTER *prAdapter)
 		}
 	}
 
-	if (u4BssAbsentBitmap) {
+	if (u4BssAbsentTxBufferBitmap) {
 		for (ucBssIndex = 0; ucBssIndex < MAX_BSSID_NUM + 1;
 		     ++ucBssIndex) {
 			if (QUEUE_IS_NOT_EMPTY(
 				    &prAdapter->rBssAbsentQueue[ucBssIndex])) {
 				nicTxDirectStartXmitMain(NULL, NULL, prAdapter,
 					0xff, 0xff, ucBssIndex);
-				u4BssAbsentBitmap &= ~BIT(ucBssIndex);
+				u4BssAbsentTxBufferBitmap &= ~BIT(ucBssIndex);
 				DBGLOG(TX, INFO,
 					"ucBssIndex: %u\n", ucBssIndex);
 			}
-			if (u4BssAbsentBitmap == 0)
+			if (u4BssAbsentTxBufferBitmap == 0)
 				break;
 		}
 	}
