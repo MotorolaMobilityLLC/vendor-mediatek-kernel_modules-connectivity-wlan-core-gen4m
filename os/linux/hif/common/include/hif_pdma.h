@@ -84,7 +84,7 @@
 /* Event/MSDU_report Rx ring */
 #define RX_RING1_SIZE				16
 #else
-#ifdef CONNAC2X2
+#if defined(SOC2_1X1) || defined(SOC2_2X2)
 #define TX_RING_SIZE				512
 #define RX_RING_SIZE				512	/* Max Rx ring size */
 /* Data Rx ring */
@@ -94,7 +94,7 @@
 #define RX_RING_SIZE				256	/* Max Rx ring size */
 /* Data Rx ring */
 #define RX_RING0_SIZE				256
-#endif /* CONNAC2X2 */
+#endif /* defined(SOC2_1X1) || defined(SOC2_2X2) */
 /* Event/MSDU_report Rx ring */
 #define RX_RING1_SIZE				16
 #endif
@@ -141,11 +141,11 @@
 
 #define HIF_TX_INIT_CMD_PORT				TX_RING_FWDL_IDX_3
 
-#ifdef CONNAC2X2
+#if defined(SOC2_1X1) || defined(SOC2_2X2)
 #define HIF_TX_MSDU_TOKEN_NUM				(TX_RING_SIZE * 3)
 #else
 #define HIF_TX_MSDU_TOKEN_NUM				(TX_RING_SIZE * 2)
-#endif
+#endif /* defined(SOC2_1X1) || defined(SOC2_2X2) */
 
 #define HIF_TX_PAYLOAD_LENGTH				72
 

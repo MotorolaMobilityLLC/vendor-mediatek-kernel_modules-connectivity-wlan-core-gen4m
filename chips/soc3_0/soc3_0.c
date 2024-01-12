@@ -3751,7 +3751,7 @@ int32_t soc3_0_wlanPowerOnInit(
 		/* assiggned in wlanNetCreate() */
 		prChipInfo = prAdapter->chip_info;
 
-		/* It is configured in mt66xx_chip_info_connac2x2.fw_dl_ops */
+		/* It is configured in mt66xx_chip_info_soc3.fw_dl_ops */
 		prFwDlOps = prChipInfo->fw_dl_ops;
 
 		/* No need to check F/W ready bit,
