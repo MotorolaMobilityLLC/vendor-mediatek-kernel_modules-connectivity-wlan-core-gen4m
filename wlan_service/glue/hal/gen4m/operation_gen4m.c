@@ -2776,6 +2776,7 @@ s_int32 mt_op_set_band_mode(
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
 
+	/* band_state->band_mode BIT24: TEST_BAND_MODE_SINGLE_BAND0/1 */
 	fw_band_mode =
 		(band_state->band_mode & 0xffffff00) |	dbdc_enb;
 
@@ -3813,7 +3814,7 @@ s_int32 mt_op_listmode_cmd(
 	struct test_wlan_info *winfos,
 	u_int8 *para,
 	u_int16 para_len,
-	uint32_t *rsp_len,
+	u_int32 *rsp_len,
 	void *rsp_data)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;

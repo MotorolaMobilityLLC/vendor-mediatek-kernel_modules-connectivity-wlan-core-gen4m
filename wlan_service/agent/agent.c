@@ -2550,16 +2550,18 @@ static s_int32 hqa_get_capability(
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
 
-	/* get content */
-	ret = mt_serv_get_capability(serv_test, &capability);
+	memset(&capability, 0, sizeof(struct test_capability));
 
-	/* fill header */
+	/* fill default header */
 	capability.version = GET_CAPABILITY_VER;
 	capability.tag_num = GET_CAPABILITY_TAG_NUM;
 	capability.ph_cap.tag = GET_CAPABILITY_TAG_PHY;
 	capability.ph_cap.tag_len = GET_CAPABILITY_TAG_PHY_LEN;
 	capability.ext_cap.tag = GET_CAPABILITY_TAG_PHY_EXT;
 	capability.ext_cap.tag_len = GET_CAPABILITY_TAG_PHY_EXT_LEN;
+
+	/* get content */
+	ret = mt_serv_get_capability(serv_test, &capability);
 
 	cast = (u_int32 *)&capability;
 
@@ -2582,7 +2584,7 @@ static s_int32 hqa_get_rf_type_capability(
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_char *data = hqa_frame->data;
-	u_int32 band_idx, convert;
+	u_int32 band_idx, convert, convert_rx;
 	struct test_capability capability;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
@@ -2590,27 +2592,95 @@ static s_int32 hqa_get_rf_type_capability(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	SERV_SET_PARAM(serv_test, ctrl_band_idx, (u_char)band_idx);
-
 	/* get content */
 	ret = mt_serv_get_capability(serv_test, &capability);
 
-	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
-		(" capability.ph_cap.ant_num = %x\n",
-		capability.ph_cap.ant_num));
+	if (ret != SERV_STATUS_SUCCESS) {
+		convert = 0;
 
-	convert = SERV_OS_HTONL(capability.ph_cap.ant_num);
+		/* TX */
+		sys_ad_move_mem(hqa_frame->data + 2, &convert,
+			sizeof(convert));
+
+		/* RX */
+		sys_ad_move_mem(hqa_frame->data + 6, &convert,
+			sizeof(convert));
+
+		update_hqa_frame(hqa_frame, 10, ret);
+		return ret;
+	}
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	(" capability.ph_cap.band path num = 0x%x, 0x%x\n",
+	capability.ph_cap.band_0_1_wf_path_num,
+	capability.ph_cap.band_2_3_wf_path_num));
+
+	switch (band_idx) {
+	case TEST_DBDC_BAND0:
+		convert =
+		SERV_OS_HTONL(
+			capability.ph_cap.band_0_1_wf_path_num&0xF);
+		convert_rx =
+		SERV_OS_HTONL(
+			(capability.ph_cap.band_0_1_wf_path_num>>8)&0xF);
+
+		/* DBDC mode and support MIMO/DBDC_switch */
+		if (IS_TEST_DBDC(serv_test->test_winfo) &&
+				(capability.ext_cap.feature1&BIT(4))) {
+			convert /= 2;
+			convert_rx /= 2;
+		}
+		break;
+
+	case TEST_DBDC_BAND1:
+		convert =
+		SERV_OS_HTONL(
+			(capability.ph_cap.band_0_1_wf_path_num>>16)&0xF);
+		convert_rx =
+		SERV_OS_HTONL(
+			(capability.ph_cap.band_0_1_wf_path_num>>24)&0xF);
+
+		/* DBDC mode and support MIMO/DBDC_switch */
+		if (IS_TEST_DBDC(serv_test->test_winfo) &&
+				(capability.ext_cap.feature1&BIT(4))) {
+			convert /= 2;
+			convert_rx /= 2;
+		}
+		break;
+
+	case TEST_DBDC_BAND2:
+		convert =
+		SERV_OS_HTONL(
+			capability.ph_cap.band_2_3_wf_path_num&0xF);
+		convert_rx =
+		SERV_OS_HTONL(
+			(capability.ph_cap.band_2_3_wf_path_num>>8)&0xF);
+		break;
+
+	case TEST_DBDC_BAND3:
+		convert =
+		SERV_OS_HTONL(
+			(capability.ph_cap.band_2_3_wf_path_num>>16)&0xF);
+		convert_rx =
+		SERV_OS_HTONL(
+			(capability.ph_cap.band_2_3_wf_path_num>>24)&0xF);
+		break;
+
+	default:
+		convert = 0;
+		convert_rx = 0;
+		break;
+	}
 
 	/* TX */
 	sys_ad_move_mem(hqa_frame->data + 2, &convert,
 		sizeof(convert));
 
 	/* RX */
-	sys_ad_move_mem(hqa_frame->data + 6, &convert,
-		sizeof(convert));
+	sys_ad_move_mem(hqa_frame->data + 6, &convert_rx,
+		sizeof(convert_rx));
 
 	update_hqa_frame(hqa_frame, 10, ret);
-
 	return ret;
 }
 
@@ -3194,19 +3264,19 @@ static s_int32 hqa_get_band_mode(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM)
-		band_idx = 0;
+	if (band_idx < TEST_DBDC_BAND_NUM) {
+		/* Set parameters */
+		band_state = SERV_GET_PADDR(serv_test, test_bstat);
+		serv_test->ctrl_band_idx = (u_char)band_idx;
+		ret = mt_serv_get_band_mode(serv_test);
 
-	/* Set parameters */
-	band_state = SERV_GET_PADDR(serv_test, test_bstat);
-	serv_test->ctrl_band_idx = (u_char)band_idx;
-	ret = mt_serv_get_band_mode(serv_test);
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+			("%s: band_type=%u\n",
+			__func__, band_state->band_type));
 
-	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
-		("%s: band_type=%u\n",
-		__func__, band_state->band_type));
-
-	band_type = SERV_OS_HTONL(band_state->band_type);
+		band_type = SERV_OS_HTONL(band_state->band_type);
+	}
+	/* else respone band_type = 0 */
 
 	/* Update hqa_frame with response: status (2 bytes) */
 	sys_ad_move_mem(hqa_frame->data + 2, &band_type, sizeof(band_type));

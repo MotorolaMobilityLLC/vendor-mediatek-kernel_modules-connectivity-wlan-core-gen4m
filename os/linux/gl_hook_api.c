@@ -4403,6 +4403,7 @@ uint32_t ServiceWlanOid(void *winfos,
 #endif
 	struct ICAP_INFO_T *prIcapInfo = NULL;
 	struct test_capability *capability = NULL;
+	struct ATE_OPS_T *prAteOps = NULL;
 
 	ASSERT(winfos);
 
@@ -4424,6 +4425,8 @@ uint32_t ServiceWlanOid(void *winfos,
 	prIcapInfo = &prAdapter->rIcapInfo;
 	ASSERT(prIcapInfo);
 
+	prAteOps = prAdapter->chip_info->prAteOps;
+
 	/* Normal set */
 	fgRead = FALSE;
 	fgWaitResp = FALSE;
@@ -4444,7 +4447,6 @@ uint32_t ServiceWlanOid(void *winfos,
 
 		DBGLOG(RFTEST, INFO,
 			"Test Mode Start Workaround for META2!\n");
-
 	}
 #endif
 
@@ -4478,7 +4480,14 @@ uint32_t ServiceWlanOid(void *winfos,
 #endif
 	case OP_WLAN_OID_GET_CAPABILITY:
 		capability = (struct test_capability *)rsp_data;
-		kalMemSet(capability, 0, sizeof(struct test_capability));
+
+		if (prAteOps)
+			if (prAteOps->tool_capability) {
+				kalMemCopy(capability,
+					prAteOps->tool_capability,
+					sizeof(struct test_capability));
+				return WLAN_STATUS_SUCCESS;
+			}
 
 		/* ph_cap.protocol */
 		capability->ph_cap.protocol = BIT(0);
@@ -4526,7 +4535,7 @@ uint32_t ServiceWlanOid(void *winfos,
 		*  4 : support BW20 + BW40 + BW80 + BW 160 + BW8080
 		*  5 : support BW20 + BW40 + BW80 + BW 160 + BW8080 + BW320
 		*/
-		capability->ph_cap.bandwidth =
+		capability->ph_cap.max_bandwidth =
 			BITS(0, prAdapter->rWifiVar.u4PhyMaxBandwidth);
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
@@ -4535,14 +4544,14 @@ uint32_t ServiceWlanOid(void *winfos,
 		if (g_HqaCap.support_mimo && g_HqaCap.support_dbdc) {
 			/* Chips which support MIMO/DBDC */
 			if (prTestWinfo->dbdc_mode == TEST_DBDC_ENABLE)
-				capability->ph_cap.ant_num =
+				capability->ph_cap.max_ant_num =
 					prAdapter->rWifiVar.ucNSS / 2;
 			else
-				capability->ph_cap.ant_num =
+				capability->ph_cap.max_ant_num =
 					prAdapter->rWifiVar.ucNSS;
 		} else {
 			/* Chips which only support DBDC */
-			capability->ph_cap.ant_num =
+			capability->ph_cap.max_ant_num =
 					prAdapter->rWifiVar.ucNSS;
 		}
 
@@ -4579,11 +4588,12 @@ uint32_t ServiceWlanOid(void *winfos,
 					BIT(16)+BIT(17)+BIT(18);
 			}
 		}
+
 #else
 		/* ph_cap.ant_num */
 
 		/* Chips which only support DBDC */
-		capability->ph_cap.ant_num =
+		capability->ph_cap.max_ant_num =
 				prAdapter->rWifiVar.ucNSS;
 
 		/* ph_cap.channel_band_dbdc */

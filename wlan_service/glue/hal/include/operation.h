@@ -537,7 +537,7 @@ s_int32 mt_op_listmode_cmd(
 	struct test_wlan_info *winfos,
 	u_int8 *para,
 	u_int16 para_len,
-	uint32_t *rsp_len,
+	u_int32 *rsp_len,
 	void *rsp_data);
 s_int32 mt_op_set_efem_mode(
 	struct test_wlan_info *winfos,

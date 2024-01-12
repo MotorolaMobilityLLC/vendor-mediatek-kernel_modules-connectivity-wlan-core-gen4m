@@ -1793,45 +1793,53 @@ s_int32 mt_serv_get_band_mode(
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
 	struct test_capability capability;
-	u_int32 band_mode = 0;
-	u_int8 is_single_band = 0;
-	u_int8 set_band_idx = 0; /*band which is choose by set_band_mode*/
+	u_int32 band_mode = BSTATE_GET_PARAM(serv_test, band_mode);
 
-	band_mode = BSTATE_GET_PARAM(serv_test, band_mode);
-	is_single_band =
-		((band_mode & 0xff) == TEST_BAND_MODE_SINGLE) ? TRUE : FALSE;
+	/* get content */
+	ret = mt_serv_get_capability(serv_test, &capability);
 
-	set_band_idx = (band_mode & (0xff << 24)) >> 24;
+	if (ret == SERV_STATUS_SUCCESS) {
+		switch (ctrl_band_idx) {
+		case TEST_DBDC_BAND0:
+			band_type =
+				(capability.ph_cap.channel_band_dbdc & 0xFF);
 
-	if (is_single_band && !((1 << ctrl_band_idx) & set_band_idx)) {
-		band_type = TEST_BAND_TYPE_UNUSE;
-		ret = SERV_STATUS_SUCCESS;
-	} else {
+			/* check if single band */
+			if (band_mode == TEST_BAND_MODE_SINGLE_BAND0)
+				band_type |=
+				((capability.ph_cap.channel_band_dbdc >> 16) &
+				0xFF);
+			else if (band_mode == TEST_BAND_MODE_SINGLE_BAND1)
+				band_type = TEST_BAND_TYPE_UNUSE;
+			break;
 
-		/* get content */
-		ret = mt_serv_get_capability(serv_test, &capability);
+		case TEST_DBDC_BAND1:
+			band_type =
+			((capability.ph_cap.channel_band_dbdc >> 16) &
+			0xFF);
 
-		if (ret == SERV_STATUS_SUCCESS) {
-			switch (ctrl_band_idx) {
-			case TEST_DBDC_BAND0:
-				band_type =
-				capability.ph_cap.channel_band_dbdc & 0xFF;
-				break;
-			case TEST_DBDC_BAND1:
-				band_type =
-				(capability.ph_cap.channel_band_dbdc >> 16)
-				& 0xFF;
-				break;
-			case TEST_DBDC_BAND2:
-				band_type =
-				capability.ph_cap.channel_band_dbdc_ext & 0xFF;
-				break;
-			case TEST_DBDC_BAND3:
-				band_type =
-				(capability.ph_cap.channel_band_dbdc_ext >> 16)
-				& 0xFF;
-				break;
-			}
+			/* check if single band */
+			if (band_mode == TEST_BAND_MODE_SINGLE_BAND0)
+				band_type = TEST_BAND_TYPE_UNUSE;
+			else if (band_mode == TEST_BAND_MODE_SINGLE_BAND1)
+				band_type |=
+				(capability.ph_cap.channel_band_dbdc & 0xFF);
+			break;
+
+		case TEST_DBDC_BAND2:
+			band_type =
+			(capability.ph_cap.channel_band_dbdc_ext & 0xFF);
+			break;
+
+		case TEST_DBDC_BAND3:
+			band_type =
+			((capability.ph_cap.channel_band_dbdc_ext >> 16) &
+			0xFF);
+			break;
+
+		default:
+			band_type = TEST_BAND_TYPE_UNUSE;
+			break;
 		}
 	}
 #else
