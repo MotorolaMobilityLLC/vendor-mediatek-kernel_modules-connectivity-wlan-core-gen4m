@@ -698,7 +698,7 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 		goto exit;
 	}
 
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
 	dump = mtk_pcie_dump_link_info(0);
 	g_u4AERDumpInfo = dump;
 #endif
@@ -729,7 +729,7 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 		/* bit[7]: RxErr */
 		else if (dump & BIT(7)) {
 			/* block PCIe access */
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
 			mtk_pcie_disable_data_trans(0);
 #endif
 			fgNeedReset = TRUE;
@@ -1662,7 +1662,7 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 			"Wi-Fi tx cma platform_driver_register fail\n");
 #endif /* CFG_MTK_WIFI_TX_CMA_MEM */
 
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
 	mtk_pcie_remove_port(0);
 #endif
 
@@ -1883,7 +1883,7 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 		}
 #endif
 
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
 #if CFG_MTK_MDDP_SUPPORT
 		if (prMsiLayout->type == MDDP_INT) {
 			struct irq_data *data;
@@ -2406,7 +2406,7 @@ void halPcieHwControlVote(
 	uint8_t enable,
 	uint32_t u4WifiUser)
 {
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
 	uint8_t voteResult = TRUE;
 	int32_t u4VoteState = 0;
 	int32_t err = 0;
@@ -2460,14 +2460,14 @@ void halPcieHwControlVote(
 
 	spin_unlock_bh(
 		&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_PCIE_VOTE]);
-#endif /* IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT) */
+#endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
 }
 
 int32_t glBusFuncOn(void)
 {
 	int ret = 0;
 
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
 	/*
 	 * Due to connsys chip may be powered on before platform is powered on,
 	 * need to remove pcie port first to ensure no resource is occupied.
@@ -2491,7 +2491,7 @@ int32_t glBusFuncOn(void)
 	} else if (ret) {
 		DBGLOG(HAL, ERROR, "pci_register_driver failed, ret=%d\n",
 			ret);
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
 		mtk_pcie_remove_port(0);
 #endif
 		return ret;
@@ -2535,7 +2535,7 @@ int32_t glBusFuncOn(void)
 #endif
 exit_dump:
 		pci_unregister_driver(&mtk_pci_driver);
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
 		mtk_pcie_remove_port(0);
 #endif
 		ret = -EINVAL;
@@ -2550,7 +2550,7 @@ void glBusFuncOff(void)
 		pci_unregister_driver(&mtk_pci_driver);
 		g_fgDriverProbed = FALSE;
 	}
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
 	mtk_pcie_remove_port(0);
 #endif
 }

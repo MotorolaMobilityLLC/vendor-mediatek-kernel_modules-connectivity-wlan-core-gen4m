@@ -663,7 +663,7 @@ struct BUS_INFO mt6653_bus_info = {
 		.prMsiLayout = mt6653_pcie_msi_layout,
 		.u4MaxMsiNum = ARRAY_SIZE(mt6653_pcie_msi_layout),
 	},
-	.showDebugInfo = NULL,
+	.showDebugInfo = mt6653ShowPcieDebugInfo,
 #endif /* _HIF_PCIE */
 #if CFG_MTK_WIFI_WFDMA_WB
 	.processTxInterrupt = mt6653ProcessTxInterruptByEmi,
@@ -2903,6 +2903,39 @@ static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
 }
 
+static void mt6653ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	uint32_t u4Addr, u4Val = 0, u4Idx;
+	uint32_t u4BufSize = 512, pos = 0;
+	char *buf;
+	uint32_t au4PcieEpReg[] = {
+		0x74030188, 0x7403018C, 0x740310f0, 0x740310f4, 0x70025018
+	};
+
+	buf = (char *)kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
+	if (!buf) {
+		DBGLOG(HAL, WARN, "buffer alloc fail%s\n", buf);
+		return;
+	}
+
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+	u4Val = mtk_pcie_dump_link_info(0);
+	pos += kalSnprintf(buf + pos, u4BufSize - pos,
+			   "link_info:0x%x ", u4Val);
+#endif
+
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4PcieEpReg); u4Idx++) {
+		u4Addr = au4PcieEpReg[u4Idx];
+		HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+		pos += kalSnprintf(buf + pos, u4BufSize - pos,
+				   "[0x%08x]=[0x%08x] ", u4Addr, u4Val);
+	}
+
+	DBGLOG(HAL, INFO, "%s\n", buf);
+	kalMemFree(buf, VIR_MEM_TYPE, u4BufSize);
+}
+
 static void mt6653SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 {
 	phys_addr_t base = emi_mem_get_phy_base(prAdapter->chip_info);
@@ -3793,7 +3826,7 @@ static void mt6653LowPowerOwnClear(struct ADAPTER *prAdapter,
 		return;
 	}
 
-#ifdef CFG_MTK_WIFI_PCIE_SUPPORT
+#if CFG_MTK_WIFI_PCIE_SUPPORT
 	mtk_pcie_dump_link_info(0);
 #endif
 

@@ -2616,11 +2616,11 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 	struct pci_dev *pci_dev = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	uint32_t u4RegVal[25] = {0};
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
 	uint32_t link_info = mtk_pcie_dump_link_info(0);
 #endif
 
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
 	if (!(link_info & BIT(5)))
 		return FALSE;
 #endif
@@ -2636,7 +2636,7 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 			DBGLOG(HAL, INFO,
 				"PCIE link down 0x0=0x%08x\n", u4RegVal[0]);
 			/* block pcie to prevent access */
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
 			mtk_pcie_disable_data_trans(0);
 #endif
 			return FALSE;
@@ -2733,7 +2733,7 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 		return FALSE;
 	}
 
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
 	/* MalfTLP */
 	if (link_info & BIT(8)) {
 		fgIsBusAccessFailed = TRUE;
@@ -2760,7 +2760,7 @@ static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t u4Addr, u4Val = 0;
 
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
 	if (!in_interrupt()) {
 		u4Addr = 0x112F0184;
 		wf_ioremap_read(u4Addr, &u4Val);
@@ -3721,7 +3721,7 @@ static void mt6639_CheckMcuOff(struct ADAPTER *ad)
 	if ((u4RegVal & BITS(12, 13)) == BITS(12, 13)) {
 		DBGLOG(HAL, INFO, "MCU off, 0x1F5014=0x%08x\n", u4RegVal);
 		/* block pcie to prevent access */
-#if defined(CFG_MTK_WIFI_PCIE_SUPPORT)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
 		mtk_pcie_disable_data_trans(0);
 #endif
 	}
