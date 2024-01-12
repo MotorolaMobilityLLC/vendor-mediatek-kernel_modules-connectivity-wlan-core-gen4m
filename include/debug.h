@@ -831,11 +831,13 @@ int32_t connac2x_show_stat_info(
 
 void connac2x_show_wfdma_interrupt_info(
 	struct ADAPTER *prAdapter,
-	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
+	uint32_t u4DmaNum);
 
 void connac2x_show_wfdma_glo_info(
 	struct ADAPTER *prAdapter,
-	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
+	uint32_t u4DmaNum);
 
 void connac2x_show_wfdma_ring_info(
 	struct ADAPTER *prAdapter,
@@ -843,11 +845,13 @@ void connac2x_show_wfdma_ring_info(
 
 void connac2x_show_wfdma_dbg_flag_log(
 	struct ADAPTER *prAdapter,
-	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
+	uint32_t u4DmaNum);
 
 void connac2x_show_wfdma_info_by_type(
 	struct ADAPTER *prAdapter,
-	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
+	uint32_t u4DmaNum);
 
 void connac2x_show_wfdma_info(IN struct ADAPTER *prAdapter);
 void connac2x_show_dmashdl_info(IN struct ADAPTER *prAdapter);
@@ -855,9 +859,9 @@ void connac2x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd);
 void connac2x_show_pse_info(struct ADAPTER *prAdapter);
 void connac2x_DumpWfsyscpupcr(struct ADAPTER *prAdapter);
 void connac2x_DbgCrRead(
-	struct ADAPTER *prAdapter, size_t addr, unsigned int *val);
+	struct ADAPTER *prAdapter, uint32_t addr, unsigned int *val);
 void connac2x_DbgCrWrite(
-	struct ADAPTER *prAdapter, phys_addr_t addr, unsigned int val);
+	struct ADAPTER *prAdapter, uint32_t addr, unsigned int val);
 void connac2x_dump_format_memory32(
 	uint32_t *pu4StartAddr, uint32_t u4Count, char *aucInfo);
 void connac2x_DumpCrRange(

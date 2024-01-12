@@ -1069,8 +1069,8 @@ void show_wfdma_dbg_log(
 {
 	/* Dump Host WFMDA info */
 	DBGLOG(HAL, TRACE, "WFMDA Configuration:\n");
-	connac2x_show_wfdma_interrupt_info(prAdapter, enum_wfdma_type);
-	connac2x_show_wfdma_glo_info(prAdapter, enum_wfdma_type);
+	connac2x_show_wfdma_interrupt_info(prAdapter, enum_wfdma_type, 2);
+	connac2x_show_wfdma_glo_info(prAdapter, enum_wfdma_type, 2);
 	connac2x_show_wfdma_ring_info(prAdapter, enum_wfdma_type);
 }
 
@@ -1322,9 +1322,9 @@ void show_wfdma_interrupt_info_without_adapter(
 	uint32_t idx;
 	uint32_t u4hostBaseCrAddr = 0;
 	uint32_t u4DmaCfgCrAddr = 0;
-	uint32_t u4DmaCfgCrAddrByWFDMA[CONNAC2X_WFDMA_COUNT];
+	uint32_t u4DmaCfgCrAddrByWFDMA[CONNAC2X_MAX_WFDMA_COUNT];
 	uint32_t u4RegValue = 0;
-	uint32_t u4RegValueByWFDMA[CONNAC2X_WFDMA_COUNT] = {0};
+	uint32_t u4RegValueByWFDMA[CONNAC2X_MAX_WFDMA_COUNT] = {0};
 
 	/* Dump Interrupt Status info */
 	if (enum_wfdma_type == WFDMA_TYPE_HOST) {
@@ -1336,7 +1336,7 @@ void show_wfdma_interrupt_info_without_adapter(
 	}
 
 	/* Dump PDMA Status CR */
-	for (idx = 0; idx < CONNAC2X_WFDMA_COUNT; idx++) {
+	for (idx = 0; idx < CONNAC2X_MAX_WFDMA_COUNT; idx++) {
 
 		if (enum_wfdma_type == WFDMA_TYPE_HOST)
 			u4hostBaseCrAddr = idx ?
@@ -1372,7 +1372,7 @@ void show_wfdma_interrupt_info_without_adapter(
 	}
 
 	/* Dump PDMA Enable CR */
-	for (idx = 0; idx < CONNAC2X_WFDMA_COUNT; idx++) {
+	for (idx = 0; idx < CONNAC2X_MAX_WFDMA_COUNT; idx++) {
 
 		if (enum_wfdma_type == WFDMA_TYPE_HOST)
 			u4hostBaseCrAddr = idx ?
@@ -1405,7 +1405,7 @@ void show_wfdma_glo_info_without_adapter(
 	uint32_t u4DmaCfgCrAddr = 0;
 	union WPDMA_GLO_CFG_STRUCT GloCfgValue;
 
-	for (idx = 0; idx < CONNAC2X_WFDMA_COUNT; idx++) {
+	for (idx = 0; idx < CONNAC2X_MAX_WFDMA_COUNT; idx++) {
 
 		if (enum_wfdma_type == WFDMA_TYPE_HOST)
 			u4hostBaseCrAddr = idx ?

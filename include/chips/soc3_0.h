@@ -334,9 +334,6 @@ void soc3_0_WfdmaAxiCtrl(struct ADAPTER *prAdapter);
 
 int hifWmmcuPwrOn(void);
 int hifWmmcuPwrOff(void);
-int wf_ioremap_read(size_t addr, unsigned int *val);
-
-int wf_ioremap_write(phys_addr_t addr, unsigned int val);
 int soc3_0_Trigger_fw_assert(void);
 int soc3_0_CheckBusHang(void *adapter,
 	uint8_t ucWfResetEnable);

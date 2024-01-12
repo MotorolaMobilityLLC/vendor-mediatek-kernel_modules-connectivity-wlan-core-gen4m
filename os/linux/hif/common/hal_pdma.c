@@ -2577,24 +2577,24 @@ bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
 	return true;
 }
 
-u_int8_t halIsStaticMapBusAddr(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4Addr)
+static u_int8_t halIsStaticMapBusAddr(struct mt66xx_chip_info *prChipInfo,
+				      uint32_t u4Addr)
 {
-	if (u4Addr < prAdapter->chip_info->bus_info->max_static_map_addr)
+	if (u4Addr < prChipInfo->bus_info->max_static_map_addr)
 		return TRUE;
 	else
 		return FALSE;
 }
 
-u_int8_t halChipToStaticMapBusAddr(IN struct GLUE_INFO *prGlueInfo,
-				   IN uint32_t u4ChipAddr,
-				   OUT uint32_t *pu4BusAddr)
+u_int8_t halChipToStaticMapBusAddr(struct mt66xx_chip_info *prChipInfo,
+				   uint32_t u4ChipAddr,
+				   uint32_t *pu4BusAddr)
 {
-	struct BUS_INFO *prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	struct BUS_INFO *prBusInfo = prChipInfo->bus_info;
 	uint32_t u4StartAddr, u4EndAddr, u4BusAddr;
 	uint32_t u4Idx = 0;
 
-	if (halIsStaticMapBusAddr(prGlueInfo->prAdapter, u4ChipAddr)) {
+	if (halIsStaticMapBusAddr(prChipInfo, u4ChipAddr)) {
 		*pu4BusAddr = u4ChipAddr;
 		return TRUE;
 	}
@@ -2625,9 +2625,12 @@ u_int8_t halGetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo,
 			     IN uint32_t u4ChipAddr, OUT uint32_t *pu4Value)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4ReMapReg, u4BusAddr;
 
-	if (!halChipToStaticMapBusAddr(prGlueInfo, MCU_CFG_PCIE_REMAP2,
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+
+	if (!halChipToStaticMapBusAddr(prChipInfo, MCU_CFG_PCIE_REMAP2,
 				       &u4ReMapReg))
 		return FALSE;
 
@@ -2643,9 +2646,12 @@ u_int8_t halSetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo,
 			     IN uint32_t u4ChipAddr, IN uint32_t u4Value)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4ReMapReg, u4BusAddr;
 
-	if (!halChipToStaticMapBusAddr(prGlueInfo, MCU_CFG_PCIE_REMAP2,
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+
+	if (!halChipToStaticMapBusAddr(prChipInfo, MCU_CFG_PCIE_REMAP2,
 				       &u4ReMapReg))
 		return FALSE;
 
