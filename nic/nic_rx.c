@@ -3194,6 +3194,7 @@ static void nicRxProcessPacketType(
 {
 	struct RX_CTRL *prRxCtrl;
 	struct mt66xx_chip_info *prChipInfo;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prChipInfo = prAdapter->chip_info;
@@ -3201,15 +3202,11 @@ static void nicRxProcessPacketType(
 	case RX_PKT_TYPE_RX_DATA:
 		if (HAL_IS_RX_DIRECT(prAdapter)
 			&& HAL_MON_EN(prAdapter)) {
-			spin_lock_bh(
-				&prAdapter->prGlueInfo->
-				rSpinLock[
+			spin_lock_bh(&prGlueInfo->rSpinLock[
 				SPIN_LOCK_RX_DIRECT]);
 			nicRxProcessMonitorPacket(
 				prAdapter, prSwRfb);
-			spin_unlock_bh(
-				&prAdapter->prGlueInfo->
-				rSpinLock[
+			spin_unlock_bh(&prGlueInfo->rSpinLock[
 				SPIN_LOCK_RX_DIRECT]);
 			break;
 		} else if (HAL_MON_EN(prAdapter)) {
@@ -3218,16 +3215,12 @@ static void nicRxProcessPacketType(
 			break;
 		}
 		if (HAL_IS_RX_DIRECT(prAdapter)) {
-			spin_lock_bh(
-				&prAdapter->prGlueInfo->
-				rSpinLock[
+			spin_lock_bh(&prGlueInfo->rSpinLock[
 				SPIN_LOCK_RX_DIRECT]);
 			nicRxProcessDataPacket(
 				prAdapter,
 				prSwRfb);
-			spin_unlock_bh(
-				&prAdapter->prGlueInfo->
-				rSpinLock[
+			spin_unlock_bh(&prGlueInfo->rSpinLock[
 				SPIN_LOCK_RX_DIRECT]);
 		} else {
 			nicRxProcessDataPacket(
@@ -3261,9 +3254,27 @@ static void nicRxProcessPacketType(
 				prSwRfb->ucOFLD,
 				get_ofld,
 				prSwRfb->prRxStatus);
-			if (prSwRfb->ucOFLD)
-				nicRxProcessDataPacket(
-				prAdapter, prSwRfb);
+			if (prSwRfb->ucOFLD) {
+				if (HAL_IS_RX_DIRECT(prAdapter)) {
+					spin_lock_bh(&prGlueInfo->rSpinLock[
+						SPIN_LOCK_RX_DIRECT]);
+					if (HAL_MON_EN(prAdapter))
+						nicRxProcessMonitorPacket(
+							prAdapter, prSwRfb);
+					else
+						nicRxProcessDataPacket(
+							prAdapter, prSwRfb);
+					spin_unlock_bh(&prGlueInfo->rSpinLock[
+						SPIN_LOCK_RX_DIRECT]);
+				} else {
+					if (HAL_MON_EN(prAdapter))
+						nicRxProcessMonitorPacket(
+							prAdapter, prSwRfb);
+					else
+						nicRxProcessDataPacket(
+							prAdapter, prSwRfb);
+				}
+			}
 			else
 				nicRxProcessMgmtPacket(
 				prAdapter, prSwRfb);
