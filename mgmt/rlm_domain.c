@@ -4151,6 +4151,11 @@ skipLabel:
 		else {
 			pcContCur2 = pcContOld;
 			pcContTmp = txPwrGetString(&pcContCur2, "-");
+			if (!pcContTmp) {
+				DBGLOG(RLM, ERROR,
+					"parse channel range error: %s\n");
+				goto clearLabel;
+			}
 			if (pcContCur2 == NULL) { /* case: normal channel */
 				if (kalkStrtou8(pcContOld, 0, &value) != 0) {
 					DBGLOG(RLM, ERROR,
@@ -4384,6 +4389,10 @@ void txPwrCtrlShowList(struct ADAPTER *prAdapter, uint8_t filterType,
 				prChlSettingList =
 					&(prCurElement->rChlSettingList[j]);
 				msgOfs = 0;
+
+				/*Coverity check*/
+				if (prChlSettingList->eChnlType < 0)
+					prChlSettingList->eChnlType = 0;
 
 				/*message head*/
 				msgOfs += snprintf(msgLimit + msgOfs,
