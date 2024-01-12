@@ -914,6 +914,8 @@ struct WIFI_VAR {
 
 	uint8_t ucRxMaxMpduLen;
 	uint8_t ucRxQuotaInfoEn;
+	uint32_t u4HtTxMaxAmsduInAmpduLen;
+	uint32_t u4VhtTxMaxAmsduInAmpduLen;
 	uint32_t u4TxMaxAmsduInAmpduLen;
 
 	uint8_t ucTxBaSize;

@@ -211,6 +211,7 @@
 /* Add to the negotiated WinSize to cope with Ball Behind after Fall Ahead */
 #define WLAN_RX_BA_EXT_SIZE 64
 #define WLAN_RX_BA_EXT_MAX_SIZE 256
+#define WLAN_TX_MAX_AMSDU_IN_AMPDU_LEN 11454
 
 /* Define for wifi path usage */
 #define WLAN_FLAG_2G4_WF0		BIT(0)	/*1: support, 0: NOT support */
