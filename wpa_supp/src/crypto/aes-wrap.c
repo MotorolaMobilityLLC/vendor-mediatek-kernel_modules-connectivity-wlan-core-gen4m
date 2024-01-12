@@ -14,9 +14,9 @@
 
 #include "wpa_supp/FourWayHandShake.h"
 
+#include "wpa_supp/src/utils/common.h"
 #include "wpa_supp/src/crypto/aes.h"
 #include "wpa_supp/src/crypto/aes_wrap.h"
-#include "wpa_supp/src/utils/common.h"
 
 /**
  * aes_wrap - Wrap keys with AES Key Wrap Algorithm (RFC3394)
@@ -28,8 +28,8 @@
  * @cipher: Wrapped key, (n + 1) * 64 bits
  * Returns: 0 on success, -1 on failure
  */
-int
-aes_wrap(const u8 *kek, size_t kek_len, int n, const u8 *plain, u8 *cipher) {
+int aes_wrap(const u8 *kek, size_t kek_len, int n, const u8 *plain, u8 *cipher)
+{
 	u8 *a, *r, b[AES_BLOCK_SIZE];
 	int i, j;
 	void *ctx;
@@ -42,7 +42,7 @@ aes_wrap(const u8 *kek, size_t kek_len, int n, const u8 *plain, u8 *cipher) {
 	os_memset(a, 0xa6, 8);
 	os_memcpy(r, plain, 8 * n);
 
-	ctx = aes_encrypt_init_wpa(kek, kek_len);
+	ctx = aes_encrypt_init(kek, kek_len);
 	if (ctx == NULL)
 		return -1;
 
@@ -58,7 +58,7 @@ aes_wrap(const u8 *kek, size_t kek_len, int n, const u8 *plain, u8 *cipher) {
 		for (i = 1; i <= n; i++) {
 			os_memcpy(b, a, 8);
 			os_memcpy(b + 8, r, 8);
-			aes_encrypt_wpa(ctx, b, b);
+			aes_encrypt(ctx, b, b);
 			os_memcpy(a, b, 8);
 			t = n * j + i;
 			a[7] ^= t;
@@ -69,7 +69,7 @@ aes_wrap(const u8 *kek, size_t kek_len, int n, const u8 *plain, u8 *cipher) {
 			r += 8;
 		}
 	}
-	aes_encrypt_deinit_wpa(ctx);
+	aes_encrypt_deinit(ctx);
 
 	/* 3) Output the results.
 	 *

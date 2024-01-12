@@ -186,6 +186,10 @@
 #include "wnm.h"
 #include "rrm.h"
 
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+#include "fils.h"
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+
 #include "qosmap.h"
 
 #include "aa_fsm.h"

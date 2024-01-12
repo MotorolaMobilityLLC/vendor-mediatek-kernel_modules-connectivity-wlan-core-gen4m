@@ -2217,8 +2217,7 @@ wext_set_essid(struct net_device *prNetDev,
 	/* set auth mode */
 	if (prWpaInfo->u4WpaVersion ==
 	    IW_AUTH_WPA_VERSION_DISABLED) {
-		eAuthMode = (prWpaInfo->u4AuthAlg ==
-			     IW_AUTH_ALG_OPEN_SYSTEM) ?
+		eAuthMode = (prWpaInfo->u4AuthAlg == IW_AUTH_ALG_OPEN_SYSTEM) ?
 			    AUTH_MODE_OPEN : AUTH_MODE_AUTO_SWITCH;
 	} else {
 		/* set auth mode */
@@ -2916,7 +2915,7 @@ wext_set_encode(struct net_device *prNetDev,
 
 		/* change to auto switch */
 		prWpaInfo->u4AuthAlg = IW_AUTH_ALG_SHARED_KEY |
-						 IW_AUTH_ALG_OPEN_SYSTEM;
+				       IW_AUTH_ALG_OPEN_SYSTEM;
 		eAuthMode = AUTH_MODE_AUTO_SWITCH;
 
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetAuthMode, &eAuthMode,
@@ -3139,10 +3138,8 @@ wext_set_auth(struct net_device *prNetDev,
 #if CFG_SUPPORT_WAPI
 		if (aisGetWapiMode(prGlueInfo->prAdapter,
 			ucBssIndex)) {
-			prWpaInfo->u4WpaVersion =
-						IW_AUTH_WPA_VERSION_DISABLED;
-			prWpaInfo->u4AuthAlg =
-						IW_AUTH_ALG_OPEN_SYSTEM;
+			prWpaInfo->u4WpaVersion = IW_AUTH_WPA_VERSION_DISABLED;
+			prWpaInfo->u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
 		} else {
 			prWpaInfo->u4WpaVersion = prAuth->value;
 		}
@@ -3399,9 +3396,8 @@ wext_set_encode_ext(struct net_device *prNetDev,
 				}
 
 				/* change to auto switch */
-				prWpaInfo->u4AuthAlg =
-							IW_AUTH_ALG_SHARED_KEY |
-							IW_AUTH_ALG_OPEN_SYSTEM;
+				prWpaInfo->u4AuthAlg = IW_AUTH_ALG_SHARED_KEY |
+						       IW_AUTH_ALG_OPEN_SYSTEM;
 				eAuthMode = AUTH_MODE_AUTO_SWITCH;
 
 				rStatus = kalIoctl(prGlueInfo,
@@ -4206,7 +4202,7 @@ wext_support_ioctl_SIOCSIWPMKSA_Action(struct net_device
 					 netdev_priv(prDev));
 	uint32_t rStatus;
 	uint32_t u4BufLen;
-	struct PARAM_PMKID pmkid;
+	struct PARAM_PMKID pmkid = {0};
 	uint8_t ucBssIndex = wlanGetBssIdx(prDev);
 
 	pmkid.ucBssIdx = ucBssIndex;

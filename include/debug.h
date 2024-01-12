@@ -198,6 +198,7 @@ enum ENUM_DBG_MODULE {
 	DBG_APS_IDX,		/* 0x2D *//* AP selection */
 	DBG_SA_IDX,		/* 0x2E *//* standalone log */
 	DBG_MET_IDX,		/* 0x2F *//* Connsys MET log */
+	DBG_FILS_IDX,		/* 0x30 *//* FILS */
 	DBG_MODULE_NUM		/* Notice the XLOG check */
 };
 enum ENUM_DBG_ASSERT_CTRL_LEVEL {
@@ -652,6 +653,10 @@ enum WAIT_TO_PERIOD {
 #define DBGLOG_MEM8(_Module, _Class, _StartAddr, _Length)
 #define DBGLOG_MEM32(_Module, _Class, _StartAddr, _Length)
 #define DBGLOG_MEM128(_Module, _Class, _StartAddr, _Length)
+#define DBGDUMP_HEX(_Module, _Class, _Title, _StartAddr, _Length)
+#define DBGDUMP_MEM8(_Module, _Class, _Title, _StartAddr, _Length)
+#define DBGDUMP_MEM32(_Module, _Class, _Title, _StartAddr, _Length)
+#define DBGDUMP_MEM128(_Module, _Class, _Title, _StartAddr, _Length)
 #else
 #define DBGLOG(_Mod, _Clz, _Fmt, ...) \
 	do { \
@@ -713,6 +718,43 @@ enum WAIT_TO_PERIOD {
 #define DBGLOG_MEM128(_Mod, _Clz, _Adr, _Len) \
 	{ \
 		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
+			dumpMemory128((uint32_t *)(_Adr), (uint32_t)(_Len)); \
+		} \
+	}
+
+#define DBGDUMP_HEX(_Mod, _Clz, _Title, _Adr, _Len) \
+	{ \
+		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
+			LOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ") %s", \
+				 KAL_GET_CURRENT_THREAD_ID(), \
+				 __func__, _Title); \
+			dumpHex((uint8_t *)(_Adr), (uint32_t)(_Len)); \
+		} \
+	}
+#define DBGDUMP_MEM8(_Mod, _Clz, _Title, _Adr, _Len) \
+	{ \
+		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
+			LOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ") %s", \
+				 KAL_GET_CURRENT_THREAD_ID(), \
+				 __func__, _Title); \
+			dumpMemory8((uint8_t *)(_Adr), (uint32_t)(_Len)); \
+		} \
+	}
+#define DBGDUMP_MEM32(_Mod, _Clz, _Title, _Adr, _Len) \
+	{ \
+		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
+			LOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ") %s", \
+				 KAL_GET_CURRENT_THREAD_ID(), \
+				 __func__, _Title); \
+			dumpMemory32((uint32_t *)(_Adr), (uint32_t)(_Len)); \
+		} \
+	}
+#define DBGDUMP_MEM128(_Mod, _Clz, _Title, _Adr, _Len) \
+	{ \
+		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
+			LOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ") %s", \
+				 KAL_GET_CURRENT_THREAD_ID(), \
+				 __func__, _Title); \
 			dumpMemory128((uint32_t *)(_Adr), (uint32_t)(_Len)); \
 		} \
 	}

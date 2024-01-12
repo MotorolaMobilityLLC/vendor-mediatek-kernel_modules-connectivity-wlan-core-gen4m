@@ -38,10 +38,8 @@
 #define RSN_CIPHER_SUITE_TKIP           0x02AC0F00
 #define RSN_CIPHER_SUITE_CCMP           0x04AC0F00
 #define RSN_CIPHER_SUITE_WEP104         0x05AC0F00
-#if CFG_SUPPORT_802_11W
 #define RSN_CIPHER_SUITE_AES_128_CMAC   0x06AC0F00
 #define RSN_CIPHER_SUITE_BIP_CMAC_128   0x06AC0F00
-#endif
 #define RSN_CIPHER_SUITE_GROUP_NOT_USED 0x07AC0F00
 #define RSN_CIPHER_SUITE_GCMP           0x08AC0F00
 #define RSN_CIPHER_SUITE_GCMP_256       0x09AC0F00
@@ -60,6 +58,7 @@
 #define WPA_AKM_SUITE_NONE              0x00F25000
 #define WPA_AKM_SUITE_802_1X            0x01F25000
 #define WPA_AKM_SUITE_PSK               0x02F25000
+
 #ifndef WLAN_AKM_SUITE_FT_8021X
 #define WLAN_AKM_SUITE_FT_8021X         0x000FAC03
 #endif
@@ -74,6 +73,18 @@
 #endif
 #ifndef WLAN_AKM_SUITE_8021X_SUITE_B_192
 #define WLAN_AKM_SUITE_8021X_SUITE_B_192 0x000FAC0C
+#endif
+#ifndef WLAN_AKM_SUITE_FILS_SHA256
+#define WLAN_AKM_SUITE_FILS_SHA256	0x000FAC0E
+#endif
+#ifndef WLAN_AKM_SUITE_FILS_SHA384
+#define WLAN_AKM_SUITE_FILS_SHA384	0x000FAC0F
+#endif
+#ifndef WLAN_AKM_SUITE_FT_FILS_SHA256
+#define WLAN_AKM_SUITE_FT_FILS_SHA256	0x000FAC10
+#endif
+#ifndef WLAN_AKM_SUITE_FT_FILS_SHA384
+#define WLAN_AKM_SUITE_FT_FILS_SHA384	0x000FAC11
 #endif
 /* Add AKM SUITE for OWE since kernel haven't defined it. */
 #ifndef WLAN_AKM_SUITE_OWE
@@ -274,6 +285,9 @@ void rsnGenerateWPAIE(struct ADAPTER *prAdapter,
 void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 		      struct MSDU_INFO *prMsduInfo);
 
+void rsnGenerateRSNIEImpl(struct ADAPTER *prAdapter,
+		      struct MSDU_INFO *prMsduInfo);
+
 #if CFG_SUPPORT_AAA
 void rsnGenerateRSNXIE(struct ADAPTER *prAdapter,
 		      struct MSDU_INFO *prMsduInfo);
@@ -300,6 +314,12 @@ void rsnTkipHandleMICFailure(struct ADAPTER *prAdapter,
 
 struct PMKID_ENTRY *rsnSearchPmkidEntry(struct ADAPTER *prAdapter,
 					uint8_t *pucBssid,
+					uint8_t ucBssIndex);
+
+struct PMKID_ENTRY *rsnSearchPmkidEntryEx(struct ADAPTER *prAdapter,
+					uint8_t *pucBssid,
+					struct PARAM_SSID *prSsid,
+					uint8_t *pucFilsCacheId,
 					uint8_t ucBssIndex);
 
 void rsnGeneratePmkidIndication(struct ADAPTER *prAdapter,
@@ -394,6 +414,12 @@ uint32_t rsnKeyMgmtToAuthMode(enum ENUM_PARAM_AUTH_MODE eOriAuthMode,
 	uint32_t version, uint32_t akm);
 uint8_t rsnApOverload(uint16_t status, uint16_t reason);
 uint8_t rsnApInvalidPMK(uint16_t status);
+uint8_t rsnIsFilsAuthAlg(uint8_t alg);
+uint8_t rsnKeyMgmtFils(uint32_t akm);
+uint8_t rsnIsKeyMgmtSha256(uint32_t akm);
+uint8_t rsnIsKeyMgmtSha384(uint32_t akm);
+uint8_t rsnKekLen(uint32_t akmp, uint16_t pmk_len);
+uint8_t rsnCipherKeyLen(uint32_t cipher);
 
 /*******************************************************************************
  *                              F U N C T I O N S

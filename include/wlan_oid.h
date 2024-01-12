@@ -537,6 +537,11 @@ struct PARAM_PMKID {
 	uint8_t arBSSID[PARAM_MAC_ADDR_LEN];
 	uint8_t arPMKID[IW_PMKID_LEN];
 	uint8_t ucBssIdx;
+	struct PARAM_SSID rSsid;
+	uint8_t arPMK[64];
+	uint16_t u2PMKLen;
+	uint8_t arFilsCacheId[2];
+	uint8_t fgFilsCacheIdSet;
 };
 
 struct PARAM_PMKID_CANDIDATE {
@@ -584,6 +589,18 @@ struct PARAM_WEP {
 	uint32_t u4KeyLength;	/*!< Key length in bytes */
 	uint8_t aucKeyMaterial[32];	/*!< Key content by above setting */
 };
+
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+struct PARAM_FILS {
+	const uint8_t *pucErpUsername;
+	uint16_t u2ErpUsernameLen;
+	const uint8_t *pucErpRealm;
+	uint16_t pucErpRealmLen;
+	uint32_t u4ErpNextSeqNum;
+	const uint8_t *pucErpRrk;
+	uint16_t u2ErpRrkLen;
+};
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 
 /*! \brief Key mapping of BSSID */
 struct PARAM_KEY {
@@ -3930,6 +3947,11 @@ wlanoidSetAddKey(struct ADAPTER *prAdapter,
 		 uint32_t *pu4SetInfoLen);
 
 uint32_t
+wlanSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
+		 uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen,
+		 uint8_t fgIsOID);
+
+uint32_t
 wlanoidSetRemoveKey(struct ADAPTER *prAdapter,
 		    void *pvSetBuffer,
 		    uint32_t u4SetBufferLen,
@@ -4673,6 +4695,13 @@ wlanoidSetWapiKey(struct ADAPTER *prAdapter,
 		  uint32_t u4SetBufferLen,
 		  uint32_t *pu4SetInfoLen);
 #endif
+
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+uint32_t
+wlanoidSetFilsConnInfo(struct ADAPTER *prAdapter,
+		   void *pvSetBuffer, uint32_t u4SetBufferLen,
+		   uint32_t *pu4SetInfoLen);
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 
 #if CFG_ENABLE_WAKEUP_ON_LAN
 uint32_t

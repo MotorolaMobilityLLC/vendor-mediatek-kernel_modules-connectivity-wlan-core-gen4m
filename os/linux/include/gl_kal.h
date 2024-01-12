@@ -985,6 +985,13 @@ static inline void kalCfg80211VendorEvent(void *pvPacket)
 	kvfree(pvAddr); \
 }
 #endif
+
+#define kalMemZFree(pvAddr, eMemType, u4Size) \
+{ \
+	kalMemSet(pvAddr, 0, u4Size); \
+	kalMemFree(pvAddr, eMemType, u4Size); \
+}
+
 #define kalUdelay(u4USec)                           udelay(u4USec)
 #define kalMdelay(u4MSec)                           mdelay(u4MSec)
 #define kalMsleep(u4MSec)                           msleep(u4MSec)
@@ -1942,6 +1949,7 @@ uint8_t kalUpdateBssTimestamp(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
 
 uint32_t kalRandomNumber(void);
+void kalRandomGetBytes(void *buf, uint32_t len);
 
 #if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
 void kalTimeoutHandler(struct timer_list *timer);

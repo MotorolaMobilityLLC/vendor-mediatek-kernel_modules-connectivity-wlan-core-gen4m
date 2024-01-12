@@ -4515,7 +4515,7 @@ int mtk_p2p_cfg80211_testmode_update_sta_pmkid_cmd(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct NL80211_DRIVER_UPDATE_STA_PMKID_PARAMS *prParams =
 		(struct NL80211_DRIVER_UPDATE_STA_PMKID_PARAMS *) NULL;
-	struct PARAM_PMKID pmkid;
+	struct PARAM_PMKID pmkid = {0};
 	uint8_t ucRoleIdx = 0;
 	uint8_t ucBssIdx = 0;
 	uint32_t rStatus;

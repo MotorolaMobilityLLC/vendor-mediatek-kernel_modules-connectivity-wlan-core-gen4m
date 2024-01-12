@@ -2992,7 +2992,21 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			break;
 		}
 		/* end Support AP Selection */
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+		case ELEM_ID_FILS_INDICATION:
+		{
+			uint16_t info;
 
+			if (IE_LEN(pucIE) < 4)
+				break;
+
+			WLAN_GET_FIELD_16(pucIE + 2, &info);
+			prBssDesc->ucIsFilsSkSupport =
+				!!(info & FILS_INFO_SK_SUPPORTED);
+
+			break;
+		}
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 		case ELEM_ID_VENDOR:	/* ELEM_ID_P2P, ELEM_ID_WMM */
 		{
 			uint8_t ucOuiType;
@@ -4846,6 +4860,30 @@ void scanHandleOceIE(struct SCAN_PARAM *prScanParam,
 	pucBuf = prScanParam->aucIE;
 	DBGLOG(SCN, INFO, "After OCE IE, length = %d\n", prScanParam->u2IELen);
 	dumpMemory8(pucBuf, prScanParam->u2IELen);
+}
+
+uint8_t	*scanGetFilsCacheIdFromBssDesc(struct BSS_DESC *bss)
+{
+	uint8_t *ie;
+	uint16_t ie_len, offset;
+
+	if (!bss)
+		return NULL;
+
+	ie = bss->pucIeBuf;
+	ie_len = bss->u2IELength;
+
+	IE_FOR_EACH(ie, ie_len, offset) {
+		if (IE_ID(ie) == ELEM_ID_FILS_INDICATION && IE_LEN(ie) >= 4) {
+			uint16_t info;
+
+			WLAN_GET_FIELD_16(ie + 2, &info);
+			if (info & FILS_INFO_CACHE_ID_INCLUDED)
+				return ie + 4;
+		}
+	}
+
+	return NULL;
 }
 
 #if (CFG_SUPPORT_WIFI_6G == 1)

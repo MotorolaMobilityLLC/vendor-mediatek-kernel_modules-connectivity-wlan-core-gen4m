@@ -78,6 +78,10 @@ struct APPEND_VAR_IE_ENTRY txAssocReqIETable[] = {
 	 heRlmReqGenerateHe6gBandCapIE}
 	,			/* 255, EXT 59 */
 #endif
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	/* Add AES_BLOCK_SIZE for AEAD encryption header info */
+	{FILS_ASSOC_MAX_LEN + FILS_AES_BLOCK_SIZE, 0, filsBuildAssocIE},
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 #if (CFG_SUPPORT_BSS_MAX_IDLE_PERIOD == 1)
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_BSS_MAX_IDLE), NULL,
 				heRlmReqGenerateBssMaxIdleIE}
@@ -513,22 +517,11 @@ assocComposeReAssocReqFrameHeaderAndFF(struct ADAPTER *prAdapter,
 	/* Fill the Current AP Address field. */
 	if (prStaRec->fgIsReAssoc) {
 		if (IS_STA_IN_AIS(prStaRec)) {
-
-			struct BSS_INFO *prAisBssInfo =
-				aisGetAisBssInfo(prAdapter,
-				prStaRec->ucBssIndex);
 			struct WLAN_REASSOC_REQ_FRAME *prReAssocFrame =
 			    (struct WLAN_REASSOC_REQ_FRAME *)prAssocFrame;
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-			if (mldIsMultiLinkFormed(prAdapter, prStaRec)) {
-				DBGLOG(ML, INFO,  "use mld addr");
-				COPY_MAC_ADDR(prReAssocFrame->aucCurrentAPAddr,
-					      prStaRec->aucMldAddr);
-			} else
-#endif
-				COPY_MAC_ADDR(prReAssocFrame->aucCurrentAPAddr,
-					      prAisBssInfo->aucBSSID);
+			COPY_MAC_ADDR(prReAssocFrame->aucCurrentAPAddr,
+				      cnmStaRecAuthAddr(prAdapter, prStaRec));
 		} else {
 			ASSERT(0);
 			/* We don't support ReAssociation for other network */
@@ -771,6 +764,14 @@ uint32_t assocSendReAssocReqFrame(struct ADAPTER *prAdapter,
 				      prStaRec->ucBssIndex);
 	}
 #endif
+
+
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	if (filsEncryptAssocReq(prAdapter, prMsduInfo)) {
+		cnmMgtPktFree(prAdapter, prMsduInfo);
+		return WLAN_STATUS_FAILURE;
+	}
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 
 	/* Enqueue the frame to send this (Re)Association request frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);

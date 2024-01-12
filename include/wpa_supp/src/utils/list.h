@@ -14,11 +14,6 @@
 #ifndef LIST_H
 #define LIST_H
 
-#if KERNEL_VERSION(5, 16, 0) > LINUX_VERSION_CODE
-#include <stddef.h>
-#endif
-/*#define NULL            (0)*/
-
 /**
  * struct dl_list - Doubly-linked list
  */

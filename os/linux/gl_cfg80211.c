@@ -1382,6 +1382,14 @@ int wlanParseAkmSuites(uint32_t *au4AkmSuites, uint32_t u4AkmSuitesCount,
 				u4AkmSuite = RSN_AKM_SUITE_PSK_SHA256;
 				break;
 #endif
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+			case WLAN_AKM_SUITE_FILS_SHA256:
+				u4AkmSuite = RSN_AKM_SUITE_FILS_SHA256;
+				break;
+			case WLAN_AKM_SUITE_FILS_SHA384:
+				u4AkmSuite = RSN_AKM_SUITE_FILS_SHA384;
+				break;
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 #if CFG_SUPPORT_PASSPOINT
 			case WLAN_AKM_SUITE_OSEN:
 				u4AkmSuite = RSN_AKM_SUITE_OSEN;
@@ -1480,13 +1488,10 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 
 	DBGLOG(REQ, INFO, "[wlan] mtk_cfg80211_connect %p %zu %d\n",
 	       sme->ie, sme->ie_len, sme->auth_type);
-	prConnSettings =
-		aisGetConnSettings(prGlueInfo->prAdapter,
-		ucBssIndex);
+	prConnSettings = aisGetConnSettings(prGlueInfo->prAdapter, ucBssIndex);
 	/* init to prevent returning status success due to no valid ap. */
 	prConnSettings->u2JoinStatus = WLAN_STATUS_AUTH_TIMEOUT;
-	if (prConnSettings->eOPMode >
-	    NET_TYPE_AUTO_SWITCH)
+	if (prConnSettings->eOPMode > NET_TYPE_AUTO_SWITCH)
 		rOpMode.eOpMode = NET_TYPE_AUTO_SWITCH;
 	else
 		rOpMode.eOpMode = prConnSettings->eOPMode;
@@ -1557,6 +1562,17 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		eAuthMode = AUTH_MODE_WPA3_SAE;
 		u4AkmSuite = RSN_AKM_SUITE_SAE;
 		break;
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	case NL80211_AUTHTYPE_FILS_SK:
+		prWpaInfo->u4AuthAlg = IW_AUTH_ALG_FILS_SK;
+		break;
+	case NL80211_AUTHTYPE_FILS_SK_PFS:
+	case NL80211_AUTHTYPE_FILS_PK:
+		DBGLOG(INIT, INFO,
+			"Only support fils share key authentication without PFS (auth_type=%d)\n",
+			sme->auth_type);
+		return -EFAULT;
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 	default:
 		/* NL80211 only set the Tx wep key while connect */
 		if (sme->key_len != 0) {
@@ -1859,6 +1875,27 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		}
 	}
 
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	if (sme->fils_erp_rrk) {
+		struct PARAM_FILS rFils;
+
+		rFils.pucErpUsername = sme->fils_erp_username;
+		rFils.u2ErpUsernameLen = sme->fils_erp_username_len;
+		rFils.pucErpRealm = sme->fils_erp_realm;
+		rFils.pucErpRealmLen = sme->fils_erp_realm_len;
+		rFils.u4ErpNextSeqNum = sme->fils_erp_next_seq_num;
+		rFils.pucErpRrk = sme->fils_erp_rrk;
+		rFils.u2ErpRrkLen = sme->fils_erp_rrk_len;
+		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetFilsConnInfo,
+				&rFils, sizeof(rFils), &u4BufLen, ucBssIndex);
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, INFO,
+				"FILS conn info error:%x\n", rStatus);
+			return -EFAULT;
+		}
+	}
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+
 	/* Avoid dangling pointer, set defatul all zero */
 	kalMemZero(&rNewSsid, sizeof(rNewSsid));
 	rNewSsid.u4CenterFreq = sme->channel ?
@@ -1884,6 +1921,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 
 	return 0;
 }
+
 #if CFG_SUPPORT_WPA3
 int mtk_cfg80211_external_auth(struct wiphy *wiphy,
 			 struct net_device *ndev,
@@ -2121,6 +2159,38 @@ int mtk_cfg80211_set_power_mgmt(struct wiphy *wiphy,
 	return 0;
 }
 
+void wlanParsePmksa(struct cfg80211_pmksa *pmksa,
+	struct PARAM_PMKID *param, uint8_t ucBssIndex)
+{
+	kalMemZero(param, sizeof(*param));
+	kalMemCopy(param->arPMKID, pmksa->pmkid, IW_PMKID_LEN);
+
+	if (pmksa->bssid)
+		COPY_MAC_ADDR(param->arBSSID, pmksa->bssid);
+
+	if (pmksa->pmk && pmksa->pmk_len) {
+		if (pmksa->pmk_len > sizeof(param->arPMK)) {
+			DBGLOG(REQ, WARN, "pmk len=%d too big\n",
+				(int)pmksa->pmk_len);
+		} else {
+			kalMemCopy(param->arPMK, pmksa->pmk,
+				pmksa->pmk_len);
+			param->u2PMKLen = pmksa->pmk_len;
+		}
+	}
+
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	if (pmksa->cache_id && pmksa->ssid && pmksa->ssid_len) {
+		param->fgFilsCacheIdSet = TRUE;
+		kalMemCopy(param->arFilsCacheId, pmksa->cache_id, 2);
+		COPY_SSID(param->rSsid.aucSsid, param->rSsid.u4SsidLen,
+			pmksa->ssid, pmksa->ssid_len);
+	}
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+
+	param->ucBssIdx = ucBssIndex;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is responsible for requesting to cache
@@ -2138,7 +2208,7 @@ int mtk_cfg80211_set_pmksa(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
 	uint32_t u4BufLen;
-	struct PARAM_PMKID pmkid;
+	struct PARAM_PMKID pmkid = {0};
 	uint8_t ucBssIndex = 0;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
@@ -2148,12 +2218,10 @@ int mtk_cfg80211_set_pmksa(struct wiphy *wiphy,
 		MAC2STR(pmksa->bssid));
 
 	ucBssIndex = wlanGetBssIdx(ndev);
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+	if (!IS_BSS_INDEX_VALID(ucBssIndex) || !pmksa->pmkid)
 		return -EINVAL;
 
-	COPY_MAC_ADDR(pmkid.arBSSID, pmksa->bssid);
-	kalMemCopy(pmkid.arPMKID, pmksa->pmkid, IW_PMKID_LEN);
-	pmkid.ucBssIdx = ucBssIndex;
+	wlanParsePmksa(pmksa, &pmkid, ucBssIndex);
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetPmkid, &pmkid,
 			   sizeof(struct PARAM_PMKID),
 			   &u4BufLen);
@@ -2180,7 +2248,7 @@ int mtk_cfg80211_del_pmksa(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
 	uint32_t u4BufLen;
-	struct PARAM_PMKID pmkid;
+	struct PARAM_PMKID pmkid = {0};
 	uint8_t ucBssIndex = 0;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
@@ -2190,12 +2258,10 @@ int mtk_cfg80211_del_pmksa(struct wiphy *wiphy,
 		MAC2STR(pmksa->bssid));
 
 	ucBssIndex = wlanGetBssIdx(ndev);
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+	if (!IS_BSS_INDEX_VALID(ucBssIndex) || !pmksa->pmkid)
 		return -EINVAL;
 
-	COPY_MAC_ADDR(pmkid.arBSSID, pmksa->bssid);
-	kalMemCopy(pmkid.arPMKID, pmksa->pmkid, IW_PMKID_LEN);
-	pmkid.ucBssIdx = ucBssIndex;
+	wlanParsePmksa(pmksa, &pmkid, ucBssIndex);
 	rStatus = kalIoctl(prGlueInfo, wlanoidDelPmkid, &pmkid,
 			   sizeof(struct PARAM_PMKID),
 			   &u4BufLen);
@@ -8117,29 +8183,75 @@ int mtk_cfg_update_connect_params(struct wiphy *wiphy,
 	uint32_t u4BufLen;
 	uint32_t rStatus;
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct PARAM_CONNECT rNewSsid;
-
-	if (!(changed & UPDATE_ASSOC_IES))
-		return 0;
-
-	if (!(sme->ie && sme->ie_len))
-		return 0;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ucBssIndex = wlanGetBssIdx(ndev);
 
-	DBGLOG(REQ, INFO, "[wlan%d] update connect %p %zu %d\n",
+	DBGLOG(REQ, INFO, "[bss%d] update connect %p %zu %d\n",
 		ucBssIndex, sme->ie, sme->ie_len, changed);
-	rNewSsid.pucIEs = (uint8_t *)sme->ie;
-	rNewSsid.u4IesLen = sme->ie_len;
-	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidUpdateConnect,
-		   (void *)&rNewSsid, sizeof(struct PARAM_CONNECT),
-		   &u4BufLen, ucBssIndex);
-	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(REQ, WARN, "update SSID:%x\n", rStatus);
-		return -EINVAL;
+
+	if (changed & UPDATE_ASSOC_IES && sme->ie && sme->ie_len) {
+		struct PARAM_CONNECT rNewSsid;
+
+		rNewSsid.pucIEs = (uint8_t *)sme->ie;
+		rNewSsid.u4IesLen = sme->ie_len;
+		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidUpdateConnect,
+			   (void *)&rNewSsid, sizeof(struct PARAM_CONNECT),
+			   &u4BufLen, ucBssIndex);
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(REQ, WARN, "update SSID:%x\n", rStatus);
+			return -EINVAL;
+		}
 	}
-	return 0;
+
+	if (changed & UPDATE_AUTH_TYPE) {
+		struct GL_WPA_INFO *prWpaInfo;
+
+		prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter, ucBssIndex);
+
+		switch (sme->auth_type) {
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+		case NL80211_AUTHTYPE_FILS_SK:
+			DBGLOG(REQ, INFO, "FILS: auth alg 0x%x -> 0x%x",
+				prWpaInfo->u4AuthAlg, IW_AUTH_ALG_FILS_SK);
+			prWpaInfo->u4AuthAlg = IW_AUTH_ALG_FILS_SK;
+			break;
+		case NL80211_AUTHTYPE_FILS_SK_PFS:
+		case NL80211_AUTHTYPE_FILS_PK:
+			DBGLOG(INIT, INFO,
+				"Only support fils share key authentication without PFS (auth_type=%d)\n",
+				sme->auth_type);
+			return -EFAULT;
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+		default:
+			DBGLOG(INIT, INFO, "auth_type changed to %d??\n",
+				sme->auth_type);
+			break;
+		}
+	}
+
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	if (changed & UPDATE_FILS_ERP_INFO) {
+		struct PARAM_FILS rFils;
+
+		rFils.pucErpUsername = sme->fils_erp_username;
+		rFils.u2ErpUsernameLen = sme->fils_erp_username_len;
+		rFils.pucErpRealm = sme->fils_erp_realm;
+		rFils.pucErpRealmLen = sme->fils_erp_realm_len;
+		rFils.u4ErpNextSeqNum = sme->fils_erp_next_seq_num;
+		rFils.pucErpRrk = sme->fils_erp_rrk;
+		rFils.u2ErpRrkLen = sme->fils_erp_rrk_len;
+		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetFilsConnInfo,
+				&rFils, sizeof(rFils), &u4BufLen, ucBssIndex);
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, INFO,
+				"FILS conn info error:%x\n", rStatus);
+			return -EFAULT;
+		}
+	}
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+
+	return WLAN_STATUS_SUCCESS;
 }
 
 

@@ -192,6 +192,10 @@
 #include <linux/workqueue.h>
 #endif /* CFG_SUPPORT_TX_WORK || CFG_SUPPORT_RX_WORK */
 
+#if CFG_SUPPORT_CRYPTO
+extern struct ADAPTER *g_prAdapter;
+#endif
+
 #include "gl_typedef.h"
 #include "typedef.h"
 #include "queue.h"

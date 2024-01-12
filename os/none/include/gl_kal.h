@@ -601,6 +601,12 @@ enum ENUM_VENDOR_DRIVER_EVENT {
 }
 #endif
 
+#define kalMemZFree(pvAddr, eMemType, u4Size) \
+{ \
+	kalMemSet(pvAddr, 0, u4Size); \
+	kalMemFree(pvAddr, eMemType, u4Size); \
+}
+
 #define kalUdelay(u4USec) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #define kalMdelay(u4MSec) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #define kalMsleep(u4MSec) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
@@ -1556,6 +1562,8 @@ void kalTimeoutHandler(unsigned long arg);
 
 #ifdef CFG_REMIND_IMPLEMENT
 #define kalRandomNumber() KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define kalRandomGetBytes(a, b) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, a, b)
 
 #define kalSetEvent(_pr) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr)
@@ -1573,6 +1581,7 @@ void kalTimeoutHandler(unsigned long arg);
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr)
 #else
 uint32_t kalRandomNumber(void);
+void kalRandomGetBytes(void *buf, uint32_t len);
 
 void kalSetEvent(struct GLUE_INFO *pr);
 

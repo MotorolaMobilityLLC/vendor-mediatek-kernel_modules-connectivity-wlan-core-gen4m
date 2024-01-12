@@ -27,6 +27,7 @@
 #include "src/utils/state_machine.h"
 /*#include "src/ap/wpa_auth_ie.h"*/
 #include "src/crypto/aes_wrap.h"
+#include "src/crypto/aes_siv.h"
 #include "src/crypto/crypto.h"
 
 #include "src/eapol_supp/eapol_supp_sm.h"
@@ -52,8 +53,6 @@
 #include "src/crypto/random.h"
 
 extern unsigned char g_EnableHostPrintWpa;
-
-extern struct ADAPTER *g_prAdapter;
 
 /*typedef long os_time_t;*/
 
@@ -383,7 +382,6 @@ void wpa_hexdump_dbg(int level, const char *title, const void *buf, size_t len);
 
 /*/#define htonl(x)    (x)*/
 #define abort()
-#define printf(x, y)
 #define rand() (0)
 
 #define in_range(c, lo, up) ((int)c >= lo && (int)c <= up)
@@ -412,6 +410,8 @@ void *os_memset(void *s, int c, size_t n);
 int os_memcmp(const void *s1, const void *s2, size_t n);
 
 int os_memcmp_const(const void *a, const void *b, size_t len);
+
+void *os_memdup(const void *src, size_t len);
 
 void *os_memmove(void *dest, const void *src, size_t n);
 
@@ -471,7 +471,9 @@ void wpa_SYSrand_Gen_Rand_Seed(uint8_t *aucOwnMacAddr);
 #define os_malloc(_S) _os_malloc(_S, __func__, __LINE__)
 #define os_zalloc(_S) _os_zalloc(_S, __func__, __LINE__)
 #define os_free(_V) _os_free(_V, __func__, __LINE__)
-
+#ifndef forced_memzero
+#define forced_memzero(_S, _L) os_memset(_S, 0, _L)
+#endif
 #define dup_binstr(_S, _L) _dup_binstr(_S, _L)
 
 #define wpabuf_alloc(_S) _wpabuf_alloc(_S)
@@ -480,5 +482,7 @@ void wpa_SYSrand_Gen_Rand_Seed(uint8_t *aucOwnMacAddr);
 #define wpabuf_dup(_D) _wpabuf_dup(_D)
 #define wpabuf_zeropad(_D, _L) _wpabuf_zeropad(_D, _L)
 #define eap_msg_alloc(_V, _T, _P, _C, _I) _eap_msg_alloc(_V, _T, _P, _C, _I)
+
+#define TEST_FAIL() 0
 
 #endif /*FOURWAYHANDSHAKE_H*/

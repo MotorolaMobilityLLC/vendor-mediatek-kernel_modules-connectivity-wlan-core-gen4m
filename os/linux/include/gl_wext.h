@@ -129,9 +129,9 @@ struct iw_mlme {
 #define IW_AUTH_KEY_MGMT_WPA_NONE   4
 
 /* IW_AUTH_80211_AUTH_ALG values (bit field) */
-#define IW_AUTH_ALG_OPEN_SYSTEM 0x00000001
-#define IW_AUTH_ALG_SHARED_KEY  0x00000002
-#define IW_AUTH_ALG_LEAP        0x00000004
+#define IW_AUTH_ALG_OPEN_SYSTEM     0x00000001
+#define IW_AUTH_ALG_SHARED_KEY      0x00000002
+#define IW_AUTH_ALG_LEAP            0x00000004
 
 /* IW_AUTH_ROAMING_CONTROL values */
 #define IW_AUTH_ROAMING_ENABLE  0 /* driver/firmware based roaming */
@@ -257,8 +257,11 @@ enum {
 #define IW_AUTH_KEY_MGMT_802_1X_SHA256 7
 #define IW_AUTH_KEY_MGMT_PSK_SHA256 8
 #endif
+
 #define IW_AUTH_ALG_FT			0x00000008
 #define IW_AUTH_ALG_SAE			0x00000010
+#define IW_AUTH_ALG_FILS_SK		0x00000020
+#define IW_AUTH_ALG_FILS_SK_PFS		0x00000040
 
 /*******************************************************************************
  *                            P U B L I C   D A T A

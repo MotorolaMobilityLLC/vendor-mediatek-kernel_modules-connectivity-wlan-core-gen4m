@@ -955,10 +955,9 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 			/* Record the Status Code of Authentication Request */
 			prStaRec->u2StatusCode = u2StatusCode;
 
-			if (u2StatusCode == STATUS_CODE_SUCCESSFUL) {
-
-				authProcessRxAuth2_Auth4Frame(prAdapter,
-							      prSwRfb);
+			if (u2StatusCode == STATUS_CODE_SUCCESSFUL &&
+			    authProcessRxAuth2_Auth4Frame(prAdapter, prSwRfb) ==
+				WLAN_STATUS_SUCCESS) {
 
 				prStaRec->ucAuthTranNum =
 					AUTH_TRANSACTION_SEQ_2;
@@ -975,6 +974,23 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 						AUTH_ALGORITHM_NUM_SHARED_KEY) {
 
 					eNextState = SAA_STATE_SEND_AUTH3;
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+				} else if (prStaRec->ucAuthAlgNum ==
+					AUTH_ALGORITHM_NUM_FILS_SK) {
+					if (filsProcessAuth(prAdapter, prStaRec)
+					    != WLAN_STATUS_SUCCESS) {
+						DBGLOG(SAA, INFO,
+							"FILS Authentication response processing failed");
+						eNextState = AA_STATE_IDLE;
+					} else {
+						/* Update StaRec - Class 2 */
+						cnmStaRecChangeState(
+							prAdapter, prStaRec,
+							STA_STATE_2);
+						eNextState =
+							SAA_STATE_SEND_ASSOC1;
+					}
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 				} else {
 					/* Update Station Record - Class 2 */
 					cnmStaRecChangeState(prAdapter,
@@ -985,11 +1001,12 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 				}
 			} else {
 				DBGLOG(SAA, INFO,
-				       "Auth Req was rejected by [" MACSTR
+				       "Auth Req was %s by [" MACSTR
 				       "], Status Code = %d\n",
 				       MAC2STR(prStaRec->aucMacAddr),
+				       u2StatusCode != STATUS_CODE_SUCCESSFUL ?
+				       "rejected" : "invalid",
 				       u2StatusCode);
-
 				eNextState = AA_STATE_IDLE;
 			}
 
@@ -1194,12 +1211,26 @@ uint32_t saaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 				rStatus = WLAN_STATUS_FAILURE;
 				prRetainedSwRfb = NULL;
 				if (u2StatusCode == STATUS_CODE_SUCCESSFUL)
-					prStaRec->u2StatusCode =
+					u2StatusCode = prStaRec->u2StatusCode =
 						STATUS_CODE_UNSPECIFIED_FAILURE;
 			}
 
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+			if (u2StatusCode == STATUS_CODE_SUCCESSFUL &&
+			    filsProcessAssocResp(prAdapter, prSwRfb)) {
+				DBGLOG(SAA, WARN,
+					"Fils process assoc resp failed\n");
+				rStatus = WLAN_STATUS_FAILURE;
+				prRetainedSwRfb = NULL;
+				if (u2StatusCode == STATUS_CODE_SUCCESSFUL)
+					prStaRec->u2StatusCode =
+						STATUS_CODE_UNSPECIFIED_FAILURE;
+			}
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-			if (!mldSanityCheck(prAdapter, prSwRfb->pvHeader,
+			if (u2StatusCode == STATUS_CODE_SUCCESSFUL &&
+			    !mldSanityCheck(prAdapter, prSwRfb->pvHeader,
 				prSwRfb->u2PacketLen, prStaRec,
 				prStaRec->ucBssIndex)) {
 				DBGLOG(SAA, WARN,
@@ -1207,7 +1238,7 @@ uint32_t saaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 				rStatus = WLAN_STATUS_FAILURE;
 				prRetainedSwRfb = NULL;
 				if (u2StatusCode == STATUS_CODE_SUCCESSFUL)
-					prStaRec->u2StatusCode =
+					u2StatusCode = prStaRec->u2StatusCode =
 						STATUS_CODE_UNSPECIFIED_FAILURE;
 			}
 #endif
@@ -1849,523 +1880,3 @@ void saaFsmRunEventExternalAuthDone(struct ADAPTER *prAdapter,
 			    (struct SW_RFB *)NULL);
 }				/* end of saaFsmRunEventExternalAuthDone() */
 
-/* TODO(Kevin): following code will be modified and move to AIS FSM */
-#if 0
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This function will send Join Timeout Event to JOIN FSM.
- *
- * \param[in] prAdapter      Pointer to the Adapter structure.
- *
- * \retval WLAN_STATUS_FAILURE   Fail because of Join Timeout
- */
-/*----------------------------------------------------------------------------*/
-uint32_t joinFsmRunEventJoinTimeOut(struct ADAPTER *prAdapter)
-{
-	P_JOIN_INFO_T prJoinInfo;
-	struct STA_RECORD *prStaRec;
-
-	ASSERT(prAdapter);
-	prJoinInfo = &prAdapter->rJoinInfo;
-
-	DBGLOG(JOIN, EVENT, "JOIN EVENT: JOIN TIMEOUT\n");
-
-	/* Get a Station Record if possible, TA == BSSID for AP */
-	prStaRec = staRecGetStaRecordByAddr(prAdapter,
-					    prJoinInfo->prBssDesc->aucBSSID);
-
-	/* We have renew this Sta Record when in JOIN_STATE_INIT */
-	ASSERT(prStaRec);
-
-	/* Record the Status Code of Authentication Request */
-	prStaRec->u2StatusCode = STATUS_CODE_JOIN_TIMEOUT;
-
-	/* Increase Failure Count */
-	prStaRec->ucJoinFailureCount++;
-
-	/* Reset Send Auth/(Re)Assoc Frame Count */
-	prJoinInfo->ucTxAuthAssocRetryCount = 0;
-
-	/* Cancel other JOIN relative Timer */
-	ARB_CANCEL_TIMER(prAdapter, prJoinInfo->rTxRequestTimer);
-
-	ARB_CANCEL_TIMER(prAdapter, prJoinInfo->rRxResponseTimer);
-
-	/* Restore original setting from current BSS_INFO_T */
-	if (prAdapter->eConnectionState == MEDIA_STATE_CONNECTED)
-		joinAdoptParametersFromCurrentBss(prAdapter);
-
-	/* Pull back to IDLE */
-	joinFsmSteps(prAdapter, JOIN_STATE_IDLE);
-
-	return WLAN_STATUS_FAILURE;
-
-}				/* end of joinFsmRunEventJoinTimeOut() */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This function will adopt the parameters from Peer BSS.
- *
- * \param[in] prAdapter      Pointer to the Adapter structure.
- *
- * \return (none)
- */
-/*----------------------------------------------------------------------------*/
-void joinAdoptParametersFromPeerBss(struct ADAPTER *prAdapter)
-{
-	P_JOIN_INFO_T prJoinInfo;
-	struct BSS_DESC *prBssDesc;
-
-	ASSERT(prAdapter);
-	prJoinInfo = &prAdapter->rJoinInfo;
-	prBssDesc = prJoinInfo->prBssDesc;
-
-	/* 4 <1> Adopt Peer BSS' PHY TYPE */
-	prAdapter->eCurrentPhyType = prBssDesc->ePhyType;
-
-	DBGLOG(JOIN, INFO, "Target BSS[%s]'s PhyType = %s\n",
-	       prBssDesc->aucSSID, (prBssDesc->ePhyType == PHY_TYPE_ERP_INDEX) ?
-	       "ERP" : "HR_DSSS");
-
-	/* 4 <2> Adopt Peer BSS' Frequency(Band/Channel) */
-	DBGLOG(JOIN, INFO, "Target BSS's Channel = %d, Band = %d\n",
-	       prBssDesc->ucChannelNum, prBssDesc->eBand);
-
-	nicSwitchChannel(prAdapter, prBssDesc->eBand,
-			 prBssDesc->ucChannelNum, 10);
-
-	prJoinInfo->fgIsParameterAdopted = TRUE;
-}				/* end of joinAdoptParametersFromPeerBss() */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This function will adopt the parameters from current associated BSS.
- *
- * \param[in] prAdapter      Pointer to the Adapter structure.
- *
- * \return (none)
- */
-/*----------------------------------------------------------------------------*/
-void joinAdoptParametersFromCurrentBss(struct ADAPTER *prAdapter)
-{
-	/* P_JOIN_INFO_T prJoinInfo = &prAdapter->rJoinInfo; */
-	struct BSS_INFO *prBssInfo;
-
-	ASSERT(prAdapter);
-	prBssInfo = &prAdapter->rBssInfo;
-
-	/* 4 <1> Adopt current BSS' PHY TYPE */
-	prAdapter->eCurrentPhyType = prBssInfo->ePhyType;
-
-	/* 4 <2> Adopt current BSS' Frequency(Band/Channel) */
-	DBGLOG(JOIN, INFO, "Current BSS's Channel = %d, Band = %d\n",
-	       prBssInfo->ucChnl, prBssInfo->eBand);
-
-	nicSwitchChannel(prAdapter, prBssInfo->eBand, prBssInfo->ucChnl, 10);
-}				/* end of joinAdoptParametersFromCurrentBss() */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This function will update all the SW variables and HW MCR registers
- *        after the association with target BSS.
- *
- * \param[in] prAdapter      Pointer to the Adapter structure.
- *
- * \return (none)
- */
-/*----------------------------------------------------------------------------*/
-void joinComplete(struct ADAPTER *prAdapter)
-{
-	P_JOIN_INFO_T prJoinInfo;
-	struct BSS_DESC *prBssDesc;
-	P_PEER_BSS_INFO_T prPeerBssInfo;
-	struct BSS_INFO *prBssInfo;
-	struct CONNECTION_SETTINGS *prConnSettings;
-	struct STA_RECORD *prStaRec;
-	struct TX_CTRL *prTxCtrl;
-#if CFG_SUPPORT_802_11D
-	struct IE_COUNTRY *prIECountry;
-#endif
-
-	ASSERT(prAdapter);
-	prJoinInfo = &prAdapter->rJoinInfo;
-	prBssDesc = prJoinInfo->prBssDesc;
-	prPeerBssInfo = &prAdapter->rPeerBssInfo;
-	prBssInfo = &prAdapter->rBssInfo;
-	prConnSettings = &prAdapter->rConnSettings;
-	prTxCtrl = &prAdapter->rTxCtrl;
-
-/* 4 <1> Update Connecting & Connected Flag of BSS_DESC_T. */
-	/* Remove previous AP's Connection Flags if have */
-	scanRemoveConnectionFlagOfBssDescByBssid(prAdapter,
-						 prBssInfo->aucBSSID);
-
-	prBssDesc->fgIsConnected = TRUE;	/* Mask as Connected */
-
-	if (prBssDesc->fgIsHiddenSSID) {
-		/* NOTE(Kevin): This is for the case of Passive Scan and the
-		 * target BSS didn't broadcast SSID on its Beacon Frame.
-		 */
-		COPY_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
-			  prAdapter->rConnSettings.aucSSID,
-			  prAdapter->rConnSettings.ucSSIDLen);
-
-		if (prBssDesc->ucSSIDLen)
-			prBssDesc->fgIsHiddenSSID = FALSE;
-#if DBG
-		else
-			ASSERT(0);
-#endif /* DBG */
-
-		DBGLOG(JOIN, INFO, "Hidden SSID! - Update SSID : %s\n",
-		       prBssDesc->aucSSID);
-	}
-
-/* 4 <2> Update BSS_INFO_T from BSS_DESC_T */
-	/* 4 <2.A> PHY Type */
-	prBssInfo->ePhyType = prBssDesc->ePhyType;
-
-	/* 4 <2.B> BSS Type */
-	prBssInfo->eBSSType = BSS_TYPE_INFRASTRUCTURE;
-
-	/* 4 <2.C> BSSID */
-	COPY_MAC_ADDR(prBssInfo->aucBSSID, prBssDesc->aucBSSID);
-
-	DBGLOG(JOIN, INFO,
-	       "JOIN to BSSID: [" MACSTR "]\n", MAC2STR(prBssDesc->aucBSSID));
-
-	/* 4 <2.D> SSID */
-	COPY_SSID(prBssInfo->aucSSID, prBssInfo->ucSSIDLen,
-		  prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
-
-	/* 4 <2.E> Channel / Band information. */
-	prBssInfo->eBand = prBssDesc->eBand;
-	prBssInfo->ucChnl = prBssDesc->ucChannelNum;
-
-	/* 4 <2.F> RSN/WPA information. */
-	secFsmRunEventStart(prAdapter);
-	prBssInfo->u4RsnSelectedPairwiseCipher =
-				prBssDesc->u4RsnSelectedPairwiseCipher;
-	prBssInfo->u4RsnSelectedGroupCipher =
-				prBssDesc->u4RsnSelectedGroupCipher;
-	prBssInfo->u4RsnSelectedAKMSuite = prBssDesc->u4RsnSelectedAKMSuite;
-
-	if (secRsnKeyHandshakeEnabled())
-		prBssInfo->fgIsWPAorWPA2Enabled = TRUE;
-	else
-		prBssInfo->fgIsWPAorWPA2Enabled = FALSE;
-
-	/* 4 <2.G> Beacon interval. */
-	prBssInfo->u2BeaconInterval = prBssDesc->u2BeaconInterval;
-
-	/* 4 <2.H> DTIM period. */
-	prBssInfo->ucDtimPeriod = prBssDesc->ucDTIMPeriod;
-
-	/* 4 <2.I> ERP Information */
-	/* Our BSS's PHY_TYPE is ERP now. */
-	if ((prBssInfo->ePhyType == PHY_TYPE_ERP_INDEX) &&
-	    (prBssDesc->fgIsERPPresent)) {
-
-		prBssInfo->fgIsERPPresent = TRUE;
-		/* Save the ERP for later check */
-		prBssInfo->ucERP = prBssDesc->ucERP;
-	} else {
-		/* Some AP, may send ProbeResp without ERP IE.
-		 * Thus prBssDesc->fgIsERPPresent is FALSE.
-		 */
-		prBssInfo->fgIsERPPresent = FALSE;
-		prBssInfo->ucERP = 0;
-	}
-
-#if CFG_SUPPORT_802_11D
-	/* 4 <2.J> Country inforamtion of the associated AP */
-	if (prConnSettings->fgMultiDomainCapabilityEnabled) {
-		struct DOMAIN_INFO_ENTRY rDomainInfo;
-
-		if (domainGetDomainInfoByScanResult(prAdapter, &rDomainInfo)) {
-			if (prBssDesc->prIECountry) {
-				prIECountry = prBssDesc->prIECountry;
-
-				domainParseCountryInfoElem(prIECountry,
-				   &prBssInfo->rDomainInfo);
-
-				/* use the domain get from the BSS info */
-				prBssInfo->fgIsCountryInfoPresent = TRUE;
-				nicSetupOpChnlList(prAdapter,
-				   prBssInfo->rDomainInfo.u2CountryCode, FALSE);
-			} else {
-				/* use the domain get from the scan result */
-				prBssInfo->fgIsCountryInfoPresent = TRUE;
-				nicSetupOpChnlList(prAdapter,
-						   rDomainInfo.u2CountryCode,
-						   FALSE);
-			}
-		}
-	}
-#endif
-
-	/* 4 <2.K> Signal Power of the associated AP */
-	prBssInfo->rRcpi = prBssDesc->rRcpi;
-	prBssInfo->rRssi = RCPI_TO_dBm(prBssInfo->rRcpi);
-	GET_CURRENT_SYSTIME(&prBssInfo->rRssiLastUpdateTime);
-
-	/* 4 <2.L> Capability Field of the associated AP */
-	prBssInfo->u2CapInfo = prBssDesc->u2CapInfo;
-
-	DBGLOG(JOIN, INFO,
-	       "prBssInfo-> fgIsERPPresent = %d, ucERP = %02x, rRcpi = %d, rRssi = %ld\n",
-	       prBssInfo->fgIsERPPresent, prBssInfo->ucERP,
-	       prBssInfo->rRcpi, prBssInfo->rRssi);
-
-/* 4 <3> Update BSS_INFO_T from PEER_BSS_INFO_T & NIC RATE FUNC */
-	/* 4 <3.A> Association ID */
-	prBssInfo->u2AssocId = prPeerBssInfo->u2AssocId;
-
-	/* 4 <3.B> WMM Information */
-	if (prAdapter->fgIsEnableWMM &&
-	    (prPeerBssInfo->rWmmInfo.ucWmmFlag & WMM_FLAG_SUPPORT_WMM)) {
-
-		prBssInfo->fgIsWmmAssoc = TRUE;
-		prTxCtrl->rTxQForVoipAccess = TXQ_AC3;
-
-		qosWmmInfoInit(&prBssInfo->rWmmInfo,
-			       (prBssInfo->ePhyType == PHY_TYPE_HR_DSSS_INDEX)
-				? TRUE : FALSE);
-
-		if (prPeerBssInfo->rWmmInfo.ucWmmFlag &
-						WMM_FLAG_AC_PARAM_PRESENT) {
-			kalMemCopy(&prBssInfo->rWmmInfo,
-				   &prPeerBssInfo->rWmmInfo,
-				   sizeof(WMM_INFO_T));
-		} else {
-			kalMemCopy(&prBssInfo->rWmmInfo,
-				   &prPeerBssInfo->rWmmInfo,
-				   sizeof(WMM_INFO_T) -
-				   sizeof(prPeerBssInfo->
-						rWmmInfo.arWmmAcParams));
-		}
-	} else {
-		prBssInfo->fgIsWmmAssoc = FALSE;
-		prTxCtrl->rTxQForVoipAccess = TXQ_AC1;
-
-		kalMemZero(&prBssInfo->rWmmInfo, sizeof(WMM_INFO_T));
-	}
-
-	/* 4 <3.C> Operational Rate Set & BSS Basic Rate Set */
-	prBssInfo->u2OperationalRateSet = prPeerBssInfo->u2OperationalRateSet;
-	prBssInfo->u2BSSBasicRateSet = prPeerBssInfo->u2BSSBasicRateSet;
-
-	/* 4 <3.D> Short Preamble */
-	if (prBssInfo->fgIsERPPresent) {
-
-		/* NOTE(Kevin 2007/12/24): Truth Table.
-		 * Short Preamble Bit in
-		 * <AssocReq> <AssocResp w/i ERP> <BARKER(Long)>  Final Drv Set
-		 * TRUE        FALSE              FALSE      FALSE(#1)
-		 * TRUE        FALSE              TRUE       FALSE
-		 * FALSE       FALSE              FALSE      FALSE(#1)
-		 * FALSE       FALSE              TRUE       FALSE
-		 * TRUE        TRUE               FALSE      TRUE(#2)
-		 * TRUE        TRUE               TRUE       FALSE(#2)
-		 * FALSE       TRUE               FALSE      FALSE(#3)
-		 * FALSE       TRUE               TRUE       FALSE(#4)
-		 * #1: shouldn't have such case, use the AssocResp
-		 * #2: follow ERP
-		 * #3: shouldn't have such case, and we should set to FALSE
-		 * #4: we should set to FALSE
-		 */
-		if ((prPeerBssInfo->fgIsShortPreambleAllowed) &&
-		    ((prConnSettings->ePreambleType == PREAMBLE_TYPE_SHORT) ||
-		     /* Short Preamble Option Enable is TRUE */
-		     ((prConnSettings->ePreambleType == PREAMBLE_TYPE_AUTO) &&
-		      (prBssDesc->u2CapInfo & CAP_INFO_SHORT_PREAMBLE)))) {
-
-			prBssInfo->fgIsShortPreambleAllowed = TRUE;
-
-			if (prBssInfo->ucERP & ERP_INFO_BARKER_PREAMBLE_MODE)
-				prBssInfo->fgUseShortPreamble = FALSE;
-			else
-				prBssInfo->fgUseShortPreamble = TRUE;
-		} else {
-			prBssInfo->fgIsShortPreambleAllowed = FALSE;
-			prBssInfo->fgUseShortPreamble = FALSE;
-		}
-	} else {
-		/* NOTE(Kevin 2007/12/24): Truth Table.
-		 * Short Preamble Bit in
-		 * <AssocReq>  <AssocResp w/o ERP>   Final Driver Setting(Short)
-		 * TRUE         FALSE                FALSE
-		 * FALSE        FALSE                FALSE
-		 * TRUE         TRUE                 TRUE
-		 * FALSE        TRUE(status success) TRUE
-		 * --> Honor the result of prPeerBssInfo.
-		 */
-
-		prBssInfo->fgIsShortPreambleAllowed =
-			prBssInfo->fgUseShortPreamble =
-				prPeerBssInfo->fgIsShortPreambleAllowed;
-	}
-
-	DBGLOG(JOIN, INFO,
-	       "prBssInfo->fgIsShortPreambleAllowed = %d, prBssInfo->fgUseShortPreamble = %d\n",
-	       prBssInfo->fgIsShortPreambleAllowed,
-	       prBssInfo->fgUseShortPreamble);
-
-	/* 4 <3.E> Short Slot Time */
-	/* AP support Short Slot Time */
-	prBssInfo->fgUseShortSlotTime = prPeerBssInfo->fgUseShortSlotTime;
-
-	DBGLOG(JOIN, INFO, "prBssInfo->fgUseShortSlotTime = %d\n",
-	       prBssInfo->fgUseShortSlotTime);
-
-	nicSetSlotTime(prAdapter,
-		       prBssInfo->ePhyType,
-		       ((prConnSettings->fgIsShortSlotTimeOptionEnable &&
-			 prBssInfo->fgUseShortSlotTime) ? TRUE : FALSE));
-
-	/* 4 <3.F> Update Tx Rate for Control Frame */
-	bssUpdateTxRateForControlFrame(prAdapter);
-
-	/* 4 <3.G> Save the available Auth Types during Roaming (Design for
-	 * Fast BSS Transition).
-	 */
-	/* if (prAdapter->fgIsEnableRoaming) */
-	/* NOTE(Kevin): Always prepare info for roaming */
-	{
-
-		if (prJoinInfo->ucCurrAuthAlgNum ==
-				AUTH_ALGORITHM_NUM_OPEN_SYSTEM)
-			prJoinInfo->ucRoamingAuthTypes |= AUTH_TYPE_OPEN_SYSTEM;
-		else if (prJoinInfo->ucCurrAuthAlgNum ==
-				AUTH_ALGORITHM_NUM_SHARED_KEY)
-			prJoinInfo->ucRoamingAuthTypes |= AUTH_TYPE_SHARED_KEY;
-
-		prBssInfo->ucRoamingAuthTypes = prJoinInfo->ucRoamingAuthTypes;
-
-		/* Set the stable time of the associated BSS. We won't do
-		 * roaming decision during the stable time.
-		 */
-		SET_EXPIRATION_TIME(prBssInfo->rRoamingStableExpirationTime,
-				    SEC_TO_SYSTIME(ROAMING_STABLE_TIMEOUT_SEC));
-	}
-
-	/* 4 <3.H> Update Parameter for TX Fragmentation Threshold */
-#if CFG_TX_FRAGMENT
-	txFragInfoUpdate(prAdapter);
-#endif /* CFG_TX_FRAGMENT */
-
-/* 4 <4> Update STA_RECORD_T */
-	/* Get a Station Record if possible */
-	prStaRec = staRecGetStaRecordByAddr(prAdapter, prBssDesc->aucBSSID);
-
-	if (prStaRec) {
-		uint16_t u2OperationalRateSet, u2DesiredRateSet;
-
-		/* 4 <4.A> Desired Rate Set */
-		u2OperationalRateSet = (rPhyAttributes[prBssInfo->ePhyType].
-					u2SupportedRateSet & prBssInfo->
-					u2OperationalRateSet);
-
-		u2DesiredRateSet = (u2OperationalRateSet &
-				    prConnSettings->u2DesiredRateSet);
-		if (u2DesiredRateSet) {
-			prStaRec->u2DesiredRateSet = u2DesiredRateSet;
-		} else {
-			/* For Error Handling - The Desired Rate Set is not
-			 * covered in Operational Rate Set.
-			 */
-			prStaRec->u2DesiredRateSet = u2OperationalRateSet;
-		}
-
-		/* Try to set the best initial rate for this entry */
-		if (!rateGetBestInitialRateIndex(prStaRec->u2DesiredRateSet,
-						 prStaRec->rRcpi, &prStaRec->
-						 ucCurrRate1Index)) {
-
-			if (!rateGetLowestRateIndexFromRateSet(prStaRec->
-			    u2DesiredRateSet, &prStaRec->ucCurrRate1Index))
-				ASSERT(0);
-		}
-
-		DBGLOG(JOIN, INFO, "prStaRec->ucCurrRate1Index = %d\n",
-		       prStaRec->ucCurrRate1Index);
-
-		/* 4 <4.B> Preamble Mode */
-		prStaRec->fgIsShortPreambleOptionEnable =
-						prBssInfo->fgUseShortPreamble;
-
-		/* 4 <4.C> QoS Flag */
-		prStaRec->fgIsQoS = prBssInfo->fgIsWmmAssoc;
-	}
-#if DBG
-	else
-		ASSERT(0);
-#endif /* DBG */
-
-/* 4 <5> Update NIC */
-	/* 4 <5.A> Update BSSID & Operation Mode */
-	nicSetupBSS(prAdapter, prBssInfo);
-
-	/* 4 <5.B> Update WLAN Table. */
-	if (nicSetHwBySta(prAdapter, prStaRec) == FALSE)
-		ASSERT(FALSE);
-	/* 4 <5.C> Update Desired Rate Set for BT. */
-#if CFG_TX_FRAGMENT
-	if (prConnSettings->fgIsEnableTxAutoFragmentForBT)
-		txRateSetInitForBT(prAdapter, prStaRec);
-#endif /* CFG_TX_FRAGMENT */
-
-	/* 4 <5.D> TX AC Parameter and TX/RX Queue Control */
-	if (prBssInfo->fgIsWmmAssoc) {
-
-#if CFG_TX_AGGREGATE_HW_FIFO
-		nicTxAggregateTXQ(prAdapter, FALSE);
-#endif /* CFG_TX_AGGREGATE_HW_FIFO */
-
-		qosUpdateWMMParametersAndAssignAllowedACI(prAdapter,
-							  &prBssInfo->rWmmInfo);
-	} else {
-
-#if CFG_TX_AGGREGATE_HW_FIFO
-		nicTxAggregateTXQ(prAdapter, TRUE);
-#endif /* CFG_TX_AGGREGATE_HW_FIFO */
-
-		nicTxNonQoSAssignDefaultAdmittedTXQ(prAdapter);
-
-		nicTxNonQoSUpdateTXQParameters(prAdapter, prBssInfo->ePhyType);
-	}
-
-#if CFG_TX_STOP_WRITE_TX_FIFO_UNTIL_JOIN
-	{
-		prTxCtrl->fgBlockTxDuringJoin = FALSE;
-
-#if !CFG_TX_AGGREGATE_HW_FIFO	/* TX FIFO AGGREGATE already do flush once */
-		nicTxFlushStopQueues(prAdapter, (uint8_t) TXQ_DATA_MASK,
-				     (uint8_t) NULL);
-#endif /* CFG_TX_AGGREGATE_HW_FIFO */
-
-		nicTxRetransmitOfSendWaitQue(prAdapter);
-
-		if (prTxCtrl->fgIsPacketInOsSendQueue)
-			nicTxRetransmitOfOsSendQue(prAdapter);
-#if CFG_SDIO_TX_ENHANCE
-		halTxLeftClusteredMpdu(prAdapter);
-#endif /* CFG_SDIO_TX_ENHANCE */
-
-	}
-#endif /* CFG_TX_STOP_WRITE_TX_FIFO_UNTIL_JOIN */
-
-/* 4 <6> Setup CONNECTION flag. */
-	prAdapter->eConnectionState = MEDIA_STATE_CONNECTED;
-	prAdapter->eConnectionStateIndicated = MEDIA_STATE_CONNECTED;
-
-	if (prJoinInfo->fgIsReAssoc)
-		prAdapter->fgBypassPortCtrlForRoaming = TRUE;
-	else
-		prAdapter->fgBypassPortCtrlForRoaming = FALSE;
-
-	kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
-				     WLAN_STATUS_MEDIA_CONNECT,
-				     (void *) NULL, 0);
-}				/* end of joinComplete() */
-#endif

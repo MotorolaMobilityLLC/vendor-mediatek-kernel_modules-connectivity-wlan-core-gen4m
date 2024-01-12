@@ -195,6 +195,10 @@ struct BSS_INFO {
 	uint8_t wepkeyUsed[MAX_KEY_NUM];
 	uint8_t wepkeyWlanIdx;	/* wlan index of the wep key */
 
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	uint8_t filskeyUsed[MAX_KEY_NUM];
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+
 	uint16_t u2CapInfo;	/* Change Detection */
 
 	uint16_t u2BeaconInterval;	/* The Beacon Interval of this BSS */

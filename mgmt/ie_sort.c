@@ -1057,6 +1057,7 @@ void sortIE(struct ADAPTER *prAdapter,
 	uint8_t num = 0, i;
 	struct MSDU_INFO *prMsduInfoInOrder = NULL;
 	int offset = sortMsduPayloadOffset(prAdapter, prMsduInfo);
+	const uint8_t *pos, *end;
 
 	if (offset < 0) {
 		DBGLOG(TX, ERROR, "Unsupported mgmt frame\n");
@@ -1086,6 +1087,7 @@ void sortIE(struct ADAPTER *prAdapter,
 
 	pucBuf = (uint8_t *)prMsduInfo->prPacket + offset;
 	u2IEsBufLen = prMsduInfo->u2FrameLength - offset;
+	end = pucBuf + u2IEsBufLen;
 
 #if DBG
 	DBGLOG(TX, LOUD, "%s IE, length = %d\n", pucIeDesc, u2IEsBufLen);
@@ -1094,6 +1096,9 @@ void sortIE(struct ADAPTER *prAdapter,
 
 	/* prepare ie info table */
 	IE_FOR_EACH(pucBuf, u2IEsBufLen, u2Offset) {
+		if (IE_ID(pucBuf) == ELEM_ID_FRAGMENT)
+			continue;
+
 		if (num > MAX_IE_NUM) {
 			DBGLOG(TX, ERROR, "too many IE > %d\n", MAX_IE_NUM);
 			break;
@@ -1103,6 +1108,16 @@ void sortIE(struct ADAPTER *prAdapter,
 			IE_ID_EXT(pucBuf) : 0;
 		info[num].ie = pucBuf;
 		info[num].size = IE_SIZE(pucBuf);
+
+		/* start from next ie to find fragments */
+		pos = pucBuf + IE_SIZE(pucBuf);
+		while (end - pos >= 2 &&
+		       pos[0] == ELEM_ID_FRAGMENT &&
+		       2 + pos[1] <= end - pos) {
+			info[num].size += 2 + pos[1]; /* include hdr */
+			pos += 2 + pos[1];
+		}
+
 		num++;
 	}
 
