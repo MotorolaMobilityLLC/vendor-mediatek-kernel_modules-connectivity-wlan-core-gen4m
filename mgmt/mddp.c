@@ -1272,6 +1272,13 @@ exit:
 }
 #endif
 
+static void mddpResetGlobalVariable(void)
+{
+	g_u4CheckSerCnt = 0;
+	g_ulMddpActionFlag = 0;
+	g_u4MddpRstFlag = 0;
+}
+
 void __mddpNotifyWifiOnStart(void)
 {
 #if CFG_MTK_CCCI_SUPPORT
@@ -1286,6 +1293,8 @@ void __mddpNotifyWifiOnStart(void)
 
 void mddpNotifyWifiOnStart(void)
 {
+	mddpResetGlobalVariable();
+
 	if (!mddpIsSupportMcifWifi())
 		return;
 
