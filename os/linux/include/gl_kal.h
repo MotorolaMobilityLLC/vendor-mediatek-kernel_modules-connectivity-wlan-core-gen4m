@@ -1719,7 +1719,13 @@ uint32_t kalPerMonGetInfo(IN struct ADAPTER *prAdapter,
 int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		    IN uint32_t u4TarPerfLevel,
 		    IN uint32_t u4BoostCpuTh);
+int32_t kalCheckTputLoad(IN struct ADAPTER *prAdapter,
+			 IN uint32_t u4CurrPerfLevel,
+			 IN uint32_t u4TarPerfLevel,
+			 IN int32_t i4Pending,
+			 IN uint32_t u4Used);
 uint32_t kalGetCpuBoostThreshold(void);
+void kalSetRpsMap(IN struct GLUE_INFO *glue, IN unsigned long value);
 extern int set_task_util_min_pct(pid_t pid, unsigned int min);
 
 #if CFG_MTK_ANDROID_EMI
