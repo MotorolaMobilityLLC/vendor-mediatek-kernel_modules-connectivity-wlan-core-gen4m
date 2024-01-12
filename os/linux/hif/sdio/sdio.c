@@ -196,6 +196,7 @@ MODULE_DEVICE_TABLE(sdio, mtk_sdio_ids);
 ********************************************************************************
 */
 
+
 /*******************************************************************************
 *                           P R I V A T E   D A T A
 ********************************************************************************
@@ -1531,7 +1532,16 @@ kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 	ASSERT(prSdioFunc->cur_blksize > 0);
 
 	sdio_claim_host(prSdioFunc);
-
+#if CFG_SDIO_PORT_DEBUG
+	DBGLOG(HAL, STATE, " port:0x%x, length:%d 1\n", u2Port, u4Len);
+#endif
+#if CFG_SER_L05_DEBUG
+	if ((prGlueInfo->prAdapter->ucSerState == SER_STOP_HOST_TX_RX)
+						&& (fgSerStopTxRxDB == 1)) {
+		dump_stack();
+		DBGLOG(HAL, ERROR, " port:0x%x, length:%d 1\n", u2Port, u4Len);
+	}
+#endif
 	/* Split buffer into multiple single block to workaround hifsys */
 	while (count >= prSdioFunc->cur_blksize) {
 		count -= prSdioFunc->cur_blksize;
@@ -1584,7 +1594,12 @@ kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 		DBGLOG(HAL, ERROR, "sdio_readsb() reports error: %d\n", ret);
 		DBGLOG(HAL, ERROR, "\n");
 	}
-
+#if CFG_SER_L05_DEBUG
+	if ((prGlueInfo->prAdapter->ucSerState == SER_STOP_HOST_TX_RX)
+						&& (fgSerStopTxRxDB == 1)) {
+		DBGLOG(HAL, ERROR, "port:0x%x, length:%d 2\n", u2Port, u4Len);
+	}
+#endif
 	return (ret) ? FALSE : TRUE;
 }				/* end of kalDevPortRead() */
 
@@ -1624,16 +1639,22 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 
 	ASSERT(u4Len <= u4ValidInBufSize);
 
-#if CFG_SDIO_CONTEXT_DEBUG
-	DBGLOG(HAL, STATE, "buf:0x%p, port:0x%x, length:%d\n",
-						pucBuf, u2Port, u4Len);
-#endif
 #if (MTK_WCN_HIF_SDIO == 0)
 	prSdioFunc = prHifInfo->func;
 	ASSERT(prSdioFunc->cur_blksize > 0);
 
 	sdio_claim_host(prSdioFunc);
-
+#if CFG_SDIO_PORT_DEBUG
+	DBGLOG(HAL, STATE, "buf:0x%p, port:0x%x, length:%d\n",
+						pucBuf, u2Port, u4Len);
+#endif
+#if CFG_SER_L05_DEBUG
+	if ((prGlueInfo->prAdapter->ucSerState == SER_STOP_HOST_TX_RX)
+						&& (fgSerStopTxRxDB == 1)) {
+		dump_stack();
+		DBGLOG(HAL, ERROR, "port:0x%x, length:%d 1\n", u2Port, u4Len);
+	}
+#endif
 	/* Split buffer into multiple single block to workaround hifsys */
 	while (count >= prSdioFunc->cur_blksize) {
 		count -= prSdioFunc->cur_blksize;
@@ -1687,7 +1708,13 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 		DBGLOG(HAL, ERROR, "sdio_writesb() reports error: %d\n", ret);
 		DBGLOG(HAL, ERROR, "\n");
 	}
-
+#if CFG_SER_L05_DEBUG
+	if ((prGlueInfo->prAdapter->ucSerState == SER_STOP_HOST_TX_RX)
+						&& (fgSerStopTxRxDB == 1)) {
+		dump_stack();
+		DBGLOG(HAL, ERROR, "port:0x%x, length:%d 2\n", u2Port, u4Len);
+	}
+#endif
 	return (ret) ? FALSE : TRUE;
 }				/* end of kalDevPortWrite() */
 

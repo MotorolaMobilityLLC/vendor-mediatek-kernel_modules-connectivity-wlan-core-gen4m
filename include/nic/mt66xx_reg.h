@@ -1097,6 +1097,7 @@ union DELAY_INT_CFG_STRUCT {
 /* 4 WLAN TXQ Count Register 7 */
 #define MCR_WTQCR7                          0x014C
 
+#if (CFG_SDIO_INTR_ENHANCE_FORMAT == 2)
 /* 4 WLAN TXQ Count Register 8 */
 #define MCR_WTQCR8                          0x0190
 
@@ -1120,6 +1121,7 @@ union DELAY_INT_CFG_STRUCT {
 
 /* 4 WLAN TXQ Count Register 15 */
 #define MCR_WTQCR15                         0x01AC
+#endif
 
 /* WLAN/Common PC value Debug registre */
 #define MCR_SWPCDBGR				0x0154
@@ -1193,7 +1195,10 @@ struct ENHANCE_MODE_DATA_STRUCT {
 
 /* 3 WHCR 0x000C */
 #define WHCR_RX_ENHANCE_MODE_EN         BIT(16)
+#define WHCR_WF_RST_DONE                BIT(15)
 #define WHCR_MAX_HIF_RX_LEN_NUM         BITS(8, 14)
+#define WHCR_SDIO_WF_PATH_RSTB          BIT(6)
+#define WHCR_WF_WHOLE_PATH_RSTB         BIT(5)
 #define WHCR_RPT_OWN_RX_PACKET_LEN      BIT(3)
 #define WHCR_RECV_MAILBOX_RD_CLR_EN     BIT(2)
 #define WHCR_W_INT_CLR_CTRL             BIT(1)
@@ -1206,6 +1211,7 @@ struct ENHANCE_MODE_DATA_STRUCT {
 #define WHISR_D2H_WKUP_BY_RX_PACKET		BIT(30)
 #define WHISR_D2H_SW_RD_MAILBOX_INT     BIT(29)
 #define WHISR_FW_OWN_BACK_INT           BIT(7)
+#define WHISR_WDT_INT                   BIT(5)
 #define WHISR_ABNORMAL_INT              BIT(6)
 #define WHISR_RX1_DONE_INT              BIT(2)
 #define WHISR_RX0_DONE_INT              BIT(1)
@@ -1215,20 +1221,34 @@ struct ENHANCE_MODE_DATA_STRUCT {
 #define WHIER_D2H_SW_INT                BITS(8, 31)
 #define WHIER_FW_OWN_BACK_INT_EN        BIT(7)
 #define WHIER_ABNORMAL_INT_EN           BIT(6)
+#define WHIER_WF_WDT_INT_EN             BIT(5)
 #define WHIER_RX1_DONE_INT_EN           BIT(2)
 #define WHIER_RX0_DONE_INT_EN           BIT(1)
 #define WHIER_TX_DONE_INT_EN            BIT(0)
+
+
+#if CFG_CHIP_RESET_SUPPORT
+#define WHIER_DEFAULT                   (WHIER_RX0_DONE_INT_EN    | \
+					 WHIER_RX1_DONE_INT_EN    | \
+					 WHIER_TX_DONE_INT_EN     | \
+					 WHIER_ABNORMAL_INT_EN    | \
+					 WHIER_WF_WDT_INT_EN      | \
+					 WHIER_D2H_SW_INT           \
+					 )
+#else
 #define WHIER_DEFAULT                   (WHIER_RX0_DONE_INT_EN    | \
 					 WHIER_RX1_DONE_INT_EN    | \
 					 WHIER_TX_DONE_INT_EN     | \
 					 WHIER_ABNORMAL_INT_EN    | \
 					 WHIER_D2H_SW_INT           \
 					 )
+#endif
 
 /* 3 WASR 0x0020 */
 #define WASR_FW_OWN_INVALID_ACCESS      BIT(16)
 #define WASR_RX1_UNDER_FLOW             BIT(9)
 #define WASR_RX0_UNDER_FLOW             BIT(8)
+#define WASR_JTAG_EVENT_INT             BIT(2)
 #define WASR_TX1_OVER_FLOW              BIT(1)
 
 /* 3 WSICR 0x0024 */

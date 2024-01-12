@@ -98,6 +98,7 @@
 #define CFG_SDIO_TIMING_PROFILING       0
 
 #define CFG_SDIO_CONTEXT_DEBUG		0
+#define CFG_SDIO_PORT_DEBUG		0
 
 #define CFG_SDIO_INT_LOG_CNT            8
 
@@ -364,6 +365,9 @@ enum HIF_SDIO_INT_STS {
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
+#if CFG_SER_L05_DEBUG
+extern u_int8_t fgSerStopTxRxDB;
+#endif
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A

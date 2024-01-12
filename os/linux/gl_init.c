@@ -5982,7 +5982,7 @@ int32_t wlanOffAtReset(void)
 	uint8_t i;
 #endif
 
-	DBGLOG(INIT, INFO, "Driver Off during Reset\n");
+	DBGLOG(INIT, STATE, "[SER] Driver Off during Reset\n");
 
 	if (u4WlanDevNum > 0
 		&& u4WlanDevNum <= CFG_MAX_WLAN_DEVICES) {
@@ -6103,7 +6103,7 @@ int32_t wlanOnAtReset(void)
 		FAIL_REASON_NUM
 	} eFailReason = FAIL_REASON_NUM;
 
-	DBGLOG(INIT, INFO, "Driver On during Reset\n");
+	DBGLOG(INIT, STATE, "[SER] Driver On during Reset\n");
 
 	if (u4WlanDevNum > 0
 		&& u4WlanDevNum <= CFG_MAX_WLAN_DEVICES) {

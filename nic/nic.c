@@ -113,7 +113,7 @@ const uint8_t aucPhyCfg2PhyTypeSet[PHY_CONFIG_NUM] = {
  */
 
 static struct INT_EVENT_MAP arIntEventMapTable[] = {
-	{WHISR_ABNORMAL_INT, INT_EVENT_ABNORMAL},
+	{WHISR_ABNORMAL_INT | WHISR_WDT_INT, INT_EVENT_ABNORMAL},
 	{WHISR_D2H_SW_INT, INT_EVENT_SW_INT},
 	{WHISR_TX_DONE_INT, INT_EVENT_TX},
 	{(WHISR_RX0_DONE_INT | WHISR_RX1_DONE_INT), INT_EVENT_RX}
@@ -3386,10 +3386,10 @@ void nicInitSystemService(IN struct ADAPTER *prAdapter,
 	if (!bAtResetFlow) {
 		/* <2> Mailbox Initialization */
 		mboxInitialize(prAdapter);
-
-		/* <3> Timer Initialization */
-		cnmTimerInitialize(prAdapter);
 	}
+
+	/* <3> Timer Initialization */
+	cnmTimerInitialize(prAdapter);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5251,7 +5251,7 @@ void nicSerStopTxRx(IN struct ADAPTER *prAdapter)
 				ulFlags);
 #endif
 
-	DBGLOG(NIC, WARN, "[SER][L1] host set STOP_TRX!\n");
+	DBGLOG(NIC, WARN, "[SER] host set STOP_TRX!\n");
 
 	prAdapter->ucSerState = SER_STOP_HOST_TX_RX;
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -5277,14 +5277,14 @@ void nicSerStopTxRx(IN struct ADAPTER *prAdapter)
 
 void nicSerStopTx(IN struct ADAPTER *prAdapter)
 {
-	DBGLOG(NIC, WARN, "[SER][L1] Stop HIF Tx!\n");
+	DBGLOG(NIC, WARN, "[SER] Stop HIF Tx!\n");
 
 	prAdapter->ucSerState = SER_STOP_HOST_TX;
 }
 
 void nicSerStartTxRx(IN struct ADAPTER *prAdapter)
 {
-	DBGLOG(NIC, WARN, "[SER][L1] Start HIF T/R!\n");
+	DBGLOG(NIC, WARN, "[SER] Start HIF T/R!\n");
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	{
 		struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
