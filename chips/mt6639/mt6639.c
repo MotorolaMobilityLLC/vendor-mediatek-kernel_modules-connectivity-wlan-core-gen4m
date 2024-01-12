@@ -165,7 +165,9 @@ static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 
 static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter);
 
+#if CFG_MTK_WIFI_SW_EMI_RING
 static void mt6639triggerInt(struct GLUE_INFO *prGlueInfo);
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 static void mt6639WfdmaRxRingExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
@@ -661,7 +663,7 @@ struct BUS_INFO mt6639_bus_info = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
 	.DmaShdlInit = mt6639DmashdlInit,
 #endif
-#if defined(_HIF_PCIE)
+#if CFG_MTK_WIFI_SW_EMI_RING
 	.rSwEmiRingInfo = {
 		.rOps = {
 			.init = halSwEmiInit,
@@ -674,7 +676,7 @@ struct BUS_INFO mt6639_bus_info = {
 		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_TCHNUM_ADDR,
 		.u4CcifChlNum = 3,
 	},
-#endif /* _HIF_PCIE */
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 #if defined(_HIF_USB)
 	.prDmashdlCfg = &rMt6639DmashdlCfg,
 	.u4UdmaWlCfg_0_Addr = CONNAC3X_UDMA_WLCFG_0,
@@ -2549,6 +2551,7 @@ static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 		   size);
 }
 
+#if CFG_MTK_WIFI_SW_EMI_RING
 static void mt6639triggerInt(struct GLUE_INFO *prGlueInfo)
 {
 	struct mt66xx_chip_info *prChipInfo;
@@ -2563,6 +2566,7 @@ static void mt6639triggerInt(struct GLUE_INFO *prGlueInfo)
 		   prSwEmiRingInfo->u4CcifTchnumAddr,
 		   prSwEmiRingInfo->u4CcifChlNum);
 }
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 static u_int8_t mt6639_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *pu4Status)

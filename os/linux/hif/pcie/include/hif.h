@@ -476,7 +476,9 @@ struct BUS_INFO {
 	void (*disableDevice)(struct GLUE_INFO *prGlueInfo);
 
 	struct SW_WFDMA_INFO rSwWfdmaInfo;
+#if CFG_MTK_WIFI_SW_EMI_RING
 	struct SW_EMI_RING_INFO rSwEmiRingInfo;
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 #if CFG_SUPPORT_PCIE_GEN_SWITCH
 	void (*setPcieSpeed)(struct GLUE_INFO *prGlueInfo, uint32_t speed);

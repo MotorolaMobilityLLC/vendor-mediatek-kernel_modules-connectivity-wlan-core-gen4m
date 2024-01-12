@@ -6577,6 +6577,7 @@ wlanoidSetDrvMcrWrite(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }				/* wlanoidSetMcrWrite */
 
+#if CFG_MTK_WIFI_SW_EMI_RING
 uint32_t wlanoidQueryEmiMcrRead(
 	struct ADAPTER *prAdapter,
 	void *pvQueryBuffer,
@@ -6618,6 +6619,7 @@ uint32_t wlanoidQueryEmiMcrRead(
 	return WLAN_STATUS_NOT_ACCEPTED;
 #endif
 }
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 /*----------------------------------------------------------------------------*/
 /*!

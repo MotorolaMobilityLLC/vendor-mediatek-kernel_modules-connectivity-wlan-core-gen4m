@@ -1524,14 +1524,18 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	struct BUS_INFO *prBusInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
+#if CFG_MTK_WIFI_SW_EMI_RING
 	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 	uint32_t u4Idx;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+#if CFG_MTK_WIFI_SW_EMI_RING
 	prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	halOffloadAllocMem(prAdapter->prGlueInfo);
@@ -1638,8 +1642,10 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	if (prSwWfdmaInfo->rOps.init)
 		prSwWfdmaInfo->rOps.init(prAdapter->prGlueInfo);
 
+#if CFG_MTK_WIFI_SW_EMI_RING
 	if (prSwEmiRingInfo->rOps.init)
 		prSwEmiRingInfo->rOps.init(prAdapter->prGlueInfo);
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 	return true;
 }

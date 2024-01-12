@@ -587,6 +587,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = get_mcr_policy,
 		.u4PolicySize = ARRAY_SIZE(get_mcr_policy)
 	},
+#if CFG_MTK_WIFI_SW_EMI_RING
 	{
 		.pcCmdStr  = CMD_GET_EMI_MCR,
 		.pfHandler = priv_driver_get_emi_mcr,
@@ -595,6 +596,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = get_mcr_policy,
 		.u4PolicySize = ARRAY_SIZE(get_mcr_policy)
 	},
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 	{
 		.pcCmdStr  = CMD_SET_UHW_MCR,
 		.pfHandler = priv_driver_set_uhw_mcr,
