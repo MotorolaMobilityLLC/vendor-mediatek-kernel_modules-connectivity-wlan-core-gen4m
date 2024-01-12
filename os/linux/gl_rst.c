@@ -762,10 +762,10 @@ void glResetSubsysRstProcedure(
 {
 	bool fgIsTimeout;
 	struct mt66xx_chip_info *prChipInfo;
-
+#if 0
 	if (prAdapter->chip_info->checkbushang)
 		prAdapter->chip_info->checkbushang(FALSE);
-
+#endif
 	fgIsTimeout = IsOverRstTimeThreshold(rNowTs, rLastTs);
 	if (g_IsWfsysBusHang == TRUE) {
 		glSetRstReasonString(
