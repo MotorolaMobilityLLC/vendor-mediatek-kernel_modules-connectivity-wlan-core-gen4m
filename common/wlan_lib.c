@@ -8468,6 +8468,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_INT(prWifiVar->icTxPwrEnvLmtMin, "TxPwrEnvLmtMin",
 		TX_PWR_ENV_LMT_MIN);
 #endif
+#if CFG_CH_SELECT_ENHANCEMENT
+	prWifiVar->ucStaSapIndoorConn = (uint8_t)
+		wlanCfgGetUint32(
+			prAdapter, "StaSapIndoorConn", FEATURE_ENABLED);
+#endif
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)

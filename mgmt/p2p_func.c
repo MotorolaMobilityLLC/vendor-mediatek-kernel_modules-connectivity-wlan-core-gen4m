@@ -7418,6 +7418,114 @@ struct BSS_INFO *p2pGetAisConnectedBss(
 		return aisGetConnectedBssInfo(ad);
 }
 
+u_int8_t p2pFuncSapOnlyCsaCheck(
+	struct ADAPTER *prAdapter,
+	uint8_t *ucStaChannelNum,
+	uint8_t *ucSapChannelNum,
+	enum ENUM_BAND *eStaBand,
+	enum ENUM_BAND *eSapBand,
+	u_int8_t fgIsSapDesense,
+	u_int8_t fgIsSapDfs)
+{
+	if (fgIsSapDfs || fgIsSapDesense) {
+		/* Choose one 2G channel */
+		*ucStaChannelNum = AP_DEFAULT_CHANNEL_2G;
+		*eStaBand = BAND_2G4;
+
+		DBGLOG(P2P, INFO,
+			"[SCC] Dfs: %d, Desense %d, Choose a channel\n",
+			fgIsSapDfs,
+			fgIsSapDesense);
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
+		/* restore DFS channels table */
+		wlanUpdateDfsChannelTable(
+			prAdapter->prGlueInfo,
+			-1, /* p2p role index */
+			0, /* primary channel */
+			0, /* bandwidth */
+			0, /* sco */
+			0, /* center frequency */
+			0 /* eBand */);
+#endif
+#if CFG_CH_SELECT_ENHANCEMENT
+		return TRUE;
+	} else if (*eSapBand == BAND_5G &&
+		rlmDomainIsIndoorChannel(prAdapter,
+		 *eSapBand, *ucSapChannelNum)) {
+		/* Choose one 5G channel */
+		*ucStaChannelNum = AP_NONINDOOR_CHANNEL_5G;
+		*eStaBand = BAND_5G;
+#endif
+		return TRUE;
+	}
+	return FALSE;
+}
+void p2pFuncCrossBandChannelSwitchCheck(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prP2pBssInfo,
+	uint8_t *ucStaChannelNum,
+	uint8_t *ucSapChannelNum,
+	enum ENUM_BAND *eStaBand,
+	enum ENUM_BAND *eSapBand,
+	u_int8_t *fgDbDcModeEn)
+{
+
+#if CFG_SUPPORT_DBDC
+	*fgDbDcModeEn = prAdapter->rWifiVar.fgDbDcModeEn;
+#if (CFG_SUPPORT_WIFI_6G == 1)	/* Go SCC for 5G+6G */
+	if ((*eStaBand == BAND_5G && *eSapBand == BAND_6G) ||
+		(*eStaBand == BAND_6G && *eSapBand == BAND_5G))
+		*fgDbDcModeEn = FALSE;
+#if CFG_CH_SELECT_ENHANCEMENT
+	if ((prAdapter->rWifiVar.eDbdcMode !=
+		ENUM_DBDC_MODE_DISABLED) &&
+		(*eStaBand == BAND_6G) &&
+		(*eSapBand != BAND_2G4) &&
+		!IS_6G_PSC_CHANNEL(*ucStaChannelNum)) {
+		*ucStaChannelNum = AP_DEFAULT_CHANNEL_2G;
+		*eStaBand = BAND_2G4;
+		*fgDbDcModeEn = FALSE;
+	}
+#endif
+#endif
+
+#if CFG_CH_SELECT_ENHANCEMENT
+	if ((prAdapter->rWifiVar.eDbdcMode !=
+		ENUM_DBDC_MODE_DISABLED) &&
+		rlmDomainIsLegalDfsChannel(prAdapter,
+		*eStaBand, *ucStaChannelNum) &&
+		(*eSapBand != BAND_2G4) &&
+		(prAdapter->rWifiVar.eDbdcMode !=
+		ENUM_DBDC_MODE_DISABLED)) {
+		*ucStaChannelNum = AP_DEFAULT_CHANNEL_2G;
+		*eStaBand = BAND_2G4;
+		*fgDbDcModeEn = FALSE;
+	} else if ((prAdapter->rWifiVar.eDbdcMode !=
+		ENUM_DBDC_MODE_DISABLED) &&
+		(rlmDomainIsIndoorChannel(prAdapter,
+			*eStaBand, *ucStaChannelNum) &&
+		!rlmDomainIsStaSapIndoorConn(prAdapter)) &&
+		(*eSapBand != BAND_2G4) &&
+		(prAdapter->rWifiVar.eDbdcMode !=
+		ENUM_DBDC_MODE_DISABLED)) {
+		*ucStaChannelNum = AP_DEFAULT_CHANNEL_2G;
+		*eStaBand = BAND_2G4;
+		*fgDbDcModeEn = FALSE;
+	} else if ((prAdapter->rWifiVar.eDbdcMode !=
+		ENUM_DBDC_MODE_DISABLED) &&
+		*eStaBand == BAND_2G4 &&
+		*eSapBand == BAND_5G) {
+		/* Choose one 5G channel */
+		*ucStaChannelNum = AP_NONINDOOR_CHANNEL_5G;
+		*eStaBand = BAND_5G;
+		*fgDbDcModeEn = FALSE;
+	}
+
+#endif
+#endif
+
+}
+
 void p2pFuncSwitchSapChannel(
 		struct ADAPTER *prAdapter)
 {
@@ -7522,8 +7630,8 @@ void p2pFuncSwitchSapChannel(
 #if CFG_SUPPORT_DFS_MASTER
 	if ((eSapBand == BAND_5G) &&
 		(p2pFuncGetDfsState() != DFS_STATE_ACTIVE))
-		fgIsSapDfs = rlmDomainIsLegalDfsChannel(prAdapter,
-			eSapBand, ucSapChannelNum);
+		fgIsSapDfs = (rlmDomainIsLegalDfsChannel(prAdapter,
+			eSapBand, ucSapChannelNum) > 0) ? TRUE : FALSE;
 #endif
 
 	/* STA is not connected */
@@ -7531,29 +7639,15 @@ void p2pFuncSwitchSapChannel(
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)
 		fgIsSapDesense =
 			IS_CHANNEL_IN_DESENSE_RANGE(prAdapter,
-			ucSapChannelNum,
-			eSapBand);
+				ucSapChannelNum,
+				eSapBand);
 #endif
-		if (fgIsSapDfs || fgIsSapDesense) {
-			/* Choose one 5G channel */
-			ucStaChannelNum = 36;
-			eStaBand = BAND_5G;
-			DBGLOG(P2P, INFO,
-				"[SCC] Dfs: %d, Desense %d, Choose a channel\n",
-				fgIsSapDfs,
-				fgIsSapDesense);
-#if CFG_SUPPORT_SAP_DFS_CHANNEL
-			/* restore DFS channels table */
-			wlanUpdateDfsChannelTable(
-				prAdapter->prGlueInfo,
-				-1, /* p2p role index */
-				0, /* primary channel */
-				0, /* bandwidth */
-				0, /* sco */
-				0, /* center frequency */
-				0 /* eBand */);
-#endif
-		} else {
+		if (!p2pFuncSapOnlyCsaCheck(
+			prAdapter,
+			&ucStaChannelNum, &ucSapChannelNum,
+			&eStaBand, &eSapBand,
+			fgIsSapDesense,
+			fgIsSapDfs)) {
 			DBGLOG(P2P, WARN, "STA is not connected\n");
 			goto exit;
 		}
@@ -7586,15 +7680,12 @@ void p2pFuncSwitchSapChannel(
 	}
 #endif
 
-#if CFG_SUPPORT_DBDC
-	fgDbDcModeEn = prAdapter->rWifiVar.fgDbDcModeEn;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	/* Go SCC for 5G+6G */
-	if ((eStaBand == BAND_5G && eSapBand == BAND_6G) ||
-		(eStaBand == BAND_6G && eSapBand == BAND_5G))
-		fgDbDcModeEn = FALSE;
-#endif
-#endif
+	p2pFuncCrossBandChannelSwitchCheck(
+		prAdapter, prP2pBssInfo,
+		&ucStaChannelNum, &ucSapChannelNum,
+		&eStaBand, &eSapBand,
+		&fgDbDcModeEn);
+
 
 	/* Check channel no */
 	if (ucStaChannelNum == ucSapChannelNum) {

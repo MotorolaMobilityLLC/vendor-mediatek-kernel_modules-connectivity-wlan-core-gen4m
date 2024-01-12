@@ -275,6 +275,8 @@
 #define CFG_SUPPORT_LOWLATENCY_MODE	1
 #endif
 
+#define CFG_CH_SELECT_ENHANCEMENT	0
+
 #define CFG_SUPPORT_ANT_SWAP		1
 
 /* If skb_buff mark field marked with pre-defined value, change priority to VO*/
