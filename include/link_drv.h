@@ -229,6 +229,24 @@ do { \
 	    } \
 	}
 
+/* Get first entry from a link list */
+/* NOTE: We assume the link entry located at the beginning of "prEntry Type",
+ * so that we can cast the link entry to other data type without doubts.
+ * And this macro also decrease the total entry count at the same time.
+ */
+#define LINK_REMOVE_HEAD_VAR(prLink, prEntry, _P_TYPE) \
+	{ \
+		if (LINK_IS_EMPTY(prLink)) { \
+			prEntry = (_P_TYPE)NULL; \
+	    } \
+		else { \
+			prEntry = \
+			    (_P_TYPE)(((struct LINK *)(prLink))->prNext); \
+			linkDel((struct LINK_ENTRY *)prEntry); \
+			((prLink)->u4NumElem)--; \
+	    } \
+	}
+
 /* Assume the link entry located at the beginning of prEntry Type.
  * And also decrease the total entry count.
  */

@@ -2344,6 +2344,8 @@ uint32_t rsnSetPmkid(struct ADAPTER *prAdapter,
 	struct PMKID_ENTRY *entry;
 	struct LINK *cache;
 
+	GLUE_SPIN_LOCK_DECLARATION();
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		prPmkid->ucBssIdx);
 	if (!prBssInfo) {
@@ -2358,7 +2360,9 @@ uint32_t rsnSetPmkid(struct ADAPTER *prAdapter,
 		entry = kalMemAlloc(sizeof(struct PMKID_ENTRY), VIR_MEM_TYPE);
 		if (!entry)
 			return -ENOMEM;
+		GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_PMKID);
 		LINK_INSERT_TAIL(cache,	&entry->rLinkEntry);
+		GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_PMKID);
 	}
 
 	DBGLOG(RSN, INFO,
@@ -2393,6 +2397,8 @@ uint32_t rsnDelPmkid(struct ADAPTER *prAdapter,
 	struct PMKID_ENTRY *entry;
 	struct LINK *cache;
 
+	GLUE_SPIN_LOCK_DECLARATION();
+
 	if (!prPmkid)
 		return WLAN_STATUS_INVALID_DATA;
 
@@ -2411,7 +2417,9 @@ uint32_t rsnDelPmkid(struct ADAPTER *prAdapter,
 			DBGLOG(RSN, WARN, "Del " MACSTR " pmkid but mismatch\n",
 				MAC2STR(prPmkid->arBSSID));
 		}
+		GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_PMKID);
 		LINK_REMOVE_KNOWN_ENTRY(cache, entry);
+		GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_PMKID);
 		kalMemFree(entry, VIR_MEM_TYPE, sizeof(struct PMKID_ENTRY));
 	}
 
@@ -2429,7 +2437,9 @@ uint32_t rsnFlushPmkid(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
 	struct PMKID_ENTRY *entry;
-	struct LINK *cache;
+	struct LINK cache;
+
+	GLUE_SPIN_LOCK_DECLARATION();
 
 	prBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
@@ -2438,16 +2448,21 @@ uint32_t rsnFlushPmkid(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	cache = &prBssInfo->rPmkidCache;
+	LINK_INITIALIZE(&cache);
 
 	DBGLOG(RSN, TRACE, "[%d] Flush Pmkid total:%d\n",
 		ucBssIndex,
-		cache->u4NumElem);
+		prBssInfo->rPmkidCache.u4NumElem);
 
-	while (!LINK_IS_EMPTY(cache)) {
-		LINK_REMOVE_HEAD(cache, entry, struct PMKID_ENTRY *);
+	GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_PMKID);
+	LINK_MERGE_TO_HEAD(&cache, &prBssInfo->rPmkidCache);
+	GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_PMKID);
+
+	while (!LINK_IS_EMPTY(&cache)) {
+		LINK_REMOVE_HEAD_VAR(&cache, entry, struct PMKID_ENTRY *);
 		kalMemFree(entry, VIR_MEM_TYPE, sizeof(struct PMKID_ENTRY));
 	}
+
 	return WLAN_STATUS_SUCCESS;
 } /* rsnDelPmkid */
 

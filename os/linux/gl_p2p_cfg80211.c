@@ -4487,7 +4487,6 @@ int mtk_p2p_cfg80211_testmode_update_sta_pmkid_cmd(struct wiphy *wiphy,
 	uint8_t ucRoleIdx = 0;
 	uint8_t ucBssIdx = 0;
 	uint32_t rStatus;
-	uint32_t u4BufLen;
 	int fgIsValid = 0;
 
 	ASSERT(wiphy);
@@ -4520,13 +4519,13 @@ int mtk_p2p_cfg80211_testmode_update_sta_pmkid_cmd(struct wiphy *wiphy,
 	kalMemCopy(pmkid.arPMKID, prParams->aucPmkid, IW_PMKID_LEN);
 	pmkid.ucBssIdx = ucBssIdx;
 	if (prParams->ucAddRemove) {
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetPmkid, &pmkid,
-				   sizeof(struct PARAM_PMKID), &u4BufLen);
+		rStatus = rsnSetPmkid(prGlueInfo->prAdapter, &pmkid);
+
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(INIT, INFO, "add pmkid error:%x\n", rStatus);
 	} else {
-		rStatus = kalIoctl(prGlueInfo, wlanoidDelPmkid, &pmkid,
-				   sizeof(struct PARAM_PMKID), &u4BufLen);
+		rStatus = rsnDelPmkid(prGlueInfo->prAdapter, &pmkid);
+
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(INIT, INFO, "remove pmkid error:%x\n", rStatus);
 	}
