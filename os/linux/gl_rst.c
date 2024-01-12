@@ -362,9 +362,9 @@ static int wlan_pm_notifier_call(struct notifier_block *notifier,
 	switch (pm_event) {
 	case PM_SUSPEND_PREPARE:
 		rst->is_suspend = TRUE;
-		set_bit(SUSPEND_FLAG_FOR_WAKEUP_REASON,
-			&rst->prGlueInfo->fgIsInSuspend);
 		set_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
+			&rst->prGlueInfo->fgIsInSuspend);
+		set_bit(SUSPEND_FLAG_FOR_WAKEUP_REASON,
 			&rst->prGlueInfo->fgIsInSuspend);
 		break;
 	case PM_POST_SUSPEND:
