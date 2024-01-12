@@ -685,6 +685,7 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 	struct UNI_CMD_BSSINFO *bss_cmd;
 	struct UNI_CMD_DEVINFO_ACTIVE *dev_active_tag;
 	struct UNI_CMD_BSSINFO_BASIC *bss_basic_tag;
+	struct UNI_CMD_BSSINFO_MLD *bss_mld_tag;
 	struct WIFI_UNI_CMD_ENTRY *dev_entry = NULL, *bss_entry = NULL;
 	uint32_t max_cmd_len;
 	struct BSS_INFO *bss;
@@ -716,7 +717,8 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 
 	/* update bssinfo */
 	max_cmd_len = sizeof(struct UNI_CMD_BSSINFO) +
-		      sizeof(struct UNI_CMD_BSSINFO_BASIC);
+		      sizeof(struct UNI_CMD_BSSINFO_BASIC) +
+		      (cmd->ucActive ? sizeof(struct UNI_CMD_BSSINFO_MLD) : 0);
 	bss_entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_BSSINFO,
 			max_cmd_len, NULL, NULL);
 	if (!bss_entry)
@@ -745,13 +747,31 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 	bss_basic_tag->ucPhyModeExt = (phy_mode >> 8) & 0xff;
 
 	DBGLOG(INIT, INFO,
-		"%s DevInfo[OMAC=%d, DBDC=%d], BssInfo[BssIdx=%d, DBDC=%d, OMAC=%d, ConnType=%d, ConnState=%d, BcIdx=%d, PhyMode=0x%x, PhyModeEx=0x%x]\n",
+		"%s DevInfo[OMAC=%d, DBDC=%d], BssInfo%d[DBDC=%d, OMAC=%d, ConnType=%d, ConnState=%d, BcIdx=%d, PhyMode=0x%x, PhyModeEx=0x%x]\n",
 		cmd->ucActive ? "Activate" : "Deactivate",
 		dev_cmd->ucOwnMacIdx, dev_cmd->ucDbdcIdx,
 		bss_cmd->ucBssInfoIdx, bss_basic_tag->ucDbdcIdx,
 		bss_basic_tag->ucOwnMacIdx, bss_basic_tag->u4ConnectionType,
 		bss_basic_tag->ucConnectionState, bss_basic_tag->u2BcMcWlanidx,
 		bss_basic_tag->ucPhyMode, bss_basic_tag->ucPhyModeExt);
+
+	if (cmd->ucActive) {
+		bss_mld_tag = (struct UNI_CMD_BSSINFO_MLD *)
+			(bss_cmd->aucTlvBuffer + sizeof(*bss_basic_tag));
+		bss_mld_tag->u2Tag = UNI_CMD_BSSINFO_TAG_MLD;
+		bss_mld_tag->u2Length = sizeof(*bss_mld_tag);
+		bss_mld_tag->ucGroupMldId = MLD_GROUP_NONE;
+		bss_mld_tag->ucOwnMldId = bss->ucBssIndex;
+		COPY_MAC_ADDR(bss_mld_tag->aucOwnMldAddr, bss->aucBSSID);
+		bss_mld_tag->ucOmRemapIdx = OM_REMAP_IDX_NONE;
+
+		DBGLOG(INIT, INFO, "BssInfo%d[GroupMldId=%d, OwnMldId=%d, OmRemapIdx=%d, OwnMldAddr=" MACSTR "]\n",
+			bss_cmd->ucBssInfoIdx,
+			bss_mld_tag->ucGroupMldId,
+			bss_mld_tag->ucOwnMldId,
+			bss_mld_tag->ucOmRemapIdx,
+			MAC2STR(bss_mld_tag->aucOwnMldAddr));
+	}
 
 	if (cmd->ucActive) {
 		/* activate devinfo first */
