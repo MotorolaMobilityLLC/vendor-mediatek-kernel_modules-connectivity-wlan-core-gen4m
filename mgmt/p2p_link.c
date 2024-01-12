@@ -934,12 +934,6 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 	if (!mldIsMultiLinkEnabled(prAdapter, NETWORK_TYPE_P2P, FALSE))
 		return;
 
-	DBGLOG(P2P, INFO,
-		"Main " MACSTR " valid=%d mld_addr="MACSTR"\n",
-		MAC2STR(prMainBssDesc->aucBSSID),
-		prMainBssDesc->rMlInfo.fgValid,
-		MAC2STR(prMainBssDesc->rMlInfo.aucMldAddr));
-
 	/* setup secondary link */
 	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
 		struct BSS_DESC) {
@@ -961,11 +955,11 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 			continue;
 		}
 
-		DBGLOG(P2P, LOUD,
-			"Add " MACSTR " valid=%d mld_addr="MACSTR"\n",
+		DBGLOG(P2P, INFO,
+			"Add " MACSTR " mld_addr=" MACSTR " link=%d\n",
 			MAC2STR(prBssDesc->aucBSSID),
-			prBssDesc->rMlInfo.fgValid,
-			MAC2STR(prBssDesc->rMlInfo.aucMldAddr));
+			MAC2STR(prBssDesc->rMlInfo.aucMldAddr),
+			prBssDesc->rMlInfo.ucLinkIndex);
 
 		/* Record same Mld list */
 		prBssDescSet->aprBssDesc[prBssDescSet->ucLinkNum] = prBssDesc;
@@ -989,7 +983,14 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 
 	/* first bss desc is main bss */
 	prBssDescSet->prMainBssDesc = prBssDescSet->aprBssDesc[0];
-	DBGLOG(P2P, INFO, "Total %d link(s)\n", prBssDescSet->ucLinkNum);
+	prMainBssDesc = prBssDescSet->prMainBssDesc;
+	DBGLOG(P2P, INFO,
+		"Total %d link(s), Main=" MACSTR
+		" mld_addr=" MACSTR " link=%d\n",
+		prBssDescSet->ucLinkNum,
+		MAC2STR(prMainBssDesc->aucBSSID),
+		MAC2STR(prMainBssDesc->rMlInfo.aucMldAddr),
+		prMainBssDesc->rMlInfo.ucLinkIndex);
 }
 #endif
 

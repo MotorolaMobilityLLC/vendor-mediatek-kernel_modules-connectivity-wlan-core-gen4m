@@ -333,6 +333,9 @@ struct BSS_DESC *scanP2pSearchDesc(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			p2pScanFillSecondaryLink(prAdapter, prBssDescSet);
+			if (prBssDescSet->ucLinkNum > 1)
+				prCandidateBssDesc =
+					prBssDescSet->prMainBssDesc;
 #endif
 		} else {
 			prBssDescSet->ucLinkNum = 0;
