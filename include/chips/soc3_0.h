@@ -157,7 +157,6 @@ struct ROM_EMI_HEADER {
 */
 extern struct platform_device *g_prPlatDev;
 #if (CFG_SUPPORT_CONNINFRA == 1)
-extern int g_IsConninfraBusHang;
 extern u_int8_t g_IsWfsysBusHang;
 extern struct completion g_triggerComp;
 #endif
