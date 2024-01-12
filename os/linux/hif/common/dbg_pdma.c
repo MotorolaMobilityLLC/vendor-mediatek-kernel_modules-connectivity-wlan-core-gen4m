@@ -200,9 +200,31 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 		return;
 	}
 
+	/* Check Driver own HW CR */
+	{
+		struct BUS_INFO *prBusInfo = NULL;
+		u_int8_t driver_owen_result = 0;
+
+		prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+
+		if (prBusInfo->lowPowerOwnRead)
+			prBusInfo->lowPowerOwnRead(prGlueInfo->prAdapter,
+				&driver_owen_result);
+		else {
+			DBGLOG(HAL, ERROR, "retrun due to null API\n");
+			return;
+		}
+
+		if (driver_owen_result == 0) {
+			DBGLOG(HAL, ERROR, "return, not driver-own[%d]\n",
+				driver_owen_result);
+			return;
+		}
+	}
+
 	prDbgOps = prAdapter->chip_info->prDebugOps;
 
-	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PDMA)) {
+	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PLE)) {
 		if (prDbgOps && prDbgOps->showPleInfo)
 			prDbgOps->showPleInfo(prAdapter, FALSE);
 	}
@@ -212,14 +234,14 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 			prDbgOps->showPseInfo(prAdapter);
 	}
 
+	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PDMA)) {
+		if (prDbgOps && prDbgOps->showPdmaInfo)
+			prDbgOps->showPdmaInfo(prAdapter);
+	}
+
 	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_DMASCH)) {
 		if (prDbgOps && prDbgOps->showDmaschInfo)
 			prDbgOps->showDmaschInfo(prAdapter);
-	}
-
-	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PLE)) {
-		if (prDbgOps && prDbgOps->showPdmaInfo)
-			prDbgOps->showPdmaInfo(prAdapter);
 	}
 
 	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_MAC))
