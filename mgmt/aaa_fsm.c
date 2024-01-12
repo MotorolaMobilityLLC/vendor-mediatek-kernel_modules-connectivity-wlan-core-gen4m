@@ -308,6 +308,12 @@ void aaaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
+	if (!prSwRfb || !prSwRfb->pvHeader) {
+		DBGLOG(AAA, ERROR,
+			"prSwRfb or prSwRfb->pvHeader is NULL!\n");
+		return;
+	}
+
 	do {
 		prAuthFrame = (struct WLAN_AUTH_FRAME *) prSwRfb->pvHeader;
 

@@ -203,9 +203,7 @@ scanP2pProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 		kalGetP2pDevScanSpecificSSID(prAdapter->prGlueInfo);
 	if (fgIsBeacon && prScanRequest == NULL && !fgScanSpecificSSID) {
 		DBGLOG(P2P, TRACE,
-			"Skip beacon, p2pScanRequest=%d, scanSpecificSSID=%d\n",
-			prScanRequest,
-			fgScanSpecificSSID);
+			"Skip beacon, p2pScanRequest NULL, scanSpecificSSID NULL\n");
 		fgIsSkipThisBeacon = TRUE;
 	}
 

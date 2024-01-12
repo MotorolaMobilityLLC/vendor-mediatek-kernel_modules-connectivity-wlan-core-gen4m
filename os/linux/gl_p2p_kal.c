@@ -1363,8 +1363,7 @@ void kalP2PIndicateMgmtTxStatus(struct GLUE_INFO *prGlueInfo,
 	do {
 		if ((prGlueInfo == NULL) || (prMsduInfo == NULL)) {
 			DBGLOG(P2P, WARN,
-				"Unexpected pointer PARAM. 0x%lx, 0x%lx.\n",
-				prGlueInfo, prMsduInfo);
+				"Unexpected NULL pointer prGlueInfo/prMsduInfo.\n");
 			ASSERT(FALSE);
 			break;
 		}
@@ -2744,6 +2743,7 @@ int32_t kalP2pFuncPreStartRdd(
 	kalMemZero(
 		prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan,
 		sizeof(struct ieee80211_channel));
+	kalMemZero(&rRfChnlInfo, sizeof(struct RF_CHANNEL_INFO));
 
 	/* Copy chan def to local buffer*/
 	prGlueInfo->prP2PInfo[ucRoleIdx]
