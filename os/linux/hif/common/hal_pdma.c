@@ -1440,11 +1440,13 @@ static void halMsduReportStatsP0(IN struct ADAPTER *prAdapter,
 	halAddMacLatencyCount(prAdapter, u4MacLatency);
 
 	if (unlikely(msduToken->rFormatV3.rP0.u4Stat)) {
+		uint32_t lim = prWifiVar->u4ContinuousTxFailThreshold;
+
 		GLUE_INC_REF_CNT(stats->u4TxFail);
 		GLUE_INC_REF_CNT(report->u4ContinuousTxFail);
 		halAddTxFailConnsysLatencyCount(prAdapter, u4ConnsysLatency);
-		if (prAdapter->rWifiVar.u4ContinuousTxFailThreshold <=
-			report->u4ContinuousTxFail) {
+		if (lim && report->u4ContinuousTxFail >= lim &&
+		    report->u4ContinuousTxFail % lim == 0) {
 			char uevent[64];
 
 			kalSnprintf(uevent, sizeof(uevent),
