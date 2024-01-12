@@ -3383,6 +3383,9 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 			if (prSwWfdmaInfo->rOps.reset)
 				prSwWfdmaInfo->rOps.reset(prSwWfdmaInfo);
 
+			if (prBusInfo->DmaShdlInit)
+				prBusInfo->DmaShdlInit(prAdapter);
+
 			/* only reset TXD & RXD */
 			halWpdmaAllocRing(prAdapter->prGlueInfo, false);
 			nicFreePendingTxMsduInfo(prAdapter, 0xFF,
