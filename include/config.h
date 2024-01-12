@@ -741,7 +741,7 @@
 
 #define CFG_SUPPORT_STATISTICS			1
 
-#define CFG_SUPPORT_TRACE_TC4			1
+#define CFG_SUPPORT_TRACE_TC4			0
 /*------------------------------------------------------------------------------
  * Flags of Firmware Download Option.
  *------------------------------------------------------------------------------
@@ -1856,6 +1856,14 @@
 #define CFG_SUPPORT_TX_BEACON_STA_MODE      0
 #else
 #define CFG_SUPPORT_TX_BEACON_STA_MODE      0
+#endif
+
+/*------------------------------------------------------------------------------
+ * Support Debug SOP or not.
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_DEBUG_SOP
+#define CFG_SUPPORT_DEBUG_SOP  0
 #endif
 
 /*------------------------------------------------------------------------------

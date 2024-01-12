@@ -238,6 +238,31 @@ halRxWaitResponse(IN struct ADAPTER *prAdapter,
 	u4Time = (uint32_t) kalGetTimeTick();
 
 	do {
+		HAL_MCR_RD(prAdapter, MCR_WHISR, &u4Value);
+		if (!(u4Value & (WHISR_RX0_DONE_INT | WHISR_RX1_DONE_INT))) {
+			/* timeout exceeding check */
+			u4Current = (uint32_t) kalGetTimeTick();
+
+			if ((u4Current > u4Time) && ((u4Current - u4Time)
+				> RX_RESPONSE_TIMEOUT)) {
+
+				DBGLOG(RX, ERROR, "Timeout! %d - %d = %d\n",
+				u4Current, u4Time, (u4Current-u4Time));
+				return WLAN_STATUS_FAILURE;
+			} else if (u4Current < u4Time &&
+				((u4Current + (0xFFFFFFFF - u4Time))
+				> RX_RESPONSE_TIMEOUT)) {
+
+				DBGLOG(RX, ERROR, "Timeout! %d - %d = %d\n",
+					u4Current, u4Time,
+					(u4Current + (0xFFFFFFFF - u4Time)));
+				return WLAN_STATUS_FAILURE;
+			}
+			/* Response packet is not ready */
+			kalUdelay(50);
+
+			continue;
+		}
 		/* Read the packet length */
 		HAL_MCR_RD(prAdapter, MCR_WRPLR, &u4Value);
 
@@ -259,22 +284,9 @@ halRxWaitResponse(IN struct ADAPTER *prAdapter,
 			DBGLOG_MEM8(RX, ERROR, pucRspBuffer, u4MaxRespBufferLen);
 			return WLAN_STATUS_FAILURE;
 		}
-
 		if (u4PktLen == 0) {
-			/* timeout exceeding check */
-			u4Current = (uint32_t) kalGetTimeTick();
-
-			if ((u4Current > u4Time) && ((u4Current - u4Time) > RX_RESPONSE_TIMEOUT)) {
-				DBGLOG(RX, ERROR, "Timeout! %d - %d = %d\n", u4Current, u4Time, (u4Current-u4Time));
-				return WLAN_STATUS_FAILURE;
-			} else if (u4Current < u4Time && ((u4Current + (0xFFFFFFFF - u4Time)) > RX_RESPONSE_TIMEOUT)) {
-				DBGLOG(RX, ERROR, "Timeout! %d - %d = %d\n",
-					u4Current, u4Time, (u4Current + (0xFFFFFFFF - u4Time)));
-				return WLAN_STATUS_FAILURE;
-			}
-
-			/* Response packet is not ready */
-			kalUdelay(50);
+			DBGLOG(RX, ERROR, "Packet length is 0!!\n");
+			return WLAN_STATUS_FAILURE;
 		} else {
 
 #if (CFG_ENABLE_READ_EXTRA_4_BYTES == 1)
@@ -403,6 +415,9 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	uint32_t u4DriverOwnTime = 0, u4Cr4ReadyTime = 0;
 	struct GL_HIF_INFO *prHifInfo;
 	u_int8_t fgWmtCoreDump = FALSE;
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+	struct CHIP_DBG_OPS *prChipDbg = prAdapter->chip_info->prDebugOps;
+#endif
 
 	ASSERT(prAdapter);
 
@@ -477,7 +492,9 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 
 				GET_CURRENT_SYSTIME(&prAdapter->rLastOwnFailedLogTime);
 			}
-
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+			prChipDbg->show_debug_sop_info(prAdapter, SLAVENORESP);
+#endif
 			prAdapter->u4OwnFailedCount++;
 			fgStatus = FALSE;
 			break;
@@ -2736,8 +2753,9 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 
 void halPollDbgCr(IN struct ADAPTER *prAdapter, IN uint32_t u4LoopCount)
 {
-	uint32_t au4Value[] = {MCR_WCIR, MCR_WHLPCR, MCR_D2HRM2R};
-	uint32_t au4Value1[] = {MCR_WHIER, MCR_D2HRM0R, MCR_D2HRM1R};
+	uint32_t au4Value[] = {MCR_WCIR, MCR_WHLPCR};
+	uint32_t au4Value1[] = {MCR_WHIER, MCR_D2HRM0R, MCR_D2HRM1R,
+		MCR_D2HRM2R};
 	uint32_t u4Loop = 0;
 	uint32_t u4Data = 0;
 	uint8_t i = 0, fgResult;
@@ -2745,29 +2763,53 @@ void halPollDbgCr(IN struct ADAPTER *prAdapter, IN uint32_t u4LoopCount)
 	uint8_t *pucCCR = (uint8_t *)&au4Value[0];
 	unsigned long cltCtx = prAdapter->prGlueInfo->rHifInfo.cltCtx;
 #endif
+	struct CHIP_DBG_OPS *prChipDbg = prAdapter->chip_info->prDebugOps;
 
 	for (; i < sizeof(au4Value)/sizeof(uint32_t); i++)
 		HAL_MCR_RD(prAdapter, au4Value[i], &au4Value[i]);
-	DBGLOG(REQ, WARN, "MCR_WCIR:0x%x, MCR_WHLPCR:0x%x, MCR_D2HRM2R:0x%x\n",
-		au4Value[0], au4Value[1], au4Value[2]);
+	DBGLOG(REQ, WARN, "MCR_WCIR:0x%x, MCR_WHLPCR:0x%x\n",
+		au4Value[0], au4Value[1]);
 
 	/* Need driver own */
 	HAL_LP_OWN_RD(prAdapter, &fgResult);
 	if (fgResult == TRUE) {
 		/* dump N9 programming counter */
-		for (u4Loop = 0; u4Loop < u4LoopCount; u4Loop++) {
-			HAL_MCR_RD(prAdapter, MCR_SWPCDBGR, &u4Data);
-			DBGLOG(INIT, WARN, "SWPCDBGR 0x%08X\n", u4Data);
+		if (prChipDbg->show_mcu_debug_info) {
+			uint8_t ucFlag = 0;
+
+			/*
+			 * u4LoopCount = 1 is from hif_thread dbg task,
+			 * in 7961 because cmd res is not sufficient, so
+			 * will call this function frequently, prevent dump
+			 * too much log in this case.
+			 */
+			if (u4LoopCount == 1)
+				ucFlag = DBG_MCU_DBG_CURRENT_PC;
+			else
+				ucFlag = DBG_MCU_DBG_ALL;
+
+			fgResult = prChipDbg->show_mcu_debug_info(prAdapter,
+				NULL, 0, ucFlag, NULL);
+			if (!fgResult)
+				DBGLOG(INIT, WARN,
+				"show_mcu_debug_info fail!\n");
+		} else {
+			/* Not used in future project (from 7961). */
+			for (u4Loop = 0; u4Loop < u4LoopCount; u4Loop++) {
+				HAL_MCR_RD(prAdapter, MCR_SWPCDBGR, &u4Data);
+				DBGLOG(INIT, WARN, "SWPCDBGR 0x%08X\n", u4Data);
+			}
 		}
 
 		/* dump others */
 		for (i = 0; i < sizeof(au4Value1)/sizeof(uint32_t); i++)
 			HAL_MCR_RD(prAdapter, au4Value1[i], &au4Value1[i]);
 
-		DBGLOG(REQ, WARN, "MCR_WHIER:0x%x, MCR_D2HRM0R:0x%x",
+		DBGLOG(REQ, WARN,
+			"MCR_WHIER:0x%x, MCR_D2HRM0R:0x%x",
 			au4Value1[0], au4Value1[1]);
-		DBGLOG(REQ, WARN, "MCR_D2HRM1R:0x%x\n",
-			au4Value1[2]);
+		DBGLOG(REQ, WARN, "MCR_D2HRM1R:0x%x, MCR_D2HRM2R:0x%x\n",
+			au4Value1[2], au4Value1[3]);
 	}
 
 #if MTK_WCN_HIF_SDIO

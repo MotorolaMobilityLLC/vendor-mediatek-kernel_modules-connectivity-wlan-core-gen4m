@@ -4272,8 +4272,16 @@ nicRxWaitResponseByWaitingInterval(IN struct ADAPTER *prAdapter,
 	struct mt66xx_chip_info *prChipInfo;
 	struct WIFI_EVENT *prEvent;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+	struct CHIP_DBG_OPS *prChipDbg = (struct CHIP_DBG_OPS *) NULL;
+#endif
 
-	ASSERT(prAdapter);
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, WARN, "prAdapter is NULL\n");
+
+		return WLAN_STATUS_FAILURE;
+	}
+
 	prChipInfo = prAdapter->chip_info;
 
 	u4Status = halRxWaitResponse(prAdapter, ucPortIdx,
@@ -4297,6 +4305,10 @@ nicRxWaitResponseByWaitingInterval(IN struct ADAPTER *prAdapter,
 		halPrintHifDbgInfo(prAdapter);
 		DBGLOG(RX, ERROR, "halRxWaitResponse fail!status %X\n",
 		       u4Status);
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+		prChipDbg = prAdapter->chip_info->prDebugOps;
+		prChipDbg->show_debug_sop_info(prAdapter, SLAVENORESP);
+#endif
 	}
 
 	return u4Status;

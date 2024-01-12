@@ -104,6 +104,14 @@
 #define MT7961_BT_FW_VER_MASK 0xFF
 
 /*------------------------------------------------------------------------------
+ * MACRO for debug MCU
+ *------------------------------------------------------------------------------
+ */
+#define CURRENT_PC 0x3F
+#define PC_LOG_IDX 0x20
+#define PC_LOG_NUM 32
+
+/*------------------------------------------------------------------------------
  * MACRO for WTBL INFO GET
  *------------------------------------------------------------------------------
  */
@@ -154,6 +162,36 @@ void mt7961_show_pse_info(
 
 void mt7961_show_wfdma_info(
 	IN struct ADAPTER *prAdapter);
+
+#if defined(_HIF_SDIO)
+u_int8_t sdio_show_mcu_debug_info(
+	struct ADAPTER *prAdapter,
+	IN uint8_t *pucBuf, IN uint32_t u4Max,
+	IN uint8_t ucFlag, OUT uint32_t *pu4Length);
+#elif defined(_HIF_USB)
+u_int8_t usb_show_mcu_debug_info(
+	struct ADAPTER *prAdapter,
+	IN uint8_t *pucBuf, IN uint32_t u4Max,
+	IN uint8_t ucFlag, OUT uint32_t *pu4Length);
+#elif defined(_HIF_PCIE)
+u_int8_t pcie_show_mcu_debug_info(
+	struct ADAPTER *prAdapter,
+	IN uint8_t *pucBuf, IN uint32_t u4Max,
+	IN uint8_t ucFlag, OUT uint32_t *pu4Length);
+#endif
+
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+#if defined(_HIF_USB)
+void usb_mt7961_dump_subsys_debug_cr(struct ADAPTER *prAdapter);
+void usb_mt7961_dump_conninfra_debug_cr(struct ADAPTER *prAdapter);
+#elif defined(_HIF_PCIE)
+void pcie_mt7961_dump_subsys_debug_cr(struct ADAPTER *prAdapter);
+void pcie_mt7961_dump_conninfra_debug_cr(struct ADAPTER *prAdapter);
+#endif
+u_int8_t mt7961_show_debug_sop_info(struct ADAPTER *prAdapter,
+	uint8_t ucCase);
+#endif
+
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 

@@ -521,6 +521,7 @@ struct CHIP_DBG_OPS mt7668_debug_ops = {
 	.showWtblInfo = NULL,
 	.showHifInfo = NULL,
 	.printHifDbgInfo = NULL,
+	.show_mcu_debug_info = NULL,
 };
 
 /* Litien code refine to support multi chip */

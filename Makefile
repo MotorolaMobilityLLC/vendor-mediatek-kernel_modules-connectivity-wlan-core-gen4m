@@ -219,6 +219,10 @@ CONFIG_SUPPORT_BT_SKU=n
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
 CFG_COALESCING_INTERRUPT=y
 endif
+# For MT7961, only PCIE & USB support
+ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
+CONFIG_SUPPORT_DEBUG_SOP=y
+endif
 endif
 
 ifneq ($(filter 6873, $(WLAN_CHIP_ID)),)
@@ -794,6 +798,12 @@ ifeq ($(CFG_COALESCING_INTERRUPT), y)
     ccflags-y += -DCFG_COALESCING_INTERRUPT=1
 else
     ccflags-y += -DCFG_COALESCING_INTERRUPT=0
+endif
+
+ifeq ($(CONFIG_SUPPORT_DEBUG_SOP), y)
+    ccflags-y += -DCFG_SUPPORT_DEBUG_SOP=1
+else
+    ccflags-y += -DCFG_SUPPORT_DEBUG_SOP=0
 endif
 
 ifeq ($(CFG_SUPPORT_HIDDEN_SW_AP), y)

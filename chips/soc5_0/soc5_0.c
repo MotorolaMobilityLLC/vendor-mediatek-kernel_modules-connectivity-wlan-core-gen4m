@@ -509,6 +509,7 @@ struct CHIP_DBG_OPS soc5_0_DebugOps = {
 #if CFG_SUPPORT_LLS
 	.get_rx_link_stats = soc5_0_get_rx_link_stats,
 #endif
+	.show_mcu_debug_info = NULL,
 };
 
 #if CFG_SUPPORT_QA_TOOL
