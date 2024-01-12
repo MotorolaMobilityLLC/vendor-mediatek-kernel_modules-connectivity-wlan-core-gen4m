@@ -2749,11 +2749,13 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11AX == 1)
 		case ELEM_ID_RESERVED:
+			if (fgEfuseCtrlAxOn == 1) {
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP)
 				heRlmRecHeCapInfo(prAdapter, prStaRec, pucIE);
 			else if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP)
 				heRlmRecHeOperation(prAdapter,
 							prBssInfo, pucIE);
+			}
 			break;
 #endif
 
@@ -3156,10 +3158,12 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 #endif
 #if (CFG_SUPPORT_802_11AX == 1)
 		case ELEM_ID_RESERVED:
+			if (fgEfuseCtrlAxOn == 1) {
 			if (IE_ID_EXT(pucIE) != ELEM_EXT_ID_HE_CAP ||
 			    !RLM_NET_IS_11AX(prBssInfo))
 				break;
 			fgIsHasHeCap = TRUE;
+			}
 			break;
 #endif
 
@@ -3191,6 +3195,7 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 		}
 	}
 #if (CFG_SUPPORT_802_11AX == 1)
+	if (fgEfuseCtrlAxOn == 1) {
 	if (!fgIsHasHeCap) {
 		prStaRec->ucDesiredPhyTypeSet &= ~PHY_TYPE_BIT_HE;
 		if (prBssDesc) {
@@ -3199,6 +3204,7 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 				DBGLOG(RLM, WARN, "Disable HE per assoc.\n");
 			}
 		}
+	}
 	}
 #endif
 }
@@ -3547,9 +3553,11 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 						prAdapter, prBssInfo, prSwRfb,
 						pucIE, u2IELength);
 #if (CFG_SUPPORT_802_11AX == 1)
+					if (fgEfuseCtrlAxOn == 1) {
 					fgNewSRParam = heRlmRecHeSRParams(
 						prAdapter, prBssInfo,
 						prSwRfb, pucIE, u2IELength);
+					}
 #endif
 				} else {
 					fgNewParameter =
@@ -3584,10 +3592,12 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 				fgNewParameter = FALSE;
 			}
 #if (CFG_SUPPORT_802_11AX == 1)
-			if (fgNewSRParam) {
-				nicRlmUpdateSRParams(prAdapter,
-					prBssInfo->ucBssIndex);
-				fgNewSRParam = FALSE;
+			if (fgEfuseCtrlAxOn == 1) {
+				if (fgNewSRParam) {
+					nicRlmUpdateSRParams(prAdapter,
+						prBssInfo->ucBssIndex);
+					fgNewSRParam = FALSE;
+				}
 			}
 #endif
 
@@ -3667,10 +3677,12 @@ void rlmProcessAssocRsp(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 		prBssInfo->fg40mBwAllowed = FALSE;
 
 #if (CFG_SUPPORT_802_11AX == 1)
-	fgNewSRParam = heRlmRecHeSRParams(prAdapter, prBssInfo,
-					prSwRfb, pucIE, u2IELength);
-	/* ASSERT(fgNewSRParam); */
-	nicRlmUpdateSRParams(prAdapter, prBssInfo->ucBssIndex);
+	if (fgEfuseCtrlAxOn == 1) {
+		fgNewSRParam = heRlmRecHeSRParams(prAdapter, prBssInfo,
+						prSwRfb, pucIE, u2IELength);
+		/* ASSERT(fgNewSRParam); */
+		nicRlmUpdateSRParams(prAdapter, prBssInfo->ucBssIndex);
+	}
 #endif
 
 	/* Note: Update its capabilities to WTBL by cnmStaRecChangeState(),
@@ -4347,28 +4359,30 @@ static void rlmBssReset(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 	prBssInfo->fgIsOpChangeTxNss = FALSE;
 
 #if (CFG_SUPPORT_802_11AX == 1)
-	/* MU EDCA params */
-	prBssInfo->ucMUEdcaUpdateCnt = 0;
-	kalMemSet(&prBssInfo->arMUEdcaParams[0], 0,
+	if (fgEfuseCtrlAxOn == 1) {
+		/* MU EDCA params */
+		prBssInfo->ucMUEdcaUpdateCnt = 0;
+		kalMemSet(&prBssInfo->arMUEdcaParams[0], 0,
 		sizeof(struct _CMD_MU_EDCA_PARAMS_T) * WMM_AC_INDEX_NUM);
 
-	/* Spatial Reuse params */
-	prBssInfo->ucSRControl = 0;
-	prBssInfo->ucNonSRGObssPdMaxOffset = 0;
-	prBssInfo->ucSRGObssPdMinOffset = 0;
-	prBssInfo->ucSRGObssPdMaxOffset = 0;
-	prBssInfo->u8SRGBSSColorBitmap = 0;
-	prBssInfo->u8SRGPartialBSSIDBitmap = 0;
+		/* Spatial Reuse params */
+		prBssInfo->ucSRControl = 0;
+		prBssInfo->ucNonSRGObssPdMaxOffset = 0;
+		prBssInfo->ucSRGObssPdMinOffset = 0;
+		prBssInfo->ucSRGObssPdMaxOffset = 0;
+		prBssInfo->u8SRGBSSColorBitmap = 0;
+		prBssInfo->u8SRGPartialBSSIDBitmap = 0;
 
-	/* HE Operation */
-	memset(prBssInfo->ucHeOpParams, 0, HE_OP_BYTE_NUM);
-	/* set TXOP to 0x3FF (Spec. define default value) */
-	prBssInfo->ucHeOpParams[0]
-		|= HE_OP_PARAM0_TXOP_DUR_RTS_THRESHOLD_DEFAULT;
-	prBssInfo->ucHeOpParams[1]
-		|= HE_OP_PARAM1_TXOP_DUR_RTS_THRESHOLD_DEFAULT;
-	prBssInfo->ucBssColorInfo = 0;
-	prBssInfo->u2HeBasicMcsSet = 0;
+		/* HE Operation */
+		memset(prBssInfo->ucHeOpParams, 0, HE_OP_BYTE_NUM);
+		/* set TXOP to 0x3FF (Spec. define default value) */
+		prBssInfo->ucHeOpParams[0]
+			|= HE_OP_PARAM0_TXOP_DUR_RTS_THRESHOLD_DEFAULT;
+		prBssInfo->ucHeOpParams[1]
+			|= HE_OP_PARAM1_TXOP_DUR_RTS_THRESHOLD_DEFAULT;
+		prBssInfo->ucBssColorInfo = 0;
+		prBssInfo->u2HeBasicMcsSet = 0;
+	}
 #endif
 
 #ifdef CFG_DFS_CHSW_FORCE_BW20

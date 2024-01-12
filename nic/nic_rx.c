@@ -1711,6 +1711,7 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 		STATS_RX_PKT_INFO_DISPLAY(prSwRfb);
 
 #if (CFG_SUPPORT_802_11AX == 1)
+		if (fgEfuseCtrlAxOn == 1) {
 		if (prAdapter->fgEnShowHETrigger) {
 			uint16_t u2TxFrameCtrl;
 
@@ -1728,6 +1729,7 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 				nicRxReturnRFB(prAdapter, prSwRfb);
 				return;
 			}
+		}
 		}
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 
@@ -3223,17 +3225,19 @@ void nicRxProcessMgmtPacket(IN struct ADAPTER *prAdapter,
 				 MASK_FRAME_TYPE);
 
 #if (CFG_SUPPORT_802_11AX == 1)
-	if (RXM_IS_TRIGGER_FRAME(u2TxFrameCtrl)) {
-		if (prAdapter->fgEnShowHETrigger) {
-			DBGLOG(NIC, STATE,
-					"HE Trigger --------------\n");
-			dumpMemory8((uint8_t *)prSwRfb->prRxStatus,
-				prSwRfb->u2RxByteCount);
-			DBGLOG(NIC, STATE,
-					"HE Trigger end --------------\n");
+	if (fgEfuseCtrlAxOn == 1) {
+		if (RXM_IS_TRIGGER_FRAME(u2TxFrameCtrl)) {
+			if (prAdapter->fgEnShowHETrigger) {
+				DBGLOG(NIC, STATE,
+						"HE Trigger --------------\n");
+				dumpMemory8((uint8_t *)prSwRfb->prRxStatus,
+					prSwRfb->u2RxByteCount);
+				DBGLOG(NIC, STATE,
+						"HE Trigger end --------------\n");
+			}
+			nicRxReturnRFB(prAdapter, prSwRfb);
+			return;
 		}
-		nicRxReturnRFB(prAdapter, prSwRfb);
-		return;
 	}
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 

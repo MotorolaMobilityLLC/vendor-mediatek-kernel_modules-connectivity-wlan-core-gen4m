@@ -2877,8 +2877,10 @@ uint32_t gmGetDequeueQuota(
 		}
 	}
 #if (CFG_SUPPORT_802_11AX == 1)
-	else if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_HE)
+	else if (fgEfuseCtrlAxOn == 1) {
+		if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_HE)
 		;/* TBD */
+	}
 #endif
 
 	u4Quota = u4TotalQuota * u4Weight / 100;
@@ -5116,8 +5118,10 @@ void mqmProcessAssocRsp(IN struct ADAPTER *prAdapter,
 			mqmParseEdcaParameters(prAdapter, prSwRfb, pucIEStart,
 				u2IELength, TRUE);
 #if (CFG_SUPPORT_802_11AX == 1)
-			mqmParseMUEdcaParams(prAdapter, prSwRfb, pucIEStart,
-				u2IELength, TRUE);
+			if (fgEfuseCtrlAxOn == 1) {
+			mqmParseMUEdcaParams(prAdapter, prSwRfb,
+				pucIEStart, u2IELength, TRUE);
+			}
 #endif
 
 #if ARP_MONITER_ENABLE
@@ -5130,10 +5134,12 @@ void mqmProcessAssocRsp(IN struct ADAPTER *prAdapter,
 		if (prStaRec->fgIsWmmSupported)
 			nicQmUpdateWmmParms(prAdapter, prStaRec->ucBssIndex);
 #if (CFG_SUPPORT_802_11AX == 1)
+		if (fgEfuseCtrlAxOn == 1) {
 		if (prStaRec->fgIsMuEdcaSupported ||
 			prAdapter->fgMuEdcaOverride) {
 			nicQmUpdateMUEdcaParams(prAdapter,
 				prStaRec->ucBssIndex);
+		}
 		}
 #endif
 
@@ -5187,9 +5193,11 @@ void mqmProcessBcn(IN struct ADAPTER *prAdapter,
 							prSwRfb, pucIE,
 							u2IELength, FALSE);
 #if (CFG_SUPPORT_802_11AX == 1)
+					if (fgEfuseCtrlAxOn == 1) {
 					fgNewMUEdca = mqmParseMUEdcaParams(
 						prAdapter, prSwRfb, pucIE,
 						u2IELength, FALSE);
+					}
 #endif
 				}
 			}
@@ -5200,10 +5208,12 @@ void mqmProcessBcn(IN struct ADAPTER *prAdapter,
 					prBssInfo->ucBssIndex);
 				fgNewParameter = FALSE;
 #if (CFG_SUPPORT_802_11AX == 1)
-			if (fgNewMUEdca) {
-				nicQmUpdateMUEdcaParams(prAdapter,
-					prBssInfo->ucBssIndex);
-				fgNewMUEdca = FALSE;
+			if (fgEfuseCtrlAxOn == 1) {
+				if (fgNewMUEdca) {
+					nicQmUpdateMUEdcaParams(prAdapter,
+						prBssInfo->ucBssIndex);
+					fgNewMUEdca = FALSE;
+				}
 			}
 #endif
 			}
@@ -5721,8 +5731,10 @@ void mqmProcessScanResult(IN struct ADAPTER *prAdapter,
 		prStaRec->fgIsQoS = TRUE;
 
 #if (CFG_SUPPORT_802_11AX == 1)
-	if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AX)
-		prStaRec->fgIsQoS = TRUE;
+	if (fgEfuseCtrlAxOn == 1) {
+		if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AX)
+			prStaRec->fgIsQoS = TRUE;
+	}
 #endif
 
 }

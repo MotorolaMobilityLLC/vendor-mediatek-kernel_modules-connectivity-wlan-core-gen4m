@@ -158,6 +158,8 @@ uint32_t heRlmReqGetHeCapIELen(
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	uint32_t u4OverallLen = OFFSET_OF(struct _IE_HE_CAP_T, aucVarInfo[0]);
 
+	if (fgEfuseCtrlAxOn == 1) {
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
 
@@ -172,6 +174,10 @@ uint32_t heRlmReqGetHeCapIELen(
 #if (CFG_RX_PPE_THRESHOLD == 1)
 	u4OverallLen += sizeof(struct _PPE_THRESHOLD_FIELD);
 #endif
+	} else {
+		u4OverallLen = 0;
+	}
+
 	return u4OverallLen;
 }
 
@@ -453,6 +459,8 @@ void heRlmReqGenerateHeCapIE(
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
 
+	if (fgEfuseCtrlAxOn == 1) {
+
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
 
@@ -465,6 +473,7 @@ void heRlmReqGenerateHeCapIE(
 	if ((prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11AX)
 	    && (!prStaRec || (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AX)))
 		heRlmFillHeCapIE(prAdapter, prBssInfo, prMsduInfo);
+	}
 }
 
 static uint16_t heRlmGetHeMcsMap(uint8_t *pSrc)
