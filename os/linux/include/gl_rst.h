@@ -306,6 +306,8 @@ void glResetUninit(void);
 
 void glSendResetRequest(void);
 
+void glResetWholeChipResetTrigger(char *pcReason);
+
 u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 			uint32_t u4RstFlag, const uint8_t *pucFile,
 			uint32_t u4Line);
