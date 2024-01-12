@@ -1377,6 +1377,13 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 			continue;
 		}
 
+		if (prSwRfb->ucPacketType == RX_PKT_TYPE_RX_REPORT) {
+			nicRxProcessRxReport(prAdapter, prSwRfb);
+			nicRxReturnRFB(prAdapter, prSwRfb);
+
+			continue;
+		}
+
 		GLUE_RX_SET_PKT_INT_TIME(prSwRfb->pvPacket,
 					 prAdapter->prGlueInfo->u8HifIntTime);
 		GLUE_RX_SET_PKT_RX_TIME(prSwRfb->pvPacket, sched_clock());

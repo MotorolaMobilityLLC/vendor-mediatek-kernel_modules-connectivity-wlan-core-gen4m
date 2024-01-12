@@ -3672,6 +3672,137 @@ void nicRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 	nicRxReturnRFB(prAdapter, prSwRfb);
 }
 
+void nicRxProcessRxReport(IN struct ADAPTER *prAdapter,
+	IN OUT struct SW_RFB *prSwRfb)
+{
+	struct HW_MAC_RX_REPORT *prRxRpt;
+	uint32_t *prRxv = NULL;
+	uint32_t u4RxvOfst, u4Idx;
+	uint16_t u2RxByteCntHw, u2RxByteCntSw, u2PRXVCnt;
+	uint8_t ucDataType;
+	struct SW_RX_RPT_BLK_RXV *prRxRptBlkRxv = NULL;
+
+	ASSERT(prAdapter);
+	ASSERT(prAdapter->prGlueInfo);
+
+	prRxRpt = (struct HW_MAC_RX_REPORT *)prSwRfb->pucRecvBuff;
+	u2RxByteCntHw = RX_RPT_GET_RX_BYTE_COUNT(prRxRpt);
+	u2RxByteCntSw = RX_RPT_HDR_LEN + RX_RPT_USER_INFO_LEN;
+	u2PRXVCnt = RX_RPT_GET_RXV_PRXV_BYTE_COUNT(prRxRpt);
+	u4RxvOfst = (RX_RPT_HDR_LEN + RX_RPT_USER_INFO_LEN
+		+ RX_RPT_BLK_HDR_LEN) << 2;
+
+	/* Sanity check */
+	if (RX_RPT_GET_RXV_BLK_EXIST(prRxRpt))
+		u2RxByteCntSw += RX_RPT_BLK_HDR_LEN;
+	if (RX_RPT_GET_RXV_TYPE_CRXV1_VLD(prRxRpt))
+		u2RxByteCntSw += RX_RPT_BLK_CRXV1_LEN;
+	if (RX_RPT_GET_RXV_TYPE_PRXV1_VLD(prRxRpt))
+		u2RxByteCntSw += RX_RPT_BLK_PRXV1_LEN;
+	if (RX_RPT_GET_RXV_TYPE_PRXV2_VLD(prRxRpt))
+		u2RxByteCntSw += RX_RPT_BLK_PRXV2_LEN;
+	if (RX_RPT_GET_RXV_TYPE_CRXV2_VLD(prRxRpt))
+		u2RxByteCntSw += RX_RPT_BLK_CRXV2_LEN;
+
+	if (u2RxByteCntHw != (u2RxByteCntSw << 2)) {
+		DBGLOG(RX, ERROR, "Expect %d bytes but real %d bytes !!\n",
+			(u2RxByteCntSw << 2), u2RxByteCntHw);
+		return;
+	}
+
+	prSwRfb->ucStaRecIdx = secGetStaIdxByWlanIdx(prAdapter,
+		(uint8_t) RX_RPT_GET_WLAN_ID(prRxRpt));
+
+	if (prSwRfb->ucStaRecIdx >= CFG_STA_REC_NUM)
+		return;
+
+	/* Only check data frame */
+	ucDataType = (uint8_t) RX_RPT_GET_FRAME_TYPE(prRxRpt);
+	if (!RX_RPT_IS_DATA_FRAME(ucDataType))
+		return;
+
+	prRxRptBlkRxv = (struct SW_RX_RPT_BLK_RXV *)kalMemAlloc(
+			sizeof(struct SW_RX_RPT_BLK_RXV), VIR_MEM_TYPE);
+	if (!prRxRptBlkRxv) {
+		DBGLOG(RX, ERROR, "Allocate prRxRptBlkRxv failed!\n");
+		return;
+	}
+
+	if (RX_RPT_GET_RXV_BLK_EXIST(prRxRpt)) {
+		if (RX_RPT_GET_RXV_TYPE_CRXV1_VLD(prRxRpt)) {
+			prRxv = (uint32_t *)((uint8_t *)prRxRpt + u4RxvOfst);
+			for (u4Idx = 0; u4Idx < RX_RPT_BLK_CRXV1_LEN; u4Idx++) {
+				prRxRptBlkRxv->u4CRxv1[u4Idx] =
+					*(prRxv + u4Idx);
+			}
+
+			u4RxvOfst += (RX_RPT_BLK_CRXV1_LEN << 2);
+		}
+		if (RX_RPT_GET_RXV_TYPE_PRXV1_VLD(prRxRpt)) {
+			prRxv = (uint32_t *)((uint8_t *)prRxRpt + u4RxvOfst);
+			for (u4Idx = 0; u4Idx < RX_RPT_BLK_PRXV1_LEN; u4Idx++)
+				prRxRptBlkRxv->u4PRxv1[u4Idx] =
+					*(prRxv + u4Idx);
+
+			u4RxvOfst += (RX_RPT_BLK_PRXV1_LEN << 2);
+		}
+		if (RX_RPT_GET_RXV_TYPE_PRXV2_VLD(prRxRpt)) {
+			prRxv = (uint32_t *)((uint8_t *)prRxRpt + u4RxvOfst);
+			for (u4Idx = 0; u4Idx < RX_RPT_BLK_PRXV2_LEN; u4Idx++)
+				prRxRptBlkRxv->u4PRxv2[u4Idx] =
+					*(prRxv + u4Idx);
+
+			u4RxvOfst += (RX_RPT_BLK_PRXV2_LEN << 2);
+		}
+		if (RX_RPT_GET_RXV_TYPE_CRXV2_VLD(prRxRpt)) {
+			prRxv = (uint32_t *)((uint8_t *)prRxRpt + u4RxvOfst);
+			for (u4Idx = 0; u4Idx < RX_RPT_BLK_CRXV2_LEN; u4Idx++)
+				prRxRptBlkRxv->u4CRxv2[u4Idx] =
+					*(prRxv + u4Idx);
+
+			u4RxvOfst += (RX_RPT_BLK_CRXV2_LEN << 2);
+		}
+	}
+
+	/* P-B-0[0:31] */
+	if (RX_RPT_GET_RXV_TYPE_PRXV1_VLD(prRxRpt))
+		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxVector0 =
+			prRxRptBlkRxv->u4PRxv1[0];
+	else
+		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxVector0 = 0;
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	if (RX_RPT_GET_RXV_TYPE_CRXV1_VLD(prRxRpt)) {
+		/* C-B-0[0:31] */
+		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxVector1 =
+			prRxRptBlkRxv->u4CRxv1[0];
+		/* C-B-1[0:31] */
+		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxVector2 =
+			prRxRptBlkRxv->u4CRxv1[2];
+		/* C-B-3[0:31] */
+		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxVector3 =
+			prRxRptBlkRxv->u4CRxv1[4];
+		/* C-B-3[0:31] */
+		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxVector4 =
+			prRxRptBlkRxv->u4CRxv1[6];
+	} else {
+		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxVector1 =
+			0;
+		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxVector2 =
+			0;
+		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxVector3 =
+			0;
+		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxVector4 =
+			0;
+		DBGLOG(RX, WARN, "RX_RPT C-RXV1 not valid!\n");
+	}
+#endif
+
+	if (prRxRptBlkRxv)
+		kalMemFree(prRxRptBlkRxv, VIR_MEM_TYPE,
+			sizeof(struct SW_RX_RPT_BLK_RXV));
+}
+
 #if CFG_SUPPORT_WAKEUP_REASON_DEBUG
 static void nicRxCheckWakeupReason(struct ADAPTER *prAdapter,
 				   struct SW_RFB *prSwRfb)
@@ -3802,6 +3933,11 @@ static void nicRxProcessPacketType(
 	case RX_PKT_TYPE_MSDU_REPORT:
 		nicRxProcessMsduReport(prAdapter,
 			prSwRfb);
+		break;
+
+	case RX_PKT_TYPE_RX_REPORT:
+		nicRxProcessRxReport(prAdapter, prSwRfb);
+		nicRxReturnRFB(prAdapter, prSwRfb);
 		break;
 
 	/* case HIF_RX_PKT_TYPE_TX_LOOPBACK: */
