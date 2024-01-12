@@ -1199,6 +1199,12 @@ struct WIFI_VAR {
 	u_int8_t fgLinkStatsDump;
 #endif /* CFG_SUPPORT_LLS */
 
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+	uint8_t ucAbnWakeupDetectEn;
+	uint8_t ucAbnWakeupPktThld;
+	uint8_t ucAbnWakeupDetectIntv;
+#endif
+
 #if (CFG_SUPPORT_APF == 1)
 	uint8_t ucApfEnable;
 #endif
@@ -2100,6 +2106,10 @@ struct ADAPTER {
 
 #if CFG_MSCS_SUPPORT
 	struct MSCS_CAP_FAST_PATH rFastPathCap;
+#endif
+#if CFG_SUPPORT_PKT_OFLD
+	struct ABNORMAL_WAKEUP_STATISTIC rAbnormalWakeupStat;
+	u_int8_t ucRxDataMode;
 #endif
 };				/* end of _ADAPTER_T */
 

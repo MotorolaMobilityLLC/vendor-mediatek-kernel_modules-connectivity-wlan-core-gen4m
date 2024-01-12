@@ -5631,6 +5631,70 @@ void nicUpdateWakeupStatistics(IN struct ADAPTER *prAdapter,
 }
 #endif /* fos_change end */
 
+#if CFG_SUPPORT_PKT_OFLD
+
+void nicRXDataModeConfig(struct ADAPTER *prAdapter)
+{
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
+	uint8_t cmd[30] = {0};
+	uint8_t strLen = 0;
+	uint32_t strOutLen = 0;
+
+	strLen = kalSnprintf(cmd, sizeof(cmd),
+			"PktOfldRxDataMode %d",
+			prAdapter->ucRxDataMode);
+	DBGLOG(RX, INFO, "Notify FW %s, strlen=%d", cmd, strLen);
+
+	rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_ASCII;
+	rChipConfigInfo.u2MsgSize = strLen;
+	kalStrnCpy(rChipConfigInfo.aucCmd, cmd, strLen);
+	wlanSetChipConfig(prAdapter, &rChipConfigInfo,
+			sizeof(rChipConfigInfo), &strOutLen, FALSE);
+
+}
+
+void nicAbnormalWakeupHandler(IN struct ADAPTER *prAdapter)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	OS_SYSTIME rCurrent = 0;
+
+	GET_CURRENT_SYSTIME(&rCurrent);
+
+	if (!prWifiVar->ucAbnWakeupDetectEn) {
+		DBGLOG(RX, INFO, "Abnormal wakeup monitor not enabled");
+		return;
+	}
+
+	if (prAdapter->ucRxDataMode == RX_DATA_MODE_SUSPEND_TO_FW)
+		return;
+
+	if (prAdapter->rAbnormalWakeupStat.u2Count == 0) {
+		GET_CURRENT_SYSTIME(&prAdapter->rAbnormalWakeupStat.rStartTime);
+		prAdapter->ucRxDataMode = RX_DATA_MODE_TO_HOST;
+	}
+
+	prAdapter->rAbnormalWakeupStat.u2Count++;
+
+	if (prAdapter->rAbnormalWakeupStat.u2Count ==
+			prWifiVar->ucAbnWakeupPktThld) {
+		if (!CHECK_FOR_TIMEOUT(rCurrent,
+				prAdapter->rAbnormalWakeupStat.rStartTime,
+			SEC_TO_SYSTIME(prWifiVar->ucAbnWakeupPktThld))) {
+			prAdapter->ucRxDataMode = RX_DATA_MODE_SUSPEND_TO_FW;
+			nicRXDataModeConfig(prAdapter);
+		} else {
+			prAdapter->rAbnormalWakeupStat.u2Count = 0;
+		}
+	}
+
+}
+
+void nicAbnormalWakeupMonReset(IN struct ADAPTER *prAdapter)
+{
+	prAdapter->ucRxDataMode == RX_DATA_MODE_TO_HOST;
+	prAdapter->rAbnormalWakeupStat.u2Count = 0;
+}
+#endif
 
 void nicRxdChNumTranslate(
 	IN enum ENUM_BAND eBand, IN uint8_t *pucHwChannelNum)
