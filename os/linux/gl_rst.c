@@ -1988,7 +1988,8 @@ void glResetWholeChipResetTrigger(char *pcReason)
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	prAdapter = prGlueInfo->prAdapter;
-	prDebugOps = prAdapter->chip_info->prDebugOps;
+	if (prAdapter != NULL && prAdapter->chip_info != NULL)
+		prDebugOps = prAdapter->chip_info->prDebugOps;
 
 	if (prDebugOps && prDebugOps->checkDumpViaBt)
 		dumpViaBt = prDebugOps->checkDumpViaBt();
