@@ -197,6 +197,9 @@ uint8_t wmmCalculateUapsdSetting(struct ADAPTER *prAdapter,
 uint32_t wmmDumpActiveTspecs(struct ADAPTER *prAdapter, uint8_t *pucBuffer,
 	uint16_t u2BufferLenu, uint8_t ucBssIndex);
 #if CFG_SUPPORT_SOFT_ACM
+u_int8_t wmmAcmCanTx(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo, struct STA_RECORD *prStaRec,
+	uint8_t ucAc, uint16_t u2PktLen);
 u_int8_t wmmAcmCanDequeue(struct ADAPTER *prAdapter, uint8_t ucAc,
 	uint32_t u4PktTxTime, uint8_t ucBssIndex);
 void wmmAcmTxStatistic(struct ADAPTER *prAdapter, uint8_t ucAc,
