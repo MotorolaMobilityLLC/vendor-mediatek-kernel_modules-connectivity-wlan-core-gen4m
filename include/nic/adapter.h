@@ -1132,7 +1132,9 @@ struct WIFI_VAR {
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 	uint8_t ucP2pGoACS;
 #endif
-
+#if ARP_MONITER_ENABLE
+	uint32_t u4ArpMoniterThreshold;
+#endif
 	uint8_t fgReuseRSNIE;
 
 	uint32_t u4DiscoverTimeout;
