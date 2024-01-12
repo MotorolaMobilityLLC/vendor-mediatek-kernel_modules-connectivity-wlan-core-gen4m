@@ -699,8 +699,11 @@ void halUninitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 
 uint32_t halGetMsduTokenFreeCnt(IN struct ADAPTER *prAdapter)
 {
+	struct PERF_MONITOR_T *prPerMonitor;
 	struct MSDU_TOKEN_INFO *prTokenInfo =
 		&prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
+	prPerMonitor = &prAdapter->rPerMonitor;
+	prPerMonitor->u4UsedCnt = prTokenInfo->i4UsedCnt;
 
 	return (HIF_TX_MSDU_TOKEN_NUM - prTokenInfo->i4UsedCnt);
 }

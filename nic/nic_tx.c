@@ -4070,10 +4070,17 @@ nicTxDummyTxDone(IN struct ADAPTER *prAdapter,
 		 IN struct MSDU_INFO *prMsduInfo,
 		 IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
-	DBGLOG(TX, TRACE,
-	       "Msdu WIDX:PID[%u:%u] SEQ[%u] Tx Status[%u]\n",
-	       prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
-	       prMsduInfo->ucTxSeqNum, rTxDoneStatus);
+	struct PERF_MONITOR_T *prPerMonitor = &prAdapter->rPerMonitor;
+
+	if (rTxDoneStatus == 0) {
+		prPerMonitor->ulTotalTxSuccessCount++;
+	} else {
+		DBGLOG(TX, INFO,
+			"Msdu WIDX:PID[%u:%u] SEQ[%u] Tx Status[%u]\n",
+			prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
+			prMsduInfo->ucTxSeqNum, rTxDoneStatus);
+		prPerMonitor->ulTotalTxFailCount++;
+	}
 
 	return WLAN_STATUS_SUCCESS;
 }
