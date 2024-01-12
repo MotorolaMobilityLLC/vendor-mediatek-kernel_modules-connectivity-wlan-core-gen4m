@@ -2929,7 +2929,7 @@
  * 1 : Primary Channel (config in rlm_txpwr_data_emi_pri.h)
  *------------------------------------------------------------------------------
  */
-#define COUNTRY_CHANNEL_TXPOWER_LIMIT_CHANNEL_DEFINE 0
+#define COUNTRY_CHANNEL_TXPOWER_LIMIT_CHANNEL_DEFINE 1
 
 /*------------------------------------------------------------------------------
  * Flags of using wmt driver to wifi on with test mode
