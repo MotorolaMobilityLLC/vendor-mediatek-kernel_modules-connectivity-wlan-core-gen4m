@@ -348,7 +348,7 @@ static void heRlmFillHeCapIE(
 	struct _HE_SUPPORTED_MCS_FIELD *prHeSupportedMcsSet;
 	uint32_t u4OverallLen = OFFSET_OF(struct _IE_HE_CAP_T, aucVarInfo[0]);
 	uint16_t ucMaxBw;
-	boolean fgBfEn = TRUE;
+	u_int8_t fgBfEn = TRUE;
 
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #if (CFG_RX_PPE_THRESHOLD == 1)

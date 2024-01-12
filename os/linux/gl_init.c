@@ -2383,9 +2383,7 @@ static void wlanCreateWirelessDevice(void)
 				    BIT(NL80211_IFTYPE_STATION);
 	prWiphy->software_iftypes |= BIT(NL80211_IFTYPE_P2P_DEVICE);
 	prWiphy->flags |= WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL;
-#if CFG_SUPPORT_WPA3
 	prWiphy->flags |= WIPHY_FLAG_HAVE_AP_SME;
-#endif
 	prWiphy->ap_sme_capa = 1;
 #endif
 
