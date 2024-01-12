@@ -85,12 +85,19 @@
 					   NIC_TX_DESC_AND_PADDING_LENGTH)
 #define AXI_TX_CMD_BUFF_SIZE              4096
 
+#define MCU_EMI_SIZE 2 * 64 * 1024
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
 
 struct GL_HIF_INFO;
+
+struct HIF_MEM {
+	phys_addr_t pa;
+	void *va;
+};
 
 struct HIF_MEM_OPS {
 	void (*allocTxDesc)(struct GL_HIF_INFO *prHifInfo,
@@ -140,6 +147,8 @@ struct HIF_MEM_OPS {
 	void (*dumpRx)(struct GL_HIF_INFO *prHifInfo,
 		       struct RTMP_RX_RING *prRxRing,
 		       uint32_t u4Idx, uint32_t u4DumpLen);
+	void (*allocMcuEmiMem)(struct GL_HIF_INFO *prHifInfo);
+	void (*freeMcuEmiMem)(struct GL_HIF_INFO *prHifInfo);
 };
 
 enum pcie_suspend_state {
@@ -157,6 +166,7 @@ struct GL_HIF_INFO {
 	struct pci_dev *pdev;
 	struct pci_dev *prDmaDev;
 	struct HIF_MEM_OPS rMemOps;
+	struct HIF_MEM rMcuEmiMem;
 
 	uint32_t u4IrqId;
 	int32_t u4HifCnt;
@@ -321,13 +331,9 @@ struct BUS_INFO {
 		bool fgAllocMem);
 	void (*setPdmaIntMask)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
 	void (*enableFwDlMode)(struct ADAPTER *prAdapter);
+	void (*setupMcuEmiAddr)(struct ADAPTER *prAdapter);
 
 	struct SW_WFDMA_INFO rSwWfdmaInfo;
-};
-
-struct HIF_MEM {
-	phys_addr_t pa;
-	void *va;
 };
 
 struct HIF_PREALLOC_MEM {

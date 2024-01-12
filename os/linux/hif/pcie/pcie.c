@@ -336,6 +336,8 @@ static void pcieDumpTx(struct GL_HIF_INFO *prHifInfo,
 static void pcieDumpRx(struct GL_HIF_INFO *prHifInfo,
 		       struct RTMP_RX_RING *prRxRing,
 		       uint32_t u4Idx, uint32_t u4DumpLen);
+static void pcieAllocMcuEmiMem(struct GL_HIF_INFO *prHifInfo);
+static void pcieFreeMcuEmiMem(struct GL_HIF_INFO *prHifInfo);
 
 static void halPciePreSuspendCmd(struct ADAPTER *prAdapter);
 static void halPcieResumeCmd(struct ADAPTER *prAdapter);
@@ -1050,6 +1052,10 @@ static void glPopulateMemOps(struct HIF_MEM_OPS *prMemOps)
 	prMemOps->dumpTx = pcieDumpTx;
 	prMemOps->dumpRx = pcieDumpRx;
 #endif
+#ifdef MT6639
+	prMemOps->allocMcuEmiMem= pcieAllocMcuEmiMem;
+	prMemOps->freeMcuEmiMem = pcieFreeMcuEmiMem;
+#endif
 
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
 	if (g_prPlatDev) {
@@ -1525,6 +1531,28 @@ static void pcieDumpRx(struct GL_HIF_INFO *prHifInfo,
 
 	prDmaBuf->AllocPa = pcieMapRxBuf(prHifInfo, prDmaBuf->AllocVa,
 					0, prDmaBuf->AllocSize);
+}
+
+static void pcieAllocMcuEmiMem(struct GL_HIF_INFO *prHifInfo)
+{
+	struct HIF_MEM *prEmiMem = &prHifInfo->rMcuEmiMem;
+	dma_addr_t rAddr;
+
+	prEmiMem->va = KAL_DMA_ALLOC_COHERENT(
+		prHifInfo->prDmaDev, MCU_EMI_SIZE, &rAddr);
+	prEmiMem->pa = (phys_addr_t)rAddr;
+
+	DBGLOG(HAL, INFO, "McuEmiMemAddr = 0x%x\n", (uint64_t)prEmiMem->pa);
+}
+
+static void pcieFreeMcuEmiMem(struct GL_HIF_INFO *prHifInfo)
+{
+	struct HIF_MEM *prEmiMem = &prHifInfo->rMcuEmiMem;
+
+	KAL_DMA_FREE_COHERENT(prHifInfo->prDmaDev,
+			      MCU_EMI_SIZE,
+			      prEmiMem->va,
+			      (dma_addr_t)prEmiMem->pa);
 }
 
 #if CFG_CHIP_RESET_SUPPORT

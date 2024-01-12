@@ -1022,11 +1022,13 @@ void halReturnTimeoutMsduToken(struct ADAPTER *prAdapter)
 bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct HIF_MEM_OPS *prMemOps = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prMemOps = &prHifInfo->rMemOps;
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
@@ -1072,8 +1074,16 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 
 	prHifInfo->fgIsPowerOff = false;
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	if (prMemOps->allocMcuEmiMem) {
+		prMemOps->allocMcuEmiMem(prHifInfo);
+		if (prBusInfo->setupMcuEmiAddr)
+			prBusInfo->setupMcuEmiAddr(prAdapter);
+	}
+
 	if (prSwWfdmaInfo->rOps.init)
 		prSwWfdmaInfo->rOps.init(prAdapter->prGlueInfo);
+#endif
 
 	return true;
 }
@@ -1084,11 +1094,13 @@ void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct HIF_MEM_OPS *prMemOps = NULL;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
 	struct list_head *prCur, *prNext;
 	struct TX_CMD_REQ *prTxCmdReq;
 	struct TX_DATA_REQ *prTxDataReq;
 
+	prMemOps = &prHifInfo->rMemOps;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
@@ -1109,6 +1121,9 @@ void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
 		list_del(prCur);
 		prHifInfo->u4TxDataQLen--;
 	}
+
+	if (prMemOps->freeMcuEmiMem)
+		prMemOps->freeMcuEmiMem(prHifInfo);
 
 	if (prSwWfdmaInfo->rOps.uninit)
 		prSwWfdmaInfo->rOps.uninit(prGlueInfo);
