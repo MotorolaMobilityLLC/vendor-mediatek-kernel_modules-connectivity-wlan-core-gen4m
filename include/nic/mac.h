@@ -2254,6 +2254,10 @@ enum BEACON_REPORT_DETAIL {
 #define ML_STA_CTRL_NSTR_BMP_SIZE			BIT(9)
 #define ML_STA_CTRL_NSTR_BMP_SIZE_SHIFT			9
 
+/* Figure 9-1002n - Presence Bitmap field of the Probe Request ML element */
+#define MLD_ID_PRESENT					BIT(0)
+
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

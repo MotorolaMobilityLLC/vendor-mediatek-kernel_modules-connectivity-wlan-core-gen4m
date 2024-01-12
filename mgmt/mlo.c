@@ -428,6 +428,34 @@ struct IE_MULTI_LINK_CONTROL *beGenerateMldCommonInfo(
 	return common;
 }
 
+void beGenerateMlProbeReqIE(uint8_t *pucIE,
+	uint32_t *u4IELength, uint8_t ucMldId)
+{
+	struct IE_MULTI_LINK_CONTROL *common;
+
+	common = (struct IE_MULTI_LINK_CONTROL *)pucIE;
+
+	common->ucId = ELEM_ID_RESERVED;
+	common->ucExtId = ELEM_EXT_ID_MLD;
+
+	/* EID 1byte + ML Ctrl 2byte + CommonInfo 2byte */
+	common->ucLength = 5;
+
+	/* filling control field */
+	BE_SET_ML_CTRL_TYPE(common->u2Ctrl, ML_ELEMENT_TYPE_PROBE_REQ);
+	BE_SET_ML_CTRL_PRESENCE(common->u2Ctrl, MLD_ID_PRESENT);
+
+	/* Common Info Length = 2 */
+	*common->aucCommonInfo = 2;
+	/* Assign MLD ID*/
+	*(common->aucCommonInfo + 1) = ucMldId;
+
+	*u4IELength += common->ucLength;
+	DBGLOG(ML, INFO, "111 Dump ML probe IE\n");
+	DBGLOG_MEM8(ML, INFO, common, IE_SIZE(common));
+}
+
+
 uint8_t beDupSkipIE(uint8_t *pucBuf)
 {
 	if (IE_ID(pucBuf) == ELEM_ID_RNR ||
