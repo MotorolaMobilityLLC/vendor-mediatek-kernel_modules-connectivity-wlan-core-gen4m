@@ -281,6 +281,10 @@ static const struct ACTION_FRAME_SIZE_MAP arActionFrameReservedLen[] = {
 
 static void updateLinkStatsMpduAc(struct ADAPTER *prAdapter,
 		struct SW_RFB *prSwRfb);
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+static void nicRxReturnUnUseRFB(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -315,18 +319,22 @@ void nicRxInitialize(struct ADAPTER *prAdapter)
 	QUEUE_INITIALIZE(&prRxCtrl->rFreeSwRfbList);
 	QUEUE_INITIALIZE(&prRxCtrl->rReceivedRfbList);
 	QUEUE_INITIALIZE(&prRxCtrl->rIndicatedRfbList);
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+	QUEUE_INITIALIZE(&prRxCtrl->rUnUseRfbList);
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 
 	pucMemHandle = prRxCtrl->pucRxCached;
 #if CFG_SUPPORT_DYNAMIC_PAGE_POOL
-	kalSetPagePoolPageNum(CFG_RX_MAX_PKT_NUM);
-#endif
+	kalSetPagePoolPageNum(CFG_RX_MAX_PKT_NUM - nicRxGetUnUseCnt(prAdapter));
+#endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 	for (i = CFG_RX_MAX_PKT_NUM; i != 0; i--) {
 		prSwRfb = (struct SW_RFB *) pucMemHandle;
 #if CFG_RFB_TRACK
 		RX_RFB_TRACK_INIT(prAdapter, prSwRfb, (i-1));
 #endif /* CFG_RFB_TRACK */
-
-		if (nicRxSetupRFB(prAdapter, prSwRfb)) {
+		if ((RX_GET_UNUSE_RFB_CNT(prRxCtrl) ==
+		     nicRxGetUnUseCnt(prAdapter))
+			&& nicRxSetupRFB(prAdapter, prSwRfb)) {
 			DBGLOG(RX, ERROR,
 			       "nicRxInitialize failed: Cannot allocate packet buffer for SwRfb!\n");
 			return;
@@ -336,7 +344,8 @@ void nicRxInitialize(struct ADAPTER *prAdapter)
 		pucMemHandle += ALIGN_4(sizeof(struct SW_RFB));
 	}
 
-	if (RX_GET_FREE_RFB_CNT(prRxCtrl) != CFG_RX_MAX_PKT_NUM)
+	if (RX_GET_FREE_RFB_CNT(prRxCtrl) !=
+		(CFG_RX_MAX_PKT_NUM - nicRxGetUnUseCnt(prAdapter)))
 		ASSERT_NOMEM();
 	/* Check if the memory allocation consist with this
 	 * initialization function
@@ -2594,7 +2603,7 @@ void nicRxProcessRFBs(struct ADAPTER *prAdapter)
  * @retval WLAN_STATUS_RESOURCES
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicRxSetupRFB(struct ADAPTER *prAdapter,
+uint32_t __nicRxSetupRFB(struct ADAPTER *prAdapter,
 		       struct SW_RFB *prSwRfb)
 {
 	void *pvPacket;
@@ -2643,8 +2652,21 @@ uint32_t nicRxSetupRFB(struct ADAPTER *prAdapter,
 #endif /* CFG_RFB_TRACK */
 
 	return WLAN_STATUS_SUCCESS;
+}
 
-}				/* end of nicRxSetupRFB() */
+uint32_t nicRxSetupRFB(struct ADAPTER *prAdapter,
+		       struct SW_RFB *prSwRfb)
+{
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+	struct RX_CTRL *prRxCtrl;
+
+	prRxCtrl = &prAdapter->rRxCtrl;
+	if (RX_GET_UNUSE_RFB_CNT(prRxCtrl) < nicRxGetUnUseCnt(prAdapter))
+		return WLAN_STATUS_RESOURCES;
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
+
+	return __nicRxSetupRFB(prAdapter, prSwRfb);
+}
 
 #if CFG_RFB_TRACK
 void nicRxTrackConcatRxQue(struct ADAPTER *prAdapter,
@@ -2927,13 +2949,6 @@ void __nicRxReturnRFB(struct ADAPTER *prAdapter,
 
 	ASSERT(prQueEntry);
 
-	if (isRfbFromSpared(prRxCtrl, prSwRfb)) {
-		if (prSwRfb->pvPacket)
-			kalPacketFree(prGlueInfo, prSwRfb->pvPacket);
-		kalMemFree(prSwRfb, VIR_MEM_TYPE, sizeof(struct SW_RFB));
-		goto done;
-	}
-
 	/* The processing on this RFB is done,
 	 * so put it back on the tail of our list
 	 */
@@ -2959,7 +2974,6 @@ void __nicRxReturnRFB(struct ADAPTER *prAdapter,
 	}
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
-done:
 	/* Trigger Rx if there are free SwRfb */
 	if (halIsPendingRx(prAdapter)
 	    && (RX_GET_FREE_RFB_CNT(prRxCtrl) > 0))
@@ -2969,10 +2983,30 @@ done:
 void nicRxReturnRFB(struct ADAPTER *prAdapter,
 		    struct SW_RFB *prSwRfb)
 {
+	struct RX_CTRL *prRxCtrl = &prAdapter->rRxCtrl;
+
+	if (!prSwRfb)
+		return;
+
+	if (isRfbFromSpared(prRxCtrl, prSwRfb)) {
+		if (prSwRfb->pvPacket)
+			kalPacketFree(prAdapter->prGlueInfo,
+				prSwRfb->pvPacket);
+		kalMemFree(prSwRfb, VIR_MEM_TYPE, sizeof(struct SW_RFB));
+		return;
+	}
+
 #if CFG_SUPPORT_RX_PAGE_POOL
 	if (prSwRfb->pvPacket)
 		kalSkbReuseCheck(prSwRfb);
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */
+
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+	if (RX_GET_UNUSE_RFB_CNT(prRxCtrl) < nicRxGetUnUseCnt(prAdapter)) {
+		nicRxReturnUnUseRFB(prAdapter, prSwRfb);
+		return;
+	}
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 
 	__nicRxReturnRFB(prAdapter, prSwRfb);
 }
@@ -4112,7 +4146,8 @@ void nicRxRfbTrackCheck(struct ADAPTER *prAdapter)
 		rTrackTime = prRfbTrack->rTrackTime;
 
 		/* no need to check rfb in free rfb list */
-		if (prRfbTrack->ucTrackState == RFB_TRACK_FREE)
+		if (prRfbTrack->ucTrackState == RFB_TRACK_FREE ||
+			prRfbTrack->ucTrackState == RFB_TRACK_UNUSE)
 			continue;
 
 		/* rfb track time is change, skip this rfb check */
@@ -4137,3 +4172,219 @@ void nicRxRfbTrackCheck(struct ADAPTER *prAdapter)
 	last = now;
 }
 #endif /* CFG_RFB_TRACK */
+
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+static void nicRxReturnUnUseRFB(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
+{
+	struct RX_CTRL *prRxCtrl;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	if (!prSwRfb)
+		return;
+
+	/* release skb when rfb inuse */
+	if (prSwRfb->pvPacket) {
+		kalPacketFree(prAdapter->prGlueInfo, prSwRfb->pvPacket);
+		prSwRfb->pvPacket = NULL;
+	}
+
+	/* enqueue into inuse rfb list */
+	prRxCtrl = &prAdapter->rRxCtrl;
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+	QUEUE_INSERT_TAIL(&prRxCtrl->rUnUseRfbList, &prSwRfb->rQueEntry);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+
+#if CFG_RFB_TRACK
+	RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb, RFB_TRACK_UNUSE);
+#endif /* CFG_RFB_TRACK */
+}
+
+void nicRxAdjustUnUseRFB(struct ADAPTER *prAdapter)
+{
+	struct RX_CTRL *prRxCtrl;
+	struct SW_RFB *prSwRfb;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	prRxCtrl = &prAdapter->rRxCtrl;
+	if (RX_GET_UNUSE_RFB_CNT(prRxCtrl) == nicRxGetUnUseCnt(prAdapter))
+		return;
+
+	if (RX_GET_UNUSE_RFB_CNT(prRxCtrl) < nicRxGetUnUseCnt(prAdapter)) {
+		uint32_t u4Cnt[2] = {0};
+
+		/* inuse rfb list is not full */
+		/* dequeue indicated rfb list first */
+		while (RX_GET_UNUSE_RFB_CNT(prRxCtrl) <
+			nicRxGetUnUseCnt(prAdapter)) {
+			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+			QUEUE_REMOVE_HEAD(&prRxCtrl->rIndicatedRfbList,
+				prSwRfb, struct SW_RFB *);
+			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+
+			if (!prSwRfb)
+				break;
+#if CFG_RFB_TRACK
+			RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb,
+				RFB_TRACK_ADJUST_UNUSE);
+#endif /* CFG_RFB_TRACK */
+			nicRxReturnRFB(prAdapter, prSwRfb);
+			u4Cnt[0]++;
+		}
+
+		/* dequeue free rfb list */
+		while (RX_GET_UNUSE_RFB_CNT(prRxCtrl) <
+			nicRxGetUnUseCnt(prAdapter)) {
+			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+			QUEUE_REMOVE_HEAD(&prRxCtrl->rFreeSwRfbList,
+				prSwRfb, struct SW_RFB *);
+			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+
+			if (!prSwRfb)
+				break;
+#if CFG_RFB_TRACK
+			RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb,
+				RFB_TRACK_ADJUST_UNUSE);
+#endif /* CFG_RFB_TRACK */
+			nicRxReturnRFB(prAdapter, prSwRfb);
+			u4Cnt[1]++;
+		}
+
+		DBGLOG(NIC, INFO,
+			"Move rfb[%u,%u] to inuse rfb list.\n",
+			u4Cnt[0], u4Cnt[1]);
+	} else {
+		uint32_t u4Cnt = 0;
+
+		/* inuse rfb list is full, need to dequeue from it */
+		while (RX_GET_UNUSE_RFB_CNT(prRxCtrl) >
+			nicRxGetUnUseCnt(prAdapter)) {
+			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+			QUEUE_REMOVE_HEAD(&prRxCtrl->rUnUseRfbList,
+				prSwRfb, struct SW_RFB *);
+			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+
+			if (!prSwRfb)
+				break;
+#if CFG_RFB_TRACK
+			RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb,
+				RFB_TRACK_ADJUST_UNUSE);
+#endif /* CFG_RFB_TRACK */
+			nicRxReturnRFB(prAdapter, prSwRfb);
+			u4Cnt++;
+		}
+
+		DBGLOG(NIC, INFO,
+			"Move inuse rfb[%u] to indicated rfb list.\n",
+			u4Cnt);
+
+		wlanReturnPacketDelaySetupTimeout(prAdapter, (uintptr_t)NULL);
+	}
+}
+
+void nicRxSetRfbCntByLevel(struct ADAPTER *prAdapter, uint32_t u4Lv)
+{
+	uint32_t u4RfbCnt;
+
+	if (u4Lv >= PERF_MON_RFB_MAX_THRESHOLD)
+		u4Lv = PERF_MON_RFB_MAX_THRESHOLD - 1;
+
+	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_DYNAMIC_RFB);
+
+	if (prAdapter->u4RfbUnUseCntLv == u4Lv)
+		goto unlock;
+
+	prAdapter->u4RfbUnUseCntLv = u4Lv;
+	u4RfbCnt = prAdapter->rWifiVar.u4RfbUnUseCnt[u4Lv];
+	nicRxSetUnUseCnt(prAdapter, u4RfbCnt, TRUE);
+
+	prAdapter->ulUpdateRxRfbCntPeriod = jiffies +
+		prAdapter->rWifiVar.u4PerfMonUpdatePeriod * HZ / 1000;
+unlock:
+	KAL_RELEASE_MUTEX(prAdapter, MUTEX_DYNAMIC_RFB);
+}
+
+u_int8_t nicRxIncRfbCnt(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Lv, u4RfbCnt;
+	u_int8_t fgRet = TRUE;
+
+	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_DYNAMIC_RFB);
+
+	if ((prAdapter->u4RfbUnUseCntLv + 1) == PERF_MON_RFB_MAX_THRESHOLD) {
+		fgRet = FALSE;
+		goto unlock;
+	}
+
+	prAdapter->u4RfbUnUseCntLv++;
+	u4Lv = prAdapter->u4RfbUnUseCntLv;
+	u4RfbCnt = prAdapter->rWifiVar.u4RfbUnUseCnt[u4Lv];
+	nicRxSetUnUseCnt(prAdapter, u4RfbCnt, TRUE);
+
+	prAdapter->ulUpdateRxRfbCntPeriod = jiffies +
+		prAdapter->rWifiVar.u4PerfMonUpdatePeriod * HZ / 1000;
+
+unlock:
+	KAL_RELEASE_MUTEX(prAdapter, MUTEX_DYNAMIC_RFB);
+
+	return fgRet;
+}
+
+u_int8_t nicRxDecRfbCnt(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Lv, u4RfbCnt;
+	u_int8_t fgRet = TRUE;
+
+	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_DYNAMIC_RFB);
+
+	if (prAdapter->u4RfbUnUseCntLv == 0) {
+		fgRet = FALSE;
+		goto unlock;
+	}
+
+	if (time_before(jiffies, prAdapter->ulUpdateRxRfbCntPeriod)) {
+		fgRet = FALSE;
+		goto unlock;
+	}
+
+	prAdapter->u4RfbUnUseCntLv--;
+	u4Lv = prAdapter->u4RfbUnUseCntLv;
+	u4RfbCnt = prAdapter->rWifiVar.u4RfbUnUseCnt[u4Lv];
+	nicRxSetUnUseCnt(prAdapter, u4RfbCnt, TRUE);
+
+	prAdapter->ulUpdateRxRfbCntPeriod = jiffies +
+		prAdapter->rWifiVar.u4PerfMonUpdatePeriod * HZ / 1000;
+
+unlock:
+	KAL_RELEASE_MUTEX(prAdapter, MUTEX_DYNAMIC_RFB);
+
+	return TRUE;
+}
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
+
+uint32_t nicRxGetUnUseCnt(struct ADAPTER *prAdapter)
+{
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+	return prAdapter->u4RfbUnUseCnt;
+#else /* CFG_DYNAMIC_RFB_ADJUSTMENT */
+	return 0;
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
+}
+
+void nicRxSetUnUseCnt(struct ADAPTER *prAdapter,
+	uint32_t u4UnUseCnt, u_int8_t fgAdjustNow)
+{
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+	if (prAdapter->u4RfbUnUseCnt == u4UnUseCnt)
+		return;
+
+	DBGLOG(NIC, INFO, "u4RfbUnUseCnt:[%u->%u]\n",
+	       prAdapter->u4RfbUnUseCnt, u4UnUseCnt);
+	prAdapter->u4RfbUnUseCnt = u4UnUseCnt;
+
+	if (fgAdjustNow)
+		nicRxAdjustUnUseRFB(prAdapter);
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
+}

@@ -3273,7 +3273,7 @@ void wlanReturnPacketDelaySetup(struct ADAPTER *prAdapter)
 	}
 }
 
-#if (CFG_SUPPORT_RETURN_TASK == 1) || (CFG_SUPPORT_RETURN_WORK == 1)
+#if (CFG_SUPPORT_RETURN_TASK == 1)
 void wlanReturnPacketDelaySetupTasklet(uintptr_t data)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
@@ -7899,6 +7899,19 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4PerfMonTpTh[8], "PerfMonLv9", 2000);
 	INIT_UINT(prWifiVar->u4PerfMonTpTh[9], "PerfMonLv10", 3500);
 
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+	INIT_UINT(prWifiVar->u4RfbBoostTpTh[0], "RfbBoostTpTh0", 50);
+	INIT_UINT(prWifiVar->u4RfbBoostTpTh[1], "RfbBoostTpTh1", 300);
+	INIT_UINT(prWifiVar->u4RfbBoostTpTh[2], "RfbBoostTpTh2", 1200);
+	INIT_UINT(prWifiVar->u4RfbUnUseCnt[0], "RfbUnUseCnt0",
+			(CFG_RX_MAX_PKT_NUM >> 2) * 3);
+	INIT_UINT(prWifiVar->u4RfbUnUseCnt[1], "RfbUnUseCnt1",
+			(CFG_RX_MAX_PKT_NUM >> 1));
+	INIT_UINT(prWifiVar->u4RfbUnUseCnt[2], "RfbUnUseCnt2", 0);
+	/* just set it, not need to adjust it immediately */
+	nicRxSetUnUseCnt(prAdapter, prWifiVar->u4RfbUnUseCnt[0], FALSE);
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
+
 #if CFG_SUPPORT_MCC_BOOST_CPU
 	INIT_UINT(prWifiVar->u4MccBoostTputLvTh, "MccBoostTputLvTh",
 		MCC_BOOST_LEVEL);
@@ -8504,8 +8517,14 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		prAdapter, "DlyIntCnt", 0); /* 0: No check by count */
 
 #if CFG_SUPPORT_DYNAMIC_PAGE_POOL
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+	prWifiVar->u4PagePoolMinCnt = (uint32_t)wlanCfgGetUint32(
+		prAdapter, "PagePoolMinCnt",
+		CFG_RX_MAX_PKT_NUM - nicRxGetUnUseCnt(prAdapter));
+#else
 	prWifiVar->u4PagePoolMinCnt = (uint32_t)wlanCfgGetUint32(
 		prAdapter, "PagePoolMinCnt", CFG_RX_MAX_PKT_NUM);
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 	prWifiVar->u4PagePoolMaxCnt = (uint32_t)wlanCfgGetUint32(
 		prAdapter, "PagePoolMaxCnt", CFG_RX_MAX_PKT_NUM * 3);
 	kalSetupPagePoolPageMaxMinNum(prWifiVar->u4PagePoolMinCnt,
