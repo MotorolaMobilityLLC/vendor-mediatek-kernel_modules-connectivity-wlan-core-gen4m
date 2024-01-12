@@ -2545,10 +2545,7 @@ void asicConnac3xConstructBtPatchName(struct GLUE_INFO *prGlueInfo,
 		return;
 	}
 
-	if (IS_MOBILE_SEGMENT)
-		u4FlavorVer = 0x1;
-	else
-		u4FlavorVer = 0x2;
+	u4FlavorVer = 0x2;
 
 	kalSnprintf(apucName[(*pucNameIdx)],
 		CFG_FW_NAME_MAX_LEN, "BT_RAM_CODE_MT%x_%x_%x_hdr.bin",
