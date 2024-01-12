@@ -624,6 +624,7 @@ uint32_t nicUniCmdScanTagSsid(struct ADAPTER *ad, uint8_t *buf,
 	tag->u2Length = len;
 	tag->ucSSIDType = cmd->ucSSIDType;
 	tag->ucSSIDNum = ssid_num + ssid_ext_num;
+	tag->ucIsShortSSID = 0;
 	for (i = 0; i < ssid_num; i++) {
 		kalMemCopy(pos, &cmd->arSSID[i], sizeof(struct PARAM_SSID));
 		pos += sizeof(struct PARAM_SSID);
@@ -633,6 +634,40 @@ uint32_t nicUniCmdScanTagSsid(struct ADAPTER *ad, uint8_t *buf,
 					sizeof(struct PARAM_SSID));
 		pos += sizeof(struct PARAM_SSID);
 	}
+	return tag->u2Length;
+}
+
+uint32_t nicUniCmdScanTagShortSsid(struct ADAPTER *ad, uint8_t *buf,
+	struct CMD_SCAN_REQ_V2 *cmd)
+{
+	struct UNI_CMD_SCAN_SSID *tag = (struct UNI_CMD_SCAN_SSID *)buf;
+	struct PARAM_SSID arShortSSID;
+	uint8_t i;
+	uint8_t *pos = tag->aucSsidBuffer;
+	uint8_t short_ssid_num = KAL_MIN((int)cmd->ucShortSSIDNum,
+					CFG_SCAN_OOB_MAX_NUM);
+	uint16_t len = sizeof(*tag) +
+		short_ssid_num * sizeof(struct PARAM_SSID);
+
+	if (short_ssid_num == 0)
+		return 0;
+
+	tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_SSID;
+	tag->u2Length = len;
+	tag->ucSSIDType = cmd->ucSSIDType;
+	tag->ucSSIDNum = short_ssid_num;
+	tag->ucIsShortSSID = 1;
+
+	arShortSSID.u4SsidLen = MAX_SHORT_SSID_LEN;
+	for (i = 0; i < short_ssid_num; i++) {
+		kalMemCopy(&arShortSSID.aucSsid,
+			&cmd->aucShortSSID[i],
+			MAX_SHORT_SSID_LEN);
+		kalMemCopy(pos, &arShortSSID,
+			sizeof(struct PARAM_SSID));
+		pos += sizeof(struct PARAM_SSID);
+	}
+
 	return tag->u2Length;
 }
 
@@ -652,6 +687,8 @@ uint32_t nicUniCmdScanTagBssid(struct ADAPTER *ad, uint8_t *buf,
 
 			tag->ucBssidMatchCh = cmd->ucBssidMatchCh[i];
 			tag->ucBssidMatchSsidInd = cmd->ucBssidMatchSsidInd[i];
+			tag->ucBssidMatchShortSsidInd =
+				cmd->ucBssidMatchShortSsidInd[i];
 			tag++;
 		}
 		return ((uint8_t *)tag) - buf;
@@ -662,6 +699,7 @@ uint32_t nicUniCmdScanTagBssid(struct ADAPTER *ad, uint8_t *buf,
 
 		tag->ucBssidMatchCh = 0;
 		tag->ucBssidMatchSsidInd = CFG_SCAN_OOB_MAX_NUM;
+		tag->ucBssidMatchShortSsidInd = CFG_SCAN_OOB_MAX_NUM;
 
 		return tag->u2Length;
 	}
@@ -810,9 +848,13 @@ uint32_t nicUniCmdScanTagMisc(struct ADAPTER *ad, uint8_t *buf,
 
 struct UNI_CMD_SCAN_TAG_HANDLE arSetScanReqTable[] = {
 	{sizeof(struct UNI_CMD_SCAN_REQ), nicUniCmdScanTagReq},
-	{sizeof(struct UNI_CMD_SCAN_SSID) + sizeof(struct PARAM_SSID) * 10,
+	{sizeof(struct UNI_CMD_SCAN_SSID) +
+	 sizeof(struct PARAM_SSID) * CFG_SCAN_SSID_MAX_NUM,
 	 nicUniCmdScanTagSsid},
-	{sizeof(struct UNI_CMD_SCAN_BSSID) * CFG_SCAN_SSID_MAX_NUM,
+	{sizeof(struct UNI_CMD_SCAN_SSID) +
+	 sizeof(struct PARAM_SSID) * CFG_SCAN_OOB_MAX_NUM,
+	 nicUniCmdScanTagShortSsid},
+	{sizeof(struct UNI_CMD_SCAN_BSSID) * CFG_SCAN_OOB_MAX_NUM,
 	 nicUniCmdScanTagBssid},
 	{sizeof(struct UNI_CMD_SCAN_CHANNEL_INFO) +
 	 sizeof(struct CHANNEL_INFO) * 64,
