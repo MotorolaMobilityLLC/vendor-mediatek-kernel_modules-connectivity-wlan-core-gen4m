@@ -2036,13 +2036,16 @@ static int32_t HQA_ReadEEPROM(struct net_device *prNetDev,
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	if (!prGlueInfo) {
+		rStatus = WLAN_STATUS_FAILURE;
 		log_dbg(RFTEST, ERROR, "prGlueInfo is NULL\n");
 		ResponseToQA(HqaCmdFrame, prIwReqData, 2, rStatus);
 		return rStatus;
-	}
-
-	if (prGlueInfo->prAdapter &&
-	    prGlueInfo->prAdapter->chip_info &&
+	} else if (!prGlueInfo->prAdapter) {
+		rStatus = WLAN_STATUS_FAILURE;
+		log_dbg(RFTEST, ERROR, "prAdapter is NULL\n");
+		ResponseToQA(HqaCmdFrame, prIwReqData, 2, rStatus);
+		return rStatus;
+	} else if (prGlueInfo->prAdapter->chip_info &&
 	    !prGlueInfo->prAdapter->chip_info->is_support_efuse) {
 		rStatus = WLAN_STATUS_NOT_SUPPORTED;
 		log_dbg(RFTEST, WARN, "Efuse not support\n");
