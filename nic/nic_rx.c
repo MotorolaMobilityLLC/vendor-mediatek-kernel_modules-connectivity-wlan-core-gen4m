@@ -1887,7 +1887,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 			/* return prCmdInfo */
 			cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 		} else {
-			DBGLOG(RX, WARN,
+			DBGLOG(RX, TRACE,
 				"UNHANDLED RX EVENT: ID[0x%02X] SEQ[%u] LEN[%u]\n",
 			  prEvent->ucEID, prEvent->ucSeqNum,
 			  prEvent->u2PacketLength);
