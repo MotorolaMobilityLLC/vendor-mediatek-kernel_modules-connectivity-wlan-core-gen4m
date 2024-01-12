@@ -1124,6 +1124,8 @@ struct WIFI_VAR {
 #endif
 #if CFG_SUPPORT_SMART_GEAR
 	uint8_t ucSGCfg;
+	uint8_t ucSG24GFavorANT;
+	uint8_t ucSG5GFavorANT;
 #endif
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 	uint8_t ucP2pGoACS;
