@@ -7876,8 +7876,15 @@ uint32_t rlmSendOMIDataFrame(struct ADAPTER *prAdapter,
 	PFN_TX_DONE_HANDLER pfTxDoneHandler =
 		(PFN_TX_DONE_HANDLER)rlmDummyOmiOpModeTxDone;
 
+	/* Sanity Check */
+	if (!prStaRec)
+		return WLAN_STATUS_FAILURE;
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
-	if (prBssInfo && prBssInfo->pfOpChangeHandler) {
+	if (!prBssInfo)
+		return WLAN_STATUS_FAILURE;
+
+	if (prBssInfo->pfOpChangeHandler) {
 		prBssInfo->aucOpModeChangeState
 			[OP_NOTIFY_TYPE_OMI_NSS_BW] =
 			OP_NOTIFY_STATE_SENDING;
@@ -8121,10 +8128,12 @@ static void rlmOpModeTxDoneHandler(struct ADAPTER *prAdapter,
 	ASSERT((prAdapter != NULL) && (prMsduInfo != NULL));
 
 	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
-
-	ASSERT(prBssInfo);
+	if (!prBssInfo)
+		return;
 
 	prStaRec = prBssInfo->prStaRecOfAP;
+	if (!prStaRec)
+		return;
 
 	DBGLOG(RLM, INFO,
 	       "OP notification Tx done: BSS[%d] Type[%d] Status[%d] IsSuccess[%d]\n",
