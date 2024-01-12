@@ -1789,7 +1789,7 @@ void nicRxRfbTrackUpdate(struct ADAPTER *prAdapter,
 void nicRxRfbTrackCheck(struct ADAPTER *prAdapter);
 #endif /* CFG_RFB_TRACK */
 #if CFG_DYNAMIC_RFB_ADJUSTMENT
-void nicRxSetRfbCntByLevel(struct ADAPTER *prAdapter, uint32_t u4Lv);
+u_int8_t nicRxSetRfbCntByLevel(struct ADAPTER *prAdapter, uint32_t u4Lv);
 u_int8_t nicRxIncRfbCnt(struct ADAPTER *prAdapter);
 u_int8_t nicRxDecRfbCnt(struct ADAPTER *prAdapter);
 #endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
