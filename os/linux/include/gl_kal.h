@@ -863,10 +863,12 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 #define kalkStrtou32(cp, base, resp)       kstrtou32(cp, base, resp)
 #define kalkStrtos32(cp, base, resp)       kstrtos32(cp, base, resp)
 #define kalSnprintf(buf, size, fmt, ...)   \
-	snprintf(buf, size, fmt, ##__VA_ARGS__)
+	_kalSnprintf((char *)(buf), (size_t)(size), \
+		(const char *)(fmt), ##__VA_ARGS__)
 #define kalScnprintf(buf, size, fmt, ...)  \
 	scnprintf(buf, size, fmt, ##__VA_ARGS__)
-#define kalSprintf(buf, fmt, ...)          sprintf(buf, fmt, __VA_ARGS__)
+#define kalSprintf(buf, fmt, ...)          \
+	_kalSprintf((char *)(buf), (const char *)(fmt), __VA_ARGS__)
 /* remove for AOSP */
 /* #define kalSScanf(buf, fmt, ...)        sscanf(buf, fmt, __VA_ARGS__) */
 #define kalStrStr(ct, cs)                  strstr(ct, cs)
@@ -1702,5 +1704,7 @@ int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
 			   IN uint8_t uBssIndex);
 #endif
 
+int _kalSnprintf(char *buf, size_t size, const char *fmt, ...);
+int _kalSprintf(char *buf, const char *fmt, ...);
 #endif /* _GL_KAL_H */
 
