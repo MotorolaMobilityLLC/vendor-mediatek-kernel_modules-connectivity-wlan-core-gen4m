@@ -1278,19 +1278,19 @@ static int __coredump_to_userspace_scp_dump(struct coredump_ctx *ctx,
 	struct mt66xx_chip_info *chip_info)
 {
 #if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
-	u64 u8ScpDumpAddr = 0;
+	u64 u8ScpDumpPhyAddr = 0;
 	unsigned int u4ScpDumpSize = 0;
 	uint8_t *pScpDumpBuf = NULL;
-	uint32_t u4Ret = 0, i4Ret;
+	void *vir_addr = NULL;
+	int32_t i4Ret;
 
-	i4Ret = kalGetScpDumpInfo(&u8ScpDumpAddr, &u4ScpDumpSize);
+	i4Ret = kalGetScpDumpInfo(&u8ScpDumpPhyAddr, &u4ScpDumpSize);
 	if (i4Ret) {
 		DBGLOG(INIT, INFO, "no scp dump info\n");
 		return 0;
 	}
-
 	DBGLOG(INIT, INFO, "scp dump addr:0x%llx, size:%u\n",
-		u8ScpDumpAddr, u4ScpDumpSize);
+		u8ScpDumpPhyAddr, u4ScpDumpSize);
 
 	pScpDumpBuf = kalMemAlloc(u4ScpDumpSize, VIR_MEM_TYPE);
 	if (pScpDumpBuf == NULL) {
@@ -1300,18 +1300,18 @@ static int __coredump_to_userspace_scp_dump(struct coredump_ctx *ctx,
 	}
 
 	kalMemZero(pScpDumpBuf, u4ScpDumpSize);
-	u4Ret = emi_mem_read(chip_info,
-				(u8ScpDumpAddr-COREDUMP_EMI_BASE),
-				pScpDumpBuf, u4ScpDumpSize);
-	if (u4Ret) {
-		DBGLOG(INIT, ERROR, "read scp dump failed\n");
+	vir_addr = ioremap(u8ScpDumpPhyAddr, u4ScpDumpSize);
+	if (!vir_addr) {
+		DBGLOG(INIT, ERROR, "ioremap fail.\n");
 		goto exit;
 	}
 
+	kalMemCopyFromIo(pScpDumpBuf, vir_addr, u4ScpDumpSize);
 	connv3_coredump_send(ctx->handler,
 			     "PRED",
 			     pScpDumpBuf,
 			     u4ScpDumpSize);
+	iounmap(vir_addr);
 exit:
 	kalMemFree(pScpDumpBuf, VIR_MEM_TYPE, u4ScpDumpSize);
 	DBGLOG(INIT, INFO, "scp dump done\n");
