@@ -4254,6 +4254,7 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 	}
 
 	/* he */
+#if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
 #if CFG_SUPPORT_TDLS_11AX
 	if (prLinkParams->he_capa != NULL) {
 		kalMemCopy(rCmdUpdate.rHeCap.ucHeMacCapInfo,
@@ -4264,6 +4265,7 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 			HE_PHY_CAP_BYTE_NUM);
 		rCmdUpdate.fgIsSupHe = TRUE;
 	}
+#endif
 #endif
 
 	/* update a TDLS peer record */
