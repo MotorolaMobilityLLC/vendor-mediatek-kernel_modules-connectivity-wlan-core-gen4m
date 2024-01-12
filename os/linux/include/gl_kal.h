@@ -536,6 +536,30 @@ struct VOLT_INFO_T {
 };
 #endif /* CFG_VOLT_INFO */
 
+#if CFG_NEW_HIF_DEV_REG_IF
+enum HIF_DEV_REG_REASON {
+	/* HIF_DEV_REG_{module}_{reason} */
+	HIF_DEV_REG_HIF_READ,
+	HIF_DEV_REG_HIF_DBG,
+	HIF_DEV_REG_HIF_EXTDBG,
+	HIF_DEV_REG_HIF_CONNAC1_2,
+	HIF_DEV_REG_HIF_USB,
+	HIF_DEV_REG_OFFLOAD_READ,
+	HIF_DEV_REG_OFFLOAD_HOST,
+	HIF_DEV_REG_OFFLOAD_DBG,
+	HIF_DEV_REG_ONOFF_READ,
+	HIF_DEV_REG_LPOWN_READ,
+	HIF_DEV_REG_CCIF_READ,
+	HIF_DEV_REG_SER_READ,
+	HIF_DEV_REG_PLAT_DBG,
+	HIF_DEV_REG_UMAC_DBG,
+	HIF_DEV_REG_WTBL_DBG,
+	HIF_DEV_REG_OID_DBG,
+	HIF_DEV_REG_UNDEFINE,
+	HIF_DEV_REG_MAX
+};
+#endif /* CFG_NEW_HIF_DEV_REG_IF */
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -1720,9 +1744,23 @@ int8_t kalIndicateOpModeChange(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 /* Routines in interface - ehpi/sdio.c                                        */
 /*----------------------------------------------------------------------------*/
+#if CFG_NEW_HIF_DEV_REG_IF
+u_int8_t kalDevRegRead(enum HIF_DEV_REG_REASON reason,
+		       struct GLUE_INFO *prGlueInfo,
+		       uint32_t u4Register,
+		       uint32_t *pu4Value);
+u_int8_t kalDevRegReadRange(
+	enum HIF_DEV_REG_REASON reason,
+	struct GLUE_INFO *glue,
+	uint32_t reg, void *buf, uint32_t total_size);
+#else
 u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 		       uint32_t u4Register,
 		       uint32_t *pu4Value);
+u_int8_t kalDevRegReadRange(struct GLUE_INFO *glue,
+	uint32_t reg, void *buf, uint32_t total_size);
+#endif /* CFG_NEW_HIF_DEV_REG_IF */
+
 u_int8_t kalDevRegRead_mac(struct GLUE_INFO *prGlueInfo,
 			   uint32_t u4Register, uint32_t *pu4Value);
 
@@ -1731,9 +1769,6 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 			uint32_t u4Value);
 u_int8_t kalDevRegWrite_mac(struct GLUE_INFO *prGlueInfo,
 			    uint32_t u4Register, uint32_t u4Value);
-
-u_int8_t kalDevRegReadRange(struct GLUE_INFO *glue,
-	uint32_t reg, void *buf, uint32_t total_size);
 u_int8_t kalDevRegWriteRange(struct GLUE_INFO *glue,
 	uint32_t reg, void *buf, uint32_t total_size);
 

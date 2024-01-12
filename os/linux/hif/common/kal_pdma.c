@@ -967,7 +967,7 @@ static u_int8_t kalDevRegReadStatic(struct GLUE_INFO *prGlueInfo,
  * \retval FALSE         operation fail
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo,
+static u_int8_t _kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Register, uint32_t *pu4Value)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
@@ -1245,7 +1245,7 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 	return TRUE;
 }
 
-u_int8_t kalDevRegReadRange(struct GLUE_INFO *glue,
+static u_int8_t _kalDevRegReadRange(struct GLUE_INFO *glue,
 	uint32_t reg, void *buf, uint32_t total_size)
 {
 	struct mt66xx_chip_info *chip_info;
@@ -1367,17 +1367,124 @@ u_int8_t kalDevRegWriteRange(struct GLUE_INFO *glue,
 	return ret;
 }
 
+#if CFG_NEW_HIF_DEV_REG_IF
+static u_int8_t kalIsValidRead(enum HIF_DEV_REG_REASON eReason,
+			       struct GLUE_INFO *prGlueInfo,
+			       uint32_t u4Reg,
+			       uint32_t u4Mod)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	struct GL_HIF_INFO *prHifInfo;
+	struct HIF_DEV_REG_RECORD *prRecord;
+	uint32_t u4Idx = 0;
+
+	if (!prGlueInfo)
+		goto check;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	u4Idx = (uint32_t)eReason;
+	prHifInfo->u4MmioReadReasonCnt[u4Idx]++;
+
+	u4Idx = prHifInfo->u4MmioReadHistoryIdx;
+	if (u4Idx >= HIF_DEV_REG_HISTORY_SIZE)
+		u4Idx = 0;
+
+	prRecord = &prHifInfo->arMmioReadHistory[u4Idx++];
+	prRecord->eReason = eReason;
+	prRecord->u4Reg = u4Reg;
+	prRecord->u4Mod = u4Mod;
+	prHifInfo->u4MmioReadHistoryIdx = u4Idx;
+
+check:
+	glGetChipInfo((void **)&prChipInfo);
+	if (prChipInfo && prChipInfo->isValidMmioReadReason &&
+	    !prChipInfo->isValidMmioReadReason(prChipInfo, eReason)) {
+		DBGLOG(HAL, ERROR,
+		       "Read invalid register. reg[%u] rsn[%u] mod[%u].\n",
+		       u4Reg, u4Idx, u4Mod);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+u_int8_t kalDevRegRead(enum HIF_DEV_REG_REASON eReason,
+		       struct GLUE_INFO *prGlueInfo,
+		       uint32_t u4Register, uint32_t *pu4Value)
+{
+	if (!kalIsValidRead(eReason, prGlueInfo, u4Register, 0))
+		return FALSE;
+
+	return _kalDevRegRead(prGlueInfo, u4Register, pu4Value);
+}
+
+u_int8_t kalDevRegReadRange(
+	enum HIF_DEV_REG_REASON reason, struct GLUE_INFO *glue,
+	uint32_t reg, void *buf, uint32_t total_size)
+{
+	if (!kalIsValidRead(reason, glue, reg, 1))
+		return FALSE;
+
+	return _kalDevRegReadRange(glue, reg, buf, total_size);
+}
+#else
+u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo,
+		       uint32_t u4Register, uint32_t *pu4Value)
+{
+	return _kalDevRegRead(prGlueInfo, u4Register, pu4Value);
+}
+
+u_int8_t kalDevRegReadRange(
+	struct GLUE_INFO *glue, uint32_t reg,
+	void *buf, uint32_t total_size)
+{
+	return _kalDevRegReadRange(glue, reg, buf, total_size);
+}
+#endif /* CFG_NEW_HIF_DEV_REG_IF */
+
+static void kalWaitRxDmaDoneDebug(
+	struct GLUE_INFO *prGlueInfo, struct RTMP_RX_RING *prRxRing,
+	struct RXD_STRUCT *pRxD, uint16_t u2Port)
+{
+	uint32_t u4CpuIdx = 0;
+	struct RTMP_DMACB *pRxCell;
+	struct RXD_STRUCT *pCrRxD;
+	struct RTMP_DMABUF *prDmaBuf;
+	uint32_t u4Size = 0;
+
+	HAL_RMCR_RD(HIF_DBG, prGlueInfo->prAdapter,
+		       prRxRing->hw_didx_addr,
+		       &prRxRing->RxDmaIdx);
+	DBGLOG(HAL, INFO,
+	       "Rx DMA done P[%u] DMA[%u] CPU[%u]\n",
+	       u2Port, prRxRing->RxDmaIdx, prRxRing->RxCpuIdx);
+
+	u4CpuIdx = prRxRing->RxCpuIdx;
+	INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
+	if (prRxRing->RxDmaIdx != u4CpuIdx) {
+		pRxCell = &prRxRing->Cell[u4CpuIdx];
+		pCrRxD = (struct RXD_STRUCT *)pRxCell->AllocVa;
+		DBGLOG(HAL, INFO, "Rx DMAD[%u]\n", u4CpuIdx);
+		DBGLOG_MEM32(HAL, INFO, pCrRxD, sizeof(struct RXD_STRUCT));
+		u4Size = pCrRxD->SDLen0;
+		if (u4Size > CFG_RX_MAX_PKT_SIZE) {
+			DBGLOG(RX, ERROR, "Rx Data too large[%u]\n", u4Size);
+		} else {
+			DBGLOG(HAL, INFO, "RXD+Data[%u] len[%u]\n",
+			       u4CpuIdx, u4Size);
+			prDmaBuf = &pRxCell->DmaBuf;
+			DBGLOG_MEM32(HAL, INFO, prDmaBuf->AllocVa, u4Size);
+		}
+	}
+}
+
 static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 			     struct RTMP_RX_RING *prRxRing,
 			     struct RXD_STRUCT *pRxD,
 			     uint16_t u2Port)
 {
 	uint32_t u4Count = 0;
-	uint32_t u4CpuIdx = 0;
-	struct RTMP_DMACB *pRxCell;
-	struct RXD_STRUCT *pCrRxD;
-	struct RTMP_DMABUF *prDmaBuf;
-	uint32_t u4Size = 0;
 
 #if CFG_MTK_WIFI_WFDMA_WB
 	if (prRxRing->fgEnEmiIdx)
@@ -1386,35 +1493,8 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 
 	for (u4Count = 0; pRxD->DMADONE == 0; u4Count++) {
 		if (u4Count > DMA_DONE_WAITING_COUNT) {
-			kalDevRegRead(prGlueInfo, prRxRing->hw_didx_addr,
-				      &prRxRing->RxDmaIdx);
-			DBGLOG(HAL, INFO,
-			       "Rx DMA done P[%u] DMA[%u] CPU[%u]\n",
-			       u2Port, prRxRing->RxDmaIdx, prRxRing->RxCpuIdx);
-
-			u4CpuIdx = prRxRing->RxCpuIdx;
-			INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
-			if (prRxRing->RxDmaIdx != u4CpuIdx) {
-				pRxCell = &prRxRing->Cell[u4CpuIdx];
-				pCrRxD = (struct RXD_STRUCT *)pRxCell->AllocVa;
-				DBGLOG(HAL, INFO, "Rx DMAD[%u]\n", u4CpuIdx);
-				DBGLOG_MEM32(HAL, INFO, pCrRxD,
-					sizeof(struct RXD_STRUCT));
-				u4Size = pCrRxD->SDLen0;
-				if (u4Size > CFG_RX_MAX_PKT_SIZE) {
-					DBGLOG(RX, ERROR,
-						"Rx Data too large[%u]\n",
-						u4Size);
-				} else {
-					DBGLOG(HAL, INFO,
-						"RXD+Data[%u] len[%u]\n",
-						u4CpuIdx, u4Size);
-					prDmaBuf = &pRxCell->DmaBuf;
-					DBGLOG_MEM32(HAL, INFO,
-						prDmaBuf->AllocVa, u4Size);
-				}
-			}
-
+			kalWaitRxDmaDoneDebug(
+				prGlueInfo, prRxRing, pRxD, u2Port);
 			return false;
 		}
 
@@ -1711,7 +1791,7 @@ void kalDevReadIntStatus(struct ADAPTER *prAdapter,
 
 	*pu4IntStatus = 0;
 
-	HAL_MCR_RD(prAdapter, WPDMA_INT_STA, &u4RegValue);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, WPDMA_INT_STA, &u4RegValue);
 
 	if (HAL_IS_RX_DONE_INTR(u4RegValue))
 		*pu4IntStatus |= WHISR_RX0_DONE_INT;
@@ -2668,7 +2748,7 @@ int32_t wf_reg_read_wrapper(void *priv,
 		goto exit;
 	}
 
-	HAL_MCR_RD(ad, addr, value);
+	HAL_RMCR_RD(HIF_EXTDBG, ad, addr, value);
 
 exit:
 	return ret;
@@ -2767,7 +2847,7 @@ int32_t wf_reg_write_mask_wrapper(void *priv,
 		goto exit;
 	}
 
-	HAL_MCR_RD(ad, addr, &val);
+	HAL_RMCR_RD(HIF_EXTDBG, ad, addr, &val);
 	val &= ~mask;
 	val |= value;
 	HAL_MCR_WR(ad, addr, val);

@@ -1206,7 +1206,7 @@ void asicConnac2xProcessSoftwareInterrupt(
 	else
 		u4HostWpdamBase = CONNAC2X_HOST_WPDMA_0_BASE;
 
-	kalDevRegRead(prGlueInfo,
+	HAL_MCR_RD(prAdapter,
 		CONNAC2X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase),
 		&u4Status);
 

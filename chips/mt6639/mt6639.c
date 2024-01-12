@@ -2608,7 +2608,7 @@ static void mt6639ShowDevapcDebugInfo(void)
 {
 	uint32_t u4Val = 0;
 
-	kalDevRegRead(NULL, PCIE_MAC_IREG_IMASK_HOST_ADDR, &u4Val);
+	HAL_MCR_RD(NULL, PCIE_MAC_IREG_IMASK_HOST_ADDR, &u4Val);
 	DBGLOG(HAL, INFO, "PCIE_MAC_IREG_IMASK_HOST_ADDR[0x%08x]=[0x%08x]\n",
 		PCIE_MAC_IREG_IMASK_HOST_ADDR, u4Val);
 }

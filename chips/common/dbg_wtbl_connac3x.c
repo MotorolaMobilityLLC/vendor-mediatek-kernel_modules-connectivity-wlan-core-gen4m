@@ -116,7 +116,7 @@ uint32_t halWtblReadRaw(
 	while (sizeInDW--) {
 		uint32_t u4Value = 0;
 
-		HAL_MCR_RD(prAdapter, u4SrcAddr, &u4Value);
+		HAL_RMCR_RD(WTBL_DBG, prAdapter, u4SrcAddr, &u4Value);
 		*dest_cpy++ = u4Value;
 		u4SrcAddr += 4;
 	}
@@ -762,7 +762,7 @@ void connac3x_get_lwtbl(
 	wtbl_lmac_baseaddr = CONNAC3X_LWTBL_IDX2BASE(
 		prChipInfo->u4LmacWtblDUAddr, u4Index, 0);
 
-	HAL_MCR_RD(prAdapter, prChipInfo->u4LmacWtblDUAddr,
+	HAL_RMCR_RD(WTBL_DBG, prAdapter, prChipInfo->u4LmacWtblDUAddr,
 				&u4Value);
 
 	DBGLOG(REQ, INFO, "LMAC WTBL Addr: group: 0x%x=0x%x addr: 0x%x\n",
@@ -775,7 +775,7 @@ void connac3x_get_lwtbl(
 		sizeof(struct bwtbl_lmac_struct);
 		wtbl_offset += 4) {
 		addr = wtbl_lmac_baseaddr + wtbl_offset;
-		HAL_MCR_RD(prAdapter, addr,
+		HAL_RMCR_RD(WTBL_DBG, prAdapter, addr,
 			   &u4Value);
 		kalMemCopy(
 			(uint32_t *)&wtbl_raw_dw[wtbl_offset],
@@ -850,13 +850,13 @@ static bool is_wtbl_bigtk_exist(struct ADAPTER *prAdapter, uint32_t u4Index)
 	CONNAC3X_LWTBL_CONFIG(prAdapter, prChipInfo->u4LmacWtblDUAddr, u4Index);
 	wtbl_lmac_baseaddr = CONNAC3X_LWTBL_IDX2BASE(
 		prChipInfo->u4LmacWtblDUAddr, u4Index, 0);
-	HAL_MCR_RD(prAdapter,
+	HAL_RMCR_RD(WTBL_DBG, prAdapter,
 		prChipInfo->u4LmacWtblDUAddr + WF_LWTBL_MUAR_DW * 4,
 				&dw_value);
 
 	if (((dw_value & WF_LWTBL_MUAR_MASK) >> WF_LWTBL_MUAR_SHIFT) ==
 					MUAR_INDEX_OWN_MAC_ADDR_BC_MC) {
-		HAL_MCR_RD(prAdapter,
+		HAL_RMCR_RD(WTBL_DBG, prAdapter,
 			(prChipInfo->u4LmacWtblDUAddr +
 				WF_LWTBL_CIPHER_SUIT_BIGTK_DW * 4),
 			&dw_value);
@@ -889,7 +889,8 @@ static void dump_key_table(
 		*/
 		halWtblReadRaw(prAdapter, keyloc0,
 			WTBL_TYPE_KEY, 0, ONE_KEY_ENTRY_LEN_IN_DW, keytbl);
-		HAL_MCR_RD(prAdapter, WF_UWTBL_TOP_WDUCR_ADDR, &u4Value);
+		HAL_RMCR_RD(WTBL_DBG, prAdapter,
+			       WF_UWTBL_TOP_WDUCR_ADDR, &u4Value);
 		DBGLOG(HAL, INFO, "\t\tKEY WTBL Addr: group:0x%x=0x%x addr: 0x%x\n",
 			WF_UWTBL_TOP_WDUCR_ADDR,
 			u4Value,
@@ -911,7 +912,8 @@ static void dump_key_table(
 		*/
 		halWtblReadRaw(prAdapter, keyloc1,
 			WTBL_TYPE_KEY, 0, ONE_KEY_ENTRY_LEN_IN_DW, keytbl);
-		HAL_MCR_RD(prAdapter, WF_UWTBL_TOP_WDUCR_ADDR, &u4Value);
+		HAL_RMCR_RD(WTBL_DBG, prAdapter,
+			       WF_UWTBL_TOP_WDUCR_ADDR, &u4Value);
 		DBGLOG(HAL, INFO, "\t\tKEY WTBL Addr: group:0x%x=0x%x addr: 0x%x\n",
 			WF_UWTBL_TOP_WDUCR_ADDR,
 			u4Value,
@@ -933,7 +935,8 @@ static void dump_key_table(
 		*/
 		halWtblReadRaw(prAdapter, keyloc2,
 			WTBL_TYPE_KEY, 0, ONE_KEY_ENTRY_LEN_IN_DW, keytbl);
-		HAL_MCR_RD(prAdapter, WF_UWTBL_TOP_WDUCR_ADDR, &u4Value);
+		HAL_RMCR_RD(WTBL_DBG, prAdapter,
+			       WF_UWTBL_TOP_WDUCR_ADDR, &u4Value);
 		DBGLOG(HAL, INFO, "\t\tKEY WTBL Addr: group:0x%x=0x%x addr: 0x%x\n",
 			WF_UWTBL_TOP_WDUCR_ADDR,
 			u4Value,
@@ -978,7 +981,8 @@ int32_t connac3x_show_umac_wtbl_info(
 	CONNAC3X_UWTBL_CONFIG(prAdapter, prChipInfo->u4UmacWtblDUAddr, u4Index);
 	wtbl_umac_baseaddr = CONNAC3X_UWTBL_IDX2BASE(
 		prChipInfo->u4UmacWtblDUAddr, u4Index, 0);
-	HAL_MCR_RD(prAdapter, prChipInfo->u4UmacWtblDUAddr, &u4Value);
+	HAL_RMCR_RD(WTBL_DBG, prAdapter,
+		       prChipInfo->u4UmacWtblDUAddr, &u4Value);
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 		"UMAC WTBL Addr: group: 0x%x=0x%x addr: 0x%x\n",
 		prChipInfo->u4UmacWtblDUAddr,
@@ -996,7 +1000,7 @@ int32_t connac3x_show_umac_wtbl_info(
 		sizeof(struct bwtbl_umac_struct);
 		wtbl_offset += 4) {
 		addr = wtbl_umac_baseaddr + wtbl_offset;
-		HAL_MCR_RD(prAdapter, addr,
+		HAL_RMCR_RD(WTBL_DBG, prAdapter, addr,
 			   &u4Value);
 		kalMemCopy(
 			(uint32_t *)&wtbl_raw_dw[wtbl_offset],

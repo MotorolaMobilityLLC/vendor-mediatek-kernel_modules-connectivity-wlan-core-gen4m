@@ -5930,7 +5930,7 @@ wlanoidQueryMcrRead(struct ADAPTER *prAdapter,
 				prMcrRdInfo->u4McrData);
 		} else {
 			ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
-			HAL_MCR_RD(prAdapter,
+			HAL_RMCR_RD(OID_DBG, prAdapter,
 				/* address is in DWORD unit */
 				(prMcrRdInfo->u4McrOffset & BITS(2, 31)),
 				   &prMcrRdInfo->u4McrData);
@@ -6361,8 +6361,9 @@ wlanoidQueryDrvMcrRead(struct ADAPTER *prAdapter,
 		      pvQueryBuffer;
 
 	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
-	HAL_MCR_RD(prAdapter, (prMcrRdInfo->u4McrOffset & BITS(2,
-			       31)), &prMcrRdInfo->u4McrData);
+	HAL_RMCR_RD(OID_DBG, prAdapter,
+		       (prMcrRdInfo->u4McrOffset & BITS(2, 31)),
+		       &prMcrRdInfo->u4McrData);
 	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 
 	DBGLOG(INIT, TRACE,

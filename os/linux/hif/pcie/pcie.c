@@ -280,7 +280,6 @@ static struct pci_driver mtk_pci_driver = {
 };
 
 static struct GLUE_INFO *g_prGlueInfo;
-static void *CSRBaseAddress;
 static u64 g_u8CsrOffset;
 static u32 g_u4CsrSize;
 static u_int8_t g_fgDriverProbed = FALSE;
@@ -839,8 +838,8 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 	}
 	prChipInfo = prDriverData->chip_info;
 
-	if (CSRBaseAddress) {
-		DBGLOG(INIT, ERROR, "CSRBaseAddress not iounmap!\n");
+	if (prChipInfo->HostCSRBaseAddress) {
+		DBGLOG(INIT, ERROR, "HostCSRBaseAddress not iounmap!\n");
 		return false;
 	}
 
@@ -848,12 +847,12 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 
 	/* map physical address to virtual address for accessing register */
 #ifdef CONFIG_OF
-	CSRBaseAddress = of_iomap(node, 0);
+	prChipInfo->HostCSRBaseAddress = of_iomap(node, 0);
 #else
-	CSRBaseAddress = ioremap(g_u8CsrOffset, g_u4CsrSize);
+	prChipInfo->HostCSRBaseAddress = ioremap(g_u8CsrOffset, g_u4CsrSize);
 #endif
 
-	if (!CSRBaseAddress) {
+	if (!prChipInfo->HostCSRBaseAddress) {
 		DBGLOG(INIT, INFO,
 			"ioremap failed for device %s, region 0x%X @ 0x%lX\n",
 			axi_name(pdev), g_u4CsrSize, g_u8CsrOffset);
@@ -861,27 +860,31 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 		return false;
 	}
 
-	prChipInfo->HostCSRBaseAddress = CSRBaseAddress;
 	prChipInfo->u4HostCsrOffset = (uint32_t)g_u8CsrOffset;
 	prChipInfo->u4HostCsrSize = g_u4CsrSize;
 
 	DBGLOG(INIT, INFO,
-	       "CSRBaseAddress:0x%llX ioremap region 0x%X @ 0x%llX\n",
-	       (uint64_t)CSRBaseAddress, g_u4CsrSize, g_u8CsrOffset);
+	       "HostCSRBaseAddress:0x%llX ioremap region 0x%X @ 0x%llX\n",
+	       (uint64_t)prChipInfo->HostCSRBaseAddress,
+	       g_u4CsrSize, g_u8CsrOffset);
 
 	return true;
 }
 
 static void axiCsrIounmap(struct platform_device *pdev)
 {
-	if (!CSRBaseAddress)
+	struct mt66xx_chip_info *prChipInfo;
+
+	glGetChipInfo((void **)&prChipInfo);
+
+	if (!prChipInfo || !prChipInfo->HostCSRBaseAddress)
 		return;
 
 	/* Unmap CSR base address */
-	iounmap(CSRBaseAddress);
+	iounmap(prChipInfo->HostCSRBaseAddress);
 	release_mem_region(g_u8CsrOffset, g_u4CsrSize);
 
-	CSRBaseAddress = NULL;
+	prChipInfo->HostCSRBaseAddress = NULL;
 	g_u8CsrOffset = 0;
 	g_u4CsrSize = 0;
 }
@@ -1514,8 +1517,6 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	prHif->prDmaDev = prHif->pdev;
 
 	g_prGlueInfo = prGlueInfo;
-
-	prHif->CSRBaseAddress = prChipInfo->CSRBaseAddress;
 
 	if (g_prPlatDev)
 		SET_NETDEV_DEV(prGlueInfo->prDevHandler, &g_prPlatDev->dev);

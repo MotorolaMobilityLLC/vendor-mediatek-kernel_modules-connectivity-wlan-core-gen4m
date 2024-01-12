@@ -1144,16 +1144,8 @@ void connac3x_show_pse_info(struct ADAPTER *prAdapter);
 void connac3x_show_mawd_info(struct ADAPTER *prAdapter);
 void connac3x_show_rro_info(struct ADAPTER *prAdapter);
 #endif
-void connac3x_DumpWfsyscpupcr(struct ADAPTER *prAdapter);
-void connac3x_DbgCrRead(
-	struct ADAPTER *prAdapter, uint32_t addr, unsigned int *val);
-void connac3x_DbgCrWrite(
-	struct ADAPTER *prAdapter, uint32_t addr, unsigned int val);
 void connac3x_dump_format_memory32(
 	uint32_t *pu4StartAddr, uint32_t u4Count, char *aucInfo);
-void connac3x_DumpCrRange(
-	struct ADAPTER *prAdapter,
-	uint32_t cr_start, uint32_t word_count, char *str);
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 int connac3x_get_rx_rate_info(
 	const uint32_t *prRxV,

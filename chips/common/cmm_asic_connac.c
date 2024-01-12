@@ -191,7 +191,7 @@ void asicEnableFWDownload(struct ADAPTER *prAdapter,
 	{
 		union WPDMA_GLO_CFG_STRUCT GloCfg;
 
-		kalDevRegRead(prGlueInfo, WPDMA_GLO_CFG, &GloCfg.word);
+		HAL_MCR_RD(prAdapter, WPDMA_GLO_CFG, &GloCfg.word);
 
 		GloCfg.field_conn.bypass_dmashdl_txring3 = fgEnable;
 
@@ -442,7 +442,7 @@ void asicPdmaLoopBackConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 	union WPDMA_GLO_CFG_STRUCT GloCfg;
 	uint32_t word = 1;
 
-	kalDevRegRead(prGlueInfo, WPDMA_GLO_CFG, &GloCfg.word);
+	HAL_MCR_RD(prAdapter, WPDMA_GLO_CFG, &GloCfg.word);
 
 	GloCfg.field_conn.bypass_dmashdl_txring3 = 1;
 	GloCfg.field_conn.pdma_addr_ext_en = 0;
@@ -466,7 +466,7 @@ static void configPdmaRxRingThreshold(struct GLUE_INFO *prGlueInfo)
 		return;
 
 	/* Config RX ring0 & ring1 */
-	kalDevRegRead(prGlueInfo, WPDMA_PAUSE_RX_Q_TH10, &u4OldVal);
+	HAL_MCR_RD(prAdapter, WPDMA_PAUSE_RX_Q_TH10, &u4OldVal);
 	u4NewVal += (WPDMA_PAUSE_RX_Q_TH0 << WPDMA_PAUSE_RX_Q_TH0_SHFT);
 	u4NewVal += (WPDMA_PAUSE_RX_Q_TH1 << WPDMA_PAUSE_RX_Q_TH1_SHFT);
 	kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_RX_Q_TH10, u4NewVal);
@@ -475,7 +475,7 @@ static void configPdmaRxRingThreshold(struct GLUE_INFO *prGlueInfo)
 
 	/* Config RX ring2 & ring3 */
 	u4OldVal = u4NewVal = 0;
-	kalDevRegRead(prGlueInfo, WPDMA_PAUSE_RX_Q_TH32, &u4OldVal);
+	HAL_MCR_RD(prAdapter, WPDMA_PAUSE_RX_Q_TH32, &u4OldVal);
 	u4NewVal += (WPDMA_PAUSE_RX_Q_TH2 << WPDMA_PAUSE_RX_Q_TH2_SHFT);
 	u4NewVal += (WPDMA_PAUSE_RX_Q_TH3 << WPDMA_PAUSE_RX_Q_TH3_SHFT);
 	kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_RX_Q_TH32, u4NewVal);
@@ -491,7 +491,7 @@ void asicPdmaIntMaskConfig(struct GLUE_INFO *prGlueInfo,
 			prGlueInfo->prAdapter->chip_info->bus_info;
 	union WPDMA_INT_MASK IntMask = {0};
 
-	kalDevRegRead(prGlueInfo, WPDMA_INT_MSK, &IntMask.word);
+	HAL_MCR_RD(prAdapter, WPDMA_INT_MSK, &IntMask.word);
 
 	if (fgEnable == TRUE) {
 		if (ucType & BIT(DMA_INT_TYPE_MCU2HOST))
@@ -530,6 +530,66 @@ void asicPdmaIntMaskConfig(struct GLUE_INFO *prGlueInfo,
 	kalDevRegWrite(prGlueInfo, WPDMA_INT_MSK, IntMask.word);
 }
 
+static void asicEnableSlpProt(struct GLUE_INFO *prGlueInfo)
+{
+	uint32_t u4Val = 0;
+	uint32_t u4WaitDelay = 20000;
+
+	HAL_MCR_RD(prGlueInfo->prAdapter,
+		   CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, &u4Val);
+	u4Val |= CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_PDMA_AXI_SLPPROT_ENABLE_MASK;
+	kalDevRegWrite(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, u4Val);
+	while (TRUE) {
+		u4WaitDelay--;
+		HAL_MCR_RD(prGlueInfo->prAdapter,
+			   CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR,
+			   &u4Val);
+		if (CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_PDMA_AXI_SLPPROT_RDY_MASK &
+				u4Val)
+			break;
+		if (u4WaitDelay == 0) {
+			DBGLOG(HAL, ERROR, "wait for sleep protect timeout.\n");
+			GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
+						 RST_SLP_PROT_TIMEOUT);
+			break;
+		}
+		kalUdelay(1);
+	}
+}
+
+static void asicDisableSlpProt(struct GLUE_INFO *prGlueInfo)
+{
+	uint32_t u4Val = 0;
+
+	HAL_MCR_RD(prGlueInfo->prAdapter,
+		   CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, &u4Val);
+	u4Val &= ~CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_PDMA_AXI_SLPPROT_ENABLE_MASK;
+	kalDevRegWrite(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, u4Val);
+}
+
+u_int8_t asicWpdmaWaitIdle(struct GLUE_INFO *prGlueInfo,
+	int32_t round, int32_t wait_us)
+{
+	int32_t i = 0;
+	union WPDMA_GLO_CFG_STRUCT GloCfg = {0};
+
+	do {
+		HAL_MCR_RD(prGlueInfo->prAdapter,
+			   WPDMA_GLO_CFG, &GloCfg.word);
+		if ((GloCfg.field.TxDMABusy == 0) &&
+		(GloCfg.field.RxDMABusy == 0)) {
+			DBGLOG(HAL, TRACE,
+				"==>  DMAIdle, GloCfg=0x%x\n", GloCfg.word);
+			return TRUE;
+		}
+		kalUdelay(wait_us);
+	} while ((i++) < round);
+
+	DBGLOG(HAL, INFO, "==>  DMABusy, GloCfg=0x%x\n", GloCfg.word);
+
+	return FALSE;
+}
+
 void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable,
 		bool fgResetHif)
 {
@@ -541,7 +601,7 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable,
 	asicPdmaIntMaskConfig(prGlueInfo,
 		BIT(DMA_INT_TYPE_MCU2HOST) | BIT(DMA_INT_TYPE_TRX),
 		fgEnable);
-	kalDevRegRead(prGlueInfo, WPDMA_GLO_CFG, &GloCfg.word);
+	HAL_MCR_RD(prAdapter, WPDMA_GLO_CFG, &GloCfg.word);
 
 	if (fgEnable == TRUE) {
 		GloCfg.field_conn.tx_dma_en = 1;
@@ -564,7 +624,7 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable,
 		       ERROR_DETECT_MASK);
 
 	/* Set PDMA APSRC_ACK CR */
-	kalDevRegRead(prGlueInfo, WPDMA_APSRC_ACK_LOCK_SLPPROT, &u4Val);
+	HAL_MCR_RD(prAdapter, WPDMA_APSRC_ACK_LOCK_SLPPROT, &u4Val);
 	kalDevRegWrite(prGlueInfo, WPDMA_APSRC_ACK_LOCK_SLPPROT,
 		u4Val | BIT(4));
 
@@ -572,13 +632,13 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable,
 		kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_TX_Q, 0);
 		configPdmaRxRingThreshold(prGlueInfo);
 	} else {
-		halWpdmaWaitIdle(prGlueInfo, 100, 1000);
+		asicWpdmaWaitIdle(prGlueInfo, 100, 1000);
 		/* Reset DMA Index */
 		kalDevRegWrite(prGlueInfo, WPDMA_RST_PTR, 0xFFFFFFFF);
 		if (fgResetHif) {
-			halEnableSlpProt(prGlueInfo);
+			asicEnableSlpProt(prGlueInfo);
 			halHifRst(prGlueInfo);
-			halDisableSlpProt(prGlueInfo);
+			asicDisableSlpProt(prGlueInfo);
 		}
 	}
 }
@@ -630,7 +690,7 @@ uint32_t asicUpdatTxRingMaxQuota(struct ADAPTER *prAdapter,
 	}
 
 	/* Step 1. Pause the TxRing */
-	kalDevRegRead(prGlueInfo, WPDMA_PAUSE_TX_Q, &u4TxRingBitmap);
+	HAL_MCR_RD(prAdapter, WPDMA_PAUSE_TX_Q, &u4TxRingBitmap);
 	kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_TX_Q,
 		u4TxRingBitmap |
 		(BIT(u2Port) << WPDMA_PAUSE_TX_Q_RINGIDX_OFFSET));
@@ -786,7 +846,7 @@ void asicCheckDummyReg(struct GLUE_INFO *prGlueInfo)
 
 	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
-	kalDevRegRead(prGlueInfo, CONN_DUMMY_CR, &u4Value);
+	HAL_MCR_RD(prAdapter, CONN_DUMMY_CR, &u4Value);
 	DBGLOG(HAL, TRACE, "Check sleep mode DummyReg[0x%x]\n", u4Value);
 	if (u4Value != PDMA_DUMMY_RESET_VALUE)
 		return;

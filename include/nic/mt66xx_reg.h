@@ -1625,6 +1625,13 @@ struct mt66xx_chip_info {
 #endif
 	void (*asicSerInit)(struct ADAPTER *prAdapter,
 			    const u_int8_t fgAtResetFlow);
+#if CFG_NEW_HIF_DEV_REG_IF
+	const enum HIF_DEV_REG_REASON *prValidMmioReadReason;
+	const uint32_t u4ValidMmioReadReasonSize;
+	u_int8_t (*isValidMmioReadReason)(
+		struct mt66xx_chip_info *prChipInfo,
+		enum HIF_DEV_REG_REASON eReason);
+#endif /* CFG_NEW_HIF_DEV_REG_IF */
 
 	/* If you want to explicitly specify the max AMPDU length exponent in
 	 * HE CAP IE instead of using default one specified by

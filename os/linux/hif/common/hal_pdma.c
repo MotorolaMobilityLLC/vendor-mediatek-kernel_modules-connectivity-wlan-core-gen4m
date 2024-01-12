@@ -220,7 +220,8 @@ u_int8_t halVerifyChipID(struct ADAPTER *prAdapter)
 	if (prAdapter->fgIsReadRevID || !prChipInfo->should_verify_chip_id)
 		return TRUE;
 
-	HAL_MCR_RD(prAdapter, prBusInfo->top_cfg_base + TOP_HW_CONTROL, &u4CIR);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       prBusInfo->top_cfg_base + TOP_HW_CONTROL, &u4CIR);
 
 	DBGLOG(INIT, INFO, "WCIR_CHIP_ID = 0x%x, chip_id = 0x%x\n",
 	       (uint32_t)(u4CIR & WCIR_CHIP_ID), prChipInfo->chip_id);
@@ -228,7 +229,8 @@ u_int8_t halVerifyChipID(struct ADAPTER *prAdapter)
 	if ((u4CIR & WCIR_CHIP_ID) != prChipInfo->chip_id)
 		return FALSE;
 
-	HAL_MCR_RD(prAdapter, prBusInfo->top_cfg_base + TOP_HW_VERSION, &u4CIR);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       prBusInfo->top_cfg_base + TOP_HW_VERSION, &u4CIR);
 
 	prAdapter->ucRevID = (uint8_t)(u4CIR & 0xF);
 	prAdapter->fgIsReadRevID = TRUE;
@@ -340,8 +342,8 @@ uint32_t halRxWaitResponse(struct ADAPTER *prAdapter, uint8_t ucPortIdx,
 			prHifInfo = &prGlueInfo->rHifInfo;
 			prRxRing = &prHifInfo->RxRing[ucNewPort];
 
-			kalDevRegRead(prGlueInfo, CONN_HIF_ON_DBGCR01,
-				      &u4Value);
+			HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+				       CONN_HIF_ON_DBGCR01, &u4Value);
 			DBGLOG(HAL, ERROR,
 				"CONN_HIF_ON_DBGCR01[0x%x], DDone TO: %d, Cnt: %u\n",
 				u4Value, prRxRing->fgIsWaitRxDmaDoneTimeout,
@@ -2978,28 +2980,6 @@ void halEnableFWDownload(struct ADAPTER *prAdapter, u_int8_t fgEnable)
 		prChipInfo->asicEnableFWDownload(prAdapter, fgEnable);
 }
 
-u_int8_t halWpdmaWaitIdle(struct GLUE_INFO *prGlueInfo,
-	int32_t round, int32_t wait_us)
-{
-	int32_t i = 0;
-	union WPDMA_GLO_CFG_STRUCT GloCfg = {0};
-
-	do {
-		kalDevRegRead(prGlueInfo, WPDMA_GLO_CFG, &GloCfg.word);
-		if ((GloCfg.field.TxDMABusy == 0) &&
-		(GloCfg.field.RxDMABusy == 0)) {
-			DBGLOG(HAL, TRACE,
-				"==>  DMAIdle, GloCfg=0x%x\n", GloCfg.word);
-			return TRUE;
-		}
-		kalUdelay(wait_us);
-	} while ((i++) < round);
-
-	DBGLOG(HAL, INFO, "==>  DMABusy, GloCfg=0x%x\n", GloCfg.word);
-
-	return FALSE;
-}
-
 void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif)
 {
 	struct GL_HIF_INFO *prHifInfo;
@@ -3337,7 +3317,7 @@ void halWpdmaProcessDataDmaDoneByIdx(struct ADAPTER *prAdapter,
 	if (prTxRing->u4UsedCnt == 0)
 		return;
 
-	HAL_GET_RING_DIDX(prAdapter->prGlueInfo, prTxRing, &u4DmaIdx);
+	HAL_GET_RING_DIDX(HIF_READ, prAdapter, prTxRing, &u4DmaIdx);
 	u4SwIdx = prTxRing->TxSwUsedIdx;
 	if (u4DmaIdx > u4SwIdx) {
 		u4Diff = u4DmaIdx - u4SwIdx;
@@ -3449,15 +3429,17 @@ static u_int8_t halIsWfdmaRxRingsEmpty(struct GLUE_INFO *prGlueInfo)
 uint32_t halWpdmaGetRxDmaDoneCnt(struct GLUE_INFO *prGlueInfo,
 	uint8_t ucRingNum)
 {
+	struct ADAPTER *prAdapter;
 	struct mt66xx_chip_info *prChipInfo;
 	struct WIFI_VAR *prWifiVar;
 	struct RTMP_RX_RING *prRxRing;
 	struct GL_HIF_INFO *prHifInfo;
 	uint32_t u4MaxCnt = 0, u4CpuIdx = 0, u4DmaIdx = 0, u4RxPktCnt = 0;
 
+	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
-	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
+	prChipInfo = prAdapter->chip_info;
+	prWifiVar = &prAdapter->rWifiVar;
 	prRxRing = &prHifInfo->RxRing[ucRingNum];
 	u4MaxCnt = prRxRing->u4RingSize;
 
@@ -3476,7 +3458,8 @@ uint32_t halWpdmaGetRxDmaDoneCnt(struct GLUE_INFO *prGlueInfo,
 		goto exit;
 	}
 
-	HAL_GET_RING_DIDX(prGlueInfo, prRxRing, &prRxRing->RxDmaIdx);
+	HAL_GET_RING_DIDX(HIF_READ, prAdapter, prRxRing,
+			  &prRxRing->RxDmaIdx);
 	u4CpuIdx = prRxRing->RxCpuIdx;
 	u4DmaIdx = prRxRing->RxDmaIdx;
 
@@ -4174,7 +4157,6 @@ u_int8_t halChipToStaticMapBusAddr(struct mt66xx_chip_info *prChipInfo,
 u_int8_t halGetDynamicMapReg(struct GLUE_INFO *prGlueInfo,
 			     uint32_t u4ChipAddr, uint32_t *pu4Value)
 {
-	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4ReMapReg, u4BusAddr;
 
@@ -4185,9 +4167,9 @@ u_int8_t halGetDynamicMapReg(struct GLUE_INFO *prGlueInfo,
 		return FALSE;
 
 
-	RTMP_IO_WRITE32(prHifInfo, u4ReMapReg, u4ChipAddr & PCIE_REMAP2_MASK);
+	RTMP_IO_WRITE32(prChipInfo, u4ReMapReg, u4ChipAddr & PCIE_REMAP2_MASK);
 	u4BusAddr = PCIE_REMAP2_BUS_ADDR + (u4ChipAddr & ~PCIE_REMAP2_MASK);
-	RTMP_IO_READ32(prHifInfo, u4BusAddr, pu4Value);
+	RTMP_IO_READ32(prChipInfo, u4BusAddr, pu4Value);
 
 	return TRUE;
 }
@@ -4195,7 +4177,6 @@ u_int8_t halGetDynamicMapReg(struct GLUE_INFO *prGlueInfo,
 u_int8_t halSetDynamicMapReg(struct GLUE_INFO *prGlueInfo,
 			     uint32_t u4ChipAddr, uint32_t u4Value)
 {
-	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4ReMapReg, u4BusAddr;
 
@@ -4205,9 +4186,9 @@ u_int8_t halSetDynamicMapReg(struct GLUE_INFO *prGlueInfo,
 				       &u4ReMapReg))
 		return FALSE;
 
-	RTMP_IO_WRITE32(prHifInfo, u4ReMapReg, u4ChipAddr & PCIE_REMAP2_MASK);
+	RTMP_IO_WRITE32(prChipInfo, u4ReMapReg, u4ChipAddr & PCIE_REMAP2_MASK);
 	u4BusAddr = PCIE_REMAP2_BUS_ADDR + (u4ChipAddr & ~PCIE_REMAP2_MASK);
-	RTMP_IO_WRITE32(prHifInfo, u4BusAddr, u4Value);
+	RTMP_IO_WRITE32(prChipInfo, u4BusAddr, u4Value);
 
 	return TRUE;
 }
@@ -4273,7 +4254,8 @@ static void halDefaultProcessSoftwareInterrupt(
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
 
-	kalDevRegRead(prGlueInfo, MCU2HOST_SW_INT_STA, &u4Status);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       MCU2HOST_SW_INT_STA, &u4Status);
 	DBGLOG(HAL, INFO, "SER status[0x%x].\n", u4Status);
 	prErrRecoveryCtrl->u4BackupStatus = u4Status;
 	if (u4Status & ERROR_DETECT_MASK) {
@@ -4897,40 +4879,6 @@ void halUpdateTxMaxQuota(struct ADAPTER *prAdapter)
 				SPIN_LOCK_UPDATE_WMM_QUOTA);
 		}
 	}
-}
-
-void halEnableSlpProt(struct GLUE_INFO *prGlueInfo)
-{
-	uint32_t u4Val = 0;
-	uint32_t u4WaitDelay = 20000;
-
-	kalDevRegRead(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, &u4Val);
-	u4Val |= CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_PDMA_AXI_SLPPROT_ENABLE_MASK;
-	kalDevRegWrite(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, u4Val);
-	while (TRUE) {
-		u4WaitDelay--;
-		kalDevRegRead(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR,
-			&u4Val);
-		if (CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_PDMA_AXI_SLPPROT_RDY_MASK &
-				u4Val)
-			break;
-		if (u4WaitDelay == 0) {
-			DBGLOG(HAL, ERROR, "wait for sleep protect timeout.\n");
-			GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
-						 RST_SLP_PROT_TIMEOUT);
-			break;
-		}
-		kalUdelay(1);
-	}
-}
-
-void halDisableSlpProt(struct GLUE_INFO *prGlueInfo)
-{
-	uint32_t u4Val = 0;
-
-	kalDevRegRead(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, &u4Val);
-	u4Val &= ~CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_PDMA_AXI_SLPPROT_ENABLE_MASK;
-	kalDevRegWrite(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, u4Val);
 }
 
 #if CFG_MTK_MDDP_SUPPORT
@@ -6206,6 +6154,16 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 			" txdelay[0x%lx]",
 			prHifInfo->ulTxDataTimeout);
 #endif /* CFG_SUPPORT_TX_DATA_DELAY == 1 */
+#if CFG_NEW_HIF_DEV_REG_IF
+	for (i = 0; i < HIF_DEV_REG_MAX; ++i) {
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+				   "%s%u%s",
+				   (i == 0) ? " MR[" : "",
+				   prHifInfo->u4MmioReadReasonCnt[i],
+				   (i == HIF_DEV_REG_MAX - 1) ? "] " : ",");
+	}
+#endif /* CFG_NEW_HIF_DEV_REG_IF */
+
 	DBGLOG(HAL, INFO, "%s\n", buf);
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
 
@@ -6308,7 +6266,8 @@ uint32_t halSetSuspendFlagToFw(struct ADAPTER *prAdapter,
 	} else if (prNotifyInfo->eType ==
 		   ENUM_HOST_SUSPEND_ADDR_TYPE_CONN_W_R_REG) {
 
-		HAL_MCR_RD(prAdapter, prNotifyInfo->u4SetAddr, &u4Value);
+		HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+			       prNotifyInfo->u4SetAddr, &u4Value);
 		if (fgSuspend)
 			u4Value |= prNotifyInfo->u4Mask;
 		else

@@ -163,6 +163,8 @@ do { \
 	} \
 } while (0)
 
+#define HAL_RMCR_RD(_RSN, _A, _R, _V)	HAL_MCR_RD(_A, _R, _V)
+
 #define HAL_MCR_WR(_prAdapter, _u4Offset, _u4Value) \
 do { \
 	if (HAL_TEST_FLAG(_prAdapter, ADAPTER_FLAG_HW_ERR) == FALSE) { \
@@ -351,27 +353,79 @@ do { \
 			<= CONN_MCU_CONFG_CFG_DBG1_ADDR_END)
 #endif
 
-#define HAL_MCR_RD(_prAdapter, _u4Offset, _pu4Value) \
-{ \
-	if (_prAdapter == NULL) { \
-		kalDevRegRead(NULL, _u4Offset, _pu4Value); \
+#if (CFG_NEW_HIF_DEV_REG_IF == 1)
+#define HAL_RMCR_RD(_RSN, _A, _R, _V) { \
+	u_int8_t _RET = FALSE; \
+	struct ADAPTER *_AD = _A; \
+	if (_AD == NULL) { \
+		_RET = kalDevRegRead( \
+			HIF_DEV_REG_##_RSN, NULL, _R, _V); \
 	} else { \
-		if (_prAdapter->rAcpiState == ACPI_STATE_D3) {	\
+		if (_AD->rAcpiState == ACPI_STATE_D3) \
 			ASSERT(0); \
-		} \
-		kalDevRegRead(_prAdapter->prGlueInfo, _u4Offset, _pu4Value); \
+		_RET = kalDevRegRead( \
+			HIF_DEV_REG_##_RSN, _AD->prGlueInfo, _R, _V); \
 	} \
+	_RET; \
 }
+
+#define HAL_RMCR_RD_RANGE(_RSN, _A, _R, _B, _S) { \
+	u_int8_t _RET = FALSE; \
+	struct ADAPTER *_AD = _A; \
+	if (_AD == NULL) { \
+		_RET = kalDevRegReadRange( \
+			HIF_DEV_REG_##_RSN, NULL, _R, _B, _S); \
+	} else { \
+		if (_AD->rAcpiState == ACPI_STATE_D3) \
+			ASSERT(0); \
+		_RET = kalDevRegReadRange( \
+			HIF_DEV_REG_##_RSN, _AD->prGlueInfo, \
+			_R, _B, _S); \
+	} \
+	_RET; \
+}
+#else
+#define HAL_MCR_RD(_A, _R, _V) { \
+	u_int8_t _RET = FALSE; \
+	struct ADAPTER *_AD = _A; \
+	if (_AD == NULL) { \
+		_RET = kalDevRegRead(NULL, _R, _V); \
+	} else { \
+		if (_AD->rAcpiState == ACPI_STATE_D3) \
+			ASSERT(0); \
+		_RET = kalDevRegRead(_AD->prGlueInfo, _R, _V); \
+	} \
+	_RET; \
+}
+
+#define HAL_MCR_RD_RANGE(_A, _R, _B, _S) { \
+	u_int8_t _RET = FALSE; \
+	struct ADAPTER *_AD = _A; \
+	if (_AD == NULL) { \
+		_RET = kalDevRegReadRange(NULL, _R, _B, _S); \
+	} else { \
+		if (_AD->rAcpiState == ACPI_STATE_D3) \
+			ASSERT(0); \
+		_RET = kalDevRegReadRange(_AD->prGlueInfo, _R, _B, _S); \
+	} \
+	_RET; \
+}
+
+#define HAL_RMCR_RD(_RSN, _A, _R, _V)	HAL_MCR_RD(_A, _R, _V)
+#define HAL_RMCR_RD_RANGE(_RSN, _A, _R, _B, _S) \
+	HAL_MCR_RD_RANGE(_A, _R, _B, _S)
+#endif /* CFG_NEW_HIF_DEV_REG_IF */
 
 #define HAL_MCR_WR(_prAdapter, _u4Offset, _u4Value) \
 { \
-	if (_prAdapter == NULL) { \
+	struct ADAPTER *_AD = _prAdapter; \
+	if (_AD == NULL) { \
 		kalDevRegWrite(NULL, _u4Offset, _u4Value); \
 	} else { \
-		if (_prAdapter->rAcpiState == ACPI_STATE_D3) {	\
+		if (_AD->rAcpiState == ACPI_STATE_D3) {	\
 			ASSERT(0); \
 		} \
-		kalDevRegWrite(_prAdapter->prGlueInfo, _u4Offset, _u4Value); \
+		kalDevRegWrite(_AD->prGlueInfo, _u4Offset, _u4Value); \
 	} \
 }
 
@@ -400,20 +454,37 @@ do { \
 
 #endif /* #if defined(_HIF_SDIO) */
 
-#define HAL_MCR_WR_FIELD(_prAdapter, _u4Offset, _u4FieldVal, _ucShft, _u4Mask) \
+#if (CFG_NEW_HIF_DEV_REG_IF == 1)
+#define HAL_MCR_WR_FIELD(_R, _A, _O, _u4FieldVal, _ucShft, _u4Mask) \
 { \
 	uint32_t u4CrValue = 0; \
-	HAL_MCR_RD(_prAdapter, _u4Offset, &u4CrValue); \
+	HAL_RMCR_RD(_R, _A, _O, &u4CrValue);	\
 	u4CrValue &= (~_u4Mask); \
 	u4CrValue |= ((_u4FieldVal << _ucShft) & _u4Mask); \
-	HAL_MCR_WR(_prAdapter, _u4Offset, u4CrValue); \
+	HAL_MCR_WR(_A, _O, u4CrValue); \
 }
 
-#define HAL_MCR_RD_FIELD(_prAdapter, _u4Offset, _ucShft, _u4Mask, pu4Val) \
+#define HAL_MCR_RD_FIELD(_R, _A, _O, _ucShft, _u4Mask, pu4Val) \
 { \
-	HAL_MCR_RD(_prAdapter, _u4Offset, pu4Val); \
+	HAL_RMCR_RD(_R, _A, _O, pu4Val); \
 	*pu4Val = ((*pu4Val & _u4Mask) >> _ucShft); \
 }
+#else
+#define HAL_MCR_WR_FIELD(_A, _O, _u4FieldVal, _ucShft, _u4Mask) \
+{ \
+	uint32_t u4CrValue = 0; \
+	HAL_MCR_RD(_A, _O, &u4CrValue);	\
+	u4CrValue &= (~_u4Mask); \
+	u4CrValue |= ((_u4FieldVal << _ucShft) & _u4Mask); \
+	HAL_MCR_WR(_A, _O, u4CrValue); \
+}
+
+#define HAL_MCR_RD_FIELD(_A, _O, _ucShft, _u4Mask, pu4Val) \
+{ \
+	HAL_MCR_RD(_A, _O, pu4Val); \
+	*pu4Val = ((*pu4Val & _u4Mask) >> _ucShft); \
+}
+#endif /* CFG_NEW_HIF_DEV_REG_IF */
 
 #define HAL_WRITE_TX_DATA(_prAdapter, _prMsduInfo) \
 { \
@@ -510,7 +581,8 @@ do { \
 			&u4Value); \
 	} \
 	if (!fgRet) \
-		HAL_MCR_RD(_prAdapter, prChipInfo->sw_sync0, &u4Value); \
+		HAL_RMCR_RD(ONOFF_READ, _prAdapter, \
+			       prChipInfo->sw_sync0, &u4Value);	\
 	if ((u4Value & (_checkItem << prChipInfo->sw_ready_bit_offset)) \
 	     == (_checkItem << prChipInfo->sw_ready_bit_offset)) \
 		*_pfgResult = TRUE; \
@@ -524,7 +596,8 @@ do { \
 		ASSERT(0); \
 	*_pfgResult = FALSE; \
 	prChipInfo = _prAdapter->chip_info; \
-	HAL_MCR_RD(_prAdapter, prChipInfo->sw_sync0, &u4Value); \
+	HAL_RMCR_RD(ONOFF_READ, _prAdapter, \
+		       prChipInfo->sw_sync0, &u4Value); \
 	if ((u4Value & (_checkItem << prChipInfo->sw_ready_bit_offset)) \
 	     == (_checkItem << prChipInfo->sw_ready_bit_offset)) \
 		*_pfgResult = TRUE; \
@@ -546,7 +619,8 @@ do { \
 		ASSERT(0); \
 	prChipInfo = _prAdapter->chip_info; \
 	prBusInfo = prChipInfo->bus_info; \
-	HAL_MCR_RD(_prAdapter, prChipInfo->sw_sync0, &_u4Result); \
+	HAL_RMCR_RD(ONOFF_READ, _prAdapter, \
+		       prChipInfo->sw_sync0, &_u4Result);	\
 	if (prBusInfo->getMailboxStatus) {	\
 		prBusInfo->getMailboxStatus(_prAdapter, &u4Value);	\
 		DBGLOG(INIT, INFO, "Mailbox: 0x%x\n", u4Value); \
@@ -687,7 +761,8 @@ do { \
 		ASSERT(0); \
 	} else {\
 		prChipInfo = _prAdapter->chip_info; \
-		HAL_MCR_RD(_prAdapter, prChipInfo->sw_sync0, &u4Value); \
+		HAL_RMCR_RD(LPOWN_READ, _prAdapter, \
+			       prChipInfo->sw_sync0, &u4Value); \
 		u4Value &= ~(WIFI_FUNC_DUMMY_REQ << \
 			prChipInfo->sw_ready_bit_offset);\
 		HAL_MCR_WR(prAdapter, prChipInfo->sw_sync0, u4Value);\

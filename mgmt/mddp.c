@@ -1969,7 +1969,7 @@ u_int8_t mddpIsMDFwOwn(void)
 {
 	uint32_t u4Val = 0;
 
-	kalDevRegRead(NULL, MD_LPCTL_ADDR, &u4Val);
+	HAL_MCR_RD(NULL, MD_LPCTL_ADDR, &u4Val);
 	DBGLOG(INIT, INFO, "Set MD Fw Status[0x%08x].\n", u4Val);
 
 	return (u4Val & BIT(0)) == BIT(0);

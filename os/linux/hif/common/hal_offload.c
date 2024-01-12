@@ -148,14 +148,14 @@ u_int8_t halMawdWakeup(struct GLUE_INFO *prGlueInfo)
 
 	u4Addr = MAWD_AP_WAKE_UP;
 	u4Val = BIT(0);
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	/* mawd speed up */
 	u4Addr = MAWD_POWER_UP;
 	u4Val = BIT(0);
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
-		kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+		HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
 		if ((u4Val & BIT(2)) == BIT(2))
 			break;
 		kalUdelay(MAWD_POWER_UP_WAIT_TIME);
@@ -170,21 +170,21 @@ u_int8_t halMawdWakeup(struct GLUE_INFO *prGlueInfo)
 
 	u4Addr = MAWD_IDX_REG_PATCH;
 	u4Val = 0x81000000 | (prHifInfo->u4RxBlkDidx & 0xFFFF);
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 	u4Val = 0x92000000 | (prHifInfo->u4RxBlkMagicCnt & 0xFFFF);
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
-	HAL_SET_RING_CIDX(prGlueInfo, prRxRing, prRxRing->RxCpuIdx);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+	HAL_SET_RING_CIDX(prAdapter, prRxRing, prRxRing->RxCpuIdx);
 
 	/* BKRS index from RRO */
 	u4Addr = WF_RRO_TOP_IND_CMD_0_CTRL3_ADDR;
-	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_READ, prAdapter, u4Addr, &u4Val);
 	u4Addr = MAWD_IND_CMD_SIGNATURE1;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	/* prevent MD disable RRO after AP eable RRO */
 	u4Addr = MAWD_BA_PARAM;
 	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
-		kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+		HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
 		if ((u4Val & BITS(0, 1)) != 2)
 			break;
 		kalUdelay(MAWD_POWER_UP_WAIT_TIME);
@@ -197,7 +197,7 @@ u_int8_t halMawdWakeup(struct GLUE_INFO *prGlueInfo)
 	u4Addr = WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_ADDR;
 	u4Val = WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_EN_MASK |
 		MAWD_WFDMA_HIGH_ADDR;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 done:
 	prHifInfo->fgIsMawdSuspend = FALSE;
 
@@ -236,21 +236,21 @@ u_int8_t halMawdSleep(struct GLUE_INFO *prGlueInfo)
 
 	u4Addr = MAWD_AP_WAKE_UP;
 	u4Val = BIT(1);
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	if (!IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
 		goto done;
 
 	u4Addr = MAWD_BA_PARAM;
-	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
 	/* MD is wakeup */
 	if ((u4Val & BITS(0, 1)) == 0)
 		goto mawd_sleep;
 
 	u4Addr = MAWD_POWER_UP;
-	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
 	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
-		kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+		HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
 		if ((u4Val & BITS(8, 12)) == BITS(8, 12))
 			break;
 		kalUdelay(MAWD_POWER_UP_WAIT_TIME);
@@ -262,19 +262,19 @@ u_int8_t halMawdSleep(struct GLUE_INFO *prGlueInfo)
 	}
 
 	u4Addr = WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_ADDR;
-	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_READ, prAdapter, u4Addr, &u4Val);
 	u4Val &= ~WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_EN_MASK;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 mawd_sleep:
 	u4Addr = MAWD_AP_RX_BLK_CTRL2;
-	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
 	prHifInfo->u4RxBlkDidx = (u4Val & BITS(12, 23)) >> 12;
 	prHifInfo->u4RxBlkMagicCnt = (u4Val & BITS(30, 31)) >> 30;
 
 done:
 	u4Addr = MAWD_AP_WAKE_UP;
-	kalDevRegWrite(prGlueInfo, u4Addr, 0);
+	HAL_MCR_WR(prAdapter, u4Addr, 0);
 #if (CFG_MTK_FPGA_PLATFORM == 0)
 	__halMawdSleep();
 #endif
@@ -419,50 +419,54 @@ void halRroFreeMem(struct GLUE_INFO *prGlueInfo)
 
 static void halRroSetupBaBitmap(struct GLUE_INFO *prGlueInfo)
 {
+	struct ADAPTER *prAdapter;
 	struct GL_HIF_INFO *prHifInfo;
 	struct RTMP_DMABUF *prCache;
 	uint32_t u4Addr, u4Val;
 
+	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prCache = &prHifInfo->BaBitmapCache;
 
 	u4Addr = WF_RRO_TOP_BA_BITMAP_BASE_0_ADDR;
 	u4Val = prCache->AllocPa;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	u4Addr = WF_RRO_TOP_BA_BITMAP_BASE_1_ADDR;
 	u4Val = (prCache->AllocPa >> DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 #ifdef WF_RRO_TOP_BA_BITMAP_BASE_EXT0_ADDR
 	u4Addr = WF_RRO_TOP_BA_BITMAP_BASE_EXT0_ADDR;
 	u4Val = prCache->AllocPa;
 	u4Val += RRO_BA_BITMAP_SIZE * RRO_MAX_WINDOW_NUM / 2;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	u4Addr = WF_RRO_TOP_BA_BITMAP_BASE_EXT1_ADDR;
 	u4Val = (prCache->AllocPa >> DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 #endif /* WF_RRO_TOP_BA_BITMAP_BASE_EXT0_ADDR */
 }
 
 static void halRroSetupAddressElement(struct GLUE_INFO *prGlueInfo)
 {
+	struct ADAPTER *prAdapter;
 	struct GL_HIF_INFO *prHifInfo;
 	struct RTMP_DMABUF *prAddrArray;
 	uint32_t u4Addr, u4Val;
 
+	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prAddrArray = &prHifInfo->AddrArray;
 
 	u4Addr = WF_RRO_TOP_ADDR_ARRAY_BASE_0_ADDR;
 	u4Val = prAddrArray->AllocPa;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	u4Addr = WF_RRO_TOP_ADDR_ARRAY_BASE_1_ADDR;
 	u4Val = ((prAddrArray->AllocPa >> DMA_BITS_OFFSET) &
 	    DMA_HIGHER_4BITS_MASK) | BIT(30);
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 #ifdef WF_RRO_TOP_PARTICULAR_CFG_0_ADDR
 	u4Addr = WF_RRO_TOP_PARTICULAR_CFG_0_ADDR;
@@ -470,35 +474,37 @@ static void halRroSetupAddressElement(struct GLUE_INFO *prGlueInfo)
 		(RRO_ADDR_ELEM_SIZE *
 		 RRO_TOTAL_ADDR_ELEM_NUM *
 		 RRO_MAX_WINDOW_NUM);
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 #endif /* WF_RRO_TOP_PARTICULAR_CFG_0_ADDR */
 
 #ifdef WF_RRO_TOP_PARTICULAR_CFG_1_ADDR
 	u4Addr = WF_RRO_TOP_PARTICULAR_CFG_1_ADDR;
 	u4Val = (prAddrArray->AllocPa >> DMA_BITS_OFFSET) |
 		(RRO_TOTAL_ADDR_ELEM_NUM << 16) | BIT(31);
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 #endif /* WF_RRO_TOP_PARTICULAR_CFG_1_ADDR */
 
 	u4Addr = WF_RRO_TOP_BA_STA_CFG_ADDR;
-	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
-	u4Val = (u4Val & BITS(16, 31)) |
+	u4Val = (0x5 << 24) |
+		(0x20 << 16) |
 		((RRO_MAX_TID_NUM - 1) << 12) |
 		(RRO_MAX_STA_NUM - 1);
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 }
 
 static void halRroSetupIndicateCmdRing(struct GLUE_INFO *prGlueInfo)
 {
+	struct ADAPTER *prAdapter;
 	struct mt66xx_chip_info *prChipInfo;
 	struct GL_HIF_INFO *prHifInfo;
 	struct WIFI_VAR *prWifiVar;
 	struct RTMP_DMABUF *prIndCmd;
 	uint32_t u4Addr, u4Val;
 
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prAdapter = prGlueInfo->prAdapter;
+	prChipInfo = prAdapter->chip_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
-	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
+	prWifiVar = &prAdapter->rWifiVar;
 	prIndCmd = &prHifInfo->IndCmdRing;
 
 	prHifInfo->u4RroMagicCnt = 0;
@@ -512,37 +518,37 @@ static void halRroSetupIndicateCmdRing(struct GLUE_INFO *prGlueInfo)
 
 	u4Addr = WF_RRO_TOP_IND_CMD_0_CTRL0_ADDR;
 	u4Val = prIndCmd->AllocPa;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	u4Addr = WF_RRO_TOP_IND_CMD_0_CTRL1_ADDR;
 	u4Val = (((prIndCmd->AllocPa >> DMA_BITS_OFFSET) &
 		DMA_HIGHER_4BITS_MASK) << 16) |
 		RRO_IND_CMD_RING_SIZE;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	u4Addr = WF_RRO_TOP_IND_CMD_0_CTRL2_ADDR;
 	u4Val = RRO_IND_CMD_RING_SIZE - 1;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	u4Addr = WF_RRO_TOP_IND_CMD_0_CTRL3_ADDR;
 	u4Val = 0;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
 		u4Addr = WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_0_ADDR;
 		u4Val = MAWD_IND_CMD_SIGNATURE0 | MAWD_WFDMA_LOW_ADDR;
-		kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+		HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 		u4Addr = WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_ADDR;
 		u4Val = WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_EN_MASK |
 			MAWD_WFDMA_HIGH_ADDR;
-		kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+		HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 	}
 
 	/* enable rro host interrupt */
 	u4Addr = WF_RRO_TOP_HOST_INT_ENA_ADDR;
 	u4Val = WF_RRO_TOP_HOST_INT_ENA_HOST_RRO_DONE_ENA_MASK;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 }
 
 static void halRroSetupTimeoutConfig(struct GLUE_INFO *prGlueInfo)
@@ -551,15 +557,17 @@ static void halRroSetupTimeoutConfig(struct GLUE_INFO *prGlueInfo)
 
 	u4Addr = WF_RRO_TOP_TIMEOUT_CONF_0_TO_STEP_ONE_0_ADDR;
 	u4Val = 9;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prGlueInfo->prAdapter, u4Addr, u4Val);
 }
 
 void halRroMawdInit(struct GLUE_INFO *prGlueInfo)
 {
+	struct ADAPTER *prAdapter;
 	struct GL_HIF_INFO *prHifInfo;
 	struct RTMP_DMABUF *prAddrArray, *prIndCmd;
 	uint32_t u4Addr, u4Val;
 
+	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prAddrArray = &prHifInfo->AddrArray;
 	prIndCmd = &prHifInfo->IndCmdRing;
@@ -569,43 +577,43 @@ void halRroMawdInit(struct GLUE_INFO *prGlueInfo)
 	/* speed up the PLL after power up */
 	u4Addr = MAWD_POWER_UP;
 	u4Val = BIT(0);
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	halMawdInitSram(prGlueInfo);
 
 	/* setup addr array */
 	u4Addr = MAWD_ADDR_ARRAY_BASE_L;
 	u4Val = prAddrArray->AllocPa;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	u4Addr = MAWD_ADDR_ARRAY_BASE_M;
 	u4Val = (prAddrArray->AllocPa >> DMA_BITS_OFFSET) &
 		DMA_HIGHER_4BITS_MASK;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	/* setup ind cmd array */
 	u4Addr = MAWD_IND_CMD_CTRL0;
 	u4Val = prIndCmd->AllocPa;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	u4Addr = MAWD_IND_CMD_CTRL1;
 	u4Val = ((prIndCmd->AllocPa >> DMA_BITS_OFFSET) &
 		 DMA_HIGHER_4BITS_MASK) |
 		(RRO_IND_CMD_RING_SIZE << 4);
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	/* setup ack sn */
 	u4Addr = MAWD_RRO_ACK_SN_BASE_L;
 	u4Val = WF_RRO_TOP_ACK_SN_CTRL_ADDR - MAWD_RRO_ADDR_OFFSET;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	u4Addr = MAWD_RRO_ACK_SN_BASE_M;
 	u4Val = MAWD_WFDMA_HIGH_ADDR;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 #if (CFG_MTK_FPGA_PLATFORM == 1)
 	/* set remapping CR for MAWD in connsys FPGA */
-	kalDevRegWrite(prGlueInfo, 0x7C023118, 0x1);
+	HAL_MCR_WR(prAdapter, 0x7C023118, 0x1);
 #endif
 }
 
@@ -692,6 +700,7 @@ void halMawdFreeRxBlkRing(struct GLUE_INFO *prGlueInfo)
 
 void halMawdInitRxBlkRing(struct GLUE_INFO *prGlueInfo)
 {
+	struct ADAPTER *prAdapter;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo = NULL;
@@ -700,6 +709,7 @@ void halMawdInitRxBlkRing(struct GLUE_INFO *prGlueInfo)
 	struct RX_BLK_DESC *prRxBlkD = NULL;
 	uint32_t u4PhyAddr = 0, u4PhyAddrExt = 0, u4Idx, u4Num;
 
+	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
@@ -737,8 +747,8 @@ void halMawdInitRxBlkRing(struct GLUE_INFO *prGlueInfo)
 		prRxRing->RxCpuIdx = 0;
 		prRxRing->RxDmaIdx = 0;
 		prRxRing->u4MagicCnt = 0;
-		kalDevRegWrite(prGlueInfo, prRxRing->hw_desc_base, u4PhyAddr);
-		kalDevRegWrite(prGlueInfo, prRxRing->hw_cnt_addr,
+		HAL_MCR_WR(prAdapter, prRxRing->hw_desc_base, u4PhyAddr);
+		HAL_MCR_WR(prAdapter, prRxRing->hw_cnt_addr,
 			u4PhyAddrExt | (prRxRing->u4RingSize << 16));
 
 		for (u4Idx = 0; u4Idx < prRxRing->u4RingSize; u4Idx++) {
@@ -1027,7 +1037,7 @@ void halRroTurnOff(struct GLUE_INFO *prGlueInfo)
 
 	u4Addr = WF_RRO_TOP_GLOBAL_CONFG_ADDR;
 	u4Val != BITS(0, 1);
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prGlueInfo->prAdapter, u4Addr, u4Val);
 }
 
 static void halRroSetup(struct GLUE_INFO *prGlueInfo)
@@ -1104,13 +1114,16 @@ void halOffloadFreeMem(struct GLUE_INFO *prGlueInfo)
 uint32_t halMawdGetRxBlkDoneCnt(struct GLUE_INFO *prGlueInfo,
 				uint32_t u4Num)
 {
+	struct ADAPTER *prAdapter;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct RTMP_RX_RING *prRxRing = NULL;
 	uint32_t u4MaxCnt = 0, u4CpuIdx = 0, u4DmaIdx = 0, u4RxPktCnt;
 
+	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prRxRing = &prHifInfo->RxBlkRing[u4Num];
-	HAL_GET_RING_DIDX(prGlueInfo, prRxRing, &prRxRing->RxDmaIdx);
+	HAL_GET_RING_DIDX(OFFLOAD_HOST, prAdapter, prRxRing,
+			  &prRxRing->RxDmaIdx);
 	u4MaxCnt = prRxRing->u4RingSize;
 	u4CpuIdx = prRxRing->RxCpuIdx;
 	u4DmaIdx = prRxRing->RxDmaIdx;
@@ -1792,7 +1805,7 @@ void halRroDumpDebugInfo(struct GLUE_INFO *prGlueInfo)
 	}
 
 	u4Addr = WF_RRO_TOP_IND_CMD_0_CTRL3_ADDR;
-	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_DBG, prGlueInfo->prAdapter, u4Addr, &u4Val);
 	u4DmaIdx = u4Val & WF_RRO_TOP_IND_CMD_0_CTRL3_DMA_IDX_MASK;
 
 	u4Id = aurIndCmd[u4DmaIdx].session_id;
@@ -1949,7 +1962,7 @@ static void halMawdReadRxBlkRing(
 		u4RxCnt--;
 	}
 
-	HAL_SET_RING_CIDX(prGlueInfo, prRxRing, prRxRing->RxCpuIdx);
+	HAL_SET_RING_CIDX(prAdapter, prRxRing, prRxRing->RxCpuIdx);
 
 	prRxRing->u4PendingCnt = u4RxCnt;
 
@@ -2003,7 +2016,7 @@ static void halRroReadIndCmd(
 	aurIndCmd = (struct RRO_IND_CMD *)prIndCmd->AllocVa;
 
 	u4Addr = WF_RRO_TOP_IND_CMD_0_CTRL3_ADDR;
-	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_READ, prAdapter, u4Addr, &u4Val);
 	u4DmaIdx = prHifInfo->u4IndCmdDmaIdx;
 	u4IndCmdIdx = u4Val & WF_RRO_TOP_IND_CMD_0_CTRL3_DMA_IDX_MASK;
 
@@ -2052,7 +2065,7 @@ static void halRroReadIndCmd(
 		rAckSn.field.is_last = 1;
 
 		u4Addr = WF_RRO_TOP_ACK_SN_CTRL_ADDR;
-		kalDevRegWrite(prGlueInfo, WF_RRO_TOP_ACK_SN_CTRL_ADDR,
+		HAL_MCR_WR(prAdapter, WF_RRO_TOP_ACK_SN_CTRL_ADDR,
 			       rAckSn.word);
 		DBGLOG(HAL, TRACE, "update ind cmd[0x%08x]\n", rAckSn.word);
 
@@ -2196,7 +2209,7 @@ void halRroUpdateWfdmaRxBlk(struct GLUE_INFO *prGlueInfo,
 		INC_RING_INDEX(prRxRing->RxCpuIdx, prRxRing->u4RingSize);
 	}
 
-	HAL_SET_RING_CIDX(prGlueInfo, prRxRing, prRxRing->RxCpuIdx);
+	HAL_SET_RING_CIDX(prGlueInfo->prAdapter, prRxRing, prRxRing->RxCpuIdx);
 }
 
 static void halMawdReadSram(
@@ -2205,25 +2218,32 @@ static void halMawdReadSram(
 	uint32_t *pu4ValL,
 	uint32_t *pu4ValH)
 {
+	struct ADAPTER *prAdapter;
 	struct BUS_INFO *prBusInfo;
 	uint32_t u4Val = 0, u4Idx;
 
-	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prAdapter = prGlueInfo->prAdapter;
+	prBusInfo = prAdapter->chip_info->bus_info;
 
-	kalDevRegRead(prGlueInfo, prBusInfo->mawd_settings2, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter,
+		       prBusInfo->mawd_settings2, &u4Val);
 	u4Val = (u4Val & BITS(16, 25)) | (u4Offset & BITS(0, 6));
-	kalDevRegWrite(prGlueInfo, prBusInfo->mawd_settings2, u4Val);
+	HAL_MCR_WR(prAdapter, prBusInfo->mawd_settings2, u4Val);
 
-	kalDevRegRead(prGlueInfo, prBusInfo->mawd_settings4, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter,
+		       prBusInfo->mawd_settings4, &u4Val);
 	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
-		kalDevRegRead(prGlueInfo, prBusInfo->mawd_settings4, &u4Val);
+		HAL_RMCR_RD(OFFLOAD_HOST, prAdapter,
+			       prBusInfo->mawd_settings4, &u4Val);
 		if ((u4Val & BIT(8)) == 0)
 			break;
 		kalUdelay(MAWD_POWER_UP_WAIT_TIME);
 	}
-	kalDevRegWrite(prGlueInfo, prBusInfo->mawd_settings4, BIT(1));
-	kalDevRegRead(prGlueInfo, prBusInfo->mawd_settings5, pu4ValL);
-	kalDevRegRead(prGlueInfo, prBusInfo->mawd_settings6, pu4ValH);
+	HAL_MCR_WR(prAdapter, prBusInfo->mawd_settings4, BIT(1));
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter,
+		       prBusInfo->mawd_settings5, pu4ValL);
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter,
+		       prBusInfo->mawd_settings6, pu4ValH);
 }
 
 static void halMawdInitSram(struct GLUE_INFO *prGlueInfo)
@@ -2232,7 +2252,8 @@ static void halMawdInitSram(struct GLUE_INFO *prGlueInfo)
 
 	for (u4Idx = 0; u4Idx < 64; u4Idx++) {
 		u4Addr = MAWD_REG_BASE + u4Idx * 4;
-		kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+		HAL_RMCR_RD(OFFLOAD_HOST, prGlueInfo->prAdapter,
+			       u4Addr, &u4Val);
 		halMawdBackupCr(prGlueInfo, u4Addr, u4Val);
 	}
 }
@@ -2243,25 +2264,30 @@ static void halMawdUpdateSram(
 	uint32_t u4ValL,
 	uint32_t u4ValH)
 {
+	struct ADAPTER *prAdapter;
 	struct BUS_INFO *prBusInfo;
 	uint32_t u4Val = 0, u4Idx;
 
-	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prAdapter = prGlueInfo->prAdapter;
+	prBusInfo = prAdapter->chip_info->bus_info;
 
-	kalDevRegWrite(prGlueInfo, prBusInfo->mawd_settings0, u4ValL);
-	kalDevRegWrite(prGlueInfo, prBusInfo->mawd_settings1, u4ValH);
-	kalDevRegRead(prGlueInfo, prBusInfo->mawd_settings2, &u4Val);
+	HAL_MCR_WR(prAdapter, prBusInfo->mawd_settings0, u4ValL);
+	HAL_MCR_WR(prAdapter, prBusInfo->mawd_settings1, u4ValH);
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter,
+		       prBusInfo->mawd_settings2, &u4Val);
 	u4Val = (u4Val & BITS(16, 25)) | (u4Offset & BITS(0, 6));
-	kalDevRegWrite(prGlueInfo, prBusInfo->mawd_settings2, u4Val);
+	HAL_MCR_WR(prAdapter, prBusInfo->mawd_settings2, u4Val);
 
-	kalDevRegRead(prGlueInfo, prBusInfo->mawd_settings4, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter,
+		       prBusInfo->mawd_settings4, &u4Val);
 	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
-		kalDevRegRead(prGlueInfo, prBusInfo->mawd_settings4, &u4Val);
+		HAL_RMCR_RD(OFFLOAD_HOST, prAdapter,
+			       prBusInfo->mawd_settings4, &u4Val);
 		if ((u4Val & BIT(8)) == 0)
 			break;
 		kalUdelay(MAWD_POWER_UP_WAIT_TIME);
 	}
-	kalDevRegWrite(prGlueInfo, prBusInfo->mawd_settings4, BIT(0));
+	HAL_MCR_WR(prAdapter, prBusInfo->mawd_settings4, BIT(0));
 
 	DBGLOG(HAL, TRACE, "Update SRAM[%d] H[0x%08x] L[0x%08x]",
 	       u4Offset, u4ValH, u4ValL);
@@ -2304,6 +2330,7 @@ static void halMawdSetupTxRing(struct GLUE_INFO *prGlueInfo,
 			      uint32_t u4PhyAddr,
 			      uint32_t u4PhyAddrExt)
 {
+	struct ADAPTER *prAdapter;
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 	struct RTMP_DMACB *prTxCell = &prTxRing->Cell[0];
@@ -2311,22 +2338,23 @@ static void halMawdSetupTxRing(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4HifTxdOffset = u4Base * 0xC;
 	uint32_t u4WfdmaOffset = u4Base * 0x14;
 
+	prAdapter = prGlueInfo->prAdapter;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 
 	u4Addr = prBusInfo->mawd_ring_ctrl0 + u4WfdmaOffset;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4PhyAddr);
+	HAL_MCR_WR(prAdapter, u4Addr, u4PhyAddr);
 	u4Addr = prBusInfo->mawd_ring_ctrl1 + u4WfdmaOffset;
 	u4Val = prWfdmaTxRing->hw_cidx_addr - MAWD_WFDMA_ADDR_OFFSET;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 	u4Addr = prBusInfo->mawd_ring_ctrl2 + u4WfdmaOffset;
 	u4Val = prWfdmaTxRing->hw_didx_addr - MAWD_WFDMA_ADDR_OFFSET;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 	u4Addr = prBusInfo->mawd_ring_ctrl3 + u4WfdmaOffset;
 	u4Val = (TX_RING_DATA_SIZE << 19) | (TXD_SIZE << 12) |
 		(u4PhyAddrExt << 8) | (MAWD_WFDMA_HIGH_ADDR << 4) |
 		MAWD_WFDMA_HIGH_ADDR;
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	prTxRing->hw_desc_base =
 		prBusInfo->mawd_hif_txd_ctrl0 + u4HifTxdOffset;
@@ -2346,7 +2374,7 @@ static void halMawdSetupTxRing(struct GLUE_INFO *prGlueInfo,
 	prTxRing->hw_cnt_mask = BITS(16, 28);
 	prTxRing->hw_cnt_shift = 16;
 
-	kalDevRegWrite(prGlueInfo, prTxRing->hw_desc_base,
+	HAL_MCR_WR(prAdapter, prTxRing->hw_desc_base,
 		       prTxCell->AllocPa);
 	/* setup tx ring/hif txd size */
 	u4DWCnt = BYTE_TO_DWORD(NIC_TX_DESC_LONG_FORMAT_LENGTH +
@@ -2354,27 +2382,29 @@ static void halMawdSetupTxRing(struct GLUE_INFO *prGlueInfo,
 	u4Val = (prTxCell->AllocPa >> DMA_BITS_OFFSET) &
 		DMA_HIGHER_4BITS_MASK |
 		(prTxRing->u4RingSize << 16) | (u4DWCnt << 8);
-	kalDevRegWrite(prGlueInfo, prTxRing->hw_cnt_addr, u4Val);
+	HAL_MCR_WR(prAdapter, prTxRing->hw_cnt_addr, u4Val);
 }
 
 static void halMawdInitErrRptRing(struct GLUE_INFO *prGlueInfo)
 {
+	struct ADAPTER *prAdapter;
 	struct GL_HIF_INFO *prHifInfo;
 	struct BUS_INFO *prBusInfo;
 	struct RTMP_DMABUF *prErrRpt;
 	uint32_t u4Val;
 
+	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	prErrRpt = &prHifInfo->ErrRptRing;
 
-	kalDevRegWrite(prGlueInfo,
+	HAL_MCR_WR(prAdapter,
 		       prBusInfo->mawd_err_rpt_ctrl0,
 		       prErrRpt->AllocPa);
 	u4Val = (prErrRpt->AllocPa >> DMA_BITS_OFFSET) &
 		DMA_HIGHER_4BITS_MASK |
 		(prHifInfo->u4RxEvtRingSize << 16) | (32 << 8);
-	kalDevRegWrite(prGlueInfo,
+	HAL_MCR_WR(prAdapter,
 		       prBusInfo->mawd_err_rpt_ctrl1,
 		       u4Val);
 }
@@ -2382,10 +2412,12 @@ static void halMawdInitErrRptRing(struct GLUE_INFO *prGlueInfo)
 void halMawdUpdateL2Tbl(struct GLUE_INFO *prGlueInfo,
 		    union mawd_l2tbl rL2Tbl, uint32_t u4Set)
 {
+	struct ADAPTER *prAdapter;
 	struct GL_HIF_INFO *prHifInfo;
 	struct BUS_INFO *prBusInfo;
 	uint32_t u4Idx = 0, u4Val = 0;
 
+	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
@@ -2396,15 +2428,17 @@ void halMawdUpdateL2Tbl(struct GLUE_INFO *prGlueInfo,
 				  rL2Tbl.data[u4Idx * 2 + 1]);
 	}
 
-	kalDevRegRead(prGlueInfo, prBusInfo->mawd_settings2, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter,
+		       prBusInfo->mawd_settings2, &u4Val);
 	u4Val = (prHifInfo->u4MawdL2TblCnt << 21) |
 		(30 << 16) |
 		(u4Val & BITS(0, 20));
-	kalDevRegWrite(prGlueInfo, prBusInfo->mawd_settings2, u4Val);
+	HAL_MCR_WR(prAdapter, prBusInfo->mawd_settings2, u4Val);
 
-	kalDevRegRead(prGlueInfo, prBusInfo->mawd_settings3, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter,
+		       prBusInfo->mawd_settings3, &u4Val);
 	u4Val |= BIT(u4Set);
-	kalDevRegWrite(prGlueInfo, prBusInfo->mawd_settings3, u4Val);
+	HAL_MCR_WR(prAdapter, prBusInfo->mawd_settings3, u4Val);
 }
 
 static u_int8_t halMawdAllocHifTxRing(struct GLUE_INFO *prGlueInfo,
@@ -2505,6 +2539,7 @@ u_int8_t halMawdAllocTxRing(struct GLUE_INFO *prGlueInfo, u_int8_t fgAllocMem)
 
 void halMawdInitTxRing(struct GLUE_INFO *prGlueInfo)
 {
+	struct ADAPTER *prAdapter;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo = NULL;
@@ -2513,8 +2548,9 @@ void halMawdInitTxRing(struct GLUE_INFO *prGlueInfo)
 	struct RTMP_DMACB *prTxCell = NULL;
 	uint32_t u4Idx = 0, u4PhyAddr = 0, u4PhyAddrExt = 0, u4Val = 0;
 
+	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 
 	for (u4Idx = 0; u4Idx < MAWD_MD_TX_RING_NUM; u4Idx++) {
@@ -2539,9 +2575,9 @@ void halMawdInitTxRing(struct GLUE_INFO *prGlueInfo)
 		       u4PhyAddrExt, u4PhyAddr, prMawdTxRing->u4RingSize);
 	}
 
-	kalDevRegRead(prGlueInfo, MAWD_MISC_SETTING2, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, MAWD_MISC_SETTING2, &u4Val);
 	u4Val |= BIT(11);
-	kalDevRegWrite(prGlueInfo, MAWD_MISC_SETTING2, u4Val);
+	HAL_MCR_WR(prAdapter, MAWD_MISC_SETTING2, u4Val);
 
 	halMawdInitErrRptRing(prGlueInfo);
 }
@@ -2584,7 +2620,7 @@ u_int8_t halMawdFillTxRing(struct GLUE_INFO *prGlueInfo,
 	/* Update HW Tx DMA ring */
 	prTxRing->u4UsedCnt++;
 	prWfdmaTxRing->u4UsedCnt += 2;
-	HAL_SET_RING_CIDX(prGlueInfo, prTxRing, prTxRing->TxCpuIdx);
+	HAL_SET_RING_CIDX(prGlueInfo->prAdapter, prTxRing, prTxRing->TxCpuIdx);
 
 	DBGLOG_LIMITED(HAL, TRACE,
 		"MAWD Tx Data:Ring%d CPU idx[0x%x] Used[%u]\n",
@@ -2598,80 +2634,82 @@ u_int8_t halMawdFillTxRing(struct GLUE_INFO *prGlueInfo,
 void halMawdReset(struct GLUE_INFO *prGlueInfo)
 {
 	struct mt66xx_chip_info *prChipInfo;
+	struct ADAPTER *prAdapter;
 	uint32_t u4Addr = 0, u4Val = 0, u4Idx, u4Cnt;
 
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prAdapter = prGlueInfo->prAdapter;
+	prChipInfo = prAdapter->chip_info;
 
 	/* set mask */
 	u4Addr = MAWD_MD_INTERRUPT_SETTING1;
-	kalDevRegWrite(prGlueInfo, u4Addr, 0xFFFFFFFF);
+	HAL_MCR_WR(prAdapter, u4Addr, 0xFFFFFFFF);
 	u4Addr = MAWD_AP_INTERRUPT_SETTING1;
-	kalDevRegWrite(prGlueInfo, u4Addr, 0xFFFFFFFF);
+	HAL_MCR_WR(prAdapter, u4Addr, 0xFFFFFFFF);
 
 	/* slp_prot enable */
 	u4Addr = MAWD_AXI_SLEEP_PROT_SETTING;
-	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
 	u4Val |= BIT(0);
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	/* clear cpu_idx */
 	/* md_hiftxd_ring0/1/2_cpu_idx */
 	u4Addr = MAWD_HIF_TXD_MD_CTRL2;
-	kalDevRegWrite(prGlueInfo, u4Addr, 0);
+	HAL_MCR_WR(prAdapter, u4Addr, 0);
 	u4Addr = MAWD_HIF_TXD_MD_CTRL5;
-	kalDevRegWrite(prGlueInfo, u4Addr, 0);
+	HAL_MCR_WR(prAdapter, u4Addr, 0);
 	u4Addr = MAWD_HIF_TXD_MD_CTRL8;
-	kalDevRegWrite(prGlueInfo, u4Addr, 0);
+	HAL_MCR_WR(prAdapter, u4Addr, 0);
 	/* err_rpt_cpu_idx */
 	u4Addr = MAWD_ERR_RPT_CTRL2;
-	kalDevRegWrite(prGlueInfo, u4Addr, 0);
+	HAL_MCR_WR(prAdapter, u4Addr, 0);
 	/* ind_cmd_dma_idx_rro/mcu */
 	u4Addr = MAWD_IND_CMD_SIGNATURE0;
-	kalDevRegWrite(prGlueInfo, u4Addr, 0);
+	HAL_MCR_WR(prAdapter, u4Addr, 0);
 	u4Addr = MAWD_IND_CMD_SIGNATURE1;
-	kalDevRegWrite(prGlueInfo, u4Addr, 0);
+	HAL_MCR_WR(prAdapter, u4Addr, 0);
 	/* md/ap_rx_blk_ring_cpu_idx */
 	u4Addr = MAWD_AP_RX_BLK_CTRL2;
-	kalDevRegWrite(prGlueInfo, u4Addr, 0);
+	HAL_MCR_WR(prAdapter, u4Addr, 0);
 	u4Addr = MAWD_MD_RX_BLK_CTRL2;
-	kalDevRegWrite(prGlueInfo, u4Addr, 0);
+	HAL_MCR_WR(prAdapter, u4Addr, 0);
 
 	/* reset index */
 	u4Addr = MAWD_IDX_REG_PATCH;
 	for (u4Idx = 0; u4Idx < MAWD_MAX_PATCH_NUM; u4Idx++) {
 		u4Val = BIT(31) | (u4Idx << 24) |
 			prChipInfo->mawd_idx_patch[u4Idx];
-		kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+		HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 	}
 
 	/* set SW reset */
 	u4Addr = MAWD_SOFTRESET;
 	u4Val = BITS(0, 2);
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	/* polling idle */
 	u4Addr = MAWD_POWER_UP;
-	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
 	for (u4Cnt = 0; (u4Val & BITS(8, 12)) != BITS(8, 12); u4Cnt++) {
 		if (u4Cnt > DMA_DONE_WAITING_COUNT) {
 			DBGLOG(HAL, ERROR, "Wait MAWD ready timeout\n");
 			break;
 		}
-		kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+		HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
 		kalUdelay(MAWD_POWER_UP_WAIT_TIME);
 	}
 
 	/* release mask */
 	u4Addr = MAWD_MD_INTERRUPT_SETTING1;
-	kalDevRegWrite(prGlueInfo, u4Addr, 0);
+	HAL_MCR_WR(prAdapter, u4Addr, 0);
 	u4Addr = MAWD_AP_INTERRUPT_SETTING1;
-	kalDevRegWrite(prGlueInfo, u4Addr, 0);
+	HAL_MCR_WR(prAdapter, u4Addr, 0);
 
 	/* release slp_prot */
 	u4Addr = MAWD_AXI_SLEEP_PROT_SETTING;
-	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
 	u4Val &= ~BIT(0);
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 }
 
 static u_int8_t __halMawdWakeup(void)
@@ -2681,15 +2719,15 @@ static u_int8_t __halMawdWakeup(void)
 
 	/* sequence 1 */
 	u4Addr = 0x180601A4;
-	kalDevRegWrite(NULL, u4Addr, 1);
+	HAL_MCR_WR(NULL, u4Addr, 1);
 	kalUdelay(200);
 	u4Addr = 0x18011000;
-	kalDevRegRead(NULL, u4Addr, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_HOST, NULL, u4Addr, &u4Val);
 	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
 		if (u4Val == 0x02050300 || u4Val == 0x02050500)
 			break;
 		kalUdelay(MAWD_POWER_UP_WAIT_TIME);
-		kalDevRegRead(NULL, u4Addr, &u4Val);
+		HAL_RMCR_RD(OFFLOAD_HOST, NULL, u4Addr, &u4Val);
 	}
 	if (u4Idx == MAWD_POWER_UP_RETRY_CNT) {
 		DBGLOG(HAL, ERROR, "polling ID fail\n");
@@ -2698,12 +2736,12 @@ static u_int8_t __halMawdWakeup(void)
 	}
 
 	u4Addr = 0x18001210;
-	kalDevRegRead(NULL, u4Addr, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_HOST, NULL, u4Addr, &u4Val);
 	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
 		if (u4Val & BIT(16))
 			break;
 		kalUdelay(MAWD_POWER_UP_WAIT_TIME);
-		kalDevRegRead(NULL, u4Addr, &u4Val);
+		HAL_RMCR_RD(OFFLOAD_HOST, NULL, u4Addr, &u4Val);
 	}
 	if (u4Idx == MAWD_POWER_UP_RETRY_CNT) {
 		DBGLOG(HAL, ERROR, "polling conn_infra_cfg_on ready fail\n");
@@ -2713,19 +2751,19 @@ static u_int8_t __halMawdWakeup(void)
 
 	/* sequence 2 */
 	u4Addr = 0x180120A4;
-	kalDevRegWrite(NULL, u4Addr, BIT(0));
-	kalDevRegRead(NULL, u4Addr, &u4Val);
+	HAL_MCR_WR(NULL, u4Addr, BIT(0));
+	HAL_RMCR_RD(OFFLOAD_HOST, NULL, u4Addr, &u4Val);
 
 	/* sequence 3 */
 	u4Addr = 0x180120B4;
-	kalDevRegWrite(NULL, u4Addr, BIT(0));
+	HAL_MCR_WR(NULL, u4Addr, BIT(0));
 	u4Addr = 0x18011030;
-	kalDevRegRead(NULL, u4Addr, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_HOST, NULL, u4Addr, &u4Val);
 	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
 		if (u4Val)
 			break;
 		kalUdelay(MAWD_POWER_UP_WAIT_TIME);
-		kalDevRegRead(NULL, u4Addr, &u4Val);
+		HAL_RMCR_RD(OFFLOAD_HOST, NULL, u4Addr, &u4Val);
 	}
 	if (u4Idx == MAWD_POWER_UP_RETRY_CNT) {
 		DBGLOG(HAL, ERROR, "polling conn_infra_cfg ready fail\n");
@@ -2744,11 +2782,11 @@ static void __halMawdSleep(void)
 
 	/* sequence 2 */
 	u4Addr = 0x180120A8;
-	kalDevRegWrite(NULL, u4Addr, BIT(0));
+	HAL_MCR_WR(NULL, u4Addr, BIT(0));
 
 	/* sequence 1 */
 	u4Addr = 0x180601A4;
-	kalDevRegWrite(NULL, u4Addr, 0);
+	HAL_MCR_WR(NULL, u4Addr, 0);
 }
 
 u_int8_t halMawdCheckInfra(struct ADAPTER *prAdapter)
@@ -2775,12 +2813,12 @@ u_int8_t halMawdCheckInfra(struct ADAPTER *prAdapter)
 		}
 	}
 	u4Addr = 0x18023000;
-	kalDevRegWrite(NULL, u4Addr, 1);
-	kalDevRegRead(NULL, u4Addr, &u4Val);
+	HAL_MCR_WR(prAdapter, u4Addr, 1);
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
 	for (u4Idx = 0; u4Idx < u4PollingCnt; u4Idx++) {
 		if (u4Val & BITS(1, 2))
 			break;
-		kalDevRegRead(NULL, u4Addr, &u4Val);
+		HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
 		kalUdelay(1000);
 	}
 	if (u4Idx == u4PollingCnt) {
@@ -2789,13 +2827,13 @@ u_int8_t halMawdCheckInfra(struct ADAPTER *prAdapter)
 		return FALSE;
 	}
 	u4Addr = 0x18011000;
-	kalDevRegRead(NULL, u4Addr, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
 	DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
 	u4Addr = 0x18023400;
-	kalDevRegRead(NULL, u4Addr, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
 	DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
 	u4Addr = 0x180120A0;
-	kalDevRegRead(NULL, u4Addr, &u4Val);
+	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
 	DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
 #endif /* CFG_MTK_FPGA_PLATFORM == 0 */
 	return TRUE;

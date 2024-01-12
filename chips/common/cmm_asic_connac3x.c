@@ -381,7 +381,7 @@ u_int8_t asicConnac3xWfdmaDummyCrRead(
 	}
 	if (!fgRet)
 #endif
-		HAL_MCR_RD(prAdapter, u4Addr, pu4Value);
+		HAL_RMCR_RD(HIF_READ, prAdapter, u4Addr, pu4Value);
 
 	return (*pu4Value & CONNAC3X_WFDMA_NEED_REINIT_BIT) == 0 ? TRUE : FALSE;
 }
@@ -571,7 +571,7 @@ void asicConnac3xWfdmaStop(struct GLUE_INFO *prGlueInfo, u_int8_t enable)
 	uint32_t u4DmaCfgCr;
 
 	u4DmaCfgCr = asicConnac3xWfdmaCfgAddrGet(prGlueInfo, 0);
-	HAL_MCR_RD(prAdapter, u4DmaCfgCr, &GloCfg.word);
+	HAL_RMCR_RD(HIF_READ, prAdapter, u4DmaCfgCr, &GloCfg.word);
 
 	if (enable == TRUE) {
 		GloCfg.field_conn3x.tx_dma_en = 0;
@@ -670,7 +670,7 @@ u_int8_t asicConnac3xWfdmaWaitIdle(
 	}
 
 	do {
-		HAL_MCR_RD(prAdapter, u4RegAddr, &GloCfg.word);
+		HAL_RMCR_RD(HIF_READ, prAdapter, u4RegAddr, &GloCfg.word);
 		if ((GloCfg.field_conn3x.tx_dma_busy == 0) &&
 		    (GloCfg.field_conn3x.rx_dma_busy == 0)) {
 			DBGLOG(HAL, TRACE, "==>  DMAIdle, GloCfg=0x%x\n",
@@ -905,28 +905,6 @@ void asicConnac3xDisablePlatformSwIRQ(struct ADAPTER *prAdapter)
 }
 #endif
 
-void asicConnac3xDisableExtInterrupt(
-	struct ADAPTER *prAdapter)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	union WPDMA_INT_MASK IntMask;
-
-	ASSERT(prAdapter);
-
-	prGlueInfo = prAdapter->prGlueInfo;
-
-	IntMask.word = 0;
-
-	HAL_MCR_WR(prAdapter,
-		CONNAC3X_WPDMA_EXT_INT_MASK(CONNAC3X_HOST_EXT_CONN_HIF_WRAP),
-		IntMask.word);
-	HAL_MCR_RD(prAdapter,
-		CONNAC3X_WPDMA_EXT_INT_MASK(CONNAC3X_HOST_EXT_CONN_HIF_WRAP),
-		&IntMask.word);
-
-	DBGLOG(HAL, TRACE, "%s\n", __func__);
-}
-
 void asicConnac3xLowPowerOwnRead(
 	struct ADAPTER *prAdapter,
 	u_int8_t *pfgResult)
@@ -938,7 +916,7 @@ void asicConnac3xLowPowerOwnRead(
 	if (prChipInfo->is_support_asic_lp) {
 		u_int32_t u4RegValue = 0;
 
-		HAL_MCR_RD(prAdapter,
+		HAL_RMCR_RD(LPOWN_READ, prAdapter,
 				CONNAC3X_BN0_LPCTL_ADDR,
 				&u4RegValue);
 		*pfgResult = (u4RegValue &
@@ -1026,7 +1004,7 @@ void asicConnac3xLowPowerOwnSet(
 			CONNAC3X_BN0_LPCTL_ADDR,
 			PCIE_LPCR_HOST_SET_OWN);
 
-		HAL_MCR_RD(prAdapter,
+		HAL_RMCR_RD(LPOWN_READ, prAdapter,
 			CONNAC3X_BN0_LPCTL_ADDR,
 			&u4RegValue);
 
@@ -1064,7 +1042,7 @@ void asicConnac3xLowPowerOwnClear(
 			CONNAC3X_BN0_LPCTL_ADDR,
 			PCIE_LPCR_HOST_CLR_OWN);
 
-		HAL_MCR_RD(prAdapter,
+		HAL_RMCR_RD(LPOWN_READ, prAdapter,
 			CONNAC3X_BN0_LPCTL_ADDR,
 			&u4RegValue);
 
@@ -1120,7 +1098,7 @@ void asicConnac3xProcessSoftwareInterrupt(
 
 	if (!fgRet)
 #endif
-		kalDevRegRead(prGlueInfo, u4Addr, &u4Status);
+		HAL_RMCR_RD(SER_READ, prAdapter, u4Addr, &u4Status);
 
 	prErrRecoveryCtrl->u4BackupStatus = u4Status;
 	if (u4Status & ERROR_DETECT_SUBSYS_BUS_TIMEOUT) {
@@ -1201,7 +1179,7 @@ uint32_t asicConnac3xGetMdSoftwareInterruptStatus(
 
 	if (!fgRet)
 #endif
-		kalDevRegRead(prGlueInfo, u4Addr, &u4Status);
+		HAL_RMCR_RD(SER_READ, prAdapter, u4Addr, &u4Status);
 
 	return u4Status & BITS(0, 15);
 }
@@ -1254,10 +1232,10 @@ void asicConnac3xWfdmaInitForUSB(
 
 	prBusInfo = prChipInfo->bus_info;
 
-	/* HAL_MCR_RD(prAdapter, 0x7c00e400, &u4WfdmaCr); */
+	/* HAL_RMCR_RD(HIF_USB, prAdapter, 0x7c00e400, &u4WfdmaCr); */
 	/* HAL_MCR_WR(prAdapter, 0x7c00e400, 0xFF); */
 
-	HAL_MCR_RD(prAdapter, 0x7c021100, &u4WfdmaCr);
+	HAL_RMCR_RD(HIF_USB, prAdapter, 0x7c021100, &u4WfdmaCr);
 	HAL_MCR_WR(prAdapter, 0x7c021100, 0x0);
 
 	if (prChipInfo->is_support_wfdma1) {
@@ -1271,7 +1249,8 @@ void asicConnac3xWfdmaInitForUSB(
 	 * HOST_DMA1_WPDMA_TX_RING0_EXT_CTRL ~ HOST_DMA1_WPDMA_TX_RING4_EXT_CTRL
 	 */
 	for (idx = 0; idx < USB_TX_EPOUT_NUM; idx++) {
-		HAL_MCR_RD(prAdapter, u4WfdmaAddr + (idx*4), &u4WfdmaCr);
+		HAL_RMCR_RD(HIF_USB, prAdapter,
+			       u4WfdmaAddr + (idx*4), &u4WfdmaCr);
 		u4WfdmaCr &= ~CONNAC3X_WFDMA_DISP_MAX_CNT_MASK;
 		u4WfdmaCr |= CONNAC3X_TX_RING_DISP_MAX_CNT;
 		u4WfdmaCr &= ~CONNAC3X_WFDMA_DISP_BASE_PTR_MASK;
@@ -1280,7 +1259,7 @@ void asicConnac3xWfdmaInitForUSB(
 	}
 
 	/* HOST_DMA1_WPDMA_TX_RING16_EXT_CTRL_ADDR */
-	HAL_MCR_RD(prAdapter, u4WfdmaAddr + 0x40, &u4WfdmaCr);
+	HAL_RMCR_RD(HIF_USB, prAdapter, u4WfdmaAddr + 0x40, &u4WfdmaCr);
 	u4WfdmaCr &= ~CONNAC3X_WFDMA_DISP_MAX_CNT_MASK;
 	u4WfdmaCr |= CONNAC3X_TX_RING_DISP_MAX_CNT;
 	u4WfdmaCr &= ~CONNAC3X_WFDMA_DISP_BASE_PTR_MASK;
@@ -1288,7 +1267,7 @@ void asicConnac3xWfdmaInitForUSB(
 	HAL_MCR_WR(prAdapter, u4WfdmaAddr + 0x40, u4WfdmaCr);
 
 	/* HOST_DMA1_WPDMA_TX_RING15_EXT_CTRL_ADDR */
-	HAL_MCR_RD(prAdapter, u4WfdmaAddr + 0x3c, &u4WfdmaCr);
+	HAL_RMCR_RD(HIF_USB, prAdapter, u4WfdmaAddr + 0x3c, &u4WfdmaCr);
 	u4WfdmaCr &= ~CONNAC3X_WFDMA_DISP_MAX_CNT_MASK;
 	u4WfdmaCr |= CONNAC3X_TX_RING_DISP_MAX_CNT;
 	u4WfdmaCr &= ~CONNAC3X_WFDMA_DISP_BASE_PTR_MASK;
@@ -1298,7 +1277,7 @@ void asicConnac3xWfdmaInitForUSB(
 	if (prChipInfo->is_support_wfdma1) {
 		u4WfdmaAddr =
 			CONNAC3X_WPDMA_GLO_CFG(CONNAC3X_HOST_WPDMA_1_BASE);
-		HAL_MCR_RD(prAdapter, u4WfdmaAddr, &u4WfdmaCr);
+		HAL_RMCR_RD(HIF_USB, prAdapter, u4WfdmaAddr, &u4WfdmaCr);
 		u4WfdmaCr |=
 			(CONNAC3X_WPDMA1_GLO_CFG_OMIT_TX_INFO |
 			 CONNAC3X_WPDMA1_GLO_CFG_OMIT_RX_INFO |
@@ -1310,14 +1289,14 @@ void asicConnac3xWfdmaInitForUSB(
 		/* Enable WFDMA0 RX for receiving data frame */
 		u4WfdmaAddr =
 			CONNAC3X_WPDMA_GLO_CFG(CONNAC3X_HOST_WPDMA_0_BASE);
-		HAL_MCR_RD(prAdapter, u4WfdmaAddr, &u4WfdmaCr);
+		HAL_RMCR_RD(HIF_USB, prAdapter, u4WfdmaAddr, &u4WfdmaCr);
 		u4WfdmaCr |=
 			(CONNAC3X_WPDMA1_GLO_CFG_RX_DMA_EN);
 		HAL_MCR_WR(prAdapter, u4WfdmaAddr, u4WfdmaCr);
 	} else {
 		u4WfdmaAddr =
 			CONNAC3X_WPDMA_GLO_CFG(CONNAC3X_HOST_WPDMA_0_BASE);
-		HAL_MCR_RD(prAdapter, u4WfdmaAddr, &u4WfdmaCr);
+		HAL_RMCR_RD(HIF_USB, prAdapter, u4WfdmaAddr, &u4WfdmaCr);
 		u4WfdmaCr &= ~(CONNAC3X_WPDMA1_GLO_CFG_OMIT_RX_INFO);
 		u4WfdmaCr |=
 			(CONNAC3X_WPDMA1_GLO_CFG_OMIT_TX_INFO |
@@ -1343,7 +1322,7 @@ void asicConnac3xWfdmaInitForUSB(
 			u4WfdmaAddr = CONNAC3X_WPDMA_GLO_CFG_EXT0(
 					CONNAC3X_HOST_WPDMA_0_BASE);
 		}
-		HAL_MCR_RD(prAdapter, u4WfdmaAddr, &u4WfdmaCr);
+		HAL_RMCR_RD(HIF_USB, prAdapter, u4WfdmaAddr, &u4WfdmaCr);
 		u4WfdmaCr &= ~CONNAC3X_WPDMA1_GLO_CFG_EXT0_TX_DMASHDL_EN;
 		HAL_MCR_WR(prAdapter, u4WfdmaAddr, u4WfdmaCr);
 
@@ -1355,7 +1334,7 @@ void asicConnac3xWfdmaInitForUSB(
 		 */
 		u4WfdmaAddr = CONNAC3X_HOST_DMASHDL_SW_CONTROL(
 					CONNAC3X_HOST_DMASHDL);
-		HAL_MCR_RD(prAdapter, u4WfdmaAddr, &u4WfdmaCr);
+		HAL_RMCR_RD(HIF_USB, prAdapter, u4WfdmaAddr, &u4WfdmaCr);
 		u4WfdmaCr |= CONNAC3X_HIF_DMASHDL_BYPASS_EN;
 		HAL_MCR_WR(prAdapter, u4WfdmaAddr, u4WfdmaCr);
 	}
@@ -1386,7 +1365,7 @@ void asicConnac3xEnableUsbFWDL(
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 
-	HAL_MCR_RD(prAdapter, prBusInfo->u4UdmaTxQsel, &u4Value);
+	HAL_RMCR_RD(HIF_USB, prAdapter, prBusInfo->u4UdmaTxQsel, &u4Value);
 	if (fgEnable)
 		u4Value |= FW_DL_EN;
 	else
@@ -1405,7 +1384,7 @@ void asicConnac3xUdmaRxFlush(
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 
-	HAL_MCR_RD(prAdapter, prBusInfo->u4UdmaWlCfg_0_Addr,
+	HAL_RMCR_RD(HIF_USB, prAdapter, prBusInfo->u4UdmaWlCfg_0_Addr,
 		   &u4Value);
 	if (bEnable)
 		u4Value |= UDMA_WLCFG_0_RX_FLUSH_MASK;
@@ -1459,7 +1438,7 @@ u_int8_t asicConnac3xUsbResume(
 		for (u4Idx = 0;
 			u4Idx < sizeof(g_au4UsbPollAddrTbl)/sizeof(uint32_t);
 			u4Idx++) {
-			HAL_MCR_RD(prAdapter,
+			HAL_RMCR_RD(HIF_USB, prAdapter,
 				g_au4UsbPollAddrTbl[u4Idx], &u4Value);
 			if ((u4Value & g_au4UsbPollMaskTbl[u4Idx])
 				!= g_au4UsbPollValueTbl[u4Idx]) {
@@ -2077,31 +2056,6 @@ void asicConnac3xDmashdlSetPlePsePktMaxPage(
 	HAL_MCR_WR(prAdapter, prCfg->rPlePacketMaxSize.u4Addr, u4Val);
 }
 
-void asicConnac3xDmashdlGetPktMaxPage(struct ADAPTER *prAdapter)
-{
-	struct BUS_INFO *prBusInfo;
-	struct DMASHDL_CFG *prCfg;
-	uint32_t u4Val = 0;
-	uint32_t ple_pkt_max_sz;
-	uint32_t pse_pkt_max_sz;
-
-	prBusInfo = prAdapter->chip_info->bus_info;
-	prCfg = prBusInfo->prDmashdlCfg;
-
-	HAL_MCR_RD(prAdapter, prCfg->rPlePacketMaxSize.u4Addr, &u4Val);
-
-	ple_pkt_max_sz = (u4Val & prCfg->rPlePacketMaxSize.u4Mask) >>
-		prCfg->rPlePacketMaxSize.u4Shift;
-	pse_pkt_max_sz = (u4Val & prCfg->rPsePacketMaxSize.u4Mask) >>
-		prCfg->rPsePacketMaxSize.u4Shift;
-
-	DBGLOG(HAL, INFO, "DMASHDL PLE_PACKET_MAX_SIZE (0x%08x): 0x%08x\n",
-		prCfg->rPlePacketMaxSize.u4Addr, u4Val);
-	DBGLOG(HAL, INFO, "PLE/PSE packet max size=0x%03x/0x%03x\n",
-		ple_pkt_max_sz, pse_pkt_max_sz);
-
-}
-
 void asicConnac3xDmashdlSetRefill(struct ADAPTER *prAdapter, uint8_t ucGroup,
 			       u_int8_t fgEnable)
 {
@@ -2125,20 +2079,6 @@ void asicConnac3xDmashdlSetRefill(struct ADAPTER *prAdapter, uint8_t ucGroup,
 	prCfg->u4RefillCtrl = u4Val;
 
 	HAL_MCR_WR(prAdapter, prCfg->rGroup0RefillDisable.u4Addr, u4Val);
-}
-
-void asicConnac3xDmashdlGetRefill(struct ADAPTER *prAdapter)
-{
-	struct BUS_INFO *prBusInfo;
-	struct DMASHDL_CFG *prCfg;
-	uint32_t u4Val = 0;
-
-	prBusInfo = prAdapter->chip_info->bus_info;
-	prCfg = prBusInfo->prDmashdlCfg;
-
-	HAL_MCR_RD(prAdapter, prCfg->rGroup0RefillDisable.u4Addr, &u4Val);
-	DBGLOG(HAL, INFO, "DMASHDL ReFill Control (0x%08x): 0x%08x\n",
-		prCfg->rGroup0RefillDisable.u4Addr, u4Val);
 }
 
 void asicConnac3xDmashdlSetMinMaxQuota(
@@ -2169,31 +2109,6 @@ void asicConnac3xDmashdlSetMinMaxQuota(
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 }
 
-void asicConnac3xDmashdlGetGroupControl(struct ADAPTER *prAdapter,
-					uint8_t ucGroup)
-{
-	struct BUS_INFO *prBusInfo;
-	struct DMASHDL_CFG *prCfg;
-	uint32_t u4Addr;
-	uint32_t u4Val = 0;
-	uint32_t max_quota;
-	uint32_t min_quota;
-
-	prBusInfo = prAdapter->chip_info->bus_info;
-	prCfg = prBusInfo->prDmashdlCfg;
-
-	u4Addr = prCfg->rGroup0ControlMaxQuota.u4Addr + (ucGroup << 2);
-
-	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
-
-	max_quota = GET_DMASHDL_MAX_QUOTA_NUM(u4Val);
-	min_quota = GET_DMASHDL_MIN_QUOTA_NUM(u4Val);
-	DBGLOG(HAL, INFO, "\tDMASHDL Group%d control(0x%08x): 0x%08x\n",
-		ucGroup, u4Addr, u4Val);
-	DBGLOG(HAL, INFO, "\tmax/min quota = 0x%03x/ 0x%03x\n",
-		max_quota, min_quota);
-
-}
 void asicConnac3xDmashdlSetQueueMapping(
 	struct ADAPTER *prAdapter, uint8_t ucQueue, uint8_t ucGroup)
 {
@@ -2275,85 +2190,6 @@ void asicConnac3xDmashdlSetSlotArbiter(
 
 	HAL_MCR_WR(prAdapter, prCfg->rPageSettingGroupSeqOrderType.u4Addr,
 		   u4Val);
-}
-
-uint32_t asicConnac3xDmashdlGetRsvCount(struct ADAPTER *prAdapter,
-					uint8_t ucGroup)
-{
-	struct BUS_INFO *prBusInfo;
-	struct DMASHDL_CFG *prCfg;
-	uint32_t u4Addr;
-	uint32_t u4Val = 0;
-	uint32_t rsv_cnt = 0;
-
-	prBusInfo = prAdapter->chip_info->bus_info;
-	prCfg = prBusInfo->prDmashdlCfg;
-
-	u4Addr = prCfg->rStatusRdGp0RsvCnt.u4Addr + (ucGroup << 2);
-
-	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
-
-	rsv_cnt = (u4Val & prCfg->rStatusRdGp0RsvCnt.u4Mask) >>
-		prCfg->rStatusRdGp0RsvCnt.u4Shift;
-
-	DBGLOG(HAL, INFO, "\tDMASHDL Status_RD_GP%d(0x%08x): 0x%08x\n",
-		ucGroup, u4Addr, u4Val);
-	DBGLOG(HAL, TRACE, "\trsv_cnt = 0x%03x\n", rsv_cnt);
-	return rsv_cnt;
-}
-
-uint32_t asicConnac3xDmashdlGetSrcCount(struct ADAPTER *prAdapter,
-					uint8_t ucGroup)
-{
-	struct BUS_INFO *prBusInfo;
-	struct DMASHDL_CFG *prCfg;
-	uint32_t u4Addr;
-	uint32_t u4Val = 0;
-	uint32_t src_cnt = 0;
-
-	prBusInfo = prAdapter->chip_info->bus_info;
-	prCfg = prBusInfo->prDmashdlCfg;
-
-	u4Addr = prCfg->rStatusRdGp0SrcCnt.u4Addr + (ucGroup << 2);
-
-	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
-
-	src_cnt = (u4Val & prCfg->rStatusRdGp0SrcCnt.u4Mask) >>
-		prCfg->rStatusRdGp0SrcCnt.u4Shift;
-
-	DBGLOG(HAL, TRACE, "\tsrc_cnt = 0x%03x\n", src_cnt);
-	return src_cnt;
-}
-
-void asicConnac3xDmashdlGetPKTCount(struct ADAPTER *prAdapter, uint8_t ucGroup)
-{
-	struct BUS_INFO *prBusInfo;
-	struct DMASHDL_CFG *prCfg;
-	uint32_t u4Addr;
-	uint32_t u4Val = 0;
-	uint32_t pktin_cnt = 0;
-	uint32_t ask_cnt = 0;
-
-	prBusInfo = prAdapter->chip_info->bus_info;
-	prCfg = prBusInfo->prDmashdlCfg;
-
-	if ((ucGroup & 0x1) == 0)
-		u4Addr = prCfg->rRdGroupPktCnt0.u4Addr + (ucGroup << 1);
-	else
-		u4Addr = prCfg->rRdGroupPktCnt0.u4Addr + ((ucGroup-1) << 1);
-
-	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
-	DBGLOG(HAL, INFO, "\tDMASHDL RD_group_pkt_cnt_%d(0x%08x): 0x%08x\n",
-		ucGroup / 2, u4Addr, u4Val);
-	if ((ucGroup & 0x1) == 0) {
-		pktin_cnt = GET_EVEN_GROUP_PKT_IN_CNT(u4Val);
-		ask_cnt = GET_EVEN_GROUP_ASK_CNT(u4Val);
-	} else {
-		pktin_cnt = GET_ODD_GROUP_PKT_IN_CNT(u4Val);
-		ask_cnt = GET_ODD_GROUP_ASK_CNT(u4Val);
-	}
-	DBGLOG(HAL, INFO, "\tpktin_cnt = 0x%02x, ask_cnt = 0x%02x",
-		pktin_cnt, ask_cnt);
 }
 
 void asicConnac3xDmashdlSetOptionalControl(
@@ -2855,5 +2691,19 @@ void register_plat_connsys_cbs(void)
 #endif
 }
 #endif
+
+#if CFG_NEW_HIF_DEV_REG_IF
+u_int8_t connac3xIsValidMmioReadReason(
+	struct mt66xx_chip_info *prChipInfo, enum HIF_DEV_REG_REASON eReason)
+{
+	uint32_t u4Idx, u4Size = prChipInfo->u4ValidMmioReadReasonSize;
+
+	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
+		if (prChipInfo->prValidMmioReadReason[u4Idx] == eReason)
+			return TRUE;
+	}
+	return FALSE;
+}
+#endif /* CFG_NEW_HIF_DEV_REG_IF */
 
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */

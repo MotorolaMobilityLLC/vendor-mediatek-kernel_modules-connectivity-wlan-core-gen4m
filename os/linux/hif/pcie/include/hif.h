@@ -178,9 +178,6 @@ struct GL_HIF_INFO {
 	uint32_t u4IrqId_1;
 	int32_t u4HifCnt;
 
-	/* PCI MMIO Base Address, all access will use */
-	void *CSRBaseAddress;
-
 	/* Shared memory of all 1st pre-allocated
 	 * TxBuf associated with each TXD
 	 */
@@ -277,6 +274,12 @@ struct GL_HIF_INFO {
 #endif
 
 	unsigned long ulHifIntEnBits;
+
+#if CFG_NEW_HIF_DEV_REG_IF
+	struct HIF_DEV_REG_RECORD arMmioReadHistory[HIF_DEV_REG_HISTORY_SIZE];
+	uint32_t u4MmioReadHistoryIdx;
+	uint32_t u4MmioReadReasonCnt[HIF_DEV_REG_MAX];
+#endif /* CFG_NEW_HIF_DEV_REG_IF */
 };
 
 struct BUS_INFO {
