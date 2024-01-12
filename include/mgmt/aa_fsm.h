@@ -38,13 +38,18 @@
 #if CFG_MTK_FPGA_PLATFORM
 /* Wait for a response to a transmitted association-request MMPDU. */
 #define DOT11_ASSOCIATION_RESPONSE_TIMEOUT_TU       5120/* TU. */
+
+/* Wait for a response to a transmitted SAE authentication MMPDU. */
+/* 2000 msec is the default value on 802.11-REVmd-D0.5 */
+#define DOT11_RSNA_SAE_RETRANS_PERIOD_TU            5120
 #else
 /* Wait for a response to a transmitted association-request MMPDU. */
 #define DOT11_ASSOCIATION_RESPONSE_TIMEOUT_TU       512	/* TU. */
-#endif
+
 /* Wait for a response to a transmitted SAE authentication MMPDU. */
 /* 2000 msec is the default value on 802.11-REVmd-D0.5 */
-#define DOT11_RSNA_SAE_RETRANS_PERIOD_TU	2000
+#define DOT11_RSNA_SAE_RETRANS_PERIOD_TU            2000
+#endif
 
 /* The maximum time to wait for JOIN process complete. */
 /* Beacon Interval, 20 * 100TU = 2 sec. */
