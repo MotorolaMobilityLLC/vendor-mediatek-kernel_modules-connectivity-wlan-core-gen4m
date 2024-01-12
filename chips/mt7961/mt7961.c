@@ -187,6 +187,7 @@ static void mt7961EnableInterrupt(
 	IntMask.field_conn2x_single.wfdma0_tx_done_0 = 1;
 	IntMask.field_conn2x_single.wfdma0_tx_done_16 = 1;
 	IntMask.field_conn2x_single.wfdma0_tx_done_17 = 1;
+	IntMask.field_conn2x_single.wfdma0_mcu2host_sw_int_en = 1;
 
 	IntMask.field_conn2x_single.wfdma0_rx_coherent = 0;
 	IntMask.field_conn2x_single.wfdma0_tx_coherent = 0;
@@ -328,6 +329,64 @@ static void mt7961Connac2xProcessRxInterrupt(
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_5)
 		halRxReceiveRFBs(prAdapter, WFDMA1_RX_RING_IDX_0, TRUE);
 }
+
+void mt7961DumpSerDummyCR(
+	struct ADAPTER *prAdapter)
+{
+	uint32_t u4MacVal;
+
+	DBGLOG(HAL, INFO, "%s\n", __func__);
+
+	DBGLOG(HAL, INFO, "=====Dump Start====\n");
+
+	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_SER_STATUS_ADDR, &u4MacVal);
+	DBGLOG(HAL, INFO, "SER STATUS[0x%08x]: 0x%08x\n",
+		WF_SW_DEF_CR_SER_STATUS_ADDR, u4MacVal);
+
+	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_PLE_STATUS_ADDR, &u4MacVal);
+	DBGLOG(HAL, INFO, "PLE STATUS[0x%08x]: 0x%08x\n",
+		WF_SW_DEF_CR_PLE_STATUS_ADDR, u4MacVal);
+
+	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_PLE1_STATUS_ADDR, &u4MacVal);
+	DBGLOG(HAL, INFO, "PLE1 STATUS[0x%08x]: 0x%08x\n",
+		WF_SW_DEF_CR_PLE1_STATUS_ADDR, u4MacVal);
+
+	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_PLE_AMSDU_STATUS_ADDR, &u4MacVal);
+	DBGLOG(HAL, INFO, "PLE AMSDU STATUS[0x%08x]: 0x%08x\n",
+		WF_SW_DEF_CR_PLE_AMSDU_STATUS_ADDR, u4MacVal);
+
+	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_PSE_STATUS_ADDR, &u4MacVal);
+	DBGLOG(HAL, INFO, "PSE STATUS[0x%08x]: 0x%08x\n",
+		WF_SW_DEF_CR_PSE_STATUS_ADDR, u4MacVal);
+
+	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_PSE1_STATUS_ADDR, &u4MacVal);
+	DBGLOG(HAL, INFO, "PSE1 STATUS[0x%08x]: 0x%08x\n",
+		WF_SW_DEF_CR_PSE1_STATUS_ADDR, u4MacVal);
+
+	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_LAMC_WISR6_BN0_STATUS_ADDR,
+			&u4MacVal);
+	DBGLOG(HAL, INFO, "LMAC WISR6 BN0 STATUS[0x%08x]: 0x%08x\n",
+		WF_SW_DEF_CR_LAMC_WISR6_BN0_STATUS_ADDR, u4MacVal);
+
+	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_LAMC_WISR6_BN1_STATUS_ADDR,
+			&u4MacVal);
+	DBGLOG(HAL, INFO, "LMAC WISR6 BN1 STATUS[0x%08x]: 0x%08x\n",
+		WF_SW_DEF_CR_LAMC_WISR6_BN1_STATUS_ADDR, u4MacVal);
+
+	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_LAMC_WISR7_BN0_STATUS_ADDR,
+			&u4MacVal);
+	DBGLOG(HAL, INFO, "LMAC WISR7 BN0 STATUS[0x%08x]: 0x%08x\n",
+		WF_SW_DEF_CR_LAMC_WISR7_BN0_STATUS_ADDR, u4MacVal);
+
+	HAL_MCR_RD(prAdapter, WF_SW_DEF_CR_LAMC_WISR7_BN1_STATUS_ADDR,
+			&u4MacVal);
+	DBGLOG(HAL, INFO, "LMAC WISR7 BN1 STATUS[0x%08x]: 0x%08x\n",
+		WF_SW_DEF_CR_LAMC_WISR7_BN1_STATUS_ADDR, u4MacVal);
+
+	DBGLOG(HAL, INFO, "=====Dump End====\n");
+
+}
+
 
 static void mt7961Connac2xWfdmaManualPrefetch(
 	struct GLUE_INFO *prGlueInfo)
@@ -573,6 +632,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7961 = {
 #if CFG_ENABLE_FW_DOWNLOAD
 	.asicEnableFWDownload = NULL,
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
+	.asicDumpSerDummyCR = mt7961DumpSerDummyCR,
 	.downloadBufferBin = wlanConnacDownloadBufferBin,
 	.is_support_hw_amsdu = TRUE,
 	.is_support_asic_lp = TRUE,
