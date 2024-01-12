@@ -762,6 +762,10 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 				      0	/* u4SetQueryBufferLen */
 				     );
 
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	rlmDomainConnectionNotifiey(prAdapter, CNM_REQUEST_CHANNEL);
+#endif
+
 	/* ASSERT(rStatus == WLAN_STATUS_PENDING); */
 
 	cnmMemFree(prAdapter, prCmdBody);

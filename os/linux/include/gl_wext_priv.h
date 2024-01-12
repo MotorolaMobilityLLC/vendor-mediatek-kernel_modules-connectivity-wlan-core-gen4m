@@ -1049,6 +1049,10 @@ int priv_driver_phy_ctrl(struct net_device *prNetDev,
 int priv_driver_set_6g_pwr_mode(struct net_device *prNetDev, char *pcCommand,
 			int i4TotalLen);
 #endif
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+int priv_driver_get_power_limit_emi_data(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

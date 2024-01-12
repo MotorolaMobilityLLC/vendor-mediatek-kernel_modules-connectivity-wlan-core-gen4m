@@ -3293,6 +3293,8 @@ enum UNI_CMD_POWER_LIMIT_TAG {
 	UNI_CMD_POWER_LIMIT_TABLE_CTRL = 0,
 	UNI_CMD_POWER_LIMIT_PER_RATE_TABLE = 1,
 	UNI_CMD_POWER_LIMIT_TX_PWR_ENV = 2,
+	UNI_CMD_POWER_LIMIT_FWREGD_CTRL = 3,
+	UNI_CMD_POWER_LIMIT_EMI_INFO = 4,
 	UNI_CMD_POWER_LIMIT_TAG_MAX_NUM
 } __KAL_ATTRIB_PACKED__;
 
@@ -3315,6 +3317,18 @@ struct UNI_CMD_SET_PWR_LIMIT_PER_RATE_TABLE_PARAM {
 
 	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE config;
 } __KAL_ATTRIB_PACKED__;
+
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+/* Power limit table (Tag3) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_SET_PWR_LIMIT_EMI_INFO {
+	/* Tag = 0x03 */
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	struct CMD_EMI_POWER_LIMIT_FORMAT config;
+} __KAL_ATTRIB_PACKED__;
+#endif
 
 /*UNI_CMD_ID_TXPOWER */
 __KAL_ATTRIB_PACKED_FRONT__
@@ -6449,6 +6463,19 @@ struct UNI_EVENT_TXPOWER {
     uint8_t aucTlvBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
+enum ENUM_UNI_EVENT_TXPOWER_INFO_TAG {
+	UNI_EVENT_TXPOWER_SHOW_INFO = 0,
+	UNI_EVENT_TXPOWER_UPDATE_COMPENSATE_TABLE = 1,
+	UNI_EVENT_TXPOWER_UPDATE_EPA_STATUS = 2,
+	UNI_EVENT_TXPOWER_TARGET_POWER_INGO_GET = 3,
+	UNI_EVENT_TXPOWER_SHOW_ALL_RATE_TXPOWER_INFO = 5,
+	UNI_EVENT_TXPOWER_THERMAL_COMPENSATE_TABLE_SHOW_INFO = 6,
+	UNI_EVENT_TXPOWER_TXV_BBP_POWER_SHOW_INFO = 7,
+	UNI_EVENT_TXPOWER_POWER_SKU_TABLE_SHOW_INFO = 8,
+	UNI_EVENT_TXPOWER_POWER_LIMIT_EMI_STATUS = 9,
+	UNI_EVENT_TXPOWER_INFO_TAG_NUM
+};
+
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_TXPOWER_RSP {
     uint16_t u2Tag;
@@ -8403,6 +8430,10 @@ uint32_t nicUniCmdRttRangeRequest(struct ADAPTER *ad,
 uint32_t nicUniCmdGetTputFactor(struct ADAPTER *ad, uint32_t u4WtblFlag);
 #endif
 
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+uint32_t nicUniCmdPowerLimitEmiInfo(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif
 /*******************************************************************************
  *                   Event
  *******************************************************************************
@@ -8484,7 +8515,7 @@ void nicUniEventLinkStats(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 void nicUniEventRfTestHandler(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
-void nicUniEventTxPowerInfo(struct ADAPTER
+void nicUniCmdEventTxPowerInfo(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 void nicUniEventEfuseControl(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
@@ -8637,7 +8668,8 @@ void nicUniEventAssertDump(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt);
 #endif
 void nicUniEventUpdateLp(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
-
+void nicUniEventTxPower(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
 
 uint32_t nicUniCmdRxHdrTransUpdate(struct ADAPTER *ad,
 	struct UNI_CMD_RX_HDR_TRAN_PARM *param);

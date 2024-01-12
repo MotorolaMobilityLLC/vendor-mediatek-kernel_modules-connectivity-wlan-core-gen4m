@@ -2270,6 +2270,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.u4PolicySize = ARRAY_SIZE(set_6g_pwr_mode_policy)
 	},
 #endif
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	{
+		.pcCmdStr  = CMD_GET_POWER_LIMIT,
+		.pfHandler = priv_driver_get_power_limit_emi_data,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(3),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif
 /*
  *	{
  *		.pcCmdStr  = <command string>,

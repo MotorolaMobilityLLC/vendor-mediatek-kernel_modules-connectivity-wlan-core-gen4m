@@ -22614,3 +22614,49 @@ int priv_driver_set_6g_pwr_mode(struct net_device *prNetDev, char *pcCommand,
 
 }
 #endif
+#if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+int priv_driver_get_power_limit_emi_data(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen)
+{
+#define PARSE_POWER_LIMIT_AGRC_NUM 3
+
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t i4BytesWritten = 0, i4Argc = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4RFBand, u4Channel;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+
+	if (i4Argc != PARSE_POWER_LIMIT_AGRC_NUM) {
+		DBGLOG(REQ, ERROR, "argc(%d) is error\n", i4Argc);
+		return -1;
+	}
+
+	if (kalkStrtou32(apcArgv[1], 0, &u4RFBand)
+		|| kalkStrtou32(apcArgv[2], 0, &u4Channel)) {
+		DBGLOG(REQ, ERROR, "Parse error\n");
+		return -1;
+	}
+
+	DBGLOG(REQ, STATE, "u4RFBand :%d, u4Channel :%d\n",
+		u4RFBand, u4Channel);
+
+	i4BytesWritten = rlmDomainReadPwrLimitEmiData(prAdapter,
+		pcCommand,
+		i4TotalLen,
+		u4RFBand,
+		u4Channel);
+
+	return i4BytesWritten;
+}
+#endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */

@@ -2224,6 +2224,12 @@ else
     ccflags-y += -DCFG_PCIE_LTR_UPDATE=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_PWR_LMT_EMI), y)
+    ccflags-y += -DCFG_SUPPORT_PWR_LMT_EMI=1
+else
+    ccflags-y += -DCFG_SUPPORT_PWR_LMT_EMI=0
+endif
+
 # ---------------------------------------------------
 # Directory List
 # ---------------------------------------------------
