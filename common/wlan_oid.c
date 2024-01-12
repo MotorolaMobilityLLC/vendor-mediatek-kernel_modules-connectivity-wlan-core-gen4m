@@ -16752,6 +16752,7 @@ uint32_t wlanoidThermalProtectAct(IN struct ADAPTER *prAdapter,
 	return rStatus;
 }
 #endif
+
 uint32_t
 wlanoidSetMdvt(IN struct ADAPTER *prAdapter,
 			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
@@ -16786,3 +16787,50 @@ wlanoidSetMdvt(IN struct ADAPTER *prAdapter,
 				   (uint8_t *) &rCmdMdvtCfg,
 				   pvSetBuffer, u4SetBufferLen);
 }	/* wlanoidSetMdvt */
+
+#if (CFG_SUPPORT_PKT_OFLD == 1)
+
+uint32_t
+wlanoidSetOffloadInfo(IN struct ADAPTER *prAdapter,
+			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen)
+{
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	return wlanSendSetQueryCmd(prAdapter,
+				   CMD_ID_PKT_OFLD,
+				   TRUE,
+				   FALSE,
+				   TRUE,
+				   nicCmdEventSetCommon,
+				   nicOidCmdTimeoutCommon,
+				   sizeof(struct CMD_OFLD_INFO),
+				   (uint8_t *) pvSetBuffer,
+				   pvSetBuffer, u4SetBufferLen);
+
+}	/* wlanoidSetOffloadInfo */
+
+uint32_t
+wlanoidQueryOffloadInfo(IN struct ADAPTER *prAdapter,
+			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen)
+{
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	return wlanSendSetQueryCmd(prAdapter,
+				   CMD_ID_PKT_OFLD,
+				   FALSE,
+				   TRUE,
+				   TRUE,
+				   nicCmdEventQueryOfldInfo,
+				   nicOidCmdTimeoutCommon,
+				   sizeof(struct CMD_OFLD_INFO),
+				   (uint8_t *) pvSetBuffer,
+				   pvSetBuffer, u4SetBufferLen);
+
+}	/* wlanoidQueryOffloadInfo */
+
+#endif /* CFG_SUPPORT_PKT_OFLD */
+

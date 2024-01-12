@@ -7775,6 +7775,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prAdapter, "BackoffLevel", 3);
 #endif
 
+#if (CFG_SUPPORT_APF == 1)
+	prWifiVar->ucApfEnable = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "ApfEnable", FEATURE_ENABLED);
+#endif
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
