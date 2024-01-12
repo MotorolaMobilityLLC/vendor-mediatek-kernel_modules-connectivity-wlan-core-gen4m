@@ -74,6 +74,12 @@
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
+
+struct PhTputSetting {
+	uint16_t u2CmdId;
+	uint8_t fgIsSec;
+};
+
 enum ENUM_PHPTUT_SETTING {
 	/*STA*/
 	ENUM_PHTPUT_LEGACY_OPEN_STA		= 1,
@@ -104,6 +110,7 @@ enum ENUM_PHPTUT_SETTING {
 	ENUM_PHTPUT_DBDC_OPEN_BN0_BN1_AP	= 1203,
 	ENUM_PHTPUT_DBDC_SEC_BN0_BN1_AP		= 1204
 };
+
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
@@ -132,9 +139,10 @@ enum ENUM_PHPTUT_SETTING {
 uint32_t dvtSetupPhTput(IN struct net_device *prNetDev,
 			IN uint32_t u4CaseIndex);
 uint32_t dvtActivateNetworkPhTput(IN struct net_device *prNetDev,
-                            IN uint8_t ucBssIndex);
+			IN uint8_t ucBssIndex,
+			IN struct PhTputSetting *prPhtputSetting);
 uint32_t dvtDeactivateNetworkPhTput(IN struct net_device *prNetDev,
-                            IN uint8_t ucBssIndex);
+			IN uint8_t ucBssIndex);
 
 #endif /* _DVT_PHTPUT_H */
 

@@ -89,6 +89,36 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
+struct PhTputSetting g_rPhTputMap[] = {
+	/*STA*/
+	{ENUM_PHTPUT_LEGACY_OPEN_STA, FALSE},
+	{ENUM_PHTPUT_LEGACY_SEC_GCMP256_STA, TRUE},
+	{ENUM_PHTPUT_LEGACY_SEC_WEP128_STA, TRUE},
+	{ENUM_PHTPUT_LEGACY_SEC_TKIP_STA, TRUE},
+	{ENUM_PHTPUT_LEGACY_SEC_AES_STA, TRUE},
+	{ENUM_PHTPUT_MLO_OPEN_BN0_BN2_STA, FALSE},
+	{ENUM_PHTPUT_MLO_SEC_BN0_BN2_STA, TRUE},
+	{ENUM_PHTPUT_MLO_OPEN_BN0_BN1_STA, FALSE},
+	{ENUM_PHTPUT_MLO_SEC_BN0_BN1_STA, TRUE},
+	{ENUM_PHTPUT_DBDC_OPEN_BN0_BN2_STA, FALSE},
+	{ENUM_PHTPUT_DBDC_SEC_BN0_BN2_STA, TRUE},
+	{ENUM_PHTPUT_DBDC_OPEN_BN0_BN1_STA, FALSE},
+	{ENUM_PHTPUT_DBDC_SEC_BN0_BN1_STA, TRUE},
+	/*AP*/
+	{ENUM_PHTPUT_LEGACY_OPEN_AP, FALSE},
+	{ENUM_PHTPUT_LEGACY_SEC_GCMP256_AP, TRUE},
+	{ENUM_PHTPUT_LEGACY_SEC_WEP128_AP, TRUE},
+	{ENUM_PHTPUT_LEGACY_SEC_TKIP_AP, TRUE},
+	{ENUM_PHTPUT_LEGACY_SEC_AES_AP, TRUE},
+	{ENUM_PHTPUT_MLO_OPEN_BN0_BN2_AP, FALSE},
+	{ENUM_PHTPUT_MLO_SEC_BN0_BN2_AP, TRUE},
+	{ENUM_PHTPUT_MLO_OPEN_BN0_BN1_AP, FALSE},
+	{ENUM_PHTPUT_MLO_SEC_BN0_BN1_AP, TRUE},
+	{ENUM_PHTPUT_DBDC_OPEN_BN0_BN2_AP, FALSE},
+	{ENUM_PHTPUT_DBDC_SEC_BN0_BN2_AP, TRUE},
+	{ENUM_PHTPUT_DBDC_OPEN_BN0_BN1_AP, FALSE},
+	{ENUM_PHTPUT_DBDC_SEC_BN0_BN1_AP, TRUE},
+};
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -118,12 +148,26 @@ uint32_t dvtSetupPhTput(IN struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct BSS_INFO *prBssInfo;
+	uint16_t ucMapIdx, ucPhTputMapSize;
+	struct PhTputSetting *prPhtputSetting = NULL;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, 0);
 
-	switch(u4CaseIndex) {
+	ucPhTputMapSize = sizeof(g_rPhTputMap) / sizeof(*prPhtputSetting);
+
+	for (ucMapIdx = 0; ucMapIdx < ucPhTputMapSize; ucMapIdx++) {
+		if (u4CaseIndex == g_rPhTputMap[ucMapIdx].u2CmdId)
+			prPhtputSetting = &g_rPhTputMap[ucMapIdx];
+	}
+
+	if (prPhtputSetting == NULL) {
+		DBGLOG(CNM, WARN, "No Match Case ID[%d]\n", u4CaseIndex);
+		return 0;
+	}
+
+	switch (prPhtputSetting->u2CmdId) {
 	case ENUM_PHTPUT_DBDC_OPEN_BN0_BN2_STA:
 	case ENUM_PHTPUT_DBDC_SEC_BN0_BN2_STA:
 	case ENUM_PHTPUT_DBDC_OPEN_BN0_BN1_STA:
@@ -133,8 +177,8 @@ uint32_t dvtSetupPhTput(IN struct net_device *prNetDev,
 	case ENUM_PHTPUT_DBDC_OPEN_BN0_BN1_AP:
 	case ENUM_PHTPUT_DBDC_SEC_BN0_BN1_AP:
 		if (prBssInfo->fgIsNetActive == FALSE) {
-			dvtActivateNetworkPhTput(prNetDev, 0);
-			dvtActivateNetworkPhTput(prNetDev, 2);
+			dvtActivateNetworkPhTput(prNetDev, 0, prPhtputSetting);
+			dvtActivateNetworkPhTput(prNetDev, 2, prPhtputSetting);
 		} else {
 			dvtDeactivateNetworkPhTput(prNetDev, 0);
 			dvtDeactivateNetworkPhTput(prNetDev, 2);
@@ -142,7 +186,7 @@ uint32_t dvtSetupPhTput(IN struct net_device *prNetDev,
 		break;
 	default:
 		if (prBssInfo->fgIsNetActive == FALSE) {
-			dvtActivateNetworkPhTput(prNetDev, 0);
+			dvtActivateNetworkPhTput(prNetDev, 0, prPhtputSetting);
 		} else {
 			dvtDeactivateNetworkPhTput(prNetDev, 0);
 		}
@@ -164,7 +208,8 @@ uint32_t dvtSetupPhTput(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t dvtActivateNetworkPhTput(IN struct net_device *prNetDev,
-                            IN uint8_t ucBssIndex)
+			IN uint8_t ucBssIndex,
+			IN struct PhTputSetting *prPhtputSetting)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -178,6 +223,7 @@ uint32_t dvtActivateNetworkPhTput(IN struct net_device *prNetDev,
 	uint8_t aucStaRecMacAddr[6];
 	uint8_t ucStaRecIdx = ucBssIndex;
 	uint8_t ucWlanIdx = ucBssIndex == 0 ? 1 : 2;
+	uint8_t ucTid;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
         prAdapter = prGlueInfo->prAdapter;
@@ -226,6 +272,17 @@ uint32_t dvtActivateNetworkPhTput(IN struct net_device *prNetDev,
 	prStaRec->fgIsValid = TRUE;
 	prStaRec->fgIsQoS = TRUE;
 	prStaRec->fgIsInPS = FALSE;
+	prStaRec->fgIsTxAllowed = TRUE;
+
+	if (prPhtputSetting->fgIsSec) {
+		prStaRec->fgTransmitKeyExist = TRUE;
+		prAdapter->rWifiVar.rAisFsmInfo[prBssInfo->u4PrivateData]
+			.rConnSettings.eEncStatus = ENUM_ENCRYPTION4_ENABLED;
+	} else {
+		prStaRec->fgTransmitKeyExist = FALSE;
+		prAdapter->rWifiVar.rAisFsmInfo[prBssInfo->u4PrivateData]
+			.rConnSettings.eEncStatus = ENUM_ENCRYPTION_DISABLED;
+	}
 
 	for (i = 0; i < NUM_OF_PER_STA_TX_QUEUES; i++) {
 		QUEUE_INITIALIZE(&prStaRec->arTxQueue[i]);
@@ -243,6 +300,14 @@ uint32_t dvtActivateNetworkPhTput(IN struct net_device *prNetDev,
 	/* netif_carrier_on */
 	prDevHandler = wlanGetNetDev(prGlueInfo, ucBssIndex); //DBDC
 	netif_carrier_on(prDevHandler);
+
+	/* setup TEMP TXD */
+	nicTxGenerateDescTemplate(prAdapter, prStaRec);
+
+	for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++) {
+		nicTxSetHwAmsduDescTemplate(prAdapter, prStaRec, ucTid,
+					    TRUE);
+	}
 
 	return 0;
 }
