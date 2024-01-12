@@ -1292,30 +1292,6 @@ struct PARAM_GET_BSS_STATISTICS {
 	uint8_t au4Reserved[32];	/* insufficient for LLS?? */
 };
 
-struct PARAM_GET_DRV_STATISTICS {
-	int32_t i4TxPendingFrameNum;
-	int32_t i4TxPendingCmdDataFrameNum;
-	int32_t i4TxPendingCmdNum;
-
-	/* sync i4PendingFwdFrameCount in _TX_CTRL_T */
-	int32_t i4PendingFwdFrameCount;
-
-	/* sync pad->rTxCtrl.rFreeMsduInfoList.u4NumElem */
-	uint32_t u4MsduNumElem;
-
-	/* sync pad->rTxCtrl.rTxMgmtTxingQueue.u4NumElem */
-	uint32_t u4TxMgmtTxringQueueNumElem;
-
-	/* sync pad->prRxCtrl.rFreeSwRfbList.u4NumElem */
-	uint32_t u4RxFreeSwRfbMsduNumElem;
-
-	/* sync pad->prRxCtrl.rReceivedRfbList.u4NumElem */
-	uint32_t u4RxReceivedRfbNumElem;
-
-	/* sync pad->prRxCtrl.rIndicatedRfbList.u4NumElem */
-	uint32_t u4RxIndicatedNumElem;
-};
-
 struct NET_INTERFACE_INFO {
 	uint8_t ucBssIndex;
 	void *pvNetInterface;

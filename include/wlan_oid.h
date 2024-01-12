@@ -3195,38 +3195,6 @@ struct PARAM_PREFER_CHN_INFO {
 	uint32_t u4Dirtiness;
 };
 
-struct UMAC_STAT2_GET {
-	uint16_t	u2PleRevPgHif0Group0;
-	uint16_t	u2PleRevPgCpuGroup2;
-
-	uint16_t	u2PseRevPgHif0Group0;
-	uint16_t	u2PseRevPgHif1Group1;
-	uint16_t	u2PseRevPgCpuGroup2;
-	uint16_t	u2PseRevPgLmac0Group3;
-	uint16_t	u2PseRevPgLmac1Group4;
-	uint16_t	u2PseRevPgLmac2Group5;
-	uint16_t	u2PseRevPgPleGroup6;
-
-	uint16_t	u2PleSrvPgHif0Group0;
-	uint16_t	u2PleSrvPgCpuGroup2;
-
-	uint16_t	u2PseSrvPgHif0Group0;
-	uint16_t	u2PseSrvPgHif1Group1;
-	uint16_t	u2PseSrvPgCpuGroup2;
-	uint16_t	u2PseSrvPgLmac0Group3;
-	uint16_t	u2PseSrvPgLmac1Group4;
-	uint16_t	u2PseSrvPgLmac2Group5;
-	uint16_t	u2PseSrvPgPleGroup6;
-
-	uint16_t	u2PleTotalPageNum;
-	uint16_t	u2PleFreePageNum;
-	uint16_t	u2PleFfaNum;
-
-	uint16_t	u2PseTotalPageNum;
-	uint16_t	u2PseFreePageNum;
-	uint16_t	u2PseFfaNum;
-};
-
 struct CNM_STATUS {
 	uint8_t              fgDbDcModeEn;
 	uint8_t              ucChNumB0;
