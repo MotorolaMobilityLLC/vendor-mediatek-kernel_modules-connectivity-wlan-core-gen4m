@@ -4707,8 +4707,6 @@ int mtk_cfg80211_vendor_get_usable_channel(
 		goto end;
 	}
 	band = nla_get_u32(tb[WIFI_ATTRIBUTE_USABLE_CHANNEL_BAND]);
-	DBGLOG(REQ, WARN, "mtk_cfg80211_usable_channel: band %d\n",
-		band);
 
 	if (!tb[WIFI_ATTRIBUTE_USABLE_CHANNEL_IFACE]) {
 		DBGLOG(REQ, ERROR, "attr channel band failed.\n");
@@ -4841,7 +4839,7 @@ int mtk_cfg80211_vendor_get_usable_channel(
 		i4Status = -ENOMEM;
 		goto end;
 	}
-	DBGLOG(REQ, ERROR, "sizeof(comb_matrix):%lu\n,",
+	DBGLOG(REQ, TRACE, "sizeof(comb_matrix):%lu\n,",
 		sizeof(struct ANDROID_USABLE_CHANNEL_UNIT)*
 		(num_channels_2g + num_channels_5g + num_channels_6g) +
 		sizeof(u16));

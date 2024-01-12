@@ -8174,9 +8174,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 
 #if CFG_ENABLE_WIFI_DIRECT
 	INIT_UINT(prWifiVar->u4ApChnlHoldTime,
-		"ApChnlHoldTime", P2P_AP_CHNL_HOLD_TIME_MS);
+		"ApChnlHoldTime", SAP_CHNL_HOLD_TIME_MS);
 	INIT_UINT(prWifiVar->u4P2pChnlHoldTime,
-		"P2pChnlHoldTime", P2P_AP_CHNL_HOLD_TIME_MS);
+		"P2pChnlHoldTime", P2P_CHNL_HOLD_TIME_MS);
 	INIT_UINT(prWifiVar->u4ProbeRspRetryLimit,
 		"ProbeRspRetryLimit", DEFAULT_P2P_PROBERESP_RETRY_LIMIT);
 #endif
