@@ -1124,6 +1124,7 @@ struct CAP_PHY_CAP {
 };
 
 #if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
+#define RX_QUOTA_MAGIC_NUM 10000
 struct CAP_PSE_RX_QUOTA {
 	uint32_t u4MaxQuotaBytes;
 	uint32_t u4MinQuotaBytes;
