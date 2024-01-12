@@ -459,6 +459,13 @@ enum ENUM_CMD_TX_RESULT {
 #define kfree(_addr) kal_kfree(_addr)
 #define vfree(_addr) kal_vfree(_addr)
 
+#define KAL_MB_W() \
+({ \
+	/* Avoid memory barrier problem  */ \
+	/* TODO: OS-dependent */ \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__) \
+})
+
 #if DBG
 #define kalMemAlloc(u4Size, eMemType) ({    \
 	void *pvAddr; \

@@ -843,11 +843,11 @@ void asicCheckDummyReg(struct GLUE_INFO *prGlueInfo)
 
 	if (halWpdmaGetRxDmaDoneCnt(prGlueInfo, RX_RING_EVT_IDX_1)) {
 		DBGLOG(HAL, TRACE, "Force to read RX event\n");
-		prAdapter->u4NoMoreRfb |= BIT(RX_RING_EVT_IDX_1);
+		KAL_SET_BIT(RX_RING_EVT_IDX_1, prAdapter->ulNoMoreRfb);
 	}
 	if (halWpdmaGetRxDmaDoneCnt(prGlueInfo, RX_RING_DATA_IDX_0)) {
 		DBGLOG(HAL, TRACE, "Force to read RX data\n");
-		prAdapter->u4NoMoreRfb |= BIT(RX_RING_DATA_IDX_0);
+		KAL_SET_BIT(RX_RING_DATA_IDX_0, prAdapter->ulNoMoreRfb);
 	}
 	/* Write sleep mode magic num to dummy reg */
 	asicSetDummyReg(prGlueInfo);

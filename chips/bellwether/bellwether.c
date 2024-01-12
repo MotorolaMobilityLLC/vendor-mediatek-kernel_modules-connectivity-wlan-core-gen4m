@@ -594,31 +594,31 @@ static void bellwetherProcessRxInterrupt(
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
 
 	if (rIntrStatus.field_conn3x.wfdma0_rx_done_4 ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA_IDX_0)))
+	    (KAL_TEST_BIT(RX_RING_DATA_IDX_0, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0, TRUE);
 
 	if (rIntrStatus.field_conn3x.wfdma0_rx_done_5 ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA1_IDX_2)))
+	    (KAL_TEST_BIT(RX_RING_DATA1_IDX_2, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_DATA1_IDX_2, TRUE);
 
 	if (rIntrStatus.field_conn3x.wfdma0_rx_done_8 ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA2_IDX_5)))
+	    (KAL_TEST_BIT(RX_RING_DATA2_IDX_5, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_DATA2_IDX_5, TRUE);
 
 	if (rIntrStatus.field_conn3x.wfdma0_rx_done_0 ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_EVT_IDX_1)))
+	    (KAL_TEST_BIT(RX_RING_EVT_IDX_1, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, FALSE);
 
 	if (rIntrStatus.field_conn3x.wfdma0_rx_done_6 ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_TXDONE0_IDX_3)))
+	    (KAL_TEST_BIT(RX_RING_TXDONE0_IDX_3, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0_IDX_3, FALSE);
 
 	if (rIntrStatus.field_conn3x.wfdma0_rx_done_7 ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_TXDONE1_IDX_4)))
+	    (KAL_TEST_BIT(RX_RING_TXDONE1_IDX_4, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE1_IDX_4, FALSE);
 
 	if (rIntrStatus.field_conn3x.wfdma0_rx_done_9 ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_TXDONE2_IDX_6)))
+	    (KAL_TEST_BIT(RX_RING_TXDONE2_IDX_6, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE2_IDX_6, FALSE);
 }
 

@@ -118,8 +118,10 @@ static enum ENUM_CMD_TX_RESULT kalDevWriteCmdByQueue(
 		uint8_t ucTC);
 static bool kalDevWriteDataByQueue(struct GLUE_INFO *prGlueInfo,
 				   struct MSDU_INFO *prMsduInfo);
-static bool kalDevKickMsduData(struct GLUE_INFO *prGlueInfo, uint32_t u4Port);
-static bool kalDevKickAmsduData(struct GLUE_INFO *prGlueInfo, uint32_t u4Port);
+static bool kalDevKickMsduData(struct GLUE_INFO *prGlueInfo,
+				struct list_head *prHead);
+static bool kalDevKickAmsduData(struct GLUE_INFO *prGlueInfo,
+				struct list_head *prHead);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -961,6 +963,7 @@ static enum ENUM_CMD_TX_RESULT kalDevWriteCmdByQueue(
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct TX_CMD_REQ *prTxReq;
+	unsigned long flags;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -974,7 +977,9 @@ static enum ENUM_CMD_TX_RESULT kalDevWriteCmdByQueue(
 
 	prTxReq->prCmdInfo = prCmdInfo;
 	prTxReq->ucTC = ucTC;
+	spin_lock_irqsave(&prHifInfo->rTxCmdQLock, flags);
 	list_add_tail(&prTxReq->list, &prHifInfo->rTxCmdQ);
+	spin_unlock_irqrestore(&prHifInfo->rTxCmdQLock, flags);
 
 	return CMD_TX_RESULT_QUEUED;
 }
@@ -985,10 +990,12 @@ bool kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
 	struct list_head *prCur, *prNext;
 	struct TX_CMD_REQ *prTxReq;
 	enum ENUM_CMD_TX_RESULT ret;
+	unsigned long flags;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
 
+	spin_lock_irqsave(&prHifInfo->rTxCmdQLock, flags);
 	list_for_each_safe(prCur, prNext, &prHifInfo->rTxCmdQ) {
 		prTxReq = list_entry(prCur, struct TX_CMD_REQ, list);
 		if (prTxReq->prCmdInfo) {
@@ -1006,6 +1013,7 @@ bool kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
 		list_del(prCur);
 		kfree(prTxReq);
 	}
+	spin_unlock_irqrestore(&prHifInfo->rTxCmdQLock, flags);
 
 	return true;
 }
@@ -1050,6 +1058,7 @@ static bool kalDevWriteDataByQueue(IN struct GLUE_INFO *prGlueInfo,
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct TX_DATA_REQ *prTxReq;
 	uint32_t u4Port = 0;
+	unsigned long flags;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -1057,8 +1066,10 @@ static bool kalDevWriteDataByQueue(IN struct GLUE_INFO *prGlueInfo,
 	u4Port = halTxRingDataSelect(prGlueInfo->prAdapter, prMsduInfo);
 	prTxReq = &prMsduInfo->rTxReq;
 	prTxReq->prMsduInfo = prMsduInfo;
+	spin_lock_irqsave(&prHifInfo->rTxDataQLock[u4Port], flags);
 	list_add_tail(&prTxReq->list, &prHifInfo->rTxDataQ[u4Port]);
 	prHifInfo->u4TxDataQLen[u4Port]++;
+	spin_unlock_irqrestore(&prHifInfo->rTxDataQLock[u4Port], flags);
 
 	return true;
 }
@@ -1078,7 +1089,10 @@ u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
 	struct mt66xx_chip_info *prChipInfo;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct RTMP_TX_RING *prTxRing;
+	struct list_head rTempList;
 	uint32_t u4Idx;
+	static int32_t ai4RingLock[NUM_OF_TX_RING];
+	unsigned long flags;
 
 	ASSERT(prGlueInfo);
 
@@ -1086,17 +1100,59 @@ u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
 	prHifInfo = &prGlueInfo->rHifInfo;
 
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
-		if (list_empty(&prHifInfo->rTxDataQ[u4Idx]))
-			continue;
+		if (unlikely(GLUE_INC_REF_CNT(ai4RingLock[u4Idx]) > 1)) {
+			/* Single user allowed per port read */
+			DBGLOG(TX, WARN, "Single user only R[%u] [%d]\n",
+				u4Idx,
+				GLUE_GET_REF_CNT(ai4RingLock[u4Idx]));
+			goto end;
+		}
+
+		spin_lock_irqsave(&prHifInfo->rTxDataQLock[u4Idx],
+			flags);
+		if (list_empty(&prHifInfo->rTxDataQ[u4Idx])) {
+			spin_unlock_irqrestore(&prHifInfo->rTxDataQLock[u4Idx],
+				flags);
+			goto end;
+		}
+		/* move list entry of rTxDataQ to rTempList */
+		INIT_LIST_HEAD(&rTempList);
+		list_replace_init(&prHifInfo->rTxDataQ[u4Idx], &rTempList);
+		spin_unlock_irqrestore(&prHifInfo->rTxDataQLock[u4Idx],
+			flags);
+
 		prTxRing = &prHifInfo->TxRing[u4Idx];
+
+		if (HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) ||
+			HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
+			spin_lock_irqsave(&prTxRing->rTxDmaQLock, flags);
+
 		kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr,
 			      &prTxRing->TxCpuIdx);
 		if (prChipInfo->ucMaxSwAmsduNum > 1)
-			kalDevKickAmsduData(prGlueInfo, u4Idx);
+			kalDevKickAmsduData(prGlueInfo, &rTempList);
 		else
-			kalDevKickMsduData(prGlueInfo, u4Idx);
+			kalDevKickMsduData(prGlueInfo, &rTempList);
 		kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr,
 			       prTxRing->TxCpuIdx);
+
+		if (HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) ||
+			HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
+			spin_unlock_irqrestore(&prTxRing->rTxDmaQLock,
+				flags);
+
+		spin_lock_irqsave(&prHifInfo->rTxDataQLock[u4Idx],
+			flags);
+		/* move list entries of rTempList to rTxDataQ */
+		if (!list_empty(&rTempList)) {
+			list_splice_tail_init(&prHifInfo->rTxDataQ[u4Idx],
+				&rTempList);
+			list_replace(&rTempList, &prHifInfo->rTxDataQ[u4Idx]);
+		}
+		spin_unlock_irqrestore(&prHifInfo->rTxDataQLock[u4Idx],
+			flags);
+end:
+		GLUE_DEC_REF_CNT(ai4RingLock[u4Idx]);
 	}
 	return 0;
 }
@@ -1134,7 +1190,8 @@ static uint16_t kalGetMoreSizeForAmsdu(uint32_t u4TxdDW1)
 	return u2Size;
 }
 
-static bool kalDevKickMsduData(struct GLUE_INFO *prGlueInfo, uint32_t u4Port)
+static bool kalDevKickMsduData(struct GLUE_INFO *prGlueInfo,
+				struct list_head *prHead)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
@@ -1148,7 +1205,7 @@ static bool kalDevKickMsduData(struct GLUE_INFO *prGlueInfo, uint32_t u4Port)
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
-	list_for_each_safe(prCur, prNext, &prHifInfo->rTxDataQ[u4Port]) {
+	list_for_each_safe(prCur, prNext, prHead) {
 		prTxReq = list_entry(prCur, struct TX_DATA_REQ, list);
 		prMsduInfo = prTxReq->prMsduInfo;
 		if (!prMsduInfo ||
@@ -1256,11 +1313,12 @@ static uint32_t kalGetNumOfAmsdu(struct GLUE_INFO *prGlueInfo,
 	return u4Cnt;
 }
 
-static bool kalDevKickAmsduData(struct GLUE_INFO *prGlueInfo, uint32_t u4Port)
+static bool kalDevKickAmsduData(struct GLUE_INFO *prGlueInfo,
+				struct list_head *prHead)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
-	struct list_head *prHead, *prCur, *prNext;
+	struct list_head *prCur, *prNext;
 	struct TX_DATA_REQ *prTxReq;
 	struct MSDU_INFO *prMsduInfo;
 	uint32_t u4Num = 0, u4Idx;
@@ -1272,7 +1330,6 @@ static bool kalDevKickAmsduData(struct GLUE_INFO *prGlueInfo, uint32_t u4Port)
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
-	prHead = &prHifInfo->rTxDataQ[u4Port];
 	list_for_each_safe(prCur, prNext, prHead) {
 		prTxReq = list_entry(prCur, struct TX_DATA_REQ, list);
 		prMsduInfo = prTxReq->prMsduInfo;

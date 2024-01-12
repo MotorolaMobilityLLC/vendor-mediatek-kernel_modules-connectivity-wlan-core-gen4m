@@ -119,6 +119,7 @@ struct QUE {
 	    (prQueue)->prHead = (struct QUE_ENTRY *)NULL; \
 	    (prQueue)->prTail = (struct QUE_ENTRY *)NULL; \
 	    (prQueue)->u4NumElem = 0; \
+	    KAL_MB_W(); \
 	}
 
 #define QUEUE_IS_EMPTY(prQueue)	\
@@ -142,6 +143,7 @@ struct QUE {
 			(prQueue)->prTail = (prQueueEntry); \
 		} \
 		((prQueue)->u4NumElem)++; \
+		KAL_MB_W(); \
 	}
 
 #define QUEUE_INSERT_TAIL(prQueue, prQueueEntry) \
@@ -156,6 +158,7 @@ struct QUE {
 		} \
 		(prQueue)->prTail = (prQueueEntry); \
 		((prQueue)->u4NumElem)++; \
+		KAL_MB_W(); \
 	}
 
 #define QUEUE_INSERT_TAIL_ALL(prQueue, prQueueEntry) \
@@ -188,6 +191,7 @@ struct QUE {
 			((struct QUE_ENTRY *)(prQueueEntry))->prNext = \
 				(struct QUE_ENTRY *)NULL; \
 			((prQueue)->u4NumElem)--; \
+			KAL_MB_W(); \
 		} \
 	}
 

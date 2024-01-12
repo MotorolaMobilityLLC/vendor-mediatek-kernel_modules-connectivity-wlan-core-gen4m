@@ -573,6 +573,9 @@ uint32_t nicProcessISTWithSpecifiedCount(IN struct ADAPTER *prAdapter,
 		}
 
 		nicProcessIST_impl(prAdapter, u4IntStatus);
+
+		if (prAdapter->ulNoMoreRfb)
+			break;
 	}
 
 	return u4Status;

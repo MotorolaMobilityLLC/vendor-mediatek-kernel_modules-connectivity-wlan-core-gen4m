@@ -251,8 +251,10 @@ struct GL_HIF_INFO {
 	struct timer_list rSerTimer;
 	unsigned long rSerTimerData;
 	struct list_head rTxCmdQ;
+	spinlock_t rTxCmdQLock;
 	struct list_head rTxDataQ[NUM_OF_TX_RING];
 	uint32_t u4TxDataQLen[NUM_OF_TX_RING];
+	spinlock_t rTxDataQLock[NUM_OF_TX_RING];
 
 	bool fgIsPowerOff;
 	bool fgIsDumpLog;

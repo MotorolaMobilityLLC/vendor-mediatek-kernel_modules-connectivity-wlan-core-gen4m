@@ -368,6 +368,12 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 #define GLUE_FLAG_CNS_PWR_TEMP			BIT(22)
 #endif
 
+#define GLUE_FLAG_RX_DIRECT_INT_BIT             (23)
+#define GLUE_FLAG_RX_DIRECT_INT                 BIT(23)
+
+#define GLUE_FLAG_TX_DIRECT_HIF_TX_BIT          (24)
+#define GLUE_FLAG_TX_DIRECT_HIF_TX              BIT(24)
+
 #define GLUE_BOW_KFIFO_DEPTH        (1024)
 /* #define GLUE_BOW_DEVICE_NAME        "MT6620 802.11 AMP" */
 #define GLUE_BOW_DEVICE_NAME        "ampc0"
@@ -794,6 +800,14 @@ struct GLUE_INFO {
 	uint8_t *prTxMsduRetFifoBuf;
 	uint32_t u4TxMsduRetFifoLen;
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
+
+#if CFG_SUPPORT_RX_NAPI
+	struct napi_struct *prRxDirectNapi;
+	uint8_t ucNapiUseCnt;
+	struct kfifo rRxKfifoQ;
+	uint8_t *prRxKfifoBuf;
+	uint32_t u4RxKfifoBufLen;
+#endif /* CFG_SUPPORT_RX_NAPI */
 
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 	uint8_t fgIsEnableMon;
@@ -1233,13 +1247,28 @@ struct MTK_WCN_WLAN_CB_INFO {
 #define GLUE_SET_EVENT(pr) \
 	kalSetEvent(pr)
 
-#define GLUE_INC_REF_CNT(_refCount)     atomic_inc((atomic_t *)&(_refCount))
-#define GLUE_DEC_REF_CNT(_refCount)     atomic_dec((atomic_t *)&(_refCount))
+/*
+ * For legacy kernel, create new MACRO by ourself
+ * Otherwise, may use __atomic_op_fence()
+ */
+#define GLUE_FENCE_ATOMIC(op, args...) \
+({ \
+	typeof(op(args)) __ret;	 \
+	KAL_MB_RW(); \
+	__ret = op(args); \
+	KAL_MB_RW(); \
+	__ret; \
+})
+#define GLUE_INC_REF_CNT(_refCount) \
+	GLUE_FENCE_ATOMIC(atomic_add_return, 1, ((atomic_t *)&(_refCount)))
+#define GLUE_DEC_REF_CNT(_refCount) \
+	GLUE_FENCE_ATOMIC(atomic_sub_return, 1, ((atomic_t *)&(_refCount)))
+#define GLUE_GET_REF_CNT(_refCount)  \
+	GLUE_FENCE_ATOMIC(atomic_read, ((atomic_t *)&(_refCount)))
 #define GLUE_ADD_REF_CNT(_value, _refCount) \
-	atomic_add(_value, (atomic_t *)&(_refCount))
+	GLUE_FENCE_ATOMIC(atomic_add_return, _value, ((atomic_t *)&(_refCount)))
 #define GLUE_SUB_REF_CNT(_value, _refCount) \
-	atomic_sub(_value, (atomic_t *)&(_refCount))
-#define GLUE_GET_REF_CNT(_refCount)     atomic_read((atomic_t *)&(_refCount))
+	GLUE_FENCE_ATOMIC(atomic_sub_return, _value, ((atomic_t *)&(_refCount)))
 
 #define DbgPrint(...)
 
