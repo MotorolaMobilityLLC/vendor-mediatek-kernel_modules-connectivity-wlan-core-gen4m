@@ -504,7 +504,15 @@
  * Flags and Parameters for CMD/RESPONSE
  *------------------------------------------------------------------------------
  */
+/* WMT expects wlan driver on/off to be completed within 4s.
+ * To avoid on/off timeout, only polling ready bit in 1s
+ * (CFG_RESPONSE_POLLING_TIMEOUT * CFG_RESPONSE_POLLING_DELAY).
+ */
+#if CFG_MTK_ANDROID_WMT
+#define CFG_RESPONSE_POLLING_TIMEOUT            200
+#else
 #define CFG_RESPONSE_POLLING_TIMEOUT            1000
+#endif
 #define CFG_RESPONSE_POLLING_DELAY              5
 
 /*------------------------------------------------------------------------------
