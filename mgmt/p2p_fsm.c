@@ -165,6 +165,7 @@ void p2pFsmRunEventChGrant(IN struct ADAPTER *prAdapter,
 			GET_BSS_INFO_BY_INDEX(prAdapter,
 				prMsgChGrant->ucBssIndex);
 
+		prAdapter->prP2pInfo->eConnState = P2P_CNN_NORMAL;
 		prAdapter->prP2pInfo->ucExtendChanFlag = 0;
 
 		DBGLOG(P2P, TRACE, "P2P Run Event Channel Grant\n");

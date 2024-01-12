@@ -3455,6 +3455,10 @@ void p2pFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 				prActFrame;
 			p2pProcessActionResponse(prAdapter,
 				prActPubVenFrame->ucPubSubType);
+			if (fgIsDevInterface) {
+				p2pDevFsmNotifyP2pRx(prAdapter,
+						prActPubVenFrame->ucPubSubType);
+			}
 		default:
 			break;
 		}

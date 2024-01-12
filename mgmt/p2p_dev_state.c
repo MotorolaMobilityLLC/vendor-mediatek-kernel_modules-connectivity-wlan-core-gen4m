@@ -244,12 +244,15 @@ p2pDevStateInit_CHNL_ON_HAND(IN struct ADAPTER *prAdapter,
 			&(prP2pDevFsmInfo->rP2pFsmTimeoutTimer),
 			u4TimeoutMs);
 
-		kalP2PIndicateChannelReady(prAdapter->prGlueInfo,
-					   prChnlReqInfo->u8Cookie,
-					   prChnlReqInfo->ucReqChnlNum,
-					   prChnlReqInfo->eBand,
-					   prChnlReqInfo->eChnlSco,
-					   prChnlReqInfo->u4MaxInterval);
+		/* Do NOT report channel ready event again for extension case */
+		if (!prAdapter->prP2pInfo->ucExtendChanFlag) {
+			kalP2PIndicateChannelReady(prAdapter->prGlueInfo,
+					prChnlReqInfo->u8Cookie,
+					prChnlReqInfo->ucReqChnlNum,
+					prChnlReqInfo->eBand,
+					prChnlReqInfo->eChnlSco,
+					prChnlReqInfo->u4MaxInterval);
+		}
 	} while (FALSE);
 }				/* p2pDevStateInit_CHNL_ON_HAND */
 

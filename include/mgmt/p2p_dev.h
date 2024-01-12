@@ -94,7 +94,7 @@ struct MSG_P2P_MGMT_TX_REQUEST {
 	u_int8_t fgIsWaitRsp;
 };
 
-#define P2P_DEV_EXTEND_CHAN_TIME	50
+#define P2P_DEV_EXTEND_CHAN_TIME	500
 
 #if CFG_SUPPORT_WFD
 
@@ -258,4 +258,7 @@ void p2pDevFsmRunEventMgmtFrameRegister(IN struct ADAPTER *prAdapter,
 
 void p2pDevFsmRunEventActiveDevBss(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr);
+
+void
+p2pDevFsmNotifyP2pRx(IN struct ADAPTER *prAdapter, uint8_t p2pFrameType);
 
