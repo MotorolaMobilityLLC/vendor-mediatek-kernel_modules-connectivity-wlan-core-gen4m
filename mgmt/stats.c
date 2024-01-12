@@ -297,7 +297,7 @@ void statsParseARPInfo(struct sk_buff *skb,
 	case EVENT_RX:
 		GLUE_SET_INDEPENDENT_PKT(skb, TRUE);
 		if (u2OpCode == ARP_PRO_REQ)
-			DBGLOG(RX, INFO,
+			DBGLOG_LIMITED(RX, INFO,
 				"<RX> Arp Req From IP: %d.%d.%d.%d\n",
 				pucEthBody[14], pucEthBody[15],
 				pucEthBody[16], pucEthBody[17]);
