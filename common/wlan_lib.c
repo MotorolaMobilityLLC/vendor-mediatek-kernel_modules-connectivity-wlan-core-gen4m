@@ -10026,82 +10026,6 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-#if CFG_ASSERT_DUMP
-void wlanCorDumpTimerInit(IN struct ADAPTER *prAdapter,
-				u_int8_t fgIsResetN9)
-{
-	if (fgIsResetN9) {
-		cnmTimerInitTimer(prAdapter,
-				  &prAdapter->rN9CorDumpTimer,
-				  (PFN_MGMT_TIMEOUT_FUNC) wlanN9CorDumpTimeOut,
-				  (unsigned long) NULL);
-
-	} else {
-		cnmTimerInitTimer(prAdapter,
-				  &prAdapter->rCr4CorDumpTimer,
-				  (PFN_MGMT_TIMEOUT_FUNC) wlanCr4CorDumpTimeOut,
-				  (unsigned long) NULL);
-	}
-}
-
-void wlanCorDumpTimerReset(IN struct ADAPTER *prAdapter,
-			   u_int8_t fgIsResetN9)
-{
-
-	if (prAdapter->fgN9AssertDumpOngoing
-	    || prAdapter->fgCr4AssertDumpOngoing) {
-
-		if (fgIsResetN9) {
-			cnmTimerStopTimer(prAdapter,
-					  &prAdapter->rN9CorDumpTimer);
-			cnmTimerStartTimer(prAdapter,
-					   &prAdapter->rN9CorDumpTimer, 5000);
-		} else {
-			cnmTimerStopTimer(prAdapter,
-					  &prAdapter->rCr4CorDumpTimer);
-			cnmTimerStartTimer(prAdapter,
-					   &prAdapter->rCr4CorDumpTimer, 5000);
-		}
-	} else {
-		DBGLOG(INIT, INFO,
-		       "Cr4, N9 CorDump Is not ongoing, ignore timer reset\n");
-	}
-}
-
-void wlanN9CorDumpTimeOut(IN struct ADAPTER *prAdapter,
-			  IN unsigned long ulParamPtr)
-{
-
-	if (prAdapter->fgN9CorDumpFileOpend) {
-		DBGLOG(INIT, INFO, "\n[DUMP_N9]====N9 ASSERT_END====\n");
-		prAdapter->fgN9AssertDumpOngoing = FALSE;
-		kalCloseCorDumpFile(TRUE);
-		prAdapter->fgN9CorDumpFileOpend = FALSE;
-	}
-
-	/* Trigger RESET */
-	glSetRstReason(RST_FW_ASSERT);
-	GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
-
-}
-
-void wlanCr4CorDumpTimeOut(IN struct ADAPTER *prAdapter,
-			   IN unsigned long ulParamPtr)
-{
-
-	if (prAdapter->fgCr4CorDumpFileOpend) {
-		DBGLOG(INIT, INFO, "\n[DUMP_Cr4]====Cr4 ASSERT_END====\n");
-		prAdapter->fgCr4AssertDumpOngoing = FALSE;
-		kalCloseCorDumpFile(FALSE);
-		prAdapter->fgCr4CorDumpFileOpend = FALSE;
-	}
-
-	/* Trigger RESET */
-	glSetRstReason(RST_FW_ASSERT);
-	GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
-}
-#endif
-
 u_int8_t
 wlanGetWlanIdxByAddress(IN struct ADAPTER *prAdapter,
 			IN uint8_t *pucAddr, OUT uint8_t *pucIndex)
@@ -11565,15 +11489,11 @@ uint32_t wlanFwCfgParse(IN struct ADAPTER *prAdapter, uint8_t *pucConfigBuf)
 
 int32_t wlanGetFileContent(struct ADAPTER *prAdapter,
 	const uint8_t *pcFileName, uint8_t *pucBuf,
-	uint32_t u4MaxFileLen, uint32_t *pu4ReadFileLen, u_int8_t bReqFw)
+	uint32_t u4MaxFileLen, uint32_t *pu4ReadFileLen)
 {
-	if (bReqFw)
-		return kalRequestFirmware(pcFileName, pucBuf,
-				 u4MaxFileLen, pu4ReadFileLen,
-				 prAdapter->prGlueInfo->prDev);
-
-	return kalReadToFile(pcFileName, pucBuf,
-				u4MaxFileLen, pu4ReadFileLen);
+	return kalRequestFirmware(pcFileName, pucBuf,
+			 u4MaxFileLen, pu4ReadFileLen,
+			 prAdapter->prGlueInfo->prDev);
 }
 
 void wlanReleasePendingCmdById(struct ADAPTER *prAdapter, uint8_t ucCid)

@@ -3377,21 +3377,13 @@ void wlanGetParseConfig(struct ADAPTER *prAdapter)
 	kalMemZero(pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE);
 	u4ConfigReadLen = 0;
 	if (pucConfigBuf) {
-		if (kalRequestFirmware("wifi.cfg", pucConfigBuf,
+		if (kalRequestFirmware("wifi_sigma.cfg", pucConfigBuf,
 			   WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
 			   prAdapter->prGlueInfo->prDev) == 0) {
 			/* ToDo:: Nothing */
-		} else if (kalReadToFile("/data/misc/wifi.cfg",
-			   pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE,
-			   &u4ConfigReadLen) == 0) {
-			/* ToDo:: Nothing */
-		} else if (kalReadToFile("/data/misc/wifi/wifi.cfg",
-			   pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE,
-			   &u4ConfigReadLen) == 0) {
-			/* ToDo:: Nothing */
-		} else if (kalReadToFile("/storage/sdcard0/wifi.cfg",
-			   pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE,
-			   &u4ConfigReadLen) == 0) {
+		} else if (kalRequestFirmware("wifi.cfg", pucConfigBuf,
+			   WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
+			   prAdapter->prGlueInfo->prDev) == 0) {
 			/* ToDo:: Nothing */
 		}
 
@@ -3427,27 +3419,16 @@ void wlanGetConfig(struct ADAPTER *prAdapter)
 	kalMemZero(pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE);
 	u4ConfigReadLen = 0;
 	if (pucConfigBuf) {
-#ifdef BUILD_QA_DBG
-		if (kalReadToFile("/data/misc/wifi/wifi.cfg",
-			   pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE,
-			   &u4ConfigReadLen) == 0) {
+		if (kalRequestFirmware("wifi_sigma.cfg", pucConfigBuf,
+			   WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
+			   prAdapter->prGlueInfo->prDev) == 0) {
 			/* ToDo:: Nothing */
 		} else if (kalRequestFirmware("wifi.cfg", pucConfigBuf,
 			   WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
 			   prAdapter->prGlueInfo->prDev) == 0) {
 			/* ToDo:: Nothing */
-		} else if (kalReadToFile("/storage/sdcard0/wifi.cfg",
-			   pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE,
-			   &u4ConfigReadLen) == 0) {
-			/* ToDo:: Nothing */
 		}
-#else
-		if (kalRequestFirmware("wifi.cfg", pucConfigBuf,
-			   WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
-			   prAdapter->prGlueInfo->prDev) == 0) {
-			/* ToDo:: Nothing */
-		}
-#endif
+
 		if (pucConfigBuf[0] != '\0' && u4ConfigReadLen > 0)
 			wlanCfgInit(prAdapter,
 				pucConfigBuf, u4ConfigReadLen, 0);

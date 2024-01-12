@@ -1596,18 +1596,6 @@ uint8_t kalGetRsnIeMfpCap(IN struct GLUE_INFO *prGlueInfo,
 /*----------------------------------------------------------------------------*/
 /* file opetation                                                             */
 /*----------------------------------------------------------------------------*/
-uint32_t kalWriteToFile(const uint8_t *pucPath,
-			u_int8_t fgDoAppend,
-			uint8_t *pucData, uint32_t u4Size);
-
-uint32_t kalCheckPath(const uint8_t *pucPath);
-
-uint32_t kalTrunkPath(const uint8_t *pucPath);
-
-int32_t kalReadToFile(const uint8_t *pucPath,
-		      uint8_t *pucData,
-		      uint32_t u4Size, uint32_t *pu4ReadSize);
-
 int32_t kalRequestFirmware(const uint8_t *pucPath,
 			   uint8_t *pucData,
 			   uint32_t u4Size, uint32_t *pu4ReadSize,
@@ -1665,17 +1653,6 @@ void *kalGetStats(IN struct net_device *prDev);
 void kalResetPacket(IN struct GLUE_INFO *prGlueInfo,
 		    IN void *prPacket);
 
-#if CFG_SUPPORT_QA_TOOL
-struct file *kalFileOpen(const char *path, int flags,
-			 int rights);
-
-void kalFileClose(struct file *file);
-
-uint32_t kalFileRead(struct file *file,
-		     unsigned long long offset,
-		     unsigned char *data, unsigned int size);
-#endif
-
 #if CFG_SUPPORT_SDIO_READ_WRITE_PATTERN
 /*----------------------------------------------------------------------------*/
 /* SDIO Read/Write Pattern Support                                            */
@@ -1694,18 +1671,10 @@ void kalSchedScanStopped(IN struct GLUE_INFO *prGlueInfo,
 			 u_int8_t fgDriverTriggerd);
 
 void kalSetFwOwnEvent2Hif(struct GLUE_INFO *pr);
-#if CFG_ASSERT_DUMP
 #if (CFG_SUPPORT_ICS == 1)
 uint32_t kalOpenIcsDumpFile(void);
 uint32_t kalWriteIcsDumpFile(uint8_t *pucBuffer, uint16_t u2Size);
 #endif /* CFG_SUPPORT_ICS */
-/* Core Dump out put file */
-uint32_t kalOpenCorDumpFile(u_int8_t fgIsN9);
-uint32_t kalWriteCorDumpFile(uint8_t *pucBuffer,
-			     uint16_t u2Size,
-			     u_int8_t fgIsN9);
-uint32_t kalCloseCorDumpFile(u_int8_t fgIsN9);
-#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

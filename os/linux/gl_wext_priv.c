@@ -400,16 +400,6 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	,
 
 	{
-		OID_CUSTOM_MEM_DUMP,
-		DISP_STRING("OID_CUSTOM_MEM_DUMP"),
-		TRUE, TRUE, ENUM_OID_DRIVER_CORE,
-		sizeof(struct PARAM_CUSTOM_MEM_DUMP_STRUCT),
-		(PFN_OID_HANDLER_FUNC_REQ) wlanoidQueryMemDump,
-		NULL
-	}
-	,
-
-	{
 		OID_CUSTOM_TEST_MODE,
 		DISP_STRING("OID_CUSTOM_TEST_MODE"),
 		FALSE, FALSE, ENUM_OID_DRIVER_CORE, 0,
@@ -1309,26 +1299,9 @@ __priv_get_int(IN struct net_device *prNetDev,
 #endif
 
 	case PRIV_CMD_DUMP_MEM:
-		prNdisReq = (struct NDIS_TRANSPORT_STRUCT *) &aucOidBuf[0];
+		DBGLOG(INIT, INFO, "No support dump memory\n");
+		prIwReqData->mode = 0;
 
-#if 1
-		if (!prGlueInfo->fgMcrAccessAllowed) {
-			status = 0;
-			return status;
-		}
-#endif
-		kalMemCopy(&prNdisReq->ndisOidContent[0], &pu4IntBuf[1], 8);
-
-		prNdisReq->ndisOidCmd = OID_CUSTOM_MEM_DUMP;
-		prNdisReq->inNdisOidlength = sizeof(struct
-						PARAM_CUSTOM_MEM_DUMP_STRUCT);
-		prNdisReq->outNdisOidLength = sizeof(struct
-						PARAM_CUSTOM_MEM_DUMP_STRUCT);
-
-		status = priv_get_ndis(prNetDev, prNdisReq, &u4BufLen);
-		if (status == 0)
-			prIwReqData->mode = *(uint32_t *)
-					    &prNdisReq->ndisOidContent[0];
 		return status;
 
 	case PRIV_CMD_SW_CTRL:
@@ -3282,7 +3255,6 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_OKC_ENABLE		"OKC_ENABLE"
 
 #define CMD_SETMONITOR		"MONITOR"
-#define CMD_SETBUFMODE		"BUFFER_MODE"
 
 #define CMD_GET_CH_RANK_LIST	"GET_CH_RANK_LIST"
 #define CMD_GET_CH_DIRTINESS	"GET_CH_DIRTINESS"
@@ -3574,108 +3546,6 @@ static int priv_cmd_not_support(IN struct net_device *prNetDev,
 }
 
 #if CFG_SUPPORT_QA_TOOL
-#if CFG_SUPPORT_BUFFER_MODE
-static int priv_driver_set_efuse_buffer_mode(
-	IN struct net_device *prNetDev, IN char *pcCommand,
-	IN int i4TotalLen)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct ADAPTER *prAdapter = NULL;
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	uint32_t u4BufLen = 0;
-	int32_t i4Argc = 0;
-	int32_t i4BytesWritten = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	struct PARAM_CUSTOM_EFUSE_BUFFER_MODE
-		*prSetEfuseBufModeInfo = NULL;
-#if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 0)
-	struct BIN_CONTENT *pBinContent;
-	int i = 0;
-#endif
-	uint8_t *pucConfigBuf = NULL;
-	uint32_t u4ConfigReadLen;
-
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	prAdapter = prGlueInfo->prAdapter;
-
-	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
-
-	pucConfigBuf = (uint8_t *) kalMemAlloc(2048, VIR_MEM_TYPE);
-
-	if (!pucConfigBuf) {
-		DBGLOG(INIT, INFO, "allocate pucConfigBuf failed\n");
-		i4BytesWritten = -1;
-		goto out;
-	}
-
-	kalMemZero(pucConfigBuf, 2048);
-	u4ConfigReadLen = 0;
-
-	if (kalReadToFile("/MT6632_eFuse_usage_table.xlsm.bin",
-			  pucConfigBuf, 2048, &u4ConfigReadLen) == 0) {
-		/* ToDo:: Nothing */
-	} else {
-		DBGLOG(INIT, INFO, "can't find file\n");
-		i4BytesWritten = -1;
-		goto out;
-	}
-
-	/* pucConfigBuf */
-	prSetEfuseBufModeInfo =
-		(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE *) kalMemAlloc(
-			sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE),
-			VIR_MEM_TYPE);
-
-	if (prSetEfuseBufModeInfo == NULL) {
-		DBGLOG(INIT, INFO,
-			"allocate prSetEfuseBufModeInfo failed\n");
-		i4BytesWritten = -1;
-		goto out;
-	}
-
-	kalMemZero(prSetEfuseBufModeInfo,
-		   sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE));
-
-	prSetEfuseBufModeInfo->ucSourceMode = 1;
-	prSetEfuseBufModeInfo->ucCount = (uint8_t)
-					 EFUSE_CONTENT_SIZE;
-
-#if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 0)
-	pBinContent = (struct BIN_CONTENT *)
-		      prSetEfuseBufModeInfo->aBinContent;
-	for (i = 0; i < EFUSE_CONTENT_SIZE; i++) {
-		pBinContent->u2Addr  = i;
-		pBinContent->ucValue = *(pucConfigBuf + i);
-
-		pBinContent++;
-	}
-
-	for (i = 0; i < 20; i++)
-		DBGLOG(INIT, INFO, "%x\n",
-		       prSetEfuseBufModeInfo->aBinContent[i].ucValue);
-#endif
-
-	rStatus = kalIoctl(prGlueInfo, wlanoidSetEfusBufferMode,
-			   prSetEfuseBufModeInfo,
-			   sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE),
-			   FALSE, FALSE, TRUE, &u4BufLen);
-
-	i4BytesWritten =
-		kalSnprintf(pcCommand, i4TotalLen, "set buffer mode %s",
-			 (rStatus == WLAN_STATUS_SUCCESS) ? "success" : "fail");
-
-out:
-	if (pucConfigBuf)
-		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, 2048);
-
-	if (prSetEfuseBufModeInfo)
-		kalMemFree(prSetEfuseBufModeInfo, VIR_MEM_TYPE,
-			sizeof(truct PARAM_CUSTOM_EFUSE_BUFFER_MODE));
-
-	return i4BytesWritten;
-}
-#endif /* CFG_SUPPORT_BUFFER_MODE */
-
 static int priv_driver_get_rx_statistics(IN struct net_device *prNetDev,
 					 IN char *pcCommand, IN int i4TotalLen)
 {
@@ -14208,9 +14078,6 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_SET_MDTIM, priv_driver_set_mdtim},
 #if CFG_SUPPORT_QA_TOOL
 	{CMD_GET_RX_STATISTICS, priv_driver_get_rx_statistics},
-#if CFG_SUPPORT_BUFFER_MODE
-	{CMD_SETBUFMODE, priv_driver_set_efuse_buffer_mode},
-#endif
 #endif
 #if CFG_SUPPORT_MSP
 #if 0
