@@ -7222,7 +7222,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #define INIT_STR(__FEATURE, __KEY, __VAL) \
 {\
 	if (!pucKey || !kalStrnCmp(pucKey, __KEY, WLAN_CFG_KEY_LEN_MAX - 1)) { \
-		wlanCfgGet(prAdapter, __KEY, __FEATURE, __VAL, 0);\
+		if (wlanCfgGet(prAdapter, __KEY, __FEATURE, __VAL, \
+				0) != WLAN_STATUS_SUCCESS) \
+			DBGLOG(INIT, WARN, \
+				"Fail to get key %s and set val %s\n", \
+				__KEY, __VAL); \
 	} \
 }
 
