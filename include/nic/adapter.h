@@ -1278,6 +1278,11 @@ struct WIFI_VAR {
 	uint32_t u4TxDataDelayTimeout;
 	uint32_t u4TxDataDelayCnt;
 #endif /* CFG_SUPPORT_TX_DATA_DELAY == 1 */
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+	int32_t i4ThrmCtrlTemp;
+	int32_t i4ThrmRadioOffTemp;
+	uint8_t aucThrmLvTxDuty[6];
+#endif
 };
 
 /* cnm_timer module */

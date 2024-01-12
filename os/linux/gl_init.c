@@ -6518,8 +6518,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 				sizeof(struct conn_pwr_event_max_temp));
 		connsys_power_event_notification(CONN_PWR_EVENT_LEVEL,
 				&(prAdapter->u4PwrLevel));
-		connsys_power_event_notification(CONN_PWR_EVENT_MAX_TEMP,
-				&prAdapter->rTempInfo);
 #endif
 
 		/* 4 <3> Register the card */

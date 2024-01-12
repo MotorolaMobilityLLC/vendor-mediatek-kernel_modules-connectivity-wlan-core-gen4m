@@ -5628,6 +5628,11 @@ struct UNI_EVENT_BF_PFMU_READ {
 	union PFMU_PROFILE_TAG2 ru4TxBfPFMUTag2;
 };
 
+#define UNI_THERMAL_PROTECT_TYPE_NTX_CTRL	0
+#define UNI_THERMAL_PROTECT_TYPE_DUTY_CTRL	1
+#define UNI_THERMAL_PROTECT_TYPE_RADIO_CTRL	2
+#define UNI_THERMAL_PROTECT_TYPE_NUM		3
+
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_THERMAL {
     /* fixed field */
@@ -5659,6 +5664,36 @@ struct UNI_EVENT_THERMAL_DDIE_SENSOR_INFO {
 	uint32_t u4SensorResult;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_THERMAL_PROTECT_MECH_INFO {
+	uint8_t ucSubEventId;
+	uint8_t uc1BandIdx;
+	uint8_t ucReserved[2];
+	uint8_t ucProtectionType[UNI_THERMAL_PROTECT_TYPE_NUM];
+	uint8_t ucReserved2;
+	uint8_t ucTriggerType[UNI_THERMAL_PROTECT_TYPE_NUM];
+	uint8_t ucReserved3;
+	int32_t i4TriggerTemp[UNI_THERMAL_PROTECT_TYPE_NUM];
+	int32_t i4RestoreTemp[UNI_THERMAL_PROTECT_TYPE_NUM];
+	uint16_t u2RecheckTime[UNI_THERMAL_PROTECT_TYPE_NUM];
+	uint8_t ucReserved4[2];
+	uint8_t ucState[UNI_THERMAL_PROTECT_TYPE_NUM];
+	uint8_t ucReserved6;
+	bool fgEnable[UNI_THERMAL_PROTECT_TYPE_NUM];
+	uint8_t ucReserved7;
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_THERMAL_PROTECT_DUTY_INFO {
+	uint8_t ucSubEventId;
+	uint8_t ucBandIdx;
+	uint8_t ucDuty0;
+	uint8_t ucDuty1;
+	uint8_t ucDuty2;
+	uint8_t ucDuty3;
+	uint8_t ucReserved[2];
+} __KAL_ATTRIB_PACKED__;
+
 enum UNI_THERMAL_EVENT_CATEGORY {
 	UNI_THERMAL_EVENT_TEMPERATURE_INFO = 0x0,
 	UNI_THERMAL_EVENT_THERMAL_SENSOR_BASIC_INFO = 0x1,
@@ -5666,6 +5701,8 @@ enum UNI_THERMAL_EVENT_CATEGORY {
 	UNI_THERMAL_EVENT_THERMAL_PROTECT_MECH_INFO = 0x3,
 	UNI_THERMAL_EVENT_THERMAL_PROTECT_DUTY_INFO = 0x4,
 	UNI_THERMAL_EVENT_DDIE_SENSOR_INFO = 0x5,
+	UNI_THERMAL_EVENT_THERMAL_PROTECT_DUTY_UPDATE = 0x6,
+	UNI_THERMAL_EVENT_THERMAL_PROTECT_RADIO_UPDATE = 0x7,
 	UNI_THERMAL_EVENT_NUM
 };
 
@@ -6861,6 +6898,8 @@ void nicUniEventGetVnf(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 #endif
 void nicUniEventFastPath(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventThermalProtect(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 
 /*******************************************************************************
