@@ -4398,16 +4398,44 @@ uint32_t ServiceWlanOid(void *winfos,
 	fgWaitResp = FALSE;
 	fgCmd = TRUE;
 
+	if (prAdapter->fgTestMode == FALSE) {
+		/* workaround for meta tool */
+		DBGLOG(RFTEST, INFO,
+			"Test Mode Start Workaround for META!\n");
+
+		ServiceRfTestInit(winfos);
+
+		i4Status = kalIoctl(prGlueInfo, /* prGlueInfo */
+		wlanoidRftestSetTestMode,  /* pfnOidHandler */
+			NULL, /* pvInfoBuf */
+			0, /* u4InfoBufLen */
+			fgRead, /* fgRead */
+			fgWaitResp, /* fgWaitResp */
+			fgCmd, /* fgCmd */
+			u4BufLen); /* pu4QryInfoLen */
+
+		DBGLOG(RFTEST, INFO,
+			"Test Mode Start Workaround for META2!\n");
+	}
+
 	switch (oidType) {
 	case OP_WLAN_OID_SET_TEST_MODE_START:
+		DBGLOG(RFTEST, INFO, "Test Mode Start!\n");
 		ServiceRfTestInit(winfos);
 		pfnOidHandler = wlanoidRftestSetTestMode;
 		break;
 	case OP_WLAN_OID_SET_TEST_MODE_ABORT:
+		DBGLOG(RFTEST, INFO, "Test Mode Abort!\n");
 		pfnOidHandler = wlanoidRftestSetAbortTestMode;
 		break;
 	case OP_WLAN_OID_RFTEST_SET_AUTO_TEST:
 		pfnOidHandler = wlanoidRftestSetAutoTest;
+		break;
+	case OP_WLAN_OID_RFTEST_QUERY_AUTO_TEST:
+		pfnOidHandler = wlanoidRftestQueryAutoTest;
+		fgRead = TRUE;
+		fgWaitResp = TRUE;
+		fgCmd = TRUE;
 		break;
 	case OP_WLAN_OID_QUERY_RX_STATISTICS:
 		prStatsData = (struct hqa_m_rx_stat *)rsp_data;
@@ -4473,12 +4501,7 @@ uint32_t ServiceWlanOid(void *winfos,
 		fgCmd = FALSE;
 		break;
 	/* ICAP Operation Function -- END*/
-	case OP_WLAN_OID_RFTEST_QUERY_AUTO_TEST:
-		pfnOidHandler = wlanoidRftestQueryAutoTest;
-		fgRead = TRUE;
-		fgWaitResp = TRUE;
-		fgCmd = TRUE;
-		break;
+
 	case OP_WLAN_OID_SET_MCR_WRITE:
 		pfnOidHandler = wlanoidSetMcrWrite;
 		fgRead = TRUE;

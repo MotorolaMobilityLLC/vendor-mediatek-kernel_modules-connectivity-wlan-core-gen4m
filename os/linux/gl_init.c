@@ -3885,8 +3885,19 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	if (u4LogLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT)
 		wlanDbgSetLogLevelImpl(prAdapter,
 				       ENUM_WIFI_LOG_LEVEL_VERSION_V1,
+				       ENUM_WIFI_LOG_MODULE_DRIVER,
+				       u4LogLevel);
+
+	/* For META mode debug */
+	wlanDbgSetLogLevelImpl(prAdapter,
+				       ENUM_WIFI_LOG_LEVEL_VERSION_V1,
 				       ENUM_WIFI_LOG_MODULE_FW,
 				       u4LogLevel);
+
+	wlanDbgSetLogLevelImpl(prAdapter,
+				       ENUM_WIFI_LOG_LEVEL_VERSION_V1,
+				       ENUM_WIFI_LOG_MODULE_FW,
+				       ENUM_WIFI_LOG_LEVEL_DEFAULT);
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	/* sync log status with firmware */

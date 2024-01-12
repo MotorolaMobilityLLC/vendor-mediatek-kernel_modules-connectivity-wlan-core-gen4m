@@ -3748,6 +3748,8 @@ static s_int32 hqa_set_ru_info(
 					   (u_char *)&value);
 		param_loop--;
 		ru_info[sta_seq].nss = value;
+		if (ru_info[sta_seq].nss == 0)
+			ru_info[sta_seq].nss = 1;
 		get_param_and_shift_buf(TRUE,
 					   sizeof(u_int32),
 					   &data,
