@@ -423,22 +423,6 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 	prGlueInfo->u4InfType = MT_DEV_INF_PCIE;
 
-	prHif->rErrRecoveryCtl.eErrRecovState = ERR_RECOV_STOP_IDLE;
-	prHif->rErrRecoveryCtl.u4Status = 0;
-
-	init_timer(&prHif->rSerTimer);
-	prHif->rSerTimer.function = halHwRecoveryTimeout;
-	prHif->rSerTimer.data = (unsigned long)prGlueInfo;
-	prHif->rSerTimer.expires =
-		jiffies + HIF_SER_TIMEOUT * HZ / MSEC_PER_SEC;
-
-	INIT_LIST_HEAD(&prHif->rTxCmdQ);
-	INIT_LIST_HEAD(&prHif->rTxDataQ);
-	prHif->u4TxDataQLen = 0;
-
-	prHif->fgIsPowerOff = true;
-	prHif->fgIsDumpLog = false;
-
 	prMemOps->allocTxDesc = pcieAllocDesc;
 	prMemOps->allocRxDesc = pcieAllocDesc;
 	prMemOps->allocTxCmdBuf = NULL;
@@ -472,27 +456,6 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 /*----------------------------------------------------------------------------*/
 void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 {
-	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
-	struct list_head *prCur, *prNext;
-	struct TX_CMD_REQ *prTxCmdReq;
-	struct TX_DATA_REQ *prTxDataReq;
-
-	del_timer_sync(&prHifInfo->rSerTimer);
-
-	halUninitMsduTokenInfo(prGlueInfo->prAdapter);
-	halWpdmaFreeRing(prGlueInfo);
-
-	list_for_each_safe(prCur, prNext, &prHifInfo->rTxCmdQ) {
-		prTxCmdReq = list_entry(prCur, struct TX_CMD_REQ, list);
-		list_del(prCur);
-		kfree(prTxCmdReq);
-	}
-
-	list_for_each_safe(prCur, prNext, &prHifInfo->rTxDataQ) {
-		prTxDataReq = list_entry(prCur, struct TX_DATA_REQ, list);
-		list_del(prCur);
-		prHifInfo->u4TxDataQLen--;
-	}
 }
 
 /*----------------------------------------------------------------------------*/
