@@ -275,7 +275,7 @@ static void asicConnac3xFillInitCmdTxdInfo(
 						INIT_PKT_FT_CMD)
 	HAL_MAC_CONNAC3X_TXD_SET_HEADER_FORMAT(prInitHifTxHeaderPadding,
 						HEADER_FORMAT_COMMAND);
-	HAL_MAC_CONNAC3X_TXD_SET_QUEUE_INDEX(prInitHifTxHeaderPadding, 0x20);
+	HAL_MAC_CONNAC3X_TXD_SET_QUEUE_INDEX(prInitHifTxHeaderPadding, 0);
 
 	prInitHifTxHeader->rInitWifiCmd.ucCID = prCmdInfo->ucCID;
 	prInitHifTxHeader->rInitWifiCmd.ucPktTypeID = prCmdInfo->ucPktTypeID;
@@ -313,7 +313,7 @@ static void asicConnac3xFillCmdTxdInfo(
 		(struct HW_MAC_CONNAC3X_TX_DESC *)prWifiCmd,
 		HEADER_FORMAT_COMMAND);
 	HAL_MAC_CONNAC3X_TXD_SET_QUEUE_INDEX(
-		(struct HW_MAC_CONNAC3X_TX_DESC *)prWifiCmd, 0x20);
+		(struct HW_MAC_CONNAC3X_TX_DESC *)prWifiCmd, 0);
 
 	prWifiCmd->ucCID = prCmdInfo->ucCID;
 	prWifiCmd->ucExtenCID = prCmdInfo->ucExtCID;
@@ -359,7 +359,7 @@ static void asicConnac3xFillUniCmdTxdInfo(
 		(struct HW_MAC_CONNAC3X_TX_DESC *)prWifiCmd,
 		HEADER_FORMAT_COMMAND);
 	HAL_MAC_CONNAC3X_TXD_SET_QUEUE_INDEX(
-		(struct HW_MAC_CONNAC3X_TX_DESC *)prWifiCmd, 0x20);
+		(struct HW_MAC_CONNAC3X_TX_DESC *)prWifiCmd, 0);
 
 	prWifiCmd->u2CID = prCmdInfo->u2CID;
 	prWifiCmd->ucPktTypeID = prCmdInfo->ucPktTypeID;
