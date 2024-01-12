@@ -443,7 +443,19 @@ static void heRlmFillHeCapIE(
 	HE_SET_MAC_CAP_TRIGGER_PAD_DURATION(prHeCap->ucHeMacCap,
 		prWifiVar->ucTrigMacPadDur);
 
-	HE_SET_MAC_CAP_HTC_HE(prHeCap->ucHeMacCap);
+	/* Check HTC blacklist */
+	if (IS_BSS_AIS(prBssInfo) && prAisFsmInfo != NULL) {
+		prBssDesc = prAisFsmInfo->prTargetBssDesc;
+		if (prBssDesc != NULL &&
+			queryAxBlacklist(prAdapter, prBssDesc->aucBSSID,
+			    prBssInfo->ucBssIndex, BLACKLIST_DIS_HE_HTC)) {
+			DBGLOG(BSS, INFO,
+			    "BSSID " MACSTR " is in HTC blacklist!\n",
+			    MAC2STR(prBssDesc->aucBSSID));
+		} else {
+			HE_SET_MAC_CAP_HTC_HE(prHeCap->ucHeMacCap);
+		}
+	}
 	HE_SET_MAC_CAP_OM_CTRL(prHeCap->ucHeMacCap);
 
 #if (CFG_SUPPORT_TWT == 1)

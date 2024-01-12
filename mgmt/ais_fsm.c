@@ -493,6 +493,12 @@ void aisFsmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	init_completion(&prAisBssInfo->rDeauthComp);
 	prAisBssInfo->encryptedDeauthIsInProcess = FALSE;
 #endif
+	/* AX blacklist*/
+	LINK_INITIALIZE(&prAisFsmInfo->rAxBlacklist);
+	/* HE HTC blacklist*/
+	LINK_INITIALIZE(&prAisFsmInfo->rHeHtcBlacklist);
+
+
 	/* DBGPRINTF("[2] ucBmpDeliveryAC:0x%x,
 	 * ucBmpTriggerAC:0x%x, ucUapsdSp:0x%x",
 	 */
@@ -604,6 +610,8 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	rsnFlushPmkid(prAdapter, ucBssIndex);
 
 	rrmParamInit(prAdapter, ucBssIndex);
+	clearAxBlacklist(prAdapter, ucBssIndex, BLACKLIST_AX_TO_AC);
+	clearAxBlacklist(prAdapter, ucBssIndex, BLACKLIST_DIS_HE_HTC);
 } /* end of aisFsmUninit() */
 
 /*----------------------------------------------------------------------------*/
@@ -7155,4 +7163,106 @@ uint8_t *
 
 	ASSERT(0);
 	return (uint8_t *) NULL;
+}
+
+u_int8_t addAxBlacklist(IN struct ADAPTER *prAdapter,
+			     IN uint8_t aucBSSID[], IN uint8_t ucBssIndex,
+			     IN uint8_t ucType) {
+	struct AX_BLACKLIST_ITEM *prBlacklistItem;
+	struct AIS_FSM_INFO *prAisFsmInfo;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+	prBlacklistItem =
+	    (struct AX_BLACKLIST_ITEM *)cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+					      sizeof(struct AX_BLACKLIST_ITEM));
+
+	if (!prBlacklistItem) {
+		DBGLOG(AIS, ERROR, "Can't generate new message\n");
+		return FALSE;
+	}
+
+	COPY_MAC_ADDR(prBlacklistItem->aucBSSID, aucBSSID);
+	if (ucType == BLACKLIST_AX_TO_AC) {
+		LINK_INSERT_TAIL(&prAisFsmInfo->rAxBlacklist,
+			&prBlacklistItem->rLinkEntry);
+	} else if (ucType == BLACKLIST_DIS_HE_HTC) {
+		LINK_INSERT_TAIL(&prAisFsmInfo->rHeHtcBlacklist,
+			&prBlacklistItem->rLinkEntry);
+	} else {
+		DBGLOG(AIS, ERROR, "Wrong type %d\n", ucType);
+		return FALSE;
+	}
+	DBGLOG(AIS, INFO, "Add BSSID " MACSTR " into %s blacklist\n",
+			MAC2STR(aucBSSID),
+			ucType == 0 ? "AX" : "+HTC");
+
+	return TRUE;
+}
+
+u_int8_t queryAxBlacklist(IN struct ADAPTER *prAdapter,
+			     IN uint8_t aucBSSID[], IN uint8_t ucBssIndex,
+			     IN uint8_t ucType) {
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct LINK *prBlacklist;
+	struct AX_BLACKLIST_ITEM *prBlacklistItem, *prBlacklistItemNext;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+	if (ucType == BLACKLIST_AX_TO_AC) {
+		prBlacklist = &prAisFsmInfo->rAxBlacklist;
+	} else if (ucType == BLACKLIST_DIS_HE_HTC) {
+		prBlacklist = &prAisFsmInfo->rHeHtcBlacklist;
+	} else {
+		DBGLOG(AIS, ERROR, "Wrong type %d\n", ucType);
+		return FALSE;
+	}
+
+	/* traverse through blacklist */
+	LINK_FOR_EACH_ENTRY_SAFE(prBlacklistItem,
+				 prBlacklistItemNext,
+				 prBlacklist, rLinkEntry,
+				 struct AX_BLACKLIST_ITEM) {
+		if (EQUAL_MAC_ADDR(aucBSSID, prBlacklistItem->aucBSSID))
+			return TRUE;
+	}
+		DBGLOG(AIS, INFO,
+			"BSSID " MACSTR " is not in %s blacklist!\n",
+			MAC2STR(aucBSSID),
+			ucType == 0 ? "AX" : "+HTC");
+	return FALSE;
+}
+
+u_int8_t clearAxBlacklist(IN struct ADAPTER *prAdapter,
+			     IN uint8_t ucBssIndex,
+			     IN uint8_t ucType) {
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct LINK *prBlacklist;
+	struct AX_BLACKLIST_ITEM *prBlacklistItem, *prBlacklistItemNext;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+	if (ucType == BLACKLIST_AX_TO_AC) {
+		prBlacklist = &prAisFsmInfo->rAxBlacklist;
+	} else if (ucType == BLACKLIST_DIS_HE_HTC) {
+		prBlacklist = &prAisFsmInfo->rHeHtcBlacklist;
+	} else {
+		DBGLOG(AIS, ERROR, "Wrong type %d\n", ucType);
+		return FALSE;
+	}
+
+	/* traverse through blacklist */
+	LINK_FOR_EACH_ENTRY_SAFE(prBlacklistItem,
+				 prBlacklistItemNext,
+				 prBlacklist, rLinkEntry,
+				 struct AX_BLACKLIST_ITEM) {
+		DBGLOG(AIS, INFO,
+			"BSSID " MACSTR " is removed from %s blacklist!\n",
+			MAC2STR(prBlacklistItem->aucBSSID),
+			ucType == 0 ? "AX" : "+HTC");
+		LINK_REMOVE_KNOWN_ENTRY(prBlacklist,
+					&prBlacklistItem->rLinkEntry);
+		cnmMemFree(prAdapter, prBlacklistItem);
+	}
+	return TRUE;
 }
