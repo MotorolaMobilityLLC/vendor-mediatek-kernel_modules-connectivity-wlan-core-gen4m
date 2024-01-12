@@ -2347,9 +2347,8 @@ nicTxFillDesc(struct ADAPTER *prAdapter,
 
 		if (MLR_CHECK_IF_MSDU_IS_FRAG(prMsduInfo))
 			ucChksumFlag &= ~TX_CS_TCP_UDP_GEN;
-		else
-			ucChksumFlag |= TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN;
-#else
+#endif
+
 		/*
 		 * Future:
 		 * Remove this checksum flag twicking and back to
@@ -2367,8 +2366,6 @@ nicTxFillDesc(struct ADAPTER *prAdapter,
 		 *   For IPv6 in connac3, nic_txd_v3_header_format_op(),
 		 *   let CSO respect the ip_summed flag.
 		 */
-		ucChksumFlag |= TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN;
-#endif
 
 		if (prTxDescOps->nic_txd_chksum_op)
 			prTxDescOps->nic_txd_chksum_op(prTxDesc, ucChksumFlag,
