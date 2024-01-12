@@ -1649,6 +1649,7 @@ typedef struct _CMD_CHANNEL_POWER_LIMIT_V2 {
 	UINT_8 tx_pwr_ht40_mcs5; /* MCS5*/
 	UINT_8 tx_pwr_ht40_mcs6; /* MCS6*/
 	UINT_8 tx_pwr_ht40_mcs7; /* MCS7*/
+	UINT_8 tx_pwr_ht40_mcs32; /* MCS32*/
 
 	UINT_8 tx_pwr_vht20_bpsk; /* MCS0*/
 	UINT_8 tx_pwr_vht20_qpsk; /* MCS1, MCS2*/
