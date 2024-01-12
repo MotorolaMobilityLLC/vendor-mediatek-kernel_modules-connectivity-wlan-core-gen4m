@@ -1023,8 +1023,6 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 		++i;
 	}
 
-	glUsbInitQ(prHifInfo, &prHifInfo->rTxCmdSendingQ, 0);
-
 	/* TX Data FFA */
 	prHifInfo->arTxDataFfaReqHead = glUsbInitQ(prHifInfo,
 							&prHifInfo->rTxDataFfaQ, USB_REQ_TX_DATA_FFA_CNT);
@@ -1079,9 +1077,6 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 		DBGLOG(INIT, INFO, "USB Tx URB INIT Tc[%u] cnt[%u] len[%u]\n", ucTc, i,
 		       prHifInfo->rTxDataBufCtrl[ucTc][0].u4BufSize);
 	}
-
-	glUsbInitQ(prHifInfo, &prHifInfo->rTxCmdCompleteQ, 0);
-	glUsbInitQ(prHifInfo, &prHifInfo->rTxDataCompleteQ, 0);
 
 	/* RX EVENT */
 	prHifInfo->prRxEventReqHead = glUsbInitQ(prHifInfo, &prHifInfo->rRxEventFreeQ, USB_REQ_RX_EVENT_CNT);
@@ -1144,11 +1139,15 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	}
 #endif
 
-	glUsbInitQ(prHifInfo, &prHifInfo->rRxEventCompleteQ, 0);
-	glUsbInitQ(prHifInfo, &prHifInfo->rRxDataCompleteQ, 0);
+	INIT_LIST_HEAD(&prHifInfo->rTxCmdSendingQ);
+	INIT_LIST_HEAD(&prHifInfo->rTxCmdCompleteQ);
+	INIT_LIST_HEAD(&prHifInfo->rTxDataCompleteQ);
+	INIT_LIST_HEAD(&prHifInfo->rRxEventCompleteQ);
+	INIT_LIST_HEAD(&prHifInfo->rRxDataCompleteQ);
+
 #if CFG_CHIP_RESET_SUPPORT
 	if (prChipInfo->fgIsSupportL0p5Reset && prBusInfo->fgIsSupportWdtEp)
-		glUsbInitQ(prHifInfo, &prHifInfo->rRxWdtCompleteQ, 0);
+		INIT_LIST_HEAD(&prHifInfo->rRxWdtCompleteQ);
 #endif
 
 	glUsbSetState(prHifInfo, USB_STATE_LINK_UP);
