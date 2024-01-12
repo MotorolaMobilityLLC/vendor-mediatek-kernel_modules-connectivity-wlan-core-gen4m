@@ -4862,18 +4862,6 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 		DBGLOG(RLM, WARN,
 			   "CC={0x00,0x00},Power Limit use Default setting!");
 
-	/*<1>Command - default table information,
-	 *fill all subband
-	 */
-	rlmDomainBuildCmdByDefaultTable(prCmd,
-		u2DefaultTableIndex);
-
-	/*<2>Command - configuration table information,
-	 * replace specified channel
-	 */
-	rlmDomainBuildCmdByConfigTable(prAdapter, prCmd);
-
-
 
 	/* Initialize channel number */
 	prCmd->ucNum = 0;
