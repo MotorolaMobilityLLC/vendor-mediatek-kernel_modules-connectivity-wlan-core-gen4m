@@ -264,6 +264,7 @@ struct CHIP_DBG_OPS mt7663_debug_ops = {
 	.showPleInfo = halShowPleInfo,
 	.showTxdInfo = halShowTxdInfo,
 	.showDmaschInfo = halShowDmaschInfo,
+	.dumpMacInfo = haldumpMacInfo,
 	.showWtblInfo = NULL,
 	.showHifInfo = NULL,
 	.printHifDbgInfo = halPrintHifDbgInfo,
