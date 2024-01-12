@@ -39,16 +39,19 @@
 #ifdef MT6639
 #include "coda/mt6639/mawd_reg.h"
 #include "coda/mt6639/wf_rro_top.h"
+#include "coda/mt6653/wf_wfdma_host_dma0.h"
 #endif
 
 #ifdef MT6653
 #include "coda/mt6653/mawd_reg.h"
 #include "coda/mt6653/wf_rro_top.h"
+#include "coda/mt6653/wf_wfdma_host_dma0.h"
 #endif
 
 #ifdef MT6655
 #include "coda/mt6655/mawd_reg.h"
 #include "coda/mt6655/wf_rro_top.h"
+#include "coda/mt6653/wf_wfdma_host_dma0.h"
 #endif
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
@@ -63,6 +66,9 @@
 
 #define MAWD_CR_BACKUP_OFFSET_VER_1_0	88
 #define MAWD_CR_BACKUP_OFFSET_VER_1_1	128
+
+#define MAWD_AMSDU_MAX_CNT		7
+#define MAWD_READ_COUNT_BY_EMI		0
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -259,8 +265,10 @@ u_int8_t halMawdWakeup(struct GLUE_INFO *prGlueInfo)
 		MAWD_WFDMA_HIGH_ADDR;
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
-	u4Addr = MAWD_SOFTRESET;
-	HAL_MAWD_MCR_WR(prAdapter, u4Addr, 0);
+	if (kalGetMawdVer() == MAWD_VER_1_0) {
+		u4Addr = MAWD_SOFTRESET;
+		HAL_MAWD_MCR_WR(prAdapter, u4Addr, 0);
+	}
 done:
 	prHifInfo->fgIsMawdSuspend = FALSE;
 
@@ -630,6 +638,18 @@ static void halRroSetupTimeoutConfig(struct GLUE_INFO *prGlueInfo)
 	HAL_MCR_WR(prGlueInfo->prAdapter, u4Addr, u4Val);
 }
 
+void halRroWfdmaInit(struct GLUE_INFO *prGlueInfo)
+{
+#if (CFG_MTK_MDDP_SUPPORT == 1)
+	uint32_t u4Addr, u4Val;
+
+	/* Pre-pause threshold setting */
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RRO_Q_ADDR;
+	u4Val = 0x20;
+	HAL_MCR_WR(prGlueInfo->prAdapter, u4Addr, u4Val);
+#endif
+}
+
 void halRroMawdInit(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter;
@@ -685,6 +705,11 @@ void halRroMawdInit(struct GLUE_INFO *prGlueInfo)
 	u4Addr = MAWD_RRO_ACK_SN_BASE_M;
 	u4Val = MAWD_WFDMA_HIGH_ADDR;
 	HAL_MAWD_MCR_WR(prAdapter, u4Addr, u4Val);
+
+	if (kalGetMawdVer() == MAWD_VER_1_0) {
+		u4Addr = MAWD_SOFTRESET;
+		HAL_MAWD_MCR_WR(prAdapter, u4Addr, 0);
+	}
 
 #if CFG_MTK_FPGA_PLATFORM
 	/* set remapping CR for MAWD in connsys FPGA */
@@ -1126,6 +1151,7 @@ static void halRroSetup(struct GLUE_INFO *prGlueInfo)
 	halRroSetupIndicateCmdRing(prGlueInfo);
 	halRroSetupTimeoutConfig(prGlueInfo);
 
+	halRroWfdmaInit(prGlueInfo);
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
 		halRroMawdInit(prGlueInfo);
 }
@@ -1188,6 +1214,34 @@ void halOffloadFreeMem(struct GLUE_INFO *prGlueInfo)
 	} else if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro2Md)) {
 		halRroFreeMem(prGlueInfo);
 	}
+}
+
+uint32_t halMawdGetRxBlkDoneCntByMagicCnt(struct GLUE_INFO *prGlueInfo,
+					  uint32_t u4Num)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct RTMP_RX_RING *prRxRing;
+	struct RTMP_DMACB *prRxCell;
+	struct RX_BLK_DESC *prRxBlkD;
+	uint32_t u4Cnt = 0, u4CpuIdx = 0, u4MagicCnt = 0;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prRxRing = &prHifInfo->RxBlkRing[u4Num];
+	u4CpuIdx = prRxRing->RxCpuIdx;
+	u4MagicCnt = prRxRing->u4MagicCnt;
+
+	for (u4Cnt = 0; u4Cnt < prRxRing->u4RingSize; u4Cnt++) {
+		prRxCell = &prRxRing->Cell[u4CpuIdx];
+		prRxBlkD = (struct RX_BLK_DESC *)prRxCell->AllocVa;
+		if (u4MagicCnt != prRxBlkD->magic_cnt)
+			break;
+
+		INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
+		if (u4CpuIdx == 0)
+			INC_RING_INDEX(u4MagicCnt, RX_BLK_MAGIC_CNT_NUM);
+	}
+
+	return u4Cnt;
 }
 
 uint32_t halMawdGetRxBlkDoneCnt(struct GLUE_INFO *prGlueInfo,
@@ -1270,8 +1324,6 @@ static u_int8_t halRroHandleRxRcb(
 	struct RXD_STRUCT rRxD;
 	struct RTMP_DMABUF rDmaBuf;
 	struct RX_CTRL *prRxCtrl;
-	struct QUE *prQue;
-	struct QUE rQue;
 	struct SW_RFB *prSwRfb;
 	struct sk_buff *prSkb;
 
@@ -1280,23 +1332,7 @@ static u_int8_t halRroHandleRxRcb(
 	prMemOps = &prHifInfo->rMemOps;
 	prRxCtrl = &prAdapter->rRxCtrl;
 
-#if CFG_SUPPORT_RX_NAPI
-	/* if fifo exhausted, stop deQ and schedule NAPI */
-	if (prGlueInfo->prRxDirectNapi &&
-	    KAL_FIFO_IS_FULL(&prGlueInfo->rRxKfifoQ)) {
-		RX_INC_CNT(prRxCtrl, RX_NAPI_FIFO_FULL_COUNT);
-		return FALSE;
-	}
-#endif /* CFG_SUPPORT_RX_NAPI */
-
-	prQue = &rQue;
-	QUEUE_INITIALIZE(prQue);
-#if CFG_RFB_TRACK
-	nicRxDequeueFreeQue(prAdapter, 1, prQue, RFB_TRACK_HIF);
-#else /* CFG_RFB_TRACK */
-	nicRxDequeueFreeQue(prAdapter, 1, prQue);
-#endif /* CFG_RFB_TRACK */
-	QUEUE_REMOVE_HEAD(prQue, prSwRfb, struct SW_RFB *);
+	QUEUE_REMOVE_HEAD(prFreeSwRfbList, prSwRfb, struct SW_RFB *);
 	if (!prSwRfb) {
 		DBGLOG_LIMITED(RX, WARN, "No More RFB\n");
 		return FALSE;
@@ -1343,6 +1379,9 @@ static u_int8_t halRroHandleRxRcb(
 #else
 	halRxInsertRecvRfbList(prAdapter, prRecvRfbList, prSwRfb);
 #endif
+
+	GLUE_INC_REF_CNT(prAdapter->rHifStats.u4DataRxCount);
+
 	RX_INC_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT);
 	DBGLOG(RX, TEMP, "Recv p=%p total:%lu\n",
 	       prSwRfb, RX_GET_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT));
@@ -1792,25 +1831,12 @@ static u_int8_t halRroHandleRxRcbMsdu(
 	struct GL_HIF_INFO *prHifInfo;
 	struct mt66xx_chip_info *prChipInfo;
 	struct WIFI_VAR *prWifiVar;
-	struct RX_CTRL *prRxCtrl;
 	struct RX_CTRL_BLK *prCurRcb, *prNextRcb;
 	uint32_t u4Idx;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prChipInfo = prAdapter->chip_info;
 	prWifiVar = &prAdapter->rWifiVar;
-	prRxCtrl = &prAdapter->rRxCtrl;
-
-#if CFG_DYNAMIC_RFB_ADJUSTMENT
-	if (RX_GET_FREE_RFB_CNT(prRxCtrl) < u4MsduCnt)
-		nicRxIncRfbCnt(prAdapter);
-#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
-
-	if (RX_GET_FREE_RFB_CNT(prRxCtrl) < u4MsduCnt) {
-		DBGLOG_LIMITED(RX, WARN, "RFB[%u], [%u]\n",
-			       RX_GET_FREE_RFB_CNT(prRxCtrl), u4MsduCnt);
-		return FALSE;
-	}
 
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRroDbg))
 		halRroDebugPreLookingRxList(prAdapter, prRcb, &u4MsduCnt);
@@ -1995,6 +2021,35 @@ static u_int8_t halMawdWaitMagicCnt(struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
+static void halRroGetFreeSwRfbList(struct ADAPTER *prAdapter,
+				   struct QUE *prFreeSwRfbList,
+				   uint32_t u4RxCnt)
+{
+	struct RX_CTRL *prRxCtrl = &prAdapter->rRxCtrl;
+	uint32_t u4MaxRfbCnt = u4RxCnt * MAWD_AMSDU_MAX_CNT;
+
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+	if (RX_GET_FREE_RFB_CNT(prRxCtrl) < u4MaxRfbCnt)
+		nicRxIncRfbCnt(prAdapter);
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
+
+#if CFG_RFB_TRACK
+	nicRxDequeueFreeQue(prAdapter, u4MaxRfbCnt,
+			    prFreeSwRfbList, RFB_TRACK_HIF);
+#else
+	nicRxDequeueFreeQue(prAdapter, u4MaxRfbCnt, prFreeSwRfbList);
+#endif /* CFG_RFB_TRACK */
+
+	if (prFreeSwRfbList->u4NumElem < u4MaxRfbCnt) {
+		DBGLOG_LIMITED(
+			RX, WARN,
+			"No More RFB for MAWD, RxCnt:%u, RfbCnt:%u, Ind:%u\n",
+			u4RxCnt,
+			prFreeSwRfbList->u4NumElem,
+			RX_GET_INDICATED_RFB_CNT(prRxCtrl));
+	}
+}
+
 static void halMawdReadRxBlkRing(
 	struct ADAPTER *prAdapter,
 	uint32_t *au4RingCnt,
@@ -2007,24 +2062,48 @@ static void halMawdReadRxBlkRing(
 	struct RTMP_RX_RING *prRxRing;
 	struct RTMP_DMACB *prRxCell;
 	struct RX_BLK_DESC rRxBlkD, *prRxBlkD;
-	uint32_t u4RxCnt;
+	struct RX_CTRL *prRxCtrl;
+	uint32_t u4RxCnt, u4RxDoneCnt = 0;
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prRxCtrl = &prAdapter->rRxCtrl;
 	prRxRing = &prHifInfo->RxBlkRing[u4Num];
 
+#if MAWD_READ_COUNT_BY_EMI
+	u4RxCnt = halMawdGetRxBlkDoneCntByMagicCnt(prGlueInfo, u4Num);
+#else
 	u4RxCnt = halMawdGetRxBlkDoneCnt(prGlueInfo, u4Num);
+#endif
+	DBGLOG(RX, TEMP, "halMawdReadRxBlks: u4RxCnt:%d\n", u4RxCnt);
+	if (!u4RxCnt)
+		goto end;
 
-	DBGLOG(RX, TRACE, "halMawdReadRxBlks: u4RxCnt:%d\n", u4RxCnt);
+	halRroGetFreeSwRfbList(prAdapter, prFreeSwRfbList, u4RxCnt);
 
-	while (u4RxCnt) {
+	for (u4RxDoneCnt = 0; u4RxDoneCnt < u4RxCnt; u4RxDoneCnt++) {
+#if CFG_SUPPORT_RX_NAPI
+		/* if fifo exhausted, stop deQ and schedule NAPI */
+		if (prGlueInfo->prRxDirectNapi &&
+			KAL_FIFO_IS_FULL(&prGlueInfo->rRxKfifoQ)) {
+			RX_INC_CNT(prRxCtrl, RX_NAPI_FIFO_FULL_COUNT);
+			kalNapiSchedule(prAdapter);
+			break;
+		}
+#endif /* CFG_SUPPORT_RX_NAPI */
+
+		if (prFreeSwRfbList->u4NumElem < MAWD_AMSDU_MAX_CNT)
+			break;
+
 		prRxCell = &prRxRing->Cell[prRxRing->RxCpuIdx];
 		prRxBlkD = (struct RX_BLK_DESC *)prRxCell->AllocVa;
 
+#if (MAWD_READ_COUNT_BY_EMI == 0)
 		if (!halMawdWaitMagicCnt(prAdapter, prRxBlkD,
 					 prRxRing->u4MagicCnt,
 					 u4Num))
 			break;
+#endif
 
 		/* copy to cache memory */
 		kalMemCopyFromIo(&rRxBlkD, prRxBlkD,
@@ -2037,12 +2116,12 @@ static void halMawdReadRxBlkRing(
 		if (prRxRing->RxCpuIdx == 0)
 			INC_RING_INDEX(prRxRing->u4MagicCnt,
 				       RX_BLK_MAGIC_CNT_NUM);
-		u4RxCnt--;
 	}
 
 	HAL_SET_MAWD_RING_CIDX(prAdapter, prRxRing, prRxRing->RxCpuIdx);
 
-	prRxRing->u4PendingCnt = u4RxCnt;
+end:
+	prRxRing->u4PendingCnt = u4RxCnt - u4RxDoneCnt;
 
 	if (prRxRing->u4PendingCnt == 0)
 		KAL_CLR_BIT(RX_RRO_DATA, prAdapter->ulNoMoreRfb);
@@ -2102,9 +2181,23 @@ static void halRroReadIndCmd(
 		u4Id = aurIndCmd[u4DmaIdx].session_id;
 		u4Sn = aurIndCmd[u4DmaIdx].start_sn;
 
+#if CFG_SUPPORT_RX_NAPI
+		/* if fifo exhausted, stop deQ and schedule NAPI */
+		if (prGlueInfo->prRxDirectNapi &&
+			KAL_FIFO_IS_FULL(&prGlueInfo->rRxKfifoQ)) {
+			RX_INC_CNT(&prAdapter->rRxCtrl,
+				   RX_NAPI_FIFO_FULL_COUNT);
+			kalNapiSchedule(prAdapter);
+			break;
+		}
+#endif /* CFG_SUPPORT_RX_NAPI */
+
 		if (!halRroWaitMagicCnt(prAdapter, &aurIndCmd[u4DmaIdx],
 					prHifInfo->u4RroMagicCnt))
 			break;
+
+		halRroGetFreeSwRfbList(prAdapter, prFreeSwRfbList,
+				       aurIndCmd[u4DmaIdx].ind_cnt);
 
 		for (u4Idx = 0; u4Idx < aurIndCmd[u4DmaIdx].ind_cnt; u4Idx++) {
 			u4AddrNum = u4Id * RRO_MAX_WINDOW_NUM +
@@ -2196,15 +2289,14 @@ void halRroReadRxData(struct ADAPTER *prAdapter)
 				 prFreeSwRfbList, prRecvRfbList);
 	}
 
-	nicRxConcatFreeQue(prAdapter, prFreeSwRfbList);
-	nicRxConcatRxQue(prAdapter, prRecvRfbList);
+	if (prFreeSwRfbList->u4NumElem)
+		nicRxConcatFreeQue(prAdapter, prFreeSwRfbList);
+	if (prRecvRfbList->u4NumElem)
+		nicRxConcatRxQue(prAdapter, prRecvRfbList);
 
 	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++)
 		u4TotalCnt += au4RingCnt[u4Idx];
 
-#if CFG_SUPPORT_RX_NAPI
-	kalNapiSchedule(prAdapter);
-#endif /* CFG_SUPPORT_RX_NAPI */
 	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
 		uint32_t u4Res = au4RingCnt[u4Idx];
 
@@ -2287,8 +2379,8 @@ void halRroUpdateWfdmaRxBlk(struct GLUE_INFO *prGlueInfo,
 		INC_RING_INDEX(prRxRing->RxCpuIdx, prRxRing->u4RingSize);
 	}
 
-	HAL_SET_MAWD_RING_CIDX(prGlueInfo->prAdapter,
-			       prRxRing, prRxRing->RxCpuIdx);
+	HAL_SET_RING_CIDX(prGlueInfo->prAdapter,
+			  prRxRing, prRxRing->RxCpuIdx);
 }
 
 static void halMawdReadSram(

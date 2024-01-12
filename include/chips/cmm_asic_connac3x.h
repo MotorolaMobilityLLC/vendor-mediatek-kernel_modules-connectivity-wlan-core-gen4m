@@ -1228,11 +1228,13 @@ uint8_t asicConnac3xWfdmaWaitIdle(
 void asicConnac3xWfdmaTxRingBasePtrExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_TX_RING *tx_ring,
-	u_int32_t index);
+	u_int32_t index,
+	u_int32_t u4DefVal);
 void asicConnac3xWfdmaRxRingBasePtrExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_RX_RING *rx_ring,
-	u_int32_t index);
+	u_int32_t index,
+	u_int32_t u4DefVal);
 void asicConnac3xWfdmaTxRingExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_TX_RING *tx_ring,

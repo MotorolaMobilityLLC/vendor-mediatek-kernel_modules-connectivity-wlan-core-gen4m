@@ -1745,22 +1745,22 @@ static void mt6639WfdmaManualPrefetch(
 static void mt6639ReadOffloadIntStatus(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus)
 {
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-	uint32_t u4RegValue = 0, u4WrValue = 0, u4Addr = 0;
+	uint32_t u4RegValue = 0, u4WrValue = 0, u4Addr = 0, u4MawdOffSet;
 
 	if (!IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
 		return;
 
 	u4WrValue = 0;
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
-		u4Addr = MAWD_AP_INTERRUPT_SETTING0;
-		HAL_MCR_RD(prAdapter, u4Addr, &u4RegValue);
-		if (u4RegValue & BIT(0)) {
+		u4MawdOffSet = prChipInfo->u4HostCsrOffset;
+		if (KAL_TEST_BIT(1, prHifInfo->ulHifIntEnBits)) {
 			*pu4IntStatus |= WHISR_RX0_DONE_INT;
-			u4WrValue = u4RegValue & BIT(0);
+			u4WrValue = BIT(0);
 		}
-		u4Addr = MAWD_AP_INTERRUPT_SETTING1;
+		u4Addr = MAWD_AP_INTERRUPT_SETTING1 + u4MawdOffSet;
 	} else {
 		u4Addr = WF_RRO_TOP_HOST_INT_STS_ADDR;
 		HAL_MCR_RD(prAdapter, u4Addr, &u4RegValue);
@@ -1773,7 +1773,8 @@ static void mt6639ReadOffloadIntStatus(struct ADAPTER *prAdapter,
 		}
 	}
 	prHifInfo->u4OffloadIntStatus = u4WrValue;
-	HAL_MCR_WR(prAdapter, u4Addr, u4WrValue);
+	if (u4WrValue)
+		HAL_MCR_WR(prAdapter, u4Addr, u4WrValue);
 }
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 

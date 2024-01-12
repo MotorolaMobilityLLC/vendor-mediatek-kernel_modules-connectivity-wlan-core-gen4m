@@ -23,7 +23,7 @@
 #define DOMAIN_CONN	2
 #endif
 
-#define CONN_INFRA_ID	0x02050500
+#define CONN_INFRA_ID	0x02050601
 
 #define MAX_CPU_FREQ (3050 * 1000)
 #define MID_BIG_CPU_FREQ (2000 * 1000)
@@ -1091,7 +1091,7 @@ int32_t kalGetScpDumpInfo(u64 *addr, unsigned int *size)
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 u_int8_t kalIsSupportMawd(void)
 {
-	return FALSE;
+	return TRUE;
 }
 
 u_int8_t kalIsSupportSdo(void)
@@ -1101,12 +1101,12 @@ u_int8_t kalIsSupportSdo(void)
 
 u_int8_t kalIsSupportRro(void)
 {
-	return FALSE;
+	return TRUE;
 }
 
 uint32_t kalGetMawdVer(void)
 {
-	return MAWD_VER_1_0;
+	return MAWD_VER_1_1;
 }
 
 uint32_t kalGetConnInfraId(void)

@@ -8472,6 +8472,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		prWifiVar->fgEnableRro = FEATURE_ENABLED;
 	else if (!prChipInfo->is_support_rro || !kalIsSupportRro())
 		prWifiVar->fgEnableRro = FEATURE_DISABLED;
+	wlanCfgSetUint32(prAdapter, "EnableRro", prWifiVar->fgEnableRro);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 #if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)

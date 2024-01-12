@@ -1208,10 +1208,10 @@ u_int8_t kalSetPagePoolPageNum(uint32_t u4Num)
 }
 #endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 
-struct sk_buff *kalAllocRxSkb(uint8_t **ppucData)
+struct sk_buff *kalAllocRxSkb(struct GLUE_INFO *prGlueInfo, uint8_t **ppucData)
 {
 	struct page *page;
-	struct sk_buff *pkt;
+	struct sk_buff *pkt = NULL;
 
 	page = wifi_page_pool_alloc_page();
 #if CFG_SUPPORT_RETURN_WORK
@@ -1223,13 +1223,13 @@ struct sk_buff *kalAllocRxSkb(uint8_t **ppucData)
 	}
 #endif /* CFG_SUPPORT_RETURN_WOR */
 	if (!page)
-		return NULL;
+		goto fail;
 
 	pkt = build_skb(page_to_virt(page), PAGE_SIZE); /* ptr to sk_buff */
 	if (!pkt) {
 		page_pool_recycle_direct(page->pp, page);
 		DBGLOG(HAL, ERROR, "allocate skb fail\n");
-		return NULL;
+		goto fail;
 	}
 	kmemleak_not_leak(pkt); /* Omit memleak check */
 	kalSkbMarkForRecycle(pkt);
@@ -1240,6 +1240,14 @@ struct sk_buff *kalAllocRxSkb(uint8_t **ppucData)
 
 	*ppucData = (uint8_t *) (pkt->data);
 
+fail:
+#if (CFG_SUPPORT_HOST_OFFLOAD == 0) || (CFG_SUPPORT_PAGE_POOL_USE_CMA == 0)
+	if (!pkt) {
+		pkt = kalPacketAlloc(
+			prGlueInfo, CFG_RX_MAX_MPDU_SIZE,
+			FALSE, ppucData);
+	}
+#endif
 	return pkt;
 }
 
@@ -1268,7 +1276,7 @@ u_int8_t kalCreateHifSkbList(struct mt66xx_chip_info *prChipInfo)
 #endif
 
 	for (u4Idx = 0; u4Idx < u4Num; u4Idx++) {
-		prSkb = kalAllocRxSkb(&pucRecvBuff);
+		prSkb = kalAllocRxSkb(NULL, &pucRecvBuff);
 		if (!prSkb) {
 			DBGLOG(HAL, ERROR, "hif skb reserve fail[%u]!\n",
 			       u4Idx);
