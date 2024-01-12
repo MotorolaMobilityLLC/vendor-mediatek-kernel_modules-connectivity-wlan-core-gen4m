@@ -4372,6 +4372,11 @@ void cnmWmmIndexDecision(
 		}
 	}
 #else
+	if (!prAdapter || !prBssInfo) {
+		DBGLOG(CNM, ERROR, "Set WMM fail\n");
+		return;
+	}
+
 	/* Follow the same rule with cnmUpdateDbdcSetting */
 	if (prBssInfo->eBand == BAND_5G
 #if (CFG_SUPPORT_WIFI_6G == 1)
