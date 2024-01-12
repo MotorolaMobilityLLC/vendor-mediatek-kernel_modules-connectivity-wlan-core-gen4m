@@ -74,7 +74,11 @@
 #include "que_mgt.h"
 
 #ifdef UDP_SKT_WIFI
+#if (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
+#include <linux/trace_events.h>
+#else
 #include <linux/ftrace_event.h>
+#endif
 #endif
 
 /*******************************************************************************
