@@ -7524,6 +7524,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #if CFG_SUPPORT_VHT_IE_IN_2G
 	INIT_UINT(prWifiVar->ucVhtIeIn2g, "VhtIeIn2G", FEATURE_ENABLED);
 #endif
+	INIT_UINT(prWifiVar->fgApLegacyQosMap, "ApLegacyQosMap",
+			FEATURE_DISABLED);
 	INIT_UINT(prWifiVar->ucCmdRsvResource,
 		"TxCmdRsv", QM_CMD_RESERVED_THRESHOLD);
 	INIT_UINT(prWifiVar->u4MgmtQueueDelayTimeout,
