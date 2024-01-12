@@ -171,6 +171,10 @@
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+static uint32_t halChkRstPass(IN struct ADAPTER *prAdapter);
+#if CFG_SER_L05_DEBUG
+u_int8_t fgSerStopTxRxDB;
+#endif
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -655,6 +659,11 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 		DBGLOG(INIT, INFO,
 		  "FW OWN Skipped due to pending INT or waiting L1 reset\n");
 		/* pending interrupts */
+		goto unlock;
+	}
+
+	if (kalIsRstPreventFwOwn() == TRUE) {
+		DBGLOG(INIT, WARN, "[SER][L0.5] skip set fw own\n");
 		goto unlock;
 	}
 
@@ -2332,22 +2341,54 @@ void halProcessAbnormalInterrupt(IN struct ADAPTER *prAdapter)
 {
 	uint32_t u4Data = 0;
 	uint8_t fgResult;
+	uint32_t u4IntrBits;
+
+	if (kalIsResetting())
+		return;
+
+	u4IntrBits = prAdapter->u4IntStatus &
+			(WHISR_ABNORMAL_INT | WHISR_WDT_INT);
+	DBGLOG(INIT, WARN, "u4IntrBits:0x%x\n", u4IntrBits);
 
 	HAL_LP_OWN_RD(prAdapter, &fgResult);
-	if (fgResult == TRUE) {
-		/* Need driver own */
-		HAL_MCR_RD(prAdapter, MCR_WASR, &u4Data);
+	if (fgResult == FALSE) { /* driver own fail */
+
+		halPollDbgCr(prAdapter, 5);
+		halPrintIntStatus(prAdapter);
+		halDumpIntLog(prAdapter);
+
+		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_DRV_OWN_FAIL);
+		return;
+	}
+
+	HAL_MCR_RD(prAdapter, MCR_WASR, &u4Data); /* Need driver own */
+	DBGLOG(REQ, WARN, "Check MCR_WASR: 0x%08x\n", u4Data);
+
+	if (u4Data & (WASR_FW_OWN_INVALID_ACCESS | WASR_JTAG_EVENT_INT)) {
+		DBGLOG(REQ, WARN,
+			"state: FW_OWN_INVALID_ACCESS | JTAG_EVENT_INT\n");
+		DBGLOG(REQ, WARN, "skip abnormal int process\n");
+
+		return;
 	}
 
 	halPollDbgCr(prAdapter, 5);
 	halPrintIntStatus(prAdapter);
+	halDumpIntLog(prAdapter);
 
 	if (u4Data & (WASR_RX0_UNDER_FLOW | WASR_RX1_UNDER_FLOW)) {
 		DBGLOG(REQ, WARN, "Skip all SDIO Rx due to Rx underflow error!\n");
 		prAdapter->prGlueInfo->rHifInfo.fgSkipRx = TRUE;
 		halDumpHifStatus(prAdapter, NULL, 0);
-		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_PROCESS_ABNORMAL_INT);
 	}
+
+	if (u4IntrBits & WHISR_WDT_INT) {
+		DBGLOG(INIT, ERROR, "[SER] mcu wdt timeout!!\n");
+		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_WDT);
+		return;
+	}
+
+	GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_PROCESS_ABNORMAL_INT);
 
 	halDumpIntLog(prAdapter);
 }
@@ -3402,15 +3443,214 @@ void halDumpHifStats(IN struct ADAPTER *prAdapter)
 #if CFG_CHIP_RESET_SUPPORT
 uint32_t halToggleWfsysRst(IN struct ADAPTER *prAdapter)
 {
+	struct mt66xx_chip_info *prChipInfo;
+	uint32_t u4CrValue = 0;
+
 	if (!prAdapter) {
 		DBGLOG(HAL, ERROR, "ADAPTER is NULL\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
+#if CFG_SER_L05_DEBUG
+	fgSerStopTxRxDB = TRUE;
+#endif
+	prChipInfo = prAdapter->chip_info;
+	fgIsRstPreventFwOwn = FALSE;
+
+	HAL_LP_OWN_RD(prAdapter, &u4CrValue);
+	if (u4CrValue == FALSE) {
+		DBGLOG(INIT, INFO,
+			"[SER][L0.5] WHLPCR_IS_DRIVER_OWN = %d\n", u4CrValue);
+		HAL_LP_OWN_CLR(prAdapter, &u4CrValue);
+		if (u4CrValue == FALSE) {
+			DBGLOG(INIT, ERROR,
+				"[SER][L0.5] set drv own fail !!\n");
+			goto FAIL;
+		}
+	}
+
+	/* assert WF L0.5 reset */
+	if (prChipInfo->asicWfsysRst) {
+		if (prChipInfo->asicWfsysRst(prAdapter, TRUE) == FALSE) {
+			DBGLOG(HAL, ERROR, "[SER][L0.5] trigger assert fail\n");
+			goto FAIL;
+		}
+	}
+
+	kalMdelay(50);
+
+	/* rst SD-CTL WF part */
+	HAL_MCR_RD(prAdapter, MCR_WHCR, &u4CrValue);
+	u4CrValue &= (~WHCR_SDIO_WF_PATH_RSTB);
+	HAL_MCR_WR(prAdapter, MCR_WHCR, u4CrValue);
+	kalMdelay(1);
+
+	/* de-assert WF L0.5 reset */
+	if (prChipInfo->asicWfsysRst) {
+		if (prChipInfo->asicWfsysRst(prAdapter, FALSE) == FALSE) {
+			DBGLOG(HAL, ERROR, "[SER][L0.5] de-assert fail\n");
+			goto FAIL;
+		}
+	}
+
+	if (prChipInfo->asicPollWfsysSwInitDone) {
+		if (!prChipInfo->asicPollWfsysSwInitDone(prAdapter)) {
+			DBGLOG(HAL, ERROR,
+				"[SER][L0.5] reset polling sw init done fail\n");
+			goto FAIL;
+		}
+	}
+
+	/* rst cr clear check */
+	if (halChkRstPass(prAdapter) != WLAN_STATUS_SUCCESS)
+		goto FAIL;
+
+	HAL_LP_OWN_SET(prAdapter, &u4CrValue);
+	if (u4CrValue == TRUE) {
+		DBGLOG(INIT, ERROR, "[SER][L0.5] set fw own fail !!\n");
+		goto FAIL;
+	}
+	prAdapter->prGlueInfo->IsrAbnormalCnt = 0;
+
+#if CFG_SER_L05_DEBUG
+	fgSerStopTxRxDB = FALSE;
+#endif
+
 	/* TODO */
 
 	return WLAN_STATUS_SUCCESS;
+FAIL:
+
+#if CFG_SER_L05_DEBUG
+	fgSerStopTxRxDB = FALSE;
+#endif
+	HAL_MCR_RD(prAdapter, MCR_WHLPCR, &u4CrValue);
+	DBGLOG(INIT, ERROR, "[SER][L0.5] polling MCR_WHLPCR=0x%x\n", u4CrValue);
+
+	HAL_MCR_RD(prAdapter, MCR_WHISR, &u4CrValue);
+	DBGLOG(INIT, ERROR, "[SER][L0.5] polling MCR_WHISR=0x%x\n", u4CrValue);
+
+	HAL_MCR_RD(prAdapter, MCR_WASR, &u4CrValue);
+	DBGLOG(INIT, ERROR, "[SER][L0.5] polling MCR_WASR=0x%x\n", u4CrValue);
+
+	return WLAN_STATUS_FAILURE;
 }
+
+static uint32_t halChkRstPass(IN struct ADAPTER *prAdapter)
+{
+	uint32_t u4CrValue = 0;
+
+	HAL_MCR_RD(prAdapter, MCR_WRPLR, &u4CrValue);
+	if (u4CrValue) {
+		DBGLOG(INIT, ERROR, "[SER][L0.5] MCR_WRPLR=0x%x\n", u4CrValue);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	HAL_MCR_RD(prAdapter, MCR_WTQCR0, &u4CrValue);
+	if (u4CrValue) {
+		DBGLOG(INIT, ERROR, "[SER][L0.5] MCR_WTQCR0=0x%x\n", u4CrValue);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	HAL_MCR_RD(prAdapter, MCR_WTQCR1, &u4CrValue);
+	if (u4CrValue) {
+		DBGLOG(INIT, ERROR, "[SER][L0.5] MCR_WTQCR1=0x%x\n", u4CrValue);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	HAL_MCR_RD(prAdapter, MCR_WTQCR2, &u4CrValue);
+	if (u4CrValue) {
+		DBGLOG(INIT, ERROR, "[SER][L0.5] MCR_WTQCR2=0x%x\n", u4CrValue);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	HAL_MCR_RD(prAdapter, MCR_WTQCR3, &u4CrValue);
+	if (u4CrValue) {
+		DBGLOG(INIT, ERROR, "[SER][L0.5] MCR_WTQCR3=0x%x\n", u4CrValue);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	HAL_MCR_RD(prAdapter, MCR_WTQCR4, &u4CrValue);
+	if (u4CrValue) {
+		DBGLOG(INIT, ERROR, "[SER][L0.5] MCR_WTQCR4=0x%x\n", u4CrValue);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	HAL_MCR_RD(prAdapter, MCR_WTQCR5, &u4CrValue);
+	if (u4CrValue) {
+		DBGLOG(INIT, ERROR, "[SER][L0.5] MCR_WTQCR5=0x%x\n", u4CrValue);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	HAL_MCR_RD(prAdapter, MCR_WTQCR6, &u4CrValue);
+	if (u4CrValue) {
+		DBGLOG(INIT, ERROR, "[SER][L0.5] MCR_WTQCR6=0x%x\n", u4CrValue);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	HAL_MCR_RD(prAdapter, MCR_WTQCR7, &u4CrValue);
+	if (u4CrValue) {
+		DBGLOG(INIT, ERROR, "[SER][L0.5] MCR_WTQCR7=0x%x\n", u4CrValue);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	HAL_MCR_RD(prAdapter, MCR_WTQCR8, &u4CrValue);
+	if (u4CrValue) {
+		DBGLOG(INIT, ERROR, "[SER][L0.5] MCR_WTQCR8=0x%x\n", u4CrValue);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	HAL_MCR_RD(prAdapter, MCR_WTQCR9, &u4CrValue);
+	if (u4CrValue) {
+		DBGLOG(INIT, ERROR, "[SER][L0.5] MCR_WTQCR9=0x%x\n", u4CrValue);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	HAL_MCR_RD(prAdapter, MCR_WTQCR10, &u4CrValue);
+	if (u4CrValue) {
+		DBGLOG(INIT, ERROR,
+			"[SER][L0.5] MCR_WTQCR10=0x%x\n", u4CrValue);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	HAL_MCR_RD(prAdapter, MCR_WTQCR11, &u4CrValue);
+	if (u4CrValue) {
+		DBGLOG(INIT, ERROR,
+			"[SER][L0.5] MCR_WTQCR11=0x%x\n", u4CrValue);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	HAL_MCR_RD(prAdapter, MCR_WTQCR12, &u4CrValue);
+	if (u4CrValue) {
+		DBGLOG(INIT, ERROR,
+			"[SER][L0.5] MCR_WTQCR12=0x%x\n", u4CrValue);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	HAL_MCR_RD(prAdapter, MCR_WTQCR13, &u4CrValue);
+	if (u4CrValue) {
+		DBGLOG(INIT, ERROR,
+			"[SER][L0.5] MCR_WTQCR13=0x%x\n", u4CrValue);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	HAL_MCR_RD(prAdapter, MCR_WTQCR14, &u4CrValue);
+	if (u4CrValue) {
+		DBGLOG(INIT, ERROR,
+			"[SER][L0.5] MCR_WTQCR14=0x%x\n", u4CrValue);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	HAL_MCR_RD(prAdapter, MCR_WTQCR15, &u4CrValue);
+	if (u4CrValue) {
+		DBGLOG(INIT, ERROR,
+			"[SER][L0.5] MCR_WTQCR15=0x%x\n", u4CrValue);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 #endif /* CFG_CHIP_RESET_SUPPORT */
 
 uint32_t halSetSuspendFlagToFw(IN struct ADAPTER *prAdapter,

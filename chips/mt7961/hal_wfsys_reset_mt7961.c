@@ -320,9 +320,29 @@ u_int8_t mt7961HalPollWfsysSwInitDone(struct ADAPTER *prAdapter)
 u_int8_t mt7961HalCbtopRguWfRst(struct ADAPTER *prAdapter,
 				u_int8_t fgAssertRst)
 {
-	/* TODO */
+	uint32_t u4Val = 0;
 
-	return TRUE;
+	HAL_MCR_RD(prAdapter, MCR_WHCR, &u4Val);
+
+	if (fgAssertRst) {
+		/* trigger rst */
+		u4Val &= ~WHCR_WF_WHOLE_PATH_RSTB;
+		HAL_MCR_WR(prAdapter, MCR_WHCR, u4Val);
+
+	} else {
+		/* clear rst */
+		u4Val |= WHCR_WF_WHOLE_PATH_RSTB;
+		HAL_MCR_WR(prAdapter, MCR_WHCR, u4Val);
+	}
+
+	if (fgIsBusAccessFailed == TRUE) {
+		DBGLOG(INIT, ERROR,
+			"[SER][L0.5] fgIsBusAccessFailed=%d fgAssertRst=%d\n",
+				fgIsBusAccessFailed, fgAssertRst);
+		return FALSE;
+	} else
+		return TRUE;
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -337,9 +357,30 @@ u_int8_t mt7961HalCbtopRguWfRst(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 u_int8_t mt7961HalPollWfsysSwInitDone(struct ADAPTER *prAdapter)
 {
-	/* TODO */
+#define SER_L05_RST_DONE_TIMEOUT        (2000)
 
-	return TRUE;
+	uint32_t u4CrValue1, u4Tick;
+	u_int8_t fgSwInitDone = TRUE;
+
+
+	HAL_MCR_RD(prAdapter, MCR_WHCR, &u4CrValue1);
+	/* polling until WF WM is ready */
+	u4Tick = kalGetTimeTick();
+	while ((u4CrValue1 & WHCR_WF_RST_DONE) == FALSE) {
+		kalMsleep(50);
+		HAL_MCR_RD(prAdapter, MCR_WHCR, &u4CrValue1);
+
+		/* timeout handle */
+		if ((CHECK_FOR_TIMEOUT(kalGetTimeTick(), u4Tick,
+				MSEC_TO_SYSTIME(SER_L05_RST_DONE_TIMEOUT)))) {
+			fgSwInitDone = FALSE;
+			DBGLOG(INIT, ERROR,
+				"[SER] L05 - polling sw init done timeout\n");
+			break;
+		}
+	}
+
+	return fgSwInitDone;
 }
 
 #endif /* defined(_HIF_SDIO) */

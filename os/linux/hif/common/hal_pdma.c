@@ -3362,6 +3362,7 @@ void halProcessAbnormalInterrupt(IN struct ADAPTER *prAdapter)
 	prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 	halPrintHifDbgInfo(prAdapter);
 	halSetDrvSer(prAdapter);
+	GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_PROCESS_ABNORMAL_INT);
 }
 
 static void halDefaultProcessSoftwareInterrupt(

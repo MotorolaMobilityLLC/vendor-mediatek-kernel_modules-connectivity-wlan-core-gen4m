@@ -1397,15 +1397,15 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 					eFailReason = WAIT_FIRMWARE_READY_FAIL;
 					break;
 				}
-
-				/* 5. reset TX Resource for normal operation
-				 *    based on the information reported from
-				 *    CMD_NicCapabilityV2
-				 */
-				wlanUpdateNicResourceInformation(prAdapter);
-
-				wlanPrintVersion(prAdapter);
 			}
+
+			/* 5. reset TX Resource for normal operation
+			 *    based on the information reported from
+			 *    CMD_NicCapabilityV2
+			 */
+			wlanUpdateNicResourceInformation(prAdapter);
+
+			wlanPrintVersion(prAdapter);
 #endif
 
 			/* 6. update basic configuration */
@@ -1548,6 +1548,9 @@ void wlanOffUninitNicModule(IN struct ADAPTER *prAdapter,
 		/* Note: restore the SPI Mode Select from 32 bit to default */
 		nicRestoreSpiDefMode(prAdapter);
 #endif
+	}  else {
+		/* Timer Destruction */
+		cnmTimerDestroy(prAdapter);
 	}
 }
 

@@ -1920,6 +1920,7 @@ void kalRemoveBss(struct GLUE_INFO *prGlueInfo,
 	enum ENUM_BAND eBand);
 
 u_int8_t kalIsResetting(void);
+u_int8_t kalIsRstPreventFwOwn(void);
 
 uint8_t kalRxNapiValidSkb(struct GLUE_INFO *prGlueInfo,
 	struct sk_buff *prSkb);
