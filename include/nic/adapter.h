@@ -2182,7 +2182,6 @@ struct ADAPTER {
 
 	unsigned long ulSuspendFlag;
 	struct WIFI_FEM_CFG rWifiFemCfg;
-	bool fgRstDrvOwn;
 
 	/* Smar Gear */
 	uint8_t ucSmarGearSupportSisoOnly;

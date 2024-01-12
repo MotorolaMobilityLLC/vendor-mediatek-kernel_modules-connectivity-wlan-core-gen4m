@@ -2065,15 +2065,7 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 	chip_info = ad->chip_info;
 	debug_ops = chip_info->prDebugOps;
 
-	/* debug only */
-	if (ad->fgRstDrvOwn) {
-		DBGLOG(HAL, INFO, "[KL]: Reset by Driver own, do BT dump.\n");
-		readable = FALSE;
-		fgIsBusAccessFailed = TRUE;
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-		fgTriggerDebugSop = TRUE;
-#endif
-	} else if (debug_ops && debug_ops->dumpPcieStatus)
+	if (debug_ops && debug_ops->dumpPcieStatus)
 		readable = debug_ops->dumpPcieStatus(ad->prGlueInfo);
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)

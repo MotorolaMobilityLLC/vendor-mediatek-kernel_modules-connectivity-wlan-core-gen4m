@@ -2359,15 +2359,14 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 	struct pci_dev *pci_dev = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	u_int32_t u4RegValue = 0;
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
 	u_int8_t dump = TRUE;
 
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
-	dump = mtk_pcie_dump_link_info(0) & BIT(5);
-#endif
+	dump = mtk_pcie_dump_link_info(0);
 
-	if (!dump)
+	if (!(dump & BIT(5)))
 		return FALSE;
-
+#endif
 	/*read pcie cfg.space 0x488 // level1: pcie*/
 	prHifInfo = &prGlueInfo->rHifInfo;
 	if (prHifInfo)
