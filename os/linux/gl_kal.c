@@ -1646,7 +1646,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 	switch (eStatus) {
 	case WLAN_STATUS_ROAM_OUT_FIND_BEST:
 	case WLAN_STATUS_MEDIA_CONNECT:
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 		/* clear the count */
 		prGlueInfo->prAdapter->rLinkQualityInfo.u8TxTotalCount = 0;
 		prGlueInfo->prAdapter->rLinkQualityInfo.u8RxTotalCount = 0;
@@ -1849,7 +1849,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 
 	case WLAN_STATUS_MEDIA_DISCONNECT:
 	case WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY:
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 		/* clear the count */
 		prGlueInfo->prAdapter->rLinkQualityInfo.u8TxTotalCount = 0;
 		prGlueInfo->prAdapter->rLinkQualityInfo.u8RxTotalCount = 0;
@@ -8456,7 +8456,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	prPerMonitor->u4CurrPerfLevel =
 		prPerMonitor->u4TarPerfLevel;
 
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	prAdapter->u4LinkQualityCounter++;
 	if ((prAdapter->u4LinkQualityCounter %
 	     CFG_LQ_MONITOR_FREQUENCY) == 0) {

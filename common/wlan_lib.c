@@ -6007,7 +6007,7 @@ wlanoidQueryStaStatistics(IN struct ADAPTER *prAdapter,
 			  IN uint32_t u4QueryBufferLen,
 			  OUT uint32_t *pu4QueryInfoLen)
 {
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	uint8_t ucBssIndex ;
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
@@ -12559,7 +12559,7 @@ errhandle:
 }
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucBssIdx, OUT uint32_t *pu4CurRate,
 		OUT uint32_t *pu4MaxRate, uint32_t *pu4CurBw)

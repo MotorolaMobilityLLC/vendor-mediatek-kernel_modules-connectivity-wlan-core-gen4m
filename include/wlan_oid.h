@@ -2795,7 +2795,7 @@ enum ENUM_WIFI_LOG_LEVEL_SUPPORT_T {
 	ENUM_WIFI_LOG_LEVEL_SUPPORT_NUM
 };
 
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 struct PARAM_GET_LINK_QUALITY_INFO {
 	uint8_t ucBssIdx;
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo;
@@ -4452,7 +4452,7 @@ uint32_t wlanoidRfTestICapGetIQData(IN struct ADAPTER *prAdapter,
 				    OUT uint32_t *pu4SetInfoLen);
 
 
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 uint32_t wlanoidGetLinkQualityInfo(IN struct ADAPTER *prAdapter,
 				   IN void *pvSetBuffer,
 				   IN uint32_t u4SetBufferLen,

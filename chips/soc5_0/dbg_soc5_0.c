@@ -1028,7 +1028,7 @@ void soc5_0_dump_mac_info(IN struct ADAPTER *prAdapter)
 		kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
 }
 
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 int soc5_0_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 		OUT uint32_t *pu4Rate, OUT uint32_t *pu4Nss,
 		OUT uint32_t *pu4RxMode, OUT uint32_t *pu4FrMode,
