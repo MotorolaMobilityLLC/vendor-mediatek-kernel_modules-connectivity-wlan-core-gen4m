@@ -1015,8 +1015,31 @@ aaaFsmRunEventTxDone(struct ADAPTER *prAdapter,
 		 */
 		/* 2017-01-12 Do nothing only when STA is in state 3 */
 		/* Free the StaRec if found any unexpected status */
-		if (prStaRec->ucStaState != STA_STATE_3)
-			cnmStaRecFree(prAdapter, prStaRec);
+		if (prStaRec->ucStaState != STA_STATE_3) {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			struct MLD_STA_RECORD *prMldSta;
+#endif
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			prMldSta = mldStarecGetByStarec(prAdapter, prStaRec);
+			if (prMldSta) {
+				struct LINK *prStarecList;
+				struct STA_RECORD *prCurrStarec, *prNextStarec;
+
+				prStarecList = &prMldSta->rStarecList;
+				LINK_FOR_EACH_ENTRY_SAFE(prCurrStarec,
+							 prNextStarec,
+							 prStarecList,
+							 rLinkEntryMld,
+							 struct STA_RECORD) {
+					cnmStaRecFree(prAdapter, prCurrStarec);
+				}
+			} else
+#endif
+			{
+				cnmStaRecFree(prAdapter, prStaRec);
+			}
+		}
 		break;
 
 	default:
