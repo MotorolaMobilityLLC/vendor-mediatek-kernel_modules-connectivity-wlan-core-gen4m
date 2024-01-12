@@ -106,7 +106,7 @@ enum ENUM_MLR_STATE {
 	&& (prStaRec->ucMlrSupportBitmap != MLR_MODE_NOT_SUPPORT))
 
 #define MLR_CHECK_IF_BAND_IS_SUPPORT(eBand) \
-	(eBand == BAND_5G)
+	(eBand != BAND_2G4)
 
 #define MLR_CHECK_IF_RCPI_IS_LOW(prAdapter, ucRCPI) \
 	(ucRCPI < prAdapter->rWifiVar.ucTxMlrRateRcpiThr)
