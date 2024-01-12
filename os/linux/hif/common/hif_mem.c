@@ -64,6 +64,11 @@ struct sk_buff_head g_rHifSkbList;
  *                              F U N C T I O N S
  *******************************************************************************
  */
+void kalSkbMarkForRecycle(struct sk_buff *pkt)
+{
+	skb_mark_for_recycle(pkt);
+}
+
 struct sk_buff *kalAllocRxSkb(uint8_t **ppucData)
 {
 	struct page *page;
@@ -81,11 +86,7 @@ struct sk_buff *kalAllocRxSkb(uint8_t **ppucData)
 		DBGLOG(HAL, ERROR, "allocate skb fail\n");
 		return NULL;
 	}
-#if KERNEL_VERSION(5, 15, 0) <= LINUX_VERSION_CODE
-	skb_mark_for_recycle(pkt);
-#else
-	skb_mark_for_recycle(pkt, page, page->pp);
-#endif
+	kalSkbMarkForRecycle(pkt);
 	*ppucData = (uint8_t *) (pkt->data);
 
 	return pkt;
