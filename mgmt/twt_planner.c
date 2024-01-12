@@ -1477,13 +1477,17 @@ void twtPlannerGetTsfDone(
 		struct _TWT_FLOW_T *prTWTFlow = twtPlannerFlowFindById(
 					prStaRec, prGetTsfCtxt->ucTWTFlowId);
 
-		if (prStaRec->arTWTFlow[prGetTsfCtxt->ucTWTFlowId]
-				.eBtwtState == ENUM_BTWT_FLOW_STATE_DEFAULT) {
+		if ((prTWTFlow != NULL) &&
+			(prStaRec->arTWTFlow[prGetTsfCtxt->ucTWTFlowId]
+				.eBtwtState == ENUM_BTWT_FLOW_STATE_DEFAULT)) {
 			prTWTParams = &(prTWTFlow->rTWTPeerParams);
-			prTWTParams->u8TWT = u8CurTsf;
 
-			btwtPlannerSendReqStart(prAdapter, prStaRec,
-				prGetTsfCtxt->ucTWTFlowId);
+			if (prTWTParams != NULL) {
+				prTWTParams->u8TWT = u8CurTsf;
+
+				btwtPlannerSendReqStart(prAdapter, prStaRec,
+					prGetTsfCtxt->ucTWTFlowId);
+			}
 		}
 
 		break;
