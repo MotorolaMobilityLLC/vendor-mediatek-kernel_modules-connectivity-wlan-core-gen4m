@@ -134,7 +134,7 @@ static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 
 	if (count != chip_info->rEmiInfo.coredump_size) {
 		DBGLOG(INIT, ERROR,
-			"coredump size mismatch (%d %d)\n",
+			"coredump size mismatch (%lu %lu)\n",
 			count, chip_info->rEmiInfo.coredump_size);
 		ret = -EINVAL;
 		goto exit;
@@ -159,7 +159,7 @@ static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 	}
 
 	ret = simple_read_from_buffer(buf, count, f_pos, tmp_buf, count);
-	DBGLOG(INIT, INFO, "ret: 0x%x\n", ret);
+	DBGLOG(INIT, INFO, "ret: %lu\n", ret);
 
 exit:
 	if (tmp_buf)
@@ -488,7 +488,7 @@ static int __coredump_init_mem_region(struct coredump_ctx *ctx,
 			sizeof(struct mem_region_layout));
 		if (ret) {
 			DBGLOG(INIT, ERROR,
-				"Read memory region failed, 0x%x 0x%x\n",
+				"Read memory region failed, %u %lu\n",
 				offset,
 				sizeof(struct mem_region_layout));
 			goto exit;
@@ -578,7 +578,7 @@ static int __coredump_init_cr_region(struct coredump_ctx *ctx,
 			sizeof(struct cr_region_layout));
 		if (ret) {
 			DBGLOG(INIT, ERROR,
-				"Read cr region failed, 0x%x 0x%x\n",
+				"Read cr region failed, %u %lu\n",
 				offset,
 				sizeof(struct cr_region_layout));
 			goto exit;
