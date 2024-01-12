@@ -182,6 +182,11 @@ u_int8_t p2pLaunch(struct GLUE_INFO *prGlueInfo)
 	return TRUE;
 }
 
+uint8_t p2pGetMode()
+{
+	return mode;
+}
+
 void p2pSetMode(IN uint8_t ucAPMode)
 {
 	uint8_t *prAPInfName = AP_INF_NAME;
@@ -223,6 +228,10 @@ void p2pSetMode(IN uint8_t ucAPMode)
 		break;
 	case 4:
 		mode = RUNNING_DUAL_P2P_MODE;
+		ifname = prP2PInfName;
+		break;
+	case 5:
+		mode = RUNNING_P2P_DEV_MODE;
 		ifname = prP2PInfName;
 		break;
 	}

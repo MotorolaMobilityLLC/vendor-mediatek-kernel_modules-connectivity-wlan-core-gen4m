@@ -1637,6 +1637,9 @@ void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
 		nicUpdateBss(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
 	}
 
+	if (p2pGetMode() == RUNNING_P2P_DEV_MODE)
+		p2pRoleFsmUninit(prAdapter, ucRoleIdx);
+
 error:
 	cnmMemFree(prAdapter, prMsgHdr);
 }

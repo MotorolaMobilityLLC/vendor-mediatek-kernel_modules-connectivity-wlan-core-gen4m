@@ -330,7 +330,7 @@ ifeq ($(SNIFFER_RADIOTAP), y)
     ccflags-y += -DCFG_SUPPORT_PDMA_SCATTER
 endif
 
-ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=3
+ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=5
 
 ifneq ($(filter 6765, $(WLAN_CHIP_ID)),)
     ccflags-y += -DCFG_SUPPORT_DUAL_STA=0
