@@ -815,6 +815,10 @@ struct STA_RECORD {
 			[STATS_LLS_MAX_EHT_BW_NUM][STATS_LLS_EHT_NUM];
 	};
 #endif
+#if CFG_SUPPORT_STA_INFO
+	uint32_t u4RxBmcCnt;
+	uint32_t u4RxRetryCnt;
+#endif
 #if (CFG_WIFI_GET_MCS_INFO == 1)
 	uint32_t au4RxV0[MCS_INFO_SAMPLE_CNT];
 	uint32_t au4RxV1[MCS_INFO_SAMPLE_CNT];

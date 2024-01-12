@@ -3372,7 +3372,13 @@ struct EVENT_STA_STATISTICS {
 	uint8_t ucDynamicGband256QAMState;
 	uint8_t ucVhtNonSpRateState;
 #endif
+
+#if CFG_SUPPORT_STA_INFO
+	uint32_t u4RxBmcCnt;
+	uint8_t aucReserved[3];
+#else
 	uint8_t aucReserved[4];
+#endif
 };
 
 struct EVENT_LTE_SAFE_CHN {

@@ -1793,7 +1793,7 @@
 #define CFG_SUPPORT_ASSURANCE	(CFG_EXT_FEATURE)
 #define CFG_SUPPORT_LLW_SCAN		(CFG_EXT_FEATURE)
 #define CFG_STAINFO_FEATURE (CFG_EXT_FEATURE)
-#define CFG_SUPPORT_STA_INFO (0)
+#define CFG_SUPPORT_STA_INFO (CFG_EXT_FEATURE)
 
 /*------------------------------------------------------------------------------
  * Flags of Manipulate TID for UDP packets
