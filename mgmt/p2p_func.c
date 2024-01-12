@@ -951,6 +951,8 @@ p2pFuncStartGO(IN P_ADAPTER_T prAdapter,
 
 		prCmdRddOnOffCtrl->ucDfsCtrl = RDD_START_TXQ;
 
+		prCmdRddOnOffCtrl->ucRddIdx = prAdapter->aprBssInfo[prBssInfo->ucBssIndex]->eDBDCBand;
+
 		DBGLOG(P2P, INFO, "p2pFuncStartGO: Start TXQ - DFS ctrl: %.d\n", prCmdRddOnOffCtrl->ucDfsCtrl);
 
 		wlanSendSetQueryCmd(prAdapter,
