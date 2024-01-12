@@ -244,7 +244,7 @@ nanDataEngineComposeNAFHeader(struct ADAPTER *prAdapter,
 	COPY_MAC_ADDR(prNAF->aucDestAddr, pucPeerMacAddr);
 	COPY_MAC_ADDR(prNAF->aucSrcAddr, pucLocalMacAddr);
 	COPY_MAC_ADDR(prNAF->aucClusterID,
-		      nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_MAIN)
+		      nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0)
 			      ->aucClusterId);
 
 	prNAF->u2SeqCtrl = 0;
@@ -2439,16 +2439,8 @@ nanDataEngineElemContainerAttrAppend(struct ADAPTER *prAdapter,
 	if (nanDataEngineElemContainerAttrLength(prAdapter, prNDL, prNDP) == 0)
 		return;
 
-	if (prNDP == NULL || prNDP->fgSecurityRequired == FALSE)
-		prBssInfo = prAdapter->aprBssInfo[nanGetSpecificBssInfo(
-							  prAdapter,
-							  NAN_BSS_INDEX_WOSEC)
-							  ->ucBssIndex];
-	else
-		prBssInfo = prAdapter->aprBssInfo[nanGetSpecificBssInfo(
-							  prAdapter,
-							  NAN_BSS_INDEX_WSEC)
-							  ->ucBssIndex];
+	prBssInfo = prAdapter->aprBssInfo[nanGetSpecificBssInfo(
+			prAdapter, NAN_BSS_INDEX_BAND0)->ucBssIndex];
 	if (prNDP->eCurrentNDPProtocolState == NDP_INITIATOR_TX_DP_REQUEST)
 		nanDataEngineGetECAttrImpl(prAdapter, &pucECAttr,
 					   &u2ECAttrLength, prBssInfo, NULL);
@@ -4091,8 +4083,7 @@ nanDataEngineEnrollNMIContext(IN struct ADAPTER *prAdapter,
 
 	/* Notify scheduler */
 	nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr,
-				fgSecurityRequired ? NAN_BSS_INDEX_WSEC
-						   : NAN_BSS_INDEX_WOSEC,
+				NAN_BSS_INDEX_BAND0,
 				prNdpCxt->prNanStaRec->ucIndex, prNdpCxt->ucId);
 
 	/* update SA with strongest security */
@@ -4167,7 +4158,7 @@ nanDataEngineUnrollNMIContext(IN struct ADAPTER *prAdapter,
 	struct _NAN_NDP_INSTANCE_T *prTargetNdpSA;
 	uint8_t *pucLocalNMI;
 	uint8_t *pucPeerNMI;
-	enum NAN_BSS_ROLE_INDEX eRole;
+	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
 
 #if !CFG_NAN_PMF_PATCH
 	return WLAN_STATUS_SUCCESS;
@@ -4235,11 +4226,6 @@ nanDataEngineUnrollNMIContext(IN struct ADAPTER *prAdapter,
 	if (prNDP->fgNDPEstablish == TRUE)
 		nanDataEngineFreeStaRec(prAdapter, prNDL,
 					&prNdpCxt->prNanStaRec);
-
-	if (prTargetNdpSA && prTargetNdpSA->fgSecurityRequired)
-		eRole = NAN_BSS_INDEX_WSEC;
-	else
-		eRole = NAN_BSS_INDEX_WOSEC;
 
 	if (prNdpCxt->prNanStaRec == NULL) {
 		nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr, eRole,
@@ -4327,7 +4313,7 @@ nanDataEngineEnrollNDPContext(IN struct ADAPTER *prAdapter,
 	struct _NAN_NDP_CONTEXT_T *prNdpCxt;
 	struct _NAN_NDP_INSTANCE_T *prTargetNdpSA;
 	struct _NAN_NDP_INSTANCE_T *prNdpTmp;
-	enum NAN_BSS_ROLE_INDEX eRole;
+	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
 	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
 	unsigned char fgSecurityRequired;
 	uint8_t ucBssIndex;
@@ -4523,7 +4509,7 @@ nanDataEngineUnrollNDPContext(IN struct ADAPTER *prAdapter,
 	uint32_t u4NdpCxtIdx;
 	struct _NAN_NDP_CONTEXT_T *prNdpCxt;
 	struct _NAN_NDP_INSTANCE_T *prTargetNdpSA;
-	enum NAN_BSS_ROLE_INDEX eRole;
+	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
 	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
 
 	if ((prNDL == NULL) || (prNDP == NULL))
@@ -4570,11 +4556,6 @@ nanDataEngineUnrollNDPContext(IN struct ADAPTER *prAdapter,
 	if (prNDP->fgNDPEstablish == TRUE)
 		nanDataEngineFreeStaRec(prAdapter, prNDL,
 					&prNdpCxt->prNanStaRec);
-
-	if (prTargetNdpSA && prTargetNdpSA->fgSecurityRequired)
-		eRole = NAN_BSS_INDEX_WSEC;
-	else
-		eRole = NAN_BSS_INDEX_WOSEC;
 
 	if (prNdpCxt->prNanStaRec == NULL) {
 		nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr, eRole,

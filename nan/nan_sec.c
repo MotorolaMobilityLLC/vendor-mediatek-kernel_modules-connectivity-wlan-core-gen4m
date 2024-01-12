@@ -2218,7 +2218,7 @@ nan_sec_hostapd_setup_wpa(struct hostapd_data *hapd) {
 int
 nan_sec_hostapd_setup_bss(struct hostapd_data *hapd) {
 	hostapd_wpa_auth_hapd_data_alloc(
-		hapd, nanGetSpecificBssInfo(g_prAdapter, NAN_BSS_INDEX_WSEC)
+		hapd, nanGetSpecificBssInfo(g_prAdapter, NAN_BSS_INDEX_BAND0)
 			      ->ucBssIndex);
 	nan_sec_hostapd_setup_wpa(hapd);
 	wpa_init_keys(hapd->wpa_auth); /*TODO_CJ: Need GTK init?*/
@@ -2737,7 +2737,7 @@ nanSecNotify4wayBegin(IN struct _NAN_NDP_INSTANCE_T *prNdp) {
 
 		hostapd_wpa_auth_set_bssid(
 			g_prNanHapdData,
-			nanGetSpecificBssInfo(g_prAdapter, NAN_BSS_INDEX_WOSEC)
+			nanGetSpecificBssInfo(g_prAdapter, NAN_BSS_INDEX_BAND0)
 				->aucClusterId);
 
 		/*TODO_CJ: concurrent 4-way*/
