@@ -2385,6 +2385,7 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 
 #define MAX_NUM_MLD_LINKS				15
 
+/*802.11be D3.0 Figure 9-709c - MLD Parameters subfield format*/
 #define MLD_PARAM_MLD_ID_MASK				BITS(0, 7)
 #define MLD_PARAM_LINK_ID_MASK				BITS(8, 11)
 #define MLD_PARAM_LINK_ID_SHIFT				8
@@ -2413,6 +2414,23 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define ML_CTRL_MLD_CAPA_PRESENT			BIT(4)
 #define ML_CTRL_MLD_ID_PRESENT				BIT(5)
 #define ML_CTRL_EXT_MLD_CAP_OP_PRESENT			BIT(6)
+
+/* 9.4.2.314 TID-To-LINK Mapping element */
+#define MAX_NUM_T2LM_TIDS				8
+#define T2LM_DIRECTION_DL				0x00
+#define T2LM_DIRECTION_UL				0x01
+#define T2LM_DIRECTION_DL_UL				0x02
+#define T2LM_CTRL_DIRECTION				BITS(0, 1)
+#define T2LM_CTRL_DEFAULT_LINK_MAPPING			BIT(2)
+#define T2LM_CTRL_DEFAULT_LINK_MAPPING_SHIFT		2
+#define T2LM_CTRL_MAPPING_SWITCH_TIME_PRESENT		BIT(3)
+#define T2LM_CTRL_MAPPING_SWITCH_TIME_PRESENT_SHIFT	3
+#define T2LM_CTRL_EXPECTED_DURATION_PRESENT		BIT(4)
+#define T2LM_CTRL_EXPECTED_DURATION_PRESENT_SHIFT	4
+#define T2LM_CTRL_LINK_MAPPING_SIZE			BIT(5)
+#define T2LM_CTRL_LINK_MAPPING_SIZE_SHIFT		5
+#define T2LM_CTRL_RESERVED				BITS(6, 7)
+#define T2LM_CTRL_LINK_MAPPING_PRESENT_INDICATOR	BITS(8, 15)
 
 /* Figure 9-788eo - STA Control field format */
 #define SUB_IE_MLD_PER_STA_PROFILE			0
@@ -4642,6 +4660,58 @@ struct ACTION_LM_REPORT_FRAME {
 	uint8_t ucRSNI;
 	uint8_t aucInfoElem[1];	/* subelements */
 } __KAL_ATTRIB_PACKED__;
+
+#if (CFG_SUPPORT_802_11BE_T2LM == 1)
+__KAL_ATTRIB_PACKED_FRONT__
+struct ACTION_T2LM_REQ_FRAME {
+	/* DELTS MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2DurationID;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	 /* Sequence Control */
+	/* Action frame body */
+	uint8_t ucCategory;	/* Category: 37 protected EHT */
+	/* Protected EHT Action Value: [0]: T2LM Request */
+	uint8_t ucAction;
+	uint8_t ucDialogToken;	/* Dialog Token */
+	uint8_t aucT2LM[0];	/* TID-TO-LINK Mapping Element */
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct ACTION_T2LM_RSP_FRAME {
+	/* DELTS MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2DurationID;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	 /* Sequence Control */
+	/* Action frame body */
+	uint8_t ucCategory;	/* Category: 37 protected EHT */
+	/* Protected EHT Action Value: [1]: T2LM Response */
+	uint8_t ucAction;
+	uint8_t ucDialogToken;	/* Dialog Token */
+	uint8_t ucStatusCode;	/* Status Code*/
+	uint8_t aucT2LM[0];	/* TID-TO-LINK Mapping Element */
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct ACTION_T2LM_TEARDOWN_FRAME {
+	/* DELTS MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2DurationID;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	 /* Sequence Control */
+	/* Action frame body */
+	uint8_t ucCategory;	/* Category: 37 protected EHT */
+	/* Protected EHT Action Value: [2]: T2LM Teardown */
+	uint8_t ucAction;
+} __KAL_ATTRIB_PACKED__;
+#endif
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct IE_REQUEST {

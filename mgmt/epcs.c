@@ -135,6 +135,7 @@ uint32_t epcsRspTxDoneCb(struct ADAPTER *prAdapter,
 	if (rTxDoneStatus != TX_RESULT_SUCCESS &&
 			prAdapter->ucEpcsRspRetryCnt > EPCS_RETRY_LIMIT) {
 		prMldStaRec->fgEPCS = 0;
+		prAdapter->ucEpcsRspRetryCnt = 0;
 		/* Restore BSS (MU)Edca param parsed in Req from AP */
 		epcsMldMUnEdcaBackupRestore(prMldBssInfo, FALSE);
 	} else if (rTxDoneStatus != TX_RESULT_SUCCESS) {

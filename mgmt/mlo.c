@@ -524,11 +524,13 @@ uint8_t *mldGenerateBasicCommonInfo(
 	uint8_t *cp;
 	struct MLD_BSS_INFO *mld_bssinfo;
 	struct BSS_INFO *bss;
+	struct WIFI_VAR *prWifiVar;
 	struct IE_MULTI_LINK_CONTROL *common;
 	uint16_t present = 0;
 
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
+	prWifiVar = &prAdapter->rWifiVar;
 
 	if (!bss && !mld_bssinfo)
 		return NULL;
@@ -604,14 +606,25 @@ uint8_t *mldGenerateBasicCommonInfo(
 		 * MLD that support simultaneous transmission or reception of
 		 * frames minus 1. For an AP MLD, set to the number of
 		 * affiliated APs minus 1
+		 * According to Table 9-401i in 802.11be D3.0. Set the
+		 * TID-to-link mapping negotiation to
+		 * 0: TID-to-link mapping is not supported
+		 * 1: MLD supports all TIDs to the same link set, both UL and
+		 *     DL.
+		 * 2: reserved.
+		 * 3: MLD supports each TID to the same or different link set.
 		 */
 		if (mld_bssinfo) {
 			BE_SET_MLD_CAP_MAX_SIMULTANEOUS_LINKS(mld_cap,
 				mld_bssinfo->ucMaxSimuLinks);
+#if (CFG_SUPPORT_802_11BE_T2LM == 1)
+			BE_SET_MLD_CAP_TID_TO_LINK_NEGO(mld_cap,
+				prWifiVar->ucT2LMNegotiationSupport);
+#endif
 		} else if (bss) {
 			BE_SET_MLD_CAP_MAX_SIMULTANEOUS_LINKS(mld_cap, 0);
+			BE_SET_MLD_CAP_TID_TO_LINK_NEGO(mld_cap, 0);
 		}
-
 		WLAN_SET_FIELD_16(cp, mld_cap);
 		DBGLOG(ML, TRACE, "\tML common Info MLD capa = 0x%x",
 			*(uint16_t *)cp);
@@ -2967,6 +2980,12 @@ int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"T2LMNegotiationSupport:%d\nu4T2LMMarginMs:%d\n",
+		prAdapter->rWifiVar.ucT2LMNegotiationSupport,
+		prAdapter->rWifiVar.u4T2LMMarginMs);
+
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"BSS:%d,%d,%d,%d,%d\n\n",
 		prAdapter->aprBssInfo[0]->fgIsInUse,
 		prAdapter->aprBssInfo[1]->fgIsInUse,
@@ -3905,7 +3924,13 @@ struct MLD_STA_RECORD *mldStarecAlloc(struct ADAPTER *prAdapter,
 				(PFN_MGMT_TIMEOUT_FUNC) epcsTimeout,
 				(uintptr_t) prMldStarec);
 #endif
-
+#if (CFG_SUPPORT_802_11BE_T2LM == 1)
+		prMldStarec->eT2LMState = T2LM_STATE_IDLE;
+		cnmTimerInitTimer(prAdapter,
+			&prMldStarec->rT2LMTimer,
+			(PFN_MGMT_TIMEOUT_FUNC) t2lmTimeout,
+			(uintptr_t) prMldStarec);
+#endif
 		mldBssAddClient(prAdapter, prMldBssInfo, prMldStarec);
 		DBGLOG(ML, INFO, "ucIdx: %d, aucMacAddr: " MACSTR "\n",
 				prMldStarec->ucIdx,
@@ -3948,6 +3973,9 @@ void mldStarecFree(struct ADAPTER *prAdapter,
 		}
 	}
 
+#if (CFG_SUPPORT_802_11BE_T2LM == 1)
+	cnmTimerStopTimer(prAdapter, &prMldStarec->rT2LMTimer);
+#endif
 	mldBssRemoveClient(prAdapter, prMldBssInfo, prMldStarec);
 	kalMemZero(prMldStarec, sizeof(struct MLD_STA_RECORD));
 }
@@ -4010,6 +4038,82 @@ int8_t mldStarecSetSetupIdx(struct ADAPTER *prAdapter,
 	prMldStarec->u2SetupWlanId = prStaRec->ucWlanIndex;
 
 	return 0;
+}
+
+uint32_t mldUpdateTidBitmap(struct ADAPTER *prAdapter,
+	 struct MLD_STA_RECORD *prMldStaRec)
+{
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	struct UNI_CMD_STAREC *uni_cmd;
+	struct UNI_CMD_STAREC_T2LM *tag;
+	struct UNI_CMD_STAREC_LINK_INFO *link;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC) +
+			       sizeof(struct UNI_CMD_STAREC_T2LM);
+	struct LINK *prStarecList = &prMldStaRec->rStarecList;
+	struct STA_RECORD *prStaRec;
+	uint16_t widx = 0;
+
+	prStaRec = LINK_PEEK_HEAD(prStarecList,
+			struct STA_RECORD, rLinkEntryMld);
+	if (!prStaRec) {
+		DBGLOG(ML, ERROR,
+		       "prStaRec is Null ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	max_cmd_len += sizeof(*link) * prStarecList->u4NumElem;
+	uni_cmd = (struct UNI_CMD_STAREC *) cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(ML, ERROR,
+		       "Allocate UNI_CMD_STAREC ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	uni_cmd->ucBssInfoIdx = prStaRec->ucBssIndex;
+	widx = (uint16_t) prStaRec->ucWlanIndex;
+	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL, widx);
+
+	tag = (struct UNI_CMD_STAREC_T2LM *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_STAREC_TAG_T2LM;
+	tag->u2Length = sizeof(*tag) + sizeof(*link) * prStarecList->u4NumElem;
+	tag->ucLinkNumber = prStarecList->u4NumElem;
+
+	DBGLOG(ML, INFO, "[%d] bssidx=%d,widx=%d,num=%d,mac=" MACSTR "\n",
+		prStaRec->ucIndex,
+		prStaRec->ucBssIndex,
+		prStaRec->ucWlanIndex,
+		tag->ucLinkNumber,
+		MAC2STR(prMldStaRec->aucPeerMldAddr));
+
+	link = (struct UNI_CMD_STAREC_LINK_INFO *)tag->aucLinkInfo;
+	LINK_FOR_EACH_ENTRY(prStaRec, prStarecList, rLinkEntryMld,
+			struct STA_RECORD) {
+		link->ucBssIdx = prStaRec->ucBssIndex;
+		link->u2WlanIdx = prStaRec->ucWlanIndex;
+		link->ucTidBitmap = prStaRec->ucULTidBitmap;
+		DBGLOG(ML, INFO, "\tbss=%d,wlan_idx=%d,tid=0x%x\n",
+			link->ucBssIdx, link->u2WlanIdx, link->ucTidBitmap);
+		link++;
+	}
+
+	status = wlanSendSetQueryUniCmd(prAdapter,
+			     UNI_CMD_ID_STAREC_INFO,
+			     TRUE,
+			     FALSE,
+			     FALSE,
+			     nicUniCmdEventSetCommon,
+			     nicUniCmdTimeoutCommon,
+			     max_cmd_len,
+			     (void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(prAdapter, uni_cmd);
+	return status;
+#else
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+
 }
 
 #if (CFG_MLD_INFO_PRESETUP == 1)

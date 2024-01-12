@@ -292,13 +292,6 @@ extern uint32_t arEventTableSize;
  *******************************************************************************
  */
 
-/* This is for the usage of assign a 2 byte Wcid to WcidL and WcidH */
-#define WCID_SET_H_L(_HnVer, _L, _u2Value) \
-	do { \
-		_HnVer = (uint8_t)((((uint16_t)(_u2Value)) >> 8) & 0xff); \
-		_L = (uint8_t)(((uint16_t)(_u2Value)) & 0xff); \
-	} while (0)
-
 #define UNI_CMD_STAREC_INVALID_WTBL_IDX 0x7ff
 
 #define	RUN_RX_EVENT_HANDLER(_EID, _pdata) \
@@ -3787,7 +3780,7 @@ uint32_t nicUniCmdStaRecTagEhtInfo(struct ADAPTER *ad,
 
 	tag->u2Tag = UNI_CMD_STAREC_TAG_EHT_BASIC;
 	tag->u2Length = sizeof(*tag);
-	tag->ucTidBitmap = 0xff;
+	tag->aucPadding[0] = 0xff; /* not used */
 	WLAN_GET_FIELD_16(&cmd->ucEhtMacCapInfo[0], &tag->u2EhtMacCap);
 	WLAN_GET_FIELD_64(&cmd->ucEhtPhyCapInfo[0], &tag->u8EhtPhyCap);
 	tag->u8EhtPhyCapExt = (uint64_t) cmd->ucEhtPhyCapInfo[8];
@@ -3797,10 +3790,9 @@ uint32_t nicUniCmdStaRecTagEhtInfo(struct ADAPTER *ad,
 	WLAN_GET_FIELD_24(&cmd->aucMcsMap320MHz[0], &tag->aucMcsMap320MHz);
 
 	DBGLOG(INIT, INFO,
-		"[%d] bss=%d,tid=0x%x,mac_cap=0x%x,phy_cap=0x%lx,phy_cap_ext=0x%lx\n",
+		"[%d] bss=%d,mac_cap=0x%x,phy_cap=0x%lx,phy_cap_ext=0x%lx\n",
 		cmd->ucStaIndex,
 		cmd->ucBssIndex,
-		tag->ucTidBitmap,
 		tag->u2EhtMacCap,
 		tag->u8EhtPhyCap,
 		tag->u8EhtPhyCapExt);

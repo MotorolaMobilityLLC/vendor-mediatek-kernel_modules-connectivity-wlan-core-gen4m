@@ -85,6 +85,18 @@
 #endif
 
 /*******************************************************************************
+ *                                 M A C R O S
+ *******************************************************************************
+ */
+
+/* This is for the usage of assign a 2 byte Wcid to WcidL and WcidH */
+#define WCID_SET_H_L(_HnVer, _L, _u2Value) \
+	do { \
+		_HnVer = (uint8_t)((((uint16_t)(_u2Value)) >> 8) & 0xff); \
+		_L = (uint8_t)(((uint16_t)(_u2Value)) & 0xff); \
+	} while (0)
+
+/*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
@@ -828,6 +840,7 @@ enum ENUM_UNI_CMD_STAREC_TAG {
 	UNI_CMD_STAREC_TAG_INSTALL_KEY_V3	= 0x27,
 	UNI_CMD_STAREC_TAG_FAST_ALL		= 0x2C,
 	UNI_CMD_STAREC_TAG_MLR_INFO		= 0x2D,
+	UNI_CMD_STAREC_TAG_T2LM			= 0x3E,
 	UNI_CMD_STAREC_TAG_MAX_NUM
 };
 
@@ -1032,7 +1045,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_LINK_INFO {
 	uint16_t  u2WlanIdx;
 	uint8_t   ucBssIdx;
-	uint8_t   aucPadding[1];
+	uint8_t   ucTidBitmap;
 } __KAL_ATTRIB_PACKED__;
 
 /* starec MLD level information (Tag 0x21) */
@@ -1064,8 +1077,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_EHT_BASIC {
 	uint16_t  u2Tag;		/* Tag = 0x22 */
 	uint16_t  u2Length;
-	uint8_t   ucTidBitmap;
-	uint8_t   aucPadding[1];
+	uint8_t   aucPadding[2];
 	uint16_t   u2EhtMacCap;
 	uint64_t   u8EhtPhyCap; /* BIT0 ~ BIT63 */
 	uint64_t   u8EhtPhyCapExt; /* BIT64 ~ BIT127 */
@@ -1155,6 +1167,16 @@ struct UNI_CMD_STAREC_MLR_INFO {
 	uint8_t   ucMlrMode;
 	uint8_t   ucMlrState;
 	uint8_t   aucReserved[2];
+} __KAL_ATTRIB_PACKED__;
+
+/* t2lm (Tag 0x3E) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_STAREC_T2LM {
+	uint16_t  u2Tag;                 /* Tag = 0x3E */
+	uint16_t  u2Length;
+	uint8_t   ucLinkNumber;
+	uint8_t   audPaddings[3];
+	uint8_t   aucLinkInfo[0];
 } __KAL_ATTRIB_PACKED__;
 
 /* EDCA set command (0x04) */

@@ -266,7 +266,10 @@ struct STA_RECORD {
 	 *     1'b1: supoort transmission for the TID in this link
 	 *     1'b0: NOT support transmission for the TID in this link
 	 */
-	uint8_t ucTidBitmap;
+	uint8_t ucULTidBitmap;
+	uint8_t ucDLTidBitmap;
+	uint8_t ucPendingULTidBitmap;
+	uint8_t ucPendingDLTidBitmap;
 	uint8_t aucMldAddr[MAC_ADDR_LEN];
 #endif
 
@@ -757,11 +760,8 @@ struct STA_RECORD {
 	struct _TWT_HOTSPOT_CTRL_T TWTHotspotCtrl;
 	struct _TWT_HOTSPOT_STA_NODE *prTWTHotspotStaNode;
 #endif
-
-#if (CFG_SUPPORT_BTWT == 1)
+#endif
 	uint32_t au4Timestamp[2];
-#endif
-#endif
 #if (CFG_SUPPORT_802_11AX == 1)
 	struct HE_A_CTRL_OM_T arHeACtrlOm;
 #endif
@@ -868,6 +868,11 @@ struct MLD_STA_RECORD {
 	uint64_t aucRxPktCnt[ENUM_BAND_NUM];
 	uint32_t u4StaBitmap;
 	struct TIMER rEpcsTimer;
+#if (CFG_SUPPORT_802_11BE_T2LM == 1)
+	enum ENUM_T2LM_STATE eT2LMState;
+	struct TIMER rT2LMTimer;
+	struct T2LM_INFO rT2LMParams;
+#endif
 };
 #endif
 
