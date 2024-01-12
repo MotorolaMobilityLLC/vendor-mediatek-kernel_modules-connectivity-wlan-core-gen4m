@@ -410,26 +410,26 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 		(prCandBss->eBand == BAND_2G4 && cCandRssi < MINIMUM_RSSI_2G4))
 		return TRUE;
 
-	/* 1.4 prefer to select 5G Bss if Rssi of a 5G band BSS is >= -60dbm */
+	/* 1.4 prefer to select 5G Bss if Rssi of a 5G band BSS is good */
 	if (eRoamType != ROAM_TYPE_PER) {
 		if (prCandBss->eBand != prCurrBss->eBand) {
-			if (prCurrBss->eBand == BAND_5G) {
-				/* Current AP is 5G, replace candidate
-				* AP of current AP is good.
-				*/
+			if (prCandBss->eBand == BAND_5G) {
+				/* Candidate AP is 5G, don't replace it
+				 * if it's good enough.
+				 */
 				if (cCandRssi >= GOOD_RSSI_FOR_HT_VHT)
 					return FALSE;
 				if (cCandRssi < LOW_RSSI_FOR_5G_BAND &&
 					(cCurrRssi > cCandRssi + 5))
 					return TRUE;
 			} else {
-				/* Candidate AP is 5G, don't replace it
-				* if it's good enough.
-				*/
+				/* Current AP is 5G, replace candidate
+				 * AP if current AP is good.
+				 */
 				if (cCurrRssi >= GOOD_RSSI_FOR_HT_VHT)
 					return TRUE;
 				if (cCurrRssi < LOW_RSSI_FOR_5G_BAND &&
-					(cCandRssi  > cCurrRssi + 5))
+					(cCandRssi > cCurrRssi + 5))
 					return FALSE;
 			}
 		}
