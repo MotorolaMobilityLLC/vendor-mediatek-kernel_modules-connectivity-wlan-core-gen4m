@@ -97,6 +97,9 @@ extern const PUINT_8 apucNetworkType[NETWORK_TYPE_NUM];
 #define BSS_PROBE_RESP_USE_P2P_DEV_ADDR             BIT(0)
 #define BSS_PROBE_RESP_INCLUDE_P2P_IE               BIT(1)
 
+#define MAX_BSS_INDEX           HW_BSSID_NUM
+#define P2P_DEV_BSS_INDEX       MAX_BSS_INDEX
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
