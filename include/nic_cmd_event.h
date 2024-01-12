@@ -1130,7 +1130,8 @@ typedef struct _EVENT_NIC_CAPABILITY_T {
 	UINT_32 u4CompileFlag1;
 	UINT_8 aucBranchInfo[4];
 	UINT_8 ucFwBuildNumber;
-	UINT_8 aucReserved0[3];
+	UINT_8 ucHwSetNss1x1;
+	UINT_8 aucReserved0[2];
 	UINT_8 aucReserved1[56];
 } EVENT_NIC_CAPABILITY_T, *P_EVENT_NIC_CAPABILITY_T;
 
