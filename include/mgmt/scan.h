@@ -92,7 +92,7 @@
 #define SCAN_CHANNEL_DWELL_TIME_MSEC_APP	(40)
 
 /* dwell time setting for OCE certification */
-#define SCAN_CHANNEL_DWELL_TIME_OCE         (42 + 28)
+#define SCAN_CHANNEL_DWELL_TIME_OCE         (42 + 8)
 /* dwell time setting for VOE certification */
 #define SCAN_CHANNEL_DWELL_TIME_VOE         (42 + 8)
 

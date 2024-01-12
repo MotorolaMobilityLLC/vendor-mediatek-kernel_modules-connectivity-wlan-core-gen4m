@@ -7992,6 +7992,11 @@ int mtk_cfg_testmode_cmd(struct wiphy *wiphy, void *data,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
+	if (!wdev) {
+		DBGLOG(NAN, ERROR, "wdev error!\n");
+		return -EFAULT;
+	}
+
 	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
 		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
