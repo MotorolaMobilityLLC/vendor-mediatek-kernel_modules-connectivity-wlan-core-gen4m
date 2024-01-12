@@ -113,6 +113,7 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
+struct MIB_INFO_STAT g_arMibInfo[ENUM_BAND_NUM];
 
 /*******************************************************************************
  *                            F U N C T I O N   D A T A
@@ -2382,6 +2383,7 @@ void nicCmdEventQueryStaStatistics(IN struct ADAPTER
 	struct PARAM_GET_STA_STATISTICS *prStaStatistics;
 	enum ENUM_WMM_ACI eAci;
 	struct STA_RECORD *prStaRec;
+	uint8_t ucDbdcIdx, ucIdx;
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo;
 #endif
@@ -2439,6 +2441,12 @@ void nicCmdEventQueryStaStatistics(IN struct ADAPTER
 		prStaStatistics->u4AggRangeCtrl_1 =
 			prEvent->u4AggRangeCtrl_1;
 		prStaStatistics->ucRangeType = prEvent->ucRangeType;
+#if (CFG_SUPPORT_CONNAC2X == 1)
+		prStaStatistics->u4AggRangeCtrl_2 =
+			prEvent->u4AggRangeCtrl_2;
+		prStaStatistics->u4AggRangeCtrl_3 =
+			prEvent->u4AggRangeCtrl_3;
+#endif
 		kalMemCopy(prStaStatistics->aucReserved5,
 			   prEvent->aucReserved5,
 			   sizeof(prEvent->aucReserved5));
@@ -2459,6 +2467,29 @@ void nicCmdEventQueryStaStatistics(IN struct ADAPTER
 		kalMemCopy(&prStaStatistics->rMibInfo,
 			&prEvent->rMibInfo,
 			sizeof(prEvent->rMibInfo));
+		for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM; ucDbdcIdx++) {
+			g_arMibInfo[ucDbdcIdx].u4RxMpduCnt +=
+				prStaStatistics->rMibInfo[ucDbdcIdx].
+				u4RxMpduCnt;
+			g_arMibInfo[ucDbdcIdx].u4FcsError +=
+				prStaStatistics->rMibInfo[ucDbdcIdx].
+				u4FcsError;
+			g_arMibInfo[ucDbdcIdx].u4RxFifoFull +=
+				prStaStatistics->rMibInfo[ucDbdcIdx].
+				u4RxFifoFull;
+			g_arMibInfo[ucDbdcIdx].u4AmpduTxSfCnt +=
+				prStaStatistics->rMibInfo[ucDbdcIdx].
+				u4AmpduTxSfCnt;
+			g_arMibInfo[ucDbdcIdx].u4AmpduTxAckSfCnt +=
+				prStaStatistics->rMibInfo[ucDbdcIdx].
+				u4AmpduTxAckSfCnt;
+
+			for (ucIdx = 0; ucIdx <= AGG_RANGE_SEL_NUM; ucIdx++)
+				g_arMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[ucIdx]
+					+= prStaStatistics->rMibInfo[ucDbdcIdx].
+					au2TxRangeAmpduCnt[ucIdx];
+		}
+
 		prStaStatistics->fgIsForceTxStream =
 			prEvent->fgIsForceTxStream;
 		prStaStatistics->fgIsForceSeOff =

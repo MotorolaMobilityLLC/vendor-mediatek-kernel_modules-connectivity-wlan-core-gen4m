@@ -2482,7 +2482,13 @@ struct EVENT_STA_STATISTICS {
 	uint32_t u4AggRangeCtrl_0;
 	uint32_t u4AggRangeCtrl_1;
 	uint8_t ucRangeType;
+#if (CFG_SUPPORT_CONNAC2X == 0)
 	uint8_t aucReserved5[24];
+#else
+	uint32_t u4AggRangeCtrl_2;
+	uint32_t u4AggRangeCtrl_3;
+	uint8_t aucReserved5[16];
+#endif
 #endif
 	uint8_t ucArStateCurr;
 	uint8_t ucArStatePrev;

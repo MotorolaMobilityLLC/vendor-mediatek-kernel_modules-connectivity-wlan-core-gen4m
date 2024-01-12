@@ -68,15 +68,6 @@
 /* If it is set to 1, iwpriv will support register read/write */
 #define CFG_SUPPORT_PRIV_MCR_RW         1
 
-/* Stat CMD will have different format due to different algorithm support */
-#if (defined(MT6632) || defined(MT7668))
-#define CFG_SUPPORT_RA_GEN			0
-#define CFG_SUPPORT_TXPOWER_INFO		0
-#else
-#define CFG_SUPPORT_RA_GEN			1
-#define CFG_SUPPORT_TXPOWER_INFO		1
-#endif
-
 /*******************************************************************************
  *			E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
@@ -266,26 +257,6 @@
 /* Define magic key of test mode (Don't change it for future compatibity) */
 #define PRIV_CMD_TEST_MAGIC_KEY                         2011
 #define PRIV_CMD_TEST_MAGIC_KEY_ICAP                         2013
-
-#if (CFG_SUPPORT_TXPOWER_INFO == 1)
-#define TX_POWER_SHOW_INFO                              0x7
-#endif
-
-#define AGG_RANGE_SEL_NUM                               7
-#define AGG_RANGE_SEL_0_MASK                            BITS(0, 7)
-#define AGG_RANGE_SEL_0_OFFSET                          0
-#define AGG_RANGE_SEL_1_MASK                            BITS(8, 15)
-#define AGG_RANGE_SEL_1_OFFSET                          8
-#define AGG_RANGE_SEL_2_MASK                            BITS(16, 23)
-#define AGG_RANGE_SEL_2_OFFSET                          16
-#define AGG_RANGE_SEL_3_MASK                            BITS(24, 31)
-#define AGG_RANGE_SEL_3_OFFSET                          24
-#define AGG_RANGE_SEL_4_MASK                            AGG_RANGE_SEL_0_MASK
-#define AGG_RANGE_SEL_4_OFFSET                          AGG_RANGE_SEL_0_OFFSET
-#define AGG_RANGE_SEL_5_MASK                            AGG_RANGE_SEL_1_MASK
-#define AGG_RANGE_SEL_5_OFFSET                          AGG_RANGE_SEL_1_OFFSET
-#define AGG_RANGE_SEL_6_MASK                            AGG_RANGE_SEL_2_MASK
-#define AGG_RANGE_SEL_6_OFFSET                          AGG_RANGE_SEL_2_OFFSET
 
 /*******************************************************************************
  *                             D A T A   T Y P E S

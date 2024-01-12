@@ -589,6 +589,7 @@ struct CHIP_DBG_OPS soc3_0_debug_ops = {
 	.printHifDbgInfo = NULL,
 	.show_rx_rate_info = connac2x_show_rx_rate_info,
 	.show_rx_rssi_info = connac2x_show_rx_rssi_info,
+	.show_stat_info = connac2x_show_stat_info,
 };
 
 #if CFG_SUPPORT_QA_TOOL

@@ -4236,3 +4236,68 @@ uint8_t nicRxGetRcpiValueFromRxv(
 		return 0;
 	}
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief
+ *
+ * @param
+ *
+ * @retval
+ */
+/*----------------------------------------------------------------------------*/
+int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, IN char *pcCommand,
+				 IN int i4TotalLen, IN uint8_t ucWlanIdx)
+{
+	int32_t i4RSSI0 = 0, i4RSSI1 = 0, i4RSSI2 = 0, i4RSSI3 = 0;
+	int32_t i4BytesWritten = 0;
+	uint32_t u4RxVector3 = 0;
+	uint8_t ucStaIdx;
+	struct CHIP_DBG_OPS *prChipDbg;
+
+	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
+	    WLAN_STATUS_SUCCESS) {
+		u4RxVector3 = prAdapter->arStaRec[ucStaIdx].u4RxVector3;
+		DBGLOG(REQ, LOUD, "****** RX Vector3 = 0x%08x ******\n",
+		       u4RxVector3);
+	} else {
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s", "Last RX RSSI", " = NOT SUPPORT");
+		return i4BytesWritten;
+	}
+
+	prChipDbg = prAdapter->chip_info->prDebugOps;
+
+	if (prChipDbg && prChipDbg->show_rx_rssi_info) {
+		i4BytesWritten = prChipDbg->show_rx_rssi_info(
+				prAdapter,
+				pcCommand,
+				i4TotalLen,
+				ucStaIdx);
+		return i4BytesWritten;
+	}
+
+	i4RSSI0 = RCPI_TO_dBm((u4RxVector3 & RX_VT_RCPI0_MASK) >>
+			      RX_VT_RCPI0_OFFSET);
+	i4RSSI1 = RCPI_TO_dBm((u4RxVector3 & RX_VT_RCPI1_MASK) >>
+			      RX_VT_RCPI1_OFFSET);
+
+	if (prAdapter->rWifiVar.ucNSS > 2) {
+		i4RSSI2 = RCPI_TO_dBm((u4RxVector3 & RX_VT_RCPI2_MASK) >>
+				      RX_VT_RCPI2_OFFSET);
+		i4RSSI3 = RCPI_TO_dBm((u4RxVector3 & RX_VT_RCPI3_MASK) >>
+				      RX_VT_RCPI3_OFFSET);
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "%-20s%s%d %d %d %d\n",
+			"Last RX Data RSSI", " = ",
+			i4RSSI0, i4RSSI1, i4RSSI2, i4RSSI3);
+	} else
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "%-20s%s%d %d\n",
+			"Last RX Data RSSI", " = ", i4RSSI0, i4RSSI1);
+
+	return i4BytesWritten;
+}
+

@@ -361,6 +361,18 @@
 #define CONNAC2X_HW_TX_RATE_TO_NSS(_x)         (((_x) & (0x7 << 10)) >> 10)
 #define CONNAC2X_HW_TX_RATE_TO_STBC(_x)        (((_x) & (0x1 << 13)) >> 13)
 
+/*------------------------------------------------------------------------------
+ * MACRO for CONNAC2X TXV
+ *------------------------------------------------------------------------------
+ */
+#define CONNAC2X_TXV_GET_TX_RATE(_x)	((_x)->u4TxV[2] & 0x7f)
+#define CONNAC2X_TXV_GET_TX_LDPC(_x)	(((_x)->u4TxV[2] & (0x1 << 7)) >> 7)
+#define CONNAC2X_TXV_GET_TX_STBC(_x)	(((_x)->u4TxV[0] & (0x3 << 6)) >> 6)
+#define CONNAC2X_TXV_GET_TX_FRMODE(_x)	(((_x)->u4TxV[0] & (0x7 << 8)) >> 8)
+#define CONNAC2X_TXV_GET_TX_MODE(_x)	(((_x)->u4TxV[0] & (0xf << 12)) >> 12)
+#define CONNAC2X_TXV_GET_TX_NSTS(_x)	(((_x)->u4TxV[2] & (0x7 << 8)) >> 8)
+#define CONNAC2X_TXV_GET_TX_PWR(_x)	(((_x)->u4TxV[0] & (0xff << 16)) >> 16)
+#define CONNAC2X_TXV_GET_TX_SGI(_x)	(((_x)->u4TxV[1] & (0x3 << 26)) >> 26)
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -469,6 +481,23 @@ union WTBL_LMAC_DW3 {
 		uint32_t tebf_vht:1;
 		uint32_t tebf_he:1;
 	} field;
+
+	struct {
+		uint32_t wmm_q:2;
+		uint32_t rxd_dup_mode:2;
+		uint32_t vlan_2e_th:1;
+		uint32_t beam_chg:1;
+		uint32_t ba_mode:2;
+		uint32_t pfmu_index:8;
+		uint32_t ulpf_index:8;
+		uint32_t ribf:1;
+		uint32_t ulpf:1;
+		uint32_t ign_fbk:1;
+		uint32_t bf_rsvd2:2;
+		uint32_t tebf:1;
+		uint32_t tebf_vht:1;
+		uint32_t tebf_he:1;
+	} field_v2;
 	uint32_t word;
 };
 
@@ -516,6 +545,27 @@ union WTBL_LMAC_DW5 {
 		uint32_t psm:1;
 		uint32_t skip_tx:1;
 	} field;
+
+	struct {
+		uint32_t af:3;
+		uint32_t af_he:2;
+		uint32_t rts:1;
+		uint32_t smps:1;
+		uint32_t dyn_bw:1;
+		uint32_t mmss:3;
+		uint32_t usr:1;
+		uint32_t sr_r:3;
+		uint32_t sr_abort:1;
+		uint32_t tx_power_offset:6;
+		uint32_t mpdu_size:2;
+		uint32_t pe:2;
+		uint32_t doppl:1;
+		uint32_t txop_ps_cap:1;
+		uint32_t du_i_psm:1;
+		uint32_t i_psm:1;
+		uint32_t psm:1;
+		uint32_t skip_tx:1;
+	} field_v2;
 	uint32_t word;
 };
 
@@ -582,6 +632,20 @@ union WTBL_LMAC_DW9 {
 		uint32_t mpdu_ok_cnt:3;
 		uint32_t rate_idx:3;
 	} field;
+
+	struct {
+		uint32_t rx_avg_mpdu_size:14;
+		uint32_t pad:2;
+		uint32_t pritx_sw_mode:1;
+		uint32_t pritx_plr:1;
+		uint32_t pritx_dcm:1;
+		uint32_t pritx_er160:1;
+		uint32_t pritx_ersu:1;
+		uint32_t fcap:2;
+		uint32_t mpdu_fail_cnt:3;
+		uint32_t mpdu_ok_cnt:3;
+		uint32_t rate_idx:3;
+	} field_v2;
 	uint32_t word;
 };
 
@@ -715,6 +779,12 @@ union WTBL_LMAC_DW28 {
 		uint32_t ht_amsdu:1;
 		uint32_t amsdu_cros_lg:1;
 	} field;
+
+	struct {
+		uint32_t om_info:12;
+		uint32_t rxd_dup_om_chg:1;
+		uint32_t pad:19;
+	} field_v2;
 	uint32_t word;
 };
 
@@ -725,6 +795,16 @@ union WTBL_LMAC_DW29 {
 		uint32_t resp_rcpi_2:8;
 		uint32_t resp_rcpi_3:8;
 	} field;
+
+	struct {
+		uint32_t usr_rssi:9;
+		uint32_t usr_snr:6;
+		uint32_t pad:1;
+		uint32_t rapid_reaction_rate:11;
+		uint32_t pad2:3;
+		uint32_t ht_amsdu:1;
+		uint32_t amsdu_cros_lg:1;
+	} field_2;
 	uint32_t word;
 };
 
@@ -735,6 +815,13 @@ union WTBL_LMAC_DW30 {
 		uint32_t resp_rcpi_6:8;
 		uint32_t resp_rcpi_7:8;
 	} field;
+
+	struct {
+		uint32_t resp_rcpi_0:8;
+		uint32_t resp_rcpi_1:8;
+		uint32_t resp_rcpi_2:8;
+		uint32_t resp_rcpi_3:8;
+	} field_v2;
 	uint32_t word;
 };
 
