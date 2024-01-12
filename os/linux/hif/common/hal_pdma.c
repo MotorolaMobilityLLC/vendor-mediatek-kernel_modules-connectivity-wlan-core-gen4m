@@ -1523,12 +1523,22 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem)
 	/* For falcon: TxFreeDoneEvent to Host Rx path */
 	/* For buzzard(costdown wfdma): Event Rx path */
 	/* Event Rx path */
+#if (CFG_SUPPORT_CONNAC2X_2x2 == 1)
+
 	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_EVT_IDX_1,
-				 RX_RING1_SIZE, RXD_SIZE,
+				 RX_RING0_SIZE, RXD_SIZE,
 				 RX_BUFFER_AGGRESIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
 		return false;
 	}
+#else
+	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_EVT_IDX_1,
+			 RX_RING1_SIZE, RXD_SIZE,
+			 RX_BUFFER_AGGRESIZE, fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
+		return false;
+	}
+#endif
 
 #if (CFG_SUPPORT_CONNAC2X == 1)
 	if (prBusInfo->wfdmaAllocRxRing)

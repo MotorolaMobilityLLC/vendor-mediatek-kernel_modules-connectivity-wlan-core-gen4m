@@ -76,13 +76,21 @@
 #define NUM_OF_TX_RING				(4+NUM_OF_WFDMA1_TX_RING)
 #define NUM_OF_RX_RING				(2+NUM_OF_WFDMA1_RX_RING)
 
+#if (CFG_SUPPORT_CONNAC2X_2x2 == 1)
+#define TX_RING_SIZE				1024
+#define RX_RING_SIZE				1024 /* Max Rx ring size */
+/* Data Rx ring */
+#define RX_RING0_SIZE				1024
+/* Event/MSDU_report Rx ring */
+#define RX_RING1_SIZE				16
+#else
 #define TX_RING_SIZE				256
 #define RX_RING_SIZE				256	/* Max Rx ring size */
-
 /* Data Rx ring */
 #define RX_RING0_SIZE				256
 /* Event/MSDU_report Rx ring */
 #define RX_RING1_SIZE				16
+#endif
 
 /* TXD_SIZE = TxD + TxInfo */
 #define TXD_SIZE					16
