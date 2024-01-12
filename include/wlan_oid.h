@@ -2622,21 +2622,25 @@ struct PARAM_NETWORK_ADDRESS {
 	uint16_t u2AddressType;	/* type of this address
 				 * (PARAM_PROTOCOL_ID_XXX above)
 				 */
-	uint8_t aucAddress[1];	/* actually AddressLength bytes long */
+	uint8_t aucAddress[];	/* actually AddressLength bytes long */
 };
 
 /* The following is used with OID_GEN_NETWORK_LAYER_ADDRESSES to set network
  * layer addresses on an interface
  */
-
 struct PARAM_NETWORK_ADDRESS_LIST {
 	uint8_t ucBssIdx;
-	uint32_t u4AddressCount;/* number of addresses following */
 	uint16_t u2AddressType;	/* type of this address
 				 * (NDIS_PROTOCOL_ID_XXX above)
 				 */
-	struct PARAM_NETWORK_ADDRESS
-		arAddress[1];	/* actually AddressCount elements long */
+	uint32_t u4AddressCount;/* number of addresses following */
+
+	/**
+	 * Followed by one or more flexible size struct PARAM_NETWORK_ADDRESS,
+	 * the original structure struct PARAM_NETWORK_ADDRESS aucAddress[];
+	 * was removed since declaring a flexible array member here will cause
+	 * arrays of objects containing zero-size array.
+	 */
 };
 
 #if CFG_SLT_SUPPORT
