@@ -938,7 +938,8 @@ void soc7_0_get_rx_link_stats(struct ADAPTER *prAdapter,
 	uint32_t mcsIdx;
 
 	if (prAdapter->rWifiVar.fgLinkStatsDump)
-		DBGLOG(RX, INFO, "RXV: pmbl=%u nsts=%u stbc=%u bw=%u mcs=%u",
+		DBGLOG(RX, INFO,
+			"RXV: pmbl=%lu nsts=%lu stbc=%lu bw=%lu mcs=%lu",
 			RXV_GET_TXMODE(u4RxV0),
 			RXV_GET_RX_NSTS(u4RxV0),
 			RXV_GET_STBC(u4RxV0),
