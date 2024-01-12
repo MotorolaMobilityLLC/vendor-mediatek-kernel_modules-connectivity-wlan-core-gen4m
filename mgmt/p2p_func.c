@@ -410,7 +410,7 @@ void p2pFuncGCJoin(IN struct ADAPTER *prAdapter,
 		}
 
 		/* 2 <1> We are goin to connect to this BSS */
-		prBssDesc->fgIsConnecting = TRUE;
+		prBssDesc->fgIsConnecting |= BIT(prP2pBssInfo->ucBssIndex);
 
 		/* 2 <2> Setup corresponding STA_RECORD_T */
 		prStaRec = bssCreateStaRecFromBssDesc(prAdapter,
@@ -621,8 +621,8 @@ p2pFuncUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 
 		/* 3 <4> Update BSS_INFO_T from BSS_DESC_T */
 
-		prBssDesc->fgIsConnecting = FALSE;
-		prBssDesc->fgIsConnected = TRUE;
+		prBssDesc->fgIsConnecting &= ~BIT(prP2pBssInfo->ucBssIndex);
+		prBssDesc->fgIsConnected |= BIT(prP2pBssInfo->ucBssIndex);
 
 		/* 4 <4.1> Setup MIB for current BSS */
 		prP2pBssInfo->u2BeaconInterval = prBssDesc->u2BeaconInterval;
@@ -2928,7 +2928,8 @@ p2pFuncDisconnect(IN struct ADAPTER *prAdapter,
 			prP2pRoleFsmInfo->rJoinInfo.prTargetBssDesc = NULL;
 
 			scanRemoveConnFlagOfBssDescByBssid(prAdapter,
-				prP2pBssInfo->aucBSSID);
+				prP2pBssInfo->aucBSSID,
+				prP2pBssInfo->ucBssIndex);
 		}
 
 		DBGLOG(P2P, INFO,

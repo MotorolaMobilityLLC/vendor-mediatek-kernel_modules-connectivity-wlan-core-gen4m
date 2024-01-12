@@ -676,7 +676,7 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 		ucBssIndex);
 
 	/* 4 <1> We are going to connect to this BSS. */
-	prBssDesc->fgIsConnecting = TRUE;
+	prBssDesc->fgIsConnecting |= BIT(ucBssIndex);
 
 	/* 4 <2> Setup corresponding STA_RECORD_T */
 	prStaRec = bssCreateStaRecFromBssDesc(prAdapter,
@@ -1049,8 +1049,8 @@ void aisFsmStateInit_IBSS_MERGE(IN struct ADAPTER *prAdapter,
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 
 	/* 4 <1> We will merge with to this BSS immediately. */
-	prBssDesc->fgIsConnecting = FALSE;
-	prBssDesc->fgIsConnected = TRUE;
+	prBssDesc->fgIsConnecting &= ~BIT(ucBssIndex);
+	prBssDesc->fgIsConnected |= BIT(ucBssIndex);
 
 	/* 4 <2> Setup corresponding STA_RECORD_T */
 	prStaRec = bssCreateStaRecFromBssDesc(prAdapter,
@@ -1108,8 +1108,8 @@ void aisFsmStateAbort_JOIN(IN struct ADAPTER *prAdapter,
 	prJoinAbortMsg->ucSeqNum = prAisFsmInfo->ucSeqNumOfReqMsg;
 	prJoinAbortMsg->prStaRec = prAisFsmInfo->prTargetStaRec;
 
-	prAisFsmInfo->prTargetBssDesc->fgIsConnected = FALSE;
-	prAisFsmInfo->prTargetBssDesc->fgIsConnecting = FALSE;
+	prAisFsmInfo->prTargetBssDesc->fgIsConnected &= ~BIT(ucBssIndex);
+	prAisFsmInfo->prTargetBssDesc->fgIsConnecting &= ~BIT(ucBssIndex);
 
 	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *)prJoinAbortMsg,
 		    MSG_SEND_METHOD_BUF);
@@ -1215,8 +1215,8 @@ void aisFsmStateAbort_IBSS(IN struct ADAPTER *prAdapter,
 					  prTargetStaRec->aucMacAddr);
 
 		if (prBssDesc) {
-			prBssDesc->fgIsConnected = FALSE;
-			prBssDesc->fgIsConnecting = FALSE;
+			prBssDesc->fgIsConnected &= ~BIT(ucBssIndex);
+			prBssDesc->fgIsConnecting &= ~BIT(ucBssIndex);
 		}
 	}
 	/* release channel privilege */
@@ -1421,8 +1421,7 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 		}
 
 #define BSS_DESC_BAD_CASE \
-	(!prBssDesc || (prBssDesc->fgIsConnected && \
-	EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prAisBssInfo->aucBSSID) && \
+	(!prBssDesc || ((prBssDesc->fgIsConnected & BIT(ucBssIndex)) && \
 	prConnSettings->eConnectionPolicy != CONNECT_BY_BSSID) || \
 	prBssDesc->eBSSType != BSS_TYPE_INFRASTRUCTURE)
 		/* 4 <3.a> Following cases will go back to NORMAL_TR.
@@ -3004,7 +3003,8 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 					    prStaRec->u2StatusCode;
 
 				if (prBssDesc)
-					prBssDesc->fgIsConnecting = FALSE;
+					prBssDesc->fgIsConnecting &=
+						~BIT(ucBssIndex);
 
 				/* 3.3 Free STA-REC */
 				if (prStaRec != prAisBssInfo->prStaRecOfAP)
@@ -3150,8 +3150,10 @@ void aisFsmMergeIBSS(IN struct ADAPTER *prAdapter,
 				    scanSearchBssDescByBssid(prAdapter,
 					prAisBssInfo->aucBSSID);
 				if (prBssDesc != NULL) {
-					prBssDesc->fgIsConnecting = FALSE;
-					prBssDesc->fgIsConnected = FALSE;
+					prBssDesc->fgIsConnecting &=
+						~BIT(ucBssIndex);
+					prBssDesc->fgIsConnected &=
+						~BIT(ucBssIndex);
 				}
 				/* 4 <1.4> Add Peers' STA_RECORD_T to
 				 * Client List
@@ -3262,8 +3264,10 @@ void aisFsmRunEventFoundIBSSPeer(IN struct ADAPTER *prAdapter,
 							  prStaRec->aucMacAddr);
 
 				if (prBssDesc != NULL) {
-					prBssDesc->fgIsConnecting = FALSE;
-					prBssDesc->fgIsConnected = TRUE;
+					prBssDesc->fgIsConnecting &=
+						~BIT(ucBssIndex);
+					prBssDesc->fgIsConnected |=
+						BIT(ucBssIndex);
 				}
 
 				/* 4 <1.4> Activate current Peer's
@@ -3280,8 +3284,10 @@ void aisFsmRunEventFoundIBSSPeer(IN struct ADAPTER *prAdapter,
 					prAisBssInfo->aucBSSID);
 
 				if (prBssDesc != NULL) {
-					prBssDesc->fgIsConnecting = FALSE;
-					prBssDesc->fgIsConnected = TRUE;
+					prBssDesc->fgIsConnecting &=
+						~BIT(ucBssIndex);
+					prBssDesc->fgIsConnected |=
+						BIT(ucBssIndex);
 				}
 
 				/* 4 <1.4> Activate current Peer's STA_RECORD_T
@@ -3727,8 +3733,9 @@ void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 					    prAssocRspFrame->aucBSSID, TRUE,
 					    &rSsid);
 	if (prBssDesc) {
-		prBssDesc->fgIsConnecting = FALSE;
-		prBssDesc->fgIsConnected = TRUE;
+		prBssDesc->fgIsConnecting &= ~BIT(ucBssIndex);
+		prBssDesc->fgIsConnected |= BIT(ucBssIndex);
+
 		prBssDesc->ucJoinFailureCount = 0;
 
 		aisRemoveBlackList(prAdapter, prBssDesc);
@@ -3959,8 +3966,9 @@ void aisUpdateBssInfoForMergeIBSS(IN struct ADAPTER *prAdapter,
 	/* 3 <4> Update BSS_INFO_T from BSS_DESC_T */
 	prBssDesc = scanSearchBssDescByTA(prAdapter, prStaRec->aucMacAddr);
 	if (prBssDesc) {
-		prBssDesc->fgIsConnecting = FALSE;
-		prBssDesc->fgIsConnected = TRUE;
+		prBssDesc->fgIsConnecting &= ~BIT(ucBssIndex);
+		prBssDesc->fgIsConnected |= BIT(ucBssIndex);
+
 		/* Support AP Selection */
 		aisRemoveBlackList(prAdapter, prBssDesc);
 
@@ -4154,11 +4162,11 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 						     prAisBssInfo->aucBSSID);
 		} else {
 			scanRemoveConnFlagOfBssDescByBssid(prAdapter,
-				prAisBssInfo->aucBSSID);
+				prAisBssInfo->aucBSSID, ucBssIndex);
 			prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 			if (prBssDesc) {
-				prBssDesc->fgIsConnected = FALSE;
-				prBssDesc->fgIsConnecting = FALSE;
+				prBssDesc->fgIsConnected &= ~BIT(ucBssIndex);
+				prBssDesc->fgIsConnecting &= ~BIT(ucBssIndex);
 			}
 		}
 
@@ -5189,8 +5197,8 @@ void aisFsmRoamingDisconnectPrevAP(IN struct ADAPTER *prAdapter,
 						    prAisBssInfo->aucBSSID,
 						    TRUE, &rSsid);
 		if (prBssDesc) {
-			prBssDesc->fgIsConnected = FALSE;
-			prBssDesc->fgIsConnecting = FALSE;
+			prBssDesc->fgIsConnected &= ~BIT(ucBssIndex);
+			prBssDesc->fgIsConnecting &= ~BIT(ucBssIndex);
 		}
 	}
 
