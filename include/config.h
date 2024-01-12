@@ -234,18 +234,20 @@
  * Linux version only. Force remove for other platform
  *------------------------------------------------------------------------------
  */
-#if CFG_SUPPORT_DYNAMIC_PAGE_POOL
-#define CFG_SUPPORT_RETURN_TASK		0
-#define CFG_SUPPORT_RETURN_WORK		1
-#else
-#define CFG_SUPPORT_RETURN_TASK		1
-#define CFG_SUPPORT_RETURN_WORK		0
-#endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
+
+#ifndef CFG_SUPPORT_RETURN_WORK
+#define CFG_SUPPORT_RETURN_WORK 0
+#endif /* CFG_SUPPORT_RETURN_WORK */
+
+#if CFG_SUPPORT_RETURN_WORK
+#define CFG_SUPPORT_RETURN_TASK 0
+#else /* CFG_SUPPORT_RETURN_WORK */
+#define CFG_SUPPORT_RETURN_TASK 1
+#endif /* CFG_SUPPORT_RETURN_WORK */
 
 #ifndef LINUX
 #undef CFG_SUPPORT_RETURN_TASK
 #define CFG_SUPPORT_RETURN_TASK		0
-#define CFG_SUPPORT_RETURN_WORK		0
 #endif /* LINUX */
 
 /* Enable handling BA Request advance SSN before data in previous window */
