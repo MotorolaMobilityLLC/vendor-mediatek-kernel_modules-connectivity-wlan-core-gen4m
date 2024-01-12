@@ -1455,9 +1455,11 @@ void twtPlannerGetTsfDone(
 			<< prGetTsfCtxt->rTWTParams.ucWakeIntvalExponent;
 		u8Temp = u8CurTsf + u8twt_interval;
 
-		if (u8twt_interval == 0) {
+		if ((u8twt_interval == 0) ||
+			(prGetTsfCtxt->ucTWTFlowId >= TWT_MAX_FLOW_NUM)) {
 			DBGLOG(TWT_PLANNER, ERROR,
-				"u8twt_interval 0x%x\n",
+				"Flow ID %d u8twt_interval 0x%x\n",
+				prGetTsfCtxt->ucTWTFlowId,
 				CPU_TO_LE32(u8twt_interval & 0xFFFFFFFF));
 
 			kalMemFree(prGetTsfCtxt,
