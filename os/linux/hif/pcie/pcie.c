@@ -417,27 +417,18 @@ void mtk_pci_disable_device(struct GLUE_INFO *prGlueInfo)
 /*----------------------------------------------------------------------------*/
 irqreturn_t mtk_pci_isr(int irq, void *dev_instance)
 {
-	disable_irq_nosync(irq);
-	return IRQ_WAKE_THREAD;
-}
-
-irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
+	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
-	struct BUS_INFO *prBusInfo = NULL;
 	struct pcie_msi_info *prMsiInfo;
 	struct pcie_msi_layout *prMsiLayout;
 	int i;
 
-	prGlueInfo = get_glue_info_isr(dev_instance, irq, 0);
+	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 	if (!prGlueInfo)
-		return IRQ_NONE;
+		goto exit;
 
 	prHifInfo = &prGlueInfo->rHifInfo;
-	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
-	prMsiInfo = &prBusInfo->pcie_msi_info;
-
+	prMsiInfo = &prGlueInfo->prAdapter->chip_info->bus_info->pcie_msi_info;
 	if (!prMsiInfo || !prMsiInfo->fgMsiEnabled) {
 		KAL_SET_BIT(0, prHifInfo->ulHifIntEnBits);
 		goto exit;
@@ -450,7 +441,21 @@ irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance)
 			break;
 		}
 	}
+
 exit:
+	disable_irq_nosync(irq);
+
+	return IRQ_WAKE_THREAD;
+}
+
+irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	prGlueInfo = get_glue_info_isr(dev_instance, irq, 0);
+	if (!prGlueInfo)
+		return IRQ_NONE;
+
 	kalSetIntEvent(prGlueInfo);
 
 	return IRQ_HANDLED;
@@ -479,7 +484,8 @@ void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo)
 
 	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
 		prMsiLayout = &prMsiInfo->prMsiLayout[i];
-		if (prMsiLayout->type != AP_INT)
+		if (prMsiLayout->type != AP_INT ||
+		    !prMsiLayout->irq_num)
 			continue;
 
 		if (test_and_clear_bit(i, &prMsiInfo->ulEnBits))
@@ -510,12 +516,13 @@ void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo)
 
 	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
 		prMsiLayout = &prMsiInfo->prMsiLayout[i];
-		if (prMsiLayout->type != AP_INT)
+		if (prMsiLayout->type != AP_INT ||
+		    !prMsiLayout->irq_num)
 			continue;
 
 		if (!test_bit(i, &prMsiInfo->ulEnBits)) {
-			disable_irq_nosync(prMsiLayout->irq_num);
 			KAL_SET_BIT(i, prMsiInfo->ulEnBits);
+			disable_irq_nosync(prMsiLayout->irq_num);
 		}
 	}
 }
@@ -1791,6 +1798,17 @@ err:
 /*----------------------------------------------------------------------------*/
 static irqreturn_t mtk_axi_isr(int irq, void *dev_instance)
 {
+	struct ADAPTER *prAdapter;
+	struct GL_HIF_INFO *prHifInfo;
+
+	prAdapter = (struct ADAPTER *)dev_instance;
+	if (!prAdapter)
+		goto exit;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	KAL_SET_BIT(1, prHifInfo->ulHifIntEnBits);
+
+exit:
 	disable_irq_nosync(irq);
 	return IRQ_HANDLED;
 }
@@ -1799,7 +1817,6 @@ static irqreturn_t mtk_axi_isr_thread(int irq, void *dev_instance)
 {
 	struct ADAPTER *prAdapter;
 	struct GLUE_INFO *prGlueInfo;
-	struct GL_HIF_INFO *prHifInfo;
 
 	prAdapter = (struct ADAPTER *)dev_instance;
 	if (!prAdapter) {
@@ -1811,8 +1828,6 @@ static irqreturn_t mtk_axi_isr_thread(int irq, void *dev_instance)
 	if (!prGlueInfo)
 		return IRQ_NONE;
 
-	prHifInfo = &prGlueInfo->rHifInfo;
-	KAL_SET_BIT(1, prHifInfo->ulHifIntEnBits);
 	kalSetIntEvent(prGlueInfo);
 
 	return IRQ_HANDLED;
