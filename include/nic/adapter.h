@@ -1123,6 +1123,8 @@ struct WIFI_VAR {
 
 	uint32_t u4DiscoverTimeout;
 	uint32_t u4InactiveTimeout;
+	uint32_t u4BtmDelta;
+	uint32_t u4BtmDisTimerThreshold;
 #if ARP_MONITER_ENABLE
 	uint32_t uArpMonitorNumber;
 	uint32_t uArpMonitorRxPktNum;

@@ -471,7 +471,6 @@ struct NEIGHBOR_AP *scanGetNeighborAPEntry(
 	}
 	return NULL;
 }
-
 #endif
 
 uint8_t scanNetworkReplaceHandler2G4(enum ENUM_BAND eCurrentBand,
@@ -824,20 +823,32 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 
 
 #if CFG_SUPPORT_802_11K
-	if (eRoamReason == ROAMING_REASON_BTM ||
-	    eRoamReason == ROAMING_REASON_BTM_DISASSOC) {
+	if (eRoamReason == ROAMING_REASON_BTM) {
 		struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
 		uint8_t ucRequestMode = 0;
 
 		prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
 		ucRequestMode = prBtmParam->ucRequestMode;
-		if (ucRequestMode & WNM_BSS_TM_REQ_ABRIDGED) {
-			if (!prBssDesc->prNeighbor) {
+		if (aisCheckNeighborApValidity(prAdapter, ucBssIndex)) {
+			if (prBssDesc->prNeighbor &&
+			    prBssDesc->prNeighbor->fgPrefPresence &&
+			    !prBssDesc->prNeighbor->ucPreference) {
+				log_dbg(SCN, INFO,
+				     MACSTR " preference is 0, skip it\n",
+				     MAC2STR(prBssDesc->aucBSSID));
+				return FALSE;
+			}
+
+			if ((ucRequestMode & WNM_BSS_TM_REQ_ABRIDGED) &&
+			    !prBssDesc->prNeighbor &&
+			    prBtmParam->ucDisImmiState !=
+				    AIS_BTM_DIS_IMMI_STATE_3) {
 				log_dbg(SCN, INFO,
 				     MACSTR " not in candidate list, skip it\n",
 				     MAC2STR(prBssDesc->aucBSSID));
 				return FALSE;
 			}
+
 		}
 	}
 #endif
@@ -846,7 +857,8 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 
 #if (CFG_TC10_FEATURE == 1)
 static int32_t scanCalculateScoreByCu(IN struct ADAPTER *prAdapter,
-	IN struct BSS_DESC *prBssDesc, IN uint8_t ucBssIndex)
+	IN struct BSS_DESC *prBssDesc, enum ENUM_ROAMING_REASON eRoamReason,
+	IN uint8_t ucBssIndex)
 {
 	struct SCAN_INFO *info;
 	struct SCAN_PARAM *param;
@@ -856,9 +868,11 @@ static int32_t scanCalculateScoreByCu(IN struct ADAPTER *prAdapter,
 	uint32_t slot = 0, idle;
 	uint8_t i;
 
-	if (!prBssDesc ||
+	if (eRoamReason == ROAMING_REASON_BEACON_TIMEOUT ||
+	    eRoamReason == ROAMING_REASON_BEACON_TIMEOUT_TX_ERR || !prBssDesc ||
 	    (prBssDesc->prBlack && prBssDesc->prBlack->fgDeauthLastTime))
 		return -1;
+
 #if CFG_SUPPORT_NCHO
 	if (prAdapter->rNchoInfo.fgNCHOEnabled)
 		return -1;
@@ -1120,8 +1134,7 @@ uint16_t scanCalculateScoreByPreference(struct ADAPTER *prAdapter,
 	    struct BSS_DESC *prBssDesc, enum ENUM_ROAMING_REASON eRoamReason)
 {
 #if CFG_SUPPORT_802_11K
-	if (eRoamReason == ROAMING_REASON_BTM ||
-	    eRoamReason == ROAMING_REASON_BTM_DISASSOC) {
+	if (eRoamReason == ROAMING_REASON_BTM) {
 		if (prBssDesc->prNeighbor) {
 			enum ROAM_TYPE eRoamType =
 				roamReasonToType[eRoamReason];
@@ -1386,7 +1399,7 @@ struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
 	struct ROAMING_INFO *roam;
 	enum ROAM_TYPE eRoamType;
 #if (CFG_TC10_FEATURE == 1)
-	int32_t base, delta, goal;
+	int32_t base, goal;
 #endif
 	uint8_t ucAisIdx;
 
@@ -1418,10 +1431,41 @@ struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
 		prConnSettings->eConnectionPolicy, eRoamReason);
 	policy = prConnSettings->eConnectionPolicy;
 #if (CFG_TC10_FEATURE == 1)
-	base = (eRoamReason == ROAMING_REASON_BTM_DISASSOC) ? 6000 :
-		scanCalculateScoreByCu(prAdapter,
-			aisGetTargetBssDesc(prAdapter, ucBssIndex), ucBssIndex);
+	goal = base = scanCalculateScoreByCu(prAdapter,
+		aisGetTargetBssDesc(prAdapter, ucBssIndex),
+		eRoamReason, ucBssIndex);
+	switch (eRoamReason) {
+	case ROAMING_REASON_POOR_RCPI:
+	case ROAMING_REASON_RETRY:
+		goal += base * 20 / 100;
+		break;
+	case ROAMING_REASON_IDLE:
+		goal += base * 1 / 100;
+		break;
+	case ROAMING_REASON_BTM:
+	{
+		struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
+		uint8_t ucRequestMode = 0;
+
+		goal += base * prAdapter->rWifiVar.u4BtmDelta / 100;
+		prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
+		ucRequestMode = prBtmParam->ucRequestMode;
+		if (ucRequestMode &
+			WNM_BSS_TM_REQ_DISASSOC_IMMINENT) {
+			if (prBtmParam->ucDisImmiState ==
+					AIS_BTM_DIS_IMMI_STATE_2)
+				goal = 6000;
+			else if (prBtmParam->ucDisImmiState ==
+					AIS_BTM_DIS_IMMI_STATE_3)
+				goal = 0;
+		}
+		break;
+	}
+	default:
+		break;
+	}
 #endif
+
 try_again:
 	LINK_FOR_EACH_ENTRY(prBssDesc, prEssLink, rLinkEntryEss[ucAisIdx],
 		struct BSS_DESC) {
@@ -1486,35 +1530,15 @@ try_again:
 		}
 
 #if (CFG_TC10_FEATURE == 1)
-		if (base > 0) {
-			if (UNEQUAL_MAC_ADDR(prBssDesc->aucBSSID,
-						prAisBssInfo->aucBSSID)) {
-				u2ScoreTotal = scanCalculateScoreByCu(
-					prAdapter, prBssDesc, ucBssIndex);
-				switch (eRoamReason) {
-				case ROAMING_REASON_POOR_RCPI:
-				case ROAMING_REASON_RETRY:
-					delta = 20;
-					break;
-				case ROAMING_REASON_IDLE:
-					delta = 1;
-					break;
-				default:
-					delta = 0;
-				}
-				goal = base + base * delta / 100;
-				if (u2ScoreTotal < goal) {
-					log_dbg(SCN, WARN,
-					   MACSTR " reason %d, score %d < %d\n",
-					   MAC2STR(prBssDesc->aucBSSID),
-					   eRoamReason, u2ScoreTotal, goal);
-					continue;
-				}
-			} else if (eRoamReason == ROAMING_REASON_BTM_DISASSOC) {
+		if (base > 0 && UNEQUAL_MAC_ADDR(prBssDesc->aucBSSID,
+				prAisBssInfo->aucBSSID)) {
+			u2ScoreTotal = scanCalculateScoreByCu(
+				prAdapter, prBssDesc, eRoamReason, ucBssIndex);
+			if (u2ScoreTotal < goal) {
 				log_dbg(SCN, WARN,
-					MACSTR " reason %d, given zero\n",
+					MACSTR " reason %d, score %d < %d\n",
 					MAC2STR(prBssDesc->aucBSSID),
-					eRoamReason);
+					eRoamReason, u2ScoreTotal, goal);
 				continue;
 			}
 		}

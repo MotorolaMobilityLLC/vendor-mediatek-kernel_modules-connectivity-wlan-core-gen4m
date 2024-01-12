@@ -7992,6 +7992,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4InactiveTimeout = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "InactiveTimeout", ROAMING_INACTIVE_TIMEOUT_SEC);
 
+	prWifiVar->u4BtmDelta = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "BtmDelta", ROAMING_BTM_DELTA);
+	prWifiVar->u4BtmDisTimerThreshold = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "BtmDisTimerThreshold", AIS_BTM_DIS_IMMI_TIMEOUT);
+
 #if ARP_MONITER_ENABLE
 	prWifiVar->uArpMonitorNumber = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "ArpMonitorNumber", 20);

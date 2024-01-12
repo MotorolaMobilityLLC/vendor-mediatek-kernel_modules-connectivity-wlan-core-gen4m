@@ -76,7 +76,6 @@
  */
 #define AIS_ROAMING_CONNECTION_TRIAL_LIMIT  2
 #define AIS_JOIN_TIMEOUT                    7
-#define AIS_BTM_DISASSOC_IMMINENT_TIMEOUT   10 /* 10 sec */
 
 #if (CFG_SUPPORT_HE_ER == 1)
 #define AP_TX_POWER		  20
@@ -1649,9 +1648,15 @@ struct BSS_DESC *aisSearchBssDescByScore(
 	OUT struct BSS_DESC_SET *set)
 {
 	struct ROAMING_INFO *roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
-	return scanSearchBssDescByScoreForAis(prAdapter,
-			roam->eReason, ucBssIndex, set);
+	/* don't use cached scan list for BTO/deauth at 1st trial */
+	if (aisFsmIsInProcessPostpone(prAdapter, ucBssIndex) &&
+		ais->ucConnTrialCount == 0)
+		return NULL;
+	else
+		return scanSearchBssDescByScoreForAis(prAdapter,
+				roam->eReason, ucBssIndex, set);
 }
 
 uint8_t aisNeedTargetScan(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
@@ -1793,8 +1798,16 @@ enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(IN struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *ais;
 	enum ENUM_AIS_STATE state = AIS_STATE_NORMAL_TR;
 	struct BSS_DESC *prBssDesc = prBssDescSet->prMainBssDesc;
+	struct BSS_TRANSITION_MGT_PARAM *btm;
+	uint8_t mode = 0;
+	struct ROAMING_INFO *roam;
+	struct BSS_INFO *aisBssInfo;
 
 	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	aisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	btm =  aisGetBTMParam(prAdapter, ucBssIndex);
+	mode = btm->ucRequestMode;
 
 	if (prBssDesc) {
 		DBGLOG(ROAMING, INFO,
@@ -1805,7 +1818,31 @@ enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(IN struct ADAPTER *prAdapter,
 			ucBssIndex);
 	}
 
-	if (ais->fgTargetChnlScanIssued) {
+	if (roam->eReason == ROAMING_REASON_BTM) {
+		wnmSendBTMResponse(prAdapter, NULL,
+			WNM_BSS_TM_REJECT_NO_SUITABLE_CANDIDATES,
+			MBO_TRANSITION_REJECT_REASON_RSSI,
+			ucBssIndex);
+		if (mode & WNM_BSS_TM_REQ_DISASSOC_IMMINENT) {
+			if (btm->ucDisImmiState == AIS_BTM_DIS_IMMI_STATE_1) {
+				btm->ucDisImmiState = AIS_BTM_DIS_IMMI_STATE_2;
+				ais->u4SleepInterval =
+				     btm->u4ReauthDelay -
+				     prAdapter->rWifiVar.u4BtmDisTimerThreshold;
+				ais->fgTargetChnlScanIssued = TRUE;
+				state = AIS_STATE_WAIT_FOR_NEXT_SCAN;
+				DBGLOG(AIS, INFO, "DIS_IMMI_STATE 1 -> 2\n");
+				goto skip_roam_fail;
+			} else if (btm->ucDisImmiState ==
+					AIS_BTM_DIS_IMMI_STATE_2) {
+				btm->ucDisImmiState = AIS_BTM_DIS_IMMI_STATE_3;
+				ais->fgTargetChnlScanIssued = FALSE;
+				state = AIS_STATE_LOOKING_FOR;
+				DBGLOG(AIS, INFO, "DIS_IMMI_STATE 2 -> 3\n");
+				goto skip_roam_fail;
+			}
+		}
+	} else if (ais->fgTargetChnlScanIssued) {
 		/* if target channel scan has issued, and no
 		 * roaming target is found, need to do full scan
 		 */
@@ -1815,15 +1852,12 @@ enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(IN struct ADAPTER *prAdapter,
 		state = AIS_STATE_LOOKING_FOR;
 		goto skip_roam_fail;
 	}
+
 #if CFG_SUPPORT_ROAMING
 	roamingFsmRunEventFail(prAdapter,
 		ROAMING_FAIL_REASON_NOCANDIDATE, ucBssIndex);
 #endif /* CFG_SUPPORT_ROAMING */
 
-	wnmSendBTMResponse(prAdapter, NULL,
-		WNM_BSS_TM_REJECT_NO_SUITABLE_CANDIDATES,
-		MBO_TRANSITION_REJECT_REASON_RSSI,
-		ucBssIndex);
 skip_roam_fail:
 	/* We already associated with it go back to NORMAL_TR */
 	return state;
@@ -2485,6 +2519,11 @@ send_msg:
 				eNextState = AIS_STATE_REQ_REMAIN_ON_CHANNEL;
 				fgIsTransition = TRUE;
 			}
+			/* reset disconnect reason otherwise
+			 * aisSearchHandleBssDesc uses it wrongly
+			 */
+			prAisFsmInfo->ucReasonOfDisconnect =
+				DISCONNECT_REASON_CODE_RESERVED;
 
 			/* reset disconnect reason otherwise
 			 * aisSearchHandleBssDesc uses it wrongly
@@ -2637,10 +2676,17 @@ void aisFsmQueryCandidates(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	struct ROAMING_INFO *prRoamingFsmInfo;
 	struct STA_RECORD *prStaRec;
 	struct BSS_DESC *prBssDesc;
+	struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
 
 	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
+	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
+
+	if (prBtmParam->fgPendingResponse) {
+		DBGLOG(WNM, WARN, "BTM: don't query when handling\n");
+		return;
+	}
 
 	if (!prBssDesc->fgQueriedCandidates) {
 		prBssDesc->fgQueriedCandidates = TRUE;
@@ -2653,7 +2699,7 @@ void aisFsmQueryCandidates(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 #if CFG_SUPPORT_802_11V_BTM_OFFLOAD
 		else if (prStaRec && prStaRec->fgSupportBTM)
 			wnmSendBTMQueryFrame(prAdapter,
-				prStaRec, BSS_TRANSITION_LOAD_BALANCING);
+				prStaRec, BSS_TRANSITION_BETTER_AP_FOUND);
 #endif
 	}
 #endif
@@ -6989,17 +7035,32 @@ void aisFsmRunEventBssTransition(IN struct ADAPTER *prAdapter,
 	/* update cached channel list */
 	scanGetCurrentEssChnlList(prAdapter, ucBssIndex);
 
-	if (ucRequestMode & WNM_BSS_TM_REQ_DISASSOC_IMMINENT &&
-	    prBtmParam->u2DisassocTimer != 0 &&
-	    prBtmParam->u2DisassocTimer * prBssDesc->u2BeaconInterval <
-	    SEC_TO_MSEC(AIS_BTM_DISASSOC_IMMINENT_TIMEOUT) +
-	    prAisSpecificBssInfo->ucCurEssChnlInfoNum *
-	    prBssDesc->u2BeaconInterval)
-		prRoamingFsmInfo->eReason = ROAMING_REASON_BTM_DISASSOC;
-	else
-		prRoamingFsmInfo->eReason = ROAMING_REASON_BTM;
+	if (ucRequestMode & WNM_BSS_TM_REQ_DISASSOC_IMMINENT) {
+		struct AIS_BLACKLIST_ITEM *blk =
+			aisAddBlacklist(prAdapter, prBssDesc);
 
-	DBGLOG(AIS, INFO, "BTM req roam start\n");
+		if (blk) {
+			blk->fgDisallowed = TRUE;
+			blk->u2DisallowSec =
+				MSEC_TO_SEC(prBtmParam->u4ReauthDelay);
+			DBGLOG(WNM, INFO, "Disallow Sec: %d",
+				blk->u2DisallowSec);
+		}
+		if (prBtmParam->u4ReauthDelay >
+			prAdapter->rWifiVar.u4BtmDisTimerThreshold)
+			prBtmParam->ucDisImmiState = AIS_BTM_DIS_IMMI_STATE_1;
+		else
+			prBtmParam->ucDisImmiState = AIS_BTM_DIS_IMMI_STATE_2;
+
+
+	} else {
+		prBtmParam->ucDisImmiState = AIS_BTM_DIS_IMMI_STATE_0;
+	}
+
+	prRoamingFsmInfo->eReason = ROAMING_REASON_BTM;
+
+	DBGLOG(AIS, INFO, "BTM req roam start, DIS_IMMI_STATE %d\n",
+		prBtmParam->ucDisImmiState);
 	roamingFsmSteps(prAdapter, ROAMING_STATE_DISCOVERY, ucBssIndex);
 
 	return;
@@ -7162,9 +7223,10 @@ void aisResetNeighborApList(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	struct LINK_MGMT *prAPlist = &prAisSpecBssInfo->rNeighborApList;
 
 	LINK_MERGE_TO_TAIL(&prAPlist->rFreeLink, &prAPlist->rUsingLink);
+	DBGLOG(AIS, INFO, "reset done");
 }
 
-void aisCheckNeighborApValidity(IN struct ADAPTER *prAdapter,
+uint8_t aisCheckNeighborApValidity(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo =
@@ -7175,15 +7237,20 @@ void aisCheckNeighborApValidity(IN struct ADAPTER *prAdapter,
 	/* If candidate list is not timeout, just return */
 	if (rCurrent <= prAisSpecBssInfo->rNeiApRcvTime ||
 	    rCurrent - prAisSpecBssInfo->rNeiApRcvTime <
-	    prAisSpecBssInfo->u4NeiApValidInterval)
-		return;
+	    prAisSpecBssInfo->u4NeiApValidInterval) {
+		DBGLOG(AIS, TRACE, "valid, Cur %u, Rcv %u, Valid Int %u\n",
+			rCurrent, prAisSpecBssInfo->rNeiApRcvTime,
+			prAisSpecBssInfo->u4NeiApValidInterval);
+		return TRUE;
+	}
 
 	if (prAPlist->rUsingLink.u4NumElem > 0) {
 		DBGLOG(AIS, INFO, "timeout, Cur %u, Rcv %u, Valid Int %u\n",
 			rCurrent, prAisSpecBssInfo->rNeiApRcvTime,
 			prAisSpecBssInfo->u4NeiApValidInterval);
-		LINK_MERGE_TO_TAIL(&prAPlist->rFreeLink, &prAPlist->rUsingLink);
+		aisResetNeighborApList(prAdapter, ucBssIndex);
 	}
+	return FALSE;
 }
 
 #endif
