@@ -4020,6 +4020,11 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 
 #define CMD_GET_BAINFO           "GET_BAINFO"
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+#define CMD_PRESET_LINKID	"PRESET_LINKID"
+#define CMD_SET_ML_PROBEREQ	"SET_ML_PROBEREQ"
+#endif
+
 static uint8_t g_ucMiracastMode = MIRACAST_MODE_OFF;
 
 struct cmd_tlv {
@@ -5695,6 +5700,139 @@ int priv_driver_get_bainfo(IN struct net_device *prNetDev,
 	}
 	return i4BytesWritten;
 }
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+int priv_driver_preset_linkid(IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	uint32_t u4Param = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t i4BytesWritten = -1;
+	uint32_t u4SetInfoLen = 0;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(INIT, TRACE, "command is %s\n", pcCommand);
+	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 2) {
+		DBGLOG(REQ, TRACE, "argc is %i, %s\n", i4Argc,
+		       apcArgv[1]);
+		i4BytesWritten = kalkStrtou32(apcArgv[1], 0, &u4Param);
+		if (i4BytesWritten) {
+			DBGLOG(REQ, ERROR, "parse u4Param error %d\n",
+			       i4BytesWritten);
+			i4BytesWritten = -1;
+		} else {
+			DBGLOG(INIT, TRACE, "set link id %d\n", u4Param);
+			rStatus = kalIoctl(prGlueInfo,
+				wlanoidPresetLinkId,
+				&u4Param, sizeof(uint32_t),
+				FALSE, FALSE, TRUE, &u4SetInfoLen);
+
+			if (rStatus != WLAN_STATUS_SUCCESS)
+				DBGLOG(INIT, ERROR,
+				       "set link id fail 0x%x\n", rStatus);
+			else
+				DBGLOG(INIT, TRACE,
+				       "set link id successed\n");
+		}
+	} else {
+		DBGLOG(REQ, ERROR, "set link id failed\n");
+		rStatus = WLAN_STATUS_INVALID_DATA;
+	}
+
+	return rStatus;
+}
+
+int priv_driver_set_ml_probereq(IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t i4Argc = 0;
+	int32_t i4BytesWritten = -1;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
+	uint8_t aucMacAddr[MAC_ADDR_LEN], aucIe[100];
+	uint32_t u4BufLen, rStatus, u4Freq;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(INIT, INFO, "command is %s\n", pcCommand);
+	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	/* check if there is any pending scan/sched_scan not yet finished */
+	if (prGlueInfo->prScanRequest != NULL) {
+		DBGLOG(REQ, ERROR, "prGlueInfo->prScanRequest != NULL\n");
+		return -EINVAL;
+	}
+
+	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 3) {
+		DBGLOG(REQ, INFO, "argc %i, cmd [%s]\n", i4Argc, apcArgv[1]);
+		wlanHwAddrToBin(apcArgv[1], &aucMacAddr[0]);
+
+		i4BytesWritten = kalkStrtou32(apcArgv[2], 0, &u4Freq);
+		if (i4BytesWritten)
+			DBGLOG(REQ, ERROR, "parse ucType error %d\n",
+					i4BytesWritten);
+
+		prScanRequest =
+			kalMemAlloc(sizeof(struct PARAM_SCAN_REQUEST_ADV),
+				VIR_MEM_TYPE);
+
+		if (prScanRequest == NULL) {
+			DBGLOG(REQ, ERROR, "alloc scan request fail\n");
+			return -ENOMEM;
+		}
+		kalMemZero(prScanRequest,
+			   sizeof(struct PARAM_SCAN_REQUEST_ADV));
+		prScanRequest->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
+		kalMemZero(aucIe, 100);
+		beGenerateMlProbeReqIE(aucIe, &prScanRequest->u4IELength, 0);
+		prScanRequest->pucIE = aucIe;
+		DBGLOG(ML, INFO, "Dump ML probe IE\n");
+		DBGLOG_MEM8(ML, INFO, prScanRequest->pucIE,
+				prScanRequest->u4IELength);
+		prScanRequest->arChannel[0].ucChannelNum =
+					nicFreq2ChannelNum(u4Freq * 1000);
+		prScanRequest->ucBssidMatchCh[0] =
+					nicFreq2ChannelNum(u4Freq * 1000);
+		if (u4Freq >= 2412 && u4Freq <= 2484)
+			prScanRequest->arChannel[0].eBand = BAND_2G4;
+		else if (u4Freq >= 5180 && u4Freq <= 5900)
+			prScanRequest->arChannel[0].eBand = BAND_5G;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (u4Freq >= 5955 && u4Freq <= 7115)
+			prScanRequest->arChannel[0].eBand = BAND_6G;
+#endif
+		prScanRequest->u4ChannelNum = 1;
+		prScanRequest->ucBssIndex = 0;
+		prScanRequest->u4ScnFuncMaskExtend |= ENUM_SCN_ML_PROBE;
+		COPY_MAC_ADDR(prScanRequest->aucBssid[0], aucMacAddr);
+		kalMemSet(prScanRequest->ucBssidMatchSsidInd,
+				CFG_SCAN_OOB_MAX_NUM,
+				sizeof(prScanRequest->ucBssidMatchSsidInd));
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetBssidListScanAdv,
+			prScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV),
+			FALSE, FALSE, FALSE, &u4BufLen);
+
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(INIT, ERROR, "fail 0x%x\n", rStatus);
+
+	} else {
+		DBGLOG(REQ, ERROR, "fail invalid data\n");
+		rStatus = WLAN_STATUS_INVALID_DATA;
+	}
+	return rStatus;
+}
+#endif
 
 static int priv_driver_set_test_mode(IN struct net_device *prNetDev,
 				     IN char *pcCommand, IN int i4TotalLen)
@@ -16400,6 +16538,10 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_GET_BAINFO, priv_driver_get_bainfo},
 #if (CFG_SUPPORT_TSF_SYNC == 1)
 	{CMD_GET_TSF_VALUE, priv_driver_get_tsf_value},
+#endif
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	{CMD_PRESET_LINKID, priv_driver_preset_linkid},
+	{CMD_SET_ML_PROBEREQ, priv_driver_set_ml_probereq},
 #endif
 };
 

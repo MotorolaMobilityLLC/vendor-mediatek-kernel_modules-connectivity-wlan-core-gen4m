@@ -4485,7 +4485,7 @@ wlanoidSetAxBlacklist(IN struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 uint32_t
-wlanoidSetLinkIdForKey(IN struct ADAPTER *prAdapter,
+wlanoidPresetLinkId(IN struct ADAPTER *prAdapter,
 		     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		     OUT uint32_t *pu4SetInfoLen);
 #endif

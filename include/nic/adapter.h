@@ -749,7 +749,7 @@ struct WIFI_VAR {
 	uint8_t ucEhtAmsduInAmpduTx;
 	uint8_t ucEhtAmsduInAmpduRx;
 	uint8_t ucStaEhtBfee;
-	uint8_t ucLinkIdForKey;
+	uint8_t ucPresetLinkId;
 	uint8_t ucMldLinkMax;
 #endif
 	uint8_t ucApHt;
