@@ -9031,20 +9031,23 @@ p2pFunDetermineChnlSwitchPolicy(struct ADAPTER *prAdapter,
 		struct RF_CHANNEL_INFO *prNewChannelInfo)
 {
 	enum ENUM_CHNL_SWITCH_POLICY ePolicy = CHNL_SWITCH_POLICY_CSA;
-	struct BSS_INFO *prBssInfo;
-
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	struct BSS_INFO *prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	struct LINK *prClientList;
 
 	if (!prBssInfo || !IS_BSS_APGO(prBssInfo))
 		return ePolicy;
 
+	prClientList = &prBssInfo->rStaRecOfClientList;
+	if (!prClientList || prClientList->u4NumElem <= 0)
+		return CHNL_SWITCH_POLICY_NO_CLIENT;
+
 	if (!p2pFuncIsAPMode(prAdapter->rWifiVar.
-			prP2PConnSettings[prBssInfo->u4PrivateData])) {
+			prP2PConnSettings[prBssInfo->u4PrivateData]))
 		return ePolicy;
-	}
 
 	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucCsaDeauthClient))
 		return ePolicy;
+
 #if defined(CFG_SAP_CROSS_BAND_CSA)
 	DBGLOG(P2P, INFO, "cross band csa enable\n");
 
@@ -9068,8 +9071,8 @@ p2pFunDetermineChnlSwitchPolicy(struct ADAPTER *prAdapter,
 #endif
 		(prBssInfo && prBssInfo->eBand != prNewChannelInfo->eBand))
 		ePolicy = CHNL_SWITCH_POLICY_DEAUTH;
-#endif
 #endif /* CFG_SEND_DEAUTH_DURING_CHNL_SWITCH */
+#endif /* defined(CFG_SAP_CROSS_BAND_CSA) */
 
 	return ePolicy;
 }
@@ -9170,6 +9173,9 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 #endif
 		/* Update Beacon */
 		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+		break;
+	case CHNL_SWITCH_POLICY_NO_CLIENT:
+		p2pFunChnlSwitchNotifyDone(prAdapter);
 		break;
 	default:
 		DBGLOG(P2P, WARN, "invalid policy for channel switch: %d\n",
