@@ -675,7 +675,46 @@ void nic_txd_v3_compose(
 	}
 }
 
+#if CFG_SUPPORT_MLR
+static uint8_t setMlrFixedRate(struct MSDU_INFO *prMsduInfo)
+{
+	uint8_t ucRateIdx;
+
+	if (prMsduInfo->eSrc == TX_PACKET_OS) {
+		ucRateIdx = FIXED_RATE_INDEX_MLR_MCS0_SPE_IDX_FAVOR_WTBL;
+	} else if (prMsduInfo->eSrc == TX_PACKET_MGMT) {
+		ucRateIdx = FIXED_RATE_INDEX_MLR_MCS0_SPE_IDX_FAVOR_TXD;
+	} else {
+		ucRateIdx = FIXED_RATE_INDEX_OFDM_6M;
+		DBGLOG(TX, WARN, "MLR rate - Don't use MLR rate\n");
+	}
+	return ucRateIdx;
+}
+#endif
+
+static uint8_t getSpeIdx(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo)
+{
+	uint8_t ucSpeIdx = 0;
+#if ((CFG_SISO_SW_DEVELOP == 1) || (CFG_SUPPORT_SPE_IDX_CONTROL == 1))
+	struct BSS_INFO *prBssInfo;
+	enum ENUM_WF_PATH_FAVOR_T eWfPathFavor;
+
+	/* Update spatial extension index setting */
+	eWfPathFavor = wlanGetAntPathType(prAdapter, ENUM_WF_NON_FAVOR);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+
+	if (prBssInfo) {
+		ucSpeIdx = wlanGetSpeIdx(prAdapter, prBssInfo->ucBssIndex,
+				eWfPathFavor);
+	}
+#endif
+	return ucSpeIdx;
+}
+
 void nic_txd_v3_set_pkt_fixed_rate_option(
+	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
 	uint16_t u2RateCode,
 	uint8_t ucBandwidth,
@@ -683,58 +722,72 @@ void nic_txd_v3_set_pkt_fixed_rate_option(
 	u_int8_t fgDynamicBwRts)
 {
 	uint8_t ucRateIdx;
+	uint8_t ucSpeIdx = 0;
+
+	ucSpeIdx = getSpeIdx(prAdapter, prMsduInfo);
 
 	/* Convert rate code to pre-defined rate index */
-	switch (u2RateCode) {
-	case RATE_CCK_1M_LONG:
-		ucRateIdx = FIXED_RATE_INDEX_CCK_1M;
-		break;
+	if (ucSpeIdx == 0x18) {
+		switch (u2RateCode) {
+		case RATE_CCK_1M_LONG: /* 0x0000 */
+			ucRateIdx = FIXED_RATE_INDEX_CCK_1M_SPE_IDX_FAVOR_TXD;
+			break;
 
-	case RATE_OFDM_6M:
-		ucRateIdx = FIXED_RATE_INDEX_OFDM_6M;
-		break;
+		case RATE_OFDM_6M: /* 0x004B */
+			ucRateIdx = FIXED_RATE_INDEX_OFDM_6M_SPE_IDX_FAVOR_TXD;
+			break;
 
-	case RATE_OFDM_24M:
-		ucRateIdx = FIXED_RATE_INDEX_OFDM_24M;
-		break;
+		case RATE_MLR_1_5M: /* 0x0140 */
+			ucRateIdx = FIXED_RATE_INDEX_MLR_MCS0_SPE_IDX_FAVOR_TXD;
+			break;
 
-	case RATE_MM_MCS_0:
-		ucRateIdx = FIXED_RATE_INDEX_HT_MCS0;
-		break;
+		default:
+			ucRateIdx = FIXED_RATE_INDEX_OFDM_6M_SPE_IDX_FAVOR_TXD;
+			DBGLOG(TX, WARN,
+				"No mapped rate speidx=0x%02x, 0x%04x\n",
+				ucSpeIdx, u2RateCode);
+			break;
+		}
+	} else {
+		switch (u2RateCode) {
+		case RATE_CCK_1M_LONG: /* 0x0000 */
+			ucRateIdx = FIXED_RATE_INDEX_CCK_1M;
+			break;
 
-	case RATE_VHT_MCS_0:
-		ucRateIdx = FIXED_RATE_INDEX_VHT_MCS0;
-		break;
+		case RATE_OFDM_6M: /* 0x004B */
+			ucRateIdx = FIXED_RATE_INDEX_OFDM_6M;
+			break;
+
+		case RATE_OFDM_24M: /* 0x0049 */
+			ucRateIdx = FIXED_RATE_INDEX_OFDM_24M;
+			break;
+
+		case RATE_MM_MCS_0: /* 0x0080 */
+			ucRateIdx = FIXED_RATE_INDEX_HT_MCS0;
+			break;
+
+		case RATE_VHT_MCS_0: /* 0x0100 */
+			ucRateIdx = FIXED_RATE_INDEX_VHT_MCS0;
+			break;
 
 #if CFG_SUPPORT_MLR
-	case RATE_MLR_1_5M:
-	case RATE_MLR_3M:
-		if (prMsduInfo->eSrc == TX_PACKET_OS) {
-			ucRateIdx =
-				FIXED_RATE_INDEX_MLR_MCS0_SPE_IDX_FAVOR_WTBL;
-		} else if (prMsduInfo->eSrc == TX_PACKET_MGMT) {
-			ucRateIdx = FIXED_RATE_INDEX_MLR_MCS0_SPE_IDX_FAVOR_TXD;
-		} else {
-			ucRateIdx = FIXED_RATE_INDEX_OFDM_6M;
-			DBGLOG(TX, WARN, "MLR rate - Don't use MLR rate\n");
-		}
-		break;
+		case RATE_MLR_1_5M: /* 0x0140 */
+		case RATE_MLR_3M: /* 0x0141 */
+			ucRateIdx = setMlrFixedRate(prMsduInfo);
+			break;
 #endif
 
-	/**
-	 * TODO: other rates?
-	 * RATE_CCK_*M_LONG
-	 * RATE_OFDM_*M
-	 * RATE_HE_ER_DCM_MCS_0
-	 * RATE_HE_ER_TONE_106_MCS_0
-	 */
-
-	default:
-		ucRateIdx = FIXED_RATE_INDEX_OFDM_6M;
-		DBGLOG(TX, WARN, "No mapped rate %02x\n", u2RateCode);
-		break;
+		default:
+			ucRateIdx = FIXED_RATE_INDEX_OFDM_6M;
+			DBGLOG(TX, WARN,
+				"No mapped rate speidx=0x%02x, 0x%04x\n",
+				ucSpeIdx, u2RateCode);
+			break;
+		}
 	}
-	DBGLOG(TX, TRACE, "0x%02x -> %u\n", u2RateCode, ucRateIdx);
+
+	DBGLOG(TX, TRACE, "SpeIdx=0x%02x, RateCode=0x%04x -> RateIdx=%u\n",
+		ucSpeIdx, u2RateCode, ucRateIdx);
 
 	prMsduInfo->u4FixedRateOption = ucRateIdx;
 	prMsduInfo->ucRateMode = MSDU_RATE_MODE_MANUAL_DESC;
