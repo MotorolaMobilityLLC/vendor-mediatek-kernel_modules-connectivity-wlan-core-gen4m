@@ -1311,7 +1311,7 @@ uint32_t mltwtFillTWTElementPerLinkDistinct(
 		{
 			prMLTWTBuf = (struct IE_ML_TWT_T *)(pucIE + u2Offset);
 
-			prTWTParams = &(prTWTFlow->rTWTPeerParams);
+			prTWTParams = &(prTWTFlow->rTWTParams);
 
 			/* Add TWT element */
 			prMLTWTBuf->ucId = ELEM_ID_TWT;
