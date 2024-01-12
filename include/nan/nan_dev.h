@@ -16,8 +16,6 @@ enum ENUM_MODULE {
 	ENUM_NAN_MODULE_NUM
 };
 
-extern uint8_t g_ucNanWmmQueIdx;
-
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -29,9 +27,9 @@ void nanDevFsmUninit(struct ADAPTER *prAdapter, uint8_t ucIdx);
 struct _NAN_SPECIFIC_BSS_INFO_T *
 nanGetSpecificBssInfo(struct ADAPTER *prAdapter,
 		      uint8_t eIndex);
-struct _NAN_SPECIFIC_BSS_INFO_T *
-nanGetSpecificBssInfobyBand(struct ADAPTER *prAdapter,
-				enum ENUM_BAND eBand);
+uint8_t
+nanGetBssIdxbyBand(struct ADAPTER *prAdapter,
+		      enum ENUM_BAND eBand);
 
 void nanDevSetMasterPreference(struct ADAPTER *prAdapter,
 			       uint8_t ucMasterPreference);
@@ -52,6 +50,10 @@ uint32_t nanDevSendEnableRequestToCnm(struct ADAPTER *prAdapter);
 uint32_t nanDevSendAbortRequestToCnm(struct ADAPTER *prAdapter);
 void nanDevSendEnableRequest(struct ADAPTER *prAdapter,
 				struct MSG_HDR *prMsgHdr);
+void
+nanDevSetDWInterval(struct ADAPTER *prAdapter,
+			  uint8_t ucDWInterval);
+
 /*========================= FUNCTIONs ============================*/
 #endif
 #endif /* __NAN_DEV_H__ */

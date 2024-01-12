@@ -6,7 +6,6 @@
 #include "precomp.h"
 #include "nan/nan_sec.h"
 
-
 uint8_t
 nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
@@ -46,22 +45,31 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 			      prNANInfo->prDevHandler->dev_addr);
 		prNANSpecInfo->ucBssIndex = prnanBssInfo->ucBssIndex;
 		prNANSpecInfo->u4ModuleUsed = 0;
-		prNANSpecInfo->fgIsNdp = 0;
 		prnanBssInfo->eCurrentOPMode = OP_MODE_NAN;
 
-		eNanMode = NAN_MODE_MIXED_11BG;
+#if (CFG_SUPPORT_NAN_DBDC == 1)
+		if (ucIdx == NAN_BSS_INDEX_BAND1)
+			eNanMode = NAN_MODE_11A;
+		else
+			eNanMode = NAN_MODE_MIXED_11BG;
+#else
+		eNanMode = NAN_MODE_11A;
+#endif
 		prLegacyModeAttr = &rNonHTNanModeAttr[eNanMode];
 		ucLegacyPhyTp =
 			(uint8_t)prLegacyModeAttr->ePhyTypeIndex;
 		prLegacyPhyAttr = &rNonHTPhyAttributes[ucLegacyPhyTp];
 		prWifiVar = &prAdapter->rWifiVar;
 
-#if (CFG_SUPPORT_DBDC == 1)
+#if (CFG_SUPPORT_NAN_DBDC == 1)
 		if (ucIdx == NAN_BSS_INDEX_BAND1)
 			prnanBssInfo->eBand = BAND_5G;
 		else
-#endif
 			prnanBssInfo->eBand = BAND_2G4;
+#else
+		prnanBssInfo->eBand = BAND_5G;
+#endif
+
 
 		prnanBssInfo->u4PrivateData = 0;
 		prnanBssInfo->ucSSIDLen = 0;
@@ -78,7 +86,7 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 
 		cnmWmmIndexDecision(prAdapter, prnanBssInfo);
 
-#if (CFG_SUPPORT_DBDC == 1)
+#if (CFG_SUPPORT_NAN_DBDC == 1)
 		if (ucIdx == NAN_BSS_INDEX_BAND1) {
 #if (CFG_SUPPORT_802_11AX == 1)
 			prnanBssInfo->ucPhyTypeSet =
@@ -89,16 +97,23 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 				prWifiVar->ucAvailablePhyTypeSet &
 				PHY_TYPE_SET_802_11ANAC;
 #endif
-		} else {
+		} else
 #endif
+		{
 #if (CFG_SUPPORT_802_11AX == 1)
 			prnanBssInfo->ucPhyTypeSet =
 				prWifiVar->ucAvailablePhyTypeSet &
 				PHY_TYPE_SET_802_11ABGNACAX;
 #else
+#if (CFG_SUPPORT_NAN_DBDC == 1)
 			prnanBssInfo->ucPhyTypeSet =
 				prWifiVar->ucAvailablePhyTypeSet &
 				PHY_TYPE_SET_802_11BGN;
+#else
+			prnanBssInfo->ucPhyTypeSet =
+				prWifiVar->ucAvailablePhyTypeSet &
+				PHY_TYPE_SET_802_11ANAC;
+#endif
 #endif
 		}
 
@@ -129,24 +144,29 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 		prnanBssInfo->eGfOperationMode = GF_MODE_DISALLOWED;
 		prnanBssInfo->eRifsOperationMode = RIFS_MODE_DISALLOWED;
 
-#if (CFG_SUPPORT_DBDC == 1)
+#if (CFG_SUPPORT_NAN_DBDC == 1)
 		if (ucIdx == NAN_BSS_INDEX_BAND1)
 			prnanBssInfo->ucPrimaryChannel = 149;
 		else
-#endif
 			prnanBssInfo->ucPrimaryChannel = 6;
+#else
+		prnanBssInfo->ucPrimaryChannel = 149;
+#endif
+
 
 		prnanBssInfo->eBssSCO = CHNL_EXT_SCN;
 		prnanBssInfo->ucHtOpInfo1 = 0;
 		prnanBssInfo->u2HtOpInfo2 = 0;
 		prnanBssInfo->u2HtOpInfo3 = 0;
 
-#if (CFG_SUPPORT_DBDC == 1)
+#if (CFG_SUPPORT_NAN_DBDC == 1)
 		if (ucIdx == NAN_BSS_INDEX_BAND1)
 			prnanBssInfo->ucVhtChannelWidth = CW_80MHZ;
 		else
-#endif
 			prnanBssInfo->ucVhtChannelWidth = CW_20_40MHZ;
+#else
+		prnanBssInfo->ucVhtChannelWidth = CW_80MHZ;
+#endif
 
 		prnanBssInfo->ucVhtChannelFrequencyS1 = 0;
 		prnanBssInfo->ucVhtChannelFrequencyS2 = 0;
@@ -171,11 +191,13 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 			prnanBssInfo->aucAllSupportedRates,
 			&prnanBssInfo->ucAllSupportedRatesLen);
 
+#if (CFG_SUPPORT_802_11AX == 1)
 		/* Set DBRTS to 0x3FF as defalt */
 		prnanBssInfo->ucHeOpParams[0] |=
 			HE_OP_PARAM0_TXOP_DUR_RTS_THRESHOLD_MASK;
 		prnanBssInfo->ucHeOpParams[1] |=
 			HE_OP_PARAM1_TXOP_DUR_RTS_THRESHOLD_MASK;
+#endif
 
 		/* Activate NAN BSS */
 		if (!IS_BSS_ACTIVE(
@@ -208,8 +230,6 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 			prnanBssInfo->eConnectionState
 				= MEDIA_STATE_CONNECTED;
 
-			nicQmUpdateWmmParms(prAdapter,
-					    prnanBssInfo->ucBssIndex);
 		}
 	}
 
@@ -263,20 +283,22 @@ nanDevFsmUninit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 		nicUpdateBss(prAdapter, prnanBssInfo->ucBssIndex);
 
 		cnmFreeBssInfo(prAdapter, prnanBssInfo);
-
-		g_ucNanWmmQueIdx = 0;
-
 	}
 } /* p2pDevFsmUninit */
+
 struct _NAN_SPECIFIC_BSS_INFO_T *
-nanGetSpecificBssInfo(struct ADAPTER *prAdapter,
-		      uint8_t eIndex) {
+nanGetSpecificBssInfo(
+	struct ADAPTER *prAdapter,
+	uint8_t eIndex)
+{
 	return prAdapter->rWifiVar.aprNanSpecificBssInfo[eIndex];
 }
 
-struct _NAN_SPECIFIC_BSS_INFO_T *
-nanGetSpecificBssInfobyBand(struct ADAPTER *prAdapter,
-				enum ENUM_BAND eBand) {
+uint8_t
+nanGetBssIdxbyBand(
+	struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand)
+{
 	uint8_t ucIdx = 0;
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo;
 	struct BSS_INFO *prBssInfo;
@@ -286,7 +308,7 @@ nanGetSpecificBssInfobyBand(struct ADAPTER *prAdapter,
 		DBGLOG(NAN, WARN, "no band info\n");
 		prNANSpecInfo = nanGetSpecificBssInfo(
 				prAdapter, NAN_BSS_INDEX_BAND0);
-		return prNANSpecInfo;
+		return prNANSpecInfo->ucBssIndex;
 	}
 
 	for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
@@ -299,13 +321,15 @@ nanGetSpecificBssInfobyBand(struct ADAPTER *prAdapter,
 			break;
 	}
 
-	return prNANSpecInfo;
-
+	return prNANSpecInfo->ucBssIndex;
 }
 
 void
-nanDevCommonSetCb(struct ADAPTER *prAdapter, struct CMD_INFO *prCmdInfo,
-		  uint8_t *pucEventBuf) {
+nanDevCommonSetCb(
+	struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo,
+	uint8_t *pucEventBuf)
+{
 
 	if (prAdapter == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prAdapter is NULL\n", __func__);
@@ -319,8 +343,10 @@ nanDevCommonSetCb(struct ADAPTER *prAdapter, struct CMD_INFO *prCmdInfo,
 }
 
 void
-nanDevSetMasterPreference(struct ADAPTER *prAdapter,
-			  uint8_t ucMasterPreference) {
+nanDevSetMasterPreference(
+	struct ADAPTER *prAdapter,
+	uint8_t ucMasterPreference)
+{
 	uint32_t rStatus;
 	void *prCmdBuffer;
 	uint32_t u4CmdBufferLen;
@@ -698,14 +724,20 @@ nanDevSendAbortRequestToCnm(struct ADAPTER *prAdapter)
 }
 
 void
-nanDevSendEnableRequest(struct ADAPTER *prAdapter,
-		     struct MSG_HDR *prMsgHdr)
+nanDevSendEnableRequest(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr)
 {
-	struct NanEnableRequest rEnableReq;
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
 		(struct _NAN_SPECIFIC_BSS_INFO_T *)NULL;
 	struct BSS_INFO *prnanBssInfo = (struct BSS_INFO *)NULL;
 	uint8_t ucIdx;
+	struct AC_QUE_PARMS *prACQueParms;
+	enum ENUM_WMM_ACI eAci;
+	uint8_t auCWmin[WMM_AC_INDEX_NUM] = { 4, 4, 3, 2 };
+	uint8_t auCWmax[WMM_AC_INDEX_NUM] = { 10, 10, 4, 3 };
+	uint8_t auAifs[WMM_AC_INDEX_NUM] = { 3, 7, 2, 2 };
+	uint8_t auTxop[WMM_AC_INDEX_NUM] = { 0, 0, 94, 47 };
 
 	/** Update BSS Info and set BSS to connected state */
 	for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
@@ -722,21 +754,84 @@ nanDevSendEnableRequest(struct ADAPTER *prAdapter,
 		prnanBssInfo->eConnectionState = MEDIA_STATE_CONNECTED;
 
 		nicUpdateBss(prAdapter, prnanBssInfo->ucBssIndex);
+
+		/* Update AC WMM Parm with correct BN info in BSSInfo */
+		prACQueParms = prnanBssInfo->arACQueParms;
+
+		for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
+
+			prACQueParms[eAci].ucIsACMSet = FALSE;
+			prACQueParms[eAci].u2Aifsn = auAifs[eAci];
+			prACQueParms[eAci].u2CWmin = BIT(auCWmin[eAci]) - 1;
+			prACQueParms[eAci].u2CWmax = BIT(auCWmax[eAci]) - 1;
+			prACQueParms[eAci].u2TxopLimit = auTxop[eAci];
+		}
+		nicQmUpdateWmmParms(prAdapter,
+			prnanBssInfo->ucBssIndex);
 	}
 
-	/** Send NAN enable request to FW */
-	kalMemZero(&rEnableReq, sizeof(struct NanEnableRequest));
-	rEnableReq.master_pref = prAdapter->rWifiVar.ucMasterPref;
-	rEnableReq.config_random_factor_force = 0;
-	rEnableReq.random_factor_force_val = 0;
-	rEnableReq.config_hop_count_force = 0;
-	rEnableReq.hop_count_force_val = 0;
-	rEnableReq.config_5g_channel = prAdapter->rWifiVar.ucConfig5gChannel;
-	rEnableReq.channel_5g_val = prAdapter->rWifiVar.ucChannel5gVal;
-
-	nanDevEnableRequest(prAdapter, &rEnableReq);
+	/** Set complete for mtk_cfg80211_vendor_nan send nan enable */
+	complete(&prAdapter->prGlueInfo->rNanHaltComp);
 
 	nanDevSendAbortRequestToCnm(prAdapter);
 
 	cnmMemFree(prAdapter, prMsgHdr);
 }
+
+void nanDevSetDWInterval(
+	struct ADAPTER *prAdapter,
+	uint8_t ucDWInterval)
+{
+	uint32_t rStatus;
+	void *prCmdBuffer;
+	uint32_t u4CmdBufferLen;
+	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
+	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
+	struct _NAN_CMD_DW_INTERVAL_T *prCmdNanDWInterval = NULL;
+
+	u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
+			 sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +
+			 sizeof(struct _NAN_CMD_DW_INTERVAL_T);
+	prCmdBuffer = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4CmdBufferLen);
+
+	if (!prCmdBuffer) {
+		DBGLOG(CNM, ERROR, "Memory allocation fail\n");
+		cnmMemFree(prAdapter, prCmdBuffer);
+		return;
+	}
+
+	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)prCmdBuffer;
+
+	prTlvCommon->u2TotalElementNum = 0;
+
+	rStatus =
+		nicAddNewTlvElement(NAN_CMD_SET_DW_INTERVAL,
+				    sizeof(struct _NAN_CMD_DW_INTERVAL_T),
+				    u4CmdBufferLen, prCmdBuffer);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(TX, ERROR, "Add new Tlv element fail\n");
+		cnmMemFree(prAdapter, prCmdBuffer);
+		return;
+	}
+
+	prTlvElement = nicGetTargetTlvElement(1, prCmdBuffer);
+
+	if (prTlvElement == NULL) {
+		DBGLOG(TX, ERROR, "Get target Tlv element fail\n");
+		cnmMemFree(prAdapter, prCmdBuffer);
+		return;
+	}
+
+	prCmdNanDWInterval =
+		(struct _NAN_CMD_DW_INTERVAL_T *)prTlvElement->aucbody;
+	prCmdNanDWInterval->ucDWInterval = ucDWInterval;
+
+	rStatus = wlanSendSetQueryCmd(prAdapter, CMD_ID_NAN_EXT_CMD, TRUE,
+				      FALSE, FALSE, nanDevCommonSetCb,
+				      nicCmdTimeoutCommon, u4CmdBufferLen,
+				      (uint8_t *)prCmdBuffer, NULL, 0);
+
+	cnmMemFree(prAdapter, prCmdBuffer);
+}
+

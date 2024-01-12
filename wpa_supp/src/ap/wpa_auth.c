@@ -12,7 +12,7 @@
  */
 #include "wpa_supp/FourWayHandShake.h"
 
-#if 0
+#ifdef NAN_UNUSED
 #include "wpa_supp/wpaSuppCmdEvt.h"
 #endif
 
@@ -403,7 +403,7 @@ wpa_rekey_gmk(void *eloop_ctx, void *timeout_ctx) {
 		wpa_hexdump_key(MSG_DEBUG, "GMK", wpa_auth->group->GMK,
 				WPA_GMK_LEN);
 	}
-#if 0
+#ifdef NAN_UNUSED
 	if (wpa_auth->conf.wpa_gmk_rekey) {
 		eloop_register_timeout(wpa_auth->conf.wpa_gmk_rekey, 0,
 					wpa_rekey_gmk, wpa_auth, NULL);
@@ -432,7 +432,7 @@ wpa_rekey_gtk(void *eloop_ctx, void *timeout_ctx) {
 		group = next;
 	}
 
-#if 0
+#ifdef NAN_UNUSED
 	if (wpa_auth->conf.wpa_group_rekey) {
 		eloop_register_timeout(wpa_auth->conf.wpa_group_rekey,
 					0, wpa_rekey_gtk, wpa_auth, NULL);
@@ -565,7 +565,7 @@ wpa_init(const u8 *addr, struct wpa_auth_config *conf,
 		return NULL;
 	}
 
-#if 0
+#ifdef NAN_UNUSED
 	if (wpa_auth->conf.wpa_gmk_rekey) {
 		eloop_register_timeout(wpa_auth->conf.wpa_gmk_rekey, 0,
 					wpa_rekey_gmk, wpa_auth, NULL);
@@ -616,7 +616,7 @@ wpa_deinit(struct wpa_authenticator *wpa_auth) {
 		group = group->next;
 		os_free(prev);
 	}
-#if 0
+#ifdef NAN_UNUSED
 /**
 * No need to free wpa_auth,
 * current design auth use global variable not pointer
@@ -720,7 +720,7 @@ wpa_auth_sta_deinit(struct wpa_state_machine *sm) {
 		 * is leaving");
 		 */
 		eloop_cancel_timeout(wpa_rekey_gtk, sm->wpa_auth, NULL);
-#if 0
+#ifdef NAN_UNUSED
 		eloop_register_timeout(0, 500000, wpa_rekey_gtk, sm->wpa_auth,
 					NULL);
 #endif
@@ -1612,7 +1612,7 @@ wpa_verify_key_mic(int akmp, struct wpa_ptk *PTK, u8 *data, size_t data_len) {
 	if (data_len < sizeof(*hdr) + sizeof(*key)) {
 		wpa_printf(
 			MSG_ERROR,
-			"[%s] ERROR! size mis-match, data_len:%zu, hdr+key:%zu\n",
+			"[%s] ERROR! size mis-match, data_len:%d, hdr+key:%d\n",
 			__func__, data_len, sizeof(*hdr) + sizeof(*key));
 		return -1;
 	}
@@ -2022,8 +2022,11 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING) {
 	/*for (;;) {    //Coverity:loop inc unreachable*/
 	while (1) {
 		if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt)) {
+#ifdef NAN_UNUSED
 			pmk = wpa_auth_get_psk(sm->wpa_auth, sm->addr,
 					       sm->p2p_dev_addr, pmk);
+#endif
+			pmk = sm->au1Psk;
 			if (pmk == NULL)
 				break;
 			psk_found = 1;
@@ -2429,7 +2432,7 @@ SM_STEP(WPA_PTK) {
 				SM_ENTER(WPA_PTK, PTKSTART);
 			else
 				wpa_printf(
-					MSG_DEBUG, "[%s] stop moving at %s",
+					MSG_DEBUG, "[%s] stop moving at %d",
 					__func__,
 					aStrWpaAuthPtkState[
 					(u8)sm->wpa_ptk_state]);
@@ -2444,7 +2447,7 @@ SM_STEP(WPA_PTK) {
 				SM_ENTER(WPA_PTK, PTKSTART);
 			else
 				wpa_printf(
-					MSG_DEBUG, "[%s] stop moving at %s",
+					MSG_DEBUG, "[%s] stop moving at %d",
 					__func__,
 					aStrWpaAuthPtkState[
 					(u8)sm->wpa_ptk_state]);
@@ -2470,7 +2473,7 @@ SM_STEP(WPA_PTK) {
 				SM_ENTER(WPA_PTK, PTKINITNEGOTIATING);
 			else
 				wpa_printf(
-					MSG_DEBUG, "[%s] stop moving at %s",
+					MSG_DEBUG, "[%s] stop moving at %d",
 					__func__,
 					aStrWpaAuthPtkState[
 					(u8)sm->wpa_ptk_state]);
@@ -2914,7 +2917,7 @@ wpa_gtk_rekey(struct wpa_authenticator *wpa_auth) {
 	}
 }
 
-#if 0
+#ifdef NAN_UNUSED
 static const char *wpa_bool_txt(int val)
 {
 	return val ? "TRUE" : "FALSE";

@@ -290,7 +290,7 @@ struct EVENT_LTE_SAFE_CHN g_rLteSafeChInfo;
 
 #endif
 
-#if CFG_SUPPORT_NAN
+#ifdef CFG_SUPPORT_NAN_WMM
 uint8_t g_ucNanWmmQueIdx;
 #endif
 /*******************************************************************************
@@ -4206,6 +4206,8 @@ enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(
 {
 	if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS)
 		return ENUM_CNM_NETWORK_TYPE_AIS;
+	else if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN)
+		return ENUM_CNM_NETWORK_TYPE_NAN;
 	else if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
 		if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE)
 			return ENUM_CNM_NETWORK_TYPE_P2P_GC;
@@ -4433,7 +4435,7 @@ void cnmWmmIndexDecision(
 	if (prBssInfo->fgIsWmmInited)
 		return;
 
-#if CFG_SUPPORT_NAN
+#ifdef CFG_SUPPORT_NAN_WMM
 	if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN) {
 		ucWmmIndex = HW_WMM_NUM;
 		if (prBssInfo->eBand == BAND_2G4) {

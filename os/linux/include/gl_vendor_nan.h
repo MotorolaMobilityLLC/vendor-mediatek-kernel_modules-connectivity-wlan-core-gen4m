@@ -255,6 +255,17 @@ struct NanMatchIndMsg {
 	u8 ptlv[];
 } PACKED;
 
+/* NAN Match Expired Ind */
+struct _NanmatchExpiredIndParams  {
+	u32 matchHandle;
+} PACKED;
+
+struct NanMatchExpiredIndMsg {
+	struct _NanMsgHeader fwHeader;
+	struct _NanmatchExpiredIndParams matchExpiredIndParams;
+} PACKED;
+
+
 /* NAN Ranging Configuration params */
 struct _NanFWGeoFenceDescriptor {
 	u32 inner_threshold;
@@ -669,7 +680,7 @@ enum NanInternalStatusType {
 #define SDEA_CTRL_PARMS_SERVICE_UPDATE_IND_PRESENT BIT(9)
 #define SDEA_CTRL_PARMS_RESERVED_1 BITS(10, 15)
 #define SDEA_CTRL_PARMS_RANGE_REPORT BIT(16)
-#define SDEA_CTRL_PARMS_RESERVED_2 BITS(17, 31)
+#define SDEA_CTRL_PARMS_RESERVED_2 BIT(17, 31)
 
 /* Publish Service Req parameters bit map */
 #define PUB_RESERVED BITS(27, 31)
@@ -819,6 +830,9 @@ mtk_cfg80211_vendor_event_nan_seldflwup_indication(struct ADAPTER *prAdapter,
 						  uint8_t *pcuEvtBuf);
 int mtk_cfg80211_vendor_event_nan_match_indication(struct ADAPTER *prAdapter,
 						   uint8_t *pcuEvtBuf);
+int
+mtk_cfg80211_vendor_event_nan_match_expire(struct ADAPTER *prAdapter,
+					       uint8_t *pcuEvtBuf);
 int
 mtk_cfg80211_vendor_event_nan_disable_indication(struct ADAPTER *prAdapter,
 						uint8_t *pcuEvtBuf);

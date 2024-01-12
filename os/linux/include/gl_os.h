@@ -723,6 +723,10 @@ struct GLUE_INFO {
 	uint32_t u4RxThreadPid;
 	uint32_t u4HifThreadPid;
 #endif
+#if CFG_SUPPORT_NAN
+	struct completion
+		rNanHaltComp;	/* indicate halt complete in NAN initial flow */
+#endif
 
 #if CFG_SUPPORT_NCHO
 	/* indicate Ais channel grant complete */
@@ -1587,7 +1591,8 @@ int set_p2p_mode_handler(struct net_device *netdev,
 #endif
 
 #if CFG_SUPPORT_NAN
-int set_nan_handler(struct net_device *netdev, uint32_t ucEnable);
+int set_nan_handler(struct net_device *netdev, uint32_t ucEnable,
+	uint8_t fgIsHoldRtnlLock);
 #endif
 
 const struct net_device_ops *wlanGetNdevOps(void);

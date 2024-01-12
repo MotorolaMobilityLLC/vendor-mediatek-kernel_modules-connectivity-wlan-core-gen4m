@@ -1536,10 +1536,10 @@ priv_get_struct(struct net_device *prNetDev,
 }
 
 #if CFG_SUPPORT_NAN
-int
-__priv_nan_struct(struct net_device *prNetDev,
+int __priv_nan_struct(struct net_device *prNetDev,
 		  struct iw_request_info *prIwReqInfo,
-		  union iwreq_data *prIwReqData, char *pcExtra) {
+		  union iwreq_data *prIwReqData, char *pcExtra)
+{
 	uint32_t u4SubCmd = 0;
 	int status = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -1841,7 +1841,7 @@ __priv_nan_struct(struct net_device *prNetDev,
 		struct NanDataPathIndicationResponse *prDataRes =
 			(struct NanDataPathIndicationResponse *)&aucOidBuf[0];
 		struct _NAN_CMD_DATA_RESPONSE rNanCmdDataResponse;
-		uint32_t rStatus;
+		int32_t rStatus;
 
 		rNanCmdDataResponse.ucType = prDataRes->type;
 		rNanCmdDataResponse.ucDecisionStatus = NAN_DP_REQUEST_ACCEPT;
@@ -10649,7 +10649,7 @@ priv_driver_set_nan_start(struct net_device *prNetDev, char *pcCommand,
 		       "parse ap-start error (u4Enable) u4Ret=%d\n",
 		       u4Ret);
 
-	set_nan_handler(prNetDev, u4Enable);
+	set_nan_handler(prNetDev, u4Enable, FALSE);
 
 	return 0;
 }
@@ -15895,7 +15895,8 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 		    prCnmInfo->ucBssActive[ucBssIdx] &&
 		    ((eNetworkType == ENUM_CNM_NETWORK_TYPE_P2P_GO) ||
 		     ((eNetworkType == ENUM_CNM_NETWORK_TYPE_AIS ||
-		       eNetworkType == ENUM_CNM_NETWORK_TYPE_P2P_GC) &&
+		       eNetworkType == ENUM_CNM_NETWORK_TYPE_P2P_GC ||
+		       eNetworkType == ENUM_CNM_NETWORK_TYPE_NAN) &&
 		      (prCnmInfo->ucBssConnectState[ucBssIdx] ==
 		       MEDIA_STATE_CONNECTED)))) {
 			ucOpRxNss = prBssInfo->ucOpRxNss;

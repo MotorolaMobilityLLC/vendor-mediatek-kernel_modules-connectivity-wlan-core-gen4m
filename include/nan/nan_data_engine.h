@@ -244,6 +244,9 @@ struct _NAN_NDP_INSTANCE_T {
 	uint16_t u2AppInfoLen;
 	/* TODO: timing of freeing - after event indication */
 	uint8_t *pucAppInfo;
+	uint16_t u2PeerAppInfoLen;
+	uint8_t *pucPeerAppInfo;
+
 	/* NAN R3 feature */
 	uint8_t ucServiceProtocolType; /* NAN_SERVICE_PROTOCOL_TYPE_* */
 	uint8_t ucProtocolType;
@@ -252,8 +255,8 @@ struct _NAN_NDP_INSTANCE_T {
 	/* IPv6 - NAN R3 feature */
 	unsigned char fgCarryIPV6;
 	unsigned char fgIsInitiator;
-	uint8_t aucInterfaceId[8];
-	uint8_t aucRspInterfaceId[8];
+	uint8_t aucInterfaceId[IPV6MACLEN];
+	uint8_t aucRspInterfaceId[IPV6MACLEN];
 
 	uint8_t *pucServiceInfo;
 
@@ -534,16 +537,15 @@ void nanSetNdpPmkid(
 );
 
 /* Command Handlers */
-uint32_t nanCmdDataRequest(struct ADAPTER *prAdapter,
+int32_t nanCmdDataRequest(struct ADAPTER *prAdapter,
 			   struct _NAN_CMD_DATA_REQUEST *prNanCmdDataRequest,
 			   uint8_t *pu1NdpId,
 			   uint8_t *au1InitiatorDataAddr);
 
-uint32_t
-nanCmdDataResponse(struct ADAPTER *prAdapter,
+int32_t nanCmdDataResponse(struct ADAPTER *prAdapter,
 		   struct _NAN_CMD_DATA_RESPONSE *prNanCmdDataResponse);
 
-uint32_t nanCmdDataEnd(struct ADAPTER *prAdapter,
+int32_t nanCmdDataEnd(struct ADAPTER *prAdapter,
 		       struct _NAN_CMD_DATA_END *prNanCmdDataEnd);
 
 uint32_t nanUpdateNdlSchedule(struct ADAPTER *prAdapter,
@@ -759,6 +761,14 @@ uint32_t nanSharedKeyAttrHandler(
 	struct _NAN_ATTR_SHARED_KEY_DESCRIPTOR_T *prAttrSharedKeyDescriptor,
 	struct _NAN_NDL_INSTANCE_T *prNDL, struct _NAN_NDP_INSTANCE_T *prNDP);
 
+
+#if (CFG_SUPPORT_802_11AX == 1)
+void nanNdpeAttrVendorSpecificHandler(
+	struct ADAPTER *prAdapter,
+	struct _NAN_ATTR_VENDOR_SPECIFIC_T *prAttrVendorSpecific,
+	struct _NAN_NDL_INSTANCE_T *prNDL);
+#endif
+
 /* NDP update utility functions*/
 void nanDataUpdateNdpPeerNDI(struct ADAPTER *prAdapter,
 			     struct _NAN_NDP_INSTANCE_T *prNDP,
@@ -777,7 +787,8 @@ uint32_t nanDataEngineComposeNAFHeader(struct ADAPTER *prAdapter,
 				       struct MSDU_INFO *prMsduInfo,
 				       enum _NAN_ACTION_T eAction,
 				       uint8_t *pucLocalMacAddr,
-				       uint8_t *pucPeerMacAddr);
+				       uint8_t *pucPeerMacAddr,
+				       struct STA_RECORD *prStaRec);
 
 /* functions for attribute generation */
 uint16_t
@@ -1029,11 +1040,19 @@ nanDataEngineSearchNDPContext(struct ADAPTER *prAdapter,
 			      uint8_t *pucLocalAddr,
 			      uint8_t *pucPeerAddr);
 
+struct _NAN_NDP_CONTEXT_T *
+nanDataEngineSearchFirstNDP(struct ADAPTER *prAdapter,
+	      struct _NAN_NDL_INSTANCE_T *prNDL,
+	      uint8_t *pucLocalAddr, uint8_t *pucPeerAddr);
+
 struct STA_RECORD *nanGetStaRecByNDI(struct ADAPTER *prAdapter,
 				     uint8_t *pucPeerMacAddr);
 
 struct _NAN_NDL_INSTANCE_T *
 nanDataUtilSearchNdlByMac(struct ADAPTER *prAdapter, uint8_t *pucAddr);
+
+unsigned char
+nanGetFeatureIsSigma(struct ADAPTER *prAdapter);
 
 #endif
 #endif

@@ -1347,10 +1347,15 @@ struct WIFI_VAR {
 	uint8_t ucNanDiscBcnInterval;
 	uint8_t ucNanCommittedDw;
 	unsigned char fgNoPmf;
+	uint8_t fgNanIsSigma;
 	uint8_t ucNan2gBandwidth;
 	uint8_t ucNan5gBandwidth;
 	uint8_t ucNdlFlowCtrlVer;
 	unsigned char fgNanWmmSeq;
+	uint8_t ucNanMaxNdpSession;
+	uint8_t ucNanMacAddrOverride;
+	uint8_t aucNanMacAddrStr[WLAN_CFG_VALUE_LEN_MAX];
+	unsigned char fgEnableRandNdpid;
 #endif
 
 #if CFG_SUPPORT_TPENHANCE_MODE
@@ -2174,8 +2179,8 @@ struct ADAPTER {
 	unsigned char fgIsNANfromHAL;
 	bool fgIsNanSendRequestToCnm;
 	uint8_t ucNanReqTokenId;
-	uint8_t ucNanPubNum;
-	uint8_t ucNanSubNum;
+	struct _NAN_PUBLISH_INFO_T rPublishInfo;
+	struct _NAN_SUBSCRIBE_INFO_T rSubscribeInfo;
 
 	/* Container for Data Engine */
 	struct _NAN_DATA_PATH_INFO_T rDataPathInfo;

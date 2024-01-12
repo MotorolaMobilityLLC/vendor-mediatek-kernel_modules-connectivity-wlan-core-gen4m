@@ -572,8 +572,8 @@ nanNdpEndRspEvent(struct ADAPTER *prAdapter, struct _NAN_NDP_INSTANCE_T *prNDP,
  * \return WLAN_STATUS
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanNdiCreateHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
+int32_t nanNdiCreateHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb)
+{
 	/* Need implement */
 	struct ADAPTER *prAdapter = NULL;
 	struct NdiIfaceCreate rNdiInterfaceCreate;
@@ -620,8 +620,8 @@ nanNdiCreateHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
  * \return WLAN_STATUS
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanNdiDeleteHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
+int32_t nanNdiDeleteHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb)
+{
 	/* Need implement */
 	struct ADAPTER *prAdapter = NULL;
 	struct NdiIfaceDelete rNdiInterfaceDelete;
@@ -659,6 +659,8 @@ nanNdiDeleteHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	return WLAN_STATUS_SUCCESS;
 }
 
+
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Handle NDP initiator request vendor cmd.
@@ -670,14 +672,15 @@ nanNdiDeleteHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
  * \return WLAN_STATUS
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
+int32_t nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo,
+		struct nlattr **tb)
+{
 	struct _NAN_CMD_DATA_REQUEST rNanCmdDataRequest;
 	struct NanDataReqReceive rDataRcv;
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	uint8_t aucPassphrase[64];
-	uint8_t aucSalt[] = { 0x00, 0x01, 0x2b, 0x9c, 0x45, 0x0f, 0x66,
-				 0x71, 0x02, 0x90, 0x4c, 0x12, 0xd0, 0x01 };
+	int32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint8_t aucPassphrase[64] = {0};
+	uint8_t aucSalt[] = { 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+				 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
 	kalMemZero(&rNanCmdDataRequest, sizeof(rNanCmdDataRequest));
 
@@ -737,6 +740,13 @@ nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 				tb[MTK_WLAN_VENDOR_ATTR_NDP_PASSPHRASE]),
 				nla_len(
 				tb[MTK_WLAN_VENDOR_ATTR_NDP_PASSPHRASE]));
+				kalMemCopy(aucSalt + 2,
+				g_aucNanServiceId, 6);
+				dumpMemory8(
+				g_aucNanServiceId, 6);
+				kalMemCopy(aucSalt + 8,
+				rNanCmdDataRequest.aucResponderDataAddress,
+				6);
 				dumpMemory8(
 				aucPassphrase, sizeof(aucPassphrase));
 				dumpMemory8(
@@ -769,8 +779,12 @@ nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 				prGlueInfo->prAdapter,
 				&rNanCmdDataRequest,
 				g_aucNanServiceName);
+				dumpMemory8(
+				g_aucNanServiceName, NAN_MAX_SERVICE_NAME_LEN);
+#ifdef NAN_UNUSED
 				memset(g_aucNanServiceName, 0,
 				NAN_MAX_SERVICE_NAME_LEN);
+#endif
 			}
 		}
 	}
@@ -791,21 +805,28 @@ nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	}
 
 	rNanCmdDataRequest.fgNDPE = g_ndpReqNDPE.fgEnNDPE;
-	if (rNanCmdDataRequest.fgNDPE) {
-		/* Ipv6: vendor cmd did not fill this attribute,
-		 * default set to FALSE
-		 */
-		rNanCmdDataRequest.fgCarryIpv6 = 1;
+	/* APP Info */
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]) {
+		rNanCmdDataRequest.u2SpecificInfoLength =
+			nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]);
+		kalMemCopy(rNanCmdDataRequest.aucSpecificInfo,
+			nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]),
+			nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]));
 
-		/* APP Info */
-		if (tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]) {
-			rNanCmdDataRequest.u2SpecificInfoLength =
-				nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]);
-			kalMemCopy(rNanCmdDataRequest.aucSpecificInfo,
-				nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]),
-				nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]));
-		}
+		DBGLOG(NAN, INFO, "[%s] AppInfoLen = %d\n",
+			__func__, rNanCmdDataRequest.u2SpecificInfoLength);
 	}
+
+	/* Ipv6 */
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_IPV6_ADDR]) {
+		rNanCmdDataRequest.fgCarryIpv6 = 1;
+		kalMemCopy(rNanCmdDataRequest.aucIPv6Addr, nla_data(
+		tb[MTK_WLAN_VENDOR_ATTR_NDP_IPV6_ADDR]), IPV6MACLEN);
+	}
+
+	/* NDPE */
+	DBGLOG(NAN, INFO, "[%s] NDPEenable = %d\n",
+		__func__, g_ndpReqNDPE.fgEnNDPE);
 
 	/* Send cmd request */
 	rStatus = nanCmdDataRequest(prGlueInfo->prAdapter, &rNanCmdDataRequest,
@@ -829,13 +850,37 @@ nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
  * \return WLAN_STATUS
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
+int32_t nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo,
+		struct nlattr **tb)
+{
 	struct _NAN_CMD_DATA_RESPONSE rNanCmdDataResponse;
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	uint8_t aucPassphrase[64];
-	uint8_t aucSalt[] = { 0x00, 0x01, 0x2b, 0x9c, 0x45, 0x0f, 0x66,
-				 0x71, 0x02, 0x90, 0x4c, 0x12, 0xd0, 0x01 };
+	int32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint8_t aucPassphrase[64] = {0};
+	uint8_t aucSalt[] = { 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+				 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	struct BSS_INFO *prBssInfo;
+	struct _NAN_SPECIFIC_BSS_INFO_T *prNanSpecificBssInfo;
+
+	if (prGlueInfo->prAdapter == NULL) {
+		DBGLOG(NAN, ERROR, "prAdapter is null\n");
+		return -EINVAL;
+	}
+
+	/* Get BSS info */
+	prNanSpecificBssInfo = nanGetSpecificBssInfo(
+		prGlueInfo->prAdapter,
+		NAN_BSS_INDEX_BAND0);
+	if (prNanSpecificBssInfo == NULL) {
+		DBGLOG(NAN, ERROR, "prNanSpecificBssInfo is null\n");
+		return -EINVAL;
+	}
+	prBssInfo = GET_BSS_INFO_BY_INDEX(
+			prGlueInfo->prAdapter,
+			prNanSpecificBssInfo->ucBssIndex);
+	if (prBssInfo == NULL) {
+		DBGLOG(NAN, ERROR, "prBssInfo is null\n");
+		return -EINVAL;
+	}
 
 	kalMemZero(&rNanCmdDataResponse, sizeof(rNanCmdDataResponse));
 	/* Decision status */
@@ -887,33 +932,35 @@ nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	/* App Info */
 	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]) {
 		rNanCmdDataResponse.u2SpecificInfoLength =
-			IPV6MACLEN;
+			nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]);
 		kalMemCopy(rNanCmdDataResponse.aucSpecificInfo,
 			nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]),
-			IPV6MACLEN);
-		kalMemCopy(rNanCmdDataResponse.aucIPv6Addr,
-			nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]),
-			IPV6MACLEN);
-		/* Ipv6: vendor cmd did not fill this attribute,
-		 * set to TRUE if carry Ipv6 by Sigma
-		 */
-		rNanCmdDataResponse.fgCarryIpv6 = 1;
+			nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]));
 
-		DBGLOG(NAN, ERROR, "[%s] appInfoLen= %d, Ipv6 ="IPV6STR"\n",
+		DBGLOG(NAN, ERROR, "[%s] appInfoLen= %d\n",
 			__func__,
-			rNanCmdDataResponse.u2SpecificInfoLength,
-			IPV6TOSTR(rNanCmdDataResponse.aucIPv6Addr));
+			rNanCmdDataResponse.u2SpecificInfoLength);
 	}
 
-	/* PortNum: vendor cmd did not fill this attribute,
-	 * default set to 9000
-	 */
-	rNanCmdDataResponse.u2PortNum = 9000;
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_IPV6_ADDR]) {
+		kalMemCopy(rNanCmdDataResponse.aucIPv6Addr,
+			nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_IPV6_ADDR]),
+			IPV6MACLEN);
+		rNanCmdDataResponse.fgCarryIpv6 = 1;
+	}
 
-	/* Service protocol type: vendor cmd did not fill this attribute,
-	 * default set to 0xFF
-	 */
-	rNanCmdDataResponse.ucServiceProtocolType = IP_PRO_TCP;
+	if (nanGetFeatureIsSigma(prGlueInfo->prAdapter)) {
+		/* PortNum: vendor cmd did not fill this attribute,
+		 * default set to 9000
+		 */
+		rNanCmdDataResponse.u2PortNum = 9000;
+
+		/* Service protocol type:
+		 * vendor cmd did not fill this attribute,
+		 * default set to 0xFF
+		 */
+		rNanCmdDataResponse.ucServiceProtocolType = IP_PRO_TCP;
+	}
 
 	/* Peer mac addr */
 	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_PEER_DISCOVERY_MAC_ADDR]) {
@@ -923,8 +970,8 @@ nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 			tb[MTK_WLAN_VENDOR_ATTR_NDP_PEER_DISCOVERY_MAC_ADDR]),
 			MAC_ADDR_LEN);
 	} else {
-		kalMemCopy(rNanCmdDataResponse.aucInitiatorDataAddress,
-			   g_InitiatorMacAddr, MAC_ADDR_LEN);
+		kalMemZero(rNanCmdDataResponse.aucInitiatorDataAddress,
+			MAC_ADDR_LEN);
 	}
 	DBGLOG(NAN, INFO, "[%s] aucInitiatorDataAddress = " MACSTR "\n",
 	       __func__, MAC2STR(rNanCmdDataResponse.aucInitiatorDataAddress));
@@ -945,6 +992,11 @@ nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 		kalMemCopy(aucPassphrase,
 			   nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_PASSPHRASE]),
 			   nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_PASSPHRASE]));
+		kalMemCopy(aucSalt + 2,
+				g_aucNanServiceId, 6);
+		kalMemCopy(aucSalt + 8,
+		prBssInfo->aucOwnMacAddr,
+		6);
 		dumpMemory8(aucPassphrase, sizeof(aucPassphrase));
 		dumpMemory8(aucSalt, sizeof(aucSalt));
 		PKCS5_PBKDF2_HMAC(
@@ -979,10 +1031,10 @@ nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
  * \return WLAN_STATUS
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanNdpEndReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
+int32_t nanNdpEndReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb)
+{
 	struct _NAN_CMD_DATA_END rNanCmdDataEnd;
-	uint32_t rStatus;
+	int32_t rStatus;
 	uint32_t instanceIdNum;
 	uint32_t i;
 
@@ -1110,10 +1162,10 @@ nanNdpDataIndEvent(struct ADAPTER *prAdapter,
 		return -EFAULT;
 	}
 
-	if (prNDP->u2AppInfoLen) {
+	if (prNDP->u2PeerAppInfoLen) {
 		if (unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO,
-				     prNDP->u2AppInfoLen,
-				     prNDP->pucAppInfo) < 0)) {
+				     prNDP->u2PeerAppInfoLen,
+				     prNDP->pucPeerAppInfo) < 0)) {
 			DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 			kfree_skb(skb);
 			return -EFAULT;
@@ -1217,13 +1269,30 @@ nanNdpDataConfirmEvent(struct ADAPTER *prAdapter,
 		return -EFAULT;
 	}
 
-	if (prNDP->pucAppInfo &&
-	    nla_put(skb, MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO, prNDP->u2AppInfoLen,
-		    prNDP->pucAppInfo)) {
+	if (prNDP->fgCarryIPV6 && unlikely(nla_put(skb,
+		MTK_WLAN_VENDOR_ATTR_NDP_IPV6_ADDR,
+		IPV6MACLEN, prNDP->aucRspInterfaceId)) < 0) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 		kfree_skb(skb);
 		return -EFAULT;
 	}
+
+	if (prNDP->fgCarryIPV6)
+		DBGLOG(NAN, INFO, "[%s] fgCarryIPV6 = %d\n",
+		__func__, prNDP->aucRspInterfaceId);
+
+	if (prNDP->pucPeerAppInfo &&
+	    unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO,
+	    prNDP->u2PeerAppInfoLen,
+		    prNDP->pucPeerAppInfo)) < 0) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		kfree_skb(skb);
+		return -EFAULT;
+	}
+
+	if (prNDP->pucPeerAppInfo)
+		DBGLOG(NAN, INFO, "[%s] u2PeerAppInfoLen = %d\n", __func__,
+		prNDP->u2PeerAppInfoLen);
 
 	if (unlikely(nla_put_u32(skb, MTK_WLAN_VENDOR_ATTR_NDP_RESPONSE_CODE,
 				 prNDP->ucReasonCode) < 0)) {
@@ -1308,6 +1377,8 @@ nanNdpDataTerminationEvent(struct ADAPTER *prAdapter,
 		return -EFAULT;
 	}
 
+	*pu2NDPInstance = (uint32_t)prNDP->ucNDPID;
+
 	if (unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID_ARRAY,
 			     1 * sizeof(*pu2NDPInstance),
 			     pu2NDPInstance) < 0)) {
@@ -1345,13 +1416,13 @@ nanNdpDataTerminationEvent(struct ADAPTER *prAdapter,
  * \return int
  */
 /*----------------------------------------------------------------------------*/
-int
-mtk_cfg80211_vendor_ndp(struct wiphy *wiphy, struct wireless_dev *wdev,
-			const void *data, int data_len) {
+int mtk_cfg80211_vendor_ndp(struct wiphy *wiphy, struct wireless_dev *wdev,
+			const void *data, int data_len)
+{
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct nlattr *tb[MTK_WLAN_VENDOR_ATTR_NDP_PARAMS_MAX + 1];
 	uint32_t u4NdpCmdType;
-	uint32_t rStatus;
+	int32_t rStatus;
 
 	if (wiphy == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] wiphy is NULL\n", __func__);

@@ -20,7 +20,7 @@ struct ADAPTER *g_prAdapter;
 
 void
 wpas_timeoutCb(struct ADAPTER *prAdapter, unsigned long u4TimerIdx) {
-	wpa_printf(MSG_INFO, "[%s] Enter, u4TimerIdx:%lu\n", __func__,
+	wpa_printf(MSG_INFO, "[%s] Enter, u4TimerIdx:%d\n", __func__,
 		   u4TimerIdx);
 	g_arWpasTimer[u4TimerIdx].rHandler(
 		g_arWpasTimer[u4TimerIdx].pvEloopData,
@@ -79,7 +79,7 @@ eloop_register_timeout(unsigned int secs, unsigned int usecs,
 		       eloop_timeout_handler handler, void *eloop_data,
 		       void *user_data) {
 	uint32_t u4TimeoutMs = 0;
-	uint8_t u1TimerIdx;
+	uint8_t u1TimerIdx = WPAS_TIMER_NOT_FOUND;
 	int8_t i1Status = 0;
 
 	u4TimeoutMs = wpas_convertToMs(secs, usecs);
@@ -109,7 +109,7 @@ eloop_register_timeout(unsigned int secs, unsigned int usecs,
 int
 eloop_cancel_timeout(eloop_timeout_handler handler, void *eloop_data,
 		     void *user_data) {
-	uint8_t u1TimerIdx;
+	uint8_t u1TimerIdx = WPAS_TIMER_NOT_FOUND;
 
 	u1TimerIdx = wpas_getCorrespondingTimer(handler);
 
@@ -228,7 +228,7 @@ os_strlen(const char *s) {
 
 void
 _os_free(void *ptr, const char *func, int line) {
-#if 0
+#ifdef NAN_UNUSED
 	DBGLOG(NAN, INFO, "[TEST][free] ptr:%p, %s:%d\n", ptr, func, line);
 #endif
 
@@ -247,7 +247,7 @@ void *
 _os_malloc(size_t size, const char *func, int line) {
 	void *n = cnmMemAlloc(g_prAdapter, RAM_TYPE_BUF, size);
 
-#if 0
+#ifdef NAN_UNUSED
 	DBGLOG(NAN, INFO, "[TEST][malloc] ptr:%p, %s:%d\n", n, func, line);
 #endif
 
@@ -450,7 +450,7 @@ os_reltime_sub(struct os_reltime *a, struct os_reltime *b,
 		res->usec += 1000000;
 	}
 }
-#if 0
+#ifdef NAN_UNUSED
 int os_reltime_expired(struct os_reltime *now,
 					   struct os_reltime *ts,
 					   os_time_t timeout_secs)

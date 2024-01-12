@@ -130,7 +130,7 @@ struct wpa_state_machine {
 	u8 u1MicCalState;
 	bool fgIsTxDone;
 
-	u8 *pu1TmpKdeAttrBuf; /* SEC gen buf */
+	u8 au1TmpKdeAttrBuf[150]; /* SEC gen buf */
 	u32 u4TmpKdeAttrLen;
 
 	u8 *pu1GetTxMsgBodyBuf; /* NDP gen buf */

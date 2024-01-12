@@ -88,6 +88,11 @@
 #define NAN_ATTR_ID_PUBLIC_AVAILABILITY 0x27
 #define NAN_ATTR_ID_SUBSCRIBE_SERVICE_ID_LIST 0x28
 #define NAN_ATTR_ID_NDP_EXTENSION 0x29
+#define NAN_ATTR_ID_DEVICE_CAPABILITY_EXT 0x2A
+#define NAN_ATTR_ID_NAN_IDENTITY_RESOLUTION 0x2B
+#define NAN_ATTR_ID_NAN_PAIRING_BOOTSTRAPPING 0x2C
+#define NAN_ATTR_ID_S3 0x2D
+#define NAN_ATTR_ID_TRANSMIT_POWER_ENVELOPE 0x2E
 #define NAN_ATTR_ID_VENDOR_SPECIFIC 0xDD
 
 /* NAN Reason Code Field */
@@ -231,6 +236,7 @@
 
 #define NAN_SUPPORTED_BAND_ID_2P4G (2)
 #define NAN_SUPPORTED_BAND_ID_5G (4)
+#define NAN_DEV_CAP_OP_MODE_PHY_MODE (0)
 
 /* NAN SDA Service Control Field */
 #define NAN_SDA_SERVICE_CONTROL_TYPE BITS(0, 1)
@@ -411,7 +417,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_HDR_T {
 	uint8_t ucAttrId;
 	uint16_t u2Length;
-	uint8_t aucAttrBody[1];
+	uint8_t aucAttrBody[2];
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN attribute definitions */
@@ -471,7 +477,7 @@ struct _NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T {
 	uint16_t u2Length;
 	uint8_t aucOui[VENDOR_OUI_LEN]; /* than NAN_OUI */
 	uint8_t ucServiceProtocolType;  /* NAN_SERVICE_PROTOCOL_TYPE_* */
-	uint8_t aucBody[1];
+	uint8_t aucBody[2];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -488,6 +494,17 @@ struct _NAN_ATTR_NDPE_T {
 	uint8_t aucResponderNDI[6]; /*optional */
 	uint8_t aucTLVList[1];      /*to be defined*/
 } __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct _NAN_ATTR_VENDOR_SPECIFIC_T {
+	uint8_t ucAttrId; /* NAN_ATTR_ID_VENDOR_SPECIFIC */
+	uint16_t u2Length;
+	uint8_t aucOui[VENDOR_OUI_LEN]; /* NAN_OUI */
+	uint8_t ucVendorSpecificOuiType;
+	uint16_t u2SubAttrLength;
+	uint8_t aucVendorSpecificOuiData[1];      /*to be defined*/
+} __KAL_ATTRIB_PACKED__;
+
 
 /* NAN Cluster attribute format */
 __KAL_ATTRIB_PACKED_FRONT__

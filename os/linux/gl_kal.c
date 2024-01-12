@@ -12533,6 +12533,47 @@ uint32_t kalDumpPwrLevel(struct ADAPTER *prAdapter)
 
 #if CFG_SUPPORT_NAN
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
+static const char *nan_unisubevent_str(uint32_t u4SubEvent)
+{
+	static const char * const subevent_string[UNI_EVENT_NAN_TAG_NUM] = {
+		[UNI_EVENT_NAN_TAG_DISCOVERY_RESULT] = "Discovery Result",
+		[UNI_EVENT_NAN_TAG_FOLLOW_EVENT] = "Follow",
+		[UNI_EVENT_NAN_TAG_MASTER_IND_ATTR] = "Master Ind",
+		[UNI_EVENT_NAN_TAG_CLUSTER_ID_UPDATE] = "Cluster ID Update",
+		[UNI_EVENT_NAN_TAG_REPLIED_EVENT] = "Replied",
+		[UNI_EVENT_NAN_TAG_PUBLISH_TERMINATE_EVENT] =
+			"Publish Terminate",
+		[UNI_EVENT_NAN_TAG_SUBSCRIBE_TERMINATE_EVENT] =
+			"Subscribe Terminate",
+		[UNI_EVENT_NAN_TAG_ID_SCHEDULE_CONFIG] = "Schedule Config",
+		[UNI_EVENT_NAN_TAG_ID_PEER_AVAILABILITY] = "Peer Availability",
+		[UNI_EVENT_NAN_TAG_ID_PEER_CAPABILITY] = "Peer Capability",
+		[UNI_EVENT_NAN_TAG_ID_CRB_HANDSHAKE_TOKEN] =
+			"CRB Handshake Token",
+		[UNI_EVENT_NAN_TAG_ID_DATA_NOTIFY] = "Data Notify",
+		[UNI_EVENT_NAN_TAG_FTM_DONE] = "FTM Done",
+		[UNI_EVENT_NAN_TAG_RANGING_BY_DISC] = "Ranging by Disc",
+		[UNI_EVENT_NAN_TAG_NDL_FLOW_CTRL] = "NDL Flow Ctrl",
+		[UNI_EVENT_NAN_TAG_DW_INTERVAL] = "DW Interval",
+		[UNI_EVENT_NAN_TAG_NDL_DISCONNECT] = "NDL Disconnect",
+		[UNI_EVENT_NAN_TAG_ID_PEER_CIPHER_SUITE_INFO] =
+			"Peer Cipher Suite Info (CSIA)",
+		[UNI_EVENT_NAN_TAG_ID_PEER_SEC_CONTEXT_INFO] =
+			"Peer Security Context Info (SCIA)",
+		[UNI_EVENT_NAN_TAG_ID_DE_EVENT_IND] = "DE Event",
+		[UNI_EVENT_NAN_TAG_SELF_FOLLOW_EVENT] = "Self Follow",
+		[UNI_EVENT_NAN_TAG_DISABLE_IND] = "Disable",
+		[UNI_EVENT_NAN_TAG_NDL_FLOW_CTRL_V2] = "NDL Flow Ctrl v2",
+		[UNI_EVENT_NAN_TAG_ID_DEVICE_CAPABILITY] = "Device Capability",
+		[UNI_EVENT_NAN_ID_MATCH_EXPIRE] = "Match Expire",
+	};
+
+	if (u4SubEvent < UNI_EVENT_NAN_TAG_NUM)
+		return subevent_string[u4SubEvent];
+	else
+		return "";
+}
+
 void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 {
 	struct UNI_CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
@@ -12546,7 +12587,8 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 
 	u4SubEvent = prTlvElement->u2Tag;
 
-	DBGLOG(NAN, INFO, "[%s] subEvent:%d\n", __func__, u4SubEvent);
+	DBGLOG(NAN, INFO, "subEvent:%d (%s)\n", u4SubEvent,
+			nan_unisubevent_str(u4SubEvent));
 
 	if (prAdapter->fgIsNANRegistered == FALSE) {
 		DBGLOG(NAN, ERROR,
@@ -12629,6 +12671,10 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 		mtk_cfg80211_vendor_event_nan_disable_indication(
 			prAdapter, prTlvElement->aucbody);
 		break;
+	case UNI_EVENT_NAN_ID_MATCH_EXPIRE:
+		status = mtk_cfg80211_vendor_event_nan_match_expire(
+			prAdapter, prTlvElement->aucbody);
+		break;
 	default:
 		DBGLOG(NAN, LOUD, "No match event!!\n");
 		break;
@@ -12636,6 +12682,55 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 }
 
 #else
+static const char *nan_subevent_str(uint32_t u4SubEvent)
+{
+	static const char * const subevent_string[NAN_EVENT_NUM] = {
+	[NAN_EVENT_TEST] = "Test", /* 0 */
+	[NAN_EVENT_DISCOVERY_RESULT] = "Discovery Result",
+	[NAN_EVENT_FOLLOW_EVENT] = "Follow",
+	[NAN_EVENT_MASTER_IND_ATTR] = "Master Ind",
+	[NAN_EVENT_CLUSTER_ID_UPDATE] = "Cluster ID Update",
+	[NAN_EVENT_REPLIED_EVENT] = "Replied",
+	[NAN_EVENT_PUBLISH_TERMINATE_EVENT] = "Publish Terminate",
+	[NAN_EVENT_SUBSCRIBE_TERMINATE_EVENT] = "Subscribe Terminate",
+	[NAN_EVENT_ID_SCHEDULE_CONFIG] = "Schedule Config",
+	[NAN_EVENT_ID_PEER_AVAILABILITY] = "Peer Availability",
+	[NAN_EVENT_ID_PEER_CAPABILITY] = "Peer Capability",
+	[NAN_EVENT_ID_CRB_HANDSHAKE_TOKEN] = "CRB Handshake Token",
+	[NAN_EVENT_ID_DATA_NOTIFY] = "Data Notify",
+	[NAN_EVENT_FTM_DONE] = "FTM Done",
+	[NAN_EVENT_RANGING_BY_DISC] = "Ranging by Disc",
+	[NAN_EVENT_NDL_FLOW_CTRL] = "NDL Flow Ctrl",
+	[NAN_EVENT_DW_INTERVAL] = "DW Interval",
+	[NAN_EVENT_NDL_DISCONNECT] = "NDL Disconnect",
+	[NAN_EVENT_ID_PEER_CIPHER_SUITE_INFO] = "Peer Cipher Suite Info (CSIA)",
+	[NAN_EVENT_ID_PEER_SEC_CONTEXT_INFO] =
+		"Peer Security Context Info (SCIA)",
+	[NAN_EVENT_ID_DE_EVENT_IND] = "DE Event",
+	[NAN_EVENT_SELF_FOLLOW_EVENT] = "Self Follow",
+	[NAN_EVENT_DISABLE_IND] = "Disable",
+	[NAN_EVENT_NDL_FLOW_CTRL_V2] = "NDL Flow Ctrl v2",
+	[NAN_EVENT_ID_DEVICE_CAPABILITY] = "Device Capability",
+	[NAN_EVENT_DISC_BCN_PERIOD] = "Discovery Beacon",
+	[NAN_EVENT_SERVICE_DISC_CAPABILITY] =  "Service Discovery Capability",
+	[NAN_EVENT_DEVICE_INFO] = "Device Info",
+	[NAN_EVENT_REPORT_BEACON] = "Report Beacon",
+	[NAN_EVENT_MATCH_EXPIRE] = "Match Expire",
+
+	[NAN_EVENT_VENDOR_DISCOVERY_RESULT] = "Vendor Discovery Result",
+	[NAN_EVENT_VENDOR_PUBLISH_REPLIED_EVENT] = "Vendor Publish Replied",
+	[NAN_EVENT_VENDOR_FOLLOW_UP_RX_EVENT] = "Vendor Follow up RX",
+	[NAN_EVENT_VENDOR_FOLLOW_UP_TX_EVENT] =  "Vendor Follow up TX",
+	};
+
+	if (u4SubEvent <= NAN_EVENT_MATCH_EXPIRE ||
+	    u4SubEvent >= NAN_EVENT_VENDOR_DISCOVERY_RESULT &&
+	    u4SubEvent < NAN_EVENT_NUM)
+		return subevent_string[u4SubEvent];
+	else
+		return "";
+}
+
 void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 {
 	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
@@ -12651,7 +12746,8 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 
 	u4SubEvent = prTlvElement->tag_type;
 
-	DBGLOG(NAN, INFO, "[%s] subEvent:%d\n", __func__, u4SubEvent);
+	DBGLOG(NAN, INFO, "subEvent:%d (%s)\n", u4SubEvent,
+				nan_subevent_str(u4SubEvent));
 
 	if (prAdapter->fgIsNANRegistered == FALSE) {
 		DBGLOG(NAN, ERROR,
@@ -12732,6 +12828,10 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 		break;
 	case NAN_EVENT_DISABLE_IND:
 		mtk_cfg80211_vendor_event_nan_disable_indication(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_MATCH_EXPIRE:
+		mtk_cfg80211_vendor_event_nan_match_expire(
 			prAdapter, prTlvElement->aucbody);
 		break;
 	default:

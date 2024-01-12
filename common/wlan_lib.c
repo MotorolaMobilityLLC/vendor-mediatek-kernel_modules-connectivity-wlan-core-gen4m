@@ -8030,6 +8030,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 
 #if CFG_SUPPORT_NAN
+	INIT_UINT(prWifiVar->ucNanMacAddrOverride, "NanMacOverride", 0);
+	INIT_STR(prWifiVar->aucNanMacAddrStr,
+		"NanMacAddr", "00:0c:e7:11:22:33");
+
 	INIT_UINT(prWifiVar->ucMasterPref, "NanMasterPref", 2);
 	INIT_UINT(prWifiVar->ucConfig5gChannel, "NanConfig5gChannel", 1);
 	INIT_UINT(prWifiVar->ucChannel5gVal, "NanChannel5gVal", 149);
@@ -8054,12 +8058,14 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucNanDiscBcnInterval, "NanDiscBcnInterval", 100);
 	INIT_UINT(prWifiVar->ucNanCommittedDw, "NanDftCommittedDw", 1);
 	INIT_UINT(prWifiVar->fgNoPmf, "NanForceNoPmf", 0);
-
+	INIT_UINT(prWifiVar->fgNanIsSigma, "NanIsSigma", 0);
 	INIT_UINT(prWifiVar->ucNan2gBandwidth, "Nan2gBw", MAX_BW_20MHZ);
 	INIT_UINT(prWifiVar->ucNan5gBandwidth, "Nan5gBw", MAX_BW_80MHZ);
 	INIT_UINT(prWifiVar->ucNdlFlowCtrlVer,
 		"NanNdlFlowCtrlVer", CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL);
-
+	INIT_UINT(prWifiVar->ucNanMaxNdpSession, "NanMaxNdpSession",
+		NAN_MAX_NDP_SESSIONS);
+	INIT_UINT(prWifiVar->fgEnableRandNdpid, "NanEnableRandNdpid", 1);
 	if (prWifiVar->ucNanFixChnl == 0) {
 		INIT_UINT(prWifiVar->fgNanWmmSeq, "NanWmmSeq", 1);
 	} else {

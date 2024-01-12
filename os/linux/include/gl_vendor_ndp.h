@@ -88,6 +88,7 @@ struct NdiIfaceDelete {
 
 extern struct NanDataPathInitiatorNDPE g_ndpReqNDPE;
 extern uint8_t g_aucNanServiceName[NAN_MAX_SERVICE_NAME_LEN];
+extern uint8_t g_aucNanServiceId[6];
 
 enum mtk_wlan_ndp_sub_cmd {
 	MTK_WLAN_VENDOR_ATTR_NDP_INVALID = 0,
@@ -242,17 +243,17 @@ uint32_t nanNdpEndRspEvent(struct ADAPTER *prAdapter,
 			   struct _NAN_NDP_INSTANCE_T *prNDP,
 			   uint32_t rTxDoneStatus);
 
-uint32_t nanNdiCreateHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb);
+int32_t nanNdiCreateHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb);
 
-uint32_t nanNdiDeleteHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb);
+int32_t nanNdiDeleteHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb);
 
-uint32_t nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo,
+int32_t nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo,
 				   struct nlattr **tb);
 
-uint32_t nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo,
+int32_t nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo,
 				   struct nlattr **tb);
 
-uint32_t nanNdpEndReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb);
+int32_t nanNdpEndReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb);
 
 uint32_t nanNdpDataIndEvent(struct ADAPTER *prAdapter,
 			    struct _NAN_NDP_INSTANCE_T *prNDP,
