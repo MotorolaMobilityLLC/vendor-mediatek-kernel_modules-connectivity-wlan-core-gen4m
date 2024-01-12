@@ -264,10 +264,10 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE == 1)
 	if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_EHT) {
-		memset(prBssInfo->ucEhtOpParams, 0, EHT_OP_BYTE_NUM);
+		EHT_RESET_OP(prBssInfo->ucEhtOpParams);
 		/* TODO */
 	} else {
-		memset(prBssInfo->ucEhtOpParams, 0, EHT_OP_BYTE_NUM);
+		EHT_RESET_OP(prBssInfo->ucEhtOpParams);
 	}
 #endif
 

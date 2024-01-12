@@ -5220,7 +5220,7 @@ static void rlmBssReset(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 #endif
 
 #if (CFG_SUPPORT_802_11BE == 1)
-	memset(prBssInfo->ucEhtOpParams, 0, EHT_OP_BYTE_NUM);
+	EHT_RESET_OP(prBssInfo->ucEhtOpParams);
 	/*TODO */
 #endif
 }

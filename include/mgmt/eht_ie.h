@@ -20,24 +20,40 @@ struct IE_EHT_CAP {
 	u_int8_t  aucVarInfo[0];
 } __KAL_ATTRIB_PACKED__;
 
-/*
- * <EHT Oeration Information Subfield>
- * Channel Width 1 byte
- * CCFS 2 byte
- * Disabled Subchannel Bitmap Present 1 byte
- * Note: The subfield hasn't been defined in D1.2
- * TODO: modify field according to spec
- */
-#define EHT_OP_BYTE_NUM (4)
+/* EHT Operation Parameters */
+#define EHT_OP_PARAM_OP_INFO_PRESENT				BIT(0)
+#define EHT_OP_PARAM_OP_INFO_PRESENT_SHIFT			0
+#define EHT_OP_PARAM_DIS_SUBCHANNEL_PRESENT			BIT(1)
+#define EHT_OP_PARAM_DIS_SUBCHANNEL_PRESENT_SHFT	1
+
+#define EHT_SET_OP_PARAM_OP_INFO_PRESENT(_aucEhtOpParams) \
+	(_aucEhtOpParams |= EHT_OP_PARAM_OP_INFO_PRESENT)
+
+#define EHT_IS_OP_PARAM_OP_INFO_PRESENT(_aucEhtOpParams) \
+	((_aucEhtOpParams & EHT_OP_PARAM_OP_INFO_PRESENT) \
+	== EHT_OP_PARAM_OP_INFO_PRESENT)
+
+#define EHT_SET_OP_PARAM_DIS_SUBCHANNEL_PRESENT(_aucEhtOpParams) \
+	(_aucEhtOpParams |= EHT_OP_PARAM_DIS_SUBCHANNEL_PRESENT)
+
+#define EHT_IS_OP_PARAM_DIS_SUBCHANNEL_PRESENT(_aucEhtOpParams) \
+	((_aucEhtOpParams & EHT_OP_PARAM_DIS_SUBCHANNEL_PRESENT) \
+	== EHT_OP_PARAM_DIS_SUBCHANNEL_PRESENT)
 
 struct IE_EHT_OP {
 	u_int8_t  ucId;
 	u_int8_t  ucLength;
 	u_int8_t  ucExtId;
-	u_int8_t  ucEhtOpParams[EHT_OP_BYTE_NUM];
+	u_int8_t  ucEhtOpParams;
 	u_int8_t  aucVarInfo[0];
 } __KAL_ATTRIB_PACKED__;
 
+struct EHT_OP_INFO {
+	u_int8_t  ucControl;
+	u_int8_t  ucCCFS0;
+	u_int8_t  ucCCFS1;
+	u_int8_t  aucVarInfo[0];
+} __KAL_ATTRIB_PACKED__;
 
 #define EHT_RESET_MAC_CAP(_aucMacCapInfo) \
 	(memset(_aucMacCapInfo, 0, EHT_MAC_CAP_BYTE_NUM))
@@ -46,7 +62,7 @@ struct IE_EHT_OP {
 	(memset(_aucPhyCapInfo, 0, EHT_PHY_CAP_BYTE_NUM))
 
 #define EHT_RESET_OP(_aucOpInfo) \
-	(memset(_aucOpInfo, 0, EHT_OP_BYTE_NUM))
+	(_aucOpInfo = 0)
 
 /* EHT MAC Capabilities Information field */
 /*
