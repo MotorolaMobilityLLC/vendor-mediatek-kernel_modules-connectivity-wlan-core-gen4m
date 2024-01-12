@@ -3012,7 +3012,7 @@ void nicUniCmdBFActionDataWrite(
 	DBGLOG(NIC, INFO, "ucPfmuIdx:%d, u2SubCarIdx:%d\n", tag->ucPfmuIdx,
 		tag->u2SubCarIdx);
 	memcpy(&tag->rTxBfPfmuData, &cmd->rProfileDataWrite.rTxBfPfmuData,
-		sizeof(union PFMU_DATA));
+		sizeof(union ORIGIN_PFMU_DATA));
 }
 
 void nicUniCmdBFActionPnRead(
