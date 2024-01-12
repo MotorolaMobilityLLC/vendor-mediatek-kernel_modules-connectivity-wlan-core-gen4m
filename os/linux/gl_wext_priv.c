@@ -3921,6 +3921,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_WOW_UDP		"SET_WOW_UDP"
 #define CMD_SET_WOW_TCP		"SET_WOW_TCP"
 #define CMD_GET_WOW_PORT	"GET_WOW_PORT"
+#define CMD_GET_WOW_REASON	"GET_WOW_REASON"
 #endif
 #define CMD_SET_ADV_PWS		"SET_ADV_PWS"
 #define CMD_SET_MDTIM		"SET_MDTIM"
@@ -11637,6 +11638,32 @@ static int priv_driver_get_wow_port(IN struct net_device *prNetDev,
 		return -1;
 
 }
+
+static int priv_driver_get_wow_reason(IN struct net_device *prNetDev,
+				   IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4Argc = 0;
+	int32_t i4BytesWritten = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	struct WOW_CTRL *pWOW_CTRL = NULL;
+
+	if (prNetDev == NULL)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	pWOW_CTRL = &prGlueInfo->prAdapter->rWowCtrl;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (pWOW_CTRL->ucReason != INVALID_WOW_WAKE_UP_REASON)
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"\nwakeup_reason:%d", pWOW_CTRL->ucReason);
+
+	return i4BytesWritten;
+}
 #endif
 
 static int priv_driver_set_adv_pws(IN struct net_device *prNetDev,
@@ -15959,6 +15986,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_SET_WOW_UDP, priv_driver_set_wow_udpport},
 	{CMD_SET_WOW_TCP, priv_driver_set_wow_tcpport},
 	{CMD_GET_WOW_PORT, priv_driver_get_wow_port},
+	{CMD_GET_WOW_REASON, priv_driver_get_wow_reason},
 #endif
 	{CMD_SET_ADV_PWS, priv_driver_set_adv_pws},
 	{CMD_SET_MDTIM, priv_driver_set_mdtim},
