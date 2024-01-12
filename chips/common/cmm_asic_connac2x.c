@@ -199,15 +199,10 @@ void asicConnac2xCapInit(
 		prChipInfo->u4ExtraTxByteCount =
 				EXTRA_TXD_SIZE_FOR_TX_BYTE_COUNT;
 		prChipInfo->u4HifDmaShdlBaseAddr = USB_HIF_DMASHDL_BASE;
-		if (prBusInfo->DmaShdlInit)
-			prBusInfo->DmaShdlInit(prAdapter);
 
 #if (CFG_ENABLE_FW_DOWNLOAD == 1)
 		prChipInfo->asicEnableFWDownload = asicConnac2xEnableUsbFWDL;
 #endif /* CFG_ENABLE_FW_DOWNLOAD == 1 */
-		if (prChipInfo->asicUsbInit)
-			prChipInfo->asicUsbInit(prAdapter, prChipInfo);
-		asicConnac2xUdmaRxFlush(prAdapter, FALSE);
 		break;
 #endif /* _HIF_USB */
 	default:
@@ -1376,7 +1371,7 @@ void asicConnac2xWfdmaInitForUSB(
 		prChipInfo->asicUsbInit_ic_specific(prAdapter, prChipInfo);
 }
 
-static void asicConnac2xUsbRxEvtEP4Setting(
+void asicConnac2xUsbRxEvtEP4Setting(
 	struct ADAPTER *prAdapter,
 	u_int8_t fgEnable)
 {
@@ -1622,7 +1617,7 @@ u_int8_t asicConnac2xUsbResume(IN struct ADAPTER *prAdapter,
 
 void asicConnac2xUdmaRxFlush(
 	struct ADAPTER *prAdapter,
-	u_int8_t bEnable)
+	uint8_t bEnable)
 {
 	struct BUS_INFO *prBusInfo;
 	uint32_t u4Value;

@@ -9625,6 +9625,37 @@ void kalNanHandleVendorEvent(IN struct ADAPTER *prAdapter, uint8_t *prBuffer)
 }
 #endif
 
+#if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
+void
+kalApplyCustomRegulatory(IN struct wiphy *pWiphy,
+			    IN const struct ieee80211_regdomain *pRegdom)
+{
+	u32 band_idx, ch_idx;
+	struct ieee80211_supported_band *sband;
+	struct ieee80211_channel *chan;
+
+	DBGLOG(RLM, INFO, "%s()\n", __func__);
+
+	/* to reset chan->flags */
+	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++) {
+		sband = pWiphy->bands[band_idx];
+		if (!sband)
+			continue;
+
+		for (ch_idx = 0; ch_idx < sband->n_channels; ch_idx++) {
+			chan = &sband->channels[ch_idx];
+
+			/*reset chan->flags*/
+			chan->flags = 0;
+		}
+
+	}
+
+	/* update to kernel */
+	wiphy_apply_custom_regulatory(pWiphy, pRegdom);
+}
+#endif
+
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
 #endif

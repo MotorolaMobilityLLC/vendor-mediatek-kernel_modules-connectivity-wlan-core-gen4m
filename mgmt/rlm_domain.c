@@ -351,6 +351,11 @@ struct TX_PWR_LIMIT_SECTION {
 	 {"cck", "ofdm", "ht20", "ht40", "vht20", "vht40",
 	  "vht80", "vht160", "txbf_backoff"}
 	},
+	{15,
+	 {"cck", "ofdm", "ht20", "ht40", "vht20", "vht40",
+	  "vht80", "vht160", "ru26", "ru52", "ru106", "ru242",
+	  "ru484", "ru996", "ru996x2"}
+	},
 };
 
 
@@ -361,6 +366,14 @@ const u8 gTx_Pwr_Limit_Element_Num[][TX_PWR_LIMIT_SECTION_NUM] = {
 	 POWER_LIMIT_SKU_VHT20_NUM, POWER_LIMIT_SKU_VHT40_NUM,
 	 POWER_LIMIT_SKU_VHT80_NUM, POWER_LIMIT_SKU_VHT160_NUM,
 	 POWER_LIMIT_TXBF_BACKOFF_PARAM_NUM},
+	{POWER_LIMIT_SKU_CCK_NUM, POWER_LIMIT_SKU_OFDM_NUM,
+	 POWER_LIMIT_SKU_HT20_NUM, POWER_LIMIT_SKU_HT40_NUM,
+	 POWER_LIMIT_SKU_VHT20_2_NUM, POWER_LIMIT_SKU_VHT40_2_NUM,
+	 POWER_LIMIT_SKU_VHT80_2_NUM, POWER_LIMIT_SKU_VHT160_2_NUM,
+	 POWER_LIMIT_SKU_RU26_NUM, POWER_LIMIT_SKU_RU52_NUM,
+	 POWER_LIMIT_SKU_RU106_NUM, POWER_LIMIT_SKU_RU242_NUM,
+	 POWER_LIMIT_SKU_RU484_NUM, POWER_LIMIT_SKU_RU996_NUM,
+	 POWER_LIMIT_SKU_RU996X2_NUM},
 };
 
 const char *gTx_Pwr_Limit_Element[]
@@ -387,6 +400,35 @@ const char *gTx_Pwr_Limit_Element[]
 		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9"},
 		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9"},
 		{"2to1"},
+	},
+	{
+		{"c1", "c2", "c5", "c11"},
+		{"o6", "o9", "o12", "o18",
+		 "o24", "o36", "o48", "o54"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m32"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "rsvd", "rsvd"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "rsvd", "rsvd"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "rsvd", "rsvd"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "rsvd", "rsvd"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11"},
 	},
 };
 
@@ -1384,6 +1426,7 @@ u_int8_t rlmDomainIsDfsChnls(struct ADAPTER *prAdapter, uint8_t ucChannel)
 /*----------------------------------------------------------------------------*/
 void rlmDomainSendCmd(struct ADAPTER *prAdapter)
 {
+
 	if (!regd_is_single_sku_en())
 		rlmDomainSendPassiveScanInfoCmd(prAdapter);
 	rlmDomainSendDomainInfoCmd(prAdapter);
@@ -1456,7 +1499,6 @@ void rlmDomainSendDomainInfoCmd_V2(struct ADAPTER *prAdapter)
 	DBGLOG(RLM, INFO,
 	       "rlmDomainSendDomainInfoCmd_V2(), buff_valid_size = 0x%x\n",
 	       buff_valid_size);
-
 
 	/* Set domain info to chip */
 	wlanSendSetQueryCmd(prAdapter, /* prAdapter */
@@ -2053,7 +2095,7 @@ rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
  * This function coverts country code from alphabet chars to u32,
  * the caller need to pass country code chars and do size check
  */
-uint32_t rlmDomainAlpha2ToU32(uint8_t *pcAlpha2, uint8_t ucAlpha2Size)
+uint32_t rlmDomainAlpha2ToU32(char *pcAlpha2, uint8_t ucAlpha2Size)
 {
 	uint8_t ucIdx;
 	uint32_t u4CountryCode = 0;
@@ -2070,11 +2112,133 @@ uint32_t rlmDomainAlpha2ToU32(uint8_t *pcAlpha2, uint8_t ucAlpha2Size)
 	return u4CountryCode;
 }
 
+
+
+#if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
+uint32_t rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
+	struct wiphy *pWiphy,
+	uint32_t u4CountryCode)
+{
+	const struct ieee80211_regdomain *pRegdom = NULL;
+	char acCountryCodeStr[MAX_COUNTRY_CODE_LEN + 1] = {0};
+	uint32_t u4FinalCountryCode = u4CountryCode;
+
+	rlmDomainU32ToAlpha(u4FinalCountryCode, acCountryCodeStr);
+	pRegdom =
+		rlmDomainSearchRegdomainFromLocalDataBase(acCountryCodeStr);
+	if (!pRegdom) {
+		DBGLOG(RLM, ERROR,
+	       "Cannot find the %s RegDomain. Set to default WW\n",
+	       acCountryCodeStr);
+		pRegdom = &default_regdom_ww;
+		u4FinalCountryCode = COUNTRY_CODE_WW;
+	}
+
+	kalApplyCustomRegulatory(pWiphy, pRegdom);
+
+	return u4FinalCountryCode;
+}
+#else
+uint32_t rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
+	struct wiphy *pWiphy,
+	uint32_t u4CountryCode)
+{
+	return 0;
+}
+#endif
+
+uint8_t
+rlmDomainCountryCodeUpdateSanity(
+	struct GLUE_INFO *prGlueInfo,
+	struct wiphy *pWiphy,
+	struct ADAPTER **prAdapter)
+{
+	enum regd_state eCurrentState = rlmDomainGetCtrlState();
+
+	/* Always use the wlan GlueInfo as parameter. */
+	if (!prGlueInfo) {
+		DBGLOG(RLM, ERROR, "prGlueInfo is NULL!\n");
+		return FALSE;
+	}
+
+	if (!prGlueInfo->prAdapter) {
+		DBGLOG(RLM, ERROR, "prAdapter is NULL!\n");
+		return FALSE;
+	}
+	*prAdapter = prGlueInfo->prAdapter;
+
+	if (!pWiphy) {
+		DBGLOG(RLM, ERROR, "pWiphy is NULL!\n");
+		return FALSE;
+	}
+
+	if (eCurrentState == REGD_STATE_INVALID ||
+		eCurrentState == REGD_STATE_UNDEFINED) {
+		DBGLOG(RLM, ERROR, "regd is in an invalid state\n");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+void rlmDomainCountryCodeUpdate(
+	struct ADAPTER *prAdapter, struct wiphy *pWiphy,
+	uint32_t u4CountryCode)
+{
+	uint32_t u4FinalCountryCode = u4CountryCode;
+	char acCountryCodeStr[MAX_COUNTRY_CODE_LEN + 1] = {0};
+
+	if (rlmDomainIsUsingLocalRegDomainDataBase()) {
+		u4FinalCountryCode =
+			rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
+				pWiphy,
+				u4CountryCode);
+	}
+
+	rlmDomainU32ToAlpha(u4FinalCountryCode, acCountryCodeStr);
+
+	if (u4FinalCountryCode != u4CountryCode)
+		rlmDomainSetCountryCode(acCountryCodeStr,
+			MAX_COUNTRY_CODE_LEN);
+
+	DBGLOG(RLM, INFO, "g_mtk_regd_control.alpha2 = %s\n", acCountryCodeStr);
+
+	if (pWiphy)
+		rlmDomainParsingChannel(pWiphy);
+
+	if (!regd_is_single_sku_en())
+		return;
+
+	prAdapter->rWifiVar.u2CountryCode =
+		(uint16_t)rlmDomainGetCountryCode();
+
+	/* Send commands to firmware */
+	rlmDomainSendCmd(prAdapter);
+
+}
+void
+rlmDomainSetCountry(struct ADAPTER *prAdapter)
+{
+	struct GLUE_INFO *prGlueInfo = rlmDomainGetGlueInfo();
+	struct ADAPTER *prBaseAdapter;
+	struct wiphy *prBaseWiphy = wlanGetWiphy();
+
+	if (!rlmDomainCountryCodeUpdateSanity(
+		prGlueInfo, prBaseWiphy, &prBaseAdapter)) {
+		DBGLOG(RLM, WARN, "sanity check failed, skip update\n");
+		return;
+	}
+
+	rlmDomainCountryCodeUpdate(
+		prBaseAdapter, prBaseWiphy,
+		rlmDomainGetCountryCode());
+}
+
 uint8_t rlmDomainTxPwrLimitGetTableVersion(
 	uint8_t *pucBuf, uint32_t u4BufLen)
 {
 #define TX_PWR_LIMIT_VERSION_STR_LEN 7
-#define TX_PWR_LIMIT_MAX_VERSION 1
+#define TX_PWR_LIMIT_MAX_VERSION 2
 	uint32_t u4TmpPos = 0;
 	uint8_t ucVersion = 0;
 
@@ -2347,6 +2511,9 @@ u_int8_t rlmDomainTxPwrLimitLoadChannelSetting(
 			break;
 		}
 
+		if (cTmpChar == '\n')
+			break;
+
 		if (u4TmpPos >= u4BufEnd) {
 			*pu4Pos = u4BufEnd;
 			DBGLOG(RLM, ERROR,
@@ -2447,8 +2614,17 @@ u_int8_t rlmDomainTxPwrLimitLoad(
 		u4BufLen, &u4CountryStart, &u4CountryEnd)) {
 		DBGLOG(RLM, ERROR, "Can't find specified table in %s\n",
 			prFileName);
-		return FALSE;
+
+		/* Use WW as default country */
+		if (!rlmDomainTxPwrLimitGetCountryRange(COUNTRY_CODE_WW, pucBuf,
+			u4BufLen, &u4CountryStart, &u4CountryEnd)) {
+			DBGLOG(RLM, ERROR,
+				"Can't find default table (WW) in %s\n",
+				prFileName);
+			return FALSE;
+		}
 	}
+
 	u4Pos = u4CountryStart;
 
 	for (uSecIdx = 0; uSecIdx < ucSecNum; uSecIdx++) {
@@ -2670,6 +2846,12 @@ u_int8_t rlmDomainTxPwrLimitLoadFromFile(
 	u_int8_t bRet = TRUE;
 	uint8_t *prFileName = prAdapter->chip_info->prTxPwrLimitFile;
 	uint8_t aucPath[TXPWRLIMIT_FILE_LEN];
+
+	if (!prFileName || kalStrLen(prFileName) == 0) {
+		bRet = FALSE;
+		DBGLOG(RLM, ERROR, "Invalid TxPwrLimit dat file name!!\n");
+		goto error;
+	}
 
 	kalMemZero(aucPath, sizeof(aucPath));
 	kalSnprintf(aucPath, TXPWRLIMIT_FILE_LEN, "%s", prFileName);
@@ -3479,7 +3661,8 @@ error:
 u_int32_t rlmDomainInitTxPwrLimitPerRateCmd(
 	struct ADAPTER *prAdapter,
 	struct wiphy *prWiphy,
-	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE *prCmd[])
+	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE *prCmd[],
+	uint32_t prCmdSize[])
 {
 	uint8_t ch_cnt = 0;
 	uint8_t ch_idx = 0;
@@ -3507,10 +3690,10 @@ u_int32_t rlmDomainInitTxPwrLimitPerRateCmd(
 
 		u4SetCmdTableMaxSize[band_idx] = u4SetCountryTxPwrLimitCmdSize +
 			ch_cnt * u4ChPwrLimitSize;
+		prCmdSize[band_idx] = u4SetCmdTableMaxSize[band_idx];
 
-		prCmd[band_idx] = cnmMemAlloc(prAdapter,
-			RAM_TYPE_BUF, u4SetCmdTableMaxSize[band_idx]);
-
+		prCmd[band_idx] = kalMemAlloc(u4SetCmdTableMaxSize[band_idx],
+			VIR_MEM_TYPE);
 		if (!prCmd[band_idx]) {
 			DBGLOG(RLM, ERROR, "Domain: no buf to send cmd\n");
 			return WLAN_STATUS_RESOURCES;
@@ -3763,10 +3946,12 @@ rlmDomainSendTxPwrLimitPerRateCmd(struct ADAPTER *prAdapter,
 	uint8_t band_idx = 0;
 	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE
 		*prTxPwrLimitPerRateCmd[KAL_NUM_BANDS] = {0};
+	uint32_t prTxPwrLimitPerRateCmdSize[KAL_NUM_BANDS] = {0};
 
 	wiphy = wlanGetWiphy();
 	if (rlmDomainInitTxPwrLimitPerRateCmd(
-		prAdapter, wiphy, prTxPwrLimitPerRateCmd) !=
+		prAdapter, wiphy, prTxPwrLimitPerRateCmd,
+		prTxPwrLimitPerRateCmdSize) !=
 		WLAN_STATUS_SUCCESS)
 		goto error;
 
@@ -3779,7 +3964,9 @@ rlmDomainSendTxPwrLimitPerRateCmd(struct ADAPTER *prAdapter,
 error:
 	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++)
 		if (prTxPwrLimitPerRateCmd[band_idx])
-			cnmMemFree(prAdapter, prTxPwrLimitPerRateCmd[band_idx]);
+			kalMemFree(prTxPwrLimitPerRateCmd[band_idx],
+				VIR_MEM_TYPE,
+				prTxPwrLimitPerRateCmdSize[band_idx]);
 }
 
 void
@@ -3826,16 +4013,20 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 	/*
 	 * Get Max Tx Power from MT_TxPwrLimit.dat
 	 */
-	rlmDomainGetTxPwrLimit(rlmDomainGetCountryCode(),
+	if (!rlmDomainGetTxPwrLimit(rlmDomainGetCountryCode(),
 		&ucVersion,
 		prAdapter->prGlueInfo,
-		pTxPwrLimitData);
+		pTxPwrLimitData)) {
+		DBGLOG(RLM, ERROR,
+			"Load TxPwrLimitData failed\n");
+		goto error;
+	}
 
 	/* Prepare to send CMD to FW */
 	if (ucVersion == 0) {
 		rlmDomainSendTxPwrLimitCmd(prAdapter,
 			ucVersion, pTxPwrLimitData);
-	 } else if (ucVersion == 1) {
+	 } else if (ucVersion == 1 || ucVersion == 2) {
 		rlmDomainSendTxPwrLimitPerRateCmd(prAdapter,
 			ucVersion, pTxPwrLimitData);
 
@@ -5575,16 +5766,16 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	uint8_t bandedgeParam[4] = { 0, 0, 0, 0 };
 	struct DOMAIN_INFO_ENTRY *prDomainInfo;
 	/* TODO : 5G band edge */
+
+	if (regd_is_single_sku_en())
+		return rlmDomainSendPwrLimitCmd_V2(prAdapter);
+
 	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
 	if (prDomainInfo) {
 		bandedgeParam[0] = prDomainInfo->rSubBand[0].ucFirstChannelNum;
 		bandedgeParam[1] = bandedgeParam[0] +
 			prDomainInfo->rSubBand[0].ucNumChannels - 1;
 	}
-
-	if (regd_is_single_sku_en())
-		return rlmDomainSendPwrLimitCmd_V2(prAdapter);
-
 
 	u4SetCmdTableMaxSize =
 	    sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT);
@@ -5802,11 +5993,6 @@ u_int8_t regd_is_single_sku_en(void)
 }
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-u_int8_t rlmDomainIsCtrlStateEqualTo(enum regd_state state)
-{
-	return (g_mtk_regd_control.state == state) ? TRUE : FALSE;
-}
-
 enum regd_state rlmDomainGetCtrlState(void)
 {
 	return g_mtk_regd_control.state;
@@ -5866,18 +6052,13 @@ void rlmDomainResetCtrlInfo(u_int8_t force)
 		g_mtk_regd_control.state = REGD_STATE_INIT;
 
 		rlmDomainSetDefaultCountryCode();
-
-#if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
-		g_mtk_regd_control.flag |= REGD_CTRL_FLAG_SUPPORT_LOCAL_REGD_DB;
-#endif
 	}
 }
 
 u_int8_t rlmDomainIsUsingLocalRegDomainDataBase(void)
 {
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
-	return (g_mtk_regd_control.flag & REGD_CTRL_FLAG_SUPPORT_LOCAL_REGD_DB)
-		? TRUE : FALSE;
+	return TRUE;
 #else
 	return FALSE;
 #endif
@@ -6200,12 +6381,7 @@ const struct ieee80211_regdomain
 		idx++;
 	}
 
-	DBGLOG(RLM, ERROR,
-	       "%s(): Error, Cannot find the correct RegDomain. country = %s\n",
-	       __func__, alpha2);
-	DBGLOG(RLM, INFO, "    Set as default WW.\n");
-
-	return &default_regdom_ww; /*default world wide*/
+	return NULL; /*default world wide*/
 #else
 	return NULL;
 #endif
@@ -6303,8 +6479,7 @@ uint32_t rlmDomainExtractSingleSkuInfoFromFirmware(IN struct ADAPTER *prAdapter,
 		if (!rlmDomainIsUsingLocalRegDomainDataBase()) {
 
 			DBGLOG(RLM, ERROR,
-			       "%s(): Error. In efuse mode, must use local data base.\n",
-			       __func__);
+				"Error. In efuse mode, must use local data base.\n");
 
 			ASSERT(0);
 			/* force using local db if getting
@@ -6313,10 +6488,11 @@ uint32_t rlmDomainExtractSingleSkuInfoFromFirmware(IN struct ADAPTER *prAdapter,
 			return WLAN_STATUS_NOT_SUPPORTED;
 		}
 
-		rlmDomainSetCountryCode((char *) &prSkuInfo->u4EfuseCountryCode,
-					sizeof(prSkuInfo->u4EfuseCountryCode));
-		g_mtk_regd_control.isEfuseCountryCodeUsed = TRUE;
+		rlmDomainSetCountryCode(
+			(char *) &prSkuInfo->u4EfuseCountryCode,
+			sizeof(prSkuInfo->u4EfuseCountryCode));
 
+		g_mtk_regd_control.isEfuseCountryCodeUsed = TRUE;
 	}
 #endif
 
@@ -6326,19 +6502,11 @@ uint32_t rlmDomainExtractSingleSkuInfoFromFirmware(IN struct ADAPTER *prAdapter,
 void rlmDomainSendInfoToFirmware(IN struct ADAPTER *prAdapter)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	struct regulatory_request request;
-	struct regulatory_request *prReq = NULL;
-
 	if (!regd_is_single_sku_en())
 		return; /*not support single sku*/
 
-	if (g_mtk_regd_control.isEfuseCountryCodeUsed) {
-		request.initiator = NL80211_REGDOM_SET_BY_DRIVER;
-		prReq = &request;
-	}
-
 	g_mtk_regd_control.pGlueInfo = prAdapter->prGlueInfo;
-	mtk_reg_notify(wlanGetWiphy(), prReq);
+	rlmDomainSetCountry(prAdapter);
 #endif
 }
 
@@ -6367,13 +6535,21 @@ void rlmDomainOidSetCountry(IN struct ADAPTER *prAdapter, char *country,
 			    u8 size_of_country)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	struct regulatory_request request;
-	kalMemZero(&request, sizeof(request));
 
 	if (rlmDomainIsUsingLocalRegDomainDataBase()) {
-		rlmDomainSetTempCountryCode(country, size_of_country);
-		request.initiator = NL80211_REGDOM_SET_BY_DRIVER;
-		mtk_reg_notify(wlanGetWiphy(), &request);
+
+		if (rlmDomainIsSameCountryCode(country, size_of_country)) {
+			char acCountryCodeStr[MAX_COUNTRY_CODE_LEN + 1] = {0};
+
+			rlmDomainU32ToAlpha(
+				rlmDomainGetCountryCode(), acCountryCodeStr);
+			DBGLOG(RLM, WARN,
+				"Same as current country %s, skip!\n",
+				acCountryCodeStr);
+			return;
+		}
+		rlmDomainSetCountryCode(country, size_of_country);
+		rlmDomainSetCountry(prAdapter);
 	} else {
 		DBGLOG(RLM, INFO,
 		       "%s(): Using driver hint to query CRDA getting regd.\n",
@@ -6392,15 +6568,6 @@ u32 rlmDomainGetCountryCode(void)
 #endif
 }
 
-u32 rlmDomainGetTempCountryCode(void)
-{
-#if (CFG_SUPPORT_SINGLE_SKU == 1)
-	return g_mtk_regd_control.tmp_alpha2;
-#else
-	return 0;
-#endif
-}
-
 void rlmDomainAssert(u_int8_t cond)
 {
 	/* bypass this check because single sku is not enable */
@@ -6414,4 +6581,10 @@ void rlmDomainAssert(u_int8_t cond)
 
 }
 
+void rlmDomainU32ToAlpha(uint32_t u4CountryCode, char *pcAlpha)
+{
+	uint8_t ucIdx;
 
+	for (ucIdx = 0; ucIdx < MAX_COUNTRY_CODE_LEN; ucIdx++)
+		pcAlpha[ucIdx] = ((u4CountryCode >> (ucIdx * 8)) & 0xff);
+}

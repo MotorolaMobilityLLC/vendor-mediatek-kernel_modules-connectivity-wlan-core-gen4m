@@ -1810,5 +1810,11 @@ void connsysPowerTempUpdate(enum conn_pwr_msg_type status,
 					int currentTemp);
 #endif
 
+#if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
+void
+kalApplyCustomRegulatory(IN struct wiphy *pWiphy,
+			    IN const struct ieee80211_regdomain *pRegdom);
+#endif
+
 #endif /* _GL_KAL_H */
 

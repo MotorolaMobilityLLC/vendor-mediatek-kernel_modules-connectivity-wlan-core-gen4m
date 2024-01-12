@@ -1988,7 +1988,12 @@ struct CMD_SET_DOMAIN_INFO_V2 {
 	struct CMD_DOMAIN_ACTIVE_CHANNEL_LIST arActiveChannels;
 };
 
+#if (CFG_SUPPORT_CONNAC2X == 1)
+#define SINGLE_SKU_PARAM_NUM 161
+#else
 #define SINGLE_SKU_PARAM_NUM 69
+#endif
+
 struct CMD_SKU_TABLE_TYPE {
 	int8_t i1PwrLimit[SINGLE_SKU_PARAM_NUM];
 };

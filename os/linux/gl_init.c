@@ -5939,6 +5939,11 @@ static void wlanRemove(void)
 	wlanTpeUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
 
+	/* Need to get A-DIE ver anytime when device plug in,
+	 * or will fail on the case with insert different A-DIE card.
+	 */
+	prAdapter->chip_info->u4ADieVer = 0xFFFFFFFF;
+
 	/* complete possible pending oid, which may block wlanRemove some time
 	 * and then whole chip reset may failed
 	 */
