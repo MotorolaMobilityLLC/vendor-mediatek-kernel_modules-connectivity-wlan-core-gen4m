@@ -926,7 +926,7 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 	uint8_t i, j;
 
 	if (!prMainBssDesc || !prMainBssDesc->rMlInfo.fgValid ||
-	    prMainBssDesc->rMlInfo.fgMldType == MLD_TYPE_EXTERNAL) {
+	    prMainBssDesc->rMlInfo.fgMldType == MLD_TYPE_ICV_METHOD_V1) {
 		DBGLOG(P2P, INFO, "no need secondary link");
 		return;
 	}

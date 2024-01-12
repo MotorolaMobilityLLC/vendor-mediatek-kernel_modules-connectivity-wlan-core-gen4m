@@ -598,6 +598,7 @@
 #define MLD_TYPE_INVALID		0
 #define MLD_TYPE_ICV_METHOD_V1		1
 #define MLD_TYPE_ICV_METHOD_V2		2
+#define MLD_TYPE_ICV_METHOD_V1_1	3
 #define MLD_TYPE_EXTERNAL		0xff
 
 /*------------------------------------------------------------------------------

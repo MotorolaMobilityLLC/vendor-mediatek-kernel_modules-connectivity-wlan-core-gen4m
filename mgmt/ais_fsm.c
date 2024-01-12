@@ -2967,11 +2967,6 @@ send_msg:
 			/* recycle unused bssinfo */
 			aisFreeAllBssInfo(prAdapter, prAisFsmInfo, FALSE);
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1) && defined(CFG_AAD_NONCE_NO_REPLACE)
-			mldBssEnableAllClients(prAdapter,
-				prAisFsmInfo->prMldBssInfo);
-#endif
-
 			/* Don't do anything when rJoinTimeoutTimer
 			 * is still ticking
 			 */

@@ -846,11 +846,7 @@ struct STA_RECORD {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 struct MLD_STA_RECORD {
 	struct LINK_ENTRY rLinkEntry;
-
 	uint8_t fgIsInUse;
-#ifdef CFG_AAD_NONCE_NO_REPLACE
-	uint8_t fgIsEnabled;
-#endif
 	uint8_t ucIdx;
 	uint8_t ucGroupMldId; /* id from mld bss */
 	uint8_t aucPeerMldAddr[MAC_ADDR_LEN];

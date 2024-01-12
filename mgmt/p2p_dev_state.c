@@ -459,7 +459,7 @@ void p2pComposeLoProbeRsp(
 		(struct P2P_DEV_FSM_INFO *) NULL;
 	struct P2P_LISTEN_OFFLOAD_INFO *pLoInfo =
 		(struct P2P_LISTEN_OFFLOAD_INFO *) NULL;
-#ifdef CFG_AAD_NONCE_NO_REPLACE
+#ifdef CFG_SUPPORT_PRE_WIFI7
 	uint8_t fgHide = TRUE;
 #else
 	uint8_t fgHide = FALSE;

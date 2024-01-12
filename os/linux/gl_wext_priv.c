@@ -5443,11 +5443,6 @@ int priv_driver_get_ml_capa(struct net_device *prNetDev,
 			    mldBssAllowReconfig(prAd, prMldBssInfo))
 				ucCapa = 1;
 
-#ifdef CFG_AAD_NONCE_NO_REPLACE
-			if (mldStarecExternalMldExist(prAd))
-				ucCapa = 0;
-#endif
-
 			i4BytesWritten = kalSnprintf(
 				pcCommand, i4TotalLen, "%d", ucCapa);
 
