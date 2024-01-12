@@ -4971,6 +4971,7 @@ cnmOpModeSetTRxNss(
 			}
 		}
 
+#if (CFG_SUPPORT_COEX_DOWNGRADE_BW == 1)
 		if (eNewReq == CNM_OPMODE_REQ_COEX) {
 			if (fgEnable) {
 				if (ucOpBwFinal == MAX_BW_40MHZ &&
@@ -4991,6 +4992,7 @@ cnmOpModeSetTRxNss(
 				}
 			}
 		}
+#endif /* (CFG_SUPPORT_COEX_DOWNGRADE_BW == 1) */
 
 #if CFG_ENABLE_WIFI_DIRECT
 		if (eNewReq == CNM_OPMODE_REQ_RDD_OPCHNG &&
