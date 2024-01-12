@@ -2867,7 +2867,6 @@ rlmDomainInitTxPwrLimitData(struct ADAPTER *prAdapter)
 	uint8_t ch_idx = 0;
 	uint8_t band_idx = 0;
 	uint8_t ch_num = 0;
-	struct wiphy *wiphy;
 	const int8_t *prChannelList = NULL;
 	struct TX_PWR_LIMIT_DATA *pTxPwrLimitData = NULL;
 	struct CHANNEL_TX_PWR_LIMIT *prChTxPwrLimit = NULL;
@@ -2907,7 +2906,6 @@ rlmDomainInitTxPwrLimitData(struct ADAPTER *prAdapter)
 			MAX_TX_POWER,
 			sizeof(prChTxPwrLimit->rTxPwrLimitValue));
 
-	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
 	ch_cnt = 0;
 	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++) {
 		if (band_idx != KAL_BAND_2GHZ && band_idx != KAL_BAND_5GHZ)
@@ -2943,7 +2941,6 @@ rlmDomainSendTxPwrLimitCmd(struct ADAPTER *prAdapter,
 	uint32_t rStatus;
 	uint32_t u4SetQueryInfoLen;
 	uint32_t u4SetCmdTableMaxSize[KAL_NUM_BANDS] = {0};
-	struct wiphy *wiphy;
 	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2
 		*prCmd[KAL_NUM_BANDS] = {0};
 	struct CMD_CHANNEL_POWER_LIMIT_V2 *prCmdChPwrLimitV2 = NULL;
@@ -2953,7 +2950,6 @@ rlmDomainSendTxPwrLimitCmd(struct ADAPTER *prAdapter,
 	const uint8_t ucCmdBatchSize =
 		prAdapter->chip_info->ucTxPwrLimitBatchSize;
 
-	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
 	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++) {
 		if (band_idx != KAL_BAND_2GHZ && band_idx != KAL_BAND_5GHZ)
 			continue;
@@ -3088,7 +3084,6 @@ rlmDomainSendTxPwrLimitPerRateCmd(struct ADAPTER *prAdapter,
 	uint32_t rStatus;
 	uint32_t u4SetQueryInfoLen;
 	uint32_t u4SetCmdTableMaxSize[KAL_NUM_BANDS] = {0};
-	struct wiphy *wiphy;
 	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE
 		*prCmd[KAL_NUM_BANDS] = {0};
 	struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_PER_RATE *prChPwrLimit = NULL;
@@ -3099,7 +3094,6 @@ rlmDomainSendTxPwrLimitPerRateCmd(struct ADAPTER *prAdapter,
 	const uint8_t ucCmdBatchSize =
 		prAdapter->chip_info->ucTxPwrLimitBatchSize;
 
-	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
 	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++) {
 		if (band_idx != KAL_BAND_2GHZ && band_idx != KAL_BAND_5GHZ)
 			continue;
