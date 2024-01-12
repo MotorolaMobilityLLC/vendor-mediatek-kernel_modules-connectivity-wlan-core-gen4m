@@ -109,6 +109,9 @@ struct ATE_PRIV_CMD rAtePrivCmdTable[] = {
 	{"ATETXMCS", SetATETxMcs},
 	{"ATETXMODE", SetATETxMode},
 	{"ATEIPG", SetATEIpg},
+#if CFG_SUPPORT_ANT_SWAP
+	{"ATEANTSWP", SetATEAntSwp},
+#endif
 #if CFG_SUPPORT_TX_BF
 	{"TxBfProfileTagHelp", Set_TxBfProfileTag_Help},
 	{"TxBfProfileTagInValid", Set_TxBfProfileTag_InValid},
@@ -616,6 +619,38 @@ int SetATEIpg(struct net_device *prNetDev, uint8_t *prInBuf)
 
 	return i4Status;
 }
+
+#if CFG_SUPPORT_ANT_SWAP
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  This routine is called to Set Antenna Swap
+ *
+ * \param[in] prNetDev		Pointer to the Net Device
+ * \param[in] prInBuf		A pointer to the command string buffer
+ * \param[out] None
+ *
+ * \retval 0				On success.
+ * \retval -EINVAL			If invalid argument.
+ */
+/*----------------------------------------------------------------------------*/
+int SetATEAntSwp(struct net_device *prNetDev, uint8_t *prInBuf)
+{
+	uint32_t i4SetAntSwp = 0;
+	int32_t i4Status;
+	int32_t rv;
+
+	DBGLOG(REQ, INFO, "ATE_AGENT iwpriv SetAntSwp\n");
+
+	rv = kstrtoint(prInBuf, 0, &i4SetAntSwp);
+	if (rv == 0) {
+		DBGLOG(REQ, INFO, "i4SetAntSwp = %d\n", i4SetAntSwp);
+		i4Status = MT_ATESetAntSwap(prNetDev, i4SetAntSwp);
+	} else
+		return -EINVAL;
+
+	return i4Status;
+}
+#endif
 
 #if CFG_SUPPORT_TX_BF
 int Set_TxBfProfileTag_Help(struct net_device *prNetDev,
