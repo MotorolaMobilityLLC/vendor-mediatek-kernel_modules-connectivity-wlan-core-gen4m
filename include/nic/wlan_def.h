@@ -1033,6 +1033,23 @@ struct P2P_DEVICE_DESC {
 			((uint16_t)__cp[1]); \
 	}
 
+#define WLAN_GET_FIELD_24(_memAddr_p, _value_p) \
+	{ \
+		uint8_t *__cp = (uint8_t *)(_memAddr_p); \
+		*(uint32_t *)(_value_p) = 0; \
+		*(uint32_t *)(_value_p) = ((uint32_t)__cp[0]) | \
+			((uint32_t)__cp[1] << 8) | \
+			((uint32_t)__cp[2] << 16); \
+	}
+
+#define WLAN_GET_FIELD_BE24(_memAddr_p, _value_p) \
+	{ \
+		uint8_t *__cp = (uint8_t *)(_memAddr_p); \
+		*(uint32_t *)(_value_p) = 0; \
+		*(uint32_t *)(_value_p) = ((uint32_t)__cp[0] << 16) | \
+		    ((uint32_t)__cp[1] << 8) | (uint32_t)__cp[2]; \
+	}
+
 #define WLAN_GET_FIELD_32(_memAddr_p, _value_p) \
 	{ \
 		uint8_t *__cp = (uint8_t *)(_memAddr_p); \
