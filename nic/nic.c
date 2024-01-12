@@ -3193,7 +3193,7 @@ uint32_t nicQmUpdateWmmParms(IN struct ADAPTER *prAdapter,
 	DBGLOG_LIMITED(QM, INFO, "ucTxMsduQueue:[%u], u4TxHifRes[%d]",
 		prAdapter->rWifiVar.ucTxMsduQueue, u4TxHifRes);
 
-	for (u4Idx = 0; u4Idx < TX_PORT_NUM && u4TxHifRes; u4Idx++) {
+	for (u4Idx = 0; u4Idx < TC_NUM && u4TxHifRes; u4Idx++) {
 		prAdapter->au4TxHifResCtl[u4Idx] = u4TxHifRes & BITS(0, 3);
 		u4TxHifRes = u4TxHifRes >> 4;
 	}

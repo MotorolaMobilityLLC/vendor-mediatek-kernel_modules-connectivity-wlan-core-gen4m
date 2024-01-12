@@ -530,8 +530,6 @@ enum ENUM_MCU_Q_INDEX {
 	MCU_Q_NUM
 };
 
-#define TX_PORT_NUM (TC_NUM)
-
 #define BMC_TC_INDEX TC1_INDEX
 
 /* per-Network Tc Resource index */
@@ -1880,6 +1878,8 @@ uint32_t nicTxMsduInfoListMthread(IN struct ADAPTER *prAdapter,
 
 uint32_t nicTxMsduQueueMthread(IN struct ADAPTER *prAdapter);
 #if CFG_TX_DIRECT_VIA_HIF_THREAD
+#define NIC_GET_TX_DIRECT_HIFQ(prAdapter, ucBssIndex, ucHifTc) \
+	(&prAdapter->rTxDirectHifQueue[ucBssIndex][ucHifTc])
 uint32_t nicTxDirectMsduQueueMthread(IN struct ADAPTER *prAdapter);
 #endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 

@@ -288,6 +288,10 @@
 #include "agent.h"
 #endif
 
+#if CFG_TX_DIRECT_VIA_HIF_THREAD
+#include "wlan_typedef.h"
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
+
 extern u_int8_t fgIsBusAccessFailed;
 extern const struct ieee80211_iface_combination
 	*p_mtk_iface_combinations_sta;
@@ -755,6 +759,10 @@ struct GLUE_INFO {
 	/* check if HIF port is ready to accept a new Msdu */
 	kal_timer_list rTxDirectHifTimer;
 	struct sk_buff_head rTxDirectSkbQueue;
+
+#if CFG_TX_DIRECT_VIA_HIF_THREAD
+	spinlock_t rTxDirectHifQueueLock[MAX_BSSID_NUM][TC_NUM];
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 
 #if CFG_SUPPORT_EXT_CONFIG
 	uint16_t au2ExtCfg[256];	/* NVRAM data buffer */

@@ -371,6 +371,16 @@ enum ENUM_CMD_TX_RESULT {
 	kalReleaseSpinLock(((struct ADAPTER *)_prAdapter)->prGlueInfo,  \
 	_rLockCategory, __ulFlags)
 
+#define KAL_TX_DIRECT_HIFQ_LOCK_DECLARATION() unsigned long __ulHifQFlags
+
+#define KAL_TX_DIRECT_HIFQ_LOCK(prGlueInfo, ucBssIndex, ucHifTc) \
+	kalAcquireTxDirectHifQLock(prGlueInfo, ucBssIndex, ucHifTc, \
+		&__ulHifQFlags)
+
+#define KAL_TX_DIRECT_HIFQ_UNLOCK(prGlueInfo, ucBssIndex, ucHifTc) \
+	kalReleaseTxDirectHifQLock(prGlueInfo, ucBssIndex, ucHifTc, \
+		__ulHifQFlags)
+
 /*----------------------------------------------------------------------------*/
 /* Macros of MUTEX operations for using in Driver Layer                   */
 /*----------------------------------------------------------------------------*/
@@ -900,6 +910,16 @@ KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr, _rLockCate, _plFlags)
 
 #define kalReleaseSpinLock(_prGlueInfo, _rLockCategory, _ulFlags) \
 KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
+
+#define kalAcquireTxDirectHifQLock(_prGlueInfo, _ucBssIndex, _ucHifTc, \
+	_plHifQFlags) \
+KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, \
+	_ucBssIndex, _ucHifTc, _plHifQFlags)
+
+#define kalReleaseTxDirectHifQLock(_prGlueInfo, _ucBssIndex, _ucHifTc, \
+	_ulHifQFlags) \
+KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, \
+	_ucBssIndex, _ucHifTc, _ulHifQFlags)
 
 #define kalUpdateMACAddress(_prGlueInfo, _pucMacAddr) \
 KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, _pucMacAddr)
