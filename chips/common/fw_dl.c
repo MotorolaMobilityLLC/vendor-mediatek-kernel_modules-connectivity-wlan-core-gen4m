@@ -2446,7 +2446,9 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 		u4Offset += snprintf(pcBuf + u4Offset,
 				     i4TotalLen - u4Offset,
 				     "MCU patch is not downloaded by wlan driver, read patch info\n");
+#if (CFG_MTK_ANDROID_WMT == 0)
 		wlanGetPatchInfo(prAdapter);
+#endif
 	}
 
 	kalMemZero(aucBuf, sizeof(aucBuf));
