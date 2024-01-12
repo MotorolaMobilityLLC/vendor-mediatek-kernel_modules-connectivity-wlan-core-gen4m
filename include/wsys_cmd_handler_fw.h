@@ -338,6 +338,9 @@ enum ENUM_CMD_ID {
 #if (CFG_SUPPORT_ICS == 1)
 	CMD_ID_SET_ICS_SNIFFER = 0x93,
 #endif /* CFG_SUPPORT_ICS */
+#if (CFG_SUPPORT_TSF_SYNC == 1)
+	CMD_ID_BEACON_TSF_SYNC = 0x94,		/* 0x94 (Set / Query) */
+#endif
 	CMD_ID_WFC_KEEP_ALIVE = 0xA0,       /* 0xA0 (Set) */
 	CMD_ID_RSSI_MONITOR = 0xA1,         /* 0xA1 (Set) */
 #if (CFG_SUPPORT_PKT_OFLD == 1)
@@ -534,7 +537,9 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_LOG_UI_INFO  = 0x8D,           /* 0x8D (Set / Query) */
 	EVENT_ID_UPDATE_COEX_PHYRATE = 0x90,    /* 0x90 (Unsolicited) */
 	EVENT_ID_UPDATE_COEX_STATUS = 0x91,
-
+#if (CFG_SUPPORT_TSF_SYNC == 1)
+	EVENT_ID_BEACON_TSF_SYNC = 0x94,		/* 0x94 (Set / Query) */
+#endif
 	EVENT_ID_RSSI_MONITOR = 0xA1,       /* Event ID for Rssi monitoring */
 #if (CFG_SUPPORT_PKT_OFLD == 1)
 	EVENT_ID_PKT_OFLD = 0xA2,

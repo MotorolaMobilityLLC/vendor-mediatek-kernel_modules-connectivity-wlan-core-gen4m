@@ -3771,6 +3771,9 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_RST_HANG_ARG_NUM		2
 #endif
 
+#if CFG_SUPPORT_TSF_SYNC
+#define CMD_GET_TSF_VALUE   "GET_TSF"
+#endif
 
 #define CMD_EFUSE		"EFUSE"
 
@@ -5419,6 +5422,78 @@ static int priv_driver_get_mcr(IN struct net_device *prNetDev,
 	return i4BytesWritten;
 
 }				/* priv_driver_get_mcr */
+
+#if (CFG_SUPPORT_TSF_SYNC == 1)
+static int priv_driver_get_tsf_value(
+	IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	int32_t i4BytesWritten = 0;
+	uint32_t u4BufLen = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t status = 0;
+	struct CMD_TSF_SYNC rTsfSync;
+	uint8_t ucBssIdx = 0;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc != 2) {
+		DBGLOG(REQ, ERROR, "argc(%d) is error\n", i4Argc);
+		return -1;
+	}
+
+	status = kalkStrtou8(apcArgv[1], 0, &ucBssIdx);
+	if (status) {
+		DBGLOG(REQ, ERROR, "parse ucBssIdx error u4Ret=%d\n", status);
+		ucBssIdx = 0;
+	}
+
+	if (ucBssIdx >= MAX_BSS_INDEX) {
+		DBGLOG(REQ, ERROR, "invalid bss index %d\n", ucBssIdx);
+		return -1;
+	}
+
+	/* get the tsf value and to pull the tsf gpio */
+	kalMemZero(&rTsfSync, sizeof(struct CMD_TSF_SYNC));
+	rTsfSync.ucCmdVer = 0;
+	rTsfSync.u2CmdLen = sizeof(struct CMD_TSF_SYNC);
+	rTsfSync.fgIsLatch = 1;
+	rTsfSync.ucBssIndex = ucBssIdx;
+	rStatus = kalIoctl(prGlueInfo, wlanoidLatchTSF, &rTsfSync,
+		sizeof(rTsfSync), TRUE, TRUE, TRUE, &u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "Fail");
+	else {
+		DBGLOG(REQ, INFO, "tsfvaluse: %llu\n", rTsfSync.u8TsfValue);
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%llu",
+			rTsfSync.u8TsfValue);
+	}
+
+	/* get the tsf value and to release the tsf gpio */
+	kalMemZero(&rTsfSync, sizeof(struct CMD_TSF_SYNC));
+	rTsfSync.ucCmdVer = 0;
+	rTsfSync.u2CmdLen = sizeof(struct CMD_TSF_SYNC);
+	rTsfSync.fgIsLatch = 0;
+	rStatus = kalIoctl(prGlueInfo, wlanoidLatchTSF, &rTsfSync,
+		sizeof(rTsfSync), TRUE, TRUE, TRUE, &u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "Fail");
+	else
+		DBGLOG(REQ, INFO, "tsfvaluse: %llu\n", rTsfSync.u8TsfValue);
+
+	return i4BytesWritten;
+}
+#endif
 
 int priv_driver_set_mcr(IN struct net_device *prNetDev, IN char *pcCommand,
 			IN int i4TotalLen)
@@ -16326,6 +16401,9 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #endif
 	{CMD_SET_USE_CASE, priv_driver_set_multista_use_case},
 	{CMD_GET_BAINFO, priv_driver_get_bainfo},
+#if (CFG_SUPPORT_TSF_SYNC == 1)
+	{CMD_GET_TSF_VALUE, priv_driver_get_tsf_value},
+#endif
 };
 
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
