@@ -704,8 +704,9 @@ struct GLUE_INFO {
 #endif
 	struct tasklet_struct rRxTask;
 	struct tasklet_struct rTxCompleteTask;
-
+#if CFG_SUPPORT_MULTITHREAD
 	struct work_struct rTxMsduFreeWork;
+#endif
 	struct delayed_work rRxPktDeAggWork;
 
 	struct timer_list tickfn;

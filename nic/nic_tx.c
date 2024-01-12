@@ -2766,7 +2766,9 @@ void nicTxRelease(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void nicProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 {
+#if CFG_SUPPORT_MULTITHREAD
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+#endif
 
 	/* fos_change begin */
 #if CFG_SUPPORT_WAKEUP_REASON_DEBUG
@@ -2793,7 +2795,7 @@ void nicProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 		/* Skip following Tx handling */
 		return;
 	}
-
+#if CFG_SUPPORT_MULTITHREAD
 	/* TX Commands */
 	if (kalGetTxPendingCmdCount(prAdapter->prGlueInfo))
 		wlanTxCmdMthread(prAdapter);
@@ -2802,6 +2804,7 @@ void nicProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 	if (nicTxGetMsduPendingCnt(prAdapter) >=
 	    prWifiVar->u4TxIntThCount)
 		nicTxMsduQueueMthread(prAdapter);
+#endif
 } /* end of nicProcessTxInterrupt() */
 
 void nicTxFreePacket(IN struct ADAPTER *prAdapter,
@@ -3548,11 +3551,9 @@ u_int8_t nicTxProcessMngPacket(IN struct ADAPTER *prAdapter,
 		nicTxSetPktLowestFixedRate(prAdapter, prMsduInfo);
 #endif
 	}
-#if CFG_SUPPORT_MULTITHREAD
+
 	nicTxFillDesc(prAdapter, prMsduInfo,
 		      prMsduInfo->aucTxDescBuffer, NULL);
-#endif
-
 	return TRUE;
 }
 
@@ -5840,7 +5841,10 @@ void nicTxHandleRoamingDone(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo = NULL;
 	uint8_t ucOldWlanIndex = prOldStaRec->ucWlanIndex;
 	uint8_t ucNewWlanIndex = prNewStaRec->ucWlanIndex;
-	uint8_t ucIndex = 0, i;
+#if CFG_SUPPORT_MULTITHREAD
+	uint8_t ucIndex = 0;
+	uint8_t i = 0;
+#endif
 
 	KAL_SPIN_LOCK_DECLARATION();
 
