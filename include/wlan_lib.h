@@ -1934,14 +1934,8 @@ uint32_t wlanPowerOffWifi(IN struct ADAPTER *prAdapter);
 void wlanPrintVersion(struct ADAPTER *prAdapter);
 
 uint32_t wlanAccessRegister(IN struct ADAPTER *prAdapter,
-			    IN uint32_t u4Addr, IN uint32_t *pru4Result,
-			    IN uint32_t u4Data,
-			    IN uint8_t ucSetQuery);
-
-uint32_t wlanAccessRegisterStatus(IN struct ADAPTER
-				  *prAdapter, IN uint8_t ucCmdSeqNum,
-				  IN uint8_t ucSetQuery, IN void *prEvent,
-				  IN uint32_t u4EventLen);
+	IN uint32_t u4Addr, IN uint32_t *pru4Result,
+	IN uint32_t u4Data, IN uint8_t ucSetQuery);
 
 uint32_t wlanSetChipEcoInfo(IN struct ADAPTER *prAdapter);
 
