@@ -505,15 +505,7 @@
  *------------------------------------------------------------------------------
  */
 
-#ifdef LINUX
-#ifdef CONFIG_X86
-#define CFG_ENABLE_BT_OVER_WIFI         0
-#else
-#define CFG_ENABLE_BT_OVER_WIFI         1
-#endif
-#else
 #define CFG_ENABLE_BT_OVER_WIFI             0
-#endif
 
 #define CFG_BOW_SEPARATE_DATA_PATH              1
 
