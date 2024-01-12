@@ -470,7 +470,6 @@ static void heRlmFillHeCapIE(
 	struct _IE_HE_CAP_T *prHeCap;
 	struct _HE_SUPPORTED_MCS_FIELD *prHeSupportedMcsSet;
 	uint32_t u4OverallLen = OFFSET_OF(struct _IE_HE_CAP_T, aucVarInfo[0]);
-	uint16_t ucMaxBw;
 	u_int8_t fgBfEn = TRUE;
 
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
@@ -494,8 +493,6 @@ static void heRlmFillHeCapIE(
 
 	prHeCap->ucId = ELEM_ID_RESERVED;
 	prHeCap->ucExtId = ELEM_EXT_ID_HE_CAP;
-
-	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
 
 	/* MAC capabilities */
 	HE_RESET_MAC_CAP(prHeCap->ucHeMacCap);
@@ -636,14 +633,16 @@ static void heRlmFillHeCapIE(
 	heRlmFillMCSMap(prAdapter, prBssInfo, prHeSupportedMcsSet);
 	u4OverallLen += sizeof(struct _HE_SUPPORTED_MCS_FIELD);
 
-	if (ucMaxBw >= MAX_BW_160MHZ) {
+	if (heGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand)
+		>= MAX_BW_160MHZ) {
 		prHeSupportedMcsSet = (struct _HE_SUPPORTED_MCS_FIELD *)
 			(((uint8_t *) prHeCap) + u4OverallLen);
 		heRlmFillMCSMap(prAdapter, prBssInfo, prHeSupportedMcsSet);
 		u4OverallLen += sizeof(struct _HE_SUPPORTED_MCS_FIELD);
 	}
 
-	if (ucMaxBw >= MAX_BW_80_80_MHZ) {
+	if (heGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand)
+		>= MAX_BW_80_80_MHZ) {
 		prHeSupportedMcsSet = (struct _HE_SUPPORTED_MCS_FIELD *)
 			(((uint8_t *) prHeCap) + u4OverallLen);
 		heRlmFillMCSMap(prAdapter, prBssInfo, prHeSupportedMcsSet);
