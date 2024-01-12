@@ -1912,6 +1912,8 @@ uint32_t nicUniCmdBcnContent(struct ADAPTER *ad,
 		tag->ucAction = UPDATE_PROBE_RSP;
 	else if (cmd->ucUpdateMethod == IE_UPD_METHOD_DELETE_ALL)
 		tag->ucAction = BCN_ACTION_DISABLE;
+	else if (cmd->ucUpdateMethod == IE_UPD_METHOD_UNSOL_PROBE_RSP)
+		tag->ucAction = UPDATE_UNSOL_PROBE_RSP;
 	else
 		tag->ucAction = BCN_ACTION_ENABLE;
 	tag->u2PktLength = 2 + cmd->u2IELen;
