@@ -13173,39 +13173,27 @@ void kalConfigChksumOffload(
 #if CFG_SUPPORT_THERMAL_QUERY
 static int get_connsys_thermal_temp(void *data, int *temp)
 {
-	struct ADAPTER *ad = data;
-	struct THERMAL_DATA *thermal;
-	uint32_t temperature = 0;
-	uint32_t status = WLAN_STATUS_SUCCESS;
-	uint32_t size = 0;
-	uint8_t band;
+	struct thermal_sensor_info *sensor = data;
+	struct ADAPTER *ad = (struct ADAPTER *)sensor->priv;
+	struct THERMAL_TEMP_DATA temp_data;
+	uint32_t status;
 
-	size = sizeof(struct THERMAL_DATA) * ENUM_BAND_NUM;
-	thermal = kalMemAlloc(size, VIR_MEM_TYPE);
-	if (!thermal)
-		goto exit;
-	kalMemZero(thermal, size);
-
-	status = wlanQueryThermalTemp(ad->prGlueInfo, thermal);
+	kalMemZero(&temp_data, sizeof(temp_data));
+	temp_data.eType = sensor->type;
+	temp_data.ucIdx = sensor->sendor_idx;
+	status = wlanQueryThermalTemp(ad, &temp_data);
 	if (status != WLAN_STATUS_SUCCESS)
 		goto exit;
 
-	for (band = 0; band < ENUM_BAND_NUM; band++, data++)
-		temperature += thermal->u4Temperature;
-
 exit:
 	if (status == WLAN_STATUS_SUCCESS) {
-		temperature *= 1000;
-		temperature /= ENUM_BAND_NUM;
-		*temp = temperature;
+		*temp = temp_data.u4Temperature;
 	} else {
 		*temp = THERMAL_TEMP_INVALID;
 	}
 
-	if (thermal)
-		kalMemFree(thermal, VIR_MEM_TYPE, size);
-
-	DBGLOG(REQ, INFO, "temp: %d\n", *temp);
+	DBGLOG(REQ, INFO, "[%s] temp: %d\n",
+		sensor->name, *temp);
 
 	return 0;
 }
@@ -13216,8 +13204,14 @@ static const struct thermal_zone_of_device_ops wf_thermal_ops = {
 
 int register_thermal_cbs(struct ADAPTER *ad)
 {
-	struct thermal_zone_device *tz;
+	struct mt66xx_chip_info *chip_info = ad->chip_info;
+	struct thermal_info *thermal_info = &chip_info->thermal_info;
+	struct thermal_zone_device *tzdev = NULL;
+	uint8_t idx = 0;
 	int err = 0;
+
+	if (thermal_info->sensor_num == 0)
+		goto exit;
 
 	if (!g_prPlatDev) {
 		DBGLOG(INIT, ERROR,
@@ -13226,17 +13220,22 @@ int register_thermal_cbs(struct ADAPTER *ad)
 		goto exit;
 	}
 
-	tz = thermal_zone_of_sensor_register(&g_prPlatDev->dev,
-		0, ad, &wf_thermal_ops);
-	if (IS_ERR(tz)) {
-		err = PTR_ERR(tz);
-		DBGLOG(INIT, ERROR,
-			"Failed to register the thermal cbs: %d\n",
-			err);
-		goto exit;
-	}
+	for (idx = 0; idx < thermal_info->sensor_num; idx++) {
+		struct thermal_sensor_info *sensor =
+			&thermal_info->sensor_info[idx];
 
-	ad->tz = tz;
+		sensor->priv = (void *)ad;
+		tzdev = devm_thermal_zone_of_sensor_register(&g_prPlatDev->dev,
+			idx, sensor, &wf_thermal_ops);
+		if (IS_ERR(tzdev)) {
+			err = PTR_ERR(tzdev);
+			DBGLOG(INIT, ERROR,
+				"[%d] Failed to register the thermal cbs: %d\n",
+				idx, err);
+			goto exit;
+		}
+		sensor->tzd = tzdev;
+	}
 
 exit:
 	return err;
@@ -13244,12 +13243,24 @@ exit:
 
 void unregister_thermal_cbs(struct ADAPTER *ad)
 {
-	if (!ad->tz)
+	struct mt66xx_chip_info *chip_info = ad->chip_info;
+	struct thermal_info *thermal_info = &chip_info->thermal_info;
+	uint8_t idx = 0;
+
+	if (thermal_info->sensor_num == 0)
 		return;
 
-	thermal_zone_of_sensor_unregister(ad->prGlueInfo->prDev,
-		ad->tz);
-	ad->tz = NULL;
+	if (!g_prPlatDev)
+		return;
+
+	for (idx = 0; idx < thermal_info->sensor_num; idx++) {
+		struct thermal_sensor_info *sensor =
+			&thermal_info->sensor_info[idx];
+
+		devm_thermal_zone_of_sensor_unregister(&g_prPlatDev->dev,
+			sensor->tzd);
+		sensor->tzd = NULL;
+	}
 }
 #endif
 

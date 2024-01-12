@@ -548,6 +548,16 @@ static struct CCIF_OPS mt6639_ccif_ops = {
 };
 #endif
 
+#if CFG_SUPPORT_THERMAL_QUERY
+struct thermal_sensor_info mt6639_thermal_sensor_info[] = {
+	{"wifi_adie_0", THERMAL_TEMP_TYPE_ADIE, 0},
+	{"wifi_ddie_0", THERMAL_TEMP_TYPE_DDIE, 0},
+	{"wifi_ddie_1", THERMAL_TEMP_TYPE_DDIE, 1},
+	{"wifi_ddie_2", THERMAL_TEMP_TYPE_DDIE, 2},
+	{"wifi_ddie_3", THERMAL_TEMP_TYPE_DDIE, 3},
+};
+#endif
+
 struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.bus_info = &mt6639_bus_info,
 #if CFG_ENABLE_FW_DOWNLOAD
@@ -633,8 +643,14 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 		.type = EMI_ALLOC_TYPE_LK,
 #else
 		.type = EMI_ALLOC_TYPE_IN_DRIVER,
-#endif /* CFG_MTK_ANDROID_WMT */
+#endif /* CFG_MTK_ANDROID_EMI */
 	},
+#if CFG_SUPPORT_THERMAL_QUERY
+	.thermal_info = {
+		.sensor_num = ARRAY_SIZE(mt6639_thermal_sensor_info),
+		.sensor_info = mt6639_thermal_sensor_info,
+	},
+#endif /* CFG_MTK_ANDROID_WMT */
 #else
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
 		BIT(CHIP_CAPA_XTAL_TRIM),
