@@ -65,7 +65,7 @@ struct HW_MAC_RX_STS_GROUP_5 {		/* DW24 - */
 struct tx_free_done_rpt {
 	uint32_t dw0;
 	uint32_t dw1;
-	void *arIdSets[0];
+	void *arIdSets[];
 };
 
 uint16_t nic_rxd_v3_get_rx_byte_count(

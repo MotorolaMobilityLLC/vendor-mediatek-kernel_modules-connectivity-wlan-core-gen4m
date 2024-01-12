@@ -1142,7 +1142,7 @@ struct ieee80211_2040_intol_chan_report {
 	u8 element_id;
 	u8 length;
 	u8 op_class;
-	u8 variable[0]; /* Channel List */
+	u8 variable[]; /* Channel List */
 } STRUCT_PACKED;
 
 /* IEEE 802.11v - WNM-Sleep Mode element */
@@ -1188,7 +1188,7 @@ struct rrm_link_measurement_request {
 	u8 dialog_token;
 	s8 tx_power;
 	s8 max_tp;
-	u8 variable[0];
+	u8 variable[];
 } STRUCT_PACKED;
 
 /* IEEE Std 802.11-2012, 8.5.7.5 - Link Measurement Report frame format */
@@ -1199,7 +1199,7 @@ struct rrm_link_measurement_report {
 	u8 tx_ant_id;
 	u8 rcpi;
 	u8 rsni;
-	u8 variable[0];
+	u8 variable[];
 } STRUCT_PACKED;
 
 #define SSID_MAX_LEN 32
@@ -1222,7 +1222,7 @@ struct multi_band_ie {
 	 *   Pairwise Cipher Suite Count
 	 *   Pairwise Cipher Suite List
 	 */
-	u8 variable[0];
+	u8 variable[];
 } STRUCT_PACKED;
 
 enum mb_ctrl_sta_role {

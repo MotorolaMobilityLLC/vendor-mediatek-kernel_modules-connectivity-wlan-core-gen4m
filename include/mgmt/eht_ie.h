@@ -18,7 +18,7 @@ struct IE_EHT_CAP {
 	u_int8_t  ucExtId;
 	u_int8_t  ucEhtMacCap[EHT_MAC_CAP_BYTE_NUM];
 	u_int8_t  ucEhtPhyCap[EHT_PHY_CAP_BYTE_NUM]; /* BIT0 ~ BIT71 */
-	u_int8_t  aucVarInfo[0];
+	u_int8_t  aucVarInfo[];
 } __KAL_ATTRIB_PACKED__;
 
 /* EHT Operation Parameters */
@@ -62,7 +62,7 @@ struct IE_EHT_OP {
 	u_int8_t  ucExtId;
 	u_int8_t  ucEhtOpParams;
 	u_int32_t u4BasicEhtMcsNssSet;
-	u_int8_t  aucVarInfo[0];
+	u_int8_t  aucVarInfo[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__

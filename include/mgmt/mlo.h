@@ -117,7 +117,7 @@ struct SUB_IE_MULTI_LINK_CONTROL {
 	u_int8_t  ucId;
 	u_int8_t  ucLength;
 	u_int16_t u2Ctrl;
-	u_int8_t aucCommonInfo[0];
+	u_int8_t aucCommonInfo[];
 } __KAL_ATTRIB_PACKED__;
 
 #define BE_SET_ML_STA_CTRL_LINK_ID(_u2ctrl, _val) \
@@ -186,14 +186,14 @@ struct IE_NON_INHERITANCE {
 	uint8_t ucId;
 	uint8_t ucLength;
 	uint8_t ucExtId;
-	uint8_t aucList[0];
+	uint8_t aucList[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct IE_FRAGMENT {
 	uint8_t ucId;
 	uint8_t ucLength;
-	uint8_t pucData[0];
+	uint8_t pucData[];
 } __KAL_ATTRIB_PACKED__;
 
 /*802.11be D3.0 Figure 9-1002ao TID-to-Link Mapping element format*/
@@ -203,7 +203,7 @@ struct IE_TID_TO_LINK_MAPPING {
 	uint8_t ucLength;
 	uint8_t ucExtId;
 	uint8_t ucCtrl;
-	uint8_t ucOptCtrl[0];
+	uint8_t ucOptCtrl[];
 } __KAL_ATTRIB_PACKED__;
 
 struct STA_PROFILE {

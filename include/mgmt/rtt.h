@@ -115,7 +115,7 @@ struct RTT_RESULT_ENTRY {
 	struct RTT_RESULT rResult;
 	uint16_t u2IELen;
 	/* Keep it last */
-	uint8_t aucIE[0];
+	uint8_t aucIE[];
 };
 
 struct RTT_INFO {

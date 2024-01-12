@@ -61,7 +61,7 @@ struct HIF_HW_TX_HEADER {
 	uint16_t u2TxByteCount;
 	uint8_t ucEtherTypeOffset;
 	uint8_t ucCSflags;
-	uint8_t aucBuffer[0];
+	uint8_t aucBuffer[];
 };
 
 struct HIF_TX_HEADER {

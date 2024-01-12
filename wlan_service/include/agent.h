@@ -99,7 +99,7 @@ struct GNU_PACKED hqa_tx_content {
 	u_char addr1[SERV_MAC_ADDR_LEN];
 	u_char addr2[SERV_MAC_ADDR_LEN];
 	u_char addr3[SERV_MAC_ADDR_LEN];
-	u_char payload[0];
+	u_char payload[];
 };
 
 struct GNU_PACKED hqa_tx {

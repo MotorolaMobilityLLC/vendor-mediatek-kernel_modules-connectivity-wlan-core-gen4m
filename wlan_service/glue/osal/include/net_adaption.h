@@ -430,7 +430,7 @@ struct GNU_PACKED serv_hdr_802_11 {
 	u_int16 frag:4;
 	u_int16 sequence:12;
 #endif				/* !RT_BIG_ENDIAN */
-	u_char octet[0];
+	u_char octet[];
 };
 
 /* Service fw related information */
@@ -1391,7 +1391,7 @@ struct list_mode_tx_seg_header {
 	u_int32	u4SegNum;
 	u_int32	u4SegParaNum;
 
-	u_int32	au4Buffer[0];
+	u_int32	au4Buffer[];
 };
 
 struct list_mode_rx_seg_header {
@@ -1400,7 +1400,7 @@ struct list_mode_rx_seg_header {
 	u_int32	u4SegNum;
 	u_int32	u4SegParaNum;
 
-	u_int32	au4Buffer[0];
+	u_int32	au4Buffer[];
 };
 
 struct list_mode_rx_get_status {

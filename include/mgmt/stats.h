@@ -58,7 +58,7 @@ enum ENUM_STATS_CGS_TLV_TAG_ID_T {
 struct STATS_TRX_TLV_T {
 	uint32_t u4Tag;
 	uint32_t u4Len;
-	uint8_t  aucBuffer[0];
+	uint8_t  aucBuffer[];
 };
 
 typedef void(*PFN_STATS_HANDLE)(uint8_t,
