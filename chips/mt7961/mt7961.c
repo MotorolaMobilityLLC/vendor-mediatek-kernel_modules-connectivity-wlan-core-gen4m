@@ -70,9 +70,8 @@
 */
 
 #include "coda/mt7961/wf_wfdma_host_dma0.h"
-
+#include "coda/mt7961/wf_cr_sw_def.h"
 #include "precomp.h"
-
 #include "mt7961.h"
 
 /*******************************************************************************
@@ -407,31 +406,20 @@ static void mt7961ReadIntStatus(
 	HAL_MCR_WR(prAdapter,
 		WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR, u4RegValue);
 }
+
 #endif /*_HIF_PCIE || _HIF_AXI */
 
 #if defined(_HIF_USB)
-uint16_t wlanHarrierUsbRxByteCount(
+void mt7961Connac2xWfdmaInitForUSB(
 	struct ADAPTER *prAdapter,
-	struct BUS_INFO *prBusInfo,
-	uint8_t *pRXD)
+	struct mt66xx_chip_info *prChipInfo)
 {
-	uint16_t u2RxByteCount;
-	uint8_t ucPacketType;
-	uint8_t ucHdrTrans;
-
-	ucHdrTrans = NIC_RX_FLAG_IS_HEADER_TRAN(pRXD);
-	ucPacketType = NIC_RX_GET_PKT_TYPE(pRXD);
-	u2RxByteCount = NIC_RX_GET_RX_BYTE_CNT(pRXD);
-	if ((ucPacketType == RX_PKT_TYPE_RX_DATA) && ucHdrTrans)
-		u2RxByteCount =
-		ALIGN_8(u2RxByteCount) + prBusInfo->u4RxPaddingRxInfo;
-	else
-		u2RxByteCount =
-		ALIGN_4(u2RxByteCount) + prBusInfo->u4RxPaddingCSO;
-
-	return u2RxByteCount;
+	HAL_MCR_WR(prAdapter, 0x74000004, 0);
+	HAL_MCR_WR(prAdapter, 0x74000014, 0);
+	HAL_MCR_WR(prAdapter, 0x74000300, 0);
 }
-#endif /* defined(_HIF_USB) */
+
+#endif
 
 struct BUS_INFO mt7961_bus_info = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -500,6 +488,21 @@ struct BUS_INFO mt7961_bus_info = {
 	.setRxRingHwAddr = mt7961SetRxRingHwAddr,
 	.wfdmaAllocRxRing = mt7961LiteWfdmaAllocRxRing,
 #endif /*_HIF_PCIE || _HIF_AXI */
+
+#if defined(_HIF_USB)
+	.u4UdmaWlCfg_0_Addr = CONNAC2X_UDMA_WLCFG_0,
+	.u4UdmaWlCfg_1_Addr = CONNAC2X_UDMA_WLCFG_1,
+	.u4UdmaWlCfg_0 =
+	    (CONNAC2X_UDMA_WLCFG_0_WL_TX_EN(1) |
+	     CONNAC2X_UDMA_WLCFG_0_WL_RX_EN(1) |
+	     CONNAC2X_UDMA_WLCFG_0_WL_RX_MPSZ_PAD0(1) |
+	     CONNAC2X_UDMA_WLCFG_0_TICK_1US_EN(1)),
+	.u4UdmaTxQsel = CONNAC2X_UDMA_TX_QSEL,
+	.u4device_vender_request_in = DEVICE_VENDOR_REQUEST_IN_CONNAC2,
+	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT_CONNAC2,
+	.asicUsbEventEpDetected = asicConnac2xUsbEventEpDetected,
+	.asicUsbRxByteCount = asicConnac2xUsbRxByteCount,
+#endif
 };
 
 #if CFG_ENABLE_FW_DOWNLOAD
@@ -573,6 +576,12 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7961 = {
 	.is_support_wfdma1 = FALSE,
 	.asicWfdmaReInit = asicConnac2xWfdmaReInit,
 	.asicWfdmaReInit_handshakeInit = asicConnac2xWfdmaDummyCrWrite,
+#if defined(_HIF_USB)
+	.asicUsbInit = asicConnac2xWfdmaInitForUSB,
+	.asicUsbInit_ic_specific = mt7961Connac2xWfdmaInitForUSB,
+	.u4SerUsbMcuEventAddr = WF_SW_DEF_CR_USB_MCU_EVENT_ADD,
+	.u4SerUsbHostAckAddr = WF_SW_DEF_CR_USB_HOST_ACK_ADDR,
+#endif
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7961 = {
