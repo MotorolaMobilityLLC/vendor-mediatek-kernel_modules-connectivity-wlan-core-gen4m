@@ -8511,11 +8511,11 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-	DBGLOG(TX, INFO,
-	       "TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] Status[%u], SeqNo: %d\n",
-	       apucPktType[prMsduInfo->ucPktType], prMsduInfo->u4TxDoneTag,
-	       prMsduInfo->ucWlanIndex,
-	       prMsduInfo->ucPID, rTxDoneStatus, prMsduInfo->ucTxSeqNum);
+	DBGLOG_LIMITED(TX, INFO,
+		"TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] Status[%u], SeqNo: %d\n",
+		apucPktType[prMsduInfo->ucPktType], prMsduInfo->u4TxDoneTag,
+		prMsduInfo->ucWlanIndex, prMsduInfo->ucPID, rTxDoneStatus,
+		prMsduInfo->ucTxSeqNum);
 
 	if (prMsduInfo->ucPktType == ENUM_PKT_1X) {
 		p2pRoleFsmNotifyEapolTxStatus(prAdapter,
