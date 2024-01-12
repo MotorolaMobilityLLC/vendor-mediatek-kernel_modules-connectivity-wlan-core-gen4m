@@ -983,6 +983,11 @@ nanDataFreeNdp(struct ADAPTER *prAdapter, struct _NAN_NDP_INSTANCE_T *prNDP) {
 	prDataPathInfo = &(prAdapter->rDataPathInfo);
 	prNDL = nanDataUtilGetNdl(prAdapter, prNDP);
 
+	if (!prNDL) {
+		DBGLOG(NAN, ERROR, "[%s] prNDL error\n", __func__);
+		return;
+	}
+
 	if (prNDP->u2KdeLen) {
 		prNDP->pucKdeInfo = NULL;
 		prNDP->u2KdeLen = 0;
@@ -2762,6 +2767,11 @@ nanDataPathProtocolFsmStep(IN struct ADAPTER *prAdapter,
 
 	prNDL = nanDataUtilGetNdl(prAdapter, prNDP);
 
+	if (!prNDL) {
+		DBGLOG(NAN, ERROR, "[%s] prNDL error\n", __func__);
+		return NAN_NDP_DISCONNECT;
+	}
+
 	eNdpConnectionStatus = NAN_NDP_DISCONNECT;
 
 	do {
@@ -4080,6 +4090,11 @@ nanNdpSendDataIndicationEvent(IN struct ADAPTER *prAdapter,
 
 	prNDL = nanDataUtilGetNdl(prAdapter, prNDP);
 
+	if (!prNDL) {
+		DBGLOG(NAN, ERROR, "[%s] prNDL error\n", __func__);
+		return;
+	}
+
 	rDataReqInd.eventID = ENUM_NAN_DATA_INDICATION;
 	rDataReqInd.service_instance_id = prNDP->ucPublishId;
 	rDataReqInd.ndp_instance_id = prNDP->ucNDPID;
@@ -4230,6 +4245,11 @@ nanNdpSendDataPathRequest(IN struct ADAPTER *prAdapter,
 	}
 
 	prNDL = nanDataUtilGetNdl(prAdapter, prNDP);
+
+	if (!prNDL) {
+		DBGLOG(NAN, ERROR, "[%s] prNDL error\n", __func__);
+		return WLAN_STATUS_INVALID_DATA;
+	}
 
 	u2EstimatedFrameLen =
 		OFFSET_OF(struct _NAN_ACTION_FRAME_T, aucInfoContent);
@@ -4480,6 +4500,11 @@ nanNdpSendDataPathConfirm(IN struct ADAPTER *prAdapter,
 
 	prNDL = nanDataUtilGetNdl(prAdapter, prNDP);
 
+	if (!prNDL) {
+		DBGLOG(NAN, ERROR, "[%s] prNDL error\n", __func__);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	u2EstimatedFrameLen =
 		OFFSET_OF(struct _NAN_ACTION_FRAME_T, aucInfoContent);
 
@@ -4590,6 +4615,11 @@ nanNdpSendDataPathKeyInstall(IN struct ADAPTER *prAdapter,
 
 	prNDL = nanDataUtilGetNdl(prAdapter, prNDP);
 
+	if (!prNDL) {
+		DBGLOG(NAN, ERROR, "[%s] prNDL error\n", __func__);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	u2EstimatedFrameLen =
 		OFFSET_OF(struct _NAN_ACTION_FRAME_T, aucInfoContent);
 
@@ -4696,6 +4726,11 @@ nanNdpSendDataPathTermination(IN struct ADAPTER *prAdapter,
 	}
 
 	prNDL = nanDataUtilGetNdl(prAdapter, prNDP);
+
+	if (!prNDL) {
+		DBGLOG(NAN, ERROR, "[%s] prNDL error\n", __func__);
+		return WLAN_STATUS_INVALID_DATA;
+	}
 
 	u2EstimatedFrameLen =
 		OFFSET_OF(struct _NAN_ACTION_FRAME_T, aucInfoContent);
