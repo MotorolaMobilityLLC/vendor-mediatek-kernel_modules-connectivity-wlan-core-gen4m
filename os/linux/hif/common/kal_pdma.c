@@ -1086,6 +1086,80 @@ static uint8_t kalGetSwAmsduNum(struct GLUE_INFO *prGlueInfo,
 	return prStaRec->ucMaxMpduCount;
 }
 
+void kalAcquireHifTxDataQLock(IN struct GL_HIF_INFO *prHifInfo,
+		IN uint32_t u4Port,
+		OUT unsigned long *plHifTxDataQFlags)
+{
+	unsigned long ulHifTxDataQFlags = 0;
+
+	if (!HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) &&
+		!HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
+		return;
+
+	if (unlikely(prHifInfo == NULL)) {
+		DBGLOG(INIT, ERROR, "prHifInfo is NULL\n");
+		return;
+	}
+
+	spin_lock_irqsave(&prHifInfo->rTxDataQLock[u4Port],
+			ulHifTxDataQFlags);
+	*plHifTxDataQFlags = ulHifTxDataQFlags;
+}
+
+void kalReleaseHifTxDataQLock(IN struct GL_HIF_INFO *prHifInfo,
+		IN uint32_t u4Port,
+		IN unsigned long ulHifTxDataQFlags)
+{
+	if (!HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) &&
+		!HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
+		return;
+
+
+	if (unlikely(prHifInfo == NULL)) {
+		DBGLOG(INIT, ERROR, "prHifInfo is NULL\n");
+		return;
+	}
+
+	spin_unlock_irqrestore(&prHifInfo->rTxDataQLock[u4Port],
+			ulHifTxDataQFlags);
+}
+
+void kalAcquireHifTxRingLock(IN struct RTMP_TX_RING *prTxRing,
+		OUT unsigned long *plHifTxRingFlags)
+{
+	unsigned long ulHifTxRingFlags = 0;
+
+	if (!HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) &&
+		!HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
+		return;
+
+	if (unlikely(prTxRing == NULL)) {
+		DBGLOG(INIT, ERROR, "prTxRing is NULL\n");
+		return;
+	}
+
+	spin_lock_irqsave(&prTxRing->rTxDmaQLock,
+			ulHifTxRingFlags);
+	*plHifTxRingFlags = ulHifTxRingFlags;
+}
+
+void kalReleaseHifTxRingLock(IN struct RTMP_TX_RING *prTxRing,
+		IN unsigned long ulHifTxRingFlags)
+{
+	if (!HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) &&
+		!HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
+		return;
+
+	if (unlikely(prTxRing == NULL)) {
+		DBGLOG(INIT, ERROR, "prTxRing is NULL\n");
+		return;
+	}
+
+	spin_unlock_irqrestore(&prTxRing->rTxDmaQLock,
+		ulHifTxRingFlags);
+
+}
+
 u_int8_t kalDevWriteData(IN struct GLUE_INFO *prGlueInfo,
 	IN struct MSDU_INFO *prMsduInfo)
 {
@@ -1100,7 +1174,8 @@ static bool kalDevWriteDataByQueue(IN struct GLUE_INFO *prGlueInfo,
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct TX_DATA_REQ *prTxReq;
 	uint32_t u4Port = 0;
-	unsigned long flags;
+
+	KAL_HIF_TXDATAQ_LOCK_DECLARATION();
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -1108,10 +1183,10 @@ static bool kalDevWriteDataByQueue(IN struct GLUE_INFO *prGlueInfo,
 	u4Port = halTxRingDataSelect(prGlueInfo->prAdapter, prMsduInfo);
 	prTxReq = &prMsduInfo->rTxReq;
 	prTxReq->prMsduInfo = prMsduInfo;
-	spin_lock_irqsave(&prHifInfo->rTxDataQLock[u4Port], flags);
+	KAL_HIF_TXDATAQ_LOCK(prHifInfo, u4Port);
 	list_add_tail(&prTxReq->list, &prHifInfo->rTxDataQ[u4Port]);
 	prHifInfo->u4TxDataQLen[u4Port]++;
-	spin_unlock_irqrestore(&prHifInfo->rTxDataQLock[u4Port], flags);
+	KAL_HIF_TXDATAQ_UNLOCK(prHifInfo, u4Port);
 
 	return true;
 }
@@ -1134,12 +1209,19 @@ u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
 	struct list_head rTempList;
 	uint32_t u4Idx;
 	static int32_t ai4RingLock[NUM_OF_TX_RING];
-	unsigned long flags;
+
+	KAL_HIF_TXDATAQ_LOCK_DECLARATION();
+#if !CFG_TX_DIRECT_VIA_HIF_THREAD
+	KAL_HIF_TXRING_LOCK_DECLARATION();
+#endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 
 	ASSERT(prGlueInfo);
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
+
+	/* disable softirq to improve processing efficiency */
+	local_bh_disable();
 
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
 		if (unlikely(GLUE_INC_REF_CNT(ai4RingLock[u4Idx]) > 1)) {
@@ -1150,24 +1232,20 @@ u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
 			goto end;
 		}
 
-		spin_lock_irqsave(&prHifInfo->rTxDataQLock[u4Idx],
-			flags);
-		if (list_empty(&prHifInfo->rTxDataQ[u4Idx])) {
-			spin_unlock_irqrestore(&prHifInfo->rTxDataQLock[u4Idx],
-				flags);
+		if (list_empty(&prHifInfo->rTxDataQ[u4Idx]))
 			goto end;
-		}
+
 		/* move list entry of rTxDataQ to rTempList */
 		INIT_LIST_HEAD(&rTempList);
+		KAL_HIF_TXDATAQ_LOCK(prHifInfo, u4Idx);
 		list_replace_init(&prHifInfo->rTxDataQ[u4Idx], &rTempList);
-		spin_unlock_irqrestore(&prHifInfo->rTxDataQLock[u4Idx],
-			flags);
+		KAL_HIF_TXDATAQ_UNLOCK(prHifInfo, u4Idx);
 
 		prTxRing = &prHifInfo->TxRing[u4Idx];
 
-		if (HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) ||
-			HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
-			spin_lock_irqsave(&prTxRing->rTxDmaQLock, flags);
+#if !CFG_TX_DIRECT_VIA_HIF_THREAD
+		KAL_HIF_TXRING_LOCK(prTxRing);
+#endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 
 		kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr,
 			      &prTxRing->TxCpuIdx);
@@ -1178,24 +1256,25 @@ u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
 		kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr,
 			       prTxRing->TxCpuIdx);
 
-		if (HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) ||
-			HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
-			spin_unlock_irqrestore(&prTxRing->rTxDmaQLock,
-				flags);
+#if !CFG_TX_DIRECT_VIA_HIF_THREAD
+		KAL_HIF_TXRING_UNLOCK(prTxRing);
+#endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 
-		spin_lock_irqsave(&prHifInfo->rTxDataQLock[u4Idx],
-			flags);
 		/* move list entries of rTempList to rTxDataQ */
-		if (!list_empty(&rTempList)) {
-			list_splice_tail_init(&prHifInfo->rTxDataQ[u4Idx],
-				&rTempList);
-			list_replace(&rTempList, &prHifInfo->rTxDataQ[u4Idx]);
-		}
-		spin_unlock_irqrestore(&prHifInfo->rTxDataQLock[u4Idx],
-			flags);
+		if (list_empty(&rTempList))
+			goto end;
+
+		KAL_HIF_TXDATAQ_LOCK(prHifInfo, u4Idx);
+		list_splice_tail_init(&prHifInfo->rTxDataQ[u4Idx],
+			&rTempList);
+		list_replace(&rTempList, &prHifInfo->rTxDataQ[u4Idx]);
+		KAL_HIF_TXDATAQ_UNLOCK(prHifInfo, u4Idx);
 end:
 		GLUE_DEC_REF_CNT(ai4RingLock[u4Idx]);
 	}
+
+	local_bh_enable();
+
 	return 0;
 }
 
