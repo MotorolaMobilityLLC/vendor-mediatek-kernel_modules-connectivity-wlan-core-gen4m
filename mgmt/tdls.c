@@ -2225,6 +2225,10 @@ TdlsDataFrameSend_DISCOVERY_RSP(struct ADAPTER *prAdapter,
 		prMsduInfoMgmt->ucTxSeqNum = nicIncreaseTxSeqNum(prAdapter);
 		prMsduInfoMgmt->pfTxDoneHandler = NULL;
 
+
+		nicTxConfigPktControlFlag(prMsduInfoMgmt,
+					  MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
+
 		/* Send them to HW queue */
 		nicTxEnqueueMsdu(prAdapter, prMsduInfoMgmt);
 	}
