@@ -1100,7 +1100,9 @@
 
 #define CFG_ENABLE_PER_STA_STATISTICS_LOG 1
 
-#define CFG_SUPPORT_LLS 0
+#define CFG_SUPPORT_TX_LATENCY_STATS 0
+
+#define CFG_SUPPORT_LLS 1
 
 /*------------------------------------------------------------------------------
  * Flags for prepare the FW compile flag
