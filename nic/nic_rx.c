@@ -1855,7 +1855,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 			(prSwRfb->pucRecvBuff + prChipInfo->rxd_size);
 	if (prEvent->ucEID != EVENT_ID_DEBUG_MSG
 	    && prEvent->ucEID != EVENT_ID_ASSERT_DUMP) {
-		DBGLOG(NIC, INFO,
+		DBGLOG_LIMITED(NIC, INFO,
 			"RX EVENT: ID[0x%02X] SEQ[%u] LEN[%u]\n",
 			prEvent->ucEID, prEvent->ucSeqNum,
 			prEvent->u2PacketLength);
@@ -1895,7 +1895,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 			/* return prCmdInfo */
 			cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 		} else {
-			DBGLOG(RX, INFO,
+			DBGLOG_LIMITED(RX, INFO,
 				"UNHANDLED RX EVENT: ID[0x%02X] SEQ[%u] LEN[%u]\n",
 			  prEvent->ucEID, prEvent->ucSeqNum,
 			  prEvent->u2PacketLength);
@@ -1904,7 +1904,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 
 	/* Reset Chip NoAck flag */
 	if (prAdapter->fgIsChipNoAck) {
-		DBGLOG(RX, WARN,
+		DBGLOG_LIMITED(RX, WARN,
 		       "Got response from chip, clear NoAck flag!\n");
 		WARN_ON(TRUE);
 	}

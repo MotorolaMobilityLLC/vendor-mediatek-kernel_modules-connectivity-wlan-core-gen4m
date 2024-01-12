@@ -4617,7 +4617,7 @@ void kalEnqueueCommand(IN struct GLUE_INFO *prGlueInfo,
 	}
 #endif
 
-	DBGLOG(INIT, TRACE,
+	DBGLOG_LIMITED(INIT, TRACE,
 	       "EN-Q CMD TYPE[%u] ID[0x%02X] SEQ[%u] to CMD Q\n",
 	       prCmdInfo->eCmdType, prCmdInfo->ucCID,
 	       prCmdInfo->ucCmdSeqNum);
