@@ -744,11 +744,15 @@ void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 	spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
 }
 
-void halHifSwInfoInit(IN struct ADAPTER *prAdapter)
+bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 {
-	halWpdmaAllocRing(prAdapter->prGlueInfo);
+	if (!halWpdmaAllocRing(prAdapter->prGlueInfo))
+		return false;
+
 	halWpdmaInitRing(prAdapter->prGlueInfo);
 	halInitMsduTokenInfo(prAdapter);
+
+	return true;
 }
 
 void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
@@ -1028,18 +1032,73 @@ static void *halWpdmaAllocRxPacketBuff(IN void *pPciDev,
 	return (void *) pkt;
 }
 
-void halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
-	uint32_t u4Num, uint32_t u4Size,
-	uint32_t u4DescSize, uint32_t u4BufSize)
+bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
+			 uint32_t u4Size, uint32_t u4DescSize)
 {
+	struct GL_HIF_INFO *prHifInfo;
+	struct RTMP_TX_RING *pTxRing;
+	struct RTMP_DMABUF *pDmaBuf;
+	struct RTMP_DMACB *prDmaCb;
 	dma_addr_t RingBasePa;
 	void *RingBaseVa;
 	int32_t index;
+
+	ASSERT(prGlueInfo);
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	halWpdmaAllocRingDesc(prGlueInfo, &prHifInfo->TxDescRing[u4Num],
+			      u4Size * u4DescSize);
+	if (prHifInfo->TxDescRing[u4Num].AllocVa == NULL) {
+		DBGLOG(HAL, ERROR, "TxDescRing[%d] allocation failed\n", u4Num);
+		return false;
+	}
+
+	pDmaBuf = &prHifInfo->TxDescRing[u4Num];
+	DBGLOG(HAL, TRACE, "TxDescRing[%p]: total %d bytes allocated\n",
+	       pDmaBuf->AllocVa, (int32_t) pDmaBuf->AllocSize);
+
+	/* Save PA & VA for further operation */
+	RingBasePa = pDmaBuf->AllocPa;
+	RingBaseVa = pDmaBuf->AllocVa;
+
+	/*
+	 * Initialize Tx Ring Descriptor and associated buffer memory
+	 */
+	pTxRing = &prHifInfo->TxRing[u4Num];
+	for (index = 0; index < u4Size; index++) {
+		prDmaCb = &pTxRing->Cell[index];
+		prDmaCb->pPacket = NULL;
+		prDmaCb->pBuffer = NULL;
+		/* Init Tx Ring Size, Va, Pa variables */
+		prDmaCb->AllocSize = u4DescSize;
+		prDmaCb->AllocVa = RingBaseVa;
+		prDmaCb->AllocPa = RingBasePa;
+
+		RingBasePa += u4DescSize;
+		RingBaseVa = (uint8_t *) RingBaseVa + u4DescSize;
+	}
+
+	DBGLOG(HAL, TRACE, "TxRing[%d]: total %d entry allocated\n",
+	       u4Num, index);
+
+	return true;
+}
+
+bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
+			 uint32_t u4Size, uint32_t u4DescSize,
+			 uint32_t u4BufSize)
+{
+	struct GL_HIF_INFO *prHifInfo;
 	struct RXD_STRUCT *pRxD;
 	struct RTMP_DMABUF *pDmaBuf;
 	struct RTMP_DMACB *dma_cb;
+	dma_addr_t RingBasePa;
 	void *pPacket;
-	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	void *RingBaseVa;
+	int32_t index;
+
+	ASSERT(prGlueInfo);
+	prHifInfo = &prGlueInfo->rHifInfo;
 
 	/* Alloc RxRingDesc memory except Tx ring allocated eariler */
 	halWpdmaAllocRingDesc(prGlueInfo, &prHifInfo->RxDescRing[u4Num],
@@ -1047,7 +1106,7 @@ void halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
 	if (prHifInfo->RxDescRing[u4Num].AllocVa == NULL) {
 		DBGLOG(HAL, ERROR,
 			"\n\n\nRxDescRing allocation failed!!\n\n\n");
-		return;
+		return false;
 	}
 
 	DBGLOG(HAL, INFO, "RxDescRing[%p]: total %d bytes allocated\n",
@@ -1085,7 +1144,7 @@ void halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
 		if (pDmaBuf->AllocVa == NULL) {
 			log_dbg(HAL, ERROR, "\n\n\nFailed to allocate RxRing buffer index[%u]\n\n\n",
 				index);
-			return;
+			return false;
 		}
 
 		/* Zero init this memory block */
@@ -1102,6 +1161,7 @@ void halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
 
 	DBGLOG(HAL, TRACE,
 		"Rx[%d] Ring: total %d entry allocated\n", u4Num, index);
+	return true;
 }
 
 void halHifRst(struct GLUE_INFO *prGlueInfo)
@@ -1111,78 +1171,51 @@ void halHifRst(struct GLUE_INFO *prGlueInfo)
 	kalDevRegWrite(prGlueInfo, CONN_HIF_RST, 0x00000030);
 }
 
-void halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo)
+bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo)
 {
-	dma_addr_t RingBasePa;
-	void *RingBaseVa;
-	int32_t index, num;
-	struct RTMP_TX_RING *pTxRing;
-	struct RTMP_DMABUF *pDmaBuf;
-	struct RTMP_DMACB *prDmaCb;
-	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct GL_HIF_INFO *prHifInfo;
+	int32_t u4Num, u4Index;
 
-	do {
-		/*
-		 *   Allocate all ring descriptors, include TxD, RxD, MgmtD.
-		 *   Although each size is different, to prevent cacheline and
-		 *   alignment issue, I intentional set them all to 64 bytes
-		 */
-		for (num = 0; num < NUM_OF_TX_RING; num++) {
-			/*
-			 *  Allocate Tx ring descriptor's memory
-			 */
-			halWpdmaAllocRingDesc(prGlueInfo,
-				&prHifInfo->TxDescRing[num],
-				TX_RING_SIZE * TXD_SIZE);
-			if (prHifInfo->TxDescRing[num].AllocVa == NULL)
-				break;
+	ASSERT(prGlueInfo);
+	prHifInfo = &prGlueInfo->rHifInfo;
 
-			pDmaBuf = &prHifInfo->TxDescRing[num];
-			DBGLOG(HAL, TRACE,
-				"TxDescRing[%p]: total %d bytes allocated\n",
-				pDmaBuf->AllocVa, (int32_t) pDmaBuf->AllocSize);
-
-			/* Save PA & VA for further operation */
-			RingBasePa = pDmaBuf->AllocPa;
-			RingBaseVa = pDmaBuf->AllocVa;
-
-			/* Initialize Tx Ring Descriptor
-			 * and associated buffer memory
-			 */
-			pTxRing = &prHifInfo->TxRing[num];
-			for (index = 0; index < TX_RING_SIZE; index++) {
-				prDmaCb = &pTxRing->Cell[index];
-				prDmaCb->pPacket = NULL;
-				prDmaCb->pBuffer = NULL;
-				/* Init Tx Ring Size, Va, Pa variables */
-				prDmaCb->AllocSize = TXD_SIZE;
-				prDmaCb->AllocVa = RingBaseVa;
-				prDmaCb->AllocPa = RingBasePa;
-
-				RingBasePa += TXD_SIZE;
-				RingBaseVa = (uint8_t *) RingBaseVa + TXD_SIZE;
-			}
-
-			DBGLOG(HAL, TRACE,
-				"TxRing[%d]: total %d entry allocated\n",
-				num, index);
+	/*
+	 *   Allocate all ring descriptors, include TxD, RxD, MgmtD.
+	 *   Although each size is different, to prevent cacheline and alignment
+	 *   issue, I intentional set them all to 64 bytes
+	 */
+	for (u4Num = 0; u4Num < NUM_OF_TX_RING; u4Num++) {
+		if (!halWpdmaAllocTxRing(prGlueInfo, u4Num,
+					TX_RING_SIZE, TXD_SIZE)) {
+			DBGLOG(HAL, ERROR, "AllocTxRing[%d] fail\n", u4Num);
+			return false;
 		}
+	}
 
-		/* Data Rx path */
-		halWpdmaAllocRxRing(prGlueInfo, RX_RING_DATA_IDX_0,
-			RX_RING0_SIZE, RXD_SIZE, CFG_RX_MAX_PKT_SIZE);
-		/* Event Rx path */
-		halWpdmaAllocRxRing(prGlueInfo, RX_RING_EVT_IDX_1,
-			RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE);
-	} while (FALSE);
+	/* Data Rx path */
+	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_DATA_IDX_0,
+				RX_RING0_SIZE, RXD_SIZE,
+				CFG_RX_MAX_PKT_SIZE)) {
+		DBGLOG(HAL, ERROR, "AllocRxRing[0] fail\n");
+		return false;
+	}
+	/* Event Rx path */
+	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_EVT_IDX_1,
+				RX_RING1_SIZE, RXD_SIZE,
+				RX_BUFFER_AGGRESIZE)) {
+		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
+		return false;
+	}
 
 	/* Initialize all transmit related software queues */
 
 	/* Init TX rings index pointer */
-	for (index = 0; index < NUM_OF_TX_RING; index++) {
-		prHifInfo->TxRing[index].TxSwUsedIdx = 0;
-		prHifInfo->TxRing[index].TxCpuIdx = 0;
+	for (u4Index = 0; u4Index < NUM_OF_TX_RING; u4Index++) {
+		prHifInfo->TxRing[u4Index].TxSwUsedIdx = 0;
+		prHifInfo->TxRing[u4Index].TxCpuIdx = 0;
 	}
+
+	return true;
 }
 
 void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
@@ -1313,9 +1346,7 @@ void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo)
 	for (i = 0; i < NUM_OF_RX_RING; i++)
 		spin_lock_init((spinlock_t *) (&prHifInfo->RxRingLock[i]));
 
-	KAL_FLUSH_DCACHE();
 	prBusInfo->pdmaSetup(prGlueInfo, TRUE);
-	KAL_FLUSH_DCACHE();
 }
 
 void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo)
@@ -1589,7 +1620,6 @@ u_int8_t halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 
 	prTxRing->u4UsedCnt++;
 	kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr, prTxRing->TxCpuIdx);
-	KAL_FLUSH_DCACHE();
 
 	spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
 
@@ -1678,7 +1708,6 @@ u_int8_t halWpdmaWriteData(IN struct GLUE_INFO *prGlueInfo,
 
 	prTxRing->u4UsedCnt++;
 	kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr, prTxRing->TxCpuIdx);
-	KAL_FLUSH_DCACHE();
 
 	spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
 

@@ -423,7 +423,12 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter, IN struct REG_INFO *prRe
 		nicRxInitialize(prAdapter);
 
 		/* 4 <5> HIF SW info initialize */
-		halHifSwInfoInit(prAdapter);
+		if (!halHifSwInfoInit(prAdapter)) {
+			DBGLOG(INIT, ERROR, "halHifSwInfoInit failed!\n");
+			u4Status = WLAN_STATUS_FAILURE;
+			eFailReason = INIT_ADAPTER_FAIL;
+			break;
+		}
 
 		/* 4 <6> Enable HIF cut-through to N9 mode, not visiting CR4 */
 		HAL_ENABLE_FWDL(prAdapter, TRUE);

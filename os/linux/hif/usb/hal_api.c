@@ -1280,9 +1280,9 @@ void halProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 #endif
 }
 
-void halHifSwInfoInit(IN struct ADAPTER *prAdapter)
+bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 {
-
+	return true;
 }
 
 void halRxProcessMsduReport(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb)
