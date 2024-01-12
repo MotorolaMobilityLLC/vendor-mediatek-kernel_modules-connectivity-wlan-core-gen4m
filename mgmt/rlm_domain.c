@@ -2984,7 +2984,7 @@ u_int8_t rlmDomainGetTxPwrLimit(
 	struct GLUE_INFO *prGlueInfo,
 	struct TX_PWR_LIMIT_DATA *pTxPwrLimitData)
 {
-	u_int8_t bRet = TRUE;
+	u_int8_t bRet = FALSE;
 	uint8_t *pucConfigBuf = NULL;
 	uint32_t u4ConfigReadLen = 0;
 
@@ -2992,7 +2992,7 @@ u_int8_t rlmDomainGetTxPwrLimit(
 		WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE, VIR_MEM_TYPE);
 
 	if (!pucConfigBuf)
-		return FALSE;
+		return bRet;
 
 	bRet = rlmDomainTxPwrLimitLoadFromFile(prGlueInfo->prAdapter,
 		pucConfigBuf, &u4ConfigReadLen);
