@@ -8273,6 +8273,8 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 		(unsigned char)wlanCfgGetUint32(prAdapter,
 		"NanNdlFlowCtrlVer",
 		CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL);
+	prWifiVar->fgNanWmmSeq =
+		wlanCfgGetUint32(prAdapter, "NanWmmSeq", 1);
 #endif
 
 	prWifiVar->fgReuseRSNIE = (uint32_t) wlanCfgGetUint32(

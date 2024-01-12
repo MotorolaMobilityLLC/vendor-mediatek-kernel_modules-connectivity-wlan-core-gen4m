@@ -1261,6 +1261,7 @@ struct WIFI_VAR {
 	uint8_t ucNan2gBandwidth;
 	uint8_t ucNan5gBandwidth;
 	uint8_t ucNdlFlowCtrlVer;
+	unsigned char fgNanWmmSeq;
 #endif
 
 #if CFG_SUPPORT_TPENHANCE_MODE
