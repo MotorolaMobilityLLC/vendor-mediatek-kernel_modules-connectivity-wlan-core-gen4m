@@ -1469,6 +1469,16 @@ uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
+	/* FW only supports BMCWlan index 0 ~ 31.
+	 * it always checks BMCWlan index validity and triggers
+	 * assertion if BMCWlan index is invalid.
+	 */
+	if (prBssInfo->ucBMCWlanIndex == WTBL_RESERVED_ENTRY) {
+		DBGLOG(RSN, WARN,
+		       "Network may be deactivated already, ignore\n");
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
 	kalMemZero(&rCmdActivateCtrl,
 		   sizeof(struct CMD_BSS_ACTIVATE_CTRL));
 

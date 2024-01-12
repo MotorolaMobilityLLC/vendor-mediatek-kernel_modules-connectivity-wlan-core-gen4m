@@ -1299,7 +1299,12 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 						prAisBssInfo->ucBssIndex);
 					} else
 #endif
-					{
+					if (IS_NET_ACTIVE
+					    (prAdapter,
+					     prAdapter->
+					     prAisBssInfo->ucBssIndex) &&
+					    !prAdapter->rWifiVar.rScanInfo.
+						fgSchedScanning) {
 						UNSET_NET_ACTIVE(prAdapter,
 						prAdapter->prAisBssInfo->
 						ucBssIndex);
