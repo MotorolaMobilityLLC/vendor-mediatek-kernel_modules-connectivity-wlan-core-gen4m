@@ -33,7 +33,7 @@
  *******************************************************************************
  */
 
-#if CFG_MTK_ANDROID_EMI
+#if CFG_MTK_ANDROID_WMT
 u_int8_t *gEmiCalResult;
 u_int32_t gEmiCalSize;
 u_int32_t gEmiCalOffset;
@@ -48,7 +48,7 @@ struct wireless_dev *grWdev;
  *******************************************************************************
  */
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if CFG_MTK_ANDROID_WMT
 uint32_t wlanAccessCalibrationEMI(
 	struct INIT_EVENT_PHY_ACTION_RSP *pCalEvent,
 	uint8_t backupEMI)
@@ -193,7 +193,7 @@ uint32_t wlanRcvPhyActionRsp(struct ADAPTER *prAdapter,
 			HAL_PHY_ACTION_STATUS_RECAL)) {
 
 			/* read from EMI, backup in driver */
-#if 0
+#if CFG_MTK_ANDROID_WMT
 			wlanAccessCalibrationEMI(prPhyEvent,
 				TRUE);
 #endif
@@ -705,7 +705,7 @@ uint32_t wlanPhyAction(IN struct ADAPTER *prAdapter)
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	/* Setup calibration data from backup file */
-#if 0
+#if CFG_MTK_ANDROID_WMT
 	if (wlanAccessCalibrationEMI(NULL, FALSE) ==
 		WLAN_STATUS_SUCCESS)
 		u4Status = wlanSendPhyAction(prAdapter,
@@ -720,7 +720,7 @@ uint32_t wlanPhyAction(IN struct ADAPTER *prAdapter)
 	return u4Status;
 }
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if CFG_MTK_ANDROID_WMT
 int wlanPreCalPwrOn(void)
 {
 #define MAX_PRE_ON_COUNT 5
@@ -932,12 +932,13 @@ int wlanPreCalPwrOn(void)
 
 		kalSyncTimeToFW(prAdapter, TRUE);
 
-		wlanSendPhyAction(prAdapter,
-			HAL_PHY_ACTION_TAG_NVRAM,
-			0);
 #if (CFG_SUPPORT_CONNFEM == 1)
 		wlanSendPhyAction(prAdapter,
 			HAL_PHY_ACTION_TAG_COM_FEM,
+			0);
+#else
+		wlanSendPhyAction(prAdapter,
+			HAL_PHY_ACTION_TAG_NVRAM,
 			0);
 #endif
 
