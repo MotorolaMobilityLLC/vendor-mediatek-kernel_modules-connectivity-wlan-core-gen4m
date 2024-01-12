@@ -81,8 +81,15 @@ enum ENUM_MLR_STATE {
 #define MLR_BIT_V2_SUPPORT(u4MlrBitmap) \
 	((u4MlrBitmap & MLR_MODE_MLR_V2) ? TRUE : FALSE)
 
+#define MLR_V2_OR_ABOVE_SUPPORT(u4MlrBitmap) \
+	((u4MlrBitmap & (MLR_MODE_MLR_V2 \
+	| MLR_MODE_MLR_PLUS \
+	| MLR_MODE_ALR \
+	| MLR_MODE_DUAL_CTS)) ? TRUE : FALSE)
+
 #define MLR_BIT_V1_V2_SUPPORT(u4MlrBitmap) \
-	((u4MlrBitmap & (MLR_MODE_MLR_V1 | MLR_MODE_MLR_V2)) ? TRUE : FALSE)
+	(((u4MlrBitmap & (MLR_MODE_MLR_V1 | MLR_MODE_MLR_V2)) \
+	== (MLR_MODE_MLR_V1 | MLR_MODE_MLR_V2)) ? TRUE : FALSE)
 
 #define MLR_BIT_MLRP_SUPPORT(u4MlrBitmap) \
 	((u4MlrBitmap & MLR_MODE_MLR_PLUS) ? TRUE : FALSE)
@@ -96,22 +103,48 @@ enum ENUM_MLR_STATE {
 #define MLR_STATE_IN_START(ucMlrState) \
 	(ucMlrState == MLR_STATE_START)
 
+/* Check if DUT supports at least one MLR */
 #define MLR_IS_SUPPORT(prAdapter) \
 	(prAdapter->ucMlrIsSupport \
 	&& (prAdapter->u4MlrSupportBitmap != MLR_MODE_NOT_SUPPORT)) \
 
+/* Check if Peer supports at least one MLR */
 #define MLR_IS_PEER_SUPPORT(prStaRec) \
 	(prStaRec->fgIsMlrSupported \
 	&& (prStaRec->ucMlrSupportBitmap != MLR_MODE_NOT_SUPPORT))
 
+/* Check if both DUT and Peer support at least one MLR */
 #define MLR_IS_BOTH_SUPPORT(prAdapter, prStaRec) \
 	(prAdapter->ucMlrIsSupport \
 	&& (prAdapter->u4MlrSupportBitmap != MLR_MODE_NOT_SUPPORT) \
 	&& prStaRec->fgIsMlrSupported \
 	&& (prStaRec->ucMlrSupportBitmap != MLR_MODE_NOT_SUPPORT))
 
-#define MLR_CHECK_IF_BAND_IS_SUPPORT(eBand) \
-	(eBand != BAND_2G4)
+/* Check if interaction of both support at least MLRv1, MLRv2 or MLRv1+MLRv2 */
+#define MLR_IS_BOTH_INTERACTION_AT_LEAST_V1_V2(prAdapter, prStaRec) \
+	(MLR_BIT_V1_SUPPORT(MLR_BIT_INTERSECTION( \
+	prAdapter->u4MlrSupportBitmap, prStaRec->ucMlrSupportBitmap)) \
+	|| MLR_BIT_V2_SUPPORT(MLR_BIT_INTERSECTION( \
+	prAdapter->u4MlrSupportBitmap, prStaRec->ucMlrSupportBitmap)) \
+	|| MLR_BIT_V1_V2_SUPPORT(MLR_BIT_INTERSECTION( \
+	prAdapter->u4MlrSupportBitmap, prStaRec->ucMlrSupportBitmap)))
+
+/* Check if interaction of both support MLRv1 or above */
+#define MLR_IS_BOTH_INTERACTION_V1_OR_ABOVE(prAdapter, prStaRec) \
+	(MLR_BIT_SUPPORT(MLR_BIT_INTERSECTION( \
+	prAdapter->u4MlrSupportBitmap, prStaRec->ucMlrSupportBitmap)))
+
+/* Check if interaction of both support MLRv2 or above */
+#define MLR_IS_BOTH_INTERACTION_V2_OR_ABOVE(prAdapter, prStaRec) \
+	(MLR_V2_OR_ABOVE_SUPPORT(MLR_BIT_INTERSECTION( \
+	prAdapter->u4MlrSupportBitmap, prStaRec->ucMlrSupportBitmap)))
+
+#define MLR_BAND_IS_SUPPORT(eBand) \
+	(eBand != BAND_2G4 && eBand != BAND_NULL)
+
+#define MLR_GET_BAND(prAdapter, prStaRec) \
+	((prAdapter->aprBssInfo[prStaRec->ucBssIndex] != NULL) ? \
+	prAdapter->aprBssInfo[prStaRec->ucBssIndex]->eBand : BAND_NULL)
 
 #define MLR_CHECK_IF_RCPI_IS_LOW(prAdapter, ucRCPI) \
 	(ucRCPI < prAdapter->rWifiVar.ucTxMlrRateRcpiThr)
@@ -183,8 +216,8 @@ u_int8_t mlrDecideIfUseMlrRate(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo,
 		uint16_t *pu2RateCode);
 
-void mlrGenerateMTKOuiIEforMlr(struct ADAPTER *prAdapter,
-		struct MSDU_INFO *prMsduInfo);
+uint16_t mlrGenerateMlrIEforMTKOuiIE(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo, uint8_t *pucBuf);
 
 void mlrEventMlrFsmUpdateHandler(struct ADAPTER *prAdapter,
 		struct WIFI_EVENT *prEvent);
