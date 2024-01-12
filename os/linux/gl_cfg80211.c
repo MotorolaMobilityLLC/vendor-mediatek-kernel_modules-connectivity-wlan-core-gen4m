@@ -6601,7 +6601,7 @@ int mtk_cfg_channel_switch(struct wiphy *wiphy,
 
 static void mtk_vif_destructor(struct net_device *dev)
 {
-	struct wireless_dev *prWdev = ERR_PTR(-ENOMEM);
+	struct wireless_dev *prWdev = NULL;
 	uint32_t u4Idx = 0;
 	if (dev) {
 		DBGLOG(AIS, INFO, "netdev=%p, wdev=%p\n",

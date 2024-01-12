@@ -8152,7 +8152,7 @@ void p2pFunProcessAcsReport(struct ADAPTER *prAdapter,
 		struct PARAM_GET_CHN_INFO *prLteSafeChnInfo,
 		struct P2P_ACS_REQ_INFO *prAcsReqInfo)
 {
-	uint32_t u4LteSafeChnMask_2G = -1;
+	uint32_t u4LteSafeChnMask_2G;
 
 	if (!prAdapter || !prAcsReqInfo)
 		return;
