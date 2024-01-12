@@ -1634,7 +1634,7 @@ uint32_t fill_iface(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
 static uint8_t bandMaskByBssIdx(struct ADAPTER *prAdapter, uint8_t bss_idx)
 {
 	struct BSS_INFO *prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, bss_idx);
-	uint8_t ucHwBandIdxBitmap;
+	uint8_t ucHwBandIdxBitmap = 0;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prMldBssInfo;
 #endif
@@ -1642,7 +1642,8 @@ static uint8_t bandMaskByBssIdx(struct ADAPTER *prAdapter, uint8_t bss_idx)
 	if (!prBssInfo)
 		return 0;
 
-	ucHwBandIdxBitmap = BIT(prBssInfo->eHwBandIdx);
+	if (prBssInfo->eHwBandIdx < ENUM_BAND_NUM)
+		ucHwBandIdxBitmap = BIT(prBssInfo->eHwBandIdx);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
