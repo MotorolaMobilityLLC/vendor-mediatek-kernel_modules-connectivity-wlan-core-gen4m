@@ -522,9 +522,6 @@ struct AIS_FSM_INFO {
 
 	/*! \brief wext wpa related information */
 	struct GL_WPA_INFO rWpaInfo;
-#if CFG_SUPPORT_REPLAY_DETECTION
-	struct GL_DETECT_REPLAY_INFO prDetRplyInfo;
-#endif
 
 	/* Indicated media state */
 	enum ENUM_PARAM_MEDIA_STATE eParamMediaStateIndicated;

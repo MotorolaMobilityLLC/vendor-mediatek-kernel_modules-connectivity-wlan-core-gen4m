@@ -234,10 +234,18 @@ void nic_rxd_v3_fill_rfb(
 		(u2RxStatusOffset + u4HeaderOffset));
 	prSwRfb->u2HeaderLen = (uint16_t)
 		HAL_MAC_CONNAC3X_RX_STATUS_GET_HEADER_LEN(prRxStatus);
+
+	prSwRfb->fgIsBC = HAL_MAC_CONNAC3X_RX_STATUS_IS_BC(prRxStatus);
+	prSwRfb->fgIsMC = HAL_MAC_CONNAC3X_RX_STATUS_IS_MC(prRxStatus);
 	/* For MLO, MLD_ID need to be corrected according to TID */
 	prSwRfb->ucTid =
 		(uint8_t) HAL_MAC_CONNAC3X_RX_STATUS_GET_TID(prRxStatus);
-	prSwRfb->ucWlanIdx = getPrimaryWlanIdx(prAdapter, prSwRfb->ucTid,
+	if (prSwRfb->fgIsBC || prSwRfb->fgIsMC)
+		prSwRfb->ucWlanIdx =
+			HAL_MAC_CONNAC3X_RX_STATUS_GET_MLD_ID(prRxStatus);
+	else
+		prSwRfb->ucWlanIdx = getPrimaryWlanIdx(prAdapter,
+			prSwRfb->ucTid,
 		(uint8_t)HAL_MAC_CONNAC3X_RX_STATUS_GET_MLD_ID(prRxStatus));
 	prSwRfb->ucStaRecIdx = secGetStaIdxByWlanIdx(prAdapter,
 			prSwRfb->ucWlanIdx);
@@ -255,8 +263,6 @@ void nic_rxd_v3_fill_rfb(
 	prSwRfb->ucSecMode =
 		HAL_MAC_CONNAC3X_RX_STATUS_GET_SEC_MODE(prRxStatus);
 	prSwRfb->ucOFLD = HAL_MAC_CONNAC3X_RX_STATUS_GET_OFLD(prRxStatus);
-	prSwRfb->fgIsBC = HAL_MAC_CONNAC3X_RX_STATUS_IS_BC(prRxStatus);
-	prSwRfb->fgIsMC = HAL_MAC_CONNAC3X_RX_STATUS_IS_MC(prRxStatus);
 	prSwRfb->fgIsCipherMS =
 		HAL_MAC_CONNAC3X_RX_STATUS_IS_CIPHER_MISMATCH(prRxStatus);
 	prSwRfb->fgIsCipherLenMS =

@@ -2102,6 +2102,11 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 			prBssDesc->u4RsnSelectedAKMSuite;
 		prAisBssInfo->eBand = prBssDesc->eBand;
 
+#if CFG_SUPPORT_REPLAY_DETECTION
+		kalMemZero(&prAisBssInfo->rDetRplyInfo,
+			sizeof(struct GL_DETECT_REPLAY_INFO));
+#endif
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_CONNAC3X == 1)
 		/* connac3 MLO all bss use the same wmm index as main bss use */
 		prAisBssInfo->fgIsWmmInited = TRUE;
@@ -9084,7 +9089,7 @@ struct GL_DETECT_REPLAY_INFO *aisGetDetRplyInfo(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex) {
 
-	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->prDetRplyInfo;
+	return &aisGetAisBssInfo(prAdapter, ucBssIndex)->rDetRplyInfo;
 }
 #endif
 

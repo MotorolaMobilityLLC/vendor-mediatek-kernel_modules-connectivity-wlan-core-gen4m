@@ -569,6 +569,10 @@ struct BSS_INFO {
 #if CFG_SUPPORT_LLS
 	uint32_t u4RxMpduAc[STATS_LLS_WIFI_AC_MAX];
 #endif
+
+#if CFG_SUPPORT_REPLAY_DETECTION
+	struct GL_DETECT_REPLAY_INFO rDetRplyInfo;
+#endif
 };
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
