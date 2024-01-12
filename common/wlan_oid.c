@@ -3231,11 +3231,8 @@ wlanSetRemoveKey(struct ADAPTER *prAdapter,
 	ASSERT(prBssInfo);
 
 	u4KeyIndex = prRemovedKey->u4KeyIndex & 0x000000FF;
-#if CFG_SUPPORT_802_11W
-	ASSERT(u4KeyIndex < MAX_KEY_NUM + 2);
-#else
-	/* ASSERT(prCmdKey->ucKeyId < MAX_KEY_NUM); */
-#endif
+
+	ASSERT(u4KeyIndex < MAX_KEY_NUM);
 
 #if (CFG_WIFI_IGTK_GTK_SEPARATE == 0)
 	if (u4KeyIndex >= 4 && u4KeyIndex <= 5) {
