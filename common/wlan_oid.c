@@ -9965,7 +9965,8 @@ rftestQueryATInfo(IN struct ADAPTER *prAdapter,
 		prTestStatus = (union EVENT_TEST_STATUS *) pvQueryBuffer;
 
 		prTestStatus->rATInfo.u4FuncData =
-				prAdapter->chip_info->em_interface_version;
+			(prAdapter->chip_info->em_interface_version << 16) |
+			(prAdapter->rVerInfo.u2FwOwnVersion);
 
 		DBGLOG(RFTEST, INFO, "RF_AT_FUNCID_FW_INFO=0x%x\n",
 					prTestStatus->rATInfo.u4FuncData);
