@@ -279,22 +279,20 @@ void aisInitializeConnectionSettings(IN struct ADAPTER *prAdapter,
 
 	prConnSettings->fgIsAdHocQoSEnable = FALSE;
 
-
-	prAdapter->rWifiVar.eDesiredPhyConfig
-		= PHY_CONFIG_802_11ABGN;
-
-#if (CFG_SUPPORT_802_11AC == 1)
+#if CFG_SUPPORT_802_11AC
 	prAdapter->rWifiVar.eDesiredPhyConfig
 		= PHY_CONFIG_802_11ABGNAC;
+#else
+	prAdapter->rWifiVar.eDesiredPhyConfig
+		= PHY_CONFIG_802_11ABGN;
 #endif
 
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (fgEfuseCtrlAxOn == 1) {
-	prAdapter->rWifiVar.eDesiredPhyConfig
+		prAdapter->rWifiVar.eDesiredPhyConfig
 			= PHY_CONFIG_802_11ABGNACAX;
 	}
 #endif
-
 
 	/* Set default bandwidth modes */
 	prAdapter->rWifiVar.uc2G4BandwidthMode = CONFIG_BW_20M;
