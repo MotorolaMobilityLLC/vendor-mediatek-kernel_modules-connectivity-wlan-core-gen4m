@@ -3199,7 +3199,7 @@ void mldBssDump(struct ADAPTER *prAdapter)
 			prMldBssInfo->ucOmacIdx,
 			prMldBssInfo->ucGroupMldId,
 			prMldBssInfo->ucOmRemapIdx,
-			prMldBssInfo->aucOwnMldAddr);
+			MAC2STR(prMldBssInfo->aucOwnMldAddr));
 
 		DBGLOG(ML, INFO, "\tBss list:\n");
 		prBssList = &prMldBssInfo->rBssList;
@@ -3224,7 +3224,7 @@ void mldBssUpdateMldAddr(
 
 	DBGLOG(ML, INFO,
 		"prMldBssInfo: %d, macAddr: " MACSTR "\n",
-		prMldBssInfo->ucGroupMldId, paucBssId);
+		prMldBssInfo->ucGroupMldId, MAC2STR(paucBssId));
 
 	COPY_MAC_ADDR(prMldBssInfo->aucOwnMldAddr, paucBssId);
 }
@@ -3582,7 +3582,7 @@ void mldStarecDump(struct ADAPTER *prAdapter)
 			prMldStarec->u2EmlCap,
 			*(uint8_t *)(prMldStarec->aucStrBitmap + 2),
 			*(uint16_t *)(prMldStarec->aucStrBitmap),
-			prMldStarec->aucPeerMldAddr);
+			MAC2STR(prMldStarec->aucPeerMldAddr));
 
 		DBGLOG(ML, INFO, "\tRX pkt count:\n");
 		for (j = 0; j < ARRAY_SIZE(prMldStarec->aucRxPktCnt); j++)
