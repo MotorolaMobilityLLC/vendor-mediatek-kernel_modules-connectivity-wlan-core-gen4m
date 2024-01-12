@@ -123,7 +123,7 @@ static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 {
 	struct mt66xx_chip_info *chip_info;
 	uint8_t *tmp_buf = NULL;
-	size_t ret = 0;
+	ssize_t ret = 0;
 
 	glGetChipInfo((void **)&chip_info);
 	if (!chip_info) {
@@ -134,7 +134,7 @@ static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 
 	if (count != chip_info->rEmiInfo.coredump_size) {
 		DBGLOG(INIT, ERROR,
-			"coredump size mismatch (%lu %lu)\n",
+			"coredump size mismatch (%zu %u)\n",
 			count, chip_info->rEmiInfo.coredump_size);
 		ret = -EINVAL;
 		goto exit;
@@ -143,7 +143,7 @@ static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 	tmp_buf = kalMemAlloc(chip_info->rEmiInfo.coredump_size, VIR_MEM_TYPE);
 	if (tmp_buf == NULL) {
 		DBGLOG(INIT, ERROR,
-			"buffer(%d) alloc failed\n",
+			"buffer(%u) alloc failed\n",
 			chip_info->rEmiInfo.coredump_size);
 		ret = -ENOMEM;
 		goto exit;
@@ -159,7 +159,7 @@ static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 	}
 
 	ret = simple_read_from_buffer(buf, count, f_pos, tmp_buf, count);
-	DBGLOG(INIT, INFO, "ret: %lu\n", ret);
+	DBGLOG(INIT, INFO, "ret: %zd\n", ret);
 
 exit:
 	if (tmp_buf)
