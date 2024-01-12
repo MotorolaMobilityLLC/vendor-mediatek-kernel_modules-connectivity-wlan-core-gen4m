@@ -1769,6 +1769,9 @@ int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, char *pcCommand,
 void nicRxProcessRxv(struct ADAPTER *prAdapter,
 		struct SW_RFB *prSwRfb);
 
+uint8_t getWlanIdxByBand(struct ADAPTER *prAdapter, uint8_t ucHwBandIdx,
+			 uint8_t ucWlanIdx);
+
 uint8_t getPrimaryWlanIdx(struct ADAPTER *prAdapter,
 		uint8_t ucTid, uint8_t ucWlanIdx);
 
