@@ -7366,7 +7366,6 @@ static int32_t HQA_CapWiFiSpectrum(struct net_device
 					       u4MacTriggerEvent,
 					       u4SourceAddrLSB,
 					       u4SourceAddrMSB, u4Band);
-			prGlueInfo->prAdapter->fgIcapMode = u4Trigger;
 		} else
 			i4Ret = 1;
 
