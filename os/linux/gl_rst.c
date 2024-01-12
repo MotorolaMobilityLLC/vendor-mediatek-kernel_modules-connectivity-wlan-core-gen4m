@@ -398,6 +398,7 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst)
 	update_driver_reset_status(fgIsResetting);
 	if (g_IsWholeChipRst == TRUE) {
 		g_IsWholeChipRst = FALSE;
+		g_IsWfsysBusHang = FALSE;
 		complete(&g_RstOnComp);
 	}
 #endif
@@ -682,7 +683,6 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 		else if (g_IsWfsysBusHang)
 			DBGLOG(INIT, INFO, "WFSYS bus hang!!!\n");
 			g_IsWholeChipRst = TRUE;
-			g_IsWfsysBusHang = FALSE;
 			kalSetRstEvent();
 	}
 	wait_for_completion(&g_RstOffComp);
