@@ -98,6 +98,14 @@ static uint8_t *apucDebugRoamingState[ROAMING_STATE_NUM] = {
 	(uint8_t *) DISP_STRING("ROAM")
 };
 
+static uint8_t *apucEventStr[ROAMING_EVENT_NUM] = {
+	(uint8_t *) DISP_STRING("START"),
+	(uint8_t *) DISP_STRING("DISCOVERY"),
+	(uint8_t *) DISP_STRING("ROAM"),
+	(uint8_t *) DISP_STRING("FAIL"),
+	(uint8_t *) DISP_STRING("ABORT"),
+	(uint8_t *) DISP_STRING("THRESHOLD_UPDATE"),
+};
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -128,7 +136,7 @@ void roamingFsmInit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	struct CONNECTION_SETTINGS *prConnSettings;
 
 	DBGLOG(ROAMING, LOUD,
-	       "[%d]->roamingFsmInit(): Current Time = %d\n",
+	       "[%d]->Init: Current Time = %u\n",
 	       ucBssIndex,
 	       kalGetTimeTick());
 
@@ -159,7 +167,7 @@ void roamingFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	struct ROAMING_INFO *prRoamingFsmInfo;
 
 	DBGLOG(ROAMING, LOUD,
-	       "[%d]->roamingFsmUninit(): Current Time = %d\n",
+	       "[%d]->Uninit: Current Time = %u\n",
 	       ucBssIndex,
 	       kalGetTimeTick());
 
@@ -182,17 +190,13 @@ void roamingFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 void roamingFsmSendCmd(IN struct ADAPTER *prAdapter,
 	IN struct CMD_ROAMING_TRANSIT *prTransit)
 {
-	struct ROAMING_INFO *prRoamingFsmInfo;
 	uint32_t rStatus;
 	uint8_t ucBssIndex = prTransit->ucBssidx;
 
-	DBGLOG(ROAMING, LOUD,
-	       "[%d]->roamingFsmSendCmd(): Current Time = %d\n",
-	       ucBssIndex,
-	       kalGetTimeTick());
-
-	prRoamingFsmInfo =
-		aisGetRoamingInfo(prAdapter, ucBssIndex);
+	DBGLOG(ROAMING, INFO,
+		"[%d]->Send(%s): Current Time = %u\n",
+		ucBssIndex, apucEventStr[prTransit->u2Event],
+		kalGetTimeTick());
 
 	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
 				      CMD_ID_ROAMING_TRANSIT,	/* ucCID */
@@ -212,36 +216,7 @@ void roamingFsmSendCmd(IN struct ADAPTER *prAdapter,
 }				/* end of roamingFsmSendCmd() */
 
 /*----------------------------------------------------------------------------*/
-/*!
- * @brief Update the recent time when ScanDone occurred
- *
- * @param [IN P_ADAPTER_T] prAdapter
- *
- * @return none
- */
-/*----------------------------------------------------------------------------*/
-void roamingFsmScanResultsUpdate(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
-{
-	DBGLOG(ROAMING, LOUD,
-		"[%d]->roamingFsmScanResultsUpdate(): Current Time = %d\n",
-		ucBssIndex, kalGetTimeTick());
 
-	/* try driver roaming */
-	if (scanCheckNeedDriverRoaming(prAdapter, ucBssIndex)) {
-		struct ROAMING_INFO *roam;
-
-		DBGLOG(ROAMING, INFO, "Request driver roaming");
-		roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
-		roam->eReason = ROAMING_REASON_INACTIVE;
-		aisFsmRemoveRoamingRequest(prAdapter, ucBssIndex);
-		aisFsmInsertRequest(prAdapter,
-			AIS_REQUEST_ROAMING_CONNECT, ucBssIndex);
-	}
-}				/* end of roamingFsmScanResultsUpdate() */
-
-/*----------------------------------------------------------------------------*/
 /*
  * @brief Check if need to do scan for roaming
  *
@@ -447,9 +422,10 @@ void roamingFsmRunEventStart(IN struct ADAPTER *prAdapter,
 	enum ENUM_ROAMING_STATE eNextState;
 	struct BSS_INFO *prAisBssInfo;
 	struct CMD_ROAMING_TRANSIT rTransit;
+	struct AIS_FSM_INFO *prAisFsmInfo;
 
-	prRoamingFsmInfo =
-		aisGetRoamingInfo(prAdapter, ucBssIndex);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	kalMemZero(&rTransit, sizeof(struct CMD_ROAMING_TRANSIT));
 
 	/* Check Roaming Conditions */
@@ -463,7 +439,7 @@ void roamingFsmRunEventStart(IN struct ADAPTER *prAdapter,
 		return;
 
 	DBGLOG(ROAMING, EVENT,
-	       "[%d] EVENT-ROAMING START: Current Time = %d\n",
+	       "[%d] EVENT-ROAMING START: Current Time = %u\n",
 	       ucBssIndex,
 	       kalGetTimeTick());
 
@@ -475,11 +451,23 @@ void roamingFsmRunEventStart(IN struct ADAPTER *prAdapter,
 
 	eNextState = ROAMING_STATE_DECISION;
 	if (eNextState != prRoamingFsmInfo->eCurrentState) {
-		rTransit.u2Event = ROAMING_EVENT_START;
-		rTransit.u2Data = prAisBssInfo->ucBssIndex;
-		rTransit.ucBssidx = ucBssIndex;
-		roamingFsmSendCmd(prAdapter,
-			(struct CMD_ROAMING_TRANSIT *) &rTransit);
+		uint8_t i;
+
+		/* start to monitor all links */
+		for (i = 0; i < MLD_LINK_MAX; i++) {
+			struct BSS_INFO *bss =
+				aisGetLinkBssInfo(prAisFsmInfo, i);
+
+			if (!bss ||
+			     bss->eConnectionState != MEDIA_STATE_CONNECTED)
+				continue;
+
+			rTransit.u2Event = ROAMING_EVENT_START;
+			rTransit.u2Data = bss->ucBssIndex;
+			rTransit.ucBssidx = bss->ucBssIndex;
+			roamingFsmSendCmd(prAdapter,
+				(struct CMD_ROAMING_TRANSIT *) &rTransit);
+		}
 
 		/* Step to next state */
 		roamingFsmSteps(prAdapter, eNextState, ucBssIndex);
@@ -510,15 +498,37 @@ void roamingFsmRunEventDiscovery(IN struct ADAPTER *prAdapter,
 		return;
 
 	DBGLOG(ROAMING, EVENT,
-	       "[%d] EVENT-ROAMING DISCOVERY: Current Time = %d\n",
+	       "[%d] EVENT-ROAMING DISCOVERY: Current Time = %u\n",
 	       ucBssIndex,
 	       kalGetTimeTick());
 
 	/* DECISION -> DISCOVERY */
 	/* Errors as IDLE, DISCOVERY, ROAM -> DISCOVERY */
 	if (prRoamingFsmInfo->eCurrentState !=
-	    ROAMING_STATE_DECISION)
+	    ROAMING_STATE_DECISION) {
+#if (CFG_SUPPORT_CONNAC3X == 1)
+		struct CMD_ROAMING_TRANSIT rTransit = {0};
+
+		/* fail when roaming is ongoing on anther link */
+		if (prRoamingFsmInfo->eCurrentState > ROAMING_STATE_DECISION &&
+			prRoamingFsmInfo->eCurrentState < ROAMING_STATE_NUM)
+			DBGLOG(ROAMING, EVENT,
+				"There's ongoing roaming link - ignore bssidx:%d\n",
+				ucBssIndex);
+
+		rTransit.u2Event = ROAMING_EVENT_ROAM;
+		rTransit.ucBssidx = ucBssIndex;
+		roamingFsmSendCmd(prAdapter,
+			(struct CMD_ROAMING_TRANSIT *) &rTransit);
+
+		rTransit.u2Event = ROAMING_EVENT_FAIL;
+		rTransit.u2Data = ROAMING_FAIL_REASON_NOCANDIDATE;
+		rTransit.ucBssidx = ucBssIndex;
+		roamingFsmSendCmd(prAdapter,
+			(struct CMD_ROAMING_TRANSIT *) &rTransit);
+#endif
 		return;
+	}
 
 	eNextState = ROAMING_STATE_DISCOVERY;
 	/* DECISION -> DISCOVERY */
@@ -619,7 +629,7 @@ void roamingFsmRunEventRoam(IN struct ADAPTER *prAdapter,
 
 
 	DBGLOG(ROAMING, EVENT,
-	       "[%d] EVENT-ROAMING ROAM: Current Time = %d\n",
+	       "[%d] EVENT-ROAMING ROAM: Current Time = %u\n",
 	       ucBssIndex,
 	       kalGetTimeTick());
 
@@ -676,7 +686,6 @@ void roamingFsmNotifyEvent(
 	kalSendUevent(uevent);
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Transit to Decision state as being failed to find out any candidate
@@ -703,7 +712,7 @@ void roamingFsmRunEventFail(IN struct ADAPTER *prAdapter,
 
 
 	DBGLOG(ROAMING, STATE,
-	       "[%d] EVENT-ROAMING FAIL: reason %x Current Time = %d\n",
+	       "[%d] EVENT-ROAMING FAIL: reason %x Current Time = %u\n",
 	       ucBssIndex,
 	       ucReason, kalGetTimeTick());
 
@@ -741,9 +750,10 @@ void roamingFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 	struct ROAMING_INFO *prRoamingFsmInfo;
 	enum ENUM_ROAMING_STATE eNextState;
 	struct CMD_ROAMING_TRANSIT rTransit;
+	struct AIS_FSM_INFO *prAisFsmInfo;
 
-	prRoamingFsmInfo =
-		aisGetRoamingInfo(prAdapter, ucBssIndex);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	kalMemZero(&rTransit, sizeof(struct CMD_ROAMING_TRANSIT));
 
 	/* Check Roaming Conditions */
@@ -751,17 +761,28 @@ void roamingFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 		return;
 
 	DBGLOG(ROAMING, EVENT,
-	       "[%d] EVENT-ROAMING ABORT: Current Time = %d\n",
+	       "[%d] EVENT-ROAMING ABORT: Current Time = %u\n",
 	       ucBssIndex,
 	       kalGetTimeTick());
 
 	eNextState = ROAMING_STATE_IDLE;
 	/* IDLE, DECISION, DISCOVERY, ROAM -> IDLE */
 	if (eNextState != prRoamingFsmInfo->eCurrentState) {
-		rTransit.u2Event = ROAMING_EVENT_ABORT;
-		rTransit.ucBssidx = ucBssIndex;
-		roamingFsmSendCmd(prAdapter,
-			(struct CMD_ROAMING_TRANSIT *) &rTransit);
+		uint8_t i;
+
+		/* start to monitor all links */
+		for (i = 0; i < MLD_LINK_MAX; i++) {
+			struct BSS_INFO *bss =
+				aisGetLinkBssInfo(prAisFsmInfo, i);
+
+			if (!bss)
+				continue;
+
+			rTransit.u2Event = ROAMING_EVENT_ABORT;
+			rTransit.ucBssidx = bss->ucBssIndex;
+			roamingFsmSendCmd(prAdapter,
+				(struct CMD_ROAMING_TRANSIT *) &rTransit);
+		}
 
 		/* Step to next state */
 		roamingFsmSteps(prAdapter, eNextState, ucBssIndex);
@@ -784,7 +805,7 @@ uint32_t roamingFsmProcessEvent(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex = prTransit->ucBssidx;
 
 	DBGLOG(ROAMING, LOUD,
-	       "[%d] ROAMING Process Events: Current Time = %d\n",
+	       "[%d] ROAMING Process Events: Current Time = %u\n",
 	       ucBssIndex,
 	       kalGetTimeTick());
 
@@ -827,7 +848,6 @@ uint8_t roamingFsmInDecision(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	       roam->eCurrentState == ROAMING_STATE_DECISION &&
 	       policy != CONNECT_BY_BSSID ?
 	       TRUE : FALSE;
-
 }
 
 #endif

@@ -229,18 +229,13 @@ enum ENUM_DBG_MODULE {
 	DBG_TWT_PLANNER_IDX,	/* 0x24 *//* TWT Planner */
 	DBG_TWT_RESPONDER_IDX,	/* 0x25 *//* TWT Hotspot */
 	DBG_SMC_IDX,		/* 0x26 *//* SMC */
-	DBG_RRM_IDX,
-	DBG_ML_IDX,
-	DBG_RTT_IDX,
-#if CFG_SUPPORT_NAN
-	DBG_NAN_IDX,
-#endif
-#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
-	DBG_ICS_IDX,
-#endif /* CFG_SUPPORT_ICS */
-#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
-	DBG_HIF_WMM_ENHANCE_IDX,
-#endif
+	DBG_RRM_IDX,		/* 0x27 *//* radio resource management */
+	DBG_ML_IDX,		/* 0x28 *//* multi-link operation */
+	DBG_RTT_IDX,		/* 0x29 */
+	DBG_NAN_IDX,		/* 0x2A */
+	DBG_ICS_IDX,		/* 0x2B *//* In-chip sniffer */
+	DBG_HIF_WMM_ENHANCE_IDX,/* 0x2C */
+	DBG_APS_IDX,		/* 0x2D *//* AP selection */
 	DBG_MODULE_NUM		/* Notice the XLOG check */
 };
 enum ENUM_DBG_ASSERT_CTRL_LEVEL {
