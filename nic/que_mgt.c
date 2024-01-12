@@ -1086,6 +1086,29 @@ void qmSetStaRecTxAllowed(struct ADAPTER *prAdapter,
 		nicTxDirectStartCheckQTimer(prAdapter);
 	}
 }
+void qmDetermineTxPacketRate(struct ADAPTER *prAdapter,
+			struct MSDU_INFO *prMsduInfo)
+{
+	/* Set Tx rate */
+	switch (prAdapter->rWifiVar.ucDataTxRateMode) {
+	case DATA_RATE_MODE_BSS_LOWEST:
+		nicTxSetPktLowestFixedRate(prAdapter, prMsduInfo);
+		break;
+
+	case DATA_RATE_MODE_MANUAL:
+		prMsduInfo->u4FixedRateOption =
+			prAdapter->rWifiVar.u4DataTxRateCode;
+
+		prMsduInfo->ucRateMode = MSDU_RATE_MODE_MANUAL_DESC;
+		break;
+
+	case DATA_RATE_MODE_AUTO:
+	default:
+		if (prMsduInfo->ucRateMode == MSDU_RATE_MODE_LOWEST_RATE)
+			nicTxSetPktLowestFixedRate(prAdapter, prMsduInfo);
+		break;
+	}
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1250,30 +1273,6 @@ struct MSDU_INFO *qmEnqueueTxPackets(struct ADAPTER *prAdapter,
 
 		/* Check the Tx descriptor template is valid */
 		qmSetTxPacketDescTemplate(prAdapter, prCurrentMsduInfo);
-
-		/* Set Tx rate */
-		switch (prAdapter->rWifiVar.ucDataTxRateMode) {
-		case DATA_RATE_MODE_BSS_LOWEST:
-			nicTxSetPktLowestFixedRate(prAdapter,
-				prCurrentMsduInfo);
-			break;
-
-		case DATA_RATE_MODE_MANUAL:
-			prCurrentMsduInfo->u4FixedRateOption =
-				prAdapter->rWifiVar.u4DataTxRateCode;
-
-			prCurrentMsduInfo->ucRateMode =
-				MSDU_RATE_MODE_MANUAL_DESC;
-			break;
-
-		case DATA_RATE_MODE_AUTO:
-		default:
-			if (prCurrentMsduInfo->ucRateMode ==
-			    MSDU_RATE_MODE_LOWEST_RATE)
-				nicTxSetPktLowestFixedRate(prAdapter,
-					prCurrentMsduInfo);
-			break;
-		}
 
 		/* BMC pkt need limited rate according to coex report*/
 		if (prCurrentMsduInfo->ucStaRecIndex == STA_REC_INDEX_BMCAST)
@@ -9534,12 +9533,13 @@ void qmMoveStaTxQueue(struct STA_RECORD *prSrcStaRec,
 		return;
 
 	prSrcQue = &prSrcStaRec->arTxQueue[0];
-	prDstQue = &prDstStaRec->arTxQueue[0];
+	prDstQue = &prDstStaRec->arPendingTxQueue[0];
 	ucDstStaIndex = prDstStaRec->ucIndex;
 
-	DBGLOG(QM, INFO, "Pending MSDUs for TC 0~3, %u %u %u %u\n",
-	       prSrcQue[TC0_INDEX].u4NumElem, prSrcQue[TC1_INDEX].u4NumElem,
-	       prSrcQue[TC2_INDEX].u4NumElem, prSrcQue[TC3_INDEX].u4NumElem);
+	DBGLOG(QM, INFO, "Move Pending MSDUs STA[%u->%u] TC[%u %u %u %u]\n",
+		prSrcStaRec->ucIndex, ucDstStaIndex,
+		prSrcQue[TC0_INDEX].u4NumElem, prSrcQue[TC1_INDEX].u4NumElem,
+		prSrcQue[TC2_INDEX].u4NumElem, prSrcQue[TC3_INDEX].u4NumElem);
 	/* Concatenate all MSDU_INFOs in TX queues of this STA_REC */
 	for (ucQueArrayIdx = 0; ucQueArrayIdx < TC4_INDEX; ucQueArrayIdx++) {
 		prMsduInfo = QUEUE_GET_HEAD(&prSrcQue[ucQueArrayIdx]);
