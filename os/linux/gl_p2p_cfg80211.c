@@ -1072,7 +1072,7 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
 		DBGLOG(REQ, TRACE, "Glue=%p rLinkSpeed=%p size=%zu u4BufLen=%p",
 			prGlueInfo, &rLinkSpeed, sizeof(rLinkSpeed), &u4BufLen);
 		rStatus = kalIoctlByBssIdx(prGlueInfo,
-				 wlanoidQueryLinkSpeedEx,
+				 wlanoidQueryLinkSpeed,
 				 &rLinkSpeed, sizeof(rLinkSpeed),
 				 &u4BufLen, ucBssIdx);
 		DBGLOG(REQ, TRACE, "rStatus=%u, prGlueInfo=%p, u4BufLen=%u",
