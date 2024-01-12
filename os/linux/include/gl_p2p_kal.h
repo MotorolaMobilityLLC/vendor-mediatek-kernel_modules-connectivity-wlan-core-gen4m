@@ -222,6 +222,12 @@ void kalP2PGenP2P_IE(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t *pucBuffer,
 		IN uint8_t ucRoleIdx);
 
+void kalP2PTxCarrierOn(IN struct GLUE_INFO *prGlueInfo,
+		IN struct BSS_INFO *prBssInfo);
+
+void kalP2PEnableNetDev(IN struct GLUE_INFO *prGlueInfo,
+		IN struct BSS_INFO *prBssInfo);
+
 void kalP2PUpdateP2P_IE(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucIndex,
 		IN uint8_t *pucBuffer,
@@ -398,6 +404,9 @@ void kalP2pIndicateRadarEvent(IN struct GLUE_INFO *prGlueInfo,
 
 void kalP2pNotifyStopApComplete(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucRoleIndex);
+
+u_int8_t kalP2pIsStoppingAp(IN struct ADAPTER *prAdapter,
+	IN struct BSS_INFO *prBssInfo);
 
 void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prBssInfo);
