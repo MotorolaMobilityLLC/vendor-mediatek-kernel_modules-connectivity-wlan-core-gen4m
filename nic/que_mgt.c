@@ -5023,14 +5023,14 @@ void fallWithinVerboseLogging(struct ADAPTER *prAdapter,
 		return;
 
 	DBGLOG(RX, INFO,
-		"[class,type,miss,plfmt,isSub,Sta,Tid,WinStart,cSN,rSN,Lsub,WinAdv,deq,inc1,inc2]:%u,%u,%u,%u,%u(%s),%u,%u,%u,%u(%s),%u,%u,%u.%u.%u,%u.%u\n",
+		"[class,type,miss,plfmt,isSub,Sta,Tid,WinStart,cSN,rSN,Lsub,WinAdv,deq,inc1,inc2]:%u,%u,%u,%u,%u(%s),%u,%u,%u,%u,%u,%u(%s),%u,%u,%u.%u.%u,%u.%u\n",
 		prReorderedSwRfb->ucRxClassify, /* class */
 		prReorderedSwRfb->ucPacketType, /* type */
 		fgMissing, /* miss */
 		prReorderedSwRfb->ucPayloadFormat, /* plfmt */
 		fgIsAmsduSubframe, fmt[fgIsAmsduSubframe], /* isSub */
-		prReorderQueParm->ucStaRecIdx,
-		prReorderQueParm->ucTid,
+		prReorderQueParm->ucStaRecIdx, /* Sta */
+		prReorderQueParm->ucTid, /* Tid */
 		prReorderQueParm->u2WinStart, /* WinStart */
 		prReorderedSwRfb->u2SSN, /* cSN */
 		prReorderQueParm->u2SeqNo, /* rSN */
