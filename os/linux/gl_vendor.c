@@ -2042,6 +2042,7 @@ fail:
 
 #endif
 
+#if CFG_SUPPORT_ROAMING
 int mtk_cfg80211_vendor_set_roaming_policy(
 	struct wiphy *wiphy, struct wireless_dev *wdev,
 	const void *data, int data_len)
@@ -2070,7 +2071,6 @@ int mtk_cfg80211_vendor_set_roaming_policy(
 	       "vendor command: data_len=%d, data=0x%x 0x%x, roaming policy=%d\r\n",
 	       data_len, *((uint32_t *) data), *((uint32_t *) data + 1),
 	       setRoaming);
-
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
 			   wlanoidSetDrvRoamingPolicy,
 			   &setRoaming, sizeof(uint32_t),
@@ -2081,8 +2081,8 @@ int mtk_cfg80211_vendor_set_roaming_policy(
 
 nla_put_failure:
 	return i4Status;
-
 }
+#endif
 
 int mtk_cfg80211_vendor_set_rssi_monitoring(
 	struct wiphy *wiphy, struct wireless_dev *wdev,

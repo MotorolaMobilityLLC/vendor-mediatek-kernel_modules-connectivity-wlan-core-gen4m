@@ -1222,7 +1222,9 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 	const uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
 	uint8_t ucBssIndex = 0;
 	struct PARAM_BSSID_EX *prCurrBssid;
+#if CFG_SUPPORT_ROAMING
 	struct ROAMING_INFO *roam;
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
@@ -1257,8 +1259,9 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prCurrBssid = aisGetCurrBssId(prAdapter,
 		ucBssIndex);
+#if CFG_SUPPORT_ROAMING
 	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
-
+#endif
 	if (pParamConn->u4SsidLen > 32) {
 		cnmMemFree(prAdapter, prAisAbortMsg);
 		DBGLOG(OID, WARN, "SsidLen [%d] is invalid!\n",
@@ -1335,6 +1338,7 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 		DBGLOG(INIT, INFO, "No Bssid set\n");
 	prConnSettings->u4FreqInKHz = pParamConn->u4CenterFreq;
 
+#if CFG_SUPPORT_ROAMING
 	/* prepare for CMD_BUILD_CONNECTION & CMD_GET_CONNECTION_STATUS */
 	/* re-association check */
 	if (kalGetMediaStateIndicated(prGlueInfo,
@@ -1365,6 +1369,7 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 			return WLAN_STATUS_FAILURE;
 		}
 	} else
+#endif
 		prAisAbortMsg->ucReasonOfDisconnect =
 			DISCONNECT_REASON_CODE_NEW_CONNECTION;
 #if 0
@@ -15783,6 +15788,8 @@ wlanoidBssDisallowedList(struct ADAPTER *prAdapter,
 }
 #endif
 
+#if CFG_SUPPORT_ROAMING
+
 uint32_t
 wlanoidSetDrvRoamingPolicy(struct ADAPTER *prAdapter,
 			   void *pvSetBuffer, uint32_t u4SetBufferLen,
@@ -15826,9 +15833,9 @@ wlanoidSetDrvRoamingPolicy(struct ADAPTER *prAdapter,
 	       "wlanoidSetDrvRoamingPolicy, RoamingPoily= %d, conn policy= [%d] allow [%d]\n",
 	       u4RoamingPoily, u4CurConPolicy,
 	       prConnSettings->eConnectionPolicy);
-
 	return WLAN_STATUS_SUCCESS;
 }
+#endif
 
 #if (CFG_SUPPORT_ANDROID_DUAL_STA == 1)
 uint32_t wlanoidSetMultiStaPrimaryInterface(struct ADAPTER
@@ -16550,6 +16557,7 @@ uint32_t wlanoidFwEventIT(struct ADAPTER *prAdapter, void *pvBuffer,
 
 	/* Firmware roaming Integration Test case */
 	if (!kalStrniCmp(pucCmd, "Roaming", 7)) {
+#if CFG_SUPPORT_ROAMING
 		struct CMD_ROAMING_TRANSIT rTransit = {0};
 		struct BSS_DESC *prBssDesc =
 			aisGetTargetBssDesc(prAdapter, ucBssIndex);
@@ -16557,9 +16565,10 @@ uint32_t wlanoidFwEventIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		if (prBssDesc)
 			rTransit.u2Data = prBssDesc->ucRCPI;
 		rTransit.u2Event = ROAMING_EVENT_DISCOVERY;
-		rTransit.eReason = ROAMING_REASON_POOR_RCPI;
+		rTransit.eReason = CONNECTING_ROAMING_REASON_POOR_RCPI;
 		rTransit.ucBssidx = ucBssIndex;
 		roamingFsmRunEventDiscovery(prAdapter, &rTransit);
+#endif
 	} else {
 		DBGLOG(OID, ERROR, "Not supported Fw Event IT type %s\n",
 		       pucCmd);

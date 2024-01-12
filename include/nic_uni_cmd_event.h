@@ -6945,8 +6945,10 @@ uint32_t nicUniCmdSetSGParam(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetMonitor(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+#if CFG_SUPPORT_ROAMING
 uint32_t nicUniCmdRoaming(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif
 uint32_t nicUniCmdPerfInd(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdInstallKey(struct ADAPTER *ad,
@@ -7187,8 +7189,10 @@ void nicUniEventSap(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventOBSS(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+#if CFG_SUPPORT_ROAMING
 void nicUniEventRoaming(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+#endif
 void nicUniEventAddKeyDone(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventPpCb(struct ADAPTER *ad,

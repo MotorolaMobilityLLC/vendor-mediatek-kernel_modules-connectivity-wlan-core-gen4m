@@ -8163,9 +8163,10 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 
 	wlanCfgSetUint32(prAdapter, "MddpSupport", FEATURE_ENABLED);
 
+#if CFG_SUPPORT_ROAMING
 	prWifiVar->u4DiscoverTimeout = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "DiscoverTimeout", ROAMING_DISCOVER_TIMEOUT_SEC);
-
+#endif
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 	prWifiVar->ucDbdcP2pLisEn =
 		(uint8_t) wlanCfgGetUint32(
@@ -8186,11 +8187,14 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->ucDisallowBand6G = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "DisallowBand6G", 0);
 #endif
+
+#if CFG_SUPPORT_ROAMING
 	prWifiVar->u4InactiveTimeout = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "InactiveTimeout", ROAMING_INACTIVE_TIMEOUT_SEC);
 
 	prWifiVar->u4BtmDelta = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "BtmDelta", ROAMING_BTM_DELTA);
+#endif
 	prWifiVar->u4BtmDisTimerThreshold = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "BtmDisTimerThreshold", AIS_BTM_DIS_IMMI_TIMEOUT);
 

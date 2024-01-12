@@ -1330,6 +1330,30 @@ enum ENUM_CSI_MODULATION_BW_TYPE_T {
 };
 #endif
 
+enum CONN_ROAM_TYPE {
+	CONN_ROAM_TYPE_RCPI,
+#if CFG_SUPPORT_ROAMING
+	ROAM_TYPE_PER,
+#endif
+	CONN_ROAM_TYPE_NUM
+};
+
+enum ENUM_CONN_ROAM_REASON {
+	CONNECTING_ROAMING_REASON_POOR_RCPI = 0,
+#if CFG_SUPPORT_ROAMING
+	ROAMING_REASON_TX_ERR, /*Lowest rate, high PER*/
+	ROAMING_REASON_RETRY,
+	ROAMING_REASON_IDLE,
+	ROAMING_REASON_BEACON_TIMEOUT,
+	ROAMING_REASON_INACTIVE,
+	ROAMING_REASON_SAA_FAIL,
+	ROAMING_REASON_UPPER_LAYER_TRIGGER,
+	ROAMING_REASON_BTM,
+	ROAMING_REASON_REASSOC,
+#endif
+	CONNECTING_ROAMING_REASON_NUM
+};
+
 /*----------------------------------------------------------------------------*/
 /* RSN structures                                                             */
 /*----------------------------------------------------------------------------*/

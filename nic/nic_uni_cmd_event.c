@@ -138,7 +138,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_SET_IP_ADDRESS] = nicUniCmdOffloadIPV4,
 	[CMD_ID_SET_IPV6_ADDRESS] = nicUniCmdOffloadIPV6,
 	[CMD_ID_GET_LTE_CHN] = nicUniCmdGetIdcChnl,
+#if CFG_SUPPORT_ROAMING
 	[CMD_ID_ROAMING_TRANSIT] = nicUniCmdRoaming,
+#endif
 	[CMD_ID_GET_STA_STATISTICS] = nicUniCmdGetStaStatistics,
 	[CMD_ID_GET_STATISTICS] = nicUniCmdGetStatistics,
 	[CMD_ID_GET_LINK_QUALITY] = nicUniCmdGetLinkQuality,
@@ -242,7 +244,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_PS_SYNC] = nicUniEventPsSync,
 	[UNI_EVENT_ID_SAP] = nicUniEventSap,
 	[UNI_EVENT_ID_OBSS_UPDATE] = nicUniEventOBSS,
+#if CFG_SUPPORT_ROAMING
 	[UNI_EVENT_ID_ROAMING] = nicUniEventRoaming,
+#endif
 	[UNI_EVENT_ID_ADD_KEY_DONE] = nicUniEventAddKeyDone,
 	[UNI_EVENT_ID_FW_LOG_2_HOST] = nicUniEventFwLog2Host,
 	[UNI_EVENT_ID_P2P] = nicUniEventP2p,
@@ -4494,6 +4498,7 @@ uint32_t nicUniCmdSetMonitor(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if CFG_SUPPORT_ROAMING
 uint32_t nicUniCmdRoaming(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
@@ -4531,6 +4536,7 @@ uint32_t nicUniCmdRoaming(struct ADAPTER *ad,
 
 	return WLAN_STATUS_SUCCESS;
 }
+#endif
 
 uint32_t nicUniCmdPerfInd(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
@@ -8675,6 +8681,7 @@ void nicUniEventOBSS(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	}
 }
 
+#if CFG_SUPPORT_ROAMING
 void nicUniEventRoaming(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
 	uint16_t tags_len;
@@ -8725,6 +8732,7 @@ void nicUniEventRoaming(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 	}
 }
+#endif
 
 void nicUniEventAddKeyDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
