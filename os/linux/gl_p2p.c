@@ -1873,8 +1873,11 @@ int p2pDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 		/* 0x8BE0 ~ 0x8BFF, private ioctl region */
 		ret = priv_support_ioctl(prDev, prIfReq, i4Cmd);
 	} else if (i4Cmd == SIOCDEVPRIVATE + 1) {
+#ifdef CFG_ANDROID_AOSP_PRIV_CMD
+		ret = android_private_support_driver_cmd(prDev, prIfReq, i4Cmd);
+#else
 		ret = priv_support_driver_cmd(prDev, prIfReq, i4Cmd);
-
+#endif /* CFG_ANDROID_AOSP_PRIV_CMD */
 	} else {
 		DBGLOG(INIT, WARN, "Unexpected ioctl command: 0x%04x\n", i4Cmd);
 		ret = -1;
