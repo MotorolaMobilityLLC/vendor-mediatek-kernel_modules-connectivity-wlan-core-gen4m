@@ -1991,7 +1991,8 @@ void nicTxFillDescByPktControl(struct MSDU_INFO *prMsduInfo,
 void nicTxConfigPktControlFlag(IN struct MSDU_INFO *prMsduInfo,
 	IN uint8_t ucControlFlagMask, IN u_int8_t fgSetFlag);
 
-void nicTxSetPktLifeTime(IN struct MSDU_INFO *prMsduInfo,
+void nicTxSetPktLifeTime(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo,
 	IN uint32_t u4TxLifeTimeInMs);
 
 void nicTxSetPktRetryLimit(IN struct MSDU_INFO *prMsduInfo,

@@ -1218,6 +1218,10 @@ struct WIFI_VAR {
 	int32_t i4Ed2GEU;
 	int32_t i4Ed5GEU;
 #endif
+
+#if CFG_MTK_FPGA_PLATFORM
+	uint32_t u4FpgaSpeedFactor;
+#endif
 };
 
 /* cnm_timer module */
