@@ -5920,18 +5920,6 @@ u_int8_t qmAddRxBaEntry(struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
-static void qmStarvationCheck(struct ADAPTER *prAdapter)
-{
-#if CFG_HIF_RX_STARVATION_WARNING
-	struct RX_CTRL *prRxCtrl;
-
-	prRxCtrl = &prAdapter->rRxCtrl;
-	DBGLOG(QM, TRACE,
-		"QM: (RX DEBUG) Enqueued: %d / Dequeued: %d\n",
-		prRxCtrl->u4QueuedCnt, prRxCtrl->u4DequeuedCnt);
-#endif
-}
-
 /**
  * The bottom-half handler to flush frames on RX BA deleted.
  */
@@ -5978,8 +5966,6 @@ void qmFlushDeletedBaReorder(struct ADAPTER *prAdapter,
 	prRxBaEntry->fgIsValid = FALSE;
 	prQM->ucRxBaCount--;
 #endif
-
-	qmStarvationCheck(prAdapter);
 }
 
 /**

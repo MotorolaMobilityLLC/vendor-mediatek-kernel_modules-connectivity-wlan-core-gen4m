@@ -403,12 +403,6 @@ void nicRxInitialize(struct ADAPTER *prAdapter)
 
 	prRxCtrl->pucRxCoalescingBufPtr =
 		prAdapter->pucCoalescingBufCached;
-
-#if CFG_HIF_RX_STARVATION_WARNING
-	prRxCtrl->u4QueuedCnt = 0;
-	prRxCtrl->u4DequeuedCnt = 0;
-#endif
-
 }				/* end of nicRxInitialize() */
 
 /*----------------------------------------------------------------------------*/
@@ -1945,9 +1939,7 @@ void nicRxIndicatePackets(struct ADAPTER *prAdapter,
 		default:
 			break;
 		}
-#if CFG_HIF_RX_STARVATION_WARNING
-		prRxCtrl->u4DequeuedCnt++;
-#endif
+
 		prRetSwRfb = prNextSwRfb;
 	}
 }
@@ -2097,9 +2089,6 @@ void nicRxProcessDataPacket(struct ADAPTER *prAdapter,
 
 	/* if(secCheckClassError(prAdapter, prSwRfb, prStaRec) == TRUE && */
 	if (prAdapter->fgTestMode == FALSE && fgDrop == FALSE) {
-#if CFG_HIF_RX_STARVATION_WARNING
-		prRxCtrl->u4QueuedCnt++;
-#endif
 		ucBssIndex = secGetBssIdxByWlanIdx(prAdapter,
 						   prSwRfb->ucWlanIdx);
 		GLUE_SET_PKT_BSS_IDX(prSwRfb->pvPacket, ucBssIndex);
