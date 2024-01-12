@@ -3250,9 +3250,11 @@ void wlanReturnPacket(struct ADAPTER *prAdapter,
 		      void *pvPacket)
 {
 	struct RX_CTRL *prRxCtrl;
+#if !CFG_SUPPORT_RETURN_WORK
 	struct SW_RFB *prSwRfb = NULL;
 
 	KAL_SPIN_LOCK_DECLARATION();
+#endif /* !CFG_SUPPORT_RETURN_WORK */
 
 	ASSERT(prAdapter);
 
@@ -3270,6 +3272,10 @@ void wlanReturnPacket(struct ADAPTER *prAdapter,
 #endif
 	}
 
+#if CFG_SUPPORT_RETURN_WORK
+	if (QUEUE_IS_NOT_EMPTY(&prRxCtrl->rIndicatedRfbList))
+		kalRxRfbReturnWorkSchedule(prAdapter->prGlueInfo);
+#else /* CFG_SUPPORT_RETURN_WORK */
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 	QUEUE_REMOVE_HEAD(&prRxCtrl->rIndicatedRfbList, prSwRfb,
 			  struct SW_RFB *);
@@ -3295,6 +3301,7 @@ void wlanReturnPacket(struct ADAPTER *prAdapter,
 		}
 	}
 	nicRxReturnRFB(prAdapter, prSwRfb);
+#endif /* CFG_SUPPORT_RETURN_WORK */
 }
 
 /*
