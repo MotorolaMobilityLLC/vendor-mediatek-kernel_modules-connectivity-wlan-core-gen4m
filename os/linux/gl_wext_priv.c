@@ -472,7 +472,7 @@ int priv_support_ioctl(struct net_device *prNetDev,
 				     (char *) &(prIwReq->u));
 #endif
 
-#if CFG_SUPPORT_NAN
+#if CFG_SUPPORT_NAN_PRIV
 	case IOCTL_NAN_STRUCT:
 		return priv_nan_struct(prNetDev, &rIwReqInfo, &(prIwReq->u),
 				       (char *)&(prIwReq->u));
@@ -1566,7 +1566,7 @@ priv_get_struct(struct net_device *prNetDev,
 	     prIwReqData, pcExtra, __priv_get_struct);
 }
 
-#if CFG_SUPPORT_NAN
+#if CFG_SUPPORT_NAN_PRIV
 int __priv_nan_struct(struct net_device *prNetDev,
 		  struct iw_request_info *prIwReqInfo,
 		  union iwreq_data *prIwReqData, char *pcExtra)
