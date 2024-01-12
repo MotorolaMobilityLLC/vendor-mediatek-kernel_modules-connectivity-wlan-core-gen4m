@@ -1004,6 +1004,9 @@ union DELAY_INT_CFG_STRUCT {
 /* 4 Host to Device Send Mailbox 1 Register */
 #define MCR_H2DSM1R                         0x0074
 
+/* 4 Host to Device Send Mailbox 2 Register */
+#define MCR_H2DSM2R                         0x0160
+
 /* 4 Device to Host Receive Mailbox 0 Register */
 #define MCR_D2HRM0R                         0x0078
 
@@ -1106,8 +1109,8 @@ union DELAY_INT_CFG_STRUCT {
 #define SDIO_RX0_AGG_NUM		16
 #define SDIO_RX1_AGG_NUM		16
 
-/* (SDIO_RX0_AGG_NUM + SDIO_RX1_AGG_NUM + 2) >> 1 */
-#define SDIO_RX_STATUS_REPORT_LEN	17
+#define SDIO_RX_STATUS_REPORT_LEN \
+	((SDIO_RX0_AGG_NUM + SDIO_RX1_AGG_NUM + 2) >> 1)
 
 #elif (CFG_SDIO_INTR_ENHANCE_FORMAT == 2)
 #define SDIO_TX_RESOURCE_NUM		32
@@ -1115,8 +1118,8 @@ union DELAY_INT_CFG_STRUCT {
 #define SDIO_RX0_AGG_NUM		16
 #define SDIO_RX1_AGG_NUM		128
 
-/* (SDIO_RX0_AGG_NUM + SDIO_RX1_AGG_NUM + 2) >> 1 */
-#define SDIO_RX_STATUS_REPORT_LEN	73
+#define SDIO_RX_STATUS_REPORT_LEN \
+	((SDIO_RX0_AGG_NUM + SDIO_RX1_AGG_NUM + 2) >> 1)
 #endif
 
 
@@ -1166,7 +1169,7 @@ struct ENHANCE_MODE_DATA_STRUCT {
 
 /* 3 WHCR 0x000C */
 #define WHCR_RX_ENHANCE_MODE_EN         BIT(16)
-#define WHCR_MAX_HIF_RX_LEN_NUM         BITS(8, 13)
+#define WHCR_MAX_HIF_RX_LEN_NUM         BITS(8, 14)
 #define WHCR_RPT_OWN_RX_PACKET_LEN      BIT(3)
 #define WHCR_RECV_MAILBOX_RD_CLR_EN     BIT(2)
 #define WHCR_W_INT_CLR_CTRL             BIT(1)
