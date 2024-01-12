@@ -1984,6 +1984,11 @@ void rlmDomainTxPwrLimitSetValues(
 	struct CMD_CHANNEL_POWER_LIMIT_V2 *pCmd = NULL;
 	struct CHANNEL_TX_PWR_LIMIT *pChTxPwrLimit = NULL;
 
+	if (!pSetCmd || !pTxPwrLimit) {
+		DBGLOG(RLM, ERROR, "Invalid TxPwrLimit request\n");
+		return;
+	}
+
 	for (ucIdx = 0; ucIdx < pSetCmd->ucNum; ucIdx++) {
 		pCmd = &(pSetCmd->rChannelPowerLimit[ucIdx]);
 		cChIdx = rlmDomainTxPwrLimitGetChIdx(pTxPwrLimit,
@@ -2088,7 +2093,8 @@ u_int8_t rlmDomainGetTxPwrLimit(
 		return bRet;
 	}
 
-	pTxPwrLimit->ucChNum = pSetCmd_2g->ucNum + pSetCmd_5g->ucNum;
+	pTxPwrLimit->ucChNum = (pSetCmd_2g ? pSetCmd_2g->ucNum : 0) +
+		(pSetCmd_5g ? pSetCmd_5g->ucNum : 0);
 
 	pTxPwrLimit->rChannelTxPwrLimit =
 		(struct CHANNEL_TX_PWR_LIMIT *)
