@@ -2818,9 +2818,12 @@ void wlanNetDestroy(struct wireless_dev *prWdev)
 		uint32_t u4Idx = 0;
 
 		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-			if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev)
+			if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev) {
+				rtnl_lock();
 				gprWdev[u4Idx]->netdev->wireless_handlers =
 					NULL;
+				rtnl_unlock();
+			}
 		}
 	}
 #endif
