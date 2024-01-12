@@ -14,7 +14,11 @@ extern "C" {
 
 #define WF_MCU_CONFG_LS_BASE                                   0x184F0000
 
+#define WF_MCU_CONFG_LS_BUSHANGCTRLA_ADDR                      (WF_MCU_CONFG_LS_BASE + 0x0430)
 #define WF_MCU_CONFG_LS_BUSHANGCR_ADDR                         (WF_MCU_CONFG_LS_BASE + 0x0440)
+#define WF_MCU_CONFG_LS_BUSHANGADDR_ADDR                       (WF_MCU_CONFG_LS_BASE + 0x0444)
+#define WF_MCU_CONFG_LS_BUSHANGID_ADDR                         (WF_MCU_CONFG_LS_BASE + 0x044C)
+#define WF_MCU_CONFG_LS_BUSHANGBUS_ADDR                        (WF_MCU_CONFG_LS_BASE + 0x0450)
 
 #define WF_MCU_CONFG_LS_BUSHANGCR_BUS_HANG_DEBUG_EN_ADDR       WF_MCU_CONFG_LS_BUSHANGCR_ADDR
 #define WF_MCU_CONFG_LS_BUSHANGCR_BUS_HANG_DEBUG_EN_MASK       0x80000000
