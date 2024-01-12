@@ -920,7 +920,7 @@ int Set_TxBfProfileTag_Mem(struct net_device *prNetDev,
 
 	DBGLOG(RFTEST, ERROR, "Set_TxBfProfileTag_Mem\n");
 
-	rv = sscanf(prInBuf, "%d:%d:%d:%d:%d:%d:%d:%d",
+	rv = sscanf(prInBuf, "%x:%x:%x:%x:%x:%x:%x:%x",
 		    &aucInput[0], &aucInput[1], &aucInput[2], &aucInput[3],
 		    &aucInput[4], &aucInput[5], &aucInput[6],
 		    &aucInput[7]);
@@ -960,7 +960,7 @@ int Set_TxBfProfileTag_Matrix(struct net_device *prNetDev,
 
 	DBGLOG(RFTEST, ERROR, "Set_TxBfProfileTag_Matrix\n");
 
-	rv = sscanf(prInBuf, "%d:%d:%d:%d:%d:%d",
+	rv = sscanf(prInBuf, "%x:%x:%x:%x:%x:%x",
 		    &aucInput[0], &aucInput[1], &aucInput[2], &aucInput[3],
 		    &aucInput[4], &aucInput[5]);
 	/* nrow:nol:ng:LM:CodeBook:HtcExist */
@@ -994,7 +994,7 @@ int Set_TxBfProfileTag_SNR(struct net_device *prNetDev,
 
 	DBGLOG(RFTEST, ERROR, "Set_TxBfProfileTag_SNR\n");
 
-	rv = sscanf(prInBuf, "%d:%d:%d:%d", &aucInput[0],
+	rv = sscanf(prInBuf, "%x:%x:%x:%x", &aucInput[0],
 		    &aucInput[1], &aucInput[2], &aucInput[3]);
 	if (rv == 4) {
 		DBGLOG(RFTEST, ERROR,
@@ -1092,7 +1092,7 @@ int Set_TxBfProfileTag_McsThrd(struct net_device *prNetDev,
 
 	DBGLOG(RFTEST, ERROR, "Set_TxBfProfileTag_McsThrd\n");
 
-	rv = sscanf(prInBuf, "%d:%d:%d:%d:%d:%d",
+	rv = sscanf(prInBuf, "%x:%x:%x:%x:%x:%x",
 		    &aucInput[0], &aucInput[1], &aucInput[2], &aucInput[3],
 		    &aucInput[4], &aucInput[5]);
 	if (rv == 6) {
@@ -1218,7 +1218,7 @@ int Set_TxBfProfileTagPartialBw(struct net_device *prNetDev,
 
 	DBGLOG(RFTEST, INFO, "Set_TxBfProfileTagPartialBw\n");
 
-	rv = sscanf(prInBuf, "%d:%d", &uBitmap, &uResolution);
+	rv = sscanf(prInBuf, "%x:%x", &uBitmap, &uResolution);
 	if (rv == 2) {
 		DBGLOG(RFTEST, INFO,
 		       "Set_TxBfProfileTagPartialBw prInBuf = %s, u4Bitmap = %d, u4Resolution = %d\n",
@@ -1286,7 +1286,7 @@ int Set_TxBfProfileTagRead(struct net_device *prNetDev,
 
 	DBGLOG(RFTEST, ERROR, "Set_TxBfProfileTagRead\n");
 
-	rv = sscanf(prInBuf, "%d:%d", &profileIdx, &fgBFer);
+	rv = sscanf(prInBuf, "%x:%x", &profileIdx, &fgBFer);
 	if (rv == 2) {
 		DBGLOG(RFTEST, ERROR,
 		       "Set_TxBfProfileTagRead prInBuf = %s, profileIdx = %d, fgBFer = %d\n",
@@ -1308,7 +1308,7 @@ int Set_TxBfProfileDataRead(struct net_device *prNetDev,
 
 	DBGLOG(RFTEST, ERROR, "Set_TxBfProfileDataRead\n");
 
-	rv = sscanf(prInBuf, "%d:%d:%x:%x", &profileIdx, &fgBFer,
+	rv = sscanf(prInBuf, "%x:%x:%x:%x", &profileIdx, &fgBFer,
 		    &subcarrierIdxMsb, &subcarrierIdxLsb);
 	if (rv == 4) {
 		DBGLOG(RFTEST, ERROR,
@@ -1409,7 +1409,7 @@ int Set_TxBfProfilePnWrite(struct net_device *prNetDev,
 	DBGLOG(RFTEST, ERROR, "TxBfProfilePnWrite\n");
 
 	rv = sscanf(prInBuf,
-		    "%d:%hd:%hd:%hd:%hd:%hd:%hd:%hd:%hd:%hd:%hd:%hd:%hd:%hd",
+		    "%x:%hx:%hx:%hx:%hx:%hx:%hx:%hx:%hx:%hx:%hx:%hx:%hx:%hx",
 		    &u4ProfileIdx, &u2bw, &au2XSTS[0], &au2XSTS[1], &au2XSTS[2],
 		    &au2XSTS[3],
 		    &au2XSTS[4], &au2XSTS[5], &au2XSTS[6], &au2XSTS[7],
@@ -1481,7 +1481,7 @@ int Set_TxBfTxApply(struct net_device *prNetDev,
 
 	DBGLOG(RFTEST, ERROR, "TxBfTxApply\n");
 
-	rv = sscanf(prInBuf, "%d:%d:%d:%d:%d", &u4WlanId, &u4ETxBf,
+	rv = sscanf(prInBuf, "%x:%x:%x:%x:%x", &u4WlanId, &u4ETxBf,
 		    &u4ITxBf, &u4MuTxBf, &u4PhaseCali);
 	if (rv >= 4) {
 		DBGLOG(RFTEST, ERROR,
@@ -1509,7 +1509,7 @@ int Set_TxBfManualAssoc(struct net_device *prNetDev,
 	DBGLOG(RFTEST, ERROR, "TxBfManualAssoc\n");
 
 	rv = sscanf(prInBuf,
-		    "%x:%x:%x:%x:%x:%x:%x:%d:%x:%x:%x:%d:%x:%x:%x:%d",
+		    "%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x",
 		    &au4Mac[0], &au4Mac[1], &au4Mac[2], &au4Mac[3], &au4Mac[4],
 		    &au4Mac[5],
 		    &u4Type, &u4Wtbl, &u4Ownmac, &u4Bw,
@@ -1544,7 +1544,7 @@ int Set_TxBfPfmuMemAlloc(struct net_device *prNetDev,
 
 	DBGLOG(RFTEST, ERROR, "TxBfPfmuMemAlloc\n");
 
-	rv = sscanf(prInBuf, "%d:%d", &ucSuMuMode, &ucWlanIdx);
+	rv = sscanf(prInBuf, "%x:%x", &ucSuMuMode, &ucWlanIdx);
 	if (rv == 2) {
 		DBGLOG(RFTEST, ERROR,
 		       "TxBfPfmuMemAlloc ucSuMuMode = %d, ucWlanIdx = %d",
@@ -1815,11 +1815,15 @@ int Set_StaRecBfRead(struct net_device *prNetDev,
 
 	rv = sscanf(prInBuf, "%x", &u2WlanId);
 
-	i4Status = kalIoctl(prGlueInfo,
-			    wlanoidStaRecBFRead,
-			    &u2WlanId,
-			    sizeof(u2WlanId),
-			    &u4BufLen);
+	if (rv == 1) {
+		i4Status = kalIoctl(prGlueInfo,
+			wlanoidStaRecBFRead,
+			&u2WlanId,
+			sizeof(u2WlanId),
+			&u4BufLen);
+	} else
+		return -EINVAL;
+
 	return i4Status;
 }
 
@@ -2433,14 +2437,14 @@ int Set_MUSetGID_UP(struct net_device *prNetDev,
 	ASSERT(prNetDev);
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	if (sscanf(prInBuf, "%d:%d:%d:%d:%d:%d",
+	if (sscanf(prInBuf, "%x:%x:%x:%x:%x:%x",
 		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Gid[0],
 		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Gid[1],
 		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[0],
 		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[1],
 		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[2],
 		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[3]) == 6
-	    ) {
+		) {
 		DBGLOG(RFTEST, ERROR,
 		       "Set_MUSetGID_UP prInBuf = %s, au4Gid[0] = %x, au4Gid[1] = %x, au4Up[0] = %x, au4Up[1] = %x, au4Up[2] = %x, au4Up[3] = %x",
 		       prInBuf,
@@ -2486,7 +2490,7 @@ int Set_MUTriggerTx(struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	if (sscanf(prInBuf,
-		   "%d:%x:%x:%x:%d:%d:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x",
+		   "%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x",
 		   &u4IsRandomPattern, &u4MsduPayloadLength0,
 		   &u4MsduPayloadLength1, &u4MuPacketCount, &u4NumOfSTAs,
 		   &au4MacAddrs[0][0], &au4MacAddrs[0][1], &au4MacAddrs[0][2],
@@ -2549,7 +2553,7 @@ int Set_TxBfProfileSwTagWrite(struct net_device *prNetDev,
 
 	DBGLOG(RFTEST, ERROR, "Set_TxBfProfileSwTagWrite\n");
 
-	rv = sscanf(prInBuf, "%d-%d-%d-%d-%d-%d", &u4Lm, &u4Nr,
+	rv = sscanf(prInBuf, "%x-%x-%x-%x-%x-%x", &u4Lm, &u4Nr,
 		    &u4Nc, &u4Bw, &u4Codebook, &u4Group);
 
 	if (rv == 6) {
