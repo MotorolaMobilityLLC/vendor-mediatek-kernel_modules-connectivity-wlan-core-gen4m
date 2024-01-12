@@ -778,7 +778,9 @@
 #define CFG_SUPPORT_UL_PSMP		0
 
 /* Roaming System */
+#ifndef CFG_SUPPORT_ROAMING
 #define CFG_SUPPORT_ROAMING		1
+#endif
 
 #if (CFG_SUPPORT_ROAMING == 1)
 
