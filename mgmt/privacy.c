@@ -598,8 +598,8 @@ BOOLEAN secIsProtectedFrame(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsdu, I
 
 #if CFG_SUPPORT_802_11W
 	if (prMsdu->ucPacketType == TX_PACKET_TYPE_MGMT) {
-		BOOL fgRobustActionWithProtect = FALSE;
 #if 0				/* Decide by Compose module */
+		BOOL fgRobustActionWithProtect = FALSE;
 		P_BSS_INFO_T prBssInfo;
 
 		if (prStaRec) {
@@ -609,13 +609,11 @@ BOOLEAN secIsProtectedFrame(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsdu, I
 			    prAdapter->rWifiVar.rAisSpecificBssInfo.fgMgmtProtection /* Use MFP */) {
 
 				fgRobustActionWithProtect = TRUE;
+				return TRUE; /* AIS & Robust action frame */
 			}
 		}
 #endif
-		if (prStaRec && fgRobustActionWithProtect /* AIS & Robust action frame */)
-			return TRUE;
-		else
-			return FALSE;
+		return FALSE;
 	}
 #else
 	if (prMsdu->ucPacketType == TX_PACKET_TYPE_MGMT)
