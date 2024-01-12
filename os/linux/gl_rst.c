@@ -538,7 +538,7 @@ static u_int8_t glResetMsgHandler(enum ENUM_WMTMSG_TYPE eMsgType,
 	return TRUE;
 }
 
-int glRstwlanPreWholeChipReset(void)
+int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 {
 	uint32_t waitRet = 0;
 	bool bRet = TRUE;

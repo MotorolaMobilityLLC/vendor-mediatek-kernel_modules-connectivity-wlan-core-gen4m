@@ -101,6 +101,7 @@
 #define SER_L0_HANG_LOG_TIME_INTERVAL	3000
 #endif
 #if (CFG_SUPPORT_CONNINFRA == 1)
+#include "conninfra.h"
 #define WIFI_TRIGGER_ASSERT_TIMEOUT 2000
 #define WIFI_RST_TIMEOUT 6000
 #define GLUE_FLAG_RST_PROCESS (GLUE_FLAG_HALT | GLUE_FLAG_RST_START)
@@ -312,7 +313,7 @@ u_int8_t glIsWmtCodeDump(void);
 #if (CFG_SUPPORT_CONNINFRA == 1)
 
 int wlan_reset_thread_main(void *data);
-int glRstwlanPreWholeChipReset(void);
+int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason);
 int glRstwlanPostWholeChipReset(void);
 u_int8_t kalIsWholeChipResetting(void);
 void glSetRstReasonString(char *reason);
