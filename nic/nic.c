@@ -4496,6 +4496,14 @@ uint32_t nicApplyNetworkAddress(IN struct ADAPTER
 	kalUpdateMACAddress(prAdapter->prGlueInfo,
 			    prAdapter->rWifiVar.aucMacAddress);
 
+	if (KAL_AIS_NUM > 1) {
+		/* Generate from wlan0 MAC */
+		COPY_MAC_ADDR(prAdapter->rWifiVar.aucMacAddress1,
+			prAdapter->rWifiVar.aucMacAddress);
+		/* Update wlan1 address */
+		prAdapter->rWifiVar.aucMacAddress1[3] ^= BIT(1);
+	}
+
 	return WLAN_STATUS_SUCCESS;
 }
 
