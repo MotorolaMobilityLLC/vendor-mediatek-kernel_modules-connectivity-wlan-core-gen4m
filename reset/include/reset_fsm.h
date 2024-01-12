@@ -68,14 +68,15 @@
 ***********************************************************************
 */
 #include <linux/kernel.h>
+#include <linux/timer.h>
 
 /**********************************************************************
 *                                 M A C R O S
 ***********************************************************************
 */
-#define RFSM_Info(_Fmt...)  pr_err("[reset][FSM] " _Fmt)
-#define RFSM_Warn(_Fmt...)  pr_warn("[reset][FSM] " _Fmt)
-#define RFSM_Err(_Fmt...) pr_err("[reset][FSM] " _Fmt)
+#define MR_Info(_Fmt...)  pr_info("[reset] " _Fmt)
+#define MR_Warn(_Fmt...)  pr_warn("[reset] " _Fmt)
+#define MR_Err(_Fmt...) pr_err("[reset] " _Fmt)
 
 #define RFSM_NAME_MAX_LEN 32
 
@@ -145,6 +146,7 @@ struct FsmEntity {
 	ResetFunc resetFunc;
 	NotifyFunc notifyFunc;
 
+	struct timer_list resetTimer;
 	struct FsmState *fsmState;
 };
 

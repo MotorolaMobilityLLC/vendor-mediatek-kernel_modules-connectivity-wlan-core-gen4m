@@ -329,6 +329,11 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 		    uint32_t u4RstFlag, const uint8_t *pucFile,
 		    uint32_t u4Line);
 
+#if CFG_CHIP_RESET_KO_SUPPORT
+void resetkoNotifyFunc(unsigned int event, void *data);
+void resetkoReset(void);
+#endif
+
 #if CFG_WMT_RESET_API_SUPPORT
 int32_t glIsWmtCodeDump(void);
 int wlan_reset_thread_main(void *data);

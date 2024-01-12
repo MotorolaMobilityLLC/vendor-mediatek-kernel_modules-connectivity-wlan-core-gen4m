@@ -385,7 +385,7 @@
  * chip reset
  *------------------------------------------------------------------------------
  */
-#ifdef CFG_CHIP_RESET_KO_SUPPORT
+#if CFG_CHIP_RESET_KO_SUPPORT
 #include "reset.h"
 #endif
 
