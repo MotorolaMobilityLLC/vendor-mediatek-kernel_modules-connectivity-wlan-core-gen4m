@@ -7353,6 +7353,56 @@ void rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 }
 
+uint16_t rlmOpClassToBandwidth(uint8_t ucOpClass)
+{
+	switch (ucOpClass) {
+		case 81:
+		case 82:
+			return BW_20;
+		case 83: /* channels 1..9; 40 MHz */
+		case 84: /* channels 5..13; 40 MHz */
+			return BW_40;
+		case 115: /* channels 36,40,44,48; indoor only */
+			return BW_20;
+		case 116: /* channels 36,44; 40 MHz; indoor only */
+		case 117: /* channels 40,48; 40 MHz; indoor only */
+			return BW_40;
+		case 118: /* channels 52,56,60,64; dfs */
+			return BW_20;
+		case 119: /* channels 52,60; 40 MHz; dfs */
+		case 120: /* channels 56,64; 40 MHz; dfs */
+			return BW_40;
+		case 121: /* channels 100-140 */
+			return BW_20;
+		case 122: /* channels 100-142; 40 MHz */
+		case 123: /* channels 104-136; 40 MHz */
+			return BW_40;
+		case 124: /* channels 149,153,157,161 */
+		case 125: /* channels 149,153,157,161,165,169,173,177 */
+			return BW_20;
+		case 126: /* channels 149,157,161,165,169,173; 40 MHz */
+		case 127: /* channels 153..177; 40 MHz */
+			return BW_40;
+		case 128: /* center freqs 42, 58, 106, 122, 138, 155, 171; 80 MHz */
+			return BW_80;
+		case 129: /* center freqs 50, 114, 163; 160 MHz */
+			return BW_160;
+		case 130: /* center freqs 42, 58, 106, 122, 138, 155, 171; 80+80 MHz */
+			return BW_8080;
+		case 131: /* UHB channels, 20 MHz: 1, 5, 9.. */
+			return BW_20;
+		case 132: /* UHB channels, 40 MHz: 3, 11, 19.. */
+			return BW_40;
+		case 133: /* UHB channels, 80 MHz: 7, 23, 39.. */
+			return BW_80;
+		case 134: /* UHB channels, 160 MHz: 15, 47, 79.. */
+			return BW_160;
+		case 135: /* UHB channels, 80+80 MHz: 7, 23, 39.. */
+			return BW_8080;
+	}
+	return BW_20;
+}
+
 #if CFG_SUPPORT_BFER
 /*----------------------------------------------------------------------------*/
 /*!
