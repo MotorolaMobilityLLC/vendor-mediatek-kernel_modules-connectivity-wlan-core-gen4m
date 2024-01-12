@@ -220,6 +220,10 @@ else
     ccflags-y += -DCFG_MTK_ANDROID_EMI=0
 endif
 
+ifneq ($(strip $(WIFI_FLAVOR)),)
+    ccflags-y += -DCFG_WIFI_FLAVOR=$(WIFI_FLAVOR)
+endif
+
 ifneq ($(WIFI_IP_SET),)
     ccflags-y += -DCFG_WIFI_IP_SET=$(WIFI_IP_SET)
 else
