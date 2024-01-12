@@ -253,6 +253,10 @@
 #include <linux/time.h>
 #include <linux/fb.h>
 
+#if (CONFIG_WLAN_SERVICE == 1)
+#include "agent.h"
+#endif
+
 extern u_int8_t fgIsBusAccessFailed;
 extern const struct ieee80211_iface_combination
 	*p_mtk_iface_combinations_sta;
@@ -749,6 +753,11 @@ struct GLUE_INFO {
 	/* 11R */
 	struct FT_IES rFtIeForTx;
 	struct cfg80211_ft_event_params rFtEventParam;
+
+	/*service for test mode*/
+#if (CONFIG_WLAN_SERVICE == 1)
+	struct service rService;
+#endif
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id,

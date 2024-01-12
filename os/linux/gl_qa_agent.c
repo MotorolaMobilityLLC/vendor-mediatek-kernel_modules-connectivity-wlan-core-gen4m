@@ -73,6 +73,9 @@
 #if KERNEL_VERSION(3, 8, 0) <= CFG80211_VERSION_CODE
 #include <uapi/linux/nl80211.h>
 #endif
+#if (CONFIG_WLAN_SERVICE == 1)
+#include "agent.h"
+#endif
 
 /*******************************************************************************
  *				C O N S T A N T S
@@ -8820,6 +8823,9 @@ int priv_qa_agent(IN struct net_device *prNetDev,
 	int32_t i4Status = 0;
 	struct HQA_CMD_FRAME *HqaCmdFrame;
 	uint32_t u4ATEMagicNum, u4ATEId, u4ATEData;
+#if (CONFIG_WLAN_SERVICE == 1)
+	struct GLUE_INFO *prGlueInfo = NULL;
+#endif
 
 	HqaCmdFrame = kmalloc(sizeof(*HqaCmdFrame), GFP_KERNEL);
 
@@ -8843,14 +8849,49 @@ int priv_qa_agent(IN struct net_device *prNetDev,
 
 	switch (u4ATEMagicNum) {
 	case HQA_CMD_MAGIC_NO:
-		i4Status = HQA_CMDHandler(prNetDev, prIwReqData,
-					  HqaCmdFrame);
+#if (CONFIG_WLAN_SERVICE == 1)
+	{
+		prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+		ASSERT(prGlueInfo);
+
+		i4Status = mt_agent_hqa_cmd_handler(&prGlueInfo->rService,
+			(struct hqa_frame *)HqaCmdFrame);
+
+		if (i4Status == WLAN_STATUS_SUCCESS) {
+			/*Response to QA */
+			prIwReqData->data.length
+				= sizeof((HqaCmdFrame)->MagicNo)
+				+ sizeof((HqaCmdFrame)->Type)
+				+ sizeof((HqaCmdFrame)->Id)
+				+ sizeof((HqaCmdFrame)->Length)
+				+ sizeof((HqaCmdFrame)->Sequence)
+				+ ntohs((HqaCmdFrame)->Length);
+
+			if (copy_to_user(prIwReqData->data.pointer
+				, (uint8_t *) (HqaCmdFrame)
+				, prIwReqData->data.length)) {
+				DBGLOG(RFTEST, INFO
+					, "QA_AGENT copy_to_user() fail in %s\n"
+					, __func__);
+				goto ERROR1;
+			}
+			DBGLOG(RFTEST, INFO,
+			 "QA_AGENT HQA cmd(0x%04x)Magic num(0x%08x) is done\n",
+			 ntohs(HqaCmdFrame->Id),
+			 ntohl(HqaCmdFrame->MagicNo));
+		}
+	}
+#else
+		i4Status = HQA_CMDHandler(prNetDev, prIwReqData, HqaCmdFrame);
+#endif
 		break;
 	default:
 		i4Status = -EINVAL;
 		DBGLOG(RFTEST, INFO, "QA_AGENT ATEMagicNum Error!!!\n");
 		break;
 	}
+
+
 
 ERROR1:
 	kfree(HqaCmdFrame);

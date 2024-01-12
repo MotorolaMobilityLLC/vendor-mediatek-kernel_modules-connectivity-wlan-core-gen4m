@@ -41,6 +41,8 @@ LOCAL_PATH := $(call my-dir)
 #
 ###############################################################################
 
+MTK_WLAN_SERVICE = yes
+
 ifeq ($(PRODUCT_OUT),)
     $(error PRODUCT_OUT is not defined)
 endif
@@ -175,7 +177,7 @@ endif
 
 
 WIFI_NAME := wlan_drv_gen4m
-WIFI_OPTS := CONFIG_MTK_COMBO_WIFI_HIF=$(WIFI_HIF) MODULE_NAME=$(WIFI_NAME) MTK_COMBO_CHIP=$(WIFI_CHIP) WLAN_CHIP_ID=$(WLAN_CHIP_ID) MTK_ANDROID_WMT=$(WIFI_WMT) WIFI_ENABLE_GCOV=$(WIFI_ENABLE_GCOV) WIFI_IP_SET=$(WIFI_IP_SET)
+WIFI_OPTS := CONFIG_MTK_COMBO_WIFI_HIF=$(WIFI_HIF) MODULE_NAME=$(WIFI_NAME) MTK_COMBO_CHIP=$(WIFI_CHIP) WLAN_CHIP_ID=$(WLAN_CHIP_ID) MTK_ANDROID_WMT=$(WIFI_WMT) WIFI_ENABLE_GCOV=$(WIFI_ENABLE_GCOV) WIFI_IP_SET=$(WIFI_IP_SET) MTK_WLAN_SERVICE=$(MTK_WLAN_SERVICE)
 
 ### Copy Module.symvers from $(LOCAL_REQUIRED_MODULES) to this module #######
 ### For symbol link (when CONFIG_MODVERSIONS is defined)
