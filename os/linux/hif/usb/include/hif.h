@@ -185,6 +185,7 @@ typedef enum _ENUM_USB_END_POINT_T {
 #define VND_REQ_POWER_ON_WIFI           (0x4)
 #define VND_REQ_REG_READ                (0x63)
 #define VND_REQ_REG_WRITE               (0x66)
+#define VND_REQ_EP5_IN_INFO             (0x67)
 #define VND_REQ_FEATURE_SET             (0x91)
 #define FEATURE_SET_WVALUE_RESUME       (0x5)
 #define FEATURE_SET_WVALUE_SUSPEND      (0x6)
@@ -308,6 +309,7 @@ typedef struct _BUS_INFO {
 	UINT_32 u4UdmaWlCfg_0;
 	UINT_32 u4UdmaTxTimeout; /* UDMA Tx time out limit, unit: us */
 	BOOLEAN (*asicUsbSuspend)(IN P_ADAPTER_T prAdapter, IN P_GLUE_INFO_T prGlueInfo);
+	UINT_8 (*asicUsbEventEpDetected)(IN P_ADAPTER_T prAdapter);
 } BUS_INFO, *P_BUS_INFO;
 
 /* USB_REQ_T prPriv field for TxData */

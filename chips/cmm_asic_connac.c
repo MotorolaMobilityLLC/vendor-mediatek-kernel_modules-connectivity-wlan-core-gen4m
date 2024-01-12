@@ -124,6 +124,7 @@ UINT_8 arAcQIdx2GroupId[MAC_TXQ_NUM] = {
 #if defined(_HIF_USB)
 #define USB_DMA_SHDL_GROUP_DEF_MIN_QUOTA 0x3
 #define USB_DMA_SHDL_GROUP_DEF_MAX_QUOTA 0x1FF
+#define USB_ACCESS_RETRY_LIMIT           1
 #endif /* _HIF_USB */
 
 /*******************************************************************************
@@ -590,6 +591,47 @@ BOOLEAN asicUsbSuspend(IN P_ADAPTER_T prAdapter, IN P_GLUE_INFO_T prGlueInfo)
 	}
 	DBGLOG(HAL, INFO, "%s <----\n", __func__);
 	return TRUE;
+}
+
+UINT_8 asicUsbEventEpDetected(IN P_ADAPTER_T prAdapter)
+{
+	P_GL_HIF_INFO_T prHifInfo = NULL;
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	INT_32 ret = 0;
+	UINT_8 ucRetryCount = 0;
+	BOOLEAN ucEp5Disable = FALSE;
+
+	ASSERT(FALSE == 0);
+	prGlueInfo = prAdapter->prGlueInfo;
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	if (prHifInfo->fgEventEpDetected == FALSE) {
+		prHifInfo->fgEventEpDetected = TRUE;
+		do {
+			ret = mtk_usb_vendor_request(prGlueInfo, 0, DEVICE_VENDOR_REQUEST_IN, VND_REQ_EP5_IN_INFO,
+					       0, 0, &ucEp5Disable, sizeof(ucEp5Disable));
+			if (ret || ucRetryCount)
+				DBGLOG(HAL, ERROR, "usb_control_msg() status: %x retry: %u\n",
+					(unsigned int)ret, ucRetryCount);
+			ucRetryCount++;
+			if (ucRetryCount > USB_ACCESS_RETRY_LIMIT)
+				break;
+		} while (ret);
+
+		if (ret) {
+			kalSendAeeWarning(HIF_USB_ERR_TITLE_STR,
+					  HIF_USB_ERR_DESC_STR "USB() reports error: %x retry: %u", ret, ucRetryCount);
+			DBGLOG(HAL, ERROR, "usb_readl() reports error: %x retry: %u\n", ret, ucRetryCount);
+		} else {
+			DBGLOG(HAL, INFO, "%s: Get ucEp5Disable = %d\n", __func__, ucEp5Disable);
+			if (ucEp5Disable)
+				prHifInfo->eEventEpType = EVENT_EP_TYPE_DATA_EP;
+		}
+	}
+	if (prHifInfo->eEventEpType == EVENT_EP_TYPE_DATA_EP)
+		return USB_DATA_EP_IN;
+	else
+		return USB_EVENT_EP_IN;
 }
 
 VOID asicUdmaTxTimeoutEnable(IN P_ADAPTER_T prAdapter)
