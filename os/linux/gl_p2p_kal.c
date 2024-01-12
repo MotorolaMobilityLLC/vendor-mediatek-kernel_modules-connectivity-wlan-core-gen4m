@@ -56,10 +56,12 @@
  *                   F U N C T I O N   D E C L A R A T I O N S
  ******************************************************************************
  */
-
 struct ieee80211_channel *kalP2pFuncGetChannelEntry(
 		struct GL_P2P_INFO *prP2pInfo,
 		struct RF_CHANNEL_INFO *prChannelInfo);
+
+static inline enum nl80211_chan_width
+__kalP2pGetNl80211ChnlBw(struct RF_CHANNEL_INFO *prRfChnlInfo);
 
 /******************************************************************************
  *                              F U N C T I O N S
@@ -2586,6 +2588,106 @@ void kalP2pNotifyDelStaComplete(struct ADAPTER *prAdapter,
 		complete(&prP2PInfo->rDelStaComp);
 }
 
+void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct RF_CHANNEL_INFO *prRfChnlInfo,
+	uint8_t ucCsaCount,
+	u_int8_t fgQuiet)
+{
+	struct GL_P2P_INFO *prP2PInfo;
+	struct net_device *prNetdevice;
+	struct cfg80211_chan_def chandef;
+	struct ieee80211_channel *chan;
+	enum nl80211_channel_type rChannelType;
+	enum ENUM_CHNL_EXT eChnlSco;
+	uint8_t ucRoleIdx;
+#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE) || \
+	(CFG_ADVANCED_80211_MLO == 1)
+	uint8_t ucLinkIdx = 0;
+#endif
+
+	if (!prAdapter || !prBssInfo || !prRfChnlInfo)
+		return;
+
+#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE) || \
+	(CFG_ADVANCED_80211_MLO == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	ucLinkIdx = prBssInfo->ucLinkIndex;
+#endif
+#endif
+	ucRoleIdx = prBssInfo->u4PrivateData;
+	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[ucRoleIdx];
+
+	if (prP2PInfo->aprRoleHandler != NULL &&
+	    prP2PInfo->aprRoleHandler != prP2PInfo->prDevHandler)
+		prNetdevice = prP2PInfo->aprRoleHandler;
+	else
+		prNetdevice = prP2PInfo->prDevHandler;
+
+	chan = ieee80211_get_channel(prP2PInfo->prWdev->wiphy,
+		nicChannelNum2Freq(prRfChnlInfo->ucChannelNum,
+				   prRfChnlInfo->eBand) / 1000);
+	if (!chan) {
+		DBGLOG(P2P, ERROR,
+			"Get channel failed by channel(%d) band(%d)\n",
+			prRfChnlInfo->ucChannelNum,
+			prRfChnlInfo->eBand);
+		return;
+	}
+
+	eChnlSco = rlmGetScoByChnInfo(prAdapter, prRfChnlInfo);
+	switch (eChnlSco) {
+	case CHNL_EXT_SCA:
+		rChannelType = NL80211_CHAN_HT40PLUS;
+		break;
+	case CHNL_EXT_SCB:
+		rChannelType = NL80211_CHAN_HT40MINUS;
+		break;
+	case CHNL_EXT_RES:
+		rChannelType = NL80211_CHAN_HT40MINUS;
+		break;
+	case CHNL_EXT_SCN:
+	default:
+		rChannelType = NL80211_CHAN_NO_HT;
+		break;
+	}
+
+	cfg80211_chandef_create(&chandef, chan, rChannelType);
+	chandef.width = __kalP2pGetNl80211ChnlBw(prRfChnlInfo);
+	chandef.center_freq1 = prRfChnlInfo->u4CenterFreq1;
+	chandef.center_freq2 = prRfChnlInfo->u4CenterFreq2;
+
+	DBGLOG(P2P, INFO,
+		"name(%s) b=%d f=%d w=%d s1=%d s2=%d\n",
+		prNetdevice->name,
+		chandef.chan->band,
+		chandef.chan->center_freq,
+		chandef.width,
+		chandef.center_freq1,
+		chandef.center_freq2);
+
+#if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
+	cfg80211_ch_switch_started_notify(prNetdevice, &chandef,
+				  ucLinkIdx, ucCsaCount, fgQuiet, 0);
+#elif (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE) && \
+	(CFG_ADVANCED_80211_MLO == 1)
+	cfg80211_ch_switch_started_notify(prNetdevice, &chandef,
+				  ucLinkIdx, ucCsaCount, fgQuiet, 0);
+#elif (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE) || \
+	(CFG_ADVANCED_80211_MLO == 1)
+	cfg80211_ch_switch_started_notify(prNetdevice, &chandef,
+					  ucLinkIdx, ucCsaCount, fgQuiet);
+#elif KERNEL_VERSION(5, 11, 0) <= CFG80211_VERSION_CODE
+	cfg80211_ch_switch_started_notify(prNetdevice, &chandef, ucCsaCount,
+					  fgQuiet);
+#elif KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE
+	cfg80211_ch_switch_started_notify(prNetdevice, &chandef, ucCsaCount);
+#endif
+
+	if (fgQuiet)
+		netif_tx_stop_all_queues(prNetdevice);
+}
+
 void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo)
 {
@@ -3142,5 +3244,59 @@ void kalIdcUnregisterRilNotifier(void)
 	}
 }
 #endif
+
+static inline enum nl80211_chan_width
+__kalP2pGetNl80211ChnlBw(struct RF_CHANNEL_INFO *prRfChnlInfo)
+{
+	if (!prRfChnlInfo) {
+		DBGLOG(P2P, ERROR, "NULL channel info.\n");
+		return NL80211_CHAN_WIDTH_20;
+	}
+
+	switch (prRfChnlInfo->ucChnlBw) {
+#if KERNEL_VERSION(5, 18, 0) <= CFG80211_VERSION_CODE
+	case MAX_BW_320_1MHZ:
+	case MAX_BW_320_2MHZ:
+		return NL80211_CHAN_WIDTH_320;
+#endif
+	case MAX_BW_80_80_MHZ:
+		return NL80211_CHAN_WIDTH_80P80;
+	case MAX_BW_160MHZ:
+		return NL80211_CHAN_WIDTH_160;
+	case MAX_BW_80MHZ:
+		return NL80211_CHAN_WIDTH_80;
+	case MAX_BW_40MHZ:
+		return NL80211_CHAN_WIDTH_40;
+	case MAX_BW_20MHZ:
+	default:
+		return NL80211_CHAN_WIDTH_20;
+	}
+}
+
+void kalP2pStopApInterface(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo)
+{
+	struct wiphy *wiphy = wlanGetWiphy();
+	struct GL_P2P_INFO *prP2PInfo;
+	struct net_device *prNetdevice;
+	uint8_t ucRoleIdx;
+
+	if (!prAdapter || !prBssInfo)
+		return;
+
+	ucRoleIdx = prBssInfo->u4PrivateData;
+	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[ucRoleIdx];
+
+	if (prP2PInfo->aprRoleHandler != NULL &&
+	    prP2PInfo->aprRoleHandler != prP2PInfo->prDevHandler)
+		prNetdevice = prP2PInfo->aprRoleHandler;
+	else
+		prNetdevice = prP2PInfo->prDevHandler;
+
+	DBGLOG(P2P, INFO, "AP interface (%s) leaving.\n",
+		prNetdevice->name);
+
+	cfg80211_stop_iface(wiphy, prNetdevice->ieee80211_ptr, GFP_KERNEL);
+}
 
 #endif /* CFG_ENABLE_WIFI_DIRECT */

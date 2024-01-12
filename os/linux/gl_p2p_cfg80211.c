@@ -2060,6 +2060,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 	uint8_t *pucBuffer = (uint8_t *) NULL;
 	uint8_t ucRoleIdx = 0;
 	struct RF_CHANNEL_INFO rRfChnlInfo;
+	struct BSS_INFO *prBssInfo;
 	uint8_t ucBssIdx = 0;
 	uint32_t u4Len = 0;
 
@@ -2233,6 +2234,15 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 				MBOX_ID_0,
 				(struct MSG_HDR *) prP2pBcnUpdateMsg,
 				MSG_SEND_METHOD_BUF);
+
+			prBssInfo = GET_BSS_INFO_BY_INDEX(
+				prGlueInfo->prAdapter,
+				ucBssIdx);
+			kalP2pIndicateChnlSwitchStarted(prGlueInfo->prAdapter,
+				prBssInfo,
+				&rRfChnlInfo,
+				params->count,
+				params->block_tx);
 
 			i4Rslt = 0; /* Return Success */
 		}
