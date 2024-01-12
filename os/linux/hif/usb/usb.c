@@ -692,8 +692,17 @@ void glUdmaRxAggEnable(struct GLUE_INFO *prGlueInfo, u_int8_t enable)
 		kalDevRegWrite(prGlueInfo, prBusInfo->u4UdmaWlCfg_1_Addr, u4Value);
 	} else {
 		kalDevRegRead(prGlueInfo, prBusInfo->u4UdmaWlCfg_0_Addr, &u4Value);
-		u4Value &= ~UDMA_WLCFG_0_RX_AGG_EN(1);
-		kalDevRegWrite(prGlueInfo, prBusInfo->u4UdmaWlCfg_0_Addr, u4Value);
+		/* enable UDMA TX & RX */
+		u4Value &= ~(UDMA_WLCFG_0_RX_AGG_LMT_MASK |
+			UDMA_WLCFG_0_RX_AGG_TO_MASK);
+		kalDevRegWrite(prGlueInfo,
+			prBusInfo->u4UdmaWlCfg_0_Addr, u4Value);
+
+		kalDevRegRead(prGlueInfo,
+			prBusInfo->u4UdmaWlCfg_1_Addr, &u4Value);
+		u4Value &= ~UDMA_WLCFG_1_RX_AGG_PKT_LMT_MASK;
+		kalDevRegWrite(prGlueInfo,
+			prBusInfo->u4UdmaWlCfg_1_Addr, u4Value);
 	}
 }
 
