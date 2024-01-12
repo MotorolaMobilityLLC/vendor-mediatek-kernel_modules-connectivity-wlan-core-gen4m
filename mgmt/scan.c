@@ -1553,12 +1553,6 @@ uint8_t scanRnrChnlIsNeedScan(IN struct ADAPTER *prAdapter,
 	if (ucRnrChNum == 0)
 		return FALSE;
 
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	/* 6g */
-	if (ucBand == KAL_BAND_6GHZ && IS_6G_PSC_CHANNEL(ucRnrChNum))
-		return FALSE;
-#endif
-
 	switch (ucBand) {
 	case KAL_BAND_2GHZ:
 		eRfBand = BAND_2G4;
@@ -1576,12 +1570,19 @@ uint8_t scanRnrChnlIsNeedScan(IN struct ADAPTER *prAdapter,
 		break;
 	}
 
-	/* Set channel info to scan request */
+	/* Check RNR scan channel is in current scan list or not,
+	 * if RNR scan channel is 2.4G or 5G, ignore it. 6G needs
+	 * to send probe request with BSSID, so keep it.
+	 */
 	if (prScanParam->eScanChannel == SCAN_CHANNEL_SPECIFIED) {
 		for (i = 0; i < prScanParam->ucChannelListNum; i++) {
 			prCnlInfo = &prScanParam->arChnlInfoList[i];
 			if (eRfBand == prCnlInfo->eBand &&
-			    ucRnrChNum == prCnlInfo->ucChannelNum) {
+			    ucRnrChNum == prCnlInfo->ucChannelNum
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			    && eRfBand != BAND_6G
+#endif
+			) {
 				log_dbg(SCN, INFO,
 					"[ch:%d][band:%d] already in scan chnl list\n",
 						ucRnrChNum, eRfBand);
