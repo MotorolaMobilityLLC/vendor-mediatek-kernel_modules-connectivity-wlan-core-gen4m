@@ -2360,109 +2360,100 @@ p2pFuncValidateAuth(IN P_ADAPTER_T prAdapter,
 		    IN P_BSS_INFO_T prP2pBssInfo,
 		    IN P_SW_RFB_T prSwRfb, IN PP_STA_RECORD_T pprStaRec, OUT PUINT_16 pu2StatusCode)
 {
-	BOOLEAN fgReplyAuth = TRUE;
 	P_STA_RECORD_T prStaRec = (P_STA_RECORD_T) NULL;
 	P_WLAN_AUTH_FRAME_T prAuthFrame = (P_WLAN_AUTH_FRAME_T) NULL;
 
 	DBGLOG(P2P, TRACE, "p2pValidate Authentication Frame\n");
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) &&
-			     (prP2pBssInfo != NULL) &&
-			     (prSwRfb != NULL) && (pprStaRec != NULL) && (pu2StatusCode != NULL));
 
-		/* P2P 3.2.8 */
-		*pu2StatusCode = STATUS_CODE_REQ_DECLINED;
-		prAuthFrame = (P_WLAN_AUTH_FRAME_T) prSwRfb->pvHeader;
+	/* P2P 3.2.8 */
+	*pu2StatusCode = STATUS_CODE_REQ_DECLINED;
+	prAuthFrame = (P_WLAN_AUTH_FRAME_T) prSwRfb->pvHeader;
 
-		if ((prP2pBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) ||
-		    (prP2pBssInfo->eIntendOPMode != OP_MODE_NUM)) {
-			/* We are not under AP Mode yet. */
-			fgReplyAuth = FALSE;
-			DBGLOG(P2P, WARN, "Current OP mode is not under AP mode. (%d)\n", prP2pBssInfo->eCurrentOPMode);
-			break;
-		}
+	if ((prP2pBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) ||
+	    (prP2pBssInfo->eIntendOPMode != OP_MODE_NUM)) {
+		/* We are not under AP Mode yet. */
+		DBGLOG(P2P, WARN, "Current OP mode is not under AP mode. (%d)\n", prP2pBssInfo->eCurrentOPMode);
+		return FALSE;
+	}
 
-		prStaRec = cnmGetStaRecByAddress(prAdapter, prP2pBssInfo->ucBssIndex, prAuthFrame->aucSrcAddr);
+	prStaRec = cnmGetStaRecByAddress(prAdapter, prP2pBssInfo->ucBssIndex, prAuthFrame->aucSrcAddr);
 
-		if (!prStaRec) {
-			prStaRec = cnmStaRecAlloc(prAdapter, STA_TYPE_P2P_GC,
-						  prP2pBssInfo->ucBssIndex, prAuthFrame->aucSrcAddr);
+	if (!prStaRec) {
+		prStaRec = cnmStaRecAlloc(prAdapter, STA_TYPE_P2P_GC,
+					  prP2pBssInfo->ucBssIndex, prAuthFrame->aucSrcAddr);
 
-			/* TODO(Kevin): Error handling of allocation of STA_RECORD_T for
-			 * exhausted case and do removal of unused STA_RECORD_T.
-			 */
-			/* Sent a message event to clean un-used STA_RECORD_T. */
-			ASSERT(prStaRec);
+		/* TODO(Kevin): Error handling of allocation of STA_RECORD_T for
+		 * exhausted case and do removal of unused STA_RECORD_T.
+		 */
+		/* Sent a message event to clean un-used STA_RECORD_T. */
+		ASSERT(prStaRec);
 
-			prSwRfb->ucStaRecIdx = prStaRec->ucIndex;
+		prSwRfb->ucStaRecIdx = prStaRec->ucIndex;
 
-			prStaRec->u2BSSBasicRateSet = prP2pBssInfo->u2BSSBasicRateSet;
+		prStaRec->u2BSSBasicRateSet = prP2pBssInfo->u2BSSBasicRateSet;
 
-			prStaRec->u2DesiredNonHTRateSet = RATE_SET_ERP_P2P;
+		prStaRec->u2DesiredNonHTRateSet = RATE_SET_ERP_P2P;
 
-			prStaRec->u2OperationalRateSet = RATE_SET_ERP_P2P;
-			prStaRec->ucPhyTypeSet = PHY_TYPE_SET_802_11GN;
+		prStaRec->u2OperationalRateSet = RATE_SET_ERP_P2P;
+		prStaRec->ucPhyTypeSet = PHY_TYPE_SET_802_11GN;
 
-			/* Update default Tx rate */
-			nicTxUpdateStaRecDefaultRate(prStaRec);
+		/* Update default Tx rate */
+		nicTxUpdateStaRecDefaultRate(prStaRec);
 
-			/* NOTE(Kevin): Better to change state here, not at TX Done */
+		/* NOTE(Kevin): Better to change state here, not at TX Done */
+		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
+	} else {
+		prSwRfb->ucStaRecIdx = prStaRec->ucIndex;
+
+		if ((prStaRec->ucStaState > STA_STATE_1) && (IS_STA_IN_P2P(prStaRec))) {
+
 			cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
-		} else {
-			prSwRfb->ucStaRecIdx = prStaRec->ucIndex;
 
-			if ((prStaRec->ucStaState > STA_STATE_1) && (IS_STA_IN_P2P(prStaRec))) {
+			p2pFuncResetStaRecStatus(prAdapter, prStaRec);
 
-				cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
-
-				p2pFuncResetStaRecStatus(prAdapter, prStaRec);
-
-				bssRemoveClient(prAdapter, prP2pBssInfo, prStaRec);
-			}
-
+			bssRemoveClient(prAdapter, prP2pBssInfo, prStaRec);
 		}
 
-		if (bssGetClientCount(prAdapter, prP2pBssInfo) >= P2P_MAXIMUM_CLIENT_COUNT
-			|| !p2pRoleProcessACLInspection(prAdapter, prStaRec->aucMacAddr, prP2pBssInfo->ucBssIndex)
+	}
+
+	if (bssGetClientCount(prAdapter, prP2pBssInfo) >= P2P_MAXIMUM_CLIENT_COUNT
+		|| !p2pRoleProcessACLInspection(prAdapter, prStaRec->aucMacAddr, prP2pBssInfo->ucBssIndex)
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
-			|| kalP2PMaxClients(prAdapter->prGlueInfo, bssGetClientCount(prAdapter, prP2pBssInfo),
-			(UINT_8) prP2pBssInfo->u4PrivateData)
+		|| kalP2PMaxClients(prAdapter->prGlueInfo, bssGetClientCount(prAdapter, prP2pBssInfo),
+		(UINT_8) prP2pBssInfo->u4PrivateData)
 #endif
-		) {
-			/* GROUP limit full. */
-			/* P2P 3.2.8 */
-			DBGLOG(P2P, WARN, "Group Limit Full. (%d)\n", bssGetClientCount(prAdapter, prP2pBssInfo));
-			cnmStaRecFree(prAdapter, prStaRec);
-			break;
-		}
+	) {
+		/* GROUP limit full. */
+		/* P2P 3.2.8 */
+		DBGLOG(P2P, WARN, "Group Limit Full. (%d)\n", bssGetClientCount(prAdapter, prP2pBssInfo));
+		cnmStaRecFree(prAdapter, prStaRec);
+		return TRUE;
+	}
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
-		else {
-			/* Hotspot Blacklist */
-			if (prAuthFrame->aucSrcAddr) {
-				if (kalP2PCmpBlackList(prAdapter->prGlueInfo, prAuthFrame->aucSrcAddr,
-					(UINT_8) prP2pBssInfo->u4PrivateData)) {
-					fgReplyAuth = FALSE;
-					return fgReplyAuth;
-				}
-			}
+	else {
+		/* Hotspot Blacklist */
+		if (kalP2PCmpBlackList(prAdapter->prGlueInfo, prAuthFrame->aucSrcAddr,
+			(UINT_8) prP2pBssInfo->u4PrivateData)) {
+			return FALSE;
 		}
+
+	}
 #endif
-		/* prStaRec->eStaType = STA_TYPE_INFRA_CLIENT; */
-		prStaRec->eStaType = STA_TYPE_P2P_GC;
+	/* prStaRec->eStaType = STA_TYPE_INFRA_CLIENT; */
+	prStaRec->eStaType = STA_TYPE_P2P_GC;
 
-		/* Update Station Record - Status/Reason Code */
-		prStaRec->u2StatusCode = STATUS_CODE_SUCCESSFUL;
+	/* Update Station Record - Status/Reason Code */
+	prStaRec->u2StatusCode = STATUS_CODE_SUCCESSFUL;
 
-		prStaRec->ucJoinFailureCount = 0;
+	prStaRec->ucJoinFailureCount = 0;
 
-		*pprStaRec = prStaRec;
+	*pprStaRec = prStaRec;
 
-		*pu2StatusCode = STATUS_CODE_SUCCESSFUL;
+	*pu2StatusCode = STATUS_CODE_SUCCESSFUL;
 
-	} while (FALSE);
 
-	return fgReplyAuth;
+	return TRUE;
 
 }				/* p2pFuncValidateAuth */
 
