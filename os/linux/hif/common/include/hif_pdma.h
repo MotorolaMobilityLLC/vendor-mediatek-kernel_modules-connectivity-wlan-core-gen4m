@@ -95,23 +95,32 @@
 #define NUM_OF_TX_RING				(6 + NUM_OF_WFDMA1_TX_RING)
 #define NUM_OF_RX_RING				(2 + NUM_OF_WFDMA1_RX_RING)
 
-#ifdef CONFIG_MTK_WIFI_HE160
+#if defined(CONFIG_MTK_WIFI_BW320)
 #define TX_RING_SIZE				1024
 #if CFG_SUPPORT_RX_PAGE_POOL
 #define RX_RING_SIZE				4095 /* Max Rx ring size */
-#else
-#define RX_RING_SIZE				1024 /* Max Rx ring size */
-#endif
 /* Data Rx ring */
-#if CFG_SUPPORT_RX_PAGE_POOL
 #define RX_RING0_SIZE				4095
 #else
+#define RX_RING_SIZE				1024 /* Max Rx ring size */
+/* Data Rx ring */
 #define RX_RING0_SIZE				1024
 #endif
 /* Event/MSDU_report Rx ring */
 #define RX_RING1_SIZE				128
-#define HIF_NUM_OF_QM_RX_PKT_NUM	4096
-#define HIF_TX_MSDU_TOKEN_NUM		(TX_RING_SIZE * 4)
+#define HIF_NUM_OF_QM_RX_PKT_NUM		4096
+#define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_SIZE * 7)
+
+#elif defined(CONFIG_MTK_WIFI_HE160)
+#define TX_RING_SIZE				1024
+#define RX_RING_SIZE				1024 /* Max Rx ring size */
+/* Data Rx ring */
+#define RX_RING0_SIZE				1024
+/* Event/MSDU_report Rx ring */
+#define RX_RING1_SIZE				128
+#define HIF_NUM_OF_QM_RX_PKT_NUM		4096
+#define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_SIZE * 4)
+
 #elif defined(CONFIG_MTK_WIFI_HE80)
 #define TX_RING_SIZE				1024
 #define RX_RING_SIZE				1024 /* Max Rx ring size */
@@ -119,26 +128,28 @@
 #define RX_RING0_SIZE				1024
 /* Event/MSDU_report Rx ring */
 #define RX_RING1_SIZE				16
-#define HIF_NUM_OF_QM_RX_PKT_NUM	2048
-#define HIF_TX_MSDU_TOKEN_NUM		(TX_RING_SIZE * 2)
+#define HIF_NUM_OF_QM_RX_PKT_NUM		2048
+#define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_SIZE * 2)
+
 #elif defined(CONFIG_MTK_WIFI_VHT80)
 #define TX_RING_SIZE				512
-#define RX_RING_SIZE				512	/* Max Rx ring size */
+#define RX_RING_SIZE				512 /* Max Rx ring size */
 /* Data Rx ring */
 #define RX_RING0_SIZE				512
 /* Event/MSDU_report Rx ring */
 #define RX_RING1_SIZE				16
-#define HIF_NUM_OF_QM_RX_PKT_NUM	2048
-#define HIF_TX_MSDU_TOKEN_NUM		(TX_RING_SIZE * 3)
+#define HIF_NUM_OF_QM_RX_PKT_NUM		2048
+#define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_SIZE * 3)
+
 #else
 #define TX_RING_SIZE				256
-#define RX_RING_SIZE				256	/* Max Rx ring size */
+#define RX_RING_SIZE				256 /* Max Rx ring size */
 /* Data Rx ring */
 #define RX_RING0_SIZE				256
 /* Event/MSDU_report Rx ring */
 #define RX_RING1_SIZE				16
-#define HIF_NUM_OF_QM_RX_PKT_NUM	2048
-#define HIF_TX_MSDU_TOKEN_NUM		(TX_RING_SIZE * 3)
+#define HIF_NUM_OF_QM_RX_PKT_NUM		2048
+#define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_SIZE * 3)
 #endif
 
 /* TXD_SIZE = TxD + TxInfo */
