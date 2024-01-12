@@ -6192,6 +6192,7 @@ void p2pFuncSwitchGcChannel(
 		prP2pBssInfo->eBand != prChnlReqInfo->eBand) {
 
 		nicPmIndicateBssAbort(prAdapter, prP2pBssInfo->ucBssIndex);
+		prP2pBssInfo->ucDTIMPeriod = 0;
 
 		/* Update BSS with temp. disconnect state to FW */
 		UNSET_NET_ACTIVE(prAdapter,
