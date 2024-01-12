@@ -1674,6 +1674,10 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 					IW_AUTH_CIPHER_TKIP;
 #endif
 			break;
+#if CFG_SUPPORT_WAPI
+		case WLAN_CIPHER_SUITE_SMS4:
+			break;
+#endif
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 		case WLAN_CIPHER_SUITE_GCMP_256:
 			prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_GCMP256;
@@ -1731,6 +1735,10 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		case WLAN_CIPHER_SUITE_GCMP:
 			prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_GCMP128;
 			break;
+#if CFG_SUPPORT_WAPI
+		case WLAN_CIPHER_SUITE_SMS4:
+			break;
+#endif
 		case WLAN_CIPHER_SUITE_NO_GROUP_ADDR:
 			break;
 		default:
