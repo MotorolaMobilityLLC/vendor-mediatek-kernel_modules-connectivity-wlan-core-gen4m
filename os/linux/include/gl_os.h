@@ -779,10 +779,18 @@ struct GLUE_INFO {
 	uint16_t u2MetUdpPort;
 #endif
 
-#if CFG_SUPPORT_SNIFFER
-	u_int8_t fgIsEnableMon;
-	struct net_device *prMonDevHandler;
-	struct work_struct monWork;
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	uint8_t fgIsEnableMon;
+	uint8_t ucPriChannel;
+	uint8_t ucChannelS1;
+	uint8_t ucChannelS2;
+	uint8_t ucBand;
+	uint8_t ucChannelWidth;
+	uint8_t ucSco;
+	uint8_t ucBandIdx;
+	uint8_t fgDropFcsErrorFrame;
+	uint16_t u2Aid;
+	uint32_t u4AmpduRefNum;
 #endif
 
 	int32_t i4RssiCache[BSSID_NUM];
@@ -1491,6 +1499,10 @@ uint32_t getFWLogOnOff(void);
 uint32_t getFWLogLevel(void);
 uint32_t connsysFwLogControl(struct ADAPTER *prAdapter,
 	void *pvSetBuffer, uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen);
+#endif
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+int32_t sysCreateMonDbgFs(struct GLUE_INFO *prGlueInfo);
+void sysRemoveMonDbgFs(void);
 #endif
 
 #endif /* _GL_OS_H */

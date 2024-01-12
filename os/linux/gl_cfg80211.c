@@ -978,6 +978,10 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	if (prGlueInfo->fgIsEnableMon)
+		return -EINVAL;
+#endif
 	ucBssIndex = wlanGetBssIdx(request->wdev->netdev);
 	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
 		return -EINVAL;
@@ -6550,6 +6554,12 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 			mtk_init_sta_role(prAdapter, ndev);
 			return -EFAULT;
 		}
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	} else if (type == NL80211_IFTYPE_MONITOR) {
+		ndev->type = ARPHRD_IEEE80211_RADIOTAP;
+		ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
+		prGlueInfo->fgIsEnableMon = TRUE;
+#endif
 	} else {
 		/* AP mode change to STA mode */
 		if (mtk_uninit_ap_role(prGlueInfo, ndev) != 0) {
@@ -7768,3 +7778,95 @@ int mtk_cfg80211_update_ft_ies(struct wiphy *wiphy, struct net_device *dev,
 
 	return 0;
 }
+
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+int mtk_cfg80211_set_monitor_channel(struct wiphy *wiphy,
+			struct cfg80211_chan_def *chandef)
+{
+	struct GLUE_INFO *prGlueInfo;
+	uint8_t ucBand = BAND_NULL;
+	uint8_t ucSco = CHNL_EXT_SCN;
+	uint8_t ucChannelWidth = CW_20_40MHZ;
+	uint8_t ucPriChannel = 0;
+	uint8_t ucChannelS1 = 0;
+	uint8_t ucChannelS2 = 0;
+	uint32_t u4BufLen;
+	uint32_t rStatus;
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (chandef == NULL) {
+		return -EFAULT;
+	}
+
+	ucPriChannel =
+		ieee80211_frequency_to_channel(chandef->chan->center_freq);
+	ucChannelS1 =
+		ieee80211_frequency_to_channel(chandef->center_freq1);
+	ucChannelS2 =
+		ieee80211_frequency_to_channel(chandef->center_freq2);
+
+	switch (chandef->chan->band) {
+		case NL80211_BAND_2GHZ:
+			ucBand = BAND_2G4;
+			break;
+		case NL80211_BAND_5GHZ:
+			ucBand = BAND_5G;
+			break;
+		default:
+			return -EFAULT;
+	}
+
+	switch (chandef->width) {
+		case NL80211_CHAN_WIDTH_80P80:
+			ucChannelWidth = CW_80P80MHZ;
+			break;
+		case NL80211_CHAN_WIDTH_160:
+			ucChannelWidth = CW_160MHZ;
+			break;
+		case NL80211_CHAN_WIDTH_80:
+			ucChannelWidth = CW_80MHZ;
+			break;
+		case NL80211_CHAN_WIDTH_40:
+			ucChannelWidth = CW_20_40MHZ;
+			if (ucChannelS1 > ucPriChannel)
+				ucSco = CHNL_EXT_SCA;
+			else
+				ucSco = CHNL_EXT_SCB;
+			break;
+		case NL80211_CHAN_WIDTH_20:
+			ucChannelWidth = CW_20_40MHZ;
+			break;
+		default:
+			return -EFAULT;
+	}
+
+	prGlueInfo->ucPriChannel = ucPriChannel;
+	prGlueInfo->ucChannelS1 = ucChannelS1;
+	prGlueInfo->ucChannelS2 = ucChannelS2;
+	prGlueInfo->ucBand = ucBand;
+	prGlueInfo->ucChannelWidth = ucChannelWidth;
+	prGlueInfo->ucSco = ucSco;
+
+	DBGLOG(REQ, INFO,
+		"en[%d],bn[%d],pc[%d],bw[%d],cc1[%d],cc2[%d],bidx[%d],aid[%d]\n",
+		prGlueInfo->fgIsEnableMon,
+		prGlueInfo->ucBand,
+		prGlueInfo->ucPriChannel,
+		prGlueInfo->ucChannelWidth,
+		prGlueInfo->ucChannelS1,
+		prGlueInfo->ucChannelS2,
+		prGlueInfo->ucBandIdx,
+		prGlueInfo->u2Aid);
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetMonitor,
+		NULL, 0, FALSE, FALSE, TRUE, &u4BufLen);
+
+	return 0;
+}
+#endif
