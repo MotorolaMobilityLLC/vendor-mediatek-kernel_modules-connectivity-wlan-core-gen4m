@@ -2283,8 +2283,7 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 			p2pChangeMediaState(prAdapter, prP2pBssInfo,
 				MEDIA_STATE_DISCONNECTED);
 			nicUpdateBssEx(prAdapter,
-				NETWORK_ID(prP2pRoleFsmInfo->ucBssIndex,
-				prP2pRoleFsmInfo->ucRoleIndex),
+				prP2pBssInfo->ucBssIndex,
 				FALSE);
 
 #if CFG_SUPPORT_DBDC
