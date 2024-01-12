@@ -184,9 +184,10 @@ enum ENUM_CNM_OPMODE_REQ_T {
 	CNM_OPMODE_REQ_DBDC_SCAN  = 1,
 	CNM_OPMODE_REQ_COEX       = 2,
 	CNM_OPMODE_REQ_SMARTGEAR  = 3,
-	CNM_OPMODE_REQ_COANT      = 4,
-	CNM_OPMODE_REQ_NUM        = 5,
-	CNM_OPMODE_REQ_MAX_CAP    = 6 /* just for coding */
+	CNM_OPMODE_REQ_SMARTGEAR_1T2R  = 4,
+	CNM_OPMODE_REQ_COANT      = 5,
+	CNM_OPMODE_REQ_NUM        = 6,
+	CNM_OPMODE_REQ_MAX_CAP    = 7 /* just for coding */
 };
 
 enum ENUM_CNM_OPMODE_REQ_STATUS {
@@ -3513,6 +3514,9 @@ cnmOpModeMapEvtReason(
 	case EVENT_OPMODE_CHANGE_REASON_SMARTGEAR:
 		eReqIdx = CNM_OPMODE_REQ_SMARTGEAR;
 		break;
+	case EVENT_OPMODE_CHANGE_REASON_SMARTGEAR_1T2R:
+		eReqIdx = CNM_OPMODE_REQ_SMARTGEAR_1T2R;
+		break;
 	case EVENT_OPMODE_CHANGE_REASON_COEX:
 		eReqIdx = CNM_OPMODE_REQ_COEX;
 		break;
@@ -3736,7 +3740,11 @@ cnmOpModeSetTRxNss(
 					ucOpBwFinal,
 					ucOpRxNssFinal,
 					ucOpTxNssFinal,
-					cnmOpModeCallbackDispatcher);
+					#if CFG_SUPPORT_SMART_GEAR
+					eNewReq,
+					#endif
+					cnmOpModeCallbackDispatcher
+		);
 
 		switch (eRlmStatus) {
 		case OP_CHANGE_STATUS_VALID_NO_CHANGE:
@@ -3838,6 +3846,48 @@ void cnmOpModeGetTRxNss(
 		ucBssIndex, apucCnmOpModeReq[eCurrMaxIdx],
 		*pucOpTxNss, *pucOpRxNss);
 }
+
+#if CFG_SUPPORT_SMART_GEAR
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Handle Smart Gear Status Change event from FW.
+ *
+ * @param prAdapter
+ * @param prEvent
+ *
+ * @return
+ */
+/*----------------------------------------------------------------------------*/
+void cnmEventSGStatus(
+	IN struct ADAPTER *prAdapter,
+	IN struct WIFI_EVENT *prEvent)
+{
+	struct EVENT_SMART_GEAT_STATE *prSGState;
+
+	#if CFG_SUPPORT_DATA_STALL
+	enum ENUM_VENDOR_DRIVER_EVENT eEvent;
+
+	ASSERT(prAdapter);
+	prSGState = (struct EVENT_SMART_GEAT_STATE *) (prEvent->aucBuffer);
+
+	if (prSGState->fgIsEnable == 0x01) {
+		eEvent = EVENT_SG_ENABLE;
+	} else if (prSGState->fgIsEnable == 0x00) {
+		eEvent = EVENT_SG_DISABLE;
+	} else {
+		;/* Not correction value, juste reture;*/
+		return;
+	}
+
+	DBGLOG(CNM,  INFO,
+			"[SG]cnmEventSGStatus,%u,%u,%u\n",
+			prSGState->fgIsEnable, prSGState->u4StateIdx, eEvent);
+
+	KAL_REPORT_ERROR_EVENT(prAdapter,
+			eEvent, (uint16_t)sizeof(u_int8_t));
+	#endif /* CFG_SUPPORT_DATA_STALL */
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!

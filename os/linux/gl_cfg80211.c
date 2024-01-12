@@ -5135,6 +5135,9 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 			 struct cfg80211_wowlan *wow)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+#if (CFG_SUPPORT_PERF_IND == 1)
+	struct PERF_MONITOR_T *prPerMonitor = NULL;
+#endif
 
 	DBGLOG(REQ, INFO, "mtk_cfg80211_suspend\n");
 
@@ -5148,6 +5151,17 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 		goto end;
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+
+#if (CFG_SUPPORT_PERF_IND == 1)
+	prPerMonitor = &prGlueInfo->prAdapter->rPerMonitor;
+
+	if (KAL_TEST_BIT(PERF_MON_RUNNING_BIT,
+			prPerMonitor->ulPerfMonFlag)) {
+		DBGLOG(REQ, INFO,
+				"need to stop before entry Suspend\n");
+		kalPerMonStop(prGlueInfo);
+	}
+#endif
 
 	if (prGlueInfo && prGlueInfo->prAdapter) {
 		set_bit(SUSPEND_FLAG_FOR_WAKEUP_REASON,

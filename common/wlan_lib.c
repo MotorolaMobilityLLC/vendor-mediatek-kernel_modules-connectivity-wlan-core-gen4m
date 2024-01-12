@@ -6803,6 +6803,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	}
 #endif
 
+#if CFG_SUPPORT_SMART_GEAR
+	prWifiVar->ucSGCfg = (uint8_t) wlanCfgGetUint32(
+					prAdapter, "SGCfg", FEATURE_ENABLED);
+#endif
 	/* Tx Buffer Management */
 	prWifiVar->ucExtraTxDone = (uint32_t) wlanCfgGetUint32(
 					prAdapter, "ExtraTxDone", 1);
@@ -8277,9 +8281,19 @@ void wlanFeatureToFw(IN struct ADAPTER *prAdapter)
 		ucTimes = 0;
 	}
 
+#if CFG_SUPPORT_SMART_GEAR
+	/*Send Event, Notify Fwks*/
+	#if CFG_SUPPORT_DATA_STALL
+	if (prAdapter->rWifiVar.ucSGCfg == 0x00) {
+		enum ENUM_VENDOR_DRIVER_EVENT eEvent = EVENT_SG_DISABLE;
+
+		KAL_REPORT_ERROR_EVENT(prAdapter,
+			eEvent, (uint16_t)sizeof(u_int8_t));
+	}
+	#endif /* CFG_SUPPORT_DATA_STALL */
+#endif
+
 }
-
-
 
 uint32_t wlanCfgParse(IN struct ADAPTER *prAdapter,
 		      uint8_t *pucConfigBuf, uint32_t u4ConfigBufLen,
