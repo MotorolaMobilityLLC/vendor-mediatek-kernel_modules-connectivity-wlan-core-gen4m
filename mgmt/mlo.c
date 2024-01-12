@@ -3539,6 +3539,7 @@ int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 	prMldStarec->u2EmlCap = u2EmlCap;
 
 	LINK_INSERT_TAIL(prStarecList, &prStarec->rLinkEntryMld);
+	prMldStarec->u4StaBitmap |= BIT(prStarec->ucIndex);
 
 	mldStarecUpdateMldId(prAdapter, prMldStarec);
 
@@ -3590,6 +3591,8 @@ void mldStarecUnregister(struct ADAPTER *prAdapter,
 	}
 
 	mldStarecUpdateMldId(prAdapter, prMldStarec);
+
+	prMldStarec->u4StaBitmap &= ~BIT(prStarec->ucIndex);
 
 	if (LINK_IS_EMPTY(prStarecList))
 		mldStarecFree(prAdapter, prMldStarec, prStarec);
