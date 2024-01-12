@@ -231,7 +231,7 @@ extern const uint8_t *apucACI2Str[4];
 #define QM_RX_BA_ENTRY_MISS_TIMEOUT_MS_SHORT	(50)
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
-#if CFG_M0VE_BA_TO_DRIVER
+#if CFG_MOVE_BA_TO_DRIVER
 /* MQM internal control bitmap per-bit usage
  * (for operations on g_prMqm->u4FlagBitmap)
  */
@@ -370,7 +370,7 @@ struct RX_BA_ENTRY {
 	uint16_t u2FirstBubbleSn;
 	u_int8_t fgHasBubble;
 
-#if CFG_M0VE_BA_TO_DRIVER
+#if CFG_MOVE_BA_TO_DRIVER
 	uint8_t ucStatus;
 	uint8_t ucIdleCount;
 	uint16_t u2SnapShotSN;
@@ -808,7 +808,7 @@ struct MSG_ARP_MONITOR {
 };
 #endif /* ARP_MONITER_ENABLE */
 
-#if CFG_M0VE_BA_TO_DRIVER
+#if CFG_MOVE_BA_TO_DRIVER
 /* The status of an TX/RX BA entry in FW
  * (NEGO means the negotiation process is in progress)
  */
@@ -1236,7 +1236,7 @@ void qmFlushTimeoutReorderBubble(struct ADAPTER *prAdapter,
 void qmFlushDeletedBaReorder(struct ADAPTER *prAdapter,
 		struct RX_BA_ENTRY *prReorderQueParm);
 
-#if CFG_M0VE_BA_TO_DRIVER
+#if CFG_MOVE_BA_TO_DRIVER
 void
 mqmSendDelBaFrame(struct ADAPTER *prAdapter,
 		  u_int8_t fgIsInitiator, struct STA_RECORD *prStaRec,

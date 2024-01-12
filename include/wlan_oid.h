@@ -4967,7 +4967,7 @@ wlanoidSetStopSchedScan(struct ADAPTER *prAdapter,
 			uint32_t *pu4SetInfoLen);
 #endif /* CFG_SUPPORT_SCHED_SCAN */
 
-#if CFG_M0VE_BA_TO_DRIVER
+#if CFG_MOVE_BA_TO_DRIVER
 uint32_t wlanoidResetBAScoreboard(struct ADAPTER *prAdapter,
 				  void *pvSetBuffer,
 				  uint32_t u4SetBufferLen);

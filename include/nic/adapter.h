@@ -2152,7 +2152,7 @@ struct ADAPTER {
 	struct WLAN_CFG rWlanCfgEm;
 #endif
 
-#if CFG_M0VE_BA_TO_DRIVER
+#if CFG_MOVE_BA_TO_DRIVER
 	struct TIMER rMqmIdleRxBaDetectionTimer;
 	uint32_t u4FlagBitmap;
 #endif
