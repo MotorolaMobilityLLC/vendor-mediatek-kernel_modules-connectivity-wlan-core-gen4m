@@ -26,3 +26,6 @@ MODULE_PWD=../vendor/mediatek/kernel_modules/connectivity/wlan/core/gen4m
 $(info gen4m depends on following symbols:[${EXTRA_SYMBOLS}])
 modules modules_install clean:
 	$(MAKE) -C $(KERNEL_DIR) M=$(MODULE_PWD) $(KBUILD_OPTIONS) EXTRA_CFLAGS="$(EXTRA_CFLAGS)" KBUILD_EXTRA_SYMBOLS="$(EXTRA_SYMBOLS)" MODULE_NAME=$(_MODULE_NAME) SEGMENT=$(SEGMENT) $(@)
+	mkdir -p $(O)/$(M)
+	cp -f $(O)/$(MODULE_PWD)/Module.symvers $(O)/$(M)/Module.symvers
+	cp -f $(O)/$(MODULE_PWD)/*.ko $(O)/$(M)
