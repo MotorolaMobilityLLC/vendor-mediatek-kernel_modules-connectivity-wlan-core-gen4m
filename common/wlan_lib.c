@@ -7212,6 +7212,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucStaHePpRx, "StaHePpRx", FEATURE_DISABLED);
 	INIT_UINT(prWifiVar->ucHeDynamicSMPS,
 		"HeDynamicSMPS", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucHeHTC, "HeHTC", FEATURE_ENABLED);
 #endif
 
 	/* 0: disabled
