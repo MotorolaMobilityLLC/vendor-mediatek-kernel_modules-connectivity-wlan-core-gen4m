@@ -2977,7 +2977,7 @@ void nicRxQueryStatistics(IN struct ADAPTER *prAdapter,
  *
  */
 /*----------------------------------------------------------------------------*/
-inline uint32_t
+uint32_t
 nicRxWaitResponse(IN struct ADAPTER *prAdapter,
 		  IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
 		  IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length) {

@@ -516,6 +516,10 @@ struct BUS_INFO mt6639_bus_info = {
 	.asicUsbRxByteCount = asicConnac3xUsbRxByteCount,
 	.asicUdmaRxFlush = asicConnac3xUdmaRxFlush,
 #endif
+#if defined(_HIF_NONE)
+	/* for compiler need one entry */
+	.DmaShdlInit = NULL
+#endif
 };
 
 #if CFG_ENABLE_FW_DOWNLOAD
