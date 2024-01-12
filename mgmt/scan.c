@@ -1456,10 +1456,12 @@ uint8_t scanGetRnrChannel(
 	/* get channel number for this neighborAPInfo */
 	scanOpClassToBand(prNeighborAPInfoField->ucOpClass, pucBand);
 
-	prChannel = ieee80211_get_channel(wlanGetWiphy(),
-					ieee80211_channel_to_frequency
-					(prNeighborAPInfoField->ucChannelNum,
-					*pucBand));
+	prChannel = (struct ieee80211_channel *)
+			kal_ieee80211_get_channel(wlanGetWiphy(),
+			kal_ieee80211_channel_to_frequency
+			(prNeighborAPInfoField->ucChannelNum,
+			*pucBand));
+
 	if (!prChannel) {
 		log_dbg(SCN, ERROR, "RnrCh=NULL!\n");
 		return 0;

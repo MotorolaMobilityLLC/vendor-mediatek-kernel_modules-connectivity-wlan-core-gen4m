@@ -258,6 +258,11 @@
 #define PRIV_CMD_TEST_MAGIC_KEY                         2011
 #define PRIV_CMD_TEST_MAGIC_KEY_ICAP                         2013
 
+/* IW_AUTH_80211_AUTH_ALG values (bit field) */
+#define IW_AUTH_ALG_OPEN_SYSTEM 0x00000001
+#define IW_AUTH_ALG_SHARED_KEY  0x00000002
+#define IW_AUTH_ALG_LEAP        0x00000004
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

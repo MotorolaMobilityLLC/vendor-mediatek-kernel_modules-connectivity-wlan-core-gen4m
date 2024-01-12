@@ -129,6 +129,14 @@ struct ATE_OPS_T {
 				 uint32_t u4WFNum);
 	void (*getRbistDataDumpEvent)(struct ADAPTER *prAdapter,
 				      uint8_t *pucEventBuf);
+
+#if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1)
+	void (*getICapDataDumpCmdEvent)(struct ADAPTER *prAdapter,
+					struct CMD_INFO *prCmdInfo,
+					uint8_t *pucEventBuf);
+#endif
+	void (*icapRiseVcoreClockRate)(void);
+	void (*icapDownVcoreClockRate)(void);
 };
 
 

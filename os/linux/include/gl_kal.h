@@ -90,6 +90,8 @@
 #include "nic/bow.h"
 #endif
 
+#include "linux/bug.h"
+#include "linux/kmemleak.h"
 #include "linux/kallsyms.h"
 #include "linux/sched.h"
 #if KERNEL_VERSION(4, 11, 0) <= CFG80211_VERSION_CODE
@@ -948,6 +950,31 @@ int8_t atoi(uint8_t ch);
 #else
 #define _kalRequestFirmware request_firmware
 #endif
+#define kal_init_completion(rComp) \
+	init_completion(rComp)
+
+#define kal_completion_done(rComp) \
+	completion_done(rComp)
+
+#define kal_completion struct completion
+
+#define kal_timer_list struct timer_list
+
+#define kal_kmemleak_ignore(pucAssocIEs) \
+	kmemleak_ignore(pucAssocIEs)
+
+#define kal_ieee80211_get_channel(_rWiphy, _freq) \
+	ieee80211_get_channel(_rWiphy, _freq)
+
+#define kal_ieee80211_channel_to_frequency(_ch, _band) \
+	ieee80211_channel_to_frequency(_ch, _band)
+
+#define kal_min_t(_type, _v1, _v2) \
+	min_t(_type, _v1, _v2)
+
+#define kal_tasklet_schedule(_rRxRfbRetTask) \
+	tasklet_schedule(_rRxRfbRetTask)
+
 
 /*----------------------------------------------------------------------------*/
 /*!

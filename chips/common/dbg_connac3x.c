@@ -2327,7 +2327,6 @@ void connac3x_show_wfdma_info(IN struct ADAPTER *prAdapter)
 	connac3x_show_wfdma_desc(prAdapter);
 
 	connac3xDumpPPDebugCr(prAdapter);
-#endif
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (prChipInfo->is_support_mawd_tx)
@@ -2335,6 +2334,7 @@ void connac3x_show_wfdma_info(IN struct ADAPTER *prAdapter)
 
 	if (prChipInfo->is_support_rro)
 		connac3x_show_rro_info(prAdapter);
+#endif
 #endif
 }
 

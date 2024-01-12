@@ -153,7 +153,11 @@ void StatsEnvRxTime2Host(IN struct ADAPTER *prAdapter,
 	uint64_t u8IntTime = 0;
 	uint64_t u8RxTime = 0;
 	uint32_t u4Delay = 0;
+#if KERNEL_VERSION(5, 0, 0) <= LINUX_VERSION_CODE
 	struct timespec64 tval;
+#else
+	struct timeval tval;
+#endif
 	struct rtc_time tm;
 
 	u2EthType = (pucEth[ETH_TYPE_LEN_OFFSET] << 8)

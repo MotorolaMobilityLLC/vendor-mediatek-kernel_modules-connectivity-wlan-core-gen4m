@@ -150,20 +150,19 @@ int kal_hex_dump_to_buffer(const void *buf, size_t len, int rowsize,
 	return 0;
 }
 
-void kal_warn_on(uint8_t condition)
+void kal_do_gettimeofday(struct timeval *tv)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+bool kal_warn_on(uint8_t condition)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
 void kal_get_monotonic_boottime(struct timespec *ts)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
-int kal_mod_timer(struct timer_list *timer, unsigned long expires)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	return 0;
 }
 
 int kal_strtoint(const char *s, unsigned int base, int *res)
@@ -383,4 +382,9 @@ int kal_test_bit(unsigned long nr, unsigned long *addr)
 	/* TODO: restore interrupt */
 
 	return res;
+}
+
+u_int8_t halTxIsCmdBufEnough(IN struct ADAPTER *prAdapter)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }

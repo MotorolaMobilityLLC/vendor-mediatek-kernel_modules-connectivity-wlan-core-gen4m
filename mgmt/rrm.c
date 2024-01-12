@@ -1620,9 +1620,10 @@ void rrmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 		uint8_t bcnSsid[ELEM_MAX_LEN_SSID + 1] = {0};
 
 		kalMemCopy(reqSsid, data->ssid,
-			min_t(uint8_t, data->ssidLen, ELEM_MAX_LEN_SSID));
+			kal_min_t(uint8_t, data->ssidLen, ELEM_MAX_LEN_SSID));
 		kalMemCopy(bcnSsid, prBssDesc->aucSSID,
-		       min_t(uint8_t, prBssDesc->ucSSIDLen, ELEM_MAX_LEN_SSID));
+			kal_min_t(uint8_t, prBssDesc->ucSSIDLen,
+				ELEM_MAX_LEN_SSID));
 		DBGLOG(RRM, TRACE,
 		       ""MACSTR" SSID mismatch, req(%lu, %s), bcn(%d, %s)\n",
 		       MAC2STR(bssid), data->ssidLen, HIDE(reqSsid),

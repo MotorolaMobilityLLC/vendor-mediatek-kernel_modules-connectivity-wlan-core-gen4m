@@ -1255,7 +1255,7 @@ void nicRxProcessPktWithoutReorder(IN struct ADAPTER
 	 */
 	if (!prSwRfb->pvPacket) {
 		nicRxReturnRFB(prAdapter, prSwRfb);
-		tasklet_schedule(&prAdapter->prGlueInfo->rRxRfbRetTask);
+		kal_tasklet_schedule(&prAdapter->prGlueInfo->rRxRfbRetTask);
 		return;
 	}
 #endif

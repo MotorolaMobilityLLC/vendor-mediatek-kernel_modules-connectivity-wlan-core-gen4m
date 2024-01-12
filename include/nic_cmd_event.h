@@ -1150,6 +1150,47 @@ struct NIC_EFUSE_ADDRESS {
 	uint32_t u4EfuseEndAddress;   /* Efuse End Address */
 };
 
+struct TPUT_FACTOR_LIST_T {
+	/** Event source: TPUT_EVENT_START ~ */
+	uint32_t u4EvtId;
+
+	/** Factor version */
+	uint32_t u4Ver;
+
+	uint8_t Cont[0];
+} __KAL_ATTRIB_PACKED__;
+
+struct TPUT_SUB_FACTOR_T {
+	/** sub header */
+	uint8_t ucTag;
+	uint16_t u2Len;
+	uint8_t ucRes;
+
+	uint8_t Cont[0];
+} __KAL_ATTRIB_PACKED__;
+
+struct TPUT_BKRS_FACTOR_T {
+	/** Collection type: TPUT_COLL_CMD_INIT ~ */
+	uint32_t u4EvtId;
+
+	/** Factor type: _TPUT_FACTOR_TAG */
+	uint32_t u4FactorType;
+
+	/** sub header */
+	/* TPUT_FACTOR_TYPE_LMAC_TMAC
+	 * ~ TPUT_FACTOR_TYPE_LMAC_RMAC
+	 */
+	uint8_t ucTag;
+	uint16_t u2Len;
+	uint8_t ucIndex;
+
+	/* reference to backup/restore table */
+	uint32_t u4AddrStart, u4AddrEnd;
+	uint32_t u4RegNum;
+
+	uint8_t Cont[0];
+} __KAL_ATTRIB_PACKED__;
+
 struct CAP_HW_VERSION {
 	uint16_t u2ProductID; /* CHIP ID */
 	uint8_t ucEcoVersion; /* ECO version */

@@ -319,7 +319,7 @@
 #ifdef CFG_COMBO_SLT_GOLDEN
 #define CFG_SUPPORT_ICS                 0
 #else
-#define CFG_SUPPORT_ICS                 1
+#define CFG_SUPPORT_ICS                 0
 #endif
 
 #define CFG_SUPPORT_BAR_DELAY_INDICATION	1

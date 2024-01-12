@@ -81,6 +81,8 @@
 #define NL80211_DRIVER_TESTMODE_VERSION 2
 #endif
 
+#define NL80211_SCAN_FLAG_LOW_SPAN (1 << 8)
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -754,6 +756,8 @@ const uint8_t *mtk_cfg80211_find_ie_match_mask(uint8_t eid,
 				const uint8_t *match_mask);
 #endif
 
+#define kalCfgDataWrite8(_prGlueInfo, _u4Offset, _u1Data) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
