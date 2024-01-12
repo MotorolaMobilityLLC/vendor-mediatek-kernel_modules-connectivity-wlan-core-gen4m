@@ -1510,7 +1510,8 @@ kalP2PGCIndicateConnectionStatus(IN struct GLUE_INFO *prGlueInfo,
 		IN struct P2P_CONNECTION_REQ_INFO *prP2pConnInfo,
 		IN uint8_t *pucRxIEBuf,
 		IN uint16_t u2RxIELen,
-		IN uint16_t u2StatusReason)
+		IN uint16_t u2StatusReason,
+		IN uint32_t eStatus)
 {
 	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -1565,14 +1566,18 @@ kalP2PGCIndicateConnectionStatus(IN struct GLUE_INFO *prGlueInfo,
 
 			prP2pConnInfo->eConnRequest = P2P_CONNECTION_TYPE_IDLE;
 		} else {
+			DBGLOG(INIT, INFO,
+				"indicate disconnection event to kernel, reason=%d, locally_generated=%d\n",
+				u2StatusReason,
+				eStatus == WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY
+				);
 			/* Disconnect, what if u2StatusReason == 0? */
 			cfg80211_disconnected(prGlueP2pInfo->aprRoleHandler,
 				/* struct net_device * dev, */
 				u2StatusReason,
 				pucRxIEBuf, u2RxIELen,
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
-				u2StatusReason ==
-					REASON_CODE_DEAUTH_LEAVING_BSS,
+				eStatus == WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY,
 #endif
 				GFP_KERNEL);
 		}
