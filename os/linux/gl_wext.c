@@ -139,6 +139,7 @@ static const struct iw_priv_args rIwPrivTable[] = {
 		PRIV_CMD_TEST_CMD, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 2,
 		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_test_result"
 	},
+#if BUILD_QA_DBG
 #if CFG_SUPPORT_PRIV_MCR_RW
 	{PRIV_CMD_ACCESS_MCR, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
 		2, 0, "set_mcr"},
@@ -146,6 +147,7 @@ static const struct iw_priv_args rIwPrivTable[] = {
 		PRIV_CMD_ACCESS_MCR, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
 		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_mcr"
 	},
+#endif
 #endif
 
 #if CFG_SUPPORT_QA_TOOL

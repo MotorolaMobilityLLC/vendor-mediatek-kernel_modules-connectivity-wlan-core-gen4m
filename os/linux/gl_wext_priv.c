@@ -567,6 +567,7 @@ __priv_set_int(struct net_device *prNetDev,
 		status = priv_set_ndis(prNetDev, prNdisReq, &u4BufLen);
 		break;
 
+#if BUILD_QA_DBG
 #if CFG_SUPPORT_PRIV_MCR_RW
 	case PRIV_CMD_ACCESS_MCR:
 		prNdisReq = (struct NDIS_TRANSPORT_STRUCT *) &aucOidBuf[0];
@@ -594,6 +595,7 @@ __priv_set_int(struct net_device *prNetDev,
 		/* Execute this OID */
 		status = priv_set_ndis(prNetDev, prNdisReq, &u4BufLen);
 		break;
+#endif
 #endif
 
 	case PRIV_CMD_SW_CTRL:
@@ -831,6 +833,7 @@ __priv_get_int(struct net_device *prNetDev,
 		}
 		return status;
 
+#if BUILD_QA_DBG
 #if CFG_SUPPORT_PRIV_MCR_RW
 	case PRIV_CMD_ACCESS_MCR:
 		prNdisReq = (struct NDIS_TRANSPORT_STRUCT *) &aucOidBuf[0];
@@ -852,6 +855,7 @@ __priv_get_int(struct net_device *prNetDev,
 					    &prNdisReq->ndisOidContent[4];
 		}
 		return status;
+#endif
 #endif
 
 	case PRIV_CMD_DUMP_MEM:
