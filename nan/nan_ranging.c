@@ -1649,7 +1649,7 @@ nanRangingUpdateDistance(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
-	DBGLOG(NAN, INFO, "Report %u (1/4096 m), Range %u cm\n",
+	DBGLOG(NAN, INFO, "Report %lu (1/4096 m), Range %u cm\n",
 	       pCtrl->rNanFtmReport.arRangeEntry[0].u4Range,
 	       FTM_FMT_TO_RANGE_CM(
 		       pCtrl->rNanFtmReport.arRangeEntry[0].u4Range));
