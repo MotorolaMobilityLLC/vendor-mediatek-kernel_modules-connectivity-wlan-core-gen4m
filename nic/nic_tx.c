@@ -1811,6 +1811,8 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 			prStaRec->aprTxDescTemplate[prMsduInfo->ucUserPriority];
 	}
 	if (prTxDescTemplate) {
+		prMsduInfo->ucWlanIndex = nicTxGetWlanIdx(prAdapter,
+			prMsduInfo->ucBssIndex, prMsduInfo->ucStaRecIndex);
 		if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA)
 			kalMemCopy(prTxDesc, prTxDescTemplate,
 				u4TxDescLength + prChipInfo->txd_append_size);
