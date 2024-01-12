@@ -1138,7 +1138,7 @@ void p2pFuncStopComplete(IN struct ADAPTER *prAdapter,
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pBssInfo != NULL));
 
-		DBGLOG(P2P, TRACE, "p2pFuncStopComplete\n");
+		DBGLOG(P2P, INFO, "p2pFuncStopComplete\n");
 
 		/* GO: It would stop Beacon TX.
 		 * GC: Stop all BSS related PS function.
