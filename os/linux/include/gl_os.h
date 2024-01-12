@@ -679,6 +679,7 @@ enum TestModeCmdType {
 	/* Hotspot managerment testmode command */
 	TESTMODE_CMD_ID_HS_CONFIG = 51,
 
+	TESTMODE_CMD_ID_STR_CMD = 102,
 	NUM_OF_TESTMODE_CMD_ID
 };
 
