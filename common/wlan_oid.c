@@ -16358,11 +16358,11 @@ wlanoidIndicateBssInfo(struct ADAPTER *prAdapter,
 	return rStatus;
 }	/* wlanoidIndicateBssInfo */
 
-uint32_t
-wlanoidSetAxBlocklist(struct ADAPTER *prAdapter,
+uint32_t wlanoidSetAxBlocklist(struct ADAPTER *prAdapter,
 		     void *pvSetBuffer,
 		     uint32_t u4SetBufferLen,
-		     uint32_t *pu4SetInfoLen) {
+		     uint32_t *pu4SetInfoLen)
+{
 	struct PARAM_AX_BLACKLIST *pParamAxBlacklist;
 	uint8_t count = 0;
 	uint8_t ucBssIndex = 0;
@@ -16380,8 +16380,7 @@ wlanoidSetAxBlocklist(struct ADAPTER *prAdapter,
 
 	clearAxBlocklist(prAdapter, ucBssIndex, pParamAxBlacklist->ucType);
 	for (i = 0; i < count ; i++) {
-		COPY_MAC_ADDR(aucTemp,
-				&pParamAxBlacklist->aucList[i * MAC_ADDR_LEN]);
+		COPY_MAC_ADDR(aucTemp, &pParamAxBlacklist->aucList[i]);
 		addAxBlocklist(prAdapter, aucTemp, ucBssIndex,
 				pParamAxBlacklist->ucType);
 		DBGLOG(OID, INFO,

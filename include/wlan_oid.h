@@ -3376,10 +3376,11 @@ struct PARAM_MANIUPLATE_TID {
 };
 #endif
 
+#define MAX_AX_BLOCKLIST_ENTRIES 16
 struct PARAM_AX_BLACKLIST {
 	uint8_t ucType;
 	uint8_t ucCount;
-	uint8_t aucList[MAC_ADDR_LEN * 16];
+	uint8_t aucList[MAX_AX_BLOCKLIST_ENTRIES][MAC_ADDR_LEN];
 };
 
 enum ENUM_AX_BLACKLIST_TYPE {
