@@ -105,6 +105,10 @@ static void mt6639WfdmaRxRingExtCtrl(
 
 static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo);
 
+#if CFG_SUPPORT_PCIE_ASPM
+static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
+#endif
+
 static u_int8_t mt6639_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *pu4Status);
 
@@ -388,6 +392,9 @@ struct BUS_INFO mt6639_bus_info = {
 	.disableInterrupt = asicConnac3xDisablePlatformIRQ,
 #if defined(_HIF_PCIE)
 	.initPcieInt = mt6639InitPcieInt,
+#if CFG_SUPPORT_PCIE_ASPM
+	.configPcieAspm = mt6639ConfigPcieAspm,
+#endif
 	.pdmaStop = asicConnac3xWfdmaStop,
 	.pdmaPollingIdle = asicConnac3xWfdmaPollingAllIdle,
 	.pcie_msi_info = {
@@ -1348,6 +1355,23 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 		PCIE_MAC_IREG_IMASK_HOST_ADDR,
 		value);
 }
+
+#if CFG_SUPPORT_PCIE_ASPM
+static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
+{
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+
+	if (fgEn) {
+		glBusConfigASPML1SS(
+			prHifInfo->pdev,
+			PCI_L1PM_CTR1_ASPM_L12_EN | PCI_L1PM_CTR1_ASPM_L11_EN);
+		DBGLOG(HAL, INFO, "ENable aspm L1.1/L1.2\n");
+	} else {
+		glBusConfigASPML1SS(prHifInfo->pdev, 0);
+		DBGLOG(HAL, INFO, "Disable aspm L1.1/L1.2\n");
+	}
+}
+#endif
 
 static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 {
