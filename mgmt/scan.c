@@ -643,19 +643,6 @@ scanSearchBssDescByBssidAndSsid(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (!prDstBssDesc) {
-		LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
-			rLinkEntry, struct BSS_DESC) {
-
-			if (!prBssDesc->rMlInfo.fgValid)
-				continue;
-			if ((EQUAL_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr, aucBSSID)))
-				return prBssDesc;
-		}
-	}
-#endif
-
 	return prDstBssDesc;
 }	/* end of scanSearchBssDescByBssid() */
 
