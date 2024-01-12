@@ -718,12 +718,12 @@ void halMawdInitRxBlkRing(struct GLUE_INFO *prGlueInfo)
 	for (u4Num = 0; u4Num < MAWD_NUM_OF_RX_BLK_RING; u4Num++) {
 		prRxRing = &prHifInfo->RxBlkRing[u4Num];
 
-		if (u4Num == 0) {
-			prRxRing->hw_desc_base = prBusInfo->mawd_rx_blk_ctrl0;
-			prRxRing->hw_cidx_addr = prBusInfo->mawd_rx_blk_ctrl2;
-			prRxRing->hw_didx_addr = prBusInfo->mawd_rx_blk_ctrl2;
-			prRxRing->hw_cnt_addr = prBusInfo->mawd_rx_blk_ctrl1;
-		} else {
+		prRxRing->hw_desc_base = prBusInfo->mawd_rx_blk_ctrl0;
+		prRxRing->hw_cidx_addr = prBusInfo->mawd_rx_blk_ctrl2;
+		prRxRing->hw_didx_addr = prBusInfo->mawd_rx_blk_ctrl2;
+		prRxRing->hw_cnt_addr = prBusInfo->mawd_rx_blk_ctrl1;
+#if CFG_ENABLE_MAWD_MD_RING
+		if (u4Num > 0) {
 			prRxRing->hw_desc_base =
 				prBusInfo->mawd_md_rx_blk_ctrl0;
 			prRxRing->hw_cidx_addr =
@@ -733,6 +733,7 @@ void halMawdInitRxBlkRing(struct GLUE_INFO *prGlueInfo)
 			prRxRing->hw_cnt_addr =
 				prBusInfo->mawd_md_rx_blk_ctrl1;
 		}
+#endif /* CFG_ENABLE_MAWD_MD_RING */
 		prRxRing->hw_cidx_mask = BITS(0, 11);
 		prRxRing->hw_cidx_shift = 0;
 		prRxRing->hw_didx_mask = BITS(12, 23);
