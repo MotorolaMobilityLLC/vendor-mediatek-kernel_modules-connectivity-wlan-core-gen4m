@@ -1177,9 +1177,7 @@ void nicRxProcessPktWithoutReorder(struct ADAPTER
 	if (HAL_IS_RX_DIRECT(prAdapter)
 		|| kalRxNapiValidSkb(prAdapter->prGlueInfo, prSwRfb->pvPacket)
 		) {
-		kalRxIndicateOnePkt(prAdapter->prGlueInfo,
-			(void *) GLUE_GET_PKT_DESCRIPTOR(
-				GLUE_GET_PKT_QUEUE_ENTRY(prSwRfb->pvPacket)));
+		kalRxIndicateOnePkt(prAdapter->prGlueInfo, prSwRfb->pvPacket);
 		if (fgIsRetained)
 			RX_ADD_CNT(prRxCtrl, RX_DATA_RETAINED_COUNT, 1);
 	} else {
@@ -1196,9 +1194,7 @@ void nicRxProcessPktWithoutReorder(struct ADAPTER
 #else
 #if defined(_HIF_USB)
 	if (HAL_IS_RX_DIRECT(prAdapter)) {
-		kalRxIndicateOnePkt(prAdapter->prGlueInfo,
-			(void *) GLUE_GET_PKT_DESCRIPTOR(
-				GLUE_GET_PKT_QUEUE_ENTRY(prSwRfb->pvPacket)));
+		kalRxIndicateOnePkt(prAdapter->prGlueInfo, prSwRfb->pvPacket);
 		RX_ADD_CNT(prRxCtrl, RX_DATA_INDICATION_COUNT, 1);
 		if (fgIsRetained)
 			RX_ADD_CNT(prRxCtrl, RX_DATA_RETAINED_COUNT, 1);
@@ -2559,7 +2555,7 @@ uint32_t nicRxSetupRFB(struct ADAPTER *prAdapter,
 	if (!prSwRfb->pvPacket) {
 		kalMemZero(prSwRfb, sizeof(struct SW_RFB));
 #if CFG_SUPPORT_RX_PAGE_POOL
-		pvPacket = (void *)kalAllocRxSkb(&pucRecvBuff);
+		pvPacket = kalAllocRxSkb(&pucRecvBuff);
 		if (!pvPacket) {
 			pvPacket = kalPacketAlloc(
 				prAdapter->prGlueInfo,
