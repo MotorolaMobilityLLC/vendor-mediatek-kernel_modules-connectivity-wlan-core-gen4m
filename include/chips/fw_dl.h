@@ -559,6 +559,4 @@ uint32_t asicConnac3xConfigBtImageSection(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */
 
 uint32_t wlanDownloadDspFw(struct ADAPTER *prAdapter);
-
 #endif /* _FW_DL_H */
-

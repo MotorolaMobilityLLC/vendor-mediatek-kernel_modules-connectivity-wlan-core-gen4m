@@ -335,7 +335,7 @@ static u64 g_u8CsrOffset;
 static u32 g_u4CsrSize;
 #endif
 static u_int8_t g_fgDriverProbed = FALSE;
-struct pci_dev *g_prDev;
+static struct pci_dev *g_prDev;
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -2649,20 +2649,36 @@ void glBusFuncOff(void)
 #endif
 }
 
-uint32_t glReadPcieCfgSpace(int offset)
+uint32_t glReadPcieCfgSpace(int offset, uint32_t *value)
 {
-	uint32_t val = 0;
 	int ret = 0;
 
-	ret = pci_read_config_dword(g_prDev, offset, &val);
-	if (ret)
+	ret = pci_read_config_dword(g_prDev, offset, value);
+	if (unlikely(ret))
 		DBGLOG(HAL, ERROR,
-			"pci_read_config_dword failed, offset=0x%x\n",
-			offset);
+			"pci_read_config_dword() failed, ret=%d offset=0x%08x\n",
+			ret, offset);
 	else
-		DBGLOG(HAL, LOUD, "read 0x%08x=[0x%08x]\n", offset, val);
+		DBGLOG(HAL, LOUD, "Read 0x%08x=[0x%08x]\n", offset, *value);
 
-	return val;
+	return ret == 0 ?
+		WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
+}
+
+uint32_t glWritePcieCfgSpace(int offset, uint32_t value)
+{
+	int ret = 0;
+
+	ret = pci_write_config_dword(g_prDev, offset, value);
+	if (unlikely(ret))
+		DBGLOG(HAL, ERROR,
+			"pci_write_config_dword() failed, ret=%d offset=0x%08x\n",
+			ret, offset);
+	else
+		DBGLOG(HAL, LOUD, "Write 0x%08x=[0x%08x]\n", offset, value);
+
+	return ret == 0 ?
+		WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
 }
 
 #if CFG_SUPPORT_PCIE_GEN_SWITCH

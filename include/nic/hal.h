@@ -582,7 +582,7 @@ do { \
 #define HAL_WIFI_FUNC_READY_CHECK(_prAdapter, _checkItem, _pfgResult) \
 do { \
 	uint32_t u4Value = 0; \
-	u4Value = glReadPcieCfgSpace(PCIE_CFGSPACE_BASE_OFFSET); \
+	glReadPcieCfgSpace(PCIE_CFGSPACE_BASE_OFFSET, &u4Value); \
 	*_pfgResult = (((u4Value >> PCIE_CFGSPACE_FW_STATUS_SYNC_SHIFT) \
 		       & PCIE_CFGSPACE_FW_STATUS_SYNC_MASK) \
 		       == (PCIE_CFGSPACE_FW_STATUS_SYNC_MASK)) ? TRUE : FALSE; \

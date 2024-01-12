@@ -53,6 +53,12 @@
 #if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
 #define MT7935_WIFI_OFF_MAGIC_NUM		0x10ff8A55U
 #endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
+#if (CFG_MTK_WIFI_SUPPORT_IPC == 1)
+#define MT7935_WFMCU_DOORBELL_PCI_CFG_SPACE_BASE_OFFSET 0x484
+#define MT7935_CBMCU_DOORBELL_PCI_CFG_SPACE_BASE_OFFSET 0x4BC
+#define MT7935_BITMAP_PCI_CFG_SPACE_BASE_OFFSET         0x488
+#define MT7935_CONN_VON_SYSRAM_BASE_ADDR          0x200B0000U
+#endif /* CFG_MTK_WIFI_SUPPORT_IPC */
 
 #define WF_PP_TOP_BASE             0x820CC000
 #define WF_PP_TOP_DBG_CTRL_ADDR    (WF_PP_TOP_BASE + 0x00FC)
@@ -133,6 +139,56 @@ extern struct PP_TOP_CR rMt7935PpTopCr;
 		(((_prRxVector) & MT7935_RX_VT_TXMODE_MASK)	\
 			 >> MT7935_RX_VT_TXMODE_OFFSET)
 
+#if (CFG_MTK_WIFI_SUPPORT_IPC == 1)
+struct mt7935_conn_von_sysram_layout_t {
+	uint32_t boot_stage;
+	uint32_t lo_image_addr;
+	uint32_t hi_image_addr;
+	uint32_t image_size;
+	uint32_t image_response;
+	uint32_t chip_id;
+	uint32_t hw_version;
+	uint32_t hwip_version;
+	uint32_t fw_version;
+	uint32_t wifi_efuse_info[16];
+	uint32_t wifi_chip_unique_id[3];
+	uint32_t wifi_on_off_sync_addr;
+	uint32_t wifi_host_emi_size;
+	uint32_t lo_context_info_addr;
+	uint32_t hi_context_info_addr;
+	uint32_t lo_post_dump_addr;
+	uint32_t hi_post_dump_addr;
+	uint32_t post_dump_size;
+	uint32_t lo_host_emi_addr;
+	uint32_t hi_host_emi_addr;
+};
+
+struct mt7935_bitmap_layout_t {
+	uint8_t reserve0[7];
+	uint8_t wifi_sw_init_done;
+	uint8_t reserve1[56];
+};
+
+struct mt7935_wfmcu_doorbell_layout_t {
+	uint8_t reserve0[11];
+	uint8_t wifi_image_doorbell;
+	uint8_t reserve1[19];
+	uint8_t wifi_mcu_trap;
+};
+
+struct mt7935_cbmcu_doorbell_layout_t {
+	uint8_t reserve0[11];
+	uint8_t cb_image_doorbell;
+	uint8_t reserve1[16];
+	uint8_t turn_on_radio_mcu;
+	uint8_t turn_off_radio_mcu;
+	union {
+		uint8_t notify_cbmcu_c1_coredump;
+		uint8_t notify_wifi_c2_coredump;
+	};
+	uint8_t notify_dbgsys_c3_coredump;
+};
+#endif /* MTK_WIFI_SUPPORT_IPC */
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -167,5 +223,4 @@ int mt7935_get_rx_rate_info(const uint32_t *prRxV,
 
 void mt7935_get_rx_link_stats(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb, uint32_t *pu4RxV);
-
 #endif  /* mt7935 */

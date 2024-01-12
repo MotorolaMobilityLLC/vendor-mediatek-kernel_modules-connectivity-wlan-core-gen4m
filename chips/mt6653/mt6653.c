@@ -3379,7 +3379,7 @@ static uint32_t mt6653_mcu_check_idle(struct ADAPTER *ad)
 		}
 
 		/* read mcu ilde from pcie config space: 0x490 */
-		u4Value = glReadPcieCfgSpace(PCIE_CFGSPACE_MCU_IDLE_OFFSET);
+		glReadPcieCfgSpace(PCIE_CFGSPACE_MCU_IDLE_OFFSET, &u4Value);
 
 		if ((u4Value == MCU_IDLE)
 #if (CFG_MTK_ANDROID_WMT == 0)
@@ -3834,7 +3834,7 @@ static void mt6653LowPowerOwnRead(struct ADAPTER *prAdapter,
 
 #if (CFG_MTK_WIFI_ON_READ_BY_CFG_SPACE == 1)
 	/* read own status from pcie config space: 0x48C[14] */
-	u4RegValue = glReadPcieCfgSpace(PCIE_CFGSPACE_BASE_OFFSET);
+	glReadPcieCfgSpace(PCIE_CFGSPACE_BASE_OFFSET, &u4RegValue);
 	*pfgResult = (((u4RegValue >> PCIE_CFGSPACE_OWN_STATUS_SHIFT)
 			& PCIE_CFGSPACE_OWN_STATUS_MASK)
 			== 0) ? TRUE : FALSE;

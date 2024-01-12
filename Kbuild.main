@@ -2257,6 +2257,19 @@ else
     ccflags-y += -DCFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI=0
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_SUPPORT_IPC), y)
+    ifeq ($(filter 1 y,$(CONFIG_MTK_FPGA_PLATFORM)),)
+        ccflags-y += -DCFG_MTK_WIFI_SUPPORT_IPC=1
+        ccflags-y += -DCFG_ENABLE_IPC_FW_DOWNLOAD=1
+    else
+        ccflags-y += -DCFG_MTK_WIFI_SUPPORT_IPC=0
+        ccflags-y += -DCFG_ENABLE_IPC_FW_DOWNLOAD=0
+    endif
+else
+    ccflags-y += -DCFG_MTK_WIFI_SUPPORT_IPC=0
+    ccflags-y += -DCFG_ENABLE_IPC_FW_DOWNLOAD=0
+endif
+
 ifeq ($(CONFIG_SUPPORT_TX_HIF_CREDIT_FEATURE), y)
 ccflags-y += -DCFG_TX_HIF_CREDIT_FEATURE=1
 else
@@ -2636,6 +2649,9 @@ else
 endif
 
 CHIPS_OBJS += $(CHIPS_CMM)fw_dl.o
+ifeq ($(CONFIG_MTK_WIFI_SUPPORT_IPC), y)
+CHIPS_OBJS += $(CHIPS_CMM)wlan_ipc.o
+endif
 
 ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt6632/mt6632.o
