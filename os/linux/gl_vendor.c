@@ -897,6 +897,8 @@ int mtk_cfg80211_vendor_enable_roaming(struct wiphy *wiphy,
 
 	ASSERT(wiphy);	/* change to if (wiphy == NULL) then return? */
 	ASSERT(wdev);	/* change to if (wiphy == NULL) then return? */
+	if ((data == NULL) || (data_len == 0))
+		return -EINVAL;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	if (!prGlueInfo)
@@ -2550,6 +2552,8 @@ int mtk_cfg80211_vendor_set_tx_power_scenario(struct wiphy *wiphy,
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
+	if ((data == NULL) || (data_len == 0))
+		return -EINVAL;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -2621,6 +2625,8 @@ int mtk_cfg80211_vendor_set_multista_primary_connection(struct wiphy *wiphy,
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
+	if ((data == NULL) || (data_len == 0))
+		return -EINVAL;
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo)
@@ -2669,6 +2675,8 @@ int mtk_cfg80211_vendor_set_multista_use_case(
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
+	if ((data == NULL) || (data_len == 0))
+		return -EINVAL;
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo)
