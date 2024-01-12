@@ -1087,6 +1087,12 @@ uint32_t bssUpdateBeaconContent(IN struct ADAPTER *prAdapter,
 
 	prBcnFrame = (struct WLAN_BEACON_FRAME *)prMsduInfo->prPacket;
 
+	DBGLOG(P2P, TRACE, "Dump beacon content to FW.\n");
+	if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
+		dumpMemory8((uint8_t *) prMsduInfo->prPacket,
+			(uint32_t) prMsduInfo->u2FrameLength);
+	}
+
 	return nicUpdateBeaconIETemplate(prAdapter,
 					 IE_UPD_METHOD_UPDATE_ALL,
 					 ucBssIndex,
