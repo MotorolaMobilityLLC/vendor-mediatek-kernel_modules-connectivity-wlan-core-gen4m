@@ -5506,7 +5506,7 @@ struct WIFI_UNI_CMD_ENTRY *nicUniCmdNanGenEntry(uint16_t u2Tag,
 	uni_cmd = (struct UNI_CMD_NAN *) entry->pucInfoBuffer;
 	tag = (struct UNI_CMD_EVENT_TLV_ELEMENT_T *) uni_cmd->aucTlvBuffer;
 	tag->u2Tag = u2Tag;
-	tag->u2Length = u2Length;
+	tag->u2Length = u2Length + sizeof(struct UNI_CMD_EVENT_TLV_ELEMENT_T);
 
 	*ppucEvtBuf = tag->aucbody;
 
