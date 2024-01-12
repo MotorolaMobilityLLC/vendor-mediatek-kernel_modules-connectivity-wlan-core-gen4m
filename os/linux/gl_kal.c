@@ -3588,7 +3588,9 @@ int main_thread(void *data)
 			p2pSetMulticastListWorkQueueWrapper(prGlueInfo);
 
 		if (test_and_clear_bit(GLUE_FLAG_FRAME_FILTER_BIT,
-				       &prGlueInfo->ulFlag)) {
+				       &prGlueInfo->ulFlag)
+			&& prGlueInfo->prP2PDevInfo) {
+			/* P2p info will be null after p2p removed. */
 			p2pFuncUpdateMgmtFrameRegister(prGlueInfo->prAdapter,
 			       prGlueInfo->prP2PDevInfo->u4OsMgmtFrameFilter);
 		}
