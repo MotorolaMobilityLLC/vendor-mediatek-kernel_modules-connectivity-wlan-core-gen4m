@@ -1490,9 +1490,7 @@ void wlanTxCmdDoneCb(IN struct ADAPTER *prAdapter,
 	}
 
 	/* call tx thread to work */
-	set_bit(GLUE_FLAG_TX_CMD_DONE_BIT,
-		&prAdapter->prGlueInfo->ulFlag);
-	wake_up_interruptible(&prAdapter->prGlueInfo->waitq);
+	kalSetTxCmdDoneEvent(prAdapter->prGlueInfo);
 }
 
 uint32_t wlanTxCmdMthread(IN struct ADAPTER *prAdapter)
@@ -1562,12 +1560,9 @@ uint32_t wlanTxCmdMthread(IN struct ADAPTER *prAdapter)
 
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_TX_CMD_CLEAR);
 
-	if (u4TxDoneQueueSize > 0) {
-		/* call tx thread to work */
-		set_bit(GLUE_FLAG_TX_CMD_DONE_BIT,
-			&prAdapter->prGlueInfo->ulFlag);
-		wake_up_interruptible(&prAdapter->prGlueInfo->waitq);
-	}
+	/* call tx thread to work */
+	if (u4TxDoneQueueSize > 0)
+		kalSetTxCmdDoneEvent(prAdapter->prGlueInfo);
 
 	return WLAN_STATUS_SUCCESS;
 }
