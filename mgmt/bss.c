@@ -1178,6 +1178,17 @@ bssComposeBeaconProbeRespFrameHeaderAndFF(uint8_t *pucBuffer,
 uint32_t bssUpdateBeaconContent(struct ADAPTER
 				*prAdapter, uint8_t uBssIndex)
 {
+	struct BSS_INFO *bss =
+		GET_BSS_INFO_BY_INDEX(prAdapter,
+		uBssIndex);
+
+	if (!bss || !bss->fgIsInUse) {
+		DBGLOG(P2P, WARN,
+			"bss%d is not in used\n",
+			uBssIndex);
+		return 0;
+	}
+
 	return bssUpdateBeaconContentEx(prAdapter,
 		uBssIndex,
 		IE_UPD_METHOD_UPDATE_ALL);
