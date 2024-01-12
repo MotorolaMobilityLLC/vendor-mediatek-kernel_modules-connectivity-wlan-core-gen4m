@@ -562,8 +562,14 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 #endif /* IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
 		{
 			u4chkTick = kalGetTimeTick();
-			fgTimeout = ((u4chkTick - u4CurrTick) >
-				LP_OWN_BACK_TOTAL_DELAY_MS) ? TRUE : FALSE;
+			if (prAdapter->u4CasanLoadType == 1)
+				fgTimeout = ((kalGetTimeTick() - u4CurrTick) >
+					LP_OWN_BACK_TOTAL_DELAY_CASAN_MS)
+					? TRUE : FALSE;
+			else
+				fgTimeout = ((u4chkTick - u4CurrTick) >
+					LP_OWN_BACK_TOTAL_DELAY_MS)
+					? TRUE : FALSE;
 		}
 
 		if (fgResult) {
