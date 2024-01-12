@@ -484,7 +484,7 @@ static void btwtParseTWTElement(
 	u8TargetWakeTime = prTWTParams->u8TWT;
 
 	/* see Draft P802.11ax_D7.0.pdf, p421 */
-	u8TargetWakeTime &= 0xFFFFFFFFFC000000;
+	u8TargetWakeTime &= 0xFFFFFFFFFFFFFC00;
 	u8TargetWakeTime |= (uint32_t)(prBTWTIE->u2TWT << 10);
 
 	DBGLOG(TWT_REQUESTER, WARN,
@@ -2519,7 +2519,7 @@ void rtwtParseTWTElement(
 	u8TargetWakeTime = prTWTParams->u8TWT;
 
 	/* see Draft P802.11ax_D7.0.pdf, p421 */
-	u8TargetWakeTime &= 0xFFFFFFFFFC000000;
+	u8TargetWakeTime &= 0xFFFFFFFFFFFFFC00;
 	u8TargetWakeTime |= (uint32_t)(prRTWTIE->u2TWT << 10);
 
 	DBGLOG(TWT_REQUESTER, WARN,
@@ -2539,7 +2539,7 @@ void rtwtParseTWTElement(
 		(uint32_t)((prTWTParams->u8TWT & 0xFFFFFFFF00000000) >> 32));
 
 	/* Evaluate if the RTWT setup resp frame contains traffic info */
-	if (sizeof(prRTWTIE) > sizeof(struct _IE_BTWT_T)) {
+	if (GET_BTWT_RTWT_TRAFFIC_INFO_PRESENT(prRTWTIE->u2BTWTInfo) != 0) {
 		prTWTParams->ucTrafficInfoPresent = 1;
 		prTWTParams->ucDlUlBmpValid = prRTWTIE->uc_arRTWTTrafficInfo[0];
 		prTWTParams->ucDlBmp = prRTWTIE->uc_arRTWTTrafficInfo[1];
