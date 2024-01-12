@@ -5492,7 +5492,9 @@ uint32_t getPreferFreq(struct ADAPTER *prAd,
 
 		eBand = getBandByFreq(ucPreferFreq);
 		if ((fgIsGBand && (eBand == BAND_2G4)) ||
-			(!fgIsGBand && (eBand >= BAND_5G)))
+			(!fgIsGBand && (eBand >= BAND_5G)) ||
+			(prAd->rWifiFemCfg.u2WifiDBDCAwithA &&
+				(eBand >= BAND_5G)))
 			return ucPreferFreq;
 	}
 
