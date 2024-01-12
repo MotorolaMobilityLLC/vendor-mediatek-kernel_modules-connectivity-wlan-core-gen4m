@@ -3123,6 +3123,10 @@ void mldBssUpdateOmacIdx(
 #endif
 }
 
+/**
+ * Mark prMldBssInfo->ucHwBandBitmap with all the affiliated links with
+ * eHwBandIdx bit mask.
+ */
 void mldBssUpdateBandIdxBitmap(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo)
 {
@@ -4292,6 +4296,48 @@ uint8_t mldCheckMldType(struct ADAPTER *prAdapter,
 		return MLD_TYPE_EXTERNAL;
 
 	return MLD_TYPE_INVALID;
+}
+
+/**
+ * mldGetStaRecByBandIdx() - find a STA_RECORD in same MLD by HW band index
+ *
+ * @prAdapter: adapter pointer to look up required information
+ * @prStaRec: a STA_RECORD points to the same MLD to be queried
+ * @ucHwBandIdx: band index to match a STA_RECORD
+ */
+struct STA_RECORD *mldGetStaRecByBandIdx(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec, uint8_t ucHwBandIdx)
+{
+	struct MLD_STA_RECORD *prMldStarec;
+	struct STA_RECORD *sta_rec = NULL;
+	struct BSS_INFO *prBssInfo;
+	int i;
+
+	if (!prStaRec)
+		return prStaRec;
+
+	/* TODO: get bss info by station record index */
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (prBssInfo && prBssInfo->eHwBandIdx == ucHwBandIdx)
+		return prStaRec;
+
+	prMldStarec = mldStarecGetByStarec(prAdapter, prStaRec);
+	if (!prMldStarec)
+		return sta_rec;
+
+	for (i = 0; i < CFG_STA_REC_NUM; i++) {
+		if ((prMldStarec->u4StaBitmap & BIT(i)) == 0)
+			continue;
+
+		sta_rec = cnmGetStaRecByIndex(prAdapter, i);
+		if (prStaRec) {
+			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+							prStaRec->ucBssIndex);
+			if (prBssInfo && prBssInfo->eHwBandIdx == ucHwBandIdx)
+				break;
+		}
+	}
+	return sta_rec;
 }
 
 #endif /* CFG_SUPPORT_802_11BE_MLO == 1 */

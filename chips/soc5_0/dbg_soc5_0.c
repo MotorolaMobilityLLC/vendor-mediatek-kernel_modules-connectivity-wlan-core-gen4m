@@ -1124,6 +1124,8 @@ void soc5_0_get_rx_link_stats(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	uint32_t u4RxV0 = pu4RxV[0];
 	uint32_t mcsIdx;
+	uint8_t i;
+	uint8_t ucHwBandIdx = prSwRfb->ucHwBandIdx;
 
 	if (prAdapter->rWifiVar.fgLinkStatsDump)
 		DBGLOG(RX, INFO, "RXV: pmbl=%u nsts=%u stbc=%u bw=%u mcs=%u",
@@ -1134,7 +1136,7 @@ void soc5_0_get_rx_link_stats(struct ADAPTER *prAdapter,
 			RXV_GET_RX_RATE(u4RxV0));
 
 	if (!(prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_MSDU ||
-		prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU))
+	      prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU))
 		return;
 
 	rate.preamble = TX_MODE_2_LLS_MODE[RXV_GET_TXMODE(u4RxV0)];
