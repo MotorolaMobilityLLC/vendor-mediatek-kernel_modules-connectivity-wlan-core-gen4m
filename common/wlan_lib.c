@@ -8143,7 +8143,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgSapCheckPmkidInDriver,
 		"SapCheckPmkidInDriver", FEATURE_ENABLED);
 	INIT_UINT(prWifiVar->fgSapOffload, "SapOffload", FEATURE_DISABLED);
-	INIT_UINT(prWifiVar->fgSapSkipObss, "SapSkipObss", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgSapGoSkipObss,
+		"SapGoSkipObss", FEATURE_DISABLED);
 	INIT_UINT(prWifiVar->fgP2pGcCsa, "P2pGcCsa", FEATURE_ENABLED);
 	INIT_UINT(prWifiVar->fgSkipP2pIe, "SkipP2pIe", FEATURE_ENABLED);
 	INIT_UINT(prWifiVar->fgSkipP2pProbeResp,

@@ -405,7 +405,7 @@ u_int8_t rlmUpdateBwByChListForAP(struct ADAPTER *prAdapter,
 		prBssInfo->eBssSCO);
 
 	if ((ucLevel == CHNL_LEVEL0) &&
-		!prAdapter->rWifiVar.fgSapSkipObss) {
+		!prAdapter->rWifiVar.fgSapGoSkipObss) {
 		/* Forced to 20MHz,
 		 * so extended channel is SCN and STA width is zero
 		 */
@@ -708,6 +708,9 @@ void rlmHandleObssStatusEventPkt(struct ADAPTER *prAdapter,
 		(u_int8_t) prObssStatus->ucObssRifsOperationMode;
 	prBssInfo->fgObssBeaconForcedTo20M =
 		(u_int8_t) prObssStatus->ucObssBeaconForcedTo20M;
+
+	if (prAdapter->rWifiVar.fgSapGoSkipObss)
+		prBssInfo->fgObssBeaconForcedTo20M = FALSE;
 
 	/* Check if Beacon content need to be updated */
 	rlmUpdateParamsForAP(prAdapter, prBssInfo, TRUE);
