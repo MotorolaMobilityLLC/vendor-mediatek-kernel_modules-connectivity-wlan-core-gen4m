@@ -4756,6 +4756,12 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 		DBGLOG(INIT, INFO,
 		       "Handle pending interrupt\n");
 
+#if CFG_MTK_MDDP_SUPPORT
+	if (prHifInfo->rErrRecoveryCtl.eErrRecovState !=
+	    ERR_RECOV_STOP_IDLE)
+		halNotifyMdCrash(prAdapter);
+#endif
+
 	while (prHifInfo->rErrRecoveryCtl.eErrRecovState !=
 	       ERR_RECOV_STOP_IDLE) {
 		if (u4Retry >= HIF_SER_POWER_OFF_RETRY_COUNT)
