@@ -1018,7 +1018,7 @@ void dumpLinkStatsRadio(struct STATS_LLS_WIFI_RADIO_STAT *radio, uint32_t idx)
 			radio->tx_time,
 			radio->num_tx_levels,
 			radio->tx_time_per_levels,
-			radio->tx_time,
+			radio->rx_time,
 			radio->on_time_scan,
 			radio->on_time_nbd,
 			radio->on_time_gscan,

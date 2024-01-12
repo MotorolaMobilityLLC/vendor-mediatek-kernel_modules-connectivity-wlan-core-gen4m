@@ -1143,6 +1143,16 @@ void nicCmdEventQueryLinkStats(IN struct ADAPTER *prAdapter,
 		kalOidComplete(prGlueInfo, prCmdInfo, len, WLAN_STATUS_SUCCESS);
 }
 
+/**
+ * Check buffer size against reported event buffer in this function,
+ * since the event buffer size, prEvent->u2PacketLength, is only available
+ * in this function.
+ *
+ * If the size is not enough, OID complete with FAILURE.
+ * If the size is enough, clear the destination buffer, and set the data length,
+ * call the command done handler, it will copy the data to returning buffer,
+ * and OID complete the caller if needed.
+ */
 void nicEventStatsLinkStats(IN struct ADAPTER *prAdapter,
 		IN struct WIFI_EVENT *prEvent)
 {
@@ -3434,8 +3444,7 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 #endif
 
 	/* command response handling */
-	prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-					 prEvent->ucSeqNum);
+	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
 
 	DBGLOG(RX, TRACE, "prCmdInfo=%p", prCmdInfo);
 	if (prCmdInfo != NULL) {
