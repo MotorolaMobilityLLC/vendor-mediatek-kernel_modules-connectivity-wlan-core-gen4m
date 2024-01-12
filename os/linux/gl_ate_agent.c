@@ -1128,7 +1128,7 @@ int Set_TxBfProfilePnRead(struct net_device *prNetDev, uint8_t *prInBuf)
 
 int Set_TxBfProfilePnWrite(struct net_device *prNetDev, uint8_t *prInBuf)
 {
-	uint32_t ucProfileIdx;
+	uint32_t u4ProfileIdx;
 	uint16_t u2bw;
 	uint16_t au2XSTS[12];
 	int32_t rv;
@@ -1137,16 +1137,16 @@ int Set_TxBfProfilePnWrite(struct net_device *prNetDev, uint8_t *prInBuf)
 
 	DBGLOG(RFTEST, ERROR, "TxBfProfilePnWrite\n");
 
-	rv = sscanf(prInBuf, "%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d",
-		   &ucProfileIdx, &u2bw, &au2XSTS[0], &au2XSTS[1], &au2XSTS[2], &au2XSTS[3],
+	rv = sscanf(prInBuf, "%d:%hd:%hd:%hd:%hd:%hd:%hd:%hd:%hd:%hd:%hd:%hd:%hd:%hd",
+		   &u4ProfileIdx, &u2bw, &au2XSTS[0], &au2XSTS[1], &au2XSTS[2], &au2XSTS[3],
 		   &au2XSTS[4], &au2XSTS[5], &au2XSTS[6], &au2XSTS[7], &au2XSTS[8], &au2XSTS[9], &au2XSTS[10],
 		   &au2XSTS[11]);
 	if (rv == 14) {
 		DBGLOG(RFTEST, ERROR,
 			"TxBfProfilePnWrite prInBuf = %s, ucProfileIdx = %d, u2bw = %dau2XSTS[0]:%d, au2XSTS[1]:%d, au2XSTS[2]:%d, au2XSTS[3]:%d, au2XSTS[4]:%d, au2XSTS[5]:%d, au2XSTS[6]:%d, au2XSTS[7]:%d, au2XSTS[8]:%d, au2XSTS[9]:%d, au2XSTS[10]:%d, au2XSTS[11]:%d\n",
-		       ucProfileIdx, u2bw, au2XSTS[0], au2XSTS[1], au2XSTS[2], au2XSTS[3], au2XSTS[4], au2XSTS[5],
+		       u4ProfileIdx, u2bw, au2XSTS[0], au2XSTS[1], au2XSTS[2], au2XSTS[3], au2XSTS[4], au2XSTS[5],
 		       au2XSTS[6], au2XSTS[7], au2XSTS[8], au2XSTS[9], au2XSTS[10], au2XSTS[11]);
-		i4Status = TxBfProfilePnWrite(prNetDev, ucProfileIdx, u2bw, au2XSTS);
+		i4Status = TxBfProfilePnWrite(prNetDev, u4ProfileIdx, u2bw, au2XSTS);
 	} else
 		return -EINVAL;
 
@@ -1502,7 +1502,7 @@ int Set_MUCalLQ(struct net_device *prNetDev, uint8_t *prInBuf)
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	rv = sscanf
-	    (prInBuf, "%x:%x:%x:%x:%x:%x:%x:%x:%x:%x", &u4NumOfUser, &u4Bandwidth, &u4NssOfUser0, &u4NssOfUser1,
+	    (prInBuf, "%x:%x:%x:%x:%x:%x:%x:%x:%x", &u4NumOfUser, &u4Bandwidth, &u4NssOfUser0, &u4NssOfUser1,
 	     &u4PfMuIdOfUser0, &u4PfMuIdOfUser1, &u4NumOfTxer, &u4SpeIndex, &u4GroupIndex);
 	if (rv == 9) {
 		DBGLOG(RFTEST, ERROR,
