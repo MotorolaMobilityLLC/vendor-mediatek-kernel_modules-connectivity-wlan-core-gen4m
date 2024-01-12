@@ -204,9 +204,6 @@ enum mtk_wlan_vendor_attr_ndp_cfg_security {
 	MTK_WLAN_VENDOR_ATTR_NDP_SECURITY_TYPE = 1,
 };
 
-extern const struct nla_policy
-	mtk_wlan_vendor_ndp_policy[MTK_WLAN_VENDOR_ATTR_NDP_PARAMS_MAX + 1];
-
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
