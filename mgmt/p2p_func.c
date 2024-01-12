@@ -7128,6 +7128,77 @@ void p2pFuncRemoveOneSap(IN struct ADAPTER *prAdapter)
 	}
 }
 
+struct BSS_INFO *p2pGetAisBssByBand(
+	IN struct ADAPTER *ad,
+	IN enum ENUM_BAND eBand)
+{
+	uint8_t i, j;
+
+	for (j = 0; j < KAL_AIS_NUM; j++) {
+		struct AIS_FSM_INFO *fsm =
+			aisFsmGetInstance(ad, j);
+
+		if (!fsm)
+			continue;
+
+		for (i = 0; i < MLD_LINK_MAX; i++) {
+			struct BSS_INFO *bss =
+				aisGetLinkBssInfo(fsm, i);
+
+			if (bss &&
+				IS_BSS_AIS(bss) &&
+				(kalGetMediaStateIndicated(
+				ad->prGlueInfo,
+				bss->ucBssIndex) ==
+				MEDIA_STATE_CONNECTED) &&
+				bss->eBand == eBand) {
+				DBGLOG(P2P, TRACE,
+					"bss%d;c%d, ais%d;link%d\n",
+					bss->ucBssIndex,
+					bss->ucPrimaryChannel,
+					j, i);
+
+				return bss;
+			}
+		}
+	}
+
+	return NULL;
+}
+
+struct BSS_INFO *p2pGetAisConnectedBss(
+	IN struct ADAPTER *ad)
+{
+	struct BSS_INFO *bss = NULL;
+	struct BSS_INFO *bssRet = NULL;
+
+	if (!ad)
+		return NULL;
+
+	bss = cnmGetSapBssInfo(ad);
+	if (!bss) {
+		DBGLOG(P2P, TRACE, "SAP is not active\n");
+		return NULL;
+	}
+
+	if (p2pGetMode() != RUNNING_P2P_AP_MODE)
+		bssRet = p2pGetAisBssByBand(ad,
+			bss->eBand);
+	else {
+		struct BSS_INFO *bssNext =
+			cnmGetOtherSapBssInfo(ad, bss);
+
+		if (bssNext)
+			bssRet = p2pGetAisBssByBand(ad,
+				bssNext->eBand);
+	}
+
+	if (bssRet)
+		return bssRet;
+	else
+		return aisGetConnectedBssInfo(ad);
+}
+
 void p2pFuncSwitchSapChannel(
 		IN struct ADAPTER *prAdapter)
 {
@@ -7157,7 +7228,7 @@ void p2pFuncSwitchSapChannel(
 		goto exit;
 	}
 
-	prAisBssInfo = aisGetConnectedBssInfo(prAdapter);
+	prAisBssInfo = p2pGetAisConnectedBss(prAdapter);
 	if (!prAisBssInfo) {
 		ucStaChannelNum = 0;
 	} else {
