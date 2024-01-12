@@ -300,6 +300,7 @@ struct BUS_INFO {
 	void (*processSoftwareInterrupt)(struct ADAPTER *prAdapter);
 	void (*softwareInterruptMcu)(struct ADAPTER *prAdapter,
 		u_int32_t intrBitMask);
+	uint32_t (*getMdSwIntSta)(struct ADAPTER *prAdapter);
 	void (*hifRst)(struct GLUE_INFO *prGlueInfo);
 	void (*devReadIntStatus)(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus);

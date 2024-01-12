@@ -137,6 +137,7 @@ void mddpUpdateReorderQueParm(struct ADAPTER *prAdapter,
 int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
 	uint8_t fgActivate);
+int32_t mddpNotifyCheckSer(uint32_t u4Status);
 int32_t mddpNotifyStaTxd(struct ADAPTER *prAdapter);
 void mddpNotifyWifiOnStart(void);
 int32_t mddpNotifyWifiOnEnd(void);

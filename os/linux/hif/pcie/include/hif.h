@@ -426,6 +426,7 @@ struct BUS_INFO {
 	void (*processSoftwareInterrupt)(struct ADAPTER *prAdapter);
 	void (*softwareInterruptMcu)(struct ADAPTER *prAdapter,
 		u_int32_t intrBitMask);
+	uint32_t (*getMdSwIntSta)(struct ADAPTER *prAdapter);
 	void (*hifRst)(struct GLUE_INFO *prGlueInfo);
 	void (*initPcieInt)(struct GLUE_INFO *prGlueInfo);
 	void (*powerOffPcieMac)(struct ADAPTER *prAdapter);

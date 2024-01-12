@@ -1153,6 +1153,54 @@ void asicConnac3xSoftwareInterruptMcu(
 		intrBitMask);
 }
 
+uint32_t asicConnac3xGetMdSoftwareInterruptStatus(
+	struct ADAPTER *prAdapter)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct GL_HIF_INFO *prHifInfo;
+#if CFG_MTK_WIFI_EN_SW_EMI_READ
+	struct BUS_INFO *prBusInfo;
+	struct WIFI_VAR *prWifiVar;
+	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
+	u_int8_t fgRet = FALSE;
+#endif
+	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
+	uint32_t u4Status = 0, u4Addr = 0;
+	uint32_t u4HostWpdamBase = 0;
+
+	if (prAdapter->prGlueInfo == NULL) {
+		DBGLOG(HAL, ERROR, "prGlueInfo is NULL\n");
+		return 0;
+	}
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prHifInfo = &prGlueInfo->rHifInfo;
+#if CFG_MTK_WIFI_EN_SW_EMI_READ
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prWifiVar = &prAdapter->rWifiVar;
+	prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
+#endif
+	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
+
+	if (prAdapter->chip_info->is_support_wfdma1)
+		u4HostWpdamBase = CONNAC3X_HOST_WPDMA_1_BASE;
+	else
+		u4HostWpdamBase = CONNAC3X_HOST_WPDMA_0_BASE;
+
+	u4Addr = CONNAC3X_WPDMA_MCU2MD_SW_INT_STA(u4HostWpdamBase);
+#if CFG_MTK_WIFI_EN_SW_EMI_READ
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiRead) &&
+	    prSwEmiRingInfo->rOps.read) {
+		fgRet = prSwEmiRingInfo->rOps.read(
+			prGlueInfo, u4Addr, &u4Status);
+	}
+
+	if (!fgRet)
+#endif
+		kalDevRegRead(prGlueInfo, u4Addr, &u4Status);
+
+	return u4Status & BITS(0, 15);
+}
 
 void asicConnac3xHifRst(
 	struct GLUE_INFO *prGlueInfo)
