@@ -2732,7 +2732,6 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	struct SWITCH_CH_AND_BAND_PARAMS *prCSAParams;
 	uint8_t ucCurrentCsaCount;
 	struct IE_SECONDARY_OFFSET *prSecondaryOffsetIE;
-	struct IE_WIDE_BAND_CHANNEL *prWideBandChannelIE;
 #endif
 	const uint8_t *pucDumpIE;
 	uint8_t fgDomainValid = FALSE;
@@ -3057,25 +3056,6 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			pucIEOpmode = pucIE;
 
 			break;
-#if CFG_SUPPORT_DFS
-		case ELEM_ID_WIDE_BAND_CHANNEL_SWITCH:
-			if (IE_LEN(pucIE) !=
-				(sizeof(struct IE_WIDE_BAND_CHANNEL) - 2))
-				break;
-			DBGLOG(RLM, INFO,
-			       "[CSA] ELEM_ID_WIDE_BAND_CHANNEL_SWITCH, 11AC\n");
-			prWideBandChannelIE =
-				(struct IE_WIDE_BAND_CHANNEL *)pucIE;
-			prCSAParams->ucVhtBw =
-				prWideBandChannelIE->ucNewChannelWidth;
-			prCSAParams->ucVhtS1 = prWideBandChannelIE->ucChannelS1;
-			prCSAParams->ucVhtS2 = prWideBandChannelIE->ucChannelS2;
-			DBGLOG(RLM, INFO, "[CSA] BW=%d, s1=%d, s2=%d\n",
-			       prCSAParams->ucVhtBw,
-			       prCSAParams->ucVhtS1, prCSAParams->ucVhtS2);
-			break;
-#endif
-
 #endif
 		case ELEM_ID_20_40_BSS_COEXISTENCE:
 			if (!RLM_NET_IS_11N(prBssInfo))
@@ -3228,9 +3208,42 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			break;
 #endif
 
-		case ELEM_ID_CH_SW_WRAPPER:
-			DBGLOG(RLM, LOUD, "[CSA] Channel switch wrapper\n");
+#if CFG_SUPPORT_DFS
+		case ELEM_ID_CH_SW_WRAPPER: {
+			const uint8_t *sub;
+			uint16_t sub_len, sub_offset;
+
+			DBGLOG(RLM, INFO, "[CSA] Channel switch wrapper\n");
+
+			sub = &pucIE[2];
+			sub_len = IE_LEN(pucIE);
+
+			IE_FOR_EACH(sub, sub_len, sub_offset) {
+
+				if (IE_ID(sub) ==
+				    ELEM_ID_WIDE_BAND_CHANNEL_SWITCH) {
+					struct IE_WIDE_BAND_CHANNEL *prWBC;
+
+					DBGLOG(RLM, INFO,
+					       "[CSA] ELEM_ID_WIDE_BAND_CHANNEL_SWITCH\n");
+					prWBC =
+					     (struct IE_WIDE_BAND_CHANNEL *)sub;
+					prCSAParams->ucVhtBw =
+						prWBC->ucNewChannelWidth;
+					prCSAParams->ucVhtS1 =
+						prWBC->ucChannelS1;
+					prCSAParams->ucVhtS2 =
+						prWBC->ucChannelS2;
+					DBGLOG(RLM, INFO,
+					       "[CSA] BW=%d, s1=%d, s2=%d\n",
+					       prCSAParams->ucVhtBw,
+					       prCSAParams->ucVhtS1,
+					       prCSAParams->ucVhtS2);
+				}
+			}
+		}
 			break;
+#endif
 
 		case ELEM_ID_RESERVED:
 #if CFG_SUPPORT_DFS
