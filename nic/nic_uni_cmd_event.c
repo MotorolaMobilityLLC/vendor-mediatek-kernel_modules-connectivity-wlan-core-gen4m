@@ -110,6 +110,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_UPDATE_BEACON_CONTENT] = nicUniCmdBcnContent,
 	[CMD_ID_SET_BSS_INFO] = nicUniCmdSetBssInfo,
 	[CMD_ID_SET_WMM_PS_TEST_PARMS] = nicUniCmdSetWmmPsTestParams,
+	[CMD_ID_SET_UAPSD_PARAM] = nicUniCmdSetUapsd,
 	[CMD_ID_UPDATE_STA_RECORD] = nicUniCmdUpdateStaRec,
 	[CMD_ID_CH_PRIVILEGE] = nicUniCmdChPrivilege,
 	[CMD_ID_GET_CNM] = nicUniCmdCnmGetInfo,
@@ -2343,7 +2344,7 @@ uint32_t nicUniCmdSetWmmPsTestParams(struct ADAPTER *ad,
 	struct UNI_CMD_BSSINFO_WMM_PS_TEST *wmm;
 	struct WIFI_UNI_CMD_ENTRY *entry;
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_BSSINFO) +
-			       sizeof(struct UNI_CMD_BSSINFO_UAPSD);
+			       sizeof(struct UNI_CMD_BSSINFO_UAPSD) +
 	     		       sizeof(struct UNI_CMD_BSSINFO_WMM_PS_TEST);
 
 	if (info->ucCID != CMD_ID_SET_WMM_PS_TEST_PARMS ||
@@ -2371,6 +2372,51 @@ uint32_t nicUniCmdSetWmmPsTestParams(struct ADAPTER *ad,
 	wmm->u2Length = sizeof(*wmm);
 	wmm->ucIsEnterPsAtOnce = cmd->ucIsEnterPsAtOnce;
 	wmm->ucIsDisableUcTrigger = cmd->ucIsDisableUcTrigger;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdSetUapsd(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_CUSTOM_UAPSD_PARAM_STRUCT *cmd;
+	struct UNI_CMD_BSSINFO *uni_cmd;
+	struct UNI_CMD_BSSINFO_UAPSD *uapsd;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_BSSINFO) +
+			       sizeof(struct UNI_CMD_BSSINFO_UAPSD);
+	struct PARAM_CUSTOM_UAPSD_PARAM_STRUCT *param;
+
+	if (info->ucCID != CMD_ID_SET_UAPSD_PARAM ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_CUSTOM_UAPSD_PARAM_STRUCT *) info->pucInfoBuffer;
+	param = (struct PARAM_CUSTOM_UAPSD_PARAM_STRUCT *)
+							info->pvSetQueryBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_BSSINFO, max_cmd_len,
+			nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_BSSINFO *) entry->pucInfoBuffer;
+	uni_cmd->ucBssInfoIdx = param->ucBssIdx;
+
+	uapsd = (struct UNI_CMD_BSSINFO_UAPSD *) uni_cmd->aucTlvBuffer;
+	uapsd->u2Tag = UNI_CMD_BSSINFO_TAG_UAPSD;
+	uapsd->u2Length = sizeof(*uapsd);
+	uapsd->ucBmpDeliveryAC =
+		((cmd->fgEnAPSD_AcBe << 0) |
+		 (cmd->fgEnAPSD_AcBk << 1) |
+		 (cmd->fgEnAPSD_AcVi << 2) |
+		 (cmd->fgEnAPSD_AcVo << 3));
+	uapsd->ucBmpTriggerAC =
+		((cmd->fgEnAPSD_AcBe << 0) |
+		 (cmd->fgEnAPSD_AcBk << 1) |
+		 (cmd->fgEnAPSD_AcVi << 2) |
+		 (cmd->fgEnAPSD_AcVo << 3));
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
