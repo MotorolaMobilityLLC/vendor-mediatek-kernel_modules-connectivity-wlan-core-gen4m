@@ -195,6 +195,7 @@ enum ENUM_OP_NOTIFY_TYPE_T {
 	OP_NOTIFY_TYPE_VHT_NSS_BW = 0,
 	OP_NOTIFY_TYPE_HT_NSS,
 	OP_NOTIFY_TYPE_HT_BW,
+	OP_NOTIFY_TYPE_OMI_NSS_BW,
 	OP_NOTIFY_TYPE_NUM
 };
 
@@ -469,6 +470,13 @@ uint32_t rlmUpdateMrcSetting(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, uint8_t enable);
 
 uint32_t
+rlmSendOpModeFrameByType(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucOpChangeType,
+	uint8_t ucChannelWidth,
+	uint8_t ucRxNss, uint8_t ucTxNss);
+
+uint32_t
 rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter,
 			       struct STA_RECORD *prStaRec,
 			       uint8_t ucChannelWidth, uint8_t ucNss);
@@ -476,6 +484,19 @@ rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter,
 uint32_t
 rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
 			struct STA_RECORD *prStaRec, uint8_t ucNss);
+
+uint32_t
+rlmSendNotifyChannelWidthFrame(
+		struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec,
+		uint8_t ucChannelWidth);
+
+uint32_t
+rlmSendOMIDataFrame(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec,
+		uint8_t ucChannelWidth,
+		uint8_t ucOpRxNss,
+		uint8_t ucOpTxNss);
 
 void
 rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
@@ -486,6 +507,11 @@ rlmOpClassToBandwidth(uint8_t ucOpClass);
 
 uint32_t
 rlmNotifyVhtOpModeTxDone(struct ADAPTER *prAdapter,
+			 struct MSDU_INFO *prMsduInfo,
+			 enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+
+uint32_t
+rlmNotifyOMIOpModeTxDone(struct ADAPTER *prAdapter,
 			 struct MSDU_INFO *prMsduInfo,
 			 enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 

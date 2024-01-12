@@ -7783,6 +7783,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 
 #if CFG_SUPPORT_DBDC
 	INIT_UINT(prWifiVar->eDbdcMode, "DbdcMode", DEFAULT_DBDC_MODE);
+
+	/* ucDbdcOMFrame == 1, for OMI only */
+	/* ucDbdcOMFrame == 2, for OMN only */
+	/* ucDbdcOMFrame == 3, for OMI + OMN */
+	INIT_UINT(prWifiVar->ucDbdcOMFrame, "DbdcOMFrame", 3);
 #else
 	prWifiVar->eDbdcMode = ENUM_DBDC_MODE_DISABLED;
 	prWifiVar->fgDbDcModeEn = false;

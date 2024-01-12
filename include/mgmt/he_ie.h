@@ -444,6 +444,9 @@ enum ENUM_HEBA_TYPE {
 #define HE_IS_MAC_CAP_FLEXIBLE_TWT_SHDL(_aucHeMacCapInfo) \
 	(_aucHeMacCapInfo[3] & HE_MAC_CAP3_FLEXIBLE_TWT_SHDL)
 
+#define HE_IS_MAC_CAP_OM_CTRL(_aucHeMacCapInfo) \
+	(_aucHeMacCapInfo[3] & HE_MAC_CAP3_OM_CTRL)
+
 #define HE_SET_MAC_CAP_OM_CTRL(_aucHeMacCapInfo) \
 	(_aucHeMacCapInfo[3] |=  HE_MAC_CAP3_OM_CTRL)
 

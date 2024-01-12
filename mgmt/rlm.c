@@ -39,6 +39,7 @@ enum ENUM_OP_NOTIFY_STATE_T {
 	OP_NOTIFY_STATE_SENDING,  /* Sending OP notification frame */
 	OP_NOTIFY_STATE_SUCCESS,  /* OP notification Tx success */
 	OP_NOTIFY_STATE_FAIL,     /* OP notification Tx fail(over retry limit)*/
+	OP_NOTIFY_STATE_ROLLBACK, /* OP notification rollback */
 	OP_NOTIFY_STATE_NUM
 };
 
@@ -7354,6 +7355,16 @@ static void rlmOpModeDummyTxDoneHandler(struct ADAPTER *prAdapter,
 	rlmUpdateMrcTxDone(prAdapter, prMsduInfo->ucBssIndex, fgIsSuccess);
 }
 
+static uint32_t rlmDummyOmiOpModeTxDone(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo,
+		enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	rlmOpModeDummyTxDoneHandler(prAdapter, prMsduInfo,
+			OP_NOTIFY_TYPE_OMI_NSS_BW,
+			(rTxDoneStatus == TX_RESULT_SUCCESS) ? TRUE : FALSE);
+	return WLAN_STATUS_SUCCESS;
+}
+
 static uint32_t rlmDummyVhtOpModeTxDone(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo,
 		enum ENUM_TX_RESULT_CODE rTxDoneStatus)
@@ -7406,6 +7417,37 @@ void rlmProcessPublicAction(struct ADAPTER *prAdapter,
 	case ACTION_PUBLIC_VENDOR_SPECIFIC:
 	default:
 		break;
+	}
+}
+
+uint32_t
+rlmSendOpModeFrameByType(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucOpChangeType,
+	uint8_t ucChannelWidth,
+	uint8_t ucRxNss, uint8_t ucTxNss)
+{
+	switch (ucOpChangeType) {
+	case OP_NOTIFY_TYPE_HT_NSS:
+		return rlmSendSmPowerSaveFrame(prAdapter,
+			prStaRec, ucRxNss);
+	case OP_NOTIFY_TYPE_HT_BW:
+		return rlmSendNotifyChannelWidthFrame(prAdapter,
+			prStaRec, ucChannelWidth);
+	case OP_NOTIFY_TYPE_VHT_NSS_BW:
+		return rlmSendOpModeNotificationFrame(prAdapter,
+			prStaRec, ucChannelWidth, ucRxNss);
+#if (CFG_SUPPORT_802_11AX == 1) || (CFG_SUPPORT_802_11BE == 1)
+	case OP_NOTIFY_TYPE_OMI_NSS_BW:
+		return rlmSendOMIDataFrame(prAdapter,
+			prStaRec, ucChannelWidth,
+			ucRxNss, ucTxNss);
+#endif /* CFG_SUPPORT_802_11AX || CFG_SUPPORT_802_11BE == 1 */
+	default:
+		DBGLOG(RLM, WARN,
+			"Can't find op change type [%d]\n",
+			ucOpChangeType);
+		return WLAN_STATUS_FAILURE;
 	}
 }
 
@@ -7584,6 +7626,61 @@ uint32_t rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Send Notify Channel Width or NSS frame (OMI Data frame)
+ *
+ * \param[in] ucChannelWidth 0:20MHz, 1:Any channel width
+ *  in the STAs Supported Channel Width Set subfield
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+#if (CFG_SUPPORT_802_11AX == 1) || (CFG_SUPPORT_802_11BE == 1)
+uint32_t rlmSendOMIDataFrame(struct ADAPTER *prAdapter,
+				    struct STA_RECORD *prStaRec,
+					uint8_t ucChannelWidth,
+					uint8_t ucOpRxNss,
+					uint8_t ucOpTxNss)
+{
+	uint32_t u4Status;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucMaxBw;
+	PFN_TX_DONE_HANDLER pfTxDoneHandler =
+		(PFN_TX_DONE_HANDLER)rlmDummyOmiOpModeTxDone;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (prBssInfo->pfOpChangeHandler) {
+		prBssInfo->aucOpModeChangeState
+			[OP_NOTIFY_TYPE_OMI_NSS_BW] =
+			OP_NOTIFY_STATE_SENDING;
+		pfTxDoneHandler = rlmNotifyOMIOpModeTxDone;
+		DBGLOG(RLM, INFO,
+			"OMI Fill pfTxDoneHandler\n");
+	}
+
+	ucMaxBw = cnmGetBssMaxBw(prAdapter, prStaRec->ucBssIndex);
+	if (ucChannelWidth >= ucMaxBw)
+		ucChannelWidth = ucMaxBw;
+
+	if (ucOpRxNss == 0)
+		ucOpRxNss = 1;
+	if (ucOpTxNss == 0)
+		ucOpTxNss = 1;
+
+	heRlmInitHeHtcACtrlOMAndUPH(prAdapter);
+	HE_SET_HTC_HE_OM_CH_WIDTH(prAdapter->u4HeHtcOM, ucChannelWidth);
+	HE_SET_HTC_HE_OM_RX_NSS(prAdapter->u4HeHtcOM, ucOpRxNss - 1);
+	HE_SET_HTC_HE_OM_TX_NSTS(prAdapter->u4HeHtcOM, ucOpTxNss - 1);
+	u4Status =
+		heRlmSendHtcNullFrame(
+		prAdapter, prStaRec, 7,
+		pfTxDoneHandler);
+
+	return u4Status;
+
+}
+#endif /* CFG_SUPPORT_802_11AX  or CFG_SUPPORT_802_11BE*/
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Send Notify Channel Width frame (HT action frame)
  *
  * \param[in] ucChannelWidth 0:20MHz, 1:Any channel width
@@ -7692,6 +7789,35 @@ uint32_t rlmNotifyVhtOpModeTxDone(struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
+uint32_t rlmNotifyOMIOpModeTxDone(struct ADAPTER *prAdapter,
+				  struct MSDU_INFO *prMsduInfo,
+				  enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	u_int8_t fgIsSuccess = FALSE;
+
+	do {
+		ASSERT((prAdapter != NULL) && (prMsduInfo != NULL));
+
+		if (rTxDoneStatus == TX_RESULT_SUCCESS)
+			fgIsSuccess = TRUE;
+
+	} while (FALSE);
+
+	rlmOpModeTxDoneHandler(prAdapter, prMsduInfo, OP_NOTIFY_TYPE_OMI_NSS_BW,
+		fgIsSuccess);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
 uint32_t rlmSmPowerSaveTxDone(struct ADAPTER *prAdapter,
 			      struct MSDU_INFO *prMsduInfo,
 			      enum ENUM_TX_RESULT_CODE rTxDoneStatus)
@@ -7759,11 +7885,8 @@ static void rlmOpModeTxDoneHandler(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo = NULL;
 	struct STA_RECORD *prStaRec = NULL;
 	u_int8_t fgIsOpModeChangeSuccess = FALSE; /* OP change result */
-	uint8_t ucRelatedFrameType =
-		OP_NOTIFY_TYPE_NUM; /* Used for HT notification frame */
-		/* Used for HT notification frame */
 	uint8_t *pucCurrOpState = NULL;
-	uint8_t *pucRelatedOpState = NULL;
+	uint8_t ucFailCnt = 0, i = 0;
 
 	/* Sanity check */
 	ASSERT((prAdapter != NULL) && (prMsduInfo != NULL));
@@ -7784,7 +7907,9 @@ static void rlmOpModeTxDoneHandler(struct ADAPTER *prAdapter,
 		if ((prBssInfo->aucOpModeChangeState[ucOpChangeType] !=
 		     OP_NOTIFY_STATE_KEEP) &&
 		    (prBssInfo->aucOpModeChangeState[ucOpChangeType] !=
-		     OP_NOTIFY_STATE_SENDING)) {
+		     OP_NOTIFY_STATE_SENDING) &&
+		     (prBssInfo->aucOpModeChangeState[ucOpChangeType] !=
+		     OP_NOTIFY_STATE_ROLLBACK)) {
 			DBGLOG(RLM, WARN,
 			       "Unexpected BSS[%d] OpModeChangeState[%d]\n",
 			       prBssInfo->ucBssIndex,
@@ -7798,7 +7923,6 @@ static void rlmOpModeTxDoneHandler(struct ADAPTER *prAdapter,
 			DBGLOG(RLM, WARN,
 			       "Uxexpected Bss[%d] OpChangeType[%d]\n",
 			       prMsduInfo->ucBssIndex, ucOpChangeType);
-			rlmRollbackOpChangeParam(prBssInfo, TRUE, TRUE);
 			fgIsOpModeChangeSuccess = FALSE;
 			break;
 		}
@@ -7806,255 +7930,101 @@ static void rlmOpModeTxDoneHandler(struct ADAPTER *prAdapter,
 		pucCurrOpState = &prBssInfo
 				->aucOpModeChangeState[ucOpChangeType];
 
-		/* <2>Assign Op notification Type/State for HT notification
-		 * frame
-		 */
-		if ((ucOpChangeType == OP_NOTIFY_TYPE_HT_BW) ||
-		    (ucOpChangeType == OP_NOTIFY_TYPE_HT_NSS)) {
-
-			ucRelatedFrameType =
-				(ucOpChangeType == OP_NOTIFY_TYPE_HT_BW)
-					? OP_NOTIFY_TYPE_HT_NSS
-					: OP_NOTIFY_TYPE_HT_BW;
-
-			pucRelatedOpState = &prBssInfo
-				->aucOpModeChangeState[ucRelatedFrameType];
-		}
 
 		/* <3.1>handle TX done - SUCCESS */
 		if (fgIsSuccess == TRUE) {
-
 			/* Clear retry count */
-			prBssInfo->aucOpModeChangeRetryCnt[ucOpChangeType] = 0;
+			prBssInfo->aucOpModeChangeRetryCnt[ucOpChangeType]
+							= 0;
+			*pucCurrOpState = OP_NOTIFY_STATE_SUCCESS;
 
-			if (ucOpChangeType == OP_NOTIFY_TYPE_VHT_NSS_BW) {
-				*pucCurrOpState = OP_NOTIFY_STATE_SUCCESS;
-
-				if (prBssInfo->aucOpModeChangeState
-					[OP_NOTIFY_TYPE_HT_BW] ==
-						OP_NOTIFY_STATE_SENDING ||
-					prBssInfo->aucOpModeChangeState
-					[OP_NOTIFY_TYPE_HT_NSS] ==
-						OP_NOTIFY_STATE_SENDING) {
-					/* Wait for HT BW/Nss notification
-					 * frames Tx done
-					 */
-					return;
-				}
-
-				/* VHT notification frame sent */
-				fgIsOpModeChangeSuccess = TRUE;
-				break;
+			/* Record rollback frame status to fail only */
+			if (prBssInfo->aucOpModeChangeState[ucOpChangeType]
+				== OP_NOTIFY_STATE_ROLLBACK) {
+				*pucCurrOpState = OP_NOTIFY_STATE_FAIL;
+				DBGLOG(RLM, INFO,
+					"type [%d] roll back success\n",
+					ucOpChangeType);
+				return;
+			}
+		} else {
+			/* Record rollback frame status to fail only */
+			if (prBssInfo->aucOpModeChangeState[ucOpChangeType]
+				== OP_NOTIFY_STATE_ROLLBACK) {
+				DBGLOG(RLM, WARN,
+					"type [%d] roll back fail\n",
+					ucOpChangeType);
+				*pucCurrOpState = OP_NOTIFY_STATE_FAIL;
+				return;
 			}
 
-			/* HT notification frame sent */
-			if (*pucCurrOpState ==
-			    OP_NOTIFY_STATE_SENDING) { /* Change OpMode */
-				*pucCurrOpState = OP_NOTIFY_STATE_SUCCESS;
-
-				/* Case1: Wait for VHT notification frame &
-				 * HT BW/Nss notification frame TX done
-				 */
-				if (*pucRelatedOpState ==
-					OP_NOTIFY_STATE_SENDING ||
-					prBssInfo->aucOpModeChangeState
-					[OP_NOTIFY_TYPE_VHT_NSS_BW] ==
-						OP_NOTIFY_STATE_SENDING)
-					return;
-
-				/* Case2: Both BW and Nss notification TX done
-				 * or only change either BW or Nss
-				 */
-				if ((*pucRelatedOpState ==
-				     OP_NOTIFY_STATE_KEEP) ||
-				    (*pucRelatedOpState ==
-				     OP_NOTIFY_STATE_SUCCESS)) {
-					fgIsOpModeChangeSuccess = TRUE;
-
-					/* Case3: One of the notification TX
-					 * failed,
-					 * re-send a notification frame to
-					 * rollback the successful one
-					 */
-				} else if (*pucRelatedOpState ==
-					   OP_NOTIFY_STATE_FAIL) {
-					/*Rollback to keep the original BW/Nss
-					 */
-					*pucCurrOpState = OP_NOTIFY_STATE_KEEP;
-					if (ucOpChangeType ==
-					    OP_NOTIFY_TYPE_HT_BW)
-						u4Status =
-						rlmSendNotifyChannelWidthFrame(
-						prAdapter, prStaRec,
-						rlmGetBssOpBwByVhtAndHtOpInfo(
-						prBssInfo));
-					else if (ucOpChangeType ==
-						 OP_NOTIFY_TYPE_HT_NSS)
-						u4Status =
-						rlmSendSmPowerSaveFrame(
-							prAdapter, prStaRec,
-							prBssInfo->ucOpRxNss);
-
-					DBGLOG(RLM, INFO,
-						"Bss[%d] OpType[%d] Tx Failed, send OpType",
-						prMsduInfo->ucBssIndex,
-						ucRelatedFrameType);
-					DBGLOG(RLM, INFO,
-						"[%d] for roll back to BW[%d] RxNss[%d]\n",
-						ucOpChangeType,
-						rlmGetBssOpBwByVhtAndHtOpInfo
-							(prBssInfo),
-						prBssInfo->ucOpRxNss);
-
-					if (u4Status == WLAN_STATUS_SUCCESS)
-						return;
-				}
-			} else if (*pucCurrOpState ==
-				   OP_NOTIFY_STATE_KEEP) { /* Rollback OpMode */
-
-				/* Case4: Rollback success, keep original OP
-				 * BW/Nss
-				 */
-				if (ucOpChangeType == OP_NOTIFY_TYPE_HT_BW)
-					rlmRollbackOpChangeParam(prBssInfo,
-								 TRUE, FALSE);
-				else if (ucOpChangeType ==
-					 OP_NOTIFY_TYPE_HT_NSS)
-					rlmRollbackOpChangeParam(prBssInfo,
-								 FALSE, TRUE);
-
-				fgIsOpModeChangeSuccess = FALSE;
-			}
-		} /* End of processing TX success */
-		/* <3.2>handle TX done - FAIL */
-		else {
 			prBssInfo->aucOpModeChangeRetryCnt[ucOpChangeType]++;
 
 			/* Re-send notification frame */
 			if (prBssInfo
 				    ->aucOpModeChangeRetryCnt[ucOpChangeType] <=
 			    OPERATION_NOTICATION_TX_LIMIT) {
-				if (ucOpChangeType == OP_NOTIFY_TYPE_VHT_NSS_BW)
-					u4Status =
-					rlmSendOpModeNotificationFrame(
-					prAdapter, prStaRec,
+				u4Status = rlmSendOpModeFrameByType(prAdapter,
+					prStaRec, ucOpChangeType,
 					prBssInfo->ucOpChangeChannelWidth,
-					prBssInfo->ucOpChangeRxNss);
-				else if (ucOpChangeType ==
-					 OP_NOTIFY_TYPE_HT_NSS)
-					u4Status = rlmSendSmPowerSaveFrame(
-						prAdapter, prStaRec,
-						prBssInfo->ucOpChangeRxNss);
-				else if (ucOpChangeType == OP_NOTIFY_TYPE_HT_BW)
-					u4Status =
-					rlmSendNotifyChannelWidthFrame(
-						prAdapter, prStaRec,
-						prBssInfo
-						->ucOpChangeChannelWidth);
+					prBssInfo->ucOpChangeRxNss,
+					prBssInfo->ucOpChangeTxNss);
 
 				if (u4Status == WLAN_STATUS_SUCCESS)
 					return;
-			}
-
-			/* Clear retry count when retry count > TX limit */
-			prBssInfo->aucOpModeChangeRetryCnt[ucOpChangeType] = 0;
-
-#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
-			/* for power control error handling, */
-			/* retry fail but before rollback parameter */
-			if (prAdapter->fgPowerNeedDisconnect) {
-				cnmPowerControlErrorHandling(prAdapter,
-					prBssInfo);
-			}
-#endif
-
-			/* VHT notification frame sent */
-			if (ucOpChangeType ==
-			    OP_NOTIFY_TYPE_VHT_NSS_BW) {
+			} else {
 				*pucCurrOpState = OP_NOTIFY_STATE_FAIL;
-
-				/* Change failed, keep original OP BW/Nss */
-				rlmRollbackOpChangeParam(prBssInfo, TRUE, TRUE);
-				fgIsOpModeChangeSuccess = FALSE;
-				break;
+				/* Clear retry count when retry */
+				/* count > TX limit */
+				prBssInfo
+				->aucOpModeChangeRetryCnt[ucOpChangeType] = 0;
 			}
+		}
 
-			/* HT notification frame sent */
-			if (*pucCurrOpState ==
-			    OP_NOTIFY_STATE_SENDING) { /* Change OpMode */
-				*pucCurrOpState = OP_NOTIFY_STATE_FAIL;
 
-				/* Change failed, keep original OP BW/Nss */
-				if (ucOpChangeType == OP_NOTIFY_TYPE_HT_BW)
-					rlmRollbackOpChangeParam(prBssInfo,
-								 TRUE, FALSE);
-				else if (ucOpChangeType ==
-					 OP_NOTIFY_TYPE_HT_NSS)
-					rlmRollbackOpChangeParam(prBssInfo,
-								 FALSE, TRUE);
-
-				/* Case1: Wait for both HT BW/Nss notification
-				 * frame TX done
+		for (i = 0; i < OP_NOTIFY_TYPE_NUM; i++) {
+			if (prBssInfo->aucOpModeChangeState[i]
+					== OP_NOTIFY_STATE_SENDING) {
+				/* Wait for All BW/Nss notification
+				 * frames Tx done
 				 */
-				if (*pucRelatedOpState ==
-				    OP_NOTIFY_STATE_SENDING) {
-					return;
+				return;
+			} else if (prBssInfo->aucOpModeChangeState[i]
+					== OP_NOTIFY_STATE_FAIL) {
+				ucFailCnt++;
+				DBGLOG(RLM, WARN,
+					"OpType[%d] Tx Failed, fail[%d]",
+					i, ucFailCnt);
+			}
+		}
 
-					/* Case2: Both BW and Nss notification
-					 * TX done
-					 * or only change either BW or Nss
-					 */
-				} else if ((*pucRelatedOpState ==
-					    OP_NOTIFY_STATE_KEEP) ||
-					   (*pucRelatedOpState ==
-					    OP_NOTIFY_STATE_FAIL)) {
-					fgIsOpModeChangeSuccess = FALSE;
-
-					/* Case3: One of the notification TX
-					 * failed,
-					 * re-send a notification frame to
-					 * rollback the successful one
-					 */
-				} else if (*pucRelatedOpState ==
-					   OP_NOTIFY_STATE_SUCCESS) {
-					/*Rollback to keep the original BW/Nss
-					 */
-					*pucRelatedOpState =
-						OP_NOTIFY_STATE_KEEP;
-
-					if (ucRelatedFrameType ==
-					    OP_NOTIFY_TYPE_HT_BW) {
-						u4Status =
-						rlmSendNotifyChannelWidthFrame(
-						prAdapter, prStaRec,
-						rlmGetBssOpBwByVhtAndHtOpInfo(
-						prBssInfo));
-					} else if (ucRelatedFrameType ==
-						   OP_NOTIFY_TYPE_HT_NSS)
-						u4Status =
-						rlmSendSmPowerSaveFrame(
-							prAdapter, prStaRec,
-							prBssInfo->ucOpRxNss);
-
-					DBGLOG(RLM, INFO,
-					       "Bss[%d] OpType[%d] Tx Failed, send a OpType[%d] for roll back to BW[%d] RxNss[%d]\n",
-					       prMsduInfo->ucBssIndex,
-					       ucOpChangeType,
-					       ucRelatedFrameType,
-					       rlmGetBssOpBwByVhtAndHtOpInfo(
-						       prBssInfo),
-					       prBssInfo->ucOpRxNss);
-
-					if (u4Status == WLAN_STATUS_SUCCESS)
-						return;
-				}
-			} else if (*pucCurrOpState ==
-				   OP_NOTIFY_STATE_KEEP) /* Rollback OpMode */
-				/* Case4: Rollback failed, keep changing OP
-				 * BW/Nss
-				 */
-				fgIsOpModeChangeSuccess = FALSE;
-		} /* End of processing TX failed */
+		if (ucFailCnt == 0) {
+			/* All notification frame sent */
+			fgIsOpModeChangeSuccess = TRUE;
+			break;
+		}
+		/* If any tx fail occurs, rollback the successful one */
+		for (i = 0; i < OP_NOTIFY_TYPE_NUM; i++) {
+			if (prBssInfo->aucOpModeChangeState[i]
+				== OP_NOTIFY_STATE_SUCCESS) {
+				prBssInfo->aucOpModeChangeState[i]
+					= OP_NOTIFY_STATE_ROLLBACK;
+				rlmRollbackOpChangeParam(prBssInfo,
+						TRUE, TRUE);
+				DBGLOG(RLM, WARN,
+				"Type[%d] roll back to BW[%d] RxNss[%d] TxNss[%d]\n",
+				i,
+				rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo),
+				prBssInfo->ucOpRxNss,
+				prBssInfo->ucOpTxNss);
+				rlmSendOpModeFrameByType(prAdapter,
+				prStaRec, i,
+				rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo),
+				prBssInfo->ucOpRxNss,
+				prBssInfo->ucOpTxNss);
+			}
+		}
+		fgIsOpModeChangeSuccess = FALSE;
 
 	} while (FALSE);
 
@@ -8074,7 +8044,6 @@ static void rlmOpModeTxDoneHandler(struct ADAPTER *prAdapter,
 				prBssInfo->ucOpTxNss, prBssInfo->ucOpRxNss);
 	}
 #endif
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -8683,20 +8652,27 @@ rlmChangeOperationMode(
 		ucBssIndex, ucChannelWidth, ucOpRxNss, ucOpTxNss);
 
 	/* <4> Fill OP Change Info into BssInfo*/
+
+	/* When we resent OP Notification frame, we will use these params
+	 * prBssInfo->ucOpChangeChannelWidth, prBssInfo->ucOpChangeRxNss,
+	 * prBssInfo->ucOpChangeTxNss to resend, even if we don't need to
+	 *  change BW or TRXNSS, we still need to assign value to those
+	 * variables
+	 */
+	prBssInfo->ucOpChangeChannelWidth = ucChannelWidth;
+	prBssInfo->ucOpChangeRxNss = ucOpRxNss;
+	prBssInfo->ucOpChangeTxNss = ucOpTxNss;
 	if (fgIsChangeBw) {
-		prBssInfo->ucOpChangeChannelWidth = ucChannelWidth;
 		prBssInfo->fgIsOpChangeChannelWidth = TRUE;
 		DBGLOG(RLM, INFO, "Intend to change BSS[%d] to BW[%d]\n",
 		       ucBssIndex, ucChannelWidth);
 	}
 	if (fgIsChangeRxNss) {
-		prBssInfo->ucOpChangeRxNss = ucOpRxNss;
 		prBssInfo->fgIsOpChangeRxNss = TRUE;
 		DBGLOG(RLM, INFO, "Intend to change BSS[%d] to RxNss[%d]\n",
 		       ucBssIndex, ucOpRxNss);
 	}
 	if (fgIsChangeTxNss) {
-		prBssInfo->ucOpChangeTxNss = ucOpTxNss;
 		prBssInfo->fgIsOpChangeTxNss = TRUE;
 		DBGLOG(RLM, INFO, "Intend to change BSS[%d] to TxNss[%d]\n",
 			ucBssIndex, ucOpTxNss);
@@ -8726,16 +8702,37 @@ rlmChangeOperationMode(
 		if (fgIsChangeRxNss)
 			rlmResetMrc(prAdapter, ucBssIndex);
 
+#if (CFG_SUPPORT_802_11AX == 1)
+		if (((RLM_NET_IS_11AX(prBssInfo) &&
+			(prStaRec->ucDesiredPhyTypeSet &
+			PHY_TYPE_SET_802_11AX))
+#if (CFG_SUPPORT_802_11BE == 1)
+			|| (RLM_NET_IS_11BE(prBssInfo) &&
+			(prStaRec->ucDesiredPhyTypeSet &
+			PHY_TYPE_SET_802_11BE))
+#endif /* CFG_SUPPORT_802_11BE  */
+		) && HE_IS_MAC_CAP_OM_CTRL(prStaRec->ucHeMacCapInfo)
+		&& (prAdapter->rWifiVar.ucDbdcOMFrame & ENABLE_OMI)
+		&& (fgIsChangeBw || fgIsChangeRxNss)) {
+			if (prBssInfo->pfOpChangeHandler)
+				prBssInfo->aucOpModeChangeState
+					[OP_NOTIFY_TYPE_OMI_NSS_BW] =
+					OP_NOTIFY_STATE_SENDING;
+			DBGLOG(RLM, INFO,
+				"Send OMI frame: BSS[%d] BW[%d] RxNss[%d]\n",
+				ucBssIndex, ucChannelWidth, ucOpRxNss);
+
+			u4Status = rlmSendOMIDataFrame(prAdapter,
+				prStaRec, ucChannelWidth,
+				ucOpRxNss, ucOpTxNss);
+
+		}
+#endif /* CFG_SUPPORT_802_11AX */
 #if CFG_SUPPORT_802_11AC
 		if (((RLM_NET_IS_11AC(prBssInfo) &&
 			(prStaRec->ucDesiredPhyTypeSet &
 			PHY_TYPE_SET_802_11AC))
-#if (CFG_SUPPORT_802_11AX == 1)
-			|| (RLM_NET_IS_11AX(prBssInfo) &&
-			(prStaRec->ucDesiredPhyTypeSet &
-			PHY_TYPE_SET_802_11AX))
-#endif
-			)
+			|| (prAdapter->rWifiVar.ucDbdcOMFrame & ENABLE_OMN))
 			&& (fgIsChangeBw || fgIsChangeRxNss)) {
 			if (prBssInfo->pfOpChangeHandler)
 				prBssInfo->aucOpModeChangeState
@@ -8750,9 +8747,6 @@ rlmChangeOperationMode(
 		}
 #endif
 		if (RLM_NET_IS_11N(prBssInfo)
-#if (CFG_SUPPORT_802_11AX == 1)
-			|| RLM_NET_IS_11AX(prBssInfo)
-#endif
 			&& (fgIsChangeBw || fgIsChangeRxNss)) {
 			if (prBssInfo->pfOpChangeHandler) {
 				if (fgIsChangeRxNss)
