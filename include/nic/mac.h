@@ -1048,7 +1048,8 @@
 	85	/* Multiple BSSID-Index element */
 #define ELEM_ID_EXTENDED_CAP \
 	127	/* Extended capabilities */
-
+#define ELEM_ID_RNR \
+	201	/* Reduced Neighbor Report */
 #define ELEM_ID_INTERWORKING \
 	107	/* Interworking with External Network */
 #define ELEM_ID_ADVERTISEMENT_PROTOCOL \
@@ -1922,6 +1923,19 @@ enum BEACON_REPORT_DETAIL {
 #define HE_OP_CHANNEL_WIDTH_40				1
 #define HE_OP_CHANNEL_WIDTH_80				2
 #define HE_OP_CHANNEL_WIDTH_80P80_160			3
+
+/* 9.4.2.170 Reduced Neighbor Report element */
+#define TBTT_INFO_HDR_FIELD_TYPE                    BITS(0, 1)
+#define TBTT_INFO_HDR_FILTERED_NIEGHBOR_AP          BIT(2)
+#define TBTT_INFO_HDR_COLOCATED_AP                  BIT(3)
+#define TBTT_INFO_HDR_COUNT                         BITS(4, 7)
+#define TBTT_INFO_HDR_COUNT_OFFSET                  4
+#define TBTT_INFO_HDR_LENGTH                        BITS(8, 15)
+#define TBTT_INFO_HDR_LENGTH_OFFSET                 8
+
+#define TBTT_INFO_BSS_PARAM_SAME_SSID               BIT(1)
+/* 9.4.2.260 Short SSID List element */
+#define ELEM_EXT_ID_SHORT_SSID_LIST                 58
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -3568,6 +3582,21 @@ struct IE_OCE_SUPPRESSION_BSSID {
 	uint8_t aucAttrBssIds[1];	/* Suppression BSSIDs */
 } __KAL_ATTRIB_PACKED__;
 
+/* 9.4.2.170 Reduced Neighbor Report element */
+struct NEIGHBOR_AP_INFO_FIELD {
+	uint16_t     u2TbttInfoHdr;
+	uint8_t      ucOpClass;
+	uint8_t      ucChannelNum;
+	uint8_t      aucTbttInfoSet[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* 9.4.2.260 Short SSID List element */
+struct IE_SHORT_SSID_LIST {
+	uint8_t      ucId;
+	uint8_t      ucLength;
+	uint8_t      ucIdExt;
+	uint8_t      aucShortSsidList[0];
+} __KAL_ATTRIB_PACKED__;
 
 #if defined(WINDOWS_DDK) || defined(WINDOWS_CE)
 #pragma pack()
