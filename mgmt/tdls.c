@@ -823,6 +823,12 @@ uint16_t _TdlsComposeCapIE(
 	uint16_t u2EstimatedFrameLen;
 	uint16_t u2EstimatedExtraIELen;
 	uint16_t u2FrameLength;
+#if CFG_SUPPORT_TDLS_11AX
+	uint8_t ucHeOption = 0;
+#endif
+#if CFG_SUPPORT_TDLS_11BE
+	uint8_t ucEhtOption = 0;
+#endif
 
 	if (!ad || !bss || !sta || !buf) {
 		DBGLOG(TDLS, ERROR, "ad is NULL!\n");
@@ -842,7 +848,12 @@ uint16_t _TdlsComposeCapIE(
 	u2EstimatedExtraIELen = 0;
 
 #if CFG_SUPPORT_TDLS_11AX
-	if (RLM_NET_IS_11AX(bss))
+	if (IS_BSS_AIS(bss))
+		ucHeOption = ad->rWifiVar.ucStaHe;
+	else if (IS_BSS_GC(bss))
+		ucHeOption = ad->rWifiVar.ucP2pGcHe;
+
+	if (ucHeOption)
 		u2EstimatedExtraIELen +=
 			heRlmCalculateHeCapIELen(
 			ad,
@@ -850,7 +861,12 @@ uint16_t _TdlsComposeCapIE(
 			sta);
 #endif
 #if CFG_SUPPORT_TDLS_11BE
-	if (RLM_NET_IS_11BE(bss))
+	if (IS_BSS_AIS(bss))
+		ucEhtOption = ad->rWifiVar.ucStaEht;
+	else if (IS_BSS_GC(bss))
+		ucEhtOption = ad->rWifiVar.ucP2pGcEht;
+
+	if (ucEhtOption)
 		u2EstimatedExtraIELen +=
 			ehtRlmCalculateCapIELen(
 			ad,
@@ -871,14 +887,14 @@ uint16_t _TdlsComposeCapIE(
 
 	/* Append IE */
 #if CFG_SUPPORT_TDLS_11AX
-	if (RLM_NET_IS_11AX(bss))
+	if (ucHeOption)
 		heRlmFillHeCapIE(
 			ad,
 			bss,
 			prMsduInfo);
 #endif
 #if CFG_SUPPORT_TDLS_11BE
-	if (RLM_NET_IS_11BE(bss))
+	if (ucEhtOption)
 		ehtRlmFillCapIE(
 			ad,
 			bss,
