@@ -6233,7 +6233,7 @@ void mqmProcessAssocRsp(struct ADAPTER *prAdapter,
 						(fgRxsmmEnable) :
 						(prStaRec->fgRxsmmEnable);
 
-				DBGLOG(QM, INFO, "RxSMM: STAREC enable = %d\n",
+				DBGLOG(QM, TRACE, "RxSMM: STAREC enable = %d\n",
 					prStaRec->fgRxsmmEnable);
 #endif
 
