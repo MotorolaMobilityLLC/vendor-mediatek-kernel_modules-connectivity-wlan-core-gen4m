@@ -122,6 +122,11 @@
 #define ICMPV6_FLAG_ROUTER_BIT                  BIT(7)
 #define ICMPV6_FLAG_SOLICITED_BIT               BIT(6)
 #define ICMPV6_FLAG_OVERWRITE_BIT               BIT(5)
+#define ICMPV6_TYPE_ECHO_REQUEST                0x80 /* 128 */
+#define ICMPV6_TYPE_ECHO_REPLY                  0x81 /* 129 */
+#define ICMPV6_TYPE_MULTICAST_LISTENER_QUERY    0x82 /* 130 */
+#define ICMPV6_TYPE_MULTICAST_LISTENER_REPORT   0x83 /* 131 */
+#define ICMPV6_TYPE_MULTICAST_LISTENER_DONE     0x84 /* 132 */
 #define ICMPV6_TYPE_ROUTER_SOLICITATION		0x85 /* 133 */
 #define ICMPV6_TYPE_ROUTER_ADVERTISEMENT	0x86 /* 134 */
 #define ICMPV6_TYPE_NEIGHBOR_SOLICITATION       0x87 /* 135 */
@@ -154,6 +159,15 @@
 #define IP_PORT_DHCP_CLIENT                     68
 
 #define DHCP_MAGIC_NUMBER                       0x63825363
+
+#define DHCP_DISCOVER				1
+#define DHCP_OFFER				2
+#define DHCP_REQUEST				3
+#define DHCP_DECLINE				4
+#define DHCP_ACK				5
+#define DHCP_NAK				6
+#define DHCP_RELEASE				7
+#define DHCP_INFORM				8
 
 #define ARP_PKT_LEN                             28
 #define ARP_OPERATION_OFFSET                    6
