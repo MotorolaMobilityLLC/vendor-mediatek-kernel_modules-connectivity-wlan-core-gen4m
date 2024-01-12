@@ -2951,6 +2951,9 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 #endif
 	}
 
+#if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1)
+	cnmCtrlDynamicMaxQuota(prAdapter);
+#endif /* CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1 */
 #if (CFG_SUPPORT_DBDC == 1 && CFG_UPDATE_STATIC_DBDC_QUOTA == 1)
 	if (prAdapter->rWifiVar.eDbdcMode ==
 		ENUM_DBDC_MODE_STATIC)

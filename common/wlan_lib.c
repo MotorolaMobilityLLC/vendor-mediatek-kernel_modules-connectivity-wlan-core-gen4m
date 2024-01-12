@@ -8673,6 +8673,23 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4TputFactorDumpThresh,
 		  "TputFactorDumpThresh", 100);
 #endif
+#if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1)
+	{
+		uint8_t aucBuf[WLAN_CFG_VALUE_LEN_MAX];
+		uint32_t u4Pos = 0;
+
+		for (u4Idx = 0; u4Idx < ENUM_BAND_NUM; u4Idx++) {
+			kalMemZero(aucBuf, WLAN_CFG_VALUE_LEN_MAX);
+			u4Pos += kalSnprintf(
+				aucBuf + u4Pos,
+				WLAN_CFG_VALUE_LEN_MAX - u4Pos,
+				"%s0x%x",
+				(u4Idx == 0) ? "" : " ",
+				prChipInfo->au4DmaMaxQuotaBand[u4Idx]);
+		}
+		INIT_STR(prWifiVar->aucDmaMaxQuota, "DmaMaxQuota", aucBuf);
+	}
+#endif
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)

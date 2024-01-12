@@ -6235,19 +6235,30 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 				   "%s%u%s",
 				   (i == 0) ? " MR[" : "",
 				   prHifInfo->u4MmioReadReasonCnt[i],
-				   (i == HIF_DEV_REG_MAX - 1) ? "] " : ",");
+				   (i == HIF_DEV_REG_MAX - 1) ? "]" : ",");
 	}
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 #if CFG_MTK_WIFI_WFDMA_WB
 	if (prAdapter->chip_info->is_support_wfdma_cidx_fetch) {
 		pos += kalSnprintf(
 			buf + pos, u4BufferSize - pos,
-			"cfetch[%u][%u][%u]",
+			" cfetch[%u %u %u]",
 			GLUE_INC_REF_CNT(prHifStats->u4CidxFetchByCmd),
 			GLUE_GET_REF_CNT(prHifStats->u4CidxFetchByNewTx),
 			GLUE_GET_REF_CNT(prHifStats->u4CidxFetchByTimeout));
 	}
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
+#if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1)
+	for (i = 0; i < HW_WMM_NUM; i++) {
+		pos += kalSnprintf(
+			buf + pos, u4BufferSize - pos,
+			"%s%u:%x%s",
+			(i == 0) ? " Wmm[" : "[",
+			prAdapter->rWmmQuotaStatus[i].eHwBand,
+			prAdapter->rWmmQuotaStatus[i].u4Quota,
+			(i == HW_WMM_NUM - 1) ? "] " : "]");
+	}
+#endif /* CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1 */
 
 	DBGLOG(HAL, INFO, "%s\n", buf);
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);

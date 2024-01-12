@@ -418,6 +418,11 @@ void cnmPowerControlErrorHandling(
 void cnmUpdateStaticDbdcQuota(
 	struct ADAPTER *prAdapter);
 #endif
+#if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1)
+enum ENUM_MBMC_BN cnmGetMaxQuotaHwBandByWmmIndex(
+	struct ADAPTER *prAdapter, uint8_t ucWmmIndex, u_int8_t *fgIsMldMulti);
+void cnmCtrlDynamicMaxQuota(struct ADAPTER *prAdapter);
+#endif
 
 /*******************************************************************************
  *                              F U N C T I O N S

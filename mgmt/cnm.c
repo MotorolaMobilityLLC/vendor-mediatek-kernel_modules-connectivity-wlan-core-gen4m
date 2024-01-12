@@ -2861,6 +2861,137 @@ void cnmUpdateStaticDbdcQuota(
 }
 #endif
 
+#if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1)
+enum ENUM_MBMC_BN cnmGetMaxQuotaHwBandByWmmIndex(
+	struct ADAPTER *prAdapter, uint8_t ucWmmIndex, u_int8_t *fgIsMldMulti)
+{
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	struct BSS_INFO *prBssInfo;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+#endif
+	enum ENUM_MBMC_BN eTargetHwBand = ENUM_BAND_AUTO;
+	uint8_t ucBssIndex;
+
+	*fgIsMldMulti = FALSE;
+	for (ucBssIndex = 0;
+	     ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
+		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+
+		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo) ||
+		    prBssInfo->eHwBandIdx >= ENUM_BAND_NUM ||
+		    prBssInfo->ucWmmQueSet != ucWmmIndex)
+			continue;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		/* MLO select max quota hw band */
+		prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+		if (IS_MLD_BSSINFO_MULTI(prMldBssInfo)) {
+			eTargetHwBand = prChipInfo->eMloMaxQuotaHwBand;
+			*fgIsMldMulti = TRUE;
+			DBGLOG(CNM, TRACE,
+			       "bss group[%u] hwbnad[%u] wmm[%u] mld[%u]\n",
+			       prBssInfo->ucGroupMldId,
+			       prBssInfo->eHwBandIdx,
+			       prBssInfo->ucWmmQueSet,
+			       prMldBssInfo->rBssList.u4NumElem);
+			break;
+		}
+#endif
+		/* select band with largest max quota */
+		if (eTargetHwBand == ENUM_BAND_AUTO ||
+		    prChipInfo->au4DmaMaxQuotaBand[prBssInfo->eHwBandIdx] >
+		    prChipInfo->au4DmaMaxQuotaBand[eTargetHwBand])
+			eTargetHwBand = prBssInfo->eHwBandIdx;
+	}
+
+	return eTargetHwBand;
+}
+
+static void cnmUpdateDynamicMaxQuotaByWmmIdx(
+	struct ADAPTER *prAdapter, uint8_t ucWmmIdx)
+{
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	struct WMM_QUOTA_STATUS *prWmmStatus;
+	enum ENUM_MBMC_BN eHwBand = ENUM_BAND_AUTO;
+	uint32_t u4ReqQuota = 0;
+	u_int8_t fgEn = TRUE, fgIsNeedUpdate = FALSE, fgIsMldMulti = FALSE;
+
+	if (!prChipInfo->dmashdlQuotaDecision ||
+	    ucWmmIdx >= MAX_BSSID_NUM)
+		return;
+
+	prWmmStatus = &prAdapter->rWmmQuotaStatus[ucWmmIdx];
+	eHwBand = cnmGetMaxQuotaHwBandByWmmIndex(
+		prAdapter, ucWmmIdx, &fgIsMldMulti);
+	if (prWmmStatus->eHwBand == eHwBand)
+		return;
+
+	/* disconnect */
+	if (eHwBand >= ENUM_BAND_NUM) {
+		fgEn = FALSE;
+		goto update;
+	}
+
+	/* set req band for quota decision */
+	prAdapter->rWmmQuotaReqCS[ucWmmIdx].eHwBand = eHwBand;
+	u4ReqQuota = prChipInfo->dmashdlQuotaDecision(prAdapter, ucWmmIdx);
+	if (u4ReqQuota == 0) {
+		DBGLOG(CNM, TRACE,
+		       "WmmIndex[%d] HwBand[%u] ReqQuota is zero!!!\n",
+		       ucWmmIdx, eHwBand);
+		return;
+	}
+
+	/* only update when first connection */
+	if (!prWmmStatus->fgIsUsed)
+		fgIsNeedUpdate = TRUE;
+
+update:
+	prWmmStatus->eHwBand = eHwBand;
+	prWmmStatus->u4Quota = u4ReqQuota;
+	prWmmStatus->fgIsUsed = fgEn;
+
+	DBGLOG(CNM, TRACE,
+	       "WmmIndex[%d] En[%u] ReqQuota[0x%x] HwBand[%u] Mlo[%u]\n",
+	       ucWmmIdx, fgEn, u4ReqQuota, eHwBand, fgIsMldMulti);
+
+	if (fgIsNeedUpdate) {
+		cnmWmmQuotaSetMaxQuota(
+			prAdapter, ucWmmIdx, CNM_WMM_REQ_DBDC,
+			TRUE, u4ReqQuota);
+	}
+}
+
+void cnmCtrlDynamicMaxQuota(struct ADAPTER *prAdapter)
+{
+	uint8_t ucWmmIdx = 0;
+	uint32_t u4BufSize = 512, u4Pos = 0;
+	char *aucBuf;
+
+	for (ucWmmIdx = 0; ucWmmIdx < HW_WMM_NUM; ucWmmIdx++)
+		cnmUpdateDynamicMaxQuotaByWmmIdx(prAdapter, ucWmmIdx);
+
+	aucBuf = (char *)kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
+	if (!aucBuf)
+		return;
+
+	kalMemZero(aucBuf, u4BufSize);
+	for (ucWmmIdx = 0; ucWmmIdx < HW_WMM_NUM; ucWmmIdx++) {
+		u4Pos += kalSnprintf(
+			aucBuf + u4Pos, u4BufSize - u4Pos,
+			"%s%u:%u:0x%x%s",
+			(ucWmmIdx == 0) ? "Update Wmm Quota[" : "",
+			prAdapter->rWmmQuotaStatus[ucWmmIdx].fgIsUsed,
+			prAdapter->rWmmQuotaStatus[ucWmmIdx].eHwBand,
+			prAdapter->rWmmQuotaStatus[ucWmmIdx].u4Quota,
+			(ucWmmIdx == HW_WMM_NUM - 1) ? "] " : "/");
+	}
+	DBGLOG(HAL, INFO, "%s\n", aucBuf);
+	kalMemFree(aucBuf, VIR_MEM_TYPE, u4BufSize);
+}
+#endif /* CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1 */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief    MT6632 HW capability will change between BW160+NSS2 and BW80+NSS1
@@ -3261,7 +3392,9 @@ cnmDBDCFsmActionReqPeivilegeUnLock(struct ADAPTER *prAdapter)
 static void
 cnmDbdcFsmEntryFunc_DISABLE_IDLE(struct ADAPTER *prAdapter)
 {
+#if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 0)
 	uint8_t ucWmmIndex;
+#endif
 	uint8_t ucBssIndex;
 	struct CNM_OPMODE_BSS_CONTROL_T *prBssOpCtrl;
 
@@ -3276,6 +3409,7 @@ cnmDbdcFsmEntryFunc_DISABLE_IDLE(struct ADAPTER *prAdapter)
 		prBssOpCtrl->arReqPool[CNM_OPMODE_REQ_DBDC].fgEnable = false;
 	}
 
+#if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 0)
 	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
 		ucWmmIndex++) {
 		cnmWmmQuotaSetMaxQuota(
@@ -3285,6 +3419,7 @@ cnmDbdcFsmEntryFunc_DISABLE_IDLE(struct ADAPTER *prAdapter)
 			false,
 			0 /* don't care */);
 	}
+#endif /* CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 0 */
 }
 
 static void
@@ -3331,6 +3466,7 @@ cnmDbdcFsmEntryFunc_ENABLE_IDLE(
 	struct ADAPTER *prAdapter
 )
 {
+#if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 0)
 	uint8_t ucWmmIndex;
 	uint32_t u4ReqQuota = DBDC_WMM_TX_QUOTA;
 	struct mt66xx_chip_info *prChipInfo;
@@ -3356,6 +3492,7 @@ cnmDbdcFsmEntryFunc_ENABLE_IDLE(
 			true,
 			u4ReqQuota);
 	}
+#endif /* CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 0 */
 }
 
 

@@ -1677,6 +1677,9 @@ struct WIFI_VAR {
 	uint32_t u4TputFactorDumpThresh;
 	/* throughput factor dump threshold unit:mbps */
 #endif
+#if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1)
+	uint8_t aucDmaMaxQuota[WLAN_CFG_VALUE_LEN_MAX];
+#endif
 };
 
 /* cnm_timer module */
@@ -2090,6 +2093,12 @@ struct STATS_REG_STAT_FW_REPORT {
 };
 
 #endif
+
+struct WMM_QUOTA_STATUS {
+	uint8_t fgIsUsed;
+	uint32_t u4Quota;
+	enum ENUM_MBMC_BN eHwBand;
+};
 
 /*
  * Major ADAPTER structure
@@ -2595,7 +2604,10 @@ struct ADAPTER {
 	struct {
 		bool fgRun;
 		uint32_t u4Quota;
+		enum ENUM_MBMC_BN eHwBand;
 	} rWmmQuotaReqCS[MAX_BSSID_NUM];
+
+	struct WMM_QUOTA_STATUS rWmmQuotaStatus[MAX_BSSID_NUM];
 
 	/* TX HIF Control falgs */
 	uint32_t au4TxHifResCtl[TC_NUM];

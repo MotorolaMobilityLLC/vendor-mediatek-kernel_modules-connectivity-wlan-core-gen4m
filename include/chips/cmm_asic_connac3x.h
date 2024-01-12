@@ -1412,6 +1412,19 @@ void asicConnac3xDmashdlSetUserDefinedPriority(
 void asicConnac3xDmashdlSetOptionalControl(
 	struct ADAPTER *prAdapter,
 	uint16_t u2HifAckCntTh, uint16_t u2HifGupActMap, uint32_t u4DefVal);
+#if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1)
+uint32_t asicConnac3xDynamicDmashdlGetInUsedMaxQuota(
+	struct ADAPTER *prAdapter,
+	uint32_t u4GroupIdx,
+	uint32_t u4DefMaxQuota);
+uint32_t asicConnac3xUpdateDynamicDmashdlQuota(
+	struct ADAPTER *prAdapter,
+	uint8_t ucWmmIndex,
+	uint32_t u4MaxQuota);
+uint32_t asicConnac3xDynamicDmashdlQuotaDecision(
+	struct ADAPTER *prAdapter,
+	uint8_t ucWmmIndex);
+#endif /* CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1 */
 u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter);
 uint32_t asicConnac3xQueryPmicInfo(struct ADAPTER *prAdapter);
 uint32_t asicConnac3xGetFwVer(struct ADAPTER *prAdapter);
