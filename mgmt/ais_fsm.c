@@ -8054,6 +8054,23 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 			&prSubReq->eRfChannelWidth,
 			&prSubReq->ucRfCenterFreqSeg1,
 			&prSubReq->ucPrimaryChannel);
+
+		/* Fix the IOT issue of low DL t-put of VHT40 and HE40.
+		 * The root cause is that the channel width of operation
+		 * mode notification element in association request is
+		 * wrong. According to 11ac 10.41, it shall be the
+		 * maximum receiving bandwidth in operation rather than
+		 * maximum chip capability. For example, it shall be
+		 * 40MHz rather than 80MHz in VHT40 and HE40. Otherwise,
+		 * some AP will try to transmit packets in 80MHz first
+		 * even we can only receive packets with bandwidth up to
+		 * 40MHz. So, we copy the bandwidth information in
+		 * MID_MNY_CNM_CH_REQ to AIS BssInfo for later reference
+		 * of the gereration of the operation mode notification
+		 * element.
+		 */
+		prBss->ucVhtChannelWidth = prSubReq->eRfChannelWidth;
+		prBss->eBssSCO = prSubReq->eRfSco;
 	}
 
 	mboxSendMsg(prAdapter, MBOX_ID_0,

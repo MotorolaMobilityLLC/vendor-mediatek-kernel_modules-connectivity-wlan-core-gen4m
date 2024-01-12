@@ -1367,7 +1367,7 @@ void rlmReqGenerateVhtOpNotificationIE(struct ADAPTER *prAdapter,
 		 * current state
 		 */
 		rlmFillVhtOpNotificationIE(prAdapter, prBssInfo, prMsduInfo,
-					   TRUE);
+					   FALSE);
 	}
 }
 
