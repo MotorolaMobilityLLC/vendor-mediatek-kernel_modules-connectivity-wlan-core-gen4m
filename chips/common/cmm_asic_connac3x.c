@@ -2588,6 +2588,11 @@ static void register_connv3_cbs(void)
 	struct sub_drv_ops_cb conninfra_wf_cb;
 #endif
 	int ret = 0;
+#if CFG_SUPPORT_WIFI_SLEEP_COUNT
+	struct mt66xx_chip_info *chip = NULL;
+
+	glGetChipInfo((void **)&chip);
+#endif
 
 	kalMemZero(&cb, sizeof(cb));
 	cb.pwr_on_cb.pre_power_on = wlan_pre_pwr_on;
@@ -2617,6 +2622,17 @@ static void register_connv3_cbs(void)
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	cb.hif_dump_cb.hif_dump_start = wf_reg_start_wrapper;
 	cb.hif_dump_cb.hif_dump_end = wf_reg_end_wrapper;
+#endif
+
+#if CFG_SUPPORT_WIFI_SLEEP_COUNT
+	if (!chip) {
+		DBGLOG(HAL, ERROR, "NULL chip info.\n");
+	} else {
+		cb.pwr_dump_cb.power_dump_start =
+			chip->bus_info->wf_power_dump_start;
+		cb.pwr_dump_cb.power_dump_end =
+			chip->bus_info->wf_power_dump_end;
+	}
 #endif
 
 	ret = connv3_sub_drv_ops_register(CONNV3_DRV_TYPE_WIFI, &cb);

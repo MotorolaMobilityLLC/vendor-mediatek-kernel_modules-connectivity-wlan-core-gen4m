@@ -497,6 +497,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_SUPPORT_WIFI_MDDP_NO_MMIO_READ=y
     CONFIG_SUPPORT_WIFI_MCIF_NO_MMIO_READ=y
     CONFIG_SUPPORT_WIFI_DYNAMIC_PAGE_POOL=y
+    CONFIG_SUPPORT_WIFI_SLEEP_COUNT=y
     CONFIG_MTK_WIFI_AER_L05_RESET=y
     ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
     ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
@@ -1800,6 +1801,11 @@ else
     ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_WIFI_SLEEP_COUNT), y)
+    ccflags-y += -DCFG_SUPPORT_WIFI_SLEEP_COUNT=1
+else
+    ccflags-y += -DCFG_SUPPORT_WIFI_SLEEP_COUNT=0
+endif
 # ---------------------------------------------------
 # Directory List
 # ---------------------------------------------------
