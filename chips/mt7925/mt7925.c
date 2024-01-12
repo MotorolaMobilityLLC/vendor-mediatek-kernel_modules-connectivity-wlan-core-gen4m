@@ -32,6 +32,9 @@
 #include "coda/mt7925/wf_wtblon_top.h"
 #include "coda/mt7925/wf_uwtbl_top.h"
 #include "hal_wfsys_reset_mt7925.h"
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+#include "dbg_mt7925.h"
+#endif
 #define CFG_SUPPORT_VCODE_VDFS 0
 
 #if (CFG_SUPPORT_VCODE_VDFS == 1)
@@ -524,6 +527,9 @@ struct CHIP_DBG_OPS mt7925_DebugOps = {
 	.get_rx_link_stats = mt7925_get_rx_link_stats,
 #endif
 	.dumpTxdInfo = connac3x_dump_tmac_info,
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+	.show_debug_sop_info = mt7925_show_debug_sop_info,
+#endif
 };
 
 #if CFG_SUPPORT_QA_TOOL

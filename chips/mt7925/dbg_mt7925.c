@@ -26,6 +26,10 @@
 #include "coda/mt7925/wf_pse_top.h"
 #include "coda/mt7925/wf_wfdma_host_dma0.h"
 #include "coda/mt7925/wf_hif_dmashdl_top.h"
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#include "connv3.h"
+#include "connectivity_build_in_adapter.h"
+#endif
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
@@ -48,16 +52,1204 @@
 */
 #if defined(_HIF_PCIE)
 static void mt7925_dumpPcGprLog(struct ADAPTER *ad);
-static void mt7925_dumpN45CoreReg(struct ADAPTER *ad);
 static void mt7925_dumpWfTopReg(struct ADAPTER *ad);
 static void mt7925_dumpWfBusReg(struct ADAPTER *ad);
-static void mt7925_dumpCbtopReg(struct ADAPTER *ad);
 #endif
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
+#define MAP_DRIVER_SIDE(ADDR) (ADDR - (CONN_INFRA_REMAPPING_OFFSET))
+#define PC_LOG_NUM_CE   32
+#define GPR_LOG_NUM_CE  32
+#define CURRENT_PC_IDX  0x22
+#define PC_LOG_CTRL_IDX 0x20
+
+struct dump_cr_set conninfra_bus_off_domain_dump_bf_list[] = {
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_VON_VDNR_GLUE_BUS_P_D_N54_TIMEOUT_INFO_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_VON_VDNR_GLUE_BUS_P_D_N54_TIMEOUT_ADDR_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_VON_VDNR_GLUE_BUS_P_D_N54_TIMEOUT_WDATA_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_VON_VDNR_GLUE_BUS_P_D_N57_TIMEOUT_INFO_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_VON_VDNR_GLUE_BUS_P_D_N57_TIMEOUT_ADDR_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_VON_VDNR_GLUE_BUS_P_D_N57_TIMEOUT_WDATA_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_BUS_CR_ON_CONN_INFRA_ON_P_D_N7_TIMEOUT_INFO_0_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_BUS_CR_ON_CONN_INFRA_ON_P_D_N7_TIMEOUT_INFO_1_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_BUS_CR_ON_CONN_INFRA_ON_P_D_N7_TIMEOUT_ADDR_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_BUS_CR_ON_CONN_INFRA_ON_P_D_N7_TIMEOUT_WDATA_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_BUS_CR_ON_CONN_INFRA_ON_P_D_N9_TIMEOUT_INFO_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_BUS_CR_ON_CONN_INFRA_ON_P_D_N9_TIMEOUT_ADDR_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_BUS_CR_ON_CONN_INFRA_ON_P_D_N9_TIMEOUT_WDATA_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+};
+
+struct dump_cr_set conninfra_pwr_on_domain_dump_list[] = {
+	{
+		TRUE,
+		0x7C060A10,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C060014,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C060054,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C060010,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C060050,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C060018,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C060058,
+		0xFFFFFFFF,
+		0
+	}
+};
+
+struct dump_cr_set conninfra_pwr_off_domain_dump_list[] = {
+	{
+		TRUE,
+		CONN_CFG_PLL_STATUS_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_CLKGEN_TOP_CKGEN_BUS_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_CFG_ON_CONN_INFRA_CFG_RC_STATUS_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_RGU_ON_WFSYS_ON_TOP_PWR_ST_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_RGU_ON_BGFSYS_ON_TOP_PWR_ST_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_WT_SLP_CTL_REG_WB_CK_STA_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_0_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_1_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_2_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_3_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_4_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_5_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_CFG_EMI_CTL_0_ADDR,
+		CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_MASK,
+		CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_SHFT,
+		0
+	},
+	{
+		TRUE,
+		CONN_CFG_EMI_PROBE_1_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_CFG_EMI_CTL_0_ADDR,
+		CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_MASK,
+		CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_SHFT,
+		0x1
+	},
+	{
+		TRUE,
+		CONN_CFG_EMI_PROBE_1_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_CFG_EMI_CTL_0_ADDR,
+		CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_MASK,
+		CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_SHFT,
+		0x2
+	},
+	{
+		TRUE,
+		CONN_CFG_EMI_PROBE_1_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_CFG_EMI_CTL_0_ADDR,
+		CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_MASK,
+		CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_SHFT,
+		0x3
+	},
+	{
+		TRUE,
+		CONN_CFG_EMI_PROBE_1_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C050C50,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C050C54,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C050C58,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C050C5C,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C050C60,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C050C64,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_RF_SPI_MST_REG_SPI_STA_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_RF_SPI_MST_REG_SPI_TOP_ADDR_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_RF_SPI_MST_REG_SPI_TOP_WDAT_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_RF_SPI_MST_REG_SPI_TOP_RDAT_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_RF_SPI_MST_REG_SPI_HSCK_CTL_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_RF_SPI_MST_REG_SPI_CRTL_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C001620,
+		0xFFFFFFFF,
+		0
+	}
+	,
+	{
+		TRUE,
+		0x7C001610,
+		0xFFFFFFFF,
+		0
+	}
+	,
+	{
+		TRUE,
+		0x7C001600,
+		0xFFFFFFFF,
+		0
+	}
+};
+
+struct dump_cr_set conninfra_pwr_adie_common_dump_list[] = {
+	{
+		TRUE,
+		0xA10,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x090,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x08C,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x0A0,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x09C,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x094,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x5B4,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x2CC,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0xA70,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0xA20,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0xC08,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0xAA0,
+		0xFFFFFFFF,
+		0
+	}
+};
+
+struct dump_cr_set conninfra_pwr_adie_7971_dump_list[] = {
+	{
+		TRUE,
+		0x02C,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x000,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x750,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0xC50,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0xB08,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x0B4,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x580,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x30C,
+		0xFFFFFFFF,
+		0
+	}
+};
+
+struct dump_cr_set conninfra_clk_off_domain_dump_list[] = {
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_INFRA_MONFLAG_OUT_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_CFG_EMI_PROBE_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_CFG_EMI_CTL_0_ADDR,
+		CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_MASK,
+		CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_SHFT,
+		0
+	},
+	{
+		TRUE,
+		CONN_CFG_EMI_PROBE_1_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_CFG_EMI_CTL_0_ADDR,
+		CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_MASK,
+		CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_SHFT,
+		1
+	},
+	{
+		TRUE,
+		CONN_CFG_EMI_PROBE_1_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_CFG_EMI_CTL_0_ADDR,
+		CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_MASK,
+		CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_SHFT,
+		2
+	},
+	{
+		TRUE,
+		CONN_CFG_EMI_PROBE_1_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_CFG_EMI_CTL_0_ADDR,
+		CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_MASK,
+		CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_SHFT,
+		3
+	},
+	{
+		TRUE,
+		CONN_CFG_EMI_PROBE_1_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL9_ADDR,
+		CONN_GPIO_MON_SEL9_MON_SYS_SEL_0_MASK,
+		CONN_GPIO_MON_SEL9_MON_SYS_SEL_0_SHFT,
+		0x14
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL9_ADDR,
+		CONN_GPIO_MON_SEL9_MON_SYS_SEL_1_MASK,
+		CONN_GPIO_MON_SEL9_MON_SYS_SEL_1_SHFT,
+		0x17
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL1_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x03020100
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL2_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x07060504
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL3_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x0B0A0908
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL4_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x0F0E0D0C
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL5_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x13121110
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL6_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x17161514
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL7_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x1B1A1918
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL8_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x1F1E1D1C
+	},
+	{
+		FALSE,
+		CONN_GPIO_GPIO_MISC_CTRL_ADDR,
+		CONN_GPIO_GPIO_MISC_CTRL_MON_FLAG_EN_MASK,
+		CONN_GPIO_GPIO_MISC_CTRL_MON_FLAG_EN_SHFT,
+		0x1
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_INFRA_MONFLAG_OUT_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL9_ADDR,
+		CONN_GPIO_MON_SEL9_MON_SYS_SEL_0_MASK,
+		CONN_GPIO_MON_SEL9_MON_SYS_SEL_0_SHFT,
+		0x24
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL1_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x03020100
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL2_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x07060504
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL3_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x0B0A0908
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL4_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x0F0E0D0C
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL5_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x13121110
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL6_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x17161514
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL7_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x1B1A1918
+	},
+	{
+		FALSE,
+		CONN_GPIO_MON_SEL8_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x1F1E1D1C
+	},
+	{
+		FALSE,
+		CONN_GPIO_GPIO_MISC_CTRL_ADDR,
+		CONN_GPIO_GPIO_MISC_CTRL_MON_FLAG_EN_MASK,
+		CONN_GPIO_GPIO_MISC_CTRL_MON_FLAG_EN_SHFT,
+		0x1
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_INFRA_MONFLAG_OUT_ADDR,
+		0xFFFFFFFF,
+		0
+	}
+};
+
+struct dump_cr_set conninfra_clk_on_domain_dump_list[] = {
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_CONN_INFRA_SYSSTRAP_OUT_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_CONN_INFRA_CLKGEN_ON_DBG_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL_ADDR,
+		0x7,
+		0,
+		0
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_CONN_INFRA_CFG_ON_DBG_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL_ADDR,
+		0x7,
+		0,
+		1
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_CONN_INFRA_CFG_ON_DBG_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL_ADDR,
+		0x7,
+		0,
+		2
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_CONN_INFRA_CFG_ON_DBG_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL_ADDR,
+		0x7,
+		0,
+		3
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_CONN_INFRA_CFG_ON_DBG_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL_ADDR,
+		0x7,
+		0,
+		4
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_CONN_INFRA_CFG_ON_DBG_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL_ADDR,
+		0x7,
+		0,
+		5
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_CONN_INFRA_CFG_ON_DBG_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL_ADDR,
+		0x7,
+		0,
+		6
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_CONN_INFRA_CFG_ON_DBG_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL_ADDR,
+		0x7,
+		0,
+		7
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_CONN_INFRA_CFG_ON_DBG_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_RGU_ON_DBG_MUX_SEL_ADDR,
+		0xF,
+		0,
+		0
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_CONN_INFRA_RGU_ON_DBG_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_RGU_ON_DBG_MUX_SEL_ADDR,
+		0xF,
+		0,
+		1
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_CONN_INFRA_RGU_ON_DBG_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_RGU_ON_DBG_MUX_SEL_ADDR,
+		0xF,
+		0,
+		2
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_CONN_INFRA_RGU_ON_DBG_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_RGU_ON_DBG_MUX_SEL_ADDR,
+		0xF,
+		0,
+		3
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_CONN_INFRA_RGU_ON_DBG_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_RGU_ON_DBG_MUX_SEL_ADDR,
+		0xF,
+		0,
+		4
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_CONN_INFRA_RGU_ON_DBG_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_RGU_ON_DBG_MUX_SEL_ADDR,
+		0xF,
+		0,
+		5
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_CONN_INFRA_RGU_ON_DBG_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_RGU_ON_DBG_MUX_SEL_ADDR,
+		0xF,
+		0,
+		7
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_CONN_INFRA_RGU_ON_DBG_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_RGU_ON_DBG_MUX_SEL_ADDR,
+		0xF,
+		0,
+		8
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_CONN_INFRA_RGU_ON_DBG_ADDR,
+		0xFFFFFFFF,
+		0
+	}
+};
+
+struct dump_cr_set conninfra_bus_off_domain_dump_af_list[] = {
+	{
+		TRUE,
+		CONN_BUS_CR_ADDR_SUBSYS_0_ARADDR_LATCH_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_BUS_CR_ADDR_SUBSYS_0_AWADDR_LATCH_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_BUS_CR_ADDR_SUBSYS_1_HADDR_LATCH_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_BUS_CR_ADDR_SUBSYS_2_HADDR_LATCH_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_BUS_CR_ADDR_ACCESS_PROTECTOR_IRQ_STATUS_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C04F294,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C04F298,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C04F29C,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C04F2A0,
+		0xFFFFFFFF,
+		0
+	},
+
+/* Reference conn_vdnr_gen_u_debug_ctrl_ao_off_pwr_debug_ctrl_ao.h +. */
+	{
+		TRUE,
+		0x7C049408,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C04940C,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C049410,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C049414,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C049418,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C04941C,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C049420,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C049424,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C049428,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C04942C,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C049430,
+		0xFFFFFFFF,
+		0
+	},
+/* Reference conn_vdnr_gen_u_debug_ctrl_ao_off_pwr_debug_ctrl_ao.h -. */
+	{
+		TRUE,
+		CONN_BUS_CR_ADDR_CONN2AP_REMAP_EN_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_BUS_CR_CONN_INFRA_LOW_POWER_LAYER_CTRL_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_ADDR_MCU_0_EMI_BASE_ADDR_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_ADDR_MD_SHARED_BASE_ADDR_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_HOST_CSR_TOP_ADDR_GPS_EMI_BASE_ADDR_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_BUS_CR_ADDR_SCPSYS_SRAM_BASE_ADDR_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_BUS_CR_ADDR_PERI_WF_BASE_ADDR_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_BUS_CR_ADDR_PERI_BT_BASE_ADDR_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_BUS_CR_ADDR_PERI_GPS_BASE_ADDR_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		0x7C023408,
+		0xFFFFFFFF,
+		0,
+		0X0000002E
+	},
+	{
+		TRUE,
+		0x7C023404,
+		0xFFFFFFFF,
+		0
+	}
+};
+
+struct dump_cr_set conninfra_bus_off_domain_dump_af_list_c[] = {
+	/* Section C */
+	{
+		TRUE,
+		CONN_CFG_CONN_INFRA_CONN2AP_SLP_STATUS_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_CFG_CONN_INFRA_CONN2AP_EMI_SLP_STATUS_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_CFG_CONN_INFRA_OFF_BUS_SLP_STATUS_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_CFG_CONN_INFRA_WF_SLP_STATUS_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_CFG_GALS_CONN2BT_SLP_STATUS_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_CFG_GALS_BT2CONN_SLP_STATUS_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_CFG_GALS_CONN2GPS_SLP_STATUS_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_CFG_GALS_GPS2CONN_SLP_STATUS_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		0x7C01148C,
+		0xFFFFFFFF,
+		0
+	}
+	,
+	{
+		TRUE,
+		0x7C01149C,
+		0xFFFFFFFF,
+		0
+	}
+	,
+	{
+		TRUE,
+		0x7C0114AC,
+		0xFFFFFFFF,
+		0
+	}
+};
 
 struct PLE_TOP_CR rMt7925PleTopCr = {
 	.rAc0QueueEmpty0 = {
@@ -740,6 +1932,195 @@ struct PP_TOP_CR rMt7925PpTopCr = {
 	},
 };
 
+struct dump_cr_set conninfra_bus_on_domain_dump_list[] = {
+	{
+		FALSE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_BUS_DBG_SEL_ADDR,
+		0xFFFFFFFF,
+		0,
+		0
+	},
+	{
+		FALSE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_DEBUGSYS_CTRL_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x00010001
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_BUS_DBG_OUT_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_DEBUGSYS_CTRL_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x00020001
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_BUS_DBG_OUT_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_DEBUGSYS_CTRL_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x00030001
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_BUS_DBG_OUT_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_DEBUGSYS_CTRL_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x00010002
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_BUS_DBG_OUT_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_DEBUGSYS_CTRL_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x00000003
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_BUS_DBG_OUT_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_DEBUGSYS_CTRL_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x00010003
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_BUS_DBG_OUT_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_DEBUGSYS_CTRL_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x00020003
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_BUS_DBG_OUT_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_DEBUGSYS_CTRL_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x00030003
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_BUS_DBG_OUT_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_DEBUGSYS_CTRL_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x00010004
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_BUS_DBG_OUT_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_DEBUGSYS_CTRL_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x00020004
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_BUS_DBG_OUT_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		FALSE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_DEBUGSYS_CTRL_ADDR,
+		0xFFFFFFFF,
+		0,
+		0x00030004
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_INFRA_OFF_BUS_DBG_OUT_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_INFRA_BUS_TIMEOUT_IRQ_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_VON_VDNR_GLUE_BUS_S2P_N6_TIMEOUT_INFO_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_VON_VDNR_GLUE_BUS_S2P_N6_TIMEOUT_ADDR_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_VON_VDNR_GLUE_BUS_S2P_N6_TIMEOUT_WDATA_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_DBG_CTL_CONN_DEADFEED_PROT_EN_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+	{
+		TRUE,
+		CONN_BUS_CR_ON_ADDR_AP2CONN_AHB_GALS_DBG_ADDR,
+		0xFFFFFFFF,
+		0
+	},
+};
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -807,40 +2188,98 @@ void mt7925_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 }
 
 #if defined(_HIF_PCIE)
-static void mt7925_dumpCbtopReg(struct ADAPTER *ad)
+void mt7925_dumpCbtopReg(struct ADAPTER *ad)
 {
-	struct dump_cr_set *dump = NULL;
-	uint32_t size = 0;
-	uint32_t i = 0;
-	uint32_t val = 0;
+	uint32_t u4Value = 0;
 
-	dump = cbtop_dump_list;
-	size = ARRAY_SIZE(cbtop_dump_list);
-	for (i = 0; i < size; i++) {
-		if (dump[i].read) {
-			HAL_MCR_RD(ad,
-				   dump[i].addr,
-				   &val);
-			DBGLOG(HAL, INFO, "RD 0x%08x=0x%08x\n",
-				dump[i].addr,
-				val);
-		} else {
-			HAL_MCR_RD(ad,
-				   dump[i].addr,
-				   &val);
-			val &= ~dump[i].mask;
-			val |= ((dump[i].value << dump[i].shift) &
-				dump[i].mask);
-			HAL_MCR_WR(ad,
-				   dump[i].addr,
-				   val);
-			DBGLOG(HAL, INFO, "WR 0x%08x=0x%08x\n",
-				dump[i].addr,
-				val);
-		}
-	}
+	DBGLOG(HAL, INFO, "Start mt6639_dumpCbtopReg.\n");
+
+	/* 1. dump 0x18023C00[31:0] -> 0x7c023c00 */
+	HAL_MCR_RD(ad, 0x7c023c00, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x7c023c00] value[0x%08x]\n", u4Value);
+
+	/* 2. dump 0x70007204, read patch version */
+	HAL_MCR_RD(ad, 0x70007204, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x70007204] value[0x%08x]\n", u4Value);
+
+	/* 3. dump 0x7002500C, cb_infra_slp_status */
+	HAL_MCR_RD(ad, 0x7002500C, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x7002500C] value[0x%08x]\n", u4Value);
+
+	/* 4. dump slp_ctrl setting: 0x70025004/0x7002500C/0x70025014 */
+	HAL_MCR_RD(ad, 0x70025004, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x70025004] value[0x%08x]\n", u4Value);
+	HAL_MCR_RD(ad, 0x7002500C, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x7002500C] value[0x%08x]\n", u4Value);
+	HAL_MCR_RD(ad, 0x70025014, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x70025014] value[0x%08x]\n", u4Value);
+
+	/* 5. dump slp_ctrl cnt: 0x70025400/0x70025404 */
+	HAL_MCR_RD(ad, 0x70025400, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x70025400] value[0x%08x]\n", u4Value);
+	HAL_MCR_RD(ad, 0x70025404, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x70025404] value[0x%08x]\n", u4Value);
+
+	/* 6. dump ap2conn gals dbg : 0x70026008 */
+	HAL_MCR_RD(ad, 0x70026008, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x70026008] value[0x%08x]\n", u4Value);
+
+	/* 7. dump conn2ap gals dbg : 0x70026000 */
+	HAL_MCR_RD(ad, 0x70026000, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x70026000] value[0x%08x]\n", u4Value);
+
+	/* 8. dump dma2ap gals dbg : 0x70026100 */
+	HAL_MCR_RD(ad, 0x70026100, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x70026100] value[0x%08x]\n", u4Value);
+
+	/* 9. dump 0x70025300  // debug index */
+	HAL_MCR_RD(ad, 0x70025300, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x70025300] value[0x%08x]\n", u4Value);
+
+	/* 10. dump 0x70026550 // debug index */
+	HAL_MCR_RD(ad, 0x70026550, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x70026550] value[0x%08x]\n", u4Value);
+
+	/* 11. dump 0x7002801C // debug index */
+	HAL_MCR_RD(ad, 0x7002801C, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x7002801C] value[0x%08x]\n", u4Value);
+
+	/* 12. write 0x70003020 = 0x0 // set vlp_uds_ctrl probe 00 */
+	HAL_MCR_WR(ad, 0x70003020, 0);
+
+	/* 13. write 0x70007150 = 0x2 */
+	HAL_MCR_WR(ad, 0x70007150, 0x2);
+
+	/* 14. CBTOP REGs dump 0x70007154 */
+	HAL_MCR_RD(ad, 0x70007154, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x70007154] value[0x%08x]\n", u4Value);
+
+	/* 15.PCIE LTSSM dump: 0x74030150 */
+	HAL_MCR_RD(ad, 0x74030150, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x74030150] value[0x%08x]\n", u4Value);
+
+	/* 16. PCIE LP state dump: 0x74030154 */
+	HAL_MCR_RD(ad, 0x74030154, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x74030154] value[0x%08x]\n", u4Value);
+
+	/* 17. PCIE INT status dump: 0x74030184 */
+	HAL_MCR_RD(ad, 0x74030184, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x74030184] value[0x%08x]\n", u4Value);
+
+	/* 18. PCIE Cfg BAR check: 0x74031010 */
+	HAL_MCR_RD(ad, 0x74031010, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x74031010] value[0x%08x]\n", u4Value);
+
+	/* 19. write PCIE debug partition: 0x74030168 = 0x22cc0100 */
+	HAL_MCR_WR(ad, 0x74030168, 0x22cc0100);
+
+	/* 20. write PCIE debug bus: 0x74030164 = 0x81804845 */
+	HAL_MCR_WR(ad, 0x74030164, 0x81804845);
+
+	/* 21. PCIE debug monitor dump: 0x7403002C */
+	HAL_MCR_RD(ad, 0x7403002C, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x7403002C] value[0x%08x]\n", u4Value);
 }
-
 void mt7925_dumpWfsyscpupcr(struct ADAPTER *ad)
 {
 #define CPUPCR_LOG_NUM	5
@@ -932,8 +2371,8 @@ static void mt7925_dumpPcGprLog(struct ADAPTER *ad)
 		HAL_MCR_WR_FIELD(ad,
 			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_ADDR,
 			i,
-			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_SHFT,
-			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_MASK);
+			0,
+			0x0000003F);
 		HAL_MCR_RD(ad,
 			   CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
 			   &pc_dump[i]);
@@ -945,8 +2384,8 @@ static void mt7925_dumpPcGprLog(struct ADAPTER *ad)
 		HAL_MCR_WR_FIELD(ad,
 			CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_ADDR,
 			i,
-			CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_SHFT,
-			CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_MASK);
+			0,
+			0x0000003F);
 		HAL_MCR_RD(ad,
 			   CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR,
 			   &gpr_dump[i]);
@@ -954,58 +2393,10 @@ static void mt7925_dumpPcGprLog(struct ADAPTER *ad)
 	connac3x_dump_format_memory32(gpr_dump, GPR_LOG_NUM, "GPR log");
 }
 
-static void mt7925_dumpN45CoreReg(struct ADAPTER *ad)
-{
-#define GENERAL_LOG_NUM			32
-#define CTRL_LOG_NUM			5
-
-	uint32_t i = 0, idx = 0;
-	uint32_t val = 0;
-	uint32_t general_dump[GENERAL_LOG_NUM];
-	uint32_t ctl_status_dump[CTRL_LOG_NUM];
-
-	kalMemZero(ctl_status_dump, sizeof(ctl_status_dump));
-	for (i = 0, idx = 0; i < ARRAY_SIZE(n45_general_dump_list); i++) {
-		if (n45_general_dump_list[i].read) {
-			HAL_MCR_RD(ad,
-				   n45_general_dump_list[i].addr,
-				   &val);
-			general_dump[idx++] = val;
-		} else {
-			HAL_MCR_WR_FIELD(ad,
-				n45_general_dump_list[i].addr,
-				n45_general_dump_list[i].value,
-				n45_general_dump_list[i].shift,
-				n45_general_dump_list[i].mask);
-		}
-	}
-	connac3x_dump_format_memory32(general_dump,
-		GENERAL_LOG_NUM,
-		"N45 General Purpose Registers");
-
-	kalMemZero(ctl_status_dump, sizeof(ctl_status_dump));
-	for (i = 0, idx = 0; i < ARRAY_SIZE(n45_ctrl_status_dump_list); i++) {
-		if (n45_ctrl_status_dump_list[i].read) {
-			HAL_MCR_RD(ad,
-				   n45_ctrl_status_dump_list[i].addr,
-				   &val);
-			ctl_status_dump[idx++] = val;
-		} else {
-			HAL_MCR_WR_FIELD(ad,
-				n45_ctrl_status_dump_list[i].addr,
-				n45_ctrl_status_dump_list[i].value,
-				n45_ctrl_status_dump_list[i].shift,
-				n45_ctrl_status_dump_list[i].mask);
-		}
-	}
-	connac3x_dump_format_memory32(ctl_status_dump,
-		CTRL_LOG_NUM,
-		"N45 Control & Status Registers");
-}
-
 static void mt7925_dumpWfTopMiscOn(struct ADAPTER *ad)
 {
 	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4RdAddr, u4WrAddr;
+	uint32_t indexA = 1;
 	uint32_t au4List[] = {
 		0x00000000, 0x00000001, 0x00000002, 0x00000003, 0x00000004,
 		0x00000010, 0x00000012, 0x00000017, 0x00000018, 0x00000019,
@@ -1016,8 +2407,11 @@ static void mt7925_dumpWfTopMiscOn(struct ADAPTER *ad)
 	u4WrVal = 0x00000001;
 	HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
 	DBGLOG(HAL, INFO,
-	       "\tW 0x%08x=[0x%08x]\n",
-	       u4WrAddr, u4WrVal);
+		"=PSOP_3_1_A%d=0x%08X=0x%08X\n",
+		indexA,
+		u4Val,
+		u4WrAddr);
+	indexA++;
 
 	u4WrAddr = CONN_HOST_CSR_TOP_WF_ON_MONFLG_SEL_FR_HIF_ADDR;
 	u4RdAddr = CONN_HOST_CSR_TOP_WF_ON_MONFLG_OUT_ADDR;
@@ -1025,15 +2419,19 @@ static void mt7925_dumpWfTopMiscOn(struct ADAPTER *ad)
 		u4WrVal = au4List[u4Idx];
 		HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
 		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
-		DBGLOG(HAL, INFO,
-		       "\tW 0x%08x=[0x%08x], R 0x%08x=[0x%08x]\n",
-		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
+	DBGLOG(HAL, INFO,
+		"=PSOP_3_1_A%d=0x%08X=0x%08X\n",
+		indexA,
+		u4Val,
+		u4RdAddr);
+	indexA++;
 	}
 }
 
 static void mt7925_dumpWfTopMiscVon(struct ADAPTER *ad)
 {
 	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4RdAddr, u4WrAddr;
+	uint32_t indexB = 1;
 	uint32_t au4List[] = {
 		0x00000000, 0x00000001, 0x00000002, 0x00000003, 0x00000004,
 		0x00000008
@@ -1053,14 +2451,18 @@ static void mt7925_dumpWfTopMiscVon(struct ADAPTER *ad)
 		HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
 		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
 		DBGLOG(HAL, INFO,
-		       "\tW 0x%08x=[0x%08x], R 0x%08x=[0x%08x]\n",
-		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
+			"=PSOP_3_1_B%d=0x%08X=0x%08X\n",
+			indexB,
+			u4Val,
+			u4RdAddr);
+		indexB++;
 	}
 }
 
 static void mt7925_dumpWfTopCfgon(struct ADAPTER *ad)
 {
 	uint32_t u4RdAddr, u4Val = 0, u4Idx;
+	uint32_t indexC = 1;
 	uint32_t au4List[] = {
 		WF_TOP_CFG_ON_DEBUG_FLAG0_ADDR,
 		WF_TOP_CFG_ON_DEBUG_FLAG1_ADDR,
@@ -1102,8 +2504,11 @@ static void mt7925_dumpWfTopCfgon(struct ADAPTER *ad)
 		u4RdAddr = au4List[u4Idx];
 		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
 		DBGLOG(HAL, INFO,
-		       "\tR 0x%08x=[0x%08x]\n",
-		       u4RdAddr, u4Val);
+			"=PSOP_3_1_C%d=0x%08X=0x%08X\n",
+			indexC,
+			u4Val,
+			u4RdAddr);
+		indexC++;
 	}
 }
 
@@ -1122,36 +2527,44 @@ static void mt7925_dumpWfTopReg(struct ADAPTER *ad)
 static void mt7925_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad)
 {
 	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4RdAddr, u4WrAddr;
+	uint32_t indexA = 1;
 	uint32_t au4List[] = {
 		0x00010001, 0x00020001, 0x00030001, 0x00040001, 0x00050001,
 		0x00060001, 0x00070001, 0x00080001, 0x00090001, 0x00010002,
-		0x00020002, 0x00030002, 0x00040002, 0x00050002
+		0x00020002, 0x00030002, 0x00040002
 	};
 
-	u4RdAddr = CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_BUS_TIMEOUT_IRQ_ADDR;
+	u4RdAddr = WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_BUS_TIMEOUT_IRQ_ADDR;
 	u4WrAddr = CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_ADDR;
 	u4WrVal = 0x4;
 	HAL_MCR_RD(ad, u4RdAddr, &u4Val);
 	HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
 	DBGLOG(HAL, INFO,
-	       "\tR 0x%08x=[0x%08x], W 0x%08x=[0x%08x]\n",
-	       u4RdAddr, u4Val, u4WrAddr, u4WrVal);
+		"=PSOP_4_1_A%d=0x%08X=0x%08X\n",
+		indexA,
+		u4Val,
+		u4RdAddr);
+	indexA++;
 
-	u4WrAddr = CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_DEBUGSYS_CTRL_ADDR;
+	u4WrAddr = WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_DEBUGSYS_CTRL_ADDR;
 	u4RdAddr = CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR;
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
 		u4WrVal = au4List[u4Idx];
 		HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
 		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
 		DBGLOG(HAL, INFO,
-		       "\tW 0x%08x=[0x%08x], R 0x%08x=[0x%08x]\n",
-		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
+			"=PSOP_4_1_A%d=0x%08X=0x%08X\n",
+			indexA,
+			u4Val,
+			u4RdAddr);
+		indexA++;
 	}
 }
 
 static void mt7925_dumpWfVdnrTimeoutInfo(struct ADAPTER *ad)
 {
 	uint32_t u4RdAddr, u4Val = 0, u4Idx;
+	uint32_t indexB = 0, u4WrVal, u4WrAddr;
 	uint32_t au4List[] = {
 		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT2_ADDR,
 		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT3_ADDR,
@@ -1170,18 +2583,40 @@ static void mt7925_dumpWfVdnrTimeoutInfo(struct ADAPTER *ad)
 		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_CTRL0_ADDR,
 	};
 
+	u4RdAddr = 0x1802362C;
+	HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+	DBGLOG(HAL, INFO,
+		"=PSOP_4_1_B%d=0x%08X=0x%08X\n",
+		indexB,
+		u4Val,
+		u4RdAddr);
+
+	u4WrAddr = 0x18023604;
+	u4WrVal = 0x4;
+	HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
+	indexB++;
+
+	u4WrAddr = 0x18400120;
+	u4WrVal = 0x810F0000;
+	HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
+	indexB++;
+
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
 		u4RdAddr = au4List[u4Idx];
 		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
 		DBGLOG(HAL, INFO,
-		       "\tR 0x%08x=[0x%08x]\n",
-		       u4RdAddr, u4Val);
+			"=PSOP_4_1_B%d=0x%08X=0x%08X\n",
+			indexB,
+			u4Val,
+			u4RdAddr);
+		indexB++;
 	}
 }
 
 static void mt7925_dumpAhbApbTimeoutInfo(struct ADAPTER *ad)
 {
-	uint32_t u4RdAddr, u4Val = 0, u4Idx;
+	uint32_t u4RdAddr, u4Val = 0, u4Idx, u4WrAddr, u4WrVal;
+	uint32_t indexC = 0;
 	uint32_t au4List[] = {
 		CONN_MCU_BUS_CR_AHB_APB_TIMEOUT_ADDR_ADDR,
 		CONN_MCU_BUS_CR_AHB_APB_TIMEOUT_INFO_ADDR,
@@ -1190,12 +2625,20 @@ static void mt7925_dumpAhbApbTimeoutInfo(struct ADAPTER *ad)
 		CONN_MCU_BUS_CR_AHB_APB_TIMEOUT_CTRL_ADDR
 	};
 
+	u4WrAddr = 0x18400120;
+	u4WrVal = 0x830C0000;
+	HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
+	indexC++;
+
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
 		u4RdAddr = au4List[u4Idx];
 		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
 		DBGLOG(HAL, INFO,
-		       "\tR 0x%08x=[0x%08x]\n",
-		       u4RdAddr, u4Val);
+			"=PSOP_4_1_C%d=0x%08X=0x%08X\n",
+			indexC,
+			u4Val,
+			u4RdAddr);
+		indexC++;
 	}
 }
 
@@ -1217,16 +2660,13 @@ void mt7925_DumpBusHangCr(struct ADAPTER *ad)
 		DBGLOG(HAL, ERROR, "NULL ADAPTER.\n");
 		return;
 	}
-
 	mt7925_dumpCbtopReg(ad);
 	mt7925_dumpWfsyscpupcr(ad);
 	mt7925_dumpPcGprLog(ad);
-	mt7925_dumpN45CoreReg(ad);
 	mt7925_dumpWfTopReg(ad);
 	mt7925_dumpWfBusReg(ad);
 }
 #endif
-
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 int mt7925_get_rx_rate_info(const uint32_t *prRxV,
 	struct RxRateInfo *prRxRateInfo)
@@ -1388,4 +2828,1454 @@ wrong_rate:
 #endif
 }
 
+#if defined(_HIF_USB)
+static u_int8_t usb_mt7925_ConninfraAp2WfRdableChk(struct ADAPTER *ad)
+{
+#define WIFI_IP_VER 0x03010001
+
+	uint32_t u4RdAddr, u4Val = 0;
+	u_int8_t fgStatus = FALSE;
+
+/* CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_BUS_TIMEOUT_IRQ_ADDR */
+	u4RdAddr = 0x1802362C;
+	HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+	DBGLOG(HAL, INFO,
+	   "\tR 0x%08x=[0x%08x]\n",
+	   u4RdAddr, u4Val);
+
+	u4RdAddr =
+	  MAP_DRIVER_SIDE(CONN_BUS_CR_ADDR_CONN2SUBSYS_0_AHB_GALS_DBG_ADDR);
+	HAL_UHW_RD_FIELD(ad, u4RdAddr, 26, BIT(26), &u4Val);
+	if (u4Val != 0) {
+		DBGLOG(HAL, INFO,
+		  "conn2wf sleep protect not release, skip further sop dump!\n");
+
+		return FALSE;
+	}
+
+	u4RdAddr = 0x184B0010;
+	HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+	DBGLOG(HAL, INFO,
+	   "\tR 0x%08x=[0x%08x]\n",
+	   u4RdAddr, u4Val);
+
+	if (u4Val != WIFI_IP_VER) {
+		DBGLOG(HAL, INFO,
+		  "wifi IP ver not match, skip further sop dump!\n");
+
+		return FALSE;
+	}
+
+	return TRUE;
+}
+static u_int8_t usb_mt7925_ConninfraOffRdableChk(struct ADAPTER *ad)
+{
+#define CONNINFRA_OFF_POLLING_TIME 4
+#define CONNINFRA_IP_VER 0x03010001
+	uint32_t u4RdAddr = 0, u4Addr, u4Val = 0;
+	uint32_t i = 0;
+	u_int8_t fgStatus = FALSE;
+
+	u4Addr =
+	  MAP_DRIVER_SIDE(CONN_DBG_CTL_CONN_INFRA_BUS_CLK_DETECT_ADDR);
+	HAL_UHW_WR_FIELD(ad, u4Addr, 1, 0, 0x1);
+
+	DBGLOG(HAL, INFO,
+	   "\tW 0x%08x[0]=[0x1]\n", u4Addr);
+
+	for (i = 0; i <= CONNINFRA_OFF_POLLING_TIME; i++) {
+		HAL_UHW_RD_FIELD(ad, u4Addr, 1, (BIT(1) | BIT(2)), &u4Val);
+
+		if (u4Val == 0x3)
+			break;
+		else if (i == CONNINFRA_OFF_POLLING_TIME) {
+			DBGLOG(HAL, INFO,
+			  "clock not exist, skip further sop dump!\n");
+
+			return FALSE;
+		}
+		kalUsleep_range(900, 1000);
+	}
+	u4RdAddr = MAP_DRIVER_SIDE(CONN_CFG_IP_VERSION_ADDR);
+	HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+	DBGLOG(HAL, INFO,
+	   "\tR 0x%08x=[0x%08x]\n",
+	   u4RdAddr, u4Val);
+
+	if (u4Val != CONNINFRA_IP_VER) {
+		DBGLOG(HAL, INFO,
+		  "IP ver not match, skip further sop dump!\n");
+
+		return FALSE;
+	}
+	u4RdAddr =
+	  MAP_DRIVER_SIDE(CONN_DBG_CTL_CONN_INFRA_BUS_TIMEOUT_IRQ_ADDR);
+	HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+	DBGLOG(HAL, INFO,
+	   "\tR 0x%08x=[0x%08x]\n",
+	   u4RdAddr, u4Val);
+
+	if (u4Val != 0) {
+		DBGLOG(HAL, INFO,
+		  "conn_infra off bus maybe hang, skip further sop dump!\n");
+
+		return FALSE;
+	}
+
+	return TRUE;
+}
+static u_int8_t usb_mt7925_ConninfraOnRdableChk(struct ADAPTER *ad)
+{
+	uint32_t u4RdAddr, u4Val = 0;
+	u_int8_t fgStatus = FALSE;
+
+	u4RdAddr = CB_INFRA_RGU_SLP_PROT_RDY_STAT_ADDR;
+	HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+	HAL_UHW_RD_FIELD(ad, u4RdAddr, 6, (BIT(6) | BIT(7)), &u4Val);
+
+	DBGLOG(HAL, INFO,
+	   "\tR 0x%08x[7:6]=[0x%08x]\n",
+	   u4RdAddr, u4Val);
+
+	if (u4Val != 0) {
+		DBGLOG(HAL, INFO,
+		  "sleep protect not release, skip further sop dump!\n");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+uint32_t mtk_sys_usb_spi_read(struct ADAPTER *ad, uint32_t addr)
+{
+	uint32_t u4Val = 0;
+	u_int8_t fgStatus = FALSE;
+
+	HAL_UHW_RD(ad, 0x18098000, &u4Val, &fgStatus);
+	if ((u4Val & BIT(5)) != BIT(5)) {
+		u4Val = 0x0000B000 | addr;
+		HAL_UHW_WR_FIELD(ad, 0x18098050, u4Val, 0, 0xFFFFFFFF);
+		HAL_UHW_WR_FIELD(ad, 0x18098054, 0, 0, 0xFFFFFFFF);
+		HAL_UHW_RD(ad, 0x18098000, &u4Val, &fgStatus);
+		if ((u4Val & BIT(5)) != BIT(5))
+			HAL_UHW_RD(ad, 0x18098058, &u4Val, &fgStatus);
+	}
+	return u4Val;
+}
+static void usb_mt7925_dumpConninfraPwrDbg(struct ADAPTER *ad,
+u_int8_t fgOnDomain)
+{
+	uint32_t u4Val = 0, u4Addr;
+	struct dump_cr_set *dump = NULL;
+	uint32_t size = 0;
+	uint32_t i = 0;
+	uint32_t indexB = 1;
+	uint32_t indexC = 1;
+	uint32_t indexE = 1;
+	uint32_t indexD[12] = {1, 2, 3, 4, 5, 9, 10, 11, 15, 16, 19, 20};
+	u_int8_t fgStatus = FALSE;
+
+	if (fgOnDomain) {
+		dump = conninfra_pwr_on_domain_dump_list;
+		size = ARRAY_SIZE(conninfra_pwr_on_domain_dump_list);
+		for (i = 0; i < size; i++) {
+			if (!IS_CONN_INFRA_PHY_ADDR(dump[i].addr))
+				u4Addr = MAP_DRIVER_SIDE(dump[i].addr);
+			else
+				u4Addr = dump[i].addr;
+			if (dump[i].read) {
+				HAL_UHW_RD(ad,
+					u4Addr,
+					&u4Val,
+					&fgStatus);
+				DBGLOG(HAL, INFO,
+					"=PSOP_2_1_B%d=0x%08X=0x%08X\n",
+					indexB,
+					u4Val,
+					u4Addr);
+				indexB++;
+			} else {
+				HAL_UHW_WR_FIELD(ad,
+					u4Addr,
+					dump[i].value,
+					dump[i].shift,
+					dump[i].mask);
+			}
+		}
+	} else {
+		dump = conninfra_pwr_off_domain_dump_list;
+		size = ARRAY_SIZE(conninfra_pwr_off_domain_dump_list);
+		for (i = 0; i < size; i++) {
+			if (!IS_CONN_INFRA_PHY_ADDR(dump[i].addr))
+				u4Addr = MAP_DRIVER_SIDE(dump[i].addr);
+			else
+				u4Addr = dump[i].addr;
+			if (dump[i].read) {
+				HAL_UHW_RD(ad,
+					u4Addr,
+					&u4Val,
+					&fgStatus);
+				DBGLOG(HAL, INFO,
+					"=PSOP_2_1_C%d=0x%08X=0x%08X\n",
+					indexC,
+					u4Val,
+					u4Addr);
+				indexC++;
+			} else {
+				HAL_UHW_WR_FIELD(ad,
+					u4Addr,
+					dump[i].value,
+					dump[i].shift,
+					dump[i].mask);
+			}
+		}
+
+		dump = conninfra_pwr_adie_common_dump_list;
+		size = ARRAY_SIZE(conninfra_pwr_adie_common_dump_list);
+		for (i = 0; i < size; i++) {
+			u4Addr = dump[i].addr;
+			u4Val = mtk_sys_usb_spi_read(ad, u4Addr);
+			DBGLOG(HAL, INFO,
+				"=PSOP_2_1_D%d=0x%08X=0x%08X\n",
+				indexD[i],
+				u4Val,
+				u4Addr);
+		}
+
+		dump = conninfra_pwr_adie_7971_dump_list;
+		size = ARRAY_SIZE(conninfra_pwr_adie_7971_dump_list);
+		for (i = 0; i < size; i++) {
+			u4Addr = dump[i].addr;
+			u4Val = mtk_sys_usb_spi_read(ad, u4Addr);
+			DBGLOG(HAL, INFO,
+				"=PSOP_2_1_E%d=0x%08X=0x%08X\n",
+				indexE,
+				u4Val,
+				u4Addr);
+			indexE++;
+		}
+	}
+}
+
+static void usb_mt7925_dumpConninfraBusDbg(struct ADAPTER *ad,
+	u_int8_t fgOnDomain)
+{
+	uint32_t u4RdAddr, u4WrAddr, u4Addr, u4Val = 0, u4Idx;
+	struct dump_cr_set *dump = NULL;
+	uint32_t size = 0;
+	uint32_t i = 0;
+	u_int8_t fgStatus = FALSE;
+	uint32_t indexA = 1;
+	uint32_t indexB = 1;
+	uint32_t indexC = 1;
+
+	if (fgOnDomain) {
+		dump = conninfra_bus_on_domain_dump_list;
+		size = ARRAY_SIZE(conninfra_bus_on_domain_dump_list);
+
+		for (i = 0; i < size; i++) {
+			if (!IS_CONN_INFRA_PHY_ADDR(dump[i].addr))
+				u4Addr = MAP_DRIVER_SIDE(dump[i].addr);
+			else
+				u4Addr = dump[i].addr;
+
+			if (dump[i].read) {
+				HAL_UHW_RD(ad,
+					u4Addr,
+					&u4Val,
+					&fgStatus);
+				DBGLOG(HAL, INFO,
+					"=PSOP_1_1_A%d=0x%08X=0x%08X\n",
+					indexA,
+					u4Val,
+					u4Addr);
+				indexA++;
+			} else {
+				HAL_UHW_WR_FIELD(ad,
+					u4Addr,
+					dump[i].value,
+					dump[i].shift,
+					dump[i].mask);
+			}
+		}
+	} else {
+		dump = conninfra_bus_off_domain_dump_bf_list;
+		size = ARRAY_SIZE(conninfra_bus_off_domain_dump_bf_list);
+
+		for (i = 0; i < size; i++) {
+			if (!IS_CONN_INFRA_PHY_ADDR(dump[i].addr))
+				u4Addr = MAP_DRIVER_SIDE(dump[i].addr);
+			else
+				u4Addr = dump[i].addr;
+
+			if (dump[i].read) {
+				HAL_UHW_RD(ad,
+					u4Addr,
+					&u4Val,
+					&fgStatus);
+				DBGLOG(HAL, INFO,
+					"=PSOP_1_1_B%d=0x%08X=0x%08X\n",
+					indexB,
+					u4Val,
+					u4Addr);
+				indexB++;
+			} else {
+				HAL_UHW_WR_FIELD(ad,
+					u4Addr,
+					dump[i].value,
+					dump[i].shift,
+					dump[i].mask);
+			}
+		}
+		u4WrAddr =
+		  MAP_DRIVER_SIDE(CONN_DBG_CTL_CONN_INFRA_OFF_BUS_DBG_SEL_ADDR);
+		u4RdAddr =
+		  MAP_DRIVER_SIDE(CONN_DBG_CTL_CONN_INFRA_OFF_BUS_DBG_OUT_ADDR);
+		for (u4Idx = 0x13; u4Idx <= 0x2d; u4Idx++) {
+			HAL_UHW_WR(ad, u4WrAddr, u4Idx, &fgStatus);
+
+			HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+			DBGLOG(HAL, INFO,
+				"=PSOP_1_1_B%d=0x%08X=0x%08X\n",
+				indexB,
+				u4Val,
+				u4RdAddr);
+			indexB++;
+		}
+
+		for (u4Idx = 0x01; u4Idx <= 0x12; u4Idx++) {
+			HAL_UHW_WR(ad, u4WrAddr, u4Idx, &fgStatus);
+
+			HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+			DBGLOG(HAL, INFO,
+				"=PSOP_1_1_B%d=0x%08X=0x%08X\n",
+				indexB,
+				u4Val,
+				u4RdAddr);
+			indexB++;
+		}
+
+		dump = conninfra_bus_off_domain_dump_af_list;
+		size = ARRAY_SIZE(conninfra_bus_off_domain_dump_af_list);
+
+		for (i = 0; i < size; i++) {
+			if (!IS_CONN_INFRA_PHY_ADDR(dump[i].addr))
+				u4Addr = MAP_DRIVER_SIDE(dump[i].addr);
+			else
+				u4Addr = dump[i].addr;
+
+			if (dump[i].read) {
+				HAL_UHW_RD(ad,
+					u4Addr,
+					&u4Val,
+					&fgStatus);
+				DBGLOG(HAL, INFO,
+					"=PSOP_1_1_B%d=0x%08X=0x%08X\n",
+					indexB,
+					u4Val,
+					u4Addr);
+				indexB++;
+			} else {
+				HAL_UHW_WR_FIELD(ad,
+					u4Addr,
+					dump[i].value,
+					dump[i].shift,
+					dump[i].mask);
+			}
+		}
+		dump = conninfra_bus_off_domain_dump_af_list_c;
+		size = ARRAY_SIZE(conninfra_bus_off_domain_dump_af_list_c);
+
+		for (i = 0; i < size; i++) {
+			if (!IS_CONN_INFRA_PHY_ADDR(dump[i].addr))
+				u4Addr = MAP_DRIVER_SIDE(dump[i].addr);
+			else
+				u4Addr = dump[i].addr;
+
+			if (dump[i].read) {
+				HAL_UHW_RD(ad,
+					u4Addr,
+					&u4Val,
+					&fgStatus);
+				DBGLOG(HAL, INFO,
+					"=PSOP_1_1_C%d=0x%08X=0x%08X\n",
+					indexC,
+					u4Val,
+					u4Addr);
+				indexC++;
+			} else {
+				HAL_UHW_WR_FIELD(ad,
+					u4Addr,
+					dump[i].value,
+					dump[i].shift,
+					dump[i].mask);
+			}
+		}
+		u4Addr = 0x70028730;
+		HAL_UHW_RD(ad, u4Addr, &u4Val, &fgStatus);
+		DBGLOG(HAL, INFO,
+			"=PSOP_1_1_C%d=0x%08X=0x%08X\n",
+			indexC, u4Val, u4Addr);
+	}
+}
+
+static void usb_mt7925_dumpConninfraClkDbg(struct ADAPTER *ad,
+	u_int8_t fgOnDomain)
+{
+	uint32_t u4Addr, u4Val = 0;
+	struct dump_cr_set *dump = NULL;
+	uint32_t size = 0;
+	uint32_t i = 0;
+	uint32_t indexA = 1;
+	uint32_t indexB = 1;
+	u_int8_t fgStatus = FALSE;
+
+	if (fgOnDomain) {
+		dump = conninfra_clk_on_domain_dump_list;
+		size = ARRAY_SIZE(conninfra_clk_on_domain_dump_list);
+
+		for (i = 0; i < size; i++) {
+			if (!IS_CONN_INFRA_PHY_ADDR(dump[i].addr))
+				u4Addr = MAP_DRIVER_SIDE(dump[i].addr);
+			else
+				u4Addr = dump[i].addr;
+
+			if (dump[i].read) {
+				HAL_UHW_RD(ad,
+					u4Addr,
+					&u4Val,
+					&fgStatus);
+				DBGLOG(HAL, INFO,
+					"=PSOP_8_1_A%d=0x%08X=0x%08X\n",
+					indexA,
+					u4Val,
+					u4Addr);
+				indexA++;
+			} else {
+				HAL_UHW_WR_FIELD(ad,
+					u4Addr,
+					dump[i].value,
+					dump[i].shift,
+					dump[i].mask);
+				DBGLOG(HAL, INFO,
+					"WR 0x%08x=0x%08x\n",
+					u4Addr,
+					dump[i].value);
+			}
+		}
+	} else {
+		dump = conninfra_clk_off_domain_dump_list;
+		size = ARRAY_SIZE(conninfra_clk_off_domain_dump_list);
+
+		for (i = 0; i < size; i++) {
+			if (!IS_CONN_INFRA_PHY_ADDR(dump[i].addr))
+				u4Addr = MAP_DRIVER_SIDE(dump[i].addr);
+			else
+				u4Addr = dump[i].addr;
+
+			if (dump[i].read) {
+				HAL_UHW_RD(ad,
+					u4Addr,
+					&u4Val,
+					&fgStatus);
+				DBGLOG(HAL, INFO,
+					"=PSOP_8_1_B%d=0x%08X=0x%08X\n",
+					indexB,
+					u4Val,
+					u4Addr);
+				indexB++;
+			} else {
+				HAL_UHW_WR_FIELD(ad,
+					u4Addr,
+					dump[i].value,
+					dump[i].shift,
+					dump[i].mask);
+				DBGLOG(HAL, INFO,
+					"WR 0x%08x=0x%08x\n",
+					u4Addr,
+					dump[i].value);
+			}
+		}
+	}
+}
+
+static void usb_mt7925_dumpConninfraReg(struct ADAPTER *ad)
+{
+	uint32_t u4RdAddr, u4Val = 0;
+	u_int8_t fgStatus = FALSE;
+
+	if (!usb_mt7925_ConninfraOnRdableChk(ad))
+		return;
+
+	u4RdAddr = MAP_DRIVER_SIDE(CONN_HOST_CSR_TOP_CONNSYS_PWR_STATES_ADDR);
+	HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+	DBGLOG(HAL, INFO,
+	       "\tR 0x%08x=[0x%08x]\n",
+	       u4RdAddr, u4Val);
+
+	/* Dump on domain */
+	usb_mt7925_dumpConninfraPwrDbg(ad, TRUE);
+	usb_mt7925_dumpConninfraBusDbg(ad, TRUE);
+	usb_mt7925_dumpConninfraClkDbg(ad, TRUE);
+
+	if (!usb_mt7925_ConninfraOffRdableChk(ad))
+		return;
+
+	/* Dump off domain */
+	usb_mt7925_dumpConninfraPwrDbg(ad, FALSE);
+	usb_mt7925_dumpConninfraBusDbg(ad, FALSE);
+	usb_mt7925_dumpConninfraClkDbg(ad, FALSE);
+}
+
+static void usb_mt7925_dumpWfTopMiscOn(struct ADAPTER *ad)
+{
+	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4RdAddr, u4WrAddr;
+	u_int8_t fgStatus = FALSE;
+	uint32_t indexA = 1;
+	uint32_t au4List[] = {
+		0x00000000, 0x00000001, 0x00000002, 0x00000003, 0x00000004,
+		0x00000010, 0x00000012, 0x00000017, 0x00000018, 0x00000019,
+		0x0000001A, 0x0000001B, 0x0000001D
+	};
+
+	u4WrAddr =
+	  MAP_DRIVER_SIDE(CONN_HOST_CSR_TOP_WF_ON_MONFLG_EN_FR_HIF_ADDR);
+	u4WrVal = 0x00000001;
+	HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
+	DBGLOG(HAL, INFO,
+	       "\tW 0x%08x=[0x%08x]\n",
+	       u4WrAddr, u4WrVal);
+
+	u4WrAddr =
+	  MAP_DRIVER_SIDE(CONN_HOST_CSR_TOP_WF_ON_MONFLG_SEL_FR_HIF_ADDR);
+	u4RdAddr =
+	  MAP_DRIVER_SIDE(CONN_HOST_CSR_TOP_WF_ON_MONFLG_OUT_ADDR);
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
+		u4WrVal = au4List[u4Idx];
+		HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
+		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+		DBGLOG(HAL, INFO,
+			"=PSOP_3_1_A%d=0x%08X=0x%08X\n",
+			indexA,
+			u4Val,
+			u4RdAddr);
+		indexA++;
+	}
+}
+
+static void usb_mt7925_dumpWfTopMiscVon(struct ADAPTER *ad)
+{
+	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4RdAddr, u4WrAddr;
+	u_int8_t fgStatus = FALSE;
+	uint32_t indexB = 1;
+	uint32_t au4List[] = {
+		0x00000000, 0x00000001, 0x00000002, 0x00000003, 0x00000004,
+		0x00000008
+	};
+
+	u4WrAddr =
+	  MAP_DRIVER_SIDE(CONN_HOST_CSR_TOP_ADDR_WF_VON_MONFLG_EN_FR_HIF_ADDR);
+	u4WrVal = 0x00000001;
+	HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
+	DBGLOG(HAL, INFO,
+	       "\tW 0x%08x=[0x%08x]\n",
+	       u4WrAddr, u4WrVal);
+
+	u4WrAddr =
+	  MAP_DRIVER_SIDE(CONN_HOST_CSR_TOP_ADDR_WF_VON_MONFLG_SEL_FR_HIF_ADDR);
+	u4RdAddr =
+	  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_VON_DEBUG_OUT_ADDR);
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
+		u4WrVal = au4List[u4Idx];
+		HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
+		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+		DBGLOG(HAL, INFO,
+			"=PSOP_3_1_B%d=0x%08X=0x%08X\n",
+			indexB,
+			u4Val,
+			u4RdAddr);
+		indexB++;
+	}
+}
+
+static void usb_mt7925_dumpWfTopCfgon(struct ADAPTER *ad)
+{
+	uint32_t u4RdAddr, u4Val = 0, u4Idx;
+	u_int8_t fgStatus = FALSE;
+	uint32_t indexC = 1;
+	uint32_t au4List[] = {
+	/* Reference WF_top_cfg_on.h 0x184C_1XXX <=> 0x8102_1XXX */
+		0x184C1B00, 0x184C1B04, 0x184C1B08, 0x184C1B0C,
+		0x184C1B10, 0x184C1B14, 0x184C1B18, 0x184C1B1C,
+		0x184C1B20, 0x184C1B24, 0x184C1B28, 0x184C1B2C,
+		0x184C1B30, 0x184C1B34, 0x184C1B38, 0x184C1B3C,
+		0x184C1B40, 0x184C1B50, 0x184C1B54, 0x184C1B58,
+		0x184C1B5C, 0x184C1B60, 0x184C1B64, 0x184C1B68,
+		0x184C1B6C, 0x184C1B70, 0x184C1B74, 0x184C1B78,
+		0x184C1B7C, 0x184C1B80, 0x184C1B84, 0x184C1B88,
+		0x184C1B8C, 0x184C1B90
+	};
+
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
+		u4RdAddr = au4List[u4Idx];
+		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+		DBGLOG(HAL, INFO,
+			"=PSOP_3_1_C%d=0x%08X=0x%08X\n",
+			indexC,
+			u4Val,
+			u4RdAddr);
+		indexC++;
+	}
+}
+
+static void usb_mt7925_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad)
+{
+	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4RdAddr, u4WrAddr;
+	u_int8_t fgStatus = FALSE;
+	u_int8_t indexA = 0;
+	uint32_t au4List[] = {
+		0x00010001, 0x00020001, 0x00030001, 0x00040001, 0x00050001,
+		0x00060001, 0x00070001, 0x00080001, 0x00090001, 0x00010002,
+		0x00020002, 0x00030002, 0x00040002
+	};
+
+/* CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_BUS_TIMEOUT_IRQ_ADDR */
+	u4RdAddr = 0x1802362C;
+	u4WrAddr = MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_ADDR);
+	u4WrVal = 0x4;
+
+	HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+	DBGLOG(HAL, INFO,
+		"=PSOP_4_1_A%d=0x%08X=0x%08X\n",
+		indexA,
+		u4Val,
+		u4RdAddr);
+	indexA++;
+	HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
+	DBGLOG(HAL, INFO,
+	       "\tR 0x%08x=[0x%08x], W 0x%08x=[0x%08x]\n",
+	       u4RdAddr, u4Val, u4WrAddr, u4WrVal);
+
+/* CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_DEBUGSYS_CTRL_ADDR */
+	u4WrAddr = 0x18023628;
+	u4RdAddr =
+	  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR);
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
+		u4WrVal = au4List[u4Idx];
+		HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
+		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+		DBGLOG(HAL, INFO,
+			"=PSOP_4_1_A%d=0x%08X=0x%08X\n",
+			indexA,
+			u4Val,
+			u4RdAddr);
+		indexA++;
+	}
+}
+
+static void usb_mt7925_dumpWfVdnrTimeoutInfo(struct ADAPTER *ad)
+{
+	uint32_t u4RdAddr, u4WrAddr, u4Val = 0, u4WrVal = 0;
+	uint32_t u4Idx;
+	u_int8_t fgStatus = FALSE;
+	uint32_t indexB = 0;
+	uint32_t au4List[] = {
+/* Ref Wf_mcusys_vdnr_gen_bus_u_debug_ctrl_ao.h 0x1850_XXXX <=> 0x810F_XXXX */
+		0x18500408, 0x1850040C, 0x18500410, 0x18500414,
+		0x18500418, 0x1850041C, 0x18500420, 0x18500424,
+		0x18500428, 0x1850042C, 0x18500430, 0x18500434,
+		0x18500438, 0x18500000
+	};
+
+	u4RdAddr = 0x1802362C;
+	HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+	DBGLOG(HAL, INFO,
+		"=PSOP_4_1_B%d=0x%08X=0x%08X\n",
+		indexB,
+		u4Val,
+		u4RdAddr);
+	indexB++;
+
+	u4WrAddr = 0x18023604;
+	u4WrVal = 0X4;
+	HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
+
+	/* switch Ap2WF to 0x810F0000. */
+	u4WrAddr = 0x18400120;
+	u4WrVal = 0x810F0000;
+	HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
+	DBGLOG(HAL, INFO,
+	       "\tW 0x%08x=[0x%08x]\n",
+	       u4WrAddr, u4WrVal);
+	indexB++;
+
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
+		u4RdAddr = au4List[u4Idx];
+		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+		DBGLOG(HAL, INFO,
+			"=PSOP_4_1_B%d=0x%08X=0x%08X\n",
+			indexB,
+			u4Val,
+			u4RdAddr);
+		indexB++;
+	}
+}
+
+static void usb_mt7925_dumpAhbApbTimeoutInfo(struct ADAPTER *ad)
+{
+	uint32_t u4RdAddr, u4WrAddr, u4Val = 0, u4WrVal = 0;
+	uint32_t u4Idx;
+	u_int8_t fgStatus = FALSE;
+	uint32_t indexC = 1;
+	uint32_t au4List[] = {
+/* Reference Conn_mcu_bus_cr.h 0x1850_XXXX <=> 0x830C_XXXX */
+		0x18501004, 0x18501010, 0x18501008,
+		0x1850100C, 0x18501000
+	};
+
+	/* switch Ap2WF to 0x830C0000. */
+	u4WrAddr = 0x18400120;
+	u4WrVal = 0x830C0000;
+	HAL_UHW_WR(ad, u4WrAddr, u4WrVal, &fgStatus);
+	DBGLOG(HAL, INFO,
+	       "\tW 0x%08x=[0x%08x]\n",
+	       u4WrAddr, u4WrVal);
+
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
+		u4RdAddr = au4List[u4Idx];
+		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+		DBGLOG(HAL, INFO,
+			"=PSOP_4_1_C%d=0x%08X=0x%08X\n",
+			indexC,
+			u4Val,
+			u4RdAddr);
+		indexC++;
+	}
+}
+
+static void usb_mt7925_dumpWfsysReg(struct ADAPTER *ad)
+{
+	/* Section A: Dump wf_top_misc_on monflag */
+	usb_mt7925_dumpWfTopMiscOn(ad);
+
+	/* Section B: Dump wf_top_misc_von monflag */
+	usb_mt7925_dumpWfTopMiscVon(ad);
+
+	/* Section A: Dump VDNR timeout host side info */
+	usb_mt7925_dumpHostVdnrTimeoutInfo(ad);
+
+	if (!usb_mt7925_ConninfraAp2WfRdableChk(ad))
+		return;
+
+	/* Section C: Dump wf_top_cfg_on debug CR */
+	usb_mt7925_dumpWfTopCfgon(ad);
+
+	/* Section B: Dump VDNR timeout wf side info */
+	usb_mt7925_dumpWfVdnrTimeoutInfo(ad);
+
+	/* Section C: Dump AHB APB timeout info */
+	usb_mt7925_dumpAhbApbTimeoutInfo(ad);
+}
+
+u_int8_t mt7925_usb_show_mcu_debug_info(struct ADAPTER *ad,
+	uint8_t *pucBuf, uint32_t u4Max, uint8_t ucFlag,
+	uint32_t *pu4Length)
+{
+	uint32_t u4Val = 0, u4Addr = 0, u4RdAddr = 0;
+	uint32_t u4Shft = 0, u4Mask = 0;
+	uint8_t  i = 0;
+	u_int8_t fgStatus = FALSE;
+
+	if (pucBuf) {
+		LOGBUF(pucBuf, u4Max, *pu4Length, "\n");
+		LOGBUF(pucBuf, u4Max, *pu4Length,
+			"----<Dump MCU Debug Information>----\n");
+	}
+	u4Addr =
+	  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_ADDR);
+	/* Enable mcu debug function. */
+	HAL_UHW_WR_FIELD(ad,
+		u4Addr,
+		0x0,
+		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_SHFT,
+		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_MASK);
+
+	u4Addr =
+	  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_ADDR);
+	/* Get currenct PC log. */
+	HAL_UHW_WR_FIELD(ad,
+		u4Addr,
+		CURRENT_PC_IDX,
+		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_SHFT,
+		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_MASK);
+
+	u4RdAddr =
+	  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR);
+
+	HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+
+	DBGLOG(INIT, INFO, "Current PC LOG: 0x%08x\n", u4Val);
+	if (pucBuf)
+		LOGBUF(pucBuf, u4Max, *pu4Length,
+		"Current PC LOG: 0x%08x\n", u4Val);
+
+	if (ucFlag != DBG_MCU_DBG_CURRENT_PC) {
+		u4Shft =
+		  CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_SHFT;
+		u4Mask =
+		  CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_MASK;
+		u4Addr =
+		  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_ADDR);
+
+		HAL_UHW_WR_FIELD(ad, u4Addr, PC_LOG_CTRL_IDX,
+		  u4Shft, u4Mask);
+
+		u4RdAddr =
+		  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR);
+
+		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+
+		DBGLOG(INIT, INFO, "PC log contorl=0x%08x\n", u4Val);
+		if (pucBuf)
+			LOGBUF(pucBuf, u4Max, *pu4Length,
+			"PC log contorl=0x%08x\n", u4Val);
+
+		u4Addr =
+		  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_ADDR);
+
+		u4RdAddr =
+		  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR);
+
+		for (i = 0; i < PC_LOG_NUM_CE; i++) {
+			HAL_UHW_WR_FIELD(ad,
+			u4Addr,
+			i,
+			u4Shft,
+			u4Mask);
+
+		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+
+		DBGLOG(INIT, INFO, "PC log(%d)=0x%08x\n", i, u4Val);
+		if (pucBuf)
+			LOGBUF(pucBuf, u4Max, *pu4Length,
+			"PC log(%d)=0x%08x\n", i, u4Val);
+		}
+		/* Read LR log. */
+		u4Shft =
+		CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_SHFT;
+
+		u4Mask =
+		CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_MASK;
+
+		u4Addr =
+		  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_ADDR);
+
+		HAL_UHW_WR_FIELD(ad,
+		  u4Addr,
+		  PC_LOG_CTRL_IDX,
+		  u4Shft,
+		  u4Mask);
+
+		u4RdAddr =
+		  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR);
+
+		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+
+		DBGLOG(INIT, INFO, "LR log contorl=0x%08x\n", u4Val);
+
+		u4Addr =
+		  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_ADDR);
+
+		u4RdAddr =
+		  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR);
+
+		if (pucBuf)
+			LOGBUF(pucBuf, u4Max, *pu4Length,
+			"LR log contorl=0x%08x\n", u4Val);
+
+		for (i = 0; i < GPR_LOG_NUM_CE; i++) {
+			HAL_UHW_WR_FIELD(ad,
+			u4Addr,
+			i,
+			u4Shft,
+			u4Mask);
+
+			HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+
+			DBGLOG(INIT, INFO, "LR log(%d)=0x%08x\n", i, u4Val);
+			if (pucBuf)
+				LOGBUF(pucBuf, u4Max, *pu4Length,
+				"LR log(%d)=0x%08x\n", i, u4Val);
+		}
+	}
+	return TRUE;
+}
+#endif
+
+#if defined(_HIF_PCIE)
+uint32_t mtk_sys_pci_spi_read(struct ADAPTER *ad, uint32_t addr)
+{
+	uint32_t u4Val = 0;
+
+	HAL_MCR_RD(ad, 0x7C098000, &u4Val);
+	if ((u4Val & BIT(5)) != BIT(5)) {
+		u4Val = 0x0000B000 | addr;
+		HAL_MCR_WR_FIELD(ad, 0x7C098050, u4Val,
+			0, 0xFFFFFFFF);
+		HAL_MCR_WR_FIELD(ad, 0x7C098054, 0,
+			0, 0xFFFFFFFF);
+		HAL_MCR_RD(ad, 0x7C098000, &u4Val);
+		if ((u4Val & BIT(5)) != BIT(5))
+			HAL_MCR_RD(ad, 0x7C098058, &u4Val);
+	}
+	return u4Val;
+}
+
+static u_int8_t mt7925_ConninfraOnRdableChk(struct ADAPTER *ad)
+{
+	uint32_t u4RdAddr, u4Val = 0;
+
+	u4RdAddr = CB_INFRA_RGU_SLP_PROT_RDY_STAT_ADDR;
+	HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+	HAL_MCR_RD_FIELD(ad, u4RdAddr, 6, (BIT(6) | BIT(7)), &u4Val);
+
+	DBGLOG(HAL, INFO,
+	   "\tR 0x%08x[7:6]=[0x%08x]\n",
+	   u4RdAddr, u4Val);
+
+	if (u4Val != 0) {
+		DBGLOG(HAL, INFO,
+		  "sleep protect not release, skip further sop dump!\n");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static u_int8_t mt7925_ConninfraOffRdableChk(struct ADAPTER *ad)
+{
+#define CONNINFRA_OFF_POLLING_TIME 4
+#define CONNINFRA_IP_VER 0x03010001
+	uint32_t u4RdAddr = 0, u4Addr, u4Val = 0;
+	uint32_t i = 0;
+
+	u4Addr = CONN_DBG_CTL_CONN_INFRA_BUS_CLK_DETECT_ADDR;
+	HAL_MCR_WR_FIELD(ad, u4Addr, 1, 0, 0x1);
+
+	DBGLOG(HAL, INFO,
+	   "\tW 0x%08x[0]=[0x1]\n", u4Addr);
+
+	for (i = 0; i <= CONNINFRA_OFF_POLLING_TIME; i++) {
+		HAL_MCR_RD_FIELD(ad, u4Addr, 1, (BIT(1) | BIT(2)), &u4Val);
+
+		if (u4Val == 0x3)
+			break;
+		else if (i == CONNINFRA_OFF_POLLING_TIME) {
+			DBGLOG(HAL, INFO,
+			  "clock not exist, skip further sop dump!\n");
+
+			return FALSE;
+		}
+		kalUsleep_range(900, 1000);
+	}
+	u4RdAddr = CONN_CFG_IP_VERSION_ADDR;
+	HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+	DBGLOG(HAL, INFO,
+	   "\tR 0x%08x=[0x%08x]\n",
+	   u4RdAddr, u4Val);
+
+	if (u4Val != CONNINFRA_IP_VER) {
+		DBGLOG(HAL, INFO,
+		  "IP ver not match, skip further sop dump!\n");
+
+		return FALSE;
+	}
+	u4RdAddr = CONN_DBG_CTL_CONN_INFRA_BUS_TIMEOUT_IRQ_ADDR;
+	HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+	DBGLOG(HAL, INFO,
+	   "\tR 0x%08x=[0x%08x]\n",
+	   u4RdAddr, u4Val);
+
+	if (u4Val != 0) {
+		DBGLOG(HAL, INFO,
+		  "conn_infra off bus maybe hang, skip further sop dump!\n");
+
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static u_int8_t mt7925_ConninfraAp2WfRdableChk(struct ADAPTER *ad)
+{
+#define WIFI_IP_VER 0x03010001
+
+	uint32_t u4RdAddr, u4Val = 0;
+
+/* CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_BUS_TIMEOUT_IRQ_ADDR */
+	u4RdAddr = 0x7C02362C;
+	HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+	DBGLOG(HAL, INFO,
+	   "\tR 0x%08x=[0x%08x]\n",
+	   u4RdAddr, u4Val);
+
+	u4RdAddr = CONN_BUS_CR_ADDR_CONN2SUBSYS_0_AHB_GALS_DBG_ADDR;
+	HAL_MCR_RD_FIELD(ad, u4RdAddr, 26, BIT(26), &u4Val);
+	if (u4Val != 0) {
+		DBGLOG(HAL, INFO,
+		  "conn2wf sleep protect not release, skip further sop dump!\n");
+
+		return FALSE;
+	}
+
+	u4RdAddr = 0x184B0010;
+	HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+	DBGLOG(HAL, INFO,
+	   "\tR 0x%08x=[0x%08x]\n",
+	   u4RdAddr, u4Val);
+
+	if (u4Val != WIFI_IP_VER) {
+		DBGLOG(HAL, INFO,
+		  "wifi IP ver not match, skip further sop dump!\n");
+
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static void mt7925_dumpConninfraPwrDbg(struct ADAPTER *ad, u_int8_t fgOnDomain)
+{
+	uint32_t u4Val = 0;
+	struct dump_cr_set *dump = NULL;
+	uint32_t size = 0;
+	uint32_t i = 0;
+	uint32_t indexB = 1;
+	uint32_t indexC = 1;
+	uint32_t indexD[12] = {1, 2, 3, 4, 5, 9, 10, 11, 15, 16, 19, 20};
+	uint32_t indexE = 1;
+
+	if (fgOnDomain) {
+		dump = conninfra_pwr_on_domain_dump_list;
+		size = ARRAY_SIZE(conninfra_pwr_on_domain_dump_list);
+		for (i = 0; i < size; i++) {
+			if (dump[i].read) {
+				HAL_MCR_RD(ad,
+					dump[i].addr,
+					&u4Val);
+				DBGLOG(HAL, INFO,
+					"=PSOP_2_1_B%d=0x%08X=0x%08X\n",
+					indexB,
+					u4Val,
+					dump[i].addr);
+				indexB++;
+			} else {
+				HAL_MCR_WR_FIELD(ad,
+				dump[i].addr,
+				dump[i].value,
+				dump[i].shift,
+				dump[i].mask);
+			}
+		}
+	} else {
+		dump = conninfra_pwr_off_domain_dump_list;
+		size = ARRAY_SIZE(conninfra_pwr_off_domain_dump_list);
+		for (i = 0; i < size; i++) {
+			if (dump[i].read) {
+				HAL_MCR_RD(ad,
+					dump[i].addr,
+					&u4Val);
+				DBGLOG(HAL, INFO,
+					"=PSOP_2_1_C%d=0x%08X=0x%08X\n",
+					indexC,
+					u4Val,
+					dump[i].addr);
+				indexC++;
+			} else {
+				HAL_MCR_WR_FIELD(ad,
+				dump[i].addr,
+				dump[i].value,
+				dump[i].shift,
+				dump[i].mask);
+			}
+		}
+		dump = conninfra_pwr_adie_common_dump_list;
+		size = ARRAY_SIZE(conninfra_pwr_adie_common_dump_list);
+		for (i = 0; i < size; i++) {
+			u4Val = mtk_sys_pci_spi_read(ad, dump[i].addr);
+			DBGLOG(HAL, INFO,
+				"=PSOP_2_1_D%d=0x%08X=0x%08X\n",
+				indexD[i],
+				u4Val,
+				dump[i].addr);
+		}
+
+		dump = conninfra_pwr_adie_7971_dump_list;
+		size = ARRAY_SIZE(conninfra_pwr_adie_7971_dump_list);
+		for (i = 0; i < size; i++) {
+			u4Val = mtk_sys_pci_spi_read(ad, dump[i].addr);
+			DBGLOG(HAL, INFO,
+				"=PSOP_2_1_E%d=0x%08X=0x%08X\n",
+				indexE,
+				u4Val,
+				dump[i].addr);
+			indexE++;
+		}
+	}
+}
+
+static void mt7925_dumpConninfraBusDbg(struct ADAPTER *ad,
+	u_int8_t fgOnDomain)
+{
+	uint32_t u4RdAddr, u4WrAddr, u4Val = 0, u4Idx;
+	struct dump_cr_set *dump = NULL;
+	uint32_t size = 0;
+	uint32_t i = 0;
+	uint32_t indexA = 1;
+	uint32_t indexB = 1;
+	uint32_t indexC = 1;
+
+	if (fgOnDomain) {
+		dump = conninfra_bus_on_domain_dump_list;
+		size = ARRAY_SIZE(conninfra_bus_on_domain_dump_list);
+		for (i = 0; i < size; i++) {
+			if (dump[i].read) {
+				HAL_MCR_RD(ad,
+					   dump[i].addr,
+					   &u4Val);
+				DBGLOG(HAL, INFO,
+					"=PSOP_1_1_A%d=0x%08X=0x%08X\n",
+					indexA,
+					u4Val,
+					dump[i].addr);
+				indexA++;
+			} else {
+				HAL_MCR_WR_FIELD(ad,
+				dump[i].addr,
+				dump[i].value,
+				dump[i].shift,
+				dump[i].mask);
+			}
+		}
+	} else {
+		dump = conninfra_bus_off_domain_dump_bf_list;
+		size = ARRAY_SIZE(conninfra_bus_off_domain_dump_bf_list);
+		for (i = 0; i < size; i++) {
+			if (dump[i].read) {
+				HAL_MCR_RD(ad,
+					   dump[i].addr,
+					   &u4Val);
+				DBGLOG(HAL, INFO,
+					"=PSOP_1_1_B%d=0x%08X=0x%08X\n",
+					indexB,
+					u4Val,
+					dump[i].addr);
+				indexB++;
+			} else {
+				HAL_MCR_WR_FIELD(ad,
+				dump[i].addr,
+				dump[i].value,
+				dump[i].shift,
+				dump[i].mask);
+			}
+		}
+		u4WrAddr = CONN_DBG_CTL_CONN_INFRA_OFF_BUS_DBG_SEL_ADDR;
+		u4RdAddr = CONN_DBG_CTL_CONN_INFRA_OFF_BUS_DBG_OUT_ADDR;
+		for (u4Idx = 0x13; u4Idx <= 0x2d; u4Idx++) {
+			HAL_MCR_WR(ad, u4WrAddr, u4Idx);
+
+			HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+			DBGLOG(HAL, INFO,
+				"=PSOP_1_1_B%d=0x%08X=0x%08X\n",
+				indexB,
+				u4Val,
+				u4RdAddr);
+			indexB++;
+		}
+
+		dump = conninfra_bus_off_domain_dump_af_list;
+		size = ARRAY_SIZE(conninfra_bus_off_domain_dump_af_list);
+		for (i = 0; i < size; i++) {
+			if (dump[i].read) {
+				HAL_MCR_RD(ad,
+					   dump[i].addr,
+					   &u4Val);
+				DBGLOG(HAL, INFO,
+				"=PSOP_1_1_B%d=0x%08X=0x%08X\n",
+				indexB,
+				u4Val,
+				dump[i].addr);
+			indexB++;
+			} else {
+				HAL_MCR_WR_FIELD(ad,
+				dump[i].addr,
+				dump[i].value,
+				dump[i].shift,
+				dump[i].mask);
+			}
+		}
+		dump = conninfra_bus_off_domain_dump_af_list_c;
+		size = ARRAY_SIZE(conninfra_bus_off_domain_dump_af_list_c);
+		for (i = 0; i < size; i++) {
+			if (dump[i].read) {
+				HAL_MCR_RD(ad,
+					   dump[i].addr,
+					   &u4Val);
+				DBGLOG(HAL, INFO,
+				"=PSOP_1_1_C%d=0x%08X=0x%08X\n",
+				indexC,
+				u4Val,
+				dump[i].addr);
+			indexC++;
+			} else {
+				HAL_MCR_WR_FIELD(ad,
+				dump[i].addr,
+				dump[i].value,
+				dump[i].shift,
+				dump[i].mask);
+			}
+		}
+	}
+}
+
+static void mt7925_dumpConninfraClkDbg(struct ADAPTER *ad,
+	u_int8_t fgOnDomain)
+{
+	uint32_t u4Val = 0;
+	struct dump_cr_set *dump = NULL;
+	uint32_t size = 0;
+	uint32_t i = 0;
+	uint32_t indexA = 1;
+	uint32_t indexB = 1;
+
+	if (fgOnDomain) {
+		dump = conninfra_clk_on_domain_dump_list;
+		size = ARRAY_SIZE(conninfra_clk_on_domain_dump_list);
+		for (i = 0; i < size; i++) {
+			if (dump[i].read) {
+				HAL_MCR_RD(ad,
+					   dump[i].addr,
+					   &u4Val);
+				DBGLOG(HAL, INFO,
+					"=PSOP_8_1_A%d=0x%08X=0x%08X\n",
+					indexA,
+					u4Val,
+					dump[i].addr);
+				indexA++;
+			} else {
+				HAL_MCR_WR_FIELD(ad,
+				dump[i].addr,
+				dump[i].value,
+				dump[i].shift,
+				dump[i].mask);
+			}
+		}
+	} else {
+		dump = conninfra_clk_off_domain_dump_list;
+		size = ARRAY_SIZE(conninfra_clk_off_domain_dump_list);
+		for (i = 0; i < size; i++) {
+			if (dump[i].read) {
+				HAL_MCR_RD(ad,
+					   dump[i].addr,
+					   &u4Val);
+				DBGLOG(HAL, INFO,
+					"=PSOP_8_1_B%d=0x%08X=0x%08X\n",
+					indexB,
+					u4Val,
+					dump[i].addr);
+				indexB++;
+			} else {
+				HAL_MCR_WR_FIELD(ad,
+				dump[i].addr,
+				dump[i].value,
+				dump[i].shift,
+				dump[i].mask);
+			}
+		}
+	}
+}
+
+
+static void mt7925_dumpConninfraReg(struct ADAPTER *ad)
+{
+	uint32_t u4RdAddr, u4Val = 0;
+
+	if (!mt7925_ConninfraOnRdableChk(ad))
+		return;
+
+	u4RdAddr = CONN_HOST_CSR_TOP_CONNSYS_PWR_STATES_ADDR;
+	HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+	DBGLOG(HAL, INFO,
+	       "\tR 0x%08x=[0x%08x]\n",
+	       u4RdAddr, u4Val);
+
+	/* Dump on domain */
+	mt7925_dumpConninfraPwrDbg(ad, TRUE);
+	mt7925_dumpConninfraBusDbg(ad, TRUE);
+	mt7925_dumpConninfraClkDbg(ad, TRUE);
+
+	if (!mt7925_ConninfraOffRdableChk(ad))
+		return;
+
+	/* Dump off domain */
+	mt7925_dumpConninfraPwrDbg(ad, FALSE);
+	mt7925_dumpConninfraBusDbg(ad, FALSE);
+	mt7925_dumpConninfraClkDbg(ad, FALSE);
+}
+
+static void mt7925_dumpWfsysReg(struct ADAPTER *ad)
+{
+	/* Section A: Dump wf_top_misc_on monflag */
+	mt7925_dumpWfTopMiscOn(ad);
+
+	/* Section B: Dump wf_top_misc_von monflag */
+	mt7925_dumpWfTopMiscVon(ad);
+
+	/* Section A: Dump VDNR timeout host side info */
+	mt7925_dumpHostVdnrTimeoutInfo(ad);
+
+	if (!mt7925_ConninfraAp2WfRdableChk(ad))
+		return;
+
+	/* Section C: Dump wf_top_cfg_on debug CR */
+	mt7925_dumpWfTopCfgon(ad);
+
+	/* Section B: Dump VDNR timeout wf side info */
+	mt7925_dumpWfVdnrTimeoutInfo(ad);
+
+	/* Section C: Dump AHB APB timeout info */
+	mt7925_dumpAhbApbTimeoutInfo(ad);
+}
+
+u_int8_t mt7925_pcie_show_mcu_debug_info(struct ADAPTER *ad,
+	uint8_t *pucBuf, uint32_t u4Max, uint8_t ucFlag,
+	uint32_t *pu4Length)
+{
+	uint32_t u4Val = 0;
+	uint32_t u4Shft = 0, u4Mask = 0;
+	uint8_t  i = 0;
+
+	if (pucBuf) {
+		LOGBUF(pucBuf, u4Max, *pu4Length, "\n");
+		LOGBUF(pucBuf, u4Max, *pu4Length,
+			"----<Dump MCU Debug Information>----\n");
+	}
+	/* Enable mcu debug function. */
+	HAL_MCR_WR_FIELD(ad,
+		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_ADDR,
+		0x0,
+		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_SHFT,
+		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_MASK);
+
+	/* Get currenct PC log. */
+	HAL_MCR_WR_FIELD(ad,
+		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_ADDR,
+		CURRENT_PC_IDX,
+		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_SHFT,
+		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_MASK);
+
+	HAL_MCR_RD(ad,
+		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
+		&u4Val);
+
+	DBGLOG(INIT, INFO, "Current PC LOG: 0x%08x\n", u4Val);
+	if (pucBuf)
+		LOGBUF(pucBuf, u4Max, *pu4Length,
+		"Current PC LOG: 0x%08x\n", u4Val);
+
+	if (ucFlag != DBG_MCU_DBG_CURRENT_PC) {
+		u4Shft =
+		  CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_SHFT;
+		u4Mask =
+		  CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_MASK;
+
+		HAL_MCR_WR_FIELD(ad,
+		  CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_ADDR,
+		  PC_LOG_CTRL_IDX,
+		  u4Shft,
+		  u4Mask);
+
+		HAL_MCR_RD(ad,
+			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
+			&u4Val);
+
+		DBGLOG(INIT, INFO, "PC log contorl=0x%08x\n", u4Val);
+		if (pucBuf)
+			LOGBUF(pucBuf, u4Max, *pu4Length,
+			"PC log contorl=0x%08x\n", u4Val);
+
+		for (i = 0; i < PC_LOG_NUM_CE; i++) {
+			HAL_MCR_WR_FIELD(ad,
+			  CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_ADDR,
+			  i,
+			  u4Shft,
+			  u4Mask);
+			HAL_MCR_RD(ad,
+			  CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
+			  &u4Val);
+
+			DBGLOG(INIT, INFO, "PC log(%d)=0x%08x\n", i, u4Val);
+			if (pucBuf)
+				LOGBUF(pucBuf, u4Max, *pu4Length,
+				"PC log(%d)=0x%08x\n", i, u4Val);
+		}
+		/* Read LR log. */
+		u4Shft =
+		CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_SHFT;
+		u4Mask =
+		CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_MASK;
+		HAL_MCR_WR_FIELD(ad,
+			CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_ADDR,
+			PC_LOG_CTRL_IDX,
+			u4Shft,
+			u4Mask);
+		HAL_MCR_RD(ad,
+			CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR,
+			&u4Val);
+		DBGLOG(INIT, INFO, "LR log contorl=0x%08x\n", u4Val);
+		if (pucBuf)
+			LOGBUF(pucBuf, u4Max, *pu4Length,
+			"LR log contorl=0x%08x\n", u4Val);
+
+		for (i = 0; i < GPR_LOG_NUM_CE; i++) {
+			HAL_MCR_WR_FIELD(ad,
+			  CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_ADDR,
+			  i,
+			  u4Shft,
+			  u4Mask);
+			HAL_MCR_RD(ad,
+			  CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR,
+			  &u4Val);
+			DBGLOG(INIT, INFO, "LR log(%d)=0x%08x\n", i, u4Val);
+			if (pucBuf)
+				LOGBUF(pucBuf, u4Max, *pu4Length,
+				"LR log(%d)=0x%08x\n", i, u4Val);
+		}
+	}
+
+	return TRUE;
+
+}
+#endif
+
+u_int8_t mt7925_show_debug_sop_info(struct ADAPTER *ad,
+	uint8_t ucCase)
+{
+	switch (ucCase) {
+	case SLAVENORESP:
+		DBGLOG(HAL, ERROR, "Slave no response!\n");
+#if defined(_HIF_USB)
+		usb_mt7925_dumpConninfraReg(ad);
+		usb_mt7925_dumpWfsysReg(ad);
+#elif defined(_HIF_PCIE)
+		mt7925_dumpCbtopReg(ad);
+		mt7925_dumpConninfraReg(ad);
+		mt7925_dumpWfsysReg(ad);
+#endif
+		break;
+	default:
+		break;
+	}
+
+	return TRUE;
+}
 #endif /* MT7925 */
