@@ -8243,11 +8243,8 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 				gatewayIp[2] = prBootp->aucOptions[i + 8];
 				gatewayIp[3] = prBootp->aucOptions[i + 9];
 
-				DBGLOG(INIT, TRACE, "Gateway ip: %d.%d.%d.%d\n",
-					gatewayIp[0],
-					gatewayIp[1],
-					gatewayIp[2],
-					gatewayIp[3]);
+				DBGLOG(INIT, TRACE, "Gateway ip: " IPV4STR "\n",
+					IPV4TOSTR(&gatewayIp[0]));
 			};
 			dhcpGatewayGot = 1;
 			break;

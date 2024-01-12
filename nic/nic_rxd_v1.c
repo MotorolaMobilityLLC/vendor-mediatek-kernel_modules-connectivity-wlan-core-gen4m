@@ -518,13 +518,8 @@ void nic_rxd_v1_check_wakeup_reason(
 		case ETH_P_IPV4:
 			u2Temp = *(uint16_t *) &pvHeader[ETH_HLEN + 4];
 			DBGLOG(RX, INFO,
-				"IP Packet from:%d.%d.%d.%d,",
-				pvHeader[ETH_HLEN + 12],
-				pvHeader[ETH_HLEN + 13],
-				pvHeader[ETH_HLEN + 14],
-				pvHeader[ETH_HLEN + 15]);
-			DBGLOG(RX, INFO,
-				" IP ID 0x%04x wakeup host\n",
+				"IP Pkt [" IPV4STR ",IPID:0x%04x] wakeup host",
+				IPV4TOSTR(&pvHeader[ETH_HLEN + 12]),
 				u2Temp);
 			break;
 		case ETH_P_ARP:
