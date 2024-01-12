@@ -380,6 +380,7 @@ struct FWDL_OPS_T mt6639_fw_dl_ops = {
 	.downloadByDynMemMap = NULL,
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
+	.downloadEMI = wlanDownloadEMISectionViaDma,
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 

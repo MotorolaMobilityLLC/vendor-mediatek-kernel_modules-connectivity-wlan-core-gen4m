@@ -288,6 +288,7 @@ struct FWDL_OPS_T soc2_1x1_fw_dl_ops = {
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
 	.phyAction = NULL,
+	.downloadEMI = wlanDownloadEMISection,
 };
 
 struct TX_DESC_OPS_T soc2_1x1TxDescOps = {
