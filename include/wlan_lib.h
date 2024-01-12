@@ -200,7 +200,7 @@
 #if CFG_SUPPORT_NCHO
 #define WLAN_CFG_ARGV_MAX 64
 #else
-#define WLAN_CFG_ARGV_MAX 8
+#define WLAN_CFG_ARGV_MAX 10
 #endif
 #define WLAN_CFG_ARGV_MAX_LONG	22	/* for WOW, 2+20 */
 #define WLAN_CFG_ENTRY_NUM_MAX	200	/* 128 */
