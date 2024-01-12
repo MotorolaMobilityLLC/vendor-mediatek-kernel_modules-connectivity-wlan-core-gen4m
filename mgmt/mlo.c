@@ -3802,9 +3802,9 @@ int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 		DBGLOG(ML, WARN, "starec(idx=%d, widx=%d) not in use",
 			prStarec->ucIndex, prStarec->ucWlanIndex);
 		return -EINVAL;
-	} else if (ucLinkId >= MLD_MAX_NUM_LINKS) {
+	} else if (ucLinkId >= MAX_NUM_MLO_LINKS) {
 		DBGLOG(ML, WARN, "wrong linkid=%d >= %d",
-			ucLinkId, MLD_MAX_NUM_LINKS);
+			ucLinkId, MAX_NUM_MLO_LINKS);
 		return -EINVAL;
 	}
 

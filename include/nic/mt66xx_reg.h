@@ -23,6 +23,15 @@
  */
 
 /*******************************************************************************
+ *			T Y P E   D E C L A R A T I O N S
+ *******************************************************************************
+ */
+
+#if (CFG_SUPPORT_APS == 1)
+struct AP_COLLECTION;
+#endif
+
+/*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
  */
@@ -1660,6 +1669,12 @@ struct mt66xx_chip_info {
 		struct mt66xx_chip_info *prChipInfo,
 		enum HIF_DEV_REG_REASON eReason);
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
+
+#if (CFG_SUPPORT_APS == 1)
+	uint8_t (*apsLinkPlanDecision)(struct ADAPTER *prAdapter,
+		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
+		uint8_t ucBssidx);
+#endif
 
 	/* If you want to explicitly specify the max AMPDU length exponent in
 	 * HE CAP IE instead of using default one specified by

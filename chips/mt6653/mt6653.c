@@ -190,6 +190,12 @@ static uint32_t mt6653_wlanDownloadPatch(struct ADAPTER *prAdapter);
 static void mt6653WiFiNappingCtrl(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 #endif
 
+#if (CFG_SUPPORT_APS == 1)
+static uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
+		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
+		uint8_t ucBssIndex);
+#endif
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
@@ -1037,6 +1043,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.isSupportMddpSHM = false,
 #endif
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
+#if (CFG_SUPPORT_APS == 1)
+	.apsLinkPlanDecision = mt6653_apsLinkPlanDecision,
+#endif
 #if defined(CFG_MTK_WIFI_PMIC_QUERY)
 	.queryPmicInfo = asicConnac3xQueryPmicInfo,
 #endif
@@ -3538,4 +3547,31 @@ static void mt6653WiFiNappingCtrl(
 		   CONN_HOST_CSR_TOP_ADDR_CR_CONN_AON_TOP_RESERVE_ADDR,
 		   u4value);
 }
+
+#if (CFG_SUPPORT_APS == 1)
+uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
+		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
+		uint8_t ucBssIndex)
+{
+	uint16_t i;
+	enum ENUM_BAND aeLinkPlan[][APS_LINK_MAX] = {
+		{BAND_2G4, BAND_5G, BAND_5G},
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		{BAND_2G4, BAND_5G, BAND_6G},
+		{BAND_2G4, BAND_6G, BAND_6G},
+#endif
+	};
+
+	/* select best link plan */
+	for (i = 0; i < ARRAY_SIZE(aeLinkPlan); ++i) {
+		enum ENUM_BAND *link_plan = aeLinkPlan[i];
+
+		if (!kalMemCmp(paeLinkPlan, link_plan, sizeof(aeLinkPlan[0])))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+#endif /* CFG_SUPPORT_APS */
+
 #endif  /* MT6653 */
