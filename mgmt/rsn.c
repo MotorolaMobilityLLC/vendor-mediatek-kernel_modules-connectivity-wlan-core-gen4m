@@ -2259,7 +2259,7 @@ uint32_t rsnFlushPmkid(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 		aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	cache = &prAisSpecBssInfo->rPmkidCache;
 
-	DBGLOG(RSN, INFO, "[%d] Flush Pmkid total:%d\n",
+	DBGLOG(RSN, TRACE, "[%d] Flush Pmkid total:%d\n",
 		ucBssIndex,
 		cache->u4NumElem);
 
