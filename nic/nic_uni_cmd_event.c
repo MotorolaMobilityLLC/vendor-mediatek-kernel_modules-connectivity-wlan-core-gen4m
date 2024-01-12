@@ -163,7 +163,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_SET_FORCE_RTS] = nicUniCmdNotSupport,
 	[CMD_ID_TX_AMPDU] = nicUniCmdSetTxAmpdu,
 	[CMD_ID_ADDBA_REJECT] = nicUniCmdSetRxAmpdu,
-	[CMD_ID_MAC_MCAST_ADDR] = nicUniCmdSetMultiAddr,
+	[CMD_ID_MAC_MCAST_ADDR] = nicUniCmdNotSupport, // TODO: wait for FW ready
 	[CMD_ID_RSSI_MONITOR] = nicUniCmdSetRssiMonitor,
 	[CMD_ID_SET_ICS_SNIFFER] = nicUniCmdSetIcsSniffer,
 };
@@ -568,7 +568,7 @@ uint32_t nicUniCmdScanTagBssid(struct ADAPTER *ad, uint8_t *buf,
 	uint8_t i;
 
 	if (cmd->ucScnFuncMask & ENUM_SCN_USE_PADDING_AS_BSSID) {
-		for (i = 0; i < CFG_SCAN_SSID_MAX_NUM; i++) {
+		for (i = 0; i < CFG_SCAN_OOB_MAX_NUM; i++) {
 			tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_BSSID;
 			tag->u2Length = sizeof(*tag);
 			kalMemCopy(tag->aucBssid,
@@ -585,7 +585,7 @@ uint32_t nicUniCmdScanTagBssid(struct ADAPTER *ad, uint8_t *buf,
 		kalMemCopy(tag->aucBssid, cmd->aucBSSID, MAC_ADDR_LEN);
 
 		tag->ucBssidMatchCh = 0;
-		tag->ucBssidMatchSsidInd = CFG_SCAN_SSID_MAX_NUM;
+		tag->ucBssidMatchSsidInd = CFG_SCAN_OOB_MAX_NUM;
 
 		return tag->u2Length;
 	}
@@ -789,8 +789,7 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 	bss = GET_BSS_INFO_BY_INDEX(ad, cmd->ucBssIndex);
 
 	if (info->ucCID != CMD_ID_BSS_ACTIVATE_CTRL ||
-	    info->u4SetQueryInfoLen != sizeof(*cmd) ||
-	    bss->eNetworkType != NETWORK_TYPE_AIS)
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	/* update devinfo */
@@ -5335,7 +5334,7 @@ void nicUniEventQueryRxStatAll(IN struct ADAPTER
 	for (i = 0; i < UNI_EVENT_TESTMODE_RX_STAT_ALL_ITEM; i++) {
 		u4Temp = ntohl(tag->u4Buffer[i]);
 		kalMemCopy(prElement, &u4Temp, 4);
-	
+
 		if (i < (UNI_EVENT_TESTMODE_RX_STAT_ALL_ITEM - 1))
 			prElement++;
 	}

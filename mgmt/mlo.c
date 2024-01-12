@@ -269,8 +269,6 @@ struct IE_MULTI_LINK_CONTROL *beGenerateMldCommonInfo(
 	struct MSDU_INFO *prMsduInfo)
 {
 	uint8_t *cp;
-	struct STA_RECORD *starec;
-	struct MLD_STA_RECORD *mld_starec;
 	struct MLD_BSS_INFO *mld_bssinfo;
 	struct BSS_INFO *bss;
 	struct IE_MULTI_LINK_CONTROL *common;
@@ -278,14 +276,12 @@ struct IE_MULTI_LINK_CONTROL *beGenerateMldCommonInfo(
 	uint16_t frame_ctrl;
 	uint16_t present;
 
-	starec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
-	mld_starec = mldStarecGetByStarec(prAdapter, starec);
-	bss = GET_BSS_INFO_BY_INDEX(prAdapter, starec->ucBssIndex);
+	bss = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
 	mgmt = (struct WLAN_MAC_MGMT_HEADER *)(prMsduInfo->prPacket);
 	frame_ctrl = mgmt->u2FrameCtrl & MASK_FRAME_TYPE;
 
-	if (!mld_starec && !mld_bssinfo)
+	if (!mld_bssinfo)
 		return 0;
 
 	common = (struct IE_MULTI_LINK_CONTROL *)
