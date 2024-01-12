@@ -2022,12 +2022,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 					prBssDesc->ucDCMMaxConRx =
 					HE_GET_PHY_CAP_DCM_MAX_CONSTELLATION_RX(
 						prHeCap->ucHePhyCap);
-					DBGLOG(SCN, INFO,
-						"ER: BSSID:" MACSTR
-						" SSID:%s,rx:%x\n",
-						MAC2STR(prBssDesc->aucBSSID),
-						prBssDesc->aucSSID,
-						prBssDesc->ucDCMMaxConRx);
 				}
 				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP) {
 					prHeOp = (struct _IE_HE_OP_T *) pucIE;
@@ -2041,13 +2035,14 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 					prBssDesc->fgIsERSUDisable =
 					HE_IS_ER_SU_DISABLE(
 						prHeOp->ucHeOpParams);
-					DBGLOG(SCN, INFO,
-						"ER: BSSID:" MACSTR
-						" SSID:%s,er:%x\n",
-						MAC2STR(prBssDesc->aucBSSID),
-						prBssDesc->aucSSID,
-						prBssDesc->fgIsERSUDisable);
 				}
+				DBGLOG(SCN, INFO,
+					"ER: BSSID:" MACSTR
+					" SSID:%s,rx:%x, er:%x\n",
+					MAC2STR(prBssDesc->aucBSSID),
+					prBssDesc->aucSSID,
+					prBssDesc->ucDCMMaxConRx,
+					prBssDesc->fgIsERSUDisable);
 #else
 				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP)
 					prBssDesc->fgIsHEPresent = TRUE;
