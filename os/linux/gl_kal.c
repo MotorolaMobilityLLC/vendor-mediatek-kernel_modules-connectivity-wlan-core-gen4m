@@ -10177,7 +10177,7 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 				* the PerfMonLv3 still stands for 100M
 			*/
 			DBGLOG(SW4, TRACE,
-			"Coex_i[%d]ad[%d]k[%d]m[%d]eb[%d]tp[%u]tpi[%llu]tpth[%d]th[%d]\n",
+			"Coex_i[%d]ad[%d]k[%d]m[%d]eb[%d]tp[%u]tpi[%u]tpth[%d]th[%d]\n",
 			i, prWifiVar->fgIsBoostCpuThAdjustable, keep_alive,
 			prBssInfo->eCoexMode, prBssInfo->eBand,
 			prWifiVar->u4PerfMonTpTh[u4BoostCpuTh],
@@ -12573,7 +12573,7 @@ uint8_t kalNapiRxDirectInit(struct GLUE_INFO *prGlueInfo)
 
 	if (!prGlueInfo->prRxKfifoBuf) {
 		DBGLOG(INIT, ERROR,
-			"Cannot alloc buf(%d) for NapiDirect [%s]\n",
+			"Cannot alloc buf(%d) for NapiDirect\n",
 			prGlueInfo->u4RxKfifoBufLen);
 		return FALSE;
 	}
@@ -12804,7 +12804,7 @@ next_try:
 
 	/* Debug check only */
 	if (!time_before_eq(jiffies, ulTimeLimit))
-		DBGLOG(RX, WARN, "timeout hit %d\n", jiffies-ulTimeLimit);
+		DBGLOG(RX, WARN, "timeout hit %lu\n", jiffies-ulTimeLimit);
 
 	if (work_done > budget)
 		work_done = budget;
