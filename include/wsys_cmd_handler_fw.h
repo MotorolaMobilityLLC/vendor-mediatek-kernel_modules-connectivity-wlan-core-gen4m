@@ -364,9 +364,7 @@ enum ENUM_CMD_ID {
 
 	CMD_ID_SET_RDD_CH           = 0xE1,
 
-#if CFG_SUPPORT_NAN
 	CMD_ID_NAN_EXT_CMD = 0XEB,
-#endif
 
 	CMD_ID_LAYER_0_EXT_MAGIC_NUM    = 0xED,
 	/* magic number for Extending MT6630 original CMD header  */
