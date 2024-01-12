@@ -11977,9 +11977,9 @@ wlanoidQuerySetRddReport(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT
 	prCmdRddOnOffCtrl->ucRddIdx = prSetRddReport->ucDbdcIdx;
 
 	if (prCmdRddOnOffCtrl->ucRddIdx)
-		prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_1;
+		prCmdRddOnOffCtrl->ucRddRxSel = RDD_IN_SEL_1;
 	else
-		prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_0;
+		prCmdRddOnOffCtrl->ucRddRxSel = RDD_IN_SEL_0;
 
 	DBGLOG(INIT, INFO, "MT6632 : wlanoidQuerySetRddReport -  DFS ctrl: %.d, RDD index: %d\n",
 	prCmdRddOnOffCtrl->ucDfsCtrl, prCmdRddOnOffCtrl->ucRddIdx);
