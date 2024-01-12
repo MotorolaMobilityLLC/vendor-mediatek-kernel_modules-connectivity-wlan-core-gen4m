@@ -649,8 +649,14 @@ endif
 
 ifeq ($(CONFIG_SUPPORT_WIFI_SW_EMI_RING), y)
     ccflags-y += -DCFG_MTK_WIFI_SW_EMI_RING=1
+    ifeq ($(CONFIG_SUPPORT_WIFI_EN_SW_EMI_READ), y)
+        ccflags-y += -DCFG_MTK_WIFI_EN_SW_EMI_READ=1
+    else
+        ccflags-y += -DCFG_MTK_WIFI_EN_SW_EMI_READ=0
+    endif
 else
     ccflags-y += -DCFG_MTK_WIFI_SW_EMI_RING=0
+    ccflags-y += -DCFG_MTK_WIFI_EN_SW_EMI_READ=0
 endif
 
 ifeq ($(CONFIG_SUPPORT_WIFI_MCIF_NO_MMIO_READ), y)
