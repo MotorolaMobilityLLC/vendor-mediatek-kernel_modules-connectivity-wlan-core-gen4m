@@ -5307,8 +5307,10 @@ void wlanSetPreferBandByNetwork(struct ADAPTER *prAdapter,
 {
 	ASSERT(prAdapter);
 	ASSERT(eBand <= BAND_NUM);
-	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
-
+	if (ucBssIndex >= prAdapter->ucSwBssIdNum) {
+		DBGLOG(INIT, ERROR, "BSS index %d is invalid\n", ucBssIndex);
+		return;
+	}
 
 	/* 1. set prefer band according to network type */
 	prAdapter->aePreferBand[ucBssIndex] = eBand;

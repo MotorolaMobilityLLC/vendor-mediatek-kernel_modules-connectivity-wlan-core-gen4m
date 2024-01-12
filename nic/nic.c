@@ -2645,7 +2645,10 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 	struct CMD_SET_BSS_INFO rCmdSetBssInfo;
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
+	if (ucBssIndex > prAdapter->ucSwBssIdNum) {
+		DBGLOG(BSS, ERROR, "BSS index %d is invalid\n", ucBssIndex);
+		return WLAN_STATUS_FAILURE;
+	}
 
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
@@ -4786,7 +4789,10 @@ void nicFreeScanResultIE(struct ADAPTER *prAdapter, uint32_t u4Idx)
 	struct PARAM_BSSID_EX *prScanResult;
 
 	ASSERT(prAdapter);
-	ASSERT(u4Idx < CFG_MAX_NUM_BSS_LIST);
+	if (u4Idx >= CFG_MAX_NUM_BSS_LIST) {
+		DBGLOG(SCN, ERROR, "u4Idx %d is invalid\n", u4Idx);
+		return;
+	}
 
 	prWlanInfo = &prAdapter->rWlanInfo;
 	prScanResult = prWlanInfo->arScanResult;

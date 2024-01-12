@@ -339,7 +339,8 @@ uint32_t CmdExtBssInfoUpdate2WA(
 	struct CMD_BSSINFO_UPDATE_T *prCmdContent;
 
 	ASSERT(pAd);
-	ASSERT(ucBssIndex <= pAd->ucSwBssIdNum);
+	if (ucBssIndex > pAd->ucSwBssIdNum)
+		return WLAN_STATUS_FAILURE;
 
 	prBssInfo = pAd->aprBssInfo[ucBssIndex];
 

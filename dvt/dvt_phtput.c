@@ -182,7 +182,8 @@ uint32_t dvtActivateNetworkPhTput(struct net_device *prNetDev,
         prAdapter = prGlueInfo->prAdapter;
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
+	if (ucBssIndex > prAdapter->ucSwBssIdNum)
+		return 0;
 
 	/* setup BssInfo */
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
@@ -293,7 +294,8 @@ uint32_t dvtDeactivateNetworkPhTput(struct net_device *prNetDev,
 	prAdapter = prGlueInfo->prAdapter;
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
+	if (ucBssIndex > prAdapter->ucSwBssIdNum)
+		return 0;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	prBssInfo->fgIsNetActive = FALSE;

@@ -4154,7 +4154,10 @@ static uint32_t mldUpdatePerLinkMlo(struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 	ASSERT(prStaRec);
-	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucSwBssIdNum);
+	if (prStaRec->ucBssIndex > prAdapter->ucSwBssIdNum) {
+		DBGLOG(ML, INFO, "BSS index is invalid\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	if (!IS_NET_ACTIVE(prAdapter, prStaRec->ucBssIndex)) {
 		DBGLOG(ML, INFO, "Network is not activated\n");

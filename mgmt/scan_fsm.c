@@ -795,7 +795,8 @@ void scnFsmHandleScanMsgV2(struct ADAPTER *prAdapter,
 			  &prScanReqMsg->arSsid[0].aucSsid[0],
 			  prScanReqMsg->arSsid[0].u4SsidLen);
 	} else {
-		for (i = 0; i < prScanReqMsg->ucSSIDNum; i++) {
+		for (i = 0; i < prScanReqMsg->ucSSIDNum &&
+			    i < CFG_SCAN_SSID_MAX_NUM; i++) {
 			COPY_SSID(prScanParam->aucSpecifiedSSID[i],
 				  prScanParam->ucSpecifiedSSIDLen[i],
 				  prScanReqMsg->arSsid[i].aucSsid,
@@ -1806,7 +1807,8 @@ scnFsmSchedScanRequest(struct ADAPTER *prAdapter,
 	/* 2.1 Prepare command. Set FW struct SSID_MATCH_SETS */
 	/* ssid in ssid list will be send in probe request in advance */
 	prSchedScanCmd->ucSsidNum = prRequest->u4SsidNum;
-	for (i = 0; i < prSchedScanCmd->ucSsidNum; i++) {
+	for (i = 0; i < prSchedScanCmd->ucSsidNum &&
+		    i < CFG_SCAN_HIDDEN_SSID_MAX_NUM; i++) {
 		kalMemCopy(&(prSsid[i]), &(prRequest->arSsid[i]),
 			sizeof(struct PARAM_SSID));
 		log_dbg(SCN, TRACE, "ssid set(%d) %s\n", i,
@@ -1814,7 +1816,8 @@ scnFsmSchedScanRequest(struct ADAPTER *prAdapter,
 	}
 
 	prSchedScanCmd->ucMatchSsidNum = prRequest->u4MatchSsidNum;
-	for (i = 0; i < prSchedScanCmd->ucMatchSsidNum; i++) {
+	for (i = 0; i < prSchedScanCmd->ucMatchSsidNum &&
+		    i < CFG_SCAN_SSID_MATCH_MAX_NUM; i++) {
 		COPY_SSID(prMatchSets[i].aucSsid, prMatchSets[i].ucSsidLen,
 			prRequest->arMatchSsid[i].aucSsid,
 			prRequest->arMatchSsid[i].u4SsidLen);
