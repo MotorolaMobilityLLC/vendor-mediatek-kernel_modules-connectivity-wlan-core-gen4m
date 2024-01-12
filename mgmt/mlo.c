@@ -3484,6 +3484,30 @@ uint8_t mldStarecExternalMldExist(struct ADAPTER *prAdapter)
 	return FALSE;
 }
 
+void mldBssTeardownAllClients(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo)
+{
+	struct MLD_STA_RECORD *prMldStarec = NULL;
+	struct LINK *prStarecList;
+	uint8_t i = 0;
+
+	if (!prMldBssInfo)
+		return;
+
+	for (i = 0; i < ARRAY_SIZE(prAdapter->aprMldStarec); i++) {
+		prMldStarec = &prAdapter->aprMldStarec[i];
+		prStarecList = &prMldStarec->rStarecList;
+
+		if (prMldStarec->fgIsInUse &&
+		    prMldStarec->ucGroupMldId == prMldBssInfo->ucGroupMldId &&
+		    !LINK_IS_EMPTY(prStarecList))
+			/* sync with FW */
+			nicUniCmdMldStaTeardown(prAdapter,
+				LINK_PEEK_HEAD(prStarecList,
+				struct STA_RECORD, rLinkEntryMld));
+	}
+}
+
 #ifdef CFG_AAD_NONCE_NO_REPLACE
 
 void mldBssEnableAllClients(struct ADAPTER *prAdapter,
