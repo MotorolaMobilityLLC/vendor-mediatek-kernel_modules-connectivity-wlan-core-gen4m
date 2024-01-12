@@ -1479,7 +1479,6 @@ int mtk_cfg80211_vendor_event_rssi_beyond_range(
 	struct BSS_INFO *prAisBssInfo;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
@@ -1507,7 +1506,7 @@ int mtk_cfg80211_vendor_event_rssi_beyond_range(
 	}
 
 	prAdapter = prGlueInfo->prAdapter;
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prAisBssInfo = aisGetDefaultLinkBssInfo(prGlueInfo->prAdapter);
 	kalMemCopy(rRSSIEvt.BSSID, prAisBssInfo->aucBSSID,
 		   sizeof(uint8_t) * MAC_ADDR_LEN);
 

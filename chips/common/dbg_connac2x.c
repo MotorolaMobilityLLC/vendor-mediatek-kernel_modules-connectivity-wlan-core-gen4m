@@ -1967,7 +1967,7 @@ int32_t connac2x_show_stat_info(
 	uint32_t u4BufLen = 0;
 	uint8_t ucRaTableNum = sizeof(RATE_TBLE) / sizeof(char *);
 	uint8_t ucRaStatusNum = sizeof(RA_STATUS_TBLE) / sizeof(char *);
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex;
 	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 
 #if 0
@@ -4048,7 +4048,7 @@ int connac2x_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 		(!pu4Sgi))
 		return -1;
 
-	prStaRec = aisGetStaRecOfAP(prAdapter, AIS_DEFAULT_INDEX);
+	prStaRec = aisGetDefaultStaRecOfAP(prAdapter);
 	if (prStaRec) {
 		ucWlanIdx = prStaRec->ucWlanIndex;
 	} else {

@@ -108,7 +108,6 @@
 #define AIS_BLACKLIST_TIMEOUT               15 /* seconds */
 #define AIS_AUTORN_MIN_INTERVAL		    20
 
-
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -187,6 +186,193 @@ struct AIS_MGMT_TX_REQ_INFO {
 	uint64_t u8Cookie;
 };
 
+struct ESS_CHNL_INFO {
+	uint8_t ucChannel;
+	uint8_t ucUtilization;
+	uint8_t ucApNum;
+};
+
+struct AIS_SPECIFIC_BSS_INFO {
+	/* This value indicate the roaming type used in AIS_JOIN */
+	uint8_t ucRoamingAuthTypes;
+
+	u_int8_t fgIsIBSSActive;
+
+	/*! \brief Global flag to let arbiter stay at standby
+	 *  and not connect to any network
+	 */
+	u_int8_t fgCounterMeasure;
+
+#if 0
+	u_int8_t fgWepWapiBcKeyExist;	/* WEP WAPI BC key exist flag */
+	uint8_t ucWepWapiBcWlanIndex;	/* WEP WAPI BC wlan index */
+
+	/* RSN BC key exist flag, map to key id 0, 1, 2, 3 */
+	u_int8_t fgRsnBcKeyExist[4];
+	/* RSN BC wlan index, map to key id 0, 1, 2, 3 */
+	uint8_t ucRsnBcWlanIndex[4];
+#endif
+
+	/* While Do CounterMeasure procedure,
+	 * check the EAPoL Error report have send out
+	 */
+	u_int8_t fgCheckEAPoLTxDone;
+
+	uint32_t u4RsnaLastMICFailTime;
+
+	/* By the flow chart of 802.11i,
+	 *  wait 60 sec before associating to same AP
+	 *  or roaming to a new AP
+	 *  or sending data in IBSS,
+	 *  keep a timer for handle the 60 sec counterMeasure
+	 */
+	struct TIMER rRsnaBlockTrafficTimer;
+	struct TIMER rRsnaEAPoLReportTimeoutTimer;
+
+	/* For Keep the Tx/Rx Mic key for TKIP SW Calculate Mic */
+	/* This is only one for AIS/AP */
+	uint8_t aucTxMicKey[8];
+	uint8_t aucRxMicKey[8];
+
+	/* Buffer for WPA2 PMKID */
+	/* The PMKID cache lifetime is expire by media_disconnect_indication */
+	struct LINK rPmkidCache;
+#if CFG_SUPPORT_802_11W
+	u_int8_t fgMgmtProtection;
+	uint32_t u4SaQueryStart;
+	uint32_t u4SaQueryCount;
+	uint8_t ucSaQueryTimedOut;
+	uint8_t *pucSaQueryTransId;
+	struct TIMER rSaQueryTimer;
+	u_int8_t fgBipKeyInstalled;
+#endif
+	uint8_t ucKeyAlgorithmId;
+
+	/* Support AP Selection */
+#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
+	uint8_t	ucRoamSkipTimes;
+	u_int8_t fgGoodRcpiArea;
+	u_int8_t fgPoorRcpiArea;
+#endif
+	struct ESS_CHNL_INFO arCurEssChnlInfo[CFG_MAX_NUM_OF_CHNL_INFO];
+	uint8_t ucCurEssChnlInfoNum;
+	struct LINK rCurEssLink;
+	/* end Support AP Selection */
+
+	struct BSS_TRANSITION_MGT_PARAM rBTMParam;
+	struct LINK_MGMT  rNeighborApList;
+	OS_SYSTIME rNeiApRcvTime;
+	uint32_t u4NeiApValidInterval;
+};
+
+/* Session for CONNECTION SETTINGS */
+struct CONNECTION_SETTINGS {
+
+	uint8_t aucMacAddress[MAC_ADDR_LEN];
+
+	uint8_t ucDelayTimeOfDisconnectEvent;
+
+	u_int8_t fgIsConnByBssidIssued;
+	uint8_t aucBSSID[MAC_ADDR_LEN];
+	uint8_t aucBSSIDHint[MAC_ADDR_LEN];
+
+	uint8_t ucSSIDLen;
+	uint8_t aucSSID[ELEM_MAX_LEN_SSID];
+
+	enum ENUM_PARAM_OP_MODE eOPMode;
+
+	enum ENUM_PARAM_CONNECTION_POLICY eConnectionPolicy;
+
+	enum ENUM_PARAM_AD_HOC_MODE eAdHocMode;
+
+	enum ENUM_PARAM_AUTH_MODE eAuthMode;
+
+	enum ENUM_WEP_STATUS eEncStatus;
+
+	u_int8_t fgIsScanReqIssued;
+
+	/* MIB attributes */
+	uint16_t u2BeaconPeriod;
+
+	uint16_t u2RTSThreshold;	/* User desired setting */
+
+	uint16_t u2DesiredNonHTRateSet;	/* User desired setting */
+
+	uint8_t ucAdHocChannelNum;	/* For AdHoc */
+
+	enum ENUM_BAND eAdHocBand;	/* For AdHoc */
+
+	uint32_t u4FreqInKHz;	/* Center frequency */
+
+	/* ATIM windows using for IBSS power saving function */
+	uint16_t u2AtimWindow;
+
+	/* Features */
+	u_int8_t fgIsEnableRoaming;
+
+	u_int8_t fgIsAdHocQoSEnable;
+
+	enum ENUM_PARAM_PHY_CONFIG eDesiredPhyConfig;
+
+#if CFG_SUPPORT_802_11D
+	u_int8_t fgMultiDomainCapabilityEnabled;
+#endif				/* CFG_SUPPORT_802_11D */
+
+#if 1				/* CFG_SUPPORT_WAPI */
+	u_int8_t fgWapiMode;
+	uint32_t u4WapiSelectedGroupCipher;
+	uint32_t u4WapiSelectedPairwiseCipher;
+	uint32_t u4WapiSelectedAKMSuite;
+#endif
+
+	/* for cfg80211 connected indication */
+	uint32_t u4RspIeLength;
+	uint8_t aucRspIe[CFG_CFG80211_IE_BUF_LEN];
+
+	uint32_t u4ReqIeLength;
+	uint8_t aucReqIe[CFG_CFG80211_IE_BUF_LEN];
+
+	u_int8_t fgWpsActive;
+	uint8_t aucWSCIE[GLUE_INFO_WSCIE_LENGTH];	/*for probe req */
+	uint16_t u2WSCIELen;
+
+	/*
+	 * Buffer to hold non-wfa vendor specific IEs set
+	 * from wpa_supplicant. This is used in sending
+	 * Association Request in AIS mode.
+	 */
+	uint16_t non_wfa_vendor_ie_len;
+	uint8_t non_wfa_vendor_ie_buf[NON_WFA_VENDOR_IE_MAX_LEN];
+
+	/* 11R */
+	struct FT_IES rFtIeForTx;
+	struct cfg80211_ft_event_params rFtEventParam;
+
+	/* CR1486, CR1640 */
+	/* for WPS, disable the privacy check for AP selection policy */
+	u_int8_t fgPrivacyCheckDisable;
+
+	/* b0~3: trigger-en AC0~3. b4~7: delivery-en AC0~3 */
+	uint8_t bmfgApsdEnAc;
+
+	/* for RSN info store, when upper layer set rsn info */
+	struct RSN_INFO rRsnInfo;
+
+#if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
+	u_int8_t fgSecModeChangeStartTimer;
+#endif
+
+	uint8_t *pucAssocIEs;
+	size_t assocIeLen;
+	u_int8_t fgAuthOsenWithRSN;
+};
+
+struct AIS_LINK_INFO {
+	struct BSS_INFO *prBssInfo;
+	struct BSS_DESC *prTargetBssDesc;
+	struct STA_RECORD *prTargetStaRec;
+};
+
 /* Support AP Selection */
 struct AIS_BLACKLIST_ITEM {
 	struct LINK_ENTRY rLinkEntry;
@@ -217,16 +403,27 @@ struct AIS_FSM_INFO {
 	enum ENUM_AIS_STATE ePreviousState;
 	enum ENUM_AIS_STATE eCurrentState;
 
+	u_int8_t ucAisIndex;
+
 	u_int8_t fgIsScanning;
 
 	u_int8_t fgIsChannelRequested;
 	u_int8_t fgIsChannelGranted;
 
-	uint8_t ucAvailableAuthTypes;	/* Used for AUTH_MODE_AUTO_SWITCH */
+	uint8_t ucAvailableAuthTypes; /* Used for AUTH_MODE_AUTO_SWITCH */
 
-	struct BSS_DESC *prTargetBssDesc;	/* For destination */
+	struct AIS_LINK_INFO aprLinkInfo[MLD_LINK_MAX];
 
-	struct STA_RECORD *prTargetStaRec;	/* For JOIN Abort */
+	struct AIS_LINK_INFO *prMainLink;
+	uint8_t ucMainBssIndex;
+
+	struct CONNECTION_SETTINGS rConnSettings;
+
+#if CFG_SUPPORT_ROAMING
+	struct ROAMING_INFO rRoamingInfo;
+#endif	/* CFG_SUPPORT_ROAMING */
+
+	struct AIS_SPECIFIC_BSS_INFO rAisSpecificBssInfo;
 
 	uint32_t u4SleepInterval;
 
@@ -292,6 +489,39 @@ struct AIS_FSM_INFO {
 	uint8_t ucJoinFailCntAfterScan;
 	/* end Support AP Selection */
 
+	/* 11K */
+	struct RADIO_MEASUREMENT_REQ_PARAMS rRmReqParams;
+	struct RADIO_MEASUREMENT_REPORT_PARAMS rRmRepParams;
+
+	/* WMMAC */
+	struct WMM_INFO rWmmInfo;
+
+#if CFG_SUPPORT_PASSPOINT
+	struct HS20_INFO rHS20Info;
+#endif	/* CFG_SUPPORT_PASSPOINT */
+
+#if CFG_SUPPORT_802_11W
+	/* STA PMF: for encrypted deauth frame */
+	struct completion rDeauthComp;
+	u_int8_t encryptedDeauthIsInProcess;
+#endif
+
+	/* MTK WLAN NIC driver IEEE 802.11 MIB */
+	struct IEEE_802_11_MIB rMib;
+
+	struct PARAM_BSSID_EX rCurrBssId;
+
+	/*! \brief wext wpa related information */
+	struct GL_WPA_INFO rWpaInfo;
+#if CFG_SUPPORT_REPLAY_DETECTION
+	struct GL_DETECT_REPLAY_INFO prDetRplyInfo;
+#endif
+
+	/* Indicated media state */
+	enum ENUM_PARAM_MEDIA_STATE eParamMediaStateIndicated;
+
+	uint8_t ucReasonOfDisconnect;	/* Used by media state indication */
+
 	/* Scan target channel when device roaming */
 	uint8_t fgTargetChnlScanIssued;
 
@@ -342,11 +572,15 @@ struct MSG_AIS_BSS_TRANSITION {
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
+
 void aisInitializeConnectionSettings(IN struct ADAPTER
 		*prAdapter, IN struct REG_INFO *prRegInfo,
 		IN uint8_t ucBssIndex);
 
-void aisFsmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+void aisFsmInit(IN struct ADAPTER *prAdapter,
+		IN struct AIS_FSM_INFO *prAisFsmInfo,
+		IN struct REG_INFO *prRegInfo,
+		IN uint8_t ucAisIndex);
 
 void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
@@ -357,7 +591,7 @@ bool aisFsmIsInBeaconTimeout(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
 void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
-		struct BSS_DESC *prBssDesc, uint8_t ucBssIndex);
+	struct AIS_FSM_INFO *prAisFsmInfo, uint8_t ucLinkIndex);
 
 u_int8_t aisFsmStateInit_RetryJOIN(IN struct ADAPTER
 				   *prAdapter, IN struct STA_RECORD *prStaRec,
@@ -400,9 +634,6 @@ void aisFsmRunEventJoinComplete(IN struct ADAPTER
 enum ENUM_AIS_STATE aisFsmJoinCompleteAction(
 	IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
 
-void aisFsmRunEventFoundIBSSPeer(IN struct ADAPTER
-				 *prAdapter, IN struct MSG_HDR *prMsgHdr);
-
 void aisFsmRunEventRemainOnChannel(IN struct ADAPTER
 				   *prAdapter, IN struct MSG_HDR *prMsgHdr);
 
@@ -441,21 +672,12 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER
 void aisPostponedEventOfDisconnTimeout(IN struct ADAPTER *prAdapter,
 				IN uint8_t ucBssIndex);
 
+void aisUpdateAllBssInfoForJOIN(IN struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *prAisFsmInfo, struct SW_RFB *prAssocRspSwRfb);
+
 void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 			     struct STA_RECORD *prStaRec,
 			     struct SW_RFB *prAssocRspSwRfb);
-
-void aisUpdateBssInfoForCreateIBSS(IN struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex);
-
-void aisUpdateBssInfoForMergeIBSS(IN struct ADAPTER *prAdapter,
-				IN struct STA_RECORD *prStaRec);
-
-u_int8_t aisValidateProbeReq(IN struct ADAPTER *prAdapter,
-				IN struct SW_RFB *prSwRfb,
-				IN uint8_t ucBssIndex,
-				OUT uint32_t *pu4ControlFlags);
-
 uint32_t
 aisFsmRunEventMgmtFrameTxDone(IN struct ADAPTER *prAdapter,
 			      IN struct MSDU_INFO *prMsduInfo,
@@ -505,8 +727,8 @@ enum ENUM_AIS_STATE aisFsmRoamingScanResultsUpdate(
 				   IN struct ADAPTER *prAdapter,
 				   IN uint8_t ucBssIndex);
 
-void aisFsmRoamingDisconnectPrevAP(IN struct ADAPTER
-				   *prAdapter,
+void aisFsmRoamingDisconnectPrevAP(IN struct ADAPTER *prAdapter,
+				   IN struct AIS_FSM_INFO *prAisFsmInfo,
 				   IN struct STA_RECORD *prTargetStaRec);
 
 void aisUpdateBssInfoForRoamingAP(IN struct ADAPTER
@@ -640,8 +862,6 @@ void aisSendNeighborRequest(struct ADAPTER *prAdapter,
  *******************************************************************************
  */
 
-#define AIS_DEFAULT_INDEX (0)
-
 struct AIS_FSM_INFO *aisGetAisFsmInfo(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex);
@@ -674,9 +894,43 @@ struct STA_RECORD *aisGetTargetStaRec(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex);
 
-uint8_t aisGetTargetBssDescChannel(
-	IN struct ADAPTER *prAdapter,
+struct AIS_FSM_INFO *aisGetDefaultAisInfo(IN struct ADAPTER *prAdapter);
+struct AIS_LINK_INFO *aisGetDefaultLink(IN struct ADAPTER *prAdapter);
+struct BSS_INFO *aisGetDefaultLinkBssInfo(IN struct ADAPTER *prAdapter);
+uint8_t aisGetDefaultLinkBssIndex(IN struct ADAPTER *prAdapter);
+struct STA_RECORD *aisGetDefaultStaRecOfAP(IN struct ADAPTER *prAdapter);
+struct AIS_LINK_INFO *aisGetLink(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex);
+void aisSetLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo,
+	struct BSS_INFO *prBssInfo, uint8_t ucLinkIdx);
+struct BSS_INFO *aisGetLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo,
+	uint8_t ucLinkIdx);
+struct BSS_INFO *aisGetMainLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo);
+void aisSetLinkBssDesc(IN struct AIS_FSM_INFO *prAisFsmInfo,
+	struct BSS_DESC *prBssDesc, uint8_t ucLinkIdx);
+struct BSS_DESC *aisGetLinkBssDesc(IN struct AIS_FSM_INFO *prAisFsmInfo,
+	uint8_t ucLinkIdx);
+struct BSS_DESC *aisGetMainLinkBssDesc(IN struct AIS_FSM_INFO *prAisFsmInfo);
+void aisSetLinkStaRec(IN struct AIS_FSM_INFO *prAisFsmInfo,
+	 struct STA_RECORD *prStaRec, uint8_t ucLinkIdx);
+struct STA_RECORD *aisGetLinkStaRec(IN struct AIS_FSM_INFO *prAisFsmInfo,
+	uint8_t ucLinkIdx);
+struct STA_RECORD *aisGetMainLinkStaRec(IN struct AIS_FSM_INFO *prAisFsmInfo);
+void aisResetAllLink(IN struct AIS_FSM_INFO *prAisFsmInfo);
+void aisDeactivateAllLink(IN struct ADAPTER *prAdapter,
+			IN struct AIS_FSM_INFO *prAisFsmInfo);
+
+void aisTargetBssSetConnected(IN struct ADAPTER *prAdapter,
+	IN struct AIS_FSM_INFO *ais);
+
+void aisTargetBssSetConnecting(IN struct ADAPTER *prAdapter,
+	IN struct AIS_FSM_INFO *ais);
+
+void aisTargetBssResetConnected(IN struct ADAPTER *prAdapter,
+	IN struct AIS_FSM_INFO *ais);
+
+void aisTargetBssResetConnecting(IN struct ADAPTER *prAdapter,
+	IN struct AIS_FSM_INFO *ais);
 
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 struct TIMER *aisGetSecModeChangeTimer(

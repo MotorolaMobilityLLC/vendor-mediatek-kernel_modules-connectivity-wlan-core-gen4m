@@ -69,9 +69,6 @@
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
  */
-#if CFG_SUPPORT_PASSPOINT
-#include "hs20.h"
-#endif /* CFG_SUPPORT_PASSPOINT */
 #include "gl_os.h"
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 #include "thrm.h"
@@ -122,8 +119,6 @@ struct ESS_SCAN_RESULT_T {
 };
 
 struct WLAN_INFO {
-	struct PARAM_BSSID_EX rCurrBssId[KAL_AIS_NUM];
-
 	/* Scan Result */
 	struct PARAM_BSSID_EX arScanResult[CFG_MAX_NUM_BSS_LIST];
 	uint8_t *apucScanResultIEs[CFG_MAX_NUM_BSS_LIST];
@@ -147,7 +142,7 @@ struct WLAN_INFO {
 	uint16_t u2AtimWindow;
 
 	uint8_t eDesiredRates[PARAM_MAX_LEN_RATES];
-	struct CMD_LINK_ATTRIB eLinkAttr;
+
 /* CMD_PS_PROFILE_T         ePowerSaveMode; */
 	struct CMD_PS_PROFILE arPowerSaveMode[MAX_BSSID_NUM];
 
@@ -175,111 +170,12 @@ struct WLAN_INFO {
 
 };
 
-/* Session for CONNECTION SETTINGS */
-struct CONNECTION_SETTINGS {
-
-	uint8_t aucMacAddress[MAC_ADDR_LEN];
-
-	uint8_t ucDelayTimeOfDisconnectEvent;
-
-	u_int8_t fgIsConnByBssidIssued;
-	uint8_t aucBSSID[MAC_ADDR_LEN];
-	uint8_t aucBSSIDHint[MAC_ADDR_LEN];
-
-	uint8_t ucSSIDLen;
-	uint8_t aucSSID[ELEM_MAX_LEN_SSID];
-
-	enum ENUM_PARAM_OP_MODE eOPMode;
-
-	enum ENUM_PARAM_CONNECTION_POLICY eConnectionPolicy;
-
-	enum ENUM_PARAM_AD_HOC_MODE eAdHocMode;
-
-	enum ENUM_PARAM_AUTH_MODE eAuthMode;
-
-	enum ENUM_WEP_STATUS eEncStatus;
-
-	u_int8_t fgIsScanReqIssued;
-
-	/* MIB attributes */
-	uint16_t u2BeaconPeriod;
-
-	uint16_t u2RTSThreshold;	/* User desired setting */
-
-	uint16_t u2DesiredNonHTRateSet;	/* User desired setting */
-
-	uint8_t ucAdHocChannelNum;	/* For AdHoc */
-
-	enum ENUM_BAND eAdHocBand;	/* For AdHoc */
-
-	uint32_t u4FreqInKHz;	/* Center frequency */
-
-	/* ATIM windows using for IBSS power saving function */
-	uint16_t u2AtimWindow;
-
-	/* Features */
-	u_int8_t fgIsEnableRoaming;
-
-	u_int8_t fgIsAdHocQoSEnable;
-
-	enum ENUM_PARAM_PHY_CONFIG eDesiredPhyConfig;
-
-#if CFG_SUPPORT_802_11D
-	u_int8_t fgMultiDomainCapabilityEnabled;
-#endif				/* CFG_SUPPORT_802_11D */
-
-#if 1				/* CFG_SUPPORT_WAPI */
-	u_int8_t fgWapiMode;
-	uint32_t u4WapiSelectedGroupCipher;
-	uint32_t u4WapiSelectedPairwiseCipher;
-	uint32_t u4WapiSelectedAKMSuite;
-#endif
-
-	/* for cfg80211 connected indication */
-	uint32_t u4RspIeLength;
-	uint8_t aucRspIe[CFG_CFG80211_IE_BUF_LEN];
-
-	uint32_t u4ReqIeLength;
-	uint8_t aucReqIe[CFG_CFG80211_IE_BUF_LEN];
-
-	u_int8_t fgWpsActive;
-	uint8_t aucWSCIE[GLUE_INFO_WSCIE_LENGTH];	/*for probe req */
-	uint16_t u2WSCIELen;
-
-	/*
-	 * Buffer to hold non-wfa vendor specific IEs set
-	 * from wpa_supplicant. This is used in sending
-	 * Association Request in AIS mode.
-	 */
-	uint16_t non_wfa_vendor_ie_len;
-	uint8_t non_wfa_vendor_ie_buf[NON_WFA_VENDOR_IE_MAX_LEN];
-
-	/* 11R */
-	struct FT_IES rFtIeForTx;
-	struct cfg80211_ft_event_params rFtEventParam;
-
-	/* CR1486, CR1640 */
-	/* for WPS, disable the privacy check for AP selection policy */
-	u_int8_t fgPrivacyCheckDisable;
-
-	/* b0~3: trigger-en AC0~3. b4~7: delivery-en AC0~3 */
-	uint8_t bmfgApsdEnAc;
-
-	/* for RSN info store, when upper layer set rsn info */
-	struct RSN_INFO rRsnInfo;
-
-#if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
-	u_int8_t fgSecModeChangeStartTimer;
-#endif
-
-	uint8_t *pucAssocIEs;
-	size_t assocIeLen;
-	u_int8_t fgAuthOsenWithRSN;
-};
-
 struct BSS_INFO {
 
 	enum ENUM_NETWORK_TYPE eNetworkType;
+
+	/* index of a ais/p2p/ap... wdev which owns this bssinfo */
+	uint8_t ucWdevIndex;
 
 	/* Private data parameter for each NETWORK type usage. */
 	uint32_t u4PrivateData;
@@ -305,8 +201,6 @@ struct BSS_INFO {
 	u_int8_t fgIsNetActive;	/* TRUE if this network has been activated */
 
 	uint8_t ucBssIndex;	/* BSS_INFO_T index */
-
-	uint8_t ucReasonOfDisconnect;	/* Used by media state indication */
 
 	uint8_t ucSSIDLen;	/* Length of SSID */
 
@@ -619,9 +513,6 @@ struct BSS_INFO {
 #if CFG_SUPPORT_802_11W
 	/* AP PMF */
 	struct AP_PMF_CFG rApPmfCfg;
-	/* STA PMF: for encrypted deauth frame */
-	struct completion rDeauthComp;
-	u_int8_t encryptedDeauthIsInProcess;
 #endif
 
 #if (CFG_SUPPORT_HE_ER == 1)
@@ -646,14 +537,6 @@ struct BSS_INFO {
 #endif
 };
 
-/* Support AP Selection */
-struct ESS_CHNL_INFO {
-	uint8_t ucChannel;
-	uint8_t ucUtilization;
-	uint8_t ucApNum;
-};
-/* end Support AP Selection */
-
 struct NEIGHBOR_AP {
 	struct LINK_ENTRY rLinkEntry;
 	uint8_t aucBssid[MAC_ADDR_LEN];
@@ -667,79 +550,6 @@ struct NEIGHBOR_AP {
 	uint8_t ucPreference;
 	uint8_t ucChannel;
 	uint64_t u8TermTsf;
-};
-
-struct AIS_SPECIFIC_BSS_INFO {
-	/* This value indicate the roaming type used in AIS_JOIN */
-	uint8_t ucRoamingAuthTypes;
-
-	u_int8_t fgIsIBSSActive;
-
-	/*! \brief Global flag to let arbiter stay at standby
-	 *  and not connect to any network
-	 */
-	u_int8_t fgCounterMeasure;
-
-#if 0
-	u_int8_t fgWepWapiBcKeyExist;	/* WEP WAPI BC key exist flag */
-	uint8_t ucWepWapiBcWlanIndex;	/* WEP WAPI BC wlan index */
-
-	/* RSN BC key exist flag, map to key id 0, 1, 2, 3 */
-	u_int8_t fgRsnBcKeyExist[4];
-	/* RSN BC wlan index, map to key id 0, 1, 2, 3 */
-	uint8_t ucRsnBcWlanIndex[4];
-#endif
-
-	/* While Do CounterMeasure procedure,
-	 * check the EAPoL Error report have send out
-	 */
-	u_int8_t fgCheckEAPoLTxDone;
-
-	uint32_t u4RsnaLastMICFailTime;
-
-	/* By the flow chart of 802.11i,
-	 *  wait 60 sec before associating to same AP
-	 *  or roaming to a new AP
-	 *  or sending data in IBSS,
-	 *  keep a timer for handle the 60 sec counterMeasure
-	 */
-	struct TIMER rRsnaBlockTrafficTimer;
-	struct TIMER rRsnaEAPoLReportTimeoutTimer;
-
-	/* For Keep the Tx/Rx Mic key for TKIP SW Calculate Mic */
-	/* This is only one for AIS/AP */
-	uint8_t aucTxMicKey[8];
-	uint8_t aucRxMicKey[8];
-
-	/* Buffer for WPA2 PMKID */
-	/* The PMKID cache lifetime is expire by media_disconnect_indication */
-	struct LINK rPmkidCache;
-#if CFG_SUPPORT_802_11W
-	u_int8_t fgMgmtProtection;
-	uint32_t u4SaQueryStart;
-	uint32_t u4SaQueryCount;
-	uint8_t ucSaQueryTimedOut;
-	uint8_t *pucSaQueryTransId;
-	struct TIMER rSaQueryTimer;
-	u_int8_t fgBipKeyInstalled;
-#endif
-	uint8_t ucKeyAlgorithmId;
-
-	/* Support AP Selection */
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-	uint8_t	ucRoamSkipTimes;
-	u_int8_t fgGoodRcpiArea;
-	u_int8_t fgPoorRcpiArea;
-#endif
-	struct ESS_CHNL_INFO arCurEssChnlInfo[CFG_MAX_NUM_OF_CHNL_INFO];
-	uint8_t ucCurEssChnlInfoNum;
-	struct LINK rCurEssLink;
-	/* end Support AP Selection */
-
-	struct BSS_TRANSITION_MGT_PARAM rBTMParam;
-	struct LINK_MGMT  rNeighborApList;
-	OS_SYSTIME rNeiApRcvTime;
-	uint32_t u4NeiApValidInterval;
 };
 
 struct BOW_SPECIFIC_BSS_INFO {
@@ -812,23 +622,16 @@ struct WIFI_VAR {
 	enum ENUM_PARAM_PHY_CONFIG eDesiredPhyConfig;
 	/* Common connection settings end */
 
-	struct CONNECTION_SETTINGS rConnSettings[KAL_AIS_NUM];
-
 	struct SCAN_INFO rScanInfo;
 
-#if CFG_SUPPORT_ROAMING
-	struct ROAMING_INFO rRoamingInfo[KAL_AIS_NUM];
-#endif				/* CFG_SUPPORT_ROAMING */
-
 	struct AIS_FSM_INFO rAisFsmInfo[KAL_AIS_NUM];
+	struct AIS_FSM_INFO *prDefaultAisFsmInfo;
 
 	enum ENUM_PWR_STATE aePwrState[MAX_BSSID_NUM + 1];
 
 	struct BSS_INFO arBssInfoPool[MAX_BSSID_NUM];
 
 	struct BSS_INFO rP2pDevInfo;
-
-	struct AIS_SPECIFIC_BSS_INFO rAisSpecificBssInfo[KAL_AIS_NUM];
 
 #if CFG_SUPPORT_NAN
 	struct _NAN_SPECIFIC_BSS_INFO_T
@@ -893,9 +696,6 @@ struct WIFI_VAR {
 	struct SLT_INFO rSltInfo;
 #endif
 
-#if CFG_SUPPORT_PASSPOINT
-	struct HS20_INFO rHS20Info[KAL_AIS_NUM];
-#endif				/* CFG_SUPPORT_PASSPOINT */
 	uint8_t aucMediatekOuiIE[64];
 	uint16_t u2MediatekOuiIELen;
 
@@ -1183,13 +983,6 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_PERF_IND
 	u_int8_t fgPerfIndicatorEn;
 #endif
-
-	/* 11K */
-	struct RADIO_MEASUREMENT_REQ_PARAMS rRmReqParams[KAL_AIS_NUM];
-	struct RADIO_MEASUREMENT_REPORT_PARAMS rRmRepParams[KAL_AIS_NUM];
-
-	/* WMMAC */
-	struct WMM_INFO rWmmInfo[KAL_AIS_NUM];
 
 	/* Tx Msdu Queue method */
 	uint8_t ucTxMsduQueue;
@@ -1486,7 +1279,6 @@ struct ADAPTER {
 	u_int8_t fgAllMulicastFilter;	/* mDNS filter used by OS */
 
 	struct BSS_INFO *aprBssInfo[MAX_BSSID_NUM + 1];
-	struct BSS_INFO *prAisBssInfo[KAL_AIS_NUM];
 	uint8_t ucHwBssIdNum;
 	uint8_t ucWmmSetNum;
 	uint8_t ucWtblEntryNum;
@@ -1529,6 +1321,7 @@ struct ADAPTER {
 #endif
 
 	struct STA_RECORD arStaRec[CFG_STA_REC_NUM];
+	struct MLD_STAREC arMldStaRec[CFG_MLD_STAREC_NUM];
 
 	/* Element for TX PATH */
 	struct TX_CTRL rTxCtrl;
@@ -1665,9 +1458,6 @@ struct ADAPTER {
 
 	/* WIFI_VAR_T */
 	struct WIFI_VAR rWifiVar;
-
-	/* MTK WLAN NIC driver IEEE 802.11 MIB */
-	struct IEEE_802_11_MIB rMib[KAL_AIS_NUM];
 
 	/* Mailboxs for inter-module communication */
 	struct MBOX arMbox[MBOX_ID_TOTAL_NUM];
@@ -1990,7 +1780,8 @@ struct ADAPTER {
 	((_prBssInfo)->eNetworkType == NETWORK_TYPE_AIS)
 
 #define IS_BSS_INDEX_AIS(_prAdapter, _BssIndex) \
-	(_BssIndex < KAL_AIS_NUM)
+	(GET_BSS_INFO_BY_INDEX(_prAdapter, _BssIndex) && \
+	IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(_prAdapter, _BssIndex)))
 
 #define IS_BSS_P2P(_prBssInfo) \
 	((_prBssInfo)->eNetworkType == NETWORK_TYPE_P2P)
@@ -2015,7 +1806,6 @@ struct ADAPTER {
 	(_prBssInfo)->eConnectionStateIndicated = \
 		MEDIA_STATE_DISCONNECTED; \
 	(_prBssInfo)->eCurrentOPMode = OP_MODE_INFRASTRUCTURE; \
-	(_prBssInfo)->ucReasonOfDisconnect = DISCONNECT_REASON_CODE_RESERVED; \
 	COPY_MAC_ADDR((_prBssInfo)->aucBSSID, _aucZeroMacAddr); \
 	LINK_INITIALIZE(&((_prBssInfo)->rStaRecOfClientList)); \
 	(_prBssInfo)->fgIsBeaconActivated = FALSE; \

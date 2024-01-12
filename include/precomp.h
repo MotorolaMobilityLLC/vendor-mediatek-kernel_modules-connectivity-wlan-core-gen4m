@@ -296,6 +296,10 @@
 #include "roaming_fsm.h"
 #endif /* CFG_SUPPORT_ROAMING */
 
+#if CFG_SUPPORT_PASSPOINT
+#include "hs20.h"
+#endif /* CFG_SUPPORT_PASSPOINT */
+
 #include "ais_fsm.h"
 
 #include "adapter.h"

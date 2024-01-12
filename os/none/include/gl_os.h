@@ -426,12 +426,6 @@ struct GLUE_INFO {
 	int32_t i4TxPendingSecurityFrameNum;
 	int32_t i4TxPendingCmdNum;
 
-	/*! \brief wext wpa related information */
-	struct GL_WPA_INFO rWpaInfo[KAL_AIS_NUM];
-#if CFG_SUPPORT_REPLAY_DETECTION
-	struct GL_DETECT_REPLAY_INFO prDetRplyInfo[KAL_AIS_NUM];
-#endif
-
 	uint32_t u4RoamFailCnt;
 	uint64_t u8RoamFailTime;
 

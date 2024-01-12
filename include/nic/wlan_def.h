@@ -201,6 +201,7 @@
 
 /*! CNM(STA_RECORD_T) related definition */
 #define CFG_STA_REC_NUM         27
+#define CFG_MLD_STAREC_NUM      128
 
 /* PHY TYPE bit definitions */
 /* HR/DSSS PHY (clause 18) */

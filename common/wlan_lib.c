@@ -540,7 +540,6 @@ PFN_OID_HANDLER_FUNC apfnOidQueryHandlerWOHwAccess[] = {
 	wlanoidQueryBssidList,
 	wlanoidQueryAcpiDevicePowerState,
 	wlanoidQuerySupportedRates,
-	wlanoidQueryDesiredRates,
 	wlanoidQuery802dot11PowerSaveProfile,
 	wlanoidQueryBeaconInterval,
 	wlanoidQueryAtimWindow,
@@ -5078,34 +5077,6 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief This function is called to check
- *        Media Stream Mode is set to non-default value or not,
- *        and clear to default value if above criteria is met
- *
- * @param prAdapter      Pointer of Adapter Data Structure
- *
- * @return TRUE
- *           The media stream mode was non-default value and has been reset
- *         FALSE
- *           The media stream mode is default value
- */
-/*----------------------------------------------------------------------------*/
-u_int8_t wlanResetMediaStreamMode(IN struct ADAPTER
-				  *prAdapter)
-{
-	ASSERT(prAdapter);
-
-	if (prAdapter->rWlanInfo.eLinkAttr.ucMediaStreamMode != 0) {
-		prAdapter->rWlanInfo.eLinkAttr.ucMediaStreamMode = 0;
-
-		return TRUE;
-	} else {
-		return FALSE;
-	}
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * @brief This function is called to check if any pending timer has expired
  *
  * @param prAdapter      Pointer of Adapter Data Structure
@@ -5915,10 +5886,10 @@ wlanoidQueryStaStatistics(IN struct ADAPTER *prAdapter,
 			  OUT uint32_t *pu4QueryInfoLen)
 {
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex ;
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-	if (ucBssIndex == AIS_DEFAULT_INDEX &&
+	if (ucBssIndex == aisGetDefaultLinkBssIndex(prAdapter) &&
 	    !CHECK_FOR_TIMEOUT(kalGetTimeTick(),
 		prAdapter->u4LastLinkQuality,
 		SEC_TO_MSEC(CFG_LQ_MONITOR_FREQUENCY))) {
@@ -10089,8 +10060,13 @@ struct net_device *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
 		return NULL;
 
 	/* AIS */
-	if (ucBssIndex < KAL_AIS_NUM && gprWdev[ucBssIndex])
-		return gprWdev[ucBssIndex]->netdev;
+	if (IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex)) {
+		struct AIS_FSM_INFO *ais =
+			aisGetAisFsmInfo(prGlueInfo->prAdapter, ucBssIndex);
+
+		if (gprWdev[ais->ucAisIndex])
+			return gprWdev[ais->ucAisIndex]->netdev;
+	}
 
 	/* P2P */
 	if (ucBssIndex < BSS_DEFAULT_NUM) {
@@ -11003,7 +10979,7 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 	}
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
 	else if (IS_BSS_AIS(prBssInfo) && prAisFsmInfo != NULL) {
-		prBssDesc = prAisFsmInfo->prTargetBssDesc;
+		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		if (prBssDesc != NULL &&
 		    bssGetIotApAction(prAdapter,
 				      prBssDesc) == WLAN_IOT_AP_DBDC_1SS) {
@@ -11115,7 +11091,7 @@ wlanProbeSuccessForLowLatency(IN struct ADAPTER *prAdapter)
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanConnectedForLowLatency(IN struct ADAPTER *prAdapter)
+wlanConnectedForLowLatency(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	uint32_t u4Events = 0;
 
@@ -11126,7 +11102,7 @@ wlanConnectedForLowLatency(IN struct ADAPTER *prAdapter)
 
 	/* Set low latency mode */
 	DBGLOG(AIS, INFO, "LowLatency(Connected) event:0x%x\n", u4Events);
-	wlanSetLowLatencyMode(prAdapter, u4Events);
+	wlanSetLowLatencyMode(prAdapter, u4Events, ucBssIndex);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -11194,7 +11170,7 @@ uint32_t wlanSetLowLatencyCommand(
 /*----------------------------------------------------------------------------*/
 uint32_t wlanSetLowLatencyMode(
 	IN struct ADAPTER *prAdapter,
-	IN uint32_t u4Events)
+	IN uint32_t u4Events, uint8_t ucBssIndex)
 {
 	u_int8_t fgEnMode = FALSE; /* Low Latency Mode */
 	u_int8_t fgEnScan = FALSE; /* Scan management */
@@ -11203,19 +11179,10 @@ uint32_t wlanSetLowLatencyMode(
 	uint32_t u4PowerFlag;
 	struct PARAM_POWER_MODE_ rPowerMode;
 	struct WIFI_VAR *prWifiVar = NULL;
-	struct BSS_INFO *prAisBssInfo;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 
 	DEBUGFUNC("wlanSetLowLatencyMode");
 
 	ASSERT(prAdapter);
-
-	prAisBssInfo =
-		aisGetAisBssInfo(prAdapter, ucBssIndex);
-	if (!prAisBssInfo) {
-		DBGLOG(OID, ERROR, "prAisBssInfo = NULL\n");
-		return WLAN_STATUS_FAILURE;
-	}
 
 	/* Initialize */
 	prWifiVar = &prAdapter->rWifiVar;
@@ -11230,7 +11197,7 @@ uint32_t wlanSetLowLatencyMode(
 		(uint32_t)prWifiVar->ucLowLatencyModePower,
 		(uint32_t)prWifiVar->ucLowLatencyCmdData);
 
-	rPowerMode.ucBssIdx = prAisBssInfo->ucBssIndex;
+	rPowerMode.ucBssIdx = ucBssIndex;
 	u4PowerFlag = prAdapter->rWlanInfo.u4PowerSaveFlag[rPowerMode.ucBssIdx];
 
 	/* Enable/disable low latency mode decision:
@@ -11242,7 +11209,7 @@ uint32_t wlanSetLowLatencyMode(
 		&& (u4Events & GED_EVENT_NETWORK) != 0
 		&& MEDIA_STATE_CONNECTED
 			== kalGetMediaStateIndicated(prAdapter->prGlueInfo,
-			prAisBssInfo->ucBssIndex))
+			ucBssIndex))
 		fgEnMode = TRUE; /* It will enable low latency mode */
 
 	/* Enable/disable scan management decision:
@@ -12078,19 +12045,20 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 	uint32_t u4BufLen = 0;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
 	uint32_t u4Status = WLAN_STATUS_FAILURE;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex;
 
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(SW4, ERROR, "prAdapter is null\n");
+		return u4Status;
+	}
+
+	ucBssIndex = aisGetDefaultLinkBssIndex(prAdapter);
 	if (kalGetMediaStateIndicated(prGlueInfo,
 		ucBssIndex) !=
 	    MEDIA_STATE_CONNECTED) {
 		/* not connected */
 		DBGLOG(SW4, ERROR, "not yet connected\n");
-		return u4Status;
-	}
-
-	prAdapter = prGlueInfo->prAdapter;
-	if (prAdapter == NULL) {
-		DBGLOG(SW4, ERROR, "prAdapter is null\n");
 		return u4Status;
 	}
 
@@ -12865,7 +12833,7 @@ int wlanTpeProcess(struct GLUE_INFO *prGlueInfo,
 	struct QUE *prTpeAckQueue;
 	struct WIFI_VAR *prWifiVar;
 	uint64_t u8Nowus;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex;
 	int8_t cRssi;
 	struct PERF_MONITOR *prPerMonitor =
 		&prGlueInfo->prAdapter->rPerMonitor;

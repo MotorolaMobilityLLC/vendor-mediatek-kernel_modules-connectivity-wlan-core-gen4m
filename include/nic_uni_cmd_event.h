@@ -98,7 +98,7 @@
 #define UNICMD_CHIP_CONFIG_RESP_SIZE       320
 
 // TODO: uni cmd
-#define MLD_LINK_MAX 3
+#define MLD_LINK_MAX 2
 #define MLD_GROUP_NONE 0xff
 #define OM_REMAP_IDX_NONE 0xff
 

@@ -1239,7 +1239,7 @@ int32_t halShowStatInfo(struct ADAPTER *prAdapter,
 	uint32_t u4RangeCtrl_0, u4RangeCtrl_1;
 	enum AGG_RANGE_TYPE_T eRangeType = ENUM_AGG_RANGE_TYPE_TX;
 #endif
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex;
 	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 
 	ucSkipAr = prQueryStaStatistics->ucSkipAr;
@@ -1988,7 +1988,7 @@ int connac_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 		(!pu4Sgi))
 		return -1;
 
-	prStaRec = aisGetStaRecOfAP(prAdapter, AIS_DEFAULT_INDEX);
+	prStaRec = aisGetDefaultStaRecOfAP(prAdapter);
 	if (prStaRec) {
 		ucWlanIdx = prStaRec->ucWlanIndex;
 	} else {

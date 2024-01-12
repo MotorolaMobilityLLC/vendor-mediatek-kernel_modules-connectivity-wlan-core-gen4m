@@ -445,12 +445,8 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 	*  2) wow is enable
 	*  3) WIfI connected => execute WOW flow
 	*/
-	if (prAdapter->rWifiVar.ucWow && prAdapter->rWowCtrl.fgWowEnable &&
-		(kalGetMediaStateIndicated(prGlueInfo, AIS_DEFAULT_INDEX) ==
-		MEDIA_STATE_CONNECTED)) {
-		DBGLOG(HAL, STATE, "enter WOW flow\n");
+	if (prAdapter->rWifiVar.ucWow && prAdapter->rWowCtrl.fgWowEnable))
 		kalWowProcess(prGlueInfo, TRUE);
-	}
 
 	prGlueInfo->rHifInfo.fgForceFwOwn = TRUE;
 
@@ -535,9 +531,7 @@ static int mtk_sdio_pm_resume(struct device *pDev)
 	prGlueInfo->rHifInfo.fgForceFwOwn = FALSE;
 
 	if (prGlueInfo->prAdapter->rWifiVar.ucWow &&
-		prGlueInfo->prAdapter->rWowCtrl.fgWowEnable &&
-		(kalGetMediaStateIndicated(prGlueInfo, AIS_DEFAULT_INDEX) ==
-		MEDIA_STATE_CONNECTED)) {
+		prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
 		DBGLOG(HAL, STATE, "leave WOW flow\n");
 		kalWowProcess(prGlueInfo, FALSE);
 	}

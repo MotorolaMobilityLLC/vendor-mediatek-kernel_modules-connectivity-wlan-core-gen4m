@@ -2453,6 +2453,93 @@ uint32_t nicUniCmdUpdateStaRec(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t nicUniCmdMldSetup(struct ADAPTER *ad)
+{
+	struct UNI_CMD_STAREC *uni_cmd;
+	struct UNI_CMD_STAREC_MLD_SETUP *tag;
+	struct UNI_CMD_STAREC_LINK_INFO *link;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC) +
+	     		sizeof(struct UNI_CMD_STAREC_MLD_SETUP) +
+			sizeof(struct UNI_CMD_STAREC_LINK_INFO) * MLD_LINK_MAX;
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	uint8_t i;
+
+	uni_cmd = (struct UNI_CMD_STAREC *) cnmMemAlloc(ad,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_BF ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	uni_cmd->ucBssInfoIdx = 0;
+	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL, 0);
+	tag = (struct UNI_CMD_STAREC_MLD_SETUP *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_STAREC_TAG_MLD_SETUP;
+	tag->u2Length = sizeof(*tag) + sizeof(*link) * MLD_LINK_MAX;
+	COPY_MAC_ADDR(tag->aucPeerMldAddr, "\0\0\0\0\0\0");
+	tag->u2PrimaryMldId = 0;
+	tag->u2SecondMldId = 0;
+	tag->u2SetupWlanId = 0;
+	tag->ucLinkNumber = 0;
+
+	link = (struct UNI_CMD_STAREC_LINK_INFO *)tag->aucLinkInfo;
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		link->u2WlanIdx = 0;
+		link->ucBssIdx = 0;
+		link++;
+	}
+
+	status = wlanSendSetQueryUniCmd(ad,
+			     UNI_CMD_ID_STAREC_INFO,
+			     TRUE,
+			     FALSE,
+			     FALSE,
+			     nicUniCmdEventSetCommon,
+			     nicUniCmdTimeoutCommon,
+			     max_cmd_len,
+			     (void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(ad, uni_cmd);
+	return status;
+}
+
+uint32_t nicUniCmdMldTeardown(struct ADAPTER *ad)
+{
+	struct UNI_CMD_STAREC *uni_cmd;
+	struct UNI_CMD_STAREC_MLD_TEARDOWN *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC) +
+			sizeof(struct UNI_CMD_STAREC_MLD_TEARDOWN);
+	uint32_t status = WLAN_STATUS_SUCCESS;
+
+	uni_cmd = (struct UNI_CMD_STAREC *) cnmMemAlloc(ad,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_BF ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	uni_cmd->ucBssInfoIdx = 0;
+	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL, 0);
+	tag = (struct UNI_CMD_STAREC_MLD_TEARDOWN *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_STAREC_TAG_MLD_TEARDOWN;
+	tag->u2Length = sizeof(*tag);
+
+	status = wlanSendSetQueryUniCmd(ad,
+			     UNI_CMD_ID_STAREC_INFO,
+			     TRUE,
+			     FALSE,
+			     FALSE,
+			     nicUniCmdEventSetCommon,
+			     nicUniCmdTimeoutCommon,
+			     max_cmd_len,
+			     (void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(ad, uni_cmd);
+	return status;
+}
+
 uint32_t nicUniCmdChPrivilege(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {

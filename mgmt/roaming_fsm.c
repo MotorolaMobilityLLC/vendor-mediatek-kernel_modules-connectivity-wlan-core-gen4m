@@ -532,7 +532,7 @@ void roamingFsmRunEventDiscovery(IN struct ADAPTER *prAdapter,
 		/* sync. rcpi with firmware */
 		prAisBssInfo =
 			&(prAdapter->rWifiVar.arBssInfoPool[NETWORK_TYPE_AIS]);
-		prBssDesc = prAisFsmInfo->prTargetBssDesc;
+		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		if (prBssDesc) {
 			COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
 				  prBssDesc->aucSSID, prBssDesc->ucSSIDLen);

@@ -186,7 +186,7 @@ void hs20FillProreqExtCapIE(IN struct ADAPTER *prAdapter, OUT uint8_t *pucIE)
 	ASSERT(prAdapter);
 
 	prHS20Info = aisGetHS20Info(prAdapter,
-		AIS_DEFAULT_INDEX);
+		0);
 	if (!prHS20Info)
 		return;
 

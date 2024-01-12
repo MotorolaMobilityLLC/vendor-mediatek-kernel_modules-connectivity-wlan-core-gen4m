@@ -898,8 +898,6 @@ void testPsSetupBss(IN struct ADAPTER *prAdapter,
 	prBssInfo->eCurrentOPMode = OP_MODE_ACCESS_POINT;
 	prBssInfo->fgIsNetActive = TRUE;
 	prBssInfo->ucBssIndex = ucBssIndex;
-	prBssInfo->ucReasonOfDisconnect =
-		DISCONNECT_REASON_CODE_RESERVED;
 
 	/* Depend on eBand */
 	prBssInfo->ucPhyTypeSet =

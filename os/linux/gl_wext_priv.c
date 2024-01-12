@@ -1642,7 +1642,7 @@ __priv_set_struct(IN struct net_device *prNetDev,
 
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4BufLen = 0;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
 
 	ASSERT(prNetDev);
 	/* ASSERT(prIwReqInfo); */
@@ -3136,11 +3136,8 @@ priv_get_string(IN struct net_device *prNetDev,
 		if (kalIoctl(prGlueInfo, wlanoidQueryRssi,
 			&i4Rssi, sizeof(i4Rssi),
 			TRUE, TRUE, TRUE, &u4BufLen) == WLAN_STATUS_SUCCESS) {
-			prStaRec = cnmGetStaRecByAddress(prGlueInfo->prAdapter,
-				prGlueInfo->prAdapter->prAisBssInfo[0]
-				->ucBssIndex,
-				prGlueInfo->prAdapter->rWlanInfo
-				.rCurrBssId[0].arMacAddress);
+			prStaRec = aisGetDefaultLink(prGlueInfo->prAdapter)
+					->prTargetStaRec;
 			if (prStaRec)
 				ucAvgNoise = prStaRec->ucNoise_avg - 127;
 
@@ -4255,7 +4252,7 @@ static int priv_driver_get_bss_statistics(
 	uint32_t u4BufLen;
 	struct PARAM_LINK_SPEED_EX *prLinkSpeed;
 	struct PARAM_GET_BSS_STATISTICS rQueryBssStatistics;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
 	int32_t i4BytesWritten = 0;
 #if 0
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
@@ -4274,7 +4271,7 @@ static int priv_driver_get_bss_statistics(
 	if (i4Argc >= 2)
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Index);
 #endif
-	ucBssIndex = wlanGetBssIdx(prNetDev);
+
 	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
 		return WLAN_STATUS_FAILURE;
 
@@ -6846,7 +6843,7 @@ static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 	static uint32_t au4LengthMismatch[ENUM_BAND_NUM] = {0};
 	struct STA_RECORD *prStaRecOfAP;
 
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
 
 	prStaRecOfAP =
 		aisGetStaRecOfAP(prAdapter, ucBssIndex);
@@ -9252,13 +9249,12 @@ int priv_driver_get_linkspeed(IN struct net_device *prNetDev,
 	uint32_t u4BufLen = 0;
 	uint32_t u4Rate = 0;
 	int32_t i4BytesWritten = 0;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	ucBssIndex = wlanGetBssIdx(prNetDev);
 
 	if (!netif_carrier_ok(prNetDev))
 		return -1;

@@ -642,12 +642,6 @@ struct GLUE_INFO {
 	/* defined in related hif header file */
 	struct GL_HIF_INFO rHifInfo;
 
-	/*! \brief wext wpa related information */
-	struct GL_WPA_INFO rWpaInfo[KAL_AIS_NUM];
-#if CFG_SUPPORT_REPLAY_DETECTION
-	struct GL_DETECT_REPLAY_INFO prDetRplyInfo[KAL_AIS_NUM];
-#endif
-
 	/* Pointer to ADAPTER_T - main data structure of internal protocol
 	 * stack
 	 */
@@ -656,10 +650,6 @@ struct GLUE_INFO {
 #if WLAN_INCLUDE_PROC
 	struct proc_dir_entry *pProcRoot;
 #endif				/* WLAN_INCLUDE_PROC */
-
-	/* Indicated media state */
-	enum ENUM_PARAM_MEDIA_STATE
-		eParamMediaStateIndicated[KAL_AIS_NUM];
 
 	/* Device power state D0~D3 */
 	enum PARAM_DEVICE_POWER_STATE ePowerState;
