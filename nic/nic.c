@@ -1646,7 +1646,9 @@ uint32_t nicActivateNetworkEx(IN struct ADAPTER *prAdapter,
 					 STA_REC_INDEX_NOT_FOUND,
 					 CIPHER_SUITE_NONE, 0xFF);
 	rCmdActivateCtrl.ucBMCWlanIndex = prBssInfo->ucBMCWlanIndex;
-	rCmdActivateCtrl.ucDbdcIdx = ENUM_BAND_AUTO;
+
+	kalMemZero(&rCmdActivateCtrl.ucReserved,
+		   sizeof(rCmdActivateCtrl.ucReserved));
 
 #if 1
 	DBGLOG(RSN, INFO,

@@ -705,7 +705,7 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 		goto fail;
 	dev_cmd = (struct UNI_CMD_DEVINFO *) dev_entry->pucInfoBuffer;
 	dev_cmd->ucOwnMacIdx = cmd->ucOwnMacAddrIndex;
-	dev_cmd->ucDbdcIdx = cmd->ucDbdcIdx;
+	dev_cmd->ucDbdcIdx = ENUM_BAND_AUTO;
 	dev_active_tag = (struct UNI_CMD_DEVINFO_ACTIVE *)dev_cmd->aucTlvBuffer;
 	dev_active_tag->u2Tag = UNI_CMD_DEVINFO_TAG_ACTIVE;
 	dev_active_tag->u2Length = sizeof(*dev_active_tag);
@@ -726,7 +726,7 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 	bss_basic_tag->u2Tag = UNI_CMD_BSSINFO_TAG_BASIC;
 	bss_basic_tag->u2Length = sizeof(*bss_basic_tag);
 	bss_basic_tag->ucActive = cmd->ucActive;
-	bss_basic_tag->ucDbdcIdx = cmd->ucDbdcIdx;
+	bss_basic_tag->ucDbdcIdx = ENUM_BAND_AUTO;
 	bss_basic_tag->ucOwnMacIdx = cmd->ucOwnMacAddrIndex;
 	bss_basic_tag->ucHwBSSIndex = cmd->ucOwnMacAddrIndex;
 	bss_basic_tag->u4ConnectionType = nicUniCmdBssInfoConnType(ad, bss);
