@@ -1207,7 +1207,6 @@ do { \
  *------------------------------------------------------------------------------
  */
 #define TX_SET_MMPDU            nicTxSetMngPacket
-#define TX_SET_DATA_PACKET      nicTxSetDataPacket
 
 /*------------------------------------------------------------------------------
  * MACRO for HW_MAC_TX_DESC_T
@@ -1965,17 +1964,6 @@ void nicTxSetMngPacket(IN struct ADAPTER *prAdapter,
 	IN uint16_t u2FrameLength,
 	IN PFN_TX_DONE_HANDLER pfTxDoneHandler,
 	IN uint8_t ucRateMode);
-
-void nicTxSetDataPacket(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo,
-	IN uint8_t ucBssIndex,
-	IN uint8_t ucStaRecIndex,
-	IN uint8_t ucMacHeaderLength,
-	IN uint16_t u2FrameLength,
-	IN PFN_TX_DONE_HANDLER pfTxDoneHandler,
-	IN uint8_t ucRateMode,
-	IN enum ENUM_TX_PACKET_SRC eSrc, IN uint8_t ucTID,
-	IN u_int8_t fgIs802_11Frame, IN u_int8_t fgIs1xFrame);
 
 void nicTxFillDescByPktOption(
 	IN struct ADAPTER *prAdapter,

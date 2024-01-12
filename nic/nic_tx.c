@@ -4569,37 +4569,6 @@ void nicTxSetMngPacket(struct ADAPTER *prAdapter,
 	nicTxSetPktSequenceNumber(prMsduInfo, u2SwSn);
 }
 
-void nicTxSetDataPacket(struct ADAPTER *prAdapter,
-	struct MSDU_INFO *prMsduInfo,
-	uint8_t ucBssIndex, uint8_t ucStaRecIndex,
-	uint8_t ucMacHeaderLength,
-	uint16_t u2FrameLength, PFN_TX_DONE_HANDLER pfTxDoneHandler,
-	uint8_t ucRateMode, enum ENUM_TX_PACKET_SRC eSrc,
-	uint8_t ucTID,
-	u_int8_t fgIs802_11Frame, u_int8_t fgIs1xFrame)
-{
-	ASSERT(prMsduInfo);
-
-	prMsduInfo->ucBssIndex = ucBssIndex;
-	prMsduInfo->ucStaRecIndex = ucStaRecIndex;
-	prMsduInfo->ucMacHeaderLength = ucMacHeaderLength;
-	prMsduInfo->u2FrameLength = u2FrameLength;
-	prMsduInfo->pfTxDoneHandler = pfTxDoneHandler;
-	prMsduInfo->ucRateMode = ucRateMode;
-	prMsduInfo->ucUserPriority = ucTID;
-	prMsduInfo->fgIs802_11 = fgIs802_11Frame;
-	prMsduInfo->eSrc = eSrc;
-	prMsduInfo->fgIs802_1x = fgIs1xFrame;
-
-	/* Reset default value for data packet */
-	prMsduInfo->u4FixedRateOption = 0;
-	prMsduInfo->cPowerOffset = 0;
-	prMsduInfo->u4Option = 0;
-	prMsduInfo->ucTxSeqNum = nicIncreaseTxSeqNum(prAdapter);
-	prMsduInfo->ucPID = NIC_TX_DESC_PID_RESERVED;
-	prMsduInfo->ucPacketType = TX_PACKET_TYPE_DATA;
-}
-
 void nicTxFillDescByPktOption(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
