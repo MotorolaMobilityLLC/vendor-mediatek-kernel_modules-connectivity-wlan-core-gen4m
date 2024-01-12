@@ -3872,6 +3872,10 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 #define CMD_SET_PWR_LEVEL	"SET_PWR_LEVEL"
 #define CMD_SET_PWR_TEMP	"SET_PWR_TEMP"
+#define CMD_THERMAL_PROTECT_ENABLE	"thermal_protect_enable"
+#define CMD_THERMAL_PROTECT_DISABLE	"thermal_protect_disable"
+#define CMD_THERMAL_PROTECT_DUTY_CFG	"thermal_protect_duty_cfg"
+#define CMD_THERMAL_PROTECT_STATE_ACT	"thermal_protect_state_act"
 #endif
 
 #if (CFG_SUPPORT_ICS == 1)
@@ -3981,7 +3985,6 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #if (CFG_SUPPORT_CONNAC2X == 1)
 #define CMD_GET_FWTBL_UMAC      "GET_UMAC_FWTBL"
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
-
 /* Debug for consys */
 #define CMD_DBG_SHOW_TR_INFO			"show-tr"
 #define CMD_DBG_SHOW_PLE_INFO			"show-ple"
@@ -14721,6 +14724,200 @@ int priv_driver_set_nvram(IN struct net_device *prNetDev, IN char *pcCommand,
 	return i4BytesWritten;
 
 }
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+int priv_driver_thermal_protect_enable(IN struct net_device *prNetDev,
+		IN char *pcCommand, IN int i4TotalLen)
+{
+
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	uint8_t uParse = 0;
+	uint32_t u4Parse = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Ret;
+	struct EXT_CMD_THERMAL_PROTECT_ENABLE *ext_cmd_buf;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc != 7)
+		return 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	ext_cmd_buf = kalMemAlloc(
+			sizeof(struct EXT_CMD_THERMAL_PROTECT_ENABLE),
+			VIR_MEM_TYPE);
+
+	if (!ext_cmd_buf)
+		return 0;
+
+	u4Ret = kalkStrtou8(apcArgv[1], 0, &uParse);
+	ext_cmd_buf->band_idx = uParse;
+	u4Ret = kalkStrtou8(apcArgv[2], 0, &uParse);
+	ext_cmd_buf->protection_type = uParse;
+	u4Ret = kalkStrtou8(apcArgv[3], 0, &uParse);
+	ext_cmd_buf->trigger_type = uParse;
+	u4Ret = kalkStrtou32(apcArgv[4], 0, &u4Parse);
+	ext_cmd_buf->trigger_temp = u4Parse;
+	u4Ret = kalkStrtou32(apcArgv[5], 0, &u4Parse);
+	ext_cmd_buf->restore_temp = u4Parse;
+	u4Ret = kalkStrtou32(apcArgv[6], 0, &u4Parse);
+	ext_cmd_buf->recheck_time = u4Parse;
+	ext_cmd_buf->sub_cmd_id = THERMAL_PROTECT_ENABLE;
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidThermalProtectAct,
+				ext_cmd_buf,
+				sizeof(struct EXT_CMD_THERMAL_PROTECT_ENABLE),
+				FALSE, FALSE, TRUE, &u4BufLen);
+
+	kalMemFree(ext_cmd_buf, VIR_MEM_TYPE,
+				sizeof(struct EXT_CMD_THERMAL_PROTECT_ENABLE));
+	return 1;
+}
+
+int priv_driver_thermal_protect_disable(IN struct net_device *prNetDev,
+		IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	uint8_t uParse = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Ret;
+	struct EXT_CMD_THERMAL_PROTECT_DISABLE *ext_cmd_buf;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc != 4)
+		return 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	ext_cmd_buf = kalMemAlloc(
+			sizeof(struct EXT_CMD_THERMAL_PROTECT_DISABLE),
+			VIR_MEM_TYPE);
+
+	if (!ext_cmd_buf)
+		return 0;
+
+	u4Ret = kalkStrtou8(apcArgv[1], 0, &uParse);
+	ext_cmd_buf->band_idx = uParse;
+	u4Ret = kalkStrtou8(apcArgv[2], 0, &uParse);
+	ext_cmd_buf->protection_type = uParse;
+	u4Ret = kalkStrtou8(apcArgv[3], 0, &uParse);
+	ext_cmd_buf->trigger_type = uParse;
+	ext_cmd_buf->sub_cmd_id = THERMAL_PROTECT_DISABLE;
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidThermalProtectAct,
+		ext_cmd_buf,
+		sizeof(struct EXT_CMD_THERMAL_PROTECT_DISABLE),
+		FALSE, FALSE, TRUE, &u4BufLen);
+
+	kalMemFree(ext_cmd_buf, VIR_MEM_TYPE,
+		sizeof(struct EXT_CMD_THERMAL_PROTECT_DISABLE));
+
+	return 1;
+}
+
+int priv_driver_thermal_protect_duty_cfg(IN struct net_device *prNetDev,
+		IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	uint8_t uParse = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Ret;
+	struct EXT_CMD_THERMAL_PROTECT_DUTY_CFG *ext_cmd_buf;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc != 4)
+		return 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	ext_cmd_buf = kalMemAlloc(
+			sizeof(struct EXT_CMD_THERMAL_PROTECT_DUTY_CFG),
+			VIR_MEM_TYPE);
+
+	if (!ext_cmd_buf)
+		return 0;
+
+	u4Ret = kalkStrtou8(apcArgv[1], 0, &uParse);
+	ext_cmd_buf->band_idx = uParse;
+	u4Ret = kalkStrtou8(apcArgv[2], 0, &uParse);
+	ext_cmd_buf->level_idx = uParse;
+	u4Ret = kalkStrtou8(apcArgv[3], 0, &uParse);
+	ext_cmd_buf->duty = uParse;
+
+	ext_cmd_buf->sub_cmd_id = THERMAL_PROTECT_DUTY_CONFIG;
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidThermalProtectAct, ext_cmd_buf,
+				sizeof(struct EXT_CMD_THERMAL_PROTECT_DUTY_CFG),
+				FALSE, FALSE, TRUE, &u4BufLen);
+
+	kalMemFree(ext_cmd_buf, VIR_MEM_TYPE,
+			sizeof(struct EXT_CMD_THERMAL_PROTECT_DUTY_CFG));
+	return 1;
+}
+
+int priv_driver_thermal_protect_state_act(IN struct net_device *prNetDev,
+		IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	uint8_t uParse = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Ret;
+	struct EXT_CMD_THERMAL_PROTECT_STATE_ACT *ext_cmd_buf;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc != 5)
+		return 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	ext_cmd_buf = kalMemAlloc(
+			sizeof(struct EXT_CMD_THERMAL_PROTECT_STATE_ACT),
+			VIR_MEM_TYPE);
+
+	if (!ext_cmd_buf)
+		return 0;
+
+	u4Ret = kalkStrtou8(apcArgv[1], 0, &uParse);
+	ext_cmd_buf->band_idx = uParse;
+	u4Ret = kalkStrtou8(apcArgv[2], 0, &uParse);
+	ext_cmd_buf->protect_type = uParse;
+	u4Ret = kalkStrtou8(apcArgv[3], 0, &uParse);
+	ext_cmd_buf->trig_type = uParse;
+	u4Ret = kalkStrtou8(apcArgv[4], 0, &uParse);
+	ext_cmd_buf->state = uParse;
+
+	ext_cmd_buf->sub_cmd_id = THERMAL_PROTECT_STATE_ACT;
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidThermalProtectAct,
+			ext_cmd_buf,
+			sizeof(struct EXT_CMD_THERMAL_PROTECT_STATE_ACT),
+			FALSE, FALSE, TRUE, &u4BufLen);
+
+	kalMemFree(ext_cmd_buf, VIR_MEM_TYPE,
+			sizeof(struct EXT_CMD_THERMAL_PROTECT_STATE_ACT));
+	return 1;
+}
+#endif
 
 static int priv_driver_get_hapd_channel(
 	IN struct net_device *prNetDev,
@@ -14932,6 +15129,10 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	{CMD_SET_PWR_LEVEL, priv_driver_set_pwr_level},
 	{CMD_SET_PWR_TEMP, priv_driver_set_pwr_temp},
+	{CMD_THERMAL_PROTECT_ENABLE, priv_driver_thermal_protect_enable},
+	{CMD_THERMAL_PROTECT_DISABLE, priv_driver_thermal_protect_disable},
+	{CMD_THERMAL_PROTECT_DUTY_CFG, priv_driver_thermal_protect_duty_cfg},
+	{CMD_THERMAL_PROTECT_STATE_ACT, priv_driver_thermal_protect_state_act},
 #endif
 };
 

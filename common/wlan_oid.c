@@ -16908,3 +16908,30 @@ wlanoidSetAxBlacklist(IN struct ADAPTER *prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+uint32_t wlanoidThermalProtectAct(IN struct ADAPTER *prAdapter,
+			IN void *pvSetBuffer,
+			IN uint32_t u4SetBufferLen,
+			OUT uint32_t *pu4SetInfoLen)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	if (pvSetBuffer == NULL)
+		return WLAN_STATUS_INVALID_DATA;
+
+	rStatus = wlanSendSetQueryExtCmd(prAdapter,
+		CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+		EXT_CMD_ID_THERMAL_PROTECT,
+		TRUE,
+		FALSE,
+		TRUE,
+		nicCmdEventSetCommon,
+		nicOidCmdTimeoutCommon,
+		u4SetBufferLen,
+		(uint8_t *) pvSetBuffer, (uint8_t *) pvSetBuffer,
+		u4SetBufferLen);
+
+	return rStatus;
+}
+#endif
