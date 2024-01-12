@@ -6070,6 +6070,32 @@ uint32_t kalScheduleFlushRxBaEntry(struct GLUE_INFO *prGlueInfo)
 	return rc;
 }
 
+#if CFG_SUPPORT_FW_DROP_SSN
+/**
+ * kalScheduleHandleRxFwDropSSN() - schedule NAPI to handle Fw drop SSN
+ *
+ * Main thread generate a prSwRfb with the SSN, enqueue into rRxFwDropSSNQue
+ * and then calls this function to schedule NAPI for dequeue the data.
+ * If the configuration supports NAPI to schedule the polling, this function
+ * returns WLAN_STATUS_SUCCESS; otherwise, it retuns WLAN_STATUS_NOT_ACCEPTED
+ * suggesting the caller to flush the data in main thread.
+ *
+ * Return: WLAN_STATUS_SUCCESS The task was scheduled.
+ *         WLAN_STATUS_NOT_ACCEPTED The configuration does not support NAPI.
+ */
+uint32_t kalScheduleHandleRxFwDropSSN(struct GLUE_INFO *prGlueInfo)
+{
+	uint32_t rc = WLAN_STATUS_NOT_ACCEPTED;
+
+	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
+		kal_napi_schedule(&prGlueInfo->napi);
+		rc = WLAN_STATUS_SUCCESS;
+	}
+
+	return rc;
+}
+#endif /* CFG_SUPPORT_FW_DROP_SSN */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is get indicated media state
@@ -9995,10 +10021,12 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	RRO_LOG_TEMPLATE \
 	"RxReorder[%s] " \
 	RRB_TRACK_TEMPLATE \
-	"drv[RM,IL,RI,RT,RM,RW,RA,RB,DT,NS,IB,HS,LS,DD,ME,BD,NI," \
-	"DR,TE,PE,CE,DN,FE,DE,IE,TME,ID,NL]:%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
-	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
-	"%lu,%lu,%lu\n"
+	"drv[RM,IL,RI,RT,RM,RW,RA,RB,DT,NS," \
+	"IB,HS,LS,DD,ME,BD,NI,DR,TE,PE," \
+	"CE,DN,FE,DE,IE,TME,ID,FD,NL]:" \
+	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
+	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
+	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu\n" \
 
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
 		head3,
@@ -10077,6 +10105,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_ICV_ERR_DROP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_TKIP_MIC_ERROR_DROP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_ICS_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_FW_DROP_SSN_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NULL_PACKET_COUNT)
 		);
 #undef TEMP_LOG_TEMPLATE
@@ -12655,6 +12684,18 @@ static int kalNapiPollSwRfb(struct napi_struct *napi, int budget)
 		goto end;
 
 	prAdapter = prGlueInfo->prAdapter;
+
+#if CFG_SUPPORT_FW_DROP_SSN
+	/* Added in nicUniHandleFwDropSSN */
+	while (prSwRfb = nicRxGetFwDropSSN(prAdapter)) {
+#if CFG_RFB_TRACK
+		RX_RFB_TRACK_UPDATE(prAdapter,
+			prSwRfb, RFB_TRACK_NAPI);
+#endif /* CFG_RFB_TRACK */
+		nicRxHandleFwDropSSN(prAdapter, prSwRfb);
+	}
+#endif /* CFG_SUPPORT_FW_DROP_SSN */
+
 	while (KAL_FIFO_OUT(&prGlueInfo->rRxKfifoQ, prSwRfb)) {
 		if (!prSwRfb) {
 			DBGLOG(RX, ERROR, "prSwRfb null\n");

@@ -2437,7 +2437,9 @@ struct ADAPTER {
 
 	struct QUE rTimeoutRxBaEntry; /* wait for Timeout flush by NAPI */
 	struct QUE rFlushRxBaEntry; /* wait for BA Delete flush by NAPI */
-
+#if CFG_SUPPORT_FW_DROP_SSN
+	struct QUE rRxFwDropSSNQue; /* handle FW DROP SSN by NAPI */
+#endif /* CFG_SUPPORT_FW_DROP_SSN */
 	uint32_t u4LongestPending; /* longest pending token in seconds */
 };				/* end of _ADAPTER_T */
 

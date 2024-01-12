@@ -4696,6 +4696,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_GET_VOLT_INFO   = 0x5C,
 	UNI_EVENT_ID_PKT_OFLD	     = 0x60,
 	UNI_EVENT_ID_DELAY_BAR       = 0x61,
+	UNI_EVENT_ID_FW_DROP_SSN     = 0x62,
 	UNI_EVENT_ID_LP_DBG_CTRL     = 0x71,
 	UNI_EVENT_ID_NUM
 };
@@ -7155,6 +7156,39 @@ struct UNI_EVENT_LP_KEEP_PWR_CTRL {
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
+#if CFG_SUPPORT_FW_DROP_SSN
+struct UNI_EVENT_FW_DROP_SSN {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+};
+
+/* Delay Bar event tag */
+enum UNI_EVENT_FW_DROP_SSN_TAG {
+	UNI_EVENT_FW_DROP_SSN_INFO_TAG = 0,
+	UNI_EVENT_FW_DROP_SSN_INFO_TAG_NUM
+};
+
+struct UNI_STORED_FW_DROP_SSN_INFO {
+	uint16_t u2SSN;
+	uint8_t ucTid;
+	uint8_t ucWlanIdx;
+	uint8_t ucAmsduFormat;
+	uint8_t aucPadding[3];
+};
+
+struct UNI_EVENT_FW_DROP_SSN_INFO {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	/* event body */
+	uint8_t ucDrpPktNum;
+	uint8_t aucPadding[3];
+	struct UNI_STORED_FW_DROP_SSN_INFO
+		arSSN[FW_DROP_SSN_MAX];
+};
+#endif /* CFG_SUPPORT_FW_DROP_SSN */
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -7728,6 +7762,10 @@ void nicUniEventFastPath(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventThermalProtect(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+#if CFG_SUPPORT_FW_DROP_SSN
+void nicUniEventFwDropSSN(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+#endif /* CFG_SUPPORT_FW_DROP_SSN */
 
 #if (CFG_CE_ASSERT_DUMP == 1)
 void nicUniEventAssertDump(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt);
