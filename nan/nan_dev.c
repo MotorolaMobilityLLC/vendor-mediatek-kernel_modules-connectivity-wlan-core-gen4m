@@ -77,23 +77,25 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 
 #if (CFG_SUPPORT_DBDC == 1)
 		if (ucIdx == NAN_BSS_INDEX_BAND1) {
+#if (CFG_SUPPORT_802_11AX == 1)
+			prnanBssInfo->ucPhyTypeSet =
+				prWifiVar->ucAvailablePhyTypeSet &
+				PHY_TYPE_SET_802_11ABGNACAX;
+#else
 			prnanBssInfo->ucPhyTypeSet =
 				prWifiVar->ucAvailablePhyTypeSet &
 				PHY_TYPE_SET_802_11ANAC;
-#if (CFG_SUPPORT_802_11AX == 1)
-			prnanBssInfo->ucPhyTypeSet =
-				prWifiVar->ucAvailablePhyTypeSet &
-				PHY_TYPE_SET_802_11ABGNACAX;
 #endif
 		} else {
 #endif
-			prnanBssInfo->ucPhyTypeSet =
-				prWifiVar->ucAvailablePhyTypeSet &
-				PHY_TYPE_SET_802_11BGN;
 #if (CFG_SUPPORT_802_11AX == 1)
 			prnanBssInfo->ucPhyTypeSet =
 				prWifiVar->ucAvailablePhyTypeSet &
 				PHY_TYPE_SET_802_11ABGNACAX;
+#else
+			prnanBssInfo->ucPhyTypeSet =
+				prWifiVar->ucAvailablePhyTypeSet &
+				PHY_TYPE_SET_802_11BGN;
 #endif
 		}
 
