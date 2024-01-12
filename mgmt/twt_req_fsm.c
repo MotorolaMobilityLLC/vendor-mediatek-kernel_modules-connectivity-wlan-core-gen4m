@@ -158,8 +158,19 @@ twtReqFsmSteps(
 	enum _ENUM_TWT_REQUESTER_STATE_T ePreState;
 	uint8_t fgIsTransition;
 
-	ASSERT(prAdapter);
-	ASSERT(prStaRec);
+	if (!prAdapter) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prStaRec\n");
+
+		return;
+	}
 
 	do {
 
@@ -207,7 +218,14 @@ twtReqFsmSteps(
 		{
 			struct _TWT_PARAMS_T *prTWTParams =
 				(struct _TWT_PARAMS_T *)pParam;
-			ASSERT(prTWTParams);
+
+			if (!prTWTParams) {
+				DBGLOG(TWT_REQUESTER, ERROR,
+					"invalid prTWTParams\n");
+
+				return;
+			}
+
 			rStatus = twtSendSetupFrame(
 				prAdapter, prStaRec, ucTWTFlowId,
 				prTWTParams, twtReqFsmRunEventTxDone);
@@ -307,7 +325,14 @@ twtReqFsmSteps(
 		{
 			struct _TWT_PARAMS_T *prTWTParams =
 				(struct _TWT_PARAMS_T *)pParam;
-			ASSERT(prTWTParams);
+
+			if (!prTWTParams) {
+				DBGLOG(TWT_REQUESTER, ERROR,
+					"invalid prTWTParams\n");
+
+				return;
+			}
+
 			rStatus = btwtSendSetupFrame(
 				prAdapter, prStaRec, ucTWTFlowId,
 				prTWTParams, twtReqFsmRunEventTxDone);
@@ -343,7 +368,14 @@ twtReqFsmSteps(
 		{
 			struct _TWT_PARAMS_T *prTWTParams =
 				(struct _TWT_PARAMS_T *)pParam;
-			ASSERT(prTWTParams);
+
+			if (!prTWTParams) {
+				DBGLOG(TWT_REQUESTER, ERROR,
+					"invalid prTWTParams\n");
+
+				return;
+			}
+
 			rStatus = mltwtSendSetupFrameAllInOne(
 				prAdapter, prStaRec, ucTWTFlowId,
 				prTWTParams, twtReqFsmRunEventTxDone);
@@ -359,7 +391,14 @@ twtReqFsmSteps(
 		{
 			struct _TWT_PARAMS_T *prTWTParams =
 				(struct _TWT_PARAMS_T *)pParam;
-			ASSERT(prTWTParams);
+
+			if (!prTWTParams) {
+				DBGLOG(TWT_REQUESTER, ERROR,
+					"invalid prTWTParams\n");
+
+				return;
+			}
+
 			rStatus = mltwtSendSetupFramePerLinkDistinct(
 				prAdapter, prStaRec, ucTWTFlowId,
 				prTWTParams, twtReqFsmRunEventTxDone);
@@ -375,7 +414,7 @@ twtReqFsmSteps(
 		default:
 			DBGLOG(TWT_REQUESTER, ERROR,
 				"Unknown TWT_REQUESTER STATE\n");
-			ASSERT(0);
+
 			break;
 		}
 
@@ -453,8 +492,19 @@ void twtReqFsmRunEventStart(
 	struct _TWT_PARAMS_T *prTWTParams;
 	uint8_t ucTWTFlowId;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
+	if (!prAdapter) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prMsgHdr) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prMsgHdr\n");
+
+		return;
+	}
 
 	prTWTReqFsmStartMsg = (struct _MSG_TWT_REQFSM_START_T *) prMsgHdr;
 	prStaRec = prTWTReqFsmStartMsg->prStaRec;
@@ -466,8 +516,19 @@ void twtReqFsmRunEventStart(
 		return;
 	}
 
-	ASSERT(prStaRec);
-	ASSERT(prTWTParams);
+	if (!prStaRec) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prStaRec\n");
+
+		return;
+	}
+
+	if (!prTWTParams) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prTWTParams\n");
+
+		return;
+	}
 
 	DBGLOG(TWT_REQUESTER, LOUD,
 		"EVENT-START: TWT Requester FSM %d\n", ucTWTFlowId);
@@ -505,8 +566,20 @@ void twtReqFsmRunEventTeardown(
 	struct STA_RECORD *prStaRec;
 	uint8_t ucTWTFlowId;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
+	if (!prAdapter) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prMsgHdr) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prAdapter\n");
+
+		return;
+	}
+
 
 	prTWTReqFsmTeardownMsg = (struct _MSG_TWT_REQFSM_TEARDOWN_T *) prMsgHdr;
 	prStaRec = prTWTReqFsmTeardownMsg->prStaRec;
@@ -517,7 +590,12 @@ void twtReqFsmRunEventTeardown(
 		return;
 	}
 
-	ASSERT(prStaRec);
+	if (!prStaRec) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prAdapter\n");
+
+		return;
+	}
 
 	DBGLOG(TWT_REQUESTER, LOUD, "EVENT-TEARDOWN: TWT Requester FSM %d\n",
 		ucTWTFlowId);
@@ -554,8 +632,19 @@ void twtReqFsmRunEventSuspend(
 	struct STA_RECORD *prStaRec;
 	uint8_t ucTWTFlowId;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
+	if (!prAdapter) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prMsgHdr) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prMsgHdr\n");
+
+		return;
+	}
 
 	prTWTReqFsmSuspendMsg = (struct _MSG_TWT_REQFSM_SUSPEND_T *) prMsgHdr;
 	prStaRec = prTWTReqFsmSuspendMsg->prStaRec;
@@ -563,10 +652,13 @@ void twtReqFsmRunEventSuspend(
 
 	if ((!prStaRec) || (prStaRec->fgIsInUse == FALSE)) {
 		cnmMemFree(prAdapter, prMsgHdr);
+
+		if (!prStaRec)
+			DBGLOG(TWT_REQUESTER, ERROR,
+				"invalid prStaRec\n");
+
 		return;
 	}
-
-	ASSERT(prStaRec);
 
 	DBGLOG(TWT_REQUESTER, LOUD, "EVENT-SUSPEND: TWT Requester FSM %d\n",
 		ucTWTFlowId);
@@ -604,8 +696,19 @@ void twtReqFsmRunEventResume(
 	uint8_t ucTWTFlowId;
 	struct _NEXT_TWT_INFO_T rNextTWTInfo;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
+	if (!prAdapter) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prMsgHdr) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prMsgHdr\n");
+
+		return;
+	}
 
 	prTWTReqFsmResumeMsg = (struct _MSG_TWT_REQFSM_RESUME_T *) prMsgHdr;
 	prStaRec = prTWTReqFsmResumeMsg->prStaRec;
@@ -615,10 +718,13 @@ void twtReqFsmRunEventResume(
 
 	if ((!prStaRec) || (prStaRec->fgIsInUse == FALSE)) {
 		cnmMemFree(prAdapter, prMsgHdr);
+
+		if (!prStaRec)
+			DBGLOG(TWT_REQUESTER, ERROR,
+				"invalid prStaRec\n");
+
 		return;
 	}
-
-	ASSERT(prStaRec);
 
 	DBGLOG(TWT_REQUESTER, LOUD, "EVENT-RESUME: TWT Requester FSM %d\n",
 		ucTWTFlowId);
@@ -631,7 +737,6 @@ void twtReqFsmRunEventResume(
 			prStaRec->eStaType);
 
 		/* TODO: Notify TWT Planner */
-
 		return;
 	}
 
@@ -654,12 +759,26 @@ twtReqFsmRunEventTxDone(
 	enum _ENUM_TWT_REQUESTER_STATE_T eNextState;
 	uint8_t ucTWTFlowId;
 
-	ASSERT(prMsduInfo);
+	if (!prAdapter) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prAdapter\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prMsduInfo) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prMsduInfo\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+
 	if (!prStaRec) {
 		DBGLOG(TWT_REQUESTER, ERROR,
 			"EVENT-TXDONE: No valid STA Record\n");
+
 		return WLAN_STATUS_INVALID_PACKET;
 	}
 
@@ -682,6 +801,16 @@ twtReqFsmRunEventTxDone(
 			eNextState = TWT_REQ_STATE_IDLE;
 
 		ucTWTFlowId = twtGetTxSetupFlowId(prMsduInfo);
+
+		if ((ucTWTFlowId == TWT_INCORRECT_FLOW_ID) ||
+			(ucTWTFlowId >= TWT_MAX_FLOW_NUM)) {
+			DBGLOG(TWT_REQUESTER, ERROR,
+				"TWT_INCORRECT_FLOW_ID %d\n",
+				ucTWTFlowId);
+
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
 		twtReqFsmSteps(prAdapter,
 			prStaRec, eNextState, ucTWTFlowId, NULL);
 
@@ -697,6 +826,16 @@ twtReqFsmRunEventTxDone(
 		eNextState = TWT_REQ_STATE_IDLE;
 
 		ucTWTFlowId = twtGetTxTeardownFlowId(prMsduInfo);
+
+		if ((ucTWTFlowId == TWT_INCORRECT_FLOW_ID) ||
+			(ucTWTFlowId >= TWT_MAX_FLOW_NUM)) {
+			DBGLOG(TWT_REQUESTER, ERROR,
+				"TWT_INCORRECT_FLOW_ID %d\n",
+				ucTWTFlowId);
+
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
 		twtReqFsmSteps(prAdapter, prStaRec, eNextState,
 			ucTWTFlowId, NULL);
 
@@ -706,6 +845,16 @@ twtReqFsmRunEventTxDone(
 		if (rTxDoneStatus == TX_RESULT_SUCCESS) {
 			eNextState = TWT_REQ_STATE_SUSPENDED;
 			ucTWTFlowId = twtGetTxInfoFlowId(prMsduInfo);
+
+			if ((ucTWTFlowId == TWT_INCORRECT_FLOW_ID) ||
+				(ucTWTFlowId >= TWT_MAX_FLOW_NUM)) {
+				DBGLOG(TWT_REQUESTER, ERROR,
+					"TWT_INCORRECT_FLOW_ID %d\n",
+					ucTWTFlowId);
+
+				return WLAN_STATUS_INVALID_DATA;
+			}
+
 			twtReqFsmSteps(prAdapter, prStaRec, eNextState,
 				ucTWTFlowId, NULL);
 		}
@@ -716,6 +865,16 @@ twtReqFsmRunEventTxDone(
 		if (rTxDoneStatus == TX_RESULT_SUCCESS) {
 			eNextState = TWT_REQ_STATE_IDLE;
 			ucTWTFlowId = twtGetTxInfoFlowId(prMsduInfo);
+
+			if ((ucTWTFlowId == TWT_INCORRECT_FLOW_ID) ||
+				(ucTWTFlowId >= TWT_MAX_FLOW_NUM)) {
+				DBGLOG(TWT_REQUESTER, ERROR,
+					"TWT_INCORRECT_FLOW_ID %d\n",
+					ucTWTFlowId);
+
+				return WLAN_STATUS_INVALID_DATA;
+			}
+
 			twtReqFsmSteps(prAdapter, prStaRec, eNextState,
 				ucTWTFlowId, NULL);
 		}
@@ -723,45 +882,95 @@ twtReqFsmRunEventTxDone(
 		break;
 
 #if (CFG_SUPPORT_BTWT == 1)
-		case TWT_REQ_STATE_REQTX_BTWT:
-			if (rTxDoneStatus == TX_RESULT_SUCCESS)
-				eNextState = TWT_REQ_STATE_WAIT_RSP;
-			else
-				eNextState = TWT_REQ_STATE_IDLE;
+	case TWT_REQ_STATE_REQTX_BTWT:
+		if (rTxDoneStatus == TX_RESULT_SUCCESS)
+			eNextState = TWT_REQ_STATE_WAIT_RSP;
+		else
+			eNextState = TWT_REQ_STATE_IDLE;
 
-			ucTWTFlowId = btwtGetTxSetupFlowId(prMsduInfo);
-			twtReqFsmSteps(prAdapter,
-				prStaRec, eNextState, ucTWTFlowId, NULL);
+		ucTWTFlowId = btwtGetTxSetupFlowId(prMsduInfo);
 
-	DBGLOG(TWT_REQUESTER, INFO,
+		if ((ucTWTFlowId == TWT_INCORRECT_FLOW_ID) ||
+			(ucTWTFlowId >= TWT_MAX_FLOW_NUM)) {
+			DBGLOG(TWT_REQUESTER, ERROR,
+				"TWT_INCORRECT_FLOW_ID %d\n",
+				ucTWTFlowId);
+
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
+		twtReqFsmSteps(prAdapter,
+			prStaRec, eNextState, ucTWTFlowId, NULL);
+
+		DBGLOG(TWT_REQUESTER, INFO,
 		"EVENT-TX DONE flowID= %d\n", ucTWTFlowId);
-			break;
 
-		case TWT_REQ_STATE_TEARING_DOWN_BTWT:
-			if (rTxDoneStatus == TX_RESULT_SUCCESS)
-				eNextState = TWT_REQ_STATE_IDLE;
+		break;
 
-			ucTWTFlowId = twtGetTxTeardownFlowId(prMsduInfo);
-			twtReqFsmSteps(prAdapter, prStaRec, eNextState,
-				ucTWTFlowId, NULL);
+	case TWT_REQ_STATE_TEARING_DOWN_BTWT:
+		if (rTxDoneStatus == TX_RESULT_SUCCESS)
+			eNextState = TWT_REQ_STATE_IDLE;
 
-			break;
+		ucTWTFlowId = twtGetTxTeardownFlowId(prMsduInfo);
+
+		if ((ucTWTFlowId == TWT_INCORRECT_FLOW_ID) ||
+			(ucTWTFlowId >= TWT_MAX_FLOW_NUM)) {
+			DBGLOG(TWT_REQUESTER, ERROR,
+				"TWT_INCORRECT_FLOW_ID %d\n",
+				ucTWTFlowId);
+
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
+		twtReqFsmSteps(prAdapter, prStaRec, eNextState,
+			ucTWTFlowId, NULL);
+
+		break;
 #endif
 
 #if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
-		case TWT_REQ_STATE_REQTX_ML_TWT_ALL_LINKS:
-		case TWT_REQ_STATE_REQTX_ML_TWT_ONE_BY_ONE:
-			if (rTxDoneStatus == TX_RESULT_SUCCESS)
-				eNextState = TWT_REQ_STATE_WAIT_RSP;
-			else
-				eNextState = TWT_REQ_STATE_IDLE;
+	case TWT_REQ_STATE_REQTX_ML_TWT_ALL_LINKS:
+	case TWT_REQ_STATE_REQTX_ML_TWT_ONE_BY_ONE:
+		if (rTxDoneStatus == TX_RESULT_SUCCESS)
+			eNextState = TWT_REQ_STATE_WAIT_RSP;
+		else
+			eNextState = TWT_REQ_STATE_IDLE;
 
-			ucTWTFlowId = twtGetTxSetupFlowId(prMsduInfo);
+		ucTWTFlowId = twtGetTxSetupFlowId(prMsduInfo);
 
-			twtReqFsmSteps(prAdapter,
-				prStaRec, eNextState, ucTWTFlowId, NULL);
+		if ((ucTWTFlowId == TWT_INCORRECT_FLOW_ID) ||
+			(ucTWTFlowId >= TWT_MAX_FLOW_NUM)) {
+			DBGLOG(TWT_REQUESTER, ERROR,
+				"TWT_INCORRECT_FLOW_ID %d\n",
+				ucTWTFlowId);
 
-			break;
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
+		twtReqFsmSteps(prAdapter,
+			prStaRec, eNextState, ucTWTFlowId, NULL);
+
+		/*
+		 * For MLTWT to follow current TWT setup normal
+		 * operation flow, it needs to sync all link's
+		 * aeTWTReqState in STA_REC of BSS_INFO in MLD.
+		 *
+		 * Because twtReqFsmSteps() proceeds acccording
+		 * to prStaRec->aeTWTReqState.
+		 *
+		 * As to TWT teardown, once the STA_REC finishes
+		 * TWT setup, prStaRec->aeTWTReqState would just
+		 * back to TWT_REQ_STATE_IDLE, teardown would be
+		 * fine beginning from TWT_REQ_STATE_IDLE in the
+		 * unit of STA_REC of BSS_INFO in MLD.
+		 */
+		mltwtReqFsmSync(
+			prAdapter,
+			prStaRec,
+			eNextState,
+			ucTWTFlowId);
+
+		break;
 #endif
 
 	default:
@@ -856,8 +1065,19 @@ void btwtReqFsmRunEventStart(
 	struct _TWT_PARAMS_T *prTWTParams;
 	uint8_t ucTWTFlowId;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
+	if (!prAdapter) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prMsgHdr) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prMsgHdr\n");
+
+		return;
+	}
 
 	prTWTReqFsmStartMsg = (struct _MSG_TWT_REQFSM_START_T *) prMsgHdr;
 	prStaRec = prTWTReqFsmStartMsg->prStaRec;
@@ -866,11 +1086,20 @@ void btwtReqFsmRunEventStart(
 
 	if ((!prStaRec) || (prStaRec->fgIsInUse == FALSE)) {
 		cnmMemFree(prAdapter, prMsgHdr);
+
+		if (!prStaRec)
+			DBGLOG(TWT_REQUESTER, ERROR,
+				"invalid prStaRec\n");
+
 		return;
 	}
 
-	ASSERT(prStaRec);
-	ASSERT(prTWTParams);
+	if (!prTWTParams) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"invalid prTWTParams\n");
+
+		return;
+	}
 
 	DBGLOG(TWT_REQUESTER, LOUD,
 		"EVENT-START: BTWT Requester FSM %d\n", ucTWTFlowId);
@@ -900,8 +1129,19 @@ void btwtReqFsmRunEventTeardown(
 	struct STA_RECORD *prStaRec;
 	uint8_t ucTWTFlowId;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
+	if (!prAdapter) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"ML invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prMsgHdr) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"ML invalid prMsgHdr\n");
+
+		return;
+	}
 
 	prTWTReqFsmTeardownMsg = (struct _MSG_TWT_REQFSM_TEARDOWN_T *) prMsgHdr;
 	prStaRec = prTWTReqFsmTeardownMsg->prStaRec;
@@ -909,10 +1149,13 @@ void btwtReqFsmRunEventTeardown(
 
 	if ((!prStaRec) || (prStaRec->fgIsInUse == FALSE)) {
 		cnmMemFree(prAdapter, prMsgHdr);
+
+		if (!prStaRec)
+			DBGLOG(TWT_REQUESTER, ERROR,
+				"ML invalid prStaRec\n");
+
 		return;
 	}
-
-	ASSERT(prStaRec);
 
 	DBGLOG(TWT_REQUESTER, LOUD, "EVENT-TEARDOWN: BTWT Requester FSM %d\n",
 		ucTWTFlowId);
@@ -944,8 +1187,19 @@ void mltwtReqFsmRunEventStartAllLinks(
 	struct _TWT_PARAMS_T *prTWTParams;
 	uint8_t ucTWTFlowId;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
+	if (!prAdapter) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"ML invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prMsgHdr) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"ML invalid prMsgHdr\n");
+
+		return;
+	}
 
 	prTWTReqFsmStartMsg = (struct _MSG_TWT_REQFSM_START_T *) prMsgHdr;
 	prStaRec = prTWTReqFsmStartMsg->prStaRec;
@@ -954,11 +1208,21 @@ void mltwtReqFsmRunEventStartAllLinks(
 
 	if ((!prStaRec) || (prStaRec->fgIsInUse == FALSE)) {
 		cnmMemFree(prAdapter, prMsgHdr);
+
+		if (!prStaRec)
+			DBGLOG(TWT_REQUESTER, ERROR,
+				"ML invalid prStaRec\n");
+
 		return;
 	}
 
-	ASSERT(prStaRec);
-	ASSERT(prTWTParams);
+
+	if (!prTWTParams) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"ML invalid prTWTParams\n");
+
+		return;
+	}
 
 	DBGLOG(TWT_REQUESTER, LOUD,
 		"EVENT-START: ML TWT Requester FSM %d\n", ucTWTFlowId);
@@ -990,8 +1254,19 @@ void mltwtReqFsmRunEventStart(
 	struct _TWT_PARAMS_T *prTWTParams;
 	uint8_t ucTWTFlowId;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
+	if (!prAdapter) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"ML invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prMsgHdr) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"ML invalid prMsgHdr\n");
+
+		return;
+	}
 
 	prTWTReqFsmStartMsg = (struct _MSG_TWT_REQFSM_START_T *) prMsgHdr;
 	prStaRec = prTWTReqFsmStartMsg->prStaRec;
@@ -1000,11 +1275,20 @@ void mltwtReqFsmRunEventStart(
 
 	if ((!prStaRec) || (prStaRec->fgIsInUse == FALSE)) {
 		cnmMemFree(prAdapter, prMsgHdr);
+
+		if (!prStaRec)
+			DBGLOG(TWT_REQUESTER, ERROR,
+				"ML invalid prStaRec\n");
+
 		return;
 	}
 
-	ASSERT(prStaRec);
-	ASSERT(prTWTParams);
+	if (!prTWTParams) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"ML invalid prTWTParams\n");
+
+		return;
+	}
 
 	DBGLOG(TWT_REQUESTER, LOUD,
 		"EVENT-START: ML TWT Requester FSM %d\n", ucTWTFlowId);
@@ -1026,5 +1310,222 @@ void mltwtReqFsmRunEventStart(
 		ucTWTFlowId,
 		prTWTParams);
 
+}
+
+void mltwtReqFsmRunEventRxSetup(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t *pucIE,
+	uint16_t u2IELength)
+{
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct STA_RECORD *prStaRecOfAP = NULL;
+	struct IE_ML_TWT_T *prMLTWTIE = NULL;
+	uint16_t u2Offset;
+	uint8_t ucLinkID;
+	uint8_t ucTWTFlowId;
+	uint16_t u2LinkIdBitMap;
+
+	/* Get MLD_BSS_INFO in MLO connection */
+	if (!prAdapter) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"ML invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"ML invalid prStaRec\n");
+
+		return;
+	}
+
+	if (!IS_AP_STA(prStaRec))
+		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(
+					prAdapter, prStaRec->ucBssIndex);
+
+	if (!prBssInfo) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"ML invalid prBssInfo\n");
+
+		return;
+	}
+
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+	if (!prMldBssInfo) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"ML invalid MLD_BSS_INFO\n");
+
+		return;
+	}
+
+	IE_FOR_EACH(pucIE, u2IELength, u2Offset)
+	{
+		DBGLOG(TWT_REQUESTER, WARN,
+			"u2IELength %d u2Offset %d\n",
+			u2IELength, u2Offset);
+
+		if (IE_ID(pucIE) == ELEM_ID_TWT) {
+			prMLTWTIE = (struct IE_ML_TWT_T *)pucIE;
+
+			ucTWTFlowId = twtGetRxSetupFlowId(
+					(struct _IE_TWT_T *)prMLTWTIE);
+
+			if ((ucTWTFlowId == TWT_INCORRECT_FLOW_ID) ||
+				(ucTWTFlowId >= TWT_MAX_FLOW_NUM)) {
+				DBGLOG(TWT_REQUESTER, ERROR,
+					"TWT_INCORRECT_FLOW_ID %d\n",
+					ucTWTFlowId);
+
+				return;
+			}
+
+			u2LinkIdBitMap = prMLTWTIE->u2LinkIdBitmap;
+
+			/* Iterate each link ID */
+			for (ucLinkID = 0;
+				ucLinkID < ML_TWT_LINK_ID_BITMAP_COUNT;
+				ucLinkID++) {
+				if ((u2LinkIdBitMap & BIT(ucLinkID))
+					== BIT(ucLinkID)) {
+					/* Get the BSS INFO of ucLinkID */
+					prBssInfo = mldGetBssInfoByLinkID(
+								prAdapter,
+								prMldBssInfo,
+								ucLinkID,
+								TRUE);
+
+					if (!prBssInfo) {
+						DBGLOG(TWT_REQUESTER, ERROR,
+						"MLTWT %d no BSS_INFO of link ID %d\n",
+						ucTWTFlowId,
+						ucLinkID);
+
+						return;
+					}
+
+					prStaRecOfAP = prBssInfo->prStaRecOfAP;
+
+					if (!prStaRecOfAP) {
+						DBGLOG(TWT_REQUESTER, ERROR,
+						"TWT Flow %d no STA_REC of link ID %d\n",
+						ucTWTFlowId,
+						ucLinkID);
+
+						return;
+					}
+
+					/*
+					 * This supposed to be the setup link's
+					 * STA_REC of BSS_INFO, only need to
+					 * monitor the TWT_REQ_STATE of setup
+					 * link would be quiet sufficient, No!
+					 * The whole STA_REC of BSS_INFOs in
+					 * the MLD must all be synced!!!
+					 *
+					 * Because the twtReqFsmSteps()
+					 * proceeds inaccordance to
+					 * TWT_REQ_STATE
+					 */
+					if (prStaRecOfAP->aeTWTReqState
+						!= TWT_REQ_STATE_WAIT_RSP) {
+						DBGLOG(TWT_REQUESTER, ERROR,
+						"MLTWT RX Setup: BSS %d Flow %d invalid req state %d\n",
+						prBssInfo->ucBssIndex,
+						ucTWTFlowId,
+						prStaRecOfAP->aeTWTReqState);
+
+						return;
+					}
+
+					/*
+					 * STA_REC of this MLO link transition
+					 * to the IDLE state
+					 */
+					twtReqFsmSteps(prAdapter,
+						prStaRecOfAP,
+						TWT_REQ_STATE_IDLE,
+						ucTWTFlowId, NULL);
+				}
+			}
+		}
+	} /* end IE_FOR_EACH(pucIE, u2IELength, u2Offset) */
+}
+
+void mltwtReqFsmSync(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	enum _ENUM_TWT_REQUESTER_STATE_T eNextState,
+	u_int8_t ucTWTFlowId)
+{
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct LINK *prBssList = NULL;
+	struct BSS_INFO *prCurrBssInfo = NULL;
+	struct STA_RECORD *prStaRecOfAP = NULL;
+
+	/* Get MLD_BSS_INFO in MLO connection */
+	if (!prAdapter) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"ML invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"ML invalid prStaRec\n");
+
+		return;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(
+					prAdapter, prStaRec->ucBssIndex);
+
+	if (!prBssInfo) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"ML invalid prBssInfo\n");
+
+		return;
+	}
+
+
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+	if (!prMldBssInfo) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"ML invalid MLD_BSS_INFO\n");
+
+		return;
+	}
+
+	/* Iterate each BSS_INFO in MLD_BSS_INFO */
+	prBssList = &prMldBssInfo->rBssList;
+
+	LINK_FOR_EACH_ENTRY(prCurrBssInfo, prBssList,
+			rLinkEntryMld,
+			struct BSS_INFO) {
+		if (!prCurrBssInfo)
+			break;
+
+		prStaRecOfAP = prCurrBssInfo->prStaRecOfAP;
+
+		if (!prStaRecOfAP)
+			break;
+
+		DBGLOG(TWT_REQUESTER, STATE,
+			"[MLTWT_STA_SYNC]BSS %d Flow %d: [%s] -> [%s]\n",
+			prStaRecOfAP->ucBssIndex,
+			ucTWTFlowId,
+			apucDebugTWTReqState[prStaRecOfAP->aeTWTReqState],
+			apucDebugTWTReqState[eNextState]);
+
+		prStaRecOfAP->aeTWTReqState = eNextState;
+	}
 }
 #endif
