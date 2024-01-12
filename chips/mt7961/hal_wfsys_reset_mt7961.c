@@ -161,19 +161,34 @@ u_int8_t mt7961HalPollWfsysSwInitDone(struct ADAPTER *prAdapter)
 u_int8_t mt7961HalCbtopRguWfRst(struct ADAPTER *prAdapter,
 				u_int8_t fgAssertRst)
 {
+	uint32_t u4CrVal;
 	u_int8_t fgStatus;
 
+	HAL_UHW_RD(prAdapter, CBTOP_RGU_WF_SUBSYS_RST_ADDR, &u4CrVal,
+		   &fgStatus);
+	if (!fgStatus) {
+		DBGLOG(HAL, ERROR, "UHW read CBTOP RGU CR fail\n");
+
+		goto end;
+	}
+
 	if (fgAssertRst) {
-		HAL_UHW_WR(prAdapter, CBTOP_RGU_WF_SUBSYS_RST_ADDR, 0x00000001,
+		u4CrVal |= CBTOP_RGU_WF_SUBSYS_RST_WF_WHOLE_PATH_RST_MASK;
+		HAL_UHW_WR(prAdapter, CBTOP_RGU_WF_SUBSYS_RST_ADDR, u4CrVal,
 			   &fgStatus);
 	} else {
-		HAL_UHW_WR(prAdapter, CBTOP_RGU_WF_SUBSYS_RST_ADDR, 0x00000000,
+		u4CrVal &= ~CBTOP_RGU_WF_SUBSYS_RST_WF_WHOLE_PATH_RST_MASK;
+		HAL_UHW_WR(prAdapter, CBTOP_RGU_WF_SUBSYS_RST_ADDR, u4CrVal,
 			   &fgStatus);
 	}
 
-	if (!fgStatus)
+	if (!fgStatus) {
 		DBGLOG(HAL, ERROR, "UHW write CBTOP RGU CR fail\n");
 
+		goto end;
+	}
+
+end:
 	return fgStatus;
 }
 
