@@ -11084,10 +11084,9 @@ uint32_t
 wlanoidSetTxAmpdu(IN struct ADAPTER *prAdapter,
 		  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		  OUT uint32_t *pu4SetInfoLen) {
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct CMD_TX_AMPDU rTxAmpdu;
+	struct CMD_TX_AMPDU *p;
 	uint16_t u2CmdBufLen;
-	u_int8_t *pfgEnable;
 
 	DEBUGFUNC("wlanoidSetTxAmpdu");
 
@@ -11095,20 +11094,22 @@ wlanoidSetTxAmpdu(IN struct ADAPTER *prAdapter,
 	ASSERT(pvSetBuffer);
 	ASSERT(pu4SetInfoLen);
 
-	*pu4SetInfoLen = sizeof(u_int8_t);
+	*pu4SetInfoLen = sizeof(struct CMD_TX_AMPDU);
 
-	pfgEnable = (u_int8_t *) pvSetBuffer;
+	p = (struct CMD_TX_AMPDU *) pvSetBuffer;
 
-	rTxAmpdu.fgEnable = *pfgEnable;
+	rTxAmpdu.fgEnable = p->fgEnable;
+	rTxAmpdu.fgApply = p->fgApply;
 
 	u2CmdBufLen = sizeof(struct CMD_TX_AMPDU);
 
-	rStatus = wlanSendSetQueryCmd(prAdapter, CMD_ID_TX_AMPDU,
+	/* return value of wlanSendSetQueryCmd is WLAN_STATUS_PENDING */
+	wlanSendSetQueryCmd(prAdapter, CMD_ID_TX_AMPDU,
 				      TRUE, FALSE, TRUE, NULL, NULL,
 				      u2CmdBufLen,
 				      (uint8_t *) &rTxAmpdu, NULL, 0);
 
-	return rStatus;
+	return WLAN_STATUS_SUCCESS;
 }				/* wlanoidSetTxAmpdu */
 
 /*----------------------------------------------------------------------------*/
@@ -11130,10 +11131,9 @@ uint32_t
 wlanoidSetAddbaReject(IN struct ADAPTER *prAdapter,
 		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		      OUT uint32_t *pu4SetInfoLen) {
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct CMD_ADDBA_REJECT rAddbaReject;
+	struct CMD_ADDBA_REJECT *p;
 	uint16_t u2CmdBufLen;
-	u_int8_t *pfgEnable;
 
 	DEBUGFUNC("wlanoidSetAddbaReject");
 
@@ -11141,20 +11141,22 @@ wlanoidSetAddbaReject(IN struct ADAPTER *prAdapter,
 	ASSERT(pvSetBuffer);
 	ASSERT(pu4SetInfoLen);
 
-	*pu4SetInfoLen = sizeof(u_int8_t);
+	*pu4SetInfoLen = sizeof(struct CMD_ADDBA_REJECT);
 
-	pfgEnable = (u_int8_t *) pvSetBuffer;
+	p = (struct CMD_ADDBA_REJECT *) pvSetBuffer;
 
-	rAddbaReject.fgEnable = *pfgEnable;
+	rAddbaReject.fgEnable = p->fgEnable;
+	rAddbaReject.fgApply = p->fgApply;
 
 	u2CmdBufLen = sizeof(struct CMD_ADDBA_REJECT);
 
-	rStatus = wlanSendSetQueryCmd(prAdapter, CMD_ID_ADDBA_REJECT,
+	/* return value of wlanSendSetQueryCmd is WLAN_STATUS_PENDING */
+	wlanSendSetQueryCmd(prAdapter, CMD_ID_ADDBA_REJECT,
 				      TRUE, FALSE, TRUE, NULL, NULL,
 				      u2CmdBufLen,
 				      (uint8_t *) &rAddbaReject, NULL, 0);
 
-	return rStatus;
+	return WLAN_STATUS_SUCCESS;
 }				/* wlanoidSetAddbaReject */
 
 #if CFG_SLT_SUPPORT

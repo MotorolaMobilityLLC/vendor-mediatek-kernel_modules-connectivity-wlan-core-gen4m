@@ -750,12 +750,14 @@ struct _CMD_MQM_UPDATE_MU_EDCA_PARMS_T {
 
 struct CMD_TX_AMPDU {
 	u_int8_t fgEnable;
-	uint8_t aucReserved[3];
+	u_int8_t fgApply;
+	uint8_t aucReserved[2];
 };
 
 struct CMD_ADDBA_REJECT {
 	u_int8_t fgEnable;
-	uint8_t aucReserved[3];
+	u_int8_t fgApply;
+	uint8_t aucReserved[2];
 };
 
 #if CFG_M0VE_BA_TO_DRIVER
