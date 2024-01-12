@@ -5065,7 +5065,7 @@ void qmDelRxBaEntry(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucStaRecIdx, IN uint8_t ucTid,
 	IN u_int8_t fgFlushToHost)
 {
-	struct RX_BA_ENTRY *prRxBaEntry;
+	struct RX_BA_ENTRY *prRxBaEntry = NULL;
 	struct STA_RECORD *prStaRec;
 	struct SW_RFB *prFlushedPacketList = NULL;
 	struct QUE_MGT *prQM = &prAdapter->rQM;
@@ -5083,7 +5083,9 @@ void qmDelRxBaEntry(IN struct ADAPTER *prAdapter,
 #endif
 
 	/* Remove the BA entry for the same (STA, TID) tuple if it exists */
-	prRxBaEntry = prStaRec->aprRxReorderParamRefTbl[ucTid];
+	if (ucTid < CFG_RX_MAX_BA_TID_NUM) {
+		prRxBaEntry = prStaRec->aprRxReorderParamRefTbl[ucTid];
+	}
 
 	if (prRxBaEntry) {
 
