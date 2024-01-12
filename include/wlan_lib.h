@@ -1463,7 +1463,7 @@ uint32_t wlanAccessRegisterStatus(IN struct ADAPTER
 				  IN uint8_t ucSetQuery, IN void *prEvent,
 				  IN uint32_t u4EventLen);
 
-void wlanSetChipEcoInfo(IN struct ADAPTER *prAdapter);
+uint32_t wlanSetChipEcoInfo(IN struct ADAPTER *prAdapter);
 
 void wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
 			 struct net_device *prDev, u_int8_t fgSuspend);
