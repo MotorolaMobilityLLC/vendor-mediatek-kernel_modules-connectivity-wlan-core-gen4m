@@ -52,6 +52,12 @@ else
     ccflags-y += -DCFG_MTK_ANDROID_WMT=0
 endif
 
+ifneq ($(filter MTK_WCN_REMOVE_KERNEL_MODULE,$(KBUILD_SUBDIR_CCFLAGS)),)
+    ccflags-y += -DCFG_BUILT_IN_DRIVER=1
+else
+    ccflags-y += -DCFG_BUILT_IN_DRIVER=0
+endif
+
 CONFIG_MTK_WIFI_MCC_SUPPORT=y
 ifeq ($(CONFIG_MTK_WIFI_MCC_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_CHNL_CONFLICT_REVISE=0
