@@ -1218,10 +1218,8 @@ p2pDevHandleOffchnlTxReq(IN struct ADAPTER *prAdapter,
 		}
 		break;
 	default:
-		DBGLOG(P2P, WARN, "Unknown state (%s) for offchannel-tx.\n",
-				apucDebugP2pDevState[
-				prP2pDevFsmInfo->eCurrentState]);
-		goto error;
+		/* do nothing & wait for IDLE state to handle TX request */
+		break;
 	}
 
 	return;
@@ -1232,7 +1230,6 @@ error:
 			&prOffChnlTxReq->rLinkEntry);
 	cnmMgtPktFree(prAdapter, prOffChnlTxReq->prMgmtTxMsdu);
 	cnmMemFree(prAdapter, prOffChnlTxReq);
-	ASSERT(FALSE);
 }				/* p2pDevHandleOffchnlTxReq */
 
 static u_int8_t
