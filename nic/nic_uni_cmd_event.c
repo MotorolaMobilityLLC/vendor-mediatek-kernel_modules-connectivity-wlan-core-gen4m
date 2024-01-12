@@ -908,7 +908,7 @@ uint32_t nicUniCmdBssInfoMld(struct ADAPTER *ad,
 	tag->u2Length = sizeof(*tag);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (prMldBssInfo && prMldBssInfo->rBssList.u4NumElem > 1) {
+	if (IS_MLD_BSSINFO_VALID(prMldBssInfo)) {
 		tag->ucGroupMldId = prMldBssInfo->ucGroupMldId;
 		tag->ucOwnMldId = bss->ucOwnMldId;
 		COPY_MAC_ADDR(tag->aucOwnMldAddr, prMldBssInfo->aucOwnMldAddr);
@@ -3800,8 +3800,7 @@ uint32_t nicUniCmdStaRecTagMlrInfo(struct ADAPTER *ad,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_STA_RECORD *mld_starec = mldStarecGetByStarec(ad, prStaRec);
 
-
-	if (mld_starec && mld_starec->rStarecList.u4NumElem > 1) {
+	if (IS_MLD_STAREC_VALID(mld_starec)) {
 		DBGLOG(REQ, INFO, "MLR unicmd - This is a MLD starec\n");
 		return 0;
 	}
