@@ -311,6 +311,7 @@ struct BSS_DESC {
 	enum ENUM_BAND eBand;
 
 	uint8_t ucDTIMPeriod;
+	u_int8_t fgTIMPresent;
 
 	/* This BSS's TimeStamp is larger than us(TCL == 1 in RX_STATUS_T) */
 	u_int8_t fgIsLargerTSF;
