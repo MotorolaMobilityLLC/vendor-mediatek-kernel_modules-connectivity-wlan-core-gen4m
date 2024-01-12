@@ -1015,12 +1015,14 @@ int32_t nicGetTxRateInfo(IN char *pcCommand, IN int i4TotalLen,
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"%s, ", sgi == 0 ? "LGI" : "SGI");
+#if CFG_SUPPORT_802_11AX == 1 || CFG_SUPPORT_802_11BE == 1
 		else
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"%s, ", sgi == 0 ? "SGI" :
 				(sgi == 1 ? "MGI" : "LGI"));
+#endif
 
 		if (prQueryStaStatistics->ucSkipAr) {
 			i4BytesWritten += kalScnprintf(
