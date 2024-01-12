@@ -3038,6 +3038,10 @@ uint32_t nicUniCmdStaRecTagEhtInfo(struct ADAPTER *ad,
 	tag->ucTidBitmap = 0xff;
 	WLAN_GET_FIELD_16(&cmd->ucEhtMacCapInfo[0], &tag->u2EhtMacCap);
 	WLAN_GET_FIELD_64(&cmd->ucEhtPhyCapInfo[0], &tag->u8EhtPhyCap);
+	WLAN_GET_FIELD_32(&cmd->aucMscMap20MHzSta[0], &tag->aucMscMap20MHzSta);
+	WLAN_GET_FIELD_24(&cmd->aucMscMap80MHz[0], &tag->aucMscMap80MHz);
+	WLAN_GET_FIELD_24(&cmd->aucMscMap160MHz[0], &tag->aucMscMap160MHz);
+	WLAN_GET_FIELD_24(&cmd->aucMscMap320MHz[0], &tag->aucMscMap320MHz);
 
 	DBGLOG(INIT, INFO, "[%d] bss=%d,tid=0x%x,mac_cap=0x%x,phy_cap=0x%lx\n",
 		cmd->ucStaIndex,
