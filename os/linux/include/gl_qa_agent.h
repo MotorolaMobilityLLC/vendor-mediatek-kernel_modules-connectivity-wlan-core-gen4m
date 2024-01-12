@@ -55,7 +55,9 @@
 
 #ifndef _GL_QA_AGENT_H
 #define _GL_QA_AGENT_H
+
 #if CFG_SUPPORT_QA_TOOL
+
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -71,19 +73,34 @@
 ********************************************************************************
 */
 
-/*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+/* Trigger Event */
+#define CAP_FREE_RUN							0
 
-/*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+/* Ring Mode */
+#define CAP_RING_MODE_ENABLE					1
+#define CAP_RING_MODE_DISABLE					0
+
+/* Capture Bit Width */
+#define CAP_96BIT								0
+#define CAP_128BIT
+
+/* I/Q Type */
+#define CAP_I_TYPE								0
+#define CAP_Q_TYPE								1
+#define NUM_OF_CAP_TYPE							2
+
+/* ACTION */
+#define ACTION_SWITCH_TO_RFTEST 0 /* to switch firmware mode between normal mode or rf test mode */
+#define ACTION_IN_RFTEST        1
 
 #define HQA_CMD_MAGIC_NO 0x18142880
 #define HQA_CHIP_ID_6632	0x6632
 #define HQA_CHIP_ID_7668	0x7668
+
+/* (4096(Samples/Bank) * 6Banks * 3(IQSamples/Sample) * 32bits)/96bits */
+#define MAX_ICAP_IQ_DATA_CNT					(4096 * 6)
+#define ICAP_EVENT_DATA_SAMPLE					256
+
 
 #if CFG_SUPPORT_TX_BF
 #define HQA_BF_STR_SIZE 512
@@ -91,7 +108,22 @@
 
 #define HQA_RX_STATISTIC_NUM 66
 
+#ifdef MAX_EEPROM_BUFFER_SIZE
+#undef MAX_EEPROM_BUFFER_SIZE
+#endif
+#define MAX_EEPROM_BUFFER_SIZE	1200
+
+/******************************************************************************
+*                    E X T E R N A L   R E F E R E N C E S
+*******************************************************************************
+*/
+
 extern uint8_t uacEEPROMImage[MAX_EEPROM_BUFFER_SIZE];
+
+/******************************************************************************
+*                             D A T A   T Y P E S
+*******************************************************************************
+*/
 
 #if 0
 struct PARAM_RX_STAT {
@@ -261,9 +293,31 @@ struct HQA_CMD_TABLE {
 	uint32_t CmdOffset;
 };
 
+/******************************************************************************
+*                   F U N C T I O N   D E C L A R A T I O N S
+*******************************************************************************
+*/
+
 int HQA_CMDHandler(struct net_device *prNetDev, IN union iwreq_data *prIwReqData, struct HQA_CMD_FRAME *HqaCmdFrame);
 
 int priv_qa_agent(IN struct net_device *prNetDev,
 		  IN struct iw_request_info *prIwReqInfo, IN union iwreq_data *prIwReqData, IN char *pcExtra);
+
+int32_t mt6632SetICapStart(struct GLUE_INFO *prGlueInfo, uint32_t u4Trigger, uint32_t u4RingCapEn,
+			  uint32_t u4Event, uint32_t u4Node, uint32_t u4Len, uint32_t u4StopCycle,
+			  uint32_t u4BW, uint32_t u4MacTriggerEvent, uint32_t u4SourceAddrLSB,
+			  uint32_t u4SourceAddrMSB, uint32_t u4Band);
+int32_t mt6632GetICapStatus(struct GLUE_INFO *prGlueInfo);
+
+int32_t connacSetICapStart(struct GLUE_INFO *prGlueInfo, uint32_t u4Trigger, uint32_t u4RingCapEn,
+			  uint32_t u4Event, uint32_t u4Node, uint32_t u4Len, uint32_t u4StopCycle,
+			  uint32_t u4BW, uint32_t u4MacTriggerEvent, uint32_t u4SourceAddrLSB,
+			  uint32_t u4SourceAddrMSB, uint32_t u4Band);
+int32_t connacGetICapStatus(struct GLUE_INFO *prGlueInfo);
+
+int32_t commonGetICapIQData(struct GLUE_INFO *prGlueInfo, uint8_t *pData, uint32_t u4IQType, uint32_t u4WFNum);
+int32_t connacGetICapIQData(struct GLUE_INFO *prGlueInfo, uint8_t *pData, uint32_t u4IQType, uint32_t u4WFNum);
+
+
 #endif /*CFG_SUPPORT_QA_TOOL */
 #endif /* _GL_QA_AGENT_H */

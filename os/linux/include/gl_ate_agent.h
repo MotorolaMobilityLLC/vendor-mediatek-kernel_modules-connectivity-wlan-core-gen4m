@@ -73,7 +73,6 @@ extern union PFMU_PROFILE_TAG1 g_rPfmuTag1;
 extern union PFMU_PROFILE_TAG2 g_rPfmuTag2;
 extern union PFMU_DATA g_rPfmuData;
 #endif
-extern u_int8_t g_bCaptureDone;
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -109,6 +108,17 @@ struct STA_REC_BF_UPD_ARGUMENT {
 	uint32_t au4MemRow[4];
 	uint32_t au4MemCol[4];
 };
+
+struct ATE_OPS_T {
+	int32_t (*setICapStart)(struct GLUE_INFO *prGlueInfo, uint32_t fgTrigger, uint32_t fgRingCapEn,
+			       uint32_t u4Event, uint32_t u4Node, uint32_t u4Len, uint32_t u4StopCycle,
+			       uint32_t u4BW, uint32_t u4MACTriggerEvent, uint32_t u4SourceAddrLSB,
+			       uint32_t u4SourceAddrMSB, uint32_t u4Band);
+	int32_t (*getICapStatus)(struct GLUE_INFO *prGlueInfo);
+	int32_t (*getICapIQData)(struct GLUE_INFO *prGlueInfo, uint8_t *pData, uint32_t u4IQType, uint32_t u4WFNum);
+	void (*getRbistDataDumpEvent)(struct ADAPTER *prAdapter, uint8_t *pucEventBuf);
+};
+
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -197,7 +207,7 @@ int SetByPassCac(struct net_device *prNetDev, uint8_t *prInBuf);
 int SetRadarDetectMode(struct net_device *prNetDev, uint8_t *prInBuf);
 #endif
 
-
 int AteCmdSetHandle(struct net_device *prNetDev, uint8_t *prInBuf, uint32_t u4InBufLen);
+
 #endif /*CFG_SUPPORT_QA_TOOL */
 #endif /* _GL_ATE_AGENT_H */

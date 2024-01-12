@@ -217,10 +217,22 @@ struct TX_DESC_OPS_T connacTxDescOps = {
 	.fillTxByteCount = fillTxDescTxByteCount,
 };
 
+#if CFG_SUPPORT_QA_TOOL
+struct ATE_OPS_T connacAteOps = {
+	.setICapStart = connacSetICapStart,
+	.getICapStatus = connacGetICapStatus,
+	.getICapIQData = connacGetICapIQData,
+	.getRbistDataDumpEvent = nicExtEventICapIQData,
+};
+#endif
+
 struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	.bus_info = &connac_bus_info,
 	.fw_dl_ops = &connac_fw_dl_ops,
 	.prTxDescOps = &connacTxDescOps,
+#if CFG_SUPPORT_QA_TOOL
+	.prAteOps = &connacAteOps,
+#endif
 
 	.chip_id = CONNAC_CHIP_ID,
 	.should_verify_chip_id = FALSE,

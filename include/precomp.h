@@ -257,6 +257,7 @@
 
 #if CFG_SUPPORT_QA_TOOL
 #include "gl_qa_agent.h"
+#include "gl_ate_agent.h"
 #endif
 
 /*******************************************************************************
