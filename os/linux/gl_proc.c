@@ -297,10 +297,13 @@ static ssize_t procCSIDataRead(struct file *filp,
 	int32_t i4Pos = 0;
 	struct CSI_INFO_T *prCSIInfo = NULL;
 
-	if (g_prGlueInfo_proc && g_prGlueInfo_proc->prAdapter)
+	if (g_prGlueInfo_proc && g_prGlueInfo_proc->u4ReadyFlag &&
+			g_prGlueInfo_proc->prAdapter)
 		prCSIInfo = glCsiGetCSIInfo();
-	else
+	else {
+		DBGLOG(REQ, WARN, "[CSI] driver is not ready.\n");
 		return 0;
+	}
 
 	if (prCSIInfo->bIncomplete == FALSE) {
 
