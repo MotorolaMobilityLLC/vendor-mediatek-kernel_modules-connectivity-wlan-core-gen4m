@@ -1980,7 +1980,9 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 					prBssDesc->ucDCMMaxConRx =
 					HE_GET_PHY_CAP_DCM_MAX_CONSTELLATION_RX(
 						prHeCap->ucHePhyCap);
-					DBGLOG(SCN, INFO, "ER: SSID:%s,rx:%x\n",
+					DBGLOG(SCN, INFO,
+						"ER: BSSID:" MACSTR
+						" SSID:%s,rx:%x\n",
 						MAC2STR(prBssDesc->aucBSSID),
 						prBssDesc->aucSSID,
 						prBssDesc->ucDCMMaxConRx);
@@ -1990,7 +1992,9 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 					prBssDesc->fgIsERSUDisable =
 					HE_IS_ER_SU_DISABLE(
 						prHeOp->ucHeOpParams);
-					DBGLOG(SCN, INFO, "ER: SSID:%s,er:%x\n",
+					DBGLOG(SCN, INFO,
+						"ER: BSSID:" MACSTR
+						" SSID:%s,er:%x\n",
 						MAC2STR(prBssDesc->aucBSSID),
 						prBssDesc->aucSSID,
 						prBssDesc->fgIsERSUDisable);
