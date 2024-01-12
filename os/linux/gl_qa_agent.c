@@ -6967,6 +6967,12 @@ static int32_t HQA_BFProfileDataRead(struct net_device
 	NumOfsub = subcarr_end - subcarr_start + 1;
 	NumOfsub = ntohl(NumOfsub);
 
+	if (2 + sizeof(NumOfsub) + sizeof(rPfmuData) * NumOfsub
+		> sizeof(HqaCmdFrame->Data)) {
+		i4Ret = -EINVAL;
+		goto label_exit;
+	}
+
 	memcpy(HqaCmdFrame->Data + 2, &NumOfsub, sizeof(NumOfsub));
 	offset += sizeof(NumOfsub);
 
@@ -6993,6 +6999,7 @@ static int32_t HQA_BFProfileDataRead(struct net_device
 		offset += sizeof(rPfmuData);
 	}
 
+label_exit:
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2 + offset, i4Ret);
 	kfree(prInBuf);
 
@@ -7610,8 +7617,14 @@ static int32_t HQA_MUSetMUTable(struct net_device *prNetDev,
 	prTable = kmalloc_array(u2Len, sizeof(uint8_t), GFP_KERNEL);
 
 	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MUSetMUTable\n");
+	if (!prTable)
+		return -EFAULT;
 
 	u2Len = ntohl(HqaCmdFrame->Length) - sizeof(u4SuMu);
+	if (4 + u2Len > sizeof(HqaCmdFrame->Data)) {
+		i4Ret = -EINVAL;
+		goto label_exit;
+	}
 
 	memcpy(&u4SuMu, HqaCmdFrame->Data + 4 * 0, 4);
 	u4SuMu = ntohl(u4SuMu);
@@ -7620,10 +7633,12 @@ static int32_t HQA_MUSetMUTable(struct net_device *prNetDev,
 
 	i4Ret = Set_MUSetMUTable(prNetDev, prTable);
 
+label_exit:
+	/* free memory */
+	kfree(prTable);
+
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
-	if (prTable != NULL)
-		kfree(prTable);
 	return i4Ret;
 }
 
