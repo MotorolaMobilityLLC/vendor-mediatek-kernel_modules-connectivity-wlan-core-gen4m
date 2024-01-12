@@ -935,7 +935,7 @@ struct RX_CTRL {
 #endif
 
 	/* Store SysTime of Last Rx */
-	uint32_t u4LastRxTime;
+	uint32_t u4LastRxTime[MAX_BSSID_NUM];
 };
 
 struct RX_MAILBOX {

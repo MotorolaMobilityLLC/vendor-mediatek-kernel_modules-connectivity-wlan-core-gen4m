@@ -4401,7 +4401,8 @@ void nicEventMibInfo(IN struct ADAPTER *prAdapter,
 *         false	if the beacon timeout event needs to be ignored
 */
 /*----------------------------------------------------------------------------*/
-bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter)
+bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx)
 {
 	struct RX_CTRL	*prRxCtrl;
 	struct TX_CTRL	*prTxCtrl;
@@ -4425,17 +4426,19 @@ bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter)
 	DBGLOG(NIC, INFO,
 			"u4MonitorWindow: %d, u4CurrentTime: %d, u4LastRxTime: %d, u4LastTxTime: %d",
 			u4MonitorWindow, u4CurrentTime,
-			prRxCtrl->u4LastRxTime, prTxCtrl->u4LastTxTime);
+			prRxCtrl->u4LastRxTime[ucBssIdx],
+			prTxCtrl->u4LastTxTime[ucBssIdx]);
 
 	/* Policy 1, if RX in the past duration (in ms)
 	 * Policy 2, if TX done successfully in the past duration (in ms)
 	 *    if hit, then the beacon timeout event will be ignored
 	 */
-	if (!CHECK_FOR_TIMEOUT(u4CurrentTime, prRxCtrl->u4LastRxTime,
+	if (!CHECK_FOR_TIMEOUT(u4CurrentTime, prRxCtrl->u4LastRxTime[ucBssIdx],
 			      SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow)))) {
 		DBGLOG(NIC, INFO, "Policy 1 hit, RX in the past duration");
 		bValid = false;
-	} else if (!CHECK_FOR_TIMEOUT(u4CurrentTime, prTxCtrl->u4LastTxTime,
+	} else if (!CHECK_FOR_TIMEOUT(u4CurrentTime,
+			prTxCtrl->u4LastTxTime[ucBssIdx],
 			      SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow)))) {
 		DBGLOG(NIC, INFO,
 			"Policy 2 hit, TX done successfully in the past duration");
@@ -4470,7 +4473,8 @@ void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 			prEventBssBeaconTimeout->ucBssIndex);
 
 		if (IS_BSS_AIS(prBssInfo)) {
-			if (nicBeaconTimeoutFilterPolicy(prAdapter))
+			if (nicBeaconTimeoutFilterPolicy(prAdapter,
+				prBssInfo->ucBssIndex))
 				aisBssBeaconTimeout(prAdapter,
 					prBssInfo->ucBssIndex);
 		}
