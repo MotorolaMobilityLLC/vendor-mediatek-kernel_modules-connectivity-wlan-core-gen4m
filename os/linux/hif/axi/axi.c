@@ -691,7 +691,9 @@ static int _init_resv_mem(struct platform_device *pdev)
 static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+#if AXI_ISR_DEBUG_LOG
 	static DEFINE_RATELIMIT_STATE(_rs, 2 * HZ, 1);
+#endif
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 	if (!prGlueInfo) {
@@ -708,8 +710,10 @@ static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
 	}
 
 	kalSetIntEvent(prGlueInfo);
+#if AXI_ISR_DEBUG_LOG
 	if (__ratelimit(&_rs))
 		LOG_FUNC("In HIF ISR.\n");
+#endif
 
 	return IRQ_HANDLED;
 }
