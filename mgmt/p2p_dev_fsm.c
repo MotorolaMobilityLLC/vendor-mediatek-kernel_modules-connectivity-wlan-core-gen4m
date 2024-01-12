@@ -724,90 +724,88 @@ VOID p2pDevFsmRunEventMgmtTx(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 	P_P2P_CHNL_REQ_INFO_T prP2pChnlReqInfo = (P_P2P_CHNL_REQ_INFO_T) NULL;
 	P_P2P_MGMT_TX_REQ_INFO_T prP2pMgmtTxReqInfo = (P_P2P_MGMT_TX_REQ_INFO_T) NULL;
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
+	prMgmtTxMsg = (P_MSG_P2P_MGMT_TX_REQUEST_T) prMsgHdr;
 
-		prMgmtTxMsg = (P_MSG_P2P_MGMT_TX_REQUEST_T) prMsgHdr;
+	if ((prMgmtTxMsg->ucBssIdx != prAdapter->ucP2PDevBssIdx) &&
+		(IS_NET_ACTIVE(prAdapter, prMgmtTxMsg->ucBssIdx))) {
+		DBGLOG(P2P, TRACE, " Role Interface\n");
+		p2pFuncTxMgmtFrame(prAdapter,
+				   prMgmtTxMsg->ucBssIdx,
+				   prMgmtTxMsg->prMgmtMsduInfo, prMgmtTxMsg->fgNoneCckRate);
+		goto error;
+	}
 
-		if ((prMgmtTxMsg->ucBssIdx != prAdapter->ucP2PDevBssIdx) &&
-			(IS_NET_ACTIVE(prAdapter, prMgmtTxMsg->ucBssIdx))) {
-			DBGLOG(P2P, TRACE, " Role Interface\n");
-			p2pFuncTxMgmtFrame(prAdapter,
-					   prMgmtTxMsg->ucBssIdx,
-					   prMgmtTxMsg->prMgmtMsduInfo, prMgmtTxMsg->fgNoneCckRate);
-			break;
+	DBGLOG(P2P, TRACE, " Device Interface\n");
+	DBGLOG(P2P, STATE, "p2pDevFsmRunEventMgmtTx\n");
+
+	prMgmtTxMsg->ucBssIdx = prAdapter->ucP2PDevBssIdx;
+
+	prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
+
+	if (prP2pDevFsmInfo == NULL) {
+		DBGLOG(P2P, ERROR, "prP2pDevFsmInfo is NULL!\n");
+		goto error;
+	}
+
+	prP2pChnlReqInfo = &(prP2pDevFsmInfo->rChnlReqInfo);
+	prP2pMgmtTxReqInfo = &(prP2pDevFsmInfo->rMgmtTxInfo);
+
+	if ((!prMgmtTxMsg->fgIsOffChannel) ||
+	    ((prP2pDevFsmInfo->eCurrentState == P2P_DEV_STATE_OFF_CHNL_TX) &&
+	     (LINK_IS_EMPTY(&prP2pMgmtTxReqInfo->rP2pTxReqLink)))) {
+		p2pFuncTxMgmtFrame(prAdapter,
+				   prP2pDevFsmInfo->ucBssIndex,
+				   prMgmtTxMsg->prMgmtMsduInfo, prMgmtTxMsg->fgNoneCckRate);
+	} else {
+		P_P2P_OFF_CHNL_TX_REQ_INFO_T prOffChnlTxReq = (P_P2P_OFF_CHNL_TX_REQ_INFO_T) NULL;
+
+		prOffChnlTxReq = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(P2P_OFF_CHNL_TX_REQ_INFO_T));
+
+		if (prOffChnlTxReq == NULL) {
+			DBGLOG(P2P, ERROR, "Can not serve TX request due to MSG buffer not enough\n");
+			ASSERT(FALSE);
+			goto error;
 		}
 
-		DBGLOG(P2P, TRACE, " Device Interface\n");
-		DBGLOG(P2P, STATE, "p2pDevFsmRunEventMgmtTx\n");
+		prOffChnlTxReq->prMgmtTxMsdu = prMgmtTxMsg->prMgmtMsduInfo;
+		prOffChnlTxReq->fgNoneCckRate = prMgmtTxMsg->fgNoneCckRate;
+		kalMemCopy(&prOffChnlTxReq->rChannelInfo, &prMgmtTxMsg->rChannelInfo,
+			   sizeof(RF_CHANNEL_INFO_T));
+		prOffChnlTxReq->eChnlExt = prMgmtTxMsg->eChnlExt;
+		prOffChnlTxReq->fgIsWaitRsp = prMgmtTxMsg->fgIsWaitRsp;
 
-		prMgmtTxMsg->ucBssIdx = prAdapter->ucP2PDevBssIdx;
+		LINK_INSERT_TAIL(&prP2pMgmtTxReqInfo->rP2pTxReqLink, &prOffChnlTxReq->rLinkEntry);
 
-		prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
+		/* Channel Request if needed. */
+		if (prP2pDevFsmInfo->eCurrentState != P2P_DEV_STATE_OFF_CHNL_TX) {
+			P_MSG_P2P_CHNL_REQUEST_T prP2pMsgChnlReq = (P_MSG_P2P_CHNL_REQUEST_T) NULL;
 
-		if (prP2pDevFsmInfo == NULL)
-			break;
+			prP2pMsgChnlReq = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(MSG_P2P_CHNL_REQUEST_T));
 
-		prP2pChnlReqInfo = &(prP2pDevFsmInfo->rChnlReqInfo);
-		prP2pMgmtTxReqInfo = &(prP2pDevFsmInfo->rMgmtTxInfo);
-
-		if ((!prMgmtTxMsg->fgIsOffChannel) ||
-		    ((prP2pDevFsmInfo->eCurrentState == P2P_DEV_STATE_OFF_CHNL_TX) &&
-		     (LINK_IS_EMPTY(&prP2pMgmtTxReqInfo->rP2pTxReqLink)))) {
-			p2pFuncTxMgmtFrame(prAdapter,
-					   prP2pDevFsmInfo->ucBssIndex,
-					   prMgmtTxMsg->prMgmtMsduInfo, prMgmtTxMsg->fgNoneCckRate);
-		} else {
-			P_P2P_OFF_CHNL_TX_REQ_INFO_T prOffChnlTxReq = (P_P2P_OFF_CHNL_TX_REQ_INFO_T) NULL;
-
-			prOffChnlTxReq = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(P2P_OFF_CHNL_TX_REQ_INFO_T));
-
-			if (prOffChnlTxReq == NULL) {
-				DBGLOG(P2P, ERROR, "Can not serve TX request due to MSG buffer not enough\n");
+			if (prP2pMsgChnlReq == NULL) {
+				cnmMemFree(prAdapter, prOffChnlTxReq);
 				ASSERT(FALSE);
-				break;
+				DBGLOG(P2P, ERROR, "Not enough MSG buffer for channel request\n");
+				goto error;
 			}
 
-			prOffChnlTxReq->prMgmtTxMsdu = prMgmtTxMsg->prMgmtMsduInfo;
-			prOffChnlTxReq->fgNoneCckRate = prMgmtTxMsg->fgNoneCckRate;
-			kalMemCopy(&prOffChnlTxReq->rChannelInfo, &prMgmtTxMsg->rChannelInfo,
-				   sizeof(RF_CHANNEL_INFO_T));
-			prOffChnlTxReq->eChnlExt = prMgmtTxMsg->eChnlExt;
-			prOffChnlTxReq->fgIsWaitRsp = prMgmtTxMsg->fgIsWaitRsp;
+			prP2pMsgChnlReq->eChnlReqType = CH_REQ_TYPE_OFFCHNL_TX;
 
-			LINK_INSERT_TAIL(&prP2pMgmtTxReqInfo->rP2pTxReqLink, &prOffChnlTxReq->rLinkEntry);
+			/* Not used in TX OFFCHNL REQ fields. */
+			prP2pMsgChnlReq->rMsgHdr.eMsgId = MID_MNY_P2P_CHNL_REQ;
+			prP2pMsgChnlReq->u8Cookie = 0;
+			prP2pMsgChnlReq->u4Duration = P2P_OFF_CHNL_TX_DEFAULT_TIME_MS;
 
-			/* Channel Request if needed. */
-			if (prP2pDevFsmInfo->eCurrentState != P2P_DEV_STATE_OFF_CHNL_TX) {
-				P_MSG_P2P_CHNL_REQUEST_T prP2pMsgChnlReq = (P_MSG_P2P_CHNL_REQUEST_T) NULL;
+			kalMemCopy(&prP2pMsgChnlReq->rChannelInfo,
+				   &prMgmtTxMsg->rChannelInfo, sizeof(RF_CHANNEL_INFO_T));
+			prP2pMsgChnlReq->eChnlSco = prMgmtTxMsg->eChnlExt;
 
-				prP2pMsgChnlReq = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(MSG_P2P_CHNL_REQUEST_T));
-
-				if (prP2pMsgChnlReq == NULL) {
-					cnmMemFree(prAdapter, prOffChnlTxReq);
-					ASSERT(FALSE);
-					DBGLOG(P2P, ERROR, "Not enough MSG buffer for channel request\n");
-					break;
-				}
-
-				prP2pMsgChnlReq->eChnlReqType = CH_REQ_TYPE_OFFCHNL_TX;
-
-				/* Not used in TX OFFCHNL REQ fields. */
-				prP2pMsgChnlReq->rMsgHdr.eMsgId = MID_MNY_P2P_CHNL_REQ;
-				prP2pMsgChnlReq->u8Cookie = 0;
-				prP2pMsgChnlReq->u4Duration = P2P_OFF_CHNL_TX_DEFAULT_TIME_MS;
-
-				kalMemCopy(&prP2pMsgChnlReq->rChannelInfo,
-					   &prMgmtTxMsg->rChannelInfo, sizeof(RF_CHANNEL_INFO_T));
-				prP2pMsgChnlReq->eChnlSco = prMgmtTxMsg->eChnlExt;
-
-				p2pDevFsmRunEventChannelRequest(prAdapter, (P_MSG_HDR_T) prP2pMsgChnlReq);
-			}
+			p2pDevFsmRunEventChannelRequest(prAdapter, (P_MSG_HDR_T) prP2pMsgChnlReq);
 		}
-	} while (FALSE);
+	}
 
-	if (prMsgHdr)
-		cnmMemFree(prAdapter, prMsgHdr);
+error:
+	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventMgmtTx */
 
 WLAN_STATUS
