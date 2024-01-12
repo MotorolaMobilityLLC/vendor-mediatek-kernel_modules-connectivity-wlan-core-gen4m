@@ -8922,7 +8922,7 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
 	uint8_t *pucData;
 	struct DHCP_PROTOCOL *prDhcp;
-	uint32_t dhcpLen = 0;
+	uint16_t dhcpLen = 0;
 	uint8_t ucBssIndex;
 
 	pucData = prSwRfb->pvHeader;
@@ -8966,7 +8966,7 @@ end:
 }
 
 struct UDP_HEADER *qmGetUdpPkt(uint8_t *pucData, uint16_t u2PacketLen,
-		uint32_t *pUdpLen)
+		uint16_t *pUdpLen)
 {
 	uint16_t u2EtherType = 0;
 	uint8_t *pucEthBody = NULL;
@@ -9012,11 +9012,11 @@ end:
 }
 
 struct DHCP_PROTOCOL *qmGetDhcpPkt(uint8_t *pucData, uint16_t u2PacketLen,
-	u_int8_t fgFromServer, uint32_t *pDhcpLen)
+	u_int8_t fgFromServer, uint16_t *pDhcpLen)
 {
 	struct UDP_HEADER *pucUdpPkt = NULL;
-	uint32_t udpLen = 0;
-	uint32_t dhcpLen = 0;
+	uint16_t udpLen = 0;
+	uint16_t dhcpLen = 0;
 	uint16_t u2UdpDstPort;
 	uint16_t u2UdpSrcPort;
 	struct DHCP_PROTOCOL *prDhcp = NULL;
@@ -9196,7 +9196,7 @@ void qmArpMonitorHandleRxDhcpPkt(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, uint8_t *pucData, uint16_t u2PacketLen)
 {
 	struct DHCP_PROTOCOL *prDhcp;
-	uint32_t dhcpLen = 0;
+	uint16_t dhcpLen = 0;
 	uint8_t dhcpTypeGot = 0;
 	uint8_t dhcpGatewayGot = 0;
 	uint32_t i = 0;
@@ -9213,11 +9213,12 @@ void qmArpMonitorHandleRxDhcpPkt(struct ADAPTER *prAdapter,
 	if (!prDhcp)
 		return;
 
+	if (unlikely(dhcpLen > MAX_DHCP_OPT_LEN))
+		dhcpLen = MAX_DHCP_OPT_LEN;
 	DBGLOG(QM, LOUD, "BssIdx:%u dhcpLen:%u\n", ucBssIndex, dhcpLen);
 
 	/* start from the beginning of dhcp option */
-	while (sizeof(struct DHCP_PROTOCOL) + i < dhcpLen &&
-	       sizeof(struct DHCP_PROTOCOL) + i < MAX_DHCP_OPT_LEN) {
+	while (sizeof(struct DHCP_PROTOCOL) + i < dhcpLen) {
 		/* Because DHCP is a variant of DHCP identified by the
 		 * MAGIC COOKIE at the beginning of option field in
 		 * struct DHCP_PROTOCOL,
