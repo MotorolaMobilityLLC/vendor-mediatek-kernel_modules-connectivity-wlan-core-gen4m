@@ -84,7 +84,9 @@ static uint32_t nanNdpBufferNanAttrLists(struct ADAPTER *prAdapter,
 unsigned char
 nanGetFeatureIsSigma(struct ADAPTER *prAdapter)
 {
-	return prAdapter->rWifiVar.fgNanIsSigma;
+	return prAdapter->rWifiVar.fgNanIsSigma ||
+		(prAdapter->rWifiVar.u4SwTestMode ==
+			ENUM_SW_TEST_MODE_SIGMA_NAN);
 }
 
 static uint32_t

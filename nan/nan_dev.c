@@ -756,6 +756,9 @@ nanDevSendEnableRequest(
 		nicUpdateBss(prAdapter, prnanBssInfo->ucBssIndex);
 
 		/* Update AC WMM Parm with correct BN info in BSSInfo */
+		if (nanGetFeatureIsSigma(prAdapter))
+			continue;
+
 		prACQueParms = prnanBssInfo->arACQueParms;
 
 		for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
@@ -770,8 +773,25 @@ nanDevSendEnableRequest(
 			prnanBssInfo->ucBssIndex);
 	}
 
+	if (nanGetFeatureIsSigma(prAdapter)) {
+		struct NanEnableRequest rEnableReq;
+
+		/** Send NAN enable request to FW */
+		kalMemZero(&rEnableReq, sizeof(struct NanEnableRequest));
+		rEnableReq.master_pref = prAdapter->rWifiVar.ucMasterPref;
+		rEnableReq.config_random_factor_force = 0;
+		rEnableReq.random_factor_force_val = 0;
+		rEnableReq.config_hop_count_force = 0;
+		rEnableReq.hop_count_force_val = 0;
+		rEnableReq.config_5g_channel =
+			prAdapter->rWifiVar.ucConfig5gChannel;
+		rEnableReq.channel_5g_val =
+			prAdapter->rWifiVar.ucChannel5gVal;
+
+		nanDevEnableRequest(prAdapter, &rEnableReq);
+	} else
 	/** Set complete for mtk_cfg80211_vendor_nan send nan enable */
-	complete(&prAdapter->prGlueInfo->rNanHaltComp);
+		complete(&prAdapter->prGlueInfo->rNanHaltComp);
 
 	nanDevSendAbortRequestToCnm(prAdapter);
 
