@@ -980,6 +980,10 @@ KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, _pvPacket)
 
 #define kalPacketAllocWithHeadroom(_prGlueInfo, _u4Size, _ppucData) \
 ((void *) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo))
+
+#define kalGetUIntRealTime() \
+((uint64_t) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__))
+
 #else
 void kalAcquireSpinLock(struct GLUE_INFO *prGlueInfo,
 			enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory,
@@ -1009,6 +1013,7 @@ void *kalPacketAlloc(struct GLUE_INFO *prGlueInfo,
 void *kalPacketAllocWithHeadroom(struct GLUE_INFO
 				 *prGlueInfo,
 				 uint32_t u4Size, uint8_t **ppucData);
+uint64_t kalGetUIntRealTime(void);
 #endif
 
 #define kalDuplicateSwRfbSanity(_prSwRfb) \

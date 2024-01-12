@@ -2375,6 +2375,7 @@ void kal_sched_set(struct task_struct *p, int policy,
 void kalSetThreadSchPolicyPriority(struct GLUE_INFO *prGlueInfo);
 void kalSetLogTooMuch(uint32_t u4DriverLevel, uint32_t u4FwLevel);
 void kalGetRealTime(struct REAL_TIME *prRealTime);
+uint64_t kalGetUIntRealTime(void);
 void kalVendorEventRssiBeyondRange(struct GLUE_INFO *prGlueInfo,
 			uint8_t ucBssIdx, int rssi);
 #if CFG_SUPPORT_TPENHANCE_MODE

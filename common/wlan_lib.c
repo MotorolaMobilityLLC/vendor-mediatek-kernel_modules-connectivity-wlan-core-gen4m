@@ -8372,6 +8372,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #if CFG_SUPPORT_LIMITED_PKT_PID
 	INIT_UINT(prWifiVar->u4PktPIDTimeout, "PktPIDTimeout", 1000);
 #endif /* CFG_SUPPORT_LIMITED_PKT_PID */
+#if CFG_SUPPORT_ICS_TIMESYNC
+	INIT_UINT(prWifiVar->u4IcsTimeSyncCnt, "IcsTimeSyncCnt", 1000);
+#endif /* CFG_SUPPORT_ICS_TIMESYNC */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	INIT_UINT(prWifiVar->fgEnOnlyScan6g,
 		"EnableOnlyScan6g", FEATURE_DISABLED);
