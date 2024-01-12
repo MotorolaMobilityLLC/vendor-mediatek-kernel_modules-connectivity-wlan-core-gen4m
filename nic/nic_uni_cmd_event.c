@@ -293,6 +293,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 #endif /* CFG_MTK_MDDP_SUPPORT */
 
 	[UNI_EVENT_ID_TXPOWER] = nicUniEventTxPower,
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	[UNI_EVENT_ID_MLO] = nicUniEventMLSRSwitchDone,
+#endif
 
 };
 
