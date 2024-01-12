@@ -8179,9 +8179,11 @@ static u_int8_t rlmCheckOpChangeParamForClient(struct BSS_INFO *prBssInfo,
 		case MAX_BW_80MHZ:
 		case MAX_BW_40MHZ:
 			if (!HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW40_BW80_5G(
-				prStaRec->ucHePhyCapInfo)) {
+				prStaRec->ucHePhyCapInfo) &&
+				(!HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW40_2G(
+				prStaRec->ucHePhyCapInfo))) {
 				DBGLOG(RLM, INFO,
-					"Can't change BSS[%d] OP BW to:%d for peer HE doens't support BW80/BW40\n",
+					"Can't change BSS[%d] OP BW to:%d for peer HE doens't support 5G BW80/BW40 or 2G BW 40\n",
 					prBssInfo->ucBssIndex, ucChannelWidth);
 				return FALSE;
 			}
