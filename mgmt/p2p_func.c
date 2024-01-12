@@ -4752,7 +4752,7 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 		pucIEBuf = prProbeRspFrame->aucInfoElem;
 		u2IELength = prMgmtTxMsdu->u2FrameLength - u2ProbeRspHdrLen;
 
-#if CFG_SUPPORT_WFD
+#if 0 /*CFG_SUPPORT_WFD*/
 		/* Reset in each time ?? */
 		prAdapter->prGlueInfo
 			->prP2PInfo[prP2pBssInfo->u4PrivateData]
@@ -5961,8 +5961,6 @@ uint32_t wfdFuncCalculateWfdIELenForAssocRsp(IN struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_WFD_COMPOSE_IE
 	uint16_t u2EstimatedExtraIELen = 0;
-	struct WFD_CFG_SETTINGS *prWfdCfgSettings =
-		(struct WFD_CFG_SETTINGS *) NULL;
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
@@ -5970,16 +5968,16 @@ uint32_t wfdFuncCalculateWfdIELenForAssocRsp(IN struct ADAPTER *prAdapter,
 	if (prBssInfo->eNetworkType != NETWORK_TYPE_P2P)
 		return 0;
 
-	prWfdCfgSettings = &(prAdapter->rWifiVar.rWfdConfigureSettings);
+	if (!IS_STA_P2P_TYPE(prStaRec))
+		return 0;
 
-	if (IS_STA_P2P_TYPE(prStaRec) && (prWfdCfgSettings->ucWfdEnable > 0)) {
+	u2EstimatedExtraIELen = prAdapter->prGlueInfo->
+		prP2PInfo[prBssInfo->u4PrivateData]->u2WFDIELen;
 
-		u2EstimatedExtraIELen =
-			prAdapter->prGlueInfo->prP2PInfo[0]->u2WFDIELen;
-		ASSERT(u2EstimatedExtraIELen < 128);
-	}
-	return u2EstimatedExtraIELen;
-
+	if (u2EstimatedExtraIELen < VENDOR_SPECIFIC_IE_LENGTH)
+		return u2EstimatedExtraIELen;
+	else
+		return 0;
 #else
 	return 0;
 #endif
@@ -5990,62 +5988,41 @@ void wfdFuncGenerateWfdIEForAssocRsp(IN struct ADAPTER *prAdapter,
 {
 
 #if CFG_SUPPORT_WFD_COMPOSE_IE
-	struct WFD_CFG_SETTINGS *prWfdCfgSettings =
-		(struct WFD_CFG_SETTINGS *) NULL;
 	struct STA_RECORD *prStaRec;
 	uint16_t u2EstimatedExtraIELen;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
+	struct GLUE_INFO *prGlueInfo;
+	struct GL_P2P_INFO *prP2PInfo;
+
+	if (!prAdapter || !prMsduInfo)
+		return;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	if (!prGlueInfo)
+		return;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+	if (!prStaRec)
+		return;
+
+	if (!IS_STA_P2P_TYPE(prStaRec))
+		return;
 
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+	if (!prP2pBssInfo)
+		return;
 
-	prWfdCfgSettings = &(prAdapter->rWifiVar.rWfdConfigureSettings);
+	prP2PInfo = prGlueInfo->prP2PInfo[prP2pBssInfo->u4PrivateData];
+	if (!prP2PInfo)
+		return;
 
-	do {
-		ASSERT_BREAK((prMsduInfo != NULL) && (prAdapter != NULL));
-
-		prStaRec = cnmGetStaRecByIndex(prAdapter,
-			prMsduInfo->ucStaRecIndex);
-
-		if (prStaRec) {
-			if (IS_STA_P2P_TYPE(prStaRec)) {
-
-				if (prWfdCfgSettings->ucWfdEnable > 0) {
-					u2EstimatedExtraIELen =
-						prAdapter->prGlueInfo
-						->prP2PInfo[prP2pBssInfo
-						->u4PrivateData]->u2WFDIELen;
-					if (u2EstimatedExtraIELen > 0) {
-						ASSERT(
-							u2EstimatedExtraIELen
-							< 128);
-						ASSERT(sizeof
-							(prAdapter->prGlueInfo
-							->prP2PInfo
-							[prP2pBssInfo
-							->u4PrivateData]
-							->aucWFDIE) >=
-							prAdapter->prGlueInfo
-							->prP2PInfo[prP2pBssInfo
-							->u4PrivateData]
-							->u2WFDIELen);
-						kalMemCopy(
-							(prMsduInfo->prPacket +
-							prMsduInfo
-							->u2FrameLength),
-							prAdapter->prGlueInfo
-							->prP2PInfo
-							[prP2pBssInfo
-							->u4PrivateData]
-							->aucWFDIE,
-							u2EstimatedExtraIELen);
-						prMsduInfo->u2FrameLength +=
-							u2EstimatedExtraIELen;
-					}
-				}
-			}	/* IS_STA_P2P_TYPE */
-		} else {
-		}
-	} while (FALSE);
+	u2EstimatedExtraIELen = prP2PInfo->u2WFDIELen;
+	if (u2EstimatedExtraIELen > 0 &&
+		u2EstimatedExtraIELen < VENDOR_SPECIFIC_IE_LENGTH) {
+		kalMemCopy(prMsduInfo->prPacket + prMsduInfo->u2FrameLength,
+			prP2PInfo->aucWFDIE, u2EstimatedExtraIELen);
+		prMsduInfo->u2FrameLength += u2EstimatedExtraIELen;
+	}
 
 	return;
 #else
