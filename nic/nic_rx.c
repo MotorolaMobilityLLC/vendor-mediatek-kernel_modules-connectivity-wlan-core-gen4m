@@ -1551,6 +1551,95 @@ void nicRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 	}
 }
 #endif
+
+static void nicRxSendDeauthPacket(IN struct ADAPTER *prAdapter,
+		IN uint16_t u2FrameCtrl,
+		IN uint8_t *pucSrcAddr,
+		IN uint8_t *pucDestAddr,
+		IN uint8_t *pucBssid)
+{
+	struct SW_RFB rSwRfb;
+	struct WLAN_MAC_HEADER rWlanHeader;
+	uint32_t u4Status;
+
+	if (!prAdapter || !pucSrcAddr || !pucDestAddr || !pucBssid)
+		return;
+
+	kalMemZero(&rSwRfb, sizeof(rSwRfb));
+	kalMemZero(&rWlanHeader, sizeof(rWlanHeader));
+
+	rWlanHeader.u2FrameCtrl = u2FrameCtrl;
+	COPY_MAC_ADDR(rWlanHeader.aucAddr1, pucSrcAddr);
+	COPY_MAC_ADDR(rWlanHeader.aucAddr2, pucDestAddr);
+	COPY_MAC_ADDR(rWlanHeader.aucAddr3, pucBssid);
+	rSwRfb.pvHeader = &rWlanHeader;
+
+	u4Status = authSendDeauthFrame(prAdapter,
+		NULL,
+		NULL,
+		&rSwRfb,
+		REASON_CODE_CLASS_3_ERR,
+		NULL);
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		DBGLOG(NIC, WARN, "u4Status: %d\n", u4Status);
+}
+
+static void nicRxProcessDropPacket(IN struct ADAPTER *prAdapter,
+		IN struct SW_RFB *prSwRfb)
+{
+	struct WLAN_MAC_HEADER *prWlanHeader = NULL;
+	uint8_t ucBssIndex = 0;
+	uint16_t u2FrameCtrl;
+
+	if (!prAdapter || !prSwRfb)
+		return;
+
+	prWlanHeader = (struct WLAN_MAC_HEADER *) prSwRfb->pvHeader;
+
+	if (!prWlanHeader)
+		return;
+
+	u2FrameCtrl = prWlanHeader->u2FrameCtrl;
+	DBGLOG(NIC, TRACE,
+		"TA: " MACSTR " RA: " MACSTR " bssid: " MACSTR " fc: 0x%x\n",
+		MAC2STR(prWlanHeader->aucAddr2),
+		MAC2STR(prWlanHeader->aucAddr1),
+		MAC2STR(prWlanHeader->aucAddr3),
+		u2FrameCtrl);
+
+	if ((u2FrameCtrl & (MASK_FC_FROM_DS | MASK_FC_TO_DS)) == 0)
+		return;
+
+	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum;
+			ucBssIndex++) {
+		struct BSS_INFO *prBssInfo;
+		u_int8_t fgSendDeauth = FALSE;
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+		if (!prBssInfo)
+			continue;
+		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
+			continue;
+		switch (prBssInfo->eNetworkType) {
+		case NETWORK_TYPE_P2P:
+			if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT &&
+				EQUAL_MAC_ADDR(prWlanHeader->aucAddr3,
+					prBssInfo->aucOwnMacAddr))
+				fgSendDeauth = TRUE;
+			break;
+		default:
+			break;
+		}
+
+		if (fgSendDeauth)
+			nicRxSendDeauthPacket(prAdapter,
+				u2FrameCtrl,
+				prWlanHeader->aucAddr1,
+				prWlanHeader->aucAddr2,
+				prWlanHeader->aucAddr3);
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Process HIF data packet
@@ -1567,6 +1656,7 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 {
 	struct RX_CTRL *prRxCtrl;
 	struct SW_RFB *prRetSwRfb, *prNextSwRfb;
+	struct HW_MAC_RX_DESC *prRxStatus;
 	u_int8_t fgDrop;
 	uint8_t ucBssIndex = 0;
 	struct mt66xx_chip_info *prChipInfo;
@@ -1584,6 +1674,7 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prChipInfo = prAdapter->chip_info;
 	prRxDescOps = prChipInfo->prRxDescOps;
+	prRxStatus = prSwRfb->prRxStatus;
 
 	/* Check AMPDU_nERR_Bitmap */
 	prSwRfb->fgDataFrame = TRUE;
@@ -1598,6 +1689,10 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 			"%s:: no nic_rxd_sanity_check??\n", __func__);
 		fgDrop = TRUE;
 	}
+
+	if (fgDrop && prRxStatus->ucWlanIdx >= WTBL_SIZE &&
+			HAL_RX_STATUS_IS_LLC_MIS(prRxStatus))
+		nicRxProcessDropPacket(prAdapter, prSwRfb);
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD || CFG_TCP_IP_CHKSUM_OFFLOAD_NDIS_60
 	if (prAdapter->fgIsSupportCsumOffload && fgDrop == FALSE)
