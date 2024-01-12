@@ -8011,7 +8011,8 @@ void _txPwrCtrlDeleteElement(struct ADAPTER *prAdapter,
 		fgFind = FALSE;
 		prCurElement = LINK_ENTRY(prCur, struct TX_PWR_CTRL_ELEMENT,
 					  node);
-		if (kalStrCmp(prCurElement->name, name) == 0) {
+		if (prCurElement != NULL
+			&& kalStrCmp(prCurElement->name, name) == 0) {
 			if (index == 0)
 				fgFind = TRUE;
 			else if (prCurElement->index == index)
