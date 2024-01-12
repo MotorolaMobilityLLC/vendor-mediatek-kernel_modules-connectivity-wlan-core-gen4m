@@ -401,6 +401,15 @@ do { \
 
 #endif /* #if defined(_HIF_SDIO) */
 
+#define HAL_MCR_WR_FIELD(_prAdapter, _u4Offset, _u4FieldVal, _ucShft, _u4Mask) \
+{ \
+	uint32_t u4CrValue; \
+	HAL_MCR_RD(_prAdapter, _u4Offset, &u4CrValue); \
+	u4CrValue &= (~_u4Mask); \
+	u4CrValue |= ((_u4FieldVal << _ucShft) & _u4Mask); \
+	HAL_MCR_WR(_prAdapter, _u4Offset, u4CrValue); \
+}
+
 #define HAL_WRITE_TX_DATA(_prAdapter, _prMsduInfo) \
 { \
 	if (_prAdapter->rAcpiState == ACPI_STATE_D3) { \
