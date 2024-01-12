@@ -817,12 +817,9 @@ VOID wlanClearPendingInterrupt(IN P_ADAPTER_T prAdapter)
 
 WLAN_STATUS wlanCheckWifiFunc(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgRdyChk)
 {
-	UINT_8 i;
 	BOOLEAN fgResult, fgTimeout;
 	UINT_32 u4Result, u4Status, u4StartTime, u4CurTime;
 	const UINT_32 ready_bits = prAdapter->chip_info->sw_ready_bits;
-
-	i = 0;
 
 	u4StartTime = kalGetTimeTick();
 	fgTimeout = FALSE;
@@ -863,7 +860,7 @@ WLAN_STATUS wlanCheckWifiFunc(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgRdyChk)
 			u4Status = WLAN_STATUS_FAILURE;
 
 			break;
-		} else if ((i >= CFG_RESPONSE_POLLING_TIMEOUT) || fgTimeout) {
+		} else if (fgTimeout) {
 			HAL_WIFI_FUNC_GET_STATUS(prAdapter, u4Result);
 			DBGLOG(INIT, ERROR, "Waiting for %s: Timeout, Status=0x%08x\n",
 				fgRdyChk?"ready bit":"power off", u4Result);
@@ -872,7 +869,6 @@ WLAN_STATUS wlanCheckWifiFunc(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgRdyChk)
 
 			break;
 		}
-			i++;
 			kalMsleep(CFG_RESPONSE_POLLING_DELAY);
 
 	}
@@ -2786,15 +2782,15 @@ WLAN_STATUS wlanPatchSendComplete(IN P_ADAPTER_T prAdapter)
 			if (nicTxPollingResource(prAdapter, ucTC) != WLAN_STATUS_SUCCESS) {
 				u4Status = WLAN_STATUS_FAILURE;
 				DBGLOG(INIT, ERROR, "Fail to get TX resource return within timeout\n");
-				break;
+				goto exit;
 			}
-				continue;
-
+			continue;
 		}
 		/* 5.2 Send CMD Info Packet */
 		if (nicTxInitCmd(prAdapter, prCmdInfo, prChipInfo->u2TxInitCmdPort) != WLAN_STATUS_SUCCESS) {
 			u4Status = WLAN_STATUS_FAILURE;
 			DBGLOG(INIT, ERROR, "Fail to transmit WIFI start command\n");
+			goto exit;
 		}
 
 		break;
@@ -2811,7 +2807,7 @@ WLAN_STATUS wlanPatchSendComplete(IN P_ADAPTER_T prAdapter)
 	else
 		DBGLOG(INIT, INFO, "PATCH FINISH EVT success!!\n");
 
-
+exit:
 	/* 6. Free CMD Info Packet. */
 	cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 
@@ -2904,15 +2900,15 @@ WLAN_STATUS wlanImageSectionConfig(IN P_ADAPTER_T prAdapter,
 			if (nicTxPollingResource(prAdapter, ucTC) != WLAN_STATUS_SUCCESS) {
 				u4Status = WLAN_STATUS_FAILURE;
 				DBGLOG(INIT, ERROR, "Fail to get TX resource return within timeout\n");
-				break;
+				goto exit;
 			}
-				continue;
-
+			continue;
 		}
 		/* 6.2 Send CMD Info Packet */
 		if (nicTxInitCmd(prAdapter, prCmdInfo, prChipInfo->u2TxInitCmdPort) != WLAN_STATUS_SUCCESS) {
 			u4Status = WLAN_STATUS_FAILURE;
 			DBGLOG(INIT, ERROR, "Fail to transmit image download command\n");
+			goto exit;
 		}
 
 		break;
@@ -2923,6 +2919,7 @@ WLAN_STATUS wlanImageSectionConfig(IN P_ADAPTER_T prAdapter,
 	u4Status = wlanConfigWifiFuncStatus(prAdapter, ucCmdSeqNum);
 #endif
 
+exit:
 	/* 8. Free CMD Info Packet. */
 	cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 
@@ -3246,15 +3243,15 @@ WLAN_STATUS wlanConfigWifiFunc(IN P_ADAPTER_T prAdapter,
 			if (nicTxPollingResource(prAdapter, ucTC) != WLAN_STATUS_SUCCESS) {
 				u4Status = WLAN_STATUS_FAILURE;
 				DBGLOG(INIT, ERROR, "Fail to get TX resource return within timeout\n");
-				break;
+				goto exit;
 			}
-				continue;
-
+			continue;
 		}
 		/* 5.2 Send CMD Info Packet */
 		if (nicTxInitCmd(prAdapter, prCmdInfo, prChipInfo->u2TxInitCmdPort) != WLAN_STATUS_SUCCESS) {
 			u4Status = WLAN_STATUS_FAILURE;
 			DBGLOG(INIT, ERROR, "Fail to transmit WIFI start command\n");
+			goto exit;
 		}
 
 		break;
@@ -3269,7 +3266,7 @@ WLAN_STATUS wlanConfigWifiFunc(IN P_ADAPTER_T prAdapter,
 	else
 		DBGLOG(INIT, INFO, "FW_START EVT success!!\n");
 
-
+exit:
 	/* 6. Free CMD Info Packet. */
 	cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 
@@ -3783,7 +3780,7 @@ WLAN_STATUS wlanGetPatchInfo(IN P_ADAPTER_T prAdapter)
 
 VOID wlanSetChipEcoInfo(IN P_ADAPTER_T prAdapter)
 {
-	UINT_32 hw_version, sw_version;
+	UINT_32 hw_version, sw_version = 0;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	UINT_32 chip_id = prChipInfo->chip_id;
 	/* WLAN_STATUS status; */
@@ -3895,15 +3892,15 @@ WLAN_STATUS wlanAccessRegister(IN P_ADAPTER_T prAdapter,
 			if (nicTxPollingResource(prAdapter, ucTC) != WLAN_STATUS_SUCCESS) {
 				u4Status = WLAN_STATUS_FAILURE;
 				DBGLOG(INIT, ERROR, "Fail to get TX resource return within timeout\n");
-				break;
+				goto exit;
 			}
 			continue;
-
 		}
 		/* 6.2 Send CMD Info Packet */
 		if (nicTxInitCmd(prAdapter, prCmdInfo, prChipInfo->u2TxInitCmdPort) != WLAN_STATUS_SUCCESS) {
 			u4Status = WLAN_STATUS_FAILURE;
 			DBGLOG(INIT, ERROR, "Fail to transmit image download command\n");
+			goto exit;
 		}
 
 		break;
@@ -3923,6 +3920,7 @@ WLAN_STATUS wlanAccessRegister(IN P_ADAPTER_T prAdapter,
 		*pru4Result = prInitEventAccessReg->u4Data;
 	}
 
+exit:
 	/* 8. Free CMD Info Packet. */
 	cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 
@@ -6021,19 +6019,17 @@ VOID wlanDumpBssStatistics(IN P_ADAPTER_T prAdapter, UINT_8 ucBssIdx)
 
 	for (ucIdx = 0; ucIdx < CFG_STA_REC_NUM; ucIdx++) {
 		prStaRec = cnmGetStaRecByIndex(prAdapter, ucIdx);
-		if (prStaRec) {
-			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
-
-			if (!prBssInfo)
-				continue;
-
-			for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
-				arLLStats[eAci].u4TxMsdu += prStaRec->arLinkStatistics[eAci].u4TxMsdu;
-				arLLStats[eAci].u4RxMsdu += prStaRec->arLinkStatistics[eAci].u4RxMsdu;
-				arLLStats[eAci].u4TxDropMsdu += prStaRec->arLinkStatistics[eAci].u4TxDropMsdu;
-				arLLStats[eAci].u4TxFailMsdu += prStaRec->arLinkStatistics[eAci].u4TxFailMsdu;
-				arLLStats[eAci].u4TxRetryMsdu += prStaRec->arLinkStatistics[eAci].u4TxRetryMsdu;
-			}
+		if (!prStaRec)
+			continue;
+		if (prStaRec->ucBssIndex != ucBssIdx)
+			continue;
+		/* now the valid sta_rec is valid */
+		for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
+			arLLStats[eAci].u4TxMsdu += prStaRec->arLinkStatistics[eAci].u4TxMsdu;
+			arLLStats[eAci].u4RxMsdu += prStaRec->arLinkStatistics[eAci].u4RxMsdu;
+			arLLStats[eAci].u4TxDropMsdu += prStaRec->arLinkStatistics[eAci].u4TxDropMsdu;
+			arLLStats[eAci].u4TxFailMsdu += prStaRec->arLinkStatistics[eAci].u4TxFailMsdu;
+			arLLStats[eAci].u4TxRetryMsdu += prStaRec->arLinkStatistics[eAci].u4TxRetryMsdu;
 		}
 	}
 #endif
@@ -6844,7 +6840,8 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	prWifiVar->ucArpTxDone = (UINT_8) wlanCfgGetUint32(prAdapter, "ArpTxDone", 1);
 
 	prWifiVar->ucMacAddrOverride = (UINT_8) wlanCfgGetInt32(prAdapter, "MacOverride", 0);
-	wlanCfgGet(prAdapter, "MacAddr", prWifiVar->aucMacAddrStr, "00:0c:e7:66:32:e1", 0);
+	if (wlanCfgGet(prAdapter, "MacAddr", prWifiVar->aucMacAddrStr, "00:0c:e7:66:32:e1", 0))
+		DBGLOG(INIT, ERROR, "get MacAddr fail, use defaul\n");
 
 	prWifiVar->ucCtiaMode = (UINT_8) wlanCfgGetUint32(prAdapter, "CtiaMode", 0);
 
@@ -7005,7 +7002,7 @@ VOID wlanCfgSetChip(IN P_ADAPTER_T prAdapter)
 	for (i = 0; i < WLAN_CFG_SET_CHIP_LEN_MAX; i++) {
 		kalMemZero(aucValue, WLAN_CFG_VALUE_LEN_MAX);
 		kalMemZero(aucKey, WLAN_CFG_VALUE_LEN_MAX);
-		kalSprintf(aucKey, "SetChip%d", i);
+		kalSnprintf(aucKey, sizeof(aucKey), "SetChip%d", i);
 
 		/* get nothing */
 		if (wlanCfgGet(prAdapter, aucKey, aucValue, "", 0) != WLAN_STATUS_SUCCESS)
@@ -7789,15 +7786,12 @@ WLAN_STATUS wlanCfgParseToFW(PCHAR *args, PCHAR args_size, UCHAR nargs, PCHAR bu
 			data++;
 		}
 
-		for (bufferindex = 0; sum > 0; bufferindex++) {
-			cmd_v1.itemValue[bufferindex] = sum & 0xFF;
+		bufferindex = 0;
+		do {
+			cmd_v1.itemValue[bufferindex++] = sum & 0xFF;
 			sum = sum >> 8;
-		}
-
-		if (sum == 0)
-			cmd_v1.itemValueLength = 1;
-		else
-			cmd_v1.itemValueLength = bufferindex;
+		} while (sum > 0);
+		cmd_v1.itemValueLength = bufferindex;
 	} else if (cmd_v1.itemType == ITEM_TYPE_STR) {
 		cmd_v1.itemValueLength = args_size[ED_VALUE_SITE];
 		strncpy(cmd_v1.itemValue, args[ED_VALUE_SITE], cmd_v1.itemValueLength);
@@ -7837,6 +7831,7 @@ VOID wlanFeatureToFw(IN P_ADAPTER_T prAdapter)
 	rCmdV1Header.cmdType = CMD_TYPE_SET;
 	rCmdV1Header.cmdVersion = CMD_VER_1;
 	rCmdV1Header.cmdBufferLen = 0;
+	rCmdV1Header.itemNum = 0;
 
 	kalMemSet(rCmdV1Header.buffer, 0, MAX_CMD_BUFFER_LENGTH);
 	kalMemSet(&rCmd_v1, 0, sizeof(CMD_FORMAT_V1_T));
@@ -7957,9 +7952,9 @@ WLAN_STATUS wlanCfgParse(IN P_ADAPTER_T prAdapter, PUINT_8 pucConfigBuf, UINT_32
 	CHAR ucTmp[WLAN_CFG_VALUE_LEN_MAX];
 	UINT_8 i;
 
-
-
 	PUINT_8 pucCurrBuf = ucTmp;
+	UINT_32 u4CurrSize = ARRAY_SIZE(ucTmp);
+	UINT_32 u4RetSize = 0;
 
 	rCmdV1Header.cmdType = CMD_TYPE_SET;
 	rCmdV1Header.cmdVersion = CMD_VER_1;
@@ -8003,12 +7998,13 @@ WLAN_STATUS wlanCfgParse(IN P_ADAPTER_T prAdapter, PUINT_8 pucConfigBuf, UINT_32
 
 				kalMemZero(ucTmp, WLAN_CFG_VALUE_LEN_MAX);
 				pucCurrBuf = ucTmp;
+				u4CurrSize = ARRAY_SIZE(ucTmp);
 
 				if ((*ppcArgs[0] == '2') && (*(ppcArgs[2]) != '0') && (*(ppcArgs[2]+1) != 'x')) {
 					DBGLOG(INIT, WARN, "config file got a hex format\n");
-					SPRINTF(pucCurrBuf, ("0x%s", ppcArgs[2]));
+					kalSnprintf(pucCurrBuf, u4CurrSize, "0x%s", ppcArgs[2]);
 				} else {
-					SPRINTF(pucCurrBuf, ("%s", ppcArgs[2]));
+					kalSnprintf(pucCurrBuf, u4CurrSize, "%s", ppcArgs[2]);
 				}
 				DBGLOG(INIT, WARN, "[3 parameter mode][%s],[%s],[%s]\n", ppcArgs[0], ppcArgs[1], ucTmp);
 				wlanCfgParseAddEntry(prAdapter, ppcArgs[1], NULL, ucTmp, NULL);
@@ -8051,13 +8047,14 @@ WLAN_STATUS wlanCfgParse(IN P_ADAPTER_T prAdapter, PUINT_8 pucConfigBuf, UINT_32
 				*/
 				kalMemZero(ucTmp, WLAN_CFG_VALUE_LEN_MAX);
 				pucCurrBuf = ucTmp;
+				u4CurrSize = ARRAY_SIZE(ucTmp);
 
 				if ((*ppcArgs[0] == '2')  && (*(ppcArgs[2]) != '0') && (*(ppcArgs[2]+1) != 'x')) {
 					DBGLOG(INIT, WARN, "config file got a hex format\n");
-					SPRINTF(pucCurrBuf, ("0x%s", ppcArgs[2]));
+					kalSnprintf(pucCurrBuf, u4CurrSize, "0x%s", ppcArgs[2]);
 
 				} else {
-					SPRINTF(pucCurrBuf, ("%s", ppcArgs[2]));
+					kalSnprintf(pucCurrBuf, u4CurrSize, "%s", ppcArgs[2]);
 				}
 
 
@@ -8071,29 +8068,32 @@ WLAN_STATUS wlanCfgParse(IN P_ADAPTER_T prAdapter, PUINT_8 pucConfigBuf, UINT_32
 			}
 #if 1
 			/*combine the argument to save in temp*/
-			{
-				pucCurrBuf = ucTmp;
+			pucCurrBuf = ucTmp;
+			u4CurrSize = ARRAY_SIZE(ucTmp);
 
-				kalMemZero(ucTmp, WLAN_CFG_VALUE_LEN_MAX);
+			kalMemZero(ucTmp, WLAN_CFG_VALUE_LEN_MAX);
 
-				if (i4Nargs == 2) {
-					/*no space for it, driver can't accept space in the end of the line*/
-					/*ToDo: skip the space when parsing*/
-					SPRINTF(pucCurrBuf, ("%s", ppcArgs[1]));
-				} else {
-					for (i = 1; i < i4Nargs; i++)
-						SPRINTF(pucCurrBuf, ("%s ", ppcArgs[i]));
+			if (i4Nargs == 2) {
+				/*no space for it, driver can't accept space in the end of the line*/
+				/*ToDo: skip the space when parsing*/
+				kalSnprintf(pucCurrBuf, u4CurrSize, "%s", ppcArgs[1]);
+			} else {
+				for (i = 1; i < i4Nargs; i++) {
+					if (u4CurrSize <= 1) {
+						DBGLOG(INIT, ERROR, "write to pucCurrBuf out of bound, i=%d\n", i);
+						break;
+					}
+					u4RetSize = scnprintf(pucCurrBuf, u4CurrSize, "%s ", ppcArgs[i]);
+					pucCurrBuf += u4RetSize;
+					u4CurrSize -= u4RetSize;
 				}
-
-				DBGLOG(INIT, WARN, "Save to driver temp buffer as [%s]\n", ucTmp);
-				wlanCfgParseAddEntry(prAdapter, ppcArgs[0], NULL, ucTmp, NULL);
 			}
+
+			DBGLOG(INIT, WARN, "Save to driver temp buffer as [%s]\n", ucTmp);
+			wlanCfgParseAddEntry(prAdapter, ppcArgs[0], NULL, ucTmp, NULL);
 #else
 			wlanCfgParseAddEntry(prAdapter, ppcArgs[0], NULL, ppcArgs[1], NULL);
-
 #endif
-
-
 
 			if (isFwConfig) {
 
@@ -8490,9 +8490,7 @@ VOID wlanTxLifetimeUpdateStaStats(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prM
 {
 	P_STA_RECORD_T prStaRec;
 	UINT_32 u4DeltaTime;
-	P_QUE_MGT_T prQM = &prAdapter->rQM;
 	P_PKT_PROFILE_T prPktProfile = &prMsduInfo->rPktProfile;
-	UINT_32 u4PktPrintPeriod = 0;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
@@ -8507,22 +8505,6 @@ VOID wlanTxLifetimeUpdateStaStats(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prM
 			prStaRec->u4MaxTxPktsTime = u4DeltaTime;
 		if (u4DeltaTime >= NIC_TX_TIME_THRESHOLD)
 			prStaRec->u4ThresholdCounter++;
-
-		if (u4PktPrintPeriod && (prStaRec->u4TotalTxPktsNumber >= u4PktPrintPeriod)) {
-			DBGLOG(TX, TRACE, "[%u]N[%4lu]A[%5lu]M[%4lu]T[%4lu]E[%4lu]\n",
-			       prStaRec->ucIndex,
-			       prStaRec->u4TotalTxPktsNumber,
-			       (prStaRec->u4TotalTxPktsTime / prStaRec->u4TotalTxPktsNumber),
-			       prStaRec->u4MaxTxPktsTime,
-			       prStaRec->u4ThresholdCounter,
-			       prQM->au4QmTcResourceEmptyCounter[prStaRec->ucBssIndex][TC2_INDEX]);
-
-			prStaRec->u4TotalTxPktsNumber = 0;
-			prStaRec->u4TotalTxPktsTime = 0;
-			prStaRec->u4MaxTxPktsTime = 0;
-			prStaRec->u4ThresholdCounter = 0;
-			prQM->au4QmTcResourceEmptyCounter[prStaRec->ucBssIndex][TC2_INDEX] = 0;
-		}
 	}
 }
 #endif
