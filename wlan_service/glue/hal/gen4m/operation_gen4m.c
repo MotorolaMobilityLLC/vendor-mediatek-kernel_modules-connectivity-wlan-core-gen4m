@@ -329,7 +329,9 @@ enum ENUM_ATE_CAP_TYPE {
  *	Global Variable
  *****************************************************************************/
 static struct hqa_m_rx_stat test_hqa_rx_stat;
+#if (CFG_SUPPORT_CONNAC3X == 0)
 static u_char g_tx_mode;
+#endif /*(CFG_SUPPORT_CONNAC3X == 0)*/
 
 
 
@@ -1487,10 +1489,33 @@ s_int32 mt_op_set_preamble(
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	/* QA tool pass through to FW
+	typedef enum
+	{
+		PREAMBLE_CCK = 0,
+		PREAMBLE_OFDM,
+		PREAMBLE_MIX_MODE,
+		PREAMBLE_GREEN_FIELD,
+		PREAMBLE_VHT,
+		PREAMBLE_PLR_MODE,
+		PREAMBLE_HE_SU = 8,
+		PREAMBLE_HE_ER,
+		PREAMBLE_HE_TRIG,
+		PREAMBLE_HE_MU,
+		PREAMBLE_EHT_MU_DL_SU = 13,
+		PREAMBLE_EHT_MU_UL_SU,
+		PREAMBLE_EHT_MU_DL_OFDMA,
+		PREAMBLE_EHT_TB_UL_OFDMA
+	} E_PREAMBLE_TYPE, *P_E_PREAMBLE_TYPE;
+	*/
+
+#else
 	g_tx_mode = mode;
 
 	if (mode == TEST_MODE_OFDM)
 		mode = TEST_MODE_CCK;
+#endif
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 			("%s: tx mode = %d\n",
@@ -1513,6 +1538,11 @@ s_int32 mt_op_set_rate(
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	/* QA tool pass through to FW */
+
+#else
+
 	if (g_tx_mode == TEST_MODE_OFDM) {
 		g_tx_mode = TEST_MODE_CCK;
 		mcs += 4;
@@ -1531,6 +1561,7 @@ s_int32 mt_op_set_rate(
 	} else if (g_tx_mode >= TEST_MODE_HTMIX &&
 	g_tx_mode <= TEST_MODE_HE_TB)
 		mcs |= 0x80000000;
+#endif
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 			("%s: mcs = %d\n",
