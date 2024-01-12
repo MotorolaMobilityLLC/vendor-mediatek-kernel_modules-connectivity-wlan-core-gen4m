@@ -95,28 +95,11 @@
 uint8_t g_GetResultsBufferedCnt;
 uint8_t g_GetResultsCmdCnt;
 
-static struct nla_policy nla_parse_wifi_policy[
-		 WIFI_ATTRIBUTE_ROAMING_STATE + 1] = {
-	[WIFI_ATTRIBUTE_BAND] = {.type = NLA_U32},
-	[WIFI_ATTRIBUTE_NUM_CHANNELS] = {.type = NLA_U32},
-	[WIFI_ATTRIBUTE_CHANNEL_LIST] = {.type = NLA_UNSPEC},
-
-	[WIFI_ATTRIBUTE_NUM_FEATURE_SET] = {.type = NLA_U32},
-	[WIFI_ATTRIBUTE_FEATURE_SET] = {.type = NLA_UNSPEC},
-	[WIFI_ATTRIBUTE_PNO_RANDOM_MAC_OUI] = {.type = NLA_UNSPEC},
-	[WIFI_ATTRIBUTE_NODFS_VALUE] = {.type = NLA_U32},
-	[WIFI_ATTRIBUTE_COUNTRY_CODE] = {.type = NLA_STRING},
-
-	[WIFI_ATTRIBUTE_MAX_RSSI] = {.type = NLA_U32},
-	[WIFI_ATTRIBUTE_MIN_RSSI] = {.type = NLA_U32},
-	[WIFI_ATTRIBUTE_RSSI_MONITOR_START] = {.type = NLA_U32},
-
-	[WIFI_ATTRIBUTE_ROAMING_CAPABILITIES] = {.type = NLA_UNSPEC},
-	[WIFI_ATTRIBUTE_ROAMING_BLACKLIST_NUM] = {.type = NLA_U32},
-	[WIFI_ATTRIBUTE_ROAMING_BLACKLIST_BSSID] = {.type = NLA_UNSPEC},
-	[WIFI_ATTRIBUTE_ROAMING_WHITELIST_NUM] = {.type = NLA_U32},
-	[WIFI_ATTRIBUTE_ROAMING_WHITELIST_SSID] = {.type = NLA_UNSPEC},
-	[WIFI_ATTRIBUTE_ROAMING_STATE] = {.type = NLA_U32},
+const struct nla_policy nla_parse_wifi_rssi_monitor[
+		WIFI_ATTRIBUTE_RSSI_MONITOR_ATTRIBUTE_MAX + 1] = {
+	[WIFI_ATTRIBUTE_RSSI_MONITOR_MAX_RSSI] = {.type = NLA_U32},
+	[WIFI_ATTRIBUTE_RSSI_MONITOR_MIN_RSSI] = {.type = NLA_U32},
+	[WIFI_ATTRIBUTE_RSSI_MONITOR_START]    = {.type = NLA_U32},
 };
 
 static struct nla_policy nla_parse_offloading_policy[
@@ -984,21 +967,21 @@ int mtk_cfg80211_vendor_set_rssi_monitoring(
 	if (NLA_PARSE_NESTED(attr,
 			     WIFI_ATTRIBUTE_RSSI_MONITOR_START,
 			     (struct nlattr *)(data - NLA_HDRLEN),
-			     nla_parse_wifi_policy) < 0) {
+			     nla_parse_wifi_rssi_monitor) < 0) {
 		DBGLOG(REQ, ERROR, "%s nla_parse_nested failed\n",
 		       __func__);
 		goto nla_put_failure;
 	}
 
-	for (i = WIFI_ATTRIBUTE_MAX_RSSI;
-	     i <= WIFI_ATTRIBUTE_RSSI_MONITOR_START; i++) {
+	for (i = WIFI_ATTRIBUTE_RSSI_MONITOR_INVALID + 1;
+	     i < WIFI_ATTRIBUTE_RSSI_MONITOR_ATTRIBUTE_MAX; i++) {
 		if (attr[i]) {
 			switch (i) {
-			case WIFI_ATTRIBUTE_MAX_RSSI:
+			case WIFI_ATTRIBUTE_RSSI_MONITOR_MAX_RSSI:
 				rRSSIMonitor.max_rssi_value =
 					nla_get_u32(attr[i]);
 				break;
-			case WIFI_ATTRIBUTE_MIN_RSSI:
+			case WIFI_ATTRIBUTE_RSSI_MONITOR_MIN_RSSI:
 				rRSSIMonitor.min_rssi_value
 					= nla_get_u32(attr[i]);
 				break;
