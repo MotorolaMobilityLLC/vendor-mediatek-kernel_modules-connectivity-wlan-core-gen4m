@@ -3472,6 +3472,35 @@ void qmInitRxQueues(IN struct ADAPTER *prAdapter)
 	/* TODO */
 }
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+u_int8_t qmHandleRroPkt(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb)
+{
+	u_int8_t fgDrop = FALSE;
+	struct RX_CTRL *prRxCtrl = &prAdapter->rRxCtrl;
+
+	if (unlikely(prSwRfb->u4IndReason >= RRO_COUNTER_NUM ||
+		prSwRfb->u4IndReason == RRO_REPEAT ||
+		prSwRfb->u4IndReason == RRO_OLDPKT)) {
+		/* no drop for independent pkt or low latency mode */
+		if (!qmIsNoDropPacket(prAdapter, prSwRfb))
+			fgDrop = TRUE;
+	}
+
+	if (prSwRfb->u4IndReason < RRO_COUNTER_NUM) {
+		/* increase rro counter for normal reason */
+		RX_RRO_INC_CNT(prRxCtrl, prSwRfb->u4IndReason);
+	} else {
+		/* RRO_COUNTER_NUM used for abnormal reason */
+		RX_RRO_INC_CNT(prRxCtrl, RRO_COUNTER_NUM);
+		DBGLOG(QM, WARN, "Invalid RRO reason: %d\n",
+			prSwRfb->u4IndReason);
+	}
+
+	return fgDrop;
+}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Handle RX packets (buffer reordering)
@@ -3498,8 +3527,15 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 	u_int8_t ucBssIndexRly = 0;
 	struct BSS_INFO *prBssInfoRly = NULL;
 #endif
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	u_int8_t fgIsHwRROSupport =
+		IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnableRro);
+	/* SwRRO is only enabled when HwRRO is disabled */
+	u_int8_t fgSwRxReordering = !fgIsHwRROSupport;
+#else /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	u_int8_t fgSwRxReordering =
 		IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgSwRxReordering);
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	DEBUGFUNC("qmHandleRxPackets");
 
@@ -3513,6 +3549,17 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 	do {
 		prCurrSwRfb = prNextSwRfb;
 		prNextSwRfb = QM_RX_GET_NEXT_SW_RFB(prCurrSwRfb);
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+		if (likely(fgIsHwRROSupport)) {
+			if (qmHandleRroPkt(prAdapter, prCurrSwRfb)) {
+				prCurrSwRfb->eDst =
+					RX_PKT_DESTINATION_NULL;
+				QUEUE_INSERT_TAIL(prReturnedQue,
+					(struct QUE_ENTRY *) prCurrSwRfb);
+			}
+		}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 		prRxStatus = prCurrSwRfb->prRxStatus;
 		if (prCurrSwRfb->u2RxByteCount > CFG_RX_MAX_PKT_SIZE) {

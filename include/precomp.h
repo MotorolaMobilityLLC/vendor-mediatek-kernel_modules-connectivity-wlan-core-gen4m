@@ -150,9 +150,11 @@
 #include "nic_rxd_v1.h"
 #endif
 
+#include "hal.h"
 #include "nic_connac2x_rx.h"
 #include "nic_connac3x_rx.h"
 /* Dependency:  hif_rx.h (P_HIF_RX_HEADER_T) */
+/* Dependency:  hal.h (RRO_COUNTER_NUM) */
 #include "nic_rx.h"
 
 #include "nic_umac.h"
@@ -190,8 +192,6 @@
 #if CFG_ENABLE_WIFI_DIRECT
 #include "wlan_p2p.h"
 #endif
-
-#include "hal.h"
 
 #include "gl_emi.h"
 #include "mt66xx_reg.h"
