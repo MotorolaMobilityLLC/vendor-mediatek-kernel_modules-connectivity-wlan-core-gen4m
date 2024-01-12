@@ -10111,7 +10111,7 @@ uint32_t wlanCfgParse(struct ADAPTER *prAdapter,
 				}
 			}
 
-			DBGLOG(INIT, WARN,
+			DBGLOG(INIT, TRACE,
 			       "Save to driver temp buffer as [%s]\n",
 			       ucTmp);
 			wlanCfgParseAddEntry(prAdapter, ppcArgs[0], NULL, ucTmp,
