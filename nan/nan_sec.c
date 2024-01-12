@@ -2364,7 +2364,7 @@ nan_sec_wpa_supplicant_start(void) {
 
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (prGlueInfo == NULL) {
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
 		return;

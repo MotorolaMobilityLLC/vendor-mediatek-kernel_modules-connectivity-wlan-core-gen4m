@@ -510,7 +510,7 @@ static bool mddpIsCasanFWload(void)
 	struct ADAPTER *prAdapter = NULL;
 	bool ret = FALSE;
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (prGlueInfo == NULL) {
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
 		goto exit;
@@ -674,7 +674,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 
 	DBGLOG(INIT, INFO, "MD notify mddpMdNotifyInfo.\n");
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (prGlueInfo == NULL) {
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
 		ret = -ENODEV;
@@ -792,7 +792,7 @@ int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len)
 	struct ADAPTER *prAdapter = NULL;
 	u_int8_t fgHalted = kalIsHalted();
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (prGlueInfo == NULL) {
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
 		return 0;
@@ -886,7 +886,7 @@ static bool wait_for_md_on_complete(void)
 	uint32_t u4MDOnTimeoutTime = MD_ON_OFF_TIMEOUT;
 
 	u4StartTime = kalGetTimeTick();
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo) {
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
 		return false;
@@ -995,7 +995,7 @@ static void notifyMdCrash2FW(void)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
 		DBGLOG(INIT, ERROR, "Invalid drv state.\n");
 		return;
