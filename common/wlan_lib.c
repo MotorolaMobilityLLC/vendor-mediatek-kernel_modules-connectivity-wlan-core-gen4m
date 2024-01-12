@@ -5067,6 +5067,11 @@ uint32_t wlanLoadManufactureData(struct ADAPTER
 				      sizeof(struct CMD_NVRAM_SETTING),
 				      VIR_MEM_TYPE);
 
+		if (prCmdNvramSettings == NULL) {
+			DBGLOG(INIT, ERROR, "can't alloc prCmdNvramSettings\n");
+			return WLAN_STATUS_FAILURE;
+		}
+
 		kalMemCopy(&prCmdNvramSettings->rNvramSettings,
 			   &prRegInfo->prNvramSettings->u2Part1OwnVersion,
 			   sizeof(struct CMD_NVRAM_SETTING));

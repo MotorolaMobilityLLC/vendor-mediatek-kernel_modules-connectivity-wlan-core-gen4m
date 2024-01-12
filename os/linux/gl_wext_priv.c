@@ -973,7 +973,7 @@ __priv_get_int(struct net_device *prNetDev,
 /* fos_change begin */
 	case PRIV_CMD_SHOW_CHANNEL:
 	{
-		uint32_t freq;
+		uint32_t freq = 0;
 
 		status = wlanQueryInformation(prGlueInfo->prAdapter,
 			wlanoidQueryFrequency,
@@ -16682,10 +16682,6 @@ static int priv_driver_get_noise(struct net_device *prNetDev,
 	uint32_t u4Offset = 0;
 	struct PARAM_CUSTOM_SW_CTRL_STRUCT rSwCtrlInfo;
 	int16_t u2Wf0AvgPwr, u2Wf1AvgPwr;
-
-	ASSERT(prNetDev);
-
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
