@@ -15346,8 +15346,17 @@ uint32_t wlanoidTspecOperation(struct ADAPTER *prAdapter, void *pvBuffer,
 		DBGLOG(OID, ERROR, "AisBssInfo is NULL!\n");
 	else if (ucApsdSetting == 2) {
 		struct PM_PROFILE_SETUP_INFO *prPmProf = NULL;
-		enum ENUM_ACI eAc =
-			aucUp2ACIMap[prTspecParam->rTsInfo.ucuserPriority];
+		enum ENUM_ACI eAc;
+
+		if (prTspecParam->rTsInfo.ucuserPriority
+			>= (ARRAY_SIZE(aucUp2ACIMap))) {
+			DBGLOG(OID, WARN,
+				"userPriority=%d is invalid, resest to 0\n",
+				prTspecParam->rTsInfo.ucuserPriority);
+			prTspecParam->rTsInfo.ucuserPriority = 0;
+		}
+
+		eAc = aucUp2ACIMap[prTspecParam->rTsInfo.ucuserPriority];
 
 		prPmProf = &prAisBssInfo->rPmProfSetupInfo;
 		switch (prTspecParam->rTsInfo.ucDirection) {
