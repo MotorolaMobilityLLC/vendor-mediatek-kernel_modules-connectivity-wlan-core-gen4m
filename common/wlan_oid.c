@@ -6239,7 +6239,8 @@ wlanoidQueryCalBackupV2(IN struct ADAPTER *prAdapter,
 uint32_t
 wlandioSetSGStatus(IN struct ADAPTER *prAdapter,
 			IN uint8_t ucSGEnable,
-			IN uint8_t ucSGSpcCmd)
+			IN uint8_t ucSGSpcCmd,
+			IN uint8_t ucNSS)
 {
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	struct CMD_SMART_GEAR_PARAM *prCmdSGStatus;
@@ -6259,12 +6260,15 @@ wlandioSetSGStatus(IN struct ADAPTER *prAdapter,
 
 	prCmdSGStatus->ucSGCfg = 0xFF;
 
-	if (ucSGSpcCmd == 0xFF)
+	if (ucSGSpcCmd == 0xFF) {
 		prCmdSGStatus->ucSGCfg = prAdapter->rWifiVar.ucSGCfg;
+		prCmdSGStatus->ucNSSCap = ucNSS;
+	}
 
 	DBGLOG(SW4, INFO,
 			"[SG]Status[%d][%d]\n",
-			prCmdSGStatus->ucSGEnable, prCmdSGStatus->ucSGSpcCmd);
+			prCmdSGStatus->ucSGEnable, prCmdSGStatus->ucSGSpcCmd,
+			prCmdSGStatus->ucNSSCap);
 
 	wlanSendSetQueryCmd(prAdapter,
 			CMD_ID_SG_PARAM,

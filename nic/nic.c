@@ -1724,7 +1724,7 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 				"[SG]cnmAisInfraConnectNotify,%d\n",
 				prBssInfo->eConnectionState);
 		if (prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
-			uint8_t ucSGEnable = TRUE;
+			uint8_t ucSGEnable = TRUE, ucRetValNss = 0;
 			#if CFG_SUPPORT_IOT_AP_BLACKLIST
 			struct BSS_DESC *prBssDesc;
 			struct AIS_FSM_INFO *prAisFsmInfo;
@@ -1733,7 +1733,10 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 							ucBssIndex);
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 							ucBssIndex);
-
+			ucRetValNss = wlanGetSupportNss(prAdapter,
+							ucBssIndex);
+			DBGLOG(SW4, INFO,
+					"[SG]Hit SG Get NSS,%d\n", ucRetValNss);
 			if (IS_BSS_AIS(prBssInfo)) {
 				prBssDesc = prAisFsmInfo->prTargetBssDesc;
 				if (prBssDesc != NULL && bssGetIotApAction
@@ -1746,12 +1749,12 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 			/*Send Event  to Enable/Disable SG*/
 			/*Here is SG REAL TRIGGER POINT!*/
 				wlandioSetSGStatus(prAdapter,
-				ucSGEnable, 0xFF);
+				ucSGEnable, 0xFF, ucRetValNss);
 			}
 			#else
 			/*Here is SG REAL TRIGGER POINT!!*/
 			wlandioSetSGStatus(prAdapter,
-			ucSGEnable, 0xFF);
+			ucSGEnable, 0xFF, ucRetValNss);
 			#endif
 		}
 #endif
