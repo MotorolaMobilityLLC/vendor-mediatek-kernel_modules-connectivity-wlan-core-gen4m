@@ -142,10 +142,12 @@ static inline bool kalIsChipDead(struct GLUE_INFO *prGlueInfo,
 				 uint32_t u4Register, uint32_t *pu4Value)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	uint32_t u4Value;
 	uint32_t u4BusAddr;
 
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
 
 #if (CFG_ENABLE_HOST_BUS_TIMEOUT == 1)
 	if (*pu4Value == 0xdead0001) {
@@ -158,13 +160,13 @@ static inline bool kalIsChipDead(struct GLUE_INFO *prGlueInfo,
 	if (*pu4Value != HIF_DEADFEED_VALUE)
 		return false;
 
-	if (!halChipToStaticMapBusAddr(prGlueInfo, CONN_CFG_CHIP_ID_ADDR,
+	if (!halChipToStaticMapBusAddr(prChipInfo, CONN_CFG_CHIP_ID_ADDR,
 				       &u4BusAddr)) {
 		DBGLOG(HAL, ERROR, "Not exist CR read[0x%08x]\n", u4Register);
 		return false;
 	}
 
-	RTMP_IO_READ32(prHifInfo, u4BusAddr, &u4Value);
+	RTMP_IO_READ32(prChipInfo, u4BusAddr, &u4Value);
 
 	return u4Value == HIF_DEADFEED_VALUE;
 }
@@ -184,23 +186,31 @@ static inline bool kalIsChipDead(struct GLUE_INFO *prGlueInfo,
 u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 	IN uint32_t u4Register, OUT uint32_t *pu4Value)
 {
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
 	uint32_t u4BusAddr = u4Register;
 
-	ASSERT(prGlueInfo);
 	ASSERT(pu4Value);
 
-	prHifInfo = &prGlueInfo->rHifInfo;
-	prAdapter = prGlueInfo->prAdapter;
-	ASSERT(prAdapter);
-	prBusInfo = prAdapter->chip_info->bus_info;
+	if (prGlueInfo) {
+		prHifInfo = &prGlueInfo->rHifInfo;
+		prAdapter = prGlueInfo->prAdapter;
+		ASSERT(prAdapter);
+	}
 
-	if (!prHifInfo->fgIsDumpLog && prBusInfo->isValidRegAccess &&
+	glGetChipInfo((void **)&prChipInfo);
+	if (!prChipInfo)
+		return FALSE;
+
+	prBusInfo = prChipInfo->bus_info;
+
+	if (prHifInfo && !prHifInfo->fgIsDumpLog &&
+	    prBusInfo->isValidRegAccess &&
 	    !prBusInfo->isValidRegAccess(prAdapter, u4Register)) {
 		/* Don't printk log when resetting */
-		if (!wlanIsChipNoAck(prAdapter)) {
+		if (prAdapter && !wlanIsChipNoAck(prAdapter)) {
 			DBGLOG(HAL, ERROR,
 			       "Invalid access! Get CR[0x%08x/0x%08x] value[0x%08x]\n",
 			       u4Register, u4BusAddr, *pu4Value);
@@ -210,11 +220,12 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 	}
 
 	/* Static mapping */
-	if (halChipToStaticMapBusAddr(prGlueInfo, u4Register, &u4BusAddr)) {
-		RTMP_IO_READ32(prHifInfo, u4BusAddr, pu4Value);
-		if (kalIsChipDead(prGlueInfo, u4Register, pu4Value)) {
+	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
+		RTMP_IO_READ32(prChipInfo, u4BusAddr, pu4Value);
+		if (prGlueInfo &&
+		    kalIsChipDead(prGlueInfo, u4Register, pu4Value)) {
 			/* Don't printk log when resetting */
-			if (!wlanIsChipNoAck(prAdapter)) {
+			if (prAdapter && !wlanIsChipNoAck(prAdapter)) {
 				DBGLOG(HAL, ERROR,
 				       "Read register is deadfeed\n");
 				glSetRstReason(RST_REG_READ_DEADFEED);
@@ -245,22 +256,29 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 	IN uint32_t u4Register, IN uint32_t u4Value)
 {
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
 	uint32_t u4BusAddr = u4Register;
 
-	ASSERT(prGlueInfo);
+	if (prGlueInfo) {
+		prHifInfo = &prGlueInfo->rHifInfo;
+		prAdapter = prGlueInfo->prAdapter;
+		ASSERT(prAdapter);
+	}
 
-	prHifInfo = &prGlueInfo->rHifInfo;
-	prAdapter = prGlueInfo->prAdapter;
-	ASSERT(prAdapter);
-	prBusInfo = prAdapter->chip_info->bus_info;
+	glGetChipInfo((void **)&prChipInfo);
+	if (!prChipInfo)
+		return FALSE;
 
-	if (!prHifInfo->fgIsDumpLog && prBusInfo->isValidRegAccess &&
+	prBusInfo = prChipInfo->bus_info;
+
+	if (prHifInfo && !prHifInfo->fgIsDumpLog &&
+	    prBusInfo->isValidRegAccess &&
 	    !prBusInfo->isValidRegAccess(prAdapter, u4Register)) {
 		/* Don't printk log when resetting */
-		if (!wlanIsChipNoAck(prAdapter)) {
+		if (prAdapter && !wlanIsChipNoAck(prAdapter)) {
 			DBGLOG(HAL, ERROR,
 			       "Invalid access! Set CR[0x%08x/0x%08x] value[0x%08x]\n",
 			       u4Register, u4BusAddr, u4Value);
@@ -269,14 +287,15 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 	}
 
 	/* Static mapping */
-	if (halChipToStaticMapBusAddr(prGlueInfo, u4Register, &u4BusAddr)) {
-		RTMP_IO_WRITE32(prHifInfo, u4BusAddr, u4Value);
+	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
+		RTMP_IO_WRITE32(prChipInfo, u4BusAddr, u4Value);
 	} else {
 		DBGLOG(HAL, ERROR, "Not exist CR write[0x%08x] value[0x%08x]\n",
 		       u4Register, u4Value);
 	}
 
-	prHifInfo->u4HifCnt++;
+	if (prHifInfo)
+		prHifInfo->u4HifCnt++;
 
 	return TRUE;
 }
@@ -973,13 +992,14 @@ skip:
 	return fgRet;
 }
 
-int wf_ioremap_read(size_t addr, unsigned int *val)
+int wf_ioremap_read(phys_addr_t addr, unsigned int *val)
 {
 	void *vir_addr = NULL;
 
 	vir_addr = ioremap(addr, 0x10);
 	if (!vir_addr) {
-		DBGLOG(INIT, ERROR, "%s: Cannot remap address.\n", __func__);
+		DBGLOG(INIT, ERROR, "%s: Cannot remap address[%pa].\n",
+		       addr, __func__);
 		return -1;
 	}
 
@@ -996,7 +1016,8 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val)
 
 	vir_addr = ioremap(addr, 0x10);
 	if (!vir_addr) {
-		DBGLOG(INIT, ERROR, "%s: Cannot remap address.\n", __func__);
+		DBGLOG(INIT, ERROR, "%s: Cannot remap address[%pa].\n",
+		       addr, __func__);
 		return -1;
 	}
 

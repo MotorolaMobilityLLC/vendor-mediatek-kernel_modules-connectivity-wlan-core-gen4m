@@ -301,6 +301,8 @@ struct BUS_INFO {
 		bool fgAllocMem);
 	void (*setPdmaIntMask)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
 	void (*enableFwDlMode)(struct ADAPTER *prAdapter);
+
+	struct SW_WFDMA_INFO rSwWfdmaInfo;
 };
 
 
@@ -345,6 +347,8 @@ void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode);
 void glGetDev(void *ctx, struct device **dev);
 
 void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev);
+
+void glGetChipInfo(void **prChipInfo);
 
 /*******************************************************************************
  *                              F U N C T I O N S

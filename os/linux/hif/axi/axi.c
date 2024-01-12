@@ -418,6 +418,8 @@ exit:
 
 static bool axiCsrIoremap(struct platform_device *pdev)
 {
+	struct mt66xx_hif_driver_data *prDriverData;
+	struct mt66xx_chip_info *prChipInfo;
 #ifdef CONFIG_OF
 	struct device_node *node = NULL;
 	struct resource res;
@@ -441,6 +443,10 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 	g_u8CsrOffset = axi_resource_start(pdev, 0);
 	g_u4CsrSize = axi_resource_len(pdev, 0);
 #endif
+
+	prDriverData = get_platform_driver_data();
+	prChipInfo = prDriverData->chip_info;
+
 	if (CSRBaseAddress) {
 		DBGLOG(INIT, ERROR, "CSRBaseAddress not iounmap!\n");
 		return false;
@@ -462,6 +468,8 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 		release_mem_region(g_u8CsrOffset, g_u4CsrSize);
 		return false;
 	}
+
+	prChipInfo->CSRBaseAddress = CSRBaseAddress;
 
 	DBGLOG(INIT, INFO, "CSRBaseAddress:0x%lX ioremap region 0x%X @ 0x%lX\n",
 	       CSRBaseAddress, g_u4CsrSize, g_u8CsrOffset);
@@ -1141,6 +1149,17 @@ void glGetDev(void *ctx, struct device **dev)
 void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev)
 {
 	*dev = &(prHif->pdev->dev);
+}
+
+void glGetChipInfo(void **prChipInfo)
+{
+	struct mt66xx_hif_driver_data *prDriverData;
+
+	prDriverData = get_platform_driver_data();
+	if (!prDriverData)
+		return;
+
+	*prChipInfo = (void *)prDriverData->chip_info;
 }
 
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER

@@ -58,6 +58,7 @@
 #define __HIF_PDMA_H__
 
 #include <linux/list_sort.h>
+#include "mt66xx_reg.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -526,11 +527,9 @@ void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
 			       struct MSDU_TOKEN_ENTRY *prFillToken,
 			       struct MSDU_TOKEN_ENTRY *prDataToken,
 			       uint32_t u4Idx, bool fgIsLast);
-u_int8_t halIsStaticMapBusAddr(IN struct ADAPTER *prAdapter,
-					IN uint32_t u4Addr);
-u_int8_t halChipToStaticMapBusAddr(IN struct GLUE_INFO *prGlueInfo,
-				   IN uint32_t u4ChipAddr,
-				   OUT uint32_t *pu4BusAddr);
+u_int8_t halChipToStaticMapBusAddr(struct mt66xx_chip_info *prChipInfo,
+				   uint32_t u4ChipAddr,
+				   uint32_t *pu4BusAddr);
 u_int8_t halGetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo,
 			     IN uint32_t u4ChipAddr,
 			     OUT uint32_t *pu4Value);
@@ -576,7 +575,7 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 		   struct RTMP_RX_RING *prRxRing,
 		   uint32_t u4Num, bool fgDumpContent);
 void haldumpPhyInfo(struct ADAPTER *prAdapter);
-int wf_ioremap_read(size_t addr, unsigned int *val);
+int wf_ioremap_read(phys_addr_t addr, unsigned int *val);
 int wf_ioremap_write(phys_addr_t addr, unsigned int val);
 void halEnableSlpProt(struct GLUE_INFO *prGlueInfo);
 void halDisableSlpProt(struct GLUE_INFO *prGlueInfo);

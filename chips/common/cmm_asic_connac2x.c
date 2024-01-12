@@ -456,7 +456,7 @@ void asicConnac2xWfdmaControl(
 	uint32_t u4DmaRstDtxPtrCr;
 	uint32_t u4DmaRstDrxPtrCr;
 
-	ASSERT(ucDmaIdx < CONNAC2X_WFDMA_COUNT);
+	ASSERT(ucDmaIdx < CONNAC2X_MAX_WFDMA_COUNT);
 	u4DmaCfgCr = asicConnac2xWfdmaCfgAddrGet(prGlueInfo, ucDmaIdx);
 	u4DmaRstDtxPtrCr =
 		asicConnac2xWfdmaIntRstDtxPtrAddrGet(prGlueInfo, ucDmaIdx);
@@ -498,23 +498,22 @@ void asicConnac2xWpdmaConfig(
 	bool fgResetHif)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
-	union WPDMA_GLO_CFG_STRUCT GloCfg[CONNAC2X_WFDMA_COUNT] = {0};
+	union WPDMA_GLO_CFG_STRUCT GloCfg[CONNAC2X_MAX_WFDMA_COUNT] = {0};
 	uint32_t u4DmaCfgCr;
-	uint32_t idx;
+	uint32_t idx, u4DmaNum = 1;
 	struct mt66xx_chip_info *chip_info = prAdapter->chip_info;
 
-	for (idx = 0; idx < CONNAC2X_WFDMA_COUNT; idx++) {
-		if (!chip_info->is_support_wfdma1 && idx)
-			break;
+	if (chip_info->is_support_wfdma1)
+		u4DmaNum++;
+
+	for (idx = 0; idx < u4DmaNum; idx++) {
 		asicConnac2xWfdmaControl(prGlueInfo, idx, enable);
 		u4DmaCfgCr = asicConnac2xWfdmaCfgAddrGet(prGlueInfo, idx);
 		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &GloCfg[idx].word);
 	}
 
 	if (enable) {
-		for (idx = 0; idx < CONNAC2X_WFDMA_COUNT; idx++) {
-			if (!chip_info->is_support_wfdma1 && idx)
-				break;
+		for (idx = 0; idx < u4DmaNum; idx++) {
 			u4DmaCfgCr =
 				asicConnac2xWfdmaCfgAddrGet(prGlueInfo, idx);
 			GloCfg[idx].field_conn2x.tx_dma_en = 1;
@@ -1870,7 +1869,7 @@ uint32_t downloadImgByDynMemMap(IN struct ADAPTER *prAdapter,
 	HAL_MCR_WR(prAdapter, prBusInfo->ap2wf_remap_1,
 			u4Addr);
 
-	if (!halChipToStaticMapBusAddr(prAdapter->prGlueInfo,
+	if (!halChipToStaticMapBusAddr(prAdapter->chip_info,
 			CONN_INFRA_CFG_AP2WF_BUS_ADDR,
 			&u4ReMapReg)) {
 		DBGLOG(INIT, ERROR, "map bus address fail.\n");
