@@ -1775,6 +1775,7 @@ struct ADAPTER {
 
 #if CFG_WOW_SUPPORT
 	struct WOW_CTRL	rWowCtrl;
+	u_int8_t fgWowLinkDownPendFlag;
 #endif
 
 #if CFG_SUPPORT_NCHO			/*  NCHO information */

@@ -1233,7 +1233,6 @@ void halSetTxRingBssTokenCnt(struct ADAPTER *prAdapter, uint32_t u4Cnt);
 #if defined(_HIF_USB)
 void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter);
 #endif /* defined(_HIF_USB) */
-bool halIsHifStateReady(IN struct ADAPTER *prAdapter, uint8_t *pucState);
 bool halIsHifStateLinkup(IN struct ADAPTER *prAdapter);
 bool halIsHifStateSuspend(IN struct ADAPTER *prAdapter);
 

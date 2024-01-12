@@ -270,5 +270,8 @@ static __KAL_INLINE__ void cnmTimerInitTimer(IN struct ADAPTER *prAdapter,
 		TIMER_WAKELOCK_AUTO);
 }
 
+#if CFG_WOW_SUPPORT
+void cnmStopPendingJoinTimerForSuspend(IN struct ADAPTER *prAdapter);
+#endif
 
 #endif /* _CNM_TIMER_H */

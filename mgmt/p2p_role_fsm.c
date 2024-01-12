@@ -4365,3 +4365,122 @@ void p2pRoleFsmRunEventScanAbort(IN struct ADAPTER *prAdapter,
 		}
 	} while (FALSE);
 }
+
+#if (CFG_WOW_SUPPORT == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief This function will clean p2p connection before suspend.
+*
+* @param[in] prAdapter          Pointer to the Adapter structure.
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
+void p2pRoleProcessPreSuspendFlow(IN struct ADAPTER *prAdapter)
+{
+	uint8_t ucIdx;
+	struct BSS_INFO *prBssInfo;
+	uint32_t u4ClientCount = 0;
+	struct LINK *prClientList;
+	struct STA_RECORD *prCurrStaRec, *prStaRecNext;
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
+		(struct P2P_DEV_FSM_INFO *) NULL;
+	enum ENUM_OP_MODE eOPMode;
+
+	if (prAdapter == NULL)
+		return;
+
+	/* This should be cover by USB TX/RX check condition */
+	/*
+	* if (!wlanGetHifState(prAdapter->prGlueInfo))
+	* return;
+	*/
+
+	for (ucIdx = 0; ucIdx < MAX_BSS_INDEX; ucIdx++) {
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucIdx);
+		if (!prBssInfo)
+			continue;
+
+		/* Skip AIS BSS */
+		if (IS_BSS_AIS(prBssInfo))
+			continue;
+
+		if (!IS_BSS_ACTIVE(prBssInfo))
+			continue;
+
+		/* Non-P2P network type */
+		if (!IS_BSS_P2P(prBssInfo)) {
+			DBGLOG(P2P, STATE, "[Suspend] eNetworkType %d.\n",
+				prBssInfo->eNetworkType);
+			nicPmIndicateBssAbort(prAdapter, ucIdx);
+			nicDeactivateNetwork(prAdapter, ucIdx);
+			nicUpdateBss(prAdapter, ucIdx);
+		} else {
+			eOPMode = prBssInfo->eCurrentOPMode;
+
+			/* P2P network type. */
+			/* Deactive GO/AP bss to let TOP sleep */
+			if (eOPMode == OP_MODE_ACCESS_POINT) {
+				/* Force to deactivate Network of GO case */
+				u4ClientCount = bssGetClientCount(
+				    prAdapter, prBssInfo);
+				if (u4ClientCount != 0) {
+					prClientList =
+						&prBssInfo->rStaRecOfClientList;
+					LINK_FOR_EACH_ENTRY_SAFE(prCurrStaRec,
+					prStaRecNext, prClientList, rLinkEntry,
+					struct STA_RECORD) {
+						p2pFuncDisconnect(prAdapter,
+							prBssInfo,
+							prCurrStaRec, FALSE,
+						REASON_CODE_DEAUTH_LEAVING_BSS
+						);
+					}
+				}
+
+				DBGLOG(P2P, STATE, "Susp Force Deactive GO\n");
+				p2pChangeMediaState(prAdapter, prBssInfo,
+					MEDIA_STATE_DISCONNECTED);
+				p2pFuncStopComplete(prAdapter, prBssInfo);
+			}
+			/* P2P network type. Deactive GC bss to let TOP sleep */
+			else if (eOPMode == OP_MODE_INFRASTRUCTURE) {
+				if (prBssInfo->prStaRecOfAP == NULL)
+					continue;
+
+				/* Force to deactivate Network of GC case */
+				DBGLOG(P2P, STATE, "Susp Force Deactive GC\n");
+#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
+				kalP2PGCIndicateConnectionStatus(
+				    prAdapter->prGlueInfo,
+				    (uint8_t) prBssInfo->u4PrivateData,	NULL,
+				    NULL, 0, 0,	WLAN_STATUS_MEDIA_DISCONNECT);
+#else
+				kalP2PGCIndicateConnectionStatus(
+				    prAdapter->prGlueInfo,
+				    (uint8_t) prBssInfo->u4PrivateData,
+				    NULL, NULL, 0, 0);
+#endif
+
+				p2pFuncDisconnect(prAdapter, prBssInfo,
+					prBssInfo->prStaRecOfAP, FALSE,
+					REASON_CODE_DEAUTH_LEAVING_BSS);
+				p2pFuncStopComplete(prAdapter, prBssInfo);
+			}
+		}
+
+	}
+
+	prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
+
+	if (prP2pDevFsmInfo) {
+		DBGLOG(P2P, STATE, "Force P2P to IDLE state when suspend\n");
+		cnmTimerStopTimer(prAdapter,
+			&(prP2pDevFsmInfo->rP2pFsmTimeoutTimer));
+
+		/* Abort device FSM */
+		p2pDevFsmStateTransition(prAdapter, prP2pDevFsmInfo,
+			P2P_DEV_STATE_IDLE);
+	}
+}
+#endif

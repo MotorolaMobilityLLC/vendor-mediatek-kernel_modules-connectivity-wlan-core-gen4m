@@ -5955,6 +5955,9 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 			 struct cfg80211_wowlan *wow)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct WIFI_VAR *prWifiVar = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen;
 
 	DBGLOG(REQ, INFO, "mtk_cfg80211_suspend\n");
 
@@ -5971,6 +5974,20 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 
 
 	if (prGlueInfo && prGlueInfo->prAdapter) {
+		prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
+		if (IS_FEATURE_ENABLED(prWifiVar->ucWow)) {
+			/* AIS flow: disassociation if wow_en=0 */
+			DBGLOG(REQ, INFO, "Enter AIS pre-suspend\n");
+			rStatus = kalIoctl(prGlueInfo, wlanoidAisPreSuspend, NULL, 0,
+						TRUE, FALSE, FALSE, &u4BufLen);
+
+			/* TODO: p2pProcessPreSuspendFlow
+			 * In current design, only support AIS connection during suspend only.
+			 * It need to add flow to deactive P2P (GC/GO) link during suspend flow.
+			 * Otherwise, MT7668 would fail to enter deep sleep.
+			 */
+		}
+
 		set_bit(SUSPEND_FLAG_FOR_WAKEUP_REASON,
 			&prGlueInfo->prAdapter->ulSuspendFlag);
 		set_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME,

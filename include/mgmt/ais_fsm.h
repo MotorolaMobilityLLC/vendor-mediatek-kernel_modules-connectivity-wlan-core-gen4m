@@ -784,4 +784,7 @@ u_int8_t clearAxBlacklist(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex,
 	IN uint8_t ucType);
 
+void aisPreSuspendFlow(
+	IN struct ADAPTER *prAdapter);
+
 #endif /* _AIS_FSM_H */

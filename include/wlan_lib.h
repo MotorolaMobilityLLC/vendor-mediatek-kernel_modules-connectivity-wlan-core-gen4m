@@ -319,6 +319,15 @@ struct TPENHANCE_PKT_MAP {
 
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
 
+#if CFG_WOW_SUPPORT
+#define INVALID_WOW_WAKE_UP_REASON 255
+/* HIF suspend should wait for cfg80211 suspend done.
+ * by experience, 5ms is enough, and worst case ~= 250ms.
+ * if > 250 ms --> treat as no cfg80211 suspend
+ */
+#define HIF_SUSPEND_MAX_WAIT_TIME 50 /* unit: 5ms */
+#endif
+
 enum CMD_VER {
 	CMD_VER_1,	/* Type[2]+String[32]+Value[32] */
 	CMD_VER_1_EXT
@@ -642,6 +651,8 @@ struct WOW_CTRL {
 	uint8_t aucReserved1[1];
 	struct WOW_WAKE_HIF astWakeHif[2];
 	struct WOW_PORT stWowPort;
+	uint8_t ucReason;
+	uint8_t aucReserved2[3];
 };
 
 #endif
@@ -1903,3 +1914,10 @@ int wlanTpeProcess(struct GLUE_INFO *prGlueInfo,
 			struct sk_buff *prSkb,
 			struct net_device *prDev);
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
+
+#if (CFG_WOW_SUPPORT == 1)
+void wlanReleaseAllTxCmdQueue(struct ADAPTER *prAdapter);
+void wlanWaitCfg80211SuspendDone(struct GLUE_INFO *prGlueInfo);
+#endif
+
+#endif /* _WLAN_LIB_H */

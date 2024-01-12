@@ -14241,6 +14241,60 @@ wlanoidLinkDown(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 } /* wlanoidSetDisassociate */
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is used to do AIS pre-Suspend flow.
+ *
+ * \param[in] pvAdapter Pointer to the Adapter structure.
+ * \param[in] pvSetBuffer A pointer to the buffer that holds the data to be set.
+ * \param[in] u4SetBufferLen The length of the set buffer.
+ * \param[out] pu4SetInfoLen If the call is successful, returns the number of
+ *                          bytes read from the set buffer. If the call failed
+ *                          due to invalid length of the set buffer, returns
+ *                          the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_ADAPTER_NOT_READY
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidAisPreSuspend(IN struct ADAPTER *prAdapter,
+		IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		OUT uint32_t *pu4SetInfoLen) {
+
+	struct WIFI_VAR *prWifiVar = NULL;
+	struct BSS_INFO *prAisBssInfo = NULL;
+
+	if (prAdapter == NULL || pu4SetInfoLen == NULL)
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+
+	*pu4SetInfoLen = 0;
+	prWifiVar = &prAdapter->rWifiVar;
+
+#if CFG_WOW_SUPPORT
+	aisPreSuspendFlow(prAdapter);
+	p2pRoleProcessPreSuspendFlow(prAdapter);
+
+	if (IS_FEATURE_ENABLED(prWifiVar->ucWow) &&
+		IS_FEATURE_DISABLED(prAdapter->rWowCtrl.fgWowEnable) &&
+		IS_FEATURE_DISABLED(prWifiVar->ucAdvPws))
+	{
+		prAisBssInfo = aisGetConnectedBssInfo(prAdapter);
+		if (prAisBssInfo != NULL) {
+			/* Need Link down, and connected AIS BSS existed,
+			 * ->pending oid until disconnection done (i.e. AIS switch to IDLE)
+			 */
+			prAdapter->fgWowLinkDownPendFlag = TRUE;
+			return WLAN_STATUS_PENDING;
+		}
+	}
+
+	prAdapter->fgWowLinkDownPendFlag = FALSE;
+#endif
+
+	return WLAN_STATUS_SUCCESS;
+} /* wlanoidPreSuspend */
+
 #if CFG_SUPPORT_NCHO
 
 uint32_t

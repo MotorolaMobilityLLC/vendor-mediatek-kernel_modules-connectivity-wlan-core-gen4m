@@ -315,6 +315,9 @@ void qmInit(IN struct ADAPTER *prAdapter,
 		prQM->arRxBaTable[u4Idx].fgAmsduNeedLastFrame = FALSE;
 		prQM->arRxBaTable[u4Idx].fgIsAmsduDuplicated = FALSE;
 #endif
+#if CFG_WOW_SUPPORT
+		prQM->arRxBaTable[u4Idx].fgFirstSnToWinStart = FALSE;
+#endif
 		cnmTimerInitTimer(prAdapter,
 			&(prQM->arRxBaTable[u4Idx].rReorderBubbleTimer),
 			(PFN_MGMT_TIMEOUT_FUNC) qmHandleReorderBubbleTimeout,
@@ -3902,6 +3905,27 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 #endif
 
 	RX_DIRECT_REORDER_LOCK(prAdapter, 0);
+
+#if CFG_WOW_SUPPORT
+	/* After resuming, WinStart and WinEnd are obsolete and unsync
+	 * with AP's SN. So assign the SN of first packet to WinStart
+	 * as "Fall Within" case.
+	 */
+	if (prReorderQueParm->fgFirstSnToWinStart) {
+		DBGLOG(QM, INFO,
+		       "[%u] First resumed SN(%u) reset Window{%u,%u}\n",
+		       prSwRfb->ucTid, prSwRfb->u2SSN,
+		       prReorderQueParm->u2WinStart,
+		       prReorderQueParm->u2WinEnd);
+
+		prReorderQueParm->u2WinStart = prSwRfb->u2SSN;
+		prReorderQueParm->u2WinEnd =
+		    ((prReorderQueParm->u2WinStart) +
+		     (prReorderQueParm->u2WinSize) - 1) % MAX_SEQ_NO_COUNT;
+		prReorderQueParm->fgFirstSnToWinStart = FALSE;
+	}
+#endif
+
 	/* Insert reorder packet */
 	qmInsertReorderPkt(prAdapter, prSwRfb, prReorderQueParm,
 		prReturnedQue);

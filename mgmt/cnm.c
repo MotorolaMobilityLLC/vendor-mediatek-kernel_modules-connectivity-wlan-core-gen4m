@@ -4639,3 +4639,37 @@ void cnmPowerControlErrorHandling(
 }
 #endif
 
+#if CFG_WOW_SUPPORT
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief stop pending Join timer if suspend during AIS join.
+*
+* @param (prAdapter)
+*
+* @return None
+*/
+/*----------------------------------------------------------------------------*/
+void cnmStopPendingJoinTimerForSuspend(IN struct ADAPTER *prAdapter)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+
+	if (prAdapter == NULL)
+		return;
+
+	/* Timer 1: rJoinTimeoutTimer
+	 * Driver couldn't get any CH_GRANT event of CH_REQ after resume
+	 * Because pending AIS join timer should do CH_ABORT to FW.
+	 * Without CH_ABORT cmd, FW CNM's FSM would keep in GRANT stage.
+	 * FW's CNM couldn't service any other CH_REQ in GRANT stage.
+	 * As a result, checking the timer in suspend flow.
+	 */
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, AIS_DEFAULT_INDEX);
+	if (timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
+		DBGLOG(CNM, STATE, "[AIS] pending rJoinTimeoutTimer\n");
+		cnmTimerStopTimer(prAdapter,
+			&prAisFsmInfo->rJoinTimeoutTimer);
+		/* Release Channel */
+		aisFsmReleaseCh(prAdapter, AIS_DEFAULT_INDEX);
+	}
+}
+#endif
