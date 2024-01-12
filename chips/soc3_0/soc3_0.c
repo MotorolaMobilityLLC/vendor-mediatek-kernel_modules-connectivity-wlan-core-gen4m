@@ -2102,6 +2102,7 @@ int wf_pwr_on_consys_mcu(void)
 			DBGLOG(HAL, ERROR,
 				"conninfra_is_bus_hang, Chip reset\n");
 		}
+		return -1;
 	}
 	/* Turn off "conn_infra to wfsys"/ wfsys to conn_infra" bus
 	 * sleep protect 0x218001620[0] = 1'b0
