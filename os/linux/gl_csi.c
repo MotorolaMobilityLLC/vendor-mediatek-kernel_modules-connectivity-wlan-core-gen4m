@@ -292,7 +292,7 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 	prBuf = (int8_t *) (prEvent->aucBuffer);
 
 #if CFG_CSI_DEBUG
-	DBGLOG_MEM8(NIC, INFO, (uint8_t *) prBuf, i4EventLen);
+	DBGLOG_MEM8(NIC, TRACE, (uint8_t *) prBuf, i4EventLen);
 #endif
 	while ((i4EventLen >= u2Offset) && (ucLastTagFlg == false)) {
 		prCSITlvData = (struct CSI_TLV_ELEMENT *) prBuf;
