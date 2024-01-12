@@ -2195,9 +2195,6 @@ uint32_t nicUniCmdBssInfoTagMld(struct ADAPTER *ad,
 	struct MLD_BSS_INFO *prMldBssInfo = mldBssGetByBss(ad, bss);
 #endif
 
-	if (bss->eConnectionState != MEDIA_STATE_CONNECTED)
-		return 0;
-
 	tag->u2Tag = UNI_CMD_BSSINFO_TAG_MLD;
 	tag->u2Length = sizeof(*tag);
 
@@ -2212,7 +2209,7 @@ uint32_t nicUniCmdBssInfoTagMld(struct ADAPTER *ad,
 	{
 		tag->ucGroupMldId = MLD_GROUP_NONE;
 		tag->ucOwnMldId = bss->ucOwnMldId;
-		COPY_MAC_ADDR(tag->aucOwnMldAddr, bss->aucBSSID);
+		COPY_MAC_ADDR(tag->aucOwnMldAddr, bss->aucOwnMacAddr);
 		tag->ucOmRemapIdx = OM_REMAP_IDX_NONE;
 	}
 
