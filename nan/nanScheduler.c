@@ -5788,11 +5788,13 @@ nanSchedNegoIsRmtCrbConflict(
 				}
 				continue;
 			}
-
+/* Need to discuss why checking concurrent op. */
+#if 0
 			if (nanSchedChkConcurrOp(rLocalChnlInfo,
 						 rRmtChnlInfo) ==
 			    CNM_CH_CONCURR_MCC)
 				return TRUE;
+#endif
 		}
 	}
 
