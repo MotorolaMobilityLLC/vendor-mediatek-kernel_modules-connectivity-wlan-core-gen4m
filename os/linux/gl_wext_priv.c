@@ -5460,9 +5460,9 @@ int priv_driver_preset_linkid(struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(INIT, TRACE, "command is %s\n", pcCommand);
-	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
-	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 2) {
+	if (i4Argc >= 2) {
 		DBGLOG(REQ, TRACE, "argc is %i, %s\n", i4Argc,
 		       apcArgv[1]);
 		i4BytesWritten = kalkStrtou32(apcArgv[1], 0, &u4Param);
@@ -5510,7 +5510,7 @@ int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(INIT, INFO, "command is %s\n", pcCommand);
-	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
 	/* check if there is any pending scan/sched_scan not yet finished */
 	if (prGlueInfo->prScanRequest != NULL) {
@@ -5518,7 +5518,7 @@ int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 		return -EINVAL;
 	}
 
-	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 5) {
+	if (i4Argc >= 5) {
 		struct BSS_DESC *prBssDesc;
 		uint32_t u4SsidNum = 0;
 		struct PARAM_SSID rSsid;
@@ -5626,21 +5626,21 @@ int priv_driver_get_ml_capa(struct net_device *prNetDev,
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
 	uint8_t ucBssIdx = 0;
 	uint8_t ucCapa = 0;
-	uint32_t rStatus, u4Param = 0;
+	uint32_t u4Param = 0;
 
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAd = prGlueInfo->prAdapter;
-	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	ucBssIdx = wlanGetBssIdx(prNetDev);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAd, ucBssIdx);
 	prMldBssInfo = mldBssGetByBss(prAd, prBssInfo);
 
 	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
 
-	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 2) {
+	if (i4Argc >= 2) {
 		DBGLOG(REQ, TRACE, "argc is %i, %s\n", i4Argc,
 		       apcArgv[1]);
 		i4BytesWritten = kalkStrtou32(apcArgv[1], 0, &u4Param);

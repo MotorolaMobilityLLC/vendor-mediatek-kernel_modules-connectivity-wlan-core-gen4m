@@ -9409,7 +9409,7 @@ textresume:
 	return STATE_EOF;
 }
 
-uint32_t wlanCfgParseArgument(int8_t *cmdLine,
+void wlanCfgParseArgument(int8_t *cmdLine,
 			      int32_t *argc, int8_t *argv[])
 {
 	struct WLAN_CFG_PARSE_STATE_S state;
@@ -9419,10 +9419,11 @@ uint32_t wlanCfgParseArgument(int8_t *cmdLine,
 	if (cmdLine == NULL || argc == NULL || argv == NULL) {
 		DBGLOG(INIT, ERROR, "parameter is NULL: %p, %p, %p\n",
 		       cmdLine, argc, argv);
-		return WLAN_STATUS_FAILURE;
+		return;
 	}
 	args = argv;
 	nargs = 0;
+	*argc = 0;
 	state.ptr = cmdLine;
 	state.nexttoken = 0;
 	state.maxSize = 0;
@@ -9432,7 +9433,7 @@ uint32_t wlanCfgParseArgument(int8_t *cmdLine,
 
 	if (kalStrnLen(cmdLine, 512) >= 512) {
 		DBGLOG(INIT, ERROR, "cmdLine >= 512\n");
-		return WLAN_STATUS_FAILURE;
+		return;
 	}
 
 	for (;;) {
@@ -9450,7 +9451,7 @@ uint32_t wlanCfgParseArgument(int8_t *cmdLine,
 
 exit:
 	*argc = nargs;
-	return WLAN_STATUS_SUCCESS;
+	return;
 }
 
 #if CFG_WOW_SUPPORT

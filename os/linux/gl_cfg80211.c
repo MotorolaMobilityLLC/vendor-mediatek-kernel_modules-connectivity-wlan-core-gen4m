@@ -5117,11 +5117,7 @@ int testmode_disable_tdls_ps(struct wiphy *wiphy,
 	DBGLOG(INIT, TRACE, "command is %s\n", pcCommand);
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
-	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(REQ, ERROR, "Parse argument error: %d\n", rStatus);
-		return WLAN_STATUS_FAILURE;
-	}
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
 	i4Ret = kalkStrtou8(apcArgv[1], 0, &ucIsEnablePs);
 	if (i4Ret) {
@@ -5160,11 +5156,7 @@ int testmode_neighbor_request(struct wiphy *wiphy,
 	if (!IS_BSS_INDEX_VALID(ucBssIndex))
 		return -EINVAL;
 
-	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
-	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(REQ, ERROR, "Parse argument error %d\n", rStatus);
-		return WLAN_STATUS_FAILURE;
-	}
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
 	if (kalStrniCmp(apcArgv[1], "SSID=", 5) == 0) {
 		pucSSID = apcArgv[1] + 5;
@@ -5200,11 +5192,7 @@ int testmode_bss_tran_query(struct wiphy *wiphy,
 	if (!IS_BSS_INDEX_VALID(ucBssIndex))
 		return -EINVAL;
 
-	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
-	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(REQ, ERROR, "Parse argument error: %d\n", rStatus);
-		return WLAN_STATUS_FAILURE;
-	}
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
 	if (kalStrniCmp(apcArgv[1], "reason=", 7) == 0) {
 		pucReason = apcArgv[1] + 7;
@@ -5242,11 +5230,7 @@ int testmode_osharemod(struct wiphy *wiphy,
 	if (!IS_BSS_INDEX_VALID(ucBssIndex))
 		return -EINVAL;
 
-	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
-	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(REQ, ERROR, "Parse argument error: %d\n", rStatus);
-		return WLAN_STATUS_FAILURE;
-	}
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
 	kalMemZero(&cmdBuf, sizeof(cmdBuf));
 
@@ -5318,9 +5302,9 @@ int testmode_reassoc(struct wiphy *wiphy,
 		return -EINVAL;
 
 	prConnSettings = aisGetConnSettings(prGlueInfo->prAdapter, ucBssIndex);
-	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
-	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 3) {
+	if (i4Argc >= 3) {
 		DBGLOG(REQ, TRACE, "argc is %i, cmd is %s, %s\n", i4Argc,
 		       apcArgv[1], apcArgv[2]);
 		i4Ret = kalkStrtou32(apcArgv[2], 0, &u4FreqInfo);
@@ -5387,9 +5371,9 @@ int testmode_set_ax_blacklist(struct wiphy *wiphy,
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
 	DBGLOG(INIT, TRACE, "command is %s\n", pcCommand);
-	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
-	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 2) {
+	if (i4Argc >= 2) {
 		DBGLOG(REQ, TRACE, "argc %i, cmd [%s]\n", i4Argc, apcArgv[1]);
 		i4BytesWritten = kalkStrtou8(apcArgv[1], 0, &ucType);
 		if (i4BytesWritten)
@@ -5445,7 +5429,7 @@ int testmode_rtt_test(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct RTT_CAPABILITIES rRttCapabilities;
 	struct PARAM_RTT_REQUEST request;
-	uint32_t rStatus;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
 	uint32_t u4BufLen;
 	int32_t i4BytesWritten = -1;
 	uint8_t ucType = 0;
@@ -5454,9 +5438,9 @@ int testmode_rtt_test(struct wiphy *wiphy,
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
 	DBGLOG(INIT, TRACE, "command is %s\n", pcCommand);
-	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
-	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 2) {
+	if (i4Argc >= 2) {
 		DBGLOG(REQ, TRACE, "argc %i, cmd [%s]\n", i4Argc, apcArgv[1]);
 		i4BytesWritten = kalkStrtou8(apcArgv[1], 0, &ucType);
 		if (i4BytesWritten)
@@ -5526,18 +5510,18 @@ int testmode_set_report_vendor_specified(struct wiphy *wiphy,
 {
 	int32_t i4Argc = 0, i4BytesWritten = -1;
 	uint32_t u4SetInfoLen = 0;
-	uint32_t rStatus;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint8_t ucParam = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(INIT, TRACE, "Report vendor specified frame: %s (%d)(%s)\n",
 		pcCommand, i4Argc, apcArgv[1]);
 
-	if (rStatus == WLAN_STATUS_SUCCESS) {
+	if (i4Argc == 2) {
 		i4BytesWritten = kalkStrtou8(apcArgv[1], 0, &ucParam);
 		if (i4BytesWritten) {
 			DBGLOG(REQ, ERROR, "Parsing failed(%d)\n",
@@ -5556,10 +5540,6 @@ int testmode_set_report_vendor_specified(struct wiphy *wiphy,
 				DBGLOG(INIT, TRACE,
 				       "Set report VS successed\n");
 		}
-	} else {
-		DBGLOG(REQ, ERROR,
-			"Unknown fail - failed to set report vendor specified frame\n");
-		rStatus = WLAN_STATUS_INVALID_DATA;
 	}
 
 	return rStatus;
