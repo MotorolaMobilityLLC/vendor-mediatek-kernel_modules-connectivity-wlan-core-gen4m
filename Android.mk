@@ -36,6 +36,7 @@ ifeq ($(WLAN_BUILD_COMMON), true)
 	WIFI_EMI := n
 	WIFI_NAME := wlan_drv_gen4m_bellwether
 	WIFI_CHRDEV_MODULE :=
+	include $(LOCAL_PATH)/build_wlan_drv.mk
 else
 	WIFI_NAME := wlan_drv_gen4m
 	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi.ko
