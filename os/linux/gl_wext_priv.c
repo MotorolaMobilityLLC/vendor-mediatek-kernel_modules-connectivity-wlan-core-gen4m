@@ -3396,6 +3396,8 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_QOS             "SET_QOS"
 #if (CFG_SUPPORT_802_11AX == 1)
 #define CMD_SET_BA_SIZE         "SET_BA_SIZE"
+#define CMD_SET_RX_BA_SIZE      "SET_RX_BA_SIZE"
+#define CMD_SET_TX_BA_SIZE      "SET_TX_BA_SIZE"
 #define CMD_SET_TP_TEST_MODE    "SET_TP_TEST_MODE"
 #define CMD_SET_MUEDCA_OVERRIDE "MUEDCA_OVERRIDE"
 #define CMD_SET_TX_MCSMAP       "SET_MCS_MAP"
@@ -11017,6 +11019,83 @@ int priv_driver_set_ba_size(IN struct net_device *prNetDev, IN char *pcCommand,
 	return i4BytesWritten;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to process the SET_RX_BA_SIZE or SET_TX_BA_SIZE
+ *
+ * \param[in]  fgIsTx		when fgIsTx is 1, process SET_TX_BA_SIZE
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ */
+/*----------------------------------------------------------------------------*/
+int priv_driver_set_trx_ba_size(IN struct net_device *prNetDev,
+		IN char *pcCommand, IN int i4TotalLen, IN u_int8_t fgIsTx)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse = 0;
+	uint16_t u2BaSize;
+	int8_t i4Type = WLAN_TYPE_UNKNOWN;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 3) {
+		if (strnicmp(apcArgv[1], "LEGACY", strlen("LEGACY")) == 0)
+			i4Type = WLAN_TYPE_LEGACY;
+		else if (strnicmp(apcArgv[1], "HE", strlen("HE")) == 0)
+			i4Type = WLAN_TYPE_HE;
+
+		if (i4Type != WLAN_TYPE_UNKNOWN) {
+			u4Ret = kalkStrtou32(apcArgv[2], 0, &u4Parse);
+			if (u4Ret)
+				DBGLOG(REQ, LOUD,
+				       "parse apcArgv error u4Ret=%d\n",
+				       u4Ret);
+
+			u2BaSize = (uint16_t) u4Parse;
+
+			if ((i4Type == WLAN_TYPE_LEGACY
+				&& u2BaSize <= WLAN_LEGACY_MAX_BA_SIZE)
+			    || (i4Type == WLAN_TYPE_HE
+				&& u2BaSize <= WLAN_HE_MAX_BA_SIZE)) {
+				/* only with valid ba size enter here */
+				if (fgIsTx == 0)
+					wlanSetRxBaSize(prGlueInfo,
+						i4Type, u2BaSize);
+				else
+					wlanSetTxBaSize(prGlueInfo,
+						i4Type, u2BaSize);
+
+				return i4BytesWritten;
+			}
+		}
+	}
+
+	if (fgIsTx == 0)
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver SET_RX_BA_SIZE <type> <number>\n");
+	else
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver SET_TX_BA_SIZE <type> <number>\n");
+
+	DBGLOG(INIT, ERROR, "<type> LEGACY or HE\n");
+	DBGLOG(INIT, ERROR,
+		"<number> the number of ba size, max(Legacy):%d max(HE):%d\n",
+		WLAN_LEGACY_MAX_BA_SIZE, WLAN_HE_MAX_BA_SIZE);
+
+	return i4BytesWritten;
+}
+
 /* This command is for sigma to disable TpTestMode. */
 int priv_driver_set_tp_test_mode(IN struct net_device *prNetDev,
 				 IN char *pcCommand, IN int i4TotalLen)
@@ -14403,6 +14482,14 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			   strlen(CMD_SET_BA_SIZE)) == 0) {
 			i4BytesWritten = priv_driver_set_ba_size(prNetDev,
 							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_RX_BA_SIZE,
+			   strlen(CMD_SET_RX_BA_SIZE)) == 0) {
+			i4BytesWritten = priv_driver_set_trx_ba_size(prNetDev,
+						pcCommand, i4TotalLen, FALSE);
+		} else if (strnicmp(pcCommand, CMD_SET_TX_BA_SIZE,
+			   strlen(CMD_SET_TX_BA_SIZE)) == 0) {
+			i4BytesWritten = priv_driver_set_trx_ba_size(prNetDev,
+						pcCommand, i4TotalLen, TRUE);
 		} else if (strnicmp(pcCommand, CMD_SET_TP_TEST_MODE,
 			   strlen(CMD_SET_TP_TEST_MODE)) == 0) {
 			i4BytesWritten = priv_driver_set_tp_test_mode(prNetDev,
