@@ -520,25 +520,6 @@ static int p2pDoIOCTL(struct net_device *prDev,
 		struct ifreq *prIFReq,
 		int i4Cmd);
 
-#if CFG_SUPPORT_RX_GRO
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief A method of callback function for napi struct
- *
- * It just return false because driver indicate Rx packet directly.
- *
- * \param[in] napi      Pointer to struct napi_struct.
- * \param[in] budget    Polling time interval.
- *
- * \return false
- */
-/*----------------------------------------------------------------------------*/
-static int p2p_napi_poll(struct napi_struct *napi, int budget)
-{
-	return 0;
-}
-#endif
-
 /*---------------------------------------------------------------------------*/
 /*!
  * \brief A function for prDev->init
@@ -551,22 +532,10 @@ static int p2p_napi_poll(struct napi_struct *napi, int budget)
 /*---------------------------------------------------------------------------*/
 static int p2pInit(struct net_device *prDev)
 {
-#if CFG_SUPPORT_RX_GRO
-	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
-#endif
 	if (!prDev)
 		return -ENXIO;
 #if CFG_SUPPORT_RX_GRO
-	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
-		netdev_priv(prDev);
-	prDev->features |= NETIF_F_GRO;
-	prDev->hw_features |= NETIF_F_GRO;
-	spin_lock_init(&prNetDevPrivate->napi_spinlock);
-	prNetDevPrivate->napi.dev = prDev;
-	netif_napi_add(prNetDevPrivate->napi.dev,
-		&prNetDevPrivate->napi, p2p_napi_poll, 64);
-	DBGLOG(INIT, TRACE,
-		"GRO interface added successfully:%p\n", prDev);
+	kalNapiInit(prDev);
 #endif
 	return 0;		/* success */
 }				/* end of p2pInit() */
@@ -1745,6 +1714,12 @@ static int p2pOpen(IN struct net_device *prDev)
 		MSG_SEND_METHOD_BUF);
 #endif
 
+#if CFG_SUPPORT_RX_GRO
+#if CFG_SUPPORT_RX_NAPI
+	kalNapiEnable(prDev);
+#endif /* CFG_SUPPORT_RX_NAPI */
+#endif /* CFG_SUPPORT_RX_GRO */
+
 	/* 2. carrier on & start TX queue */
 	/*DFS todo 20161220_DFS*/
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -1850,6 +1825,12 @@ static int p2pStop(IN struct net_device *prDev)
 #ifdef CONFIG_WIRELESS_EXT
 	prDev->wireless_handlers = NULL;
 #endif
+
+#if CFG_SUPPORT_RX_GRO
+#if CFG_SUPPORT_RX_NAPI
+	kalNapiDisable(prDev);
+#endif /* CFG_SUPPORT_RX_NAPI */
+#endif /* CFG_SUPPORT_RX_GRO */
 
 	return 0;
 }				/* end of p2pStop() */

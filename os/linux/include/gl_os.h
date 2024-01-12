@@ -1016,6 +1016,7 @@ struct NETDEV_PRIVATE_GLUE_INFO {
 	OS_SYSTIME tmGROFlushTimeout;
 	spinlock_t napi_spinlock;
 	uint32_t u4PendingFlushNum;
+	struct sk_buff_head rRxNapiSkbQ;
 #endif
 	struct net_device_stats stats;
 #if CFG_SUPPORT_NAN

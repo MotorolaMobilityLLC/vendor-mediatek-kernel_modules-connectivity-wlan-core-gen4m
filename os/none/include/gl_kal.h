@@ -1790,6 +1790,9 @@ void kalScanLogCacheFlushBSS(struct ADAPTER *prAdapter,
 
 #define kalIsResetting(_void) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define kalRxNapiValidSkb(_prGlueInfo, _prSkb) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
 int kalMaskMemCmp(const void *cs, const void *ct,
 	const void *mask, size_t count);
@@ -1809,6 +1812,9 @@ void kalRemoveBss(struct GLUE_INFO *prGlueInfo,
 	enum ENUM_BAND eBand);
 
 u_int8_t kalIsResetting(void);
+
+uint8_t kalRxNapiValidSkb(struct GLUE_INFO *prGlueInfo,
+	struct sk_buff *prSkb);
 #endif
 
 #if CFG_CHIP_RESET_SUPPORT
