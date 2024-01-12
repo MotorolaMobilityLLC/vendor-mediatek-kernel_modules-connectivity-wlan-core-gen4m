@@ -118,11 +118,17 @@ extern unsigned long long gConEmiSizeFinal;
 #undef MAX_EEPROM_BUFFER_SIZE
 #endif
 
+#ifdef BUFFER_BIN_PAGE_SIZE
+#undef BUFFER_BIN_PAGE_SIZE
+#endif
+
 #if defined MT7915 || defined MT7961
 #define MAX_EEPROM_BUFFER_SIZE	0xe00
+#define BUFFER_BIN_PAGE_SIZE 0x400
 #else
 //For Bellwether, Modify from 1200 to 6K and align to linux
 #define MAX_EEPROM_BUFFER_SIZE	6144 //6K
+#define BUFFER_BIN_PAGE_SIZE 0x400
 #endif
 
 /*******************************************************************************

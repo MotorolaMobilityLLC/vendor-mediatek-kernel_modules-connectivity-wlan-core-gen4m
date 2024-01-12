@@ -203,7 +203,11 @@ struct CMD_EFUSE_BUFFER_MODE_CONNAC_T {
 	uint8_t ucSourceMode;
 	uint8_t ucContentFormat;
 	uint16_t u2Count;
+#if defined MT7915 || defined MT7961
+	uint8_t aBinContent[BUFFER_BIN_PAGE_SIZE];
+#else
 	uint8_t aBinContent[MAX_EEPROM_BUFFER_SIZE];
+#endif
 };
 
 /*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/
