@@ -2459,6 +2459,12 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 #endif
 	}
 
+#if (CFG_SUPPORT_DBDC == 1 && CFG_UPDATE_STATIC_DBDC_QUOTA == 1)
+	if (prAdapter->rWifiVar.eDbdcMode ==
+		ENUM_DBDC_MODE_STATIC)
+		cnmUpdateStaticDbdcQuota(prAdapter);
+
+#endif
 	return u4Status;
 }
 

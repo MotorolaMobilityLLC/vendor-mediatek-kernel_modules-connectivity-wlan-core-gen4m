@@ -2683,7 +2683,6 @@ static u_int8_t cnmDbdcIsConcurrent(
 
 	return fgDBDCConcurrent;
 }
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This utility function is used to check MCC
@@ -2748,6 +2747,77 @@ uint8_t cnmGetDbdcNss(struct ADAPTER *prAdapter,
 	return wlanGetSupportNss(prAdapter, ucBssIndex);
 }
 
+#if (CFG_SUPPORT_DBDC == 1 && CFG_UPDATE_STATIC_DBDC_QUOTA == 1)
+void cnmUpdateStaticDbdcQuota(
+	struct ADAPTER *prAdapter)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIndex = 0;
+	uint8_t ucWmmCompare = 0;
+	uint8_t ucWmmQueSet = 0;
+	uint8_t ucWmmIndex = 0;
+	uint8_t ucBssNum = prAdapter->ucHwBssIdNum;
+	uint32_t u4ReqQuota;
+	u_int8_t fgDBDCConcurrent = FALSE;
+	u_int8_t fgWMMConcurrent = FALSE;
+	u_int8_t fgEnable;
+
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo->dmashdlQuotaDecision) {
+		fgDBDCConcurrent = cnmDbdcIsConcurrent(prAdapter, BAND_NULL, 0);
+
+		ucWmmCompare = HW_WMM_NUM;
+
+		for (ucBssIndex = 0;
+			ucBssIndex < ucBssNum; ucBssIndex++) {
+
+			prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+
+			if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
+				continue;
+
+			ucWmmQueSet = prBssInfo->ucWmmQueSet;
+
+			if (ucWmmCompare == HW_WMM_NUM)
+				ucWmmCompare = ucWmmQueSet;
+
+			if (ucWmmCompare != ucWmmQueSet)
+				fgWMMConcurrent = TRUE;
+		}
+
+		for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
+			ucWmmIndex++) {
+
+			u4ReqQuota = 0;
+			fgEnable = FALSE;
+
+			/* Update Quota when dual band
+			 * && mulit WmmSetis actived.
+			 */
+			if (fgDBDCConcurrent && fgWMMConcurrent) {
+				u4ReqQuota =
+				prChipInfo->dmashdlQuotaDecision(
+						prAdapter,
+						ucWmmIndex);
+				fgEnable = TRUE;
+			}
+
+			log_dbg(CNM, INFO,
+				"WmmIndex %d Enable %d ReqQuota 0x%x dbdc %d Wmm %d\n",
+				ucWmmIndex, fgEnable, u4ReqQuota,
+				fgDBDCConcurrent, fgWMMConcurrent);
+
+			cnmWmmQuotaSetMaxQuota(
+				prAdapter,
+				ucWmmIndex,
+				CNM_WMM_REQ_DBDC,
+				fgEnable,
+				u4ReqQuota);
+		}
+	}
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!

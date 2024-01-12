@@ -541,6 +541,14 @@ else
     ccflags-y += -DCFG_SUPPORT_TX_DATA_DELAY=0
 endif
 
+ifeq ($(CONFIG_UPDATE_STATIC_DBDC_QUOTA), y)
+    ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
+        ccflags-y += -DCFG_UPDATE_STATIC_DBDC_QUOTA=1
+    else
+        ccflags-y += -DCFG_UPDATE_STATIC_DBDC_QUOTA=0
+    endif
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO), y)
     ccflags-y += -DCFG_VOLT_INFO=1
 else
