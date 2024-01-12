@@ -480,6 +480,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     ifeq ($(call kver_ge,5,15),1)
         CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
     endif
+    CONFIG_PERF_MON_FAST=y
     CONFIG_WIFI_COREDUMP_SUPPORT=y
     CONFIG_MTK_WIFI_AER_RESET=y
     CONFIG_DRV_OWN_INT_MODE=y
@@ -526,6 +527,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     ifeq ($(call kver_ge,5,15),1)
         CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
     endif
+    CONFIG_PERF_MON_FAST=y
     CONFIG_WIFI_COREDUMP_SUPPORT=y
     CONFIG_MTK_WIFI_AER_RESET=y
     CONFIG_RX_WORK_SUPPORT=y
@@ -1695,6 +1697,12 @@ ifeq ($(CONFIG_RFB_TRACK), y)
 ccflags-y += -DCFG_RFB_TRACK=1
 else
 ccflags-y += -DCFG_RFB_TRACK=0
+endif
+
+ifeq ($(CONFIG_PERF_MON_FAST), y)
+    ccflags-y += -DCFG_PERF_MON_FAST=1
+else
+    ccflags-y += -DCFG_PERF_MON_FAST=0
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_WFDMA_BK_RS), y)

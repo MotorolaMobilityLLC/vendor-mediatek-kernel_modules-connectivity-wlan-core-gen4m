@@ -7682,8 +7682,19 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgTdlsBufferSTASleep,
 		"TdlsBufferSTASleep", FEATURE_ENABLED);
 
-	INIT_UINT(prWifiVar->u4PerfMonUpdatePeriod,
-		"PerfMonPeriod", PERF_MON_UPDATE_INTERVAL);
+#if CFG_PERF_MON_FAST
+	INIT_UINT(prWifiVar->u4PerfMonUpdatePeriod, "PerfMonPeriod",
+		PERF_MON_UPDATE_MIN_INTERVAL);
+
+	if (prWifiVar->u4PerfMonUpdatePeriod < PERF_MON_UPDATE_MIN_INTERVAL) {
+		prWifiVar->u4PerfMonUpdatePeriod = PERF_MON_UPDATE_MIN_INTERVAL;
+		DBGLOG(INIT, TRACE, "u4PerfMonUpdatePeriod set to min(%d).\n",
+			PERF_MON_UPDATE_MIN_INTERVAL);
+	}
+#else /* CFG_PERF_MON_FAST */
+	INIT_UINT(prWifiVar->u4PerfMonUpdatePeriod, "PerfMonPeriod",
+		PERF_MON_UPDATE_INTERVAL);
+#endif /* CFG_PERF_MON_FAST */
 
 	INIT_UINT(prWifiVar->u4PerfMonTpTh[0], "PerfMonLv1", 20);
 	INIT_UINT(prWifiVar->u4PerfMonTpTh[1], "PerfMonLv2", 50);
