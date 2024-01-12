@@ -38,6 +38,12 @@
 #define CMD_SW_DBGCTL_ADVCTL_GET_ID	0xb1260000
 #endif /* CFG_SUPPORT_ADVANCE_CONTROL */
 
+/* Common set/get */
+#define COMMON_CMD_DYNAMIC_ARG_NUM	(0)
+#define COMMON_CMD_GET_ARG_NUM(num)	(num)
+#define COMMON_CMD_SET_ARG_NUM(num)	(num)
+#define COMMON_CMD_ATTR_IDX(idx)	(idx)
+
 /*------------------------------------------------------------------------------
  *  Mediatek ioctl private commnad
  *------------------------------------------------------------------------------
@@ -58,7 +64,6 @@
 #define CMD_GET_TP_INFO			"GET_TP"
 #define CMD_COUNTRY			"COUNTRY"
 #define CMD_CSA				"CSA"
-#define CMD_ECSA			"ECSA"
 #define CMD_CSA_EX			"CSA_EX"
 #define CMD_CSA_EX_EVENT		"EVENT_CSA_EX"
 #define CMD_GET_COUNTRY			"GET_COUNTRY"
@@ -115,7 +120,6 @@
 #define CMD_GET_TX_POWER_INFO		"TxPowerInfo"
 #define CMD_TX_POWER_MANUAL_SET		"TxPwrManualSet"
 #define CMD_GET_HAPD_CHANNEL		"HAPD_GET_CHANNEL"
-#define CMD_SET_HAPD_AXMODE		"HAPD_SET_AX_MODE"
 #define CMD_SET_MDVT			"SET_MDVT"
 #define CMD_SET_MLO_AGC_TX		"MLOAGCTX"
 #define CMD_GET_MLD_REC			"MLDREC"
@@ -150,11 +154,6 @@
 #define CMD_SET_QOS			"SET_QOS"
 #define CMD_GET_CNM			"GET_CNM"
 #define CMD_GET_CAPAB_RSDB		"GET_CAPAB_RSDB"
-#define CMD_GET_TDLS_AVAILABLE		"GET_TDLS_AVAILABLE"
-#define CMD_GET_TDLS_WIDER_BW		"GET_TDLS_WIDER_BW"
-#define CMD_GET_TDLS_MAX_SESSION	"GET_TDLS_MAX_SESSION"
-#define CMD_GET_TDLS_NUM_OF_SESSION	"GET_TDLS_NUM_OF_SESSION"
-#define CMD_SET_TDLS_ENABLED		"SET_TDLS_ENABLED"
 #define CMD_SET_SW_AMSDU_NUM		"SET_SW_AMSDU_NUM"
 #define CMD_SET_SW_AMSDU_SIZE		"SET_SW_AMSDU_SIZE"
 #define CMD_SET_DRV_SER			"SET_DRV_SER"
@@ -189,14 +188,7 @@
 #endif /* CFG_SUPPORT_DFS_MASTER */
 #if CFG_SUPPORT_IDC_CH_SWITCH
 #define CMD_SET_IDC_BMP			"SetIdcBmp"
-#define CMD_SET_IDC_RIL			"SET_RIL_BRIDGE"
 #endif /* CFG_SUPPORT_IDC_CH_SWITCH */
-#if CFG_SUPPORT_UWB_COEX
-#define CMD_SET_UWBCX_ENABLE	"SET_UWBCX_ENABLE"
-#define CMD_GET_UWBCX_ENABLE	"GET_UWBCX_ENABLE"
-#define CMD_SET_UWBCX_PREPARE_TIME		"SET_UWBCX_PREPARE_TIME"
-#define CMD_GET_UWBCX_PREPARE_TIME		"GET_UWBCX_PREPARE_TIME"
-#endif
 #if CFG_CHIP_RESET_HANG
 #define CMD_SET_RST_HANG		"RST_HANG_SET"
 #endif /* CFG_CHIP_RESET_HANG */
@@ -458,5 +450,13 @@ struct STR_CMD_HANDLER {
  */
 PRIV_CMD_FUNCTION get_priv_cmd_handler(uint8_t *cmd, int32_t len);
 STR_CMD_FUNCTION get_str_cmd_handler(uint8_t *cmd, int32_t len);
+uint32_t cmd_validate(int8_t *pcCmd, enum ARG_NUM_POLICY argPolicy,
+	uint8_t ucArgNum, struct CMD_VALIDATE_POLICY *policy,
+	uint32_t u4PolicySize);
+
+#if CFG_EXT_FEATURE
+PRIV_CMD_FUNCTION get_priv_cmd_ext_handler(uint8_t *cmd, int32_t len);
+STR_CMD_FUNCTION get_str_cmd_ext_handler(uint8_t *cmd, int32_t len);
+#endif
 
 #endif /* _WSYS_CMD_HANDLER_DRIVER_H */

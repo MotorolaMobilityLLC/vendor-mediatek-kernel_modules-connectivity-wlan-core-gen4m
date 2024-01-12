@@ -1557,7 +1557,7 @@
 #define WLAN_INCLUDE_PROC                   1
 #endif
 
-#if CFG_TC10_FEATURE
+#if CFG_EXT_FEATURE
 #define WLAN_INCLUDE_SYS                   1
 #else
 #define WLAN_INCLUDE_SYS                   0

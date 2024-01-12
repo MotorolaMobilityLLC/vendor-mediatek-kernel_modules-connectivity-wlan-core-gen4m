@@ -20,12 +20,6 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-/* Common set/get */
-#define COMMON_CMD_DYNAMIC_ARG_NUM	(0)
-#define COMMON_CMD_GET_ARG_NUM(num)	(num)
-#define COMMON_CMD_SET_ARG_NUM(num)	(num)
-
-#define COMMON_CMD_ATTR_IDX(idx)	(idx)
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -101,12 +95,6 @@ struct CMD_VALIDATE_POLICY set_cas_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
 	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8, .min = 0, .max = U8_MAX}
 };
 
-#if CFG_SUPPORT_P2P_ECSA
-struct CMD_VALIDATE_POLICY set_ecsa_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
-	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8, .min = 0, .max = U8_MAX},
-	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_U8, .min = 0, .max = U32_MAX}
-};
-#endif
 #endif
 
 struct CMD_VALIDATE_POLICY get_chnls_policy[COMMON_CMD_GET_ARG_NUM(2)] = {
@@ -359,16 +347,6 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = set_cas_ex_policy,
 		.u4PolicySize = ARRAY_SIZE(set_cas_ex_policy)
 	},
-#if CFG_SUPPORT_P2P_ECSA
-	{
-		.pcCmdStr  = CMD_ECSA,
-		.pfHandler = priv_driver_set_ecsa,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
-		.policy    = set_ecsa_policy,
-		.u4PolicySize = ARRAY_SIZE(set_ecsa_policy)
-	},
-#endif
 	{
 		.pcCmdStr  = CMD_CSA,
 		.pfHandler = priv_driver_set_csa,
@@ -836,48 +814,6 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(5),
 		.policy    = u8_policy,
 		.u4PolicySize = ARRAY_SIZE(u8_policy)
-	},
-	{
-		.pcCmdStr  = CMD_SET_IDC_RIL,
-		.pfHandler = priv_driver_set_idc_ril_bridge,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(4),
-		.policy    = u32_policy,
-		.u4PolicySize = ARRAY_SIZE(u32_policy)
-	},
-#endif
-#if CFG_SUPPORT_UWB_COEX
-	{
-		.pcCmdStr  = CMD_SET_UWBCX_ENABLE,
-		.pfHandler = priv_driver_set_uwbcx_enable,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(4),
-		.policy    = u32_policy,
-		.u4PolicySize = ARRAY_SIZE(u32_policy)
-	},
-	{
-		.pcCmdStr  = CMD_SET_UWBCX_PREPARE_TIME,
-		.pfHandler = priv_driver_set_uwbcx_prepare,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
-		.policy    = u32_policy,
-		.u4PolicySize = ARRAY_SIZE(u32_policy)
-	},
-	{
-		.pcCmdStr  = CMD_GET_UWBCX_ENABLE,
-		.pfHandler = priv_driver_get_uwbcx_enable,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
-		.policy    = NULL,
-		.u4PolicySize = 0
-	},
-	{
-		.pcCmdStr  = CMD_GET_UWBCX_PREPARE_TIME,
-		.pfHandler = priv_driver_get_uwbcx_prepare,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
-		.policy    = NULL,
-		.u4PolicySize = 0
 	},
 #endif
 #if CFG_WOW_SUPPORT
@@ -1406,7 +1342,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
 		.policy    = u8_policy,
-		.u4PolicySize = ARRAY_SIZE(set_ecsa_policy)
+		.u4PolicySize = ARRAY_SIZE(u8_policy)
 	},
 	{
 		.pcCmdStr  = CMD_GET_MU_RX_PKTCNT,
@@ -1486,14 +1422,6 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
 		.policy    = NULL,
 		.u4PolicySize = 0
-	},
-	{
-		.pcCmdStr  = CMD_SET_HAPD_AXMODE,
-		.pfHandler = priv_driver_set_ap_axmode,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
-		.policy    = set_stanss_policy,
-		.u4PolicySize = ARRAY_SIZE(set_stanss_policy)
 	},
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	{
@@ -2222,48 +2150,6 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
 		.policy    = NULL,
 		.u4PolicySize = 0
-	},
-#endif
-#if CFG_SUPPORT_TDLS
-	{
-		.pcCmdStr  = CMD_GET_TDLS_AVAILABLE,
-		.pfHandler = priv_driver_get_tdls_available,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
-		.policy    = NULL,
-		.u4PolicySize = 0
-	},
-	{
-		.pcCmdStr  = CMD_GET_TDLS_WIDER_BW,
-		.pfHandler = priv_driver_get_tdls_wider_bw,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
-		.policy    = NULL,
-		.u4PolicySize = 0
-	},
-	{
-		.pcCmdStr  = CMD_GET_TDLS_MAX_SESSION,
-		.pfHandler = priv_driver_get_tdls_max_session,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
-		.policy    = NULL,
-		.u4PolicySize = 0
-	},
-	{
-		.pcCmdStr  = CMD_GET_TDLS_NUM_OF_SESSION,
-		.pfHandler = priv_driver_get_tdls_num_of_session,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
-		.policy    = NULL,
-		.u4PolicySize = 0
-	},
-	{
-		.pcCmdStr  = CMD_SET_TDLS_ENABLED,
-		.pfHandler = priv_driver_set_tdls_enabled,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
-		.policy    = u32_policy,
-		.u4PolicySize = ARRAY_SIZE(u32_policy)
 	},
 #endif
 #if CFG_SUPPORT_802_11K
