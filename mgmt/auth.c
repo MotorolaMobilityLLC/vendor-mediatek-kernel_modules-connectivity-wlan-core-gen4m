@@ -820,6 +820,10 @@ authSendDeauthFrame(IN P_ADAPTER_T prAdapter,
 		if ((prWlanMacHeader->u2FrameCtrl & MASK_TO_DS_FROM_DS) == 0)
 			return WLAN_STATUS_FAILURE;
 
+		DBGLOG(SAA, INFO, "u2FrameCtrl=0x%x, DestAddr=%pM srcAddr=%pM BSSID=%pM, u2SeqCtrl=0x%x\n",
+			prWlanMacHeader->u2FrameCtrl,
+			prWlanMacHeader->aucAddr1, prWlanMacHeader->aucAddr2, prWlanMacHeader->aucAddr3,
+			prWlanMacHeader->u2SeqCtrl);
 		/* Check if corresponding BSS is able to send Deauth */
 		for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
@@ -925,6 +929,9 @@ authSendDeauthFrame(IN P_ADAPTER_T prAdapter,
 				MAC_TX_RESERVED_FIELD);
 
 			prDeauthFrame->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
+			DBGLOG(SAA, INFO, "Reason=%d, DestAddr=%pM srcAddr=%pM BSSID=%pM\n",
+				prDeauthFrame->u2ReasonCode, prDeauthFrame->aucDestAddr,
+				prDeauthFrame->aucSrcAddr, prDeauthFrame->aucBSSID);
 		}
 	}
 #endif
@@ -954,6 +961,8 @@ authSendDeauthFrame(IN P_ADAPTER_T prAdapter,
 	}
 
 #endif
+	DBGLOG(SAA, INFO, "ucTxSeqNum=%d ucStaRecIndex=%d u2ReasonCode=%d\n",
+		prMsduInfo->ucTxSeqNum, prMsduInfo->ucStaRecIndex, u2ReasonCode);
 
 	/* 4 <8> Inform TXM to send this Deauthentication frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);

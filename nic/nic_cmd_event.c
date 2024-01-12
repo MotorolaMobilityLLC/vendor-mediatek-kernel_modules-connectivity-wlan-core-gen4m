@@ -3157,6 +3157,7 @@ VOID nicEventSendDeauth(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 {
 	SW_RFB_T rSwRfb;
 
+	DBGLOG(NIC, INFO, "%s\n", __func__);
 #if DBG
 	P_WLAN_MAC_HEADER_T prWlanMacHeader;
 
@@ -3170,7 +3171,7 @@ VOID nicEventSendDeauth(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 	if (authSendDeauthFrame(prAdapter, NULL, NULL, &rSwRfb, REASON_CODE_CLASS_3_ERR,
 		(PFN_TX_DONE_HANDLER) NULL) == WLAN_STATUS_SUCCESS) {
 
-		DBGLOG(RX, TRACE, "Send Deauth Error\n");
+		DBGLOG(RX, ERROR, "Send Deauth Error\n");
 	}
 }
 
