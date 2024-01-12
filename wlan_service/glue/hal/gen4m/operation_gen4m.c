@@ -1009,6 +1009,7 @@ s_int32 mt_op_read_bulk_eeprom(
 	struct test_wlan_info *winfos,
 	struct test_eeprom *eprms)
 {
+#if 0
 	struct param_custom_mcr_rw_struct mcr_info;
 	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
 	u_int32 idx;
@@ -1028,8 +1029,8 @@ s_int32 mt_op_read_bulk_eeprom(
 			NULL,
 			NULL);
 	}
-
-	return ret;
+#endif
+	return SERV_STATUS_SUCCESS;
 }
 
 static void mt_op_set_manual_he_tb_value(
