@@ -301,6 +301,7 @@ struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int msi_idx)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter;
+	struct pcie_msi_info *prMsiInfo;
 #if HIF_INT_TIME_DEBUG
 	struct BUS_INFO *prBusInfo = NULL;
 #endif
@@ -310,22 +311,26 @@ struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int msi_idx)
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 	if (!prGlueInfo) {
-		DBGLOG(HAL, INFO, "No glue info in %s(%d, %d)\n",
-		       __func__, irq, msi_idx);
+		DBGLOG_LIMITED(HAL, INFO, "No glue info in %s(%d, %d)\n",
+			       __func__, irq, msi_idx);
 		enable_irq(irq);
 		return NULL;
 	}
 
 	prAdapter = prGlueInfo->prAdapter;
+	prMsiInfo = &prAdapter->chip_info->bus_info->pcie_msi_info;
 	if (msi_idx >= 0 && msi_idx < PCIE_MSI_NUM)
 		GLUE_INC_REF_CNT(prAdapter->rHifStats.u4MsiIsrCount[msi_idx]);
 	else
 		GLUE_INC_REF_CNT(prAdapter->rHifStats.u4HwIsrCount);
 
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
-		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip INT(%d, %d)\n",
-		       irq, msi_idx);
-		enable_irq(irq);
+		DBGLOG_LIMITED(HAL, INFO, "GLUE_FLAG_HALT skip INT(%d, %d)\n",
+			       irq, msi_idx);
+		if (msi_idx >= 0 && msi_idx < PCIE_MSI_NUM)
+			KAL_SET_BIT(msi_idx, prMsiInfo->ulEnBits);
+		else
+			KAL_SET_BIT(0, prGlueInfo->rHifInfo.ulHifIntEnBits);
 		return NULL;
 	}
 
