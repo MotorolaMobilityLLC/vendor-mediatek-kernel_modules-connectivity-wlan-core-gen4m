@@ -1549,6 +1549,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		"drv: %d, reason: %s\n",
 		drv, reason);
 
+#if CFG_MTK_ANDROID_WMT
 	while (get_wifi_process_status() == 1) {
 		DBGLOG(REQ, WARN,
 			"Wi-Fi on/off process is ongoing, wait here.\n");
@@ -1559,7 +1560,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
 		return 0;
 	}
-
+#endif
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
 	prBusInfo = prAdapter->chip_info->bus_info;
@@ -1633,6 +1634,7 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
 
+#if CFG_MTK_ANDROID_WMT
 	while (get_wifi_process_status() == 1) {
 		DBGLOG(REQ, WARN,
 			"Wi-Fi on/off process is ongoing, wait here.\n");
@@ -1643,7 +1645,7 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
 		return 0;
 	}
-
+#endif
 	triggerHifDumpIfNeed();
 
 	g_Coredump_source = coredump_conn_type_to_src(drv);
@@ -1679,6 +1681,7 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 
 int wlan_post_whole_chip_rst_v2(void)
 {
+#if CFG_MTK_ANDROID_WMT
 	while (get_wifi_process_status() == 1) {
 		DBGLOG(REQ, WARN,
 			"Wi-Fi on/off process is ongoing, wait here.\n");
@@ -1688,6 +1691,7 @@ int wlan_post_whole_chip_rst_v2(void)
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
 		return 0;
 	}
+#endif
 	glRstSetRstEndEvent();
 
 	DBGLOG(INIT, INFO,
