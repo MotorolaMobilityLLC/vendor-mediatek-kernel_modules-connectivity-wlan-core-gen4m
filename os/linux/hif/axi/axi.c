@@ -287,6 +287,14 @@ static int hifAxiSetMpuProtect(bool enable)
 }
 #endif /* CFG_MTK_ANDROID_WMT */
 
+static int hifAxiIsWifiDrvOwn(void)
+{
+	if (!g_prGlueInfo || !g_prGlueInfo->prAdapter)
+		return 0;
+
+	return (g_prGlueInfo->prAdapter->fgIsFwOwn == FALSE) ? 1 : 0;
+}
+
 static void axiDmaSetup(struct platform_device *pdev)
 {
 	struct mt66xx_chip_info *prChipInfo;
@@ -560,6 +568,7 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 	rWmtCb.wlan_bus_cnt_get_cb = hifAxiGetBusCnt;
 	rWmtCb.wlan_bus_cnt_clr_cb = hifAxiClrBusCnt;
 	rWmtCb.wlan_emi_mpu_set_protection_cb = hifAxiSetMpuProtect;
+	rWmtCb.wlan_is_wifi_drv_own_cb = hifAxiIsWifiDrvOwn;
 	mtk_wcn_wmt_wlan_reg(&rWmtCb);
 #else
 	hifAxiProbe();
