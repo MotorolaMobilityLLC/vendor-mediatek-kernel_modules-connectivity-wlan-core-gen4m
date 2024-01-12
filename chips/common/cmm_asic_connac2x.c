@@ -2172,6 +2172,7 @@ void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 			       IN uint8_t ucBssIndex)
 {
 	struct GLUE_INFO *prGlueInfo;
+	struct GL_PERF_IND_INFO *prPerfIndInfo;
 	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3;
 	uint8_t ucRCPI0 = 0, ucRCPI1 = 0;
 	uint32_t u4PhyRate;
@@ -2187,6 +2188,17 @@ void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 	prGlueInfo = prAdapter->prGlueInfo;
 	status = wlanGetRxRateByBssid(prGlueInfo, ucBssIndex, &u4PhyRate, NULL,
 				&rRxRateInfo);
+
+	prPerfIndInfo = &prGlueInfo->PerfIndCache;
+
+	if (rRxRateInfo.u4Nss == 1) {
+		if (prPerfIndInfo->ucCurRxNss[ucBssIndex] < 0xff)
+			prPerfIndInfo->ucCurRxNss[ucBssIndex]++;
+	} else if (rRxRateInfo.u4Nss == 2) {
+		if (prPerfIndInfo->ucCurRxNss2[ucBssIndex] < 0xff)
+			prPerfIndInfo->ucCurRxNss2[ucBssIndex]++;
+	}
+
 	/* ucRate(500kbs) = u4PhyRate(100kbps) */
 	if (status < 0 || u4PhyRate == 0)
 		return;
@@ -2198,11 +2210,17 @@ void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 	ucRCPI1 = HAL_RX_STATUS_GET_RCPI1(prRxStatusGroup3);
 
 	/* Record peak rate to Traffic Indicator*/
-	prAdapter->prGlueInfo->PerfIndCache.
-		ucCurRxRCPI0[ucBssIndex] = ucRCPI0;
-	prAdapter->prGlueInfo->PerfIndCache.
-		ucCurRxRCPI1[ucBssIndex] = ucRCPI1;
+	if (u2Rate > prPerfIndInfo->u2CurRxRate[ucBssIndex]) {
+		prPerfIndInfo->u2CurRxRate[ucBssIndex] = u2Rate;
+		prPerfIndInfo->ucCurRxRCPI0[ucBssIndex] = ucRCPI0;
+		prPerfIndInfo->ucCurRxRCPI1[ucBssIndex] = ucRCPI1;
+	}
 
+	DBGLOG(SW4, TEMP, "rate=[%u], nss=[%u], cnt_nss1=[%d], cnt_nss2=[%d]\n",
+		u2Rate,
+		rRxRateInfo.u4Nss,
+		prPerfIndInfo->ucCurRxNss[ucBssIndex],
+		prPerfIndInfo->ucCurRxNss2[ucBssIndex]);
 }
 #endif
 
