@@ -18016,7 +18016,8 @@ int priv_driver_get_wifi_type(struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	rParamGetWifiType.prNetDev = prNetDev;
 	rStatus = kalIoctl(prGlueInfo, wlanoidGetWifiType,
-			   (void *)&rParamGetWifiType, sizeof(void *),
+			   (void *)&rParamGetWifiType,
+			   sizeof(struct PARAM_GET_WIFI_TYPE),
 			   &u4BytesWritten);
 	if (rStatus == WLAN_STATUS_SUCCESS) {
 		if (u4BytesWritten > 0) {
