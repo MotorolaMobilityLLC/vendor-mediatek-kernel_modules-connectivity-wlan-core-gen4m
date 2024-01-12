@@ -20,7 +20,15 @@ struct IE_EHT_CAP {
 	u_int8_t  aucVarInfo[0];
 } __KAL_ATTRIB_PACKED__;
 
-#define EHT_OP_BYTE_NUM (1)
+/*
+ * <EHT Oeration Information Subfield>
+ * Channel Width 1 byte
+ * CCFS 2 byte
+ * Disabled Subchannel Bitmap Present 1 byte
+ * Note: The subfield hasn't been defined in D1.2
+ * TODO: modify field according to spec
+ */
+#define EHT_OP_BYTE_NUM (4)
 
 struct _IE_EHT_OP_T {
 	u_int8_t  ucId;

@@ -163,7 +163,7 @@
 #define HE_OP_BYTE_NUM                          3
 #define HE_MAC_CAP_BYTE_NUM                     6
 #define HE_PHY_CAP_BYTE_NUM                     11
-#define EHT_OP_BYTE_NUM                          (1)
+#define EHT_OP_BYTE_NUM                         (4)
 #define EHT_MAC_CAP_BYTE_NUM                    (2)
 #define EHT_PHY_CAP_BYTE_NUM                    (8)
 
