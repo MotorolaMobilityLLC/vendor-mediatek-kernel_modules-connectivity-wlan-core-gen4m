@@ -12621,7 +12621,8 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		if (rate >= 5 && rate <= 7)
 			rate -= 4;
 		if (rate >= ucMaxSize) {
-			DBGLOG(SW4, ERROR, "rate error for CCK: %u\n", rate);
+			DBGLOG_LIMITED(SW4, ERROR, "rate error for CCK: %u\n",
+					rate);
 			return -1;
 		}
 		u4CurRate = g_rCckDataRateMappingTable.rate[rate];
@@ -12630,7 +12631,7 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 	} else if (txmode == TX_RATE_MODE_OFDM) { /* 11G */
 		u4CurRate = wlanHwRateOfdmNum(rate);
 		if (u4CurRate == 0) {
-			DBGLOG(SW4, ERROR, "rate error for OFDM\n");
+			DBGLOG_LIMITED(SW4, ERROR, "rate error for OFDM\n");
 			return -1;
 		}
 		u4MaxRate = g_rOfdmDataRateMappingTable
@@ -12638,19 +12639,20 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 	} else if (txmode == TX_RATE_MODE_HTMIX ||
 		   txmode == TX_RATE_MODE_HTGF) { /* 11N */
 		if (nsts == 0 || nsts >= 4) {
-			DBGLOG(SW4, ERROR, "nsts error: %u\n", nsts);
+			DBGLOG_LIMITED(SW4, ERROR, "nsts error: %u\n", nsts);
 			return -1;
 		}
 
 		ucMaxSize = 8;
 		if (rate > 23) {
-			DBGLOG(SW4, ERROR, "rate error for 11N: %u\n", rate);
+			DBGLOG_LIMITED(SW4, ERROR, "rate error for 11N: %u\n",
+					rate);
 			return -1;
 		}
 		rate %= ucMaxSize;
 
 		if (frmode > 1) {
-			DBGLOG(SW4, ERROR,
+			DBGLOG_LIMITED(SW4, ERROR,
 			       "frmode error for 11N: %u\n", frmode);
 			return -1;
 		}
@@ -12660,12 +12662,12 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 				.sgi[gi].rate[MCS_IDX_MAX_RATE_HT];
 	} else if (txmode == TX_RATE_MODE_VHT) { /* 11AC */
 		if (nsts == 0 || nsts >= 4) {
-			DBGLOG(SW4, ERROR, "nsts error: %u\n", nsts);
+			DBGLOG_LIMITED(SW4, ERROR, "nsts error: %u\n", nsts);
 			return -1;
 		}
 
 		if (frmode > 3) {
-			DBGLOG(SW4, ERROR,
+			DBGLOG_LIMITED(SW4, ERROR,
 			       "frmode error for 11AC: %u\n", frmode);
 			return -1;
 		}
@@ -12673,7 +12675,8 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		ucMaxSize = ARRAY_SIZE(g_rDataRateMappingTable.nsts[nsts - 1]
 				.bw[frmode].sgi[gi].rate);
 		if (rate >= ucMaxSize) {
-			DBGLOG(SW4, ERROR, "rate error for 11AC: %u\n", rate);
+			DBGLOG_LIMITED(SW4, ERROR, "rate error for 11AC: %u\n",
+					rate);
 			return -1;
 		}
 
@@ -12690,11 +12693,11 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 			nsts--;
 
 		if (nsts == 0 || nsts >= 5) {
-			DBGLOG(SW4, ERROR, "nsts error: %u\n", nsts);
+			DBGLOG_LIMITED(SW4, ERROR, "nsts error: %u\n", nsts);
 			return -1;
 		}
 		if (frmode > 3) {
-			DBGLOG(SW4, ERROR,
+			DBGLOG_LIMITED(SW4, ERROR,
 			       "frmode error for 11AX: %u\n", frmode);
 			return -1;
 		}
@@ -12707,7 +12710,8 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		ucMaxSize = ARRAY_SIZE(g_rAxDataRateMappingTable.nsts[nsts - 1]
 				.bw[frmode].gi[gi].rate);
 		if (rate >= ucMaxSize) {
-			DBGLOG(SW4, ERROR, "rate error for 11AX: %u\n", rate);
+			DBGLOG_LIMITED(SW4, ERROR, "rate error for 11AX: %u\n",
+					rate);
 			return -1;
 		}
 
@@ -12726,11 +12730,11 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		uint8_t ru106 = 0;
 
 		if (nsts == 0 || nsts >= 5) {
-			DBGLOG(SW4, ERROR, "nsts error: %u\n", nsts);
+			DBGLOG_LIMITED(SW4, ERROR, "nsts error: %u\n", nsts);
 			return -1;
 		}
 		if (frmode > 5) {
-			DBGLOG(SW4, ERROR,
+			DBGLOG_LIMITED(SW4, ERROR,
 			       "frmode error for 11BE: %u\n", frmode);
 			return -1;
 		}
@@ -12758,8 +12762,9 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 			u4MaxRate = u4MaxRate >> 1;
 		}
 	} else {
-		DBGLOG(SW4, ERROR, "Unknown rate for [%d,%d,%d,%d,%d]\n",
-			txmode, nsts, frmode, gi, rate);
+		DBGLOG_LIMITED(SW4, ERROR,
+				"Unknown rate for [%d,%d,%d,%d,%d]\n",
+				txmode, nsts, frmode, gi, rate);
 		return -1;
 	}
 
