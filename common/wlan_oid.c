@@ -88,7 +88,6 @@
 *                            P U B L I C   D A T A
 *******************************************************************************
 */
-
 PARAM_CUSTOM_KEY_CFG_STRUCT_T g_rDefaulteSetting[] = {
 		/*format :
 		*: {"firmware config parameter", "firmware config value"}
