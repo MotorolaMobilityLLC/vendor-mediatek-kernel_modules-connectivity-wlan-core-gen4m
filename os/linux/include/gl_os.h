@@ -190,7 +190,7 @@
 #include <linux/can/netlink.h>
 #include <net/netlink.h>
 
-#ifdef CONFIG_IPV6
+#if IS_ENABLED(CONFIG_IPV6)
 #include <linux/ipv6.h>
 #include <linux/in6.h>
 #include <net/if_inet6.h>
