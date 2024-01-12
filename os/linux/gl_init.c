@@ -1827,6 +1827,13 @@ void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo)
 					    (aucChannelList[i].eDFS) ?
 					     NL80211_DFS_USABLE :
 					     NL80211_DFS_UNAVAILABLE;
+					if (mtk_5ghz_channels[j].dfs_state ==
+							NL80211_DFS_USABLE)
+						mtk_5ghz_channels[j].flags |=
+							IEEE80211_CHAN_RADAR;
+					else
+						mtk_5ghz_channels[j].flags &=
+							~IEEE80211_CHAN_RADAR;
 					break;
 				}
 			}
