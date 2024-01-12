@@ -1568,9 +1568,9 @@ static void halAddConnsysLatencyCount(IN struct ADAPTER *prAdapter,
 							[ucBssIndex];
 	uint8_t i;
 
-	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++, pConnsysDelay++) {
+	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
 		if (u4ConnsysLatency <= *pMaxConnsysDelay++) {
-			GLUE_INC_REF_CNT(*pConnsysDelay);
+			GLUE_INC_REF_CNT(pConnsysDelay[i]);
 			break;
 		}
 	}
@@ -1588,7 +1588,7 @@ static void halAddTxFailConnsysLatencyCount(IN struct ADAPTER *prAdapter,
 
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
 		if (u4ConnsysLatency <= *pMaxFailConnsysDelay++) {
-			GLUE_INC_REF_CNT(*pFailConnsysDelay);
+			GLUE_INC_REF_CNT(pFailConnsysDelay[i]);
 			break;
 		}
 	}
@@ -1605,7 +1605,7 @@ static void halAddMacLatencyCount(IN struct ADAPTER *prAdapter,
 
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
 		if (u4MacLatency <= *pMaxMacDelay++) {
-			GLUE_INC_REF_CNT(*pMacDelay);
+			GLUE_INC_REF_CNT(pMacDelay[i]);
 			break;
 		}
 	}
