@@ -2111,6 +2111,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			&& u8Timestamp < prBssDesc->u8TimeStamp.QuadPart
 			&& prBssDesc->fgIsConnecting == FALSE) {
 			u_int8_t fgIsConnected, fgIsConnecting;
+			struct AIS_BLACKLIST_ITEM *prBlack;
 
 			if (aisGetTargetBssDesc(prAdapter, AIS_DEFAULT_INDEX)
 				== prBssDesc) {
@@ -2129,6 +2130,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			 */
 			fgIsConnected = prBssDesc->fgIsConnected;
 			fgIsConnecting = prBssDesc->fgIsConnecting;
+			prBlack = prBssDesc->prBlack;
 
 			/* Connected BSS descriptor still be used by other
 			 * functions. Thus, we should re-initialize the BSS_DESC
@@ -2140,6 +2142,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			/* restore */
 			prBssDesc->fgIsConnected = fgIsConnected;
 			prBssDesc->fgIsConnecting = fgIsConnecting;
+			prBssDesc->prBlack = prBlack;
 		}
 	}
 
