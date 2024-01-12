@@ -1454,13 +1454,14 @@ void twtPlannerGetTsfDone(
 		DBGLOG(TWT_REQUESTER, WARN,
 		"TWT Info Frame[2] %d Tgt[0x%x 0x%x] Cur[0x%x 0x%x] Input[0x%x 0x%x]\n",
 		ucNextTWTSize,
-		(u8NextTWT & 0x00000000FFFFFFFF),
-		((u8NextTWT & 0xFFFFFFFF00000000) >> 32),
-		(u8CurTsf & 0x00000000FFFFFFFF),
-		((u8CurTsf & 0xFFFFFFFF00000000) >> 32),
-		(prGetTsfCtxt->rNextTWT.u8NextTWT & 0x00000000FFFFFFFF),
-		((prGetTsfCtxt->rNextTWT.u8NextTWT & 0xFFFFFFFF00000000)
-			>> 32));
+		(uint32_t)(u8NextTWT & 0x00000000FFFFFFFF),
+		(uint32_t)((u8NextTWT & 0xFFFFFFFF00000000) >> 32),
+		(uint32_t)(u8CurTsf & 0x00000000FFFFFFFF),
+		(uint32_t)((u8CurTsf & 0xFFFFFFFF00000000) >> 32),
+		(uint32_t)(prGetTsfCtxt->rNextTWT.u8NextTWT &
+				0x00000000FFFFFFFF),
+		(uint32_t)((prGetTsfCtxt->rNextTWT.u8NextTWT &
+				0xFFFFFFFF00000000) >> 32));
 
 		/* Start the process to resume this TWT agreement */
 		twtPlannerSendReqResume(prAdapter,
