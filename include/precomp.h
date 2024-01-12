@@ -142,9 +142,14 @@
 #include "nic_txd_v1.h"
 #include "nic_txd_v2.h"
 #include "nic_txd_v3.h"
-#include "nic_rxd_v1.h"
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
 #include "nic_rxd_v2.h"
+#elif (CFG_SUPPORT_CONNAC3X == 1)
 #include "nic_rxd_v3.h"
+#else
+#include "nic_rxd_v1.h"
+#endif
 
 #include "nic_connac2x_rx.h"
 #include "nic_connac3x_rx.h"
@@ -193,6 +198,7 @@
 
 #include "connac_reg.h"
 #include "connac_dmashdl.h"
+#include "cmm_asic_common.h"
 #include "cmm_asic_connac.h"
 #include "cmm_asic_connac2x.h"
 #include "cmm_asic_connac3x.h"

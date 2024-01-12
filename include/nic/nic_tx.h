@@ -197,6 +197,17 @@
 /* Warning!! To use MAC header padding, every Tx packet must be decomposed */
 #define NIC_TX_DESC_HEADER_PADDING_LENGTH       0	/* in unit of bytes */
 
+/*
+ * Bit[1]: padding mode selection
+ * 1'b0: pad the dummy bytes in the tail of header
+ * 1'b1: pad the dummy bytes in the head of header
+ * Bit[0]: padding 2 byte length
+*/
+#define NIC_TX_DESC_HEADER_PADDING_TAIL_NO_PAD    0
+#define NIC_TX_DESC_HEADER_PADDING_TAIL_PAD       1
+#define NIC_TX_DESC_HEADER_PADDING_HEAD_NO_PAD    2
+#define NIC_TX_DESC_HEADER_PADDING_PAD_HEAD_PAD   3
+
 #define NIC_TX_DESC_PID_RESERVED                0
 #define NIC_TX_DESC_DRIVER_PID_MIN              1
 #define NIC_TX_DESC_DRIVER_PID_MAX              127
@@ -457,6 +468,13 @@ enum ENUM_HIF_TX_INDEX {
 	HIF_TX_CPU_INDEX,
 
 	HIF_TX_NUM
+};
+
+enum ENUM_TXD_LEN_PAGE {
+	TXD_LEN_1_PAGE,
+	TXD_LEN_2_PAGE,
+	TXD_LEN_3_PAGE,
+	TXD_LEN_4_PAGE,
 };
 
 /* LMAC Tx queue index */

@@ -76,6 +76,29 @@
  *******************************************************************************
  */
 
+struct HW_MAC_RX_STS_GROUP_1 {
+	uint8_t aucPN[16];
+};
+
+struct HW_MAC_RX_STS_GROUP_2 {
+	uint32_t u4Timestamp;	/* DW 12 */
+	uint32_t u4CRC;		/* DW 13 */
+};
+
+struct HW_MAC_RX_STS_GROUP_4 {
+	/* For HDR_TRAN */
+	uint16_t u2FrameCtl;	/* DW 4 */
+	uint8_t aucTA[6];	/* DW 4~5 */
+	uint16_t u2SeqFrag;	/* DW 6 */
+	uint16_t u2Qos;		/* DW 6 */
+	uint32_t u4HTC;		/* DW 7 */
+};
+
+struct HW_MAC_RX_STS_GROUP_3 {
+	/*!  RX Vector Info */
+	uint32_t u4RxVector[6];	/* DW 14~19 */
+};
+
 uint16_t nic_rxd_v1_get_rx_byte_count(
 	void *prRxStatus);
 uint8_t nic_rxd_v1_get_packet_type(

@@ -513,7 +513,6 @@ struct PWR_LEVEL_HANDLER_ELEMENT {
  *                                 M A C R O S
  *******************************************************************************
  */
-
 #define KAL_SET_BIT(bitOffset, value)      set_bit(bitOffset, &value)
 #define KAL_CLR_BIT(bitOffset, value)      clear_bit(bitOffset, &value)
 #define KAL_TEST_AND_CLEAR_BIT(bitOffset, value)  \
@@ -1033,15 +1032,30 @@ do { \
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 #define get_ds() KERNEL_DS
 #define kal_access_ok(type, addr, size) access_ok(addr, size)
+#define ktime_get_ts64 ktime_get_real_ts64
+#define KAL_GET_USEC(_time) (uint32_t)NSEC_TO_USEC(_time.tv_nsec)
+#define KAL_GET_PTIME_OF_USEC_OR_NSEC(_pTime) _pTime->tv_nsec
+#define KAL_GET_TIME_OF_USEC_OR_NSEC(_Time) _Time.tv_nsec
 #else
 #define kal_access_ok(type, addr, size) access_ok(type, addr, size)
+#undef timespec64
+#define timespec64 timeval
+#undef ktime_get_ts64
+#define ktime_get_ts64 do_gettimeofday
+#undef ktime_get_real_ts64
+#define ktime_get_real_ts64 do_gettimeofday
+#undef rtc_time64_to_tm
+#define rtc_time64_to_tm rtc_time_to_tm
+#define KAL_GET_USEC(_time) _time.tv_usec
+#define KAL_GET_PTIME_OF_USEC_OR_NSEC(_pTime) _pTime->tv_usec
+#define KAL_GET_TIME_OF_USEC_OR_NSEC(_Time) _Time.tv_usec
 #endif
 #define KAL_TIME_INTERVAL_DECLARATION()     struct timespec64 __rTs, __rTe
 #define KAL_REC_TIME_START()                ktime_get_ts64(&__rTs)
 #define KAL_REC_TIME_END()                  ktime_get_ts64(&__rTe)
 #define KAL_GET_TIME_INTERVAL() \
-	((SEC_TO_USEC(__rTe.tv_sec) + (uint32_t)NSEC_TO_USEC(__rTe.tv_nsec)) - \
-	(SEC_TO_USEC(__rTs.tv_sec) + (uint32_t)NSEC_TO_USEC(__rTs.tv_nsec)))
+	((SEC_TO_USEC(__rTe.tv_sec) + KAL_GET_USEC(__rTe)) - \
+	(SEC_TO_USEC(__rTs.tv_sec) + KAL_GET_USEC(__rTs)))
 #define KAL_ADD_TIME_INTERVAL(_Interval) \
 	{ \
 		(_Interval) += KAL_GET_TIME_INTERVAL(); \

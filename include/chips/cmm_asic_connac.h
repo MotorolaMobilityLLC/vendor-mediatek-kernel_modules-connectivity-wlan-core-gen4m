@@ -75,22 +75,13 @@
  *******************************************************************************
  */
 void asicCapInit(IN struct ADAPTER *prAdapter);
-uint32_t asicGetFwDlInfo(struct ADAPTER *prAdapter,
-	char *pcBuf, int i4TotalLen);
 void asicEnableFWDownload(IN struct ADAPTER *prAdapter,
 	IN u_int8_t fgEnable);
 uint32_t asicGetChipID(struct ADAPTER *prAdapter);
-void fillNicTxDescAppend(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo,
-	OUT uint8_t *prTxDescBuffer);
 void fillNicTxDescAppendWithCR4(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo,
 	OUT uint8_t *prTxDescBuffer);
 void fillTxDescAppendByHost(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-	IN phys_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
-	OUT uint8_t *pucBuffer);
-void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
 	IN phys_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
 	OUT uint8_t *pucBuffer);
@@ -122,7 +113,6 @@ void asicLowPowerOwnClear(IN struct ADAPTER *prAdapter,
 	OUT u_int8_t *pfgResult);
 void asicLowPowerOwnClearPCIe(IN struct ADAPTER *prAdapter,
 	OUT u_int8_t *pfgResult);
-void asicWakeUpWiFi(IN struct ADAPTER *prAdapter);
 bool asicIsValidRegAccess(IN struct ADAPTER *prAdapter, IN uint32_t u4Register);
 void asicGetMailboxStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4Val);
 void asicSetDummyReg(struct GLUE_INFO *prGlueInfo);

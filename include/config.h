@@ -1345,8 +1345,11 @@
  * Flags of WPA3 support
  *------------------------------------------------------------------------------
  */
-
+#if KERNEL_VERSION(4, 17, 0) <= LINUX_VERSION_CODE
 #define CFG_SUPPORT_WPA3	1
+#else
+#define CFG_SUPPORT_WPA3	0
+#endif
 
 /*------------------------------------------------------------------------------
  * Driver supports preferred frequency list for p2p operating channel

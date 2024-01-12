@@ -223,64 +223,6 @@ void asicCapInit(IN struct ADAPTER *prAdapter)
 	}
 }
 
-uint32_t asicGetFwDlInfo(struct ADAPTER *prAdapter,
-			 char *pcBuf, int i4TotalLen)
-{
-	struct TAILER_COMMON_FORMAT_T *prComTailer;
-	uint32_t u4Offset = 0;
-	uint8_t aucBuf[32];
-
-	prComTailer = &prAdapter->rVerInfo.rCommonTailer;
-
-	kalMemZero(aucBuf, sizeof(aucBuf));
-	kalMemCopy(aucBuf, prComTailer->aucRamVersion,
-			sizeof(prComTailer->aucRamVersion));
-	u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
-			     "Tailer Ver[%u:%u] %s (%s) info %u:E%u\n",
-			     prComTailer->ucFormatVer,
-			     prComTailer->ucFormatFlag,
-			     aucBuf,
-			     prComTailer->aucRamBuiltDate,
-			     prComTailer->ucChipInfo,
-			     prComTailer->ucEcoCode + 1);
-
-	if (prComTailer->ucFormatFlag) {
-		u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
-				     "Release manifest: %s\n",
-				     prAdapter->rVerInfo.aucReleaseManifest);
-	}
-	return u4Offset;
-}
-
-uint32_t asicGetChipID(struct ADAPTER *prAdapter)
-{
-	struct mt66xx_chip_info *prChipInfo;
-	uint32_t u4ChipID = 0;
-
-	ASSERT(prAdapter);
-	prChipInfo = prAdapter->chip_info;
-	ASSERT(prChipInfo);
-
-	/* Compose chipID from chip ip version
-	 *
-	 * BIT(30, 31) : Coding type, 00: compact, 01: index table
-	 * BIT(24, 29) : IP config (6 bits)
-	 * BIT(8, 23)  : IP version
-	 * BIT(0, 7)   : A die info
-	 */
-
-	u4ChipID = (0x0 << 30) |
-		   ((prChipInfo->u4ChipIpConfig & 0x3F) << 24) |
-		   ((prChipInfo->u4ChipIpVersion & 0xF0000000) >>  8) |
-		   ((prChipInfo->u4ChipIpVersion & 0x000F0000) >>  0) |
-		   ((prChipInfo->u4ChipIpVersion & 0x00000F00) <<  4) |
-		   ((prChipInfo->u4ChipIpVersion & 0x0000000F) <<  8) |
-		   (prChipInfo->u2ADieChipVersion & 0xFF);
-
-	log_dbg(HAL, INFO, "ChipID = [0x%08x]\n", u4ChipID);
-	return u4ChipID;
-}
-
 void asicEnableFWDownload(IN struct ADAPTER *prAdapter,
 			  IN u_int8_t fgEnable)
 {
@@ -330,19 +272,6 @@ void asicEnableFWDownload(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void fillNicTxDescAppend(IN struct ADAPTER *prAdapter,
-			 IN struct MSDU_INFO *prMsduInfo,
-			 OUT uint8_t *prTxDescBuffer)
-{
-	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
-	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
-
-	/* Fill TxD append */
-	prHwTxDescAppend = (union HW_MAC_TX_DESC_APPEND *)
-			   prTxDescBuffer;
-	kalMemZero(prHwTxDescAppend, prChipInfo->txd_append_size);
-}
-
 void fillNicTxDescAppendWithCR4(IN struct ADAPTER
 				*prAdapter, IN struct MSDU_INFO *prMsduInfo,
 				OUT uint8_t *prTxDescBuffer)
@@ -384,37 +313,6 @@ void fillTxDescAppendByHost(IN struct ADAPTER *prAdapter,
 		prPtrLen->u2Len1 = prMsduInfo->u2FrameLength | TXD_LEN_ML;
 		if (fgIsLast)
 			prPtrLen->u2Len1 |= TXD_LEN_AL;
-	}
-}
-
-void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-	IN phys_addr_t rDmaAddr, IN uint32_t u4Idx,
-	IN u_int8_t fgIsLast,
-	OUT uint8_t *pucBuffer)
-{
-	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
-	struct TXD_PTR_LEN *prPtrLen;
-	uint64_t u8Addr = (uint64_t)rDmaAddr;
-
-	prHwTxDescAppend = (union HW_MAC_TX_DESC_APPEND *)
-		(pucBuffer + NIC_TX_DESC_LONG_FORMAT_LENGTH);
-	prHwTxDescAppend->CONNAC_APPEND.au2MsduId[u4Idx] =
-		u4MsduId | TXD_MSDU_ID_VLD;
-	prPtrLen = &prHwTxDescAppend->CONNAC_APPEND.arPtrLen[u4Idx >> 1];
-
-	if ((u4Idx & 1) == 0) {
-		prPtrLen->u4Ptr0 = (uint32_t)u8Addr;
-		prPtrLen->u2Len0 =
-			(prMsduInfo->u2FrameLength & TXD_LEN_MASK_V2) |
-			((u8Addr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK);
-		prPtrLen->u2Len0 |= TXD_LEN_ML_V2;
-	} else {
-		prPtrLen->u4Ptr1 = (uint32_t)u8Addr;
-		prPtrLen->u2Len1 =
-			(prMsduInfo->u2FrameLength & TXD_LEN_MASK_V2) |
-			((u8Addr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK);
-		prPtrLen->u2Len1 |= TXD_LEN_ML_V2;
 	}
 }
 
@@ -874,23 +772,6 @@ void asicLowPowerOwnClearPCIe(IN struct ADAPTER *prAdapter,
 				CR_PCIE_CFG_CLEAR_OWN);
 }
 #endif
-
-void asicWakeUpWiFi(IN struct ADAPTER *prAdapter)
-{
-	u_int8_t fgResult;
-
-	ASSERT(prAdapter);
-
-	HAL_LP_OWN_RD(prAdapter, &fgResult);
-
-	if (fgResult) {
-		prAdapter->fgIsFwOwn = FALSE;
-		DBGLOG(HAL, WARN,
-			"Already DriverOwn, set flag only\n");
-	}
-	else
-		HAL_LP_OWN_CLR(prAdapter, &fgResult);
-}
 
 bool asicIsValidRegAccess(IN struct ADAPTER *prAdapter, IN uint32_t u4Register)
 {
