@@ -102,6 +102,7 @@
 #define HE_MAC_CAP3_AMSDU_FRAGMENT_SHFT                5
 #define HE_MAC_CAP3_FLEXIBLE_TWT_SHDL                  BIT(6)
 #define HE_MAC_CAP3_FLEXIBLE_TWT_SHDL_SHFT             6
+#define HE_MAC_CAP3_RX_CTRL_TO_MUTI_BSS                BIT(7)
 #define HE_MAC_CAP3_RX_CTRL_TO_MUTI_BSS_SHFT           7
 
 /* HE MAC Capablilites byte4 */
@@ -475,6 +476,9 @@ enum ENUM_HEBA_TYPE {
 
 #define HE_IS_MAC_CAP_BTWT_SUPT(_aucHeMacCapInfo) \
 	(_aucHeMacCapInfo[2] &  HE_MAC_CAP2_BTWT)
+
+#define HE_SET_MAC_CAP_RX_CTRL_TO_MUTI_BSS(_aucHeMacCapInfo) \
+	(_aucHeMacCapInfo[3] |=  HE_MAC_CAP3_RX_CTRL_TO_MUTI_BSS)
 
 #define HE_IS_MAC_CAP_FLEXIBLE_TWT_SHDL(_aucHeMacCapInfo) \
 	(_aucHeMacCapInfo[3] & HE_MAC_CAP3_FLEXIBLE_TWT_SHDL)
