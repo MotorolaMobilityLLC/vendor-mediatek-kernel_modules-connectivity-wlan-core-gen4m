@@ -9802,12 +9802,12 @@ static uint32_t rlmTxPwrEnvGetMaxTxPwrPsd(
 		ucNumMaxTxPwr = (1 << (ucTxPwrEnvCnt - 1));
 
 		/* Sanity check for TxPwrEnv count */
-		if (ucNumMaxTxPwr >= TX_PWR_ENV_INFO_TXPWR_COUNT_MAX ||
+		if (ucNumMaxTxPwr > TX_PWR_ENV_INFO_TXPWR_COUNT_MAX ||
 			ucPriChIdx >= ucNumMaxTxPwr) {
 			DBGLOG(RLM, ERROR,
 			"Get max TxPwr PSD idx fail,MaxNum[%d]PriCh_Idx[%d]\n",
-			ucPriChIdx,
-			ucNumMaxTxPwr);
+			ucNumMaxTxPwr,
+			ucPriChIdx);
 			return WLAN_STATUS_FAILURE;
 		}
 
