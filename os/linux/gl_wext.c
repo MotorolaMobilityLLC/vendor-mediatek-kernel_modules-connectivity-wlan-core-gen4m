@@ -4443,6 +4443,7 @@ wext_indicate_wext_event(IN struct GLUE_INFO *prGlueInfo,
 
 			rPmkidCand.flags = prPmkidCand->u4Flags;
 			rPmkidCand.index = 0;
+			rPmkidCand.bssid.sa_family = AF_UNSPEC;
 			kalMemCopy(rPmkidCand.bssid.sa_data,
 				   prPmkidCand->arBSSID, 6);
 
