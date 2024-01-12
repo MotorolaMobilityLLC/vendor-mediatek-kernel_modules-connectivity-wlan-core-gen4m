@@ -409,6 +409,11 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	uint8_t drv_own_fail = FALSE;
+	uint32_t count = 0;
+	struct WIFI_VAR *prWifiVar = NULL;
+#if CFG_ENABLE_WAKE_LOCK
+	u_int8_t state = 0;
+#endif
 
 	DBGLOG(HAL, STATE, "==>\n");
 
@@ -416,19 +421,55 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 	prGlueInfo = sdio_get_drvdata(func);
 	prAdapter = prGlueInfo->prAdapter;
 
-	DBGLOG(REQ, STATE, "Wow:%d, WowEnable:%d\n",
-		prAdapter->rWifiVar.ucWow,
-		prAdapter->rWowCtrl.fgWowEnable);
+	/* Stop upper layers calling the device hard_start_xmit routine. */
+	netif_tx_stop_all_queues(prGlueInfo->prDevHandler);
+
+	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
+
+#if CFG_ENABLE_WAKE_LOCK
+	/* change to non-READY state to block cfg80211 ops */
+	glSdioSetState(&prGlueInfo->rHifInfo, SDIO_STATE_PRE_SUSPEND_START);
+
+	if (!halIsHifStateReady(prGlueInfo, &state))
+		DBGLOG(HAL, STATE, ">>mtk_sdio_pm_suspend hif NOT ready\n");
+	else
+		DBGLOG(HAL, STATE, ">>mtk_sdio_pm_suspend hif ready!\n");
+
+	if (IS_FEATURE_ENABLED(prGlueInfo->prAdapter->rWifiVar.ucWow)) {
+		DBGLOG(HAL, STATE, ">> compile flag CFG_ENABLE_WAKE_LOCK\n");
+		aisPreSuspendFlow(prGlueInfo->prAdapter);
+		p2pRoleProcessPreSuspendFlow(prGlueInfo->prAdapter);
+	}
+
+#else
+
+	DBGLOG(HAL, STATE, ">> compile flag NON - CFG_ENABLE_WAKE_LOCK\n");
+	/* wait wiphy device do cfg80211 suspend done, then start hif suspend */
+	if (IS_FEATURE_ENABLED(prGlueInfo->prAdapter->rWifiVar.ucWow))
+		wlanWaitCfg80211SuspendDone(prGlueInfo);
+
+	/* change to non-READY state to block cfg80211 ops */
+	glSdioSetState(&prGlueInfo->rHifInfo, SDIO_STATE_PRE_SUSPEND_START);
+#endif
 
 	prGlueInfo->fgIsInSuspendMode = TRUE;
-	if (!wlan_perf_monitor_force_enable)
-		kalPerMonDisable(prGlueInfo);
-	/* 1) wifi cfg "Wow" is true
-	*  2) wow is enable
-	*  3) WIfI connected => execute WOW flow
-	*/
-	if (prAdapter->rWifiVar.ucWow && prAdapter->rWowCtrl.fgWowEnable)
-		kalWowProcess(prGlueInfo, TRUE);
+
+	wlanSuspendPmHandle(prGlueInfo);
+
+	/* send pre-suspend cmd to notify FW do not send pkt/event to host */
+	halPreSuspendCmd(prAdapter);
+
+	while (prGlueInfo->rHifInfo.state != SDIO_STATE_PRE_SUSPEND_DONE) {
+		if (count > 500) {
+			DBGLOG(HAL, ERROR, "pre_suspend timeout\n");
+			break;
+		}
+		usleep_range(2000, 3000);
+		count++;
+	}
+	DBGLOG(HAL, STATE, "pre_suspend polling count: %d\n", count);
+
+	halDisableInterrupt(prAdapter);
 
 	prGlueInfo->rHifInfo.fgForceFwOwn = TRUE;
 
