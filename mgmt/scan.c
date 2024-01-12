@@ -1552,9 +1552,11 @@ uint8_t scanRnrChnlIsNeedScan(IN struct ADAPTER *prAdapter,
 	if (ucRnrChNum == 0)
 		return FALSE;
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
 	/* 6g */
 	if (ucBand == KAL_BAND_6GHZ && IS_6G_PSC_CHANNEL(ucRnrChNum))
 		return FALSE;
+#endif
 
 	switch (ucBand) {
 	case KAL_BAND_2GHZ:
