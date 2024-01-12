@@ -483,6 +483,8 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_BSS_ER_TX_MODE = 0x66,  /* 0x66 BSS Extend Rage (ER) mode */
 #endif
 
+	EVENT_ID_REPORT_U_EVENT = 0x68,
+
 	EVENT_ID_GET_CMD_INFO = 0x70,
 	/* 0x70 (Query - EVENT_ID_GET_CMD_INFO) */
 	/*query info from cmd.*/
