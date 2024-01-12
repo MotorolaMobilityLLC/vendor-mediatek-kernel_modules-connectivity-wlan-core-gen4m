@@ -452,10 +452,24 @@ void nicRxProcessRxv(struct ADAPTER *prAdapter,
 {
 #if (CFG_SUPPORT_MSP == 1)
 	struct mt66xx_chip_info *prChipInfo;
+	uint8_t *pucEthDestAddr;
 
 	prChipInfo = prAdapter->chip_info;
 
 	if (!prChipInfo || !prChipInfo->asicRxProcessRxvforMSP)
+		return;
+
+	/* ignore non-data frame */
+	if (!prSwRfb->fgDataFrame)
+		return;
+
+	pucEthDestAddr = prSwRfb->pvHeader;
+	if (!pucEthDestAddr)
+		return;
+
+	/* Ignore BMC pkt */
+	if (prSwRfb->fgIsBC || prSwRfb->fgIsMC ||
+		IS_BMCAST_MAC_ADDR(pucEthDestAddr))
 		return;
 
 	prChipInfo->asicRxProcessRxvforMSP(prAdapter, prSwRfb);
