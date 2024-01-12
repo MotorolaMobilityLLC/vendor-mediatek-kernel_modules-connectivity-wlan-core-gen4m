@@ -838,6 +838,8 @@
 #define STATUS_CODE_DESTINATION_STA_NOT_QSTA        50
 /* Association denied because the ListenInterval is too large */
 #define STATUS_CODE_ASSOC_DENIED_LARGE_LIS_INTERVAL 51
+/* Invalid pairwise master key identifier (PMKID) */
+#define STATUS_INVALID_PMKID                        53
 
 /* proprietary definition of reserved field of Status Code */
 /* Join failure */
