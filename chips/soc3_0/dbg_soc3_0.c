@@ -1679,7 +1679,8 @@ void show_wfdma_interrupt_info_without_adapter(
 	uint32_t u4hostBaseCrAddr = 0;
 	uint32_t u4DmaCfgCrAddr = 0;
 	uint32_t u4DmaCfgCrAddrByWFDMA[CONNAC2X_WFDMA_COUNT];
-	uint32_t u4RegValue, u4RegValueByWFDMA[CONNAC2X_WFDMA_COUNT] = {0};
+	uint32_t u4RegValue = 0;
+	uint32_t u4RegValueByWFDMA[CONNAC2X_WFDMA_COUNT] = {0};
 
 	/* Dump Interrupt Status info */
 	if (enum_wfdma_type == WFDMA_TYPE_HOST) {
