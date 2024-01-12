@@ -1756,6 +1756,7 @@ struct ADAPTER {
 /*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/
 	uint8_t aucEepromVaule[16]; /* HQA CMD for Efuse Block size contents */
 	uint32_t u4FreeBlockNum;
+	uint32_t u4TotalBlockNum;
 	uint32_t u4GetTxPower;
 /*#endif*/
 	u_int8_t fgIsCr4FwDownloaded;

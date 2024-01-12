@@ -89,6 +89,8 @@ u_int8_t g_DBDCEnable = FALSE;
 u_int8_t	g_BufferDownload = FALSE;
 uint32_t	u4EepromMode = 4;
 uint32_t g_u4Chip_ID;
+uint32_t g_ucEepromCurrentMode = EFUSE_MODE;
+
 
 static struct hqa_rx_stat_band_format g_backup_band0_info;
 static struct hqa_rx_stat_band_format g_backup_band1_info;
@@ -2508,8 +2510,7 @@ static int32_t HQA_ReadBulkEEPROM(struct net_device
 	       "QA_AGENT HQA_ReadBulkEEPROM Address : %d\n",
 	       rAccessEfuseInfo.u4Address);
 
-	if	((prGlueInfo->prAdapter->rWifiVar.ucEfuseBufferModeCal !=
-		  TRUE)
+	if ((g_ucEepromCurrentMode == EFUSE_MODE)
 		 && (prGlueInfo->prAdapter->fgIsSupportQAAccessEfuse ==
 		     TRUE)) {
 
@@ -2632,11 +2633,10 @@ static int32_t HQA_WriteBulkEEPROM(struct net_device
 	uint32_t u4BufLen = 0;
 	struct PARAM_CUSTOM_ACCESS_EFUSE rAccessEfuseInfoRead,
 		       rAccessEfuseInfoWrite;
-	uint16_t testBuffer1, testBuffer2, testBuffer;
 	uint16_t	*Buffer = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	uint8_t  u4Loop = 0, u4Index = 0;
+	uint32_t  u4Loop = 0, u4Index = 0;
 	uint16_t ucTemp2;
 	uint16_t i = 0;
 
@@ -2656,16 +2656,10 @@ static int32_t HQA_WriteBulkEEPROM(struct net_device
 	memcpy(&Len, HqaCmdFrame->Data + 2 * 1, 2);
 	Len = ntohs(Len);
 
-	memcpy(&testBuffer1, HqaCmdFrame->Data + 2 * 2, Len);
-	testBuffer2 = ntohs(testBuffer1);
-	testBuffer = ntohs(testBuffer1);
-
 	DBGLOG(INIT, INFO, "Offset : %x, Len : %u\n", Offset, Len);
 
 	/* Support Delay Calibraiton */
-	if (prGlueInfo->prAdapter->fgIsSupportQAAccessEfuse ==
-	    TRUE) {
-
+	if (prGlueInfo->prAdapter->fgIsSupportQAAccessEfuse == TRUE) {
 		Buffer = kmalloc(sizeof(uint8_t) * (EFUSE_BLOCK_SIZE),
 				 GFP_KERNEL);
 		ASSERT(Buffer);
@@ -2674,27 +2668,37 @@ static int32_t HQA_WriteBulkEEPROM(struct net_device
 		kalMemCopy((uint8_t *)Buffer,
 			   (uint8_t *)HqaCmdFrame->Data + 4, Len);
 
-		for (u4Loop = 0; u4Loop < (Len); u4Loop++) {
+		for (u4Loop = 0; u4Loop < Len; u4Loop++) {
 
 			DBGLOG(INIT, INFO,
-			       "QA_AGENT HQA_WriteBulkEEPROM u4Loop=%d  u4Value=%x\n",
+			       "HQA_WriteBulkEEPROM u4Loop=%d  u4Value=%x\n",
 			       u4Loop, Buffer[u4Loop]);
 		}
 
-		if (prGlueInfo->prAdapter->rWifiVar.ucEfuseBufferModeCal ==
-		    TRUE && Offset < MAX_EEPROM_BUFFER_SIZE - 1) {
+		if ((g_ucEepromCurrentMode == BUFFER_BIN_MODE)
+			&& Offset >= 0 && Offset < MAX_EEPROM_BUFFER_SIZE - 1) {
 			/* EEPROM */
 			DBGLOG(INIT, INFO, "Direct EEPROM buffer, offset=%x\n",
 			       Offset);
-#if 0
-			for (i = 0; i < EFUSE_BLOCK_SIZE; i++)
-				memcpy(uacEEPROMImage + Offset + i, Buffer + i,
-				       1);
 
-#endif
+			/* update buffer bin format first */
+			if (Len > 2) {
+				for (u4Loop = 0; u4Loop < EFUSE_BLOCK_SIZE/2;
+					u4Loop++) {
+					Buffer[u4Loop] = ntohs(Buffer[u4Loop]);
+					uacEEPROMImage[Offset] =
+						Buffer[u4Loop] & 0xff;
+					uacEEPROMImage[Offset + 1] =
+						Buffer[u4Loop] >> 8 & 0xff;
+					Offset += 2;
+				}
+			} else {
 			*Buffer = ntohs(*Buffer);
 			uacEEPROMImage[Offset] = *Buffer & 0xff;
-			uacEEPROMImage[Offset + 1] = *Buffer >> 8 & 0xff;
+				uacEEPROMImage[Offset + 1] =
+					*Buffer >> 8 & 0xff;
+			}
+
 		} else {
 			/* EFUSE */
 			/* Read */
@@ -2730,10 +2734,6 @@ static int32_t HQA_WriteBulkEEPROM(struct net_device
 				       16);
 			} else {
 				u4Index = Offset % EFUSE_BLOCK_SIZE;
-				DBGLOG(INIT, INFO,
-				       "MT6632:QA_AGENT HQA_WriteBulkEEPROM Wr,u4Index=%x,Buffer=%x\n",
-				       u4Index, testBuffer);
-
 				*Buffer = ntohs(*Buffer);
 				DBGLOG(INIT, INFO,
 				       "Buffer[0]=%x, Buffer[0]&0xff=%x\n",
@@ -2904,7 +2904,7 @@ static int32_t HQA_GetFreeEfuseBlock(struct net_device
 				     struct HQA_CMD_FRAME *HqaCmdFrame)
 {
 
-	int32_t i4Ret = 0, u4FreeBlockCount = 0;
+	int32_t i4Ret = 0, u4FreeBlockCount = 0, u4TotalBlockCount = 0;
 
 #if (CFG_EEPROM_PAGE_ACCESS == 1)
 	struct PARAM_CUSTOM_EFUSE_FREE_BLOCK rEfuseFreeBlock;
@@ -2923,6 +2923,8 @@ static int32_t HQA_GetFreeEfuseBlock(struct net_device
 		kalMemSet(&rEfuseFreeBlock, 0,
 			  sizeof(struct PARAM_CUSTOM_EFUSE_FREE_BLOCK));
 
+		/* assign die index here */
+		rEfuseFreeBlock.ucDieIdx = HqaCmdFrame->Data[2];
 
 		rStatus = kalIoctl(prGlueInfo,
 				   wlanoidQueryEfuseFreeBlock,
@@ -2931,8 +2933,12 @@ static int32_t HQA_GetFreeEfuseBlock(struct net_device
 				   TRUE, TRUE, TRUE, &u4BufLen);
 
 		u4FreeBlockCount = prGlueInfo->prAdapter->u4FreeBlockNum;
-		u4FreeBlockCount = ntohl(u4FreeBlockCount);
-		kalMemCopy(HqaCmdFrame->Data + 2, &u4FreeBlockCount, 4);
+		u4TotalBlockCount = prGlueInfo->prAdapter->u4TotalBlockNum;
+
+		HqaCmdFrame->Data[5]  = u4FreeBlockCount;
+		HqaCmdFrame->Data[4]  = 1;
+		HqaCmdFrame->Data[3]  = u4TotalBlockCount;
+		HqaCmdFrame->Data[2]  = 0;
 	}
 #endif
 
@@ -3695,6 +3701,43 @@ static int32_t HQA_GetCfgOnOff(struct net_device *prNetDev,
 	return i4Ret;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief  QA Agent For
+*
+* \param[in] prNetDev		Pointer to the Net Device
+* \param[in] prIwReqData
+* \param[in] HqaCmdFrame	Ethernet Frame Format receive from QA Tool DLL
+* \param[out] None
+*
+* \retval 0			On success.
+*/
+/*----------------------------------------------------------------------------*/
+static int32_t HQA_SetBufferBin(struct net_device *prNetDev,
+				IN union iwreq_data *prIwReqData,
+				struct HQA_CMD_FRAME *HqaCmdFrame)
+{
+	int32_t Ret = 0;
+	uint32_t data = 0;
+
+	kalMemCopy(&data, HqaCmdFrame->Data, sizeof(data));
+	data = ntohl(data);
+	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetBufferBin data=%x\n"
+		, data);
+
+	if (data == BUFFER_BIN_MODE) {  /*Buffer mode*/
+		g_ucEepromCurrentMode = BUFFER_BIN_MODE;
+	} else if (data == EFUSE_MODE) {    /*Efuse mode */
+		g_ucEepromCurrentMode = EFUSE_MODE;
+	} else {
+		DBGLOG(RFTEST, ERROR, "Invalid data!!\n");
+	}
+
+	DBGLOG(RFTEST, INFO, "ucEepromCurrentMode=%x\n", g_ucEepromCurrentMode);
+	ResponseToQA(HqaCmdFrame, prIwReqData, 2, Ret);
+	return Ret;
+}
+
 static HQA_CMD_HANDLER HQA_CMD_SET3[] = {
 	/* cmd id start from 0x1300 */
 	HQA_MacBbpRegRead,	/* 0x1300 */
@@ -3718,6 +3761,8 @@ static HQA_CMD_HANDLER HQA_CMD_SET3[] = {
 	HQA_SetRXFilterPktLen,	/* 0x1312 */
 	HQA_GetTXInfo,		/* 0x1313 */
 	HQA_GetCfgOnOff,	/* 0x1314 */
+	ToDoFunction,       /* 0x1315 */
+	HQA_SetBufferBin,   /* 0x1316 */
 };
 
 /*----------------------------------------------------------------------------*/
@@ -4355,47 +4400,137 @@ static int32_t HQA_WriteBufferDone(struct net_device
 				   struct HQA_CMD_FRAME *HqaCmdFrame)
 {
 	int32_t i4Ret = 0;
-	/* UINT_16 u2InitAddr = 0x000; */
 	uint32_t Value;
-	/* UINT_32 i = 0, j = 0;
-	 * UINT_32 u4BufLen = 0;
-	 */
-	/* WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS; */
 	struct GLUE_INFO *prGlueInfo = NULL;
-	/* PARAM_CUSTOM_EFUSE_BUFFER_MODE_T rSetEfuseBufModeInfo; */
+	struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T *prSetBufInfo = NULL;
+	uint8_t uTotalPage = 0, uPageIdx = 0;
+	uint32_t u4ContentLen = 0, u4BufLen = 0;
+	struct ADAPTER *prAdapter = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	uint8_t aucEeprom[32];
+	uint8_t *apucEepromName[] = {(uint8_t *) "EEPROM_MT", NULL};
+	const struct firmware *fw;
+	int ret = 0;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+	prChipInfo = prAdapter->chip_info;
 
 	memcpy(&Value, HqaCmdFrame->Data + 4 * 0, 4);
 	Value = ntohl(Value);
 
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_WriteBufferDone Value : %d\n", Value);
+	DBGLOG(RFTEST, INFO, "HQA_WriteBufferDone Value : %d\n", Value);
 
 	u4EepromMode = Value;
 
-#if 0
-	for (i = 0 ; i < MAX_EEPROM_BUFFER_SIZE / 16 ; i++) {
-		for (j = 0 ; j < 16 ; j++) {
-			rSetEfuseBufModeInfo.aBinContent[j].u2Addr = u2InitAddr;
-			rSetEfuseBufModeInfo.aBinContent[j].ucValue =
-				uacEEPROMImage[u2InitAddr];
-			DBGLOG(RFTEST, INFO, "u2Addr = %x\n",
-			       rSetEfuseBufModeInfo.aBinContent[j].u2Addr);
-			DBGLOG(RFTEST, INFO, "ucValue = %x\n",
-			       rSetEfuseBufModeInfo.aBinContent[j].ucValue);
-			u2InitAddr += 1;
-		}
+	/* get EEPROM bin file name first */
+	kalMemZero(aucEeprom, sizeof(aucEeprom));
 
-		rSetEfuseBufModeInfo.ucSourceMode = 1;
-		rSetEfuseBufModeInfo.ucCount = EFUSE_CONTENT_SIZE;
-		rStatus = kalIoctl(prGlueInfo,
-				wlanoidSetEfusBufferMode,
-				&rSetEfuseBufModeInfo,
-				sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE),
-				FALSE, FALSE, TRUE, &u4BufLen);
+	if (prChipInfo->constructBufferBinFileName == NULL) {
+		snprintf(aucEeprom, 32, "%s%x.bin",
+					apucEepromName[0], prChipInfo->chip_id);
+	} else {
+		if (prChipInfo->constructBufferBinFileName(
+			prAdapter, aucEeprom) != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR, "gen BIN file name fail\n");
+			goto label_exit;
+		}
 	}
-#endif
+
+	/* get EEPROM bin file size */
+	ret = request_firmware(&fw, aucEeprom, prGlueInfo->prDev);
+
+	if (ret != 0) {
+		DBGLOG(INIT, INFO,
+			"Request FW %s Fail, errno[%d]!!\n", aucEeprom, ret);
+		goto label_exit;
+	}
+
+	u4ContentLen = fw->size;
+	release_firmware(fw);
+
+	DBGLOG(INIT, INFO,
+		"EEPROM bin: %s(size %d bytes)\n", aucEeprom, u4ContentLen);
+
+	/* decide total page size */
+	uTotalPage = u4ContentLen / BUFFER_BIN_PAGE_SIZE;
+	if ((u4ContentLen % BUFFER_BIN_PAGE_SIZE) == 0)
+		uTotalPage--;
+
+	/* allocate memory for buffer mode info */
+	prSetBufInfo =
+		(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T *)
+		kalMemAlloc(sizeof(
+			struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T),
+			VIR_MEM_TYPE);
+
+	if (prSetBufInfo == NULL)
+		goto label_exit;
+
+	kalMemZero(prSetBufInfo,
+		sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T));
+
+	/* assign buffer/efuse mode */
+	prSetBufInfo->ucSourceMode = u4EepromMode;
+
+	if (u4EepromMode == 0) { /* efuse mode */
+		prSetBufInfo->ucContentFormat = CONTENT_FORMAT_WHOLE_CONTENT;
+		/*
+		 * the following parameters are not required
+		 * in FW due to FW has eFuse info
+		 *     --- uint16_t u2Count;
+		 *     --- uint8_t aBinContent[BUFFER_BIN_PAGE_SIZE];
+		 */
+	} else { /* buffer mode */
+		for (uPageIdx = 0; uPageIdx <= uTotalPage; uPageIdx++) {
+			/* set format */
+			prSetBufInfo->ucContentFormat = (
+				CONTENT_FORMAT_WHOLE_CONTENT |
+				((uTotalPage << BUFFER_BIN_TOTAL_PAGE_SHIFT)
+					& BUFFER_BIN_TOTAL_PAGE_MASK) |
+				((uPageIdx << BUFFER_BIN_PAGE_INDEX_SHIFT)
+					& BUFFER_BIN_PAGE_INDEX_MASK)
+			);
+
+			/* set buffer size */
+			prSetBufInfo->u2Count =
+				(u4ContentLen < BUFFER_BIN_PAGE_SIZE ?
+					u4ContentLen : BUFFER_BIN_PAGE_SIZE);
+
+			/* set buffer */
+			kalMemZero(prSetBufInfo->aBinContent,
+					BUFFER_BIN_PAGE_SIZE);
+
+			if (prSetBufInfo->u2Count != 0)
+				kalMemCopy(prSetBufInfo->aBinContent,
+					uacEEPROMImage +
+						uPageIdx * BUFFER_BIN_PAGE_SIZE,
+					prSetBufInfo->u2Count);
+
+			/* send buffer */
+			DBGLOG(INIT, INFO, "[%d/%d] load buffer size: 0x%x\n",
+				uPageIdx, uTotalPage, prSetBufInfo->u2Count);
+
+			i4Ret = kalIoctl(prGlueInfo,
+					wlanoidConnacSetEfusBufferMode,
+					(void *) prSetBufInfo,
+					OFFSET_OF(
+					struct
+					PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T,
+					aBinContent) + prSetBufInfo->u2Count,
+					FALSE, TRUE, TRUE, &u4BufLen);
+
+			/* update remain size */
+			u4ContentLen -= prSetBufInfo->u2Count;
+		}
+	}
+
+label_exit:
+	/* free memory */
+	if (prSetBufInfo != NULL)
+		kalMemFree(prSetBufInfo, VIR_MEM_TYPE,
+			sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T));
+
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
