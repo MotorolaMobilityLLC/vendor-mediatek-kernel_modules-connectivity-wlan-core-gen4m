@@ -3724,8 +3724,10 @@ int32_t priv_driver_rate_to_string(char *pcCommand,
 
 		txmode = HW_TX_RATE_TO_MODE(
 				 prHwWlanInfo->rWtblRateInfo.au2RateCode[i]);
+#if (CFG_SUPPORT_802_11BE == 0)
 		if (txmode >= ENUM_TX_MODE_NUM)
 			txmode = ENUM_TX_MODE_NUM - 1;
+#endif
 		rate = HW_TX_RATE_TO_MCS(
 			       prHwWlanInfo->rWtblRateInfo.au2RateCode[i]);
 		nss = HW_TX_RATE_TO_NSS(
