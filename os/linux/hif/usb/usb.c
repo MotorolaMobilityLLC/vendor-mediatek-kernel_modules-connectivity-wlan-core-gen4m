@@ -66,7 +66,12 @@
 #define MTK_USB_BULK_OUT_MIN_EP         4
 #define MTK_USB_BULK_OUT_MAX_EP         9
 #if CFG_DC_USB_WOW_CALLBACK
+#ifdef MT6639
 #define WIFI_POWER_OFF_DONE     (0x7C05B120)
+#endif
+#ifdef MT7925
+#define WIFI_POWER_OFF_DONE     (0x7C059400)
+#endif
 #endif
 
 static const struct usb_device_id mtk_usb_ids[] = {
@@ -509,8 +514,12 @@ void mtk_usb_shutdown_vnd_cmd(struct GLUE_INFO *prGlueInfo)
 
 		HAL_MCR_RD(prGlueInfo->prAdapter, WIFI_POWER_OFF_DONE, &u4Data);
 		DBGLOG(REQ, STATE, "Read data is: %x\n", u4Data);
-
+#ifdef MT6639
 		u4Data |= BIT(1);
+#endif
+#ifdef MT7925
+		u4Data |= BIT(15);
+#endif
 		DBGLOG(REQ, STATE, "Write data is: %x\n", u4Data);
 		HAL_MCR_WR(prGlueInfo->prAdapter, WIFI_POWER_OFF_DONE, u4Data);
 
