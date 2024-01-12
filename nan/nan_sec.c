@@ -1537,6 +1537,7 @@ nan_sec_wpa_receive(struct wpa_authenticator *wpa_auth, /*AP*/
 	kde.wpa_ie_len = 0;
 	kde.mac_addr = NULL;
 #endif
+	kde.mac_addr = NULL;
 
 	mic_len = wpa_mic_len(sm->wpa_key_mgmt);
 	keyhdrlen = mic_len == 24 ? sizeof(*key192) : sizeof(*key);
