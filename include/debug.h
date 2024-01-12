@@ -243,6 +243,16 @@ enum ENUM_DBG_ASSERT_PATH {
 	DBG_ASSERT_PATH_WIFI,
 	DBG_ASSERT_PATH_WMT
 };
+enum ENUM_MCU_DBG_FLAG {
+	DBG_MCU_DBG_CURRENT_PC,
+	DBG_MCU_DBG_ALL
+};
+
+enum FAIL_SCENARIO {
+	SLEEP = 0,
+	SLAVENORESP,
+};
+
 
 struct wfdma_group_info {
 	char name[20];
@@ -545,6 +555,17 @@ struct CHIP_DBG_OPS {
 		IN struct ADAPTER *prAdapter,
 		IN struct SW_RFB *prRetSwRfb,
 		IN uint32_t u4RxVector0);
+#endif
+	u_int8_t (*show_mcu_debug_info)(
+		struct ADAPTER *prAdapter,
+		IN uint8_t *pucBuf,
+		IN uint32_t u4Max,
+		IN uint8_t ucFlag,
+		OUT uint32_t *pu4Length);
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+	u_int8_t (*show_debug_sop_info)(
+		struct ADAPTER *prAdapter,
+		uint8_t ucCase);
 #endif
 };
 

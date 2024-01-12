@@ -489,18 +489,7 @@ do { \
 
 #define HAL_WIFI_FUNC_OFF_CHECK(_prAdapter, _checkItem, _pfgResult) \
 do { \
-	u_int8_t fgLpOwnResult; \
 	HAL_WIFI_FUNC_READY_CHECK(_prAdapter, _checkItem, _pfgResult); \
-	if (*_pfgResult) { \
-		HAL_LP_OWN_RD(_prAdapter, &fgLpOwnResult); \
-		if (fgLpOwnResult == FALSE) { \
-			DBGLOG(INIT, INFO, \
-				"HAL_LP_OWN_RD %d\n", fgLpOwnResult); \
-			HAL_LP_OWN_SET(prAdapter, &fgLpOwnResult); \
-			DBGLOG(INIT, INFO, \
-				"HAL_LP_OWN_SET %d\n", fgLpOwnResult); \
-		} \
-	} \
 	*_pfgResult = !*_pfgResult; \
 } while (0)
 

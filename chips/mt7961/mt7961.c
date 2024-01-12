@@ -1587,7 +1587,17 @@ struct CHIP_DBG_OPS mt7961DebugOps = {
 	.show_rx_rssi_info = connac2x_show_rx_rssi_info,
 	.show_stat_info = connac2x_show_stat_info,
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
-	.get_rx_rate_info = connac2x_get_rx_rate_info
+	.get_rx_rate_info = connac2x_get_rx_rate_info,
+#endif
+#if defined(_HIF_SDIO)
+	.show_mcu_debug_info = sdio_show_mcu_debug_info,
+#elif defined(_HIF_USB)
+	.show_mcu_debug_info = usb_show_mcu_debug_info,
+#elif defined(_HIF_PCIE)
+	.show_mcu_debug_info = pcie_show_mcu_debug_info,
+#endif
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+	.show_debug_sop_info = mt7961_show_debug_sop_info,
 #endif
 };
 

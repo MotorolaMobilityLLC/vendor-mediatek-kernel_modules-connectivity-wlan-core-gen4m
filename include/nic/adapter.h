@@ -1959,6 +1959,7 @@ struct ADAPTER {
 #if CFG_SUPPORT_WIFI_DL_BT_PATCH || CFG_SUPPORT_WIFI_DL_ZB_PATCH
 	u_int8_t fgIsNeedDlPatch;
 #endif
+	uint8_t CurNoResSeqID;
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

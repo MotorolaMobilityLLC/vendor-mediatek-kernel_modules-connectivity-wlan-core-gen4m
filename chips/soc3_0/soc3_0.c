@@ -1079,8 +1079,9 @@ struct CHIP_DBG_OPS soc3_0_debug_ops = {
 	.show_stat_info = connac2x_show_stat_info,
 	.show_wfdma_dbg_probe_info = soc3_0_show_wfdma_dbg_probe_info,
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
-	.get_rx_rate_info = connac2x_get_rx_rate_info
+	.get_rx_rate_info = connac2x_get_rx_rate_info,
 #endif
+	.show_mcu_debug_info = NULL,
 };
 
 #if CFG_SUPPORT_QA_TOOL

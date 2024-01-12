@@ -1868,15 +1868,24 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER
 			/* 4 <4> Send the command */
 #if CFG_SUPPORT_MULTITHREAD
 			rStatus = wlanSendCommandMthread(prAdapter, prCmdInfo);
-
+			/* no more TC4 resource for further
+			 * transmission
+			 */
 			if (rStatus == WLAN_STATUS_RESOURCES) {
-				/* no more TC4 resource for further
-				 * transmission
+				/*
+				 * Because 7961 cmd res is not sufficient,
+				 * so will dump log here frequently, and
+				 * will result system busy.
 				 */
-				DBGLOG(INIT, WARN,
-				       "NO Res CMD TYPE[%u] ID[0x%02X] SEQ[%u]\n",
-				       prCmdInfo->eCmdType, prCmdInfo->ucCID,
-				       prCmdInfo->ucCmdSeqNum);
+				if (prAdapter->CurNoResSeqID !=
+					prCmdInfo->ucCmdSeqNum) {
+					DBGLOG(INIT, WARN,
+				    "NO Res CMD TYPE[%u] ID[0x%02X] SEQ[%u]\n",
+				    prCmdInfo->eCmdType, prCmdInfo->ucCID,
+				    prCmdInfo->ucCmdSeqNum);
+				}
+				prAdapter->CurNoResSeqID =
+					prCmdInfo->ucCmdSeqNum;
 
 				prAdapter->u4HifDbgFlag |= DEG_HIF_ALL;
 				kalSetHifDbgEvent(prAdapter->prGlueInfo);
@@ -2853,12 +2862,19 @@ void wlanReleasePendingOid(IN struct ADAPTER *prAdapter,
 	struct QUE *prTempCmdQue = &rTempCmdQue;
 	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
 	struct CMD_INFO *prCmdInfo = (struct CMD_INFO *) NULL;
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+	struct CHIP_DBG_OPS *prChipDbg = (struct CHIP_DBG_OPS *) NULL;
+#endif
 
 	KAL_SPIN_LOCK_DECLARATION();
 
 	DEBUGFUNC("wlanReleasePendingOid");
 
-	ASSERT(prAdapter);
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, WARN, "prAdapter is NULL!\n");
+
+		return;
+	}
 
 	do {
 		if (ulParamPtr == 1)
@@ -2871,6 +2887,11 @@ void wlanReleasePendingOid(IN struct ADAPTER *prAdapter,
 				DBGLOG(INIT, WARN,
 				       "No response from chip for %u times, set NoAck flag!\n",
 				       prAdapter->ucOidTimeoutCount);
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+				prChipDbg = prAdapter->chip_info->prDebugOps;
+				prChipDbg->show_debug_sop_info(prAdapter,
+				  SLAVENORESP);
+#endif
 			}
 
 			prAdapter->fgIsChipNoAck = TRUE;

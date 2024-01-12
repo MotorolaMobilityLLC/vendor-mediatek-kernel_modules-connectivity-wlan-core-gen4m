@@ -106,6 +106,24 @@
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+struct DEBUG_SOP_INFO {
+	u_int32_t	*wfsys_status;
+	uint8_t		wfsys_cr_num;
+	u_int32_t	*bgfsys_status;
+	uint8_t		bgfsys_cr_num;
+	u_int32_t	conn_infra_power_status;
+#if defined(_HIF_PCIE)
+	u_int32_t	*conninfra_bus_status;
+	uint8_t		conninfra_bus_cr_num;
+#endif
+};
+
+enum SUBSYS {
+	WF = 0,
+	BT,
+};
+#endif
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -275,6 +293,51 @@ struct wfdma_group_info wfmda_wm_rx_group[] = {
 	{"R4:TXFREEDONE", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING4_CTRL0_ADDR},
 	{"R5:RXRPT", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING5_CTRL0_ADDR},
 };
+
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+static u_int32_t wfsys_status_sel[] =
+#if defined(_HIF_USB)
+	{0x80000010, 0x80000017, 0x80000018, 0x8000001C, 0x8000001D};
+#elif defined(_HIF_PCIE)
+	{0x00100010, 0x00100017, 0x00100018, 0x0010001C, 0x0010001D};
+#endif
+
+static u_int32_t bgfsys_status_sel[] = {
+	 0x80000000, 0x91800000, 0x90880000, 0x86280080, 0x86280081,
+	 0x86280082, 0x86280083, 0x86280084, 0x86280085, 0x86280086,
+	 0x86280087, 0x86280088, 0x86280089, 0x8a480080, 0x8a480081,
+	 0x8a480082, 0x8a480083, 0x8a480084, 0x8a480085, 0x8a480086,
+	 0x8a480087, 0x8a480088, 0x8a480089, 0x80000080, 0x80000081,
+	 0x80000082, 0x80000083, 0x80000084, 0x80000085, 0x80000086,
+	 0x80000087, 0x80000088, 0x80000089, 0x8000008a, 0x8000008b,
+	 0x8000008c, 0x8000008d, 0x8000008e, 0x8000008f, 0x81000080,
+	 0x81000081, 0x81000082, 0x81000083, 0x81000084, 0x81000085,
+	 0x81000086, 0x81000087, 0x81000088, 0x81000089, 0x8100008a,
+	 0x8100008b, 0x8100008c, 0x8100008d, 0x8100008e, 0x8100008f
+};
+
+#if defined(_HIF_PCIE)
+static u_int32_t conn_infra_power_status_sel[] = {
+	 0x00030001, 0x00020001, 0x00010001, 0x00020002, 0x00010002,
+	 0x00020003, 0x00010003, 0x00050004, 0x00040004, 0x00030004,
+	 0x00020004, 0x00010004, 0x00020005, 0x00010005
+};
+#endif
+
+static struct DEBUG_SOP_INFO mt7961_debug_sop_info[] = {
+	{wfsys_status_sel,
+	sizeof(wfsys_status_sel)/sizeof(u_int32_t),
+	bgfsys_status_sel,
+	sizeof(bgfsys_status_sel)/sizeof(u_int32_t),
+	0x9F1E0000,
+#if defined(_HIF_PCIE)
+	conn_infra_power_status_sel,
+	sizeof(conn_infra_power_status_sel)/sizeof(u_int32_t),
+#endif
+	}
+};
+#endif
+
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -1137,4 +1200,375 @@ void mt7961_show_wfdma_info(
 	show_wfdma_ring_info(prAdapter, WFDMA_TYPE_WM);
 	show_wfdma_dbg_probe_info(prAdapter, WFDMA_TYPE_WM);
 }
+
+#if defined(_HIF_SDIO)
+/* Because debug CR is placed in BT, so need to call BT driver export API
+ *  to R/W these DEBUG CR.
+ */
+u_int8_t sdio_show_mcu_debug_info(struct ADAPTER *prAdapter,
+	IN uint8_t *pucBuf, IN uint32_t u4Max, IN uint8_t ucFlag,
+	OUT uint32_t *pu4Length)
+{
+	char *bt_func_name = "btmtk_sdio_read_wifi_mcu_pc";
+	typedef int (*p_bt_fun_type) (u8, u32*);
+	p_bt_fun_type bt_func;
+	uint32_t u4Val = 0;
+	uint8_t i = 0;
+
+	bt_func = (p_bt_fun_type) kallsyms_lookup_name(bt_func_name);
+
+	if (!bt_func) {
+		DBGLOG(INIT, WARN, "%s does not exist\n", bt_func_name);
+		return FALSE;
+	}
+	if (pucBuf) {
+		LOGBUF(pucBuf, u4Max, *pu4Length, "\n");
+		LOGBUF(pucBuf, u4Max, *pu4Length,
+			"----<Dump MCU Debug Information>----\n");
+	}
+	bt_func(CURRENT_PC, &u4Val);
+	DBGLOG(INIT, INFO, "Current PC LOG: 0x%08x\n", u4Val);
+	if (pucBuf)
+		LOGBUF(pucBuf, u4Max, *pu4Length,
+		"Current PC LOG: 0x%08x\n", u4Val);
+
+	/*
+	 * Prevent dump log too much, because 7961 cmd res
+	 * is not sufficient, so will wakeup hif_thread() to dump
+	 * debug info frequently.
+	 */
+	if (ucFlag != DBG_MCU_DBG_CURRENT_PC) {
+		bt_func(PC_LOG_IDX, &u4Val);
+		DBGLOG(INIT, INFO, "PC LOG Index: 0x%08x\n", u4Val);
+		if (pucBuf)
+			LOGBUF(pucBuf, u4Max, *pu4Length,
+			"PC LOG Index: 0x%08x\n", u4Val);
+
+		for (i = 0; i < PC_LOG_NUM; i++) {
+			bt_func(i, &u4Val);
+			DBGLOG(INIT, INFO, "PC LOG %d: 0x%08x\n", i, u4Val);
+			if (pucBuf)
+				LOGBUF(pucBuf, u4Max, *pu4Length,
+				"PC LOG %d: 0x%08x\n", i, u4Val);
+		}
+	}
+
+	return TRUE;
+}
+#endif
+
+#if defined(_HIF_USB)
+u_int8_t usb_read_wifi_mcu_pc(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucPcLogSel, OUT uint32_t *pu4RetVal)
+{
+	u_int8_t fgStatus = FALSE;
+	uint32_t u4Val = 0;
+
+	if (pu4RetVal == NULL)
+		return FALSE;
+
+	HAL_UHW_RD(prAdapter, CONNAC2X_UDMA_CONDBGCR_SEL, &u4Val,
+		&fgStatus);
+	u4Val = PC_IDX_SWH(u4Val, ucPcLogSel, CONNAC2X_UDMA_MCU_PC_LOG_MASK,
+		CONNAC2X_UDMA_MCU_PC_LOG_SHIFT);
+	HAL_UHW_WR(prAdapter, CONNAC2X_UDMA_CONDBGCR_SEL, u4Val,
+		&fgStatus);
+	HAL_UHW_RD(prAdapter, CONNAC2X_UDMA_CONDBGCR_DATA, pu4RetVal,
+		&fgStatus);
+
+	return TRUE;
+}
+
+u_int8_t usb_show_mcu_debug_info(IN struct ADAPTER *prAdapter,
+	IN uint8_t *pucBuf, IN uint32_t u4Max, IN uint8_t ucFlag,
+	OUT uint32_t *pu4Length)
+{
+	uint32_t u4Val = 0;
+	uint8_t  i = 0;
+	u_int8_t fgStatus = FALSE;
+
+	if (pucBuf) {
+		LOGBUF(pucBuf, u4Max, *pu4Length, "\n");
+		LOGBUF(pucBuf, u4Max, *pu4Length,
+			"----<Dump MCU Debug Information>----\n");
+	}
+	/* Enable USB mcu debug function. */
+	HAL_UHW_RD(prAdapter, CONNAC2X_UDMA_CONDBGCR_SEL, &u4Val,
+		&fgStatus);
+	u4Val |= USB_CTRL_EN;
+	u4Val &= CONNAC2X_UDMA_WM_MONITER_SEL;
+	u4Val &= CONNAC2X_UDMA_PC_MONITER_SEL;
+	HAL_UHW_WR(prAdapter, CONNAC2X_UDMA_CONDBGCR_SEL, u4Val,
+		&fgStatus);
+
+	usb_read_wifi_mcu_pc(prAdapter, CURRENT_PC, &u4Val);
+
+	DBGLOG(INIT, INFO, "Current PC LOG: 0x%08x\n", u4Val);
+	if (pucBuf)
+		LOGBUF(pucBuf, u4Max, *pu4Length,
+		"Current PC LOG: 0x%08x\n", u4Val);
+
+	if (ucFlag != DBG_MCU_DBG_CURRENT_PC) {
+		usb_read_wifi_mcu_pc(prAdapter, PC_LOG_IDX, &u4Val);
+		DBGLOG(INIT, INFO, "PC LOG Index: 0x%08x\n", u4Val);
+		if (pucBuf)
+			LOGBUF(pucBuf, u4Max, *pu4Length,
+			"PC LOG Index: 0x%08x\n", u4Val);
+
+		for (i = 0; i < PC_LOG_NUM; i++) {
+			usb_read_wifi_mcu_pc(prAdapter, i, &u4Val);
+			DBGLOG(INIT, INFO, "PC LOG %d: 0x%08x\n", i, u4Val);
+			if (pucBuf)
+				LOGBUF(pucBuf, u4Max, *pu4Length,
+				"PC LOG %d: 0x%08x\n", i, u4Val);
+		}
+	}
+
+	/* Disable USB mcu debug function. */
+	HAL_UHW_RD(prAdapter, CONNAC2X_UDMA_CONDBGCR_SEL, &u4Val,
+		&fgStatus);
+	u4Val &= ~USB_CTRL_EN;
+	HAL_UHW_WR(prAdapter, CONNAC2X_UDMA_CONDBGCR_SEL, u4Val,
+		&fgStatus);
+
+	return TRUE;
+}
+#endif
+
+#if defined(_HIF_PCIE)
+u_int8_t pcie_read_wifi_mcu_pc(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucPcLogSel, OUT uint32_t *pu4RetVal)
+{
+	uint32_t u4Val = 0;
+
+	if (pu4RetVal == NULL)
+		return FALSE;
+
+	HAL_MCR_RD(prAdapter, CONNAC2X_PCIE_CONDBGCR_SEL, &u4Val);
+	u4Val = PC_IDX_SWH(u4Val, ucPcLogSel, CONNAC2X_PCIE_MCU_PC_LOG_MASK,
+		CONNAC2X_PCIE_MCU_PC_LOG_SHIFT);
+	HAL_MCR_WR(prAdapter, CONNAC2X_PCIE_CONDBGCR_SEL, u4Val);
+	HAL_MCR_RD(prAdapter, CONNAC2X_PCIE_CONDBGCR_DATA, pu4RetVal);
+
+	return TRUE;
+}
+
+u_int8_t pcie_show_mcu_debug_info(IN struct ADAPTER *prAdapter,
+	IN uint8_t *pucBuf, IN uint32_t u4Max, IN uint8_t ucFlag,
+	OUT uint32_t *pu4Length)
+{
+	uint32_t u4Val = 0;
+	uint8_t  i = 0;
+
+	if (pucBuf) {
+		LOGBUF(pucBuf, u4Max, *pu4Length, "\n");
+		LOGBUF(pucBuf, u4Max, *pu4Length,
+			"----<Dump MCU Debug Information>----\n");
+	}
+	/* Enable PCIE mcu debug function. */
+	HAL_MCR_RD(prAdapter, CONNAC2X_PCIE_CONDBGCR_CTRL, &u4Val);
+	u4Val |= PCIE_CTRL_EN;
+	HAL_MCR_WR(prAdapter, CONNAC2X_PCIE_CONDBGCR_CTRL, u4Val);
+
+	pcie_read_wifi_mcu_pc(prAdapter, CURRENT_PC, &u4Val);
+
+	DBGLOG(INIT, INFO, "Current PC LOG: 0x%08x\n", u4Val);
+	if (pucBuf)
+		LOGBUF(pucBuf, u4Max, *pu4Length,
+		"Current PC LOG: 0x%08x\n", u4Val);
+
+	if (ucFlag != DBG_MCU_DBG_CURRENT_PC) {
+		pcie_read_wifi_mcu_pc(prAdapter, PC_LOG_IDX, &u4Val);
+		DBGLOG(INIT, INFO, "PC LOG Index: 0x%08x\n", u4Val);
+		if (pucBuf)
+			LOGBUF(pucBuf, u4Max, *pu4Length,
+			"PC LOG Index: 0x%08x\n", u4Val);
+
+		for (i = 0; i < PC_LOG_NUM; i++) {
+			pcie_read_wifi_mcu_pc(prAdapter, i, &u4Val);
+			DBGLOG(INIT, INFO, "PC LOG %d: 0x%08x\n", i, u4Val);
+			if (pucBuf)
+				LOGBUF(pucBuf, u4Max, *pu4Length,
+				"PC LOG %d: 0x%08x\n", i, u4Val);
+		}
+	}
+
+	/* Disable PCIE mcu debug function. */
+	HAL_MCR_RD(prAdapter, CONNAC2X_PCIE_CONDBGCR_CTRL, &u4Val);
+	u4Val &= ~PCIE_CTRL_EN;
+	HAL_MCR_WR(prAdapter, CONNAC2X_PCIE_CONDBGCR_CTRL, u4Val);
+
+	return TRUE;
+}
+#endif
+
+
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+#if defined(_HIF_USB)
+void usb_mt7961_dump_subsys_debug_cr(struct ADAPTER *prAdapter)
+{
+	uint8_t i = 0;
+	uint32_t u4Val = 0;
+	u_int8_t fgStatus = FALSE;
+
+	for (i = 0; i < mt7961_debug_sop_info->wfsys_cr_num; i++) {
+		HAL_UHW_WR(prAdapter,
+		  CONNAC2X_UDMA_DBG_SEL,
+		  mt7961_debug_sop_info->wfsys_status[i],
+		  &fgStatus);
+		HAL_UHW_RD(prAdapter,
+		  CONNAC2X_UDMA_DBG_STATUS, &u4Val,
+		  &fgStatus);
+		DBGLOG(HAL, INFO, "WFSYS sel: 0x%08x, u4Val: 0x%08x\n",
+		  mt7961_debug_sop_info->wfsys_status[i], u4Val);
+	}
+	for (i = 0; i < mt7961_debug_sop_info->bgfsys_cr_num; i++) {
+		HAL_UHW_WR(prAdapter,
+		  CONNAC2X_UDMA_BT_DBG_SEL,
+		  mt7961_debug_sop_info->bgfsys_status[i],
+		  &fgStatus);
+		HAL_UHW_RD(prAdapter,
+		  CONNAC2X_UDMA_BT_DBG_STATUS, &u4Val,
+		  &fgStatus);
+		DBGLOG(HAL, INFO, "BGFSYS sel: 0x%08x, u4Val: 0x%08x\n",
+		  mt7961_debug_sop_info->bgfsys_status[i], u4Val);
+	}
+}
+
+void usb_mt7961_dump_conninfra_debug_cr(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Val = 0;
+	u_int8_t fgStatus = FALSE;
+
+	if (mt7961_debug_sop_info->conn_infra_power_status) {
+		HAL_UHW_WR(prAdapter,
+		CONNAC2X_UDMA_CONN_INFRA_STATUS_SEL,
+		mt7961_debug_sop_info->conn_infra_power_status,
+		&fgStatus);
+		HAL_UHW_RD(prAdapter,
+		CONNAC2X_UDMA_CONN_INFRA_STATUS,
+		&u4Val,
+		&fgStatus);
+	}
+	DBGLOG(HAL, INFO,
+	"conn_infra_power_status sel: 0x%08x, Val: 0x%08x\n",
+	mt7961_debug_sop_info->conn_infra_power_status,
+	u4Val);
+}
+
+#endif
+
+#if defined(_HIF_PCIE)
+void pcie_mt7961_dump_subsys_debug_cr(struct ADAPTER *prAdapter)
+{
+	uint8_t i = 0;
+	uint32_t u4Val = 0;
+
+	for (i = 0; i < mt7961_debug_sop_info->wfsys_cr_num; i++) {
+		HAL_MCR_WR(prAdapter,
+		  CONNAC2X_PCIE_DEBUG_SEL,
+		  mt7961_debug_sop_info->wfsys_status[i]);
+
+		HAL_MCR_RD(prAdapter,
+		  CONNAC2X_PCIE_DEBUG_STATUS, &u4Val);
+
+		DBGLOG(HAL, INFO, "WFSYS sel: 0x%08x, Val: 0x%08x\n",
+		  mt7961_debug_sop_info->wfsys_status[i], u4Val);
+	}
+	for (i = 0; i < mt7961_debug_sop_info->bgfsys_cr_num; i++) {
+		HAL_MCR_WR(prAdapter,
+		  CONNAC2X_PCIE_BT_DBG_SEL,
+		  mt7961_debug_sop_info->bgfsys_status[i]);
+
+		HAL_MCR_RD(prAdapter,
+		  CONNAC2X_PCIE_BT_DBG_STATUS, &u4Val);
+
+		DBGLOG(HAL, INFO, "BGFSYS sel: 0x%08x, Val: 0x%08x\n",
+		  mt7961_debug_sop_info->bgfsys_status[i], u4Val);
+	}
+	HAL_MCR_WR(prAdapter,
+	  CONNAC2X_PCIE_DBG_BGF_MCU_SEL_CR,
+	  BGF_MCU_PC_LOG_SEL);
+
+	HAL_MCR_RD(prAdapter,
+	  CONNAC2X_PCIE_BGF_MCU_PC_DBG_STS, &u4Val);
+	DBGLOG(HAL, INFO, "BGFSYS MCU CR: 0x%08x, Val: 0x%08x\n",
+	  CONNAC2X_PCIE_BGF_MCU_PC_DBG_STS, u4Val);
+
+	HAL_MCR_RD(prAdapter,
+	  CONNAC2X_PCIE_MCU_BGF_ON_DBG_STS, &u4Val);
+
+	DBGLOG(HAL, INFO, "BGFSYS MCU CR: 0x%08x, Val: 0x%08x\n",
+	  CONNAC2X_PCIE_MCU_BGF_ON_DBG_STS, u4Val);
+}
+
+void pcie_mt7961_dump_conninfra_debug_cr(struct ADAPTER *prAdapter)
+{
+	uint8_t i = 0;
+	uint32_t u4Val = 0;
+
+	if (mt7961_debug_sop_info->conn_infra_power_status) {
+		HAL_MCR_WR(prAdapter,
+		CONNAC2X_PCIE_CONN_INFRA_SEL,
+		mt7961_debug_sop_info->conn_infra_power_status);
+
+		HAL_MCR_RD(prAdapter,
+		CONNAC2X_PCIE_CONN_INFRA_STATUS,
+		&u4Val);
+	}
+	DBGLOG(HAL, INFO,
+	"conn_infra_power_status sel: 0x%08x, Val: 0x%08x\n",
+	mt7961_debug_sop_info->conn_infra_power_status,
+	u4Val);
+
+	/* Enable Debug */
+	HAL_MCR_WR(prAdapter, 0xDF000, 0xFF001C);
+	for (i = 0; i < mt7961_debug_sop_info->conninfra_bus_cr_num; i++) {
+		HAL_MCR_WR(prAdapter,
+		  CONNAC2X_PCIE_CONN_INFRA_BUS_SEL,
+		  mt7961_debug_sop_info->conninfra_bus_status[i]);
+
+		HAL_MCR_RD(prAdapter,
+		  CONNAC2X_PCIE_CONN_INFRA_BUS_STATUS,
+		  &u4Val);
+
+		DBGLOG(HAL, INFO, "conn_infra sel: 0x%08x, Val: 0x%08x\n",
+		  mt7961_debug_sop_info->conninfra_bus_status[i], u4Val);
+	}
+	/* Disable Debug */
+	HAL_MCR_WR(prAdapter, 0xDF000, 0);
+}
+
+#endif
+
+u_int8_t mt7961_show_debug_sop_info(struct ADAPTER *prAdapter,
+	uint8_t ucCase)
+{
+	switch (ucCase) {
+	case SLEEP:
+		DBGLOG(HAL, ERROR, "Sleep Fail!\n");
+#if defined(_HIF_USB)
+		usb_mt7961_dump_subsys_debug_cr(prAdapter);
+#elif defined(_HIF_PCIE)
+		pcie_mt7961_dump_subsys_debug_cr(prAdapter);
+#endif
+		break;
+	case SLAVENORESP:
+		DBGLOG(HAL, ERROR, "Slave no response!\n");
+#if defined(_HIF_USB)
+		usb_mt7961_dump_subsys_debug_cr(prAdapter);
+		usb_mt7961_dump_conninfra_debug_cr(prAdapter);
+#elif defined(_HIF_PCIE)
+		pcie_mt7961_dump_subsys_debug_cr(prAdapter);
+		pcie_mt7961_dump_conninfra_debug_cr(prAdapter);
+#endif
+		break;
+	default:
+		break;
+	}
+
+	return TRUE;
+}
+#endif
+
 #endif /* MT7961 */

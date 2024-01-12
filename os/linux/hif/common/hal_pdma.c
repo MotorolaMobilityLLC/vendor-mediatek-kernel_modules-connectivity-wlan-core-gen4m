@@ -519,6 +519,10 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 		} else if (wlanIsChipNoAck(prAdapter)) {
 			DBGLOG(INIT, INFO,
 			"Driver own return due to chip reset and chip no response.\n");
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+			prChipInfo->prDebugOps->show_debug_sop_info(prAdapter,
+			  SLAVENORESP);
+#endif
 			fgStatus = FALSE;
 			break;
 		} else if ((i > LP_OWN_BACK_FAILED_RETRY_CNT) &&
@@ -3502,9 +3506,11 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 	prHifInfo->fgIsPowerOff = true;
 
 	/* prAdapter->fgWiFiInSleepyState = TRUE; */
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 
+	/* Wait til RDY bit has been cleared */
 	rStatus = wlanCheckWifiFunc(prAdapter, FALSE);
+
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 
 	if (prBusInfo->disableSwInterrupt)
 		prBusInfo->disableSwInterrupt(prAdapter);
