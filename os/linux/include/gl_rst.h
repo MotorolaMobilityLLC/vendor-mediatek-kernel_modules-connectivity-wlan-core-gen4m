@@ -296,10 +296,10 @@ void kalSetRstEvent(u_int8_t force_dump);
 void glRstSetRstEndEvent(void);
 int reset_wait_for_trigger_completion(void);
 void reset_done_trigger_completion(void);
+void glSetIsNeedWaitCoredumpFlag(uint8_t status);
 #else
 void glSetWfsysResetState(struct ADAPTER *prAdapter,
 			  enum ENUM_WFSYS_RESET_STATE_TYPE_T state);
-
 u_int8_t glReSchWfsysReset(struct ADAPTER *prAdapter);
 
 void WfsysResetHdlr(struct work_struct *work);

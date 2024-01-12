@@ -35,6 +35,7 @@
 #include "wlan_lib.h"
 #include "gl_coredump.h"
 #include "gl_fw_log.h"
+#include "gl_rst.h"
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 #include "connsys_debug_utility.h"
@@ -2767,7 +2768,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 #if (CFG_WIFI_COREDUMP_SUPPORT == 1)
 		g_Coredump_source = COREDUMP_SOURCE_WF_DRIVER;
 		if (!prAdapter->prGlueInfo->u4ReadyFlag)
-			g_IsNeedWaitCoredump = TRUE;
+			glSetIsNeedWaitCoredumpFlag(TRUE);
 #endif
 		DBGLOG(HAL, ERROR,
 			"Wi-Fi Driver trigger, need do complete.\n");
@@ -2776,7 +2777,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 #if (CFG_WIFI_COREDUMP_SUPPORT == 1)
 		g_Coredump_source = COREDUMP_SOURCE_WF_FW;
 		if (!prAdapter->prGlueInfo->u4ReadyFlag)
-			g_IsNeedWaitCoredump = TRUE;
+			glSetIsNeedWaitCoredumpFlag(TRUE);
 #endif
 		DBGLOG(HAL, ERROR,
 			"FW trigger assert.\n");
@@ -2792,7 +2793,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 #if (CFG_WIFI_COREDUMP_SUPPORT == 1)
 			wifi_coredump_start(g_Coredump_source, NULL,
 				ENUM_COREDUMP_BY_CHIP_RST_LEGACY_MODE, TRUE);
-			g_IsNeedWaitCoredump = FALSE;
+			glSetIsNeedWaitCoredumpFlag(FALSE);
 #endif
 			if (debug_ops && debug_ops->dumpwfsyscpupcr)
 				debug_ops->dumpwfsyscpupcr(prAdapter);
@@ -2859,7 +2860,7 @@ bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
 #if (CFG_WIFI_COREDUMP_SUPPORT == 1)
 		g_Coredump_source = COREDUMP_SOURCE_WF_FW;
 		if (!prAdapter->prGlueInfo->u4ReadyFlag)
-			g_IsNeedWaitCoredump = TRUE;
+			glSetIsNeedWaitCoredumpFlag(TRUE);
 #endif
 		DBGLOG(HAL, ERROR, "get_sw_interrupt_status failed\n");
 		glResetUpdateFlag(TRUE);

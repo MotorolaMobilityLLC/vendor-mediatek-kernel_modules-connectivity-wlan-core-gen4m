@@ -187,6 +187,12 @@ int32_t resetCreateSerDbgFs(struct GLUE_INFO *prGlueInfo);
  *                              F U N C T I O N S
  *******************************************************************************
  */
+void glSetIsNeedWaitCoredumpFlag(uint8_t status)
+{
+	g_IsNeedWaitCoredump = status;
+	DBGLOG(INIT, TRACE, "isNeedWaitCoredump: %u\n", g_IsNeedWaitCoredump);
+}
+
 void glSetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T
 		    eReason)
 {
@@ -1669,7 +1675,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 		g_IsWholeChipRst = TRUE;
 
 		if (!prGlueInfo->u4ReadyFlag)
-			g_IsNeedWaitCoredump = TRUE;
+			glSetIsNeedWaitCoredumpFlag(TRUE);
 
 		kalSetRstEvent(FALSE);
 	}
@@ -2054,7 +2060,7 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 					g_Coredump_type,
 					rst->force_dump);
 
-			g_IsNeedWaitCoredump = FALSE;
+			glSetIsNeedWaitCoredumpFlag(FALSE);
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 			if (g_IsWfsysBusHang == TRUE)
@@ -2096,7 +2102,7 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 				g_Coredump_type,
 				rst->force_dump);
 
-		g_IsNeedWaitCoredump = FALSE;
+		glSetIsNeedWaitCoredumpFlag(FALSE);
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 		if (g_IsWfsysBusHang == TRUE)
@@ -2185,7 +2191,7 @@ int wlan_reset_thread_main(void *data)
 					g_Coredump_type,
 					rst->force_dump);
 				rst->force_dump = FALSE;
-				g_IsNeedWaitCoredump = FALSE;
+				glSetIsNeedWaitCoredumpFlag(FALSE);
 
 				if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
 					glResetMsgHandler(
