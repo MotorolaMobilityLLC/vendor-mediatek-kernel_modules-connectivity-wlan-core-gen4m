@@ -728,10 +728,8 @@ static void ehtRlmRecMcsMap(
 	}
 }
 
-void ehtRlmRecCapInfo(
-	struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStaRec,
-	uint8_t *pucIE)
+void ehtRlmRecCapInfo(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
+	const uint8_t *pucIE)
 {
 	struct IE_EHT_CAP *prEhtCap = (struct IE_EHT_CAP *) pucIE;
 
@@ -753,11 +751,8 @@ void ehtRlmRecCapInfo(
 	ehtRlmRecMcsMap(prAdapter, prStaRec, prEhtCap);
 }
 
-void ehtRlmRecOperation(
-	struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStaRec,
-	struct BSS_INFO *prBssInfo,
-	uint8_t *pucIE)
+void ehtRlmRecOperation(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
+	struct BSS_INFO *prBssInfo, const uint8_t *pucIE)
 {
 	struct IE_EHT_OP *prEhtOp = (struct IE_EHT_OP *) pucIE;
 	struct EHT_OP_INFO *prEhtOpInfo;

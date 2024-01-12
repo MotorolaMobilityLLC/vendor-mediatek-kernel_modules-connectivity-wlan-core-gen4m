@@ -332,11 +332,11 @@ uint16_t rlmGenerateMTKChipCapIE(uint8_t *pucBuf, uint16_t u2FrameLength,
 	uint8_t fgNeedOui, uint64_t u8ChipCap);
 
 u_int8_t rlmParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
-			       uint8_t *pucBuf,  struct STA_RECORD *prStaRec);
+			const uint8_t *pucBuf,  struct STA_RECORD *prStaRec);
 
 #if CFG_SUPPORT_RXSMM_WHITELIST
-u_int8_t rlmParseCheckRxsmmOuiIE(struct ADAPTER *prAdapter, uint8_t *pucBuf,
-			       u_int8_t *pfgRxsmmEnable);
+u_int8_t rlmParseCheckRxsmmOuiIE(struct ADAPTER *prAdapter,
+		const uint8_t *pucBuf, u_int8_t *pfgRxsmmEnable);
 #endif
 #if CFG_ENABLE_WIFI_DIRECT
 void rlmGenerateCsaIE(struct ADAPTER *prAdapter,
@@ -347,7 +347,7 @@ void rlmProcessBcn(struct ADAPTER *prAdapter,
 		   uint16_t u2IELength);
 
 void rlmProcessAssocRsp(struct ADAPTER *prAdapter,
-			struct SW_RFB *prSwRfb, uint8_t *pucIE,
+			struct SW_RFB *prSwRfb, const uint8_t *pucIE,
 			uint16_t u2IELength);
 
 void rlmProcessHtAction(struct ADAPTER *prAdapter,

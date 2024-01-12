@@ -620,7 +620,7 @@ p2pFuncUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 	struct WLAN_ASSOC_RSP_FRAME *prAssocRspFrame =
 		(struct WLAN_ASSOC_RSP_FRAME *) NULL;
 	uint16_t u2IELength;
-	uint8_t *pucIE;
+	const uint8_t *pucIE;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL)

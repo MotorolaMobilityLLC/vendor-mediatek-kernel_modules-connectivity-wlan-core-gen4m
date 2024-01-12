@@ -63,7 +63,7 @@ int qosHandleQosMapConfigure(struct ADAPTER *prAdapter,
 void qosMapSetInit(struct STA_RECORD *prStaRec);
 
 void qosParseQosMapSet(struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStaRec, uint8_t *qosMapSet);
+	struct STA_RECORD *prStaRec, const uint8_t *qosMapSet);
 
 /*******************************************************************************
  *                              F U N C T I O N S

@@ -2072,7 +2072,7 @@ void bowFsmRunEventJoinComplete(struct ADAPTER *prAdapter,
 	struct SW_RFB *prAssocRspSwRfb;
 	struct WLAN_ASSOC_RSP_FRAME *prAssocRspFrame = (struct WLAN_ASSOC_RSP_FRAME *) NULL;
 	uint16_t u2IELength;
-	uint8_t *pucIE;
+	const uint8_t *pucIE;
 	struct BSS_INFO *prBowBssInfo;
 
 	ASSERT(prAdapter);
