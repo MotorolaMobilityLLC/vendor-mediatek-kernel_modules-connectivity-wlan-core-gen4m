@@ -42,6 +42,8 @@
 #include "connv3.h"
 #endif
 
+#include "gl_coredump.h"
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -911,7 +913,9 @@ static u_int8_t kalDevRegReadStatic(struct GLUE_INFO *prGlueInfo,
 	if (fgIsBusAccessFailed) {
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-		if (fgTriggerDebugSop && kalIsResetting()) {
+		if (is_wifi_coredump_processing())
+			return FALSE;
+		else if (fgTriggerDebugSop && kalIsResetting()) {
 			return kalDevRegReadViaBT(prGlueInfo,
 				u4Register, pu4Value);
 		}
@@ -1002,7 +1006,9 @@ static u_int8_t _kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 	if (fgIsBusAccessFailed) {
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-		if (fgTriggerDebugSop && kalIsResetting()) {
+		if (is_wifi_coredump_processing())
+			return FALSE;
+		else if (fgTriggerDebugSop && kalIsResetting()) {
 			return kalDevRegReadViaBT(prGlueInfo,
 				u4Register, pu4Value);
 		}
@@ -1085,7 +1091,9 @@ static u_int8_t kalDevRegWriteStatic(struct GLUE_INFO *prGlueInfo,
 	if (fgIsBusAccessFailed) {
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-		if (fgTriggerDebugSop && kalIsResetting()) {
+		if (is_wifi_coredump_processing())
+			return FALSE;
+		else if (fgTriggerDebugSop && kalIsResetting()) {
 			return kalDevRegWriteViaBT(prGlueInfo,
 				u4Register, u4Value);
 		}
@@ -1184,7 +1192,9 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 	if (fgIsBusAccessFailed) {
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-		if (fgTriggerDebugSop && kalIsResetting()) {
+		if (is_wifi_coredump_processing())
+			return FALSE;
+		else if (fgTriggerDebugSop && kalIsResetting()) {
 			return kalDevRegWriteViaBT(prGlueInfo,
 				u4Register, u4Value);
 		}
