@@ -2726,7 +2726,6 @@ uint32_t nicUniCmdStaRecUpdateExt(struct ADAPTER *ad,
 		tag->ucMarate = cmn->ucMarate;
 		tag->ucSpeIdx = cmn->ucSpeIdx;
 		tag->ucaid = cmn->ucaid;
-		DBGLOG(NIC, ERROR, "STA_REC_MAUNAL_ASSOC TAG:%d\n", tag->u2Tag);
 	}
 		break;
 	}
@@ -2771,18 +2770,18 @@ void nicUniCmdBFActionTxApply(
 	tag = (struct UNI_CMD_BF_TX_APPLY *) uni_cmd->aucTlvBuffer;
 	tag->u2Tag = UNI_CMD_BF_TAG_DATA_PACKET_APPLY;
 	tag->u2Length = sizeof(*tag);
-	DBGLOG(NIC, ERROR,
-		"WlanId:%d, ETxBf:%d, ITxBf:%d, MuTxBf:%d, PhaseCali:%d\n",
-		cmd->rTxBfTxApply.ucWlanId,
-		cmd->rTxBfTxApply.fgETxBf,
-		cmd->rTxBfTxApply.fgITxBf,
-		cmd->rTxBfTxApply.fgMuTxBf,
-		cmd->rTxBfTxApply.ucReserved[0]);
 	tag->ucWlanId = cmd->rTxBfTxApply.ucWlanId;
 	tag->fgETxBf = cmd->rTxBfTxApply.fgETxBf;
 	tag->fgITxBf = cmd->rTxBfTxApply.fgITxBf;
 	tag->fgMuTxBf = cmd->rTxBfTxApply.fgMuTxBf;
 	tag->fgPhaseCali = cmd->rTxBfTxApply.ucReserved[0];
+	DBGLOG(NIC, INFO,
+		"WlanId:%d, ETxBf:%d, ITxBf:%d, MuTxBf:%d, PhaseCali:%d\n",
+		tag->ucWlanId,
+		tag->fgETxBf,
+		tag->fgITxBf,
+		tag->fgMuTxBf,
+		tag->fgPhaseCali);
 }
 
 void nicUniCmdBFActionMemAlloc(
@@ -2793,9 +2792,8 @@ void nicUniCmdBFActionMemAlloc(
 	tag = (struct UNI_CMD_BF_PFMU_MEM_ALLOC *) uni_cmd->aucTlvBuffer;
 	tag->u2Tag = UNI_CMD_BF_TAG_PFMU_MEM_ALLOCATE;
 	tag->u2Length = sizeof(*tag);
-	tag->ucSuMuMode = cmd->rTxBfPfmuMemAlloc.ucSuMuMode;
+	tag->u1SuMu = cmd->rTxBfPfmuMemAlloc.ucSuMuMode;
 	tag->ucWlanIdx = cmd->rTxBfPfmuMemAlloc.ucWlanIdx;
-	tag->ucReserved = cmd->rTxBfPfmuMemAlloc.ucReserved;
 }
 
 void nicUniCmdBFActionMemRelease(
@@ -2814,32 +2812,44 @@ void nicUniCmdBFActionMemRelease(
 void nicUniCmdBFActionTagRead(
 	union CMD_TXBF_ACTION *cmd, struct UNI_CMD_BF *uni_cmd)
 {
-	struct UNI_CMD_BF_PROFILE_TAG_READ *tag;
+	struct UNI_CMD_BF_PROFILE_TAG_READ_WRITE *tag;
 
-	tag = (struct UNI_CMD_BF_PROFILE_TAG_READ *) uni_cmd->aucTlvBuffer;
-	tag->u2Tag = UNI_CMD_BF_TAG_PROFILE_READ;
+	tag = (struct UNI_CMD_BF_PROFILE_TAG_READ_WRITE *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_BF_TAG_PFMU_TAG_READ;
 	tag->u2Length = sizeof(*tag);
-	DBGLOG(NIC, ERROR, "ucProfileIdx:%d, fgBfer:%d, ucBandIdx:%d\n",
-		cmd->rProfileTagRead.ucProfileIdx,
-		cmd->rProfileTagRead.fgBfer,
-		cmd->rProfileTagRead.ucBandIdx);
-	tag->ucProfileIdx = cmd->rProfileTagRead.ucProfileIdx;
-	tag->fgBfer = cmd->rProfileTagRead.fgBfer;
-	tag->ucBandIdx = cmd->rProfileTagRead.ucBandIdx;
+	tag->ucPfmuId = cmd->rProfileTagRead.ucProfileIdx;
+	tag->fgBFer = cmd->rProfileTagRead.fgBfer;
+	tag->u1TxBf = cmd->rProfileTagRead.ucBandIdx;
+	DBGLOG(NIC, INFO, "ucPfmuId:%d, fgBFer:%d, u1TxBf:%d\n", tag->ucPfmuId,
+		tag->fgBFer,
+		tag->u1TxBf);
 }
 
 void nicUniCmdBFActionTagWrite(
 	union CMD_TXBF_ACTION *cmd, struct UNI_CMD_BF *uni_cmd)
 {
-	struct UNI_CMD_BF_PROFILE_TAG_WRITE *tag;
+	struct UNI_CMD_BF_PROFILE_TAG_READ_WRITE *tag;
 
-	tag = (struct UNI_CMD_BF_PROFILE_TAG_WRITE *) uni_cmd->aucTlvBuffer;
-	tag->u2Tag = UNI_CMD_BF_TAG_PROFILE_WRITE;
+	tag = (struct UNI_CMD_BF_PROFILE_TAG_READ_WRITE *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_BF_TAG_PFMU_TAG_WRITE;
 	tag->u2Length = sizeof(*tag);
 	tag->ucPfmuId = cmd->rProfileTagWrite.ucPfmuId;
 	tag->fgBFer = cmd->rProfileTagWrite.fgBFer;
-	tag->ucBandIdx = cmd->rProfileTagWrite.ucBandIdx;
-	memcpy(tag->ucBuffer, cmd->rProfileTagWrite.ucBuffer, 64);
+	tag->u1TxBf = cmd->rProfileTagWrite.ucBandIdx;
+	memcpy(tag->au4BfPfmuTag1RawData, cmd->rProfileTagWrite.ucBuffer,
+		sizeof(tag->au4BfPfmuTag1RawData));
+	memcpy(tag->au4BfPfmuTag2RawData, cmd->rProfileTagWrite.ucBuffer +
+		sizeof(tag->au4BfPfmuTag1RawData),
+		sizeof(tag->au4BfPfmuTag2RawData));
+	DBGLOG(NIC, INFO, "ucPfmuId:%d, fgBFer:%d, u1TxBf:%d\n", tag->ucPfmuId,
+		tag->fgBFer,
+		tag->u1TxBf);
+	dumpMemory32((uint32_t *)tag->au4BfPfmuTag1RawData,
+		sizeof(tag->au4BfPfmuTag1RawData));
+	dumpMemory32((uint32_t *)tag->au4BfPfmuTag2RawData,
+		sizeof(tag->au4BfPfmuTag2RawData));
 }
 
 void nicUniCmdBFActionDataRead(
@@ -2852,8 +2862,8 @@ void nicUniCmdBFActionDataRead(
 	tag->u2Length = sizeof(*tag);
 	tag->ucPfmuIdx = cmd->rProfileDataRead.ucPfmuIdx;
 	tag->fgBFer = cmd->rProfileDataRead.fgBFer;
-	tag->ucBandIdx = cmd->rProfileDataRead.ucBandIdx;
 	tag->u2SubCarIdx = cmd->rProfileDataRead.u2SubCarIdx;
+	tag->u1TxBf = cmd->rProfileDataRead.ucBandIdx;
 }
 
 void nicUniCmdBFActionDataWrite(
@@ -2865,8 +2875,9 @@ void nicUniCmdBFActionDataWrite(
 	tag->u2Tag = UNI_CMD_BF_TAG_PROFILE_WRITE;
 	tag->u2Length = sizeof(*tag);
 	tag->ucPfmuIdx = cmd->rProfileDataWrite.ucPfmuIdx;
-	tag->u2SubCarrIdxLsb = cmd->rProfileDataWrite.u2SubCarrIdxLsb;
-	tag->u2SubCarrIdxMsb = cmd->rProfileDataWrite.u2SubCarrIdxMsb;
+	tag->u2SubCarIdx = cmd->rProfileDataWrite.u2SubCarrIdxLsb;
+	DBGLOG(NIC, INFO, "ucPfmuIdx:%d, u2SubCarIdx:%d\n", tag->ucPfmuIdx,
+		tag->u2SubCarIdx);
 	memcpy(&tag->rTxBfPfmuData, &cmd->rProfileDataWrite.rTxBfPfmuData,
 		sizeof(union PFMU_DATA));
 }
@@ -2909,8 +2920,9 @@ struct  UNI_CMD_BF_HANDLE arBFActionTable[] = {
 	{sizeof(struct UNI_CMD_BF_TX_APPLY), nicUniCmdBFActionTxApply},
 	{sizeof(struct UNI_CMD_BF_PFMU_MEM_ALLOC), nicUniCmdBFActionMemAlloc},
 	{sizeof(struct UNI_CMD_BF_PFMU_MEM_RLS), nicUniCmdBFActionMemRelease},
-	{sizeof(struct UNI_CMD_BF_PROFILE_TAG_READ), nicUniCmdBFActionTagRead},
-	{sizeof(struct UNI_CMD_BF_PROFILE_TAG_WRITE),
+	{sizeof(struct UNI_CMD_BF_PROFILE_TAG_READ_WRITE),
+		nicUniCmdBFActionTagRead},
+	{sizeof(struct UNI_CMD_BF_PROFILE_TAG_READ_WRITE),
 		nicUniCmdBFActionTagWrite},
 	{sizeof(struct UNI_CMD_BF_PROFILE_DATA_READ),
 		nicUniCmdBFActionDataRead},

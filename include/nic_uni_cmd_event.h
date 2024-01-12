@@ -2858,21 +2858,15 @@ struct UNI_CMD_BF_SND {
 	uint32_t u4SndIntv;
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_BF_PROFILE_TAG_READ {
-	uint16_t u2Tag;
-	uint16_t u2Length;
-	uint8_t ucProfileIdx;
-	uint8_t fgBfer;
-	uint8_t ucBandIdx;
-};
-
-struct UNI_CMD_BF_PROFILE_TAG_WRITE {
+struct UNI_CMD_BF_PROFILE_TAG_READ_WRITE {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t ucPfmuId;
 	uint8_t fgBFer;
-	uint8_t ucBandIdx;
-	uint8_t ucBuffer[64];
+	uint8_t u1TxBf;
+	uint8_t ucReserved[5];
+	uint32_t au4BfPfmuTag1RawData[7];
+	uint32_t au4BfPfmuTag2RawData[7];
 };
 
 struct UNI_CMD_BF_PROFILE_PN_READ {
@@ -2895,17 +2889,17 @@ struct UNI_CMD_BF_PROFILE_DATA_READ {
 	uint16_t u2Length;
 	uint8_t ucPfmuIdx;
 	uint8_t fgBFer;
-	uint8_t ucBandIdx;
-	uint8_t ucReserved[2];
 	uint16_t u2SubCarIdx;
+	uint8_t u1TxBf;
+	uint8_t ucReserved[3];
 };
 
 struct UNI_CMD_BF_PROFILE_DATA_WRITE {
 	uint16_t u2Tag;
 	uint16_t u2Length;
+	uint16_t u2SubCarIdx;
 	uint8_t ucPfmuIdx;
-	uint8_t u2SubCarrIdxLsb;
-	uint8_t u2SubCarrIdxMsb;
+	uint8_t ucReserved[5];
 	union PFMU_DATA rTxBfPfmuData;
 };
 
@@ -2923,9 +2917,9 @@ struct UNI_CMD_BF_TX_APPLY {
 struct UNI_CMD_BF_PFMU_MEM_ALLOC {
 	uint16_t u2Tag;
 	uint16_t u2Length;
-	uint8_t ucSuMuMode;
-	uint8_t ucWlanIdx;
-	uint8_t ucReserved;
+	uint16_t ucWlanIdx;
+	uint8_t u1SuMu;
+	uint8_t ucReserved[5];
 };
 
 struct UNI_CMD_BF_PFMU_MEM_RLS {
