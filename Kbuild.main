@@ -527,6 +527,14 @@ ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
     ccflags-y += -DCFG_SUPPORT_RX_NAPI=0
     ccflags-y += -DCFG_SUPPORT_RX_GRO=0
 endif
+
+# ===== project override =====
+ifeq ($(CONFIG_MTK_EAP), y)
+CONFIG_MTK_MDDP_SUPPORT=
+CONFIG_SUPPORT_WIFI_SW_EMI_RING=n
+CONFIG_SUPPORT_WIFI_WFDMA_TX_RING_BK_RS=n
+endif
+
 endif
 
 ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
@@ -586,12 +594,6 @@ endif
 CONFIG_MTK_WIFI_SUPPORT_DSP_FWDL=n
 ifneq ($(CONFIG_MTK_FPGA_PLATFORM), y)
     CONFIG_SUPPORT_PRE_ON_PHY_ACTION=y
-endif
-# ===== project override =====
-ifeq ($(CONFIG_MTK_EAP), y)
-CONFIG_MTK_MDDP_SUPPORT=
-CONFIG_SUPPORT_WIFI_SW_EMI_RING=n
-CONFIG_SUPPORT_WIFI_WFDMA_TX_RING_BK_RS=n
 endif
 endif
 
