@@ -837,6 +837,9 @@ void WfsysResetHdlr(struct work_struct *work)
 	if (prAdapter->eWfsysResetState != WFSYS_RESET_STATE_POSTPONE) {
 		spin_unlock_bh(&prAdapter->rWfsysResetLock);
 
+		if (prAdapter->u2WfsysResetCnt < 0xFFFF)
+			prAdapter->u2WfsysResetCnt++;
+
 		glSetWfsysResetState(prAdapter, WFSYS_RESET_STATE_RESET);
 
 		HAL_CANCEL_TX_RX(prAdapter);
