@@ -78,9 +78,6 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-#if (CFG_MTK_FPGA_PLATFORM == 0)
-static u_int8_t g_fgIsMawdPowerOn;
-#endif
 /* reset mawd idx to default value
  * 0: md_rx_blk_ring_dma_idx	(default = 0)
  * 1: ap_rx_blk_ring_dma_idx	(default = 0)
@@ -1132,11 +1129,6 @@ static void halRroSetup(struct GLUE_INFO *prGlueInfo)
 void halRroInit(struct GLUE_INFO *prGlueInfo)
 {
 	struct WIFI_VAR *prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
-
-#if (CFG_MTK_FPGA_PLATFORM == 0)
-	if (!g_fgIsMawdPowerOn)
-		prWifiVar->fgEnableMawd = FALSE;
-#endif
 
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx))
 		halMawdInitTxRing(prGlueInfo);
@@ -2931,10 +2923,10 @@ int halMawdPwrOn(void)
 	}
 #endif
 #if (MAWD_ENABLE_WAKEUP_SLEEP == 0) && (CFG_MTK_FPGA_PLATFORM == 0)
-	g_fgIsMawdPowerOn = __halMawdWakeup();
-	if (!g_fgIsMawdPowerOn)
+	if (!__halMawdWakeup()) {
 		DBGLOG(HAL, ERROR, "Mawd power on fail\n");
-
+		ret = -1;
+	}
 #endif
 exit:
 	return ret;
