@@ -188,7 +188,7 @@ struct CMD_VALIDATE_POLICY get_mib_info_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
 };
 
 struct CMD_VALIDATE_POLICY get_cfg_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
-	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8, .min = 0, .max = 127}
+	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_STRING, .min = 0, .max = 127}
 };
 
 struct CMD_VALIDATE_POLICY set_noise_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
