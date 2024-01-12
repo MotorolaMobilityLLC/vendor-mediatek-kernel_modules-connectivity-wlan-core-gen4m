@@ -703,7 +703,7 @@ struct MSG_SCN_SCAN_REQ_V2 {
 	uint8_t ucSSIDType;
 
 	uint8_t ucSSIDNum;
-	struct PARAM_SSID *prSsid;
+	struct PARAM_SSID arSsid[CFG_SCAN_SSID_MAX_NUM];
 	uint16_t u2ProbeDelay;
 	uint16_t u2ChannelDwellTime;	/* In TU. 1024us. */
 	uint16_t u2ChannelMinDwellTime;	/* In TU. 1024us. */

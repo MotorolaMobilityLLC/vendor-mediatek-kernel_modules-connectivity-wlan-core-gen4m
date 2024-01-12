@@ -740,14 +740,14 @@ void scnFsmHandleScanMsgV2(struct ADAPTER *prAdapter,
 			   sizeof(prScanParam->ucSpecifiedSSIDLen));
 		COPY_SSID(prScanParam->aucSpecifiedSSID[0],
 			  prScanParam->ucSpecifiedSSIDLen[0],
-			  &prScanReqMsg->prSsid[0].aucSsid[0],
-			  prScanReqMsg->prSsid[0].u4SsidLen);
+			  &prScanReqMsg->arSsid[0].aucSsid[0],
+			  prScanReqMsg->arSsid[0].u4SsidLen);
 	} else {
 		for (i = 0; i < prScanReqMsg->ucSSIDNum; i++) {
 			COPY_SSID(prScanParam->aucSpecifiedSSID[i],
 				  prScanParam->ucSpecifiedSSIDLen[i],
-				  prScanReqMsg->prSsid[i].aucSsid,
-				  (uint8_t) prScanReqMsg->prSsid[i].u4SsidLen);
+				  prScanReqMsg->arSsid[i].aucSsid,
+				  (uint8_t) prScanReqMsg->arSsid[i].u4SsidLen);
 		}
 	}
 

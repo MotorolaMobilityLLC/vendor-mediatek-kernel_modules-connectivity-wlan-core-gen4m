@@ -1660,6 +1660,7 @@ wext_set_scan(struct net_device *prNetDev,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
 	uint32_t u4BufLen = 0;
 	uint8_t essid_len = 0;
 
@@ -1682,16 +1683,29 @@ wext_set_scan(struct net_device *prNetDev,
 
 	/* TODO:  parse flags and issue different scan requests? */
 
-	rStatus = kalIoctl(prGlueInfo, wlanoidSetBssidListScan,
-			   pcExtra, essid_len, &u4BufLen);
+	prScanRequest = kalMemAlloc(sizeof(struct PARAM_SCAN_REQUEST_ADV),
+			VIR_MEM_TYPE);
+	if (prScanRequest == NULL) {
+		DBGLOG(REQ, ERROR, "alloc scan request fail\n");
+		return -ENOMEM;
 
-	/* wait_for_completion_interruptible_timeout(&prGlueInfo->rScanComp,
-	 *					     2 * KAL_HZ);
-	 */
-	/* kalIndicateStatusAndComplete(prGlueInfo, WLAN_STATUS_SCAN_COMPLETE,
-	 *				NULL, 0);
-	 */
+	}
+	kalMemZero(prScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV));
 
+	prScanRequest->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
+	if (pcExtra) {
+		prScanRequest->u4SsidNum = 1;
+		COPY_SSID(prScanRequest->rSsid[0].aucSsid,
+			prScanRequest->rSsid[0].u4SsidLen,
+			pcExtra, essid_len);
+	}
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetBssidListScanAdv,
+			   prScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV),
+			   &u4BufLen);
+
+	kalMemFree(prScanRequest, VIR_MEM_TYPE,
+		   sizeof(struct PARAM_SCAN_REQUEST_ADV));
 	return 0;
 }				/* wext_set_scan */
 

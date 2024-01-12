@@ -46,7 +46,7 @@
 enum BCN_RM_STATE {
 	RM_NO_REQUEST,
 	RM_ON_GOING,
-	RM_WAITING, /*waiting normal scan done */
+	RM_WAITING, /* waiting for rrm scan */
 };
 
 enum RM_REQ_PRIORITY {
@@ -55,17 +55,9 @@ enum RM_REQ_PRIORITY {
 	RM_PRI_UNICAST
 };
 
-struct NORMAL_SCAN_PARAMS {
-	struct PARAM_SCAN_REQUEST_ADV rScanRequest;
-	uint8_t aucScanIEBuf[MAX_IE_LENGTH];
-	u_int8_t fgExist;
-};
-
 /* Beacon RM related parameters */
 struct BCN_RM_PARAMS {
 	enum BCN_RM_STATE eState;
-	struct NORMAL_SCAN_PARAMS rNormalScan;
-
 	uint8_t token;
 	uint8_t lastIndication;
 	u8 ssid[ELEM_MAX_LEN_SSID];
@@ -105,7 +97,6 @@ struct RADIO_MEASUREMENT_REQ_PARAMS {
 	uint8_t *pucReqIeBuf;
 	enum RM_REQ_PRIORITY ePriority;
 	u_int8_t fgRmIsOngoing;
-	u_int8_t fgInitialLoop;
 	OS_SYSTIME rScanStartTime;
 
 	struct BCN_RM_PARAMS rBcnRmParam;

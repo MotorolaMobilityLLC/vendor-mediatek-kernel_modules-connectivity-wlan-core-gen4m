@@ -5295,7 +5295,6 @@ int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 	struct ADAPTER *prAdapter = NULL;
 	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
 	uint8_t aucMacAddr[MAC_ADDR_LEN] = {0};
-	uint8_t aucIe[100];
 	uint32_t u4BufLen, rStatus, u4Freq, u4PerSta;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
@@ -5346,10 +5345,9 @@ int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 		kalMemZero(prScanRequest,
 			   sizeof(struct PARAM_SCAN_REQUEST_ADV));
 		prScanRequest->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
-		kalMemZero(aucIe, 100);
-		prScanRequest->u4IELength = mldFillScanIE(prAdapter, prBssDesc,
-			aucIe, sizeof(aucIe), u4PerSta);
-		prScanRequest->pucIE = aucIe;
+		prScanRequest->u4IELength = mldFillScanIE(prAdapter,
+			prBssDesc, prScanRequest->aucIEBuf,
+			sizeof(prScanRequest->aucIEBuf), u4PerSta);
 		prScanRequest->arChannel[0].ucChannelNum =
 					nicFreq2ChannelNum(u4Freq * 1000);
 		prScanRequest->ucBssidMatchCh[0] =
@@ -5365,7 +5363,7 @@ int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 		prScanRequest->u4ChannelNum = 1;
 		prScanRequest->ucBssIndex = 0;
 		prScanRequest->u4ScnFuncMaskExtend |= ENUM_SCN_ML_PROBE;
-		COPY_MAC_ADDR(prScanRequest->aucBssid[0], aucMacAddr);
+		COPY_MAC_ADDR(prScanRequest->aucExtBssid[0], aucMacAddr);
 		kalMemSet(prScanRequest->ucBssidMatchSsidInd,
 				CFG_SCAN_OOB_MAX_NUM,
 				sizeof(prScanRequest->ucBssidMatchSsidInd));

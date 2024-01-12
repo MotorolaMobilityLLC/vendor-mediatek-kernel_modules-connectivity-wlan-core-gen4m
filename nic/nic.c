@@ -5465,8 +5465,6 @@ uint32_t nicUpdateRddTestMode(struct ADAPTER *prAdapter,
 {
 	ASSERT(prAdapter);
 
-	/* aisFsmScanRequest(prAdapter, NULL); */
-
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_SET_RDD_CH,
 				   TRUE,

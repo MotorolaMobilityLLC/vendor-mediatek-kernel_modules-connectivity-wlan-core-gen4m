@@ -3074,21 +3074,24 @@ struct PARAM_SCAN_REQUEST_EXT {
 };
 
 struct PARAM_SCAN_REQUEST_ADV {
+	uint8_t fgIsRrm;
+	uint8_t aucBSSID[MAC_ADDR_LEN];
+	uint16_t u2ChannelDwellTime;
+	uint16_t u2ChannelMinDwellTime;
 	uint8_t ucShortSsidNum;
 	uint32_t u4SsidNum;
 	struct PARAM_SSID rSsid[CFG_SCAN_SSID_MAX_NUM];
 	uint8_t ucScanType;
 	uint32_t u4IELength;
-	uint8_t *pucIE;
+	uint8_t aucIEBuf[MAX_IE_LENGTH];
 	uint32_t u4ChannelNum;
-	struct RF_CHANNEL_INFO
-		arChannel[MAXIMUM_OPERATION_CHANNEL_LIST];
+	struct RF_CHANNEL_INFO arChannel[MAXIMUM_OPERATION_CHANNEL_LIST];
 	uint8_t ucScnFuncMask;
 	uint32_t u4ScnFuncMaskExtend;
 	uint8_t aucRandomMac[MAC_ADDR_LEN];
 	uint8_t ucBssIndex;
 	uint32_t u4Flags;
-	uint8_t aucBssid[CFG_SCAN_OOB_MAX_NUM][MAC_ADDR_LEN];
+	uint8_t aucExtBssid[CFG_SCAN_OOB_MAX_NUM][MAC_ADDR_LEN];
 	/* For OOB discovery*/
 	uint8_t ucBssidMatchCh[CFG_SCAN_OOB_MAX_NUM];
 	uint8_t ucBssidMatchSsidInd[CFG_SCAN_OOB_MAX_NUM];
@@ -3837,18 +3840,6 @@ uint32_t
 wlanoidQueryLinkBssInfo(struct ADAPTER *prAdapter,
 		  void *pvQueryBuffer, uint32_t u4QueryBufferLen,
 		  uint32_t *pu4QueryInfoLen);
-
-uint32_t
-wlanoidSetBssidListScan(struct ADAPTER *prAdapter,
-			void *pvSetBuffer,
-			uint32_t u4SetBufferLen,
-			uint32_t *pu4SetInfoLen);
-
-uint32_t
-wlanoidSetBssidListScanExt(struct ADAPTER *prAdapter,
-			   void *pvSetBuffer,
-			   uint32_t u4SetBufferLen,
-			   uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetBssidListScanAdv(struct ADAPTER *prAdapter,
