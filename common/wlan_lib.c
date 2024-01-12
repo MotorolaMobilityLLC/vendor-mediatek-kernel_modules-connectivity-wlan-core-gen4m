@@ -10233,8 +10233,7 @@ int wlanGetMaxTxRate(IN struct ADAPTER *prAdapter,
 
 	/* get bandwidth */
 	ucBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
-	if (IS_BSS_AIS(prBssInfo))
-		prBssDesc = prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
+	prBssDesc = aisGetTargetBssDesc(prAdapter, prBssInfo->ucBssIndex);
 	if (prBssDesc) {
 		ucAPBwPermitted = MAX_BW_160MHZ;
 		if (prBssDesc->eChannelWidth == CW_20_40MHZ) {
