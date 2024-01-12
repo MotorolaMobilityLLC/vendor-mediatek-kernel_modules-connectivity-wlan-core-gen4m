@@ -7251,6 +7251,7 @@ struct UNI_EVENT_MDDP {
 enum UNI_EVENT_MDDP_TAG {
 	UNI_EVENT_MDDP_FILTER_RULE,
 	UNI_EVENT_MDDP_EXCEPTION,
+	UNI_EVENT_MDDP_FWOWN_RETRY,
 	UNI_EVENT_MDDP_MAX_NUM
 };
 
@@ -7298,6 +7299,12 @@ struct UNI_EVENT_MDDP_EXCEPTION {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint32_t u4ExceptionIdx;
+};
+
+struct UNI_EVENT_MDDP_FWOWN_RETRY {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint32_t u4RetryCnt;
 };
 /** @} */
 #endif /* CFG_MTK_MDDP_SUPPORT */
