@@ -1721,10 +1721,10 @@ int soc5_0_Trigger_whole_chip_rst(char *reason)
 void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 {
 	int value = 0;
+	int sw_int_value = 0;
 	int ret = 0;
 	int check;
 	unsigned int polling_count;
-	u_int8_t needWakeup = FALSE;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo = NULL;
@@ -1736,15 +1736,9 @@ void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 
 	/* Wakeup conn_infra off write 0x180601A4[0] = 1'b1 */
 	HAL_MCR_RD(prAdapter, CONN_INFRA_WAKEUP_WF_ADDR_CONNCYS_VIEW, &value);
-	if (value & 0x1 != 0x1) {
-		DBGLOG(HAL, INFO, "Need wakeup conn_infra off first.\n");
-		needWakeup = TRUE;
-	}
-	if (needWakeup) {
-		value |= 0x00000001;
-		HAL_MCR_WR(prAdapter, CONN_INFRA_WAKEUP_WF_ADDR_CONNCYS_VIEW,
-			value);
-	}
+	value |= 0x00000001;
+	HAL_MCR_WR(prAdapter, CONN_INFRA_WAKEUP_WF_ADDR_CONNCYS_VIEW,
+		value);
 
 	/* Check CONNSYS version ID
 	 * (polling "10 times" and each polling interval is "1ms")
@@ -1771,9 +1765,6 @@ void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		if (!conninfra_reg_readable_no_lock()) {
 			DBGLOG(HAL, ERROR,
 				"conninfra_reg_readable fail\n");
-			/* check for dump log */
-			conninfra_is_bus_hang();
-
 			disable_irq_nosync(prHifInfo->u4IrqId_1);
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 			g_eWfRstSource = WF_RST_SOURCE_FW;
@@ -1789,25 +1780,23 @@ void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		}
 	}
 
-	HAL_MCR_RD(prAdapter, AP2WF_PCCIF_RCHNUM_CONNCYS_VIEW, &value);
-	DBGLOG(HAL, TRACE, "SW INT happened!!!!!(0x%x)\n", value);
-	HAL_MCR_WR(prAdapter, AP2WF_PCCIF_ACK_CONNCYS_VIEW, value);
+	HAL_MCR_RD(prAdapter, AP2WF_PCCIF_RCHNUM_CONNCYS_VIEW, &sw_int_value);
+	DBGLOG(HAL, TRACE, "SW INT happened!!!!!(0x%x)\n", sw_int_value);
+	HAL_MCR_WR(prAdapter, AP2WF_PCCIF_ACK_CONNCYS_VIEW, sw_int_value);
 
 	/* Disable conn_infra off domain force on 0x180601A4[0] = 1'b0 */
-	if (needWakeup) {
-		HAL_MCR_RD(prAdapter, CONN_INFRA_WAKEUP_WF_ADDR_CONNCYS_VIEW,
-			&value);
-		value &= 0xFFFFFFFE;
-		HAL_MCR_WR(prAdapter, CONN_INFRA_WAKEUP_WF_ADDR_CONNCYS_VIEW,
-			value);
-	}
+	HAL_MCR_RD(prAdapter, CONN_INFRA_WAKEUP_WF_ADDR_CONNCYS_VIEW,
+		&value);
+	value &= 0xFFFFFFFE;
+	HAL_MCR_WR(prAdapter, CONN_INFRA_WAKEUP_WF_ADDR_CONNCYS_VIEW,
+		value);
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
-	if (value & BIT(0))
+	if (sw_int_value & BIT(0))
 		fw_log_wifi_irq_handler();
 #endif
 
-	if (value & BIT(1)) {
+	if (sw_int_value & BIT(1)) {
 		if (kalIsResetting()) {
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 			g_eWfRstSource = WF_RST_SOURCE_DRIVER;
@@ -1816,7 +1805,7 @@ void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 #endif
 			DBGLOG(HAL, ERROR,
 				"Wi-Fi Driver trigger, need do complete(0x%x).\n",
-				value);
+				sw_int_value);
 			complete(&g_triggerComp);
 		} else {
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
@@ -1825,20 +1814,20 @@ void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 				g_IsNeedWaitCoredump = TRUE;
 #endif
 			DBGLOG(HAL, ERROR,
-				"FW trigger assert(0x%x).\n", value);
+				"FW trigger assert(0x%x).\n", sw_int_value);
 			fgIsResetting = TRUE;
 			update_driver_reset_status(fgIsResetting);
 			kalSetRstEvent();
 		}
 	}
-	if (value & BIT(2)) {
+	if (sw_int_value & BIT(2)) {
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 		g_eWfRstSource = WF_RST_SOURCE_FW;
 		if (!prAdapter->prGlueInfo->u4ReadyFlag)
 			g_IsNeedWaitCoredump = TRUE;
 #endif
 		DBGLOG(HAL, ERROR,
-			"FW trigger whole chip reset(0x%x).\n", value);
+			"FW trigger whole chip reset(0x%x).\n", sw_int_value);
 		fgIsResetting = TRUE;
 		update_driver_reset_status(fgIsResetting);
 		g_IsWfsysBusHang = TRUE;
@@ -1848,7 +1837,7 @@ void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 	/* BIT(3): reset without coredump
 	 * change to sw wfdma cmd done interrupt
 	 */
-	if (value & BIT(3)) {
+	if (sw_int_value & BIT(3)) {
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 		g_eWfRstSource = WF_RST_SOURCE_FW;
 		if (!prAdapter->prGlueInfo->u4ReadyFlag)
@@ -1862,7 +1851,7 @@ void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 #endif
 
 	/* SW wfdma cmd done interrupt */
-	if (value & BIT(3) && prSwWfdmaInfo->fgIsEnSwWfdma) {
+	if (sw_int_value & BIT(3) && prSwWfdmaInfo->fgIsEnSwWfdma) {
 		if (prAdapter->prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
 			DBGLOG(HAL, TRACE, "GLUE_FLAG_HALT skip SwWfdma INT\n");
 		} else {
