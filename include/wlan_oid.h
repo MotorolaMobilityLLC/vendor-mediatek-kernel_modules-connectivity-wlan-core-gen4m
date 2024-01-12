@@ -4728,6 +4728,13 @@ wlanoidSetMdvt(IN struct ADAPTER *prAdapter,
 			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 			OUT uint32_t *pu4SetInfoLen);
 
+#if CFG_SUPPORT_MDNS_OFFLOAD
+uint32_t wlanoidSetMdnsCmdToFw(IN struct ADAPTER *prAdapter,
+				IN void *pvSetBuffer,
+				IN uint32_t u4SetBufferLen,
+				OUT uint32_t *pu4SetInfoLen);
+#endif
+
 #if (CFG_SUPPORT_TSF_SYNC == 1)
 uint32_t
 wlanoidLatchTSF(IN struct ADAPTER *prAdapter,

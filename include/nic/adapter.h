@@ -1731,6 +1731,12 @@ struct ADAPTER {
 #if CFG_WOW_SUPPORT
 	struct WOW_CTRL	rWowCtrl;
 	u_int8_t fgWowLinkDownPendFlag;
+#if CFG_SUPPORT_MDNS_OFFLOAD
+	struct MDNS_INFO_T rMdnsInfo;
+	u_int8_t mdns_offload_enable;
+	uint8_t mdns_wake_flag;
+#endif
+
 #endif
 
 #if CFG_SUPPORT_NCHO			/*  NCHO information */

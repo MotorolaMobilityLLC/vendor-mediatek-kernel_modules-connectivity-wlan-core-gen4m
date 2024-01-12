@@ -273,6 +273,7 @@ enum ENUM_CMD_ID {
 	CMD_ID_SET_COUNTRY_POWER_LIMIT,     /* 0x49 (Set) */
 	CMD_ID_SET_WOWLAN = 0x4A,           /* 0x4A (Set) */
 	CMD_ID_SET_IPV6_ADDRESS,            /* 0x4B (Set) */
+	CMD_ID_SET_MDNS_RECORD = 0x4e,      /* 0X4E(set) */
 
 	CMD_ID_SET_SLTINFO = 0x50,          /* 0x50 (Set) */
 	CMD_ID_UART_ACK,                    /* 0x51 (Set) */
