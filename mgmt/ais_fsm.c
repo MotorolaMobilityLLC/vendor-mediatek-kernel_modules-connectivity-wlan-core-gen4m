@@ -447,8 +447,7 @@ struct BSS_INFO *aisAllocBssInfo(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *bss = NULL;
 
-	bss = cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_AIS,
-		FALSE, ucLinkIdx != AIS_MAIN_LINK_INDEX);
+	bss = cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_AIS, FALSE);
 	if (!bss) {
 		DBGLOG(AIS, ERROR,
 			"prAisBssInfo is NULL for link%d\n", ucLinkIdx);
@@ -2113,20 +2112,12 @@ skip_roam_fail:
 uint8_t aisSecondLinkAvailable(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct BSS_INFO *bss =
-		prAdapter->aprBssInfo[prAdapter->ucMldReservedBssIdx];
+	struct MLD_BSS_INFO *prMldBssInfo;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prMldBssInfo = prAisFsmInfo->prMldBssInfo;
 
-
-	if (!bss->fgIsInUse)
-		return TRUE;
-
-	/* already used by self */
-	if (aisGetLinkBssInfo(prAisFsmInfo, 1) == bss)
-		return TRUE;
-
-	return FALSE;
+	return mldBssAllowReconfig(prAdapter, prMldBssInfo);
 }
 
 uint8_t aisNeedMloScan(struct ADAPTER *prAdapter,
@@ -2142,7 +2133,7 @@ uint8_t aisNeedMloScan(struct ADAPTER *prAdapter,
 		prAdapter->rWifiVar.ucMlProbeRetryLimit)
 		return FALSE;
 
-	if (!mldIsMloFeatureEnabled(prAdapter, FALSE) ||
+	if (!mldIsMloFeatureEnabled(prAdapter, NETWORK_TYPE_AIS, FALSE) ||
 	    !aisSecondLinkAvailable(prAdapter, ucBssIndex))
 		return FALSE;
 

@@ -62,7 +62,7 @@ void p2pLinkInitGCRole(struct ADAPTER *prAdapter)
 	prGlueInfo = prAdapter->prGlueInfo;
 
 	for (i = 0;
-		i < prAdapter->rWifiVar.ucMldLinkMax;
+		i < prAdapter->rWifiVar.ucP2pMldLinkMax;
 		i++) {
 		prP2pInfo = prGlueInfo->prP2PInfo[i];
 		if (prP2pInfo == NULL)
@@ -109,7 +109,7 @@ void p2pLinkUninitGCRole(struct ADAPTER *prAdapter)
 
 	DBGLOG(INIT, TRACE, "\n");
 
-	for (i = 0; i < prAdapter->rWifiVar.ucMldLinkMax; i++) {
+	for (i = 0; i < prAdapter->rWifiVar.ucP2pMldLinkMax; i++) {
 		prP2pInfo = prAdapter->prGlueInfo->prP2PInfo[i];
 		if (prP2pInfo == NULL)
 			continue;
@@ -535,7 +535,7 @@ struct BSS_INFO *p2pGetLinkBssInfo(
 	uint8_t ucLinkMax = 1;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	ucLinkMax = prAdapter->rWifiVar.ucMldLinkMax;
+	ucLinkMax = prAdapter->rWifiVar.ucP2pMldLinkMax;
 #endif
 
 	if (!prP2pRoleFsmInfo)
@@ -1015,7 +1015,7 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (!mldIsMloFeatureEnabled(prAdapter, FALSE))
+	if (!mldIsMloFeatureEnabled(prAdapter, NETWORK_TYPE_P2P, FALSE))
 		return;
 
 	DBGLOG(P2P, INFO,

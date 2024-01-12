@@ -2189,8 +2189,7 @@ uint8_t cnmGetBssMaxBwToChnlBW(struct ADAPTER
 /*----------------------------------------------------------------------------*/
 struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 				      enum ENUM_NETWORK_TYPE eNetworkType,
-				      u_int8_t fgIsP2pDevice,
-				      u_int8_t fgIsMldReserved)
+				      u_int8_t fgIsP2pDevice)
 {
 	struct WIFI_VAR *prWifiVar;
 	struct BSS_INFO *prBssInfo = NULL, *prOutBssInfo = NULL;
@@ -2260,15 +2259,6 @@ omac_choosed:
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
 		if (prBssInfo && !prBssInfo->fgIsInUse) {
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-			/* reserve for mld secondary link */
-			if (mldIsMloFeatureEnabled(prAdapter, FALSE) &&
-			    ((fgIsMldReserved &&
-			     ucBssIndex != prAdapter->ucMldReservedBssIdx) ||
-			    (!fgIsMldReserved &&
-			     ucBssIndex == prAdapter->ucMldReservedBssIdx)))
-				continue;
-#endif
 			prBssInfo->fgIsInUse = TRUE;
 			prBssInfo->eNetworkType = eNetworkType;
 			prBssInfo->ucBssIndex = ucBssIndex;

@@ -772,6 +772,8 @@ struct WIFI_VAR {
 	uint8_t ucEht20MRxNDPWiderBW;
 	uint8_t ucPresetLinkId;
 	uint8_t ucMldLinkMax;
+	uint8_t ucStaMldLinkMax;
+	uint8_t ucP2pMldLinkMax;
 	uint8_t ucApMldMainLinkIdx;
 	uint8_t ucStaMldMainLinkIdx;
 	uint8_t ucEnableMlo;
@@ -2155,7 +2157,6 @@ struct ADAPTER {
 	struct MLD_BSS_INFO aprMldBssInfo[MAX_BSSID_NUM];
 	struct MLD_STA_RECORD aprMldStarec[CFG_STA_REC_NUM];
 	uint8_t ucBssAbsentBitmap;
-	uint8_t ucMldReservedBssIdx;
 #endif
 	uint8_t ucCnmTokenID;
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)

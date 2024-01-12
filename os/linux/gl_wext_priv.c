@@ -5841,6 +5841,9 @@ int priv_driver_get_ml_capa(struct net_device *prNetDev,
 	int32_t i4BytesWritten = -1;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAd = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	uint8_t ucBssIdx = 0;
 	uint8_t ucCapa = 0;
 	uint32_t rStatus = WLAN_STATUS_FAILURE, u4Param = 0;
 
@@ -5850,6 +5853,10 @@ int priv_driver_get_ml_capa(struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAd = prGlueInfo->prAdapter;
 	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	ucBssIdx = wlanGetBssIdx(prNetDev);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAd, ucBssIdx);
+	prMldBssInfo = mldBssGetByBss(prAd, prBssInfo);
+
 	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
 
 	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 2) {
@@ -5862,24 +5869,15 @@ int priv_driver_get_ml_capa(struct net_device *prNetDev,
 			i4BytesWritten = -1;
 		} else {
 			/* u4Param: 1: p2p, 0: AP */
-			if (mldIsMloFeatureEnabled(prAd, !u4Param) &&
-				(p2pGetMode() == RUNNING_P2P_DEV_MODE)) {
-				struct BSS_INFO *bss =
-				    prAd->aprBssInfo[prAd->ucMldReservedBssIdx];
+			if (mldIsMloFeatureEnabled(prAd,
+				NETWORK_TYPE_P2P, !u4Param) &&
+			    mldBssAllowReconfig(prAd, prMldBssInfo))
+				ucCapa = 1;
 
-				if (!bss->fgIsInUse ||
-				    (u4Param == 0 &&
-				     bssInfoConnType(prAd, bss) ==
-						CONNECTION_INFRA_AP) ||
-				    (u4Param == 1 &&
-				     bssInfoConnType(prAd, bss) ==
-						CONNECTION_P2P_GO))
-					ucCapa = 1;
 #ifdef CFG_AAD_NONCE_NO_REPLACE
-				if (mldStarecExternalMldExist(prAd))
-					ucCapa = 0;
+			if (mldStarecExternalMldExist(prAd))
+				ucCapa = 0;
 #endif
-			}
 
 			i4BytesWritten = kalSnprintf(
 				pcCommand, i4TotalLen, "%d", ucCapa);

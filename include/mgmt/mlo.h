@@ -292,6 +292,9 @@ int8_t mldBssAlloc(struct ADAPTER *prAdapter,
 void mldBssFree(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo);
 
+uint8_t mldBssAllowReconfig(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo);
+
 struct MLD_BSS_INFO *mldBssGetByBss(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
 
@@ -358,6 +361,7 @@ uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,
 
 uint8_t mldIsMloFeatureEnabled(
 	struct ADAPTER *prAdapter,
+	enum ENUM_NETWORK_TYPE eNetworkType,
 	uint8_t fgIsApMode);
 
 uint8_t mldSingleLink(struct ADAPTER *prAdapter,

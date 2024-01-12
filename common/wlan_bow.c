@@ -1358,7 +1358,7 @@ uint8_t bowInit(struct ADAPTER *prAdapter)
 	ASSERT(prAdapter);
 
 	prBowBssInfo = cnmGetBssInfoAndInit(prAdapter,
-		NETWORK_TYPE_BOW, TRUE, FALSE);
+		NETWORK_TYPE_BOW, TRUE);
 
 	/*Initiate BSS_INFO_T - common part -move from bowstarting */
 	BSS_INFO_INIT(prAdapter, prBowBssInfo);

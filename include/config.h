@@ -1186,6 +1186,10 @@
 #define CFG_SUPPORT_802_11BE_MLO                 0
 #endif
 
+#ifndef CFG_MLO_LINK_PLAN_MODE
+#define CFG_MLO_LINK_PLAN_MODE			 0
+#endif
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && \
 	(CFG_SUPPORT_802_11BE == 0)
 #error \

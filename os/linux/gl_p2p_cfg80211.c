@@ -264,7 +264,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 				continue;
 #if (KAL_P2P_NUM > 2)
 			if ((type == NL80211_IFTYPE_AP) &&
-				(u4Idx < prAdapter->rWifiVar.ucMldLinkMax))
+				(u4Idx < prAdapter->rWifiVar.ucP2pMldLinkMax))
 				continue;
 #endif
 			if (prP2pInfo->aprRoleHandler ==

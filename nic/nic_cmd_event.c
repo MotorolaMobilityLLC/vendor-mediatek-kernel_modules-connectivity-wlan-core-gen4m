@@ -2948,9 +2948,6 @@ uint32_t nicCfgChipCapMacCap(struct ADAPTER *prAdapter,
 		prAdapter->ucP2PDevBssIdx = prAdapter->ucHwBssIdNum;
 		prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx] =
 			&prAdapter->rWifiVar.rP2pDevInfo;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		prAdapter->ucMldReservedBssIdx = prAdapter->ucHwBssIdNum - 1;
-#endif
 	}
 
 	if (prMacCap->ucWtblEntryNum > 0
