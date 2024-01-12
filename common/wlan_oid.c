@@ -16751,7 +16751,7 @@ wlanoidSetMdvt(struct ADAPTER *prAdapter,
 			   uint32_t *pu4SetInfoLen)
 {
 	struct PARAM_MDVT_STRUCT *prMdvtInfo;
-	struct CMD_MDVT_CFG rCmdMdvtCfg;
+	struct CMD_MDVT_CFG rCmdMdvtCfg = {0};
 
 	ASSERT(prAdapter);
 

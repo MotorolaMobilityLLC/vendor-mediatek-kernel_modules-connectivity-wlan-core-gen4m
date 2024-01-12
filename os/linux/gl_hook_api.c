@@ -5085,8 +5085,10 @@ uint8_t glIsWifiInTestMode(struct net_device *prNetDev)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 
-	if (!prNetDev)
+	if (!prNetDev) {
 		DBGLOG(RFTEST, STATE, "prNetDev is NULL\n");
+		return FALSE;
+	}
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
