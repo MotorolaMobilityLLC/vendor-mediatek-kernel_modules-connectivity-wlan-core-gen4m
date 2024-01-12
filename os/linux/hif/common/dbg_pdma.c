@@ -609,6 +609,8 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 
 	for (i = 0; i < sizeof(wfmda_tx_group) /
 			sizeof(struct wfdma_ring_info); i++) {
+		int ret;
+
 		offset = wfmda_tx_group[i].ring_idx * MT_RINGREG_DIFF;
 		offset_ext = wfmda_tx_group[i].ring_idx * MT_RINGREG_EXT_DIFF;
 
@@ -623,7 +625,7 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 		HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL3 + offset,
 				&wfmda_tx_group[i].didx);
 
-		kalSnprintf(buf, sizeof(buf),
+		ret = kalSnprintf(buf, sizeof(buf),
 			"%10s%10d  0x%08x  0x%016llx%10d%10d%10d",
 			wfmda_tx_group[i].name,
 			wfmda_tx_group[i].ring_idx,
@@ -633,7 +635,12 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 			wfmda_tx_group[i].cnt,
 			wfmda_tx_group[i].cidx,
 			wfmda_tx_group[i].didx);
-		DBGLOG(HAL, INFO, "%s\n", buf);
+		if (ret >= 0 || ret < sizeof(buf))
+			DBGLOG(HAL, INFO, "%s\n", buf);
+		else
+			DBGLOG(INIT, ERROR,
+					"[%u] kalSnprintf failed, ret: %d\n",
+					__LINE__, ret);
 	}
 
 	DBGLOG(HAL, INFO, "Rx Ring configuration\n");
@@ -642,6 +649,8 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 
 	for (i = 0; i < sizeof(wfmda_rx_group) /
 			sizeof(struct wfdma_ring_info); i++) {
+		int ret;
+
 		offset = wfmda_rx_group[i].ring_idx * MT_RINGREG_DIFF;
 		offset_ext = wfmda_rx_group[i].ring_idx * MT_RINGREG_EXT_DIFF;
 
@@ -656,7 +665,7 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 		HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL3 + offset,
 				&wfmda_rx_group[i].didx);
 
-		kalSnprintf(buf, sizeof(buf),
+		ret = kalSnprintf(buf, sizeof(buf),
 			"%10s%10d  0x%08x  0x%016llx%10d%10d%10d",
 			wfmda_rx_group[i].name,
 			wfmda_rx_group[i].ring_idx,
@@ -666,7 +675,12 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 			wfmda_rx_group[i].cnt,
 			wfmda_rx_group[i].cidx,
 			wfmda_rx_group[i].didx);
-		DBGLOG(HAL, INFO, "%s\n", buf);
+		if (ret >= 0 || ret < sizeof(buf))
+			DBGLOG(HAL, INFO, "%s\n", buf);
+		else
+			DBGLOG(INIT, ERROR,
+					"[%u] kalSnprintf failed, ret: %d\n",
+					__LINE__, ret);
 	}
 
 	/* PDMA Tx/Rx descriptor & packet content */

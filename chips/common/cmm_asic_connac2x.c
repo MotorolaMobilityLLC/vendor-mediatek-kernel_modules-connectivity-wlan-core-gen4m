@@ -317,7 +317,7 @@ void asicConnac2xWfdmaDummyCrRead(
 	struct ADAPTER *prAdapter,
 	u_int8_t *pfgResult)
 {
-	u_int32_t u4RegValue;
+	u_int32_t u4RegValue = 0;
 
 	HAL_MCR_RD(prAdapter,
 		CONNAC2X_WFDMA_DUMMY_CR,
