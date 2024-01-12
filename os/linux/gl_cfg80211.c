@@ -717,17 +717,18 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 			arBwCfg80211Table[u4RxBw];
 	}
 
-	if (rStatus != WLAN_STATUS_SUCCESS || i4Rssi == 0) {
+	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, WARN,
 			"Query RSSI failed, use last RSSI %d\n",
 			prGlueInfo->i4RssiCache[ucBssIndex]);
 		sinfo->signal = prGlueInfo->i4RssiCache[ucBssIndex] ?
 			prGlueInfo->i4RssiCache[ucBssIndex] :
 			PARAM_WHQL_RSSI_INITIAL_DBM;
-	} else if (i4Rssi == PARAM_WHQL_RSSI_MIN_DBM ||
-			i4Rssi == PARAM_WHQL_RSSI_MAX_DBM) {
+	} else if (i4Rssi <= PARAM_WHQL_RSSI_MIN_DBM ||
+			i4Rssi >= PARAM_WHQL_RSSI_MAX_DBM) {
 		DBGLOG(REQ, WARN,
-			"RSSI abnormal, use last RSSI %d\n",
+			"RSSI abnormal %d, use last RSSI %d\n",
+			i4Rssi,
 			prGlueInfo->i4RssiCache[ucBssIndex]);
 		sinfo->signal = prGlueInfo->i4RssiCache[ucBssIndex] ?
 			prGlueInfo->i4RssiCache[ucBssIndex] : i4Rssi;
