@@ -5617,6 +5617,7 @@ uint32_t nicTxDirectToHif(struct ADAPTER *prAdapter,
 		QUEUE_INSERT_TAIL(prHifQueue,
 			(struct QUE_ENTRY *) prMsduInfo);
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
+		GLUE_INC_REF_CNT(prAdapter->rHifStats.u4DataInCount);
 
 		kalSetTxEvent2Hif(prGlueInfo);
 	}
