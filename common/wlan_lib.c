@@ -8187,7 +8187,8 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->ucDisallowBand6G = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "DisallowBand6G", 0);
 #endif
-
+	prWifiVar->ucDisallowP2PAcs6G = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "DisallowP2PAcs6G", FEATURE_DISABLED);
 #if CFG_SUPPORT_ROAMING
 	prWifiVar->u4InactiveTimeout = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "InactiveTimeout", ROAMING_INACTIVE_TIMEOUT_SEC);
