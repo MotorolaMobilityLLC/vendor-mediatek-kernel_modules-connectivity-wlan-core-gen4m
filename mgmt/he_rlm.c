@@ -647,6 +647,9 @@ void heRlmFillHeCapIE(
 	}
 #endif
 
+	HE_SET_PHY_CAP_TX_1KQAM_242_TONE_RU(prHeCap->ucHePhyCap);
+	HE_SET_PHY_CAP_RX_1KQAM_242_TONE_RU(prHeCap->ucHePhyCap);
+
 	/* Set MCS map */
 	prHeSupportedMcsSet = (struct _HE_SUPPORTED_MCS_FIELD *)
 		(((uint8_t *) prHeCap) + u4OverallLen);
