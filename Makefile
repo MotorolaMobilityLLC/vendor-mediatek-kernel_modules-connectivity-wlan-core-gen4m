@@ -139,6 +139,7 @@ ccflags-y += -DCFG_HS20_DEBUG=1
 endif
 
 ccflags-y += -Werror $(call cc-disable-warning, unused-but-set-variable)
+ccflags-y += $(call cc-disable-warning, attribute-warning)
 #ccflags-y:=$(filter-out -U$(WLAN_CHIP_ID),$(ccflags-y))
 #ccflags-y += -DLINUX -D$(WLAN_CHIP_ID)
 #workaround: also needed for none LINUX system
