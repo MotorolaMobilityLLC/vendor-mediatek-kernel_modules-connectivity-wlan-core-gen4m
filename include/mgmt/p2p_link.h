@@ -11,10 +11,6 @@
 #define _P2P_LINK_H
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-struct MLD_BSS_INFO *p2pGetMldBssInfo(
-	struct ADAPTER *prAdapter,
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo);
-
 uint32_t p2pLinkProcessRxAuthReqFrame(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,

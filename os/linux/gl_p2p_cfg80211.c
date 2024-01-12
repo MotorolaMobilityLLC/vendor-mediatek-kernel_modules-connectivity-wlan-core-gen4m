@@ -230,8 +230,7 @@ static void mtk_p2p_need_remove_iface(
 
 	/* Remove MLO GC/MLO GO before starting SAP */
 	if (fsm && (type == NL80211_IFTYPE_AP)) {
-		mld = p2pGetMldBssInfo(
-			prAdapter, fsm);
+		mld = fsm->prP2pMldBssInfo;
 
 		if (mld &&
 			mld->rBssList.u4NumElem > 1)
