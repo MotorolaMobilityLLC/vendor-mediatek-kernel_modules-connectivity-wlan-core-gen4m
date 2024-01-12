@@ -1070,7 +1070,7 @@ p2pDevAdjustChnlTime(IN struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg,
 	if (!prMgmtTxMsg->fgIsOffChannel)
 		return;
 
-	if (prMgmtTxMsg->u4Duration < P2P_MIN_TX_DURATION_TIME_MS) {
+	if (prMgmtTxMsg->u4Duration < MIN_TX_DURATION_TIME_MS) {
 		/*
 		 * The wait time requested from Supplicant may be too short
 		 * to TX a frame, eg. nego.conf.. Overwrite the wait time
@@ -1078,8 +1078,8 @@ p2pDevAdjustChnlTime(IN struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg,
 		 */
 		DBGLOG(P2P, INFO, "Overwrite channel duration from %d to %d\n",
 				prMgmtTxMsg->u4Duration,
-				P2P_MIN_TX_DURATION_TIME_MS);
-		prOffChnlTxReq->u4Duration = P2P_MIN_TX_DURATION_TIME_MS;
+				MIN_TX_DURATION_TIME_MS);
+		prOffChnlTxReq->u4Duration = MIN_TX_DURATION_TIME_MS;
 	} else {
 		prOffChnlTxReq->u4Duration = prMgmtTxMsg->u4Duration;
 	}
