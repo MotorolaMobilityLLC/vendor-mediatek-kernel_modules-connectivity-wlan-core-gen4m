@@ -789,6 +789,17 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 #if defined(CFG_MTK_WIFI_PMIC_QUERY)
 	.queryPmicInfo = asicConnac3xQueryPmicInfo,
 #endif
+
+	.prTxPwrLimitFile = "TxPwrLimit_MT66x9.dat",
+#if (CFG_SUPPORT_SINGLE_SKU_6G == 1)
+	.prTxPwrLimit6GFile = "TxPwrLimit6G_MT66x9.dat",
+#if (CFG_SUPPORT_SINGLE_SKU_6G_1SS1T == 1)
+	.prTxPwrLimit6G1ss1tFile = "TxPwrLimit6G_MT66x9_1ss1t.dat",
+#endif
+#endif
+
+	.ucTxPwrLimitBatchSize = 3,
+
 #if defined(_HIF_USB)
 	.asicUsbInit = asicConnac3xWfdmaInitForUSB,
 	.asicUsbInit_ic_specific = NULL,

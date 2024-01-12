@@ -532,7 +532,7 @@
 #endif
 
 /*! Maximum number of SW TX CMD packet buffer */
-#define CFG_TX_MAX_CMD_PKT_NUM                  96
+#define CFG_TX_MAX_CMD_PKT_NUM                  144 /* WIFI7 support */
 
 /* QM_CMD_RESERVED_THRESHOLD should less than the cmd tx resource */
 #ifndef QM_CMD_RESERVED_THRESHOLD
@@ -1591,6 +1591,10 @@
 
 #ifndef CFG_SUPPORT_SINGLE_SKU_LOCAL_DB
 #define CFG_SUPPORT_SINGLE_SKU_LOCAL_DB 1
+#endif
+
+#ifndef CFG_SUPPORT_SINGLE_SKU_6G_1SS1T
+#define CFG_SUPPORT_SINGLE_SKU_6G_1SS1T 1
 #endif
 
 #ifndef CFG_SUPPORT_BW160
