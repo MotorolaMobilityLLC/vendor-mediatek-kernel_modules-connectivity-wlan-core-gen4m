@@ -683,7 +683,8 @@ uint32_t nicUniCmdScanTagChnlInfo(struct ADAPTER *ad, uint8_t *buf,
 	uint16_t len = sizeof(*tag) +
 	       ALIGN_4((chnl_num + chnl_ext_num) * sizeof(struct CHANNEL_INFO));
 
-	if ((chnl_num + chnl_ext_num) == 0)
+	if (cmd->ucChannelType == SCAN_CHANNEL_FULL &&
+		(chnl_num + chnl_ext_num) == 0)
 		return 0;
 
 	tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_CHANNEL;
