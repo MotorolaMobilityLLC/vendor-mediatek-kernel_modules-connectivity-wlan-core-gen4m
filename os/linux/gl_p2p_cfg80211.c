@@ -1943,7 +1943,7 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 		if (wiphy == NULL)
 			break;
 
-		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_stop_ap.\n");
+		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_stop_ap.\n");
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -2397,7 +2397,7 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy, struct net_device *dev, st
 		if (mac == NULL)
 			mac = aucBcMac;
 
-		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_del_station.\n");
+		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_del_station " MACSTR ". reason: %d\n", mac, params->reason_code);
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -2448,7 +2448,7 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy, struct net_device *dev, co
 		if (mac == NULL)
 			mac = aucBcMac;
 
-		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_del_station.\n");
+		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_del_station " MACSTR ".\n", mac);
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -2500,7 +2500,7 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy, struct net_device *dev, u8
 		if (mac == NULL)
 			mac = aucBcMac;
 
-		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_del_station.\n");
+		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_del_station " MACSTR ".\n", mac);
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -2548,7 +2548,7 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev, struct
 		if ((wiphy == NULL) || (dev == NULL) || (sme == NULL))
 			break;
 
-		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_connect.\n");
+		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_connect to " MACSTR ".\n", sme->bssid);
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -2671,7 +2671,7 @@ mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
 			break;
 		}
 
-		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_change_iface.\n");
+		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_change_iface, type: %d\n", type);
 
 		if (ndev->ieee80211_ptr)
 			ndev->ieee80211_ptr->iftype = type;

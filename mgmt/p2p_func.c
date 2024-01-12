@@ -727,7 +727,7 @@ void p2pProcessActionResponse(IN struct ADAPTER *prAdapter, enum p2p_action_fram
 		break;
 	}
 
-	DBGLOG(P2P, TRACE, "eConnState: %d, eType: %d\n", prAdapter->prP2pInfo->eConnState, eType);
+	DBGLOG(P2P, INFO, "eConnState: %d, eType: %d\n", prAdapter->prP2pInfo->eConnState, eType);
 
 	if (fgIdle)
 		prAdapter->prP2pInfo->eConnState = P2P_CNN_NORMAL;
