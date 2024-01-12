@@ -186,6 +186,7 @@ struct WIFI_UNI_SETQUERY_INFO {
 	IN uint8_t *pucInfoBuffer;
 	IN void *pvSetQueryBuffer;
 	IN uint32_t u4SetQueryBufferLen;
+	IN enum EUNM_CMD_SEND_METHOD eMethod;
 
 	/* uni cmds */
 	OUT struct LINK rUniCmdList;
@@ -717,6 +718,8 @@ enum ENUM_UNI_CMD_STAREC_TAG {
 	UNI_CMD_STAREC_TAG_MLD_TEARDOWN		= 0x23,
 	UNI_CMD_STAREC_TAG_UAPSD		= 0x24,
 	UNI_CMD_STAREC_TAG_REMOVE		= 0x25,
+	UNI_CMD_STAREC_TAG_GET_PN		= 0x26,
+	UNI_CMD_STAREC_TAG_INSTALL_KEY_V3	= 0x27,
 
 	UNI_CMD_STAREC_TAG_MAX_NUM
 };
@@ -836,24 +839,33 @@ struct UNI_CMD_STAREC_PHY_INFO {
 /* Update RA Info */
 struct UNI_CMD_STAREC_RA_INFO
 {
-    uint16_t      u2Tag;
-    uint16_t      u2Length;
-    uint16_t      u2DesiredNonHTRateSet;
-    uint8_t       aucRxMcsBitmask[10];
+	uint16_t      u2Tag;
+	uint16_t      u2Length;
+	uint16_t      u2DesiredNonHTRateSet;
+	uint8_t       aucRxMcsBitmask[10];
 } __KAL_ATTRIB_PACKED__;
 
 /* Update BA_OFFLOAD Info */
 struct UNI_CMD_STAREC_BA_OFFLOAD_INFO
 {
-    uint16_t      u2Tag;
-    uint16_t      u2Length;
-    uint8_t       ucTxAmpdu;
-    uint8_t       ucRxAmpdu;
-    uint8_t       ucTxAmsduInAmpdu;
-    uint8_t       ucRxAmsduInAmpdu;
-    uint32_t      u4TxMaxAmsduInAmpduLen;
-    uint16_t      u2TxBaSize;
-    uint16_t      u2RxBaSize;
+	uint16_t      u2Tag;
+	uint16_t      u2Length;
+	uint8_t       ucTxAmpdu;
+	uint8_t       ucRxAmpdu;
+	uint8_t       ucTxAmsduInAmpdu;
+	uint8_t       ucRxAmsduInAmpdu;
+	uint32_t      u4TxMaxAmsduInAmpduLen;
+	uint16_t      u2TxBaSize;
+	uint16_t      u2RxBaSize;
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_CMD_STAREC_DEFAULT_KEY
+{
+	uint16_t      u2Tag;
+	uint16_t      u2Length;
+	uint8_t       ucKeyId;
+	uint8_t       ucMulticast;
+	uint8_t       aucReserve[2];
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_STAREC_HE_BASIC {
@@ -948,6 +960,25 @@ struct UNI_CMD_STAREC_REMOVE_INFO
 	uint16_t      u2Length;
 	uint8_t       ucActionType; /* ENUM_STA_REC_CMD_ACTION_T */
 	uint8_t       aucReserve[3];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_CMD_STAREC_INSTALL_KEY3
+{
+	uint16_t      u2Tag;
+	uint16_t      u2Length;
+	uint8_t       ucAddRemove;
+	uint8_t       ucTxKey;
+	uint8_t       ucKeyType;
+	uint8_t       ucIsAuthenticator;
+	uint8_t       aucPeerAddr[6];
+	uint8_t       ucBssIdx;
+	uint8_t       ucAlgorithmId;
+	uint8_t       ucKeyId;
+	uint8_t       ucKeyLen;
+	uint8_t       ucWlanIndex;
+	uint8_t       ucMgmtProtection;
+	uint8_t       aucKeyMaterial[32];
+	uint8_t       aucKeyRsc[16];
 } __KAL_ATTRIB_PACKED__;
 
 /* EDCA set command (0x04) */
@@ -2650,6 +2681,32 @@ struct UNI_EVENT_SCAN_DONE_NLO {
 	uint8_t  aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_ADD_KEY_DONE
+{
+	/* fixed field */
+	uint8_t ucBssIndex;
+	uint8_t aucPadding[3];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* Add key done event Tag */
+enum ENUM_UNI_EVENT_ADD_KEY_DONE_TAG
+{
+	UNI_EVENT_ADD_KEY_DONE_TAG_PKEY = 0,
+	UNI_EVENT_ADD_KEY_DONE_TAG_NUM
+};
+
+/* Add PKey down (Tag0) */
+struct UNI_EVENT_ADD_PKEY_DONE
+{
+	uint16_t u2Tag;    // Tag = 0x00
+	uint16_t u2Length;
+	uint8_t aucStaAddr[6];
+	uint8_t aucPadding[2];
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_EVENT_IDC
 {
 	/* fixed field */
@@ -3312,6 +3369,12 @@ uint32_t nicUniCmdSetMonitor(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdRoaming(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdInstallKey(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdInstallDefaultKey(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdOffloadKey(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************
  *                   Event
@@ -3335,6 +3398,9 @@ void nicUniCmdEventQueryCfgRead(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventQueryChipConfig(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniCmdStaRecHandleEventPkt(IN struct ADAPTER
+	*prAdapter, IN struct CMD_INFO *prCmdInfo,
+	IN uint8_t *pucEventBuf);
 void nicUniEventQueryIdcChnl(IN struct ADAPTER *prAdapter,
 		IN struct CMD_INFO *prCmdInfo,
 		IN uint8_t *pucEventBuf);
@@ -3344,6 +3410,8 @@ void nicUniCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniCmdEventGetTsfDone(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniCmdEventInstallKey(IN struct ADAPTER
+	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
 /*******************************************************************************
  *                   Unsolicited Event
@@ -3375,6 +3443,8 @@ void nicUniEventPsSync(struct ADAPTER *ad,
 void nicUniEventSap(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventRoaming(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventAddKeyDone(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 
 /*******************************************************************************
