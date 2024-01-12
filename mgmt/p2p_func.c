@@ -467,7 +467,7 @@ void p2pFuncGCJoin(struct ADAPTER *prAdapter,
 		/* only setup link needs to do SAA */
 		if (i == P2P_MAIN_LINK_INDEX) {
 			prP2pJoinInfo->prTargetStaRec = prStaRec;
-			prP2pJoinInfo->fgIsJoinComplete = FALSE;
+			prP2pJoinInfo->fgIsJoinSuccess = FALSE;
 			prP2pJoinInfo->u4BufLength = 0;
 		}
 
