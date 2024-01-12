@@ -456,6 +456,8 @@ static ssize_t procDbgLevelWrite(struct file *file, const char __user *buffer,
 	kalMemSet(g_aucProcBuf, 0, u4CopySize);
 	if (u4CopySize >= count+1)
 		u4CopySize = count;
+	else
+		u4CopySize = u4CopySize - 1;
 	if (copy_from_user(g_aucProcBuf, buffer, u4CopySize)) {
 		pr_err("error of copy from user\n");
 		return -EFAULT;
@@ -786,6 +788,8 @@ static ssize_t procPktDelayDbgCfgWrite(struct file *file, const char *buffer, si
 	kalMemSet(g_aucProcBuf, 0, u4CopySize);
 	if (u4CopySize >= count + 1)
 		u4CopySize = count;
+	else
+		u4CopySize = u4CopySize - 1;
 
 	if (copy_from_user(g_aucProcBuf, buffer, u4CopySize)) {
 		pr_err("error of copy from user\n");
@@ -866,6 +870,8 @@ static ssize_t procRoamWrite(struct file *file, const char __user *buffer,
 	kalMemSet(g_aucProcBuf, 0, u4CopySize);
 	if (u4CopySize >= count+1)
 		u4CopySize = count;
+	else
+		u4CopySize = u4CopySize - 1;
 	if (copy_from_user(g_aucProcBuf, buffer, u4CopySize)) {
 		pr_err("error of copy from user\n");
 		return -EFAULT;
@@ -935,6 +941,8 @@ static ssize_t procCountryWrite(struct file *file, const char __user *buffer,
 	kalMemSet(g_aucProcBuf, 0, u4CopySize);
 	if (u4CopySize >= count+1)
 		u4CopySize = count;
+	else
+		u4CopySize = u4CopySize - 1;
 	if (copy_from_user(g_aucProcBuf, buffer, u4CopySize)) {
 		pr_err("error of copy from user\n");
 		return -EFAULT;
@@ -1410,4 +1418,133 @@ static int procTxStatisticsWrite(struct file *file, const char *buffer, unsigned
 }				/* end of procTxStatisticsWrite() */
 #endif
 
+#ifdef FW_CFG_SUPPORT
+#define MAX_CFG_OUTPUT_BUF_LENGTH 1024
+static UINT_8 aucCfgBuf[CMD_FORMAT_V1_LENGTH];
+static UINT_8 aucCfgQueryKey[MAX_CMD_NAME_MAX_LENGTH];
+static UINT_8 aucCfgOutputBuf[MAX_CFG_OUTPUT_BUF_LENGTH];
+
+static ssize_t cfgRead(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
+{
+	WLAN_STATUS rStatus = WLAN_STATUS_FAILURE;
+	UINT_8 *temp = &aucCfgOutputBuf[0];
+	UINT_32 u4CopySize = 0;
+
+	struct _CMD_HEADER_T cmdV1Header;
+	struct _CMD_FORMAT_V1_T *pr_cmd_v1 = (struct _CMD_FORMAT_V1_T *) cmdV1Header.buffer;
+
+	/* if *f_pos >  0, we should return 0 to make cat command exit */
+	if (*f_pos > 0 || gprGlueInfo == NULL)
+		return 0;
+	if (!kalStrLen(aucCfgQueryKey))
+		return 0;
+
+	kalMemSet(aucCfgOutputBuf, 0, MAX_CFG_OUTPUT_BUF_LENGTH);
+
+	SPRINTF(temp, ("\nprocCfgRead() %s:\n", aucCfgQueryKey));
+
+	/* send to FW */
+	cmdV1Header.cmdVersion = CMD_VER_1;
+	cmdV1Header.cmdType = CMD_TYPE_QUERY;
+	cmdV1Header.itemNum = 1;
+	cmdV1Header.cmdBufferLen = sizeof(struct _CMD_FORMAT_V1_T);
+	kalMemSet(cmdV1Header.buffer, 0, MAX_CMD_BUFFER_LENGTH);
+
+	pr_cmd_v1->itemStringLength = kalStrLen(aucCfgQueryKey);
+
+	kalMemCopy(pr_cmd_v1->itemString, aucCfgQueryKey, kalStrLen(aucCfgQueryKey));
+
+	rStatus = kalIoctl(gprGlueInfo,
+			wlanoidQueryCfgRead,
+			(PVOID)&cmdV1Header,
+			sizeof(cmdV1Header),
+			TRUE,
+			TRUE,
+			TRUE,
+			&u4CopySize);
+	if (rStatus == WLAN_STATUS_FAILURE)
+		DBGLOG(INIT, ERROR, "prCmdV1Header kalIoctl wlanoidQueryCfgRead fail 0x%x\n", rStatus);
+
+	SPRINTF(temp, ("%s\n", cmdV1Header.buffer));
+
+	u4CopySize = kalStrLen(aucCfgOutputBuf);
+	if (u4CopySize > count)
+		u4CopySize = count;
+
+	if (copy_to_user(buf, aucCfgOutputBuf, u4CopySize))
+		DBGLOG(INIT, ERROR, "copy to user failed\n");
+
+	*f_pos += u4CopySize;
+	return (ssize_t)u4CopySize;
+}
+
+static ssize_t cfgWrite(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos)
+{
+	/* echo xxx xxx > /proc/net/wlan/cfg */
+	UINT_8 i = 0;
+	UINT_32 u4CopySize = sizeof(aucCfgBuf);
+	UINT_8 token_num = 1;
+
+	kalMemSet(aucCfgBuf, 0, u4CopySize);
+
+	if (u4CopySize >= (count + 1))
+		u4CopySize = count;
+	else
+		u4CopySize = u4CopySize - 1;
+
+	if (copy_from_user(aucCfgBuf, buf, u4CopySize)) {
+		DBGLOG(INIT, ERROR, "copy from user failed\n");
+		return -EFAULT;
+	}
+	aucCfgBuf[u4CopySize] = '\0';
+	for (; i < u4CopySize; i++) {
+		if (aucCfgBuf[i] == ' ') {
+			token_num++;
+			break;
+		}
+	}
+
+	if (token_num == 1) {
+		kalMemSet(aucCfgQueryKey, 0, sizeof(aucCfgQueryKey));
+		/* remove the 0x0a */
+		memcpy(aucCfgQueryKey, aucCfgBuf, u4CopySize);
+		if (aucCfgQueryKey[u4CopySize - 1] == 0x0a)
+			aucCfgQueryKey[u4CopySize - 1] = '\0';
+	} else {
+		if (u4CopySize)
+			wlanFwCfgParse(gprGlueInfo->prAdapter, aucCfgBuf);
+	}
+
+	return count;
+}
+
+static const struct file_operations fwcfg_ops = {
+	.owner = THIS_MODULE,
+	.read = cfgRead,
+	.write = cfgWrite,
+};
+
+INT_32 cfgRemoveProcEntry(void)
+{
+	remove_proc_entry(PROC_CFG_NAME, gprProcRoot);
+	return 0;
+}
+
+INT_32 cfgCreateProcEntry(P_GLUE_INFO_T prGlueInfo)
+{
+	struct proc_dir_entry *prEntry;
+
+	prGlueInfo->pProcRoot = gprProcRoot;
+	gprGlueInfo = prGlueInfo;
+
+	prEntry = proc_create(PROC_CFG_NAME, 0664, gprProcRoot, &fwcfg_ops);
+	if (prEntry == NULL) {
+		DBGLOG(INIT, ERROR, "Unable to create /proc entry cfg\n\r");
+		return -1;
+	}
+	proc_set_user(prEntry, KUIDT_INIT(PROC_UID_SHELL), KGIDT_INIT(PROC_GID_WIFI));
+
+	return 0;
+}
+#endif
 
