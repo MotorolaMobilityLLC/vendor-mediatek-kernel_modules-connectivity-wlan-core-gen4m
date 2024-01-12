@@ -16054,10 +16054,13 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 	struct PARAM_GET_CNM_T *prCnmInfo = NULL;
 
 	enum ENUM_MBMC_BN	eDbdcIdx, eDbdcIdxMax;
-	uint8_t			ucBssIdx;
+	uint8_t ucBssIdx;
 	struct BSS_INFO *prBssInfo;
 	enum ENUM_CNM_NETWORK_TYPE_T eNetworkType;
 	uint8_t ucOpRxNss, ucOpTxNss;
+#if (CFG_SUPPORT_802_11AX == 1)
+	struct STA_RECORD *prStaRec = NULL;
+#endif
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -16198,23 +16201,13 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 			_getStrFromBssOpBw(prBssInfo),
 			ucOpTxNss,
 			ucOpRxNss);
-#ifdef CONFIG_SUPPORT_OPENWRT
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten, "BW=BW%s\n",
-			_getStrFromBssOpBw(prBssInfo)
-			);
-
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten, "[TxNSS%u][RxNss%u]\n",
-			ucOpTxNss, ucOpRxNss);
 
 #if (CFG_SUPPORT_802_11AX == 1)
-	{
-
-		struct STA_RECORD *prStaRec;
-
 		prStaRec = cnmGetStaRecByAddress(prGlueInfo->prAdapter,
 			ucBssIdx, prBssInfo->aucBSSID);
+
+		if (prStaRec == NULL)
+			continue;
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten, "Mcs1=%u\n",
@@ -16223,10 +16216,7 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten, "Mcs2=%u\n",
 			((prStaRec->u2HeRxMcsMapBW80) >> 2) & 0x3);
-	}
 #endif /* CFG_SUPPORT_802_11AX */
-#endif
-
 	}
 
 	kalMemFree(prCnmInfo, VIR_MEM_TYPE, sizeof(struct PARAM_GET_CNM_T));
