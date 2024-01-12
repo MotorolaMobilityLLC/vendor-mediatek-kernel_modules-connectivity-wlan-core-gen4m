@@ -201,6 +201,10 @@ static int priv_driver_iso_detect(IN struct GLUE_INFO *prGlueInfo,
 #endif
 static int priv_driver_coex_ctrl(IN struct net_device *prNetDev,
 				IN char *pcCommand, IN int i4TotalLen);
+#if (CFG_WIFI_GET_DPD_CACHE == 1)
+static int priv_driver_get_dpd_cache(IN struct net_device *prNetDev,
+	IN char *pcCommand, IN int i4TotalLen);
+#endif
 
 /*******************************************************************************
  *                       P R I V A T E   D A T A
@@ -4054,6 +4058,10 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 #define CMD_PRESET_LINKID	"PRESET_LINKID"
 #define CMD_SET_ML_PROBEREQ	"SET_ML_PROBEREQ"
+#endif
+
+#if (CFG_WIFI_GET_DPD_CACHE == 1)
+#define CMD_GET_DPD_CACHE		"GET_DPD_CACHE"
 #endif
 
 static uint8_t g_ucMiracastMode = MIRACAST_MODE_OFF;
@@ -17096,6 +17104,9 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_PRESET_LINKID, priv_driver_preset_linkid},
 	{CMD_SET_ML_PROBEREQ, priv_driver_set_ml_probereq},
 #endif
+#if (CFG_WIFI_GET_DPD_CACHE == 1)
+	{CMD_GET_DPD_CACHE, priv_driver_get_dpd_cache},
+#endif
 	{CMD_COEX_CONTROL, priv_driver_coex_ctrl},
 };
 
@@ -18230,3 +18241,63 @@ static int priv_driver_coex_ctrl(IN struct net_device *prNetDev,
 	}
 	return i4BytesWritten;
 }
+
+#if (CFG_WIFI_GET_DPD_CACHE == 1)
+static int priv_driver_get_dpd_cache(IN struct net_device *prNetDev,
+	IN char *pcCommand, IN int i4TotalLen)
+{
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t i4BytesWritten = 0, i4Argc = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct PARAM_GET_DPD_CACHE *prDpdCache = NULL;
+	uint8_t idx = 0;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	prDpdCache = (struct PARAM_GET_DPD_CACHE *)kalMemAlloc(
+			sizeof(struct PARAM_GET_DPD_CACHE), VIR_MEM_TYPE);
+	if (!prDpdCache) {
+		DBGLOG(REQ, ERROR, "Allocate prDpdCache failed!\n");
+		i4BytesWritten = -1;
+		goto out;
+	}
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidQueryDpdCache, prDpdCache,
+			   sizeof(struct PARAM_GET_DPD_CACHE),
+			   TRUE, TRUE, TRUE, &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		goto out;
+
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+		   i4TotalLen - i4BytesWritten,
+		   "\nCurrent DPD Cache:\n");
+
+	for (idx = 0; idx < prDpdCache->ucDpdCacheNum; idx++) {
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+		   i4TotalLen - i4BytesWritten,
+		   "Cache[%u] = WF%u ch%u\n",
+		   idx,
+		   prDpdCache->ucDpdCachePath[idx],
+		   prDpdCache->u4DpdCacheCh[idx]);
+	}
+
+	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
+
+out:
+
+	if (prDpdCache)
+		kalMemFree(prDpdCache, VIR_MEM_TYPE,
+			sizeof(struct PARAM_GET_DPD_CACHE));
+
+	return i4BytesWritten;
+}
+#endif /* CFG_WIFI_GET_DPD_CACHE */
