@@ -4682,25 +4682,6 @@ static int initWlan(void)
 	int ret = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
-#if 0
-#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
-#if defined(SOC3_0)
-#if defined(_HIF_AXI)
-/* prPlatDev is already created by initWlan()->glRegisterBus()::axi.c */
-	void *pvData = (void *)prPlatDev;
-	void *pvDriverData = (void *)prPlatDev->id_entry->driver_data;
-#endif
-
-#if defined(_HIF_PCIE)
-	void *pvData = NULL;
-	void *pvDriverData = (void *)&mt66xx_driver_data_soc3_0;
-#endif
-#endif
-#endif  /* #if 0 */
-
-	struct mt66xx_chip_info *prChipInfo;
-#endif
-
 #if defined(UT_TEST_MODE) && defined(CFG_BUILD_X86_PLATFORM)
 	/* Refer 6765 dts setting */
 	char *ptr = NULL;
@@ -4781,26 +4762,6 @@ static int initWlan(void)
 	/* Set WIFI EMI protection to consys permitted on system boot up */
 	kalSetEmiMpuProtection(gConEmiPhyBase, true);
 #endif
-
-#if 0
-#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
-/* #pragma message("initWlan(2)::CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1") */
-/* Power on download MCU ROM EMI + WiFi ROM EMI + ROM patch */
-	wlanPowerOnInit();
-
-#if defined(_HIF_AXI) && defined(SOC3_0)
-/* AXI goes over here, to be conti... */
-#endif
-
-#if defined(_HIF_PCIE) && defined(SOC3_0)
-	prChipInfo = ((struct mt66xx_hif_driver_data *)pvDriverData)->chip_info;
-
-	pvData = (void *)prChipInfo->pdev;
-#endif
-
-	wlanProbe(pvData, pvDriverData);
-#endif
-#endif  /* #if 0 */
 
 	DBGLOG(INIT, INFO, "initWlan::End\n");
 
