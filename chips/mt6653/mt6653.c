@@ -513,6 +513,11 @@ struct BUS_INFO mt6653_bus_info = {
 	.tx_ring1_data_idx = 1,
 	.tx_ring2_data_idx = 2,
 	.tx_ring3_data_idx = 3,
+	.rx_data_ring_num = 3,
+	.rx_evt_ring_num = 2,
+	.rx_data_ring_size = 3072,
+	.rx_evt_ring_size = 128,
+	.rx_data_ring_prealloc_size = 1024,
 	.fw_own_clear_addr = CONNAC3X_BN0_IRQ_STAT_ADDR,
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
 	.fgCheckDriverOwnInt = FALSE,
@@ -1079,17 +1084,27 @@ static uint8_t mt6653SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 static bool mt6653WfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
 		bool fgAllocMem)
 {
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+
 	/* Band1 Data Rx path */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_DATA1, RX_RING0_SIZE,
+			RX_RING_DATA1, prHifInfo->u4RxDataRingSize,
 			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[2] fail\n");
 		return false;
 	}
 
+	/* Band2 Data Rx path */
+	if (!halWpdmaAllocRxRing(prGlueInfo,
+			RX_RING_DATA2, prHifInfo->u4RxDataRingSize,
+			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocRxRing[5] fail\n");
+		return false;
+	}
+
 	/* ICS log */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_TXDONE0, RX_RING1_SIZE,
+			RX_RING_TXDONE0, prHifInfo->u4RxEvtRingSize,
 			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[3] fail\n");
 		return false;
@@ -1660,12 +1675,16 @@ static void mt6653WpdmaMsiConfig(struct ADAPTER *prAdapter)
 }
 
 static void mt6653ConfigWfdmaRxRingThreshold(
-	struct ADAPTER *prAdapter, uint32_t u4Num, u_int8_t fgIsData)
+	struct ADAPTER *prAdapter, uint32_t u4Th, u_int8_t fgIsData)
 {
-	uint32_t u4Addr = 0, u4Val = u4Num;
+	uint32_t u4Addr = 0, u4Val = 0, u4Num = 2;
 
-	u4Val |= (u4Num <<
-		  WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH10_RX_DMAD_TH1_SHFT);
+	/* set rxq th to 1 if tput is high */
+	if (u4Th == 2)
+		u4Num = 1;
+
+	u4Val = u4Num | (u4Num <<
+		 WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH10_RX_DMAD_TH1_SHFT);
 	if (fgIsData) {
 		u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH54_ADDR;
 		HAL_MCR_WR(prAdapter, u4Addr, u4Val);
@@ -1771,7 +1790,7 @@ static void mt6653WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	prGlueInfo->rHifInfo.GloCfg.word = GloCfg.word;
 #endif
-	mt6653ConfigWfdmaRxRingThreshold(prAdapter, 2, FALSE);
+	mt6653ConfigWfdmaRxRingThreshold(prAdapter, 0, FALSE);
 
 	mt6653WpdmaConfigExt0(prAdapter);
 	mt6653WpdmaConfigExt1(prAdapter);

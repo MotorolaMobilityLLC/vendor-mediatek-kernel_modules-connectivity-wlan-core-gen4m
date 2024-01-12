@@ -53,6 +53,8 @@
 #define NUM_OF_TX_RING				(6 + NUM_OF_WFDMA1_TX_RING)
 #define NUM_OF_RX_RING				(2 + NUM_OF_WFDMA1_RX_RING)
 
+#define RX_RING_MAX_SIZE			4095
+
 #if defined(CONFIG_MTK_WIFI_BW320)
 #ifdef BELLWETHER
 #define TX_RING_SIZE				1024
@@ -72,22 +74,6 @@
 #define TX_RING_CMD_SIZE			320
 #endif
 
-#if CFG_SUPPORT_RX_PAGE_POOL
-#define RX_RING_SIZE				4095 /* Max Rx ring size */
-/* Data Rx ring */
-#define RX_RING0_SIZE				4095
-#elif defined(MT7990)
-#define RX_RING_SIZE				256
-#define RX_RING0_SIZE				256
-#else
-#define RX_RING_SIZE				1024 /* Max Rx ring size */
-/* Data Rx ring */
-#define RX_RING0_SIZE				1024
-#endif
-
-
-/* Event/MSDU_report Rx ring */
-#define RX_RING1_SIZE				128
 #define HIF_NUM_OF_QM_RX_PKT_NUM		10240
 #define HIF_PLE_PAGE_SIZE			0xBC0
 #define HIF_AMSDU_COUNT				4
@@ -102,11 +88,6 @@
 #else
 #define TX_RING_CMD_SIZE			256
 #endif
-#define RX_RING_SIZE				1024 /* Max Rx ring size */
-/* Data Rx ring */
-#define RX_RING0_SIZE				1024
-/* Event/MSDU_report Rx ring */
-#define RX_RING1_SIZE				128
 #define HIF_NUM_OF_QM_RX_PKT_NUM		4096
 #define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_DATA_SIZE * 4)
 
@@ -118,11 +99,6 @@
 #else
 #define TX_RING_CMD_SIZE			256
 #endif
-#define RX_RING_SIZE				1024 /* Max Rx ring size */
-/* Data Rx ring */
-#define RX_RING0_SIZE				1024
-/* Event/MSDU_report Rx ring */
-#define RX_RING1_SIZE				16
 #define HIF_NUM_OF_QM_RX_PKT_NUM		2048
 #define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_DATA_SIZE * 2)
 
@@ -134,11 +110,6 @@
 #else
 #define TX_RING_CMD_SIZE			256
 #endif
-#define RX_RING_SIZE				512 /* Max Rx ring size */
-/* Data Rx ring */
-#define RX_RING0_SIZE				512
-/* Event/MSDU_report Rx ring */
-#define RX_RING1_SIZE				16
 #define HIF_NUM_OF_QM_RX_PKT_NUM		2048
 #define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_DATA_SIZE * 3)
 
@@ -150,11 +121,6 @@
 #else
 #define TX_RING_CMD_SIZE			256
 #endif
-#define RX_RING_SIZE				256 /* Max Rx ring size */
-/* Data Rx ring */
-#define RX_RING0_SIZE				256
-/* Event/MSDU_report Rx ring */
-#define RX_RING1_SIZE				16
 #define HIF_NUM_OF_QM_RX_PKT_NUM		2048
 #define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_DATA_SIZE * 3)
 #endif
@@ -285,7 +251,7 @@
 #define WFDMA_MAGIC_CNT_NUM      16
 #define INDCMD_MAGIC_CNT_NUM     8
 #define RX_BLK_MAGIC_CNT_NUM     4
-#define MAWD_RX_BLK_RING_SIZE    (RX_RING_SIZE)
+#define MAWD_RX_BLK_RING_SIZE    (RX_RING_MAX_SIZE)
 #define MAWD_ENABLE_WAKEUP_SLEEP 1
 #define MAWD_DUMP_DEBUG_INFO     1
 #define MAWD_POWER_UP_RETRY_CNT  10000
@@ -294,7 +260,7 @@
 #define MAWD_MD_TX_RING_NUM      2
 #define MAWD_CR_BACKUP_VALID     88
 #define MAWD_CR_BACKUP_OFFSET    89
-#define RRO_PREALLOC_RX_BUF_NUM  (RX_RING_SIZE * 3)
+#define RRO_PREALLOC_RX_BUF_NUM  (RX_RING_MAX_SIZE * 3)
 #define RRO_BA_BITMAP_SIZE       128
 #if (CFG_MTK_FPGA_PLATFORM == 1)
 #define RRO_MAX_STA_NUM          8
@@ -564,7 +530,7 @@ struct RTMP_TX_RING {
 };
 
 struct RTMP_RX_RING {
-	struct RTMP_DMACB Cell[RX_RING_SIZE];
+	struct RTMP_DMACB Cell[RX_RING_MAX_SIZE];
 	uint32_t RxCpuIdx;
 	uint32_t RxDmaIdx;
 	uint32_t u4BufSize;
@@ -653,6 +619,7 @@ struct MSDU_TOKEN_INFO {
 	struct MSDU_TOKEN_ENTRY *aprTokenStack[HIF_TX_MSDU_TOKEN_NUM];
 	spinlock_t rTokenLock;
 	struct MSDU_TOKEN_ENTRY arToken[HIF_TX_MSDU_TOKEN_NUM];
+	uint32_t u4TokenNum;
 
 	/* control bss index packet number */
 	uint32_t u4TxBssCnt[MAX_BSSID_NUM];
@@ -1144,15 +1111,124 @@ static inline int halMawdPwrOn(void) { return 0; }
 static inline void halMawdPwrOff(void) {}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
+int halInitResvMem(struct platform_device *pdev);
+int halAllocHifMem(struct platform_device *pdev,
+		   struct mt66xx_hif_driver_data *prDriverData);
+void halFreeHifMem(struct platform_device *pdev);
+
+void halCopyPathAllocTxDesc(struct GL_HIF_INFO *prHifInfo,
+			    struct RTMP_DMABUF *prDescRing,
+			    uint32_t u4Num);
+void halCopyPathAllocRxDesc(struct GL_HIF_INFO *prHifInfo,
+			    struct RTMP_DMABUF *prDescRing,
+			    uint32_t u4Num);
+void halCopyPathAllocExtBuf(struct GL_HIF_INFO *prHifInfo,
+			    struct RTMP_DMABUF *prDescRing);
+bool halCopyPathAllocTxCmdBuf(struct RTMP_DMABUF *prDmaBuf,
+			      uint32_t u4Num, uint32_t u4Idx);
+void halCopyPathAllocTxDataBuf(struct MSDU_TOKEN_ENTRY *prToken,
+			       uint32_t u4Idx);
+void *halCopyPathAllocRxBuf(struct GL_HIF_INFO *prHifInfo,
+			    struct RTMP_DMABUF *prDmaBuf,
+			    uint32_t u4Num, uint32_t u4Idx);
+bool halCopyPathCopyCmd(struct GL_HIF_INFO *prHifInfo,
+			struct RTMP_DMACB *prTxCell, void *pucBuf,
+			void *pucSrc1, uint32_t u4SrcLen1,
+			void *pucSrc2, uint32_t u4SrcLen2);
+bool halCopyPathCopyEvent(struct GL_HIF_INFO *prHifInfo,
+			  struct RTMP_DMACB *pRxCell,
+			  struct RXD_STRUCT *pRxD,
+			  struct RTMP_DMABUF *prDmaBuf,
+			  uint8_t *pucDst, uint32_t u4Len);
+bool halCopyPathCopyTxData(struct MSDU_TOKEN_ENTRY *prToken,
+			   void *pucSrc, uint32_t u4Len);
+bool halCopyPathCopyRxData(struct GL_HIF_INFO *prHifInfo,
+			   struct RTMP_DMACB *pRxCell,
+			   struct RTMP_DMABUF *prDmaBuf,
+			   struct SW_RFB *prSwRfb);
+void halCopyPathFreeExtBuf(struct GL_HIF_INFO *prHifInfo,
+			   struct RTMP_DMABUF *prDescRing);
+void halCopyPathDumpTx(struct GL_HIF_INFO *prHifInfo,
+		       struct RTMP_TX_RING *prTxRing,
+		       uint32_t u4Idx, uint32_t u4DumpLen);
+void halCopyPathDumpRx(struct GL_HIF_INFO *prHifInfo,
+		       struct RTMP_RX_RING *prRxRing,
+		       uint32_t u4Idx, uint32_t u4DumpLen);
+void halZeroCopyPathAllocDesc(struct GL_HIF_INFO *prHifInfo,
+			  struct RTMP_DMABUF *prDescRing,
+			  uint32_t u4Num);
+void halZeroCopyPathAllocExtBuf(struct GL_HIF_INFO *prHifInfo,
+			    struct RTMP_DMABUF *prDescRing);
+void *halZeroCopyPathAllocRxBuf(struct GL_HIF_INFO *prHifInfo,
+			    struct RTMP_DMABUF *prDmaBuf,
+			    uint32_t u4Num, uint32_t u4Idx);
+void halZeroCopyPathAllocTxDataBuf(struct MSDU_TOKEN_ENTRY *prToken,
+			       uint32_t u4Idx);
+void *halZeroCopyPathAllocRuntimeMem(uint32_t u4SrcLen);
+bool halZeroCopyPathCopyCmd(struct GL_HIF_INFO *prHifInfo,
+			struct RTMP_DMACB *prTxCell, void *pucBuf,
+			void *pucSrc1, uint32_t u4SrcLen1,
+			void *pucSrc2, uint32_t u4SrcLen2);
+bool halZeroCopyPathCopyEvent(struct GL_HIF_INFO *prHifInfo,
+			  struct RTMP_DMACB *pRxCell,
+			  struct RXD_STRUCT *pRxD,
+			  struct RTMP_DMABUF *prDmaBuf,
+			  uint8_t *pucDst, uint32_t u4Len);
+bool halZeroCopyPathCopyTxData(struct MSDU_TOKEN_ENTRY *prToken,
+			   void *pucSrc, uint32_t u4Len);
+bool halZeroCopyPathCopyRxData(struct GL_HIF_INFO *prHifInfo,
+			   struct RTMP_DMACB *pRxCell,
+			   struct RTMP_DMABUF *prDmaBuf,
+			   struct SW_RFB *prSwRfb);
+phys_addr_t halZeroCopyPathMapTxBuf(struct GL_HIF_INFO *prHifInfo,
+			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len);
+phys_addr_t halZeroCopyPathMapRxBuf(struct GL_HIF_INFO *prHifInfo,
+			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len);
+void halZeroCopyPathUnmapTxBuf(struct GL_HIF_INFO *prHifInfo,
+			   phys_addr_t rDmaAddr, uint32_t u4Len);
+void halZeroCopyPathUnmapRxBuf(struct GL_HIF_INFO *prHifInfo,
+			   phys_addr_t rDmaAddr, uint32_t u4Len);
+void halZeroCopyPathFreeDesc(struct GL_HIF_INFO *prHifInfo,
+			 struct RTMP_DMABUF *prDescRing);
+void halZeroCopyPathFreeBuf(void *pucSrc, uint32_t u4Len);
+void halZeroCopyPathFreePacket(struct GL_HIF_INFO *prHifInfo,
+			   void *pvPacket, uint32_t u4Num);
+void halZeroCopyPathDumpTx(struct GL_HIF_INFO *prHifInfo,
+		       struct RTMP_TX_RING *prTxRing,
+		       uint32_t u4Idx, uint32_t u4DumpLen);
+void halZeroCopyPathDumpRx(struct GL_HIF_INFO *prHifInfo,
+		       struct RTMP_RX_RING *prRxRing,
+		       uint32_t u4Idx, uint32_t u4DumpLen);
+
+#if CFG_MTK_WIFI_SW_EMI_RING
+struct HIF_MEM *halGetRsvEmi(struct GL_HIF_INFO *prHifInfo);
+#endif
+
 #if CFG_SUPPORT_RX_PAGE_POOL
+void halZeroCopyPathFreePagePoolPacket(struct GL_HIF_INFO *prHifInfo,
+				       void *pvPacket, uint32_t u4Num);
+void *halZeroCopyPathAllocPagePoolRxBuf(struct GL_HIF_INFO *prHifInfo,
+					struct RTMP_DMABUF *prDmaBuf,
+					uint32_t u4Num, uint32_t u4Idx);
+
 void kalSkbMarkForRecycle(struct sk_buff *pkt);
+#if CFG_SUPPORT_DYNAMIC_PAGE_POOL
+void kalSetupPagePoolPageMaxMinNum(uint32_t u4Min, uint32_t u4Max);
+uint32_t kalGetPagePoolPageNum(void);
+u_int8_t kalIncPagePoolPageNum(void);
+u_int8_t kalDecPagePoolPageNum(void);
+u_int8_t kalSetPagePoolPageNum(uint32_t u4Num);
+#endif
 struct sk_buff *kalAllocRxSkb(uint8_t **ppucData);
-u_int8_t kalCreateHifSkbList(void);
+u_int8_t kalCreateHifSkbList(struct mt66xx_chip_info *prChipInfo);
 void kalReleaseHifSkbList(void);
 struct sk_buff *kalAllocHifSkb(void);
 void kalFreeHifSkb(struct sk_buff *prSkb);
 
 extern struct page *wifi_page_pool_alloc_page(void) __attribute__((weak));
+extern void wifi_page_pool_set_page_num(uint32_t num) __attribute__((weak));
+extern uint32_t wifi_page_pool_get_page_num(void) __attribute__((weak));
+extern uint32_t wifi_page_pool_get_max_page_num(void) __attribute__((weak));
 #endif
 void halWpdmaStopRecycleDmad(struct GLUE_INFO *prGlueInfo,
 				       uint16_t u2Port);
