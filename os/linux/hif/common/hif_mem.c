@@ -262,7 +262,11 @@ struct sk_buff *kalAllocRxSkb(dma_addr_t *prAddr)
 		DBGLOG(HAL, ERROR, "allocate skb fail\n");
 		return NULL;
 	}
+#if KERNEL_VERSION(5, 15, 0) <= LINUX_VERSION_CODE
+	skb_mark_for_recycle(pkt);
+#else
 	skb_mark_for_recycle(pkt, page, g_prPagePool);
+#endif
 
 	return pkt;
 }
