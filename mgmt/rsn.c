@@ -1171,6 +1171,7 @@ u_int8_t rsnPerformPolicySelection(
 	u_int8_t fgSuiteSupported;
 	uint32_t u4PairwiseCipher = 0;
 	uint32_t u4GroupCipher = 0;
+	uint32_t u4GroupMgmtCipher = RSN_CIPHER_SUITE_BIP_CMAC_128;
 	uint32_t u4AkmSuite = 0;
 	uint8_t fgMgmtProtection = FALSE;
 	struct RSN_INFO *prBssRsnInfo;
@@ -1482,12 +1483,28 @@ u_int8_t rsnPerformPolicySelection(
 			}
 		}
 
+		if (fgMgmtProtection &&
+		    prBssRsnInfo->u4GroupMgmtCipherSuite !=
+			RSN_CIPHER_SUITE_BIP_CMAC_128 &&
+		    prBssRsnInfo->u4GroupMgmtCipherSuite !=
+			RSN_CIPHER_SUITE_BIP_GMAC_256 &&
+		    prBssRsnInfo->u4GroupMgmtCipherSuite !=
+			prWpaInfo->u4CipherGroupMgmt) {
+			DBGLOG(RSN, INFO,
+			       "[MFP] Skip RSN IE, No matched GropMgmtCipher expected 0x%x but 0x%x\n",
+			       SWAP32(prWpaInfo->u4CipherGroupMgmt),
+			       SWAP32(prBssRsnInfo->u4GroupMgmtCipherSuite));
+			return FALSE;
+		}
+
+		u4GroupMgmtCipher = prBssRsnInfo->u4GroupMgmtCipherSuite;
+
 		DBGLOG(RSN, TRACE,
-		       "[MFP] MFP setting=%d, Cap=%d, CapPresent=%d, MgmtProtection = %d\n",
+		       "[MFP] MFP setting=%d, Cap=%d, CapPresent=%d, MgmtProtection = %d, GroupMgmtCipher = 0x%x\n",
 		       kalGetMfpSetting(prAdapter->prGlueInfo, ucBssIndex),
 		       prBssRsnInfo->u2RsnCap,
 		       prBssRsnInfo->fgRsnCapPresent,
-		       fgMgmtProtection);
+		       fgMgmtProtection, SWAP32(u4GroupMgmtCipher));
 	}
 #endif
 
@@ -1508,9 +1525,11 @@ u_int8_t rsnPerformPolicySelection(
 
 	prBss->u4RsnSelectedPairwiseCipher = u4PairwiseCipher;
 	prBss->u4RsnSelectedGroupCipher = u4GroupCipher;
+	prBss->u4RsnSelectedGroupMgmtCipher = u4GroupMgmtCipher;
 	prBss->u4RsnSelectedAKMSuite = u4AkmSuite;
 	prBss->eRsnSelectedAuthMode = eAuthMode;
 	prBss->u4RsnSelectedPmf = fgMgmtProtection;
+
 	if (prBss->u4RsnSelectedProto != IW_AUTH_WPA_VERSION_DISABLED)
 		prBss->u4RsnSelectedProto = rsnAuthModeRsn(eAuthMode) ?
 			IW_AUTH_WPA_VERSION_WPA2 : IW_AUTH_WPA_VERSION_WPA;
@@ -2023,7 +2042,7 @@ void rsnGenerateRSNIEImpl(struct ADAPTER *prAdapter,
 		/* Fill Group Management Cipher field */
 		if (prAisSpecBssInfo->fgMgmtProtection) {
 			WLAN_SET_FIELD_32(cp,
-				prWpaInfo->u4CipherGroupMgmt);
+			prBssInfo->u4RsnSelectedGroupMgmtCipher);
 			cp += 4;
 			RSN_IE(pucBuffer)->ucLength += 4;
 		}

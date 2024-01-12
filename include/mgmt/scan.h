@@ -374,6 +374,7 @@ struct BSS_DESC {
 	 */
 	uint32_t u4RsnSelectedGroupCipher;
 	uint32_t u4RsnSelectedPairwiseCipher;
+	uint32_t u4RsnSelectedGroupMgmtCipher;
 	uint32_t u4RsnSelectedAKMSuite;
 	uint32_t u4RsnSelectedProto;
 	uint32_t u4RsnSelectedPmf;

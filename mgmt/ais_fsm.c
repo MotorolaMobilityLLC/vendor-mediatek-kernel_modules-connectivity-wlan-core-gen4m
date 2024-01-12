@@ -2096,6 +2096,8 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 			prBssDesc->u4RsnSelectedGroupCipher;
 		prAisBssInfo->u4RsnSelectedPairwiseCipher =
 			prBssDesc->u4RsnSelectedPairwiseCipher;
+		prAisBssInfo->u4RsnSelectedGroupMgmtCipher =
+			prBssDesc->u4RsnSelectedGroupMgmtCipher;
 		prAisBssInfo->u4RsnSelectedAKMSuite =
 			prBssDesc->u4RsnSelectedAKMSuite;
 		prAisBssInfo->eBand = prBssDesc->eBand;
@@ -2629,7 +2631,7 @@ static uint8_t aisFsmUpdateRsnSetting(struct ADAPTER *prAdapter,
 	prAisSpecificBssInfo->fgMgmtProtection = prBss->u4RsnSelectedPmf;
 
 	DBGLOG(AIS, INFO,
-	       "setting=%d,MgmtProtection = %d\n",
+	       "setting=%d, MgmtProtection = %d\n",
 	       kalGetMfpSetting(prAdapter->prGlueInfo, ucBssIndex),
 	       prAisSpecificBssInfo->fgMgmtProtection);
 #endif
@@ -3907,6 +3909,8 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 		prBssDesc->u4RsnSelectedGroupCipher;
 	prBssInfo->u4RsnSelectedPairwiseCipher =
 		prBssDesc->u4RsnSelectedPairwiseCipher;
+	prBssInfo->u4RsnSelectedGroupMgmtCipher =
+		prBssDesc->u4RsnSelectedGroupMgmtCipher;
 	prBssInfo->u4RsnSelectedAKMSuite = prBssDesc->u4RsnSelectedAKMSuite;
 	prBssInfo->eBand = prBssDesc->eBand;
 	ucPrimaryChannel = prBssDesc->ucChannelNum;
