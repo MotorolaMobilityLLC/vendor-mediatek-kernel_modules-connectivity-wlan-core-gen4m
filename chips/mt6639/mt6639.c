@@ -1911,7 +1911,7 @@ static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter)
 #define MCIF_EMI_MEMORY_SIZE 128
 static int mt6639ConnacPccifOn(void)
 {
-#if IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER)
+#if IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER) && CFG_MTK_MDDP_SUPPORT
 	uint32_t mcif_emi_base;
 	void *vir_addr = NULL;
 	int ret = 0;
@@ -1921,7 +1921,7 @@ static int mt6639ConnacPccifOn(void)
 		CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_1_BA_ADDR,
 		0x18051803);
 
-	mcif_emi_base =	get_smem_phy_start_addr(
+	mcif_emi_base = get_smem_phy_start_addr(
 		MD_SYS1, SMEM_USER_RAW_MD_CONSYS, &ret);
 	vir_addr = ioremap(mcif_emi_base, MCIF_EMI_MEMORY_SIZE);
 
@@ -1950,7 +1950,7 @@ static int mt6639ConnacPccifOn(void)
 
 static int mt6639ConnacPccifOff(void)
 {
-#if IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER)
+#if IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER) && CFG_MTK_MDDP_SUPPORT
 	uint32_t mcif_emi_base;
 	void *vir_addr = NULL;
 	int ret = 0;
