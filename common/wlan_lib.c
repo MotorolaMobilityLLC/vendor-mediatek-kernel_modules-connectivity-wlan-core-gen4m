@@ -9444,16 +9444,13 @@ uint32_t wlanCfgParseToFW(int8_t **args, int8_t *args_size,
 
 	memset(&cmd_v1, 0, sizeof(struct CMD_FORMAT_V1));
 
-#if 0
-	cmd_v1.itemType = kalAtoi(*args[ED_ITEMTYPE_SITE]);
-#else
 	cmd_v1.itemType = ITEM_TYPE_DEC;
-#endif
+
 	if (buffer == NULL ||
 	    args_size[ED_STRING_SITE] == 0 ||
 	    args_size[ED_VALUE_SITE] == 0 ||
-	    (cmd_v1.itemType < ITEM_TYPE_DEC
-	     || cmd_v1.itemType > ITEM_TYPE_STR)) {
+	    cmd_v1.itemType < ITEM_TYPE_DEC ||
+	    cmd_v1.itemType > ITEM_TYPE_STR) {
 		DBGLOG(INIT, ERROR, "cfg args wrong\n");
 		return WLAN_STATUS_FAILURE;
 	}
@@ -9462,14 +9459,14 @@ uint32_t wlanCfgParseToFW(int8_t **args, int8_t *args_size,
 	strncpy(cmd_v1.itemString, args[ED_STRING_SITE],
 		cmd_v1.itemStringLength);
 	DBGLOG(INIT, INFO, "itemString:");
-	for (i = 0; i <  cmd_v1.itemStringLength; i++)
+	for (i = 0; i < cmd_v1.itemStringLength; i++)
 		DBGLOG(INIT, INFO, "%c", cmd_v1.itemString[i]);
 	DBGLOG(INIT, INFO, "\n");
 
 	DBGLOG(INIT, INFO, "cmd_v1.itemType = %d\n",
 	       cmd_v1.itemType);
-	if (cmd_v1.itemType == ITEM_TYPE_DEC
-	    || cmd_v1.itemType == ITEM_TYPE_HEX) {
+	if (cmd_v1.itemType == ITEM_TYPE_DEC ||
+	    cmd_v1.itemType == ITEM_TYPE_HEX) {
 		data = args[ED_VALUE_SITE];
 
 		switch (cmd_v1.itemType) {
@@ -9500,10 +9497,10 @@ uint32_t wlanCfgParseToFW(int8_t **args, int8_t *args_size,
 
 		for (j = args_size[ED_VALUE_SITE] - 1 - startOffset; j >= 0;
 		     j--) {
-			sum = sum * base + kalAtoi(*data);
+			sum = sum * base + hexDigitToInt(*data);
 			DBGLOG(INIT, WARN, "size:%d data[%d]=%u, sum=%u\n",
 			       args_size[ED_VALUE_SITE], j,
-				   kalAtoi(*data), sum);
+				   hexDigitToInt(*data), sum);
 
 			data++;
 		}
@@ -14338,5 +14335,17 @@ uint32_t wlanQueryThermalTemp(struct ADAPTER *ad,
 	status = kalIoctl(glue, handler, data, sizeof(*data), &len);
 
 	return status;
+}
+
+int8_t hexDigitToInt(uint8_t ch)
+{
+	if (ch >= 'a' && ch <= 'f')
+		return 10 + ch - 'a';
+	else if (ch >= 'A' && ch <= 'F')
+		return 10 + ch - 'A';
+	else if (ch >= '0' && ch <= '9')
+		return ch - '0';
+
+	return 0;
 }
 

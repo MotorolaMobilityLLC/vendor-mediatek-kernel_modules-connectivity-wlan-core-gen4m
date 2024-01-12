@@ -979,18 +979,6 @@ int dmashdl_dvt_result(
 	return i4BytesWritten;
 }
 
-int8_t cmd_atoi(uint8_t ch)
-{
-	if (ch >= 'a' && ch <= 'f')
-		return ch - 87;
-	else if (ch >= 'A' && ch <= 'F')
-		return ch - 55;
-	else if (ch >= '0' && ch <= '9')
-		return ch - 48;
-
-	return 0;
-}
-
 /*
 * This routine is used to run DMASHDL DVT items.
 * iwpriv wlan0 driver "DMASHDL_DVT_ITEM item subitem"
@@ -1023,10 +1011,10 @@ int priv_driver_dmashdl_dvt_item(
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
-	tDvtCmd.ucItemNo = cmd_atoi(apcArgv[1][0]);
+	tDvtCmd.ucItemNo = hexDigitToInt(apcArgv[1][0]);
 	tDvtCmd.ucArgNo = i4Argc - 2;
 	if (tDvtCmd.ucArgNo)
-		tDvtCmd.ucSubItemNo = cmd_atoi(apcArgv[2][0]);
+		tDvtCmd.ucSubItemNo = hexDigitToInt(apcArgv[2][0]);
 	else
 		tDvtCmd.ucSubItemNo = 0;
 

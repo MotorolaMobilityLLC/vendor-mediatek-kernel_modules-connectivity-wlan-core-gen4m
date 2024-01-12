@@ -5460,92 +5460,69 @@ void nicEventUpdateLowLatencyInfoStatus(struct ADAPTER *prAdapter,
 		  struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_LOW_LATENCY_INFO *prEvtLowLatencyInfo;
-	struct REAL_TIME rTm;
+	struct REAL_TIME rTm = {0};
 #if CFG_SUPPORT_DATA_STALL
-	uint8_t event[12];
-	uint32_t iEventTime;
-	int8_t i, ret = 0;
+	/* Save 8 digits uint32 timestamp with snprintf to a 9-byte buffer. */
+	uint8_t event[9];
+	uint32_t u4EventTime;
+	int8_t ret = 0;
 #endif
 
 	ASSERT(prAdapter);
 
 	prEvtLowLatencyInfo =
 		(struct EVENT_LOW_LATENCY_INFO *)(prEvent->aucBuffer);
-	kalMemZero(&rTm, sizeof(struct REAL_TIME));
 	kalGetRealTime(&rTm);
 
 	DBGLOG(NIC, TRACE,
-		   "Low Latency DPP Info: drv cert=[%d], evt cert=[%d], evt dup=[%d] drv det=[%d] %02d-%02d %02d:%02d:%02d.%06u\n",
-		   prAdapter->fgTxDupCertificate,
-		   prEvtLowLatencyInfo->fgTxDupCert,
-		   prEvtLowLatencyInfo->fgTxDupEnable,
-		   prAdapter->fgEnTxDupDetect,
-		   rTm.i4TmWday + 1, rTm.i4TmDay, rTm.i4TmHour,
-		   rTm.i4TmMin, rTm.i4TmSec, rTm.u4TvValUsec);
+			"Low Latency DPP Info: drv cert=[%d], evt cert=[%d], evt dup=[%d] drv det=[%d] %02d-%02d %02d:%02d:%02d.%06u\n",
+			prAdapter->fgTxDupCertificate,
+			prEvtLowLatencyInfo->fgTxDupCert,
+			prEvtLowLatencyInfo->fgTxDupEnable,
+			prAdapter->fgEnTxDupDetect,
+			rTm.i4TmWday + 1, rTm.i4TmDay, rTm.i4TmHour,
+			rTm.i4TmMin, rTm.i4TmSec, rTm.u4TvValUsec);
+
 	if (prAdapter->fgTxDupCertificate != prEvtLowLatencyInfo->fgTxDupCert) {
 
 		prAdapter->fgTxDupCertificate =
 			prEvtLowLatencyInfo->fgTxDupCert;
 
 #if CFG_SUPPORT_DATA_STALL
-		ret = sprintf(event, "%03d%02d%06u",
+		ret = snprintf(event, sizeof(event), "%03d%02d%06u",
 			EVENT_TX_DUP_CERT_CHANGE,
-			rTm.i4TmSec,
-			rTm.u4TvValUsec);
+			rTm.i4TmSec, rTm.u4TvValUsec);
 
 		if (ret < 0 || ret > sizeof(event)) {
 			DBGLOG_LIMITED(NIC, INFO, "sprintf failed:%d\n", ret);
 			return;
 		}
 
-		iEventTime = 0;
-		for (i = 0 ; i < 8 ; i++)
-			iEventTime = iEventTime*10 + kalAtoi(event[i]);
-
-		KAL_REPORT_ERROR_EVENT(prAdapter,
-			iEventTime,
-			(uint16_t)sizeof(uint32_t),
-			0,
-			TRUE);
+		kalStrtouint(event, 10, &u4EventTime);
+		KAL_REPORT_ERROR_EVENT(prAdapter, u4EventTime,
+				sizeof(uint32_t), 0, TRUE);
 #endif
 	}
 
 #if CFG_SUPPORT_DATA_STALL
-	if (prAdapter->fgTxDupCertificate) {
-
+	if (prAdapter->fgTxDupCertificate &&
+	    prAdapter->fgEnTxDupDetect) {
 		/* Indicate detect result to driver if detect on */
-		if (prAdapter->fgEnTxDupDetect) {
-			if (prEvtLowLatencyInfo->fgTxDupEnable) {
-				ret = sprintf(event, "%03d%02d%06u",
-					EVENT_TX_DUP_ON,
-					rTm.i4TmSec,
-					rTm.u4TvValUsec);
-			} else {
-				ret = sprintf(event, "%03d%02d%06u",
-					EVENT_TX_DUP_OFF,
-					rTm.i4TmSec,
-					rTm.u4TvValUsec);
-			}
+		ret = snprintf(event, sizeof(event), "%03d%02d%06u",
+				prEvtLowLatencyInfo->fgTxDupEnable ?
+				EVENT_TX_DUP_ON : EVENT_TX_DUP_OFF,
+				rTm.i4TmSec,
+				rTm.u4TvValUsec);
 
-			if (ret < 0 || ret > sizeof(event)) {
-				DBGLOG_LIMITED(NIC, INFO,
-					"sprintf failed:%d\n", ret);
-				return;
-			}
-
-			/* Convert 11 byte string like '10121316927' to
-			 * 8 digits uint32 integer 10121316
-			 */
-			iEventTime = 0;
-			for (i = 0 ; i < 8 ; i++)
-				iEventTime = iEventTime*10 + kalAtoi(event[i]);
-
-			KAL_REPORT_ERROR_EVENT(prAdapter,
-				iEventTime,
-				(uint16_t)sizeof(uint32_t),
-				0,
-				TRUE);
+		if (ret < 0 || ret > sizeof(event)) {
+			DBGLOG_LIMITED(NIC, INFO,
+				"snprintf failed:%d\n", ret);
+			return;
 		}
+
+		kalStrtouint(event, 10, &u4EventTime);
+		KAL_REPORT_ERROR_EVENT(prAdapter, u4EventTime,
+				sizeof(uint32_t), 0, TRUE);
 	}
 #endif
 }

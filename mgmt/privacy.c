@@ -689,7 +689,6 @@ u_int8_t secIsRobustActionFrame(struct ADAPTER *prAdapter, void *prPacket)
 {
 	struct WLAN_MAC_HEADER *prWlanHeader = NULL;
 	struct WLAN_ACTION_FRAME *prActFrame = NULL;
-	uint8_t ucCategory;
 	uint16_t u2TxFrameCtrl;
 
 	if (!prPacket)
@@ -702,25 +701,29 @@ u_int8_t secIsRobustActionFrame(struct ADAPTER *prAdapter, void *prPacket)
 		return FALSE;
 
 	prActFrame = (struct WLAN_ACTION_FRAME *)prWlanHeader;
-	ucCategory = prActFrame->ucCategory;
-	return ucCategory == CATEGORY_SPEC_MGT ||
-	       ucCategory == CATEGORY_QOS_ACTION ||
-	       ucCategory == CATEGORY_DLS_ACTION ||
-	       ucCategory == CATEGORY_BLOCK_ACK_ACTION ||
-	       ucCategory == CATEGORY_RM_ACTION ||
-	       ucCategory == CATEGORY_FT_ACTION ||
-	       ucCategory == CATEGORY_SA_QUERY_ACTION ||
-	       ucCategory == CATEGORY_PROTECTED_DUAL_OF_PUBLIC_ACTION ||
-	       ucCategory == CATEGORY_WNM_ACTION ||
-	       ucCategory == CATEGORY_TDLS_ACTION ||
-	       ucCategory == CATEGORY_MESH_ACTION ||
-	       ucCategory == CATEGORY_MULTIHOP_ACTION ||
-	       ucCategory == CATEGORY_DMG_ACTION ||
-	       ucCategory == CATEGORY_FST_ACTION ||
-	       ucCategory == CATEGORY_ROBUST_AV_STREAMING_ACTION ||
-	       ucCategory == CATEGORY_VENDOR_SPECIFIC_PROTECTED_ACTION ||
-	       ucCategory == CATEGORY_PROTECTED_EHT_ACTION
-	       ? TRUE : FALSE;
+
+	switch (prActFrame->ucCategory) {
+	case CATEGORY_SPEC_MGT:
+	case CATEGORY_QOS_ACTION:
+	case CATEGORY_DLS_ACTION:
+	case CATEGORY_BLOCK_ACK_ACTION:
+	case CATEGORY_RM_ACTION:
+	case CATEGORY_FT_ACTION:
+	case CATEGORY_SA_QUERY_ACTION:
+	case CATEGORY_PROTECTED_DUAL_OF_PUBLIC_ACTION:
+	case CATEGORY_WNM_ACTION:
+	case CATEGORY_TDLS_ACTION:
+	case CATEGORY_MESH_ACTION:
+	case CATEGORY_MULTIHOP_ACTION:
+	case CATEGORY_DMG_ACTION:
+	case CATEGORY_FST_ACTION:
+	case CATEGORY_ROBUST_AV_STREAMING_ACTION:
+	case CATEGORY_VENDOR_SPECIFIC_PROTECTED_ACTION:
+	case CATEGORY_PROTECTED_EHT_ACTION:
+		return TRUE;
+	default:
+		return FALSE;
+	}
 }
 
 u_int8_t secIsWepBss(struct ADAPTER *prAdapter,

@@ -758,12 +758,12 @@ freq_range_list_parse(struct wpa_freq_range_list *res, const char *value) {
 			return -1;
 		}
 		freq = n;
-		freq[count].min = atoi(pos);
+		kstrtouint(pos, 10, &freq[count].min);
 		pos2 = os_strchr(pos, '-');
 		pos3 = os_strchr(pos, ',');
 		if (pos2 && (!pos3 || pos2 < pos3)) {
 			pos2++;
-			freq[count].max = atoi(pos2);
+			kstrtouint(pos2, 10, &freq[count].max);
 		} else
 			freq[count].max = freq[count].min;
 		pos = pos3;

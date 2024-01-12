@@ -672,10 +672,9 @@ enum ENUM_VENDOR_DRIVER_EVENT {
 #define kalStrnCat(dst, src, n)            strncat(dst, src, n)
 #define kalIsXdigit(c)                     isxdigit(c)
 #define kalStrtoint(_data, _base, _res) kal_strtoint(_data, _base, _res)
+#define kalStrtouint(_data, _base, _res) kal_strtouint(_data, _base, _res)
 #define kalStrtoul(_data, _base, _res) kal_strtoul(_data, _base, _res)
 /* implementation for no op API */
-int8_t kal_atoi(uint8_t ch);
-#define kalAtoi(_ch) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #define SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten, fmt, args...) (\
 	{\
@@ -2293,6 +2292,7 @@ int kal_strtou16(const char *s, unsigned int base, uint16_t *res);
 int kal_strtou32(const char *s, unsigned int base, uint32_t *res);
 int kal_strtos32(const char *s, unsigned int base, int32_t *res);
 int kal_strtoint(const char *s, unsigned int base, int *res);
+int kal_strtouint(const char *s, unsigned int base, unsigned int *res);
 int kal_strtoul(const char *s, unsigned int base, unsigned long *res);
 int kal_scnprintf(char *buf, size_t size, const char *fmt, ...);
 void *kal_kmalloc(size_t size, enum gfp_t type);

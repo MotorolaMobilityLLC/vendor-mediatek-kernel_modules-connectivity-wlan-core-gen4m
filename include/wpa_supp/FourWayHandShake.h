@@ -445,8 +445,6 @@ int os_strncmp(const char *s1, const char *s2, size_t n);
 
 int os_strcmp(const char *s1, const char *s2);
 
-/*/int atoi(const char *s);*/
-
 int os_snprintf_error(size_t size, int res);
 
 int os_get_reltime(struct os_reltime *t);
