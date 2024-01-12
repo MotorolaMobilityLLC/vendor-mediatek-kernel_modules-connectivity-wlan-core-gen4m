@@ -1801,21 +1801,39 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 	if (prP2PInfo)
 		prP2PInfo->eChnlSwitchPolicy = CHNL_SWITCH_POLICY_NONE;
 
-	prGlueInfo = prAdapter->prGlueInfo;
-	role_idx = prP2pRoleFsmInfo->ucRoleIndex;
-	/* Skip channel request/abort for STA+SAP/MCC concurrent case */
-	if (prAisBssInfo &&
-		(prAisBssInfo->ucPrimaryChannel !=
-		prP2pBssInfo->ucPrimaryChannel) &&
-		(prAisBssInfo->eConnectionState ==
-		MEDIA_STATE_CONNECTED)) {
-		p2pFuncDfsSwitchCh(prAdapter,
-			prP2pBssInfo,
-			prP2pRoleFsmInfo->rChnlReqInfo);
-	} else {
+	if (prP2pBssInfo->eBand != prP2pRoleFsmInfo->rChnlReqInfo.eBand) {
+		nicDeactivateNetwork(prAdapter, prP2pBssInfo->ucBssIndex);
+		nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
+		nicActivateNetwork(prAdapter, prP2pBssInfo->ucBssIndex);
+
+#if CFG_SUPPORT_DBDC
+		cnmDbdcPreConnectionEnableDecision(prAdapter,
+			prP2pBssInfo->ucBssIndex,
+			prP2pRoleFsmInfo->rChnlReqInfo.eBand,
+			prP2pRoleFsmInfo->rChnlReqInfo.ucReqChnlNum,
+			prP2pBssInfo->ucWmmQueSet);
+#endif /*CFG_SUPPORT_DBDC*/
+
 		p2pRoleFsmStateTransition(prAdapter,
 			prP2pRoleFsmInfo,
 			P2P_ROLE_STATE_SWITCH_CHANNEL);
+	} else {
+		prGlueInfo = prAdapter->prGlueInfo;
+		role_idx = prP2pRoleFsmInfo->ucRoleIndex;
+		/* Skip channel request/abort for STA+SAP/MCC concurrent case */
+		if (prAisBssInfo &&
+			(prAisBssInfo->ucPrimaryChannel !=
+			prP2pBssInfo->ucPrimaryChannel) &&
+			(prAisBssInfo->eConnectionState ==
+			MEDIA_STATE_CONNECTED)) {
+			p2pFuncDfsSwitchCh(prAdapter,
+				prP2pBssInfo,
+				prP2pRoleFsmInfo->rChnlReqInfo);
+		} else {
+			p2pRoleFsmStateTransition(prAdapter,
+				prP2pRoleFsmInfo,
+				P2P_ROLE_STATE_SWITCH_CHANNEL);
+		}
 	}
 
 	cnmMemFree(prAdapter, prMsgHdr);
