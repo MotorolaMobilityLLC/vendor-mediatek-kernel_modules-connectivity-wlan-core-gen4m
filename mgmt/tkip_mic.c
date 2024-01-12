@@ -504,9 +504,7 @@ u_int8_t tkipMicDecapsulateInRxHdrTransMode(
 			   prSwRfb->pvHeader + 6,
 			   prSwRfb->pvHeader,
 			   prSwRfb->ucTid, aucMic2);
-
-		if (prSkb)
-			kfree_skb((struct sk_buff *)prSkb);
+		kalKfreeSkb(prSkb, TRUE);
 	} else {
 		DBGLOG(RX, ERROR, "MIC SW DEC1\n");
 		return fgStatus;

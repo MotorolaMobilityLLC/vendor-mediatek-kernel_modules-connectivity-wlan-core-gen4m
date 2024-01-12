@@ -12147,3 +12147,28 @@ uint32_t kalGetTxDirectQueueLength(
 {
 	return skb_queue_len(&prGlueInfo->rTxDirectSkbQueue);
 }
+
+void kalKfreeSkb(void *pvPacket, u_int8_t fgIsFreeData)
+{
+	struct sk_buff *pkt = (struct sk_buff *)pvPacket;
+
+	if (pkt) {
+		if (!fgIsFreeData)
+			pkt->head = NULL;
+
+		kfree_skb(pkt);
+	}
+}
+
+void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
+	u_int8_t fgIsSetLen)
+{
+	struct sk_buff *pkt = (struct sk_buff *)pvPacket;
+
+	pkt = build_skb(pkt, u4TotLen);
+
+	if (pkt && fgIsSetLen)
+		pkt->len = u4TotLen;
+
+	return (void *)pkt;
+}
