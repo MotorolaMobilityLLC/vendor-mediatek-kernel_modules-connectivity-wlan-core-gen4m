@@ -1984,6 +1984,14 @@ enum ENUM_PWR_LIMIT_TYPE {
 	PWR_LIMIT_TYPE_COMP_6E_3 = 6,
 	PWR_LIMIT_TYPE_COMP_ANT_V2 = 7,
 	PWR_LIMIT_TYPE_COMP_11AX_BW160 = 8,
+	PWR_LIMIT_TYPE_COMP_11BE_1 = 9,
+	PWR_LIMIT_TYPE_COMP_11BE_2 = 10,
+	PWR_LIMIT_TYPE_COMP_11BE_6G_1 = 11,
+	PWR_LIMIT_TYPE_COMP_11BE_6G_2 = 12,
+	PWR_LIMIT_TYPE_COMP_11BE_6G_3 = 13,
+	PWR_LIMIT_TYPE_COMP_11BE_6G_4 = 14,
+	PWR_LIMIT_TYPE_COMP_11BE_6G_5 = 15,
+	PWR_LIMIT_TYPE_COMP_11BE_6G_6 = 16,
 	PWR_LIMIT_TYPE_COMP_NUM,
 };
 
@@ -2021,7 +2029,79 @@ struct CMD_CHANNEL_POWER_LIMIT_6E {
 	uint8_t ucFlag;
 	uint8_t ucValid;
 };
-#endif
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+struct CMD_CHANNEL_POWER_LIMIT_EHT_6G {
+	uint8_t ucCentralCh;
+	int8_t cPwrLimitEHT26L; /* MCS0~4 */
+	int8_t cPwrLimitEHT26H; /* MCS5~9 */
+	int8_t cPwrLimitEHT26U; /* MCS10~15 */
+
+	int8_t cPwrLimitEHT52L; /* MCS0~4 */
+	int8_t cPwrLimitEHT52H; /* MCS5~9 */
+	int8_t cPwrLimitEHT52U; /* MCS10~15 */
+
+	int8_t cPwrLimitEHT106L; /* MCS0~4 */
+	int8_t cPwrLimitEHT106H; /* MCS5~9 */
+	int8_t cPwrLimitEHT106U; /* MCS10~15 */
+	/*RU242/SU20*/
+	int8_t cPwrLimitEHT242L; /* MCS0~4 */
+	int8_t cPwrLimitEHT242H; /* MCS5~9 */
+	int8_t cPwrLimitEHT242U; /* MCS10~15 */
+	/*RU484/SU40*/
+	int8_t cPwrLimitEHT484L; /* MCS0~4 */
+	int8_t cPwrLimitEHT484H; /* MCS5~9 */
+	int8_t cPwrLimitEHT484U; /* MCS10~15 */
+	/*RU996/SU80*/
+	int8_t cPwrLimitEHT996L; /* MCS0~4 */
+	int8_t cPwrLimitEHT996H; /* MCS5~9 */
+	int8_t cPwrLimitEHT996U; /* MCS10~15 */
+	/*RU1992/SU160*/
+	int8_t cPwrLimitEHT996X2L; /* MCS0~4 */
+	int8_t cPwrLimitEHT996X2H; /* MCS5~9 */
+	int8_t cPwrLimitEHT996X2U; /* MCS10~15 */
+	/*RU1992/SU320*/
+	int8_t cPwrLimitEHT996X4L; /* MCS0~4 */
+	int8_t cPwrLimitEHT996X4H; /* MCS5~9 */
+	int8_t cPwrLimitEHT996X4U; /* MCS10~15 */
+
+	int8_t cPwrLimitEHT26_52L; /* MCS0~4 */
+	int8_t cPwrLimitEHT26_52H; /* MCS5~9 */
+	int8_t cPwrLimitEHT26_52U; /* MCS10~15 */
+
+	int8_t cPwrLimitEHT26_106L; /* MCS0~4 */
+	int8_t cPwrLimitEHT26_106H; /* MCS5~9 */
+	int8_t cPwrLimitEHT26_106U; /* MCS10~15 */
+
+	int8_t cPwrLimitEHT484_242L; /* MCS0~4 */
+	int8_t cPwrLimitEHT484_242H; /* MCS5~9 */
+	int8_t cPwrLimitEHT484_242U; /* MCS10~15 */
+
+	int8_t cPwrLimitEHT996_484L; /* MCS0~4 */
+	int8_t cPwrLimitEHT996_484H; /* MCS5~9 */
+	int8_t cPwrLimitEHT996_484U; /* MCS10~15 */
+
+	int8_t cPwrLimitEHT996_484_242L; /* MCS0~4 */
+	int8_t cPwrLimitEHT996_484_242H; /* MCS5~9 */
+	int8_t cPwrLimitEHT996_484_242U; /* MCS10~15 */
+
+	int8_t cPwrLimitEHT996X2_484L; /* MCS0~4 */
+	int8_t cPwrLimitEHT996X2_484H; /* MCS5~9 */
+	int8_t cPwrLimitEHT996X2_484U; /* MCS10~15 */
+
+	int8_t cPwrLimitEHT996X3L; /* MCS0~4 */
+	int8_t cPwrLimitEHT996X3H; /* MCS5~9 */
+	int8_t cPwrLimitEHT996X3U; /* MCS10~15 */
+
+	int8_t cPwrLimitEHT996X3_484L; /* MCS0~4 */
+	int8_t cPwrLimitEHT996X3_484H; /* MCS5~9 */
+	int8_t cPwrLimitEHT996X3_484U; /* MCS10~15 */
+
+	uint8_t ucFlag;
+	uint8_t ucValid;
+
+};
+#endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
+#endif /* CFG_SUPPORT_WIFI_6G */
 
 /* CMD_SET_PWR_LIMIT_TABLE */
 struct CMD_CHANNEL_POWER_LIMIT {
@@ -2112,6 +2192,63 @@ struct CMD_CHANNEL_POWER_LIMIT_HE_BW160 { /*HE SU design*/
 
 };
 
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+struct CMD_CHANNEL_POWER_LIMIT_EHT { /*HE SU design*/
+	uint8_t ucCentralCh;
+	int8_t cPwrLimitEHT26L; /* MCS0~4 */
+	int8_t cPwrLimitEHT26H; /* MCS5~9 */
+	int8_t cPwrLimitEHT26U; /* MCS10~15 */
+
+	int8_t cPwrLimitEHT52L; /* MCS0~4 */
+	int8_t cPwrLimitEHT52H; /* MCS5~9 */
+	int8_t cPwrLimitEHT52U; /* MCS10~15 */
+
+	int8_t cPwrLimitEHT106L; /* MCS0~4 */
+	int8_t cPwrLimitEHT106H; /* MCS5~9 */
+	int8_t cPwrLimitEHT106U; /* MCS10~15 */
+	/*RU242/SU20*/
+	int8_t cPwrLimitEHT242L; /* MCS0~4 */
+	int8_t cPwrLimitEHT242H; /* MCS5~9 */
+	int8_t cPwrLimitEHT242U; /* MCS10~15 */
+	/*RU484/SU40*/
+	int8_t cPwrLimitEHT484L; /* MCS0~4 */
+	int8_t cPwrLimitEHT484H; /* MCS5~9 */
+	int8_t cPwrLimitEHT484U; /* MCS10~15 */
+	/*RU996/SU80*/
+	int8_t cPwrLimitEHT996L; /* MCS0~4 */
+	int8_t cPwrLimitEHT996H; /* MCS5~9 */
+	int8_t cPwrLimitEHT996U; /* MCS10~15 */
+	/*RU1992/SU160*/
+	int8_t cPwrLimitEHT996X2L; /* MCS0~4 */
+	int8_t cPwrLimitEHT996X2H; /* MCS5~9 */
+	int8_t cPwrLimitEHT996X2U; /* MCS10~15 */
+
+	int8_t cPwrLimitEHT26_52L; /* MCS0~4 */
+	int8_t cPwrLimitEHT26_52H; /* MCS5~9 */
+	int8_t cPwrLimitEHT26_52U; /* MCS10~15 */
+
+	int8_t cPwrLimitEHT26_106L; /* MCS0~4 */
+	int8_t cPwrLimitEHT26_106H; /* MCS5~9 */
+	int8_t cPwrLimitEHT26_106U; /* MCS10~15 */
+
+	int8_t cPwrLimitEHT484_242L; /* MCS0~4 */
+	int8_t cPwrLimitEHT484_242H; /* MCS5~9 */
+	int8_t cPwrLimitEHT484_242U; /* MCS10~15 */
+
+	int8_t cPwrLimitEHT996_484L; /* MCS0~4 */
+	int8_t cPwrLimitEHT996_484H; /* MCS5~9 */
+	int8_t cPwrLimitEHT996_484U; /* MCS10~15 */
+
+	int8_t cPwrLimitEHT996_484_242L; /* MCS0~4 */
+	int8_t cPwrLimitEHT996_484_242H; /* MCS5~9 */
+	int8_t cPwrLimitEHT996_484_242U; /* MCS10~15 */
+
+	uint8_t ucFlag;
+	uint8_t ucValid;
+
+};
+#endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
+
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
 
 #define POWER_LIMIT_ANT_CONFIG_NUM 60
@@ -2149,6 +2286,10 @@ struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT {
 		/*Channel HE BW160 power limit entries to be set*/
 		struct CMD_CHANNEL_POWER_LIMIT_HE_BW160
 			rChPwrLimtHEBW160[MAX_CMD_SUPPORT_CHANNEL_NUM];
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+		struct CMD_CHANNEL_POWER_LIMIT_EHT
+			rChPwrLimtEHT[MAX_CMD_EHT_SUPPORT_CHANNEL_NUM];
+#endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
 		struct CMD_CHANNEL_POWER_LIMIT_ANT
 			rChPwrLimtAnt[POWER_LIMIT_ANT_CONFIG_NUM];
@@ -2156,7 +2297,11 @@ struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		struct CMD_CHANNEL_POWER_LIMIT_6E
 			rChPwrLimt6E[MAX_CMD_SUPPORT_CHANNEL_NUM];
-#endif
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+		struct CMD_CHANNEL_POWER_LIMIT_EHT_6G
+			rChPwrLimtEHT_6G[MAX_CMD_EHT_6G_SUPPORT_CHANNEL_NUM];
+#endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
+#endif /* CFG_SUPPORT_WIFI_6G */
 	} u;
 
 };

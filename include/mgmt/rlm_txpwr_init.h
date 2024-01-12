@@ -2482,6 +2482,28 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE_BW160
 	}
 };
 
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+/* For EHT 2.4G & 5G setting */
+struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT
+	g_rRlmPowerLimitConfigurationEHT[] = {
+	/*Default*/
+	{	{0, 0}
+		, 1,
+			{64, 64, 64, /* EHT26 L,H,U */
+			64, 64, 64,  /* EHT52 L,H,U*/
+			64, 64, 64,  /* EHT106 L,H,U*/
+			64, 64, 64,  /* EHT242 L,H,U*/
+			64, 64, 64,  /* EHT484 L,H,U*/
+			64, 64, 64,  /* EHT996 L,H,U*/
+			64, 64, 64,  /* EHT996X2 L,H,U*/
+			64, 64, 64,  /* EHT26_52 L,H,U*/
+			64, 64, 64,  /* EHT26_106 L,H,U*/
+			64, 64, 64,  /* EHT484_242 L,H,U*/
+			64, 64, 64,  /* EHT996_484 L,H,U*/
+			64, 64, 64}  /* EHT996_484_242 L,H,U*/
+	}
+};
+#endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_6E
@@ -2498,7 +2520,34 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_6E
 			64, 64, 64}  /* RU1992 L,H,U*/
 	}
 };
-#endif
+
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+/* For EHT 6G setting */
+struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT_6G
+	g_rRlmPowerLimitConfigurationEHT_6G[] = {
+	/*Default*/
+	{	{0, 0}
+		, 1,
+			{64, 64, 64, /* EHT26 L,H,U */
+			64, 64, 64,  /* EHT52 L,H,U*/
+			64, 64, 64,  /* EHT106 L,H,U*/
+			64, 64, 64,  /* EHT242 L,H,U*/
+			64, 64, 64,  /* EHT484 L,H,U*/
+			64, 64, 64,  /* EHT996 L,H,U*/
+			64, 64, 64,  /* EHT996X2 L,H,U*/
+			64, 64, 64,  /* EHT996X4 L,H,U*/
+			64, 64, 64,  /* EHT26_52 L,H,U*/
+			64, 64, 64,  /* EHT26_106 L,H,U*/
+			64, 64, 64,  /* EHT484_242 L,H,U*/
+			64, 64, 64,  /* EHT996_484 L,H,U*/
+			64, 64, 64,  /* EHT996_484_242 L,H,U*/
+			64, 64, 64,  /* EHT996X2_484 L,H,U*/
+			64, 64, 64,  /* EHT996X3 L,H,U*/
+			64, 64, 64}  /* EHT996X3_484 L,H,U*/
+	}
+};
+#endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
+#endif /* CFG_SUPPORT_WIFI_6G */
 
 #if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
