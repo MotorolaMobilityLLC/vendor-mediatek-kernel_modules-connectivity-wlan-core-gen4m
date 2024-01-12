@@ -171,11 +171,11 @@ static inline bool kalIsChipDead(struct GLUE_INFO *prGlueInfo,
 	return u4Value == HIF_DEADFEED_VALUE;
 }
 
-static void kalDevRegL1Read(struct mt66xx_chip_info *prChipInfo,
+static void kalDevRegL1Read(struct GLUE_INFO *prGlueInfo,
+	struct mt66xx_chip_info *prChipInfo,
 	uint32_t reg, uint32_t *val)
 {
-	uint32_t backup_val, tmp_val;
-	uint32_t u4BusAddr = 0;
+	uint32_t backup_val = 0, tmp_val = 0;
 	struct BUS_INFO *prBusInfo = prChipInfo->bus_info;
 	const struct PCIE_CHIP_CR_REMAPPING *prRemapping =
 		prBusInfo->bus2chip_remapping;
@@ -189,29 +189,20 @@ static void kalDevRegL1Read(struct mt66xx_chip_info *prChipInfo,
 		return;
 	}
 
-	if (!halChipToStaticMapBusAddr(prChipInfo,
-	    prL1Remapping->u4Base, &u4BusAddr)) {
-		DBGLOG(HAL, ERROR,
-			"Mapping bus addr failed, reg: 0x%08x\n",
-			prL1Remapping->u4Base);
-		return;
-	}
-
-	RTMP_IO_READ32(prChipInfo, u4BusAddr, &backup_val);
+	kalDevRegRead(prGlueInfo, prL1Remapping->u4Base, &backup_val);
 	tmp_val = (backup_val & ~prL1Remapping->u4Mask);
 	tmp_val |= GET_L1_REMAP_BASE(reg) << prL1Remapping->u4Shift;
-	RTMP_IO_WRITE32(prChipInfo, u4BusAddr, tmp_val);
-	RTMP_IO_READ32(prChipInfo,
-		prL1Remapping->u4RemapBase + GET_L1_REMAP_OFFSET(reg),
-		val);
-	RTMP_IO_WRITE32(prChipInfo, u4BusAddr, backup_val);
+	kalDevRegWrite(prGlueInfo, prL1Remapping->u4Base, tmp_val);
+	kalDevRegRead(prGlueInfo, prL1Remapping->u4RemapBase +
+		GET_L1_REMAP_OFFSET(reg), val);
+	kalDevRegWrite(prGlueInfo, prL1Remapping->u4Base, backup_val);
 }
 
-static void kalDevRegL1Write(struct mt66xx_chip_info *prChipInfo,
+static void kalDevRegL1Write(struct GLUE_INFO *prGlueInfo,
+	struct mt66xx_chip_info *prChipInfo,
 	uint32_t reg, uint32_t val)
 {
-	uint32_t backup_val, tmp_val;
-	uint32_t u4BusAddr = 0;
+	uint32_t backup_val = 0, tmp_val = 0;
 	struct BUS_INFO *prBusInfo = prChipInfo->bus_info;
 	const struct PCIE_CHIP_CR_REMAPPING *prRemapping =
 		prBusInfo->bus2chip_remapping;
@@ -225,30 +216,21 @@ static void kalDevRegL1Write(struct mt66xx_chip_info *prChipInfo,
 		return;
 	}
 
-	if (!halChipToStaticMapBusAddr(prChipInfo,
-	    prL1Remapping->u4Base, &u4BusAddr)) {
-		DBGLOG(HAL, ERROR,
-			"Mapping bus addr failed, reg: 0x%08x\n",
-			prL1Remapping->u4Base);
-		return;
-	}
-
-	RTMP_IO_READ32(prChipInfo, u4BusAddr, &backup_val);
+	kalDevRegRead(prGlueInfo, prL1Remapping->u4Base, &backup_val);
 	tmp_val = (backup_val & ~prL1Remapping->u4Mask);
 	tmp_val |= GET_L1_REMAP_BASE(reg) << prL1Remapping->u4Shift;
-	RTMP_IO_WRITE32(prChipInfo, u4BusAddr, tmp_val);
-	RTMP_IO_WRITE32(prChipInfo,
-		prL1Remapping->u4RemapBase + GET_L1_REMAP_OFFSET(reg),
-		val);
-	RTMP_IO_WRITE32(prChipInfo, u4BusAddr, backup_val);
+	kalDevRegWrite(prGlueInfo, prL1Remapping->u4Base, tmp_val);
+	kalDevRegWrite(prGlueInfo, prL1Remapping->u4RemapBase +
+		GET_L1_REMAP_OFFSET(reg), val);
+	kalDevRegWrite(prGlueInfo, prL1Remapping->u4Base, backup_val);
 }
 
-static void kalDevRegL2Read(struct mt66xx_chip_info *prChipInfo,
+static void kalDevRegL2Read(struct GLUE_INFO *prGlueInfo,
+	struct mt66xx_chip_info *prChipInfo,
 	uint32_t reg, uint32_t *val)
 {
 #if defined(_HIF_PCIE)
-	uint32_t backup_val, tmp_val;
-	uint32_t u4BusAddr = 0;
+	uint32_t backup_val = 0, tmp_val = 0;
 #endif
 	struct BUS_INFO *prBusInfo = prChipInfo->bus_info;
 	const struct PCIE_CHIP_CR_REMAPPING *prRemapping =
@@ -266,36 +248,28 @@ static void kalDevRegL2Read(struct mt66xx_chip_info *prChipInfo,
 	}
 
 #if defined(_HIF_PCIE)
-	if (!halChipToStaticMapBusAddr(prChipInfo,
-	    prL1Remapping->u4Base, &u4BusAddr)) {
-		DBGLOG(HAL, ERROR,
-			"Mapping bus addr failed, reg: 0x%08x\n",
-			prL1Remapping->u4Base);
-		return;
-	}
-
-	RTMP_IO_READ32(prChipInfo, u4BusAddr, &backup_val);
+	kalDevRegRead(prGlueInfo, prL1Remapping->u4Base, &backup_val);
 	tmp_val = (backup_val & ~prL1Remapping->u4Mask);
-	tmp_val |= GET_L1_REMAP_BASE(prL2Remapping->u4RemapBase) <<
+	tmp_val |= GET_L1_REMAP_BASE(prL1Remapping->u4RemapBase -
+		CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET) <<
 		prL1Remapping->u4Shift;
-	RTMP_IO_WRITE32(prChipInfo, u4BusAddr, tmp_val);
+	kalDevRegWrite(prGlueInfo, prL1Remapping->u4Base, tmp_val);
 #endif
 
-	RTMP_IO_WRITE32(prChipInfo, prL2Remapping->u4Base, reg);
-
-	RTMP_IO_READ32(prChipInfo, prL2Remapping->u4RemapBusBase, val);
+	kalDevRegWrite(prGlueInfo, prL2Remapping->u4Base, reg);
+	kalDevRegRead(prGlueInfo, prL1Remapping->u4RemapBase, val);
 
 #if defined(_HIF_PCIE)
-	RTMP_IO_WRITE32(prChipInfo, u4BusAddr, backup_val);
+	kalDevRegWrite(prGlueInfo, prL1Remapping->u4Base, backup_val);
 #endif
 }
 
-static void  kalDevRegL2Write(struct mt66xx_chip_info *prChipInfo,
+static void  kalDevRegL2Write(struct GLUE_INFO *prGlueInfo,
+	struct mt66xx_chip_info *prChipInfo,
 	uint32_t reg, uint32_t val)
 {
 #if defined(_HIF_PCIE)
-	uint32_t backup_val, tmp_val;
-	uint32_t u4BusAddr = 0;
+	uint32_t backup_val = 0, tmp_val = 0;
 #endif
 	struct BUS_INFO *prBusInfo = prChipInfo->bus_info;
 	const struct PCIE_CHIP_CR_REMAPPING *prRemapping =
@@ -313,27 +287,19 @@ static void  kalDevRegL2Write(struct mt66xx_chip_info *prChipInfo,
 	}
 
 #if defined(_HIF_PCIE)
-	if (!halChipToStaticMapBusAddr(prChipInfo,
-	    prL1Remapping->u4Base, &u4BusAddr)) {
-		DBGLOG(HAL, ERROR,
-			"Mapping bus addr failed, reg: 0x%08x\n",
-			prL1Remapping->u4Base);
-		return;
-	}
-
-	RTMP_IO_READ32(prChipInfo, u4BusAddr, &backup_val);
+	kalDevRegRead(prGlueInfo, prL1Remapping->u4Base, &backup_val);
 	tmp_val = (backup_val & ~prL1Remapping->u4Mask);
-	tmp_val |= GET_L1_REMAP_BASE(prL2Remapping->u4RemapBase) <<
+	tmp_val |= GET_L1_REMAP_BASE(prL1Remapping->u4RemapBase -
+		CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET) <<
 		prL1Remapping->u4Shift;
-	RTMP_IO_WRITE32(prChipInfo, u4BusAddr, tmp_val);
+	kalDevRegWrite(prGlueInfo, prL1Remapping->u4Base, tmp_val);
 #endif
 
-	RTMP_IO_WRITE32(prChipInfo, prL2Remapping->u4Base, reg);
-
-	RTMP_IO_WRITE32(prChipInfo, prL2Remapping->u4RemapBusBase, val);
+	kalDevRegWrite(prGlueInfo, prL2Remapping->u4Base, reg);
+	kalDevRegWrite(prGlueInfo, prL1Remapping->u4RemapBase, val);
 
 #if defined(_HIF_PCIE)
-	RTMP_IO_WRITE32(prChipInfo, u4BusAddr, backup_val);
+	kalDevRegWrite(prGlueInfo, prL1Remapping->u4Base, backup_val);
 #endif
 }
 
@@ -415,9 +381,11 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 		}
 	} else {
 		if (kalDevRegL1Remap(&u4Register))
-			kalDevRegL1Read(prChipInfo, u4Register, pu4Value);
+			kalDevRegL1Read(prGlueInfo, prChipInfo, u4Register,
+				pu4Value);
 		else
-			kalDevRegL2Read(prChipInfo, u4Register, pu4Value);
+			kalDevRegL2Read(prGlueInfo, prChipInfo, u4Register,
+				pu4Value);
 	}
 
 	return TRUE;
@@ -473,9 +441,11 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 		RTMP_IO_WRITE32(prChipInfo, u4BusAddr, u4Value);
 	} else {
 		if (kalDevRegL1Remap(&u4Register))
-			kalDevRegL1Write(prChipInfo, u4Register, u4Value);
+			kalDevRegL1Write(prGlueInfo, prChipInfo, u4Register,
+				u4Value);
 		else
-			kalDevRegL2Write(prChipInfo, u4Register, u4Value);
+			kalDevRegL2Write(prGlueInfo, prChipInfo, u4Register,
+				u4Value);
 	}
 
 	if (prHifInfo)
