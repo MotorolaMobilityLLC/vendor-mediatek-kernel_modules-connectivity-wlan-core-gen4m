@@ -177,8 +177,6 @@ static int32_t mddpRegisterCb(void)
 
 	ret = mddp_drv_attach(&gMddpDrvConf, &gMddpFunc);
 
-	mtk_ccci_register_md_state_cb(&mddpMdStateChangedCb);
-
 	DBGLOG(INIT, INFO, "mddp_drv_attach ret: %d, g_fgMddpEnabled: %d\n",
 			ret, g_fgMddpEnabled);
 
@@ -487,6 +485,9 @@ void mddpNotifyWifiOnStart(void)
 {
 	if (!mddpIsSupportMcifWifi())
 		return;
+
+	mtk_ccci_register_md_state_cb(&mddpMdStateChangedCb);
+
 	mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_ON_START);
 }
 
