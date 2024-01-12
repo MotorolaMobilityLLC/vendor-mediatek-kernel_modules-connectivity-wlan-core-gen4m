@@ -633,6 +633,25 @@ irqreturn_t pcie_fw_log_thread_handler(int irq, void *dev_instance)
 }
 #endif
 
+irqreturn_t pcie_drv_own_top_handler(int irq, void *dev_instance)
+{
+	return IRQ_WAKE_THREAD;
+}
+
+irqreturn_t pcie_drv_own_thread_handler(int irq, void *dev_instance)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	DBGLOG(HAL, TRACE, "driver own INT\n");
+
+	prGlueInfo = (struct GLUE_INFO *)dev_instance;
+
+	if (prGlueInfo)
+		set_bit(GLUE_FLAG_DRV_OWN_INT_BIT, &prGlueInfo->ulFlag);
+
+	return IRQ_HANDLED;
+}
+
 #if (CFG_MTK_MDDP_SUPPORT || CFG_MTK_CCCI_SUPPORT)
 irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance)
 {
@@ -1419,7 +1438,6 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 #if (CFG_DEVICE_SUSPEND_BY_MOBILE == 1)
 	return 0;
 #else
-
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct BUS_INFO *prBusInfo;
 	uint32_t count = 0;
@@ -2719,7 +2737,8 @@ void halPcieHwControlVote(
 		return;
 	}
 
-	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_WF_VOTE);
+	spin_lock_bh(
+		&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_PCIE_VOTE]);
 
 	if (enable) {
 		/* set bit to 0 to vote enable */
@@ -2732,7 +2751,7 @@ void halPcieHwControlVote(
 	}
 
 	DBGLOG(HAL, TRACE,
-		"enable[%d], user[%d], vote state[0x%08X]\n",
+		"enable[%d], user[%d], Vote state[0x%08X]\n",
 		enable, u4WifiUser,
 		prAdapter->prGlueInfo->rHifInfo.u4VoteState);
 
@@ -2753,8 +2772,10 @@ void halPcieHwControlVote(
 		GL_DEFAULT_RESET_TRIGGER(prAdapter,
 			RST_PCIE_NOT_READY);
 	}
-	KAL_RELEASE_MUTEX(prAdapter, MUTEX_WF_VOTE);
-#endif
+
+	spin_unlock_bh(
+		&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_PCIE_VOTE]);
+#endif /* IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT) */
 }
 
 

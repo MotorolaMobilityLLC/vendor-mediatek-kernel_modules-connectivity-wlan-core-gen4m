@@ -1937,6 +1937,39 @@ void kalReleaseHifTxRingLock(struct RTMP_TX_RING *prTxRing,
 
 }
 
+void kalAcquireHifOwnLock(struct ADAPTER *prAdapter)
+{
+#if (IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) && \
+	!IS_ENABLED(CFG_SUPPORT_RX_WORK)) || \
+	!IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+
+	/* if direct trx,  set drv/fw own will be called
+	*  in softirq/tasklet/thread context,
+	*  if normal trx, set drv/fw own will only
+	*  be called in thread context
+	*/
+	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
+		spin_lock_bh(
+			&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_SET_OWN]);
+	else
+#endif
+		KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_SET_OWN);
+}
+
+void kalReleaseHifOwnLock(struct ADAPTER *prAdapter)
+{
+#if (IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) && \
+	!IS_ENABLED(CFG_SUPPORT_RX_WORK)) || \
+	!IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+
+	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
+		spin_unlock_bh(
+			&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_SET_OWN]);
+	else
+#endif
+		KAL_RELEASE_MUTEX(prAdapter, MUTEX_SET_OWN);
+}
+
 u_int8_t kalDevWriteData(struct GLUE_INFO *prGlueInfo,
 	struct MSDU_INFO *prMsduInfo)
 {
