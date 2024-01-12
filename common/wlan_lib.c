@@ -8119,6 +8119,10 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 			prAdapter, "Nan2gBw", MAX_BW_20MHZ);
 	prWifiVar->ucNan5gBandwidth = (uint8_t) wlanCfgGetUint32(
 			prAdapter, "Nan5gBw", MAX_BW_80MHZ);
+	prWifiVar->ucNdlFlowCtrlVer =
+		(unsigned char)wlanCfgGetUint32(prAdapter,
+		"NanNdlFlowCtrlVer",
+		CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL);
 #endif
 
 	prWifiVar->fgReuseRSNIE = (uint32_t) wlanCfgGetUint32(

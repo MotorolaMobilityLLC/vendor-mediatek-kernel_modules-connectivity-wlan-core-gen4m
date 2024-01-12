@@ -367,7 +367,8 @@ struct _NAN_SCHED_CMD_MANAGE_PEER_SCH_REC_T {
 struct _NAN_SCHED_CMD_UPDATE_PEER_CAPABILITY_T {
 	uint32_t u4SchIdx;
 	uint8_t ucSupportedBands;
-	uint8_t aucRsvd[3];
+	uint16_t u2MaxChnlSwitchTime;
+	uint8_t aucRsvd[1];
 };
 
 struct _NAN_SCHED_CMD_MAP_STA_REC_T {
@@ -403,6 +404,11 @@ struct _NAN_SCHED_CMD_UPDATE_PONTENTIAL_CHNL_LIST_T {
 	struct _NAN_POTENTIAL_CHNL_T arChnlList[NAN_MAX_POTENTIAL_CHNL_LIST];
 };
 
+struct _NAN_SCHED_CMD_SET_SCHED_VER_T {
+	uint8_t ucNdlFlowCtrlVer;
+	uint8_t aucRsvd[3];
+};
+
 struct _NAN_SCHED_EVENT_SCHEDULE_CONFIG_T {
 	uint8_t fgEn2g;
 	uint8_t fgEn5gH;
@@ -412,6 +418,11 @@ struct _NAN_SCHED_EVENT_SCHEDULE_CONFIG_T {
 
 struct _NAN_SCHED_EVENT_DW_INTERVAL_T {
 	uint8_t ucDwInterval;
+};
+
+struct _NAN_SCHED_EVENT_DEV_CAP_T {
+	uint16_t u2MaxChnlSwitchTimeUs;
+	uint8_t aucRsvd[2];
 };
 
 struct _NAN_NONNAN_NETWORK_TIMELINE_T {
@@ -1370,6 +1381,7 @@ nanSchedInit(struct ADAPTER *prAdapter) {
 	nanSchedReleaseAllPeerSchDesc(prAdapter);
 
 	nanSchedConfigPhyParams(prAdapter);
+	nanSchedCmdUpdateSchedVer(prAdapter);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -8326,6 +8338,7 @@ nanSchedCmdUpdatePeerCapability(struct ADAPTER *prAdapter, uint32_t u4SchIdx) {
 	uint8_t ucSupportedBands;
 	uint32_t u4Idx;
 	struct _NAN_DEVICE_CAPABILITY_T *prDevCapList;
+	uint16_t u2MaxChnlSwitchTime = 0;
 
 	prPeerSchRecord = nanSchedGetPeerSchRecord(prAdapter, u4SchIdx);
 	if (!prPeerSchRecord || prPeerSchRecord->fgActive != TRUE ||
@@ -8368,11 +8381,18 @@ nanSchedCmdUpdatePeerCapability(struct ADAPTER *prAdapter, uint32_t u4SchIdx) {
 	prDevCapList = prPeerSchRecord->prPeerSchDesc->arDevCapability;
 	for (u4Idx = 0; u4Idx < (NAN_NUM_AVAIL_DB + 1);
 		u4Idx++, prDevCapList++) {
-		if (prDevCapList->fgValid)
+		if (prDevCapList->fgValid) {
 			ucSupportedBands |= prDevCapList->ucSupportedBand;
+			u2MaxChnlSwitchTime =
+				(prDevCapList->u2MaxChnlSwitchTime
+				>= u2MaxChnlSwitchTime) ?
+				prDevCapList->u2MaxChnlSwitchTime :
+				u2MaxChnlSwitchTime;
+		}
 	}
 
 	prCmdUpdatePeerCap->ucSupportedBands = ucSupportedBands;
+	prCmdUpdatePeerCap->u2MaxChnlSwitchTime = u2MaxChnlSwitchTime;
 
 	rStatus = wlanSendSetQueryCmd(prAdapter, CMD_ID_NAN_EXT_CMD, TRUE,
 				      FALSE, FALSE, NULL, nicCmdTimeoutCommon,
@@ -8697,6 +8717,64 @@ nanSchedCmdUpdatePhySettigns(struct ADAPTER *prAdapter,
 }
 
 uint32_t
+nanSchedCmdUpdateSchedVer(struct ADAPTER *prAdapter) {
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct _NAN_SCHED_CMD_SET_SCHED_VER_T *prNanSchedVer;
+
+	void *prCmdBuffer;
+	uint32_t u4CmdBufferLen;
+	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
+	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
+
+	u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
+			 sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +
+			 sizeof(struct _NAN_SCHED_CMD_SET_SCHED_VER_T);
+	prCmdBuffer = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4CmdBufferLen);
+
+	if (!prCmdBuffer) {
+		DBGLOG(NAN, ERROR, "Memory allocation fail\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)prCmdBuffer;
+	prTlvCommon->u2TotalElementNum = 0;
+
+	rStatus = nicAddNewTlvElement(
+		NAN_CMD_SET_SCHED_VERSION,
+		sizeof(struct _NAN_SCHED_CMD_SET_SCHED_VER_T),
+		u4CmdBufferLen, prCmdBuffer);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(NAN, ERROR, "Add new Tlv element fail\n");
+		cnmMemFree(prAdapter, prCmdBuffer);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prTlvElement = nicGetTargetTlvElement(1, prCmdBuffer);
+
+	if (prTlvElement == NULL) {
+		DBGLOG(NAN, ERROR, "Get target Tlv element fail\n");
+		cnmMemFree(prAdapter, prCmdBuffer);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prNanSchedVer = (struct _NAN_SCHED_CMD_SET_SCHED_VER_T *)
+				prTlvElement->aucbody;
+	prNanSchedVer->ucNdlFlowCtrlVer = prAdapter->rWifiVar.ucNdlFlowCtrlVer;
+	DBGLOG(NAN, INFO, "Set NDL version:%u\n",
+		prNanSchedVer->ucNdlFlowCtrlVer);
+
+	rStatus = wlanSendSetQueryCmd(prAdapter, CMD_ID_NAN_EXT_CMD, TRUE,
+				      FALSE, FALSE, NULL, nicCmdTimeoutCommon,
+				      u4CmdBufferLen, (uint8_t *)prCmdBuffer,
+				      NULL, 0);
+
+	cnmMemFree(prAdapter, prCmdBuffer);
+
+	return rStatus;
+}
+
+uint32_t
 nanSchedEventScheduleConfig(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 			    uint8_t *pucBuf) {
 	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
@@ -8714,6 +8792,19 @@ nanSchedEventScheduleConfig(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 					 prWifiVar->ucDftRangQuotaVal);
 
 	nanSchedCmdUpdatePotentialChnlList(prAdapter);
+
+	return rRetStatus;
+}
+
+uint32_t
+nanSchedEventDevCapability(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
+			uint8_t *pucBuf) {
+	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
+	struct _NAN_SCHED_EVENT_DEV_CAP_T *prEventDevCap;
+
+	prEventDevCap = (struct _NAN_SCHED_EVENT_DEV_CAP_T *)pucBuf;
+	g_u4MaxChnlSwitchTimeUs = prEventDevCap->u2MaxChnlSwitchTimeUs;
+	DBGLOG(NAN, INFO, "MaxChnlSwitchTime:%d us\n", g_u4MaxChnlSwitchTimeUs);
 
 	return rRetStatus;
 }
@@ -8922,6 +9013,9 @@ nanSchedulerUniEventDispatch(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 	case UNI_EVENT_NAN_TAG_DW_INTERVAL:
 		nanSchedEventDwInterval(prAdapter, u4SubEvent, pucBuf);
 		break;
+	case UNI_EVENT_NAN_TAG_ID_DEVICE_CAPABILITY:
+		nanSchedEventDevCapability(prAdapter, u4SubEvent, pucBuf);
+		break;
 	default:
 		break;
 	}
@@ -8950,6 +9044,9 @@ nanSchedulerEventDispatch(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 		break;
 	case NAN_EVENT_DW_INTERVAL:
 		nanSchedEventDwInterval(prAdapter, u4SubEvent, pucBuf);
+		break;
+	case NAN_EVENT_ID_DEVICE_CAPABILITY:
+		nanSchedEventDevCapability(prAdapter, u4SubEvent, pucBuf);
 		break;
 	default:
 		break;

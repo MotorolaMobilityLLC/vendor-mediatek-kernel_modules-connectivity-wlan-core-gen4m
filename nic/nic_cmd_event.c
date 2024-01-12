@@ -5927,6 +5927,58 @@ void nicNanNdlFlowCtrlEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 	}
 }
 
+void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
+{
+	struct NAN_EVT_NDL_FLOW_CTRL_V2 *prFlowCtrlEvt;
+	struct STA_RECORD *prStaRec;
+	uint16_t u2SchId = 0;
+	uint32_t u4Idx;
+	unsigned char fgNeedToSendPkt = FALSE;
+	OS_SYSTIME rCurrentTime;
+	OS_SYSTIME rExpiryTime;
+
+	prFlowCtrlEvt = (struct NAN_EVT_NDL_FLOW_CTRL_V2 *)pcuEvtBuf;
+	for (u2SchId = 0; u2SchId < NAN_MAX_CONN_CFG; u2SchId++) {
+		uint8_t ucSTAIdx;
+		uint16_t u4RemainingTime;
+
+		if (nanSchedPeerSchRecordIsValid(prAdapter, u2SchId) == FALSE)
+			continue;
+
+		rCurrentTime = kalGetTimeTick();
+		u4RemainingTime = prFlowCtrlEvt->au4RemainingTime[u2SchId];
+		rExpiryTime =
+			rCurrentTime + u4RemainingTime;
+
+		DBGLOG(NAN, INFO,
+		       "[NDL flow control] Sch:%u, Expiry:%u, Remain:%u\n",
+		       u2SchId, rExpiryTime, u4RemainingTime);
+
+		if (u4RemainingTime == 0)
+			continue;
+
+		rExpiryTime -= NAN_SEND_PKT_TIME_GUARD_TIME;
+		for (u4Idx = 0; u4Idx < NAN_MAX_SUPPORT_NDP_CXT_NUM; u4Idx++) {
+			ucSTAIdx = nanSchedQueryStaRecIdx(prAdapter, u2SchId,
+							  u4Idx);
+			if (ucSTAIdx == STA_REC_INDEX_NOT_FOUND)
+				continue;
+
+			prStaRec = &prAdapter->arStaRec[ucSTAIdx];
+			prStaRec->rNanExpiredSendTime = rExpiryTime;
+
+			if (prStaRec->fgNanSendTimeExpired)
+				fgNeedToSendPkt = TRUE;
+		}
+	}
+
+	if (fgNeedToSendPkt == TRUE &&
+	    wlanGetTxPendingFrameCount(prAdapter) > 0) {
+		DBGLOG(NAN, LOUD, "Trigger NAN tx request\n");
+		kalSetEvent(prAdapter->prGlueInfo);
+	}
+}
+
 void nicNanEventDispatcher(struct ADAPTER *prAdapter,
 		      struct WIFI_EVENT *prEvent)
 {
@@ -5987,6 +6039,7 @@ void nicNanIOEventHandler(struct ADAPTER *prAdapter,
 	case UNI_EVENT_NAN_TAG_ID_PEER_AVAILABILITY:
 	case UNI_EVENT_NAN_TAG_ID_PEER_CAPABILITY:
 	case UNI_EVENT_NAN_TAG_ID_CRB_HANDSHAKE_TOKEN:
+	case UNI_EVENT_NAN_TAG_ID_DEVICE_CAPABILITY:
 		nanSchedulerUniEventDispatch(prAdapter, u4SubEvent,
 					  prTlvElement->aucbody);
 		break;
@@ -6011,9 +6064,13 @@ void nicNanIOEventHandler(struct ADAPTER *prAdapter,
 	case UNI_EVENT_NAN_TAG_NDL_FLOW_CTRL:
 		nicNanNdlFlowCtrlEvt(prAdapter, prTlvElement->aucbody);
 		break;
+	case UNI_EVENT_NAN_TAG_NDL_FLOW_CTRL_V2:
+		nicNanNdlFlowCtrlEvtV2(prAdapter, prTlvElement->aucbody);
+		break;
 #endif
 	case UNI_EVENT_NAN_TAG_NDL_DISCONNECT:
 		nanDataEngingDisconnectEvt(prAdapter, prTlvElement->aucbody);
+		break;
 	}
 }
 
@@ -6066,6 +6123,7 @@ void nicNanIOEventHandler(struct ADAPTER *prAdapter,
 	case NAN_EVENT_ID_PEER_AVAILABILITY:
 	case NAN_EVENT_ID_PEER_CAPABILITY:
 	case NAN_EVENT_ID_CRB_HANDSHAKE_TOKEN:
+	case NAN_EVENT_ID_DEVICE_CAPABILITY:
 		nanSchedulerEventDispatch(prAdapter, u4SubEvent,
 					  prTlvElement->aucbody);
 		break;
@@ -6089,6 +6147,9 @@ void nicNanIOEventHandler(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
 	case NAN_EVENT_NDL_FLOW_CTRL:
 		nicNanNdlFlowCtrlEvt(prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_NDL_FLOW_CTRL_V2:
+		nicNanNdlFlowCtrlEvtV2(prAdapter, prTlvElement->aucbody);
 		break;
 #endif
 	case NAN_EVENT_NDL_DISCONNECT:

@@ -6065,6 +6065,9 @@ uint32_t nicUniCmdNan(struct ADAPTER *ad,
 	case NAN_CMD_MANAGE_SCID:
 		u2EvtTag = UNI_CMD_NAN_TAG_MANAGE_SCID;
 		break;
+	case NAN_CMD_SET_SCHED_VERSION:
+		u2EvtTag = UNI_CMD_NAN_TAG_SET_SCHED_VERSION;
+		break;
 	default:
 		return WLAN_STATUS_NOT_ACCEPTED;
 		break;

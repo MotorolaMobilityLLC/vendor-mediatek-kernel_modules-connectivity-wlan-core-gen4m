@@ -3871,9 +3871,10 @@ enum _ENUM_NAN_SUB_CMD {
 	NAN_CMD_UPDATE_POTENTIAL_CHNL_LIST,
 	NAN_CMD_UPDATE_AVAILABILITY_CTRL,
 	NAN_CMD_UPDATE_PEER_CAPABILITY,
-	NAN_CMD_ADD_CSID,
+	NAN_CMD_ADD_CSID, /* 25 */
 	NAN_CMD_MANAGE_SCID,
-
+	NAN_CMD_CHANGE_ADDRESS,
+	NAN_CMD_SET_SCHED_VERSION,
 	NAN_CMD_NUM
 };
 
@@ -3901,6 +3902,8 @@ enum _ENUM_NAN_SUB_EVENT {
 	NAN_EVENT_ID_DE_EVENT_IND,	/* 20 */
 	NAN_EVENT_SELF_FOLLOW_EVENT,
 	NAN_EVENT_DISABLE_IND,
+	NAN_EVENT_NDL_FLOW_CTRL_V2,
+	NAN_EVENT_ID_DEVICE_CAPABILITY,
 
 	NAN_EVENT_NUM
 };
@@ -4454,6 +4457,8 @@ void nicNanTestQueryInfoDone(struct ADAPTER *prAdapter,
 			     uint8_t *pucEventBuf);
 void nicNanEventSTATxCTL(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf);
 void nicNanNdlFlowCtrlEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf);
+void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter,
+	uint8_t *pcuEvtBuf);
 void nicNanVendorEventHandler(struct ADAPTER *prAdapter,
 			      struct WIFI_EVENT *prEvent);
 #endif
