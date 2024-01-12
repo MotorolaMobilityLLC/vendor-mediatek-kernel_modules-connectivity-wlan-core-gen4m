@@ -2859,17 +2859,13 @@ static int priv_driver_set_efuse_buffer_mode(
 	int32_t i4BytesWritten = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
 	struct PARAM_CUSTOM_EFUSE_BUFFER_MODE
-		*prSetEfuseBufModeInfo;
+		*prSetEfuseBufModeInfo = NULL;
 #if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 0)
 	struct BIN_CONTENT *pBinContent;
 	int i = 0;
 #endif
-	uint8_t *pucConfigBuf;
+	uint8_t *pucConfigBuf = NULL;
 	uint32_t u4ConfigReadLen;
-
-	ASSERT(prNetDev);
-	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
-		return -1;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
@@ -2877,27 +2873,38 @@ static int priv_driver_set_efuse_buffer_mode(
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
 	pucConfigBuf = (uint8_t *) kalMemAlloc(2048, VIR_MEM_TYPE);
+
+	if (!pucConfigBuf) {
+		DBGLOG(INIT, INFO, "allocate pucConfigBuf failed\n");
+		i4BytesWritten = -1;
+		goto out;
+	}
+
 	kalMemZero(pucConfigBuf, 2048);
 	u4ConfigReadLen = 0;
 
-	if (pucConfigBuf) {
-		if (kalReadToFile("/MT6632_eFuse_usage_table.xlsm.bin",
-				  pucConfigBuf, 2048, &u4ConfigReadLen) == 0) {
-			/* ToDo:: Nothing */
-		} else {
-			DBGLOG(INIT, INFO, "can't find file\n");
-			return -1;
-		}
-
-		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, 2048);
+	if (kalReadToFile("/MT6632_eFuse_usage_table.xlsm.bin",
+			  pucConfigBuf, 2048, &u4ConfigReadLen) == 0) {
+		/* ToDo:: Nothing */
+	} else {
+		DBGLOG(INIT, INFO, "can't find file\n");
+		i4BytesWritten = -1;
+		goto out;
 	}
+
 	/* pucConfigBuf */
 	prSetEfuseBufModeInfo =
 		(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE *) kalMemAlloc(
 			sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE),
 			VIR_MEM_TYPE);
-	if (prSetEfuseBufModeInfo == NULL)
-		return WLAN_STATUS_FAILURE;
+
+	if (prSetEfuseBufModeInfo == NULL) {
+		DBGLOG(INIT, INFO,
+			"allocate prSetEfuseBufModeInfo failed\n");
+		i4BytesWritten = -1;
+		goto out;
+	}
+
 	kalMemZero(prSetEfuseBufModeInfo,
 		   sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE));
 
@@ -2924,12 +2931,18 @@ static int priv_driver_set_efuse_buffer_mode(
 			   prSetEfuseBufModeInfo,
 			   sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE),
 			   FALSE, FALSE, TRUE, &u4BufLen);
-	kalMemFree(prSetEfuseBufModeInfo, VIR_MEM_TYPE,
-		   sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE));
 
 	i4BytesWritten =
 		snprintf(pcCommand, i4TotalLen, "set buffer mode %s",
 			 (rStatus == WLAN_STATUS_SUCCESS) ? "success" : "fail");
+
+out:
+	if (pucConfigBuf)
+		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, 2048);
+
+	if (prSetEfuseBufModeInfo)
+		kalMemFree(prSetEfuseBufModeInfo, VIR_MEM_TYPE,
+			sizeof(truct PARAM_CUSTOM_EFUSE_BUFFER_MODE));
 
 	return i4BytesWritten;
 }
