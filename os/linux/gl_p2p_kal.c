@@ -1404,6 +1404,19 @@ void kalP2PIndicateMgmtTxStatus(struct GLUE_INFO *prGlueInfo,
 			}
 		}
 
+		if (!prGlueInfo->fgIsRegistered ||
+			test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag) ||
+			!prGlueInfo->prAdapter->fgIsP2PRegistered ||
+			(prGlueInfo->prAdapter->rP2PNetRegState !=
+				ENUM_NET_REG_STATE_REGISTERED) ||
+			(prNetdevice == NULL) ||
+			(prNetdevice->reg_state != NETREG_REGISTERED) ||
+			(prNetdevice->ieee80211_ptr == NULL)) {
+			DBGLOG(P2P, WARN,
+				"prNetdevice is not ready or NULL!\n");
+			break;
+		}
+
 		cfg80211_mgmt_tx_status(
 			/* struct net_device * dev, */
 			prNetdevice->ieee80211_ptr,
@@ -1571,12 +1584,12 @@ kalP2PGCIndicateConnectionStatus(struct GLUE_INFO *prGlueInfo,
 
 		/* FIXME: This exception occurs at wlanRemove. */
 		if ((prGlueP2pInfo == NULL) ||
-		    (prGlueP2pInfo->aprRoleHandler == NULL) ||
-		    (prGlueP2pInfo->aprRoleHandler->reg_state !=
-				NETREG_REGISTERED) ||
 		    (prAdapter->rP2PNetRegState !=
 				ENUM_NET_REG_STATE_REGISTERED) ||
-		    (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag) == 1)) {
+		    (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag) == 1) ||
+		    (prGlueP2pInfo->aprRoleHandler == NULL) ||
+		    (prGlueP2pInfo->aprRoleHandler->reg_state !=
+				NETREG_REGISTERED)) {
 			break;
 		}
 
