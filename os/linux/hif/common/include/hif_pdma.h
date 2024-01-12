@@ -202,13 +202,10 @@
 
 #define SW_WFDMA_CMD_NUM		4
 #define SW_WFDMA_CMD_PKT_SIZE		1600
-#define SW_WFDMA_EMI_OFFSET		0x974ffc
-#define SW_WFDMA_EMI_SIZE	(SW_WFDMA_CMD_NUM * SW_WFDMA_CMD_PKT_SIZE + 8)
-#define SW_WFDMA_PCCIF_START		0x1024D008
-#define SW_WFDMA_PCCIF_TCHNUM		0x1024D00C
-#define SW_WFDMA_CCIF_CHANNEL_NUM	4
-#define SW_WFDMA_MAX_RETRY_COUNT	10
-#define SW_WFDMA_RETRY_TIME		100
+#define SW_WFDMA_EMI_SIZE \
+	(SW_WFDMA_CMD_NUM * SW_WFDMA_CMD_PKT_SIZE + 8)
+#define	SW_WFDMA_MAX_RETRY_COUNT	10
+#define	SW_WFDMA_RETRY_TIME		100
 #define SW_WFDMA_FLAG_INT		BIT(0)
 #define SW_WFDMA_FLAG_INT_BIT		(0)
 
@@ -455,14 +452,15 @@ struct ERR_RECOVERY_CTRL_T {
 struct SW_WFDMA_INFO;
 
 struct SW_WFDMAD {
-	uint8_t aucBuf[SW_WFDMA_CMD_NUM][SW_WFDMA_CMD_PKT_SIZE];
 	uint32_t u4DrvIdx;
 	uint32_t u4FwIdx;
+	uint8_t aucBuf[SW_WFDMA_CMD_NUM][SW_WFDMA_CMD_PKT_SIZE];
 };
 
 struct SW_WFDMA_OPS {
-	void (*init)(struct SW_WFDMA_INFO *prSwWfdmaInfo);
-	void (*uninit)(struct SW_WFDMA_INFO *prSwWfdmaInfo);
+	void (*init)(struct GLUE_INFO *prGlueInfo);
+	void (*uninit)(struct GLUE_INFO *prGlueInfo);
+	void (*enable)(struct GLUE_INFO *prGlueInfo, bool fgEn);
 	void (*reset)(struct SW_WFDMA_INFO *prSwWfdmaInfo);
 	void (*backup)(struct GLUE_INFO *prGlueInfo);
 	void (*restore)(struct GLUE_INFO *prGlueInfo);
@@ -471,6 +469,8 @@ struct SW_WFDMA_OPS {
 	void (*getDidx)(IN struct GLUE_INFO *prGlueInfo, uint32_t *pu4Didx);
 	bool (*writeCmd)(struct GLUE_INFO *prGlueInfo);
 	bool (*processDmaDone)(struct GLUE_INFO *prGlueInfo);
+	void (*triggerInt)(struct GLUE_INFO *prGlueInfo);
+	void (*getIntSta)(struct GLUE_INFO *prGlueInfo,  uint32_t *pu4Sta);
 	void (*dumpDebugLog)(struct GLUE_INFO *prGlueInfo);
 };
 
@@ -479,9 +479,16 @@ struct SW_WFDMA_INFO {
 	struct SW_WFDMAD *prDmad;
 	struct SW_WFDMAD rBackup;
 	unsigned long ulIntFlag;
-	bool fgIsSupportSwWfdma;
 	bool fgIsEnSwWfdma;
+	bool fgIsEnAfterFwdl;
 	void *pucIoremapAddr;
+	uint32_t u4EmiOffsetAddr;
+	uint32_t u4EmiOffsetBase;
+	uint32_t u4EmiOffsetMask;
+	uint32_t u4EmiOffset;
+	uint32_t u4CcifStartAddr;
+	uint32_t u4CcifTchnumAddr;
+	uint32_t u4CcifChlNum;
 	uint32_t u4CpuIdx;
 	uint32_t u4DmaIdx;
 	uint32_t u4MaxCnt;
@@ -574,8 +581,9 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val);
 void halEnableSlpProt(struct GLUE_INFO *prGlueInfo);
 void halDisableSlpProt(struct GLUE_INFO *prGlueInfo);
 
-void halSwWfdmaInit(struct SW_WFDMA_INFO *prSwWfdmaInfo);
-void halSwWfdmaUninit(struct SW_WFDMA_INFO *prSwWfdmaInfo);
+void halSwWfdmaInit(struct GLUE_INFO *prGlueInfo);
+void halSwWfdmaUninit(struct GLUE_INFO *prGlueInfo);
+void halSwWfdmaEn(struct GLUE_INFO *prGlueInfo, bool fgEn);
 void halSwWfdmaReset(struct SW_WFDMA_INFO *prSwWfdmaInfo);
 void halSwWfdmaBackup(struct GLUE_INFO *prGlueInfo);
 void halSwWfdmaRestore(struct GLUE_INFO *prGlueInfo);
