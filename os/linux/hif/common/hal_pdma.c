@@ -3848,8 +3848,6 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 			if (prBusInfo->DmaShdlInit)
 				prBusInfo->DmaShdlInit(prAdapter);
 
-			if (prBusInfo->DmaShdlReInit)
-				prBusInfo->DmaShdlReInit(prAdapter);
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 			DBGLOG(HAL, INFO, "SER(M) Reset Host Offload\n");
 			if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {

@@ -2433,8 +2433,8 @@ void halSerSyncTimerHandler(struct ADAPTER *prAdapter)
 		break;
 	case ERR_RECOV_RESET_PDMA0:
 		if (u4SerAction == ERROR_DETECT_RECOVERY_DONE) {
-			if (prBusInfo->DmaShdlReInit)
-				prBusInfo->DmaShdlReInit(prAdapter);
+			if (prBusInfo->DmaShdlInit)
+				prBusInfo->DmaShdlInit(prAdapter);
 
 			DBGLOG(HAL, INFO,
 				"SER(Q) Host ACK MCU SER handle done\n");
