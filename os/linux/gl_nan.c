@@ -689,7 +689,7 @@ glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 {
 	struct ADAPTER *prAdapter = NULL;
 	uint8_t rMacAddr[6];
-	uint8_t rRandMacAddr[6];
+	uint8_t rRandMacAddr[6] = {0};
 	uint8_t rRandMacMask[6] = {0xFF, 0xFF, 0xFF, 0x0, 0x0, 0x0};
 	struct wireless_dev *prNanWdev = NULL;
 	struct net_device *prNanDev = NULL;
