@@ -835,6 +835,29 @@ struct PSE_TOP_CR rSoc3_0_PseTopCr = {
 	},
 };
 
+struct PP_TOP_CR rSoc3_0_PpTopCr = {
+	.rDbgCtrl = {
+		WF_PP_TOP_DBG_CTRL_ADDR,
+		0,
+		0
+	},
+	.rDbgCs0 = {
+		WF_PP_TOP_DBG_CS_0_ADDR,
+		0,
+		0
+	},
+	.rDbgCs0 = {
+		WF_PP_TOP_DBG_CS_1_ADDR,
+		0,
+		0
+	},
+	.rDbgCs0 = {
+		WF_PP_TOP_DBG_CS_2_ADDR,
+		0,
+		0
+	},
+};
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************

@@ -44,8 +44,15 @@
 #define CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR \
 	(0x7C00E000 + 0x068)
 
+#define WF_PP_TOP_BASE             0x820CC000
+#define WF_PP_TOP_DBG_CTRL_ADDR    (WF_PP_TOP_BASE + 0x00FC)
+#define WF_PP_TOP_DBG_CS_0_ADDR    (WF_PP_TOP_BASE + 0x0104)
+#define WF_PP_TOP_DBG_CS_1_ADDR    (WF_PP_TOP_BASE + 0x0108)
+#define WF_PP_TOP_DBG_CS_2_ADDR    (WF_PP_TOP_BASE + 0x010C)
+
 extern struct PLE_TOP_CR rSoc7_0_PleTopCr;
 extern struct PSE_TOP_CR rSoc7_0_PseTopCr;
+extern struct PP_TOP_CR rSoc7_0_PpTopCr;
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
