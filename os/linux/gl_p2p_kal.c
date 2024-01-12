@@ -2303,23 +2303,8 @@ void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
 	}
 
 	/* Ch notify */
-	if (prP2PInfo->chandef) {
-#if (KERNEL_VERSION(4, 2, 0) <= CFG80211_VERSION_CODE)
-		u_int8_t fgRegBeaconRelax = FALSE;
-
-		rtnl_lock();
-		fgRegBeaconRelax = cfg80211_reg_can_beacon_relax(
-			prP2PInfo->prWdev->wiphy,
-			prP2PInfo->chandef,
-			prP2PInfo->prWdev->iftype);
-		rtnl_unlock();
-		if (!fgRegBeaconRelax)
-			DBGLOG(P2P, WARN,
-				"plz check channel info. is correct.\n");
-#endif
-
+	if (prP2PInfo->chandef)
 		cfg80211_ch_switch_notify(
 			prP2PInfo->prDevHandler,
 			prP2PInfo->chandef);
-	}
 }
