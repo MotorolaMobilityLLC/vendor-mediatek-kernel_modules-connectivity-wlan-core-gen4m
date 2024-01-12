@@ -472,7 +472,7 @@ struct BSS_INFO {
 	u_int8_t fgTdlsIsProhibited;
 	u_int8_t fgTdlsIsChSwProhibited;
 #endif
-#if CFG_SUPPORT_TDLS_P2P_AUTO
+#if CFG_SUPPORT_TDLS_AUTO
 	struct sta_tdls_info *prTdlsHash[STA_TDLS_HASH_SIZE + 1];
 	uint64_t ulLastUpdate;
 	int32_t i4TdlsLastRx;
@@ -1242,8 +1242,8 @@ struct WIFI_VAR {
 	uint8_t ucDfsRegion;
 	uint32_t u4ByPassCacTime;
 	uint32_t u4CC2Region;
-#if CFG_SUPPORT_TDLS_P2P_AUTO
-	uint32_t u4TdlsP2pAuto;
+#if CFG_SUPPORT_TDLS_AUTO
+	uint32_t u4TdlsAuto;
 #endif
 	uint32_t u4ApChnlHoldTime;
 	uint32_t u4P2pChnlHoldTime;

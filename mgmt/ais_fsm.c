@@ -5054,6 +5054,10 @@ void aisUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 	prAisBssInfo->fgTdlsIsProhibited = prStaRec->fgTdlsIsProhibited;
 	prAisBssInfo->fgTdlsIsChSwProhibited = prStaRec->fgTdlsIsChSwProhibited;
 #endif /* CFG_SUPPORT_TDLS */
+#if CFG_SUPPORT_TDLS_AUTO
+	/* fire the update jiffies */
+	prAisBssInfo->ulLastUpdate = kalGetJiffies();
+#endif
 
 	/* 4 <2.3> Setup PHY Attributes and Basic Rate Set/Operational
 	 * Rate Set

@@ -95,7 +95,7 @@ uint8_t TdlsAllowedChannel(
 	return fgAvailable;
 }
 
-#if CFG_SUPPORT_TDLS_P2P_AUTO
+#if CFG_SUPPORT_TDLS_AUTO
 uint8_t TdlsCheckSetup(
 	struct ADAPTER *ad,
 	struct sta_tdls_info *sta)
@@ -105,11 +105,11 @@ uint8_t TdlsCheckSetup(
 	if (!ad || !sta)
 		return FALSE;
 
-	f = ad->rWifiVar.u4TdlsP2pAuto;
+	f = ad->rWifiVar.u4TdlsAuto;
 
-	if (IS_FEATURE_DISABLED(f))
+	if (!f)
 		return FALSE;
-	else if (IS_FEATURE_FORCE_ENABLED(f))
+	else if (f == TDLS_AUTO_TESTMODE)
 		return (sta &&
 			sta->u4Throughput >
 			TDLS_SETUP_LOW_THD);
@@ -128,11 +128,11 @@ uint8_t TdlsCheckTeardown(
 	if (!ad || !sta)
 		return FALSE;
 
-	f = ad->rWifiVar.u4TdlsP2pAuto;
+	f = ad->rWifiVar.u4TdlsAuto;
 
-	if (IS_FEATURE_DISABLED(f))
+	if (!f)
 		return FALSE;
-	else if (IS_FEATURE_FORCE_ENABLED(f))
+	else if (f == TDLS_AUTO_TESTMODE)
 		return (sta &&
 			sta->u4Throughput <
 			TDLS_TEARDOWN_LOW_THD);
@@ -224,18 +224,19 @@ TdlsApStaForEach(struct ADAPTER *pAd,
 	KAL_RELEASE_SPIN_LOCK(pAd, SPIN_LOCK_STA_REC);
 }
 
-uint8_t TdlsAllowedP2p(
+uint8_t TdlsAllowedBss(
 	struct ADAPTER *pAd,
 	uint8_t bss)
 {
-	uint8_t fgAvailable = TRUE;
-
 	if (!TdlsValid(pAd, bss))
-		fgAvailable = FALSE;
+		return FALSE;
 	else {
 		struct BSS_INFO *b =
 			GET_BSS_INFO_BY_INDEX(
 			pAd, bss);
+		uint32_t f = 0;
+
+		f = pAd->rWifiVar.u4TdlsAuto;
 
 #if CFG_SUPPORT_TDLS_LOG
 		DBGLOG(TDLS, TRACE,
@@ -245,12 +246,13 @@ uint8_t TdlsAllowedP2p(
 			b->eConnectionState);
 #endif
 
-		fgAvailable =
-			IS_BSS_GC(b) &&
-			TdlsAllowedChannel(pAd, b);
+		if (!IS_BSS_AIS(b) && !IS_BSS_GC(b))
+			return FALSE;
+		else if (IS_BSS_AIS(b) && (f < TDLS_AUTO_ALL))
+			return FALSE;
+		else
+			return TdlsAllowedChannel(pAd, b);
 	}
-
-	return fgAvailable;
 }
 
 void TdlsStateTimer(
@@ -550,7 +552,7 @@ TdlsUpdateTxRxStat(
 
 	KAL_SPIN_LOCK_DECLARATION();
 
-	if (!pAd->rWifiVar.u4TdlsP2pAuto)
+	if (!pAd->rWifiVar.u4TdlsAuto)
 		return;
 
 	KAL_ACQUIRE_SPIN_LOCK(pAd, SPIN_LOCK_STA_REC);
@@ -581,7 +583,7 @@ TdlsUpdateTxRxStat(
 #endif
 }
 
-int32_t TdlsP2pAuto(
+int32_t TdlsAuto(
 	struct ADAPTER *pAd,
 	uint8_t bss,
 	uint64_t tx_bytes,
@@ -594,8 +596,8 @@ int32_t TdlsP2pAuto(
 	struct sta_tdls_info *target_sta = NULL;
 
 	if (!pAd ||
-		!pAd->rWifiVar.u4TdlsP2pAuto ||
-		!TdlsAllowedP2p(pAd, bss) ||
+		!pAd->rWifiVar.u4TdlsAuto ||
+		!TdlsAllowedBss(pAd, bss) ||
 		(u4PacketLen < ETH_HLEN))
 		return -1;
 
@@ -1107,7 +1109,7 @@ uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter,
 					prBssInfo->ucBssIndex,
 					prCmd->aucPeerMac);
 				prStaRec->ucTdlsIndex = i;
-#if CFG_SUPPORT_TDLS_P2P_AUTO
+#if CFG_SUPPORT_TDLS_AUTO
 				TdlsAutoSetupTarget(
 					prAdapter,
 					prBssInfo->ucBssIndex,
@@ -1128,7 +1130,7 @@ uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter,
 		g_arTdlsLink[prStaRec->ucTdlsIndex] = 0;
 		if (IS_DLS_STA(prStaRec))
 			cnmStaRecFree(prAdapter, prStaRec);
-#if CFG_SUPPORT_TDLS_P2P_AUTO
+#if CFG_SUPPORT_TDLS_AUTO
 		TdlsAutoTeardown(prAdapter,
 			prBssInfo->ucBssIndex,
 			NULL,

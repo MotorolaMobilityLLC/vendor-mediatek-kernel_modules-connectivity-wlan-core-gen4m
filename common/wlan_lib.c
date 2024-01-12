@@ -8339,9 +8339,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgAllowSameBandDualSta,
 		"AllowSameBandDualSta", FEATURE_ENABLED);
 
-#if CFG_SUPPORT_TDLS_P2P_AUTO
-	INIT_UINT(prWifiVar->u4TdlsP2pAuto,
-		"TdlsP2pAuto", FEATURE_ENABLED);
+#if CFG_SUPPORT_TDLS_AUTO
+	INIT_UINT(prWifiVar->u4TdlsAuto,
+		"TdlsAuto",
+		(CFG_TC10_FEATURE) ? TDLS_AUTO_P2P : TDLS_AUTO_NONE);
 #endif
 
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
@@ -10647,8 +10648,8 @@ void wlanTxLifetimeTagPacket(struct ADAPTER *prAdapter,
 			wlanTxLifetimeUpdateStaStats(prAdapter, prMsduInfo);
 #endif
 
-#if CFG_SUPPORT_TDLS_P2P_AUTO
-			TdlsP2pAuto(
+#if CFG_SUPPORT_TDLS_AUTO
+			TdlsAuto(
 				prAdapter,
 				prMsduInfo->ucBssIndex,
 				prMsduInfo->u2FrameLength,
