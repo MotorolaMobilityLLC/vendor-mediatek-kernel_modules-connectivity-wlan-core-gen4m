@@ -8392,6 +8392,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
 	INIT_UINT(prWifiVar->u4TxDataDelayTimeout, "TxDataDelayTimeout", 2);
 	INIT_UINT(prWifiVar->u4TxDataDelayCnt, "TxDataDelayCnt", 10);
+	INIT_UINT(prWifiVar->fgEnTxDataDelayDbg,
+		  "EnTxDataDelayDbg", FEATURE_DISABLED);
 #endif /* CFG_SUPPORT_TX_DATA_DELAY == 1 */
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)

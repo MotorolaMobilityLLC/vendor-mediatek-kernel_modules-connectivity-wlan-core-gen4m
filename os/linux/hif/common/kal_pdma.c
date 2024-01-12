@@ -2208,6 +2208,8 @@ u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo)
 		return 0;
 	}
 tx_data:
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnTxDataDelayDbg))
+		DBGLOG(HAL, TRACE, "Tx Data[%u]\n", u4DataCnt);
 #endif
 
 #if !CFG_SUPPORT_RX_WORK

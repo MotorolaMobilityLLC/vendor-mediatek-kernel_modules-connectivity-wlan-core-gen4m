@@ -1535,7 +1535,8 @@ void halTxDelayTimeout(unsigned long arg)
 	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
 
-	DBGLOG(HAL, TRACE, "Tx Delay timeout\n");
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnTxDataDelayDbg))
+		DBGLOG(HAL, TRACE, "Tx Delay timeout\n");
 
 	KAL_SET_BIT(HIF_TX_DATA_DELAY_TIMEOUT_BIT,
 		    prHifInfo->ulTxDataTimeout);
@@ -1563,7 +1564,8 @@ void halStartTxDelayTimer(struct ADAPTER *prAdapter)
 	KAL_SET_BIT(HIF_TX_DATA_DELAY_TIMER_RUNNING_BIT,
 		    prHifInfo->ulTxDataTimeout);
 
-	DBGLOG(HAL, TRACE, "Start Delay Timer\n");
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnTxDataDelayDbg))
+		DBGLOG(HAL, TRACE, "Start Delay Timer\n");
 }
 #endif /* (CFG_SUPPORT_TX_DATA_DELAY == 1) */
 
