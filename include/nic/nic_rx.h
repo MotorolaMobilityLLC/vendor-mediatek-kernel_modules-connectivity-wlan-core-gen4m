@@ -156,25 +156,6 @@
 #define RX_RPT_RXV_TYPE_CRXV2_VLD_MASK		BIT(19)
 #define RX_RPT_RXV_TYPE_CRXV2_VLD_SHIFT		19
 
-/* HAL RX from hal_hw_def_rom.h */
-/*------------------------------------------------------------------------------
- * Cipher define
- *------------------------------------------------------------------------------
- */
-#define CIPHER_SUITE_NONE               0
-#define CIPHER_SUITE_WEP40              1
-#define CIPHER_SUITE_TKIP               2
-#define CIPHER_SUITE_TKIP_WO_MIC        3
-#define CIPHER_SUITE_CCMP               4
-#define CIPHER_SUITE_WEP104             5
-#define CIPHER_SUITE_BIP                6
-#define CIPHER_SUITE_WEP128             7
-#define CIPHER_SUITE_WPI                8
-#define CIPHER_SUITE_CCMP_W_CCX         9
-#define CIPHER_SUITE_CCMP_256           10
-#define CIPHER_SUITE_GCMP_128           11
-#define CIPHER_SUITE_GCMP_256           12
-
 /*------------------------------------------------------------------------------
  * Bit fields for HW_MAC_RX_DESC_T
  *------------------------------------------------------------------------------

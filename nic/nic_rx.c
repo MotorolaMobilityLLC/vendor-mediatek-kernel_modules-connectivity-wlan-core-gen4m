@@ -2094,7 +2094,8 @@ void nicRxProcessMgmtPacket(struct ADAPTER *prAdapter,
 #endif
 #if CFG_SUPPORT_802_11W
 	if (prSwRfb->fgIcvErr) {
-		if (prSwRfb->ucSecMode == CIPHER_SUITE_BIP)
+		if (prSwRfb->ucSecMode == CIPHER_SUITE_BIP ||
+		    prSwRfb->ucSecMode == CIPHER_SUITE_BIP_GMAC_256)
 			DBGLOG(RSN, INFO, "[MFP] RX with BIP ICV ERROR\n");
 		else
 			DBGLOG(RSN, INFO, "[MFP] RX with ICV ERROR\n");
@@ -2112,6 +2113,25 @@ void nicRxProcessMgmtPacket(struct ADAPTER *prAdapter,
 		&& (prSwRfb->fgIsBC == FALSE)
 		&& (prSwRfb->fgIsMC == FALSE)) {
 		prSwRfb->fgIsCipherMS = TRUE;
+	}
+#endif
+
+#if CFG_SUPPORT_SW_BIP_GMAC
+	/* BIP-GMAC checking for BMC mgmt frame (deauth/disassoc) */
+	if (rsnCheckBipGmacKeyInstall(prAdapter, prSwRfb->prStaRec)
+		&& (prSwRfb->fgIsBC || prSwRfb->fgIsMC) &&
+		(ucSubtype == 10 || ucSubtype == 12)) {
+		/* HW doesn't support BIP-GMAC, will set fgIsCipherMS, driver
+		 * should reset this flag and let rsnCheckBipGmac do the check
+		 */
+		prSwRfb->fgIsCipherMS = FALSE;
+		if (rsnCheckBipGmac(prAdapter, prSwRfb) != TRUE) {
+			prSwRfb->fgIsCipherMS = TRUE;
+			DBGLOG(RX, WARN,
+				"BIP-GMAC integrity check fail! Drop it\n");
+			nicRxReturnRFB(prAdapter, prSwRfb);
+			return;
+		}
 	}
 #endif
 

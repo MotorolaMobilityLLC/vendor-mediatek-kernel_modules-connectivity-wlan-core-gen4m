@@ -1485,7 +1485,9 @@ MGMT_OBJS := 	$(MGMT_DIR)ais_fsm.o \
 		$(MGMT_DIR)mscs.o \
 		$(MGMT_DIR)rtt.o \
 		$(MGMT_DIR)mlr.o \
-		$(MGMT_DIR)wlan_ring.o
+		$(MGMT_DIR)wlan_ring.o \
+		$(MGMT_DIR)gcm.o
+
 
 # ---------------------------------------------------
 # Chips Objects List
