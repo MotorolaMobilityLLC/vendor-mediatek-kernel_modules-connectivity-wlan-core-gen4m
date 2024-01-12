@@ -495,7 +495,8 @@ void nic_txd_v3_compose(
 	/* Msdu count */
 	HAL_MAC_CONNAC3X_TXD_SET_MSDU_COUNT(prTxDesc, 1);
 
-	HAL_MAC_CONNAC3X_TXD_SET_DA_SRC_SELECTION(prTxDesc);
+	if (prMsduInfo->ucStaRecIndex != STA_REC_INDEX_BMCAST)
+		HAL_MAC_CONNAC3X_TXD_SET_DA_SRC_SELECTION(prTxDesc);
 
 	/** DW7 **/
 	HAL_MAC_CONNAC3X_TXD_SET_TXD_LENGTH(prTxDesc, TXD_LEN_1_PAGE);
