@@ -13531,9 +13531,18 @@ void kalConfigChksumOffload(
 #if CFG_SUPPORT_THERMAL_QUERY
 #define MAX_REFRESH_TIME		(5 * 60) /* sec */
 #define MAX_TEMP_THRESHOLD		(60 * 1000)
+
+#if (KERNEL_VERSION(6, 1, 0) <= LINUX_VERSION_CODE)
+static int get_connsys_thermal_temp(struct thermal_zone_device *tz, int *temp)
+#else
 static int get_connsys_thermal_temp(void *data, int *temp)
+#endif
 {
+#if (KERNEL_VERSION(6, 1, 0) <= LINUX_VERSION_CODE)
+	struct thermal_sensor_info *sensor = tz->devdata;
+#else
 	struct thermal_sensor_info *sensor = data;
+#endif
 	struct GLUE_INFO *glue = wlanGetGlueInfo();
 	struct ADAPTER *ad = NULL;
 	struct THERMAL_TEMP_DATA temp_data;
@@ -13581,9 +13590,15 @@ exit:
 	return 0;
 }
 
+#if (KERNEL_VERSION(6, 1, 0) <= LINUX_VERSION_CODE)
+static const struct thermal_zone_device_ops wf_thermal_ops = {
+	.get_temp = get_connsys_thermal_temp,
+};
+#else
 static const struct thermal_zone_of_device_ops wf_thermal_ops = {
 	.get_temp = get_connsys_thermal_temp,
 };
+#endif
 
 int thermal_cbs_register(struct platform_device *pdev)
 {
@@ -13607,8 +13622,13 @@ int thermal_cbs_register(struct platform_device *pdev)
 		struct thermal_sensor_info *sensor =
 			&thermal_info->sensor_info[idx];
 
+#if (KERNEL_VERSION(6, 1, 0) <= LINUX_VERSION_CODE)
+		tzdev = devm_thermal_of_zone_register(&pdev->dev,
+			idx, sensor, &wf_thermal_ops);
+#else
 		tzdev = devm_thermal_zone_of_sensor_register(&pdev->dev,
 			idx, sensor, &wf_thermal_ops);
+#endif
 		if (IS_ERR(tzdev)) {
 			sensor->tzd = NULL;
 			err = PTR_ERR(tzdev);
@@ -13648,8 +13668,13 @@ void thermal_cbs_unregister(struct platform_device *pdev)
 		if (!sensor->tzd)
 			continue;
 
+#if (KERNEL_VERSION(6, 1, 0) <= LINUX_VERSION_CODE)
+		devm_thermal_of_zone_unregister(&pdev->dev,
+			sensor->tzd);
+#else
 		devm_thermal_zone_of_sensor_unregister(&pdev->dev,
 			sensor->tzd);
+#endif
 		sensor->tzd = NULL;
 	}
 }
