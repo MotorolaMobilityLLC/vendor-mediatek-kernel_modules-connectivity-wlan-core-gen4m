@@ -12443,11 +12443,14 @@ uint32_t wlanWakeUpWiFi(IN struct ADAPTER *prAdapter)
 			&fgReady);
 
 	if (fgReady) {
+#if defined(_HIF_USB)
 		DBGLOG(INIT, INFO,
 			"Wi-Fi is already ON!, turn off before FW DL!\n");
 		if (wlanPowerOffWifi(prAdapter) != WLAN_STATUS_SUCCESS)
 			return WLAN_STATUS_FAILURE;
-
+#else
+		DBGLOG(INIT, INFO, "Wi-Fi is already ON!\n");
+#endif
 	}
 
 	nicpmWakeUpWiFi(prAdapter);
