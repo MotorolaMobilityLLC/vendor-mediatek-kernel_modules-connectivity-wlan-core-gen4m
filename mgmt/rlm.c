@@ -1203,6 +1203,11 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
 
+	if (prBssInfo == NULL) {
+		DBGLOG(RLM, WARN, "prBssInfo is NULL\n");
+		return;
+	}
+
 	if (IS_BSS_APGO(prBssInfo))
 		fg40mAllowed = prBssInfo->fgAssoc40mBwAllowed;
 	else
