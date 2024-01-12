@@ -1840,6 +1840,10 @@
 #define CFG_SUPPORT_MDDP_AOR 0
 #endif
 
+#ifndef CFG_SUPPORT_MDDP_SHM
+#define CFG_SUPPORT_MDDP_SHM 0
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags of Disconnect with disable channel based on REGD update
  *------------------------------------------------------------------------------
