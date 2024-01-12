@@ -478,7 +478,7 @@ twtPlannerSendReqResume(struct ADAPTER *prAdapter,
 		prTWTReqFsmResumeMsg->ucNextTWTSize = ucNextTWTSize;
 
 		DBGLOG(TWT_REQUESTER, WARN,
-			"TWT Info Frame 0x%x 0x%x\n",
+			"TWT Info Frame 0x%llx 0x%llx\n",
 			prTWTReqFsmResumeMsg->u8NextTWT,
 			u8NextTWT);
 
