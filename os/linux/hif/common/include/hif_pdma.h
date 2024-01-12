@@ -207,8 +207,10 @@
 #define SW_WFDMA_PCCIF_START		0x1024D008
 #define SW_WFDMA_PCCIF_TCHNUM		0x1024D00C
 #define SW_WFDMA_CCIF_CHANNEL_NUM	4
-#define	SW_WFDMA_MAX_RETRY_COUNT	10
-#define	SW_WFDMA_RETRY_TIME		100
+#define SW_WFDMA_MAX_RETRY_COUNT	10
+#define SW_WFDMA_RETRY_TIME		100
+#define SW_WFDMA_FLAG_INT		BIT(0)
+#define SW_WFDMA_FLAG_INT_BIT		(0)
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -468,7 +470,7 @@ struct SW_WFDMA_OPS {
 	void (*setCidx)(IN struct GLUE_INFO *prGlueInfo, uint32_t u4Cidx);
 	void (*getDidx)(IN struct GLUE_INFO *prGlueInfo, uint32_t *pu4Didx);
 	bool (*writeCmd)(struct GLUE_INFO *prGlueInfo);
-	void (*processDmaDone)(struct GLUE_INFO *prGlueInfo);
+	bool (*processDmaDone)(struct GLUE_INFO *prGlueInfo);
 	void (*dumpDebugLog)(struct GLUE_INFO *prGlueInfo);
 };
 
@@ -476,6 +478,7 @@ struct SW_WFDMA_INFO {
 	struct SW_WFDMA_OPS rOps;
 	struct SW_WFDMAD *prDmad;
 	struct SW_WFDMAD rBackup;
+	unsigned long ulIntFlag;
 	bool fgIsSupportSwWfdma;
 	bool fgIsEnSwWfdma;
 	void *pucIoremapAddr;
@@ -580,6 +583,6 @@ void halSwWfdmaGetCidx(struct GLUE_INFO *prGlueInfo, uint32_t *pu4Cidx);
 void halSwWfdmaSetCidx(struct GLUE_INFO *prGlueInfo, uint32_t u4Cidx);
 void halSwWfdmaGetDidx(struct GLUE_INFO *prGlueInfo, uint32_t *pu4Didx);
 bool halSwWfdmaWriteCmd(struct GLUE_INFO *prGlueInfo);
-void halSwWfdmaProcessDmaDone(IN struct GLUE_INFO *prGlueInfo);
+bool halSwWfdmaProcessDmaDone(IN struct GLUE_INFO *prGlueInfo);
 void halSwWfdmaDumpDebugLog(struct GLUE_INFO *prGlueInfo);
 #endif /* HIF_PDMA_H__ */

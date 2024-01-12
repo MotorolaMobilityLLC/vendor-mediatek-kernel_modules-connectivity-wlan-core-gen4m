@@ -512,8 +512,10 @@ void soc3_0ReadExtIntStatus(
 		*pu4IntStatus |= WHISR_TX_DONE_INT;
 	}
 
-	if (prSwWfdmaInfo->fgIsEnSwWfdma)
+	if (prSwWfdmaInfo->fgIsEnSwWfdma &&
+	    (prSwWfdmaInfo->ulIntFlag & SW_WFDMA_FLAG_INT)) {
 		*pu4IntStatus |= WHISR_TX_DONE_INT;
+	}
 
 	if (u4RegValue & CONNAC_MCU_SW_INT) {
 		*pu4IntStatus |= WHISR_D2H_SW_INT;
@@ -537,7 +539,9 @@ void soc3_0asicConnac2xProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 	struct SW_WFDMA_INFO *prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 	union WPDMA_INT_STA_STRUCT rIntrStatus;
 
-	if (prSwWfdmaInfo->fgIsEnSwWfdma) {
+	if (prSwWfdmaInfo->fgIsEnSwWfdma &&
+	    test_and_clear_bit(SW_WFDMA_FLAG_INT_BIT,
+			       &prSwWfdmaInfo->ulIntFlag)) {
 		if (prSwWfdmaInfo->rOps.processDmaDone)
 			prSwWfdmaInfo->rOps.
 				processDmaDone(prAdapter->prGlueInfo);
@@ -2744,6 +2748,7 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 	/* SW wfdma cmd done interrupt */
 	if (value & BIT(3) && prSwWfdmaInfo->fgIsEnSwWfdma) {
 		DBGLOG(HAL, TRACE, "FW trigger SwWfdma INT.\n");
+		set_bit(SW_WFDMA_FLAG_INT_BIT, &prSwWfdmaInfo->ulIntFlag);
 		kalSetDrvIntEvent(prAdapter->prGlueInfo);
 	}
 }
