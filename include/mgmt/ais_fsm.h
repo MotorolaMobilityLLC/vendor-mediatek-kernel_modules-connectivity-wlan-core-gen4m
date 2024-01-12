@@ -620,6 +620,9 @@ void aisInitializeConnectionSettings(struct ADAPTER
 		*prAdapter, struct REG_INFO *prRegInfo,
 		uint8_t ucBssIndex);
 
+void aisInitializeConnectionRsnInfo(struct ADAPTER
+		*prAdapter, uint8_t ucBssIndex);
+
 void aisFsmInit(struct ADAPTER *prAdapter,
 		struct REG_INFO *prRegInfo,
 		uint8_t ucAisIndex);
