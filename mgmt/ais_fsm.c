@@ -7905,7 +7905,6 @@ void aisPreSuspendFlow(IN struct ADAPTER *prAdapter)
 	struct SCAN_INFO *prScanInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct MSG_CANCEL_REMAIN_ON_CHANNEL *prMsgChnlAbort;
-	GLUE_SPIN_LOCK_DECLARATION();
 
 	if (prAdapter == NULL)
 		return;
@@ -7915,14 +7914,6 @@ void aisPreSuspendFlow(IN struct ADAPTER *prAdapter)
 
 	if (prGlueInfo == NULL)
 		return;
-
-	/* report scan abort */
-	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-	if (prGlueInfo->prScanRequest) {
-		kalCfg80211ScanDone(prGlueInfo->prScanRequest, TRUE);
-		prGlueInfo->prScanRequest = NULL;
-	}
-	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	/* cancel scan */
