@@ -1745,17 +1745,16 @@ int32_t connac3x_show_stat_info(
 					prQueryStaStatistics->ucRangeType;
 
 		for (ucIdx = 0; ucIdx < AGG_RANGE_SEL_NUM; ucIdx++) {
-			if (ucIdx % 2 == 0) {
+			if (ucIdx % 2 == 0)
 				au2AggRange[ucIdx] =
 					((au4RangeCtrl[ucIdx >> 1] &
 					AGG_RANGE_SEL_0_MASK) >>
 					AGG_RANGE_SEL_0_OFFSET);
-
-				au2AggRange[ucIdx + 1] =
+			else
+				au2AggRange[ucIdx] =
 					((au4RangeCtrl[ucIdx >> 1] &
 					AGG_RANGE_SEL_1_MASK) >>
 					AGG_RANGE_SEL_1_OFFSET);
-			}
 		}
 
 		/* Tx Agg */
