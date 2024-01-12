@@ -248,6 +248,4 @@ typedef struct _PCIE_CHIP_CR_MAPPING {
 	UINT_32 u4Range;
 } PCIE_CHIP_CR_MAPPING, *P_PCIE_CHIP_CR_MAPPING;
 
-extern PCIE_CHIP_CR_MAPPING arBus2ChipCrMapping[];
-
 #endif /* HIF_PCI_H__ */
