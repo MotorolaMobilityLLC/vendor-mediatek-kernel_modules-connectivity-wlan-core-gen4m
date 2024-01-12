@@ -15437,7 +15437,6 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		struct ACTION_BTM_REQ_FRAME *rxframe = NULL;
 		int32_t i4Argc = 0;
 		int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-		uint32_t rStatus = WLAN_STATUS_FAILURE;
 
 		/*
 		 * BTM-IT 0x7 200 220 5
@@ -15447,7 +15446,7 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		 * 5: diff to decrease preference for each candidate
 		 */
 		DBGLOG(INIT, INFO, "BTM command is [%s]\n", pucSavedPtr);
-		rStatus = wlanCfgParseArgument(pucSavedPtr, &i4Argc, apcArgv);
+		wlanCfgParseArgument(pucSavedPtr, &i4Argc, apcArgv);
 		target = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		if (!target) {
 			DBGLOG(OID, INFO, "sta is not connected!!!\n");
@@ -15903,14 +15902,13 @@ wlanoidShowAhdbgInfo(struct ADAPTER *prAdapter,
 	int32_t i4Argc = 0;
 	int32_t i4Ret = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
 	uint32_t u4BssIndex = 0;
 	uint32_t u4Module = 0;
 	uint32_t u4Reason = 0;
 	struct CHIP_DBG_OPS *prDbgOps = prAdapter->chip_info->prDebugOps;
 
 	DBGLOG(INIT, INFO, "AHDBG command is [%s]\n", pucSavedPtr);
-	rStatus = wlanCfgParseArgument(pucSavedPtr, &i4Argc, apcArgv);
+	wlanCfgParseArgument(pucSavedPtr, &i4Argc, apcArgv);
 	DBGLOG(INIT, INFO, "argc [%d]\n", i4Argc);
 
 	if (i4Argc != 4) {
