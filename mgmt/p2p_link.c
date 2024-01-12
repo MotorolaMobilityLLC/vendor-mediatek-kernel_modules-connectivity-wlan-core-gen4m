@@ -253,15 +253,13 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 		    (uint16_t)
 		    OFFSET_OF(struct WLAN_REASSOC_REQ_FRAME,
 		    aucInfoElem[0]);
-		pucIE = ((struct WLAN_REASSOC_REQ_FRAME *)
-			(prSwRfb->pvHeader))->aucInfoElem;
+		pucIE = ((struct WLAN_REASSOC_REQ_FRAME *)prFrame)->aucInfoElem;
 	} else {
 		u2IELength = prSwRfb->u2PacketLen -
 			(uint16_t)
 			OFFSET_OF(struct WLAN_ASSOC_REQ_FRAME,
 			aucInfoElem[0]);
-		pucIE = ((struct WLAN_ASSOC_REQ_FRAME *)
-			(prSwRfb->pvHeader))->aucInfoElem;
+		pucIE = prFrame->aucInfoElem;
 	}
 
 	ml = mldFindMlIE(pucIE, u2IELength, ML_CTRL_TYPE_BASIC);
