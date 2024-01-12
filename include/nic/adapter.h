@@ -1155,6 +1155,7 @@ struct WIFI_VAR {
 	uint32_t u4ApChnlHoldTime;
 	uint32_t u4P2pChnlHoldTime;
 	uint8_t fgAllowSameBandDualSta;
+	uint8_t ucApForceSleep;
 
 #if CFG_SUPPORT_NAN
 	uint8_t ucMasterPref;

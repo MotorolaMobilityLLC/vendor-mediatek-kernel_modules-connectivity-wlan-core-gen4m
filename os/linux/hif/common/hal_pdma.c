@@ -658,7 +658,10 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 		goto unlock;
 #endif
 
-	if (!(prAdapter->fgWiFiInSleepyState &&
+	if (prAdapter->rWifiVar.ucApForceSleep &&
+		cnmSapIsActive(prAdapter))
+		DBGLOG(INIT, LOUD, "SAP: Skip fgWiFiInSleepyState check\n");
+	else if (!(prAdapter->fgWiFiInSleepyState &&
 		(prAdapter->u4PwrCtrlBlockCnt == 0)))
 		goto unlock;
 
