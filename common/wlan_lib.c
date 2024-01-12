@@ -4713,6 +4713,9 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 		for (i = 0 ; i < (sizeof(arNvramTagGroup) /
 				sizeof(struct NVRAM_TAG_FRAGMENT_GROUP)); i++) {
 
+			kalMemZero(prCmdNvramFragment,
+				 sizeof(struct CMD_NVRAM_FRAGMENT));
+
 			for (index = arNvramTagGroup[i].u1StartTagID;
 				index <= arNvramTagGroup[i].u1EndTagID;
 				index++) {
@@ -4769,8 +4772,6 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 
 			/*update the next Fragment group start offset*/
 			u4NvramStartOffset = u4NvramOffset;
-			kalMemZero(prCmdNvramFragment,
-				 sizeof(struct CMD_NVRAM_FRAGMENT));
 
 		}
 
