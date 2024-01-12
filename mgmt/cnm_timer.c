@@ -387,7 +387,7 @@ void cnmTimerStopTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer)
 	ASSERT(prAdapter);
 	ASSERT(prTimer);
 
-	log_dbg(CNM, TRACE, "stop timer, timer %p func %ps\n",
+	DBGLOG_LIMITED(CNM, TRACE, "stop timer, timer %p func %ps\n",
 		prTimer, prTimer->pfMgmtTimeOutFunc);
 
 	cnmTimerStopTimer_impl(prAdapter, prTimer, TRUE);
@@ -418,7 +418,7 @@ void cnmTimerStartTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer,
 	ASSERT(prAdapter);
 	ASSERT(prTimer);
 
-	log_dbg(CNM, TRACE, "start timer, timer %p func %ps %d ms\n",
+	DBGLOG_LIMITED(CNM, TRACE, "start timer, timer %p func %ps %d ms\n",
 		prTimer, prTimer->pfMgmtTimeOutFunc, u4TimeoutMs);
 
 #if (CFG_SUPPORT_STATISTICS == 1)
@@ -442,7 +442,7 @@ void cnmTimerStartTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer,
 
 	if (gDoTimeOut) {
 		/* monitor the timer start in callback */
-		log_dbg(CNM, TRACE,
+		DBGLOG_LIMITED(CNM, TRACE,
 			"In DoTimeOut, timer %p func %ps %d ms timercount %d\n",
 			prTimer, prTimer->pfMgmtTimeOutFunc,
 			u4TimeoutMs, prTimerList->u4NumElem);
@@ -510,7 +510,7 @@ void cnmTimerStartTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer,
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
 
 	if (fgInvalidTime) {
-		log_dbg(CNM, WARN,
+		DBGLOG_LIMITED(CNM, WARN,
 			"Invalid NextExpiredSysTime: %u, currentSysTime: %u\n",
 			rInvalidNextExpiredSysTime, rCurSysTime);
 	}
