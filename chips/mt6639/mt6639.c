@@ -1544,42 +1544,15 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
-	uint32_t u4Val = 0;
 
-	if (!fgEn) {
-		/*
-		 *	Backup original setting then
-		 *	disable L1.1, L1.2 and set LTR to 0
-		 */
-		HAL_MCR_RD(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LTR_VALUES_ADDR,
-			   &prHifInfo->u4PcieLTR);
-		HAL_MCR_RD(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR,
-			   &prHifInfo->u4PcieASPM);
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			PCIE_MAC_IREG_PCIE_LTR_VALUES_ADDR, 0);
-		u4Val = prHifInfo->u4PcieASPM &
-			~(PCIE_LOW_POWER_CTRL_DIS_L1 |
-			  PCIE_LOW_POWER_CTRL_DIS_L1_1 |
-			  PCIE_LOW_POWER_CTRL_DIS_L1_2);
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR,
-			   u4Val);
-		DBGLOG(HAL, TRACE, "Disable aspm L1.1/L1.2 0x%08x\n", u4Val);
+	if (fgEn) {
+		glBusConfigASPML1SS(
+			prHifInfo->pdev,
+			PCI_L1PM_CTR1_ASPM_L12_EN | PCI_L1PM_CTR1_ASPM_L11_EN);
+		DBGLOG(HAL, INFO, "ENable aspm L1.1/L1.2\n");
 	} else {
-		/* Restore original setting*/
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LTR_VALUES_ADDR,
-			   prHifInfo->u4PcieLTR);
-		u4Val = prHifInfo->u4PcieASPM &
-			~PCIE_LOW_POWER_CTRL_DIS_L1 |
-			PCIE_LOW_POWER_CTRL_DIS_L1_1 |
-			PCIE_LOW_POWER_CTRL_DIS_L1_2;
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR,
-			   u4Val);
-		DBGLOG(HAL, TRACE, "Enable aspm L1.1/L1.2 0x%08x\n", u4Val);
+		glBusConfigASPML1SS(prHifInfo->pdev, 0);
+		DBGLOG(HAL, INFO, "Disable aspm L1.1/L1.2\n");
 	}
 }
 #endif

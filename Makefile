@@ -516,18 +516,6 @@ else
     ccflags-y += -DCFG_VOLT_INFO=0
 endif
 
-ifeq ($(CONFIG_SUPPORT_TX_DATA_DELAY), y)
-    ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
-        ccflags-y += -DCFG_SUPPORT_TX_DATA_DELAY=1
-    else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
-        ccflags-y += -DCFG_SUPPORT_TX_DATA_DELAY=1
-    else
-        ccflags-y += -DCFG_SUPPORT_TX_DATA_DELAY=0
-    endif
-else
-    ccflags-y += -DCFG_SUPPORT_TX_DATA_DELAY=0
-endif
-
 ifeq ($(CONFIG_MTK_WIFI_TRX_DIRECT), y)
     ifeq (,$(filter CFG_RX_DIRECT,$(PLATFORM_FLAGS)))
         ccflags-y += -DCFG_RX_DIRECT=1

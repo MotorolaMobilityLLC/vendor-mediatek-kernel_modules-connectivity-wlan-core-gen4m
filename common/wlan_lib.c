@@ -8327,12 +8327,6 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prAdapter, "ErrPos", 0);
 #endif
 
-#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
-	prWifiVar->u4TxDataDelayTimeout = wlanCfgGetUint32(prAdapter,
-			"TxDataDelayTimeout", 2);
-	prWifiVar->u4TxDataDelayCnt = wlanCfgGetUint32(prAdapter,
-			"TxDataDelayCnt", 32);
-#endif /* CFG_SUPPORT_TX_DATA_DELAY == 1 */
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	prWifiVar->i4ThrmCtrlTemp = wlanCfgGetInt32(
 		prAdapter, "ThrmCtrlTemp", THRM_PROT_DUTY_CTRL_TEMP);
