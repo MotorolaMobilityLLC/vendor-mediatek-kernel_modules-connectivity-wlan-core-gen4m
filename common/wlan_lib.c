@@ -7311,8 +7311,12 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"RxQuotaInfoEn", FEATURE_ENABLED);
 #endif
 	/* Max Tx AMSDU in AMPDU length *in BYTES* */
+	INIT_UINT(prWifiVar->u4HtTxMaxAmsduInAmpduLen,
+		"HtTxMaxAmsduInAmpduLen", WLAN_TX_MAX_AMSDU_IN_AMPDU_LEN);
+	INIT_UINT(prWifiVar->u4VhtTxMaxAmsduInAmpduLen,
+		"VhtTxMaxAmsduInAmpduLen", WLAN_TX_MAX_AMSDU_IN_AMPDU_LEN);
 	INIT_UINT(prWifiVar->u4TxMaxAmsduInAmpduLen,
-		"TxMaxAmsduInAmpduLen", 11454);
+		"TxMaxAmsduInAmpduLen", WLAN_TX_MAX_AMSDU_IN_AMPDU_LEN);
 
 	INIT_UINT(prWifiVar->ucTcRestrict, "TcRestrict", 0xFF);
 	/* Max Tx dequeue limit: 0 => auto */

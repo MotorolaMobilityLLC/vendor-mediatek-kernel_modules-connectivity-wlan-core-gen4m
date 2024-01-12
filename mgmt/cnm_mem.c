@@ -1216,8 +1216,17 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 			&= prAdapter->rWifiVar.ucHtAmsduInAmpduRx;
 	}
 
-	prCmdContent->u4TxMaxAmsduInAmpduLen
-		= prAdapter->rWifiVar.u4TxMaxAmsduInAmpduLen;
+	if ((prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11BE) ||
+	    (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AX))
+		prCmdContent->u4TxMaxAmsduInAmpduLen =
+			prAdapter->rWifiVar.u4TxMaxAmsduInAmpduLen;
+	else if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AC)
+		prCmdContent->u4TxMaxAmsduInAmpduLen =
+			prAdapter->rWifiVar.u4VhtTxMaxAmsduInAmpduLen;
+	else if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11N)
+		prCmdContent->u4TxMaxAmsduInAmpduLen =
+			prAdapter->rWifiVar.u4HtTxMaxAmsduInAmpduLen;
+
 #if (CFG_SUPPORT_802_11BE == 1)
 	if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11BE) {
 		prCmdContent->rBaSize.rEhtBaSize.u2RxBaSize =

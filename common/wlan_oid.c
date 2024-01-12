@@ -16850,6 +16850,7 @@ uint32_t wlanoidSetAmsduSize(struct ADAPTER *prAdapter,
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct WIFI_VAR *prWifiVar = NULL;
+	uint32_t u4TxMaxAmsduInAmpduLen;
 
 	ASSERT(prAdapter);
 	if (u4SetBufferLen)
@@ -16858,7 +16859,16 @@ uint32_t wlanoidSetAmsduSize(struct ADAPTER *prAdapter,
 
 	prChipInfo = prAdapter->chip_info;
 	prWifiVar = &prAdapter->rWifiVar;
-	prWifiVar->u4TxMaxAmsduInAmpduLen = *((uint32_t *)pvSetBuffer);
+	u4TxMaxAmsduInAmpduLen = *((uint32_t *)pvSetBuffer);
+	if (u4TxMaxAmsduInAmpduLen > WLAN_TX_MAX_AMSDU_IN_AMPDU_LEN) {
+		DBGLOG(OID, WARN, "AMSDU max Size exceeds limit %d!",
+		       WLAN_TX_MAX_AMSDU_IN_AMPDU_LEN);
+		u4TxMaxAmsduInAmpduLen = WLAN_TX_MAX_AMSDU_IN_AMPDU_LEN;
+	}
+	prWifiVar->u4HtTxMaxAmsduInAmpduLen = u4TxMaxAmsduInAmpduLen;
+	prWifiVar->u4VhtTxMaxAmsduInAmpduLen = u4TxMaxAmsduInAmpduLen;
+	prWifiVar->u4TxMaxAmsduInAmpduLen = u4TxMaxAmsduInAmpduLen;
+
 	DBGLOG(OID, INFO, "Set SW AMSDU max Size: %d\n",
 	   prWifiVar->u4TxMaxAmsduInAmpduLen);
 	return 0;
