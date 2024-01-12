@@ -1474,6 +1474,10 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 	if (platform_driver_register(&mtk_axi_driver))
 		DBGLOG(HAL, ERROR, "platform_driver_register fail\n");
 
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+	mtk_pcie_remove_port(0);
+#endif
+
 	return ret;
 }
 
