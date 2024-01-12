@@ -532,7 +532,7 @@ static uint32_t wlanGetTxRateFromLinkStats(
 	uint32_t u4QueryInfoLen;
 	struct _STATS_LLS_TX_RATE_INFO targetRateInfo;
 
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+	if (unlikely(ucBssIndex >= BSSID_NUM))
 		return WLAN_STATUS_FAILURE;
 
 	kalMemZero(&query, sizeof(query));
