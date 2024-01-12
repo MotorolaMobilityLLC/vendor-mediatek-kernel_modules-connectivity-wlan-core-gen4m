@@ -1930,7 +1930,7 @@ u_int8_t halProcessToken(struct ADAPTER *prAdapter,
 }
 
 void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
-	uint32_t u4MacLatency, uint32_t u4Stat)
+	uint32_t u4MacLatency, uint32_t u4AirLatency, uint32_t u4Stat)
 {
 }
 
