@@ -6040,6 +6040,14 @@ uint32_t p2pFuncCalculateP2p_IELenForBeacon(struct ADAPTER *prAdapter,
 			[prBssInfo->u4PrivateData]))
 			break;
 
+		if (!p2pNeedAppendP2pIE(prAdapter,
+			prBssInfo)) {
+			DBGLOG(BSS, INFO,
+				"Skip p2p ie for role%d\n",
+				prBssInfo->u4PrivateData);
+			break;
+		}
+
 		prP2pSpeBssInfo =
 			prAdapter->rWifiVar.prP2pSpecificBssInfo
 			[prBssInfo->u4PrivateData];
@@ -6079,6 +6087,14 @@ void p2pFuncGenerateP2p_IEForBeacon(struct ADAPTER *prAdapter,
 			prAdapter->rWifiVar.prP2PConnSettings
 			[prBssInfo->u4PrivateData]))
 			break;
+
+		if (!p2pNeedAppendP2pIE(prAdapter,
+			prBssInfo)) {
+			DBGLOG(BSS, INFO,
+				"Skip p2p ie for role%d\n",
+				prBssInfo->u4PrivateData);
+			break;
+		}
 
 		pucIEBuf = (uint8_t *) ((uintptr_t) prMsduInfo->prPacket +
 			(uintptr_t) prMsduInfo->u2FrameLength);
