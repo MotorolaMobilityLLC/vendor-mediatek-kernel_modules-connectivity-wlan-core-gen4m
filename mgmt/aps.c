@@ -684,8 +684,9 @@ uint8_t apsGetCuInfo(struct ADAPTER *ad, struct BSS_DESC *bss, uint8_t bidx)
 		u2CuOffset = CU_6G_INDEX_OFFSET + bss->ucChannelNum;
 #endif
 
-	return aps->arCuInfo[u2CuOffset].ucTotalCu /
-		aps->arCuInfo[u2CuOffset].ucTotalCount;
+	return aps->arCuInfo[u2CuOffset].ucTotalCount == 0 ? 0 :
+	       aps->arCuInfo[u2CuOffset].ucTotalCu /
+	       aps->arCuInfo[u2CuOffset].ucTotalCount;
 }
 
 uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
