@@ -547,7 +547,7 @@ uint32_t wlanFwLogIdxToStr(struct ADAPTER *prAdapter, uint8_t *pucIdxLog,
 				aucLogBuf);
 
 		/* print the fw log  */
-		kalPrintWoTag(aucLogBuf);
+		LOG_FUNC("%s", aucLogBuf);
 	} else if (prIdxV2Header->ucVerType == VER_TYPE_TXT_LOG) {
 		prTextLog = (struct TEXT_LOG_FORMAT *)pucIdxLog;
 
@@ -555,14 +555,17 @@ uint32_t wlanFwLogIdxToStr(struct ADAPTER *prAdapter, uint8_t *pucIdxLog,
 				sizeof(struct TEXT_LOG_FORMAT);
 
 		if ((prTextLog->ucPayloadSize_wo_padding +
-			sizeof(struct TEXT_LOG_FORMAT)) < u2MsgSize) {
-			DBGLOG(INIT, STATE, "error payload size\n");
+			sizeof(struct TEXT_LOG_FORMAT)) > u2MsgSize) {
+			DBGLOG(INIT, STATE, "error payload size (%d:%d:%d)\n",
+				prTextLog->ucPayloadSize_wo_padding,
+				prTextLog->ucPayloadSize_w_padding,
+				u2MsgSize);
 			return WLAN_STATUS_FAILURE;
 		}
 
 		/* Expect the rx text log last byte is '0x0a' */
 		prLogStr[prTextLog->ucPayloadSize_wo_padding-1] = '\0';
-		LOG_FUNC("<FW>%s\n", prLogStr);
+		LOG_FUNC("<FW>%s", prLogStr);
 	} else {
 		/* TODO: process Time Sync Message here */
 
