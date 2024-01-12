@@ -126,9 +126,32 @@ uint32_t ehtRlmCalculateCapIELen(
 	uint8_t ucBssIndex,
 	struct STA_RECORD *prStaRec)
 {
-	/* struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL; */
-	uint32_t u4OverallLen = OFFSET_OF(struct _IE_EHT_CAP_T, aucVarInfo[0]);
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucMaxBw;
+	uint32_t u4OverallLen;
 
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+	/* struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL; */
+	u4OverallLen = OFFSET_OF(struct IE_EHT_CAP, aucVarInfo[0]);
+	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+
+	if (ucMaxBw == MAX_BW_20MHZ) {
+		u4OverallLen += sizeof(struct EHT_SUPPORTED_MCS_BW20_FIELD);
+        } else {
+	        if (ucMaxBw >= MAX_BW_80MHZ) {
+			u4OverallLen += sizeof(
+				struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD);
+		}
+		if (ucMaxBw >= MAX_BW_160MHZ) {
+			u4OverallLen += sizeof(
+				struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD);
+		}
+		if (ucMaxBw >= MAX_BW_320MHZ) {
+			u4OverallLen += sizeof(
+				struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD);
+		}
+        }
 	return u4OverallLen;
 }
 
@@ -143,28 +166,70 @@ uint32_t ehtRlmCalculateOpIELen(
 	return u4OverallLen;
 }
 
+static void ehtRlmFillBW80MCSMap(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	uint8_t *prEhtSupportedMcsSet)
+{
+	uint8_t ucMcsMap, ucSupportedNss;
+	struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD *_prEhtSupportedMcsSet
+			= (struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD *)
+				prEhtSupportedMcsSet;
+
+	kalMemZero((void *) prEhtSupportedMcsSet,
+		sizeof(struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD));
+	ucSupportedNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
+	ucMcsMap = ucSupportedNss + (ucSupportedNss << 4);
+	_prEhtSupportedMcsSet->eht_mcs_0_9 = ucMcsMap;
+	_prEhtSupportedMcsSet->eht_mcs_10_11 = ucMcsMap;
+	_prEhtSupportedMcsSet->eht_mcs_12_13 = ucMcsMap;
+}
+
+static void ehtRlmFillBW20MCSMap(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	uint8_t *prEhtSupportedMcsSet)
+{
+	uint8_t ucMcsMap, ucSupportedNss;
+	struct EHT_SUPPORTED_MCS_BW20_FIELD *_prEhtSupportedMcsSet =
+		(struct EHT_SUPPORTED_MCS_BW20_FIELD *) prEhtSupportedMcsSet;
+
+	kalMemZero((void *) prEhtSupportedMcsSet,
+		sizeof(struct EHT_SUPPORTED_MCS_BW20_FIELD));
+	ucSupportedNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
+
+	ucMcsMap = ucSupportedNss + (ucSupportedNss << 4);
+	_prEhtSupportedMcsSet->eht_bw20_mcs_0_7 = ucMcsMap;
+	_prEhtSupportedMcsSet->eht_bw20_mcs_8_9 = ucMcsMap;
+	_prEhtSupportedMcsSet->eht_bw20_mcs_10_11 = ucMcsMap;
+	_prEhtSupportedMcsSet->eht_bw20_mcs_12_13 = ucMcsMap;
+}
+
 static void ehtRlmFillCapIE(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
 	struct MSDU_INFO *prMsduInfo)
 {
-	struct _IE_EHT_CAP_T *prEhtCap;
-	struct eht_phy_capinfo eht_phy_cap;
+	struct IE_EHT_CAP *prEhtCap;
+	struct EHT_PHY_CAP_INFO eht_phy_cap;
 	uint32_t phy_cap_1 = 0;
 	uint32_t phy_cap_2 = 0;
-	uint32_t u4OverallLen = OFFSET_OF(struct _IE_EHT_CAP_T, aucVarInfo[0]);
+	uint32_t u4OverallLen = OFFSET_OF(struct IE_EHT_CAP, aucVarInfo[0]);
 	uint8_t eht_mcs15_mru = EHT_MCS15_MRU_106_or_52_w_26_tone;
-	uint8_t eht_bw;
+	uint8_t eht_bw, ucSupportedNss = 0;;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
 	ASSERT(prMsduInfo);
 
-	prEhtCap = (struct _IE_EHT_CAP_T *)
+	prEhtCap = (struct IE_EHT_CAP *)
 		(((uint8_t *)prMsduInfo->prPacket)+prMsduInfo->u2FrameLength);
 
 	prEhtCap->ucId = ELEM_ID_RESERVED;
 	prEhtCap->ucExtId = EID_EXT_EHT_CAPS;
+
+        eht_bw = _ehtGetBssBandBw(prAdapter, prBssInfo, prBssInfo->eBand);
+	ucSupportedNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
 
 	/* MAC capabilities */
 	EHT_RESET_MAC_CAP(prEhtCap->ucEhtMacCap);
@@ -184,77 +249,125 @@ static void ehtRlmFillCapIE(
 	}
 #endif
 
-	eht_bw = _ehtGetBssBandBw(prAdapter,
-		prBssInfo,
-		prBssInfo->eBand);
-
 	if (!IS_BSS_APGO(prBssInfo)) {
 		phy_cap_2 |= DOT11BE_PHY_CAP_PARTIAL_BW_DL_MU_MIMO;
 
 		if (eht_bw == MAX_BW_20MHZ)
 			phy_cap_1 &= ~DOT11BE_PHY_CAP_242_TONE_RU_WT_20M;
+		else
+			phy_cap_1 |= DOT11BE_PHY_CAP_242_TONE_RU_WT_20M;
 	} else {
 		phy_cap_2 |= DOT11BE_PHY_CAP_PPE_THRLD_PRESENT;
 	}
 
-
-	phy_cap_1 |= DOT11BE_PHY_CAP_PARTIAL_BW_UL_MU_MIMO;
-
-	if (eht_bw >= MAX_BW_80MHZ)
+	if (eht_bw >= MAX_BW_80MHZ) {
 		eht_mcs15_mru |= EHT_MCS15_MRU_484_w_242_tone_80M;
-	if (eht_bw >= MAX_BW_160MHZ)
+		/* set 3 to support AP NSS 4 */
+		SET_DOT11BE_PHY_CAP_BFEE_SS_LE_EQ_80M(phy_cap_1, 3);
+		/* set 1 to support 2 TX NSS */
+		SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_LE_EQ_80M(
+			phy_cap_1, ucSupportedNss - 1);
+	}
+	if (eht_bw >= MAX_BW_160MHZ) {
 		eht_mcs15_mru |= EHT_MCS15_MRU_996_to_242_tone_160M;
-	if (eht_bw == MAX_BW_320MHZ)
+		/* set 3 to support AP NSS 4 */
+		SET_DOT11BE_PHY_CAP_BFEE_160M(phy_cap_1, 3);
+		/* set 1 to support TX NSS 2 */
+		SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_160M(
+			phy_cap_1, ucSupportedNss - 1); 
+	}
+	if (eht_bw == MAX_BW_320MHZ) {
 		eht_mcs15_mru |= EHT_MCS15_MRU_3x996_tone_320M;
-
-	if (1) {
-		phy_cap_1 |= DOT11BE_PHY_CAP_NDP_4X_EHT_LTF_3DOT2US_GI;
-		phy_cap_1 |= DOT11BE_PHY_CAP_SU_BFER;
-		phy_cap_1 |= DOT11BE_PHY_CAP_SU_BFEE;
-		phy_cap_1 |= DOT11BE_PHY_CAP_MU_BFER;
-		phy_cap_1 |= DOT11BE_PHY_CAP_NG16_SU_FEEDBACK;
-		phy_cap_1 |= DOT11BE_PHY_CAP_NG32_SU_FEEDBACK;
-		phy_cap_1 |= DOT11BE_PHY_CAP_CODEBOOK_4_2_SU_FEEDBACK;
-		phy_cap_1 |= DOT11BE_PHY_CAP_CODEBOOK_7_5_SU_FEEDBACK;
-		phy_cap_1 |= DOT11BE_PHY_CAP_TRIGED_SU_BF_FEEDBACK;
-		phy_cap_1 |= DOT11BE_PHY_CAP_TRIGED_MU_BF_PARTIAL_BW_FEEDBACK;
-
-#if 0
-		SET_DOT11BE_PHY_CAP_BFEE_SS_LE_EQ_80M(phy_cap_1,
-			eht_bf_struct.bfee_ss_le_eq_bw80);
-		SET_DOT11BE_PHY_CAP_BFEE_160M(phy_cap_1,
-			eht_bf_struct.bfee_ss_bw160);
-		SET_DOT11BE_PHY_CAP_BFEE_320M(phy_cap_1,
-			eht_bf_struct.bfee_ss_bw320);
-		SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_LE_EQ_80M(phy_cap_1,
-			eht_bf_struct.snd_dim_le_eq_bw80);
-		SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_160M(phy_cap_1,
-			eht_bf_struct.snd_dim_bw160);
-		SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_320M(phy_cap_1,
-			eht_bf_struct.snd_dim_bw320);
-		SET_DOT11BE_PHY_CAP_MAX_NC(phy_cap_1,
-			eht_bf_struct.bfee_max_nc);
-		SET_DOT11BE_PHY_CAP_MAX_EHT_LTF_NUM_SU(phy_cap_2,
-			eht_bf_struct.max_ltf_num_su_non_ofdma);
-		SET_DOT11BE_PHY_CAP_MAX_EHT_LTF_NUM_MU(phy_cap_2,
-			eht_bf_struct.max_ltf_num_mu);
-#endif
+		/* set 3 to support AP NSS 4 */
+		SET_DOT11BE_PHY_CAP_BFEE_320M(phy_cap_1, 3);
+		/* set 1 to support TX NSS 2 */
+		SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_320M(
+			phy_cap_1, ucSupportedNss - 1); 
 	}
 
+	phy_cap_1 |= DOT11BE_PHY_CAP_NDP_4X_EHT_LTF_3DOT2US_GI;
+        /* phy_cap_1 &= ~DOT11BE_PHY_CAP_PARTIAL_BW_UL_MU_MIMO; */
+	phy_cap_1 |= DOT11BE_PHY_CAP_SU_BFER;
+	phy_cap_1 |= DOT11BE_PHY_CAP_SU_BFEE;
+	phy_cap_1 |= DOT11BE_PHY_CAP_NG16_SU_FEEDBACK;
+	phy_cap_1 |= DOT11BE_PHY_CAP_NG16_MU_FEEDBACK;
+	phy_cap_1 |= DOT11BE_PHY_CAP_CODEBOOK_7_5_MU_FEEDBACK;
+	phy_cap_1 |= DOT11BE_PHY_CAP_TRIGED_SU_BF_FEEDBACK;
+	phy_cap_1 |= DOT11BE_PHY_CAP_TRIGED_MU_BF_PARTIAL_BW_FEEDBACK;
+	phy_cap_1 |= DOT11BE_PHY_CAP_TRIGED_CQI_FEEDBACK;
+	phy_cap_2 |= DOT11BE_PHY_CAP_PARTIAL_BW_DL_MU_MIMO;
+	/* phy_cap_2 &= ~DOT11BE_PHY_CAP_PSR_BASED_SR; */
+	/* phy_cap_2 &= ~DOT11BE_PHY_CAP_POWER_BOOST_FACTOR; */
+	phy_cap_2 |= DOT11BE_PHY_CAP_EHT_MU_PPDU_4X_EHT_LTF_DOT8US_GI;
+	SET_DOT11BE_PHY_CAP_MAX_NC(phy_cap_2, ucSupportedNss - 1);
+        phy_cap_2 |= DOT11BE_PHY_CAP_NON_TRIGED_CQI_FEEDBACK;
+	phy_cap_2 |= DOT11BE_PHY_CAP_TX_1024QAM_4096QAM_LE_242_TONE_RU;
+	phy_cap_2 |= DOT11BE_PHY_CAP_RX_1024QAM_4096QAM_LE_242_TONE_RU;
+	phy_cap_2 |= DOT11BE_PHY_CAP_PPE_THRLD_PRESENT;
+	phy_cap_2 |= DOT11BE_PHY_CAP_EHT_MU_PPDU_4X_EHT_LTF_DOT8US_GI;
+	SET_DOT11BE_PHY_CAP_MAX_EHT_LTF_NUM(phy_cap_2, 0x0B);
+	phy_cap_2 |= DOT11BE_PHY_CAP_EHT_DUP_6G;
+	phy_cap_2 |= DOT11BE_PHY_CAP_20M_RX_NDP_W_WIDER_BW;
+	/* phy_cap_2 &= ~DOT11BE_PHY_CAP_NON_OFDMA_UL_MU_MIMO_80M; */
+	/* phy_cap_2 &= ~DOT11BE_PHY_CAP_NON_OFDMA_UL_MU_MIMO_160M; */
+	/* phy_cap_2 &= ~DOT11BE_PHY_CAP_NON_OFDMA_UL_MU_MIMO_320M; */
+	/* phy_cap_2 &= ~DOT11BE_PHY_CAP_MU_BFER_80M; */
+	/* phy_cap_2 &= ~DOT11BE_PHY_CAP_MU_BFER_160M; */
+	/* phy_cap_2 &= ~DOT11BE_PHY_CAP_MU_BFER_320M; */
 
 	SET_DOT11BE_PHY_CAP_COMMON_NOMINAL_PKT_PAD(phy_cap_2,
 		COMMON_NOMINAL_PAD_0_US);
 
 	SET_DOT11BE_PHY_CAP_MCS_15(phy_cap_2, eht_mcs15_mru);
 
+	DBGLOG(RLM, INFO, "eht_bw=%d, phy_cap_1=%u, phy_cap_2=%u\n",
+		eht_bw, phy_cap_1, phy_cap_2);
+
 	eht_phy_cap.phy_capinfo_1 = (phy_cap_1);
 	eht_phy_cap.phy_capinfo_2 = (phy_cap_2);
 
-	memcpy(prEhtCap->ucEhtPhyCap, prEhtCap->ucEhtPhyCap,
-		sizeof(eht_phy_cap));
+	memcpy(prEhtCap->ucEhtPhyCap, &eht_phy_cap, sizeof(eht_phy_cap));
+
+        /* Set EHT MCS MAP & NSS */
+        if (eht_bw == MAX_BW_20MHZ) {
+		uint8_t *prEhtSupportedBw20McsSet = NULL;
+
+		prEhtSupportedBw20McsSet =
+			(((uint8_t *) prEhtCap) + u4OverallLen);
+		ehtRlmFillBW20MCSMap(
+			prAdapter, prBssInfo, prEhtSupportedBw20McsSet);
+		u4OverallLen += sizeof(struct EHT_SUPPORTED_MCS_BW20_FIELD);
+	} else {
+		uint8_t *prEhtSupportedBw80McsSet = NULL;
+
+	        if (eht_bw >= MAX_BW_80MHZ) {
+			prEhtSupportedBw80McsSet =
+				(((uint8_t *) prEhtCap) + u4OverallLen);
+			ehtRlmFillBW80MCSMap(
+				prAdapter, prBssInfo, prEhtSupportedBw80McsSet);
+			u4OverallLen += sizeof(
+				struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD);
+		}
+		if (eht_bw >= MAX_BW_160MHZ) {
+			prEhtSupportedBw80McsSet =
+				(((uint8_t *) prEhtCap) + u4OverallLen);
+			ehtRlmFillBW80MCSMap(
+				prAdapter, prBssInfo, prEhtSupportedBw80McsSet);
+			u4OverallLen += sizeof(
+				struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD);
+		}
+		if (eht_bw >= MAX_BW_320MHZ) {
+			prEhtSupportedBw80McsSet =
+				(((uint8_t *) prEhtCap) + u4OverallLen);
+			ehtRlmFillBW80MCSMap(
+				prAdapter, prBssInfo, prEhtSupportedBw80McsSet);
+			u4OverallLen += sizeof(
+				struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD);
+		}
+        }
+        /* Set EHT PPE Thresholds */
 
 	prEhtCap->ucLength = u4OverallLen - ELEM_HDR_LEN;
-
 	prMsduInfo->u2FrameLength += IE_SIZE(prEhtCap);
 }
 
@@ -373,17 +486,71 @@ void ehtRlmRspGenerateOpIE(
 		ehtRlmFillOpIE(prAdapter, prBssInfo, prMsduInfo);
 }
 
+static void ehtRlmRecMcsMap(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct IE_EHT_CAP *prEhtCap)
+{
+	uint32_t u4McsMapOffset;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucMaxBw;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+
+	u4McsMapOffset = OFFSET_OF(struct IE_EHT_CAP, aucVarInfo[0]);
+
+	kalMemZero((void *) prStaRec->aucMscMap20MHzSta,
+		sizeof(struct EHT_SUPPORTED_MCS_BW20_FIELD));
+	kalMemZero((void *) prStaRec->aucMscMap80MHz,
+		sizeof(struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD));
+	kalMemZero((void *) prStaRec->aucMscMap160MHz,
+		sizeof(struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD));
+	kalMemZero((void *) prStaRec->aucMscMap320MHz,
+		sizeof(struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD));
+	if (ucMaxBw == MAX_BW_20MHZ) {
+		memcpy(prStaRec->aucMscMap20MHzSta,
+			((uint8_t *)prEhtCap) + u4McsMapOffset,
+			sizeof(struct EHT_SUPPORTED_MCS_BW20_FIELD));
+        } else {
+	        if (ucMaxBw >= MAX_BW_80MHZ) {
+			memcpy(prStaRec->aucMscMap80MHz,
+				((uint8_t *)prEhtCap) + u4McsMapOffset,
+				sizeof(struct
+					EHT_SUPPORTED_MCS_BW80_160_320_FIELD));
+			u4McsMapOffset +=
+				sizeof(struct
+					EHT_SUPPORTED_MCS_BW80_160_320_FIELD);
+		}
+		if (ucMaxBw >= MAX_BW_160MHZ) {
+			memcpy(prStaRec->aucMscMap160MHz,
+				((uint8_t *)prEhtCap) + u4McsMapOffset,
+				sizeof(struct
+					EHT_SUPPORTED_MCS_BW80_160_320_FIELD));
+			u4McsMapOffset +=
+				sizeof(struct
+					EHT_SUPPORTED_MCS_BW80_160_320_FIELD);
+		}
+		if (ucMaxBw >= MAX_BW_320MHZ) {
+			memcpy(prStaRec->aucMscMap320MHz,
+				((uint8_t *)prEhtCap) + u4McsMapOffset,
+				sizeof(struct
+					EHT_SUPPORTED_MCS_BW80_160_320_FIELD));
+		}
+        }
+}
+
 void ehtRlmRecCapInfo(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
 	uint8_t *pucIE)
 {
-	struct _IE_EHT_CAP_T *prEhtCap = (struct _IE_EHT_CAP_T *) pucIE;
+	struct IE_EHT_CAP *prEhtCap = (struct IE_EHT_CAP *) pucIE;
 
 	/* if payload not contain any aucVarInfo,
-	 * IE size = sizeof(struct _IE_EHT_CAP_T)
+	 * IE size = sizeof(struct IE_EHT_CAP)
 	 */
-	if (IE_SIZE(prEhtCap) < (sizeof(struct _IE_EHT_CAP_T))) {
+	if (IE_SIZE(prEhtCap) < (sizeof(struct IE_EHT_CAP))) {
 		DBGLOG(SCN, WARN,
 			"EHT_CAP IE_LEN err(%d)!\n", IE_LEN(prEhtCap));
 		return;
@@ -393,6 +560,7 @@ void ehtRlmRecCapInfo(
 		EHT_MAC_CAP_BYTE_NUM);
 	memcpy(prStaRec->ucEhtPhyCapInfo, prEhtCap->ucEhtPhyCap,
 		EHT_PHY_CAP_BYTE_NUM);
+	ehtRlmRecMcsMap(prAdapter, prStaRec, prEhtCap);
 }
 
 void ehtRlmRecOperation(
