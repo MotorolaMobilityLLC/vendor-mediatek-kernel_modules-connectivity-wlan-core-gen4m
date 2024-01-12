@@ -6275,6 +6275,10 @@ static uint32_t sendStatsUniCmd(struct ADAPTER *prAdapter,
 	struct UNI_CMD_LINK_QUALITY *lQTag;
 	struct UNI_CMD_STA_STATISTICS *staStatsTag;
 	struct UNI_CMD_LINK_LAYER_STATS *llsTag;
+#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
+	struct UNI_CMD_CURRENT_TX_RATE *txRateTag;
+#endif
+
 	uint8_t *buf;
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec, *prTempStaRec;
@@ -6351,6 +6355,14 @@ static uint32_t sendStatsUniCmd(struct ADAPTER *prAdapter,
 	llsTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_LINK_LAYER_STATS;
 	llsTag->u2Length = sizeof(*llsTag);
 
+	/* UNI_CMD_GET_STATISTICS_TAG_CURRENT_TX_RATE */
+#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
+	buf += sizeof(*llsTag);
+	txRateTag = (struct UNI_CMD_CURRENT_TX_RATE *) buf;
+	txRateTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_CURRENT_TX_RATE;
+	txRateTag->u2Length = sizeof(*txRateTag);
+#endif
+
 	rResult = wlanSendSetQueryUniCmd(prAdapter,
 			UNI_CMD_ID_GET_STATISTICS,
 			FALSE,
@@ -6421,6 +6433,9 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 	max_cmd_len = sizeof(struct UNI_CMD_GET_STATISTICS) +
 		sizeof(struct UNI_CMD_BASIC_STATISTICS) +
 		sizeof(struct UNI_CMD_LINK_QUALITY) +
+#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
+		sizeof(struct UNI_CMD_CURRENT_TX_RATE) +
+#endif
 		sizeof(struct UNI_CMD_LINK_LAYER_STATS);
 
 	for (i = 0; i < MAX_BSSID_NUM; i++) {

@@ -2975,6 +2975,10 @@ uint32_t nicCfgChipCapStatsRegMontrEmiOffset(
 		OFFSET_OF(struct STATS_REG_STAT_FW_REPORT, rStaStats);
 	uint32_t u4HostOffsetLlsStatus =
 		OFFSET_OF(struct STATS_REG_STAT_FW_REPORT, llsUpdateStatus);
+#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
+	uint32_t u4HostOffsetLastTxRateInfo =
+		OFFSET_OF(struct STATS_REG_STAT_FW_REPORT, rLlsRateInfo);
+#endif
 
 	if (!offset) {
 		DBGLOG(INIT, WARN, "NULL offset: offset=%p", offset);
@@ -3008,6 +3012,14 @@ uint32_t nicCfgChipCapStatsRegMontrEmiOffset(
 			u4HostOffsetLlsStatus);
 		return WLAN_STATUS_FAILURE;
 	}
+#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
+	DBGLOG(INIT, INFO,
+			"Tx Rate Offset FW:%u host:%u",
+			prCap->u4OffsetOfLastTxRateInfo,
+			u4HostOffsetLastTxRateInfo);
+	if (prCap->u4OffsetOfLastTxRateInfo == u4HostOffsetLastTxRateInfo)
+		prAdapter->fgTxRateOffsetMapped = TRUE;
+#endif
 
 	prAdapter->prStatsAllRegStat =
 		emi_mem_get_vir_base(prAdapter->chip_info) +

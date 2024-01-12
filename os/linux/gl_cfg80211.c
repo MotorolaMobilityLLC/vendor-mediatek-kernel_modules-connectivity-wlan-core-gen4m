@@ -615,6 +615,9 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	struct LINK_SPEED_EX_ *prLq;
 #else
 	struct PARAM_LINK_SPEED_EX rLinkSpeed = {0};
+#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
+	uint32_t u4TxBw = 0;
+#endif
 #endif
 	struct PARAM_GET_STA_STATISTICS *prGetStaStatistics;
 	uint32_t u4TotalError;
@@ -781,20 +784,24 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	}
 
 #if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+	sinfo->txrate.bw =
+		arBwCfg80211Table[prGlueInfo->u4TxBwCache[ucBssIndex]];
+#else
 	rStatus = wlanGetTxRateFromLinkStats(prGlueInfo, &u4TxRate,
 			&u4TxBw, ucBssIndex);
-	if (rStatus == WLAN_STATUS_SUCCESS) {
-		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex] = u4TxRate;
+	if (rStatus == WLAN_STATUS_SUCCESS)
 		prGlueInfo->u4TxBwCache[ucBssIndex] = u4TxBw;
-	}
+	sinfo->txrate.bw =
+		prGlueInfo->u4TxBwCache[ucBssIndex];
+#endif
 #endif
 
 	sinfo->txrate.legacy =
 		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex];
 	sinfo->rxrate.legacy =
 		prGlueInfo->u4RxLinkSpeedCache[ucBssIndex];
-	sinfo->txrate.bw =
-		prGlueInfo->u4TxBwCache[ucBssIndex];
+
 	sinfo->rxrate.bw =
 		prGlueInfo->u4RxBwCache[ucBssIndex];
 

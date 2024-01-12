@@ -2081,6 +2081,7 @@ struct STATS_REG_STAT_FW_REPORT {
 	uint32_t u4LastUpdateTime;
 	uint32_t u4Padding;
 	enum ENUM_STATS_LLS_UPDATE_STATUS llsUpdateStatus;
+	struct EVENT_STATS_LLS_TX_RATE_INFO rLlsRateInfo;
 };
 
 #endif
@@ -2332,6 +2333,9 @@ struct ADAPTER {
 	uint32_t u4RegStatLastSyncFwMs;
 	uint32_t u4RegStatLastSyncDrvTick;
 	struct STATS_REG_STAT_FW_REPORT *prStatsAllRegStat;
+#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
+	u_int8_t fgTxRateOffsetMapped;
+#endif
 #endif
 
 #if CFG_SUPPORT_MSP
