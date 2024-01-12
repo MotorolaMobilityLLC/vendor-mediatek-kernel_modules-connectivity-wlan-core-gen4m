@@ -370,6 +370,14 @@ enum ENUM_DBG_ASSERT_PATH {
 	switch (0) {case 0: case (expr): default:; } \
 }
 #endif
+
+/* Name alias of debug functions to skip check patch*/
+#define log_dbg			DBGLOG
+#define log_limited_dbg		DBGLOG_LIMITED
+#define log_fw_dbg		DBGFWLOG
+#define log_mem8_dbg		DBGLOG_MEM8
+#define log_mem32_dbg		DBGLOG_MEM32
+#define log_tool_dbg		TOOL_PRINTLOG
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
