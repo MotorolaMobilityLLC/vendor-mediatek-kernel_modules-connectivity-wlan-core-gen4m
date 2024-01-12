@@ -1559,7 +1559,7 @@ struct mt66xx_chip_info {
 	uint32_t u4ChipIpConfig;
 	uint16_t u2ADieChipVersion;
 	void *CSRBaseAddress;
-	uint32_t u4CsrOffset;
+	uint64_t u8CsrOffset;
 	void *HostCSRBaseAddress;
 	uint32_t u4HostCsrOffset;
 	uint32_t u4HostCsrSize;

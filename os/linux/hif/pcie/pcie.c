@@ -1182,6 +1182,7 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	prChipInfo->pdev = (void *)pdev;
 	prChipInfo->CSRBaseAddress = pcim_iomap_table(pdev) ?
 		pcim_iomap_table(pdev)[i] : NULL;
+	prChipInfo->u8CsrOffset = pci_resource_start(pdev, i);
 
 	DBGLOG(INIT, INFO, "ioremap for device %s[%d], region 0x%lX @ 0x%lX\n",
 	       pci_name(pdev), i, (unsigned long) pci_resource_len(pdev, i),
