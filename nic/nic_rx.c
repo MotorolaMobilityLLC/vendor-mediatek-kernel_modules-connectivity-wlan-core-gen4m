@@ -1844,6 +1844,21 @@ void nicRxHandleFwDropSSN(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_FW_DROP_SSN */
 
+void nicRxParseDropPkt(struct SW_RFB *prSwRfb)
+{
+	DBGLOG_LIMITED(RX, INFO,
+		"SwRfb:[0x%p:0x%p] PktLen:[%u] BMC:[%u:%u] SecMode:[%u] WlanId:[%u:%u]\n",
+		prSwRfb, prSwRfb->pvPacket,
+		prSwRfb->u2PacketLen,
+		prSwRfb->fgIsBC, prSwRfb->fgIsMC,
+		prSwRfb->ucSecMode,
+		prSwRfb->ucWlanIdx, prSwRfb->ucStaRecIdx
+	);
+#if (CFG_SUPPORT_STATISTICS == 1)
+	STATS_RX_PKT_INFO_DISPLAY(prSwRfb);
+#endif
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Process HIF data packet

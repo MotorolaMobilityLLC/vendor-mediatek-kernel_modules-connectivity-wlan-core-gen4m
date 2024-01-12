@@ -530,6 +530,8 @@ enum ENUM_RX_STATISTIC_COUNTER {
 	RX_DAF_ERR_DROP_COUNT,
 	RX_ICV_ERR_DROP_COUNT,
 	RX_TKIP_MIC_ERROR_DROP_COUNT,
+	RX_CIPHER_MISMATCH_DROP_COUNT,
+	RX_FRAGMENT_BMC_DROP_COUNT,
 	RX_SNIFFER_LOG_COUNT,
 	RX_PDMA_SCATTER_DATA_COUNT,
 	RX_PDMA_SCATTER_INDICATION_COUNT,
@@ -1664,6 +1666,8 @@ void nicRxAddFwDropSSN(struct ADAPTER *prAdapter,
 void nicRxHandleFwDropSSN(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb);
 #endif /* CFG_SUPPORT_FW_DROP_SSN */
+
+void nicRxParseDropPkt(struct SW_RFB *prSwRfb);
 
 void nicRxProcessDataPacket(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb);

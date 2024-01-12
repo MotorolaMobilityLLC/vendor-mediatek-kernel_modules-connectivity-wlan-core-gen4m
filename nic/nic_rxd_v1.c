@@ -255,23 +255,6 @@ void nic_rxd_v1_fill_rfb(
 #endif
 }
 
-void nic_rxd_v1_parse_drop_pkt(struct SW_RFB *prSwRfb)
-{
-	uint16_t *pu2EtherType;
-
-	pu2EtherType = (uint16_t *)
-			((uint8_t *)prSwRfb->pvHeader +
-			2 * MAC_ADDR_LEN);
-	DBGLOG(RX, INFO,
-		"u2PacketLen:%d ucSecMode:%d ucWlanIdx:%d ucStaRecIdx:%d\n",
-		prSwRfb->u2PacketLen, prSwRfb->ucSecMode,
-		prSwRfb->ucWlanIdx, prSwRfb->ucStaRecIdx
-	);
-#if (CFG_SUPPORT_STATISTICS == 1)
-	STATS_RX_PKT_INFO_DISPLAY(prSwRfb);
-#endif
-}
-
 u_int8_t nic_rxd_v1_sanity_check(
 	struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb)
@@ -307,7 +290,6 @@ u_int8_t nic_rxd_v1_sanity_check(
 			prSwRfb->fgFragFrame = TRUE;
 
 	} else {
-		DBGLOG(RX, TEMP, "Sanity check to drop\n");
 		fgDrop = TRUE;
 		if (!HAL_RX_STATUS_IS_ICV_ERROR(prRxStatus)
 		    && HAL_RX_STATUS_IS_TKIP_MIC_ERROR(prRxStatus)) {
@@ -365,26 +347,7 @@ u_int8_t nic_rxd_v1_sanity_check(
 			fgDrop = TRUE;	/* Drop after send de-auth  */
 		}
 #endif
-
-end:
-		if (fgDrop) {
-			if (prSwRfb->pvPacket == NULL)
-				RX_INC_CNT(prRxCtrl, RX_NULL_PACKET_COUNT);
-
-			if (HAL_RX_STATUS_IS_FCS_ERROR(prRxStatus))
-				RX_INC_CNT(prRxCtrl, RX_FCS_ERR_DROP_COUNT);
-
-			if (HAL_RX_STATUS_IS_ICV_ERROR(prRxStatus))
-				RX_INC_CNT(prRxCtrl, RX_ICV_ERR_DROP_COUNT);
-
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
-			if (HAL_RX_STATUS_IS_TKIP_MIC_ERROR(prRxStatus))
-				RX_INC_CNT(prRxCtrl,
-					RX_TKIP_MIC_ERROR_DROP_COUNT);
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
-		}
-
-		DBGLOG(RSN, TRACE, "Sanity check to drop:%d\n", fgDrop);
+		DBGLOG(RX, TEMP, "Sanity check to drop:%d\n", fgDrop);
 	}
 
 	/* Drop plain text during security connection */
@@ -404,10 +367,10 @@ end:
 			DBGLOG(RSN, INFO,
 				"Don't drop eapol or wpi packet\n");
 		} else {
-			nic_rxd_v1_parse_drop_pkt(prSwRfb);
-
+			nicRxParseDropPkt(prSwRfb);
+			RX_INC_CNT(prRxCtrl, RX_CIPHER_MISMATCH_DROP_COUNT);
 			fgDrop = TRUE;
-			DBGLOG(RSN, INFO,
+			DBGLOG(RSN, TEMP,
 				"Drop plain text during security connection\n");
 		}
 	}
@@ -416,19 +379,41 @@ end:
 	/* Drop fragmented broadcast and multicast frame */
 	if ((prSwRfb->fgIsBC | prSwRfb->fgIsMC)
 		&& (prSwRfb->fgFragFrame == TRUE)) {
+		RX_INC_CNT(prRxCtrl, RX_FRAGMENT_BMC_DROP_COUNT);
 		fgDrop = TRUE;
-		DBGLOG(RSN, INFO,
+		DBGLOG(RSN, TEMP,
 			"Drop fragmented broadcast and multicast\n");
 	}
 
 	if (HAL_RX_STATUS_IS_DE_AMSDU_FAIL(prRxStatus))
-		DBGLOG(RSN, INFO, "De-amsdu fail, drop:%d\n", fgDrop);
+		DBGLOG(RSN, TEMP, "De-amsdu fail, drop:%d\n", fgDrop);
 #endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
 
 	/* check CLS for MD */
 	if (HAL_RX_STATUS_GET_CLS_BITMAP(prRxStatus) & BITS(6, 9))
 		DBGLOG(RX, WARN, "RX DW3[0x%08x]\n",
 		       prRxStatus->u4PatternFilterInfo);
+
+end:
+	if (fgDrop) {
+		if (prSwRfb->pvPacket == NULL)
+			RX_INC_CNT(prRxCtrl, RX_NULL_PACKET_COUNT);
+
+		if (HAL_RX_STATUS_IS_FCS_ERROR(prRxStatus))
+			RX_INC_CNT(prRxCtrl, RX_FCS_ERR_DROP_COUNT);
+
+		if (HAL_RX_STATUS_IS_DE_AMSDU_FAIL(prRxStatus))
+			RX_INC_CNT(prRxCtrl, RX_DAF_ERR_DROP_COUNT);
+
+		if (HAL_RX_STATUS_IS_ICV_ERROR(prRxStatus))
+			RX_INC_CNT(prRxCtrl, RX_ICV_ERR_DROP_COUNT);
+
+#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+		if (HAL_RX_STATUS_IS_TKIP_MIC_ERROR(prRxStatus))
+			RX_INC_CNT(prRxCtrl,
+				RX_TKIP_MIC_ERROR_DROP_COUNT);
+#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+	}
 
 	return fgDrop;
 }

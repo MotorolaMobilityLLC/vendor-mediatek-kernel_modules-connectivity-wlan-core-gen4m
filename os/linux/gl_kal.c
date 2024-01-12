@@ -9961,10 +9961,12 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	RRB_TRACK_TEMPLATE \
 	"drv[RM,IL,RI,RT,RM,RW,RA,RB,DT,NS," \
 	"IB,HS,LS,DD,ME,BD,NI,DR,TE,PE," \
-	"CE,DN,FE,DE,IE,TME,ID,FD,NL]:" \
+	"CE,DN,FE,DE,IE,TME,CM,FB,ID,FD," \
+	"NL]:" \
 	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
 	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
-	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu\n" \
+	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
+	"%lu\n" \
 
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
 		head3,
@@ -10042,6 +10044,8 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DAF_ERR_DROP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_ICV_ERR_DROP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_TKIP_MIC_ERROR_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_CIPHER_MISMATCH_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_FRAGMENT_BMC_DROP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_ICS_DROP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_FW_DROP_SSN_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NULL_PACKET_COUNT)
