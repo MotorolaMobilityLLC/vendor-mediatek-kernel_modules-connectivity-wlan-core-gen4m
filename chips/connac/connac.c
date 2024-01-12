@@ -374,6 +374,7 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	.top_hcr = TOP_HCR,
 	.top_hvr = TOP_HVR,
 	.top_fvr = TOP_FVR,
+	.custom_oid_interface_version = MTK_CUSTOM_OID_INTERFACE_VERSION,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_connac = {
