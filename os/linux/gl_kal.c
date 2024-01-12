@@ -1024,7 +1024,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo, IN uint32_t eStatu
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
 	struct PARAM_SSID ssid;
 	struct ieee80211_channel *prChannel = NULL;
-	struct cfg80211_bss *bss;
+	struct cfg80211_bss *bss = NULL;
 	uint8_t ucChannelNum;
 	struct BSS_DESC *prBssDesc = NULL;
 
