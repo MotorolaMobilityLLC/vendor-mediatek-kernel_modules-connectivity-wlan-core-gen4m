@@ -2639,11 +2639,26 @@ struct SW_RFB *nicRxAcquireRFB(struct ADAPTER *prAdapter, uint16_t num)
 	if (likely(i == num))
 		return (struct SW_RFB *)QUEUE_GET_HEAD(que);
 
-	/* fail case goes here */
+	/* Fail to get RFB from rFreeSwRfbList */
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 	QUEUE_CONCATENATE_QUEUES(&ctrl->rFreeSwRfbList, que);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-	return NULL;
+
+	/* Fallback, allocate from spared */
+	QUEUE_INITIALIZE(que);
+	for (i = 0; i < num; i++) {
+		rfb = kalMemAlloc(sizeof(struct SW_RFB), VIR_MEM_TYPE);
+		if (!rfb) {
+			DBGLOG_LIMITED(RX, WARN,
+				"No RFB from spared caller=%pS\n", KAL_TRACE);
+			break;
+		}
+		nicRxSetupRFB(prAdapter, rfb);
+		QUEUE_INSERT_TAIL(que, &rfb->rQueEntry);
+	}
+
+	/* Assume heap is always sufficient, skip check allocated num */
+	return (struct SW_RFB *)QUEUE_GET_HEAD(que);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2704,6 +2719,13 @@ uint32_t nicRxCopyRFB(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
+u_int8_t isRfbFromSpared(struct RX_CTRL *prRxCtrl, struct SW_RFB *prSwRfb)
+{
+	return (uint8_t *)prSwRfb < prRxCtrl->pucRxCached ||
+		(uint8_t *)prSwRfb >
+			prRxCtrl->pucRxCached + prRxCtrl->u4RxCachedSize;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is called to put a RFB back onto the "RFB with Buffer"
@@ -2735,6 +2757,13 @@ void nicRxReturnRFB(struct ADAPTER *prAdapter,
 
 	ASSERT(prQueEntry);
 
+	if (isRfbFromSpared(prRxCtrl, prSwRfb)) {
+		if (prSwRfb->pvPacket)
+			kalPacketFree(prGlueInfo, prSwRfb->pvPacket);
+		kalMemFree(prSwRfb, VIR_MEM_TYPE, sizeof(struct SW_RFB));
+		goto done;
+	}
+
 	/* The processing on this RFB is done,
 	 * so put it back on the tail of our list
 	 */
@@ -2754,6 +2783,7 @@ void nicRxReturnRFB(struct ADAPTER *prAdapter,
 	}
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
+done:
 	/* Trigger Rx if there are free SwRfb */
 	if (halIsPendingRx(prAdapter)
 	    && (prRxCtrl->rFreeSwRfbList.u4NumElem > 0))
