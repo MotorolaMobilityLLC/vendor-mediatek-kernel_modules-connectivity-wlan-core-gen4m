@@ -764,7 +764,7 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 		goto exit;
 	}
 
-#if defined(CFG_MTK_WIFI_PCIE_SUPPORT)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
 	/* Check MCU off */
 	if (prAdapter->chip_info->checkmcuoff) {
 		kalMdelay(500);
