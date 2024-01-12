@@ -3591,6 +3591,26 @@ static void fillRxNullStaRec(struct ADAPTER *prAdapter,
 	}
 }
 
+static void processAPPktDst(struct ADAPTER *prAdapter,
+	uint8_t *pucEthDestAddr, struct SW_RFB *prCurrSwRfb)
+{
+	uint8_t ucStaRecIdx = STA_REC_INDEX_NOT_FOUND;
+	struct STA_RECORD *prStaRec = NULL;
+
+	if (IS_BMCAST_MAC_ADDR(pucEthDestAddr)) {
+		prCurrSwRfb->eDst = RX_PKT_DESTINATION_HOST_WITH_FORWARD;
+		return;
+	}
+
+	ucStaRecIdx = secLookupStaRecIndexFromTA(prAdapter, pucEthDestAddr);
+	if (ucStaRecIdx == STA_REC_INDEX_NOT_FOUND)
+		return;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIdx);
+
+	if (prStaRec->ucBssIndex == prCurrSwRfb->prStaRec->ucBssIndex)
+		prCurrSwRfb->eDst = RX_PKT_DESTINATION_FORWARD;
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Handle RX packets (buffer reordering)
@@ -3793,20 +3813,8 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 
 			if (prBssInfo->eCurrentOPMode ==
 				OP_MODE_ACCESS_POINT) {
-				if (IS_BMCAST_MAC_ADDR(
-					pucEthDestAddr)) {
-					prCurrSwRfb->eDst =
-				RX_PKT_DESTINATION_HOST_WITH_FORWARD;
-				} else if (
-					secLookupStaRecIndexFromTA(
-					prAdapter,
-					pucEthDestAddr)
-					!=
-					STA_REC_INDEX_NOT_FOUND) {
-
-					prCurrSwRfb->eDst =
-					RX_PKT_DESTINATION_FORWARD;
-				}
+				processAPPktDst(prAdapter,
+					pucEthDestAddr, prCurrSwRfb);
 			}
 #if CFG_SUPPORT_PASSPOINT
 			else if (IS_BSS_AIS(prBssInfo) &&
