@@ -120,6 +120,18 @@ scanP2pProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 {
 	u_int8_t fgIsBeacon = FALSE;
 	u_int8_t fgIsSkipThisBeacon = FALSE;
+	u_int8_t fgIsP2pNetRegistered = FALSE;
+
+	/* Sanity check for p2p net device state */
+	GLUE_SPIN_LOCK_DECLARATION();
+	GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_NET_DEV);
+	if (prAdapter->fgIsP2PRegistered &&
+		prAdapter->rP2PNetRegState == ENUM_NET_REG_STATE_REGISTERED)
+		fgIsP2pNetRegistered = TRUE;
+	GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_NET_DEV);
+
+	if (!fgIsP2pNetRegistered)
+		return;
 
 	/* Indicate network to kernel for P2P interface when:
 	 *  1. This is P2P network
