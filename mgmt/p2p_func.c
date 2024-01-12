@@ -2152,13 +2152,6 @@ p2pFuncSwitchOPMode(struct ADAPTER *prAdapter,
 
 			switch (prP2pBssInfo->eCurrentOPMode) {
 			case OP_MODE_ACCESS_POINT:
-				/* p2pFuncDissolve will be done
-				 * in p2pFuncStopGO().
-				 */
-				/* p2pFuncDissolve(prAdapter,
-				 * prP2pBssInfo, TRUE,
-				 * REASON_CODE_DEAUTH_LEAVING_BSS);
-				 */
 				if (prP2pBssInfo->eIntendOPMode
 					!= OP_MODE_P2P_DEVICE) {
 					p2pFuncStopGO(prAdapter, prP2pBssInfo);
@@ -3596,28 +3589,24 @@ p2pFuncDissolve(struct ADAPTER *prAdapter,
 
 			break;
 		case OP_MODE_ACCESS_POINT:
-			/* Under AP mode, we would net
-			 * send deauthentication frame to each STA.
-			 * We only stop the Beacon & let all stations timeout.
-			 */
-			/* Send deauth. */
-			authSendDeauthFrame(prAdapter,
-			    prP2pBssInfo,
-			    NULL, (struct SW_RFB *) NULL,
-			    u2ReasonCode, (PFN_TX_DONE_HANDLER) NULL);
-
 			prClientList = &prP2pBssInfo->rStaRecOfClientList;
 
 			/* This case may let LINK_FOR_EACH_ENTRY_SAFE crash */
-			if (prClientList == NULL)
+			if (prClientList == NULL ||
+			    prClientList->u4NumElem == 0)
 				break;
+			if (fgSendDeauth) {
+				/* Send bmc deauth. */
+				authSendDeauthFrame(prAdapter, prP2pBssInfo,
+					NULL, NULL, u2ReasonCode, NULL);
+			}
 			LINK_FOR_EACH_ENTRY_SAFE(prCurrStaRec, prStaRecNext,
 				prClientList, rLinkEntry, struct STA_RECORD) {
 				if (!prCurrStaRec)
 					break;
 				p2pFuncDisconnect(prAdapter,
 					prP2pBssInfo, prCurrStaRec,
-					TRUE, u2ReasonCode,
+					fgSendDeauth, u2ReasonCode,
 					fgIsLocallyGenerated);
 			}
 			break;

@@ -429,7 +429,7 @@ void p2pRoleFsmUninitLink(struct ADAPTER *prAdapter,
 		prP2pBssInfo->ucBssIndex);
 
 	p2pFuncDissolve(prAdapter,
-		prP2pBssInfo, TRUE,
+		prP2pBssInfo, FALSE,
 		REASON_CODE_DEAUTH_LEAVING_BSS,
 		TRUE);
 
@@ -1952,11 +1952,6 @@ void p2pRoleFsmDelIface(
 		prP2pBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
 		DBGLOG(P2P, INFO, "under deauth procedure, Quit.\n");
 	} else {
-		/*p2pFuncDissolve(prAdapter,
-		 * prP2pBssInfo, TRUE,
-		 * REASON_CODE_DEAUTH_LEAVING_BSS);
-		 */
-
 		SET_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex);
 
 		/* Function Dissolve should already enter IDLE state. */
