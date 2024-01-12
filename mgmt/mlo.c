@@ -3741,9 +3741,13 @@ static void mldStarecUpdateMldId(struct ADAPTER *prAdapter,
 	prMldStarec->u2SecondMldId = 0;
 	LINK_FOR_EACH_ENTRY(prStarec, prStarecList,
 			rLinkEntryMld, struct STA_RECORD) {
-		if (i == 0)
+		if (i == 0) {
 			prMldStarec->u2PrimaryMldId = prStarec->ucWlanIndex;
-		else if (i == 1) {
+			/*Second MldId is same as Primary MldId in the
+			 *case of single link.
+			 */
+			prMldStarec->u2SecondMldId = prStarec->ucWlanIndex;
+		} else if (i == 1) {
 			prMldStarec->u2SecondMldId = prStarec->ucWlanIndex;
 			break;
 		}
