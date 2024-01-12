@@ -9738,7 +9738,8 @@ uint32_t wlanCfgParseToFW(int8_t **args, int8_t *args_size,
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-void wlanFeatureToFw(struct ADAPTER *prAdapter, uint32_t u4Flag)
+void wlanFeatureToFw(struct ADAPTER *prAdapter, uint32_t u4Flag,
+	uint8_t *pucKey)
 {
 
 	struct WLAN_CFG_ENTRY *prWlanCfgEntry;
@@ -9766,6 +9767,15 @@ void wlanFeatureToFw(struct ADAPTER *prAdapter, uint32_t u4Flag)
 		prWlanCfgEntry = wlanCfgGetEntryByIndex(prAdapter, i, u4Flag);
 
 		if (prWlanCfgEntry) {
+
+			if (pucKey != NULL) {
+				if (kalStrnCmp(pucKey, prWlanCfgEntry->aucKey,
+					MAX_CMD_NAME_MAX_LENGTH) != 0)
+					continue;
+
+				if (ucTimes != 0)
+					break;
+			}
 
 			rCmd_v1.itemType = ITEM_TYPE_STR;
 
