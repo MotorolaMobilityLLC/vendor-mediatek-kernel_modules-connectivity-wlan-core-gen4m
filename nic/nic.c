@@ -1394,9 +1394,6 @@ uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
 					 prBssInfo->aucOwnMacAddr,
 					 STA_REC_INDEX_NOT_FOUND,
 					 CIPHER_SUITE_NONE, 0xFF);
-
-	prBssInfo->ucBMCWlanIndexSUsed[0] = TRUE;
-
 	rCmdActivateCtrl.ucBMCWlanIndex = prBssInfo->ucBMCWlanIndex;
 
 	kalMemZero(&rCmdActivateCtrl.ucReserved,
