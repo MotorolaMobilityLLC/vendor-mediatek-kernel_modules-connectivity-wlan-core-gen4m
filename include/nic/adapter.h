@@ -802,6 +802,7 @@ struct WIFI_VAR {
 	/* Current Wi-Fi Settings and Flags */
 	uint8_t aucPermanentAddress[MAC_ADDR_LEN];
 	uint8_t aucMacAddress[MAC_ADDR_LEN];
+	uint8_t aucMacAddress1[MAC_ADDR_LEN];
 	uint8_t aucDeviceAddress[MAC_ADDR_LEN];
 	uint8_t aucInterfaceAddress[MAC_ADDR_LEN];
 
