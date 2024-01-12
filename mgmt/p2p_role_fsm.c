@@ -2099,6 +2099,15 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
 		}
 		prP2pBssInfo->eCurrentOPMode = OP_MODE_ACCESS_POINT;
 		prP2pConnReqInfo->rChannelInfo.ucChannelNum = ucChannelNum;
+		if (ucChannelNum == 165) {
+			prAdapter->rWifiVar
+				.prP2pSpecificBssInfo[ucRoleIndex]
+				->ucRddBw = VHT_OP_CHANNEL_WIDTH_20_40;
+		} else {
+			prAdapter->rWifiVar
+				.prP2pSpecificBssInfo[ucRoleIndex]
+				->ucRddBw = VHT_OP_CHANNEL_WIDTH_80;
+		}
 		/* Use rConnReqInfo bw */
 
 		if (IS_NET_PWR_STATE_ACTIVE(

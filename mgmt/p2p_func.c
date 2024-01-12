@@ -2518,13 +2518,13 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 	if (prAdapter->rWifiVar
 		.prP2pSpecificBssInfo[role_idx]
 		->fgIsRddOpchng == TRUE) {
-		prAdapter->rWifiVar
-			.prP2pSpecificBssInfo[role_idx]
-			->fgIsRddOpchng = FALSE;
 		cnmOpmodeEventHandler(prAdapter,
 			prAdapter->rWifiVar
 			.prP2pSpecificBssInfo[role_idx]
 			->prRddPostOpchng);
+		prAdapter->rWifiVar
+			.prP2pSpecificBssInfo[role_idx]
+			->fgIsRddOpchng = FALSE;
 		kalMemFree(prAdapter->rWifiVar
 			.prP2pSpecificBssInfo[role_idx]
 			->prRddPostOpchng,

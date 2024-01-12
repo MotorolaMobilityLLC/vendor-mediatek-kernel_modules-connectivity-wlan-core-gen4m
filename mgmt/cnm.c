@@ -545,6 +545,7 @@ static uint8_t *apucCnmOpModeReq[CNM_OPMODE_REQ_MAX_CAP+1] = {
 	(uint8_t *) DISP_STRING("SmartGear_1T2R"),
 	(uint8_t *) DISP_STRING("ANT Ctrl_1T2R"),
 	(uint8_t *) DISP_STRING("CoAnt"),
+	(uint8_t *) DISP_STRING("RDD"),
 	(uint8_t *) DISP_STRING("N/A"),
 	(uint8_t *) DISP_STRING("MAX_CAP")
 };
@@ -1980,6 +1981,7 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	uint8_t ucChannelBw = MAX_BW_80_80_MHZ;
 #endif
+	uint8_t ucRoleIndex = 0;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  ucBssIndex);
@@ -2059,6 +2061,12 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 			}
 
 		}
+		ucRoleIndex = prBssInfo->u4PrivateData;
+
+		if (p2pFuncGetDfsState() == DFS_STATE_DETECTED)
+			ucMaxBandwidth = prAdapter->rWifiVar
+				.prP2pSpecificBssInfo[ucRoleIndex]
+				->ucRddBw;
 
 	}
 
@@ -4652,6 +4660,7 @@ cnmOpModeSetTRxNss(
 	uint8_t ucOpRxNssFinal, ucOpTxNssFinal, ucOpBwFinal;
 	enum ENUM_CNM_OPMODE_REQ_T eRunReq;
 	uint8_t ucSendAct = TRUE;
+	uint8_t ucRoleIndex = 0;
 
 	ASSERT(prAdapter);
 	if (ucBssIndex > prAdapter->ucHwBssIdNum ||
@@ -4707,7 +4716,12 @@ cnmOpModeSetTRxNss(
 			ucOpBwFinal = MAX_BW_80MHZ;
 		}
 #endif
-
+		if (eRunReq == CNM_OPMODE_REQ_RDD_OPCHNG) {
+			ucRoleIndex = prBssInfo->u4PrivateData;
+			ucOpBwFinal = prAdapter->rWifiVar
+			.prP2pSpecificBssInfo[ucRoleIndex]
+			->ucRddBw;
+		}
 		/* When DBDC is off, we should rollback STA's bandwidth
 		 * as peer's bandwidth capability.
 		 */
@@ -5072,6 +5086,12 @@ void cnmRddOpmodeEventHandler(
 	} else
 		return;
 
+	DBGLOG(P2P, TRACE,
+		"[RDD]event CH=%d,TxNss=%d,BW=%d\n",
+		prRddEvtOpMode->ucPriChannel,
+		prRddEvtOpMode->ucOpTxNss,
+		prRddEvtOpMode->ucChBw);
+
 	if (prRddEvtOpMode->ucChBw !=
 		prP2pConnReqInfo->rChannelInfo.ucChnlBw ||
 		prRddEvtOpMode->ucOpRxNss !=
@@ -5136,9 +5156,12 @@ void cnmRddOpmodeEventHandler(
 			rfChannelInfo.eBand = BAND_2G4;
 		else
 			rfChannelInfo.eBand = BAND_5G;
+		rfChannelInfo.ucChnlBw = prRddEvtOpMode->ucChBw;
 		cnmSapChannelSwitchReq(prAdapter,
 		&rfChannelInfo,
 		ucRoleIndex);
+		kalP2PTxCarrierOn(prAdapter->prGlueInfo,
+			prBssInfo);
 		prAdapter->rWifiVar.prP2pSpecificBssInfo[ucRoleIndex]
 			->prRddPostOpchng = pEventOpMode;
 	} else if (pEventOpMode) {
