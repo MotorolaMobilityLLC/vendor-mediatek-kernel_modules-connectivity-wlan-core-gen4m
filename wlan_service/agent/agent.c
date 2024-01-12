@@ -322,7 +322,7 @@ static s_int32 todo_function(
 {
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
 	sys_ad_zero_mem(hqa_frame->data, SERV_IOCTLBUFF);
-	update_hqa_frame(hqa_frame, 2, SERV_STATUS_AGENT_NOT_SUPPORTED);
+	update_hqa_frame(hqa_frame, 6, SERV_STATUS_SUCCESS);
 	return SERV_STATUS_AGENT_NOT_SUPPORTED;
 }
 
@@ -1889,12 +1889,12 @@ static struct hqa_cmd_entry CMD_SET3[] = {
 	{0x2,	hqa_mac_bbp_reg_bulk_read},
 	{0x3,	hqa_rf_reg_bulk_read},
 	{0x4,	hqa_rf_reg_bulk_write},
-	//{0x5,	hqa_read_eeprom},
-	//{0x6,	hqa_write_eeprom},
-	//{0x7,	hqa_read_bulk_eeprom},
-	//{0x8,	hqa_write_bulk_eeprom},
-	//{0x9,	hqa_check_efuse_mode},
-	//{0xa,	hqa_get_free_efuse_block},
+	{0x5,	hqa_read_eeprom},
+	{0x6,	hqa_write_eeprom},
+	{0x7,	hqa_read_bulk_eeprom},
+	{0x8,	hqa_write_bulk_eeprom},
+	{0x9,	hqa_check_efuse_mode},
+	{0xa,	hqa_get_free_efuse_block},
 	{0xd,	hqa_get_tx_power},
 	{0xe,	hqa_set_cfg_on_off},
 	{0xf,	hqa_get_freq_offset},
@@ -1907,7 +1907,7 @@ static struct hqa_cmd_entry CMD_SET3[] = {
 	{0x17,	legacy_function},
 	{0x18,	hqa_ca53_reg_read},
 	{0x19,	hqa_ca53_reg_write},
-	//{0x1a,	hqa_get_tx_tone_pwr}
+	{0x1a,	hqa_get_tx_tone_pwr}
 };
 
 static s_int32 hqa_get_thermal_val(
@@ -3881,7 +3881,7 @@ static s_int32 hqa_set_ru_info(
 
 static struct hqa_cmd_entry CMD_SET5[] = {
 	/* cmd id start from 0x1500 */
-	//{0x0,	hqa_get_fw_info},
+	{0x0,	hqa_get_fw_info},
 	{0x1,	legacy_function},
 	{0x2,	hqa_set_stbc},
 	{0x3,	hqa_set_short_gi},
@@ -3907,8 +3907,8 @@ static struct hqa_cmd_entry CMD_SET5[] = {
 	{0x1c,	hqa_get_rx_statistics_all},
 	{0x1d,	hqa_get_capability},
 	{0x21,	legacy_function},
-	//{0x22,	hqa_check_efuse_mode_type},
-	//{0x23,	hqa_check_efuse_nativemode_type},
+	{0x22,	hqa_check_efuse_mode_type},
+	{0x23,	hqa_check_efuse_nativemode_type},
 	{0x24,	legacy_function},
 	{0x25,	legacy_function},
 	{0x26,	legacy_function},

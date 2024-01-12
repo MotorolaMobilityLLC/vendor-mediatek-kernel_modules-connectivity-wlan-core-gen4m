@@ -2071,6 +2071,10 @@ s_int32 mt_op_set_band_mode(
 	struct test_wlan_info *winfos,
 	struct test_band_state *band_state)
 {
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	return SERV_STATUS_ENGINE_NOT_SUPPORTED;
+
+#else
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
 	u_int32 dbdc_enb;
@@ -2089,6 +2093,8 @@ s_int32 mt_op_set_band_mode(
 		RF_AT_FUNCID_SET_DBDC_ENABLE, dbdc_enb);
 
 	return ret;
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
+
 }
 
 s_int32 mt_op_get_chipid(

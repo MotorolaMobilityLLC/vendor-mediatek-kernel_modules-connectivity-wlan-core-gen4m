@@ -366,7 +366,13 @@ s_int32 mt_serv_init_test(struct service_test *serv_test)
 		sys_ad_zero_mem(&serv_test->test_bstat,
 			sizeof(struct test_band_state));
 	} else {
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+		serv_test->test_winfo->dbdc_mode = TEST_DBDC_ENABLE;
+#else
 		serv_test->test_winfo->dbdc_mode = TEST_DBDC_DISABLE;
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
+
 		serv_test->test_winfo->hw_tx_enable = TEST_HWTX_DISABLE;
 	}
 	ret = mt_serv_init_op(serv_test->test_op);
@@ -1710,7 +1716,32 @@ s_int32 mt_serv_get_band_mode(
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
-	u_int32 band_type;
+	u_int32 band_type = TEST_BAND_TYPE_UNUSE;
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	struct test_capability capability;
+	
+	/* get content */
+	ret = mt_serv_get_capability(serv_test, &capability);
+
+	if (ret == SERV_STATUS_SUCCESS) {
+		switch (ctrl_band_idx) {
+		case TEST_DBDC_BAND0:
+			band_type = capability.ph_cap.channel_band_dbdc & 0xFF;
+			break;
+		case TEST_DBDC_BAND1:
+			band_type = (capability.ph_cap.channel_band_dbdc >> 16) & 0xFF;
+			break;
+		case TEST_DBDC_BAND2:
+			band_type = capability.ph_cap.channel_band_dbdc_ext & 0xFF;
+			break;
+		case TEST_DBDC_BAND3:
+			band_type = (capability.ph_cap.channel_band_dbdc_ext >> 16) & 0xFF;
+			break;
+		}
+	}
+#else
+	
 	struct test_operation *ops;
 
 	ops = serv_test->test_op;
@@ -1756,6 +1787,8 @@ s_int32 mt_serv_get_band_mode(
 	if ((band_type != TEST_BAND_TYPE_UNUSE) &&
 		serv_test->test_winfo->chip_cap.support_6g)
 		band_type |= TEST_BAND_TYPE_6G;
+
+#endif /*(CFG_SUPPORT_CONNAC3X == 1)*/
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 		("%s: band_type=%u\n", __func__, band_type));
