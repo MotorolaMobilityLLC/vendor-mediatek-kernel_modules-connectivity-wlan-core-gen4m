@@ -8,6 +8,7 @@ ifeq ($(SEGMENT), SP)
     # build ko by connac version
     ifeq ($(CONNAC_VER), 3_0)
         obj-m += build/connac3x/6985_6639/
+        obj-m += build/connac3x/eap_6639/
     else ifeq ($(CONNAC_VER), 2_0)
         obj-m += build/connac2x/6897/
         obj-m += build/connac2x/6893/
