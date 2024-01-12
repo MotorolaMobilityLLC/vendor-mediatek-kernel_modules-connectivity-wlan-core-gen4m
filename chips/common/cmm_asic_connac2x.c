@@ -644,8 +644,11 @@ void asicConnac2xWfdmaStop(
 	union WPDMA_GLO_CFG_STRUCT GloCfg;
 	uint32_t u4DmaCfgCr;
 	uint32_t idx;
+	struct mt66xx_chip_info *chip_info = prAdapter->chip_info;
 
 	for (idx = 0; idx < CONNAC2X_MAX_WFDMA_COUNT; idx++) {
+		if (!chip_info->is_support_wfdma1 && idx)
+			break;
 		u4DmaCfgCr = asicConnac2xWfdmaCfgAddrGet(prGlueInfo, idx);
 		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &GloCfg.word);
 

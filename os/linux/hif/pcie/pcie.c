@@ -1763,6 +1763,94 @@ void kalSetWfsysResetFlag(IN struct ADAPTER *prAdapter, IN u_int8_t fgIsReset)
 }
 #endif
 
+#if CFG_SUPPORT_PCIE_ASPM
+static void pcieSetASPML1SS(struct pci_dev *dev, int i4Enable)
+{
+	int pos;
+	uint32_t u4Reg = 0;
+
+	pos = pci_find_ext_capability(dev, PCI_EXT_CAP_ID_L1PMSS);
+	pci_read_config_dword(dev, pos + PCI_L1PMSS_CTR1, &u4Reg);
+	u4Reg &= ~PCI_L1PMSS_ENABLE_MASK;
+	u4Reg |= i4Enable;
+	pci_write_config_dword(dev, pos + PCI_L1PMSS_CTR1, u4Reg);
+}
+static void pcieSetASPML1(struct pci_dev *dev, int i4Enable)
+{
+	uint16_t u2Reg = 0;
+	int i4Pos = dev->pcie_cap;
+
+	pci_read_config_word(dev, i4Pos + PCI_EXP_LNKCTL, &u2Reg);
+	u2Reg &= ~PCI_L1PM_ENABLE_MASK;
+	u2Reg |= i4Enable;
+	pci_write_config_word(dev, i4Pos + PCI_EXP_LNKCTL, u2Reg);
+}
+static bool pcieCheckASPML1SS(struct pci_dev *dev, int i4BitMap)
+{
+	int i4Pos;
+	uint32_t u4Reg = 0;
+
+	i4Pos = pci_find_ext_capability(dev, PCI_EXT_CAP_ID_L1PMSS);
+
+
+	if (!i4Pos) {
+		DBGLOG(INIT, INFO, "L1 PM Substate capability is not found!\n");
+		return FALSE;
+	}
+	pci_read_config_dword(dev, i4Pos + PCI_L1PMSS_CAP, &u4Reg);
+	if (i4BitMap != 0) {
+		if ((i4BitMap & PCI_L1PM_CAP_ASPM_L12) &
+				(!(u4Reg & PCI_L1PM_CAP_ASPM_L12))) {
+			DBGLOG(INIT, INFO, "not support ASPM L1.2!\n");
+			return FALSE;
+		}
+		if ((i4BitMap & PCI_L1PM_CAP_ASPM_L11) &
+				(!(u4Reg & PCI_L1PM_CAP_ASPM_L11))) {
+			DBGLOG(INIT, INFO, "not support ASPM L1.1!\n");
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+bool glBusConfigASPM(struct pci_dev *dev, int i4Enable)
+{
+
+	uint32_t u4Reg = 0;
+	struct pci_dev *parent = dev->bus->self;
+	int pos = parent->pcie_cap;
+
+
+	pci_read_config_dword(parent, pos + PCI_EXP_LNKCAP, &u4Reg);
+	if (PCIE_ASPM_CHECK_L1(u4Reg)) {
+		pos = dev->pcie_cap;
+		pci_read_config_dword(dev, pos + PCI_EXP_LNKCAP, &u4Reg);
+		if (PCIE_ASPM_CHECK_L1(u4Reg)) {
+			pcieSetASPML1(parent, i4Enable);
+			pcieSetASPML1(dev, i4Enable);
+			DBGLOG(INIT, INFO, "ASPM STATUS %d\n", i4Enable);
+			return TRUE;
+		}
+	}
+	return FALSE;
+
+}
+bool glBusConfigASPML1SS(struct pci_dev *dev, int i4Enable)
+{
+	struct pci_dev *parent = dev->bus->self;
+
+	if (pcieCheckASPML1SS(parent, i4Enable)) {
+		if (pcieCheckASPML1SS(dev, i4Enable)) {
+			pcieSetASPML1SS(parent, i4Enable);
+			pcieSetASPML1SS(dev, i4Enable);
+			DBGLOG(INIT, INFO, "Config ASPM-L1SS\n");
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+#endif
+
 static void halPciePreSuspendCmd(struct ADAPTER *prAdapter)
 {
 	struct CMD_HIF_CTRL rCmdHifCtrl;

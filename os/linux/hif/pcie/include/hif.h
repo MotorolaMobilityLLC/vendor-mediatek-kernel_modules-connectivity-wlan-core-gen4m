@@ -87,6 +87,34 @@
 
 #define MCU_EMI_SIZE 2 * 64 * 1024
 
+#if CFG_SUPPORT_PCIE_ASPM
+#define ENABLE_ASPM_L1 2
+#define DISABLE_ASPM_L1 0
+
+#define  PCI_EXT_CAP_ID_L1PMSS				0x1E
+#define  PCI_L1PMSS_CAP						4
+#define  PCI_L1PM_CAP_PCIPM_L12				0x00000001
+#define  PCI_L1PM_CAP_PCIPM_L11				0x00000002
+#define  PCI_L1PM_CAP_ASPM_L12				0x00000004
+#define  PCI_L1PM_CAP_ASPM_L11				0x00000008
+#define  PCI_L1PM_CAP_L1PM_SS				0x00000010
+#define  PCI_L1PM_CAP_PORT_CMR_TIME_MASK	0x0000FF00
+#define  PCI_L1PM_CAP_PWR_ON_SCALE_MASK		0x00030000
+#define  PCI_L1PM_CAP_PWR_ON_VALUE_MASK		0x00F80000
+#define  PCI_L1PMSS_CTR1					8
+#define  PCI_L1PM_CTR1_PCIPM_L12_EN			0x00000001
+#define  PCI_L1PM_CTR1_PCIPM_L11_EN			0x00000002
+#define  PCI_L1PM_CTR1_ASPM_L12_EN			0x00000004
+#define  PCI_L1PM_CTR1_ASPM_L11_EN			0x00000008
+#define  PCI_L1PMSS_ENABLE_MASK	            (PCI_L1PM_CTR1_PCIPM_L12_EN |   \
+					PCI_L1PM_CTR1_PCIPM_L11_EN |   \
+					PCI_L1PM_CTR1_ASPM_L12_EN |    \
+					PCI_L1PM_CTR1_ASPM_L11_EN)
+#define  PCI_L1PM_ENABLE_MASK			0x3
+
+#define PCIE_ASPM_CHECK_L1(reg)	((((reg) & PCI_EXP_LNKCAP_ASPMS) >> 10) & 0x2)
+
+#endif
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -490,6 +518,11 @@ void glBusFunOff(void);
 irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance);
 irqreturn_t pcie_sw_int_top_handler(int irq, void *dev_instance);
 irqreturn_t pcie_sw_int_thread_handler(int irq, void *dev_instance);
+
+#if CFG_SUPPORT_PCIE_ASPM
+bool glBusConfigASPM(struct pci_dev *dev, int val);
+bool glBusConfigASPML1SS(struct pci_dev *dev, int enable);
+#endif
 
 /*******************************************************************************
  *                              F U N C T I O N S
