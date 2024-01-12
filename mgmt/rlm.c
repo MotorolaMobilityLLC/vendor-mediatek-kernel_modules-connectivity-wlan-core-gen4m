@@ -275,29 +275,19 @@ void rlmReqGeneratePowerCapIE(struct ADAPTER *prAdapter,
 			      struct MSDU_INFO *prMsduInfo)
 {
 	uint8_t *pucBuffer;
-	struct BSS_INFO *prBssInfo;
 
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
-
-	/* We should add power capability IE in assoc/reassoc req if
-	 * the spectrum management bit is set to 1 in Capability Info
-	 * field, or the connection will be rejected by Marvell APs in
-	 * some TGn items. (e.g. 5.2.32). Spectrum management related
-	 * feature (802.11h) is for 5G band.
-	 */
-	if (!prBssInfo || prBssInfo->eBand != BAND_5G)
-		return;
+	ASSERT(prAdapter);
+	ASSERT(prMsduInfo);
 
 	pucBuffer =
 		(uint8_t *)(prMsduInfo->prPacket + prMsduInfo->u2FrameLength);
 
 	POWER_CAP_IE(pucBuffer)->ucId = ELEM_ID_PWR_CAP;
 	POWER_CAP_IE(pucBuffer)->ucLength = ELEM_MAX_LEN_POWER_CAP;
-	POWER_CAP_IE(pucBuffer)->cMinTxPowerCap = 15;
-	POWER_CAP_IE(pucBuffer)->cMaxTxPowerCap = 20;
+	POWER_CAP_IE(pucBuffer)->cMinTxPowerCap = RLM_MIN_TX_PWR;
+	POWER_CAP_IE(pucBuffer)->cMaxTxPowerCap = RLM_MAX_TX_PWR;
 
 	prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
-	pucBuffer += IE_SIZE(pucBuffer);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -357,7 +347,6 @@ void rlmReqGenerateSupportedChIE(struct ADAPTER *prAdapter,
 	}
 
 	prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
-	pucBuffer += IE_SIZE(pucBuffer);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6833,26 +6822,6 @@ void rlmFillRrmCapa(uint8_t *pucCapa)
 	for (; ucIndex < sizeof(aucEnabledBits); ucIndex++)
 		SET_EXT_CAP(pucCapa, ELEM_MAX_LEN_RRM_CAP,
 			    aucEnabledBits[ucIndex]);
-}
-
-void rlmGeneratePowerCapIE(IN struct ADAPTER *prAdapter,
-			   IN struct MSDU_INFO *prMsduInfo)
-{
-	struct IE_POWER_CAP *prPwrCap = NULL;
-	uint8_t ucChannel = 0;
-
-	ASSERT(prAdapter);
-	ASSERT(prMsduInfo);
-
-	ucChannel =
-		prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc->ucChannelNum;
-	prPwrCap = (struct IE_POWER_CAP *)(((uint8_t *)prMsduInfo->prPacket) +
-					   prMsduInfo->u2FrameLength);
-	prPwrCap->ucId = ELEM_ID_PWR_CAP;
-	prPwrCap->ucLength = 2;
-	prPwrCap->cMaxTxPowerCap = RLM_MAX_TX_PWR;
-	prPwrCap->cMinTxPowerCap = RLM_MIN_TX_PWR;
-	prMsduInfo->u2FrameLength += IE_SIZE(prPwrCap);
 }
 
 void rlmSetMaxTxPwrLimit(IN struct ADAPTER *prAdapter, int8_t cLimit,

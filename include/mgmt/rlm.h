@@ -594,9 +594,6 @@ void rlmTxNeighborReportRequest(struct ADAPTER *prAdapter,
 void rlmGenerateRRMEnabledCapIE(IN struct ADAPTER *prAdapter,
 				IN struct MSDU_INFO *prMsduInfo);
 
-void rlmGeneratePowerCapIE(IN struct ADAPTER *prAdapter,
-			   IN struct MSDU_INFO *prMsduInfo);
-
 void rlmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 				       struct SW_RFB *prSwRfb);
 
