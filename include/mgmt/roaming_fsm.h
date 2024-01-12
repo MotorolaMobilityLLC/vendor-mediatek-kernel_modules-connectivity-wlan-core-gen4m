@@ -241,4 +241,7 @@ void roamingFsmRunEventRxFtAction(struct ADAPTER *prAdapter,
 void roamingFsmTxReqDoneOrRxRespTimeout(
 	struct ADAPTER *prAdapter, uintptr_t ulParam);
 
+u_int8_t roamingFsmCheckIfRoaming(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
 #endif /* _ROAMING_FSM_H */
