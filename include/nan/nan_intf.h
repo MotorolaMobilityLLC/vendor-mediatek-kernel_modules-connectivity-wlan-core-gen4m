@@ -64,7 +64,7 @@
 /*Max publish + subscribe numbers 4*/
 #define NAN_MAX_PUBLISH_NUM 2
 #define NAN_MAX_SUBSCRIBE_NUM 2
-#define NAN_MAX_NDP_SESSIONS 8
+#define NAN_MAX_NDP_SESSIONS 5
 #define IPV6MACLEN 8
 
 /* NAN Shared Key Security Cipher Suites Mask */
