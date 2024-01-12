@@ -176,6 +176,11 @@ module_param_named(ap, gprifnameap, charp, 0000);
 char *gprifnamenvram = "";
 module_param_named(nvram, gprifnamenvram, charp, 0000);
 
+#if CFG_SUPPORT_XONVRAM
+char *gprifnamexonv = "";
+module_param_named(xonvram, gprifnamexonv, charp, 0000);
+#endif
+
 /* NIC interface name */
 #ifdef CFG_COMBO_SLT_GOLDEN
 #define NIC_INF_NAME    "ra%d"
@@ -2552,12 +2557,30 @@ static void glLoadNvram(struct GLUE_INFO *prGlueInfo,
 	}
 
 	prGlueInfo->fgNvramAvailable = TRUE;
-#if CFG_SUPPORT_XONVRAM
-	prRegInfo->prXonvCfg = &g_rXonvCfg;
-#endif
 	prRegInfo->prNvramSettings =
 		(struct WIFI_CFG_PARAM_STRUCT *)&g_aucNvram[0];
 	prNvramSettings = prRegInfo->prNvramSettings;
+
+#if CFG_SUPPORT_XONVRAM
+	if (gprifnamexonv != NULL) {
+		err = request_firmware(&fw, gprifnamexonv, prGlueInfo->prDev);
+		if (!err) {
+			DBGLOG(INIT, INFO,
+				"Find xo nvram : %s by insmod data:0x%p,size:%lu\n",
+				gprifnamexonv,
+				fw->data,
+				fw->size);
+
+			if ((fw->size > 0)
+				&& (fw->size <= sizeof(g_rXonvCfg.aucData))) {
+				kalMemCopy(g_rXonvCfg.aucData,
+					fw->data, fw->size);
+			}
+			release_firmware(fw);
+		}
+	}
+	prRegInfo->prXonvCfg = &g_rXonvCfg;
+#endif
 
 #if CFG_TC1_FEATURE
 		TC1_FAC_NAME(FacReadWifiMacAddr)(prRegInfo->aucMacAddr);
