@@ -4540,7 +4540,7 @@ uint32_t nicUniCmdUpdateEdcaSet(struct ADAPTER *ad,
 	struct UNI_CMD_EDCA_AC_PARM *tag;
 	struct WIFI_UNI_CMD_ENTRY *entry;
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_EDCA) +
-	     		       sizeof(struct UNI_CMD_EDCA_AC_PARM) * AC_NUM;
+			sizeof(struct UNI_CMD_EDCA_AC_PARM) * WMM_AC_INDEX_NUM;
 	uint8_t i;
 
 	if (info->ucCID != CMD_ID_UPDATE_WMM_PARMS ||
@@ -4557,7 +4557,7 @@ uint32_t nicUniCmdUpdateEdcaSet(struct ADAPTER *ad,
 	uni_cmd = (struct UNI_CMD_EDCA *) entry->pucInfoBuffer;
 	uni_cmd->ucBssInfoIdx = cmd->ucBssIndex;
 	tag = (struct UNI_CMD_EDCA_AC_PARM *) uni_cmd->aucTlvBuffer;
-	for (i = 0; i < AC_NUM; ++i) {
+	for (i = 0; i < WMM_AC_INDEX_NUM; ++i) {
 		tag->u2Tag = UNI_CMD_EDCA_TAG_AC_PARM;
 		tag->u2Length = sizeof(*tag);
 		tag->ucAcIndex = i;

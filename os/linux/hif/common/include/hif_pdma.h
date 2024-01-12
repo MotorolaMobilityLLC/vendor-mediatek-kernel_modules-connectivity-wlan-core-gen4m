@@ -82,7 +82,7 @@
 #define HIF_NUM_OF_QM_RX_PKT_NUM		10240
 #define HIF_PLE_PAGE_SIZE			0xBC0
 #define HIF_AMSDU_COUNT				4
-#ifdef MT6653
+#if defined(MT6653) || defined(MT7990)
 #define HIF_TX_MSDU_TOKEN_NUM			28000
 #else
 #define HIF_TX_MSDU_TOKEN_NUM \
