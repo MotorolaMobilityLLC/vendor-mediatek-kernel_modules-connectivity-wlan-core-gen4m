@@ -6269,12 +6269,17 @@ wlandioSetSGStatus(IN struct ADAPTER *prAdapter,
 	if (ucSGSpcCmd == 0xFF) {
 		prCmdSGStatus->ucSGCfg = prAdapter->rWifiVar.ucSGCfg;
 		prCmdSGStatus->ucNSSCap = ucNSS;
+		prCmdSGStatus->ucSG24GFavorANT =
+				prAdapter->rWifiVar.ucSG24GFavorANT;
+		prCmdSGStatus->ucSG5GFavorANT =
+				prAdapter->rWifiVar.ucSG5GFavorANT;
 	}
 
 	DBGLOG(SW4, INFO,
-			"[SG]Status[%d][%d]\n",
+			"[SG]Status[%d][%d][%d][%d][%d]\n",
 			prCmdSGStatus->ucSGEnable, prCmdSGStatus->ucSGSpcCmd,
-			prCmdSGStatus->ucNSSCap);
+			prCmdSGStatus->ucNSSCap, prCmdSGStatus->ucSG24GFavorANT,
+			prCmdSGStatus->ucSG5GFavorANT);
 
 	wlanSendSetQueryCmd(prAdapter,
 			CMD_ID_SG_PARAM,
