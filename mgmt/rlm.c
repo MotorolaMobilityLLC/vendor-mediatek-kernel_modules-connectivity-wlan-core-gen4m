@@ -6663,8 +6663,6 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 					 HT_OP_INFO1_STA_CHNL_WIDTH_OFFSET),
 			       prBssInfo->eBssSCO);
 		}
-
-		prBssInfo->fgIsOpChangeChannelWidth = FALSE;
 	}
 
 	/* Update own operating RxNss */
@@ -6672,7 +6670,6 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 		prBssInfo->ucOpRxNss = prBssInfo->ucOpChangeRxNss;
 		DBGLOG(RLM, INFO, "Update OP RxNss[%d]\n",
 			prBssInfo->ucOpRxNss);
-		prBssInfo->fgIsOpChangeRxNss = FALSE;
 	}
 
 	/* Update own operating TxNss */
@@ -6680,7 +6677,6 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 		prBssInfo->ucOpTxNss = prBssInfo->ucOpChangeTxNss;
 		DBGLOG(RLM, INFO, "Update OP TxNss[%d]\n",
 			prBssInfo->ucOpTxNss);
-		prBssInfo->fgIsOpChangeTxNss = FALSE;
 	}
 }
 
@@ -6723,6 +6719,11 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 		if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
 			bssUpdateBeaconContent(prAdapter,
 					       prBssInfo->ucBssIndex);
+
+		/* <4) Reset flags */
+		prBssInfo->fgIsOpChangeChannelWidth = FALSE;
+		prBssInfo->fgIsOpChangeRxNss = FALSE;
+		prBssInfo->fgIsOpChangeTxNss = FALSE;
 	}
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
