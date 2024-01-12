@@ -3193,6 +3193,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				prCSAParams->eCsaBand = BAND_2G4;
 
 			prCSAParams->ucCsaNewCh = prExCSAIE->ucNewChannelNum;
+			ucCurrentCsaCount = prExCSAIE->ucChannelSwitchCount;
 			prCSAParams->ucVhtS1 = nicGetS1(prCSAParams->eCsaBand,
 				prExCSAIE->ucNewChannelNum,
 				rlmGetVhtOpBwByBssOpBw(
@@ -3239,11 +3240,12 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			}
 
 			DBGLOG(RLM, INFO,
-				"[CSA] Mode[%d], Op class[%d], Band[%d], CH[%d]\n",
+				"[CSA] Mode[%d], Op class[%d], Band[%d], CH[%d], count[%d]\n",
 				prExCSAIE->ucChannelSwitchMode,
 				prExCSAIE->ucNewOperatingClass,
 				prCSAParams->eCsaBand,
-				prExCSAIE->ucNewChannelNum);
+				prExCSAIE->ucNewChannelNum,
+				prExCSAIE->ucChannelSwitchCount);
 			break;
 
 		case ELEM_ID_SCO:
