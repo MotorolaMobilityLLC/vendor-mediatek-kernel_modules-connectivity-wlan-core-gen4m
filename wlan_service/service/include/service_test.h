@@ -168,7 +168,10 @@ s_int32 mt_serv_get_freq_offset(
 	struct service_test *serv_test, u_int32 type, u_int32 *freq_offset);
 s_int32 mt_serv_get_cfg_on_off(
 	struct service_test *serv_test,
-	u_int32 type, u_int32 *result);
+	u_int32 type,
+	u_int32 band_idx,
+	u_int32 ch_band,
+	u_int32 *result);
 s_int32 mt_serv_get_tx_tone_pwr(
 	struct service_test *serv_test,
 	u_int32 ant_idx, u_int32 *power);
@@ -259,7 +262,12 @@ s_int32 mt_serv_get_band_mode(struct service_test *serv_test);
 s_int32 mt_serv_log_on_off(
 	struct service_test *serv_test, u_int32 log_type,
 	u_int32 log_ctrl, u_int32 log_size);
-s_int32 mt_serv_set_cfg_on_off(struct service_test *serv_test);
+s_int32 mt_serv_set_cfg_on_off(
+	struct service_test *serv_test,
+	u_int32 type,
+	u_int32 enable,
+	u_int32 band_idx,
+	u_int32 ch_band);
 s_int32 mt_serv_set_rx_filter_pkt_len(struct service_test *serv_test);
 s_int32 mt_serv_get_wf_path_comb(struct service_test *serv_test,
 	u_int8 band_idx, boolean dbdc_mode_en, u_int8 *path, u_int8 *path_len);
