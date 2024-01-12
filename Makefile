@@ -107,11 +107,13 @@ endif
 ifneq ($(filter SOC2_1X1,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -USOC2_1X1,$(ccflags-y))
 ccflags-y += -DSOC2_1X1
+ccflags-y += -DCONFIG_MTK_WIFI_VHT80
 endif
 
 ifneq ($(filter SOC2_2X2,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -USOC2_2X2,$(ccflags-y))
 ccflags-y += -DSOC2_2X2
+ccflags-y += -DCONFIG_MTK_WIFI_VHT80
 endif
 
 ifneq ($(findstring MT7915,$(MTK_COMBO_CHIP)),)
@@ -148,6 +150,7 @@ ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
 ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
 ccflags-y += -DCFG_MTK_WIFI_SW_WFDMA=1
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
+ccflags-y += -DCONFIG_MTK_WIFI_HE80
 endif
 
 ifneq ($(findstring MT7961,$(MTK_COMBO_CHIP)),)
@@ -184,6 +187,7 @@ ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
 ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
 ccflags-y += -DCFG_MTK_WIFI_SW_WFDMA=1
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
+ccflags-y += -DCONFIG_MTK_WIFI_HE80
 endif
 
 ifneq ($(findstring 7_0,$(MTK_COMBO_CHIP)),)
@@ -207,6 +211,7 @@ ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
 ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
 ccflags-y += -DCFG_SUPPORT_BW160
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
+ccflags-y += -DCONFIG_MTK_WIFI_HE160
 endif
 
 ifneq ($(filter BELLWETHER,$(MTK_COMBO_CHIP)),)
@@ -231,6 +236,7 @@ CONFIG_DBDC_MODE=1
 CONFIG_MTK_WIFI_6G_SUPPORT=y
 CONFIG_NSS=4
 CONFIG_BAND_NUM=3
+ccflags-y += -DCONFIG_MTK_WIFI_HE160
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 endif
 
@@ -257,6 +263,7 @@ ifneq ($(TARGET_BUILD_VARIANT),user)
 CONFIG_MTK_WIFI_NAN=y
 endif
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
+ccflags-y += -DCONFIG_MTK_WIFI_HE160
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
