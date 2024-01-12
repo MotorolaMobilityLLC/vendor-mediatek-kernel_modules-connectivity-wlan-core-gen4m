@@ -1506,7 +1506,7 @@ int rrmReportElem(struct RM_MEASURE_REPORT_ENTRY *reportEntry,
 	const uint8_t *data, uint32_t data_len)
 {
 	uint8_t *report = reportEntry->pucMeasReport;
-	uint8_t len = reportEntry->u2MeasReportLen;
+	uint16_t len = reportEntry->u2MeasReportLen;
 	uint32_t size = len + 5 + data_len;
 	uint8_t *buf;
 
@@ -1575,7 +1575,6 @@ int rrmAddBeaconRepElem(struct ADAPTER *prAdapter,
 		goto out;
 
 	pos = buf + ret + sizeof(*rep);
-
 
 	if (!ve) {
 		pos[0] = BEACON_REPORT_SUBELEM_FRAME_BODY_FRAGMENT_ID;
