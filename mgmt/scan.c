@@ -3959,10 +3959,9 @@ void scanLogCacheAddBSS(struct LINK *prList,
 	LINK_INSERT_TAIL(prList, &(pBss->rLinkEntry));
 }
 
-void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
-	const uint16_t logBufLen)
+void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix)
 {
-	char *prlogBuf;
+	char arlogBuf[SCAN_LOG_MSG_MAX_LEN];
 	uint32_t idx = 0;
 	struct SCAN_LOG_ELEM_BSS *pBss = NULL;
 #if CFG_SHOW_FULL_MACADDR
@@ -3980,31 +3979,26 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 	if (LINK_IS_EMPTY(prList))
 		return;
 
-	prlogBuf = kalMemAlloc(logBufLen, VIR_MEM_TYPE);
-	if (prlogBuf == NULL) {
-		DBGLOG(SCN, WARN, "logBuf is NULL, skip!\n");
-		return;
-	}
-	kalMemZero(prlogBuf, logBufLen);
+	kalMemZero(arlogBuf, SCAN_LOG_MSG_MAX_LEN);
 	/* The maximum characters of uint32_t could be 10. Thus, the
 	 * mininum size should be 10+3 for the format "%u: ".
 	 */
-	if (logBufLen < 13 || dataLen+1 > logBufLen) {
+	if (dataLen + 1 > SCAN_LOG_MSG_MAX_LEN) {
 		scanlog_dbg(prefix, INFO, "Scan log buffer is too small.\n");
 		while (!LINK_IS_EMPTY(prList)) {
 			LINK_REMOVE_HEAD(prList,
 				pBss, struct SCAN_LOG_ELEM_BSS *);
 		}
-		kalMemFree(prlogBuf, VIR_MEM_TYPE, logBufLen);
 		return;
 	}
-	idx += kalSnprintf(prlogBuf, logBufLen, "%u: ", prList->u4NumElem);
+	idx += kalSnprintf(arlogBuf, SCAN_LOG_MSG_MAX_LEN, "%u: ",
+			prList->u4NumElem);
 
 	while (!LINK_IS_EMPTY(prList)) {
-		if (idx+dataLen+1 > logBufLen) {
-			prlogBuf[idx] = 0; /* terminating null byte */
+		if (idx+dataLen+1 > SCAN_LOG_MSG_MAX_LEN) {
+			arlogBuf[idx] = 0; /* terminating null byte */
 			if (prefix != LOG_SCAN_D2D)
-				scanlog_dbg(prefix, INFO, "%s\n", prlogBuf);
+				scanlog_dbg(prefix, INFO, "%s\n", arlogBuf);
 			idx = 0;
 		}
 
@@ -4012,7 +4006,7 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 			pBss, struct SCAN_LOG_ELEM_BSS *);
 
 #if CFG_SHOW_FULL_MACADDR
-		idx += kalSnprintf(prlogBuf+idx, dataLen+1,
+		idx += kalSnprintf(arlogBuf+idx, dataLen+1,
 			"%02x%02x%02x%02x%02x%02x",
 			((uint8_t *)pBss->aucBSSID)[0],
 			((uint8_t *)pBss->aucBSSID)[1],
@@ -4021,7 +4015,7 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 			((uint8_t *)pBss->aucBSSID)[4],
 			((uint8_t *)pBss->aucBSSID)[5]);
 #else
-		idx += kalSnprintf(prlogBuf+idx, dataLen+1,
+		idx += kalSnprintf(arlogBuf+idx, dataLen+1,
 			"%02x%02x%03x%02x",
 			((uint8_t *)pBss->aucBSSID)[0],
 			((uint8_t *)pBss->aucBSSID)[1],
@@ -4033,28 +4027,27 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 
 	}
 	if (idx != 0) {
-		prlogBuf[idx] = 0; /* terminating null byte */
+		arlogBuf[idx] = 0; /* terminating null byte */
 		if (prefix != LOG_SCAN_D2D)
-			scanlog_dbg(prefix, INFO, "%s\n", prlogBuf);
+			scanlog_dbg(prefix, INFO, "%s\n", arlogBuf);
 		idx = 0;
 	}
-	kalMemFree(prlogBuf, VIR_MEM_TYPE, logBufLen);
 }
 
 void scanLogCacheFlushAll(struct ADAPTER *prAdapter,
 	struct SCAN_LOG_CACHE *prScanLogCache,
-	enum ENUM_SCAN_LOG_PREFIX prefix, const uint16_t logBufLen)
+	enum ENUM_SCAN_LOG_PREFIX prefix)
 {
 	KAL_SPIN_LOCK_DECLARATION();
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_BSSLIST_FW);
 	scanLogCacheFlushBSS(&(prScanLogCache->rBSSListFW),
-		prefix, logBufLen);
+		prefix);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_BSSLIST_FW);
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_BSSLIST_CFG);
 	scanLogCacheFlushBSS(&(prScanLogCache->rBSSListCFG),
-		prefix, logBufLen);
+		prefix);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_BSSLIST_CFG);
 }
 
