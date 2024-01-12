@@ -1311,6 +1311,9 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 int mtk_pci_resume(struct pci_dev *pdev)
 {
 #if (CFG_DEVICE_SUSPEND_BY_MOBILE == 1)
+	struct device *dev = &pdev->dev;
+
+	dev->power.runtime_status = RPM_ACTIVE;
 	return 0;
 #else
 	struct GLUE_INFO *prGlueInfo = NULL;
