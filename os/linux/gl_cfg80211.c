@@ -1439,9 +1439,8 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
 		return -EINVAL;
 
-	DBGLOG(REQ, INFO, "[wlan%d] mtk_cfg80211_connect %p %zu\n",
-		ucBssIndex, sme->ie, sme->ie_len);
-
+	DBGLOG(REQ, INFO, "[wlan] mtk_cfg80211_connect %p %zu %d\n",
+	       sme->ie, sme->ie_len, sme->auth_type);
 	prConnSettings =
 		aisGetConnSettings(prGlueInfo->prAdapter,
 		ucBssIndex);
@@ -1514,8 +1513,12 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		u4AkmSuite = RSN_AKM_SUITE_SAE;
 		break;
 	default:
-		prWpaInfo->u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM |
-						 IW_AUTH_ALG_SHARED_KEY;
+		/* NL80211 only set the Tx wep key while connect */
+		if (sme->key_len != 0)
+			prWpaInfo->u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM |
+				IW_AUTH_ALG_SHARED_KEY;
+		else
+			prWpaInfo->u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
 		break;
 	}
 
