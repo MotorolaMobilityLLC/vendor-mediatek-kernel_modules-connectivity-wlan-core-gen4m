@@ -1309,8 +1309,7 @@ void scanParsingMBSSIDSubelement(IN struct ADAPTER *prAdapter,
 	prTransBSS->ucMaxBSSIDIndicator = prMbssidIe->ucMaxBSSIDIndicator;
 	u2Offset = 0;
 	pucIE = &prMbssidIe->ucSubelements[0];
-	u2IELength = IE_SIZE(prMbssidIe) -
-		OFFSET_OF(struct IE_MBSSID, ucSubelements);
+	u2IELength = IE_SIZE(prMbssidIe) - sizeof(struct IE_MBSSID);
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset)
 	{
 		pucProfileIE = NULL;
@@ -1365,13 +1364,13 @@ void scanParsingMBSSIDSubelement(IN struct ADAPTER *prAdapter,
  * @return   NULL, if has no space.
  */
 /*----------------------------------------------------------------------------*/
-void scanEhtParsingMldElement(IN struct BSS_DESC *prBssDesc, IN uint8_t *pucIE)
+void scanEhtParsingMldElement(IN struct BSS_DESC *prBssDesc, IN const uint8_t *pucIE)
 {
 	struct MULTI_LINK_INFO rMlInfo;
 	struct MULTI_LINK_INFO *prMlInfo = &rMlInfo;
 
 	kalMemSet(prMlInfo, 0, sizeof(rMlInfo));
-	beParsingMldElement(prMlInfo, pucIE);
+	beParseMldElement(prMlInfo, pucIE, prBssDesc->aucBSSID);
 
 	prBssDesc->rMlInfo.fgValid = prMlInfo->ucValid;
 
@@ -1384,226 +1383,7 @@ void scanEhtParsingMldElement(IN struct BSS_DESC *prBssDesc, IN uint8_t *pucIE)
 	if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_LINK_ID_INFO_PRESENT)
 		prBssDesc->rMlInfo.ucLinkIndex = rMlInfo.ucLinkId;
 }
-
-void scanEhtDuplicateBssDesc(IN struct ADAPTER *prAdapter,
-                               IN struct BSS_DESC *prSrcBssDesc,
-                               IN struct MULTI_LINK_INFO *prMlInfo)
-{
-	uint8_t i;
-	struct BSS_DESC *prBssDesc = NULL;
-	struct STA_PROFILE *prProfiles;
-
-	/* For each ML link, replace existing BSS_DESC structure or
-	 * allocate a new one, only check BSSID, don't care SSID
-	 */
-	for (i = 0; i < prMlInfo->ucLinkNum; i++) {
-		prProfiles = &prMlInfo->rStaProfiles[i];
-		prBssDesc = scanSearchExistingBssDescWithSsid(
-			prAdapter,
-			prSrcBssDesc->eBSSType,
-			prProfiles->aucLinkAddr,
-			prProfiles->aucLinkAddr,
-			FALSE, NULL);
-
-		if (prBssDesc == (struct BSS_DESC *) NULL) {
-			/* First trial of allocation */
-			prBssDesc = scanAllocateBssDesc(prAdapter);
-			if (!prBssDesc) {
-				/* Hidden is useless, remove the oldest
-				 * hidden ssid. (for passive scan)
-				 */
-				scanRemoveBssDescsByPolicy(prAdapter,
-					(SCN_RM_POLICY_EXCLUDE_CONNECTED
-					| SCN_RM_POLICY_OLDEST_HIDDEN
-					| SCN_RM_POLICY_TIMEOUT));
-
-				/* Second tail of allocation */
-				prBssDesc = scanAllocateBssDesc(prAdapter);
-				if (!prBssDesc) {
-				/* Remove the weakest one
-				 * If there are more than half of BSS which has
-				 * the same ssid as connection setting, remove
-				 * the weakest one from them.
-				 * Else remove the weakest one.
-				 */
-					scanRemoveBssDescsByPolicy(prAdapter,
-					    (SCN_RM_POLICY_EXCLUDE_CONNECTED
-					    | SCN_RM_POLICY_SMART_WEAKEST));
-
-					/* reallocation */
-					prBssDesc =
-						scanAllocateBssDesc(prAdapter);
-					if (!prBssDesc) {
-					/* no space, should not happen */
-						log_dbg(SCN, WARN,
-							"duplicate new BssDesc"
-							"for MLO failed\n");
-						return;
-					}
-				}
-			}
-		} else {
-			log_dbg(SCN, INFO, "ML link(%d), "MACSTR" exist!\n",
-				prProfiles->ucLinkId,
-				MAC2STR(prProfiles->aucLinkAddr));
-			continue;
-		}
-
-		/* directly copy whole bssDesc to new duplicated bssDesc */
-		kalMemCopy(prBssDesc->aucBSSID, prSrcBssDesc->aucBSSID,
-			(sizeof(struct BSS_DESC) -
-			OFFSET_OF(struct BSS_DESC, aucBSSID)));
-
-		/* Update ML link's BSSID */
-		kalMemCopy(prBssDesc->aucBSSID, prProfiles->aucLinkAddr,
-			MAC_ADDR_LEN);
-		/* Update ML link's srcAddr */
-		kalMemCopy(prBssDesc->aucSrcAddr, prProfiles->aucLinkAddr,
-			MAC_ADDR_LEN);
-
-		/* Update ML link's band */
-		prBssDesc->eBand = prProfiles->rChnlInfo.eBand;
-
-		/* Update ML link's channel */
-		prBssDesc->ucChannelNum = prProfiles->rChnlInfo.ucChannelNum;
-
-		/* Update ML link's channel BW */
-		switch (prProfiles->rChnlInfo.ucChnlBw) {
-			case BW_20:
-			case BW_40:
-				prBssDesc->eChannelWidth = CW_20_40MHZ;
-				break;
-			case BW_80:
-				prBssDesc->eChannelWidth = CW_80MHZ;
-				break;
-			case BW_160:
-				prBssDesc->eChannelWidth = CW_160MHZ;
-				break;
-			case BW_8080:
-				prBssDesc->eChannelWidth = CW_80P80MHZ;
-				break;
-			default:
-				break;
-		}
-
-		/* Update ML link's MLD addr */
-		kalMemCopy(prBssDesc->rMlInfo.aucMldAddr, prMlInfo->aucMldAddr,
-			MAC_ADDR_LEN);
-
-		/* Update ML Link's link ID */
-		prBssDesc->rMlInfo.ucLinkIndex = prProfiles->ucLinkId;
-
-		prBssDesc->rMlInfo.fgValid = TRUE;
-	}
-}
-
-void scanHandleRnrMldParam(IN struct ADAPTER *prAdapter,
-	IN struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField,
-	IN struct MULTI_LINK_INFO *prMlInfo)
-{
-	uint8_t i, j;
-	uint8_t ucMldParamOffset, ucMldId, ucMldLinkId, ucBssParamChangeCount;
-	uint16_t u2TbttInfoCount, u2TbttInfoLength;
-	uint32_t u4MldParam = 0;
-	uint8_t band;
-	struct STA_PROFILE *prProfile;
-
-	/* get channel number for this neighborAPInfo */
-	scanOpClassToBand(prNeighborAPInfoField->ucOpClass, &band);
-	u2TbttInfoCount = ((prNeighborAPInfoField->u2TbttInfoHdr &
-				TBTT_INFO_HDR_COUNT)
-				>> TBTT_INFO_HDR_COUNT_OFFSET)
-				+ 1;
-	u2TbttInfoLength = (prNeighborAPInfoField->u2TbttInfoHdr &
-				TBTT_INFO_HDR_LENGTH)
-				>> TBTT_INFO_HDR_LENGTH_OFFSET;
-
-	for (i = 0; i < u2TbttInfoCount; i++) {
-		j = i * u2TbttInfoLength;
-
-		switch (u2TbttInfoLength) {
-			/* 10: Neighbor AP TBTT Offset + BSSID + MLD Parameter */
-			case 10:
-				ucMldParamOffset = 7;
-				break;
-			/* 16: Neighbor AP TBTT Offset + BSSID + Short SSID + BSS parameters + 20MHz PSD + MLD Parameter */
-			case 16 ... 255:
-				ucMldParamOffset = 13;
-				break;
-
-			default:
-			/* only handle neighbor AP info that MLD parameter and BSSID both exist*/
-				continue;
-		}
-
-		log_dbg(SCN, INFO, "RnrIe[%x][" MACSTR "]\n", i,
-			MAC2STR(&prNeighborAPInfoField->aucTbttInfoSet[j + 1]));
-
-		/* If this BSSID has been saved, bypass it. */
-		if (scanSearchBssDescByBssid(prAdapter, &prNeighborAPInfoField->
-						aucTbttInfoSet[j + 1]))
-			continue;
-
-		/* Directly copy 4 bytes content, but MLD param is only 3 bytes
-		 * actually. We will only use 3 bytes content.
-		 */
-		kalMemCopy(&u4MldParam, &prNeighborAPInfoField->
-			aucTbttInfoSet[j + ucMldParamOffset],
-			sizeof(u4MldParam));
-		ucMldId = (u4MldParam & MLD_PARAM_MLD_ID_MASK);
-		ucMldLinkId = (u4MldParam & MLD_PARAM_LINK_ID_MASK) >>
-			MLD_PARAM_LINK_ID_SHIFT;
-		ucBssParamChangeCount =
-			(u4MldParam & MLD_PARAM_BSS_PARAM_CHANGE_COUNT_MASK) >>
-			MLD_PARAM_BSS_PARAM_CHANGE_COUNT_SHIFT;
-
-		log_dbg(SCN, INFO,
-			"MldId=%d, MldLinkId=%d, BssParChangeCount=%d\n",
-			ucMldId, ucMldLinkId, ucBssParamChangeCount);
-
-		if (ucMldLinkId >= MLD_LINK_MAX) {
-			log_dbg(SCN, WARN, "invalid link_id: %d", ucMldLinkId);
-			return;
-		}
-
-		prProfile = &prMlInfo->rStaProfiles[ucMldLinkId];
-
-		switch (band) {
-			case KAL_BAND_2GHZ:
-				prProfile->rChnlInfo.eBand = BAND_2G4;
-				break;
-			case KAL_BAND_5GHZ:
-				prProfile->rChnlInfo.eBand = BAND_5G;
-				break;
-#if 0
-			case KAL_BAND_6GHZ:
-				prProfile->rChnlInfo.eBand = BAND_6G;
-				break;
-#endif
-			default:
-				log_dbg(SCN, WARN, "unsupported band: %d\n",
-					band);
-			break;
-		}
-
-		prProfile->rChnlInfo.ucChannelNum =
-			prNeighborAPInfoField->ucChannelNum;
-
-		prProfile->rChnlInfo.ucChnlBw =
-			rlmOpClassToBandwidth(prNeighborAPInfoField->ucOpClass);
-
-		prProfile->rChnlInfo.u4CenterFreq1 = 0;
-		prProfile->rChnlInfo.u4CenterFreq2 = 0;
-		log_dbg(SCN, INFO,
-			"link_id:%d, rfband:%d, ch:%d, bw:%d, s1:%d, s2:%d\n",
-			prProfile->ucLinkId, prProfile->rChnlInfo.eBand,
-			prProfile->rChnlInfo.ucChannelNum,
-			prProfile->rChnlInfo.ucChnlBw,
-			prProfile->rChnlInfo.u4CenterFreq1,
-			prProfile->rChnlInfo.u4CenterFreq2);
-	}
-}
-#endif
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 void scanHandleRnrSsid(IN struct SCAN_PARAM *prScanParam,
 	IN struct BSS_DESC *prBssDesc, IN uint8_t ucBssidNum)
@@ -1761,6 +1541,7 @@ uint8_t scanRnrChnlIsNeedScan(IN struct ADAPTER *prAdapter,
 	struct SCAN_PARAM *prScanParam;
 	uint32_t i;
 	struct RF_CHANNEL_INFO *prCnlInfo;
+	enum ENUM_BAND eRfBand;
 
 	ASSERT(prAdapter);
 
@@ -1775,15 +1556,37 @@ uint8_t scanRnrChnlIsNeedScan(IN struct ADAPTER *prAdapter,
 	if (ucBand == KAL_BAND_6GHZ && IS_6G_PSC_CHANNEL(ucRnrChNum))
 		return FALSE;
 
+	switch (ucBand) {
+	case KAL_BAND_2GHZ:
+		eRfBand = BAND_2G4;
+		break;
+	case KAL_BAND_5GHZ:
+		eRfBand = BAND_5G;
+		break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case KAL_BAND_6GHZ:
+		eRfBand = BAND_6G;
+		break;
+#endif
+	default:
+		eRfBand = BAND_NULL;
+		break;
+	}
+
 	/* Set channel info to scan request */
 	if (prScanParam->eScanChannel == SCAN_CHANNEL_SPECIFIED) {
 		for (i = 0; i < prScanParam->ucChannelListNum; i++) {
 			prCnlInfo = &prScanParam->arChnlInfoList[i];
-			if (ucBand == prCnlInfo->eBand &&
-			    ucRnrChNum == prCnlInfo->ucChannelNum)
+			if (eRfBand == prCnlInfo->eBand &&
+			    ucRnrChNum == prCnlInfo->ucChannelNum) {
+				log_dbg(SCN, INFO,
+					"[ch:%d][band:%d] already in scan chnl list\n",
+						ucRnrChNum, eRfBand);
 				return FALSE;
+			}
 		}
 	}
+
 
 	return TRUE;
 }
@@ -2090,7 +1893,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 					&prNeighborAPInfo->rLinkEntry);
 				ucNewLink = FALSE;
 			}
-			log_dbg(SCN, INFO, "6G RnR for ch[%d,%d,%d,%d]Match[%d %d %d %d][%d %d %d %d] (IE Length:%d)into list(%d)\n",
+			log_dbg(SCN, INFO, "RnR for ch[%d,%d,%d,%d]Match[%d %d %d %d][%d %d %d %d] (IE Length:%d)into list(%d)\n",
 				    prScanParam->arChnlInfoList[0].ucChannelNum,
 				    prScanParam->arChnlInfoList[1].ucChannelNum,
 				    prScanParam->arChnlInfoList[2].ucChannelNum,
@@ -2112,7 +1915,8 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 	}
 }
 
-#endif
+#endif /* CFG_SUPPORT_WIFI_RNR */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Allocate new BSS_DESC structure
@@ -2214,7 +2018,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	prRxDescOps = prAdapter->chip_info->prRxDescOps;
 	prScanParam = &prAdapter->rWifiVar.rScanInfo.rScanParam;
 
-	RX_STATUS_GET(prRxDescOps, eHwBand, get_rf_band, prSwRfb->prRxStatus);
+	eHwBand = prSwRfb->eRfBand;
 	prWlanBeaconFrame = (struct WLAN_BEACON_FRAME *) prSwRfb->pvHeader;
 	ucSubtype = (*(uint8_t *) (prSwRfb->pvHeader) &
 			MASK_FC_SUBTYPE) >> OFFSET_OF_FC_SUBTYPE;
@@ -2938,7 +2742,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				prBssDesc->fgIsEHTPresent = TRUE;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_MLD)
-				scanEhtParsingMldElement(prBssDesc, pucIE);
+				scanEhtParsingMldElement(prBssDesc,
+					(const uint8_t *)pucIE);
 #endif
 #endif
 			if (fgEfuseCtrlAxOn == 1) {
@@ -3086,28 +2891,16 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 	/* 4 <4> Update information from HIF RX Header */
 	{
-		void *prRxStatus;
 		uint8_t ucRxRCPI;
 
-		prRxStatus = prSwRfb->prRxStatus;
-		ASSERT(prRxStatus);
-
 		/* 4 <4.1> Get TSF comparison result */
-		RX_STATUS_GET(
-			prRxDescOps,
-			prBssDesc->fgIsLargerTSF,
-			get_tcl,
-			prRxStatus);
+		prBssDesc->fgIsLargerTSF = prSwRfb->ucTcl;
 
 		/* 4 <4.2> Get Band information */
 		prBssDesc->eBand = eHwBand;
 
 		/* 4 <4.2> Get channel and RCPI information */
-		RX_STATUS_GET(
-			prRxDescOps,
-			ucHwChannelNum,
-			get_ch_num,
-			prRxStatus);
+		ucHwChannelNum = prSwRfb->ucChnlNum;
 
 		nicRxdChNumTranslate(eHwBand, &ucHwChannelNum);
 
@@ -3869,6 +3662,9 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 			scanP2pProcessBeaconAndProbeResp(prAdapter, prSwRfb,
 				&rStatus, prBssDesc, prWlanBeaconFrame);
 		}
+#endif
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		beProcessBeaconAndProbeResp(prAdapter, prSwRfb);
 #endif
 	}
 

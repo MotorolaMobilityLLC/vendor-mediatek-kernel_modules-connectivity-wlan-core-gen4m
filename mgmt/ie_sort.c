@@ -1064,7 +1064,7 @@ void sortIE(IN struct ADAPTER *prAdapter,
 	struct IE_ORDER_TABLE_INFO *info = NULL;
 	uint8_t num = 0, i;
 	struct MSDU_INFO *prMsduInfoInOrder = NULL;
-	int offset = sortGetPayloadOffset(prAdapter, prMsduInfo);
+	int offset = sortMsduPayloadOffset(prAdapter, prMsduInfo);
 
 	if (offset < 0) {
 		DBGLOG(TX, ERROR, "Unsupported mgmt frame\n");
@@ -1169,18 +1169,25 @@ void sortMgmtFrameIE(IN struct ADAPTER *prAdapter,
 	}
 }
 
-int sortGetPayloadOffset(IN struct ADAPTER *prAdapter,
+int sortMsduPayloadOffset(IN struct ADAPTER *prAdapter,
 		    IN struct MSDU_INFO *prMsduInfo)
+{
+	if (!prMsduInfo)
+		return -1;
+	return sortGetPayloadOffset(prAdapter, prMsduInfo->prPacket);
+}
+
+int sortGetPayloadOffset(IN struct ADAPTER *prAdapter,
+		    IN uint8_t *pucFrame)
 {
 	struct WLAN_MAC_MGMT_HEADER *prMgmtFrame;
 	uint16_t u2TxFrameCtrl;
 
-	if (!prMsduInfo)
+	if (!pucFrame)
 		return -1;
 
-	prMgmtFrame = (struct WLAN_MAC_MGMT_HEADER *)(prMsduInfo->prPacket);
-	u2TxFrameCtrl = prMgmtFrame->u2FrameCtrl;
-	u2TxFrameCtrl &= MASK_FRAME_TYPE;
+	prMgmtFrame = (struct WLAN_MAC_MGMT_HEADER *)(pucFrame);
+	u2TxFrameCtrl = prMgmtFrame->u2FrameCtrl & MASK_FRAME_TYPE;
 	switch (u2TxFrameCtrl) {
 	case MAC_FRAME_AUTH:
 		return OFFSET_OF(struct WLAN_AUTH_FRAME, aucInfoElem[0]);

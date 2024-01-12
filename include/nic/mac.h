@@ -1062,6 +1062,8 @@
 	73 /* 20/40 BSS Intolerant Channel Report */
 #define ELEM_ID_OBSS_SCAN_PARAMS \
 	74 /* Overlapping BSS Scan Parameters */
+#define ELEM_ID_NON_TX_CAP \
+	83 /* Nontransmitted BSSID Capability element*/
 #define ELEM_ID_MBSSID_INDEX \
 	85 /* Multiple BSSID-Index element */
 #define ELEM_ID_FMS_DESC \
@@ -3934,7 +3936,7 @@ struct IE_MBSSID {
 	uint8_t      ucId;
 	uint8_t      ucLength;
 	uint8_t      ucMaxBSSIDIndicator;
-	uint8_t      ucSubelements[1];
+	uint8_t      ucSubelements[0];
 } __KAL_ATTRIB_PACKED__;
 
 /* 9.4.2.74 Multiple BSSID-Index element */
@@ -3944,6 +3946,15 @@ struct IE_MBSSID_INDEX {
 	uint8_t      ucBSSIDIndex;
 	uint8_t      ucDtimPeriod;
 	uint8_t      ucDtimCount;
+} __KAL_ATTRIB_PACKED__;
+
+/* 9.4.2.72 Nontransmitted BSSID Capability element */
+struct IE_NON_TX_CAP {
+	uint8_t      ucId;
+	uint8_t      ucLength;
+	uint16_t     u2Cap;
+	uint8_t      ucDmgBssCntl;
+	uint8_t      ucDmgCapElem[19];
 } __KAL_ATTRIB_PACKED__;
 
 /** 9.4.2.178 FILS Request Parameters element */
@@ -4096,6 +4107,8 @@ struct RSNX_INFO_ELEM {
 
 #define MBSSID_IE(fp)                 ((struct IE_MBSSID *) fp)
 #define MBSSID_INDEX_IE(fp)           ((struct IE_MBSSID_INDEX *) fp)
+#define NON_TX_CAP_IE(_fp)            ((struct IE_NON_TX_CAP *) _fp);
+#define NON_INHERITANCE_IE(_fp)	      ((struct IE_NON_INHERITANCE *) _fp);
 
 #define OCE_OUI_SUP_BSSID(fp)	((struct IE_OCE_SUPPRESSION_BSSID *) fp)
 #define OCE_IE_OUI_TYPE(fp)	(((struct IE_MBO_OCE *)(fp))->ucOuiType)

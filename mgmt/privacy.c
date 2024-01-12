@@ -1309,6 +1309,20 @@ uint8_t secGetBssIdxByRfb(IN struct ADAPTER *prAdapter,
 	return aisGetDefaultLinkBssIndex(prAdapter);
 }
 
+struct BSS_INFO * secGetBssByRfb(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb)
+{
+	if (prAdapter && prSwRfb) {
+		uint8_t ucBssIndex = secGetBssIdxByWlanIdx(prAdapter,
+			prSwRfb->ucWlanIdx);
+
+		if (ucBssIndex != WTBL_RESERVED_ENTRY)
+			return GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	}
+
+	return NULL;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Got the STA record index by mac addr

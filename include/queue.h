@@ -158,6 +158,18 @@ struct QUE {
 		((prQueue)->u4NumElem)++; \
 	}
 
+#define QUEUE_INSERT_TAIL_ALL(prQueue, prQueueEntry) \
+{ \
+	struct QUE_ENTRY *_entry = (struct QUE_ENTRY *)prQueueEntry; \
+	struct QUE_ENTRY *_next; \
+\
+	while(_entry) { \
+		_next = QUEUE_GET_NEXT_ENTRY((struct QUE_ENTRY *) _entry); \
+		QUEUE_INSERT_TAIL(prQueue, _entry); \
+		_entry = _next; \
+	} \
+}
+
 /* NOTE: We assume the queue entry located at the beginning
  * of "prQueueEntry Type",
  * so that we can cast the queue entry to other data type without doubts.
