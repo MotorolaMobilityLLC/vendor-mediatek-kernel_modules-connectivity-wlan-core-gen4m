@@ -5298,8 +5298,6 @@ uint32_t rlmFillNANHTCapIE(struct ADAPTER *prAdapter,
 
 	prHtCap->u4TxBeamformingCap = TX_BEAMFORMING_CAP_DEFAULT_VAL;
 
-	/* whsu!! */
-	/* (prAdapter->rWifiVar.ucDbdcMode == DBDC_MODE_DISABLED) || */
 	if (prBssInfo->eBand == BAND_5G) {
 		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfee))
 			prHtCap->u4TxBeamformingCap = TX_BEAMFORMING_CAP_BFEE;
@@ -5341,7 +5339,7 @@ uint32_t rlmFillNANVHTCapIE(struct ADAPTER *prAdapter,
 
 	prVhtCap->u4VhtCapInfo = VHT_CAP_INFO_DEFAULT_VAL;
 
-	/*ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);*/
+	/* ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex); */
 	ucMaxBw = prAdapter->rWifiVar.ucNanBandwidth;
 
 	prVhtCap->u4VhtCapInfo |= (prAdapter->rWifiVar.ucRxMaxMpduLen &
@@ -5403,7 +5401,7 @@ uint32_t rlmFillNANVHTCapIE(struct ADAPTER *prAdapter,
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucTxStbc))
 		prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_TX_STBC;
 
-	/*set MCS map */
+	/* set MCS map */
 	prVhtSupportedMcsSet = &prVhtCap->rVhtSupportedMcsSet;
 	kalMemZero((void *)prVhtSupportedMcsSet,
 		   sizeof(struct VHT_SUPPORTED_MCS_FIELD));

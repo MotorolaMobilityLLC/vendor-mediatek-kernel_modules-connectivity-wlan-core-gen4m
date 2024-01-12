@@ -1751,8 +1751,9 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 						rCurrentTime,
 						prStaRec->rNanExpiredSendTime);
 
-					/* avoid to flood the kernel log, */
-					/*only the 1st expiry event logged */
+					/* avoid to flood the kernel log,
+					 * only the 1st expiry event logged
+					 */
 					if (fgExpired &&
 					    !prStaRec->fgNanSendTimeExpired)
 						DBGLOG(NAN, TEMP,

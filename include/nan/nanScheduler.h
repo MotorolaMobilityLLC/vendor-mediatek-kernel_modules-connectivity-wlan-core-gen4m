@@ -137,7 +137,7 @@ struct _NAN_PHY_SETTING_T {
 	enum ENUM_GF_MODE eGfOperationMode;
 	enum ENUM_RIFS_MODE eRifsOperationMode;
 
-	/*ENUM_CHNL_EXT_T eBssSCO;*/
+	/* ENUM_CHNL_EXT_T eBssSCO; */
 };
 
 struct _NAN_SCHED_EVENT_NAN_ATTR_T {

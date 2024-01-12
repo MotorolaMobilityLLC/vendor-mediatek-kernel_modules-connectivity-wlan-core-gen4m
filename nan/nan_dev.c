@@ -67,8 +67,9 @@ nanDevInit(IN struct ADAPTER *prAdapter, uint8_t ucIdx) {
 		prnanBssInfo->ucOpRxNss = wlanGetSupportNss(
 			prAdapter, prnanBssInfo->ucBssIndex);
 
-		/* let secIsProtectedFrame to decide protection or */
-		/* not by STA record */
+		/* let secIsProtectedFrame to decide protection or
+		 * not by STA record
+		 */
 		prnanBssInfo->fgIsProtection = FALSE;
 
 #if (CFG_HW_WMM_BY_BSS == 1)

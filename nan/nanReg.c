@@ -6,9 +6,7 @@
 
 #include "precomp.h"
 
-/*
- * Table E4 - Global Operating Classes
- */
+/* Table E4 - Global Operating Classes */
 #define REG_MAX_SUPPORT_CHANNEL 13
 #define REG_MAX_DB_SIZE 25
 
@@ -21,13 +19,15 @@ struct _NAN_CHNL_REG_INFO_T {
 	/* For 40M Bw to determine SCB or SCA */
 
 	uint8_t aucSupportChnlList[REG_MAX_SUPPORT_CHANNEL];
-	/* BW80, BW160=> Center Channel */
-	/* BW20, BW40=> Primary Channel */
+	/* BW80, BW160=> Center Channel
+	 * BW20, BW40=> Primary Channel
+	 */
 };
 
-/********************************************/
-/* Table E4 - Global Operating Classes                   */
-/********************************************/
+/*******************************************
+ * Table E4 - Global Operating Classes
+ *******************************************
+ */
 struct _NAN_CHNL_REG_INFO_T g_rNanRegInfo[REG_MAX_DB_SIZE] = {
 	{ 81, 20, CHNL_EXT_SCN, { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 } },
 	{ 82, 20, CHNL_EXT_SCN, { 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
@@ -92,9 +92,10 @@ struct _NAN_CHNL_REG_INFO_T g_rNanRegInfo[REG_MAX_DB_SIZE] = {
 	    0 } } /* should be the last one */
 };
 
-/********************************************/
-/* Table E4 - Global Operating Classes                   */
-/********************************************/
+/*******************************************
+ * Table E4 - Global Operating Classes
+ *******************************************
+ */
 uint8_t
 nanRegFindRecordIdx(uint8_t ucOperatingClass) {
 	int i;
