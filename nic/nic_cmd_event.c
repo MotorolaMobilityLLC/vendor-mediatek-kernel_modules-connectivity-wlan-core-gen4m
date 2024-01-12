@@ -2590,7 +2590,8 @@ uint32_t nicCfgChipCapPhyCap(struct ADAPTER *prAdapter,
 		wlanCfgSetUint32(prAdapter, "P2pGcHE",
 			prAdapter->rWifiVar.ucP2pGcHe);
 	}
-	if (prAdapter->rWifiVar.ucStaHe & BIT(0)) { /* (wifi.cfg & chip cap) */
+
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHe)) {
 		fgEfuseCtrlAxOn = 1; /* default is 1 */
 	} else if (prAdapter->rWifiVar.u4SwTestMode !=
 		ENUM_SW_TEST_MODE_SIGMA_AX_AP) {
