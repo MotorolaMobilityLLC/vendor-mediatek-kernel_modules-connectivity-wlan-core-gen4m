@@ -2442,8 +2442,7 @@ int mtk_cfg80211_vendor_set_rssi_monitoring(
 
 	DBGLOG(REQ, TRACE, "vendor command: data_len=%d\r\n",
 	       data_len);
-	kalMemZero(&rRSSIMonitor,
-		   sizeof(struct PARAM_RSSI_MONITOR_T));
+	kalMemZero(&rRSSIMonitor, sizeof(struct PARAM_RSSI_MONITOR_T));
 	if ((data == NULL) || !data_len)
 		goto nla_put_failure;
 	kalMemZero(attr, sizeof(struct nlattr *) *
