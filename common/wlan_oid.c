@@ -10461,6 +10461,7 @@ void wlanoidRfTestICapRawDataProc(IN struct ADAPTER *
 
 }
 
+#if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief wifi driver response IQ data for QA agent
@@ -10478,6 +10479,128 @@ void wlanoidRfTestICapRawDataProc(IN struct ADAPTER *
  * \retval WLAN_STATUS_FAILURE
  */
 /*----------------------------------------------------------------------------*/
+
+uint32_t wlanoidRfTestICapGetIQData(IN struct ADAPTER *prAdapter,
+				    OUT void *pvSetBuffer,
+				    IN uint32_t u4SetBufferLen,
+				    OUT uint32_t *pu4SetInfoLen)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct _RBIST_IQ_DATA_T *prIQArray = NULL;
+	struct ICAP_INFO_T *prICapInfo = NULL;
+	struct RBIST_DUMP_IQ_T *prRbistDump = NULL;
+	struct RBIST_DUMP_IQ_T *prTmpRbistDump = NULL;
+	struct CMD_TEST_CTRL_EXT_T rCmdTestCtrl;
+	struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T *prRfATInfo;
+
+	if (!prAdapter) {
+		DBGLOG(RFTEST, ERROR, "prAdapter is null\n");
+		return WLAN_STATUS_FAILURE;
+	}
+	if (!pvSetBuffer) {
+		DBGLOG(RFTEST, ERROR, "pvSetBuffer is null\n");
+		return WLAN_STATUS_FAILURE;
+	}
+	if (!pu4SetInfoLen) {
+		DBGLOG(RFTEST, ERROR, "pu4SetInfoLen is null\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prICapInfo = &prAdapter->rIcapInfo;
+	prIQArray = prICapInfo->prIQArray;
+	prTmpRbistDump = (struct RBIST_DUMP_IQ_T *)pvSetBuffer;
+
+	/* store parameter to adpater */
+	prRbistDump = &prAdapter->QAICapInfo;
+	prRbistDump->u4WfNum = prTmpRbistDump->u4WfNum;
+	prRbistDump->u4IQType = prTmpRbistDump->u4IQType;
+	prRbistDump->pIcapData = prTmpRbistDump->pIcapData;
+	prRbistDump->u4IcapDataLen = prTmpRbistDump->u4IcapDataLen;
+
+
+	prICapInfo->eIcapState = ICAP_STATE_QA_TOOL_CAPTURE;
+
+
+	prRfATInfo = &(rCmdTestCtrl.u.rRfATInfo);
+
+	rCmdTestCtrl.ucAction = ACTION_IN_RFTEST;
+	prRfATInfo->u4FuncIndex = GET_ICAP_RAW_DATA;
+	prRfATInfo->Data.rICapDump.u4Address = 0;
+	prRfATInfo->Data.rICapDump.u4AddrOffset = 0x04;
+	prRfATInfo->Data.rICapDump.u4Bank = 1;
+	prRfATInfo->Data.rICapDump.u4BankSize = 0;
+	prRfATInfo->Data.rICapDump.u4WFNum = prRbistDump->u4WfNum;
+	prRfATInfo->Data.rICapDump.u4IQType = prRbistDump->u4IQType;
+
+	rStatus = wlanSendSetQueryExtCmd(prAdapter,
+				 CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+				 EXT_CMD_ID_RF_TEST,
+				 FALSE, /* Query Bit: True->write False->read */
+				 TRUE,
+				 TRUE, /*fgIsOid = FALSE, main thread trigger*/
+				 NULL,
+				 nicOidCmdTimeoutCommon,
+				 sizeof(struct CMD_TEST_CTRL_EXT_T),
+				 (uint8_t *)(&rCmdTestCtrl),
+				 pvSetBuffer, u4SetBufferLen);
+
+	return rStatus;
+}
+
+uint32_t wlanoidRfTestICapCopyDataToQA(IN struct ADAPTER *prAdapter,
+					OUT void *pvSetBuffer,
+					IN uint32_t u4SetBufferLen,
+					OUT uint32_t *pu4SetInfoLen)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct RBIST_DUMP_IQ_T *prRbistDump = NULL;
+	struct EXT_EVENT_RBIST_DUMP_DATA_T *prICapEvent = NULL;
+	struct RBIST_DUMP_IQ_T *prQAICapInfo = NULL;
+	uint32_t u4WFNum = 0, u4IQType = 0;
+
+	DBGLOG(RFTEST, INFO, "wlanoidRfTestICapCopyDataToQA\n");
+
+	if (!prAdapter) {
+		DBGLOG(RFTEST, ERROR, "prAdapter is null\n");
+		return WLAN_STATUS_FAILURE;
+	}
+	if (!pvSetBuffer) {
+		DBGLOG(RFTEST, ERROR, "pvSetBuffer is null\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prRbistDump = (struct RBIST_DUMP_IQ_T *)pvSetBuffer;
+	u4WFNum = prRbistDump->u4WfNum;
+	u4IQType = prRbistDump->u4IQType;
+
+	prICapEvent = &prAdapter->IcapDumpEvent;
+	ASSERT(prICapEvent);
+
+	prQAICapInfo = &prAdapter->QAICapInfo;
+	ASSERT(prQAICapInfo);
+
+	/* update QATool's int32 IcapData */
+	prRbistDump->pIcapData = prQAICapInfo->pIcapData;
+
+	/* update IQ sample count to QATool's IQNumberCount */
+	prRbistDump->u4IcapCnt = prICapEvent->u4DataLength;
+
+	/* update QATool's response IQ data length */
+	prRbistDump->u4IcapDataLen =
+				prICapEvent->u4DataLength * sizeof(uint32_t);
+
+
+	DBGLOG(RFTEST, INFO, "CurrICapDumpIndex[WF%d][%c],IQCnt=%d,len=%d\n",
+						u4WFNum,
+						(u4IQType == CAP_I_TYPE) ?
+						'I' : 'Q',
+						prRbistDump->u4IcapCnt,
+						prRbistDump->u4IcapDataLen);
+
+	return rStatus;
+}
+
+#else /* #if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1) */
 
 uint32_t wlanoidRfTestICapGetIQData(IN struct ADAPTER *prAdapter,
 				    OUT void *pvSetBuffer,
@@ -10544,6 +10667,8 @@ uint32_t wlanoidRfTestICapGetIQData(IN struct ADAPTER *prAdapter,
 
 	return rStatus;
 }
+#endif /* #if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1) */
+
 uint32_t
 rftestQueryATInfo(IN struct ADAPTER *prAdapter,
 		  uint32_t u4FuncIndex, uint32_t u4FuncData,

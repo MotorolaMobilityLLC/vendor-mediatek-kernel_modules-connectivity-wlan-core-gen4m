@@ -4380,17 +4380,27 @@ uint32_t ServiceIcapInit(struct ADAPTER *prAdapter)
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct ATE_OPS_T *prAteOps = NULL;
 	struct ICAP_INFO_T *prIcapInfo = NULL;
+	struct RBIST_DUMP_IQ_T *prQAICapInfo = NULL;
 	uint32_t u4IQArrayLen = 0;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 
-	ASSERT(prAdapter);
+	if (!prAdapter) {
+		DBGLOG(RFTEST, ERROR, "prAdapter is null\n");
+		return WLAN_STATUS_FAILURE;
+	}
 	prChipInfo = prAdapter->chip_info;
-	ASSERT(prChipInfo);
+	if (!prChipInfo) {
+		DBGLOG(RFTEST, ERROR, "prChipInfo is null\n");
+		return WLAN_STATUS_FAILURE;
+	}
 	prAteOps = prChipInfo->prAteOps;
-	ASSERT(prAteOps);
+	if (!prAteOps) {
+		DBGLOG(RFTEST, ERROR, "prAteOps is null\n");
+		return WLAN_STATUS_FAILURE;
+	}
 	prIcapInfo = &prAdapter->rIcapInfo;
-	ASSERT(prIcapInfo);
+	prQAICapInfo = &prAdapter->QAICapInfo;
 
 	u4IQArrayLen =
 		MAX_ICAP_IQ_DATA_CNT * sizeof(struct _RBIST_IQ_DATA_T);
@@ -4407,6 +4417,8 @@ uint32_t ServiceIcapInit(struct ADAPTER *prAdapter)
 	}
 	prIcapInfo->u4IQArrayIndex = 0;
 	prIcapInfo->u4ICapEventCnt = 0;
+
+	prQAICapInfo->u4IcapCnt = 0;
 
 	kalMemZero(prIcapInfo->au4ICapDumpIndex,
 		sizeof(prIcapInfo->au4ICapDumpIndex));
@@ -4434,15 +4446,25 @@ uint32_t ServiceIcapDeInit(struct ADAPTER *prAdapter)
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct ATE_OPS_T *prAteOps = NULL;
 	struct ICAP_INFO_T *prIcapInfo = NULL;
+	struct RBIST_DUMP_IQ_T *prQAICapInfo = NULL;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
-	ASSERT(prAdapter);
+	if (!prAdapter) {
+		DBGLOG(RFTEST, ERROR, "prAdapter is null\n");
+		return WLAN_STATUS_FAILURE;
+	}
 	prChipInfo = prAdapter->chip_info;
-	ASSERT(prChipInfo);
+	if (!prChipInfo) {
+		DBGLOG(RFTEST, ERROR, "prChipInfo is null\n");
+		return WLAN_STATUS_FAILURE;
+	}
 	prAteOps = prChipInfo->prAteOps;
-	ASSERT(prAteOps);
+	if (!prAteOps) {
+		DBGLOG(RFTEST, ERROR, "prAteOps is null\n");
+		return WLAN_STATUS_FAILURE;
+	}
 	prIcapInfo = &prAdapter->rIcapInfo;
-	ASSERT(prIcapInfo);
+	prQAICapInfo = &prAdapter->QAICapInfo;
 
 	if (prAteOps->icapDownVcoreClockRate)
 		prAteOps->icapDownVcoreClockRate();
@@ -4455,6 +4477,10 @@ uint32_t ServiceIcapDeInit(struct ADAPTER *prAdapter)
 	prIcapInfo->u4IQArrayIndex = 0;
 	prIcapInfo->u4ICapEventCnt = 0;
 	prIcapInfo->prIQArray = NULL;
+
+	prQAICapInfo->u4IcapCnt = 0;
+
+	DBGLOG(RFTEST, STATE, "%s done\n", __func__);
 
 	return u4Status;
 }
@@ -4670,7 +4696,7 @@ uint32_t ServiceWlanOid(void *winfos,
 			return WLAN_STATUS_INVALID_DATA;
 
 		resp = (uint32_t *)rsp_data;
-
+#if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 0)
 		if (prIcapInfo->eIcapState == ICAP_STATE_FW_DUMP_DONE) {
 			DBGLOG(RFTEST, INFO, "icap capture done!\n");
 			*resp = 0; /*response QA TOOL CAPTURE success*/
@@ -4680,7 +4706,7 @@ uint32_t ServiceWlanOid(void *winfos,
 			*resp = 1; /*response QA TOOL CAPTURE wait*/
 			return WLAN_STATUS_SUCCESS;
 		}
-
+#endif
 		pfnOidHandler = wlanoidExtRfTestICapStatus;
 		*resp = 1; /*response QA TOOL CAPTURE wait*/
 
@@ -4694,12 +4720,14 @@ uint32_t ServiceWlanOid(void *winfos,
 		*resp = ICAP_EVENT_DATA_SAMPLE * sizeof(uint32_t);
 		return WLAN_STATUS_SUCCESS;
 	case OP_WLAN_OID_GET_TEST_ICAP_DATA:
+#if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 0)
 		if ((prIcapInfo->eIcapState != ICAP_STATE_QA_TOOL_CAPTURE) &&
 			(prIcapInfo->eIcapState != ICAP_STATE_FW_DUMP_DONE)) {
 			DBGLOG(RFTEST, ERROR, "ICAP State = %d don't support\n",
 				prIcapInfo->eIcapState);
 			return WLAN_STATUS_NOT_SUPPORTED;
 		}
+#endif
 		pfnOidHandler = wlanoidRfTestICapGetIQData;
 		fgRead = TRUE;
 		fgWaitResp = FALSE;
@@ -4780,6 +4808,25 @@ uint32_t ServiceWlanOid(void *winfos,
 					&g_HqaRxStat,
 					sizeof(struct hqa_m_rx_stat));
 	}
+
+#if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1)
+	if (oidType == OP_WLAN_OID_SET_TEST_ICAP_STATUS) {
+		*resp = !(prAdapter->ucICapDone);
+
+		DBGLOG(RFTEST, INFO, "Resp=%d, ucICapDone=%d\n",
+			*resp, prAdapter->ucICapDone);
+	}
+
+	if (oidType == OP_WLAN_OID_GET_TEST_ICAP_DATA) {
+
+		DBGLOG(RFTEST, INFO, "OP_WLAN_OID_GET_TEST_ICAP_DATA\n");
+
+		i4Status = wlanoidRfTestICapCopyDataToQA(
+					prAdapter,
+					param,
+					0, 0);
+	}
+#endif
 
 	return i4Status;
 }

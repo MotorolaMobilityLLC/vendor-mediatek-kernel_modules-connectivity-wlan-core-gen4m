@@ -3345,7 +3345,7 @@ void nicExtEventReCalData(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
 
 
 void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
-			   IN uint8_t *pucEventBuf)
+					IN uint8_t *pucEventBuf)
 {
 	struct EXT_EVENT_RBIST_DUMP_DATA_T *prICapEvent;
 	uint32_t Idxi = 0, Idxj = 0, Idxk = 0;
@@ -3356,7 +3356,8 @@ void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 	ASSERT(pucEventBuf);
 
 	prICapEvent = (struct EXT_EVENT_RBIST_DUMP_DATA_T *)
-		      pucEventBuf;
+		    pucEventBuf;
+
 	prIcapInfo = &prAdapter->rIcapInfo;
 	prIQArray = prIcapInfo->prIQArray;
 	ASSERT(prIQArray);
@@ -3364,8 +3365,10 @@ void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 	/* If we receive the packet which is delivered from
 	 * last time data-capure, we need to drop it.
 	 */
-	DBGLOG(RFTEST, INFO, "prICapEvent->u4PktNum = %d\n",
-	       prICapEvent->u4PktNum);
+	DBGLOG(RFTEST, INFO, "u4PktNum = [%d], u4DataLength = [%d]\n",
+						prICapEvent->u4PktNum,
+						prICapEvent->u4DataLength);
+
 	if (prICapEvent->u4PktNum > prIcapInfo->u4ICapEventCnt) {
 		if (prICapEvent->u4DataLength == 0)
 			prIcapInfo->eIcapState = ICAP_STATE_FW_DUMP_DONE;
@@ -3404,11 +3407,11 @@ void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 	for (Idxi = 0; Idxi < prICapEvent->u4SmplCnt; Idxi++) {
 		for (Idxj = 0; Idxj < prICapEvent->u4WFCnt; Idxj++) {
 			prIQArray[prIcapInfo->u4IQArrayIndex].
-				u4IQArray[Idxj][CAP_I_TYPE] =
-				prICapEvent->u4Data[Idxk++];
+				    u4IQArray[Idxj][CAP_I_TYPE] =
+					prICapEvent->u4Data[Idxk++];
 			prIQArray[prIcapInfo->u4IQArrayIndex].
-				u4IQArray[Idxj][CAP_Q_TYPE] =
-				prICapEvent->u4Data[Idxk++];
+				    u4IQArray[Idxj][CAP_Q_TYPE] =
+					prICapEvent->u4Data[Idxk++];
 		}
 		prIcapInfo->u4IQArrayIndex++;
 	}
@@ -3435,6 +3438,88 @@ void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 		prAdapter->rIcapInfo.eIcapState = ICAP_STATE_FW_DUMPING;
 
 }
+
+#if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1)
+void nicExtCmdEventSolicitICapIQData(IN struct ADAPTER *prAdapter,
+					IN struct CMD_INFO *prCmdInfo,
+					IN uint8_t *pucEventBuf)
+{
+	struct EXT_EVENT_RBIST_DUMP_DATA_T *prICapEvent;
+	struct EXT_EVENT_RBIST_DUMP_DATA_T *prTmpICapEvent = NULL;
+	struct ICAP_INFO_T *prIcapInfo = NULL;
+	struct RBIST_DUMP_IQ_T *prQAICapInfo = NULL;
+	uint32_t Idxi = 0;
+	uint32_t u4WfNum;
+	uint32_t u4IQType;
+	int32_t *pData;
+
+	if (!prAdapter) {
+		DBGLOG(RFTEST, ERROR, "prAdapter is null\n");
+		return;
+	}
+	if (!pucEventBuf) {
+		DBGLOG(RFTEST, ERROR, "pucEventBuf is null\n");
+		return;
+	}
+
+	/* like jedi: UniEventRfTestSolicitICapIQDataCb */
+	prICapEvent = (struct EXT_EVENT_RBIST_DUMP_DATA_T *)pucEventBuf;
+
+	prIcapInfo = &prAdapter->rIcapInfo;
+	prQAICapInfo = &prAdapter->QAICapInfo;
+	prTmpICapEvent = &prAdapter->IcapDumpEvent;
+
+	/* prRbistDump pointer to QATool's answer */
+	u4WfNum = prQAICapInfo->u4WfNum;
+	u4IQType = prQAICapInfo->u4IQType;
+	pData = prQAICapInfo->pIcapData;
+
+	DBGLOG(RFTEST, INFO, "u4WfNum=%d, u4IQType=%d\n",
+						u4WfNum, u4IQType);
+	DBGLOG(RFTEST, INFO, "u4PktNum = [%d], u4DataLength = [%d]\n",
+				prICapEvent->u4PktNum,
+				prICapEvent->u4DataLength);
+
+	prTmpICapEvent->u4DataLength = prICapEvent->u4DataLength;
+
+
+	/* If we receive the packet which is delivered from
+	 * last time data-capure, we need to drop it.
+	 */
+	if (prICapEvent->u4PktNum > prIcapInfo->u4ICapEventCnt) {
+		if (prICapEvent->u4DataLength == 0)
+			prIcapInfo->eIcapState = ICAP_STATE_FW_DUMP_DONE;
+
+		DBGLOG(RFTEST, ERROR,
+			   "Packet out of order: Pkt num %d, EventCnt %d\n",
+			   prICapEvent->u4PktNum, prIcapInfo->u4ICapEventCnt);
+		return;
+	}
+
+
+	/* Store I/Q data to data buffer */
+	for (Idxi = 0; Idxi < prICapEvent->u4DataLength; Idxi++)
+		pData[Idxi] = prICapEvent->u4Data[Idxi];
+
+
+	/* Update ICapEventCnt */
+	if (prICapEvent->u4DataLength != 0)
+		prIcapInfo->u4ICapEventCnt++;
+
+	/* Check whether is the last FW event or not */
+	if ((prICapEvent->u4DataLength == 0)
+	    && (prICapEvent->u4PktNum == prIcapInfo->u4ICapEventCnt)) {
+
+		DBGLOG(INIT, INFO,
+			": ==> Dump data done, total pkt cnts=%d!!\n",
+			prIcapInfo->u4ICapEventCnt);
+
+		/* Reset ICapEventCnt */
+		prIcapInfo->u4ICapEventCnt = 0;
+	}
+
+}
+#endif /* #if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1) */
 
 uint32_t nicRfTestEventHandler(IN struct ADAPTER *prAdapter,
 			       IN struct WIFI_EVENT *prEvent)

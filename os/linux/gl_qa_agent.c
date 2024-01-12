@@ -8391,7 +8391,11 @@ int32_t connacGetICapIQData(struct GLUE_INFO *prGlueInfo,
 	rRbistDump.u4WfNum = u4WFNum;
 	rRbistDump.u4IcapCnt = 0;
 	rRbistDump.u4IcapDataLen = 0;
+#if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1)
+	rRbistDump.pIcapData = (int32_t *)pData;
+#else
 	rRbistDump.pucIcapData = pData;
+#endif
 
 	if ((prICapInfo->eIcapState == ICAP_STATE_FW_DUMP_DONE) ||
 		(prICapInfo->eIcapState == ICAP_STATE_QA_TOOL_CAPTURE)) {
