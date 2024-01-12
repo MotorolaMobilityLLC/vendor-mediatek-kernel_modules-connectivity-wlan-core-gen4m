@@ -8,8 +8,16 @@
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #include "connv3_debug_utility.h"
 #include "connsyslog/connv3_mcu_log.h"
-#elif (CFG_SUPPORT_CONNINFRA == 1)
+#else
 #include "connsys_debug_utility.h"
+#endif
+
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+#define CONNLOG_TYPE_WF			CONNLOG_TYPE_WIFI
+#elif (CFG_SUPPORT_CONNAC2X == 1)
+#define CONNLOG_TYPE_WF			CONN_DEBUG_TYPE_WIFI
+#else
+#define CONNLOG_TYPE_WF			CONNV3_DEBUG_TYPE_WIFI
 #endif
 
 struct fw_log_wifi_interface fw_log_wifi_inf;
@@ -57,30 +65,33 @@ static int fw_log_wifi_release(struct inode *inode, struct file *file)
 static ssize_t fw_log_wifi_read(struct file *filp, char __user *buf,
 	size_t len, loff_t *off)
 {
+	ssize_t sz = 0;
+
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	return connv3_log_read_to_user(CONNV3_DEBUG_TYPE_WIFI, buf, len);
-#elif (CFG_SUPPORT_CONNINFRA == 1)
-	return connsys_log_read_to_user(CONN_DEBUG_TYPE_WIFI, buf, len);
+	sz = connv3_log_read_to_user(CONNLOG_TYPE_WF, buf, len);
 #else
-	return 0;
+	sz = connsys_log_read_to_user(CONNLOG_TYPE_WF, buf, len);
 #endif
+
+	return sz;
 }
 
 static unsigned int fw_log_wifi_poll(struct file *filp, poll_table *wait)
 {
 	struct fw_log_wifi_interface *prInf = &fw_log_wifi_inf;
+	unsigned int ret = 0;
 
 	poll_wait(filp, &prInf->wq, wait);
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	if (connv3_log_get_buf_size(CONNV3_DEBUG_TYPE_WIFI) > 0)
-		return POLLIN | POLLRDNORM;
-#elif (CFG_SUPPORT_CONNINFRA == 1)
-	if (connsys_log_get_buf_size(CONN_DEBUG_TYPE_WIFI) > 0)
-		return POLLIN | POLLRDNORM;
+	if (connv3_log_get_buf_size(CONNLOG_TYPE_WF) > 0)
+		ret = (POLLIN | POLLRDNORM);
+#else
+	if (connsys_log_get_buf_size(CONNLOG_TYPE_WF) > 0)
+		ret = (POLLIN | POLLRDNORM);
 #endif
 
-	return 0;
+	return ret;
 }
 
 static long fw_log_wifi_unlocked_ioctl(struct file *filp, unsigned int cmd,
@@ -241,7 +252,7 @@ int fw_log_wifi_inf_init(void)
 	}
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	ret = connv3_log_init(CONNV3_DEBUG_TYPE_WIFI,
+	ret = connv3_log_init(CONNLOG_TYPE_WF,
 		RING_BUFFER_SIZE_WF_FW,
 		RING_BUFFER_SIZE_WF_MCU,
 		fw_log_wifi_inf_event_cb);
@@ -252,8 +263,8 @@ int fw_log_wifi_inf_init(void)
 		device_destroy(prInf->driver_class, prInf->devno);
 		goto class_destroy;
 	}
-#elif (CFG_SUPPORT_CONNINFRA == 1)
-	ret = connsys_log_init(CONN_DEBUG_TYPE_WIFI);
+#else
+	ret = connsys_log_init(CONNLOG_TYPE_WF);
 	if (ret) {
 		DBGLOG(INIT, ERROR,
 			"connsys_log_init failed, ret: %d\n",
@@ -261,7 +272,7 @@ int fw_log_wifi_inf_init(void)
 		device_destroy(prInf->driver_class, prInf->devno);
 		goto class_destroy;
 	}
-	connsys_log_register_event_cb(CONN_DEBUG_TYPE_WIFI,
+	connsys_log_register_event_cb(CONNLOG_TYPE_WF,
 		fw_log_wifi_inf_event_cb);
 #endif
 
@@ -290,9 +301,9 @@ void fw_log_wifi_inf_deinit(void)
 	struct fw_log_wifi_interface *prInf = &fw_log_wifi_inf;
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	connv3_log_deinit(CONNV3_DEBUG_TYPE_WIFI);
-#elif (CFG_SUPPORT_CONNINFRA == 1)
-	connsys_log_deinit(CONN_DEBUG_TYPE_WIFI);
+	connv3_log_deinit(CONNLOG_TYPE_WF);
+#else
+	connsys_log_deinit(CONNLOG_TYPE_WF);
 #endif
 	device_destroy(prInf->driver_class, prInf->devno);
 	class_destroy(prInf->driver_class);

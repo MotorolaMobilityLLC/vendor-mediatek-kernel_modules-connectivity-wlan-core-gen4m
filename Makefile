@@ -640,7 +640,6 @@ endif
 ifneq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
 ifneq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
     ccflags-y += -DCFG_SUPPORT_CONNAC1X=1
-    CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH := n
 endif
 endif
 
@@ -926,6 +925,7 @@ else
     ifeq ($(WMT_SUPPORT), y)
         ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/common/common_main/include
         ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/common/common_main/linux/include
+        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/common/debug_utility
         ifeq ($(CONFIG_MTK_CONN_LTE_IDC_SUPPORT),y)
             ccflags-y += -DWMT_IDC_SUPPORT=1
         else
@@ -933,6 +933,10 @@ else
         endif
         ccflags-y += -DMTK_WCN_WMT_STP_EXP_SYMBOL_ABSTRACT
     endif
+endif
+
+ifeq ($(CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH), y)
+    ccflags-y += -DCFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 endif
 
 ifeq ($(CONFIG_WIFI_COREDUMP_SUPPORT), y)
@@ -1472,7 +1476,6 @@ OS_OBJS := 	$(OS_DIR)gl_init.o \
 		$(OS_DIR)gl_ics.o \
 		$(OS_DIR)gl_reg_rule.o
     ifeq ($(CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH), y)
-        ccflags-y += -DCFG_MTK_CONNSYS_DEDICATED_LOG_PATH
         OS_OBJS += $(OS_DIR)gl_fw_log.o
     endif
     ifeq ($(CONFIG_WIFI_COREDUMP_SUPPORT), y)
