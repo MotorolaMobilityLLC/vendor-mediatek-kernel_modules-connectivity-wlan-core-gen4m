@@ -3758,7 +3758,7 @@ kalIPv4FrameClassifier(struct GLUE_INFO *prGlueInfo,
 	uint8_t *pucUdpHdr, *pucIcmp;
 	uint16_t u2SrcPort;
 	uint16_t u2DstPort;
-	struct BOOTP_PROTOCOL *prDhcp;
+	struct DHCP_PROTOCOL *prDhcp;
 	uint32_t u4DhcpMagicCode;
 	uint16_t u2IpId;
 #if CFG_SUPPORT_WIFI_SYSDVT
@@ -3823,12 +3823,11 @@ kalIPv4FrameClassifier(struct GLUE_INFO *prGlueInfo,
 				    &u2DstPort);
 
 		/* DHCP protocol */
-		if (u2DstPort == IP_PORT_BOOTP_SERVER ||
-		    u2DstPort == IP_PORT_BOOTP_CLIENT) {
-			prDhcp = (struct BOOTP_PROTOCOL *)
+		if (u2DstPort == IP_PORT_DHCP_SERVER ||
+		    u2DstPort == IP_PORT_DHCP_CLIENT) {
+			prDhcp = (struct DHCP_PROTOCOL *)
 							&pucUdpHdr[UDP_HDR_LEN];
-			WLAN_GET_FIELD_BE32(&prDhcp->aucOptions[0],
-					    &u4DhcpMagicCode);
+			u4DhcpMagicCode = NTOHL(prDhcp->u4MagicCookie);
 			if (u4DhcpMagicCode == DHCP_MAGIC_NUMBER) {
 				ucSeqNo = nicIncreaseTxSeqNum(
 							prGlueInfo->prAdapter);
@@ -3836,7 +3835,7 @@ kalIPv4FrameClassifier(struct GLUE_INFO *prGlueInfo,
 				prTxPktInfo->u2Flag |= BIT(ENUM_PKT_DHCP);
 			}
 		} else if (u2DstPort == UDP_PORT_DNS ||
-		    u2SrcPort == UDP_PORT_DNS) {
+			   u2SrcPort == UDP_PORT_DNS) {
 			ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
 			GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
 			prTxPktInfo->u2Flag |= BIT(ENUM_PKT_DNS);
