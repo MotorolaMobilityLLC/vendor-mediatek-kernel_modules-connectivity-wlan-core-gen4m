@@ -6550,7 +6550,7 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 		if (prWifiVar->ucP2pGoACS == FEATURE_ENABLED) {
 			p2pFunGetAcsBestChList(prAdapter,
-					eBandSel, MAX_BW_20MHZ,
+					eBandSel, MAX_BW_80MHZ,
 					BITS(0, 31), BITS(0, 31),
 					BITS(0, 31), BITS(0, 31),
 					&ucNumOfChannel, aucChannelList);
