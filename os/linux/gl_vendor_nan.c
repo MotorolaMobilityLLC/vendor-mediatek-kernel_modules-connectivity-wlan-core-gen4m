@@ -3011,6 +3011,7 @@ mtk_cfg80211_vendor_event_nan_match_expire(struct ADAPTER *prAdapter,
 		message_len,
 		prNanMatchExpiredInd) < 0)) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		kfree(prNanMatchExpiredInd);
 		kfree_skb(skb);
 		return -EFAULT;
 	}

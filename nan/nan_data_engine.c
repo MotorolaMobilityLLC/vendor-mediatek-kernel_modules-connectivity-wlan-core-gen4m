@@ -4100,7 +4100,7 @@ void
 nanNdpSendDataIndicationEvent(struct ADAPTER *prAdapter,
 			      struct _NAN_NDP_INSTANCE_T *prNDP) {
 	struct _NAN_NDL_INSTANCE_T *prNDL;
-	struct NanDataPathRequestInd rDataReqInd;
+	struct NanDataPathRequestInd rDataReqInd = {0};
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
@@ -4164,7 +4164,7 @@ void
 nanNdpSendDataConfirmEvent(struct ADAPTER *prAdapter,
 			   struct _NAN_NDP_INSTANCE_T *prNDP) {
 	struct _NAN_NDL_INSTANCE_T *prNDL;
-	struct NanDataPathConfirmInd rDataConfirmInd;
+	struct NanDataPathConfirmInd rDataConfirmInd = {0};
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);

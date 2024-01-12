@@ -2291,9 +2291,6 @@ nanDataEngineNDLAttrLength(struct ADAPTER *prAdapter,
 #endif
 			break;
 		case NDP_RESPONDER_TX_DP_RESPONSE:
-			fgGenerateNDL =
-				(prNDL->fgScheduleEstablished == TRUE ? FALSE
-								      : TRUE);
 			fgGenerateNDL = TRUE;
 			break;
 
