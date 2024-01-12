@@ -933,7 +933,7 @@ void halMawdUpdateL2Tbl(struct GLUE_INFO *prGlueInfo,
 
 #if CFG_SUPPORT_RX_PAGE_POOL
 int kalCreateRxPagePool(struct device *dev);
-struct sk_buff *kalAllocRxSkb(dma_addr_t *prAddr);
+struct sk_buff *kalAllocRxSkb(uint8_t **ppucData);
 void kalDmaSyncForDevice(void *rAddr);
 #endif
 void halWpdmaStopRecycleDmad(IN struct GLUE_INFO *prGlueInfo,

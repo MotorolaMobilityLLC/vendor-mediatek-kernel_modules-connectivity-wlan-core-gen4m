@@ -212,7 +212,7 @@ void kalDmaSyncForDevice(void *rAddr)
 		g_prPagePool, virt_to_page(rAddr), PAGE_SIZE);
 }
 
-static struct page *kalAllocRxPage(struct device *dev, dma_addr_t *prAddr)
+static struct page *kalAllocRxPage(struct device *dev)
 {
 	struct page *page;
 
@@ -229,18 +229,10 @@ static struct page *kalAllocRxPage(struct device *dev, dma_addr_t *prAddr)
 	page->pp = g_prPagePool;
 	page->pp_magic = PP_SIGNATURE;
 
-	*prAddr = dma_map_page_attrs(dev, page, 0, PAGE_SIZE,
-				      DMA_BIDIRECTIONAL,
-				      DMA_ATTR_WEAK_ORDERING);
-	if (dma_mapping_error(dev, *prAddr)) {
-		page_pool_recycle_direct(g_prPagePool, page);
-		return NULL;
-	}
-
 	return page;
 }
 
-struct sk_buff *kalAllocRxSkb(dma_addr_t *prAddr)
+struct sk_buff *kalAllocRxSkb(uint8_t **ppucData)
 {
 	struct page *page;
 	struct sk_buff *pkt;
@@ -250,7 +242,7 @@ struct sk_buff *kalAllocRxSkb(dma_addr_t *prAddr)
 		return NULL;
 	}
 
-	page = kalAllocRxPage(g_prDev, prAddr);
+	page = kalAllocRxPage(g_prDev);
 	if (!page) {
 		DBGLOG(HAL, ERROR, "allocate page fail\n");
 		return NULL;
@@ -267,6 +259,7 @@ struct sk_buff *kalAllocRxSkb(dma_addr_t *prAddr)
 #else
 	skb_mark_for_recycle(pkt, page, g_prPagePool);
 #endif
+	*ppucData = (uint8_t *) (pkt->data);
 
 	return pkt;
 }
