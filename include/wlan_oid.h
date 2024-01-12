@@ -813,8 +813,9 @@ struct PARAM_CUSTOM_ACCESS_EFUSE {
 };
 
 struct PARAM_CUSTOM_EFUSE_FREE_BLOCK {
-	uint8_t  ucGetFreeBlock;
-	uint8_t  aucReserved[3];
+	uint8_t ucGetFreeBlock;
+	uint8_t ucGetTotalBlock;
+	uint8_t aucReserved[2];
 };
 
 struct PARAM_CUSTOM_GET_TX_POWER {
