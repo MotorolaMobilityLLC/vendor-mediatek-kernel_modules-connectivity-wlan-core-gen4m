@@ -771,6 +771,9 @@ uint32_t nicUniCmdScanTagMisc(struct ADAPTER *ad, uint8_t *buf,
 	kalMemCopy(tag->aucRandomMac, cmd->aucRandomMac, MAC_ADDR_LEN);
 
 	tag->ucShortSSIDNum = cmd->ucShortSSIDNum;
+	tag->u2OpChStayTimeMs = cmd->u2OpChStayTimeMs;
+	tag->ucDfsChDwellTimeMs = cmd->ucDfsChDwellTimeMs;
+	tag->ucPerScanChannelCnt = cmd->ucPerScanChannelCnt;
 
 	return tag->u2Length;
 }

@@ -1740,6 +1740,7 @@
  */
 #define CFG_SUPPORT_NCHO		0
 #define CFG_SUPPORT_NCHO_AUTO_ENABLE	0
+#define CFG_SUPPORT_LLW_SCAN		(CFG_TC10_FEATURE)
 
 /*------------------------------------------------------------------------------
  * Flags of Key Word Exception Mechanism

@@ -397,6 +397,8 @@
 #define CMD_NCHO_MODE_GET			"GETNCHOMODE"
 #endif
 #define CMD_REPORT_VENDOR_SPECIFIED		"EnVendorSpecifiedRpt"
+#define CMD_LATENCY_CRT_DATA_SET		"SET_LATENCY_CRT_DATA"
+#define CMD_DWELL_TIME_SET			"SET_DWELL_TIME"
 
 /*****************************************************************************
 *                             D A T A   T Y P E S

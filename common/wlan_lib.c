@@ -13785,6 +13785,13 @@ u_int8_t wlanWfdEnabled(struct ADAPTER *prAdapter)
 int wlanChipConfig(struct ADAPTER *prAdapter,
 	char *pcCommand, int i4TotalLen)
 {
+	return wlanChipConfigWithType(prAdapter, pcCommand,
+				i4TotalLen, CHIP_CONFIG_TYPE_ASCII);
+}
+
+int wlanChipConfigWithType(struct ADAPTER *prAdapter,
+	char *pcCommand, int i4TotalLen, uint8_t type)
+{
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	int32_t i4BytesWritten = 0;
 	uint32_t u4BufLen = 0;
@@ -13800,7 +13807,7 @@ int wlanChipConfig(struct ADAPTER *prAdapter,
 
 	u4CmdLen = kalStrnLen(pcCommand, i4TotalLen);
 
-	rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_ASCII;
+	rChipConfigInfo.ucType = type;
 	rChipConfigInfo.u2MsgSize = u4CmdLen;
 	kalStrnCpy(rChipConfigInfo.aucCmd, pcCommand,
 		   CHIP_CONFIG_RESP_SIZE - 1);
@@ -13822,7 +13829,7 @@ int wlanChipConfig(struct ADAPTER *prAdapter,
 	DBGLOG(REQ, INFO, "%s: u2MsgSize %u\n", __func__,
 	       rChipConfigInfo.u2MsgSize);
 
-	if (rChipConfigInfo.ucRespType != CHIP_CONFIG_TYPE_ASCII) {
+	if (rChipConfigInfo.ucRespType != type) {
 		DBGLOG(REQ, WARN, "only return as ASCII");
 		return -1;
 	}

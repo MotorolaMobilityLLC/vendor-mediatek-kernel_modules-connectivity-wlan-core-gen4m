@@ -2291,4 +2291,7 @@ uint32_t wlanQueryThermalTemp(struct ADAPTER *ad,
 
 int8_t hexDigitToInt(uint8_t ch);
 
+int wlanChipConfigWithType(struct ADAPTER *prAdapter,
+	char *pcCommand, int i4TotalLen, uint8_t type);
+
 #endif /* _WLAN_LIB_H */
