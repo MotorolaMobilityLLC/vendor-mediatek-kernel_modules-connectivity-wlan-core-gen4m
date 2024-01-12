@@ -1532,6 +1532,15 @@ s_int32 mt_op_set_dpd(
 	return ret;
 }
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+s_int32 mt_op_set_max_pac_ext(
+	struct test_wlan_info *winfos,
+	u_int32 max_pac_ext)
+{
+	return SERV_STATUS_SUCCESS;
+}
+#endif
+
 s_int32 mt_op_set_tssi(
 	struct test_wlan_info *winfos,
 	u_int32 on_off,
