@@ -865,6 +865,20 @@
 #define STATUS_CODE_ASSOC_DENIED_LARGE_LIS_INTERVAL 51
 /* Invalid pairwise master key identifier (PMKID) */
 #define STATUS_INVALID_PMKID                        53
+/* Denied because the requesting STA is afflicated with a
+ * non-AP MLD that is associated with the AP MLD
+ */
+#define STATUS_CODE_DENIFED_EXISTING_MLD_ASSOC      130
+/* Denied non-AP MLD or non-AP EHT STA is not authorized to use the service */
+#define STATUS_CODE_NSEP_DENIFED_UNAUTHORIZED       131
+/* Denied due to reason outside the scope of 11be */
+#define STATUS_CODE_NSEP_DENIFED_OTHER_REASON       132
+/* Denied because the requested TID-to-link mapping is unacceptable */
+#define STATUS_CODE_DENIFED_TID_TO_LINK_MAPPING     133
+/* Preferred TID-to-link mapping suggested */
+#define STATUS_CODE_TID_TO_LINK_MAP_SUGGESTED       134
+/* Denied because the requesting STA does not support EHT features */
+#define STATUS_CODE_DENIFED_EHT_NOT_SUPPORTED       135
 
 /* proprietary definition of reserved field of Status Code */
 /* Join failure */

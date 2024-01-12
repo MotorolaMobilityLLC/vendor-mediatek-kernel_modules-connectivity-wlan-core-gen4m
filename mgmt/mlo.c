@@ -18,6 +18,140 @@
 #define IS_MLD_STAREC_VALID(__prMldStaRec) \
 	(__prMldStaRec && __prMldStaRec->rStarecList.u4NumElem > 1)
 
+uint8_t beSanityCheckMld(struct ADAPTER *prAdapter, uint8_t *pucPacket,
+	uint16_t u2PacketLen, struct STA_RECORD *prStaRec, uint8_t ucBssIndex)
+{
+	struct BSS_INFO *bss;
+	struct STA_RECORD *starec;
+	struct MLD_STA_RECORD *mld_starec;
+	struct MLD_BSS_INFO *mld_bssinfo;
+	struct MULTI_LINK_INFO parse, *info = &parse;
+	const uint8_t *ml;
+	struct LINK *links;
+	uint32_t offset;
+	uint8_t i;
+
+	bss = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	offset = sortGetPayloadOffset(prAdapter, pucPacket);
+
+	kalMemSet(info, 0, sizeof(*info));
+	/* look for ml ie from frame payload */
+	ml = kalFindIeExtIE(ELEM_ID_RESERVED, ELEM_EXT_ID_MLD,
+		pucPacket + offset, u2PacketLen - offset);
+	if (ml)
+		beParseMldElement(info, ml, bss->aucOwnMacAddr, "Sanity Check");
+
+	if (IS_BSS_APGO(bss)) {
+		/* ap mode, check auth/assoc req */
+		mld_bssinfo = mldBssGetByBss(prAdapter, bss);
+		if (IS_MLD_BSSINFO_VALID(mld_bssinfo)) {
+			links =  &mld_bssinfo->rBssList;
+			/* sta already send ml ie, expected ml ie in resp */
+			if (info->ucValid &&
+			   (info->ucLinkNum <= 1 ||
+			    info->ucLinkNum > links->u4NumElem)) {
+				DBGLOG(ML, ERROR,
+					"STA wrong ML ie (valid=%d, num=%d)\n",
+					info->ucValid,
+					info->ucLinkNum);
+				return FALSE;
+			}
+
+			/* link not matched, skip it */
+			for (i = 0; i < info->ucLinkNum; i++) {
+				struct STA_PROFILE *profile =
+					&info->rStaProfiles[i];
+				uint8_t count = 0;
+
+				LINK_FOR_EACH_ENTRY(bss, links,
+					rLinkEntryMld, struct BSS_INFO) {
+					if (count >= MLD_LINK_MAX) {
+						DBGLOG(ML, ERROR,
+							"too many links!!!\n");
+						return FALSE;
+					}
+
+					if (profile->ucLinkId ==
+						bss->ucLinkIndex &&
+					    EQUAL_MAC_ADDR(profile->aucLinkAddr,
+						bss->aucOwnMacAddr))
+						break;
+					count++;
+				}
+				if (bss == NULL || !profile->ucComplete) {
+					DBGLOG(ML, ERROR,
+					   "STA wrong link (id=%d, addr=" MACSTR
+					   "complete=%d)\n",
+					   profile->ucLinkId,
+					   MAC2STR(profile->aucLinkAddr),
+					   profile->ucComplete);
+					return FALSE;
+				}
+			}
+		} else {
+			if (info->ucValid) {
+				DBGLOG(ML, ERROR,
+					"STA should not have ML ie\n");
+				return FALSE;
+			}
+		}
+	} else {
+		/* sta mode, check auth/assoc resp */
+		mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
+		if (IS_MLD_STAREC_VALID(mld_starec)) {
+			links =  &mld_starec->rStarecList;
+			/* sta already send ml ie, expected ml ie in resp */
+			if (!info->ucValid || info->ucLinkNum <= 1 ||
+				info->ucLinkNum != links->u4NumElem) {
+				DBGLOG(ML, ERROR,
+					"AP wrong ML ie (valid=%d, num=%d)\n",
+					info->ucValid,
+					info->ucLinkNum);
+				return FALSE;
+			}
+
+			/* link not matched, skip it */
+			for (i = 0; i < info->ucLinkNum; i++) {
+				struct STA_PROFILE *profile =
+					&info->rStaProfiles[i];
+				uint8_t count = 0;
+
+				LINK_FOR_EACH_ENTRY(starec, links,
+					rLinkEntryMld, struct STA_RECORD) {
+					if (count >= MLD_LINK_MAX) {
+						DBGLOG(ML, ERROR,
+							"too many links!!!\n");
+						return FALSE;
+					}
+
+					if (profile->ucLinkId ==
+						starec->ucLinkIndex &&
+					    EQUAL_MAC_ADDR(profile->aucLinkAddr,
+						starec->aucMacAddr))
+						break;
+					count++;
+				}
+				if (starec == NULL || !profile->ucComplete) {
+					DBGLOG(ML, ERROR,
+					   "AP Wrong link (id=%d, addr=" MACSTR
+					   "complete=%d)\n",
+					   profile->ucLinkId,
+					   MAC2STR(profile->aucLinkAddr),
+					   profile->ucComplete);
+					return FALSE;
+				}
+			}
+		} else {
+			if (info->ucValid) {
+				DBGLOG(ML, ERROR, "AP should not have ML ie\n");
+				return FALSE;
+			}
+		}
+	}
+
+	return TRUE;
+}
+
 void beGenerateAuthMldIE(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
@@ -394,14 +528,10 @@ struct IE_MULTI_LINK_CONTROL *beGenerateMldCommonInfo(
 	struct MLD_BSS_INFO *mld_bssinfo;
 	struct BSS_INFO *bss;
 	struct IE_MULTI_LINK_CONTROL *common;
-	struct WLAN_MAC_MGMT_HEADER *mgmt;
-	uint16_t frame_ctrl;
 	uint16_t present;
 
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
-	mgmt = (struct WLAN_MAC_MGMT_HEADER *)(prMsduInfo->prPacket);
-	frame_ctrl = mgmt->u2FrameCtrl & MASK_FRAME_TYPE;
 
 	if (!IS_MLD_BSSINFO_VALID(mld_bssinfo))
 		return 0;
@@ -416,8 +546,7 @@ struct IE_MULTI_LINK_CONTROL *beGenerateMldCommonInfo(
 	BE_SET_ML_CTRL_TYPE(common->u2Ctrl, ML_ELEMENT_TYPE_BASIC);
 	present = ML_CTRL_MLD_CAPA_PRESENT;
 
-	if (frame_ctrl == MAC_FRAME_PROBE_RSP ||
-	    frame_ctrl == MAC_FRAME_BEACON) {
+	if (IS_BSS_APGO(bss)) {
 		present |= (ML_CTRL_LINK_ID_INFO_PRESENT |
 			    ML_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT);
 	}

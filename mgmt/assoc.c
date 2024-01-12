@@ -1062,6 +1062,14 @@ assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter,
 
 	}
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (!beSanityCheckMld(prAdapter, prSwRfb->pvHeader,
+		prSwRfb->u2PacketLen, prStaRec, prStaRec->ucBssIndex)) {
+		DBGLOG(SAA, WARN, "Discard Assoc frame with wrong ML IE\n");
+		return WLAN_STATUS_FAILURE;
+	}
+#endif
+
 	/* 4 <3> Parse the Fixed Fields of (Re)Association Resp Frame Body. */
 	/* WLAN_GET_FIELD_16(&prAssocRspFrame->u2CapInfo, &u2RxCapInfo); */
 	u2RxCapInfo = prAssocRspFrame->u2CapInfo;
@@ -1433,7 +1441,7 @@ uint32_t assocProcessRxAssocReqFrameImpl(
 /*----------------------------------------------------------------------------*/
 uint32_t assocProcessRxAssocReqFrame(
 	IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prAssocRspSwRfb,
+	IN struct SW_RFB *prAssocReqSwRfb,
 	OUT uint16_t *pu2StatusCode)
 {
 	struct STA_RECORD *prStaRec;
@@ -1441,20 +1449,25 @@ uint32_t assocProcessRxAssocReqFrame(
 	struct MLD_STA_RECORD *mld_starec;
 #endif
 
-	if (!prAdapter || !prAssocRspSwRfb || !pu2StatusCode) {
-		DBGLOG(SAA, WARN, "Invalid parameters, ignore pkt!\n");
+	if (!prAdapter || !prAssocReqSwRfb || !pu2StatusCode) {
+		DBGLOG(AAA, WARN, "Invalid parameters, ignore pkt!\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter,
-		prAssocRspSwRfb->ucStaRecIdx);
+		prAssocReqSwRfb->ucStaRecIdx);
 
 	if (prStaRec == NULL)
 		return WLAN_STATUS_FAILURE;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
+	if (!beSanityCheckMld(prAdapter, prAssocReqSwRfb->pvHeader,
+		prAssocReqSwRfb->u2PacketLen, prStaRec, prStaRec->ucBssIndex)) {
+		DBGLOG(AAA, WARN, "Discard Assoc frame with wrong ML IE\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
+	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
 	if (mld_starec) {
 		struct LINK *links =
 			&mld_starec->rStarecList;
@@ -1468,12 +1481,12 @@ uint32_t assocProcessRxAssocReqFrame(
 			if (starec == prStaRec) {
 				u4Status = assocProcessRxAssocReqFrameImpl(
 						prAdapter,
-						prAssocRspSwRfb,
+						prAssocReqSwRfb,
 						starec,
 						pu2StatusCode);
 			} else {
 				prSwRfb = beDuplicateAssocSwRfb(prAdapter,
-					prAssocRspSwRfb, starec);
+					prAssocReqSwRfb, starec);
 				if (!prSwRfb)
 					return WLAN_STATUS_RESOURCES;
 
@@ -1497,7 +1510,7 @@ uint32_t assocProcessRxAssocReqFrame(
 
 	return assocProcessRxAssocReqFrameImpl(
 		prAdapter,
-		prAssocRspSwRfb,
+		prAssocReqSwRfb,
 		prStaRec,
 		pu2StatusCode);
 }
@@ -1704,14 +1717,6 @@ uint32_t assocProcessRxAssocReqFrameImpl(
 #if (CFG_SUPPORT_802_11BE == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS)
 				prStaRec->ucPhyTypeSet |= PHY_TYPE_SET_802_11BE;
-#else
-			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_MLD) {
-				*pu2StatusCode =
-				    STATUS_CODE_INVALID_INFO_ELEMENT;
-				DBGLOG(AAA, WARN,
-				    "Invalid MLO IE for non-MLO AP\n");
-				return WLAN_STATUS_FAILURE;
-			}
 #endif
 			break;
 

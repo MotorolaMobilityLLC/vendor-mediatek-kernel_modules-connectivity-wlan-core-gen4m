@@ -220,8 +220,12 @@ void beProcessBeaconAndProbeResp(
 	struct ADAPTER *prAdapter, struct SW_RFB *prSrc);
 
 struct SW_RFB * beDuplicateAssocSwRfb(
-	struct ADAPTER *prAapter, struct SW_RFB *prSrc,
+	struct ADAPTER *prAdapter, struct SW_RFB *prSrc,
 	struct STA_RECORD *prStaRec);
+
+uint8_t beSanityCheckMld(struct ADAPTER *prAdapter, uint8_t *pucPacket,
+		uint16_t u2PacketLen, struct STA_RECORD *prStaRec,
+		uint8_t ucBssIndex);
 
 void mldBssDump(struct ADAPTER *prAdapter);
 
