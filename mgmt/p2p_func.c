@@ -1465,7 +1465,7 @@ void p2pFuncStopComplete(struct ADAPTER *prAdapter,
 
 		nicDeactivateNetwork(prAdapter,
 			NETWORK_ID(prP2pBssInfo->ucBssIndex,
-			prP2pBssInfo->u4PrivateData));
+				   prP2pBssInfo->ucLinkIndex));
 		/* Release CNM channel */
 		nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
 
