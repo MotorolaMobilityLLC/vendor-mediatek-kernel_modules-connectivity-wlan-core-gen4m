@@ -1313,6 +1313,60 @@ rlmDomainGetChnlList(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the supported channel list of specified ucRegClass
+ *
+ * \param[in/out] ucOpClass:            specified ucRegClass
+ *                pucChannelListNum:    pointer to returned channel number
+ *                paucChannelList:      pointer to returned channel list array
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+void rlmDomainGetChnlListFromOpClass(struct ADAPTER *prAdapter,
+	uint8_t ucOpClass, struct RF_CHANNEL_INFO *paucChannelList,
+	uint8_t *pucChannelListNum)
+{
+	uint8_t i, j, ucNum = 0, ucCh;
+	struct DOMAIN_SUBBAND_INFO *prSubband;
+	struct DOMAIN_INFO_ENTRY *prDomainInfo;
+
+	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
+	ASSERT(prDomainInfo);
+
+	for (i = 0; i < MAX_SUBBAND_NUM; i++) {
+		prSubband = &prDomainInfo->rSubBand[i];
+
+		if (prSubband->ucBand == BAND_NULL ||
+		    prSubband->ucBand >= BAND_NUM ||
+		    (prSubband->ucBand == BAND_5G &&
+		     !prAdapter->fgEnable5GBand))
+			continue;
+
+		if (ucOpClass == prSubband->ucRegClass) {
+			for (j = 0; j < prSubband->ucNumChannels; j++) {
+
+				ucCh = prSubband->ucFirstChannelNum +
+				     j * prSubband->ucChannelSpan;
+				if (!kalIsValidChnl(prAdapter->prGlueInfo,
+						ucCh, prSubband->ucBand)) {
+					DBGLOG(RLM, INFO,
+					       "Not support ch%d!\n", ucCh);
+					continue;
+				}
+				paucChannelList[ucNum].eBand =
+							prSubband->ucBand;
+				paucChannelList[ucNum].ucChannelNum = ucCh;
+				paucChannelList[ucNum].fgDFS = prSubband->fgDfs;
+				ucNum++;
+			}
+		}
+	}
+
+	*pucChannelListNum = ucNum;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Retrieve DFS channels from 5G band
  *
  * \param[in/out] ucMaxChannelNum: max array size

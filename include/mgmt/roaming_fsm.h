@@ -81,8 +81,9 @@
 #define ROAMING_DISCOVER_TIMEOUT_SEC                10	/* Seconds. */
 #define ROAMING_INACTIVE_TIMEOUT_SEC                10	/* Seconds. */
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-#define ROAMING_ONE_AP_SKIP_TIMES		3
+#define ROAMING_ONE_AP_SKIP_TIMES                   3
 #endif
+#define ROAMING_BTM_DELTA                           0   /* % */
 
 /* #define ROAMING_NO_SWING_RCPI_STEP                  5 //rcpi */
 /*******************************************************************************
@@ -116,7 +117,6 @@ enum ENUM_ROAMING_REASON {
 	ROAMING_REASON_SAA_FAIL,
 	ROAMING_REASON_UPPER_LAYER_TRIGGER,
 	ROAMING_REASON_BTM,
-	ROAMING_REASON_BTM_DISASSOC,
 	ROAMING_REASON_REASSOC,
 	ROAMING_REASON_NUM
 };

@@ -17036,18 +17036,21 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 			     uint32_t u4BufferLen, uint32_t *pu4InfoLen)
 {
 	struct SW_RFB rSwRfb;
-	static uint8_t aucPacket[200] = {0,};
+	static uint8_t aucPacket[500] = {0,};
 	char *pucSavedPtr = (int8_t *)pvBuffer;
-	uint8_t *pucItem = NULL;
-	uint8_t j = 0;
-	int8_t i = 0;
-	uint8_t ucByte;
-	u_int8_t fgBTMReq = FALSE;
-	void (*process_func)(struct ADAPTER *prAdapter,
-			     struct SW_RFB *prSwRfb);
 	uint8_t ucBssIndex = 0;
+	struct ACTION_BTM_REQ_FRAME *rxframe = NULL;
+	struct BSS_DESC *bssDesc;
+	struct BSS_DESC *target;
+	struct BSS_INFO *ais;
+	struct AIS_SPECIFIC_BSS_INFO *aiss = NULL;
+	struct LINK *ess = NULL;
+	uint8_t *pos = NULL;
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	ais = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	aiss = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+	ess = &aiss->rCurEssLink;
 
 	if (!pvBuffer) {
 		DBGLOG(OID, ERROR, "pvBuffer is NULL\n");
@@ -17055,12 +17058,139 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 	}
 
 	if (!kalStrniCmp(pucSavedPtr, "RM-IT", 5)) {
-		process_func = rrmProcessRadioMeasurementRequest;
 		pucSavedPtr += 5;
 	} else if (!kalStrniCmp(pucSavedPtr, "BTM-IT", 6)) {
-		process_func = wnmRecvBTMRequest;
-		pucSavedPtr += 6;
-		fgBTMReq = TRUE;
+		int32_t i4Argc = 0;
+		int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+		uint32_t rStatus = WLAN_STATUS_FAILURE;
+
+		/*
+		 * BTM-IT 0x7 200 220 5
+		 * 0x07: request mode
+		 * 200: disassoc timer, which is timer x beacon interval (ms)
+		 * 220: preference for sending btm AP
+		 * 5: diff to decrease preference for each candidate
+		 */
+		DBGLOG(INIT, INFO, "BTM command is [%s]\n", pucSavedPtr);
+		rStatus = wlanCfgParseArgument(pucSavedPtr, &i4Argc, apcArgv);
+		target = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+		if (!target) {
+			DBGLOG(OID, INFO, "sta is not connected!!!\n");
+			return WLAN_STATUS_FAILURE;
+		}
+
+		kalMemZero(aucPacket, sizeof(aucPacket));
+		kalMemZero(&rSwRfb, sizeof(rSwRfb));
+		rSwRfb.pvHeader = (void *)&aucPacket[0];
+		rSwRfb.u2PacketLen = sizeof(struct ACTION_BTM_REQ_FRAME);
+		rSwRfb.u2HeaderLen = WLAN_MAC_MGMT_HEADER_LEN;
+		rSwRfb.ucStaRecIdx = KAL_NETWORK_TYPE_AIS_INDEX;
+
+		rxframe = (struct ACTION_BTM_REQ_FRAME *) rSwRfb.pvHeader;
+		COPY_MAC_ADDR(rxframe->aucDestAddr, ais->aucOwnMacAddr);
+		COPY_MAC_ADDR(rxframe->aucSrcAddr, target->aucBSSID);
+		COPY_MAC_ADDR(rxframe->aucBSSID, target->aucBSSID);
+
+		rxframe->ucAction = ACTION_WNM_BSS_TRANSITION_MANAGEMENT_REQ;
+		rxframe->ucDialogToken = 111;
+		rxframe->ucRequestMode = 0;
+		rxframe->u2DisassocTimer = 600;
+		rxframe->ucValidityInterval = 255;
+
+		if (i4Argc > 1)
+			kalkStrtou8(apcArgv[1], 0, &rxframe->ucRequestMode);
+		if (i4Argc > 2)
+			kalkStrtou16(apcArgv[2], 0, &rxframe->u2DisassocTimer);
+
+		pos = aucPacket + sizeof(struct ACTION_BTM_REQ_FRAME);
+
+		/*
+		 * WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED BIT(0)
+		 * WNM_BSS_TM_REQ_ABRIDGED BIT(1)
+		 * WNM_BSS_TM_REQ_DISASSOC_IMMINENT BIT(2)
+		 * WNM_BSS_TM_REQ_BSS_TERMINATION_INCLUDED BIT(3)
+		 * WNM_BSS_TM_REQ_ESS_DISASSOC_IMMINENT BIT(4)
+		 */
+		if (rxframe->ucRequestMode &
+				WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED) {
+			int32_t pref = 255;
+			struct IE_NEIGHBOR_REPORT *neig = NULL;
+			uint8_t diff = 30;
+			uint8_t targetPref = 255;
+			uint8_t len = sizeof(struct IE_NEIGHBOR_REPORT) -
+				ELEM_HDR_LEN + 3;
+
+			if (i4Argc > 3)
+				kalkStrtou8(apcArgv[3], 0, &targetPref);
+			if (i4Argc > 4)
+				kalkStrtou8(apcArgv[4], 0, &diff);
+
+			neig = (struct IE_NEIGHBOR_REPORT *) pos;
+			pos += sizeof(struct IE_NEIGHBOR_REPORT);
+			neig->ucId = ELEM_ID_NEIGHBOR_REPORT;
+			neig->ucLength = len;
+			COPY_MAC_ADDR(neig->aucBSSID,
+				target->aucBSSID);
+
+			if (target->eBand == BAND_5G) {
+				WLAN_SET_FIELD_32(&neig->u4BSSIDInfo,
+					0x1c9b);
+			} else {
+				WLAN_SET_FIELD_32(&neig->u4BSSIDInfo,
+					0x0c9b);
+			}
+			neig->ucChnlNumber = target->ucChannelNum;
+			neig->ucPhyType = 0x9;
+
+			/* bss transition candidate preference */
+			*pos++ = 3;
+			*pos++ = 1;
+			*pos++ = targetPref;
+
+			rSwRfb.u2PacketLen += neig->ucLength;
+
+			LINK_FOR_EACH_ENTRY(bssDesc, ess,
+				rLinkEntryEss[ucBssIndex], struct BSS_DESC) {
+
+				if (EQUAL_MAC_ADDR(target->aucBSSID,
+				    bssDesc->aucBSSID))
+					continue;
+
+				if (rSwRfb.u2PacketLen + len >
+				    sizeof(aucPacket))
+					break;
+
+				neig = (struct IE_NEIGHBOR_REPORT *) pos;
+				pos += sizeof(struct IE_NEIGHBOR_REPORT);
+				neig->ucId = ELEM_ID_NEIGHBOR_REPORT;
+				neig->ucLength = len;
+				COPY_MAC_ADDR(neig->aucBSSID,
+					bssDesc->aucBSSID);
+
+				if (bssDesc->eBand == BAND_5G) {
+					WLAN_SET_FIELD_32(&neig->u4BSSIDInfo,
+						0x1c9b);
+				} else {
+					WLAN_SET_FIELD_32(&neig->u4BSSIDInfo,
+						0x0c9b);
+				}
+				neig->ucChnlNumber = bssDesc->ucChannelNum;
+				neig->ucPhyType = 0x9;
+
+				/* bss transition candidate preference */
+				*pos++ = 3;
+				*pos++ = 1;
+				*pos++ = pref > 0 ? (uint8_t) pref : 0;
+				pref -= diff;
+
+				rSwRfb.u2PacketLen += pos - (uint8_t *) neig;
+			}
+		}
+
+		dumpMemory8(rSwRfb.pvHeader, rSwRfb.u2PacketLen);
+
+		wnmWNMAction(prAdapter, &rSwRfb);
+		return WLAN_STATUS_SUCCESS;
 	} else if (!kalStrniCmp(pucSavedPtr, "BT-IT", 5)) {
 		DBGLOG(OID, INFO, "Simulate beacon timeout!!!\n");
 		aisBssBeaconTimeout(prAdapter, ucBssIndex);
@@ -17070,58 +17200,6 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		DBGLOG(OID, ERROR, "IT type %s is not supported\n",
 		       pucSavedPtr);
 		return WLAN_STATUS_NOT_SUPPORTED;
-	}
-	kalMemZero(aucPacket, sizeof(aucPacket));
-	pucItem = kalStrtokR(pucSavedPtr, ",", &pucSavedPtr);
-	while (pucItem) {
-		ucByte = *pucItem;
-		i = 0;
-		while (ucByte) {
-			if (i > 1) {
-				DBGLOG(OID, ERROR,
-				       "more than 2 char for one byte\n");
-				return WLAN_STATUS_FAILURE;
-			} else if (i == 1)
-				aucPacket[j] <<= 4;
-			if (ucByte >= '0' && ucByte <= '9')
-				aucPacket[j] |= ucByte - '0';
-			else if (ucByte >= 'a' && ucByte <= 'f')
-				aucPacket[j] |= ucByte - 'a' + 10;
-			else if (ucByte >= 'A' && ucByte <= 'F')
-				aucPacket[j] |= ucByte - 'A' + 10;
-			else {
-				DBGLOG(OID, ERROR, "not a hex char %c\n",
-				       ucByte);
-				return WLAN_STATUS_FAILURE;
-			}
-			ucByte = *(++pucItem);
-			i++;
-		}
-		j++;
-		pucItem = kalStrtokR(NULL, ",", &pucSavedPtr);
-	}
-	DBGLOG(OID, INFO, "Dump IT packet, len %d\n", j);
-	dumpMemory8(aucPacket, j);
-	if (j < WLAN_MAC_MGMT_HEADER_LEN) {
-		DBGLOG(OID, ERROR, "packet length %d less than mac header 24\n",
-		       j);
-		return WLAN_STATUS_FAILURE;
-	}
-	kalMemZero(&rSwRfb, sizeof(rSwRfb));
-	rSwRfb.pvHeader = (void *)&aucPacket[0];
-	rSwRfb.u2PacketLen = j;
-	rSwRfb.u2HeaderLen = WLAN_MAC_MGMT_HEADER_LEN;
-	rSwRfb.ucStaRecIdx = KAL_NETWORK_TYPE_AIS_INDEX;
-	if (fgBTMReq) {
-		struct HW_MAC_RX_DESC rRxStatus;
-
-		rRxStatus.ucChanFreq = 6;
-		rSwRfb.ucChnlNum = HAL_RX_STATUS_GET_CHNL_NUM(&rRxStatus);
-		rSwRfb.prRxStatus = (void *)&rRxStatus;
-		rSwRfb.ucChanFreq = 6;
-		wnmWNMAction(prAdapter, &rSwRfb);
-	} else {
-		process_func(prAdapter, &rSwRfb);
 	}
 
 	return WLAN_STATUS_SUCCESS;
