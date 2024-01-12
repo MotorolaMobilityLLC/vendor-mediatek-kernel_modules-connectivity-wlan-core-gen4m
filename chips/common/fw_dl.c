@@ -2815,7 +2815,7 @@ uint32_t asicConnac3xConfigBtImageSection(
 uint32_t asicConnac3xDownloadBtPatch(struct ADAPTER *prAdapter)
 {
 	uint32_t u4FwSize = 0;
-	uint32_t u4Status = WLAN_STATUS_FAILURE;
+	uint32_t u4Status = 0;
 	uint32_t u4DataMode = 0;
 	int32_t i4BtPatchCheck;
 	struct patch_dl_target target = {0};
