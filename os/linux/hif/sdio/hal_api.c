@@ -1341,7 +1341,8 @@ void halRxSDIOReceiveRFBs(struct ADAPTER *prAdapter)
 		}
 
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
-		QUEUE_INSERT_TAIL(&prRxCtrl->rReceivedRfbList, &prSwRfb->rQueEntry);
+		QUEUE_INSERT_TAIL(&prRxCtrl->rReceivedRfbList,
+				&prSwRfb->rQueEntry);
 		RX_INC_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT);
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
 
@@ -1529,7 +1530,8 @@ void halRxSDIOEnhanceReceiveRFBs(struct ADAPTER *prAdapter)
 			/* prSDIOCtrl->au4RxLength[i] = 0; */
 
 			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
-			QUEUE_INSERT_TAIL(&prRxCtrl->rReceivedRfbList, &prSwRfb->rQueEntry);
+			QUEUE_INSERT_TAIL(&prRxCtrl->rReceivedRfbList,
+					&prSwRfb->rQueEntry);
 			RX_INC_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT);
 			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
 		}
@@ -2204,7 +2206,8 @@ uint32_t halAllocateIOBuffer(struct ADAPTER *prAdapter)
 			continue;
 		}
 
-		QUEUE_INSERT_TAIL(&prHifInfo->rRxFreeBufQueue, &prRxBuf->rQueEntry);
+		QUEUE_INSERT_TAIL(&prHifInfo->rRxFreeBufQueue,
+				&prRxBuf->rQueEntry);
 	}
 
 	return WLAN_STATUS_SUCCESS;
@@ -2733,8 +2736,7 @@ void halDeAggRxPktProc(struct ADAPTER *prAdapter,
 
 	prRxBuf->u4PktCount = 0;
 	mutex_lock(&prHifInfo->rRxFreeBufQueMutex);
-	QUEUE_INSERT_TAIL(&prHifInfo->rRxFreeBufQueue,
-		(struct QUE_ENTRY *)prRxBuf);
+	QUEUE_INSERT_TAIL(&prHifInfo->rRxFreeBufQueue, prRxBuf);
 	mutex_unlock(&prHifInfo->rRxFreeBufQueMutex);
 }
 
@@ -2784,14 +2786,14 @@ void halDeAggRxPkt(struct ADAPTER *prAdapter, struct SDIO_RX_COALESCING_BUF *prR
 	/* Avoid to schedule DeAggWorker during uninit flow */
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prAdapter->prGlueInfo->ulFlag)) {
 		mutex_lock(&prHifInfo->rRxFreeBufQueMutex);
-		QUEUE_INSERT_TAIL(&prHifInfo->rRxFreeBufQueue, (struct QUE_ENTRY *)prRxBuf);
+		QUEUE_INSERT_TAIL(&prHifInfo->rRxFreeBufQueue, prRxBuf);
 		mutex_unlock(&prHifInfo->rRxFreeBufQueMutex);
 
 		return;
 	}
 #if CFG_SDIO_RX_AGG_WORKQUE
 	mutex_lock(&prHifInfo->rRxDeAggQueMutex);
-	QUEUE_INSERT_TAIL(&prHifInfo->rRxDeAggQueue, (struct QUE_ENTRY *)prRxBuf);
+	QUEUE_INSERT_TAIL(&prHifInfo->rRxDeAggQueue, prRxBuf);
 	mutex_unlock(&prHifInfo->rRxDeAggQueMutex);
 
 	schedule_delayed_work(&prAdapter->prGlueInfo->rRxPktDeAggWork, 0);

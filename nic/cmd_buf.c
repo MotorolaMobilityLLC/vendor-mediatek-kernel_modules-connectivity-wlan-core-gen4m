@@ -152,8 +152,7 @@ void cmdBufInitialize(struct ADAPTER *prAdapter)
 void cmdBufDumpCmdQueue(struct QUE *prQueue,
 			int8_t *queName)
 {
-	struct CMD_INFO *prCmdInfo = (struct CMD_INFO *)
-			QUEUE_GET_HEAD(prQueue);
+	struct CMD_INFO *prCmdInfo = QUEUE_GET_HEAD(prQueue);
 	uint8_t i = 1, pos = 0;
 	char buf[500] = {0};
 
@@ -175,8 +174,7 @@ void cmdBufDumpCmdQueue(struct QUE *prQueue,
 			kalMemZero(buf, sizeof(buf));
 			pos = 0;
 		}
-		prCmdInfo = (struct CMD_INFO *) QUEUE_GET_NEXT_ENTRY((
-					struct QUE_ENTRY *) prCmdInfo);
+		prCmdInfo = QUEUE_GET_NEXT_ENTRY(prCmdInfo);
 		i++;
 	}
 }

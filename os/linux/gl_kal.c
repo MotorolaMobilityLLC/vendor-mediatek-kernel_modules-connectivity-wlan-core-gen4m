@@ -5901,7 +5901,7 @@ void kalOidCmdClearance(struct GLUE_INFO *prGlueInfo)
 		}
 		QUEUE_INSERT_TAIL(prReturnCmdQue, prQueueEntry);
 		QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry,
-				  struct QUE_ENTRY *);
+				struct QUE_ENTRY *);
 	}
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_CMD_QUE);
@@ -9124,8 +9124,7 @@ void kalFreeTxMsdu(struct ADAPTER *prAdapter,
 {
 
 	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
-	QUEUE_INSERT_TAIL(&prAdapter->rTxDataDoneQueue,
-			  (struct QUE_ENTRY *) prMsduInfo);
+	QUEUE_INSERT_TAIL(&prAdapter->rTxDataDoneQueue, prMsduInfo);
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
 
 	schedule_work(&prAdapter->prGlueInfo->rTxMsduFreeWork);

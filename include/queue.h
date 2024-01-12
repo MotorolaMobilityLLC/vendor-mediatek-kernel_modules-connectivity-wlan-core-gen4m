@@ -127,11 +127,22 @@ struct QUE {
 
 #define QUEUE_LENGTH(prQueue)               ((prQueue)->u4NumElem)
 
-#define QUEUE_GET_HEAD(prQueue)             ((void *)((prQueue)->prHead))
+#define QUEUE_GET_HEAD(prQueue)             ((void *)(prQueue)->prHead)
 
-#define QUEUE_GET_TAIL(prQueue)             ((void *)((prQueue)->prTail))
+#define QUEUE_GET_TAIL(prQueue)             ((void *)(prQueue)->prTail)
 
-#define QUEUE_GET_NEXT_ENTRY(prQueueEntry)  ((prQueueEntry)->prNext)
+#define QUEUE_GET_NEXT_ENTRY(prQueueEntry)  \
+			((void *)((struct QUE_ENTRY *)(prQueueEntry))->prNext)
+
+#define QUEUE_ENTRY_SET_NEXT(_prQueueEntry, _prNextEntry) \
+	do { \
+		((struct QUE_ENTRY *)(_prQueueEntry))->prNext = \
+					(struct QUE_ENTRY *)(_prNextEntry); \
+		if (_prNextEntry) \
+			((struct QUE_ENTRY *)(_prNextEntry))->prPrev = \
+					(struct QUE_ENTRY *)(_prQueueEntry); \
+	} while (0)
+
 
 /**
  * prQueue (QUE) = prQueueEntry (QUE_ENTRY) + prQueue (QUE);
