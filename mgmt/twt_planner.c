@@ -1386,8 +1386,7 @@ void twtPlannerGetTsfDone(
 	case TWT_GET_TSF_FOR_RESUME_AGRT:
 	{
 		uint8_t ucNextTWTSize = prGetTsfCtxt->rNextTWT.ucNextTWTSize;
-		uint64_t u8NextTWT = u8CurTsf +
-			prGetTsfCtxt->rNextTWT.u8NextTWT;
+		uint64_t u8NextTWT;
 
 		/* To have mantissa alignment from TWT wake time::Begin */
 		struct _TWT_PARAMS_T *prTWTParams;
