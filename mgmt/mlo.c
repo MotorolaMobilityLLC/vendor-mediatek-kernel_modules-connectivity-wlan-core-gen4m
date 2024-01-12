@@ -2038,7 +2038,7 @@ int8_t mldStarecAlloc(struct ADAPTER *prAdapter,
 		prMldStarec->fgNSEP = FALSE;
 		prMldStarec->ucEmlmrBitmap = 0;
 		prMldStarec->ucEmlsrBitmap = 0;
-#ifdef BELLWETHER
+#if defined(BELLWETHER) || defined(MT7990)
 		prMldStarec->aucStrBitmap[0] = BIT(2);
 		prMldStarec->aucStrBitmap[1] = BIT(1);
 		prMldStarec->aucStrBitmap[2] = BIT(0);
