@@ -2612,6 +2612,12 @@ ccflags-y += -DCFG_SUPPORT_APS=0
 MGMT_OBJS += $(MGMT_DIR)ap_selection.o
 endif
 
+ifeq ($(CONFIG_SUPPORT_DUAL_SAP_SINGLE_LINK_MLO), y)
+ccflags-y += -DCFG_SUPPORT_DUAL_SAP_SINGLE_LINK_MLO=1
+else
+ccflags-y += -DCFG_SUPPORT_DUAL_SAP_SINGLE_LINK_MLO=0
+endif
+
 ifeq ($(CONFIG_SUPPORT_PRE_ON_PHY_ACTION), y)
     CHIPS_OBJS += $(CHIPS_CMM)pre_cal.o
     ccflags-y += -DCFG_SUPPORT_PRE_ON_PHY_ACTION=1

@@ -4701,6 +4701,32 @@ u_int8_t p2pFuncIsDualAPMode(struct ADAPTER *prAdapter)
 	return FALSE;
 }
 
+u_int8_t p2pFuncIsDualAPActive(struct ADAPTER *prAdapter)
+{
+	uint8_t ucActiveSapNum = 0;
+	uint8_t ucBssIndex = 0;
+	struct BSS_INFO *prBssInfo = NULL;
+
+	if (!prAdapter)
+		return FALSE;
+
+	if (!p2pFuncIsDualAPMode(prAdapter))
+		return FALSE;
+
+	for (ucBssIndex = 0;
+	     ucBssIndex < prAdapter->ucSwBssIdNum;
+	     ucBssIndex++) {
+		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+		if (prBssInfo &&
+		    IS_BSS_APGO(prBssInfo) &&
+		    IS_BSS_ACTIVE(prBssInfo)) {
+			ucActiveSapNum += 1;
+		}
+	}
+
+	return ucActiveSapNum > 1 ? TRUE : FALSE;
+}
+
 u_int8_t p2pFuncIsAPMode(struct P2P_CONNECTION_SETTINGS *prP2pConnSettings)
 {
 	if (prP2pConnSettings) {

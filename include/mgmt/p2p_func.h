@@ -288,6 +288,8 @@ u_int8_t p2pFuncIsDualAPMode(struct ADAPTER *prAdapter);
 
 u_int8_t p2pFuncIsDualGOMode(struct ADAPTER *prAdapter);
 
+u_int8_t p2pFuncIsDualAPActive(struct ADAPTER *prAdapter);
+
 void
 p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prP2pBssInfo,
