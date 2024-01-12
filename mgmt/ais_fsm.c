@@ -1302,16 +1302,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 				prScanReqMsg->ucChannelListNum = 1;
 				prScanReqMsg->arChnlInfoList[0].eBand = eBand;
 				prScanReqMsg->arChnlInfoList[0].ucChannelNum = ucChannel;
-			} else if (prAdapter->aePreferBand[prAdapter->prAisBssInfo->ucBssIndex] == BAND_NULL) {
-				if (prAdapter->fgEnable5GBand == TRUE)
-					prScanReqMsg->eScanChannel = SCAN_CHANNEL_FULL;
-				else
-					prScanReqMsg->eScanChannel = SCAN_CHANNEL_2G4;
-
-			} else if (prAdapter->aePreferBand[prAdapter->prAisBssInfo->ucBssIndex] == BAND_2G4) {
-				prScanReqMsg->eScanChannel = SCAN_CHANNEL_2G4;
-			} else if (prAdapter->aePreferBand[prAdapter->prAisBssInfo->ucBssIndex] == BAND_5G) {
-				prScanReqMsg->eScanChannel = SCAN_CHANNEL_5G;
 #if CFG_SUPPORT_NCHO
 			} else if (prAdapter->rNchoInfo.fgECHOEnabled &&
 				prAdapter->rNchoInfo.u4RoamScanControl == TRUE &&
@@ -1331,11 +1321,21 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 					prScanReqMsg->ucChannelListNum, u4size);
 
 				kalMemCopy(&(prScanReqMsg->arChnlInfoList), &(prRoamScnChnl->arChnlInfoList),
-					u4size);
+						u4size);
 
 				/* set scan channel type for NCHO scan */
 				prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
 #endif
+			} else if (prAdapter->aePreferBand[prAdapter->prAisBssInfo->ucBssIndex] == BAND_NULL) {
+				if (prAdapter->fgEnable5GBand == TRUE)
+					prScanReqMsg->eScanChannel = SCAN_CHANNEL_FULL;
+				else
+					prScanReqMsg->eScanChannel = SCAN_CHANNEL_2G4;
+
+			} else if (prAdapter->aePreferBand[prAdapter->prAisBssInfo->ucBssIndex] == BAND_2G4) {
+				prScanReqMsg->eScanChannel = SCAN_CHANNEL_2G4;
+			} else if (prAdapter->aePreferBand[prAdapter->prAisBssInfo->ucBssIndex] == BAND_5G) {
+				prScanReqMsg->eScanChannel = SCAN_CHANNEL_5G;
 			} else {
 				prScanReqMsg->eScanChannel = SCAN_CHANNEL_FULL;
 				ASSERT(0);
