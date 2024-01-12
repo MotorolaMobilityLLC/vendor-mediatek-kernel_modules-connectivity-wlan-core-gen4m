@@ -2242,6 +2242,34 @@ bool halIsHifStateLinkup(IN struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
+* @brief Check if HIF state is READY for upper layer cfg80211
+*
+* @param prGlueInfo      Pointer to the GlueInfo structure.
+*
+* @return (TRUE: ready, FALSE: not ready)
+*/
+/*----------------------------------------------------------------------------*/
+u_int8_t halIsHifStateReady(IN struct GLUE_INFO *prGlueInfo, uint8_t *pucState)
+{
+
+	if (!prGlueInfo)
+		return FALSE;
+
+	if (prGlueInfo->u4ReadyFlag == 0)
+		return FALSE;
+
+	if (pucState)
+		*pucState = prGlueInfo->rHifInfo.state;
+
+	if (prGlueInfo->rHifInfo.state != USB_STATE_LINK_UP)
+		return FALSE;
+
+	return TRUE;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
 * @brief Check if HIF state is during supend process
 *
 * @param prAdapter      Pointer to the Adapter structure.

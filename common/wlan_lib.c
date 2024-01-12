@@ -658,9 +658,31 @@ void wlanCardEjected(IN struct ADAPTER *prAdapter)
  * \retval FALSE Driver is not ready
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t wlanIsDriverReady(IN struct GLUE_INFO *prGlueInfo)
+u_int8_t wlanIsDriverReady(IN struct GLUE_INFO *prGlueInfo,
+				  uint32_t u4Check)
 {
-	return prGlueInfo && prGlueInfo->u4ReadyFlag && !kalIsResetting();
+	u_int8_t fgIsReady = TRUE;
+	uint8_t u1State = 0;
+
+	if (!prGlueInfo)
+		fgIsReady = FALSE;
+	else {
+		if ((u4Check & WLAN_DRV_READY_CHECK_WLAN_ON) &&
+			(prGlueInfo->u4ReadyFlag == FALSE))
+			fgIsReady = FALSE;
+
+		if ((u4Check & WLAN_DRV_READY_CHECK_HIF_SUSPEND) &&
+			(!halIsHifStateReady(prGlueInfo, &u1State))) {
+			DBGLOG(REQ, WARN, "driver state[%d]\n", u1State);
+			fgIsReady = FALSE;
+		}
+
+		if ((u4Check & WLAN_DRV_READY_CHECK_RESET) &&
+			kalIsResetting())
+			fgIsReady = FALSE;
+	}
+
+	return fgIsReady;
 }
 
 /*----------------------------------------------------------------------------*/

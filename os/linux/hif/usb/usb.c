@@ -310,9 +310,6 @@ static int mtk_usb_resume(struct usb_interface *intf)
 	/* Allow upper layers to call the device hard_start_xmit routine. */
 	netif_tx_start_all_queues(prGlueInfo->prDevHandler);
 
-	/* allow cfg80211 ops */
-	prGlueInfo->u4ReadyFlag = 1;
-
 	DBGLOG(HAL, STATE, "mtk_usb_resume() done ret=%d!\n", ret);
 
 	/* TODO */
@@ -349,11 +346,8 @@ static int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 	if (IS_FEATURE_ENABLED(prGlueInfo->prAdapter->rWifiVar.ucWow))
 		wlanWaitCfg80211SuspendDone(prGlueInfo);
 
-	/* change to pre-Suspend state */
+	/* change to pre-Suspend state & block cfg80211 ops */
 	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_PRE_SUSPEND);
-
-	/* block cfg80211 ops */
-	prGlueInfo->u4ReadyFlag = 0;
 
 	wlanSuspendPmHandle(prGlueInfo);
 

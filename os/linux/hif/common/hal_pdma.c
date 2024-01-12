@@ -3466,12 +3466,12 @@ uint32_t halGetHifTxCmdPageSize(IN struct ADAPTER *prAdapter)
 /*!
 * @brief Check if HIF state is READY for upper layer cfg80211
 *
-* @param prAdapter      Pointer to the Adapter structure.
+* @param prGlueInfo      Pointer to the GlueInfo structure.
 *
 * @return (TRUE: ready, FALSE: not ready)
 */
 /*----------------------------------------------------------------------------*/
-bool halIsHifStateReady(IN struct ADAPTER *prAdapter, uint8_t *pucState)
+u_int8_t halIsHifStateReady(IN struct GLUE_INFO *prGlueInfo, uint8_t *pucState)
 {
 	/* PCIE owner should implement this function */
 

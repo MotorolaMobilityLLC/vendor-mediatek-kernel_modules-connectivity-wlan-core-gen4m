@@ -6428,7 +6428,8 @@ int mtk_cfg_start_radar_detection(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -6453,7 +6454,8 @@ int mtk_cfg_start_radar_detection(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -6479,7 +6481,8 @@ int mtk_cfg_channel_switch(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -6700,7 +6703,8 @@ struct wireless_dev *mtk_cfg_add_iface(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return ERR_PTR(-EFAULT);
 	}
@@ -6793,7 +6797,8 @@ int mtk_cfg_del_iface(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -6833,7 +6838,8 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -6960,7 +6966,8 @@ int mtk_cfg_add_key(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -6984,7 +6991,8 @@ int mtk_cfg_get_key(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7006,7 +7014,8 @@ int mtk_cfg_del_key(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7028,7 +7037,8 @@ int mtk_cfg_set_default_key(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7049,7 +7059,8 @@ int mtk_cfg_set_default_mgmt_key(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7075,7 +7086,8 @@ int mtk_cfg_get_station(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7102,7 +7114,8 @@ int mtk_cfg_change_station(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7130,7 +7143,8 @@ int mtk_cfg_add_station(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7156,7 +7170,8 @@ int mtk_cfg_tdls_oper(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7193,7 +7208,8 @@ int mtk_cfg_tdls_mgmt(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7236,7 +7252,8 @@ int mtk_cfg_del_station(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7268,7 +7285,8 @@ int mtk_cfg_scan(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7288,7 +7306,8 @@ void mtk_cfg_abort_scan(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return;
 	}
@@ -7309,7 +7328,8 @@ int mtk_cfg_sched_scan_start(IN struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7336,7 +7356,8 @@ int mtk_cfg_sched_scan_stop(IN struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return 0;
 	}
@@ -7356,7 +7377,8 @@ int mtk_cfg_connect(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7375,7 +7397,8 @@ int mtk_cfg_disconnect(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7395,7 +7418,8 @@ int mtk_cfg_join_ibss(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7413,7 +7437,8 @@ int mtk_cfg_leave_ibss(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7432,7 +7457,8 @@ int mtk_cfg_set_power_mgmt(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7454,7 +7480,8 @@ int mtk_cfg_set_pmksa(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7475,7 +7502,8 @@ int mtk_cfg_del_pmksa(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7495,7 +7523,8 @@ int mtk_cfg_flush_pmksa(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7517,7 +7546,8 @@ int mtk_cfg_set_rekey_data(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7538,8 +7568,9 @@ int mtk_cfg_suspend(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if (!wlanIsDriverReady(prGlueInfo)) {
-		DBGLOG(REQ, TRACE, "driver is not ready\n");
+	if (!wlanIsDriverReady(prGlueInfo,
+		(WLAN_DRV_READY_CHECK_RESET | WLAN_DRV_READY_CHECK_WLAN_ON))) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return 0;
 	}
 
@@ -7553,7 +7584,8 @@ int mtk_cfg_resume(struct wiphy *wiphy)
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if (!wlanIsDriverReady(prGlueInfo)) {
+	if (!wlanIsDriverReady(prGlueInfo,
+		(WLAN_DRV_READY_CHECK_RESET | WLAN_DRV_READY_CHECK_WLAN_ON))) {
 		DBGLOG(REQ, TRACE, "driver is not ready\n");
 		return 0;
 	}
@@ -7570,7 +7602,8 @@ int mtk_cfg_assoc(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7592,7 +7625,8 @@ int mtk_cfg_remain_on_channel(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7613,7 +7647,8 @@ int mtk_cfg_cancel_remain_on_channel(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7643,7 +7678,8 @@ int mtk_cfg_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7673,7 +7709,8 @@ void mtk_cfg_mgmt_frame_register(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return;
 	}
@@ -7703,7 +7740,8 @@ void mtk_cfg_mgmt_frame_update(struct wiphy *wiphy,
 	}
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return;
 	}
@@ -7788,7 +7826,8 @@ int mtk_cfg_testmode_cmd(struct wiphy *wiphy, void *data,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7816,7 +7855,8 @@ int mtk_cfg_change_bss(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7837,7 +7877,8 @@ int mtk_cfg_mgmt_tx_cancel_wait(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7858,7 +7899,8 @@ int mtk_cfg_deauth(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7879,7 +7921,8 @@ int mtk_cfg_disassoc(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7900,7 +7943,8 @@ int mtk_cfg_start_ap(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7921,7 +7965,8 @@ int mtk_cfg_change_beacon(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7941,7 +7986,8 @@ int mtk_cfg_stop_ap(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7961,7 +8007,8 @@ int mtk_cfg_set_wiphy_params(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -7979,7 +8026,8 @@ int mtk_cfg_set_bitrate_mask(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -8001,7 +8049,8 @@ int mtk_cfg_set_txpower(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -8022,7 +8071,8 @@ int mtk_cfg_get_txpower(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG_LIMITED(REQ, TRACE, "driver is not ready\n");
 		return -EFAULT;
 	}
@@ -8170,7 +8220,8 @@ int mtk_cfg80211_set_monitor_channel(struct wiphy *wiphy,
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}

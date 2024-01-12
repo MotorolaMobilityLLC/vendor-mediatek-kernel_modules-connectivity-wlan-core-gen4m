@@ -2672,6 +2672,8 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 #endif
 
 		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+		glSdioSetState(&prAdapter->prGlueInfo->rHifInfo,
+							SDIO_STATE_WIFI_OFF);
 	}
 	return rStatus;
 }
@@ -3076,12 +3078,12 @@ void halUpdateTxDonePendingCount_v1(IN struct ADAPTER *prAdapter, IN u_int8_t is
 /*!
 * @brief Check if HIF state is READY for upper layer cfg80211
 *
-* @param prAdapter      Pointer to the Adapter structure.
+* @param prGlueInfo      Pointer to the GlueInfo structure.
 *
 * @return (TRUE: ready, FALSE: not ready)
 */
 /*----------------------------------------------------------------------------*/
-bool halIsHifStateReady(IN struct ADAPTER *prAdapter, uint8_t *pucState)
+u_int8_t halIsHifStateReady(IN struct GLUE_INFO *prGlueInfo, uint8_t *pucState)
 {
 	/* SDIO owner should implement this function */
 
