@@ -553,6 +553,34 @@ static void axiCsrIounmap(struct platform_device *pdev)
 }
 
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
+static bool axiGetRsvMemSizeRsvedByKernel(struct platform_device *pdev)
+{
+#ifdef CONFIG_OF
+	int ret = 0;
+	struct device_node *np;
+
+	np = of_parse_phandle(pdev->dev.of_node, "memory-region", 0);
+	if (!np) {
+		DBGLOG(INIT, ERROR, "can NOT find memory-region.\n");
+		return false;
+	}
+
+	ret = of_property_read_u64_array(np, "size", &gWifiRsvMemSize, 1);
+	if (ret != 0)
+		DBGLOG(INIT, ERROR, "get rsrv mem size failed(%d).\n", ret);
+	else
+		DBGLOG(INIT, INFO, "gWifiRsvMemSize: 0x%x\n", gWifiRsvMemSize);
+
+	of_node_put(np);
+	if (ret != 0)
+		return false;
+	else
+		return true;
+#else
+	return false;
+#endif
+}
+
 static bool axiAllocRsvMem(uint32_t u4Size, struct HIF_MEM *prMem)
 {
 	/* 8 bytes alignment */
@@ -606,7 +634,9 @@ static int axiAllocHifMem(struct platform_device *pdev,
 	       &grMem.pucRsvMemBase,
 	       &grMem.pucRsvMemVirBase);
 
-	kalSetDrvEmiMpuProtection(grMem.pucRsvMemBase, 0, grMem.u4RsvMemSize);
+	if (axiGetRsvMemSizeRsvedByKernel(pdev) == true)
+		kalSetDrvEmiMpuProtection(grMem.pucRsvMemBase, 0,
+			grMem.u4RsvMemSize);
 
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
 		if (u4Idx == TX_RING_DATA1_IDX_1 &&
@@ -705,21 +735,30 @@ static int _init_resv_mem(struct platform_device *pdev)
 {
 #ifdef CONFIG_OF
 	int ret = 0;
-	struct device_node *np;
+	struct device_node *node = NULL;
+	unsigned int RsvMemSize;
 
-	np = of_parse_phandle(pdev->dev.of_node, "memory-region", 0);
-	if (!np) {
-		DBGLOG(INIT, ERROR, "can NOT find memory-region.\n");
-		return -1;
+	node = pdev->dev.of_node;
+	if (!node) {
+		DBGLOG(INIT, ERROR, "WIFI-OF: get wifi device node fail\n");
+		of_node_put(node);
+		return false;
 	}
 
-	ret = of_property_read_u64_array(np, "size", &gWifiRsvMemSize, 1);
-	if (ret != 0)
-		DBGLOG(INIT, ERROR, "get rsrv mem size failed(%d).\n", ret);
-	else
-		DBGLOG(INIT, INFO, "gWifiRsvMemSize: 0x%x\n", gWifiRsvMemSize);
+	if (axiGetRsvMemSizeRsvedByKernel(pdev) == false) {
+		ret = of_property_read_u32(node, "emi-size", &RsvMemSize);
+		if (ret != 0)
+			DBGLOG(INIT, ERROR,
+				"MPU-in-lk get rsrv mem size failed(%d).\n",
+				ret);
+		else {
+			gWifiRsvMemSize = (unsigned long long) RsvMemSize;
+			DBGLOG(INIT, INFO, "MPU-in-lk gWifiRsvMemSize: 0x%x\n",
+				gWifiRsvMemSize);
+		}
+	}
 
-	of_node_put(np);
+	of_node_put(node);
 
 	return ret;
 #else
