@@ -2862,12 +2862,13 @@ uint32_t nicCmdEventLinkStatsEmiOffset(struct ADAPTER *prAdapter,
 			prOffset->u4NumTxPowerLevels, ENUM_BAND_NUM);
 
 	if (!offset) {
-		DBGLOG(INIT, WARN, "NULL offset: offset=%p, offset2=%p",
+		DBGLOG(INIT, WARN, "NULL offset: offset=0x%08x, offset2=0x%08x",
 				offset, offset2);
 		return WLAN_STATUS_FAILURE;
 	}
 	if (!offset2) {
-		DBGLOG(INIT, TRACE, "NULL offset: offset=%p, offset2=%p",
+		DBGLOG(INIT, TRACE,
+				"NULL offset: offset=0x%08x, offset2=0x%08x",
 				offset, offset2);
 	}
 
