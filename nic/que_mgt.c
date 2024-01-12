@@ -5628,8 +5628,7 @@ void qmHandleEventCheckReorderBubble(struct ADAPTER *prAdapter,
 			prSwRfb = QUEUE_GET_NEXT_ENTRY(prSwRfb);
 		}
 
-		wlanProcessQueuedSwRfb(prAdapter,
-				QUEUE_GET_HEAD(prReturnedQue));
+		nicRxIndicatePackets(prAdapter, QUEUE_GET_HEAD(prReturnedQue));
 	} else {
 		DBGLOG(QM, TRACE,
 			"QM:(Bub Flush) STA[%u] TID[%u] Pop Out 0 packet\n",
@@ -5947,7 +5946,7 @@ void qmFlushDeletedBaReorder(struct ADAPTER *prAdapter,
 
 	if (prFlushedPacketList) {
 		if (prRxBaEntry->fgFlushToHost) {
-			wlanProcessQueuedSwRfb(prAdapter, prFlushedPacketList);
+			nicRxIndicatePackets(prAdapter, prFlushedPacketList);
 		} else {
 			struct SW_RFB *prSwRfb;
 			struct SW_RFB *prNextSwRfb;
