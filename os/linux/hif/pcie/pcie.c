@@ -1954,6 +1954,12 @@ static void pcieSetASPML1SS(struct pci_dev *dev, int i4Enable)
 	uint32_t u4Reg = 0;
 
 	pos = pci_find_ext_capability(dev, PCI_EXT_CAP_ID_L1PMSS);
+
+	if (!pos) {
+		DBGLOG(INIT, INFO, "L1 PM Substate capability is not found!\n");
+		return;
+	}
+
 	pci_read_config_dword(dev, pos + PCI_L1PMSS_CTR1, &u4Reg);
 	u4Reg &= ~PCI_L1PMSS_ENABLE_MASK;
 	u4Reg |= i4Enable;
