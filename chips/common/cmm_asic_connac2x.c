@@ -346,7 +346,9 @@ void asicConnac2xWfdmaReInit(
 	if (fgResult) {
 		DBGLOG(INIT, INFO, "WFDMA reinit due to deep sleep\n");
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-	/* halWpdmaInitRing(prAdapter->prGlueInfo); */
+#if 1
+	halWpdmaInitRing(prAdapter->prGlueInfo);
+#else /* TODO check pin fail */
 	{
 		struct GL_HIF_INFO *prHifInfo;
 		uint32_t u4Idx;
@@ -364,6 +366,7 @@ void asicConnac2xWfdmaReInit(
 		}
 	}
 
+#endif
 	/* Write sleep mode magic num to dummy reg */
 	if (prBusInfo->setDummyReg)
 		prBusInfo->setDummyReg(prAdapter->prGlueInfo);
