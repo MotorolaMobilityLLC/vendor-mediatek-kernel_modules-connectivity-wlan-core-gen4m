@@ -4311,6 +4311,9 @@ uint8_t mldIsMultiLinkEnabled(
 		fgIsApMode = ucParam;
 		if (fgIsApMode) {
 			linkMax = prWifiVar->ucMldLinkMax;
+		} else if (IS_FEATURE_DISABLED(prWifiVar->ucP2pGoEht) &&
+			IS_FEATURE_DISABLED(prWifiVar->ucP2pGcEht)) {
+			linkMax = 1;
 		} else {
 			linkMax = kal_min_t(uint8_t,
 					prWifiVar->ucMldLinkMax,
