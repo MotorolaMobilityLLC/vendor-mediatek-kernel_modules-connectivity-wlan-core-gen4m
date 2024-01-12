@@ -544,6 +544,7 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 {
 #if CFG_MTK_ANDROID_WMT
 	struct MTK_WCN_WMT_WLAN_CB_INFO rWmtCb;
+	memset(&rWmtCb, 0, sizeof(struct MTK_WCN_WMT_WLAN_CB_INFO));
 #endif
 
 	axiDmaSetup(pdev);
