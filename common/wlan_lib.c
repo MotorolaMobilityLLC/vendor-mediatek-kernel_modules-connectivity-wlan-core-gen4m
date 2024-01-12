@@ -7949,7 +7949,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"IgnoreLowIdleSlot", FEATURE_DISABLED);
 	INIT_UINT(prWifiVar->u4LowIdleSlotThr, "LowIdleSlotThr", 10000);
 
-	INIT_UINT(prWifiVar->u4SameTokenThr, "SameTokenThr", 9);
+	INIT_UINT(prWifiVar->u4SameTokenThr, "SameTokenThr", 11);
 
 	/**
 	 * A debugging switch for development phase to check the difference of
