@@ -5945,6 +5945,9 @@ uint32_t nicUniCmdEfuseBufferMode(struct ADAPTER *ad,
 		info->ucExtCID != EXT_CMD_ID_EFUSE_BUFFER_MODE)
 		return WLAN_STATUS_NOT_ACCEPTED;
 
+	info->fgSetQuery = TRUE;
+	info->fgNeedResp = TRUE;
+
 	cmd = (struct CMD_EFUSE_BUFFER_MODE_CONNAC_T *) info->pucInfoBuffer;
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_EFUSE_CONTROL, max_cmd_len,
 		nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
