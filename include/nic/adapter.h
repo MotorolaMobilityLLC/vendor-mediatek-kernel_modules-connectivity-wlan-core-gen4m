@@ -1280,8 +1280,12 @@ struct WIFI_FEM_CFG {
 	/* WiFi FEM path */
 	uint16_t u2WifiPath;
 	uint16_t u2WifiPath6G;
+	/* Is support DBDC A+A Mode (5+6) */
+	uint16_t u2WifiDBDCAwithA;
+	/* Minimum Frequency Interval to support A+A */
+	uint16_t u2WifiDBDCAwithAMinimumFrqInterval;
 	/* Reserved  */
-	uint32_t au4Reserved[4];
+	uint32_t au4Reserved[3];
 };
 /*
  * State Machine:

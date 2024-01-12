@@ -1189,7 +1189,11 @@ struct NIC_HOST_STATUS_EMI_OFFSET {
 struct CAP_6G_CAP {
 	uint8_t ucIsSupport6G;  /* 1: Support, 0: Not Support */
 	uint8_t ucHwWifiPath;	/* BIT(0): 6G_WF0, BIT(1): 6G_WF1 */
-	uint8_t aucReseved[2];
+	/* Support DBDC A+A, 1:Enable, 0 Disable */
+	uint8_t ucWifiDBDCAwithA;
+	/* Minimum Frequency Interval require for DBDC A+A */
+	uint8_t ucWifiDBDCAwithAMinimumFrqInterval;
+
 };
 #endif
 
@@ -2451,11 +2455,12 @@ struct CMD_DBDC_SETTING {
 	uint8_t ucUpdateSettingNextChReq;
 	uint8_t aucPadding0[1];
 	uint8_t ucCmdVer;
-	uint8_t aucPadding1[1];
+	uint8_t ucDBDCAAMode; /* 1 is set DBDC A+A Mode */
 	uint16_t u2CmdLen;
 	uint8_t ucPrimaryChannel;
 	uint8_t ucWmmQueIdx;
-	uint8_t aucPadding2[2];
+	uint8_t ucRfBand;
+	uint8_t aucPadding2[1];
 	uint8_t aucPadding3[24];
 };
 

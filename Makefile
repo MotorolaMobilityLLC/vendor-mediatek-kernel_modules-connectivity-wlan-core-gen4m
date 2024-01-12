@@ -170,6 +170,7 @@ CONFIG_MTK_WIFI_TWT_SMART_STA=n
 CONFIG_NUM_OF_WFDMA_RX_RING=5
 CONFIG_NUM_OF_WFDMA_TX_RING=1
 CONFIG_SUPPORT_FORCE_ALTX=y
+CONFIG_MTK_WIFI_DBDC_6G=y
 CFG_SUPPORT_HOST_RX_WM_EVENT_FROM_PSE=y
 ccflags-y += -DCFG_WIFI_FWDL_UMAC_RESERVE_SIZE_PARA=128
 endif
@@ -348,11 +349,18 @@ endif
 ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT), y)
     ifeq ($(CONFIG_MTK_WIFI_6G_SUPPORT), y)
         ccflags-y += -DCFG_SUPPORT_WIFI_6G=1
+        ifeq ($(CONFIG_MTK_WIFI_DBDC_6G), y)
+            ccflags-y += -DCFG_SUPPORT_WIFI_DBDC6G=1
+        else
+            ccflags-y += -DCFG_SUPPORT_WIFI_DBDC6G=0
+        endif
     else
         ccflags-y += -DCFG_SUPPORT_WIFI_6G=0
+        ccflags-y += -DCFG_SUPPORT_WIFI_DBDC6G=0
     endif
 else
     ccflags-y += -DCFG_SUPPORT_WIFI_6G=0
+    ccflags-y += -DCFG_SUPPORT_WIFI_DBDC6G=0
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_TWT_SUPPORT), y)
