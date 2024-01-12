@@ -2931,6 +2931,16 @@
  */
 #define COUNTRY_CHANNEL_TXPOWER_LIMIT_CHANNEL_DEFINE 0
 
+/*------------------------------------------------------------------------------
+ * Flags of using wmt driver to wifi on with test mode
+ *------------------------------------------------------------------------------
+ */
+#if CFG_MTK_ANDROID_WMT && CFG_TESTMODE_FWDL_SUPPORT
+#define CFG_TESTMODE_WMT_WIFI_ON_SUPPORT 1
+#else
+#define CFG_TESTMODE_WMT_WIFI_ON_SUPPORT 0
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
