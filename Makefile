@@ -52,13 +52,13 @@ endif
 $(info $$MTK_PLATFORM is [${MTK_PLATFORM}])
 $(info $$WLAN_CHIP_ID is [${WLAN_CHIP_ID}])
 
-#ifneq ($(CONFIG_MTK_EMI),)
+ifneq ($(CONFIG_MTK_EMI),)
 ccflags-y += -DCONFIG_MTK_EMI=1
-#endif
+endif
 
-#ifneq ($(CONFIG_MEDIATEK_EMI),)
+ifneq ($(CONFIG_MEDIATEK_EMI),)
 ccflags-y += -DCONFIG_MTK_EMI=1
-#endif
+endif
 
 ifeq ($(WLAN_CHIP_ID),)
 WLAN_CHIP_ID=$(word 1, $(MTK_COMBO_CHIP))
