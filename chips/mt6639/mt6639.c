@@ -2010,23 +2010,29 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 	uint32_t u4Value = 0, u4PollingCnt = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
+	if (!ad) {
+		DBGLOG(INIT, ERROR, "NULL ADAPTER.\n");
+		rStatus = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
 	set_cbinfra_remap(ad);
 
 	rStatus = mt6639_mcu_reinit(ad);
 	if (rStatus != WLAN_STATUS_SUCCESS)
-		goto exit;
+		goto dump;
 
 #if (CFG_MTK_ANDROID_WMT == 0)
 	rStatus = mt6639_mcu_reset(ad);
 	if (rStatus != WLAN_STATUS_SUCCESS)
-		goto exit;
+		goto dump;
 #endif
 
 	while (TRUE) {
 		if (u4PollingCnt >= 1000) {
 			DBGLOG(INIT, ERROR, "timeout.\n");
 			rStatus = WLAN_STATUS_FAILURE;
-			goto exit;
+			goto dump;
 		}
 
 		HAL_MCR_RD(ad, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
@@ -2042,14 +2048,14 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 	if (connv3_ext_32k_on()) {
 		DBGLOG(INIT, ERROR, "connv3_ext_32k_on failed.\n");
 		rStatus = WLAN_STATUS_FAILURE;
-		goto exit;
+		goto dump;
 	}
 #endif
 
 	if (ad->chip_info->coexpccifon)
 		ad->chip_info->coexpccifon();
 
-exit:
+dump:
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, ERROR, "u4Value: 0x%x\n",
 			u4Value);
@@ -2089,6 +2095,7 @@ exit:
 			u4Value);
 	}
 
+exit:
 	return rStatus;
 }
 
