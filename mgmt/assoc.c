@@ -733,7 +733,9 @@ struct MSDU_INFO *assocComposeReAssocReqFrame(struct ADAPTER *prAdapter,
 uint32_t assocSendReAssocReqFrame(struct ADAPTER *prAdapter,
 				  struct STA_RECORD *prStaRec)
 {
+	struct WLAN_ASSOC_REQ_FRAME *prAssocFrame;
 	struct MSDU_INFO *prMsduInfo;
+	uint16_t u2RxFrameCtrl;
 
 	prMsduInfo = assocComposeReAssocReqFrame(prAdapter, prStaRec);
 	if (!prMsduInfo)
@@ -744,14 +746,10 @@ uint32_t assocSendReAssocReqFrame(struct ADAPTER *prAdapter,
 		assocComposeReAssocReqFrame);
 #endif
 
+	prAssocFrame = (struct WLAN_ASSOC_REQ_FRAME *)
+		((uintptr_t)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+
 	if (IS_STA_IN_AIS(prStaRec)) {
-		struct WLAN_ASSOC_REQ_FRAME *prAssocFrame;
-
-		prAssocFrame =
-		    (struct WLAN_ASSOC_REQ_FRAME
-		     *)((uintptr_t)(prMsduInfo->prPacket) +
-			MAC_TX_RESERVED_FIELD);
-
 		kalUpdateReAssocReqInfo(prAdapter->prGlueInfo,
 					(uint8_t *) &prAssocFrame->u2CapInfo,
 					prMsduInfo->u2FrameLength -
@@ -761,13 +759,6 @@ uint32_t assocSendReAssocReqFrame(struct ADAPTER *prAdapter,
 	}
 #if CFG_ENABLE_WIFI_DIRECT
 	if ((prAdapter->fgIsP2PRegistered) && (IS_STA_IN_P2P(prStaRec))) {
-		struct WLAN_ASSOC_REQ_FRAME *prAssocFrame;
-
-		prAssocFrame =
-		    (struct WLAN_ASSOC_REQ_FRAME
-		     *)((uintptr_t)(prMsduInfo->prPacket) +
-			MAC_TX_RESERVED_FIELD);
-
 		kalP2PUpdateAssocInfo(prAdapter->prGlueInfo,
 				      (uint8_t *) &prAssocFrame->u2CapInfo,
 				      prMsduInfo->u2FrameLength -
@@ -777,13 +768,19 @@ uint32_t assocSendReAssocReqFrame(struct ADAPTER *prAdapter,
 	}
 #endif
 
-
 #if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
 	if (filsEncryptAssocReq(prAdapter, prMsduInfo)) {
 		cnmMgtPktFree(prAdapter, prMsduInfo);
 		return WLAN_STATUS_FAILURE;
 	}
 #endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+
+	u2RxFrameCtrl = prAssocFrame->u2FrameCtrl & MASK_FRAME_TYPE;
+	DBGLOG(SAA, INFO,
+		"Send %sAssoc Req, SA: " MACSTR ", DA: " MACSTR "\n",
+		u2RxFrameCtrl == MAC_FRAME_REASSOC_REQ ? "Re" : "",
+		MAC2STR(prAssocFrame->aucSrcAddr),
+		MAC2STR(prAssocFrame->aucDestAddr));
 
 	/* Enqueue the frame to send this (Re)Association request frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
@@ -1072,6 +1069,16 @@ assocCheckRxReAssocRspFrameStatus(struct ADAPTER *prAdapter,
 	/* 4 <1> locate the (Re)Association Resp Frame. */
 	prAssocRspFrame = (struct WLAN_ASSOC_RSP_FRAME *)prSwRfb->pvHeader;
 
+	/* 4 <2> Parse the Header of (Re)Association Resp Frame. */
+	/* WLAN_GET_FIELD_16(&prAssocRspFrame->u2FrameCtrl, &u2RxFrameCtrl); */
+	u2RxFrameCtrl = prAssocRspFrame->u2FrameCtrl & MASK_FRAME_TYPE;
+	DBGLOG(SAA, INFO,
+		"Rx %sAssoc Resp, Status: %d, SA: " MACSTR ", DA: " MACSTR "\n",
+		u2RxFrameCtrl == MAC_FRAME_REASSOC_RSP ? "Re" : "",
+		prAssocRspFrame->u2StatusCode,
+		MAC2STR(prAssocRspFrame->aucSrcAddr),
+		MAC2STR(prAssocRspFrame->aucDestAddr));
+
 	/* If Association Response's BSSID doesn't match
 	 * our target, ignore.
 	 */
@@ -1081,11 +1088,6 @@ assocCheckRxReAssocRspFrameStatus(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
-	/* 4 <2> Parse the Header of (Re)Association Resp Frame. */
-	/* WLAN_GET_FIELD_16(&prAssocRspFrame->u2FrameCtrl, &u2RxFrameCtrl); */
-	u2RxFrameCtrl = prAssocRspFrame->u2FrameCtrl;
-	/* NOTE(Kevin): Optimized for ARM */
-	u2RxFrameCtrl &= MASK_FRAME_TYPE;
 	if (prStaRec->fgIsReAssoc) {
 		if (u2RxFrameCtrl != MAC_FRAME_REASSOC_RSP)
 			return WLAN_STATUS_FAILURE;
@@ -2190,7 +2192,9 @@ struct MSDU_INFO *assocComposeReAssocRespFrame(struct ADAPTER *prAdapter,
 uint32_t assocSendReAssocRespFrame(struct ADAPTER *prAdapter,
 				  struct STA_RECORD *prStaRec)
 {
+	struct WLAN_ASSOC_RSP_FRAME *prAssocRspFrame;
 	struct MSDU_INFO *prMsduInfo;
+	uint16_t u2RxFrameCtrl;
 
 	prMsduInfo = assocComposeReAssocRespFrame(prAdapter, prStaRec);
 	if (!prMsduInfo)
@@ -2201,15 +2205,23 @@ uint32_t assocSendReAssocRespFrame(struct ADAPTER *prAdapter,
 		assocComposeReAssocRespFrame);
 #endif
 
+	prAssocRspFrame = (struct WLAN_ASSOC_RSP_FRAME *)
+		((uintptr_t)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+
+	u2RxFrameCtrl = prAssocRspFrame->u2FrameCtrl & MASK_FRAME_TYPE;
+	DBGLOG(SAA, INFO,
+		"Send %sAssoc Resp, SA: " MACSTR ", DA: " MACSTR
+		", Seq: %d, status: %d\n",
+		u2RxFrameCtrl == MAC_FRAME_REASSOC_RSP ? "Re" : "",
+		MAC2STR(prAssocRspFrame->aucSrcAddr),
+		MAC2STR(prAssocRspFrame->aucDestAddr),
+		prMsduInfo->ucTxSeqNum,
+		prStaRec->u2StatusCode);
+
 	/* 4 <6> Enqueue the frame to send this (Re)Association request frame.
 	 */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
-	DBGLOG(SAA, INFO,
-			"Send Assoc Resp to " MACSTR ", Seq: %d, status: %d\n",
-			MAC2STR(prStaRec->aucMacAddr),
-			prMsduInfo->ucTxSeqNum,
-			prStaRec->u2StatusCode);
 	return WLAN_STATUS_SUCCESS;
 } /* end of assocSendReAssocRespFrame() */
 #endif /* CFG_SUPPORT_AAA */

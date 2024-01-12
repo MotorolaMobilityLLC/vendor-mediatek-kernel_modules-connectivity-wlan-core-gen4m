@@ -176,7 +176,8 @@ void aaaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 		}
 
 		DBGLOG(AAA, INFO,
-			"SA: " MACSTR ", bssid: " MACSTR ", %d %d sta: %d\n",
+			"Rx Auth, SA: " MACSTR ", bssid: " MACSTR
+			", Seq:%d, Alg:%d, Sta:%d\n",
 			MAC2STR(prAuthFrame->aucSrcAddr),
 			MAC2STR(prAuthFrame->aucBSSID),
 			prAuthFrame->u2AuthTransSeqNo,
@@ -473,6 +474,7 @@ uint32_t aaaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo = NULL;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
 	uint16_t u2StatusCode = STATUS_CODE_RESERVED;
+	uint16_t u2RxFrameCtrl;
 	u_int8_t fgReplyAssocResp = FALSE;
 	u_int8_t fgSendSAQ = FALSE;
 	struct WLAN_ASSOC_REQ_FRAME *prAssocReqFrame =
@@ -508,8 +510,11 @@ uint32_t aaaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 			break;
 		}
 
+		u2RxFrameCtrl = prAssocReqFrame->u2FrameCtrl & MASK_FRAME_TYPE;
 		DBGLOG(AAA, INFO,
-			"SA: " MACSTR ", bssid: " MACSTR ", sta idx: %d\n",
+			"Rx %sAssoc Req, SA: " MACSTR ", bssid: " MACSTR
+			", sta idx: %d\n",
+			u2RxFrameCtrl == MAC_FRAME_REASSOC_REQ ? "Re" : "",
 			MAC2STR(prAssocReqFrame->aucSrcAddr),
 			MAC2STR(prAssocReqFrame->aucBSSID),
 			prSwRfb->ucStaRecIdx);

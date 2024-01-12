@@ -376,7 +376,7 @@ authSendAuthFrame(struct ADAPTER *prAdapter,
 		  struct SW_RFB *prFalseAuthSwRfb,
 		  uint16_t u2TransactionSeqNum, uint16_t u2StatusCode)
 {
-
+	struct WLAN_AUTH_FRAME *prAuthFrame;
 	struct MSDU_INFO *prMsduInfo;
 
 	prMsduInfo = authComposeAuthFrame(prAdapter, prStaRec, ucBssIndex,
@@ -385,12 +385,17 @@ authSendAuthFrame(struct ADAPTER *prAdapter,
 	if (!prMsduInfo)
 		return WLAN_STATUS_RESOURCES;
 
+	prAuthFrame = (struct WLAN_AUTH_FRAME *)
+		((uintptr_t)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+	DBGLOG(SAA, INFO,
+	       "Send Auth, TranSeq: %d, Status: %d, Seq: %d, SA: " MACSTR
+	       ", DA: " MACSTR "\n",
+	       u2TransactionSeqNum, u2StatusCode, prMsduInfo->ucTxSeqNum,
+	       MAC2STR(prAuthFrame->aucSrcAddr),
+	       MAC2STR(prAuthFrame->aucDestAddr));
+
 	/* 4 <6> Inform TXM  to send this Authentication frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
-
-	DBGLOG(SAA, INFO,
-	       "Send Auth Frame, TranSeq: %d, Status: %d, Seq: %d\n",
-	       u2TransactionSeqNum, u2StatusCode, prMsduInfo->ucTxSeqNum);
 
 	return WLAN_STATUS_SUCCESS;
 }				/* end of authSendAuthFrame() */
@@ -584,6 +589,12 @@ authCheckRxAuthFrameStatus(struct ADAPTER *prAdapter,
 
 	/* 4 <1> locate the Authentication Frame. */
 	prAuthFrame = (struct WLAN_AUTH_FRAME *)prSwRfb->pvHeader;
+
+	DBGLOG(SAA, INFO,
+	       "Rx Auth, Status: %d, SA: " MACSTR ", DA: " MACSTR "\n",
+	       prAuthFrame->u2StatusCode,
+	       MAC2STR(prAuthFrame->aucSrcAddr),
+	       MAC2STR(prAuthFrame->aucDestAddr));
 
 	/* 4 <2> Parse the Fixed Fields of Authentication Frame Body. */
 	/* WLAN_GET_FIELD_16(&prAuthFrame->u2AuthAlgNum, &u2RxAuthAlgNum); */
