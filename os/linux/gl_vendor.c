@@ -1592,6 +1592,26 @@ static uint8_t bandMaskByBssIdx(struct ADAPTER *prAdapter, uint8_t bss_idx)
 	return ucHwBandIdxBitmap;
 }
 
+static void updateApRec(struct ADAPTER *prAdapter,
+			struct STATS_LLS_PEER_INFO *dst_peer)
+{
+	struct STATS_LLS_PEER_AP_REC *prPeerApRec = NULL;
+	uint8_t i;
+	uint8_t j;
+
+	for (i = 0; i < KAL_AIS_NUM; i++) {
+		for (j = 0; j < MLD_LINK_MAX; j++) {
+			prPeerApRec = &prAdapter->rPeerApRec[i][j];
+
+			if (UNEQUAL_MAC_ADDR(dst_peer->peer_mac_address,
+					     prPeerApRec->mac_addr))
+				continue;
+			dst_peer->bssload.sta_count = prPeerApRec->sta_count;
+			dst_peer->bssload.chan_util = prPeerApRec->chan_util;
+		}
+	}
+}
+
 /**
  * fill_peer_info() - Collect the associated peer info in the given BSS
  *
@@ -1652,20 +1672,8 @@ static uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 		dst_peer = (struct STATS_LLS_PEER_INFO *)dst;
 		*dst_peer = peer_info;
 
-		if (dst_peer->type == STATS_LLS_WIFI_PEER_AP) {
-			struct STATS_LLS_PEER_AP_REC *prPeerApRec = NULL;
-
-			for (j = 0, prPeerApRec = prAdapter->rPeerApRec;
-					j < KAL_AIS_NUM; j++, prPeerApRec++) {
-				if (UNEQUAL_MAC_ADDR(dst_peer->peer_mac_address,
-						     prPeerApRec->mac_addr))
-					continue;
-				dst_peer->bssload.sta_count =
-							prPeerApRec->sta_count;
-				dst_peer->bssload.chan_util =
-							prPeerApRec->chan_util;
-			}
-		}
+		if (dst_peer->type == STATS_LLS_WIFI_PEER_AP)
+			updateApRec(prAdapter, dst_peer);
 
 		if (prWifiVar->fgLinkStatsDump)
 			dumpLinkStatsPeerInfo(dst_peer, i);

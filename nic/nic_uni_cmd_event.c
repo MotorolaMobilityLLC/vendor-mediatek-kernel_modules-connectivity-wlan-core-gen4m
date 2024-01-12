@@ -9742,7 +9742,8 @@ void nicUniEventLinkStats(struct ADAPTER *prAdapter,
 		DBGLOG(RX, WARN, "Overflow tag=%u, resultSize=%u, BufLen=%u",
 			tag->u2Tag, resultSize,
 			prCmdInfo->u4InformationBufferLength);
-		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo, 0,
+		if (prCmdInfo->fgIsOid)
+			kalOidComplete(prAdapter->prGlueInfo, prCmdInfo, 0,
 				WLAN_STATUS_FAILURE);
 		return;
 	}
