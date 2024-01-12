@@ -1152,6 +1152,7 @@ p2pFuncSwitchOPMode(IN P_ADAPTER_T prAdapter,
 			switch (eOpMode) {
 			case OP_MODE_INFRASTRUCTURE:
 				DBGLOG(P2P, TRACE, "p2pFuncSwitchOPMode: Switch to Client.\n");
+				/* fall through */
 			case OP_MODE_ACCESS_POINT:
 				/* Change interface address. */
 				if (eOpMode == OP_MODE_ACCESS_POINT) {
