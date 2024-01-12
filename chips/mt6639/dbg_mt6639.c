@@ -1862,6 +1862,7 @@ void mt6639_dumpCbtopReg(struct ADAPTER *ad)
 {
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	uint32_t u4Value = 0;
+	uint32_t u4Values[3] = {0};
 
 	DBGLOG(HAL, INFO, "Start mt6639_dumpCbtopReg.\n");
 	if (fgIsBusAccessFailed || fgIsMcuOff) {
@@ -1942,6 +1943,17 @@ void mt6639_dumpCbtopReg(struct ADAPTER *ad)
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 			0x70007154, &u4Value);
 		DBGLOG(HAL, INFO, "CR[0x70007154] value[0x%08x]\n", u4Value);
+
+		/* 15. PCIe debug dump for SDES */
+		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+			0x7c05BA38, &u4Values[0]);
+		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+			0x7c05BA3C, &u4Values[1]);
+		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+			0x7c05BA40, &u4Values[2]);
+		DBGLOG(HAL, INFO,
+			"PCIe debug dump for SDES, 0x740700D0=0x%08x, 0x74079054=0x%08x, 0x74030184=0x%08x\n",
+			u4Values[0], u4Values[1], u4Values[2]);
 	}
 #endif
 }
