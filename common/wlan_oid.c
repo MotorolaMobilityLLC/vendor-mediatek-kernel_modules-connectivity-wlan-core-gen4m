@@ -7485,6 +7485,58 @@ wlanoidSetMulticastList(IN struct ADAPTER *prAdapter,
 				   (uint8_t *) &rCmdMacMcastAddr, pvSetBuffer, u4SetBufferLen);
 }				/* end of wlanoidSetMulticastList() */
 
+uint32_t
+wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
+		   OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
+		   OUT uint32_t *pu4QueryInfoLen)
+{
+	struct PARAM_RSSI_MONITOR_T rRssi;
+
+	ASSERT(prAdapter);
+	ASSERT(pu4QueryInfoLen);
+	if (u4QueryBufferLen)
+		ASSERT(pvQueryBuffer);
+
+	*pu4QueryInfoLen = sizeof(struct PARAM_RSSI_MONITOR_T);
+
+	/* Check for query buffer length */
+	if (u4QueryBufferLen < *pu4QueryInfoLen) {
+		DBGLOG(OID, WARN, "Too short length %u\n", u4QueryBufferLen);
+		return WLAN_STATUS_BUFFER_TOO_SHORT;
+	}
+
+	kalMemZero(&rRssi, sizeof(struct PARAM_RSSI_MONITOR_T));
+
+	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) ==
+		PARAM_MEDIA_STATE_DISCONNECTED)
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+
+	kalMemCopy(&rRssi, pvQueryBuffer, sizeof(struct PARAM_RSSI_MONITOR_T));
+	if (rRssi.enable) {
+		if (rRssi.max_rssi_value > PARAM_WHQL_RSSI_MAX_DBM)
+			rRssi.max_rssi_value = PARAM_WHQL_RSSI_MAX_DBM;
+		if (rRssi.min_rssi_value < -120)
+			rRssi.min_rssi_value = -120;
+	} else {
+		rRssi.max_rssi_value = 0;
+		rRssi.min_rssi_value = 0;
+	}
+
+	DBGLOG(OID, INFO, "enable=%d, max_rssi_value=%d, min_rssi_value=%d\n",
+		rRssi.enable, rRssi.max_rssi_value, rRssi.min_rssi_value);
+
+	return wlanSendSetQueryCmd(prAdapter,
+			   CMD_ID_RSSI_MONITOR,
+			   TRUE,
+			   FALSE,
+			   TRUE,
+			   nicCmdEventSetCommon,
+			   nicOidCmdTimeoutCommon,
+			   sizeof(struct PARAM_RSSI_MONITOR_T),
+			   (uint8_t *)&rRssi, NULL, 0);
+
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
 * \brief This routine is called to set Packet Filter.
@@ -12284,6 +12336,58 @@ wlanoidQueryCnm(
 				   sizeof(struct PARAM_GET_CNM_T), (uint8_t *)prCnmInfo,
 				   pvQueryBuffer, u4QueryBufferLen);
 }
+
+uint32_t
+wlanoidPacketKeepAlive(IN struct ADAPTER *prAdapter,
+		       IN void *pvSetBuffer,
+		       IN uint32_t u4SetBufferLen,
+		       OUT uint32_t *pu4SetInfoLen)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct PARAM_PACKET_KEEPALIVE_T *prPacket;
+
+	DEBUGFUNC("wlanoidPacketKeepAlive");
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+	if (u4SetBufferLen)
+		ASSERT(pvSetBuffer);
+
+	*pu4SetInfoLen = sizeof(struct PARAM_PACKET_KEEPALIVE_T);
+
+	/* Check for query buffer length */
+	if (u4SetBufferLen < *pu4SetInfoLen) {
+		DBGLOG(OID, WARN, "Too short length %u\n", u4SetBufferLen);
+		return WLAN_STATUS_BUFFER_TOO_SHORT;
+	}
+
+	prPacket = (struct PARAM_PACKET_KEEPALIVE_T *)
+			kalMemAlloc(sizeof(struct PARAM_PACKET_KEEPALIVE_T),
+				VIR_MEM_TYPE);
+	if (!prPacket) {
+		DBGLOG(OID, ERROR,
+		"Can not alloc memory for struct PARAM_PACKET_KEEPALIVE_T\n");
+		return -ENOMEM;
+	}
+	kalMemCopy(prPacket, pvSetBuffer,
+		sizeof(struct PARAM_PACKET_KEEPALIVE_T));
+
+	DBGLOG(OID, INFO, "enable=%d, index=%d\r\n",
+		prPacket->enable, prPacket->index);
+
+	rStatus = wlanSendSetQueryCmd(prAdapter,
+			   CMD_ID_WFC_KEEP_ALIVE,
+			   TRUE,
+			   FALSE,
+			   TRUE,
+			   nicCmdEventSetCommon,
+			   nicOidCmdTimeoutCommon,
+			   sizeof(struct PARAM_PACKET_KEEPALIVE_T),
+			   (uint8_t *)prPacket, NULL, 0);
+	kalMemFree(prPacket, VIR_MEM_TYPE,
+		sizeof(struct PARAM_PACKET_KEEPALIVE_T));
+	return rStatus;
+}
+
 #if CFG_SUPPORT_DBDC
 uint32_t
 wlanoidSetDbdcEnable(
