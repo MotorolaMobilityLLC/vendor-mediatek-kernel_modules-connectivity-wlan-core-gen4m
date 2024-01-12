@@ -113,6 +113,8 @@ struct STA_REC_BF_UPD_ARGUMENT {
 	uint32_t u4iBfDBW;
 	uint32_t u4iBfNcol;
 	uint32_t u4iBfNrow;
+	uint32_t u4NrBw160;
+	uint32_t u4NcBw160;
 	uint32_t u4RuStartIdx;
 	uint32_t u4RuEndIdx;
 	uint32_t u4TriggerSu;

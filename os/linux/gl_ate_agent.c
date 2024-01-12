@@ -1697,6 +1697,8 @@ int Set_StaRecBfUpdate(struct net_device *prNetDev,
 		rStaRecBfUpdArg.u4Codebook42Su = 0;
 		rStaRecBfUpdArg.u4Codebook75Mu = 0;
 		rStaRecBfUpdArg.u4HeLtf        = 0;
+		rStaRecBfUpdArg.u4NrBw160      = 0;
+		rStaRecBfUpdArg.u4NcBw160      = 0;
 
 		if (g_rPfmuHeInfo.u4Config & BIT(MANUAL_HE_SU_MU))
 			rStaRecBfUpdArg.u4SuMu = g_rPfmuHeInfo.fgSU_MU;
@@ -1732,6 +1734,11 @@ int Set_StaRecBfUpdate(struct net_device *prNetDev,
 			rStaRecBfUpdArg.u4iBfNrow = g_rPfmuHeInfo.uciBfNrow;
 		}
 
+		if (g_rPfmuHeInfo.u4Config & BIT(MANUAL_HE_BW160)) {
+			rStaRecBfUpdArg.u4NrBw160 = g_rPfmuHeInfo.ucNrBw160;
+			rStaRecBfUpdArg.u4NcBw160 = g_rPfmuHeInfo.ucNcBw160;
+		}
+
 		i4Status = StaRecBfUpdate(prNetDev, rStaRecBfUpdArg,
 					  aucMemRow, aucMemCol);
 	} else
@@ -1765,24 +1772,25 @@ int Set_StaRecBfRead(struct net_device *prNetDev,
 int Set_StaRecBfHeUpdate(struct net_device *prNetDev,
 		       uint8_t *prInBuf)
 {
-	uint32_t au4Input[13];
+	uint32_t au4Input[15];
 	uint32_t u4Config;
 	uint8_t ucSuMu, ucRuStartIdx, ucRuEndIdx, ucTriggerSu, ucTriggerMu,
 		ucNg16Su, ucNg16Mu, ucCodebook42Su, ucCodebook75Mu, ucHeLtf,
-		uciBfNcol, uciBfNrow;
+		uciBfNcol, uciBfNrow, ucNrBw160, ucNcBw160;
 	int32_t i4Status = 0;
 	int32_t rv;
 
 	DBGLOG(RFTEST, ERROR, "Set_StaRecBfHeUpdate\n");
 
 	rv = sscanf(prInBuf,
-			"%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x",
+			"%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x:%x",
 			&au4Input[0], &au4Input[1], &au4Input[2], &au4Input[3],
 			&au4Input[4], &au4Input[5], &au4Input[6], &au4Input[7],
 			&au4Input[8], &au4Input[9], &au4Input[10],
-			&au4Input[11], &au4Input[12]);
+			&au4Input[11], &au4Input[12], &au4Input[13],
+			&au4Input[14]);
 
-	if (rv == 13) {
+	if (rv == 15) {
 		u4Config = au4Input[0];
 		ucSuMu = (uint8_t) au4Input[1];
 		ucRuStartIdx = (uint8_t) au4Input[2];
@@ -1796,12 +1804,15 @@ int Set_StaRecBfHeUpdate(struct net_device *prNetDev,
 		ucHeLtf = (uint8_t) au4Input[10];
 		uciBfNcol = (uint8_t) au4Input[11];
 		uciBfNrow = (uint8_t) au4Input[12];
+		ucNrBw160 = (uint8_t) au4Input[13];
+		ucNcBw160 = (uint8_t) au4Input[14];
 
 		i4Status = StaRecBfHeUpdate(prNetDev, &g_rPfmuHeInfo, u4Config,
 				ucSuMu,	ucRuStartIdx, ucRuEndIdx, ucTriggerSu,
 				ucTriggerMu, ucNg16Su, ucNg16Mu,
 				ucCodebook42Su, ucCodebook75Mu,
-				ucHeLtf, uciBfNcol, uciBfNrow);
+				ucHeLtf, uciBfNcol, uciBfNrow,
+				ucNrBw160, ucNcBw160);
 	} else
 		return -EINVAL;
 

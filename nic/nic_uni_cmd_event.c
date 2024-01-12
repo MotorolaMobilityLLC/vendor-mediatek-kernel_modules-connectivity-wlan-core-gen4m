@@ -2017,6 +2017,7 @@ uint32_t nicUniCmdStaRecUpdateExt(struct ADAPTER *ad,
 	tag->rTxBfPfmuInfo.fgSU_MU = bf->rTxBfPfmuInfo.fgSU_MU;
 	tag->rTxBfPfmuInfo.u1TxBfCap = bf->rTxBfPfmuInfo.u1TxBfCap;
 	tag->rTxBfPfmuInfo.ucSoundingPhy = bf->rTxBfPfmuInfo.ucSoundingPhy;
+	tag->rTxBfPfmuInfo.ucNdpaRate = bf->rTxBfPfmuInfo.ucNdpaRate;
 	tag->rTxBfPfmuInfo.ucNdpRate = bf->rTxBfPfmuInfo.ucNdpRate;
 	tag->rTxBfPfmuInfo.ucReptPollRate = bf->rTxBfPfmuInfo.ucReptPollRate;
 	tag->rTxBfPfmuInfo.ucTxMode = bf->rTxBfPfmuInfo.ucTxMode;
@@ -2043,7 +2044,7 @@ uint32_t nicUniCmdStaRecUpdateExt(struct ADAPTER *ad,
 	tag->rTxBfPfmuInfo.uciBfNrow = bf->rTxBfPfmuInfo.uciBfNrow;
 	tag->rTxBfPfmuInfo.nr_bw160 = bf->rTxBfPfmuInfo.u1NrBw160;
 	tag->rTxBfPfmuInfo.nc_bw160 = bf->rTxBfPfmuInfo.u1NcBw160;
-	tag->rTxBfPfmuInfo.ru_start_idx = bf->rTxBfPfmuInfo.u1RuEndIdx;
+	tag->rTxBfPfmuInfo.ru_start_idx = bf->rTxBfPfmuInfo.u1RuStartIdx;
 	tag->rTxBfPfmuInfo.ru_end_idx = bf->rTxBfPfmuInfo.u1RuEndIdx;
 	tag->rTxBfPfmuInfo.trigger_su = bf->rTxBfPfmuInfo.fgTriggerSu;
 	tag->rTxBfPfmuInfo.trigger_mu = bf->rTxBfPfmuInfo.fgTriggerMu;

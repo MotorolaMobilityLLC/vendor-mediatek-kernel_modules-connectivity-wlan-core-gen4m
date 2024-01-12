@@ -1103,6 +1103,8 @@ struct PFMU_HE_INFO {
 	uint8_t u1HeLtf;
 	uint8_t uciBfNcol;
 	uint8_t uciBfNrow;
+	uint8_t ucNrBw160;
+	uint8_t ucNcBw160;
 };
 
 enum PFMU_HE_MANUAL_CONF {
@@ -1112,7 +1114,8 @@ enum PFMU_HE_MANUAL_CONF {
 	MANUAL_HE_NG16,
 	MANUAL_HE_CODEBOOK,
 	MANUAL_HE_LTF,
-	MANUAL_HE_IBF
+	MANUAL_HE_IBF,
+	MANUAL_HE_BW160
 };
 
 struct PROFILE_TAG_READ {
