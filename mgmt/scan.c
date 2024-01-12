@@ -1668,7 +1668,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 				ucBssidNum))
 				ucScanEnable = FALSE;
 
-			if (ucScanEnable)
+			if (!ucScanEnable)
 				continue;
 
 			if (ucBssidNum < CFG_SCAN_SSID_MAX_NUM) {
