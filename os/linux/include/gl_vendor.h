@@ -98,6 +98,9 @@
 #define QCA_NL80211_VENDOR_SUBCMD_SETBAND 105
 
 #define WIFI_VENDOR_ATTR_FEATURE_FLAGS 7
+#define WIFI_VENDOR_DATA_OP_MODE_CHANGE(bssIdx, channelBw, TxNss, RxNss) \
+	(uint32_t)((((bssIdx) << 24) + ((channelBw) << 16) + \
+		((TxNss) << 8) + (RxNss)) & 0xffff)
 
 enum NL80211_VENDOR_FEATURES {
 	VENDOR_FEATURE_KEY_MGMT_OFFLOAD        = 0,
@@ -194,7 +197,8 @@ enum WIFI_VENDOR_EVENT {
 	WIFI_EVENT_DRIVER_ERROR,
 	WIFI_EVENT_ACS,
 	WIFI_EVENT_GENERIC_RESPONSE,
-	WIFI_EVENT_BIGDATA_PIP
+	WIFI_EVENT_BIGDATA_PIP,
+	WIFI_EVENT_OP_MODE_CHANGE
 	/* Always add at the end.*/
 };
 
@@ -340,6 +344,13 @@ enum WIFI_BIGDATA_PIP_ATTRIBUTE {
 	WIFI_ATTRIBUTE_PIP_PAYLOAD = 0,
 };
 #endif
+
+#if CFG_SUPPORT_DBDC
+enum WIFI_OP_MODE_CHANGE_ATTRIBUTE {
+	WIFI_ATTRIBUTE_OP_MODE_CHANGE = 0,
+};
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

@@ -6907,6 +6907,50 @@ nla_put_failure:
 }
 #endif
 
+#if CFG_SUPPORT_DBDC
+int8_t kalIndicateOpModeChange(struct ADAPTER *prAdapter,
+					uint8_t ucBssIdx,
+					uint8_t ucChannelBw,
+					uint8_t ucTxNss,
+					uint8_t ucRxNss)
+{
+	struct sk_buff *skb = NULL;
+	struct wiphy *wiphy;
+	struct wireless_dev *wdev;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint16_t dataLen = sizeof(uint32_t);
+	uint32_t u4OpModeChange = WIFI_VENDOR_DATA_OP_MODE_CHANGE(
+		ucBssIdx, ucChannelBw, ucTxNss, ucRxNss);
+
+	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
+	wdev = ((prAdapter->prGlueInfo)->prDevHandler)->ieee80211_ptr;
+
+	if (!wiphy || !wdev || !prWifiVar)
+		return -EINVAL;
+
+	skb = cfg80211_vendor_event_alloc(wiphy,
+#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
+		wdev,
+#endif
+		dataLen, WIFI_EVENT_OP_MODE_CHANGE, GFP_KERNEL);
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "%s allocate skb failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	if (dataLen > 0 &&
+		unlikely(nla_put(skb, WIFI_ATTRIBUTE_OP_MODE_CHANGE
+		, dataLen, &u4OpModeChange) < 0))
+		goto nla_put_failure;
+
+	cfg80211_vendor_event(skb, GFP_KERNEL);
+	return TRUE;
+nla_put_failure:
+	kfree_skb(skb);
+	return FALSE;
+}
+#endif
+
 #if CFG_SUPPORT_AGPS_ASSIST
 u_int8_t kalIndicateAgpsNotify(struct ADAPTER *prAdapter,
 			       uint8_t cmd, uint8_t *data, uint16_t dataLen)

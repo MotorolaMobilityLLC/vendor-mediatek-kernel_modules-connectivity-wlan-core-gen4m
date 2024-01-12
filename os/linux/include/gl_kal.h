@@ -1264,6 +1264,15 @@ int8_t kalBigDataPip(struct ADAPTER *prAdapter,
 					uint16_t dataLen);
 #endif
 
+#if CFG_SUPPORT_DBDC
+int8_t kalIndicateOpModeChange(struct ADAPTER *prAdapter,
+					uint8_t ucBssIdx,
+					uint8_t ucChannelBw,
+					uint8_t ucTxNss,
+					uint8_t ucRxNss);
+#endif
+
+
 /*----------------------------------------------------------------------------*/
 /* Routines in interface - ehpi/sdio.c                                        */
 /*----------------------------------------------------------------------------*/
