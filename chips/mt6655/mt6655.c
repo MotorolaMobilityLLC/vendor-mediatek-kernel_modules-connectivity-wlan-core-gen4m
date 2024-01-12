@@ -598,6 +598,8 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6655 = {
 #else
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC),
 #endif /* _HIF_PCIE */
+
+	.u4MinTxLen = 2,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt6655 = {

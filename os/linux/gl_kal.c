@@ -3674,21 +3674,15 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 	uint8_t *aucLookAheadBuf = NULL;
 	uint8_t ucEthTypeLenOffset = ETHER_HEADER_LEN - ETHER_TYPE_LEN;
 	uint8_t *pucNextProtocol = NULL;
+	uint32_t u4MinTxLen;
 #if DSCP_SUPPORT
 	uint8_t ucUserPriority;
 #endif
 
 	u4PacketLen = prSkb->len;
 
-#if CFG_WIFI_TX_DROP_SHORT_PAYLOAD
-	if (u4PacketLen <= ETHER_HEADER_LEN + 2) {
-		DBGLOG(INIT, WARN, "Invalid Ether packet length: %u\n",
-		       u4PacketLen);
-		return FALSE;
-	}
-#endif
-
-	if (u4PacketLen < ETHER_HEADER_LEN) {
+	u4MinTxLen = prGlueInfo->prAdapter->chip_info->u4MinTxLen;
+	if (u4PacketLen <= ETHER_HEADER_LEN + u4MinTxLen) {
 		DBGLOG(INIT, WARN, "Invalid Ether packet length: %u\n",
 		       u4PacketLen);
 		return FALSE;
