@@ -401,9 +401,6 @@ void p2pFsmRunEventMgmtFrameTx(struct ADAPTER *prAdapter,
 
 	prMgmtTxMsg = (struct MSG_MGMT_TX_REQUEST *) prMsgHdr;
 
-	if (prMgmtTxMsg->fgIsWaitRsp || prMgmtTxMsg->fgIsOffChannel)
-		p2pFuncAddPendingMgmtLinkEntry(prAdapter, prMgmtTxMsg);
-
 	if (p2pFsmUseRoleIf(prAdapter, prMgmtTxMsg->ucBssIdx)) {
 		p2pRoleFsmRunEventMgmtTx(prAdapter, prMsgHdr);
 	} else {
