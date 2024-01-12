@@ -12656,8 +12656,9 @@ void wlanSuspendPmHandle(struct GLUE_INFO *prGlueInfo)
 				/* AIS bss enter wow power mode, default fast pws */
 				ePwrMode = Param_PowerModeFast_PSP;
 				idx = prAisBssInfo->ucBssIndex;
-				nicConfigPowerSaveProfile(prGlueInfo->prAdapter, idx,
-					ePwrMode, FALSE, PS_CALLER_WOW);
+				nicConfigPowerSaveProfileEntry(
+					prGlueInfo->prAdapter,
+					idx, ePwrMode, FALSE, PS_CALLER_WOW);
 				DBGLOG(HAL, STATE, "Wow AIS_idx:%d, pwr mode:%d\n",
 					idx, ePwrMode);
 
@@ -12794,7 +12795,7 @@ void wlanResumePmHandle(struct GLUE_INFO *prGlueInfo)
 			kalWowProcess(prGlueInfo, FALSE);
 
 			/* Restore AIS pws when leave wow, ignore ePwrMode */
-			nicConfigPowerSaveProfile(prGlueInfo->prAdapter,
+			nicConfigPowerSaveProfileEntry(prGlueInfo->prAdapter,
 				prAisBssInfo->ucBssIndex,
 				Param_PowerModeCAM,
 				FALSE, PS_CALLER_WOW);
