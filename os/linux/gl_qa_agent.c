@@ -91,9 +91,10 @@ uint32_t	u4EepromMode = 4;
 uint32_t g_u4Chip_ID;
 uint32_t g_ucEepromCurrentMode = EFUSE_MODE;
 
-
+#if (CFG_SUPPORT_CONNAC3X == 0)
 static struct hqa_rx_stat_band_format g_backup_band0_info;
 static struct hqa_rx_stat_band_format g_backup_band1_info;
+#endif
 
 #if CFG_SUPPORT_BUFFER_MODE
 uint8_t	uacEEPROMImage[MAX_EEPROM_BUFFER_SIZE] = {
@@ -5026,7 +5027,7 @@ int32_t hqa_genStatBandReport(
 {
 
 	int32_t ret = 0;
-
+#if (CFG_SUPPORT_CONNAC3X == 0)
 	if (band_idx == HQA_M_BAND_0) {
 		rx_st_band->mac_rx_fcs_err_cnt =
 			ntohl(g_HqaRxStat.MAC_FCS_Err) +
@@ -5135,6 +5136,7 @@ int32_t hqa_genStatBandReport(
 		kalMemZero(&g_backup_band1_info,
 			sizeof(struct hqa_rx_stat_band_format));
 	}
+#endif
 
 	return ret;
 }
@@ -5145,7 +5147,7 @@ int32_t hqa_genStatPathReport(
 	struct hqa_rx_stat_path_format *rx_st_path)
 {
 	int32_t ret = 0;
-
+#if (CFG_SUPPORT_CONNAC3X == 0)
 	switch (blk_idx) {
 	case HQA_ANT_WF0:
 		rx_st_path->rcpi =
@@ -5180,7 +5182,7 @@ int32_t hqa_genStatPathReport(
 		ret = WLAN_STATUS_INVALID_DATA;
 		break;
 	}
-
+#endif
 	return ret;
 }
 
@@ -5190,7 +5192,7 @@ int32_t hqa_genStatUserReport(
 	struct hqa_rx_stat_user_format *rx_st_user)
 {
 	int32_t ret = WLAN_STATUS_SUCCESS;
-
+#if (CFG_SUPPORT_CONNAC3X == 0)
 	rx_st_user->freq_offset_from_rx =
 		ntohl(g_HqaRxStat.FreqOffsetFromRX);
 	if (band_idx == HQA_M_BAND_0)
@@ -5200,7 +5202,7 @@ int32_t hqa_genStatUserReport(
 
 	rx_st_user->fcs_error_cnt =
 		ntohl(g_HqaRxStat.MAC_FCS_Err);
-
+#endif
 	return ret;
 }
 
@@ -5210,7 +5212,7 @@ int32_t hqa_genStatCommReport(
 	struct hqa_rx_stat_comm_format *rx_st_comm)
 {
 	int32_t ret = WLAN_STATUS_SUCCESS;
-
+#if (CFG_SUPPORT_CONNAC3X == 0)
 	rx_st_comm->rx_fifo_full =
 		ntohl(g_HqaRxStat.OutOfResource);
 	rx_st_comm->aci_hit_low =
@@ -5230,6 +5232,7 @@ int32_t hqa_genStatCommReport(
 		rx_st_comm->driver_rx_count =
 		ntohl(g_HqaRxStat.DriverRxCount1);
 	}
+#endif
 	return ret;
 }
 

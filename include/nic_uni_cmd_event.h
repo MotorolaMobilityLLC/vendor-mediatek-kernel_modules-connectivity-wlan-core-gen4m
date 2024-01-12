@@ -3183,6 +3183,7 @@ struct UNI_CMD_TESTMODE_RX_STAT {
 /** testmode rx statistic command TLV List */
 enum ENUM_UNI_CMD_TESTMODE_RX_TAG {
 	UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL = 0x8,
+	UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL_V2 = 0x9,
 	UNI_CMD_TESTMODE_RX_TAG_NUM,
 };
 
@@ -4873,12 +4874,133 @@ enum UNI_EVENT_TESTMODE_RX_STAT_TAG {
 /* Update rx statistic all event struct (Tag 0x06) */
 
 #define UNI_EVENT_TESTMODE_RX_STAT_ALL_ITEM	76
+#define UNI_TM_MAX_BAND_NUM 4
+#define UNI_TM_MAX_ANT_NUM 8
+#define UNI_TM_MAX_USER_NUM 16
 
 struct UNI_EVENT_TESTMODE_STAT_ALL {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint32_t u4Buffer[UNI_EVENT_TESTMODE_RX_STAT_ALL_ITEM];
 } __KAL_ATTRIB_PACKED__;
+
+struct UNI_TESTMODE_STATINFO_BAND {
+	/* mac part */
+	uint16_t u2MacRxFcsErrCnt;
+	uint16_t u2MacRxLenMisMatch;
+	uint16_t u2MacRxFcsOkCnt;
+	uint8_t u1Reserved1[2];
+	uint32_t u4MacRxMdrdyCnt;
+
+	/* phy part */
+	uint16_t u2PhyRxFcsErrCntCck;
+	uint16_t u2PhyRxFcsErrCntOfdm;
+	uint16_t u2PhyRxPdCck;
+	uint16_t u2PhyRxPdOfdm;
+	uint16_t u2PhyRxSigErrCck;
+	uint16_t u2PhyRxSfdErrCck;
+	uint16_t u2PhyRxSigErrOfdm;
+	uint16_t u2PhyRxTagErrOfdm;
+	uint16_t u2PhyRxMdrdyCntCck;
+	uint16_t u2PhyRxMdrdyCntOfdm;
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_TESTMODE_STATINFO_USER {
+	int32_t i4FreqOffsetFromRx;
+	int32_t i4Snr;
+	uint32_t u4FcsErrorCnt;
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_TESTMODE_STATINFO_COMM {
+	uint16_t u2MacRxFifoFull;
+	uint8_t u1Reserved1[2];
+
+	uint32_t u4AciHitLow;
+	uint32_t u4AciHitHigh;
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_TESTMODE_STATINFO_RXV {
+	uint16_t u2Rcpi;
+	int16_t i2Rssi;
+	int16_t i2Snr;
+	int16_t i2AdcRssi;
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_TESTMODE_STATINFO_RSSI {
+	int8_t i1RssiIb;
+	int8_t i1RssiWb;
+	uint8_t u1Reserved1[2];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_TESTMODE_STATINFO_BAND_EXT1 {
+	/* mac part */
+	uint32_t u4RxU2MMpduCnt;
+
+	/* Common part*/
+	uint8_t u1BandIdx;
+
+	/* phy part */
+	uint8_t u1Reserved[3];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_TESTMODE_STATINFO_COMM_EXT1 {
+	uint32_t u4DrvRxCnt;
+	uint32_t u4Sinr;
+	uint32_t u4MuRxCnt;
+	/* mac part */
+	uint8_t u1Reserved0[4];
+
+	/* phy part */
+	uint8_t u1EhtSigMcs;
+	uint8_t u1Reserved1[3];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_TESTMODE_STATINFO_USER_EXT1 {
+	uint8_t u1NeVarDbAllUser;
+	uint8_t u1Reserved1[3];
+} __KAL_ATTRIB_PACKED__;
+
+/** @addtogroup UNI_EVENT_ID_TESTMODE_RX_STAT_INFO
+ * @{
+ */
+/**
+ * This structure is used for UNI_EVENT_TESTMODE_RX_STAT(0x01) of
+ * UNI_EVENT_ID_TESTMODE_RX_STAT_INFO command (0x32) to update
+ * testmode rx statistic related information.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag         should be 0x01
+ * @param[in] u2Length      the length of this TLV
+ * @param[in] rInfoBand     show band part of rx statistic related information
+ * @param[in] rInfoBandExt1 show band part of rx statistic related information
+ * @param[in] rInfoComm     show common part of rx statistic related information
+ * @param[in] rInfoRXV      show rxv part of rx statistic related information
+ * @param[in] rInfoFagc     show fagc part of rx statistic related information
+ * @param[in] rInfoInst     show inst part of rx statistic related information
+ * @param[in] rInfoUser     show user part of rx statistic related information
+ */
+/* Update rx statistic event struct (Tag 0x07) */
+struct UNI_EVENT_TESTMODE_STAT_ALL_V2 {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	struct UNI_TESTMODE_STATINFO_BAND rInfoBand;
+	struct UNI_TESTMODE_STATINFO_BAND_EXT1 rInfoBandExt1;
+	struct UNI_TESTMODE_STATINFO_COMM rInfoComm;
+	struct UNI_TESTMODE_STATINFO_COMM_EXT1 rInfoCommExt1;
+
+	/* rxv part */
+	struct UNI_TESTMODE_STATINFO_RXV rInfoRXV[UNI_TM_MAX_ANT_NUM];
+
+	/* RSSI */
+	struct UNI_TESTMODE_STATINFO_RSSI rInfoFagc[UNI_TM_MAX_ANT_NUM];
+	struct UNI_TESTMODE_STATINFO_RSSI rInfoInst[UNI_TM_MAX_ANT_NUM];
+
+	/* User */
+	struct UNI_TESTMODE_STATINFO_USER rInfoUser[UNI_TM_MAX_USER_NUM];
+	struct UNI_TESTMODE_STATINFO_USER_EXT1
+		rInfoUserExt1[UNI_TM_MAX_USER_NUM];
+} __KAL_ATTRIB_PACKED__;
+/** @} */
 
 /* BSS ER event */
 struct UNI_EVENT_BSS_ER {
@@ -5406,6 +5528,8 @@ void nicUniEventLinkQuality(IN struct ADAPTER
 void nicUniEventQueryRfTestATInfo(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventQueryRxStatAll(IN struct ADAPTER
+	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniEventQueryRxStatAllCon3(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventBugReport(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);

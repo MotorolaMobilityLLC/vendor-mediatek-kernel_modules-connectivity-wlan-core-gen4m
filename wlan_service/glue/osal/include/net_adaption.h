@@ -148,6 +148,10 @@
 #else
 #define MAX_MULTI_TX_STA 2
 #endif
+#define NET_UNI_TM_MAX_BAND_NUM 4
+#define NET_UNI_TM_MAX_ANT_NUM 8
+#define NET_UNI_TM_MAX_USER_NUM 16
+
 
 /*****************************************************************************
  *	Enum value definition
@@ -562,6 +566,10 @@ struct test_rx_stat_band_info {
 	u_int32 phy_rx_tag_err_ofdm;
 	u_int32 phy_rx_mdrdy_cnt_cck;
 	u_int32 phy_rx_mdrdy_cnt_ofdm;
+#if (CFG_SUPPORT_CONNAC3X == 1) /* band info v1*/
+	u_int32 aci_hit_low;
+	u_int32 aci_hit_high;
+#endif
 };
 
 /* Test rx stat path info */
@@ -572,6 +580,9 @@ struct test_rx_stat_path_info {
 	u_int32 fagc_wb_rssi;
 	u_int32 inst_ib_rssi;
 	u_int32 inst_wb_rssi;
+#if (CFG_SUPPORT_CONNAC3X == 1) /* path_info v1 */
+	u_int32 adc_rssi;
+#endif
 };
 
 /* Test rx stat user info */
@@ -584,12 +595,17 @@ struct test_rx_stat_user_info {
 /* Test rx stat comm info */
 struct test_rx_stat_comm_info {
 	u_int32 rx_fifo_full;
+#if (CFG_SUPPORT_CONNAC3X == 0) /* comm_info v0 */
 	u_int32 aci_hit_low;
 	u_int32 aci_hit_high;
+#endif
 	u_int32 mu_pkt_count;
 	u_int32 sig_mcs;
 	u_int32 sinr;
 	u_int32 driver_rx_count;
+#if (CFG_SUPPORT_CONNAC3X == 1) /* comm_info v1 */
+	u_int32 ne_var_db;
+#endif
 };
 
 /* Test rx stat */
@@ -675,6 +691,107 @@ struct GNU_PACKED test_rx_stat_leg {
 	u_int32 fcs_error_cnt[TEST_USER_NUM];
 };
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+
+struct GNU_PACKED hqa_rx_band_info
+{
+	/* mac part */
+	u_int32 u4MacRxFcsErrCnt;
+	u_int32 u4MacRxLenMisMatch;
+	u_int32 u4MacRxFcsOkCnt;
+	u_int32 u4Reserved1[2];
+	u_int32 u4MacRxMdrdyCnt;
+
+	/* phy part */
+	u_int32 u4PhyRxFcsErrCntCck;
+	u_int32 u4PhyRxFcsErrCntOfdm;
+	u_int32 u4PhyRxPdCck;
+	u_int32 u4PhyRxPdOfdm;
+	u_int32 u4PhyRxSigErrCck;
+	u_int32 u4PhyRxSfdErrCck;
+	u_int32 u4PhyRxSigErrOfdm;
+	u_int32 u4PhyRxTagErrOfdm;
+	u_int32 u4PhyRxMdrdyCntCck;
+	u_int32 u4PhyRxMdrdyCntOfdm;
+};
+
+struct GNU_PACKED hqa_rx_user_info
+{
+	u_int32 u4FreqOffsetFromRx;
+	u_int32 u4Snr;
+	u_int32 u4FcsErrorCnt;
+};
+
+struct GNU_PACKED hqa_rx_comm_info
+{
+	u_int32 u4MacRxFifoFull;
+	u_int32 u4Reserved1[2];
+
+	u_int32 u4AciHitLow;
+	u_int32 u4AciHitHigh;
+};
+
+struct GNU_PACKED hqa_rx_rxv_info
+{
+	u_int32 u4Rcpi;
+	u_int32 u4Rssi;
+	u_int32 u4Snr;
+	u_int32 u4AdcRssi;
+};
+
+struct GNU_PACKED hqa_rx_rssi_info
+{
+	u_int32 u4RssiIb;
+	u_int32 u4RssiWb;
+	u_int32 u4Reserved1[2];
+};
+
+struct GNU_PACKED hqa_rx_band_info_ext1
+{
+	/* mac part */
+	u_int32 u4RxU2MMpduCnt;
+
+	/* phy part */
+	u_int32 u4Reserved[4];
+};
+
+struct GNU_PACKED hqa_rx_comm_info_ext1
+{
+	u_int32 u4DrvRxCnt;
+	u_int32 u4Sinr;
+	u_int32 u4MuRxCnt;
+	/* mac part */
+	u_int32 u4Reserved0[4];
+
+	/* phy part */
+	u_int32 u4EhtSigMcs;
+	u_int32 u4Reserved1[3];
+};
+
+struct GNU_PACKED hqa_rx_user_info_ext1
+{
+	u_int32 u4NeVarDbAllUser;
+	u_int32 u4Reserved1[3];
+};
+
+struct GNU_PACKED hqa_m_rx_stat {
+	struct hqa_rx_band_info rInfoBand[NET_UNI_TM_MAX_BAND_NUM];
+	struct hqa_rx_band_info_ext1 rInfoBandExt1[NET_UNI_TM_MAX_BAND_NUM];
+	struct hqa_rx_comm_info rInfoComm[NET_UNI_TM_MAX_BAND_NUM];
+	struct hqa_rx_comm_info_ext1 rInfoCommExt1[NET_UNI_TM_MAX_BAND_NUM];
+
+	/* rxv part */
+	struct hqa_rx_rxv_info rInfoRXV[NET_UNI_TM_MAX_ANT_NUM];
+
+	/* RSSI */
+	struct hqa_rx_rssi_info rInfoFagc[NET_UNI_TM_MAX_ANT_NUM];
+	struct hqa_rx_rssi_info rInfoInst[NET_UNI_TM_MAX_ANT_NUM];
+
+	/* User */
+	struct hqa_rx_user_info rInfoUser[NET_UNI_TM_MAX_USER_NUM];
+	struct hqa_rx_user_info_ext1 rInfoUserExt1[NET_UNI_TM_MAX_USER_NUM];
+};
+#else
 /* For mobile temp use */
 struct GNU_PACKED hqa_m_rx_stat {
 	u_int32 mac_rx_fcs_err_cnt;
@@ -764,6 +881,8 @@ struct GNU_PACKED hqa_m_rx_stat {
 	u_int32 per0;
 	u_int32 per1;
 };
+
+#endif
 
 struct GNU_PACKED hqa_comm_rx_stat {
 	union {

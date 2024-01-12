@@ -216,6 +216,7 @@ struct PARAM_RX_STAT {
 					 */
 };
 #else
+#if (CFG_SUPPORT_CONNAC3X == 0)
 struct PARAM_RX_STAT {
 	uint32_t MAC_FCS_Err;	/* b0 */
 	uint32_t MAC_Mdrdy;	/* b0 */
@@ -301,6 +302,98 @@ struct PARAM_RX_STAT {
 	uint32_t PER0;
 	uint32_t PER1;
 };
+#else
+struct TESTMODE_RX_STAT_BAND {
+	/* mac part */
+	uint32_t u4MacRxFcsErrCnt;
+	uint32_t u4MacRxLenMisMatch;
+	uint32_t u4MacRxFcsOkCnt;
+	uint32_t u4Reserved1[2];
+	uint32_t u4MacRxMdrdyCnt;
+
+	/* phy part */
+	uint32_t u4PhyRxFcsErrCntCck;
+	uint32_t u4PhyRxFcsErrCntOfdm;
+	uint32_t u4PhyRxPdCck;
+	uint32_t u4PhyRxPdOfdm;
+	uint32_t u4PhyRxSigErrCck;
+	uint32_t u4PhyRxSfdErrCck;
+	uint32_t u4PhyRxSigErrOfdm;
+	uint32_t u4PhyRxTagErrOfdm;
+	uint32_t u4PhyRxMdrdyCntCck;
+	uint32_t u4PhyRxMdrdyCntOfdm;
+};
+
+struct TESTMODE_RX_STAT_USER {
+	uint32_t u4FreqOffsetFromRx;
+	uint32_t u4Snr;
+	uint32_t u4FcsErrorCnt;
+};
+
+struct TESTMODE_RX_STAT_COMM {
+	uint32_t u4MacRxFifoFull;
+	uint32_t u4Reserved1[2];
+
+	uint32_t u4AciHitLow;
+	uint32_t u4AciHitHigh;
+};
+
+struct TESTMODE_RX_STAT_RXV {
+	uint32_t u4Rcpi;
+	uint32_t u4Rssi;
+	uint32_t u4Snr;
+	uint32_t u4AdcRssi;
+};
+
+struct TESTMODE_RX_STAT_RSSI {
+	uint32_t u4RssiIb;
+	uint32_t u4RssiWb;
+	uint32_t u4Reserved1[2];
+};
+
+struct TESTMODE_RX_STAT_BAND_EXT1 {
+	/* mac part */
+	uint32_t u4RxU2MMpduCnt;
+
+	/* phy part */
+	uint32_t u4Reserved[4];
+};
+
+struct TESTMODE_RX_STAT_COMM_EXT1 {
+	uint32_t u4DrvRxCnt;
+	uint32_t u4Sinr;
+	uint32_t u4MuRxCnt;
+	/* mac part */
+	uint32_t u4Reserved0[4];
+
+	/* phy part */
+	uint32_t u4EhtSigMcs;
+	uint32_t u4Reserved1[3];
+};
+
+struct TESTMODE_RX_STAT_USER_EXT1 {
+	uint32_t u4NeVarDbAllUser;
+	uint32_t u4Reserved1[3];
+};
+
+struct PARAM_RX_STAT {
+	struct TESTMODE_RX_STAT_BAND rInfoBand[UNI_TM_MAX_BAND_NUM];
+	struct TESTMODE_RX_STAT_BAND_EXT1 rInfoBandExt1[UNI_TM_MAX_BAND_NUM];
+	struct TESTMODE_RX_STAT_COMM rInfoComm[UNI_TM_MAX_BAND_NUM];
+	struct TESTMODE_RX_STAT_COMM_EXT1 rInfoCommExt1[UNI_TM_MAX_BAND_NUM];
+
+	/* rxv part */
+	struct TESTMODE_RX_STAT_RXV rInfoRXV[UNI_TM_MAX_ANT_NUM];
+
+	/* RSSI */
+	struct TESTMODE_RX_STAT_RSSI rInfoFagc[UNI_TM_MAX_ANT_NUM];
+	struct TESTMODE_RX_STAT_RSSI rInfoInst[UNI_TM_MAX_ANT_NUM];
+
+	/* User */
+	struct TESTMODE_RX_STAT_USER rInfoUser[UNI_TM_MAX_USER_NUM];
+	struct TESTMODE_RX_STAT_USER_EXT1 rInfoUserExt1[UNI_TM_MAX_USER_NUM];
+};
+#endif
 extern struct PARAM_RX_STAT g_HqaRxStat;
 
 struct hqa_rx_stat_resp_field {

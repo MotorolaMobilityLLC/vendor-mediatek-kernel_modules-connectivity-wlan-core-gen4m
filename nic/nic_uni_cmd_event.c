@@ -5144,17 +5144,26 @@ uint32_t nicUniCmdTestmodeRxStat(struct ADAPTER *ad,
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	cmd = (struct CMD_ACCESS_RX_STAT *) info->pucInfoBuffer;
-
+#if (CFG_SUPPORT_CONNAC3X == 0)
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_TESTMODE_RX_STAT,
 				max_cmd_len, nicUniEventQueryRxStatAll,
 				nicUniCmdTimeoutCommon);
+#else
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_TESTMODE_RX_STAT,
+				max_cmd_len, nicUniEventQueryRxStatAllCon3,
+				nicUniCmdTimeoutCommon);
+#endif
 
 	if (!entry)
 		return WLAN_STATUS_RESOURCES;
 
 	uni_cmd = (struct UNI_CMD_TESTMODE_RX_STAT *)entry->pucInfoBuffer;
 	tag = (struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL *)uni_cmd->aucTlvBuffer;
+#if (CFG_SUPPORT_CONNAC3X == 0)
 	tag->u2Tag = UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL;
+#else
+	tag->u2Tag = UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL_V2;
+#endif
 	tag->u2Length = sizeof(*tag);
 	tag->u1DbdcIdx = cmd->ucDbdcIdx;
 
@@ -6143,7 +6152,7 @@ void nicUniEventQueryRfTestATInfo(IN struct ADAPTER
 
 	nicCmdEventQueryRfTestATInfo(prAdapter, prCmdInfo, tag->aucBuffer);
 }
-
+#if (CFG_SUPPORT_CONNAC3X == 0)
 void nicUniEventQueryRxStatAll(IN struct ADAPTER
 	  *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
@@ -6172,7 +6181,125 @@ void nicUniEventQueryRxStatAll(IN struct ADAPTER
 						WLAN_STATUS_SUCCESS);
 	}
 }
+#else
+void nicUniEventRxStatCastMap(IN struct UNI_EVENT_TESTMODE_STAT_ALL_V2 *tag,
+	struct PARAM_RX_STAT *pHqaRxStat)
+{
+	uint8_t u1Idx = 0, u1BandIdx = 0;
 
+	u1BandIdx = tag->rInfoBandExt1.u1BandIdx;
+
+	/* Band part */
+	pHqaRxStat->rInfoBand[u1BandIdx].u4MacRxFcsErrCnt =
+		(uint32_t)(tag->rInfoBand.u2MacRxFcsErrCnt);
+	pHqaRxStat->rInfoBand[u1BandIdx].u4MacRxLenMisMatch =
+		(uint32_t)(tag->rInfoBand.u2MacRxLenMisMatch);
+	pHqaRxStat->rInfoBand[u1BandIdx].u4MacRxFcsOkCnt =
+		(uint32_t)(tag->rInfoBand.u2MacRxFcsOkCnt);
+	pHqaRxStat->rInfoBand[u1BandIdx].u4MacRxMdrdyCnt =
+		(uint32_t)(tag->rInfoBand.u4MacRxMdrdyCnt);
+	pHqaRxStat->rInfoBand[u1BandIdx].u4PhyRxFcsErrCntCck =
+		(uint32_t)(tag->rInfoBand.u2PhyRxFcsErrCntCck);
+	pHqaRxStat->rInfoBand[u1BandIdx].u4PhyRxFcsErrCntOfdm =
+		(uint32_t)(tag->rInfoBand.u2PhyRxFcsErrCntOfdm);
+	pHqaRxStat->rInfoBand[u1BandIdx].u4PhyRxPdCck =
+		(uint32_t)(tag->rInfoBand.u2PhyRxPdCck);
+	pHqaRxStat->rInfoBand[u1BandIdx].u4PhyRxPdOfdm =
+		(uint32_t)(tag->rInfoBand.u2PhyRxPdOfdm);
+	pHqaRxStat->rInfoBand[u1BandIdx].u4PhyRxSigErrCck =
+		(uint32_t)(tag->rInfoBand.u2PhyRxSigErrCck);
+	pHqaRxStat->rInfoBand[u1BandIdx].u4PhyRxSfdErrCck =
+		(uint32_t)(tag->rInfoBand.u2PhyRxSfdErrCck);
+	pHqaRxStat->rInfoBand[u1BandIdx].u4PhyRxSigErrOfdm =
+		(uint32_t)(tag->rInfoBand.u2PhyRxSigErrOfdm);
+	pHqaRxStat->rInfoBand[u1BandIdx].u4PhyRxTagErrOfdm =
+		(uint32_t)(tag->rInfoBand.u2PhyRxTagErrOfdm);
+	pHqaRxStat->rInfoBand[u1BandIdx].u4PhyRxMdrdyCntCck =
+		(uint32_t)(tag->rInfoBand.u2PhyRxMdrdyCntCck);
+	pHqaRxStat->rInfoBand[u1BandIdx].u4PhyRxMdrdyCntOfdm =
+		(uint32_t)(tag->rInfoBand.u2PhyRxMdrdyCntOfdm);
+
+	/* Path part */
+	for (u1Idx = 0; u1Idx < UNI_TM_MAX_ANT_NUM; u1Idx++) {
+		pHqaRxStat->rInfoRXV[u1Idx].u4Rcpi =
+			(uint32_t)(tag->rInfoRXV[u1Idx].u2Rcpi);
+		pHqaRxStat->rInfoRXV[u1Idx].u4Rssi =
+			(uint32_t)(tag->rInfoRXV[u1Idx].i2Rssi);
+		pHqaRxStat->rInfoRXV[u1Idx].u4AdcRssi =
+			(uint32_t)(tag->rInfoRXV[u1Idx].i2AdcRssi);
+		pHqaRxStat->rInfoFagc[u1Idx].u4RssiIb =
+			(uint32_t)(tag->rInfoFagc[u1Idx].i1RssiIb);
+		pHqaRxStat->rInfoFagc[u1Idx].u4RssiWb =
+			(uint32_t)(tag->rInfoFagc[u1Idx].i1RssiWb);
+		pHqaRxStat->rInfoInst[u1Idx].u4RssiIb =
+			(uint32_t)(tag->rInfoInst[u1Idx].i1RssiIb);
+		pHqaRxStat->rInfoInst[u1Idx].u4RssiWb =
+			(uint32_t)(tag->rInfoInst[u1Idx].i1RssiWb);
+	}
+
+	/* User part */
+	for (u1Idx = 0; u1Idx < UNI_TM_MAX_USER_NUM; u1Idx++) {
+		pHqaRxStat->rInfoUser[u1Idx].u4FreqOffsetFromRx =
+			(uint32_t)(tag->rInfoUser[u1Idx].i4FreqOffsetFromRx);
+		pHqaRxStat->rInfoUser[u1Idx].u4Snr =
+			(uint32_t)(tag->rInfoUser[u1Idx].i4Snr);
+		pHqaRxStat->rInfoUser[u1Idx].u4FcsErrorCnt =
+			tag->rInfoUser[u1Idx].u4FcsErrorCnt;
+		pHqaRxStat->rInfoUserExt1[u1Idx].u4NeVarDbAllUser =
+			(uint32_t)(tag->rInfoUserExt1[u1Idx].u1NeVarDbAllUser);
+	}
+
+	/* Common part */
+	pHqaRxStat->rInfoComm[u1BandIdx].u4AciHitLow =
+		tag->rInfoComm.u4AciHitLow;
+	pHqaRxStat->rInfoComm[u1BandIdx].u4AciHitHigh =
+		tag->rInfoComm.u4AciHitHigh;
+	pHqaRxStat->rInfoComm[u1BandIdx].u4MacRxFifoFull =
+		(uint32_t)(tag->rInfoComm.u2MacRxFifoFull);
+	pHqaRxStat->rInfoCommExt1[u1BandIdx].u4DrvRxCnt =
+		tag->rInfoCommExt1.u4DrvRxCnt;
+	pHqaRxStat->rInfoCommExt1[u1BandIdx].u4MuRxCnt =
+		tag->rInfoCommExt1.u4MuRxCnt;
+	pHqaRxStat->rInfoCommExt1[u1BandIdx].u4Sinr =
+		tag->rInfoCommExt1.u4Sinr;
+	pHqaRxStat->rInfoCommExt1[u1BandIdx].u4EhtSigMcs =
+		tag->rInfoCommExt1.u1EhtSigMcs;
+}
+
+void nicUniEventQueryRxStatAllCon3(IN struct ADAPTER
+	  *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *)pucEventBuf;
+	struct UNI_EVENT_TESTMODE_RX_STAT *rx_evt =
+		(struct UNI_EVENT_TESTMODE_RX_STAT *)uni_evt->aucBuffer;
+	struct UNI_EVENT_TESTMODE_STAT_ALL_V2 *tag =
+		(struct UNI_EVENT_TESTMODE_STAT_ALL_V2 *)rx_evt->aucTlvBuffer;
+
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	uint32_t *prElement = (uint32_t *)&g_HqaRxStat;
+	uint32_t i, u4Temp;
+	uint8_t u1BandIdx = 0;
+
+	u1BandIdx = tag->rInfoBandExt1.u1BandIdx;
+
+	nicUniEventRxStatCastMap(tag, &g_HqaRxStat);
+
+	for (i = 0; i < (sizeof(struct PARAM_RX_STAT)/sizeof(uint32_t)); i++) {
+		u4Temp = ntohl(*(prElement));
+		kalMemCopy(prElement, &u4Temp, 4);
+		if (i < ((sizeof(struct PARAM_RX_STAT)/sizeof(uint32_t))-1))
+			prElement++;
+	}
+
+	if (prCmdInfo->fgIsOid) {
+		kalOidComplete(prGlueInfo,
+			prCmdInfo,
+			sizeof(struct CMD_ACCESS_RX_STAT),
+			WLAN_STATUS_SUCCESS);
+	}
+}
+
+#endif
 void nicUniEventBugReport(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {

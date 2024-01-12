@@ -2327,14 +2327,21 @@ static s_int32 hqa_get_rx_statistics_all(
 	u_int8 path_len = 0;
 	u_int8 *ptr = NULL;
 	u_char *data = hqa_frame->data;
+#if (CFG_SUPPORT_CONNAC3X == 0)
+	u_int8 band_info_ver = 0, path_info_ver = 0,
+		user_info_ver = 0, comm_info_ver = 0;
+#else
+	u_int8 band_info_ver = 1, path_info_ver = 1,
+		user_info_ver = 0, comm_info_ver = 1;
+#endif
 	struct hqa_rx_stat_resp_format st_form[SERV_RX_STAT_TYPE_NUM] = {
-	 {SERV_RX_STAT_TYPE_BAND, 0, 0, 0,
+	 {SERV_RX_STAT_TYPE_BAND, band_info_ver, 0, 0,
 		 sizeof(struct hqa_rx_stat_band_info)},
-	 {SERV_RX_STAT_TYPE_PATH, 0, 0, 0,
+	 {SERV_RX_STAT_TYPE_PATH, path_info_ver, 0, 0,
 		 sizeof(struct hqa_rx_stat_path_info)},
-	 {SERV_RX_STAT_TYPE_USER, 0, 0, 0,
+	 {SERV_RX_STAT_TYPE_USER, user_info_ver, 0, 0,
 		 sizeof(struct hqa_rx_stat_user_info)},
-	 {SERV_RX_STAT_TYPE_COMM, 0, 0, 0,
+	 {SERV_RX_STAT_TYPE_COMM, comm_info_ver, 0, 0,
 		 sizeof(struct hqa_rx_stat_comm_info)}
 	};
 

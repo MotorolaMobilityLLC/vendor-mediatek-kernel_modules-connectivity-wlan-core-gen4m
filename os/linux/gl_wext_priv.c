@@ -7302,7 +7302,7 @@ static int priv_driver_get_sta_stat2(IN struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 
-
+#if (CFG_SUPPORT_CONNAC3X == 0)
 static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 					IN struct net_device *prNetDev,
 					IN char *pcCommand, IN int i4TotalLen,
@@ -7745,7 +7745,439 @@ static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 #endif
 	return i4BytesWritten;
 }
+#else
+static int32_t priv_driver_dump_rx_stat_info_con3(struct ADAPTER *prAdapter,
+					IN struct net_device *prNetDev,
+					IN char *pcCommand, IN int i4TotalLen,
+					IN u_int8_t fgResetCnt)
+{
+	int32_t i4BytesWritten = 0;
+	uint32_t u4RxVector0 = 0, u4RxVector2 = 0, u4RxVector3 = 0,
+		 u4RxVector4 = 0;
+	uint8_t ucStaIdx, ucWlanIndex = 0, cbw;
+	u_int8_t fgWlanIdxFound = TRUE, fgSkipRxV = FALSE;
+	uint32_t u4FAGCRssiWBR0, u4FAGCRssiIBR0;
+	uint32_t u4Value, u4Foe, foe_const;
+	static uint32_t au4MacMdrdy[ENUM_BAND_NUM] = {0};
+	static uint32_t au4FcsError[ENUM_BAND_NUM] = {0};
+	static uint32_t au4OutOfResource[ENUM_BAND_NUM] = {0};
+	static uint32_t au4LengthMismatch[ENUM_BAND_NUM] = {0};
+	struct STA_RECORD *prStaRecOfAP;
 
+	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
+
+	prStaRecOfAP =
+		aisGetStaRecOfAP(prAdapter, ucBssIndex);
+
+	au4MacMdrdy[ENUM_BAND_0] += htonl(
+		g_HqaRxStat.rInfoBand[0].u4MacRxMdrdyCnt);
+	au4MacMdrdy[ENUM_BAND_1] += htonl(
+		g_HqaRxStat.rInfoBand[1].u4MacRxMdrdyCnt);
+	au4FcsError[ENUM_BAND_0] += htonl(
+		g_HqaRxStat.rInfoBand[0].u4MacRxFcsErrCnt);
+	au4FcsError[ENUM_BAND_1] += htonl(
+		g_HqaRxStat.rInfoBand[1].u4MacRxFcsErrCnt);
+	au4OutOfResource[ENUM_BAND_0] += 0;
+	au4OutOfResource[ENUM_BAND_1] += 0;
+	au4LengthMismatch[ENUM_BAND_0] += htonl(
+		g_HqaRxStat.rInfoBand[0].u4MacRxLenMisMatch);
+	au4LengthMismatch[ENUM_BAND_1] += htonl(
+		g_HqaRxStat.rInfoBand[1].u4MacRxLenMisMatch);
+
+	DBGLOG(INIT, INFO, "fgResetCnt = %d\n", fgResetCnt);
+	if (fgResetCnt) {
+		kalMemZero(au4MacMdrdy, sizeof(au4MacMdrdy));
+		kalMemZero(au4FcsError, sizeof(au4FcsError));
+		kalMemZero(au4OutOfResource, sizeof(au4OutOfResource));
+		kalMemZero(au4LengthMismatch, sizeof(au4LengthMismatch));
+	}
+
+	if (prStaRecOfAP)
+		ucWlanIndex =
+			prStaRecOfAP->ucWlanIndex;
+	else if (!wlanGetWlanIdxByAddress(prAdapter, NULL, &ucWlanIndex))
+		fgWlanIdxFound = FALSE;
+
+	if (fgWlanIdxFound) {
+		if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIndex, &ucStaIdx)
+		    == WLAN_STATUS_SUCCESS) {
+			u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
+			u4RxVector2 = prAdapter->arStaRec[ucStaIdx].u4RxVector2;
+			u4RxVector3 = prAdapter->arStaRec[ucStaIdx].u4RxVector3;
+			u4RxVector4 = prAdapter->arStaRec[ucStaIdx].u4RxVector4;
+		} else{
+			fgSkipRxV = TRUE;
+		}
+	} else{
+		fgSkipRxV = TRUE;
+	}
+
+	DBGLOG(INIT, INFO, "g_HqaRxStat.MAC_Mdrdy = %d\n",
+		htonl(g_HqaRxStat.rInfoBand[0].u4MacRxMdrdyCnt));
+	DBGLOG(INIT, INFO, "au4MacMdrdy[ENUM_BAND_0] = %d\n",
+		au4MacMdrdy[ENUM_BAND_0]);
+	DBGLOG(INIT, INFO, "g_HqaRxStat.PhyMdrdyOFDM = %d\n",
+		htonl(g_HqaRxStat.rInfoBand[0].u4PhyRxMdrdyCntOfdm));
+	DBGLOG(INIT, INFO, "g_HqaRxStat.MAC_FCS_Err= %d\n",
+		htonl(g_HqaRxStat.rInfoBand[0].u4MacRxFcsErrCnt));
+	DBGLOG(INIT, INFO, "au4FcsError[ENUM_BAND_0]= %d\n",
+		au4FcsError[ENUM_BAND_0]);
+	DBGLOG(INIT, INFO, "g_HqaRxStat.FCSErr_OFDM = %d\n",
+		htonl(g_HqaRxStat.rInfoBand[0].u4PhyRxFcsErrCntOfdm));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s", "\n\nRX Stat:\n");
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "PER0", " = ",
+			0);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "PER1", " = ",
+			0);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "RX OK0", " = ",
+			au4MacMdrdy[ENUM_BAND_0] - au4FcsError[ENUM_BAND_0]);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "RX OK1", " = ",
+			au4MacMdrdy[ENUM_BAND_1] - au4FcsError[ENUM_BAND_1]);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "RCPI0", " = ",
+			htonl(g_HqaRxStat.rInfoRXV[0].u4Rcpi));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "RCPI1", " = ",
+			htonl(g_HqaRxStat.rInfoRXV[1].u4Rcpi));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "MuRxCnt", " = ",
+			htonl(g_HqaRxStat.rInfoCommExt1[0].u4MuRxCnt));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "MAC Mdrdy0 diff", " = ",
+			htonl(g_HqaRxStat.rInfoBand[0].u4MacRxMdrdyCnt));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "MAC Mdrdy0", " = ",
+			au4MacMdrdy[ENUM_BAND_0]);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "MAC Mdrdy1 diff", " = ",
+			htonl(g_HqaRxStat.rInfoBand[1].u4MacRxMdrdyCnt));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "MAC Mdrdy1", " = ",
+			au4MacMdrdy[ENUM_BAND_1]);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "FCS Err0", " = ",
+			au4FcsError[ENUM_BAND_0]);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "FCS Err1", " = ",
+			au4FcsError[ENUM_BAND_1]);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "CCK PD Cnt B0", " = ",
+			htonl(g_HqaRxStat.rInfoBand[0].u4PhyRxPdCck));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "CCK PD Cnt B1", " = ",
+			htonl(g_HqaRxStat.rInfoBand[1].u4PhyRxPdCck));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "CCK SIG Err B0", " = ",
+			htonl(g_HqaRxStat.rInfoBand[0].u4PhyRxSigErrCck));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "CCK SIG Err B1", " = ",
+			htonl(g_HqaRxStat.rInfoBand[1].u4PhyRxSigErrCck));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+	i4TotalLen - i4BytesWritten,
+		"%-20s%s%d\n", "OFDM PD Cnt B0", " = ",
+		htonl(g_HqaRxStat.rInfoBand[0].u4PhyRxPdOfdm));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "OFDM PD Cnt B1", " = ",
+			htonl(g_HqaRxStat.rInfoBand[1].u4PhyRxPdOfdm));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "OFDM TAG Error", " = ",
+			htonl(g_HqaRxStat.rInfoBand[0].u4PhyRxTagErrOfdm));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "CCK SFD Err B0", " = ",
+			htonl(g_HqaRxStat.rInfoBand[0].u4PhyRxSfdErrCck));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "CCK SFD Err B1", " = ",
+			htonl(g_HqaRxStat.rInfoBand[1].u4PhyRxSfdErrCck));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "OFDM SIG Err B0", " = ",
+			htonl(g_HqaRxStat.rInfoBand[0].u4PhyRxSigErrOfdm));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "OFDM SIG Err B1", " = ",
+			htonl(g_HqaRxStat.rInfoBand[1].u4PhyRxSigErrOfdm));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "CCK FCS Err B0", " = ",
+			htonl(g_HqaRxStat.rInfoBand[0].u4PhyRxFcsErrCntCck));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "CCK FCS Err B1", " = ",
+			htonl(g_HqaRxStat.rInfoBand[1].u4PhyRxFcsErrCntCck));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "OFDM FCS Err B0", " = ",
+			htonl(g_HqaRxStat.rInfoBand[0].u4PhyRxFcsErrCntOfdm));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "OFDM FCS Err B1", " = ",
+			htonl(g_HqaRxStat.rInfoBand[1].u4PhyRxFcsErrCntOfdm));
+
+	if (!fgSkipRxV) {
+		u4FAGCRssiIBR0 = (u4RxVector2 & BITS(16, 23)) >> 16;
+		u4FAGCRssiWBR0 = (u4RxVector2 & BITS(24, 31)) >> 24;
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "FAGC RSSI W", " = ",
+			(u4FAGCRssiWBR0 >= 128) ? (u4FAGCRssiWBR0 - 256) :
+				(u4FAGCRssiWBR0));
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "FAGC RSSI I", " = ",
+			(u4FAGCRssiIBR0 >= 128) ? (u4FAGCRssiIBR0 - 256) :
+				(u4FAGCRssiIBR0));
+	} else{
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "FAGC RSSI W", " = ",
+			htonl(g_HqaRxStat.rInfoFagc[0].u4RssiWb));
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "FAGC RSSI I", " = ",
+			htonl(g_HqaRxStat.rInfoFagc[0].u4RssiIb));
+	}
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "CCK MDRDY B0", " = ",
+			htonl(g_HqaRxStat.rInfoBand[0].u4PhyRxMdrdyCntCck));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "CCK MDRDY B1", " = ",
+			htonl(g_HqaRxStat.rInfoBand[1].u4PhyRxMdrdyCntCck));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "OFDM MDRDY B0", " = ",
+			htonl(g_HqaRxStat.rInfoBand[0].u4PhyRxMdrdyCntOfdm));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "OFDM MDRDY B1", " = ",
+			htonl(g_HqaRxStat.rInfoBand[1].u4PhyRxMdrdyCntOfdm));
+
+	if (!fgSkipRxV) {
+		u4Value = (u4RxVector0 & BITS(12, 14)) >> 12;
+		if (u4Value == 0) {
+			u4Foe = (((u4RxVector4 & BITS(7, 31)) >> 7) & 0x7ff);
+			u4Foe = (u4Foe * 1000)>>11;
+		} else{
+			cbw = ((u4RxVector0 & BITS(15, 16)) >> 15);
+			foe_const = ((1 << (cbw + 1)) & 0xf) * 10000;
+			u4Foe = (((u4RxVector4 & BITS(7, 31)) >> 7) & 0xfff);
+			u4Foe = (u4Foe * foe_const) >> 15;
+		}
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "Freq Offset From RX", " = ", u4Foe);
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "RX SNR (dB)", " = ",
+			(uint32_t)(((u4RxVector4 & BITS(26, 31)) >> 26) - 16));
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "uint8_t RX0", " = ",
+			(uint32_t)(u4RxVector3 & BITS(0, 7)));
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "uint8_t RX1", " = ",
+			(uint32_t)((u4RxVector3 & BITS(8, 15)) >> 8));
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "uint8_t RX2", " = ",
+			((u4RxVector3 & BITS(16, 23)) >> 16) == 0xFF ?
+			(0) : ((uint32_t)(u4RxVector3 & BITS(16, 23)) >> 16));
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "uint8_t RX3", " = ",
+			((u4RxVector3 & BITS(24, 31)) >> 24) == 0xFF ?
+			(0) : ((uint32_t)(u4RxVector3 & BITS(24, 31)) >> 24));
+	} else{
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "Driver RX Cnt0",
+			" = ",
+			htonl(g_HqaRxStat.rInfoCommExt1[0].u4DrvRxCnt));
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "Driver RX Cnt1",
+			" = ",
+			htonl(g_HqaRxStat.rInfoCommExt1[1].u4DrvRxCnt));
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n",
+			  "Freq Offset From RX",
+			  " = ",
+			htonl(g_HqaRxStat.rInfoUser[0].u4FreqOffsetFromRx));
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+					      i4TotalLen - i4BytesWritten,
+					      "%-20s%s%s\n", "RX SNR (dB)",
+					      " = ", "N/A");
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+					      i4TotalLen - i4BytesWritten,
+					      "%-20s%s%s\n", "uint8_t RX0",
+					      " = ", "N/A");
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+					      i4TotalLen - i4BytesWritten,
+					      "%-20s%s%s\n", "uint8_t RX1",
+					      " = ", "N/A");
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+					      i4TotalLen - i4BytesWritten,
+					      "%-20s%s%s\n", "uint8_t RX2",
+					      " = ", "N/A");
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+					      i4TotalLen - i4BytesWritten,
+					      "%-20s%s%s\n", "uint8_t RX3",
+					      " = ", "N/A");
+	}
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+	      i4TotalLen - i4BytesWritten,
+	      "%-20s%s%d\n", "Inst RSSI IB R0", " = ",
+	      htonl(g_HqaRxStat.rInfoInst[0].u4RssiIb));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+	      i4TotalLen - i4BytesWritten,
+	      "%-20s%s%d\n", "Inst RSSI WB R0", " = ",
+	      htonl(g_HqaRxStat.rInfoInst[0].u4RssiWb));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+	      i4TotalLen - i4BytesWritten,
+	      "%-20s%s%d\n", "Inst RSSI IB R1", " = ",
+	      htonl(g_HqaRxStat.rInfoInst[1].u4RssiIb));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+	      i4TotalLen - i4BytesWritten,
+	      "%-20s%s%d\n", "Inst RSSI WB R1", " = ",
+	      htonl(g_HqaRxStat.rInfoInst[1].u4RssiWb));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+	      i4TotalLen - i4BytesWritten,
+	      "%-20s%s%d\n", "Inst RSSI IB R2", " = ",
+	      htonl(g_HqaRxStat.rInfoInst[2].u4RssiIb));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+	      i4TotalLen - i4BytesWritten,
+	      "%-20s%s%d\n", "Inst RSSI WB R2", " = ",
+	      htonl(g_HqaRxStat.rInfoInst[2].u4RssiWb));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+	      i4TotalLen - i4BytesWritten,
+	      "%-20s%s%d\n", "Inst RSSI IB R3", " = ",
+	      htonl(g_HqaRxStat.rInfoInst[3].u4RssiIb));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+	      i4TotalLen - i4BytesWritten,
+	      "%-20s%s%d\n", "Inst RSSI WB R3", " = ",
+	      htonl(g_HqaRxStat.rInfoInst[3].u4RssiWb));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+	      i4TotalLen - i4BytesWritten,
+	      "%-20s%s%d\n", "ACI Hit Lower", " = ",
+	      htonl(g_HqaRxStat.rInfoComm[0].u4AciHitLow));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+	      i4TotalLen - i4BytesWritten,
+	      "%-20s%s%d\n", "ACI Hit Higher",
+	      " = ", htonl(g_HqaRxStat.rInfoComm[0].u4AciHitHigh));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+	      i4TotalLen - i4BytesWritten,
+	      "%-20s%s%d\n", "OutOf Resource Pkt0",
+	      " = ", au4OutOfResource[ENUM_BAND_0]);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+	      i4TotalLen - i4BytesWritten,
+	      "%-20s%s%d\n", "OutOf Resource Pkt1",
+	      " = ", au4OutOfResource[ENUM_BAND_1]);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+	      i4TotalLen - i4BytesWritten,
+	      "%-20s%s%d\n", "Len Mismatch Cnt B0",
+	      " = ", au4LengthMismatch[ENUM_BAND_0]);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+	      i4TotalLen - i4BytesWritten,
+	      "%-20s%s%d\n", "Len Mismatch Cnt B1",
+	      " = ", au4LengthMismatch[ENUM_BAND_1]);
+
+	return i4BytesWritten;
+}
+#endif
 
 static int priv_driver_show_rx_stat(IN struct net_device *prNetDev,
 				    IN char *pcCommand, IN int i4TotalLen)
@@ -7818,8 +8250,13 @@ static int priv_driver_show_rx_stat(IN struct net_device *prNetDev,
 			return -1;
 		}
 
+#if (CFG_SUPPORT_CONNAC3X == 0)
 		i4BytesWritten = priv_driver_dump_rx_stat_info(prAdapter,
 			prNetDev, pcCommand, i4TotalLen, fgResetCnt);
+#else
+		i4BytesWritten = priv_driver_dump_rx_stat_info_con3(prAdapter,
+			prNetDev, pcCommand, i4TotalLen, fgResetCnt);
+#endif
 
 		kalMemFree(prRxStatisticsTest, VIR_MEM_TYPE,
 			   sizeof(struct PARAM_CUSTOM_ACCESS_RX_STAT));
