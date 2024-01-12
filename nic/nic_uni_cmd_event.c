@@ -320,7 +320,6 @@ extern uint32_t arEventTableSize;
  *                              F U N C T I O N S
  *******************************************************************************
  */
-
 struct WIFI_UNI_CMD_ENTRY *nicUniCmdAllocEntry(struct ADAPTER *ad,
 	uint8_t ucid, uint32_t max_cmd_len,
 	PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
@@ -10006,3 +10005,98 @@ void nicUniEventEfuseFreeBlock(struct ADAPTER
 	}
 }
 
+/*
+ * \. Descrption : UNI_CMD UNI_CMD_ID_RX_HDR_TRAN
+ * \. Parameters:
+ *	UNI_CMD_RX_HDR_TRAN_ENABLE
+ *	- enable : Enables RX header translation
+ *	TRUE	Enable HW header translation
+ *	FALSE	Disable HW header translation
+ *	- chkBssid : Enables RX HDRT BSSID check
+ *	TRUE	Only when BSSID of frames (meeting RX translation rule)
+ *		matches own BSSID will RX header translation be performed.
+ *	FALSE	No need to check BSSID field of frames
+ *			(meeting RX translation rule)
+ *	- ucTranslationMode : Selects RX header translation mode
+ *	0: 802.11 to 802.3/ethernet
+ *	1: 802.11 QoS data to 802.11 non-QoS data.
+ *	The translation will remove QoS control field and HT control field.
+ *
+ *	UNI_CMD_RX_HDR_TRAN_VLAN
+ *	- insVlan : RX inserts VLAN
+ *	TRUE	RX header translation will insert new VLAN field
+ *	FALSE	RX header translation will NOT insert new VLAN field
+ *	- rmVlan : RX removes VLAN
+ *	TRUE	RX header translation will remove original VLAN field
+ *	FALSE	RX header translation does NOT remove original VLAN field
+ *	- fgUseQosTid : Selects RX PCP
+ *	TRUE: RX header translation uses QoS_TID as VLAN TCI.PCP
+ *	FALSE: RX header translation uses firmware assigned VLAN TCI.PCP
+ *
+ *	UNI_CMD_RX_HDR_TRAN_BLACKLIST_CONFIG : TBD
+ *	- listCnt : max ~7
+ *	- list : Ether-type blacklist for RX header translation
+ *	- en : en/disable for list
+ */
+uint32_t nicUniCmdRxHdrTransUpdate(struct ADAPTER *ad,
+	struct UNI_CMD_RX_HDR_TRAN_PARM *param)
+{
+	struct UNI_CMD_RX_HDR_TRAN *uni_cmd = NULL;
+	struct UNI_CMD_RX_HDR_TRAN_ENABLE *rx_hdr_tran_enable = NULL;
+	struct UNI_CMD_RX_HDR_TRAN_VLAN *rx_hdr_tran_vlan = NULL;
+	uint32_t status = 0;
+	uint32_t max_cmd_len = 0;
+	uint8_t *pos = NULL;
+
+	max_cmd_len = sizeof(*uni_cmd) + sizeof(*rx_hdr_tran_enable)
+		+ sizeof(*rx_hdr_tran_vlan);
+
+	pos = cnmMemAlloc(ad, RAM_TYPE_MSG, max_cmd_len);
+
+	if (!pos)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_RX_HDR_TRAN *) pos;
+
+	DBGLOG(NIC, INFO,
+		"En %u chkBssid %u TransMode %u insVlan %u rmVlan %u UseTid %u\n",
+		param->fgEnable, param->fgCheckBssid, param->ucTranslationMode,
+		param->fgInsertVlan, param->fgRemoveVlan, param->fgUseQosTid);
+
+	/* 1. cmd header setting : empty header */
+	pos += sizeof(*uni_cmd);
+	/* 2. set RX header translation ENABLE/DISABLE */
+	rx_hdr_tran_enable = (struct UNI_CMD_RX_HDR_TRAN_ENABLE *) pos;
+	rx_hdr_tran_enable->u2Tag = UNI_CMD_RX_HDR_TRAN_ENABLE;
+	rx_hdr_tran_enable->u2Length =
+		sizeof(struct UNI_CMD_RX_HDR_TRAN_ENABLE);
+	rx_hdr_tran_enable->fgEnable = param->fgEnable;
+	rx_hdr_tran_enable->fgCheckBssid = param->fgCheckBssid;
+	rx_hdr_tran_enable->ucTranslationMode = param->ucTranslationMode;
+	pos += sizeof(*rx_hdr_tran_enable);
+	/* 3. set RX header translation - VLAN */
+	rx_hdr_tran_vlan = (struct UNI_CMD_RX_HDR_TRAN_VLAN *) pos;
+	rx_hdr_tran_vlan->u2Tag = UNI_CMD_RX_HDR_TRAN_VLAN_CONFIG;
+	rx_hdr_tran_vlan->u2Length = sizeof(struct UNI_CMD_RX_HDR_TRAN_VLAN);
+	rx_hdr_tran_vlan->fgInsertVlan = param->fgInsertVlan;
+	rx_hdr_tran_vlan->fgRemoveVlan = param->fgRemoveVlan;
+	rx_hdr_tran_vlan->fgUseQosTid = param->fgUseQosTid;
+	pos += sizeof(*rx_hdr_tran_vlan);
+
+	/* 4. TODO: set Ether type black list */
+
+	/* 5. Send uni cmd */
+	status = wlanSendSetQueryUniCmd(ad,
+			     UNI_CMD_ID_RX_HDR_TRAN,
+			     TRUE,
+			     TRUE,
+			     FALSE,
+			     nicUniCmdEventSetCommon,
+			     nicUniCmdTimeoutCommon,
+			     max_cmd_len,
+			     (void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(ad, uni_cmd);
+
+	return status;
+}
