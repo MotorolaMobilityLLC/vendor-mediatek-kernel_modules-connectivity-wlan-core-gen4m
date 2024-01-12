@@ -2786,8 +2786,7 @@ struct UNI_EVENT_CMD_RESULT {
 	uint32_t u4Status;
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_EVENT_FW_LOG2HOST
-{
+struct UNI_EVENT_FW_LOG2HOST {
 	/* fixed field */
 	uint8_t ucReserved[4];
 
@@ -2801,15 +2800,13 @@ struct UNI_EVENT_FW_LOG2HOST
 } __KAL_ATTRIB_PACKED__;
 
 /* FW Log 2 Host event Tag */
-enum ENUM_UNI_EVENT_FWLOG2HOST_TAG
-{
+enum ENUM_UNI_EVENT_FWLOG2HOST_TAG {
 	UNI_EVENT_FWLOG2HOST_TAG_FORMAT = 0,
 	UNI_EVENT_FWLOG2HOST_TAG_NUM
 };
 
 /* FW Log with Format (Tag0) */
-struct UNI_EVENT_FW_LOG_FORMAT
-{
+struct UNI_EVENT_FW_LOG_FORMAT {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t ucMsgFmt;
@@ -2817,8 +2814,7 @@ struct UNI_EVENT_FW_LOG_FORMAT
 	uint8_t acMsg[0];
 };
 
-struct UNI_EVENT_ROAMING
-{
+struct UNI_EVENT_ROAMING {
 	/* fixed field */
 	uint8_t ucBssIndex;
 	uint8_t ucDbdcIdx;
@@ -2834,8 +2830,7 @@ enum ENUM_UNI_EVENT_ROAMING_TAG {
 };
 
 /* Roaming status (Tag0) */
-struct UNI_EVENT_ROAMING_STATUS
-{
+struct UNI_EVENT_ROAMING_STATUS {
 	uint16_t u2Tag;    // Tag = 0x00
 	uint16_t u2Length;
 	uint16_t u2Event;
@@ -2846,8 +2841,7 @@ struct UNI_EVENT_ROAMING_STATUS
 	uint16_t u2RcpiHighThreshold;
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_EVENT_ACCESS_REG
-{
+struct UNI_EVENT_ACCESS_REG {
 	/* fixed field */
 	uint8_t ucReserved[4];
 
@@ -2862,16 +2856,14 @@ struct UNI_EVENT_ACCESS_REG
 } __KAL_ATTRIB_PACKED__;
 
 /* Register access event Tag */
-enum ENUM_UNI_EVENT_ACCESS_REG_TAG
-{
+enum ENUM_UNI_EVENT_ACCESS_REG_TAG {
 	UNI_EVENT_ACCESS_REG_TAG_BASIC = 0,
 	UNI_EVENT_ACCESS_REG_TAG_RF_REG_BASIC,
 	UNI_EVENT_ACCESS_REG_TAG_NUM
 } __KAL_ATTRIB_PACKED__;
 
 /* Access Register (Tag0) */
-struct UNI_EVENT_ACCESS_REG_BASIC
-{
+struct UNI_EVENT_ACCESS_REG_BASIC {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint32_t u4Addr;
@@ -2879,8 +2871,7 @@ struct UNI_EVENT_ACCESS_REG_BASIC
 } __KAL_ATTRIB_PACKED__;
 
 /* Access RF address (Tag1) */
-struct UNI_EVENT_ACCESS_RF_REG_BASIC
-{
+struct UNI_EVENT_ACCESS_RF_REG_BASIC {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint16_t u2WifiStream;
@@ -2889,8 +2880,7 @@ struct UNI_EVENT_ACCESS_RF_REG_BASIC
 	uint32_t u4Value;
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_EVENT_CHIP_CONFIG
-{
+struct UNI_EVENT_CHIP_CONFIG {
 	/* fixed field */
 	uint16_t u2TotalElementNum;
 	uint8_t aucPadding[2];
@@ -2899,16 +2889,50 @@ struct UNI_EVENT_CHIP_CONFIG
 	uint8_t aucTlvBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
-enum ENUM_UNI_EVENT_CHIP_CONFIG_TAG
-{
+enum ENUM_UNI_EVENT_CHIP_CONFIG_TAG {
 	UNI_EVENT_CHIP_CONFIG_TAG_SW_DBG_CTRL,
 	UNI_EVENT_CHIP_CONFIG_TAG_CUSTOMER_CFG,
 	UNI_EVENT_CHIP_CONFIG_TAG_CHIP_CFG ,
 	UNI_EVENT_CHIP_CONFIG_TAG_NUM
 };
 
-struct UNI_EVENT_SLEEP_NOTIFY
+struct UNI_EVENT_IE_COUNTDOWNT {
+	/* fixed field */
+	uint8_t ucBand;
+	uint8_t aucPadding[3];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* IE countdown event Tag */
+enum ENUM_UNI_EVENT_IE_COUNTDOWN_TAG
 {
+	UNI_EVENT_IE_COUNTDOWN_CSA = 0,
+	UNI_EVENT_IE_COUNTDOWN_BCC = 1,
+	UNI_EVENT_IE_COUNTDOWN_MAX_NUM
+};
+
+struct UNI_EVENT_CSA_NOTIFY
+{
+	uint16_t u2Tag;    // Tag = 0x00
+	uint16_t u2Length;
+	uint8_t ucOwnMacIdx;
+	uint8_t ucChannelSwitchCount;
+	uint8_t aucPadding[2];
+} __KAL_ATTRIB_PACKED__;
+
+/* BCC notify Parameters (Tag1) */
+struct UNI_EVENT_BCC_NOTIFY
+{
+	uint16_t u2Tag;    // Tag = 0x01
+	uint16_t u2Length;
+	uint8_t ucOwnMacIdx;
+	uint8_t ucColorSwitchCount;
+	uint8_t aucPadding[2];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_SLEEP_NOTIFY {
 	/*fixed field*/
 	uint8_t ucBssIndex;
 	uint8_t aucPadding[3];
@@ -2923,14 +2947,12 @@ struct UNI_EVENT_SLEEP_NOTIFY
 } __KAL_ATTRIB_PACKED__;
 
 /* Sleep Notify event Tag */
-enum ENUM_UNI_EVENT_SLEEP_NOTYFY_TAG
-{
+enum ENUM_UNI_EVENT_SLEEP_NOTYFY_TAG {
 	UNI_EVENT_SLEEP_NOTYFY_TAG_SLEEP_INFO = 0,
 	UNI_EVENT_SLEEP_NOTYFY_TAG_NUM
 };
 
-struct UNI_EVENT_SLEEP_INFO
-{
+struct UNI_EVENT_SLEEP_INFO {
 	uint16_t u2Tag;                   // Tag = 0x00
 	uint16_t u2Length;
 
@@ -2938,8 +2960,7 @@ struct UNI_EVENT_SLEEP_INFO
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_EVENT_BEACON_TIMEOUT
-{
+struct UNI_EVENT_BEACON_TIMEOUT {
 	/* fixed field */
 	uint8_t ucBssIndex;
 	uint8_t aucPadding[3];
@@ -2949,22 +2970,19 @@ struct UNI_EVENT_BEACON_TIMEOUT
 } __KAL_ATTRIB_PACKED__;
 
 /* Beacon Timeout event Tag */
-enum ENUM_UNI_EVENT_BEACON_TIMEOUT_TAG
-{
+enum ENUM_UNI_EVENT_BEACON_TIMEOUT_TAG {
 	UNI_EVENT_BEACON_TIMEOUT_TAG_INFO = 0,
 	UNI_EVENT_BEACON_TIMEOUT_TAG_NUM
 };
 
-struct UNI_EVENT_BEACON_TIMEOUT_INFO
-{
+struct UNI_EVENT_BEACON_TIMEOUT_INFO {
 	uint16_t u2Tag;    // Tag = 0x00
 	uint16_t u2Length;
 	uint8_t ucReasonCode;
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_EVENT_PS_SYNC
-{
+struct UNI_EVENT_PS_SYNC {
 	/*fixed field*/
 	uint8_t ucBssIndex;
 	uint8_t aucPadding[3];
@@ -2978,15 +2996,13 @@ struct UNI_EVENT_PS_SYNC
 	*/
 } __KAL_ATTRIB_PACKED__;
 
-enum ENUM_UNI_EVENT_PS_SYNC_TAG
-{
+enum ENUM_UNI_EVENT_PS_SYNC_TAG {
 	UNI_EVENT_PS_SYNC_TAG_CLIENT_PS_INFO = 0,
 	UNI_EVENT_PS_SYNC_TAG_NUM
 };
 
 /* PS SYNC (Tag0) */
-struct UNI_EVENT_CLIENT_PS_INFO
-{
+struct UNI_EVENT_CLIENT_PS_INFO {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 
@@ -4065,6 +4081,8 @@ void nicUniEventFwLog2Host(struct ADAPTER *ad,
 void nicUniEventP2p(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventRDD(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventCountdown(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 
 /*******************************************************************************
