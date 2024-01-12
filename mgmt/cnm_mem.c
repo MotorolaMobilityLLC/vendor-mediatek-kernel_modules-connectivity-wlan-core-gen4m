@@ -494,7 +494,13 @@ void *cnmMemAlloc(struct ADAPTER *prAdapter, enum ENUM_RAM_TYPE eRamType,
 		DBGLOG(MEM, WARN, "kmalloc fail: %u\n", u4Length);
 #endif
 #else
-	pvMemory = (void *) NULL;
+	/*
+	 * For Windows, it is not supported because of no size argument
+	 * in windows cx it supports and common part has massive allocation
+	 */
+	pvMemory = (void *) kalMemAlloc(u4Length, PHY_MEM_TYPE);
+	if (!pvMemory)
+		DBGLOG(MEM, WARN, "kalMemAlloc FAILED: %u\n", u4Length);
 #endif
 
 #if CFG_DBG_MGT_BUF
@@ -572,10 +578,13 @@ void cnmMemFree(struct ADAPTER *prAdapter, void *pvMemory)
 		kalMemFree(pvMemory, PHY_MEM_TYPE, 0);
 #endif
 #else
-		/* For Windows, it is not supported because of
-		 * no size argument
+		/*
+		 * For Windows, it is not supported because of no size argument
+		 * in windows cx it supports and
+		 * common part has massive allocation
 		 */
-		ASSERT(0);
+		kalMemFree(pvMemory, PHY_MEM_TYPE, 0);
+		/* ASSERT(0); */
 #endif
 
 #if CFG_DBG_MGT_BUF
