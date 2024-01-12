@@ -1759,12 +1759,16 @@ void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
-	rv = wlanQueryRateByTable(rxmode, rate, frmode, sgi, nsts,
-				 &u4CurRate, &u4MaxRate);
+	if (rxmode == RX_VT_LEGACY_CCK) {
+		u4CurRate =  /* uint : 500 kbps => 100kbps */
+			(5 * nicGetHwRateByPhyRate(rate));
+	} else {
+		rv = wlanQueryRateByTable(rxmode, rate, frmode, sgi, nsts,
+				&u4CurRate, &u4MaxRate); /* uint :100kbps */
 
-	if (rv < 0)
-		return;
-
+		if (rv < 0)
+			return;
+	}
 
 	/* RCPI */
 	ucRCPI0 = HAL_RX_STATUS_GET_RCPI0(prRxStatusGroup3);
@@ -1775,7 +1779,7 @@ void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 	if (u4CurRate > prAdapter->prGlueInfo
 		->PerfIndCache.u2CurRxRate[ucBssIndex]) {
 		prAdapter->prGlueInfo->PerfIndCache.
-			u2CurRxRate[ucBssIndex] = u4CurRate;
+			u2CurRxRate[ucBssIndex] = u4CurRate; /* uint :100kbps */
 		prAdapter->prGlueInfo->PerfIndCache.
 			ucCurRxNss[ucBssIndex] = nsts;
 		prAdapter->prGlueInfo->PerfIndCache.
