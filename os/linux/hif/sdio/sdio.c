@@ -694,6 +694,7 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 	prHif->fgSkipRx = FALSE;
 	prGlueInfo->u4InfType = MT_DEV_INF_SDIO;
+	glSdioSetState(prHif, SDIO_STATE_READY);
 }				/* end of glSetHifInfo() */
 
 /*----------------------------------------------------------------------------*/
@@ -1701,6 +1702,27 @@ u_int8_t glWakeupSdio(struct GLUE_INFO *prGlueInfo)
 #endif
 
 	return fgSuccess;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This function set SDIO state
+*
+* \param[in] prHifInfo  Pointer to the GL_HIF_INFO_T structure
+* \param[in] state      Specify TC index
+*
+* \retval TRUE          operation success
+* \retval FALSE         operation fail
+*/
+/*----------------------------------------------------------------------------*/
+void glSdioSetState(struct GL_HIF_INFO *prHifInfo, enum sdio_state state)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&prHifInfo->rStateLock, flags);
+	prHifInfo->state = state;
+	spin_unlock_irqrestore(&prHifInfo->rStateLock, flags);
+	DBGLOG(HAL, STATE, "sdio state:%d\n", state);
 }
 
 #if (CFG_CHIP_RESET_SUPPORT == 1) && (MTK_WCN_HIF_SDIO == 0)
