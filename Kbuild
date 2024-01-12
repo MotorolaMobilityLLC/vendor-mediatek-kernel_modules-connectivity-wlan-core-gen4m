@@ -25,6 +25,8 @@ ifeq ($(SEGMENT), SP)
         include $(KO_CODE_PATH)/Kbuild.6893
     else ifeq ($(MODULE_NAME), wlan_drv_gen4m_6878)
         include $(KO_CODE_PATH)/Kbuild.6878
+    else ifeq ($(MODULE_NAME), wlan_drv_gen4m_6891)
+        include $(KO_CODE_PATH)/Kbuild.6891
     endif
 else
     KO_CODE_PATH := $(if $(filter /%,$(src)),,$(srctree)/)$(src)
