@@ -3990,10 +3990,10 @@ nanSchedPeerUpdateRangingScheduleList(
 			break;
 		}
 
-		nanUtilDump(prAdapter, "[Peer Ranging]",
-			    (uint8_t *)prScheduleEntryList,
-			    u4ScheduleEntryListLength);
-
+		/* nanUtilDump(prAdapter, "[Peer Ranging]",
+		 *	    (uint8_t *)prScheduleEntryList,
+		 *	    u4ScheduleEntryListLength);
+		 */
 		prPeerSchDesc->fgRangingTimelineValid = FALSE;
 		rRetStatus = nanSchedPeerInterpretScheduleEntryList(
 			prAdapter, prPeerSchDesc,
