@@ -675,8 +675,4 @@ void nicDumpMsduInfo(struct MSDU_INFO *prMsduInfo);
 uint8_t nicGetActiveTspec(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
-#if CFG_SUPPORT_PKT_OFLD
-void nicAbnormalWakeupHandler(struct ADAPTER *prAdapter);
-void nicAbnormalWakeupMonReset(struct ADAPTER *prAdapter);
-#endif
 #endif /* _NIC_H */

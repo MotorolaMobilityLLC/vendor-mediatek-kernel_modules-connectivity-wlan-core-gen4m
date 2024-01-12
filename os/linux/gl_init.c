@@ -4407,10 +4407,6 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 	if (!prGlueInfo)
 		return;
 
-#if CFG_SUPPORT_PKT_OFLD
-	nicAbnormalWakeupMonReset(prGlueInfo->prAdapter);
-#endif
-
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 		prDev = wlanGetAisNetDev(prGlueInfo, u4Idx);
 		if (!prDev)
@@ -4479,7 +4475,11 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 		}
 #endif
 
+#if (CFG_SUPPORT_SCREENON_OFLD == 1)
+		kalSetNetAddressFromInterface(prGlueInfo, prDev, TRUE);
+#else
 		kalSetNetAddressFromInterface(prGlueInfo, prDev, fgEnable);
+#endif
 		wlanNotifyFwSuspend(prGlueInfo, prDev, fgEnable);
 	}
 }

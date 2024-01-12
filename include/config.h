@@ -2050,6 +2050,12 @@
 #define CFG_SUPPORT_APF 0
 #endif
 
+#if (CFG_SUPPORT_APF == 1)
+#define CFG_SUPPORT_SCREENON_OFLD 1
+#else
+#define CFG_SUPPORT_SCREENON_OFLD 0
+#endif
+
 /*------------------------------------------------------------------------------
  * Support NAN or not.
  *------------------------------------------------------------------------------
