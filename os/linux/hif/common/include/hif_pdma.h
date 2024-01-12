@@ -73,7 +73,7 @@
  * The FWDL binary size becomes larger, so the
  * TX CMD RING size needs to be larger.
  */
-#if defined(MT7925)
+#if defined(MT7925) || defined(MT6653)
 #define TX_RING_CMD_SIZE			512
 #else
 #define TX_RING_CMD_SIZE			320
