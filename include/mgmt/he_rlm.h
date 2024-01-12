@@ -183,6 +183,10 @@ u_int32_t heRlmCalculateHeCapIELen(
 	struct ADAPTER *prAdapter,
 	u_int8_t ucBssIndex,
 	struct STA_RECORD *prStaRec);
+void heRlmFillHeCapIE(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct MSDU_INFO *prMsduInfo);
 u_int32_t heRlmCalculateHeOpIELen(
 	struct ADAPTER *prAdapter,
 	u_int8_t ucBssIndex,
