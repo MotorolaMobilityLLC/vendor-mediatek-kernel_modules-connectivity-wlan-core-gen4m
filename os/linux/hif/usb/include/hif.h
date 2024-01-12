@@ -203,6 +203,10 @@ enum ENUM_USB_END_POINT {
 #define VND_REQ_BUF_SIZE                (16)
 #define VND_REQ_UHW_READ                (0x01)
 #define VND_REQ_UHW_WRITE               (0x02)
+/* When vendor requests keep fail over this TH, bypass subsequent vendor
+ * requests since chip may not work and reset is required.
+ */
+#define VND_REQ_FAIL_TH                 (0x3)
 
 #define USB_TX_CMD_QUEUE_MASK           (BITS(2, 4))   /* For H2CDMA Tx CMD mapping */
 
@@ -363,6 +367,10 @@ struct BUS_INFO {
 	struct DMASHDL_CFG *prDmashdlCfg;
 	/* Is support USB Interrupt IN Endpoint for WDT? */
 	u_int8_t fgIsSupportWdtEp;
+	/* If vendor request is fail, then increment this field.
+	 * Otherwise, reset this field to zero.
+	 */
+	uint8_t ucVndReqToMcuFailCnt;
 
 	u_int8_t (*asicUsbSuspend)(
 		IN struct ADAPTER *prAdapter,
