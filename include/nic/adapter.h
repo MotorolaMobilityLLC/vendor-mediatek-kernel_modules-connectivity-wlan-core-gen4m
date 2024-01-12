@@ -1163,6 +1163,7 @@ struct WIFI_VAR {
 	uint32_t u4CC2Region;
 	uint32_t u4ApChnlHoldTime;
 	uint32_t u4P2pChnlHoldTime;
+	uint32_t u4ProbeRspRetryLimit;
 	uint8_t fgAllowSameBandDualSta;
 	uint8_t ucApForceSleep;
 
