@@ -2024,6 +2024,12 @@ uint8_t aisNeedTargetScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	bss = aisGetAisBssInfo(prAdapter, ucBssIndex);
 #if CFG_SUPPORT_ROAMING
 	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	if (!ais || !bss || !roam) {
+		DBGLOG(AIS, ERROR,
+			"ERR! Null access! ais=%p, bss=%p, roam=%p\n",
+			ais, bss, roam);
+		return FALSE;
+	}
 	discovering =
 		bss->eConnectionState == MEDIA_STATE_CONNECTED &&
 		(roam->eCurrentState == ROAMING_STATE_DISCOVERY ||
