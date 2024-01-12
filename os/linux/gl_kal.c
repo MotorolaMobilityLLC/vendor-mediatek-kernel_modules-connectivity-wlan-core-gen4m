@@ -1637,7 +1637,6 @@ void kalSkbReuseCheck(struct SW_RFB *prSwRfb)
 			skb_headroom(prSkb));
 		kalKfreeSkb(prSwRfb->pvPacket, TRUE);
 		prSwRfb->pvPacket = NULL;
-		dump_stack();
 	}
 }
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */
