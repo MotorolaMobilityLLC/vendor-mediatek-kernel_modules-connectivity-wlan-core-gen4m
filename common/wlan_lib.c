@@ -10629,6 +10629,10 @@ IN enum ENUM_CHNL_SORT_POLICY ucSortType)
 		for (ucRoot = ucIdx; ucRoot * 2 + 1 < MAX_CHN_NUM;
 		     ucRoot = ucChild) {
 			ucChild = ucRoot * 2 + 1;
+			/* Coverity check*/
+			if (ucChild < 0 || ucChild >= MAX_CHN_NUM ||
+			    ucRoot < 0 || ucRoot >= MAX_CHN_NUM)
+				break;
 			if (ucChild < MAX_CHN_NUM - 1 && prChnLoadInfo->
 			    rChnRankList[ucChild + 1].u4Dirtiness >
 			    prChnLoadInfo->rChnRankList[ucChild].u4Dirtiness)
@@ -10677,6 +10681,10 @@ IN enum ENUM_CHNL_SORT_POLICY ucSortType)
 		prChnLoadInfo->rChnRankList[ucIdx] = rChnRankInfo;
 		for (ucRoot = 0; ucRoot * 2 + 1 < ucIdx; ucRoot = ucChild) {
 			ucChild = ucRoot * 2 + 1;
+			/* Coverity check*/
+			if (ucChild < 0 || ucChild >= MAX_CHN_NUM ||
+			    ucRoot < 0 || ucRoot >= MAX_CHN_NUM)
+				break;
 			if (ucChild < ucIdx - 1 && prChnLoadInfo->
 			    rChnRankList[ucChild + 1].u4Dirtiness >
 			    prChnLoadInfo->rChnRankList[ucChild].u4Dirtiness)
