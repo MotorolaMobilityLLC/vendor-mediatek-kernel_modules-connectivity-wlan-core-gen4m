@@ -41,6 +41,11 @@
 #include "coda/mt6639/wf_rro_top.h"
 #endif
 
+#ifdef MT6653
+#include "coda/mt6653/mawd_reg.h"
+#include "coda/mt6653/wf_rro_top.h"
+#endif
+
 #ifdef MT6655
 #include "coda/mt6655/mawd_reg.h"
 #include "coda/mt6655/wf_rro_top.h"

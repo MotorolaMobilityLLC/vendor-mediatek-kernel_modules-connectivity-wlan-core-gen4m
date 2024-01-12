@@ -102,6 +102,7 @@ static bool kalDevKickAmsduData(struct GLUE_INFO *prGlueInfo,
  * \retval FALSE         connsys is alive
  */
 /*----------------------------------------------------------------------------*/
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X) || (CFG_SUPPORT_CONNAC2X == 1)
 static inline bool kalIsChipDead(struct GLUE_INFO *prGlueInfo,
 				 uint32_t u4Register, uint32_t *pu4Value)
 {
@@ -124,6 +125,7 @@ static inline bool kalIsChipDead(struct GLUE_INFO *prGlueInfo,
 	if (*pu4Value != HIF_DEADFEED_VALUE)
 		return false;
 
+
 	if (!halChipToStaticMapBusAddr(prChipInfo, CONN_CFG_CHIP_ID_ADDR,
 				       &u4BusAddr)) {
 		DBGLOG(HAL, ERROR, "Not exist CR read[0x%08x]\n", u4Register);
@@ -134,6 +136,7 @@ static inline bool kalIsChipDead(struct GLUE_INFO *prGlueInfo,
 
 	return u4Value == HIF_DEADFEED_VALUE;
 }
+#endif
 
 static void kalDevRegL1Read(struct GLUE_INFO *prGlueInfo,
 	struct mt66xx_chip_info *prChipInfo,
