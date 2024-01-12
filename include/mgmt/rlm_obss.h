@@ -81,13 +81,14 @@ enum ENUM_SYS_PCO_PHASE {
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-void rlmObssInit(struct ADAPTER *prAdapter);
-
 void rlmObssScanDone(struct ADAPTER *prAdapter,
 		     struct MSG_HDR *prMsgHdr);
 
 void rlmObssTriggerScan(struct ADAPTER *prAdapter,
 			struct BSS_INFO *prBssInfo);
+
+void rlmObssScanTimeout(struct ADAPTER *prAdapter,
+			       uintptr_t ulParamPtr);
 
 /*******************************************************************************
  *                              F U N C T I O N S
