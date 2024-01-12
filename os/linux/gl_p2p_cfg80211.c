@@ -1969,6 +1969,7 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 
 err:
 	if (prP2pStartAPMsg) {
+#if KERNEL_VERSION(5, 10, 0) <= CFG80211_VERSION_CODE
 		struct MSG_P2P_FILS_DISCOVERY_UPDATE *prFilsDiscovery;
 		struct MSG_P2P_UNSOL_PROBE_UPDATE *prUnsolProbe;
 
@@ -1983,9 +1984,13 @@ err:
 			kalMemFree(prFilsDiscovery->prBuffer,
 				   VIR_MEM_TYPE,
 				   prFilsDiscovery->u4Length);
+#endif
+		cnmMemFree(prAdapter, prP2pStartAPMsg);
 	}
+
 	if (prP2pBcnUpdateMsg)
 		cnmMemFree(prAdapter, prP2pBcnUpdateMsg);
+
 exit:
 	return i4Rslt;
 }				/* mtk_p2p_cfg80211_start_ap */
