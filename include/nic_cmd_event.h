@@ -592,6 +592,16 @@ enum ENUM_SCN_FUNC_EXT_MASK {
 	ENUM_SCN_ML_PROBE = (1 << 1),
 };
 
+enum ENUM_SCN_SOURCE_MASK {
+	ENUM_SCN_NORMAL = (1 << 0),
+	ENUM_SCN_ROMAING = (1 << 1),
+	/* FW trigger scan */
+	ENUM_SCN_SOURCE_FW = (1 << 2),
+	/* Sensor hub trigger scan */
+	ENUM_SCN_SOURCE_FENCE = (1 << 3),
+	ENUM_SCN_SOURCE_MASK_NUM
+};
+
 struct CMD_PACKET_FILTER_CAP {
 	uint8_t			ucCmd;
 	uint16_t			packet_cap_type;

@@ -1969,7 +1969,7 @@ struct UNI_CMD_SCAN_REQ {
 	uint8_t ucScanType;
 	uint8_t ucNumProbeReq;
 	uint8_t ucScnFuncMask;
-	uint8_t aucPadding[1];
+	uint8_t ucScnSourceMask;
 	uint16_t u2ChannelMinDwellTime;
 	uint16_t u2ChannelDwellTime;
 	uint16_t u2TimeoutValue;

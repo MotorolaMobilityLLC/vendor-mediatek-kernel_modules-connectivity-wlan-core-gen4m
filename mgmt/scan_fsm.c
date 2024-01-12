@@ -288,6 +288,8 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	prCmdScanReq->auVersion[0] = 1;
 	prCmdScanReq->ucScnFuncMask |= prScanParam->ucScnFuncMask;
 	prCmdScanReq->u4ScnFuncMaskExtend |= prScanParam->u4ScnFuncMaskExtend;
+	prCmdScanReq->ucScnSourceMask = ENUM_SCN_NORMAL;
+
 	/* for 6G OOB scan */
 	kalMemCopy(prCmdScanReq->ucBssidMatchCh, prScanParam->ucBssidMatchCh,
 			CFG_SCAN_OOB_MAX_NUM);
@@ -402,7 +404,8 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	}
 
 	/* enable split scan when (not in roam) && (WFD || 1s TRX pkt > 30) */
-	if (scnEnableSplitScan(prAdapter, prScanParam->ucBssIndex)) {
+	if (scnEnableSplitScan(prAdapter, prScanParam->ucBssIndex,
+				prCmdScanReq)) {
 		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_SPLIT_SCAN_EN;
 		/* if WFD enable, not do dbdc scan and reduce dwell time to
 		 * enhance latency
@@ -1255,7 +1258,8 @@ void scnEventSchedScanDone(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-bool scnEnableSplitScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+bool scnEnableSplitScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
+				struct CMD_SCAN_REQ_V2 *prCmdScanReq)
 {
 	uint8_t ucWfdEn = FALSE, ucTrxPktEn = FALSE, ucRoamingEn = FALSE;
 	struct PERF_MONITOR *prPerMonitor;
@@ -1289,9 +1293,12 @@ bool scnEnableSplitScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	if (ucBssIndex < KAL_AIS_NUM) {
 		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 		if (prAisFsmInfo &&
-			prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
-			prAisFsmInfo->eCurrentState == AIS_STATE_LOOKING_FOR)
+		    prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
+		    prAisFsmInfo->eCurrentState == AIS_STATE_LOOKING_FOR) {
 			ucRoamingEn = TRUE;
+			prCmdScanReq->ucScnSourceMask =
+					ENUM_SCN_ROMAING;
+		}
 	}
 	log_dbg(SCN, TRACE, "SplitScan: Roam(%d),WFD(%d),TRX(%d)",
 				ucRoamingEn, ucWfdEn, ucTrxPktEn);
