@@ -103,8 +103,8 @@ extern unsigned long long gConEmiSizeFinal;
 #define HQA_CHIP_ID_6632	0x6632
 #define HQA_CHIP_ID_7668	0x7668
 
-/*soc3_0 EMI size= 320KB, 1 Sample Count (IQ) =4B (32bit) */
-#define MAX_ICAP_IQ_DATA_CNT					(320 * 256)
+/*soc5_0 EMI size= 256KB, 1 Sample Count (IQ) =4B (32bit) */
+#define MAX_ICAP_IQ_DATA_CNT					(256 * 256)
 #define ICAP_EVENT_DATA_SAMPLE					256
 
 

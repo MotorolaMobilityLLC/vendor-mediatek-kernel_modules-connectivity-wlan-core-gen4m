@@ -1919,10 +1919,12 @@ s_int32 mt_op_set_icap_start(
 		data,
 		sizeof(struct hqa_rbist_cap_start));
 
-	/*over write parameters for mobile setting*/
-	pr_rbist_info->en_bit_width = 0; /* 0:32bit, 1:96bit, 2:128bit */
-	pr_rbist_info->arch = 1; /*0:Support on-chip, 1:Support on-the fly*/
-	pr_rbist_info->phy_idx = 0;
+	/* over write parameters for mobile setting */
+	/* 0:32 1:96 2:128 3:64 4:disable(no need to translate) */
+	pr_rbist_info->en_bit_width = winfos->icap_bitwidth;
+	/* 0:Support on-chip, 1:Support on-the fly */
+	pr_rbist_info->arch = winfos->icap_arch;
+	pr_rbist_info->phy_idx = winfos->icap_phy_idx;
 
 	SERV_LOG(SERV_DBG_CAT_MISC, SERV_DBG_LVL_WARN,
 		("%s: en_bit_width = 0x%08x, arch = 0x%08x, phy_idx = 0x%08x\n",
@@ -2044,8 +2046,10 @@ s_int32 mt_op_get_icap_data(
 
 	if (ret == SERV_STATUS_SUCCESS) {
 		*icap_cnt = r_dump_iq.icap_cnt;
-		/*debug*/
-		/*sys_ad_mem_dump32(icap_data, r_dump_iq.icap_data_len);*/
+		/* debug */
+		if (g_hqa_frame_ctrl == 1) {
+			sys_ad_mem_dump32(icap_data, r_dump_iq.icap_data_len);
+		}
 	}
 
 	SERV_LOG(SERV_DBG_CAT_MISC, SERV_DBG_LVL_WARN,
