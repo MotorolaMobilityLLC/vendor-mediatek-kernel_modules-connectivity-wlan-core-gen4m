@@ -6176,6 +6176,12 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					prAdapter, "RxHtBaSize", 64);
 	prWifiVar->ucRxVhtBaSize = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "RxVhtBaSize", 64);
+#if (CFG_SUPPORT_802_11AX == 1)
+	prWifiVar->u2RxHeBaSize = (uint8_t)
+		wlanCfgGetUint32(prAdapter, "RxHeBaSize", 256);
+	prWifiVar->u2TxHeBaSize = (uint8_t)
+		wlanCfgGetUint32(prAdapter, "TxHeBaSize", 256);
+#endif
 
 	/* Tx Buffer Management */
 	prWifiVar->ucExtraTxDone = (uint32_t) wlanCfgGetUint32(

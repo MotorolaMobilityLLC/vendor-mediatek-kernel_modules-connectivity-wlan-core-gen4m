@@ -900,6 +900,10 @@ struct WIFI_VAR {
 	uint8_t ucTxBaSize;
 	uint8_t ucRxHtBaSize;
 	uint8_t ucRxVhtBaSize;
+#if (CFG_SUPPORT_802_11AX == 1)
+	uint16_t u2RxHeBaSize;
+	uint16_t u2TxHeBaSize;
+#endif
 
 	uint8_t ucThreadScheduling;
 	uint8_t ucThreadPriority;
