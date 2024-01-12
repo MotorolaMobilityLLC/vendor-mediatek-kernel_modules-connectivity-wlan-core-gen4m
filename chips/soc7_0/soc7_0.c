@@ -1164,6 +1164,7 @@ static int wake_up_conninfra_off(void)
 {
 	uint32_t value = 0;
 	uint32_t polling_count;
+	uint32_t u4ConnsysVersion = 0;
 
 	/* Wakeup conn_infra off
 	 * Address: 0x1806_01A4[0]
@@ -1186,9 +1187,10 @@ static int wake_up_conninfra_off(void)
 	 */
 	wf_ioremap_read(CONN_INFRA_CFG_IP_VERSION_ADDR, &value);
 	polling_count = 0;
-	while (value != SOC7_CONNSYS_VERSION_ID) {
+	u4ConnsysVersion = kalGetConnsysVersion();
+	while (value != u4ConnsysVersion) {
 		if (polling_count > 10) {
-			DBGLOG(INIT, ERROR, "Polling CONNSYS version ID fail.\n");
+			DBGLOG(INIT, ERROR, "Polling CONNSYS version ID fail");
 			return -1;
 		}
 		udelay(1000);
@@ -1243,6 +1245,7 @@ static int wf_pwr_on_consys_mcu(struct ADAPTER *prAdapter)
 	int check;
 	uint32_t value = 0;
 	uint32_t polling_count;
+	uint32_t u4WfIpVersion = 0;
 	DBGLOG(INIT, INFO, "wmmcu power-on start.\n");
 
 #if (CFG_WLAN_LK_FWDL_SUPPORT == 0)
@@ -1398,9 +1401,10 @@ static int wf_pwr_on_consys_mcu(struct ADAPTER *prAdapter)
 	 */
 	wf_ioremap_read(WF_TOP_CFG_IP_VERSION_ADDR, &value);
 	polling_count = 0;
-	while (value != SOC7_WFSYS_VERSION_ID) {
+	u4WfIpVersion = kalGetWfIpVersion();
+	while (value != u4WfIpVersion) {
 		if (polling_count > 10) {
-			DBGLOG(INIT, ERROR, "Polling WFSYS version ID fail.\n");
+			DBGLOG(INIT, ERROR, "Polling WFSYS version ID fail.");
 			ret = -1;
 			return ret;
 		}
