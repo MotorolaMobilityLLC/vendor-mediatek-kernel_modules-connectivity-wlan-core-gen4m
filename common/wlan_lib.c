@@ -8194,6 +8194,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucNanMaxNdpSession, "NanMaxNdpSession",
 		NAN_MAX_NDP_SESSIONS);
 	INIT_UINT(prWifiVar->fgEnableRandNdpid, "NanEnableRandNdpid", 1);
+	INIT_UINT(prWifiVar->u4NanSendPacketGuardTime,
+		  "NanSendPacketGuardTime", NAN_SEND_PKT_TIME_GUARD_TIME);
 	if (prWifiVar->ucNanFixChnl == 0) {
 		INIT_UINT(prWifiVar->fgNanWmmSeq, "NanWmmSeq", 1);
 	} else {

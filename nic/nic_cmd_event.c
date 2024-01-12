@@ -5879,11 +5879,13 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 	struct STA_RECORD *prStaRec;
 	uint16_t u2SchId = 0;
 	uint32_t u4Idx;
+	uint32_t u4NanSendPacketGuardTime;
 	OS_SYSTIME rCurrentTime;
 	OS_SYSTIME rExpiryTime;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
+	u4NanSendPacketGuardTime = prAdapter->rWifiVar.u4NanSendPacketGuardTime;
 	prFlowCtrlEvt = (struct NAN_EVT_NDL_FLOW_CTRL_V2 *)pcuEvtBuf;
 	for (u2SchId = 0; u2SchId < NAN_MAX_CONN_CFG; u2SchId++) {
 		uint8_t ucSTAIdx;
@@ -5894,8 +5896,7 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 
 		rCurrentTime = kalGetTimeTick();
 		u4RemainingTime = prFlowCtrlEvt->au4RemainingTime[u2SchId];
-		rExpiryTime =
-			rCurrentTime + u4RemainingTime;
+		rExpiryTime = rCurrentTime + u4RemainingTime;
 
 		DBGLOG(NAN, INFO,
 		       "[NDL flow control] Sch:%u, Expiry:%u, Remain:%u\n",
@@ -5904,7 +5905,7 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 		if (u4RemainingTime == 0)
 			continue;
 
-		rExpiryTime -= NAN_SEND_PKT_TIME_GUARD_TIME;
+		rExpiryTime -= u4NanSendPacketGuardTime;
 		for (u4Idx = 0; u4Idx < NAN_MAX_SUPPORT_NDP_CXT_NUM; u4Idx++) {
 			ucSTAIdx = nanSchedQueryStaRecIdx(prAdapter, u2SchId,
 							  u4Idx);
