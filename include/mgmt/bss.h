@@ -256,7 +256,7 @@ uint32_t ibssCheckCapabilityForAdHocMode(
 void ibssInitForAdHoc(struct ADAPTER *prAdapter,
 		      struct BSS_INFO *prBssInfo);
 
-#if CFG_SUPPORT_ADHOC || CFG_ENABLE_WIFI_DIRECT
+#if (CFG_SUPPORT_ADHOC || CFG_ENABLE_WIFI_DIRECT)
 uint32_t bssUpdateBeaconContent(struct ADAPTER
 				*prAdapter, uint8_t uBssIndex);
 

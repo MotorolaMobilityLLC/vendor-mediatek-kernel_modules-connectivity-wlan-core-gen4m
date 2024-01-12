@@ -8736,21 +8736,6 @@ void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 								&legacy);
 		}
 			break;
-#if CFG_SUPPORT_802_PP_DSCB
-		case UNI_EVENT_SAP_TAG_SAP_DCSB_IE: {
-			struct UNI_EVENT_SAP_DCSB_IE *dscb =
-				(struct UNI_EVENT_SAP_DCSB_IE *) tag;
-			struct EVENT_STA_SAP_DCSB_IE legacy = {0};
-
-			legacy.ucBssIndex = dscb->ucBssIndex;
-			legacy.fgIsDscbEnable = dscb->fgIsDscbEnable;
-			legacy.u2DscbBitmap = dscb->u2DscbBitmap;
-
-			RUN_RX_EVENT_HANDLER(EVENT_ID_STATIC_PP_DSCB,
-								&legacy);
-		}
-			break;
-#endif
 		default:
 			fail_cnt++;
 			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
@@ -8984,6 +8969,21 @@ void nicUniEventPpCb(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	case UNI_EVENT_PP_TAG_ALG_CTRL:
 		nicUniEventPpStat(ad, tag);
 		break;
+#if CFG_SUPPORT_802_PP_DSCB
+	case UNI_EVENT_SAP_TAG_SAP_DSCB_IE: {
+		struct UNI_EVENT_SAP_DSCB_IE *dscb =
+			(struct UNI_EVENT_SAP_DSCB_IE *) tag;
+		struct EVENT_STA_SAP_DSCB_IE legacy = {0};
+
+		legacy.ucBssIndex = dscb->ucBssIndex;
+		legacy.fgIsDscbEnable = dscb->fgIsDscbEnable;
+		legacy.u2DscbBitmap = dscb->u2DscbBitmap;
+
+		RUN_RX_EVENT_HANDLER(EVENT_ID_STATIC_PP_DSCB,
+							&legacy);
+	}
+		break;
+#endif
 	default:
 		DBGLOG(REQ, ERROR, "\x1b[31m %s: Invalid tag = %d\x1b[m\n"
 			, __func__, TAG_ID(tag));
