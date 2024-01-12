@@ -254,6 +254,10 @@ void heRlmRecBTWTparams(
 	uint8_t *pucIE);
 #endif
 
+void heRlmRspGenerateBssMaxIdleIE(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo);
+
 void heRlmReqGenerateBssMaxIdleIE(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);

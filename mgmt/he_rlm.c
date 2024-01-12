@@ -655,8 +655,12 @@ static void heRlmFillHeCapIE(
 			if (ucSupportedNss > 0)
 				HE_SET_PHY_CAP_DCM_MAX_NSS_RX(
 					prHeCap->ucHePhyCap);
-			HE_SET_PHY_CAP_ER_SU_4X_HE_LTF(prHeCap->ucHePhyCap);
-			HE_SET_PHY_CAP_ER_SU_1X_HE_LTF(prHeCap->ucHePhyCap);
+			if (IS_FEATURE_ENABLED(prWifiVar->fgErSuRx)) {
+				HE_SET_PHY_CAP_ER_SU_4X_HE_LTF(
+					prHeCap->ucHePhyCap);
+				HE_SET_PHY_CAP_ER_SU_1X_HE_LTF(
+					prHeCap->ucHePhyCap);
+			}
 		}
 
 		if (IS_FEATURE_ENABLED(prWifiVar->fgErTx) ||
@@ -1884,6 +1888,38 @@ void heRlmRecBTWTparams(
 
 #endif /* CFG_SUPPORT_BTWT == 1 */
 
+void heRlmRspGenerateBssMaxIdleIE(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
+{
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+	uint8_t ucPhyTypeSet;
+
+	if (!prAdapter || !prMsduInfo ||
+		IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgBssMaxIdle))
+		return;
+
+	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
+	if (!prBssInfo || !IS_BSS_ACTIVE(prBssInfo))
+		return;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+
+	/* Decide PHY type set source */
+	if (prStaRec) {
+		/* Get PHY type set from target STA */
+		ucPhyTypeSet = prStaRec->ucPhyTypeSet;
+	} else {
+		/* Get PHY type set from current BSS */
+		ucPhyTypeSet = prBssInfo->ucPhyTypeSet;
+	}
+
+	if (RLM_NET_IS_11AX(prBssInfo) &&
+	    (ucPhyTypeSet & PHY_TYPE_SET_802_11AX))
+		heRlmFillBssMaxIdleIE(prAdapter, prBssInfo, prMsduInfo);
+}
+
 void heRlmReqGenerateBssMaxIdleIE(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo)
@@ -1924,13 +1960,16 @@ static void heRlmFillBssMaxIdleIE(
 	prBssMaxIdleIE->ucId = ELEM_ID_BSS_MAX_IDLE_PERIOD;
 	prBssMaxIdleIE->ucLength = ELEM_MAX_LEN_BSS_MAX_IDLE;
 	WLAN_SET_FIELD_16(&prBssMaxIdleIE->u2MaxIdlePeriod,
-		BSS_MAX_IDLE_PERIOD_VALUE);
+		prAdapter->rWifiVar.u2BssMaxIdlePeriod);
 
 	/* The Protected Keep-Alive Required subfield is set to 1
 	 * to indicate that only a protected frame indicates activity.
 	 */
 	if (prStaRec && (prStaRec->u2CapInfo & CAP_INFO_PRIVACY) &&
 		secEnabledInAis(prAdapter, prMsduInfo->ucBssIndex))
+		ucIdleOptions = 1;
+	else if (IS_BSS_APGO(prBssInfo) &&
+		rsnCheckBipKeyInstalled(prAdapter, prStaRec))
 		ucIdleOptions = 1;
 	prBssMaxIdleIE->ucIdleOptions = ucIdleOptions;
 

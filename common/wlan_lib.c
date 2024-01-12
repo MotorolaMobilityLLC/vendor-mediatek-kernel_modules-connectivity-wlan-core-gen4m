@@ -7999,6 +7999,17 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgErRx = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "ErRx",
 			FEATURE_ENABLED);
+	prWifiVar->fgErSuRx = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "ErSuRx",
+			FEATURE_ENABLED);
+#endif
+#if (CFG_SUPPORT_BSS_MAX_IDLE_PERIOD == 1)
+	prWifiVar->fgBssMaxIdle = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "BssMaxIdle",
+			FEATURE_DISABLED);
+	prWifiVar->u2BssMaxIdlePeriod = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "BssMaxIdlePeriod",
+			BSS_MAX_IDLE_PERIOD_VALUE);
 #endif
 
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
