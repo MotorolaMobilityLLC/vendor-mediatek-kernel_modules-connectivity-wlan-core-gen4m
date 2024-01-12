@@ -483,6 +483,7 @@ struct RTMP_DMABUF {
 	unsigned long AllocSize;
 	void *AllocVa;		/* TxBuf virtual address */
 	phys_addr_t AllocPa;		/* TxBuf physical address */
+	u_int8_t fgIsCopyPath;	/* RxBuf is copy path */
 };
 
 /*

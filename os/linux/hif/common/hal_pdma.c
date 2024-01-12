@@ -2445,9 +2445,18 @@ void halWpdmaGetRxBuf(
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
-	if (fgAllocMem && prMemOps->allocRxBuf)
-		prRxCell->pPacket = prMemOps->allocRxBuf(
-			prHifInfo, pDmaBuf, u4Num, u4Idx);
+	if (!fgAllocMem)
+		return;
+
+	if (halIsDataRing(RX_RING, u4Num)) {
+		if (prMemOps->allocRxDataBuf)
+			prRxCell->pPacket = prMemOps->allocRxDataBuf(
+				prHifInfo, pDmaBuf, u4Num, u4Idx);
+	} else {
+		if (prMemOps->allocRxEvtBuf)
+			prRxCell->pPacket = prMemOps->allocRxEvtBuf(
+				prHifInfo, pDmaBuf, u4Num, u4Idx);
+	}
 }
 
 bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
@@ -2652,7 +2661,7 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 	struct RTMP_TX_RING *pTxRing;
 	struct RTMP_RX_RING *pRxRing;
 	struct TXD_STRUCT *pTxD;
-	struct RTMP_DMACB *prDmaCb;
+	struct RTMP_DMACB *prRxCell;
 	void *pPacket, *pBuffer;
 	uint32_t i, j;
 
@@ -2692,19 +2701,26 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 		for (j = 0; j < pRxRing->u4RingSize; j++) {
-			prDmaCb = &pRxRing->Cell[j];
-			if (prMemOps->unmapRxBuf && prDmaCb->DmaBuf.AllocVa) {
+			prRxCell = &pRxRing->Cell[j];
+			/* reserved non-cache memory */
+			if (prRxCell->DmaBuf.fgIsCopyPath) {
+				prRxCell->DmaBuf.AllocVa = NULL;
+				prRxCell->pPacket = NULL;
+				continue;
+			}
+
+			if (prMemOps->unmapRxBuf && prRxCell->DmaBuf.AllocVa) {
 				prMemOps->unmapRxBuf(
 					prHifInfo,
-					prDmaCb->DmaBuf.AllocPa,
-					prDmaCb->DmaBuf.AllocSize);
+					prRxCell->DmaBuf.AllocPa,
+					prRxCell->DmaBuf.AllocSize);
 			}
-			prDmaCb->DmaBuf.AllocVa = NULL;
-			if (prMemOps->freePacket && prDmaCb->pPacket) {
+			prRxCell->DmaBuf.AllocVa = NULL;
+			if (prMemOps->freePacket && prRxCell->pPacket) {
 				prMemOps->freePacket(
-					prHifInfo, prDmaCb->pPacket, i);
+					prHifInfo, prRxCell->pPacket, i);
 			}
-			prDmaCb->pPacket = NULL;
+			prRxCell->pPacket = NULL;
 		}
 
 		halWpdmaFreeRingDesc(prGlueInfo, &prHifInfo->RxDescRing[i]);
@@ -3279,6 +3295,13 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 
 	prTxRing->u4UsedCnt++;
 
+	DBGLOG(HAL, TRACE,
+	       "%s: CmdInfo[0x%p], TxD[0x%p/%u] TxP[0x%p/%u] CPU idx[%u] Used[%u]\n",
+	       __func__, prCmdInfo, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen,
+	       prCmdInfo->pucTxp, prCmdInfo->u4TxpLen,
+	       prTxRing->TxCpuIdx, prTxRing->u4UsedCnt);
+	DBGLOG_MEM32(HAL, TRACE, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
+
 	if (prSwWfdmaInfo->fgIsEnSwWfdma) {
 		if (prSwWfdmaInfo->rOps.setCidx)
 			prSwWfdmaInfo->rOps.
@@ -3290,13 +3313,6 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 			       prTxRing->TxCpuIdx);
 
 	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4CmdTxCount);
-
-	DBGLOG(HAL, TRACE,
-	       "%s: CmdInfo[0x%p], TxD[0x%p/%u] TxP[0x%p/%u] CPU idx[%u] Used[%u]\n",
-	       __func__, prCmdInfo, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen,
-	       prCmdInfo->pucTxp, prCmdInfo->u4TxpLen,
-	       prTxRing->TxCpuIdx, prTxRing->u4UsedCnt);
-	DBGLOG_MEM32(HAL, TRACE, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
 
 	if (u2Port == TX_RING_CMD
 #if (CFG_SUPPORT_CONNAC2X == 1)
