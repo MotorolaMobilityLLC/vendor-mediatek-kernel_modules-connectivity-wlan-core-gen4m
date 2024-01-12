@@ -2151,13 +2151,8 @@ uint8_t wlanGetSupportNss(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 uint32_t wlanAdapterStartForLowLatency(struct ADAPTER *prAdapter);
-uint32_t wlanProbeSuccessForLowLatency(struct ADAPTER *prAdapter);
 uint32_t wlanConnectedForLowLatency(struct ADAPTER *prAdapter,
 				    uint8_t ucBssIndex);
-uint32_t wlanSetLowLatencyCommand(struct ADAPTER *prAdapter,
-				     u_int8_t fgEnLowLatencyMode,
-				     u_int8_t fgEnTxDupDetect,
-				     u_int8_t fgTxDupCertQuery);
 uint32_t wlanSetLowLatencyMode(struct ADAPTER *prAdapter,
 				uint32_t u4Events, uint8_t ucBssIndex);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */

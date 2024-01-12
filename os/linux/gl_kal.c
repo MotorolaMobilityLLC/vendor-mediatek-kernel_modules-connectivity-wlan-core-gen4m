@@ -4984,7 +4984,6 @@ void kalClearCommandQueue(struct GLUE_INFO *prGlueInfo,
 			prTempCmdQue->u4NumElem);
 }
 
-#if CFG_SUPPORT_LOWLATENCY_MODE
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is used to check use packet data into command Queue flow
@@ -4994,64 +4993,6 @@ void kalClearCommandQueue(struct GLUE_INFO *prGlueInfo,
  * \retval is TRUE (run CmdData path flow) or FALSE (not use)
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalIsCommandDataPath(struct ADAPTER *prAdapter,
-		struct sk_buff *prSkb)
-{
-	if (prAdapter->rWifiVar.ucLowLatencyCmdData == 0)
-		return FALSE;
-
-	if (!prAdapter->fgTxDupCertificate)
-		return FALSE;
-
-	if (!prAdapter->fgEnTxDupDetect)
-		return FALSE;
-
-	/* Only detect for special mark packet */
-	if (!prAdapter->rWifiVar.ucLowLatencyCmdDataAllPacket &&
-	    !(prSkb->mark & BIT(NIC_TX_SKB_DUP_DETECT_MARK_BIT))) {
-		DBGLOG_LIMITED(TX, TRACE,
-			"mark flag=[%x]\n", prSkb->mark);
-		return FALSE;
-	}
-
-	/* Not send special mark flag packets via command path */
-	if (GLUE_IS_PKT_FLAG_SET(prSkb)) {
-		DBGLOG_LIMITED(TX, TRACE,
-			"Packet flag=[%d]\n", GLUE_IS_PKT_FLAG_SET(prSkb));
-		return FALSE;
-	}
-
-	/* Only handle checksum calculated packets, must not enable
-	 * checksum offload for CmdData packet. Refer to
-	 * kalQueryTxChksumOffloadParam()
-	 */
-	if (prSkb->ip_summed != CHECKSUM_NONE) {
-		DBGLOG_LIMITED(TX, TRACE,
-			"Packet checksum not calculated, ip_summed=[%d]",
-			prSkb->ip_summed);
-		return FALSE;
-	}
-
-	if (prAdapter->tmTxDataInterval > 0 &&
-	    !CHECK_FOR_TIMEOUT(kalGetTimeTick(),
-				prAdapter->tmTxDataInterval, 10)) {
-		DBGLOG_LIMITED(TX, TRACE, "Packet interval too close");
-		return FALSE;
-	}
-	GET_CURRENT_SYSTIME(&prAdapter->tmTxDataInterval);
-
-	DBGLOG_LIMITED(TX, INFO,
-	       "Change data to cmd data frame. Packet flag=[%d], ip_summed=[%d] mark=[%x]\n",
-		GLUE_IS_PKT_FLAG_SET(prSkb), prSkb->ip_summed, prSkb->mark);
-
-	DBGLOG_LIMITED(TX, INFO,
-	       "Change data to cmd data frame. Packet flag=[%d], ip_summed=[%d] mark=[%x]\n",
-		GLUE_IS_PKT_FLAG_SET(prSkb), prSkb->ip_summed, prSkb->mark);
-
-	return TRUE;
-}
-#endif
-
 uint32_t kalProcessTxPacket(struct GLUE_INFO *prGlueInfo,
 			    struct sk_buff *prSkb)
 {
@@ -5060,21 +5001,7 @@ uint32_t kalProcessTxPacket(struct GLUE_INFO *prGlueInfo,
 	if (prSkb == NULL) {
 		DBGLOG(INIT, WARN, "prSkb == NULL in tx\n");
 		return u4Status;
-	}
-
-#if CFG_SUPPORT_LOWLATENCY_MODE
-	/* Data frame use command path */
-	else if (kalIsCommandDataPath(prGlueInfo->prAdapter, prSkb)) {
-		u4Status = wlanProcessCmdDataFrame(prGlueInfo->prAdapter,
-					       (void *) prSkb);
-		if (u4Status == WLAN_STATUS_SUCCESS)
-			GLUE_INC_REF_CNT(
-				prGlueInfo->i4TxPendingCmdDataFrameNum);
-
-	}
-#endif
-	/* Handle normal frame */
-	else
+	} else
 		u4Status = wlanEnqueueTxPacket(prGlueInfo->prAdapter,
 					       (void *) prSkb);
 
@@ -8265,7 +8192,7 @@ u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
 		, dataLen, &event) < 0))
 		goto nla_put_failure;
 
-	DBGLOG(INIT, ERROR, "DPP event to cfg80211[id:%d][len:%d][F:%d]:%d\n",
+	DBGLOG(INIT, ERROR, "event to cfg80211[id:%d][len:%d][F:%d]:%d\n",
 		WIFI_EVENT_DRIVER_ERROR,
 		dataLen, fgForceReport, event);
 

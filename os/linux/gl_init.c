@@ -6402,10 +6402,6 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	DBGLOG(INIT, STATE, "[SER][L0] PASS!!\n");
 #endif
 
-#if CFG_SUPPORT_LOWLATENCY_MODE
-	wlanProbeSuccessForLowLatency(prAdapter);
-#endif
-
 	coredump_register_bushang_chk_cb(prAdapter->chip_info->checkbushang);
 
 #if CFG_SUPPORT_PERSIST_NETDEV
