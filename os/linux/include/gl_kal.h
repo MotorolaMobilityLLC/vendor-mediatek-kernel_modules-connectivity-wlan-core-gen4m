@@ -482,6 +482,13 @@ enum ENUM_CMD_TX_RESULT {
 	CMD_TX_RESULT_NUM
 };
 
+typedef int(*PFN_PWR_LEVEL_HANDLER)(struct ADAPTER *, uint8_t);
+
+struct PWR_LEVEL_HANDLER_ELEMENT {
+	struct LINK_ENTRY rLinkEntry;
+	PFN_PWR_LEVEL_HANDLER prPwrLevelHandler;
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -1842,6 +1849,19 @@ void kalUpdateCompHdlrRec(IN struct ADAPTER *prAdapter,
 extern uint32_t get_wifi_standalone_log_mode(void);
 void kalPrintLog(const char *fmt, ...);
 void kalPrintLogLimited(const char *fmt, ...);
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+void kalPwrLevelHdlrRegister(IN struct ADAPTER *prAdapter,
+					PFN_PWR_LEVEL_HANDLER hdlr);
+
+void
+connsysPowerLevelNotify(IN struct ADAPTER *prAdapter,
+				IN struct MSG_HDR *prMsgHdr);
+
+void
+connsysPowerTempNotify(IN struct ADAPTER *prAdapter,
+				IN struct MSG_HDR *prMsgHdr);
+#endif
 
 #endif /* _GL_KAL_H */
 

@@ -4119,6 +4119,91 @@ static void consys_log_event_notification(int cmd, int value)
 }
 #endif
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+int connsys_power_event_notification(
+		enum conn_pwr_event_type type, void *data)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct net_device *prDev = gPrDev;
+	struct MSG_PWR_LEVEL_NOTIFY *prMsgLevelNotify;
+	struct MSG_PWR_TEMP_NOTIFY *prMsgPwrNotify;
+	uint32_t *prLevel;
+	struct conn_pwr_event_max_temp *prTempInfo;
+	int ret = -1;
+
+	prGlueInfo = (prDev != NULL) ?
+		*((struct GLUE_INFO **) netdev_priv(prDev)) : NULL;
+	DBGLOG(INIT, TRACE, "prGlueInfo=%p\n", prGlueInfo);
+	if (!prGlueInfo) {
+		DBGLOG(INIT, INFO,
+			"prGlueInfo == NULL return\n");
+		return ret;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	DBGLOG(INIT, TRACE, "prAdapter=%p\n", prAdapter);
+	if (!prAdapter) {
+		DBGLOG(INIT, INFO,
+			"prAdapter == NULL return\n");
+		return ret;
+	}
+
+	switch (type) {
+	case CONN_PWR_EVENT_LEVEL:
+		prLevel = (int *)data;
+		prMsgLevelNotify = (struct MSG_PWR_LEVEL_NOTIFY *)
+				kalMemAlloc(sizeof(struct MSG_PWR_LEVEL_NOTIFY),
+						VIR_MEM_TYPE);
+
+		if (!prMsgLevelNotify) {
+			DBGLOG(INIT, WARN, "prMsgNotify memory alloc fail!\n");
+			return ret;
+		}
+
+		kalMemSet(prMsgLevelNotify, 0,
+				sizeof(struct MSG_PWR_LEVEL_NOTIFY));
+		prMsgLevelNotify->rMsgHdr.eMsgId = MID_CNS_DRV_PWR_LEVEL;
+		prMsgLevelNotify->level = *prLevel;
+
+		mboxSendMsg(prAdapter, MBOX_ID_0,
+				(struct MSG_HDR *) prMsgLevelNotify,
+				MSG_SEND_METHOD_BUF);
+		/* Is MSG_SEND_METHOD_UNBUF needed? */
+		break;
+
+	case CONN_PWR_EVENT_MAX_TEMP:
+		prTempInfo = (struct conn_pwr_event_max_temp *)data;
+		prMsgPwrNotify = (struct MSG_PWR_TEMP_NOTIFY *)
+				kalMemAlloc(sizeof(struct MSG_PWR_TEMP_NOTIFY),
+						VIR_MEM_TYPE);
+
+		if (!prMsgPwrNotify) {
+			DBGLOG(INIT, WARN, "prMsgNotify memory alloc fail!\n");
+			return ret;
+		}
+
+		kalMemSet(prMsgPwrNotify, 0,
+				sizeof(struct MSG_PWR_TEMP_NOTIFY));
+		prMsgPwrNotify->rMsgHdr.eMsgId = MID_CNS_DRV_PWR_TEMP;
+		prMsgPwrNotify->u4MaxTemp = prTempInfo->max_temp;
+		prMsgPwrNotify->u4RecoveryTemp = prTempInfo->recovery_temp;
+
+		mboxSendMsg(prAdapter, MBOX_ID_0,
+				(struct MSG_HDR *) prMsgPwrNotify,
+				MSG_SEND_METHOD_BUF);
+		/* Is MSG_SEND_METHOD_UNBUF needed? */
+		break;
+
+	default:
+		DBGLOG(INIT, TRACE, "Unknown connsys power event type.\n");
+		return ret;
+	}
+
+	return 0;
+}
+#endif
+
 static
 void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER *prAdapter,
@@ -5015,6 +5100,11 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 		prAdapter = prGlueInfo->prAdapter;
 		prWifiVar = &prAdapter->rWifiVar;
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+		prAdapter->u4PwrLevel = ((struct mt66xx_hif_driver_data *)
+						pvDriverData)->prPwrLevel;
+#endif
 
 		wlanOnPreAdapterStart(prGlueInfo,
 			prAdapter,

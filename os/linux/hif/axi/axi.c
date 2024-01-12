@@ -279,6 +279,11 @@ static int hifAxiProbe(void)
 	mtk_wcn_consys_hw_wifi_paldo_ctrl(1);
 #endif
 #endif
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	conn_pwr_drv_pre_on(CONN_PWR_DRV_WIFI, &prDriverData->prPwrLevel);
+#endif
+
 	if (prChipInfo->wmmcupwron)
 		ret = prChipInfo->wmmcupwron();
 	if (ret != 0) {
@@ -327,6 +332,11 @@ int hifAxiRemove(void)
 
 	if (prChipInfo->wmmcupwroff)
 		prChipInfo->wmmcupwroff();
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	conn_pwr_drv_post_off(CONN_PWR_DRV_WIFI);
+#endif
+
 #if CFG_MTK_ANDROID_WMT
 #if (CFG_SUPPORT_CONNINFRA == 0)
 	mtk_wcn_consys_hw_wifi_paldo_ctrl(0);
@@ -832,6 +842,11 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 	if (prChipInfo->conninra_cb_register)
 		prChipInfo->conninra_cb_register();
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	/* Register callbacks for connsys power throttling feature. */
+	conn_pwr_register_event_cb(CONN_PWR_DRV_WIFI,
+			(CONN_PWR_EVENT_CB)connsys_power_event_notification);
+#endif
 #endif
 #else
 	hifAxiProbe();
@@ -844,6 +859,10 @@ exit:
 
 static int mtk_axi_remove(IN struct platform_device *pdev)
 {
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	conn_pwr_register_event_cb(CONN_PWR_DRV_WIFI, NULL);
+#endif
+
 	axiCsrIounmap(pdev);
 
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
