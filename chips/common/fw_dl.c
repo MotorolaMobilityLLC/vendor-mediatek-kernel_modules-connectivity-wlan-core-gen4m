@@ -2275,6 +2275,7 @@ uint32_t wlanReadRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	uint32_t u4FwVerOffset = 0;
 	uint32_t u4CopySize = 0;
+	int32_t ret = 0;
 
 	*pu4ManifestSize = 0;
 	kalMemZero(pucManifestBuffer, u4BufferMaxSize);
@@ -2285,8 +2286,12 @@ uint32_t wlanReadRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 	if (u4FwVerOffset) {
 		u4CopySize = (u4BufferMaxSize < FW_VERSION_MAX_LEN) ?
 			u4BufferMaxSize : FW_VERSION_MAX_LEN;
-		emi_mem_read(prChipInfo, u4FwVerOffset,
+		ret = emi_mem_read(prChipInfo, u4FwVerOffset,
 			pucManifestBuffer, u4CopySize);
+		if (ret != 0) {
+			DBGLOG(INIT, ERROR, "Read RAM code Manifest failed\n");
+			return WLAN_STATUS_FAILURE;
+		}
 		*pu4ManifestSize = kalStrnLen(pucManifestBuffer,
 			u4BufferMaxSize);
 		DBGLOG(INIT, INFO, "ver[%d]:%s\n", *pu4ManifestSize,
