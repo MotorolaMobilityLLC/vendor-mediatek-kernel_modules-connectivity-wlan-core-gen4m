@@ -2582,6 +2582,9 @@ static uint32_t mt6639_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
 static int32_t mt6639_ccif_trigger_fw_assert(struct ADAPTER *ad)
 {
 	HAL_MCR_WR(ad,
+		CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_1_BA_ADDR,
+		0x18051803);
+	HAL_MCR_WR(ad,
 		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_TCHNUM_ADDR,
 		SW_INT_SUBSYS_RESET);
 
