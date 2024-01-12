@@ -1446,19 +1446,17 @@ static void rlmFillHtOpIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 	prMsduInfo->u2FrameLength += IE_SIZE(prHtOp);
 }
 
-
-void rlmGenerateHtTPEIE(
+void rlmGeneratePwrConstraintIE(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo)
 {
+#if CFG_ENABLE_WIFI_DIRECT
 	struct BSS_INFO *prBssInfo;
-	struct STA_RECORD *prStaRec;
-	uint8_t ucPhyTypeSet;
+	struct P2P_SPECIFIC_BSS_INFO *prSpecBssInfo;
+	struct IE_HT_TPE *prPwrConstraint;
 
 	if (!prAdapter || !prMsduInfo)
 		return;
-
-	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
 	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
 	if (!prBssInfo || !IS_BSS_APGO(prBssInfo))
@@ -1467,33 +1465,26 @@ void rlmGenerateHtTPEIE(
 	if (!IS_BSS_ACTIVE(prBssInfo))
 		return;
 
-	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgSapAddTPEIE))
+	if (!(prBssInfo->ucPhyTypeSet & PHY_TYPE_SET_802_11A))
 		return;
 
-	/* Decide PHY type set source */
-	if (prStaRec) {
-		/* Get PHY type set from target STA */
-		ucPhyTypeSet = prStaRec->ucPhyTypeSet;
-	} else {
-		/* Get PHY type set from current BSS */
-		ucPhyTypeSet = prBssInfo->ucPhyTypeSet;
-	}
+	prSpecBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo[
+		prBssInfo->u4PrivateData];
+	if (prSpecBssInfo->fgAddPwrConstrIe == FALSE &&
+	    IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgSapAddTPEIE))
+		return;
 
-	if (RLM_NET_IS_11N(prBssInfo) &&
-		(ucPhyTypeSet & PHY_TYPE_SET_802_11N)) {
-		struct IE_HT_TPE *prHtTpe;
+	prPwrConstraint = (struct IE_HT_TPE *)
+		(((uint8_t *)prMsduInfo->prPacket) +
+		prMsduInfo->u2FrameLength);
 
-		prHtTpe = (struct IE_HT_TPE *)
-			(((uint8_t *)prMsduInfo->prPacket) +
-			prMsduInfo->u2FrameLength);
+	prPwrConstraint->ucId = ELEM_ID_PWR_CONSTRAINT;
+	prPwrConstraint->ucLength =
+		sizeof(struct IE_HT_TPE) - ELEM_HDR_LEN;
+	prPwrConstraint->u8TxPowerInfo = 3;
 
-		prHtTpe->ucId = ELEM_ID_PWR_CONSTRAINT;
-		prHtTpe->ucLength =
-			sizeof(struct IE_HT_TPE) - ELEM_HDR_LEN;
-		prHtTpe->u8TxPowerInfo = 3;
-
-		prMsduInfo->u2FrameLength += IE_SIZE(prHtTpe);
-	}
+	prMsduInfo->u2FrameLength += IE_SIZE(prPwrConstraint);
+#endif
 }
 
 #if CFG_SUPPORT_802_11AC
@@ -10426,4 +10417,70 @@ rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
 		__rlmSendExChannelSwitchFrame(prAdapter, prBssInfo,
 					    prCurrStaRec);
 	}
+}
+
+uint32_t rlmCalculateTpeIELen(struct ADAPTER *prAdapter,
+			      uint8_t ucBssIndex, struct STA_RECORD *prStaRec)
+{
+#if CFG_ENABLE_WIFI_DIRECT
+	struct BSS_INFO *prBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
+
+	if (!prAdapter)
+		return 0;
+
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgSapAddTPEIE))
+		return 0;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo || !IS_BSS_APGO(prBssInfo))
+		return 0;
+
+	prP2pSpecificBssInfo =
+		prAdapter->rWifiVar
+			.prP2pSpecificBssInfo[prBssInfo->u4PrivateData];
+
+	if (!prP2pSpecificBssInfo)
+		return 0;
+
+	return prP2pSpecificBssInfo->u2TpeIeLen;
+#else
+	return 0;
+#endif
+}
+
+void rlmGenerateTpeIE(struct ADAPTER *prAdapter,
+		      struct MSDU_INFO *prMsduInfo)
+{
+#if CFG_ENABLE_WIFI_DIRECT
+	struct BSS_INFO *prBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
+	uint8_t *pucBuffer;
+
+	if (!prAdapter || !prMsduInfo)
+		return;
+
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgSapAddTPEIE))
+		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+	if (!prBssInfo || !IS_BSS_APGO(prBssInfo))
+		return;
+
+	prP2pSpecificBssInfo =
+		prAdapter->rWifiVar
+			.prP2pSpecificBssInfo[prBssInfo->u4PrivateData];
+
+	if (!prP2pSpecificBssInfo || !prP2pSpecificBssInfo->u2TpeIeLen)
+		return;
+
+	pucBuffer = (uint8_t *) ((uintptr_t)prMsduInfo->prPacket +
+		(uintptr_t)prMsduInfo->u2FrameLength);
+
+	kalMemCopy(pucBuffer,
+		prP2pSpecificBssInfo->aucTpeIeBuffer,
+		prP2pSpecificBssInfo->u2TpeIeLen);
+	prMsduInfo->u2FrameLength +=
+		prP2pSpecificBssInfo->u2TpeIeLen;
+#endif
 }

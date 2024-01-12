@@ -316,7 +316,7 @@ void rlmRspGenerateExtCapIE(struct ADAPTER *prAdapter,
 void rlmRspGenerateHtOpIE(struct ADAPTER *prAdapter,
 			  struct MSDU_INFO *prMsduInfo);
 
-void rlmGenerateHtTPEIE(
+void rlmGeneratePwrConstraintIE(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
 
@@ -671,6 +671,13 @@ uint32_t rlmRegTxPwrLimitUpdate(
 	struct IE_COUNTRY *prCountryIE,
 	uint8_t ucPowerConstraint);
 #endif /* CFG_SUPPORT_802_11K */
+
+uint32_t rlmCalculateTpeIELen(struct ADAPTER *prAdapter,
+			      uint8_t ucBssIndex, struct STA_RECORD *prStaRec);
+
+void rlmGenerateTpeIE(struct ADAPTER *prAdapter,
+		      struct MSDU_INFO *prMsduInfo);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

@@ -207,12 +207,12 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 			|= HE_OP_PARAM1_TXOP_DUR_RTS_THRESHOLD_MASK;
 
 		/* Disable BSS color support*/
-		if (!prAdapter->rWifiVar.fgSapAddTPEIE)
+		if (prAdapter->rWifiVar.fgSapAddTPEIE) {
 			prBssInfo->ucBssColorInfo |=
 				BIT(HE_OP_BSSCOLOR_BSS_COLOR_DISABLE_SHFT);
-
-		prBssInfo->ucBssColorInfo |=
-			BIT(HE_OP_BSSCOLOR_BSS_COLOR_SHFT);
+			prBssInfo->ucBssColorInfo |=
+				BIT(HE_OP_BSSCOLOR_BSS_COLOR_SHFT);
+		}
 
 		prBssInfo->u2HeBasicMcsSet |= (HE_CAP_INFO_MCS_MAP_MCS7 << 0);
 		for (i = 1; i < 8; i++)

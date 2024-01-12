@@ -68,7 +68,7 @@ struct APPEND_VAR_IE_ENTRY txBcnIETable[] = {
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_OP), NULL,
 	   rlmRspGenerateHtOpIE}	/* 61 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_TPE), NULL,
-	   rlmGenerateHtTPEIE}		/* 34 */
+	   rlmGeneratePwrConstraintIE}		/* 32 */
 #if CFG_ENABLE_WIFI_DIRECT
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_OBSS_SCAN), NULL,
 	   rlmRspGenerateObssScanIE}	/* 74 */
@@ -132,6 +132,7 @@ struct APPEND_VAR_IE_ENTRY txBcnIETable[] = {
 	   rsnGenerateRSNXIE}	/* 244 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL,
 	   rsnGenerateOWEIE}
+	, {0, rlmCalculateTpeIELen, rlmGenerateTpeIE}
 };
 
 struct APPEND_VAR_IE_ENTRY txProbRspIETable[] = {
@@ -148,7 +149,7 @@ struct APPEND_VAR_IE_ENTRY txProbRspIETable[] = {
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_OP), NULL,
 	   rlmRspGenerateHtOpIE}	/* 61 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_TPE), NULL,
-	   rlmGenerateHtTPEIE}		/* 34 */
+	   rlmGeneratePwrConstraintIE}		/* 32 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL,
 	   rsnGenerateWPAIE}	/* 221 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL,

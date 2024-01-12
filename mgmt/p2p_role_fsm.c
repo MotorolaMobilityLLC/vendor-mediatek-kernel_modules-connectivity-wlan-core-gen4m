@@ -1398,6 +1398,8 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 		(struct MSG_P2P_START_AP *) NULL;
 	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
 		(struct P2P_CONNECTION_REQ_INFO *) NULL;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo =
+		(struct P2P_SPECIFIC_BSS_INFO *) NULL;
 	u_int8_t bSkipCac = TRUE;
 	enum ENUM_BAND eBand;
 	uint8_t ucChannelNum;
@@ -1421,9 +1423,10 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 	}
 
 	prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
-	prAdapter->rWifiVar
-		.prP2pSpecificBssInfo[prP2pStartAPMsg->ucRoleIdx]
-		->fgIsRddOpchng = FALSE;
+	prP2pSpecificBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo[
+		prP2pRoleFsmInfo->ucRoleIndex];
+	prP2pSpecificBssInfo->fgIsRddOpchng = FALSE;
+	prP2pSpecificBssInfo->fgAddPwrConstrIe = FALSE;
 
 	eBand = prP2pConnReqInfo->rChannelInfo.eBand;
 	ucChannelNum = prP2pConnReqInfo->rChannelInfo.ucChannelNum;
@@ -1479,6 +1482,7 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 		p2pRoleFsmRunEventStartAP(prAdapter, prMsgHdr);
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	else {
+		prP2pSpecificBssInfo->fgAddPwrConstrIe = TRUE;
 		memcpy(&prP2pConnReqInfo->rMsgStartAp,
 			prMsgHdr,
 			sizeof(struct MSG_P2P_START_AP));
