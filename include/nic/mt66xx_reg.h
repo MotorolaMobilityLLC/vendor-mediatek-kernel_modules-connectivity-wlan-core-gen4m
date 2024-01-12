@@ -1421,8 +1421,8 @@ struct mt66xx_hif_driver_data {
 	struct mt66xx_chip_info *chip_info;
 	const char *fw_flavor;
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	uint32_t prPwrLevel;
-	struct conn_pwr_event_max_temp *rTempInfo;
+	uint32_t u4PwrLevel;
+	struct conn_pwr_event_max_temp rTempInfo;
 #endif
 };
 
