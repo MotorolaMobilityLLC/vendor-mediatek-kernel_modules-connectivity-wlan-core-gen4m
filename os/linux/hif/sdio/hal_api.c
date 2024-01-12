@@ -584,7 +584,7 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	if (prAdapter->u4PwrCtrlBlockCnt != 0) {
-		DBGLOG(INIT, INFO, "prAdapter->u4PwrCtrlBlockCnt = %d\n",
+		DBGLOG(INIT, TRACE, "prAdapter->u4PwrCtrlBlockCnt = %d\n",
 			prAdapter->u4PwrCtrlBlockCnt);
 		goto unlock;
 	}
