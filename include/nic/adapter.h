@@ -1247,6 +1247,14 @@ struct WIFI_VAR {
 	uint8_t ucNanCommittedDw;
 	unsigned char fgNoPmf;
 #endif
+
+#if CFG_SUPPORT_TPENHANCE_MODE
+	uint8_t ucTpEnhanceEnable;
+	uint8_t ucTpEnhancePktNum;
+	uint32_t u4TpEnhanceInterval; /* in us */
+	int8_t cTpEnhanceRSSI;
+	uint32_t u4TpEnhanceThreshold;
+#endif /* CFG_SUPPORT_TPENHANCE_MODE */
 };
 
 /* cnm_timer module */
