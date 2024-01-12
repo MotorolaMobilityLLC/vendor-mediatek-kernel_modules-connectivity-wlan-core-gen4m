@@ -8258,3 +8258,26 @@ const uint8_t *kalFindIeMatchMask(uint8_t eid,
 	}
 	return NULL;
 }
+
+int _kalSnprintf(char *buf, size_t size, const char *fmt, ...)
+{
+	int retval;
+	va_list ap;
+
+	va_start(ap, fmt);
+	retval = vsnprintf(buf, size, fmt, ap);
+	va_end(ap);
+	return (retval < 0)?(0):(retval);
+}
+
+int _kalSprintf(char *buf, const char *fmt, ...)
+{
+	int retval;
+	va_list ap;
+
+	va_start(ap, fmt);
+	retval = vsprintf(buf, fmt, ap);
+	va_end(ap);
+	return (retval < 0)?(0):(retval);
+}
+

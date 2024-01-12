@@ -11587,6 +11587,10 @@ wlanoidSetCountryCode(IN struct ADAPTER *prAdapter,
 		struct BSS_INFO *prAisBssInfo =
 				aisGetConnectedBssInfo(prAdapter);
 
+		if (prAisBssInfo == NULL) {
+			return WLAN_STATUS_FAILURE;
+		}
+
 		/* restore DFS channels table */
 		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
 			-1, /* p2p role index */
