@@ -719,6 +719,16 @@ int8_t kal_atoi(uint8_t ch);
 #define kal_tasklet_schedule(_rRxRfbRetTask) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
+#ifndef __has_attribute
+#define __has_attribute(x) 0
+#endif
+
+#if __has_attribute(__fallthrough__)
+#define kal_fallthrough __attribute__((__fallthrough__))
+#else
+#define kal_fallthrough do {} while (0)  /* fallthrough */
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Notify OS with SendComplete event of the specific packet.
@@ -1933,8 +1943,8 @@ u_int8_t kalCheckWfsysResetPostpone(IN struct GLUE_INFO *prGlueInfo);
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 void
-kalApplyCustomRegulatory(IN struct wiphy *pWiphy,
-	IN const struct ieee80211_regdomain *pRegdom);
+kalApplyCustomRegulatory(
+	const struct ieee80211_regdomain *pRegdom);
 #endif
 
 #define kalGetCpuBoostThreshold() \
@@ -2042,5 +2052,24 @@ uint8_t kalGetChannelCount(struct GLUE_INFO *prGlueInfo);
 u_int8_t kalIsValidChnl(struct GLUE_INFO *prGlueInfo,
 			uint8_t ucNumOfChannel,
 			enum ENUM_BAND eBand);
-#endif /* _GL_KAL_H */
 
+void *kalGetNetDevPriv(void *prNet);
+
+uint32_t kalGetNetDevRxPacket(void *prNet);
+
+#if CFG_SUPPORT_TDLS
+void kalTdlsOpReq(
+	struct GLUE_INFO *prGlueInfo,
+	struct STA_RECORD *prStaRec,
+	uint16_t eOpMode,
+	uint16_t u2ReasonCode
+	);
+#endif
+
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+
+void kalConfigChksumOffload(
+	struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
+#endif
+
+#endif /* _GL_KAL_H */

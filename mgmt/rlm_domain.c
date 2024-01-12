@@ -2146,8 +2146,9 @@ uint32_t rlmDomainAlpha2ToU32(char *pcAlpha2, uint8_t ucAlpha2Size)
 
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
-uint32_t rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
-	struct wiphy *pWiphy,
+
+uint32_t
+rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
 	uint32_t u4CountryCode)
 {
 	const struct ieee80211_regdomain *pRegdom = NULL;
@@ -2165,13 +2166,13 @@ uint32_t rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
 		u4FinalCountryCode = COUNTRY_CODE_WW;
 	}
 
-	kalApplyCustomRegulatory(pWiphy, pRegdom);
+	kalApplyCustomRegulatory(pRegdom);
 
 	return u4FinalCountryCode;
 }
 #else
-uint32_t rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
-	struct wiphy *pWiphy,
+uint32_t
+rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
 	uint32_t u4CountryCode)
 {
 	return 0;
@@ -2181,7 +2182,6 @@ uint32_t rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
 uint8_t
 rlmDomainCountryCodeUpdateSanity(
 	struct GLUE_INFO *prGlueInfo,
-	struct wiphy *pWiphy,
 	struct ADAPTER **prAdapter)
 {
 	enum regd_state eCurrentState = rlmDomainGetCtrlState();
@@ -2198,11 +2198,6 @@ rlmDomainCountryCodeUpdateSanity(
 	}
 	*prAdapter = prGlueInfo->prAdapter;
 
-	if (!pWiphy) {
-		DBGLOG(RLM, ERROR, "pWiphy is NULL!\n");
-		return FALSE;
-	}
-
 	if (eCurrentState == REGD_STATE_INVALID ||
 		eCurrentState == REGD_STATE_UNDEFINED) {
 		DBGLOG(RLM, ERROR, "regd is in an invalid state\n");
@@ -2213,7 +2208,7 @@ rlmDomainCountryCodeUpdateSanity(
 }
 
 void rlmDomainCountryCodeUpdate(
-	struct ADAPTER *prAdapter, struct wiphy *pWiphy,
+	struct ADAPTER *prAdapter,
 	uint32_t u4CountryCode)
 {
 	uint32_t u4FinalCountryCode = u4CountryCode;
@@ -2228,7 +2223,6 @@ void rlmDomainCountryCodeUpdate(
 	if (rlmDomainIsUsingLocalRegDomainDataBase()) {
 		u4FinalCountryCode =
 			rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
-				pWiphy,
 				u4CountryCode);
 	}
 
@@ -2273,16 +2267,15 @@ rlmDomainSetCountry(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = rlmDomainGetGlueInfo();
 	struct ADAPTER *prBaseAdapter;
-	struct wiphy *prBaseWiphy = wlanGetWiphy();
 
 	if (!rlmDomainCountryCodeUpdateSanity(
-		prGlueInfo, prBaseWiphy, &prBaseAdapter)) {
+		prGlueInfo, &prBaseAdapter)) {
 		DBGLOG(RLM, WARN, "sanity check failed, skip update\n");
 		return;
 	}
 
 	rlmDomainCountryCodeUpdate(
-		prBaseAdapter, prBaseWiphy,
+		prBaseAdapter,
 		rlmDomainGetCountryCode());
 }
 
@@ -4266,7 +4259,6 @@ void rlmDomainTxPwrLimitSendPerRateCmd_6G(
 
 u_int32_t rlmDomainInitTxPwrLimitPerRateCmd(
 	struct ADAPTER *prAdapter,
-	struct wiphy *prWiphy,
 	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE *prCmd[],
 	uint32_t prCmdSize[])
 {
@@ -4421,7 +4413,6 @@ void rlmDomainTxPwrLimitSendPerRateCmd(
 
 u_int32_t rlmDomainInitTxBfBackoffCmd(
 	struct ADAPTER *prAdapter,
-	struct wiphy *prWiphy,
 	struct CMD_TXPWR_TXBF_SET_BACKOFF **prCmd
 )
 {
@@ -4549,7 +4540,6 @@ rlmDomainSendTxPwrLimitPerRateCmd_6G(struct ADAPTER *prAdapter,
 	uint8_t ucVersion,
 	struct TX_PWR_LIMIT_DATA *pTxPwrLimitData)
 {
-	struct wiphy *wiphy;
 	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE
 		*prTxPwrLimitPerRateCmd_6G;
 	uint32_t rTxPwrLimitPerRateCmdSize_6G = 0;
@@ -4562,8 +4552,6 @@ rlmDomainSendTxPwrLimitPerRateCmd_6G(struct ADAPTER *prAdapter,
 	uint8_t ch_cnt = TX_PWR_LIMIT_6G_CH_NUM;
 	uint8_t ch_idx = 0;
 	const int8_t *prChannelList = &gTx_Pwr_Limit_6g_Ch[0];
-
-	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
 
 	u4SetCmdTableMaxSize = u4SetCountryTxPwrLimitCmdSize +
 	ch_cnt * u4ChPwrLimitSize;
@@ -4605,15 +4593,13 @@ rlmDomainSendTxPwrLimitPerRateCmd(struct ADAPTER *prAdapter,
 	uint8_t ucVersion,
 	struct TX_PWR_LIMIT_DATA *pTxPwrLimitData)
 {
-	struct wiphy *wiphy;
 	uint8_t band_idx = 0;
 	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE
 		*prTxPwrLimitPerRateCmd[KAL_NUM_BANDS] = {0};
 	uint32_t prTxPwrLimitPerRateCmdSize[KAL_NUM_BANDS] = {0};
 
-	wiphy = wlanGetWiphy();
 	if (rlmDomainInitTxPwrLimitPerRateCmd(
-		prAdapter, wiphy, prTxPwrLimitPerRateCmd,
+		prAdapter, prTxPwrLimitPerRateCmd,
 		prTxPwrLimitPerRateCmdSize) !=
 		WLAN_STATUS_SUCCESS)
 		goto error;
@@ -4637,14 +4623,11 @@ rlmDomainSendTxBfBackoffCmd(struct ADAPTER *prAdapter,
 	uint8_t ucVersion,
 	struct TX_PWR_LIMIT_DATA *pTxPwrLimitData)
 {
-	struct wiphy *wiphy;
 	struct CMD_TXPWR_TXBF_SET_BACKOFF
 		*prTxBfBackoffCmd = NULL;
 
-	wiphy = wlanGetWiphy();
-
 	if (rlmDomainInitTxBfBackoffCmd(
-		prAdapter, wiphy, &prTxBfBackoffCmd) !=
+		prAdapter, &prTxBfBackoffCmd) !=
 		WLAN_STATUS_SUCCESS)
 		goto error;
 

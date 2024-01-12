@@ -8647,7 +8647,7 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	struct WIFI_VAR *prWifiVar = NULL;
 	uint32_t uArpMonitorNumber;
 	uint32_t uArpMonitorRxPktNum;
-	struct net_device *prNetDev = NULL;
+
 	struct GLUE_INFO *prGlueInfo = NULL;
 
 	if (!prAdapter ||
@@ -8657,7 +8657,6 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 		return;
 	}
 	prGlueInfo = prAdapter->prGlueInfo;
-	prNetDev = prGlueInfo->prDevHandler;
 	prWifiVar = &prAdapter->rWifiVar;
 	uArpMonitorNumber = prWifiVar->uArpMonitorNumber;
 	uArpMonitorRxPktNum = prWifiVar->uArpMonitorRxPktNum;
@@ -8708,11 +8707,13 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 		arpMoniter++;
 		/* Record counts of RX Packets when Tx 1st ARP Req */
 		if (!last_rx_packets) {
-			last_rx_packets = prNetDev->stats.rx_packets;
+			last_rx_packets = kalGetNetDevRxPacket(
+				(void *)prGlueInfo->prDevHandler);
 			latest_rx_packets = 0;
 		}
 		/* Record counts of RX Packets when TX ARP Req recently */
-		latest_rx_packets = prNetDev->stats.rx_packets;
+		last_rx_packets = kalGetNetDevRxPacket(
+				(void *)prGlueInfo->prDevHandler);
 		if (arpMoniter > uArpMonitorNumber) {
 			if ((latest_rx_packets - last_rx_packets) <=
 				uArpMonitorRxPktNum) {

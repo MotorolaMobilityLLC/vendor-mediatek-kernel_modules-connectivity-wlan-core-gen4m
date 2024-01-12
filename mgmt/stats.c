@@ -141,7 +141,7 @@ void StatsEnvSetPktDelay(IN uint8_t ucTxOrRx, IN uint8_t ucIpProto,
 }
 
 void StatsEnvRxTime2Host(IN struct ADAPTER *prAdapter,
-	struct sk_buff *prSkb, struct net_device *prNetDev)
+	struct sk_buff *prSkb, void *prNetDev)
 {
 	uint8_t *pucEth = prSkb->data;
 	uint16_t u2EthType = 0;
@@ -163,7 +163,7 @@ void StatsEnvRxTime2Host(IN struct ADAPTER *prAdapter,
 	u2IPID = pucEth[4] << 8 | pucEth[5];
 
 	DBGLOG(RX, TEMP, "u2IpId=%d rx_packets=%lu\n",
-		u2IPID, prNetDev->stats.rx_packets);
+		u2IPID, kalGetNetDevRxPacket(prNetDev));
 
 	if ((g_ucTxRxFlag & BIT(1)) == 0)
 		return;

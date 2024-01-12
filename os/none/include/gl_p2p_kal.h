@@ -496,6 +496,8 @@ u_int8_t kalP2PMaxClients(IN struct GLUE_INFO *prGlueInfo,
 #define kalP2pClearCsaChan(prGlueP2pInfo) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
+#define kalSetP2pDevMac(_prGlueInfo, _prBssInfo, _ucRoleIdx) \
+		KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
 void kalP2pUnlinkBss(IN struct GLUE_INFO *prGlueInfo, IN uint8_t aucBSSID[]);
 

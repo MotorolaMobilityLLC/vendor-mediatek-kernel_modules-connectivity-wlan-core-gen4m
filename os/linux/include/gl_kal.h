@@ -2054,8 +2054,8 @@ uint32_t kalDumpPwrLevel(IN struct ADAPTER *prAdapter);
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 void
-kalApplyCustomRegulatory(IN struct wiphy *pWiphy,
-			    IN const struct ieee80211_regdomain *pRegdom);
+kalApplyCustomRegulatory(
+	const struct ieee80211_regdomain *pRegdom);
 #endif
 
 void kal_sched_set(struct task_struct *p, int policy,
@@ -2123,6 +2123,24 @@ uint8_t kalGetChannelCount(struct GLUE_INFO *prGlueInfo);
 u_int8_t kalIsValidChnl(struct GLUE_INFO *prGlueInfo,
 			uint8_t ucNumOfChannel,
 			enum ENUM_BAND eBand);
+
+void *kalGetNetDevPriv(void *prNet);
+
+uint32_t kalGetNetDevRxPacket(void *prNet);
+
+#if CFG_SUPPORT_TDLS
+void kalTdlsOpReq(
+	struct GLUE_INFO *prGlueInfo,
+	struct STA_RECORD *prStaRec,
+	uint16_t eOpMode,
+	uint16_t u2ReasonCode
+	);
+#endif
+
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+void kalConfigChksumOffload(
+	struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
+#endif
 
 #ifndef __has_attribute
 #define __has_attribute(x) 0

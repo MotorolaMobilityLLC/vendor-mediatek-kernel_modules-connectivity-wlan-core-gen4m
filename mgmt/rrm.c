@@ -470,7 +470,7 @@ schedule_next:
 		if (prBeaconReq->u2RandomInterval == 0)
 			rrmDoBeaconMeasurement(prAdapter, ucBssIndex);
 		else {
-			get_random_bytes(&u2RandomTime, 2);
+			u2RandomTime = (uint16_t) (kalRandomNumber() & 0xFFFF);
 			u2RandomTime =
 				(u2RandomTime * prBeaconReq->u2RandomInterval) /
 				65535;
