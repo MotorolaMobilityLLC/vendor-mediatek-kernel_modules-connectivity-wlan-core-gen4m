@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2021 MediaTek Inc.
  */
-/*! \file   hal_mawd.c
+/*! \file   hal_offload.c
 *    \brief  Internal driver stack will export
 *    the required procedures here for GLUE Layer.
 *
@@ -91,6 +91,11 @@ static u_int8_t halRroHashAdd(struct GL_HIF_INFO *prHifInfo, uint64_t u8Key,
 static u_int8_t halRroHashDel(struct GL_HIF_INFO *prHifInfo, uint64_t u8Key);
 static struct RCB_NODE *halRroHashSearch(
 	struct GL_HIF_INFO *prHifInfo, uint64_t u8Key);
+static void halMawdUpdateSram(
+	struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Offset,
+	uint32_t u4ValL,
+	uint32_t u4ValH);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -100,18 +105,27 @@ void halMawdWakeup(struct GLUE_INFO *prGlueInfo)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct RTMP_RX_RING *prRxRing;
-	uint32_t u4Addr, u4Val;
+	uint32_t u4Addr, u4Val, u4Idx;
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prRxRing = &prHifInfo->RxBlkRing;
 
-	if (!prGlueInfo->prAdapter->fgIsFwDownloaded)
-		return;
+	halMawdPwrOn();
 
 	/* mawd speed up */
 	u4Addr = MAWD_POWER_UP;
 	u4Val = BIT(0);
 	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+
+	/* BKRS down */
+	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
+		kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+		if ((u4Val & BIT(2)) == BIT(2))
+			break;
+		kalUdelay(10);
+	}
+	if (u4Idx == MAWD_POWER_UP_RETRY_CNT)
+		DBGLOG(HAL, ERROR, "BKRS failed\n");
 
 	/* restore AP_rx_blk_ring_cpu_idx */
 	u4Addr = MAWD_AP_RX_BLK_CTRL2;
@@ -135,21 +149,18 @@ void halMawdSleep(struct GLUE_INFO *prGlueInfo)
 	struct RTMP_RX_RING *prRxRing;
 	uint32_t u4Addr, u4Val, u4Idx;
 
-	if (!prGlueInfo->prAdapter->fgIsFwDownloaded)
-		return;
-
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prRxRing = &prHifInfo->RxBlkRing;
 
 	u4Addr = MAWD_AP_WAKE_UP;
-	u4Val = 0;
+	u4Val = BIT(1);
 	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
 
 	u4Addr = MAWD_MD_WAKE_UP;
 	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
 	/* MD is wakeup */
 	if (u4Val == 1)
-		return;
+		goto exit;
 
 	u4Addr = MAWD_POWER_UP;
 	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
@@ -157,7 +168,7 @@ void halMawdSleep(struct GLUE_INFO *prGlueInfo)
 		kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
 		if ((u4Val & BITS(8, 12)) == BITS(8, 12))
 			break;
-		kalUdelay(20);
+		kalUdelay(10);
 	}
 	if (u4Idx == MAWD_POWER_UP_RETRY_CNT)
 		DBGLOG(HAL, ERROR, "1. Mawd Sleep failed\n");
@@ -167,10 +178,20 @@ void halMawdSleep(struct GLUE_INFO *prGlueInfo)
 		kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
 		if ((u4Val & BIT(2)) == BIT(2))
 			break;
-		kalUdelay(20);
+		kalUdelay(10);
 	}
 	if (u4Idx == MAWD_POWER_UP_RETRY_CNT)
 		DBGLOG(HAL, ERROR, "2. Mawd Sleep failed\n");
+
+	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+	u4Val &= ~BIT(0);
+	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+
+	u4Addr = MAWD_AP_WAKE_UP;
+	kalDevRegWrite(prGlueInfo, u4Addr, 0);
+
+exit:
+	halMawdPwrOff();
 }
 
 void halRroAllocMem(struct GLUE_INFO *prGlueInfo)
@@ -390,6 +411,8 @@ void halRroMawdInit(struct GLUE_INFO *prGlueInfo)
 	u4Addr = MAWD_POWER_UP;
 	u4Val = BIT(0);
 	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+
+	halMawdUpdateSram(prGlueInfo, MAWD_CR_BACKUP_VALID, 0, 0);
 
 	/* setup addr array */
 	u4Addr = MAWD_ADDR_ARRAY_BASE_L;
@@ -880,6 +903,15 @@ static u_int8_t halRroHandleRxRcb(
 	prMemOps = &prHifInfo->rMemOps;
 	prRxCtrl = &prAdapter->rRxCtrl;
 
+#if CFG_SUPPORT_RX_NAPI
+	/* if fifo exhausted, stop deQ and schedule NAPI */
+	if (prGlueInfo->prRxDirectNapi &&
+	    KAL_FIFO_IS_FULL(&prGlueInfo->rRxKfifoQ)) {
+		RX_INC_CNT(prRxCtrl, RX_NAPI_FIFO_FULL_COUNT);
+		return FALSE;
+	}
+#endif /* CFG_SUPPORT_RX_NAPI */
+
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 	QUEUE_REMOVE_HEAD(&prRxCtrl->rFreeSwRfbList,
 			  prSwRfb, struct SW_RFB *);
@@ -920,10 +952,10 @@ static u_int8_t halRroHandleRxRcb(
 		QUEUE_INSERT_TAIL(prFreeSwRfbList, &prSwRfb->rQueEntry);
 		DBGLOG(HAL, INFO, "Drop skb by hif[%d]\n", u4Reason);
 	} else {
-		QUEUE_INSERT_TAIL(prRecvRfbList, &prSwRfb->rQueEntry);
+		halRxInsertRecvRfbList(prAdapter, prRecvRfbList, prSwRfb);
 	}
 #else
-	QUEUE_INSERT_TAIL(prRecvRfbList, &prSwRfb->rQueEntry);
+	halRxInsertRecvRfbList(prAdapter, prRecvRfbList, prSwRfb);
 #endif
 	RX_INC_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT);
 	DBGLOG(RX, TEMP, "Recv p=%p total:%lu\n",
@@ -1202,8 +1234,6 @@ void halRroReadRxData(struct ADAPTER *prAdapter)
 		halRroReadIndCmd(prAdapter, au4RingCnt,
 				 prFreeSwRfbList, prRecvRfbList);
 
-	u4TotalCnt = prFreeSwRfbList->u4NumElem + prRecvRfbList->u4NumElem;
-
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 	QUEUE_CONCATENATE_QUEUES(&prRxCtrl->rFreeSwRfbList, prFreeSwRfbList);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
@@ -1211,6 +1241,14 @@ void halRroReadRxData(struct ADAPTER *prAdapter)
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
 	QUEUE_CONCATENATE_QUEUES(&prRxCtrl->rReceivedRfbList, prRecvRfbList);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
+
+	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++)
+		u4TotalCnt += au4RingCnt[u4Idx];
+
+#if CFG_SUPPORT_RX_NAPI
+	RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
+	kal_napi_schedule(prGlueInfo->prRxDirectNapi);
+#endif /* CFG_SUPPORT_RX_NAPI */
 
 	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
 		if (!halIsDataRing(RX_RING, u4Idx))
@@ -1289,7 +1327,7 @@ void halRroUpdateWfdmaRxBlk(struct GLUE_INFO *prGlueInfo,
 	HAL_SET_RING_CIDX(prGlueInfo, prRxRing, prRxRing->RxCpuIdx);
 }
 
-static void halMawdReadSram(
+void halMawdReadSram(
 	struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Offset,
 	uint32_t *pu4ValL,
@@ -1311,6 +1349,7 @@ static void halMawdReadSram(
 			break;
 		kalUdelay(10);
 	}
+	kalDevRegWrite(prGlueInfo, prBusInfo->mawd_settings4, BIT(1));
 	kalDevRegRead(prGlueInfo, prBusInfo->mawd_settings5, pu4ValL);
 	kalDevRegRead(prGlueInfo, prBusInfo->mawd_settings6, pu4ValH);
 }
@@ -1352,7 +1391,7 @@ static void halMawdBackupCr(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4ValL, u4ValH;
 
 	u4CrNum = (u4Addr - MAWD_REG_BASE) >> 2;
-	u4Offset = u4CrNum >> 1;
+	u4Offset = MAWD_CR_BACKUP_OFFSET + (u4CrNum / 2);
 
 	halMawdReadSram(prGlueInfo, u4Offset, &u4ValL, &u4ValH);
 	if (u4CrNum % 2)
@@ -1360,6 +1399,13 @@ static void halMawdBackupCr(struct GLUE_INFO *prGlueInfo,
 	else
 		u4ValL = u4Val;
 	halMawdUpdateSram(prGlueInfo, u4Offset, u4ValL, u4ValH);
+
+	halMawdReadSram(prGlueInfo, MAWD_CR_BACKUP_VALID, &u4ValL, &u4ValH);
+	if (u4CrNum >= 32)
+		u4ValH |= BIT(u4CrNum - 32);
+	else
+		u4ValL |= BIT(u4CrNum);
+	halMawdUpdateSram(prGlueInfo, MAWD_CR_BACKUP_VALID, u4ValL, u4ValH);
 }
 
 static void halMawdSetupTxRing(struct GLUE_INFO *prGlueInfo,
@@ -1716,44 +1762,44 @@ void halMawdPwrOn(void)
 
 	/* sequence 1 */
 	u4Addr = 0x180601A4;
-	wf_ioremap_write(u4Addr, 1);
+	kalDevRegWrite(NULL, u4Addr, 1);
 	kalUdelay(200);
 	u4Addr = 0x18011000;
-	wf_ioremap_read(u4Addr, &u4Val);
+	kalDevRegRead(NULL, u4Addr, &u4Val);
 	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
 		if (u4Val == 0x02050300)
 			break;
 		kalUdelay(10);
-		wf_ioremap_read(u4Addr, &u4Val);
+		kalDevRegRead(NULL, u4Addr, &u4Val);
 	}
 	if (u4Idx == MAWD_POWER_UP_RETRY_CNT)
 		DBGLOG(HAL, ERROR, "polling ID fail\n");
 
 	u4Addr = 0x18001210;
-	wf_ioremap_read(u4Addr, &u4Val);
+	kalDevRegRead(NULL, u4Addr, &u4Val);
 	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
 		if (u4Val & BIT(16))
 			break;
 		kalUdelay(10);
-		wf_ioremap_read(u4Addr, &u4Val);
+		kalDevRegRead(NULL, u4Addr, &u4Val);
 	}
 	if (u4Idx == MAWD_POWER_UP_RETRY_CNT)
 		DBGLOG(HAL, ERROR, "polling conn_infra_cfg_on ready fail\n");
 
 	/* sequence 2 */
 	u4Addr = 0x180120A4;
-	wf_ioremap_write(u4Addr, BIT(0));
+	kalDevRegWrite(NULL, u4Addr, BIT(0));
 
 	/* sequence 3 */
 	u4Addr = 0x180120B4;
-	wf_ioremap_write(u4Addr, BIT(0));
+	kalDevRegWrite(NULL, u4Addr, BIT(0));
 	u4Addr = 0x18011030;
-	wf_ioremap_read(u4Addr, &u4Val);
+	kalDevRegRead(NULL, u4Addr, &u4Val);
 	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
 		if (u4Val)
 			break;
 		kalUdelay(10);
-		wf_ioremap_read(u4Addr, &u4Val);
+		kalDevRegRead(NULL, u4Addr, &u4Val);
 	}
 	if (u4Idx == MAWD_POWER_UP_RETRY_CNT)
 		DBGLOG(HAL, ERROR, "polling conn_infra_cfg ready fail\n");
@@ -1765,42 +1811,46 @@ void halMawdPwrOff(void)
 
 	/* sequence 3 */
 	u4Addr = 0x180120B8;
-	wf_ioremap_write(u4Addr, BIT(0));
+	kalDevRegWrite(NULL, u4Addr, BIT(0));
 
 	/* sequence 2 */
 	u4Addr = 0x180120A8;
-	wf_ioremap_write(u4Addr, BIT(0));
+	kalDevRegWrite(NULL, u4Addr, BIT(0));
 
 	/* sequence 1 */
 	u4Addr = 0x180601A4;
-	wf_ioremap_write(u4Addr, 0);
+	kalDevRegWrite(NULL, u4Addr, 0);
 }
 
 u_int8_t halMawdCheckInfra(struct ADAPTER *prAdapter)
 {
 	uint32_t u4Addr, u4Val = 0, u4Idx, u4PollingCnt = 4;
 
-	u4Addr = 0x1002C004;
-	wf_ioremap_read(u4Addr, &u4Val);
-	if (u4Val & BIT(25)) {
-		DBGLOG(HAL, ERROR, "check failed. CR [0x%08x]=[0x%08x]",
-		       u4Addr, u4Val);
-		return FALSE;
-	}
-	u4Addr = 0x1002C00C;
-	wf_ioremap_read(u4Addr, &u4Val);
-	if (u4Val & BIT(25)) {
-		DBGLOG(HAL, ERROR, "check failed. CR [0x%08x]=[0x%08x]",
-		       u4Addr, u4Val);
-		return FALSE;
+	if (!in_interrupt()) {
+		u4Addr = 0x1002C004;
+		wf_ioremap_read(u4Addr, &u4Val);
+		if (u4Val & BIT(25)) {
+			DBGLOG(HAL, ERROR,
+			       "check failed. CR [0x%08x]=[0x%08x]",
+			       u4Addr, u4Val);
+			return FALSE;
+		}
+		u4Addr = 0x1002C00C;
+		wf_ioremap_read(u4Addr, &u4Val);
+		if (u4Val & BIT(25)) {
+			DBGLOG(HAL, ERROR,
+			       "check failed. CR [0x%08x]=[0x%08x]",
+			       u4Addr, u4Val);
+			return FALSE;
+		}
 	}
 	u4Addr = 0x18023000;
-	wf_ioremap_write(u4Addr, 1);
-	wf_ioremap_read(u4Addr, &u4Val);
+	kalDevRegWrite(NULL, u4Addr, 1);
+	kalDevRegRead(NULL, u4Addr, &u4Val);
 	for (u4Idx = 0; u4Idx < u4PollingCnt; u4Idx++) {
 		if (u4Val & BITS(1, 2))
 			break;
-		wf_ioremap_read(u4Addr, &u4Val);
+		kalDevRegRead(NULL, u4Addr, &u4Val);
 		kalUdelay(1000);
 	}
 	if (u4Idx == u4PollingCnt) {
@@ -1809,13 +1859,13 @@ u_int8_t halMawdCheckInfra(struct ADAPTER *prAdapter)
 		return FALSE;
 	}
 	u4Addr = 0x18011000;
-	wf_ioremap_read(u4Addr, &u4Val);
+	kalDevRegRead(NULL, u4Addr, &u4Val);
 	DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
 	u4Addr = 0x18023400;
-	wf_ioremap_read(u4Addr, &u4Val);
+	kalDevRegRead(NULL, u4Addr, &u4Val);
 	DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
 	u4Addr = 0x180120A4;
-	wf_ioremap_read(u4Addr, &u4Val);
+	kalDevRegRead(NULL, u4Addr, &u4Val);
 	DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
 
 	return TRUE;

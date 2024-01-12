@@ -2528,15 +2528,14 @@ void connac3x_show_rro_info(IN struct ADAPTER *prAdapter)
 	struct WIFI_VAR *prWifiVar;
 	struct RTMP_DMABUF *prIndCmd;
 	struct RTMP_DMABUF *prAddrArray;
-	struct RRO_ADDR_ELEM *prAddrElem;
-	uint32_t u4Val = 0, u4Idx;
-	uint32_t u4AddrNum;
+	uint32_t u4Val = 0, u4Idx, u4DebugLevel = 0;
 
 	prChipInfo = prAdapter->chip_info;
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prIndCmd = &prHifInfo->IndCmdRing;
 	prAddrArray = &prHifInfo->AddrArray;
 	prWifiVar = &prAdapter->rWifiVar;
+	wlanGetDriverDbgLevel(DBG_HAL_IDX, &u4DebugLevel);
 
 	if (prChipInfo->is_support_mawd &&
 	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd) &&
@@ -2583,22 +2582,16 @@ void connac3x_show_rro_info(IN struct ADAPTER *prAdapter)
 		       WF_RRO_TOP_DBG_FLAG_OUTPUT_ADDR, u4Val);
 	}
 
-	if (prIndCmd->AllocVa) {
-		DBGLOG(HAL, INFO, " IndCmd DUMP\n");
-		dumpMemory32((uint32_t *)prIndCmd->AllocVa,
-			     prIndCmd->AllocSize);
-	}
-
-	u4AddrNum = RRO_TOTAL_ADDR_ELEM_NUM * (RRO_MAX_WINDOW_NUM);
-	if (prAddrArray->AllocVa) {
-		DBGLOG(HAL, INFO, " AddrArray DUMP\n");
-		for (u4Idx = 0; u4Idx < RRO_MAX_STA_NUM; u4Idx++) {
-			prAddrElem = (struct RRO_ADDR_ELEM *)
-				(prAddrArray->AllocVa +
-				 (u4AddrNum + u4Idx) *
-				 sizeof(struct RRO_ADDR_ELEM));
-			dumpMemory32((uint32_t *)prAddrElem,
-				     sizeof(struct RRO_ADDR_ELEM));
+	if (u4DebugLevel & DBG_CLASS_TRACE) {
+		if (prIndCmd->AllocVa) {
+			DBGLOG(HAL, INFO, " IndCmd DUMP\n");
+			dumpMemory32((uint32_t *)prIndCmd->AllocVa,
+				     prIndCmd->AllocSize);
+		}
+		if (prAddrArray->AllocVa) {
+			DBGLOG(HAL, INFO, " AddrArray DUMP\n");
+			dumpMemory128((uint32_t *)prAddrArray->AllocVa,
+				      prAddrArray->AllocSize);
 		}
 	}
 
