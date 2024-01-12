@@ -382,14 +382,10 @@ uint32_t mt7925dmashdlQuotaDecision(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucBssIndex;
+	uint8_t ucABandWmmIdx = HW_WMM_NUM;
+	bool fgAAWmmConcurrent = false;
 	uint16_t u2MaxQuota = 0;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	u_int8_t fgIs5g = FALSE, fgIs6g = FALSE;
-#endif
 	enum ENUM_BAND eTargetBand = BAND_NULL;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	struct MLD_BSS_INFO *prMldBssInfo = NULL;
-#endif
 	for (ucBssIndex = 0;
 		ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
 
@@ -405,31 +401,40 @@ uint32_t mt7925dmashdlQuotaDecision(struct ADAPTER *prAdapter,
 #endif
 		    )
 			continue;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
-		if (IS_MLD_BSSINFO_MULTI(prMldBssInfo))
-			return 0; /* don't care */
-#endif
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		if (prBssInfo->eBand == BAND_6G)
-			fgIs6g = TRUE;
-		else if (prBssInfo->eBand == BAND_5G)
-			fgIs5g = TRUE;
-#endif
-		if (prBssInfo->ucWmmQueSet == ucWmmIndex)
-			eTargetBand = prBssInfo->eBand;
 
+		if (prBssInfo->eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			|| prBssInfo->eBand == BAND_6G
+#endif
+		) {
+			/* MLO STR A+G is regarded as A band to concurrent */
+			/* If there are many WMM set with A band, */
+			/* that means there is A+A Wmm concurent */
+			if (prBssInfo->ucWmmQueSet != ucABandWmmIdx) {
+				if (ucABandWmmIdx == HW_WMM_NUM)
+					ucABandWmmIdx = prBssInfo->ucWmmQueSet;
+				else
+					fgAAWmmConcurrent = true;
+			}
+		}
+
+		/* MLO STR A+G is regarded as A band to concurrent */
+		/* So using A band as target band in the same WMM set */
+		if (prBssInfo->ucWmmQueSet == ucWmmIndex)
+			if (prBssInfo->eBand > eTargetBand)
+				eTargetBand = prBssInfo->eBand;
 	}
 
 	if (eTargetBand != BAND_NULL) {
-		if (eTargetBand == BAND_2G4) /* for 2G in case 2+6 or 2+5 */
+		if (eTargetBand == BAND_2G4) /* for G band in case A+G */
 			u2MaxQuota = MT7925_DMASHDL_DBDC_2G_MAX_QUOTA;
-		else /* for 5G and 6G in case 2+6 or 2+5 */
-			u2MaxQuota = MT7925_DMASHDL_DBDC_5G_MAX_QUOTA;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		if (fgIs6g && fgIs5g) /* for 5+6 case */
-			u2MaxQuota = MT7925_DMASHDL_DBDC_5G_6G_MAX_QUOTA;
-#endif
+		else {
+			if (fgAAWmmConcurrent) /* for A+A case */
+				u2MaxQuota =
+					MT7925_DMASHDL_DBDC_5G_6G_MAX_QUOTA;
+			else /* for A band in case A+G */
+				u2MaxQuota = MT7925_DMASHDL_DBDC_5G_MAX_QUOTA;
+		}
 	}
 
 	return u2MaxQuota;
