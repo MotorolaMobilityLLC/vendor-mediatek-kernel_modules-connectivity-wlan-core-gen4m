@@ -89,11 +89,27 @@ extern struct PP_TOP_CR rMt6653PpTopCr;
 #define CONN_AON_WF_NAPPING_ENABLE	0
 #define CONN_AON_WF_NAPPING_DISABLE	1
 
+
 /* Security Coredump EMI base */
 #define COREDUMP_EMI_BASE		0x78000000
 #define SEC_COREDUMP_EMI_OFFSET		0x18000
 #define SEC_COREDUMP_EMI_BASE \
 	(COREDUMP_EMI_BASE+SEC_COREDUMP_EMI_OFFSET)
+
+#if (CFG_SUPPORT_PHY_ICS == 1)
+#define PHYICS_EMI_BASE_ADDR 0x78231C00
+#define PHYICS_EMI_SIZE (16 * 1024)
+#if (CFG_SUPPORT_PHY_ICS_V3 == 1)
+#define PHYICS_TOTAL_CNT (16 * 256) // 4096
+#define PHYICS_BUF_SIZE (16 * 1024) // 8192
+#elif (CFG_SUPPORT_PHY_ICS_V4 == 1)
+#define PHYICS_TOTAL_CNT (8 * 256) // 2048
+#define PHYICS_BUF_SIZE (8 * 1024) // 8192
+#endif
+#define WIFI_MCU_MEMORY_PART_1        1
+#define WIFI_MCU_MEMORY_PART_2        2
+#endif
+
 
 /*------------------------------------------------------------------------------
  * MACRO for MT6653 RXVECTOR Parsing

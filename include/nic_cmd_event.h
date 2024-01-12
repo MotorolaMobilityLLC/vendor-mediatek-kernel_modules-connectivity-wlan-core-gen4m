@@ -4237,6 +4237,8 @@ void nicEventSchedScanDone(struct ADAPTER *prAdapter,
 			struct WIFI_EVENT *prEvent);
 void nicEventSleepyNotify(struct ADAPTER *prAdapter,
 			  struct WIFI_EVENT *prEvent);
+void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
+				uint8_t *pucEventBuf);
 void nicExtEventPhyIcsRawData(struct ADAPTER *prAdapter,
 				uint8_t *pucEventBuf);
 void nicEventBtOverWifi(struct ADAPTER *prAdapter,

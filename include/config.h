@@ -321,6 +321,22 @@
 #ifndef CFG_SUPPORT_PHY_ICS
 #define CFG_SUPPORT_PHY_ICS             1
 #endif
+
+/*
+ * Connac3 PHY ICS version3: free run mode and timer polling
+ * via AXI DMA copy data to EMI
+ */
+#ifndef CFG_SUPPORT_PHY_ICS_V3
+#define CFG_SUPPORT_PHY_ICS_V3       0
+#endif
+/*
+ * Connac3 PHY ICS version4: ring buffer mode and IRQ trigger
+ * via AXI DMA copy data to EMI
+ */
+#ifndef CFG_SUPPORT_PHY_ICS_V4
+#define CFG_SUPPORT_PHY_ICS_V4       0
+#endif
+
 #endif
 
 #ifndef CFG_SUPPORT_ICS_TIMESYNC
