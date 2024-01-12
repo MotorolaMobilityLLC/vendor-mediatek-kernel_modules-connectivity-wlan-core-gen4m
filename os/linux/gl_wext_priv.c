@@ -1533,7 +1533,7 @@ priv_get_struct(IN struct net_device *prNetDev,
 
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4BufLen = 0;
-	uint32_t *pu4IntBuf = NULL;
+	/* uint32_t *pu4IntBuf = NULL; */
 	int status = 0;
 
 	kalMemZero(&aucOidBuf[0], sizeof(aucOidBuf));
@@ -1589,7 +1589,7 @@ priv_get_struct(IN struct net_device *prNetDev,
 		return -EFAULT;
 
 	case PRIV_CMD_SW_CTRL:
-		pu4IntBuf = (uint32_t *) prIwReqData->data.pointer;
+		/* pu4IntBuf = (uint32_t *) prIwReqData->data.pointer; */
 		prNdisReq = (struct NDIS_TRANSPORT_STRUCT *) &aucOidBuf[0];
 
 		if (prIwReqData->data.length > (sizeof(aucOidBuf) - OFFSET_OF(struct NDIS_TRANSPORT_STRUCT, ndisOidContent))) {
@@ -1871,19 +1871,22 @@ priv_get_ndis(IN struct net_device *prNetDev, IN struct NDIS_TRANSPORT_STRUCT * 
 /*----------------------------------------------------------------------------*/
 int
 priv_ate_set(IN struct net_device *prNetDev,
-	     IN struct iw_request_info *prIwReqInfo, IN union iwreq_data *prIwReqData, IN char *pcExtra)
+	IN struct iw_request_info *prIwReqInfo,
+	IN union iwreq_data *prIwReqData,
+	IN char *pcExtra)
 {
-	struct GLUE_INFO *GlueInfo;
 	int32_t i4Status;
-	uint8_t *InBuf;
-	/* UINT_8 *addr_str, *value_str; */
-	uint32_t InBufLen;
+	/* uint8_t *InBuf;
+	 * UINT_8 *addr_str, *value_str;
+	 * uint32_t InBufLen;
+	 */
 	uint32_t u4SubCmd;
 	/* u_int8_t isWrite = 0;
-	*uint32_t u4BufLen = 0;
-	*struct NDIS_TRANSPORT_STRUCT *prNdisReq;
-	*uint32_t pu4IntBuf[2];
-	*/
+	 * uint32_t u4BufLen = 0;
+	 * struct NDIS_TRANSPORT_STRUCT *prNdisReq;
+	 * uint32_t pu4IntBuf[2];
+	 */
+	uint32_t u4CopySize = sizeof(aucOidBuf);
 
 	/* sanity check */
 	ASSERT(prNetDev);
@@ -1891,31 +1894,26 @@ priv_ate_set(IN struct net_device *prNetDev,
 	ASSERT(prIwReqData);
 	ASSERT(pcExtra);
 
-	/* init */
-	DBGLOG(REQ, INFO, "priv_set_string (%s)(%d)\n",
-	       (uint8_t *) prIwReqData->data.pointer, (int32_t) prIwReqData->data.length);
-
 	if (GLUE_CHK_PR3(prNetDev, prIwReqData, pcExtra) == FALSE)
 		return -EINVAL;
 
-	GlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-
 	u4SubCmd = (uint32_t) prIwReqData->data.flags;
-
-	DBGLOG(REQ, INFO, "MT6632 : priv_ate_set u4SubCmd = %d\n", u4SubCmd);
+	DBGLOG(REQ, INFO, "MT6632: %s, u4SubCmd=%d\n", __func__, u4SubCmd);
 
 	switch (u4SubCmd) {
 	case PRIV_QACMD_SET:
-		DBGLOG(REQ, INFO, "MT6632 : priv_ate_set PRIV_QACMD_SET\n");
-		InBuf = aucOidBuf;
-		InBufLen = prIwReqData->data.length;
-		i4Status = 0;
-
-		if (copy_from_user(InBuf, prIwReqData->data.pointer, prIwReqData->data.length))
+		u4CopySize = (prIwReqData->data.length < u4CopySize)
+				? prIwReqData->data.length : (u4CopySize - 1);
+		if (copy_from_user(&aucOidBuf[0], prIwReqData->data.pointer,
+			u4CopySize))
 			return -EFAULT;
-		i4Status = AteCmdSetHandle(prNetDev, InBuf, InBufLen);
+		aucOidBuf[u4CopySize] = '\0';
+		DBGLOG(REQ, INFO,
+			"PRIV_QACMD_SET: priv_set_string=(%s)(%u,%d)\n",
+			aucOidBuf, u4CopySize,
+			(int32_t)prIwReqData->data.length);
+		i4Status = AteCmdSetHandle(prNetDev, &aucOidBuf[0], u4CopySize);
 		break;
-
 	default:
 		return -EOPNOTSUPP;
 	}
