@@ -7585,7 +7585,8 @@ p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 		eBandSel = BIT(BAND_5G);
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		if (prAdapter->fgIsHwSupport6G) {
+		if (prAdapter->fgIsHwSupport6G
+		    && !prWifiVar->ucDisallowP2PAcs6G) {
 			eBandPrefer = BAND_6G;
 			eBandSel |= BIT(BAND_6G);
 		}
@@ -7637,7 +7638,8 @@ p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 		eBandSel = BIT(BAND_5G);
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		if (prAdapter->fgIsHwSupport6G) {
+		if (prAdapter->fgIsHwSupport6G
+		    && !prWifiVar->ucDisallowP2PAcs6G) {
 			eBandPrefer = BAND_6G;
 			eBandSel |= BIT(BAND_6G);
 		}
