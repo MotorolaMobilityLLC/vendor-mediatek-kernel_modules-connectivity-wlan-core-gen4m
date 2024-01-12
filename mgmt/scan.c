@@ -4964,14 +4964,20 @@ void scanParseEhtOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 {
 	struct IE_EHT_OP *prEhtOp;
 	struct EHT_OP_INFO *prEhtOpInfo;
+	uint8_t ucVhtOpBw = 0;
 
 	prEhtOp = (struct IE_EHT_OP *) pucIE;
 
 	if (EHT_IS_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams)) {
-
 		prEhtOpInfo = (struct EHT_OP_INFO *) prEhtOp->aucVarInfo;
-		prBssDesc->eChannelWidth =
-			ehtRlmGetVhtOpBwByEhtOpBw(prEhtOpInfo);
+		ucVhtOpBw = ehtRlmGetVhtOpBwByEhtOpBw(prEhtOpInfo);
+		if (ucVhtOpBw == VHT_MAX_BW_INVALID) {
+			DBGLOG(SCN, WARN, "invalid Bss OP BW, control: %d\n",
+				prEhtOpInfo->ucControl);
+			return;
+		}
+
+		prBssDesc->eChannelWidth = ucVhtOpBw;
 		prBssDesc->ucCenterFreqS1 = nicGetS1(
 			prBssDesc->eBand, prBssDesc->ucChannelNum,
 			prBssDesc->eChannelWidth);

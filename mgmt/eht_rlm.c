@@ -756,6 +756,7 @@ void ehtRlmRecOperation(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 {
 	struct IE_EHT_OP *prEhtOp = (struct IE_EHT_OP *) pucIE;
 	struct EHT_OP_INFO *prEhtOpInfo;
+	uint8_t ucVhtOpBw = 0;
 
 	/* if payload not contain any aucVarInfo,
 	 * IE size = sizeof(struct IE_EHT_OP)
@@ -772,8 +773,14 @@ void ehtRlmRecOperation(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	if (EHT_IS_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams)) {
 		prBssInfo->fgIsEhtOpPresent = TRUE;
 		prEhtOpInfo = (struct EHT_OP_INFO *) prEhtOp->aucVarInfo;
-		prBssInfo->ucVhtChannelWidth =
-			ehtRlmGetVhtOpBwByEhtOpBw(prEhtOpInfo);
+		ucVhtOpBw = ehtRlmGetVhtOpBwByEhtOpBw(prEhtOpInfo);
+		if (ucVhtOpBw == VHT_MAX_BW_INVALID) {
+			DBGLOG(RLM, WARN, "invalid Bss OP BW, control: %d\n",
+				prEhtOpInfo->ucControl);
+			return;
+		}
+
+		prBssInfo->ucVhtChannelWidth = ucVhtOpBw;
 		prBssInfo->ucVhtChannelFrequencyS1 = nicGetS1(
 			prBssInfo->eBand, prBssInfo->ucPrimaryChannel,
 			prBssInfo->ucVhtChannelWidth);
@@ -875,8 +882,7 @@ void ehtRlmInit(
 
 uint8_t ehtRlmGetVhtOpBwByEhtOpBw(struct EHT_OP_INFO *op)
 {
-	uint8_t ucVhtOpBw =
-		VHT_OP_CHANNEL_WIDTH_80; /*VHT default should support BW 80*/
+	uint8_t ucVhtOpBw;
 	uint8_t ucBssOpBw = op->ucControl & BITS(0, 2);
 	uint8_t ucS1 = op->ucCCFS1;
 
@@ -899,6 +905,7 @@ uint8_t ehtRlmGetVhtOpBwByEhtOpBw(struct EHT_OP_INFO *op)
 		break;
 	default:
 		DBGLOG(RLM, WARN, "unexpected Bss OP BW: %d\n", ucBssOpBw);
+		ucVhtOpBw = VHT_MAX_BW_INVALID;
 		break;
 	}
 

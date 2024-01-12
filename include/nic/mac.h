@@ -1733,6 +1733,7 @@ enum BEACON_REPORT_DETAIL {
 #define VHT_OP_CHANNEL_WIDTH_80P80          3
 #define VHT_OP_CHANNEL_WIDTH_320_1          4
 #define VHT_OP_CHANNEL_WIDTH_320_2          5
+#define VHT_MAX_BW_INVALID                  255
 
 /*8.4.1.50 Operating Mode Field*/
 #define VHT_OP_MODE_CHANNEL_WIDTH                   BITS(0, 1)
