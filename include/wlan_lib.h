@@ -1675,6 +1675,13 @@ struct ADAPTER *wlanAdapterCreate(struct GLUE_INFO *prGlueInfo);
 
 void wlanAdapterDestroy(struct ADAPTER *prAdapter);
 
+void wlanOnPreAllocAdapterMem(struct ADAPTER *prAdapter,
+			  const u_int8_t bAtResetFlow);
+
+void wlanOnPostNicInitAdapter(struct ADAPTER *prAdapter,
+	struct REG_INFO *prRegInfo,
+	const u_int8_t bAtResetFlow);
+
 void wlanCardEjected(struct ADAPTER *prAdapter);
 
 void wlanIST(struct ADAPTER *prAdapter, bool fgEnInt);
