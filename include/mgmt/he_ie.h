@@ -287,6 +287,7 @@
 /* HE Operation element - BSS Color Information */
 #define HE_OP_BSSCOLOR_BSS_COLOR_MASK                   BITS(0, 5)
 #define HE_OP_BSSCOLOR_BSS_COLOR_SHFT                   0
+#define HE_OP_BSSCOLOR_PARTIAL_BSS_COLOR                BIT(6)
 #define HE_OP_BSSCOLOR_PARTIAL_BSS_COLOR_SHFT           6
 #define HE_OP_BSSCOLOR_BSS_COLOR_DISABLE                BIT(7)
 #define HE_OP_BSSCOLOR_BSS_COLOR_DISABLE_SHFT           7
@@ -849,6 +850,16 @@ struct _IE_HE_OP_T {
 	u_int16_t u2HeBasicMcsSet;
 	u_int8_t  aucVarInfo[];
 } __KAL_ATTRIB_PACKED__;
+
+#if (CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON == 1)
+struct _IE_COLOR_CHANGE_ANNOUNCEMENT_T {
+	u_int8_t  ucId;
+	u_int8_t  ucLength;
+	u_int8_t  ucExtId;
+	u_int8_t  ucColorSwitchCntdn;
+	u_int8_t  ucNewBssColorInfo;
+} __KAL_ATTRIB_PACKED__;
+#endif /* CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON */
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 /* 9.4.2.261 HE 6 GHz Band Capabilities element */

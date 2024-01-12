@@ -1577,6 +1577,39 @@ void heRlmRecHeOperation(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 #endif
 }
 
+#if (CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON == 1)
+void heRlmRecBssColorChangeAnnouncement(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	const uint8_t *pucIE)
+{
+	struct _IE_COLOR_CHANGE_ANNOUNCEMENT_T *prColorChangeAnnouncement =
+		(struct _IE_COLOR_CHANGE_ANNOUNCEMENT_T *) pucIE;
+
+	if (IE_SIZE(prColorChangeAnnouncement)
+			< (sizeof(struct _IE_COLOR_CHANGE_ANNOUNCEMENT_T))) {
+		DBGLOG(SCN, WARN, "COLOR_CHANGE_ANNOUNCEMENT IE_LEN err(%d)!\n",
+			IE_LEN(prColorChangeAnnouncement));
+		return;
+	}
+
+	prBssInfo->ucColorAnnouncement = TRUE;
+
+	prBssInfo->ucColorSwitchCntdn =
+		prColorChangeAnnouncement->ucColorSwitchCntdn;
+	prBssInfo->ucNewBssColorInfo =
+		prColorChangeAnnouncement->ucNewBssColorInfo;
+
+
+	DBGLOG(RLM, LOUD,
+		"RlmBssColorChangeAnnouncement-ColorSwitchCntdn:0x%x,NewBssColorInfo:0x%x\n",
+		prBssInfo->ucColorSwitchCntdn,
+		prBssInfo->ucNewBssColorInfo
+	);
+
+}   /* end of heRlmRecBssColorChangeAnnouncement */
+#endif /* CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON */
+
 uint8_t heRlmUpdateSRParams(
 	struct BSS_INFO *prBssInfo,
 	const uint8_t *pucIE)

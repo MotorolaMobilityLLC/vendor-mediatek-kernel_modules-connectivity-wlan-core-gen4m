@@ -97,6 +97,14 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 				       struct SW_RFB *prSwRfb, uint8_t *pucIE,
 				       uint16_t u2IELength);
 
+#if (CFG_SUPPORT_802_11AX == 1)
+#if (CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON == 1)
+u_int8_t updateHeBssColor(struct BSS_INFO *prBssInfo,
+				       struct SW_RFB *prSwRfb,
+					   u_int8_t ucBssColorInfo);
+#endif /* CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON */
+#endif /* CFG_SUPPORT_802_11AX */
+
 static void rlmBssReset(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 
 #if CFG_SUPPORT_802_11AC
@@ -2938,6 +2946,11 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 #endif
 	const uint8_t *pucIEOpmode = NULL;
 
+#if (CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON == 1)
+	/* Record the old BssColorInfo before parsing beacon */
+	uint8_t ucOldBssColorInfo = 0;
+#endif /* CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON */
+
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
 	ASSERT(pucIE);
@@ -2958,6 +2971,11 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	prCSAParams = &prBssInfo->CSAParams;
 	ucCurrentCsaCount = MAX_CSA_COUNT;
 #endif
+
+#if (CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON == 1)
+	/* Reset if receive announcement */
+	prBssInfo->ucColorAnnouncement = FALSE;
+#endif /* CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON */
 
 	/* Note: HT-related members in staRec may not be zero before, so
 	 *       if following IE does not exist, they are still not zero.
@@ -3416,6 +3434,13 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				heRlmRecHeCapInfo(prAdapter,
 					prStaRec, pucIE);
 			else if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP) {
+#if (CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON == 1)
+				/*
+				 * Record the old BssColorInfo value
+				 * before parsing beacon.
+				 */
+				ucOldBssColorInfo = prBssInfo->ucBssColorInfo;
+#endif /* CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON */
 				heRlmRecHeOperation(prAdapter,
 					prBssInfo, pucIE);
 #if (CFG_SUPPORT_WIFI_6G == 1)
@@ -3484,6 +3509,13 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 					prHe6gBandCap->u2CapInfo;
 			}
 #endif /* CFG_SUPPORT_WIFI_6G */
+#if (CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON == 1)
+			else if (IE_ID_EXT(pucIE) ==
+				ELEM_EXT_ID_BSS_COLOR_CHANGE) {
+				heRlmRecBssColorChangeAnnouncement(prAdapter,
+					prBssInfo, pucIE);
+			}
+#endif /* CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON */
 #if (CFG_SUPPORT_802_11BE == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS)
 				ehtRlmRecCapInfo(prAdapter, prStaRec, pucIE);
@@ -3521,6 +3553,18 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			break;
 		} /* end of switch */
 	}	 /* end of IE_FOR_EACH */
+
+#if (CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON == 1)
+	/*
+	 * If AP NOT send BssColorChangeAnnouncement
+	 * and NOT change "disabled" bit,
+	 * DO NOT change BssColorInfo in (struct)BssInfo.
+	 */
+	if (prBssInfo->ucColorAnnouncement == FALSE &&
+		((prBssInfo->ucBssColorInfo & (~HE_OP_BSSCOLOR_BSS_COLOR_MASK))
+		== (ucOldBssColorInfo & (~HE_OP_BSSCOLOR_BSS_COLOR_MASK))))
+		prBssInfo->ucBssColorInfo = ucOldBssColorInfo;
+#endif /* CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON */
 
 	if (pucIEOpmode != NULL) {
 		switch (IE_ID(pucIEOpmode)) {
@@ -4414,6 +4458,9 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 	 */
 	struct CMD_SET_BSS_RLM_PARAM rBssRlmParam;
 	struct CMD_SET_BSS_INFO rBssInfo;
+#if (CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON == 1)
+	u_int8_t fgChangeBssColor = FALSE;
+#endif /* CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON */
 	u_int8_t fgNewParameter = FALSE;
 #if CFG_SUPPORT_802_PP_DSCB
 	uint8_t  u1PreDscbPresent = 0;
@@ -4521,7 +4568,15 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_SUPPORT_802_11AX == 1)
-		if (fgEfuseCtrlAxOn == 1)
+		if (fgEfuseCtrlAxOn == 1) {
+#if (CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON == 1)
+			fgChangeBssColor =
+				updateHeBssColor(prBssInfo,
+					prSwRfb, rBssInfo.ucBssColorInfo);
+
+			if (fgChangeBssColor)
+				fgNewParameter = TRUE;
+#else /* CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON */
 			if (rBssInfo.ucBssColorInfo
 					!= prBssInfo->ucBssColorInfo) {
 				fgNewParameter = TRUE;
@@ -4530,7 +4585,9 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 					rBssInfo.ucBssColorInfo,
 					prBssInfo->ucBssColorInfo);
 			}
-#endif
+#endif /* CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON */
+		}
+#endif /* CFG_SUPPORT_802_11AX */
 
 	return fgNewParameter;
 }
@@ -4620,6 +4677,160 @@ static void rlmRecHtOpForClient(struct ADAPTER *prAdapter,
 			? RIFS_MODE_NORMAL
 			: RIFS_MODE_DISALLOWED;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Decide whether the bss color need update
+ *
+ * \param[in] prBssInfo       Pointer to the BssInfo
+ * \param[in] prSwRfb         Pointer to the received frame
+ * \param[in] ucBssColorInfo  The old Bss Color Info
+ *
+ * \return fgChangeBssColor   Need update or not
+ */
+/*----------------------------------------------------------------------------*/
+#if (CFG_SUPPORT_802_11AX == 1)
+#if (CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON == 1)
+u_int8_t updateHeBssColor(struct BSS_INFO *prBssInfo,
+				       struct SW_RFB *prSwRfb,
+					   u_int8_t ucBssColorInfo)
+{
+	struct WLAN_BEACON_FRAME *prWlanBeaconFrame = NULL;
+	u_int8_t fgChangeBssColor = FALSE;
+	uint64_t u64BeaconTimestamp = 0; /* The timestamp of the beacon */
+
+	/* Get beacon frame info */
+	prWlanBeaconFrame = (struct WLAN_BEACON_FRAME *) prSwRfb->pvHeader;
+
+	/* Get whole beacon timestamp */
+	u64BeaconTimestamp =
+		((uint64_t)prWlanBeaconFrame->au4Timestamp[1] << 32)
+		| (prWlanBeaconFrame->au4Timestamp[0]);
+
+	/* Timestamp >= expected, ready to change color */
+	if ((u64BeaconTimestamp >= (prBssInfo->u64ExpectedTimestamp))
+		&& (prBssInfo->u64ExpectedTimestamp != 0)) {
+
+		fgChangeBssColor = TRUE;
+
+		/*
+		 * bit[7]   : disabled = 0
+		 * bit[6]   : partial
+		 * bit[5:0] : new color
+		 */
+		prBssInfo->ucBssColorInfo =
+			(prBssInfo->ucBssColorInfo &
+				HE_OP_BSSCOLOR_PARTIAL_BSS_COLOR) |
+			(prBssInfo->ucNewBssColorInfo &
+				HE_OP_BSSCOLOR_BSS_COLOR_MASK);
+
+		DBGLOG(RLM, INFO,
+			"End Countdown, BssColorInfo change from %x to %x. Update BSSInfo to FW\n",
+			ucBssColorInfo, prBssInfo->ucBssColorInfo);
+
+		/* Reset ExpectedTimestamp */
+		prBssInfo->u64ExpectedTimestamp = 0;
+		/* Reset ucColorSwitchCntdn */
+		prBssInfo->ucColorSwitchCntdn = 0;
+		/* Reset ucNewBssColorInfo */
+		prBssInfo->ucNewBssColorInfo = 0;
+
+		return fgChangeBssColor;
+	}
+
+	/* AP send announcement, will change bss color */
+	if ((prBssInfo->ucColorAnnouncement) == TRUE) {
+
+		DBGLOG(RLM, INFO,
+			"Receive BssColorChangeAnnouncement\n");
+
+		DBGLOG(RLM, INFO,
+			"ucColorSwitchCntdn: 0x%x, ucNewBssColorInfo: 0x%x.\n",
+				prBssInfo->ucColorSwitchCntdn,
+				prBssInfo->ucNewBssColorInfo);
+
+		/*
+		 *  Retain original "disable" bit when receiving announcement.
+		 *  In announcement phase, disable bit should be set to 1,
+		 *  but we choose NOT to change the disabled bit.
+		 *  Instead, retain to 0.
+		 */
+		prBssInfo->ucBssColorInfo = (prBssInfo->ucBssColorInfo)
+			& (~HE_OP_BSSCOLOR_BSS_COLOR_DISABLE);
+
+		/*
+		 *  AP error case
+		 *  Count not end but set NewColor = 0
+		 */
+		if ((prBssInfo->ucNewBssColorInfo == 0)
+			&& (prBssInfo->ucColorSwitchCntdn > 0)) {
+
+			/* Reset ExpectedTimestamp */
+			prBssInfo->u64ExpectedTimestamp = 0;
+			/* Reset ucColorSwitchCntdn */
+			prBssInfo->ucColorSwitchCntdn = 0;
+
+			return fgChangeBssColor;
+		}
+
+		/* Receive Cntdn = 0, update New color */
+		if (prBssInfo->ucColorSwitchCntdn == 0) {
+			fgChangeBssColor = TRUE;
+
+			/*
+			 * bit[7]   : disabled = 0
+			 * bit[6]   : partial
+			 * bit[5:0] : new color
+			 */
+			prBssInfo->ucBssColorInfo =
+				(prBssInfo->ucBssColorInfo &
+					HE_OP_BSSCOLOR_PARTIAL_BSS_COLOR) |
+				(prBssInfo->ucNewBssColorInfo &
+					HE_OP_BSSCOLOR_BSS_COLOR_MASK);
+
+			DBGLOG(RLM, INFO,
+				"Countdown = 0, BssColorInfo change from %x to %x. Update BSSInfo to FW\n",
+				ucBssColorInfo, prBssInfo->ucBssColorInfo);
+
+			/* Reset ExpectedTimestamp */
+			prBssInfo->u64ExpectedTimestamp = 0;
+			/* Reset ucNewBssColorInfo */
+			prBssInfo->ucNewBssColorInfo = 0;
+
+			return fgChangeBssColor;
+		}
+
+		/*
+		 * General countdown case : countdown != 0
+		 * Store expected timestamp to know when to update bss color
+		 *
+		 * Time unit
+		 * u64BeaconTimestamp : us
+		 * u2BeaconInterval : ms
+		 */
+		prBssInfo->u64ExpectedTimestamp = u64BeaconTimestamp +
+			((uint64_t)((prWlanBeaconFrame->u2BeaconInterval)
+			*(prBssInfo->ucColorSwitchCntdn)) * 1000);
+			/* 1000 for ms -> us */
+
+	} else if (((prBssInfo->ucBssColorInfo &
+			HE_OP_BSSCOLOR_BSS_COLOR_DISABLE) !=
+			(ucBssColorInfo & HE_OP_BSSCOLOR_BSS_COLOR_DISABLE)) &&
+			(prBssInfo->ucNewBssColorInfo == 0)) {
+		/*
+		 * Only BssColorInfo "disable" bit changed,
+		 * NO NEED to change color.
+		 */
+		fgChangeBssColor = TRUE;
+		DBGLOG(RLM, INFO,
+			"BssColorInfo is changed from %x to %x. Update BSSInfo to FW\n",
+			ucBssColorInfo, prBssInfo->ucBssColorInfo);
+	}
+
+	return fgChangeBssColor;
+}
+#endif /* CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON */
+#endif /* CFG_SUPPORT_802_11AX */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -5756,6 +5967,12 @@ static void rlmBssReset(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 			|= HE_OP_PARAM1_TXOP_DUR_RTS_THRESHOLD_MASK;
 		prBssInfo->ucBssColorInfo = 0;
 		prBssInfo->u2HeBasicMcsSet = 0;
+#if (CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON == 1)
+		prBssInfo->ucColorAnnouncement = FALSE;
+		prBssInfo->ucColorSwitchCntdn = 0;
+		prBssInfo->ucNewBssColorInfo = 0;
+		prBssInfo->u64ExpectedTimestamp = 0;
+#endif /* CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON */
 	}
 #endif
 #if (CFG_SUPPORT_WIFI_6G == 1)

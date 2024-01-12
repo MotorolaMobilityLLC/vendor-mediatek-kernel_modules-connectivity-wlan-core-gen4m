@@ -419,6 +419,12 @@ struct BSS_INFO {
 	uint8_t ucHeOpParams[HE_OP_BYTE_NUM];
 	uint8_t ucBssColorInfo;
 	uint16_t u2HeBasicMcsSet;
+#if (CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON == 1)
+	uint8_t ucColorAnnouncement; /* Record if receive announcement */
+	uint8_t ucColorSwitchCntdn;
+	uint8_t ucNewBssColorInfo;
+	uint64_t u64ExpectedTimestamp; /* the time to change bss color */
+#endif /* CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	struct _6G_OPER_INFOR_T r6gOperInfor;
 #endif

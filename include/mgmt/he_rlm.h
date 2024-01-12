@@ -166,6 +166,12 @@ void heRlmRecHeOperation(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
 	const uint8_t *pucIE);
+#if (CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON == 1)
+void heRlmRecBssColorChangeAnnouncement(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	const uint8_t *pucIE);
+#endif /* CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON */
 u_int8_t heRlmRecHeSRParams(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
