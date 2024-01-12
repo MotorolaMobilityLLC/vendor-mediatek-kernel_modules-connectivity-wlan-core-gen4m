@@ -28,6 +28,13 @@
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
  */
+
+#if CFG_MTK_ANDROID_WMT
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#include "connv3.h"
+#endif
+#endif
+
 #include "hif_cmm.h"
 #include "gl_os.h"		/* Include "config.h" */
 #include "gl_sys_lock.h"

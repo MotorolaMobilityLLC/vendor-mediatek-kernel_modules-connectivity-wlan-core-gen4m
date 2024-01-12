@@ -15,6 +15,10 @@
 #include <linux/hashtable.h>
 #include "mt66xx_reg.h"
 
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#include "connv3.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -1069,11 +1073,17 @@ extern struct page *wifi_page_pool_alloc_page(void) __attribute__((weak));
 void halWpdmaStopRecycleDmad(struct GLUE_INFO *prGlueInfo,
 				       uint16_t u2Port);
 
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 int32_t wf_reg_read_wrapper(void *priv,
 	uint32_t addr, uint32_t *value);
 int32_t wf_reg_write_wrapper(void *priv,
 	uint32_t addr, uint32_t value);
 int32_t wf_reg_write_mask_wrapper(void *priv,
 	uint32_t addr, uint32_t mask, uint32_t value);
-
+int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv,
+	void *priv_data);
+int32_t wf_reg_end_wrapper(enum connv3_drv_type from_drv,
+	void *priv_data);
+#endif
 #endif /* HIF_PDMA_H__ */
