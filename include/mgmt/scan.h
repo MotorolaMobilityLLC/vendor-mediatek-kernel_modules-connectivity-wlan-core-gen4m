@@ -912,9 +912,6 @@ uint32_t scanSendProbeReqFrames(IN struct ADAPTER *prAdapter,
 void scanUpdateBssDescForSearch(IN struct ADAPTER *prAdapter,
 				IN struct BSS_DESC *prBssDesc);
 
-struct BSS_DESC *scanSearchBssDescByPolicy(IN struct ADAPTER *prAdapter,
-					   IN uint8_t ucBssIndex);
-
 uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter,
 			   IN struct BSS_DESC *prBssDesc,
 			   IN struct SW_RFB *prSwRfb);
