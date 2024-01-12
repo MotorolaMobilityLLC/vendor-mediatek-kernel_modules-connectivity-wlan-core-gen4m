@@ -191,6 +191,10 @@ void mt7668CapInit(IN struct ADAPTER *prAdapter)
 	prChipInfo->fillHifTxDesc = NULL;
 	prChipInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD;
 	prChipInfo->u4ExtraTxByteCount = 0;
+	prChipInfo->asicFillInitCmdTxd = asicFillInitCmdTxd;
+	prChipInfo->asicFillCmdTxd = asicFillCmdTxd;
+	prChipInfo->asicParseInitEventRxInfo = asicParseInitEventRxInfo;
+	prChipInfo->asicParseEventRxInfo = asicParseEventRxInfo;
 
 	switch (prGlueInfo->u4InfType) {
 #if defined(_HIF_PCIE)

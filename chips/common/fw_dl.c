@@ -235,6 +235,100 @@ void wlanImageSectionGetPatchInfo(IN struct ADAPTER
 		   sizeof(struct PATCH_FORMAT_T));
 }
 
+void wlanImageSectionGetPatchInfoV2(IN struct ADAPTER
+	*prAdapter,
+	IN void *pvFwImageMapFile, IN uint32_t u4FwImageFileLength,
+	OUT uint32_t *pu4DataMode,
+	struct patch_dl_target *target)
+{
+	struct PATCH_FORMAT_V2_T *prPatchFormat;
+	uint8_t aucBuffer[32];
+	struct PATCH_GLO_DESC *glo_desc;
+	struct PATCH_SEC_MAP *sec_map;
+	uint8_t *img_ptr;
+	uint32_t num_of_region, i;
+
+	/* patch header */
+	img_ptr = pvFwImageMapFile;
+	prPatchFormat = (struct PATCH_FORMAT_V2_T *)img_ptr;
+
+	/* Dump image information */
+	kalMemZero(aucBuffer, 32);
+	kalStrnCpy(aucBuffer, prPatchFormat->aucPlatform, 4);
+	DBGLOG(INIT, INFO,
+	       "PATCH INFO: platform[%s] HW/SW ver[0x%04X] ver[0x%04X]\n",
+	       aucBuffer, prPatchFormat->u4SwHwVersion,
+	       prPatchFormat->u4PatchVersion);
+
+	kalStrnCpy(aucBuffer, prPatchFormat->aucBuildDate, 16);
+	DBGLOG(INIT, INFO, "date[%s]\n", aucBuffer);
+
+	/* Backup to FW version info */
+	kalMemCopy(&prAdapter->rVerInfo.rPatchHeader, prPatchFormat,
+		   sizeof(struct PATCH_FORMAT_T));
+
+	/* global descriptor */
+	img_ptr += sizeof(struct PATCH_FORMAT_V2_T);
+	glo_desc = (struct PATCH_GLO_DESC *)img_ptr;
+	num_of_region = be2cpu32(glo_desc->section_num);
+	DBGLOG(INIT, INFO,
+			"\tPatch ver: 0x%x, Section num: 0x%x, subsys: 0x%x\n",
+			glo_desc->patch_ver,
+			num_of_region,
+			be2cpu32(glo_desc->subsys));
+
+	if (num_of_region < 0) {
+		DBGLOG(INIT, WARN, "parse patch failed! num_of_region < 0.\n");
+		return;
+	}
+
+	/* section map */
+	img_ptr += sizeof(struct PATCH_GLO_DESC);
+
+	target->num_of_region = num_of_region;
+	target->patch_region = (struct patch_dl_buf *)kalMemAlloc(
+		num_of_region * sizeof(struct patch_dl_buf), PHY_MEM_TYPE);
+
+	if (!target->patch_region) {
+		DBGLOG(INIT, WARN,
+			"parse patch failed!No memory to allocate.\n");
+		return;
+	}
+
+	for (i = 0; i < num_of_region; i++) {
+		struct patch_dl_buf *region;
+		uint32_t section_type;
+
+		region = &target->patch_region[i];
+		sec_map = (struct PATCH_SEC_MAP *)img_ptr;
+		img_ptr += sizeof(struct PATCH_SEC_MAP);
+
+		section_type = be2cpu32(sec_map->section_type);
+		DBGLOG(INIT, INFO,
+			"\tSection %d: type = 0x%x, offset = 0x%x, size = 0x%x\n",
+			i, section_type, be2cpu32(sec_map->section_offset),
+			be2cpu32(sec_map->section_size));
+
+		if ((section_type & PATCH_SEC_TYPE_MASK) ==
+			PATCH_SEC_TYPE_BIN_INFO) {
+			region->img_dest_addr =
+				be2cpu32(sec_map->bin_info_spec.dl_addr);
+			region->img_size =
+				be2cpu32(sec_map->bin_info_spec.dl_size);
+			region->img_ptr = pvFwImageMapFile +
+				be2cpu32(sec_map->section_offset);
+
+			DBGLOG(INIT, INFO,
+				"\tTarget address: 0x%x, length: 0x%x\n",
+				region->img_dest_addr, region->img_size);
+		} else {
+			region->img_ptr = NULL;
+			DBGLOG(INIT, INFO, "\tNot binary\n");
+		}
+	}
+	*pu4DataMode = wlanGetDataMode(prAdapter, IMG_DL_IDX_PATCH, 0);
+}
+
 uint32_t wlanDownloadSection(IN struct ADAPTER *prAdapter,
 			     IN uint32_t u4Addr, IN uint32_t u4Len,
 			     IN uint32_t u4DataMode, IN uint8_t *pucStartPtr,
@@ -268,6 +362,70 @@ uint32_t wlanDownloadSection(IN struct ADAPTER *prAdapter,
 	}
 
 	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t wlanDownloadSectionV2(IN struct ADAPTER *prAdapter,
+		IN uint32_t u4DataMode,
+		IN enum ENUM_IMG_DL_IDX_T eDlIdx,
+		struct patch_dl_target *target)
+{
+	uint32_t u4ImgSecSize, u4Offset;
+	uint8_t *pucSecBuf;
+	uint32_t num_of_region, i;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+	num_of_region = target->num_of_region;
+	if (num_of_region < 0) {
+		DBGLOG(INIT, ERROR,
+			"Firmware download num_of_region < 0 !\n");
+		u4Status = WLAN_STATUS_FAILURE;
+		goto out;
+	}
+
+
+	for (i = 0; i < num_of_region; i++) {
+		struct patch_dl_buf *region;
+
+		region = &target->patch_region[i];
+		if (region->img_ptr == NULL)
+			continue;
+
+		/* 2. config PDA */
+		if (wlanImageSectionConfig(prAdapter, region->img_dest_addr,
+			region->img_size, u4DataMode, eDlIdx) !=
+			WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR,
+				"Firmware download configuration failed!\n");
+			u4Status = WLAN_STATUS_FAILURE;
+			goto out;
+		}
+
+		/* 3. image scatter */
+		for (u4Offset = 0; u4Offset < region->img_size;
+			u4Offset += CMD_PKT_SIZE_FOR_IMAGE) {
+			if (u4Offset + CMD_PKT_SIZE_FOR_IMAGE <
+				region->img_size)
+				u4ImgSecSize = CMD_PKT_SIZE_FOR_IMAGE;
+			else
+				u4ImgSecSize = region->img_size - u4Offset;
+
+			pucSecBuf = (uint8_t *) region->img_ptr + u4Offset;
+			if (wlanImageSectionDownload(prAdapter, u4ImgSecSize,
+					pucSecBuf) !=
+					WLAN_STATUS_SUCCESS) {
+				DBGLOG(INIT, ERROR,
+					"Firmware scatter download failed!\n");
+				return WLAN_STATUS_FAILURE;
+			}
+		}
+	}
+
+out:
+	kalMemFree(target->patch_region, PHY_MEM_TYPE,
+		num_of_region * sizeof(struct patch_dl_buf));
+	target->patch_region = NULL;
+	target->num_of_region = 0;
+	return u4Status;
 }
 
 uint32_t wlanDownloadEMISection(IN struct ADAPTER
@@ -441,20 +599,38 @@ uint32_t wlanImageSectionDownloadStage(
 	u_int8_t fgIsEMIDownload = FALSE;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	struct patch_dl_target target;
+	struct PATCH_FORMAT_T *prPatchHeader;
 
 	/* 3a. parse file header for decision of
 	 * divided firmware download or not
 	 */
 	if (eDlIdx == IMG_DL_IDX_PATCH) {
-		wlanImageSectionGetPatchInfo(prAdapter, pvFwImageMapFile,
+		prPatchHeader = pvFwImageMapFile;
+		if (prPatchHeader->u4PatchVersion == PATCH_VERSION_MAGIC_NUM) {
+			wlanImageSectionGetPatchInfoV2(prAdapter,
+				pvFwImageMapFile,
+				u4FwImageFileLength,
+				&u4DataMode,
+				&target);
+			DBGLOG(INIT, INFO,
+				"FormatV2 num_of_regoin[%d] datamode[0x%08x]\n",
+				target.num_of_region, u4DataMode);
+		} else {
+			wlanImageSectionGetPatchInfo(prAdapter,
+				pvFwImageMapFile,
 					     u4FwImageFileLength,
 					     &u4Offset, &u4Addr,
 					     &u4Len, &u4DataMode);
-
 		DBGLOG(INIT, INFO,
-		       "DL Offset[%u] addr[0x%08x] len[%u] datamode[0x%08x]\n",
+				"FormatV1 DL Offset[%u] addr[0x%08x] len[%u] datamode[0x%08x]\n",
 		       u4Offset, u4Addr, u4Len, u4DataMode);
+		}
 
+		if (prPatchHeader->u4PatchVersion == PATCH_VERSION_MAGIC_NUM)
+			u4Status = wlanDownloadSectionV2(prAdapter,
+				u4DataMode, eDlIdx, &target);
+		else
 		u4Status = wlanDownloadSection(prAdapter, u4Addr, u4Len,
 					       u4DataMode,
 					       pvFwImageMapFile + u4Offset,
@@ -506,9 +682,9 @@ uint32_t wlanPatchRecvSemaResp(IN struct ADAPTER *prAdapter,
 	struct mt66xx_chip_info *prChipInfo;
 	uint8_t *aucBuffer;
 	uint32_t u4EventSize;
-	struct INIT_WIFI_EVENT *prInitEvent;
 	struct INIT_EVENT_CMD_RESULT *prEventCmdResult;
 	uint32_t u4RxPktLength;
+	struct WIFI_EVENT_INFO rWifiEventInfo;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
@@ -529,24 +705,25 @@ uint32_t wlanPatchRecvSemaResp(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
-	prInitEvent = (struct INIT_WIFI_EVENT *)
-		(aucBuffer + prChipInfo->rxd_size);
-	if (prInitEvent->ucEID != INIT_EVENT_ID_PATCH_SEMA_CTRL) {
+	NIC_PARSE_EVEMT_RX_HDR(prAdapter,
+			aucBuffer, &rWifiEventInfo, TRUE);
+
+	if (rWifiEventInfo.ucEID != INIT_EVENT_ID_PATCH_SEMA_CTRL) {
 		DBGLOG(INIT, WARN, "Unexpected EVENT ID, get 0x%0x\n",
-		       prInitEvent->ucEID);
+		       rWifiEventInfo.ucEID);
 		kalMemFree(aucBuffer, PHY_MEM_TYPE, u4EventSize);
 		return WLAN_STATUS_FAILURE;
 	}
 
-	if (prInitEvent->ucSeqNum != ucCmdSeqNum) {
+	if (rWifiEventInfo.ucSeqNum != ucCmdSeqNum) {
 		DBGLOG(INIT, WARN, "Unexpected SeqNum %d, %d\n",
-		       ucCmdSeqNum, prInitEvent->ucSeqNum);
+		       ucCmdSeqNum, rWifiEventInfo.ucSeqNum);
 		kalMemFree(aucBuffer, PHY_MEM_TYPE, u4EventSize);
 		return WLAN_STATUS_FAILURE;
 	}
 
 	prEventCmdResult = (struct INIT_EVENT_CMD_RESULT *)
-		prInitEvent->aucBuffer;
+		rWifiEventInfo.pucInfoBuffer;
 
 	*pucPatchStatus = prEventCmdResult->ucStatus;
 
@@ -569,9 +746,6 @@ uint32_t wlanPatchSendSemaControl(IN struct ADAPTER
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct CMD_INFO *prCmdInfo;
-	struct INIT_HIF_TX_HEADER *prInitHifTxHeader;
-	struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES
-			*prInitHifTxHeaderPending;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	struct INIT_CMD_PATCH_SEMA_CONTROL *prPatchSemaControl;
 
@@ -595,33 +769,18 @@ uint32_t wlanPatchSendSemaControl(IN struct ADAPTER
 		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES) +
 		sizeof(struct INIT_CMD_PATCH_SEMA_CONTROL);
 
-	/* 2. Setup common CMD Info Packet */
-	prInitHifTxHeaderPending =
-		(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES *)
-		(prCmdInfo->pucInfoBuffer);
-	prInitHifTxHeader = (struct INIT_HIF_TX_HEADER *)
-		(prCmdInfo->pucInfoBuffer +
-		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES));
+	NIC_FILL_CMD_TX_HDR(prAdapter,
+		prCmdInfo->pucInfoBuffer,
+		prCmdInfo->u2InfoBufLen,
+		INIT_CMD_ID_PATCH_SEMAPHORE_CONTROL,
+		INIT_CMD_PDA_PACKET_TYPE_ID,
+		pucSeqNum, FALSE,
+		(void **)&prPatchSemaControl, TRUE, 0, S2D_INDEX_CMD_H2N);
 
-	prInitHifTxHeaderPending->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prInitHifTxHeaderPending->u2PQ_ID = INIT_CMD_PQ_ID;
-	prInitHifTxHeaderPending->ucHeaderFormat = INIT_CMD_PACKET_TYPE_ID;
-	prInitHifTxHeaderPending->ucPktFt = INIT_PKT_FT_CMD;
+	kalMemZero(prPatchSemaControl,
+		   sizeof(struct INIT_CMD_PATCH_SEMA_CONTROL));
 
-	prInitHifTxHeader->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prInitHifTxHeader->u2PQ_ID = INIT_CMD_PQ_ID;
-	prInitHifTxHeader->rInitWifiCmd.ucCID =
-		INIT_CMD_ID_PATCH_SEMAPHORE_CONTROL;
-	prInitHifTxHeader->rInitWifiCmd.ucPktTypeID =
-		INIT_CMD_PDA_PACKET_TYPE_ID;
-	prInitHifTxHeader->rInitWifiCmd.ucSeqNum =
-		nicIncreaseCmdSeqNum(prAdapter);
-
-	*pucSeqNum = prInitHifTxHeader->rInitWifiCmd.ucSeqNum;
-
-	/* 3. Setup DOWNLOAD_BUF */
-	prPatchSemaControl = (struct INIT_CMD_PATCH_SEMA_CONTROL *)
-			     prInitHifTxHeader->rInitWifiCmd.aucBuffer;
+	/* Setup DOWNLOAD_BUF */
 	kalMemZero(prPatchSemaControl,
 		   sizeof(struct INIT_CMD_PATCH_SEMA_CONTROL));
 	prPatchSemaControl->ucGetSemaphore = PATCH_GET_SEMA_CONTROL;
@@ -684,9 +843,6 @@ u_int8_t wlanPatchIsDownloaded(IN struct ADAPTER *prAdapter)
 uint32_t wlanPatchSendComplete(IN struct ADAPTER *prAdapter)
 {
 	struct CMD_INFO *prCmdInfo;
-	struct INIT_HIF_TX_HEADER *prInitHifTxHeader;
-	struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES
-			*prInitHifTxHeaderPending;
 	uint8_t ucTC, ucCmdSeqNum;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	struct mt66xx_chip_info *prChipInfo;
@@ -725,31 +881,15 @@ uint32_t wlanPatchSendComplete(IN struct ADAPTER *prAdapter)
 	ucTC = TC0_INDEX;
 #endif
 
-	/* 3. increase command sequence number */
-	ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
+	NIC_FILL_CMD_TX_HDR(prAdapter,
+		prCmdInfo->pucInfoBuffer,
+		prCmdInfo->u2InfoBufLen,
+		INIT_CMD_ID_PATCH_FINISH,
+		INIT_CMD_PACKET_TYPE_ID,
+		&ucCmdSeqNum,
+		FALSE,
+		(void **)&prPatchFinish, TRUE, 0, S2D_INDEX_CMD_H2N);
 
-	/* 4. Setup common CMD Info Packet */
-	prInitHifTxHeaderPending =
-		(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES *)
-		(prCmdInfo->pucInfoBuffer);
-	prInitHifTxHeader = (struct INIT_HIF_TX_HEADER *)
-		(prCmdInfo->pucInfoBuffer +
-		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES));
-
-	prInitHifTxHeaderPending->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prInitHifTxHeaderPending->u2PQ_ID = INIT_CMD_PQ_ID;
-	prInitHifTxHeaderPending->ucPktFt = INIT_PKT_FT_CMD;
-
-	prInitHifTxHeader->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prInitHifTxHeader->u2PQ_ID = INIT_CMD_PQ_ID;
-	prInitHifTxHeader->rInitWifiCmd.ucCID =
-		INIT_CMD_ID_PATCH_FINISH;
-	prInitHifTxHeader->rInitWifiCmd.ucPktTypeID =
-		INIT_CMD_PACKET_TYPE_ID;
-	prInitHifTxHeader->rInitWifiCmd.ucSeqNum = ucCmdSeqNum;
-
-	prPatchFinish = (struct INIT_CMD_PATCH_FINISH *)
-			prInitHifTxHeader->rInitWifiCmd.aucBuffer;
 	prPatchFinish->ucCheckCrc = 0;
 
 	/* 5. Seend WIFI start command */
@@ -820,9 +960,6 @@ uint32_t wlanImageSectionConfig(
 	IN enum ENUM_IMG_DL_IDX_T eDlIdx)
 {
 	struct CMD_INFO *prCmdInfo;
-	struct INIT_HIF_TX_HEADER *prInitHifTxHeader;
-	struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES
-			*prInitHifTxHeaderPending;
 	struct INIT_CMD_DOWNLOAD_CONFIG *prInitCmdDownloadConfig;
 	uint8_t ucTC, ucCmdSeqNum;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
@@ -861,37 +998,29 @@ uint32_t wlanImageSectionConfig(
 	ucTC = TC0_INDEX;
 #endif
 
-	/* 3. increase command sequence number */
-	ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
+	if (eDlIdx == IMG_DL_IDX_PATCH) {
+		NIC_FILL_CMD_TX_HDR(prAdapter,
+			prCmdInfo->pucInfoBuffer,
+			prCmdInfo->u2InfoBufLen,
+			INIT_CMD_ID_PATCH_START,
+			INIT_CMD_PACKET_TYPE_ID,
+			&ucCmdSeqNum,
+			FALSE,
+			(void **)&prInitCmdDownloadConfig,
+			TRUE, 0, S2D_INDEX_CMD_H2N);
+	} else {
+		NIC_FILL_CMD_TX_HDR(
+			prAdapter,
+			prCmdInfo->pucInfoBuffer,
+			prCmdInfo->u2InfoBufLen,
+			INIT_CMD_ID_DOWNLOAD_CONFIG,
+			INIT_CMD_PACKET_TYPE_ID,
+			&ucCmdSeqNum,
+			FALSE,
+			(void **)&prInitCmdDownloadConfig,
+			TRUE, 0, S2D_INDEX_CMD_H2N);
+	}
 
-	/* 4. Setup common CMD Info Packet */
-	prInitHifTxHeaderPending =
-		(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES *)
-		(prCmdInfo->pucInfoBuffer);
-	prInitHifTxHeader = (struct INIT_HIF_TX_HEADER *)
-		(prCmdInfo->pucInfoBuffer +
-		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES));
-	prInitHifTxHeaderPending->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prInitHifTxHeaderPending->u2PQ_ID = INIT_CMD_PQ_ID;
-	prInitHifTxHeaderPending->ucHeaderFormat = INIT_CMD_PACKET_TYPE_ID;
-	prInitHifTxHeaderPending->ucPktFt = INIT_PKT_FT_CMD;
-
-	if (eDlIdx == IMG_DL_IDX_PATCH)
-		prInitHifTxHeader->rInitWifiCmd.ucCID =
-			INIT_CMD_ID_PATCH_START;
-	else
-		prInitHifTxHeader->rInitWifiCmd.ucCID =
-			INIT_CMD_ID_DOWNLOAD_CONFIG;
-	prInitHifTxHeader->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prInitHifTxHeader->u2PQ_ID = INIT_CMD_PQ_ID;
-	prInitHifTxHeader->rInitWifiCmd.ucPktTypeID =
-		INIT_CMD_PACKET_TYPE_ID;
-	prInitHifTxHeader->rInitWifiCmd.ucSeqNum = ucCmdSeqNum;
-
-	/* 5. Setup CMD_DOWNLOAD_CONFIG */
-	prInitCmdDownloadConfig =
-		(struct INIT_CMD_DOWNLOAD_CONFIG *)
-			(prInitHifTxHeader->rInitWifiCmd.aucBuffer);
 	prInitCmdDownloadConfig->u4Address = u4DestAddr;
 	prInitCmdDownloadConfig->u4Length = u4ImgSecSize;
 	prInitCmdDownloadConfig->u4DataMode = u4DataMode;
@@ -951,9 +1080,7 @@ uint32_t wlanImageSectionDownload(IN struct ADAPTER
 				  IN uint8_t *pucImgSecBuf)
 {
 	struct CMD_INFO *prCmdInfo;
-	struct INIT_HIF_TX_HEADER *prInitHifTxHeader;
-	struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES
-			*prInitHifTxHeaderPending;
+	uint8_t *prBuf;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	struct mt66xx_chip_info *prChipInfo;
 
@@ -978,34 +1105,22 @@ uint32_t wlanImageSectionDownload(IN struct ADAPTER
 		return WLAN_STATUS_FAILURE;
 	}
 
-	prCmdInfo->u2InfoBufLen = sizeof(struct INIT_HIF_TX_HEADER) +
-		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES) +
-		(uint16_t) u4ImgSecSize;
+	/*
+	 * For falcon WFDMA, driver doesn't need to append TXD.
+	 * For old project/talos,
+	 *     TXD length will be included in asicFillInitCmdTxd.
+	 */
+	prCmdInfo->u2InfoBufLen = (uint16_t) u4ImgSecSize;
 
 	/* 2. Setup common CMD Info Packet */
-	prInitHifTxHeaderPending =
-		(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES *)
-		(prCmdInfo->pucInfoBuffer);
-	prInitHifTxHeader = (struct INIT_HIF_TX_HEADER *)
-		(prCmdInfo->pucInfoBuffer +
-		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES));
-
-	prInitHifTxHeaderPending->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prInitHifTxHeaderPending->u2PQ_ID = INIT_CMD_PDA_PQ_ID;
-	prInitHifTxHeaderPending->ucHeaderFormat =
-		INIT_CMD_PDA_PACKET_TYPE_ID;
-	prInitHifTxHeaderPending->ucPktFt = INIT_PKT_FT_PDA_FWDL;
-
-	prInitHifTxHeader->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prInitHifTxHeader->u2PQ_ID = INIT_CMD_PDA_PQ_ID;
-	prInitHifTxHeader->rInitWifiCmd.ucCID = 0;
-	prInitHifTxHeader->rInitWifiCmd.ucPktTypeID =
-		INIT_CMD_PDA_PACKET_TYPE_ID;
-	prInitHifTxHeader->rInitWifiCmd.ucSeqNum = 0;
+	NIC_FILL_CMD_TX_HDR(prAdapter,
+		prCmdInfo->pucInfoBuffer,
+		prCmdInfo->u2InfoBufLen,
+		0, INIT_CMD_PDA_PACKET_TYPE_ID,
+		NULL, FALSE, (void **)&prBuf, TRUE, 0, S2D_INDEX_CMD_H2N);
 
 	/* 3. Setup DOWNLOAD_BUF */
-	kalMemCopy(prInitHifTxHeader->rInitWifiCmd.aucBuffer,
-		   pucImgSecBuf, u4ImgSecSize);
+	kalMemCopy(prBuf, pucImgSecBuf, u4ImgSecSize);
 
 	/* 4. Send FW_Download command */
 	if (nicTxInitCmd(prAdapter, prCmdInfo,
@@ -1034,16 +1149,13 @@ uint32_t wlanImageQueryStatus(IN struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct CMD_INFO *prCmdInfo;
-	struct INIT_HIF_TX_HEADER *prInitHifTxHeader;
-	struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES
-			*prInitHifTxHeaderPending;
 	uint8_t *aucBuffer;
 	uint32_t u4EventSize;
 	uint32_t u4RxPktLength;
-	struct INIT_WIFI_EVENT *prInitEvent;
 	struct INIT_EVENT_CMD_RESULT *prEventPendingError;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	uint8_t ucTC, ucCmdSeqNum;
+	struct WIFI_EVENT_INFO rWifiEventInfo;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
@@ -1081,27 +1193,12 @@ uint32_t wlanImageQueryStatus(IN struct ADAPTER *prAdapter)
 	ucTC = TC0_INDEX;
 #endif
 
-	/* 3. increase command sequence number */
-	ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
-
-	/* 4. Setup common CMD Info Packet */
-	prInitHifTxHeaderPending =
-		(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES *)
-		(prCmdInfo->pucInfoBuffer);
-	prInitHifTxHeader = (struct INIT_HIF_TX_HEADER *)
-		(prCmdInfo->pucInfoBuffer +
-		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES));
-
-	prInitHifTxHeaderPending->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prInitHifTxHeaderPending->u2PQ_ID = INIT_CMD_PQ_ID;
-
-	prInitHifTxHeader->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prInitHifTxHeader->u2PQ_ID = INIT_CMD_PQ_ID;
-	prInitHifTxHeader->rInitWifiCmd.ucCID =
-		INIT_CMD_ID_QUERY_PENDING_ERROR;
-	prInitHifTxHeader->rInitWifiCmd.ucPktTypeID =
-		INIT_CMD_PACKET_TYPE_ID;
-	prInitHifTxHeader->rInitWifiCmd.ucSeqNum = ucCmdSeqNum;
+	NIC_FILL_CMD_TX_HDR(prAdapter,
+		prCmdInfo->pucInfoBuffer,
+		prCmdInfo->u2InfoBufLen,
+		INIT_CMD_ID_QUERY_PENDING_ERROR,
+		INIT_CMD_PACKET_TYPE_ID,
+		&ucCmdSeqNum, FALSE, NULL, TRUE, 0, S2D_INDEX_CMD_H2N);
 
 	/* 5. Send command */
 	while (1) {
@@ -1143,18 +1240,18 @@ uint32_t wlanImageQueryStatus(IN struct ADAPTER *prAdapter)
 			   WLAN_STATUS_SUCCESS) {
 			u4Status = WLAN_STATUS_FAILURE;
 		} else {
-			prInitEvent = (struct INIT_WIFI_EVENT *)
-				(aucBuffer + prChipInfo->rxd_size);
+			NIC_PARSE_EVEMT_RX_HDR(prAdapter,
+				aucBuffer, &rWifiEventInfo, TRUE);
 
 			/* EID / SeqNum check */
-			if (prInitEvent->ucEID != INIT_EVENT_ID_PENDING_ERROR)
+			if (rWifiEventInfo.ucEID != INIT_EVENT_ID_PENDING_ERROR)
 				u4Status = WLAN_STATUS_FAILURE;
-			else if (prInitEvent->ucSeqNum != ucCmdSeqNum)
+			else if (rWifiEventInfo.ucSeqNum != ucCmdSeqNum)
 				u4Status = WLAN_STATUS_FAILURE;
 			else {
 				prEventPendingError =
 					(struct INIT_EVENT_CMD_RESULT *)
-					prInitEvent->aucBuffer;
+					rWifiEventInfo.pucInfoBuffer;
 				/* 0 for download success */
 				if (prEventPendingError->ucStatus != 0)
 					u4Status = WLAN_STATUS_FAILURE;
@@ -1190,11 +1287,11 @@ uint32_t wlanConfigWifiFuncStatus(IN struct ADAPTER
 	struct mt66xx_chip_info *prChipInfo;
 	uint8_t *aucBuffer;
 	uint32_t u4EventSize;
-	struct INIT_WIFI_EVENT *prInitEvent;
 	struct INIT_EVENT_CMD_RESULT *prEventCmdResult;
 	uint32_t u4RxPktLength;
 	uint32_t u4Status;
 	uint8_t ucPortIdx = IMG_DL_STATUS_PORT_IDX;
+	struct WIFI_EVENT_INFO rWifiEventInfo;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
@@ -1213,18 +1310,18 @@ uint32_t wlanConfigWifiFuncStatus(IN struct ADAPTER
 			   WLAN_STATUS_SUCCESS) {
 			u4Status = WLAN_STATUS_FAILURE;
 		} else {
-			prInitEvent = (struct INIT_WIFI_EVENT *)
-				(aucBuffer + prChipInfo->rxd_size);
+			NIC_PARSE_EVEMT_RX_HDR(prAdapter,
+				aucBuffer, &rWifiEventInfo, TRUE);
 
 			/* EID / SeqNum check */
-			if (prInitEvent->ucEID != INIT_EVENT_ID_CMD_RESULT)
+			if (rWifiEventInfo.ucEID != INIT_EVENT_ID_CMD_RESULT)
 				u4Status = WLAN_STATUS_FAILURE;
-			else if (prInitEvent->ucSeqNum != ucCmdSeqNum)
+			else if (rWifiEventInfo.ucSeqNum != ucCmdSeqNum)
 				u4Status = WLAN_STATUS_FAILURE;
 			else {
 				prEventCmdResult =
 					(struct INIT_EVENT_CMD_RESULT *)
-					prInitEvent->aucBuffer;
+					rWifiEventInfo.pucInfoBuffer;
 
 				/* 0 for download success */
 				if (prEventCmdResult->ucStatus != 0) {
@@ -1256,9 +1353,6 @@ uint32_t wlanConfigWifiFunc(IN struct ADAPTER *prAdapter,
 			    IN uint8_t ucPDA)
 {
 	struct CMD_INFO *prCmdInfo;
-	struct INIT_HIF_TX_HEADER *prInitHifTxHeader;
-	struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES
-			*prInitHifTxHeaderPending;
 	struct INIT_CMD_WIFI_START *prInitCmdWifiStart;
 	uint8_t ucTC, ucCmdSeqNum;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
@@ -1299,31 +1393,16 @@ uint32_t wlanConfigWifiFunc(IN struct ADAPTER *prAdapter,
 	ucTC = TC0_INDEX;
 #endif
 
-	/* 3. increase command sequence number */
-	ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
+	NIC_FILL_CMD_TX_HDR(prAdapter,
+		prCmdInfo->pucInfoBuffer,
+		prCmdInfo->u2InfoBufLen,
+		INIT_CMD_ID_WIFI_START,
+		INIT_CMD_PACKET_TYPE_ID,
+		&ucCmdSeqNum,
+		FALSE,
+		(void **)&prInitCmdWifiStart,
+		TRUE, 0, S2D_INDEX_CMD_H2N);
 
-	/* 4. Setup common CMD Info Packet */
-	prInitHifTxHeaderPending =
-		(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES *)
-		(prCmdInfo->pucInfoBuffer);
-	prInitHifTxHeader = (struct INIT_HIF_TX_HEADER *)
-		(prCmdInfo->pucInfoBuffer +
-		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES));
-
-	prInitHifTxHeaderPending->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prInitHifTxHeaderPending->u2PQ_ID = INIT_CMD_PQ_ID;
-	prInitHifTxHeaderPending->ucPktFt = INIT_PKT_FT_CMD;
-
-	prInitHifTxHeader->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prInitHifTxHeader->u2PQ_ID = INIT_CMD_PQ_ID;
-	prInitHifTxHeader->rInitWifiCmd.ucCID =
-		INIT_CMD_ID_WIFI_START;
-	prInitHifTxHeader->rInitWifiCmd.ucPktTypeID =
-		INIT_CMD_PACKET_TYPE_ID;
-	prInitHifTxHeader->rInitWifiCmd.ucSeqNum = ucCmdSeqNum;
-
-	prInitCmdWifiStart = (struct INIT_CMD_WIFI_START *) (
-		prInitHifTxHeader->rInitWifiCmd.aucBuffer);
 	prInitCmdWifiStart->u4Override = 0;
 	if (fgEnable)
 		prInitCmdWifiStart->u4Override |=
@@ -1393,9 +1472,6 @@ wlanCompressedFWConfigWifiFunc(IN struct ADAPTER *prAdapter,
 	IN struct INIT_CMD_WIFI_DECOMPRESSION_START *prFwImageInFo)
 {
 	struct CMD_INFO *prCmdInfo;
-	struct INIT_HIF_TX_HEADER *prInitHifTxHeader;
-	struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES
-			*prInitHifTxHeaderPending;
 	struct INIT_CMD_WIFI_DECOMPRESSION_START *prInitCmdWifiStart;
 	uint8_t ucTC, ucCmdSeqNum;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
@@ -1428,32 +1504,15 @@ wlanCompressedFWConfigWifiFunc(IN struct ADAPTER *prAdapter,
 	/* 2. Always use TC0 */
 	ucTC = TC0_INDEX;
 
-	/* 3. increase command sequence number */
-	ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
+	NIC_FILL_CMD_TX_HDR(prAdapter,
+		prCmdInfo->pucInfoBuffer,
+		prCmdInfo->u2InfoBufLen,
+		INIT_CMD_ID_DECOMPRESSED_WIFI_START,
+		INIT_CMD_PACKET_TYPE_ID,
+		&ucCmdSeqNum,
+		FALSE,
+		&prInitCmdWifiStart, TRUE, 0, S2D_INDEX_CMD_H2N);
 
-	/* 4. Setup common CMD Info Packet */
-	prInitHifTxHeaderPending =
-		(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES *)
-		(prCmdInfo->pucInfoBuffer);
-	prInitHifTxHeader = (struct INIT_HIF_TX_HEADER *)
-		(prCmdInfo->pucInfoBuffer +
-		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES));
-
-	prInitHifTxHeaderPending->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prInitHifTxHeaderPending->u2PQ_ID = INIT_CMD_PQ_ID;
-	prInitHifTxHeaderPending->ucPktFt = INIT_PKT_FT_CMD;
-
-	prInitHifTxHeader->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prInitHifTxHeader->u2PQ_ID = INIT_CMD_PQ_ID;
-	prInitHifTxHeader->rInitWifiCmd.ucCID =
-		INIT_CMD_ID_DECOMPRESSED_WIFI_START;
-	prInitHifTxHeader->rInitWifiCmd.ucPktTypeID =
-		INIT_CMD_PACKET_TYPE_ID;
-	prInitHifTxHeader->rInitWifiCmd.ucSeqNum = ucCmdSeqNum;
-
-	prInitCmdWifiStart = (struct
-			      INIT_CMD_WIFI_DECOMPRESSION_START *) (
-				     prInitHifTxHeader->rInitWifiCmd.aucBuffer);
 	prInitCmdWifiStart->u4Override = 0;
 	if (fgEnable)
 		prInitCmdWifiStart->u4Override |=
@@ -1898,7 +1957,7 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	if (prFwDlOps->downloadFirmware) {
 		rStatus = prFwDlOps->downloadFirmware(prAdapter,
 						      IMG_DL_IDX_N9_FW);
-		if (prChipInfo->is_support_cr4
+		if ((prChipInfo->is_support_cr4 || prChipInfo->is_support_wacpu)
 		    && rStatus == WLAN_STATUS_SUCCESS)
 			rStatus = prFwDlOps->downloadFirmware(prAdapter,
 						IMG_DL_IDX_CR4_FW);

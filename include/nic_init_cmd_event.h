@@ -163,6 +163,24 @@ enum ENUM_INIT_PATCH_STATUS {
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
+struct WIFI_CMD_INFO {
+	uint16_t u2InfoBufLen;
+	uint8_t *pucInfoBuffer;
+	uint8_t ucCID;
+	uint8_t ucExtCID;
+	uint8_t ucPktTypeID;
+	uint8_t ucSetQuery;
+	uint8_t ucS2DIndex;
+};
+
+struct WIFI_EVENT_INFO {
+	uint16_t u2PacketType;
+	uint16_t u2InfoBufLen;
+	uint8_t *pucInfoBuffer;
+	uint8_t ucEID;
+	uint8_t ucExtEID;
+	uint8_t ucSeqNum;
+};
 
 /* commands */
 struct INIT_CMD_DOWNLOAD_CONFIG {

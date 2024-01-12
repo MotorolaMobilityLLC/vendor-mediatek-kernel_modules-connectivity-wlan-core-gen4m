@@ -136,5 +136,24 @@ void asicUdmaRxFlush(IN struct ADAPTER *prAdapter, IN u_int8_t bEnable);
 void asicPdmaHifReset(IN struct ADAPTER *prAdapter, IN u_int8_t bRelease);
 void fillUsbHifTxDesc(IN uint8_t **pDest, IN uint16_t *pInfoBufLen);
 #endif /* _HIF_USB */
+void asicFillInitCmdTxd(
+	struct ADAPTER *prAdapter,
+	struct WIFI_CMD_INFO *prCmdInfo,
+	uint16_t *pu2BufInfoLen,
+	u_int8_t *pucSeqNum,
+	void **pCmdBuf);
+void asicFillCmdTxd(
+	struct ADAPTER *prAdapter,
+	struct WIFI_CMD_INFO *prCmdInfo,
+	u_int8_t *pucSeqNum,
+	void **pCmdBuf);
+void asicParseInitEventRxInfo(
+	struct ADAPTER *prAdapter,
+	u_int8_t *paucInBuffer,
+	struct WIFI_EVENT_INFO *prEventInfo);
+void asicParseEventRxInfo(
+	struct ADAPTER *prAdapter,
+	u_int8_t *paucInBuffer,
+	struct WIFI_EVENT_INFO *prEventInfo);
 #endif /* _CMM_ASIC_CONNAC_H */
 
