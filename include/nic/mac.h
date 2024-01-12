@@ -1959,15 +1959,6 @@ enum BEACON_REPORT_DETAIL {
 #define HE_OP_CHANNEL_WIDTH_80				2
 #define HE_OP_CHANNEL_WIDTH_80P80_160			3
 
-/* 9.4.2.170 Reduced Neighbor Report element */
-#define TBTT_INFO_HDR_FIELD_TYPE                    BITS(0, 1)
-#define TBTT_INFO_HDR_FILTERED_NIEGHBOR_AP          BIT(2)
-#define TBTT_INFO_HDR_COLOCATED_AP                  BIT(3)
-#define TBTT_INFO_HDR_COUNT                         BITS(4, 7)
-#define TBTT_INFO_HDR_COUNT_OFFSET                  4
-#define TBTT_INFO_HDR_LENGTH                        BITS(8, 15)
-#define TBTT_INFO_HDR_LENGTH_OFFSET                 8
-
 #define TBTT_INFO_BSS_PARAM_SAME_SSID               BIT(1)
 /* 9.4.2.260 Short SSID List element */
 #define ELEM_EXT_ID_SHORT_SSID_LIST                 58
