@@ -176,6 +176,8 @@ void p2pFuncReleaseCh(IN struct ADAPTER *prAdapter,
 		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
+void p2pFuncSetDfsChannelAvailable(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucChannel, IN uint8_t ucAvailable);
 void p2pFuncStartRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx);
 
 void p2pFuncStopRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx);
