@@ -27,6 +27,10 @@ ccflags-y += -DCFG_VIRTUAL_OS
 ccflags-y += -DCFG_REMIND_IMPLEMENT
 endif
 
+ifeq ($(CONFIG_SUPPORT_OPENWRT),y)
+ccflags-y += -DCONFIG_SUPPORT_OPENWRT
+endif
+
 ifndef TOP
     TOP := $(srctree)/..
 endif
