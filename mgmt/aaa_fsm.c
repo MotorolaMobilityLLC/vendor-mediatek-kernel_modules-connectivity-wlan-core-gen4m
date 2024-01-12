@@ -255,7 +255,7 @@ void aaaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 	uint16_t u2StatusCode;
 	u_int8_t fgReplyAuth = FALSE;
 	struct WLAN_AUTH_FRAME *prAuthFrame = (struct WLAN_AUTH_FRAME *) NULL;
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 
 	ASSERT(prAdapter);
 

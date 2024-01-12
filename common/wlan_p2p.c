@@ -642,7 +642,7 @@ wlanoidSetP2pSetNetworkAddress(struct ADAPTER *prAdapter,
 	struct PARAM_NETWORK_ADDRESS *prNWAddress;
 	struct PARAM_NETWORK_ADDRESS_IP *prNetAddrIp;
 	uint32_t u4IpAddressCount, u4CmdSize;
-	uint8_t *pucBuf = (uint8_t *) pvSetBuffer;
+	uint8_t *pucBuf = NULL;
 
 	DEBUGFUNC("wlanoidSetP2pSetNetworkAddress");
 	DBGLOG(INIT, TRACE, "\n");
@@ -1487,7 +1487,7 @@ wlanoidSetP2pSupplicantVersion(struct ADAPTER *prAdapter,
 		uint32_t u4SetBufferLen,
 		uint32_t *pu4SetInfoLen)
 {
-	uint32_t rResult = WLAN_STATUS_FAILURE;
+	uint32_t rResult;
 	uint8_t ucVersionNum;
 
 	do {

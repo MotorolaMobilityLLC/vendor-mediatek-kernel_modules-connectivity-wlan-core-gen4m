@@ -120,7 +120,7 @@ int32_t mtk_Netdev_To_RoleIdx(struct GLUE_INFO *prGlueInfo,
 
 static void mtk_vif_destructor(struct net_device *dev)
 {
-	struct wireless_dev *prWdev = ERR_PTR(-ENOMEM);
+	struct wireless_dev *prWdev = NULL;
 	uint32_t u4Idx = 0;
 	if (dev) {
 		DBGLOG(P2P, TRACE, "mtk_vif_destructor\n");
@@ -2735,7 +2735,7 @@ int mtk_p2p_cfg80211_change_bss(struct wiphy *wiphy,
 		struct bss_parameters *params)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
-	int32_t i4Rslt = -EINVAL;
+	int32_t i4Rslt;
 
 	ASSERT(wiphy);
 
