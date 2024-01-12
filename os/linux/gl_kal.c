@@ -2144,9 +2144,6 @@ kalIoctl(IN P_GLUE_INFO_T prGlueInfo,
 		return WLAN_STATUS_SUCCESS;
 #endif
 
-	if (wlanIsChipAssert(prGlueInfo->prAdapter))
-		return WLAN_STATUS_SUCCESS;
-
 	/* GLUE_SPIN_LOCK_DECLARATION(); */
 	ASSERT(prGlueInfo);
 
@@ -5015,6 +5012,37 @@ UINT_64 kalGetBootTime(void)
 	bootTime += ts.tv_nsec / NSEC_PER_USEC;
 	return bootTime;
 }
+
+#if CFG_SUPPORT_WAKEUP_REASON_DEBUG
+/* if SPM is not implement this function, we will use this default one */
+int __weak slp_get_wake_reason(VOID)
+{
+	DBGLOG(INIT, WARN, "SPM didn't define this function!\n");
+	return 0;
+}
+
+/* if SPM is not implement this function, we will use this default one */
+bool __weak spm_read_eint_status(UINT_32 u4EintNum)
+{
+	DBGLOG(INIT, WARN, "SPM didn't define this function!\n");
+	return FALSE;
+}
+static inline BOOLEAN spm_check_wakesrc(VOID)
+{
+	return spm_read_eint_status(4);
+}
+
+BOOLEAN kalIsWakeupByWlan(P_ADAPTER_T  prAdapter)
+{
+	/*
+	* SUSPEND_FLAG_FOR_WAKEUP_REASON is set means system has suspended, but may be failed
+	* duo to some driver suspend failed. so we need help of function slp_get_wake_reason
+	*/
+	if (test_and_clear_bit(SUSPEND_FLAG_FOR_WAKEUP_REASON, &prAdapter->ulSuspendFlag) == 0)
+		return FALSE;
+	return TRUE;
+}
+#endif
 
 #if CFG_ASSERT_DUMP
 WLAN_STATUS kalOpenCorDumpFile(BOOLEAN fgIsN9)

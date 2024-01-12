@@ -1266,7 +1266,7 @@ struct _ADAPTER_T {
 
 	/* SER related info */
 	UINT_8 ucSerState;
-
+	ULONG ulSuspendFlag;
 	WIFI_FEM_CFG_T rWifiFemCfg;
 
 	/* Smar Gear */

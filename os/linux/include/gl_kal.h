@@ -1209,6 +1209,12 @@ UINT_64 kalGetBootTime(VOID);
 int kalMetInitProcfs(IN P_GLUE_INFO_T prGlueInfo);
 int kalMetRemoveProcfs(void);
 
+UINT_8 kalGetEapolKeyType(P_NATIVE_PACKET prPacket);
+
+#if CFG_SUPPORT_WAKEUP_REASON_DEBUG
+BOOLEAN kalIsWakeupByWlan(P_ADAPTER_T  prAdapter);
+#endif
+
 INT_32 kalHaltLock(UINT_32 waitMs);
 INT_32 kalHaltTryLock(VOID);
 VOID kalHaltUnlock(VOID);
@@ -1246,3 +1252,5 @@ static inline void kal_skb_reset_mac_len(struct sk_buff *skb)
 #endif
 
 #endif /* _GL_KAL_H */
+
+
