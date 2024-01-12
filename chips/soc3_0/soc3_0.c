@@ -3307,18 +3307,8 @@ int32_t soc3_0_wlanPowerOnInit(
 *	pfWlanProbe((void *)prPlatDev,
 *			(void *)prPlatDev->id_entry->driver_data)
 */
-#if defined(SOC3_0)
-#if defined(_HIF_AXI)
-/* prPlatDev is already created by initWlan()->glRegisterBus()::axi.c */
-	void *pvData = (void *)g_prPlatDev;
-	void *pvDriverData = (void *)g_prPlatDev->id_entry->driver_data;
-#endif
-
-#if defined(_HIF_PCIE)
-	void *pvData = NULL;
+	void *pvData;
 	void *pvDriverData = (void *)&mt66xx_driver_data_soc3_0;
-#endif
-#endif
 
 	int32_t i4Status = 0;
 	enum ENUM_POWER_ON_INIT_FAIL_REASON {
@@ -3346,30 +3336,9 @@ int32_t soc3_0_wlanPowerOnInit(
 	eFailReason = FAIL_REASON_NUM;
 
 	do {
-#if defined(_HIF_AXI)
-		/* AXI goes over here, to be conti... */
 		prChipInfo = ((struct mt66xx_hif_driver_data *)pvDriverData)
 					->chip_info;
-
 		pvData = (void *)prChipInfo->pdev;
-
-		/* we should call axi_enable_device(
-		*        (struct platform_device *)pvData);
-		* since it is invoked from within hifAxiProbe()::axi.c,
-		* before calling pfWlanProbe(), to be conti...
-		*/
-#endif
-
-#if defined(_HIF_PCIE)
-		prChipInfo = ((struct mt66xx_hif_driver_data *)pvDriverData)
-					->chip_info;
-
-		pvData = (void *)prChipInfo->pdev;
-
-		/* no need pci_enable_device(dev),
-		 * it has already been done in PCI driver's probe() function
-		 */
-#endif
 
 		if (eDownloadItem == ENUM_WLAN_POWER_ON_DOWNLOAD_EMI) {
 			if (fgSimplifyResetFlow) {
@@ -4397,7 +4366,6 @@ int soc3_0_wlanPreCalPwrOn(void)
 
 	/* Download patch and send PHY action */
 	do {
-#if defined(_HIF_AXI)
 		retryCount = 0;
 		while (g_prPlatDev == NULL) {
 			DBGLOG(INIT, WARN,
@@ -4414,13 +4382,7 @@ int soc3_0_wlanPreCalPwrOn(void)
 			}
 		}
 
-		pvDriverData = (void *)g_prPlatDev->id_entry->driver_data;
-#endif
-
-#if defined(_HIF_PCIE)
 		pvDriverData = (void *)&mt66xx_driver_data_soc3_0;
-#endif
-
 		prChipInfo = ((struct mt66xx_hif_driver_data *)
 			pvDriverData)->chip_info;
 		pvData = (void *)prChipInfo->pdev;
