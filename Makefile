@@ -107,12 +107,6 @@ $(info $$WLAN_CHIP_ID is [${WLAN_CHIP_ID}])
 $(info $$MTK_COMBO_CHIP is [${MTK_COMBO_CHIP}])
 $(info $$WLAN_CONNAC3_DEV is [${WLAN_CONNAC3_DEV}])
 
-include $(CFG_DIR)/defconfig
-ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/defconfig),)
-    include $(CFG_DIR)/${MTK_COMBO_CHIP}/defconfig
-endif
-
-
 ifneq ($(CONFIG_MTK_EMI),)
 ccflags-y += -DCONFIG_WLAN_MTK_EMI=1
 endif
@@ -133,17 +127,6 @@ ccflags-y += -DCFG_SUPPORT_TSF_USING_BOOTTIME=1
 ccflags-y += -DARP_MONITER_ENABLE=1
 ccflags-y += -DCFG_SUPPORT_PASSPOINT=1
 ccflags-y += -DCFG_HS20_DEBUG=1
-endif
-
-# ---------------------------------------------------
-# none_sta disable unused Configs
-# ---------------------------------------------------
-ifeq ($(CONFIG_BUILD_NONE_STA), y)
-CONFIG_MTK_WIFI_11BE_MLO_SUPPORT=n
-CONFIG_MTK_WIFI_TWT_SUPPORT=n
-ccflags-y += -DCFGDBG_DISABLE_ALL_LOG=1
-ccflags-y += -DCFG_SUPPORT_HE_ER=0
-TARGET_BUILD_VARIANT = user
 endif
 
 ccflags-y += -Werror $(call cc-disable-warning, unused-but-set-variable)
@@ -533,7 +516,7 @@ endif
 CONFIG_MTK_WIFI_TRX_DIRECT=y
 CONFIG_NOT_CLR_FREE_MSDU_IN_DEACTIVE_NETWORK=y
 ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
-CONFIG_MTK_WIFI_WFDMA_BK_RS=y
+CONFIG_MTK_WIFI_WFDMA_BK_RS=n
 ccflags-y += -DCONFIG_MTK_WIFI_BW160
 ccflags-y += -DCONFIG_MTK_WIFI_EHT160
 ccflags-y += -DCFG_USB_RX_PADDING_CSO_LEN=12
@@ -545,6 +528,11 @@ endif
 endif
 
 # ===== Before is project setting =====
+include $(CFG_DIR)/defconfig
+ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/defconfig),)
+    include $(CFG_DIR)/${MTK_COMBO_CHIP}/defconfig
+endif
+
 ifeq ($(WM_RAM),ce)
     ccflags-y += -DCONFIG_WM_RAM_TYPE=1
     ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/ce/defconfig),)
@@ -556,6 +544,17 @@ else
     ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/mobile/defconfig),)
         include $(CFG_DIR)/${MTK_COMBO_CHIP}/mobile/defconfig
     endif
+endif
+
+# ---------------------------------------------------
+# none_sta disable unused Configs
+# ---------------------------------------------------
+ifeq ($(CONFIG_BUILD_NONE_STA), y)
+CONFIG_MTK_WIFI_11BE_MLO_SUPPORT=n
+CONFIG_MTK_WIFI_TWT_SUPPORT=n
+ccflags-y += -DCFGDBG_DISABLE_ALL_LOG=1
+ccflags-y += -DCFG_SUPPORT_HE_ER=0
+TARGET_BUILD_VARIANT = user
 endif
 # ===== Below will add compile flag based on project setting =====
 
