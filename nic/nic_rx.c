@@ -3784,10 +3784,9 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 			prSwRfb->prStaRec->ucBssIndex);
 
 	switch (prActFrame->ucCategory) {
-#if CFG_M0VE_BA_TO_DRIVER
+#if CFG_MOVE_BA_TO_DRIVER
 	case CATEGORY_BLOCK_ACK_ACTION:
-		DBGLOG(RX, WARN,
-		       "[Puff][%s] Rx CATEGORY_BLOCK_ACK_ACTION\n", __func__);
+		DBGLOG(RX, WARN, "Rx CATEGORY_BLOCK_ACK_ACTION\n");
 
 		if (prSwRfb->prStaRec)
 			mqmHandleBaActionFrame(prAdapter, prSwRfb);

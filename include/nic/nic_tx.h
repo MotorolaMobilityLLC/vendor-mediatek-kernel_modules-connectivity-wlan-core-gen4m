@@ -866,7 +866,7 @@ struct MSDU_INFO {
 	/* UINT_8 ucPsSessionID; */
 	/* TRUE means this is the last packet of the burst for (STA, TID) */
 	/* BOOLEAN fgIsBurstEnd; */
-#if CFG_M0VE_BA_TO_DRIVER
+#if CFG_MOVE_BA_TO_DRIVER
 	uint8_t ucTID;
 #endif
 

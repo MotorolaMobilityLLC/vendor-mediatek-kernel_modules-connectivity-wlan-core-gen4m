@@ -640,7 +640,7 @@
  * Description  : Move BA from FW to Driver
  *------------------------------------------------------------------------------
  */
-#define CFG_M0VE_BA_TO_DRIVER                   0
+#define CFG_MOVE_BA_TO_DRIVER                   0
 
 /*! Max. descriptor number - sync. with firmware */
 #if CFG_SLT_SUPPORT
@@ -693,7 +693,7 @@
 
 /*! RX BA capability */
 #define CFG_NUM_OF_RX_BA_AGREEMENTS             80
-#if CFG_M0VE_BA_TO_DRIVER
+#if CFG_MOVE_BA_TO_DRIVER
 #define CFG_RX_BA_MAX_WINSIZE                   64
 #endif
 #define CFG_RX_MAX_BA_TID_NUM                   8

@@ -7880,7 +7880,7 @@ uint32_t qmDumpQueueStatus(struct ADAPTER *prAdapter,
 	return u4Len;
 }
 
-#if CFG_M0VE_BA_TO_DRIVER
+#if CFG_MOVE_BA_TO_DRIVER
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Send DELBA Action frame
@@ -7903,22 +7903,18 @@ mqmSendDelBaFrame(struct ADAPTER *prAdapter,
 	struct ACTION_DELBA_FRAME *prDelBaFrame;
 	struct BSS_INFO *prBssInfo;
 
-	DBGLOG(QM, WARN, "[Puff]: Enter mqmSendDelBaFrame()\n");
+	DBGLOG(QM, WARN, "Enter SendDelBaFrame\n");
 
 	ASSERT(prStaRec);
 
 	/* 3 <1> Block the message in case of invalid STA */
 	if (!prStaRec->fgIsInUse) {
-		DBGLOG(QM, WARN,
-			"[Puff][%s]: (Warning) sta_rec is not inuse\n",
-			__func__);
+		DBGLOG(QM, WARN, "sta_rec is not inuse\n");
 		return;
 	}
 	/* Check HT-capabale STA */
 	if (!(prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_HT)) {
-		DBGLOG(QM, WARN,
-			"[Puff][%s]: (Warning) sta is NOT HT-capable(0x%08X)\n",
-			__func__,
+		DBGLOG(QM, WARN, "sta is NOT HT-capable(0x%08X)\n",
 			prStaRec->ucDesiredPhyTypeSet);
 		return;
 	}
@@ -7927,8 +7923,9 @@ mqmSendDelBaFrame(struct ADAPTER *prAdapter,
 		prAdapter, ACTION_DELBA_FRAME_LEN);
 
 	if (!prTxMsduInfo) {
-		log_dbg(QM, WARN, "[Puff][%s]: (Warning) DELBA for TID=%ld was not sent (MSDU_INFO alloc failure)\n",
-			__func__, u4Tid);
+		log_dbg(QM, WARN,
+			"DELBA for TID=%ld was not sent (MSDU_INFO alloc failure)\n",
+			u4Tid);
 		return;
 	}
 
@@ -7942,9 +7939,7 @@ mqmSendDelBaFrame(struct ADAPTER *prAdapter,
 	prDelBaFrame->u2FrameCtrl = MAC_FRAME_ACTION;
 #if CFG_SUPPORT_802_11W
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
-		DBGLOG(QM, WARN,
-			"[Puff][%s]: (Warning) DELBA is 80211w enabled\n",
-			__func__);
+		DBGLOG(QM, WARN, "DELBA is 80211w enabled\n");
 		prDelBaFrame->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
 	}
 #endif
@@ -7983,9 +7978,8 @@ mqmSendDelBaFrame(struct ADAPTER *prAdapter,
 
 	nicTxEnqueueMsdu(prAdapter, prTxMsduInfo);
 
-	DBGLOG(QM, WARN,
-		"[Puff][%s]: Send DELBA for TID=%ld Initiator=%d\n",
-		__func__, u4Tid, fgIsInitiator);
+	DBGLOG(QM, WARN, "Send DELBA for TID=%ld Initiator=%d\n",
+			u4Tid, fgIsInitiator);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -8017,21 +8011,17 @@ mqmCallbackAddBaRspSent(struct ADAPTER *prAdapter,
 
 	prQM = &prAdapter->rQM;
 
-	DBGLOG(QM, WARN,
-	       "[Puff]: Enter mqmCallbackAddBaRspSent()\n");
+	DBGLOG(QM, WARN, "Enter CallbackAddBaRspSent()\n");
 
 	/* 4 <0> Check STA_REC status */
 	/* Check STA_REC is inuse */
 	if (!prStaRec->fgIsInUse) {
-		DBGLOG(QM, WARN, "[Puff][%s]: (Warning) sta_rec is not inuse\n",
-			__func__);
+		DBGLOG(QM, WARN, "sta_rec is not inuse\n");
 		return WLAN_STATUS_SUCCESS;
 	}
 	/* Check HT-capabale STA */
 	if (!(prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_HT)) {
-		DBGLOG(QM, WARN,
-			"[Puff][%s]: (Warning) sta is NOT HT-capable(0x%08X)\n",
-			__func__,
+		DBGLOG(QM, WARN, "sta is NOT HT-capable(0x%08X)\n",
 			prStaRec->ucDesiredPhyTypeSet);
 		/* To free the received ADDBA_REQ directly */
 		return WLAN_STATUS_SUCCESS;
@@ -8046,8 +8036,9 @@ mqmCallbackAddBaRspSent(struct ADAPTER *prAdapter,
 	 */
 	/* 4 <2> INVALID state */
 	if (!prRxBaEntry) {
-		log_dbg(QM, WARN, "[Puff][%s]: (RX_BA) ADDBA_RSP ---> peer (STA=%d TID=%d)(TX successful)(invalid BA)\n",
-			__func__, prStaRec->ucIndex, u4Tid);
+		log_dbg(QM, WARN,
+			"(RX_BA) ADDBA_RSP ---> peer (STA=%d TID=%d)(TX successful)(invalid BA)\n",
+			prStaRec->ucIndex, u4Tid);
 	}
 	/* 4 <3> NEGO, ACTIVE, or DELETING state */
 	else {
@@ -8056,8 +8047,8 @@ mqmCallbackAddBaRspSent(struct ADAPTER *prAdapter,
 		case TX_RESULT_SUCCESS:
 
 			DBGLOG(QM, WARN,
-				"[Puff][%s]: (RX_BA) ADDBA_RSP ---> peer (STA=%d TID=%d)(TX successful)\n",
-				__func__, prStaRec->ucIndex, u4Tid);
+				"(RX_BA) ADDBA_RSP ---> peer (STA=%d TID=%d)(TX successful)\n",
+				prStaRec->ucIndex, u4Tid);
 
 			/* 4 <Case 1.1> NEGO or ACTIVE state */
 			if (prRxBaEntry->ucStatus != BA_ENTRY_STATUS_DELETING)
@@ -8068,8 +8059,8 @@ mqmCallbackAddBaRspSent(struct ADAPTER *prAdapter,
 		/* 4 <Case 2> TX Failure */
 		default:
 
-			log_dbg(QM, WARN, "[Puff][%s]: (RX_BA) ADDBA_RSP ---> peer (STA=%d TID=%ld Entry_Status=%d)(TX failed)\n",
-				__func__, prStaRec->ucIndex,
+			log_dbg(QM, WARN, "(RX_BA) ADDBA_RSP ---> peer (STA=%d TID=%ld Entry_Status=%d)(TX failed)\n",
+				prStaRec->ucIndex,
 				u4Tid, prRxBaEntry->ucStatus);
 
 			/* 4 <Case 2.1> NEGO or ACTIVE state */
@@ -8119,8 +8110,7 @@ void mqmTimeoutCheckIdleRxBa(struct ADAPTER *prAdapter,
 		MQM_DEL_IDLE_RXBA_THRESHOLD_VO
 	};
 
-	DBGLOG(QM, WARN,
-		"[Puff]: Enter mqmTimeoutIdleRxBaDetection()\n");
+	DBGLOG(QM, WARN, "Enter mqmTimeoutIdleRxBaDetection()\n");
 
 	prQM = &prAdapter->rQM;
 
@@ -8142,17 +8132,14 @@ void mqmTimeoutCheckIdleRxBa(struct ADAPTER *prAdapter,
 				prRxBa->ucStaRecIdx);
 
 			if (!prStaRec->fgIsInUse) {
-				DBGLOG(QM, WARN,
-					"[Puff][%s]: (Warning) sta_rec is not inuse\n",
-					__func__);
+				DBGLOG(QM, WARN, "sta_rec is not inuse\n");
 				ASSERT(0);
 			}
 			/* Check HT-capabale STA */
 			if (!(prStaRec->ucDesiredPhyTypeSet &
 				PHY_TYPE_BIT_HT)) {
 				DBGLOG(QM, WARN,
-					"[Puff][%s]: (Warning) sta is NOT HT-capable(0x%08X)\n",
-					__func__,
+					"sta is NOT HT-capable(0x%08X)\n",
 					prStaRec->ucDesiredPhyTypeSet);
 				ASSERT(0);
 			}
@@ -8220,8 +8207,8 @@ mqmRxModifyBaEntryStatus(struct ADAPTER *prAdapter,
 	prQM = &prAdapter->rQM;
 
 	if (prRxBaEntry->ucStatus == (uint8_t) eStatus) {
-		DBGLOG(QM, WARN, "[Puff][%s]: eStatus are identical...\n",
-			__func__, prRxBaEntry->ucStatus);
+		DBGLOG(QM, WARN, "eStatus are identical...\n",
+			prRxBaEntry->ucStatus);
 		return;
 	}
 	/* 4 <1> State transition from state X */
@@ -8340,7 +8327,7 @@ mqmRxModifyBaEntryStatus(struct ADAPTER *prAdapter,
 	}
 
 	DBGLOG(QM, WARN,
-		"[Puff]QM: (RX_BA) [STA=%d TID=%d] status from %d to %d\n",
+		"QM: (RX_BA) [STA=%d TID=%d] status from %d to %d\n",
 		prRxBaEntry->ucStaRecIdx, prRxBaEntry->ucTid,
 		prRxBaEntry->ucStatus, eStatus);
 
@@ -8395,15 +8382,12 @@ void mqmHandleAddBaReq(struct ADAPTER *prAdapter,
 		/* 4 <0> Check if this is an active HT-capable STA */
 		/* Check STA_REC is inuse */
 		if (!prStaRec->fgIsInUse) {
-			log_dbg(QM, WARN, "[Puff][%s]: (Warning) sta_rec is not inuse\n",
-				__func__);
+			log_dbg(QM, WARN, "sta_rec is not inuse\n");
 			break;
 		}
 		/* Check HT-capabale STA */
 		if (!(prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_HT)) {
-			DBGLOG(QM, WARN,
-				"[Puff][%s]: (Warning) sta is NOT HT-capable(0x%08X)\n",
-				__func__,
+			DBGLOG(QM, WARN, "sta is NOT HT-capable(0x%08X)\n",
 				prStaRec->ucDesiredPhyTypeSet);
 			break;	/* To free the received ADDBA_REQ directly */
 		}
@@ -8413,8 +8397,8 @@ void mqmHandleAddBaReq(struct ADAPTER *prAdapter,
 		    (!prAdapter->rWifiVar.fgSupportAmpduRx) ||
 		    (!prStaRec->fgRxAmpduEn)) {
 			DBGLOG(QM, WARN,
-				"[Puff][%s]: (Warning) BA ACK Policy not supported fgSupportQoS(%d)",
-				__func__, prAdapter->rWifiVar.fgSupportQoS);
+				"BA ACK Policy not supported fgSupportQoS(%d)",
+				prAdapter->rWifiVar.fgSupportQoS);
 			DBGLOG(QM, WARN,
 				"fgSupportAmpduRx(%d), fgRxAmpduEn(%d)\n",
 				prAdapter->rWifiVar.fgSupportAmpduRx,
@@ -8434,8 +8418,8 @@ void mqmHandleAddBaReq(struct ADAPTER *prAdapter,
 		    != BA_PARAM_SET_ACK_POLICY_IMMEDIATE_BA) {
 		  /* Only Immediate_BA is supported */
 			DBGLOG(QM, WARN,
-				"[Puff][%s]: (Warning) BA ACK Policy not supported (0x%08X)\n",
-				__func__, rAddBaReqBody.u2BAParameterSet);
+				"BA ACK Policy not supported (0x%08X)\n",
+				rAddBaReqBody.u2BAParameterSet);
 			/* Will send an ADDBA_RSP with DECLINED */
 			fgIsReqAccepted = FALSE;
 		}
@@ -8447,8 +8431,8 @@ void mqmHandleAddBaReq(struct ADAPTER *prAdapter,
 			  BA_PARAM_SET_TID_MASK_OFFSET);
 		u4StaRecIdx = prStaRec->ucIndex;
 		DBGLOG(QM, WARN,
-			"[Puff][%s]: BA entry index = [TID(%d), STA_REC index(%d)]\n",
-			__func__, u4Tid, u4StaRecIdx);
+			"BA entry index = [TID(%d), STA_REC index(%d)]\n",
+			u4Tid, u4StaRecIdx);
 
 		u2WinStart = ((rAddBaReqBody.u2BAStartSeqCtrl) >>
 			OFFSET_BAR_SSC_SN);
@@ -8456,8 +8440,8 @@ void mqmHandleAddBaReq(struct ADAPTER *prAdapter,
 			BA_PARAM_SET_BUFFER_SIZE_MASK) >>
 			BA_PARAM_SET_BUFFER_SIZE_MASK_OFFSET);
 		DBGLOG(QM, WARN,
-			"[Puff][%s]: BA entry info = [WinStart(%d), WinSize(%d)]\n",
-			__func__, u2WinStart, u2WinSize);
+			"BA entry info = [WinStart(%d), WinSize(%d)]\n",
+			u2WinStart, u2WinSize);
 
 		if (fgIsReqAccepted) {
 
@@ -8479,18 +8463,20 @@ void mqmHandleAddBaReq(struct ADAPTER *prAdapter,
 
 					if (!fgIsNewEntryAdded) {
 						DBGLOG(QM, ERROR,
-							"[Puff][%s]: (Error) Free RX BA entry alloc failure\n");
+							"Free RX BA entry alloc failure\n");
 						fgIsReqAccepted = FALSE;
 					} else {
-						log_dbg(QM, WARN, "[Puff][%s]: Create a new BA Entry\n");
+						log_dbg(QM, WARN,
+							"Create a new BA Entry\n");
 					}
 				}
 				/* 4 <Case 2.2> INVALID state && BA entry
 				 *   unavailable --> Reject the ADDBA_REQ
 				 */
 				else {
-					log_dbg(QM, WARN, "[Puff][%s]: (Warning) Free RX BA entry unavailable(req: %d)\n",
-						__func__, prQM->ucRxBaCount);
+					log_dbg(QM, WARN,
+						"Free RX BA entry unavailable(req: %d)\n",
+						prQM->ucRxBaCount);
 					/* Will send ADDBA_RSP with DECLINED */
 					fgIsReqAccepted = FALSE;
 				}
@@ -8508,9 +8494,9 @@ void mqmHandleAddBaReq(struct ADAPTER *prAdapter,
 					/* Ignore the ADDBA_REQ since
 					 * the current state is NEGO
 					 */
-					log_dbg(QM, WARN, "[Puff][%s]:(Warning)ADDBA_REQ for TID=%ld is received, status:%d)\n",
-						__func__, u4Tid,
-						prRxBaEntry->ucStatus);
+					log_dbg(QM, WARN,
+						"ADDBA_REQ for TID=%ld is received, status:%d)\n",
+						u4Tid, prRxBaEntry->ucStatus);
 					break;
 				}
 			}
@@ -8529,9 +8515,7 @@ void mqmHandleAddBaReq(struct ADAPTER *prAdapter,
 			 *  No BA deletion event will be sent to the host
 			 *  (because cnmMgtPktAlloc() may fail again).
 			 */
-			DBGLOG(QM, WARN,
-				"[Puff][%s]: (Warning) ADDBA_RSP alloc failure\n",
-				__func__);
+			DBGLOG(QM, WARN, "ADDBA_RSP alloc failure\n");
 
 			if (fgIsNewEntryAdded) {
 				/* If a new entry has been created due
@@ -8553,9 +8537,7 @@ void mqmHandleAddBaReq(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_802_11W
 		if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
-			DBGLOG(QM, WARN,
-				"[Puff][%s]: (Warning) ADDBA_RSP is 80211w enabled\n",
-				__func__);
+			DBGLOG(QM, WARN, "ADDBA_RSP is 80211w enabled\n");
 			prAddBaReq->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
 		}
 #endif
@@ -8564,8 +8546,9 @@ void mqmHandleAddBaReq(struct ADAPTER *prAdapter,
 		prAddBaRsp->ucAction = ACTION_ADDBA_RSP;
 		prAddBaRsp->ucDialogToken = prAddBaReq->ucDialogToken;
 
-		log_dbg(QM, WARN, "[Puff][%s]: (Warning) ADDBA_RSP DurationID(%d) Category(%d) Action(%d) DialogToken(%d)\n",
-			__func__, prAddBaRsp->u2DurationID,
+		log_dbg(QM, WARN,
+			"ADDBA_RSP DurationID(%d) Category(%d) Action(%d) DialogToken(%d)\n",
+			prAddBaRsp->u2DurationID,
 			prAddBaRsp->ucCategory, prAddBaRsp->ucAction,
 			prAddBaRsp->ucDialogToken);
 
@@ -8586,9 +8569,7 @@ void mqmHandleAddBaReq(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_BCM
 		/* TODO: Call BT coexistence function to limit the winsize */
 		u4BuffSizeBT = bcmRequestBaWinSize();
-		DBGLOG(QM, WARN,
-			"[Puff][%s]: (Warning) bcmRequestBaWinSize(%d)\n",
-			__func__, u4BuffSizeBT);
+		DBGLOG(QM, WARN, "bcmRequestBaWinSize(%d)\n", u4BuffSizeBT);
 
 		if (u4BuffSize > u4BuffSizeBT)
 			u4BuffSize = u4BuffSizeBT;
@@ -8604,11 +8585,9 @@ void mqmHandleAddBaReq(struct ADAPTER *prAdapter,
 		rAddBaRspBody.u2BATimeoutValue =
 			rAddBaReqBody.u2BATimeoutValue;
 
-		DBGLOG(QM, WARN,
-			"[Puff][%s]: (Warning) ADDBA_RSP u4BuffSize(%d) StatusCode(%d)",
-			__func__, u4BuffSize, rAddBaRspBody.u2StatusCode);
-		DBGLOG(QM, WARN,
-			"BAParameterSet(0x%08X) BATimeoutValue(%d)\n",
+		DBGLOG(QM, WARN, "ADDBA_RSP u4BuffSize(%d) StatusCode(%d)",
+			u4BuffSize, rAddBaRspBody.u2StatusCode);
+		DBGLOG(QM, WARN, "BAParameterSet(0x%08X) BATimeoutValue(%d)\n",
 			rAddBaRspBody.u2BAParameterSet,
 			rAddBaRspBody.u2BATimeoutValue);
 		kalMemCopy((uint8_t *) (&(prAddBaRsp->aucStatusCode[0])),
@@ -8641,8 +8620,7 @@ void mqmHandleAddBaReq(struct ADAPTER *prAdapter,
 		nicTxEnqueueMsdu(prAdapter, prTxMsduInfo);
 
 		DBGLOG(QM, WARN,
-			"[Puff][%s]: (RX_BA) ADDBA_RSP ---> peer (STA=%d TID=%ld)\n",
-			__func__,
+			"(RX_BA) ADDBA_RSP ---> peer (STA=%d TID=%ld)\n",
 			prStaRec->ucIndex, u4Tid);
 
 #if 0
@@ -8759,32 +8737,27 @@ void mqmHandleBaActionFrame(struct ADAPTER *prAdapter,
 	ASSERT(prSwRfb);
 
 	prRxFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
-	DBGLOG(RLM, WARN, "[Puff][%s] Action(%d)\n", __func__,
-		prRxFrame->ucAction);
+	DBGLOG(RLM, WARN, "Action(%d)\n", prRxFrame->ucAction);
 
 	switch (prRxFrame->ucAction) {
 
 	case ACTION_ADDBA_REQ:
-		DBGLOG(RLM, WARN,
-			"[Puff][%s] (RX_BA) ADDBA_REQ <--- peer\n", __func__);
+		DBGLOG(RLM, WARN, "(RX_BA) ADDBA_REQ <--- peer\n");
 		mqmHandleAddBaReq(prAdapter, prSwRfb);
 		break;
 
 	case ACTION_ADDBA_RSP:
-		DBGLOG(RLM, WARN,
-			"[Puff][%s] (RX_BA) ADDBA_RSP <--- peer\n", __func__);
+		DBGLOG(RLM, WARN, "(RX_BA) ADDBA_RSP <--- peer\n");
 		mqmHandleAddBaRsp(prSwRfb);
 		break;
 
 	case ACTION_DELBA:
-		DBGLOG(RLM, WARN, "[Puff][%s] (RX_BA) DELBA <--- peer\n",
-			__func__);
+		DBGLOG(RLM, WARN, "(RX_BA) DELBA <--- peer\n");
 		mqmHandleDelBa(prSwRfb);
 		break;
 
 	default:
-		DBGLOG(RLM, WARN, "[Puff][%s] Unknown BA Action Frame\n",
-			__func__);
+		DBGLOG(RLM, WARN, "Unknown BA Action Frame\n");
 		break;
 	}
 

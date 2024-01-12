@@ -13579,7 +13579,7 @@ wlanoidSetStopSchedScan(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_SCHED_SCAN */
 
-#if CFG_M0VE_BA_TO_DRIVER
+#if CFG_MOVE_BA_TO_DRIVER
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to reset BA scoreboard.
@@ -13603,7 +13603,7 @@ uint32_t wlanoidResetBAScoreboard(struct ADAPTER *
 {
 	uint32_t rStatus;
 
-	DBGLOG(REQ, WARN, "[Puff]wlanoidResetBAScoreboard\n");
+	DBGLOG(REQ, WARN, "enter ResetBAScoreboard\n");
 
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
