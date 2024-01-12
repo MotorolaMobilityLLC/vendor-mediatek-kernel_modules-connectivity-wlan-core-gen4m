@@ -141,6 +141,7 @@ textresume:
 					x++;
 					continue;
 				}
+				break;
 			case '\n':
 				/* \ <lf> -> line continuation */
 				x++;

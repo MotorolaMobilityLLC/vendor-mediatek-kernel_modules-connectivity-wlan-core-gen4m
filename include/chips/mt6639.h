@@ -66,4 +66,7 @@ void mt6639_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
 void mt6639_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
 	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 
+void mt6639_icapRiseVcoreClockRate(void);
+void mt6639_icapDownVcoreClockRate(void);
+
 #endif  /* mt6639 */
