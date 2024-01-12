@@ -135,10 +135,7 @@ const struct firmware *fw_entry;
 /* Default */
 static PUINT_8 apucFwName[] = {
 	(PUINT_8) CFG_FW_FILENAME "_MT",
-#ifdef CONNAC_MAC
 	(PUINT_8) CFG_FW_FILENAME "_CONNAC",
-#endif
-
 	NULL
 };
 
@@ -709,10 +706,16 @@ VOID kalPacketFree(IN P_GLUE_INFO_T prGlueInfo, IN PVOID pvPacket)
 /*----------------------------------------------------------------------------*/
 PVOID kalPacketAlloc(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Size, OUT PUINT_8 *ppucData)
 {
-	struct sk_buff *prSkb = __dev_alloc_skb(u4Size + NIC_TX_HEAD_ROOM, GFP_KERNEL);
+	struct mt66xx_chip_info *prChipInfo;
+	struct sk_buff *prSkb;
+	UINT_32 u4TxHeadRoomSize;
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
+	prSkb = __dev_alloc_skb(u4Size + u4TxHeadRoomSize, GFP_KERNEL);
 
 	if (prSkb) {
-		skb_reserve(prSkb, NIC_TX_HEAD_ROOM);
+		skb_reserve(prSkb, u4TxHeadRoomSize);
 
 		*ppucData = (PUINT_8) (prSkb->data);
 
@@ -745,10 +748,15 @@ PVOID kalPacketAlloc(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Size, OUT PUINT_8
 /*----------------------------------------------------------------------------*/
 PVOID kalPacketAllocWithHeadroom(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Size, OUT PUINT_8 *ppucData)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	struct sk_buff *prSkb = dev_alloc_skb(u4Size);
+	UINT_32 u4TxHeadRoomSize;
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
 
     /* Daniel 20151117, add for skb headroom setting */
-	prSkb = skb_realloc_headroom(prSkb, NIC_TX_HEAD_ROOM);
+	prSkb = skb_realloc_headroom(prSkb, u4TxHeadRoomSize);
 
 	if (prSkb) {
 		*ppucData = (PUINT_8) (prSkb->data);
@@ -1434,11 +1442,16 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, P_GLUE_I
 	UINT_16 u2QueueIdx = 0;
 	struct sk_buff *prSkbNew = NULL;
 	struct sk_buff *prSkb = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+	UINT_32 u4TxHeadRoomSize = 0;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prOrgSkb);
 	ASSERT(prGlueInfo);
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
 
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
 		DBGLOG(INIT, INFO, "GLUE_FLAG_HALT skip tx\n");
@@ -1452,8 +1465,8 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, P_GLUE_I
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
-	if (skb_headroom(prOrgSkb) < NIC_TX_HEAD_ROOM) {
-		prSkbNew = skb_realloc_headroom(prOrgSkb, NIC_TX_HEAD_ROOM);
+	if (skb_headroom(prOrgSkb) < u4TxHeadRoomSize) {
+		prSkbNew = skb_realloc_headroom(prOrgSkb, u4TxHeadRoomSize);
 		ASSERT(prSkbNew);
 		prSkb = prSkbNew;
 		dev_kfree_skb(prOrgSkb);

@@ -1612,7 +1612,7 @@ P_MSDU_INFO_T qmDequeueTxPacketsMthread(IN P_ADAPTER_T prAdapter, IN P_TX_TCQ_ST
 	while (prMsduInfo) {
 		prNextMsduInfo = (P_MSDU_INFO_T) QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo);
 		nicTxAcquireResource(prAdapter, prMsduInfo->ucTC,
-			nicTxGetPageCount(prMsduInfo->u2FrameLength, FALSE), FALSE);
+			nicTxGetPageCount(prAdapter, prMsduInfo->u2FrameLength, FALSE), FALSE);
 		prMsduInfo = prNextMsduInfo;
 	}
 
@@ -4653,7 +4653,7 @@ qmGetFrameAction(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex,
 			}
 			/* 4 <4.2> Sta in PS */
 			if (prStaRec->fgIsInPS) {
-				ucReqResource = nicTxGetPageCount(u2FrameLength, FALSE) +
+				ucReqResource = nicTxGetPageCount(prAdapter, u2FrameLength, FALSE) +
 				    prWifiVar->ucCmdRsvResource + QM_MGMT_QUEUED_THRESHOLD;
 
 				/* 4 <4.2.1> Tx, if resource is enough */
@@ -4675,13 +4675,14 @@ qmGetFrameAction(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex,
 	/* <5> Resource CHECK! */
 	/* <5.1> Reserve resource for CMD & 1X */
 	if (eFrameType == FRAME_TYPE_MMPDU) {
-		ucReqResource = nicTxGetPageCount(u2FrameLength, FALSE) + prWifiVar->ucCmdRsvResource;
+		ucReqResource = nicTxGetPageCount(prAdapter, u2FrameLength, FALSE) + prWifiVar->ucCmdRsvResource;
 
 		if (u2FreeResource < ucReqResource) {
 			eFrameAction = FRAME_ACTION_QUEUE_PKT;
 			DBGLOG(QM, INFO, "Queue MGMT (MSDU[0x%p] Req/Rsv/Free[%u/%u/%u])\n",
 			       prMsduInfo,
-			       nicTxGetPageCount(u2FrameLength, FALSE), prWifiVar->ucCmdRsvResource, u2FreeResource);
+			       nicTxGetPageCount(prAdapter, u2FrameLength, FALSE),
+			       prWifiVar->ucCmdRsvResource, u2FreeResource);
 		}
 
 		/* <6> Timeout check! */

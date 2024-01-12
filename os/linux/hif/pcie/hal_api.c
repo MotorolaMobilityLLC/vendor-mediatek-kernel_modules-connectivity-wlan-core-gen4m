@@ -528,9 +528,12 @@ VOID halInitMsduTokenInfo(IN P_ADAPTER_T prAdapter)
 {
 	P_MSDU_TOKEN_INFO_T prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
 	P_MSDU_TOKEN_ENTRY_T prToken;
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	UINT_32 u4Idx;
+	UINT_32 u4TxHeadRoomSize;
 
 	prTokenInfo->i4UsedCnt = 0;
+	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
 
 	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];
@@ -538,7 +541,7 @@ VOID halInitMsduTokenInfo(IN P_ADAPTER_T prAdapter)
 		prToken->prMsduInfo = NULL;
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
-		prToken->u4DmaLength = NIC_TX_MAX_SIZE_PER_FRAME + NIC_TX_HEAD_ROOM;
+		prToken->u4DmaLength = NIC_TX_MAX_SIZE_PER_FRAME + u4TxHeadRoomSize;
 		prToken->prPacket = kalMemAlloc(prToken->u4DmaLength, PHY_MEM_TYPE);
 		if (prToken->prPacket) {
 			DBGLOG(HAL, TRACE, "Msdu Entry[0x%p] Tok[%u] Buf[0x%p] len[%u]\n", prToken,
@@ -721,31 +724,43 @@ VOID halTxUpdateCutThroughDesc(P_GLUE_INFO_T prGlueInfo, P_MSDU_INFO_T prMsduInf
 {
 	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo;
 	struct pci_dev *pdev = prHifInfo->pdev;
+	struct mt66xx_chip_info *prChipInfo = prGlueInfo->prAdapter->chip_info;
 	PUINT_8 pucBufferTxD;
 	P_HW_MAC_TX_DESC_APPEND_T prHwTxDescAppend;
 	dma_addr_t rDmaAddr;
+	UINT_32 u4TxHeadRoomSize;
 
 	pucBufferTxD = prToken->prPacket;
+	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
 
 	prHwTxDescAppend = (P_HW_MAC_TX_DESC_APPEND_T) (pucBufferTxD + NIC_TX_DESC_LONG_FORMAT_LENGTH);
-	prHwTxDescAppend->u2MsduToken = (UINT_16)prToken->u4Token;
-	prHwTxDescAppend->ucBufNum = 1;
+	if (prChipInfo->is_support_cr4) {
+		prHwTxDescAppend->CR4_APPEND.u2MsduToken = (UINT_16)prToken->u4Token;
+		prHwTxDescAppend->CR4_APPEND.ucBufNum = 1;
+	} else
+		prHwTxDescAppend->CONNAC_APPEND.au2MsduId[0] = ((UINT_16) prToken->u4Token) | TXD_MSDU_ID_VLD;
 
-	rDmaAddr = pci_map_single(pdev, pucBufferTxD + NIC_TX_HEAD_ROOM, prMsduInfo->u2FrameLength,
+	rDmaAddr = pci_map_single(pdev, pucBufferTxD + u4TxHeadRoomSize, prMsduInfo->u2FrameLength,
 		PCI_DMA_TODEVICE);
 	if (pci_dma_mapping_error(pdev, rDmaAddr)) {
 		DBGLOG(HAL, ERROR, "pci_map_single() error!\n");
 		return;
 	}
 
-	prHwTxDescAppend->au4BufPtr[0] = rDmaAddr;
-	prHwTxDescAppend->au2BufLen[0] = prMsduInfo->u2FrameLength;
+	if (prChipInfo->is_support_cr4) {
+		prHwTxDescAppend->CR4_APPEND.au4BufPtr[0] = rDmaAddr;
+		prHwTxDescAppend->CR4_APPEND.au2BufLen[0] = prMsduInfo->u2FrameLength;
+	} else {
+		prHwTxDescAppend->CONNAC_APPEND.arPtrLen[0].u4Ptr0 = rDmaAddr;
+		prHwTxDescAppend->CONNAC_APPEND.arPtrLen[0].u2Len0 =
+			prMsduInfo->u2FrameLength | TXD_LEN_AL | TXD_LEN_ML;
+	}
 
 	prToken->rPktDmaAddr = rDmaAddr;
 	prToken->u4PktDmaLength = prMsduInfo->u2FrameLength;
 }
 
-UINT_32 halTxGetPageCount(IN UINT_32 u4FrameLength, IN BOOLEAN fgIncludeDesc)
+UINT_32 halTxGetPageCount(IN P_ADAPTER_T prAdapter, IN UINT_32 u4FrameLength, IN BOOLEAN fgIncludeDesc)
 {
 	return 1;
 }
@@ -1401,7 +1416,7 @@ VOID halWpdmaProcessCmdDmaDone(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port)
 
 		if (u2Port == TX_RING_CMD_IDX_2)
 			nicTxReleaseResource(prGlueInfo->prAdapter, TC4_INDEX,
-				nicTxGetPageCount(pTxD->SDLen0, TRUE), TRUE);
+				nicTxGetPageCount(prGlueInfo->prAdapter, pTxD->SDLen0, TRUE), TRUE);
 
 		INC_RING_INDEX(u4SwIdx, TX_RING_SIZE);
 	} while (u4SwIdx != u4DmaIdx);

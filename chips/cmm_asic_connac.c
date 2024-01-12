@@ -56,8 +56,6 @@
 *    LAN driver stack to GLUE Layer.
 */
 
-#ifdef CONNAC_MAC
-
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -161,4 +159,3 @@ VOID asicDevInit(IN P_ADAPTER_T prAdapter)
 		break;
 	}
 }
-#endif /* CONNAC_MAC */

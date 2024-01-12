@@ -80,6 +80,7 @@
 #define MT6632_PATCH_START_ADDR			(0x000B4000)
 #define MT6632_TOP_CFG_BASE			(0x0000)
 #define MT6632_IS_PCIE_32DW_READ		(1)
+#define MT6632_TX_DESC_APPEND_LENGTH            44
 
 /*******************************************************************************
 *                         D A T A   T Y P E S

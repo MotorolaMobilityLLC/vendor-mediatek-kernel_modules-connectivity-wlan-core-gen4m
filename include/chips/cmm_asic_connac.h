@@ -57,8 +57,6 @@
 *    \brief This file contains the info of CONNAC
 */
 
-#ifdef CONNAC_MAC
-
 #ifndef _CMM_ASIC_CONNAC_H
 #define _CMM_ASIC_CONNAC_H
 
@@ -71,6 +69,4 @@ VOID asicEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable);
 VOID asicDevInit(IN P_ADAPTER_T prAdapter);
 
 #endif /* _CMM_ASIC_CONNAC_H */
-
-#endif /* CONNAC_MAC */
 

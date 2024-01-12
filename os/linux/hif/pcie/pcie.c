@@ -883,9 +883,11 @@ BOOL kalDevWriteData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo)
 	struct sk_buff *skb;
 	PUINT_8 pucSrc;
 	P_MSDU_TOKEN_ENTRY_T prToken;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
 
 	pdev = prHifInfo->pdev;
 	prTxRing = &prHifInfo->TxRing[u2Port];
@@ -921,7 +923,9 @@ BOOL kalDevWriteData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo)
 	pTxD = (TXD_STRUCT *) prTxRing->Cell[SwIdx].AllocVa;
 
 	pTxD->SDPtr0 = prToken->rDmaAddr;
-	pTxD->SDLen0 = HIF_TX_DESC_PAYLOAD_LENGTH;
+	pTxD->SDLen0 = NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
+	if (prChipInfo->is_support_cr4)
+		pTxD->SDLen0 += HIF_TX_PAYLOAD_LENGTH;
 	pTxD->SDPtr1 = 0;
 	pTxD->SDLen1 = 0;
 	pTxD->LastSec0 = 1;
@@ -944,10 +948,10 @@ BOOL kalDevWriteData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo)
 		prMsduInfo, prToken->u4Token, halGetMsduTokenFreeCnt(prGlueInfo->prAdapter),
 		SwIdx, prTxRing->u4UsedCnt, (prMsduInfo->pfTxDoneHandler ? TRUE : FALSE));
 
-	DBGLOG_MEM32(HAL, TRACE, pucSrc, HIF_TX_DESC_PAYLOAD_LENGTH);
+	DBGLOG_MEM32(HAL, TRACE, pucSrc, pTxD->SDLen0);
 
 	nicTxReleaseResource(prGlueInfo->prAdapter, prMsduInfo->ucTC,
-		nicTxGetPageCount(prMsduInfo->u2FrameLength, TRUE), TRUE);
+		nicTxGetPageCount(prGlueInfo->prAdapter, prMsduInfo->u2FrameLength, TRUE), TRUE);
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
 	if (!prMsduInfo->pfTxDoneHandler) {

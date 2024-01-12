@@ -1438,7 +1438,7 @@ VOID halRxProcessMsduReport(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 
 }
 
-UINT_32 halTxGetPageCount(IN UINT_32 u4FrameLength, IN BOOLEAN fgIncludeDesc)
+UINT_32 halTxGetPageCount(IN P_ADAPTER_T prAdapter, IN UINT_32 u4FrameLength, IN BOOLEAN fgIncludeDesc)
 {
 	return 1;
 }

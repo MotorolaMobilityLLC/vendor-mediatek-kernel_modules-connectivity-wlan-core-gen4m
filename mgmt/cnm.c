@@ -1141,7 +1141,8 @@ VOID cnmGetDbdcCapability(
 	if (eRfBand == BAND_5G)
 		prDbdcCap->ucWmmSetIndex = DBDC_5G_WMM_INDEX;
 	else
-		prDbdcCap->ucWmmSetIndex = DBDC_2G_WMM_INDEX;
+		prDbdcCap->ucWmmSetIndex =
+			(prAdapter->rWifiVar.ucDbdcMode == DBDC_MODE_DISABLED) ? DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
 
 	/* Nss & band 0/1 */
 	switch (prAdapter->rWifiVar.ucDbdcMode) {

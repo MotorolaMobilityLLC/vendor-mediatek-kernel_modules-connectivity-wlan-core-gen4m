@@ -792,6 +792,7 @@ BOOLEAN glRegisterP2P(P_GLUE_INFO_T prGlueInfo, const char *prDevName, const cha
 	struct device *prDev;
 #endif
 	const char *prSetDevName;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prGlueInfo);
 
@@ -800,6 +801,8 @@ BOOLEAN glRegisterP2P(P_GLUE_INFO_T prGlueInfo, const char *prDevName, const cha
 
 	prHif = &prGlueInfo->rHifInfo;
 	ASSERT(prHif);
+
+	prChipInfo = prAdapter->chip_info;
 
 	if ((ucApMode == RUNNING_AP_MODE) || (ucApMode == RUNNING_DUAL_AP_MODE || (ucApMode == RUNNING_P2P_AP_MODE))) {
 		fgIsApMode = TRUE;
@@ -896,7 +899,8 @@ BOOLEAN glRegisterP2P(P_GLUE_INFO_T prGlueInfo, const char *prDevName, const cha
 			   ETH_ALEN);
 
 		/* 4.3 register callback functions */
-		prGlueInfo->prP2PInfo[i]->prDevHandler->needed_headroom += NIC_TX_HEAD_ROOM;
+		prGlueInfo->prP2PInfo[i]->prDevHandler->needed_headroom +=
+			NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
 		prGlueInfo->prP2PInfo[i]->prDevHandler->netdev_ops = &p2p_netdev_ops;
 	/* prGlueInfo->prP2PInfo->prDevHandler->wireless_handlers    = &mtk_p2p_wext_handler_def; */
 

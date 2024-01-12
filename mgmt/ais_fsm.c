@@ -317,7 +317,8 @@ VOID aisFsmInit(IN P_ADAPTER_T prAdapter)
 	prAisBssInfo->prStaRecOfAP = (P_STA_RECORD_T) NULL;
 	prAisBssInfo->ucNss = wlanGetSupportNss(prAdapter, prAisBssInfo->ucBssIndex);
 	prAisBssInfo->eDBDCBand = ENUM_BAND_0;
-	prAisBssInfo->ucWmmQueSet = DBDC_2G_WMM_INDEX;
+	prAisBssInfo->ucWmmQueSet =
+			(prAdapter->rWifiVar.ucDbdcMode == DBDC_MODE_DISABLED) ? DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
 
 	/* 4 <4> Allocate MSDU_INFO_T for Beacon */
 	prAisBssInfo->prBeacon = cnmMgtPktAlloc(prAdapter,
