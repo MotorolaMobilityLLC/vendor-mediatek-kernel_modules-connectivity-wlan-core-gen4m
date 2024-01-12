@@ -4670,7 +4670,7 @@ void halWFDBssBalanceSetBssCntCfg(struct ADAPTER *prAdapter,
 	for (i = 0; i < MAX_BSSID_NUM; i++)
 		prAdapter->rWifiVar.i4BssCount[i] = i4BssCntCfg;
 
-	DBGLOG(REQ, INFO, "BssCntCfg ===> %ld", i4BssCntCfg);
+	DBGLOG(REQ, INFO, "BssCntCfg ===> %d", i4BssCntCfg);
 }
 
 void halWFDBssBalanceGetPreTxBW(struct ADAPTER *prAdapter,
@@ -4688,7 +4688,7 @@ void halWFDBssBalanceGetPreTxBW(struct ADAPTER *prAdapter,
 				prTokenInfo->bitrate.au4PredictBitrate[i];
 	}
 
-	DBGLOG(REQ, INFO, "CurR[%lu,%lu,%lu,%lu], PreR[%lu,%lu,%lu,%lu]",
+	DBGLOG(REQ, INFO, "CurR[%u,%u,%u,%u], PreR[%u,%u,%u,%u]",
 		prTokenInfo->bitrate.au4CurrentBitrate[0],
 		prTokenInfo->bitrate.au4CurrentBitrate[1],
 		prTokenInfo->bitrate.au4CurrentBitrate[2],
@@ -4721,7 +4721,7 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleNoLimitState(
 		&u4CurBitRate, &u4PredBitRate);
 
 	DBGLOG(REQ, INFO,
-		"C All: %lu, CurRate: %lu, PredRate: %lu",
+		"C All: %u, CurRate: %u, PredRate: %u",
 		u4ConsysAll, u4CurBitRate, u4PredBitRate);
 
 
@@ -4729,13 +4729,13 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleNoLimitState(
 	if (u4ConsysSlot0 < (u4ConsysAll*4/5) &&
 		(u4CurBitRate > u4PredBitRate*5/10)) {
 		DBGLOG(REQ, INFO,
-			"C[0]:[%lu] < LowTH, FSM: [NO_LIMIT] -> [QUICK]",
+			"C[0]:[%u] < LowTH, FSM: [NO_LIMIT] -> [QUICK]",
 			u4ConsysSlot0);
 		return WFD_BSS_BALANCE_QUICK_STATE;
 	}
 
 	DBGLOG(REQ, INFO,
-		"C[0]:[%lu] > LowTH, FSM: [NO_LIMIT] -> [NO_LIMIT]",
+		"C[0]:[%u] > LowTH, FSM: [NO_LIMIT] -> [NO_LIMIT]",
 		u4ConsysSlot0);
 	halWFDBssBalanceSetBssCntCfg(prAdapter,
 		prTokenInfo->u4MaxBssBalanceTxCredit, prTokenInfo);
@@ -4753,12 +4753,12 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleQuickState(
 		for (j = 0; j < LATENCY_STATS_MAX_SLOTS; j++)
 			u4ConsysAll += report->au4ConnsysLatency[i][j];
 
-	DBGLOG(REQ, INFO, "C All: %lu", u4ConsysAll);
+	DBGLOG(REQ, INFO, "C All: %u", u4ConsysAll);
 
 	/* set Credit = ring size * 1/2, then go to main state */
 	halWFDBssBalanceSetBssCntCfg(prAdapter, TX_RING_SIZE/2, prTokenInfo);
 	DBGLOG(REQ, INFO,
-		"Cnt[%ld], FSM: [QUICK] -> [MAIN]",
+		"Cnt[%d], FSM: [QUICK] -> [MAIN]",
 		halWFDBssBalanceGetBssCntCfg(prAdapter));
 
 	return WFD_BSS_BALANCE_MAIN_STATE;
@@ -4790,13 +4790,13 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleMainState(
 		&u4CurBitRate, &u4PredBitRate);
 
 	DBGLOG(REQ, INFO,
-		"C All: %lu, D All: %lu, CurRate: %lu, PredRate: %lu",
+		"C All: %u, D All: %u, CurRate: %u, PredRate: %u",
 		u4ConsysAll, u4DriverAll, u4CurBitRate, u4PredBitRate);
 
 	/* if Actual TPUT <= Est TPUT*50% */
 	if (u4CurBitRate < u4PredBitRate*5/10) {
 		DBGLOG(REQ, INFO,
-			"TPUT <= NoLimitTH, Cnt[%ld], FSM: [MAIN] -> [NO_LIMIT]",
+			"TPUT <= NoLimitTH, Cnt[%d], FSM: [MAIN] -> [NO_LIMIT]",
 			halWFDBssBalanceGetBssCntCfg(prAdapter));
 		halWFDBssBalanceSetBssCntCfg(prAdapter,
 			prTokenInfo->u4MaxBssBalanceTxCredit, prTokenInfo);
@@ -4809,7 +4809,7 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleMainState(
 		halWFDBssBalanceSetBssCntCfg(prAdapter,
 			i4BssCntCfg - TX_RING_SIZE/8, prTokenInfo);
 		DBGLOG(REQ, INFO,
-			"C[0]:[%lu] < TH, Cnt[%ld], FSM: [MAIN] -> [MAIN]",
+			"C[0]:[%u] < TH, Cnt[%d], FSM: [MAIN] -> [MAIN]",
 			u4ConsysSlot0,
 			halWFDBssBalanceGetBssCntCfg(prAdapter));
 		return WFD_BSS_BALANCE_MAIN_STATE;
@@ -4823,7 +4823,7 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleMainState(
 		halWFDBssBalanceSetBssCntCfg(prAdapter,
 			i4BssCntCfg + TX_RING_SIZE/8, prTokenInfo);
 		DBGLOG(REQ, INFO,
-			"C[0]:[%lu] > TH and TPUT < TH, Cnt[%ld], FSM: [MAIN] -> [MAIN]",
+			"C[0]:[%u] > TH and TPUT < TH, Cnt[%d], FSM: [MAIN] -> [MAIN]",
 			u4ConsysSlot0,
 			halWFDBssBalanceGetBssCntCfg(prAdapter));
 		return WFD_BSS_BALANCE_MAIN_STATE;
@@ -4833,7 +4833,7 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleMainState(
 	if ((u4ConsysSlot0 > (u4ConsysAll*9/10))
 		&& (u4CurBitRate > u4PredBitRate*8/10)) {
 		DBGLOG(REQ, INFO,
-			"C[0]:[%lu] > TH, Cnt[%ld], FSM: [MAIN] -> [STEP]",
+			"C[0]:[%u] > TH, Cnt[%d], FSM: [MAIN] -> [STEP]",
 			u4ConsysSlot0,
 			halWFDBssBalanceGetBssCntCfg(prAdapter));
 		return WFD_BSS_BALANCE_STEP_STATE;
@@ -4868,14 +4868,14 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleStepState(
 		&u4CurBitRate, &u4PredBitRate);
 
 	DBGLOG(REQ, INFO,
-		"C All: %lu, D All: %lu, CurRate: %lu, PreRate: %lu",
+		"C All: %u, D All: %u, CurRate: %u, PreRate: %u",
 		u4ConsysAll, u4DriverAll, u4CurBitRate, u4PredBitRate);
 
 
 	/* if Actual TPUT < Est TPUT*50% */
 	if (u4CurBitRate <= u4PredBitRate*5/10) {
 		DBGLOG(REQ, INFO,
-			"TPUT <= NoLimitTH, Cnt[%ld], FSM: [STEP] -> [NO_LIMIT]",
+			"TPUT <= NoLimitTH, Cnt[%d], FSM: [STEP] -> [NO_LIMIT]",
 			halWFDBssBalanceGetBssCntCfg(prAdapter));
 
 		halWFDBssBalanceSetBssCntCfg(prAdapter,
@@ -4887,7 +4887,7 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleStepState(
 	/* if C < 10ms < 90%, go to main state */
 	if (u4ConsysSlot0 < (u4ConsysAll*9/10)) {
 		DBGLOG(REQ, INFO,
-			"C[0]:[%lu] < TH, Cnt[%ld], FSM: [STEP] -> [MAIN]",
+			"C[0]:[%u] < TH, Cnt[%d], FSM: [STEP] -> [MAIN]",
 			u4ConsysSlot0,
 			halWFDBssBalanceGetBssCntCfg(prAdapter));
 
@@ -4902,14 +4902,14 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleStepState(
 			halWFDBssBalanceSetBssCntCfg(prAdapter,
 				i4BssCntCfg - 10, prTokenInfo);
 			DBGLOG(REQ, INFO,
-				"D[0]+D[1]:[%lu] < HighTH, Cnt[%ld], FSM: [STEP] -> [STEP]",
+				"D[0]+D[1]:[%u] < HighTH, Cnt[%d], FSM: [STEP] -> [STEP]",
 				(u4Driver[0] + u4Driver[1]),
 				halWFDBssBalanceGetBssCntCfg(prAdapter));
 		} else {
 			halWFDBssBalanceSetBssCntCfg(prAdapter,
 				i4BssCntCfg + 10, prTokenInfo);
 			DBGLOG(REQ, INFO,
-				"D[0]+D[1]:[%lu] > HighTH, Cnt[%ld], FSM: [STEP] -> [STEP]",
+				"D[0]+D[1]:[%u] > HighTH, Cnt[%d], FSM: [STEP] -> [STEP]",
 				(u4Driver[0] + u4Driver[1]),
 				halWFDBssBalanceGetBssCntCfg(prAdapter));
 		}
@@ -4922,7 +4922,7 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleStepState(
 		halWFDBssBalanceSetBssCntCfg(prAdapter,
 			i4BssCntCfg + 10, prTokenInfo);
 		DBGLOG(REQ, INFO,
-			"TPUT < HighTH, Cnt[%ld], FSM: [STEP] -> [STEP]",
+			"TPUT < HighTH, Cnt[%d], FSM: [STEP] -> [STEP]",
 			halWFDBssBalanceGetBssCntCfg(prAdapter));
 		return WFD_BSS_BALANCE_STEP_STATE;
 	}
@@ -4951,7 +4951,8 @@ void halWFDBssBalanceFsmSteps(struct ADAPTER *prAdapter,
 
 	if ((prAdapter->rWifiVar.u4WfdSccBalanceEnable == 0) ||
 		prTokenInfo->u4EnAdjustCtrlMode != WFD_SCC_BALANCE_MODE) {
-		if (u4NextState != WFD_BSS_BALANCE_NO_LIMIT_STATE) {
+		if (prTokenInfo->u4WFDBssBalanceState
+				!= WFD_BSS_BALANCE_NO_LIMIT_STATE) {
 			halWFDBssBalanceSetBssCntCfg(prAdapter,
 				prTokenInfo->u4MaxBssBalanceTxCredit,
 				prTokenInfo);
@@ -5148,7 +5149,7 @@ enum ENUM_BAND halIsDualBandSccMode(struct ADAPTER *prAdapter)
 
 		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
 			continue;
-		DBGLOG(HAL, INFO, "band:[%lu], channel:[%lu]\n",
+		DBGLOG(HAL, INFO, "band:[%d], channel:[%u]\n",
 			   prBssInfo->eBand, prBssInfo->ucPrimaryChannel);
 		u4AllActiveBssCnt++;
 
@@ -5167,7 +5168,7 @@ enum ENUM_BAND halIsDualBandSccMode(struct ADAPTER *prAdapter)
 		if (fgIsScc[u4Idx])
 			u4SccBand = u4Idx;
 	}
-	DBGLOG(HAL, INFO, "ActiveBssCnt:[%lu], SccBand:[%lu]\n",
+	DBGLOG(HAL, INFO, "ActiveBssCnt:[%u], SccBand:[%d]\n",
 		   u4AllActiveBssCnt, u4SccBand);
 
 	return u4SccBand;
@@ -5193,7 +5194,8 @@ void halUpdateBssTokenCnt(struct ADAPTER *prAdapter,
 		halSetAdjustCtrl(prAdapter, true);
 		halSetAdjustCtrlMode(prAdapter, WFD_DEFAULT_MODE);
 #if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
-	} else if (halIsDualBandSccMode(prAdapter)) {
+	} else if (halIsDualBandSccMode(prAdapter) > BAND_NULL &&
+			halIsDualBandSccMode(prAdapter) < BAND_NUM) {
 		if (prAdapter->rWifiVar.u4WfdSccBalanceEnable == 1) {
 			halSetAdjustCtrl(prAdapter, true);
 			halSetAdjustCtrlMode(prAdapter, WFD_SCC_BALANCE_MODE);

@@ -1035,7 +1035,7 @@ int32_t mddpNotifyMDPCIeL12Status(uint32_t u32Enable)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 
-	DBGLOG(INIT, TRACE, "Notify PCIe L1.2 Status %lu\n", u32Enable);
+	DBGLOG(INIT, TRACE, "Notify PCIe L1.2 Status %u\n", u32Enable);
 
 	if (!gMddpWFunc.notify_drv_info) {
 		DBGLOG(NIC, ERROR, "notify_drv_info callback NOT exist.\n");
@@ -1091,8 +1091,11 @@ exit:
 	if (buff)
 		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
 
-	DBGLOG(INIT, TRACE, "ret: %d, info_id: %lu, u32SeqNum:%lu.\n",
-		ret, u32InfoId, prAdapter->u4MddpPCIeL12SeqNum);
+	if (prAdapter) {
+		DBGLOG(INIT, TRACE, "ret: %d, info_id: %u, u32SeqNum:%u.\n",
+			ret, u32InfoId, prAdapter->u4MddpPCIeL12SeqNum);
+	}
+
 	return ret;
 }
 #endif
@@ -1451,21 +1454,23 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 						prCurrStaRec,
 						TRUE);
 			}
-		}
 
-		prSapBssInfo = cnmGetOtherSapBssInfo(prAdapter, prP2pBssInfo);
-		if (prSapBssInfo) {
-			struct LINK *prClientList;
-			struct STA_RECORD *prCurrStaRec;
+			prSapBssInfo = cnmGetOtherSapBssInfo(prAdapter,
+					prP2pBssInfo);
+			if (prSapBssInfo) {
+				struct LINK *prClientList;
+				struct STA_RECORD *prCurrStaRec;
 
-			prClientList = &prSapBssInfo->rStaRecOfClientList;
-			LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
-					rLinkEntry, struct STA_RECORD) {
-				if (!prCurrStaRec)
-					break;
-				mddpNotifyDrvTxd(prAdapter,
-						prCurrStaRec,
-						TRUE);
+				prClientList =
+					&prSapBssInfo->rStaRecOfClientList;
+				LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
+						rLinkEntry, struct STA_RECORD) {
+					if (!prCurrStaRec)
+						break;
+					mddpNotifyDrvTxd(prAdapter,
+							prCurrStaRec,
+							TRUE);
+				}
 			}
 		}
 #endif
@@ -1499,7 +1504,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 		if (prMdInfo->buf_len != sizeof(
 				struct wsvc_md_event_comm_t)) {
 			DBGLOG(INIT, ERROR,
-				"Invalid args from MD, expect %u but %u\n",
+				"Invalid args from MD, expect %lu but %u\n",
 				sizeof(struct wsvc_md_event_comm_t),
 				prMdInfo->buf_len);
 			ret = -EINVAL;
