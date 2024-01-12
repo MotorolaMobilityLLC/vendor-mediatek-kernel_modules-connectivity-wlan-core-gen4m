@@ -2194,6 +2194,9 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 		prBssInfo->eNetworkType = eNetworkType;
 		prBssInfo->ucOwnMacIndex = prAdapter->ucHwBssIdNum;
 
+		prBssInfo->ucOwnMldId = prBssInfo->ucBssIndex;
+		prBssInfo->ucGroupMldId = ucMldGroupIdx;
+
 		/* initialize wlan id and status for keys */
 		prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
 		prBssInfo->wepkeyWlanIdx = WTBL_RESERVED_ENTRY;

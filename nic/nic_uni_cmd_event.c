@@ -867,8 +867,8 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 
 	/* update bssinfo */
 	max_cmd_len = sizeof(struct UNI_CMD_BSSINFO) +
-		      sizeof(struct UNI_CMD_BSSINFO_BASIC) +
-		      sizeof(struct UNI_CMD_BSSINFO_MLD);
+		sizeof(struct UNI_CMD_BSSINFO_BASIC) +
+		(cmd->ucActive ? sizeof(struct UNI_CMD_BSSINFO_MLD) : 0);
 	bss_entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_BSSINFO,
 			max_cmd_len, NULL, NULL);
 	if (!bss_entry)
@@ -896,8 +896,10 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 	bss_basic_tag->ucPhyMode = phy_mode & 0xff;
 	bss_basic_tag->ucPhyModeExt = (phy_mode >> 8) & 0xff;
 	bss_basic_tag->ucMldLinkIdx = cmd->ucMldLinkIdx;
-	nicUniCmdBssInfoMld(ad, bss_cmd->aucTlvBuffer + sizeof(*bss_basic_tag),
-		cmd->ucBssIndex);
+	if (cmd->ucActive)
+		nicUniCmdBssInfoMld(ad,
+			bss_cmd->aucTlvBuffer + sizeof(*bss_basic_tag),
+			cmd->ucBssIndex);
 
 	DBGLOG(INIT, INFO,
 		"%s DevInfo[OMAC=%d, DBDC=%d], BssInfo%d[DBDC=%d, OMAC=%d, WMM=%d, ConnType=%d, ConnState=%d, BcIdx=%d, PhyMode=0x%x, PhyModeEx=0x%x]\n",
