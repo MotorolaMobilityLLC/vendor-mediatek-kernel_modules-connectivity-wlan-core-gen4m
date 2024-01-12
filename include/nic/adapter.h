@@ -1489,11 +1489,13 @@ struct ADAPTER {
 	u_int8_t fgEnCfg80211Scan;
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
+	bool fgEnHifDbgInfo;
+	uint32_t u4HifDbgFlag;
+	uint32_t u4HifChkFlag;
+
 #if CFG_SUPPORT_OSHARE
 	bool fgEnOshareMode;
 #endif
-
-	bool fgEnHifDbgInfo;
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

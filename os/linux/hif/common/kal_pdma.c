@@ -76,7 +76,6 @@
 #include "hif_pdma.h"
 
 #include "precomp.h"
-#include "pse.h"
 
 #include <linux/mm.h>
 #ifndef CONFIG_X86
@@ -191,9 +190,12 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 
 	if (!prHifInfo->fgIsDumpLog && prBusInfo->isValidRegAccess &&
 	    !prBusInfo->isValidRegAccess(prAdapter, u4Register)) {
-		DBGLOG(HAL, ERROR,
-		       "Invalid access! Get CR[0x%08x/0x%08x] value[0x%08x]\n",
-		       u4Register, u4BusAddr, *pu4Value);
+		/* Don't printk log when resetting */
+		if (!wlanIsChipNoAck(prAdapter)) {
+			DBGLOG(HAL, ERROR,
+			       "Invalid access! Get CR[0x%08x/0x%08x] value[0x%08x]\n",
+			       u4Register, u4BusAddr, *pu4Value);
+		}
 		*pu4Value = HIF_DEADFEED_VALUE;
 		return FALSE;
 	}
@@ -202,8 +204,13 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 	if (halChipToStaticMapBusAddr(prGlueInfo, u4Register, &u4BusAddr)) {
 		RTMP_IO_READ32(prHifInfo, u4BusAddr, pu4Value);
 		if (kalIsChipDead(prGlueInfo, u4Register, pu4Value)) {
-			DBGLOG(HAL, ERROR, "Read register is deadfeed\n");
-			GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+			/* Don't printk log when resetting */
+			if (!wlanIsChipNoAck(prAdapter)) {
+				DBGLOG(HAL, ERROR,
+				       "Read register is deadfeed\n");
+				GL_RESET_TRIGGER(prAdapter,
+						 RST_FLAG_CHIP_RESET);
+			}
 			return FALSE;
 		}
 	} else {
@@ -242,9 +249,12 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 
 	if (!prHifInfo->fgIsDumpLog && prBusInfo->isValidRegAccess &&
 	    !prBusInfo->isValidRegAccess(prAdapter, u4Register)) {
-		DBGLOG(HAL, ERROR,
-		       "Invalid access! Set CR[0x%08x/0x%08x] value[0x%08x]\n",
-		       u4Register, u4BusAddr, u4Value);
+		/* Don't printk log when resetting */
+		if (!wlanIsChipNoAck(prAdapter)) {
+			DBGLOG(HAL, ERROR,
+			       "Invalid access! Set CR[0x%08x/0x%08x] value[0x%08x]\n",
+			       u4Register, u4BusAddr, u4Value);
+		}
 		return FALSE;
 	}
 
@@ -301,6 +311,7 @@ u_int8_t kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 	IN uint16_t u2Port, IN uint32_t u4Len,
 	OUT uint8_t *pucBuf, IN uint32_t u4ValidOutBufSize)
 {
+	struct ADAPTER *prAdapter = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct HIF_MEM_OPS *prMemOps;
 	struct RTMP_RX_RING *prRxRing;
@@ -316,6 +327,7 @@ u_int8_t kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 	ASSERT(pucBuf);
 	ASSERT(u4Len <= u4ValidOutBufSize);
 
+	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
 	prRxRing = &prHifInfo->RxRing[u2Port];
@@ -332,8 +344,10 @@ u_int8_t kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 		return FALSE;
 
 	if (!kalWaitRxDmaDone(prGlueInfo, prRxRing, pRxD, u2Port)) {
-		if (!prRxRing->fgIsDumpLog)
-			halDumpHifDebugLog(prGlueInfo, false, true);
+		if (!prRxRing->fgIsDumpLog) {
+			prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
+			halPrintHifDbgInfo(prAdapter);
+		}
 		prRxRing->fgIsDumpLog = true;
 		return FALSE;
 	}
@@ -879,6 +893,7 @@ static bool kalDevKickAmsduData(struct GLUE_INFO *prGlueInfo)
 bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 		    struct SW_RFB *prSwRfb)
 {
+	struct ADAPTER *prAdapter = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct HIF_MEM_OPS *prMemOps;
 	struct RXD_STRUCT *pRxD;
@@ -892,6 +907,7 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 
 	ASSERT(prGlueInfo);
 
+	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
 	prRxRing = &prHifInfo->RxRing[u2Port];
@@ -908,8 +924,10 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 		return FALSE;
 
 	if (!kalWaitRxDmaDone(prGlueInfo, prRxRing, pRxD, u2Port)) {
-		if (!prRxRing->fgIsDumpLog)
-			halDumpHifDebugLog(prGlueInfo, false, true);
+		if (!prRxRing->fgIsDumpLog) {
+			prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
+			halPrintHifDbgInfo(prAdapter);
+		}
 		prRxRing->fgIsDumpLog = true;
 		return false;
 	}
@@ -972,74 +990,4 @@ skip:
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 	return fgRet;
-}
-
-void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
-		   struct RTMP_TX_RING *prTxRing,
-		   uint32_t u4Num, bool fgDumpContent)
-{
-	struct GL_HIF_INFO *prHifInfo = NULL;
-	struct HIF_MEM_OPS *prMemOps;
-	struct RTMP_DMACB *pTxCell;
-	struct TXD_STRUCT *pTxD;
-	uint32_t u4DumpLen = 64;
-
-	ASSERT(prGlueInfo);
-	prHifInfo = &prGlueInfo->rHifInfo;
-	prMemOps = &prHifInfo->rMemOps;
-
-	if (u4Num >= TX_RING_SIZE)
-		return;
-
-	pTxCell = &prTxRing->Cell[u4Num];
-	pTxD = (struct TXD_STRUCT *) pTxCell->AllocVa;
-
-	DBGLOG(HAL, INFO, "Tx Dese Num[%u]\n", u4Num);
-	DBGLOG_MEM32(HAL, INFO, pTxD, sizeof(struct TXD_STRUCT));
-
-	if (!fgDumpContent)
-		return;
-
-	if (u4DumpLen > pTxD->SDLen0)
-		u4DumpLen = pTxD->SDLen0;
-
-	DBGLOG(HAL, INFO, "Tx Contents\n");
-	if (prMemOps->dumpTx)
-		prMemOps->dumpTx(prHifInfo, prTxRing, u4Num, u4DumpLen);
-	DBGLOG(HAL, INFO, "\n\n");
-}
-
-void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
-		   struct RTMP_RX_RING *prRxRing,
-		   uint32_t u4Num, bool fgDumpContent)
-{
-	struct GL_HIF_INFO *prHifInfo = NULL;
-	struct HIF_MEM_OPS *prMemOps;
-	struct RTMP_DMACB *pRxCell;
-	struct RXD_STRUCT *pRxD;
-	uint32_t u4DumpLen = 64;
-
-	ASSERT(prGlueInfo);
-	prHifInfo = &prGlueInfo->rHifInfo;
-	prMemOps = &prHifInfo->rMemOps;
-
-	if (u4Num >= prRxRing->u4RingSize)
-		return;
-
-	pRxCell = &prRxRing->Cell[u4Num];
-	pRxD = (struct RXD_STRUCT *) pRxCell->AllocVa;
-
-	DBGLOG(HAL, INFO, "Rx Dese Num[%u]\n", u4Num);
-	DBGLOG_MEM32(HAL, INFO, pRxD, sizeof(struct RXD_STRUCT));
-
-	if (!fgDumpContent)
-		return;
-
-	if (u4DumpLen > pRxD->SDLen0)
-		u4DumpLen = pRxD->SDLen0;
-
-	DBGLOG(HAL, INFO, "Rx Contents\n");
-	if (prMemOps->dumpRx)
-		prMemOps->dumpRx(prHifInfo, prRxRing, u4Num, u4DumpLen);
-	DBGLOG(HAL, INFO, "\n\n");
 }

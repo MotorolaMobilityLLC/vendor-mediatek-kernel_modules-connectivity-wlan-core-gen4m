@@ -61,6 +61,11 @@
 
 #define PSE_FREEPG_HEAD_TAIL		(PSE_BASE + 0x104)
 
+#define PSE_ENQ_0			(PSE_BASE + 0x60)
+#define PSE_DEQ_0			(PSE_BASE + 0x80)
+#define PSE_ENDEQ_OFFSET		0x4
+#define PSE_ENDEQ_NUM			3
+
 #define PSE_PG_HIF0_GROUP			(PSE_BASE + 0x110)
 #define PSE_HIF0_PG_INFO			(PSE_BASE + 0x114)
 #define PSE_PG_HIF1_GROUP			(PSE_BASE + 0x118)

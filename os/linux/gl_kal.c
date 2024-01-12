@@ -4316,6 +4316,14 @@ void kalSetIntEvent(struct GLUE_INFO *pr)
 #endif
 }
 
+void kalSetHifDbgEvent(struct GLUE_INFO *pr)
+{
+	set_bit(GLUE_FLAG_HIF_PRT_HIF_DBG_INFO_BIT, &(pr->ulFlag));
+#if CFG_SUPPORT_MULTITHREAD
+	wake_up_interruptible(&pr->waitq_hif);
+#endif
+}
+
 #if CFG_SUPPORT_MULTITHREAD
 void kalSetTxEvent2Hif(struct GLUE_INFO *pr)
 {
@@ -6542,6 +6550,10 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	}
 	prPerMonitor->u4CurrPerfLevel =
 		prPerMonitor->u4TarPerfLevel;
+
+	/* check tx hang */
+	prAdapter->u4HifChkFlag |= HIF_CHK_TX_HANG;
+	kalSetHifDbgEvent(prAdapter->prGlueInfo);
 
 	DBGLOG(SW4, TRACE, "exit kalPerMonHandler\n");
 }
