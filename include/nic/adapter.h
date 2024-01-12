@@ -997,6 +997,10 @@ struct WIFI_VAR {
 	uint8_t ucLowLatencyModeReOrder;
 	uint8_t ucLowLatencyModePower;
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+#if CFG_SUPPORT_IDC_CH_SWITCH
+	uint8_t ucChannelSwtichColdownTime;
+	u_int8_t fgCrossBandSwitchEn;
+#endif
 
 	/* 11K */
 	struct RADIO_MEASUREMENT_REQ_PARAMS rRmReqParams;
