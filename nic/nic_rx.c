@@ -1028,7 +1028,6 @@ void nicRxProcessPktWithoutReorder(IN struct ADAPTER
 			       prSwRfb->aeCSUM) != WLAN_STATUS_SUCCESS) {
 		DBGLOG(RX, ERROR,
 		       "kalProcessRxPacket return value != WLAN_STATUS_SUCCESS\n");
-		ASSERT(0);
 
 		nicRxReturnRFB(prAdapter, prSwRfb);
 		return;
