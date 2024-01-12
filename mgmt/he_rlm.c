@@ -1888,7 +1888,7 @@ uint32_t heRlmSendHtcNullFrame(
 		+ WLAN_MAC_HEADER_QOS_HTC_LEN;
 
 	/* Allocate a MSDU_INFO_T */
-	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
+	prMsduInfo = nicAllocMgmtPktForDataQ(prAdapter, u2EstimatedFrameLen);
 	if (prMsduInfo == NULL) {
 		DBGLOG(RLM, WARN, "No PKT_INFO_T for sending Null Frame.\n");
 		return WLAN_STATUS_FAILURE;
@@ -1908,7 +1908,6 @@ uint32_t heRlmSendHtcNullFrame(
 		     pfTxDoneHandler,
 		     MSDU_RATE_MODE_AUTO);
 
-	prMsduInfo->fgNullUseDataQ = TRUE;
 	/* prMsduInfo->ucUserPriority = 0;*/
 	prMsduInfo->u4Option |= MSDU_OPT_NO_AGGREGATE;
 	prMsduInfo->u4Option |= MSDU_OPT_SW_HTC;

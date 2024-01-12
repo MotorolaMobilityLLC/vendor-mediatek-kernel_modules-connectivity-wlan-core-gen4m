@@ -3677,15 +3677,10 @@ u_int8_t nicTxProcessMngPacket(struct ADAPTER *prAdapter,
 	} else
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 	{
-		if (prMsduInfo->fgNullUseDataQ)
-			prMsduInfo->ucTC = TC0_INDEX;
-		else
-			prMsduInfo->ucTC = TC4_INDEX;
+		prMsduInfo->ucTC = TC4_INDEX;
 
-		if (prMsduInfo->ucRateMode == MSDU_RATE_MODE_AUTO &&
-			prMsduInfo->fgNullUseDataQ != TRUE) {
+		if (prMsduInfo->ucRateMode == MSDU_RATE_MODE_AUTO)
 			nicTxSetPktLowestFixedRate(prAdapter, prMsduInfo);
-		}
 	}
 
 	/* No Tx descriptor template for MMPDU */
