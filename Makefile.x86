@@ -41,6 +41,14 @@ export CONFIG_MTK_COMBO_WIFI_HIF=$(hif)
 
 export CONFIG_MTK_COMBO_PLAT_PATH=x86
 
+#need to support these 3 CONFIG_ in Android.mk::Begin
+export CONFIG_MTK_WIFI_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=$(wifi_pwron_emi_patch_dl)
+
+export CONFIG_MTK_WIFI_DOWNLOAD_DYN_MEMORY_MAP=$(wifi_dl_dyn_mem_map)
+
+export CONFIG_MTK_WIFI_ROM_PATCH_NO_SEM_CTRL=$(wifi_rom_patch_no_sem_ctrl)
+#need to support these 3 CONFIG_ in Android.mk::End
+
 ##############################################################
 # Compile options
 ##############################################################

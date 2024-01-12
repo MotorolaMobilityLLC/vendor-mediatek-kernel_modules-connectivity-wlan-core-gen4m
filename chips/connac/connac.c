@@ -253,6 +253,7 @@ struct FWDL_OPS_T connac_fw_dl_ops = {
 	.downloadPatch = wlanDownloadPatch,
 #endif
 	.downloadFirmware = wlanConnacFormatDownload,
+	.downloadByDynMemMap = NULL,
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
 };

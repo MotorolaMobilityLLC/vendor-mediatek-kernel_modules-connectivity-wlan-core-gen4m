@@ -72,6 +72,10 @@
 #include "coda/soc3_0/wf_wfdma_host_dma0.h"
 #include "coda/soc3_0/wf_wfdma_host_dma1.h"
 
+#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
+#include "conn_infra_cfg.h"
+#endif
+
 #include "precomp.h"
 
 #include "soc3_0.h"
@@ -171,6 +175,9 @@ struct PCIE_CHIP_CR_MAPPING soc3_0_bus2chip_cr_mapping[] = {
 	{0x820b0000, 0xae000, 0x1000}, /* [APB2] WFSYS_ON */
 	{0x80020000, 0xb0000, 0x10000}, /* WF_TOP_MISC_OFF */
 	{0x81020000, 0xc0000, 0x10000}, /* WF_TOP_MISC_ON */
+#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
+	{0x7c500000, 0x50000, 0x10000}, /* CONN_INFRA, dyn mem map */
+#endif
 	{0x7c020000, 0xd0000, 0x10000}, /* CONN_INFRA, wfdma */
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
@@ -405,8 +412,13 @@ struct BUS_INFO soc3_0_bus_info = {
 struct FWDL_OPS_T soc3_0_fw_dl_ops = {
 	.constructFirmwarePrio = NULL,
 	.constructPatchName = NULL,
-	.downloadPatch = NULL, /*wlanDownloadPatch,*/
+	.downloadPatch = wlanDownloadPatch,
 	.downloadFirmware = wlanConnacFormatDownload,
+#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
+	.downloadByDynMemMap = soc3_0_DownloadByDynMemMap,
+#else
+	.downloadByDynMemMap = NULL,
+#endif
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
 };
@@ -475,6 +487,110 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 struct mt66xx_hif_driver_data mt66xx_driver_data_soc3_0 = {
 	.chip_info = &mt66xx_chip_info_soc3_0,
 };
+
+#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
+uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4Addr, IN uint32_t u4Len,
+	IN uint8_t *pucStartPtr, IN enum ENUM_IMG_DL_IDX_T eDlIdx)
+{
+	uint32_t u4Val = 0;
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	if ((eDlIdx == IMG_DL_IDX_PATCH) || (eDlIdx == IMG_DL_IDX_N9_FW)) {
+#if defined(SOC3_0)
+/*#pragma message("wlanDownloadSectionByDynMemMap()::SOC3_0")*/
+#if defined(_HIF_AXI)
+		/* AXI goes over here */
+#endif
+
+#if defined(_HIF_PCIE)
+		HAL_MCR_RD(prAdapter,
+			CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR, &u4Val);
+
+		DBGLOG(INIT, WARN, "[MJ]ORIG(0x%08x) = 0x%08x\n",
+			CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR, u4Val);
+
+		/*
+		 * 0x18=0x7C
+		 * 0x18001120[31:0] = 0x00100000
+		 * 0x18500000  (AP) is 0x00100000(MCU)
+		 * 0x18001198[31:16] = 0x1850
+		 * 0x18001198 = 0x1850|Value[15:0]
+
+		u4Val = ((~BITS(31,16) & u4Val) | ((0x1850) << 16));
+		*/
+
+		/* this hard code is verified with DE for SOC3_0 */
+		u4Val = CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR_DE_HARDCODE;
+
+		HAL_MCR_WR(prAdapter,
+			CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR, u4Val);
+
+		HAL_MCR_RD(prAdapter,
+			CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR, &u4Val);
+
+		DBGLOG(INIT, WARN, "[MJ]NEW(0x%08x) = 0x%08x\n",
+			CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR, u4Val);
+
+#if 1
+		/* PCIe workable version by bytes of u4Len in one movement */
+		/* for PCIe WLAN drv, use 0x7C000000 based;
+		 * for AXI, use 0x18000000 based
+		 */
+		HAL_MCR_WR(prAdapter,
+			CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
+			u4Addr);
+
+		/* because
+		* soc3_0_bus2chip_cr_mapping =
+		*	{0x7c500000, 0x50000, 0x10000}
+		*/
+		kalMemCopy((void *)(prHifInfo->CSRBaseAddress+0x50000),
+			(void *)pucStartPtr, u4Len);
+#else
+		/* PCIe workable version by 4 bytes in one movement */
+		/* for PCIe WLAN drv, use 0x7C000000 based;
+		 * for AXI, use 0x18000000 based
+		 */
+		HAL_MCR_WR(prAdapter,
+			CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
+			u4Addr);
+
+		for (u4Offset = 0; u4Len > 0; u4Offset += u4RemapSize) {
+			if (u4Len > 4)
+				u4RemapSize = 4;
+			else
+				u4RemapSize = u4Len;
+
+			u4Len -= u4RemapSize;
+
+			HAL_MCR_WR(prAdapter,
+			(CONN_INFRA_CFG_AP2WF_BUS_ADDR + u4Offset),
+			(uint32_t)
+			(*(uint32_t *)((uint8_t *)pucStartPtr + u4Offset)));
+
+			HAL_MCR_RD(prAdapter,
+			(CONN_INFRA_CFG_AP2WF_BUS_ADDR + u4Offset), &u4Val);
+
+			/* You can uncomment it to see what is downloaded
+			*if (u4Idx++ < 20) {
+			*DBGLOG(INIT, WARN, "[MJ]0x%08x(%08x) = 0x%08x\n",
+			*(0x7C500000 + u4Offset), u4Val,
+			*(uint32_t)(*(uint32_t *)
+			*((uint8_t *)pucStartPtr + u4Offset)));
+			*}
+			*/
+		}
+#endif
+#endif /* _HIF_PCIE */
+#endif /* SOC3_0 */
+	} else {
+		return WLAN_STATUS_NOT_SUPPORTED;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
 
 #endif				/* soc3_0 */
 

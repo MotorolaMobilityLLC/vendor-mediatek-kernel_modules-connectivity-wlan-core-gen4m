@@ -87,7 +87,7 @@
 #define SOC3_0_SW_SYNC0                CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_ADDR
 #define SOC3_0_SW_SYNC0_RDY_OFFSET \
 	CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT
-#define SOC3_0_PATCH_START_ADDR        (0x00200000)
+#define SOC3_0_PATCH_START_ADDR        (0x00100000)
 #define SOC3_0_TOP_CFG_BASE			CONN_CFG_BASE
 #define SOC3_0_TX_DESC_APPEND_LENGTH   32
 #define SOC3_0_RX_DESC_LENGTH   24
@@ -122,6 +122,12 @@
 *                              F U N C T I O N S
 ********************************************************************************
 */
+
+#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
+uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4Addr, IN uint32_t u4Len,
+	IN uint8_t *pucStartPtr, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
+#endif
 
 #endif /* _SOC3_0_H */
 
