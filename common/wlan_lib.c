@@ -7204,7 +7204,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	}
 	INIT_UINT(prWifiVar->ucHeOMCtrl, "HeOMCtrl", FEATURE_ENABLED);
 	INIT_UINT(prWifiVar->ucRxCtrlToMutiBss,
-		"RxCtrlToMutiBss", FEATURE_DISABLED);
+		"RxCtrlToMutiBss", FEATURE_ENABLED);
 	INIT_UINT(prWifiVar->ucStaHePpRx, "StaHePpRx", FEATURE_DISABLED);
 	INIT_UINT(prWifiVar->ucHeDynamicSMPS,
 		"HeDynamicSMPS", FEATURE_DISABLED);
