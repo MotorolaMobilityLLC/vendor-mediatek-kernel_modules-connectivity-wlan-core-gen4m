@@ -977,21 +977,10 @@ struct UNI_CMD_STAREC_LINK_INFO {
 
 /* starec MLD level information (Tag 0x21) */
 struct UNI_CMD_STAREC_EHT_MLD {
-	uint16_t  u2Tag;		/* Tag = 0x21 */
-	uint16_t  u2Length;
-	uint8_t   fgNSEP;
-	/*
-	 * bit0: band0 link enable emlmr
-	 * bit1: band1 link enable emlmr
-	 * bit2: band2 link enable emlmr
-	 */
-	uint8_t  ucEmlmrBitmap;
-	/*
-	 * bit0: band0 link enable emlsr
-	 * bit1: band1 link enable emlsr
-	 * bit2: band2 link enable emlsr
-	 */
-	uint8_t  ucEmlsrBitmap;
+	uint16_t u2Tag;		/* Tag = 0x21 */
+	uint16_t u2Length;
+	uint8_t fgNSEP;
+	uint8_t aucReserved[2];
 	/*
 	 * pucStrBitmap[0] bit[0]: don't care
 	 * pucStrBitmap[0] bit[1]: band0 and band1 str capability
@@ -1003,8 +992,9 @@ struct UNI_CMD_STAREC_EHT_MLD {
 	 * pucStrBitmap[2] bit[1]: band2 and band1 str capability
 	 * pucStrBitmap[2] bit[2]: don't care
 	 */
-	uint8_t   afgStrCapBitmap[UNI_MLD_LINK_MAX];
-	uint8_t   aucPadding[2];
+	uint8_t afgStrCapBitmap[UNI_MLD_LINK_MAX];
+	uint8_t aucEmlCap[3];
+	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
 /* starec link level EHT information (Tag 0x22) */
