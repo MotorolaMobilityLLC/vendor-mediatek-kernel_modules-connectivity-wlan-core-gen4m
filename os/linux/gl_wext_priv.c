@@ -3277,7 +3277,11 @@ priv_get_string(IN struct net_device *prNetDev,
 				"TotalBeaconTimeout:%d\n",
 				prGlueInfo->prAdapter
 				->total_beacon_timeout_count);
-		for (i = 0; i < BEACON_TIMEOUT_DUE_2_NUM; i++) {
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+		for (i = 0; i < UNI_ENUM_BCN_TIMEOUT_REASON_MAX_NUM; i++) {
+#else
+		for (i = 0; i < BEACON_TIMEOUT_REASON_NUM; i++) {
+#endif
 			if (prGlueInfo->prAdapter->beacon_timeout_count[i] > 0)
 				pos += kalScnprintf(buf + pos, u4TotalLen - pos,
 					"BeaconTimeout Reason(0x%0x):%d\n", i,

@@ -8789,9 +8789,9 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 				DBGLOG(INIT, WARN, "IOT issue, arp no resp!\n");
 				if (prAisBssInfo)
 					prAisBssInfo->u2DeauthReason =
-				BEACON_TIMEOUT_DUE_2_APR_NO_RESPONSE;
+					REASON_CODE_ARP_NO_RESPONSE;
 				prAdapter->cArpNoResponseIdx =
-				prStaRec->ucBssIndex;
+					prStaRec->ucBssIndex;
 			} else
 				DBGLOG(INIT, WARN, "ARP, still have %d pkts\n",
 					latest_rx_packets - last_rx_packets);
