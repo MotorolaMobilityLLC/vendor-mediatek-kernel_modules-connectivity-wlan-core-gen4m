@@ -1452,6 +1452,9 @@ struct WIFI_VAR {
 	int8_t icTxPwrEnvLmtMin;
 #endif
 	uint32_t u4PhyMaxBandwidth;
+#if CFG_CH_SELECT_ENHANCEMENT
+	uint8_t  ucStaSapIndoorConn;
+#endif
 };
 
 /* cnm_timer module */
