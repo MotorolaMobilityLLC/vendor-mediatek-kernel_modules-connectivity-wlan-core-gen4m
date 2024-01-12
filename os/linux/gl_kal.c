@@ -2157,15 +2157,18 @@ struct cfg80211_bss * kalInformConnectionBss(struct ADAPTER *prAdapter,
 }
 
 struct LINK_INFO {
+	uint8_t used;
 	uint8_t *addr;
 	uint8_t *bssid;
+	uint8_t link_id;
 	struct ieee80211_channel *channel;
 	struct cfg80211_bss *bss;
 };
 
 uint32_t kalCollectLinkInfo(struct ADAPTER *prAdapter,
-	struct LINK_INFO links[MLD_MAX_NUM_LINKS], uint8_t ucBssIndex)
+	struct LINK_INFO *link, struct STA_RECORD *prStaRec)
 {
+	uint8_t ucBssIndex = prStaRec->ucBssIndex;
 	struct BSS_INFO *prBssInfo = NULL;
 	struct ieee80211_channel *prChannel = NULL;
 	struct cfg80211_bss *bss = NULL;
@@ -2173,7 +2176,6 @@ uint32_t kalCollectLinkInfo(struct ADAPTER *prAdapter,
 	uint8_t chnlNum, band;
 	enum ENUM_BAND eBand;
 	uint8_t ucLoopCnt = 15; /* only loop 15 times to avoid dead loop */
-	uint8_t ucLinkIndex = 0;
 
 	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	if (!prBssInfo) {
@@ -2268,19 +2270,15 @@ uint32_t kalCollectLinkInfo(struct ADAPTER *prAdapter,
 		}
 	}
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	ucLinkIndex = prBssInfo->ucLinkIndex;
-#endif
+	link->used = TRUE;
+	link->addr = prBssInfo->aucOwnMacAddr;
+	link->bssid = prBssInfo->aucBSSID;
+	link->channel = prChannel;
+	link->bss = bss;
 
-	if (ucLinkIndex < MLD_MAX_NUM_LINKS) {
-		links[ucLinkIndex].addr = prBssInfo->aucOwnMacAddr;
-		links[ucLinkIndex].bssid = prBssInfo->aucBSSID;
-		links[ucLinkIndex].channel = prChannel;
-		links[ucLinkIndex].bss = bss;
-	} else {
-		DBGLOG(INIT, INFO, "wrong linkid=%d", ucLinkIndex);
-		return WLAN_STATUS_FAILURE;
-	}
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	link->link_id = prStaRec->ucLinkIndex;
+#endif
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -2293,7 +2291,7 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
 	struct CONNECTION_SETTINGS *prConnSettings = NULL;
-	struct LINK_INFO links[MLD_MAX_NUM_LINKS] = {0};
+	struct LINK_INFO links[MLD_LINK_MAX] = {0};
 #if ((CFG_ADVANCED_80211_MLO == 1) || \
 	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE)) && \
 	(CFG_SUPPORT_802_11BE_MLO == 1)
@@ -2321,21 +2319,27 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 	prMldStaRec = mldStarecGetByStarec(prAdapter, prStaRec);
 	if (prMldStaRec) {
 		struct STA_RECORD *sta;
+		uint8_t count = 0;
 
 		LINK_FOR_EACH_ENTRY(sta, &prMldStaRec->rStarecList,
 					rLinkEntryMld, struct STA_RECORD) {
+			if (count >= MLD_LINK_MAX) {
+				DBGLOG(INIT, INFO, "too many links!!!\n");
+				return WLAN_STATUS_NOT_ACCEPTED;
+			}
 
 			status = kalCollectLinkInfo(prAdapter,
-				links, sta->ucBssIndex);
+				&links[count], sta);
 			if (status != WLAN_STATUS_SUCCESS)
 				return status;
 
-			valid_links |= BIT(sta->ucLinkIndex);
+			valid_links |= BIT(links[count].link_id);
+			count++;
 		}
 	} else
 #endif
 	{
-		status = kalCollectLinkInfo(prAdapter, links, ucBssIndex);
+		status = kalCollectLinkInfo(prAdapter, &links[0], prStaRec);
 		if (status != WLAN_STATUS_SUCCESS)
 			return status;
 		/* no need to update valid_links for non-mlo */
@@ -2354,17 +2358,16 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 		if (prMldStaRec) {
 			rRoamInfo.ap_mld_addr = prMldStaRec->aucPeerMldAddr;
 			rRoamInfo.valid_links = valid_links;
-			for (i = 0; i < MLD_MAX_NUM_LINKS; i++) {
-				if (valid_links & BIT(i)) {
-					rRoamInfo.links[i].addr =
-						links[i].addr;
-					rRoamInfo.links[i].bssid =
-						links[i].bssid;
-					rRoamInfo.links[i].bss =
-						links[i].bss;
-					rRoamInfo.links[i].channel =
-						links[i].channel;
-				}
+			for (i = 0; i < MLD_LINK_MAX; i++) {
+				uint8_t id = links[i].link_id;
+
+				if (!links[i].used)
+					continue;
+
+				rRoamInfo.links[id].addr = links[i].addr;
+				rRoamInfo.links[id].bssid = links[i].bssid;
+				rRoamInfo.links[id].bss = links[i].bss;
+				rRoamInfo.links[id].channel = links[i].channel;
 			}
 		} else
 #endif /*  (CFG_SUPPORT_802_11BE_MLO == 1) */
@@ -2396,7 +2399,7 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 #else /* KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE */
 		cfg80211_roamed_bss(
 			netdev,
-			links[0].bss,
+			links[0].bss, /* always use main link */
 			prConnSettings->aucReqIe,
 			prConnSettings->u4ReqIeLength,
 			prConnSettings->aucRspIe,
@@ -2433,12 +2436,15 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 			params.timeout_reason = NL80211_TIMEOUT_UNSPECIFIED;
 			params.ap_mld_addr = prMldStaRec->aucPeerMldAddr;
 			params.valid_links = valid_links;
-			for (i = 0; i < MLD_MAX_NUM_LINKS; i++) {
-				if (valid_links & BIT(i)) {
-					params.links[i].addr = links[i].addr;
-					params.links[i].bssid = links[i].bssid;
-					params.links[i].bss = links[i].bss;
-				}
+			for (i = 0; i < MLD_LINK_MAX; i++) {
+				uint8_t id = links[i].link_id;
+
+				if (!links[i].used)
+					continue;
+
+				params.links[id].addr = links[i].addr;
+				params.links[id].bssid = links[i].bssid;
+				params.links[id].bss = links[i].bss;
 			}
 
 			DBGLOG(INIT, INFO, "JOIN %s: MLD "MACSTR" Status=%d",

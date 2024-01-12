@@ -1883,7 +1883,7 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 		/* Get RNR channel */
 		ucRnrChNum = scanGetRnrChannel(prNeighborAPInfoField);
 		if (!scanRnrChnlIsNeedScan(prAdapter, ucRnrChNum, ucOpClass)) {
-			DBGLOG(SCN, INFO, "Ignore RNR chnl(%d) OpClass(%d)!\n",
+			DBGLOG(SCN, TRACE, "Ignore RNR chnl(%d) OpClass(%d)!\n",
 				ucRnrChNum, ucOpClass);
 			if (ucNewLink)
 				cnmMemFree(prAdapter, prNeighborAPInfo);
