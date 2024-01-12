@@ -5054,7 +5054,7 @@ uint32_t nicUniCmdIccmSetParam(struct ADAPTER *ad,
 	tag->u2Tag = UNI_CMD_ICCM_TAG_PARAM;
 	tag->u2Length = sizeof(*tag);
 	tag->u4Enable = cmd->u4Enable;
-	tag->u4EnablePrintFw = cmd->u4EnablePrintFw
+	tag->u4EnablePrintFw = cmd->u4EnablePrintFw;
 	tag->u4Value = cmd->u4Value;
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
