@@ -50,13 +50,13 @@
  *
  *****************************************************************************/
 /*
-** Id: include/tdls.h#1
-*/
+ * Id: include/tdls.h#1
+ */
 
 /*! \file   "tdls.h"
-*    \brief This file contains the internal used in TDLS modules
-*	 for MediaTek Inc. 802.11 Wireless LAN Adapters.
-*/
+ *    \brief This file contains the internal used in TDLS modules
+ *	 for MediaTek Inc. 802.11 Wireless LAN Adapters.
+ */
 
 
 #ifndef _TDLS_H
@@ -65,32 +65,33 @@
 #if CFG_SUPPORT_TDLS
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 #define TDLS_CFG_CMD_TEST
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /* assign station record idx for the packet */
-#define TDLSEX_STA_REC_IDX_GET(__prAdapter__, __MsduInfo__)					\
-{												\
-	struct STA_RECORD *__StaRec__;								\
-	__MsduInfo__->ucStaRecIndex = STA_REC_INDEX_NOT_FOUND;					\
-	__StaRec__ = cnmGetStaRecByAddress(__prAdapter__,					\
-								(uint8_t) NETWORK_TYPE_AIS_INDEX,\
-								__MsduInfo__->aucEthDestAddr);	\
-	if ((__StaRec__ != NULL) && (IS_DLS_STA(__StaRec__)))					\
-		__MsduInfo__->ucStaRecIndex = __StaRec__->ucIndex;				\
+#define TDLSEX_STA_REC_IDX_GET(__prAdapter__, __MsduInfo__)		\
+{									\
+	struct STA_RECORD *__StaRec__;					\
+	__MsduInfo__->ucStaRecIndex = STA_REC_INDEX_NOT_FOUND;		\
+	__StaRec__ = cnmGetStaRecByAddress(__prAdapter__,		\
+			(uint8_t) NETWORK_TYPE_AIS_INDEX,		\
+			__MsduInfo__->aucEthDestAddr);			\
+	if ((__StaRec__ != NULL) && (IS_DLS_STA(__StaRec__)))		\
+		__MsduInfo__->ucStaRecIndex = __StaRec__->ucIndex;	\
 }
 
 /* fill wiphy flag */
-#define TDLSEX_WIPHY_FLAGS_INIT(__fgFlag__)							\
-{												\
-	__fgFlag__ |= (WIPHY_FLAG_SUPPORTS_TDLS | WIPHY_FLAG_TDLS_EXTERNAL_SETUP);\
+#define TDLSEX_WIPHY_FLAGS_INIT(__fgFlag__)				\
+{									\
+	__fgFlag__ |= (WIPHY_FLAG_SUPPORTS_TDLS |			\
+			WIPHY_FLAG_TDLS_EXTERNAL_SETUP);		\
 }
 
 #define LR_TDLS_FME_FIELD_FILL(__Len)	\
@@ -100,35 +101,34 @@
 }
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
-extern int wlanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev);
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
+extern int wlanHardStartXmit(struct sk_buff *prSkb,
+			     struct net_device *prDev);
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 /* Status code */
 #define TDLS_STATUS							uint32_t
 
-#define TDLS_STATUS_SUCCESS					WLAN_STATUS_SUCCESS
-#define TDLS_STATUS_FAIL					WLAN_STATUS_FAILURE
-#define TDLS_STATUS_INVALID_LENGTH			WLAN_STATUS_INVALID_LENGTH
-#define TDLS_STATUS_RESOURCES				WLAN_STATUS_RESOURCES
-#define TDLS_FME_MAC_ADDR_LEN				6
-#define TDLS_EX_CAP_PEER_UAPSD				BIT(0)
-#define TDLS_EX_CAP_CHAN_SWITCH				BIT(1)
-#define TDLS_EX_CAP_TDLS					BIT(2)
-#define TDLS_CMD_PEER_UPDATE_EXT_CAP_MAXLEN			5
-#define TDLS_CMD_PEER_UPDATE_SUP_RATE_MAX			50
-#define TDLS_CMD_PEER_UPDATE_SUP_CHAN_MAX			50
-#define TDLS_SEC_BUF_LENGTH							600
+#define TDLS_STATUS_SUCCESS			WLAN_STATUS_SUCCESS
+#define TDLS_STATUS_FAIL			WLAN_STATUS_FAILURE
+#define TDLS_STATUS_INVALID_LENGTH		WLAN_STATUS_INVALID_LENGTH
+#define TDLS_STATUS_RESOURCES			WLAN_STATUS_RESOURCES
+#define TDLS_FME_MAC_ADDR_LEN			6
+#define TDLS_EX_CAP_PEER_UAPSD			BIT(0)
+#define TDLS_EX_CAP_CHAN_SWITCH			BIT(1)
+#define TDLS_EX_CAP_TDLS			BIT(2)
+#define TDLS_CMD_PEER_UPDATE_EXT_CAP_MAXLEN	5
+#define TDLS_CMD_PEER_UPDATE_SUP_RATE_MAX	50
+#define TDLS_CMD_PEER_UPDATE_SUP_CHAN_MAX	50
+#define TDLS_SEC_BUF_LENGTH			600
 
-
-
-#define MAXNUM_TDLS_PEER            4
+#define MAXNUM_TDLS_PEER			4
 
 /* command */
 enum TDLS_CMD_ID {
@@ -141,12 +141,12 @@ enum TDLS_CMD_ID {
 };
 
 /* protocol */
-#define TDLS_FRM_PROT_TYPE							0x890d
+#define TDLS_FRM_PROT_TYPE			0x890d
 
 /* payload specific type in the LLC/SNAP header */
-#define TDLS_FRM_PAYLOAD_TYPE						2
+#define TDLS_FRM_PAYLOAD_TYPE			2
 
-#define TDLS_FRM_CATEGORY							12
+#define TDLS_FRM_CATEGORY			12
 
 enum TDLS_FRM_ACTION_ID {
 	TDLS_FRM_ACTION_SETUP_REQ = 0x00,
@@ -178,9 +178,9 @@ struct IE_LINK_IDENTIFIER {
 #define TDLS_LINK_IDENTIFIER_IE(__ie__)	((struct IE_LINK_IDENTIFIER *)(__ie__))
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 struct STATION_PRARAMETERS {
 	const u8 *supported_rates;
@@ -361,40 +361,41 @@ enum TDLS_REASON_CODE {
 	TDLS_REASON_CODE_UNREACHABLE = 25,
 	TDLS_REASON_CODE_UNSPECIFIED = 26,
 
-	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_UNKNOWN = 0x80,	/* 128 */
-	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_WIFI_OFF = 0x81,	/* 129 */
-	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_ROAMING = 0x82,	/* 130 */
-	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_PTI_TIMEOUT = 0x83,	/* 131 */
-	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_AGE_TIMEOUT = 0x84,	/* 132 */
-	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_REKEY = 0x85,	/* 133 */
-	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_PTI_SEND_FAIL = 0x86,	/* 134 */
-	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_PTI_SEND_MAX_FAIL = 0x87,	/* 135 */
-	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_WRONG_NETWORK_IDX = 0x88,	/* 136 */
-	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_NON_STATE3 = 0x89,	/* 137 */
-	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_TX_QUOTA_EMPTY = 0x8a,	/* 138 */
-	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_LOST_TEAR_DOWN = 0x8b	/* 139 */
+	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_UNKNOWN = 0x80,          /*128*/
+	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_WIFI_OFF = 0x81,         /*129*/
+	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_ROAMING = 0x82,          /*130*/
+	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_PTI_TIMEOUT = 0x83,      /*131*/
+	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_AGE_TIMEOUT = 0x84,      /*132*/
+	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_REKEY = 0x85,            /*133*/
+	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_PTI_SEND_FAIL = 0x86,    /*134*/
+	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_PTI_SEND_MAX_FAIL = 0x87,/*135*/
+	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_WRONG_NETWORK_IDX = 0x88,/*136*/
+	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_NON_STATE3 = 0x89,       /*137*/
+	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_TX_QUOTA_EMPTY = 0x8a,   /*138*/
+	TDLS_REASON_CODE_MTK_DIS_BY_US_DUE_TO_LOST_TEAR_DOWN = 0x8b    /*139*/
 };
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
-uint32_t TdlsFrameGeneralIeAppend(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec, uint8_t *pPkt);
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
+uint32_t TdlsFrameGeneralIeAppend(struct ADAPTER *prAdapter,
+				  struct STA_RECORD *prStaRec, uint8_t *pPkt);
 
 uint32_t			/* TDLS_STATUS */
 
@@ -402,7 +403,8 @@ TdlsDataFrameSend_TearDown(struct ADAPTER *prAdapter,
 			   struct STA_RECORD *prStaRec,
 			   uint8_t *pPeerMac,
 			   uint8_t ucActionCode,
-			   uint8_t ucDialogToken, uint16_t u2StatusCode, uint8_t *pAppendIe, uint32_t AppendIeLen);
+			   uint8_t ucDialogToken, uint16_t u2StatusCode,
+			   uint8_t *pAppendIe, uint32_t AppendIeLen);
 
 uint32_t			/* TDLS_STATUS */
 
@@ -410,7 +412,8 @@ TdlsDataFrameSend_CONFIRM(struct ADAPTER *prAdapter,
 			  struct STA_RECORD *prStaRec,
 			  uint8_t *pPeerMac,
 			  uint8_t ucActionCode,
-			  uint8_t ucDialogToken, uint16_t u2StatusCode, uint8_t *pAppendIe, uint32_t AppendIeLen);
+			  uint8_t ucDialogToken, uint16_t u2StatusCode,
+			  uint8_t *pAppendIe, uint32_t AppendIeLen);
 
 uint32_t			/* TDLS_STATUS */
 
@@ -418,7 +421,8 @@ TdlsDataFrameSend_SETUP_REQ(struct ADAPTER *prAdapter,
 			    struct STA_RECORD *prStaRec,
 			    uint8_t *pPeerMac,
 			    uint8_t ucActionCode,
-			    uint8_t ucDialogToken, uint16_t u2StatusCode, uint8_t *pAppendIe, uint32_t AppendIeLen);
+			    uint8_t ucDialogToken, uint16_t u2StatusCode,
+			    uint8_t *pAppendIe, uint32_t AppendIeLen);
 
 uint32_t			/* TDLS_STATUS */
 
@@ -426,7 +430,8 @@ TdlsDataFrameSend_DISCOVERY_REQ(struct ADAPTER *prAdapter,
 				struct STA_RECORD *prStaRec,
 				uint8_t *pPeerMac,
 				uint8_t ucActionCode,
-				uint8_t ucDialogToken, uint16_t u2StatusCode, uint8_t *pAppendIe, uint32_t AppendIeLen);
+				uint8_t ucDialogToken, uint16_t u2StatusCode,
+				uint8_t *pAppendIe, uint32_t AppendIeLen);
 
 uint32_t			/* TDLS_STATUS */
 
@@ -434,7 +439,8 @@ TdlsDataFrameSend_SETUP_RSP(struct ADAPTER *prAdapter,
 			    struct STA_RECORD *prStaRec,
 			    uint8_t *pPeerMac,
 			    uint8_t ucActionCode,
-			    uint8_t ucDialogToken, uint16_t u2StatusCode, uint8_t *pAppendIe, uint32_t AppendIeLen);
+			    uint8_t ucDialogToken, uint16_t u2StatusCode,
+			    uint8_t *pAppendIe, uint32_t AppendIeLen);
 
 uint32_t			/* TDLS_STATUS */
 
@@ -442,25 +448,35 @@ TdlsDataFrameSend_DISCOVERY_RSP(struct ADAPTER *prAdapter,
 				struct STA_RECORD *prStaRec,
 				uint8_t *pPeerMac,
 				uint8_t ucActionCode,
-				uint8_t ucDialogToken, uint16_t u2StatusCode, uint8_t *pAppendIe, uint32_t AppendIeLen);
+				uint8_t ucDialogToken, uint16_t u2StatusCode,
+				uint8_t *pAppendIe, uint32_t AppendIeLen);
 
-uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen);
+uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter,
+			void *pvSetBuffer, uint32_t u4SetBufferLen,
+			uint32_t *pu4SetInfoLen);
 
-uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen);
+uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
+		       void *pvSetBuffer, uint32_t u4SetBufferLen,
+		       uint32_t *pu4SetInfoLen);
 
-void TdlsexEventHandle(struct GLUE_INFO *prGlueInfo, uint8_t *prInBuf, uint32_t u4InBufLen);
+void TdlsexEventHandle(struct GLUE_INFO *prGlueInfo,
+		       uint8_t *prInBuf, uint32_t u4InBufLen);
 
-void TdlsEventTearDown(struct GLUE_INFO *prGlueInfo, uint8_t *prInBuf, uint32_t u4InBufLen);
+void TdlsEventTearDown(struct GLUE_INFO *prGlueInfo,
+		       uint8_t *prInBuf, uint32_t u4InBufLen);
 
-void TdlsBssExtCapParse(struct STA_RECORD *prStaRec, uint8_t *pucIE);
+void TdlsBssExtCapParse(struct STA_RECORD *prStaRec,
+			uint8_t *pucIE);
 
 uint32_t
-TdlsSendChSwControlCmd(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen);
+TdlsSendChSwControlCmd(struct ADAPTER *prAdapter,
+		       void *pvSetBuffer, uint32_t u4SetBufferLen,
+		       uint32_t *pu4SetInfoLen);
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 #endif /* CFG_SUPPORT_TDLS */
 
