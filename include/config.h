@@ -2269,6 +2269,12 @@
 #define MLD_LINK_MAX 1
 #endif
 
+#ifdef CFG_MLD_AP_LINK_MAX
+#define MLD_AP_LINK_MAX (CFG_MLD_AP_LINK_MAX)
+#else
+#define MLD_AP_LINK_MAX 1
+#endif
+
 #ifdef CFG_DBDC_MODE
 #define DEFAULT_DBDC_MODE (CFG_DBDC_MODE)
 #else
