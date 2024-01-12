@@ -3083,6 +3083,8 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4TxHeadRoomSize = 0;
 	struct ADAPTER *prAdapter = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	uint32_t u4StopTh;
 
 	ASSERT(prOrgSkb);
 	ASSERT(prGlueInfo);
@@ -3098,10 +3100,16 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
-	if ((GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->eNetworkType
-			== NETWORK_TYPE_AIS) &&
-			(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)
-			->eConnectionState != MEDIA_STATE_CONNECTED)) {
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(INIT, INFO, "prBssInfo NULL for ucBssIndex:%u\n",
+			ucBssIndex);
+		dev_kfree_skb(prSkb);
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS &&
+		prBssInfo->eConnectionState != MEDIA_STATE_CONNECTED) {
 		DBGLOG(INIT, INFO,
 			"ais status is not connected, skip this frame\n");
 		dev_kfree_skb(prOrgSkb);
@@ -3230,9 +3238,9 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex]
 		[u2QueueIdx]);
 
+	u4StopTh = prGlueInfo->u4TxStopTh[ucBssIndex];
 	if (GLUE_GET_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue
-	    [ucBssIndex][u2QueueIdx]) >=
-	    prGlueInfo->prAdapter->rWifiVar.u4NetifStopTh) {
+	    [ucBssIndex][u2QueueIdx]) >= u4StopTh) {
 		netif_stop_subqueue(prDev, u2QueueIdx);
 
 		DBGLOG(TX, INFO,
@@ -3323,6 +3331,7 @@ void kalSendCompleteAndAwakeQueue(IN struct GLUE_INFO
 	uint16_t u2QueueIdx = 0;
 	uint8_t ucBssIndex = 0;
 	u_int8_t fgIsValidDevice = TRUE;
+	struct BSS_INFO *prBssInfo;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -3355,9 +3364,8 @@ void kalSendCompleteAndAwakeQueue(IN struct GLUE_INFO
 #if CFG_ENABLE_WIFI_DIRECT
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
 	{
-		struct BSS_INFO *prBssInfo = GET_BSS_INFO_BY_INDEX(
-					     prGlueInfo->prAdapter, ucBssIndex);
 		struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *)
 						    NULL;
 		struct net_device *prNetdevice = NULL;
@@ -3392,8 +3400,7 @@ void kalSendCompleteAndAwakeQueue(IN struct GLUE_INFO
 #endif
 
 	if (fgIsValidDevice == TRUE) {
-		uint32_t u4StartTh =
-			prGlueInfo->prAdapter->rWifiVar.u4NetifStartTh;
+		uint32_t u4StartTh = prGlueInfo->u4TxStartTh[ucBssIndex];
 
 		if (netif_subqueue_stopped(prDev, prSkb) &&
 		    prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex]
