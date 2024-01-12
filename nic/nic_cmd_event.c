@@ -3772,6 +3772,27 @@ void nicEventUpdateNoaParams(IN struct ADAPTER *prAdapter,
 #endif
 }
 
+void nicEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
+			     IN struct WIFI_EVENT *prEvent)
+{
+	qmHandleEventBssAbsencePresence(prAdapter,
+		(struct EVENT_BSS_ABSENCE_PRESENCE *) prEvent->aucBuffer);
+}
+
+void nicEventStaChangePsMode(IN struct ADAPTER *prAdapter,
+			     IN struct WIFI_EVENT *prEvent)
+{
+	qmHandleEventStaChangePsMode(prAdapter,
+		(struct EVENT_STA_CHANGE_PS_MODE *) prEvent->aucBuffer);
+}
+
+void nicEventStaUpdateFreeQuota(IN struct ADAPTER *prAdapter,
+			     IN struct WIFI_EVENT *prEvent)
+{
+	qmHandleEventStaUpdateFreeQuota(prAdapter,
+		(struct EVENT_STA_UPDATE_FREE_QUOTA *) prEvent->aucBuffer);
+}
+
 void nicEventStaAgingTimeout(IN struct ADAPTER *prAdapter,
 			     IN struct WIFI_EVENT *prEvent)
 {
@@ -4153,7 +4174,7 @@ void nicEventUpdateCoexPhyrate(IN struct ADAPTER *prAdapter,
 void nicEventIdcReport(IN struct ADAPTER *prAdapter,
 			       IN struct WIFI_EVENT *prEvent)
 {
-#if CFG_SUPPORT_IDC_CH_SWITCH  
+#if CFG_SUPPORT_IDC_CH_SWITCH
 	cnmIdcDetectHandler(prAdapter,
 		(struct EVENT_LTE_SAFE_CHN *)(prEvent->aucBuffer));
 #endif

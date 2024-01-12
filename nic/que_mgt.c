@@ -6810,9 +6810,8 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void qmHandleEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent)
+	IN struct EVENT_BSS_ABSENCE_PRESENCE *prEventBssStatus)
 {
-	struct EVENT_BSS_ABSENCE_PRESENCE *prEventBssStatus;
 	struct BSS_INFO *prBssInfo;
 	u_int8_t fgIsNetAbsentOld;
 	struct GLUE_INFO *glue = prAdapter->prGlueInfo;
@@ -6821,8 +6820,6 @@ void qmHandleEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
 	char buf[512];
 	int i;
 
-	prEventBssStatus = (struct EVENT_BSS_ABSENCE_PRESENCE *) (
-		prEvent->aucBuffer);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		prEventBssStatus->ucBssIndex);
 	fgIsNetAbsentOld = prBssInfo->fgIsNetAbsent;
@@ -6873,16 +6870,12 @@ void qmHandleEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void qmHandleEventStaChangePsMode(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent)
+	IN struct EVENT_STA_CHANGE_PS_MODE *prEventStaChangePsMode)
 {
-	struct EVENT_STA_CHANGE_PS_MODE *prEventStaChangePsMode;
 	struct STA_RECORD *prStaRec;
 	u_int8_t fgIsInPSOld;
 
 	/* DbgPrint("QM:Event -RxBa\n"); */
-
-	prEventStaChangePsMode = (struct EVENT_STA_CHANGE_PS_MODE *)
-		(prEvent->aucBuffer);
 	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter,
 		prEventStaChangePsMode->ucStaRecIdx);
 	/* ASSERT(prStaRec); */
@@ -6926,14 +6919,10 @@ void qmHandleEventStaChangePsMode(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void qmHandleEventStaUpdateFreeQuota(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent)
+	IN struct EVENT_STA_UPDATE_FREE_QUOTA *prEventStaUpdateFreeQuota)
 {
-	struct EVENT_STA_UPDATE_FREE_QUOTA
-		*prEventStaUpdateFreeQuota;
 	struct STA_RECORD *prStaRec;
 
-	prEventStaUpdateFreeQuota = (struct
-		EVENT_STA_UPDATE_FREE_QUOTA *) (prEvent->aucBuffer);
 	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter,
 			prEventStaUpdateFreeQuota->ucStaRecIdx);
 	/* 2013/08/30
