@@ -4560,6 +4560,18 @@ void reset_p2p_mode(struct GLUE_INFO *prGlueInfo)
 			"ret = 0x%08x\n", (uint32_t) rWlanStatus);
 }
 
+int set_p2p_mode_handler_wrapper(struct net_device *netdev,
+			 struct PARAM_CUSTOM_P2P_SET_STRUCT p2pmode)
+{
+	while (rtnl_is_locked()) {
+		DBGLOG_LIMITED(INIT, WARN,
+			"sleep for 100ms and wait for rtnl_lock\n");
+		kalMsleep(100);
+	}
+
+	return set_p2p_mode_handler(netdev, p2pmode);
+}
+
 int set_p2p_mode_handler(struct net_device *netdev,
 			 struct PARAM_CUSTOM_P2P_SET_STRUCT p2pmode)
 {
@@ -6261,7 +6273,7 @@ void wlanOnP2pRegistration(struct GLUE_INFO *prGlueInfo,
 	DBGLOG(INIT, TRACE, "start.\n");
 
 #if (CFG_ENABLE_WIFI_DIRECT && CFG_MTK_ANDROID_WMT)
-	register_set_p2p_mode_handler(set_p2p_mode_handler);
+	register_set_p2p_mode_handler(set_p2p_mode_handler_wrapper);
 #endif
 
 #if CFG_ENABLE_WIFI_DIRECT
