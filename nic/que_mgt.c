@@ -5242,6 +5242,9 @@ void addReorderQueParm(struct QUE *prRxBaEntry,
 
 	prRxBaQueEntry = kalMemZAlloc(sizeof(struct RX_BA_QUE_ENTRY),
 					VIR_MEM_TYPE);
+	if (unlikely(!prRxBaQueEntry))
+		return;
+
 	prRxBaQueEntry->prReorderQueParm = prReorderQueParm;
 
 	QUEUE_INSERT_TAIL(prRxBaEntry, (struct QUE_ENTRY *)prRxBaQueEntry);
