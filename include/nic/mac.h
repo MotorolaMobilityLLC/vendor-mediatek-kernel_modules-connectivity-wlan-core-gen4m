@@ -878,17 +878,21 @@
 /* Denied because the requesting STA is afflicated with a
  * non-AP MLD that is associated with the AP MLD
  */
-#define STATUS_CODE_DENIFED_EXISTING_MLD_ASSOC      130
+#define STATUS_CODE_DENIED_EXISTING_MLD_ASSOC       130
 /* Denied non-AP MLD or non-AP EHT STA is not authorized to use the service */
-#define STATUS_CODE_NSEP_DENIFED_UNAUTHORIZED       131
+#define STATUS_CODE_NSEP_DENIED_UNAUTHORIZED        131
 /* Denied due to reason outside the scope of 11be */
-#define STATUS_CODE_NSEP_DENIFED_OTHER_REASON       132
+#define STATUS_CODE_NSEP_DENIED_OTHER_REASON        132
 /* Denied because the requested TID-to-link mapping is unacceptable */
-#define STATUS_CODE_DENIFED_TID_TO_LINK_MAPPING     133
+#define STATUS_CODE_DENIED_TID_TO_LINK_MAPPING      133
 /* Preferred TID-to-link mapping suggested */
 #define STATUS_CODE_TID_TO_LINK_MAP_SUGGESTED       134
 /* Denied because the requesting STA does not support EHT features */
-#define STATUS_CODE_DENIFED_EHT_NOT_SUPPORTED       135
+#define STATUS_CODE_DENIED_EHT_NOT_SUPPORTED        135
+/* Link not accepted because the link on which the (Re)Association
+ * Request frame is transmitted is not accepted.
+ */
+#define STATUS_CODE_DENIED_LINK_NOT_ACCEPTED        136
 
 /* proprietary definition of reserved field of Status Code */
 /* Join failure */
@@ -1339,8 +1343,10 @@
 	108 /* EHT Capabilities */
 #define ELEM_EXT_ID_TID2LNK_MAP \
 	109 /* TID2LNK */
-#define ELEM_EXT_ID_MLT \
-	110 /* Multi-link Traffic */
+#define ELEM_EXT_ID_MLT_INDICATION \
+	110 /* Multi-link Traffic Indication */
+#define ELEM_EXT_ID_QOS_CHAR \
+	113 /* QoS Characteristics */
 #define ELEM_EXT_ID_MAX_NUM \
 	256 /* EXT_ID: 0-255 */
 
@@ -2281,8 +2287,11 @@ enum BEACON_REPORT_DETAIL {
 /* 9.4.2.295b.2 Basic variant Multi-Link element */
 #define ML_CTRL_TYPE_MASK				BITS(0, 2)
 #define ML_CTRL_TYPE_SHIFT				0
-#define ML_ELEMENT_TYPE_BASIC				0
-#define ML_ELEMENT_TYPE_PROBE_REQ			1
+#define ML_CTRL_TYPE_BASIC				0
+#define ML_CTRL_TYPE_PROBE_REQ				1
+#define ML_CTRL_TYPE_RECONFIG				2
+#define ML_CTRL_TYPE_TDLS				3
+#define ML_CTRL_TYPE_PRIORITY_ACCESS			4
 #define ML_CTRL_PRE_BMP_MASK				BITS(4, 15)
 #define ML_CTRL_PRE_BMP_SHIFT				4
 #define ML_CTRL_LINK_ID_INFO_PRESENT			BIT(0)
@@ -2290,6 +2299,7 @@ enum BEACON_REPORT_DETAIL {
 #define ML_CTRL_MEDIUM_SYN_DELAY_INFO_PRESENT		BIT(2)
 #define ML_CTRL_EML_CAPA_PRESENT			BIT(3)
 #define ML_CTRL_MLD_CAPA_PRESENT			BIT(4)
+#define ML_CTRL_MLD_ID_PRESENT				BIT(5)
 
 /* Figure 9-788eo - STA Control field format */
 #define SUB_IE_MLD_PER_STA_PROFILE			0
@@ -2298,10 +2308,12 @@ enum BEACON_REPORT_DETAIL {
 #define ML_STA_CTRL_COMPLETE_PROFILE			BIT(4)
 #define ML_STA_CTRL_MAC_ADDR_PRESENT			BIT(5)
 #define ML_STA_CTRL_BCN_INTV_PRESENT			BIT(6)
-#define ML_STA_CTRL_DTIM_INFO_PRESENT			BIT(7)
-#define ML_STA_CTRL_NSTR_LINK_PAIR_PRESENT		BIT(8)
-#define ML_STA_CTRL_NSTR_BMP_SIZE			BIT(9)
-#define ML_STA_CTRL_NSTR_BMP_SIZE_SHIFT			9
+#define ML_STA_CTRL_TSF_OFFSET_PRESENT			BIT(7)
+#define ML_STA_CTRL_DTIM_INFO_PRESENT			BIT(8)
+#define ML_STA_CTRL_NSTR_LINK_PAIR_PRESENT		BIT(9)
+#define ML_STA_CTRL_NSTR_BMP_SIZE			BIT(10)
+#define ML_STA_CTRL_NSTR_BMP_SIZE_SHIFT			10
+#define ML_STA_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT	BIT(11)
 
 /* Figure 9-1002n - Presence Bitmap field of the Probe Request ML element */
 #define MLD_ID_PRESENT					BIT(0)

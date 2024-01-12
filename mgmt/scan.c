@@ -1308,7 +1308,9 @@ void scanEhtParsingMldElement(IN struct BSS_DESC *prBssDesc,
 {
 	struct MULTI_LINK_INFO rMlInfo;
 	struct MULTI_LINK_INFO *prMlInfo = &rMlInfo;
-	uint8_t i;
+
+	if (!BE_IS_ML_CTRL_TYPE(pucIE, ML_CTRL_TYPE_BASIC))
+		return;
 
 	kalMemSet(prMlInfo, 0, sizeof(rMlInfo));
 	mldParseBasicMlIE(prMlInfo, pucIE, prBssDesc->aucBSSID,
@@ -1325,11 +1327,11 @@ void scanEhtParsingMldElement(IN struct BSS_DESC *prBssDesc,
 	if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_LINK_ID_INFO_PRESENT)
 		prBssDesc->rMlInfo.ucLinkIndex = rMlInfo.ucLinkId;
 
-	prBssDesc->rMlInfo.ucLinkNum = prMlInfo->ucLinkNum;
-	for (i = 0; i < prMlInfo->ucLinkNum; i++) {
-		COPY_MAC_ADDR(prBssDesc->rMlInfo.aucLinkAddrs[i],
-			prMlInfo->rStaProfiles[i].aucLinkAddr);
+	if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_MLD_CAPA_PRESENT) {
+		prBssDesc->rMlInfo.ucMaxSimultaneousLinks =
+			(rMlInfo.u2MldCap & BITS(0, 3));
 	}
+
 }
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 

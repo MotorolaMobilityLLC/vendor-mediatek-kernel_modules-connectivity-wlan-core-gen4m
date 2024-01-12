@@ -2834,6 +2834,17 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 		wlanCfgSetUint32(prAdapter, "P2pGcEHT",
 			prAdapter->rWifiVar.ucP2pGcEht);
 	}
+	if (prAdapter->rWifiVar.ucEnableMlo != FEATURE_FORCE_ENABLED) {
+		prAdapter->rWifiVar.ucEnableMlo &= prPhyCap->ucEht;
+		wlanCfgSetUint32(prAdapter, "EnableMlo",
+			prAdapter->rWifiVar.ucEnableMlo);
+	}
+	if (prAdapter->rWifiVar.ucEnableMloSingleLink !=
+					FEATURE_FORCE_ENABLED) {
+		prAdapter->rWifiVar.ucEnableMloSingleLink &= prPhyCap->ucEht;
+		wlanCfgSetUint32(prAdapter, "EnableMloSingleLink",
+			prAdapter->rWifiVar.ucEnableMloSingleLink);
+	}
 #endif
 	/* Overwrite bandwidth settings by phy capability */
 	if (prAdapter->rWifiVar.ucStaBandwidth > prPhyCap->ucMaxBandwidth) {

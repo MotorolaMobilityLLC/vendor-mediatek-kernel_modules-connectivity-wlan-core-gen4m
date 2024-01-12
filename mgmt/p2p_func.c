@@ -360,9 +360,8 @@ void p2pFuncRequestScan(IN struct ADAPTER *prAdapter,
 		prScanReqInfo->fgIsScanRequest = TRUE;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		ml = kalFindIeExtIE(ELEM_ID_RESERVED,
-			ELEM_EXT_ID_MLD, prScanReqV2->aucIE,
-			prScanReqV2->u2IELen);
+		ml = mldFindMlIE(prScanReqV2->aucIE,
+			prScanReqV2->u2IELen, ML_CTRL_TYPE_BASIC);
 		/* use ml prob req if scan req has ml ie, bssid, single chnl */
 		if (prScanReqV2->eScanChannel == SCAN_CHANNEL_SPECIFIED &&
 		    prScanReqV2->ucChannelListNum == 1 &&
@@ -3855,7 +3854,7 @@ p2pFuncValidateAuth(IN struct ADAPTER *prAdapter,
 	if (p2pLinkProcessRxAuthReqFrame(prAdapter,
 		prP2pBssInfo, prStaRec, prSwRfb) != WLAN_STATUS_SUCCESS) {
 		cnmStaRecFree(prAdapter, prStaRec);
-		*pu2StatusCode = STATUS_CODE_DENIFED_EHT_NOT_SUPPORTED;
+		*pu2StatusCode = STATUS_CODE_DENIED_EHT_NOT_SUPPORTED;
 		return FALSE;
 	}
 #endif
@@ -5908,7 +5907,6 @@ p2pFuncProcessP2pProbeRspAction(IN struct ADAPTER *prAdapter,
 		case ELEM_ID_RESERVED:
 #if (CFG_SUPPORT_802_11BE == 1)
 			if (IE_ID_EXT(pucIEBuf) == ELEM_EXT_ID_MLD) {
-
 				kalMemCopy(prP2PInfo->aucMlIE,
 					pucIEBuf, IE_SIZE(pucIEBuf));
 				prP2PInfo->u2MlIELen = IE_SIZE(pucIEBuf);

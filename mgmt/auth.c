@@ -762,7 +762,7 @@ authCheckRxAuthFrameStatus(IN struct ADAPTER *prAdapter,
 	if (!mldSanityCheck(prAdapter, prSwRfb->pvHeader,
 		prSwRfb->u2PacketLen, prStaRec, prStaRec->ucBssIndex)) {
 		DBGLOG(SAA, WARN, "Discard Auth frame with wrong ML IE\n");
-		*pu2StatusCode = STATUS_CODE_DENIFED_EHT_NOT_SUPPORTED;
+		*pu2StatusCode = STATUS_CODE_DENIED_EHT_NOT_SUPPORTED;
 		return WLAN_STATUS_FAILURE;
 	}
 #endif

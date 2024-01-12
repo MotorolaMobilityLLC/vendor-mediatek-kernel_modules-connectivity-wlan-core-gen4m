@@ -1463,8 +1463,10 @@ int cnmShowStaRec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\tSTA[%d][WIDX=%d]:\n",
-		prStaRec->ucIndex, prStaRec->ucWlanIndex);
+		"\tSTA[%d][WIDX=%d][BSS_IDX=%d]:\n",
+		prStaRec->ucIndex,
+		prStaRec->ucWlanIndex,
+		prStaRec->ucBssIndex);
 
 	if (!prStaRec->fgIsInUse) {
 		i4BytesWritten += kalSnprintf(
@@ -1475,8 +1477,7 @@ int cnmShowStaRec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\tBSS_IDX/STATE/RCPI/MAC: %u/%u/%u/"MACSTR"\n",
-		prStaRec->ucBssIndex,
+		"\tSTATE/RCPI/MAC: %u/%u/"MACSTR"\n",
 		prStaRec->ucStaState,
 		prStaRec->ucRCPI,
 		MAC2STR(prStaRec->aucMacAddr));
