@@ -11559,7 +11559,12 @@ wlanoidSetFilsConnInfo(struct ADAPTER *prAdapter,
 	if (prFils->u2ErpUsernameLen == 0)
 		return WLAN_STATUS_SUCCESS;
 
-	if (prFils->u2ErpUsernameLen + 1 + prFils->pucErpRealmLen >
+	if (checkAddOverflow(prFils->u2ErpUsernameLen + 1,
+		prFils->pucErpRealmLen)) {
+		DBGLOG(FILS, ERROR, "nai sum overflow, name=%d realm=%d\n",
+			prFils->u2ErpUsernameLen, prFils->pucErpRealmLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	} else if (prFils->u2ErpUsernameLen + 1 + prFils->pucErpRealmLen >
 		FILS_MAX_KEY_NAME_NAI_LEN) {
 		DBGLOG(FILS, ERROR, "nai too long, name=%d realm=%d\n",
 			prFils->u2ErpUsernameLen, prFils->pucErpRealmLen);

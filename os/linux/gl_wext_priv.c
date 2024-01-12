@@ -10066,7 +10066,11 @@ int priv_driver_set_em_cfg(struct net_device *prNetDev, char *pcCommand,
 		}
 
 		/* set_em_cfg n key_1 value_1 key_2 value_2 ... key_n value_n*/
-		if (u4CfgSetNum * 2 > (i4Argc - 2)) {
+		if (checkMulOverflow(u4CfgSetNum, 2)) {
+			DBGLOG(REQ, ERROR,
+				"Set Num(%d) with input arg num(%d) has overflow!\n",
+				u4CfgSetNum, i4Argc);
+		} else if (u4CfgSetNum * 2 > (i4Argc - 2)) {
 			DBGLOG(REQ, ERROR,
 			       "Set Num(%d) over input arg num(%d)\n",
 			       u4CfgSetNum, i4Argc);

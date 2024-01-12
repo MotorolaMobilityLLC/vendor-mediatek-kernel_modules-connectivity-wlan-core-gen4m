@@ -967,6 +967,14 @@ uint32_t mldProfileCopyIe(struct MSDU_INFO *prMsduInfo,
 
 	pos = cp;
 	/* check before copy */
+	if (checkAddOverflow(IE_LEN(ie), IE_SIZE(buf)) ||
+	    checkAddOverflow(IE_LEN(sta), IE_SIZE(buf))) {
+		DBGLOG(ML, ERROR,
+			"Sum of ie len or sta len is overflow, ie len=%d, sta len=%d, buf size\n",
+			IE_LEN(ie), IE_LEN(sta), IE_SIZE(buf));
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
 	if (IE_LEN(ie) + IE_SIZE(buf) > 255 &&
 	    IE_LEN(sta) + IE_SIZE(buf) > 255) {
 		if (IE_ID(ie) == ELEM_ID_FRAGMENT) {
