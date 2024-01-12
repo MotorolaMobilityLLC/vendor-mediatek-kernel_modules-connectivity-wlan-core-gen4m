@@ -1308,11 +1308,11 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 			goto err_alloc_netdev;
 		}
 
-		/* fill hardware address */
-		COPY_MAC_ADDR(rMacAddr, prAdapter->rMyMacAddr);
-		rMacAddr[0] |= 0x2;
-		/* change to local administrated address */
-		rMacAddr[0] ^= i << 2;
+		COPY_MAC_ADDR(rMacAddr,
+				prAdapter->rWifiVar.aucInterfaceAddress[i]);
+
+		DBGLOG(INIT, INFO, "Set p2p role[%d] mac to " MACSTR "\n",
+				i, MAC2STR(rMacAddr));
 		kalMemCopy(prP2pDev->dev_addr, rMacAddr, ETH_ALEN);
 		kalMemCopy(prP2pDev->perm_addr, prP2pDev->dev_addr, ETH_ALEN);
 
@@ -2158,43 +2158,45 @@ int p2pSetMACAddress(IN struct net_device *prDev, void *addr)
 	if (!prDev || !addr) {
 		DBGLOG(INIT, ERROR, "Set macaddr with ndev(%d) and addr(%d)\n",
 		       (prDev == NULL) ? 0 : 1, (addr == NULL) ? 0 : 1);
-		return WLAN_STATUS_INVALID_DATA;
+		return -EINVAL;
 	}
 
 	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prDev, &ucRoleIdx) != 0) {
 		DBGLOG(INIT, ERROR, "can't find the matched dev");
-		return WLAN_STATUS_INVALID_DATA;
+		return -EINVAL;
 	}
 
 	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
 		ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, ERROR, "can't find the matched bss");
-		return WLAN_STATUS_INVALID_DATA;
+		return -EINVAL;
 	}
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 	if (!prBssInfo) {
 		DBGLOG(INIT, ERROR, "bss is not active\n");
-		return WLAN_STATUS_INVALID_DATA;
+		return -EINVAL;
 	}
 
 	prDevBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		prAdapter->ucP2PDevBssIdx);
 	if (!prDevBssInfo) {
 		DBGLOG(INIT, ERROR, "dev bss is not active\n");
-		return WLAN_STATUS_INVALID_DATA;
+		return -EINVAL;
 	}
 
 	prP2pInfo = prGlueInfo->prP2PInfo[0];
 	if (!prP2pInfo) {
 		DBGLOG(INIT, ERROR, "p2p info is null\n");
-		return WLAN_STATUS_INVALID_DATA;
+		return -EINVAL;
 	}
 
 	sa = (struct sockaddr *)addr;
 
 	COPY_MAC_ADDR(prBssInfo->aucOwnMacAddr, sa->sa_data);
 	COPY_MAC_ADDR(prDev->dev_addr, sa->sa_data);
+	COPY_MAC_ADDR(prAdapter->rWifiVar.aucInterfaceAddress[ucRoleIdx],
+			sa->sa_data);
 
 	if ((prP2pInfo->prDevHandler == prDev)
 		&& mtk_IsP2PNetDevice(prGlueInfo, prDev)) {

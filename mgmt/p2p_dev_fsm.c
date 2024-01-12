@@ -97,9 +97,10 @@ uint8_t p2pDevFsmInit(IN struct ADAPTER *prAdapter)
 
 		if (prP2pBssInfo != NULL) {
 			COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,
-				prAdapter->rMyMacAddr);
-			/* change to local administrated address */
-			prP2pBssInfo->aucOwnMacAddr[0] ^= 0x2;
+					prAdapter->rWifiVar.aucDeviceAddress);
+			DBGLOG(INIT, INFO, "Set p2p dev mac to " MACSTR "\n",
+					prP2pBssInfo->ucBssIndex,
+					MAC2STR(prP2pBssInfo->aucOwnMacAddr));
 
 			prP2pDevFsmInfo->ucBssIndex = prP2pBssInfo->ucBssIndex;
 
