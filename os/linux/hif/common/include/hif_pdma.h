@@ -375,6 +375,7 @@ struct MSDU_TOKEN_ENTRY {
 	phys_addr_t rPktDmaAddr;
 	uint32_t u4PktDmaLength;
 	uint16_t u2Port; /* tx ring number */
+	uint8_t ucWlanIndex;
 };
 
 struct MSDU_TOKEN_INFO {

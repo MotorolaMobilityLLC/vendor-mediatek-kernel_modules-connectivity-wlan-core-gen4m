@@ -3582,7 +3582,6 @@ int32_t soc3_0_wlanPowerOnInit(
 #if 0  /* Sample's gen4m code base doesn't support */
 		prAdapter->u4HifDbgFlag = 0;
 		prAdapter->u4HifChkFlag = 0;
-		prAdapter->u4TxHangFlag = 0;
 		prAdapter->u4NoMoreRfb = 0;
 #endif
 
