@@ -623,7 +623,8 @@ void nic_txd_v3_compose(
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	/* altx set TGID and force link */
 	if (prMldSta && (ucTarQueue == MAC_TXQ_ALTX_0_INDEX ||
-	    prMsduInfo->ucPktType == ENUM_PKT_1X))
+	    (prMsduInfo->ucPktType == ENUM_PKT_1X &&
+			prStaRec->fgIsTxKeyReady != TRUE)))
 		HAL_MAC_CONNAC3X_TXD_SET_FORCE_ASSIGN_LINK(prTxDesc);
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
