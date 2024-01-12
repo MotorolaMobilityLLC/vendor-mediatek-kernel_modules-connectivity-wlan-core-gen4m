@@ -132,6 +132,10 @@ void p2pLinkUninitGCRole(struct ADAPTER *prAdapter)
 			fsm->ucBssIndex,
 			kalGetP2pNetHdl(prAdapter->prGlueInfo, i, FALSE));
 
+		p2pFuncInitConnectionSettings(prAdapter,
+			prAdapter->rWifiVar.prP2PConnSettings[i],
+			FALSE);
+
 		p2pRoleFsmUninit(prAdapter, i);
 	}
 }
