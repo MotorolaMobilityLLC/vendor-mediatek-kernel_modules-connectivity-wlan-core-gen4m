@@ -2315,7 +2315,6 @@ exit:
 uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 {
 	uint32_t rStatus = 0;
-	u_int8_t fgReady;
 	struct mt66xx_chip_info *prChipInfo;
 	struct FWDL_OPS_T *prFwDlOps;
 	struct timespec64 time;
@@ -2328,23 +2327,6 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 
 	prChipInfo = prAdapter->chip_info;
 	prFwDlOps = prChipInfo->fw_dl_ops;
-
-	DBGLOG(INIT, INFO,
-	       "wlanDownloadFW:: Check ready_bits(=0x%x)\n",
-	       prChipInfo->sw_ready_bits);
-	HAL_WIFI_FUNC_READY_CHECK(prAdapter,
-				  prChipInfo->sw_ready_bits, &fgReady);
-
-	if (fgReady) {
-		DBGLOG(INIT, INFO,
-		       "Wi-Fi is already ON!, turn off before FW DL!\n");
-
-		if (wlanPowerOffWifi(prAdapter) != WLAN_STATUS_SUCCESS)
-			return WLAN_STATUS_FAILURE;
-
-		nicpmWakeUpWiFi(prAdapter);
-		HAL_HIF_INIT(prAdapter);
-	}
 
 	HAL_ENABLE_FWDL(prAdapter, TRUE);
 

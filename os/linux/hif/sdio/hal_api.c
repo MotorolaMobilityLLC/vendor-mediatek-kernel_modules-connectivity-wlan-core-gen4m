@@ -649,15 +649,19 @@ unlock:
 
 void halWakeUpWiFi(IN struct ADAPTER *prAdapter)
 {
-
 	u_int8_t fgResult;
+	struct GL_HIF_INFO *prHif = NULL;
 
 	ASSERT(prAdapter);
 
+	prHif = &prAdapter->prGlueInfo->rHifInfo;
 	HAL_LP_OWN_RD(prAdapter, &fgResult);
 
-	if (fgResult)
+	if (fgResult) {
 		prAdapter->fgIsFwOwn = FALSE;
+		/* TODO: Temp marked for no sdio state flow */
+		/*glSdioSetState(prHif, SDIO_STATE_READY);*/
+	}
 	else
 		HAL_LP_OWN_CLR(prAdapter, &fgResult);
 }
