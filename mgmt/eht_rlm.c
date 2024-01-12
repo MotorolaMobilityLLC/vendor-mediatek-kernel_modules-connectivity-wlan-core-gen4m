@@ -456,7 +456,7 @@ static void ehtRlmFillOpIE(
 		(((uint8_t *)prMsduInfo->prPacket)+prMsduInfo->u2FrameLength);
 
 	prEhtOp->ucId = ELEM_ID_RESERVED;
-	prEhtOp->ucExtId = ELEM_EXT_ID_EHT_CAPS;
+	prEhtOp->ucExtId = ELEM_EXT_ID_EHT_OP;
 
 	/* MAC capabilities */
 	EHT_RESET_OP(prEhtOp->ucEhtOpParams);
@@ -594,10 +594,8 @@ void ehtRlmRecOperation(
 	}
 
 	// TODO: The format of EHT operation Information subfield is missing in spec D1.1
-	if (prEhtOp->ucEhtOpParams[0] == 0 || prEhtOp->ucEhtOpParams[0] == 1)
-		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_20_40;
-	else
-		prBssInfo->ucVhtChannelWidth = prEhtOp->ucEhtOpParams[0];
+	prBssInfo->ucVhtChannelWidth =
+		ehtRlmGetVhtOpBwByEhtOpBw(prEhtOp->ucEhtOpParams[0]);
 	DBGLOG(RLM, INFO, "EHT channel width: %d\n",
 		prBssInfo->ucVhtChannelWidth);
 
@@ -608,4 +606,48 @@ void ehtRlmInit(
 	struct ADAPTER *prAdapter)
 {
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return ucVhtOpBw 0:20M/40Hz, 1:80MHz, 2:160MHz, 4:320MHz
+ * Note: 80+80MHz is not used for EHT op BW
+ *
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t ehtRlmGetVhtOpBwByEhtOpBw(uint8_t ucBssOpBw)
+{
+	uint8_t ucVhtOpBw =
+		VHT_OP_CHANNEL_WIDTH_80; /*VHT default should support BW 80*/
+
+	switch (ucBssOpBw) {
+	case EHT_MAX_BW_20:
+	case EHT_MAX_BW_40:
+		ucVhtOpBw = VHT_OP_CHANNEL_WIDTH_20_40;
+		break;
+
+	case EHT_MAX_BW_80:
+		ucVhtOpBw = VHT_OP_CHANNEL_WIDTH_80;
+		break;
+
+	case EHT_MAX_BW_160:
+		ucVhtOpBw = VHT_OP_CHANNEL_WIDTH_160;
+		break;
+
+	case EHT_MAX_BW_320:
+		ucVhtOpBw = VHT_OP_CHANNEL_WIDTH_320;
+		break;
+
+	default:
+		DBGLOG(RLM, WARN, "%s: unexpected Bss OP BW: %d\n", __func__,
+		       ucBssOpBw);
+		break;
+	}
+
+	return ucVhtOpBw;
+}
+
 #endif /* CFG_SUPPORT_802_11BE == 1 */
