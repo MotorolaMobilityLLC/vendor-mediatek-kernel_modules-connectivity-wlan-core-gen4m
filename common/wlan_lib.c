@@ -7773,11 +7773,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 	prWifiVar->ucP2pGoACS = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "P2pGoACSEnable",
-			FEATURE_DISABLED);
-	DBGLOG(INIT, TRACE,
-		"P2pGoACSEnable Setting:ACS Enable[%d]\n",
-		prAdapter->rWifiVar.ucP2pGoACS);
-
+			FEATURE_ENABLED);
 #endif
 
 #if CFG_SUPPORT_NAN
@@ -10696,9 +10692,12 @@ wlanInitChnLoadInfoChannelList(IN struct ADAPTER *prAdapter)
 	struct PARAM_GET_CHN_INFO *prGetChnLoad = &
 			(prAdapter->rWifiVar.rChnLoadInfo);
 
-	for (ucIdx = 0; ucIdx < MAX_CHN_NUM; ucIdx++)
+	for (ucIdx = 0; ucIdx < MAX_CHN_NUM; ucIdx++) {
+		prGetChnLoad->rEachChnLoad[ucIdx].eBand =
+			wlanGetChannelBandFromIndex(ucIdx);
 		prGetChnLoad->rEachChnLoad[ucIdx].ucChannel =
 			wlanGetChannelNumFromIndex(ucIdx);
+	}
 }
 
 uint32_t
@@ -10791,9 +10790,27 @@ wlanGetChannelNumFromIndex(IN uint8_t ucIdx)
 	return ucChannel;
 }
 
+enum ENUM_BAND
+wlanGetChannelBandFromIndex(IN uint8_t ucIdx)
+{
+	enum ENUM_BAND eBand = BAND_NULL;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (ucIdx >= 39)
+		eBand = BAND_6G;
+	else
+#endif
+	if (ucIdx >= 14)
+		eBand = BAND_5G;
+	else
+		eBand = BAND_2G4;
+
+	return eBand;
+}
+
 void
 wlanSortChannel(IN struct ADAPTER *prAdapter,
-IN enum ENUM_CHNL_SORT_POLICY ucSortType)
+		IN enum ENUM_CHNL_SORT_POLICY ucSortType)
 {
 	struct PARAM_GET_CHN_INFO *prChnLoadInfo = &
 			(prAdapter->rWifiVar.rChnLoadInfo);
@@ -10807,70 +10824,70 @@ IN enum ENUM_CHNL_SORT_POLICY ucSortType)
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 	if (ucSortType == CHNL_SORT_POLICY_BY_CH_DOMAIN) {
 		for (ucBandIdx = BAND_2G4; ucBandIdx < BAND_NUM; ucBandIdx++) {
-			rlmDomainGetChnlList(prAdapter,
-								ucBandIdx,
-								TRUE,
-								MAX_CHN_NUM,
-								&ucNumOfChannel,
-								aucChannelList);
+			rlmDomainGetChnlList(prAdapter, ucBandIdx, TRUE,
+				MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
+
 			DBGLOG(SCN, TRACE, "[ACS]Band=%d, Channel Number=%d\n",
-			       ucBandIdx,
-			       ucNumOfChannel);
-		for (i = 0; i < ucNumOfChannel; i++) {
-			ucIdx =
-			wlanGetChannelIndex(ucBandIdx,
-				aucChannelList[i].ucChannelNum);
-			prChnLoadInfo->
-				rChnRankList[uc2gChNum+i].ucChannel =
-			prChnLoadInfo->
-				rEachChnLoad[ucIdx].ucChannel;
-			prChnLoadInfo->
-				rChnRankList[uc2gChNum+i].u4Dirtiness =
-			prChnLoadInfo->
-				rEachChnLoad[ucIdx].u4Dirtiness;
-			DBGLOG(SCN, TRACE, "[ACS]Ch=%d eIdx=%d,Cidx[%d]",
-				aucChannelList[i].ucChannelNum,
-				ucIdx,
-				uc2gChNum+i);
-			DBGLOG(SCN, TRACE, "[ACS]ChR[%d],eCh[%d]\n",
+				ucBandIdx,
+				ucNumOfChannel);
+
+			for (i = 0; i < ucNumOfChannel; i++) {
+				ucIdx = wlanGetChannelIndex(
+					aucChannelList[i].eBand,
+					aucChannelList[i].ucChannelNum);
 				prChnLoadInfo->
-				rChnRankList[uc2gChNum+i].ucChannel,
+					rChnRankList[uc2gChNum+i].eBand =
+					prChnLoadInfo->rEachChnLoad[ucIdx].
+						eBand;
 				prChnLoadInfo->
-				rEachChnLoad[ucIdx].ucChannel);
+					rChnRankList[uc2gChNum+i].ucChannel =
+					prChnLoadInfo->rEachChnLoad[ucIdx].
+						ucChannel;
+				prChnLoadInfo->
+					rChnRankList[uc2gChNum+i].u4Dirtiness =
+					prChnLoadInfo->rEachChnLoad[ucIdx].
+						u4Dirtiness;
+
+				DBGLOG(SCN, TRACE, "[ACS]Ch[%d],cIdx[%d]\n",
+					aucChannelList[i].ucChannelNum,
+					uc2gChNum+i);
+				DBGLOG(SCN, TRACE, "[ACS]ChR[%d],eCh[%d]\n",
+					prChnLoadInfo->
+						rChnRankList[uc2gChNum+i].
+						ucChannel,
+					prChnLoadInfo->rEachChnLoad[ucIdx].
+						ucChannel);
+			}
+			uc2gChNum = uc2gChNum + ucNumOfChannel;
 		}
-			uc2gChNum = uc2gChNum+ucNumOfChannel;
-	}
+
 		/*Set the reset idx to invalid value*/
 		for (i = uc2gChNum; i < MAX_CHN_NUM; i++) {
-			prChnLoadInfo->
-				rChnRankList[i].u4Dirtiness = 0xFFFFFFFF;
-			prChnLoadInfo->
-				rChnRankList[i].ucChannel = 0xFF;
-			DBGLOG(SCN, TRACE, "uc2gChNum=%d,[ACS]Chn=%d,D=%x\n",
-						uc2gChNum,
-						prChnLoadInfo->
-						rChnRankList[i].ucChannel,
-						prChnLoadInfo->
-						rChnRankList[i].u4Dirtiness);
+			prChnLoadInfo->rChnRankList[i].u4Dirtiness = 0xFFFFFFFF;
+			prChnLoadInfo->rChnRankList[i].ucChannel = 0xFF;
+
+			DBGLOG(SCN, TRACE, "uc2gChNum=%d,[ACS]Chn=%d,D=0x%x\n",
+				i,
+				prChnLoadInfo->rChnRankList[i].ucChannel,
+				prChnLoadInfo->rChnRankList[i].u4Dirtiness);
 		}
 	} else
 #endif
 	{
 		for (ucIdx = 0; ucIdx < MAX_CHN_NUM; ++ucIdx) {
-			prChnLoadInfo->
-			rChnRankList[ucIdx].ucChannel =
-			prChnLoadInfo->
-			rEachChnLoad[ucIdx].ucChannel;
-			prChnLoadInfo->
-			rChnRankList[ucIdx].u4Dirtiness =
-			prChnLoadInfo->
-			rEachChnLoad[ucIdx].u4Dirtiness;
+			prChnLoadInfo->rChnRankList[ucIdx].eBand =
+				prChnLoadInfo->rEachChnLoad[ucIdx].eBand;
+			prChnLoadInfo->rChnRankList[ucIdx].ucChannel =
+				prChnLoadInfo->rEachChnLoad[ucIdx].ucChannel;
+			prChnLoadInfo->rChnRankList[ucIdx].u4Dirtiness =
+				prChnLoadInfo->rEachChnLoad[ucIdx].u4Dirtiness;
+
 		}
 	}
 	/* heapify ch rank list */
 	for (ucIdx = MAX_CHN_NUM / 2 - 1; ucIdx >= 0; --ucIdx) {
 		for (ucRoot = ucIdx; ucRoot * 2 + 1 < MAX_CHN_NUM;
-		     ucRoot = ucChild) {
+				ucRoot = ucChild) {
 			ucChild = ucRoot * 2 + 1;
 			/* Coverity check*/
 			if (ucChild < 0 || ucChild >= MAX_CHN_NUM ||
@@ -10883,12 +10900,12 @@ IN enum ENUM_CHNL_SORT_POLICY ucSortType)
 			if (prChnLoadInfo->rChnRankList[ucChild].u4Dirtiness <=
 			    prChnLoadInfo->rChnRankList[ucRoot].u4Dirtiness)
 				break;
-			DBGLOG(SCN, TRACE, "[ACS]root Chn=%d,D=%x\n",
+			DBGLOG(SCN, TRACE, "[ACS]root Chn=%d,D=0x%x\n",
 					   prChnLoadInfo->
 					   rChnRankList[ucRoot].ucChannel,
 					   prChnLoadInfo->
 					   rChnRankList[ucRoot].u4Dirtiness);
-			DBGLOG(SCN, TRACE, "[ACS]child Chn=%d,D=%x\n",
+			DBGLOG(SCN, TRACE, "[ACS]child Chn=%d,D=0x%x\n",
 					   prChnLoadInfo->
 					   rChnRankList[ucChild].ucChannel,
 					   prChnLoadInfo->
@@ -10903,13 +10920,13 @@ IN enum ENUM_CHNL_SORT_POLICY ucSortType)
 				&rChnRankInfo,
 				sizeof(struct PARAM_CHN_RANK_INFO));
 			DBGLOG(SCN, TRACE,
-				"[ACS]After root uChn=%d,D=%x\n",
+				"[ACS]After root uChn=%d,D=0x%x\n",
 					   prChnLoadInfo->
 					   rChnRankList[ucRoot].ucChannel,
 					   prChnLoadInfo->
 					   rChnRankList[ucRoot].u4Dirtiness);
 			DBGLOG(SCN, TRACE,
-				"[ACS]AFter child Chn=%d,D=%x\n",
+				"[ACS]AFter child Chn=%d,D=0x%x\n",
 					   prChnLoadInfo->
 					   rChnRankList[ucChild].ucChannel,
 					   prChnLoadInfo->
@@ -10936,12 +10953,12 @@ IN enum ENUM_CHNL_SORT_POLICY ucSortType)
 			    prChnLoadInfo->rChnRankList[ucRoot].u4Dirtiness)
 				break;
 			DBGLOG(SCN, TRACE,
-				"[ACS]root ChNum=%d D=%x",
+				"[ACS]root ChNum=%d D=0x%x",
 					   prChnLoadInfo->
 					   rChnRankList[ucRoot].ucChannel,
 					   prChnLoadInfo->
 					   rChnRankList[ucRoot].u4Dirtiness);
-			DBGLOG(SCN, TRACE, "[ACS]child ChNum=%d D=%x\n",
+			DBGLOG(SCN, TRACE, "[ACS]child ChNum=%d D=0x%x\n",
 					   prChnLoadInfo->
 					   rChnRankList[ucChild].ucChannel,
 					   prChnLoadInfo->
@@ -10956,14 +10973,14 @@ IN enum ENUM_CHNL_SORT_POLICY ucSortType)
 				&rChnRankInfo,
 				sizeof(struct PARAM_CHN_RANK_INFO));
 			DBGLOG(SCN, TRACE,
-				"[ACS]New root ChNum=%d D=%x",
+				"[ACS]New root ChNum=%d D=0x%x",
 					   prChnLoadInfo->
 					   rChnRankList[ucRoot].ucChannel,
 					   prChnLoadInfo->
 					   rChnRankList[ucRoot].u4Dirtiness);
 
 			DBGLOG(SCN, TRACE,
-				"[ACS]New child ChNum=%d D=%x",
+				"[ACS]New child ChNum=%d D=0x%x",
 					   prChnLoadInfo->
 					   rChnRankList[ucChild].ucChannel,
 					   prChnLoadInfo->
@@ -10972,9 +10989,10 @@ IN enum ENUM_CHNL_SORT_POLICY ucSortType)
 	}
 
 	for (ucIdx = 0; ucIdx < MAX_CHN_NUM; ++ucIdx) {
-		DBGLOG(SCN, TRACE, "[ACS]channel=%d,dirtiness=%d\n",
-		       prChnLoadInfo->rChnRankList[ucIdx].ucChannel,
-		       prChnLoadInfo->rChnRankList[ucIdx].u4Dirtiness);
+		DBGLOG(SCN, TRACE, "[ACS]band=%d,channel=%d,dirtiness=0x%x\n",
+			prChnLoadInfo->rChnRankList[ucIdx].eBand,
+			prChnLoadInfo->rChnRankList[ucIdx].ucChannel,
+			prChnLoadInfo->rChnRankList[ucIdx].u4Dirtiness);
 	}
 
 }
