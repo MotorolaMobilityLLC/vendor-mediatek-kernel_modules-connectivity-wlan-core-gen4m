@@ -15803,11 +15803,15 @@ uint32_t wlanoidSetSer(IN struct ADAPTER *prAdapter,
 
 	switch (u4CmdId) {
 	case SER_USER_CMD_DISABLE:
+		prAdapter->rWifiVar.eEnableSerL1 = FEATURE_OPT_SER_DISABLE;
+
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_SET,
 				 SER_SET_DISABLE, 0);
 		break;
 
 	case SER_USER_CMD_ENABLE:
+		prAdapter->rWifiVar.eEnableSerL1 = FEATURE_OPT_SER_ENABLE;
+
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_SET, SER_SET_ENABLE, 0);
 		break;
 
@@ -15924,11 +15928,15 @@ uint32_t wlanoidSetSer(IN struct ADAPTER *prAdapter,
 		break;
 
 	case SER_USER_CMD_L0P5_PAUSE_WDT:
+		prAdapter->rWifiVar.eEnableSerL0p5 = FEATURE_OPT_SER_DISABLE;
+
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_L0P5_CTRL,
 				 SER_ACTION_L0P5_CTRL_PAUSE_WDT, 0);
 		break;
 
 	case SER_USER_CMD_L0P5_RESUME_WDT:
+		prAdapter->rWifiVar.eEnableSerL0p5 = FEATURE_OPT_SER_ENABLE;
+
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_L0P5_CTRL,
 				 SER_ACTION_L0P5_CTRL_RESUME_WDT, 0);
 		break;

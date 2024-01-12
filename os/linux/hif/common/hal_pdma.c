@@ -3375,8 +3375,12 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 	u4Status = prErrRecoveryCtrl->u4Status;
 	prErrRecoveryCtrl->u4Status = 0;
 
-	if (prAdapter->rWifiVar.fgEnableSerL1 == FALSE)
+	if (prAdapter->rWifiVar.eEnableSerL1 !=
+	     FEATURE_OPT_SER_ENABLE) {
+		DBGLOG(HAL, WARN,
+		       "[SER][L1] Bypass L1 reset due to wifi.cfg\n");
 		return;
+	}
 
 	switch (prErrRecoveryCtrl->eErrRecovState) {
 	case ERR_RECOV_STOP_IDLE:
