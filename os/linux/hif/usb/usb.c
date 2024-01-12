@@ -791,6 +791,13 @@ int glUsbSubmitUrb(struct GL_HIF_INFO *prHifInfo, struct urb *urb,
 			return -ESHUTDOWN;
 		}
 	}
+
+	if (nicSerIsTxStop(prHifInfo->prGlueInfo->prAdapter)) {
+		DBGLOG(HAL, ERROR, "[SER] BYPASS USB send packet\n");
+		spin_unlock_irqrestore(&prHifInfo->rStateLock, flags);
+		return -EBUSY;
+	}
+
 	ret = usb_submit_urb(urb, GFP_ATOMIC);
 	spin_unlock_irqrestore(&prHifInfo->rStateLock, flags);
 
@@ -1328,7 +1335,8 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, 
 				  HIF_USB_ERR_DESC_STR "USB() reports error: %x retry: %u", ret, ucRetryCount);
 		DBGLOG(HAL, ERROR, "usb_readl() reports error: %x retry: %u\n", ret, ucRetryCount);
 	} else {
-		DBGLOG(HAL, INFO, "Get CR[0x%08x] value[0x%08x]\n", u4Register, *pu4Value);
+		DBGLOG(HAL, TRACE, "Get CR[0x%08x] value[0x%08x]\n",
+			u4Register, *pu4Value);
 	}
 
 	return (ret) ? FALSE : TRUE;

@@ -1112,6 +1112,12 @@ struct mt66xx_chip_info {
 	u_int8_t is_support_wfdma;
 	u_int8_t is_support_dma_shdl;
 	u_int8_t rx_event_port;
+#if defined(_HIF_USB)
+	void (*asicUsbInit)(IN struct ADAPTER *prAdapter,
+			    IN struct mt66xx_chip_info *prChipInfo);
+	uint32_t u4SerUsbMcuEventAddr;
+	uint32_t u4SerUsbHostAckAddr;
+#endif
 };
 
 struct mt66xx_hif_driver_data {
