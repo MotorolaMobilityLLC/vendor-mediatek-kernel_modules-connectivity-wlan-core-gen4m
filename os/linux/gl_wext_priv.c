@@ -6583,14 +6583,15 @@ int priv_driver_set_fixed_fallback(struct net_device *prNetDev,
 #if (CFG_SUPPORT_TXPOWER_INFO == 1)
 static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter,
 		char *pcCommand, int i4TotalLen,
-		struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T *prTxPowerInfo)
+		struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T *prTxPowerInfo,
+		uint32_t u4DumpType)
 {
 	int32_t i4BytesWritten = 0;
 
 	if (prTxPowerInfo->ucTxPowerCategory ==
 	    TXPOWER_EVENT_SHOW_ALL_RATE_TXPOWER_INFO) {
-		uint8_t ucTxPwrIdx = 0, ucTxPwrType = 0, ucIdx = 0,
-			ucIdxOffset = 0;
+		uint8_t ucTxPwrIdx = 0, ucTxPwrType = 0;
+		uint16_t u2Idx = 0, u2IdxOffset = 0;
 
 		char *rateStr = NULL;
 		struct FRAME_POWER_CONFIG_INFO_T rRatePowerInfo;
@@ -6598,39 +6599,56 @@ static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter,
 			"1M", "2M", "5M", "11M"};
 		char *ofdmRateStr[MODULATION_SYSTEM_OFDM_NUM] = {
 			"6M", "9M", "12M", "18M", "24M", "36M", "48M", "54M" };
-		char *ht20RateStr[MODULATION_SYSTEM_HT20_NUM] = {
-			"M0", "M1", "M2", "M3", "M4", "M5", "M6", "M7" };
 		char *ht40RateStr[MODULATION_SYSTEM_HT40_NUM] = {
 			"M0", "M1", "M2", "M3", "M4", "M5", "M6",
 			"M7", "M32" };
-		char *vhtRateStr[MODULATION_SYSTEM_VHT20_NUM] = {
-			"M0", "M1", "M2", "M3", "M4", "M5", "M6",
-			"M7", "M8", "M9" };
-		char *ruRateStr[MODULATION_SYSTEM_HE_26_MCS_NUM] = {
+		char *allRateStr[MODULATION_SYSTEM_EHT_MCS_NUM] = {
 			"M0", "M1", "M2", "M3", "M4", "M5", "M6", "M7",
-			"M8", "M9", "M10", "M11" };
+			"M8", "M9", "M10", "M11", "M12", "M13", "M14", "M15"};
 
 		uint8_t *pucStr = NULL;
 		uint8_t *POWER_TYPE_STR[] = {
 			"CCK", "OFDM", "HT20", "HT40",
 			"VHT20", "VHT40", "VHT80",
-			"VHT160", "RU26", "RU52", "RU106",
-			"RU242", "RU484", "RU996"};
+			"VHT160", "HE26", "HE52", "HE106",
+			"HE242", "HE484", "HE996", "HE996x2",
+			"EHT26", "EHT52", "EHT106", "EHT242",
+			"EHT484", "EHT996", "EHT996X2", "EHT996X4",
+			"EHT26_52", "EHT26_106", "EHT484_242",
+			"EHT996_484", "EHT996_484_242", "EHT996X2_484",
+			"EHT_996X3", "EHT996X3_484"};
 		uint8_t ucPwrIdxLen[] = {
-		    MODULATION_SYSTEM_CCK_NUM,
+			MODULATION_SYSTEM_CCK_NUM,
 			MODULATION_SYSTEM_OFDM_NUM,
-		    MODULATION_SYSTEM_HT20_NUM,
-		    MODULATION_SYSTEM_HT40_NUM,
-		    MODULATION_SYSTEM_VHT20_NUM,
-		    MODULATION_SYSTEM_VHT40_NUM,
-		    MODULATION_SYSTEM_VHT80_NUM,
-		    MODULATION_SYSTEM_VHT160_NUM,
-		    MODULATION_SYSTEM_HE_26_MCS_NUM,
-		    MODULATION_SYSTEM_HE_52_MCS_NUM,
-		    MODULATION_SYSTEM_HE_106_MCS_NUM,
-		    MODULATION_SYSTEM_HE_242_MCS_NUM,
-		    MODULATION_SYSTEM_HE_484_MCS_NUM,
-		    MODULATION_SYSTEM_HE_996_MCS_NUM};
+			MODULATION_SYSTEM_HT20_NUM,
+			MODULATION_SYSTEM_HT40_NUM,
+			MODULATION_SYSTEM_VHT20_NUM,
+			MODULATION_SYSTEM_VHT40_NUM,
+			MODULATION_SYSTEM_VHT80_NUM,
+			MODULATION_SYSTEM_VHT160_NUM,
+			MODULATION_SYSTEM_HE_26_MCS_NUM,
+			MODULATION_SYSTEM_HE_52_MCS_NUM,
+			MODULATION_SYSTEM_HE_106_MCS_NUM,
+			MODULATION_SYSTEM_HE_242_MCS_NUM,
+			MODULATION_SYSTEM_HE_484_MCS_NUM,
+			MODULATION_SYSTEM_HE_996_MCS_NUM,
+			MODULATION_SYSTEM_HE_996X2_MCS_NUM,
+			MODULATION_SYSTEM_EHT_26_MCS_NUM,
+			MODULATION_SYSTEM_EHT_52_MCS_NUM,
+			MODULATION_SYSTEM_EHT_106_MCS_NUM,
+			MODULATION_SYSTEM_EHT_242_MCS_NUM,
+			MODULATION_SYSTEM_EHT_484_MCS_NUM,
+			MODULATION_SYSTEM_EHT_996_MCS_NUM,
+			MODULATION_SYSTEM_EHT_996X2_MCS_NUM,
+			MODULATION_SYSTEM_EHT_996X4_MCS_NUM,
+			MODULATION_SYSTEM_EHT_26_52_MCS_NUM,
+			MODULATION_SYSTEM_EHT_26_106_MCS_NUM,
+			MODULATION_SYSTEM_EHT_484_242_MCS_NUM,
+			MODULATION_SYSTEM_EHT_996_484_MCS_NUM,
+			MODULATION_SYSTEM_EHT_996_484_242_MCS_NUM,
+			MODULATION_SYSTEM_EHT_996X2_484_MCS_NUM,
+			MODULATION_SYSTEM_EHT_996X3_MCS_NUM,
+			MODULATION_SYSTEM_EHT_996X3_484_MCS_NUM};
 
 		uint8_t ucBandIdx;
 		uint8_t ucFormat;
@@ -6658,6 +6676,27 @@ static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter,
 		rRatePowerInfo =
 			prTxPowerInfo->rRatePowerInfo;
 
+		if (u4DumpType == 1) {
+			/* EHT */
+			i4BytesWritten += kalScnprintf(
+				 pcCommand + i4BytesWritten,
+				 i4TotalLen - i4BytesWritten,
+				 "%17s", "");
+
+			for (ucTxPwrIdx = 0;
+			     ucTxPwrIdx < MODULATION_SYSTEM_EHT_MCS_NUM;
+			     ucTxPwrIdx++) {
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%05s", allRateStr[ucTxPwrIdx]);
+			}
+
+			i4BytesWritten += kalScnprintf(
+				 pcCommand + i4BytesWritten,
+				 i4TotalLen - i4BytesWritten,
+				 "\n");
+		}
 
 		for (ucTxPwrType = 0;
 		     ucTxPwrType < sizeof(POWER_TYPE_STR)/sizeof(uint8_t *);
@@ -6665,10 +6704,27 @@ static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter,
 
 			pucStr = POWER_TYPE_STR[ucTxPwrType];
 
-			i4BytesWritten += kalScnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten,
-				"[%6s] > ", pucStr);
+			if (u4DumpType == 0) {
+				/* LG, HT, VHT, HE */
+				if (kalStrnCmp(pucStr, "EHT", 3) == 0) {
+					u2IdxOffset += ucPwrIdxLen[ucTxPwrType];
+					continue;
+				} else
+					i4BytesWritten += kalScnprintf(
+						pcCommand + i4BytesWritten,
+						i4TotalLen - i4BytesWritten,
+						"[%7s] > ", pucStr);
+			} else if (u4DumpType == 1) {
+				/* EHT */
+				if (kalStrnCmp(pucStr, "EHT", 3) != 0) {
+					u2IdxOffset += ucPwrIdxLen[ucTxPwrType];
+					continue;
+				} else
+					i4BytesWritten += kalScnprintf(
+						pcCommand + i4BytesWritten,
+						i4TotalLen - i4BytesWritten,
+						"[%14s] > ", pucStr);
+			}
 
 			for (ucTxPwrIdx = 0;
 			     ucTxPwrIdx < ucPwrIdxLen[ucTxPwrType];
@@ -6679,27 +6735,38 @@ static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter,
 				else if (kalStrCmp(pucStr, "OFDM") == 0)
 					rateStr = ofdmRateStr[ucTxPwrIdx];
 				else if (kalStrCmp(pucStr, "HT20") == 0)
-					rateStr = ht20RateStr[ucTxPwrIdx];
+					rateStr = allRateStr[ucTxPwrIdx];
 				else if (kalStrCmp(pucStr, "HT40") == 0)
 					rateStr = ht40RateStr[ucTxPwrIdx];
 				else if (kalStrnCmp(pucStr, "VHT", 3) == 0)
-					rateStr = vhtRateStr[ucTxPwrIdx];
+					rateStr = allRateStr[ucTxPwrIdx];
 				/*HE format*/
-				else if ((kalStrnCmp(pucStr, "RU", 2) == 0)
+				else if ((kalStrnCmp(pucStr, "HE", 2) == 0)
 					&& (ucFormat == TXPOWER_FORMAT_HE))
-					rateStr = ruRateStr[ucTxPwrIdx];
+					rateStr = allRateStr[ucTxPwrIdx];
+				else if (kalStrnCmp(pucStr, "EHT", 3) == 0)
+					rateStr = allRateStr[ucTxPwrIdx];
 				else
 					continue;
 
-				ucIdx = ucTxPwrIdx + ucIdxOffset;
+				u2Idx = ucTxPwrIdx + u2IdxOffset;
 
-				i4BytesWritten += kalScnprintf(
+				if (u4DumpType == 0)
+					i4BytesWritten += kalScnprintf(
 					pcCommand + i4BytesWritten,
 					i4TotalLen - i4BytesWritten,
-					"%3s:%03d, ",
+					"%03s:%03d, ",
 					rateStr,
 					rRatePowerInfo.
-					aicFramePowerConfig[ucIdx][ucBandIdx].
+					aicFramePowerConfig[u2Idx][ucBandIdx].
+					icFramePowerDbm);
+				else if (u4DumpType == 1)
+					i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%03d, ",
+					rRatePowerInfo.
+					aicFramePowerConfig[u2Idx][ucBandIdx].
 					icFramePowerDbm);
 			}
 			 i4BytesWritten += kalScnprintf(
@@ -6707,7 +6774,7 @@ static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter,
 				 i4TotalLen - i4BytesWritten,
 				 "\n");
 
-			ucIdxOffset += ucPwrIdxLen[ucTxPwrType];
+			u2IdxOffset += ucPwrIdxLen[ucTxPwrType];
 		}
 
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
@@ -6741,6 +6808,7 @@ static int32_t priv_driver_get_txpower_info(struct net_device *prNetDev,
 	uint8_t ucParam = 0;
 	uint8_t ucBandIdx = 0;
 	struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T *prTxPowerInfo = NULL;
+	uint32_t u4DumpType = 0;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -6759,11 +6827,12 @@ static int32_t priv_driver_get_txpower_info(struct net_device *prNetDev,
 
 	DBGLOG(REQ, INFO, "string = %s\n", this_char);
 
-	u4ParamNum = sscanf(this_char, "%hhu:%hhu", &ucParam, &ucBandIdx);
-	if (u4ParamNum != 2)
+	u4ParamNum = sscanf(this_char, "%hhu:%hhu:%hhu",
+		&ucParam, &ucBandIdx, &u4DumpType);
+	if ((u4ParamNum != 2) && (u4ParamNum != 3))
 		return -1;
-	DBGLOG(REQ, INFO, "ParamNum=%u,Param=%u,Band=%u\n",
-		u4ParamNum, ucParam, ucBandIdx);
+	DBGLOG(REQ, INFO, "ParamNum=%u,Param=%u,Band=%u,DumpType=%u\n",
+		u4ParamNum, ucParam, ucBandIdx, u4DumpType);
 
 	u4Size = sizeof(struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T);
 
@@ -6773,7 +6842,7 @@ static int32_t priv_driver_get_txpower_info(struct net_device *prNetDev,
 	if (!prTxPowerInfo)
 		return -1;
 
-	if (u4ParamNum == TXPOWER_INFO_INPUT_ARG_NUM) {
+	if (u4ParamNum >= TXPOWER_INFO_INPUT_ARG_NUM) {
 		prTxPowerInfo->ucTxPowerCategory = ucParam;
 		prTxPowerInfo->ucBandIdx = ucBandIdx;
 
@@ -6789,7 +6858,8 @@ static int32_t priv_driver_get_txpower_info(struct net_device *prNetDev,
 		}
 
 		i4BytesWritten = priv_driver_dump_txpower_info(prAdapter,
-					pcCommand, i4TotalLen, prTxPowerInfo);
+					pcCommand, i4TotalLen, prTxPowerInfo,
+					u4DumpType);
 	} else {
 		DBGLOG(INIT, ERROR,
 		       "[Error]iwpriv wlanXX driver TxPowerInfo=[Param]:[BandIdx]\n");
