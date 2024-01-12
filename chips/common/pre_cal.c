@@ -47,35 +47,15 @@ struct wireless_dev *grWdev;
  *******************************************************************************
  */
 
-uint32_t wlanAccessCalibrationEMI(
+uint32_t wlanAccessCalibrationEMI(struct ADAPTER *prAdapter,
 	struct INIT_EVENT_PHY_ACTION_RSP *pCalEvent,
 	uint8_t backupEMI)
 {
 	uint32_t u4Status = WLAN_STATUS_FAILURE;
 
 #if CFG_MTK_ANDROID_EMI
-	uint8_t __iomem *pucEmiBaseAddr = NULL;
-
-	if (!gConEmiPhyBaseFinal) {
-		DBGLOG(INIT, ERROR,
-		       "gConEmiPhyBaseFinal invalid\n");
-		return u4Status;
-	}
-
-	request_mem_region(gConEmiPhyBaseFinal, gConEmiSizeFinal, "WIFI-EMI");
-	kalSetEmiMpuProtection(gConEmiPhyBaseFinal, false);
-	pucEmiBaseAddr = ioremap(gConEmiPhyBaseFinal, gConEmiSizeFinal);
-	DBGLOG(INIT, INFO,
-	       "backupEMI(%d),gConEmiPhyBaseFinal(0x%x),gConEmiSizeFinal(0x%X),pucEmiBaseAddr(0x%x)\n",
-	       backupEMI, gConEmiPhyBaseFinal, gConEmiSizeFinal,
-	       pucEmiBaseAddr);
 
 	do {
-		if (!pucEmiBaseAddr) {
-			DBGLOG(INIT, ERROR, "ioremap failed\n");
-			break;
-		}
-
 		if (backupEMI == TRUE) {
 			if (gEmiCalResult != NULL) {
 				kalMemFree(gEmiCalResult,
@@ -84,25 +64,25 @@ uint32_t wlanAccessCalibrationEMI(
 				gEmiCalResult = NULL;
 			}
 
-			gEmiCalOffset = pCalEvent->u4EmiAddress &
-				WIFI_EMI_ADDR_MASK;
-			gEmiCalSize = pCalEvent->u4EmiLength;
-
-			if (gEmiCalSize == 0) {
+			if (pCalEvent->u4EmiLength == 0) {
 				DBGLOG(INIT, ERROR, "gEmiCalSize 0\n");
 				break;
 			}
 
-			gEmiCalResult = kalMemAlloc(gEmiCalSize, VIR_MEM_TYPE);
+			gEmiCalOffset = emi_mem_offset_convert(
+				pCalEvent->u4EmiAddress);
+			gEmiCalSize = pCalEvent->u4EmiLength;
 
+			gEmiCalResult = kalMemAlloc(gEmiCalSize, VIR_MEM_TYPE);
 			if (gEmiCalResult == NULL) {
 				DBGLOG(INIT, ERROR,
 					"gEmiCalResult kalMemAlloc NULL\n");
 				break;
 			}
 
-			kalMemCopyFromIo(gEmiCalResult,
-				(pucEmiBaseAddr + gEmiCalOffset),
+			emi_mem_read(prAdapter->chip_info,
+				gEmiCalOffset,
+				gEmiCalResult,
 				gEmiCalSize);
 
 			u4Status = WLAN_STATUS_SUCCESS;
@@ -121,16 +101,13 @@ uint32_t wlanAccessCalibrationEMI(
 			break;
 		}
 #if 0  /* Disable host write EMI */
-		kalMemCopyToIo((pucEmiBaseAddr + gEmiCalOffset),
+		emi_mem_write(prAdapter->chip_info,
+			gEmiCalOffset,
 			gEmiCalResult,
 			gEmiCalSize);
 #endif
 		u4Status = WLAN_STATUS_SUCCESS;
 	} while (FALSE);
-
-	kalSetEmiMpuProtection(gConEmiPhyBaseFinal, true);
-	iounmap(pucEmiBaseAddr);
-	release_mem_region(gConEmiPhyBaseFinal, gConEmiSizeFinal);
 #endif /* CFG_MTK_ANDROID_EMI */
 	return u4Status;
 }
@@ -329,7 +306,8 @@ uint32_t wlanRcvPhyActionRsp(struct ADAPTER *prAdapter,
 #endif
 
 			/* read from EMI, backup in driver */
-			wlanAccessCalibrationEMI(prPhyEvent,
+			wlanAccessCalibrationEMI(prAdapter,
+				prPhyEvent,
 				TRUE);
 		}
 
@@ -700,7 +678,7 @@ uint32_t wlanPhyAction(IN struct ADAPTER *prAdapter)
 
 	/* Setup calibration data from backup file */
 #if CFG_MTK_ANDROID_WMT
-	if (wlanAccessCalibrationEMI(NULL, FALSE) ==
+	if (wlanAccessCalibrationEMI(prAdapter, NULL, FALSE) ==
 		WLAN_STATUS_SUCCESS)
 		u4Status = wlanSendPhyAction(prAdapter,
 			HAL_PHY_ACTION_TAG_CAL,

@@ -1274,13 +1274,10 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 
 	prHifInfo->fgIsPowerOff = false;
 
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
-	if (prMemOps->allocMcuEmiMem) {
-		prMemOps->allocMcuEmiMem(prHifInfo);
-		if (prBusInfo->setupMcuEmiAddr)
-			prBusInfo->setupMcuEmiAddr(prAdapter);
-	}
+	if (prBusInfo->setupMcuEmiAddr)
+		prBusInfo->setupMcuEmiAddr(prAdapter);
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	if (prSwWfdmaInfo->rOps.init)
 		prSwWfdmaInfo->rOps.init(prAdapter->prGlueInfo);
 #endif
@@ -1338,9 +1335,6 @@ void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
 		}
 		spin_unlock_irqrestore(&prHifInfo->rTxDataQLock[u4Idx], flags);
 	}
-
-	if (prMemOps->freeMcuEmiMem)
-		prMemOps->freeMcuEmiMem(prHifInfo);
 
 	if (prSwWfdmaInfo->rOps.uninit)
 		prSwWfdmaInfo->rOps.uninit(prGlueInfo);
@@ -4417,17 +4411,20 @@ uint32_t halSetSuspendFlagToFw(IN struct ADAPTER *prAdapter,
 
 	if (prNotifyInfo->eType == ENUM_HOST_SUSPEND_ADDR_TYPE_EMI) {
 #if CFG_MTK_ANDROID_EMI
-		uint32_t u4Offset = prNotifyInfo->u4SetAddr &
-			WIFI_EMI_ADDR_MASK;
 		uint32_t u4SuspendFlag = (fgSuspend == TRUE) ?
 			0x11111111 : 0x22222222;
 
-		wf_ioremap_read((gConEmiPhyBaseFinal + u4Offset), &u4Value);
+		emi_mem_read(prAdapter->chip_info,
+			prNotifyInfo->u4SetAddr,
+			&u4Value,
+			sizeof(u4Value));
 		u4Value &= ~prNotifyInfo->u4Mask;
 		u4Value |= ((u4SuspendFlag << prNotifyInfo->u4Shift) &
 			prNotifyInfo->u4Mask);
-		wf_ioremap_write((gConEmiPhyBaseFinal + u4Offset),
-			u4SuspendFlag);
+		emi_mem_write(prAdapter->chip_info,
+			prNotifyInfo->u4SetAddr,
+			&u4SuspendFlag,
+			sizeof(u4SuspendFlag));
 #endif
 	} else if (prNotifyInfo->eType ==
 		   ENUM_HOST_SUSPEND_ADDR_TYPE_CONN_W_R_REG) {

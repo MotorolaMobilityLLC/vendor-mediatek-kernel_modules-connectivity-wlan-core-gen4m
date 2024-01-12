@@ -8344,13 +8344,13 @@ int32_t connacSetICapStart(struct GLUE_INFO *prGlueInfo,
 	prICapInfo->u4CapSource = 0;
 #if (CFG_MTK_ANDROID_EMI == 1)
 	prICapInfo->u4EmiStartAddress =
-		(uint32_t) (gConEmiPhyBaseFinal & 0xFFFFFFFF);
+		emi_mem_get_phy_base(prGlueInfo->prAdapter->chip_info);
 	prICapInfo->u4EmiEndAddress =
-		(uint32_t) ((gConEmiPhyBaseFinal + gConEmiSizeFinal) &
-			0xFFFFFFFF);
-	prICapInfo->u4EmiMsbAddress =
-		(uint32_t) ((((uint64_t) gConEmiPhyBaseFinal) >> 32) &
-			0xFFFFFFFF);
+		emi_mem_get_phy_base(prGlueInfo->prAdapter->chip_info) +
+		emi_mem_get_size(prGlueInfo->prAdapter->chip_info);
+	prICapInfo->u4EmiMsbAddress = (uint32_t) ((((uint64_t)
+		emi_mem_get_phy_base(prGlueInfo->prAdapter->chip_info)) >> 32) &
+		0xFFFFFFFF);
 
 	DBGLOG(RFTEST, INFO,
 		"startAddr = 0x%08x, endAddress = 0x%08x, MsbAddr = 0x%08x\n",

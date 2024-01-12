@@ -888,6 +888,10 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 	if (ret)
 		goto exit;
 
+#if (CFG_MTK_ANDROID_WMT == 1)
+	emi_mem_init(prChipInfo, pdev);
+#endif
+
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
 	ret = axiAllocHifMem(pdev, prDriverData);
 	if (ret)
@@ -907,8 +911,17 @@ exit:
 
 static int mtk_axi_remove(IN struct platform_device *pdev)
 {
+#if (CFG_MTK_ANDROID_WMT == 1)
+	struct mt66xx_hif_driver_data *prDriverData =
+		platform_get_drvdata(pdev);
+	struct mt66xx_chip_info *prChipInfo = prDriverData->chip_info;
+#endif
+
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
 	axiFreeHifMem(pdev);
+#endif
+#if (CFG_MTK_ANDROID_WMT == 1)
+	emi_mem_uninit(prChipInfo, pdev);
 #endif
 	platform_set_drvdata(pdev, NULL);
 	return 0;
@@ -919,20 +932,11 @@ static int mtk_page_pool_probe(IN struct platform_device *pdev)
 {
 	struct mt66xx_hif_driver_data *prDriverData;
 	struct mt66xx_chip_info *prChipInfo;
-	struct device_node *node = NULL;
 	int ret = 0;
 
 	prDriverData = (struct mt66xx_hif_driver_data *)
 			mtk_axi_ids[0].driver_data;
 	prChipInfo = prDriverData->chip_info;
-
-	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi_page_pool");
-	if (!node) {
-		DBGLOG(INIT, ERROR,
-		       "WIFI-OF: get wifi_page_pool device node fail\n");
-		return false;
-	}
-	of_node_put(node);
 
 	ret = axiDmaSetup(pdev, prDriverData);
 	if (ret)
@@ -1043,6 +1047,10 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	pci_set_drvdata(pdev, (void *)id->driver_data);
 
+#if (CFG_MTK_ANDROID_WMT == 0)
+	emi_mem_init(prChipInfo, pdev);
+#endif
+
 	if (pfWlanProbe((void *) pdev,
 		(void *) id->driver_data) != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, INFO, "pfWlanProbe fail!call pfWlanRemove()\n");
@@ -1081,6 +1089,11 @@ out:
 
 static void mtk_pci_remove(struct pci_dev *pdev)
 {
+#if (CFG_MTK_ANDROID_WMT == 0)
+	struct mt66xx_hif_driver_data *prDriverData = pci_get_drvdata(pdev);
+	struct mt66xx_chip_info *prChipInfo = prDriverData->chip_info;
+#endif
+
 	ASSERT(pdev);
 
 	if (g_fgDriverProbed) {
@@ -1089,6 +1102,9 @@ static void mtk_pci_remove(struct pci_dev *pdev)
 		DBGLOG(INIT, INFO, "pfWlanRemove done\n");
 	}
 	pci_set_drvdata(pdev, NULL);
+#if (CFG_MTK_ANDROID_WMT == 0)
+	emi_mem_uninit(prChipInfo, pdev);
+#endif
 #if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
 	pci_free_irq_vectors(pdev);
 #endif
@@ -1401,10 +1417,6 @@ static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 #if 0
 	prMemOps->dumpTx = pcieDumpTx;
 	prMemOps->dumpRx = pcieDumpRx;
-#endif
-#ifdef MT6639
-	prMemOps->allocMcuEmiMem = pcieAllocMcuEmiMem;
-	prMemOps->freeMcuEmiMem = pcieFreeMcuEmiMem;
 #endif
 
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
@@ -2094,42 +2106,6 @@ static void pcieDumpRx(struct GL_HIF_INFO *prHifInfo,
 
 	prDmaBuf->AllocPa = pcieMapRxBuf(prHifInfo, prDmaBuf->AllocVa,
 					0, prDmaBuf->AllocSize);
-}
-
-static void pcieAllocMcuEmiMem(struct GL_HIF_INFO *prHifInfo)
-{
-	struct HIF_MEM_OPS *prMemOps = &prHifInfo->rMemOps;
-	struct HIF_MEM *prEmiMem = &prHifInfo->rMcuEmiMem;
-	struct RTMP_DMABUF rDmaBuf;
-
-	rDmaBuf.AllocSize = MCU_EMI_SIZE;
-	if (prMemOps->allocExtBuf) {
-		prMemOps->allocExtBuf(prHifInfo, &rDmaBuf);
-		prEmiMem->va = rDmaBuf.AllocVa;
-		prEmiMem->pa = rDmaBuf.AllocPa;
-	}
-
-	DBGLOG(HAL, INFO, "McuEmiMemAddr = 0x%x\n", (uint64_t)prEmiMem->pa);
-}
-
-static void pcieFreeMcuEmiMem(struct GL_HIF_INFO *prHifInfo)
-{
-	struct HIF_MEM_OPS *prMemOps = &prHifInfo->rMemOps;
-	struct HIF_MEM *prEmiMem = &prHifInfo->rMcuEmiMem;
-	struct RTMP_DMABUF rDmaBuf;
-
-	if (!prEmiMem->va)
-		return;
-
-	if (!prMemOps->freeExtBuf)
-		return;
-
-	rDmaBuf.AllocVa = prEmiMem->va;
-	rDmaBuf.AllocPa = prEmiMem->pa;
-	rDmaBuf.AllocSize = MCU_EMI_SIZE;
-	prMemOps->freeExtBuf(prHifInfo, &rDmaBuf);
-	prEmiMem->va = 0;
-	prEmiMem->pa = 0;
 }
 
 #if CFG_CHIP_RESET_SUPPORT

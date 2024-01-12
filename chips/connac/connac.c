@@ -396,6 +396,11 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	.top_fvr = TOP_FVR,
 	.custom_oid_interface_version = MTK_CUSTOM_OID_INTERFACE_VERSION,
 	.em_interface_version = MTK_EM_INTERFACE_VERSION,
+#if CFG_MTK_ANDROID_WMT
+	.rEmiInfo = {
+		.type = EMI_ALLOC_TYPE_WMT,
+	},
+#endif
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_connac = {

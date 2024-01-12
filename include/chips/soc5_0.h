@@ -179,11 +179,6 @@ extern u_int8_t g_fgRstRecover;
 extern u_int8_t g_IsNeedWaitCoredump;
 #endif
 
-#if CFG_MTK_ANDROID_EMI
-extern phys_addr_t gConEmiPhyBaseFinal;
-extern unsigned long long gConEmiSizeFinal;
-#endif
-
 extern struct PLE_TOP_CR rSoc5_0_PleTopCr;
 extern struct PSE_TOP_CR rSoc5_0_PseTopCr;
 extern struct PP_TOP_CR rSoc5_0_PpTopCr;
