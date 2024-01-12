@@ -674,9 +674,10 @@ static uint16_t kalGetMoreSizeForAmsdu(uint32_t u4TxdDW1)
 	if (u4TxdDW1 & TXD_DW1_ETYP)
 		u2Size += 8;
 	if (u4TxdDW1 & TXD_DW1_VLAN) {
-		if (u4TxdDW1 & TXD_DW1_RMVL)
-			u2Size -= 4;
-		else
+		if (u4TxdDW1 & TXD_DW1_RMVL) {
+			if (u2Size >= 4)
+				u2Size -= 4;
+		} else
 			u2Size += 6;
 	}
 	return u2Size;
