@@ -5137,9 +5137,9 @@ void kalIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 
 		i4Freq = nicChannelNum2Freq(ucChnlNum) / 1000;
 
-		if (prGlueInfo->prDevHandler->ieee80211_ptr == NULL) {
+		if (!prGlueInfo->fgIsRegistered) {
 			DBGLOG(AIS, WARN,
-				"ieee80211_ptr is NULL!\n");
+				"Net dev is not ready!\n");
 			break;
 		}
 
