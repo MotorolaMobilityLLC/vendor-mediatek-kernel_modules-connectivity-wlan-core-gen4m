@@ -24,6 +24,8 @@
 
 #include "precomp.h"
 #include "soc7_0.h"
+#include "coda/soc7_0/wf_ple_top.h"
+#include "coda/soc7_0/wf_pse_top.h"
 #include "coda/soc7_0/wf_hif_dmashdl_top.h"
 #include "hal_dmashdl_soc7_0.h"
 

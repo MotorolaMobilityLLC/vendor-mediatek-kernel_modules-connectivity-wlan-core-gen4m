@@ -74,6 +74,7 @@
 #include "coda/soc3_0/wf_wfdma_host_dma1.h"
 #include "coda/soc3_0/wf_wfdma_mcu_dma0.h"
 #include "coda/soc3_0/wf_wfdma_mcu_dma1.h"
+#include "coda/soc3_0/wf_pse_top.h"
 
 #include "coda/soc3_0/conn_infra_cfg.h"
 
@@ -326,6 +327,39 @@ struct wfdma_group_info soc3_0_wfmda_wm_rx_group[] = {
 	{"P1R0:FWDL", WF_WFDMA_MCU_DMA1_WPDMA_RX_RING0_CTRL0_ADDR},
 	{"P1R1:AP CMD", WF_WFDMA_MCU_DMA1_WPDMA_RX_RING1_CTRL0_ADDR},
 	{"P1R2:MD CMD", WF_WFDMA_MCU_DMA1_WPDMA_RX_RING2_CTRL0_ADDR},
+};
+
+struct pse_group_info rSoc3_0_pse_group[] = {
+	{"HIF0(TX data)", WF_PSE_TOP_PG_HIF0_GROUP_ADDR,
+		WF_PSE_TOP_HIF0_PG_INFO_ADDR},
+	{"HIF1(Talos CMD)", WF_PSE_TOP_PG_HIF1_GROUP_ADDR,
+		WF_PSE_TOP_HIF1_PG_INFO_ADDR},
+#if 0
+	{"HIF2", WF_PSE_TOP_PG_HIF2_GROUP_ADDR,
+		WF_PSE_TOP_HIF2_PG_INFO_ADDR},
+#endif
+	{"CPU(I/O r/w)",  WF_PSE_TOP_PG_CPU_GROUP_ADDR,
+		WF_PSE_TOP_CPU_PG_INFO_ADDR},
+	{"PLE(host report)",  WF_PSE_TOP_PG_PLE_GROUP_ADDR,
+		WF_PSE_TOP_PLE_PG_INFO_ADDR},
+	{"PLE1(SPL report)", WF_PSE_TOP_PG_PLE1_GROUP_ADDR,
+		WF_PSE_TOP_PLE1_PG_INFO_ADDR},
+	{"LMAC0(RX data)", WF_PSE_TOP_PG_LMAC0_GROUP_ADDR,
+			WF_PSE_TOP_LMAC0_PG_INFO_ADDR},
+	{"LMAC1(RX_VEC)", WF_PSE_TOP_PG_LMAC1_GROUP_ADDR,
+			WF_PSE_TOP_LMAC1_PG_INFO_ADDR},
+	{"LMAC2(TXS)", WF_PSE_TOP_PG_LMAC2_GROUP_ADDR,
+			WF_PSE_TOP_LMAC2_PG_INFO_ADDR},
+	{"LMAC3(TXCMD/RXRPT)", WF_PSE_TOP_PG_LMAC3_GROUP_ADDR,
+			WF_PSE_TOP_LMAC3_PG_INFO_ADDR},
+	{"MDP",  WF_PSE_TOP_PG_MDP_GROUP_ADDR,
+			WF_PSE_TOP_MDP_PG_INFO_ADDR},
+#if 0
+	{"MDP1", WF_PSE_TOP_PG_MDP1_GROUP_ADDR,
+		WF_PSE_TOP_MDP1_PG_INFO_ADDR},
+	{"MDP2", WF_PSE_TOP_PG_MDP2_GROUP_ADDR,
+		WF_PSE_TOP_MDP2_PG_INFO_ADDR},
+#endif
 };
 
 static uint8_t soc3_0SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
@@ -882,6 +916,10 @@ struct BUS_INFO soc3_0_bus_info = {
 	.wfmda_wm_rx_group = soc3_0_wfmda_wm_rx_group,
 	.wfmda_wm_rx_group_len = ARRAY_SIZE(soc3_0_wfmda_wm_rx_group),
 	.prDmashdlCfg = &rMT6885DmashdlCfg,
+	.prPleTopCr = &rSoc3_0_PleTopCr,
+	.prPseTopCr = &rSoc3_0_PseTopCr,
+	.prPseGroup = rSoc3_0_pse_group,
+	.u4PseGroupLen = ARRAY_SIZE(rSoc3_0_pse_group),
 	.pdmaSetup = soc3_0asicConnac2xWpdmaConfig,
 	.enableInterrupt = asicConnac2xEnablePlatformIRQ,
 	.disableInterrupt = asicConnac2xDisablePlatformIRQ,
@@ -975,8 +1013,8 @@ struct RX_DESC_OPS_T soc3_0_RxDescOps = {
 
 struct CHIP_DBG_OPS soc3_0_debug_ops = {
 	.showPdmaInfo = connac2x_show_wfdma_info,
-	.showPseInfo = soc3_0_show_pse_info,
-	.showPleInfo = soc3_0_show_ple_info,
+	.showPseInfo = connac2x_show_pse_info,
+	.showPleInfo = connac2x_show_ple_info,
 	.showTxdInfo = connac2x_show_txd_Info,
 	.showWtblInfo = connac2x_show_wtbl_info,
 	.showUmacFwtblInfo = connac2x_show_umac_wtbl_info,

@@ -253,6 +253,10 @@ struct BUS_INFO {
 	const uint32_t wfmda_wm_rx_group_len;
 
 	struct DMASHDL_CFG *prDmashdlCfg;
+	struct PLE_TOP_CR *prPleTopCr;
+	struct PSE_TOP_CR *prPseTopCr;
+	struct pse_group_info *prPseGroup;
+	const uint32_t u4PseGroupLen;
 
 	void (*pdmaSetup)(struct GLUE_INFO *prGlueInfo, u_int8_t enable,
 		bool fgResetHif);
