@@ -7052,6 +7052,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucPresetLinkId = 0xff;
 	prWifiVar->ucMldLinkMax = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"MldLinkMax", MLD_LINK_MAX);
+	prWifiVar->ucEnableMlo = (uint8_t) wlanCfgGetUint32(prAdapter,
+		"EnableMlo", FEATURE_ENABLED);
 #endif
 
 	prWifiVar->ucApHt = (uint8_t) wlanCfgGetUint32(prAdapter, "ApHT",
