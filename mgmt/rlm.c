@@ -8155,8 +8155,9 @@ void rlmSetSrControl(struct ADAPTER *prAdapter, bool fgIsEnableSr)
 		(uint8_t *) (prCmdSrCap),
 		NULL, 0);
 
-	kalMemFree(prCmdSrCap, VIR_MEM_TYPE,
-		   sizeof(struct _SR_CMD_SR_CAP_T));
+	if (prCmdSrCap)
+		kalMemFree(prCmdSrCap, VIR_MEM_TYPE,
+			    sizeof(struct _SR_CMD_SR_CAP_T));
 }
 #endif
 
