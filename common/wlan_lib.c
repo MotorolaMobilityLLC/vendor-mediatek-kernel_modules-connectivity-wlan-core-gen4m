@@ -10614,7 +10614,7 @@ void wlanTxLifetimeTagPacket(struct ADAPTER *prAdapter,
 #endif
 			if (prWifiVar->fgPacketLatencyLog)
 				DBGLOG(TX, INFO,
-					"Latency(us) HIF_D:%lu, DEQ_D:%lu, ENQ_D:%lu A:%llu BSSIDX:WIDX:PID[%u:%u:%u] IPID:0x%04x SeqNo:%d\n",
+					"Latency(us) HIF_D:%u, DEQ_D:%u, ENQ_D:%u A:%llu BSSIDX:WIDX:PID[%u:%u:%u] IPID:0x%04x SeqNo:%d\n",
 					NSEC_TO_USEC((uint32_t)(
 					prPktProfile->u8HifTxTime -
 					prPktProfile->u8XmitArrival)),
