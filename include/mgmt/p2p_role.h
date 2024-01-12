@@ -501,4 +501,7 @@ void p2pRoleFsmRunEventTxCancelWait(IN struct ADAPTER *prAdapter,
 void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr);
 
+void p2pRoleFsmRunEventScanAbort(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIdx);
+
 #endif
