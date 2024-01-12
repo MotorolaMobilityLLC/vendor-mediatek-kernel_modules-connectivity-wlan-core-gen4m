@@ -13662,56 +13662,6 @@ wlanoidSetStopSchedScan(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_SCHED_SCAN */
 
-#if CFG_MOVE_BA_TO_DRIVER
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This routine is called to reset BA scoreboard.
- *
- *
- * \param[in] prAdapter      Pointer to the Adapter structure.
- * \param[in] pvSetBuffer A pointer to the buffer that holds the data to be set.
- * \param[in] u4SetBufferLen The length of the set buffer.
- * \param[out] pu4SetInfoLen If the call is successful, returns the number of
- *                          bytes read from the set buffer. If the call failed
- *                          due to invalid length of the set buffer, returns
- *                          the amount of storage needed.
- *
- * \retval WLAN_STATUS_SUCCESS
- * \retval WLAN_STATUS_INVALID_LENGTH
- */
-/*----------------------------------------------------------------------------*/
-uint32_t wlanoidResetBAScoreboard(struct ADAPTER *
-				  prAdapter, void *pvSetBuffer,
-				  uint32_t u4SetBufferLen)
-{
-	uint32_t rStatus;
-
-	DBGLOG(REQ, WARN, "enter ResetBAScoreboard\n");
-
-	ASSERT(prAdapter);
-	ASSERT(pvSetBuffer);
-
-	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
-				CMD_ID_RESET_BA_SCOREBOARD, /* ucCID */
-				TRUE,	/* fgSetQuery */
-				FALSE,	/* fgNeedResp */
-				TRUE,	/* fgIsOid */
-				NULL,	/* pfCmdDoneHandler */
-				NULL,	/* pfCmdTimeoutHandler */
-				u4SetBufferLen,	/* u4SetQueryInfoLen */
-				(uint8_t *) pvSetBuffer, /* pucInfoBuffer */
-				NULL,	/* pvSetQueryBuffer */
-				0	/* u4SetQueryBufferLen */
-				);
-
-	/* ASSERT(rStatus == WLAN_STATUS_PENDING); */
-
-	return rStatus;
-
-}
-
-#endif
-
 #if CFG_SUPPORT_PASSPOINT
 /*----------------------------------------------------------------------------*/
 /*!
