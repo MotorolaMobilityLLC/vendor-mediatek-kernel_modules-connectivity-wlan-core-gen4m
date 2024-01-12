@@ -4498,19 +4498,36 @@ void cnmWmmIndexDecision(
 				|| (prAdapter->ucHwWmmEnBit & BIT(2))) {
 				if (!(prAdapter->ucHwWmmEnBit & BIT(1))
 				&& !(prAdapter->ucHwWmmEnBit & BIT(3))) {
-					g_ucNanWmmQueIdx = 3;
-					ucWmmIndex = 3;
+					if (prAdapter->rWifiVar.fgNanWmmSeq) {
+						g_ucNanWmmQueIdx = 3;
+						ucWmmIndex = 3;
+					} else {
+						g_ucNanWmmQueIdx = 1;
+						ucWmmIndex = 1;
+					}
 				}
 			} else {
-				g_ucNanWmmQueIdx = 2;
-				ucWmmIndex = 2;
+				if (prAdapter->rWifiVar.fgNanWmmSeq) {
+					g_ucNanWmmQueIdx = 2;
+					ucWmmIndex = 2;
+				} else {
+					g_ucNanWmmQueIdx = 0;
+					ucWmmIndex = 0;
+				}
 			}
 		}
 		if (prBssInfo->eBand == BAND_5G) {
-			if (g_ucNanWmmQueIdx == 2)
-				ucWmmIndex = 0;
-			if (g_ucNanWmmQueIdx == 3)
-				ucWmmIndex = 1;
+			if (prAdapter->rWifiVar.fgNanWmmSeq) {
+				if (g_ucNanWmmQueIdx == 2)
+					ucWmmIndex = 0;
+				if (g_ucNanWmmQueIdx == 3)
+					ucWmmIndex = 1;
+			} else {
+				if (g_ucNanWmmQueIdx == 0)
+					ucWmmIndex = 2;
+				if (g_ucNanWmmQueIdx == 1)
+					ucWmmIndex = 3;
+			}
 		}
 		if (ucWmmIndex != HW_WMM_NUM) {
 			prAdapter->ucHwWmmEnBit |= BIT(ucWmmIndex);
