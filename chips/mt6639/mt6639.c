@@ -914,7 +914,7 @@ struct test_capability mt6639_toolCapability = {
 		/* BIT[15:8]: Band1 BW320, 0x2F */
 		/* BIT[23:16]: Band2 N/A, 0x0 */
 		/* BIT[31:24]: Band3 BW20, 0x1 */
-		0x01002F02,	/* u_int32 band_bandwidth; */
+		0x01002F03,	/* u_int32 band_bandwidth; */
 
 		{ 0, 0, 0, 0 }	/* u_int32 reserved[4]; */
 	},
