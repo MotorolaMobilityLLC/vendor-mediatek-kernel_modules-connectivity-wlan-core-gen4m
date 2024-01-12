@@ -2394,7 +2394,7 @@ uint32_t wlanParseRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 		goto exit;
 	}
 
-	kalGetPlatDev(&pvDev);
+	kalGetDev(&pvDev);
 	if (pvDev == NULL) {
 		DBGLOG(INIT, WARN, "glGetPlatDev failed\n");
 		goto exit;

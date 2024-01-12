@@ -63,6 +63,8 @@
 /* for sched_clock() */
 #include <linux/sched/clock.h>
 
+#include <linux/platform_device.h>
+
 #if DBG
 extern int allocatedMemSize;
 #endif
@@ -79,7 +81,6 @@ extern bool fgIsTxPowerDecreased;
 
 extern u_int8_t wlan_perf_monitor_force_enable;
 
-extern struct platform_device *g_prPlatDev;
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -2541,7 +2542,8 @@ void *kalBuildSkb(void *pvPacket, uint32_t u4MgmtLength,
 	uint32_t u4TotLen, u_int8_t fgIsSetLen);
 void *kalGetGlueNetDevHdl(struct GLUE_INFO *prGlueInfo);
 struct device *kalGetGlueDevHdl(struct GLUE_INFO *prGlueInfo);
-void kalGetPlatDev(void **dev);
+void kalGetPlatDev(struct platform_device **pdev);
+void kalGetDev(void **dev);
 void kalClearGlueScanReq(struct GLUE_INFO *prGlueInfo);
 void *kalGetGlueScanReq(struct GLUE_INFO *prGlueInfo);
 void *kalGetGlueSchedScanReq(struct GLUE_INFO *prGlueInfo);

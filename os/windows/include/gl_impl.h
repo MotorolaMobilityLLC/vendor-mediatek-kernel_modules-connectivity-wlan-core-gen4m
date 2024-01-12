@@ -103,7 +103,7 @@ uint32_t  __KAL_INLINE__ kalGetConnInfraId(void)
 }
 #endif
 
-void __KAL_INLINE__ kalGetPlatDev(void **dev)
+void __KAL_INLINE__ kalGetDev(void **dev)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }

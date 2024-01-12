@@ -464,7 +464,7 @@ void *kalGetGlueDevHdl(struct GLUE_INFO *prGlueInfo)
 	return (void *)NULL;
 }
 
-void kalGetPlatDev(void **dev)
+void kalGetDev(void **dev)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }

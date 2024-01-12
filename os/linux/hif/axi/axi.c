@@ -147,15 +147,20 @@ static int hifAxiProbe(void)
 	int ret = 0;
 	struct mt66xx_hif_driver_data *prDriverData;
 	struct mt66xx_chip_info *prChipInfo;
-
-	ASSERT(g_prPlatDev);
+	struct platform_device *pdev;
 
 	prDriverData = get_platform_driver_data();
 	prChipInfo = prDriverData->chip_info;
+	pdev = prChipInfo->platform_device;
+	if (!pdev) {
+		DBGLOG(INIT, ERROR, "pdev is NULL\n");
+		ret = -1;
+		goto out;
+	}
 
-	if (pfWlanProbe((void *) g_prPlatDev, (void *) prDriverData) !=
+	if (pfWlanProbe((void *) pdev, (void *) prDriverData) !=
 			WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, INFO, "pfWlanProbe fail!\n");
+		DBGLOG(INIT, ERROR, "pfWlanProbe fail!\n");
 		ret = -1;
 		goto out;
 	}
@@ -417,11 +422,11 @@ static int mtk_axi_probe(struct platform_device *pdev)
 	struct mt66xx_chip_info *prChipInfo;
 	int ret = 0;
 
-	g_prPlatDev = pdev;
 	prDriverData = (struct mt66xx_hif_driver_data *)
 			mtk_axi_ids[0].driver_data;
 	prChipInfo = prDriverData->chip_info;
 	prChipInfo->pdev = (void *) pdev;
+	prChipInfo->platform_device = (void *) pdev;
 
 	platform_set_drvdata(pdev, (void *) prDriverData);
 

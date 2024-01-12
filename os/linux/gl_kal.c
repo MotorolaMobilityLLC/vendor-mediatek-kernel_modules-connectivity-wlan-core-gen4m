@@ -152,8 +152,6 @@ static uint8_t aucBandTranslate[BAND_NUM] = {
 int allocatedMemSize;
 #endif
 
-struct platform_device *g_prPlatDev;
-
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -15245,10 +15243,24 @@ struct device *kalGetGlueDevHdl(struct GLUE_INFO *prGlueInfo)
 	return prGlueInfo->prDev;
 }
 
-void kalGetPlatDev(void **dev)
+void kalGetPlatDev(struct platform_device **pdev)
 {
-	if (g_prPlatDev)
-		*dev = &g_prPlatDev->dev;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+
+	glGetChipInfo((void **)&prChipInfo);
+	if (prChipInfo)
+		*pdev = (struct platform_device *)prChipInfo->platform_device;
+	else
+		*pdev = NULL;
+}
+
+void kalGetDev(void **dev)
+{
+	struct platform_device *prPlatDev;
+
+	kalGetPlatDev(&prPlatDev);
+	if (prPlatDev)
+		*dev = &prPlatDev->dev;
 	else
 		*dev = NULL;
 }

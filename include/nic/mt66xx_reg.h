@@ -1627,6 +1627,7 @@ struct mt66xx_chip_info {
 	void (*asicWfdmaReInit)(struct ADAPTER *prAdapter);
 	void (*asicWfdmaReInit_handshakeInit)(struct ADAPTER *prAdapter);
 	void *pdev;
+	void *platform_device;
 	uint32_t group5_size;
 	void (*wlanCheckAsicCap)(struct ADAPTER *prAdapter);
 #if (CFG_CHIP_RESET_SUPPORT == 1) && (CFG_WMT_RESET_API_SUPPORT == 0)
