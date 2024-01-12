@@ -412,8 +412,6 @@ saaFsmSendEventJoinComplete(struct ADAPTER *prAdapter,
 			    struct STA_RECORD *prStaRec,
 			    struct SW_RFB *prSwRfb)
 {
-	struct BSS_INFO *prBssInfo;
-
 	if (!prStaRec) {
 		DBGLOG(SAA, ERROR, "[%s]prStaRec is NULL\n", __func__);
 		return WLAN_STATUS_INVALID_PACKET;
@@ -425,21 +423,6 @@ saaFsmSendEventJoinComplete(struct ADAPTER *prAdapter,
 	if (prStaRec->ucBssIndex >= MAX_BSSID_NUM) {
 		DBGLOG(NIC, ERROR, "ucBssIndex out of range!\n");
 		return WLAN_STATUS_FAILURE;
-	}
-
-	/* Store limitation about 40Mhz bandwidth capability during
-	 * association.
-	 */
-	if (prStaRec->ucBssIndex < prAdapter->ucHwBssIdNum) {
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-						  prStaRec->ucBssIndex);
-
-		if (prBssInfo != NULL) {
-			if (rJoinStatus == WLAN_STATUS_SUCCESS)
-				prBssInfo->fg40mBwAllowed =
-						prBssInfo->fgAssoc40mBwAllowed;
-			prBssInfo->fgAssoc40mBwAllowed = FALSE;
-		}
 	}
 
 	/* For wlan0 (AP) + p2p0, don't check the prAisBssInfo for the P2P. */
@@ -540,7 +523,6 @@ void saaFsmRunEventStart(struct ADAPTER *prAdapter,
 {
 	struct MSG_SAA_FSM_START *prSaaFsmStartMsg;
 	struct STA_RECORD *prStaRec;
-	struct BSS_INFO *prBssInfo;
 
 	prSaaFsmStartMsg = (struct MSG_SAA_FSM_START *) prMsgHdr;
 	prStaRec = prSaaFsmStartMsg->prStaRec;
@@ -612,28 +594,6 @@ void saaFsmRunEventStart(struct ADAPTER *prAdapter,
 	 */
 	/* cnmStaRecChangeState(prStaRec, STA_STATE_1); */
 
-	/* 4 <6> Decide if this BSS 20/40M bandwidth is allowed */
-	if (prStaRec->ucBssIndex < prAdapter->ucHwBssIdNum) {
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-						  prStaRec->ucBssIndex);
-
-		if (!prBssInfo) {
-			DBGLOG(SAA, ERROR, "prBssInfo is null\n");
-			return;
-		}
-
-		if ((prAdapter->rWifiVar.ucAvailablePhyTypeSet &
-		     PHY_TYPE_SET_802_11N) &&
-		    (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N)) {
-			prBssInfo->fgAssoc40mBwAllowed =
-				cnmBss40mBwPermitted(prAdapter,
-						     prBssInfo->ucBssIndex);
-		} else {
-			prBssInfo->fgAssoc40mBwAllowed = FALSE;
-		}
-		DBGLOG(RLM, TRACE, "STA 40mAllowed=%d\n",
-		       prBssInfo->fgAssoc40mBwAllowed);
-	}
 	/* 4 <7> Trigger SAA FSM */
 	if (prStaRec->ucStaState == STA_STATE_1) {
 		if (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_SAE)
