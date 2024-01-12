@@ -2886,6 +2886,82 @@ nicPowerSaveInfoMap(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
+nicConfigPowerSaveProfileEntry(struct ADAPTER *prAdapter,
+			  uint8_t ucBssIndex,
+			  enum PARAM_POWER_MODE ePwrMode,
+			  u_int8_t fgEnCmdEvent,
+			  enum POWER_SAVE_CALLER ucCaller)
+{
+	struct BSS_INFO *prBssInfo;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+#endif
+
+	DBGLOG(INIT, INFO,
+		"ucBssIndex:%d, ePwrMode:%d, fgEnCmdEvent:%d\n",
+		ucBssIndex, ePwrMode, fgEnCmdEvent);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(INIT, ERROR, "ucBssIndex:%d not found\n", ucBssIndex);
+		return WLAN_STATUS_NOT_SUPPORTED;
+	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	if (prMldBssInfo) {
+		struct BSS_INFO *bss;
+
+		LINK_FOR_EACH_ENTRY(bss, &prMldBssInfo->rBssList,
+			rLinkEntryMld, struct BSS_INFO) {
+			if (bss->eNetworkType < 0 ||
+			    bss->eNetworkType >= NETWORK_TYPE_NUM ||
+			    bss->eNetworkType != prBssInfo->eNetworkType) {
+				DBGLOG(INIT, WARN,
+					   "Bss%d invalid eNetworkType: %d\n",
+					   bss->ucBssIndex,
+					   bss->eNetworkType);
+			} else if (prAdapter->rWifiVar.ucPresetLinkId ==
+							MLD_LINK_ID_NONE ||
+			    prAdapter->rWifiVar.ucPresetLinkId ==
+							bss->ucLinkIndex) {
+				nicConfigPowerSaveProfile(prAdapter,
+					bss->ucBssIndex,
+					ePwrMode,
+					fgEnCmdEvent,
+					ucCaller);
+			}
+		}
+
+		prAdapter->rWifiVar.ucPresetLinkId = MLD_LINK_ID_NONE;
+	} else
+#endif
+	{
+		nicConfigPowerSaveProfile(prAdapter, ucBssIndex,
+			ePwrMode, fgEnCmdEvent, ucCaller);
+	}
+
+	return WLAN_STATUS_SUCCESS;
+} /* end of nicConfigPowerSaveProfile */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This utility function is used to set power save profile
+ *
+ *
+ * @param prAdapter          Pointer of ADAPTER_T
+ *        ucBssIndex         Index of BSS-INFO
+ *        ucSet              enter power save or not(1 PS, 0 not PS)
+ *        fgEnCmdEvent       Enable the functions when command done and timeout
+ *        ucCaller           index of bit map for caller
+ *
+ * @retval WLAN_STATUS_SUCCESS
+ * @retval WLAN_STATUS_PENDING
+ * @retval WLAN_STATUS_FAILURE
+ * @retval WLAN_STATUS_NOT_SUPPORTED
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
 nicConfigPowerSaveProfile(struct ADAPTER *prAdapter,
 			  uint8_t ucBssIndex,
 			  enum PARAM_POWER_MODE ePwrMode,

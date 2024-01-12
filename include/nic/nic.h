@@ -539,6 +539,11 @@ nicPowerSaveInfoMap(struct ADAPTER *prAdapter,
 		enum POWER_SAVE_CALLER ucCaller);
 
 uint32_t
+nicConfigPowerSaveProfileEntry(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex, enum PARAM_POWER_MODE ePwrMode,
+		u_int8_t fgEnCmdEvent, enum POWER_SAVE_CALLER ucCaller);
+
+uint32_t
 nicConfigPowerSaveProfile(struct ADAPTER *prAdapter,
 		uint8_t ucBssIndex, enum PARAM_POWER_MODE ePwrMode,
 		u_int8_t fgEnCmdEvent, enum POWER_SAVE_CALLER ucCaller);
