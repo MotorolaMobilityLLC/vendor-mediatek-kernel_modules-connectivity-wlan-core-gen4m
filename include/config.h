@@ -2381,6 +2381,10 @@
 #error "TX_FREE_MSDU_WORK is based on TASKLET_FREE_MSDU."
 #endif
 
+#ifndef CFG_ADJUST_NETIF_TH_BY_BAND
+#define CFG_ADJUST_NETIF_TH_BY_BAND 0
+#endif /* CFG_ADJUST_NETIF_TH_BY_BAND */
+
 /*------------------------------------------------------------------------------
  * Flags of Force TX via ALTX Q Support
  *------------------------------------------------------------------------------

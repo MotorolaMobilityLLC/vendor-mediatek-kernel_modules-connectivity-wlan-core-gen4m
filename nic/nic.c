@@ -2475,12 +2475,53 @@ void nicUpdateNetifTxTh(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_802_11BE_MLO == 1 */
 
+void nicSetDefaultNetifTxTh(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+#if CFG_ADJUST_NETIF_TH_BY_BAND
+	enum ENUM_BAND eBand;
+	uint32_t u4TxStopTh, u4TxStartTh;
+	uint8_t ucBw;
+
+	eBand = prBssInfo->eBand;
+	if (eBand >= BAND_NUM) {
+		DBGLOG(NIC, ERROR, "Invalid eBand:%u\n");
+		return;
+	}
+
+	if (prBssInfo->eConnectionState != MEDIA_STATE_CONNECTED)
+		return;
+
+	u4TxStopTh = prWifiVar->au4NetifStopTh[eBand];
+	u4TxStartTh = prWifiVar->au4NetifStartTh[eBand];
+
+	/* Get DUT BW capability */
+	ucBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+	if (prBssInfo->eBand == BAND_2G4 && ucBw > MAX_BW_20MHZ) {
+		/* double it for 2.4G BW40 */
+		u4TxStopTh <<= 1;
+		u4TxStartTh <<= 1;
+	}
+
+	if (u4TxStartTh > u4TxStopTh) {
+		DBGLOG(NIC, ERROR,
+			"Invalid TxTh[%u:%u] for eBand:%u BssIndex:%u\n",
+			u4TxStartTh, u4TxStopTh, eBand, prBssInfo->ucBssIndex);
+		return;
+	}
+
+	prBssInfo->u4TxStopTh = u4TxStopTh;
+	prBssInfo->u4TxStartTh = u4TxStartTh;
+#else /* CFG_ADJUST_NETIF_TH_BY_BAND */
+	prBssInfo->u4TxStopTh = prWifiVar->u4NetifStopTh;
+	prBssInfo->u4TxStartTh = prWifiVar->u4NetifStartTh;
+#endif /* CFG_ADJUST_NETIF_TH_BY_BAND */
+}
+
 void nicAdjustNetifTxTh(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo)
 {
-	struct WIFI_VAR *prWifiVar;
-
-	prWifiVar = &prAdapter->rWifiVar;
 	if (prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED
 		&& NIC_IS_BSS_BELOW_11AC(prBssInfo)) {
 		if (NIC_IS_BSS_11B(prBssInfo))
@@ -2500,8 +2541,7 @@ void nicAdjustNetifTxTh(struct ADAPTER *prAdapter,
 	}
 #endif
 	else {
-		prBssInfo->u4TxStopTh = prWifiVar->u4NetifStopTh;
-		prBssInfo->u4TxStartTh = prWifiVar->u4NetifStartTh;
+		nicSetDefaultNetifTxTh(prAdapter, prBssInfo);
 		prBssInfo->fgIs11B = FALSE;
 	}
 
@@ -2821,7 +2861,7 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 #define TEMP_LOG_TEMPLATE \
 	"Update Bss[%u] OMAC[%u] WMM[%u] ConnState[%u] OPmode[%u] " \
 	"BSSID[" MACSTR "] AuthMode[%u] EncStatus[%u] IotAct[%u] " \
-	"NetIfTh[%u:%u]\n"
+	"eBand[%u] Bw[%u] NetIfTh[%u:%u]\n"
 
 	DBGLOG(BSS, INFO,
 	       TEMP_LOG_TEMPLATE,
@@ -2834,6 +2874,8 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 	       rCmdSetBssInfo.ucAuthMode,
 	       rCmdSetBssInfo.ucEncStatus,
 	       rCmdSetBssInfo.ucIotApAct,
+	       prBssInfo->eBand,
+	       cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex),
 	       prBssInfo->u4TxStopTh,
 	       prBssInfo->u4TxStartTh);
 #undef TEMP_LOG_TEMPLATE
