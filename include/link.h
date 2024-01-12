@@ -425,7 +425,8 @@ static __KAL_INLINE__ void __linkDel(IN struct LINK_ENTRY
 {
 	if (prNext)
 		prNext->prPrev = prPrev;
-	prPrev->prNext = prNext;
+	if (prPrev)
+		prPrev->prNext = prNext;
 }				/* end of __linkDel() */
 
 /*----------------------------------------------------------------------------*/
