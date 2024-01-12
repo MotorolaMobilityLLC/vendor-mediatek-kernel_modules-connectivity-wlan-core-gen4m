@@ -2403,7 +2403,7 @@ int _mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 			}
 		}
 
-		*cookie = prGlueInfo->u8Cookie++;
+		*cookie = prGlueInfo->prP2PDevInfo->u8Cookie++;
 
 		prMsgTxReq = cnmMemAlloc(prGlueInfo->prAdapter,
 				RAM_TYPE_MSG,
