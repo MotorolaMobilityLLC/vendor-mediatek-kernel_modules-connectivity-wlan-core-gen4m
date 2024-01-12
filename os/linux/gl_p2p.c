@@ -1174,7 +1174,7 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	/* set HW checksum offload */
 	if (prAdapter->fgIsSupportCsumOffload) {
-		prP2pDev->features = NETIF_F_IP_CSUM |
+		prP2pDev->features |= NETIF_F_IP_CSUM |
 				     NETIF_F_IPV6_CSUM |
 				     NETIF_F_RXCSUM;
 	}
