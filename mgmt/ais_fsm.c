@@ -1372,7 +1372,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 						prAisBssInfo->ucWmmQueSet);
 #endif /*CFG_SUPPORT_DBDC*/
 
-					cnmGetOpTRxNss(prAdapter,
+					cnmOpModeGetTRxNss(prAdapter,
 						prAisBssInfo->ucBssIndex,
 						&prAisBssInfo->ucOpRxNss,
 						&prAisBssInfo->ucOpTxNss);
