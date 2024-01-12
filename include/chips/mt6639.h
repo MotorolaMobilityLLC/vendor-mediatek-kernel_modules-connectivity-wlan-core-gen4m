@@ -58,6 +58,9 @@
 
 #define MT6639_ROM_VERSION			1
 
+#define MTK_CUSTOM_OID_INTERFACE_VERSION     0x00000200	/* for WPDWifi DLL */
+#define MTK_EM_INTERFACE_VERSION		0x0001
+
 extern struct PLE_TOP_CR rMt6639PleTopCr;
 extern struct PSE_TOP_CR rMt6639PseTopCr;
 extern struct PP_TOP_CR rMt6639PpTopCr;
