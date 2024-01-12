@@ -1209,13 +1209,13 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 void scanFillSecondaryLink(struct ADAPTER *prAdapter,
-	struct BSS_DESC_SET *prBssDescSet)
+	struct BSS_DESC_SET *prBssDescSet, uint8_t ucBssIndex)
 {
 	struct LINK *prBSSDescList =
 		&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
 	struct BSS_DESC *prBssDesc = NULL;
 	struct BSS_DESC *prMainBssDesc = prBssDescSet->prMainBssDesc;
-	uint8_t i, j;
+	uint8_t i;
 
 	if (!prMainBssDesc || !prMainBssDesc->rMlInfo.fgValid)
 		return;
@@ -1230,9 +1230,11 @@ void scanFillSecondaryLink(struct ADAPTER *prAdapter,
 
 		if (!prBssDesc->rMlInfo.fgValid ||
 		    EQUAL_MAC_ADDR(prMainBssDesc->aucBSSID,
-				 prBssDesc->aucBSSID) ||
+				prBssDesc->aucBSSID) ||
 		    !EQUAL_MAC_ADDR(prMainBssDesc->rMlInfo.aucMldAddr,
-				 prBssDesc->rMlInfo.aucMldAddr))
+				prBssDesc->rMlInfo.aucMldAddr) ||
+		    !rsnPerformPolicySelection(prAdapter, prBssDesc,
+				ucBssIndex))
 			continue;
 
 		/* Record same Mld list */
@@ -1240,16 +1242,17 @@ void scanFillSecondaryLink(struct ADAPTER *prAdapter,
 		prBssDescSet->ucLinkNum++;
 	}
 
-	for (i = 0; i < prBssDescSet->ucLinkNum - 1; i++) {
-		for (j = i + 1; j < prBssDescSet->ucLinkNum; j++) {
-			if (prBssDescSet->aprBssDesc[j]->rMlInfo.ucLinkIndex <
-				prBssDescSet->aprBssDesc[i]->rMlInfo.ucLinkIndex) {
-				prBssDesc = prBssDescSet->aprBssDesc[j];
-				prBssDescSet->aprBssDesc[j] =
-					prBssDescSet->aprBssDesc[i];
-				prBssDescSet->aprBssDesc[i] =
-					prBssDesc;
-			}
+	/* prefer bssid = mld addr */
+	for (i = 0; i < prBssDescSet->ucLinkNum; i++) {
+		prBssDesc = prBssDescSet->aprBssDesc[i];
+		if (EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
+			prMainBssDesc->aucSSID, prMainBssDesc->ucSSIDLen) &&
+		    EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
+			prMainBssDesc->rMlInfo.aucMldAddr)) {
+			prBssDescSet->aprBssDesc[i] =
+				prBssDescSet->aprBssDesc[0];
+			prBssDescSet->aprBssDesc[0] = prBssDesc;
+			break;
 		}
 	}
 
@@ -1502,7 +1505,8 @@ done:
 			prBssDescSet->prMainBssDesc = prCandBssDesc;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-			scanFillSecondaryLink(prAdapter, prBssDescSet);
+			scanFillSecondaryLink(prAdapter,
+				prBssDescSet, ucBssIndex);
 #endif
 		} else {
 			prBssDescSet->ucLinkNum = 0;
