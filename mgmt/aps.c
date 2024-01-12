@@ -1842,9 +1842,8 @@ struct AP_COLLECTION *apsIntraApSelection(struct ADAPTER *ad,
 			bss = ap->aprTarget[i];
 			score = bss ? bss->u2Score : 0;
 
-			for (j = i - 1;
-			     j >= 0 && ap->aprTarget[j]->u2Score < score;
-			     j--)
+			for (j = i - 1; j >= 0 && (ap->aprTarget[j] ?
+				ap->aprTarget[j]->u2Score : 0) < score; j--)
 				ap->aprTarget[j + 1] = ap->aprTarget[j];
 
 			ap->aprTarget[j + 1] = bss;
