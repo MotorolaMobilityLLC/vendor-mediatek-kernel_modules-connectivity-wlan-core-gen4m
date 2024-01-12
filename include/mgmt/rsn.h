@@ -197,6 +197,9 @@
 #define GTK_REKEY_CMD_MODE_RPY_OFFLOAD_ON	4
 #define GTK_REKEY_CMD_MODE_RPY_OFFLOAD_OFF	5
 
+#define SA_QUERY_RETRY_TIMEOUT	3000
+#define SA_QUERY_TIMEOUT	501
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
