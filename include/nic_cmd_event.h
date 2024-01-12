@@ -1018,6 +1018,9 @@ enum NIC_CAPABILITY_V2_TAG {
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 	TAG_CAP_P2P = 0x17,
 #endif
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	TAG_CAP_6G_CAP = 0x18,
+#endif
 	TAG_CAP_HOST_STATUS_EMI_OFFSET = 0x19,
 	TAG_CAP_TOTAL
 };
@@ -1140,6 +1143,13 @@ struct CAP_ANTSWP {
 struct NIC_HOST_STATUS_EMI_OFFSET {
 	uint32_t u4EmiOffset;  /* TRUE for COEX FDD mode */
 };
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+struct CAP_6G_CAP {
+	uint8_t ucIsSupport6G;  /* 1: Support, 0: Not Support */
+	uint8_t aucReseved[3];
+};
+#endif
 
 #define EFUSE_SECTION_TABLE_SIZE        (10)   /* It should not be changed. */
 
@@ -3328,13 +3338,18 @@ uint32_t nicCfgChipCapAntSwpCap(IN struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
-	uint32_t nicCfgChipP2PCap(IN struct ADAPTER *prAdapter,
+uint32_t nicCfgChipP2PCap(IN struct ADAPTER *prAdapter,
 		IN uint8_t *pucEventBuf);
 
 #endif
 
 uint32_t nicCmdEventHostStatusEmiOffset(IN struct ADAPTER *prAdapter,
 					IN uint8_t *pucEventBuf);
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+uint32_t nicCfgChipCap6GCap(IN struct ADAPTER *prAdapter,
+		IN uint8_t *pucEventBuf);
+#endif
 
 void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 			   IN uint8_t *pucEventBuf);
