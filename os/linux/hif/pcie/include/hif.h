@@ -525,7 +525,7 @@ irqreturn_t pcie_sw_int_thread_handler(int irq, void *dev_instance);
 irqreturn_t pcie_fw_log_top_handler(int irq, void *dev_instance);
 irqreturn_t pcie_fw_log_thread_handler(int irq, void *dev_instance);
 #endif
-#if (CFG_MTK_MDDP_SUPPORT || IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER))
+#if (CFG_MTK_MDDP_SUPPORT || CFG_MTK_CCCI_SUPPORT)
 irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance);
 #endif
 
