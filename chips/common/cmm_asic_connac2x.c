@@ -2919,10 +2919,6 @@ void connsys_power_off(void)
 #if CFG_MTK_ANDROID_WMT
 void unregister_plat_connsys_cbs(void)
 {
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	power_throttling_deinit();
-#endif
-
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	conninfra_sub_drv_ops_unregister(CONNDRV_TYPE_WIFI);
 #endif
@@ -2954,10 +2950,6 @@ void register_plat_connsys_cbs(void)
 
 	conninfra_sub_drv_ops_register(CONNDRV_TYPE_WIFI,
 		&conninfra_wf_cb);
-#endif
-
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	power_throttling_init();
 #endif
 }
 #endif
