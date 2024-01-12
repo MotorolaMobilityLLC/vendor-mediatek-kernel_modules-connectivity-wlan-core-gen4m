@@ -2501,7 +2501,7 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 		cfg80211_roamed(netdev, &rRoamInfo, GFP_KERNEL);
 #if KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE
 		if (ucAuthorized) {
-#if KERNEL_VERSION(6, 2, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE
 			cfg80211_port_authorized(netdev,
 				links[0].bssid, NULL, 0, GFP_KERNEL);
 #else
@@ -11047,10 +11047,10 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 #if (CFG_ADVANCED_80211_MLO == 1)
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	cfg80211_ch_switch_notify(prDevHandler, &chandef,
-		prBssInfo->ucLinkIndex);
+		prBssInfo->ucLinkIndex, 0);
 #else
 	cfg80211_ch_switch_notify(prDevHandler, &chandef,
-		linkIdx);
+		linkIdx, 0);
 #endif
 #else
 	cfg80211_ch_switch_notify(prDevHandler, &chandef);
