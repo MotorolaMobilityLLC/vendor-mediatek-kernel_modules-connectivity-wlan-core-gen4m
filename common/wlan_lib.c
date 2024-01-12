@@ -815,6 +815,11 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 		 */
 		prAdapter->fgN9AssertDumpOngoing = FALSE;
 #endif
+#if defined(_HIF_SDIO)
+		prAdapter->fgMBAccessFail = FALSE;
+		prAdapter->prGlueInfo->rHifInfo.fgSkipRx = FALSE;
+#endif
+		prAdapter->fgIsChipNoAck = FALSE;
 	}
 
 	QUEUE_INITIALIZE(&(prAdapter->rPendingCmdQueue));
@@ -869,7 +874,15 @@ void wlanOnPostNicInitAdapter(IN struct ADAPTER *prAdapter,
 		/* 4 <3> Initialize Tx */
 		nicTxInitialize(prAdapter);
 	} /* end of bAtResetFlow == FALSE */
-
+#if defined(_HIF_SDIO)
+	else {
+		/* For SER L0.5, need reset resource before first CMD,
+		 *  or maybe will get resource fail (resource exhaustion
+		 * before SER).
+		 */
+		nicTxResetResource(prAdapter);
+	}
+#endif
 	/* 4 <4> Initialize Rx */
 	nicRxInitialize(prAdapter);
 }
@@ -1321,7 +1334,7 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		if (u4Status == WLAN_STATUS_SUCCESS) {
 #if defined(_HIF_SDIO)
 			uint32_t *pu4WHISR = NULL;
-			uint16_t au2TxCount[16];
+			uint16_t au2TxCount[SDIO_TX_RESOURCE_NUM];
 
 			pu4WHISR = (uint32_t *)kalMemAlloc(sizeof(uint32_t),
 							   PHY_MEM_TYPE);

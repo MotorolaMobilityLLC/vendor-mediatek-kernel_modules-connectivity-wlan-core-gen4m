@@ -1097,6 +1097,30 @@ union DELAY_INT_CFG_STRUCT {
 /* 4 WLAN TXQ Count Register 7 */
 #define MCR_WTQCR7                          0x014C
 
+/* 4 WLAN TXQ Count Register 8 */
+#define MCR_WTQCR8                          0x0190
+
+/* 4 WLAN TXQ Count Register 9 */
+#define MCR_WTQCR9                          0x0194
+
+/* 4 WLAN TXQ Count Register 10 */
+#define MCR_WTQCR10                         0x0198
+
+/* 4 WLAN TXQ Count Register 11 */
+#define MCR_WTQCR11                         0x019C
+
+/* 4 WLAN TXQ Count Register 12 */
+#define MCR_WTQCR12                         0x01A0
+
+/* 4 WLAN TXQ Count Register 13 */
+#define MCR_WTQCR13                         0x01A4
+
+/* 4 WLAN TXQ Count Register 14 */
+#define MCR_WTQCR14                         0x01A8
+
+/* 4 WLAN TXQ Count Register 15 */
+#define MCR_WTQCR15                         0x01AC
+
 /* WLAN/Common PC value Debug registre */
 #define MCR_SWPCDBGR				0x0154
 

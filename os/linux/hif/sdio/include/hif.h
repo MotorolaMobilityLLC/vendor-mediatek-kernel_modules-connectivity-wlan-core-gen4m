@@ -170,6 +170,14 @@
 /* N9 Interrupt Host System Error Recovery Done */
 #define SER_SDIO_N9_HOST_RECOVERY_DONE             BIT(11)
 
+#define HIF_H2D_SW_INT_SHFT                 (16)
+/* bit16 */
+#define SDIO_MAILBOX_FUNC_READ_REG_IDX      (BIT(0) << HIF_H2D_SW_INT_SHFT)
+/* bit17 */
+#define SDIO_MAILBOX_FUNC_WRITE_REG_IDX     (BIT(1) << HIF_H2D_SW_INT_SHFT)
+/* bit18 */
+#define SDIO_MAILBOX_FUNC_CHECKSUN16_IDX    (BIT(2) << HIF_H2D_SW_INT_SHFT)
+
 /* WSICR host to device (H2D) */
 /* Host ACK HIF tx/rx ring stop operatio */
 #define SER_SDIO_HOST_N9_STOP_TX_RX_OP_ACK         BIT(19)

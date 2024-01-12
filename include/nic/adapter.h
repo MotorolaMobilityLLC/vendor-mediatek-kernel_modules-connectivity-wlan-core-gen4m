@@ -1974,6 +1974,11 @@ struct ADAPTER {
 	u_int8_t fgIsNeedDlPatch;
 #endif
 	uint8_t CurNoResSeqID;
+#if defined(_HIF_SDIO)
+	u_int8_t fgGetMailBoxRWAck;
+	/* For check mailbox r/w access */
+	u_int8_t fgMBAccessFail;
+#endif
 #if (CFG_WIFI_GET_MCS_INFO == 1)
 	struct TIMER rRxMcsInfoTimer;
 	u_int8_t fgIsMcsInfoValid;
