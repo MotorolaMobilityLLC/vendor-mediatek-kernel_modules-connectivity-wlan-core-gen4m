@@ -6560,6 +6560,13 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 		prGlueInfo->fgIsEnableMon = TRUE;
 #endif
 	} else {
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+		if (prGlueInfo->fgIsEnableMon) {
+			prGlueInfo->fgIsEnableMon = FALSE;
+			mtk_cfg80211_set_monitor_channel(wiphy, NULL);
+			ndev->type = ARPHRD_ETHER;
+		} else
+#endif
 		/* AP mode change to STA mode */
 		if (mtk_uninit_ap_role(prGlueInfo, ndev) != 0) {
 			DBGLOG(INIT, ERROR, "mtk_uninit_ap_role FAILED\n");
@@ -7784,33 +7791,31 @@ int mtk_cfg80211_set_monitor_channel(struct wiphy *wiphy,
 {
 	struct GLUE_INFO *prGlueInfo;
 	uint8_t ucBand = BAND_NULL;
-	uint8_t ucSco = CHNL_EXT_SCN;
-	uint8_t ucChannelWidth = CW_20_40MHZ;
+	uint8_t ucSco = 0;
+	uint8_t ucChannelWidth = 0;
 	uint8_t ucPriChannel = 0;
 	uint8_t ucChannelS1 = 0;
 	uint8_t ucChannelS2 = 0;
 	uint32_t u4BufLen;
 	uint32_t rStatus;
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	ASSERT(prGlueInfo);
 
 	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
 
-	if (chandef == NULL) {
-		return -EFAULT;
-	}
-
-	ucPriChannel =
+	if (chandef) {
+		ucPriChannel =
 		ieee80211_frequency_to_channel(chandef->chan->center_freq);
-	ucChannelS1 =
+		ucChannelS1 =
 		ieee80211_frequency_to_channel(chandef->center_freq1);
-	ucChannelS2 =
+		ucChannelS2 =
 		ieee80211_frequency_to_channel(chandef->center_freq2);
 
-	switch (chandef->chan->band) {
+		switch (chandef->chan->band) {
 		case NL80211_BAND_2GHZ:
 			ucBand = BAND_2G4;
 			break;
@@ -7819,9 +7824,9 @@ int mtk_cfg80211_set_monitor_channel(struct wiphy *wiphy,
 			break;
 		default:
 			return -EFAULT;
-	}
+		}
 
-	switch (chandef->width) {
+		switch (chandef->width) {
 		case NL80211_CHAN_WIDTH_80P80:
 			ucChannelWidth = CW_80P80MHZ;
 			break;
@@ -7843,6 +7848,7 @@ int mtk_cfg80211_set_monitor_channel(struct wiphy *wiphy,
 			break;
 		default:
 			return -EFAULT;
+		}
 	}
 
 	prGlueInfo->ucPriChannel = ucPriChannel;
@@ -7851,17 +7857,6 @@ int mtk_cfg80211_set_monitor_channel(struct wiphy *wiphy,
 	prGlueInfo->ucBand = ucBand;
 	prGlueInfo->ucChannelWidth = ucChannelWidth;
 	prGlueInfo->ucSco = ucSco;
-
-	DBGLOG(REQ, INFO,
-		"en[%d],bn[%d],pc[%d],bw[%d],cc1[%d],cc2[%d],bidx[%d],aid[%d]\n",
-		prGlueInfo->fgIsEnableMon,
-		prGlueInfo->ucBand,
-		prGlueInfo->ucPriChannel,
-		prGlueInfo->ucChannelWidth,
-		prGlueInfo->ucChannelS1,
-		prGlueInfo->ucChannelS2,
-		prGlueInfo->ucBandIdx,
-		prGlueInfo->u2Aid);
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetMonitor,
 		NULL, 0, FALSE, FALSE, TRUE, &u4BufLen);

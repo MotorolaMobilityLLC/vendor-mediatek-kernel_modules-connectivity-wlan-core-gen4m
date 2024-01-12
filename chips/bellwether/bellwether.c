@@ -496,13 +496,13 @@ static bool bellwetherWfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
 	/* Band1 Data Rx path */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
 			RX_RING_DATA1_IDX_2, RX_RING0_SIZE,
-			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
+			RXD_SIZE, CFG_RX_MAX_MPDU_SIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[2] fail\n");
 		return false;
 	}
 	if (!halWpdmaAllocRxRing(prGlueInfo,
 			RX_RING_DATA2_IDX_5, RX_RING0_SIZE,
-			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
+			RXD_SIZE, CFG_RX_MAX_MPDU_SIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[5] fail\n");
 		return false;
 	}

@@ -5495,7 +5495,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 		prGlueInfo->fgIsEnableMon = FALSE;
 		prGlueInfo->ucBandIdx = 0;
-		prGlueInfo->fgDropFcsErrorFrame = FALSE;
+		prGlueInfo->fgDropFcsErrorFrame = TRUE;
 		prGlueInfo->u2Aid = 1;
 		prGlueInfo->u4AmpduRefNum = 0;
 
