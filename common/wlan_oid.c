@@ -16231,7 +16231,12 @@ uint32_t wlanoidSetMonitor(IN struct ADAPTER *prAdapter,
 		nicOidCmdTimeoutCommon,
 		sizeof(struct CMD_MONITOR_SET_INFO),
 		(uint8_t *)prCmdMonitor, pvSetBuffer, u4SetBufferLen);
-
+#if CFG_SUPPORT_TX_BEACON_STA_MODE
+	if (prCmdMonitor->ucEnable != 0)
+		nicActivateNetwork(prAdapter, 0);
+	else
+		nicDeactivateNetwork(prAdapter, 0);
+#endif
 	kalMemFree(prCmdMonitor, VIR_MEM_TYPE, sizeof(struct CMD_MONITOR_SET_INFO));
 
 	return rStatus;
