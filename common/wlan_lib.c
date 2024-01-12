@@ -967,6 +967,8 @@ void wlanNchoInit(IN struct ADAPTER *prAdapter, IN uint8_t fgFwSync)
 void wlanOnPostFirmwareReady(IN struct ADAPTER *prAdapter,
 		IN struct REG_INFO *prRegInfo)
 {
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
 	DBGLOG(INIT, TRACE, "start.\n");
 	/* OID timeout timer initialize */
 	cnmTimerInitTimer(prAdapter,
@@ -1146,8 +1148,7 @@ void wlanOnPostFirmwareReady(IN struct ADAPTER *prAdapter,
 #endif
 
 	/* Default QM RX BA timeout */
-	prAdapter->u4QmRxBaMissTimeout =
-		QM_RX_BA_ENTRY_MISS_TIMEOUT_MS;
+	prAdapter->u4QmRxBaMissTimeout = prWifiVar->u4BaMissTimeoutMs;
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	wlanAdapterStartForLowLatency(prAdapter);
@@ -7739,6 +7740,13 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgSwRxReordering = wlanCfgGetUint32(prAdapter,
 					"SwRxReordering", FEATURE_ENABLED);
 
+	prWifiVar->u4BaShortMissTimeoutMs = wlanCfgGetUint32(prAdapter,
+					"BaShortMissTimeoutMs",
+					QM_RX_BA_ENTRY_MISS_TIMEOUT_MS_SHORT);
+	prWifiVar->u4BaMissTimeoutMs = wlanCfgGetUint32(prAdapter,
+					"BaMissTimeoutMs",
+					QM_RX_BA_ENTRY_MISS_TIMEOUT_MS);
+
 	prWifiVar->u4PerfMonPendingTh = (uint8_t)wlanCfgGetUint32(prAdapter,
 						"PerfMonPendingTh", 80);
 
@@ -11607,10 +11615,10 @@ uint32_t wlanSetLowLatencyMode(
 		 */
 		if (fgEnMode) {
 			prAdapter->u4QmRxBaMissTimeout
-				= QM_RX_BA_ENTRY_MISS_TIMEOUT_MS_SHORT;
+				= prWifiVar->u4BaShortMissTimeoutMs;
 		} else {
 			prAdapter->u4QmRxBaMissTimeout
-				= QM_RX_BA_ENTRY_MISS_TIMEOUT_MS;
+				= prWifiVar->u4BaMissTimeoutMs;
 		}
 	}
 
