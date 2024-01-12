@@ -1651,12 +1651,10 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 	uint8_t ucHasBssid = FALSE, ucScanEnable = TRUE, ucOpClass = 0;
 	uint8_t aucNullAddr[] = NULL_MAC_ADDR;
 	uint16_t u2TbttInfoCount, u2TbttInfoLength;
-	uint8_t ucHasMlo = FALSE;
-	uint8_t ucNeedMlo = FALSE;
+	uint8_t ucHasMlo = FALSE, ucNeedMlo = FALSE;
 	struct NEIGHBOR_AP_INFO *prNeighborAPInfo = NULL;
 	struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField;
-	struct SCAN_PARAM *prScanParam;
-	struct SCAN_PARAM *prAdapterScanParam;
+	struct SCAN_PARAM *prScanParam, *prAdapterScanParam;
 	struct IE_SHORT_SSID_LIST *prIeShortSsidList;
 	struct BSS_DESC *prBssDescTemp = NULL;
 	struct SCAN_INFO *prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
@@ -1878,6 +1876,17 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 					ENUM_SCN_USE_PADDING_AS_BSSID;
 				prScanParam->ucSSIDType =
 					SCAN_REQ_SSID_WILDCARD;
+			}
+			/* If current scan has random MAC,
+			 * then RNR scan should use random MAC also.
+			 */
+			if (kalIsValidMacAddr(prAdapterScanParam
+						->aucRandomMac)) {
+				prScanParam->ucScnFuncMask |=
+					(ENUM_SCN_RANDOM_MAC_EN |
+					ENUM_SCN_RANDOM_SN_EN);
+				COPY_MAC_ADDR(prScanParam->aucRandomMac,
+					prAdapterScanParam->aucRandomMac);
 			}
 		}
 
