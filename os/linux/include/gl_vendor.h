@@ -303,7 +303,7 @@ typedef INT_32 wifi_rssi;
 ********************************************************************************
 */
 
-#if 1
+#if KERNEL_VERSION(3, 5, 0) <= LINUX_VERSION_CODE
 /*
 * #define NLA_PUT(skb, attrtype, attrlen, data) \
 *	do { \
