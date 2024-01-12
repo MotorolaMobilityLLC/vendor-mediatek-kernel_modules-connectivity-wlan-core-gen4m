@@ -9130,7 +9130,8 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 
 	pucPN = prSwRfb->prRxStatusGroup1->aucPN;
 	DBGLOG_LIMITED(QM, TRACE,
-		"BC packet 0x%x:0x%x:0x%x:0x%x:0x%x:0x%x--0x%x:0x%x:0x%x:0x%x:0x%x:0x%x\n",
+		"[KID=%d] BC packet 0x%x:0x%x:0x%x:0x%x:0x%x:0x%x--0x%x:0x%x:0x%x:0x%x:0x%x:0x%x\n",
+		ucKeyID,
 		pucPN[0], pucPN[1], pucPN[2], pucPN[3], pucPN[4], pucPN[5],
 		prDetRplyInfo->arReplayPNInfo[ucKeyID].auPN[0],
 		prDetRplyInfo->arReplayPNInfo[ucKeyID].auPN[1],

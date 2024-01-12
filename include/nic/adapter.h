@@ -990,6 +990,7 @@ struct WIFI_VAR {
 	uint8_t ucAdvPws; /* enable LP multiple DTIM function, default enable */
 	uint8_t ucWowOnMdtim; /* multiple DTIM if WOW enable, default 1 */
 	uint8_t ucWowOffMdtim; /* multiple DTIM if WOW disable, default 3 */
+	uint8_t ucEapolSuspendOffload; /* Suspend mode eapol offload, def:0 */
 	/* set wow detect type, default 1 (magic packet) */
 	/* bit 0, magic packet */
 	/* bit 1, any */

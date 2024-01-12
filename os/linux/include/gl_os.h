@@ -225,6 +225,7 @@
 #include <linux/module.h>
 #include <linux/can/netlink.h>
 #include <net/netlink.h>
+#include <linux/nl80211.h>
 
 #if IS_ENABLED(CONFIG_IPV6)
 #include <linux/ipv6.h>
@@ -236,7 +237,7 @@
 #include <net/addrconf.h>
 #endif /* CFG_SUPPORT_PASSPOINT */
 
-#if KERNEL_VERSION(3, 8, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(3, 7, 0) <= CFG80211_VERSION_CODE
 #include <uapi/linux/nl80211.h>
 #endif
 
@@ -410,6 +411,9 @@ struct GL_WPA_INFO {
 	uint8_t ucRSNMfpCap;
 #endif
 	uint16_t u2RSNXCap;
+	uint8_t aucKek[NL80211_KEK_LEN];
+	uint8_t aucKck[NL80211_KCK_LEN];
+	uint8_t aucReplayCtr[NL80211_REPLAY_CTR_LEN];
 };
 
 #if CFG_SUPPORT_REPLAY_DETECTION
