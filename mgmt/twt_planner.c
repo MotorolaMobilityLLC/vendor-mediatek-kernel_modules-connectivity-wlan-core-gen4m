@@ -1421,6 +1421,12 @@ void twtPlannerGetTsfDone(
 					prStaRec,
 					prGetTsfCtxt->ucTWTFlowId);
 
+		if (prTWTFlow == NULL) {
+			DBGLOG(TWT_PLANNER, ERROR, "prTWTFlow is NULL.\n");
+
+			return;
+		}
+
 		prTWTParams = &(prTWTFlow->rTWTPeerParams);
 
 		u8twt_interval = ((u_int64_t)(prTWTParams->u2WakeIntvalMantiss))
