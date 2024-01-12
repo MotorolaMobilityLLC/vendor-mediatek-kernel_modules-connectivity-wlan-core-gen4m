@@ -403,14 +403,14 @@ static uint16_t scanCalculateScoreByClientCnt(struct BSS_DESC *prBssDesc,
 #define BSS_STA_CNT_GOOD_THRESOLD 10
 
 	log_dbg(SCN, TRACE, "Exist bss load %d, sta cnt %d\n",
-			prBssDesc->fgExsitBssLoadIE, prBssDesc->u2StaCnt);
+			prBssDesc->fgExistBssLoadIE, prBssDesc->u2StaCnt);
 
 	if (eRoamType < 0 || eRoamType >= ROAM_TYPE_NUM) {
 		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
 
-	if (!prBssDesc->fgExsitBssLoadIE) {
+	if (!prBssDesc->fgExistBssLoadIE) {
 		u2Score = BSS_STA_CNT_NORMAL_SCORE;
 		return u2Score *
 		gasMtkWeightConfig[eRoamType].ucClientCntWeight;
@@ -873,7 +873,7 @@ static int32_t scanCalculateScoreByCu(struct ADAPTER *prAdapter,
 		rssiFactor = 2 * (90 + rssi);
 	else
 		rssiFactor = 0;
-	if (prBssDesc->fgExsitBssLoadIE) {
+	if (prBssDesc->fgExistBssLoadIE) {
 		cu = prBssDesc->ucChnlUtilization;
 	} else {
 		bss = aisGetAisBssInfo(prAdapter, ucBssIndex);
@@ -917,7 +917,7 @@ static int32_t scanCalculateScoreByCu(struct ADAPTER *prAdapter,
 		MAC2STR(prBssDesc->aucBSSID),
 		(prBssDesc->eBand == BAND_5G ? 1 : 0),
 		prBssDesc->ucChannelNum, slot,
-		prBssDesc->fgExsitBssLoadIE, score, rssi, cu, cuRatio,
+		prBssDesc->fgExistBssLoadIE, score, rssi, cu, cuRatio,
 		rssiFactor, rssiWeight,	cuFactor, cuWeight);
 	return score;
 }
@@ -999,7 +999,7 @@ static uint16_t scanCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
 		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
-	if (prBssDesc->fgExsitBssLoadIE) {
+	if (prBssDesc->fgExistBssLoadIE) {
 		cu = prBssDesc->ucChnlUtilization;
 	} else {
 		bss = aisGetAisBssInfo(prAdapter, ucBssIndex);
@@ -1056,7 +1056,7 @@ static uint16_t scanCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
 		MAC2STR(prBssDesc->aucBSSID),
 		apucBandStr[prBssDesc->eBand],
 		prBssDesc->ucChannelNum, slot,
-		prBssDesc->fgExsitBssLoadIE, score, rssi, cu, cuRatio,
+		prBssDesc->fgExistBssLoadIE, score, rssi, cu, cuRatio,
 		rssiFactor, rssiWeight, cuFactor, cuWeight);
 done:
 	return score * gasMtkWeightConfig[eRoamType].ucChnlIdleWeight;
@@ -1203,7 +1203,7 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 		u2ScoreSnrRssi, u2ScoreBand, u2BlackListScore,
 		u2ScoreSaa, u2ScoreBandwidth, u2ScoreStaCnt,
 		u2ScoreSTBC, u2ScoreChnlInfo, u2ScoreIdleTime,
-		prBssDesc->fgExsitBssLoadIE,
+		prBssDesc->fgExistBssLoadIE,
 		prBssDesc->ucChnlUtilization,
 		u2PreferenceScore,
 		u2TputScore, extra);

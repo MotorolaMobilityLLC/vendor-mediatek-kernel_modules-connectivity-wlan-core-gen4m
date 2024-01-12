@@ -5796,7 +5796,9 @@ void aisFsmDisconnect(struct ADAPTER *prAdapter,
 				prAisFsmInfo->ucConnTrialCountLimit = 1;
 				break;
 			case DISCONNECT_REASON_CODE_REASSOCIATION:
-				roam->eReason = ROAMING_REASON_REASSOC;
+			case DISCONNECT_REASON_CODE_ROAMING:
+				roam->eReason =
+					ROAMING_REASON_UPPER_LAYER_TRIGGER;
 				prAisFsmInfo->ucConnTrialCountLimit = 2;
 				break;
 			default:
@@ -8980,6 +8982,15 @@ struct ROAMING_INFO *aisGetRoamingInfo(
 	uint8_t ucBssIndex)
 {
 	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rRoamingInfo;
+}
+#endif
+
+#if (CFG_SUPPORT_APS == 1)
+struct APS_INFO *aisGetApsInfo(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rApsInfo;
 }
 #endif
 

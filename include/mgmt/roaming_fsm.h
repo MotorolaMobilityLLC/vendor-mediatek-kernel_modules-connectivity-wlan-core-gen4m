@@ -129,14 +129,6 @@ struct ROAMING_INFO {
 	uint8_t ucRecoverBitmap;
 };
 
-struct ROAMING_IDLE_INFO {
-	uint16_t au2ChIdleTime2G4[14];
-	uint16_t au2ChIdleTime5G[25];
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	uint16_t au2ChIdleTime6G[59];
-#endif
-};
-
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -201,11 +193,5 @@ void roamingFsmSetRecoverBitmap(struct ADAPTER *prAdapter,
 void roamingFsmDoRecover(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 uint8_t roamingFsmInDecision(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
-
-void roamingFillScanInfo(struct ADAPTER *ad, enum ENUM_BAND eBand,
-	uint8_t ucChNum, uint16_t u2IdleTime);
-
-uint16_t roamingGetChIdleSlot(struct ADAPTER *ad, enum ENUM_BAND eBand,
-	uint8_t ucChNum);
 
 #endif /* _ROAMING_FSM_H */

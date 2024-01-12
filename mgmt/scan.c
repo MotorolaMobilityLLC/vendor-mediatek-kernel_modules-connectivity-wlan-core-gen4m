@@ -160,6 +160,8 @@ void scnInit(struct ADAPTER *prAdapter)
 #if (CFG_SUPPORT_WIFI_RNR == 1)
 	LINK_INITIALIZE(&prScanInfo->rNeighborAPInfoList);
 #endif
+
+	kalMemZero(&(prScanInfo->rSlotInfo), sizeof(struct CHNL_IDLE_SLOT));
 }	/* end of scnInit() */
 
 void scnFreeAllPendingScanRquests(struct ADAPTER *prAdapter)
@@ -2709,13 +2711,17 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 	prBssDesc->ucCenterFreqS3 = 0;
 
 	/* Support AP Selection */
-	prBssDesc->fgExsitBssLoadIE = FALSE;
+	prBssDesc->fgExistBssLoadIE = FALSE;
 	prBssDesc->fgMultiAnttenaAndSTBC = FALSE;
 	prBssDesc->u2MaximumMpdu = 0;
 #if CFG_SUPPORT_MBO
 	prBssDesc->fgIsDisallowed = FALSE;
 	prBssDesc->fgExistEspIE = FALSE;
+	prBssDesc->fgExistEspOutIE = FALSE;
 	memset(prBssDesc->u4EspInfo, 0, sizeof(prBssDesc->u4EspInfo));
+	memset(prBssDesc->ucEspOutInfo, 0, sizeof(prBssDesc->ucEspOutInfo));
+	prBssDesc->fgIsRWMValid = FALSE;
+	prBssDesc->u2ReducedWanMetrics = 0;
 #endif
 
 	if (fgIsProbeResp == FALSE) {
@@ -2995,7 +3001,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			prBssDesc->ucChnlUtilization =
 				prBssLoad->ucChnlUtilizaion;
 			prBssDesc->u2AvaliableAC = prBssLoad->u2AvailabeAC;
-			prBssDesc->fgExsitBssLoadIE = TRUE;
+			prBssDesc->fgExistBssLoadIE = TRUE;
 
 			updateLinkStatsApRec(prAdapter, prBssDesc);
 			break;
@@ -3065,11 +3071,18 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 				struct IE_MBO_OCE *mbo =
 					(struct IE_MBO_OCE *)pucIE;
 				const uint8_t *disallow = NULL;
+				const uint8_t *rwm = NULL;
 				uint32_t u4lenParam = mbo->ucLength - 4;
 
 				if (u4lenParam <= u2IELength) {
 					disallow = kalFindIeMatchMask(
 						MBO_ATTR_ID_ASSOC_DISALLOW,
+						mbo->aucSubElements,
+						u4lenParam,
+						NULL, 0, 0, NULL);
+
+					rwm = kalFindIeMatchMask(
+						OCE_ATTR_ID_REDUCED_WAN_METRICS,
 						mbo->aucSubElements,
 						u4lenParam,
 						NULL, 0, 0, NULL);
@@ -3081,6 +3094,12 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 						MACSTR " disallow reason %d\n",
 						MAC2STR(prBssDesc->aucBSSID),
 						disallow[2]);
+				}
+				if (rwm && rwm[1] >= 1) {
+					prBssDesc->fgIsRWMValid = TRUE;
+					prBssDesc->u2ReducedWanMetrics =
+					(rwm[2] &
+					OCE_ATTIBUTE_REDUCED_WAN_METRICS_MASK);
 				}
 			}
 #endif
@@ -3174,7 +3193,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 				uint8_t infoNum = 0;
 				uint8_t *infoList = pucIE + 3;
 
-				DBGLOG(SCN, INFO, "ESP IE\n");
+				DBGLOG(SCN, INFO, "ESP Inbound IE\n");
 				dumpMemory8(pucIE, IE_LEN(pucIE));
 
 				prBssDesc->fgExistEspIE = TRUE;
@@ -3189,6 +3208,23 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 				}
 			}
 
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_ESP_OUTBOUND) {
+				uint8_t infoNum = 0;
+				uint8_t present;
+				uint8_t *infoList = pucIE + 4;
+
+				DBGLOG(SCN, INFO, "ESP Outbound IE\n");
+				dumpMemory8(pucIE, IE_LEN(pucIE));
+
+				prBssDesc->fgExistEspOutIE = TRUE;
+				present = pucIE[3];
+				for (i = 0; i < ESP_AC_NUM; i++) {
+					if (present & BIT(i) &&
+					    infoNum + 2 < IE_LEN(pucIE))
+						prBssDesc->ucEspOutInfo[i] =
+							infoList[infoNum++];
+				}
+			}
 #endif
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_6G_BAND_CAP) {
@@ -4471,6 +4507,80 @@ void scanLogCacheFlushAll(struct ADAPTER *prAdapter,
 		prefix);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_BSSLIST_CFG);
 }
+
+void scanFillChnlIdleSlot(struct ADAPTER *ad, enum ENUM_BAND eBand,
+	uint8_t ucChNum, uint16_t u2IdleTime)
+{
+	struct CHNL_IDLE_SLOT *prSlotInfo =
+		&(ad->rWifiVar.rScanInfo.rSlotInfo);
+	uint8_t index = 0;
+
+	if (eBand == BAND_2G4) {
+		if (ucChNum < 1 || ucChNum > 14)
+			return;
+
+		index = (ucChNum - 1);
+		prSlotInfo->au2ChIdleTime2G4[index] = u2IdleTime;
+	} else if (eBand == BAND_5G) {
+		if (ucChNum < 36 || ucChNum > 165)
+			return;
+
+		if (ucChNum >= 36 && ucChNum <= 64)
+			index = (ucChNum - 36) / 4;
+		else if (ucChNum >= 100 && ucChNum <= 144)
+			index = (ucChNum - 68) / 4;
+		else if (ucChNum >= 149 && ucChNum <= 165)
+			index = (ucChNum - 69) / 4;
+		prSlotInfo->au2ChIdleTime5G[index] = u2IdleTime;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	} else if (eBand == BAND_6G) {
+		if (ucChNum < 1 || ucChNum > 233)
+			return;
+
+		index = (ucChNum - 1) / 4;
+		prSlotInfo->au2ChIdleTime6G[index] = u2IdleTime;
+#endif
+	}
+}
+
+uint16_t scanGetChnlIdleSlot(struct ADAPTER *ad, enum ENUM_BAND eBand,
+	uint8_t ucChNum)
+{
+	struct CHNL_IDLE_SLOT *prSlotInfo =
+		&(ad->rWifiVar.rScanInfo.rSlotInfo);
+	uint8_t index = 0;
+	uint16_t u2Slot = 0;
+
+	if (eBand == BAND_2G4) {
+		if (ucChNum < 1 || ucChNum > 14)
+			return 0;
+
+		index = (ucChNum - 1);
+		u2Slot = prSlotInfo->au2ChIdleTime2G4[index];
+	} else if (eBand == BAND_5G) {
+		if (ucChNum < 36 || ucChNum > 165)
+			return 0;
+
+		if (ucChNum >= 36 && ucChNum <= 64)
+			index = (ucChNum - 36) / 4;
+		else if (ucChNum >= 100 && ucChNum <= 144)
+			index = (ucChNum - 68) / 4;
+		else if (ucChNum >= 149 && ucChNum <= 165)
+			index = (ucChNum - 69) / 4;
+		u2Slot = prSlotInfo->au2ChIdleTime5G[index];
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	} else if (eBand == BAND_6G) {
+		if (ucChNum < 1 || ucChNum > 233)
+			return 0;
+
+		index = (ucChNum - 1) / 4;
+		u2Slot = prSlotInfo->au2ChIdleTime6G[index];
+#endif
+	}
+
+	return u2Slot;
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*!

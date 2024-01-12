@@ -17,11 +17,33 @@
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
+
+struct CU_INFO {
+	uint32_t ucTotalCount;
+	uint32_t ucTotalCu;
+	enum ENUM_BAND eBand;
+};
+
+struct APS_INFO {
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	/*
+	 * Record 6G info from index 256
+	 * | <-- 0-255 --> | <-- 256-511 --> |
+	 * |	2.4G,5G    |	   6G	     |
+	 */
+	struct CU_INFO arCuInfo[512];
+#else
+	struct CU_INFO arCuInfo[256];
+#endif
+	uint8_t ucConsiderEsp;
+	uint8_t fgIsGBandCoex;
+};
+
 struct AP_COLLECTION {
 	struct LINK_ENTRY rLinkEntry;
 	struct AP_COLLECTION *hnext; /* next entry in hash table list */
+	uint32_t u4Index;
 	struct BSS_DESC *aprTarget[MAX_LINK_PLAN_NUM];
-	uint16_t au2TargetScore[MAX_LINK_PLAN_NUM];
 	struct LINK arLinks[MAX_LINK_PLAN_NUM]; /* categorize AP by link */
 	uint8_t ucLinkNum;
 	uint8_t ucTotalCount; /* total BssDesc count */
@@ -31,7 +53,8 @@ struct AP_COLLECTION {
 	uint8_t fgIsMatchBssidHint;
 	uint8_t fgIsAllLinkInBlackList;
 	uint8_t fgIsAllLinkConnected;
-	uint32_t u4Tput;
+	uint32_t u4TotalTput;
+	uint32_t u4TotalScore;
 	uint8_t aucAddr[MAC_ADDR_LEN]; /* mld addr or bssid */
 };
 

@@ -1264,7 +1264,7 @@
 #define ELEM_EXT_ID_FILS_SYNC_INFO \
 	9 /* FTM Synchronization Information */
 #define ELEM_EXT_ID_ESP	\
-	11 /* Estimated Service Parameters */
+	11 /* Estimated Service Parameters Inbound */
 #define ELEM_EXT_ID_FILS_PUBLIC_KEY \
 	12 /* FILS Public Key */
 #define ELEM_EXT_ID_FILS_NONCE \
@@ -1365,6 +1365,9 @@ enum MBO_ATTR_ID {
 	OCE_ATTR_ID_SUPPRESSION_BSSID = 105,
 	OCE_ATTR_ID_SUPPRESSION_SSID = 106,
 };
+
+/* MBO-OCE */
+#define OCE_ATTIBUTE_REDUCED_WAN_METRICS_MASK       BITS(0, 3)
 
 /* MBO v0.0_r19, 4.2.7: Transition Rejection Reason Code Attribute */
 /* Table 4-21: Transition Rejection Reason Code Field Values */
