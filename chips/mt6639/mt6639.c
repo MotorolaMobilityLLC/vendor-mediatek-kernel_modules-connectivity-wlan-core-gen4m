@@ -130,6 +130,9 @@ static void mt6639ProcessRxInterrupt(
 static void mt6639WfdmaManualPrefetch(
 	struct GLUE_INFO *prGlueInfo);
 
+static void mt6639ReadIntStatusByMsi(struct ADAPTER *prAdapter,
+		uint32_t *pu4IntStatus);
+
 static void mt6639ReadIntStatus(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus);
 
@@ -348,6 +351,26 @@ struct pse_group_info mt6639_pse_group[] = {
 
 #if defined(_HIF_PCIE)
 struct pcie_msi_layout mt6639_pcie_msi_layout[] = {
+#if (WFDMA_AP_MSI_NUM == 8)
+	{"conn_hif_tx_data0_int", mtk_pci_isr,
+	 mtk_pci_isr_tx_data0_thread, AP_INT, 0},
+	{"conn_hif_tx_data1_int", mtk_pci_isr,
+	 mtk_pci_isr_tx_data0_thread, AP_INT, 0},
+	{"conn_hif_tx_free_done_int", mtk_pci_isr,
+	 mtk_pci_isr_tx_free_done_thread, AP_INT, 0},
+	{"conn_hif_rx_data0_int", mtk_pci_isr,
+	 mtk_pci_isr_rx_data0_thread, AP_INT, 0},
+	{"conn_hif_rx_data1_int", mtk_pci_isr,
+	 mtk_pci_isr_rx_data1_thread, AP_INT, 0},
+	{"conn_hif_event_int", mtk_pci_isr,
+	 mtk_pci_isr_rx_event_thread, AP_INT, 0},
+	{"conn_hif_cmd_int", mtk_pci_isr,
+	 mtk_pci_isr_tx_cmd_thread, AP_INT, 0},
+	{"conn_hif_lump_int", mtk_pci_isr,
+	 mtk_pci_isr_lump_thread, AP_INT, 0},
+#else
+	{"conn_hif_host_int", mtk_pci_isr,
+	 mtk_pci_isr_thread, AP_INT, 0},
 	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
 	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
 	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
@@ -355,7 +378,7 @@ struct pcie_msi_layout mt6639_pcie_msi_layout[] = {
 	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
 	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
 	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
-	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
+#endif
 #if CFG_MTK_MDDP_SUPPORT
 	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
 	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
@@ -531,7 +554,11 @@ struct BUS_INFO mt6639_bus_info = {
 	.processSoftwareInterrupt = asicConnac3xProcessSoftwareInterrupt,
 	.softwareInterruptMcu = asicConnac3xSoftwareInterruptMcu,
 	.hifRst = asicConnac3xHifRst,
+#if defined(_HIF_PCIE) && (WFDMA_AP_MSI_NUM == 8)
+	.devReadIntStatus = mt6639ReadIntStatusByMsi,
+#else
 	.devReadIntStatus = mt6639ReadIntStatus,
+#endif /* _HIF_PCIE */
 	.setRxRingHwAddr = mt6639SetRxRingHwAddr,
 	.wfdmaAllocRxRing = mt6639WfdmaAllocRxRing,
 	.setupMcuEmiAddr = mt6639SetupMcuEmiAddr,
@@ -1294,12 +1321,28 @@ static void mt6639ProcessRxInterrupt(struct ADAPTER *prAdapter)
 	mt6639ProcessRxDataInterrupt(prAdapter);
 }
 
-static void mt6639SetMDTRXRingPriorityInterrupt(struct ADAPTER *prAdapter)
+static void mt6639SetTRXRingPriorityInterrupt(struct ADAPTER *prAdapter)
 {
+	uint32_t u4Val = 0;
+
+#if (WFDMA_AP_MSI_NUM == 8)
+	u4Val |= 0xF0;
+#endif
+#if CFG_MTK_MDDP_SUPPORT && (WFDMA_MD_MSI_NUM == 8)
+	u4Val |= 0xF00;
+#endif
 	HAL_MCR_WR(prAdapter,
-		WF_WFDMA_HOST_DMA0_WPDMA_INT_RX_PRI_SEL_ADDR, 0xF00);
+		WF_WFDMA_HOST_DMA0_WPDMA_INT_RX_PRI_SEL_ADDR, u4Val);
+
+	u4Val = 0;
+#if (WFDMA_AP_MSI_NUM == 8)
+	u4Val |= 0x180FF;
+#endif
+#if CFG_MTK_MDDP_SUPPORT && (WFDMA_MD_MSI_NUM == 8)
+	u4Val |= 0x7F00;
+#endif
 	HAL_MCR_WR(prAdapter,
-		WF_WFDMA_HOST_DMA0_WPDMA_INT_TX_PRI_SEL_ADDR, 0x7F00);
+		WF_WFDMA_HOST_DMA0_WPDMA_INT_TX_PRI_SEL_ADDR, u4Val);
 }
 
 static void mt6639WfdmaManualPrefetch(
@@ -1383,7 +1426,7 @@ static void mt6639WfdmaManualPrefetch(
 		u4WrVal += u4PrefetchBase;
 	}
 
-	mt6639SetMDTRXRingPriorityInterrupt(prAdapter);
+	mt6639SetTRXRingPriorityInterrupt(prAdapter);
 
 	/* reset dma TRX idx */
 	HAL_MCR_WR(prAdapter,
@@ -1391,6 +1434,64 @@ static void mt6639WfdmaManualPrefetch(
 	HAL_MCR_WR(prAdapter,
 		WF_WFDMA_HOST_DMA0_WPDMA_RST_DRX_PTR_ADDR, 0xFFFFFFFF);
 }
+
+#if defined(_HIF_PCIE)
+static void mt6639ReadIntStatusByMsi(struct ADAPTER *prAdapter,
+		uint32_t *pu4IntStatus)
+{
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	struct BUS_INFO *prBusInfo = prChipInfo->bus_info;
+	struct pcie_msi_info *prMsiInfo = &prBusInfo->pcie_msi_info;
+	uint32_t u4Value = 0;
+
+	*pu4IntStatus = 0;
+
+	if (KAL_TEST_BIT(PCIE_MSI_TX_FREE_DONE, prMsiInfo->ulEnBits)) {
+		*pu4IntStatus |= WHISR_RX0_DONE_INT;
+		u4Value |=
+			WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_7_MASK;
+	}
+
+	if (KAL_TEST_BIT(PCIE_MSI_RX_DATA_BAND0, prMsiInfo->ulEnBits)) {
+		*pu4IntStatus |= WHISR_RX0_DONE_INT;
+		u4Value |=
+			WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_4_MASK;
+	}
+
+	if (KAL_TEST_BIT(PCIE_MSI_RX_DATA_BAND1, prMsiInfo->ulEnBits)) {
+		*pu4IntStatus |= WHISR_RX0_DONE_INT;
+		u4Value |=
+			WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_5_MASK;
+	}
+
+	if (KAL_TEST_BIT(PCIE_MSI_EVENT, prMsiInfo->ulEnBits)) {
+		*pu4IntStatus |= WHISR_RX0_DONE_INT;
+		u4Value |=
+			WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_6_MASK;
+	}
+
+	if (KAL_TEST_BIT(PCIE_MSI_CMD, prMsiInfo->ulEnBits)) {
+		*pu4IntStatus |= WHISR_TX_DONE_INT;
+		u4Value |=
+			WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_15_MASK;
+	}
+
+	if (KAL_TEST_BIT(PCIE_MSI_LUMP, prMsiInfo->ulEnBits)) {
+		*pu4IntStatus |= WHISR_D2H_SW_INT;
+		u4Value |= CONNAC_MCU_SW_INT;
+
+		*pu4IntStatus |= WHISR_TX_DONE_INT;
+		u4Value |=
+			WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_16_MASK;
+	}
+
+	prHifInfo->u4IntStatus = u4Value;
+
+	/* clear interrupt */
+	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR, u4Value);
+}
+#endif
 
 static void mt6639ReadIntStatus(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus)
@@ -1528,10 +1629,16 @@ static void mt6639WpdmaMsiConfig(struct ADAPTER *prAdapter)
  * ilog2(WFDMA_AP_MSI 1) = WFDMA_AP_MSI_NUM for CR shitf
  * please do NOT use linux API, which is finally implemented in assembly
  */
-#define WFDMA_AP_MSI_NUM		0
-#if CFG_MTK_MDDP_SUPPORT
-/*ilog2(WFDMA_MD_MSI 8) = WFDMA_AP_MSI_NUM for CR shitf */
-#define WFDMA_MD_MSI_NUM		3
+#if (WFDMA_AP_MSI_NUM == 8)
+#define WFDMA_AP_MSI_SETTING_VAL		3
+#else
+#define WFDMA_AP_MSI_SETTING_VAL		0
+#endif
+
+#if (WFDMA_MD_MSI_NUM == 8)
+#define WFDMA_MD_MSI_SETTING_VAL		3
+#else
+#define WFDMA_MD_MSI_SETTING_VAL		0
 #endif
 
 	struct mt66xx_chip_info *prChipInfo = NULL;
@@ -1549,11 +1656,11 @@ static void mt6639WpdmaMsiConfig(struct ADAPTER *prAdapter)
 	/* configure MSI number */
 	HAL_MCR_RD(prAdapter, WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_ADDR,
 		&u4Value);
-	u4Value |= ((WFDMA_AP_MSI_NUM <<
+	u4Value |= ((WFDMA_AP_MSI_SETTING_VAL <<
 		WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie0_msi_num_SHFT) &
 		WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie0_msi_num_MASK);
 #if CFG_MTK_MDDP_SUPPORT
-	u4Value |= ((WFDMA_MD_MSI_NUM <<
+	u4Value |= ((WFDMA_MD_MSI_SETTING_VAL <<
 		WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie0_md_msi_num_SHFT) &
 		WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie0_md_msi_num_MASK);
 #endif
