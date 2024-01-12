@@ -849,6 +849,13 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 		*cp++ = bss->ucLinkIndex; /* Link ID */
 		*cp++ = 0; /* BSS para change count */
 
+		DBGLOG(ML, LOUD,
+			"bss_idx: %d, link: %d: ch: %d, mac: " MACSTR "\n",
+			bss->ucBssIndex,
+			bss->ucLinkIndex,
+			bss->ucPrimaryChannel,
+			MAC2STR(bss->aucOwnMacAddr));
+
 		count++;
 	}
 

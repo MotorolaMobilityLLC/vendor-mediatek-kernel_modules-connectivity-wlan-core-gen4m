@@ -1337,7 +1337,9 @@ void p2pFuncStopComplete(IN struct ADAPTER *prAdapter,
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pBssInfo != NULL));
 
-		DBGLOG(P2P, INFO, "p2pFuncStopComplete\n");
+		DBGLOG(P2P, INFO,
+			"p2pFuncStopComplete %d\n",
+			prP2pBssInfo->ucBssIndex);
 
 		/* GO: It would stop Beacon TX.
 		 * GC: Stop all BSS related PS function.
@@ -3910,14 +3912,6 @@ u_int8_t p2pFuncValidateAssocReq(IN struct ADAPTER *prAdapter,
 			break;
 		}
 		ASSERT(prSwRfb->prRxStatusGroup3);
-		prStaRec->ucRCPI =
-			nicRxGetRcpiValueFromRxv(
-				prAdapter, RCPI_MODE_MAX, prSwRfb);
-
-		prStaRec->u2DesiredNonHTRateSet &=
-			prP2pBssInfo->u2OperationalRateSet;
-		prStaRec->ucDesiredPhyTypeSet =
-			prStaRec->ucPhyTypeSet & prP2pBssInfo->ucPhyTypeSet;
 
 		if (prStaRec->ucDesiredPhyTypeSet == 0) {
 			/* The station only support 11B rate. */
@@ -4304,10 +4298,12 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 
 		prP2pBssInfo->ucCountryIELen = 0;
 #if (CFG_SUPPORT_802_11AX == 1)
-		prP2pBssInfo->ucPhyTypeSet &= ~PHY_TYPE_SET_802_11AX;
+		if (!IS_FEATURE_FORCE_ENABLED(prAdapter->rWifiVar.ucApHe))
+			prP2pBssInfo->ucPhyTypeSet &= ~PHY_TYPE_SET_802_11AX;
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
-		prP2pBssInfo->ucPhyTypeSet &= ~PHY_TYPE_SET_802_11BE;
+		if (!IS_FEATURE_FORCE_ENABLED(prAdapter->rWifiVar.ucApEht))
+			prP2pBssInfo->ucPhyTypeSet &= ~PHY_TYPE_SET_802_11BE;
 #endif
 
 		IE_FOR_EACH(pucIE, u4IELen, u2Offset) {
