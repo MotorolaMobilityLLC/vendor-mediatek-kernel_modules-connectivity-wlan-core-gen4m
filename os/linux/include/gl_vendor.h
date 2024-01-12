@@ -638,6 +638,13 @@ struct PARAM_AP_THRESHOLD {
 	uint32_t channel;	/* channel hint */
 };
 
+enum WIFI_MULTI_STA_USE_CASE {
+	WIFI_DUAL_STA_TRANSIENT_PREFER_PRIMARY = 0,
+	WIFI_DUAL_STA_NON_TRANSIENT_UNBIASED = 1,
+	WIFI_DUAL_STA_MTK_LEGACY = 15,
+};
+
+#if CFG_SUPPORT_LLS
 #define STATS_LLS_MAX_NSS_NUM    2
 
 #define STATS_LLS_CCK_NUM        4   /* 1M/2M/5.5M/11M */
@@ -818,12 +825,6 @@ struct STATS_LLS_RATE_STAT {
 	uint32_t retries_long;
 };
 
-enum WIFI_MULTI_STA_USE_CASE {
-	WIFI_DUAL_STA_TRANSIENT_PREFER_PRIMARY = 0,
-	WIFI_DUAL_STA_NON_TRANSIENT_UNBIASED = 1,
-	WIFI_DUAL_STA_MTK_LEGACY = 15,
-};
-
 enum ENUM_WIFI_CONNECTION_STATE {
 	WIFI_DISCONNECTED = 0,
 	WIFI_AUTHENTICATING = 1,
@@ -851,7 +852,7 @@ enum ENUM_WIFI_INTERFACE_MODE {
 };
 
 /**
- *
+ * Link layer statistics interface information
  * @mode: interface mode
  * @mac_addr[6]: interface mac address (self)
  * @state: connection state (valid for STA, CLI only)
@@ -888,15 +889,6 @@ enum ENUM_STATS_LLS_AC {
 	STATS_LLS_WIFI_AC_BE  = 2,
 	STATS_LLS_WIFI_AC_BK  = 3,
 	STATS_LLS_WIFI_AC_MAX = 4,
-};
-
-/* access categories */
-enum WIFI_TRAFFIC_AC {
-	WIFI_AC_VO = 0,
-	WIFI_AC_VI = 1,
-	WIFI_AC_BE = 2,
-	WIFI_AC_BK = 3,
-	WIFI_AC_MAX = 4,
 };
 
 /* wifi peer type */
@@ -1055,6 +1047,7 @@ struct STATS_LLS_PEER_AP_REC {
 	uint16_t chan_util;
 	uint8_t mac_addr[ETH_ALEN];
 };
+#endif /* CFG_SUPPORT_LLS */
 
 /* RTT Capabilities */
 struct PARAM_WIFI_RTT_CAPABILITIES {

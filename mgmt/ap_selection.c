@@ -1125,7 +1125,7 @@ uint16_t scanCalculateScoreByTput(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_MBO
 	if (prBssDesc->fgExistEspIE)
-		u2Score = (prBssDesc->u4EspInfo[WIFI_AC_BE] >> 8) & 0xff;
+		u2Score = (prBssDesc->u4EspInfo[ESP_AC_BE] >> 8) & 0xff;
 #endif
 	return u2Score * gasMtkWeightConfig[eRoamType].ucTputWeight;
 }
