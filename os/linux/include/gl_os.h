@@ -1078,9 +1078,9 @@ static inline u16 mtk_wlan_ndev_select_queue(
 #endif
 
 #if KERNEL_VERSION(2, 6, 34) > LINUX_VERSION_CODE
-#define GET_ADDR(ha) ha->da_addr
+#define GET_ADDR(ha) (ha->da_addr)
 #else
-#define GET_ADDR(ha) ha->addr
+#define GET_ADDR(ha) (ha->addr)
 #endif
 
 #if KERNEL_VERSION(2, 6, 35) <= LINUX_VERSION_CODE

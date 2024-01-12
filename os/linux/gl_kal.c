@@ -147,8 +147,8 @@ void *wlan_fb_notifier_priv_data;
 
 #if (defined(CONFIG_UIDGID_STRICT_TYPE_CHECKS) || \
 	(KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE))
-#define  KUIDT_VALUE(v) v.val
-#define  KGIDT_VALUE(v) v.val
+#define  KUIDT_VALUE(v) (v.val)
+#define  KGIDT_VALUE(v) (v.val)
 #else
 #define  KUIDT_VALUE(v) v
 #define  KGIDT_VALUE(v) v

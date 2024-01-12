@@ -1408,8 +1408,8 @@ uint32_t nicTxGetMsduPendingCnt(IN struct ADAPTER
 				*prAdapter)
 {
 #if CFG_FIX_2_TX_PORT
-	return (prAdapter->rTxP0Queue.u4NumElem +
-		prAdapter->rTxP1Queue.u4NumElem);
+	return prAdapter->rTxP0Queue.u4NumElem +
+		prAdapter->rTxP1Queue.u4NumElem;
 #else
 	int32_t i;
 	uint32_t retValue = 0;

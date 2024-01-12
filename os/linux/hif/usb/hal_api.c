@@ -756,7 +756,7 @@ uint32_t halRxUSBEnqueueRFB(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN
 			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
 			if (!prSwRfb)
-				return (u4Length - u4RemainCount);
+				return u4Length - u4RemainCount;
 
 			kalMemCopy(prSwRfb->pucRecvBuff, pucRxFrame, u2RxByteCount);
 
