@@ -1040,6 +1040,7 @@ struct WIFI_VAR {
 	uint32_t fgDisOnlineScan;
 	uint32_t fgDisBcnLostDetection;
 	uint32_t fgDisRoaming;		/* 0:enable roaming 1:disable */
+	uint32_t u4AisRoamingNumber;
 	uint32_t fgEnArpFilter;
 
 	uint8_t	uDeQuePercentEnable;

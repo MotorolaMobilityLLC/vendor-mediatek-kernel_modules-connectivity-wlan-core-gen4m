@@ -3758,6 +3758,7 @@ void aisPostponedEventOfDisconnTimeout(IN struct ADAPTER *prAdapter,
 	bool fgFound = TRUE;
 	bool fgIsPostponeTimeout;
 	bool fgIsBeaconTimeout;
+	enum ENUM_PARAM_CONNECTION_POLICY policy;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	/* firstly, check if we have started postpone indication.
@@ -3789,9 +3790,10 @@ void aisPostponedEventOfDisconnTimeout(IN struct ADAPTER *prAdapter,
 	fgIsBeaconTimeout =
 	    prAisBssInfo->ucReasonOfDisconnect ==
 	    DISCONNECT_REASON_CODE_RADIO_LOST;
+	policy = prConnSettings->eConnectionPolicy;
 
 	/* only retry connect once when beacon timeout */
-	if (!fgIsPostponeTimeout
+	if (policy != CONNECT_BY_BSSID && !fgIsPostponeTimeout
 	    && !(fgIsBeaconTimeout && prAisFsmInfo->ucConnTrialCount > 1)) {
 		DBGLOG(AIS, INFO,
 		       "DelayTimeOfDisconnect, don't report disconnect\n");
