@@ -9863,6 +9863,10 @@ void kalNanHandleVendorEvent(IN struct ADAPTER *prAdapter, uint8_t *prBuffer)
 	DBGLOG(NAN, INFO, "[%s] subEvent:%d\n", __func__, u4SubEvent);
 
 	switch (u4SubEvent) {
+	case NAN_EVENT_ID_DE_EVENT_IND:
+		status = mtk_cfg80211_vendor_event_nan_event_indication(
+			prAdapter, prTlvElement->aucbody);
+		break;
 	case NAN_EVENT_DISCOVERY_RESULT:
 		status = mtk_cfg80211_vendor_event_nan_match_indication(
 			prAdapter, prTlvElement->aucbody);
@@ -9881,6 +9885,10 @@ void kalNanHandleVendorEvent(IN struct ADAPTER *prAdapter, uint8_t *prBuffer)
 		break;
 	case NAN_EVENT_SUBSCRIBE_TERMINATE_EVENT:
 		status = mtk_cfg80211_vendor_event_nan_subscribe_terminate(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_SELF_FOLLOW_EVENT:
+		status = mtk_cfg80211_vendor_event_nan_seldflwup_indication(
 			prAdapter, prTlvElement->aucbody);
 		break;
 	case NAN_EVENT_MASTER_IND_ATTR:
@@ -9920,6 +9928,10 @@ void kalNanHandleVendorEvent(IN struct ADAPTER *prAdapter, uint8_t *prBuffer)
 #endif
 	case NAN_EVENT_NDL_DISCONNECT:
 		nanDataEngingDisconnectEvt(prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_DISABLE_IND:
+		mtk_cfg80211_vendor_event_nan_disable_indication(
+			prAdapter, prTlvElement->aucbody);
 		break;
 	default:
 		DBGLOG(NAN, LOUD, "No match event!!\n");

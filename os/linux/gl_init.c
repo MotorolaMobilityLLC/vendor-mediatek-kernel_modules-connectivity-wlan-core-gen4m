@@ -1417,11 +1417,11 @@ static const struct nl80211_vendor_cmd_info
 		.vendor_id = OUI_MTK,
 		.subcmd = MTK_SUBCMD_NAN
 	},
-	{
+	[WIFI_EVENT_SUBCMD_NAN] {
 		.vendor_id = OUI_MTK,
 		.subcmd = MTK_SUBCMD_NDP
 	},
-	{
+	[WIFI_EVENT_SUBCMD_NDP] {
 		.vendor_id = OUI_MTK,
 		.subcmd = MTK_NL80211_TRIGGER_RESET
 	},
@@ -4964,6 +4964,8 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 
 #if CFG_SUPPORT_NAN
 	prAdapter->fgIsNANfromHAL = TRUE;
+	prAdapter->ucNanPubNum = 0;
+	prAdapter->ucNanSubNum = 0;
 	DBGLOG(INIT, WARN, "NAN fgIsNANfromHAL init %u\n",
 	       prAdapter->fgIsNANfromHAL);
 #endif
