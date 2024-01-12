@@ -18431,3 +18431,18 @@ uint32_t wlanoidQuerySerInfo(IN struct ADAPTER *prAdapter,
 				      pvQueryBuffer,
 				      u4QueryBufferLen);
 }
+
+uint32_t
+wlanoidQueryThermalTemperature(struct ADAPTER *prAdapter,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen,
+	uint32_t *pu4QueryInfoLen)
+{
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	return nicUniCmdQueryThermalTemperature(prAdapter,
+		pvQueryBuffer,
+		u4QueryBufferLen);
+#else
+	return WLAN_STATUS_SUCCESS;
+#endif
+}

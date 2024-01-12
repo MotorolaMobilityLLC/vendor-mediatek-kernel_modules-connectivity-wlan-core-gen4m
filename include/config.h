@@ -2158,6 +2158,13 @@
 #define CFG_WLAN_ATF_SUPPORT 0
 #endif
 
+#if CFG_SUPPORT_THERMAL_QUERY
+#ifndef CONFIG_THERMAL_OF
+#undef CFG_SUPPORT_THERMAL_QUERY
+#define CFG_SUPPORT_THERMAL_QUERY 0
+#endif
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
