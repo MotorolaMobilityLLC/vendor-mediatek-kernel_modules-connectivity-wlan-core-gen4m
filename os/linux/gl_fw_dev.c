@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-2-Clause
+
 #if (CFG_SUPPORT_FW_IDX_LOG_SAVE == 1)
 #include "gl_os.h"
 #include "debug.h"

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: BSD-2-Clause
 KVERSION := $(shell uname -r)
 
 CONN_ALPS_OUT_PATH := $(wildcard $(abspath $(O)/../vendor/mediatek/kernel_modules/connectivity/))

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSD-2-Clause
 /*
  * One-key CBC MAC (OMAC1) hash with AES
  *

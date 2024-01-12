@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
 #ifndef ___HAL_COMMON_H__
 #define ___HAL_COMMON_H__
 
