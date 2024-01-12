@@ -341,6 +341,7 @@ void nicReleaseAdapterMemory(IN struct ADAPTER *prAdapter)
 
 #if CFG_SUPPORT_LLS
 	prAdapter->pucLinkStatsSrcBufferAddr = NULL;
+	prAdapter->pu4TxTimePerLevels = NULL;
 #endif
 
 #if CFG_DBG_MGT_BUF

@@ -1375,6 +1375,10 @@ struct CAP_6G_CAP {
  * @u4OffsetTxTimerPerLevels: tx_time_per_levels in STATS_LLS_WIFI_RADIO_STAT
  * @u4OffsetRxTime: rx_time in STATS_LLS_WIFI_RADIO_STAT
  * @u4OffsetChannel: channel in WIFI_RADIO_CHANNEL_STAT
+ *
+ * @u4TxTimePerLevelEmiOffset: pointer to shared EMI memory, as array of
+ *                             uint32_t of u4NumTxPowerLevels entries
+ * @u4NumTxPowerLevels: the size of buffer pointed by u4TxTimePerLevelEmiOffset
  */
 struct CAP_LLS_DATA_EMI_OFFSET {
 	uint32_t u4DataEmiOffset;
@@ -1385,6 +1389,9 @@ struct CAP_LLS_DATA_EMI_OFFSET {
 	uint32_t u4OffsetTxTimerPerLevels;
 	uint32_t u4OffsetRxTime;
 	uint32_t u4OffsetChannel;
+
+	uint32_t u4TxTimePerLevelEmiOffset;
+	uint32_t u4NumTxPowerLevels;
 };
 
 
