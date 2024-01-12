@@ -1250,7 +1250,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 	}
 	,
 	{	{'N', 'Z'}
-		, {63, 46, 46, 60, 63}
+		, {63, 46, 46, 60, 28}
 		, 0
 	}
 	,
@@ -1800,7 +1800,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 	}
 	,
 	{	{'A', 'Z'}
-		, {40, 34, 48, 60, 60}
+		, {40, 34, 48, 60, 28}
 		, 0
 	}
 	,
@@ -3196,6 +3196,9 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
 		, 114, {48, 48, 48, 48, 48, 48, 48, 24, 24}
 	}
 	,
+	{	{'K', 'R'}
+		, 48, {48, 28, 28, 48, 48, 48, 48, 48, 48}
+	},
 
 	/*Default*/
 	{	{0, 0}
