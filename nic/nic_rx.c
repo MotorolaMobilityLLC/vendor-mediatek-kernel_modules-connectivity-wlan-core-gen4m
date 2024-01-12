@@ -1009,6 +1009,33 @@ void nicRxProcessPktWithoutReorder(IN struct ADAPTER
 	nicRxReturnRFB(prAdapter, prSwRfb);
 }
 
+u_int8_t nicRxCheckForwardPktResource(
+	IN struct ADAPTER *prAdapter, uint32_t ucTid)
+{
+	struct TX_CTRL *prTxCtrl;
+	uint8_t i, uTxQidx;
+
+	prTxCtrl = &prAdapter->rTxCtrl;
+	uTxQidx = aucACI2TxQIdx[aucTid2ACI[ucTid]];
+
+	/* If the resource used more than half, we could control WMM resource
+	 * by limit every AC queue.
+	 */
+	for (i = uTxQidx+1; i < WMM_AC_INDEX_NUM; i++) {
+		if (GLUE_GET_REF_CNT(prTxCtrl
+			->i4PendingFwdFrameWMMCount[uTxQidx]) >=
+			GLUE_GET_REF_CNT(prTxCtrl
+			->i4PendingFwdFrameWMMCount[i]) &&
+			GLUE_GET_REF_CNT(prTxCtrl
+			->i4PendingFwdFrameWMMCount[i]) > 0 &&
+			GLUE_GET_REF_CNT(prTxCtrl
+			->i4PendingFwdFrameCount) > prAdapter
+			->rQM.u4MaxForwardBufferCount)
+			return FALSE;
+	}
+	return TRUE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Process forwarding data packet
@@ -1037,6 +1064,24 @@ void nicRxProcessForwardPkt(IN struct ADAPTER *prAdapter,
 	prTxCtrl = &prAdapter->rTxCtrl;
 	prRxCtrl = &prAdapter->rRxCtrl;
 
+	if (prSwRfb->ucTid >= TX_DESC_TID_NUM) {
+		DBGLOG_LIMITED(RX, WARN,
+		       "Wrong forward packet: tid:%d\n", prSwRfb->ucTid);
+		prSwRfb->ucTid = 0;
+	}
+
+	if (!nicRxCheckForwardPktResource(prAdapter, prSwRfb->ucTid)) {
+		nicRxReturnRFB(prAdapter, prSwRfb);
+		return;
+	}
+
+	DBGLOG_LIMITED(RX, TRACE, "to forward packet: %d,%d,%d,%d,%d\n",
+		GLUE_GET_REF_CNT(prTxCtrl->i4PendingFwdFrameWMMCount[0]),
+		GLUE_GET_REF_CNT(prTxCtrl->i4PendingFwdFrameWMMCount[1]),
+		GLUE_GET_REF_CNT(prTxCtrl->i4PendingFwdFrameWMMCount[2]),
+		GLUE_GET_REF_CNT(prTxCtrl->i4PendingFwdFrameWMMCount[3]),
+		GLUE_GET_REF_CNT(prTxCtrl->i4PendingFwdFrameCount));
+
 	prMsduInfo = cnmPktAlloc(prAdapter, 0);
 
 	if (prMsduInfo &&
@@ -1057,6 +1102,7 @@ void nicRxProcessForwardPkt(IN struct ADAPTER *prAdapter,
 		prMsduInfo->eSrc = TX_PACKET_FORWARDING;
 		prMsduInfo->ucBssIndex = secGetBssIdxByWlanIdx(prAdapter,
 					 prSwRfb->ucWlanIdx);
+		prMsduInfo->ucUserPriority = prSwRfb->ucTid;
 
 		/* release RX buffer (to rIndicatedRfbList) */
 		prSwRfb->pvPacket = NULL;
@@ -1076,6 +1122,11 @@ void nicRxProcessForwardPkt(IN struct ADAPTER *prAdapter,
 
 		/* increase forward frame counter */
 		GLUE_INC_REF_CNT(prTxCtrl->i4PendingFwdFrameCount);
+
+		/* add resource control for WMM forward packet */
+		GLUE_INC_REF_CNT(prTxCtrl
+			->i4PendingFwdFrameWMMCount[
+			aucACI2TxQIdx[aucTid2ACI[prSwRfb->ucTid]]]);
 
 		/* send into TX queue */
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
