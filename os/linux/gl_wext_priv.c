@@ -16080,6 +16080,26 @@ static int priv_driver_get_capab_rsdb(IN struct net_device *prNetDev,
 
 }
 
+static uint8_t *_getStrFromBssOpBw(struct BSS_INFO *prBssInfo)
+{
+	uint8_t *apucDebug[] = {
+		(uint8_t *) DISP_STRING("20"),
+		(uint8_t *) DISP_STRING("40"),
+		(uint8_t *) DISP_STRING("80"),
+		(uint8_t *) DISP_STRING("160"),
+		(uint8_t *) DISP_STRING("80+80"),
+		(uint8_t *) DISP_STRING("320"),
+		(uint8_t *) DISP_STRING("UNKNOWN"),
+	};
+	uint8_t ucBssOpBw =
+		rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
+
+	if (ucBssOpBw < MAX_BW_UNKNOWN)
+		return apucDebug[ucBssOpBw];
+
+	return (uint8_t *) DISP_STRING("UNKNOWN");
+}
+
 static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 			       IN char *pcCommand, IN int i4TotalLen)
 {
@@ -16221,7 +16241,7 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"BSS%u Inuse%u Act%u ConnStat%u [NetType%u][CH%3u][DBDC b%u][WMM%u b%u][OMAC%u b%u][BW%3u][TxNSS%u][RxNss%u]\n",
+			"BSS%u Inuse%u Act%u ConnStat%u [NetType%u][CH%3u][DBDC b%u][WMM%u b%u][OMAC%u b%u][BW%s][TxNSS%u][RxNss%u]\n",
 			ucBssIdx,
 			prCnmInfo->ucBssInuse[ucBssIdx],
 			prCnmInfo->ucBssActive[ucBssIdx],
@@ -16233,13 +16253,13 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 			prCnmInfo->ucBssWmmDBDCBand[ucBssIdx],
 			prCnmInfo->ucBssOMACSet[ucBssIdx],
 			prCnmInfo->ucBssOMACDBDCBand[ucBssIdx],
-			20 * (0x01 << rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo)),
+			_getStrFromBssOpBw(prBssInfo),
 			ucOpTxNss,
 			ucOpRxNss);
 #ifdef CONFIG_SUPPORT_OPENWRT
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten, "BW=BW%u\n",
-			20 * (0x01 << rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo))
+			i4TotalLen - i4BytesWritten, "BW=BW%s\n",
+			_getStrFromBssOpBw(prBssInfo)
 			);
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
