@@ -1364,6 +1364,7 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 	uint8_t *cp;
 	uint8_t count = 0;
 	uint32_t sssid;
+	enum ENUM_CHNL_EXT eSco = CHNL_EXT_SCN;
 
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
@@ -1398,10 +1399,13 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 		 * Bss Param + PSD + MLD Para
 		 */
 		info->u2TbttInfoHdr = 16 << TBTT_INFO_HDR_LENGTH_OFFSET;
+		if (bss->eBand == BAND_2G4 || bss->eBand == BAND_5G)
+			eSco = (enum ENUM_CHNL_EXT)
+				(bss->ucHtOpInfo1 & HT_OP_INFO1_SCO);
 		info->ucOpClass =
 			rlmGetOpClassForChannel(
 				bss->ucPrimaryChannel,
-				bss->eBand);
+				bss->eBand, eSco, bss->ucVhtChannelWidth);
 		info->ucChannelNum = bss->ucPrimaryChannel;
 
 		cp = info->aucTbttInfoSet;

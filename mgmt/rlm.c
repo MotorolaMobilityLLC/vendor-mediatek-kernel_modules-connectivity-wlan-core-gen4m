@@ -9603,33 +9603,30 @@ uint16_t rlmOpClassToBandwidth(uint8_t ucOpClass)
 	return BW_20;
 }
 
-int32_t rlmGetOpClassForChannel(
-	int32_t channel,
-	enum ENUM_BAND band)
+int32_t rlmGetOpClassForChannel(int32_t channel,
+	enum ENUM_BAND band, enum ENUM_CHNL_EXT eSco,
+	enum ENUM_CHANNEL_WIDTH eChBw)
 {
-	const u_int8_t support11n = TRUE;
-	const u_int8_t support11ac = TRUE;
-
 	/* 2GHz Band */
 	if ((band == BAND_2G4) != 0) {
 		if (channel == 14)
 			return 82;
 
 		if (channel >= 1 && channel <= 13) {
-			if (!support11n)
+			if (eSco == CHNL_EXT_SCN)
 				/* 20MHz channel */
 				return 81;
 
-			if (channel <= 9)
-				/* HT40 with secondary channel
-				 * above primary
-				 */
-				return 83;
-
+			if (channel <= 9 && eSco == CHNL_EXT_SCA)
 			/* HT40 with secondary channel
-			 * below primary
+			 * above primary, priCH will be 1~9
 			 */
-			return 84;
+				return 83;
+			else if (channel >= 5 && eSco == CHNL_EXT_SCB)
+			/* HT40 with secondary channel
+			 * below primary, priCH will be 5~13
+			 */
+				return 84;
 		}
 		/* Error */
 		return 0;
@@ -9637,24 +9634,8 @@ int32_t rlmGetOpClassForChannel(
 
 	/* 5GHz Band */
 	if ((band == BAND_5G) != 0) {
-		if (support11ac) {
-			switch (channel) {
-			case 42:
-			case 58:
-			case 106:
-			case 122:
-			case 138:
-			case 155:
-				/* 80MHz channel */
-				return 128;
-			case 50:
-			case 114:
-				/* 160MHz channel */
-				return 129;
-			}
-		}
-
-		if (!support11n) {
+		/* BW20 */
+		if (eChBw == CW_20_40MHZ && eSco == CHNL_EXT_SCN) {
 			if (channel >= 36 && channel <= 48)
 				return 115;
 
@@ -9669,8 +9650,9 @@ int32_t rlmGetOpClassForChannel(
 
 			if (channel >= 165 && channel <= 169)
 				return 125;
-
-		} else {
+		/* BW 40 */
+		} else if (eChBw == CW_20_40MHZ &&
+			(eSco == CHNL_EXT_SCA || eSco == CHNL_EXT_SCB)) {
 			switch (channel) {
 			case 36:
 			case 44:
@@ -9729,6 +9711,10 @@ int32_t rlmGetOpClassForChannel(
 				 */
 				return 127;
 			}
+		} else if (eChBw == CW_80MHZ) {
+			return 128;
+		} else if (eChBw == CW_160MHZ) {
+			return 129;
 		}
 		/* Error */
 		return 0;
