@@ -1235,6 +1235,7 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 		", BW[%d], SC[%d],ST[%d],CI[%d],IT[%d],CU[%d,%d],PF[%d]"\
 		", AX[%d], TPUT[%d]%s\n"
 
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
 	log_dbg(SCN, INFO,
 		TEMP_LOG_TEMPLATE,
 		MAC2STR(prBssDesc->aucBSSID), cRssi,
@@ -1246,9 +1247,19 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 		prBssDesc->fgExsitBssLoadIE,
 		prBssDesc->ucChnlUtilization,
 		u2PreferenceScore,
-#if (CFG_SUPPORT_AVOID_DESENSE == 1)
 		u2AxApScore, u2TputScore, extra, fgBssInDenseRange);
 #else
+	log_dbg(SCN, INFO,
+		TEMP_LOG_TEMPLATE,
+		MAC2STR(prBssDesc->aucBSSID), cRssi,
+		apucBandStr[prBssDesc->eBand], u2ScoreTotal,
+		u2ScoreDeauth, u2ScoreProbeRsp, u2ScoreScanMiss,
+		u2ScoreSnrRssi, u2ScoreBand, u2BlackListScore,
+		u2ScoreSaa, u2ScoreBandwidth, u2ScoreStaCnt,
+		u2ScoreSTBC, u2ScoreChnlInfo, u2ScoreIdleTime,
+		prBssDesc->fgExsitBssLoadIE,
+		prBssDesc->ucChnlUtilization,
+		u2PreferenceScore,
 		u2AxApScore, u2TputScore, extra);
 #endif
 
