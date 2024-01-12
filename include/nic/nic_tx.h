@@ -1835,6 +1835,7 @@ uint8_t nicTxGetTxDestPortIdxByTc(IN uint8_t ucTc);
 uint8_t nicTxGetTxDestQIdxByTc(IN uint8_t ucTc);
 uint32_t nicTxGetRemainingTxTimeByTc(IN uint8_t ucTc);
 uint8_t nicTxGetTxCountLimitByTc(IN uint8_t ucTc);
+uint8_t nicTxDescLengthByTc(IN uint8_t ucTc);
 #if CFG_SUPPORT_MULTITHREAD
 uint32_t nicTxMsduInfoListMthread(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfoListHead);

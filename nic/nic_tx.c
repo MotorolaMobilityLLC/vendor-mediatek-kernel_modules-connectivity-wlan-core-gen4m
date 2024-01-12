@@ -1122,6 +1122,19 @@ uint8_t nicTxGetTxCountLimitByTc(IN uint8_t ucTc)
 {
 	return arTcTrafficSettings[ucTc].ucTxCountLimit;
 }
+uint8_t nicTxDescLengthByTc(IN uint8_t ucTc)
+{
+	const uint8_t ucMaxLen = ARRAY_SIZE(arTcTrafficSettings);
+
+	if (ucTc >= ucMaxLen) {
+		DBGLOG(TX, WARN,
+			"Invalid TC%d, fallback to TC%d\n",
+			ucTc, ucTc % ucMaxLen);
+		ucTc %= ucMaxLen;
+	}
+	return arTcTrafficSettings[ucTc].u4TxDescLength;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief In this function, we'll aggregate frame(PACKET_INFO_T)
@@ -2157,7 +2170,7 @@ uint32_t nicTxGenerateDescTemplate(IN struct ADAPTER
 					arNetwork2TcResource[
 						prStaRec->ucBssIndex][
 						aucTid2ACI[ucTid]];
-			u4TxDescSize = arTcTrafficSettings[ucTc].u4TxDescLength;
+			u4TxDescSize = nicTxDescLengthByTc(ucTc);
 
 			/* Include TxD append */
 			prTxDesc = kalMemAlloc(
