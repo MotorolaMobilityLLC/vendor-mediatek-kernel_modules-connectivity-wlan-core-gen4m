@@ -2173,7 +2173,7 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prBssInfo = NULL, *prOutBssInfo = NULL;
 	uint8_t i, ucBssIndex, ucOwnMacIdx = 0;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_CONNAC3X == 1)
 	struct MLD_BSS_INFO *prMldBssInfo = mldBssGetByIdx(prAdapter, ucMldGroupIdx);
 #endif
 
@@ -2201,7 +2201,7 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 		return prBssInfo;
 	}
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_CONNAC3X == 1)
 	if (prMldBssInfo && prMldBssInfo->ucOmacIdx != INVALID_OMAC_IDX) {
 		ucOwnMacIdx = prMldBssInfo->ucOmacIdx;
 		DBGLOG(CNM, INFO, "Use mld omac idx %d instead\n",
@@ -2269,7 +2269,7 @@ omac_choosed:
 			rlmResetCSAParams(prBssInfo);
 			prBssInfo->fgHasStopTx = FALSE;
 #endif
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_CONNAC3X == 1)
 			if (prMldBssInfo && prMldBssInfo->ucOmacIdx == INVALID_OMAC_IDX)
 				prMldBssInfo->ucOmacIdx = ucOwnMacIdx;
 #endif
@@ -4290,7 +4290,7 @@ error:
 * @return
 */
 /*----------------------------------------------------------------------------*/
-uint8_t cnmWmmIndexDecision(
+void cnmWmmIndexDecision(
 	IN struct ADAPTER *prAdapter,
 	IN struct BSS_INFO *prBssInfo)
 {
@@ -4299,15 +4299,16 @@ uint8_t cnmWmmIndexDecision(
 
 	if (!prAdapter || !prBssInfo) {
 		DBGLOG(CNM, ERROR, "Set WMM fail\n");
-		return 0;
+		return;
 	}
+
+	if (prBssInfo->fgIsWmmInited)
+		return;
 
 	ucWmmIdx = prBssInfo->ucBssIndex;
 
-	if (prAdapter->ucHwWmmEnBit & BIT(ucWmmIdx)
-		|| prBssInfo->fgIsWmmInited)
-		DBGLOG(CNM, WARN, "Duplicated WMM%d found\n",
-			ucWmmIdx);
+	if (prAdapter->ucHwWmmEnBit & BIT(ucWmmIdx))
+		DBGLOG(CNM, WARN, "Duplicated WMM%d found\n", ucWmmIdx);
 
 	prAdapter->ucHwWmmEnBit |= BIT(ucWmmIdx);
 	prBssInfo->fgIsWmmInited = TRUE;
@@ -4319,24 +4320,30 @@ uint8_t cnmWmmIndexDecision(
 		ucWmmIdx %= HW_WMM_NUM;
 	}
 
-	return ucWmmIdx;
+	prBssInfo->ucWmmQueSet = ucWmmIdx;
 
 #elif (CFG_HW_WMM_BY_BSS == 1)
-	uint8_t ucWmmIndex;
+	uint8_t ucWmmIndex = HW_WMM_NUM;
+
+	if (!prAdapter || !prBssInfo || !prBssInfo->fgIsInUse) {
+		DBGLOG(CNM, ERROR, "Set WMM fail\n");
+		return;
+	}
+
+	if (prBssInfo->fgIsWmmInited)
+		return;
 
 	for (ucWmmIndex = 0; ucWmmIndex < HW_WMM_NUM; ucWmmIndex++) {
-		if (prBssInfo && prBssInfo->fgIsInUse &&
-			prBssInfo->fgIsWmmInited == FALSE) {
-			if (!(prAdapter->ucHwWmmEnBit & BIT(ucWmmIndex))) {
-				prAdapter->ucHwWmmEnBit |= BIT(ucWmmIndex);
-				prBssInfo->fgIsWmmInited = TRUE;
-				break;
-			}
+		if (!(prAdapter->ucHwWmmEnBit & BIT(ucWmmIndex))) {
+			prAdapter->ucHwWmmEnBit |= BIT(ucWmmIndex);
+			prBssInfo->fgIsWmmInited = TRUE;
+			prBssInfo->ucWmmQueSet = ucWmmIndex;
+
+			DBGLOG(CNM, INFO, "Bss%d assign ucWmmIndex: %d\n",
+				prBssInfo->ucBssIndex, ucWmmIndex);
+			return;
 		}
 	}
-	DBGLOG(CNM, INFO, "ucWmmIndex: %d\n", ucWmmIndex);
-	return (ucWmmIndex < HW_WMM_NUM) ? ucWmmIndex : MAX_HW_WMM_INDEX;
-
 #else
 	/* Follow the same rule with cnmUpdateDbdcSetting */
 	if (prBssInfo->eBand == BAND_5G
@@ -4344,9 +4351,9 @@ uint8_t cnmWmmIndexDecision(
 		|| prBssInfo->eBand == BAND_6G
 #endif
 	)
-		return DBDC_5G_WMM_INDEX;
+		prBssInfo->ucWmmQueSet = DBDC_5G_WMM_INDEX;
 	else
-		return (prAdapter->rWifiVar.eDbdcMode ==
+		prBssInfo->ucWmmQueSet = (prAdapter->rWifiVar.eDbdcMode ==
 			 ENUM_DBDC_MODE_DISABLED) ?
 			DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
 #endif

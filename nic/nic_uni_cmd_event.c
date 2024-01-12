@@ -3323,6 +3323,30 @@ uint32_t nicUniCmdUpdateStaRec(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+enum ENUM_UNI_CMD_CNM_CH_REQ_BAND
+nicUniCmdChReqBandType(enum ENUM_MBMC_BN eBand)
+{
+#define B2B(x) case ENUM_BAND_##x: eUniBand = UNI_CMD_CNM_CH_REQ_BAND_##x; break
+
+	enum ENUM_UNI_CMD_CNM_CH_REQ_BAND eUniBand;
+
+	switch (eBand) {
+	B2B(0);
+	B2B(1);
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	B2B(2);
+#endif
+	B2B(ALL);
+	B2B(AUTO);
+	default:
+		DBGLOG(RLM, WARN, "unexpected band: %d\n", eBand);
+		eUniBand = UNI_CMD_CNM_CH_REQ_BAND_AUTO;
+		break;
+	}
+
+	return eUniBand;
+}
+
 static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 		struct MSG_CH_REQ *msg,
 		struct WIFI_UNI_CMD_ENTRY **out_entry)
@@ -3388,7 +3412,7 @@ static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 		tag->ucRfChannelWidthFromAP = sub_req->eRfChannelWidth;
 		tag->ucRfCenterFreqSeg1FromAP = sub_req->ucRfCenterFreqSeg1;
 		tag->ucRfCenterFreqSeg2FromAP = sub_req->ucRfCenterFreqSeg2;
-		tag->ucDBDCBand = sub_req->eDBDCBand;
+		tag->ucDBDCBand = nicUniCmdChReqBandType(sub_req->eDBDCBand);
 
 		DBGLOG(INIT, INFO, "bss=%d,token=%d,type=%d,interval=%d,ch[%d %d %d %d %d %d],dbdc=%d\n",
 			tag->ucBssIndex,
@@ -3433,7 +3457,7 @@ static uint32_t nicUniCmdChAbortPrivilege(struct ADAPTER *ad,
 	if (msg->ucExtraChReqNum >= 1)
 		tag->ucDBDCBand = ENUM_BAND_ALL;
 	else
-		tag->ucDBDCBand = msg->eDBDCBand;
+		tag->ucDBDCBand = nicUniCmdChReqBandType(msg->eDBDCBand);
 
 	DBGLOG(INIT, INFO, "bss=%d,token=%d,dbdc=%d\n",
 		tag->ucBssIndex,

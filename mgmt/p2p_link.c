@@ -450,22 +450,20 @@ void p2pGetLinkWmmQueSet(
 	IN struct ADAPTER *prAdapter,
 	IN struct BSS_INFO *prBssInfo)
 {
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	struct BSS_INFO *bss = p2pGetDefaultLinkBssInfo(prAdapter,
-		IFTYPE_UNSPECIFIED);
+	struct BSS_INFO *bss;
 
-	if (bss) {
-		if (bss->fgIsWmmInited == FALSE)
-			bss->ucWmmQueSet =
-				cnmWmmIndexDecision(prAdapter,
-				bss);
+	/* main bss must assign wmm first */
+	bss = p2pGetDefaultLinkBssInfo(prAdapter, IFTYPE_UNSPECIFIED);
+	cnmWmmIndexDecision(prAdapter, bss);
 
-		prBssInfo->fgIsWmmInited = TRUE;
-		prBssInfo->ucWmmQueSet = bss->ucWmmQueSet;
-	} else
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_CONNAC3X == 1)
+	/* connac3 MLO all bss use the same wmm index as main bss use */
+	prBssInfo->fgIsWmmInited = TRUE;
+	prBssInfo->ucWmmQueSet = bss->ucWmmQueSet;
+#else
+	/* connac2 always assign different wmm index to bssinfo */
+	cnmWmmIndexDecision(prAdapter, prBssInfo);
 #endif
-		prBssInfo->ucWmmQueSet = cnmWmmIndexDecision(
-			prAdapter, prBssInfo);
 
 	DBGLOG(P2P, TRACE, "bss[%d] = %d\n",
 		prBssInfo->ucBssIndex, prBssInfo->ucWmmQueSet);

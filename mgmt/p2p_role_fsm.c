@@ -1536,8 +1536,7 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 #endif
 
 	prP2pBssInfo->eBand = prP2pConnReqInfo->rChannelInfo.eBand;
-	if (prP2pBssInfo->fgIsWmmInited == FALSE)
-		p2pGetLinkWmmQueSet(prAdapter, prP2pBssInfo);
+	p2pGetLinkWmmQueSet(prAdapter, prP2pBssInfo);
 #if CFG_SUPPORT_DBDC
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 	p2pRoleP2pLisStopDbdcDecision(prAdapter,
@@ -1874,8 +1873,7 @@ void p2pRoleFsmRunEventDfsCac(IN struct ADAPTER *prAdapter,
 		prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_GO;
 
 	prP2pBssInfo->eBand = prP2pConnReqInfo->rChannelInfo.eBand;
-	if (prP2pBssInfo->fgIsWmmInited == FALSE)
-		p2pGetLinkWmmQueSet(prAdapter, prP2pBssInfo);
+	p2pGetLinkWmmQueSet(prAdapter, prP2pBssInfo);
 
 #if CFG_SUPPORT_DBDC
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
@@ -2413,8 +2411,7 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 				&prChnlReqInfo->ucReqChnlNum);
 
 			prP2pBssInfo->eBand = prChnlReqInfo->eBand;
-			if (prP2pBssInfo->fgIsWmmInited == FALSE)
-				p2pGetLinkWmmQueSet(prAdapter, prP2pBssInfo);
+			p2pGetLinkWmmQueSet(prAdapter, prP2pBssInfo);
 
 #if CFG_SUPPORT_DBDC
 			/* DBDC decsion.may change OpNss */
@@ -3125,10 +3122,8 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 
 					prP2pBssInfo->eBand =
 						prChnlReqInfo->eBand;
-					if (!prP2pBssInfo->fgIsWmmInited)
-						p2pGetLinkWmmQueSet(
-							prAdapter,
-							prP2pBssInfo);
+					p2pGetLinkWmmQueSet(
+						prAdapter, prP2pBssInfo);
 #if CFG_SUPPORT_DBDC
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 					p2pRoleP2pLisStopDbdcDecision(prAdapter,
