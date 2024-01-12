@@ -130,6 +130,11 @@ void secInit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(RSN, ERROR, "prBssInfo is null\n");
+		return;
+	}
+
 	prAisSpecBssInfo =
 		aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	prMib = aisGetMib(prAdapter, ucBssIndex);
@@ -805,6 +810,10 @@ u_int8_t secPrivacySeekForEntry(
 	}
 
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prSta->ucBssIndex);
+	if (!prP2pBssInfo) {
+		DBGLOG(RSN, ERROR, "prP2pBssInfo is null\n");
+		return FALSE;
+	}
 	ucRoleIdx = prP2pBssInfo->u4PrivateData;
 
 	prWtbl = prAdapter->rWifiVar.arWtbl;
@@ -1074,6 +1083,10 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBSSInfo =
 	    GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
+	if (!prBSSInfo) {
+		DBGLOG(RSN, ERROR, "prBssInfo is null\n");
+		return ucEntry;
+	}
 	prWtbl = prAdapter->rWifiVar.arWtbl;
 
 	if (ucAlg == CIPHER_SUITE_WPI ||	/* CIPHER_SUITE_GCM_WPI || */

@@ -671,6 +671,10 @@ struct MSDU_INFO* assocComposeReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	 *	 in MSDU_INfO_T.
 	 */
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(SAA, ERROR, "prBssInfo is null\n");
+		return NULL;
+	}
 
 	/* Compose Header and Fixed Field */
 	assocComposeReAssocReqFrameHeaderAndFF(prAdapter,
@@ -1576,6 +1580,10 @@ uint32_t assocProcessRxAssocReqFrameImpl(
 	}
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(SAA, ERROR, "prBssInfo is null\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
 
 	/* Check if this Disassoc Frame is coming from Target BSSID */
 	if (UNEQUAL_MAC_ADDR(prAssocReqFrame->aucBSSID, prBssInfo->aucBSSID)) {
@@ -2117,6 +2125,10 @@ struct MSDU_INFO * assocComposeReAssocRespFrame(IN struct ADAPTER *prAdapter,
 	 *       in MSDU_INfO_T.
 	 */
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(AAA, ERROR, "prBssInfo is null\n");
+		return NULL;
+	}
 
 	/* Compose Header and Fixed Field */
 	assocComposeReAssocRespFrameHeaderAndFF(prStaRec,
@@ -2298,7 +2310,7 @@ void assocGenerateMDIE(IN struct ADAPTER *prAdapter,
 		IW_AUTH_ALG_FT)) /* Non-RSN FT */
 		return;
 
-	if (!prFtIEs->prMDIE) {
+	if (prFtIEs && !prFtIEs->prMDIE) {
 		struct BSS_DESC *prBssDesc =
 		    aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		uint8_t *pucIE = prBssDesc->pucIeBuf;
