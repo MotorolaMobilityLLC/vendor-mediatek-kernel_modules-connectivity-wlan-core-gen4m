@@ -204,7 +204,7 @@ struct GL_HIF_INFO {
 struct BUS_INFO {
 	const uint32_t top_cfg_base;	/* TOP_CFG_BASE address */
 	const struct PCIE_CHIP_CR_MAPPING *bus2chip;
-	const struct PCIE_CHIP_CR_REMAPPING *bus2chip_remapping;
+	const struct PCIE_CHIP_CR_REMAPPING *bus2chip_remap;
 	const struct pci_queue_layout queue_layout;
 	const uint32_t tx_ring_cmd_idx;
 	const uint32_t tx_ring_wa_cmd_idx;
@@ -262,8 +262,6 @@ struct BUS_INFO {
 	const uint32_t host_wfdma1_rx_ring_ext_ctrl_base;
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
-	const uint32_t pcie2ap_remap_2;
-	const uint32_t ap2wf_remap_1;
 	struct wfdma_group_info *wfmda_host_tx_group;
 	const uint32_t wfmda_host_tx_group_len;
 	struct wfdma_group_info *wfmda_host_rx_group;
@@ -369,7 +367,6 @@ struct HIF_PREALLOC_MEM {
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
-#define PCIE_REMAP_SZ		0x10000
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A

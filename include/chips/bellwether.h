@@ -48,12 +48,6 @@
 #define CONN_INFRA_CR_SW_DEF_MCU_ENTER_IDLE_LOOP \
 	(CONN_INFRA_MCU_SW_DEF_CR_BASE + 0x68)
 
-#define CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR \
-	(CONN_INFRA_CFG_BASE + 0x0120)
-
-#define CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR \
-	(0x7C00E000 + 0x068)
-
 #define WF_PP_TOP_BASE             0x820CC000
 #define WF_PP_TOP_DBG_CTRL_ADDR    (WF_PP_TOP_BASE + 0x00FC)
 #define WF_PP_TOP_DBG_CS_0_ADDR    (WF_PP_TOP_BASE + 0x0104)
@@ -69,6 +63,8 @@ extern struct PP_TOP_CR rBellwetherPpTopCr;
 
 #define BELLWETHER_FIRMWARE_ROM_ADDR		0x00800000
 #define BELLWETHER_FIRMWARE_ROM_SRAM_ADDR	0xE0048000
+
+#define BELLWETHER_REMAP_BASE_ADDR		0x7c500000
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
