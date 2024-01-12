@@ -66,7 +66,7 @@
 static uint32_t u4EmiMetOffset = 0x98000;
 static uint32_t u4ProjectId = 6991;
 
-#if defined((CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if defined(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #define RST_PIN_MIN_WAIT_TIME		200 /* ms */
 
 static struct pinctrl *pinctrl_ptr;
@@ -253,7 +253,6 @@ struct BOOST_INFO rBoostInfo[] = {
 
 uint32_t kalGetCpuBoostThreshold(void)
 {
-	DBGLOG(SW4, TRACE, "enter %s\n", func);
 	/* 5, stands for 250Mbps */
 	return 5;
 }
@@ -678,10 +677,9 @@ int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 		eNewBoost = eBoostCpuTable[u4TarPerfLevel];
 
 	if (eCurrBoost != eNewBoost) {
-		DBGLOG(INIT, INFO,
-			"%s TputLv:%u BoostLv[%u->%u]\n", func,
+		DBGLOG(INIT, INFO, "TputLv:%u BoostLv[%u->%u]\n",
 			u4TarPerfLevel, eCurrBoost, eNewBoost);
-		kalTraceEvent("%s TputLv:%u BoostLv[%u->%u]\n", func,
+		kalTraceEvent("%s TputLv:%u BoostLv[%u->%u]\n", __func__,
 			u4TarPerfLevel, eCurrBoost, eNewBoost);
 		kalSetCpuBoost(prAdapter, &rBoostInfo[eNewBoost]);
 		eCurrBoost = eNewBoost;
