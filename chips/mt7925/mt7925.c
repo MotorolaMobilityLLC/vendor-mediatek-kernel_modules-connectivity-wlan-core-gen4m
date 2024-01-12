@@ -561,7 +561,7 @@ struct CHIP_DBG_OPS mt7925_DebugOps = {
 #if (CONFIG_WLAN_SERVICE == 1)
 struct test_capability mt7925_toolCapability = {
 	/* u_int32 version; */
-	6,
+	8,
 	/* u_int32 tag_num; */
 	2,
 	/* struct test_capability_ph_cap ph_cap; */
@@ -600,9 +600,9 @@ struct test_capability mt7925_toolCapability = {
 		/* BIT[31:16]: Band3 N/A, 0*/
 		0x00000000,	/* u_int32 channel_band_dbdc_ext; */
 
-		/* BIT[7:0]: Support phy 1 */
-		/* BIT[15:8]: Support Adie 1 */
-		0x0101,	/* u_int32 phy_adie_quantities; CFG_SUPPORT_CONNAC3X */
+		/* BIT[7:0]: Support phy 0x1 (bitwise) */
+		/* BIT[15:8]: Support Adie 0x1 (bitwise) */
+		0x0101,	/* u_int32 phy_adie_index; CFG_SUPPORT_CONNAC3X */
 
 		/* BIT[7:0]: Band0 TX path 2 */
 		/* BIT[15:8]: Band0 RX path 2 */
@@ -640,6 +640,7 @@ struct test_capability mt7925_toolCapability = {
 		/* BIT5: eMLSR support 1 */
 		/* BIT6: MLR+, ALR support 1 */
 		/* BIT7: Bandwidth duplcate debug support 0 */
+		/* BIT8: dRU support */
 		0x78,	/*u_int32 feature1; */
 
 		/* u_int32 reserved[15]; */

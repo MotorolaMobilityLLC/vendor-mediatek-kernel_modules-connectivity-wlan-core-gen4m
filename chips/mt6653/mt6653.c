@@ -835,7 +835,7 @@ struct CHIP_DBG_OPS mt6653_DebugOps = {
 #if (CONFIG_WLAN_SERVICE == 1)
 struct test_capability mt6653_toolCapability = {
 	/* u_int32 version; */
-	6,
+	8,
 	/* u_int32 tag_num; */
 	2,
 	/* struct test_capability_ph_cap ph_cap; */
@@ -874,9 +874,11 @@ struct test_capability mt6653_toolCapability = {
 		/* BIT[31:16]: Band3 2.4G, 5G, 6G, 0x7 */
 		0x00070006,	/* u_int32 channel_band_dbdc_ext */
 
-		/* BIT[7:0]: Support phy 3 */
-		/* BIT[15:8]: Support Adie 1 */
-		0x0103,	/* u_int32 phy_adie_quantities; CFG_SUPPORT_CONNAC3X */
+		/* BIT[7:0]: Support phy 0xF (bitwise),
+		 *           phy0, phy1, phy2, phy3(little)
+		 */
+		/* BIT[15:8]: Support Adie 0x1 (bitwise) */
+		0x010F,	/* u_int32 phy_adie_index; CFG_SUPPORT_CONNAC3X */
 
 		/* BIT[7:0]: Band0 TX path 2 */
 		/* BIT[15:8]: Band0 RX path 2 */
@@ -914,7 +916,8 @@ struct test_capability mt6653_toolCapability = {
 		/* BIT5: eMLSR support 1 */
 		/* BIT6: MLR+, ALR support 0 */
 		/* BIT7: Bandwidth duplcate debug support 0 */
-		0x2C,	/*u_int32 feature1; */
+		/* BIT8: dRU support 1 */
+		0x12C,	/*u_int32 feature1; */
 
 		/* u_int32 reserved[15]; */
 		{ 0, 0, 0, 0, 0, 0, 0, 0,

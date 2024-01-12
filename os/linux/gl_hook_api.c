@@ -4643,10 +4643,10 @@ uint32_t ServiceWlanOid(void *winfos,
 		if (g_HqaCap.support_emlsr)
 			capability->ext_cap.feature1 |= BIT(5);
 
-		capability->ph_cap.phy_adie_quantities |=
+		capability->ph_cap.phy_adie_index |=
 			g_HqaCap.phy_num << TEST_PHY_SHIFT;
 
-		capability->ph_cap.phy_adie_quantities |=
+		capability->ph_cap.phy_adie_index |=
 			g_HqaCap.adie_num << TEST_ADIE_SHIFT;
 #endif /* (CFG_SUPPORT_CONNAC3X == 1) */
 
