@@ -204,6 +204,7 @@
 	+ HW_MAC_TX_DESC_APPEND_T_LENGTH)
 
 #define NIC_MSDU_REPORT_DUMP_TIMEOUT		5	/* sec */
+#define NIC_MSDU_REPORT_TIMEOUT_SER_TIME	60	/* sec */
 
 /*------------------------------------------------------------------------*/
 /* Tx status related information                                          */

@@ -657,6 +657,13 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 		kalMemZero(prHistory, sizeof(struct MSDU_TOKEN_HISTORY_INFO));
 	}
 
+	/* Trigger SER */
+	if (rLongest.tv_sec >= prWifiVar->u4MsduReportTimeoutSerTime) {
+		prAdapter->u4HifChkFlag |= HIF_DRV_SER;
+		DBGLOG(HAL, INFO, "Timeout > %ds, trigger SER\n",
+		       prWifiVar->u4MsduReportTimeoutSerTime);
+	}
+
 	*u4Token = u4TokenId;
 
 	return fgIsTimeout;

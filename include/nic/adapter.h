@@ -1156,6 +1156,8 @@ struct WIFI_VAR {
 	uint8_t fgEnDefaultIotApRule;
 #endif
 	uint32_t u4MsduReportTimeout;
+	uint32_t u4MsduReportTimeoutSerTime;
+
 
 #if CFG_SUPPORT_DATA_STALL
 	uint32_t u4PerHighThreshole;
