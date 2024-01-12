@@ -3488,6 +3488,25 @@ nicUpdateBeaconIETemplate(struct ADAPTER *prAdapter,
 		0);
 }
 
+uint32_t
+nicUpdateFilsDiscIETemplate(struct ADAPTER *prAdapter,
+			    uint8_t ucBssIndex,
+			    uint32_t u4MaxInterval,
+			    uint32_t u4MinInterval,
+			    uint8_t *aucIe,
+			    uint16_t u2IELen)
+{
+	if (!aucIe || !u2IELen)
+		return WLAN_STATUS_INVALID_DATA;
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	return nicUniCmdFilsDiscovery(prAdapter, ucBssIndex, u4MaxInterval,
+		u4MinInterval, aucIe, u2IELen);
+#else
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This utility function is used to initialization PHY related

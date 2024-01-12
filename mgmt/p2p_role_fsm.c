@@ -1345,6 +1345,13 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 #endif
 	}
 
+	p2pFuncStoreFilsInfo(prAdapter,
+			     &prP2pStartAPMsg->rFilsDiscovery,
+			     prP2pRoleFsmInfo->ucBssIndex);
+	p2pFuncStoreUnsolProbeInfo(prAdapter,
+				   &prP2pStartAPMsg->rUnsolProbe,
+				   prP2pRoleFsmInfo->ucBssIndex);
+
 	if (bSkipCac)
 		p2pRoleFsmRunEventStartAP(prAdapter, prMsgHdr);
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -1358,6 +1365,14 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 			eBand);
 	}
 #endif
+	if (prP2pStartAPMsg->rFilsDiscovery.prBuffer)
+		kalMemFree(prP2pStartAPMsg->rFilsDiscovery.prBuffer,
+			   VIR_MEM_TYPE,
+			   prP2pStartAPMsg->rFilsDiscovery.u4Length);
+	if (prP2pStartAPMsg->rUnsolProbe.prBuffer)
+		kalMemFree(prP2pStartAPMsg->rUnsolProbe.prBuffer,
+			   VIR_MEM_TYPE,
+			   prP2pStartAPMsg->rUnsolProbe.u4Length);
 	cnmMemFree(prAdapter, prMsgHdr);
 }
 
@@ -1862,6 +1877,9 @@ void p2pRoleFsmRunEventStopAP(struct ADAPTER *prAdapter,
 			prP2pRoleFsmInfo->ucBssIndex);
 		goto error;
 	}
+
+	p2pFuncClearUnsolProbeInfo(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
+	p2pFuncClearFilsInfo(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	if (prP2pBssInfo->eBand != BAND_5G)
@@ -4034,21 +4052,38 @@ void p2pRoleFsmRunEventBeaconUpdate(struct ADAPTER *prAdapter,
 				prP2pBssInfo->ucBssIndex));
 	}
 
-	if ((prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) &&
-		(prP2pBssInfo->eIntendOPMode == OP_MODE_NUM)) {
+	if (prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT &&
+	    prP2pBssInfo->eIntendOPMode == OP_MODE_NUM) {
+		struct WIFI_VAR *prWifiVar;
+		struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
+		struct P2P_FILS_DISCOVERY_INFO *prFilsInfo;
+		struct P2P_UNSOL_PROBE_RESP_INFO *prUnsolProbeInfo;
+		uint8_t ucBssIdx = prP2pBssInfo->ucBssIndex;
+
+		prWifiVar = &prAdapter->rWifiVar;
+		prP2pSpecBssInfo = prWifiVar->prP2pSpecificBssInfo[ucBssIdx];
+		prFilsInfo = &prP2pSpecBssInfo->rFilsInfo;
+		prUnsolProbeInfo = &prP2pSpecBssInfo->rUnsolProbeInfo;
 
 		/* AP is created, Beacon Update. */
-		/* nicPmIndicateBssAbort(prAdapter, NETWORK_TYPE_P2P_INDEX); */
-
-
 		DBGLOG(P2P, TRACE,
 			"p2pRoleFsmRunEventBeaconUpdate with Bssidex(%d)\n",
 			prRoleP2pFsmInfo->ucBssIndex);
 
 		bssUpdateBeaconContent(prAdapter, prRoleP2pFsmInfo->ucBssIndex);
 
+		if (prFilsInfo->fgValid) {
+			nicUpdateFilsDiscIETemplate(prAdapter,
+						    prP2pBssInfo->ucBssIndex,
+						    prFilsInfo->u4MaxInterval,
+						    prFilsInfo->u4MinInterval,
+						    prFilsInfo->aucIEBuf,
+						    prFilsInfo->u4Length);
+		}
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		if (prP2pBssInfo->eBand == BAND_6G) {
+		else if (prP2pBssInfo->eBand == BAND_6G &&
+			 (CFG_MTK_FORCE_ENABLE_UNSOL_PROBE_RESP ||
+			  prUnsolProbeInfo->fgValid)) {
 			/* Update unsolicited probe response as beacon */
 			bssUpdateBeaconContentEx(prAdapter,
 				prP2pBssInfo->ucBssIndex,
@@ -4067,10 +4102,6 @@ void p2pRoleFsmRunEventBeaconUpdate(struct ADAPTER *prAdapter,
 				"Update probe resp IEs fail!\n");
 		}
 #endif
-
-		/* nicPmIndicateBssCreated(prAdapter,
-		 * NETWORK_TYPE_P2P_INDEX);
-		 */
 	}
 error:
 	cnmMemFree(prAdapter, prMsgHdr);

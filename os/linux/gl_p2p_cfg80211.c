@@ -1609,6 +1609,8 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 		struct net_device *dev,
 		struct cfg80211_ap_settings *settings)
 {
+#define LOG_BUFFER_SIZE 512
+
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
 	struct MSG_P2P_BEACON_UPDATE *prP2pBcnUpdateMsg =
@@ -1616,11 +1618,17 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 	struct MSG_P2P_START_AP *prP2pStartAPMsg =
 		(struct MSG_P2P_START_AP *) NULL;
 	uint8_t *pucBuffer = (uint8_t *) NULL;
+#if KERNEL_VERSION(5, 10, 0) <= CFG80211_VERSION_CODE
+	struct cfg80211_unsol_bcast_probe_resp *presp;
+#endif
 	uint8_t ucRoleIdx = 0;
 	struct cfg80211_chan_def *chandef;
 	struct RF_CHANNEL_INFO rRfChnlInfo;
 	struct ADAPTER *prAdapter = (struct ADAPTER *) NULL;
 	struct WIFI_VAR *prWifiVar = (struct WIFI_VAR *) NULL;
+	uint32_t u4MsgLen = 0;
+	uint8_t aucLogBuf[LOG_BUFFER_SIZE];
+	int32_t i4Written = 0;
 
 	kalMemZero(&rRfChnlInfo, sizeof(struct RF_CHANNEL_INFO));
 
@@ -1628,11 +1636,12 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 /* P_IE_SSID_T prSsidIE = (P_IE_SSID_T)NULL; */
 
 	do {
-		if ((wiphy == NULL) || (settings == NULL))
-			break;
+		if ((wiphy == NULL) || (settings == NULL)) {
+			DBGLOG(P2P, ERROR, "wiphy: 0x%p, settings: 0x%p\n",
+				wiphy, settings);
+			goto exit;
+		}
 
-		DBGLOG(P2P, INFO, "inactivity_timeout: %d\n",
-				settings->inactivity_timeout);
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 		/*DFS todo 20161220_DFS*/
@@ -1640,8 +1649,10 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 
 		chandef = &settings->chandef;
 
-		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
-			break;
+		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0) {
+			DBGLOG(P2P, ERROR, "mtk_Netdev_To_RoleIdx failed.\n");
+			goto exit;
+		}
 
 		if ((prGlueInfo->prAdapter->rWifiVar.
 			fgSapConcurrencyPolicy ==
@@ -1655,7 +1666,7 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 				"Remove sap (role%d)\n",
 				ucRoleIdx);
 			i4Rslt = 0;
-			break;
+			goto exit;
 		}
 
 		if (dev->ieee80211_ptr &&
@@ -1672,15 +1683,40 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 				TRUE);
 		}
 
+		i4Written += kalSnprintf(aucLogBuf + i4Written,
+					 LOG_BUFFER_SIZE - i4Written,
+					 "name[%s] inact[%d] beacon[%d] dtim[%d] ht[%d] vht[%d]",
+					 dev->name,
+					 settings->inactivity_timeout,
+					 settings->beacon_interval,
+					 settings->dtim_period,
+					 settings->ht_required,
+					 settings->vht_required);
+#if KERNEL_VERSION(5, 8, 0) <= CFG80211_VERSION_CODE
+		i4Written += kalSnprintf(aucLogBuf + i4Written,
+					 LOG_BUFFER_SIZE - i4Written,
+					 " he[%d]",
+					 settings->he_required);
+#endif
+#if KERNEL_VERSION(5, 11, 0) <= CFG80211_VERSION_CODE
+		i4Written += kalSnprintf(aucLogBuf + i4Written,
+					 LOG_BUFFER_SIZE - i4Written,
+					 " sae_h2e[%d]",
+					 settings->sae_h2e_required);
+#endif
+
 		if (chandef) {
 			kalChannelFormatSwitch(chandef, chandef->chan,
 					&rRfChnlInfo);
 
-			DBGLOG(P2P, INFO, "pri: %d, s1: %d, s2: %d, bw: %d\n",
-				rRfChnlInfo.u2PriChnlFreq,
-				rRfChnlInfo.u4CenterFreq1,
-				rRfChnlInfo.u4CenterFreq2,
-				rRfChnlInfo.ucChnlBw);
+			i4Written += kalSnprintf(aucLogBuf + i4Written,
+						 LOG_BUFFER_SIZE - i4Written,
+						 " channel[%d %d %d %d %d]",
+						 chandef->chan->band,
+						 chandef->width,
+						 chandef->chan->center_freq,
+						 chandef->center_freq1,
+						 chandef->center_freq2);
 
 			/* Follow the channel info from wifi.cfg
 			 * prior to hostapd.conf
@@ -1726,25 +1762,27 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 
 			p2pFuncSetChannel(prGlueInfo->prAdapter,
 				ucRoleIdx, &rRfChnlInfo);
-		} else
-			DBGLOG(P2P, INFO, "!!! no CH def!!!\n");
+		} else {
+			DBGLOG(P2P, ERROR, "!!! no CH def!!!\n");
+		}
+
+		u4MsgLen = sizeof(struct MSG_P2P_BEACON_UPDATE) +
+			   settings->beacon.head_len +
+			   settings->beacon.tail_len +
+			   settings->beacon.assocresp_ies_len;
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+		u4MsgLen += settings->beacon.proberesp_ies_len;
+#endif
 
 		prP2pBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *)
 			cnmMemAlloc(prGlueInfo->prAdapter,
 			    RAM_TYPE_MSG,
-			    (sizeof(struct MSG_P2P_BEACON_UPDATE)
-			     +
-			     settings->beacon.head_len +
-			     settings->beacon.tail_len +
-			     settings->beacon.assocresp_ies_len
-#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
-				 + settings->beacon.proberesp_ies_len
-#endif
-			     ));
+			    u4MsgLen);
 
 		if (prP2pBcnUpdateMsg == NULL) {
+			DBGLOG(P2P, ERROR, "prP2pBcnUpdateMsg alloc failed.\n");
 			i4Rslt = -ENOMEM;
-			break;
+			goto exit;
 		}
 
 		prP2pBcnUpdateMsg->ucRoleIndex = ucRoleIdx;
@@ -1836,24 +1874,84 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 
 		if (prP2pStartAPMsg == NULL) {
 			i4Rslt = -ENOMEM;
-			break;
+			goto err;
 		}
 
 		prP2pStartAPMsg->rMsgHdr.eMsgId = MID_MNY_P2P_START_AP;
-
 		prP2pStartAPMsg->fgIsPrivacy = settings->privacy;
-
 		prP2pStartAPMsg->u4BcnInterval = settings->beacon_interval;
-
 		prP2pStartAPMsg->u4DtimPeriod = settings->dtim_period;
-
 		/* Copy NO SSID. */
 		prP2pStartAPMsg->ucHiddenSsidType = settings->hidden_ssid;
-
 		prP2pStartAPMsg->ucRoleIdx = ucRoleIdx;
+
+#if KERNEL_VERSION(5, 10, 0) <= CFG80211_VERSION_CODE
+		i4Written += kalSnprintf(aucLogBuf + i4Written,
+					 LOG_BUFFER_SIZE - i4Written,
+					 " fils[%d %d %zu]",
+					 settings->fils_discovery.min_interval,
+					 settings->fils_discovery.max_interval,
+					 settings->fils_discovery.tmpl_len);
+		if (settings->fils_discovery.max_interval &&
+		    settings->fils_discovery.tmpl_len) {
+			struct MSG_P2P_FILS_DISCOVERY_UPDATE *prFilsDiscovery;
+
+			u4MsgLen = settings->fils_discovery.tmpl_len;
+			prFilsDiscovery = &prP2pStartAPMsg->rFilsDiscovery;
+			prFilsDiscovery->u4MinInterval =
+				settings->fils_discovery.min_interval;
+			prFilsDiscovery->u4MaxInterval =
+				settings->fils_discovery.max_interval;
+			prFilsDiscovery->u4Length = u4MsgLen;
+			prFilsDiscovery->prBuffer = kalMemAlloc(u4MsgLen,
+				VIR_MEM_TYPE);
+			if (prFilsDiscovery->prBuffer) {
+				kalMemCopy(prFilsDiscovery->prBuffer,
+					   settings->fils_discovery.tmpl,
+					   settings->fils_discovery.tmpl_len);
+			} else {
+				DBGLOG(P2P, ERROR,
+					"FILS msg alloc failed (%d)\n",
+					u4MsgLen);
+				goto err;
+			}
+		}
+
+		presp = &settings->unsol_bcast_probe_resp;
+		i4Written += kalSnprintf(aucLogBuf + i4Written,
+					 LOG_BUFFER_SIZE - i4Written,
+					 " unsol_probe[%d %zu]",
+					 presp->interval,
+					 presp->tmpl_len);
+		if (presp->interval && presp->tmpl_len) {
+			struct MSG_P2P_UNSOL_PROBE_UPDATE *prUnsolProbe;
+
+			u4MsgLen = presp->tmpl_len;
+			prUnsolProbe = &prP2pStartAPMsg->rUnsolProbe;
+			prUnsolProbe->u4Interval = presp->interval;
+			prUnsolProbe->u4Length = u4MsgLen;
+			prUnsolProbe->prBuffer = kalMemAlloc(u4MsgLen,
+				VIR_MEM_TYPE);
+			if (prUnsolProbe->prBuffer) {
+				kalMemCopy(prUnsolProbe->prBuffer,
+					   presp->tmpl,
+					   presp->tmpl_len);
+			} else {
+				DBGLOG(P2P, ERROR,
+					"Unsol probe msg alloc failed (%d)\n",
+					u4MsgLen);
+				goto err;
+			}
+		}
+#endif
 
 		kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
 
+		i4Written += kalSnprintf(aucLogBuf + i4Written,
+					 LOG_BUFFER_SIZE - i4Written,
+					 " ssid[%zu %s]",
+					 settings->ssid_len,
+					 settings->ssid);
 		COPY_SSID(prP2pStartAPMsg->aucSsid,
 			prP2pStartAPMsg->u2SsidLen,
 			settings->ssid, settings->ssid_len);
@@ -1863,43 +1961,33 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			(struct MSG_HDR *) prP2pStartAPMsg,
 			MSG_SEND_METHOD_BUF);
 
-		i4Rslt = 0;
+		DBGLOG(P2P, INFO, "%s\n", aucLogBuf);
 
+		i4Rslt = 0;
+		goto exit;
 	} while (FALSE);
 
-	return i4Rslt;
+err:
+	if (prP2pStartAPMsg) {
+		struct MSG_P2P_FILS_DISCOVERY_UPDATE *prFilsDiscovery;
+		struct MSG_P2P_UNSOL_PROBE_UPDATE *prUnsolProbe;
 
-/* /////////////////////// */
-/**
- * struct cfg80211_ap_settings - AP configuration
- *
- * Used to configure an AP interface.
- *
- * @beacon: beacon data
- * @beacon_interval: beacon interval
- * @dtim_period: DTIM period
- * @ssid: SSID to be used in the BSS (note: may be %NULL if not provided from
- *      user space)
- * @ssid_len: length of @ssid
- * @hidden_ssid: whether to hide the SSID in Beacon/Probe Response frames
- * @crypto: crypto settings
- * @privacy: the BSS uses privacy
- * @auth_type: Authentication type (algorithm)
- * @inactivity_timeout: time in seconds to determine station's inactivity.
- */
-/* struct cfg80211_ap_settings { */
-/* struct cfg80211_beacon_data beacon; */
-/*  */
-/* int beacon_interval, dtim_period; */
-/* const u8 *ssid; */
-/* size_t ssid_len; */
-/* enum nl80211_hidden_ssid hidden_ssid; */
-/* struct cfg80211_crypto_settings crypto; */
-/* bool privacy; */
-/* enum nl80211_auth_type auth_type; */
-/* int inactivity_timeout; */
-/* }; */
-/* ////////////////// */
+		prFilsDiscovery = &prP2pStartAPMsg->rFilsDiscovery;
+		prUnsolProbe = &prP2pStartAPMsg->rUnsolProbe;
+
+		if (prUnsolProbe->prBuffer)
+			kalMemFree(prUnsolProbe->prBuffer,
+				   VIR_MEM_TYPE,
+				   prUnsolProbe->u4Length);
+		if (prFilsDiscovery->prBuffer)
+			kalMemFree(prFilsDiscovery->prBuffer,
+				   VIR_MEM_TYPE,
+				   prFilsDiscovery->u4Length);
+	}
+	if (prP2pBcnUpdateMsg)
+		cnmMemFree(prAdapter, prP2pBcnUpdateMsg);
+exit:
+	return i4Rslt;
 }				/* mtk_p2p_cfg80211_start_ap */
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -2344,7 +2432,7 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 		if (wiphy == NULL)
 			break;
 
-		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_stop_ap.\n");
+		DBGLOG(P2P, INFO, "name: %s\n", dev->name);
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 

@@ -119,6 +119,19 @@ struct MSG_P2P_CONNECTION_ABORT {
 	u_int8_t fgSendDeauth;
 };
 
+struct MSG_P2P_FILS_DISCOVERY_UPDATE {
+	uint32_t u4MinInterval;
+	uint32_t u4MaxInterval;
+	uint32_t u4Length;
+	uint8_t *prBuffer;
+};
+
+struct MSG_P2P_UNSOL_PROBE_UPDATE {
+	uint32_t u4Interval;
+	uint32_t u4Length;
+	uint8_t *prBuffer;
+};
+
 struct MSG_P2P_START_AP {
 	struct MSG_HDR rMsgHdr;
 	uint32_t u4DtimPeriod;
@@ -130,6 +143,8 @@ struct MSG_P2P_START_AP {
 	uint8_t ucRoleIdx;
 	struct AP_CRYPTO_SETTINGS rEncryptionSettings;
 	int32_t i4InactiveTimeout;
+	struct MSG_P2P_FILS_DISCOVERY_UPDATE rFilsDiscovery;
+	struct MSG_P2P_UNSOL_PROBE_UPDATE rUnsolProbe;
 };
 
 struct MSG_P2P_STOP_AP {

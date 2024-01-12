@@ -2159,6 +2159,53 @@ uint32_t nicUniCmdBcnContent(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t nicUniCmdFilsDiscovery(struct ADAPTER *ad,
+		uint8_t bss_idx, uint32_t max_interval,
+		uint32_t min_interval, uint8_t *ie, uint16_t ie_len)
+{
+	struct UNI_CMD_BSSINFO *uni_cmd;
+	struct UNI_CMD_BSSINFO_FILS_REQ *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_BSSINFO) +
+			       sizeof(struct UNI_CMD_BSSINFO_FILS_REQ);
+	uint32_t status = WLAN_STATUS_SUCCESS;
+
+	max_cmd_len += ie_len;
+	uni_cmd = (struct UNI_CMD_BSSINFO *) cnmMemAlloc(ad,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_BSSINFO ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	uni_cmd->ucBssInfoIdx = bss_idx;
+	tag = (struct UNI_CMD_BSSINFO_FILS_REQ *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_BSSINFO_TAG_FILS_DISCOVERY;
+	tag->u2Length = sizeof(*tag) + ie_len;
+	tag->u4MinInterval = min_interval;
+	tag->u4MaxInterval = max_interval;
+	tag->u2PktLength = ie_len;
+	kalMemCopy(tag->aucPktContent, ie, ie_len);
+
+	DBGLOG(INIT, INFO, "bss=%d, min=%d, max=%d, ie_len=%d\n",
+		bss_idx, min_interval, max_interval, ie_len);
+
+	status = wlanSendSetQueryUniCmd(ad,
+					UNI_CMD_ID_BSSINFO,
+					TRUE,
+					FALSE,
+					FALSE,
+					nicUniCmdEventSetCommon,
+					nicUniCmdTimeoutCommon,
+					max_cmd_len,
+					(void *)uni_cmd,
+					NULL,
+					0);
+
+	cnmMemFree(ad, uni_cmd);
+	return status;
+}
+
 uint32_t nicUniCmdPmDisable(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
