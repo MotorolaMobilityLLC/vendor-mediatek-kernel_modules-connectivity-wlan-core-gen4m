@@ -450,10 +450,12 @@ ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
     ifeq ($(CONFIG_MTK_WIFI_PMIC_QUERY), y)
         ccflags-y += -DCFG_MTK_WIFI_PMIC_QUERY=1
     endif
+    ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=5
 else
     ccflags-y += -DCFG_SUPPORT_CONNAC3X=0
     ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_NSS=1
     ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_BW=1
+    ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=3
 endif
 
 ifneq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
@@ -611,8 +613,6 @@ ifeq ($(SNIFFER_RADIOTAP), y)
     ccflags-y += -DCFG_SUPPORT_BW160
     ccflags-y += -DCFG_SUPPORT_PDMA_SCATTER
 endif
-
-ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=5
 
 ifneq ($(filter 6765, $(WLAN_CHIP_ID)),)
     ccflags-y += -DCFG_SUPPORT_DUAL_STA=0
