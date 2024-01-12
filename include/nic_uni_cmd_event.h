@@ -923,16 +923,17 @@ struct UNI_CMD_TXBF_PFMU_STA_INFO {
 	uint8_t    uciBfNcol;
 	uint8_t    uciBfNrow;
 	uint8_t    nr_bw160;
-	uint8_t	  nc_bw160;
+	uint8_t    nc_bw160;
 	uint8_t    ru_start_idx;
 	uint8_t    ru_end_idx;
-	uint8_t   trigger_su;
-	uint8_t   trigger_mu;
-	uint8_t   ng16_su;
-	uint8_t   ng16_mu;
-	uint8_t   codebook42_su;
-	uint8_t   codebook75_mu;
+	uint8_t    trigger_su;
+	uint8_t    trigger_mu;
+	uint8_t    ng16_su;
+	uint8_t    ng16_mu;
+	uint8_t    codebook42_su;
+	uint8_t    codebook75_mu;
 	uint8_t    he_ltf;
+	uint8_t    u1Reserved[3];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
