@@ -1578,7 +1578,7 @@ void asicRxPerfIndProcessRXV(struct ADAPTER *prAdapter,
 {
 	/* This Feature First MP on MT6779 */
 	struct GLUE_INFO *prGlueInfo;
-	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3;
+	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3 = NULL;
 	uint32_t u4PhyRate;
 	uint8_t ucRCPI0 = 0, ucRCPI1 = 0;
 	uint16_t u2Rate = 0; /* Unit 500 Kbps */
@@ -1594,6 +1594,10 @@ void asicRxPerfIndProcessRXV(struct ADAPTER *prAdapter,
 	/* ucRate(500kbs) = u4PhyRate(100kbps) */
 	if (status < 0 || u4PhyRate == 0)
 		return;
+
+	if (prSwRfb->prRxStatusGroup3 == NULL)
+		return;
+
 	u2Rate = u4PhyRate / 5;
 
 	/* RCPI */
