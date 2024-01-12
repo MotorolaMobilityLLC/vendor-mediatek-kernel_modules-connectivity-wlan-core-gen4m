@@ -11,7 +11,7 @@
 */
 
 #ifdef MT6653
-#if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -286,18 +286,6 @@ struct DMASHDL_CFG rMt6653DmashdlCfg = {
 		WF_PLE_TOP_HIF_PG_INFO_HIF_SRC_CNT_SHFT
 	},
 };
-#if defined(_HIF_USB)
-/* PSE quota 522*/
-uint16_t concurrentQuota[CONCURRENT_TYPE_NUM] = {
-	[CONCURRENT_6G_6G_AND_2G] = 0xD0,
-	[CONCURRENT_2G_6G_AND_2G] = 0x35,
-	[CONCURRENT_5G_5G_AND_2G] = 0xD0,
-	[CONCURRENT_2G_5G_AND_2G] = 0x35,
-	[CONCURRENT_6G_6G_AND_5G] = 0x82,
-	[CONCURRENT_5G_6G_AND_5G] = 0x82,
-	[CONCURRENT_SAME_BAND] = 0x82,
-};
-#endif
 
 void mt6653DmashdlInit(struct ADAPTER *prAdapter)
 {
@@ -354,132 +342,6 @@ void mt6653DmashdlInit(struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
-#endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB) */
-
-
-#if defined(_HIF_USB)
-uint32_t mt6653UpdateDmashdlQuota(struct ADAPTER *prAdapter,
-			uint8_t ucWmmIndex, uint32_t u4MaxQuota)
-{
-	uint8_t ucGroupIdx, ucAcIdx;
-	uint32_t idx;
-	uint16_t u2MaxQuotaFinal;
-	u_int8_t fgIsMaxQuotaInvalid = FALSE;
-
-	if (u4MaxQuota > (DMASHDL_MAX_QUOTA_MASK >> DMASHDL_MAX_QUOTA_OFFSET))
-		fgIsMaxQuotaInvalid = TRUE;
-
-	for (idx = 0; idx < WMM_AC_INDEX_NUM; idx++) {
-		ucAcIdx = idx + (ucWmmIndex * WMM_AC_INDEX_NUM);
-		ucGroupIdx = rMt6653DmashdlCfg.aucQueue2Group[ucAcIdx];
-		u2MaxQuotaFinal = u4MaxQuota;
-		if (fgIsMaxQuotaInvalid) {
-			/* Set quota to default */
-			u2MaxQuotaFinal =
-				rMt6653DmashdlCfg.au2MaxQuota[ucGroupIdx];
-		}
-
-		if (u2MaxQuotaFinal) {
-			DBGLOG(HAL, INFO,
-				"ucWmmIndex,%u ucGroupIdx,%u u2MaxQuotaFinal,0x%x\n",
-				ucWmmIndex, ucGroupIdx, u2MaxQuotaFinal);
-			asicConnac3xDmashdlSetMaxQuota(prAdapter,
-				ucGroupIdx,
-				u2MaxQuotaFinal);
-		}
-	}
-	return WLAN_STATUS_SUCCESS;
-}
-
-uint32_t mt6653dmashdlQuotaDecision(struct ADAPTER *prAdapter,
-			uint8_t ucWmmIndex)
-{
-	struct BSS_INFO *prBssInfo;
-	uint8_t ucBssIndex;
-	uint16_t u2MaxQuota = 0;
-	uint8_t ucBandCount[BAND_NUM] = {0};
-	enum ENUM_BAND eTargetBand = BAND_NULL;
-	enum ENUM_BAND eOtherBand = BAND_NULL;
-
-	for (ucBssIndex = 0;
-		ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
-
-		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
-
-		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
-			continue;
-
-		if (prBssInfo->eBand != BAND_2G4
-			&& prBssInfo->eBand != BAND_5G
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			&& prBssInfo->eBand != BAND_6G
-#endif
-			)
-			continue;
-
-#if CFG_SUPPORT_NAN
-		/* NAN will not tx traffic without NDP */
-		if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN &&
-				!nanGetSpecificBssInfobyBand(
-				prAdapter, prBssInfo->eBand)->fgIsNdp) {
-			DBGLOG(NAN, INFO, "[%s] Bypass NAN BN:%d\n",
-				__func__, prBssInfo->eBand,
-				nanGetNdpCntByBand(prAdapter, prBssInfo->eBand),
-				nanGetSpecificBssInfobyBand(prAdapter,
-					prBssInfo->eBand)->fgIsNdp);
-			continue;
-		}
-#endif
-
-		ucBandCount[prBssInfo->eBand]++;
-
-		if (prBssInfo->ucWmmQueSet == ucWmmIndex) {
-			if (prBssInfo->eBand > eTargetBand)
-				eTargetBand = prBssInfo->eBand;
-		} else {
-			if (prBssInfo->eBand > eOtherBand)
-				eOtherBand = prBssInfo->eBand;
-		}
-
-	}
-
-	if (eTargetBand != BAND_NULL &&
-		eOtherBand != BAND_NULL) {
-		if (eTargetBand == eOtherBand) {
-			u2MaxQuota =
-			concurrentQuota[CONCURRENT_SAME_BAND];
-		} else if (eTargetBand == BAND_2G4) {
-			if (eOtherBand == BAND_5G)
-				u2MaxQuota =
-				concurrentQuota[CONCURRENT_2G_5G_AND_2G];
-			else
-				u2MaxQuota =
-				concurrentQuota[CONCURRENT_2G_6G_AND_2G];
-		} else if (eTargetBand == BAND_5G) {
-			if (eOtherBand == BAND_2G4)
-				u2MaxQuota =
-				concurrentQuota[CONCURRENT_5G_5G_AND_2G];
-			else
-				u2MaxQuota =
-				concurrentQuota[CONCURRENT_5G_6G_AND_5G];
-		}
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (eTargetBand == BAND_6G) {
-			if (eOtherBand == BAND_2G4)
-				u2MaxQuota =
-				concurrentQuota[CONCURRENT_6G_6G_AND_2G];
-			else
-				u2MaxQuota =
-				concurrentQuota[CONCURRENT_6G_6G_AND_5G];
-		}
-#endif
-	}
-
-	DBGLOG(HAL, INFO,
-		"eTargetBand,%u eOtherBand,%u u2MaxQuota,0x%x\n",
-					eTargetBand, eOtherBand, u2MaxQuota);
-	return u2MaxQuota;
-}
-#endif
+#endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */
 
 #endif /* MT6653 */
