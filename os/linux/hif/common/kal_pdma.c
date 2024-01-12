@@ -1549,7 +1549,8 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Count = 0;
 
 #if CFG_MTK_WIFI_WFDMA_WB
-	if (prRxRing->fgEnEmiDidx)
+	if (prRxRing->fgEnEmiDidx &&
+	    halIsDataRing(RX_RING, u2Port))
 		return true;
 #endif /* CFG_ENABLE_MAWD_MD_RING */
 
