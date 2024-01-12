@@ -3021,6 +3021,73 @@ uint8_t cnmGetDbdcNss(struct ADAPTER *prAdapter,
 	return wlanGetSupportNss(prAdapter, ucBssIndex);
 }
 
+static bool cnmIsWmmConcurrent(
+	struct ADAPTER *prAdapter
+)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIndex = 0;
+	uint8_t ucWmmCompare = 0;
+	uint8_t ucWmmQueSet = 0;
+	uint8_t ucBssNum = prAdapter->ucHwBssIdNum;
+
+	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
+
+	ucWmmCompare = HW_WMM_NUM;
+
+	for (ucBssIndex = 0;
+		ucBssIndex < ucBssNum; ucBssIndex++) {
+
+		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+
+		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
+			continue;
+
+		ucWmmQueSet = prBssInfo->ucWmmQueSet;
+
+		if (ucWmmCompare == HW_WMM_NUM)
+			ucWmmCompare = ucWmmQueSet;
+
+		if (ucWmmCompare != ucWmmQueSet)
+			return true;
+	}
+	return false;
+}
+
+static void
+cnmUpdateDbdcQuota(
+	struct ADAPTER *prAdapter, bool fgEnable
+)
+{
+	uint8_t ucWmmIndex;
+	uint32_t u4ReqQuota = 0;
+	struct mt66xx_chip_info *prChipInfo;
+
+	ASSERT(prAdapter);
+
+	prChipInfo = prAdapter->chip_info;
+
+	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
+		ucWmmIndex++) {
+
+		if (prChipInfo->dmashdlQuotaDecision && fgEnable) {
+			u4ReqQuota =
+				prChipInfo->dmashdlQuotaDecision(
+					prAdapter,
+					ucWmmIndex);
+		}
+
+		cnmWmmQuotaSetMaxQuota(
+			prAdapter,
+			ucWmmIndex,
+			CNM_WMM_REQ_DBDC,
+			fgEnable,
+			u4ReqQuota);
+	}
+}
+
 #if (CFG_SUPPORT_DBDC == 1 && CFG_UPDATE_STATIC_DBDC_QUOTA == 1)
 void cnmUpdateStaticDbdcQuota(
 	struct ADAPTER *prAdapter)
@@ -3624,9 +3691,6 @@ cnmDBDCFsmActionReqPeivilegeUnLock(struct ADAPTER *prAdapter)
 static void
 cnmDbdcFsmEntryFunc_DISABLE_IDLE(struct ADAPTER *prAdapter)
 {
-#if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 0)
-	uint8_t ucWmmIndex;
-#endif
 	uint8_t ucBssIndex;
 	struct CNM_OPMODE_BSS_CONTROL_T *prBssOpCtrl;
 
@@ -3642,15 +3706,7 @@ cnmDbdcFsmEntryFunc_DISABLE_IDLE(struct ADAPTER *prAdapter)
 	}
 
 #if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 0)
-	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
-		ucWmmIndex++) {
-		cnmWmmQuotaSetMaxQuota(
-			prAdapter,
-			ucWmmIndex,
-			CNM_WMM_REQ_DBDC,
-			false,
-			0 /* don't care */);
-	}
+	cnmUpdateDbdcQuota(prAdapter, false);
 #endif /* CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 0 */
 }
 
@@ -3699,31 +3755,8 @@ cnmDbdcFsmEntryFunc_ENABLE_IDLE(
 )
 {
 #if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 0)
-	uint8_t ucWmmIndex;
-	uint32_t u4ReqQuota = DBDC_WMM_TX_QUOTA;
-	struct mt66xx_chip_info *prChipInfo;
-
-	ASSERT(prAdapter);
-
-	prChipInfo = prAdapter->chip_info;
-
-	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
-		ucWmmIndex++) {
-
-		if (prChipInfo->dmashdlQuotaDecision) {
-			u4ReqQuota =
-				prChipInfo->dmashdlQuotaDecision(
-					prAdapter,
-					ucWmmIndex);
-		}
-
-		cnmWmmQuotaSetMaxQuota(
-			prAdapter,
-			ucWmmIndex,
-			CNM_WMM_REQ_DBDC,
-			true,
-			u4ReqQuota);
-	}
+	if (prAdapter->rWifiVar.fgWmmConcurrent)
+		cnmUpdateDbdcQuota(prAdapter, true);
 #endif /* CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 0 */
 }
 
@@ -4459,7 +4492,7 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 			    uint8_t ucChangedBssIndex,
 			    u_int8_t ucForceLeaveEnGuard)
 {
-	bool fgIsAgConcurrent;
+	bool fgIsAgConcurrent, fgIsWmmConcurrent;
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 				prAdapter->rWifiVar.prP2pDevFsmInfo;
@@ -4528,6 +4561,12 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 			);
 		}
 #endif
+		/* If WMM concurrent is changed, update DBDC quota */
+		/* even if DBDC state haven't changed */
+		fgIsWmmConcurrent = cnmIsWmmConcurrent(prAdapter);
+		if (fgIsWmmConcurrent !=
+			prAdapter->rWifiVar.fgWmmConcurrent)
+			cnmUpdateDbdcQuota(prAdapter, fgIsWmmConcurrent);
 		return;
 	}
 
@@ -4690,6 +4729,10 @@ void cnmDbdcEventHwSwitchDone(struct ADAPTER
 
 	/* Change DBDC state */
 	prAdapter->rWifiVar.fgDbDcModeEn = fgDbdcEn;
+
+	/* Change WMM concurrent */
+	prAdapter->rWifiVar.fgWmmConcurrent = cnmIsWmmConcurrent(prAdapter);
+
 	DBDC_FSM_EVENT_HANDLER(prAdapter,
 			       DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE);
 }
