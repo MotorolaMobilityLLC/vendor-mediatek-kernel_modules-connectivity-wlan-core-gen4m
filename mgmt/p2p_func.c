@@ -2949,7 +2949,15 @@ p2pFuncDissolve(IN struct ADAPTER *prAdapter,
 		wlanReleasePowerControl(prAdapter);
 #endif
 
-		/*kalMdelay(100);*/
+		if (p2pFuncIsAPMode(
+			prAdapter->rWifiVar
+			.prP2PConnSettings[prP2pBssInfo->u4PrivateData])
+			&& (bssGetClientCount(prAdapter,
+			prP2pBssInfo) > 0)) {
+			DBGLOG(P2P, TRACE,
+				"Wait 500ms for deauth TX in Hotspot\n");
+			kalMdelay(500);
+		}
 
 		/* Change Connection Status. */
 		/* 20161025, can not set DISCONNECTED if clientcount > 0 */
