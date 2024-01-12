@@ -883,6 +883,7 @@ WLAN_STATUS wlanPowerOffWifi(IN P_ADAPTER_T prAdapter)
 	WLAN_STATUS rStatus;
 	/* Hif power off wifi */
 	rStatus = halHifPowerOffWifi(prAdapter);
+	prAdapter->fgIsCr4FwDownloaded = FALSE;
 
 	return rStatus;
 }
@@ -3590,6 +3591,7 @@ WLAN_STATUS wlanDownloadFW(IN P_ADAPTER_T prAdapter)
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 		rDlStatus = wlanImageSectionDownloadStage(prAdapter, prFwBuffer,
 				u4FwSize, CR4_FWDL_SECTION_NUM, IMG_DL_IDX_CR4_FW, &fgIsCompressed, &rFwImageInFo);
+		prAdapter->fgIsCr4FwDownloaded = TRUE;
 		if (fgIsCompressed == TRUE)
 			rCfgStatus = wlanCompressedFWConfigWifiFunc(prAdapter, FALSE, 0, PDA_CR4, &rFwImageInFo);
 		else
@@ -3598,6 +3600,7 @@ WLAN_STATUS wlanDownloadFW(IN P_ADAPTER_T prAdapter)
 #else
 		rDlStatus = wlanImageSectionDownloadStage(prAdapter, prFwBuffer,
 			u4FwSize, CR4_FWDL_SECTION_NUM, IMG_DL_IDX_CR4_FW);
+		prAdapter->fgIsCr4FwDownloaded = TRUE;
 		rCfgStatus = wlanConfigWifiFunc(prAdapter, FALSE, 0, PDA_CR4);
 #endif
 		kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL, prFwBuffer);
