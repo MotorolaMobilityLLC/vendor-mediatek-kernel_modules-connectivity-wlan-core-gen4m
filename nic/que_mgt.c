@@ -5299,7 +5299,9 @@ void qmHandleReorderBubbleTimeout(struct ADAPTER *prAdapter,
 		prReorderQueParm =
 			getReorderQueParm(&prAdapter->rTimeoutRxBaEntry,
 				prAdapter, SPIN_LOCK_RX_FLUSH_TIMEOUT);
-		qmFlushTimeoutReorderBubble(prAdapter, prReorderQueParm);
+		if (prReorderQueParm)
+			qmFlushTimeoutReorderBubble(prAdapter,
+						prReorderQueParm);
 	}
 }
 
@@ -5888,7 +5890,8 @@ void qmDelRxBaEntry(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx,
 		prRxBaEntry =
 			getReorderQueParm(&prAdapter->rFlushRxBaEntry,
 				prAdapter, SPIN_LOCK_RX_FLUSH_BA);
-		qmFlushDeletedBaReorder(prAdapter, prRxBaEntry);
+		if (prRxBaEntry)
+			qmFlushDeletedBaReorder(prAdapter, prRxBaEntry);
 	}
 }
 
