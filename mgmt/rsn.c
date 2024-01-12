@@ -2921,49 +2921,45 @@ void rsnGeneratePmkidIndication(struct ADAPTER *prAdapter,
 uint32_t rsnCheckBipKeyInstalled(struct ADAPTER
 				 *prAdapter, struct STA_RECORD *prStaRec)
 {
-	/* caution: prStaRec might be null ! */
-	if (prStaRec) {
-		if (GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex)
-			== NULL) {
-			DBGLOG(RSN, ERROR, "prBssInfo is null\n");
-			return FALSE;
-		}
+	uint8_t ucBssIndex;
+	struct BSS_INFO *prBssInfo;
 
-		if (GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex)
-		    ->eNetworkType == (uint8_t) NETWORK_TYPE_AIS) {
-			return aisGetAisSpecBssInfo(prAdapter,
-				prStaRec->ucBssIndex)
-				->fgBipKeyInstalled;
-		} else if ((GET_BSS_INFO_BY_INDEX(prAdapter,
-				prStaRec->ucBssIndex)
-				->eNetworkType == NETWORK_TYPE_P2P)
-				&&
-			(GET_BSS_INFO_BY_INDEX(prAdapter,
-				prStaRec->ucBssIndex)
-				->eCurrentOPMode == OP_MODE_ACCESS_POINT)) {
-			if (prStaRec->rPmfCfg.fgApplyPmf)
-				DBGLOG(RSN, INFO, "AP-STA PMF capable\n");
-			return prStaRec->rPmfCfg.fgApplyPmf;
-		} else {
-			return FALSE;
-		}
+	/* caution: prStaRec might be null ! */
+	if (!prStaRec)
+		return FALSE;
+	ucBssIndex = prStaRec->ucBssIndex;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(RSN, ERROR, "prBssInfo is null, bssIndex=%d\n",
+			ucBssIndex);
+		return FALSE;
+	}
+
+	if (IS_BSS_AIS(prBssInfo)) {
+		return aisGetAisSpecBssInfo(prAdapter,
+				ucBssIndex)->fgBipKeyInstalled;
+	} else if (IS_BSS_APGO(prBssInfo)) {
+		if (prStaRec->rPmfCfg.fgApplyPmf)
+			DBGLOG(RSN, INFO, "AP-STA PMF capable\n");
+		return prStaRec->rPmfCfg.fgApplyPmf;
 	} else
 		return FALSE;
-
 }
 
 uint32_t rsnCheckBipGmacKeyInstall(struct ADAPTER
 				 *prAdapter, struct STA_RECORD *prStaRec)
 {
+	uint8_t ucBssIndex;
+
 	/* caution: prStaRec might be null ! */
-	if (prStaRec) {
-		if (IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex)) {
-			return aisGetAisSpecBssInfo(prAdapter,
-				prStaRec->ucBssIndex)
-				->fgBipGmacKeyInstalled;
-		} else {
-			return FALSE;
-		}
+	if (!prStaRec)
+		return FALSE;
+	ucBssIndex = prStaRec->ucBssIndex;
+
+	if (IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex)) {
+		return aisGetAisSpecBssInfo(prAdapter,
+				ucBssIndex)->fgBipGmacKeyInstalled;
 	} else
 		return FALSE;
 }
