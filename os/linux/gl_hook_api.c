@@ -2610,6 +2610,45 @@ INT_32 MT_ATESetRddReport(struct net_device *prNetDev, UINT_8 ucDbdcIdx)
 
 	return i4Status;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief  Hook API for Set Radar Detect Mode.
+*
+* \param[in] prNetDev				 Pointer to the Net Device
+* \param[in] ucRadarDetectMode         Radar Detect Mode
+* \param[out] None
+*
+* \retval 0				On success.
+* \retval -EFAULT			If kalIoctl return nonzero.
+* \retval -EINVAL			If invalid argument.
+*/
+/*----------------------------------------------------------------------------*/
+INT_32 MT_ATESetRadarDetectMode(struct net_device *prNetDev, UINT_8 ucRadarDetectMode)
+{
+	UINT_32 u4BufLen = 0;
+	PARAM_CUSTOM_SET_RADAR_DETECT_MODE_T rSetRadarDetectMode;
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	WLAN_STATUS i4Status = WLAN_STATUS_SUCCESS;
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	kalMemSet(&rSetRadarDetectMode, 0, sizeof(PARAM_CUSTOM_SET_RADAR_DETECT_MODE_T));
+
+	/* Set Rdd Report */
+	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT Set Radar Detect Mode: %d\n", ucRadarDetectMode);
+	rSetRadarDetectMode.ucRadarDetectMode = ucRadarDetectMode;
+
+	i4Status = kalIoctl(prGlueInfo,
+				wlanoidQuerySetRadarDetectMode,
+				&rSetRadarDetectMode,
+				sizeof(PARAM_CUSTOM_SET_RADAR_DETECT_MODE_T), FALSE, FALSE, TRUE, &u4BufLen);
+
+	if (i4Status != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+
+	return i4Status;
+}
+
 #endif
 
 #if CFG_SUPPORT_TX_BF

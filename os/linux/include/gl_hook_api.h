@@ -148,6 +148,7 @@ INT_32 MT_ATEWriteEfuse(struct net_device *prNetDev, UINT_16 u2Offset, UINT_16 u
 INT_32 MT_ATESetTxTargetPower(struct net_device *prNetDev, UINT_8 ucTxTargetPower);
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 INT_32 MT_ATESetRddReport(struct net_device *prNetDev, UINT_8 ucDbdcIdx);
+INT_32 MT_ATESetRadarDetectMode(struct net_device *prNetDev, UINT_8 ucRadarDetectMode);
 #endif
 
 
