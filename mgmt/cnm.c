@@ -2274,6 +2274,8 @@ omac_choosed:
 			rlmResetCSAParams(prBssInfo);
 			prBssInfo->fgHasStopTx = FALSE;
 #endif
+			prBssInfo->u4PowerSaveFlag = 0;
+			prBssInfo->ePwrMode = Param_PowerModeCAM;
 
 			log_dbg(CNM, INFO, "bss=%d,type=%d,omac=%d,omld=%d\n",
 				prBssInfo->ucBssIndex,

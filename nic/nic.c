@@ -2438,12 +2438,21 @@ nicPowerSaveInfoMap(IN struct ADAPTER *prAdapter,
 		    IN enum POWER_SAVE_CALLER ucCaller)
 {
 	uint32_t u4Flag;
+	struct BSS_INFO *prBssInfo;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(INIT, ERROR, "ucBssIndex:%d not found\n", ucBssIndex);
+		return;
+	}
 
 	/* max caller is 24 */
-	if (ucCaller >= PS_CALLER_MAX_NUM)
-		ASSERT(0);
+	if (ucCaller >= PS_CALLER_MAX_NUM) {
+		DBGLOG(INIT, ERROR, "ucCaller:%d not accepted\n", ucCaller);
+		return;
+	}
 
-	u4Flag = prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex];
+	u4Flag = prBssInfo->u4PowerSaveFlag;
 
 	if (ucCaller == PS_CALLER_WOW) {
 		/* For WOW,
@@ -2475,9 +2484,9 @@ nicPowerSaveInfoMap(IN struct ADAPTER *prAdapter,
 	DBGLOG(NIC, INFO,
 		"Flag=0x%04x, Caller=%d, PM=%d, PSFlag[%d]=0x%04x\n",
 		u4Flag, ucCaller, ePowerMode, ucBssIndex,
-		prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex]);
+		prBssInfo->u4PowerSaveFlag);
 
-	prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex] = u4Flag;
+	prBssInfo->u4PowerSaveFlag = u4Flag;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2504,36 +2513,35 @@ nicConfigPowerSaveProfile(IN struct ADAPTER *prAdapter,
 			  IN u_int8_t fgEnCmdEvent,
 			  IN enum POWER_SAVE_CALLER ucCaller)
 {
+	struct BSS_INFO *prBssInfo;
+
 	DEBUGFUNC("nicConfigPowerSaveProfile");
-	DBGLOG(INIT, TRACE,
+	DBGLOG(INIT, INFO,
 		"ucBssIndex:%d, ePwrMode:%d, fgEnCmdEvent:%d\n",
 		ucBssIndex, ePwrMode, fgEnCmdEvent);
 
-	ASSERT(prAdapter);
-
-	if (ucBssIndex >= prAdapter->ucHwBssIdNum) {
-		ASSERT(0);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(INIT, ERROR, "ucBssIndex:%d not found\n", ucBssIndex);
 		return WLAN_STATUS_NOT_SUPPORTED;
 	}
 
 	nicPowerSaveInfoMap(prAdapter, ucBssIndex, ePwrMode, ucCaller);
+	prBssInfo->ePwrMode = ePwrMode;
 
-	prAdapter->rWlanInfo.arPowerSaveMode[ucBssIndex].ucBssIndex
-		= ucBssIndex;
-	prAdapter->rWlanInfo.arPowerSaveMode[ucBssIndex].ucPsProfile
-		= (uint8_t) ePwrMode;
-
-	if (PS_SYNC_WITH_FW
-		& prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex]) {
+	if (PS_SYNC_WITH_FW & prBssInfo->u4PowerSaveFlag) {
+		struct CMD_PS_PROFILE ps = {0};
 		uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 
-		prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex]
-			&= ~PS_SYNC_WITH_FW;
+		ps.ucBssIndex = ucBssIndex;
+		ps.ucPsProfile = (uint8_t) ePwrMode;
+
+		prBssInfo->u4PowerSaveFlag &= ~PS_SYNC_WITH_FW;
 
 		DBGLOG(NIC, TRACE,
 			"SYNC_WITH_FW u4PowerSaveFlag[%d]=0x%04x\n",
 			ucBssIndex,
-			prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex]);
+			prBssInfo->u4PowerSaveFlag);
 
 		rWlanStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
 			CMD_ID_POWER_SAVE_MODE,		/* ucCID */
@@ -2551,8 +2559,7 @@ nicConfigPowerSaveProfile(IN struct ADAPTER *prAdapter,
 			sizeof(struct CMD_PS_PROFILE),
 
 			/* pucInfoBuffer */
-			(uint8_t *) &(prAdapter->rWlanInfo
-				.arPowerSaveMode[ucBssIndex]),
+			(uint8_t *) &ps,
 
 			/* pvSetQueryBuffer */
 			NULL,
@@ -2573,12 +2580,17 @@ nicConfigProcSetCamCfgWrite(IN struct ADAPTER *prAdapter,
 {
 	enum PARAM_POWER_MODE ePowerMode;
 	struct CMD_PS_PROFILE rPowerSaveMode;
+	struct BSS_INFO *prBssInfo;
 
 	if ((!prAdapter))
 		return WLAN_STATUS_FAILURE;
 
-	if (ucBssIndex >= MAX_BSSID_NUM)
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(INIT, ERROR, "ucBssIndex:%d not found\n", ucBssIndex);
 		return WLAN_STATUS_FAILURE;
+	}
+
 	rPowerSaveMode.ucBssIndex = ucBssIndex;
 
 	if (enabled) {
@@ -2589,9 +2601,7 @@ nicConfigProcSetCamCfgWrite(IN struct ADAPTER *prAdapter,
 		       ucBssIndex, rPowerSaveMode.ucPsProfile);
 	} else {
 		prAdapter->rWlanInfo.fgEnSpecPwrMgt = FALSE;
-		rPowerSaveMode.ucPsProfile =
-			prAdapter->rWlanInfo.arPowerSaveMode[ucBssIndex].
-			ucPsProfile;
+		rPowerSaveMode.ucPsProfile = (uint8_t) prBssInfo->ePwrMode;
 		DBGLOG(INIT, INFO,
 		       "Disable CAM BssIndex:%d, PowerMode:%d\n",
 		       ucBssIndex, rPowerSaveMode.ucPsProfile);

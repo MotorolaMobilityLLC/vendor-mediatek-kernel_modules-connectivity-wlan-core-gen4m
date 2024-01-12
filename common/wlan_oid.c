@@ -9319,22 +9319,19 @@ wlanoidQuery802dot11PowerSaveProfile(IN struct ADAPTER *prAdapter,
 				     IN uint32_t u4QueryBufferLen,
 				     OUT uint32_t *pu4QueryInfoLen) {
 	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	struct BSS_INFO *prBssInfo;
 
 	DEBUGFUNC("wlanoidQuery802dot11PowerSaveProfile");
 
-	ASSERT(prAdapter);
-	ASSERT(pu4QueryInfoLen);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(INIT, ERROR, "ucBssIndex:%d not found\n", ucBssIndex);
+		return WLAN_STATUS_INVALID_DATA;
+	}
 
-	if (u4QueryBufferLen != 0) {
-		ASSERT(pvQueryBuffer);
-
-		/* *(PPARAM_POWER_MODE) pvQueryBuffer = (PARAM_POWER_MODE)
-		 *	(prAdapter->rWlanInfo.ePowerSaveMode.ucPsProfile);
-		 */
+	if (u4QueryBufferLen != 0 && pvQueryBuffer) {
 		*(enum PARAM_POWER_MODE *) pvQueryBuffer =
-			(enum PARAM_POWER_MODE) (
-			prAdapter->rWlanInfo.arPowerSaveMode[
-			    ucBssIndex].ucPsProfile);
+			prBssInfo->ePwrMode;
 		*pu4QueryInfoLen = sizeof(enum PARAM_POWER_MODE);
 
 		/* hack for CTIA power mode setting function */
