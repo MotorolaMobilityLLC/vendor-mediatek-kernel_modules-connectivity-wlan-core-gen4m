@@ -636,6 +636,9 @@ bool aisFsmIsInProcessPostpone(IN struct ADAPTER *prAdapter,
 bool aisFsmIsInBeaconTimeout(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
+bool aisFsmIsReassociation(IN struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
 void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo, uint8_t ucLinkIndex);
 
