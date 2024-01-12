@@ -2056,7 +2056,7 @@ struct UNI_CMD_RIL_BRIDGE {
 	uint16_t   u2Length;
 	uint8_t    ucRat; /* LTE or NR */
 	uint8_t    fgIsChannelSelectByAcs;
-	uint8_t    aucReserved1[3];
+	uint8_t    aucReserved1[2];
 	uint32_t   u4Band;
 	uint32_t   u4Channel;
 } __KAL_ATTRIB_PACKED__;
