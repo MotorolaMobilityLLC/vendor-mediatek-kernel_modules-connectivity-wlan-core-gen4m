@@ -799,4 +799,190 @@ void soc5_0_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
 	}
 }
 
+void soc5_0_dump_mac_info(IN struct ADAPTER *prAdapter)
+{
+#define BUF_SIZE 1024
+#define CR_COUNT 13
+#define LOOP_COUNT 30
+
+
+	uint32_t i = 0, j = 0, pos = 0;
+	uint32_t value = 0;
+	uint32_t cr_band0[] = {
+			/* #define BN0_WF_MIB_TOP_M0SDR6_ADDR */
+			0x820ED020,
+			/* #define BN0_WF_TMAC_TOP_DBGR0_ADDR */
+			0x820E4360,
+			/* #define BN0_WF_TMAC_TOP_DBGR2_ADDR */
+			0x820E4368,
+			/* #define BN0_WF_AGG_TOP_SMCR0_ADDR */
+			0x820E22F0,
+			/* #define BN0_WF_AGG_TOP_SMCR1_ADDR */
+			0x820E22F4,
+			/* #define BN0_WF_AGG_TOP_SMCR2_ADDR */
+			0x820E22F8,
+			/* #define BN0_WF_AGG_TOP_SMCR3_ADDR */
+			0x820E22FC,
+			/* #define BN0_WF_ARB_TOP_BFCR_ADDR */
+			0x820E3150,
+			/* #define WF_PLE_TOP_TXD_QUEUE_EMPTY_ADDR */
+			0x820C0364,
+			/* #define WF_PLE_TOP_HIF_PG_INFO_ADDR */
+			0x820C0388,
+			/* #define WF_PLE_TOP_HIF_WMTXD_PG_INFO_ADDR */
+			0x820C038C,
+			/* #define WF_PLE_TOP_CPU_PG_INFO_ADDR */
+			0x820C0394,
+			/* #define BN0_WF_CFG_TOP_DBG0_ADDR */
+			0x820E0104
+	};
+	uint32_t cr_band1[] = {
+			/* #define BN1_WF_MIB_TOP_M0SDR6_ADDR */
+			0x820FD020,
+			/* #define BN1_WF_TMAC_TOP_DBGR0_ADDR */
+			0x820F4360,
+			/* #define BN1_WF_TMAC_TOP_DBGR1_ADDR */
+			0x820F4364,
+			/* #define BN1_WF_AGG_TOP_SMCR0_ADDR */
+			0x820F22F0,
+			/* #define BN1_WF_AGG_TOP_SMCR1_ADDR */
+			0x820F22F4,
+			/* #define BN1_WF_AGG_TOP_SMCR2_ADDR */
+			0x820F22F8,
+			/* #define BN1_WF_AGG_TOP_SMCR3_ADDR */
+			0x820F22FC,
+			/* #define BN1_WF_ARB_TOP_BFCR_ADDR */
+			0x820F3150,
+			/* #define WF_PLE_TOP_TXD_QUEUE_EMPTY_ADDR */
+			0x820C0364,
+			/* #define WF_PLE_TOP_HIF_PG_INFO_ADDR */
+			0x820C0388,
+			/* #define WF_PLE_TOP_HIF_WMTXD_PG_INFO_ADDR */
+			0x820C038C,
+			/* #define WF_PLE_TOP_CPU_PG_INFO_ADDR */
+			0x820C0394,
+			/* #define BN1_WF_CFG_TOP_DBG0_ADDR */
+			0x820F0104
+	};
+
+	char *buf = (char *) kalMemAlloc(BUF_SIZE, VIR_MEM_TYPE);
+
+	DBGLOG(HAL, INFO, "Dump for band0\n");
+	HAL_MCR_WR(prAdapter, 0x7C060390, 0x1F);
+	HAL_MCR_WR(prAdapter, 0x7C060394, 0x07070707);
+	HAL_MCR_WR(prAdapter, 0x7C060398, 0x0A0A0B09);
+
+	/* #define WF_LMACON_CFG_TOP_LOCGCR0_ADDR */
+	HAL_MCR_RD(prAdapter, 0x820D0000, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820D0000 = 0x%08x\n", value);
+
+	/* #define BN0_WF_ARB_TOP_SCR_ADDR */
+	HAL_MCR_RD(prAdapter, 0x820E3000, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820E3000 = 0x%08x\n", value);
+
+	/* #define WF_PLE_TOP_INT_N9_ERR_STS_ADDR */
+	HAL_MCR_RD(prAdapter, 0x820C0304, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820C0304 = 0x%08x\n", value);
+
+	/* #define WF_PLE_TOP_INT_N9_ERR_STS_1_ADDR */
+	HAL_MCR_RD(prAdapter, 0x820C0308, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820C0308 = 0x%08x\n", value);
+
+	/* #define WF_PSE_TOP_INT_N9_ERR_STS_ADDR */
+	HAL_MCR_RD(prAdapter, 0x820C8034, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820C8034 = 0x%08x\n", value);
+
+	/* #define WF_PSE_TOP_INT_N9_ERR1_STS_ADDR */
+	HAL_MCR_RD(prAdapter, 0x820C8038, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820C8038 = 0x%08x\n", value);
+
+	/* Band 0 TXV_C and TXV_P */
+	/* #define BN0_WF_TMAC_TOP_TXV0_ADDR */
+	/* #define BN0_WF_TMAC_TOP_TXV11_ADDR */
+	for (i = 0x820E4378; i < 0x820E43A8; i += 4) {
+		HAL_MCR_RD(prAdapter, i, &value);
+		DBGLOG(HAL, INFO, "Dump CR: 0x%08x = 0x%08x\n", i, value);
+		kalMdelay(1);
+	}
+
+	/* #define BN0_WF_AGG_TOP_PCR0_ADDR */
+	HAL_MCR_RD(prAdapter, 0x820E2040, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820E2040 = 0x%08x\n", value);
+
+	if (buf) {
+		kalMemZero(buf, BUF_SIZE);
+		for (i = 0; i < LOOP_COUNT; i++) {
+			for (j = 0; j < CR_COUNT; j++) {
+				HAL_MCR_RD(prAdapter, cr_band0[j], &value);
+				pos += kalSnprintf(buf + pos, 25,
+					"0x%08x = 0x%08x%s", cr_band0[j], value,
+					j == CR_COUNT - 1 ? ";" : ",");
+			}
+			DBGLOG(HAL, INFO, "Dump CR: %s\n", buf);
+			pos = 0;
+			kalMdelay(1);
+		}
+	}
+
+	DBGLOG(HAL, INFO, "Dump for band1\n");
+	HAL_MCR_WR(prAdapter, 0x7C06039C, 0x1F);
+	HAL_MCR_WR(prAdapter, 0x7C0603A0, 0x07070707);
+	HAL_MCR_WR(prAdapter, 0x7C0603A4, 0x0A0A0B09);
+
+	/* #define WF_LMACON_CFG_TOP_LOCGCR0_ADDR */
+	HAL_MCR_RD(prAdapter, 0x820D0000, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820D0000 = 0x%08x\n", value);
+
+	/* #define BN1_WF_ARB_TOP_SCR_ADDR */
+	HAL_MCR_RD(prAdapter, 0x820F3000, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820F3000 = 0x%08x\n", value);
+
+	/* #define WF_PLE_TOP_INT_N9_ERR_STS_ADDR */
+	HAL_MCR_RD(prAdapter, 0x820C0304, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820C0304 = 0x%08x\n", value);
+
+	/* #define WF_PLE_TOP_INT_N9_ERR_STS_1_ADDR */
+	HAL_MCR_RD(prAdapter, 0x820C0308, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820C0308 = 0x%08x\n", value);
+
+	/* #define WF_PSE_TOP_INT_N9_ERR_STS_ADDR */
+	HAL_MCR_RD(prAdapter, 0x820C8034, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820C8034 = 0x%08x\n", value);
+
+	/* #define WF_PSE_TOP_INT_N9_ERR1_STS_ADDR */
+	HAL_MCR_RD(prAdapter, 0x820C8038, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820C8038 = 0x%08x\n", value);
+
+	/* Band 1 TXV_C and TXV_P */
+	/* #define BN1_WF_TMAC_TOP_TXV0_ADDR */
+	/* #define BN1_WF_TMAC_TOP_TXV11_ADDR */
+	for (i = 0x820F4378; i < 0x820F43A8; i += 4) {
+		HAL_MCR_RD(prAdapter, i, &value);
+		DBGLOG(HAL, INFO, "Dump CR: 0x%08x = 0x%08x\n", i, value);
+		kalMdelay(1);
+	}
+
+	/* #define BN1_WF_AGG_TOP_PCR0_ADDR */
+	HAL_MCR_RD(prAdapter, 0x820F2040, &value);
+	DBGLOG(HAL, INFO, "Dump CR: 0x820F2040 = 0x%08x\n", value);
+
+	if (buf) {
+		kalMemZero(buf, BUF_SIZE);
+		for (i = 0; i < LOOP_COUNT; i++) {
+			for (j = 0; j < CR_COUNT; j++) {
+				HAL_MCR_RD(prAdapter, cr_band1[j], &value);
+				pos += kalSnprintf(buf + pos, 25,
+					"0x%08x = 0x%08x%s", cr_band1[j], value,
+					j == CR_COUNT - 1 ? ";" : ",");
+			}
+			DBGLOG(HAL, INFO, "Dump CR: %s\n", buf);
+			pos = 0;
+			kalMdelay(1);
+		}
+	}
+
+	if (buf)
+		kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
+}
+
 #endif /* SOC5_0 */
