@@ -5547,6 +5547,79 @@ int testmode_set_report_vendor_specified(struct wiphy *wiphy,
 	return rStatus;
 }
 
+static int testmode_force_stbc_mrc(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucBssIndex, uint8_t ucType, char *pcCommand, int i4TotalLen)
+{
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	DBGLOG(REQ, INFO, "[bss = %d] command is %s\n", ucBssIndex, pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2)  {
+		struct PARAM_STBC_MRC rParam;
+		uint32_t u4Ret, u4BufLen;
+
+		rParam.ucType = ucType;
+		rParam.ucBssIndex = ucBssIndex;
+
+		u4Ret = kalkStrtou8(apcArgv[1], 0, &(rParam.fgEnable));
+		if (u4Ret) {
+			DBGLOG(REQ, ERROR, "parse ucEnable error %d\n", u4Ret);
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidForceStbcMrc,
+			(void *)&rParam, sizeof(struct PARAM_STBC_MRC),
+			&u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(REQ, ERROR, "fail 0x%x\n", rStatus);
+
+	} else {
+		DBGLOG(REQ, ERROR, "fail invalid data\n");
+		rStatus = WLAN_STATUS_INVALID_DATA;
+	}
+
+	return rStatus;
+
+}
+
+int testmode_force_stbc(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *cmd, int len)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint8_t ucBssIndex = 0;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (prGlueInfo == NULL)
+		return -EINVAL;
+
+	ucBssIndex = wlanGetBssIdx(wdev->netdev);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+		return -EINVAL;
+
+	return testmode_force_stbc_mrc(prGlueInfo, ucBssIndex, 0, cmd, len);
+}
+
+int testmode_force_mrc(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *cmd, int len)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint8_t ucBssIndex = 0;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (prGlueInfo == NULL)
+		return -EINVAL;
+
+	ucBssIndex = wlanGetBssIdx(wdev->netdev);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+		return -EINVAL;
+
+	return testmode_force_stbc_mrc(prGlueInfo, ucBssIndex, 1, cmd, len);
+}
+
 int32_t mtk_cfg80211_process_str_cmd_reply(
 	struct wiphy *wiphy, char *data, int len)
 {

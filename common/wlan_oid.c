@@ -16395,6 +16395,112 @@ uint32_t wlanoidSetAxBlocklist(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t wlanoidForceStbcMrc(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_STBC_MRC *pParam = (struct PARAM_STBC_MRC *) pvSetBuffer;
+	struct BSS_INFO *prBssInfo;
+	uint32_t ret = WLAN_STATUS_SUCCESS;
+
+	if (prAdapter == NULL)
+		return WLAN_STATUS_FAILURE;
+
+	DBGLOG(OID, INFO, "Set STBC MRC: type = %d, bss = %d, enable = %d\n",
+		pParam->ucType, pParam->ucBssIndex, pParam->fgEnable);
+
+	if (pParam->ucBssIndex >= MAX_BSSID_NUM) {
+		DBGLOG(OID, ERROR, "Invalid bss = %d\n", pParam->ucBssIndex);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prBssInfo = prAdapter->aprBssInfo[pParam->ucBssIndex];
+	if (prBssInfo == NULL)
+		return WLAN_STATUS_FAILURE;
+
+	if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo)) {
+		DBGLOG(OID, ERROR, "Bss = %d is not alive\n",
+			pParam->ucBssIndex);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (prBssInfo->eNetworkType != NETWORK_TYPE_AIS) {
+		DBGLOG(OID, ERROR, "Bss = %d is not STA\n", pParam->ucBssIndex);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (pParam->ucType == 0) {
+		/* STBC */
+		if (pParam->fgEnable == 1) {
+			/* Enable STBC */
+			if (prBssInfo->eForceStbc == STBC_MRC_STATE_DISABLED)
+				ret = rlmUpdateStbcSetting(prAdapter,
+					pParam->ucBssIndex, 1, TRUE);
+			else
+				DBGLOG(OID, INFO, "STBC originally enabled\n");
+		} else if (pParam->fgEnable == 0) {
+			/* Disable STBC */
+			if (prBssInfo->eForceStbc == STBC_MRC_STATE_ENABLED)
+				ret = rlmUpdateStbcSetting(prAdapter,
+					pParam->ucBssIndex, 0, TRUE);
+			else
+				DBGLOG(OID, INFO, "STBC originally disabled\n");
+		} else {
+			DBGLOG(OID, ERROR, "Invalid enable flag = %d\n",
+				pParam->fgEnable);
+			ret = WLAN_STATUS_FAILURE;
+		}
+		DBGLOG(OID, INFO, "STBC state = %d\n", prBssInfo->eForceStbc);
+	} else if (pParam->ucType == 1) {
+		/* MRC */
+		if (pParam->fgEnable == 1) {
+			/* Enable MRC */
+			switch (prBssInfo->eForceMrc) {
+			case STBC_MRC_STATE_DISABLED:
+				ret = rlmUpdateMrcSetting(prAdapter,
+					pParam->ucBssIndex, 1);
+				break;
+			case STBC_MRC_STATE_ENABLED:
+			case STBC_MRC_STATE_ENABLING:
+				/* Already enabled or eanling */
+				DBGLOG(OID, INFO, "STBC enabled or enabling");
+				break;
+			default:
+				break;
+			}
+		} else if (pParam->fgEnable == 0) {
+			/* Disable MRC */
+			switch (prBssInfo->eForceMrc) {
+			case STBC_MRC_STATE_DISABLED:
+				/* Already disabled */
+				DBGLOG(OID, INFO, "STBC is disabled");
+				break;
+			case STBC_MRC_STATE_ENABLED:
+				ret = rlmUpdateMrcSetting(prAdapter,
+					pParam->ucBssIndex, 0);
+				break;
+			case STBC_MRC_STATE_ENABLING:
+				DBGLOG(OID, INFO, "STBC is enabling");
+				ret = WLAN_STATUS_FAILURE;
+				break;
+			default:
+				break;
+			}
+		} else {
+			DBGLOG(OID, ERROR, "Invalid enable flag = %d\n",
+				pParam->fgEnable);
+			ret = WLAN_STATUS_FAILURE;
+		}
+		DBGLOG(OID, INFO, "MRC state = %d\n", prBssInfo->eForceMrc);
+	} else {
+		DBGLOG(OID, ERROR, "Invalid type = %d\n", pParam->ucType);
+		ret = WLAN_STATUS_FAILURE;
+	}
+
+	return ret;
+}
+
 uint32_t wlanoidThermalProtectAct(struct ADAPTER *prAdapter,
 			void *pvSetBuffer,
 			uint32_t u4SetBufferLen,

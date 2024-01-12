@@ -446,6 +446,12 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 				uintptr_t ulParamPtr);
 #endif
 
+uint32_t rlmUpdateStbcSetting(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint8_t enable, uint8_t notify);
+
+uint32_t rlmUpdateMrcSetting(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint8_t enable);
+
 uint32_t
 rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter,
 			       struct STA_RECORD *prStaRec,

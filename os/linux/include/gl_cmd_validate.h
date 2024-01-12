@@ -398,6 +398,8 @@
 #define CMD_SET_AX_BLACKLIST                    "SET_AX_BLACKLIST"
 #define CMD_RTT_GET_CAP				"RttGetCap"
 #define CMD_REPORT_VENDOR_SPECIFIED		"EnVendorSpecifiedRpt"
+#define CMD_FORCE_STBC				"FORCE_STBC"
+#define CMD_FORCE_MRC				"FORCE_MRC"
 
 /*****************************************************************************
 *                             D A T A   T Y P E S

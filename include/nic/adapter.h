@@ -148,6 +148,10 @@ struct BSS_INFO {
 	enum ENUM_OP_MODE eIntendOPMode;
 #endif
 
+	/* STBC MRC */
+	enum ENUM_STBC_MRC_STATE eForceStbc;
+	enum ENUM_STBC_MRC_STATE eForceMrc;
+
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	u_int8_t fgIsDfsActive;
 #endif

@@ -5530,6 +5530,11 @@ static void rlmBssReset(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 	prBssInfo->fgIsOpChangeRxNss = FALSE;
 	prBssInfo->fgIsOpChangeTxNss = FALSE;
 
+	/* STBC MRC */
+	rlmUpdateStbcSetting(prAdapter, prBssInfo->ucBssIndex, 0, FALSE);
+	prBssInfo->eForceStbc = STBC_MRC_STATE_DISABLED;
+	prBssInfo->eForceMrc = STBC_MRC_STATE_DISABLED;
+
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (fgEfuseCtrlAxOn == 1) {
 		/* Spatial Reuse params */
@@ -6686,6 +6691,268 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Update STBC settings
+ *
+ * \param[in] enable 1: force STBC, 0: disable force STBC
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmUpdateStbcSetting(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint8_t enable, uint8_t notify)
+{
+	struct BSS_INFO *prBssInfo = NULL;
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
+	uint8_t cmd[30] = {0};
+	uint8_t strLen = 0;
+	uint32_t strOutLen = 0;
+
+	if (prAdapter == NULL)
+		return WLAN_STATUS_FAILURE;
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+	if (prBssInfo == NULL)
+		return WLAN_STATUS_FAILURE;
+
+	/* skip non alive BSS */
+	if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo)) {
+		DBGLOG(RLM, ERROR, "Skip non alive BSS[%d]\n", ucBssIndex);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* skip non STA/GC */
+	if ((prBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE) ||
+		    (!prBssInfo->prStaRecOfAP)) {
+		DBGLOG(RLM, ERROR, "Skip invalid STA BSS[%d]\n", ucBssIndex);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	strLen = kalSnprintf(cmd, sizeof(cmd),
+			"SET_STBC %d %d", ucBssIndex, enable);
+
+	DBGLOG(RLM, INFO, "Notify FW %s, strlen=%d", cmd, strLen);
+
+	rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_ASCII;
+	rChipConfigInfo.u2MsgSize = strLen;
+	kalStrnCpy(rChipConfigInfo.aucCmd, cmd, strLen);
+	wlanSetChipConfig(prAdapter, &rChipConfigInfo,
+		sizeof(rChipConfigInfo), &strOutLen, FALSE);
+
+	if (enable) {
+		prBssInfo->eForceStbc = STBC_MRC_STATE_ENABLED;
+		if (notify)
+			kalSendUevent("forcestbc=status:Success,enable=True");
+	} else {
+		prBssInfo->eForceStbc = STBC_MRC_STATE_DISABLED;
+		if (notify)
+			kalSendUevent("forcestbc=status:Success,enable=False");
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update MRC settings
+ *
+ * \param[in] enable 1: notify AP to NSS 1x1, 0: notify AP to NSS 2x2
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmUpdateMrcSetting(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint8_t enable)
+{
+	struct BSS_INFO *prBssInfo = NULL;
+	uint8_t ucOpRxNss;
+	uint8_t ucChannelWidth;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+	if (prAdapter == NULL)
+		return WLAN_STATUS_FAILURE;
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+	if (prBssInfo == NULL)
+		return WLAN_STATUS_FAILURE;
+
+	/* skip non alive BSS */
+	if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo)) {
+		DBGLOG(RLM, ERROR, "Skip non alive BSS[%d]\n", ucBssIndex);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* skip non STA/GC */
+	if ((prBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE) ||
+		    (!prBssInfo->prStaRecOfAP)) {
+		DBGLOG(RLM, ERROR, "Skip invalid STA BSS[%d]\n", ucBssIndex);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* skip if already 1x1 */
+	if (prBssInfo->ucOpRxNss == 1) {
+		DBGLOG(RLM, ERROR, "Skip BSS[%d] if already 1x1\n",
+				ucBssIndex);
+		kalSendUevent("forcemrc=status:Fail,reason=Already1x1");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* skip on going op mode change */
+	if (prBssInfo->pfOpChangeHandler) {
+		DBGLOG(RLM, ERROR, "Skip ongoing op mode change: BSS[%d]\n",
+				ucBssIndex);
+		kalSendUevent("forcemrc=status:Fail,reason=OngoingOpMode");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	ucOpRxNss = (enable) ? (1) :
+		(wlanGetSupportNss(prAdapter, ucBssIndex));
+	ucChannelWidth = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
+
+#if CFG_SUPPORT_802_11AC
+	if (RLM_NET_IS_11AC(prBssInfo)
+#if (CFG_SUPPORT_802_11AX == 1)
+			|| RLM_NET_IS_11AX(prBssInfo)
+#endif /* (CFG_SUPPORT_802_11AX == 1) */
+	   ) {
+		u4Status = rlmSendOpModeNotificationFrame(prAdapter,
+				prBssInfo->prStaRecOfAP,
+				ucChannelWidth, ucOpRxNss);
+
+		DBGLOG(RLM, INFO,
+			"Send VHT OP notification frame: BSS[%d] BW[%d] RxNss[%d] Status[%d]\n",
+			ucBssIndex, ucChannelWidth,
+			ucOpRxNss, u4Status);
+	}
+#endif /* CFG_SUPPORT_802_11AC */
+
+	if (RLM_NET_IS_11N(prBssInfo)
+#if (CFG_SUPPORT_802_11AX == 1)
+			|| RLM_NET_IS_11AX(prBssInfo)
+#endif
+	   ) {
+		u4Status = rlmSendSmPowerSaveFrame(prAdapter,
+				prBssInfo->prStaRecOfAP, ucOpRxNss);
+		DBGLOG(RLM, INFO,
+			"Send HT SM Power Save frame: BSS[%d] RxNss[%d] Status[%d]\n",
+			ucBssIndex, ucOpRxNss, u4Status);
+	}
+
+	if (u4Status == WLAN_STATUS_SUCCESS) {
+		prBssInfo->eForceMrc = (enable) ?
+			STBC_MRC_STATE_ENABLING : STBC_MRC_STATE_DISABLING;
+		DBGLOG(RLM, INFO,
+			"Updating BSS[%d] MRC setting to %d, state = %d.\n",
+			ucBssIndex, enable, prBssInfo->eForceMrc);
+	} else {
+		kalSendUevent("forcemrc=status:Fail,reason=SendActionFail");
+	}
+
+	return u4Status;
+}
+
+static void rlmResetMrc(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prBssInfo = NULL;
+
+	if (prAdapter == NULL)
+		return;
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+	if (prBssInfo == NULL)
+		return;
+
+	if (prBssInfo->eForceMrc != STBC_MRC_STATE_DISABLED) {
+		prBssInfo->eForceMrc = STBC_MRC_STATE_DISABLED;
+		kalSendUevent("forcemrc=status:Fail,reason=MrcIsReset");
+	}
+}
+
+static void rlmUpdateMrcTxDone(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint8_t fgIsSuccess)
+{
+	struct BSS_INFO *prBssInfo = NULL;
+
+	if (prAdapter == NULL)
+		return;
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+	if (prBssInfo == NULL)
+		return;
+
+	switch (prBssInfo->eForceMrc) {
+	case STBC_MRC_STATE_ENABLING:
+		prBssInfo->eForceMrc = (fgIsSuccess) ?
+			STBC_MRC_STATE_ENABLED : STBC_MRC_STATE_DISABLED;
+		DBGLOG(RLM, INFO,
+			"TxDone [Status: %d] BSS[%d] MRC state = %d.\n",
+			fgIsSuccess, ucBssIndex, prBssInfo->eForceMrc);
+		if (fgIsSuccess)
+			kalSendUevent("forcemrc=status:Success,enable=True");
+		else
+			kalSendUevent(
+				"forcemrc=status:Fail,reason=SendActionFail");
+		break;
+
+	case STBC_MRC_STATE_DISABLING:
+		prBssInfo->eForceMrc = (fgIsSuccess) ?
+			STBC_MRC_STATE_DISABLED : STBC_MRC_STATE_ENABLED;
+		DBGLOG(RLM, INFO,
+			"TxDone [Status: %d] BSS[%d] MRC state = %d.\n",
+			fgIsSuccess, ucBssIndex, prBssInfo->eForceMrc);
+		if (fgIsSuccess)
+			kalSendUevent("forcemrc=status:Success,enable=False");
+		else
+			kalSendUevent(
+				"forcemrc=status:Fail,reason=SendActionFail");
+		break;
+
+	default:
+		break;
+	}
+}
+
+static void rlmOpModeDummyTxDoneHandler(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo, uint8_t ucOpChangeType,
+		uint8_t fgIsSuccess)
+{
+	struct BSS_INFO *prBssInfo = NULL;
+
+	if (prAdapter == NULL || prMsduInfo == NULL)
+		return;
+
+	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
+	if (prBssInfo == NULL)
+		return;
+
+	DBGLOG(RLM, INFO,
+		"OP notification Tx done: BSS[%d] Type[%d] IsSuccess[%d]\n",
+		prBssInfo->ucBssIndex, ucOpChangeType, fgIsSuccess);
+
+	rlmUpdateMrcTxDone(prAdapter, prMsduInfo->ucBssIndex, fgIsSuccess);
+}
+
+static uint32_t rlmDummyVhtOpModeTxDone(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo,
+		enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	rlmOpModeDummyTxDoneHandler(prAdapter, prMsduInfo,
+			OP_NOTIFY_TYPE_VHT_NSS_BW,
+			(rTxDoneStatus == TX_RESULT_SUCCESS) ? TRUE : FALSE);
+	return WLAN_STATUS_SUCCESS;
+}
+
+static uint32_t rlmDummySmPowerSaveTxDone(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo,
+		enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	rlmOpModeDummyTxDoneHandler(prAdapter, prMsduInfo,
+			OP_NOTIFY_TYPE_HT_NSS,
+			(rTxDoneStatus == TX_RESULT_SUCCESS) ? TRUE : FALSE);
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Send OpMode Norification frame (VHT action frame)
  *
  * \param[in] ucChannelWidth 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz or 80+80MHz
@@ -6702,7 +6969,8 @@ uint32_t rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter,
 	struct ACTION_OP_MODE_NOTIFICATION_FRAME *prTxFrame;
 	struct BSS_INFO *prBssInfo;
 	uint16_t u2EstimatedFrameLen;
-	PFN_TX_DONE_HANDLER pfTxDoneHandler = (PFN_TX_DONE_HANDLER)NULL;
+	PFN_TX_DONE_HANDLER pfTxDoneHandler =
+		(PFN_TX_DONE_HANDLER)rlmDummyVhtOpModeTxDone;
 
 	/* Sanity Check */
 	if (!prStaRec)
@@ -6789,7 +7057,8 @@ uint32_t rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
 	struct ACTION_SM_POWER_SAVE_FRAME *prTxFrame;
 	struct BSS_INFO *prBssInfo;
 	uint16_t u2EstimatedFrameLen;
-	PFN_TX_DONE_HANDLER pfTxDoneHandler = (PFN_TX_DONE_HANDLER)NULL;
+	PFN_TX_DONE_HANDLER pfTxDoneHandler =
+		(PFN_TX_DONE_HANDLER)rlmDummySmPowerSaveTxDone;
 
 	/* Sanity Check */
 	if (!prStaRec)
@@ -7995,6 +8264,9 @@ rlmChangeOperationMode(
 			rlmCompleteOpModeChange(prAdapter, prBssInfo, TRUE);
 			return OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE;
 		}
+
+		if (fgIsChangeRxNss)
+			rlmResetMrc(prAdapter, ucBssIndex);
 
 #if CFG_SUPPORT_802_11AC
 		if (((RLM_NET_IS_11AC(prBssInfo) &&
