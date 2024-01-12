@@ -2801,8 +2801,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 
 		glSetRstReason(RST_FW_ASSERT);
 
-		fgIsResetting = TRUE;
-		update_driver_reset_status(fgIsResetting);
+		glResetUpdateFlag(TRUE);
 
 		if (get_wifi_process_status() == 1) {
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
@@ -2815,8 +2814,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 			if (debug_ops && debug_ops->dumpwfsyscpupcr)
 				debug_ops->dumpwfsyscpupcr(prAdapter);
 
-			fgIsResetting = FALSE;
-			update_driver_reset_status(fgIsResetting);
+			glResetUpdateFlag(FALSE);
 			g_ucWfRstSource = RST_SOURCE_WIFI_NONE;
 		} else {
 			kalSetRstEvent();
@@ -2834,8 +2832,7 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 	if (!prAdapter->prGlueInfo->u4ReadyFlag)
 		g_IsNeedWaitCoredump = TRUE;
 #endif
-	fgIsResetting = TRUE;
-	update_driver_reset_status(fgIsResetting);
+	glResetUpdateFlag(TRUE);
 	g_IsWfsysBusHang = TRUE;
 	kalSetRstEvent();
 }
@@ -2882,8 +2879,7 @@ bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
 			g_IsNeedWaitCoredump = TRUE;
 #endif
 		DBGLOG(HAL, ERROR, "get_sw_interrupt_status failed\n");
-		fgIsResetting = TRUE;
-		update_driver_reset_status(fgIsResetting);
+		glResetUpdateFlag(TRUE);
 		kalSetRstEvent();
 		goto exit;
 	}

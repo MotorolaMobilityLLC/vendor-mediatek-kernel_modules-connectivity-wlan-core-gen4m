@@ -1326,7 +1326,6 @@ void soc3_0_DumpWfsysInfo(void)
 
 int soc3_0_Trigger_fw_assert(struct ADAPTER *prAdapter)
 {
-	int ret = 0;
 	int value = 0;
 
 	soc3_0_CheckBusHang(NULL, FALSE);
@@ -1338,7 +1337,7 @@ int soc3_0_Trigger_fw_assert(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "Trigger fw assert start.\n");
 	wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
 	value &= 0xFFFFFF7F;
-	ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
+	wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
 
 	if (!reset_wait_for_trigger_completion()) {
 		/* Case 1: No timeout. */
@@ -1351,9 +1350,9 @@ int soc3_0_Trigger_fw_assert(struct ADAPTER *prAdapter)
 
 	wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
 	value |= 0x80;
-	ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
+	wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
 
-	return ret;
+	return 0;
 }
 
 void soc3_0_CheckBusHangUT(void)
@@ -2698,12 +2697,10 @@ int wlanConnacPccifon(void)
 
 int wlanConnacPccifoff(void)
 {
-	int ret = 0;
-
 	/*reset WiFi power on status to MD*/
-	ret = wf_ioremap_write(0x10003314, 0x00);
+	wf_ioremap_write(0x10003314, 0x00);
 	/*reset WiFi power on status to MD*/
-	ret = wf_ioremap_write(0x1024c014, 0x0ff);
+	wf_ioremap_write(0x1024c014, 0x0ff);
 
 	/*
 	*Ccif4 (ccif_md2conn_wf):
@@ -2718,9 +2715,9 @@ int wlanConnacPccifoff(void)
 	*HW auto control, so no need to turn on or turn off
 	*wf_ioremap_read(0x100010c0, &reg);
 	*reg |= BIT(28);
-	*ret = wf_ioremap_write(0x100010c0,reg);
+	*wf_ioremap_write(0x100010c0,reg);
 	*/
-	return ret;
+	return 0;
 }
 #endif
 

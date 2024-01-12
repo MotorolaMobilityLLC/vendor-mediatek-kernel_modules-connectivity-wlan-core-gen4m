@@ -161,7 +161,6 @@
 */
 #if (CFG_SUPPORT_CONNINFRA == 1)
 extern u_int8_t g_IsWfsysBusHang;
-extern u_int8_t fgIsResetting;
 extern u_int8_t g_fgRstRecover;
 #endif
 
