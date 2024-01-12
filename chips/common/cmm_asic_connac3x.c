@@ -657,13 +657,10 @@ u_int8_t asicConnac3xWfdmaWaitIdle(
 	uint32_t i = 0;
 	uint32_t u4RegAddr = 0;
 	union WPDMA_GLO_CFG_STRUCT GloCfg = {0};
-	struct BUS_INFO *prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 
-	if (index == 0)
-		u4RegAddr = prBusInfo->host_dma0_base;
-	else if (index == 1)
-		u4RegAddr = prBusInfo->host_dma1_base;
+	if (index == 0 || index == 1)
+		u4RegAddr = asicConnac3xWfdmaCfgAddrGet(prGlueInfo, index);
 	else {
 		DBGLOG(HAL, ERROR, "Unknown wfdma index(=%d)\n", index);
 		return FALSE;
