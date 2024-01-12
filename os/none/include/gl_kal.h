@@ -2317,6 +2317,8 @@ bool kal_is_err(void *ptr);
 u_int8_t kalIsSupportMawd(void);
 u_int8_t kalIsSupportSdo(void);
 u_int8_t kalIsSupportRro(void);
+uint32_t kalGetMawdVer(void);
+uint32_t kalGetConnInfraId(void);
 #endif
 
 uint32_t kalFirmwareOpen(struct GLUE_INFO *prGlueInfo,

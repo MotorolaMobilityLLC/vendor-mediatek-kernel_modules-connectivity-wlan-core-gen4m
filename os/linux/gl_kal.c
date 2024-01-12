@@ -11270,12 +11270,12 @@ u_int8_t __weak kalIsSupportRro(void)
 	return FALSE;
 }
 #endif /* CFG_MTK_FPGA_PLATFORM */
-uint32_t kalGetMawdVer(void)
+uint32_t __weak kalGetMawdVer(void)
 {
 	return 0;
 }
 
-uint32_t kalGetConnInfraId(void)
+uint32_t __weak kalGetConnInfraId(void)
 {
 	return 0;
 }
