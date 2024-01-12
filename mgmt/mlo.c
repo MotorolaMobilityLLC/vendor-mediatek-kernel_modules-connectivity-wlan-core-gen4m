@@ -2446,8 +2446,7 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter,
 	COPY_MAC_ADDR(mgmt->aucBSSID, addr);
 	mgmt->u2FrameCtrl = fctrl;
 
-	if (fctrl == MAC_FRAME_PROBE_RSP ||
-	    fctrl == MAC_FRAME_BEACON) {
+	if (fctrl == MAC_FRAME_PROBE_RSP || fctrl == MAC_FRAME_BEACON) {
 		struct WLAN_BEACON_FRAME *bcn =
 			(struct WLAN_BEACON_FRAME *)prDst->pvHeader;
 
@@ -2491,7 +2490,7 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter,
 	/* copy common info for scan result, don't include per sta profile other
 	 * scanProcessBeaconAndProbeResp will enter infinite loop
 	 */
-	if (fctrl == MAC_FRAME_PROBE_RSP && !prBssDesc) {
+	if (fctrl == MAC_FRAME_PROBE_RSP || fctrl == MAC_FRAME_BEACON) {
 		struct IE_MULTI_LINK_CONTROL *src, *dst;
 
 		src = (struct IE_MULTI_LINK_CONTROL *)

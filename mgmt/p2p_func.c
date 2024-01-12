@@ -317,7 +317,7 @@ void p2pFuncRequestScan(struct ADAPTER *prAdapter,
 		ml = mldFindMlIE(prScanReqV2->aucIE,
 			prScanReqV2->u2IELen, ML_CTRL_TYPE_PROBE_REQ);
 		/* use ml prob req if scan req has ml ie, bssid, single chnl */
-		if (prScanReqV2->eScanChannel == SCAN_CHANNEL_SPECIFIED &&
+		if (ml && prScanReqV2->eScanChannel == SCAN_CHANNEL_SPECIFIED &&
 		    prScanReqV2->ucChannelListNum == 1 &&
 		    UNEQUAL_MAC_ADDR(prScanReqInfo->aucBSSID,
 				     "\xff\xff\xff\xff\xff\xff")) {
