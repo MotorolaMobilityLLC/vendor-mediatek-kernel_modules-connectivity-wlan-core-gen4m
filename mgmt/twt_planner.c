@@ -549,7 +549,7 @@ twtPlannerAddAgrtTbl(
 				CMD_ID_LAYER_0_EXT_MAGIC_NUM,
 				EXT_CMD_ID_TWT_AGRT_UPDATE,
 				TRUE,
-				TRUE,
+				FALSE,
 				fgIsOid,
 				pfCmdDoneHandler,
 				pfCmdTimeoutHandler,
@@ -641,7 +641,7 @@ twtPlannerResumeAgrtTbl(struct ADAPTER *prAdapter,
 			CMD_ID_LAYER_0_EXT_MAGIC_NUM,
 			EXT_CMD_ID_TWT_AGRT_UPDATE,
 			TRUE,
-			TRUE,
+			FALSE,
 			fgIsOid,
 			pfCmdDoneHandler,
 			pfCmdTimeoutHandler,
@@ -710,7 +710,7 @@ twtPlannerModifyAgrtTbl(struct ADAPTER *prAdapter,
 			CMD_ID_LAYER_0_EXT_MAGIC_NUM,
 			EXT_CMD_ID_TWT_AGRT_UPDATE,
 			TRUE,
-			TRUE,
+			FALSE,
 			fgIsOid,
 			pfCmdDoneHandler,
 			pfCmdTimeoutHandler,
@@ -781,7 +781,7 @@ twtPlannerDelAgrtTbl(struct ADAPTER *prAdapter,
 			CMD_ID_LAYER_0_EXT_MAGIC_NUM,
 			EXT_CMD_ID_TWT_AGRT_UPDATE,
 			TRUE,
-			TRUE,
+			FALSE,
 			fgIsOid,
 			pfCmdDoneHandler,
 			pfCmdTimeoutHandler,
@@ -824,7 +824,7 @@ twtPlannerTeardownAgrtTbl(struct ADAPTER *prAdapter,
 			CMD_ID_LAYER_0_EXT_MAGIC_NUM,
 			EXT_CMD_ID_TWT_AGRT_UPDATE,
 			TRUE,
-			TRUE,
+			FALSE,
 			fgIsOid,
 			pfCmdDoneHandler,
 			pfCmdTimeoutHandler,
@@ -888,7 +888,7 @@ twtPlannerSuspendAgrtTbl(struct ADAPTER *prAdapter,
 			CMD_ID_LAYER_0_EXT_MAGIC_NUM,
 			EXT_CMD_ID_TWT_AGRT_UPDATE,
 			TRUE,
-			TRUE,
+			FALSE,
 			fgIsOid,
 			pfCmdDoneHandler,
 			pfCmdTimeoutHandler,
@@ -934,7 +934,7 @@ uint32_t twtPlannerReset(
 			CMD_ID_LAYER_0_EXT_MAGIC_NUM,
 			EXT_CMD_ID_TWT_AGRT_UPDATE,
 			TRUE,
-			TRUE,
+			FALSE,
 			FALSE,
 			NULL,
 			NULL,
@@ -965,6 +965,65 @@ uint32_t twtPlannerReset(
 
 	return rWlanStatus;
 }
+
+#if (CFG_TWT_STA_DIRECT_TEARDOWN == 1)
+void twtPlannerTearingdown(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucFlowId)
+{
+	struct BSS_INFO *prBssInfo;
+	struct _TWT_FLOW_T *prTWTFlow;
+
+	ASSERT(prAdapter);
+	ASSERT(prStaRec);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	if (prBssInfo == NULL) {
+		DBGLOG(TWT_PLANNER, ERROR, "No bssinfo to teardown\n");
+
+		return;
+	}
+
+	prTWTFlow = &(prStaRec->arTWTFlow[ucFlowId]);
+
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+	if (prTWTFlow->fgIsMLTWT == TRUE) {
+		/* MLTWT teardown goes over here */
+		mltwtPlannerDelAgrtTbl(
+			prAdapter,
+			prStaRec,
+			ucFlowId);
+
+		return;
+	}
+
+	/* i-TWT teardown goes in existing flow */
+#endif
+
+	/* Delete driver & FW TWT agreement entry */
+	twtPlannerDelAgrtTbl(prAdapter, prBssInfo, prStaRec,
+		ucFlowId, FALSE,
+		NULL, NULL /* handle TWT cmd timeout? */, TRUE);
+
+	/* Teardown FW TWT agreement entry */
+	twtPlannerTeardownAgrtTbl(prAdapter, prStaRec,
+		FALSE, NULL, NULL /* handle TWT cmd timeout? */);
+
+#if (CFG_TWT_SMART_STA == 1)
+	g_TwtSmartStaCtrl.fgTwtSmartStaActivated = FALSE;
+	g_TwtSmartStaCtrl.fgTwtSmartStaReq = FALSE;
+	g_TwtSmartStaCtrl.fgTwtSmartStaTeardownReq = FALSE;
+	g_TwtSmartStaCtrl.ucBssIndex = 0;
+	g_TwtSmartStaCtrl.ucFlowId = 0;
+	g_TwtSmartStaCtrl.u4CurTp = 0;
+	g_TwtSmartStaCtrl.u4LastTp = 0;
+	g_TwtSmartStaCtrl.u4TwtSwitch == 0;
+	g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
+#endif
+}
+#endif
 
 uint64_t twtPlannerAdjustNextTWT(struct ADAPTER *prAdapter,
 	uint8_t ucBssIdx, uint8_t ucFlowId,
@@ -1200,6 +1259,155 @@ void twtPlannerGetTsfDone(
 	}
 #endif
 
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+	case TWT_GET_TSF_FOR_ADD_AGRT_ML_TWT_ALL_LINKS:
+	{
+		/*
+		* If we reach here, we are preparing setup
+		* frame of multi-link TWT with all links sharing
+		* the same TWT parameter.
+		*/
+		struct _TWT_PARAMS_T *prTWTParams;
+		struct _TWT_FLOW_T *prTWTFlow = twtPlannerFlowFindById(
+					prStaRec, prGetTsfCtxt->ucTWTFlowId);
+
+		u8twt_interval = ((u_int64_t)
+			(prGetTsfCtxt->rTWTParams.u2WakeIntvalMantiss))
+			<< prGetTsfCtxt->rTWTParams.ucWakeIntvalExponent;
+		u8Temp = u8CurTsf + u8twt_interval;
+
+		if (prTWTFlow == NULL) {
+			DBGLOG(TWT_PLANNER, ERROR, "prTWTFlow is NULL.\n");
+
+			kalMemFree(prGetTsfCtxt,
+				VIR_MEM_TYPE, sizeof(*prGetTsfCtxt));
+
+			return;
+		}
+
+		u8Mod = kal_mod64(u8Temp, u8twt_interval);
+
+		prGetTsfCtxt->rTWTParams.u8TWT =
+				u8CurTsf + u8twt_interval - u8Mod;
+
+		prTWTParams = &(prTWTFlow->rTWTParams);
+
+		kalMemCopy(prTWTParams, &(prGetTsfCtxt->rTWTParams),
+			sizeof(struct _TWT_PARAMS_T));
+
+		/* Start the process to nego for a new agreement */
+		mltwtPlannerSendReqStartAllLinks(prAdapter,
+			prStaRec, prGetTsfCtxt->ucTWTFlowId);
+
+		break;
+	}
+
+	case TWT_GET_TSF_FOR_ADD_AGRT_ML_TWT_ONE_BY_ONE:
+	{
+		/* Continue to add MLTWT param, no need to nego */
+		struct _TWT_PARAMS_T *prTWTParams;
+		struct _TWT_FLOW_T *prTWTFlow = twtPlannerFlowFindById(
+					prStaRec, prGetTsfCtxt->ucTWTFlowId);
+
+		u8twt_interval = ((u_int64_t)
+			(prGetTsfCtxt->rTWTParams.u2WakeIntvalMantiss))
+			<< prGetTsfCtxt->rTWTParams.ucWakeIntvalExponent;
+		u8Temp = u8CurTsf + u8twt_interval;
+
+		if (prTWTFlow == NULL) {
+			DBGLOG(TWT_PLANNER, ERROR, "prTWTFlow is NULL.\n");
+
+			kalMemFree(prGetTsfCtxt,
+				VIR_MEM_TYPE, sizeof(*prGetTsfCtxt));
+
+			return;
+		}
+
+		prTWTFlow->fgIsMLTWT = TRUE;
+
+		u8Mod = kal_mod64(u8Temp, u8twt_interval);
+
+		prGetTsfCtxt->rTWTParams.u8TWT =
+				u8CurTsf + u8twt_interval - u8Mod;
+
+		prTWTParams = &(prTWTFlow->rTWTParams);
+
+		kalMemCopy(prTWTParams, &(prGetTsfCtxt->rTWTParams),
+			sizeof(struct _TWT_PARAMS_T));
+
+		/* This is not the final MLTWT param, no need to nego */
+
+		break;
+	}
+
+	case TWT_GET_TSF_FOR_END_AGRT_ML_TWT_ONE_BY_ONE:
+	{
+		/* Final MLTWT param, ready for nego */
+		struct _TWT_PARAMS_T *prTWTParams;
+		struct _TWT_FLOW_T *prTWTFlow = twtPlannerFlowFindById(
+					prStaRec, prGetTsfCtxt->ucTWTFlowId);
+		struct MLD_BSS_INFO *prMldBssInfo = NULL;
+
+		u8twt_interval = ((u_int64_t)
+			(prGetTsfCtxt->rTWTParams.u2WakeIntvalMantiss))
+			<< prGetTsfCtxt->rTWTParams.ucWakeIntvalExponent;
+		u8Temp = u8CurTsf + u8twt_interval;
+
+		if (prTWTFlow == NULL) {
+			DBGLOG(TWT_PLANNER, ERROR, "prTWTFlow is NULL.\n");
+
+			kalMemFree(prGetTsfCtxt,
+				VIR_MEM_TYPE, sizeof(*prGetTsfCtxt));
+
+			return;
+		}
+
+		prTWTFlow->fgIsMLTWT = TRUE;
+
+		u8Mod = kal_mod64(u8Temp, u8twt_interval);
+
+		prGetTsfCtxt->rTWTParams.u8TWT =
+				u8CurTsf + u8twt_interval - u8Mod;
+
+		prTWTParams = &(prTWTFlow->rTWTParams);
+
+		kalMemCopy(prTWTParams, &(prGetTsfCtxt->rTWTParams),
+			sizeof(struct _TWT_PARAMS_T));
+
+		/*
+		* Get the BSS_INFO/STA_REC of MLO setup link,
+		* the MLTWT setup frame is nego on the setup link
+		*/
+		prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+		if (!prMldBssInfo) {
+			DBGLOG(REQ, INFO, "MLTWT Invalid MLD_BSS_INFO\n");
+
+				return;
+		}
+
+		prBssInfo = mldGetBssInfoByLinkID(
+						prAdapter,
+						prMldBssInfo,
+						0,
+						TRUE);
+
+		if (!prBssInfo) {
+			DBGLOG(REQ, INFO, "Find no MLTWT setup link\n");
+
+			return;
+		}
+
+		prStaRec = prBssInfo->prStaRecOfAP;
+
+		/* We are ready to make MLTWT nego */
+		mltwtPlannerSendReqStart(prAdapter,
+			prStaRec, prGetTsfCtxt->ucTWTFlowId);
+
+		break;
+	}
+#endif
+
 	default:
 		DBGLOG(TWT_PLANNER, ERROR,
 			"Unknown reason to get TSF %u\n",
@@ -1401,6 +1609,100 @@ void twtPlannerSetParams(
 			ucBssIdx, ucFlowId);
 		break;
 
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+	case TWT_PARAM_ACTION_ADD_ML_TWT_ALL_LINKS:
+		/* MLTWT all links sharing the same TWT parameter */
+		if (twtPlannerDrvAgrtFind(
+			prAdapter, ucBssIdx,
+			ucFlowId, &ucFlowId_real) >= TWT_AGRT_MAX_NUM) {
+
+			struct _TWT_GET_TSF_CONTEXT_T *prGetTsfCtxt =
+				kalMemAlloc(
+					sizeof(struct _TWT_GET_TSF_CONTEXT_T),
+					VIR_MEM_TYPE);
+
+			if (prGetTsfCtxt == NULL) {
+				DBGLOG(TWT_PLANNER, ERROR,
+					"mem alloc failed\n");
+				return;
+			}
+
+			prGetTsfCtxt->ucReason =
+				TWT_GET_TSF_FOR_ADD_AGRT_ML_TWT_ALL_LINKS;
+
+			prGetTsfCtxt->ucBssIdx = ucBssIdx;
+			prGetTsfCtxt->ucTWTFlowId = prTWTCtrl->ucTWTFlowId;
+			prGetTsfCtxt->fgIsOid = FALSE;
+
+			kalMemCopy(&(prGetTsfCtxt->rTWTParams),
+					&(prTWTCtrl->rTWTParams),
+					sizeof(struct _TWT_PARAMS_T));
+
+			DBGLOG(TWT_PLANNER, WARN,
+				"BSS %u ML TWT flow %u get current TSF\n",
+				ucBssIdx, ucFlowId);
+
+			twtPlannerGetCurrentTSF(prAdapter, prBssInfo,
+				prGetTsfCtxt, sizeof(*prGetTsfCtxt));
+
+			return;
+		}
+
+		DBGLOG(TWT_PLANNER, ERROR,
+			"BSS %u ML TWT flow %u already exists\n",
+			ucBssIdx, ucFlowId);
+
+		break;
+
+	case TWT_PARAM_ACTION_ADD_ML_TWT_ONE_BY_ONE:
+		/* MLTWT each link uses distinct TWT parameter */
+		if (twtPlannerDrvAgrtFind(
+			prAdapter, ucBssIdx,
+			ucFlowId, &ucFlowId_real) >= TWT_AGRT_MAX_NUM) {
+
+			struct _TWT_GET_TSF_CONTEXT_T *prGetTsfCtxt =
+				kalMemAlloc(
+					sizeof(struct _TWT_GET_TSF_CONTEXT_T),
+					VIR_MEM_TYPE);
+
+			if (prGetTsfCtxt == NULL) {
+				DBGLOG(TWT_PLANNER, ERROR,
+					"mem alloc failed\n");
+				return;
+			}
+
+			if (prTWTCtrl->ucMLTWT_Param_Last == 0)
+				prGetTsfCtxt->ucReason =
+					TWT_GET_TSF_FOR_ADD_AGRT_ML_TWT_ONE_BY_ONE;
+			else
+				prGetTsfCtxt->ucReason =
+					TWT_GET_TSF_FOR_END_AGRT_ML_TWT_ONE_BY_ONE;
+
+			prGetTsfCtxt->ucBssIdx = ucBssIdx;
+			prGetTsfCtxt->ucTWTFlowId = prTWTCtrl->ucTWTFlowId;
+			prGetTsfCtxt->fgIsOid = FALSE;
+
+			kalMemCopy(&(prGetTsfCtxt->rTWTParams),
+					&(prTWTCtrl->rTWTParams),
+					sizeof(struct _TWT_PARAMS_T));
+
+			DBGLOG(TWT_PLANNER, WARN,
+				"BSS %u ML TWT flow %u get current TSF\n",
+				ucBssIdx, ucFlowId);
+
+			twtPlannerGetCurrentTSF(prAdapter, prBssInfo,
+				prGetTsfCtxt, sizeof(*prGetTsfCtxt));
+
+			return;
+		}
+
+		DBGLOG(TWT_PLANNER, ERROR,
+			"BSS %u ML TWT flow %u already exists\n",
+			ucBssIdx, ucFlowId);
+
+		break;
+#endif
+
 	case TWT_PARAM_ACTION_DEL:
 		if (twtPlannerDrvAgrtFind(
 			prAdapter, ucBssIdx, ucFlowId,
@@ -1520,13 +1822,27 @@ void twtPlannerRxNegoResult(
 	prTWTFlow = &(prStaRec->arTWTFlow[ucTWTFlowId]);
 	prTWTResult = &(prTWTFlow->rTWTPeerParams);
 
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+	if (prTWTFlow->fgIsMLTWT == TRUE) {
+		/* MLTWT manipulation goes over here */
+		mltwtPlannerRxNegoResult(
+			prAdapter,
+			prStaRec,
+			ucTWTFlowId);
+
+		return;
+	}
+
+	/* i-TWT/BTWT goes in existing flow */
+#endif
+
 	switch (prTWTResult->ucSetupCmd) {
 	case TWT_SETUP_CMD_ACCEPT:
 		/* Update agreement table */
 		twtPlannerAddAgrtTbl(prAdapter, prBssInfo, prStaRec,
 			prTWTResult, ucTWTFlowId, FALSE,
 			NULL, NULL /* handle TWT cmd timeout? */);
-		DBGLOG(TWT_PLANNER, ERROR,
+		DBGLOG(TWT_PLANNER, STATE,
 			"Rx nego id %d\n",
 			ucTWTFlowId);
 
@@ -1683,6 +1999,7 @@ void twtPlannerTeardownDone(
 	struct STA_RECORD *prStaRec;
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucTWTFlowId;
+	struct _TWT_FLOW_T *prTWTFlow;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsgHdr);
@@ -1706,6 +2023,22 @@ void twtPlannerTeardownDone(
 			prStaRec->eStaType);
 		return;
 	}
+
+	prTWTFlow = &(prStaRec->arTWTFlow[ucTWTFlowId]);
+
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+		if (prTWTFlow->fgIsMLTWT == TRUE) {
+			/* MLTWT teardown goes over here */
+			mltwtPlannerDelAgrtTbl(
+				prAdapter,
+				prStaRec,
+				ucTWTFlowId);
+
+			return;
+		}
+
+		/* i-TWT teardown goes in existing flow */
+#endif
 
 	/* Delete driver & FW TWT agreement entry */
 	twtPlannerDelAgrtTbl(prAdapter, prBssInfo, prStaRec,
@@ -1951,6 +2284,213 @@ btwtPlannerDelAgrtTbl(
 
 }
 
-
 #endif
 
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+uint32_t mltwtPlannerSendReqStartAllLinks(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId)
+{
+	struct _MSG_TWT_REQFSM_START_T *prTWTReqFsmStartMsg;
+
+	prTWTReqFsmStartMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+		sizeof(struct _MSG_TWT_REQFSM_START_T));
+	if (prTWTReqFsmStartMsg) {
+		prTWTReqFsmStartMsg->rMsgHdr.eMsgId = MID_ML_TWT_REQ_FSM_START_ALL_LINKS;
+		prTWTReqFsmStartMsg->prStaRec = prStaRec;
+		prTWTReqFsmStartMsg->ucTWTFlowId = ucTWTFlowId;
+
+		mboxSendMsg(prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prTWTReqFsmStartMsg,
+			MSG_SEND_METHOD_BUF);
+	} else
+		return WLAN_STATUS_RESOURCES;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t mltwtPlannerSendReqStart(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId)
+{
+	struct _MSG_TWT_REQFSM_START_T *prTWTReqFsmStartMsg;
+
+	prTWTReqFsmStartMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+		sizeof(struct _MSG_TWT_REQFSM_START_T));
+	if (prTWTReqFsmStartMsg) {
+		prTWTReqFsmStartMsg->rMsgHdr.eMsgId = MID_ML_TWT_REQ_FSM_START_ONE_BY_ONE;
+		prTWTReqFsmStartMsg->prStaRec = prStaRec;
+		prTWTReqFsmStartMsg->ucTWTFlowId = ucTWTFlowId;
+
+		mboxSendMsg(prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prTWTReqFsmStartMsg,
+			MSG_SEND_METHOD_BUF);
+	} else
+		return WLAN_STATUS_RESOURCES;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void mltwtPlannerRxNegoResult(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId)
+{
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct LINK *prBssList = NULL;
+	struct BSS_INFO *prCurrBssInfo = NULL;
+	struct STA_RECORD *prStaRecOfAP = NULL;
+	struct _TWT_FLOW_T *prTWTFlow = NULL;
+	struct _TWT_PARAMS_T *prTWTResult = NULL;
+
+	/* Get MLD_BSS_INFO in MLO connection */
+	ASSERT(prAdapter);
+
+	ASSERT(prStaRec);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(
+					prAdapter, prStaRec->ucBssIndex);
+
+	ASSERT(prBssInfo);
+
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+	if (!prMldBssInfo) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"ML Invalid MLD_BSS_INFO\n");
+
+		return;
+	}
+
+	/* Iterate each BSS_INFO in MLD_BSS_INFO */
+	prBssList = &prMldBssInfo->rBssList;
+
+	LINK_FOR_EACH_ENTRY(prCurrBssInfo, prBssList,
+			rLinkEntryMld,
+			struct BSS_INFO) {
+		if (!prCurrBssInfo)
+			break;
+
+		prStaRecOfAP = prCurrBssInfo->prStaRecOfAP;
+
+		if (!prStaRecOfAP)
+			break;
+
+		/* Get RX Nego result in STA_REC */
+		prTWTFlow = &(prStaRecOfAP->arTWTFlow[ucTWTFlowId]);
+
+		/* if this STA_REC is not MLTWT, continue */
+		if (prTWTFlow->fgIsMLTWT != TRUE)
+			continue;
+
+		/*
+		* We are MLTWT, proceed with AP response TWT param,
+		* add agreement to F/W, only TWT_SETUP_CMD_ACCEPT
+		* is manipulated during dev stage, TBD...
+		*/
+		prTWTResult = &(prTWTFlow->rTWTPeerParams);
+
+		switch (prTWTResult->ucSetupCmd) {
+		case TWT_SETUP_CMD_ACCEPT:
+			/* Update agreement table */
+			twtPlannerAddAgrtTbl(prAdapter, prCurrBssInfo, prStaRecOfAP,
+				prTWTResult, ucTWTFlowId, FALSE,
+				NULL, NULL /* handle TWT cmd timeout? */);
+
+			DBGLOG(TWT_PLANNER, STATE,
+				"Rx nego id %d link ID %d\n",
+				ucTWTFlowId,
+				prStaRec->ucLinkIndex);
+
+			/* Disable SCAN during TWT activity */
+			prAdapter->fgEnOnlineScan = FALSE;
+
+			break;
+
+		case TWT_SETUP_CMD_ALTERNATE:
+		case TWT_SETUP_CMD_DICTATE:
+		case TWT_SETUP_CMD_REJECT:
+		default:
+			DBGLOG(TWT_PLANNER, STATE,
+				"MLTWT setup command %u don't care\n",
+				prTWTResult->ucSetupCmd);
+
+			break;
+		}
+	}
+}
+
+void mltwtPlannerDelAgrtTbl(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId)
+{
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct LINK *prBssList = NULL;
+	struct BSS_INFO *prCurrBssInfo = NULL;
+	struct STA_RECORD *prStaRecOfAP = NULL;
+	struct _TWT_FLOW_T *prTWTFlow = NULL;
+
+	/* Get MLD_BSS_INFO in MLO connection */
+	ASSERT(prAdapter);
+
+	ASSERT(prStaRec);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(
+					prAdapter, prStaRec->ucBssIndex);
+
+	ASSERT(prBssInfo);
+
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+	if (!prMldBssInfo) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"ML Invalid MLD_BSS_INFO\n");
+
+		return;
+	}
+
+	/* Iterate each BSS_INFO in MLD_BSS_INFO */
+	prBssList = &prMldBssInfo->rBssList;
+
+	LINK_FOR_EACH_ENTRY(prCurrBssInfo, prBssList,
+			rLinkEntryMld,
+			struct BSS_INFO) {
+		if (!prCurrBssInfo)
+			break;
+
+		prStaRecOfAP = prCurrBssInfo->prStaRecOfAP;
+
+		if (!prStaRecOfAP)
+			break;
+
+		/* Get _TWT_FLOW_T in STA_REC */
+		prTWTFlow = &(prStaRecOfAP->arTWTFlow[ucTWTFlowId]);
+
+		/* if this STA_REC is not MLTWT, continue */
+		if (prTWTFlow->fgIsMLTWT != TRUE)
+			continue;
+
+		/* Delete driver & FW TWT agreement entry */
+		twtPlannerDelAgrtTbl(prAdapter, prCurrBssInfo, prStaRecOfAP,
+			ucTWTFlowId, FALSE,
+			NULL, NULL /* handle TWT cmd timeout? */, TRUE);
+
+		/* Teardown FW TWT agreement entry */
+		twtPlannerTeardownAgrtTbl(prAdapter, prStaRecOfAP,
+			FALSE, NULL, NULL /* handle TWT cmd timeout? */);
+
+		prTWTFlow->fgIsMLTWT == FALSE;
+	}
+
+	/* Enable SCAN after TWT agrt has been tear down */
+	prAdapter->fgEnOnlineScan = TRUE;
+}
+
+#endif

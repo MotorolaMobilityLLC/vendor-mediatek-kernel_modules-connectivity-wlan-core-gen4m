@@ -115,10 +115,11 @@
 #endif
 
 #if (CFG_SUPPORT_TWT == 1)
-#define CMD_TWT_ACTION_TEN_PARAMS        10
-#define CMD_TWT_ACTION_THREE_PARAMS      3
+#define CMD_TWT_ACTION_TWELVE_PARAMS   12
+#define CMD_TWT_ACTION_TEN_PARAMS      10
+#define CMD_TWT_ACTION_THREE_PARAMS    3
 #define CMD_TWT_ACTION_SIX_PARAMS      6
-#define CMD_TWT_MAX_PARAMS CMD_TWT_ACTION_TEN_PARAMS
+#define CMD_TWT_MAX_PARAMS CMD_TWT_ACTION_TWELVE_PARAMS
 #endif
 
 /*******************************************************************************
@@ -13769,6 +13770,10 @@ static int priv_driver_set_twtparams(
 	int i4TotalLen)
 {
 	struct ADAPTER *prAdapter = NULL;
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+	struct BSS_INFO *prBssInfo = NULL;
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+#endif
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX_LONG] = { 0 };
 	struct _TWT_CTRL_T rTWTCtrl;
@@ -13796,7 +13801,8 @@ static int priv_driver_set_twtparams(
 	/* Check param number and convert TWT params to integer type */
 	if ((i4Argc == CMD_TWT_ACTION_TEN_PARAMS) ||
 		(i4Argc == CMD_TWT_ACTION_THREE_PARAMS) ||
-		(i4Argc == CMD_TWT_ACTION_SIX_PARAMS)) {
+		(i4Argc == CMD_TWT_ACTION_SIX_PARAMS) ||
+		(i4Argc == CMD_TWT_ACTION_TWELVE_PARAMS)) {
 		for (i = 0; i < (i4Argc - 1); i++) {
 
 			u4Ret = kalkStrtou32(apcArgv[i + 1],
@@ -13865,7 +13871,176 @@ static int priv_driver_set_twtparams(
 		rTWTCtrl.ucBssIdx = prNetDevPrivate->ucBssIdx;
 		rTWTCtrl.ucCtrlAction = (uint8_t)au4Setting[0];
 		rTWTCtrl.ucTWTFlowId = (uint8_t)au4Setting[1];
-	} else if (i4Argc == CMD_TWT_ACTION_TEN_PARAMS) {
+	}
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+	else if (IS_TWT_PARAM_ACTION_ADD_ML_TWT_ALL_LINKS(au4Setting[0])
+		&& (i4Argc == CMD_TWT_ACTION_TEN_PARAMS)) {
+		/* Add ML-TWT all links sharing the same TWT param */
+        /* Get BSSINFO of ML setup link */
+		prBssInfo = GET_BSS_INFO_BY_INDEX(
+						prAdapter,
+						prNetDevPrivate->ucBssIdx);
+
+		if (!prBssInfo) {
+			DBGLOG(REQ, INFO, "MLTWT Invalid BSS_INFO \n");
+
+			return -1;
+		}
+
+		prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+		if (!prMldBssInfo) {
+			DBGLOG(REQ, INFO, "MLTWT Invalid MLD_BSS_INFO\n");
+
+			return -1;
+		}
+
+		prBssInfo = mldGetBssInfoByLinkID(
+						prAdapter,
+						prMldBssInfo,
+						0,
+						TRUE);
+
+		if (!prBssInfo) {
+			DBGLOG(REQ, INFO, "Find no MLTWT setup link\n");
+		
+			return -1;
+		}
+
+		DBGLOG(REQ, INFO, "MLTWT Action bitmap=%d\n", au4Setting[0]);
+		DBGLOG(REQ, INFO,
+			"MLTWT Flow ID=%d Setup Command=%d Trig enabled=%d\n",
+			au4Setting[1], au4Setting[2], au4Setting[3]);
+		DBGLOG(REQ, INFO,
+			"MLTWT Unannounced enabled=%d Wake Interval Exponent=%d\n",
+			au4Setting[4], au4Setting[5]);
+		DBGLOG(REQ, INFO, "MLTWT Protection enabled=%d Duration=%d\n",
+			au4Setting[6], au4Setting[7]);
+		DBGLOG(REQ, INFO, "MLTWT Wake Interval Mantissa=%d\n", au4Setting[8]);
+		/*
+		 *	au2Setting[0]: Whether bypassing nego or not
+		 *	au2Setting[1]: TWT Flow ID
+		 *	au2Setting[2]: TWT Setup Command
+		 *	au2Setting[3]: Trigger enabled
+		 *	au2Setting[4]: Unannounced enabled
+		 *	au2Setting[5]: TWT Wake Interval Exponent
+		 *	au2Setting[6]: TWT Protection enabled
+		 *	au2Setting[7]: Nominal Minimum TWT Wake Duration
+		 *	au2Setting[8]: TWT Wake Interval Mantissa
+		 */
+		if (au4Setting[1] >= TWT_MAX_FLOW_NUM ||
+			au4Setting[2] > TWT_SETUP_CMD_DEMAND ||
+			au4Setting[5] > TWT_MAX_WAKE_INTVAL_EXP) {
+			/* Simple sanity check failure */
+			DBGLOG(REQ, INFO, "Invalid ML-TWT Params\n");
+
+			return -1;
+		}
+
+		prTWTParams = &(rTWTCtrl.rTWTParams);
+		kalMemSet(prTWTParams, 0, sizeof(struct _TWT_PARAMS_T));
+		prTWTParams->fgReq = TRUE;
+		prTWTParams->ucSetupCmd = (uint8_t) au4Setting[2];
+		prTWTParams->fgTrigger = (au4Setting[3]) ? TRUE : FALSE;
+		prTWTParams->fgUnannounced = (au4Setting[4]) ? TRUE : FALSE;
+		prTWTParams->ucWakeIntvalExponent = (uint8_t) au4Setting[5];
+		prTWTParams->fgProtect = (au4Setting[6]) ? TRUE : FALSE;
+		prTWTParams->ucMinWakeDur = (uint8_t) au4Setting[7];
+		prTWTParams->u2WakeIntvalMantiss = au4Setting[8];
+		
+		rTWTCtrl.ucBssIdx = prBssInfo->ucBssIndex;
+		rTWTCtrl.ucCtrlAction = au4Setting[0];
+		rTWTCtrl.ucTWTFlowId = au4Setting[1];
+	} else if (IS_TWT_PARAM_ACTION_ADD_ML_TWT_ONE_BY_ONE(au4Setting[0])
+		&& (i4Argc == CMD_TWT_ACTION_TWELVE_PARAMS)) {
+		/* Add ML-TWT distinct link one by one */
+        /* Get BSSINFO of ML setup link */
+		prBssInfo = GET_BSS_INFO_BY_INDEX(
+						prAdapter,
+						prNetDevPrivate->ucBssIdx);
+
+		if (!prBssInfo) {
+			DBGLOG(REQ, INFO, "MLTWT Invalid BSS_INFO \n");
+
+			return -1;
+		}
+
+		prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+		if (!prMldBssInfo) {
+			DBGLOG(REQ, INFO, "MLTWT Invalid MLD_BSS_INFO\n");
+
+			return -1;
+		}
+
+		prBssInfo = mldGetBssInfoByLinkID(
+						prAdapter,
+						prMldBssInfo,
+						au4Setting[9],
+						TRUE);
+
+		if (!prBssInfo) {
+			DBGLOG(REQ, INFO,
+				"Find no MLTWT target link %d\n",
+				au4Setting[9]);
+		
+			return -1;
+		}
+
+		DBGLOG(REQ, INFO, "MLTWT Action bitmap=%d\n", au4Setting[0]);
+		DBGLOG(REQ, INFO,
+			"MLTWT Flow ID=%d Setup Command=%d Trig enabled=%d\n",
+			au4Setting[1], au4Setting[2], au4Setting[3]);
+		DBGLOG(REQ, INFO,
+			"MLTWT Unannounced enabled=%d Wake Interval Exponent=%d\n",
+			au4Setting[4], au4Setting[5]);
+		DBGLOG(REQ, INFO, "ML Protection enabled=%d Duration=%d\n",
+			au4Setting[6], au4Setting[7]);
+		DBGLOG(REQ, INFO, "MLTWT Wake Interval Mantissa=%d\n", au4Setting[8]);
+		DBGLOG(REQ, INFO, "MLTWT target link ID=%d\n", au4Setting[9]);
+		DBGLOG(REQ, INFO, "MLTWT param last=%d\n", au4Setting[10]);
+		/*
+		 *	au2Setting[0]: Whether bypassing nego or not
+		 *	au2Setting[1]: TWT Flow ID
+		 *	au2Setting[2]: TWT Setup Command
+		 *	au2Setting[3]: Trigger enabled
+		 *	au2Setting[4]: Unannounced enabled
+		 *	au2Setting[5]: TWT Wake Interval Exponent
+		 *	au2Setting[6]: TWT Protection enabled
+		 *	au2Setting[7]: Nominal Minimum TWT Wake Duration
+		 *	au2Setting[8]: TWT Wake Interval Mantissa
+		 *	au2Setting[9]: MLTWT link ID
+		 *	au2Setting[10]: MLTWT param last: 0(No)|1(Yes) 
+		 */
+		if (au4Setting[1] >= TWT_MAX_FLOW_NUM ||
+			au4Setting[2] > TWT_SETUP_CMD_DEMAND ||
+			au4Setting[5] > TWT_MAX_WAKE_INTVAL_EXP) {
+			/* Simple sanity check failure */
+			DBGLOG(REQ, INFO, "Invalid ML-TWT Params\n");
+
+			return -1;
+		}
+
+		prTWTParams = &(rTWTCtrl.rTWTParams);
+		kalMemSet(prTWTParams, 0, sizeof(struct _TWT_PARAMS_T));
+		prTWTParams->fgReq = TRUE;
+		prTWTParams->ucSetupCmd = (uint8_t) au4Setting[2];
+		prTWTParams->fgTrigger = (au4Setting[3]) ? TRUE : FALSE;
+		prTWTParams->fgUnannounced = (au4Setting[4]) ? TRUE : FALSE;
+		prTWTParams->ucWakeIntvalExponent = (uint8_t) au4Setting[5];
+		prTWTParams->fgProtect = (au4Setting[6]) ? TRUE : FALSE;
+		prTWTParams->ucMinWakeDur = (uint8_t) au4Setting[7];
+		prTWTParams->u2WakeIntvalMantiss = au4Setting[8];
+		
+		rTWTCtrl.ucBssIdx = prBssInfo->ucBssIndex;
+		rTWTCtrl.ucCtrlAction = au4Setting[0];
+		rTWTCtrl.ucTWTFlowId = au4Setting[1];
+		rTWTCtrl.ucMLTWT_Param_Last = au4Setting[10];
+	}
+#endif
+	else if ((i4Argc == CMD_TWT_ACTION_TEN_PARAMS) &&
+				(IS_TWT_PARAM_ACTION_ADD_BYPASS(au4Setting[0]) ||
+				IS_TWT_PARAM_ACTION_ADD(au4Setting[0]))) {
 		DBGLOG(REQ, INFO, "Action bitmap=%d\n", au4Setting[0]);
 		DBGLOG(REQ, INFO,
 			"TWT Flow ID=%d Setup Command=%d Trig enabled=%d\n",

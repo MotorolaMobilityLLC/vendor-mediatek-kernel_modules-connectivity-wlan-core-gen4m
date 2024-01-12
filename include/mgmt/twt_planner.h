@@ -87,6 +87,9 @@ struct _TWT_FLOW_T {
 	uint8_t fgIsBTWT;
 	enum _ENUM_BTWT_FLOW_STATE_T eBtwtState;
 #endif
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+	uint8_t fgIsMLTWT;
+#endif
 };
 
 struct _TWT_AGRT_T {
@@ -132,6 +135,11 @@ enum {
 	TWT_PARAM_ACTION_RESUME = 7,
 	TWT_PARAM_ACTION_TESTBED_CONFIG = 8,
 	TWT_PARAM_ACTION_ADD_BTWT = 9,
+	TWT_PARAM_ACTION_ENABLE_ITWT = 10,
+	TWT_PARAM_ACTION_ENABLE_BTWT = 11,
+	TWT_PARAM_ACTION_ENABLE_INF_FRAME = 12,
+	TWT_PARAM_ACTION_ADD_ML_TWT_ALL_LINKS = 13,
+	TWT_PARAM_ACTION_ADD_ML_TWT_ONE_BY_ONE = 14,
 	TWT_PARAM_ACTION_MAX
 };
 
@@ -153,6 +161,16 @@ enum {
 	((ucCtrlAction) == TWT_PARAM_ACTION_TESTBED_CONFIG)
 #define IS_TWT_PARAM_ACTION_ADD_BTWT(ucCtrlAction) \
 	((ucCtrlAction) == TWT_PARAM_ACTION_ADD_BTWT)
+#define IS_TWT_PARAM_ACTION_ENABLE_ITWT(ucCtrlAction) \
+	((ucCtrlAction) == TWT_PARAM_ACTION_ENABLE_ITWT)
+#define IS_TWT_PARAM_ACTION_ENABLE_BTWT(ucCtrlAction) \
+	((ucCtrlAction) == TWT_PARAM_ACTION_ENABLE_BTWT)
+#define IS_TWT_PARAM_ACTION_ENABLE_INF_FRAME(ucCtrlAction) \
+	((ucCtrlAction) == TWT_PARAM_ACTION_ENABLE_INF_FRAME)
+#define IS_TWT_PARAM_ACTION_ADD_ML_TWT_ALL_LINKS(ucCtrlAction) \
+	((ucCtrlAction) == TWT_PARAM_ACTION_ADD_ML_TWT_ALL_LINKS)
+#define IS_TWT_PARAM_ACTION_ADD_ML_TWT_ONE_BY_ONE(ucCtrlAction) \
+	((ucCtrlAction) == TWT_PARAM_ACTION_ADD_ML_TWT_ONE_BY_ONE)
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -165,6 +183,13 @@ void twtPlannerSetParams(
 uint32_t twtPlannerReset(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
+
+#if (CFG_TWT_STA_DIRECT_TEARDOWN == 1)
+void twtPlannerTearingdown(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucFlowId);
+#endif
 
 void twtPlannerRxNegoResult(
 	struct ADAPTER *prAdapter,
@@ -235,6 +260,28 @@ void btwtPlannerDelAgrtTbl(
 	struct STA_RECORD *prStaRec,
 	uint8_t ucFlowId);
 
+#endif
+
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+uint32_t mltwtPlannerSendReqStartAllLinks(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId);
+
+uint32_t mltwtPlannerSendReqStart(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId);
+
+void mltwtPlannerRxNegoResult(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId);
+
+void mltwtPlannerDelAgrtTbl(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId);
 #endif
 
 /*******************************************************************************

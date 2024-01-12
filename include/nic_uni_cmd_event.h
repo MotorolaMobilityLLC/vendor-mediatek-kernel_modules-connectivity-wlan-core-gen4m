@@ -1771,7 +1771,9 @@ struct UNI_CMD_TWT_ARGT_UPDATE {
 	uint8_t      ucGrpMemberCnt;
 	uint8_t      ucReserved_c;
 	uint16_t     u2Reserved_d;
+#if 0
 	uint16_t     au2StaList[UNI_TWT_GRP_MAX_MEMBER_CNT];
+#endif
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_DOMAIN_SET_INFO {
