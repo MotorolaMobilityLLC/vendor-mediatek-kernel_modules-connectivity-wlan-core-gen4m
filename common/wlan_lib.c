@@ -8031,15 +8031,13 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	 * A debugging switch enables RXD, RXP dumping when driver drops packets
 	 * for ICV error.
 	 */
-	INIT_UINT(prWifiVar->fgRxIcvErrDbg,
-		"RxIcvErrDbg", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgRxIcvErrDbg, "RxIcvErrDbg", FEATURE_DISABLED);
 	/**
 	 * Switching dumping TX/RX memory, set by bitmap format.
 	 * TXP(0x04),        TXDMAD(0x02), TXD(0x01),
 	 * RXDSEGMENT(0x40), RXDMAD(0x20), RXD(0x10).
 	 */
-	INIT_UINT(prWifiVar->u4TxRxDescDump,
-		"TRXDescDump", 0x40);
+	INIT_UINT(prWifiVar->u4TxRxDescDump, "TRXDescDump", 0x40);
 
 	DBGLOG(INIT, TRACE,
 		"TxP,TxDmad,TxD/RxDsegment,RxDmad,RxD,RxEvt=%u,%u,%u/%u,%u,%u,%u",
@@ -8401,23 +8399,21 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 
 #if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
 	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
-		prWifiVar->i4BssCount[u4Idx] = wlanCfgGetInt32(
-			prAdapter, "wfdSccBalanceBssCount", 0);
+		INIT_INT(prWifiVar->i4BssCount[u4Idx],
+				"wfdSccBalanceBssCount", 0);
 	}
-	prWifiVar->u4WfdSccBalanceMode = wlanCfgGetUint32(
-		prAdapter, "wfdSccBalanceMode", 0);
+	INIT_UINT(prWifiVar->u4WfdSccBalanceMode,
+			"wfdSccBalanceMode", 0);
 #if (CFG_WFD_SCC_BALANCE_DEF_ENABLE == 1)
-	prWifiVar->u4WfdSccBalanceEnable = wlanCfgGetUint32(
-		prAdapter, "wfdSccBalanceEnable", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->u4WfdSccBalanceEnable,
+			"wfdSccBalanceEnable", FEATURE_ENABLED);
 #else
-	prWifiVar->u4WfdSccBalanceEnable = wlanCfgGetUint32(
-		prAdapter, "wfdSccBalanceEnable", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->u4WfdSccBalanceEnable,
+			"wfdSccBalanceEnable", FEATURE_DISABLED);
 #endif
 #endif
-	prWifiVar->fgIcmpTxs = wlanCfgGetInt32(prAdapter, "IcmpTxs",
-			FEATURE_ENABLED);
-	prWifiVar->u4DrvOwnMode = wlanCfgGetUint32(prAdapter,
-			"drvOwnMode", 0);
+	INIT_UINT(prWifiVar->fgIcmpTxs, "IcmpTxs", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->u4DrvOwnMode, "drvOwnMode", 0);
 
 	/* Fast Path Config */
 	INIT_UINT(prWifiVar->ucUdpTspecUp, "UdpTspecUp", 7);

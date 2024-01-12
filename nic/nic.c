@@ -3543,8 +3543,7 @@ void nicSetAvailablePhyTypeSet(struct ADAPTER *prAdapter)
  * @retval -
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicQmUpdateWmmParms(struct ADAPTER *prAdapter,
-			     uint8_t ucBssIndex)
+uint32_t nicQmUpdateWmmParms(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
 	struct CMD_UPDATE_WMM_PARMS rCmdUpdateWmmParms = {0};
@@ -3571,17 +3570,16 @@ uint32_t nicQmUpdateWmmParms(struct ADAPTER *prAdapter,
 		   (sizeof(struct AC_QUE_PARMS) * AC_NUM));
 
 	rCmdUpdateWmmParms.fgIsQBSS = prBssInfo->fgIsQBSS;
-	rCmdUpdateWmmParms.ucWmmSet = (uint8_t)
-				      prBssInfo->ucWmmQueSet;
+	rCmdUpdateWmmParms.ucWmmSet = (uint8_t) prBssInfo->ucWmmQueSet;
 
 	/* If VI use worse parameter than BE, need to use round-robbin queue
 	 *   to enqueue data from HIF to HW.
 	 *  (Should revise if HIF can have separate queue for each AC)
 	 */
-	if ((rCmdUpdateWmmParms.arACQueParms[AC1].u2Aifsn
-		< rCmdUpdateWmmParms.arACQueParms[AC2].u2Aifsn) ||
-		 (rCmdUpdateWmmParms.arACQueParms[AC1].u2CWmin
-			< rCmdUpdateWmmParms.arACQueParms[AC2].u2CWmin)) {
+	if ((rCmdUpdateWmmParms.arACQueParms[AC1].u2Aifsn <
+	     rCmdUpdateWmmParms.arACQueParms[AC2].u2Aifsn) ||
+	    (rCmdUpdateWmmParms.arACQueParms[AC1].u2CWmin <
+	     rCmdUpdateWmmParms.arACQueParms[AC2].u2CWmin)) {
 		/* Use round-robbin queuing in HIF */
 		prAdapter->rWifiVar.ucTxMsduQueue = 1;
 
