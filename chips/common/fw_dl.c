@@ -1309,6 +1309,7 @@ uint32_t wlanImageSectionDownload(struct ADAPTER *prAdapter,
 	uint8_t *pucImgBuf,
 	uint32_t u4ImgSize)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4Offset = 0;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
@@ -1316,6 +1317,11 @@ uint32_t wlanImageSectionDownload(struct ADAPTER *prAdapter,
 
 	if (u4ImgSize == 0)
 		return WLAN_STATUS_SUCCESS;
+
+	prChipInfo = prAdapter->chip_info;
+
+	if (prChipInfo->pdmaBurstSizeSetup)
+		prChipInfo->pdmaBurstSizeSetup(prAdapter, TRUE);
 
 	do {
 		uint8_t *pucSecBuf;
@@ -1342,6 +1348,9 @@ uint32_t wlanImageSectionDownload(struct ADAPTER *prAdapter,
 		}
 		u4Offset += u4SecSize;
 	} while (TRUE);
+
+	if (prChipInfo->pdmaBurstSizeSetup)
+		prChipInfo->pdmaBurstSizeSetup(prAdapter, FALSE);
 
 	return u4Status;
 }
