@@ -198,6 +198,7 @@ CONFIG_MTK_WIFI_TWT_HOTSPOT_AC_SUPPORT=n
 CONFIG_NUM_OF_WFDMA_RX_RING=3
 CONFIG_NUM_OF_WFDMA_TX_RING=0
 CONFIG_MTK_WIFI_CONNINFRA_SUPPORT=y
+CONFIG_SUPPORT_PRE_ON_PHY_ACTION=y
 CONFIG_MTK_WIFI_CONNAC2X_2x2=y
 CONFIG_MTK_WIFI_DOWNLOAD_DYN_MEMORY_MAP=y
 CFG_WIFI_WORKAROUND_HWITS00012836_WTBL_SEARCH_FAIL=1
@@ -315,6 +316,7 @@ CONFIG_MTK_WIFI_TWT_HOTSPOT_AC_SUPPORT=n
 CONFIG_NUM_OF_WFDMA_RX_RING=3
 CONFIG_NUM_OF_WFDMA_TX_RING=0
 CONFIG_MTK_WIFI_CONNINFRA_SUPPORT=y
+CONFIG_SUPPORT_PRE_ON_PHY_ACTION=y
 CONFIG_MTK_WIFI_CONNAC2X_2x2=y
 CONFIG_MTK_WIFI_DOWNLOAD_DYN_MEMORY_MAP=y
 ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
@@ -339,6 +341,7 @@ CONFIG_MTK_WIFI_TWT_HOTSPOT_AC_SUPPORT=n
 CONFIG_NUM_OF_WFDMA_RX_RING=2
 CONFIG_NUM_OF_WFDMA_TX_RING=0
 CONFIG_MTK_WIFI_CONNINFRA_SUPPORT=y
+CONFIG_SUPPORT_PRE_ON_PHY_ACTION=y
 CONFIG_MTK_WIFI_CONNAC2X_2x2=y
 CONFIG_MTK_WIFI_DOWNLOAD_DYN_MEMORY_MAP=y
 CONFIG_MTK_WIFI_POWER_THROTTLING=y
@@ -412,6 +415,7 @@ ifneq ($(TARGET_BUILD_VARIANT),user)
 endif
 ifeq ($(MTK_ANDROID_WMT), y)
     #CONFIG_MTK_PCIE_PROBE_SUPPORT=y
+    #CONFIG_MTK_WIFI_CONNV3_SUPPORT=y
 endif
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
@@ -691,10 +695,22 @@ else
 ccflags-y += -DCFG_SUPPORT_CONNFEM=0
 endif
 
-ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
+ifeq ($(CONFIG_MTK_WIFI_CONNV3_SUPPORT), y)
+    ccflags-y += -DCFG_MTK_WIFI_CONNV3_SUPPORT=1
+    ifneq ($(wildcard $(src)/../conninfra),)
+        CONFIG_MTK_WIFI_CONNV3_PATH ?= $(src)/../conninfra
+        KBUILD_EXTRA_SYMBOLS += $(CONFIG_MTK_WIFI_CONNV3_PATH)/Module.symvers
+    else
+        CONFIG_MTK_WIFI_CONNV3_PATH ?= $(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra
+    endif
+    $(info $$CONFIG_MTK_WIFI_CONNV3_PATH is [${CONFIG_MTK_WIFI_CONNV3_PATH}])
+    ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/include
+    ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/base/include
+    ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/conn_drv/connv3/debug_utility/include
+    ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/conn_drv/connv3/debug_utility/connsyslog
+else ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_CONNINFRA=1
     ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=1
-    ccflags-y += -DCFG_SUPPORT_PRE_ON_PHY_ACTION=1
     ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
     ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/power_throttling
     ccflags-y += -DCFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT=1
@@ -712,7 +728,7 @@ ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
         ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/coredump/platform/include
         ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/metlog
 
-        # connv3 path
+        # connv2 path
         ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/conn_drv/connv2/debug_utility
         ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/conn_drv/connv2/debug_utility/include
         ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/conn_drv/connv2/debug_utility/connsyslog
@@ -725,7 +741,6 @@ else
     ccflags-y += -DCFG_SUPPORT_CONNINFRA=0
     ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=0
     ccflags-y += -DCFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT=0
-    ccflags-y += -DCFG_SUPPORT_PRE_ON_PHY_ACTION=1
     ifeq ($(WMT_SUPPORT), y)
         ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/common/common_main/include
         ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/common/common_main/linux/include
@@ -1185,16 +1200,14 @@ CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_common.o
 
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
 CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac2x.o \
-              $(CHIPS_CMM)dbg_connac2x.o \
-              $(CHIPS_CMM)pre_cal.o
+              $(CHIPS_CMM)dbg_connac2x.o
 NIC_OBJS += $(NIC_DIR)nic_ext_cmd_event.o \
             $(NIC_DIR)nic_txd_v2.o \
             $(NIC_DIR)nic_rxd_v2.o
 else ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
 CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac3x.o \
               $(CHIPS_CMM)dbg_connac3x.o \
-              $(CHIPS_CMM)dbg_wtbl_connac3x.o \
-              $(CHIPS_CMM)pre_cal.o
+              $(CHIPS_CMM)dbg_wtbl_connac3x.o
     ifeq ($(CONFIG_MTK_WIFI_FW_LOG_CTRL), y)
         CHIPS_OBJS += $(CHIPS_CMM)fw_log_ctrl.o
         ccflags-y += -DCFG_MTK_WIFI_FW_LOG_CTRL=1
@@ -1207,6 +1220,13 @@ CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac.o \
               $(CHIPS_CMM)dbg_connac.o
 NIC_OBJS += $(NIC_DIR)nic_txd_v1.o \
             $(NIC_DIR)nic_rxd_v1.o
+endif
+
+ifeq ($(CONFIG_SUPPORT_PRE_ON_PHY_ACTION), y)
+    CHIPS_OBJS += $(CHIPS_CMM)pre_cal.o
+    ccflags-y += -DCFG_SUPPORT_PRE_ON_PHY_ACTION=1
+else
+    ccflags-y += -DCFG_SUPPORT_PRE_ON_PHY_ACTION=0
 endif
 
 CHIPS_OBJS += $(CHIPS_CMM)fw_dl.o

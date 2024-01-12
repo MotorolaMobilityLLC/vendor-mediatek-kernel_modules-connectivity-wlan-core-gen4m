@@ -72,6 +72,9 @@
 
 #include "precomp.h"
 #include "wlan_lib.h"
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#include "connv3.h"
+#endif
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -1984,10 +1987,14 @@ uint32_t asicConnac3xQueryPmicInfo(struct ADAPTER *prAdapter)
 
 	prPmicEvent = (struct INIT_EVENT_QUERY_INFO_PMIC *)
 		&prTlv->aucBuffer[0];
-	DBGLOG(INIT, INFO, "PMIC ID: 0x%x.\n", prPmicEvent->u4PmicId);
-	DBGLOG_MEM32(INIT, INFO, &prPmicEvent->aucPMICCoreDumpbuf[0],
+	DBGLOG(INIT, TRACE, "PMIC ID: 0x%x.\n", prPmicEvent->u4PmicId);
+	DBGLOG_MEM32(INIT, TRACE, &prPmicEvent->aucPMICCoreDumpbuf[0],
 		prPmicEvent->u4Length);
-	/* TODO: integrate with conninfra driver for AEE */
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	connv3_update_pmic_state(CONNV3_DRV_TYPE_WIFI,
+		&prPmicEvent->aucPMICCoreDumpbuf[0],
+		prPmicEvent->u4Length);
+#endif
 	u4Status = WLAN_STATUS_SUCCESS;
 
 exit:
