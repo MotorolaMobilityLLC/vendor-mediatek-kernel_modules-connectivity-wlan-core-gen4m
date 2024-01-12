@@ -1368,6 +1368,32 @@ void scanRemoveConnFlagOfBssDescByBssid(struct ADAPTER *prAdapter,
 	}
 }	/* end of scanRemoveConnectionFlagOfBssDescByBssid() */
 
+uint8_t scanCopySSID(uint8_t *pucIE, struct PARAM_SSID *prSsid)
+{
+	uint8_t ucSSIDChar = '\0';
+	uint8_t fgIsValidSsid = FALSE;
+	uint32_t i;
+
+	if (!pucIE || IE_LEN(pucIE) > ELEM_MAX_LEN_SSID || IE_LEN(pucIE) == 0)
+		return FALSE;
+
+	for (i = 0; i < IE_LEN(pucIE); i++)
+		ucSSIDChar |= SSID_IE(pucIE)->aucSSID[i];
+
+	if (ucSSIDChar)
+		fgIsValidSsid = TRUE;
+
+	/* Update SSID to BSS Descriptor only if
+	 * SSID is not hidden.
+	 */
+	if (fgIsValidSsid == TRUE && prSsid)
+		COPY_SSID(prSsid->aucSsid,
+			 prSsid->u4SsidLen,
+			 SSID_IE(pucIE)->aucSSID,
+			 SSID_IE(pucIE)->ucLength);
+
+	return fgIsValidSsid;
+}
 
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)
 /*----------------------------------------------------------------------------*/
@@ -1391,6 +1417,8 @@ void scanParsingMBSSIDSubelement(struct ADAPTER *prAdapter,
 	struct IE_MBSSID_INDEX *prMbssidIdxIe;
 	uint8_t aucBSSID[MAC_ADDR_LEN];
 	int8_t ucBssidLsb;
+	uint8_t fgIsValidSsid = FALSE;
+	struct PARAM_SSID rSsid;
 
 	if (prMbssidIe->ucMaxBSSIDIndicator == 0) /* invalid mbssid ie*/
 		return;
@@ -1414,9 +1442,13 @@ void scanParsingMBSSIDSubelement(struct ADAPTER *prAdapter,
 		/*search for mbssid index ie in each profile*/
 		prMbssidIdxIe = NULL;
 		IE_FOR_EACH(pucProfileIE, u2ProfileLen, u2ProfileOffset) {
-			if (IE_ID(pucProfileIE) == ELEM_ID_MBSSID_INDEX) {
+			if (IE_ID(pucProfileIE) == ELEM_ID_MBSSID_INDEX)
 				prMbssidIdxIe =	MBSSID_INDEX_IE(pucProfileIE);
-				break;
+
+			if (IE_ID(pucProfileIE) == ELEM_ID_SSID) {
+				if (!fgIsValidSsid)
+					fgIsValidSsid = scanCopySSID(
+						pucProfileIE, &rSsid);
 			}
 		}
 		if (prMbssidIdxIe == NULL)
@@ -1431,12 +1463,18 @@ void scanParsingMBSSIDSubelement(struct ADAPTER *prAdapter,
 				  (1 << prMbssidIe->ucMaxBSSIDIndicator);
 
 		prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter,
-					aucBSSID, FALSE, NULL);
+					aucBSSID, fgIsValidSsid, &rSsid);
 		if (prBssDesc) {
 			prBssDesc->ucMaxBSSIDIndicator =
 				prMbssidIe->ucMaxBSSIDIndicator;
 			prBssDesc->ucMBSSIDIndex =
 				prMbssidIdxIe->ucBSSIDIndex;
+
+			DBGLOG(SCN, TRACE, "MBSS["MACSTR
+				"][%s] % MaxBSSIDIndicator=%d, ucMBSSIDIndex=%d\n",
+				MAC2STR(aucBSSID), rSsid.aucSsid,
+				prBssDesc->ucMaxBSSIDIndicator,
+				prBssDesc->ucMBSSIDIndex);
 		}
 	}
 }
@@ -2506,6 +2544,7 @@ void scanParseExtCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
 		prBssDesc->fgExtSpecMgmtCap);
 #endif
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This API parses Beacon/ProbeResp frame and insert extracted
@@ -2631,42 +2670,8 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			continue;
 		switch (IE_ID(pucIE)) {
 		case ELEM_ID_SSID:
-			if (!fgIsValidSsid &&
-				IE_LEN(pucIE) <= ELEM_MAX_LEN_SSID) {
-				ucSSIDChar = '\0';
-
-				/* D-Link DWL-900AP+ */
-				if (IE_LEN(pucIE) == 0)
-					fgIsValidSsid = FALSE;
-				/* Cisco AP1230A -
-				 * (IE_LEN(pucIE) == 1)
-				 * && (SSID_IE(pucIE)->aucSSID[0] == '\0')
-				 */
-				/* Linksys WRK54G/WL520g -
-				 * (IE_LEN(pucIE) == n)
-				 * && (SSID_IE(pucIE)->aucSSID[0~(n-1)] == '\0')
-				 */
-				else {
-					for (i = 0; i < IE_LEN(pucIE); i++) {
-						ucSSIDChar
-							|= SSID_IE(pucIE)
-								->aucSSID[i];
-					}
-
-					if (ucSSIDChar)
-						fgIsValidSsid = TRUE;
-				}
-
-				/* Update SSID to BSS Descriptor only if
-				 * SSID is not hidden.
-				 */
-				if (fgIsValidSsid == TRUE) {
-					COPY_SSID(rSsid.aucSsid,
-						  rSsid.u4SsidLen,
-						  SSID_IE(pucIE)->aucSSID,
-						  SSID_IE(pucIE)->ucLength);
-				}
-			}
+			if (!fgIsValidSsid)
+				fgIsValidSsid = scanCopySSID(pucIE, &rSsid);
 			break;
 		case ELEM_ID_DS_PARAM_SET:
 			if (IE_LEN(pucIE)
