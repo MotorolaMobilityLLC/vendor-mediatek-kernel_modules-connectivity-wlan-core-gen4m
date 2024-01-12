@@ -2029,7 +2029,8 @@ struct CMD_WOWLAN_PARAM {
 	uint8_t  aucReserved1[2];
 	struct CMD_WAKE_HIF   astWakeHif[2];
 	struct WOW_PORT   stWowPort;
-	uint8_t  aucReserved2[32];
+	uint16_t u2DetectTypeExt;
+	uint8_t  aucReserved2[30];
 };
 
 /*Oshare mode*/

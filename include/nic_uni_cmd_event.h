@@ -1167,8 +1167,9 @@ struct UNI_CMD_SUSPEND_WOW_CTRL {
 	uint8_t ucDetectType;
 	uint8_t ucWakeupHif;
 	uint8_t aucPadding[1];
+	uint16_t u2DetectTypeExt;
 
-	uint8_t aucReserved[4];
+	uint8_t aucReserved[2];
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_SUSPEND_WOW_GPIO_PARAM {

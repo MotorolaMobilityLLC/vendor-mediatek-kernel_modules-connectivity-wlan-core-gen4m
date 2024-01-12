@@ -8168,7 +8168,6 @@ void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
 		   uint8_t enable)
 {
 	struct CMD_WOWLAN_PARAM rCmdWowlanParam;
-	struct CMD_PACKET_FILTER_CAP rCmdPacket_Filter_Cap;
 	struct WOW_CTRL *pWOW_CTRL =
 			&prGlueInfo->prAdapter->rWowCtrl;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -8176,16 +8175,8 @@ void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
 	struct BSS_INFO *prAisBssInfo = NULL;
 	uint8_t fgWake = TRUE;
 
-	prAisBssInfo = aisGetConnectedBssInfo(prGlueInfo->prAdapter);
-
-	if (!prAisBssInfo)
-		return;
-
 	kalMemZero(&rCmdWowlanParam,
 		   sizeof(struct CMD_WOWLAN_PARAM));
-
-	kalMemZero(&rCmdPacket_Filter_Cap,
-		   sizeof(struct CMD_PACKET_FILTER_CAP));
 
 	prGlueInfo->prAdapter->fgSetPfCapabilityDone = FALSE;
 	prGlueInfo->prAdapter->fgSetWowDone = FALSE;
@@ -8193,43 +8184,17 @@ void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
 		&& prGlueInfo->prAdapter->rWowCtrl.fgWowEnable == 0)
 		fgWake = FALSE;
 
-	DBGLOG(PF, INFO,
-	       "PF, pAd ucBssIndex=%d, ucOwnMacIndex=%d\n",
-	       prAisBssInfo->ucBssIndex,
-	       prAisBssInfo->ucOwnMacIndex);
+	prAisBssInfo = aisGetConnectedBssInfo(prGlueInfo->prAdapter);
+
+	if (prAisBssInfo) {
+		DBGLOG(PF, INFO,
+		       "PF, pAd ucBssIndex=%d, ucOwnMacIndex=%d\n",
+		       prAisBssInfo->ucBssIndex,
+		       prAisBssInfo->ucOwnMacIndex);
+	}
 	DBGLOG(PF, INFO, "profile wow=%d, GpioInterval=%d\n",
 	       prGlueInfo->prAdapter->rWifiVar.ucWow,
 	       prGlueInfo->prAdapter->rWowCtrl.astWakeHif[0].u4GpioInterval);
-
-	rCmdPacket_Filter_Cap.packet_cap_type |=
-		PACKETF_CAP_TYPE_MAGIC;
-	/* 20160627 Bennett: if receive BMC magic, PF search by bssid index,
-	 * which is different with OM index
-	 */
-	/* After discussion, enable all bssid bits */
-	/* rCmdPacket_Filter_Cap.ucBssid |=
-	 *		BIT(prGlueInfo->prAdapter->prAisBssInfo->ucOwnMacIndex);
-	 */
-	rCmdPacket_Filter_Cap.ucBssid |= BITS(0, 3);
-
-	if (enable)
-		rCmdPacket_Filter_Cap.usEnableBits |=
-			PACKETF_CAP_TYPE_MAGIC;
-	else
-		rCmdPacket_Filter_Cap.usEnableBits &=
-			~PACKETF_CAP_TYPE_MAGIC;
-
-	rStatus = wlanSendSetQueryCmd(prGlueInfo->prAdapter,
-				      CMD_ID_SET_PF_CAPABILITY,
-				      TRUE,
-				      FALSE,
-				      FALSE,
-				      kalWowCmdEventSetCb,
-				      nicOidCmdTimeoutCommon,
-				      sizeof(struct CMD_PACKET_FILTER_CAP),
-				      (uint8_t *)&rCmdPacket_Filter_Cap,
-				      NULL,
-				      0);
 
 #if CFG_SUPPORT_MDNS_OFFLOAD
 	if (enable && prGlueInfo->prAdapter->mdns_offload_enable) {
@@ -8238,15 +8203,16 @@ void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
 	}
 #endif
 
-	/* ARP offload */
+	/* 1. ARPNS offload */
+	/* 2. SET SUSPEND MODE */
 	wlanSetSuspendMode(prGlueInfo, enable);
+
 	/* p2pSetSuspendMode(prGlueInfo, TRUE); */
 
 	/* Let WOW enable/disable as last command, so we can back/restore DMA
 	 * classify filter in FW
 	 */
-	rCmdWowlanParam.ucScenarioID = pWOW_CTRL->ucScenarioId;
-	rCmdWowlanParam.ucBlockCount = pWOW_CTRL->ucBlockCount;
+
 	kalMemCopy(&rCmdWowlanParam.astWakeHif[0],
 		   &pWOW_CTRL->astWakeHif[0], sizeof(struct WOW_WAKE_HIF));
 
@@ -8289,30 +8255,35 @@ void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
 
 	/* GPIO parameter is necessary in suspend/resume */
 	if (enable == 1) {
+
 		rCmdWowlanParam.ucCmd = PM_WOWLAN_REQ_START;
-		if (!prGlueInfo->prAdapter->rWifiVar.ucMobileLikeSuspend) {
+
+		if (fgWake) {
+
 			rCmdWowlanParam.ucDetectType =
-				prGlueInfo->prAdapter->rWifiVar.ucWowDetectType;
-			rCmdWowlanParam.u2FilterFlag = WOWLAN_FF_DROP_ALL |
-					WOWLAN_FF_SEND_MAGIC_TO_HOST |
-					WOWLAN_FF_ALLOW_1X |
-					WOWLAN_FF_ALLOW_ARP_REQ2ME;
+				prGlueInfo->prAdapter->
+				rWifiVar.ucWowDetectType;
+			/* default: WOWLAN_DETECT_TYPE_MAGIC (0x1) */
+
+			rCmdWowlanParam.u2DetectTypeExt =
+				prGlueInfo->prAdapter->
+				rWifiVar.u2WowDetectTypeExt;
+			/* default: WOWLAN_DETECT_TYPE_EXT_PORT (0x1) */
+
 		} else {
-			rCmdWowlanParam.ucDetectType = WOWLAN_DETECT_TYPE_ANY;
-			rCmdWowlanParam.u2FilterFlag = WOWLAN_FF_ALLOW_UC |
-					WOWLAN_FF_ALLOW_BMC |
-					WOWLAN_FF_SEND_MAGIC_TO_HOST |
-					WOWLAN_FF_ALLOW_1X |
-					WOWLAN_FF_ALLOW_ARP_REQ2ME;
-			DBGLOG(PF, INFO, "Mobile like suspend\n");
-			DBGLOG(PF, INFO,
-				"Wow DetectType[0x%x] FilterFlag[0x%x]\n",
-				rCmdWowlanParam.ucDetectType,
-				rCmdWowlanParam.u2FilterFlag);
+
+			rCmdWowlanParam.ucDetectType =
+				WOWLAN_DETECT_TYPE_NONE;
+
+			rCmdWowlanParam.u2DetectTypeExt =
+				WOWLAN_DETECT_TYPE_EXT_NONE;
 		}
 
-		if (!fgWake)
-			rCmdWowlanParam.ucDetectType = WOWLAN_DETECT_TYPE_NONE;
+		DBGLOG(PF, STATE,
+				"Wow DetectType[0x%x] DetectTypeExt[0x%x]\n",
+				rCmdWowlanParam.ucDetectType,
+				rCmdWowlanParam.u2DetectTypeExt);
+
 	} else {
 		rCmdWowlanParam.ucCmd = PM_WOWLAN_REQ_STOP;
 	}
@@ -8334,13 +8305,11 @@ void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
 		kalMsleep(5);
 
 		if (wait > 100) {
-			DBGLOG(INIT, ERROR, "WoW timeout.PF:%d. WoW:%d\n",
-				prGlueInfo->prAdapter->fgSetPfCapabilityDone,
+			DBGLOG(INIT, ERROR, "WoW timeout. WoW:%d\n",
 				prGlueInfo->prAdapter->fgSetWowDone);
 			break;
 		}
-		if ((prGlueInfo->prAdapter->fgSetPfCapabilityDone == TRUE)
-			&& (prGlueInfo->prAdapter->fgSetWowDone == TRUE)) {
+		if (prGlueInfo->prAdapter->fgSetWowDone == TRUE) {
 			DBGLOG(INIT, STATE, "WoW process done\n");
 			break;
 		}

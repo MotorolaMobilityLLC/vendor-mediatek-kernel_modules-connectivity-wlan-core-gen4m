@@ -1685,7 +1685,7 @@ uint32_t nicUniCmdSetSuspendMode(struct ADAPTER *ad,
 	tag->u2Length = sizeof(*tag);
 	tag->ucScreenStatus = cmd->ucEnableSuspendMode;
 	tag->ucMdtim = cmd->ucMdtim;
-	tag->ucWowSuspend = FALSE; /*unset */
+	tag->ucWowSuspend = cmd->ucWowSuspend;
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
@@ -1731,12 +1731,18 @@ uint32_t nicUniCmdSetWOWLAN(struct ADAPTER *ad,
 	uni_cmd->ucBssInfoIdx = 0; /* unused */
 	pos = uni_cmd->aucTlvBuffer;
 
+	DBGLOG(PF, STATE,
+			"unicmd DetectType[0x%x] DetectTypeExt[0x%x]\n",
+			cmd->ucDetectType,
+			cmd->u2DetectTypeExt);
+
 	ctrl_tag = (struct UNI_CMD_SUSPEND_WOW_CTRL *) pos;
 	ctrl_tag->u2Tag = UNI_CMD_SUSPEND_TAG_WOW_CTRL;
 	ctrl_tag->u2Length = sizeof(*ctrl_tag);
 	ctrl_tag->ucCmd = cmd->ucCmd;
 	ctrl_tag->ucDetectType = cmd->ucDetectType;
 	ctrl_tag->ucWakeupHif = cmd->astWakeHif[0].ucWakeupHif;
+	ctrl_tag->u2DetectTypeExt = cmd->u2DetectTypeExt;
 	pos += sizeof(*ctrl_tag);
 
 	gpio_tag = (struct UNI_CMD_SUSPEND_WOW_GPIO_PARAM *) pos;
