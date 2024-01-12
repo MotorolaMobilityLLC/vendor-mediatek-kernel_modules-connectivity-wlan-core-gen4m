@@ -1932,10 +1932,12 @@ uint32_t nicUniCmdEventQueryNicCapabilityV2(struct ADAPTER *ad,
 	tag = data + fixed_len;
 	TAG_FOR_EACH(tag, tags_len, offset) {
 		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
-		if (TAG_LEN(tag) == 0)
-			return WLAN_STATUS_FAILURE;
-
 		nicParsingNicCapV2(ad, TAG_ID(tag), TAG_DATA(tag));
+	}
+
+	if (tags_len != offset) {
+		DBGLOG(NIC, ERROR, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+		return WLAN_STATUS_FAILURE;
 	}
 
 	return WLAN_STATUS_SUCCESS;

@@ -4943,7 +4943,7 @@ struct WIFI_UNI_EVENT {
 struct TAG_HDR {
 	uint16_t u2Tag;
 	uint16_t u2Length;
-	uint8_t aucBuffer[0];
+	uint8_t aucBuffer[];
 };
 
 enum ENUM_UNI_EVENT_ID {
@@ -7899,12 +7899,18 @@ struct UNI_EVENT_UPDATE_LP_TX_DELAY_T {
 #define TAG_ID(fp)	(((struct TAG_HDR *) fp)->u2Tag)
 #define TAG_LEN(fp)	(((struct TAG_HDR *) fp)->u2Length)
 #define TAG_DATA(fp)	(((struct TAG_HDR *) fp)->aucBuffer)
-#define TAG_HDR_LEN 	sizeof(struct TAG_HDR)
+#define TAG_HDR_LEN	sizeof(struct TAG_HDR)
 
+/**
+ * In case the length field carries incorrect value breacking the TLV stride,
+ * the caller shall check the for-each exit result by checking the final value
+ * of _u2Offset against _u2TlvBufLen as in nicUniCmdEventQueryNicCapabilityV2().
+ */
 #define TAG_FOR_EACH(_pucTlvBuf, _u2TlvBufLen, _u2Offset) \
 for ((_u2Offset) = 0U;	\
-	((((_u2Offset) + 2U) <= (_u2TlvBufLen)) && \
-	(((_u2Offset) + TAG_LEN(_pucTlvBuf)) <= (_u2TlvBufLen))); \
+	((((_u2Offset) + TAG_HDR_LEN) <= (_u2TlvBufLen)) && \
+	 (TAG_LEN(_pucTlvBuf) >= TAG_HDR_LEN) && \
+	 (((_u2Offset) + TAG_LEN(_pucTlvBuf)) <= (_u2TlvBufLen))); \
 	(_u2Offset) += TAG_LEN(_pucTlvBuf), (_pucTlvBuf) += TAG_LEN(_pucTlvBuf))
 
 
