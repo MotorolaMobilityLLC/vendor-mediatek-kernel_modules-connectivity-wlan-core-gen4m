@@ -4034,14 +4034,9 @@ struct mtk_wifi_iface_combination mtk_ifaces_combinations[] = {
 		.iface_limits = sta_ap_p2p,
 	},
 	{
-		.max_ifaces = 3,
-		.num_iface_limits = ARRAY_SIZE(sta_ap_nan),
-		.iface_limits = sta_ap_nan,
-	},
-	{
-		.max_ifaces = 3,
-		.num_iface_limits = ARRAY_SIZE(sta_p2p_nan),
-		.iface_limits = sta_p2p_nan,
+		.max_ifaces = 2,
+		.num_iface_limits = ARRAY_SIZE(sta_nan),
+		.iface_limits = sta_nan,
 	},
 };
 #else
