@@ -831,9 +831,16 @@ struct GLUE_INFO {
 	uint32_t u4TxMsduRetFifoLen;
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 
+#if CFG_SUPPORT_RX_GRO
+	struct net_device dummy_dev;
+	struct napi_struct napi;
+	OS_SYSTIME tmGROFlushTimeout;
+	spinlock_t napi_spinlock;
+	uint32_t u4PendingFlushNum;
+	struct sk_buff_head rRxNapiSkbQ;
+#endif /* CFG_SUPPORT_RX_GRO */
 #if CFG_SUPPORT_RX_NAPI
 	struct napi_struct *prRxDirectNapi;
-	uint8_t ucNapiUseCnt;
 	struct kfifo rRxKfifoQ;
 	uint8_t *prRxKfifoBuf;
 	uint32_t u4RxKfifoBufLen;
@@ -1059,13 +1066,6 @@ struct NETDEV_PRIVATE_GLUE_INFO {
 	u_int8_t ucIsP2p;
 #endif
 	u_int8_t ucMddpSupport;
-#if CFG_SUPPORT_RX_GRO
-	struct napi_struct napi;
-	OS_SYSTIME tmGROFlushTimeout;
-	spinlock_t napi_spinlock;
-	uint32_t u4PendingFlushNum;
-	struct sk_buff_head rRxNapiSkbQ;
-#endif
 	struct net_device_stats stats;
 #if CFG_SUPPORT_NAN
 	unsigned char ucIsNan;
