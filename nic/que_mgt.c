@@ -8166,7 +8166,6 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 }
 #endif
 
-#if CFG_SUPPORT_LOWLATENCY_MODE || CFG_SUPPORT_OSHARE
 u_int8_t
 qmIsNoDropPacket(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 {
@@ -8176,6 +8175,10 @@ qmIsNoDropPacket(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	uint8_t ucBssIndex
 		= secGetBssIdxByWlanIdx(prAdapter, prSwRfb->ucWlanIdx);
 	u_int8_t fgCheckDrop = FALSE;
+	struct BSS_INFO *prBssInfo = NULL;
+
+	if (ucBssIndex <= MAX_BSSID_NUM)
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	if (prAdapter->fgEnLowLatencyMode)
@@ -8185,10 +8188,26 @@ qmIsNoDropPacket(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 #if CFG_SUPPORT_OSHARE
 	if (!fgCheckDrop &&
 		(prAdapter->fgEnOshareMode) &&
-		(ucBssIndex <= MAX_BSSID_NUM) &&
-		(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->eNetworkType
-			== NETWORK_TYPE_P2P))
+		prBssInfo &&
+		prBssInfo->eNetworkType == NETWORK_TYPE_P2P)
 		fgCheckDrop = TRUE;
+#endif
+
+#if CFG_MTK_MDDP_WH_SUPPORT
+	if (!fgCheckDrop && prAdapter->fgMddpActivated &&
+			prBssInfo &&
+			prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
+		struct WIFI_VAR *prWifiVar = NULL;
+		struct P2P_CONNECTION_SETTINGS *prP2PConnSettings = NULL;
+
+		prWifiVar = &prAdapter->rWifiVar;
+		if (prWifiVar && prBssInfo->u4PrivateData < BSS_P2P_NUM) {
+			prP2PConnSettings = prWifiVar->prP2PConnSettings[
+				prBssInfo->u4PrivateData];
+			fgCheckDrop = prP2PConnSettings &&
+				p2pFuncIsAPMode(prP2PConnSettings);
+		}
+	}
 #endif
 
 	if (fgCheckDrop && u2Etype == ETH_P_IP) {
@@ -8207,7 +8226,6 @@ qmIsNoDropPacket(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 
 	return FALSE;
 }
-#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 void qmMoveStaTxQueue(struct STA_RECORD *prSrcStaRec,
 		      struct STA_RECORD *prDstStaRec)
