@@ -124,4 +124,8 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 void p2pLinkStaRecFree(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
 
+u_int8_t p2pNeedAppendP2pIE(
+	struct ADAPTER *ad,
+	struct BSS_INFO *bss);
+
 #endif /* !_P2P_MLO_H */
