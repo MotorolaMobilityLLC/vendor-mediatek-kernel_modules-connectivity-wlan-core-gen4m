@@ -273,9 +273,14 @@
 /* Enable handling BA Request advance SSN before data in previous window */
 #define CFG_SUPPORT_RX_OOR_BAR	1
 
-/* Enable Android wake_lock operations */
-#ifndef CFG_ENABLE_WAKE_LOCK
+/* Mobile(must Android) need default 1 */
+#if defined(CONFIG_ANDROID)
 #define CFG_ENABLE_WAKE_LOCK	1
+#endif
+
+/* CE default 0, if need, define 1 in makefile */
+#ifndef CFG_ENABLE_WAKE_LOCK
+#define CFG_ENABLE_WAKE_LOCK	0
 #endif
 
 #define CFG_SUPPORT_OSHARE	1

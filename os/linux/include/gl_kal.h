@@ -620,8 +620,8 @@ kalCfg80211VendorEventAlloc(struct wiphy *wiphy, struct wireless_dev *wdev,
 /*----------------------------------------------------------------------------*/
 /* Macros of wake_lock operations for using in Driver Layer                   */
 /*----------------------------------------------------------------------------*/
-#if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
-/* CONFIG_ANDROID is defined in Android kernel source */
+#if CFG_ENABLE_WAKE_LOCK
+/* CFG_ENABLE_WAKE_LOCK is defined in makefile */
 #if (KERNEL_VERSION(4, 9, 0) <= LINUX_VERSION_CODE)
 #if (KERNEL_VERSION(4, 14, 149) <= LINUX_VERSION_CODE)
 #define KAL_WAKE_LOCK_INIT(_prAdapter, _prWakeLock, _pcName) \
