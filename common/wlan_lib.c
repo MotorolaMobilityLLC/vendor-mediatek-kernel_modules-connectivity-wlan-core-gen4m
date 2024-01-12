@@ -5352,7 +5352,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->aucMtkFeature[1] = 0xff;
 	prWifiVar->aucMtkFeature[2] = 0xff;
 	prWifiVar->aucMtkFeature[3] = 0xff;
-	prWifiVar->ucGbandProbe256QAM = (uint8_t) wlanCfgGetUint32(prAdapter, "Probe256QAM", 0);
+	prWifiVar->ucGbandProbe256QAM = (uint8_t) wlanCfgGetUint32(prAdapter, "Probe256QAM", FEATURE_ENABLED);
 #endif
 
 	prWifiVar->ucCmdRsvResource = (uint8_t) wlanCfgGetUint32(prAdapter, "TxCmdRsv", QM_CMD_RESERVED_THRESHOLD);
