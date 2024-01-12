@@ -2593,6 +2593,18 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 			prConnSettings->assocIeLen = 0;
 		}
 
+		if (prConnSettings && prConnSettings->u4RspIeLength > 0) {
+			kalMemFree(prConnSettings->aucRspIe, VIR_MEM_TYPE,
+				prConnSettings->u4RspIeLength);
+			prConnSettings->u4RspIeLength = 0;
+		}
+
+		if (prConnSettings && prConnSettings->u4ReqIeLength > 0) {
+			kalMemFree(prConnSettings->aucReqIe, VIR_MEM_TYPE,
+				prConnSettings->u4ReqIeLength);
+			prConnSettings->u4ReqIeLength = 0;
+		}
+
 		prFtIEs = aisGetFtIe(prAdapter, ucBssIndex);
 		if (prFtIEs) {
 			kalMemFree(prFtIEs->pucIEBuf,
@@ -2943,14 +2955,31 @@ kalUpdateReAssocReqInfo(struct GLUE_INFO *prGlueInfo,
 	wext_indicate_wext_event(prGlueInfo, IWEVASSOCREQIE, cp,
 				 u4FrameBodyLen, ucBssIndex);
 
-	if (u4FrameBodyLen > CFG_CFG80211_IE_BUF_LEN) {
+	if (u4FrameBodyLen > CONTROL_BUFFER_SIZE) {
 		DBGLOG(INIT, WARN, "Assoc Req IE truncated %d to %d",
-			u4FrameBodyLen, CFG_CFG80211_IE_BUF_LEN);
-		u4FrameBodyLen = CFG_CFG80211_IE_BUF_LEN;
+			u4FrameBodyLen, CONTROL_BUFFER_SIZE);
+		u4FrameBodyLen = CONTROL_BUFFER_SIZE;
 	}
 
-	prConnSettings->u4ReqIeLength = u4FrameBodyLen;
-	kalMemCopy(prConnSettings->aucReqIe, cp, u4FrameBodyLen);
+	if (prConnSettings->u4ReqIeLength > 0) {
+		kalMemFree(prConnSettings->aucReqIe, VIR_MEM_TYPE,
+			prConnSettings->u4ReqIeLength);
+		prConnSettings->u4ReqIeLength = 0;
+	}
+
+	if (u4FrameBodyLen > 0) {
+		prConnSettings->aucReqIe =
+			kalMemAlloc(u4FrameBodyLen, VIR_MEM_TYPE);
+
+		if (prConnSettings->aucReqIe) {
+			kalMemCopy(prConnSettings->aucReqIe, cp,
+				u4FrameBodyLen);
+			prConnSettings->u4ReqIeLength = u4FrameBodyLen;
+		} else {
+			DBGLOG(INIT, ERROR,
+				"allocate memory for prConnSettings->aucReqIe failed!\n");
+		}
+	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2987,10 +3016,10 @@ void kalUpdateReAssocRspInfo(struct GLUE_INFO
 		return;
 	}
 
-	if (u4IELength > CFG_CFG80211_IE_BUF_LEN) {
+	if (u4IELength > CONTROL_BUFFER_SIZE) {
 		DBGLOG(INIT, WARN, "Assoc Resp IE truncated %d to %d",
-			u4IELength, CFG_CFG80211_IE_BUF_LEN);
-		u4IELength = CFG_CFG80211_IE_BUF_LEN;
+			u4IELength, CONTROL_BUFFER_SIZE);
+		u4IELength = CONTROL_BUFFER_SIZE;
 	}
 
 	DBGLOG(INIT, LOUD, "[%d] Copy assoc resp info\n", ucBssIndex);
@@ -2999,13 +3028,29 @@ void kalUpdateReAssocRspInfo(struct GLUE_INFO
 		prConnSettings = aisGetConnSettings(
 			prGlueInfo->prAdapter,
 			ucBssIndex);
-		prConnSettings->u4RspIeLength = u4IELength;
-		kalMemCopy(prConnSettings->aucRspIe,
-			pucFrameBody + u4IEOffset,
-			u4IELength);
-	}
+
+		if (prConnSettings->u4RspIeLength > 0) {
+			kalMemFree(prConnSettings->aucRspIe,
+				VIR_MEM_TYPE,
+				prConnSettings->u4RspIeLength);
+			prConnSettings->u4RspIeLength = 0;
+		}
+
+		if (u4IELength > 0) {
+			prConnSettings->aucRspIe =
+				kalMemAlloc(u4IELength, VIR_MEM_TYPE);
+
+			if (prConnSettings->aucRspIe) {
+				kalMemCopy(prConnSettings->aucRspIe,
+					pucFrameBody + u4IEOffset, u4IELength);
+				prConnSettings->u4RspIeLength = u4IELength;
+			} else {
+				DBGLOG(INIT, ERROR,
+					"allocate memory for prConnSettings->aucRspIe failed!\n");
+			}
+		}
 #if CFG_ENABLE_WIFI_DIRECT
-	else if (!IS_BSS_APGO(bss)) {
+	} else if (!IS_BSS_APGO(bss)) {
 		struct P2P_ROLE_FSM_INFO *fsm =
 			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
 				prGlueInfo->prAdapter,

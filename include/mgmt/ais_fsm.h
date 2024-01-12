@@ -319,10 +319,10 @@ struct CONNECTION_SETTINGS {
 
 	/* for cfg80211 connected indication */
 	uint32_t u4RspIeLength;
-	uint8_t aucRspIe[CFG_CFG80211_IE_BUF_LEN];
+	uint8_t *aucRspIe;
 
 	uint32_t u4ReqIeLength;
-	uint8_t aucReqIe[CFG_CFG80211_IE_BUF_LEN];
+	uint8_t *aucReqIe;
 
 	u_int8_t fgWpsActive;
 	uint8_t aucWSCIE[GLUE_INFO_WSCIE_LENGTH];	/*for probe req */
