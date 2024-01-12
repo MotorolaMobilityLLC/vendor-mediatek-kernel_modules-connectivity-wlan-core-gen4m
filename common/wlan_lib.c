@@ -12959,8 +12959,27 @@ static uint32_t wlanHwRateOfdmNum(uint16_t ofdm_idx)
 	}
 }
 
+/**
+ * wlanQueryRateByTable() - get phy rate by parameters in the unit of 0.1M
+ * @mode: TX_RATE_MODE_CCK (0),
+ *	  TX_RATE_MODE_OFDM (1),
+ *	  TX_RATE_MODE_HTMIX (2), TX_RATE_MODE_HTGF (3),
+ *	  TX_RATE_MODE_VHT (4),
+ *	  TX_RATE_MODE_HE_SU (8), TX_RATE_MODE_HE_ER (9)
+ * @rate: MCS index, [0, ..]
+ * @bw: bandwidth, 0 for 11n, [0, 3] for 11ac, 11ax for 20, 40, 80, 160
+ * @gi: GI, [0, 1] for 11n, 11ac, 1 as short GI
+ *	    [0, 2] for 11ax, 0 as shortest, 2 as longest
+ * @nsts: NSTS, [1, 3]
+ * @pu4CurRate: returning current phy rate by given parameters
+ * @pu4MaxRate: returning max phy rate (max MCS)
+ *
+ * Return:
+ *	0: Success
+ *	-1: Failure
+ */
 int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
-			uint32_t frmode, uint32_t sgi, uint32_t nsts,
+			uint32_t frmode, uint32_t gi, uint32_t nsts,
 			uint32_t *pu4CurRate, uint32_t *pu4MaxRate)
 {
 	uint32_t u4CurRate = 0, u4MaxRate = 0;
@@ -12986,9 +13005,9 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		}
 		u4MaxRate = g_rOfdmDataRateMappingTable
 			.rate[MCS_IDX_MAX_RATE_OFDM];
-	} else if ((txmode == TX_RATE_MODE_HTMIX) ||
-		   (txmode == TX_RATE_MODE_HTGF)) { /* 11N */
-		if ((nsts == 0) || (nsts >= 4)) {
+	} else if (txmode == TX_RATE_MODE_HTMIX ||
+		   txmode == TX_RATE_MODE_HTGF) { /* 11N */
+		if (nsts == 0 || nsts >= 4) {
 			DBGLOG(SW4, ERROR, "nsts error: %u\n", nsts);
 			return -1;
 		}
@@ -13008,11 +13027,11 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 			return -1;
 		}
 		u4CurRate = g_rDataRateMappingTable.nsts[nsts - 1].bw[frmode]
-				.sgi[sgi].rate[rate];
+				.sgi[gi].rate[rate];
 		u4MaxRate = g_rDataRateMappingTable.nsts[nsts - 1].bw[frmode]
-				.sgi[sgi].rate[MCS_IDX_MAX_RATE_HT];
+				.sgi[gi].rate[MCS_IDX_MAX_RATE_HT];
 	} else if (txmode == TX_RATE_MODE_VHT) { /* 11AC */
-		if ((nsts == 0) || (nsts >= 4)) {
+		if (nsts == 0 || nsts >= 4) {
 			DBGLOG(SW4, ERROR, "nsts error: %u\n", nsts);
 			return -1;
 		}
@@ -13025,7 +13044,7 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		}
 
 		ucMaxSize = ARRAY_SIZE(g_rDataRateMappingTable.nsts[nsts - 1]
-				.bw[frmode].sgi[sgi].rate);
+				.bw[frmode].sgi[gi].rate);
 		if (rate >= ucMaxSize) {
 			DBGLOG(SW4, ERROR, "rate error for 11AC: %u\n",
 			       rate);
@@ -13033,12 +13052,12 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		}
 
 		u4CurRate = g_rDataRateMappingTable.nsts[nsts - 1]
-				.bw[frmode].sgi[sgi].rate[rate];
+				.bw[frmode].sgi[gi].rate[rate];
 		u4MaxRate = g_rDataRateMappingTable.nsts[nsts - 1].bw[frmode]
-				.sgi[sgi].rate[MCS_IDX_MAX_RATE_VHT];
-	} else if ((txmode == TX_RATE_MODE_HE_SU) ||
-		(txmode == TX_RATE_MODE_HE_ER) ||
-		(txmode == TX_RATE_MODE_HE_MU)) { /* AX */
+				.sgi[gi].rate[MCS_IDX_MAX_RATE_VHT];
+	} else if (txmode == TX_RATE_MODE_HE_SU ||
+		   txmode == TX_RATE_MODE_HE_ER ||
+		   txmode == TX_RATE_MODE_HE_MU) { /* AX */
 		uint8_t dcm = 0, ru106 = 0;
 
 		if (txmode == TX_RATE_MODE_HE_MU)
@@ -13061,7 +13080,7 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		rate = rate & BITS(0, 3);
 
 		ucMaxSize = ARRAY_SIZE(g_rAxDataRateMappingTable.nsts[nsts - 1]
-				.bw[frmode].gi[sgi].rate);
+				.bw[frmode].gi[gi].rate);
 		if (rate >= ucMaxSize) {
 			DBGLOG(SW4, ERROR, "rate error for 11AX: %u\n",
 			       rate);
@@ -13069,9 +13088,9 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		}
 
 		u4CurRate = g_rAxDataRateMappingTable.nsts[nsts - 1]
-				.bw[frmode].gi[sgi].rate[rate];
+				.bw[frmode].gi[gi].rate[rate];
 		u4MaxRate = g_rAxDataRateMappingTable.nsts[nsts - 1]
-				.bw[frmode].gi[sgi].rate[MCS_IDX_MAX_RATE_HE];
+				.bw[frmode].gi[gi].rate[MCS_IDX_MAX_RATE_HE];
 
 		if (dcm != 0 || ru106 != 0) {
 			u4CurRate = u4CurRate >> 1;
@@ -13080,7 +13099,7 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 	} else {
 		DBGLOG(SW4, ERROR,
 			"Unknown rate for [%d,%d,%d,%d,%d]\n",
-			txmode, nsts, frmode, sgi, rate);
+			txmode, nsts, frmode, gi, rate);
 		return -1;
 	}
 
@@ -13234,13 +13253,16 @@ errhandle:
 }
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
-int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucBssIdx,
+/**
+ * wlanGetRxRate - Get RX rate from information in RXV
+ */
+static int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo, uint32_t *prRxV,
 		OUT uint32_t *pu4CurRate, OUT uint32_t *pu4MaxRate,
 		OUT struct RxRateInfo *prRxRateInfo)
 {
 	struct ADAPTER *prAdapter;
-	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nss = 0;
-	int rv;
+	struct RxRateInfo rRxRateInfo = {0};
+	int32_t rv;
 	struct CHIP_DBG_OPS *prChipDbg;
 
 	if (pu4CurRate)
@@ -13251,34 +13273,20 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucBssIdx,
 		*prRxRateInfo = (const struct RxRateInfo){0};
 	prAdapter = prGlueInfo->prAdapter;
 
-	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIdx))
-		return -1;
-
 	prChipDbg = prAdapter->chip_info->prDebugOps;
 	if (prChipDbg && prChipDbg->get_rx_rate_info) {
-		rv = prChipDbg->get_rx_rate_info(
-				prAdapter,
-				ucBssIdx,
-				&rate,
-				&nss,
-				&rxmode,
-				&frmode,
-				&sgi);
+		rv = prChipDbg->get_rx_rate_info(prRxV, &rRxRateInfo);
 
 		if (rv < 0)
 			goto errhandle;
 	}
 
-	if (prRxRateInfo) {
-		prRxRateInfo->u4Mode = rxmode;
-		prRxRateInfo->u4Nss = nss;
-		prRxRateInfo->u4Bw = frmode;
-		prRxRateInfo->u4Gi = sgi;
-		prRxRateInfo->u4Rate = rate;
-	}
+	if (prRxRateInfo)
+		*prRxRateInfo = rRxRateInfo;
 
-	rv = wlanQueryRateByTable(rxmode, rate, frmode, sgi, nss,
-				 pu4CurRate, pu4MaxRate);
+	rv = wlanQueryRateByTable(rRxRateInfo.u4Mode, rRxRateInfo.u4Rate,
+				rRxRateInfo.u4Bw, rRxRateInfo.u4Gi,
+				rRxRateInfo.u4Nss, pu4CurRate, pu4MaxRate);
 	if (rv < 0)
 		goto errhandle;
 
@@ -13287,9 +13295,78 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucBssIdx,
 errhandle:
 	DBGLOG(SW4, TRACE,
 		"rxmode=[%u], rate=[%u], frmode=[%u], sgi=[%u], nss=[%u]\n",
-		rxmode, rate, frmode, sgi, nss
-	);
+		rRxRateInfo.u4Mode, rRxRateInfo.u4Rate, rRxRateInfo.u4Bw,
+		rRxRateInfo.u4Gi, rRxRateInfo.u4Nss);
 	return -1;
+}
+
+/**
+ * wlanGetRxRateByBssid() - Get the RX rate in last cached RXV data
+ *			    (unit: 0.1Mbps).
+ * @prGlueInfo: Pointer to GLUE info
+ * @ucBssIdx: BSS index to query by parsing RX rate from RXV saved in SatRec.
+ * @pu4CurRate: Returning current rate for given RX rate parameters if non-NULL
+ *              pointer is passed-in
+ * @pu4MaxRate: Returning max supported rate for given RX parameters with max
+ *              MCS index if non-NULL pointer is passed-in
+ * @prRxRateInfo: Pointer to structure returning RxRateInfo.
+ *		If caller want to get RxRateInfo parameters, call with a valid
+ *		pointer to returning structure.
+ *		  u4Mode: Returning RX mode
+ *		  u4Nss: Returning NSS [1..]
+ *		  u4Bw: Returning bandwidth
+ *		  u4Gi: Returning guard interval
+ *		  u4Rate: Returning MCS index
+ *		Check wlanQueryRateByTable() for returning values.
+ *
+ * This function gets RX rate from the last cached RX rate from RXV saved in
+ *     prAdapter->arStaRec[i].u4RxV[*].
+ *     The u4RxV were saved earlier on calling
+ *     asicConnac2xRxProcessRxvforMSP() in nicRxIndicatePackets() or on calling
+ *     nicRxProcessRxReport() on receiving RX_PKT_TYPE_RX_REPORT.
+ *
+ *     The two functions filling u4RxV are mutual exclusive.
+ *     In the chip supporting getting the rate from RX report,
+ *     CONNAC2X_RXV_FROM_RX_RPT(prAdapter) returns TRUE, the values will not be
+ *     filled in asicConnac2xRxProcessRxvforMSP().
+ *
+ * Return:0 on success, -1 on failure.
+ *	The caller shall pass valid pointers in the arguments of interested
+ *	results.
+ */
+int wlanGetRxRateByBssid(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucBssIdx,
+		OUT uint32_t *pu4CurRate, OUT uint32_t *pu4MaxRate,
+		OUT struct RxRateInfo *prRxRateInfo)
+{
+	struct ADAPTER *prAdapter;
+	struct STA_RECORD *prStaRec;
+	uint32_t *prRxV = NULL; /* pointer to stored RxV */
+	uint8_t ucWlanIdx;
+	uint8_t ucStaIdx;
+
+	prAdapter = prGlueInfo->prAdapter;
+
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIdx))
+		return -1;
+
+	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIdx);
+	if (prStaRec) {
+		ucWlanIdx = prStaRec->ucWlanIndex;
+	} else {
+		DBGLOG(SW4, ERROR, "prStaRecOfAP is null\n");
+		return -1;
+	}
+
+	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
+		WLAN_STATUS_SUCCESS) {
+		prRxV = prAdapter->arStaRec[ucStaIdx].au4RxV;
+	} else {
+		DBGLOG(SW4, ERROR, "wlanGetStaIdxByWlanIdx fail\n");
+		return -1;
+	}
+
+	return wlanGetRxRate(prGlueInfo, prRxV,
+			pu4CurRate, pu4MaxRate, prRxRateInfo);
 }
 
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
@@ -13427,7 +13504,8 @@ void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo)
 			prLinkQualityInfo->u8LastIdleSlotCount;
 
 	/* get current rx rate */
-	if (wlanGetRxRate(prGlueInfo, aisGetDefaultLinkBssIndex(prAdapter),
+	if (wlanGetRxRateByBssid(prGlueInfo,
+			aisGetDefaultLinkBssIndex(prAdapter),
 			&u4CurRxRate, &u4MaxRxRate, NULL) < 0)
 		prLinkQualityInfo->u4CurRxRate = 0;
 	else

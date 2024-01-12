@@ -984,7 +984,7 @@ void nicCmdEventQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 
 			/*Fill Rx Rate in unit of 100bps*/
 			if (IS_BSS_INDEX_AIS(prAdapter, i) &&
-			    wlanGetRxRate(prGlueInfo, i, &u4CurRxRate,
+			    wlanGetRxRateByBssid(prGlueInfo, i, &u4CurRxRate,
 				    &u4MaxRxRate, &rRxRateInfo) == 0) {
 				pu4LinkSpeed->rLq[i].u2RxLinkSpeed =
 					u4CurRxRate * 1000;

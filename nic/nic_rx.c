@@ -454,10 +454,10 @@ void nicRxFillRFB(IN struct ADAPTER *prAdapter,
  * @prSwRfb: RFB of received frame
  *
  * If parsed data will be saved in
- * prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxVector[*], then can be used
+ * prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxV[*], then can be used
  * for calling wlanGetRxRate().
  */
-static void nicRxProcessRxv(IN struct ADAPTER *prAdapter,
+void nicRxProcessRxv(IN struct ADAPTER *prAdapter,
 		IN struct SW_RFB *prSwRfb)
 {
 #if (CFG_SUPPORT_MSP == 1)
@@ -1669,29 +1669,9 @@ void nicRxGetNoiseLevelAndLastRate(IN struct ADAPTER *prAdapter,
 	DBGLOG(RX, TRACE, "Noise_level avg:%d latest:%d\n",
 		prStaRec->ucNoise_avg, noise_level);
 
-	/* Rx rate */
-	ucRxMode = ((prSwRfb->prRxStatusGroup3->u4RxVector[0] &
-				RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET);
-
-	/* Bit Number 2 RATE */
-	if (ucRxMode == RX_VT_LEGACY_CCK || ucRxMode == RX_VT_LEGACY_OFDM) {
-		/* Bit[2:0] for Legacy CCK, Bit[3:0] for Legacy OFDM */
-		ucRxRate =
-		(prSwRfb->prRxStatusGroup3->u4RxVector[0] & BITS(0, 3));
-		prStaRec->u4LastPhyRate = nicGetHwRateByPhyRate(ucRxRate) * 5;
-	} else {
-		ucMcs = (prSwRfb->prRxStatusGroup3->u4RxVector[0] &
-			RX_VT_RX_RATE_AC_MASK);
-		/* VHTA1 B0-B1 */
-		ucFrMode = ((prSwRfb->prRxStatusGroup3->u4RxVector[0] &
-			RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET);
-		ucShortGI = (prSwRfb->prRxStatusGroup3->u4RxVector[0] &
-			RX_VT_SHORT_GI) ? 1 : 0;
-
-		/* ucRate(500kbs) = u4PhyRate(100kbps) / 5,max ucRate = 0xFF */
-		prStaRec->u4LastPhyRate = nicGetPhyRateByMcsRate(ucMcs,
-				ucFrMode, ucShortGI);
-	}
+	wlanGetRxRateByBssid(prAdapter->prGlueInfo,
+				GLUE_GET_PKT_BSS_IDX(prRetSwRfb->pvPacket),
+				&prStaRec->u4LastPhyRate, NULL, NULL);
 }
 #endif /* fos_change end */
 
@@ -1712,7 +1692,7 @@ void nicRxIndicatePackets(IN struct ADAPTER *prAdapter,
 
 		/**
 		 * Collect RXV information,
-		 * prAdapter->arStaRec[i].u4RxVector[*] updated.
+		 * prAdapter->arStaRec[i].u4RxV[*] updated.
 		 * wlanGetRxRate() can get new rate values
 		 */
 		nicRxProcessRxv(prAdapter, prRetSwRfb);

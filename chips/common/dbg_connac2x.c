@@ -4153,52 +4153,29 @@ void connac2x_DumpCrRange(
 #endif /* _HIF_PCIE || _HIF_AXI */
 
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
-int connac2x_get_rx_rate_info(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIdx,
-		OUT uint32_t *pu4Rate, OUT uint32_t *pu4Nss,
-		OUT uint32_t *pu4RxMode, OUT uint32_t *pu4FrMode,
-		OUT uint32_t *pu4Sgi)
+int connac2x_get_rx_rate_info(IN const uint32_t *prRxV,
+		OUT struct RxRateInfo *prRxRateInfo)
 {
-	struct STA_RECORD *prStaRec;
 	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nsts = 0;
 	uint32_t stbc = 0, nss = 0, mu = 0;
-	uint32_t u4RxV0 = 0;
-	uint8_t ucWlanIdx, ucStaIdx;
 
-	if ((!pu4Rate) || (!pu4Nss) || (!pu4RxMode) || (!pu4FrMode) ||
-		(!pu4Sgi))
+	if (!prRxRateInfo || !prRxV)
 		return -1;
-
-	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIdx);
-	if (prStaRec) {
-		ucWlanIdx = prStaRec->ucWlanIndex;
-	} else {
-		DBGLOG(SW4, ERROR, "prStaRecOfAP is null\n");
-		return -1;
-	}
-
-	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
-		WLAN_STATUS_SUCCESS) {
-		u4RxV0 = prAdapter->arStaRec[ucStaIdx].au4RxV[0];
-	} else {
-		DBGLOG(SW4, ERROR, "wlanGetStaIdxByWlanIdx fail\n");
-		return -1;
-	}
 
 	/* P-RXV1 */
-	rate = (u4RxV0 & CONNAC2X_RX_VT_RX_RATE_MASK)
+	rate = (prRxV[0] & CONNAC2X_RX_VT_RX_RATE_MASK)
 				>> CONNAC2X_RX_VT_RX_RATE_OFFSET;
-	nsts = (u4RxV0 & CONNAC2X_RX_VT_NSTS_MASK)
+	nsts = (prRxV[0] & CONNAC2X_RX_VT_NSTS_MASK)
 				>> CONNAC2X_RX_VT_NSTS_OFFSET;
-	frmode = (u4RxV0 & CONNAC2X_RX_VT_FR_MODE_MASK_V2)
+	frmode = (prRxV[0] & CONNAC2X_RX_VT_FR_MODE_MASK_V2)
 					>> CONNAC2X_RX_VT_FR_MODE_OFFSET_V2;
-	sgi = (u4RxV0 & CONNAC2X_RX_VT_SHORT_GI_MASK_V2)
+	sgi = (prRxV[0] & CONNAC2X_RX_VT_SHORT_GI_MASK_V2)
 					>> CONNAC2X_RX_VT_SHORT_GI_OFFSET_V2;
-	rxmode = (u4RxV0 & CONNAC2X_RX_VT_RX_MODE_MASK_V2)
+	rxmode = (prRxV[0] & CONNAC2X_RX_VT_RX_MODE_MASK_V2)
 					>> CONNAC2X_RX_VT_RX_MODE_OFFSET_V2;
-	stbc = (u4RxV0 & CONNAC2X_RX_VT_STBC_MASK_V2)
+	stbc = (prRxV[0] & CONNAC2X_RX_VT_STBC_MASK_V2)
 				>> CONNAC2X_RX_VT_STBC_OFFSET_V2;
-	mu = u4RxV0 & CONNAC2X_RX_VT_MU;
+	mu = prRxV[0] & CONNAC2X_RX_VT_MU;
 
 	if (mu == 0)
 		nsts += 1;
@@ -4213,11 +4190,11 @@ int connac2x_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 		return -1;
 	}
 
-	*pu4Rate = rate;
-	*pu4Nss = nss;
-	*pu4RxMode = rxmode;
-	*pu4FrMode = frmode;
-	*pu4Sgi = sgi;
+	prRxRateInfo->u4Rate = rate;
+	prRxRateInfo->u4Nss = nss;
+	prRxRateInfo->u4Mode = rxmode;
+	prRxRateInfo->u4Bw = frmode;
+	prRxRateInfo->u4Gi = sgi;
 
 	DBGLOG(SW4, TRACE,
 		   "rxmode=[%u], rate=[%u], bw=[%u], sgi=[%u], nss=[%u]\n",

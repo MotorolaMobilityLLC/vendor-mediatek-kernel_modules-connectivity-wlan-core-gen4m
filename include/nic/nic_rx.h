@@ -1581,4 +1581,6 @@ void nicEventCSIData(IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent);
 #endif
 
+void nicRxProcessRxv(IN struct ADAPTER *prAdapter,
+		IN struct SW_RFB *prSwRfb);
 #endif /* _NIC_RX_H */
