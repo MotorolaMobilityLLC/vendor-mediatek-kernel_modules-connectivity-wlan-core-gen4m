@@ -2056,6 +2056,7 @@ void mddpSetMDFwOwn(void)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct mt66xx_chip_info *prChipInfo = NULL;
+	unsigned int u4MdLpctlAddr = 0;
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
@@ -2077,7 +2078,12 @@ void mddpSetMDFwOwn(void)
 			FALSE, PCIE_VOTE_USER_MDDP);
 #endif
 
-	kalDevRegWrite(NULL, MD_LPCTL_ADDR, MDDP_LPCR_MD_SET_FW_OWN);
+#ifdef MD_LPCTL_ADDR
+	u4MdLpctlAddr = MD_LPCTL_ADDR;
+#endif /* MD_LPCTL_ADDR */
+	if (prChipInfo->u4MdLpctlAddr)
+		u4MdLpctlAddr = prChipInfo->u4MdLpctlAddr;
+	kalDevRegWrite(NULL, u4MdLpctlAddr, MDDP_LPCR_MD_SET_FW_OWN);
 	DBGLOG(INIT, INFO, "Set MD Fw Own.\n");
 
 #if defined(_HIF_PCIE)
