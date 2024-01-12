@@ -2583,6 +2583,8 @@ void rlmParseMtkOui(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		prAdapter->rWifiVar.fgP2pGcCsa;
 
 	DBGLOG(RLM, LOUD, "GcCsa: %d\n", prStaRec->ucGcCsaSupported);
+	if (!(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV))
+		return;
 
 	ie = MTK_OUI_IE(pucIE)->aucInfoElem;
 	ie_len = IE_LEN(pucIE) - 7;
