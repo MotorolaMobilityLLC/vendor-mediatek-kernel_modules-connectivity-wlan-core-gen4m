@@ -14323,7 +14323,7 @@ wlanoidSetCSIControl(
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	} else if (u4SetBufferLen < sizeof(struct CMD_CSI_CONTROL_T)) {
 		DBGLOG(REQ, WARN,
-			"[CSI] Too short length %lu\n", u4SetBufferLen);
+			"[CSI] Too short length %u\n", u4SetBufferLen);
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
 
