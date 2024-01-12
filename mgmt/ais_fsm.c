@@ -811,10 +811,6 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 
 		/* We do roaming while the medium is connected */
 		prStaRec->fgIsReAssoc = TRUE;
-		if (prStaRec->ucStaState != STA_STATE_1) {
-			prStaRec->ucStaState = STA_STATE_1;
-			cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
-		}
 
 		/* TODO(Kevin): We may call a sub function to
 		 * acquire the Roaming Auth Type
@@ -1499,8 +1495,7 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 
 #define BSS_DESC_BAD_CASE \
 	(!prBssDesc || ((prBssDesc->fgIsConnected & BIT(ucBssIndex)) && \
-	prConnSettings->eConnectionPolicy != CONNECT_BY_BSSID && \
-	prConnSettings->eConnectionPolicy != CONNECT_BY_BSSID_HINT) || \
+	prConnSettings->eConnectionPolicy != CONNECT_BY_BSSID) || \
 	prBssDesc->eBSSType != BSS_TYPE_INFRASTRUCTURE)
 		/* 4 <3.a> Following cases will go back to NORMAL_TR.
 		 * Precondition: not user space triggered roaming
@@ -2724,6 +2719,16 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 					    AIS_REQUEST_ROAMING_CONNECT,
 					    ucBssIndex);
 		}
+		return;
+	} else if (ucReasonOfDisconnect ==
+			DISCONNECT_REASON_CODE_REASSOCIATION) {
+		DBGLOG(AIS, STATE,
+			"Reassociation start.\n");
+		prAisBssInfo->ucReasonOfDisconnect = ucReasonOfDisconnect;
+		aisBssBeaconTimeout_impl(prAdapter,
+			BEACON_TIMEOUT_REASON_NUM,
+			DISCONNECT_REASON_CODE_RADIO_LOST,
+			ucBssIndex);
 		return;
 	}
 	/* Support AP Selection */
@@ -5211,9 +5216,14 @@ void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
 	}
 	/* 4 <2> invoke abort handler */
 	if (fgDoAbortIndication) {
-		prAisBssInfo->u2DeauthReason =
-			REASON_CODE_BEACON_TIMEOUT*100 +
-			ucBcnTimeoutReason;
+		if (prAisBssInfo->ucReasonOfDisconnect ==
+			DISCONNECT_REASON_CODE_REASSOCIATION) {
+			/* For reassociation */
+			prAisBssInfo->u2DeauthReason = REASON_CODE_RESERVED;
+		} else
+			prAisBssInfo->u2DeauthReason =
+				REASON_CODE_BEACON_TIMEOUT * 100 +
+				ucBcnTimeoutReason;
 
 		DBGLOG(AIS, EVENT, "aisBssBeaconTimeout\n");
 		aisFsmStateAbort(prAdapter,

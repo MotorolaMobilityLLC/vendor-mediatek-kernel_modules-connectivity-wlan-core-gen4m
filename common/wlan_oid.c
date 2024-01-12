@@ -1319,13 +1319,11 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 					CONNECT_BY_BSSID_HINT;
 				COPY_MAC_ADDR(prConnSettings->aucBSSIDHint,
 					pParamConn->pucBssidHint);
-#if CFG_TC3_FEATURE
+
 				if (EQUAL_MAC_ADDR(
 					prCurrBssid->arMacAddress,
 					pParamConn->pucBssidHint))
 					fgEqualBssid = TRUE;
-#endif
-
 			} else {
 				prConnSettings->eConnectionPolicy =
 					CONNECT_BY_BSSID;
@@ -1350,10 +1348,12 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 		ucBssIndex) ==
 	    MEDIA_STATE_CONNECTED) {
 		if (fgEqualSsid) {
+			DBGLOG(INIT, INFO, "Same ssid\n");
 			prAisAbortMsg->ucReasonOfDisconnect =
 				DISCONNECT_REASON_CODE_ROAMING;
 			roam->eReason = ROAMING_REASON_UPPER_LAYER_TRIGGER;
 			if (fgEqualBssid) {
+				DBGLOG(INIT, INFO, "Same bssid\n");
 				kalSetMediaStateIndicated(prGlueInfo,
 					MEDIA_STATE_TO_BE_INDICATED,
 					ucBssIndex);
