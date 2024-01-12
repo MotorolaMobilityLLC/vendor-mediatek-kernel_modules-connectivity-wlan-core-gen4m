@@ -2967,6 +2967,20 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 			if (prP2pBssInfo->eIftype == IFTYPE_P2P_CLIENT) {
 				nicUpdateBss(prAdapter,
 					prP2pBssInfo->ucBssIndex);
+
+				/* Indicate op mode change to update BW/NSS */
+				rlmChangeOperationMode(
+					prAdapter, prP2pBssInfo->ucBssIndex,
+					cnmGetBssMaxBw(prAdapter,
+						prP2pBssInfo->ucBssIndex),
+					prP2pBssInfo->ucOpRxNss,
+					prP2pBssInfo->ucOpTxNss,
+					#if CFG_SUPPORT_SMART_GEAR
+					0x00,
+					#endif
+					rlmDummyChangeOpHandler);
+
+				/* Indicate channel switch to kernel */
 				prAdapter->prGlueInfo->
 					prP2PInfo[prP2pBssInfo->u4PrivateData]->
 					fgChannelSwitchReq = TRUE;
