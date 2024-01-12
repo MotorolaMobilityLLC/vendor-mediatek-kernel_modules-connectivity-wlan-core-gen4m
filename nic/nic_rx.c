@@ -212,6 +212,9 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_NAN_EXT_EVENT, nicNanEventDispatcher},
 #endif
 	{EVENT_ID_REPORT_U_EVENT, nicEventReportUEvent},
+#if (CFG_COALESCING_INTERRUPT == 1)
+	{EVENT_ID_PF_CF_COALESCING_INT_DONE, nicEventCoalescingIntDone},
+#endif
 };
 
 uint32_t arEventTableSize = ARRAY_SIZE(arEventTable);

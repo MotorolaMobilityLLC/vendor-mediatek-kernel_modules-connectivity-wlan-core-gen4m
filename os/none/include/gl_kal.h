@@ -140,6 +140,11 @@ extern int g_u4WlanInitFlag;
 
 #define KAL_TRACE __builtin_return_address(0)
 
+#if (CFG_COALESCING_INTERRUPT == 1)
+#define COALESCING_INT_MAX_TIME (1) /* ms */
+#define COALESCING_INT_MAX_PKT (50)
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

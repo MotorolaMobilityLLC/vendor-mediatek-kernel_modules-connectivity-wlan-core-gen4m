@@ -187,6 +187,10 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 #define TX_LATENCY_STATS_MAX_MAC_DELAY_L3 (20)
 #define TX_LATENCY_STATS_MAX_MAC_DELAY_L4 (50)
 
+#if (CFG_COALESCING_INTERRUPT == 1)
+#define COALESCING_INT_MAX_TIME (1) /* ms */
+#define COALESCING_INT_MAX_PKT (50)
+#endif
 
 #if CFG_SUPPORT_DATA_STALL
 #define REPORT_EVENT_INTERVAL		30
@@ -1740,6 +1744,11 @@ uint32_t kalGetEmiMetOffset(void);
 void kalSetEmiMetOffset(uint32_t newEmiMetOffset);
 void kalSetRpsMap(IN struct GLUE_INFO *glue, IN unsigned long value);
 extern int set_task_util_min_pct(pid_t pid, unsigned int min);
+#if (CFG_COALESCING_INTERRUPT == 1)
+int32_t kalCoalescingInt(IN struct ADAPTER *prAdapter,
+			IN uint32_t u4TarPerfLevel,
+			IN uint32_t u4CoalescingIntTh);
+#endif
 
 #if CFG_MTK_ANDROID_EMI
 void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable);

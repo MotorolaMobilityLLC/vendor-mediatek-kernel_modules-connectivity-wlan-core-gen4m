@@ -7956,6 +7956,24 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 			prAdapter, "ReuseRSNIE",
 			FEATURE_DISABLED);
 
+#if CFG_COALESCING_INTERRUPT
+	prWifiVar->u2CoalescingIntMaxPk = (uint16_t) wlanCfgGetUint32(
+			prAdapter, "CoalescingIntMaxPkt",
+			COALESCING_INT_MAX_PKT);
+	prWifiVar->u2CoalescingIntMaxTime = (uint16_t) wlanCfgGetUint32(
+			prAdapter, "CoalescingIntMaxTime",
+			COALESCING_INT_MAX_TIME);
+	prWifiVar->u2CoalescingIntuFilterMask = (uint16_t) wlanCfgGetUint32(
+			prAdapter, "CoalescingIntFilterMask",
+			CMD_PF_CF_COALESCING_INT_FILTER_MASK_DEFAULT);
+	prWifiVar->u4PerfMonTpCoalescingIntTh = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "PerfMonTpCoalescingIntTh",
+			6);
+	prWifiVar->fgCoalescingIntEn = (u_int8_t) wlanCfgGetUint32(
+			prAdapter, "CoalescingIntEn",
+			FEATURE_DISABLED);
+#endif
+
 	wlanCfgSetUint32(prAdapter, "MddpSupport", FEATURE_ENABLED);
 
 	prWifiVar->u4DiscoverTimeout = (uint32_t) wlanCfgGetUint32(

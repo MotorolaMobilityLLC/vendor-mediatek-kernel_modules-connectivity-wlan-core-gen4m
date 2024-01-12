@@ -3503,6 +3503,42 @@ enum _ENUM_NAN_SUB_EVENT {
 	NAN_EVENT_NUM
 };
 #endif
+
+#if (CFG_COALESCING_INTERRUPT == 1)
+/* parsing IPv4/IPv6 UDP/TCP header */
+#define CMD_PF_CF_COALESCING_INT_FILTER_MASK_IPV4_TCP BIT(0)
+#define CMD_PF_CF_COALESCING_INT_FILTER_MASK_IPV4_UDP BIT(1)
+#define CMD_PF_CF_COALESCING_INT_FILTER_MASK_IPV6_TCP BIT(2)
+#define CMD_PF_CF_COALESCING_INT_FILTER_MASK_IPV6_UDP BIT(3)
+#define CMD_PF_CF_COALESCING_INT_FILTER_MASK_DEFAULT \
+		(CMD_PF_CF_COALESCING_INT_FILTER_MASK_IPV4_TCP | \
+		CMD_PF_CF_COALESCING_INT_FILTER_MASK_IPV4_UDP)
+
+struct CMD_PF_CF_COALESCING_INT {
+	/* DWORD_0 - Common Part */
+	uint8_t	ucCmdVer;
+	uint8_t	ucAction;
+	uint16_t u2CmdLen;
+
+	uint8_t ucPktThEn;
+	uint8_t ucTmrThEn;
+	uint16_t u2MaxPkt;
+	uint16_t u2MaxTime;
+	uint16_t u2FilterMask;
+	uint8_t  aucReserved[64];
+};
+
+struct EVENT_PF_CF_COALESCING_INT_DONE {
+	/* DWORD_0 - Common Part */
+	uint8_t	ucEvtVer;
+	uint8_t	ucAction;
+	uint16_t u2EvtLen;
+
+	uint8_t  fgEnable;
+	uint8_t  aucPadding1[3];
+	uint8_t  aucReserved[64];
+};
+#endif
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -3887,6 +3923,10 @@ void nicEventReportUEvent(IN struct ADAPTER *prAdapter,
 #if (CFG_WOW_SUPPORT == 1)
 void nicEventWowWakeUpReason(IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent);
+#endif
+#if (CFG_COALESCING_INTERRUPT == 1)
+void nicEventCoalescingIntDone(IN struct ADAPTER *prAdapter,
+		IN struct WIFI_EVENT *prEvent);
 #endif
 
 void tputEventFactorHandler(IN struct ADAPTER *prAdapter,

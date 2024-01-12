@@ -5481,3 +5481,33 @@ void nicDumpMsduInfo(IN struct MSDU_INFO *prMsduInfo)
 	}
 }
 #endif /* CFG_SUPPORT_DROP_INVALID_MSDUINFO */
+
+#if (CFG_COALESCING_INTERRUPT == 1)
+uint32_t nicSetCoalescingInt(IN struct ADAPTER *prAdapter,
+			u_int8_t fgPktThEn, u_int8_t fgTmrThEn)
+{
+	struct CMD_PF_CF_COALESCING_INT rCmdSetCoalescingInt;
+	struct CMD_PF_CF_COALESCING_INT *prCmdSetCoalescingInt;
+
+	ASSERT(prAdapter);
+	prCmdSetCoalescingInt = &rCmdSetCoalescingInt;
+	prCmdSetCoalescingInt->ucPktThEn = fgPktThEn;
+	prCmdSetCoalescingInt->ucTmrThEn = fgTmrThEn;
+	prCmdSetCoalescingInt->u2MaxPkt =
+		prAdapter->rWifiVar.u2CoalescingIntMaxPk;
+	prCmdSetCoalescingInt->u2MaxTime =
+		prAdapter->rWifiVar.u2CoalescingIntMaxTime;
+	prCmdSetCoalescingInt->u2FilterMask =
+		prAdapter->rWifiVar.u2CoalescingIntuFilterMask;
+
+	return wlanSendSetQueryCmd(prAdapter,
+	    CMD_ID_PF_CF_COALESCING_INT,
+	    TRUE,
+	    FALSE,
+	    FALSE,
+	    NULL,
+	    NULL,
+	    sizeof(struct CMD_PF_CF_COALESCING_INT),
+	    (uint8_t *)prCmdSetCoalescingInt, NULL, 0);
+}
+#endif
