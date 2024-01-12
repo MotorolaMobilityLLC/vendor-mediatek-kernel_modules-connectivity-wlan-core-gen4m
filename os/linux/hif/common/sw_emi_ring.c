@@ -100,6 +100,8 @@ void halSwEmiInit(struct GLUE_INFO *prGlueInfo)
 	prEmi->u4RingSize = SW_EMI_RING_SIZE;
 	spin_lock_init(&prSwEmiRingInfo->rRingLock);
 	prSwEmiRingInfo->fgIsEnable = TRUE;
+
+	DBGLOG(HAL, INFO, "base: 0x%llx\n", prMem->pa);
 }
 
 u_int8_t halSwEmiRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
@@ -128,6 +130,15 @@ u_int8_t halSwEmiRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
 	    !prGlueInfo->prAdapter->fgIsFwDownloaded) {
 		fgRet = FALSE;
 		goto exit;
+	}
+
+	if ((prEmi->u4DrvIdx >= SW_EMI_RING_SIZE) ||
+	    (prEmi->u4FwIdx >= SW_EMI_RING_SIZE) ||
+	    (prEmi->u4RingSize > SW_EMI_RING_SIZE) ||
+	    (prEmi->u4RingSize == 0)) {
+		fgDbg = TRUE;
+		fgRet = FALSE;
+		goto debug;
 	}
 
 #if SW_EMI_RING_DEBUG
@@ -174,6 +185,7 @@ unlock:
 	       "read [0x%08x]=[0x%08x] time[%lu us]\n",
 	       u4Addr, *pu4Val, KAL_GET_TIME_INTERVAL());
 #endif
+debug:
 	if (fgDbg) {
 		DBGLOG(HAL, ERROR,
 		       "Read[0x%08x] timeout DrvIdx[%u] & FwIdx[%u] ",
