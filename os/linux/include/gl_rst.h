@@ -203,11 +203,16 @@ extern MTK_WCN_BOOL mtk_wcn_set_connsys_power_off_flag(MTK_WCN_BOOL value);
 extern MTK_WCN_BOOL mtk_wcn_wmt_assert_timeout(ENUM_WMTDRV_TYPE_T type, UINT32 reason, int timeout);
 extern MTK_WCN_BOOL mtk_wcn_wmt_do_reset(ENUM_WMTDRV_TYPE_T type);
 #endif
+
+/*----------------------------------------------------------------------------*/
+/* WMT Core Dump Support                                                                */
+/*----------------------------------------------------------------------------*/
+extern BOOLEAN mtk_wcn_stp_coredump_start_get(VOID);
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
 */
-
 VOID glResetInit(VOID);
 
 VOID glResetUninit(VOID);
@@ -215,6 +220,8 @@ VOID glResetUninit(VOID);
 VOID glSendResetRequest(VOID);
 
 BOOLEAN kalIsResetting(VOID);
+
+BOOLEAN glIsWmtCodeDump(VOID);
 
 BOOLEAN glResetTrigger(P_ADAPTER_T prAdapter, UINT_32 u4RstFlag, const PUINT_8 pucFile, UINT_32 u4Line);
 
