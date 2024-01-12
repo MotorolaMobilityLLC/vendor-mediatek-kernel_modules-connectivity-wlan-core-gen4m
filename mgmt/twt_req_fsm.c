@@ -724,7 +724,7 @@ void twtReqFsmRunEventResume(
 		ucTWTFlowId);
 
 	DBGLOG(TWT_REQUESTER, WARN,
-		"TWT Info Frame 0x%x 0x%x\n",
+		"TWT Info Frame 0x%llx 0x%llx\n",
 			rNextTWTInfo.u8NextTWT,
 			prTWTReqFsmResumeMsg->u8NextTWT);
 
