@@ -125,9 +125,14 @@ s_int32 mt_op_set_tr_mac(
 s_int32 mt_op_set_tx_stream(
 	struct test_wlan_info *winfos,
 	u_int32 stream_nums, u_char band_idx);
+s_int32 mt_op_set_tx_path(
+	struct test_wlan_info *winfos,
+	u_char band_idx,
+	struct test_configuration *configs);
 s_int32 mt_op_set_rx_path(
 	struct test_wlan_info *winfos,
-	u_int32 rx_path_sel, u_char band_idx);
+	u_char band_idx,
+	struct test_configuration *configs);
 s_int32 mt_op_set_rx_filter(
 	struct test_wlan_info *winfos,
 	struct rx_filter_ctrl rx_filter);
@@ -137,7 +142,7 @@ s_int32 mt_op_set_clean_persta_txq(
 s_int32 mt_op_set_cfg_on_off(
 	struct test_wlan_info *winfos,
 	u_int8 type, u_int8 enable, u_char band_idx);
-s_int32 mt_op_log_of_off(
+s_int32 mt_op_log_on_off(
 	struct test_wlan_info *winfos,
 	u_char band_idx,
 	u_int32 log_type,
@@ -421,7 +426,7 @@ s_int32 mt_op_set_ru_aid(
 s_int32 mt_op_set_mutb_spe(
 	struct test_wlan_info *winfos,
 	u_char band_idx,
-	u_char phy_mode,
+	u_char tx_mode,
 	u_int8 spe_idx);
 s_int32 mt_op_get_rx_stat_band(
 	struct test_wlan_info *winfos,

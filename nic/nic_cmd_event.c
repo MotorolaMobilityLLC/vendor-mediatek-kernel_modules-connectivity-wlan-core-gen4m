@@ -2918,10 +2918,17 @@ uint32_t nicCmdEventQueryNicCsumOffload(IN struct ADAPTER *prAdapter,
 uint32_t nicCfgChipCapHwVersion(IN struct ADAPTER *prAdapter,
 				IN uint8_t *pucEventBuf)
 {
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct CAP_HW_VERSION *prHwVer =
 		(struct CAP_HW_VERSION *)pucEventBuf;
 
+	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
+	ASSERT(prChipInfo);
+
 	prAdapter->rVerInfo.u2FwProductID = prHwVer->u2ProductID;
+	prChipInfo->u4ChipIpConfig = prHwVer->u4ConfigId;
+	prChipInfo->u4ChipIpVersion = prHwVer->u4TopIpID;
 
 	return WLAN_STATUS_SUCCESS;
 }

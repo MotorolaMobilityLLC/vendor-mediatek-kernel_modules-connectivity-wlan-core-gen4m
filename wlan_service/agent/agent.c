@@ -4,6 +4,33 @@
  */
 #include "agent.h"
 
+u_char *agnt_rstrtok;
+u_char *agent_trtok(u_char *s, const u_char *ct)
+{
+	u_char *sbegin, *send;
+
+	sbegin  = s ? s : agnt_rstrtok;
+
+	if (!sbegin)
+		return NULL;
+
+	sbegin += strspn(sbegin, ct);
+
+	if (*sbegin == '\0') {
+		agnt_rstrtok = NULL;
+		return NULL;
+	}
+
+	send = strpbrk(sbegin, ct);
+
+	if (send && *send != '\0')
+		*send++ = '\0';
+
+	agnt_rstrtok = send;
+	return sbegin;
+}
+
+
 /*****************************************************************************
  *	HQA DLL handler
  *****************************************************************************/
@@ -328,18 +355,45 @@ static s_int32 hqa_close_adapter(
 static s_int32 hqa_set_tx_path(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret = SERV_STATUS_SUCCESS, value = 0;
 	u_char *data = hqa_frame->data;
 	u_char band_idx = SERV_GET_PARAM(serv_test, ctrl_band_idx);
 	u_int16 tx_ant = 0;
 
-	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
+	if (hqa_frame->length > 2) {
+		/* new format with band index,
+		 * and data length extedned to 8 bytes
+		 */
+		/* tx path in bitwise */
+		get_param_and_shift_buf(TRUE, sizeof(value),
+				&data, (u_char *)&value);
+		tx_ant = value;
+		/* band index */
+		get_param_and_shift_buf(TRUE, sizeof(value),
+				&data, (u_char *)&value);
+		band_idx = value;
 
-	get_param_and_shift_buf(TRUE, sizeof(tx_ant),
+		if (band_idx && tx_ant > 0x3)
+			tx_ant >>= 2;
+
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+			("%s: tx_path:%d, band:%d\n", __func__,
+			tx_ant, band_idx));
+	} else {
+		/* legacy command format,
+		 * data length is 2 bytes without band index
+		 */
+		get_param_and_shift_buf(TRUE, sizeof(tx_ant),
 				&data, (u_char *)&tx_ant);
+
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+			("%s: tx_path:%d\n", __func__, tx_ant));
+	}
 
 	/* Set parameters */
 	CONFIG_SET_PARAM(serv_test, tx_ant, tx_ant, band_idx);
+
+	ret = mt_serv_set_tx_path(serv_test);
 
 	/* Update hqa_frame with response: status (2 bytes) */
 	update_hqa_frame(hqa_frame, 2, ret);
@@ -350,18 +404,45 @@ static s_int32 hqa_set_tx_path(
 static s_int32 hqa_set_rx_path(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret = SERV_STATUS_SUCCESS, value = 0;
 	u_char *data = hqa_frame->data;
 	u_char band_idx = SERV_GET_PARAM(serv_test, ctrl_band_idx);
 	u_int16 rx_ant = 0;
 
-	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
+	if (hqa_frame->length > 2) {
+		/* new format with band index,
+		 * and data length extedned to 8 bytes
+		 */
+		/* rx path in bitwise */
+		get_param_and_shift_buf(TRUE, sizeof(value),
+				&data, (u_char *)&value);
+		rx_ant = value;
+		/* band index */
+		get_param_and_shift_buf(TRUE, sizeof(value),
+				&data, (u_char *)&value);
+		band_idx = value;
 
-	get_param_and_shift_buf(TRUE, sizeof(rx_ant),
+		if (band_idx && rx_ant > 0x3)
+			rx_ant >>= 2;
+
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+			("%s: rx_path:%d, band:%d\n", __func__,
+			rx_ant, band_idx));
+	} else {
+		/* legacy command format,
+		 * data length is 2 bytes without band index
+		 */
+		get_param_and_shift_buf(TRUE, sizeof(rx_ant),
 				&data, (u_char *)&rx_ant);
+
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+			("%s: rx_path:%d\n", __func__, rx_ant));
+	}
 
 	/* Set parameters */
 	CONFIG_SET_PARAM(serv_test, rx_ant, rx_ant, band_idx);
+
+	ret = mt_serv_set_rx_path(serv_test);
 
 	/* Update hqa_frame with response: status (2 bytes) */
 	update_hqa_frame(hqa_frame, 2, ret);
@@ -448,13 +529,13 @@ static s_int32 hqa_set_preamble(
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_char *data = hqa_frame->data;
 	u_char band_idx = SERV_GET_PARAM(serv_test, ctrl_band_idx);
-	u_int32 phy_mode = 0;
+	u_int32 tx_mode = 0;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
 
 	/* Request format type: Mode (4 bytes) */
-	get_param_and_shift_buf(TRUE, sizeof(phy_mode),
-				&data, (u_char *)&phy_mode);
+	get_param_and_shift_buf(TRUE, sizeof(tx_mode),
+				&data, (u_char *)&tx_mode);
 
 	/* Set parameters */
 	/*
@@ -464,12 +545,12 @@ static s_int32 hqa_set_preamble(
 	 * 011: HT Green field mode
 	 * 100: VHT mode
 	 */
-	CONFIG_SET_PARAM(serv_test, phy_mode, (u_char)phy_mode, band_idx);
+	CONFIG_SET_PARAM(serv_test, tx_mode, (u_char)tx_mode, band_idx);
 
 	ret = mt_serv_set_preamble(serv_test);
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
-		("%s: phy_mode=%u\n", __func__, phy_mode));
+		("%s: phy_mode=%u\n", __func__, tx_mode));
 
 	/* Update hqa_frame with response: status (2 bytes) */
 	update_hqa_frame(hqa_frame, 2, ret);
@@ -819,6 +900,8 @@ static s_int32 hqa_mac_bbp_reg_read(
 
 	get_param_and_shift_buf(TRUE, sizeof(u_int32),
 				&data, (u_char *)&test_regs->cr_addr);
+
+	test_regs->cr_num = 1;
 
 	/* Allocate cr_val memory */
 	ret = sys_ad_alloc_mem((u_char **)&test_regs->cr_val, sizeof(u_int32));
@@ -1259,8 +1342,8 @@ static s_int32 hqa_write_bulk_eeprom(
 
 		return ret;
 	}
-	memcpy_eeprom((u_char *)test_eprms->value + test_eprms->offset,
-			data + 4, test_eprms->length);
+	memcpy_eeprom((u_char *)test_eprms->value + (test_eprms->offset & ~0x1),
+			data, test_eprms->length);
 
 	ret = mt_serv_reg_eprm_operation(serv_test,
 					SERV_TEST_EEPROM_WRITE_BULK);
@@ -1523,8 +1606,8 @@ static s_int32 hqa_dbdc_continuous_tx(
 				&data, (u_char *) &param.tx_tone_en);
 	get_param_and_shift_buf(TRUE, sizeof(param.ant_mask),
 				&data, (u_char *) &param.ant_mask);
-	get_param_and_shift_buf(TRUE, sizeof(param.phy_mode),
-				&data, (u_char *) &param.phy_mode);
+	get_param_and_shift_buf(TRUE, sizeof(param.tx_mode),
+				&data, (u_char *) &param.tx_mode);
 	get_param_and_shift_buf(TRUE, sizeof(param.bw),
 				&data, (u_char *) &param.bw);
 	get_param_and_shift_buf(TRUE, sizeof(param.pri_ch),
@@ -1542,8 +1625,8 @@ static s_int32 hqa_dbdc_continuous_tx(
 			(u_int32)param.tx_tone_en, param.band_idx);
 	CONFIG_SET_PARAM(serv_test, ant_mask,
 			(u_int32)param.ant_mask, param.band_idx);
-	CONFIG_SET_PARAM(serv_test, phy_mode,
-			(u_char)param.phy_mode, param.band_idx);
+	CONFIG_SET_PARAM(serv_test, tx_mode,
+			(u_char)param.tx_mode, param.band_idx);
 	CONFIG_SET_PARAM(serv_test, bw,
 			(u_char)param.bw, param.band_idx);
 	CONFIG_SET_PARAM(serv_test, ctrl_ch,
@@ -1562,7 +1645,7 @@ static s_int32 hqa_dbdc_continuous_tx(
 		__func__, param.band_idx, param.tx_tone_en, param.ant_mask));
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
 		("%s: param phy_mode=%u, bw=%u, pri_ch=%u\n",
-		__func__, param.phy_mode, param.bw, param.pri_ch));
+		__func__, param.tx_mode, param.bw, param.pri_ch));
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
 		("%s: param rate=%u, central_ch=%u, tx_fd_mode=%u\n",
 		__func__, param.rate, param.central_ch, param.tx_fd_mode));
@@ -1618,12 +1701,14 @@ static s_int32 hqa_get_tx_info(
 	tx_cnt0 = CONFIG_GET_PARAM(serv_test, tx_stat.tx_done_cnt,
 				TEST_DBDC_BAND0);
 	tx_cnt0 = SERV_OS_HTONL(tx_cnt0);
+/* #ifdef DBDC_MODE  */
+#if 1
 	if (IS_TEST_DBDC(serv_test->test_winfo)) {
 		tx_cnt1 = CONFIG_GET_PARAM(serv_test, tx_stat.tx_done_cnt,
 					TEST_DBDC_BAND1);
 		tx_cnt1 = SERV_OS_HTONL(tx_cnt1);
 	}
-
+#endif
 	/* Update hqa_frame with response: status (2 bytes) */
 	sys_ad_move_mem((hqa_frame->data + 2),
 			&tx_cnt0, sizeof(tx_cnt0));
@@ -2386,7 +2471,7 @@ static s_int32 hqa_mps_set_seq_data(
 	mps_setting = mps_cb->mps_setting;
 
 	for (idx = 0; idx < len; idx++) {
-		mps_setting[idx+1].phy_mode = (param[idx] & 0x0F000000) >> 24;
+		mps_setting[idx+1].tx_mode = (param[idx] & 0x0F000000) >> 24;
 		mps_setting[idx+1].tx_ant = (param[idx] & 0x00FFFF00) >> 8;
 		mps_setting[idx+1].mcs = (param[idx] & 0x000000FF);
 	}
@@ -3452,8 +3537,8 @@ static s_int32 hqa_get_dump_rdd(
 		resp_len += sizeof(value);
 
 		for (i = 0; i < total_cnt; i++, content++) {
-			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
-				("%s: content[%d]: 0x%x\n",
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+				("%s: content[%d]: 0x%08x\n",
 				__func__, i, *content));
 
 			value = SERV_OS_HTONL(*content);
@@ -3588,12 +3673,16 @@ static s_int32 hqa_set_ru_info(
 				   &data,
 				   (u_char *)&seg_sta_cnt[1]);
 	len -= sizeof(u_int32)*3;		/* array length */
+
+	if (seg_sta_cnt[0]+seg_sta_cnt[1] == 0)
+		return SERV_STATUS_AGENT_INVALID_LEN;
+
 	len /= (seg_sta_cnt[0]+seg_sta_cnt[1]);	/* per ru length */
 	param_cnt = len/sizeof(u_int32);	/* param count */
-	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 		 ("%s: Band:%d [ru_segment 0]:%d, [ru_segment 1]:%d\n",
 		 __func__, band_idx, seg_sta_cnt[0], seg_sta_cnt[1]));
-	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 		 ("\t\tparameters count:%d\n", param_cnt));
 
 	mpdu_length = CONFIG_GET_PARAM(serv_test, tx_len, band_idx);
@@ -3628,12 +3717,13 @@ static s_int32 hqa_set_ru_info(
 		param_loop--;
 		hqa_translate_ru_allocation(value,
 				    &ru_info[sta_seq].allocation);
-		/* sta index */
+		/* aid */
 		get_param_and_shift_buf(TRUE,
 					   sizeof(u_int32),
 					   &data,
 					   (u_char *)&value);
 		param_loop--;
+		ru_info[sta_seq].aid = value;
 		get_param_and_shift_buf(TRUE,
 					   sizeof(u_int32),
 					   &data,
@@ -3680,7 +3770,7 @@ static s_int32 hqa_set_ru_info(
 						   &data,
 						   (u_char *)&value);
 			param_loop--;
-			ru_info->alpha = value;
+			ru_info[sta_seq].alpha = value;
 		}
 
 		if (param_loop) {
@@ -3689,7 +3779,7 @@ static s_int32 hqa_set_ru_info(
 						   &data,
 						   (u_char *)&value);
 			param_loop--;
-			ru_info->ru_mu_nss = value;
+			ru_info[sta_seq].ru_mu_nss = value;
 		}
 
 		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
@@ -3849,7 +3939,7 @@ static s_int32 hqa_set_txcontent_ext(
 	struct hqa_tx_content param;
 	struct serv_hdr_802_11 *phdr = NULL;
 	u_char *data = hqa_frame->data;
-	u_char *payload;
+	u_char *payload, sta_seq = 0;
 	boolean enable = FALSE;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
@@ -3885,12 +3975,14 @@ static s_int32 hqa_set_txcontent_ext(
 
 	/* Set parameters */
 	SERV_SET_PARAM(serv_test, ctrl_band_idx, (u_char)param.band_idx);
-	CONFIG_SET_PADDR(serv_test, addr1, param.addr1,
-			SERV_MAC_ADDR_LEN, param.band_idx);
-	CONFIG_SET_PADDR(serv_test, addr2, param.addr2,
-			SERV_MAC_ADDR_LEN, param.band_idx);
-	CONFIG_SET_PADDR(serv_test, addr3, param.addr3,
-			SERV_MAC_ADDR_LEN, param.band_idx);
+	for (sta_seq = 0; sta_seq < MAX_MULTI_TX_STA ; sta_seq++) {
+		CONFIG_SET_PADDR(serv_test, addr1[sta_seq], param.addr1,
+				SERV_MAC_ADDR_LEN, param.band_idx);
+		CONFIG_SET_PADDR(serv_test, addr2[sta_seq], param.addr2,
+				SERV_MAC_ADDR_LEN, param.band_idx);
+		CONFIG_SET_PADDR(serv_test, addr3[sta_seq], param.addr3,
+				SERV_MAC_ADDR_LEN, param.band_idx);
+	}
 	CONFIG_SET_PARAM(serv_test, dur,
 			(u_short)param.dur, param.band_idx);
 	CONFIG_SET_PARAM(serv_test, seq,
@@ -3982,8 +4074,8 @@ static s_int32 hqa_start_tx_ext(
 				&data, (u_char *)&param.band_idx);
 	get_param_and_shift_buf(TRUE, sizeof(param.pkt_cnt),
 				&data, (u_char *)&param.pkt_cnt);
-	get_param_and_shift_buf(TRUE, sizeof(param.phymode),
-				&data, (u_char *)&param.phymode);
+	get_param_and_shift_buf(TRUE, sizeof(param.tx_mode),
+				&data, (u_char *)&param.tx_mode);
 	get_param_and_shift_buf(TRUE, sizeof(param.rate),
 				&data, (u_char *)&param.rate);
 	get_param_and_shift_buf(TRUE, sizeof(param.pwr),
@@ -4014,14 +4106,20 @@ static s_int32 hqa_start_tx_ext(
 	SERV_SET_PARAM(serv_test, ctrl_band_idx, (u_char)param.band_idx);
 	CONFIG_SET_PARAM(serv_test, tx_stat.tx_cnt,
 			(u_int32)param.pkt_cnt, param.band_idx);
-	CONFIG_SET_PARAM(serv_test, phy_mode,
-			(u_char)param.phymode, param.band_idx);
+	CONFIG_SET_PARAM(serv_test, tx_mode,
+			(u_char)param.tx_mode, param.band_idx);
 	CONFIG_SET_PARAM(serv_test, mcs,
 			(u_char)param.rate, param.band_idx);
 	CONFIG_SET_PARAM(serv_test, stbc,
 			(u_char)param.stbc, param.band_idx);
 	CONFIG_SET_PARAM(serv_test, ldpc,
 			(u_char)param.ldpc, param.band_idx);
+#if 0	/* remove tx_path setting while start Tx,
+	 * it should be done prior to switch channel
+	 */
+	CONFIG_SET_PARAM(serv_test, tx_ant,
+			(u_char)param.tx_path, param.band_idx);
+#endif
 	CONFIG_SET_PARAM(serv_test, nss,
 			(u_char)param.nss, param.band_idx);
 	CONFIG_SET_PARAM(serv_test, sgi,
@@ -4040,7 +4138,7 @@ static s_int32 hqa_start_tx_ext(
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
 		("%s: band_idx=%u, pkt_cnt=0x%4x, phy=%u\n",
-		__func__, param.band_idx, param.pkt_cnt, param.phymode));
+		__func__, param.band_idx, param.pkt_cnt, param.tx_mode));
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
 		("%s: pwr=%u, mcs=%u, stbc=%u, ldpc=%u\n",
 		__func__, param.pwr, param.rate, param.stbc, param.ldpc));
@@ -4048,8 +4146,8 @@ static s_int32 hqa_start_tx_ext(
 		("%s: ibf=%u, ebf=%u, wlan_id=%u, aifs=%u\n",
 		__func__, param.ibf, param.ebf, param.wlan_id, param.aifs));
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
-		("%s: gi=%u, tx_path=0x%x, nss=%u\n",
-		__func__, param.gi, param.tx_path, param.nss));
+		("%s: gi=%u, nss=%u\n",
+		__func__, param.gi, param.nss));
 
 	/* Update hqa_frame with response: status (2 bytes) */
 	sys_ad_move_mem(hqa_frame->data + 2, &param.ext_id,
@@ -4105,16 +4203,20 @@ static s_int32 hqa_start_rx_ext(
 	SERV_SET_PARAM(serv_test, ctrl_band_idx, (u_char)band_idx);
 	CONFIG_SET_PADDR(serv_test, own_mac, own_mac,
 			SERV_MAC_ADDR_LEN, band_idx);
+#if 0	/* remove rx_path setting while start Rx,
+	 * it should be done prior to switch channel
+	 */
 	CONFIG_SET_PARAM(serv_test, rx_ant, (u_int16)rx_path, band_idx);
-	CONFIG_SET_PARAM(serv_test, phy_mode, tx_mode, band_idx);
+#endif
+	CONFIG_SET_PARAM(serv_test, tx_mode, tx_mode, band_idx);
 	CONFIG_SET_PARAM(serv_test, sgi, ltf_gi, band_idx);
 	CONFIG_SET_PARAM(serv_test, user_idx, (u_int8)user_idx, band_idx);
 
 	ret = mt_serv_start_rx(serv_test);
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
-		("%s: param num=%u, band_idx=%u, rx_path=0x%x\n",
-		__func__, param_num, band_idx, rx_path));
+		("%s: param num=%u, band_idx=%u\n",
+		__func__, param_num, band_idx));
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
 		("%s: mac=%02x:%02x:%02x:%02x:%02x:%02x\n",
 		__func__, SERV_PRINT_MAC(own_mac)));
@@ -4530,6 +4632,7 @@ s_int32 mt_agent_hqa_cmd_string_parser(
 	} else
 		return SERV_STATUS_AGENT_NOT_SUPPORTED;
 }
+
 s_int32 mt_agent_hqa_cmd_handler(
 	struct service *serv, struct hqa_frame_ctrl *hqa_frame_ctrl)
 {
@@ -4557,6 +4660,8 @@ s_int32 mt_agent_hqa_cmd_handler(
 
 	if (magic_no != TEST_CMD_MAGIC_NO)
 		return SERV_STATUS_AGENT_INVALID_PARAM;
+
+	hqa_frame->length = SERV_OS_NTOHS(hqa_frame->length);
 
 	cmd_id = SERV_OS_NTOHS(hqa_frame->id);
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
@@ -4604,30 +4709,421 @@ done:
 /*****************************************************************************
  *	iwpriv command handler
  *****************************************************************************/
-/************************** Temp for test *************************************/
-s_int32 mt_agent_start(struct service *serv)
+
+static struct hqa_frame hqa_cmd_frame;
+
+static struct agent_cli_act_handler cli_act_cmds[] = {
+	{"ATESTART", mt_serv_start},
+	{"APSTOP", mt_serv_start},
+	{"ATESTOP", mt_serv_stop},
+	{"APSTART", mt_serv_stop},
+	{"TXCOMMIT", mt_serv_submit_tx},
+	{"TXREVERT", mt_serv_revert_tx},
+	{"TXFRAME", mt_serv_start_tx},
+	{"TXSTOP", mt_serv_stop_tx},
+	{"RXFRAME", mt_serv_start_rx},
+	{"RXSTOP", mt_serv_stop_rx},
+	{"", NULL}	/* the last entry */
+};
+
+s_int32 mt_agent_cli_act(u_char *name, struct service *serv)
 {
-	u_int32 ret = 0;
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	struct service_test *serv_test = NULL;
+	struct agent_cli_act_handler *entry = cli_act_cmds;
 
-	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
+	serv_test = (struct service_test *)serv->serv_handle;
 
-	ret = mt_serv_start((struct service_test *)serv->serv_handle);
+	while (strlen(entry->name)) {
+		if (strcmp(name, entry->name) == 0)
+			ret = entry->handler(serv_test);
+
+		entry++;
+	}
 
 	return ret;
 }
 
-s_int32 mt_agent_stop(struct service *serv)
+static struct agent_cli_set_w_handler cli_set_w_cmds[] = {
+	{"", NULL}	/* the last entry */
+};
+
+s_int32 mt_agent_cli_set_w(u_char *name, struct service *serv, u_char *param)
 {
-	u_int32 ret = 0;
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	struct agent_cli_set_w_handler *entry = cli_set_w_cmds;
+	struct hqa_frame *hqa_cmd = &hqa_cmd_frame;
+	u_int16 value = 0;
 
-	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
+	sys_ad_zero_mem(hqa_cmd, sizeof(*hqa_cmd));
 
-	ret = mt_serv_stop((struct service_test *)serv->serv_handle);
+	kstrtol(param, 10, (long *)&value);
+	value = SERV_OS_HTONS(value);
+	sys_ad_move_mem(hqa_cmd->data, &value, sizeof(u_int16));
+
+	while (strlen(entry->name)) {
+		if (strcmp(name, entry->name) == 0)
+			ret = entry->handler(
+				(struct service_test *)serv->serv_handle,
+				hqa_cmd);
+
+		entry++;
+	}
 
 	return ret;
 }
 
-/************************** Temp for test *************************************/
+static struct agent_cli_set_dw_handler cli_set_dw_cmds[] = {
+	{"ATETXMCS", hqa_set_rate},
+	{"ATETXNSS", hqa_set_nss},
+	{"ATENSS", hqa_set_nss},
+	{"ATETXSTBC", hqa_set_stbc},
+	{"ATETXMODE", hqa_set_preamble},
+	{"ATETXGI", hqa_set_short_gi},
+	{"", NULL}	/* the last entry */
+};
+
+s_int32 mt_agent_cli_set_dw(u_char *name, struct service *serv, u_char *param)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	struct agent_cli_set_dw_handler *entry = cli_set_dw_cmds;
+	struct hqa_frame *hqa_cmd = &hqa_cmd_frame;
+	u_int32 value = 0;
+
+	sys_ad_zero_mem(hqa_cmd, sizeof(*hqa_cmd));
+	kstrtol(param, 10, (long *)&value);
+	value = SERV_OS_HTONL(value);
+	sys_ad_move_mem(hqa_cmd->data, &value, sizeof(u_int32));
+
+	while (strlen(entry->name)) {
+		if (strcmp(name, entry->name) == 0)
+			ret = entry->handler(
+				(struct service_test *)serv->serv_handle,
+				hqa_cmd);
+
+		entry++;
+	}
+
+	return ret;
+}
+
+s_int32 mt_agent_set_bw(struct service_test *serv_test, u_char *arg)
+{
+	u_int32 ret = 0;
+	u_int32 param[2] = {0};
+	u_int8 i = 0;
+	u_char *value;
+	struct hqa_frame *hqa_cmd = &hqa_cmd_frame;
+	u_char *data = hqa_cmd->data;
+
+	sys_ad_zero_mem(hqa_cmd, sizeof(*hqa_cmd));
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+		("%s: Bw = %s\n", __func__, arg));
+
+	for (i = 0, value = agent_trtok(arg, ":");
+		value; value = agent_trtok(NULL, ":")) {
+		if (i == 2)
+			break;
+		kstrtol(value, 10, (long *)&param[i++]);
+	}
+
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&param[0], &data);
+	hqa_set_system_bw(serv_test, hqa_cmd);
+
+	data = hqa_cmd->data;
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&param[1], &data);
+	hqa_set_per_pkt_bw(serv_test, hqa_cmd);
+
+	return ret;
+}
+
+s_int32 mt_agent_set_ctrl_band(
+	struct service_test *serv_test, u_char *arg)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_int32 value = 0;
+
+	kstrtol(arg, 10, (long *)&value);
+
+	SERV_SET_PARAM(serv_test, ctrl_band_idx, value);
+
+	return ret;
+}
+
+s_int32 mt_agent_set_pwr(
+	struct service_test *serv_test, u_char *arg)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_int32 value = 0;
+	u_int32 input = 0;
+	struct hqa_frame *hqa_cmd = &hqa_cmd_frame;
+	u_char *data = hqa_cmd->data;
+
+	kstrtol(arg, 10, (long *)&input);
+
+	/* power */
+	value = input;
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+	/* band index */
+	value = serv_test->ctrl_band_idx;
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+	/* channel */
+	value = CONFIG_GET_PARAM(serv_test, channel, serv_test->ctrl_band_idx);
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+	/* channel band */
+	value = CONFIG_GET_PARAM(serv_test, ch_band, serv_test->ctrl_band_idx);
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+	/* ant index */
+	value = 0;
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+
+	hqa_set_tx_power_ext(serv_test, hqa_cmd);
+
+	return ret;
+}
+
+s_int32 mt_agent_set_channel(
+	struct service_test *serv_test, u_char *arg)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_int32 value = 0;
+	u_int32 input[4] = {0};
+	u_int8 i = 0;
+	struct hqa_frame *hqa_cmd = &hqa_cmd_frame;
+	u_char *data = hqa_cmd->data, *tok = NULL;
+
+	sys_ad_zero_mem(hqa_cmd, sizeof(*hqa_cmd));
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+		("%s: control_band_idx:%x, Channel = %s\n",
+		__func__, serv_test->ctrl_band_idx, arg));
+
+	for (i = 0, tok = agent_trtok(arg, ":");
+		tok;
+		tok = agent_trtok(NULL, ":")) {
+		if (i == 4)
+			break;
+
+		kstrtol(tok, 10, (long *)&input[i++]);
+	}
+
+	/* For backward compatibility */
+	if (input[0] >= 36 && input[0] <= 181) {
+		if (input[1] == 0) {
+			input[1] = 1; /* channel_band 5G as 1*/
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	("\x1b[41m%s(): 5G Channel:%d, then force Channel_Band:%d !!\x1b[m\n",
+				__func__, input[0], input[1]));
+		}
+	}
+
+	/* ext id */
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+	/* parameters count */
+	value = 8;
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+	/* band index */
+	value = serv_test->ctrl_band_idx;
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+	/* central channel index */
+	value = input[0];
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+	/* 2nd central channel index */
+	value = input[3];
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+	/* system bandwidth */
+	value = CONFIG_GET_PARAM(serv_test, bw,
+				serv_test->ctrl_band_idx);
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+	/* data band width */
+	value = CONFIG_GET_PARAM(serv_test, per_pkt_bw,
+				serv_test->ctrl_band_idx);
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+	/* primary offset */
+	value = input[2];
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+	/* reason */
+	value = 0;
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+	/* channel band */
+	value = input[1];
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+	value = 0;
+	/* out band frequency */
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+
+	hqa_set_channel_ext(serv_test, hqa_cmd);
+
+	return ret;
+}
+
+s_int32 mt_agent_set_ru_cli(struct service_test *serv_test, u_char *arg)
+{
+	s_int32 ret = SERV_STATUS_AGENT_INVALID_PARAM;
+	u_char *value = NULL, i = 0, band_idx, input_cnt = 0;
+	struct test_ru_info *ru_info = NULL;
+
+	band_idx = SERV_GET_PARAM(serv_test, ctrl_band_idx);
+
+	ru_info = (struct test_ru_info *)CONFIG_GET_PADDR(serv_test,
+							ru_info_list[0],
+							band_idx);
+
+	if (strlen(arg) > 0) {
+		sys_ad_zero_mem(ru_info,
+				sizeof(struct test_ru_info)*MAX_MULTI_TX_STA);
+
+		for (i = 0, value = agent_trtok(arg, ":");
+			value;
+			value = agent_trtok((char *)NULL, ":"), i++) {
+			input_cnt = sscanf(value,
+					"%4x-%d-%d-%d-%d-%d-%d-%d-%d",
+					&ru_info[i].allocation,
+					&ru_info[i].aid,
+					&ru_info[i].ru_index,
+					&ru_info[i].rate,
+					&ru_info[i].ldpc,
+					&ru_info[i].nss,
+					&ru_info[i].start_sp_st,
+					&ru_info[i].mpdu_length,
+					&ru_info[i].alpha);
+
+			if (strlen(value) > 0 && input_cnt == 9) {
+				ru_info[i].valid = TRUE;
+
+				if (ru_info[i].mpdu_length == 0)
+					ru_info[i].mpdu_length =
+					CONFIG_GET_PARAM(serv_test,
+							tx_len,
+							band_idx);
+
+				SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+					 ("%s: segment[%d]: alloc:%04x\n",
+					  __func__, (ru_info[i].ru_index & 0x1),
+					  ru_info[i].allocation));
+				SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+					 ("%s:\t\t\tru_idx:%d, length:%d,\n",
+					  __func__, (ru_info[i].ru_index >> 1),
+					  ru_info[i].mpdu_length));
+				SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+					 ("%s:\t\t\talpha:%d, rate:0x%x,\n",
+					  __func__, ru_info[i].alpha,
+					  ru_info[i].rate));
+				SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+					 ("%s: \t\t\tldpc:%d, nss:%d\n",
+					  __func__, ru_info[i].ldpc,
+					  ru_info[i].nss));
+			} else {
+				SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+					("Invalid format, %s ignored!\n", arg));
+				goto err_out;
+			}
+		}
+
+		ret = SERV_STATUS_SUCCESS;
+	}
+
+err_out:
+	return ret;
+}
+
+s_int32 mt_agent_set_txant(struct service_test *serv_test, u_char *arg)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_int32 value = 0;
+	struct hqa_frame *hqa_cmd = &hqa_cmd_frame;
+	u_char *data = hqa_cmd->data;
+
+	sys_ad_zero_mem(hqa_cmd, sizeof(*hqa_cmd));
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+		("%s: TX PATH = %s\n", __func__, arg));
+
+	hqa_cmd->length = 2*sizeof(u_int32);
+
+	kstrtol(arg, 10, (long *)&value);
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+	value = serv_test->ctrl_band_idx;
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+	hqa_set_tx_path(serv_test, hqa_cmd);
+
+	return ret;
+}
+
+s_int32 mt_agent_set_rxant(struct service_test *serv_test, u_char *arg)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_int32 value = 0;
+	struct hqa_frame *hqa_cmd = &hqa_cmd_frame;
+	u_char *data = hqa_cmd->data;
+
+	sys_ad_zero_mem(hqa_cmd, sizeof(*hqa_cmd));
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+		("%s: RX PATH = %s\n", __func__, arg));
+
+	hqa_cmd->length = 2*sizeof(u_int32);
+
+	kstrtol(arg, 10, (long *)&value);
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+	value = serv_test->ctrl_band_idx;
+	set_param_and_shift_buf(TRUE, sizeof(u_int32),
+				(u_char *)&value, &data);
+
+	hqa_set_rx_path(serv_test, hqa_cmd);
+
+	return ret;
+}
+
+static struct agent_cli_set_ext_handler cli_set_ext_cmds[] = {
+	{"ATECTRLBANDIDX", mt_agent_set_ctrl_band},
+	{"ATETXPOW0", mt_agent_set_pwr},
+	{"ATECHANNEL", mt_agent_set_channel},
+	{"ATETXBW", mt_agent_set_bw},
+	{"ATERUINFO", mt_agent_set_ru_cli},
+	{"ATETXANT", mt_agent_set_txant},
+	{"ATERXANT", mt_agent_set_rxant},
+	{"", NULL}	/* the last entry */
+};
+
+s_int32 mt_agent_cli_set_ext(u_char *name, struct service *serv, u_char *arg)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	struct agent_cli_set_ext_handler *entry = cli_set_ext_cmds;
+
+	while (strlen(entry->name)) {
+		if (strcmp(name, entry->name) == 0)
+			ret = entry->handler(
+				(struct service_test *)serv->serv_handle,
+				arg);
+
+		entry++;
+	}
+
+	return ret;
+}
 
 /*****************************************************************************
  *	Service init/exit handler

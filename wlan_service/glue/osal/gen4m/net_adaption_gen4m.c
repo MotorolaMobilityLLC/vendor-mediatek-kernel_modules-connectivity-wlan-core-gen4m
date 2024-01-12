@@ -7,6 +7,12 @@
 #if GEM4M_NET_ADAPTION_SUPPORT
 static struct test_thread_cb g_test_thread[SERV_THREAD_NUM];
 #endif
+
+struct service_test *net_ad_wrap_service(void *adapter)
+{
+	return (struct service_test *)adapter;
+}
+
 void net_ad_thread_proceed_tx(
 	struct test_wlan_info *winfos, u_char band_idx)
 {
@@ -188,19 +194,19 @@ s_int32 net_ad_alloc_pkt(
 	return SERV_STATUS_OSAL_NET_FAIL;
 }
 
-s_int32 net_ad_free_pkt(
-	struct test_wlan_info *winfos,
-	void *pkt_skb)
-{
-	return SERV_STATUS_OSAL_NET_FAIL;
-}
-
 s_int32 net_ad_enq_pkt(
 	struct test_wlan_info *winfos,
 	u_short q_idx,
 	void *virtual_wtbl,
 	void *virtual_device,
 	void *pkt)
+{
+	return SERV_STATUS_OSAL_NET_FAIL;
+}
+
+s_int32 net_ad_free_pkt(
+	struct test_wlan_info *winfos,
+	void *pkt_skb)
 {
 	return SERV_STATUS_OSAL_NET_FAIL;
 }
@@ -405,3 +411,4 @@ s_int32 net_ad_get_rxv_content(
 {
 	return SERV_STATUS_OSAL_NET_FAIL;
 }
+

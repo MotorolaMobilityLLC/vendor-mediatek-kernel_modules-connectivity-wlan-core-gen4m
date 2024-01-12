@@ -278,11 +278,11 @@ static s_int32 mt_engine_release_mps(
 	return SERV_STATUS_SUCCESS;
 }
 
-static u_int8 mt_engine_get_sigext_time_by_phymode(u_char phy_mode)
+static u_int8 mt_engine_get_sigext_time_by_phymode(u_char tx_mode)
 {
 	u_int8 sigext_time = 0;
 
-	switch (phy_mode) {
+	switch (tx_mode) {
 	case TEST_MODE_CCK:
 		sigext_time = sigext_time_list[TEST_MODE_CCK];
 		break;
@@ -311,11 +311,11 @@ static u_int8 mt_engine_get_sigext_time_by_phymode(u_char phy_mode)
 	return sigext_time;
 }
 
-static u_int16 mt_engine_get_slot_time_by_phymode(u_char phy_mode)
+static u_int16 mt_engine_get_slot_time_by_phymode(u_char tx_mode)
 {
 	u_int16 slot_time = 0;
 
-	switch (phy_mode) {
+	switch (tx_mode) {
 	case TEST_MODE_CCK:
 		slot_time = slot_time_list[TEST_MODE_CCK];
 		break;
@@ -568,7 +568,7 @@ static u_int32 mt_engine_calc_txlen(
 {
 	struct tx_time_param *tx_time_param;
 	u_int32 txlen = 0, hlen = 0, tx_data_rate = 0, pkt_tx_time = 0;
-	u_char phy_mode, mcs, mcs_1ss, nss = 1;
+	u_char tx_mode, mcs, mcs_1ss, nss = 1;
 	u_char bw = 0, bw_fact = 1, sgi = 0;
 
 	/*
@@ -580,13 +580,13 @@ static u_int32 mt_engine_calc_txlen(
 	tx_time_param = &configs->tx_time_param;
 	pkt_tx_time = tx_time_param->pkt_tx_time;
 	hlen = configs->hdr_len;
-	phy_mode = configs->phy_mode;
+	tx_mode = configs->tx_mode;
 	mcs = configs->mcs;
 	bw = configs->bw;
 	sgi = configs->sgi;
 	mcs_1ss = mcs;
 
-	if (phy_mode == TEST_MODE_CCK) {
+	if (tx_mode == TEST_MODE_CCK) {
 		/* Legacy CCK mode */
 		u_int8 cck_map_idx;
 
@@ -606,7 +606,7 @@ static u_int32 mt_engine_calc_txlen(
 
 		/* Transfer from bit to byte with expected tx time */
 		txlen = pkt_tx_time * tx_data_rate / 1000 / 8;
-	} else if (phy_mode == TEST_MODE_OFDM) {
+	} else if (tx_mode == TEST_MODE_OFDM) {
 		/* Legacy OFDM mode */
 		u_int8 ofdm_map_idx;
 
@@ -626,8 +626,8 @@ static u_int32 mt_engine_calc_txlen(
 
 		/* Transfer from bit to byte with expected tx time */
 		txlen = pkt_tx_time * tx_data_rate / 1000 / 8;
-	} else if (phy_mode == TEST_MODE_HTMIX
-		   || phy_mode == TEST_MODE_HTGREENFIELD) {
+	} else if (tx_mode == TEST_MODE_HTMIX
+		   || tx_mode == TEST_MODE_HTGREENFIELD) {
 		/* HT mode */
 		u_int8 n_map_idx;
 
@@ -660,7 +660,7 @@ static u_int32 mt_engine_calc_txlen(
 
 		/* Transfer from bit to byte with expected tx time */
 		txlen = pkt_tx_time * tx_data_rate / 1000 / 8;
-	} else if (phy_mode == TEST_MODE_VHT) {
+	} else if (tx_mode == TEST_MODE_VHT) {
 		/* VHT mode */
 		u_int8 ac_map_idx;
 		struct test_data_rate_map *vht_mode_map;
@@ -701,7 +701,7 @@ static u_int32 mt_engine_calc_txlen(
 
 		/* Transfer from bit to byte with expected tx time */
 		txlen = pkt_tx_time * tx_data_rate / 10 / 8;
-	} else if (phy_mode == TEST_MODE_HE_SU) {
+	} else if (tx_mode == TEST_MODE_HE_SU) {
 		u_int8 map_idx = 0;
 		struct test_data_rate_map *rate_map = NULL;
 		u_int32 array_cnt = 0;
@@ -773,7 +773,7 @@ static u_int32 mt_engine_calc_txlen(
 		}
 		/* Transfer from bit to byte with expected tx time */
 		txlen = pkt_tx_time * tx_data_rate / 10 / 8;
-	} else if (phy_mode == TEST_MODE_HE_TB) {
+	} else if (tx_mode == TEST_MODE_HE_TB) {
 		struct test_ru_info *ru_info = NULL;
 		u_int32 ds = 0, dss = 0;
 
@@ -794,11 +794,11 @@ static u_int32 mt_engine_calc_txlen(
 			ru_info->dbps *= ru_info->cbps;
 			ru_info->dbps /= test_he_rate_density[mcs];
 
-			txlen = mt_engine_calc_bytes_by_time(phy_mode,
+			txlen = mt_engine_calc_bytes_by_time(tx_mode,
 								nss,
 								0,
-					mt_engine_trans_ltf(phy_mode, sgi),
-					mt_engine_trans_gi(phy_mode, sgi),
+					mt_engine_trans_ltf(tx_mode, sgi),
+					mt_engine_trans_gi(tx_mode, sgi),
 								ru_info->dbps,
 								pkt_tx_time);
 			/* reserve FCS(4)+Delimiter(4)+
@@ -822,14 +822,14 @@ static u_int32 mt_engine_calc_txlen(
 
 	SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_OFF,
 		("%s: phy_mode=%d, mcs/mcs_1ss=%d/%d, nss=%d, ",
-		__func__, phy_mode, mcs, mcs_1ss, nss));
+		__func__, tx_mode, mcs, mcs_1ss, nss));
 	SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_OFF,
 		("bw/bw_fact=%d/%d, sgi=%d, ", bw, bw_fact, sgi));
 	SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_OFF,
 		("txlen=%d, pkt_tx_time=%d, tx_data_rate=%d\n",
 		txlen, pkt_tx_time, tx_data_rate));
 
-	if (phy_mode > TEST_MODE_VHT) {
+	if (tx_mode > TEST_MODE_VHT) {
 		if (txlen >= (TEST_MAX_VHT_MPDU_LEN * 256)) {
 			txlen = (TEST_MAX_VHT_MPDU_LEN * 256);
 			SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_OFF,
@@ -838,7 +838,7 @@ static u_int32 mt_engine_calc_txlen(
 			SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_OFF,
 				("reduce the txlen=%d\n", txlen));
 		}
-	} else if (phy_mode == TEST_MODE_VHT) {
+	} else if (tx_mode == TEST_MODE_VHT) {
 		if (txlen >= (TEST_MAX_VHT_MPDU_LEN * 64)) {
 			txlen = (TEST_MAX_VHT_MPDU_LEN * 64);
 			SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_OFF,
@@ -847,8 +847,8 @@ static u_int32 mt_engine_calc_txlen(
 			SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_OFF,
 				("reduce the txlen=%d\n", txlen));
 		}
-	} else if (phy_mode == TEST_MODE_HTMIX
-		   || phy_mode == TEST_MODE_HTGREENFIELD) {
+	} else if (tx_mode == TEST_MODE_HTMIX
+		   || tx_mode == TEST_MODE_HTGREENFIELD) {
 		if (txlen >= TEST_MAX_HT_AMPDU_LEN) {
 			txlen = TEST_MAX_HT_AMPDU_LEN;
 			SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_OFF,
@@ -857,7 +857,7 @@ static u_int32 mt_engine_calc_txlen(
 			SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_OFF,
 				("reduce the txlen=%d\n", txlen));
 		}
-	} else if (phy_mode == TEST_MODE_OFDM) {
+	} else if (tx_mode == TEST_MODE_OFDM) {
 		if (txlen >= TEST_MAX_MSDU_LEN) {
 			txlen = TEST_MAX_MSDU_LEN;
 			SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_OFF,
@@ -866,7 +866,7 @@ static u_int32 mt_engine_calc_txlen(
 			SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_OFF,
 				("reduce the txlen=%d\n", txlen));
 		}
-	} else if (phy_mode == TEST_MODE_CCK) {
+	} else if (tx_mode == TEST_MODE_CCK) {
 		if (txlen >= TEST_MAX_MSDU_LEN) {
 			txlen = TEST_MAX_MSDU_LEN;
 			SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_OFF,
@@ -885,7 +885,7 @@ static u_int32 mt_engine_calc_hlen(
 	boolean *need_qos, boolean *need_amsdu, boolean *need_ampdu)
 {
 	u_int32 txlen = 0, hlen = TEST_DEFAULT_MAC_HDR_LEN;
-	u_char phy_mode, use_data_frame = 1;
+	u_char tx_mode, use_data_frame = 1;
 
 	/*
 	 * 1. Get the tx data rate
@@ -895,24 +895,24 @@ static u_int32 mt_engine_calc_hlen(
 	 *  if need to has QoS field and HTC field.
 	 */
 	txlen = configs->tx_len;
-	phy_mode = configs->phy_mode;
+	tx_mode = configs->tx_mode;
 
 	if (txlen <= TEST_MIN_MSDU_LEN) {
 		use_data_frame = 0;
 		/* Here we need to go mgmt/ctrl frame mode */
 	} else if (txlen > TEST_MAX_MSDU_LEN) {
-		if (phy_mode > TEST_MODE_OFDM) {
+		if (tx_mode > TEST_MODE_OFDM) {
 			*need_qos = TRUE;
 			/* mark need_amsdu to notify A-MSDU like packet */
 			*need_amsdu = TRUE;
 		}
 
-		if (txlen > datalen_limit[phy_mode].amsdu_limit)
+		if (txlen > datalen_limit[tx_mode].amsdu_limit)
 			*need_ampdu = TRUE;
 	}
 
 	/* Force aggregation due to TXCMD required */
-	if (phy_mode == TEST_MODE_VHT_MIMO || phy_mode == TEST_MODE_HE_MU) {
+	if (tx_mode == TEST_MODE_VHT_MIMO || tx_mode == TEST_MODE_HE_MU) {
 		*need_qos = TRUE;
 		*need_ampdu = TRUE;
 	}
@@ -940,7 +940,6 @@ static s_int32 mt_engine_handle_ampdu(
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	struct tx_time_param *tx_time_param = NULL;
-	u_char phy_mode;
 	u_int32 txlen, per_mpdu_len;
 	u_int8 tx_hw_hdr_len;
 	u_int8 ampdu_agg_cnt = 0;
@@ -952,7 +951,6 @@ static s_int32 mt_engine_handle_ampdu(
 
 	tx_time_param = &configs->tx_time_param;
 	tx_hw_hdr_len = winfos->chip_cap.tx_wi_size;
-	phy_mode = configs->phy_mode;
 	txlen = tx_time_param->pkt_tx_len;
 
 	per_mpdu_len = TEST_MAX_MSDU_LEN;
@@ -1143,7 +1141,7 @@ static s_int32 mt_engine_apply_ipg_param(
 	if (ret)
 		goto err_out;
 
-	ret = net_ad_set_wmm_param_by_qid(wmm_idx, configs->q_id,
+	ret = net_ad_set_wmm_param_by_qid(wmm_idx, configs->ac_idx,
 					  winfos, configs);
 	SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_OFF,
 		("%s: ipg=%d, slot_time=%d, sifs_time=%d, aifsn=%d, cw=%d\n",
@@ -1256,7 +1254,7 @@ static s_int32 mt_engine_store_tx_info(
 		if (tx_info) {
 			net_ad_fill_phy_info(virtual_wtbl, tx_info);
 
-			if ((configs->phy_mode < TEST_MODE_HE_SU) &&
+			if ((configs->tx_mode < TEST_MODE_HE_SU) &&
 				(tx_info->mcs & 0x7f) == 32)
 				net_ad_handle_mcs32(winfos,
 						    virtual_wtbl,
@@ -1834,7 +1832,7 @@ static s_int32 mt_engine_apply_spe_antid(
 					spe_idx, ant_pri);
 		stack_idx++;
 	}
-	ops->op_set_mutb_spe(winfos, band_idx, configs->phy_mode, spe_idx);
+	ops->op_set_mutb_spe(winfos, band_idx, configs->tx_mode, spe_idx);
 
 	return ret;
 }
@@ -1919,17 +1917,20 @@ s_int32 mt_engine_subscribe_tx(
 	if (configs->duty_cycle > 0)
 		ret = mt_engine_calc_duty_cycle(configs);
 
-	tx_info.tx_mode = configs->phy_mode;
+	tx_info.tx_mode = configs->tx_mode;
+	if (configs->per_pkt_bw >= TEST_BW_160C)
+		tx_info.bw = 0x3;
+	else
 	tx_info.bw = configs->per_pkt_bw;
 	tx_info.stbc = configs->stbc;
 	tx_info.ldpc = configs->ldpc;
 	tx_info.mpdu_length = configs->tx_len;
-	tx_info.gi = mt_engine_decode_gi(configs->phy_mode, configs->sgi);
-	tx_info.ltf = mt_engine_decode_ltf(configs->phy_mode, configs->sgi);
+	tx_info.gi = mt_engine_decode_gi(configs->tx_mode, configs->sgi);
+	tx_info.ltf = mt_engine_decode_ltf(configs->tx_mode, configs->sgi);
 	tx_info.ibf = configs->ibf;
 	tx_info.ebf = configs->ebf;
 
-	tx_mthd = configs->tx_method[configs->phy_mode];
+	tx_mthd = configs->tx_method[configs->tx_mode];
 	virtual_device = (struct wifi_dev *)configs->wdev[tx_mthd];
 
 	if (tx_info.tx_mode < TEST_MODE_HE_TB) {
@@ -1940,14 +1941,14 @@ s_int32 mt_engine_subscribe_tx(
 		tx_info.nss = configs->nss;
 
 		if (net_ad_alloc_wtbl(winfos,
-				      configs->addr1,
+				      configs->addr1[0],
 				      virtual_device,
 				      &virtual_wtbl) == SERV_STATUS_SUCCESS)
 			mt_engine_store_tx_info(ops,
 						winfos,
 						configs,
 						virtual_device,
-						configs->addr1,
+						configs->addr1[0],
 						virtual_wtbl,
 						&tx_info);
 		else {
@@ -1962,7 +1963,7 @@ s_int32 mt_engine_subscribe_tx(
 			tx_info.tx_mode = TEST_MODE_VHT;
 
 		for (idx = 0 ; idx < MAX_MULTI_TX_STA ; idx++) {
-			da = configs->addr1;
+			da = configs->addr1[idx];
 			if (ru_info[idx].valid) {
 				tx_info.mcs = ru_info[idx].rate;
 				tx_info.nss = ru_info[idx].nss;
@@ -1973,7 +1974,7 @@ s_int32 mt_engine_subscribe_tx(
 						ru_info[idx].mpdu_length;
 
 				ret = net_ad_alloc_wtbl(winfos,
-							configs->addr1,
+							configs->addr1[idx],
 							virtual_device,
 							&virtual_wtbl);
 
@@ -1985,7 +1986,7 @@ s_int32 mt_engine_subscribe_tx(
 								winfos,
 								configs,
 								virtual_device,
-								configs->addr1,
+							configs->addr1[idx],
 								virtual_wtbl,
 								&tx_info);
 				} else
@@ -2092,8 +2093,8 @@ s_int32 mt_engine_start(
 
 		/*** Step1: Sanity check ***/
 		/* Make sure mt_engine_init_band_info successfully
-		 *   when interface up
-		 */
+		     when interface up
+		*/
 		if (test_config->op_mode & OP_MODE_START) {
 			SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_WARN,
 				("%s: test mode has already started, ",
@@ -2361,7 +2362,7 @@ s_int32 mt_engine_stop(
 
 		/*** Step8: Enable tmac/rmac/rxv ***/
 		ret = ops->op_set_tr_mac(
-			winfos, SERV_TEST_MAC_TXRX_RXV, TRUE, band_idx);
+			winfos, SERV_TEST_MAC_TXRX, TRUE, band_idx);
 		if (ret)
 			goto err;
 	}
@@ -2398,16 +2399,16 @@ s_int32 mt_engine_calc_ipg_param_by_ipg(
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	struct ipg_param *ipg_param;
-	u_char phy_mode;
+	u_char tx_mode;
 	u_int32 ipg, real_ipg;
 	u_int8 sig_ext, aifsn;
 	u_int16 slot_time, sifs_time, cw;
 
 	ipg_param = &configs->ipg_param;
-	phy_mode = configs->phy_mode;
+	tx_mode = configs->tx_mode;
 	ipg = ipg_param->ipg;
-	sig_ext = mt_engine_get_sigext_time_by_phymode(phy_mode);
-	slot_time = mt_engine_get_slot_time_by_phymode(phy_mode);
+	sig_ext = mt_engine_get_sigext_time_by_phymode(tx_mode);
+	slot_time = mt_engine_get_slot_time_by_phymode(tx_mode);
 	sifs_time = TEST_DEFAULT_SIFS_TIME;
 
 	/*
@@ -2552,7 +2553,7 @@ s_int32 mt_engine_start_tx(
 	if (ret)
 		goto err;
 
-	if (configs->phy_mode == TEST_MODE_HE_TB)
+	if (configs->tx_mode == TEST_MODE_HE_TB)
 		ops->op_hetb_ctrl(winfos, band_idx, OP_HETB_TX_CFG,
 				TRUE, configs->per_pkt_bw, configs->sgi,
 				configs->stbc, configs->dmnt_ru_idx,
@@ -2576,7 +2577,7 @@ s_int32 mt_engine_start_tx(
 			tx_cnt += configs->tx_stat.tx_done_cnt;
 
 		/* work aound to prevent refill flow interrupted */
-		if (configs->phy_mode == TEST_MODE_HE_MU && configs->retry)
+		if (configs->tx_mode == TEST_MODE_HE_MU && configs->retry)
 			tx_cnt = 1;
 
 		configs->tx_stat.tx_cnt = tx_cnt;
@@ -2613,7 +2614,7 @@ s_int32 mt_engine_start_tx(
 				stack_idx < configs->stack.index;
 				stack_idx++)
 				net_ad_enq_pkt(winfos,
-						configs->q_id,
+						configs->ac_idx,
 					stack->virtual_wtbl[stack_idx],
 					stack->virtual_device[stack_idx],
 					stack->pkt_skb[stack_idx]);
@@ -2629,15 +2630,15 @@ s_int32 mt_engine_start_tx(
 	 * 1.packet of primary RU dropped then queue length mismatched
 	 * 2.packets stay at PLE after TxStop
 	 */
-	if (configs->phy_mode == TEST_MODE_HE_MU ||
-		configs->phy_mode == TEST_MODE_VHT_MIMO)
+	if (configs->tx_mode == TEST_MODE_HE_MU ||
+		configs->tx_mode == TEST_MODE_VHT_MIMO)
 		net_ad_enq_pkt(winfos,
-				      configs->q_id,
+				      configs->ac_idx,
 				      stack->virtual_wtbl[0],
 				      stack->virtual_device[0],
 				      stack->pkt_skb[0]);
 
-	if (configs->phy_mode == TEST_MODE_HE_TB)
+	if (configs->tx_mode == TEST_MODE_HE_TB)
 		ops->op_hetb_ctrl(winfos, band_idx, OP_HETB_TX_START,
 				TRUE, 0, 0, 0, 0, NULL);
 
@@ -2729,7 +2730,7 @@ s_int32 mt_engine_stop_tx(
 		}
 	}
 
-	if (configs->phy_mode == TEST_MODE_HE_TB)
+	if (configs->tx_mode == TEST_MODE_HE_TB)
 		ops->op_hetb_ctrl(winfos, band_idx, OP_HETB_TX_STOP,
 					TRUE, 0, 0, 0, 0, NULL);
 
@@ -2809,7 +2810,7 @@ s_int32 mt_engine_start_rx(
 	op_mode |= OP_MODE_RXFRAME;
 	configs->op_mode = op_mode;
 
-	if (configs->phy_mode == TEST_MODE_HE_TB) {
+	if (configs->tx_mode == TEST_MODE_HE_TB) {
 		u_int8 sta_idx = 0;
 		struct test_ru_info *ru_info = &configs->ru_info_list[0];
 
@@ -2832,7 +2833,7 @@ s_int32 mt_engine_start_rx(
 				TRUE, configs->per_pkt_bw, configs->sgi,
 				configs->stbc, configs->dmnt_ru_idx,
 				&configs->ru_info_list[0]);
-	} else if (configs->phy_mode == TEST_MODE_HE_MU) {
+	} else if (configs->tx_mode == TEST_MODE_HE_MU) {
 		if (configs->mu_rx_aid)
 			ops->op_set_ru_aid(winfos, band_idx,
 					configs->mu_rx_aid);
@@ -2869,12 +2870,12 @@ s_int32 mt_engine_stop_rx(
 	op_mode &= ~OP_MODE_RXFRAME;
 	configs->op_mode = op_mode;
 
-	if (configs->phy_mode == TEST_MODE_HE_TB) {
+	if (configs->tx_mode == TEST_MODE_HE_TB) {
 		ops->op_hetb_ctrl(winfos, band_idx, OP_HETB_RX_CFG,
 				FALSE, configs->per_pkt_bw, configs->sgi,
 				configs->stbc, configs->dmnt_ru_idx,
 				&configs->ru_info_list[0]);
-	} else if (configs->phy_mode == TEST_MODE_HE_MU) {
+	} else if (configs->tx_mode == TEST_MODE_HE_MU) {
 		/* 0xf800 to disable */
 		ops->op_set_ru_aid(winfos, band_idx, 0xf800);
 	}
