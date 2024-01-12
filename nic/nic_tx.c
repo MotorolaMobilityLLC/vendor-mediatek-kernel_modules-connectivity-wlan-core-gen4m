@@ -2737,9 +2737,6 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 			   IN struct MSDU_INFO *prMsduInfo, IN void *prPacket)
 {
 	struct GLUE_INFO *prGlueInfo;
-#if CFG_CHANGE_CRITICAL_PACKET_PRIORITY
-	struct BSS_INFO *prBssInfo;
-#endif
 
 	ASSERT(prAdapter);
 
@@ -2820,18 +2817,10 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 			prMsduInfo->ucRateMode = MSDU_RATE_MODE_LOWEST_RATE;
 
 #if CFG_CHANGE_CRITICAL_PACKET_PRIORITY
-			/* Set higher priority only for SAP ARP */
-		if (prMsduInfo->ucBssIndex <= MAX_BSSID_NUM) {
-			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-				prMsduInfo->ucBssIndex);
-			if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ARP) &&
-			   prBssInfo && (prBssInfo->u4PrivateData < BSS_P2P_NUM)
-				&& p2pFuncIsAPMode(
-				prAdapter->rWifiVar.prP2PConnSettings
-				[prBssInfo->u4PrivateData])) {
-			prMsduInfo->ucUserPriority = NIC_TX_CRITICAL_DATA_TID;
-			prMsduInfo->ucTC = HIF_TX_AC3_INDEX;
-				}
+			/* Set higher priority only for ARP and 1X */
+			if (!GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_DHCP)) {
+				prMsduInfo->ucUserPriority =
+						NIC_TX_CRITICAL_DATA_TID;
 			}
 #endif
 		}
