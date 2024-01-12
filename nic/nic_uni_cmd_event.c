@@ -7526,6 +7526,7 @@ static void nicUniHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
 {
 	struct STA_RECORD *prStaRec;
 	uint8_t ucStaRecIdx;
+	uint16_t u2WinStart;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_STA_RECORD *prMldSta = NULL;
 #endif
@@ -7549,8 +7550,9 @@ static void nicUniHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
 	}
 #endif
 
+	u2WinStart = prEvent->u2BAStartSeqCtrl >> OFFSET_BAR_SSC_SN;
 	nicEventHandleAddBa(prAdapter, prStaRec, prEvent->ucTid,
-			prEvent->u2WinSize, prEvent->u2BAStartSeqCtrl);
+			prEvent->u2WinSize, u2WinStart);
 }
 
 void nicUniEventBaOffload(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
