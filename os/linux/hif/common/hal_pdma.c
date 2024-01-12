@@ -1115,9 +1115,9 @@ void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
 #endif
 }
 
-uint8_t halProcessToken(IN struct ADAPTER *prAdapter, IN uint8_t ucVer,
-		IN uint32_t u4Token, IN struct HW_MAC_MSDU_REPORT *prMsduReport,
-		IN struct QUE *prFreeQueue, IN uint16_t u2TokenCnt)
+u_int8_t halProcessToken(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4Token,
+	IN struct QUE *prFreeQueue)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct MSDU_TOKEN_ENTRY *prTokenEntry;
@@ -1130,27 +1130,18 @@ uint8_t halProcessToken(IN struct ADAPTER *prAdapter, IN uint8_t ucVer,
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
+	prTokenEntry = halGetMsduTokenEntry(prAdapter, u4Token);
 
-	/* reserved token id, not needed to handle */
-	if (ucVer == TFD_EVT_VER_5 &&
-	    u4Token == WF_TX_FREE_DONE_EVENT_MSDU_ID0_MASK)
-		return TRUE;
-
-	if (u4Token >= HIF_TX_MSDU_TOKEN_NUM) {
-		DBGLOG(HAL, ERROR, "Error MSDU report[%u]\n", u4Token);
-		DBGLOG_MEM32(HAL, ERROR, prMsduReport, 64);
-		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
-		halPrintHifDbgInfo(prAdapter);
+	if (!prTokenEntry->fgInUsed) {
+		DBGLOG(HAL, WARN, "Skip unused token[%d]\n",
+			u4Token);
 		return FALSE;
 	}
 
-	prTokenEntry = halGetMsduTokenEntry(prAdapter, u4Token);
-
 #if HIF_TX_PREALLOC_DATA_BUFFER
-	DBGLOG(HAL, INFO,
-		       "MsduRpt: Cnt[%u] Tok[%u] Free[%u]\n",
-		       u2TokenCnt, u4Token,
-		       halGetMsduTokenFreeCnt(prAdapter));
+	DBGLOG(HAL, INFO, "MsduRpt: Tok[%u] Free[%u]\n",
+		u4Token,
+		halGetMsduTokenFreeCnt(prAdapter));
 #else
 	prMsduInfo = prTokenEntry->prMsduInfo;
 	prMsduInfo->prToken = NULL;
@@ -1159,11 +1150,12 @@ uint8_t halProcessToken(IN struct ADAPTER *prAdapter, IN uint8_t ucVer,
 			(struct QUE_ENTRY *) prMsduInfo);
 
 	DBGLOG_LIMITED(HAL, TRACE,
-		       "MsduRpt: Cnt[%u] Tok[%u] Msdu[0x%p] TxDone[%u] Free[%u]\n",
-		       u2TokenCnt, u4Token, prMsduInfo,
+		       "MsduRpt: Tok[%u] Msdu[0x%p] TxDone[%u] Free[%u]\n",
+		       u4Token, prMsduInfo,
 		       (prMsduInfo->pfTxDoneHandler ? TRUE : FALSE),
 		       halGetMsduTokenFreeCnt(prAdapter));
 #endif
+
 	if (prMemOps->unmapTxBuf) {
 		prMemOps->unmapTxBuf(prHifInfo,
 				     prTokenEntry->rPktDmaAddr,
@@ -1186,28 +1178,28 @@ uint8_t halProcessToken(IN struct ADAPTER *prAdapter, IN uint8_t ucVer,
 }
 
 void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
-			    IN OUT struct SW_RFB *prSwRfb)
+	IN OUT struct SW_RFB *prSwRfb,
+	IN OUT struct QUE *prFreeQueue)
 {
+	struct GL_HIF_INFO *prHifInfo;
+	struct HIF_MEM_OPS *prMemOps;
 	struct HW_MAC_MSDU_REPORT *prMsduReport;
-	struct QUE rFreeQueue;
-	struct QUE *prFreeQueue;
+#if !HIF_TX_PREALLOC_DATA_BUFFER
+	struct MSDU_INFO *prMsduInfo;
+#endif
 	uint16_t u2TokenCnt, u2TotalTokenCnt;
-	uint32_t u4Idx, u4Token0 = 0, u4Token1= 0;
+	uint32_t u4Idx, u4Token;
 	uint8_t ucVer;
 
 	ASSERT(prAdapter);
 	ASSERT(prAdapter->prGlueInfo);
 
-	prFreeQueue = &rFreeQueue;
-	QUEUE_INITIALIZE(prFreeQueue);
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prMemOps = &prHifInfo->rMemOps;
 
 	prMsduReport = (struct HW_MAC_MSDU_REPORT *)prSwRfb->pucRecvBuff;
-#if (CFG_DUMP_RXD == 1)
-	DBGLOG(HAL, INFO, "****** MSDU REPORT ******\n");
-	DBGLOG_MEM8(HAL, INFO, prMsduReport, 20);
-#endif
 	ucVer = prMsduReport->DW1.field.u4Ver;
-	if (ucVer == TFD_EVT_VER_3 || ucVer == TFD_EVT_VER_5)
+	if (ucVer == TFD_EVT_VER_3)
 		u2TotalTokenCnt = prMsduReport->DW0.field_v3.u2MsduCount;
 	else
 		u2TotalTokenCnt = prMsduReport->DW0.field.u2MsduCount;
@@ -1221,25 +1213,18 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 		 *      3: MT7915 E2/Buzzard
 		 */
 		if (ucVer == TFD_EVT_VER_0)
-			u4Token0 = prMsduReport->au4MsduToken[u4Idx >> 1].
+			u4Token = prMsduReport->au4MsduToken[u4Idx >> 1].
 				rFormatV0.u2MsduID[u4Idx & 1];
 		else if (ucVer == TFD_EVT_VER_1)
-			u4Token0 = prMsduReport->au4MsduToken[u4Idx].
+			u4Token = prMsduReport->au4MsduToken[u4Idx].
 				rFormatV1.u2MsduID;
 		else if (ucVer == TFD_EVT_VER_2)
-			u4Token0 = prMsduReport->au4MsduToken[u4Idx].
+			u4Token = prMsduReport->au4MsduToken[u4Idx].
 				rFormatV2.u2MsduID;
-		else if (ucVer == TFD_EVT_VER_5) {
-			u4Token0 = prMsduReport->au4MsduToken[
-					u4Idx].rFormatV5.rP1.u4MsduId0;
-			u4Token1 = prMsduReport->au4MsduToken[
-					u4Idx].rFormatV5.rP1.u4MsduId1;
-			DBGLOG(HAL, INFO, "u4Token0[%d] u4Token1[%d]\n",
-				u4Token0, u4Token1);
-		} else {
+		else {
 			if (!prMsduReport->au4MsduToken[u4Idx].
 				rFormatV3.rP0.u4Pair)
-				u4Token0 = prMsduReport->au4MsduToken[u4Idx].
+				u4Token = prMsduReport->au4MsduToken[u4Idx].
 						rFormatV3.rP0.u4MsduID;
 			else {
 				u4Idx++;
@@ -1248,23 +1233,17 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 		}
 		u4Idx++;
 		u2TokenCnt++;
-		halProcessToken(prAdapter, ucVer, u4Token0, prMsduReport,
-			prFreeQueue, u2TokenCnt);
 
-		if (ucVer == TFD_EVT_VER_5)
-			halProcessToken(prAdapter, ucVer, u4Token1,
-				prMsduReport, prFreeQueue, u2TokenCnt);
+		if (u4Token >= HIF_TX_MSDU_TOKEN_NUM) {
+			DBGLOG(HAL, ERROR, "Error MSDU report[%u]\n", u4Token);
+			DBGLOG_MEM32(HAL, ERROR, prMsduReport, 64);
+			prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
+			halPrintHifDbgInfo(prAdapter);
+			continue;
+		}
+
+		halProcessToken(prAdapter, u4Token, prFreeQueue);
 	}
-
-#if !HIF_TX_PREALLOC_DATA_BUFFER
-	nicTxMsduDoneCb(prAdapter->prGlueInfo, prFreeQueue);
-#endif
-
-	/* Indicate Service Thread */
-	if (wlanGetTxPendingFrameCount(prAdapter) > 0)
-		kalSetEvent(prAdapter->prGlueInfo);
-
-	kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 }
 
 void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,

@@ -989,6 +989,8 @@ void asicConnac3xInitRxdHook(
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 	prRxDescOps->nic_rxd_fill_radiotap = nic_rxd_v3_fill_radiotap;
 #endif
+	prRxDescOps->nic_rxd_handle_host_rpt =
+		nic_rxd_v3_handle_host_rpt;
 }
 
 #if (CFG_SUPPORT_MSP == 1)
