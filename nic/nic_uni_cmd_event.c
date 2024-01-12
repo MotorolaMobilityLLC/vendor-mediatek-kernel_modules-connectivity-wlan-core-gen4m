@@ -9030,7 +9030,7 @@ void nicUniEventMibInfo(struct ADAPTER *ad,
 	rMibMapTable[UNI_CMD_MIB_CNT_AMPDU_MPDU] = &prMibStats->u4TxAmpduMpdu;
 	rMibMapTable[UNI_CMD_MIB_CNT_AMPDU_ACKED] = &prMibStats->u4TxAmpduAcked;
 
-	for (i = 0; i < BSSID_NUM; i++) {
+	for (i = 0; i < HW_BSSID_NUM; i++) {
 		rMibMapTable[UNI_CMD_MIB_CNT_BSS0_RTS_TX_CNT + i] =
 			&prMibStats->au4RtsTxCnt[i];
 		rMibMapTable[UNI_CMD_MIB_CNT_BSS0_RTS_RETRY + i] =
@@ -9260,7 +9260,8 @@ void nicCollectRegStatFromEmi(struct ADAPTER
 	" u2LinkSpeed(0x%px):%u ucMediumBusyPercentage(0x%px):%u"\
 	" ucIsLQ0Rdy(0x%px):%d\n"
 
-	for (i = 0; i < MAX_BSSID_NUM; i++) {
+	for (i = 0;
+		i < MAX_BSSID_NUM && i < ARRAY_SIZE(rUniEvtLQ.rLq); i++) {
 		struct LINK_SPEED_EX_ *prLq;
 
 		DBGLOG(NIC, TRACE,
@@ -9386,7 +9387,9 @@ void nicUniEventAllStatsOneCmd(struct ADAPTER
 			struct EVENT_LINK_QUALITY legacy = {0};
 			uint8_t i;
 
-			for (i = 0; i < MAX_BSSID_NUM; i++) {
+			for (i = 0;
+			     i < MAX_BSSID_NUM && i < ARRAY_SIZE(tlv->rLq);
+			     i++) {
 				struct LINK_SPEED_EX_ *prLq;
 
 				if (!tlv->rLq[i].ucIsLQ0Rdy)
