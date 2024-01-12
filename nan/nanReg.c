@@ -450,7 +450,8 @@ nanRegConvertNanChnlInfo(union _NAN_BAND_CHNL_CTRL rChnlInfo,
 }
 
 enum ENUM_BAND
-nanRegGetNanChnlBand(union _NAN_BAND_CHNL_CTRL rNanChnlInfo) {
+nanRegGetNanChnlBand(union _NAN_BAND_CHNL_CTRL rNanChnlInfo)
+{
 	enum ENUM_BAND eBand = BAND_NULL;
 
 	if (rNanChnlInfo.rChannel.u4Type ==

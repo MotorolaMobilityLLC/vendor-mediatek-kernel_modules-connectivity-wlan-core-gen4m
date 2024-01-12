@@ -999,12 +999,19 @@ int32_t nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo,
 		return -EINVAL;
 	}
 
-	rNanCmdDataResponse.ucNDPId =
-		nla_get_u32(tb[MTK_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID]);
-	DBGLOG(NAN, INFO, "[Data Resp] RespID:%d\n",
+	if (nanGetFeatureIsSigma(prGlueInfo->prAdapter)) {
+		rNanCmdDataResponse.ucNDPId =
+			nla_get_u32(tb[MTK_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID]);
+		DBGLOG(NAN, INFO, "[Data Resp] RespID:%d\n",
 	       rNanCmdDataResponse.ucNDPId);
-	if (rNanCmdDataResponse.ucNDPId == 0)
-		rNanCmdDataResponse.ucNDPId = g_u2IndPubId;
+		if (rNanCmdDataResponse.ucNDPId == 0)
+			rNanCmdDataResponse.ucNDPId = g_u2IndPubId;
+	} else {
+		rNanCmdDataResponse.ndp_instance_id =
+			nla_get_u32(tb[MTK_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID]);
+		DBGLOG(NAN, INFO, "[Data Resp] InstanceRespID:%d\n",
+			rNanCmdDataResponse.ndp_instance_id);
+	}
 
 	/* Get transaction ID */
 	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID]) {
