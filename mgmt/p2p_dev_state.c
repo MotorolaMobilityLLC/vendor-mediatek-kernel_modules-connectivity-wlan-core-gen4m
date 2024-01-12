@@ -441,14 +441,19 @@ p2pDevStateInit_LISTEN_OFFLOAD(
 	struct P2P_LISTEN_OFFLOAD_INFO *pLoInfo)
 {
 	struct CMD_SET_P2P_LO_START_STRUCT *prCmd;
+	uint16_t u2CmdBufLen = 0;
 
 	do {
 		if (!prAdapter)
 			return FALSE;
 
+		u2CmdBufLen =
+			sizeof(struct CMD_SET_P2P_LO_START_STRUCT) +
+			pLoInfo->u2IELen;
+
 		prCmd = (struct CMD_SET_P2P_LO_START_STRUCT *)
 			cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
-			sizeof(*prCmd));
+			u2CmdBufLen);
 		if (!prCmd) {
 			DBGLOG(P2P, ERROR,
 				"cnmMemAlloc for prCmd failed!\n");
@@ -475,7 +480,7 @@ p2pDevStateInit_LISTEN_OFFLOAD(
 			FALSE,
 			NULL,
 			NULL,
-			sizeof(*prCmd),
+			u2CmdBufLen,
 			(uint8_t *) prCmd,
 			NULL,
 			0);
@@ -493,14 +498,18 @@ void p2pDevStateAbort_LISTEN_OFFLOAD(
 	enum ENUM_P2P_DEV_STATE eNextState)
 {
 	struct CMD_SET_P2P_LO_STOP_STRUCT *prCmd;
+	uint16_t u2CmdBufLen = 0;
 
 	do {
 		if (!prAdapter)
 			break;
 
+		u2CmdBufLen =
+			sizeof(struct CMD_SET_P2P_LO_STOP_STRUCT);
+
 		prCmd = (struct CMD_SET_P2P_LO_STOP_STRUCT *)
 			cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
-			sizeof(*prCmd));
+			u2CmdBufLen);
 		if (!prCmd) {
 			DBGLOG(P2P, ERROR,
 				"cnmMemAlloc for prCmd failed!\n");
@@ -516,7 +525,7 @@ void p2pDevStateAbort_LISTEN_OFFLOAD(
 			FALSE,
 			NULL,
 			NULL,
-			sizeof(*prCmd),
+			u2CmdBufLen,
 			(uint8_t *) prCmd,
 			NULL,
 			0);

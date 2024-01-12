@@ -4935,8 +4935,7 @@ uint32_t nicUniCmdSetP2pLoStart(struct ADAPTER *ad,
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_P2P) +
 		sizeof(struct UNI_CMD_SET_P2P_LO_START_PARAM);
 
-	if (info->ucCID != CMD_ID_SET_P2P_LO_START ||
-	    info->u4SetQueryInfoLen != sizeof(*cmd))
+	if (info->ucCID != CMD_ID_SET_P2P_LO_START)
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	cmd = (struct CMD_SET_P2P_LO_START_STRUCT *)
@@ -4983,8 +4982,7 @@ uint32_t nicUniCmdSetP2pLoStop(struct ADAPTER *ad,
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_P2P) +
 		sizeof(struct UNI_CMD_SET_P2P_LO_STOP_PARAM);
 
-	if (info->ucCID != CMD_ID_SET_P2P_LO_STOP ||
-	    info->u4SetQueryInfoLen != sizeof(*cmd))
+	if (info->ucCID != CMD_ID_SET_P2P_LO_STOP)
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	cmd = (struct CMD_SET_P2P_LO_STOP_STRUCT *)
