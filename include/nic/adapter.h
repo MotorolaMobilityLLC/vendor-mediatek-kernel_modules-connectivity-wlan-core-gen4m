@@ -265,7 +265,9 @@ struct CONNECTION_SETTINGS {
 	/* for RSN info store, when upper layer set rsn info */
 	struct RSN_INFO rRsnInfo;
 
+#if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 	u_int8_t fgSecModeChangeStartTimer;
+#endif
 
 	uint8_t *pucAssocIEs;
 	size_t assocIeLen;

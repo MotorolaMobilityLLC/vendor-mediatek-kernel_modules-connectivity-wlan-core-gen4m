@@ -2626,14 +2626,8 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 		    prAisBssInfo->aucBSSID)
 		    && EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
 		    prAisBssInfo->aucSSID, prAisBssInfo->ucSSIDLen)) {
-#if CFG_SUPPORT_BEACON_CHANGE_DETECTION
-			u_int8_t fgNeedDisconnect = FALSE;
 
-			/* <1.1.2> check if supported rate differs */
-			if (prAisBssInfo->u2OperationalRateSet
-				!= prBssDesc->u2OperationalRateSet)
-				fgNeedDisconnect = TRUE;
-#endif
+#if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 			if (rsnCheckSecurityModeChanged(prAdapter,
 				prAisBssInfo, prBssDesc)
 #if CFG_SUPPORT_WAPI
@@ -2648,9 +2642,6 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 				log_mem8_dbg(SCN, INFO,
 					prSwRfb->pvHeader,
 					prSwRfb->u2PacketLen);
-#if CFG_SUPPORT_BEACON_CHANGE_DETECTION
-				fgNeedDisconnect = FALSE;
-#endif
 				if (!prConnSettings
 					->fgSecModeChangeStartTimer) {
 					cnmTimerStartTimer(prAdapter,
@@ -2673,14 +2664,6 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 							= FALSE;
 				}
 			}
-
-#if CFG_SUPPORT_BEACON_CHANGE_DETECTION
-			/* <1.1.3> beacon content change detected,
-			 * disconnect immediately
-			 */
-			if (fgNeedDisconnect == TRUE)
-				aisBssBeaconTimeout(prAdapter,
-					u4Idx);
 #endif
 		}
 		/* 4 <1.1> Update AIS_BSS_INFO */
