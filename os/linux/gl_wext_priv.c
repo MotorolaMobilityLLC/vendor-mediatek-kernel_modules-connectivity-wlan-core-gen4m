@@ -3368,7 +3368,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_GET_STA_IDX         "GET_STA_IDX"
 #define CMD_GET_TX_POWER_INFO   "TxPowerInfo"
 #define CMD_TX_POWER_MANUAL_SET "TxPwrManualSet"
-
+#define CMD_GET_HAPD_CHANNEL       "HAPD_GET_CHANNEL"
 
 /* neptune doens't support "show" entry, use "driver" to handle
  * MU GET request, and MURX_PKTCNT comes from RX_STATS,
@@ -14018,6 +14018,51 @@ int priv_driver_set_nvram(IN struct net_device *prNetDev, IN char *pcCommand,
 
 }
 
+static int priv_driver_get_hapd_channel(
+	IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct BSS_INFO *prAisBssInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	uint8_t ucChannel;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		goto error;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	prAisBssInfo = aisGetConnectedBssInfo(prAdapter);
+	if (!prAisBssInfo) {
+		DBGLOG(REQ, WARN, "bss is not active\n");
+		/* AUTO */
+		ucChannel = 0;
+	} else {
+		DBGLOG(REQ, INFO,
+			"STA operating channel: %d, band: %d, conn state: %d",
+			prAisBssInfo->ucPrimaryChannel,
+			prAisBssInfo->eBand,
+			prAisBssInfo->eConnectionState);
+		ucChannel = prAisBssInfo->ucPrimaryChannel;
+	}
+
+	i4BytesWritten = kalSnprintf(
+		pcCommand, i4TotalLen, "%d", ucChannel);
+
+	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
+
+	return i4BytesWritten;
+
+error:
+	return -1;
+}
+
+
 typedef int(*PRIV_CMD_FUNCTION) (
 		IN struct net_device *prNetDev,
 		IN char *pcCommand,
@@ -14171,6 +14216,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_SET_NVRAM, priv_driver_set_nvram},
 	{CMD_GET_NVRAM, priv_driver_get_nvram},
 	{CMD_SET_SW_WFDMA, priv_driver_set_sw_wfdma},
+	{CMD_GET_HAPD_CHANNEL, priv_driver_get_hapd_channel},
 };
 
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
