@@ -1710,7 +1710,81 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			i4Rslt = 0;
 			goto exit;
 		}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (IS_FEATURE_ENABLED(
+			prGlueInfo->prAdapter->rWifiVar.ucDisallowAcs6G)) {
+			struct BSS_INFO *prAisBssInfo =
+				aisGetConnectedBssInfo(prGlueInfo->prAdapter);
+			/* Assuming that ap0 is activated in the G band and
+			 * ap1 is activated in the A band.
+			 */
+			if (prAisBssInfo && prAisBssInfo->eBand == BAND_6G &&
+				p2pFuncIsDualAPMode(prGlueInfo->prAdapter) &&
+				ucRoleIdx == 1) {
+				DBGLOG(P2P, WARN,
+					"Remove sap (role%d)\n",
+					ucRoleIdx);
+				i4Rslt = 0;
+				goto exit;
+			}
+		}
+#endif /* CFG_SUPPORT_WIFI_6G */
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		prAdapter = prGlueInfo->prAdapter;
+		prWifiVar = &prAdapter->rWifiVar;
+		if (prWifiVar->fgSapConcurrencyPolicy ==
+			P2P_CONCURRENCY_POLICY_REMOVE_IF_STA_MLO) {
+			struct BSS_INFO *prBssInfo;
+			struct BSS_INFO *prAisBssInfo =
+				(struct BSS_INFO *) NULL;
+			struct MLD_BSS_INFO *prMldBssInfo =
+				(struct MLD_BSS_INFO *) NULL;
+			uint8_t i;
 
+			/* Get AIS BssInfo with the largest Band*/
+			for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
+				prBssInfo = prAdapter->aprBssInfo[i];
+
+				if (prBssInfo &&
+					IS_BSS_AIS(prBssInfo) &&
+					kalGetMediaStateIndicated(
+					prAdapter->prGlueInfo,
+					prBssInfo->ucBssIndex) ==
+					MEDIA_STATE_CONNECTED) {
+					if (!prAisBssInfo ||
+						(prAisBssInfo->eBand <
+						prBssInfo->eBand))
+						prAisBssInfo = prBssInfo;
+				}
+			}
+			/* Assuming that ap0 is activated in the G band and
+			 * ap1 is activated in the A band.
+			 */
+			if (prAisBssInfo) {
+				prMldBssInfo = mldBssGetByBss(
+						prGlueInfo->prAdapter,
+						prAisBssInfo);
+				if (p2pFuncIsDualAPMode(
+					prGlueInfo->prAdapter) &&
+					IS_MLD_BSSINFO_MULTI(prMldBssInfo) &&
+					(((ucRoleIdx == 0) &&
+					IS_FEATURE_DISABLED(
+					prWifiVar->ucDisallowAcs6G)) ||
+#if (CFG_SUPPORT_WIFI_6G == 1)
+					((ucRoleIdx == 1) &&
+					(prAisBssInfo->eBand == BAND_6G)) ||
+#endif /* CFG_SUPPORT_WIFI_6G */
+					((ucRoleIdx == 0) &&
+					(prAisBssInfo->eBand == BAND_5G)))) {
+					DBGLOG(P2P, WARN,
+						"Remove sap (role%d)\n",
+						ucRoleIdx);
+					i4Rslt = 0;
+					goto exit;
+				}
+			}
+		}
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 		if (dev->ieee80211_ptr &&
 			(dev->ieee80211_ptr->iftype == NL80211_IFTYPE_AP) &&
 			!p2pFuncIsAPMode(

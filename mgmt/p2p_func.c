@@ -7893,6 +7893,24 @@ void p2pFuncSwitchSapChannel(
 		if (prAisBssInfo)
 			p2pFuncRemoveOneSap(prAdapter);
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prAisBssInfo &&
+		prAisBssInfo->eBand == BAND_6G &&
+		IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucDisallowAcs6G)) {
+		p2pFuncRemoveOneSap(prAdapter);
+	}
+#endif /* CFG_SUPPORT_WIFI_6G */
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (prAdapter->rWifiVar.fgSapConcurrencyPolicy ==
+		P2P_CONCURRENCY_POLICY_REMOVE_IF_STA_MLO) {
+		if (prAisBssInfo) {
+			struct MLD_BSS_INFO *prMldBssInfo =
+				mldBssGetByBss(prAdapter, prAisBssInfo);
+			if (IS_MLD_BSSINFO_MULTI(prMldBssInfo))
+				p2pFuncRemoveOneSap(prAdapter);
+		}
+	}
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 	prP2pBssInfo = cnmGetSapBssInfo(prAdapter);
 	if (!prP2pBssInfo) {
 		DBGLOG(P2P, TRACE, "SAP is not active\n");
@@ -7900,7 +7918,9 @@ void p2pFuncSwitchSapChannel(
 	}
 
 	if (prAdapter->rWifiVar.fgSapConcurrencyPolicy ==
-		P2P_CONCURRENCY_POLICY_KEEP) {
+		P2P_CONCURRENCY_POLICY_KEEP ||
+		prAdapter->rWifiVar.fgSapConcurrencyPolicy ==
+		P2P_CONCURRENCY_POLICY_REMOVE_IF_STA_MLO) {
 		struct BSS_INFO *prSapBssInfo =
 			cnmGetOtherSapBssInfo(prAdapter,
 			prP2pBssInfo);
