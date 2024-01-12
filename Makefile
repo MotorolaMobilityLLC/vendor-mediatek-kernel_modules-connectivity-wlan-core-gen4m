@@ -677,6 +677,12 @@ else
     ccflags-y += -DCFG_SINGLE_WTBL_GTK_REKEY=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_DUAL_WTBL_GTK_REKEY_OFFLOAD), y)
+    ccflags-y += -DCFG_SUPPORT_DUAL_WTBL_GTK_REKEY_OFFLOAD=1
+else
+    ccflags-y += -DCFG_SUPPORT_DUAL_WTBL_GTK_REKEY_OFFLOAD=0
+endif
+
 ifneq ($(CONFIG_DBDC_MODE),)
     ccflags-y += -DCFG_DBDC_MODE=$(CONFIG_DBDC_MODE)
 endif

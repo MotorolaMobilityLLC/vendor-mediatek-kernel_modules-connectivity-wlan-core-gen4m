@@ -2324,6 +2324,11 @@
 
 #define CFG_SUPPORT_SW_BIP_GMAC		1
 
+#ifndef CFG_SUPPORT_DUAL_WTBL_GTK_REKEY_OFFLOAD
+#define CFG_SUPPORT_DUAL_WTBL_GTK_REKEY_OFFLOAD        0
+#endif
+
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

@@ -171,6 +171,10 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 	uint8_t ucBssIndex = 0;
 	const uint8_t aucBCAddr[] = BC_MAC_ADDR;
 	/* const UINT_8 aucZeroMacAddr[] = NULL_MAC_ADDR; */
+#if CFG_SUPPORT_DUAL_WTBL_GTK_REKEY_OFFLOAD
+	struct PARAM_KEY rDupKey;
+	struct BSS_INFO *prBssInfo;
+#endif
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
@@ -279,6 +283,32 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 		if (params->seq_len == 6) /* IGTK Package Number */
 			kalMemCopy(rKey.aucKeyPn, params->seq, params->seq_len);
 	}
+
+#if CFG_SUPPORT_DUAL_WTBL_GTK_REKEY_OFFLOAD
+	 prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
+			ucBssIndex);
+
+	DBGLOG(RSN, INFO, "ucBMCWlanIndexSUsed[1]=%u [2]=%u\n",
+		prBssInfo->ucBMCWlanIndexSUsed[1],
+		prBssInfo->ucBMCWlanIndexSUsed[2]);
+
+	if (pairwise == FALSE
+			&& prBssInfo->ucBMCWlanIndexSUsed[1] == FALSE
+			&& prBssInfo->ucBMCWlanIndexSUsed[2] == FALSE) {
+		/* if this is the first time add gtk */
+		if ((rKey.u4KeyIndex == 1) || (rKey.u4KeyIndex == 2)) {
+			kalMemCopy(&rDupKey, &rKey, sizeof(struct PARAM_KEY));
+			rDupKey.u4KeyIndex = rKey.u4KeyIndex ^ 0x03;
+			rStatus = kalIoctl(prGlueInfo, wlanoidSetAddKey,
+				&rDupKey,
+				rDupKey.u4Length,
+				&u4BufLen);
+		} else {
+			DBGLOG(RSN, ERROR, "GTK key id is %u\n",
+				rKey.u4KeyIndex);
+		}
+	}
+#endif
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetAddKey, &rKey,
 			   rKey.u4Length, &u4BufLen);
