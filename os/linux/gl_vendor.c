@@ -1556,13 +1556,15 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 			if (src_rate->tx_mpdu || src_rate->mpdu_lost ||
 			    src_rate->retries || rxMpduCount) {
 				dst_peer->num_rate++;
-				DBGLOG(REQ, TRACE, "valid rate %u", j);
-				DBGLOG(REQ, TRACE,
-					"memcpy(dst_rate=(%u), src_rate=(%u))",
-					((uint8_t *)dst_rate) -
-							((uint8_t *)dst),
-					((uint8_t *)src_rate) -
-							((uint8_t *)src->rate));
+				if (prWifiVar->fgLinkStatsDump) {
+					DBGLOG(REQ, TRACE, "valid rate %u", j);
+					DBGLOG(REQ, TRACE,
+						"memcpy(dst_rate=(%u), src_rate=(%u))",
+						(uint8_t *)dst_rate -
+							(uint8_t *)dst,
+						(uint8_t *)src_rate -
+							(uint8_t *)src->rate);
+				}
 				kalMemCopyFromIo(dst_rate, src_rate,
 					sizeof(struct STATS_LLS_RATE_STAT));
 

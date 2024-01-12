@@ -2052,7 +2052,7 @@ nicTxComposeDesc(
 			fgIsTemplate,
 			prTxDescBuffer);
 	else
-		DBGLOG(TX, ERROR, "%s:: no nic_txd_compose??\n", __func__);
+		DBGLOG(TX, ERROR, "no nic_txd_compose?\n");
 }
 
 /**
@@ -2324,9 +2324,7 @@ nicTxFillDesc(struct ADAPTER *prAdapter,
 		prTxDescOps->nic_txd_header_format_op(
 			prTxDesc, prMsduInfo);
 	else
-		DBGLOG(TX, ERROR,
-			"%s:: no nic_txd_header_format_op??\n",
-			__func__);
+		DBGLOG(TX, ERROR, "no nic_txd_header_format_op?\n");
 
 	if (pu4TxDescLength)
 		*pu4TxDescLength = u4TxDescLength;
@@ -2633,9 +2631,7 @@ void nicTxSetHwAmsduDescTemplate(
 			ucTid,
 			fgSet);
 	else
-		DBGLOG(TX, ERROR,
-			"%s:: no nic_txd_set_hw_amsdu_template??\n",
-			__func__);
+		DBGLOG(TX, ERROR, "no nic_txd_set_hw_amsdu_template?\n");
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3048,8 +3044,8 @@ void nicTxRelease(struct ADAPTER *prAdapter,
 
 		if (prMsduInfo) {
 			DBGLOG(TX, TRACE,
-				"%s: Get Msdu WIDX:PID[%u:%u] SEQ[%u] from Pending Q\n",
-			  __func__, prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
+				"Get Msdu WIDX:PID[%u:%u] SEQ[%u] from Pending Q\n",
+			  prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
 			  prMsduInfo->ucTxSeqNum);
 
 			/* invoke done handler */
@@ -4521,8 +4517,8 @@ uint32_t nicTxEnqueueMsdu(struct ADAPTER *prAdapter,
 						prMsduInfoHead->ucTxSeqNum;
 
 					DBGLOG(TX, TRACE,
-						"%s: EN-Q MSDU[0x%p] SEQ[%u] BSS[%u] STA[%u] to CMD Q\n",
-					  __func__, prMsduInfoHead,
+						"EN-Q MSDU[0x%p] SEQ[%u] BSS[%u] STA[%u] to CMD Q\n",
+					  prMsduInfoHead,
 					  prMsduInfoHead->ucTxSeqNum,
 					  prMsduInfoHead->ucBssIndex,
 					  prMsduInfoHead->ucStaRecIndex);
@@ -4894,13 +4890,10 @@ void nicTxFillDescByPktOption(
 	struct TX_DESC_OPS_T *prTxDescOps = prAdapter->chip_info->prTxDescOps;
 
 	if (prTxDescOps->nic_txd_fill_by_pkt_option)
-		prTxDescOps->nic_txd_fill_by_pkt_option(
-			prAdapter,
-			prMsduInfo,
-			prTxDesc);
+		prTxDescOps->nic_txd_fill_by_pkt_option(prAdapter,
+						prMsduInfo, prTxDesc);
 	else
-		DBGLOG(TX, ERROR, "%s:: no nic_txd_fill_by_pkt_option??\n",
-			__func__);
+		DBGLOG(TX, ERROR, "no nic_txd_fill_by_pkt_option?\n");
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5014,8 +5007,7 @@ void nicTxSetPktFixedRateOptionFull(
 			ucAntennaIndex);
 	else
 		DBGLOG(TX, ERROR,
-			"%s:: no nic_txd_set_pkt_fixed_rate_option_full??\n",
-			__func__);
+			"no nic_txd_set_pkt_fixed_rate_option_full?\n");
 }
 
 void nicTxSetPktFixedRateOption(
@@ -5037,9 +5029,7 @@ void nicTxSetPktFixedRateOption(
 			fgShortGI,
 			fgDynamicBwRts);
 	else
-		DBGLOG(TX, ERROR,
-			"%s:: no nicTxSetPktFixedRateOption??\n",
-			__func__);
+		DBGLOG(TX, ERROR, "no nic_txd_set_pkt_fixed_rate_option?\n");
 }
 
 void nicTxSetPktLowestFixedRate(struct ADAPTER *prAdapter,
@@ -5908,7 +5898,7 @@ static void nicTxDirectCheckStaAcmQ(struct ADAPTER *prAdapter,
 
 	/* check if acm required */
 	if (likely(!prStaRec->afgAcmRequired[ucAc])) {
-		DBGLOG(NIC, TRACE, "afgAcmRequired:%u\n",
+		DBGLOG(NIC, LOUD, "afgAcmRequired:%u\n",
 			prStaRec->afgAcmRequired[ucAc]);
 		return;
 	}

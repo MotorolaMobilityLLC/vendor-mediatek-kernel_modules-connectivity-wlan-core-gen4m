@@ -4736,7 +4736,7 @@ void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 		     SEQ_SMALLER(prReorderQueParm->u2LastRcvdSN, u2SeqNo))) {
 			qmPopOutReorderPkt(prAdapter, prReorderQueParm, prSwRfb,
 				prReturnedQue, RX_DATA_REORDER_BEHIND_COUNT);
-			DBGLOG(RX, TRACE,
+			DBGLOG(RX, LOUD,
 				"QM: Data after BAR:[%d](%d){%d,%d} total:%lu",
 				prSwRfb->ucTid, u2SeqNo, u2WinStart, u2WinEnd,
 				RX_GET_CNT(&prAdapter->rRxCtrl,
