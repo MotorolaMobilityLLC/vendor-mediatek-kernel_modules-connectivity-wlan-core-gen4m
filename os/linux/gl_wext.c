@@ -1305,7 +1305,7 @@ wext_set_mode(struct net_device *prNetDev,
 	prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_NONE;
 	prWpaInfo->u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
 #if CFG_SUPPORT_802_11W
-	prWpaInfo->u4Mfp = IW_AUTH_MFP_DISABLED;
+	prWpaInfo->u4Mfp = RSN_AUTH_MFP_DISABLED;
 #endif
 
 	return 0;
@@ -2775,7 +2775,7 @@ wext_set_encode(struct net_device *prNetDev,
 	prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_NONE;
 	prWpaInfo->u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
 #if CFG_SUPPORT_802_11W
-	prWpaInfo->u4Mfp = IW_AUTH_MFP_DISABLED;
+	prWpaInfo->u4Mfp = RSN_AUTH_MFP_DISABLED;
 #endif
 
 	/* iwconfig wlan0 key off */

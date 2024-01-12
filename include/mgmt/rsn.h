@@ -199,9 +199,10 @@
 #define TKIP_COUNTERMEASURE_SEC                 60	/* seconds */
 
 #if CFG_SUPPORT_802_11W
-#define RSN_AUTH_MFP_DISABLED   0	/* MFP disabled */
-#define RSN_AUTH_MFP_OPTIONAL   1	/* MFP optional */
-#define RSN_AUTH_MFP_REQUIRED   2	/* MFP required */
+/* sync with IW_AUTH_MFP_XXXX */
+#define RSN_AUTH_MFP_DISABLED		0	/* MFP disabled */
+#define RSN_AUTH_MFP_OPTIONAL		1	/* MFP optional */
+#define RSN_AUTH_MFP_REQUIRED		2	/* MFP required */
 #endif
 
 /* Extended RSN Capabilities */

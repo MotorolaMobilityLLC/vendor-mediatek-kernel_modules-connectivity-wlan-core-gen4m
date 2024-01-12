@@ -142,7 +142,7 @@ mtk_cfg80211_change_iface(struct wiphy *wiphy,
 	prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_NONE;
 	prWpaInfo->u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
 #if CFG_SUPPORT_802_11W
-	prWpaInfo->u4Mfp = IW_AUTH_MFP_DISABLED;
+	prWpaInfo->u4Mfp = RSN_AUTH_MFP_DISABLED;
 	prWpaInfo->ucRSNMfpCap = 0;
 #endif
 
@@ -1536,7 +1536,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	prWpaInfo->u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
 	prWpaInfo->fgPrivacyInvoke = FALSE;
 #if CFG_SUPPORT_802_11W
-	prWpaInfo->u4Mfp = IW_AUTH_MFP_DISABLED;
+	prWpaInfo->u4Mfp = RSN_AUTH_MFP_DISABLED;
 	prWpaInfo->ucRSNMfpCap = RSN_AUTH_MFP_DISABLED;
 	prWpaInfo->u4CipherGroupMgmt = RSN_CIPHER_SUITE_BIP_CMAC_128;
 #endif
@@ -1797,24 +1797,23 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 #if CFG_SUPPORT_802_11W
 	switch (sme->mfp) {
 	case NL80211_MFP_NO:
-		prWpaInfo->u4Mfp = IW_AUTH_MFP_DISABLED;
+		prWpaInfo->u4Mfp = RSN_AUTH_MFP_DISABLED;
 		/* Change Mfp parameter from DISABLED to OPTIONAL
 		* if upper layer set MFPC = 1 in RSNE
 		* since upper layer can't bring MFP OPTIONAL information
 		* to driver by sme->mfp
 		*/
 		if (prWpaInfo->ucRSNMfpCap == RSN_AUTH_MFP_OPTIONAL)
-			prWpaInfo->u4Mfp = IW_AUTH_MFP_OPTIONAL;
-		else if (prWpaInfo->ucRSNMfpCap ==
-					RSN_AUTH_MFP_REQUIRED)
+			prWpaInfo->u4Mfp = RSN_AUTH_MFP_OPTIONAL;
+		else if (prWpaInfo->ucRSNMfpCap == RSN_AUTH_MFP_REQUIRED)
 			DBGLOG(REQ, WARN,
 				"mfp parameter(DISABLED) conflict with mfp cap(REQUIRED)\n");
 		break;
 	case NL80211_MFP_REQUIRED:
-		prWpaInfo->u4Mfp = IW_AUTH_MFP_REQUIRED;
+		prWpaInfo->u4Mfp = RSN_AUTH_MFP_REQUIRED;
 		break;
 	default:
-		prWpaInfo->u4Mfp = IW_AUTH_MFP_DISABLED;
+		prWpaInfo->u4Mfp = RSN_AUTH_MFP_DISABLED;
 		break;
 	}
 	/* DBGLOG(REQ, INFO, ("MFP=%d\n", prWpaInfo->u4Mfp)); */

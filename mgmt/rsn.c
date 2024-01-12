@@ -1604,8 +1604,14 @@ u_int8_t rsnPerformPolicySelection(
 				ELEM_WPA_CAP_MFPR | ELEM_WPA_CAP_MFPC;
 		} else if (kalGetMfpSetting(prAdapter->prGlueInfo,
 			ucBssIndex) == RSN_AUTH_MFP_OPTIONAL) {
-			u4MgmtProtection = prBssRsnInfo->u2RsnCap &
-				(ELEM_WPA_CAP_MFPR | ELEM_WPA_CAP_MFPC);
+			if (prAdapter->rWifiVar.u4SwTestMode ==
+				/* PMF Cert. should disallow MFPR if OPTIONAL */
+				ENUM_SW_TEST_MODE_SIGMA_PMF)
+				u4MgmtProtection = prBssRsnInfo->u2RsnCap &
+					ELEM_WPA_CAP_MFPC;
+			else
+				u4MgmtProtection = prBssRsnInfo->u2RsnCap &
+					(ELEM_WPA_CAP_MFPR | ELEM_WPA_CAP_MFPC);
 		} else {
 			if ((prBssRsnInfo->fgRsnCapPresent) &&
 			(prBssRsnInfo->u2RsnCap & ELEM_WPA_CAP_MFPR)) {
