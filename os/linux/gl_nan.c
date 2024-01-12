@@ -699,7 +699,7 @@ glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 	const char *prSetDevName;
 	struct _GL_NAN_INFO_T *prNANInfo = (struct _GL_NAN_INFO_T *)NULL;
 	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
-	uint8_t rMacAddrOverride[PARAM_MAC_ADDR_LEN];
+	uint8_t rMacAddrOverride[PARAM_MAC_ADDR_LEN] = {0};
 
 	if (!prGlueInfo) {
 		DBGLOG(NAN, ERROR, "prGlueInfo error!\n");

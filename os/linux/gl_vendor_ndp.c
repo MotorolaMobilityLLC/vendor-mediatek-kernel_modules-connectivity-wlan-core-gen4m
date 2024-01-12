@@ -1131,7 +1131,7 @@ nanNdpDataIndEvent(struct ADAPTER *prAdapter,
 
 	if (unlikely(nla_put_u32(skb,
 				 MTK_WLAN_VENDOR_ATTR_NDP_SERVICE_INSTANCE_ID,
-				 prNDP->ucPublishId)) < 0) {
+				 prNDP->ucPublishId) < 0)) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 		kfree_skb(skb);
 		return -EFAULT;
@@ -1271,7 +1271,7 @@ nanNdpDataConfirmEvent(struct ADAPTER *prAdapter,
 
 	if (prNDP->fgCarryIPV6 && unlikely(nla_put(skb,
 		MTK_WLAN_VENDOR_ATTR_NDP_IPV6_ADDR,
-		IPV6MACLEN, prNDP->aucRspInterfaceId)) < 0) {
+		IPV6MACLEN, prNDP->aucRspInterfaceId) < 0)) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 		kfree_skb(skb);
 		return -EFAULT;
@@ -1284,7 +1284,7 @@ nanNdpDataConfirmEvent(struct ADAPTER *prAdapter,
 	if (prNDP->pucPeerAppInfo &&
 	    unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO,
 	    prNDP->u2PeerAppInfoLen,
-		    prNDP->pucPeerAppInfo)) < 0) {
+		    prNDP->pucPeerAppInfo) < 0)) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 		kfree_skb(skb);
 		return -EFAULT;
