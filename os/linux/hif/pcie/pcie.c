@@ -85,6 +85,9 @@
 #include <linux/platform_device.h>
 #include <linux/of_device.h>
 #include <linux/of_reserved_mem.h>
+#if CFG_SUPPORT_RX_PAGE_POOL
+#include <net/page_pool.h>
+#endif
 
 #include "mt66xx_reg.h"
 
@@ -203,6 +206,12 @@ const struct of_device_id mtk_axi_of_ids[] = {
 	{.compatible = "mediatek,wifi",},
 	{}
 };
+#if CFG_SUPPORT_RX_PAGE_POOL
+const struct of_device_id mtk_page_pool_of_ids[] = {
+	{.compatible = "mediatek,wifi_page_pool",},
+	{}
+};
+#endif
 #endif
 
 /*******************************************************************************
@@ -234,6 +243,21 @@ static struct platform_driver mtk_axi_driver = {
 	.probe = NULL,
 	.remove = NULL,
 };
+
+#if CFG_SUPPORT_RX_PAGE_POOL
+static struct platform_driver mtk_page_pool_driver = {
+	.driver = {
+		.name = "wlan_page_pool",
+		.owner = THIS_MODULE,
+#ifdef CONFIG_OF
+		.of_match_table = mtk_page_pool_of_ids,
+#endif
+	},
+	.id_table = mtk_axi_ids,
+	.probe = NULL,
+	.remove = NULL,
+};
+#endif
 
 static struct pci_driver mtk_pci_driver = {
 	.name = KBUILD_MODNAME,
@@ -608,6 +632,7 @@ static int axiAllocHifMem(struct platform_device *pdev,
 			DBGLOG(INIT, ERROR, "TxCmdBuf[%u] alloc fail\n", u4Idx);
 	}
 
+#if !CFG_SUPPORT_RX_PAGE_POOL
 	for (u4Idx = 0; u4Idx < RX_RING0_SIZE; u4Idx++) {
 		if (!axiAllocRsvMem(CFG_RX_MAX_PKT_SIZE,
 				    &grMem.rRxDataBuf[u4Idx]))
@@ -656,6 +681,7 @@ static int axiAllocHifMem(struct platform_device *pdev,
 			DBGLOG(INIT, ERROR,
 			       "TxFreeDoneEvent1Buf[%u] alloc fail\n", u4Idx);
 	}
+#endif
 #endif
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
@@ -730,6 +756,7 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 {
 	struct mt66xx_hif_driver_data *prDriverData;
 	struct mt66xx_chip_info *prChipInfo;
+	struct device_node *node = NULL;
 	int ret = 0;
 
 	g_prPlatDev = pdev;
@@ -738,6 +765,13 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 	prChipInfo = prDriverData->chip_info;
 
 	platform_set_drvdata(pdev, (void *) prDriverData);
+
+	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi");
+	if (!node) {
+		DBGLOG(INIT, ERROR, "WIFI-OF: get wifi device node fail\n");
+		return false;
+	}
+	of_node_put(node);
 
 	ret = axiDmaSetup(pdev, prDriverData);
 	if (ret)
@@ -762,6 +796,45 @@ static int mtk_axi_remove(IN struct platform_device *pdev)
 	platform_set_drvdata(pdev, NULL);
 	return 0;
 }
+
+#if CFG_SUPPORT_RX_PAGE_POOL
+static int mtk_page_pool_probe(IN struct platform_device *pdev)
+{
+	struct mt66xx_hif_driver_data *prDriverData;
+	struct mt66xx_chip_info *prChipInfo;
+	struct device_node *node = NULL;
+	int ret = 0;
+
+	prDriverData = (struct mt66xx_hif_driver_data *)
+			mtk_axi_ids[0].driver_data;
+	prChipInfo = prDriverData->chip_info;
+
+	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi_page_pool");
+	if (!node) {
+		DBGLOG(INIT, ERROR,
+		       "WIFI-OF: get wifi_page_pool device node fail\n");
+		return false;
+	}
+	of_node_put(node);
+
+	ret = axiDmaSetup(pdev, prDriverData);
+	if (ret)
+		goto exit;
+
+	kalCreateRxPagePool(&pdev->dev);
+
+exit:
+	DBGLOG(INIT, INFO, "%s() done, ret: %d\n", __func__, ret);
+
+	return 0;
+}
+
+static int mtk_page_pool_remove(IN struct platform_device *pdev)
+{
+	platform_set_drvdata(pdev, NULL);
+	return 0;
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1103,6 +1176,14 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 	mtk_axi_driver.probe = mtk_axi_probe;
 	mtk_axi_driver.remove = mtk_axi_remove;
 
+#if CFG_SUPPORT_RX_PAGE_POOL
+	mtk_page_pool_driver.probe = mtk_page_pool_probe;
+	mtk_page_pool_driver.remove = mtk_page_pool_remove;
+
+	if (platform_driver_register(&mtk_page_pool_driver))
+		DBGLOG(HAL, ERROR, "page pool platform_driver_register fail\n");
+#endif
+
 	if (platform_driver_register(&mtk_axi_driver))
 		DBGLOG(HAL, ERROR, "platform_driver_register fail\n");
 
@@ -1125,7 +1206,38 @@ void glUnregisterBus(remove_card pfRemove)
 		g_fgDriverProbed = FALSE;
 	}
 	platform_driver_unregister(&mtk_axi_driver);
+#if CFG_SUPPORT_RX_PAGE_POOL
+	platform_driver_unregister(&mtk_page_pool_driver);
+#endif
 }
+
+#if CFG_SUPPORT_RX_PAGE_POOL
+static void *pcieAllocPagePoolRxBuf(struct GL_HIF_INFO *prHifInfo,
+				    struct RTMP_DMABUF *prDmaBuf,
+				    uint32_t u4Num, uint32_t u4Idx)
+{
+	struct sk_buff *prSkb;
+	dma_addr_t rAddr;
+
+	prSkb = kalAllocRxSkb(&rAddr);
+	if (!prSkb) {
+		DBGLOG(HAL, ERROR, "can't allocate rx %u size packet\n",
+		       prDmaBuf->AllocSize);
+		prDmaBuf->AllocPa = 0;
+		prDmaBuf->AllocVa = NULL;
+		return NULL;
+	}
+
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	skb_reserve(prSkb, CFG_RADIOTAP_HEADROOM);
+#endif
+	prDmaBuf->AllocVa = (void *)prSkb->data;
+	memset(prDmaBuf->AllocVa, 0, prDmaBuf->AllocSize);
+
+	prDmaBuf->AllocPa = (phys_addr_t)rAddr;
+	return (void *)prSkb;
+}
+#endif
 
 static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 			     struct HIF_MEM_OPS *prMemOps)
@@ -1188,6 +1300,15 @@ static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 		prMemOps->freePacket = pcieReleaseRxBlkBuf;
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
+#if CFG_SUPPORT_RX_PAGE_POOL
+	prMemOps->allocRxBuf = pcieAllocPagePoolRxBuf;
+	prMemOps->copyEvent = pcieCopyEvent;
+	prMemOps->copyRxData = pcieCopyRxData;
+	prMemOps->mapRxBuf = pcieMapRxBuf;
+	prMemOps->unmapRxBuf = pcieUnmapRxBuf;
+	prMemOps->freePacket = pcieFreePacket;
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
