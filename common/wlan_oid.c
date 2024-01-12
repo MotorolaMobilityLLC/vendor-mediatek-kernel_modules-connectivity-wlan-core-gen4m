@@ -72,6 +72,7 @@
 #include "precomp.h"
 #include "mgmt/rsn.h"
 #include "debug.h"
+#include <linux/kmemleak.h>
 
 /******************************************************************************
  *                              C O N S T A N T S
@@ -1430,6 +1431,9 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 		prConnSettings->assocIeLen = pParamConn->u4IesLen;
 		prConnSettings->pucAssocIEs =
 			kalMemAlloc(prConnSettings->assocIeLen, VIR_MEM_TYPE);
+		/* skip memory leak checking */
+		kmemleak_ignore(prConnSettings->pucAssocIEs);
+
 		if (prConnSettings->pucAssocIEs) {
 			kalMemCopy(prConnSettings->pucAssocIEs,
 				pParamConn->pucIEs, prConnSettings->assocIeLen);
