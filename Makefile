@@ -695,6 +695,12 @@ else
     ccflags-y += -DCFG_SUPPORT_PCIE_ASPM=0
 endif
 
+ifeq ($(CONFIG_DEVICE_SUSPEND_BY_MOBILE), y)
+    ccflags-y += -DCFG_DEVICE_SUSPEND_BY_MOBILE=1
+else
+    ccflags-y += -DCFG_DEVICE_SUSPEND_BY_MOBILE=0
+endif
+
 ifeq ($(CONFIG_CONTROL_ASPM_BY_FW), y)
     ccflags-y += -DCFG_CONTROL_ASPM_BY_FW=1
 else

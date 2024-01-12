@@ -1130,6 +1130,10 @@ static void mtk_pci_remove(struct pci_dev *pdev)
 
 static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 {
+#if (CFG_DEVICE_SUSPEND_BY_MOBILE == 1)
+	return 0;
+#else
+
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct BUS_INFO *prBusInfo;
 	uint32_t count = 0;
@@ -1252,11 +1256,15 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 		wlanReleaseAllTxCmdQueue(prGlueInfo->prAdapter);
 
 	return 0;
+#endif
 }
 
 
 int mtk_pci_resume(struct pci_dev *pdev)
 {
+#if (CFG_DEVICE_SUSPEND_BY_MOBILE == 1)
+	return 0;
+#else
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct BUS_INFO *prBusInfo;
 
@@ -1302,6 +1310,7 @@ int mtk_pci_resume(struct pci_dev *pdev)
 	DBGLOG(HAL, STATE, "mtk_pci_resume() done!\n");
 
 	return 0;
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
