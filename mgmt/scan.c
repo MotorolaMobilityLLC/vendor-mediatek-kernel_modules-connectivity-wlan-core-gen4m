@@ -405,7 +405,11 @@ void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 		}
 
 		prScanReqMsg->ucChannelListNum = u4Index;
-		prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
+		if (u4Index == 0) {
+			log_dbg(SCN, WARN, "No channel to scan, set to full scan\n");
+			prScanReqMsg->eScanChannel = SCAN_CHANNEL_FULL;
+		} else
+			prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
 	} else
 #endif /* CFG_SUPPORT_FULL2PARTIAL_SCAN */
 	{
