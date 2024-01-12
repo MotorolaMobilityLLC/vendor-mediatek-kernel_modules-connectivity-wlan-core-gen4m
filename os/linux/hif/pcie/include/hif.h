@@ -565,9 +565,9 @@ extern struct platform_device *g_prPlatDev;
  *******************************************************************************
  */
 
-#define axi_resource_start(d, v)  (0x18000000)
-#define axi_resource_len(d, v)    (0x100000)
-#define axi_name(d)               ("AXI-BUS")
+#define wifi_resource_start(d, v)  (0x18000000)
+#define wifi_resource_len(d, v)    (0x100000)
+#define wifi_name(d)               ("WLAN")
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S

@@ -197,7 +197,7 @@ static const struct pci_device_id mtk_pci_ids[] = {
 	{ /* end: all zeroes */ },
 };
 
-static const struct platform_device_id mtk_axi_ids[] = {
+static const struct platform_device_id mtk_wifi_ids[] = {
 	{	.name = "CONNAC",
 #if defined(BELLWETHER)
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_bellwether
@@ -218,7 +218,7 @@ static const struct platform_device_id mtk_axi_ids[] = {
 MODULE_DEVICE_TABLE(pci, mtk_pci_ids);
 
 #ifdef CONFIG_OF
-const struct of_device_id mtk_axi_of_ids[] = {
+const struct of_device_id mtk_wifi_of_ids[] = {
 	{.compatible = "mediatek,wifi",},
 	{}
 };
@@ -230,6 +230,9 @@ const struct of_device_id mtk_wifi_misc_of_ids[] = {
 };
 #endif
 #endif
+
+#define HIF_WFDMA_INT_BIT	0
+#define HIF_MAWD_INT_BIT	1
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -253,16 +256,16 @@ static u_int8_t g_AERL05Rst;
 static uint32_t g_u4AERDumpInfo;
 #endif
 
-static struct platform_driver mtk_axi_driver = {
+static struct platform_driver mtk_wifi_driver = {
 	.driver = {
 		.name = "wlan",
 		.owner = THIS_MODULE,
 #ifdef CONFIG_OF
-		.of_match_table = mtk_axi_of_ids,
+		.of_match_table = mtk_wifi_of_ids,
 #endif
 		.probe_type = PROBE_FORCE_SYNCHRONOUS,
 	},
-	.id_table = mtk_axi_ids,
+	.id_table = mtk_wifi_ids,
 	.probe = NULL,
 	.remove = NULL,
 };
@@ -277,7 +280,7 @@ static struct platform_driver mtk_wifi_misc_driver = {
 #endif
 		.probe_type = PROBE_FORCE_SYNCHRONOUS,
 	},
-	.id_table = mtk_axi_ids,
+	.id_table = mtk_wifi_ids,
 	.probe = NULL,
 	.remove = NULL,
 };
@@ -308,8 +311,10 @@ static struct pci_driver mtk_pci_driver = {
 };
 
 static struct GLUE_INFO *g_prGlueInfo;
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 static u64 g_u8CsrOffset;
 static u32 g_u4CsrSize;
+#endif
 static u_int8_t g_fgDriverProbed = FALSE;
 struct pci_dev *g_prDev;
 
@@ -326,8 +331,8 @@ struct pci_dev *g_prDev;
 static void halPciePreSuspendCmd(struct ADAPTER *prAdapter);
 static void halPcieResumeCmd(struct ADAPTER *prAdapter);
 
-static irqreturn_t mtk_axi_isr(int irq, void *dev_instance);
-static irqreturn_t mtk_axi_isr_thread(int irq, void *dev_instance);
+static irqreturn_t mtk_wifi_isr(int irq, void *dev_instance);
+static irqreturn_t mtk_wifi_isr_thread(int irq, void *dev_instance);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -377,7 +382,8 @@ struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int msi_idx)
 		if (msi_idx >= 0 && msi_idx < PCIE_MSI_NUM)
 			KAL_SET_BIT(msi_idx, prMsiInfo->ulEnBits);
 		else
-			KAL_SET_BIT(0, prGlueInfo->rHifInfo.ulHifIntEnBits);
+			KAL_SET_BIT(HIF_WFDMA_INT_BIT,
+				    prGlueInfo->rHifInfo.ulHifIntEnBits);
 		return NULL;
 	}
 
@@ -430,7 +436,7 @@ irqreturn_t mtk_pci_isr(int irq, void *dev_instance)
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMsiInfo = &prGlueInfo->prAdapter->chip_info->bus_info->pcie_msi_info;
 	if (!prMsiInfo || !prMsiInfo->fgMsiEnabled) {
-		KAL_SET_BIT(0, prHifInfo->ulHifIntEnBits);
+		KAL_SET_BIT(HIF_WFDMA_INT_BIT, prHifInfo->ulHifIntEnBits);
 		goto exit;
 	}
 
@@ -778,10 +784,10 @@ static int32_t setupPlatDevIrq(struct platform_device *pdev, uint32_t *pu4IrqId)
 	ret = devm_request_threaded_irq(
 		&pdev->dev,
 		u4IrqId,
-		mtk_axi_isr,
-		mtk_axi_isr_thread,
+		mtk_wifi_isr,
+		mtk_wifi_isr_thread,
 		IRQF_SHARED,
-		mtk_axi_driver.driver.name,
+		mtk_wifi_driver.driver.name,
 		platform_get_drvdata(pdev));
 	if (ret != 0) {
 		DBGLOG(INIT, INFO, "request_irq(%u) ERROR(%d)\n",
@@ -810,7 +816,7 @@ void freePlatDevIrq(struct platform_device *pdev, uint32_t u4IrqId)
 	devm_free_irq(&pdev->dev, u4IrqId, platform_get_drvdata(pdev));
 }
 
-static int axiDmaSetup(struct platform_device *pdev,
+static int wifiDmaSetup(struct platform_device *pdev,
 		struct mt66xx_hif_driver_data *prDriverData)
 {
 	struct mt66xx_chip_info *prChipInfo;
@@ -841,7 +847,8 @@ exit:
 	return ret;
 }
 
-static bool axiCsrIoremap(struct platform_device *pdev)
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+static bool wifiCsrIoremap(struct platform_device *pdev)
 {
 	struct mt66xx_hif_driver_data *prDriverData;
 	struct mt66xx_chip_info *prChipInfo;
@@ -867,8 +874,8 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 	g_u8CsrOffset = (u64)res.start;
 	g_u4CsrSize = resource_size(&res);
 #else
-	g_u8CsrOffset = axi_resource_start(pdev, 0);
-	g_u4CsrSize = axi_resource_len(pdev, 0);
+	g_u8CsrOffset = wifi_resource_start(pdev, 0);
+	g_u4CsrSize = wifi_resource_len(pdev, 0);
 #endif
 
 	prDriverData = get_platform_driver_data();
@@ -883,7 +890,7 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 		return false;
 	}
 
-	request_mem_region(g_u8CsrOffset, g_u4CsrSize, axi_name(pdev));
+	request_mem_region(g_u8CsrOffset, g_u4CsrSize, wifi_name(pdev));
 
 	/* map physical address to virtual address for accessing register */
 #ifdef CONFIG_OF
@@ -895,7 +902,7 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 	if (!prChipInfo->HostCSRBaseAddress) {
 		DBGLOG(INIT, INFO,
 			"ioremap failed for device %s, region 0x%X @ 0x%lX\n",
-			axi_name(pdev), g_u4CsrSize, g_u8CsrOffset);
+			wifi_name(pdev), g_u4CsrSize, g_u8CsrOffset);
 		release_mem_region(g_u8CsrOffset, g_u4CsrSize);
 		return false;
 	}
@@ -911,7 +918,7 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 	return true;
 }
 
-static void axiCsrIounmap(struct platform_device *pdev)
+static void wifiCsrIounmap(struct platform_device *pdev)
 {
 	struct mt66xx_chip_info *prChipInfo;
 
@@ -928,8 +935,9 @@ static void axiCsrIounmap(struct platform_device *pdev)
 	g_u8CsrOffset = 0;
 	g_u4CsrSize = 0;
 }
+#endif /* CFG_SUPPORT_HOST_OFFLOAD */
 
-static void axiSetupFwFlavor(struct platform_device *pdev,
+static void wifiSetupFwFlavor(struct platform_device *pdev,
 	struct mt66xx_hif_driver_data *driver_data)
 {
 	struct device *dev = &pdev->dev;
@@ -943,7 +951,7 @@ static void axiSetupFwFlavor(struct platform_device *pdev,
 	DBGLOG(HAL, INFO, "fw_flavor: %s\n", driver_data->fw_flavor);
 }
 
-static int mtk_axi_probe(struct platform_device *pdev)
+static int mtk_wifi_probe(struct platform_device *pdev)
 {
 	struct mt66xx_hif_driver_data *prDriverData;
 	struct mt66xx_chip_info *prChipInfo;
@@ -951,17 +959,19 @@ static int mtk_axi_probe(struct platform_device *pdev)
 
 	g_prPlatDev = pdev;
 	prDriverData = (struct mt66xx_hif_driver_data *)
-			mtk_axi_ids[0].driver_data;
+			mtk_wifi_ids[0].driver_data;
 	prChipInfo = prDriverData->chip_info;
 
 	platform_set_drvdata(pdev, (void *)prDriverData);
 
-	axiSetupFwFlavor(pdev, prDriverData);
+	wifiSetupFwFlavor(pdev, prDriverData);
 
-	if (!axiCsrIoremap(pdev))
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	if (!wifiCsrIoremap(pdev))
 		goto exit;
+#endif
 
-	ret = axiDmaSetup(pdev, prDriverData);
+	ret = wifiDmaSetup(pdev, prDriverData);
 	if (ret)
 		goto exit;
 
@@ -988,11 +998,11 @@ static int mtk_axi_probe(struct platform_device *pdev)
 #endif
 
 exit:
-	DBGLOG(INIT, INFO, "mtk_axi_probe() done, ret: %d\n", ret);
+	DBGLOG(INIT, INFO, "mtk_wifi_probe() done, ret: %d\n", ret);
 	return ret;
 }
 
-static int mtk_axi_remove(struct platform_device *pdev)
+static int mtk_wifi_remove(struct platform_device *pdev)
 {
 #if (CFG_MTK_ANDROID_WMT == 1)
 	struct mt66xx_hif_driver_data *prDriverData =
@@ -1002,6 +1012,9 @@ static int mtk_axi_remove(struct platform_device *pdev)
 
 #if CFG_SUPPORT_THERMAL_QUERY
 	thermal_cbs_unregister(pdev);
+#endif
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	wifiCsrIounmap(pdev);
 #endif
 #if (CFG_MTK_ANDROID_WMT == 1)
 	halFreeHifMem(pdev, WIFI_RSV_MEM_WFDMA);
@@ -1055,7 +1068,7 @@ static int mtk_wifi_misc_probe(struct platform_device *pdev)
 	int ret = 0;
 
 	prDriverData = (struct mt66xx_hif_driver_data *)
-			mtk_axi_ids[0].driver_data;
+			mtk_wifi_ids[0].driver_data;
 	prChipInfo = prDriverData->chip_info;
 
 	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi_misc");
@@ -1090,6 +1103,77 @@ static int mtk_wifi_misc_remove(struct platform_device *pdev)
 }
 #endif
 
+#if (CFG_CONTROL_ASPM_BY_FW == 1) && (CFG_SUPPORT_PCIE_ASPM == 1)
+static void mtk_pci_setup_aspm(struct pci_dev *pdev)
+{
+	u_int8_t fgKeepL0 = FALSE;
+
+	if (g_prGlueInfo &&
+	    g_prGlueInfo->prAdapter &&
+	    g_prGlueInfo->prAdapter->rWifiVar.fgPcieEnableL1ss == 0)
+		fgKeepL0 = TRUE;
+
+	glBusConfigASPM(pdev, DISABLE_ASPM_L1);
+	if (fgKeepL0) {
+		DBGLOG(INIT, INFO, "PCIE keep L0\n");
+		return;
+	}
+
+	glBusConfigASPML1SS(pdev,
+		PCI_L1PM_CTR1_ASPM_L12_EN |
+		PCI_L1PM_CTR1_ASPM_L11_EN);
+	glBusConfigASPM(pdev, ENABLE_ASPM_L1);
+	DBGLOG(INIT, INFO, "PCIE allow enter L1.2\n");
+}
+#endif
+
+static int mtk_pcie_setup_msi(struct pci_dev *pdev,
+			      struct mt66xx_chip_info *prChipInfo)
+{
+	struct BUS_INFO *prBusInfo;
+	struct pcie_msi_info *prMsiInfo;
+	uint32_t u4MaxMsiNum;
+	int ret = 0;
+
+	prBusInfo = prChipInfo->bus_info;
+	prMsiInfo = &prBusInfo->pcie_msi_info;
+
+#if CFG_MTK_WIFI_PCIE_MSI_SUPPORT
+	u4MaxMsiNum = prMsiInfo->u4MaxMsiNum ?
+		prMsiInfo->u4MaxMsiNum : 1;
+#else
+	u4MaxMsiNum = 1;
+#endif
+#if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
+	ret = pci_alloc_irq_vectors(
+		pdev, 1, u4MaxMsiNum, PCI_IRQ_MSI);
+#endif
+	if (ret < 0) {
+		DBGLOG(INIT, INFO,
+			"pci_alloc_irq_vectors(1, %d) failed, ret=%d\n",
+			u4MaxMsiNum,
+			ret);
+		return ret;
+	}
+
+#if CFG_MTK_WIFI_PCIE_MSI_SUPPORT
+	if (u4MaxMsiNum > 1 && ret == prMsiInfo->u4MaxMsiNum) {
+		prMsiInfo->fgMsiEnabled = TRUE;
+		prMsiInfo->u4MsiNum = ret;
+	} else {
+		prMsiInfo->fgMsiEnabled = FALSE;
+		prMsiInfo->u4MsiNum = 1;
+	}
+#else
+	prMsiInfo->fgMsiEnabled = FALSE;
+	prMsiInfo->u4MsiNum = 1;
+#endif
+	prMsiInfo->ulEnBits = 0;
+	DBGLOG(INIT, INFO, "ret=%d, fgMsiEnabled=%d, u4MsiNum=%d\n",
+	       ret, prMsiInfo->fgMsiEnabled, prMsiInfo->u4MsiNum);
+
+	return 0;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1105,27 +1189,15 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 {
 	struct mt66xx_hif_driver_data *prDriverData;
 	struct mt66xx_chip_info *prChipInfo;
-	struct BUS_INFO *prBusInfo;
-	struct pcie_msi_info *prMsiInfo;
-	uint32_t u4MaxMsiNum;
 	int ret = 0, i;
-#if CFG_CONTROL_ASPM_BY_FW
-#if CFG_SUPPORT_PCIE_ASPM
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct GL_HIF_INFO *prHifInfo = NULL;
-	struct ADAPTER *prAdapter = NULL;
-#endif
-#endif
+
 	ASSERT(pdev);
 	ASSERT(id);
 
 	prDriverData = (struct mt66xx_hif_driver_data *)id->driver_data;
 	prChipInfo = prDriverData->chip_info;
-	prBusInfo = prChipInfo->bus_info;
-	prMsiInfo = &prBusInfo->pcie_msi_info;
 
 	ret = pcim_enable_device(pdev);
-
 	if (ret) {
 		DBGLOG(INIT, INFO,
 			"pci_enable_device failed, ret=%d\n", ret);
@@ -1153,40 +1225,9 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 #endif
 	pci_set_master(pdev);
 
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_MSI_SUPPORT)
-	u4MaxMsiNum = prMsiInfo->u4MaxMsiNum ?
-		prMsiInfo->u4MaxMsiNum : 1;
-#else
-	u4MaxMsiNum = 1;
-#endif
-#if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
-	ret = pci_alloc_irq_vectors(pdev, 1,
-				    u4MaxMsiNum,
-				    PCI_IRQ_MSI);
-#endif
-	if (ret < 0) {
-		DBGLOG(INIT, INFO,
-			"pci_alloc_irq_vectors(1, %d) failed, ret=%d\n",
-			u4MaxMsiNum,
-			ret);
+	ret = mtk_pcie_setup_msi(pdev, prChipInfo);
+	if (ret < 0)
 		goto err_free_iomap;
-	}
-
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_MSI_SUPPORT)
-	if (u4MaxMsiNum > 1 && ret == prMsiInfo->u4MaxMsiNum) {
-		prMsiInfo->fgMsiEnabled = TRUE;
-		prMsiInfo->u4MsiNum = ret;
-	} else {
-		prMsiInfo->fgMsiEnabled = FALSE;
-		prMsiInfo->u4MsiNum = 1;
-	}
-#else
-	prMsiInfo->fgMsiEnabled = FALSE;
-	prMsiInfo->u4MsiNum = 1;
-#endif
-	prMsiInfo->ulEnBits = 0;
-	DBGLOG(INIT, INFO, "ret=%d, fgMsiEnabled=%d, u4MsiNum=%d\n",
-		ret, prMsiInfo->fgMsiEnabled, prMsiInfo->u4MsiNum);
 
 	ret = dma_set_mask(&pdev->dev,
 		DMA_BIT_MASK(prChipInfo->bus_info->u4DmaMask));
@@ -1219,30 +1260,8 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		goto err_free_irq_vectors;
 	}
 
-#if CFG_CONTROL_ASPM_BY_FW
-#if CFG_SUPPORT_PCIE_ASPM
-	glBusConfigASPM(pdev,
-			DISABLE_ASPM_L1);
-	glBusConfigASPML1SS(pdev,
-		PCI_L1PM_CTR1_ASPM_L12_EN |
-		PCI_L1PM_CTR1_ASPM_L11_EN);
-	glBusConfigASPM(pdev,
-			ENABLE_ASPM_L1);
-
-	prGlueInfo = g_prGlueInfo;
-	if (!prGlueInfo) {
-		DBGLOG(INIT, ERROR, "prGlueInfo is NULL!\n");
-	} else {
-			prHifInfo = &prGlueInfo->rHifInfo;
-			prAdapter = prGlueInfo->prAdapter;
-			if (prAdapter->rWifiVar.fgPcieEnableL1ss == 0) {
-				glBusConfigASPM(pdev,
-					DISABLE_ASPM_L1);
-				DBGLOG(INIT, INFO, "PCIE keep L0\n");
-			} else
-				DBGLOG(INIT, INFO, "PCIE allow enter L1.2\n");
-	}
-#endif
+#if (CFG_CONTROL_ASPM_BY_FW == 1) && (CFG_SUPPORT_PCIE_ASPM == 1)
+	mtk_pci_setup_aspm(pdev);
 #endif
 
 	g_fgDriverProbed = TRUE;
@@ -1508,10 +1527,10 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 	mtk_pci_driver.suspend = mtk_pci_suspend;
 	mtk_pci_driver.resume = mtk_pci_resume;
 
-	mtk_axi_driver.probe = mtk_axi_probe;
-	mtk_axi_driver.remove = mtk_axi_remove;
+	mtk_wifi_driver.probe = mtk_wifi_probe;
+	mtk_wifi_driver.remove = mtk_wifi_remove;
 
-	if (platform_driver_register(&mtk_axi_driver))
+	if (platform_driver_register(&mtk_wifi_driver))
 		DBGLOG(HAL, ERROR, "platform_driver_register fail\n");
 
 #if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
@@ -1544,7 +1563,7 @@ void glUnregisterBus(remove_card pfRemove)
 		pfRemove();
 		g_fgDriverProbed = FALSE;
 	}
-	platform_driver_unregister(&mtk_axi_driver);
+	platform_driver_unregister(&mtk_wifi_driver);
 #if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
 	platform_driver_unregister(&mtk_wifi_misc_driver);
 #endif
@@ -1789,14 +1808,14 @@ err:
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function is a AXI interrupt callback function
+ * \brief This function is a WIFI interrupt callback function
  *
- * \param[in] func  pointer to AXI handle
+ * \param[in] func  pointer to WIFI handle
  *
  * \return void
  */
 /*----------------------------------------------------------------------------*/
-static irqreturn_t mtk_axi_isr(int irq, void *dev_instance)
+static irqreturn_t mtk_wifi_isr(int irq, void *dev_instance)
 {
 	struct ADAPTER *prAdapter;
 	struct GL_HIF_INFO *prHifInfo;
@@ -1806,14 +1825,14 @@ static irqreturn_t mtk_axi_isr(int irq, void *dev_instance)
 		goto exit;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	KAL_SET_BIT(1, prHifInfo->ulHifIntEnBits);
+	KAL_SET_BIT(HIF_MAWD_INT_BIT, prHifInfo->ulHifIntEnBits);
 
 exit:
 	disable_irq_nosync(irq);
 	return IRQ_HANDLED;
 }
 
-static irqreturn_t mtk_axi_isr_thread(int irq, void *dev_instance)
+static irqreturn_t mtk_wifi_isr_thread(int irq, void *dev_instance)
 {
 	struct ADAPTER *prAdapter;
 	struct GLUE_INFO *prGlueInfo;
