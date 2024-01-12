@@ -1904,7 +1904,7 @@ uint32_t halAllocateIOBuffer(IN struct ADAPTER *prAdapter)
 
 	if (prHifInfo->prSDIOCtrl == NULL) {
 		DBGLOG(HAL, ERROR,
-			"Could not allocate %u bytes for interrupt response.\n",
+			"Could not allocate %d bytes for interrupt response.\n",
 			sizeof(struct ENHANCE_MODE_DATA_STRUCT));
 
 		return WLAN_STATUS_RESOURCES;
