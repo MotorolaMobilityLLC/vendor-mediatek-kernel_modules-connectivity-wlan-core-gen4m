@@ -117,6 +117,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_NIC_POWER_CTRL] = nicUniCmdPowerCtrl,
 	[CMD_ID_SET_DOMAIN_INFO] = nicUniCmdSetDomain,
 	[CMD_ID_LOG_UI_INFO] = nicUniCmdWsysFwLogUI,
+	[CMD_ID_FW_LOG_2_HOST] = nicUniCmdWsysFwLog2Host,
 	[CMD_ID_BASIC_CONFIG] = nicUniCmdWsysFwBasicConfig,
 	[CMD_ID_SET_SUSPEND_MODE] = nicUniCmdSetSuspendMode,
 	[CMD_ID_SET_WOWLAN] = nicUniCmdSetWOWLAN,
@@ -168,7 +169,11 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_SAP] = nicUniEventSap,
 	[UNI_EVENT_ID_ROAMING] = nicUniEventRoaming,
 	[UNI_EVENT_ID_ADD_KEY_DONE] = nicUniEventAddKeyDone,
+	[UNI_EVENT_ID_FW_LOG_2_HOST] = nicUniEventFwLog2Host,
 };
+
+extern struct RX_EVENT_HANDLER arEventTable[];
+extern uint32_t arEventTableSize;
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
@@ -186,6 +191,17 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 		_HnVer = (uint8_t)(((_u2Value) >> 8) & 0x3); \
 		_L = (uint8_t)((_u2Value) & 0xff); \
 	} while (0)
+
+#define	RUN_RX_EVENT_HANDLER(_EID, _pdata) \
+	nicUniEventHelper(ad, evt, _EID, 0, \
+		(uint8_t *)(_pdata), sizeof(*(_pdata)))
+
+#define	RUN_RX_EVENT_HANDLER_EXT(_EID, _pdata, _len) \
+	nicUniEventHelper(ad, evt, _EID, 0, (uint8_t *)(_pdata), _len)
+
+#define	RUN_RX_EXT_EVENT_HANDLER(_EXT_EID, _pdata) \
+	nicUniEventHelper(ad, evt, EVENT_ID_LAYER_0_EXT_MAGIC_NUM, _EXT_EID, \
+		(uint8_t *)(_pdata), sizeof(*(_pdata)))
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
@@ -1409,6 +1425,39 @@ uint32_t nicUniCmdWsysFwLogUI(struct ADAPTER *ad,
 	tag->u2Length = sizeof(*tag);
 	tag->ucVersion = cmd->ucVersion;
 	tag->ucLogLevel = cmd->ucLogLevel;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdWsysFwLog2Host(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_FW_LOG_2_HOST_CTRL *cmd;
+	struct UNI_CMD_WSYS_CONFIG *uni_cmd;
+	struct UNI_CMD_FW_LOG_CTRL_BASIC *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_WSYS_CONFIG) +
+			       sizeof(struct UNI_CMD_FW_LOG_CTRL_BASIC);
+
+	if (info->ucCID != CMD_ID_FW_LOG_2_HOST ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_FW_LOG_2_HOST_CTRL *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_WSYS_CONFIG,
+		  max_cmd_len, nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_WSYS_CONFIG *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_FW_LOG_CTRL_BASIC *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_WSYS_CONFIG_TAG_FW_LOG_CTRL;
+	tag->u2Length = sizeof(*tag);
+	tag->ucFwLog2HostCtrl = cmd->ucFwLog2HostCtrl;
+	tag->ucFwLog2HostInterval = 0;
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
@@ -3654,6 +3703,35 @@ uint32_t nicUniCmdTdls(struct ADAPTER *ad,
  *******************************************************************************
  */
 
+void nicUniEventHelper(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt,
+	uint8_t eid, uint8_t ext_id, uint8_t *data, uint32_t len)
+{
+	struct WIFI_EVENT *legacy;
+	uint32_t size = sizeof(*legacy) + len;
+	uint8_t i;
+
+	legacy = (struct WIFI_EVENT *) kalMemAlloc(size, VIR_MEM_TYPE);
+	legacy->u2PacketLength = size;
+	legacy->u2PacketType = evt->u2PacketType;
+	legacy->ucEID = eid;
+	legacy->ucSeqNum = evt->ucSeqNum;
+	legacy->ucEventVersion = evt->ucOption;
+	legacy->ucExtenEID = ext_id;
+	legacy->ucS2DIndex = evt->ucS2DIndex;
+
+	if (data && len)
+		kalMemCopy(legacy->aucBuffer, data, len);
+
+	for (i = 0; i < arEventTableSize; i++) {
+		if (eid == arEventTable[i].eEID) {
+			arEventTable[i].pfnHandler(ad, legacy);
+			break;
+		}
+	}
+
+	kalMemFree(legacy, VIR_MEM_TYPE, size);
+}
+
 /*******************************************************************************
  *                   Solicited Event
  *******************************************************************************
@@ -4002,6 +4080,11 @@ void nicUniCmdEventInstallKey(IN struct ADAPTER
 
 }
 
+/*******************************************************************************
+ *                   Unsolicited Event
+ *******************************************************************************
+ */
+
 void nicUniEventQueryCnmInfo(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
@@ -4081,11 +4164,6 @@ void nicUniEventQueryCnmInfo(IN struct ADAPTER
 
 	nicCmdEventQueryCnmInfo(prAdapter, prCmdInfo, (uint8_t *)&legacy);
 }
-
-/*******************************************************************************
- *                   Unsolicited Event
- *******************************************************************************
- */
 
 void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
@@ -4208,7 +4286,7 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 			legacy.ucDBDCBand = grant->ucDBDCBand;
 			legacy.u4GrantInterval = grant->u4GrantInterval;
 
-			cnmChMngrHandleChEvent(ad, &legacy);
+			RUN_RX_EVENT_HANDLER(EVENT_ID_CH_PRIVILEGE, &legacy);
 		}
 			break;
 		case UNI_EVENT_CNM_TAG_OPMODE_CHANGE: {
@@ -4222,7 +4300,7 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 			legacy.ucOpRxNss = opmode->ucOpRxNss;
 			legacy.ucReason = opmode->ucReason;
 
-			cnmOpmodeEventHandler(ad, &legacy);
+			RUN_RX_EVENT_HANDLER(EVENT_ID_OPMODE_CHANGE, &legacy);
 		}
 			break;
 		default:
@@ -4251,7 +4329,8 @@ void nicUniEventMbmcHandleEvent(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 		switch (TAG_ID(tag)) {
 		case UNI_EVENT_MBMC_TAG_SWITCH_DONE:
-			cnmDbdcEventHwSwitchDone(ad);
+			RUN_RX_EVENT_HANDLER_EXT(EVENT_ID_DBDC_SWITCH_DONE,
+								NULL, 0);
 			break;
 		default:
 			fail_cnt++;
@@ -4303,7 +4382,7 @@ void nicUniEventStatusToHost(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			legacy.u4Timestamp = tx->u4Timestamp;
 			legacy.u4AppliedFlag = tx->u4AppliedFlag;
 
-			nicTxProcessTxDoneEvent(ad, &legacy);
+			RUN_RX_EVENT_HANDLER(EVENT_ID_TX_DONE, &legacy);
 		}
 			break;
 		default:
@@ -4346,7 +4425,7 @@ void nicUniEventBaOffload(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				(ba->u2WinSize <<
 					BA_PARAM_SET_BUFFER_SIZE_MASK_OFFSET);
 
-			qmHandleEventRxAddBa(ad, &legacy);
+			RUN_RX_EVENT_HANDLER(EVENT_ID_RX_ADDBA, &legacy);
 		}
 			break;
 		case UNI_EVENT_BA_OFFLOAD_TAG_RX_DELBA:{
@@ -4357,7 +4436,8 @@ void nicUniEventBaOffload(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			legacy.ucStaRecIdx =
 				secGetStaIdxByWlanIdx(ad, ba->u2WlanIdx);
 			legacy.ucTid = ba->ucTid;
-			qmHandleEventRxDelBa(ad, &legacy);
+
+			RUN_RX_EVENT_HANDLER(EVENT_ID_RX_DELBA, &legacy);
 		}
 			break;
 		case UNI_EVENT_BA_OFFLOAD_TAG_TX_ADDBA:{
@@ -4378,7 +4458,7 @@ void nicUniEventBaOffload(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			legacy.u4MaxMpduLen = ba->u4MaxMpduLen;
 			legacy.u4MinMpduLen = ba->u4MinMpduLen;
 
-			qmHandleEventTxAddBa(ad, &legacy);
+			RUN_RX_EVENT_HANDLER(EVENT_ID_TX_ADDBA, &legacy);
 		}
 			break;
 		default:
@@ -4413,7 +4493,7 @@ void nicUniEventSleepNotify(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 			legacy.ucSleepyState = info->ucSleepyState;
 
-			nicEventSleepNotifyImpl(ad, &legacy);
+			RUN_RX_EVENT_HANDLER(EVENT_ID_SLEEPY_INFO, &legacy);
 		}
 			break;
 		default:
@@ -4451,7 +4531,9 @@ void nicUniEventBeaconTimeout(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				(struct UNI_EVENT_BEACON_TIMEOUT_INFO *) tag;
 
 			legacy.ucReasonCode = info->ucReasonCode;
-			nicEventBeaconTimeoutImpl(ad, &legacy);
+
+			RUN_RX_EVENT_HANDLER(EVENT_ID_BSS_BEACON_TIMEOUT,
+					&legacy);
 		}
 			break;
 		default:
@@ -4489,7 +4571,9 @@ void nicUniEventUpdateCoex(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				legacy.au4PhyRateLimit[i] =
 					phyrate->au4PhyRateLimit[i];
 			}
-			nicEventUpdateCoexPhyrateImpl(ad, &legacy);
+
+			RUN_RX_EVENT_HANDLER(EVENT_ID_UPDATE_COEX_PHYRATE,
+					&legacy);
 		}
 			break;
 		default:
@@ -4529,7 +4613,7 @@ void nicUniEventIdc(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				sizeof(uint32_t) * ENUM_SAFE_CH_MASK_MAX_NUM);
 
 #if CFG_SUPPORT_IDC_CH_SWITCH
-			cnmIdcDetectHandler(ad, &legacy);
+			RUN_RX_EVENT_HANDLER(EVENT_ID_LTE_IDC_REPORT, &legacy);
 #endif
 		}
 			break;
@@ -4572,7 +4656,8 @@ void nicUniEventBssIsAbsence(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			legacy.ucIsAbsent = info->ucIsAbsent;
 			legacy.ucBssFreeQuota = info->ucBssFreeQuota;
 
-			qmHandleEventBssAbsencePresence(ad, &legacy);
+			RUN_RX_EVENT_HANDLER(EVENT_ID_BSS_ABSENCE_PRESENCE,
+								&legacy);
 		}
 			break;
 		default:
@@ -4609,7 +4694,8 @@ void nicUniEventPsSync(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			legacy.ucIsInPs = ps->ucPsBit;
 			legacy.ucFreeQuota = ps->ucBufferSize;
 
-			qmHandleEventStaChangePsMode(ad, &legacy);
+			RUN_RX_EVENT_HANDLER(EVENT_ID_STA_CHANGE_PS_MODE,
+								&legacy);
 		}
 			break;
 		default:
@@ -4649,7 +4735,8 @@ void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			legacy.ucUpdateMode = quota->ucUpdateMode;
 			legacy.ucFreeQuota = quota->ucFreeQuota;
 
-			qmHandleEventStaUpdateFreeQuota(ad, &legacy);
+			RUN_RX_EVENT_HANDLER(EVENT_ID_STA_UPDATE_FREE_QUOTA,
+								&legacy);
 		}
 			break;
 		default:
@@ -4734,7 +4821,56 @@ void nicUniEventAddKeyDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				(struct UNI_EVENT_ADD_PKEY_DONE *) tag;
 
 			COPY_MAC_ADDR(legacy.aucStaAddr, pkey->aucStaAddr);
-			nicEventAddPkeyDoneImpl(ad, &legacy);
+
+			RUN_RX_EVENT_HANDLER(EVENT_ID_ADD_PKEY_DONE, &legacy);
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+
+void nicUniEventFwLog2Host(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_FW_LOG2HOST);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_FWLOG2HOST_TAG_FORMAT: {
+			struct UNI_EVENT_FW_LOG_FORMAT *log =
+				(struct UNI_EVENT_FW_LOG_FORMAT *) tag;
+			struct EVENT_DEBUG_MSG *legacy;
+			uint32_t len = log->u2Length - sizeof(*log);
+			uint32_t size = sizeof(*legacy) + len;
+
+			ASSERT(log->u2Length > sizeof(*log));
+
+			legacy = (struct EVENT_DEBUG_MSG *) kalMemAlloc(
+				size, VIR_MEM_TYPE);
+			kalMemZero(legacy, sizeof(*legacy));
+
+			legacy->ucMsgType = log->ucMsgFmt;
+			legacy->u2MsgSize = len;
+			kalMemCopy(legacy->aucMsg, log->acMsg, len);
+
+			RUN_RX_EVENT_HANDLER_EXT(EVENT_ID_DEBUG_MSG,
+							legacy, size);
+
+			kalMemFree(legacy, size, VIR_MEM_TYPE);
 		}
 			break;
 		default:

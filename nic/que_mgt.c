@@ -4957,9 +4957,10 @@ void qmHandleMailboxRxMessage(IN struct MAILBOX_MSG prMailboxRxMsg)
  */
 /*----------------------------------------------------------------------------*/
 void qmHandleEventTxAddBa(IN struct ADAPTER *prAdapter,
-	IN struct EVENT_TX_ADDBA *prEventTxAddBa)
+	IN struct WIFI_EVENT *prEvent)
 {
 	struct mt66xx_chip_info *prChipInfo;
+	struct EVENT_TX_ADDBA *prEventTxAddBa;
 	struct STA_RECORD *prStaRec;
 	uint8_t ucStaRecIdx;
 	uint8_t ucTid;
@@ -4975,6 +4976,7 @@ void qmHandleEventTxAddBa(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
+	prEventTxAddBa = (struct EVENT_TX_ADDBA *) (prEvent->aucBuffer);
 	ucStaRecIdx = prEventTxAddBa->ucStaRecIdx;
 	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter, ucStaRecIdx);
 	if (!prStaRec) {
@@ -5021,14 +5023,17 @@ void qmHandleEventTxAddBa(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void qmHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
-	IN struct EVENT_RX_ADDBA *prEventRxAddBa)
+	IN struct WIFI_EVENT *prEvent)
 {
+	struct EVENT_RX_ADDBA *prEventRxAddBa;
 	struct STA_RECORD *prStaRec;
 	uint32_t u4Tid;
 	uint32_t u4WinSize;
 
 	DBGLOG(QM, INFO, "QM:Event +RxBa\n");
 
+	prEventRxAddBa = (struct EVENT_RX_ADDBA *) (
+				 prEvent->aucBuffer);
 	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter,
 			prEventRxAddBa->ucStaRecIdx);
 
@@ -5083,10 +5088,15 @@ void qmHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void qmHandleEventRxDelBa(IN struct ADAPTER *prAdapter,
-	IN struct EVENT_RX_DELBA *prEventRxDelBa)
+	IN struct WIFI_EVENT *prEvent)
 {
+	struct EVENT_RX_DELBA *prEventRxDelBa;
 	struct STA_RECORD *prStaRec;
 
+	/* DbgPrint("QM:Event -RxBa\n"); */
+
+	prEventRxDelBa = (struct EVENT_RX_DELBA *) (
+		prEvent->aucBuffer);
 	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter,
 		prEventRxDelBa->ucStaRecIdx);
 
@@ -6810,8 +6820,9 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void qmHandleEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
-	IN struct EVENT_BSS_ABSENCE_PRESENCE *prEventBssStatus)
+	IN struct WIFI_EVENT *prEvent)
 {
+	struct EVENT_BSS_ABSENCE_PRESENCE *prEventBssStatus;
 	struct BSS_INFO *prBssInfo;
 	u_int8_t fgIsNetAbsentOld;
 	struct GLUE_INFO *glue = prAdapter->prGlueInfo;
@@ -6820,6 +6831,8 @@ void qmHandleEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
 	char buf[512];
 	int i;
 
+	prEventBssStatus = (struct EVENT_BSS_ABSENCE_PRESENCE *) (
+		prEvent->aucBuffer);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		prEventBssStatus->ucBssIndex);
 	fgIsNetAbsentOld = prBssInfo->fgIsNetAbsent;
@@ -6870,12 +6883,16 @@ void qmHandleEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void qmHandleEventStaChangePsMode(IN struct ADAPTER *prAdapter,
-	IN struct EVENT_STA_CHANGE_PS_MODE *prEventStaChangePsMode)
+	IN struct WIFI_EVENT *prEvent)
 {
+	struct EVENT_STA_CHANGE_PS_MODE *prEventStaChangePsMode;
 	struct STA_RECORD *prStaRec;
 	u_int8_t fgIsInPSOld;
 
 	/* DbgPrint("QM:Event -RxBa\n"); */
+
+	prEventStaChangePsMode = (struct EVENT_STA_CHANGE_PS_MODE *)
+		(prEvent->aucBuffer);
 	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter,
 		prEventStaChangePsMode->ucStaRecIdx);
 	/* ASSERT(prStaRec); */
@@ -6919,10 +6936,14 @@ void qmHandleEventStaChangePsMode(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void qmHandleEventStaUpdateFreeQuota(IN struct ADAPTER *prAdapter,
-	IN struct EVENT_STA_UPDATE_FREE_QUOTA *prEventStaUpdateFreeQuota)
+	IN struct WIFI_EVENT *prEvent)
 {
+	struct EVENT_STA_UPDATE_FREE_QUOTA
+		*prEventStaUpdateFreeQuota;
 	struct STA_RECORD *prStaRec;
 
+	prEventStaUpdateFreeQuota = (struct
+		EVENT_STA_UPDATE_FREE_QUOTA *) (prEvent->aucBuffer);
 	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter,
 			prEventStaUpdateFreeQuota->ucStaRecIdx);
 	/* 2013/08/30

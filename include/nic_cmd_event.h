@@ -3365,24 +3365,8 @@ void nicEventScanDone(IN struct ADAPTER *prAdapter,
 		      IN struct WIFI_EVENT *prEvent);
 void nicEventSchedScanDone(IN struct ADAPTER *prAdapter,
 			IN struct WIFI_EVENT *prEvent);
-void nicEventTxDone(IN struct ADAPTER *prAdapter,
-		      IN struct WIFI_EVENT *prEvent);
-void nicEventChPrivilege(IN struct ADAPTER *prAdapter,
-		      IN struct WIFI_EVENT *prEvent);
-void nicEventCnmOpModeChange(IN struct ADAPTER *prAdapter,
-		      IN struct WIFI_EVENT *prEvent);
-void nicEventDbdcSwitchDone(IN struct ADAPTER *prAdapter,
-			IN struct WIFI_EVENT *prEvent);
-void nicEventRxAddBa(IN struct ADAPTER *prAdapter,
-			IN struct WIFI_EVENT *prEvent);
-void nicEventRxDelBa(IN struct ADAPTER *prAdapter,
-			IN struct WIFI_EVENT *prEvent);
-void nicEventTxAddBa(IN struct ADAPTER *prAdapter,
-			IN struct WIFI_EVENT *prEvent);
-void nicEventSleepNotify(IN struct ADAPTER *prAdapter,
+void nicEventSleepyNotify(IN struct ADAPTER *prAdapter,
 			  IN struct WIFI_EVENT *prEvent);
-void nicEventSleepNotifyImpl(struct ADAPTER *prAdapter,
-			struct EVENT_SLEEPY_INFO *);
 void nicEventBtOverWifi(IN struct ADAPTER *prAdapter,
 			IN struct WIFI_EVENT *prEvent);
 void nicEventStatistics(IN struct ADAPTER *prAdapter,
@@ -3393,15 +3377,7 @@ void nicEventMibInfo(IN struct ADAPTER *prAdapter,
 		     IN struct WIFI_EVENT *prEvent);
 void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 			   IN struct WIFI_EVENT *prEvent);
-void nicEventBeaconTimeoutImpl(IN struct ADAPTER *prAdapter,
-			   IN struct EVENT_BSS_BEACON_TIMEOUT *);
 void nicEventUpdateNoaParams(IN struct ADAPTER *prAdapter,
-			     IN struct WIFI_EVENT *prEvent);
-void nicEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
-			     IN struct WIFI_EVENT *prEvent);
-void nicEventStaChangePsMode(IN struct ADAPTER *prAdapter,
-			     IN struct WIFI_EVENT *prEvent);
-void nicEventStaUpdateFreeQuota(IN struct ADAPTER *prAdapter,
 			     IN struct WIFI_EVENT *prEvent);
 void nicEventStaAgingTimeout(IN struct ADAPTER *prAdapter,
 			     IN struct WIFI_EVENT *prEvent);
@@ -3417,8 +3393,6 @@ void nicEventUpdateBwcsStatus(IN struct ADAPTER *prAdapter,
 			      IN struct WIFI_EVENT *prEvent);
 void nicEventUpdateBcmDebug(IN struct ADAPTER *prAdapter,
 			    IN struct WIFI_EVENT *prEvent);
-void nicEventAddPkeyDoneImpl(IN struct ADAPTER *prAdapter,
-			 IN struct EVENT_ADD_KEY_DONE_INFO *prKeyDone);
 void nicEventAddPkeyDone(IN struct ADAPTER *prAdapter,
 			 IN struct WIFI_EVENT *prEvent);
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
@@ -3438,14 +3412,10 @@ void nicEventHifCtrl(IN struct ADAPTER *prAdapter,
 		     IN struct WIFI_EVENT *prEvent);
 void nicEventRddSendPulse(IN struct ADAPTER *prAdapter,
 			  IN struct WIFI_EVENT *prEvent);
-void nicEventIdcReport(IN struct ADAPTER *prAdapter,
-			       IN struct WIFI_EVENT *prEvent);
 void nicEventUpdateCoexPhyrate(IN struct ADAPTER *prAdapter,
 			       IN struct WIFI_EVENT *prEvent);
 void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
 			       IN struct WIFI_EVENT *prEvent);
-void nicEventUpdateCoexPhyrateImpl(IN struct ADAPTER *prAdapter,
-		IN struct EVENT_UPDATE_COEX_PHYRATE *prEventUpdateCoexPhyrate);
 uint32_t nicEventQueryTxResource_v1(IN struct ADAPTER
 				    *prAdapter, IN uint8_t *pucEventBuf);
 uint32_t nicEventQueryTxResourceEntry(IN struct ADAPTER

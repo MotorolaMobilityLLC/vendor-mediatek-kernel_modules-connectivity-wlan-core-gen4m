@@ -131,27 +131,27 @@ apfnProcessRxMgtFrame[MAX_NUM_OF_FC_SUBTYPES] = {
 };
 #endif
 
-static struct RX_EVENT_HANDLER arEventTable[] = {
-	{EVENT_ID_RX_ADDBA, nicEventRxAddBa},
-	{EVENT_ID_DBDC_SWITCH_DONE, nicEventDbdcSwitchDone},
-	{EVENT_ID_RX_DELBA, nicEventRxDelBa},
+struct RX_EVENT_HANDLER arEventTable[] = {
+	{EVENT_ID_RX_ADDBA,	qmHandleEventRxAddBa},
+	{EVENT_ID_DBDC_SWITCH_DONE, cnmDbdcEventHwSwitchDone},
+	{EVENT_ID_RX_DELBA,	qmHandleEventRxDelBa},
 	{EVENT_ID_LINK_QUALITY, nicEventLinkQuality},
 	{EVENT_ID_LAYER_0_EXT_MAGIC_NUM, nicEventLayer0ExtMagic},
-	{EVENT_ID_MIC_ERR_INFO, nicEventMicErrorInfo},
+	{EVENT_ID_MIC_ERR_INFO,	nicEventMicErrorInfo},
 	{EVENT_ID_SCAN_DONE, nicEventScanDone},
 	{EVENT_ID_SCHED_SCAN_DONE, nicEventSchedScanDone},
-	{EVENT_ID_TX_DONE, nicEventTxDone},
-	{EVENT_ID_SLEEPY_INFO, nicEventSleepNotify},
+	{EVENT_ID_TX_DONE, nicTxProcessTxDoneEvent},
+	{EVENT_ID_SLEEPY_INFO, nicEventSleepyNotify},
 #if CFG_ENABLE_BT_OVER_WIFI
 	{EVENT_ID_BT_OVER_WIFI, nicEventBtOverWifi},
 #endif
 	{EVENT_ID_STATISTICS, nicEventStatistics},
 	{EVENT_ID_WTBL_INFO, nicEventWlanInfo},
 	{EVENT_ID_MIB_INFO, nicEventMibInfo},
-	{EVENT_ID_CH_PRIVILEGE, nicEventChPrivilege},
-	{EVENT_ID_BSS_ABSENCE_PRESENCE, nicEventBssAbsencePresence},
-	{EVENT_ID_STA_CHANGE_PS_MODE, nicEventStaChangePsMode},
-	{EVENT_ID_STA_UPDATE_FREE_QUOTA, nicEventStaUpdateFreeQuota},
+	{EVENT_ID_CH_PRIVILEGE, cnmChMngrHandleChEvent},
+	{EVENT_ID_BSS_ABSENCE_PRESENCE, qmHandleEventBssAbsencePresence},
+	{EVENT_ID_STA_CHANGE_PS_MODE, qmHandleEventStaChangePsMode},
+	{EVENT_ID_STA_UPDATE_FREE_QUOTA, qmHandleEventStaUpdateFreeQuota},
 	{EVENT_ID_BSS_BEACON_TIMEOUT, nicEventBeaconTimeout},
 	{EVENT_ID_UPDATE_NOA_PARAMS, nicEventUpdateNoaParams},
 	{EVENT_ID_STA_AGING_TIMEOUT, nicEventStaAgingTimeout},
@@ -178,12 +178,12 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_RDD_REPORT, cnmRadarDetectEvent},
 	{EVENT_ID_CSA_DONE, cnmCsaDoneEvent},
 #if CFG_SUPPORT_IDC_CH_SWITCH
-	{EVENT_ID_LTE_IDC_REPORT, nicEventIdcReport},
+	{EVENT_ID_LTE_IDC_REPORT, cnmIdcDetectHandler},
 #endif
 #endif
 	{EVENT_ID_UPDATE_COEX_PHYRATE, nicEventUpdateCoexPhyrate},
 	{EVENT_ID_UPDATE_COEX_STATUS, nicEventUpdateCoexStatus},
-	{EVENT_ID_TX_ADDBA, nicEventTxAddBa},
+	{EVENT_ID_TX_ADDBA, qmHandleEventTxAddBa},
 	{EVENT_ID_GET_CNM, nicEventCnmInfo},
 #if CFG_SUPPORT_SMART_GEAR
 	{EVENT_ID_SG_STATUS, cnmEventSGStatus},
@@ -191,7 +191,7 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 #if (CFG_WOW_SUPPORT == 1)
 	{EVENT_ID_WOW_WAKEUP_REASON, nicEventWowWakeUpReason},
 #endif
-	{EVENT_ID_OPMODE_CHANGE, nicEventCnmOpModeChange},
+	{EVENT_ID_OPMODE_CHANGE, cnmOpmodeEventHandler},
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	{EVENT_ID_LOW_LATENCY_INFO, nicEventUpdateLowLatencyInfoStatus},
 #endif
@@ -200,6 +200,8 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 #endif
 	{EVENT_ID_REPORT_U_EVENT, nicEventReportUEvent},
 };
+
+uint32_t arEventTableSize = ARRAY_SIZE(arEventTable);
 
 static const struct ACTION_FRAME_SIZE_MAP arActionFrameReservedLen[] = {
 	{(uint16_t)(CATEGORY_QOS_ACTION | ACTION_QOS_MAP_CONFIGURE << 8),
