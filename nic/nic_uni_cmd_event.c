@@ -125,6 +125,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_SET_IP_ADDRESS] = nicUniCmdOffloadIPV4,
 	[CMD_ID_SET_IPV6_ADDRESS] = nicUniCmdOffloadIPV6,
 	[CMD_ID_GET_LTE_CHN] = nicUniCmdGetIdcChnl,
+	[CMD_ID_ROAMING_TRANSIT] = nicUniCmdRoaming,
 	[CMD_ID_GET_STA_STATISTICS] = nicUniCmdNotSupport,
 	[CMD_ID_GET_STATISTICS] = nicUniCmdNotSupport,
 	[CMD_ID_PERF_IND] = nicUniCmdNotSupport,
@@ -154,6 +155,7 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_BSS_IS_ABSENCE] = nicUniEventBssIsAbsence,
 	[UNI_EVENT_ID_PS_SYNC] = nicUniEventPsSync,
 	[UNI_EVENT_ID_SAP] = nicUniEventSap,
+	[UNI_EVENT_ID_ROAMING] = nicUniEventRoaming,
 };
 
 /*******************************************************************************
@@ -3033,6 +3035,44 @@ uint32_t nicUniCmdSetMonitor(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t nicUniCmdRoaming(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_ROAMING_TRANSIT *cmd;
+	struct UNI_CMD_ROAMING *uni_cmd;
+	struct UNI_CMD_ROAMING_TRANSIT_FSM *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_ROAMING) +
+	     		       sizeof(struct UNI_CMD_ROAMING_TRANSIT_FSM);
+
+	if (info->ucCID != CMD_ID_ROAMING_TRANSIT ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_ROAMING_TRANSIT *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_ROAMING,
+		max_cmd_len, NULL, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_ROAMING *) entry->pucInfoBuffer;
+	uni_cmd->ucBssInfoIdx = cmd->ucBssidx;
+	uni_cmd->ucDbdcIdx = ENUM_BAND_AUTO;
+	tag = (struct UNI_CMD_ROAMING_TRANSIT_FSM *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_ROAMING_TAG_TRANSIT_FSM;
+	tag->u2Length = sizeof(*tag);
+	tag->u2Event = cmd->u2Event;
+	tag->u2Data = cmd->u2Data;
+	tag->eReason = cmd->eReason;
+	tag->u4RoamingTriggerTime = cmd->u4RoamingTriggerTime;
+	tag->u2RcpiLowThreshold = cmd->u2RcpiLowThreshold;
+	tag->ucIsSupport11B = cmd->ucIsSupport11B;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -3880,3 +3920,49 @@ void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	}
 }
 
+void nicUniEventRoaming(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_ROAMING);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+	struct UNI_EVENT_ROAMING *roam;
+	struct CMD_ROAMING_TRANSIT legacy;
+
+	roam = (struct UNI_EVENT_ROAMING *) data;
+	legacy.ucBssidx = roam->ucBssIndex;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_ROAMING_TAG_STATUS: {
+			struct UNI_EVENT_ROAMING_STATUS *status =
+				(struct UNI_EVENT_ROAMING_STATUS *) tag;
+
+			legacy.u2Event = status->u2Event;
+			legacy.u2Data = status->u2Data;
+			legacy.u2RcpiLowThreshold = status->u2RcpiLowThreshold;
+			legacy.ucIsSupport11B = TRUE; /* unused */
+			legacy.eReason = status->eReason;
+			legacy.u4RoamingTriggerTime =
+				status->u4RoamingTriggerTime;
+			legacy.u2RcpiHighThreshold =
+				status->u2RcpiHighThreshold;
+
+			roamingFsmProcessEvent(ad, &legacy);
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}

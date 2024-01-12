@@ -1327,6 +1327,42 @@ struct UNI_CMD_WSYS_CONFIG_FW_BASIC_CONFIG {
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_CMD_ROAMING
+{
+	/* fixed field */
+	uint8_t ucBssInfoIdx;
+	uint8_t ucDbdcIdx;
+	uint8_t aucReserved[2];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0]; /**<the TLVs includer in this field:
+        *
+        *  TAG                                | ID   | structure
+        *  -------------                      | -----| -------------
+        *  UNI_CMD_ROAMING_TRANSIT_FSM        | 0x0  | UNI_CMD_ROAMING_TRANSIT_FSM_T
+        */
+} __KAL_ATTRIB_PACKED__;
+
+enum ENUM_UNI_CMD_ROAMING_TAG
+{
+	UNI_CMD_ROAMING_TAG_TRANSIT_FSM = 0,
+	UNI_CMD_ROAMING_TAG_NUM
+};
+
+/* Show roaming (Tag0) */
+struct UNI_CMD_ROAMING_TRANSIT_FSM
+{
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint16_t u2Event;
+	uint16_t u2Data;
+	uint32_t eReason; /*ENUM_ROAMING_REASON_T*/
+	uint32_t u4RoamingTriggerTime;
+	uint16_t u2RcpiLowThreshold;
+	uint8_t  ucIsSupport11B;
+	uint8_t  aucPadding[1];
+} __KAL_ATTRIB_PACKED__;
+
 /* register access command (0x0D) */
 struct UNI_CMD_ACCESS_REG
 {
@@ -2368,6 +2404,35 @@ struct UNI_EVENT_CMD_RESULT {
 	uint32_t u4Status;
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_ROAMING
+{
+	/* fixed field */
+	uint8_t ucBssIndex;
+	uint8_t ucDbdcIdx;
+	uint8_t aucPadding[2];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+enum ENUM_UNI_EVENT_ROAMING_TAG {
+	UNI_EVENT_ROAMING_TAG_STATUS  = 0,
+	UNI_EVENT_ROAMING_TAG_NUM
+};
+
+/* Roaming status (Tag0) */
+struct UNI_EVENT_ROAMING_STATUS
+{
+	uint16_t u2Tag;    // Tag = 0x00
+	uint16_t u2Length;
+	uint16_t u2Event;
+	uint16_t u2Data;
+	uint32_t eReason; /*ENUM_ROAMING_REASON_T*/
+	uint32_t u4RoamingTriggerTime;
+	uint16_t u2RcpiLowThreshold;
+	uint16_t u2RcpiHighThreshold;
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_EVENT_ACCESS_REG
 {
 	/* fixed field */
@@ -3243,6 +3308,8 @@ uint32_t nicUniCmdGetIdcChnl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetMonitor(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdRoaming(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************
  *                   Event
@@ -3304,6 +3371,8 @@ void nicUniEventBssIsAbsence(struct ADAPTER *ad,
 void nicUniEventPsSync(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventSap(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventRoaming(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 
 /*******************************************************************************
