@@ -39,6 +39,9 @@
 
 /* for rps */
 #include <linux/netdevice.h>
+#if KERNEL_VERSION(6, 6, 0) <= LINUX_VERSION_CODE
+#include <net/netdev_rx_queue.h>
+#endif
 #include <linux/ip.h>
 #include <linux/tcp.h>
 #include <linux/ipv6.h>
