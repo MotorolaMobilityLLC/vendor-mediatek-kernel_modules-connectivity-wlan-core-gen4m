@@ -3701,6 +3701,8 @@ void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
 
 	uint32_t u4EmiBaseAddr = 0;
 	uint32_t u4EmiDataSize = 0;
+	uint32_t u4PhyIcsTotalCnt = 0;
+	uint32_t u4PhyIcsBufSize = 0;
 	uint32_t *u4PhyIcsEventBuf = NULL;
 	uint32_t u4TmpRawData[4];
 	uint32_t u4Size = 0, u4EmiAddr = 0;
@@ -3723,6 +3725,8 @@ void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
 		return;
 	}
 
+	prChipInfo = prAdapter->chip_info;
+
 	if (pucEventBuf == NULL) {
 		DBGLOG(RFTEST, ERROR, "pucEventBuf is null\n");
 		return;
@@ -3738,9 +3742,20 @@ void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	prChipInfo = prAdapter->chip_info;
+	if (!prChipInfo->u4PhyIcsTotalCnt) {
+		DBGLOG(RFTEST, ERROR, "u4PhyIcsTotalCnt is null\n");
+		return;
+	}
+
+	if (!prChipInfo->u4PhyIcsBufSize) {
+		DBGLOG(RFTEST, ERROR, "u4PhyIcsBufSize is null\n");
+		return;
+	}
+
 	u4EmiBaseAddr = prChipInfo->u4PhyIcsEmiBaseAddr;
 	u4EmiDataSize = prChipInfo->u4PhyIcsEmiDataSize;
+	u4PhyIcsTotalCnt = prChipInfo->u4PhyIcsTotalCnt;
+	u4PhyIcsBufSize = prChipInfo->u4PhyIcsBufSize;
 
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	prPhyIcsEvent = (struct UNI_EVENT_PHY_ICS_DUMP_RAW_DATA *)
@@ -3768,8 +3783,19 @@ void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
 		goto exit;
 	}
 
+	/* band0 phyics bus 128bit only have 64bit data
+	 * other 64bit data value is 0, so allocate 8KB
+	 */
+	if (prAdapter->uPhyICSBandIdx == ENUM_BAND_0)
+		u4PhyIcsBufSize = u4PhyIcsBufSize / 2;
+
 	/* phy ics packet + fw parser header */
-	u4Size = PHYICS_BUF_SIZE + sizeof(struct ICS_BIN_LOG_HDR);
+	u4Size = u4PhyIcsBufSize + sizeof(struct ICS_BIN_LOG_HDR);
+
+	if (prAdapter->uPhyICSBandIdx == ENUM_BAND_0)
+		u4TotalCnt = u4PhyIcsTotalCnt / 2;
+	else
+		u4TotalCnt = u4PhyIcsTotalCnt;
 
 	pucBuf = kalMemAlloc(u4Size, VIR_MEM_TYPE);
 	if (!pucBuf) {
@@ -3784,11 +3810,6 @@ void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
 	DBGLOG_MEM32(REQ, LOUD, u4PhyIcsEventBuf, u4Size);
 
 	pu4Data = (uint32_t *)(pucBuf + sizeof(struct ICS_BIN_LOG_HDR));
-
-	if (prAdapter->uPhyICSBandIdx == ENUM_BAND_0)
-		u4TotalCnt = PHYICS_TOTAL_CNT / 2;
-	else
-		u4TotalCnt = PHYICS_TOTAL_CNT;
 
 #if (CFG_SUPPORT_PHY_ICS_V4 == 1)
 
@@ -3846,7 +3867,7 @@ void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
 	}
 
 	/* endian swap */
-	for (u2Idxi = 0; u2Idxi < PHYICS_TOTAL_CNT; u2Idxi++) {
+	for (u2Idxi = 0; u2Idxi < u4TotalCnt; u2Idxi++) {
 		pu4Data[u2Idxi] =
 			((pu4Data[u2Idxi] & 0x000000FF) << 24)
 			| ((pu4Data[u2Idxi] & 0x0000FF00) << 8)
@@ -3859,7 +3880,7 @@ void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
 	prIcsBinLogHeader->u4MagicNum = ICS_BIN_LOG_MAGIC_NUM;
 	prIcsBinLogHeader->u4Timestamp = prPhyIcsEvent->u4PhyTimestamp;
 	prIcsBinLogHeader->u2MsgID = RX_PKT_TYPE_PHY_ICS;
-	prIcsBinLogHeader->u2Length = PHYICS_BUF_SIZE;
+	prIcsBinLogHeader->u2Length = u4PhyIcsBufSize;
 
 	/* prepare ICS frame
 	 * pucBuf = ICS Header + PHY ICS payload length
@@ -3867,7 +3888,7 @@ void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
 	 */
 	kalMemCopy(pucBuf + sizeof(struct ICS_BIN_LOG_HDR),
 			pu4Data,
-			PHYICS_BUF_SIZE);
+			u4PhyIcsBufSize);
 
 	/* write to ring, ret: written */
 	ret = kalIcsWrite(pucBuf, u4Size);

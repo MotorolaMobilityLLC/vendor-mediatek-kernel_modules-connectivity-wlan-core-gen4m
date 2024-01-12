@@ -1151,6 +1151,8 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 #if ((CFG_SUPPORT_PHY_ICS_V3 == 1) || (CFG_SUPPORT_PHY_ICS_V4 == 1))
 	.u4PhyIcsEmiBaseAddr = PHYICS_EMI_BASE_ADDR,
 	.u4PhyIcsEmiDataSize = PHYICS_EMI_SIZE,
+	.u4PhyIcsTotalCnt = PHYICS_TOTAL_CNT,
+	.u4PhyIcsBufSize = PHYICS_BUF_SIZE,
 #endif
 #if (CFG_MTK_FPGA_PLATFORM == 0)
 	.ccif_ops = &mt6653_ccif_ops,
