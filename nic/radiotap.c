@@ -549,10 +549,8 @@ void radiotapFillRadiotap(struct ADAPTER *prAdapter,
 	}
 
 	if (!kalProcessRadiotap(prSwRfb->pvPacket, &p_base,
-			radiotap_len, prSwRfb->u2RxByteCount)){
-		DBGLOG(RX, ERROR, "radiotap exceed skb headroom!\n");
+			radiotap_len, prSwRfb->u2RxByteCount))
 		goto bypass;
-	}
 
 	header = (struct IEEE80211_RADIOTAP_HEADER *)p_base;
 	header->ucItVersion = PKTHDR_RADIOTAP_VERSION;
@@ -582,6 +580,23 @@ void radiotapFillRadiotap(struct ADAPTER *prAdapter,
 	}
 
 	prSwRfb->pvPacket = NULL;
+
+#if (CFG_SUPPORT_RETURN_TASK == 1)
+	/* Move SKB allocation to another context to reduce RX latency,
+	 * only if SKB is NULL.
+	 */
+	if (!prSwRfb->pvPacket) {
+		nicRxReturnRFB(prAdapter, prSwRfb);
+		kal_tasklet_hi_schedule(&prAdapter->prGlueInfo->rRxRfbRetTask);
+		return;
+	}
+#elif CFG_SUPPORT_RETURN_WORK
+	if (!prSwRfb->pvPacket) {
+		nicRxReturnRFB(prAdapter, prSwRfb);
+		kalRxRfbReturnWorkSchedule(prAdapter->prGlueInfo);
+		return;
+	}
+#endif
 
 	if (nicRxSetupRFB(prAdapter, prSwRfb)) {
 		DBGLOG(RX, WARN,

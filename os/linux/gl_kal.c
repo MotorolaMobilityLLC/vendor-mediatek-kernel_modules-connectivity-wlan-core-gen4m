@@ -1032,13 +1032,14 @@ void *kalPacketAlloc(struct GLUE_INFO *prGlueInfo,
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 
 	if (fgIsTx) {
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
-		u4TxHeadRoomSize = CFG_RADIOTAP_HEADROOM;
-#else
 		u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
 			prChipInfo->txd_append_size;
+	} else {
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+		u4TxHeadRoomSize = CFG_RADIOTAP_HEADROOM;
 #endif
 	}
+
 	if (in_interrupt())
 		prSkb = __dev_alloc_skb(u4Size + u4TxHeadRoomSize,
 					GFP_ATOMIC | __GFP_NOWARN);
@@ -1489,8 +1490,13 @@ u_int8_t kalProcessRadiotap(void *pvPacket,
 
 	prSkb = (struct sk_buff *)pvPacket;
 	/* exceed skb headroom the kernel will panic */
-	if (skb_headroom(prSkb) < radiotap_len)
+	if (skb_headroom(prSkb) < radiotap_len) {
+		DBGLOG(INIT, ERROR,
+			"radiotap[%u] exceed skb headroom[%u]!\n",
+			radiotap_len,
+			skb_headroom(prSkb));
 		return FALSE;
+	}
 
 	skb_push(prSkb, radiotap_len);
 	*ppucData = (uint8_t *)(prSkb->data);
@@ -1631,7 +1637,13 @@ void kalSkbReuseCheck(struct SW_RFB *prSwRfb)
 	 * if skb headroom is not zero, then it may not 4 byte alignment,
 	 * so we should not reuse it.
 	 */
-	if (prSkb->pp_recycle && skb_headroom(prSkb)) {
+	if (prSkb->pp_recycle &&
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+		(skb_headroom(prSkb) != CFG_RADIOTAP_HEADROOM)
+#else
+		skb_headroom(prSkb)
+#endif
+		) {
 		DBGLOG_LIMITED(NIC, INFO,
 			"Unexpected SKB with headroom[%d].\n",
 			skb_headroom(prSkb));
@@ -9760,10 +9772,6 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
-	if (glue->fgIsEnableMon)
-		return WLAN_STATUS_SUCCESS;
-#endif
 	GET_BOOT_SYSTIME(&now);
 	last = perf->rLastUpdateTime;
 
@@ -9788,6 +9796,11 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 
 		GLUE_ACQUIRE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
 		fgIsValidNetDevice = FALSE;
+
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+		if (ndev && glue->fgIsEnableMon)
+			fgIsValidNetDevice = TRUE;
+#endif /* CFG_SUPPORT_SNIFFER_RADIOTAP */
 
 		if (IS_BSS_ALIVE(prAdapter, bss) && ndev) {
 			if (!IS_BSS_P2P(bss)) /* non-p2p */
@@ -9953,12 +9966,20 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #define LINK_QUALITY_MONITOR_TEMPLATE ""
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+#define RADIOTAP_LOG_TEMPLATE " Mo:[%u:%lu:%lu:%lu]"
+#else /* CFG_SUPPORT_SNIFFER_RADIOTAP */
+#define RADIOTAP_LOG_TEMPLATE ""
+#endif /* CFG_SUPPORT_SNIFFER_RADIOTAP */
+
 #define TEMP_LOG_TEMPLATE \
 	"<%dms> Tput: %llu(%llu.%03llumbps) %s Pending:%d/%d %s " \
+	RADIOTAP_LOG_TEMPLATE \
 	LINK_QUALITY_MONITOR_TEMPLATE \
 	" idle:%u lv:%u th:%u fg:0x%lx" \
 	" TxDp[ST:BS:FO:QM:DP]:%u:%u:%u:%u:%u" \
-	" Tx[SQ:TI:TM:TDD:TDM]:%u:%u:%u:%u:%u\n"
+	" Tx[SQ:TI:TM:TDD:TDM]:%u:%u:%u:%u:%u" \
+	"\n"
 
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
 		period,	(unsigned long long) perf->ulThroughput,
@@ -9966,6 +9987,13 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		(unsigned long long) ((perf->ulThroughput >> 10) & BITS(0, 9)),
 		head1, GLUE_GET_REF_CNT(glue->i4TxPendingFrameNum),
 		prAdapter->rWifiVar.u4NetifStopTh, head2,
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+		glue->fgIsEnableMon,
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_SNIFFER_LOG_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_PDMA_SCATTER_DATA_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl,
+			RX_PDMA_SCATTER_INDICATION_COUNT),
+#endif /* CFG_SUPPORT_SNIFFER_RADIOTAP */
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 		(unsigned long long) lq->u8TxTotalCount,
 		(unsigned long long) lq->u8RxTotalCount,
@@ -10091,6 +10119,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		);
 #undef TEMP_LOG_TEMPLATE
 #undef RRO_LOG_TEMPLATE
+#undef RADIOTAP_LOG_TEMPLATE
 
 	kalTraceEvent("Tput: %llu.%03llumbps",
 		(unsigned long long) (perf->ulThroughput >> 20),
