@@ -500,6 +500,8 @@ struct CHIP_DBG_OPS soc7_0_DebugOps = {
 #if CFG_SUPPORT_LLS
 	.get_rx_link_stats = soc7_0_get_rx_link_stats,
 #endif
+	.dumpwfsyscpupcr = soc7_0_DumpWfsyscpupcr,
+	.dumpBusHangCr = soc7_0_DumpBusHangCr,
 };
 
 
@@ -579,7 +581,6 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 	.pwrondownload = NULL,
 #endif
 	.triggerfwassert = soc7_0_Trigger_fw_assert,
-	.dumpwfsyscpupcr = soc7_0_DumpWfsyscpupcr,
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	.coexpccifon = soc7_0_ConnacPccifon,
 	.coexpccifoff = soc7_0_ConnacPccifoff,
@@ -587,7 +588,6 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC),
 #endif
 	.checkbushang = soc7_0_CheckBusHang,
-	.dumpBusHangCr = soc7_0_DumpBusHangCr,
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 	.getCalResult = wlanGetCalResult,
 	.calDebugCmd = wlanCalDebugCmd,

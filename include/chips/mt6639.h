@@ -84,4 +84,7 @@ void mt6639_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
 void mt6639_icapRiseVcoreClockRate(void);
 void mt6639_icapDownVcoreClockRate(void);
 
+void mt6639_dumpWfsyscpupcr(struct ADAPTER *ad);
+void mt6639_DumpBusHangCr(struct ADAPTER *ad);
+
 #endif  /* mt6639 */

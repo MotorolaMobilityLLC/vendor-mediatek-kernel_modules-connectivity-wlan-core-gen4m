@@ -498,6 +498,8 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.show_wfdma_dbg_probe_info = mt6639_show_wfdma_dbg_probe_info,
 	.show_wfdma_wrapper_info = mt6639_show_wfdma_wrapper_info,
+	.dumpwfsyscpupcr = mt6639_dumpWfsyscpupcr,
+	.dumpBusHangCr = mt6639_DumpBusHangCr,
 #endif
 };
 
@@ -1456,9 +1458,12 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 	}
 
 exit:
-	if (rStatus != WLAN_STATUS_SUCCESS)
+	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, ERROR, "u4Value: 0x%x\n",
 			u4Value);
+		mt6639_DumpBusHangCr(ad);
+	}
+
 	return rStatus;
 }
 #endif

@@ -2772,6 +2772,91 @@ void asicConnac2xDmashdlSetOptionalControl(struct ADAPTER *prAdapter,
 #endif
 
 #if defined(_HIF_AXI)
+static void handle_wfsys_reset(struct ADAPTER *prAdapter)
+{
+	struct mt66xx_chip_info *chip_info = prAdapter->chip_info;
+	struct CHIP_DBG_OPS *debug_ops = chip_info != NULL ?
+		chip_info->prDebugOps : NULL;
+
+	if (kalIsResetting()) {
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+		g_eWfRstSource = WF_RST_SOURCE_DRIVER;
+		if (!prAdapter->prGlueInfo->u4ReadyFlag)
+			g_IsNeedWaitCoredump = TRUE;
+#endif
+		DBGLOG(HAL, ERROR,
+			"Wi-Fi Driver trigger, need do complete.\n");
+		complete(&g_triggerComp);
+	} else {
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+		g_eWfRstSource = WF_RST_SOURCE_FW;
+		if (!prAdapter->prGlueInfo->u4ReadyFlag)
+			g_IsNeedWaitCoredump = TRUE;
+#endif
+		DBGLOG(HAL, ERROR,
+			"FW trigger assert.\n");
+
+		glSetRstReason(RST_FW_ASSERT);
+
+		fgIsResetting = TRUE;
+		update_driver_reset_status(fgIsResetting);
+
+		if (get_wifi_process_status() == 1) {
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
+			fw_log_wifi_irq_handler();
+#endif
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+			fw_log_connsys_coredump_start(-1, NULL);
+			g_IsNeedWaitCoredump = FALSE;
+#endif
+			if (debug_ops && debug_ops->dumpwfsyscpupcr)
+				debug_ops->dumpwfsyscpupcr(prAdapter);
+
+			fgIsResetting = FALSE;
+			update_driver_reset_status(fgIsResetting);
+			g_eWfRstSource = WF_RST_SOURCE_NONE;
+		} else {
+			kalSetRstEvent();
+		}
+	}
+}
+
+static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
+{
+	DBGLOG(HAL, ERROR,
+		"FW trigger whole chip reset.\n");
+
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+	g_eWfRstSource = WF_RST_SOURCE_FW;
+	if (!prAdapter->prGlueInfo->u4ReadyFlag)
+		g_IsNeedWaitCoredump = TRUE;
+#endif
+	fgIsResetting = TRUE;
+	update_driver_reset_status(fgIsResetting);
+	g_IsWfsysBusHang = TRUE;
+	kalSetRstEvent();
+}
+
+static void handle_sw_wfdma_event(struct ADAPTER *prAdapter)
+{
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo =
+		&prChipInfo->bus_info->rSwWfdmaInfo;
+
+	if (prSwWfdmaInfo->fgIsEnSwWfdma) {
+		if (test_bit(GLUE_FLAG_HALT_BIT,
+			&prAdapter->prGlueInfo->ulFlag)) {
+			DBGLOG(HAL, TRACE,
+				"GLUE_FLAG_HALT skip SwWfdma INT\n");
+		} else {
+			DBGLOG(HAL, TRACE,
+				"FW trigger SwWfdma INT.\n");
+			halSetHifIntEvent(prAdapter->prGlueInfo,
+					  HIF_FLAG_SW_WFDMA_INT_BIT);
+		}
+	}
+}
+
 bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
@@ -2808,84 +2893,15 @@ bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
 		fw_log_wifi_irq_handler();
 #endif
 
-	if (status & BIT(SW_INT_SUBSYS_RESET)) {
-		if (kalIsResetting()) {
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-			g_eWfRstSource = WF_RST_SOURCE_DRIVER;
-			if (!prAdapter->prGlueInfo->u4ReadyFlag)
-				g_IsNeedWaitCoredump = TRUE;
-#endif
-			DBGLOG(HAL, ERROR,
-				"Wi-Fi Driver trigger, need do complete(0x%x).\n",
-				status);
-			complete(&g_triggerComp);
-		} else {
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-			g_eWfRstSource = WF_RST_SOURCE_FW;
-			if (!prAdapter->prGlueInfo->u4ReadyFlag)
-				g_IsNeedWaitCoredump = TRUE;
-#endif
-			DBGLOG(HAL, ERROR,
-				"FW trigger assert(0x%x).\n", status);
+	if (status & BIT(SW_INT_SUBSYS_RESET))
+		handle_wfsys_reset(prAdapter);
 
-			glSetRstReason(RST_FW_ASSERT);
-
-			fgIsResetting = TRUE;
-			update_driver_reset_status(fgIsResetting);
-
-			if (get_wifi_process_status() == 1) {
-#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-				fw_log_wifi_irq_handler();
-#endif
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-				fw_log_connsys_coredump_start(-1, NULL);
-				g_IsNeedWaitCoredump = FALSE;
-#endif
-				if (prAdapter->chip_info->dumpwfsyscpupcr)
-					prAdapter->chip_info->
-					dumpwfsyscpupcr(prAdapter);
-
-				fgIsResetting = FALSE;
-				update_driver_reset_status(fgIsResetting);
-				g_eWfRstSource = WF_RST_SOURCE_NONE;
-			} else {
-				kalSetRstEvent();
-			}
-		}
-	}
-
-	if (status & BIT(SW_INT_WHOLE_RESET)) {
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-		g_eWfRstSource = WF_RST_SOURCE_FW;
-		if (!prAdapter->prGlueInfo->u4ReadyFlag)
-			g_IsNeedWaitCoredump = TRUE;
-#endif
-		DBGLOG(HAL, ERROR,
-			"FW trigger whole chip reset(0x%x).\n", status);
-		fgIsResetting = TRUE;
-		update_driver_reset_status(fgIsResetting);
-		g_IsWfsysBusHang = TRUE;
-		kalSetRstEvent();
-	}
+	if (status & BIT(SW_INT_WHOLE_RESET))
+		handle_whole_chip_reset(prAdapter);
 
 	/* SW wfdma cmd done interrupt */
-	if (status & BIT(SW_INT_SW_WFDMA)) {
-		struct SW_WFDMA_INFO *prSwWfdmaInfo =
-			&prChipInfo->bus_info->rSwWfdmaInfo;
-
-		if (prSwWfdmaInfo->fgIsEnSwWfdma) {
-			if (test_bit(GLUE_FLAG_HALT_BIT,
-				&prAdapter->prGlueInfo->ulFlag)) {
-				DBGLOG(HAL, TRACE,
-					"GLUE_FLAG_HALT skip SwWfdma INT\n");
-			} else {
-				DBGLOG(HAL, TRACE,
-					"FW trigger SwWfdma INT.\n");
-				halSetHifIntEvent(prAdapter->prGlueInfo,
-						  HIF_FLAG_SW_WFDMA_INT_BIT);
-			}
-		}
-	}
+	if (status & BIT(SW_INT_SW_WFDMA))
+		handle_sw_wfdma_event(prAdapter);
 
 exit:
 	return ret;
@@ -2922,8 +2938,10 @@ int asicConnac2xPwrOnWmMcu(struct mt66xx_chip_info *chip_info)
 	/* wf driver power on */
 	ret = chip_info->wmmcupwron();
 	if (ret) {
-		if (chip_info->dumpBusHangCr)
-			chip_info->dumpBusHangCr(NULL);
+		struct CHIP_DBG_OPS *debug_ops = chip_info->prDebugOps;
+
+		if (debug_ops && debug_ops->dumpBusHangCr)
+			debug_ops->dumpBusHangCr(NULL);
 		goto exit;
 	}
 
@@ -2959,8 +2977,10 @@ int asicConnac2xPwrOffWmMcu(struct mt66xx_chip_info *chip_info)
 	/* wf driver power off */
 	ret = chip_info->wmmcupwroff();
 	if (ret != 0) {
-		if (chip_info->dumpBusHangCr)
-			chip_info->dumpBusHangCr(NULL);
+		struct CHIP_DBG_OPS *debug_ops = chip_info->prDebugOps;
+
+		if (debug_ops && debug_ops->dumpBusHangCr)
+			debug_ops->dumpBusHangCr(NULL);
 		goto exit;
 	}
 
