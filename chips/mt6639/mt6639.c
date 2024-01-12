@@ -67,9 +67,11 @@
 #include "wlan_pinctrl.h"
 
 #if CFG_MTK_MDDP_SUPPORT
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 0)
 #include "mddp_export.h"
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP == 0 */
 #include "mddp.h"
-#endif
+#endif /* CFG_MTK_MDDP_SUPPORT */
 
 #if CFG_MTK_CCCI_SUPPORT
 #include "mtk_ccci_common.h"
@@ -233,6 +235,10 @@ static int mt6639_CheckBusHang(void *priv, uint8_t rst_enable);
 static void mt6639_CheckMcuOff(struct ADAPTER *ad);
 static uint32_t mt6639_wlanDownloadPatch(struct ADAPTER *prAdapter);
 #endif
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+static int mt6639ConnacPccifOn(struct ADAPTER *prAdapter);
+static int mt6639ConnacPccifOff(struct ADAPTER *prAdapter);
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 #if CFG_PCIE_LTR_UPDATE
 static void mt6639PcieLTRValue(struct ADAPTER *prAdapter, uint8_t ucState);
 #endif
@@ -1095,10 +1101,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
 	.u4LmacWtblDUAddr = CONNAC3X_WIFI_LWTBL_BASE,
 	.u4UmacWtblDUAddr = CONNAC3X_WIFI_UWTBL_BASE,
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if defined(CFG_MTK_WIFI_CONNV3_SUPPORT) || (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
 	.coexpccifon = mt6639ConnacPccifOn,
 	.coexpccifoff = mt6639ConnacPccifOff,
-#endif
+#endif /* CFG_MTK_WIFI_CONNV3_SUPPORT || CFG_MTK_SUPPORT_LIGHT_MDDP */
 #if CFG_MTK_MDDP_SUPPORT
 	.isSupportMddpAOR = false,
 	.isSupportMddpSHM = true,
@@ -3567,7 +3573,9 @@ static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter)
 
 	return ret;
 }
+#endif /* IS_MOBILE_SEGMENT */
 
+#if IS_MOBILE_SEGMENT || (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
 #define MCIF_EMI_MEMORY_SIZE 128
 #define MCIF_EMI_COEX_SWMSG_OFFSET 0xF8518000
 #define MCIF_EMI_BASE_OFFSET 0xE4
@@ -3605,6 +3613,14 @@ static int mt6639ConnacPccifOn(struct ADAPTER *prAdapter)
 	u4WifiEmi = (uint32_t)emi_mem_get_phy_base(prAdapter->chip_info) +
 		emi_mem_offset_convert(0x518001);
 #endif
+
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	mddpStartMdRxThread();
+	kalDevRegWrite(
+		prAdapter->prGlueInfo,
+		CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_1_BA_ADDR,
+		0x18051803);
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 
 	kalMemSetIo(vir_addr, 0xFF, MCIF_EMI_MEMORY_SIZE);
 	writel(0x4D4D434D, vir_addr);
@@ -3670,12 +3686,17 @@ static int mt6639ConnacPccifOff(struct ADAPTER *prAdapter)
 	writel(0, vir_addr + 0x1C);
 
 	iounmap(vir_addr);
-#else
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	mddpStopMdRxThread();
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+#else /* CFG_MTK_CCCI_SUPPORT && CFG_MTK_MDDP_SUPPORT */
 	DBGLOG(INIT, ERROR, "[%s] ECCCI Driver is not supported.\n", __func__);
-#endif
+#endif /* CFG_MTK_CCCI_SUPPORT && CFG_MTK_MDDP_SUPPORT */
 	return 0;
 }
+#endif /* IS_MOBILE_SEGMENT || (CFG_MTK_SUPPORT_LIGHT_MDDP == 1) */
 
+#if IS_MOBILE_SEGMENT
 static int mt6639_CheckBusHang(void *priv, uint8_t rst_enable)
 {
 	struct ADAPTER *ad = priv;

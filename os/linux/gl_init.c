@@ -7450,8 +7450,13 @@ int32_t wlanOffAtReset(void)
 	wlanWakeStaticsUninit();
 #endif
 
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	if (prAdapter->chip_info->coexpccifoff)
+		prAdapter->chip_info->coexpccifoff(prAdapter);
+#else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	if (prAdapter->chip_info->fw_dl_ops->mcu_deinit)
 		prAdapter->chip_info->fw_dl_ops->mcu_deinit(prAdapter);
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 
 	fgSimplifyResetFlow = TRUE;
 
@@ -7521,8 +7526,13 @@ int32_t wlanOnAtReset(void)
 		return WLAN_STATUS_FAILURE;
 	}
 
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	if (prAdapter->chip_info->coexpccifon)
+		prAdapter->chip_info->coexpccifon(prAdapter);
+#else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	if (prAdapter->chip_info->fw_dl_ops->mcu_init)
 		prAdapter->chip_info->fw_dl_ops->mcu_init(prAdapter);
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 
 	prGlueInfo->ulFlag = 0;
 	fgSimplifyResetFlow = FALSE;
@@ -7814,8 +7824,13 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		prWifiVar = &prAdapter->rWifiVar;
 		prChipInfo = prAdapter->chip_info;
 
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+		if (prAdapter->chip_info->coexpccifon)
+			prAdapter->chip_info->coexpccifon(prAdapter);
+#else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 		if (prChipInfo->fw_dl_ops->mcu_init)
 			i4Status = prChipInfo->fw_dl_ops->mcu_init(prAdapter);
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(INIT, ERROR, "WF MCU init failed.\n");
 			eFailReason = ROM_DL_FAIL;
@@ -8448,8 +8463,13 @@ static void wlanRemove(void)
 	/* 4 <6> Unregister the card */
 	wlanNetUnregister(prDev->ieee80211_ptr);
 
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	if (prAdapter->chip_info->coexpccifoff)
+		prAdapter->chip_info->coexpccifoff(prAdapter);
+#else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	if (prAdapter->chip_info->fw_dl_ops->mcu_deinit)
 		prAdapter->chip_info->fw_dl_ops->mcu_deinit(prAdapter);
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 
 	/* 4 <7> Destroy the device */
 	wlanNetDestroy(prDev->ieee80211_ptr);
@@ -8842,10 +8862,6 @@ static void exitWlan(void)
 		netlink_kernel_release(nl_sk);
 #endif /* CFG_AP_80211KVR_INTERFACE */
 
-#if CFG_MTK_MDDP_SUPPORT
-	mddpUninit();
-#endif
-
 	kalFbNotifierUnReg();
 
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
@@ -8907,6 +8923,10 @@ static void exitWlan(void)
 
 	DBGLOG(INIT, INFO, "Free wlan device..\n");
 	wlanFreeNetDev();
+#endif
+
+#if CFG_MTK_MDDP_SUPPORT
+	mddpUninit();
 #endif
 
 #if CFG_DC_USB_WOW_CALLBACK
@@ -8992,9 +9012,6 @@ static int wf_pdwnc_notify(struct notifier_block *nb,
 	if (event == SYS_RESTART) {
 		DBGLOG(HAL, STATE, "wf_pdwnc_notify()\n");
 
-#if CFG_MTK_MDDP_SUPPORT
-		mddpUninit();
-#endif
 		wlanUnregisterNetdevNotifier();
 		kalFbNotifierUnReg();
 
@@ -9043,6 +9060,9 @@ static int wf_pdwnc_notify(struct notifier_block *nb,
 		wlanFreeNetDev();
 #endif
 
+#if CFG_MTK_MDDP_SUPPORT
+		mddpUninit();
+#endif
 		/* free pre-allocated memory */
 		kalUninitIOBuffer();
 

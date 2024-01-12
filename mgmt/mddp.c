@@ -24,11 +24,16 @@
 #if CFG_MTK_MDDP_SUPPORT
 
 #include "gl_os.h"
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 0)
 #include "mddp_export.h"
+#else /* CFG_MTK_SUPPORT_LIGHT_MDDP == 0 */
+#include <linux/signal.h>
+#include <linux/sched/signal.h>
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP == 0 */
 #include "mddp.h"
 #if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
 #include "cnm_mem.h"
-#endif
+#endif /* CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP */
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -180,6 +185,9 @@ static void save_mddp_stats(void);
 #if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
 static void save_mddp_lls_stats(void);
 #endif
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+static void mddpRdCCCI(struct MDDP_SETTINGS *prSettings, uint32_t *pu4Val);
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 
 static void mddpRdFunc(struct MDDP_SETTINGS *prSettings, uint32_t *pu4Val)
 {
@@ -346,11 +354,26 @@ static int32_t mddpRegisterCb(void)
 	}
 	gMddpFunc.wifi_handle = &gMddpWFunc;
 
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	if (g_rSettings.i4PortIdx > 0) {
+		DBGLOG(INIT, ERROR, "port(%d) already opened!\n",
+			g_rSettings.i4PortIdx);
+		return ret;
+	}
+
+	g_rSettings.i4PortIdx = mtk_ccci_open_port(CCCI_PORT_NAME);
+	if (g_rSettings.i4PortIdx <= 0)
+		DBGLOG(INIT, ERROR, "open ccci port fail!\n");
+
+	DBGLOG(INIT, LOUD, "port idx:%d\n", g_rSettings.i4PortIdx);
+
+	gMddpWFunc.notify_drv_info = mddpDrvNotifyInfo;
+#else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	ret = mddp_drv_attach(&gMddpDrvConf, &gMddpFunc);
 
 	DBGLOG(INIT, INFO, "mddp_drv_attach ret: %d, g_fgMddpEnabled: %d\n",
 			ret, g_fgMddpEnabled);
-
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	kalMemZero(&stats, sizeof(struct mddpw_net_stat_ext_t));
 #if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
 	kalMemZero(&cur_lls_stats, sizeof(struct wsvc_stat_lls_report_t));
@@ -365,7 +388,21 @@ static int32_t mddpRegisterCb(void)
 static void mddpUnregisterCb(void)
 {
 	DBGLOG(INIT, INFO, "mddp_drv_detach\n");
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	DBGLOG(INIT, INFO, "port idx:%d\n", g_rSettings.i4PortIdx);
+	if (g_rSettings.i4PortIdx < 0) {
+		DBGLOG(INIT, ERROR, "port didn't open!\n");
+		return;
+	}
+
+	if (mtk_ccci_close_port(g_rSettings.i4PortIdx) < 0)
+		DBGLOG(INIT, ERROR, "close ccci port fail!\n");
+	g_rSettings.i4PortIdx = -1;
+
+	gMddpWFunc.notify_drv_info = NULL;
+#else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	mddp_drv_detach(&gMddpDrvConf, &gMddpFunc);
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	gMddpFunc.wifi_handle = NULL;
 }
 
@@ -967,6 +1004,14 @@ int32_t mddpNotifyWifiStatus(enum ENUM_MDDPW_DRV_INFO_STATUS status)
 	uint32_t u32BufSize = 0;
 	uint8_t *buff = NULL;
 	int32_t ret = 0, feature = 0;
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	struct mddpw_coex_intf_info_t *prCoexInfo;
+
+	if (GLUE_GET_REF_CNT(g_rSettings.seq) >= COEX_NOTIFY_MAX_SEQ)
+		GLUE_SET_REF_CNT(0, g_rSettings.seq);
+	GLUE_INC_REF_CNT(g_rSettings.seq);
+	GLUE_SET_REF_CNT(0, g_rSettings.md_status);
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 
 	if (gMddpWFunc.get_mddp_feature)
 		feature = gMddpWFunc.get_mddp_feature();
@@ -974,8 +1019,14 @@ int32_t mddpNotifyWifiStatus(enum ENUM_MDDPW_DRV_INFO_STATUS status)
 	if (gMddpWFunc.notify_drv_info) {
 		int32_t ret;
 
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+		u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
+			sizeof(struct mddpw_drv_info_t) +
+			sizeof(struct mddpw_coex_intf_info_t));
+#else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 		u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
 			sizeof(struct mddpw_drv_info_t) + sizeof(bool));
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 		buff = kalMemAlloc(u32BufSize, VIR_MEM_TYPE);
 
 		if (buff == NULL) {
@@ -990,7 +1041,15 @@ int32_t mddpNotifyWifiStatus(enum ENUM_MDDPW_DRV_INFO_STATUS status)
 		prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
 		prDrvInfo->info_id = WSVC_DRVINFO_WIFI_ONOFF;
 		prDrvInfo->info_len = WIFI_ONOFF_NOTIFICATION_LEN;
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+		prCoexInfo = (struct mddpw_coex_intf_info_t *)
+				&(prDrvInfo->info[0]);
+		prCoexInfo->status = status;
+		prCoexInfo->ringNum = 0;
+		prCoexInfo->seq = GLUE_GET_REF_CNT(g_rSettings.seq);
+#else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 		prDrvInfo->info[0] = status;
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 
 		ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
 		DBGLOG(INIT, INFO, "power: %d, ret: %d, feature:%d.\n",
@@ -1296,7 +1355,11 @@ void mddpNotifyWifiOnStart(void)
 {
 	mddpResetGlobalVariable();
 
-	if (!mddpIsSupportMcifWifi())
+	if (!mddpIsSupportMcifWifi()
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+		&& !mddpIsSupportCcci()
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+	)
 		return;
 
 	if (!is_cal_flow_finished())
@@ -1356,7 +1419,11 @@ int32_t mddpNotifyWifiOnEnd(void)
 {
 	int32_t ret = 0;
 
-	if (!mddpIsSupportMcifWifi())
+	if (!mddpIsSupportMcifWifi()
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+		&& !mddpIsSupportCcci()
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+	)
 		return ret;
 
 	if (!is_cal_flow_finished())
@@ -1401,7 +1468,11 @@ void mddpNotifyWifiOffStart(void)
 	struct GLUE_INFO *prGlueInfo = NULL;
 #endif
 
-	if (!mddpIsSupportMcifWifi())
+	if (!mddpIsSupportMcifWifi()
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+		&& !mddpIsSupportCcci()
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+	)
 		return;
 
 	if (!is_cal_flow_finished())
@@ -1455,7 +1526,11 @@ void __mddpNotifyWifiOffEnd(void)
 
 void mddpNotifyWifiOffEnd(void)
 {
-	if (!mddpIsSupportMcifWifi())
+	if (!mddpIsSupportMcifWifi()
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+		&& !mddpIsSupportCcci()
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+	)
 		return;
 
 	if (!is_cal_flow_finished())
@@ -1798,7 +1873,11 @@ static bool wait_for_md_off_complete(void)
 		if (g_rSettings.rOps.rd)
 			g_rSettings.rOps.rd(&g_rSettings, &u4Value);
 
-		if ((u4Value & g_rSettings.u4MdOffBit) == 0) {
+		if ((u4Value & g_rSettings.u4MdOffBit) == 0
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+		&& g_rSettings.recv_seq == GLUE_GET_REF_CNT(g_rSettings.seq)
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+		) {
 			DBGLOG(INIT, INFO, "md off end.\n");
 			break;
 		}
@@ -1871,7 +1950,11 @@ void setMddpSupportRegister(struct ADAPTER *prAdapter)
 
 	prChipInfo = prAdapter->chip_info;
 
-
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	g_rSettings.rOps.rd = mddpRdCCCI;
+	g_rSettings.u4MdOnBit = MD_STATUS_ON_SYNC_BIT;
+	g_rSettings.u4MdOffBit = MD_STATUS_OFF_SYNC_BIT;
+#else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	if (prChipInfo->isSupportMddpSHM) {
 		g_rSettings.rOps.rd = mddpRdFuncSHM;
 		g_rSettings.rOps.set = mddpSetFuncSHM;
@@ -1902,6 +1985,7 @@ void setMddpSupportRegister(struct ADAPTER *prAdapter)
 		g_rSettings.u4MdOffBit = MD_STATUS_OFF_SYNC_BIT;
 		g_rSettings.u4MDDPSupportMode = MDDP_SUPPORT_AOP;
 	}
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 
 #if (CFG_SUPPORT_CONNAC2X == 0 && CFG_SUPPORT_CONNAC3X == 0)
 	HAL_MCR_RD(prAdapter, MDDP_SUPPORT_CR, &u4Val);
@@ -1920,7 +2004,6 @@ void mddpInit(int bootmode)
 		return;
 
 	g_wifi_boot_mode = bootmode;
-
 	g_eMddpStatus = MDDPW_DRV_INFO_STATUS_OFF_END;
 	mutex_init(&rMddpLock);
 	mddpRegisterCb();
@@ -2153,5 +2236,318 @@ bool mddpIsSupportMddpWh(void)
 
 	return (gMddpWFunc.get_mddp_feature() & MDDP_FEATURE_MDDP_WH) != 0;
 }
+
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+static void mddpRdCCCI(struct MDDP_SETTINGS *prSettings, uint32_t *pu4Val)
+{
+	uint32_t md_status = 0;
+	*pu4Val = prSettings->u4MdOnBit | prSettings->u4MdOffBit;
+
+	md_status = GLUE_GET_REF_CNT(prSettings->md_status);
+	if (md_status & prSettings->u4MdOffBit)
+		*pu4Val &= ~prSettings->u4MdOffBit;
+
+	DBGLOG(INIT, INFO, "value:%u md_status:%d\n", *pu4Val, md_status);
+}
+
+static int coex_read_data_from_md(int index, char *buf, size_t count)
+{
+	int ret = 0;
+	int retry_cnt = 0;
+
+	do {
+		ret = mtk_ccci_read_data(index, buf, count);
+		if (ret < 0 || ret > count) {
+			retry_cnt++;
+			msleep(CHECK_MD_STATUS_TIME);
+		} else {
+			DBGLOG(INIT, INFO,
+				"retry count = %d, recv data from MD success\n",
+				retry_cnt);
+			DBGLOG_MEM32(INIT, WARN, buf, ret);
+			return ret;
+		}
+	} while (retry_cnt < CHECK_MD_STATUS_MAX_COUNT);
+	DBGLOG(INIT, WARN, "recv data from MD failed\n");
+	return STATUS_FAILURE;
+}
+
+static int coex_send_data_to_md(int index, char *buf, size_t count)
+{
+	int ret = 0;
+	int retry_cnt = 0;
+
+	do {
+		ret = mtk_ccci_write_data(index, buf, count);
+		if (ret < 0 || ret > count) {
+			retry_cnt++;
+			msleep(CHECK_MD_STATUS_TIME);
+		} else {
+			DBGLOG(INIT, STATE,
+				"retry count = %d, send to MD success\n",
+				retry_cnt);
+			DBGLOG_MEM32(INIT, INFO, buf, ret);
+			return STATUS_SUCCESS;
+		}
+	} while (retry_cnt < CHECK_MD_STATUS_MAX_COUNT);
+	DBGLOG(INIT, WARN, "send to MD failed\n");
+	return STATUS_FAILURE;
+}
+
+static void mddpMDDrvOwnReqHdlr(struct mddpw_md_notify_info_t *md_info)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct mddpw_drv_own_info_t *drv_own_info = NULL;
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
+		DBGLOG(INIT, ERROR, "[MDDP] Invalid drv state.\n");
+		return;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "[MDDP] prAdapter is NULL.\n");
+		return;
+	}
+
+	drv_own_info = (struct mddpw_drv_own_info_t *) &(md_info->buf[0]);
+
+	DBGLOG(INIT, ERROR, "[MDDP] device_id:%d, seq_num:%d\n",
+		drv_own_info->device_id, drv_own_info->seq_num);
+
+	if (drv_own_info->device_id != 0) {
+		DBGLOG(INIT, ERROR, "[MDDP] Unkownn Device.\n");
+		return;
+	}
+
+	g_rSettings.drv_own_seq = drv_own_info->seq_num;
+	g_rSettings.is_resp_drv_own = 1;
+
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+
+	if (prAdapter->fgIsFwOwn == FALSE) {
+		DBGLOG(INIT, INFO, "[MDDP] Already FW Owned.\n");
+		mddpNotifyDrvOwn(STATUS_SUCCESS);
+	}
+}
+
+static void mddpMDDrvOwnReleaseHdlr(
+		struct mddpw_md_notify_info_t *md_info)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
+		DBGLOG(INIT, ERROR, "Invalid drv state.\n");
+		return;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		return;
+	}
+
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+}
+
+static void md_rx_msg_handle(struct MDDP_SETTINGS *pSt,
+		struct mdfpm_ctrl_msg_t *msg, unsigned long msg_len)
+{
+	struct mddpw_md_notify_info_t *md_info;
+
+	DBGLOG(INIT, INFO, "[MDDP] => user_id:%d, msg_id:%d\n",
+		msg->dest_user_id, msg->msg_id);
+
+	if (msg->dest_user_id != CCCI_USER_ID_COEX) {
+		DBGLOG(INIT, ERROR, "unaccepted user_id(%d)!\n",
+			msg->dest_user_id);
+		return;
+	}
+
+	switch (msg->msg_id) {
+	case CCCI_MSG_ID_RESET_IND:
+		DBGLOG(INIT, STATE, "received RESET IND\n");
+		mddpNotifyWifiOnStart();
+		mddpNotifyWifiOnEnd();
+		break;
+	case CCCI_MSG_ID_MD_NOTIFY:
+		DBGLOG(INIT, INFO, "received MD NOTIFY\n");
+		md_info = (struct mddpw_md_notify_info_t *) msg->buf;
+		switch (md_info->info_type) {
+		case MD_NOTIFY_INFO_ONOFF:
+			pSt->recv_seq = md_info->buf[0];
+			DBGLOG(INIT, INFO, "get seq = %d from MD\n",
+				pSt->recv_seq);
+			GLUE_SET_REF_CNT(pSt->u4MdOffBit, pSt->md_status);
+			break;
+		case MD_NOTIFY_INFO_DRV_OWN_RELEASE:
+			mddpMDDrvOwnReleaseHdlr(md_info);
+			break;
+		default:
+			DBGLOG(INIT, WARN, "unsupport info type %d from MD.\n",
+				md_info->info_type);
+			break;
+		}
+		break;
+	case CCCI_MSG_ID_MD_REQ:
+		md_info = (struct mddpw_md_notify_info_t *) msg->buf;
+		mddpMDDrvOwnReqHdlr(md_info);
+		break;
+	default:
+		DBGLOG(INIT, WARN, "unsupport RSP MDG_ID[%d] from MD.\n",
+			msg->msg_id);
+		break;
+	}
+}
+
+int32_t mddpDrvNotifyInfo(struct mddpw_drv_notify_info_t *prDrvInfo)
+{
+	struct mdfpm_ctrl_msg_t msg;
+	unsigned int header_size = sizeof(msg) - MDFPM_TTY_BUF_SZ;
+
+	msg.dest_user_id = CCCI_USER_ID_COEX;
+	msg.msg_id = CCCI_MSG_ID_COEX_NOTIFY;
+	msg.buf_len = prDrvInfo->buf_len +
+			sizeof(struct mddpw_drv_notify_info_t);
+	if (msg.buf_len > MDFPM_TTY_BUF_SZ) {
+		DBGLOG(INIT, ERROR, "buf len(%d) error!\n", msg.buf_len);
+		return STATUS_FAILURE;
+	}
+
+	memcpy(msg.buf, prDrvInfo, msg.buf_len);
+
+	return coex_send_data_to_md(g_rSettings.i4PortIdx, (char *)&msg,
+				msg.buf_len + header_size);
+}
+
+int md_rx_handler(void *data)
+{
+	int ret = 0;
+	char *msg = NULL;
+	enum MD_STATE md_state;
+	bool *was_frozen = FALSE;
+	unsigned long msg_len = 0;
+	struct MDDP_SETTINGS *pSt = data;
+
+	if (!pSt) {
+		DBGLOG(INIT, ERROR, "global Setting is NULL!!!\n");
+		return STATUS_FAILURE;
+	}
+
+	if (pSt->i4PortIdx < 0) {
+		DBGLOG(INIT, ERROR, "open ccci port fail!!!\n");
+		return STATUS_FAILURE;
+	}
+
+	// register the interrupt signal listened by the thread
+	allow_signal(SIGKILL);
+
+	msg = (char *)(&pSt->ctrl_msg);
+	msg_len = sizeof(pSt->ctrl_msg);
+
+	do {
+		if (signal_pending(current)) {
+			DBGLOG(INIT, ERROR,
+				"catch SIGKILL, md rx thread exit!\n");
+			break;
+		}
+
+		if (kthread_should_stop()) {
+			DBGLOG(INIT, ERROR, "md rx thread exit!\n");
+			break;
+		}
+
+		md_state = ccci_fsm_get_md_state(0);
+		if (md_state != READY) {
+			/* modem not ready */
+			msleep(100);
+			continue;
+		}
+
+		ret = coex_read_data_from_md(pSt->i4PortIdx, msg, msg_len);
+		if (ret == STATUS_FAILURE) {
+			DBGLOG(INIT, LOUD, "read_data fail !!!\n");
+			continue;
+		}
+
+		md_rx_msg_handle(pSt, &pSt->ctrl_msg, ret);
+	} while (!kthread_freezable_should_stop(was_frozen));
+	return STATUS_SUCCESS;
+}
+
+bool mddpIsSupportCcci(void)
+{
+	if (g_rSettings.i4PortIdx > 0)
+		return true;
+	DBGLOG(INIT, WARN, "[MDDP] => idx_port:%d\n", g_rSettings.i4PortIdx);
+	return false;
+}
+
+void mddpNotifyDrvOwn(uint32_t u4Status)
+{
+	struct mdfpm_ctrl_msg_t msg;
+	struct mddpw_drv_own_t *prNotifyInfo = NULL;
+	struct mddpw_drv_own_info_t *prDrvInfo = NULL;
+	int32_t ret = 0;
+
+	if (!g_rSettings.is_resp_drv_own)
+		return;
+
+	DBGLOG(INIT, INFO, "[MDDP] => status:%u seq_num:%d\n",
+		u4Status, g_rSettings.drv_own_seq);
+
+	if (!gMddpWFunc.notify_drv_info) {
+		DBGLOG(INIT, ERROR, "notify_drv_info is NULL.\n");
+		return;
+	}
+
+	msg.dest_user_id = CCCI_USER_ID_COEX;
+	msg.msg_id = CCCI_MSG_ID_DRV_RSP;
+	msg.buf_len = sizeof(struct mddpw_drv_own_t) +
+			sizeof(struct mddpw_drv_own_info_t);
+
+	prNotifyInfo = (struct mddpw_drv_own_t *) &msg.buf;
+	prNotifyInfo->version = 0;
+	prNotifyInfo->resource = 0; /* DRVOWN */
+	prNotifyInfo->buf_len = sizeof(struct mddpw_drv_own_info_t);
+
+	prDrvInfo = (struct mddpw_drv_own_info_t *) &(prNotifyInfo->buf[0]);
+	prDrvInfo->device_id = 0;
+	prDrvInfo->seq_num = g_rSettings.drv_own_seq;
+	prDrvInfo->status = u4Status;
+
+	ret = coex_send_data_to_md(g_rSettings.i4PortIdx, (char *)&msg,
+			sizeof(msg) + msg.buf_len - MDFPM_TTY_BUF_SZ);
+
+	DBGLOG(INIT, INFO,
+		"[MDDP] user_id:%d msg_id:%d seq_num:%d status:%d ret:%d.\n",
+		msg.dest_user_id, msg.msg_id,
+		prDrvInfo->seq_num, u4Status, ret);
+
+	g_rSettings.is_resp_drv_own = 0;
+}
+
+void mddpStartMdRxThread(void)
+{
+	g_rSettings.notify_md_thread = kthread_run(md_rx_handler,
+		(void *) &g_rSettings, "md_rx_task");
+	GLUE_SET_REF_CNT(0, g_rSettings.seq);
+}
+
+void mddpStopMdRxThread(void)
+{
+	if (g_rSettings.notify_md_thread) {
+		send_sig(SIGKILL,
+			g_rSettings.notify_md_thread, SEND_SIG_SRC_KERNEL);
+		DBGLOG(INIT, STATE, "send sig to stop md rx thread\n");
+		kthread_stop(g_rSettings.notify_md_thread);
+		g_rSettings.notify_md_thread = NULL;
+	}
+}
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 
 #endif /* CFG_MTK_MDDP_SUPPORT */

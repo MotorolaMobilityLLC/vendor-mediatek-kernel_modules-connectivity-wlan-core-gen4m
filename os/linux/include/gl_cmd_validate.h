@@ -405,6 +405,9 @@
 #define CMD_GET_DRV_MCR_DIRECTLY		"GET_DRV_MCR_DIRECTLY"
 #endif
 
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+#define CMD_SET_MDDP_TEST "MDDP_TEST"
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 /*****************************************************************************
 *                             D A T A   T Y P E S
 ******************************************************************************

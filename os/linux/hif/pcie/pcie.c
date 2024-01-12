@@ -1883,7 +1883,6 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 		}
 #endif
 
-#if CFG_MTK_WIFI_PCIE_SUPPORT
 #if CFG_MTK_MDDP_SUPPORT
 		if (prMsiLayout->type == MDDP_INT) {
 			struct irq_data *data;
@@ -1900,11 +1899,13 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 			data = irq_get_irq_data(irqn);
 			if (data) {
 				irq_chip_mask_parent(data);
+#if CFG_MTK_WIFI_PCIE_SUPPORT
 				mtk_msi_unmask_to_other_mcu(data, 1);
+#endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
 			}
 		}
 #endif
-#endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
+
 		en_wake_ret = enable_irq_wake(irqn);
 		if (buf && ((BUF_SIZE - pos) > 0)) {
 			pos += kalSnprintf(buf + pos, BUF_SIZE - pos,
