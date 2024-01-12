@@ -5755,13 +5755,6 @@ struct UNI_EVENT_STA_STATISTICS {
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
-struct UNI_EVENT_GET_STATISTICS {
-	uint16_t u2Tag;
-	uint16_t u2Length;
-	uint8_t  aucBuffer[0];
-} __KAL_ATTRIB_PACKED__;
-
-__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_LINK_STATS {
 	uint16_t u2Tag;
 	uint16_t u2Length;
