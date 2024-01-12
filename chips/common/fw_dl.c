@@ -550,20 +550,23 @@ WLAN_STATUS wlanPatchSendComplete(IN P_ADAPTER_T prAdapter)
 	UINT_8 ucTC, ucCmdSeqNum;
 	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
 	struct mt66xx_chip_info *prChipInfo;
+	struct INIT_CMD_PATCH_FINISH *prPatchFinish;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
 
 	/* 1. Allocate CMD Info Packet and its Buffer. */
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, sizeof(INIT_HIF_TX_HEADER_T));
+	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter,
+			sizeof(INIT_HIF_TX_HEADER_T) + sizeof(struct INIT_CMD_PATCH_FINISH));
 
 	if (!prCmdInfo) {
 		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
-	kalMemZero(prCmdInfo->pucInfoBuffer, sizeof(INIT_HIF_TX_HEADER_T));
-	prCmdInfo->u2InfoBufLen = sizeof(INIT_HIF_TX_HEADER_T);
+	kalMemZero(prCmdInfo->pucInfoBuffer,
+		sizeof(INIT_HIF_TX_HEADER_T) + sizeof(struct INIT_CMD_PATCH_FINISH));
+	prCmdInfo->u2InfoBufLen = sizeof(INIT_HIF_TX_HEADER_T) + sizeof(struct INIT_CMD_PATCH_FINISH);
 
 #if (CFG_USE_TC4_RESOURCE_FOR_INIT_CMD == 1)
 	/* 2. Always use TC4 (TC4 as CPU) */
@@ -588,6 +591,9 @@ WLAN_STATUS wlanPatchSendComplete(IN P_ADAPTER_T prAdapter)
 	prInitHifTxHeader->rInitWifiCmd.ucCID = INIT_CMD_ID_PATCH_FINISH;
 	prInitHifTxHeader->rInitWifiCmd.ucPktTypeID = INIT_CMD_PACKET_TYPE_ID;
 	prInitHifTxHeader->rInitWifiCmd.ucSeqNum = ucCmdSeqNum;
+
+	prPatchFinish = (struct INIT_CMD_PATCH_FINISH *)prInitHifTxHeader->rInitWifiCmd.aucBuffer;
+	prPatchFinish->ucCheckCrc = 0;
 
 	/* 5. Seend WIFI start command */
 	while (1) {
