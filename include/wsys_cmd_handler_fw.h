@@ -273,6 +273,9 @@ enum ENUM_CMD_ID {
 	CMD_ID_SET_COUNTRY_POWER_LIMIT,     /* 0x49 (Set) */
 	CMD_ID_SET_WOWLAN = 0x4A,           /* 0x4A (Set) */
 	CMD_ID_SET_IPV6_ADDRESS,            /* 0x4B (Set) */
+#if CFG_SUPPORT_CSI
+	CMD_ID_CSI_CONTROL = 0x4C,	    /* 0x4C (Set /Query) */
+#endif
 	CMD_ID_SET_MDNS_RECORD = 0x4e,      /* 0X4E(set) */
 
 	CMD_ID_SET_SLTINFO = 0x50,          /* 0x50 (Set) */
@@ -482,6 +485,9 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_FAST_SCAN_DUMMY1 = 0x39,
 	EVENT_ID_FAST_SCAN_DUMMY2 = 0x3a,
 	EVENT_ID_FAST_SCAN_DUMMY3 = 0x3b,
+#if CFG_SUPPORT_CSI
+	EVENT_ID_CSI_DATA = 0x3C,	    /* 0x3C (Query) */
+#endif
 
 	EVENT_ID_UART_ACK = 0x40,           /* 0x40 (Unsolicited) */
 	EVENT_ID_UART_NAK,                  /* 0x41 (Unsolicited) */

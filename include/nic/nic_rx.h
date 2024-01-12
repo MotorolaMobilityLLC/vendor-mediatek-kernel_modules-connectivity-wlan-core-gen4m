@@ -406,6 +406,7 @@
 #define RX_VT_MIXED_MODE      2
 #define RX_VT_GREEN_MODE      3
 #define RX_VT_VHT_MODE        4
+#define RX_VT_HE_MODE         8
 
 #define RX_VT_LG20_HT20       0
 #define RX_VT_DL40_HT40       1
@@ -1567,5 +1568,10 @@ uint8_t nicRxGetRcpiValueFromRxv(
 
 int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, IN char *pcCommand,
 			IN int i4TotalLen, IN uint8_t ucWlanIdx);
+
+#if CFG_SUPPORT_CSI
+void nicEventCSIData(IN struct ADAPTER *prAdapter,
+	IN struct WIFI_EVENT *prEvent);
+#endif
 
 #endif /* _NIC_RX_H */

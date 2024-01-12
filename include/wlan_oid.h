@@ -4581,6 +4581,15 @@ wlanoidAisPreSuspend(IN struct ADAPTER *prAdapter,
 		IN uint32_t u4SetBufferLen,
 		OUT uint32_t *pu4SetInfoLen);
 
+#if CFG_SUPPORT_CSI
+uint32_t
+wlanoidSetCSIControl(
+	IN struct ADAPTER *prAdapter,
+	IN void *pvSetBuffer,
+	IN uint32_t u4SetBufferLen,
+	OUT uint32_t *pu4SetInfoLen);
+#endif
+
 uint32_t
 wlanoidDisableTdlsPs(IN struct ADAPTER *prAdapter,
 		     IN void *pvSetBuffer,

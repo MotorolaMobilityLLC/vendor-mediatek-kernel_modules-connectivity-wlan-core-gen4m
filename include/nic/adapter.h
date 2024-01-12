@@ -80,6 +80,16 @@
 
 #define MIN_TX_DURATION_TIME_MS 100
 
+#if CFG_SUPPORT_CSI
+#define CSI_RING_SIZE 1000
+#define CSI_MAX_DATA_COUNT 256
+#define CSI_MAX_RSVD1_COUNT 10
+
+#define CSI_H_max_Index 4		/* for 2x2 support*/
+#define CSI_MAX_RSVD2_COUNT 10
+#define Max_Stream_Bytes 3000
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -1433,6 +1443,66 @@ struct TX_LATENCY_REPORT_STATS {
 	u_int8_t fgTxLatencyEnabled;
 };
 
+#if CFG_SUPPORT_CSI
+/*
+ * CSI_DATA_T is used for representing
+ * the CSI and other useful * information
+ * for application usage
+ */
+struct CSI_DATA_T {
+	uint8_t ucFwVer;
+	uint8_t ucBw;
+	u_int8_t bIsCck;
+	uint16_t u2DataCount;
+	int16_t ac2IData[CSI_MAX_DATA_COUNT];
+	int16_t ac2QData[CSI_MAX_DATA_COUNT];
+	uint8_t ucDbdcIdx;
+	int8_t cRssi;
+	uint8_t ucSNR;
+	uint64_t u8TimeStamp;
+	uint8_t ucDataBw;
+	uint8_t ucPrimaryChIdx;
+	uint8_t aucTA[MAC_ADDR_LEN];
+	uint32_t u4ExtraInfo;
+	uint8_t ucRxMode;
+	uint16_t u2RxRate;
+	int32_t ai4Rsvd1[CSI_MAX_RSVD1_COUNT];
+	int32_t au4Rsvd2[CSI_MAX_RSVD2_COUNT];
+	uint8_t ucRsvd1Cnt;
+	uint8_t ucRsvd2Cnt;
+	int32_t i4Rsvd3;
+	uint8_t ucRsvd4;
+	uint32_t Antenna_pattern;
+	uint32_t u4TRxIdx;
+};
+
+/*
+ * CSI_INFO_T is used to store the CSI
+ * settings and CSI event data
+ */
+struct CSI_INFO_T {
+	/* Variables for manipulate the CSI data in g_aucProcBuf */
+	u_int8_t bIncomplete;
+	int32_t u4CopiedDataSize;
+	int32_t u4RemainingDataSize;
+	wait_queue_head_t waitq;
+	/* Variable for recording the CSI function config */
+	uint8_t ucMode;
+	uint8_t ucValue1[CSI_CONFIG_ITEM_NUM];
+	uint8_t ucValue2[CSI_CONFIG_ITEM_NUM];
+	/* Variable for manipulating the CSI ring buffer */
+	struct CSI_DATA_T arCSIBuffer[CSI_RING_SIZE];
+	uint32_t u4CSIBufferHead;
+	uint32_t u4CSIBufferTail;
+	uint32_t u4CSIBufferUsed;
+	int16_t ai2TempIData[CSI_MAX_DATA_COUNT];
+	int16_t ai2TempQData[CSI_MAX_DATA_COUNT];
+	/*for usr to get the specific H(jw), 0 for all */
+	uint16_t Matrix_Get_Bit;
+	uint8_t byte_stream[Max_Stream_Bytes];/*send bytes to proc interfacel */
+};
+#endif
+
 /*
  * Major ADAPTER structure
  * Major data structure for driver operation
@@ -1995,6 +2065,11 @@ struct ADAPTER {
 	struct TIMER rRxMcsInfoTimer;
 	u_int8_t fgIsMcsInfoValid;
 #endif
+
+#if CFG_SUPPORT_CSI
+	struct CSI_INFO_T rCSIInfo;
+#endif
+
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
