@@ -811,7 +811,6 @@ endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
     ccflags-y += -DCFG_SUPPORT_CONNAC3X=1
-    ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_NSS=0
     ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_BW=0
     ifeq ($(CONFIG_MTK_WIFI_PMIC_QUERY), y)
         ccflags-y += -DCFG_MTK_WIFI_PMIC_QUERY=1
@@ -823,8 +822,8 @@ ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
         endif
     endif
 else
+    CONFIG_SUPPORT_DBDC_DOWNGRADE_NSS=y
     ccflags-y += -DCFG_SUPPORT_CONNAC3X=0
-    ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_NSS=1
     ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_BW=1
     ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=5
 endif
@@ -1835,6 +1834,13 @@ ifeq ($(CONFIG_SUPPORT_WIFI_SLEEP_COUNT), y)
 else
     ccflags-y += -DCFG_SUPPORT_WIFI_SLEEP_COUNT=0
 endif
+
+ifeq ($(CONFIG_SUPPORT_DBDC_DOWNGRADE_NSS), y)
+    ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_NSS=1
+else
+    ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_NSS=0
+endif
+
 # ---------------------------------------------------
 # Directory List
 # ---------------------------------------------------
