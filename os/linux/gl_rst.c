@@ -1628,13 +1628,27 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		kalMsleep(100);
 	}
 
+	while (kalIsResetOnEnd()) {
+		DBGLOG(REQ, WARN, "wifi driver is resetting\n");
+		kalMsleep(100);
+	}
+
+	wfsys_lock();
 	if (!get_wifi_powered_status()) {
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
+		glResetOnEndUpdateFlag(TRUE);
+		wfsys_unlock();
 		return 0;
 	}
+	wfsys_unlock();
 #endif
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter) {
+		DBGLOG(REQ, WARN, "adapter null, return\n");
+		return 0;
+	}
+
 	prBusInfo = prAdapter->chip_info->bus_info;
 
 	if (drv == CONNV3_DRV_TYPE_CONNV3) {
@@ -1660,8 +1674,14 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 			DBGLOG(REQ, WARN, "wifi driver is resetting\n");
 			kalMsleep(100);
 		}
-
 		g_IsWholeChipRst = TRUE;
+
+		/* If wifi is off, skip off flow after previous reset end */
+		if (!get_wifi_powered_status()) {
+			DBGLOG(INIT, INFO,
+				"wifi driver is off now, skip reset off.\n");
+			goto exit;
+		}
 
 		GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
 					 RST_WHOLE_CHIP_TRIGGER);
@@ -1678,6 +1698,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	}
 
 	wait_for_completion(&g_RstOffComp);
+exit:
 	DBGLOG(INIT, INFO, "Wi-Fi is off successfully.\n");
 
 	return 0;

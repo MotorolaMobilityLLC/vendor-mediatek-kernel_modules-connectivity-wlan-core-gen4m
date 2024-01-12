@@ -3450,12 +3450,15 @@ static void mt6639_mcu_deinit(struct ADAPTER *ad)
 			DBGLOG(INIT, WARN,
 				"Coredump spend long time, retry = %d\n",
 				retry);
+			break;
 		}
 		kalMsleep(100);
 		retry++;
 	}
-
 	wifi_coredump_set_enable(FALSE);
+
+	if (retry >= MAX_WAIT_COREDUMP_COUNT)
+		kalSendAeeWarning("WLAN", "Coredump Wait Locked\n");
 
 	if (ad->chip_info->coexpccifoff)
 		ad->chip_info->coexpccifoff(ad);
