@@ -604,6 +604,19 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 #endif
 			}
 		}
+
+		/* bit[7]: RxErr */
+		else if (dump & BIT(7)) {
+			/* block PCIe access */
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+			mtk_pcie_disable_data_trans(0);
+#endif
+			fgNeedReset = TRUE;
+			fgIsBusAccessFailed = TRUE;
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+			fgTriggerDebugSop = TRUE;
+#endif
+		}
 	} else {
 		pci_disable_device(pdev);
 		fgNeedReset = TRUE;

@@ -610,7 +610,7 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 #endif
 
 	if (kalIsResetting() || !prAdapter)
-		return;
+		goto exit;
 
 #if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyWifiReset();
@@ -662,23 +662,23 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 
 	/* check if whole chip reset is triggered */
 	if (g_IsWfsysBusHang)
-		return;
+		goto exit;
 
 	if (u4RstFlag & RST_FLAG_DO_WHOLE_RESET) {
 		glResetWholeChipResetTrigger(g_reason);
-		return;
+		goto exit;
 	}
 
 	g_Coredump_source = COREDUMP_SOURCE_WF_DRIVER;
 	if (!prChipInfo->trigger_fw_assert) {
 		DBGLOG(INIT, ERROR,
 			"No impl. of trigger_fw_assert API\n");
-		return;
+		goto exit;
 	}
 
 	ret = prChipInfo->trigger_fw_assert(prAdapter);
 	if (ret == -EBUSY)
-		return;
+		goto exit;
 
 	if (rst->is_suspend) {
 		uint32_t status;
@@ -689,7 +689,7 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 						 u4Line,
 						 ret != -ETIMEDOUT);
 		if (status == WLAN_STATUS_SUCCESS)
-			return;
+			goto exit;
 	}
 
 	if (ret == -ETIMEDOUT)
@@ -697,6 +697,8 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 	else
 		kalSetRstEvent(TRUE);
 #endif
+exit:
+	fgIsMcuOff = FALSE;
 }
 #else
 /* The following definition is of ce. */
@@ -1796,14 +1798,17 @@ void glResetWholeChipResetTrigger(char *pcReason)
 	struct GLUE_INFO *prGlueInfo = rst->prGlueInfo;
 	struct ADAPTER *prAdapter = NULL;
 	struct CHIP_DBG_OPS *prDebugOps = NULL;
-	u_int8_t dumpViaBt = fgIsBusAccessFailed && fgTriggerDebugSop;
+	bool dumpViaBt = FALSE;
 #endif
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	if (prGlueInfo->u4ReadyFlag && dumpViaBt) {
-		prAdapter = prGlueInfo->prAdapter;
-		prDebugOps = prAdapter->chip_info->prDebugOps;
+	prAdapter = prGlueInfo->prAdapter;
+	prDebugOps = prAdapter->chip_info->prDebugOps;
 
+	if (prDebugOps && prDebugOps->checkDumpViaBt)
+		dumpViaBt = prDebugOps->checkDumpViaBt();
+
+	if (prGlueInfo->u4ReadyFlag && dumpViaBt) {
 		if (prDebugOps && prDebugOps->dumpBusHangCr)
 			prDebugOps->dumpBusHangCr(prAdapter);
 	}

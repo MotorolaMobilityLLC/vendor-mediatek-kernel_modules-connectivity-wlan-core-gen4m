@@ -1597,6 +1597,11 @@ void mt6639_dumpPcieReg(void)
 		0x7403121C, &u4Value);
 	DBGLOG(HAL, INFO, "CR[0x7403121C] value[0x%08x]\n", u4Value);
 }
+
+bool mt6639_CheckDumpViaBt(void)
+{
+	return (fgIsBusAccessFailed || fgIsMcuOff) && fgTriggerDebugSop;
+}
 #endif
 void mt6639_dumpCbtopReg(struct ADAPTER *ad)
 {
@@ -2064,8 +2069,28 @@ void mt6639_dumpWfBusReg(struct ADAPTER *ad)
 static void mt6639_dumpConninfraBus(struct ADAPTER *ad)
 {
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	connv3_conninfra_bus_dump(fgIsBusAccessFailed ?
+	uint32_t WFDrvOwnStat = 0, MDDrvOwnStat = 0;
+	struct CHIP_DBG_OPS *prDebugOps = NULL;
+	bool dumpViaBt = FALSE;
+#endif
+
+	if (!ad) {
+		DBGLOG(HAL, ERROR, "NULL ADAPTER.\n");
+		return;
+	}
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	prDebugOps = ad->chip_info->prDebugOps;
+	if (prDebugOps && prDebugOps->checkDumpViaBt)
+		dumpViaBt = prDebugOps->checkDumpViaBt();
+
+	connv3_conninfra_bus_dump(dumpViaBt ?
 		CONNV3_DRV_TYPE_BT : CONNV3_DRV_TYPE_WIFI);
+
+	HAL_MCR_RD(ad, CONNAC3X_BN0_LPCTL_ADDR, &WFDrvOwnStat);
+	HAL_MCR_RD(ad, CONNAC3X_BN0_LPCTL_MD_ADDR, &MDDrvOwnStat);
+	DBGLOG(HAL, INFO, "WF DrvOwn stat=0x%08x, MD DrvOwn stat=0x%08x.\n",
+		WFDrvOwnStat, MDDrvOwnStat);
 #endif
 }
 
@@ -2091,7 +2116,8 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 		readable = debug_ops->dumpPcieStatus(ad->prGlueInfo);
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	dumpViaBt = fgIsBusAccessFailed && fgTriggerDebugSop;
+	if (debug_ops && debug_ops->checkDumpViaBt)
+		dumpViaBt = debug_ops->checkDumpViaBt();
 	if (readable == FALSE && !dumpViaBt)
 		return;
 #else
@@ -2107,7 +2133,8 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 		if (ret != 0) {
 			DBGLOG(HAL, ERROR, "connv3_hif_dbg_start failed.\n");
 			goto exit_debug_sop;
-		}
+		} else
+			DBGLOG(HAL, INFO, "start BT dump.\n");
 	}
 #endif
 
@@ -2130,8 +2157,6 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 			CONNV3_DRV_TYPE_BT);
 		if (ret != 0)
 			DBGLOG(HAL, ERROR, "connv3_hif_dbg_end failed.\n");
-
-		fgTriggerDebugSop = FALSE;
 	}
 
 exit_debug_sop:
