@@ -389,19 +389,20 @@ void statsParseUDPInfo(struct sk_buff *skb, uint8_t *pucEthBody,
 
 				switch (u4Opt & 0xffffff00) {
 				case 0x35010100:
-					snprintf(buf, 49, "client DISCOVERY");
+					kalSnprintf(buf, 49,
+						"client DISCOVERY");
 					break;
 				case 0x35010200:
-					snprintf(buf, 49, "server OFFER");
+					kalSnprintf(buf, 49, "server OFFER");
 					break;
 				case 0x35010300:
-					snprintf(buf, 49, "client REQUEST");
+					kalSnprintf(buf, 49, "client REQUEST");
 					break;
 				case 0x35010500:
-					snprintf(buf, 49, "server ACK");
+					kalSnprintf(buf, 49, "server ACK");
 					break;
 				case 0x35010600:
-					snprintf(buf, 49, "server NAK");
+					kalSnprintf(buf, 49, "server NAK");
 					break;
 				}
 			}
