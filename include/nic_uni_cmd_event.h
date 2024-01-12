@@ -2082,7 +2082,8 @@ struct UNI_CMD_MAC_INFO_TSF {
 	uint16_t u2Length;
 	uint8_t ucDbdcIdx;
 	uint8_t ucHwBssidIndex;
-	uint8_t aucPadding[2];
+	uint8_t ucBssIndex;
+	uint8_t aucPadding[1];
 } __KAL_ATTRIB_PACKED__;
 
 /* TDLS command (0x1B) */

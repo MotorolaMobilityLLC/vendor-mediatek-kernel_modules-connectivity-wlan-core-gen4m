@@ -2694,6 +2694,7 @@ uint32_t nicUniCmdGetTsf(struct ADAPTER *ad,
 	struct UNI_CMD_GET_MAC_INFO *uni_cmd;
 	struct UNI_CMD_MAC_INFO_TSF *tag;
 	struct WIFI_UNI_CMD_ENTRY *entry;
+	struct _TWT_GET_TSF_CONTEXT_T *twt;
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_GET_MAC_INFO) +
 	     		       sizeof(struct UNI_CMD_MAC_INFO_TSF);
 
@@ -2702,6 +2703,7 @@ uint32_t nicUniCmdGetTsf(struct ADAPTER *ad,
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	cmd = (struct _EXT_CMD_GET_MAC_INFO_T *) info->pucInfoBuffer;
+	twt = (struct _TWT_GET_TSF_CONTEXT_T *) info->pvSetQueryBuffer;
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_GET_MAC_INFO, max_cmd_len,
 			nicUniCmdEventGetTsfDone, NULL);
 	if (!entry)
@@ -2713,6 +2715,7 @@ uint32_t nicUniCmdGetTsf(struct ADAPTER *ad,
 	tag->u2Length = sizeof(*tag);
  	tag->ucDbdcIdx = ENUM_BAND_AUTO;
 	tag->ucHwBssidIndex = cmd->rExtraArgument.rTsfArg.ucHwBssidIndex;
+	tag->ucBssIndex = twt->ucBssIdx;
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
