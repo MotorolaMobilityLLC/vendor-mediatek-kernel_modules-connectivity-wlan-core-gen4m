@@ -4717,6 +4717,7 @@ struct WLAN_DEAUTH_FRAME_WITH_MIC {
 #define IE_ID(fp)               (((struct IE_HDR *) fp)->ucId)
 #define IE_LEN(fp)              (((struct IE_HDR *) fp)->ucLength)
 #define IE_ID_EXT(fp)           (((struct IE_HDR *) fp)->aucInfo[0])
+#define IE_DATA(fp)             (((struct IE_HDR *) fp)->aucInfo[0])
 #define IE_SIZE(fp)             (ELEM_HDR_LEN + IE_LEN(fp))
 #define IE_TAIL(fp)             ((uint8_t *)fp + IE_SIZE(fp))
 
