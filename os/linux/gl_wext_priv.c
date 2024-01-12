@@ -96,6 +96,10 @@
 #include "nan_sec.h"
 #endif
 
+#if CFG_SUPPORT_CSI
+#include "gl_csi.h"
+#endif
+
 /*
  * #if CFG_SUPPORT_QA_TOOL
  * extern UINT_16 g_u2DumpIndex;
@@ -21593,7 +21597,7 @@ static int priv_driver_set_csi(IN struct net_device *prNetDev,
 
 	DBGLOG(RSN, INFO, "[CSI] priv_driver_csi_control\n");
 
-	prCSIInfo = &(prGlueInfo->prAdapter->rCSIInfo);
+	prCSIInfo = glCsiGetCSIInfo();
 
 	prCSICtrl = (struct CMD_CSI_CONTROL_T *)kalMemAlloc(
 			sizeof(struct CMD_CSI_CONTROL_T), VIR_MEM_TYPE);
@@ -21682,7 +21686,10 @@ send_cmd:
 	   "[CSI] mode %d, csi cfg item %d, value1 %d, value2 %d",
 		prCSICtrl->ucMode, prCSICtrl->ucCfgItem,
 		prCSICtrl->ucValue1, prCSICtrl->ucValue2);
-	DBGLOG(REQ, LOUD, "[CSI] rStatus %u\n", rStatus);
+
+#if CFG_CSI_DEBUG
+	DBGLOG(REQ, INFO, "[CSI] rStatus %u\n", rStatus);
+#endif
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "[CSI] send CSI control cmd failed\n");

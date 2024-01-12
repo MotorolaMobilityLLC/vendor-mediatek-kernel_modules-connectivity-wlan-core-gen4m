@@ -73,6 +73,10 @@
 #include "precomp.h"
 #include "gl_ate_agent.h"
 
+#if CFG_SUPPORT_CSI
+#include "gl_csi.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -172,6 +176,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_NAN_EXT_CMD] = nicUniCmdNan,
 #endif
 	[CMD_ID_SET_ACL_POLICY] = nicUniCmdACLPolicy,
+#if (CFG_SUPPORT_CSI == 1)
+	[CMD_ID_CSI_CONTROL] = nicUniCmdSetCsiControl,
+#endif
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -221,6 +228,7 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_BF] = nicUniEventBF,
 	[UNI_EVENT_ID_PP] = nicUniEventPpCb,
 	[UNI_EVENT_ID_WOW] = nicUniEventWow,
+	[UNI_EVENT_ID_CSI] = nicUniEventCsiData,
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -5837,6 +5845,137 @@ uint32_t nicUniCmdQueryThermalTemperature(struct ADAPTER *ad,
 	return status;
 }
 
+uint32_t nicUniCmdSetCsiControl(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+#if CFG_SUPPORT_CSI
+	struct CMD_CSI_CONTROL_T *cmd;
+	struct UNI_CMD_CSI *uni_cmd;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_CSI);
+
+	if (info->ucCID != CMD_ID_CSI_CONTROL ||
+		 info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_CSI_CONTROL_T *) info->pucInfoBuffer;
+
+	switch (cmd->ucMode) {
+	case CSI_CONTROL_MODE_STOP: {
+		struct UNI_CMD_CSI_STOP *tag;
+
+		max_cmd_len += sizeof(struct UNI_CMD_CSI_STOP);
+		entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_CSI,
+					max_cmd_len, nicUniCmdEventSetCommon,
+					nicUniCmdTimeoutCommon);
+		if (!entry)
+			return WLAN_STATUS_RESOURCES;
+
+		uni_cmd = (struct UNI_CMD_CSI *) entry->pucInfoBuffer;
+		uni_cmd->ucBandIdx = cmd->ucBandIdx;
+
+		tag = (struct UNI_CMD_CSI_STOP *) uni_cmd->aucTlvBuffer;
+		tag->u2Tag = UNI_CMD_CSI_TAG_STOP;
+		tag->u2Length = sizeof(*tag);
+#if CFG_CSI_DEBUG
+		DBGLOG(NIC, INFO, "[CSI] Stop!\n");
+#endif
+	}
+		break;
+	case CSI_CONTROL_MODE_START: {
+		struct UNI_CMD_CSI_START *tag;
+
+		max_cmd_len += sizeof(struct UNI_CMD_CSI_START);
+		entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_CSI,
+					max_cmd_len, nicUniCmdEventSetCommon,
+					nicUniCmdTimeoutCommon);
+		if (!entry)
+			return WLAN_STATUS_RESOURCES;
+
+		uni_cmd = (struct UNI_CMD_CSI *) entry->pucInfoBuffer;
+		uni_cmd->ucBandIdx = cmd->ucBandIdx;
+
+		tag = (struct UNI_CMD_CSI_START *) uni_cmd->aucTlvBuffer;
+		tag->u2Tag = UNI_CMD_CSI_TAG_START;
+		tag->u2Length = sizeof(*tag);
+#if CFG_CSI_DEBUG
+		DBGLOG(NIC, INFO, "[CSI] Start!\n");
+#endif
+	}
+		break;
+	case CSI_CONTROL_MODE_SET: {
+		if (cmd->ucCfgItem == CSI_CONFIG_FRAME_TYPE) {
+			struct UNI_CMD_CSI_SET_FRAME_TYPE *tag;
+
+			max_cmd_len +=
+				sizeof(struct UNI_CMD_CSI_SET_FRAME_TYPE);
+			entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_CSI,
+					max_cmd_len, nicUniCmdEventSetCommon,
+					nicUniCmdTimeoutCommon);
+			if (!entry)
+				return WLAN_STATUS_RESOURCES;
+
+			uni_cmd = (struct UNI_CMD_CSI *) entry->pucInfoBuffer;
+			uni_cmd->ucBandIdx = cmd->ucBandIdx;
+
+			tag = (struct UNI_CMD_CSI_SET_FRAME_TYPE *)
+				uni_cmd->aucTlvBuffer;
+			tag->u2Tag = UNI_CMD_CSI_TAG_SET_FRAME_TYPE;
+			tag->u2Length = sizeof(*tag);
+			tag->ucFrameTypeIndex = cmd->ucValue1;
+			tag->ucFrameType = cmd->ucValue2;
+#if CFG_CSI_DEBUG
+			DBGLOG(NIC, INFO,
+			   "[CSI] Set frame type %d, %d\n",
+				tag->ucFrameTypeIndex,
+				tag->ucFrameType);
+#endif
+		} else if (cmd->ucCfgItem == CSI_CONFIG_OUTPUT_FORMAT) {
+			struct UNI_CMD_CSI_SET_CHAIN_NUMBER *tag;
+
+			max_cmd_len +=
+				sizeof(struct UNI_CMD_CSI_SET_CHAIN_NUMBER);
+			entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_CSI,
+					max_cmd_len, nicUniCmdEventSetCommon,
+					nicUniCmdTimeoutCommon);
+			if (!entry)
+				return WLAN_STATUS_RESOURCES;
+
+			uni_cmd = (struct UNI_CMD_CSI *) entry->pucInfoBuffer;
+			uni_cmd->ucBandIdx = cmd->ucBandIdx;
+			tag = (struct UNI_CMD_CSI_SET_CHAIN_NUMBER *)
+				uni_cmd->aucTlvBuffer;
+			tag->u2Tag = UNI_CMD_CS_TAGI_SET_CHAIN_NUMBER;
+			tag->u2Length = sizeof(*tag);
+			tag->ucMaxChain = cmd->ucValue1;
+#if CFG_CSI_DEBUG
+			DBGLOG(NIC, INFO,
+			   "[CSI] Set chain number %d\n",
+				tag->ucMaxChain);
+#endif
+		} else {
+			DBGLOG(NIC, INFO, "[CSI] No Support CSI CfgItem:%d\n",
+							cmd->ucCfgItem);
+			return WLAN_STATUS_NOT_ACCEPTED;
+		}
+	}
+		break;
+	default: {
+		DBGLOG(NIC, INFO, "[CSI] No Support CSI Mode:%d\n",
+				cmd->ucMode);
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+		break;
+	}
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+#else
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+}
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -8378,4 +8517,57 @@ void nicUniEventWow(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			break;
 		}
 	}
+}
+
+void nicUniEventCsiData(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+#if CFG_SUPPORT_CSI
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_CSI);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint8_t *legacy;
+	uint32_t fail_cnt = 0;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+
+#if CFG_CSI_DEBUG
+	DBGLOG(NIC, INFO,
+		"debug: data_len=%d, fixed_len=%d\n", data_len, fixed_len);
+#endif
+
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, INFO, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_CSI_TAG_DATA: {
+			int32_t tag_header_len = sizeof(struct TAG_HDR);
+			uint8_t *tag_buffer;
+			int32_t legacy_len;
+
+			legacy_len = tags_len - tag_header_len;
+			tag_buffer = tag + tag_header_len;
+			legacy = (uint8_t *) kalMemAlloc(legacy_len,
+							VIR_MEM_TYPE);
+#if CFG_CSI_DEBUG
+			DBGLOG_MEM8(NIC, INFO,
+				(uint8_t *) tag_buffer, legacy_len);
+#endif
+			kalMemCopy(legacy, tag_buffer, legacy_len);
+			RUN_RX_EVENT_HANDLER_EXT(EVENT_ID_CSI_DATA,
+						legacy, legacy_len);
+			kalMemFree(legacy, VIR_MEM_TYPE, tags_len);
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+#endif
 }

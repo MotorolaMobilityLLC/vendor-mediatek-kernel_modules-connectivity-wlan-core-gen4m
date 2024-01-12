@@ -935,10 +935,6 @@ struct REAL_TIME {
 	uint32_t u4TvValSec;
 };
 
-#if CFG_SUPPORT_CSI
-struct CSI_DATA_T;
-#endif
-
 enum ENUM_NVRAM_MTK_FEATURE {
 	MTK_FEATURE_2G_256QAM_DISABLED = 0,
 	MTK_FEATURE_NUM
@@ -1705,29 +1701,6 @@ void wlanCmdDataFrameTxTimeout(IN struct ADAPTER *prAdapter,
 uint32_t wlanGetThreadWakeUp(IN struct ADAPTER *prAdapter);
 
 uint32_t wlanGetTxdAppendSize(IN struct ADAPTER *prAdapter);
-
-#if CFG_SUPPORT_CSI
-u_int8_t wlanPushCSIData(IN struct ADAPTER *prAdapter,
-	struct CSI_DATA_T *prCSIData);
-u_int8_t wlanPopCSIData(IN struct ADAPTER *prAdapter,
-	struct CSI_DATA_T *prCSIData);
-void wlanApplyCSIToneMask(
-	uint8_t ucRxMode,
-	uint8_t ucCBW,
-	uint8_t ucDBW,
-	uint8_t ucPrimaryChIdx,
-	int16_t *ai2IData,
-	int16_t *ai2QData);
-void wlanShiftCSI(
-	uint8_t ucRxMode,
-	uint8_t ucCBW,
-	uint8_t ucDBW,
-	uint8_t ucPrimaryChIdx,
-	int16_t *ai2IData,
-	int16_t *ai2QData,
-	int16_t *ai2ShiftIData,
-	int16_t *ai2ShiftQData);
-#endif
 
 void wlanCmdDataFrameTxDone(IN struct ADAPTER *prAdapter,
 			     IN struct CMD_INFO *prCmdInfo,

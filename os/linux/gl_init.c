@@ -3726,7 +3726,7 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 
 #if CFG_SUPPORT_CSI
 	/* init CSI wait queue  */
-	init_waitqueue_head(&(prGlueInfo->prAdapter->rCSIInfo.waitq));
+	init_waitqueue_head(&(prGlueInfo->waitq_csi));
 #endif
 
 	return prWdev;
