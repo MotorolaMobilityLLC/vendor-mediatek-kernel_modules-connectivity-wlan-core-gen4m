@@ -3311,6 +3311,8 @@ uint32_t wlanDownloadBufferBin(struct ADAPTER *prAdapter)
 			   sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE));
 
 		if (prAdapter->rWifiVar.ucEfuseBufferModeCal == TRUE) {
+			int ret = 0;
+
 			/* Buffer mode */
 			/* Only in buffer mode need to access bin file */
 			/* 1 <1> Load bin file*/
@@ -3324,8 +3326,14 @@ uint32_t wlanDownloadBufferBin(struct ADAPTER *prAdapter)
 			/* 1 <2> Construct EEPROM binary name */
 			kalMemZero(aucEeprom, sizeof(aucEeprom));
 
-			snprintf(aucEeprom, 32, "%s%x.bin",
+			ret = kalSnprintf(aucEeprom, 32, "%s%x.bin",
 				 apucEepromName[0], chip_id);
+			if (ret < 0 || ret >= 32) {
+				DBGLOG(INIT, ERROR,
+					"[%u] kalSnprintf failed, ret: %d\n",
+						__LINE__, ret);
+				goto label_exit;
+			}
 
 			/* 1 <3> Request buffer bin */
 			if (kalRequestFirmware(aucEeprom, pucConfigBuf,
@@ -3442,6 +3450,8 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 		   sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T));
 
 	if (prAdapter->rWifiVar.ucEfuseBufferModeCal == TRUE) {
+		int ret = 0;
+
 		/* Buffer mode */
 		/* Only in buffer mode need to access bin file */
 		/* 1 <1> Load bin file*/
@@ -3455,8 +3465,14 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 		/* 1 <2> Construct EEPROM binary name */
 		kalMemZero(aucEeprom, sizeof(aucEeprom));
 
-		snprintf(aucEeprom, 32, "%s%x.bin",
+		ret = kalSnprintf(aucEeprom, 32, "%s%x.bin",
 			 apucEepromName[0], chip_id);
+		if (ret < 0 || ret >= 32) {
+			DBGLOG(INIT, ERROR,
+				"[%u] kalSnprintf failed, ret: %d\n",
+					__LINE__, ret);
+			goto label_exit;
+		}
 
 		/* 1 <3> Request buffer bin */
 		if (kalRequestFirmware(aucEeprom, pucConfigBuf,
