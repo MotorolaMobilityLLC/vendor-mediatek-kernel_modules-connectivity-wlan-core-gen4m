@@ -185,6 +185,8 @@ enum ENUM_USB_END_POINT {
 #define INTERRUPT_TIMEOUT_MS            (1000)
 #define SW_RFB_RECHECK_MS               (10)
 #define SW_RFB_LOG_LIMIT_MS             (5000)
+#define DEVICE_VENDOR_REQUEST_UHW_IN    (0xDE)
+#define DEVICE_VENDOR_REQUEST_UHW_OUT   (0x5E)
 
 /* Vendor Request */
 #define VND_REQ_POWER_ON_WIFI           (0x4)
@@ -195,6 +197,8 @@ enum ENUM_USB_END_POINT {
 #define FEATURE_SET_WVALUE_RESUME       (0x5)
 #define FEATURE_SET_WVALUE_SUSPEND      (0x6)
 #define VND_REQ_BUF_SIZE                (16)
+#define VND_REQ_UHW_READ                (0x01)
+#define VND_REQ_UHW_WRITE               (0x02)
 
 #define USB_TX_CMD_QUEUE_MASK           (BITS(2, 4))   /* For H2CDMA Tx CMD mapping */
 

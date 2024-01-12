@@ -6844,6 +6844,148 @@ wlanoidSetDrvMcrWrite(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief This routine is called to query driver MCR value through UHW.
+ *        This routine take effects only on chip supporting both USB and UHW.
+ *        The userspace command format is
+ *                $ iwpriv wlan0 driver "get_uhw_mcr <CR_ADDR>".
+ *        Please do not use this command on chip without both USB and UHW.
+ *        Comparison between get get_mcr, get_drv_mcr, get_uhw_mcr commands:
+ *        1. get_mcr command is encapsulated as fw command. The recipient is
+ *           mcu. You can read any CR as long as mcu can access it.
+ *        2. get_drv_mcr command is sent differently, depending on HIF. Ex:
+ *           It's sent on EP0 control pipe and the recipient is mcu if applying
+ *           on USB.
+ *        3. get_uhw_mcr command is sent on USB EP0 control pipe. The recipient
+ *           is UHW without mcu intervention. You can read any CR as long as
+ *           UHW can access it. In buzzard, UHW can access CBTOP.
+ *
+ * \param[in] pvAdapter Pointer to the Adapter structure.
+ * \param[out] pvQueryBuf A pointer to the buffer that holds the result of
+ *                           the query.
+ * \param[in] u4QueryBufLen The length of the query buffer.
+ * \param[out] pu4QueryInfoLen If the call is successful, returns the number of
+ *                            bytes written into the query buffer. If the call
+ *                            failed due to invalid length of the query buffer,
+ *                            returns the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_INVALID_LENGTH
+ * \retval WLAN_STATUS_INVALID_LENGTH
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidQueryUhwMcrRead(IN struct ADAPTER *prAdapter,
+		       IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
+		       OUT uint32_t *pu4QueryInfoLen) {
+	struct PARAM_CUSTOM_MCR_RW_STRUCT *prMcrRdInfo;
+	u_int8_t fgStatus = FALSE;
+	uint32_t u4WlanStatus = WLAN_STATUS_SUCCESS;
+	/* CMD_ACCESS_REG rCmdAccessReg; */
+
+	DEBUGFUNC("wlanoidQueryMcrRead");
+	DBGLOG(INIT, LOUD, "\n");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4QueryInfoLen);
+	if (u4QueryBufferLen)
+		ASSERT(pvQueryBuffer);
+
+	*pu4QueryInfoLen = sizeof(struct
+				  PARAM_CUSTOM_MCR_RW_STRUCT);
+
+	if (u4QueryBufferLen < sizeof(struct
+				      PARAM_CUSTOM_MCR_RW_STRUCT))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	prMcrRdInfo = (struct PARAM_CUSTOM_MCR_RW_STRUCT *)
+		      pvQueryBuffer;
+
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	HAL_UHW_RD(prAdapter, (prMcrRdInfo->u4McrOffset & BITS(2, 31)),
+		   &prMcrRdInfo->u4McrData, &fgStatus);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+
+	if (fgStatus)
+		DBGLOG(OID, TRACE,
+		       "DRV MCR Read: Offset = %#08x, Data = %#08x\n",
+		       prMcrRdInfo->u4McrOffset, prMcrRdInfo->u4McrData);
+	else {
+		u4WlanStatus = WLAN_STATUS_FAILURE;
+
+		DBGLOG(OID, WARN, "UHW read fail\n");
+	}
+
+	return u4WlanStatus;
+}				/* end of wlanoidQueryUhwMcrRead() */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to write MCR through UHW.
+ *        This routine take effects only on chip supporting both USB and UHW.
+ *        The userspace command format is
+ *                $ iwpriv wlan0 driver "set_uhw_mcr <CR_ADDR> <CR_VALUE>".
+ *        Please do not use this command on chip without both USB and UHW.
+ *        Comparison between get set_mcr, set_drv_mcr, set_uhw_mcr commands can
+ *        be refer to the description of wlanoidQueryUhwMcrRead.
+ *
+ * \param[in] prAdapter Pointer to the Adapter structure.
+ * \param[in] pvSetBuffer A pointer to the buffer that holds the data to be set.
+ * \param[in] u4SetBufferLen The length of the set buffer.
+ * \param[out] pu4SetInfoLen If the call is successful, returns the number of
+ *                           bytes read from the set buffer. If the call failed
+ *                           due to invalid length of the set buffer, returns
+ *                           the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_INVALID_LENGTH
+ * \retval WLAN_STATUS_FAILURE
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidSetUhwMcrWrite(IN struct ADAPTER *prAdapter,
+		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen) {
+	struct PARAM_CUSTOM_MCR_RW_STRUCT *prMcrWrInfo;
+	u_int8_t fgStatus = FALSE;
+	uint32_t u4WlanStatus = WLAN_STATUS_SUCCESS;
+	/* CMD_ACCESS_REG rCmdAccessReg;  */
+
+	DEBUGFUNC("wlanoidSetMcrWrite");
+	DBGLOG(INIT, LOUD, "\n");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = sizeof(struct PARAM_CUSTOM_MCR_RW_STRUCT);
+
+	if (u4SetBufferLen < sizeof(struct
+				    PARAM_CUSTOM_MCR_RW_STRUCT))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ASSERT(pvSetBuffer);
+
+	prMcrWrInfo = (struct PARAM_CUSTOM_MCR_RW_STRUCT *)
+		      pvSetBuffer;
+
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	HAL_UHW_WR(prAdapter, (prMcrWrInfo->u4McrOffset & BITS(2, 31)),
+		   prMcrWrInfo->u4McrData, &fgStatus);
+
+	if (fgStatus)
+		DBGLOG(INIT, TRACE,
+		       "DRV MCR Write: Offset = %#08x, Data = %#08x\n",
+		       prMcrWrInfo->u4McrOffset, prMcrWrInfo->u4McrData);
+	else {
+		u4WlanStatus = WLAN_STATUS_FAILURE;
+
+		DBGLOG(OID, WARN, "UHW write fail\n");
+	}
+
+	return u4WlanStatus;
+}				/* wlanoidSetUhwMcrWrite */
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This routine is called to query SW CTRL
  *
  * \param[in] pvAdapter Pointer to the Adapter structure.

@@ -3329,6 +3329,16 @@ wlanoidSetDrvMcrWrite(IN struct ADAPTER *prAdapter,
 		      OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
+wlanoidQueryUhwMcrRead(IN struct ADAPTER *prAdapter,
+		       IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
+		       OUT uint32_t *pu4QueryInfoLen);
+
+uint32_t
+wlanoidSetUhwMcrWrite(IN struct ADAPTER *prAdapter,
+		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen);
+
+uint32_t
 wlanoidQuerySwCtrlRead(IN struct ADAPTER *prAdapter,
 		       IN void *pvQueryBuffer,
 		       IN uint32_t u4QueryBufferLen,
