@@ -27,6 +27,10 @@
 #include "twt.h"
 #endif
 
+#if CFG_SUPPORT_NAN
+#include "nan_dev.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -4312,6 +4316,9 @@ void nicInitSystemService(struct ADAPTER *prAdapter,
 	/* <1> Initialize MGMT Memory pool and STA_REC */
 	if (!bAtResetFlow) {
 		cnmMemInit(prAdapter);
+#if CFG_SUPPORT_NAN
+		nanResetMemory();
+#endif
 		cnmStaRecInit(prAdapter);
 	}
 

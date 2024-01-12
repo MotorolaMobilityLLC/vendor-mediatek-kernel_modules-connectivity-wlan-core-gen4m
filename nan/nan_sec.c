@@ -84,6 +84,10 @@ uint8_t g_aucMicMaterialBuffer[NAN_MIC_BUF_SIZE];
  *                              F U N C T I O N S
  *******************************************************************************
  */
+void nanResetWpaSm(void)
+{
+	kalMemZero(g_arNanWpaSm, sizeof(g_arNanWpaSm));
+}
 
 /************************************************
  *               Set Key Related
