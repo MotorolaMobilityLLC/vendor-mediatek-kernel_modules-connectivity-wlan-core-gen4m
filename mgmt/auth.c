@@ -1111,6 +1111,8 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 			     + MAC_TX_RESERVED_FIELD);
 
 			prDeauthFrame->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
+			prAdapter->prGlueInfo->encryptedDeauthIsInProcess
+				= TRUE;
 			DBGLOG(SAA, INFO,
 			       "Reason=%d, DestAddr=" MACSTR
 			       " srcAddr=" MACSTR " BSSID=" MACSTR "\n",

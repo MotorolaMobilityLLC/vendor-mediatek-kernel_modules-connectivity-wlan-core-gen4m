@@ -2778,6 +2778,8 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 #if CFG_SUPPORT_NCHO
 	init_completion(&prGlueInfo->rAisChGrntComp);
 #endif
+	init_completion(&prGlueInfo->rDeauthComp);
+	prGlueInfo->encryptedDeauthIsInProcess = FALSE;
 
 	/* initialize timer for OID timeout checker */
 	kalOsTimerInitialize(prGlueInfo, kalTimeoutHandler);
