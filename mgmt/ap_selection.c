@@ -308,6 +308,16 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			prBssDesc->eBand, prBssDesc->ucChannelNum);
 		return FALSE;
 	}
+
+	if (CHECK_FOR_TIMEOUT(kalGetTimeTick(), prBssDesc->rUpdateTime,
+		SEC_TO_SYSTIME(SCN_BSS_DESC_STALE_SEC))) {
+		log_dbg(SCN, WARN, "BSS "
+			MACSTR
+			" description is too old.\n",
+			MAC2STR(prBssDesc->aucBSSID));
+		return FALSE;
+	}
+
 #if CFG_SUPPORT_WAPI
 	if (prAdapter->rWifiVar.rConnSettings.fgWapiMode) {
 		if (!wapiPerformPolicySelection(prAdapter, prBssDesc))
@@ -476,9 +486,11 @@ try_again:
 			if (prBssDesc->prBlack) {
 				if (prBssDesc->prBlack->fgIsInFWKBlacklist ==
 					TRUE)
-					log_dbg(SCN, INFO, "%s(%pM) is in FWK blacklist, skip it\n",
+					log_dbg(SCN, INFO, "%s("
+						MACSTR
+						") is in FWK blacklist, skip it\n",
 						prBssDesc->aucSSID,
-						prBssDesc->aucBSSID);
+						MAC2STR(prBssDesc->aucBSSID));
 				continue;
 			}
 		} else if (!prBssDesc->prBlack)
@@ -488,9 +500,11 @@ try_again:
 			 * if we are trying blacklist
 			 */
 			if (prBssDesc->prBlack->fgIsInFWKBlacklist == TRUE) {
-				log_dbg(SCN, INFO, "Although trying blacklist, %s(%pM) is in FWK blacklist, skip it\n",
+				log_dbg(SCN, INFO, "Although trying blacklist, %s("
+					MACSTR
+					") is in FWK blacklist, skip it\n",
 					prBssDesc->aucSSID,
-					prBssDesc->aucBSSID);
+					MAC2STR(prBssDesc->aucBSSID));
 				continue;
 			}
 			u2BlackListScore = WEIGHT_IDX_BLACK_LIST *
@@ -530,8 +544,9 @@ try_again:
 			u2ScoreSaa;
 
 		log_dbg(SCN, INFO,
-			"%pM cRSSI[%d] 5G[%d] Score, Total %d, DE[%d], PR[%d], SM[%d], RSSI[%d], BA[%d] RSN[%d], SAA[%d], BW[%d], CN[%d], ST[%d], CI[%d]\n",
-			prBssDesc->aucBSSID, cRssi,
+			MACSTR
+			" cRSSI[%d] 5G[%d] Score, Total %d, DE[%d], PR[%d], SM[%d], RSSI[%d], BA[%d] RSN[%d], SAA[%d], BW[%d], CN[%d], ST[%d], CI[%d]\n",
+			MAC2STR(prBssDesc->aucBSSID), cRssi,
 			(prBssDesc->eBand == BAND_5G ? 1 : 0), u2ScoreTotal,
 			u2ScoreDeauth, u2ScoreProbeRsp, u2ScoreScanMiss,
 			u2ScoreRssi, u2BlackListScore, u2ScoreRSN, u2ScoreSaa,
@@ -554,28 +569,38 @@ try_again:
 			goto try_again;
 		}
 		if (prConnSettings->eConnectionPolicy == CONNECT_BY_BSSID)
-			log_dbg(SCN, INFO, "Selected %pM %d base on ssid,when find %s, %pM in %d bssid,fix channel %d.\n",
-				prCandBssDesc->aucBSSID,
+			log_dbg(SCN, INFO, "Selected "
+				MACSTR
+				" %d base on ssid,when find %s, "
+				MACSTR
+				" in %d bssid,fix channel %d.\n",
+				MAC2STR(prCandBssDesc->aucBSSID),
 				RCPI_TO_dBm(prCandBssDesc->ucRCPI),
 				prConnSettings->aucSSID,
-				prConnSettings->aucBSSID,
+				MAC2STR(prConnSettings->aucBSSID),
 				prEssLink->u4NumElem, ucChannel);
 		else
 			log_dbg(SCN, INFO,
-				"Selected %pM, cRSSI[%d] 5G[%d] Score %d when find %s, %pM in %d BSSes, fix channel %d.\n",
-				prCandBssDesc->aucBSSID,
+				"Selected "
+				MACSTR
+				", cRSSI[%d] 5G[%d] Score %d when find %s, "
+				MACSTR
+				" in %d BSSes, fix channel %d.\n",
+				MAC2STR(prCandBssDesc->aucBSSID),
 				cRssi = RCPI_TO_dBm(prCandBssDesc->ucRCPI),
 				(prCandBssDesc->eBand == BAND_5G ? 1 : 0),
 				u2CandBssScore, prConnSettings->aucSSID,
-				prConnSettings->aucBSSID,
+				MAC2STR(prConnSettings->aucBSSID),
 				prEssLink->u4NumElem, ucChannel);
 
 		return prCandBssDesc;
 	} else if (prCandBssDescForLowRssi) {
-		log_dbg(SCN, INFO, "Selected %pM, Score %d when find %s, %pM in %d BSSes, fix channel %d.\n",
-			prCandBssDescForLowRssi->aucBSSID,
+		log_dbg(SCN, INFO, "Selected " MACSTR
+			", Score %d when find %s, " MACSTR
+			" in %d BSSes, fix channel %d.\n",
+			MAC2STR(prCandBssDescForLowRssi->aucBSSID),
 			u2CandBssScoreForLowRssi, prConnSettings->aucSSID,
-			prConnSettings->aucBSSID, prEssLink->u4NumElem,
+			MAC2STR(prConnSettings->aucBSSID), prEssLink->u4NumElem,
 			ucChannel);
 		return prCandBssDescForLowRssi;
 	}
@@ -586,8 +611,9 @@ try_again:
 		log_dbg(SCN, INFO, "No Bss is found, Try blacklist\n");
 		goto try_again;
 	}
-	log_dbg(SCN, INFO, "Selected None when find %s, %pM in %d BSSes, fix channel %d.\n",
-		prConnSettings->aucSSID, prConnSettings->aucBSSID,
+	log_dbg(SCN, INFO, "Selected None when find %s, " MACSTR
+		" in %d BSSes, fix channel %d.\n",
+		prConnSettings->aucSSID, MAC2STR(prConnSettings->aucBSSID),
 		prEssLink->u4NumElem, ucChannel);
 	return NULL;
 }
