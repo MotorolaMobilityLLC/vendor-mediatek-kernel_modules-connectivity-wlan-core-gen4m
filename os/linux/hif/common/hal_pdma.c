@@ -651,14 +651,11 @@ done:
 			   (kalIsCardRemoved(prAdapter->prGlueInfo) ||
 			    fgIsBusAccessFailed || fgTimeout)) {
 #if defined(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
-			uint32_t WFDrvOwnStat = 0xFFFFFFFF;
+			HAL_LP_OWN_RD(prAdapter, &fgResult);
 
-			HAL_MCR_RD(prAdapter,
-				CONNAC3X_BN0_LPCTL_ADDR, &WFDrvOwnStat);
-			if (WFDrvOwnStat == 0) {
+			if (fgResult) {
 				DBGLOG(INIT, INFO,
 					"host pending recover.\n");
-				fgResult = TRUE;
 				goto done;
 			}
 #endif /* CFG_MTK_WIFI_DRV_OWN_INT_MODE */

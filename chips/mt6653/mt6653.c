@@ -458,8 +458,18 @@ struct pcie_msi_layout mt6653_pcie_msi_layout[] = {
 	{"reserved", NULL, NULL, NONE_INT, 0},
 	{"reserved", NULL, NULL, NONE_INT, 0},
 	{"reserved", NULL, NULL, NONE_INT, 0},
+#if defined(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+	{"drv_own_host_timeout_irq", pcie_drv_own_top_handler,
+	pcie_drv_own_thread_handler, AP_DRV_OWN, 0},
+#else
 	{"reserved", NULL, NULL, NONE_INT, 0},
+#endif
+#if CFG_MTK_MDDP_SUPPORT
+	{"drv_own_md_timeout_irq", mtk_md_dummy_pci_interrupt,
+	 NULL, MDDP_INT, 0},
+#else
 	{"reserved", NULL, NULL, NONE_INT, 0},
+#endif
 #if CFG_MTK_WIFI_FW_LOG_MMIO || CFG_MTK_WIFI_FW_LOG_EMI
 	{"fw_log_irq", pcie_fw_log_top_handler,
 	 pcie_fw_log_thread_handler, AP_MISC_INT, 0},
@@ -579,7 +589,11 @@ struct BUS_INFO mt6653_bus_info = {
 	.rx_data_ring_prealloc_size = 1024,
 	.fw_own_clear_addr = CONNAC3X_BN0_IRQ_STAT_ADDR,
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
+#if defined(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+	.fgCheckDriverOwnInt = TRUE,
+#else
 	.fgCheckDriverOwnInt = FALSE,
+#endif /* CFG_MTK_WIFI_DRV_OWN_INT_MODE */
 	.u4DmaMask = 34,
 	.wfmda_host_tx_group = mt6653_wfmda_host_tx_group,
 	.wfmda_host_tx_group_len = ARRAY_SIZE(mt6653_wfmda_host_tx_group),
