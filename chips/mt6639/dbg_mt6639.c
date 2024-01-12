@@ -1862,7 +1862,11 @@ void mt6639_dumpCbtopReg(struct ADAPTER *ad)
 {
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	uint32_t u4Value = 0;
-	uint32_t u4Values[3] = {0};
+	uint32_t u4Values[20] = {0};
+	uint32_t i = 0;
+	uint32_t j = 0;
+	uint32_t dump_count = 25;
+	uint32_t read_addr = 0x7C059800;
 
 	DBGLOG(HAL, INFO, "Start mt6639_dumpCbtopReg.\n");
 	if (fgIsBusAccessFailed || fgIsMcuOff) {
@@ -1946,14 +1950,66 @@ void mt6639_dumpCbtopReg(struct ADAPTER *ad)
 
 		/* 15. PCIe debug dump for SDES */
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
-			0x7c05BA38, &u4Values[0]);
+			read_addr, &u4Values[0]);
+		read_addr += 4;
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
-			0x7c05BA3C, &u4Values[1]);
+			read_addr, &u4Values[1]);
+		read_addr += 4;
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
-			0x7c05BA40, &u4Values[2]);
+			read_addr, &u4Values[2]);
+		read_addr += 4;
+		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+			read_addr, &u4Values[3]);
+		read_addr += 4;
+		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+			read_addr, &u4Values[4]);
+		read_addr += 4;
+		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+			read_addr, &u4Values[5]);
+		read_addr += 4;
+		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+			read_addr, &u4Values[6]);
+		read_addr += 4;
+		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+			read_addr, &u4Values[7]);
+		read_addr += 4;
+		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+			read_addr, &u4Values[8]);
+		read_addr += 4;
+		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+			read_addr, &u4Values[9]);
+		read_addr += 4;
 		DBGLOG(HAL, INFO,
-			"PCIe debug dump for SDES, 0x740700D0=0x%08x, 0x74079054=0x%08x, 0x74030184=0x%08x\n",
-			u4Values[0], u4Values[1], u4Values[2]);
+			"PCIe debug dump for SDES, 0x70003014=0x%08x, 0x70025404=0x%08x, MCU time=0x%08x, 0x74030150=0x%08x, 0x74030184=0x%08x, 0x70003014=0x%08x, 0x70025404=0x%08x, 0x74030194=0x%08x, 0x70025008=0x%08x, 0x70025014=0x%08x\n",
+			u4Values[0], u4Values[1], u4Values[2], u4Values[3],
+			u4Values[4], u4Values[5], u4Values[6], u4Values[7],
+			u4Values[8], u4Values[9]);
+
+		for (i = 0; i < dump_count; i++) {
+			for (j = 0; j < 20; j++) {
+				connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI,
+						CONNV3_DRV_TYPE_BT,
+						read_addr,
+						&u4Values[j]);
+				read_addr += 4;
+			}
+			DBGLOG(HAL, INFO,
+				"PCIe debug dump for SDES, 1-0x74030150=0x%08x, 2-0x7403002C=0x%08x, 3-0x740700D0=0x%08x, 4-0x74079054=0x%08x, 5-0x70025304=0x%08x, 6-0x70025304=0x%08x, 7-0x70025024=0x%08x, 8-0x7002502C=0x%08x\n",
+				u4Values[0], u4Values[1],
+				u4Values[2], u4Values[3],
+				u4Values[4], u4Values[5],
+				u4Values[6], u4Values[7]);
+			DBGLOG(HAL, INFO,
+				"PCIe debug dump for SDES, 9-0x740700D0=0x%08x, 10-0x740700D0=0x%08x, 11-0x740700D0=0x%08x, 12-0x740700D0=0x%08x, 13-0x740700D0=0x%08x, 14-0x740700D0=0x%08x\n",
+				u4Values[8], u4Values[9],
+				u4Values[10], u4Values[11],
+				u4Values[12], u4Values[13]);
+			DBGLOG(HAL, INFO,
+				"PCIe debug dump for SDES, 15-0x740700D0=0x%08x, 16-0x740700D0=0x%08x, 17-0x740700D0=0x%08x, 18-0x740700D0=0x%08x, 19-0x740700D0=0x%08x, 20-0x740700D0=0x%08x\n",
+				u4Values[14], u4Values[15],
+				u4Values[16], u4Values[17],
+				u4Values[18], u4Values[19]);
+		}
 	}
 #endif
 }
