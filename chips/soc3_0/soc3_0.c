@@ -121,6 +121,7 @@ static struct sub_drv_ops_cb g_conninfra_wf_cb;
 ********************************************************************************
 */
 
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
@@ -212,7 +213,6 @@ struct PCIE_CHIP_CR_MAPPING soc3_0_bus2chip_cr_mapping[] = {
 	{0x820fb000, 0xa4200, 0x0400}, /* WF_LMAC_TOP BN1 (WF_LPON) */
 	{0x820fc000, 0xa4600, 0x0200}, /* WF_LMAC_TOP BN1 (WF_INT) */
 	{0x820fd000, 0xa4800, 0x0800}, /* WF_LMAC_TOP BN1 (WF_MIB) */
-	{0x820cc000, 0xa5000, 0x2000}, /* WF_LMAC_TOP BN1 (WF_MUCOP) */
 	{0x820c4000, 0xa8000, 0x4000}, /* WF_LMAC_TOP (WF_UWTBL)  */
 	{0x820b0000, 0xae000, 0x1000}, /* [APB2] WFSYS_ON */
 	{0x80020000, 0xb0000, 0x10000}, /* WF_TOP_MISC_OFF */
@@ -266,7 +266,6 @@ struct PCIE_CHIP_CR_MAPPING soc3_0_bus2chip_cr_mapping[] = {
 	{0x820fb000, 0x4a4200, 0x0400}, /* WF_LMAC_TOP BN1 (WF_LPON) */
 	{0x820fc000, 0x4a4600, 0x0200}, /* WF_LMAC_TOP BN1 (WF_INT) */
 	{0x820fd000, 0x4a4800, 0x0800}, /* WF_LMAC_TOP BN1 (WF_MIB) */
-	{0x820cc000, 0x4a5000, 0x2000}, /* WF_LMAC_TOP BN1 (WF_MUCOP) */
 	{0x820c4000, 0x4a8000, 0x4000}, /* WF_LMAC_TOP (WF_UWTBL)  */
 	{0x820b0000, 0x4ae000, 0x1000}, /* [APB2] WFSYS_ON */
 	{0x80020000, 0x4b0000, 0x10000}, /* WF_TOP_MISC_OFF */
@@ -417,6 +416,7 @@ void soc3_0ReadExtIntStatus(
 		CONNAC2X_WPDMA_EXT_INT_STA(
 			prBusInfo->host_ext_conn_hif_wrap_base),
 		ap_write_value);
+
 }
 
 void soc3_0asicConnac2xProcessTxInterrupt(IN struct ADAPTER *prAdapter)
@@ -1488,6 +1488,148 @@ static void soc3_0_DumpSpecifiedWfTop(struct ADAPTER *prAdapter)
 		"specified WF TOP monflg on");
 }
 
+
+/* check wsys bus hang or not */
+/* return = TRUE (bus is hang), FALSE (bus is not hang) */
+/* write  0x18060128  = 0x000B0001 */
+/* read and check 0x18060148 bit[9:8] */
+/* if [9:8]=2'b00 (wsys not hang), others is hang */
+
+static int IsWsysBusHang(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Value = 0;
+	uint32_t u4WriteDebugValue;
+
+	u4WriteDebugValue = 0x000B0001;
+	soc3_0_CrWrite(prAdapter, 0x18060128, u4WriteDebugValue);
+	soc3_0_CrRead(prAdapter, 0x18060148, &u4Value);
+
+	u4Value &= BITS(8, 9);
+	return u4Value;
+} /* soc3_0_IsWsysBusHang */
+
+/* PP CR: 0x820CCXXX remap to Base + 0x40e000  */
+static void DumpPPDebugCr(struct ADAPTER *prAdapter)
+{
+	uint32_t ReadRegValue[4];
+	uint32_t u4Value[4];
+
+	/* 0x820CC0F0 : PP DBG_CTRL */
+	ReadRegValue[0] = 0x820CC0F0;
+	HAL_MCR_RD(prAdapter, ReadRegValue[0], &u4Value[0]);
+
+	/* 0x820CC0F8 : PP DBG_CS0 */
+	ReadRegValue[1] = 0x820CC0F8;
+	HAL_MCR_RD(prAdapter, ReadRegValue[1], &u4Value[1]);
+
+	/* 0x820CC0FC : PP DBG_CS1 */
+	ReadRegValue[2] = 0x820CC0FC;
+	HAL_MCR_RD(prAdapter, ReadRegValue[2], &u4Value[2]);
+
+	/* 0x820CC100 : PP DBG_CS2 */
+	ReadRegValue[3] = 0x820CC100;
+	HAL_MCR_RD(prAdapter, ReadRegValue[3], &u4Value[3]);
+
+	DBGLOG(HAL, INFO,
+	"PP[0x%08x]=0x%08x,[0x%08x]=0x%08x,[0x%08x]=0x%08x,[0x%08x]=0x%08x,",
+		ReadRegValue[0], u4Value[0],
+		ReadRegValue[1], u4Value[1],
+		ReadRegValue[2], u4Value[2],
+		ReadRegValue[3], u4Value[3]);
+}
+
+/* PP CR: 0x820CCXXX remap to Base + 0x40e000  */
+static void DumpPPDebugCr_without_adapter(void)
+{
+	uint32_t ReadRegValue[4];
+	uint32_t u4Value[4];
+
+	/* 0x820CC0F0 : PP DBG_CTRL */
+	ReadRegValue[0] = 0x1840E0F0;
+	wf_ioremap_read(ReadRegValue[0], &u4Value[0]);
+
+	/* 0x820CC0F8 : PP DBG_CS0 */
+	ReadRegValue[1] = 0x1840E0F8;
+	wf_ioremap_read(ReadRegValue[1], &u4Value[1]);
+
+	/* 0x820CC0FC : PP DBG_CS1 */
+	ReadRegValue[2] = 0x1840E0FC;
+	wf_ioremap_read(ReadRegValue[2], &u4Value[2]);
+
+	/* 0x820CC100 : PP DBG_CS2 */
+	ReadRegValue[3] = 0x1840E100;
+	wf_ioremap_read(ReadRegValue[3], &u4Value[3]);
+
+	DBGLOG(HAL, INFO,
+	"PP[0x%08x]=0x%08x,[0x%08x]=0x%08x,[0x%08x]=0x%08x,[0x%08x]=0x%08x,",
+		ReadRegValue[0], u4Value[0],
+		ReadRegValue[1], u4Value[1],
+		ReadRegValue[2], u4Value[2],
+		ReadRegValue[3], u4Value[3]);
+
+}
+
+/* need to dump AXI Master related CR 0x1802750C ~ 0x18027530*/
+static void DumpAXIMasterDebugCr(struct ADAPTER *prAdapter)
+{
+#define AXI_MASTER_DUMP_CR_START 0x1802750C
+#define	AXI_MASTER_DUMP_CR_NUM 9
+
+	uint32_t ReadRegValue = 0;
+	uint32_t u4Value[AXI_MASTER_DUMP_CR_NUM];
+	uint32_t i;
+
+	ReadRegValue = AXI_MASTER_DUMP_CR_START;
+	for (i = 0 ; i < AXI_MASTER_DUMP_CR_NUM; i++) {
+		ReadRegValue += 4;
+		soc3_0_CrRead(prAdapter, ReadRegValue, &u4Value[i]);
+	}
+
+	soc3_0_DumpMemory32(u4Value,
+		AXI_MASTER_DUMP_CR_NUM,
+		"HW AXI BUS debug CR start[0x1802750C]");
+
+} /* soc3_0_DumpAXIMasterDebugCr */
+
+/* Dump Flow :								*/
+/*	1) dump WFDMA / AXI Master CR				*/
+/*	2) check wsys bus is hang					*/
+/*		- if not hang dump WM WFDMA & PP CR	*/
+void soc3_0_DumpWFDMACr(struct ADAPTER *prAdapter)
+{
+	/* Dump Host side WFDMACR */
+	bool bShowWFDMA_type = FALSE;
+	int32_t ret = 0;
+
+	if (prAdapter == NULL)
+		soc3_0_show_wfdma_info_by_type_without_adapter(bShowWFDMA_type);
+	else
+		soc3_0_show_wfdma_info_by_type(prAdapter, bShowWFDMA_type);
+
+	DumpAXIMasterDebugCr(prAdapter);
+
+	ret = IsWsysBusHang(prAdapter);
+	/* ret =0 is readable, wsys not bus hang */
+	if (ret == 0) {
+		bShowWFDMA_type = TRUE;
+		if (prAdapter == NULL) {
+			soc3_0_show_wfdma_info_by_type_without_adapter(
+				bShowWFDMA_type);
+
+			DumpPPDebugCr_without_adapter();
+		} else {
+			soc3_0_show_wfdma_info_by_type(prAdapter,
+				bShowWFDMA_type);
+
+			DumpPPDebugCr(prAdapter);
+		}
+	} else {
+		DBGLOG(HAL, INFO,
+		"Wifi bus hang(0x%08x), can't dump wsys CR\n", ret);
+	}
+
+} /* soc3_0_DumpWFDMAHostCr */
+
 static void soc3_0_DumpHostCr(struct ADAPTER *prAdapter)
 {
 	soc3_0_DumpPcLrLog(prAdapter);
@@ -1496,7 +1638,8 @@ static void soc3_0_DumpHostCr(struct ADAPTER *prAdapter)
 	soc3_0_DumpHwDebugFlag(prAdapter);
 	soc3_0_DumpSpecifiedWfTop(prAdapter);
 	soc3_0_DumpWfsyscpupcr(prAdapter);
-}
+	soc3_0_DumpWFDMACr(prAdapter);
+} /* soc3_0_DumpHostCr */
 
 int soc3_0_CheckBusHang(struct ADAPTER *prAdapter,
 	uint8_t ucWfResetEnable)
