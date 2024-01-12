@@ -250,6 +250,7 @@ struct GL_P2P_INFO {
 struct GL_P2P_DEV_INFO {
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	struct cfg80211_scan_request *prScanRequest;
+	uint8_t fgScanSpecificSSID;
 #if 0
 	struct cfg80211_scan_request rBackupScanRequest;
 #endif

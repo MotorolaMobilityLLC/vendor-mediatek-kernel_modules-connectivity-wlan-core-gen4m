@@ -123,3 +123,9 @@ void *kalGetP2pDevScanReq(struct GLUE_INFO *prGlueInfo)
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 	return NULL;
 }
+
+u_int8_t kalGetP2pDevScanSpecificSSID(struct GLUE_INFO *prGlueInfo)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
