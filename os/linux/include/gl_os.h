@@ -473,6 +473,17 @@ struct GL_SCAN_CACHE_INFO {
 };
 #endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
 
+#if CFG_SUPPORT_PERF_IND
+	struct GL_PERF_IND_INFO {
+		uint32_t u4CurTxBytes[BSSID_NUM]; /* Byte */
+		uint32_t u4CurRxBytes[BSSID_NUM]; /* Byte */
+		uint16_t u2CurRxRate[BSSID_NUM]; /* Unit 500 Kbps */
+		uint8_t ucCurRxRCPI0[BSSID_NUM];
+		uint8_t ucCurRxRCPI1[BSSID_NUM];
+		uint8_t ucCurRxNss[BSSID_NUM];
+	};
+#endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
+
 struct FT_IES {
 	uint16_t u2MDID;
 	struct IE_MOBILITY_DOMAIN *prMDIE;
@@ -726,6 +737,9 @@ struct GLUE_INFO {
 #if CFG_SUPPORT_SCAN_CACHE_RESULT
 	struct GL_SCAN_CACHE_INFO scanCache;
 #endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
+#if (CFG_SUPPORT_PERF_IND == 1)
+	struct GL_PERF_IND_INFO PerfIndCache;
+#endif
 
 	/* Full2Partial */
 	OS_SYSTIME u4LastFullScanTime;

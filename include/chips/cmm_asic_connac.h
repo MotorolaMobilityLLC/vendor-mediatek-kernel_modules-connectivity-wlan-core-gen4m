@@ -169,6 +169,12 @@ void asicRxProcessRxvforMSP(
 uint8_t asicRxGetRcpiValueFromRxv(
 	IN uint8_t ucRcpiMode,
 	IN struct SW_RFB *prSwRfb);
+#if (CFG_SUPPORT_PERF_IND == 1)
+void asicRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb,
+	IN uint8_t ucBssIndex);
+#endif
+
 #if (CFG_CHIP_RESET_SUPPORT == 1) && (CFG_WMT_RESET_API_SUPPORT == 0)
 u_int8_t conn1_rst_L0_notify_step2(void);
 #endif

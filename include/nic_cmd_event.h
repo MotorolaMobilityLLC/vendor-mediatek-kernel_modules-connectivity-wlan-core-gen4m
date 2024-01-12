@@ -1536,6 +1536,23 @@ struct CMD_RDD_ON_OFF_CTRL {
 };
 #endif
 
+struct CMD_PERF_IND {
+	/* DWORD_0 - Common Part */
+	uint8_t  ucCmdVer;
+	uint8_t  aucPadding0[1];
+	uint16_t u2CmdLen;       /* cmd size including common part and body. */
+	/* DWORD_1 ~ x - Command Body */
+	uint32_t u4VaildPeriod;   /* in ms */
+	/* Current State */
+	uint32_t ulCurTxBytes[4];   /* in Bps */
+	uint32_t ulCurRxBytes[4];   /* in Bps */
+	uint16_t u2CurRxRate[4];     /* Unit 500 Kbps */
+	uint8_t ucCurRxRCPI0[4];
+	uint8_t ucCurRxRCPI1[4];
+	uint8_t ucCurRxNss[4];
+	uint32_t au4Reserve[63];
+};
+
 /* EVENT_BT_OVER_WIFI */
 struct EVENT_BT_OVER_WIFI {
 	uint8_t ucLinkStatus;

@@ -1525,6 +1525,34 @@ void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief Process & Parsing RXV for traffic indicator
+ *
+ * @param prAdapter pointer to the Adapter handler
+ * @param prSWRfb the RFB to receive rx data
+ *
+ * @return (none)
+ *
+ */
+/*----------------------------------------------------------------------------*/
+#if CFG_SUPPORT_PERF_IND
+void nicRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
+			       IN struct SW_RFB *prSwRfb,
+			       IN uint8_t ucBssIndex)
+{
+	struct mt66xx_chip_info *prChipInfo;
+
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo->asicRxPerfIndProcessRXV)
+		prChipInfo->asicRxPerfIndProcessRXV(
+			prAdapter, prSwRfb, ucBssIndex);
+	else {
+		DBGLOG(RX, ERROR, "%s: no asicRxPerfIndProcessRXV ??\n",
+			__func__);
+	}
+}
+#endif
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief Process HIF data packet
  *
  * @param prAdapter pointer to the Adapter handler
@@ -1618,6 +1646,13 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 					prChipInfo->asicRxProcessRxvforMSP(
 						prAdapter, prRetSwRfb);
 #endif /* CFG_SUPPORT_MSP == 1 */
+#if CFG_SUPPORT_PERF_IND
+				nicRxPerfIndProcessRXV(
+					prAdapter,
+					prRetSwRfb,
+					ucBssIndex);
+#endif
+
 				/* save next first */
 				prNextSwRfb = (struct SW_RFB *)
 					QUEUE_GET_NEXT_ENTRY(
