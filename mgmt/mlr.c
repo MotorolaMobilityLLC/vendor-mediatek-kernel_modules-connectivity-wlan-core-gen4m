@@ -1012,10 +1012,10 @@ u_int8_t mlrCheckIfDoFrag(struct ADAPTER *prAdapter,
 	}
 
 	if (!IS_BSS_AIS(prBssInfo)
-		|| !kalGetMediaStateIndicated(
+		|| !(kalGetMediaStateIndicated(
 		prAdapter->prGlueInfo,
 		prBssInfo->ucBssIndex) ==
-		MEDIA_STATE_CONNECTED) {
+		MEDIA_STATE_CONNECTED)) {
 		return FALSE;
 	}
 
