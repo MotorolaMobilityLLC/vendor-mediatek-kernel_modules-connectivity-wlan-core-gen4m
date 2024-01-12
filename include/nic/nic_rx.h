@@ -917,6 +917,10 @@ struct SW_RFB {
 	enum ENUM_BAND eRfBand;
 	uint8_t ucTcl;
 
+	/* Save RX mode and rate for checking duplicaste RX over threshold */
+	uint8_t ucRxMode; /* Check is EHT */
+	uint8_t ucRxMcs; /* Check whether drop more than 2 levels */
+
 	/* rx sta record */
 	uint8_t ucWlanIdx;
 	uint8_t ucStaRecIdx;
@@ -1112,6 +1116,8 @@ struct RX_DESC_OPS_T {
 		struct ADAPTER *prAdapter,
 		struct SW_RFB *prSwRfb,
 		struct QUE *prFreeQueue);
+
+	void (*getRxModeRcs)(struct SW_RFB *prSwRfb);
 };
 
 struct ACTION_FRAME_SIZE_MAP {

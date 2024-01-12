@@ -2350,6 +2350,24 @@ wrong_rate:
 #endif
 }
 
+/* Save RX mode and MCS in prSwRfb */
+void mt6639_get_rx_mode_mcs(struct SW_RFB *prSwRfb)
+{
+	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3;
+	uint32_t u4RxV0;
+	uint32_t u4RxV2;
+
+	if (!(prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)))
+		return;
+
+	prGroup3 = prSwRfb->prRxStatusGroup3;
+	u4RxV0 = CONNAC3X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 0);
+	u4RxV2 = prGroup3->u2RxInfo;
+
+	prSwRfb->ucRxMode = RXV_GET_TXMODE(u4RxV2);
+	prSwRfb->ucRxMcs = RXV_GET_RX_RATE(u4RxV0);
+}
+
 #if (CFG_SUPPORT_DEBUG_SOP == 1)
 #define MAP_DRIVER_SIDE(ADDR) (ADDR - (CONN_INFRA_REMAPPING_OFFSET))
 #define PC_LOG_NUM_CE   32

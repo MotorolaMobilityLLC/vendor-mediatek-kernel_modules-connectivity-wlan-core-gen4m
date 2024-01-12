@@ -401,6 +401,12 @@ struct RX_BA_ENTRY {
 	uint16_t u2FlushedSSNReserved:3;
 
 	u_int8_t fgFlushToHost; /* flush to host (1) or drop (0) */
+
+	/* Detecting RX drop over threshold to trigger TX reset */
+	struct {
+		uint32_t u4DropCount; /* incremental & reset */
+		uint8_t ucRxMcs; /* log at u4DropCount++ from 0 to 1 */
+	} rDrop;
 };
 
 struct RX_BA_QUE_ENTRY {

@@ -143,6 +143,8 @@ extern u_int8_t fgTriggerDebugSop;
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+void mt6639_get_rx_mode_mcs(struct SW_RFB *prSwRfb);
+
 void mt6639_show_wfdma_info(struct ADAPTER *prAdapter);
 void mt6639_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd);
 void mt6639_show_pse_info(struct ADAPTER *prAdapter);

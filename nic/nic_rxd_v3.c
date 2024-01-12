@@ -265,6 +265,10 @@ void nic_rxd_v3_fill_rfb(
 	prSwRfb->ucTcl =
 		HAL_MAC_CONNAC3X_RX_STATUS_GET_TCL(prRxStatus);
 
+	if (prChipInfo->fgCheckRxDropThreshold &&
+	    prChipInfo->prRxDescOps->getRxModeRcs)
+		prChipInfo->prRxDescOps->getRxModeRcs(prSwRfb);
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldStarecLogRxData(prAdapter, prSwRfb->prStaRec, prSwRfb->ucHwBandIdx);
 #endif

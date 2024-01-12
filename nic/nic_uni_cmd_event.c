@@ -5777,6 +5777,43 @@ uint32_t nicUniCmdSetNvramSettings(struct ADAPTER *ad,
 		return nicUniCmdNvramLegacyHandler(ad, info);
 }
 
+/* reset TX scramble seed */
+uint32_t wlanResetTxScrambleSeed(struct ADAPTER *ad, uint8_t ucHwBandIdx)
+{
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	struct UNI_CMD_RESET_TX_SCRAMBLE *uni_cmd;
+	struct UNI_CMD_RESET_TX_SCRAMBLE_PARAM *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_RESET_TX_SCRAMBLE) +
+			       sizeof(struct UNI_CMD_RESET_TX_SCRAMBLE_PARAM);
+
+	uni_cmd = (struct UNI_CMD_RESET_TX_SCRAMBLE *)cnmMemAlloc(ad,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_RESET_TX_SCRAMBLE FAILED\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_RESET_TX_SCRAMBLE_PARAM *)uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_RESET_TX_SCRAMBLE_TAG;
+	tag->u2Length = sizeof(*tag);
+	tag->ucDbdcIdx = ucHwBandIdx;
+
+	status = wlanSendSetQueryUniCmd(ad,
+			     UNI_CMD_ID_RESET_TX_SCRAMBLE,
+			     TRUE,
+			     FALSE,
+			     FALSE,
+			     nicUniCmdEventSetCommon,
+			     nicUniCmdTimeoutCommon,
+			     max_cmd_len,
+			     (uint8_t *)uni_cmd, NULL, 0);
+
+	cnmMemFree(ad, uni_cmd);
+
+	return status;
+}
+
 uint32_t nicUniCmdSetTxAmpdu(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {

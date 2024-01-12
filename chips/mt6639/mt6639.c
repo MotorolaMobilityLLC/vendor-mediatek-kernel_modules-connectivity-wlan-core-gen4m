@@ -763,7 +763,9 @@ struct TX_DESC_OPS_T mt6639_TxDescOps = {
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 };
 
-struct RX_DESC_OPS_T mt6639_RxDescOps = {0};
+struct RX_DESC_OPS_T mt6639_RxDescOps = {
+	.getRxModeRcs = mt6639_get_rx_mode_mcs,
+};
 
 struct CHIP_DBG_OPS mt6639_DebugOps = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -1078,6 +1080,8 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.u4MinTxLen = 2,
 
 	.eDefaultDbdcMode = ENUM_DBDC_MODE_STATIC,
+
+	.fgCheckRxDropThreshold = TRUE,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt6639 = {

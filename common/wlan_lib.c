@@ -7138,6 +7138,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"TxEhtBaSize", WLAN_EHT_MAX_BA_SIZE);
 	INIT_UINT(prWifiVar->fgMoveWinOnMissingLast,
 		"MoveWinOnMissingLast", !RX_REORDER_WAIT_FOR_LAST_FRAG);
+	INIT_UINT(prWifiVar->u4RxDropResetThreshold,
+		"RxDropResetThreshold", 1024);
 	INIT_UINT(prWifiVar->u2BaExtSize,
 		"BaExtSize", WLAN_RX_BA_EXT_SIZE);
 	INIT_UINT(prWifiVar->u4AisEHTNumber,
