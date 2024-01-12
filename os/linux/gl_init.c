@@ -7285,6 +7285,25 @@ static int wlan_pre_pwr_on(void)
 	return wlan_pinctrl_action(prChipInfo, WLAN_PINCTRL_MSG_FUNC_ON);
 }
 
+static int wlan_efuse_on(void)
+{
+	int32_t ret = 0;
+
+	DBGLOG(INIT, INFO, "wlan_efuse_on.\n");
+
+	ret = wlanFuncOnImpl();
+	if (ret)
+		goto exit;
+
+	wlanFuncOffImpl();
+
+exit:
+	if (ret)
+		DBGLOG(INIT, ERROR, "failed, ret=%d\n", ret);
+
+	return ret;
+}
+
 static int wlan_pwr_on_notify(void)
 {
 	DBGLOG(INIT, INFO, "wlan_power_on_notify\n");
@@ -7344,6 +7363,7 @@ static void register_connv3_cbs(void)
 
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 	cb.pre_cal_cb.pre_on_cb = wlan_pre_pwr_on;
+	cb.pre_cal_cb.efuse_on_cb = wlan_efuse_on;
 	cb.pre_cal_cb.pwr_on_cb = wlanPreCalPwrOn;
 	cb.pre_cal_cb.do_cal_cb = wlanPreCal;
 #endif
