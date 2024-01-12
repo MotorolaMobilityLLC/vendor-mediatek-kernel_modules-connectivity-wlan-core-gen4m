@@ -2700,6 +2700,9 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 	wlanTraceTxCmd(prCmdInfo);
 #endif
 
+	if (!halTxIsCmdBufEnough(prAdapter))
+		return WLAN_STATUS_RESOURCES;
+
 	if (prCmdInfo->eCmdType == COMMAND_TYPE_SECURITY_FRAME ||
 		prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME) {
 		prMsduInfo = prCmdInfo->prMsduInfo;
