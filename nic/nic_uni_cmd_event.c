@@ -171,6 +171,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #if (CFG_SUPPORT_NAN == 1)
 	[CMD_ID_NAN_EXT_CMD] = nicUniCmdNan,
 #endif
+	[CMD_ID_SET_ACL_POLICY] = nicUniCmdACLPolicy,
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -4995,6 +4996,40 @@ uint32_t nicUniCmdSetIcsSniffer(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif
+
+uint32_t nicUniCmdACLPolicy(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_SET_ACL_POLICY *cmd;
+	struct UNI_CMD_ACS_POLICY *uni_cmd;
+	struct UNI_CMD_ACS_POLICY_SETTING *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_ACS_POLICY) +
+		sizeof(struct UNI_CMD_ACS_POLICY_SETTING);
+
+	if (info->ucCID != CMD_ID_SET_ACL_POLICY ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_SET_ACL_POLICY *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_ACL_POLICY,
+		max_cmd_len, NULL, NULL);
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_ACS_POLICY *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_ACS_POLICY_SETTING *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_ACS_POLICY_TAG_SETTING;
+	tag->u2Length = sizeof(*tag);
+	tag->ucBssIdx = cmd->ucBssIdx;
+	tag->ucPolicy = cmd->ucPolicy;
+	COPY_MAC_ADDR(tag->aucAddr, cmd->aucAddr);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
 
 uint32_t nicUniCmdGetStaStatistics(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
