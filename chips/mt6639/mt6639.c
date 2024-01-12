@@ -41,6 +41,11 @@
 #include "connv3.h"
 #endif
 
+#if CFG_MTK_MDDP_SUPPORT
+#include "mddp_export.h"
+#include "mtk_ccci_common.h"
+#endif
+
 #define CFG_SUPPORT_VCODE_VDFS 0
 
 #if (CFG_SUPPORT_VCODE_VDFS == 1)
@@ -97,6 +102,9 @@ static void mt6639WfdmaManualPrefetch(
 static void mt6639ReadIntStatus(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus);
 
+static void mt6639EnableInterrupt(struct ADAPTER *prAdapter);
+static void mt6639DisableInterrupt(struct ADAPTER *prAdapter);
+
 static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable);
 
@@ -116,6 +124,8 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo);
 static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 #endif
 
+static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
+
 static u_int8_t mt6639_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *pu4Status);
 
@@ -133,6 +143,9 @@ static int32_t mt6639_ccif_trigger_fw_assert(struct ADAPTER *ad);
 #if IS_MOBILE_SEGMENT
 static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter);
 static uint32_t mt6639_mcu_init(struct ADAPTER *ad);
+static void mt6639_mcu_deinit(struct ADAPTER *ad);
+static int mt6639ConnacPccifOn(void);
+static int mt6639ConnacPccifOff(void);
 #endif
 #endif
 
@@ -295,17 +308,59 @@ struct pse_group_info mt6639_pse_group[] = {
 
 #if defined(_HIF_PCIE)
 struct pcie_msi_layout mt6639_pcie_msi_layout[] = {
-	[0 ... 7] = {"conn_hif_host_int", mtk_pci_interrupt, NULL},
-	[8 ... 15] = {"conn_hif_host_int", NULL, NULL},
-	[16] = {"wm_conn2ap_wdt_irq", NULL, NULL},
-	[17] = {"wf_mcu_jtag_det_eint", NULL, NULL},
-	[18] = {"pmic_eint", NULL, NULL},
-	[19] = {"ccif_bgf2ap_sw_irq", NULL, NULL},
-	[20] = {"ccif_wf2ap_sw_irq", pcie_sw_int_top_handler,
-		pcie_sw_int_thread_handler},
-	[21] = {"ccif_bgf2ap_irq_0", NULL, NULL},
-	[22] = {"ccif_bgf2ap_irq_1", NULL, NULL},
-	[23 ... 31] = {"reserved", NULL, NULL},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
+#if CFG_MTK_MDDP_SUPPORT
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
+#else
+	{"conn_hif_host_int", NULL, NULL, 0},
+	{"conn_hif_host_int", NULL, NULL, 0},
+	{"conn_hif_host_int", NULL, NULL, 0},
+	{"conn_hif_host_int", NULL, NULL, 0},
+	{"conn_hif_host_int", NULL, NULL, 0},
+	{"conn_hif_host_int", NULL, NULL, 0},
+	{"conn_hif_host_int", NULL, NULL, 0},
+	{"conn_hif_host_int", NULL, NULL, 0},
+#endif
+	{"wm_conn2ap_wdt_irq", NULL, NULL, 0},
+	{"wf_mcu_jtag_det_eint", NULL, NULL, 0},
+	{"pmic_eint", NULL, NULL, 0},
+#if CFG_MTK_MDDP_SUPPORT
+	{"ccif_bgf2ap_sw_irq", mtk_md_dummy_pci_interrupt, NULL, 1},
+#else
+	{"ccif_bgf2ap_sw_irq", NULL, NULL, 0},
+#endif
+	{"ccif_wf2ap_sw_irq", pcie_sw_int_top_handler,
+		pcie_sw_int_thread_handler, 0},
+#if CFG_MTK_MDDP_SUPPORT
+	{"ccif_bgf2ap_irq_0", mtk_md_dummy_pci_interrupt, NULL, 1},
+	{"ccif_bgf2ap_irq_1", mtk_md_dummy_pci_interrupt, NULL, 1},
+#else
+	{"ccif_bgf2ap_irq_0", NULL, NULL, 0},
+	{"ccif_bgf2ap_irq_1", NULL, NULL, 0},
+#endif
+	{"reserved", NULL, NULL, 0},
+	{"reserved", NULL, NULL, 0},
+	{"reserved", NULL, NULL, 0},
+	{"reserved", NULL, NULL, 0},
+	{"reserved", NULL, NULL, 0},
+	{"reserved", NULL, NULL, 0},
+	{"reserved", NULL, NULL, 0},
+	{"reserved", NULL, NULL, 0},
+	{"reserved", NULL, NULL, 0},
 };
 #endif
 
@@ -402,8 +457,8 @@ struct BUS_INFO mt6639_bus_info = {
 	.prPseGroup = mt6639_pse_group,
 	.u4PseGroupLen = ARRAY_SIZE(mt6639_pse_group),
 	.pdmaSetup = mt6639WpdmaConfig,
-	.enableInterrupt = asicConnac3xEnablePlatformIRQ,
-	.disableInterrupt = asicConnac3xDisablePlatformIRQ,
+	.enableInterrupt = mt6639EnableInterrupt,
+	.disableInterrupt = mt6639DisableInterrupt,
 #if defined(_HIF_PCIE)
 	.initPcieInt = mt6639InitPcieInt,
 #if CFG_SUPPORT_PCIE_ASPM
@@ -415,7 +470,7 @@ struct BUS_INFO mt6639_bus_info = {
 		.prMsiLayout = mt6639_pcie_msi_layout,
 		.u4MaxMsiNum = ARRAY_SIZE(mt6639_pcie_msi_layout),
 	},
-	.showDebugInfo = halPcieShowDebugInfo,
+	.showDebugInfo = mt6639ShowPcieDebugInfo,
 #endif /* _HIF_PCIE */
 	.processTxInterrupt = mt6639ProcessTxInterrupt,
 	.processRxInterrupt = mt6639ProcessRxInterrupt,
@@ -478,6 +533,7 @@ struct FWDL_OPS_T mt6639_fw_dl_ops = {
 #endif
 #if defined(_HIF_PCIE) && IS_MOBILE_SEGMENT
 	.mcu_init = mt6639_mcu_init,
+	.mcu_deinit = mt6639_mcu_deinit,
 #endif
 #if CFG_SUPPORT_WIFI_DL_BT_PATCH
 	.constructBtPatchName = asicConnac3xConstructBtPatchName,
@@ -632,6 +688,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
 	.u4LmacWtblDUAddr = CONNAC3X_WIFI_LWTBL_BASE,
 	.u4UmacWtblDUAddr = CONNAC3X_WIFI_UWTBL_BASE,
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	.coexpccifon = mt6639ConnacPccifOn,
+	.coexpccifoff = mt6639ConnacPccifOff,
+#endif
 #if CFG_MTK_MDDP_SUPPORT
 	.isSupportMddpAOR = false,
 	.isSupportMddpSHM = true,
@@ -1276,6 +1336,18 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 	       u4WrVal);
 }
 
+static void mt6639EnableInterrupt(struct ADAPTER *prAdapter)
+{
+	asicConnac3xEnablePlatformIRQ(prAdapter);
+	mt6639ConfigIntMask(prAdapter->prGlueInfo, TRUE);
+}
+
+static void mt6639DisableInterrupt(struct ADAPTER *prAdapter)
+{
+	mt6639ConfigIntMask(prAdapter->prGlueInfo, FALSE);
+	asicConnac3xDisablePlatformIRQ(prAdapter);
+}
+
 static void mt6639WpdmaMsiConfig(struct ADAPTER *prAdapter)
 {
 #define WFDMA_AP_MSI_NUM		1
@@ -1491,6 +1563,22 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 	}
 }
 #endif
+
+static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
+{
+	uint32_t u4Addr, u4Val = 0;
+
+	if (!in_interrupt()) {
+		u4Addr = 0x112F0184;
+		wf_ioremap_read(u4Addr, &u4Val);
+		DBGLOG(HAL, INFO, "PCIE CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
+		for (u4Addr = 0x112F0C04; u4Addr <= 0x112F0C1C; u4Addr += 4) {
+			wf_ioremap_read(u4Addr, &u4Val);
+			DBGLOG(HAL, INFO, "PCIE CR [0x%08x]=[0x%08x]",
+			       u4Addr, u4Val);
+		}
+	}
+}
 
 static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 {
@@ -1794,6 +1882,9 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 	}
 #endif
 
+	if (ad->chip_info->coexpccifon)
+		ad->chip_info->coexpccifon();
+
 exit:
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, ERROR, "u4Value: 0x%x\n",
@@ -1802,6 +1893,12 @@ exit:
 	}
 
 	return rStatus;
+}
+
+static void mt6639_mcu_deinit(struct ADAPTER *ad)
+{
+	if (ad->chip_info->coexpccifoff)
+		ad->chip_info->coexpccifoff();
 }
 
 static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter)
@@ -1817,8 +1914,71 @@ static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter)
 
 	return ret;
 }
+
+#define MCIF_EMI_MEMORY_SIZE 128
+static int mt6639ConnacPccifOn(void)
+{
+#if IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER)
+	uint32_t mcif_emi_base;
+	void *vir_addr = NULL;
+	int ret = 0;
+
+	kalDevRegWrite(
+		NULL,
+		CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_1_BA_ADDR,
+		0x18051803);
+
+	mcif_emi_base =	get_smem_phy_start_addr(
+		MD_SYS1, SMEM_USER_RAW_MD_CONSYS, &ret);
+	vir_addr = ioremap(mcif_emi_base, MCIF_EMI_MEMORY_SIZE);
+
+	kalMemSetIo(vir_addr, 0xFF, MCIF_EMI_MEMORY_SIZE);
+	writel(0x4D4D434D, vir_addr);
+	writel(0x4D4D434D, vir_addr + 0x4);
+	writel(0x00000000, vir_addr + 0x8);
+	writel(0x00000000, vir_addr + 0xC);
+	writel(0x301B5801, vir_addr + 0x10);
+	writel(0x02000010, vir_addr + 0x14);
+	writel(0x301AF00C, vir_addr + 0x18);
+	writel(0x00000001, vir_addr + 0x1C);
+	writel(0x00000000, vir_addr + 0x70);
+	writel(0x00000000, vir_addr + 0x74);
+	writel(0x4D434D4D, vir_addr + 0x78);
+	writel(0x4D434D4D, vir_addr + 0x7C);
+
+	DBGLOG_MEM128(HAL, TRACE, vir_addr, MCIF_EMI_MEMORY_SIZE);
+
+	iounmap(vir_addr);
+#else
+	DBGLOG(INIT, ERROR, "[%s] ECCCI Driver is not supported.\n", __func__);
 #endif
+	return 0;
+}
+
+static int mt6639ConnacPccifOff(void)
+{
+#if IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER)
+	uint32_t mcif_emi_base;
+	void *vir_addr = NULL;
+	int ret = 0;
+
+	mcif_emi_base =	get_smem_phy_start_addr(
+		MD_SYS1, SMEM_USER_RAW_MD_CONSYS, &ret);
+	vir_addr = ioremap(mcif_emi_base, MCIF_EMI_MEMORY_SIZE);
+
+	writel(0, vir_addr + 0x10);
+	writel(0, vir_addr + 0x14);
+	writel(0, vir_addr + 0x18);
+	writel(0, vir_addr + 0x1C);
+
+	iounmap(vir_addr);
+#else
+	DBGLOG(INIT, ERROR, "[%s] ECCCI Driver is not supported.\n", __func__);
 #endif
+	return 0;
+}
+#endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
+#endif /* _HIF_PCIE */
 
 static uint32_t mt6639GetFlavorVer(uint8_t *flavor)
 {
@@ -1829,5 +1989,4 @@ static uint32_t mt6639GetFlavorVer(uint8_t *flavor)
 		ret = kalScnprintf(flavor, CFG_FW_FLAVOR_MAX_LEN, "2");
 	return ret;
 }
-
 #endif  /* MT6639 */

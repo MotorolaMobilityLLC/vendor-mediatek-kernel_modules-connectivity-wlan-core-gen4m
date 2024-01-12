@@ -492,6 +492,13 @@ exit:
 	return IRQ_HANDLED;
 }
 
+#if CFG_MTK_MDDP_SUPPORT
+irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance)
+{
+	return IRQ_HANDLED;
+}
+#endif
+
 static int axiDmaSetup(struct platform_device *pdev,
 		struct mt66xx_hif_driver_data *prDriverData)
 {
@@ -1583,6 +1590,9 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 	struct pcie_msi_info *prMsiInfo = &prBusInfo->pcie_msi_info;
 	uint8_t i = 0;
 	int ret = 0;
+#if CFG_MTK_MDDP_SUPPORT && IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+	uint32_t msi_addr = 0, mask = 0;
+#endif
 
 	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
 		struct pcie_msi_layout *prMsiLayout =
@@ -1601,12 +1611,22 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 			IRQF_SHARED,
 			KBUILD_MODNAME,
 			prGlueInfo);
+
+#if CFG_MTK_MDDP_SUPPORT && IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+		if (prMsiLayout->is_md_int)
+			mask |= BIT(i);
+#endif
 		en_wake_ret = enable_irq_wake(irqn);
 		DBGLOG(INIT, INFO, "request_irq(%d %s %d %d)\n",
 			irqn, prMsiLayout->name, ret, en_wake_ret);
 		if (ret)
 			goto err;
 	}
+
+#if CFG_MTK_MDDP_SUPPORT && IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+	pci_read_config_dword(pdev, pdev->msi_cap + 0x4, &msi_addr);
+	mtk_pcie_mask_msi_to_ap(0, msi_addr, mask);
+#endif
 
 	return 0;
 
@@ -2330,22 +2350,6 @@ void halPciePreSuspendTimeout(
 		PCIE_STATE_PRE_SUSPEND_FAIL;
 }
 
-void halPcieShowDebugInfo(struct GLUE_INFO *prGlueInfo)
-{
-	uint32_t u4Addr, u4Val = 0;
-
-	if (!in_interrupt()) {
-		u4Addr = 0x112F0184;
-		wf_ioremap_read(u4Addr, &u4Val);
-		DBGLOG(HAL, INFO, "PCIE CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
-		for (u4Addr = 0x112F0C04; u4Addr <= 0x112F0C1C; u4Addr += 4) {
-			wf_ioremap_read(u4Addr, &u4Val);
-			DBGLOG(HAL, INFO, "PCIE CR [0x%08x]=[0x%08x]",
-			       u4Addr, u4Val);
-		}
-	}
-}
-
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
 static void axiAllocTxDesc(struct GL_HIF_INFO *prHifInfo,
 			   struct RTMP_DMABUF *prDescRing,
@@ -2576,7 +2580,7 @@ int32_t glBusFuncOn(void)
 {
 	int ret = 0;
 
-#if IS_ENABLED(CFG_MTK_PCIE_PROBE_SUPPORT)
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
 	/*
 	 * Due to connsys chip may be powered on before platform is powered on,
 	 * need to remove pcie port first to ensure no resource is occupied.
@@ -2609,7 +2613,7 @@ void glBusFuncOff(void)
 {
 	pci_unregister_driver(&mtk_pci_driver);
 	g_fgDriverProbed = FALSE;
-#if IS_ENABLED(CFG_MTK_PCIE_PROBE_SUPPORT)
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
 	mtk_pcie_remove_port(0);
 #endif
 }
