@@ -139,6 +139,9 @@ p2pFuncGetSpecAttriAction(struct IE_P2P *prP2pIE,
 		uint8_t ucAttriID,
 		struct P2P_ATTRIBUTE **prTargetAttri);
 
+static void
+p2pFunAbortOngoingScan(struct ADAPTER *prAdapter);
+
 /*---------------------------------------------------------------------------*/
 /*!
  * @brief Function for requesting scan.
@@ -3621,6 +3624,7 @@ p2pFuncDisconnect(struct ADAPTER *prAdapter,
 		if (fgSendDeauth) {
 			prStaRec->u2ReasonCode = u2ReasonCode;
 			prStaRec->fgIsLocallyGenerated = fgIsLocallyGenerated;
+			p2pFunAbortOngoingScan(prAdapter);
 			/* Send deauth. */
 			authSendDeauthFrame(prAdapter,
 			    prP2pBssInfo,
@@ -4276,6 +4280,15 @@ p2pFuncValidateProbeReq(struct ADAPTER *prAdapter,
 
 }				/* end of p2pFuncValidateProbeReq() */
 
+/*---------------------------------------------------------------------------*/
+/*!
+ * @brief Abort AIS and P2P scan.
+ *
+ * @param[in] prAdapter          Pointer to the Adapter structure.
+ *
+ * @retval void
+ */
+/*---------------------------------------------------------------------------*/
 static void
 p2pFunAbortOngoingScan(struct ADAPTER *prAdapter)
 {
@@ -4293,6 +4306,10 @@ p2pFunAbortOngoingScan(struct ADAPTER *prAdapter)
 		prScanInfo->rScanParam.ucBssIndex))
 		aisFsmStateAbort_SCAN(prAdapter,
 			prScanInfo->rScanParam.ucBssIndex);
+	else if (prScanInfo->rScanParam.ucBssIndex ==
+			prAdapter->ucP2PDevBssIdx)
+		p2pDevFsmRunEventScanAbort(prAdapter,
+			prAdapter->ucP2PDevBssIdx);
 }
 
 static void p2pFunBufferP2pActionFrame(struct ADAPTER *prAdapter,
@@ -4407,10 +4424,12 @@ void p2pFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
 			if ((prActPubVenFrame->ucPubSubType ==
 				P2P_GO_NEG_REQ) ||
 				(prActPubVenFrame->ucPubSubType ==
-				P2P_INVITATION_REQ)) {
+				P2P_INVITATION_REQ) ||
+				(prActPubVenFrame->ucPubSubType ==
+				P2P_INVITATION_RESP) ||
+				(prActPubVenFrame->ucPubSubType ==
+				P2P_PROV_DISC_REQ)) {
 				p2pFunAbortOngoingScan(prAdapter);
-				p2pDevFsmRunEventScanAbort(prAdapter,
-					prAdapter->ucP2PDevBssIdx);
 			}
 
 			if (fgIsDevInterface) {
