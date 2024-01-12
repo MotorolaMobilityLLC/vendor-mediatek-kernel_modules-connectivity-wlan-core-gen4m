@@ -1145,6 +1145,31 @@ scnFsmDumpScanDoneInfo(struct ADAPTER *prAdapter,
 			ucScanChNum);
 	}
 
+#if CFG_SUPPORT_ROAMING
+#define print_info_ch(_Mod, _Clz, _Fmt, var) \
+	do { \
+		uint16_t u2Written = 0; \
+		uint16_t u2TotalLen = SCN_SCAN_DONE_PRINT_BUFFER_LENGTH; \
+		enum ENUM_BAND eBand = BAND_NULL; \
+		for (ucChCnt = 0; ucChCnt < ucScanChNum; ucChCnt++) { \
+			eBand = \
+			SCN_GET_EBAND_BY_CH_NUM( \
+			prScanDone->var[ucChCnt]); \
+			prScanInfo->aeChannelBand[ucChCnt] = eBand; \
+			prScanInfo->var[ucChCnt] \
+				= prScanDone->var[ucChCnt]; \
+			nicRxdChNumTranslate(eBand, \
+			&prScanInfo->var[ucChCnt]); \
+			u2Written += kalSnprintf(strbuf + u2Written, \
+				u2TotalLen - u2Written, "%6d", \
+				prScanInfo->var[ucChCnt]); \
+			roamingFillScanInfo(prAdapter, eBand, \
+				prScanInfo->var[ucChCnt], \
+				prScanDone->au2ChannelIdleTime[ucChCnt]); \
+		} \
+		log_dbg(_Mod, _Clz, _Fmt, strbuf); \
+	} while (0)
+#else
 #define print_info_ch(_Mod, _Clz, _Fmt, var) \
 	do { \
 		uint16_t u2Written = 0; \
@@ -1165,6 +1190,7 @@ scnFsmDumpScanDoneInfo(struct ADAPTER *prAdapter,
 		} \
 		log_dbg(_Mod, _Clz, _Fmt, strbuf); \
 	} while (0)
+#endif
 
 #define print_info(_Mod, _Clz, _Fmt, var) \
 	do { \
