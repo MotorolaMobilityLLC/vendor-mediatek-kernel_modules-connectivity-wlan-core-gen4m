@@ -437,7 +437,7 @@
   * Auto Channel Selection maximun channel number
   *------------------------------------------------------------------------------
   */
-#define MAX_CHN_NUM                             39 /* CH1~CH14, CH36~CH48, CH52~CH64, CH100~CH144, CH149~CH165 */
+#define MAX_CHN_NUM                             49 /* ARRAY_SIZE(mtk_5ghz_channels) + ARRAY_SIZE(mtk_2ghz_channels) */
 #define MAX_2G_BAND_CHN_NUM                     14
 #define MAX_5G_BAND_CHN_NUM                     (MAX_CHN_NUM - MAX_2G_BAND_CHN_NUM)
 
