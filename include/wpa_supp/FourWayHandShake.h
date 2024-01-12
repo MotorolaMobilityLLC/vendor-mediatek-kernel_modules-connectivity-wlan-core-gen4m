@@ -411,25 +411,13 @@ int os_memcmp(const void *s1, const void *s2, size_t n);
 
 int os_memcmp_const(const void *a, const void *b, size_t len);
 
-void *os_memdup(const void *src, size_t len);
-
 void *os_memmove(void *dest, const void *src, size_t n);
-
-/*void * _os_malloc(size_t size);*/
 
 int os_snprintf(char *str, size_t size, const char *format, ...);
 
 size_t os_strlen(const char *s);
 
-void *_os_malloc(size_t size, const char *func, int line);
-
-void _os_free(void *ptr, const char *func, int line);
-
-void *_os_zalloc(size_t size, const char *func, int line);
-
 void *os_zalloc_TCM(size_t size);
-
-char *os_strdup(const char *s);
 
 unsigned long os_random(void);
 
@@ -438,8 +426,6 @@ int os_get_random(unsigned char *buf, size_t len);
 char *os_strchr(const char *s, int c);
 
 char *os_strstr(const char *haystack, const char *needle);
-
-void *os_realloc(void *ptr, size_t new_size, size_t old_size);
 
 int os_strncmp(const char *s1, const char *s2, size_t n);
 
@@ -460,7 +446,6 @@ int os_reltime_expired(struct os_reltime *now,
 					   struct os_reltime *ts,
 					   os_time_t timeout_secs);
 #endif
-void *os_calloc(size_t nmemb, size_t size);
 
 int os_strcasecmp(const char *s1, const char *s2);
 
@@ -470,9 +455,49 @@ void wpa_SYSrand_Gen_Rand_Seed(uint8_t *aucOwnMacAddr);
 
 /*void tls_deinit(void *ssl_ctx);*/
 
-#define os_malloc(_S) _os_malloc(_S, __func__, __LINE__)
-#define os_zalloc(_S) _os_zalloc(_S, __func__, __LINE__)
-#define os_free(_V) _os_free(_V, __func__, __LINE__)
+extern struct ADAPTER *g_prAdapter;
+
+#define os_malloc(_size) cnmMemAlloc(g_prAdapter, RAM_TYPE_BUF, _size)
+
+#define os_zalloc(_size) ({						\
+	void *ptr = cnmMemAlloc(g_prAdapter, RAM_TYPE_BUF, _size);	\
+	if (ptr)							\
+		os_memset(ptr, 0, _size);				\
+	ptr;								\
+})
+
+#define os_realloc(_ptr, _new_size, _old_size) ({			\
+	size_t copy_len = kal_min_t(size_t, _old_size, _new_size);	\
+	void *nptr;							\
+	nptr = os_malloc(_new_size);					\
+	if (_ptr && nptr) {						\
+		os_memcpy(nptr, _ptr, copy_len);			\
+		os_free(_ptr);						\
+	}								\
+	nptr;								\
+})
+
+#define os_memdup(_src, _len) ({					\
+	void *ptr = os_malloc(_len);					\
+	if (ptr && _src)						\
+		os_memcpy(ptr, _src, _len);				\
+	ptr;								\
+})
+
+#define os_strdup(_str) ({						\
+	char *ptr = NULL;						\
+	size_t len;							\
+	if (_str) {							\
+		len = os_strlen(_str);					\
+		ptr = os_malloc(len + 1);				\
+		if (ptr)						\
+			os_memcpy(ptr, _str, len + 1);			\
+	}								\
+	ptr;								\
+})
+
+#define os_free(_ptr) cnmMemFree(g_prAdapter, _ptr)
+
 #ifndef forced_memzero
 #define forced_memzero(_S, _L) os_memset(_S, 0, _L)
 #endif
