@@ -9224,6 +9224,11 @@ void rlmDomainShowPwrLimitPerCh(char *message,
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 		else if (eType == PWR_LIMIT_TYPE_COMP_11BE_1 ||
 					eType == PWR_LIMIT_TYPE_COMP_11BE_2) {
+			if (i >= MAX_CMD_EHT_SUPPORT_CHANNEL_NUM) {
+				DBGLOG(RLM, ERROR, "out of ETH CH Num\n");
+				return;
+			}
+
 			prPwrLmtEHT = &prCmd->u.rChPwrLimtEHT[i];
 			prcRatePwr = &prPwrLmtEHT->cPwrLimitEHT26L;
 
@@ -9317,6 +9322,11 @@ void rlmDomainShowPwrLimitPerCh(char *message,
 					PWR_LIMIT_TYPE_COMP_11BE_6G_1 &&
 					eType <=
 					PWR_LIMIT_TYPE_COMP_11BE_6G_6) {
+			if (i >= MAX_CMD_EHT_6G_SUPPORT_CHANNEL_NUM) {
+				DBGLOG(RLM, ERROR, "out of ETH 6G CH Num\n");
+				return;
+			}
+
 			prPwrLmtEHT_6G = &prCmd->u.rChPwrLimtEHT_6G[i];
 			prcRatePwr = &prPwrLmtEHT_6G->cPwrLimitEHT26L;
 
