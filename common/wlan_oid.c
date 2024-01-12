@@ -2645,10 +2645,12 @@ wlanoidSetAddKeyImpl(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 			/* ASSERT(FALSE); */
 		}
 	} else {
-		if (!IS_BSS_ACTIVE(prBssInfo))
+		if (!IS_BSS_ACTIVE(prBssInfo)) {
 			DBGLOG_LIMITED(REQ, INFO,
 				"[wlan] BSS info (%d) not active yet!",
 				prNewKey->ucBssIdx);
+			return WLAN_STATUS_SUCCESS;
+		}
 	}
 	prCmdKey->ucBssIdx = prBssInfo->ucBssIndex;
 	prCmdKey->ucKeyId = (uint8_t) (prNewKey->u4KeyIndex & 0xff);
