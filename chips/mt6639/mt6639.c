@@ -573,7 +573,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.u4UmacWtblDUAddr = CONNAC3X_WIFI_UWTBL_BASE,
 	.isSupportMddpAOR = false,
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
-#if IS_ENABLED(CFG_MTK_WIFI_PMIC_QUERY)
+#if defined(CFG_MTK_WIFI_PMIC_QUERY)
 	.queryPmicInfo = asicConnac3xQueryPmicInfo,
 #endif
 #if defined(_HIF_USB)
