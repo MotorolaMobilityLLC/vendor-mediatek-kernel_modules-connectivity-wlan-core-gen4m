@@ -110,14 +110,17 @@ nanRegFindRecordIdx(uint8_t ucOperatingClass) {
 	return REG_MAX_DB_SIZE;
 }
 
-/* NAN 2.0 Spec, Table 85. Setting for Primary Channel Bitmap */
-uint8_t
-nanRegGet20MHzPrimaryChnlIndex(uint8_t ucOperatingClass,
-			       uint8_t ucPriChnlBitmap) {
+/* NAN 4.0 Spec, Table 101. Setting for Primary Channel Bitmap */
+uint8_t nanRegGet20MHzPrimaryChnlIndex(uint8_t ucOperatingClass,
+				       uint8_t ucPriChnlBitmap)
+{
 	int32_t i4Idx;
 
-	for (i4Idx = 7; i4Idx >= 0; i4Idx--) {
-		if ((ucPriChnlBitmap >> i4Idx))
+	/* In the case of Channel Set = 155 / 42 with bitmap = 0x0f,
+	 * prefer bit0 for ch149 / ch 36
+	 */
+	for (i4Idx = 0; i4Idx < 8; i4Idx++) {
+		if (ucPriChnlBitmap & BIT(i4Idx))
 			return i4Idx;
 	}
 
@@ -197,32 +200,32 @@ nanRegGetPrimaryChannel(uint8_t ucChannel, uint8_t ucBw, uint8_t ucNonContBw,
 	return ucChannel;
 }
 
-uint8_t
-nanRegGetPrimaryChannelByOrder(uint8_t ucOperatingClass,
+uint8_t nanRegGetPrimaryChannelByOrder(uint8_t ucOperatingClass,
 		uint16_t *pu2ChnlBitmap, uint8_t ucNonContBw,
-		uint8_t ucPriChnlBitmap) {
+		uint8_t ucPriChnlBitmap)
+{
 	uint32_t i, j;
 	uint8_t *pucBuf;
 
 	pucBuf = (uint8_t *)pu2ChnlBitmap;
 	i = nanRegFindRecordIdx(ucOperatingClass);
-	if (i != REG_MAX_DB_SIZE) {
-		for (j = 0; j < REG_MAX_SUPPORT_CHANNEL; j++) {
-			if (pucBuf[j / 8] & BIT(j % 8)) {
-				pucBuf[j / 8] &= (~(BIT(j % 8)));
-				if (g_rNanRegInfo[i].aucSupportChnlList[j] !=
-				    0) {
-					return nanRegGetPrimaryChannel(
-						g_rNanRegInfo[i]
-							.aucSupportChnlList[j],
-						nanRegGetBw(ucOperatingClass),
-						ucNonContBw,
-						nanRegGet20MHzPrimaryChnlIndex(
-							ucOperatingClass,
-							ucPriChnlBitmap));
-				}
-			}
-		}
+	if (i == REG_MAX_DB_SIZE)
+		return REG_INVALID_INFO;
+
+	for (j = 0; j < REG_MAX_SUPPORT_CHANNEL; j++) {
+		if ((pucBuf[j / 8] & BIT(j % 8)) == 0)
+			continue;
+
+		pucBuf[j / 8] &= ~BIT(j % 8);
+		if (g_rNanRegInfo[i].aucSupportChnlList[j] == 0)
+			continue;
+
+		return nanRegGetPrimaryChannel(
+			g_rNanRegInfo[i].aucSupportChnlList[j],
+			nanRegGetBw(ucOperatingClass),
+			ucNonContBw,
+			nanRegGet20MHzPrimaryChnlIndex(ucOperatingClass,
+				ucPriChnlBitmap));
 	}
 
 	return REG_INVALID_INFO;
