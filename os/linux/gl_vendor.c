@@ -1740,26 +1740,24 @@ int mtk_cfg80211_vendor_packet_keep_alive_start(
 	struct wiphy *wiphy, struct wireless_dev *wdev,
 	const void *data, int data_len)
 {
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	unsigned short u2IpPktLen = 0;
-	uint32_t u4BufLen = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
-
-	int32_t i4Status = -EINVAL;
 	struct PARAM_PACKET_KEEPALIVE_T *prPkt = NULL;
 	struct nlattr *attr[MKEEP_ALIVE_ATTRIBUTE_MAX];
-	uint32_t i = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint16_t u2IpPktLen = 0;
+	uint32_t u4BufLen = 0;
+	uint8_t ucBssIndex = 0, ucIdx = 0;
+	int32_t i4Status = -EINVAL;
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
 	if ((data == NULL) || !data_len)
 		goto nla_put_failure;
 
-	DBGLOG(REQ, TRACE, "vendor command: data_len=%d\r\n",
-	       data_len);
-	prPkt = (struct PARAM_PACKET_KEEPALIVE_T *)
-		kalMemAlloc(sizeof(struct PARAM_PACKET_KEEPALIVE_T),
-			    VIR_MEM_TYPE);
+	ucBssIndex = wlanGetBssIdx(wdev->netdev);
+	DBGLOG(REQ, TRACE, "vendor command: data_len=%d\r\n", data_len);
+	prPkt = (struct PARAM_PACKET_KEEPALIVE_T *) kalMemAlloc(
+		sizeof(struct PARAM_PACKET_KEEPALIVE_T), VIR_MEM_TYPE);
 	if (!prPkt) {
 		DBGLOG(REQ, ERROR,
 		       "Can not alloc memory for struct PARAM_PACKET_KEEPALIVE_T\n");
@@ -1769,6 +1767,7 @@ int mtk_cfg80211_vendor_packet_keep_alive_start(
 	kalMemZero(attr, sizeof(struct nlattr *) * (MKEEP_ALIVE_ATTRIBUTE_MAX));
 
 	prPkt->enable = TRUE; /*start packet keep alive*/
+	prPkt->reserved[0] = ucBssIndex;
 	if (NLA_PARSE_NESTED(attr,
 			     MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC,
 			     (struct nlattr *)(data - NLA_HDRLEN),
@@ -1778,62 +1777,61 @@ int mtk_cfg80211_vendor_packet_keep_alive_start(
 		goto nla_put_failure;
 	}
 
-	for (i = MKEEP_ALIVE_ATTRIBUTE_ID;
-	     i <= MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC; i++) {
-		if (attr[i]) {
-			switch (i) {
+	for (ucIdx = MKEEP_ALIVE_ATTRIBUTE_ID;
+	     ucIdx <= MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC; ucIdx++) {
+		if (attr[ucIdx]) {
+			switch (ucIdx) {
 			case MKEEP_ALIVE_ATTRIBUTE_ID:
-				prPkt->index = nla_get_u8(attr[i]);
+				prPkt->index = nla_get_u8(attr[ucIdx]);
 				break;
 			case MKEEP_ALIVE_ATTRIBUTE_IP_PKT_LEN:
-				prPkt->u2IpPktLen = nla_get_u16(attr[i]);
+				prPkt->u2IpPktLen = nla_get_u16(attr[ucIdx]);
 				break;
 			case MKEEP_ALIVE_ATTRIBUTE_IP_PKT:
 				u2IpPktLen = prPkt->u2IpPktLen <= 256
 					? prPkt->u2IpPktLen : 256;
-				kalMemCopy(prPkt->pIpPkt, nla_data(attr[i]),
+				kalMemCopy(prPkt->pIpPkt, nla_data(attr[ucIdx]),
 					u2IpPktLen);
 				break;
 			case MKEEP_ALIVE_ATTRIBUTE_SRC_MAC_ADDR:
 				kalMemCopy(prPkt->ucSrcMacAddr,
-				   nla_data(attr[i]), sizeof(uint8_t) * 6);
+				   nla_data(attr[ucIdx]), sizeof(uint8_t) * 6);
 				break;
 			case MKEEP_ALIVE_ATTRIBUTE_DST_MAC_ADDR:
 				kalMemCopy(prPkt->ucDstMacAddr,
-				   nla_data(attr[i]), sizeof(uint8_t) * 6);
+				   nla_data(attr[ucIdx]), sizeof(uint8_t) * 6);
 				break;
 			case MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC:
-				prPkt->u4PeriodMsec = nla_get_u32(attr[i]);
+				prPkt->u4PeriodMsec = nla_get_u32(attr[ucIdx]);
 				break;
 			}
 		}
 	}
 
 	DBGLOG(REQ, INFO,
-	       "enable=%d, index=%d, u2IpPktLen=%d u4PeriodMsec=%d\n",
-	       prPkt->enable, prPkt->index,
-	       prPkt->u2IpPktLen, prPkt->u4PeriodMsec);
+		"BssIdx=%d enable=%d, index=%d, u2IpPktLen=%d u4PeriodMsec=%d\n",
+		prPkt->reserved[0], prPkt->enable, prPkt->index,
+		prPkt->u2IpPktLen, prPkt->u4PeriodMsec);
 	DBGLOG(REQ, TRACE, "prPkt->pIpPkt=0x%02x%02x%02x%02x\n",
-	       prPkt->pIpPkt[0], prPkt->pIpPkt[1],
-	       prPkt->pIpPkt[2], prPkt->pIpPkt[3]);
+		prPkt->pIpPkt[0], prPkt->pIpPkt[1],
+		prPkt->pIpPkt[2], prPkt->pIpPkt[3]);
 	DBGLOG(REQ, TRACE, "%02x%02x%02x%02x, %02x%02x%02x%02x\n",
-	       prPkt->pIpPkt[4], prPkt->pIpPkt[5],
-	       prPkt->pIpPkt[6], prPkt->pIpPkt[7],
-	       prPkt->pIpPkt[8], prPkt->pIpPkt[9],
-	       prPkt->pIpPkt[10], prPkt->pIpPkt[11]);
+		prPkt->pIpPkt[4], prPkt->pIpPkt[5],
+		prPkt->pIpPkt[6], prPkt->pIpPkt[7],
+		prPkt->pIpPkt[8], prPkt->pIpPkt[9],
+		prPkt->pIpPkt[10], prPkt->pIpPkt[11]);
 	DBGLOG(REQ, TRACE, "%02x%02x%02x%02x\n",
-	       prPkt->pIpPkt[12], prPkt->pIpPkt[13],
-	       prPkt->pIpPkt[14], prPkt->pIpPkt[15]);
+		prPkt->pIpPkt[12], prPkt->pIpPkt[13],
+		prPkt->pIpPkt[14], prPkt->pIpPkt[15]);
 	DBGLOG(REQ, TRACE,
-	       "prPkt->srcMAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
-	       prPkt->ucSrcMacAddr[0], prPkt->ucSrcMacAddr[1],
-	       prPkt->ucSrcMacAddr[2], prPkt->ucSrcMacAddr[3],
-	       prPkt->ucSrcMacAddr[4], prPkt->ucSrcMacAddr[5]);
+		"prPkt->srcMAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
+		prPkt->ucSrcMacAddr[0], prPkt->ucSrcMacAddr[1],
+		prPkt->ucSrcMacAddr[2], prPkt->ucSrcMacAddr[3],
+		prPkt->ucSrcMacAddr[4], prPkt->ucSrcMacAddr[5]);
 	DBGLOG(REQ, TRACE, "dstMAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
-	       prPkt->ucDstMacAddr[0], prPkt->ucDstMacAddr[1],
-	       prPkt->ucDstMacAddr[2], prPkt->ucDstMacAddr[3],
-	       prPkt->ucDstMacAddr[4], prPkt->ucDstMacAddr[5]);
-
+		prPkt->ucDstMacAddr[0], prPkt->ucDstMacAddr[1],
+		prPkt->ucDstMacAddr[2], prPkt->ucDstMacAddr[3],
+		prPkt->ucDstMacAddr[4], prPkt->ucDstMacAddr[5]);
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
 
