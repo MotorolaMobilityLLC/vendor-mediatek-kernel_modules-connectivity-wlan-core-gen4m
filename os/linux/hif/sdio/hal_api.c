@@ -2903,6 +2903,11 @@ void halUpdateTxDonePendingCount(IN struct ADAPTER *prAdapter, IN u_int8_t isInc
 
 	u2PageCnt = halTxGetPageCount(prAdapter, u4Len, FALSE);
 
+#if (CFG_SUPPORT_CMD_OVER_WFDMA == 1)
+	if (ucTc == TC4_INDEX)
+		u2PageCnt = 1;
+#endif
+
 	if (prBusInfo->halUpdateTxDonePendingCount)
 		prBusInfo->halUpdateTxDonePendingCount(prAdapter, isIncr, ucTc, u2PageCnt);
 	else {
