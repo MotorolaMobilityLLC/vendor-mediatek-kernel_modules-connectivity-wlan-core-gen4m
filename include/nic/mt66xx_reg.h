@@ -1365,6 +1365,7 @@ struct mt66xx_chip_info {
 	int (*triggerfwassert)(void);
 	int (*trigger_wholechiprst)(char *reason);
 	void (*sw_interrupt_handler)(IN struct ADAPTER *prAdapter);
+	void (*conninra_cb_register)(void);
 };
 
 struct mt66xx_hif_driver_data {
