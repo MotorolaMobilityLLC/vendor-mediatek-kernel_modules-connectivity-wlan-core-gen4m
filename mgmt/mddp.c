@@ -2118,8 +2118,14 @@ bool mddpIsSupportMcifWifi(void)
 {
 	int32_t i4Feature = 0;
 
-	if (!gMddpWFunc.get_mddp_feature || !g_fgMddpEnabled) {
-		DBGLOG(INIT, INFO, "mddp enable: %u.\n", g_fgMddpEnabled);
+	if (!gMddpWFunc.get_mddp_feature) {
+		DBGLOG_LIMITED(INIT, LOUD, "gMddpWFunc not register\n");
+		return false;
+	}
+
+	if (!g_fgMddpEnabled) {
+		DBGLOG_LIMITED(INIT, INFO, "mddp enable: %u.\n",
+			       g_fgMddpEnabled);
 		return false;
 	}
 
