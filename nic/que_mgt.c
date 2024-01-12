@@ -4104,10 +4104,11 @@ u_int8_t qmAmsduAttackDetection(struct ADAPTER *prAdapter,
 	prStaRec = prSwRfb->prStaRec;
 	ASSERT(prStaRec);
 
+	/* fill in nicRxFillSSN */
+	u2SSN = prSwRfb->u2SSN;
+
 	/* 802.11 header TA */
 	if (prSwRfb->fgHdrTran) {
-		u2SSN = HAL_RX_STATUS_GET_SEQFrag_NUM(
-			prSwRfb->prRxStatusGroup4) >> RX_STATUS_SEQ_NUM_OFFSET;
 		u2FrameCtrl = HAL_RX_STATUS_GET_FRAME_CTL_FIELD(
 				prSwRfb->prRxStatusGroup4);
 		HAL_RX_STATUS_GET_TA(prSwRfb->prRxStatusGroup4, aucTaAddr);
@@ -4115,7 +4116,6 @@ u_int8_t qmAmsduAttackDetection(struct ADAPTER *prAdapter,
 		pucPaylod = prSwRfb->pvHeader;
 	} else {
 		prWlanHeader = (struct WLAN_MAC_HEADER *) prSwRfb->pvHeader;
-		u2SSN = prWlanHeader->u2SeqCtrl >> MASK_SC_SEQ_NUM_OFFSET;
 		u2FrameCtrl = prWlanHeader->u2FrameCtrl;
 		pucTaAddr = prWlanHeader->aucAddr2;
 		pucPaylod = (uint8_t *)(
@@ -4388,9 +4388,6 @@ void qmProcessPktWithReordering(struct ADAPTER *prAdapter,
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 	RX_INC_CNT(prRxCtrl, RX_DATA_REORDER_TOTAL_COUNT);
-
-	prSwRfb->u2SSN = HAL_RX_STATUS_GET_SEQFrag_NUM(
-		prSwRfb->prRxStatusGroup4) >> RX_STATUS_SEQ_NUM_OFFSET;
 
 	ucAmsduSubframeIdx = prSwRfb->ucPayloadFormat;
 #if CFG_SUPPORT_RX_AMSDU
@@ -9869,6 +9866,9 @@ qmIsNoDropPacket(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		= secGetBssIdxByWlanIdx(prAdapter, prSwRfb->ucWlanIdx);
 	u_int8_t fgCheckDrop = FALSE;
 	struct BSS_INFO *prBssInfo = NULL;
+
+	if (!pucData)
+		return FALSE;
 
 	if (ucBssIndex <= MAX_BSSID_NUM)
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);

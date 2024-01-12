@@ -244,6 +244,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
 	[UNI_EVENT_ID_DELAY_BAR] = nicUniEventDelayBar,
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
+#if CFG_SUPPORT_FW_DROP_SSN
+	[UNI_EVENT_ID_FW_DROP_SSN] = nicUniEventFwDropSSN,
+#endif /* CFG_SUPPORT_FW_DROP_SSN */
 	[UNI_EVENT_ID_FAST_PATH] = nicUniEventFastPath,
 	[UNI_EVENT_ID_THERMAL] = nicUniEventThermalProtect,
 #if (CFG_CE_ASSERT_DUMP == 1)
@@ -11203,3 +11206,101 @@ void nicUniCmdEventLpDbgCtrl(struct ADAPTER *prAdapter,
 			(uint8_t *)&legacy);
 	}
 }
+
+#if CFG_SUPPORT_FW_DROP_SSN
+void nicUniHandleFwDropSSN(struct ADAPTER *prAdapter,
+	struct UNI_STORED_FW_DROP_SSN_INFO *prSSN)
+{
+	struct QUE *prQue = NULL;
+	struct QUE rQue;
+	struct SW_RFB *prSwRfb;
+
+	prQue = &rQue;
+	QUEUE_INITIALIZE(prQue);
+#if CFG_RFB_TRACK
+	nicRxDequeueFreeQue(prAdapter, 1, prQue, RFB_TRACK_FW_DROP_SSN);
+#else /* CFG_RFB_TRACK */
+	nicRxDequeueFreeQue(prAdapter, 1, prQue);
+#endif /* CFG_RFB_TRACK */
+	QUEUE_REMOVE_HEAD(prQue, prSwRfb, struct SW_RFB *);
+	if (!prSwRfb) {
+		DBGLOG_LIMITED(QM, WARN, "No More RFB\n");
+		return;
+	}
+
+	prSwRfb->ucWlanIdx = prSSN->ucWlanIdx;
+	prSwRfb->ucStaRecIdx = secGetStaIdxByWlanIdx(prAdapter,
+			prSwRfb->ucWlanIdx);
+	prSwRfb->prStaRec = cnmGetStaRecByIndex(prAdapter,
+		prSwRfb->ucStaRecIdx);
+	prSwRfb->ucTid = prSSN->ucTid;
+	prSwRfb->u2SSN = prSSN->u2SSN;
+	prSwRfb->ucPayloadFormat = prSSN->ucAmsduFormat;
+	prSwRfb->eDst = RX_PKT_DESTINATION_NULL;
+
+	if (!prSwRfb->prStaRec) {
+		DBGLOG(NIC, WARN,
+			"Invalid STA[%u] WIDX[%u] TID[%u] SSN[%u] AmsduFormat[%u]\n",
+			prSwRfb->ucStaRecIdx, prSSN->ucWlanIdx,
+			prSSN->ucTid, prSSN->u2SSN,
+			prSSN->ucAmsduFormat);
+		return;
+	}
+
+	DBGLOG(NIC, TRACE,
+		"STA[%u] WIDX[%u] TID[%u] SSN[%u] AmsduFormat[%u]\n",
+		prSwRfb->ucStaRecIdx, prSSN->ucWlanIdx,
+		prSSN->ucTid, prSSN->u2SSN,
+		prSSN->ucAmsduFormat);
+
+	nicRxAddFwDropSSN(prAdapter, prSwRfb);
+
+	if (kalScheduleHandleRxFwDropSSN(prAdapter->prGlueInfo)
+		== WLAN_STATUS_NOT_ACCEPTED) {
+		/* Handle Non Rx-direct call path */
+		prSwRfb = nicRxGetFwDropSSN(prAdapter);
+		if (prSwRfb)
+			nicRxHandleFwDropSSN(prAdapter, prSwRfb);
+	}
+}
+
+void nicUniEventFwDropSSN(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_THERMAL);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+	uint32_t i;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_FW_DROP_SSN_INFO_TAG: {
+			struct UNI_EVENT_FW_DROP_SSN_INFO *info =
+				(struct UNI_EVENT_FW_DROP_SSN_INFO *)tag;
+
+			if (info->ucDrpPktNum > FW_DROP_SSN_MAX) {
+				DBGLOG(NIC, WARN,
+					"skip invalid ucDrpPktNum:%u\n",
+					info->ucDrpPktNum);
+				break;
+			}
+
+			for (i = 0; i < info->ucDrpPktNum; i++)
+				nicUniHandleFwDropSSN(ad, &(info->arSSN[i]));
+		}
+			break;
+		default:
+			fail_cnt++;
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+#endif /* CFG_SUPPORT_FW_DROP_SSN */

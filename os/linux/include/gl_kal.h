@@ -291,6 +291,9 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 	/* RX: main vs. NAPI */
 	SPIN_LOCK_RX_FLUSH_TIMEOUT,
 	SPIN_LOCK_RX_FLUSH_BA,
+#if CFG_SUPPORT_FW_DROP_SSN
+	SPIN_LOCK_RX_FW_DROP_SSN,
+#endif /* CFG_SUPPORT_FW_DROP_SSN */
 
 	SPIN_LOCK_IO_REQ,
 	SPIN_LOCK_INT,
@@ -1814,6 +1817,9 @@ void kalFlushPendingTxPackets(struct GLUE_INFO
 /* RX                                                                         */
 /*----------------------------------------------------------------------------*/
 uint32_t kalScheduleFlushRxBaEntry(struct GLUE_INFO *prGlueInfo);
+#if CFG_SUPPORT_FW_DROP_SSN
+uint32_t kalScheduleHandleRxFwDropSSN(struct GLUE_INFO *prGlueInfo);
+#endif /* CFG_SUPPORT_FW_DROP_SSN */
 
 /*----------------------------------------------------------------------------*/
 /* Media State Indication                                                     */

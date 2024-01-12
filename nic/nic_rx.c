@@ -428,6 +428,27 @@ void nicRxUninitialize(struct ADAPTER *prAdapter)
 
 }				/* end of nicRxUninitialize() */
 
+void nicRxFillSSN(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
+{
+	if (prSwRfb->fgHdrTran) {
+		if (!(prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_4)))
+			return;
+
+		prSwRfb->u2SSN = HAL_RX_STATUS_GET_SEQFrag_NUM(
+			prSwRfb->prRxStatusGroup4) >> RX_STATUS_SEQ_NUM_OFFSET;
+	} else {
+		struct WLAN_MAC_HEADER *prWlanHeader;
+
+		prWlanHeader = (struct WLAN_MAC_HEADER *) prSwRfb->pvHeader;
+		if (!prWlanHeader)
+			return;
+
+		prSwRfb->u2SSN = prWlanHeader->u2SeqCtrl
+					>> MASK_SC_SEQ_NUM_OFFSET;
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Fill RFB
@@ -450,6 +471,8 @@ void nicRxFillRFB(struct ADAPTER *prAdapter,
 		DBGLOG(RX, ERROR,
 			"%s:: no nic_rxd_fill_rfb??\n",
 			__func__);
+
+	nicRxFillSSN(prAdapter, prSwRfb);
 }
 
 /**
@@ -1781,6 +1804,56 @@ void nicRxIndicatePackets(struct ADAPTER *prAdapter,
 		prRetSwRfb = prNextSwRfb;
 	}
 }
+
+#if CFG_SUPPORT_FW_DROP_SSN
+struct SW_RFB *nicRxGetFwDropSSN(struct ADAPTER *prAdapter)
+{
+	struct SW_RFB *prSwRfb = NULL;
+
+	KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_FW_DROP_SSN);
+	QUEUE_REMOVE_HEAD(&prAdapter->rRxFwDropSSNQue,
+			prSwRfb, struct SW_RFB *);
+	KAL_RELEASE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_FW_DROP_SSN);
+
+	return prSwRfb;
+}
+
+void nicRxAddFwDropSSN(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
+{
+	KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_FW_DROP_SSN);
+	QUEUE_INSERT_TAIL(&prAdapter->rRxFwDropSSNQue, prSwRfb);
+	KAL_RELEASE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_FW_DROP_SSN);
+}
+
+void nicRxHandleFwDropSSN(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
+{
+	struct QUE rReturnedQue;
+	struct QUE *prReturnedQue = &rReturnedQue;
+	struct SW_RFB *prRetSwRfb;
+
+	QUEUE_INITIALIZE(prReturnedQue);
+	qmProcessPktWithReordering(prAdapter, prSwRfb, prReturnedQue);
+
+	RX_INC_CNT(&prAdapter->rRxCtrl, RX_FW_DROP_SSN_COUNT);
+
+	/* The returned list of SW_RFBs must end with a NULL pointer */
+	if (QUEUE_IS_NOT_EMPTY(prReturnedQue)) {
+		QUEUE_ENTRY_SET_NEXT(QUEUE_GET_TAIL(prReturnedQue), NULL);
+		DBGLOG(NIC, TRACE,
+			"STA[%u] WIDX[%u] TID[%u] SSN[%u] PF[%u] Dequeue[%u]\n",
+			prSwRfb->ucStaRecIdx, prSwRfb->ucWlanIdx,
+			prSwRfb->ucTid, prSwRfb->u2SSN,
+			prSwRfb->ucPayloadFormat,
+			QUEUE_LENGTH(prReturnedQue));
+	}
+
+	prRetSwRfb = QUEUE_GET_HEAD(prReturnedQue);
+	if (prRetSwRfb != NULL)
+		nicRxIndicatePackets(prAdapter, prRetSwRfb);
+}
+#endif /* CFG_SUPPORT_FW_DROP_SSN */
 
 /*----------------------------------------------------------------------------*/
 /*!

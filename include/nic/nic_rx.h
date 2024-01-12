@@ -525,6 +525,7 @@ enum ENUM_RX_STATISTIC_COUNTER {
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
 	RX_BAR_DELAY_COUNT,
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
+	RX_FW_DROP_SSN_COUNT,
 	RX_FCS_ERR_DROP_COUNT,
 	RX_DAF_ERR_DROP_COUNT,
 	RX_ICV_ERR_DROP_COUNT,
@@ -573,6 +574,7 @@ enum ENUM_RFB_TRACK_STATUS {
 	RFB_TRACK_PACKET_SETUP,
 	RFB_TRACK_ADJUST_UNUSE,
 	RFB_TRACK_MLO,
+	RFB_TRACK_FW_DROP_SSN,
 	RFB_TRACK_FAIL,
 	RFB_TRACK_STATUS_NUM
 };
@@ -1649,6 +1651,16 @@ void nicRxPerfIndProcessRXV(struct ADAPTER *prAdapter,
 
 void nicRxIndicatePackets(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfbListHead);
+
+#if CFG_SUPPORT_FW_DROP_SSN
+struct SW_RFB *nicRxGetFwDropSSN(struct ADAPTER *prAdapter);
+
+void nicRxAddFwDropSSN(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
+
+void nicRxHandleFwDropSSN(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
+#endif /* CFG_SUPPORT_FW_DROP_SSN */
 
 void nicRxProcessDataPacket(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb);
