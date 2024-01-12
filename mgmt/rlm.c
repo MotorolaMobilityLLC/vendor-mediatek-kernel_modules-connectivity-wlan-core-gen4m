@@ -6530,7 +6530,7 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 				    u_int8_t fgIsSuccess)
 {
 	PFN_OPMODE_NOTIFY_DONE_FUNC pfnCallback;
-#if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
 	uint8_t cmd[30] = {0};
 	uint8_t strLen = 0;
@@ -6557,7 +6557,7 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 					       prBssInfo->ucBssIndex);
 	}
 
-	#if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 	/* notify FW if reason is ANT_CTRL and SMARTGEAR */
 	if (prAdapter->ucANTCtrlReason > 0) {
 		strLen = kalSnprintf(cmd, sizeof(cmd),
