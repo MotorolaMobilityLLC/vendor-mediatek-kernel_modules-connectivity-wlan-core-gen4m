@@ -84,6 +84,8 @@ void halSwWfdmaInit(struct GLUE_INFO *prGlueInfo)
 	if (!prSwWfdmaInfo->fgIsEnSwWfdma)
 		return;
 
+	prSwWfdmaInfo->u4PortIdx = TX_RING_CMD_IDX_2;
+
 	/* update sw wfdma emi offset */
 	if (prSwWfdmaInfo->u4EmiOffsetAddr) {
 		kalDevRegRead(prGlueInfo,

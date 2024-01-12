@@ -349,7 +349,11 @@ void asicConnac2xWfdmaReInit(
 	struct ADAPTER *prAdapter)
 {
 	u_int8_t fgResult;
-	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+	struct BUS_INFO *prBusInfo;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 
 	/*WFDMA re-init flow after chip deep sleep*/
 	asicConnac2xWfdmaDummyCrRead(prAdapter, &fgResult);
@@ -367,6 +371,11 @@ void asicConnac2xWfdmaReInit(
 		DBGLOG(INIT, TRACE, "WFDMA reinit after bk/sr(deep sleep)\n");
 		prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 		for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
+			/* Swwfdma should not reset txring */
+			if (prSwWfdmaInfo->fgIsEnSwWfdma &&
+			    u4Idx == prSwWfdmaInfo->u4PortIdx)
+				continue;
+
 			prHifInfo->TxRing[u4Idx].TxSwUsedIdx = 0;
 			prHifInfo->TxRing[u4Idx].u4UsedCnt = 0;
 			prHifInfo->TxRing[u4Idx].TxCpuIdx = 0;
