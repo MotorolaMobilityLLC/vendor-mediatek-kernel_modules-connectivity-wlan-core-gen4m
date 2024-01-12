@@ -130,7 +130,7 @@ uint32_t ehtRlmCalculateCapIELen(
 	uint8_t ucMaxBw;
 	uint32_t u4OverallLen;
 
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
 	/* struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL; */
 	u4OverallLen = OFFSET_OF(struct IE_EHT_CAP, aucVarInfo[0]);
@@ -282,7 +282,7 @@ static void ehtRlmFillCapIE(
 		SET_DOT11BE_PHY_CAP_BFEE_160M(phy_cap_1, 3);
 		/* set 1 to support TX NSS 2 */
 		SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_160M(
-			phy_cap_1, ucSupportedNss - 1); 
+			phy_cap_1, ucSupportedNss - 1);
 	}
 	if (eht_bw == MAX_BW_320MHZ) {
 		eht_mcs15_mru |= EHT_MCS15_MRU_3x996_tone_320M;
@@ -290,7 +290,7 @@ static void ehtRlmFillCapIE(
 		SET_DOT11BE_PHY_CAP_BFEE_320M(phy_cap_1, 3);
 		/* set 1 to support TX NSS 2 */
 		SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_320M(
-			phy_cap_1, ucSupportedNss - 1); 
+			phy_cap_1, ucSupportedNss - 1);
 	}
 
 	phy_cap_1 |= DOT11BE_PHY_CAP_NDP_4X_EHT_LTF_3DOT2US_GI;
