@@ -779,9 +779,9 @@ static int __coredump_handle_cr_region(struct coredump_ctx *ctx,
 		for (j = 0; j < region->size; j += 4) {
 			u_int8_t res = TRUE;
 
-			res = HAL_MCR_RD(glue->prAdapter,
-					    region->base + j,
-					    (uint32_t *)&region->buf[j]);
+			res = HAL_RMCR_RD(COREDUMP_DBG, glue->prAdapter,
+					  region->base + j,
+					  (uint32_t *)&region->buf[j]);
 			if (res == FALSE)
 				DBGLOG(INIT, ERROR,
 					"Read cr region failed, 0x%x 0x%x j=0x%x\n",
@@ -807,10 +807,11 @@ static int __coredump_handle_mem_region(struct coredump_ctx *ctx,
 	for (idx = 0, region = mem->mem_regions;
 	     idx < mem->mem_region_num;
 	     idx++, region++) {
-		read_ret = HAL_RMCR_RD_RANGE(glue->prAdapter,
-					    region->base,
-					    region->buf,
-					    region->size);
+		read_ret = HAL_RMCR_RD_RANGE(COREDUMP_DBG,
+					     glue->prAdapter,
+					     region->base,
+					     region->buf,
+					     region->size);
 		if (read_ret == FALSE) {
 			DBGLOG(INIT, ERROR,
 				"[%d] Read mem region failed, %s 0x%x 0x%x\n",

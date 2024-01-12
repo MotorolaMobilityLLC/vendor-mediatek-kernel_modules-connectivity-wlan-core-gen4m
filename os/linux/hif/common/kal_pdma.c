@@ -1401,8 +1401,8 @@ check:
 	if (prChipInfo && prChipInfo->isValidMmioReadReason &&
 	    !prChipInfo->isValidMmioReadReason(prChipInfo, eReason)) {
 		DBGLOG(HAL, ERROR,
-		       "Read invalid register. reg[%u] rsn[%u] mod[%u].\n",
-		       u4Reg, u4Idx, u4Mod);
+		       "Read invalid register. reg[0x%08x] rsn[%d] mod[%u].\n",
+		       u4Reg, eReason, u4Mod);
 		return FALSE;
 	}
 
