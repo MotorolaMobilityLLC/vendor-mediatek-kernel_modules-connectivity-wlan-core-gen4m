@@ -764,10 +764,11 @@ p2pFuncTagActionActionP2PFrame(IN struct MSDU_INFO *prMgmtTxMsdu,
 		IN uint8_t ucP2pAction, IN uint64_t u8Cookie)
 {
 	DBGLOG(P2P, INFO,
-		"Found P2P_%s, SA: %pM - DA: %pM, cookie: 0x%llx, SeqNO: %d\n",
+		"Found P2P_%s, SA: " MACSTR
+			" - DA: " MACSTR ", cookie: 0x%llx, SeqNO: %d\n",
 		p2pToString(ucP2pAction),
-		prActFrame->aucSrcAddr,
-		prActFrame->aucDestAddr,
+		MAC2STR(prActFrame->aucSrcAddr),
+		MAC2STR(prActFrame->aucDestAddr),
 		u8Cookie,
 		prMgmtTxMsdu->ucTxSeqNum);
 	return ucP2pAction + 1;
@@ -783,10 +784,11 @@ p2pFuncTagActionActionFrame(IN struct MSDU_INFO *prMgmtTxMsdu,
 	enum ENUM_P2P_CONNECT_STATE eCNNState = P2P_CNN_NORMAL;
 
 	DBGLOG(P2P, INFO,
-		"Found WLAN_%s, SA: %pM - DA: %pM, cookie: 0x%llx, SeqNo: %d\n",
+		"Found WLAN_%s, SA: " MACSTR
+			" - DA: " MACSTR ", cookie: 0x%llx, SeqNo: %d\n",
 		paToString(ucAction),
-		prActFrame->aucSrcAddr,
-		prActFrame->aucDestAddr,
+		MAC2STR(prActFrame->aucSrcAddr),
+		MAC2STR(prActFrame->aucDestAddr),
 		u8Cookie,
 		prMgmtTxMsdu->ucTxSeqNum);
 
@@ -803,15 +805,17 @@ p2pFuncTagActionActionFrame(IN struct MSDU_INFO *prMgmtTxMsdu,
 				prActFrame, *(pucVendor + 4), u8Cookie);
 		else if (*(pucVendor + 3) == 0x0a)
 			/* found WFD IE */
-			DBGLOG(P2P, INFO, "Found WFD IE, SA: %pM - DA: %pM\n",
-				prActFrame->aucSrcAddr,
-				prActFrame->aucDestAddr);
+			DBGLOG(P2P, INFO, "Found WFD IE, SA: " MACSTR
+					" - DA: " MACSTR "\n",
+				MAC2STR(prActFrame->aucSrcAddr),
+				MAC2STR(prActFrame->aucDestAddr));
 		else
 			DBGLOG(P2P, INFO,
-				"Found Other vendor 0x%x, SA: %pM - DA: %pM\n",
+				"Found Other vendor 0x%x, SA: " MACSTR
+					" - DA: " MACSTR "\n",
 				*(pucVendor + 3),
-				prActFrame->aucSrcAddr,
-				prActFrame->aucDestAddr);
+				MAC2STR(prActFrame->aucSrcAddr),
+				MAC2STR(prActFrame->aucDestAddr));
 	}
 	return eCNNState;
 }
@@ -827,11 +831,13 @@ p2pFuncTagActionCategoryFrame(IN struct MSDU_INFO *prMgmtTxMsdu,
 	enum ENUM_P2P_CONNECT_STATE eCNNState = P2P_CNN_NORMAL;
 
 	DBGLOG(P2P, TRACE,
-		"Found WLAN_ACTION_%s, SA: %pM BSSID: %pM DA: %pM, u8Cookie: 0x%llx, SeqNO: %d\n",
+		"Found WLAN_ACTION_%s, SA: " MACSTR
+			" BSSID: " MACSTR
+			" DA: " MACSTR ", u8Cookie: 0x%llx, SeqNO: %d\n",
 		actionToString(ucCategory),
-		prActFrame->aucSrcAddr,
-		prActFrame->aucBSSID,
-		prActFrame->aucDestAddr,
+		MAC2STR(prActFrame->aucSrcAddr),
+		MAC2STR(prActFrame->aucBSSID),
+		MAC2STR(prActFrame->aucDestAddr),
 		u8Cookie,
 		prMgmtTxMsdu->ucTxSeqNum);
 
@@ -923,10 +929,12 @@ p2pFuncTagMgmtFrame(IN struct MSDU_INFO *prMgmtTxMsdu,
 	case MAC_FRAME_PROBE_RSP:
 		prProbRspHdr = (struct WLAN_BEACON_FRAME *) prWlanHdr;
 		DBGLOG(P2P, INFO,
-			"TX Probe Response, SA: %pM BSSID: %pM DA: %pM, cookie: 0x%llx, seqNo: %d\n",
-			prProbRspHdr->aucSrcAddr,
-			prProbRspHdr->aucBSSID,
-			prProbRspHdr->aucDestAddr,
+			"TX Probe Response, SA: " MACSTR
+				" BSSID: " MACSTR
+				" DA: " MACSTR ", cookie: 0x%llx, seqNo: %d\n",
+			MAC2STR(prProbRspHdr->aucSrcAddr),
+			MAC2STR(prProbRspHdr->aucBSSID),
+			MAC2STR(prProbRspHdr->aucDestAddr),
 			u8Cookie,
 			prMgmtTxMsdu->ucTxSeqNum);
 
@@ -941,11 +949,13 @@ p2pFuncTagMgmtFrame(IN struct MSDU_INFO *prMgmtTxMsdu,
 		break;
 	default:
 		DBGLOG(P2P, INFO,
-			"Untagged frame type: 0x%x, A1: %pM, A2: %pM, A3: %pM seqNo: %d\n",
+			"Untagged frame type: 0x%x, A1: " MACSTR
+				", A2: " MACSTR
+				", A3: " MACSTR " seqNo: %d\n",
 			u2TxFrameCtrl,
-			prWlanHdr->aucAddr1,
-			prWlanHdr->aucAddr2,
-			prWlanHdr->aucAddr3,
+			MAC2STR(prWlanHdr->aucAddr1),
+			MAC2STR(prWlanHdr->aucAddr2),
+			MAC2STR(prWlanHdr->aucAddr3),
 			prMgmtTxMsdu->ucTxSeqNum);
 		break;
 	}
