@@ -1634,10 +1634,10 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 		tmp_pos = end; /* traverse original buffer */
 		tmp_end = pucIE + u2Left;
 		while (tmp_end - tmp_pos >= 2 &&
-		       tmp_pos[0] == ELEM_ID_FRAGMENT &&
-		       2 + tmp_pos[1] <= tmp_end - tmp_pos) {
+		       IE_ID(tmp_pos) == ELEM_ID_FRAGMENT &&
+		       IE_SIZE(tmp_pos) <= tmp_end - tmp_pos) {
 			found = TRUE;
-			tmp_pos += 2 + tmp_pos[1];
+			tmp_pos += IE_SIZE(tmp_pos);
 			break;
 		}
 
@@ -1660,11 +1660,11 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 
 		/* Add possible fragments */
 		while (tmp_end - tmp_pos >= 2 &&
-		       tmp_pos[0] == ELEM_ID_FRAGMENT &&
-		       2 + tmp_pos[1] <= tmp_end - tmp_pos) {
-			kalMemCopy(p, tmp_pos + 2, tmp_pos[1]);
-			p += tmp_pos[1];
-			tmp_pos += 2 + tmp_pos[1];
+		       IE_ID(tmp_pos) == ELEM_ID_FRAGMENT &&
+		       IE_SIZE(tmp_pos) <= tmp_end - tmp_pos) {
+			kalMemCopy(p, &IE_DATA(tmp_pos), IE_LEN(tmp_pos));
+			p += IE_LEN(tmp_pos);
+			tmp_pos += IE_SIZE(tmp_pos);
 		}
 
 		/* parsing tmp buffer to find per-sta profiles */
@@ -2069,6 +2069,9 @@ const uint8_t *mldFindMlIE(const uint8_t *ies, uint16_t len, uint8_t type)
 		ie = MTK_OUI_IE(ies)->aucInfoElem;
 		ie_len = IE_LEN(ies) - 7;
 
+		if (ie_len > 248) /* 255-7=248, check the upper bound */
+			continue;
+
 		IE_FOR_EACH(ie, ie_len, ie_offset) {
 			if (IE_ID(ie) == MTK_OUI_ID_PRE_WIFI7) {
 				struct IE_MTK_PRE_WIFI7 *prPreWifi7 =
@@ -2076,6 +2079,10 @@ const uint8_t *mldFindMlIE(const uint8_t *ies, uint16_t len, uint8_t type)
 
 				sub = prPreWifi7->aucInfoElem;
 				sub_len = IE_LEN(prPreWifi7) - 2;
+
+				/* 255-2=253, check the upper bound */
+				if (sub_len > 253)
+					continue;
 
 				IE_FOR_EACH(sub, sub_len, sub_offset) {
 					if (IE_ID_EXT(sub) == ELEM_EXT_ID_MLD)
