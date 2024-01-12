@@ -1457,9 +1457,11 @@ uint32_t beDupMldStaProfileImpl(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
 		struct BSS_INFO *bss =
 			GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
-		if (fctrl == MAC_FRAME_ASSOC_REQ)
+		if (fctrl == MAC_FRAME_ASSOC_REQ ||
+		    fctrl == MAC_FRAME_REASSOC_REQ)
 			COPY_MAC_ADDR(mgmt->aucBSSID, bss->aucOwnMacAddr);
-		else if (fctrl == MAC_FRAME_ASSOC_RSP)
+		else if (fctrl == MAC_FRAME_ASSOC_RSP ||
+			 fctrl == MAC_FRAME_REASSOC_RSP)
 			COPY_MAC_ADDR(mgmt->aucBSSID, bss->aucBSSID);
 		COPY_MAC_ADDR(mgmt->aucDestAddr, bss->aucOwnMacAddr);
 		prDst->ucWlanIdx = prStaRec->ucWlanIndex;
@@ -1694,7 +1696,7 @@ void mldBssUpdateMldAddrByMainBss(
 	struct BSS_INFO *prBssInfo = NULL;
 
 	if (!prAdapter || !prMldBssInfo ||
-	    prMldBssInfo->rBssList.u4NumElem == 0)
+	    LINK_IS_EMPTY(&prMldBssInfo->rBssList))
 		return;
 
 	if (!prAdapter->rWifiVar.ucMldAddrOverride) {
@@ -1957,7 +1959,7 @@ int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 		}
 	}
 
-	if (prStarecList->u4NumElem == 0)
+	if (LINK_IS_EMPTY(prStarecList))
 		prMldStarec->u2PrimaryMldId = prStarec->ucWlanIndex;
 	else if (prStarecList->u4NumElem == 1)
 		prMldStarec->u2SecondMldId = prStarec->ucWlanIndex;
@@ -2011,7 +2013,7 @@ void mldStarecUnregister(struct ADAPTER *prAdapter,
 		break;
 	}
 
-	if (prStarecList->u4NumElem == 0)
+	if (LINK_IS_EMPTY(prStarecList))
 		mldStarecFree(prAdapter, prMldStarec);
 }
 
