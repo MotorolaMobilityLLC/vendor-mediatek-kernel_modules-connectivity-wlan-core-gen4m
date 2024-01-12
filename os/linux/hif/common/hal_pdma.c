@@ -2992,6 +2992,20 @@ void halWpdmaProcessDataDmaDone(struct GLUE_INFO *prGlueInfo,
 #endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 }
 
+u_int8_t halIsWfdmaRxRingReady(struct GLUE_INFO *prGlueInfo, uint8_t ucRingNum)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct RTMP_RX_RING *prRxRing;
+	uint32_t u4CpuIdx = 0;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prRxRing = &prHifInfo->RxRing[ucRingNum];
+	u4CpuIdx = prRxRing->RxCpuIdx;
+	INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
+
+	return halIsWfdmaRxReady(prRxRing, u4CpuIdx);
+}
+
 uint32_t halWpdmaGetRxDmaDoneCnt(struct GLUE_INFO *prGlueInfo,
 	uint8_t ucRingNum)
 {
