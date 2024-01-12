@@ -292,20 +292,21 @@ struct PCIE_CHIP_CR_MAPPING soc3_0_bus2chip_cr_mapping[] = {
 #endif
 
 struct wfdma_group_info soc3_0_wfmda_host_tx_group[] = {
-	{"P1T0:AP DATA0", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING0_CTRL0_ADDR},
-	{"P1T1:AP DATA1", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING1_CTRL0_ADDR},
-	{"P1T16:FWDL", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING16_CTRL0_ADDR},
-	{"P1T17:AP CMD", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING17_CTRL0_ADDR},
-	{"P1T8:MD DATA", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING8_CTRL0_ADDR},
+	{"P1T0:AP DATA0", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING0_CTRL0_ADDR, true},
+	{"P1T1:AP DATA1", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING1_CTRL0_ADDR, true},
+	{"P1T17:AP CMD", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING17_CTRL0_ADDR, true},
+	{"P1T16:FWDL", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING16_CTRL0_ADDR, true},
+	{"P1T8:MD DATA0", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING8_CTRL0_ADDR},
+	{"P1T9:MD DATA1", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING9_CTRL0_ADDR},
 	{"P1T18:MD CMD", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING18_CTRL0_ADDR},
 };
 
 struct wfdma_group_info soc3_0_wfmda_host_rx_group[] = {
-	{"P0R0:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL0_ADDR},
-	{"P0R1:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING1_CTRL0_ADDR},
+	{"P0R0:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL0_ADDR, true},
+	{"P1R0:AP EVENT", WF_WFDMA_HOST_DMA1_WPDMA_RX_RING0_CTRL0_ADDR, true},
+	{"P0R1:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING1_CTRL0_ADDR, true},
 	{"P0R2:AP TDONE0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING2_CTRL0_ADDR},
 	{"P0R3:AP TDONE1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING3_CTRL0_ADDR},
-	{"P1R0:AP EVENT", WF_WFDMA_HOST_DMA1_WPDMA_RX_RING0_CTRL0_ADDR},
 	{"P0R4:MD DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_CTRL0_ADDR},
 	{"P0R5:MD DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING5_CTRL0_ADDR},
 	{"P0R6:MD TDONE0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING6_CTRL0_ADDR},
@@ -327,23 +328,76 @@ struct wfdma_group_info soc3_0_wfmda_wm_rx_group[] = {
 	{"P1R2:MD CMD", WF_WFDMA_MCU_DMA1_WPDMA_RX_RING2_CTRL0_ADDR},
 };
 
+static uint8_t soc3_0SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
+		struct BUS_INFO *prBusInfo, uint32_t u4SwRingIdx)
+{
+	uint32_t offset = 0;
+	bool fgIsWfdma1 = false;
+
+	/*
+	 * RX_RING_EVT_IDX_1     (RX_Ring0) - Rx Event
+	 * RX_RING_DATA_IDX_0    (RX_Ring0) - Band0 Rx Data
+	 * RX_RING_DATA1_IDX_2   (RX_Ring1) - Band1 Rx Data
+	 * RX_RING_TXDONE0_IDX_3 (RX_Ring2) - Band0 Tx Free Done Event
+	 * RX_RING_TXDONE1_IDX_4 (RX_Ring3) - Band1 Tx Free Done Event
+	*/
+	switch (u4SwRingIdx) {
+	case RX_RING_EVT_IDX_1:
+		offset = 0;
+		fgIsWfdma1 = true;
+		break;
+	case RX_RING_DATA_IDX_0:
+		offset = 0;
+		break;
+	case RX_RING_DATA1_IDX_2:
+	case RX_RING_TXDONE0_IDX_3:
+	case RX_RING_TXDONE1_IDX_4:
+		offset = (u4SwRingIdx - 1) * MT_RINGREG_DIFF;
+		break;
+	default:
+		return FALSE;
+	}
+
+	if (fgIsWfdma1) {
+		prRxRing->hw_desc_base =
+			prBusInfo->host_wfdma1_rx_ring_base + offset;
+		prRxRing->hw_cidx_addr =
+			prBusInfo->host_wfdma1_rx_ring_cidx_addr + offset;
+		prRxRing->hw_didx_addr =
+			prBusInfo->host_wfdma1_rx_ring_didx_addr + offset;
+		prRxRing->hw_cnt_addr =
+			prBusInfo->host_wfdma1_rx_ring_cnt_addr + offset;
+	} else {
+		prRxRing->hw_desc_base =
+			prBusInfo->host_rx_ring_base + offset;
+		prRxRing->hw_cidx_addr =
+			prBusInfo->host_rx_ring_cidx_addr + offset;
+		prRxRing->hw_didx_addr =
+			prBusInfo->host_rx_ring_didx_addr + offset;
+		prRxRing->hw_cnt_addr =
+			prBusInfo->host_rx_ring_cnt_addr + offset;
+	}
+
+	return TRUE;
+}
+
 static bool soc3_0WfdmaAllocRxRing(
 	struct GLUE_INFO *prGlueInfo,
 	bool fgAllocMem)
 {
-	if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA0_RX_RING_IDX_2,
+	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_DATA1_IDX_2,
+			RX_RING0_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+			fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
+		return false;
+	}
+	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_TXDONE0_IDX_3,
 			RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
 			fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
 		return false;
 	}
-	if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA0_RX_RING_IDX_3,
-			RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
-			fgAllocMem)) {
-		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
-		return false;
-	}
-	if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA1_RX_RING_IDX_0,
+	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_TXDONE1_IDX_4,
 			RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
 			fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
@@ -581,24 +635,24 @@ void soc3_0asicConnac2xProcessRxInterrupt(
 
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
 	if (rIntrStatus.field_conn2x_ext.wfdma1_rx_done_0 ||
-		(prAdapter->u4NoMoreRfb & BIT(WFDMA1_RX_RING_IDX_0)))
-		halRxReceiveRFBs(prAdapter, WFDMA1_RX_RING_IDX_0, FALSE);
+		(prAdapter->u4NoMoreRfb & BIT(RX_RING_EVT_IDX_1)))
+		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, FALSE);
 
 	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_0 ||
 		(prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA_IDX_0)))
 		halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0, TRUE);
 
 	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_1 ||
-		(prAdapter->u4NoMoreRfb & BIT(RX_RING_EVT_IDX_1)))
-		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, TRUE);
+		(prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA1_IDX_2)))
+		halRxReceiveRFBs(prAdapter, RX_RING_DATA1_IDX_2, TRUE);
 
 	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_2 ||
-		(prAdapter->u4NoMoreRfb & BIT(WFDMA0_RX_RING_IDX_2)))
-		halRxReceiveRFBs(prAdapter, WFDMA0_RX_RING_IDX_2, TRUE);
+		(prAdapter->u4NoMoreRfb & BIT(RX_RING_TXDONE0_IDX_3)))
+		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0_IDX_3, TRUE);
 
 	if (rIntrStatus.field_conn2x_ext.wfdma0_rx_done_3 ||
-		(prAdapter->u4NoMoreRfb & BIT(WFDMA0_RX_RING_IDX_3)))
-		halRxReceiveRFBs(prAdapter, WFDMA0_RX_RING_IDX_3, TRUE);
+		(prAdapter->u4NoMoreRfb & BIT(RX_RING_TXDONE1_IDX_4)))
+		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE1_IDX_4, TRUE);
 }
 
 static void soc3_0SetMDRXRingPriorityInterrupt(struct ADAPTER *prAdapter)
@@ -849,6 +903,7 @@ struct BUS_INFO soc3_0_bus_info = {
 	.initPcieInt = NULL,
 	.devReadIntStatus = soc3_0ReadExtIntStatus,
 	.DmaShdlInit = mt6885DmashdlInit,
+	.setRxRingHwAddr = soc3_0SetRxRingHwAddr,
 	.wfdmaAllocRxRing = soc3_0WfdmaAllocRxRing,
 
 	.rSwWfdmaInfo = {

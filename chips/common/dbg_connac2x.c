@@ -2988,6 +2988,7 @@ void connac2x_show_wfdma_desc(IN struct ADAPTER *prAdapter)
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct RTMP_TX_RING *prTxRing;
 	struct RTMP_RX_RING *prRxRing;
+	struct wfdma_group_info *prGroup;
 	uint32_t i = 0, u4SwIdx;
 
 	/* PDMA Tx/Rx descriptor & packet content */
@@ -2995,33 +2996,30 @@ void connac2x_show_wfdma_desc(IN struct ADAPTER *prAdapter)
 	prBusInfo = prAdapter->chip_info->bus_info;
 
 	for (i = 0; i < prBusInfo->wfmda_host_tx_group_len; i++) {
-		if (!prBusInfo->wfmda_host_tx_group[i].dump_ring_content)
+		prGroup = &prBusInfo->wfmda_host_tx_group[i];
+		if (!prGroup->dump_ring_content)
 			continue;
 		DBGLOG(HAL, INFO, "Dump PDMA Tx Ring[%u]\n", i);
 		prTxRing = &prHifInfo->TxRing[i];
-		u4SwIdx = prBusInfo->wfmda_host_tx_group[i].didx;
+		u4SwIdx = prGroup->didx;
 		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing,
 			      u4SwIdx, true);
-		u4SwIdx = prBusInfo->wfmda_host_tx_group[i].didx == 0 ?
-			prBusInfo->wfmda_host_tx_group[i].cnt - 1 :
-			prBusInfo->wfmda_host_tx_group[i].didx - 1;
-		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing,
-			      u4SwIdx, true);
+		u4SwIdx = prGroup->didx == 0 ?
+			prGroup->cnt - 1 : prGroup->didx - 1;
+		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing, u4SwIdx, true);
 	}
 
 	for (i = 0; i < prBusInfo->wfmda_host_rx_group_len; i++) {
-		if (!prBusInfo->wfmda_host_rx_group[i].dump_ring_content)
+		prGroup = &prBusInfo->wfmda_host_rx_group[i];
+		if (!prGroup->dump_ring_content)
 			continue;
 		DBGLOG(HAL, INFO, "Dump PDMA Rx Ring[%u]\n", i);
 		prRxRing = &prHifInfo->RxRing[i];
-		u4SwIdx = prBusInfo->wfmda_host_rx_group[i].didx;
-		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing,
-			      u4SwIdx, true);
-		u4SwIdx = prBusInfo->wfmda_host_rx_group[i].didx == 0 ?
-			prBusInfo->wfmda_host_rx_group[i].cnt - 1 :
-			prBusInfo->wfmda_host_rx_group[i].didx - 1;
-		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing,
-			      u4SwIdx, true);
+		u4SwIdx = prGroup->didx;
+		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing, u4SwIdx, true);
+		u4SwIdx = prGroup->didx == 0 ?
+			prGroup->cnt - 1 : prGroup->didx - 1;
+		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing, u4SwIdx, true);
 	}
 }
 

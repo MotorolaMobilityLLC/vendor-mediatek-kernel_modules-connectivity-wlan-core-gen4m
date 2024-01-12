@@ -229,9 +229,9 @@ static uint8_t mt7961SetRxRingHwAddr(
 	/*
 	 * RX_RING_EVT_IDX_1    (RX_Ring0) - Rx Event
 	 * RX_RING_DATA_IDX_0   (RX_Ring2) - Band0 Rx Data
-	 * WFDMA0_RX_RING_IDX_2 (RX_Ring3) - Band1 Rx Data
-	 * WFDMA0_RX_RING_IDX_3 (RX_Ring4) - Band0 Tx Free Done Event
-	 * WFDMA1_RX_RING_IDX_0 (RX_Ring5) - Band1 Tx Free Done Event
+	 * RX_RING_DATA1_IDX_2 (RX_Ring3) - Band1 Rx Data
+	 * RX_RING_TXDONE0_IDX_3 (RX_Ring4) - Band0 Tx Free Done Event
+	 * RX_RING_TXDONE1_IDX_4 (RX_Ring5) - Band1 Tx Free Done Event
 	*/
 	switch (u4SwRingIdx) {
 	case RX_RING_EVT_IDX_1:
@@ -240,9 +240,9 @@ static uint8_t mt7961SetRxRingHwAddr(
 	case RX_RING_DATA_IDX_0:
 		offset = RX_DATA_RING_BASE_IDX * MT_RINGREG_DIFF;
 		break;
-	case WFDMA0_RX_RING_IDX_2:
-	case WFDMA0_RX_RING_IDX_3:
-	case WFDMA1_RX_RING_IDX_0:
+	case RX_RING_DATA1_IDX_2:
+	case RX_RING_TXDONE0_IDX_3:
+	case RX_RING_TXDONE1_IDX_4:
 		offset = (u4SwRingIdx + 1) * MT_RINGREG_DIFF;
 		break;
 	default:
@@ -263,21 +263,21 @@ static bool mt7961LiteWfdmaAllocRxRing(
 {
 	/* Band1 Data Rx path */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			WFDMA0_RX_RING_IDX_2, RX_RING0_SIZE,
+			RX_RING_DATA1_IDX_2, RX_RING0_SIZE,
 			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[0] fail\n");
 		return false;
 	}
 	/* Band0 Tx Free Done Event */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			WFDMA0_RX_RING_IDX_3, RX_RING1_SIZE,
+			RX_RING_TXDONE0_IDX_3, RX_RING1_SIZE,
 			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
 		return false;
 	}
 	/* Band1 Tx Free Done Event */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			WFDMA1_RX_RING_IDX_0, RX_RING1_SIZE,
+			RX_RING_TXDONE1_IDX_4, RX_RING1_SIZE,
 			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
 		return false;
@@ -321,13 +321,13 @@ static void mt7961Connac2xProcessRxInterrupt(
 		halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0, TRUE);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_3)
-		halRxReceiveRFBs(prAdapter, WFDMA0_RX_RING_IDX_2, TRUE);
+		halRxReceiveRFBs(prAdapter, RX_RING_DATA1_IDX_2, TRUE);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_4)
-		halRxReceiveRFBs(prAdapter, WFDMA0_RX_RING_IDX_3, TRUE);
+		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0_IDX_3, TRUE);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_5)
-		halRxReceiveRFBs(prAdapter, WFDMA1_RX_RING_IDX_0, TRUE);
+		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE1_IDX_4, TRUE);
 }
 
 static void mt7961Connac2xWfdmaManualPrefetch(
