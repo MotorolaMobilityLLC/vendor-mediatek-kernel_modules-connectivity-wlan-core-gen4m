@@ -944,7 +944,7 @@ nanRangingFrameSend(struct ADAPTER *prAdapter, uint8_t *PeerAddr,
 
 	nicTxSetPktRetryLimit(prMsduInfo, 3);
 
-	nicTxSetPktLifeTime(prMsduInfo, 0);
+	nicTxSetPktLifeTime(prAdapter, prMsduInfo, 0);
 
 	/* 4 <6> Enqueue the frame to send this ranging frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);

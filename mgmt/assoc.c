@@ -699,7 +699,7 @@ struct MSDU_INFO* assocComposeReAssocReqFrame(IN struct ADAPTER *prAdapter,
 					       &u2PayloadLen);
 
 	/* 4 <3> Update information of MSDU_INFO_T */
-	nicTxSetPktLifeTime(prMsduInfo, 100);
+	nicTxSetPktLifeTime(prAdapter, prMsduInfo, 100);
 	nicTxSetPktRetryLimit(prMsduInfo, TX_DESC_TX_COUNT_NO_LIMIT);
 	nicTxSetForceRts(prMsduInfo, TRUE);
 
@@ -1331,7 +1331,7 @@ uint32_t assocSendDisAssocFrame(IN struct ADAPTER *prAdapter,
 	u2PayloadLen = REASON_CODE_FIELD_LEN;
 
 	/* 4 <3> Update information of MSDU_INFO_T */
-	nicTxSetPktLifeTime(prMsduInfo, 100);
+	nicTxSetPktLifeTime(prAdapter, prMsduInfo, 100);
 	nicTxSetPktRetryLimit(prMsduInfo, TX_DESC_TX_COUNT_NO_LIMIT);
 	nicTxSetForceRts(prMsduInfo, TRUE);
 
@@ -2140,7 +2140,7 @@ struct MSDU_INFO * assocComposeReAssocRespFrame(IN struct ADAPTER *prAdapter,
 			&u2PayloadLen);
 
 	/* 4 <3> Update information of MSDU_INFO_T */
-	nicTxSetPktLifeTime(prMsduInfo, 100);
+	nicTxSetPktLifeTime(prAdapter, prMsduInfo, 100);
 	nicTxSetPktRetryLimit(prMsduInfo, TX_DESC_TX_COUNT_NO_LIMIT);
 	nicTxSetForceRts(prMsduInfo, TRUE);
 

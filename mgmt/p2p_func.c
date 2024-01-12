@@ -1221,7 +1221,7 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			 * to the STA only wait 30-50mS
 			 */
 			/* and AP do not need send it after STA left */
-			nicTxSetPktLifeTime(prMgmtTxMsdu, 100);
+			nicTxSetPktLifeTime(prAdapter, prMgmtTxMsdu, 100);
 
 			/*
 			 * Not check prMsduInfo sanity
