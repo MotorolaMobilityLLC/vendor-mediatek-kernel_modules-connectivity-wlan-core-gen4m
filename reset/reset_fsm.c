@@ -22,6 +22,8 @@
 */
 #include <linux/string.h>
 #include <linux/slab.h>
+#include <linux/preempt.h>
+
 #include "reset.h"
 
 /**********************************************************************
@@ -63,31 +65,47 @@
 /**********************************************************************
 *                              F U N C T I O N S
 **********************************************************************/
-struct FsmEntity *allocFsmEntity(char *name,
-				enum ModuleType eModuleType,
-				enum TriggerResetApiType resetApiType)
+struct FsmEntity *allocFsmEntity(char *name, enum ModuleType eModuleType)
 {
 	struct FsmEntity *fsm;
-
+#if CFG_RESETKO_ENABLE_WAKE_LOCK
+	char wakeupSourceName[RFSM_NAME_MAX_LEN];
+	int ret;
+#endif
 	if ((!name) ||
-	    ((unsigned int)eModuleType >= RESET_MODULE_TYPE_MAX) ||
-	    ((unsigned int)resetApiType >= TRIGGER_RESET_API_TYPE_MAX))
+	    ((unsigned int)eModuleType >= RESET_MODULE_TYPE_MAX))
 		return NULL;
 
-	fsm = kmalloc(sizeof(struct FsmEntity), GFP_KERNEL);
+	fsm = kmalloc(sizeof(struct FsmEntity),
+		      in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
 	if (!fsm)
 		return NULL;
-	fsm->name = kmalloc(RFSM_NAME_MAX_LEN, GFP_KERNEL);
+	fsm->name = kmalloc(RFSM_NAME_MAX_LEN,
+			    in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
 	if (fsm->name == NULL) {
 		kfree(fsm);
 		return NULL;
 	}
 	strncpy(fsm->name, name, RFSM_NAME_MAX_LEN);
 	fsm->eModuleType = eModuleType;
-	fsm->resetApiType = resetApiType;
-	fsm->fgReadyForReset = false;
-	fsm->resetFunc = NULL;
+	fsm->fgReady = false;
 	fsm->notifyFunc = NULL;
+
+	fsm->wakeupCount = 0;
+#if CFG_RESETKO_ENABLE_WAKE_LOCK
+	ret = snprintf(wakeupSourceName, RFSM_NAME_MAX_LEN, "resetko_%s", name);
+	if (ret > 0) {
+		fsm->wakeupSource = wakeup_source_create(wakeupSourceName);
+		if (!fsm->wakeupSource) {
+			MR_Err("fail to create wakeup resource(%s)\n",
+				wakeupSourceName);
+		} else {
+			wakeup_source_add(fsm->wakeupSource);
+			MR_Info("success to create wakeup resource (%s)\n",
+				wakeupSourceName);
+		}
+	}
+#endif
 
 	return fsm;
 }
@@ -96,6 +114,15 @@ void freeFsmEntity(struct FsmEntity *fsm)
 {
 	if (!fsm)
 		return;
+
+#if CFG_RESETKO_ENABLE_WAKE_LOCK
+	if (fsm->wakeupSource) {
+		wakeup_source_remove(fsm->wakeupSource);
+		wakeup_source_destroy(fsm->wakeupSource);
+		fsm->wakeupSource = NULL;
+	}
+#endif
+	fsm->wakeupCount = 0;
 
 	if (fsm->name != NULL) {
 		memset(fsm->name, 0, RFSM_NAME_MAX_LEN);
