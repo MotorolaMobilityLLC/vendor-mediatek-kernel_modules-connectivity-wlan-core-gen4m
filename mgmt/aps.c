@@ -749,6 +749,10 @@ static uint16_t scanCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
 		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
+	if (prBssDesc->eBand < 0 || prBssDesc->eBand >= BAND_NUM) {
+		log_dbg(SCN, WARN, "Invalid Band %d\n", prBssDesc->eBand);
+		return 0;
+	}
 	if (prBssDesc->fgExsitBssLoadIE) {
 		cu = prBssDesc->ucChnlUtilization;
 	} else {
@@ -841,6 +845,11 @@ uint16_t scanCalculateScoreByTput(struct ADAPTER *prAdapter,
 {
 	uint16_t u2Score = 0;
 
+	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
+		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+		return 0;
+	}
+
 #if CFG_SUPPORT_MBO
 	if (prBssDesc->fgExistEspIE)
 		u2Score = (prBssDesc->u4EspInfo[ESP_AC_BE] >> 8) & 0xff;
@@ -858,7 +867,11 @@ uint16_t scanCalculateScoreByPreference(struct ADAPTER *prAdapter,
 		if (prBssDesc->prNeighbor) {
 			enum CONN_ROAM_TYPE eRoamType =
 				roamReasonToType[eRoamReason];
-
+			if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
+				log_dbg(SCN, WARN,
+					"Invalid roam type %d!\n", eRoamType);
+				return 0;
+			}
 			return prBssDesc->prNeighbor->ucPreference *
 			       gasMtkWeightConfig[eRoamType].ucPreferenceWeight;
 		}
@@ -904,6 +917,10 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 
 	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
 		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+		return 0;
+	}
+	if (prBssDesc->eBand < 0 || prBssDesc->eBand >= BAND_NUM) {
+		log_dbg(SCN, WARN, "Invalid Band %d\n", prBssDesc->eBand);
 		return 0;
 	}
 	u2ScoreBandwidth =
@@ -1693,19 +1710,24 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *ad,
 	apsIntraApSelection(ad, reason, bidx);
 	cand = apsInterApSelection(ad, set, reason, bidx);
 	if (cand) {
-		DBGLOG(APS, INFO,
-			"Selected " MACSTR ", RSSI[%d] Band[%s] when find %s, "
-			MACSTR " policy=%d in %d(%d) BSSes.\n",
-			MAC2STR(cand->aucBSSID),
-			RCPI_TO_dBm(cand->ucRCPI),
-			apucBandStr[cand->eBand], HIDE(conn->aucSSID),
-			conn->eConnectionPolicy == CONNECT_BY_BSSID ?
-			MAC2STR(conn->aucBSSID) :
-			MAC2STR(conn->aucBSSIDHint),
-			conn->eConnectionPolicy,
-			count,
-			ess->u4NumElem);
-		goto done;
+		if (cand->eBand < 0 || cand->eBand >= BAND_NUM) {
+			DBGLOG(APS, WARN, "Invalid Band %d\n", cand->eBand);
+		} else {
+			DBGLOG(APS, INFO,
+				"Selected "
+				MACSTR ", RSSI[%d] Band[%s] when find %s, "
+				MACSTR " policy=%d in %d(%d) BSSes.\n",
+				MAC2STR(cand->aucBSSID),
+				RCPI_TO_dBm(cand->ucRCPI),
+				apucBandStr[cand->eBand], HIDE(conn->aucSSID),
+				conn->eConnectionPolicy == CONNECT_BY_BSSID ?
+				MAC2STR(conn->aucBSSID) :
+				MAC2STR(conn->aucBSSIDHint),
+				conn->eConnectionPolicy,
+				count,
+				ess->u4NumElem);
+			goto done;
+		}
 	}
 
 	DBGLOG(APS, INFO, "Selected None when find %s, " MACSTR
