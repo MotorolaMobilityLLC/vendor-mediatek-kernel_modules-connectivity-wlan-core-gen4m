@@ -547,6 +547,7 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 				WLAN_CFG_VALUE_LEN_MAX - 1]);
 			kalMemSet(g_aucProcBuf, 0, u4StrLen);
 			kalStrnCpy(g_aucProcBuf, str2, kalStrLen(str2) + 1);
+			g_aucProcBuf[kalStrLen(str2)] = '\0';
 			goto procCfgReadLabel;
 		}
 
@@ -579,6 +580,7 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 				WLAN_CFG_VALUE_LEN_MAX - 1]);
 			kalMemSet(g_aucProcBuf, 0, u4StrLen);
 			kalStrnCpy(g_aucProcBuf, str2, kalStrLen(str2) + 1);
+			g_aucProcBuf[kalStrLen(str2)] = '\0';
 			goto procCfgReadLabel;
 		}
 
@@ -1411,6 +1413,11 @@ static ssize_t procMCRWrite(struct file *file, const char __user *buffer,
 	num =
 	    sscanf(acBuf, "0x%x 0x%x", &rMcrInfo.u4McrOffset,
 		   &rMcrInfo.u4McrData);
+	if (num < 0) {
+		DBGLOG(INIT, ERROR, "can not get correct data\n");
+		return 0;
+	}
+
 	switch (num) {
 	case 2:
 		/* NOTE: Sometimes we want to test if bus will still be ok,
