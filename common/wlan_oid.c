@@ -12821,7 +12821,7 @@ wlanoidSetCountryCode(IN struct ADAPTER *prAdapter,
 
 	/* Force to re-search country code in regulatory domains */
 	prAdapter->prDomainInfo = NULL;
-	rlmDomainSendCmd(prAdapter);
+	rlmDomainSendCmd(prAdapter, TRUE);
 
 	/* Update supported channel list in channel table based on current
 	 * country domain

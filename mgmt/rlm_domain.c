@@ -1678,14 +1678,15 @@ u_int8_t rlmDomainIsDfsChnls(struct ADAPTER *prAdapter, uint8_t ucChannel)
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void rlmDomainSendCmd(struct ADAPTER *prAdapter)
+void rlmDomainSendCmd(struct ADAPTER *prAdapter, bool fgPwrLmtSend)
 {
 
 	if (!regd_is_single_sku_en())
 		rlmDomainSendPassiveScanInfoCmd(prAdapter);
 	rlmDomainSendDomainInfoCmd(prAdapter);
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
-	rlmDomainSendPwrLimitCmd(prAdapter);
+	if (fgPwrLmtSend)
+		rlmDomainSendPwrLimitCmd(prAdapter);
 #endif
 }
 
@@ -2535,7 +2536,7 @@ void rlmDomainCountryCodeUpdate(
 		(uint16_t)rlmDomainGetCountryCode();
 
 	/* Send commands to firmware */
-	rlmDomainSendCmd(prAdapter);
+	rlmDomainSendCmd(prAdapter, TRUE);
 
 }
 void

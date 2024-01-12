@@ -1353,7 +1353,7 @@ void rlmDomainGetDfsChnls(struct ADAPTER *prAdapter,
 u_int8_t rlmDomainIsDfsChnls(struct ADAPTER *prAdapter,
 				uint8_t ucChannel);
 
-void rlmDomainSendCmd(struct ADAPTER *prAdapter);
+void rlmDomainSendCmd(struct ADAPTER *prAdapter, bool fgPwrLmtSend);
 
 void rlmDomainSendDomainInfoCmd(struct ADAPTER *prAdapter);
 
