@@ -4714,7 +4714,7 @@ wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 	OS_SYSTIME rUpdateDeltaTime;
 	struct PARAM_LINK_SPEED_EX *pu4LinkSpeed;
-	DEBUGFUNC("wlanoidQueryLinkSpeed");
+	DEBUGFUNC("wlanoidQueryLinkSpeedEx");
 
 	ASSERT(prAdapter);
 	ASSERT(pu4QueryInfoLen);
@@ -13352,7 +13352,7 @@ wlanoidQueryCnm(
 	OUT uint32_t *pu4QueryInfoLen) {
 	struct PARAM_GET_CNM_T *prCnmInfo = NULL;
 
-	DEBUGFUNC("wlanoidQueryLinkSpeed");
+	DEBUGFUNC("wlanoidQueryCnm");
 
 	ASSERT(prAdapter);
 	ASSERT(pu4QueryInfoLen);
