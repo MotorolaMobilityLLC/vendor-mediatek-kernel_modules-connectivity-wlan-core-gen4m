@@ -1563,7 +1563,7 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 
 	if (prScanInfo->eCurrentState != SCAN_STATE_SCANNING
 		|| !prScanInfo->rScanParam.fgOobRnrParseEn) {
-		DBGLOG(SCN, INFO, "Skip oob scan Rnr parsing\n");
+		DBGLOG(SCN, TRACE, "Skip oob scan Rnr parsing\n");
 		return;
 	}
 
@@ -4800,7 +4800,7 @@ void scanParseEhtOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 			prBssDesc->eChannelWidth);
 		prBssDesc->ucCenterFreqS2 = 0;
 
-		DBGLOG(SCN, INFO,
+		DBGLOG(SCN, TRACE,
 			"[EHT OP IE] BSSID:" MACSTR
 			" SSID:%s CH: %u, BW: %u S1: %u S2: %u fixed s1: %u fixed s2: %u\n",
 			MAC2STR(prBssDesc->aucBSSID),
@@ -4812,7 +4812,7 @@ void scanParseEhtOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 			prBssDesc->ucCenterFreqS1,
 			prBssDesc->ucCenterFreqS2);
 	}
-	DBGLOG_MEM8(SCN, INFO, pucIE, IE_SIZE(pucIE));
+	DBGLOG_MEM8(SCN, TRACE, pucIE, IE_SIZE(pucIE));
 }
 #endif
 
