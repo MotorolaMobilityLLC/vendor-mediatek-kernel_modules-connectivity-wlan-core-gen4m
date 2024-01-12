@@ -1207,7 +1207,7 @@
  * Flags to force enable performance monitor even when screen is OFF
  *------------------------------------------------------------------------------
  */
-#define CFG_FORCE_ENABLE_PERF_MONITOR	0
+#define CFG_FORCE_ENABLE_PERF_MONITOR	1
 
 /*------------------------------------------------------------------------------
  * Flags to ignore invalid auth tsn issue (ex. ALPS03089071)
