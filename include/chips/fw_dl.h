@@ -105,17 +105,6 @@
 
 #define RELEASE_INFO_SEPARATOR_LEN  16
 
-#if CFG_MTK_ANDROID_EMI
-#define WIFI_EMI_ADDR_MASK     0xFFFFFF
-extern phys_addr_t gConEmiPhyBaseFinal;
-extern unsigned long long gConEmiSizeFinal;
-#endif
-
-#if (!defined(UT_TEST_MODE) || !defined(CFG_BUILD_X86_PLATFORM))
-extern phys_addr_t gConEmiPhyBase;
-extern unsigned long long gConEmiSize;
-#endif
-
 /*
  * patch format:
  * PATCH_FORMAT_V1 support 7636, 7637, 7615, 7622, CONNAC (p18, 7663)
@@ -490,10 +479,6 @@ uint32_t fwDlSetupReDl(struct ADAPTER *prAdapter,
 	uint32_t u4EmiOffset, uint32_t u4Size);
 #endif
 
-#endif
-
-#if (CFG_SUPPORT_CONNINFRA == 1)
-extern void conninfra_get_phy_addr(phys_addr_t *addr, unsigned int *size);
 #endif
 
 #endif /* _FW_DL_H */

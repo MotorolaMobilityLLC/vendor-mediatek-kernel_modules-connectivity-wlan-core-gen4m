@@ -155,11 +155,6 @@
 #define SOC3_0_PCIE2AP_REMAP_BASE_ADDR		0x50000
 #define SOC3_0_REMAP_BASE_ADDR			0x7c500000
 
-#if CFG_MTK_ANDROID_EMI
-extern phys_addr_t gConEmiPhyBaseFinal;
-extern unsigned long long gConEmiSizeFinal;
-#endif
-
 union soc3_0_WPDMA_INT_MASK {
 
 	struct {

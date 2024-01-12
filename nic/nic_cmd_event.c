@@ -2960,7 +2960,6 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 	struct CAP_LLS_DATA_EMI_OFFSET *prOffset =
 		(struct CAP_LLS_DATA_EMI_OFFSET *)pucEventBuf;
 	uint32_t size = sizeof(struct HAL_LLS_FULL_REPORT);
-	uint32_t offset = prOffset->u4DataEmiOffset & WIFI_EMI_ADDR_MASK;
 
 	uint32_t u4HostOffsetInfo =
 		OFFSET_OF(struct STATS_LLS_WIFI_IFACE_STAT, info);
@@ -2976,12 +2975,6 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 		OFFSET_OF(struct STATS_LLS_WIFI_RADIO_STAT, tx_time_per_levels);
 	uint32_t u4HostOffsetRxTime =
 		OFFSET_OF(struct STATS_LLS_WIFI_RADIO_STAT, rx_time);
-
-	if (!gConEmiPhyBaseFinal) {
-		DBGLOG(INIT, ERROR,
-		       "Invalid Consys EMI memory address gConEmiPhyBaseFinal");
-		return WLAN_STATUS_FAILURE;
-	}
 
 	DBGLOG(INIT, INFO, "Offset(Host): %u/%u/%u/%u/%u/%u/%u",
 			u4HostOffsetInfo, u4HostOffsetAc,
@@ -3009,17 +3002,15 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 
 	if (prAdapter->pucLinkStatsSrcBufferAddr) {
 		DBGLOG(INIT, WARN, "LLS EMI has already set, update it.");
-		iounmap(prAdapter->pucLinkStatsSrcBufferAddr);
 		prAdapter->pucLinkStatsSrcBufferAddr = NULL;
 	}
 
-	request_mem_region(gConEmiPhyBaseFinal + offset, size, "WIFI-LLS");
-
 	prAdapter->pucLinkStatsSrcBufferAddr =
-				ioremap(gConEmiPhyBaseFinal + offset, size);
+		emi_mem_get_vir_base(prAdapter->chip_info) +
+		emi_mem_offset_convert(prOffset->u4DataEmiOffset);
 
-	DBGLOG(INIT, INFO, "EMI Base=0x%llx, offset= %x, size=%zu",
-			gConEmiPhyBaseFinal, prOffset->u4DataEmiOffset, size);
+	DBGLOG(INIT, INFO, "offset= %x, size=%zu",
+		prOffset->u4DataEmiOffset, size);
 #endif
 	return WLAN_STATUS_SUCCESS;
 }

@@ -829,6 +829,7 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 	if (ret)
 		goto exit;
 
+	emi_mem_init(prChipInfo, pdev);
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
 	ret = axiAllocHifMem(pdev, prDriverData);
 	if (ret)
@@ -842,11 +843,16 @@ exit:
 
 static int mtk_axi_remove(IN struct platform_device *pdev)
 {
+	struct mt66xx_hif_driver_data *prDriverData =
+		platform_get_drvdata(pdev);
+	struct mt66xx_chip_info *prChipInfo = prDriverData->chip_info;
+
 	axiCsrIounmap(pdev);
 
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
 	axiFreeHifMem(pdev);
 #endif
+	emi_mem_uninit(prChipInfo, pdev);
 	platform_set_drvdata(pdev, NULL);
 	return 0;
 }

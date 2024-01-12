@@ -61,7 +61,7 @@ ifeq ($(WLAN_BUILD_COMMON), true)
 	CONNAC_VER := 3_0
 	WIFI_HIF := pcie
 	WIFI_WMT := y
-	WIFI_EMI := n
+	WIFI_EMI := y
 	WIFI_NAME := wlan_drv_gen4m_6639
 	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi_connac3.ko
 	CONFIG_WLAN_PLATFORM := mt6983
