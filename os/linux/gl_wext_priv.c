@@ -9693,6 +9693,7 @@ int priv_driver_set_unified_mlo_agc_tx(struct net_device *prNetDev,
 	uint32_t u4DispMgfTx = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
+	struct UNI_CMD_MLO_MLD_REC_LINK_AGC_TX mlo;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -9720,27 +9721,22 @@ int priv_driver_set_unified_mlo_agc_tx(struct net_device *prNetDev,
 	DBGLOG(REQ, ERROR, "Pol=%d,Mgf=%d,Ratio=%d,Order=%d\n",
 	       u4DispPolTx, u4DispMgfTx, u4DispRatioTx, u4DispOrderTx);
 
-	if (u4MldRecIdx >= MAX_MLO_MGMT_SUPPORT_MLD_NUM) {
-		DBGLOG(REQ, ERROR, "MldIdx should be less than %u\n",
-			MAX_MLO_MGMT_SUPPORT_MLD_NUM);
-		return -1;
-	}
-
-	if (u4MldRecLinkIdx >= MLD_LINK_MAX) {
-		DBGLOG(REQ, ERROR, "Link should be less than %u\n",
-			MLD_LINK_MAX);
-		return -1;
-	}
-
-	if (u4AcIdx >= MAX_MLO_MGMT_SUPPORT_AC_NUM) {
-		DBGLOG(REQ, ERROR, "Ac should less be than %u\n",
-			MAX_MLO_MGMT_SUPPORT_AC_NUM);
-		return -1;
-	}
-
 	if (i4Recv == 7) {
-		struct UNI_CMD_MLO_MLD_REC_LINK_AGC_TX mlo;
-
+		if (u4MldRecIdx >= MAX_MLO_MGMT_SUPPORT_MLD_NUM) {
+			DBGLOG(REQ, ERROR, "MldIdx should be less than %u\n",
+				MAX_MLO_MGMT_SUPPORT_MLD_NUM);
+			return -1;
+		}
+		if (u4MldRecLinkIdx >= MLD_LINK_MAX) {
+			DBGLOG(REQ, ERROR, "Link should be less than %u\n",
+				MLD_LINK_MAX);
+			return -1;
+		}
+		if (u4AcIdx >= MAX_MLO_MGMT_SUPPORT_AC_NUM) {
+			DBGLOG(REQ, ERROR, "Ac should less be than %u\n",
+				MAX_MLO_MGMT_SUPPORT_AC_NUM);
+			return -1;
+		}
 		mlo.u1MldRecIdx = (uint8_t)u4MldRecIdx;
 		mlo.u1MldRecLinkIdx = (uint8_t)u4MldRecLinkIdx;
 		mlo.u1AcIdx = (uint8_t)u4AcIdx;
