@@ -43,9 +43,7 @@
 #include <linux/of_irq.h>
 #include <linux/of_address.h>
 #include <linux/of.h>
-#if CFG_SUPPORT_WED_PROXY
 #include <linux/msi.h>
-#endif
 
 #if CFG_SUPPORT_RX_PAGE_POOL
 #if KERNEL_VERSION(6, 6, 0) > LINUX_VERSION_CODE
@@ -504,6 +502,58 @@ irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance)
 	return IRQ_HANDLED;
 }
 
+uint32_t mtk_pci_read_msi_mask(struct GLUE_INFO *prGlueInfo)
+{
+	struct pci_dev *dev = prGlueInfo->rHifInfo.pdev;
+	uint16_t control;
+	uint32_t mask;
+	int pos;
+
+	pci_read_config_word(dev, dev->msi_cap + PCI_MSI_FLAGS, &control);
+
+	if (control & PCI_MSI_FLAGS_64BIT)
+		pos = dev->msi_cap + PCI_MSI_MASK_64;
+	else
+		pos = dev->msi_cap + PCI_MSI_MASK_32;
+
+	pci_read_config_dword(dev, pos, &mask);
+
+	return mask;
+}
+
+static void mtk_pci_msi_unmask_irq(uint32_t u4IrqNum)
+{
+	struct irq_data *data;
+
+	data = irq_get_irq_data(u4IrqNum);
+	if (data)
+		pci_msi_unmask_irq(data);
+}
+
+void mtk_pci_msi_unmask_all_irq(struct GLUE_INFO *prGlueInfo)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct pcie_msi_info *prMsiInfo;
+	struct pcie_msi_layout *prMsiLayout;
+	int i;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prMsiInfo = &prGlueInfo->prAdapter->chip_info->bus_info->pcie_msi_info;
+	if (!prMsiInfo || !prMsiInfo->fgMsiEnabled)
+		return;
+
+	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
+		prMsiLayout = &prMsiInfo->prMsiLayout[i];
+		if (!prMsiLayout ||
+		    (!prMsiLayout->top_handler &&
+		     !prMsiLayout->thread_handler) ||
+		    prMsiLayout->type != AP_INT)
+			continue;
+
+		mtk_pci_msi_unmask_irq(prMsiLayout->irq_num);
+	}
+}
+
 void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter;
@@ -540,8 +590,13 @@ void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo)
 		    !prMsiLayout->irq_num)
 			continue;
 
-		if (KAL_TEST_AND_CLEAR_BIT(i, prMsiInfo->ulEnBits))
+		if (KAL_TEST_AND_CLEAR_BIT(i, prMsiInfo->ulEnBits)) {
 			enable_irq(prMsiLayout->irq_num);
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+			if (prBusInfo->is_en_drv_unmask_pci_msi_irq)
+				mtk_pci_msi_unmask_irq(prMsiLayout->irq_num);
+#endif
+		}
 	}
 }
 

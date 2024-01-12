@@ -164,6 +164,9 @@ static void mt6653WfdmaRxRingExtCtrl(
 	struct RTMP_RX_RING *rx_ring,
 	u_int32_t index);
 
+static void mt6653CheckFwOwnMsiStatus(struct ADAPTER *prAdapter);
+static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter);
+
 static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo);
 
 static void mt6653ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
@@ -613,6 +616,9 @@ struct BUS_INFO mt6653_bus_info = {
 #else
 	.fgCheckDriverOwnInt = FALSE,
 #endif /* CFG_MTK_WIFI_DRV_OWN_INT_MODE */
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+	.checkFwOwnMsiStatus = mt6653CheckFwOwnMsiStatus,
+#endif
 #if (CFG_MTK_ANDROID_WMT == 1)
 	.u4DmaMask = 36,
 #else /* !CFG_MTK_ANDROID_WMT */
@@ -664,6 +670,9 @@ struct BUS_INFO mt6653_bus_info = {
 		.prMsiLayout = mt6653_pcie_msi_layout,
 		.u4MaxMsiNum = ARRAY_SIZE(mt6653_pcie_msi_layout),
 	},
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+	.is_en_drv_unmask_pci_msi_irq = TRUE,
+#endif
 	.showDebugInfo = mt6653ShowPcieDebugInfo,
 #endif /* _HIF_PCIE */
 #if CFG_MTK_WIFI_WFDMA_WB
@@ -2908,6 +2917,49 @@ static void mt6653_set_crypto(struct ADAPTER *prAdapter)
 			CB_INFRA_SLP_CTRL_CB_INFRA_CRYPTO_TOP_MCU_OWN_SET_ADDR,
 			BIT(0));
 }
+
+#if defined(_HIF_PCIE)
+static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter)
+{
+	struct PERF_MONITOR *perf = &prAdapter->rPerMonitor;
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct pcie_msi_info *prMsiInfo = &prBusInfo->pcie_msi_info;
+	uint32_t u4Val = 0, u4Cnt = 0;
+
+	/* tput < 10mbps */
+	if (perf->u4CurrPerfLevel > 0)
+		return;
+
+	/* check wfdma bits(0-7) */
+	if (prMsiInfo->ulEnBits & 0xff)
+		return;
+
+	if (time_before(jiffies, prBusInfo->ulRecoveryMsiCheckTime))
+		return;
+
+	prBusInfo->ulRecoveryMsiCheckTime = jiffies +
+		prAdapter->rWifiVar.u4RecoveryMsiTime * HZ / 1000;
+
+	u4Cnt = halGetWfdmaRxCnt(prAdapter);
+	if (u4Cnt < prWifiVar->u4RecoveryMsiRxCnt)
+		return;
+
+	/* read PCIe EP MSI status */
+	u4Val = mtk_pci_read_msi_mask(prAdapter->prGlueInfo);
+	if ((u4Val & 0xff) == 0)
+		return;
+
+	mtk_pci_msi_unmask_all_irq(prAdapter->prGlueInfo);
+	DBGLOG(HAL, WARN, "Rx[%u] MSI_MASK=[0x%08x], unmask all msi irq",
+	       u4Cnt, u4Val);
+}
+
+static void mt6653CheckFwOwnMsiStatus(struct ADAPTER *prAdapter)
+{
+	mt6653RecoveryMsiStatus(prAdapter);
+}
+#endif
 
 static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
