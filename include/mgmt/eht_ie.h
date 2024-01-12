@@ -43,12 +43,15 @@ struct IE_EHT_CAP {
 #define EHT_SET_OP_PARAM_DIS_SUBCHANNEL_PRESENT(_aucEhtOpParams) \
 	(_aucEhtOpParams |= EHT_OP_PARAM_DIS_SUBCHANNEL_PRESENT)
 
+#define EHT_RESET_OP_PARAM_DIS_SUBCHANNEL_PRESENT(_aucEhtOpParams) \
+	(_aucEhtOpParams &= (~EHT_OP_PARAM_DIS_SUBCHANNEL_PRESENT))
+
 #define EHT_IS_OP_PARAM_DIS_SUBCHANNEL_PRESENT(_aucEhtOpParams) \
 	((_aucEhtOpParams & EHT_OP_PARAM_DIS_SUBCHANNEL_PRESENT) \
 	== EHT_OP_PARAM_DIS_SUBCHANNEL_PRESENT)
 
 __KAL_ATTRIB_PACKED_FRONT__
-struct EHT_DSCP_INFO {
+struct EHT_DSCB_INFO {
 	u_int16_t u2DisSubChannelBitmap;
 } __KAL_ATTRIB_PACKED__;
 
@@ -67,6 +70,7 @@ struct EHT_OP_INFO {
 	u_int8_t  ucControl;
 	u_int8_t  ucCCFS0;
 	u_int8_t  ucCCFS1;
+	u_int16_t  u2EhtDisSubChanBitmap;
 	/* DO NOT use zero-array in middle of other struct
 	 * which confuse size of compiler other than gcc
 	 * its used in the middle of struct BSS_INFO

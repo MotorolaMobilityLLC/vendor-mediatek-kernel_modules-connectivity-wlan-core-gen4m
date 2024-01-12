@@ -73,6 +73,8 @@
  */
 #include "precomp.h"
 #include "gl_ate_agent.h"
+#include "bss.h"
+
 
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
@@ -5401,14 +5403,14 @@ void nicEventWowWakeUpReason(struct ADAPTER *prAdapter,
 void nicEventUpdateStaticPPDscb(struct ADAPTER *prAdapter,
 	struct WIFI_EVENT *prEvent)
 {
-	struct EVENT_UPDATE_PP_DCSB *prEvtStaticPPDscb;
+	struct EVENT_UPDATE_PP_DSCB *prEvtStaticPPDscb;
 	struct BSS_INFO *prBssInfo;
 
 	if (!prAdapter)
 		return;
 
 	prEvtStaticPPDscb =
-			(struct EVENT_UPDATE_PP_DCSB *) (prEvent->aucBuffer);
+			(struct EVENT_UPDATE_PP_DSCB *) (prEvent->aucBuffer);
 
 	prBssInfo = prAdapter->aprBssInfo[prEvtStaticPPDscb->ucBssIndex];
 
@@ -5416,15 +5418,22 @@ void nicEventUpdateStaticPPDscb(struct ADAPTER *prAdapter,
 		return;
 
 	DBGLOG(NIC, INFO,
-		"[STATIC_PP_DCSB][EVENT] ucBssIndex=%d, fgIsDscbEnable=%d, u2DscbBitmap=%d\n",
+		"[STATIC_PP_DSCB][EVENT] ucBssIndex=%d, fgIsDscbEnable=%d, u2DscbBitmap=%d\n",
 				prEvtStaticPPDscb->ucBssIndex,
 				prEvtStaticPPDscb->fgIsDscbEnable,
 				prEvtStaticPPDscb->u2DscbBitmap);
 
 	prBssInfo->fgIsEhtDscbPresent = prEvtStaticPPDscb->fgIsDscbEnable;
 	prBssInfo->u2EhtDisSubChanBitmap = prEvtStaticPPDscb->u2DscbBitmap;
-}
+
+#if (CFG_SUPPORT_ADHOC || CFG_ENABLE_WIFI_DIRECT)
+	bssUpdateBeaconContentEx(prAdapter,
+		prEvtStaticPPDscb->ucBssIndex,
+			IE_UPD_METHOD_UPDATE_ALL);
 #endif
+
+}
+#endif /* #if CFG_SUPPORT_802_PP_DSCB */
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 /*----------------------------------------------------------------------------*/

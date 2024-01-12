@@ -1899,7 +1899,7 @@ struct EVENT_UPDATE_NOA_PARAMS {
 	struct EVENT_NOA_TIMING  arEventNoaTiming[8/*P2P_MAXIMUM_NOA_COUNT*/];
 };
 
-struct EVENT_UPDATE_PP_DCSB {
+struct EVENT_UPDATE_PP_DSCB {
 	uint8_t      ucBssIndex;
 	uint8_t      fgIsDscbEnable;
 	uint16_t     u2DscbBitmap;

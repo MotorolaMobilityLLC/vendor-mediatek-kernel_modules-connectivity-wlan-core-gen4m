@@ -490,10 +490,6 @@ static void ehtRlmFillOpIE(
 	struct MSDU_INFO *prMsduInfo)
 {
 	struct IE_EHT_OP *prEhtOp;
-#if CFG_SUPPORT_802_PP_DSCB
-	struct EHT_OP_INFO *prEhtOperInfo = NULL;
-	struct EHT_DSCP_INFO *prEhtDscpInfo = NULL;
-#endif
 	/* struct IE_EHT_OP is packed,
 	 * save to use sizeof instead of
 	 * using OFFSET_OF with ZERO array at end
@@ -540,28 +536,19 @@ static void ehtRlmFillOpIE(
 
 #if CFG_SUPPORT_802_PP_DSCB
 	if (IS_BSS_APGO(prBssInfo) &&
-		(prBssInfo->fgIsEhtOpPresent)) {
+		(EHT_IS_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams))) {
 
-		prEhtOperInfo =
-			(struct EHT_OP_INFO *)
-			(((uint8_t *) prEhtOp)+
-				u4OverallLen);
-
-		kalMemCopy(prEhtOperInfo, &prBssInfo->rEhtOpInfo,
-			sizeof(struct EHT_OP_INFO));
-
-		u4OverallLen += sizeof(struct EHT_OP_INFO);
-
-		if ((prBssInfo->fgIsEhtDscbPresent)) {
-			prEhtDscpInfo =
-				(struct EHT_DSCP_INFO *)
-				(((uint8_t *) prEhtOp)+
-				u4OverallLen);
-			kalMemCopy(prEhtDscpInfo, &prBssInfo->rEhtDscpInfo,
-				sizeof(struct EHT_DSCP_INFO));
-
-			u4OverallLen += sizeof(struct EHT_DSCP_INFO);
+		if (prBssInfo->fgIsEhtDscbPresent) {
+			EHT_SET_OP_PARAM_DIS_SUBCHANNEL_PRESENT(
+				prEhtOp->ucEhtOpParams);
+			prEhtOpInfo->u2EhtDisSubChanBitmap =
+				prBssInfo->u2EhtDisSubChanBitmap;
+		} else {
+			EHT_RESET_OP_PARAM_DIS_SUBCHANNEL_PRESENT(
+				prEhtOp->ucEhtOpParams);
+			prEhtOpInfo->u2EhtDisSubChanBitmap = 0;
 		}
+		u4OverallLen += 2;
 	}
 #endif
 
@@ -753,7 +740,7 @@ void ehtRlmRecOperation(
 #if CFG_SUPPORT_802_PP_DSCB
 	if (prBssInfo->fgIsEhtOpPresent &&
 	    prBssInfo->fgIsEhtDscbPresent) {
-		struct EHT_DSCP_INFO *prEhtDscpInfo = NULL;
+		struct EHT_DSCB_INFO *prEhtDscbInfo = NULL;
 		uint32_t u4EhtOffset;
 		uint16_t u2PreDscBitmap = 0;
 
@@ -764,11 +751,11 @@ void ehtRlmRecOperation(
 		 */
 		u4EhtOffset = OFFSET_OF(struct IE_EHT_OP, aucVarInfo[0]) +
 			      sizeof(struct EHT_OP_INFO);
-		prEhtDscpInfo = (struct EHT_DSCP_INFO *)
+		prEhtDscbInfo = (struct EHT_DSCB_INFO *)
 			(((uint8_t *) pucIE) + u4EhtOffset);
 		u2PreDscBitmap = prBssInfo->u2EhtDisSubChanBitmap;
 		prBssInfo->u2EhtDisSubChanBitmap =
-			prEhtDscpInfo->u2DisSubChannelBitmap;
+			prEhtDscbInfo->u2DisSubChannelBitmap;
 		nicUpdateDscb(prAdapter,
 			prBssInfo->ucBssIndex,
 			u2PreDscBitmap,

@@ -1240,6 +1240,7 @@ struct MSDU_INFO *bssComposeBeaconContent(struct ADAPTER *prAdapter,
 		DBGLOG(BSS, ERROR, "prBssInfo is null\n");
 		return NULL;
 	}
+
 	/* 4 <1> Allocate a PKT_INFO_T for Beacon Frame */
 	/* Allocate a MSDU_INFO_T */
 	/* For Beacon */
