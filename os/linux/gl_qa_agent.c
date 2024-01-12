@@ -7458,13 +7458,14 @@ static int32_t HQA_MUSetMUTable(struct net_device *prNetDev,
 	uint16_t u2Len = 0;
 	uint32_t u4SuMu = 0;
 
+	u2Len = ntohl(HqaCmdFrame->Length) - sizeof(u4SuMu);
+
 	prTable = kmalloc_array(u2Len, sizeof(uint8_t), GFP_KERNEL);
 
 	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MUSetMUTable\n");
 	if (!prTable)
 		return -EFAULT;
 
-	u2Len = ntohl(HqaCmdFrame->Length) - sizeof(u4SuMu);
 	if (4 + u2Len > sizeof(HqaCmdFrame->Data)) {
 		i4Ret = -EINVAL;
 		goto label_exit;
