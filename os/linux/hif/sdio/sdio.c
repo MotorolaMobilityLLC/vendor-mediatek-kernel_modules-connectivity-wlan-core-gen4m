@@ -905,6 +905,8 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	for (ucIdx = HIF_TXC_IDX_0; ucIdx < HIF_TXC_IDX_NUM; ucIdx++)
 		prHif->au4PendingTxDoneCount[ucIdx] = 0;
 
+	spin_lock_init(&prHif->rStateLock);
+
 	mutex_init(&prHif->rRxFreeBufQueMutex);
 	mutex_init(&prHif->rRxDeAggQueMutex);
 
