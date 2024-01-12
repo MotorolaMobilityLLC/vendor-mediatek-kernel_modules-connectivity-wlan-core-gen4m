@@ -316,9 +316,7 @@ enum ENUM_CMD_ID {
 
 	CMD_ID_FRM_IND_FROM_HOST = 0x7D,    /* 0x7D (Set) */
 	CMD_ID_PERF_IND = 0x7E,     /* 0x7E(Set) */
-#if CFG_SUPPORT_SMART_GEAR
 	CMD_ID_SG_PARAM = 0x7F, /* 0x7F(Set) */
-#endif
 	CMD_ID_GET_NIC_CAPABILITY   = 0x80, /* 0x80 (Query) */
 	CMD_ID_GET_LINK_QUALITY,            /* 0x81 (Query) */
 	CMD_ID_GET_STATISTICS,              /* 0x82 (Query) */
