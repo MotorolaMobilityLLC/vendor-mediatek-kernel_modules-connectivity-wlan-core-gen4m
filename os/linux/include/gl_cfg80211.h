@@ -556,6 +556,15 @@ int mtk_cfg_tdls_mgmt(struct wiphy *wiphy,
 		      u8 dialog_token, u16 status_code,
 		      const u8 *buf, size_t len);
 #endif
+#if CFG_SUPPORT_TDLS_OFFCHANNEL
+int mtk_tdls_channel_switch(struct wiphy *wiphy,
+		      struct net_device *dev,
+		      const u8 *addr, u8 oper_class,
+		      struct cfg80211_chan_def *chandef);
+void mtk_tdls_cancel_channel_switch(struct wiphy *wiphy,
+		      struct net_device *dev,
+		       const u8 *addr);
+#endif
 #endif /* CFG_SUPPORT_TDLS */
 
 #if KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE

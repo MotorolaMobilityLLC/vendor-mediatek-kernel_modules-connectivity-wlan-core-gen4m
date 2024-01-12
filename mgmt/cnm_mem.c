@@ -2057,6 +2057,11 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 				}
 			}
 		} else {
+#if CFG_SUPPORT_TDLS_11AX
+			if (prCmd->fgIsSupHe)
+				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
+#endif
+
 			if (prCmd->fgIsSupVht)
 				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
 
@@ -2221,6 +2226,33 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 			VHT_OP_MODE_RX_NSS;
 	}
 #endif /* CFG_SUPPORT_802_11AC */
+
+#if CFG_SUPPORT_TDLS_11AX
+	/* ++HE capability */
+	if (prCmd->fgIsSupHe) {
+		kalMemCopy(prStaRec->ucHeMacCapInfo,
+			prCmd->rHeCap.ucHeMacCapInfo, HE_MAC_CAP_BYTE_NUM);
+		kalMemCopy(prStaRec->ucHePhyCapInfo,
+			prCmd->rHeCap.ucHePhyCapInfo, HE_PHY_CAP_BYTE_NUM);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		prStaRec->u2He6gBandCapInfo = HE_6G_CAP_INFO_DEFAULT_VAL;
+#endif
+
+		for (i = 0; i < 8; i++) {
+			uint8_t ucOffset = i * 2;
+			uint8_t ucMcsMap;
+
+			if (i < wlanGetSupportNss(prAdapter,
+				prBssInfo->ucBssIndex))
+				ucMcsMap = HE_CAP_INFO_MCS_MAP_MCS11;
+			else
+				ucMcsMap = HE_CAP_INFO_MCS_NOT_SUPPORTED;
+
+			prStaRec->u2HeRxMcsMapBW80 |= (ucMcsMap << ucOffset);
+			prStaRec->u2HeTxMcsMapBW80 |= (ucMcsMap << ucOffset);
+		}
+	}
+#endif
 
 	cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_3);
 
