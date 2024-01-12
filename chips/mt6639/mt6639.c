@@ -619,6 +619,11 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 #endif
 #if (CFG_SUPPORT_DEBUG_SOP == 1)
 	.show_debug_sop_info = mt6639_show_debug_sop_info,
+#if defined(_HIF_PCIE)
+	.show_mcu_debug_info = mt6639_pcie_show_mcu_debug_info,
+#elif defined(_HIF_USB)
+	.show_mcu_debug_info = mt6639_usb_show_mcu_debug_info,
+#endif
 #endif
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	.get_rx_rate_info = mt6639_get_rx_rate_info,
