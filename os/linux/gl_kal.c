@@ -863,11 +863,13 @@ WLAN_STATUS kalRxIndicateOnePkt(IN P_GLUE_INFO_T prGlueInfo, IN PVOID pvPkt)
 {
 	struct net_device *prNetDev = prGlueInfo->prDevHandler;
 	struct sk_buff *prSkb = NULL;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prGlueInfo);
 	ASSERT(pvPkt);
 
 	prSkb = pvPkt;
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
 #if DBG && 0
 	do {
 		PUINT_8 pu4Head = (PUINT_8) &prSkb->cb[0];
@@ -941,6 +943,33 @@ WLAN_STATUS kalRxIndicateOnePkt(IN P_GLUE_INFO_T prGlueInfo, IN PVOID pvPkt)
 		       (PUINT_8) prSkb, prSkb->len, prSkb->protocol, prSkb->tail, prSkb->end);
 		DBGLOG_MEM32(RX, ERROR, (PUINT_32) prSkb->data, prSkb->len);
 	}
+
+	if (prSkb->protocol == NTOHS(ETH_P_8021Q)
+		&& !FEAT_SUP_LLC_VLAN_RX(prChipInfo)) {
+		/*
+		*  DA-MAC + SA-MAC + 0x8100 was removed in eth_type_trans()
+		*  pkt format here is TCI(2-bytes) + Len(2-btyes) + payload-type(2-bytes) + payload
+		*  Remove "Len" field inserted by RX VLAN header translation
+		*  Note: TCI+payload-type is a standard 8021Q header
+		*
+		*  This format update is based on RX VLAN HW header translation.
+		*  If the setting was changed, you may need to change rules here as well.
+		*/
+		const UINT_8 vlan_skb_mem_move = 2;
+
+		/* Remove "Len" and shift data pointer 2 bytes */
+		kalMemCopy(prSkb->data+vlan_skb_mem_move, prSkb->data, vlan_skb_mem_move);
+		skb_pull_rcsum(prSkb, vlan_skb_mem_move);
+
+		/* Have to update MAC header properly. Otherwise, wrong MACs woud be passed up */
+		kalMemMove(prSkb->data - ETH_HLEN, prSkb->data - ETH_HLEN - vlan_skb_mem_move, ETH_HLEN);
+		prSkb->mac_header += vlan_skb_mem_move;
+
+		skb_reset_network_header(prSkb);
+		skb_reset_transport_header(prSkb);
+		skb_reset_mac_len(prSkb);
+	}
+
 	if (!in_interrupt())
 		netif_rx_ni(prSkb);	/* only in non-interrupt context */
 	else
