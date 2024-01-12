@@ -141,6 +141,7 @@ struct DBDC_INFO_T {
 	/* Set DBDC setting for incoming network */
 	uint8_t ucPrimaryChannel;
 	uint8_t ucWmmQueIdx;
+	enum ENUM_BAND	eRfBand;
 
 	/* Used for iwpriv to force enable DBDC*/
 	bool fgHasSentCmd;
@@ -152,6 +153,9 @@ struct DBDC_INFO_T {
 
 	/* For debug */
 	OS_SYSTIME rPeivilegeLockTime;
+
+	/* Used to indicated current support DBDCAAMode or not */
+	bool fgIsDBDCAAMode;
 };
 
 enum ENUM_DBDC_FSM_EVENT_T {
@@ -296,22 +300,26 @@ struct EVENT_LTE_SAFE_CHN g_rLteSafeChInfo;
 	g_rDbdcInfo.eDbdcFsmCurrState \
 		== ENUM_DBDC_FSM_STATE_ENABLE_IDLE)?TRUE:FALSE)
 
-#define DBDC_SET_WMMBAND_FW_AUTO_BY_CHNL(_ucPrimaryChannel, _ucWmmQueIdx) \
+#define DBDC_SET_WMMBAND_FW_AUTO_BY_CHNL(_ucCh, _ucWmmQIdx, _eBand) \
 	{ \
-		g_rDbdcInfo.ucPrimaryChannel = (_ucPrimaryChannel);\
-		g_rDbdcInfo.ucWmmQueIdx = (_ucWmmQueIdx);\
+		g_rDbdcInfo.ucPrimaryChannel = (_ucCh);\
+		g_rDbdcInfo.ucWmmQueIdx = (_ucWmmQIdx);\
+		g_rDbdcInfo.eRfBand = (_eBand);\
 	}
+
 
 #define DBDC_SET_WMMBAND_FW_AUTO_DEFAULT() \
 	{ \
 		g_rDbdcInfo.ucPrimaryChannel = 0; \
 		g_rDbdcInfo.ucWmmQueIdx = 0;\
+		g_rDbdcInfo.eRfBand = BAND_NULL;\
 	}
 
 #define DBDC_UPDATE_CMD_WMMBAND_FW_AUTO(_prCmdBody) \
 	{ \
 		(_prCmdBody)->ucPrimaryChannel = g_rDbdcInfo.ucPrimaryChannel; \
 		(_prCmdBody)->ucWmmQueIdx = g_rDbdcInfo.ucWmmQueIdx; \
+		(_prCmdBody)->ucRfBand = g_rDbdcInfo.eRfBand; \
 		DBDC_SET_WMMBAND_FW_AUTO_DEFAULT(); \
 	}
 
@@ -2314,30 +2322,80 @@ void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 	}
 }
 
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief    Check if DBDC should be enabled
+ * @brief    Check A(5G)+A(6G) DBDC concurrent Condition
+ *
+ * @param (5G Channel Frequency)
+ * @param (6G Channel Frequency)
+ *
+ * @return TRUE: A(5G)+A(6G) use DBDC concurrent , FALSE: Not concurrent
+ */
+/*----------------------------------------------------------------------------*/
+static u_int8_t cnmDbdcDecideIsAAConcurrent(
+	IN struct ADAPTER *prAdapter,
+	IN u_int8_t uc5gCH,
+	IN u_int8_t uc6gCH)
+{
+	u_int16_t ucFrequency5G, ucFrequency6G;
+	u_int8_t fgAAConcurrent = FALSE;
+	uint16_t u2MiminmunFrequency =
+		prAdapter->rWifiFemCfg.u2WifiDBDCAwithAMinimumFrqInterval;
+
+	/*5G Channel start form 5000, EX: CH36 = 5180, CH132 = 5660*/
+	ucFrequency5G = uc5gCH * 5 + 5000;
+
+	/*6G Channel start form 5955,  EX: CH1 = 5955, CH5=5975*/
+	ucFrequency6G = (uc6gCH - 1) * 5 + 5955;
+
+	/* Check A+A can be DBDC or not */
+	if ((ucFrequency6G - ucFrequency5G) >= u2MiminmunFrequency) {
+		log_dbg(CNM, INFO, "[%s]decide AA DBDC = True\n", __func__);
+		fgAAConcurrent = TRUE;
+	}
+
+	log_dbg(CNM, INFO, "5CH[%u]F[%u],6CH[%u]F[%u],MinF[%u],AA[%d]\n",
+			uc5gCH, ucFrequency5G,
+			uc6gCH, ucFrequency6G,
+			u2MiminmunFrequency,
+			fgAAConcurrent);
+
+	return fgAAConcurrent;
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief    Check DBDC A+G / A+A  Condition
+ * refactor cnmDbdcIsAGConcurrent rename to cnmDbdcIsConcurrent
  *
  * @param (none)
  *
- * @return TRUE: A+G, FALSE: NOT A+G
+ * @return TRUE: DBDC A+G or A+A, FALSE: NOT for DBDC
  */
 /*----------------------------------------------------------------------------*/
-static u_int8_t cnmDbdcIsAGConcurrent(
+static u_int8_t cnmDbdcIsConcurrent(
 	IN struct ADAPTER *prAdapter,
-	IN enum ENUM_BAND eRfBand_Connecting)
+	IN enum ENUM_BAND eRfBand_Connecting,
+	IN uint8_t ucPrimaryCHConnecting)
 {
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucBssIndex;
 	enum ENUM_BAND eBandCompare = eRfBand_Connecting;
-	u_int8_t fgShouldDbdcEnabled = FALSE;
+	uint8_t ucCHCompare = ucPrimaryCHConnecting;
+	u_int8_t fgDBDCConcurrent = FALSE;
 	enum ENUM_BAND eBssBand[BSSID_NUM] = {BAND_NULL};
+	uint8_t ucBssPrimaryCH[BSSID_NUM] = {0};
+
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 	if (prAdapter->fgPowerForceOneNss) {
 		log_dbg(CNM, INFO, "[DBDC] disable DBDC by power");
 		return FALSE;
 	}
 #endif
+
 	for (ucBssIndex = 0;
 		ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
 
@@ -2346,35 +2404,114 @@ static u_int8_t cnmDbdcIsAGConcurrent(
 		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
 			continue;
 
-		if (prBssInfo->eBand == BAND_NULL)
+		if (prBssInfo->eBand != BAND_2G4
+		    && prBssInfo->eBand != BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+			&& prBssInfo->eBand != BAND_6G
+#endif
+		)
 			continue;
 
+		/* Record eRFBand and Primary Channel  */
 		eBssBand[ucBssIndex] = prBssInfo->eBand;
+		ucBssPrimaryCH[ucBssIndex] = prBssInfo->ucPrimaryChannel;
 
-		if (eBandCompare == BAND_NULL)
+		log_dbg(CNM, INFO, "Set Bssid[%u] eBand=%u,ePrimaryCH=%u\n",
+	       ucBssIndex, eBssBand[ucBssIndex], ucBssPrimaryCH[ucBssIndex]);
+
+
+		if (eBandCompare != BAND_2G4 && eBandCompare != BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+			&& eBandCompare != BAND_6G
+#endif
+		){
 			eBandCompare = prBssInfo->eBand;
+			ucCHCompare = prBssInfo->ucPrimaryChannel;
+
+			log_dbg(CNM, INFO, "set Bssid[%u] eBand=%u,ePrimaryCH=%u\n",
+	       ucBssIndex, eBandCompare, ucCHCompare);
+
+		}
 
 		if (eBandCompare != prBssInfo->eBand) {
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			if ((eBandCompare == BAND_5G &&
-				prBssInfo->eBand == BAND_6G) ||
-			    (eBandCompare == BAND_6G &&
-				prBssInfo->eBand == BAND_5G))
-				fgShouldDbdcEnabled = FALSE; /* A+A */
-			else
+
+			log_dbg(CNM, INFO, "check Compare Band[%u]CH[%u], BSS Band[%u]CH[%u]\n",
+				eBandCompare, ucCHCompare,
+				prBssInfo->eBand,
+				prBssInfo->ucPrimaryChannel);
+
+			/* Initial AAMode */
+			g_rDbdcInfo.fgIsDBDCAAMode = 0;
+			/* Check DBDC for A+G */
+			if ((prBssInfo->eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+				||	prBssInfo->eBand == BAND_6G
 #endif
-				fgShouldDbdcEnabled = TRUE; /* A+G */
+			)
+				&& eBandCompare == BAND_2G4){
+				fgDBDCConcurrent = TRUE;	/*A+G*/
+			} else if (prBssInfo->eBand == BAND_2G4 &&
+				(eBandCompare == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+				|| eBandCompare == BAND_6G
+#endif
+				)){
+				fgDBDCConcurrent = TRUE;	/*A+G*/
+			}
+
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+			/* Check DBDC for A+A when HW support */
+			if (fgDBDCConcurrent == FALSE &&
+				prAdapter->rWifiFemCfg.u2WifiDBDCAwithA
+								== TRUE){
+
+				u_int8_t uc5gCH = 0;
+				u_int8_t uc6gCH = 0;
+
+				if (eBandCompare == BAND_5G &&
+					prBssInfo->eBand == BAND_6G){
+
+					uc5gCH = ucCHCompare;
+					uc6gCH = prBssInfo->ucPrimaryChannel;
+				} else if (prBssInfo->eBand == BAND_5G &&
+					eBandCompare == BAND_6G){
+
+					uc5gCH = prBssInfo->ucPrimaryChannel;
+					uc6gCH = ucCHCompare;
+				}
+
+				if (cnmDbdcDecideIsAAConcurrent(prAdapter,
+						uc5gCH, uc6gCH) == TRUE){
+					fgDBDCConcurrent = TRUE;
+					g_rDbdcInfo.fgIsDBDCAAMode = 1;
+				}
+				log_dbg(CNM, INFO, "Check Band[%d][%d],5G[%d],6G[%d],DBDCCon[%d]\n",
+					eBandCompare, prBssInfo->eBand, uc5gCH,
+					uc6gCH, fgDBDCConcurrent);
+			}
+#endif /* CFG_SUPPORT_WIFI_6G && CFG_SUPPORT_WIFI_DBDC6G */
+
 		}
+
 	}
 
-	log_dbg(CNM, INFO, "[DBDC] BSS AG[%u.%u.%u.%u][%u]\n",
+	log_dbg(CNM, INFO, "[DBDC]BSS AG Band[%u.%u.%u.%u][%u]\n",
 	       eBssBand[BSSID_0],
 	       eBssBand[BSSID_1],
 	       eBssBand[BSSID_2],
 	       eBssBand[BSSID_3],
 	       eRfBand_Connecting);
 
-	return fgShouldDbdcEnabled;
+	log_dbg(CNM, INFO, "[DBDC]BSS AG CH[%u.%u.%u.%u][%u],fgDBDC[%u],AAMode[%u]\n",
+		   ucBssPrimaryCH[BSSID_0],
+		   ucBssPrimaryCH[BSSID_1],
+		   ucBssPrimaryCH[BSSID_2],
+		   ucBssPrimaryCH[BSSID_3],
+		   ucCHCompare,
+		   fgDBDCConcurrent,
+		   g_rDbdcInfo.fgIsDBDCAAMode);
+
+	return fgDBDCConcurrent;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2442,6 +2579,7 @@ uint8_t cnmGetDbdcNss(
 
 	return wlanGetSupportNss(prAdapter, ucBssIndex);
 }
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2661,6 +2799,13 @@ uint32_t cnmUpdateDbdcSetting(IN struct ADAPTER *prAdapter,
 
 	g_rDbdcInfo.fgHasSentCmd = TRUE;
 	g_rDbdcInfo.fgCmdEn = fgDbdcEn;
+
+	/* Set DBDC A+A Mode to FW */
+	if (g_rDbdcInfo.fgIsDBDCAAMode == TRUE)
+		prCmdBody->ucDBDCAAMode = 1;
+
+	log_dbg(CNM, WARN, "fgDbdcEn=%d, ucDBDCAAMode=%d\n",
+		g_rDbdcInfo.fgCmdEn, prCmdBody->ucDBDCAAMode);
 
 	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
 				      CMD_ID_SET_DBDC_PARMS,	/* ucCID */
@@ -3094,7 +3239,7 @@ cnmDbdcFsmEventHandler_ENABLE_GUARD(
 			ENUM_DBDC_GUARD_TIMER_NONE;
 		}
 		/* directly enter HW disable state */
-		if (!cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL))
+		if (!cnmDbdcIsConcurrent(prAdapter, BAND_NULL, 0))
 			g_rDbdcInfo.eDbdcFsmNextState =
 				ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE;
 		break;
@@ -3105,7 +3250,7 @@ cnmDbdcFsmEventHandler_ENABLE_GUARD(
 
 	case DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO:
 		/* Exit DBDC if non A+G */
-		if (!cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL)) {
+		if (!cnmDbdcIsConcurrent(prAdapter, BAND_NULL, 0)) {
 			g_rDbdcInfo.eDbdcFsmNextState =
 				ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE;
 		} else {
@@ -3148,7 +3293,7 @@ cnmDbdcFsmEventHandler_ENABLE_IDLE(
 			ENUM_DBDC_GUARD_TIMER_NONE;
 		}
 		/* directly enter HW disable state */
-		if (!cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL))
+		if (!cnmDbdcIsConcurrent(prAdapter, BAND_NULL, 0))
 			g_rDbdcInfo.eDbdcFsmNextState =
 				ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE;
 		break;
@@ -3169,7 +3314,7 @@ cnmDbdcFsmEventHandler_ENABLE_IDLE(
 		break;
 
 	case DBDC_FSM_EVENT_DISABLE_COUNT_DOWN_TO:
-		if (!cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL))
+		if (!cnmDbdcIsConcurrent(prAdapter, BAND_NULL, 0))
 			g_rDbdcInfo.eDbdcFsmNextState =
 				ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE;
 		break;
@@ -3288,7 +3433,7 @@ cnmDbdcFsmEventHandler_DISABLE_GUARD(
 #define __STAT_WAIT__	ENUM_DBDC_PROTOCOL_STATUS_WAIT
 
 		if (g_rDbdcInfo.fgDbdcDisableOpmodeChangeDone) {
-			if (cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL)) {
+			if (cnmDbdcIsConcurrent(prAdapter, BAND_NULL, 0)) {
 				switch (cnmDbdcOpmodeChangeAndWait(
 					prAdapter, TRUE)) {
 				case ENUM_DBDC_PROTOCOL_STATUS_WAIT:
@@ -3388,7 +3533,7 @@ cnmDbdcFsmEventHandler_WAIT_PROTOCOL_DISABLE(
 
 	case DBDC_FSM_EVENT_ACTION_FRAME_ALL_SUCCESS:
 	case DBDC_FSM_EVENT_ACTION_FRAME_SOME_FAIL:
-		if (cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL)) {
+		if (cnmDbdcIsConcurrent(prAdapter, BAND_NULL, 0)) {
 			switch (cnmDbdcOpmodeChangeAndWait(prAdapter, TRUE)) {
 			case ENUM_DBDC_PROTOCOL_STATUS_WAIT:
 				g_rDbdcInfo.eDbdcFsmNextState =
@@ -3518,7 +3663,8 @@ void cnmDbdcPreConnectionEnableDecision(
 					   DBDC_ENABLE_GUARD_TIME);
 		}
 		/* The DBDC is already ON, so renew WMM band information only */
-		DBDC_SET_WMMBAND_FW_AUTO_BY_CHNL(ucPrimaryChannel, ucWmmQueIdx);
+		DBDC_SET_WMMBAND_FW_AUTO_BY_CHNL(ucPrimaryChannel,
+			ucWmmQueIdx, eRfBand);
 		cnmUpdateDbdcSetting(prAdapter, TRUE);
 		return;
 	}
@@ -3528,10 +3674,12 @@ void cnmDbdcPreConnectionEnableDecision(
 		== ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME) {
 		log_dbg(CNM, INFO, "[DBDC Debug] Guard Time Check");
 
-		if ((cnmDbdcIsAGConcurrent(prAdapter, eRfBand) &&
-			!prAdapter->rWifiVar.fgDbDcModeEn) ||
-			(!cnmDbdcIsAGConcurrent(prAdapter, eRfBand) &&
-			prAdapter->rWifiVar.fgDbDcModeEn)) {
+		if ((cnmDbdcIsConcurrent(prAdapter, eRfBand,
+				ucPrimaryChannel)
+			&& !prAdapter->rWifiVar.fgDbDcModeEn) ||
+			(!cnmDbdcIsConcurrent(prAdapter, eRfBand,
+				ucPrimaryChannel)
+			&& prAdapter->rWifiVar.fgDbDcModeEn)) {
 			/* cancel Guard Time and change DBDC mode */
 			cnmTimerStopTimer(prAdapter,
 				&g_rDbdcInfo.rDbdcGuardTimer);
@@ -3548,13 +3696,18 @@ void cnmDbdcPreConnectionEnableDecision(
 		}
 	}
 
-	if (eRfBand == BAND_NULL) {
+	if (eRfBand != BAND_2G4 && eRfBand != BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+							&& eRfBand != BAND_6G
+#endif
+	){
 		log_dbg(CNM, INFO, "[DBDC Debug] Wrong RF band Return");
 		return;
 	}
 
-	if (cnmDbdcIsAGConcurrent(prAdapter, eRfBand)) {
-		DBDC_SET_WMMBAND_FW_AUTO_BY_CHNL(ucPrimaryChannel, ucWmmQueIdx);
+	if (cnmDbdcIsConcurrent(prAdapter, eRfBand, ucPrimaryChannel)) {
+		DBDC_SET_WMMBAND_FW_AUTO_BY_CHNL(ucPrimaryChannel,
+			ucWmmQueIdx, eRfBand);
 		DBDC_FSM_EVENT_HANDLER(prAdapter,
 			DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG);
 	} else {
@@ -3590,7 +3743,7 @@ void cnmDbdcRuntimeCheckDecision(IN struct ADAPTER
 	}
 
 	/* AGConcurrent status sync with DBDC satus. Do nothing. */
-	fgIsAgConcurrent = cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL);
+	fgIsAgConcurrent = cnmDbdcIsConcurrent(prAdapter, BAND_NULL, 0);
 	if (fgIsAgConcurrent == prAdapter->rWifiVar.fgDbDcModeEn)
 		return;
 
@@ -3633,7 +3786,7 @@ void cnmDbdcRuntimeCheckDecision(IN struct ADAPTER
 		return;
 	}
 
-	if (cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL)) {
+	if (cnmDbdcIsConcurrent(prAdapter, BAND_NULL, 0)) {
 		DBDC_FSM_EVENT_HANDLER(prAdapter,
 				       DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG);
 	} else
