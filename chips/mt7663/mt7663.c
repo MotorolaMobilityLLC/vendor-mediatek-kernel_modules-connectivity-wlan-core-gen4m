@@ -234,7 +234,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.asicEnableFWDownload = asicEnableFWDownload,
 	.downloadBufferBin = wlanConnacDownloadBufferBin,
 	.is_support_hw_amsdu = TRUE,
-	.workAround = BIT(WORKAROUND_MT7663_BRINGUP_20171205),
+	.workAround = 0,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7663 = {

@@ -1018,7 +1018,6 @@ enum enum_mt66xx_chip {
 };
 
 enum enum_workAround {
-	WORKAROUND_MT7663_BRINGUP_20171205 = 0,
 	WORKAROUND_NUM
 };
 
