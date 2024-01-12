@@ -4024,6 +4024,9 @@ wlanoidQueryRssi(struct ADAPTER *prAdapter,
 	ASSERT(pu4QueryInfoLen);
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	if (ucBssIndex >= MAX_BSSID_NUM)
+		return WLAN_STATUS_NOT_SUPPORTED;
+
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) ||
 	    ucBssIndex == prAdapter->ucP2PDevBssIdx)
 		return WLAN_STATUS_NOT_SUPPORTED;
