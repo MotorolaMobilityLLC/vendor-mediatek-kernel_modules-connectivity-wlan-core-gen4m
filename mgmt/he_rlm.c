@@ -408,7 +408,7 @@ static uint8_t heRlmFillPPEThreshold(
 	return ucLen;
 }
 
-static void heRlmFillHeCapIE(
+void heRlmFillHeCapIE(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
 	struct MSDU_INFO *prMsduInfo)

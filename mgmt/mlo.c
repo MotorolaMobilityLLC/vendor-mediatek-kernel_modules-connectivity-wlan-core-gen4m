@@ -910,37 +910,7 @@ uint32_t mldGenerateMlProbeReqIE(struct BSS_DESC *prBssDesc, uint8_t *pucIE,
 uint32_t mldFillScanIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 	uint8_t *pucIE, uint32_t u4IELength, uint8_t ucBssIndex)
 {
-	struct BSS_INFO *prBssInfo;
-	struct MSDU_INFO *msdu = NULL;
-	uint32_t total_len = 0, eht_len = 0;
-
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	if (!prBssInfo) {
-		DBGLOG(ML, INFO, "no bssinfo %d\n", ucBssIndex);
-		goto done;
-	}
-
-	total_len += mldGenerateMlProbeReqIE(prBssDesc, pucIE, u4IELength);
-
-	eht_len = ehtRlmCalculateCapIELen(prAdapter, ucBssIndex, NULL);
-	if (total_len + eht_len > u4IELength)
-		goto done;
-
-	msdu = cnmMgtPktAlloc(prAdapter, eht_len);
-	if (msdu == NULL)
-		goto done;
-
-	msdu->ucBssIndex = ucBssIndex;
-	ehtRlmFillCapIE(prAdapter, prBssInfo, msdu);
-
-	kalMemCopy(pucIE + total_len, (uint8_t *) msdu->prPacket,
-		msdu->u2FrameLength);
-
-	total_len += msdu->u2FrameLength;
-
-done:
-	cnmMgtPktFree(prAdapter, msdu);
-	return total_len;
+	return mldGenerateMlProbeReqIE(prBssDesc, pucIE, u4IELength);
 }
 
 uint8_t mldDupProfileSkipIE(uint8_t *pucBuf)
