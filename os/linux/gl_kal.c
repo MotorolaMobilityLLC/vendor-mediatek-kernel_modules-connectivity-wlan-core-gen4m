@@ -10164,7 +10164,7 @@ int kalVendorExternalAuthRequest(IN struct ADAPTER *prAdapter,
 		COPY_MAC_ADDR(info->bssid, prBssDesc->rMlInfo.aucMldAddr);
 	else
 		COPY_MAC_ADDR(info->bssid, prBssDesc->aucBSSID);
-	info->len += beGenerateExternalAuthMldIE(
+	info->len += mldGenerateExternalAuthIE(
 		prAdapter, prStaRec, info->ext_ie);
 	COPY_SSID(info->ssid, info->ssid_len,
 		prBssDesc->aucSSID, prBssDesc->ucSSIDLen);

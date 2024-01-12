@@ -71,6 +71,9 @@ struct BSS_DESC *p2pGetLinkBssDesc(
 	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 	IN uint8_t ucLinkIdx);
 
+uint8_t p2pGetLinkNum(
+	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo);
+
 void p2pSetLinkStaRec(
 	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 	IN struct STA_RECORD *prStaRec,

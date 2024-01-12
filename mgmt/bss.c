@@ -165,8 +165,8 @@ struct APPEND_VAR_IE_ENTRY txBcnIETable[] = {
 	, {0, ehtRlmCalculateOpIELen,
 	   ehtRlmRspGenerateOpIE}
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	, {0, beCalculateRnrIELen, beGenerateRnrIE}
-	, {0, beCalculateMldIELen, beGenerateMldIE}
+	, {0, mldCalculateRnrIELen, mldGenerateRnrIE}
+	, {0, mldCalculateMlIELen, mldGenerateMlIE}
 #endif
 #endif
 #if CFG_SUPPORT_MTK_SYNERGY
@@ -540,17 +540,6 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
 		 * we may also reset the ucJoinFailureCount to 0.
 		 */
 	}
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (prBssDesc->rMlInfo.fgValid) {
-		struct BSS_INFO *prBssInfo;
-
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-		prBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
-		prStaRec->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
-		COPY_MAC_ADDR(prStaRec->aucMldAddr, prBssDesc->rMlInfo.aucMldAddr);
-		mldStarecRegister(prAdapter, prStaRec);
-	}
-#endif
 
 	/* 4 <2> Update information from BSS_DESC_T to current P_STA_RECORD_T */
 	prStaRec->u2CapInfo = prBssDesc->u2CapInfo;

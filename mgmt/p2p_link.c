@@ -125,8 +125,8 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 	ml = kalFindIeExtIE(ELEM_ID_RESERVED,
 		ELEM_EXT_ID_MLD, pucIE, u2IELength);
 	if (ml) {
-		beParseMldElement(prMlInfo, ml, prAuthFrame->aucBSSID,
-			"ProcessAuthReq");
+		mldParseBasicMlIE(prMlInfo, ml, prAuthFrame->aucBSSID,
+			u2RxFrameCtrl, "RxAuthReq");
 	} else {
 		DBGLOG(AAA, INFO, "no ml ie\n");
 		return WLAN_STATUS_SUCCESS;
@@ -138,9 +138,8 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 	}
 
 	/* assign currect id when assoc req is received*/
-	prStaRec->ucLinkIndex = MLD_GROUP_NONE;
-	COPY_MAC_ADDR(prStaRec->aucMldAddr, prMlInfo->aucMldAddr);
-	mldStarecRegister(prAdapter, prStaRec);
+	mldStarecRegister(prAdapter, prStaRec,
+		prMlInfo->aucMldAddr, MLD_GROUP_NONE);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -202,19 +201,17 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 		ELEM_EXT_ID_MLD, pucIE, u2IELength);
 
 	if (ml) {
-		beParseMldElement(prMlInfo, ml, prFrame->aucBSSID,
-			"ProcessAssocReq");
+		mldParseBasicMlIE(prMlInfo, ml, prFrame->aucBSSID,
+			u2RxFrameCtrl, "RxAssocReq");
 	} else {
 		DBGLOG(AAA, INFO, "no ml ie\n");
 		return WLAN_STATUS_SUCCESS;
 	}
 
 	/* sae auth frames are handled by hostapd, delay register until assoc */
-	if (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_SAE) {
-		prStaRec->ucLinkIndex = MLD_GROUP_NONE;
-		COPY_MAC_ADDR(prStaRec->aucMldAddr, prMlInfo->aucMldAddr);
-		mldStarecRegister(prAdapter, prStaRec);
-	}
+	if (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_SAE)
+		mldStarecRegister(prAdapter, prStaRec,
+			prMlInfo->aucMldAddr, MLD_GROUP_NONE);
 
 	prMldStarec = mldStarecGetByAddr(prAdapter, prStaRec->aucMldAddr);
 	if (!prMlInfo->ucValid || !prMldStarec) {
@@ -297,9 +294,8 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 			prCurr->ucJoinFailureCount = 0;
 
 			/* ml link info */
-			prCurr->ucLinkIndex = prProfiles->ucLinkId;
-			COPY_MAC_ADDR(prCurr->aucMldAddr, prMlInfo->aucMldAddr);
-			mldStarecRegister(prAdapter, prCurr);
+			mldStarecRegister(prAdapter, prCurr,
+				prMlInfo->aucMldAddr, prProfiles->ucLinkId);
 		}
 	}
 
@@ -497,6 +493,18 @@ struct BSS_DESC *p2pGetLinkBssDesc(
 
 	return prP2pRoleFsmInfo->aprP2pLinkInfo[ucLinkIdx]
 		.prP2pTargetBssDesc;
+}
+
+uint8_t p2pGetLinkNum(IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
+{
+	uint8_t i, num = 0;
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		if (p2pGetLinkBssDesc(prP2pRoleFsmInfo, i))
+			num++;
+	}
+
+	return num;
 }
 
 void p2pSetLinkStaRec(
