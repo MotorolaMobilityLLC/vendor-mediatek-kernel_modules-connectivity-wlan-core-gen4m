@@ -7535,6 +7535,8 @@ static int32_t HQA_MUSetMUTable(struct net_device *prNetDev,
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
+	if (prTable != NULL)
+		kfree(prTable);
 	return i4Ret;
 }
 
