@@ -308,6 +308,12 @@
 	KAL_MB_W(); \
 }
 
+#define DEC_RING_INDEX(_idx, _RingSize)		\
+{ \
+	(_idx) = (_idx == 0) ? (_RingSize - 1) : (_idx - 1); \
+	KAL_MB_W(); \
+}
+
 #define RTMP_HOST_IO_READ32(_A, _R, _pV) \
 { \
 	(*(_pV) = readl((void *)(_A->HostCSRBaseAddress + \

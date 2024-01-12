@@ -2347,12 +2347,15 @@ void connac3x_show_wfdma_ring_info(
 
 void connac3x_show_wfdma_desc(struct ADAPTER *prAdapter)
 {
+#define WFDMA_DUMP_TX_RING_CNT 3
+#define WFDMA_DUMP_RX_RING_CNT 2
 	struct BUS_INFO *prBusInfo;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct RTMP_TX_RING *prTxRing;
 	struct RTMP_RX_RING *prRxRing;
 	struct wfdma_group_info *prGroup;
-	uint32_t i = 0, u4SwIdx;
+	uint32_t i, j, k, u4SwIdx, u4Didx[WFDMA_DUMP_RX_RING_CNT];
+	u_int8_t fgSkip = FALSE;
 
 	if (!prAdapter)
 		return;
@@ -2365,30 +2368,50 @@ void connac3x_show_wfdma_desc(struct ADAPTER *prAdapter)
 		prGroup = &prBusInfo->wfmda_host_tx_group[i];
 		if (!prGroup->dump_ring_content)
 			continue;
-		DBGLOG(HAL, INFO, "Dump PDMA Tx Ring[%u]\n", i);
+
+		DBGLOG(HAL, INFO, "Dump WFDMA Tx Ring[%s]\n", prGroup->name);
 		prTxRing = &prHifInfo->TxRing[i];
+		/* dump didx + (-2, -1, 0) */
 		u4SwIdx = prGroup->didx;
-		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing,
-			      u4SwIdx, true);
-		u4SwIdx = prGroup->didx == 0 ?
-			prGroup->cnt - 1 : prGroup->didx - 1;
-		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing, u4SwIdx, true);
-		u4SwIdx = prGroup->didx == 0 ?
-			prGroup->cnt - 2 : prGroup->didx - 2;
-		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing, u4SwIdx, true);
+		for (j = 0; j < WFDMA_DUMP_TX_RING_CNT; j++) {
+			kalDumpTxRing(prAdapter->prGlueInfo,
+				      prTxRing, u4SwIdx, true);
+			DEC_RING_INDEX(u4SwIdx, prGroup->cnt);
+		}
 	}
 
 	for (i = 0; i < prBusInfo->wfmda_host_rx_group_len; i++) {
 		prGroup = &prBusInfo->wfmda_host_rx_group[i];
 		if (!prGroup->dump_ring_content)
 			continue;
-		DBGLOG(HAL, INFO, "Dump PDMA Rx Ring[%u]\n", i);
+
+		DBGLOG(HAL, INFO, "Dump WFDMA Rx Ring[%s]\n", prGroup->name);
 		prRxRing = &prHifInfo->RxRing[i];
+		/* dump didx + (-1, 0) */
 		u4SwIdx = prGroup->didx;
-		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing, u4SwIdx, true);
-		u4SwIdx = prGroup->didx == 0 ?
-			prGroup->cnt - 1 : prGroup->didx - 1;
-		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing, u4SwIdx, true);
+		for (j = 0; j < WFDMA_DUMP_RX_RING_CNT; j++) {
+			kalDumpRxRing(prAdapter->prGlueInfo,
+				      prRxRing, u4SwIdx, true);
+			u4Didx[j] = u4SwIdx;
+			DEC_RING_INDEX(u4SwIdx, prGroup->cnt);
+		}
+
+		/* dump cidx + (0, 1) */
+		u4SwIdx = prGroup->cidx;
+		for (j = 0; j < WFDMA_DUMP_RX_RING_CNT; j++) {
+			/* skip dumped cell */
+			fgSkip = FALSE;
+			for (k = 0; k < WFDMA_DUMP_RX_RING_CNT; k++) {
+				if (u4SwIdx == u4Didx[k]) {
+					fgSkip = TRUE;
+					break;
+				}
+			}
+			if (!fgSkip)
+				kalDumpRxRing(prAdapter->prGlueInfo,
+					      prRxRing, u4SwIdx, true);
+			INC_RING_INDEX(u4SwIdx, prGroup->cnt);
+		}
 	}
 }
 
