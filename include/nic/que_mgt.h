@@ -442,6 +442,31 @@ typedef struct _QUE_MGT_T {	/* Queue Management Control Info */
 	BOOLEAN fgIsTxResrouceControlEn;
 } QUE_MGT_T, *P_QUE_MGT_T;
 
+struct _EVENT_TX_ADDBA_T {
+	UINT_8      ucStaRecIdx;
+	UINT_8      ucTid;
+	UINT_8      ucWinSize;
+	UINT_8      ucAmsduEnBitmap;    /* AMSDU in AMPDU is enabled or not (TID bitmap)*/
+
+	UINT_16     u2SSN;
+
+    /*
+     * AMSDU count/length limits by count *OR* length
+     * Count: MPDU count in an AMSDU shall not exceed ucMaxMpduCount
+     * Length: AMSDU length shall not exceed u4MaxMpduLen
+     */
+	UINT_8      ucMaxMpduCount;     /* Max MPDU count in an AMSDU */
+	UINT_8      aucReserved1[1];
+	UINT_32     u4MaxMpduLen;       /* Max AMSDU length */
+
+	/*
+	 * Note: If length of a packet < u4MinMpduLen then it shall not be
+	 * aggregated in an AMSDU
+	 */
+	UINT_32     u4MinMpduLen;       /* Min MPDU length to be AMSDU */
+	UINT_8      aucReserved2[16];
+};
+
 typedef struct _EVENT_RX_ADDBA_T {
 	/* Fields not present in the received ADDBA_REQ */
 	UINT_8 ucStaRecIdx;
@@ -864,6 +889,8 @@ VOID qmHandleEventCheckReorderBubble(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T
 VOID qmHandleMailboxRxMessage(IN MAILBOX_MSG_T prMailboxRxMsg);
 
 BOOLEAN qmCompareSnIsLessThan(IN UINT_32 u4SnLess, IN UINT_32 u4SnGreater);
+
+VOID qmHandleEventTxAddBa(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 
 VOID qmHandleEventRxAddBa(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 

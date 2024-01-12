@@ -1471,6 +1471,9 @@ WLAN_STATUS nicTxGenerateDescTemplate(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_
 
 VOID nicTxFreeDescTemplate(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec);
 
+VOID nicTxSetHwAmsduDescTemplate(IN P_ADAPTER_T prAdapter,
+	IN P_STA_RECORD_T prStaRec, IN UINT_8 ucTid, IN BOOLEAN fgSet);
+
 VOID nicTxFreePacket(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN BOOLEAN fgDrop);
 
 VOID

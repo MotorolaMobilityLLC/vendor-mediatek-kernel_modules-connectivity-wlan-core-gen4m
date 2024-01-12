@@ -518,6 +518,8 @@ struct _STA_RECORD_T {
 	UINT_8 ucSmDialogToken;	/* Spectrum Mngt Dialog Token */
 	UINT_8 ucSmMsmtRequestMode; /* Measurement Request Mode */
 	UINT_8 ucSmMsmtToken; /* Measurement Request Token */
+
+	UINT_8 ucAmsduEnBitmap; /* Tid bit mask of AMSDU enable */
 };
 
 #if 0

@@ -278,6 +278,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.asicEnableFWDownload = NULL,
 	.fillTxDescAppend = fillTxDescAppendByCR4,
 	.features = 0,
+	.is_support_hw_amsdu = FALSE,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7668 = {

@@ -998,6 +998,7 @@ struct mt66xx_chip_info {
 	void (*fillHifTxDesc)(IN PUINT_8 *pDest, IN PUINT_16 pInfoBufLen);
 
 	const UINT_32 features;	/* feature bits */
+	BOOLEAN is_support_hw_amsdu;
 };
 
 struct mt66xx_hif_driver_data {
