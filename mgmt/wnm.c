@@ -763,6 +763,13 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		}
 	}
 
+	if (prAdapter->rWifiVar.u4RejectBtmReqReason) {
+		DBGLOG(WNM, INFO, "WNM: reject btm req reason=%d\n",
+			prAdapter->rWifiVar.u4RejectBtmReqReason);
+		ucStatus = prAdapter->rWifiVar.u4RejectBtmReqReason;
+		goto send_response;
+	}
+
 	if ((!(ucRequestMode & WNM_BSS_TM_REQ_DISASSOC_IMMINENT) &&
 	     (ucRequestMode & WNM_BSS_TM_REQ_ABRIDGED) &&
 	     !(ucRequestMode & WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED)) ||
