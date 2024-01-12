@@ -5742,7 +5742,7 @@ static inline uint32_t composeTxDelayLog(struct ADAPTER *prAdapter,
 				kalSnprintf(avg, sizeof(avg), "#%d",
 					bss_num == prAdapter->ucSwBssIdNum ?
 					au4Average[b] :
-					au4Average[prAdapter->ucSwBssIdNum]);
+					au4Average[MAX_BSSID_NUM]);
 			}
 			pos += kalSnprintf(buf + pos, u4BufferSize - pos,
 				"%s%u%s%s",
@@ -5837,7 +5837,7 @@ static void updateAverageTx(struct ADAPTER *prAdapter,
 		&prDiff->au4DriverLatency[0];
 	uint64_t (*acc_delay)[MAX_BSSID_NUM] = &prDiff->au8AccumulatedDelay[0];
 
-	memset(au4TxAverage, 0, sizeof(uint32_t) *
+	kalMemZero(au4TxAverage, sizeof(uint32_t) *
 			(MAX_BSSID_NUM + 1) * MAX_AVERAGE_TX_DELAY_TYPE);
 
 	for (t = DRIVER_TX_DELAY; t < MAX_AVERAGE_TX_DELAY_TYPE; t++) {
@@ -5854,9 +5854,9 @@ static void updateAverageTx(struct ADAPTER *prAdapter,
 					acc_delay[t][b] / one_bss_tx_count;
 			}
 		}
-		/* LAST element stores the all BSS average */
+		/* LAST element (b=MAX_BSSID_NUM) stores the all BSS average */
 		if (all_bss_tx_count) {
-			au4TxAverage[t][b] =
+			au4TxAverage[t][MAX_BSSID_NUM] =
 				all_bss_acc_delay / all_bss_tx_count;
 		}
 	}

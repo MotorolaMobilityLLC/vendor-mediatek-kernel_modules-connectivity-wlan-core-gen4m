@@ -11163,14 +11163,19 @@ int wlanSetTxDelayOverLimitReport(struct ADAPTER *prAdapter,
 	return rStatus;
 }
 
-uint32_t
-wlanPktTxDone(struct ADAPTER *prAdapter,
-	      struct MSDU_INFO *prMsduInfo,
-	      enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+uint32_t wlanPktTxDone(struct ADAPTER *prAdapter,
+		       struct MSDU_INFO *prMsduInfo,
+		       enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
+	struct GLUE_INFO *prGlueInfo;
 	OS_SYSTIME rCurrent = kalGetTimeTick();
 #if CFG_ENABLE_PKT_LIFETIME_PROFILE
 	struct PKT_PROFILE *prPktProfile = &prMsduInfo->rPktProfile;
+#if CFG_SUPPORT_TX_LATENCY_STATS
+	uint64_t u8Now = StatsEnvTimeGet();
+	uint32_t u4DelayXmitToHif;
+	uint32_t u4DelayHifToDone;
+#endif
 #endif
 	struct EVENT_TX_DONE *prTxDone = prMsduInfo->prTxDone;
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
@@ -11180,6 +11185,9 @@ wlanPktTxDone(struct ADAPTER *prAdapter,
 	uint32_t u4PacketLen = 0;
 	u_int8_t fgIsSuccess = FALSE;
 #endif
+	char aucDelayInfo[80] = {0};
+
+	prGlueInfo = prAdapter->prGlueInfo;
 
 	if (prMsduInfo->ucPktType >= ENUM_PKT_FLAG_NUM)
 		prMsduInfo->ucPktType = 0;
@@ -11198,55 +11206,69 @@ wlanPktTxDone(struct ADAPTER *prAdapter,
 				prPktProfile->rHifTxDoneTimestamp, rCurrent);
 
 			if (prMsduInfo->ucPktType == ENUM_PKT_ARP)
-				prAdapter->prGlueInfo->fgTxDoneDelayIsARP =
-									TRUE;
-			prAdapter->prGlueInfo->u4ArriveDrvTick =
+				prGlueInfo->fgTxDoneDelayIsARP = TRUE;
+			prGlueInfo->u4ArriveDrvTick =
 				prPktProfile->rHardXmitArrivalTimestamp;
-			prAdapter->prGlueInfo->u4EnQueTick =
+			prGlueInfo->u4EnQueTick =
 				prPktProfile->rEnqueueTimestamp;
-			prAdapter->prGlueInfo->u4DeQueTick =
+			prGlueInfo->u4DeQueTick =
 				prPktProfile->rDequeueTimestamp;
-			prAdapter->prGlueInfo->u4LeaveDrvTick =
+			prGlueInfo->u4LeaveDrvTick =
 				prPktProfile->rHifTxDoneTimestamp;
-			prAdapter->prGlueInfo->u4CurrTick = rCurrent;
-			prAdapter->prGlueInfo->u8CurrTime = kalGetTimeTickNs();
+			prGlueInfo->u4CurrTick = rCurrent;
+			prGlueInfo->u8CurrTime = kalGetTimeTickNs();
 		}
 	}
 #endif
+
+#if CFG_ENABLE_PKT_LIFETIME_PROFILE
+#if CFG_SUPPORT_TX_LATENCY_STATS
+	u4DelayXmitToHif = NSEC_TO_USEC((uint32_t)
+				(prMsduInfo->rPktProfile.u8HifTxTime -
+				 prMsduInfo->rPktProfile.u8XmitArrival));
+	u4DelayHifToDone = NSEC_TO_USEC((uint32_t)
+				(u8Now - prMsduInfo->rPktProfile.u8HifTxTime));
+
+	/* Unit: TU (1024 micro seconds, 1.024 milliseconds) */
+	kalSnprintf(aucDelayInfo, sizeof(aucDelayInfo),
+		    "Xmit~Hif:%lu.%lu Hif~Done:%lu.%lu",
+		    u4DelayXmitToHif >> 10, u4DelayXmitToHif & BITS(0, 9),
+		    u4DelayHifToDone >> 10, u4DelayHifToDone & BITS(0, 9));
+#endif
+#endif
+
 #if CFG_SUPPORT_MLR
 	if (MLR_CHECK_IF_ENABLE_DEBUG(prAdapter))
 		DBGLOG(TX, INFO,
-			"TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] SN[%d] Status[%u], SeqNo: %d\n",
+			"TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] SN[%d] Status[%u], SeqNo: %d %s\n",
 			TXS_PACKET_TYPE[prMsduInfo->ucPktType],
 			prMsduInfo->u4TxDoneTag,
 			prMsduInfo->ucWlanIndex,
 			prMsduInfo->ucPID,
 			prTxDone ? prTxDone->u2SequenceNumber : -1,
 			rTxDoneStatus,
-			prMsduInfo->ucTxSeqNum);
+			prMsduInfo->ucTxSeqNum,
+			aucDelayInfo);
 	else
 #endif
 		DBGLOG_LIMITED(TX, INFO,
-			"TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] SN[%d] Status[%u], SeqNo: %d\n",
+			"TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] SN[%d] Status[%u], SeqNo: %d %s\n",
 			TXS_PACKET_TYPE[prMsduInfo->ucPktType],
 			prMsduInfo->u4TxDoneTag,
 			prMsduInfo->ucWlanIndex,
 			prMsduInfo->ucPID,
 			prTxDone ? prTxDone->u2SequenceNumber : -1,
 			rTxDoneStatus,
-			prMsduInfo->ucTxSeqNum);
+			prMsduInfo->ucTxSeqNum,
+			aucDelayInfo);
 
 #if (CFG_SUPPORT_CONN_LOG == 1)
-	connLogPkt(prAdapter,
-		prMsduInfo,
-		rTxDoneStatus);
+	connLogPkt(prAdapter, prMsduInfo, rTxDoneStatus);
 #endif
 #if CFG_ENABLE_WIFI_DIRECT
 	if (prMsduInfo->ucPktType == ENUM_PKT_1X)
-		p2pRoleFsmNotifyEapolTxStatus(prAdapter,
-				prMsduInfo->ucBssIndex,
-				prMsduInfo->eEapolKeyType,
-				rTxDoneStatus);
+		p2pRoleFsmNotifyEapolTxStatus(prAdapter, prMsduInfo->ucBssIndex,
+				prMsduInfo->eEapolKeyType, rTxDoneStatus);
 #endif
 #if CFG_SUPPORT_TDLS
 	if (prMsduInfo->ucPktType == ENUM_PKT_TDLS)
@@ -11266,12 +11288,9 @@ wlanPktTxDone(struct ADAPTER *prAdapter,
 				~MASK_FC_PROTECTED_FRAME;
 		fgIsSuccess = (rTxDoneStatus == TX_RESULT_SUCCESS) ?
 				TRUE : FALSE;
-		kalIndicateMgmtTxStatus(prAdapter->prGlueInfo,
-					prMsduInfo->u8Cookie,
-					fgIsSuccess,
-					pucBuf,
-					(uint32_t)
-					prMsduInfo->u2FrameLength,
+		kalIndicateMgmtTxStatus(prGlueInfo, prMsduInfo->u8Cookie,
+					fgIsSuccess, pucBuf,
+					(uint32_t)prMsduInfo->u2FrameLength,
 					prMsduInfo->ucBssIndex);
 	}
 #endif
