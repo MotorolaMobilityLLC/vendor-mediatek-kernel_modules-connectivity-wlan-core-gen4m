@@ -3758,6 +3758,7 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 				> MAX_TX_POWER) {
 				DBGLOG(RLM, WARN,
 				"SubBand[%d] Pwr(%d) > Max (%d)",
+				u1PwrIdx,
 				prPwrLimitSubBand->aucPwrLimitSubBand[u1PwrIdx],
 				MAX_TX_POWER);
 				cLmtBand = MAX_TX_POWER;
