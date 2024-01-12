@@ -785,6 +785,45 @@ uint32_t nicUniCmdBssInfoPhyMode(uint8_t ucPhyTypeSet)
 	return phy_mode;
 }
 
+uint32_t nicUniCmdBssInfoMld(struct ADAPTER *ad,
+	uint8_t *buf, uint8_t ucBssIndex)
+{
+	struct UNI_CMD_BSSINFO_MLD *tag = (struct UNI_CMD_BSSINFO_MLD *)buf;
+	struct BSS_INFO *bss = GET_BSS_INFO_BY_INDEX(ad, ucBssIndex);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo = mldBssGetByBss(ad, bss);
+#endif
+
+	tag->u2Tag = UNI_CMD_BSSINFO_TAG_MLD;
+	tag->u2Length = sizeof(*tag);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (prMldBssInfo && prMldBssInfo->rBssList.u4NumElem > 1) {
+		tag->ucGroupMldId = prMldBssInfo->ucGroupMldId;
+		tag->ucOwnMldId = bss->ucOwnMldId;
+		COPY_MAC_ADDR(tag->aucOwnMldAddr, prMldBssInfo->aucOwnMldAddr);
+		tag->ucOmRemapIdx = prMldBssInfo->ucOmRemapIdx;
+	} else
+#endif
+	{
+		tag->ucGroupMldId = MLD_GROUP_NONE;
+		tag->ucOwnMldId = bss->ucOwnMldId;
+		COPY_MAC_ADDR(tag->aucOwnMldAddr, bss->aucOwnMacAddr);
+		tag->ucOmRemapIdx = OM_REMAP_IDX_NONE;
+	}
+
+	DBGLOG(INIT, INFO,
+		"Bss=%d, GroupMldId=%d, OwnMldId=%d, OmRemapIdx=%d, OwnMldAddr="
+		MACSTR "\n",
+		bss->ucBssIndex,
+		tag->ucGroupMldId,
+		tag->ucOwnMldId,
+		tag->ucOmRemapIdx,
+		MAC2STR(tag->aucOwnMldAddr));
+
+	return tag->u2Length;
+}
+
 uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
@@ -824,7 +863,8 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 
 	/* update bssinfo */
 	max_cmd_len = sizeof(struct UNI_CMD_BSSINFO) +
-		      sizeof(struct UNI_CMD_BSSINFO_BASIC);
+		      sizeof(struct UNI_CMD_BSSINFO_BASIC) +
+		      sizeof(struct UNI_CMD_BSSINFO_MLD);
 	bss_entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_BSSINFO,
 			max_cmd_len, NULL, NULL);
 	if (!bss_entry)
@@ -852,6 +892,8 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 	bss_basic_tag->ucPhyMode = phy_mode & 0xff;
 	bss_basic_tag->ucPhyModeExt = (phy_mode >> 8) & 0xff;
 	bss_basic_tag->ucMldLinkIdx = cmd->ucMldLinkIdx;
+	nicUniCmdBssInfoMld(ad, bss_cmd->aucTlvBuffer + sizeof(*bss_basic_tag),
+		cmd->ucBssIndex);
 
 	DBGLOG(INIT, INFO,
 		"%s DevInfo[OMAC=%d, DBDC=%d], BssInfo%d[DBDC=%d, OMAC=%d, WMM=%d, ConnType=%d, ConnState=%d, BcIdx=%d, PhyMode=0x%x, PhyModeEx=0x%x]\n",
@@ -2250,38 +2292,7 @@ uint32_t nicUniCmdBssInfoTagWapi(struct ADAPTER *ad,
 uint32_t nicUniCmdBssInfoTagMld(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_SET_BSS_INFO *cmd)
 {
-	struct UNI_CMD_BSSINFO_MLD *tag = (struct UNI_CMD_BSSINFO_MLD *)buf;
-	struct BSS_INFO *bss = GET_BSS_INFO_BY_INDEX(ad, cmd->ucBssIndex);
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	struct MLD_BSS_INFO *prMldBssInfo = mldBssGetByBss(ad, bss);
-#endif
-
-	tag->u2Tag = UNI_CMD_BSSINFO_TAG_MLD;
-	tag->u2Length = sizeof(*tag);
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (prMldBssInfo && prMldBssInfo->rBssList.u4NumElem > 1) {
-		tag->ucGroupMldId = prMldBssInfo->ucGroupMldId;
-		tag->ucOwnMldId = bss->ucOwnMldId;
-		COPY_MAC_ADDR(tag->aucOwnMldAddr, prMldBssInfo->aucOwnMldAddr);
-		tag->ucOmRemapIdx = prMldBssInfo->ucOmRemapIdx;
-	} else
-#endif
-	{
-		tag->ucGroupMldId = MLD_GROUP_NONE;
-		tag->ucOwnMldId = bss->ucOwnMldId;
-		COPY_MAC_ADDR(tag->aucOwnMldAddr, bss->aucOwnMacAddr);
-		tag->ucOmRemapIdx = OM_REMAP_IDX_NONE;
-	}
-
-	DBGLOG(INIT, INFO, "Bss=%d, GroupMldId=%d, OwnMldId=%d, OmRemapIdx=%d, OwnMldAddr=" MACSTR "\n",
-		bss->ucBssIndex,
-		tag->ucGroupMldId,
-		tag->ucOwnMldId,
-		tag->ucOmRemapIdx,
-		MAC2STR(tag->aucOwnMldAddr));
-
-	return tag->u2Length;
+	return nicUniCmdBssInfoMld(ad, buf, cmd->ucBssIndex);
 }
 
 uint32_t nicUniCmdBssInfoTagMaxIdlePeriod(struct ADAPTER *ad,
