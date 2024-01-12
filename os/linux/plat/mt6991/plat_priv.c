@@ -406,13 +406,19 @@ void kalSetCpuFreq(int32_t freq, uint32_t set_mask)
 
 void kalSetDramBoost(struct ADAPTER *prAdapter, u_int8_t onoff)
 {
-	struct platform_device *pdev = g_prPlatDev;
+	struct platform_device *pdev;
 #ifdef CONFIG_OF
 	struct device_node *node;
 	static struct icc_path *bw_path;
 #endif /* CONFIG_OF */
 	static unsigned int peak_bw, current_bw;
 	unsigned int prev_bw = 0;
+
+	kalGetPlatDev(&pdev);
+	if (!pdev) {
+		DBGLOG(INIT, ERROR, "pdev is NULL\n");
+		return;
+	}
 
 	if (!bw_path) {
 #ifdef CONFIG_OF
@@ -953,13 +959,12 @@ int32_t kalPlatOpsInit(void)
 
 static int32_t mt6991_wlan_pinctrl_init(struct mt66xx_chip_info *chip_info)
 {
-	struct platform_device *pdev = g_prPlatDev;
+	struct platform_device *pdev;
 	int32_t ret = 0;
 
+	kalGetPlatDev(&pdev);
 	if (!pdev) {
-		DBGLOG(INIT, ERROR,
-			"NULL platform_device\n",
-			ret);
+		DBGLOG(INIT, ERROR, "NULL platform_device\n");
 		ret = -EINVAL;
 		goto exit;
 	}
