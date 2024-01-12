@@ -2431,7 +2431,10 @@ void wlanClearDataQueue(IN struct ADAPTER *prAdapter)
 		while (QUEUE_IS_NOT_EMPTY(&prAdapter->rTxDataDoneQueue)) {
 			QUEUE_REMOVE_HEAD(&prAdapter->rTxDataDoneQueue,
 					  prMsduInfo, struct MSDU_INFO *);
-
+			if (prMsduInfo == NULL) {
+				DBGLOG(TX, WARN, "prMsduInfo is NULL\n");
+				break;
+			}
 			nicTxFreePacket(prAdapter, prMsduInfo, FALSE);
 			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
 		}
