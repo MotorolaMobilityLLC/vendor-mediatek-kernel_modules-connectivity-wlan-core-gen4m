@@ -2185,17 +2185,22 @@ void scanSetChannelAndRCPI(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	else if (prBssDesc->eBand == BAND_6G) {
-		if (ucRxRCPI > prBssDesc->ucRCPI)
-			prBssDesc->ucRCPI = ucRxRCPI;
-
+		log_dbg(SCN, TRACE,
+			"RxRSSI=%d IE_PriCh:%d & RXD_ChNum:%d\n",
+			RCPI_TO_dBm(ucRxRCPI), prBssDesc->ucChannelNum,
+			ucHwChannelNum);
+		/* update RCPI when ChNum and HwChNum is matched */
 		if (prBssDesc->ucChannelNum != ucHwChannelNum) {
 			log_dbg(SCN, INFO,
 				"IE_PriCh:%d mismatch with RXD_ChNum:%d\n",
 				prBssDesc->ucChannelNum, ucHwChannelNum);
 
-			if (!prBssDesc->fgIsHE6GPresent)
+			if (!prBssDesc->fgIsHE6GPresent) {
+				prBssDesc->ucRCPI = ucRxRCPI;
 				prBssDesc->ucChannelNum = ucHwChannelNum;
-		}
+			}
+		} else
+		    prBssDesc->ucRCPI = ucRxRCPI;
 	}
 #endif
 }
