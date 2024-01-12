@@ -375,6 +375,8 @@ struct BSS_DESC {
 	uint32_t u4RsnSelectedGroupCipher;
 	uint32_t u4RsnSelectedPairwiseCipher;
 	uint32_t u4RsnSelectedAKMSuite;
+	uint32_t u4RsnSelectedProto;
+	uint32_t u4RsnSelectedPmf;
 	enum ENUM_PARAM_AUTH_MODE eRsnSelectedAuthMode;
 
 	uint16_t u2RsnCap;

@@ -269,7 +269,7 @@ void rsnDumpSupportedAKMSuite(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 uint8_t rsnSearchFTSuite(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
-uint8_t rsnKeyMgmtRsn(enum ENUM_PARAM_AUTH_MODE eAuthMode);
+uint8_t rsnAuthModeRsn(enum ENUM_PARAM_AUTH_MODE eAuthMode);
 
 u_int8_t rsnPerformPolicySelection(struct ADAPTER
 				   *prAdapter,
