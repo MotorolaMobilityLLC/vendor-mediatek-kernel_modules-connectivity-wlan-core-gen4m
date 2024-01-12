@@ -969,7 +969,6 @@ aaaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
 	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
-
 	DBGLOG(AAA, TRACE, "TxDone ucStaState:%d, eAuthAssocState:%d\n",
 		prStaRec->ucStaState, prStaRec->eAuthAssocState);
 
@@ -1043,6 +1042,11 @@ aaaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
 			 */
 			if (assocCheckTxReAssocRespFrame(prAdapter,
 				prMsduInfo) != WLAN_STATUS_SUCCESS)
+				break;
+			if (prBssInfo &&
+					!kalP2PIsTxCarrierOn(prAdapter
+					->prGlueInfo,
+					prBssInfo))
 				break;
 
 			if (prStaRec->u2StatusCode == STATUS_CODE_SUCCESSFUL) {
