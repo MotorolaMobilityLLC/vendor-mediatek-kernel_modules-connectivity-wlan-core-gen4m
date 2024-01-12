@@ -605,13 +605,12 @@ twtPlannerAddAgrtTbl(
 
 	prTWTAgrtUpdate->ucAgrtTblIdx = ucAgrtTblIdx;
 	prTWTAgrtUpdate->ucAgrtCtrlFlag = TWT_AGRT_CTRL_ADD;
-	prTWTAgrtUpdate->ucOwnMacId =
-		(prBssInfo) ? prBssInfo->ucOwnMacIndex : 0;
+	prTWTAgrtUpdate->ucOwnMacId = prBssInfo->ucOwnMacIndex;
 	prTWTAgrtUpdate->ucFlowId = ucFlowId;
 	prTWTAgrtUpdate->u2PeerIdGrpId =
-		(prStaRec) ? CPU_TO_LE16(prStaRec->ucWlanIndex) : 1;
+			CPU_TO_LE16(prStaRec->ucWlanIndex);
 	prTWTAgrtUpdate->ucAgrtSpDuration = prTWTParams->ucMinWakeDur;
-	prTWTAgrtUpdate->ucBssIndex = prBssInfo ? prBssInfo->ucBssIndex : 0;
+	prTWTAgrtUpdate->ucBssIndex = prBssInfo->ucBssIndex;
 	prTWTAgrtUpdate->u4AgrtSpStartTsfLow =
 		CPU_TO_LE32(prTWTParams->u8TWT & 0xFFFFFFFF);
 	prTWTAgrtUpdate->u4AgrtSpStartTsfHigh =
@@ -655,7 +654,7 @@ twtPlannerAddAgrtTbl(
 		g_TwtSmartStaCtrl.fgTwtSmartStaActivated = TRUE;
 		g_TwtSmartStaCtrl.ucFlowId = ucFlowId;
 		g_TwtSmartStaCtrl.ucBssIndex
-			= prBssInfo ? prBssInfo->ucBssIndex : 0;
+			= prBssInfo->ucBssIndex;
 		g_TwtSmartStaCtrl.eState
 			= TWT_SMART_STA_STATE_SUCCESS;
 	}
@@ -722,11 +721,9 @@ twtPlannerResumeAgrtTbl(struct ADAPTER *prAdapter,
 
 	prTWTAgrtUpdate->ucAgrtTblIdx = ucAgrtTblIdx;
 	prTWTAgrtUpdate->ucAgrtCtrlFlag = TWT_AGRT_CTRL_SUSPEND_RESUME;
-	prTWTAgrtUpdate->ucOwnMacId = (prBssInfo) ?
-		prBssInfo->ucOwnMacIndex : 0;
+	prTWTAgrtUpdate->ucOwnMacId = prBssInfo->ucOwnMacIndex;
 	prTWTAgrtUpdate->ucFlowId = ucFlowId;
-	prTWTAgrtUpdate->u2PeerIdGrpId = (prStaRec) ?
-		CPU_TO_LE16(prStaRec->ucWlanIndex) : 1;
+	prTWTAgrtUpdate->u2PeerIdGrpId = CPU_TO_LE16(prStaRec->ucWlanIndex);
 	prTWTAgrtUpdate->ucAgrtSpDuration = rTWTParams.ucMinWakeDur;
 	prTWTAgrtUpdate->ucBssIndex = prBssInfo->ucBssIndex;
 	prTWTAgrtUpdate->u4AgrtSpStartTsfLow =
@@ -814,11 +811,10 @@ twtPlannerModifyAgrtTbl(struct ADAPTER *prAdapter,
 
 	prTWTAgrtUpdate->ucAgrtTblIdx = ucAgrtTblIdx;
 	prTWTAgrtUpdate->ucAgrtCtrlFlag = TWT_AGRT_CTRL_MODIFY;
-	prTWTAgrtUpdate->ucOwnMacId = (prBssInfo) ?
-		prBssInfo->ucOwnMacIndex : 0;
+	prTWTAgrtUpdate->ucOwnMacId = prBssInfo->ucOwnMacIndex;
 	prTWTAgrtUpdate->ucFlowId = ucFlowId;
-	prTWTAgrtUpdate->u2PeerIdGrpId = (prStaRec) ?
-		CPU_TO_LE16(prStaRec->ucWlanIndex) : 1;
+	prTWTAgrtUpdate->u2PeerIdGrpId =
+			CPU_TO_LE16(prStaRec->ucWlanIndex);
 	prTWTAgrtUpdate->ucAgrtSpDuration = rTWTParams.ucMinWakeDur;
 	prTWTAgrtUpdate->u4AgrtSpStartTsfLow =
 		CPU_TO_LE32(rTWTParams.u8TWT & 0xFFFFFFFF);
@@ -904,13 +900,13 @@ twtPlannerDelAgrtTbl(struct ADAPTER *prAdapter,
 
 	prTWTAgrtUpdate->ucAgrtTblIdx = ucAgrtTblIdx;
 	prTWTAgrtUpdate->ucAgrtCtrlFlag = TWT_AGRT_CTRL_DELETE;
-	prTWTAgrtUpdate->ucOwnMacId = (prBssInfo) ?
-		prBssInfo->ucOwnMacIndex : 0;
+	prTWTAgrtUpdate->ucOwnMacId =
+				prBssInfo->ucOwnMacIndex;
 	prTWTAgrtUpdate->ucFlowId = ucFlowId;
-	prTWTAgrtUpdate->u2PeerIdGrpId = (prStaRec) ?
-		CPU_TO_LE16(prStaRec->ucWlanIndex) : 1;
+	prTWTAgrtUpdate->u2PeerIdGrpId =
+		CPU_TO_LE16(prStaRec->ucWlanIndex);
 	prTWTAgrtUpdate->ucIsRoleAp = 0;  /* STA role */
-	prTWTAgrtUpdate->ucBssIndex = prBssInfo ? prBssInfo->ucBssIndex : 0;
+	prTWTAgrtUpdate->ucBssIndex = prBssInfo->ucBssIndex;
 
 	rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
 			CMD_ID_LAYER_0_EXT_MAGIC_NUM,
@@ -964,10 +960,10 @@ twtPlannerTeardownAgrtTbl(struct ADAPTER *prAdapter,
 
 	/* Don't care about other fields of the cmd */
 	prTWTAgrtUpdate->ucAgrtCtrlFlag = TWT_AGRT_CTRL_TEARDOWN;
-	prTWTAgrtUpdate->u2PeerIdGrpId = (prStaRec) ?
-		CPU_TO_LE16(prStaRec->ucWlanIndex) : 1;
+	prTWTAgrtUpdate->u2PeerIdGrpId =
+		CPU_TO_LE16(prStaRec->ucWlanIndex);
 	prTWTAgrtUpdate->ucIsRoleAp = 0;  /* STA role */
-	prTWTAgrtUpdate->ucBssIndex = prStaRec ? prStaRec->ucBssIndex : 0;
+	prTWTAgrtUpdate->ucBssIndex = prStaRec->ucBssIndex;
 
 	rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
 			CMD_ID_LAYER_0_EXT_MAGIC_NUM,
@@ -1042,13 +1038,11 @@ twtPlannerSuspendAgrtTbl(struct ADAPTER *prAdapter,
 
 	prTWTAgrtUpdate->ucAgrtTblIdx = ucAgrtTblIdx;
 	prTWTAgrtUpdate->ucAgrtCtrlFlag = TWT_AGRT_CTRL_SUSPEND;
-	prTWTAgrtUpdate->ucOwnMacId = (prBssInfo) ?
-		prBssInfo->ucOwnMacIndex : 0;
+	prTWTAgrtUpdate->ucOwnMacId = prBssInfo->ucOwnMacIndex;
 	prTWTAgrtUpdate->ucFlowId = ucFlowId;
-	prTWTAgrtUpdate->u2PeerIdGrpId = (prStaRec) ?
-		CPU_TO_LE16(prStaRec->ucWlanIndex) : 1;
+	prTWTAgrtUpdate->u2PeerIdGrpId = CPU_TO_LE16(prStaRec->ucWlanIndex);
 	prTWTAgrtUpdate->ucIsRoleAp = 0;  /* STA role */
-	prTWTAgrtUpdate->ucBssIndex = prBssInfo ? prBssInfo->ucBssIndex : 0;
+	prTWTAgrtUpdate->ucBssIndex = prBssInfo->ucBssIndex;
 	prTWTAgrtUpdate->ucAgrtParaBitmap =
 	    ((rTWTParams.fgProtect << TWT_AGRT_PARA_BITMAP_PROTECT_OFFSET) |
 	    ((!rTWTParams.fgUnannounced) << TWT_AGRT_PARA_BITMAP_ANNCE_OFFSET) |
@@ -1132,11 +1126,11 @@ uint32_t twtPlannerReset(
 		}
 
 		prTWTAgrtUpdate->ucAgrtCtrlFlag = TWT_AGRT_CTRL_RESET;
-		prTWTAgrtUpdate->u2PeerIdGrpId = (prStaRec) ?
-					CPU_TO_LE16(prStaRec->ucWlanIndex) : 1;
+		prTWTAgrtUpdate->u2PeerIdGrpId =
+					CPU_TO_LE16(prStaRec->ucWlanIndex);
 		prTWTAgrtUpdate->ucIsRoleAp = 0;  /* STA role */
-		prTWTAgrtUpdate->ucBssIndex = prBssInfo ?
-						prBssInfo->ucBssIndex : 0;
+		prTWTAgrtUpdate->ucBssIndex =
+						prBssInfo->ucBssIndex;
 
 		rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
 			CMD_ID_LAYER_0_EXT_MAGIC_NUM,
@@ -1369,8 +1363,10 @@ void twtPlannerGetTsfDone(
 			CPU_TO_LE32(u8Temp & 0xFFFFFFFF),
 			CPU_TO_LE32((uint32_t)(u8Temp >> 32)));
 
-		if (prTWTFlow == NULL) {
-			DBGLOG(TWT_PLANNER, ERROR, "prTWTFlow is NULL.\n");
+		if ((prTWTFlow == NULL) || (u8twt_interval == 0)) {
+			DBGLOG(TWT_PLANNER, ERROR,
+				"prTWTFlow %x\nu8twt_interval 0x%x\n",
+				CPU_TO_LE32(u8twt_interval & 0xFFFFFFFF));
 
 			kalMemFree(prGetTsfCtxt,
 				VIR_MEM_TYPE, sizeof(*prGetTsfCtxt));
@@ -1854,6 +1850,13 @@ void twtPlannerSetParams(
 	/* Find the BSS info */
 	ucBssIdx = prTWTCtrl->ucBssIdx;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+
+	if (!prBssInfo) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prBssInfo\n");
+
+		return;
+	}
 
 	if (prBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE ||
 		prBssInfo->eConnectionState != MEDIA_STATE_CONNECTED) {
