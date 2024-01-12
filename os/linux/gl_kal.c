@@ -3557,7 +3557,7 @@ kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 		fgWaitResp,
 		fgCmd,
 		pu4QryInfoLen,
-		aisGetDefaultLinkBssIndex(prGlueInfo->prAdapter));
+		AIS_DEFAULT_BSS_INDEX);
 }
 
 uint32_t
