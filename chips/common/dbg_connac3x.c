@@ -1126,7 +1126,7 @@ int32_t connac3x_show_stat_info(
 	uint8_t ucRaStatusNum = sizeof(RA_STATUS_TBLE) / sizeof(char *);
 	uint8_t ucBssIndex, ucBand;
 	uint8_t uc256QAMState;
-	struct PARAM_LINK_SPEED_EX rLinkSpeed;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed = {0};
 	struct CHIP_DBG_OPS *prChipDbg;
 
 	uint8_t *wtbl_raw_dw = NULL;
@@ -1392,7 +1392,7 @@ int32_t connac3x_show_stat_info(
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(REQ, WARN, "unable to retrieve rssi\n");
 
-		if (IS_BSS_INDEX_VALID(ucBssIndex))
+		if (ucBssIndex < BSSID_NUM)
 			rRssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
 
 #if CFG_SUPPORT_ADVANCE_CONTROL
@@ -3756,9 +3756,9 @@ int32_t connac3x_show_mib_info(
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
 		"\tTx 320MHz Cnt=%d\n",
 		tbcr4 & BN0_WF_MIB_TOP_TBCR4_TX_320MHZ_CNT_MASK);
+	per = 1000 * (uint64_t)(ampdu_cnt[1] - ampdu_cnt[2]);
 	per = (ampdu_cnt[1] == 0 ?
-		0 :
-		1000 * (uint64_t)(ampdu_cnt[1] - ampdu_cnt[2]) / ampdu_cnt[1]);
+		0 : do_div(per, ampdu_cnt[1]));
 	per_rem = do_div(per, 10);
 
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
