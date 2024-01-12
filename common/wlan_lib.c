@@ -7569,9 +7569,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		wlanCfgGetUint32(prAdapter, "GpioInterval", 0);
 	prWifiVar->ucWowDetectType = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "WowDetectType", WOWLAN_DETECT_TYPE_MAGIC);
-	prWifiVar->ucMobileLikeSuspend = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "MobileLikeSuspend", FEATURE_DISABLED);
+	prWifiVar->u2WowDetectTypeExt = (uint16_t) wlanCfgGetUint32(
+		prAdapter, "WowDetectTypeExt", WOWLAN_DETECT_TYPE_EXT_PORT);
 #endif
+
 	prWifiVar->u4TxHangFullDumpMode = wlanCfgGetUint32(
 			prAdapter, "TxHangFullDumpMode", 0);
 
@@ -12282,7 +12283,12 @@ void wlanSuspendPmHandle(struct GLUE_INFO *prGlueInfo)
 #if CFG_WOW_SUPPORT
 	/* 1) wifi cfg "Wow" is true              */
 	/* 2) wow is enable                       */
-	/* 3) WIfI connected => execute WOW flow  */
+	/* 3) WIFI connected => execute WOW flow  */
+	/* 4) WIFI disconnected                   */
+	/*      => is schedlued scanning &        */
+	/*          schedlued scan wakeup enabled */
+	/*      => execute WOW flow               */
+
 	if (IS_FEATURE_ENABLED(prWifiVar->ucWow)) {
 		/* Pending Timer related to CNM need to check and
 		 * perform corresponding timeout handler. Without it,
@@ -12302,6 +12308,12 @@ void wlanSuspendPmHandle(struct GLUE_INFO *prGlueInfo)
 					idx, ePwrMode);
 
 				DBGLOG(HAL, EVENT, "enter WOW flow\n");
+				kalWowProcess(prGlueInfo, TRUE);
+			} else if ((prWifiVar->rScanInfo.fgSchedScanning) &&
+				(prGlueInfo->prAdapter->rWifiVar.ucWowDetectType
+				& WOWLAN_DETECT_TYPE_SCHD_SCAN_SSID_HIT)) {
+				DBGLOG(HAL, EVENT,
+					"Sched Scanning, enter WOW flow\n");
 				kalWowProcess(prGlueInfo, TRUE);
 			}
 		}
@@ -12431,6 +12443,12 @@ void wlanResumePmHandle(struct GLUE_INFO *prGlueInfo)
 				prAisBssInfo->ucBssIndex,
 				Param_PowerModeCAM,
 				FALSE, PS_CALLER_WOW);
+		} else if ((prWifiVar->rScanInfo.fgSchedScanning) &&
+			(prGlueInfo->prAdapter->rWifiVar.ucWowDetectType
+			& WOWLAN_DETECT_TYPE_SCHD_SCAN_SSID_HIT)) {
+			DBGLOG(HAL, EVENT,
+				"Sched Scanning, leave WOW flow\n");
+			kalWowProcess(prGlueInfo, FALSE);
 		}
 	}
 #endif

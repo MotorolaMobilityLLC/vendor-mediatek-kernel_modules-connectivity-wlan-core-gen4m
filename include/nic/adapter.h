@@ -995,12 +995,9 @@ struct WIFI_VAR {
 	uint8_t ucWowOffMdtim; /* multiple DTIM if WOW disable, default 3 */
 	uint8_t ucEapolSuspendOffload; /* Suspend mode eapol offload, def:0 */
 	/* set wow detect type, default 1 (magic packet) */
-	/* bit 0, magic packet */
-	/* bit 1, any */
-	/* bit 2, disconnect */
-	/* bit 3, GTK rekey failure */
-	/* bit 4, beacon lost */
 	uint8_t ucWowDetectType;
+	/* set wow detect type extension, default 1 (port) */
+	uint16_t u2WowDetectTypeExt;
 	uint32_t u4TxHangFullDumpMode;
 	uint8_t ucMobileLikeSuspend; /* allow mobile like suspend */
 
