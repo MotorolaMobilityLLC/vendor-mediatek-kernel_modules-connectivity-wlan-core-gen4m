@@ -3178,7 +3178,9 @@ void halWpdmaProcessCmdDmaDone(struct GLUE_INFO *prGlueInfo,
 	void *pBuffer = NULL;
 	uint32_t u4SwIdx, u4DmaIdx = 0;
 
+#if !CFG_SUPPORT_DISABLE_CMD_DDONE_INTR
 	KAL_HIF_TXRING_LOCK_DECLARATION();
+#endif /* !CFG_SUPPORT_DISABLE_CMD_DDONE_INTR */
 
 	ASSERT(prGlueInfo);
 
@@ -3195,7 +3197,9 @@ void halWpdmaProcessCmdDmaDone(struct GLUE_INFO *prGlueInfo,
 	if (prTxRing->u4UsedCnt == 0)
 		return;
 
+#if !CFG_SUPPORT_DISABLE_CMD_DDONE_INTR
 	KAL_HIF_TXRING_LOCK(prTxRing);
+#endif /* !CFG_SUPPORT_DISABLE_CMD_DDONE_INTR */
 
 	if (prSwWfdmaInfo->fgIsEnSwWfdma) {
 		if (prSwWfdmaInfo->rOps.getDidx)
@@ -3236,7 +3240,9 @@ void halWpdmaProcessCmdDmaDone(struct GLUE_INFO *prGlueInfo,
 
 	prTxRing->TxSwUsedIdx = u4SwIdx;
 
+#if !CFG_SUPPORT_DISABLE_CMD_DDONE_INTR
 	KAL_HIF_TXRING_UNLOCK(prTxRing);
+#endif /* !CFG_SUPPORT_DISABLE_CMD_DDONE_INTR */
 
 #if CFG_SUPPORT_MULTITHREAD
 	if (!QUEUE_IS_EMPTY(&prGlueInfo->prAdapter->rTxCmdQueue))
@@ -3454,7 +3460,9 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 	enum ENUM_CMD_TX_RESULT ret = CMD_TX_RESULT_SUCCESS;
 	struct ADAPTER *prAdapter;
 
+#if !CFG_SUPPORT_DISABLE_CMD_DDONE_INTR
 	KAL_HIF_TXRING_LOCK_DECLARATION();
+#endif /* !CFG_SUPPORT_DISABLE_CMD_DDONE_INTR */
 
 	ASSERT(prGlueInfo);
 
@@ -3475,7 +3483,9 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 	KAL_HIF_BH_DISABLE(prGlueInfo);
 #endif /* !CFG_SUPPORT_RX_WORK */
 
+#if !CFG_SUPPORT_DISABLE_CMD_DDONE_INTR
 	KAL_HIF_TXRING_LOCK(prTxRing);
+#endif /* !CFG_SUPPORT_DISABLE_CMD_DDONE_INTR */
 
 	u4TotalLen = prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen;
 #if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
@@ -3596,7 +3606,9 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 				TRUE),
 			TRUE);
 unlock:
+#if !CFG_SUPPORT_DISABLE_CMD_DDONE_INTR
 	KAL_HIF_TXRING_UNLOCK(prTxRing);
+#endif /* !CFG_SUPPORT_DISABLE_CMD_DDONE_INTR */
 
 #if !CFG_SUPPORT_RX_WORK
 	KAL_HIF_BH_ENABLE(prGlueInfo);

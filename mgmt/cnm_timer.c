@@ -202,9 +202,9 @@ void cnmTimerInitialize(struct ADAPTER *prAdapter)
 
 	/* Note: glue layer have configured timer */
 
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
-
 	log_dbg(CNM, WARN, "reset timer list\n");
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
 
 	/* Remove all pending timers */
 	prTimerList = &(prAdapter->rRootTimer.rLinkHead);
@@ -410,6 +410,8 @@ void cnmTimerStartTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer,
 	struct ROOT_TIMER *prRootTimer;
 	struct LINK *prTimerList;
 	OS_SYSTIME rCurSysTime, rExpiredSysTime, rTimeoutSystime;
+	OS_SYSTIME rInvalidNextExpiredSysTime;
+	u_int8_t fgInvalidTime = FALSE;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -475,8 +477,9 @@ void cnmTimerStartTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer,
 	if (TIME_BEFORE(prRootTimer->rNextExpiredSysTime, rCurSysTime) &&
 		!KAL_TEST_BIT(GLUE_FLAG_TIMEOUT_BIT,
 				       prAdapter->prGlueInfo->ulFlag)) {
-		log_dbg(CNM, WARN, "Invalid NextExpiredSysTime: %u, currentSysTime: %u\n",
-			prRootTimer->rNextExpiredSysTime, rCurSysTime);
+		fgInvalidTime = TRUE;
+		rInvalidNextExpiredSysTime =
+			prRootTimer->rNextExpiredSysTime;
 		KAL_SET_BIT(GLUE_FLAG_TIMEOUT_BIT,
 				       prAdapter->prGlueInfo->ulFlag);
 	}
@@ -505,6 +508,12 @@ void cnmTimerStartTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer,
 	}
 
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
+
+	if (fgInvalidTime) {
+		log_dbg(CNM, WARN,
+			"Invalid NextExpiredSysTime: %u, currentSysTime: %u\n",
+			rInvalidNextExpiredSysTime, rCurSysTime);
+	}
 }
 
 /*----------------------------------------------------------------------------*/

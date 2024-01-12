@@ -1003,6 +1003,8 @@ struct WIFI_VAR {
 	uint8_t ucExtraTxDone;
 	uint8_t ucTxDbg;
 
+	uint8_t ucCmdDbg;
+
 	uint8_t ucCmdRsvResource;
 	uint32_t u4MgmtQueueDelayTimeout;
 

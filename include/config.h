@@ -2471,7 +2471,9 @@
 #define CFG_AP_80211V_SUPPORT 0
 #endif
 
-#define CFG_SUPPORT_DISABLE_CMD_DDONE_INTR    1
+#ifndef CFG_SUPPORT_DISABLE_CMD_DDONE_INTR
+#define CFG_SUPPORT_DISABLE_CMD_DDONE_INTR    0
+#endif /* CFG_SUPPORT_DISABLE_CMD_DDONE_INTR */
 #define CFG_SUPPORT_DISABLE_DATA_DDONE_INTR   1
 
 /*------------------------------------------------------------------------------

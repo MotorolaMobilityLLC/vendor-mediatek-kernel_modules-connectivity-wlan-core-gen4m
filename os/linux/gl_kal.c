@@ -4580,6 +4580,7 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	uint32_t ret = WLAN_STATUS_SUCCESS;
 	uint32_t waitRet = 0;
 	int r;
+	u_int8_t fgCmdDbgEn = wlanIfCmdDbgEn(prAdapter);
 
 	KAL_TIME_INTERVAL_DECLARATION();
 
@@ -4684,7 +4685,8 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 			prAdapter->u4WaitRecIdx].aucName,
 			sizeof(prAdapter->arPrevWaitHdlrRec[
 			prAdapter->u4WaitRecIdx].aucName),
-			"%ps", pfnOidHandler);
+			fgCmdDbgEn ? "%ps" : "%p",
+			pfnOidHandler);
 	prAdapter->u4WaitRecIdx = (prAdapter->u4WaitRecIdx + 1)
 					% OID_HDLR_REC_NUM;
 
@@ -5799,6 +5801,8 @@ int main_thread(void *data)
 
 		/* update current throughput */
 		kalPerMonUpdate(prGlueInfo->prAdapter);
+
+		wlanDumpAllBssStatistics(prGlueInfo->prAdapter);
 
 #if CFG_RFB_TRACK
 		nicRxRfbTrackCheck(prGlueInfo->prAdapter);
@@ -11948,26 +11952,32 @@ void kalUpdateCompHdlrRec(struct ADAPTER *prAdapter,
 				PFN_OID_HANDLER_FUNC pfnOidHandler,
 				struct CMD_INFO *prCmdInfo)
 {
+	u_int8_t fgCmdDbgEn = wlanIfCmdDbgEn(prAdapter);
+
 	if (pfnOidHandler)
 		kalSnprintf(prAdapter->arPrevCompHdlrRec[
 					prAdapter->u4CompRecIdx].aucName,
 				sizeof(prAdapter->arPrevCompHdlrRec[
 					prAdapter->u4CompRecIdx].aucName),
-				"%ps", pfnOidHandler);
+				fgCmdDbgEn ? "%ps" : "%p",
+				pfnOidHandler);
 	else {
 		if (prCmdInfo)
 			kalSnprintf(prAdapter->arPrevCompHdlrRec[
 					prAdapter->u4CompRecIdx].aucName,
 					sizeof(prAdapter->arPrevCompHdlrRec[
 					prAdapter->u4CompRecIdx].aucName),
-					"[CID 0x%x] %ps", prCmdInfo->ucCID,
+					fgCmdDbgEn ? "[CID 0x%x] %ps" :
+						"[CID 0x%x] %p",
+					prCmdInfo->ucCID,
 					__builtin_return_address(0));
 		else
 			kalSnprintf(prAdapter->arPrevCompHdlrRec[
 					prAdapter->u4CompRecIdx].aucName,
 					sizeof(prAdapter->arPrevCompHdlrRec[
 					prAdapter->u4CompRecIdx].aucName),
-					"%ps", __builtin_return_address(0));
+					 fgCmdDbgEn ? "%ps" : "%p",
+					__builtin_return_address(0));
 	}
 
 	prAdapter->u4CompRecIdx = (prAdapter->u4CompRecIdx + 1)
@@ -12942,7 +12952,8 @@ int kalNapiPoll(struct napi_struct *napi, int budget)
 
 	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
 		/* Handle SwRFBs under RX-direct mode */
-		return kalNapiPollSwRfb(napi, budget);
+		return TRACE(kalNapiPollSwRfb(napi, budget),
+			"kalNapiPollSwRfb");
 	}
 
 	prRxNapiSkbQ = &prGlueInfo->rRxNapiSkbQ;
@@ -15418,7 +15429,7 @@ void kalRxWork(struct work_struct *work)
 {
 	struct GLUE_INFO *prGlueInfo = container_of(work,
 					struct GLUE_INFO, rRxWork);
-	halRxWork(prGlueInfo);
+	TRACE(halRxWork(prGlueInfo), "halRxWork");
 
 #if CFG_SUPPORT_CPU_STAT
 	CPU_STAT_INC_CNT(prGlueInfo, CPU_RX_WORK_DONE);
