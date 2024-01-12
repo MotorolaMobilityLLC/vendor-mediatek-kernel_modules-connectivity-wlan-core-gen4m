@@ -499,6 +499,9 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 		if (prAdapter->u4OwnFailedLogCount >
 			LP_OWN_BACK_FAILED_RESET_CNT) {
 #if IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+			mtk_pcie_dump_link_info(0);
+#endif
 			if (in_interrupt())
 				DBGLOG(INIT, INFO, "Skip reset in tasklet\n");
 			else {
