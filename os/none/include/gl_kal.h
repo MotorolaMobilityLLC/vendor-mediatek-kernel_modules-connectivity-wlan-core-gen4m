@@ -802,6 +802,7 @@ int kal_test_bit(unsigned long bit, unsigned long *p);
 
 #define kalGetTimeTick() KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #define kalGetTimeTickNs() KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define kalGetJiffies() KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #ifdef CFG_COMBO_SLT_GOLDEN
 #define WLAN_TAG                        "[wlan_golden]"

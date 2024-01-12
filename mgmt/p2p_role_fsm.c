@@ -3050,6 +3050,10 @@ void p2pRoleFsmUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 		cnmStaRecChangeState(prAdapter,
 			prStaRec, STA_STATE_3);
 
+#if CFG_SUPPORT_TDLS_P2P_AUTO
+		/* fire the update jiffies */
+		prP2pLinkBssInfo->ulLastUpdate = kalGetJiffies();
+#endif
 #if CFG_SUPPORT_P2P_RSSI_QUERY
 		/* <1.5> Update RSSI if necessary */
 		nicUpdateRSSI(prAdapter,

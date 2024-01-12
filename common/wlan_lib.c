@@ -8055,6 +8055,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgAllowSameBandDualSta,
 		"AllowSameBandDualSta", FEATURE_ENABLED);
 
+#if CFG_SUPPORT_TDLS_P2P_AUTO
+	INIT_UINT(prWifiVar->u4TdlsP2pAuto,
+		"TdlsP2pAuto", FEATURE_ENABLED);
+#endif
+
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
 	INIT_UINT(prWifiVar->u4BackoffLevel, "BackoffLevel", 0);
 #endif
@@ -10314,6 +10319,15 @@ void wlanTxLifetimeTagPacket(struct ADAPTER *prAdapter,
 
 #if CFG_ENABLE_PKT_LIFETIME_PROFILE && CFG_ENABLE_PER_STA_STATISTICS
 			wlanTxLifetimeUpdateStaStats(prAdapter, prMsduInfo);
+#endif
+
+#if CFG_SUPPORT_TDLS_P2P_AUTO
+			TdlsP2pAuto(
+				prAdapter,
+				prMsduInfo->ucBssIndex,
+				prMsduInfo->u2FrameLength,
+				0,
+				prMsduInfo->aucEthDestAddr);
 #endif
 		}
 		break;
