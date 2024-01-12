@@ -910,6 +910,10 @@ struct MSDU_INFO {
 #if (CFG_SUPPORT_CONN_LOG == 1)
 	uint16_t u2HwSeqNum;
 #endif
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	/* used with flag MSDU_CONTROL_FLAG_FORCE_LINK */
+	uint16_t u2ForceTxWlanId;
+#endif
 };
 
 #define HIF_PKT_FLAGS_CT_INFO_APPLY_TXD            BIT(0)

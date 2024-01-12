@@ -65,8 +65,8 @@ static u_int8_t mlrCompose80211Header(
 	struct WLAN_MAC_HEADER_QOS *prWlanHeader = NULL;
 	uint16_t u2FrameCtrl = 0, u2EtherType = 0;
 	uint8_t	*pucLlc = NULL;
-	struct ETH_FRAME_HEADER *prEthernetFrame =
-		(struct ETH_FRAME_HEADER *)pucEthernetFrame;
+	struct ETH_FRAME *prEthernetFrame =
+		(struct ETH_FRAME *)pucEthernetFrame;
 	uint8_t *pucCurrPos = NULL;
 	u_int8_t fgHasLlc = FALSE;
 
