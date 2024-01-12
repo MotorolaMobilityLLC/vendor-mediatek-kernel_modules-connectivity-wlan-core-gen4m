@@ -5954,7 +5954,7 @@ p2pFuncProcessP2pProbeRspAction(struct ADAPTER *prAdapter,
 
 	if ((prProbeRspFrame->u2FrameCtrl & MASK_FRAME_TYPE) !=
 			MAC_FRAME_PROBE_RSP) {
-		DBGLOG(P2P, INFO, "fctrl=0x%x is not probe resp",
+		DBGLOG(P2P, INFO, "fctrl=0x%lx is not probe resp",
 			prProbeRspFrame->u2FrameCtrl & MASK_FRAME_TYPE);
 		return;
 	}

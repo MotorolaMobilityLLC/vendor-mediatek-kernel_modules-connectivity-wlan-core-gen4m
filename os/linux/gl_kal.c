@@ -3083,6 +3083,15 @@ void kalUpdateReAssocRspInfo(struct GLUE_INFO
 			return;
 
 		prJoinInfo = &(fsm->rJoinInfo);
+
+		/* nic_cmd_event defined MAX_IE_LENGTH */
+		if (u4IELength > MAX_IE_LENGTH) {
+			DBGLOG(INIT, ERROR,
+				"Assoc Resp IE truncated %d to %d",
+				u4IELength, MAX_IE_LENGTH);
+			u4IELength = MAX_IE_LENGTH;
+		}
+
 		prJoinInfo->u4BufLength = u4IELength;
 		kalMemCopy(prJoinInfo->aucIEBuf,
 			pucFrameBody + u4IEOffset,
