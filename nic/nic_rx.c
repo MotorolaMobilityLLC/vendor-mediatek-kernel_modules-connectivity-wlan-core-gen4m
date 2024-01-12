@@ -2220,7 +2220,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 			else if (prCmdInfo->fgIsOid)
 				kalOidComplete(
 					prAdapter->prGlueInfo,
-					prCmdInfo->fgSetQuery,
+					prCmdInfo,
 					0,
 					WLAN_STATUS_SUCCESS);
 
@@ -2332,7 +2332,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 					} else if (prCmdInfo->fgIsOid == TRUE) {
 						kalOidComplete(
 							prAdapter->prGlueInfo,
-							prCmdInfo->fgSetQuery,
+							prCmdInfo,
 							0,
 							WLAN_STATUS_SUCCESS);
 					}
@@ -2341,7 +2341,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 					if (prCmdInfo->fgIsOid == TRUE)
 						kalOidComplete(
 							prAdapter->prGlueInfo,
-							prCmdInfo->fgSetQuery,
+							prCmdInfo,
 							0,
 							WLAN_STATUS_FAILURE);
 				} else if (prCmdResult->ucStatus == 2) {
@@ -2349,7 +2349,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 					if (prCmdInfo->fgIsOid == TRUE)
 						kalOidComplete(
 							prAdapter->prGlueInfo,
-							prCmdInfo->fgSetQuery,
+							prCmdInfo,
 							0,
 						WLAN_STATUS_NOT_SUPPORTED
 							);
@@ -2545,7 +2545,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 				else if (prCmdInfo->fgIsOid)
 					kalOidComplete(
 						prAdapter->prGlueInfo,
-						prCmdInfo->fgSetQuery,
+						prCmdInfo,
 						0, WLAN_STATUS_SUCCESS);
 				/* return prCmdInfo */
 				cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
@@ -2599,7 +2599,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 					if ((prCmdInfo->fgIsOid) != 0) {
 						kalOidComplete(
 							prAdapter->prGlueInfo,
-							prCmdInfo->fgSetQuery,
+							prCmdInfo,
 							u4QueryInfoLen,
 							WLAN_STATUS_SUCCESS);
 						/* return prCmdInfo */
@@ -2629,7 +2629,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 					if ((prCmdInfo->fgIsOid) != 0) {
 						kalOidComplete(
 							prAdapter->prGlueInfo,
-							prCmdInfo->fgSetQuery,
+							prCmdInfo,
 							u4QueryInfoLen,
 							WLAN_STATUS_SUCCESS);
 						/* return prCmdInfo */
@@ -2656,7 +2656,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 					if ((prCmdInfo->fgIsOid) != 0) {
 						kalOidComplete(
 							prAdapter->prGlueInfo,
-							prCmdInfo->fgSetQuery,
+							prCmdInfo,
 							u4QueryInfoLen,
 							WLAN_STATUS_SUCCESS);
 						/* return prCmdInfo */
@@ -2937,7 +2937,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 						prEvent->aucBuffer);
 				else if (prCmdInfo->fgIsOid)
 					kalOidComplete(prAdapter->prGlueInfo,
-						prCmdInfo->fgSetQuery,
+						prCmdInfo,
 						0, WLAN_STATUS_SUCCESS);
 				/* return prCmdInfo */
 				cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
@@ -2966,7 +2966,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 						prEvent->aucBuffer);
 				else if (prCmdInfo->fgIsOid)
 					kalOidComplete(prAdapter->prGlueInfo,
-						prCmdInfo->fgSetQuery,
+						prCmdInfo,
 						0, WLAN_STATUS_SUCCESS);
 				/* return prCmdInfo */
 				cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
@@ -2991,7 +2991,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 						prEvent->aucBuffer);
 				else if (prCmdInfo->fgIsOid)
 					kalOidComplete(prAdapter->prGlueInfo,
-						prCmdInfo->fgSetQuery,
+						prCmdInfo,
 						0, WLAN_STATUS_SUCCESS);
 				/* return prCmdInfo */
 				cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
@@ -3352,7 +3352,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 						prEvent->aucBuffer);
 				else if (prCmdInfo->fgIsOid)
 					kalOidComplete(prAdapter->prGlueInfo,
-						prCmdInfo->fgSetQuery,
+						prCmdInfo,
 						0, WLAN_STATUS_SUCCESS);
 				/* return prCmdInfo */
 				cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
@@ -3384,7 +3384,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 						prEvent->aucBuffer);
 				else if (prCmdInfo->fgIsOid)
 					kalOidComplete(prAdapter->prGlueInfo,
-						prCmdInfo->fgSetQuery,
+						prCmdInfo,
 						0, WLAN_STATUS_SUCCESS);
 				/* return prCmdInfo */
 				cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
@@ -3508,7 +3508,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 						prEvent->aucBuffer);
 				else if (prCmdInfo->fgIsOid)
 					kalOidComplete(prAdapter->prGlueInfo,
-						prCmdInfo->fgSetQuery,
+						prCmdInfo,
 						       0, WLAN_STATUS_SUCCESS);
 				/* return prCmdInfo */
 				cmdBufFreeCmdInfo(prAdapter, prCmdInfo);

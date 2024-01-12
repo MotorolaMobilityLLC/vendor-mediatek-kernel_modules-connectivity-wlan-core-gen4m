@@ -1355,6 +1355,10 @@ struct HIF_STATS {
 	uint32_t u4DataRxCount; /* data from DMA to hif_thread */
 };
 
+struct OID_HANDLER_RECORD {
+	uint8_t aucName[100];
+};
+
 /*
  * Major ADAPTER structure
  * Major data structure for driver operation
@@ -1807,6 +1811,10 @@ struct ADAPTER {
 	uint32_t total_mgmtRX_timeout_count;
 #endif
 
+	struct OID_HANDLER_RECORD arPrevWaitHdlrRec[OID_HDLR_REC_NUM];
+	struct OID_HANDLER_RECORD arPrevCompHdlrRec[OID_HDLR_REC_NUM];
+	uint32_t u4WaitRecIdx;
+	uint32_t u4CompRecIdx;
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
