@@ -357,6 +357,15 @@ enum ENUM_CMD_TX_RESULT {
 #define KAL_TEST_BIT(bitOffset, value)     kal_test_bit(bitOffset, &value)
 #define SUSPEND_FLAG_FOR_WAKEUP_REASON	(0)
 #define SUSPEND_FLAG_CLEAR_WHEN_RESUME	(1)
+#define KAL_HEX_DUMP_TO_BUFFER(_buf, _len, _rowsize, _groupsize, _linebuf, \
+	_linebuflen, _ascii) \
+	kal_hex_dump_to_buffer(_buf, _len, _rowsize, _groupsize, _linebuf, \
+	_linebuflen, _ascii)
+
+#define KAL_WARN_ON(_condition) kal_warn_on(_condition)
+
+#define KAL_IS_ERR(_ptr) kal_is_err(_ptr)
+#define KAL_MIN(_a, _b) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 /*----------------------------------------------------------------------------*/
 /* Macros of getting current thread id                                        */
@@ -442,22 +451,7 @@ enum ENUM_CMD_TX_RESULT {
 #define KAL_BAND_2GHZ (0)
 #define KAL_BAND_5GHZ (1)
 #define KAL_BAND_60GHZ (2)
-#if (CFG_SUPPORT_WIFI_6G == 1)
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 #define KAL_BAND_6GHZ (3)
-#define ktime_get_ts64 ktime_get_real_ts64
-#else
-#define KAL_BAND_6GHZ KAL_BAND_60GHZ
-#undef timespec64
-#define timespec64 timeval
-#undef ktime_get_ts64
-#define ktime_get_ts64 do_gettimeofday
-#undef ktime_get_real_ts64
-#define ktime_get_real_ts64 do_gettimeofday
-#undef rtc_time64_to_tm
-#define rtc_time64_to_tm rtc_time_to_tm
-#endif
-#endif
 #define KAL_NUM_BANDS (4)
 
 #if CFG_SUPPORT_DATA_STALL
@@ -2038,6 +2032,9 @@ kalApplyCustomRegulatory(
 
 #define kal_div64_u64(_a, _b) div64_u64(_a, _b)
 
+#define kal_div_u64(_a, _b) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
 #define div64_u64(_dividend, _divisor) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
@@ -2218,4 +2215,19 @@ int kal_strtou8(const char *s, unsigned int base, uint8_t *res);
 int kal_strtou16(const char *s, unsigned int base, uint16_t *res);
 int kal_strtou32(const char *s, unsigned int base, uint32_t *res);
 int kal_strtos32(const char *s, unsigned int base, int32_t *res);
+int kal_strtoint(const char *s, unsigned int base, int *res);
+int kal_strtoul(const char *s, unsigned int base, unsigned long *res);
+int kal_scnprintf(char *buf, size_t size, const char *fmt, ...);
+void *kal_kmalloc(size_t size, enum gfp_t type);
+void *kal_vmalloc(size_t size);
+void kal_kfree(void *addr);
+void kal_vfree(void *addr);
+int kal_hex_dump_to_buffer(const void *buf, size_t len, int rowsize,
+	int groupsize, char *linebuf, size_t linebuflen,
+	bool ascii);
+bool kal_warn_on(uint8_t condition);
+
+int kalRegulatoryHint(char *country);
+
+bool kal_is_err(void *ptr);
 #endif /* _GL_KAL_H */

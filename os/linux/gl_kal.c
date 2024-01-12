@@ -13359,3 +13359,11 @@ void kalGetFtIeParam(void *pvftie,
 	*pu4IeLength = ftie->ie_len;
 	*pucIe = ftie->ie;
 }
+
+int kalRegulatoryHint(char *country)
+{
+	struct wiphy *pWiphy;
+
+	pWiphy = wlanGetWiphy();
+	return regulatory_hint(pWiphy, country);
+}

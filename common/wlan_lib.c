@@ -9925,7 +9925,7 @@ int32_t wlanHexToArray(int8_t *hexString, int8_t *hexArray, uint8_t arrayLen)
 		int8_t result;
 
 		for (index = strLen-1;
-		converted < min(arrayLen*2, strLen); index--) {
+		converted < KAL_MIN(arrayLen*2, strLen); index--) {
 			if ((strLen-converted) >= 2) {
 				index--;
 				result = wlanHexToByte(hexString+index);

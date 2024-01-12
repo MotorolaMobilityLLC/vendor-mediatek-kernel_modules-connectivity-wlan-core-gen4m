@@ -479,8 +479,14 @@ struct PWR_LEVEL_HANDLER_ELEMENT {
 #define KAL_TEST_BIT(bitOffset, value)     test_bit(bitOffset, &value)
 #define SUSPEND_FLAG_FOR_WAKEUP_REASON	(0)
 #define SUSPEND_FLAG_CLEAR_WHEN_RESUME	(1)
+#define KAL_HEX_DUMP_TO_BUFFER(_buf, _len, _rowsize, _groupsize, _linebuf, \
+	_linebuflen, _ascii) \
+	hex_dump_to_buffer(_buf, _len, _rowsize, _groupsize, _linebuf, \
+	_linebuflen, _ascii)
 
-
+#define KAL_WARN_ON WARN_ON
+#define KAL_IS_ERR IS_ERR
+#define KAL_MIN min
 /*----------------------------------------------------------------------------*/
 /* Macros of getting current thread id                                        */
 /*----------------------------------------------------------------------------*/
@@ -1339,7 +1345,7 @@ do { \
 */
 #define kal_mod64(_a, _b) do_div(_a, _b)
 #define kal_div64_u64(_a, _b) div64_u64(_a, _b)
-
+#define kal_div_u64(_a, _b) div_u64(_a, _b)
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -2277,10 +2283,7 @@ void *kalGetGlueScanReq(struct GLUE_INFO *prGlueInfo);
 void kalGetFtIeParam(void *pvftie,
 	uint16_t *pu2MDID, uint32_t *pu4IeLength,
 	const uint8_t **pucIe);
-int kal_strtou8(const char *s, unsigned int base, uint8_t *res);
-int kal_strtou16(const char *s, unsigned int base, uint16_t *res);
-int kal_strtou32(const char *s, unsigned int base, uint32_t *res);
-int kal_strtos32(const char *s, unsigned int base, int32_t *res);
+int kalRegulatoryHint(char *country);
 
 #if (CFG_WLAN_ATF_SUPPORT == 1)
 uint32_t kalSendAtfSmcCmd(uint32_t u4Opid, uint32_t u4Arg2,

@@ -481,7 +481,7 @@ const uint8_t *kalFindIeMatchMask(uint8_t eid,
 	/* match_offset can't be smaller than 2, unless match_len is
 	 * zero, in which case match_offset must be zero as well.
 	 */
-	if (WARN_ON((match_len && match_offset < 2) ||
+	if (KAL_WARN_ON((match_len && match_offset < 2) ||
 		(!match_len && match_offset)))
 		return NULL;
 	while (len >= 2 && len >= ies[1] + 2) {
@@ -503,7 +503,7 @@ const uint8_t *kalFindVendorIe(uint32_t oui, int type,
 	uint8_t match[] = {oui >> 16, oui >> 8, oui, type};
 	int match_len = type < 0 ? 3 : sizeof(match);
 
-	if (WARN_ON(type > 0xff))
+	if (KAL_WARN_ON(type > 0xff))
 		return NULL;
 
 	ie = kalFindIeMatchMask(ELEM_ID_VENDOR, ies, len, match,
@@ -619,4 +619,73 @@ int kal_strtos32(const char *s, unsigned int base, int32_t *res)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 	return 0;
+}
+
+int kal_strtoint(const char *s, unsigned int base, int *res)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+int kal_strtoul(const char *s, unsigned int base, unsigned long *res)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+int kal_scnprintf(char *buf, size_t size, const char *fmt, ...)
+{
+	va_list args;
+	int i = 0;
+
+	va_start(args, fmt);
+	/* i = vscnprintf(buf, size, fmt, args); */
+	va_end(args);
+
+	return i;
+}
+
+void *kal_kmalloc(size_t size, enum gfp_t type)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return NULL;
+}
+
+void *kal_vmalloc(size_t size)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return NULL;
+}
+
+void kal_kfree(void *addr)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void kal_vfree(void *addr)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+int kal_hex_dump_to_buffer(const void *buf, size_t len, int rowsize,
+	int groupsize, char *linebuf, size_t linebuflen, bool ascii)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+int kalRegulatoryHint(char *country)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+bool kal_warn_on(uint8_t condition)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+bool kal_is_err(void *ptr)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }

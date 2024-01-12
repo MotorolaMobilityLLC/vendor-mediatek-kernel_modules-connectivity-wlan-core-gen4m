@@ -1256,9 +1256,9 @@ uint64_t twtPlannerAdjustNextTWT(struct ADAPTER *prAdapter,
 	u4WakeIntvl = rTWTParams.u2WakeIntvalMantiss <<
 		rTWTParams.ucWakeIntvalExponent;
 	u8Diff = u8NextTWTOrig - rTWTParams.u8TWT;
-	/* TODO: move div_u64 to os-dependent file */
+
 	return (rTWTParams.u8TWT +
-		(div_u64(u8Diff, u4WakeIntvl) + 1) * u4WakeIntvl);
+		(kal_div_u64(u8Diff, u4WakeIntvl) + 1) * u4WakeIntvl);
 }
 
 void twtPlannerGetTsfDone(
