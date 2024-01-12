@@ -274,7 +274,9 @@ static void ehtRlmFillCapIE(
 
 	SET_DOT11BE_PHY_CAP_MCS_15(phy_cap_2, eht_mcs15_mru);
 
-	DBGLOG(RLM, INFO, "eht_bw=%d, phy_cap_1=%u, phy_cap_2=%u\n",
+	DBGLOG(RLM, INFO,
+		"[%d] eht_bw=%d, phy_cap_1=%u, phy_cap_2=%u\n",
+		prBssInfo->ucBssIndex,
 		eht_bw, phy_cap_1, phy_cap_2);
 
 	eht_phy_cap.phy_capinfo_1 = (phy_cap_1);
