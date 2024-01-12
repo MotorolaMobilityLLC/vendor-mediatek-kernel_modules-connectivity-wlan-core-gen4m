@@ -126,6 +126,8 @@ struct QUE {
 
 #define QUEUE_IS_NOT_EMPTY(prQueue)         ((prQueue)->u4NumElem > 0)
 
+#define QUEUE_LENGTH(prQueue)               ((prQueue)->u4NumElem)
+
 #define QUEUE_GET_HEAD(prQueue)             ((prQueue)->prHead)
 
 #define QUEUE_GET_TAIL(prQueue)             ((prQueue)->prTail)
