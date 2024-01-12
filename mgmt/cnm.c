@@ -1934,6 +1934,7 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc = NULL;
 	enum ENUM_BAND eBand = BAND_NULL;
 #if CFG_ENABLE_WIFI_DIRECT
+	uint8_t ucRoleIdx;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
@@ -1984,6 +1985,7 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 			ucMaxBandwidth = prAdapter->rWifiVar.ucStaBandwidth;
 	} else if (IS_BSS_P2P(prBssInfo)) {
 #if CFG_ENABLE_WIFI_DIRECT
+		ucRoleIdx = prBssInfo->u4PrivateData;
 		prP2pRoleFsmInfo = p2pFuncGetRoleByBssIdx(prAdapter,
 				   ucBssIndex);
 		if (!prAdapter->rWifiVar.ucApChnlDefFromCfg
@@ -1991,6 +1993,12 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 		    && prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
 			prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 			ucMaxBandwidth = prP2pConnReqInfo->eChnlBw;
+		} else if (prAdapter->rWifiVar.prP2pSpecificBssInfo[ucRoleIdx]
+			->fgIsRddOpchng == TRUE) {
+			ucMaxBandwidth =
+				prAdapter->rWifiVar
+					.prP2pSpecificBssInfo[ucRoleIdx]
+				->ucRddBw;
 		} else {
 			/* AP mode */
 			if (p2pFuncIsAPMode(
@@ -5926,6 +5934,11 @@ void cnmRddOpmodeEventHandler(
 		else
 			rfChannelInfo.eBand = BAND_5G;
 		rfChannelInfo.ucChnlBw = prRddEvtOpMode->ucChBw;
+		rfChannelInfo.u4CenterFreq1 = nicGetS1Freq(prAdapter,
+			rfChannelInfo.eBand,
+			rfChannelInfo.ucChannelNum,
+			rfChannelInfo.ucChnlBw);
+		rfChannelInfo.u4CenterFreq2 = 0;
 		cnmSapChannelSwitchReq(prAdapter,
 		&rfChannelInfo,
 		ucRoleIndex);
