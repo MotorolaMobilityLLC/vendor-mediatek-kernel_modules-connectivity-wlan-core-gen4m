@@ -260,6 +260,13 @@
 #include "hs20.h"
 #endif /* CFG_SUPPORT_PASSPOINT */
 
+/* Support AP Selection */
+#if (CFG_SUPPORT_APS == 1)
+#include "aps.h"
+#else
+#include "ap_selection.h"
+#endif
+
 #include "ais_fsm.h"
 #include "rtt.h"
 
@@ -286,13 +293,6 @@
 
 #if CFG_SUPPORT_WAPI
 #include "wapi.h"
-#endif
-
-/* Support AP Selection */
-#if (CFG_SUPPORT_APS == 1)
-#include "aps.h"
-#else
-#include "ap_selection.h"
 #endif
 
 #include "thrm.h"

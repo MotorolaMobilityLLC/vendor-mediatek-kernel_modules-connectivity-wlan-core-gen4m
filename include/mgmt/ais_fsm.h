@@ -442,6 +442,10 @@ struct AIS_FSM_INFO {
 	struct ROAMING_INFO rRoamingInfo;
 #endif	/* CFG_SUPPORT_ROAMING */
 
+#if (CFG_SUPPORT_APS == 1)
+	struct APS_INFO rApsInfo;
+#endif
+
 	struct AIS_SPECIFIC_BSS_INFO rAisSpecificBssInfo;
 
 	uint32_t u4SleepInterval;
@@ -1051,6 +1055,12 @@ struct IEEE_802_11_MIB *aisGetMib(
 
 #if CFG_SUPPORT_ROAMING
 struct ROAMING_INFO *aisGetRoamingInfo(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+#endif
+
+#if (CFG_SUPPORT_APS == 1)
+struct APS_INFO *aisGetApsInfo(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 #endif

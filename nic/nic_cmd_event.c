@@ -5241,7 +5241,6 @@ void nicEventUpdateCoexStatus(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc;
 	struct BSS_INFO *prBssInfo;
 	struct CMD_ADDBA_REJECT rAddBaReject = {0};
-
 	enum ENUM_COEX_MODE eCoexMode = COEX_NONE_BT;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint8_t ucAisIndex;
@@ -5284,6 +5283,12 @@ void nicEventUpdateCoexStatus(struct ADAPTER *prAdapter,
 		prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
 		fgHitBlackList = (bssGetIotApAction(prAdapter, prBssDesc) ==
 				  WLAN_IOT_AP_COEX_DIS_RX_AMPDU);
+
+#if (CFG_SUPPORT_APS == 1)
+		aisGetApsInfo(prAdapter, ucBssIndex)->fgIsGBandCoex =
+			!!(prEventCoexStatus->u2BtProfile & 0x0045);
+#endif
+
 		if (!prBssInfo || !prStaRec)
 			return;
 		/**

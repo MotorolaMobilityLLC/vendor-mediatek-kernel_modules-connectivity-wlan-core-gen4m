@@ -442,6 +442,8 @@ struct BSS_DESC {
 
 	/* Support AP Selection */
 	struct AIS_BLACKLIST_ITEM *prBlack;
+	uint16_t u2Score;
+	uint32_t u4Tput;
 
 #if CFG_SUPPORT_802_11K
 	struct NEIGHBOR_AP *prNeighbor;
@@ -451,6 +453,10 @@ struct BSS_DESC {
 	uint8_t fgIsDisallowed;
 	uint8_t fgExistEspIE;
 	uint32_t u4EspInfo[ESP_AC_NUM];
+	uint8_t fgExistEspOutIE;
+	uint8_t ucEspOutInfo[ESP_AC_NUM];
+	uint8_t fgIsRWMValid;
+	uint16_t u2ReducedWanMetrics;
 #endif
 	uint16_t u2StaCnt;
 	uint16_t u2AvaliableAC; /* Available Admission Capacity */
@@ -458,7 +464,7 @@ struct BSS_DESC {
 	uint8_t ucChnlUtilization;
 	uint8_t ucSNR;
 	u_int8_t fgSeenProbeResp;
-	u_int8_t fgExsitBssLoadIE;
+	u_int8_t fgExistBssLoadIE;
 	u_int8_t fgMultiAnttenaAndSTBC;
 	uint32_t u4UpdateIdx;
 	uint8_t fgIotApActionValid;
@@ -589,6 +595,14 @@ struct SCAN_LOG_CACHE {
 	struct SCAN_LOG_ELEM_BSS arBSSListBufCFG[SCAN_LOG_BUFF_SIZE];
 };
 
+struct CHNL_IDLE_SLOT {
+	uint16_t au2ChIdleTime2G4[14];
+	uint16_t au2ChIdleTime5G[25];
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	uint16_t au2ChIdleTime6G[59];
+#endif
+};
+
 struct SCAN_INFO {
 	/* Store the STATE variable of SCAN FSM */
 	enum ENUM_SCAN_STATE eCurrentState;
@@ -638,6 +652,8 @@ struct SCAN_INFO {
 	uint32_t u4ScanUpdateIdx;
 	/* Scan log cache */
 	struct SCAN_LOG_CACHE rScanLogCache;
+
+	struct CHNL_IDLE_SLOT rSlotInfo;
 
 #if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
 	uint8_t		ucScnZeroMdrdyTimes;
@@ -1061,6 +1077,12 @@ void scanLogCacheFlushBSS(struct LINK *prList,
 void scanLogCacheFlushAll(struct ADAPTER *prAdapter,
 	struct SCAN_LOG_CACHE *prScanLogCache,
 	enum ENUM_SCAN_LOG_PREFIX prefix);
+
+void scanFillChnlIdleSlot(struct ADAPTER *ad, enum ENUM_BAND eBand,
+	uint8_t ucChNum, uint16_t u2IdleTime);
+
+uint16_t scanGetChnlIdleSlot(struct ADAPTER *ad, enum ENUM_BAND eBand,
+	uint8_t ucChNum);
 
 void scanRemoveBssDescFromList(struct ADAPTER *prAdapter,
 			       struct LINK *prBSSDescList,

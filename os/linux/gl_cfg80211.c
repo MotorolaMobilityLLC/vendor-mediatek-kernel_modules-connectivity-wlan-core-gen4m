@@ -1948,8 +1948,10 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 
 	/* Avoid dangling pointer, set defatul all zero */
 	kalMemZero(&rNewSsid, sizeof(rNewSsid));
-	rNewSsid.u4CenterFreq = sme->channel ?
-				sme->channel->center_freq : 0;
+	if (sme->channel)
+		rNewSsid.u4CenterFreq = sme->channel->center_freq;
+	else if (sme->channel_hint)
+		rNewSsid.u4CenterFreq = sme->channel_hint->center_freq;
 	rNewSsid.pucBssid = (uint8_t *)sme->bssid;
 #if KERNEL_VERSION(3, 15, 0) <= CFG80211_VERSION_CODE
 	rNewSsid.pucBssidHint = (uint8_t *)sme->bssid_hint;

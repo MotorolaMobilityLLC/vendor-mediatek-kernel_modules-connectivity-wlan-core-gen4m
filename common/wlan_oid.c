@@ -1489,14 +1489,15 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 		    (struct MSG_HDR *) prAisAbortMsg, MSG_SEND_METHOD_BUF);
 
 	DBGLOG(INIT, INFO,
-		"ucBssIndex %d, ssid %s, bssid " MACSTR
-		", bssid_hint " MACSTR ", conn policy %d, disc reason %d\n",
+		"ucBssIndex %d, ssid %s, bssid " MACSTR ", bssid_hint " MACSTR
+		", conn policy %d, disc reason %d, freqInKHZ %d\n",
 		ucBssIndex,
 		HIDE(prConnSettings->aucSSID),
 		MAC2STR(prConnSettings->aucBSSID),
 		MAC2STR(prConnSettings->aucBSSIDHint),
 		prConnSettings->eConnectionPolicy,
-		prAisAbortMsg->ucReasonOfDisconnect);
+		prAisAbortMsg->ucReasonOfDisconnect,
+		prConnSettings->u4FreqInKHz);
 	return WLAN_STATUS_SUCCESS;
 } /* end of wlanoidSetConnect */
 
