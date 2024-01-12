@@ -4548,6 +4548,13 @@ void nicCmdEventLatchTSF(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 #endif
 
+#if CFG_SUPPORT_FW_DROP_SSN
+void nicEventHandleFwDropSSN(struct ADAPTER *prAdapter,
+	struct EVENT_STORED_FW_DROP_SSN_INFO *prSSN);
+void nicEventFwDropSSN(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent);
+#endif /* CFG_SUPPORT_FW_DROP_SSN */
+
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
 void nicEventHandleDelayBar(struct ADAPTER *prAdapter,
 		      struct WIFI_EVENT *prEvent);

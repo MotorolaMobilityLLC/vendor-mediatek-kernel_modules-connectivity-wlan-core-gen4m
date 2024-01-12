@@ -145,6 +145,9 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_STATS_LLS, nicEventStatsLinkStats},
 #endif
 	{EVENT_ID_RSSI_MONITOR, nicEventRssiMonitor},
+#if CFG_SUPPORT_FW_DROP_SSN
+	{EVENT_ID_FW_DROP_SSN, nicEventFwDropSSN},
+#endif /* CFG_SUPPORT_FW_DROP_SSN */
 	{EVENT_ID_DUMP_MEM, nicEventDumpMem},
 #if CFG_CE_ASSERT_DUMP
 	{EVENT_ID_ASSERT_DUMP, nicEventAssertDump},

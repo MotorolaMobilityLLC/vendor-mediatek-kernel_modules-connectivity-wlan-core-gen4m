@@ -6213,6 +6213,88 @@ void nicCmdEventQueryDpdCache(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_WIFI_GET_DPD_CACHE */
 
+#if CFG_SUPPORT_FW_DROP_SSN
+void nicEventHandleFwDropSSN(struct ADAPTER *prAdapter,
+	struct EVENT_STORED_FW_DROP_SSN_INFO *prSSN)
+{
+	struct QUE *prQue = NULL;
+	struct QUE rQue;
+	struct SW_RFB *prSwRfb;
+
+	prQue = &rQue;
+	QUEUE_INITIALIZE(prQue);
+#if CFG_RFB_TRACK
+	nicRxDequeueFreeQue(prAdapter, 1, prQue, RFB_TRACK_FW_DROP_SSN);
+#else /* CFG_RFB_TRACK */
+	nicRxDequeueFreeQue(prAdapter, 1, prQue);
+#endif /* CFG_RFB_TRACK */
+	QUEUE_REMOVE_HEAD(prQue, prSwRfb, struct SW_RFB *);
+	if (!prSwRfb) {
+		DBGLOG_LIMITED(QM, WARN, "No More RFB\n");
+		return;
+	}
+
+	prSwRfb->ucWlanIdx = prSSN->ucWlanIdx;
+	prSwRfb->ucStaRecIdx = secGetStaIdxByWlanIdx(prAdapter,
+			prSwRfb->ucWlanIdx);
+	prSwRfb->prStaRec = cnmGetStaRecByIndex(prAdapter,
+		prSwRfb->ucStaRecIdx);
+	prSwRfb->ucTid = prSSN->ucTid;
+	prSwRfb->u2SSN = prSSN->u2SSN;
+	prSwRfb->ucPayloadFormat = prSSN->ucAmsduFormat;
+	prSwRfb->eDst = RX_PKT_DESTINATION_NULL;
+
+	if (!prSwRfb->prStaRec) {
+		DBGLOG(NIC, WARN,
+			"Invalid STA[%u] WIDX[%u] TID[%u] SSN[%u] AmsduFormat[%u]\n",
+			prSwRfb->ucStaRecIdx, prSSN->ucWlanIdx,
+			prSSN->ucTid, prSSN->u2SSN,
+			prSSN->ucAmsduFormat);
+		return;
+	}
+
+	DBGLOG(NIC, TRACE,
+		"STA[%u] WIDX[%u] TID[%u] SSN[%u] AmsduFormat[%u]\n",
+		prSwRfb->ucStaRecIdx, prSSN->ucWlanIdx,
+		prSSN->ucTid, prSSN->u2SSN,
+		prSSN->ucAmsduFormat);
+
+	nicRxAddFwDropSSN(prAdapter, prSwRfb);
+
+	if (kalScheduleHandleRxFwDropSSN(prAdapter->prGlueInfo)
+		== WLAN_STATUS_NOT_ACCEPTED) {
+		/* Handle Non Rx-direct call path */
+		prSwRfb = nicRxGetFwDropSSN(prAdapter);
+		if (prSwRfb)
+			nicRxHandleFwDropSSN(prAdapter, prSwRfb);
+	}
+}
+
+void nicEventFwDropSSN(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent)
+{
+	struct EVENT_FW_DROP_SSN_INFO *info;
+	int i = 0;
+
+	info = (struct EVENT_FW_DROP_SSN_INFO *)(
+				prEvent->aucBuffer);
+
+	if (unlikely(info == NULL)) {
+		DBGLOG(NIC, WARN, "info is NULL\n");
+		return;
+	}
+
+	if (info->ucDrpPktNum > FW_DROP_SSN_MAX) {
+		DBGLOG(NIC, WARN, "skip invalid ucDrpPktNum:%u\n",
+			info->ucDrpPktNum);
+		return;
+	}
+
+	for (i = 0; i < info->ucDrpPktNum; i++)
+		nicEventHandleFwDropSSN(prAdapter, &(info->arSSN[i]));
+}
+#endif /* CFG_SUPPORT_FW_DROP_SSN */
+
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
 void nicEventHandleDelayBar(struct ADAPTER *prAdapter,
 		      struct WIFI_EVENT *prEvent)

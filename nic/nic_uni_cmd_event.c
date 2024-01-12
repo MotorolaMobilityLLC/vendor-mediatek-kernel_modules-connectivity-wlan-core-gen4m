@@ -11386,62 +11386,6 @@ void nicUniCmdEventLpDbgCtrl(struct ADAPTER *prAdapter,
 }
 
 #if CFG_SUPPORT_FW_DROP_SSN
-void nicUniHandleFwDropSSN(struct ADAPTER *prAdapter,
-	struct UNI_STORED_FW_DROP_SSN_INFO *prSSN)
-{
-	struct QUE *prQue = NULL;
-	struct QUE rQue;
-	struct SW_RFB *prSwRfb;
-
-	prQue = &rQue;
-	QUEUE_INITIALIZE(prQue);
-#if CFG_RFB_TRACK
-	nicRxDequeueFreeQue(prAdapter, 1, prQue, RFB_TRACK_FW_DROP_SSN);
-#else /* CFG_RFB_TRACK */
-	nicRxDequeueFreeQue(prAdapter, 1, prQue);
-#endif /* CFG_RFB_TRACK */
-	QUEUE_REMOVE_HEAD(prQue, prSwRfb, struct SW_RFB *);
-	if (!prSwRfb) {
-		DBGLOG_LIMITED(QM, WARN, "No More RFB\n");
-		return;
-	}
-
-	prSwRfb->ucWlanIdx = prSSN->ucWlanIdx;
-	prSwRfb->ucStaRecIdx = secGetStaIdxByWlanIdx(prAdapter,
-			prSwRfb->ucWlanIdx);
-	prSwRfb->prStaRec = cnmGetStaRecByIndex(prAdapter,
-		prSwRfb->ucStaRecIdx);
-	prSwRfb->ucTid = prSSN->ucTid;
-	prSwRfb->u2SSN = prSSN->u2SSN;
-	prSwRfb->ucPayloadFormat = prSSN->ucAmsduFormat;
-	prSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-
-	if (!prSwRfb->prStaRec) {
-		DBGLOG(NIC, WARN,
-			"Invalid STA[%u] WIDX[%u] TID[%u] SSN[%u] AmsduFormat[%u]\n",
-			prSwRfb->ucStaRecIdx, prSSN->ucWlanIdx,
-			prSSN->ucTid, prSSN->u2SSN,
-			prSSN->ucAmsduFormat);
-		return;
-	}
-
-	DBGLOG(NIC, TRACE,
-		"STA[%u] WIDX[%u] TID[%u] SSN[%u] AmsduFormat[%u]\n",
-		prSwRfb->ucStaRecIdx, prSSN->ucWlanIdx,
-		prSSN->ucTid, prSSN->u2SSN,
-		prSSN->ucAmsduFormat);
-
-	nicRxAddFwDropSSN(prAdapter, prSwRfb);
-
-	if (kalScheduleHandleRxFwDropSSN(prAdapter->prGlueInfo)
-		== WLAN_STATUS_NOT_ACCEPTED) {
-		/* Handle Non Rx-direct call path */
-		prSwRfb = nicRxGetFwDropSSN(prAdapter);
-		if (prSwRfb)
-			nicRxHandleFwDropSSN(prAdapter, prSwRfb);
-	}
-}
-
 void nicUniEventFwDropSSN(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
 	int32_t tags_len;
@@ -11471,7 +11415,8 @@ void nicUniEventFwDropSSN(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			}
 
 			for (i = 0; i < info->ucDrpPktNum; i++)
-				nicUniHandleFwDropSSN(ad, &(info->arSSN[i]));
+				nicEventHandleFwDropSSN(ad,
+					&(info->arSSN[i]));
 		}
 			break;
 		default:
