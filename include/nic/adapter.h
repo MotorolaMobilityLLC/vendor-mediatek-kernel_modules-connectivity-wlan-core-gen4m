@@ -541,6 +541,7 @@ struct BSS_INFO {
 #endif
 };
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 struct MLD_BSS_INFO {
 	struct LINK rBssList;
 	u_int8_t fgIsInUse;
@@ -549,6 +550,7 @@ struct MLD_BSS_INFO {
 	uint8_t ucOmRemapIdx;
 	uint8_t aucOwnMldAddr[MAC_ADDR_LEN];
 };
+#endif
 
 struct NEIGHBOR_AP {
 	struct LINK_ENTRY rLinkEntry;
@@ -1767,9 +1769,10 @@ struct ADAPTER {
 #if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
 	struct LINK rNeighborAPInfoList;
 #endif
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO aprMldBssInfo[MAX_BSSID_NUM];
 	struct MLD_STA_RECORD aprMldStarec[CFG_STA_REC_NUM];
-
+#endif
 	uint8_t ucCnmTokenID;
 };				/* end of _ADAPTER_T */
 

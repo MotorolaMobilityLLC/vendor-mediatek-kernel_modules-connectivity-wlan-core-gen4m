@@ -515,7 +515,7 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
 		 * we may also reset the ucJoinFailureCount to 0.
 		 */
 	}
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (prBssDesc->rMlInfo.fgValid) {
 		prStaRec->ucLinkIndex = prBssDesc->rMlInfo.fgValid ?
 			prBssDesc->rMlInfo.ucLinkIndex : MLD_LINK_INDEX_NOT_FOUND;

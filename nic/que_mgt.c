@@ -5029,7 +5029,9 @@ void qmHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	uint32_t u4Tid;
 	uint32_t u4WinSize;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_STA_RECORD *prMldSta = NULL;
+#endif
 
 	DBGLOG(QM, INFO, "QM:Event +RxBa\n");
 
@@ -5037,6 +5039,8 @@ void qmHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
 				 prEvent->aucBuffer);
 	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter,
 			prEventRxAddBa->ucStaRecIdx);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prMldSta = mldStarecGetByStarec(prAdapter, prStaRec);
 	if (prMldSta) {
 		uint8_t ucStaIndex = secGetStaIdxByWlanIdx(prAdapter,
@@ -5050,6 +5054,7 @@ void qmHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
 				prEventRxAddBa->ucStaRecIdx,
 				ucStaIndex);
 	}
+#endif
 
 	if (!prStaRec) {
 		/* Invalid STA_REC index, discard the event packet */

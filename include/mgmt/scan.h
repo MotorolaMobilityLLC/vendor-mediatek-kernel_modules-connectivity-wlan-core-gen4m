@@ -306,7 +306,7 @@ enum ENUM_SCAN_LOG_PREFIX {
 	LOG_SCAN_MAX
 };
 
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 struct ML_INFO {
 	uint8_t fgValid;
 	uint8_t aucMldAddr[MAC_ADDR_LEN];
@@ -322,7 +322,7 @@ struct BSS_DESC {
 	/* Support AP Selection*/
 	struct LINK_ENTRY rLinkEntryEss[KAL_AIS_NUM];
 
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	/* For MLO, the MldAddr is to save common MLD MAC address */
 	struct ML_INFO rMlInfo;
 #endif

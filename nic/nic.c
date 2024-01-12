@@ -3330,8 +3330,10 @@ void nicInitMGMT(IN struct ADAPTER *prAdapter,
 	/* register for power level control */
 	kalPwrLevelHdlrRegister(prAdapter, cnmPowerControl);
 #endif
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldBssInit(prAdapter);
 	mldStarecInit(prAdapter);
+#endif
 
 	/* CNM Module - initialization */
 	cnmInit(prAdapter);
@@ -3390,8 +3392,10 @@ void nicUninitMGMT(IN struct ADAPTER *prAdapter)
 	/* CNM Module - uninitialization */
 	cnmUninit(prAdapter);
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldStarecUninit(prAdapter);
 	mldBssUninit(prAdapter);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

@@ -991,6 +991,20 @@
 "CFG_SUPPORT_802_11V should be 1 once CFG_SUPPORT_802_11V_TIMING_MEASUREMENT equals to 1"
 #endif
 
+#ifndef CFG_SUPPORT_802_11BE
+#define CFG_SUPPORT_802_11BE                     0
+#endif
+
+#ifndef CFG_SUPPORT_802_11BE_MLO
+#define CFG_SUPPORT_802_11BE_MLO                 0
+#endif
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && \
+	(CFG_SUPPORT_802_11BE == 0)
+#error \
+"CFG_SUPPORT_802_11BE should be 1 once CFG_SUPPORT_802_11BE_MLO equals to 1"
+#endif
+
 #define WNM_UNIT_TEST CFG_SUPPORT_802_11V
 
 #define CFG_SUPPORT_802_11V_MBSSID		0

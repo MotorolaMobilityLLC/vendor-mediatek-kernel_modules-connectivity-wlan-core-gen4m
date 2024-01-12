@@ -1355,7 +1355,7 @@ void scanParsingMBSSIDSubelement(IN struct ADAPTER *prAdapter,
 }
 #endif
 #if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief
@@ -1969,7 +1969,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 				u2TbttInfoLength);
 			return;
 		}
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 		if (prMlInfo)
 			scanHandleRnrMldParam(prAdapter, prNeighborAPInfoField,
 						prMlInfo);
@@ -2338,7 +2338,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
 	uint8_t aucRnrIe[MAX_LEN_OF_MLIE];
 	uint8_t ucRnrIeExist = FALSE;
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	/* TODO */
 	uint8_t aucMldIe[MAX_LEN_OF_MLIE];
 	uint8_t ucMldIeExist = FALSE;
@@ -2706,7 +2706,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	if (fgEfuseCtrlAxOn == 1)
 		prBssDesc->fgIsHEPresent = FALSE;
 #endif
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prBssDesc->fgIsEHTPresent = FALSE;
 	prBssDesc->rMlInfo.fgValid = FALSE;
 #endif
@@ -3046,10 +3046,12 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			/* TODO */
 			if (IE_ID_EXT(pucIE) == EID_EXT_EHT_CAPS)
 				prBssDesc->fgIsEHTPresent = TRUE;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_MLD) {
 				ucMldIeExist = TRUE;
 				kalMemCopy(aucMldIe, pucIE, IE_LEN(pucIE) + 2);
 			}
+#endif
 #endif
 			if (fgEfuseCtrlAxOn == 1) {
 #if (CFG_SUPPORT_HE_ER == 1)
@@ -3436,7 +3438,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	/* Both MLD IE and RNR IE exist, need to handle both */
 	if (ucMldIeExist && ucRnrIeExist) {
 		struct MULTI_LINK_INFO rMlInfo;

@@ -533,8 +533,9 @@ struct AIS_FSM_INFO {
 
 	struct LINK rAxBlacklist;
 	struct LINK rHeHtcBlacklist;
-
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prMldBssInfo;
+#endif
 };
 
 struct AIS_OFF_CHNL_TX_REQ_INFO {
