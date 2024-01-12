@@ -8603,7 +8603,7 @@ void wlanFeatureToFw(IN struct ADAPTER *prAdapter)
 
 
 
-			DBGLOG(INIT, WARN,
+			DBGLOG(INIT, TRACE,
 			       "Send key word (%s) WITH (%s) to firmware\n",
 			       rCmd_v1.itemString, rCmd_v1.itemValue);
 
@@ -8650,7 +8650,7 @@ void wlanFeatureToFw(IN struct ADAPTER *prAdapter)
 					       "[Fail]kalIoctl wifiSefCFG fail 0x%x\n",
 					       rStatus);
 
-				DBGLOG(INIT, INFO,
+				DBGLOG(INIT, TRACE,
 				       "kalIoctl wifiSefCFG num:%d\n", ucTimes);
 				kalMemSet(rCmdV1Header.buffer, 0,
 					  MAX_CMD_BUFFER_LENGTH);
@@ -8668,9 +8668,6 @@ void wlanFeatureToFw(IN struct ADAPTER *prAdapter)
 	if (ucTimes != 0) {
 		/* Send to FW */
 		rCmdV1Header.itemNum = ucTimes;
-
-		DBGLOG(INIT, INFO, "cmdV1Header.itemNum:%d\n",
-		       rCmdV1Header.itemNum);
 
 		rStatus = wlanSendSetQueryCmd(
 			  prAdapter,	/* prAdapter */
@@ -8690,7 +8687,10 @@ void wlanFeatureToFw(IN struct ADAPTER *prAdapter)
 			       "[Fail]kalIoctl wifiSefCFG fail 0x%x\n",
 			       rStatus);
 
-		DBGLOG(INIT, INFO, "kalIoctl wifiSefCFG num:%d\n", ucTimes);
+		DBGLOG(INIT, TRACE,
+			"cmdV1Header.itemNum:%d, kalIoctl wifiSefCFG num:%d\n",
+			rCmdV1Header.itemNum,
+			ucTimes);
 		kalMemSet(rCmdV1Header.buffer, 0, MAX_CMD_BUFFER_LENGTH);
 		rCmdV1Header.cmdBufferLen = 0;
 		ucTimes = 0;
