@@ -2266,6 +2266,8 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define MAX_LEN_OF_MLIE					(255)
 #define MAX_LEN_OF_FRAGMENT				(255)
 
+#define MAX_NUM_MLD_LINKS				15
+
 #define MLD_PARAM_MLD_ID_MASK				BITS(0, 7)
 #define MLD_PARAM_LINK_ID_MASK				BITS(8, 11)
 #define MLD_PARAM_LINK_ID_SHIFT				8

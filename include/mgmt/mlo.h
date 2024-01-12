@@ -182,6 +182,7 @@ struct MULTI_LINK_INFO {
 	uint16_t u2EmlCap;
 	uint16_t u2MldCap;
 	uint8_t ucMldId;
+	uint16_t u2ValidLinks; /* bitmap of valid MLO link IDs */
 	uint8_t ucProfNum;
 	struct STA_PROFILE rStaProfiles[MLD_LINK_MAX];
 };

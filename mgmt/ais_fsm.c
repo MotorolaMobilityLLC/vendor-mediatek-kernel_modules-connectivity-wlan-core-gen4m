@@ -7891,6 +7891,35 @@ static uint64_t aisGetBssTermTsf(uint8_t *pucSubIe, uint8_t ucLength)
 	return 0;
 }
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+void aisCollectNeighborMld(struct ADAPTER *prAdapter,
+	struct NEIGHBOR_AP *prNeighborAP, uint8_t *pucSubIe, uint8_t ucLength)
+{
+	const uint8_t *ml;
+	struct MULTI_LINK_INFO parse, *info = &parse;
+
+	ml = mldFindMlIE(pucSubIe, ucLength, ML_CTRL_TYPE_BASIC);
+	if (ml) {
+		mldParseBasicMlIE(info, ml,
+			IE_SIZE(ml),
+			prNeighborAP->aucBssid,
+			MAC_FRAME_BEACON,
+			__func__);
+
+		if (!info->ucValid)
+			return;
+
+		prNeighborAP->fgIsMld = TRUE;
+		COPY_MAC_ADDR(prNeighborAP->aucMldAddr, info->aucMldAddr);
+
+		if (!(info->ucMlCtrlPreBmp & ML_CTRL_LINK_ID_INFO_PRESENT))
+			prNeighborAP->u2ValidLinks = BITS(0, 15);
+		else
+			prNeighborAP->u2ValidLinks = info->u2ValidLinks;
+	}
+}
+#endif
+
 uint32_t aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 			  uint16_t u2ApBufLen, uint8_t ucValidInterval,
 			  uint8_t ucBssIndex)
@@ -7951,6 +7980,14 @@ uint32_t aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 			IE_SIZE(prIe) - OFFSET_OF(struct IE_NEIGHBOR_REPORT,
 					       aucSubElem));
 		COPY_MAC_ADDR(prNeighborAP->aucBssid, prIe->aucBSSID);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		aisCollectNeighborMld(prAdapter, prNeighborAP,
+			prIe->aucSubElem,
+			IE_SIZE(prIe) - OFFSET_OF(struct IE_NEIGHBOR_REPORT,
+					       aucSubElem));
+#endif
+
 		DBGLOG(AIS, INFO,
 		       "Bssid " MACSTR
 		       ", PrefPresence %d, Pref %d, Chnl %d, BssidInfo 0x%08x\n",
