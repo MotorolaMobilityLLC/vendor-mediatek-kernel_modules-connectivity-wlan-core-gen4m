@@ -1173,7 +1173,9 @@ struct MSDU_INFO *qmEnqueueTxPackets(IN struct ADAPTER *prAdapter,
 
 	struct QUE *prTxQue;
 	struct QUE rNotEnqueuedQue;
+#if ARP_MONITER_ENABLE
 	struct STA_RECORD *prStaRec;
+#endif
 	uint8_t ucTC;
 	struct TX_CTRL *prTxCtrl = &prAdapter->rTxCtrl;
 	struct QUE_MGT *prQM = &prAdapter->rQM;
