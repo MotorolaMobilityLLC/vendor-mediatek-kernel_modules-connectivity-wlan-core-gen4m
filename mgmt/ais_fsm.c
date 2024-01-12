@@ -2841,7 +2841,8 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 		prAisFsmInfo->u2SeqNumOfScanReport) {
 		prAisFsmInfo->u2SeqNumOfScanReport = AIS_SCN_REPORT_SEQ_NOT_SET;
 		prConnSettings->fgIsScanReqIssued = FALSE;
-		kalScanDone(prAdapter->prGlueInfo, ucBssIndex,
+		if (prRmReq->rBcnRmParam.eState != RM_ON_GOING)
+			kalScanDone(prAdapter->prGlueInfo, ucBssIndex,
 			(eStatus == SCAN_STATUS_DONE) ?
 			WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE);
 	}
