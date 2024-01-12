@@ -58,6 +58,7 @@ uint8_t p2pDevFsmInit(struct ADAPTER *prAdapter)
 			NETWORK_TYPE_P2P, TRUE);
 
 		if (prP2pBssInfo != NULL) {
+			BSS_INFO_INIT(prAdapter, prP2pBssInfo);
 			COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,
 					prAdapter->rWifiVar.aucDeviceAddress);
 			DBGLOG(INIT, TRACE, "Set p2p dev mac to " MACSTR "\n",
