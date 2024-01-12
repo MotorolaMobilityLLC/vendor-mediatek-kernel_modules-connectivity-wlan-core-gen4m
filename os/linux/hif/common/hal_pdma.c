@@ -4423,6 +4423,11 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 	/* Wait til RDY bit has been cleared */
 	rStatus = wlanCheckWifiFunc(prAdapter, FALSE);
 
+#if defined(_HIF_PCIE)
+	if (prBusInfo->powerOffPcieMac)
+		prBusInfo->powerOffPcieMac(prAdapter);
+#endif /* _HIF_PCIE */
+
 	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 
 	if (prBusInfo->disableSwInterrupt)

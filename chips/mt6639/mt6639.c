@@ -173,6 +173,7 @@ static void mt6639WfdmaRxRingExtCtrl(
 	u_int32_t index);
 
 static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo);
+static void mt6639PowerOffPcieMac(struct ADAPTER *prAdpater);
 static void mt6639PcieHwControlVote(
 	struct ADAPTER *prAdapter,
 	uint8_t enable,
@@ -610,6 +611,7 @@ struct BUS_INFO mt6639_bus_info = {
 	.configWfdmaRxRingTh = mt6639ConfigWfdmaRxRingThreshold,
 #if defined(_HIF_PCIE)
 	.initPcieInt = mt6639InitPcieInt,
+	.powerOffPcieMac = mt6639PowerOffPcieMac,
 	.hwControlVote = mt6639PcieHwControlVote,
 #if CFG_SUPPORT_PCIE_ASPM
 	.configPcieAspm = mt6639ConfigPcieAspm,
@@ -2159,6 +2161,13 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 		DBGLOG(HAL, INFO, "pcie_vir_addr is null\n");
 	}
 #endif
+}
+
+static void mt6639PowerOffPcieMac(struct ADAPTER *prAdpater)
+{
+#if IS_MOBILE_SEGMENT
+	HAL_MCR_WR(prAdpater, PCIE_MAC_IREG_IMASK_HOST_ADDR, 0);
+#endif /* IS_MOBILE_SEGMENT */
 }
 
 static void mt6639PcieHwControlVote(
