@@ -3339,6 +3339,7 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 		}
 	}
 
+	rlmDomainSetDfsRegion(pRequest->dfs_region);
 
 
 DOMAIN_SEND_CMD:

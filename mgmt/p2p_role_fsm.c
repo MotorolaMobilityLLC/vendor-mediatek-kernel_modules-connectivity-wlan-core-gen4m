@@ -1931,6 +1931,7 @@ p2pRoleFsmRunEventChnlGrant(IN P_ADAPTER_T prAdapter,
 	P_MSG_CH_GRANT_T prMsgChGrant = (P_MSG_CH_GRANT_T) NULL;
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
+	UINT_32 u4CacTime;
 #endif
 	UINT_8 ucTokenID = 0;
 
@@ -1980,11 +1981,17 @@ p2pRoleFsmRunEventChnlGrant(IN P_ADAPTER_T prAdapter,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 			case P2P_ROLE_STATE_DFS_CAC:
 				p2pFuncStartRdd(prAdapter, prMsgChGrant->ucBssIndex);
+
+				if (p2pFuncCheckWeatherRadarBand(prChnlReqInfo))
+					u4CacTime = P2P_AP_CAC_WEATHER_CHNL_HOLD_TIME_MS;
+				else
+					u4CacTime = prP2pRoleFsmInfo->rChnlReqInfo.u4MaxInterval;
+
 				cnmTimerStartTimer(prAdapter, &(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
-					prP2pRoleFsmInfo->rChnlReqInfo.u4MaxInterval);
+					u4CacTime);
 
 				DBGLOG(P2P, INFO, "p2pRoleFsmRunEventChnlGrant: CAC time = %ds\n",
-					prP2pRoleFsmInfo->rChnlReqInfo.u4MaxInterval/1000);
+					u4CacTime/1000);
 				break;
 			case P2P_ROLE_STATE_SWITCH_CHANNEL:
 				p2pFuncDfsSwitchCh(prAdapter, prP2pBssInfo, prP2pRoleFsmInfo->rChnlReqInfo);
