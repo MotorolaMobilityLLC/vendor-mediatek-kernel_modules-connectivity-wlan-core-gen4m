@@ -1504,7 +1504,7 @@ cnmPeerAdd(struct ADAPTER *prAdapter, void *pvSetBuffer,
 {
 	struct CMD_PEER_ADD *prCmd;
 	struct BSS_INFO *prBssInfo;
-	struct STA_RECORD *prStaRec;
+	struct STA_RECORD *prStaRec, *prStaRecOfAp;
 
 	/* sanity check */
 
@@ -1545,7 +1545,8 @@ cnmPeerAdd(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		COPY_MAC_ADDR(prStaRec->aucMacAddr, prCmd->aucPeerMac);
 
 		prStaRec->u2BSSBasicRateSet = prBssInfo->u2BSSBasicRateSet;
-
+		prStaRec->ucDesiredPhyTypeSet
+			= prAdapter->rWifiVar.ucAvailablePhyTypeSet;
 		prStaRec->u2DesiredNonHTRateSet
 			= prAdapter->rWifiVar.ucAvailablePhyTypeSet;
 
@@ -1553,6 +1554,13 @@ cnmPeerAdd(struct ADAPTER *prAdapter, void *pvSetBuffer,
 			= prBssInfo->u2OperationalRateSet;
 		prStaRec->ucPhyTypeSet = prBssInfo->ucPhyTypeSet;
 		prStaRec->eStaType = prCmd->eStaType;
+
+		/* align setting with AP */
+		prStaRecOfAp = prBssInfo->prStaRecOfAP;
+		if (prStaRecOfAp) {
+			prStaRec->u2DesiredNonHTRateSet
+				= prStaRecOfAp->u2DesiredNonHTRateSet;
+		}
 
 		/* Init lowest rate to prevent CCK in 5G band */
 		nicTxUpdateStaRecDefaultRate(prAdapter, prStaRec);
@@ -1774,6 +1782,8 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		prStaRec->ucDesiredPhyTypeSet |= PHY_TYPE_BIT_HT;
 		prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
 		prStaRec->u2HtCapInfo = prCmd->rHtCap.u2CapInfo;
+		if (!IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxLdpc))
+			prStaRec->u2HtCapInfo &= ~HT_CAP_INFO_LDPC_CAP;
 		prStaRec->ucAmpduParam = prCmd->rHtCap.ucAmpduParamsInfo;
 		prStaRec->u2HtExtendedCap = prCmd->rHtCap.u2ExtHtCapInfo;
 		prStaRec->u4TxBeamformingCap = prCmd->rHtCap.u4TxBfCapInfo;
