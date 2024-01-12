@@ -1620,6 +1620,47 @@ uint8_t *kal_skb_pull(void *pvPacket, uint32_t u4Length)
 	return prSkbBuff;
 }
 
+/**
+ * Detect and attempt to fix the wrong pointer problem if
+ * pucRecvBuff and prRxStatus were changed and different from skb->head.
+ *
+ * If error detected and recoverable,
+ * prSwRfb->pucRecvBuff = prSwRfb->prRxStatus = skb->data;
+ * In case when CFG_SUPPORT_SNIFFER_RADIOTAP was defined, there will be
+ * a 128-byte headroom (skb->data - skb->head).
+ *
+ * @return
+ *	WLAN_STATUS_SUCCESS: sanity passed or wrong pointer fixed
+ *	WLAN_STATUS_INVALID_PACKET: unrecoverable error
+ */
+uint32_t kalDuplicateSwRfbSanity(struct SW_RFB *prSwRfb)
+{
+#if CFG_FIX_INCONSISTENT_RFB_POINTER
+	struct sk_buff *skb = prSwRfb->pvPacket;
+	uint32_t offset = 0;
+
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	offset = CFG_RADIOTAP_HEADROOM;
+#endif
+
+	if (likely(skb->data == prSwRfb->pucRecvBuff &&
+		   skb->data == prSwRfb->prRxStatus))
+		return WLAN_STATUS_SUCCESS;
+
+	if (likely(((uintptr_t)(const void *)skb->head & 0xFFF) == 0 &&
+		   skb->data - skb->head == offset)) {
+		prSwRfb->pucRecvBuff = skb->data;
+		prSwRfb->prRxStatus = skb->data;
+		/* RX buffer located at 4K aligned address, recoverable */
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	return WLAN_STATUS_INVALID_PACKET;
+#else
+	return WLAN_STATUS_SUCCESS;
+#endif
+}
+
 #if CFG_SUPPORT_RX_PAGE_POOL
 void kalSkbReuseCheck(struct SW_RFB *prSwRfb)
 {
@@ -1649,6 +1690,13 @@ void kalSkbReuseCheck(struct SW_RFB *prSwRfb)
 			skb_headroom(prSkb));
 		kalKfreeSkb(prSwRfb->pvPacket, TRUE);
 		prSwRfb->pvPacket = NULL;
+	}
+
+	/* sanity check */
+	if (prSwRfb->pucRecvBuff != prSkb->data) {
+		DBGLOG(NIC, ERROR, "RX buffer not match, %04X != %04X\n",
+			(uintptr_t)prSwRfb->pucRecvBuff & 0xFFFF,
+			(uintptr_t)prSkb->data & 0xFFFF);
 	}
 }
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */
@@ -9864,9 +9912,9 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	"RxReorder[%s] " \
 	RRB_TRACK_TEMPLATE \
 	"drv[RM,IL,RI,RT,RM,RW,RA,RB,DT,NS,IB,HS,LS,DD,ME,BD,NI," \
-	"DR,TE,CE,DN,FE,DE,IE,TME,ID,NL]:%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
-	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
-	"%lu,%lu\n"
+	"DR,TE,PE,CE,DN,FE,DE,IE,TME,ID,NL]:%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
+	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
+	"%lu,%lu,%lu\n"
 
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
 		head3,
@@ -9936,6 +9984,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NO_INTEREST_DROP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_REORDER_BEHIND_DROP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_TYPE_ERR_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_POINTER_ERR_DROP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_CLASS_ERR_DROP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DST_NULL_DROP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_FCS_ERR_DROP_COUNT),

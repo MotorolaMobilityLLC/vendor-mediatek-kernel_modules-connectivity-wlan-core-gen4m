@@ -1337,7 +1337,7 @@ void swCrDebugCheck(struct ADAPTER *prAdapter,
 
 			DBGLOG(SW4, INFO, "RX1\n"
 				"%08x %08x %08x %08x\n"
-				"%08x %08x %08x %08x\n",
+				"%08x %08x %08x %08x %08x\n",
 				(uint32_t) RX_GET_CNT(prRxCtrl,
 				RX_MPDU_TOTAL_COUNT),
 				(uint32_t) RX_GET_CNT(prRxCtrl,
@@ -1350,6 +1350,8 @@ void swCrDebugCheck(struct ADAPTER *prAdapter,
 				RX_DROP_TOTAL_COUNT),
 				(uint32_t) RX_GET_CNT(prRxCtrl,
 				RX_TYPE_ERR_DROP_COUNT),
+				(uint32_t) RX_GET_CNT(prRxCtrl,
+				RX_POINTER_ERR_DROP_COUNT),
 				(uint32_t) RX_GET_CNT(prRxCtrl,
 				RX_CLASS_ERR_DROP_COUNT),
 				(uint32_t) RX_GET_CNT(prRxCtrl,
