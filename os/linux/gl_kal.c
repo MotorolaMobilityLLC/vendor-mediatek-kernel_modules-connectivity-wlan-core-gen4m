@@ -2851,6 +2851,16 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 				u2JoinStatus,
 				GFP_KERNEL);
 #endif
+
+		prFtIEs = aisGetFtIe(prAdapter, ucBssIndex);
+		if (prFtIEs) {
+			kalMemFree(prFtIEs->pucIEBuf,
+				VIR_MEM_TYPE,
+				prFtIEs->u4IeLength);
+			kalMemZero(prFtIEs,
+				sizeof(*prFtIEs));
+		}
+
 		kalSetMediaStateIndicated(prGlueInfo,
 			MEDIA_STATE_DISCONNECTED,
 			ucBssIndex);
