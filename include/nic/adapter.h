@@ -1890,9 +1890,7 @@ struct ADAPTER {
 	u_int8_t fgIsSupportGetTxPower;
 	u_int8_t fgIsEnableLpdvt;
 
-#if (CFG_SUPPORT_SUPPLICANT_SME == 1)
 	u_int8_t fgSuppSmeLinkDownPend;
-#endif
 
 	/* SER related info */
 	uint8_t ucSerState;
