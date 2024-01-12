@@ -453,6 +453,7 @@ static void procEfuseDump_stop(struct seq_file *s, void *v)
 
 static int procEfuseDump_show(struct seq_file *s, void *v)
 {
+#if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 	struct GLUE_INFO *prGlueInfo;
@@ -461,7 +462,6 @@ static int procEfuseDump_show(struct seq_file *s, void *v)
 
 	prGlueInfo = g_prGlueInfo_proc;
 
-#if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	if (prGlueInfo == NULL) {
 		seq_puts(s, "prGlueInfo is null\n");
 		return -EPERM;

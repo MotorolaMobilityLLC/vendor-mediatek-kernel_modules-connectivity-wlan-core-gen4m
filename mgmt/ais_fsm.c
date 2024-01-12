@@ -7134,6 +7134,7 @@ void aisRefreshFWKBlacklist(struct ADAPTER *prAdapter)
 void aisBssTmpDisallow(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 	uint32_t sec, int32_t rssiThreshold, uint8_t ucBssIndex)
 {
+#if CFG_SUPPORT_MBO
 	struct AIS_BLACKLIST_ITEM *blk =
 		aisAddBlacklist(prAdapter, prBssDesc);
 
@@ -7145,6 +7146,7 @@ void aisBssTmpDisallow(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 			"Temp disallow: retry delay %d, rssi threshold %d",
 			sec, rssiThreshold);
 	}
+#endif
 }
 
 struct AIS_BLACKLIST_ITEM *aisAddBlacklist(struct ADAPTER *prAdapter,
@@ -7343,9 +7345,9 @@ void aisFsmRunEventBssTransition(IN struct ADAPTER *prAdapter,
 	aisFsmGetCurrentEssChnlList(prAdapter, ucBssIndex);
 
 	if (ucRequestMode & WNM_BSS_TM_REQ_DISASSOC_IMMINENT) {
+#if CFG_SUPPORT_MBO
 		struct AIS_BLACKLIST_ITEM *blk =
 			aisAddBlacklist(prAdapter, prBssDesc);
-
 		if (blk) {
 			blk->fgDisallowed = TRUE;
 			blk->u2DisallowSec =
@@ -7353,6 +7355,7 @@ void aisFsmRunEventBssTransition(IN struct ADAPTER *prAdapter,
 			DBGLOG(WNM, INFO, "Disallow Sec: %d",
 				blk->u2DisallowSec);
 		}
+#endif
 		if (prBtmParam->u4ReauthDelay >
 			prAdapter->rWifiVar.u4BtmDisTimerThreshold)
 			prBtmParam->ucDisImmiState = AIS_BTM_DIS_IMMI_STATE_1;

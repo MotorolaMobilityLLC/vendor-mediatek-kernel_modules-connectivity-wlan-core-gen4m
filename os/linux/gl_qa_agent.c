@@ -2454,24 +2454,22 @@ static int32_t HQA_ReadBulkEEPROM(struct net_device
 	int32_t i4Ret = 0;
 	uint16_t Offset;
 	uint16_t Len;
-#if  (CFG_EEPROM_PAGE_ACCESS == 1)
-	struct PARAM_CUSTOM_ACCESS_EFUSE rAccessEfuseInfo;
-	uint32_t u4BufLen = 0;
-	uint8_t  u4Loop = 0;
-	uint32_t u4TotalOffset = 0;
-
-	uint16_t Buffer;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint8_t tmp = 0;
-
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	prAdapter = prGlueInfo->prAdapter;
+#if  (CFG_EEPROM_PAGE_ACCESS == 1)
+	struct PARAM_CUSTOM_ACCESS_EFUSE rAccessEfuseInfo;
+	uint32_t u4BufLen = 0;
+	uint8_t  u4Loop = 0;
+	uint16_t Buffer;
+	uint32_t u4TotalOffset = 0;
 
 	kalMemSet(&rAccessEfuseInfo, 0,
 		  sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 #endif
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(INIT, INFO, "QA_AGENT HQA_ReadBulkEEPROM\n");
 	if (prAdapter->chip_info &&
@@ -2950,20 +2948,18 @@ static int32_t HQA_GetFreeEfuseBlock(struct net_device
 				     struct HQA_CMD_FRAME *HqaCmdFrame)
 {
 
-	int32_t i4Ret = 0, u4FreeBlockCount = 0, u4TotalBlockCount = 0;
-
+	int32_t i4Ret = 0;
 #if (CFG_EEPROM_PAGE_ACCESS == 1)
 	struct PARAM_CUSTOM_EFUSE_FREE_BLOCK rEfuseFreeBlock;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
-#endif
+	int32_t u4FreeBlockCount = 0, u4TotalBlockCount = 0;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(INIT, INFO, "QA_AGENT HQA_GetFreeEfuseBlock\n");
 
-#if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	if (prGlueInfo->prAdapter->fgIsSupportGetFreeEfuseBlockCount
 	    == TRUE) {
 		kalMemSet(&rEfuseFreeBlock, 0,
@@ -3065,13 +3061,10 @@ static int32_t HQA_GetTxPower(struct net_device *prNetDev,
 	uint32_t u4Channel = 0, u4Band = 0, u4Ch_Band = 0,
 		 u4TxTargetPower = 0;
 	/*	UINT_32 u4EfuseAddr = 0, u4Power = 0; */
-
-#if (CFG_EEPROM_PAGE_ACCESS == 1)
 	struct PARAM_CUSTOM_GET_TX_POWER rGetTxPower;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
-#endif
 
 	memcpy(&u4Channel, HqaCmdFrame->Data + 4 * 0, 4);
 	u4Channel = ntohl(u4Channel);

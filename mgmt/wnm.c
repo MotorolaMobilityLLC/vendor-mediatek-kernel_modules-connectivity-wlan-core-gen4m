@@ -759,7 +759,9 @@ void wnmRecvBTMRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	}
 #endif
 
+#if CFG_SUPPORT_802_11K
 	aisResetNeighborApList(prAdapter, ucBssIndex);
+#endif
 
 	if (ucRequestMode & WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED) {
 #if CFG_SUPPORT_802_11K
