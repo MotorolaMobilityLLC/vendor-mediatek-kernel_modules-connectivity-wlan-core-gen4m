@@ -74,8 +74,27 @@
 #define DOWNLOAD_CONFIG_RESET_OPTION        BIT(3)
 #define DOWNLOAD_CONFIG_WORKING_PDA_OPTION	BIT(4)
 #define DOWNLOAD_CONFIG_VALID_RAM_ENTRY	    BIT(5)
+#define DOWNLOAD_CONFIG_ENCRY_MODE_SEL	    BIT(6) /* 0 - AES, 1 - SCRAMBLE */
 #define DOWNLOAD_CONFIG_EMI			BIT(7)
 #define DOWNLOAD_CONFIG_ACK_OPTION          BIT(31)
+
+/*
+ * FW feature set
+ * bit(0)  : encrypt or not.
+ * bit(1,2): encrypt key index.
+ * bit(3)  : compressed image or not. (added in CONNAC)
+ * bit(4)  : encrypt mode, 1 for scramble, 0 for AES.
+ * bit(5)  : replace RAM code starting address with image
+ *           destination address or not. (added in CONNAC)
+ * bit(7)  : download to EMI or not. (added in CONNAC)
+ */
+#define FW_FEATURE_SET_ENCRY	BIT(0)
+#define FW_FEATURE_SET_KEY_MASK	BITS(1, 2)
+#define GET_FW_FEATURE_SET_KEY(p) (((p) & FW_FEATURE_SET_KEY_MASK) >> 1)
+#define FW_FEATURE_COMPRESS_IMG	BIT(3)
+#define FW_FEATURE_ENCRY_MODE	BIT(4)
+#define FW_FEATURE_OVERRIDE_RAM_ADDR	BIT(5)
+#define FW_FEATURE_DL_TO_EMI	BIT(7)
 
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 #define COMPRESSION_OPTION_OFFSET   4
