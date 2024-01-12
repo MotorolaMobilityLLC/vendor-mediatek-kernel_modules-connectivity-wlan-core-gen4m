@@ -206,6 +206,7 @@ enum WIFI_OFFLOAD_SUB_COMMAND {
 enum MTK_WIFI_VENDOR_SUB_COMMAND {
 	MTK_SUBCMD_TRIGGER_RESET = 1,
 	MTK_SUBCMD_NAN = 12,
+	MTK_SUBCMD_CSI = 17,
 	MTK_SUBCMD_NDP = 81,
 
 	MTK_SUBCMD_STRING_CMD = 0x2454,
@@ -233,6 +234,7 @@ enum WIFI_VENDOR_EVENT {
 	WIFI_EVENT_RESET_TRIGGERED,
 	WIFI_EVENT_SUBCMD_NAN,
 	WIFI_EVENT_SUBCMD_NDP,
+	WIFI_EVENT_SUBCMD_CSI,
 	/* Always add at the end.*/
 };
 
@@ -492,6 +494,25 @@ enum WIFI_RESET_TRIGGERED_ATTRIBUTE {
 	WIFI_ATTRIBUTE_RESET_REASON = 1,
 };
 
+#if CFG_SUPPORT_CSI
+enum WIFI_VENDOR_CSI {
+	MTK_WLAN_VENDOR_ATTR_CSI = 5,
+};
+
+enum WIFI_CSI_ATTRIBUTE {
+	WIFI_ATTRIBUTE_CSI_INVALID,
+	WIFI_ATTRIBUTE_CSI_CONTROL_MODE,
+	WIFI_ATTRIBUTE_CSI_CONFIG_ITEM,
+	WIFI_ATTRIBUTE_CSI_VALUE_1,
+	WIFI_ATTRIBUTE_CSI_VALUE_2,
+
+	/* keep last */
+	WIFI_ATTRIBUTE_CSI_AFTER_LAST,
+	WIFI_ATTRIBUTE_CSI_MAX =
+		WIFI_ATTRIBUTE_CSI_AFTER_LAST - 1
+};
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -541,6 +562,11 @@ extern const struct nla_policy nla_get_apf_policy[
 
 extern const struct nla_policy nla_set_rtt_config_policy[
 		RTT_ATTRIBUTE_TARGET_BW + 1];
+
+#if CFG_SUPPORT_CSI
+extern const struct nla_policy nla_get_csi_policy[
+		WIFI_ATTRIBUTE_CSI_MAX + 1];
+#endif
 
 /*******************************************************************************
  *                           MACROS
@@ -1299,4 +1325,14 @@ int mtk_cfg80211_vendor_trigger_reset(
 
 int mtk_cfg80211_vendor_event_reset_triggered(
 	uint32_t data);
+
+#if CFG_SUPPORT_CSI
+int mtk_cfg80211_vendor_csi_control(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len);
+
+int mtk_cfg80211_vendor_event_csi_raw_data(
+	struct ADAPTER *prAdapter);
+#endif
+
 #endif /* _GL_VENDOR_H */

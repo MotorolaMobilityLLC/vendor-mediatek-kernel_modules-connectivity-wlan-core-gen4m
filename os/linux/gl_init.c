@@ -111,6 +111,10 @@
 
 #include "wlan_pinctrl.h"
 
+#if CFG_SUPPORT_CSI
+#include "gl_csi.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -1482,6 +1486,23 @@ static const struct wiphy_vendor_command
 		.policy = VENDOR_CMD_RAW_DATA
 #endif
 	},
+#if CFG_SUPPORT_CSI
+	{
+		{
+			.vendor_id = OUI_MTK,
+			.subcmd = MTK_SUBCMD_CSI
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV |
+				WIPHY_VENDOR_CMD_NEED_RUNNING,
+		.doit = mtk_cfg80211_vendor_csi_control
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = nla_get_csi_policy,
+		.maxattr = WIFI_ATTRIBUTE_CSI_MAX
+#endif
+	},
+#endif
 };
 
 static const struct nl80211_vendor_cmd_info
@@ -1587,6 +1608,10 @@ static const struct nl80211_vendor_cmd_info
 	[WIFI_EVENT_SUBCMD_NDP] {
 		.vendor_id = OUI_MTK,
 		.subcmd = MTK_SUBCMD_NDP
+	},
+	[WIFI_EVENT_SUBCMD_CSI] {
+		.vendor_id = OUI_MTK,
+		.subcmd = MTK_SUBCMD_CSI
 	},
 };
 #endif
@@ -3753,11 +3778,6 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 #if (CFG_CE_ASSERT_DUMP == 1)
 	init_waitqueue_head(&(prGlueInfo->waitq_coredump));
 	skb_queue_head_init(&(prGlueInfo->rCoreDumpSkbQueue));
-#endif
-
-#if CFG_SUPPORT_CSI
-	/* init CSI wait queue  */
-	init_waitqueue_head(&(prGlueInfo->waitq_csi));
 #endif
 
 	return prWdev;
@@ -6505,6 +6525,10 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 		kalWlanUeventInit();
 
+#if CFG_SUPPORT_CSI
+	glCsiSupportInit(prGlueInfo);
+#endif
+
 #if CFG_ENABLE_BT_OVER_WIFI
 	prGlueInfo->rBowInfo.fgIsNetRegistered = FALSE;
 	prGlueInfo->rBowInfo.fgIsRegistered = FALSE;
@@ -6897,6 +6921,10 @@ static void wlanRemove(void)
 #endif
 
 	kalWlanUeventDeinit();
+
+#if CFG_SUPPORT_CSI
+	glCsiSupportDeinit(prGlueInfo);
+#endif
 
 #if CFG_MET_TAG_SUPPORT
 	if (GL_MET_TAG_UNINIT() != 0)
