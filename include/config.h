@@ -276,6 +276,9 @@
 
 #define CFG_CH_SELECT_ENHANCEMENT	0
 
+#define CFG_SAP_RPS_SUPPORT	(CFG_EXT_FEATURE && CFG_SUPPORT_CONNAC3X)
+#define CFG_SAP_SUS_SUPPORT	(CFG_EXT_FEATURE && CFG_SUPPORT_CONNAC3X)
+
 #define CFG_SUPPORT_ANT_SWAP		1
 
 /* If skb_buff mark field marked with pre-defined value, change priority to VO*/

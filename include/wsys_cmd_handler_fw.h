@@ -345,6 +345,8 @@ enum ENUM_CMD_ID {
 #if (CFG_SUPPORT_TSF_SYNC == 1)
 	CMD_ID_BEACON_TSF_SYNC = 0x94,		/* 0x94 (Set / Query) */
 #endif
+	CMD_ID_SET_SAP_SUS     = 0x9E,      /* 0x9E (Set) */
+	CMD_ID_SET_SAP_RPS     = 0x9F,      /* 0x9F (Set) */
 	CMD_ID_WFC_KEEP_ALIVE = 0xA0,       /* 0xA0 (Set) */
 	CMD_ID_RSSI_MONITOR = 0xA1,         /* 0xA1 (Set) */
 #if (CFG_SUPPORT_PKT_OFLD == 1)
@@ -2390,6 +2392,19 @@ struct CMD_SET_FORCE_RTS {
 	uint8_t ucForceRtsEn;
 	uint8_t ucRtsPktNum;
 	uint8_t aucReserved[2];
+};
+
+struct CMD_SET_FW_SAP_RPS {
+	uint8_t ucForceSapRpsEn;
+	uint8_t ucSapRpsPhase;
+	uint8_t ucBssIdx;
+	uint8_t aucReserved;
+};
+
+struct CMD_SET_FW_SAP_SUS {
+	uint8_t ucForceSapSusEn;
+	uint8_t ucBssIdx;
+	uint8_t aucReserved;
 };
 
 #if (CFG_WOW_SUPPORT == 1)

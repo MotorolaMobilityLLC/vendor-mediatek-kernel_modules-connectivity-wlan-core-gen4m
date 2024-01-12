@@ -137,6 +137,12 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #endif
 #endif
 	[CMD_ID_SET_FORCE_RTS] = nicUniCmdGamingMode,
+#if CFG_SAP_SUS_SUPPORT
+	[CMD_ID_SET_SAP_SUS]   = nicUniCmdSetSapSus,
+#endif
+#if CFG_SAP_RPS_SUPPORT
+	[CMD_ID_SET_SAP_RPS]   = nicUniCmdSetSapRps,
+#endif
 	[CMD_ID_TX_AMPDU] = nicUniCmdSetTxAmpdu,
 	[CMD_ID_ADDBA_REJECT] = nicUniCmdSetRxAmpdu,
 	[CMD_ID_MAC_MCAST_ADDR] = nicUniCmdSetMultiAddr,
@@ -7790,7 +7796,68 @@ uint32_t nicUniCmdGamingMode(struct ADAPTER *ad,
 
 	return WLAN_STATUS_SUCCESS;
 }
+#if CFG_SAP_RPS_SUPPORT
+uint32_t nicUniCmdSetSapRps(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_SET_FW_SAP_RPS *cmd;
+	struct UNI_CMD_SET_SAP_RPS *uni_cmd;
+	struct UNI_CMD_SET_SAP_RPS_SET_T *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_SET_SAP_RPS) +
+		sizeof(struct UNI_CMD_SET_SAP_RPS_SET_T);
 
+	cmd = (struct CMD_SET_FW_SAP_RPS *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SET_SAP_RPS,
+		max_cmd_len, NULL, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_SET_SAP_RPS *) entry->pucInfoBuffer;
+	uni_cmd->ucBssIdx = cmd->ucBssIdx;
+	tag = (struct UNI_CMD_SET_SAP_RPS_SET_T *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_SET_SAP_RPS_TAG_SET;
+	tag->u2Length = sizeof(*tag);
+
+	tag->ucPhase = cmd->ucSapRpsPhase;
+	tag->fgEnable = cmd->ucForceSapRpsEn;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
+#if CFG_SAP_SUS_SUPPORT
+uint32_t nicUniCmdSetSapSus(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_SET_FW_SAP_SUS *cmd;
+	struct UNI_CMD_SET_SAP_SUS *uni_cmd;
+	struct UNI_CMD_SET_SAP_SUS_SET_T *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_SET_SAP_SUS) +
+		sizeof(struct UNI_CMD_SET_SAP_SUS_SET_T);
+
+	cmd = (struct CMD_SET_FW_SAP_SUS *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SET_SAP_RPS,
+		max_cmd_len, NULL, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_SET_SAP_SUS *) entry->pucInfoBuffer;
+	uni_cmd->ucBssIdx = cmd->ucBssIdx;
+	tag = (struct UNI_CMD_SET_SAP_SUS_SET_T *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_SET_SAP_SUS_TAG_SET;
+	tag->u2Length = sizeof(*tag);
+
+	tag->fgEnable = cmd->ucForceSapSusEn;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
 /*******************************************************************************
  *                                 Event
  *******************************************************************************

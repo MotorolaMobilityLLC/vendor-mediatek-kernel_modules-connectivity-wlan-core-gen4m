@@ -9986,6 +9986,13 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	if (throughput == 0 && prAdapter->u4RfbUnUseCntLv != 0)
 		kalRxRfbReturnWorkSchedule(glue);
 #endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
+#if CFG_SAP_RPS_SUPPORT
+	if (prAdapter->rWifiVar.fgSapRpsEnable == 1) {
+		p2pFuncRpsKalCheck(prAdapter,
+					period,
+					rxDiffPkts);
+	}
+#endif
 
 	perf->fgIdle = (throughput == 0 && glue->i4TxPendingFrameNum == 0);
 	perf->ulThroughput = throughput * MSEC_PER_SEC;
