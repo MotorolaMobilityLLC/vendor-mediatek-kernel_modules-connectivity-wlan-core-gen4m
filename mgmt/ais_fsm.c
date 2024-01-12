@@ -1284,7 +1284,8 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 	prStaRec->u2StatusCode = STATUS_CODE_AUTH_TIMEOUT;
 
 	/* 4 <3> Update ucAvailableAuthTypes which we can choice during SAA */
-	if (prBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED
+	if (aisGetMainLinkBssInfo(prAisFsmInfo)->eConnectionState ==
+		MEDIA_STATE_DISCONNECTED
 		/* not in reconnection */
 		&& (!aisFsmIsInProcessPostpone(prAdapter, ucBssIndex)
 		|| prAisFsmInfo->ucReasonOfDisconnect ==
