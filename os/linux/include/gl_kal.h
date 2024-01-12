@@ -86,6 +86,10 @@
 #include "conn_power_throttling.h"
 #endif
 
+#if ((CFG_MODIFY_TX_POWER_BY_BAT_VOLT) || (CFG_VOLT_INFO == 1))
+#include "pmic_lbat_service.h"
+#endif
+
 #if CFG_ENABLE_BT_OVER_WIFI
 #include "nic/bow.h"
 #endif
@@ -100,6 +104,10 @@
 
 #if CFG_SUPPORT_SCAN_CACHE_RESULT
 #include "wireless/core.h"
+#endif
+
+#if (CFG_VOLT_INFO == 1)
+#include <linux/workqueue.h>
 #endif
 
 #if DBG
@@ -231,6 +239,16 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 #define KAL_SCN_BSS_DESC_STALE_SEC			20
 #endif
 
+#if (CFG_VOLT_INFO == 1)
+#define VOLT_INFO_DEBOUNCE_TIMES_MAX 100
+#define VOLT_INFO_DEBOUNCE_TIMES 3
+#define VOLT_INFO_DEBOUNCE_INTERVAL 2000 /* ms */
+#define VOLT_INFO_DELTA 50 /* mV */
+/* align pmic_lbat_service.c THD_VOLT_MAX */
+#define VOLT_INFO_MAX_VOLT_THRESH 5400 /* mV */
+/* align pmic_lbat_service.c THD_VOLT_MIN */
+#define VOLT_INFO_MIN_VOLT_THRESH 2650 /* mV */
+#endif
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -458,6 +476,35 @@ struct PWR_LEVEL_HANDLER_ELEMENT {
 	struct LINK_ENTRY rLinkEntry;
 	PFN_PWR_LEVEL_HANDLER prPwrLevelHandler;
 };
+
+#if (CFG_VOLT_INFO == 1)
+enum ENUM_VOLT_INFO_STATE {
+	VOLT_INFO_STATE_INIT = 0,
+	VOLT_INFO_STATE_IN_PROGRESS,
+	VOLT_INFO_STATE_COMPLETE,
+	VOLT_INFO_STATE_NUM
+};
+
+struct VOLT_INFO_DEBOUNCE_PARAMETER_T {
+	uint32_t u4Total;
+	uint32_t u4Cnt;
+};
+
+struct VOLT_INFO_BATTERY_NOTIFY_T {
+	struct lbat_user *lbat_pt;
+	bool fgReg;
+};
+
+struct VOLT_INFO_T {
+	uint32_t u4CurrVolt;
+	struct VOLT_INFO_DEBOUNCE_PARAMETER_T rDebParam;
+	struct VOLT_INFO_BATTERY_NOTIFY_T rBatNotify;
+	struct ADAPTER *prAdapter;
+	struct delayed_work dwork;
+	struct mutex rMutex;
+	enum ENUM_VOLT_INFO_STATE eState;
+};
+#endif /* CFG_VOLT_INFO */
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -2369,6 +2416,13 @@ u_int8_t kalIsSupportMawd(void);
 int register_thermal_cbs(struct ADAPTER *ad);
 void unregister_thermal_cbs(struct ADAPTER *ad);
 #endif
+
+#if (CFG_VOLT_INFO == 1)
+void kalVnfActive(IN struct ADAPTER *prAdapter);
+void kalVnfUninit(void);
+void kalVnfInit(IN struct ADAPTER *prAdapter);
+void kalVnfEventHandler(IN struct ADAPTER *prAdapter);
+#endif /* CFG_VOLT_INFO */
 
 #endif /* _GL_KAL_H */
 

@@ -8247,6 +8247,19 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 			prAdapter, "EnableFastPath", FEATURE_ENABLED);
 	prWifiVar->ucFastPathAllPacket = (uint8_t) wlanCfgGetUint32(
 			prAdapter, "FastPathAllPacket", FEATURE_DISABLED);
+#if (CFG_VOLT_INFO == 1)
+	prWifiVar->fgVnfEn = (bool) wlanCfgGetUint32(
+		prAdapter, "VoltInfoEnable", FEATURE_ENABLED);
+	prWifiVar->u4VnfDebTimes = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "VoltInfoDebTimes",
+		VOLT_INFO_DEBOUNCE_TIMES);
+	prWifiVar->u4VnfDebInterval = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "VoltInfoDebInterval",
+		VOLT_INFO_DEBOUNCE_INTERVAL);
+	prWifiVar->u4VnfDelta = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "VoltInfoDelta",
+		VOLT_INFO_DELTA);
+#endif /* CFG_VOLT_INFO  */
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)

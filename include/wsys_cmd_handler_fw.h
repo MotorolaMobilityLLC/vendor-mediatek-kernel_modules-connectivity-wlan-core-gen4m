@@ -385,7 +385,9 @@ enum ENUM_CMD_ID {
 	CMD_ID_GET_DPD_CACHE = 0xD2,	/* 0xd2 (Query) */
 #endif
 	CMD_ID_FAST_PATH = 0xD5,
-
+#if (CFG_VOLT_INFO == 1)
+	CMD_ID_SEND_VOLT_INFO = 0xD7,
+#endif
 	CMD_ID_SET_RDD_CH           = 0xE1,
 
 	CMD_ID_NAN_EXT_CMD = 0XEB,
@@ -598,6 +600,9 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_LAYER_0_EXT_MAGIC_NUM  = 0xED,
 	/* magic number for Extending MT6630 original EVENT header  */
 	EVENT_ID_ASSERT_DUMP = 0xF0,
+#if (CFG_VOLT_INFO == 1)
+	EVEN_ID_GET_VOLT_INFO = 0xF3,
+#endif
 	EVENT_ID_HIF_CTRL = 0xF6,
 	EVENT_ID_BUILD_DATE_CODE = 0xF8,
 	EVENT_ID_GET_AIS_BSS_INFO = 0xF9,

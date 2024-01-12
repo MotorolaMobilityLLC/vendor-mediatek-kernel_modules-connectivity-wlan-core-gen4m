@@ -1257,6 +1257,12 @@ struct WIFI_VAR {
 	uint8_t ucCheckBeacon;
 	uint8_t ucEnableFastPath;
 	uint8_t ucFastPathAllPacket;
+#if (CFG_VOLT_INFO == 1)
+	uint8_t fgVnfEn;
+	uint32_t u4VnfDebTimes;
+	uint32_t u4VnfDebInterval;
+	uint32_t u4VnfDelta;
+#endif /* CFG_VOLT_INFO */
 };
 
 /* cnm_timer module */
