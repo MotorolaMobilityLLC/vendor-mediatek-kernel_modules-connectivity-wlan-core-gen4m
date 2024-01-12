@@ -21,17 +21,18 @@
 		mtk_pm_qos_update_request(_req, _value)
 #define pm_qos_remove_request(_req) \
 		mtk_pm_qos_remove_request(_req)
+#define pm_qos_request mtk_pm_qos_request
+#define PM_QOS_DDR_OPP MTK_PM_QOS_DDR_OPP
+#define ppm_limit_data cpu_ctrl_data
 #else
 #include <linux/pm_qos.h>
 #include <helio-dvfsrc-opp.h>
-#ifdef CONFIG_MTK_EMI
-#include <mt_emi_api.h>
-#endif
 #endif
 
 #include "precomp.h"
 
 #ifdef CONFIG_MTK_EMI
+#include <mt_emi_api.h>
 #define WIFI_EMI_MEM_OFFSET    0x140000
 #define WIFI_EMI_MEM_SIZE      0x130000
 #endif
