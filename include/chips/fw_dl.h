@@ -371,11 +371,10 @@ void wlanGetConnacFwInfo(IN struct ADAPTER *prAdapter,
 	OUT uint32_t *pu4DataMode, OUT u_int8_t *pfgIsEMIDownload,
 	OUT u_int8_t *pfgIsNotDownload);
 
-void wlanImageSectionGetPatchInfoV2(IN struct ADAPTER
-	*prAdapter,
+uint32_t wlanGetPatchInfoAndDownloadV2(IN struct ADAPTER *prAdapter,
 	IN void *pvFwImageMapFile, IN uint32_t u4FwImageFileLength,
-	OUT uint32_t *pu4DataMode,
-	struct patch_dl_target *target);
+	IN enum ENUM_IMG_DL_IDX_T eDlIdx,
+	IN uint32_t u4DataMode);
 
 void wlanImageSectionGetPatchInfo(IN struct ADAPTER
 	*prAdapter,
