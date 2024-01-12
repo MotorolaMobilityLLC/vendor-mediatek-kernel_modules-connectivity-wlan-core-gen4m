@@ -10547,15 +10547,11 @@ wlanoidRftestQueryAutoTest(IN struct ADAPTER *prAdapter,
 	*pu4QueryInfoLen = sizeof(struct
 				  PARAM_MTK_WIFI_TEST_STRUCT);
 
-#if 0 /* PeiHsuan Temp Remove this check for workaround Gen2/Gen3 EM Mode
-       * Modification
-       */
-	if (u4QueryBufferLen != sizeof(struct PARAM_MTK_WIFI_TEST_STRUCT)) {
+	if (u4QueryBufferLen < sizeof(struct PARAM_MTK_WIFI_TEST_STRUCT)) {
 		DBGLOG(REQ, ERROR, "Invalid data. QueryBufferLen: %ld.\n",
 		       u4QueryBufferLen);
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
-#endif
 
 	prRfATInfo = (struct PARAM_MTK_WIFI_TEST_STRUCT *)
 		     pvQueryBuffer;
@@ -10606,16 +10602,11 @@ wlanoidRftestSetAutoTest(IN struct ADAPTER *prAdapter,
 
 	*pu4SetInfoLen = sizeof(struct PARAM_MTK_WIFI_TEST_STRUCT);
 
-#if 0 /* PeiHsuan Temp Remove this check for workaround Gen2/Gen3 EM Mode
-       * Modification
-       */
-	if (u4SetBufferLen != sizeof(struct
-				     PARAM_MTK_WIFI_TEST_STRUCT)) {
+	if (u4SetBufferLen < sizeof(struct PARAM_MTK_WIFI_TEST_STRUCT)) {
 		DBGLOG(REQ, ERROR, "Invalid data. SetBufferLen: %ld.\n",
 		       u4SetBufferLen);
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
-#endif
 
 	prRfATInfo = (struct PARAM_MTK_WIFI_TEST_STRUCT *)
 		     pvSetBuffer;
@@ -17261,7 +17252,7 @@ wlanoidQueryWifiLogLevel(IN struct ADAPTER *prAdapter,
 	       pparam->u4Module,
 	       pparam->u4Level);
 
-	*pu4QueryInfoLen = sizeof(struct PARAM_WIFI_LOG_LEVEL_UI);
+	*pu4QueryInfoLen = sizeof(struct PARAM_WIFI_LOG_LEVEL);
 
 	return WLAN_STATUS_SUCCESS;
 }

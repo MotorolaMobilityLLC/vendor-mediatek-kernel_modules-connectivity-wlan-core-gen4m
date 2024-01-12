@@ -1704,7 +1704,7 @@ wext_set_scan(IN struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
-	int essid_len = 0;
+	uint8_t essid_len = 0;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_DEV(prNetDev) == FALSE)
@@ -1713,9 +1713,12 @@ wext_set_scan(IN struct net_device *prNetDev,
 
 #if WIRELESS_EXT > 17
 	/* retrieve SSID */
-	if (prData)
+	if (prData) {
 		essid_len = ((struct iw_scan_req *)(((struct iw_point *)
 					     prData)->pointer))->essid_len;
+		if (essid_len > ELEM_MAX_LEN_SSID)
+			essid_len = ELEM_MAX_LEN_SSID;
+	}
 #endif
 
 	init_completion(&prGlueInfo->rScanComp);
@@ -2546,6 +2549,7 @@ wext_get_rate(IN struct net_device *prNetDev,
 	if (ucBssIndex >= BSSID_NUM)
 		return -EFAULT;
 
+	kalMemSet(&rLinkSpeed, 0, sizeof(rLinkSpeed));
 	DBGLOG(REQ, TRACE, "Call &rLinkSpeed=%p, sizeof=%zu, &u4BufLen=%p",
 		&rLinkSpeed, sizeof(rLinkSpeed), &u4BufLen);
 	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryLinkSpeedEx,
@@ -4500,6 +4504,7 @@ struct iw_statistics *wext_get_wireless_stats(
 		goto stat_out;
 	}
 
+	kalMemSet(&rLinkSpeed, 0, sizeof(rLinkSpeed));
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
 				   wlanoidQueryRssi,
 				   &rLinkSpeed, sizeof(rLinkSpeed),
