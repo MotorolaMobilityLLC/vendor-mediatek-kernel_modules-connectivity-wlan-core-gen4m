@@ -175,4 +175,10 @@ int mt6639_get_rx_rate_info(const uint32_t *prRxV,
 void mt6639_get_rx_link_stats(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb, uint32_t *pu4RxV);
 
+#if CFG_SUPPORT_WIFI_SLEEP_COUNT
+int mt6639PowerDumpStart(void *priv_data,
+	unsigned int force_dump);
+int mt6639PowerDumpEnd(void *priv_data);
+#endif /* CFG_SUPPORT_WIFI_SLEEP_COUNT */
+
 #endif  /* mt6639 */
