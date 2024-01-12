@@ -736,6 +736,7 @@ struct _SW_RFB_T {
 	/* RX reorder for one MSDU in AMSDU issue */
 	/*QUE_T rAmsduQue;*/
 #endif
+	UINT_64 rIntTime;
 };
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
