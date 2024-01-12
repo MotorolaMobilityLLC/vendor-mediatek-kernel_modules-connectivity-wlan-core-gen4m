@@ -3542,7 +3542,7 @@ u_int8_t qmAmsduAttackDetection(IN struct ADAPTER *prAdapter,
 	}
 
 	/* 802.11 header RA */
-	ucBssIndex = secGetBssIdxByWlanIdx(prAdapter, prSwRfb->ucWlanIdx);
+	ucBssIndex = prSwRfb->prStaRec->ucBssIndex;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	pucRaAddr = &prBssInfo->aucOwnMacAddr[0];
 
