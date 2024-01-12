@@ -2129,6 +2129,16 @@ label_exit:
 static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 {
 	struct wireless_dev *prWdev = NULL;
+	enum ENUM_PROBE_FAIL_REASON {
+		BUS_INIT_FAIL,
+		NET_CREATE_FAIL,
+		BUS_SET_IRQ_FAIL,
+		ADAPTER_START_FAIL,
+		NET_REGISTER_FAIL,
+		PROC_INIT_FAIL,
+		FAIL_MET_INIT_PROCFS,
+		FAIL_REASON_NUM
+	} eFailReason;
 	P_WLANDEV_INFO_T prWlandevInfo = NULL;
 	INT_32 i4DevIdx = 0;
 	P_GLUE_INFO_T prGlueInfo = NULL;
@@ -2145,7 +2155,7 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		PUINT_8 pucConfigBuf = NULL, pucCfgBuf = NULL;
 		UINT_32 u4ConfigReadLen = 0;
 #endif
-
+	eFailReason = FAIL_REASON_NUM;
 	do {
 		/* 4 <1> Initialize the IO port of the interface */
 		/*  GeorgeKuo: pData has different meaning for _HIF_XXX:
@@ -2158,10 +2168,14 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 
 		bRet = glBusInit(pvData);
 
+#if (CFG_SUPPORT_TRACE_TC4 == 1)
+		wlanDebugTC4Init();
+#endif
 		/* Cannot get IO address from interface */
 		if (bRet == FALSE) {
 			DBGLOG(INIT, ERROR, "wlanProbe: glBusInit() fail\n");
 			i4Status = -EIO;
+			eFailReason = BUS_INIT_FAIL;
 			break;
 		}
 		/* 4 <2> Create network device, Adapter, KalInfo, prDevHandler(netdev) */
@@ -2169,6 +2183,7 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		if (prWdev == NULL) {
 			DBGLOG(INIT, ERROR, "wlanProbe: No memory for dev and its private\n");
 			i4Status = -ENOMEM;
+			eFailReason = NET_CREATE_FAIL;
 			break;
 		}
 		/* 4 <2.5> Set the ioaddr to HIF Info */
@@ -2182,6 +2197,7 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(INIT, ERROR, "wlanProbe: Set IRQ error\n");
+			eFailReason = BUS_SET_IRQ_FAIL;
 			break;
 		}
 
@@ -2263,8 +2279,10 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 
 		/* kfree(prRegInfo); */
 
-		if (i4Status < 0)
+		if (i4Status < 0) {
+			eFailReason = ADAPTER_START_FAIL;
 			break;
+		}
 
 		INIT_WORK(&prGlueInfo->rTxMsduFreeWork, kalFreeTxMsduWorker);
 		INIT_DELAYED_WORK(&prGlueInfo->rRxPktDeAggWork, halDeAggRxPktWorker);
@@ -2362,6 +2380,7 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		if (i4DevIdx < 0) {
 			i4Status = -ENXIO;
 			DBGLOG(INIT, ERROR, "wlanProbe: Cannot register the net_device context to the kernel\n");
+			eFailReason = NET_REGISTER_FAIL;
 			break;
 		}
 		/* 4 <4> Register early suspend callback */
@@ -2377,6 +2396,7 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		i4Status = procCreateFsEntry(prGlueInfo);
 		if (i4Status < 0) {
 			DBGLOG(INIT, ERROR, "wlanProbe: init procfs failed\n");
+			eFailReason = PROC_INIT_FAIL;
 			break;
 		}
 #endif /* WLAN_INCLUDE_PROC */
@@ -2410,45 +2430,30 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 				DBGLOG(INIT, ERROR, "%s: Failed to register p2p device\n", __func__);
 		}
 #endif
+#if (CFG_MET_PACKET_TRACE_SUPPORT == 1)
+		DBGLOG(INIT, TRACE, "init MET procfs...\n");
+		i4Status = kalMetInitProcfs(prGlueInfo);
+		if (i4Status < 0) {
+			DBGLOG(INIT, ERROR, "wlanProbe: init MET procfs failed\n");
+			eFailReason = FAIL_MET_INIT_PROCFS;
+			break;
+		}
+#endif
 	} while (FALSE);
 
 	if (i4Status == 0) {
 #if CFG_SUPPORT_AGPS_ASSIST
 		kalIndicateAgpsNotify(prAdapter, AGPS_EVENT_WLAN_ON, NULL, 0);
 #endif
-
-
-
 #if CFG_SUPPORT_EASY_DEBUG
-
-#if 0
-	wlanGetParseConfig(prGlueInfo->prAdapter);
-	/*wlanGetParseConfig would reparsing the config file,
-	*and then, sent to firmware
-	*use wlanFeatureToFw to take it(won't be reparsing)
-	*/
-#endif
-
 	/* move before reading file
 	 *wlanLoadDefaultCustomerSetting(prAdapter);
 	*/
-
-	wlanFeatureToFw(prGlueInfo->prAdapter);
-
+		wlanFeatureToFw(prGlueInfo->prAdapter);
 #endif
-	wlanCfgSetSwCtrl(prGlueInfo->prAdapter);
-
+		wlanCfgSetSwCtrl(prGlueInfo->prAdapter);
 		wlanCfgSetChip(prGlueInfo->prAdapter);
-
 		wlanCfgSetCountryCode(prGlueInfo->prAdapter);
-
-#if (CFG_MET_PACKET_TRACE_SUPPORT == 1)
-		DBGLOG(INIT, TRACE, "init MET procfs...\n");
-		i4Status = kalMetInitProcfs(prGlueInfo);
-		if (i4Status < 0)
-			DBGLOG(INIT, ERROR, "wlanProbe: init MET procfs failed\n");
-#endif
-
 #if CFG_MET_TAG_SUPPORT
 		if (met_tag_init() != 0)
 			DBGLOG(INIT, ERROR, "MET_TAG_INIT error!\n");
@@ -2471,11 +2476,36 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		}
 #endif
 
-		DBGLOG(INIT, LOUD, "wlanProbe: probe success\n");
+		DBGLOG(INIT, INFO, "wlanProbe: probe success\n");
 	} else {
-		if (prGlueInfo)
-			glBusFreeIrq(prGlueInfo->prDevHandler, prGlueInfo);
-		DBGLOG(INIT, LOUD, "wlanProbe: probe failed\n");
+		DBGLOG(INIT, ERROR, "wlanProbe: probe failed, reason:%d\n", eFailReason);
+		switch (eFailReason) {
+		case FAIL_MET_INIT_PROCFS:
+			kalMetRemoveProcfs();
+		case PROC_INIT_FAIL:
+			wlanNetUnregister(prWdev);
+		case NET_REGISTER_FAIL:
+			set_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag);
+			/* wake up main thread */
+			wake_up_interruptible(&prGlueInfo->waitq);
+			/* wait main thread stops */
+			wait_for_completion_interruptible(&prGlueInfo->rHaltComp);
+			wlanAdapterStop(prAdapter);
+			/* fallthrough */
+		case ADAPTER_START_FAIL:
+			glBusFreeIrq(prWdev->netdev, *((P_GLUE_INFO_T *) netdev_priv(prWdev->netdev)));
+			/* fallthrough */
+		case BUS_SET_IRQ_FAIL:
+			wlanWakeLockUninit(prGlueInfo);
+			wlanNetDestroy(prWdev);
+			break;
+		case NET_CREATE_FAIL:
+			break;
+		case BUS_INIT_FAIL:
+			break;
+		default:
+			break;
+		}
 	}
 
 	return i4Status;
@@ -2646,6 +2676,9 @@ static VOID wlanRemove(VOID)
 
 	up(&g_halt_sem);
 
+#if (CFG_SUPPORT_TRACE_TC4 == 1)
+	wlanDebugTC4Uninit();
+#endif
 	/* 4 <6> Unregister the card */
 	wlanNetUnregister(prDev->ieee80211_ptr);
 
