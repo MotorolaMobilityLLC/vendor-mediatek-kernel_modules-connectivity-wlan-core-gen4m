@@ -97,7 +97,7 @@
  * want to benifit 2.4G->5G case, and keep original logic in
  * other cases.
  */
-#define RSSI_BAD_NEED_ROAM_24G_TO_5G		-10 /* dbm */
+#define RSSI_BAD_NEED_ROAM_24G_TO_5G		-40 /* dbm */
 #define RSSI_BAD_NEED_ROAM			-80 /* dbm */
 
 #define CHNL_DWELL_TIME_DEFAULT  100
