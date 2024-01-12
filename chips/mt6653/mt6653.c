@@ -1679,6 +1679,10 @@ static void mt6653WfdmaManualPrefetch(
 	uint32_t u4PrefetchBase = 0x00400000, u4TxDataPrefetchBase = 0x01000000;
 	uint32_t u4RxDataPrefetchCnt = 0x8;
 	uint32_t u4RxDataPrefetchBase = 0x00800000;
+#if CFG_MTK_MDDP_SUPPORT || CFG_ENABLE_MAWD_MD_RING
+	uint32_t u4MdTxDataPrefetchCnt = 0x8;
+	uint32_t u4MdTxDataPrefetchBase = 0x00800000;
+#endif
 
 	/* Rx ring */
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_EXT_CTRL_ADDR;
@@ -1742,9 +1746,9 @@ static void mt6653WfdmaManualPrefetch(
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING8_EXT_CTRL_ADDR;
 	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_TX_RING11_EXT_CTRL_ADDR;
 	     u4Addr += 0x4) {
-		u4WrVal = (u4WrVal & 0xFFFF0000) | u4TxDataPrefetchCnt;
+		u4WrVal = (u4WrVal & 0xFFFF0000) | u4MdTxDataPrefetchCnt;
 		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
-		u4WrVal += u4TxDataPrefetchBase;
+		u4WrVal += u4MdTxDataPrefetchBase;
 	}
 
 	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING12_EXT_CTRL_ADDR;
