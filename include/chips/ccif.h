@@ -24,6 +24,7 @@ struct CCIF_OPS {
 		uint32_t read_pointer);
 	uint32_t (*get_fw_log_read_pointer)(struct ADAPTER *ad,
 		enum ENUM_FW_LOG_CTRL_TYPE type);
+	int32_t (*trigger_fw_assert)(struct ADAPTER *ad);
 };
 
 static inline uint32_t ccif_get_interrupt_status(struct ADAPTER *ad)
@@ -84,6 +85,24 @@ static inline uint32_t ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
 
 exit:
 	return u4Rp;
+}
+
+static inline int32_t ccif_trigger_fw_assert(struct ADAPTER *ad)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	int32_t ret = 0;
+
+	if (!ad)
+		goto exit;
+
+	prChipInfo = ad->chip_info;
+
+	if (prChipInfo && prChipInfo->ccif_ops &&
+	    prChipInfo->ccif_ops->trigger_fw_assert)
+		ret = prChipInfo->ccif_ops->trigger_fw_assert(ad);
+
+exit:
+	return ret;
 }
 
 #endif

@@ -349,13 +349,10 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 #define GLUE_FLAG_NOTIFY_MD_CRASH_BIT		(18)
 #define GLUE_FLAG_DRV_INT_BIT			(19)
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
 #define GLUE_FLAG_RST_START BIT(18)
 #define GLUE_FLAG_RST_START_BIT 18
 #define GLUE_FLAG_RST_END BIT(19)
 #define GLUE_FLAG_RST_END_BIT 19
-
-#endif
 
 #if CFG_SUPPORT_NAN /* notice the bit differnet with 7668 */
 #define GLUE_FLAG_NAN_MULTICAST_BIT (20)

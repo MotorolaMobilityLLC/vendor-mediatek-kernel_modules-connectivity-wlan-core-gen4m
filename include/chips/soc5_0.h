@@ -161,7 +161,6 @@
 */
 #if (CFG_SUPPORT_CONNINFRA == 1)
 extern u_int8_t g_IsWfsysBusHang;
-extern struct completion g_triggerComp;
 extern u_int8_t fgIsResetting;
 extern u_int8_t g_fgRstRecover;
 #endif
@@ -202,9 +201,7 @@ void soc5_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
 *                              F U N C T I O N S
 ********************************************************************************
 */
-int hifWmmcuPwrOn(void);
-int hifWmmcuPwrOff(void);
-int soc5_0_Trigger_fw_assert(void);
+int soc5_0_Trigger_fw_assert(struct ADAPTER *prAdapter);
 void wlanCoAntVFE28En(IN struct ADAPTER *prAdapter);
 void wlanCoAntVFE28Dis(void);
 

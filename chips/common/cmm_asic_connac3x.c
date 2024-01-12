@@ -2127,10 +2127,39 @@ void asicConnac3xDmashdlSetOptionalControl(struct ADAPTER *prAdapter,
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 }
 
+#if CFG_WMT_RESET_API_SUPPORT
+static void handle_wfsys_reset(struct ADAPTER *prAdapter)
+{
+	if (kalIsResetting()) {
+		DBGLOG(HAL, INFO,
+			"Wi-Fi Driver trigger, need do complete.\n");
+		reset_done_trigger_completion();
+	} else {
+		DBGLOG(HAL, ERROR, "FW trigger assert.\n");
+		g_ucWfRstSource = RST_SOURCE_WIFI_FW;
+
+		glSetRstReason(RST_FW_ASSERT);
+
+		fgIsResetting = TRUE;
+#if CFG_MTK_ANDROID_WMT && !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+		update_driver_reset_status(fgIsResetting);
+#endif
+
+		kalSetRstEvent();
+	}
+}
+
+static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
+{
+	DBGLOG(HAL, ERROR,
+		"FW trigger whole chip reset.\n");
+}
+#endif
+
 u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
-	uint32_t r4Status = 0;
+	uint32_t u4Status = 0;
 	u_int8_t fgRet = TRUE;
 
 	if (!prAdapter)
@@ -2141,12 +2170,20 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 	if (!prChipInfo->get_sw_interrupt_status)
 		goto exit;
 
-	fgRet = prChipInfo->get_sw_interrupt_status(prAdapter, &r4Status);
-	if (fgRet == FALSE || r4Status == 0)
+	fgRet = prChipInfo->get_sw_interrupt_status(prAdapter, &u4Status);
+	if (fgRet == FALSE || u4Status == 0)
 		goto exit;
 
-	if (r4Status & BIT(SW_INT_FW_LOG))
+	if (u4Status & BIT(SW_INT_FW_LOG))
 		fw_log_wifi_irq_handler();
+
+#if CFG_WMT_RESET_API_SUPPORT
+	if (u4Status & BIT(SW_INT_SUBSYS_RESET))
+		handle_wfsys_reset(prAdapter);
+
+	if (u4Status & BIT(SW_INT_WHOLE_RESET))
+		handle_whole_chip_reset(prAdapter);
+#endif
 
 exit:
 	return fgRet;

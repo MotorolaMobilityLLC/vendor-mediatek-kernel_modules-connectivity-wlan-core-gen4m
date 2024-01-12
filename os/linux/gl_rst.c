@@ -101,8 +101,6 @@ u_int8_t fgIsResetHangState = SER_L0_HANG_RST_NONE;
 #endif
 
 #if CFG_WMT_RESET_API_SUPPORT
-#if (CFG_SUPPORT_CONNINFRA == 1)
-uint32_t g_u4WlanRstThreadPid;
 wait_queue_head_t g_waitq_rst;
 unsigned long g_ulFlag;/* GLUE_FLAG_XXX */
 struct completion g_RstOffComp;
@@ -110,7 +108,6 @@ struct completion g_RstOnComp;
 struct completion g_triggerComp;
 KAL_WAKE_LOCK_T *g_IntrWakeLock;
 struct task_struct *wlan_reset_thread;
-static int g_rst_data;
 u_int8_t g_IsWholeChipRst = FALSE;
 u_int8_t g_SubsysRstCnt;
 int g_SubsysRstTotalCnt;
@@ -118,12 +115,11 @@ int g_WholeChipRstTotalCnt;
 u_int8_t g_IsSubsysRstOverThreshold = FALSE;
 u_int8_t g_IsWfsysBusHang = FALSE;
 char *g_reason;
-enum consys_drv_type g_WholeChipRstType;
 char *g_WholeChipRstReason;
 u_int8_t g_IsWfsysResetOnFail = FALSE;
 u_int8_t g_IsWfsysRstDone = TRUE;
 u_int8_t g_fgRstRecover = FALSE;
-#endif
+uint8_t g_WholeChipRstType;
 #endif
 
 uint8_t *apucRstReason[RST_REASON_MAX] = {
@@ -189,14 +185,14 @@ u_int8_t fgIsRstPreventFwOwn = FALSE;
 #if CFG_CHIP_RESET_SUPPORT
 
 #if CFG_WMT_RESET_API_SUPPORT
-#if (CFG_SUPPORT_CONNINFRA == 0)
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 static void mtk_wifi_reset(struct work_struct *work);
 static void mtk_wifi_trigger_reset(struct work_struct *work);
 static void glResetCallback(enum _ENUM_WMTDRV_TYPE_T eSrcType,
 			     enum _ENUM_WMTDRV_TYPE_T eDstType,
 			     enum _ENUM_WMTMSG_TYPE_T eMsgType, void *prMsgBody,
 			     unsigned int u4MsgLength);
-#endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
+#endif
 #else
 #ifndef CFG_CHIP_RESET_KO_SUPPORT
 static u_int8_t is_bt_exist(void);
@@ -255,7 +251,6 @@ u_int8_t kalIsResetting(void)
 }
 
 #if CFG_CHIP_RESET_SUPPORT
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is responsible for
@@ -271,7 +266,7 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 {
 #if CFG_WMT_RESET_API_SUPPORT
 	/* 1. Register reset callback */
-#if (CFG_SUPPORT_CONNINFRA == 0)
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 	mtk_wcn_wmt_msgcb_reg(WMTDRV_TYPE_WIFI, glResetCallback);
 	/* 2. Initialize reset work */
 	INIT_WORK(&(wifi_rst.rst_trigger_work),
@@ -284,17 +279,17 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 	wifi_rst.prGlueInfo = prGlueInfo;
 
 #if CFG_WMT_RESET_API_SUPPORT
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if CFG_MTK_ANDROID_WMT && !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 	update_driver_reset_status(fgIsResetting);
+#endif
 	KAL_WAKE_LOCK_INIT(NULL, g_IntrWakeLock, "WLAN Reset");
 	init_waitqueue_head(&g_waitq_rst);
 	init_completion(&g_RstOffComp);
 	init_completion(&g_RstOnComp);
 	init_completion(&g_triggerComp);
 	wlan_reset_thread = kthread_run(wlan_reset_thread_main,
-					&g_rst_data, "wlan_rst_thread");
+					prGlueInfo, "wlan_rst_thread");
 	g_SubsysRstCnt = 0;
-#endif /* CFG_SUPPORT_CONNINFRA */
 #endif
 	wifi_coredump_init(prGlueInfo);
 }
@@ -312,15 +307,14 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 void glResetUninit(void)
 {
 	wifi_coredump_deinit();
+
 #if CFG_WMT_RESET_API_SUPPORT
-	/* 1. Deregister reset callback */
-#if (CFG_SUPPORT_CONNINFRA == 0)
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 	mtk_wcn_wmt_msgcb_unreg(WMTDRV_TYPE_WIFI);
-#else
+#endif
 
 	set_bit(GLUE_FLAG_HALT_BIT, &g_ulFlag);
 	wake_up_interruptible(&g_waitq_rst);
-#endif
 #endif
 }
 /*----------------------------------------------------------------------------*/
@@ -465,11 +459,11 @@ uint32_t glResetSelectAction(IN struct ADAPTER *prAdapter)
 void glResetTrigger(struct ADAPTER *prAdapter,
 		uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line)
 {
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct CHIP_DBG_OPS *prDbgOps = NULL;
 	uint16_t u2FwOwnVersion;
 	uint16_t u2FwPeerVersion;
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	struct mt66xx_chip_info *prChipInfo;
-#endif
+
 	dump_stack();
 	if (kalIsResetting())
 		return;
@@ -479,10 +473,11 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 #endif
 
 	fgIsResetting = TRUE;
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if CFG_MTK_ANDROID_WMT && !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 	update_driver_reset_status(fgIsResetting);
 #endif
-#if (CFG_SUPPORT_CONNINFRA == 0)
+
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 	if (eResetReason != RST_BT_TRIGGER)
 		DBGLOG(INIT, STATE, "[SER][L0] wifi trigger eResetReason=%d\n",
 								eResetReason);
@@ -495,30 +490,26 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 		if (glIsWmtCodeDump())
 			DBGLOG(INIT, WARN, "WMT is code dumping !\n");
 #endif
+
 	if (prAdapter == NULL)
 		prAdapter = wifi_rst.prGlueInfo->prAdapter;
-#if (CFG_SUPPORT_CONNINFRA == 1)
+
 	prChipInfo = prAdapter->chip_info;
-#endif
+	prDbgOps = prChipInfo->prDebugOps;
 	u2FwOwnVersion = prAdapter->rVerInfo.u2FwOwnVersion;
 	u2FwPeerVersion = prAdapter->rVerInfo.u2FwPeerVersion;
 
 	DBGLOG(INIT, ERROR,
-		"Trigger chip reset in %s line %u! Chip[%04X E%u] FW Ver DEC[%u.%u] HEX[%x.%x], Driver Ver[%u.%u]\n",
-		 pucFile, u4Line, MTK_CHIP_REV,
-	wlanGetEcoVersion(prAdapter),
-		(uint16_t)(u2FwOwnVersion >> 8),
-		(uint16_t)(u2FwOwnVersion & BITS(0, 7)),
-		(uint16_t)(u2FwOwnVersion >> 8),
-		(uint16_t)(u2FwOwnVersion & BITS(0, 7)),
-		(uint16_t)(u2FwPeerVersion >> 8),
-		(uint16_t)(u2FwPeerVersion & BITS(0, 7)));
+		"Trigger chip reset in %s line %u reason %s\n",
+		pucFile, u4Line, apucRstReason[eResetReason]);
+
+	if (prDbgOps && prDbgOps->dumpBusHangCr)
+		prDbgOps->dumpBusHangCr(prAdapter);
 
 	prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 	halPrintHifDbgInfo(prAdapter);
 
-#if CFG_WMT_RESET_API_SUPPORT
-#if (CFG_SUPPORT_CONNINFRA == 0)
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 	wifi_rst.rst_trigger_flag = u4RstFlag;
 	schedule_work(&(wifi_rst.rst_trigger_work));
 #else
@@ -532,16 +523,16 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 		if (u4RstFlag & RST_FLAG_DO_WHOLE_RESET) {
 			glResetWholeChipResetTrigger(g_reason);
 		} else {
+			int ret = 0;
+
 			g_ucWfRstSource = RST_SOURCE_WIFI_DRIVER;
-			if (prChipInfo->triggerfwassert)
-				prChipInfo->triggerfwassert();
+			if (prChipInfo->trigger_fw_assert) {
+				ret = prChipInfo->trigger_fw_assert(prAdapter);
+				if (ret != -EBUSY)
+					kalSetRstEvent();
+			}
 		}
 	}
-#endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
-
-#else
-	wifi_rst.prGlueInfo = prAdapter->prGlueInfo;
-	schedule_work(&(wifi_rst.rst_work));
 #endif
 }
 #else
@@ -929,8 +920,6 @@ FAIL:
 }
 #endif /* CFG_WMT_RESET_API_SUPPORT */
 
-#if ((CFG_SUPPORT_CONNINFRA == 0 && CFG_WMT_RESET_API_SUPPORT) || \
-     (CFG_SUPPORT_CONNINFRA == 1))
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is called for wifi reset
@@ -942,12 +931,11 @@ FAIL:
  *          nonzero
  */
 /*----------------------------------------------------------------------------*/
-static void mtk_wifi_reset_main(struct RESET_STRUCT *rst)
+static void mtk_wifi_reset_main(struct RESET_STRUCT *rst,
+	u_int8_t fgL0Reset)
 {
 	u_int8_t fgResult = FALSE;
-#if CFG_WMT_RESET_API_SUPPORT
 	int32_t ret;
-#endif
 
 	if (rst == NULL) {
 		DBGLOG(INIT, ERROR, "input value rst is NULL.\n");
@@ -955,10 +943,18 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst)
 	}
 
 #if CFG_WMT_RESET_API_SUPPORT
-	/* wlanOnAtReset(); */
+#if CFG_MTK_ANDROID_WMT
 	ret = wifi_reset_end(rst->rst_data);
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#else
+	if (fgL0Reset)
+		ret = wlanFuncOnImpl();
+	else
+		ret = wlanFuncOn();
+#endif
+#if !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+#if CFG_MTK_ANDROID_WMT
 	update_driver_reset_status(fgIsResetting);
+#endif
 	if (g_IsWholeChipRst == TRUE) {
 		g_IsWholeChipRst = FALSE;
 		g_IsWfsysBusHang = FALSE;
@@ -1000,36 +996,23 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst)
 #endif
 
 #endif  /* CFG_CHIP_RESET_KO_SUPPORT */
+
 	if (fgSimplifyResetFlow) {
 		DBGLOG(INIT, INFO, "Force down the reset flag.\n");
 		fgSimplifyResetFlow = FALSE;
 	}
-#if CFG_WMT_RESET_API_SUPPORT
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	if (ret != 0) {
-		g_IsWfsysResetOnFail = TRUE;
-		fgSimplifyResetFlow = TRUE;
-		DBGLOG(INIT, STATE,
-			"Wi-Fi reset on fail, set flag(%d).\n",
-			g_IsWfsysResetOnFail);
-	} else {
-		g_IsWfsysResetOnFail = FALSE;
-		DBGLOG(INIT, STATE,
-			"Wi-Fi reset on success, set flag(%d).\n",
-			g_IsWfsysResetOnFail);
-	}
-#endif
-#endif
+
 	if (mtk_cfg80211_vendor_event_reset_triggered(
 					(uint32_t) eResetReason) != 0)
 		DBGLOG(INIT, ERROR, "Send WIFI_EVENT_RESET_TRIGGERED Error!\n");
 
-	DBGLOG(INIT, STATE, "[SER][L0] flow end, fgResult=%d\n", fgResult);
+	DBGLOG(INIT, STATE, "[SER][L0] flow end, fgResult=%d, ret: %d\n",
+		fgResult, ret);
 }
 #endif
 
 #if CFG_WMT_RESET_API_SUPPORT
-#if (CFG_SUPPORT_CONNINFRA == 0)
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is called for wifi reset
@@ -1069,7 +1052,7 @@ static void mtk_wifi_reset(struct work_struct *work)
 			DBGLOG(INIT, INFO,
 			       "[SER][L0] not drv own, cannot get mcu info\n");
 	}
-	mtk_wifi_reset_main(rst);
+	mtk_wifi_reset_main(rst, FALSE);
 }
 
 static void mtk_wifi_trigger_reset(struct work_struct *work)
@@ -1093,11 +1076,11 @@ static void mtk_wifi_trigger_reset(struct work_struct *work)
 }
 #endif
 /* Weak reference for those platform doesn't support wmt functions */
+
 int32_t __weak mtk_wcn_stp_coredump_start_get(void)
 {
 	return FALSE;
 }
-
 
 /*0= f/w assert flag is not set, others=f/w assert flag is set */
 int32_t glIsWmtCodeDump(void)
@@ -1130,7 +1113,7 @@ static void triggerHifDumpIfNeed(void)
 	kalMsleep(100);
 }
 
-#if (CFG_SUPPORT_CONNINFRA == 0)
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 static void dumpWlanThreadsIfNeed(void)
 {
 	struct GLUE_INFO *prGlueInfo;
@@ -1192,21 +1175,23 @@ static void glResetCallback(enum _ENUM_WMTDRV_TYPE_T eSrcType,
 				triggerHifDumpIfNeed();
 				fgIsResetting = TRUE;
 				fgSimplifyResetFlow = TRUE;
+#if CFG_MTK_ANDROID_WMT
 				wifi_reset_start();
+#endif
 				break;
 
 			case WMTRSTMSG_RESET_END:
 				DBGLOG(INIT, WARN, "Whole chip reset end!\n");
 				wifi_rst.rst_data = RESET_SUCCESS;
 				fgIsResetting = FALSE;
-				mtk_wifi_reset_main(&wifi_rst);
+				mtk_wifi_reset_main(&wifi_rst, TRUE);
 				break;
 
 			case WMTRSTMSG_RESET_END_FAIL:
 				DBGLOG(INIT, WARN, "Whole chip reset fail!\n");
 				fgIsResetting = FALSE;
 				wifi_rst.rst_data = RESET_FAIL;
-				mtk_wifi_reset_main(&wifi_rst);
+				mtk_wifi_reset_main(&wifi_rst, TRUE);
 				break;
 
 			default:
@@ -1219,59 +1204,61 @@ static void glResetCallback(enum _ENUM_WMTDRV_TYPE_T eSrcType,
 		break;
 	}
 }
-#else
+#endif
 
 void glSetRstReasonString(char *reason)
 {
 	g_reason = reason;
 }
 
-
-static u_int8_t glResetMsgHandler(enum ENUM_WMTMSG_TYPE eMsgType,
-				  enum ENUM_WMTRSTMSG_TYPE MsgBody)
+static u_int8_t glResetMsgHandler(enum ENUM_RST_MSG MsgBody)
 {
-	switch (eMsgType) {
-	case WMTMSG_TYPE_RESET:
-
-			switch (MsgBody) {
-			case WMTRSTMSG_RESET_START:
-				DBGLOG(INIT, WARN, "Whole chip reset start!\n");
+	switch (MsgBody) {
+	case ENUM_RST_MSG_L0_START:
+		DBGLOG(INIT, INFO, "Whole chip reset start!\n");
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-				fw_log_wifi_irq_handler();
+		fw_log_wifi_irq_handler();
 #endif
-				fgIsResetting = TRUE;
-				fgSimplifyResetFlow = TRUE;
-				wifi_reset_start();
-				wlanFuncOffImpl();
-				complete(&g_RstOffComp);
-				break;
-
-			case WMTRSTMSG_RESET_END:
-				DBGLOG(INIT, WARN, "WF reset end!\n");
-				fgIsResetting = FALSE;
-				wifi_rst.rst_data = RESET_SUCCESS;
-				mtk_wifi_reset_main(&wifi_rst);
-				break;
-
-			case WMTRSTMSG_RESET_END_FAIL:
-				DBGLOG(INIT, WARN, "Whole chip reset fail!\n");
-				fgIsResetting = FALSE;
-				wifi_rst.rst_data = RESET_FAIL;
-				schedule_work(&(wifi_rst.rst_work));
-				break;
-			case WMTRSTMSG_0P5RESET_START:
-				DBGLOG(INIT, WARN, "WF chip reset start!\n");
-#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-				fw_log_wifi_irq_handler();
+		fgIsResetting = TRUE;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+		fgSimplifyResetFlow = TRUE;
 #endif
-				fgIsResetting = TRUE;
-				fgSimplifyResetFlow = TRUE;
-				wifi_reset_start();
-				wlanFuncOff();
-				break;
-			default:
-				break;
-			}
+#if CFG_MTK_ANDROID_WMT
+		wifi_reset_start();
+#endif
+		wlanFuncOffImpl();
+		complete(&g_RstOffComp);
+		break;
+
+	case ENUM_RST_MSG_L0_END:
+		DBGLOG(INIT, INFO, "Whole chip reset end!\n");
+		fgIsResetting = FALSE;
+		wifi_rst.rst_data = RESET_SUCCESS;
+		mtk_wifi_reset_main(&wifi_rst, TRUE);
+		break;
+
+	case ENUM_RST_MSG_L04_START:
+	case ENUM_RST_MSG_L05_START:
+		DBGLOG(INIT, WARN, "WF chip reset start!\n");
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+		fw_log_wifi_irq_handler();
+#endif
+		fgIsResetting = TRUE;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+		fgSimplifyResetFlow = TRUE;
+#endif
+#if CFG_MTK_ANDROID_WMT
+		wifi_reset_start();
+#endif
+		wlanFuncOff();
+		break;
+
+	case ENUM_RST_MSG_L04_END:
+	case ENUM_RST_MSG_L05_END:
+		DBGLOG(INIT, WARN, "WF chip reset end!\n");
+		fgIsResetting = FALSE;
+		wifi_rst.rst_data = RESET_SUCCESS;
+		mtk_wifi_reset_main(&wifi_rst, FALSE);
 		break;
 
 	default:
@@ -1280,6 +1267,7 @@ static u_int8_t glResetMsgHandler(enum ENUM_WMTMSG_TYPE eMsgType,
 
 	return TRUE;
 }
+
 bool glRstCheckRstCriteria(void)
 {
 	/*
@@ -1291,23 +1279,15 @@ bool glRstCheckRstCriteria(void)
 	else
 		return TRUE;
 }
+
 void glRstWholeChipRstParamInit(void)
 {
 	g_IsSubsysRstOverThreshold = FALSE;
 	g_SubsysRstCnt = 0;
 	g_WholeChipRstTotalCnt++;
 }
-void glRstSetRstEndEvent(void)
-{
-	KAL_WAKE_LOCK(NULL, g_IntrWakeLock);
 
-	set_bit(GLUE_FLAG_RST_END_BIT, &g_ulFlag);
-
-	/* when we got interrupt, we wake up servie thread */
-	wake_up_interruptible(&g_waitq_rst);
-
-}
-
+#if (CFG_SUPPORT_CONNINFRA == 1)
 int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 {
 	bool bRet = 0;
@@ -1402,6 +1382,8 @@ int glRstwlanPostWholeChipReset(void)
 		g_IsWholeChipRst);
 	return 0;
 }
+#endif
+
 u_int8_t kalIsWholeChipResetting(void)
 {
 #if CFG_CHIP_RESET_SUPPORT
@@ -1410,6 +1392,7 @@ u_int8_t kalIsWholeChipResetting(void)
 	return FALSE;
 #endif
 }
+
 void glReset_timeinit(struct timespec64 *rNowTs, struct timespec64 *rLastTs)
 {
 	rNowTs->tv_sec = 0;
@@ -1421,6 +1404,7 @@ void glReset_timeinit(struct timespec64 *rNowTs, struct timespec64 *rLastTs)
 bool IsOverRstTimeThreshold(
 	struct timespec64 *rNowTs, struct timespec64 *rLastTs)
 {
+#if (CFG_SUPPORT_CONNINFRA == 1)
 	struct timespec64 rTimeout, rTime = {0};
 	bool fgIsTimeout = FALSE;
 
@@ -1464,34 +1448,36 @@ bool IsOverRstTimeThreshold(
 			KAL_GET_TIME_OF_USEC_OR_NSEC(rTime));
 	}
 	return fgIsTimeout;
+#else
+	return TRUE;
+#endif
 }
 
 void glResetWholeChipResetTrigger(char *pcReason)
 {
+#if (CFG_SUPPORT_CONNINFRA == 1)
 	if (conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, pcReason)
 			== 0)
 		fgIsDrvTriggerWholeChipReset = TRUE;
+#else
+	DBGLOG(INIT, WARN, "whole chip reset NOT support\n");
+#endif
 }
 
-void glResetSubsysRstProcedure(
-	struct ADAPTER *prAdapter,
+void glResetSubsysRstProcedure(struct GLUE_INFO *prGlueInfo,
 	struct timespec64 *rNowTs,
 	struct timespec64 *rLastTs)
 {
-	bool fgIsTimeout;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct WIFI_VAR *prWifiVar = NULL;
-	struct GLUE_INFO *prGlueInfo = NULL;
+	bool fgIsTimeout;
 
-	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
 		prWifiVar = &prAdapter->rWifiVar;
 		if (prWifiVar->fgRstRecover == 1)
 			g_fgRstRecover = TRUE;
 	}
-#if 0
-	if (prAdapter->chip_info->checkbushang)
-		prAdapter->chip_info->checkbushang(FALSE);
-#endif
+
 	fgIsTimeout = IsOverRstTimeThreshold(rNowTs, rLastTs);
 	if (g_IsWfsysBusHang == TRUE) {
 		struct CHIP_DBG_OPS *debug_ops = prAdapter->chip_info->prDebugOps;
@@ -1524,13 +1510,14 @@ void glResetSubsysRstProcedure(
 		 */
 			if (eResetReason >= RST_REASON_MAX)
 				eResetReason = 0;
+
 			if (g_fgRstRecover == TRUE)
 				g_fgRstRecover = FALSE;
-			else {
+			else
 				wifi_coredump_start(
 					g_ucWfRstSource,
 					apucRstReason[eResetReason]);
-			}
+
 			g_IsNeedWaitCoredump = FALSE;
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
@@ -1541,13 +1528,11 @@ void glResetSubsysRstProcedure(
 #else
 			if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
 #endif
-				glResetMsgHandler(WMTMSG_TYPE_RESET,
-						  WMTRSTMSG_0P5RESET_START);
-				glResetMsgHandler(WMTMSG_TYPE_RESET,
-						  WMTRSTMSG_RESET_END);
+				glResetMsgHandler(ENUM_RST_MSG_L04_START);
+				glResetMsgHandler(ENUM_RST_MSG_L04_END);
 			} else {
 				fgIsResetting = FALSE;
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if CFG_MTK_ANDROID_WMT && !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 				update_driver_reset_status(fgIsResetting);
 #endif
 				DBGLOG(INIT, INFO,
@@ -1567,30 +1552,29 @@ void glResetSubsysRstProcedure(
 	} else {
 		if (eResetReason >= RST_REASON_MAX)
 			eResetReason = 0;
+
 		if (g_fgRstRecover == TRUE)
 			g_fgRstRecover = FALSE;
-		else {
+		else
 			wifi_coredump_start(
 				g_ucWfRstSource,
 				apucRstReason[eResetReason]);
-		}
+
 		g_IsNeedWaitCoredump = FALSE;
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
-			if (g_IsWfsysBusHang == TRUE)
-				DBGLOG(INIT, INFO,
-					"Detect bus hang, do whole chip reset.\n");
-			else if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
+		if (g_IsWfsysBusHang == TRUE)
+			DBGLOG(INIT, INFO,
+				"Detect bus hang, do whole chip reset.\n");
+		else if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
 #else
-			if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
+		if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
 #endif
-			glResetMsgHandler(WMTMSG_TYPE_RESET,
-					  WMTRSTMSG_0P5RESET_START);
-			glResetMsgHandler(WMTMSG_TYPE_RESET,
-					  WMTRSTMSG_RESET_END);
+			glResetMsgHandler(ENUM_RST_MSG_L04_START);
+			glResetMsgHandler(ENUM_RST_MSG_L04_END);
 		} else {
 			fgIsResetting = FALSE;
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if CFG_MTK_ANDROID_WMT && !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 			update_driver_reset_status(fgIsResetting);
 #endif
 			DBGLOG(INIT, INFO,
@@ -1601,6 +1585,7 @@ void glResetSubsysRstProcedure(
 		if (fgIsTimeout == TRUE)
 			g_SubsysRstCnt = 1;
 	}
+
 	if (g_SubsysRstCnt == 1) {
 		rLastTs->tv_sec = rNowTs->tv_sec;
 		KAL_GET_PTIME_OF_USEC_OR_NSEC(rLastTs) =
@@ -1611,9 +1596,9 @@ void glResetSubsysRstProcedure(
 
 int wlan_reset_thread_main(void *data)
 {
-	int ret = 0;
-	struct GLUE_INFO *prGlueInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = data;
 	struct timespec64 rNowTs, rLastTs;
+	int ret = 0;
 
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 	KAL_WAKE_LOCK_T *prWlanRstThreadWakeLock;
@@ -1627,8 +1612,6 @@ int wlan_reset_thread_main(void *data)
 
 	DBGLOG(INIT, INFO, "%s:%u starts running...\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
-
-	g_u4WlanRstThreadPid = KAL_GET_CURRENT_THREAD_ID();
 
 	while (TRUE) {
 		/* Unlock wakelock if hif_thread going to idle */
@@ -1649,7 +1632,7 @@ int wlan_reset_thread_main(void *data)
 			KAL_WAKE_LOCK(NULL,
 				      prWlanRstThreadWakeLock);
 #endif
-		WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+
 		if (test_and_clear_bit(GLUE_FLAG_RST_START_BIT, &g_ulFlag)) {
 #if CFG_ENABLE_WAKE_LOCK
 			if (KAL_WAKE_LOCK_ACTIVE(NULL, g_IntrWakeLock))
@@ -1665,8 +1648,8 @@ int wlan_reset_thread_main(void *data)
 				g_IsNeedWaitCoredump = FALSE;
 
 				if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
-					glResetMsgHandler(WMTMSG_TYPE_RESET,
-						WMTRSTMSG_RESET_START);
+					glResetMsgHandler(
+						ENUM_RST_MSG_L0_START);
 					glRstWholeChipRstParamInit();
 					glReset_timeinit(&rNowTs, &rLastTs);
 				} else {
@@ -1682,7 +1665,7 @@ int wlan_reset_thread_main(void *data)
 				DBGLOG(INIT, INFO,
 					"WF reset count = %d.\n",
 					g_SubsysRstCnt);
-				glResetSubsysRstProcedure(prGlueInfo->prAdapter,
+				glResetSubsysRstProcedure(prGlueInfo,
 							 &rNowTs,
 							 &rLastTs);
 				/*wfsys reset done*/
@@ -1693,15 +1676,16 @@ int wlan_reset_thread_main(void *data)
 				g_WholeChipRstTotalCnt,
 				g_SubsysRstTotalCnt);
 		}
+
 		if (test_and_clear_bit(GLUE_FLAG_RST_END_BIT, &g_ulFlag)) {
 #if (CFG_ENABLE_WAKE_LOCK)
 			if (KAL_WAKE_LOCK_ACTIVE(NULL, g_IntrWakeLock))
 				KAL_WAKE_UNLOCK(NULL, g_IntrWakeLock);
 #endif
 			DBGLOG(INIT, INFO, "Whole chip reset end start\n");
-			glResetMsgHandler(WMTMSG_TYPE_RESET,
-				WMTRSTMSG_RESET_END);
+			glResetMsgHandler(ENUM_RST_MSG_L0_END);
 		}
+
 		if (test_and_clear_bit(GLUE_FLAG_HALT_BIT, &g_ulFlag)) {
 			DBGLOG(INIT, INFO, "rst_thread should stop now...\n");
 			break;
@@ -1721,7 +1705,50 @@ int wlan_reset_thread_main(void *data)
 
 	return 0;
 }
-#endif
+
+void kalSetRstEvent(void)
+{
+	KAL_WAKE_LOCK(NULL, g_IntrWakeLock);
+
+	set_bit(GLUE_FLAG_RST_START_BIT, &g_ulFlag);
+
+	/* when we got interrupt, we wake up servie thread */
+	wake_up_interruptible(&g_waitq_rst);
+}
+
+void glRstSetRstEndEvent(void)
+{
+	KAL_WAKE_LOCK(NULL, g_IntrWakeLock);
+
+	set_bit(GLUE_FLAG_RST_END_BIT, &g_ulFlag);
+
+	/* when we got interrupt, we wake up servie thread */
+	wake_up_interruptible(&g_waitq_rst);
+}
+
+int reset_wait_for_trigger_completion(void)
+{
+	uint32_t waitRet = 0;
+
+	waitRet = wait_for_completion_timeout(&g_triggerComp,
+		MSEC_TO_JIFFIES(WIFI_TRIGGER_ASSERT_TIMEOUT));
+	if (waitRet > 0) {
+		/* Case 1: No timeout. */
+		DBGLOG(INIT, INFO, "Trigger assert successfully.\n");
+	} else {
+		/* Case 2: timeout */
+		DBGLOG(INIT, ERROR,
+			"Trigger assert more than %d ms, need to trigger rst self\n",
+			WIFI_TRIGGER_ASSERT_TIMEOUT);
+	}
+
+	return waitRet > 0 ? 0 : -ETIMEDOUT;
+}
+
+void reset_done_trigger_completion(void)
+{
+	complete(&g_triggerComp);
+}
 #else
 #ifndef CFG_CHIP_RESET_KO_SUPPORT
 static u_int8_t is_bt_exist(void)
@@ -1799,6 +1826,4 @@ EXPORT_SYMBOL(BT_rst_L0_notify_WF_2);
 #endif
 
 #endif
-#endif
-
 
