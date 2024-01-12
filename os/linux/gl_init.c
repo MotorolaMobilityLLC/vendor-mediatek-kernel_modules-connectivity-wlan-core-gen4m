@@ -6115,6 +6115,10 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		 *      initialized by glBusInit().
 		 * _HIF_SDIO: bus driver handle
 		 */
+#ifdef CFG_CHIP_RESET_KO_SUPPORT
+		rstNotifyWholeChipRstStatus(RST_MODULE_WIFI,
+			RST_MODULE_STATE_PROBE_START, NULL);
+#endif
 
 		DBGLOG(INIT, INFO, "enter wlanProbe\n");
 
@@ -6379,6 +6383,12 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			break;
 		}
 	}
+
+#ifdef CFG_CHIP_RESET_KO_SUPPORT
+	rstNotifyWholeChipRstStatus(RST_MODULE_WIFI,
+		RST_MODULE_STATE_PROBE_DONE, NULL);
+#endif
+
 	return i4Status;
 }				/* end of wlanProbe() */
 
@@ -6869,6 +6879,11 @@ static int initWlan(void)
 
 	DBGLOG(INIT, INFO, "initWlan\n");
 
+#ifdef CFG_CHIP_RESET_KO_SUPPORT
+	rstNotifyWholeChipRstStatus(RST_MODULE_WIFI,
+		RST_MODULE_STATE_KO_INSMOD, NULL);
+#endif
+
 #ifdef CFG_DRIVER_INF_NAME_CHANGE
 
 	if (kalStrLen(gprifnamesta) > CUSTOM_IFNAMESIZ ||
@@ -7019,6 +7034,7 @@ static void exitWlan(void)
 	mddpUninit();
 #endif
 	wlanUnregisterNetdevNotifier();
+
 	kalFbNotifierUnReg();
 
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
@@ -7071,6 +7087,11 @@ static void exitWlan(void)
 
 	DBGLOG(INIT, INFO, "Free wlan device..\n");
 	wlanFreeNetDev();
+#endif
+
+#ifdef CFG_CHIP_RESET_KO_SUPPORT
+	rstNotifyWholeChipRstStatus(RST_MODULE_WIFI,
+		RST_MODULE_STATE_KO_RMMOD, NULL);
 #endif
 
 #if CFG_DC_USB_WOW_CALLBACK

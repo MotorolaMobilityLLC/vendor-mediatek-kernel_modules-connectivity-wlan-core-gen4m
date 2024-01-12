@@ -189,9 +189,11 @@ static void glResetCallback(enum _ENUM_WMTDRV_TYPE_T eSrcType,
 			     unsigned int u4MsgLength);
 #endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
 #else
+#ifndef CFG_CHIP_RESET_KO_SUPPORT
 static u_int8_t is_bt_exist(void);
 static u_int8_t rst_L0_notify_step1(void);
 static void wait_core_dump_end(void);
+#endif
 #endif
 #endif
 
@@ -683,6 +685,17 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst)
 	}
 #endif
 #else
+#ifdef CFG_CHIP_RESET_KO_SUPPORT
+#if defined(_HIF_USB)
+	rstNotifyWholeChipRstStatus(RST_MODULE_WIFI,
+				RST_MODULE_STATE_PRERESET, NULL);
+#endif
+#if defined(_HIF_SDIO)
+	rstNotifyWholeChipRstStatus(RST_MODULE_WIFI,
+				RST_MODULE_STATE_PRERESET,
+				rst->prGlueInfo->rHifInfo.func);
+#endif
+#else /* CFG_CHIP_RESET_KO_SUPPORT */
 	fgResult = rst_L0_notify_step1();
 
 	wait_core_dump_end();
@@ -704,6 +717,8 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst)
 		kalRemoveProbe(rst->prGlueInfo);
 
 #endif
+
+#endif  /* CFG_CHIP_RESET_KO_SUPPORT */
 	if (fgSimplifyResetFlow) {
 		DBGLOG(INIT, INFO, "Force down the reset flag.\n");
 		fgSimplifyResetFlow = FALSE;
@@ -1408,6 +1423,7 @@ int wlan_reset_thread_main(void *data)
 }
 #endif
 #else
+#ifndef CFG_CHIP_RESET_KO_SUPPORT
 static u_int8_t is_bt_exist(void)
 {
 	char *bt_func_name = "WF_rst_L0_notify_BT_step1";
@@ -1479,6 +1495,7 @@ int32_t BT_rst_L0_notify_WF_2(int32_t reserved)
 }
 #ifndef CFG_COMBO_SLT_GOLDEN
 EXPORT_SYMBOL(BT_rst_L0_notify_WF_2);
+#endif
 #endif
 
 #endif
