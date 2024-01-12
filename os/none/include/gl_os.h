@@ -305,6 +305,7 @@ enum ENUM_PKT_FLAG {
 #ifdef CFG_IP_FRAG_DISABLE_HW_CHECKSUM
 	ENUM_PKT_IP_FRAG,	/* fragmented IP packet */
 #endif
+	ENUM_PKT_IPV6_HOP_BY_HOP, /* RX only */
 	ENUM_PKT_FLAG_NUM
 };
 

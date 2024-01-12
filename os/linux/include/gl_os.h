@@ -425,6 +425,7 @@ enum ENUM_P2P_REG_STATE {
 };
 #endif
 
+/* note: maximum of pkt flag is 16 */
 enum ENUM_PKT_FLAG {
 	ENUM_PKT_802_11,	/* 802.11 or non-802.11 */
 	ENUM_PKT_802_3,		/* 802.3 or ethernetII */
@@ -439,10 +440,11 @@ enum ENUM_PKT_FLAG {
 #if CFG_SUPPORT_TPENHANCE_MODE
 	ENUM_PKT_TCP_ACK,	/* TCP ACK */
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
-	ENUM_PKT_ICMPV6,		/* ICMPV6 */
+	ENUM_PKT_ICMPV6,	/* ICMPV6 */
 #ifdef CFG_IP_FRAG_DISABLE_HW_CHECKSUM
 	ENUM_PKT_IP_FRAG,	/* fragmented IP packet */
 #endif
+	ENUM_PKT_IPV6_HOP_BY_HOP, /* RX only */
 	ENUM_PKT_FLAG_NUM
 };
 
