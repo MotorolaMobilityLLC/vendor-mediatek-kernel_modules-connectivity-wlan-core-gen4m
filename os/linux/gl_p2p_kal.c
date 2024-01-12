@@ -1826,7 +1826,7 @@ void kalP2PRddDetectUpdate(struct GLUE_INFO *prGlueInfo,
 			"kalP2PRddDetectUpdate: Update to OS\n");
 		cfg80211_radar_event(
 			prGlueP2pInfo->prWdev->wiphy,
-			prGlueP2pInfo->chandef,
+			&prGlueP2pInfo->chandefCsa,
 			GFP_KERNEL);
 		DBGLOG(INIT, INFO,
 			"kalP2PRddDetectUpdate: Update to OS Done\n");
@@ -1865,6 +1865,21 @@ void kalP2PCacStartedUpdate(struct GLUE_INFO *prGlueInfo,
 			prNetdevice = prGlueP2pInfo->aprRoleHandler;
 		else
 			prNetdevice = prGlueP2pInfo->prDevHandler;
+
+#ifdef CFG_REPORT_TO_OS
+		DBGLOG(INIT, INFO, "CacStarted: Update to OS\n");
+#if KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
+		cfg80211_cac_event(
+			prNetdevice,
+			&prGlueP2pInfo->chandefCsa,
+			NL80211_RADAR_CAC_STARTED, GFP_KERNEL);
+#else
+		cfg80211_cac_event(
+			prNetdevice,
+			NL80211_RADAR_CAC_STARTED, GFP_KERNEL);
+#endif
+		DBGLOG(INIT, INFO, "CacStarted: Update to OS Done\n");
+#endif
 
 		if (prGlueP2pInfo->chandefCsa.chan)
 			kalP2pIndicateRadarEvent(prGlueInfo,

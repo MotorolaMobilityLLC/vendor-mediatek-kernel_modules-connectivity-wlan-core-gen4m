@@ -4241,6 +4241,10 @@ static void wlanCreateWirelessDevice(void)
 	prWiphy->features |= NL80211_FEATURE_QUIET;
 #endif
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	wiphy_ext_feature_set(prWiphy, NL80211_EXT_FEATURE_DFS_OFFLOAD);
+#endif
+
 	if (wiphy_register(prWiphy) < 0) {
 		DBGLOG(INIT, ERROR, "wiphy_register error\n");
 		goto free_glue_info;
