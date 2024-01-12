@@ -1753,9 +1753,7 @@ struct ADAPTER {
 
 	struct HIF_STATS rHifStats;
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
 	unsigned int u4FWLastUpdateTime;
-#endif
 
 	u_int8_t fgSetLogOnOff;
 	u_int8_t fgSetLogLevel;
