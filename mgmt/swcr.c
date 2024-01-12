@@ -920,9 +920,9 @@ void testPsSetupBss(struct ADAPTER *prAdapter,
 	prBssInfo->u2ATIMWindow = 0;
 
 	prBssInfo->ucBeaconTimeoutCount = 0;
-
+#if CFG_ENABLE_WIFI_DIRECT
 	bssInitForAP(prAdapter, prBssInfo, TRUE);
-
+#endif
 	COPY_MAC_ADDR(prBssInfo->aucBSSID, _aucZeroMacAddr);
 	LINK_INITIALIZE(&prBssInfo->rStaRecOfClientList);
 	prBssInfo->fgIsBeaconActivated = TRUE;
@@ -1042,11 +1042,12 @@ void testPsCmdCategory0(struct ADAPTER *prAdapter,
 		break;
 		case TEST_PS_BUFFER_BMC:
 			break;
+#if CFG_ENABLE_WIFI_DIRECT || CFG_SUPPORT_ADHOC
 		case TEST_PS_UPDATE_BEACON:
 			bssUpdateBeaconContent(prAdapter,
 				ucOpt0 /*networktype */);
 			break;
-
+#endif
 		default:
 			break;
 		}

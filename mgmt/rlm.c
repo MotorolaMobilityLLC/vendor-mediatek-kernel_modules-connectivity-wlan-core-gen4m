@@ -697,13 +697,14 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 	}
 #endif
 
+#if CFG_ENABLE_WIFI_DIRECT
 	if (IS_BSS_APGO(prBssInfo) &&
 		IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgP2pGcCsa)) {
 		MTK_OUI_IE(pucBuffer)->aucCapability[1] |=
 			MTK_SYNERGY_CAP_SUPPORT_GC_CSA;
 		DBGLOG(P2P, INFO, "Add gc csa capa\n");
 	}
-
+#endif
 	prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
 	pucBuffer += IE_SIZE(pucBuffer);
 } /* rlmGenerateMTKOuiIE */
@@ -819,6 +820,8 @@ u_int8_t rlmParseCheckRxsmmOuiIE(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 } /* rlmParseCheckRxsmmOuiIE */
 #endif
 
+#if CFG_ENABLE_WIFI_DIRECT
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief
@@ -897,7 +900,7 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
 	}
 }
-
+#endif
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief
@@ -3483,8 +3486,10 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 		prBssInfo->ucHtOpInfo1 &=
 			~(HT_OP_INFO1_SCO | HT_OP_INFO1_STA_CHNL_WIDTH);
 
+#if CFG_ENABLE_WIFI_DIRECT
 		/* Check SAP channel */
 		p2pFuncSwitchSapChannel(prAdapter);
+#endif
 	}
 
 #if CFG_SUPPORT_QUIET && 0
@@ -6232,9 +6237,11 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 		prBssDesc->ucCenterFreqS1 = prBssInfo->ucVhtChannelFrequencyS1;
 		prBssDesc->ucCenterFreqS2 = prBssInfo->ucVhtChannelFrequencyS2;
 
+#if CFG_ENABLE_WIFI_DIRECT
 		if (IS_BSS_P2P(prBssInfo))
 			p2pFuncSwitchGcChannel(prAdapter, prBssInfo);
 		else
+#endif
 			kalIndicateChannelSwitch(
 				prAdapter->prGlueInfo,
 				prBssInfo->eBssSCO,
@@ -6275,10 +6282,10 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 		prBssInfo->eBssSCO = CHNL_EXT_SCN;
 		prBssInfo->ucHtOpInfo1 &=
 			~(HT_OP_INFO1_SCO | HT_OP_INFO1_STA_CHNL_WIDTH);
-
+#if CFG_ENABLE_WIFI_DIRECT
 		/* Check SAP channel */
 		p2pFuncSwitchSapChannel(prAdapter);
-
+#endif
 	}
 
 	rlmSyncOperationParams(prAdapter, prBssInfo);
@@ -7255,10 +7262,12 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 						(enum ENUM_CHNL_EXT)(
 						prStaRec->ucHtPeerOpInfo1 &
 						HT_OP_INFO1_SCO);
+#if CFG_ENABLE_WIFI_DIRECT
 				} else if (prBssInfo->eCurrentOPMode ==
 					   OP_MODE_ACCESS_POINT) {
 					prBssInfo->eBssSCO = rlmDecideScoForAP(
 						prAdapter, prBssInfo);
+#endif
 				}
 			}
 
@@ -7291,12 +7300,14 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 		}
 #endif
 
+#if CFG_ENABLE_WIFI_DIRECT
 #if (CFG_SUPPORT_802_11AX == 1)
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_HE) {
 			/* Update 6G operating info */
 			rlmUpdate6GOpInfo(prAdapter, prBssInfo);
 		}
+#endif
 #endif
 #endif
 	}
@@ -7377,6 +7388,7 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 		if (!fgIsSwitchingP2pChnl)
 			rlmSyncOperationParams(prAdapter, prBssInfo);
 
+#if CFG_ENABLE_WIFI_DIRECT
 		/* <3> Update BCN/Probe Resp IE to notify peers our OP info is
 		 * changed (AP mode)
 		 */
@@ -7384,7 +7396,7 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 			!fgIsSwitchingP2pChnl)
 			bssUpdateBeaconContent(prAdapter,
 				prBssInfo->ucBssIndex);
-
+#endif
 		/* <4) Reset flags */
 		prBssInfo->fgIsOpChangeChannelWidth = FALSE;
 		prBssInfo->fgIsOpChangeRxNss = FALSE;

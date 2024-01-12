@@ -1317,7 +1317,7 @@ uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
 	       MAC2STR(prDeauthFrame->aucBSSID), prDeauthFrame->u2ReasonCode);
 
 	do {
-
+#if CFG_ENABLE_WIFI_DIRECT
 		/* We should have the corresponding Sta Record. */
 		if (!prStaRec) {
 			DBGLOG(SAA, WARN,
@@ -1326,7 +1326,7 @@ uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
 			p2pRxDeauthNoWtbl(prAdapter, prStaRec, prSwRfb);
 			break;
 		}
-
+#endif
 		if (IS_STA_IN_AIS(prStaRec)) {
 			struct BSS_INFO *prAisBssInfo;
 			struct AIS_FSM_INFO *prAisFsmInfo;

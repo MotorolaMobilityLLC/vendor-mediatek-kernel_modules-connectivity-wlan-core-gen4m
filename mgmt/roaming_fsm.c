@@ -305,8 +305,10 @@ static u_int8_t roamingFsmIsNeedScan(
 	}
 #endif
 
+#if CFG_ENABLE_WIFI_DIRECT
 	if (cnmP2pIsActive(prAdapter))
 		fgIsNeedScan = FALSE;
+#endif
 
 	return fgIsNeedScan;
 }

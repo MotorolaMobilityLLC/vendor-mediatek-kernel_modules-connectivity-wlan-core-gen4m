@@ -297,7 +297,7 @@ uint32_t authSendAuthFrame(struct ADAPTER *prAdapter,
 	     i++) {
 		if (txAuthIETable[i].u2EstimatedFixedIELen != 0)
 			u2EstimatedExtraIELen +=
-				txAssocRespIETable[i].u2EstimatedFixedIELen;
+				txAuthIETable[i].u2EstimatedFixedIELen;
 		else if (txAuthIETable[i].pfnCalculateVariableIELen !=
 			 NULL)
 			u2EstimatedExtraIELen +=
@@ -318,17 +318,17 @@ uint32_t authSendAuthFrame(struct ADAPTER *prAdapter,
 	/* 4 <2> Compose Authentication Request frame header and fixed fields
 	 * in MSDU_INfO_T.
 	 */
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex)
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
 	    /* Compose Header and some Fixed Fields */
 	    authComposeAuthFrameHeaderAndFF((uint8_t *)
-					    ((uint32_t) (prMsduInfo->prPacket) +
-					     MAC_TX_RESERVED_FIELD),
-					    prStaRec->aucMacAddr,
-					    prBssInfo->aucOwnMacAddr,
-					    prStaRec->ucAuthAlgNum,
-					    u2TransactionSeqNum,
-					    STATUS_CODE_RESERVED);
+				    ((uintptr_t) (prMsduInfo->prPacket) +
+				     MAC_TX_RESERVED_FIELD),
+				    prStaRec->aucMacAddr,
+				    prBssInfo->aucOwnMacAddr,
+				    prStaRec->ucAuthAlgNum,
+				    u2TransactionSeqNum,
+				    STATUS_CODE_RESERVED);
 
 	u2PayloadLen =
 	    (AUTH_ALGORITHM_NUM_FIELD_LEN +
@@ -344,11 +344,11 @@ uint32_t authSendAuthFrame(struct ADAPTER *prAdapter,
 		     saaFsmRunEventTxDone, MSDU_RATE_MODE_AUTO);
 
 	/* 4 <4> Compose IEs in MSDU_INFO_T */
-	for (i = 0; i < sizeof(txAuthIETable) / sizeof(struct APPEND_IE_ENTRY);
+	for (i = 0;
+	     i < sizeof(txAuthIETable) / sizeof(struct APPEND_VAR_IE_ENTRY);
 	     i++) {
 		if (txAuthIETable[i].pfnAppendIE)
 			txAuthIETable[i].pfnAppendIE(prAdapter, prMsduInfo);
-
 	}
 
 	/* TODO(Kevin):
@@ -660,10 +660,12 @@ uint32_t authCheckRxAuthFrameTransSeq(struct ADAPTER *prAdapter,
 	switch (u2RxTransactionSeqNum) {
 	case AUTH_TRANSACTION_SEQ_2:
 	case AUTH_TRANSACTION_SEQ_4:
+#if CFG_SUPPORT_AAA
 		if (prStaRec && IS_STA_IN_P2P(prStaRec) &&
 			!IS_AP_STA(prStaRec))
 			aaaFsmRunEventRxAuth(prAdapter, prSwRfb);
 		else
+#endif
 			saaFsmRunEventRxAuth(prAdapter, prSwRfb);
 		break;
 
@@ -1161,10 +1163,12 @@ authSendDeauthFrame(struct ADAPTER *prAdapter,
 			if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
 				aisGetAisFsmInfo(prAdapter, ucBssIndex)
 					->encryptedDeauthIsInProcess = TRUE;
+#if CFG_ENABLE_WIFI_DIRECT
 			} else if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
 				P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 					prBssInfo->u4PrivateData)
 					->encryptedDeauthIsInProcess = TRUE;
+#endif
 			}
 			DBGLOG(SAA, INFO,
 			       "Reason=%d, DestAddr=" MACSTR
@@ -1438,6 +1442,7 @@ uint32_t authAddRSNIE_impl(struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
+#if CFG_SUPPORT_AAA
 /*---------------------------------------------------------------------------*/
 /*!
  * @brief This function will validate the Rx Auth Frame and then return
@@ -1486,3 +1491,4 @@ authFloodingCheck(struct ADAPTER *prAdapter,
 	return FALSE;
 }
 
+#endif

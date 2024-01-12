@@ -219,7 +219,9 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	{MID_CNM_P2P_RADAR_DETECT, p2pRoleFsmRunEventRadarDet},
 #endif
+#if CFG_ENABLE_WIFI_DIRECT
 	{MID_CNM_P2P_CSA_DONE, p2pRoleFsmRunEventCsaDone},
+#endif
 #if CFG_ENABLE_BT_OVER_WIFI
 	{MID_CNM_BOW_CH_GRANT, bowRunEventChGrant},
 #else
@@ -285,8 +287,10 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_P2P_DEVICE_DISCOVERY, p2pFsmRunEventScanRequest},	/* V */
 	{MID_MNY_P2P_CONNECTION_REQ, p2pRoleFsmRunEventConnectionRequest},
 	{MID_MNY_P2P_CONNECTION_ABORT, p2pRoleFsmRunEventConnectionAbort},
+#if CFG_ENABLE_WIFI_DIRECT
 	{MID_MNY_P2P_BEACON_UPDATE, p2pRoleFsmRunEventBeaconUpdate},
 	{MID_MNY_P2P_STOP_AP, p2pRoleFsmRunEventStopAP},
+#endif
 	{MID_MNY_P2P_CHNL_REQ, p2pDevFsmRunEventChannelRequest},	/* V */
 	{MID_MNY_P2P_CHNL_ABORT, p2pDevFsmRunEventChannelAbort},	/* V */
 	{MID_MNY_P2P_MGMT_TX, p2pFsmRunEventMgmtFrameTx},	/* V */
@@ -295,7 +299,9 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_P2P_MGMT_FRAME_REGISTER,
 		p2pDevFsmRunEventMgmtFrameRegister},
 	{MID_MNY_P2P_NET_DEV_REGISTER, p2pFsmRunEventNetDeviceRegister},
+#if CFG_ENABLE_WIFI_DIRECT
 	{MID_MNY_P2P_START_AP, p2pRoleFsmRunEventPreStartAP},
+#endif
 	{MID_MNY_P2P_DEL_IFACE, p2pRoleFsmRunEventDelIface},
 	{MID_MNY_P2P_MGMT_FRAME_UPDATE, p2pFsmRunEventUpdateMgmtFrame},
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -323,8 +329,9 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_AIS_NCHO_ACTION_FRAME,
 		aisFsmRunEventNchoActionFrameTx},
 #endif
+#if CFG_ENABLE_WIFI_DIRECT
 	{MID_MNY_P2P_ACS, p2pRoleFsmRunEventAcs},
-
+#endif
 #if (CFG_SUPPORT_TWT == 1)
 	{MID_TWT_REQ_FSM_START, twtReqFsmRunEventStart},
 	{MID_TWT_REQ_FSM_TEARDOWN, twtReqFsmRunEventTeardown},

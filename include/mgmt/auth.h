@@ -179,9 +179,10 @@ uint32_t authAddRSNIE_impl(struct ADAPTER *prAdapter,
 void authHandleFtIEs(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 		     struct IE_HDR *prIEHdr);
 
+#if CFG_SUPPORT_AAA
 u_int8_t
 authFloodingCheck(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prP2pBssInfo,
 		struct SW_RFB *prSwRfb);
-
+#endif
 #endif /* _AUTH_H */

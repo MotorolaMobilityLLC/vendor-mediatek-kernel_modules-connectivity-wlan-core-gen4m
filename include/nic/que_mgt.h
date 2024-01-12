@@ -1221,6 +1221,7 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(struct ADAPTER
 void qmHandleEventBssAbsencePresence(struct ADAPTER
 				     *prAdapter, struct WIFI_EVENT *prEvent);
 
+#if CFG_ENABLE_WIFI_DIRECT
 void qmHandleEventStaChangePsMode(struct ADAPTER
 				  *prAdapter, struct WIFI_EVENT *prEvent);
 
@@ -1235,7 +1236,7 @@ void
 qmUpdateFreeQuota(struct ADAPTER *prAdapter,
 		  struct STA_RECORD *prStaRec, uint8_t ucUpdateMode,
 		  uint8_t ucFreeQuota);
-
+#endif
 void qmFreeAllByBssIdx(struct ADAPTER *prAdapter,
 		       uint8_t ucBssIndex);
 

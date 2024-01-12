@@ -8212,7 +8212,7 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 		prAdapter, "ucScanNoApRecoverTh", 3);
 
 #endif
-
+#if CFG_ENABLE_WIFI_DIRECT
 	prWifiVar->fgSapCheckPmkidInDriver = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "SapCheckPmkidInDriver", FEATURE_ENABLED);
 
@@ -8242,7 +8242,7 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 
 	prWifiVar->fgSapAddTPEIE = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "SapAddTPEIE", FEATURE_DISABLED);
-
+#endif
 	prWifiVar->ucDfsRegion = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "DfsRegion", NL80211_DFS_UNSET);
 	if (prWifiVar->ucDfsRegion)
@@ -8259,6 +8259,8 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->u4CC2Region = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "CC2Region", FEATURE_ENABLED);
 
+#if CFG_ENABLE_WIFI_DIRECT
+
 	prWifiVar->u4ApChnlHoldTime = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "ApChnlHoldTime", P2P_AP_CHNL_HOLD_TIME_MS);
 
@@ -8268,7 +8270,7 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->u4ProbeRspRetryLimit = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "ProbeRspRetryLimit",
 		DEFAULT_P2P_PROBERESP_RETRY_LIMIT);
-
+#endif
 	prWifiVar->fgAllowSameBandDualSta = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "AllowSameBandDualSta", FEATURE_ENABLED);
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
@@ -10210,6 +10212,7 @@ void wlanChipRstPreAct(struct ADAPTER *prAdapter)
 {
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	int32_t i4BssIdx;
+#if CFG_ENABLE_WIFI_DIRECT
 	uint32_t u4ClientCount = 0;
 	struct STA_RECORD *prCurrStaRec = (struct STA_RECORD *)
 					  NULL;
@@ -10217,6 +10220,7 @@ void wlanChipRstPreAct(struct ADAPTER *prAdapter)
 					      NULL;
 	struct LINK *prClientList;
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+#endif
 
 	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_CHIP_RST);
 	if (prAdapter->fgIsChipAssert) {
@@ -10232,7 +10236,7 @@ void wlanChipRstPreAct(struct ADAPTER *prAdapter)
 
 		if (!prBssInfo->fgIsInUse)
 			continue;
-
+#if CFG_ENABLE_WIFI_DIRECT
 		if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
 			if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
 				u4ClientCount = bssGetClientCount(prAdapter,
@@ -10266,6 +10270,7 @@ void wlanChipRstPreAct(struct ADAPTER *prAdapter)
 
 			}
 		}
+#endif
 	}
 }
 
@@ -10719,12 +10724,13 @@ wlanPktTxDone(struct ADAPTER *prAdapter,
 			rTxDoneStatus,
 			prMsduInfo->ucTxSeqNum);
 
+#if CFG_ENABLE_WIFI_DIRECT
 	if (prMsduInfo->ucPktType == ENUM_PKT_1X)
 		p2pRoleFsmNotifyEapolTxStatus(prAdapter,
 				prMsduInfo->ucBssIndex,
 				prMsduInfo->eEapolKeyType,
 				rTxDoneStatus);
-
+#endif
 #if CFG_SUPPORT_TDLS
 	if (prMsduInfo->ucPktType == ENUM_PKT_TDLS)
 		TdlsHandleTxDoneStatus(prAdapter, rTxDoneStatus);
@@ -10847,6 +10853,8 @@ wlanGetStaIdxByWlanIdx(struct ADAPTER *prAdapter,
 	}
 	return WLAN_STATUS_FAILURE;
 }
+#if CFG_ENABLE_WIFI_DIRECT
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to query LTE safe channels.
@@ -10905,7 +10913,7 @@ wlanQueryLteSafeChannel(struct ADAPTER *prAdapter,
 
 	return rResult;
 }				/* wlanoidQueryLteSafeChannel */
-
+#endif
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add dirtiness to neighbor channels of a BSS to estimate channel
@@ -11704,6 +11712,7 @@ wlanGetSupportNss(struct ADAPTER *prAdapter,
 		return 1;
 	}
 
+#if CFG_ENABLE_WIFI_DIRECT
 	if (IS_BSS_APGO(prBssInfo)) {
 		if (p2pFuncIsAPMode(
 			prAdapter->rWifiVar.prP2PConnSettings
@@ -11727,6 +11736,7 @@ wlanGetSupportNss(struct ADAPTER *prAdapter,
 #endif
 		}
 	}
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
 	else if (IS_BSS_AIS(prBssInfo)) {
 		struct AIS_FSM_INFO *prAisFsmInfo =
@@ -11747,7 +11757,7 @@ wlanGetSupportNss(struct ADAPTER *prAdapter,
 	}
 #endif
 
-#if (CFG_SUPPORT_DBDC_DOWNGRADE_NSS == 1)
+#if (CFG_SUPPORT_DBDC_DOWNGRADE_NSS == 1) && CFG_ENABLE_WIFI_DIRECT
 	if (IS_BSS_P2P(prBssInfo) &&
 		(p2pFuncIsDualAPMode(prAdapter) ||
 		p2pFuncIsDualGOMode(prAdapter))) {
@@ -13926,7 +13936,9 @@ wlanWaitCfg80211SuspendDone(struct GLUE_INFO *prGlueInfo)
 			/* no cfg80211 suspend called */
 			/* do pre-suspend flow here */
 			aisPreSuspendFlow(prGlueInfo->prAdapter);
+#if CFG_ENABLE_WIFI_DIRECT
 			p2pRoleProcessPreSuspendFlow(prGlueInfo->prAdapter);
+#endif
 			break;
 		}
 		kalUsleep_range(5000, 6000);

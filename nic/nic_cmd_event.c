@@ -2094,6 +2094,7 @@ void nicCmdEventQueryStaStatistics(struct ADAPTER
 
 }
 
+#if CFG_ENABLE_WIFI_DIRECT
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is called when event for query LTE safe channels
@@ -2170,6 +2171,7 @@ void nicCmdEventQueryLteSafeChn(struct ADAPTER *prAdapter,
 	kalMemFree(prLteSafeChnInfo, VIR_MEM_TYPE,
 			sizeof(struct PARAM_GET_CHN_INFO));
 }
+#endif
 
 void nicEventRddPulseDump(struct ADAPTER *prAdapter,
 			  uint8_t *pucEventBuf)
@@ -4641,10 +4643,10 @@ void nicEventBeaconTimeout(struct ADAPTER *prAdapter,
 
 }
 
+#if CFG_ENABLE_WIFI_DIRECT
 void nicEventUpdateNoaParams(struct ADAPTER *prAdapter,
 			     struct WIFI_EVENT *prEvent)
 {
-#if CFG_ENABLE_WIFI_DIRECT
 	if (prAdapter->fgIsP2PRegistered) {
 		struct EVENT_UPDATE_NOA_PARAMS *prEventUpdateNoaParam;
 
@@ -4662,9 +4664,6 @@ void nicEventUpdateNoaParams(struct ADAPTER *prAdapter,
 			ASSERT(0);
 		}
 	}
-#else
-	ASSERT(0);
-#endif
 }
 
 void nicEventStaAgingTimeout(struct ADAPTER *prAdapter,
@@ -4717,12 +4716,11 @@ void nicEventStaAgingTimeout(struct ADAPTER *prAdapter,
 void nicEventApObssStatus(struct ADAPTER *prAdapter,
 			  struct WIFI_EVENT *prEvent)
 {
-#if CFG_ENABLE_WIFI_DIRECT
 	if (prAdapter->fgIsP2PRegistered)
 		rlmHandleObssStatusEventPkt(prAdapter,
 			(struct EVENT_AP_OBSS_STATUS *) prEvent->aucBuffer);
-#endif
 }
+#endif
 
 void nicEventRoamingStatus(struct ADAPTER *prAdapter,
 			   struct WIFI_EVENT *prEvent)
@@ -5216,7 +5214,7 @@ void nicEventUpdateCoexStatus(struct ADAPTER *prAdapter,
 		prBssInfo->eCoexMode = eCoexMode;
 	}
 
-#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+#if CFG_ENABLE_WIFI_DIRECT && (CFG_SUPPORT_AVOID_DESENSE == 1)
 	p2pFuncSwitchSapChannel(prAdapter);
 #endif
 }

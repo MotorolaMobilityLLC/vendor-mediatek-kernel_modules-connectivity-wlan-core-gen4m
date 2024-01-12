@@ -2692,6 +2692,8 @@ int mtk_cfg80211_vendor_set_multista_use_case(
 	return u4Status;
 }
 
+#if CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST
+
 int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 		*wiphy, struct wireless_dev *wdev, const void *data,
 		int data_len)
@@ -2787,6 +2789,9 @@ nla_put_failure:
 	kfree_skb(skb);
 	return -EFAULT;
 }
+#endif
+
+#if CFG_AUTO_CHANNEL_SEL_SUPPORT
 
 int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len)
@@ -2975,6 +2980,7 @@ exit:
 	}
 	return rStatus;
 }
+#endif
 
 int mtk_cfg80211_vendor_dfs_capability(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len)

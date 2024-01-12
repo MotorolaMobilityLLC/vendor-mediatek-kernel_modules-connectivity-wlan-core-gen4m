@@ -241,16 +241,20 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_UPDATE_COEX_PHYRATE] = nicUniEventUpdateCoex,
 	[UNI_EVENT_ID_IDC] = nicUniEventIdc,
 	[UNI_EVENT_ID_BSS_IS_ABSENCE] = nicUniEventBssIsAbsence,
+#if CFG_ENABLE_WIFI_DIRECT
 	[UNI_EVENT_ID_PS_SYNC] = nicUniEventPsSync,
 	[UNI_EVENT_ID_SAP] = nicUniEventSap,
+#endif
 	[UNI_EVENT_ID_OBSS_UPDATE] = nicUniEventOBSS,
 #if CFG_SUPPORT_ROAMING
 	[UNI_EVENT_ID_ROAMING] = nicUniEventRoaming,
 #endif
 	[UNI_EVENT_ID_ADD_KEY_DONE] = nicUniEventAddKeyDone,
 	[UNI_EVENT_ID_FW_LOG_2_HOST] = nicUniEventFwLog2Host,
+#if CFG_ENABLE_WIFI_DIRECT
 	[UNI_EVENT_ID_P2P] = nicUniEventP2p,
 	[UNI_EVENT_ID_IE_COUNTDOWN] = nicUniEventCountdown,
+#endif
 	[UNI_EVENT_ID_STAREC] = nicUniEventStaRec,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	[UNI_EVENT_ID_RDD] = nicUniEventRDD,
@@ -2340,7 +2344,7 @@ uint32_t nicUniCmdBssInfoTagQbss(struct ADAPTER *ad,
 	tag->ucIsQBSS = cmd->ucIsQBSS;
 	return tag->u2Length;
 }
-
+#if CFG_ENABLE_WIFI_DIRECT
 uint32_t nicUniCmdBssInfoTagSap(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_SET_BSS_INFO *cmd)
 {
@@ -2365,6 +2369,7 @@ uint32_t nicUniCmdBssInfoTagP2p(struct ADAPTER *ad,
 
 	return tag->u2Length;
 }
+#endif
 
 #if (CFG_SUPPORT_802_11AX == 1)
 uint32_t nicUniCmdBssInfoTagHe(struct ADAPTER *ad,
@@ -2514,8 +2519,10 @@ struct UNI_CMD_BSSINFO_TAG_HANDLE arSetBssInfoTable[] = {
 	{sizeof(struct UNI_CMD_BSSINFO_RATE), nicUniCmdBssInfoTagRate},
 	{sizeof(struct UNI_CMD_BSSINFO_SEC), nicUniCmdBssInfoTagSec},
 	{sizeof(struct UNI_CMD_BSSINFO_QBSS), nicUniCmdBssInfoTagQbss},
+#if CFG_ENABLE_WIFI_DIRECT
 	{sizeof(struct UNI_CMD_BSSINFO_SAP), nicUniCmdBssInfoTagSap},
 	{sizeof(struct UNI_CMD_BSSINFO_P2P), nicUniCmdBssInfoTagP2p},
+#endif
 #if (CFG_SUPPORT_802_11AX == 1)
 	{sizeof(struct UNI_CMD_BSSINFO_HE), nicUniCmdBssInfoTagHe},
 	{sizeof(struct UNI_CMD_BSSINFO_BSS_COLOR), nicUniCmdBssInfoTagBssColor},
@@ -3403,10 +3410,12 @@ uint32_t nicUniCmdStaRecConnType(struct ADAPTER *ad, uint32_t legacy_sta_type)
 		return CONNECTION_INFRA_AP;
 	else if (legacy_sta_type == STA_TYPE_LEGACY_CLIENT)
 		return CONNECTION_INFRA_STA;
+#if CFG_ENABLE_WIFI_DIRECT
 	else if (legacy_sta_type == STA_TYPE_P2P_GO)
 		return CONNECTION_P2P_GO;
 	else if (legacy_sta_type == STA_TYPE_P2P_GC)
 		return CONNECTION_P2P_GC;
+#endif
 #if CFG_SUPPORT_TDLS
 	else if (legacy_sta_type == STA_TYPE_DLS_PEER)
 		return CONNECTION_TDLS;
@@ -6973,7 +6982,9 @@ void nicUniEventQueryIdcChnl(struct ADAPTER *prAdapter,
 		   tag->u4SafeChannelBitmask,
 		   sizeof(uint32_t) * ENUM_SAFE_CH_MASK_MAX_NUM);
 
+#if CFG_ENABLE_WIFI_DIRECT
 	nicCmdEventQueryLteSafeChn(prAdapter, prCmdInfo, (uint8_t *)&legacy);
+#endif
 }
 
 #if CFG_SUPPORT_TX_BF
@@ -7912,8 +7923,12 @@ uint32_t nicUniUpdateStaRecFastAll(
 		return WLAN_STATUS_FAILURE;
 
 	if (IS_BSS_AIS(bss) ||
-	   (IS_BSS_GC(bss) && !bss->prStaRecOfAP) ||
-	   (IS_BSS_APGO(bss) && !bssGetClientCount(ad, bss)))
+	   (IS_BSS_GC(bss) && !bss->prStaRecOfAP)
+#if CFG_ENABLE_WIFI_DIRECT
+	   || (IS_BSS_APGO(bss) && !bssGetClientCount(ad, bss)))
+#else
+		)
+#endif
 		return WLAN_STATUS_INVALID_DATA;
 
 	uni_cmd = (struct UNI_CMD_STAREC *)
@@ -8527,6 +8542,8 @@ void nicUniEventBssIsAbsence(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	}
 }
 
+#if CFG_ENABLE_WIFI_DIRECT
+
 void nicUniEventPsSync(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
 	uint16_t tags_len;
@@ -8631,7 +8648,7 @@ void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 	}
 }
-
+#endif
 void nicUniEventOBSS(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
 	uint16_t tags_len;
@@ -8915,6 +8932,7 @@ void nicUniEventFwLog2Host(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	}
 }
 
+#if CFG_ENABLE_WIFI_DIRECT
 void nicUniEventP2p(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
 	uint16_t tags_len;
@@ -9019,6 +9037,7 @@ void nicUniEventCountdown(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 	}
 }
+#endif
 
 void nicUniEventStaRec(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {

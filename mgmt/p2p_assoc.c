@@ -71,6 +71,8 @@
 
 #include "precomp.h"
 
+#if CFG_ENABLE_WIFI_DIRECT
+
 /******************************************************************************
  *                              C O N S T A N T S
  ******************************************************************************
@@ -143,3 +145,4 @@ uint8_t *p2pBuildReAssocReqFrameCommonIEs(struct ADAPTER *prAdapter,
 	pucBuffer += IE_SIZE(pucBuffer);
 	return pucBuffer;
 }
+#endif /* CFG_ENABLE_WIFI_DIRECT */

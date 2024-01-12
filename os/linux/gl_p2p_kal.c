@@ -71,6 +71,7 @@
 #include "precomp.h"
 #include "gl_wext.h"
 
+#if CFG_ENABLE_WIFI_DIRECT
 /******************************************************************************
  *                              C O N S T A N T S
  ******************************************************************************
@@ -2903,3 +2904,4 @@ u_int8_t kalGetP2pDevScanSpecificSSID(struct GLUE_INFO *prGlueInfo)
 #endif
 	return fgScanSpecificSSID;
 }
+#endif /* CFG_ENABLE_WIFI_DIRECT */

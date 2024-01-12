@@ -109,6 +109,8 @@
 
 #include "precomp.h"
 
+#if CFG_ENABLE_WIFI_DIRECT
+
 static uint8_t rlmObssChnlLevelIn2G4(struct BSS_INFO *prBssInfo,
 		uint8_t ucPriChannel, enum ENUM_CHNL_EXT eExtend);
 
@@ -394,3 +396,4 @@ void rlmObssScanExemptionRsp(struct ADAPTER *prAdapter,
 	/* Send them to HW queue */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 }
+#endif /* CFG_ENABLE_WIFI_DIRECT */

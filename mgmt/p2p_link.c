@@ -9,6 +9,7 @@
 
 #include "precomp.h"
 
+#if CFG_ENABLE_WIFI_DIRECT
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 
 struct MLD_BSS_INFO *prP2pMldBssInfo;
@@ -1039,3 +1040,4 @@ p2pNeedAppendP2pIE(
 	return TRUE;
 }
 
+#endif /* CFG_ENABLE_WIFI_DIRECT */

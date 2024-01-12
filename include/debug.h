@@ -839,6 +839,20 @@ enum WAKE_DATA_TYPE {
 #define ASSERT(_exp) {}
 #define ASSERT_REPORT(_exp, _fmt) {}
 #endif /* BUILD_QA_DBG */
+
+#if DBG
+#define ASSERT_BREAK(_exp) \
+	{ \
+		if (!(_exp)) { \
+			ASSERT(FALSE); \
+			break; \
+		} \
+	}
+
+#else
+#define ASSERT_BREAK(_exp)
+#endif
+
 /* LOG function for print to buffer */
 /* If buffer pointer is NULL, redirect to normal DBGLOG */
 #define LOGBUF(_pucBuf, _maxLen, _curLen, _Fmt, ...) \

@@ -74,6 +74,7 @@
 
 #include "precomp.h"
 
+#if CFG_ENABLE_WIFI_DIRECT
 /******************************************************************************
  *                              C O N S T A N T S
  ******************************************************************************
@@ -275,3 +276,4 @@ nicRxAddP2pDevice(struct ADAPTER *prAdapter,
 		}
 	}
 }				/* nicRxAddP2pDevice */
+#endif /* CFG_ENABLE_WIFI_DIRECT */

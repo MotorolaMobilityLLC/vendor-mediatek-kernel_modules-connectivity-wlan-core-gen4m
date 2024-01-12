@@ -121,6 +121,7 @@ static void SetTestChannel(uint8_t *pucPrimaryChannel);
  *                              F U N C T I O N S
  ******************************************************************************
  */
+#if CFG_ENABLE_WIFI_DIRECT
 static void setApUapsdEnable(struct ADAPTER *prAdapter,
 			     u_int8_t enable)
 {
@@ -162,6 +163,7 @@ static void setApUapsdEnable(struct ADAPTER *prAdapter,
 			     sizeof(struct PARAM_CUSTOM_UAPSD_PARAM_STRUCT),
 			     &u4SetInfoLen);
 }
+#endif
 
 #if CFG_ENABLE_STATISTICS_BUFFERING
 static u_int8_t IsBufferedStatisticsUsable(
@@ -6899,10 +6901,12 @@ wlanoidSetSwCtrlWrite(struct ADAPTER *prAdapter,
 		} else if (u2SubId == 0x0101)
 			prAdapter->rWifiVar.ucRxShortGI = (uint8_t) u4Data;
 		else if (u2SubId == 0x0103) { /* AP Mode WMMPS */
+#if CFG_ENABLE_WIFI_DIRECT
 			DBGLOG(OID, INFO,
 			       "ApUapsd 0x10010103 cmd received: %d\n",
 			       u4Data);
 			setApUapsdEnable(prAdapter, (u_int8_t) u4Data);
+#endif
 		} else if (u2SubId == 0x0110) {
 			prAdapter->fgIsEnableLpdvt = (u_int8_t) u4Data;
 			prAdapter->fgEnOnlineScan = (u_int8_t) u4Data;
@@ -14156,7 +14160,10 @@ wlanoidAisPreSuspend(struct ADAPTER *prAdapter,
 	prWifiVar = &prAdapter->rWifiVar;
 
 	aisPreSuspendFlow(prAdapter);
+
+#if CFG_ENABLE_WIFI_DIRECT
 	p2pRoleProcessPreSuspendFlow(prAdapter);
+#endif
 
 	if (IS_FEATURE_ENABLED(prWifiVar->ucWow) &&
 		IS_FEATURE_DISABLED(prAdapter->rWowCtrl.fgWowEnable) &&

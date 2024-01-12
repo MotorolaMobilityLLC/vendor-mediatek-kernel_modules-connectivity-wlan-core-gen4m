@@ -3539,9 +3539,6 @@ static void wlanCreateWirelessDevice(void)
 	*((struct GLUE_INFO **) wiphy_priv(prWiphy)) = prGlueInfo;
 
 	/* 4 <1.3> configure wireless_dev & wiphy */
-	prWiphy->iface_combinations = p_mtk_iface_combinations_sta;
-	prWiphy->n_iface_combinations =
-		mtk_iface_combinations_sta_num;
 	prWiphy->max_scan_ssids = SCN_SSID_MAX_NUM +
 				  1; /* include one wildcard ssid */
 	prWiphy->max_scan_ie_len = 512;
@@ -3561,8 +3558,12 @@ static void wlanCreateWirelessDevice(void)
 		WIPHY_FLAG_SUPPORTS_SCHED_SCAN;
 #endif
 #endif /* CFG_SUPPORT_SCHED_SCAN */
+#if CFG_SUPPORT_ADHOC
 	prWiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) |
 				   BIT(NL80211_IFTYPE_ADHOC);
+#else
+	prWiphy->interface_modes = BIT(NL80211_IFTYPE_STATION);
+#endif
 	prWiphy->bands[KAL_BAND_2GHZ] = &mtk_band_2ghz;
 	/* always assign 5Ghz bands here, if the chip is not support 5Ghz,
 	 *  bands[KAL_BAND_5GHZ] will be assign to NULL
@@ -3593,11 +3594,11 @@ static void wlanCreateWirelessDevice(void)
 #endif
 #endif /* CFG_SUPPORT_DFS_MASTER */
 #endif
-
+#if CFG_ENABLE_WIFI_DIRECT
 #if KERNEL_VERSION(3, 14, 0) < CFG80211_VERSION_CODE
 	prWiphy->max_ap_assoc_sta = P2P_MAXIMUM_CLIENT_COUNT;
 #endif
-
+#endif
 	cfg80211_regd_set_wiphy(prWiphy);
 
 #if (CFG_SUPPORT_TDLS == 1)
@@ -3659,6 +3660,7 @@ static void wlanCreateWirelessDevice(void)
 	sema_init(&g_halt_sem, 1);
 
 #if CFG_ENABLE_UNIFY_WIPHY
+#if CFG_ENABLE_WIFI_DIRECT
 	prWiphy->iface_combinations = p_mtk_iface_combinations_p2p;
 	prWiphy->n_iface_combinations =
 		mtk_iface_combinations_p2p_num;
@@ -3674,6 +3676,7 @@ static void wlanCreateWirelessDevice(void)
 	prWiphy->flags |= WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL;
 	prWiphy->flags |= WIPHY_FLAG_HAVE_AP_SME;
 	prWiphy->ap_sme_capa = 1;
+#endif
 #endif
 
 #if CFG_ENABLE_OFFCHANNEL_TX
@@ -3727,9 +3730,7 @@ static void wlanDestroyAllWdev(void)
 	/* There is only one wiphy, avoid that double free the wiphy */
 	struct wiphy *wiphy = NULL;
 #endif
-#if CFG_ENABLE_WIFI_DIRECT
 	int i = 0;
-#endif
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	kalMemFree(prGlueInfo, VIR_MEM_TYPE, sizeof(struct GLUE_INFO));
@@ -4360,11 +4361,13 @@ static void wlan_late_resume(struct early_suspend *h)
 
 	/* 4 <2> Set suspend mode for each network */
 	wlanSetSuspendMode(prGlueInfo, FALSE);
+#if CFG_ENABLE_WIFI_DIRECT
 	p2pSetSuspendMode(prGlueInfo, FALSE);
+#endif
 }
 #endif
 
-#if (CFG_MTK_ANDROID_WMT || WLAN_INCLUDE_PROC)
+#if (CFG_MTK_ANDROID_WMT || WLAN_INCLUDE_PROC) && CFG_ENABLE_WIFI_DIRECT
 
 void reset_p2p_mode(struct GLUE_INFO *prGlueInfo)
 {
@@ -6240,6 +6243,7 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 	else if ((!prGlueInfo->prAdapter->fgIsNANRegistered) && (!ucEnable))
 		return 0;
 
+#if CFG_ENABLE_WIFI_DIRECT
 	if (ucEnable) {
 		struct PARAM_CUSTOM_P2P_SET_STRUCT rSetP2P;
 
@@ -6247,6 +6251,7 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 		rSetP2P.u4Enable = 0;
 		set_p2p_mode_handler(netdev, rSetP2P);
 	}
+#endif
 
 	if (!ucEnable)
 		nanNetUnregister(prGlueInfo, FALSE);
@@ -6666,7 +6671,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	struct ADAPTER *prAdapter = NULL;
 	int32_t i4Status = 0;
 	u_int8_t bRet = FALSE;
+#if CFG_ENABLE_WIFI_DIRECT
 	u_int8_t i = 0;
+#endif
 	struct REG_INFO *prRegInfo;
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct WIFI_VAR *prWifiVar;
@@ -6880,6 +6887,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		else
 			prWdev->wiphy->bands[KAL_BAND_5GHZ] = NULL;
 
+#if CFG_ENABLE_WIFI_DIRECT
 		for (i = 0 ; i < KAL_P2P_NUM; i++) {
 			if (gprP2pRoleWdev[i] == NULL)
 				continue;
@@ -6891,7 +6899,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 				gprP2pRoleWdev[i]->wiphy->bands[KAL_BAND_5GHZ] =
 				NULL;
 		}
-
+#endif
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		/* Configure 6G band for registered wiphy */
 		if (prAdapter->fgIsHwSupport6G)
@@ -6899,6 +6907,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		else
 			prWdev->wiphy->bands[KAL_BAND_6GHZ] = NULL;
 
+#if CFG_ENABLE_WIFI_DIRECT
 		for (i = 0 ; i < KAL_P2P_NUM; i++) {
 			if (gprP2pRoleWdev[i] == NULL)
 				continue;
@@ -6910,6 +6919,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 				gprP2pRoleWdev[i]->wiphy->bands[KAL_BAND_6GHZ] =
 				NULL;
 		}
+#endif
 #endif
 	} while (FALSE);
 
@@ -7746,9 +7756,10 @@ static int initWlan(void)
 		return -ENOMEM;
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+#if CFG_ENABLE_WIFI_DIRECT
 	if (gprWdev[0])
 		glP2pCreateWirelessDevice(prGlueInfo);
-
+#endif
 	gPrDev = NULL;
 
 #if CFG_DC_USB_WOW_CALLBACK
@@ -8134,9 +8145,11 @@ struct net_device *wlanGetNetDev(struct GLUE_INFO *prGlueInfo,
 	struct net_device *prNetDevice = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
+#if CFG_ENABLE_WIFI_DIRECT
 	struct GL_P2P_INFO *prP2pInfo = (struct GL_P2P_INFO *) NULL;
 
 	GLUE_SPIN_LOCK_DECLARATION();
+#endif
 
 	if (!prGlueInfo)
 		return NULL;
@@ -8156,7 +8169,9 @@ struct net_device *wlanGetNetDev(struct GLUE_INFO *prGlueInfo,
 
 		if (gprWdev[ais->ucAisIndex])
 			return gprWdev[ais->ucAisIndex]->netdev;
-	} else if (IS_BSS_P2P(prBssInfo)) { /* P2P */
+	}
+#if CFG_ENABLE_WIFI_DIRECT
+	else if (IS_BSS_P2P(prBssInfo)) { /* P2P */
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		if (prAdapter->rP2PNetRegState ==
 			ENUM_NET_REG_STATE_REGISTERED) {
@@ -8174,7 +8189,7 @@ struct net_device *wlanGetNetDev(struct GLUE_INFO *prGlueInfo,
 		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	}
-
+#endif
 	if (prNetDevice == NULL)
 		DBGLOG(REQ, LOUD, "bssidx=%d has NULL netdev caller=%pS\n",
 			ucBssIndex, KAL_TRACE);
@@ -8195,10 +8210,11 @@ struct net_device *wlanGetAisNetDev(struct GLUE_INFO *prGlueInfo,
 struct net_device *wlanGetP2pNetDev(struct GLUE_INFO *prGlueInfo,
 	uint8_t ucP2pIndex)
 {
+#if CFG_ENABLE_WIFI_DIRECT
 	if (gprP2pRoleWdev[ucP2pIndex] &&
 		gprP2pRoleWdev[ucP2pIndex]->netdev)
 		return gprP2pRoleWdev[ucP2pIndex]->netdev;
-
+#endif
 	return NULL;
 }
 

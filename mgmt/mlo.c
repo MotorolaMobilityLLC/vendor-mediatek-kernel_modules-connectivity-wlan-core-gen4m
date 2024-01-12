@@ -3379,7 +3379,10 @@ uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 				return FALSE;
 			}
 			enable &= prBssDesc->rMlInfo.fgValid;
-		} else if (IS_BSS_P2P(bss)) {
+		}
+#if CFG_ENABLE_WIFI_DIRECT
+		else if (IS_BSS_P2P(bss)) {
+
 			struct BSS_DESC *prBssDesc = NULL;
 			struct P2P_ROLE_FSM_INFO *p2p =
 				p2pFuncGetRoleByBssIdx(prAdapter, ucBssIndex);
@@ -3396,6 +3399,7 @@ uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 			}
 			enable &= prBssDesc->rMlInfo.fgValid;
 		}
+#endif
 	} else {
 		enable = FALSE;
 	}

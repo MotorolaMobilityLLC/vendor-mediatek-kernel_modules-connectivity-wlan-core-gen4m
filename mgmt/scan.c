@@ -3804,7 +3804,9 @@ void scanReportBss2Cfg80211(struct ADAPTER *prAdapter,
 	struct SCAN_INFO *prScanInfo = NULL;
 	struct LINK *prBSSDescList = NULL;
 	struct BSS_DESC *prBssDesc = NULL;
+#if CFG_ENABLE_WIFI_DIRECT
 	struct RF_CHANNEL_INFO rChannelInfo;
+#endif
 
 	ASSERT(prAdapter);
 
@@ -3842,7 +3844,7 @@ void scanReportBss2Cfg80211(struct ADAPTER *prAdapter,
 						SpecificprBssDesc->ucRCPI));
 				}
 			} else {
-
+#if CFG_ENABLE_WIFI_DIRECT
 				rChannelInfo.ucChannelNum
 					= SpecificprBssDesc->ucChannelNum;
 				rChannelInfo.eBand = SpecificprBssDesc->eBand;
@@ -3852,7 +3854,7 @@ void scanReportBss2Cfg80211(struct ADAPTER *prAdapter,
 					SpecificprBssDesc->u2RawLength,
 					&rChannelInfo,
 					RCPI_TO_dBm(SpecificprBssDesc->ucRCPI));
-
+#endif
 			}
 
 #if CFG_ENABLE_WIFI_DIRECT
@@ -3877,15 +3879,23 @@ void scanReportBss2Cfg80211(struct ADAPTER *prAdapter,
 			    && (prBssDesc->fgIsP2PReport == TRUE))
 #endif
 			    ) {
+#if CFG_ENABLE_WIFI_DIRECT
 #define TEMP_LOG_TEMPLATE "Report " MACSTR " SSID[%s %u] eBSSType[%d] " \
 		"u2RawLength[%d] fgIsP2PReport[%d]\n"
+#else
+#define TEMP_LOG_TEMPLATE "Report " MACSTR " SSID[%s %u] eBSSType[%d] " \
+		"u2RawLength[%d]\n"
+#endif
 				log_dbg(SCN, TRACE, TEMP_LOG_TEMPLATE,
 						MAC2STR(prBssDesc->aucBSSID),
 						HIDE(prBssDesc->aucSSID),
 						prBssDesc->ucChannelNum,
 						prBssDesc->eBSSType,
-						prBssDesc->u2RawLength,
-						prBssDesc->fgIsP2PReport);
+						prBssDesc->u2RawLength
+#if CFG_ENABLE_WIFI_DIRECT
+						, prBssDesc->fgIsP2PReport
+#endif
+						);
 #undef TEMP_LOG_TEMPLATE
 
 				if (eBSSType == BSS_TYPE_INFRASTRUCTURE) {
@@ -3908,7 +3918,6 @@ void scanReportBss2Cfg80211(struct ADAPTER *prAdapter,
 #if CFG_ENABLE_WIFI_DIRECT
 					if ((prBssDesc->fgIsP2PReport == TRUE)
 					    && prBssDesc->u2RawLength != 0) {
-#endif
 						rChannelInfo.ucChannelNum
 							= prBssDesc
 								->ucChannelNum;
@@ -3944,7 +3953,6 @@ void scanReportBss2Cfg80211(struct ADAPTER *prAdapter,
 						prBssDesc->u2RawLength = 0;
 #endif
 
-#if CFG_ENABLE_WIFI_DIRECT
 						prBssDesc->fgIsP2PReport
 							= FALSE;
 					}
@@ -3953,7 +3961,9 @@ void scanReportBss2Cfg80211(struct ADAPTER *prAdapter,
 			}
 
 		}
+#if CFG_ENABLE_WIFI_DIRECT
 		p2pFunCalAcsChnScores(prAdapter);
+#endif
 	}
 
 }

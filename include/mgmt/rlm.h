@@ -367,10 +367,10 @@ u_int8_t rlmParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 u_int8_t rlmParseCheckRxsmmOuiIE(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 			       u_int8_t *pfgRxsmmEnable);
 #endif
-
+#if CFG_ENABLE_WIFI_DIRECT
 void rlmGenerateCsaIE(struct ADAPTER *prAdapter,
 		      struct MSDU_INFO *prMsduInfo);
-
+#endif
 void rlmProcessBcn(struct ADAPTER *prAdapter,
 		   struct SW_RFB *prSwRfb, uint8_t *pucIE,
 		   uint16_t u2IELength);

@@ -52,6 +52,8 @@
 
 #include "precomp.h"
 
+#if CFG_ENABLE_WIFI_DIRECT
+
 #define IS_6G_PSC_CHANNEL(_ch) \
 	(((_ch - 5) % 16) == 0)
 
@@ -8827,3 +8829,4 @@ void p2pFunMulAPAgentBssStatusNotification(
 	kalMemFree(prBssReport, VIR_MEM_TYPE, sizeof(*prBssReport));
 }
 #endif /* CFG_AP_80211KVR_INTERFACE */
+#endif /* CFG_ENABLE_WIFI_DIRECT */

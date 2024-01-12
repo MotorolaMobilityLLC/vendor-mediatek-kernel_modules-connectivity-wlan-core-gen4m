@@ -51,6 +51,8 @@
  *****************************************************************************/
 #include "precomp.h"
 
+#if CFG_ENABLE_WIFI_DIRECT
+
 void
 p2pRoleStateInit_IDLE(struct ADAPTER *prAdapter,
 		struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
@@ -784,3 +786,4 @@ p2pRoleStateAbort_OFF_CHNL_TX(struct ADAPTER *prAdapter,
 		prP2pRoleFsmInfo->ucBssIndex,
 		prChnlReqInfo);
 }
+#endif /* CFG_ENABLE_WIFI_DIRECT */

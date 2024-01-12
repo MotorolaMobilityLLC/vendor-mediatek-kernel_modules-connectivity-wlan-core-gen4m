@@ -1149,6 +1149,7 @@ void cnmRadarDetectEvent(struct ADAPTER *prAdapter,
 }
 #endif
 
+#if CFG_ENABLE_WIFI_DIRECT
 void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 			struct WIFI_EVENT *prEvent)
 {
@@ -1172,7 +1173,7 @@ void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 
 	p2pFunChnlSwitchNotifyDone(prAdapter);
 }
-
+#endif
 
 #define CFG_SUPPORT_IDC_CROSS_BAND_SWITCH   1
 
@@ -1826,7 +1827,7 @@ u_int8_t cnmBowIsPermitted(struct ADAPTER *prAdapter)
 }
 
 
-
+#if CFG_ENABLE_WIFI_DIRECT
 static uint8_t cnmGetAPBwPermitted(struct ADAPTER
 				   *prAdapter, uint8_t ucBssIndex)
 {
@@ -1901,7 +1902,7 @@ static uint8_t cnmGetAPBwPermitted(struct ADAPTER
 
 	return ucAPBandwidth;
 }
-
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1930,10 +1931,12 @@ u_int8_t cnmBss40mBwPermitted(struct ADAPTER *prAdapter,
 			   ucBssIndex) < MAX_BW_40MHZ)
 		return FALSE;
 
+#if CFG_ENABLE_WIFI_DIRECT
 	/*check AP or GO capbility for Station or GC */
 	if (cnmGetAPBwPermitted(prAdapter,
 				ucBssIndex) < MAX_BW_40MHZ)
 		return FALSE;
+#endif
 #if 0
 	/* Decide max by other BSS */
 	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
@@ -1982,11 +1985,12 @@ u_int8_t cnmBss80mBwPermitted(struct ADAPTER *prAdapter,
 			   ucBssIndex) < MAX_BW_80MHZ)
 		return FALSE;
 
+#if CFG_ENABLE_WIFI_DIRECT
 	/*check AP or GO capbility for Station or GC */
 	if (cnmGetAPBwPermitted(prAdapter,
 				ucBssIndex) < MAX_BW_80MHZ)
 		return FALSE;
-
+#endif
 	return TRUE;
 }
 
@@ -1998,14 +2002,16 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 		MAX_BW_80_80_MHZ; /*chip capability*/
 	struct BSS_DESC *prBssDesc = NULL;
 	enum ENUM_BAND eBand = BAND_NULL;
+#if CFG_ENABLE_WIFI_DIRECT
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
 		(struct P2P_CONNECTION_REQ_INFO *) NULL;
+	uint8_t ucRoleIndex = 0;
+#endif
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	uint8_t ucChannelBw = MAX_BW_80_80_MHZ;
 #endif
-	uint8_t ucRoleIndex = 0;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  ucBssIndex);
@@ -2046,6 +2052,7 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 		if (ucMaxBandwidth > prAdapter->rWifiVar.ucStaBandwidth)
 			ucMaxBandwidth = prAdapter->rWifiVar.ucStaBandwidth;
 	} else if (IS_BSS_P2P(prBssInfo)) {
+#if CFG_ENABLE_WIFI_DIRECT
 		prP2pRoleFsmInfo = p2pFuncGetRoleByBssIdx(prAdapter,
 				   ucBssIndex);
 		if (!prAdapter->rWifiVar.ucApChnlDefFromCfg
@@ -2099,6 +2106,7 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 				.prP2pSpecificBssInfo[ucRoleIndex]
 				->ucRddBw;
 #endif
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 	}
 
 #if CFG_SUPPORT_NAN
@@ -2152,6 +2160,7 @@ uint8_t cnmGetBssBandBw(struct ADAPTER *prAdapter,
 		if (ucMaxBandwidth > prAdapter->rWifiVar.ucStaBandwidth)
 			ucMaxBandwidth = prAdapter->rWifiVar.ucStaBandwidth;
 	} else if (IS_BSS_P2P(prBssInfo)) {
+#if CFG_ENABLE_WIFI_DIRECT
 		/* AP mode */
 		if (p2pFuncIsAPMode(
 				prAdapter->rWifiVar.prP2PConnSettings[
@@ -2192,6 +2201,7 @@ uint8_t cnmGetBssBandBw(struct ADAPTER *prAdapter,
 					.ucP2p6gBandwidth;
 #endif
 		}
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 	}
 #if CFG_SUPPORT_NAN
 	else if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN) {
@@ -4251,6 +4261,7 @@ enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(
 	return ENUM_CNM_NETWORK_TYPE_OTHER;
 }
 
+#if CFG_ENABLE_WIFI_DIRECT
 u_int8_t cnmSapIsConcurrent(struct ADAPTER *prAdapter)
 {
 	if (prAdapter)
@@ -4285,7 +4296,6 @@ struct BSS_INFO *cnmGetSapBssInfo(struct ADAPTER *prAdapter)
 			prBssInfo->ucBssIndex))
 			return prBssInfo;
 	}
-
 	return NULL;
 }
 
@@ -4422,6 +4432,7 @@ error:
 	return -1;
 }
 
+#endif
 /*----------------------------------------------------------------------------*/
 /*!
 * @brief    Search available HW WMM index.
@@ -4815,7 +4826,9 @@ cnmOpModeSetTRxNss(
 	uint8_t ucOpRxNssFinal, ucOpTxNssFinal, ucOpBwFinal;
 	enum ENUM_CNM_OPMODE_REQ_T eRunReq;
 	uint8_t ucSendAct = TRUE;
+#if CFG_ENABLE_WIFI_DIRECT
 	uint8_t ucRoleIndex = 0;
+#endif
 
 	ASSERT(prAdapter);
 	if (ucBssIndex > prAdapter->ucHwBssIdNum ||
@@ -4871,12 +4884,14 @@ cnmOpModeSetTRxNss(
 			ucOpBwFinal = MAX_BW_80MHZ;
 		}
 #endif
+#if CFG_ENABLE_WIFI_DIRECT
 		if (eRunReq == CNM_OPMODE_REQ_RDD_OPCHNG) {
 			ucRoleIndex = prBssInfo->u4PrivateData;
 			ucOpBwFinal = prAdapter->rWifiVar
 			.prP2pSpecificBssInfo[ucRoleIndex]
 			->ucRddBw;
 		}
+#endif
 		/* When DBDC is off, we should rollback STA's bandwidth
 		 * as peer's bandwidth capability.
 		 */
@@ -4916,12 +4931,13 @@ cnmOpModeSetTRxNss(
 			}
 		}
 
+#if CFG_ENABLE_WIFI_DIRECT
 		if (eNewReq == CNM_OPMODE_REQ_RDD_OPCHNG &&
 			IS_BSS_APGO(prBssInfo))
 			ucOpBwFinal = prAdapter->rWifiVar
 				.prP2pSpecificBssInfo[prBssInfo->u4PrivateData]
 				->ucRddBw;
-
+#endif
 		/* Step 4. Execute OpMode change function for alive BSS */
 		if (eNewReq == CNM_OPMODE_REQ_SMARTGEAR_1T2R ||
 			eNewReq == CNM_OPMODE_REQ_ANT_CTRL_1T2R)
@@ -5334,7 +5350,7 @@ void cnmRddOpmodeEventHandler(
 			sizeof(struct EVENT_OPMODE_CHANGE));
 	}
 }
-#endif
+#endif /* CFG_SUPPORT_DFS_MASTER */
 
 enum ENUM_CNM_WMM_QUOTA_REQ_T
 cnmWmmQuotaReqDispatcher(
@@ -5491,6 +5507,7 @@ void cnmWmmQuotaSetMaxQuota(
 }
 #endif
 
+#if CFG_ENABLE_WIFI_DIRECT
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief check if p2p is active
@@ -5540,6 +5557,7 @@ struct BSS_INFO *cnmGetP2pBssInfo(struct ADAPTER *prAdapter)
 
 	return NULL;
 }
+#endif
 
 enum ENUM_BAND_80211 cnmGet80211Band(enum ENUM_BAND eBand)
 {
@@ -5785,6 +5803,7 @@ enum ENUM_CNM_MODE cnmGetMode(
 		return ENUM_CNM_MODE_SCC;
 }
 
+#if CFG_ENABLE_WIFI_DIRECT
 void _cnmOwnGcCsaCmd(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIdx,
@@ -5993,4 +6012,6 @@ void cnmPeerGcCsaHandler(struct ADAPTER *prAdapter,
 #endif
 	}
 }
+
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 

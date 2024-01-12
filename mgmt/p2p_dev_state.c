@@ -51,6 +51,8 @@
  *****************************************************************************/
 #include "precomp.h"
 
+#if CFG_ENABLE_WIFI_DIRECT
+
 u_int8_t
 p2pDevStateInit_IDLE(struct ADAPTER *prAdapter,
 		struct P2P_CHNL_REQ_INFO *prChnlReqInfo,
@@ -474,3 +476,4 @@ p2pDevStateAbort_OFF_CHNL_TX(struct ADAPTER *prAdapter,
 			prAdapter->ucP2PDevBssIdx,
 			prChnlReqInfo);
 }				/* p2pDevSateAbort_OFF_CHNL_TX */
+#endif /* CFG_ENABLE_WIFI_DIRECT */

@@ -69,6 +69,7 @@
  */
 #include "precomp.h"
 
+#if CFG_ENABLE_WIFI_DIRECT
 /******************************************************************************
  *                              C O N S T A N T S
  ******************************************************************************
@@ -129,3 +130,4 @@ u_int8_t kalGetP2pDevScanSpecificSSID(struct GLUE_INFO *prGlueInfo)
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 	return 0;
 }
+#endif /* CFG_ENABLE_WIFI_DIRECT */

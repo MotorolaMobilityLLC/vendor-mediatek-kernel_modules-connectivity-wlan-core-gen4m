@@ -1750,8 +1750,9 @@ u_int8_t asicConnac2xUsbResume(struct ADAPTER *prAdapter,
 		if (prBusInfo->DmaShdlReInit)
 			prBusInfo->DmaShdlReInit(prAdapter);
 
+#if (CFG_SUPPORT_ADHOC) || (CFG_ENABLE_WIFI_DIRECT)
 		nicSerReInitBeaconFrame(prAdapter);
-
+#endif
 		/* It's surprising that the toggle bit or sequence
 		 * number of USB endpoints in some USB hosts cannot be
 		 * reset by kernel API usb_reset_endpoint(). In order to

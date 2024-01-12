@@ -2437,9 +2437,10 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 	 */
 	if (prBssInfo->eConnectionState ==
 	    MEDIA_STATE_DISCONNECTED && fgClearStaRec) {
+#if CFG_ENABLE_WIFI_DIRECT
 		/* clear client list */
 		bssInitializeClientList(prAdapter, prBssInfo);
-
+#endif
 #if DBG
 		DBGLOG(BSS, TRACE, "nicUpdateBss for disconnect state\n");
 #endif
@@ -3830,7 +3831,7 @@ void nicInitMGMT(struct ADAPTER *prAdapter,
 	/* Support AP Selection */
 	LINK_MGMT_INIT(&prAdapter->rWifiVar.rBlackList);
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && CFG_ENABLE_WIFI_DIRECT
 	p2pMldBssInit(prAdapter);
 #endif
 
@@ -3856,7 +3857,7 @@ void nicUninitMGMT(struct ADAPTER *prAdapter)
 
 	ASSERT(prAdapter);
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && CFG_ENABLE_WIFI_DIRECT
 	p2pMldBssUninit(prAdapter);
 #endif
 
@@ -5714,6 +5715,8 @@ u_int8_t nicSerIsRxStop(struct ADAPTER *prAdapter)
 	}
 }
 
+#if (CFG_SUPPORT_ADHOC) || (CFG_ENABLE_WIFI_DIRECT)
+
 void nicSerReInitBeaconFrame(struct ADAPTER *prAdapter)
 {
 	struct P2P_ROLE_FSM_INFO *prRoleP2pFsmInfo;
@@ -5726,6 +5729,7 @@ void nicSerReInitBeaconFrame(struct ADAPTER *prAdapter)
 		DBGLOG(NIC, INFO, "SER beacon frame is updated\n");
 	}
 }
+#endif
 
 #if defined(_HIF_USB)
 void nicSerTimerHandler(struct ADAPTER *prAdapter,
