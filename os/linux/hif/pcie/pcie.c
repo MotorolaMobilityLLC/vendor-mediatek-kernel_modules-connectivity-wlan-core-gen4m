@@ -2426,6 +2426,22 @@ void glBusFuncOff(void)
 #endif
 }
 
+uint32_t glReadPcieCfgSpace(int offset)
+{
+	uint32_t val = 0;
+	int ret = 0;
+
+	ret = pci_read_config_dword(g_prDev, offset, &val);
+	if (ret)
+		DBGLOG(HAL, ERROR,
+			"pci_read_config_dword failed, offset=0x%x\n",
+			offset);
+	else
+		DBGLOG(HAL, TRACE, "read 0x%08x=[0x%08x]\n", offset, val);
+
+	return val;
+}
+
 #if CFG_SUPPORT_PCIE_GEN_SWITCH
 int mtk_pcie_speed(struct pci_dev *dev, int speed)
 {

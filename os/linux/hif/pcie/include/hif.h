@@ -74,6 +74,20 @@
 #define LINK_RETRAIN_TIMEOUT HZ
 #endif
 
+#if (CFG_MTK_WIFI_ON_READ_BY_CFG_SPACE == 1)
+/* Offset:0x490, value: 0x1D1E*/
+#define PCIE_CFGSPACE_MCU_IDLE_OFFSET		0x490
+
+/* Offset:0x48C,
+ * BIT[14]: own status - 0:driver own, 1:fw own
+ * BIT[30:28]: fw sync - 3:fw ready
+ */
+#define PCIE_CFGSPACE_BASE_OFFSET		0x48C
+#define PCIE_CFGSPACE_OWN_STATUS_SHIFT		14
+#define PCIE_CFGSPACE_OWN_STATUS_MASK		0x1
+#define PCIE_CFGSPACE_FW_STATUS_SYNC_SHIFT	28
+#define PCIE_CFGSPACE_FW_STATUS_SYNC_MASK	0x3
+#endif
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -592,6 +606,7 @@ void halPcieHwControlVote(
 	uint32_t u4WifiUser);
 int32_t glBusFuncOn(void);
 void glBusFuncOff(void);
+uint32_t glReadPcieCfgSpace(int offset);
 
 void mtk_pci_disable_device(struct GLUE_INFO *prGlueInfo);
 struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int idx);
