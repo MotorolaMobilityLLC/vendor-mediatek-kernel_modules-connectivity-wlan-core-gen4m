@@ -2124,6 +2124,9 @@ u_int8_t kalIsChFlagMatch(uint32_t uFlags, enum CHAN_FLAGS matchFlag);
 
 void kalTxTimeoutDump(struct ADAPTER *prAdapter);
 void kalSetTxTimeoutDump(struct GLUE_INFO *pr);
+int kalTimeCompare(uint32_t *pu4Ts1, uint32_t *pu4Ts2);
+u_int8_t kalGetDeltaTime(uint32_t *pu4Ts1, uint32_t *pu4Ts2,
+			 uint32_t *pu4TsRst);
 
 uint32_t kalSyncTimeToFW(struct ADAPTER *prAdapter,
 	u_int8_t fgInitCmd);

@@ -9344,7 +9344,7 @@ void nicCollectRegStatFromEmi(struct ADAPTER
 				rUniEvtLQ.rLq[i].ucMediumBusyPercentage,
 			&rUniEvtLQ.rLq[i].ucIsLQ0Rdy,
 				rUniEvtLQ.rLq[i].ucIsLQ0Rdy);
-
+#undef TEMP_LOG_TEMPLATE
 		if (!rUniEvtLQ.rLq[i].ucIsLQ0Rdy)
 			continue;
 		lqLegacy.rLq[i].cRssi = rUniEvtLQ.rLq[i].cRssi;
@@ -9555,10 +9555,19 @@ void nicUniEventAllStatsOneCmd(struct ADAPTER
 	kalMemCopyFromIo(&u4EmiUpdateMs,
 			&prAdapter->prStatsAllRegStat->u4LastUpdateTime,
 			sizeof(uint32_t));
-	prAdapter->u4RegStatLastSyncFwMs = u4EmiUpdateMs;
-	GET_CURRENT_SYSTIME(&prAdapter->u4RegStatLastSyncDrvTick);
-	DBGLOG(REQ, TRACE, "sync time drv:%u fw:%u\n",
-		prAdapter->u4RegStatLastSyncDrvTick, u4EmiUpdateMs);
+
+	KAL_SET_MSEC_TO_TIME(prAdapter->rRegStatSyncFwTs, u4EmiUpdateMs);
+	ktime_get_ts64(&prAdapter->rRegStatSyncDrvTs);
+#define TEMP_LOG_TEMPLATE\
+	"sync time drv:%ld.%ld fw:%u(%ld.%ld)\n"
+
+	DBGLOG(REQ, TRACE, TEMP_LOG_TEMPLATE,
+		prAdapter->rRegStatSyncDrvTs.tv_sec,
+		KAL_GET_TIME_OF_USEC_OR_NSEC(prAdapter->rRegStatSyncDrvTs),
+		u4EmiUpdateMs,
+		prAdapter->rRegStatSyncFwTs.tv_sec,
+		KAL_GET_TIME_OF_USEC_OR_NSEC(prAdapter->rRegStatSyncFwTs));
+#undef TEMP_LOG_TEMPLATE
 #endif
 
 	if (prCmdInfo->fgIsOid)

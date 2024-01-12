@@ -1334,6 +1334,12 @@ do { \
 #define KAL_GET_USEC(_time) (uint32_t)NSEC_TO_USEC(_time.tv_nsec)
 #define KAL_GET_PTIME_OF_USEC_OR_NSEC(_pTime) _pTime->tv_nsec
 #define KAL_GET_TIME_OF_USEC_OR_NSEC(_Time) _Time.tv_nsec
+#define KAL_SET_MSEC_TO_TIME(_Time, _ms)\
+	do { \
+		_Time.tv_sec = MSEC_TO_SEC(_ms); \
+		_Time.tv_nsec = MSEC_TO_USEC((_ms) % MSEC_PER_SEC) \
+			* NSEC_PER_USEC; \
+	} while (0)
 #else
 #define kal_access_ok(type, addr, size) access_ok(type, addr, size)
 #undef timespec64
@@ -1347,6 +1353,11 @@ do { \
 #define KAL_GET_USEC(_time) _time.tv_usec
 #define KAL_GET_PTIME_OF_USEC_OR_NSEC(_pTime) _pTime->tv_usec
 #define KAL_GET_TIME_OF_USEC_OR_NSEC(_Time) _Time.tv_usec
+#define KAL_SET_MSEC_TO_TIME(_Time, _ms)\
+	do { \
+		_Time.tv_sec = MSEC_TO_SEC(_ms); \
+		_Time.tv_usec = MSEC_TO_USEC((_ms) % MSEC_PER_SEC); \
+	} while (0)
 #endif
 #define KAL_TIME_INTERVAL_DECLARATION()     struct timespec64 __rTs, __rTe
 #define KAL_REC_TIME_START()                ktime_get_ts64(&__rTs)
@@ -2444,6 +2455,10 @@ void tracing_mark_write(const char *fmt, ...);
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 extern uint32_t getFWLogOnOff(void);
 #endif
+
+int kalTimeCompare(struct timespec64 *prTs1, struct timespec64 *prTs2);
+u_int8_t kalGetDeltaTime(struct timespec64 *prTs1, struct timespec64 *prTs2,
+			 struct timespec64 *prTsRst);
 
 void setTimeParameter(
 	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT *prChipConfigInfo,

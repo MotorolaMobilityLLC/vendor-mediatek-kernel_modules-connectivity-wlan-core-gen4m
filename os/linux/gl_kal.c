@@ -12372,6 +12372,59 @@ int _kalSprintf(char *buf, const char *fmt, ...)
 	return (retval < 0)?(0):(retval);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Compare two struct timeval
+ *
+ * @param prTs1          a pointer to timeval
+ * @param prTs2          a pointer to timeval
+ *
+ *
+ * @retval 0             two time value is equal
+ * @retval 1             prTs1 value > prTs2 value
+ * @retval -1            prTs1 value < prTs2 value
+ */
+/*----------------------------------------------------------------------------*/
+int kalTimeCompare(struct timespec64 *prTs1, struct timespec64 *prTs2)
+{
+	if (prTs1->tv_sec > prTs2->tv_sec)
+		return 1;
+	else if (prTs1->tv_sec < prTs2->tv_sec)
+		return -1;
+	/* sec part is equal */
+	else if (KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs1) >
+		 KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs2))
+		return 1;
+	else if (KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs1) <
+		 KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs2))
+		return -1;
+	return 0;
+}
+
+u_int8_t kalGetDeltaTime(struct timespec64 *prTs1, struct timespec64 *prTs2,
+			 struct timespec64 *prTsRst)
+{
+	/* Ignore now time < token time */
+	if (kalTimeCompare(prTs1, prTs2) < 0)
+		return FALSE;
+
+	prTsRst->tv_sec = prTs1->tv_sec - prTs2->tv_sec;
+	KAL_GET_PTIME_OF_USEC_OR_NSEC(prTsRst) =
+		KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs1);
+	if (KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs2) >
+	    KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs1)) {
+		prTsRst->tv_sec -= 1;
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		KAL_GET_PTIME_OF_USEC_OR_NSEC(prTsRst) += SEC_TO_NSEC(1);
+#else
+		KAL_GET_PTIME_OF_USEC_OR_NSEC(prTsRst) += SEC_TO_USEC(1);
+#endif
+	}
+	KAL_GET_PTIME_OF_USEC_OR_NSEC(prTsRst) -=
+		KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs2);
+	return TRUE;
+}
+
 void setTimeParameter(
 		struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT *prChipConfigInfo,
 		int chipConfigInfoSize, unsigned int second,
