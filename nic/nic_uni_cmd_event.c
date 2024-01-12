@@ -5227,12 +5227,12 @@ uint32_t nicUniCmdPerfInd(struct ADAPTER *ad,
 
 	uni_cmd = (struct UNI_CMD_PERF_IND *) entry->pucInfoBuffer;
 	tag = (struct UNI_CMD_PERF_IND_PARM *) uni_cmd->aucTlvBuffer;
-	tag->u2Tag = UNI_CMD_PERF_IND_TAG_PARM;
+	tag->u2Tag = UNI_CMD_PERF_IND_TAG_PARM_V2;
 	tag->u2Length = sizeof(*tag);
 	tag->ucCmdVer = cmd->ucCmdVer;
 	tag->u2CmdLen = cmd->u2CmdLen;
 	tag->u4VaildPeriod = cmd->u4VaildPeriod;
-	tag->ucBssNum = MAX_BSSID_NUM;
+	tag->ucBssNum = ad->ucSwBssIdNum;
 
 	kalMemCopy(tag->rUniCmdParm, cmd->rUniCmdParm,
 				sizeof(tag->rUniCmdParm));
