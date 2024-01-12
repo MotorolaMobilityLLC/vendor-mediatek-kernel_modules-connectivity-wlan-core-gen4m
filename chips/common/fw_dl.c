@@ -2063,6 +2063,15 @@ uint32_t wlanDownloadFW(struct ADAPTER *prAdapter)
 		}
 	}
 
+#if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
+	DBGLOG(INIT, TRACE, "DSP FW download Start\n");
+	if (prFwDlOps->downloadDspFw) {
+		rStatus = prFwDlOps->downloadDspFw(prAdapter);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			goto exit;
+	}
+#endif
+
 	DBGLOG(INIT, TRACE, "FW download Start\n");
 	if (prFwDlOps->downloadFirmware) {
 		rStatus = prFwDlOps->downloadFirmware(prAdapter,
@@ -2078,14 +2087,6 @@ uint32_t wlanDownloadFW(struct ADAPTER *prAdapter)
 		}
 	}
 
-#if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
-	DBGLOG(INIT, TRACE, "DSP FW download Start\n");
-	if (prFwDlOps->downloadDspFw) {
-		rStatus = prFwDlOps->downloadDspFw(prAdapter);
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			goto exit;
-	}
-#endif
 	DBGLOG(INIT, TRACE, "FW download End\n");
 
 exit:
