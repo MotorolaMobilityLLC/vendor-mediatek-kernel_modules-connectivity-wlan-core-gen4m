@@ -6519,7 +6519,8 @@ wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 		staStatsTag = (struct UNI_CMD_STA_STATISTICS *) buf;
 		staStatsTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_STA;
 		staStatsTag->u2Length = sizeof(*staStatsTag);
-		staStatsTag->u1Index = prStaRec->ucIndex;
+		/* FW starec idx is WTBL idx */
+		staStatsTag->u1Index = prStaRec->ucWlanIndex;
 		staStatsTag->ucReadClear =
 			prQueryStaStatistics->ucReadClear;
 		staStatsTag->ucLlsReadClear =
