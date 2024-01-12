@@ -13097,7 +13097,10 @@ static int kalNapiPollSwRfb(struct napi_struct *napi, int budget)
 end:
 	GLUE_DEC_REF_CNT(i4UserCnt);
 
-	kal_napi_complete_done(napi, work_done);
+#if !CFG_SUPPORT_RX_GRO_PEAK
+	if (work_done < budget)
+#endif
+		kal_napi_complete_done(napi, work_done);
 
 	return work_done;
 }
@@ -13229,18 +13232,13 @@ next_try:
 	/* Debug check only */
 	if (!time_before_eq(jiffies, ulTimeLimit))
 		DBGLOG(RX, WARN, "timeout hit %lu\n", jiffies-ulTimeLimit);
-
-	if (work_done > budget)
-		work_done = budget;
-
-	kal_napi_complete_done(napi, work_done);
-#else /* CFG_SUPPORT_RX_GRO_PEAK */
+#endif /* CFG_SUPPORT_RX_GRO_PEAK */
 	if (work_done < budget) {
 		kal_napi_complete_done(napi, work_done);
 		if (skb_queue_len(prRxNapiSkbQ))
 			napi_schedule(napi);
 	}
-#endif /* CFG_SUPPORT_RX_GRO_PEAK */
+
 	return work_done;
 #else /* CFG_SUPPORT_RX_NAPI */
 	return 0;
