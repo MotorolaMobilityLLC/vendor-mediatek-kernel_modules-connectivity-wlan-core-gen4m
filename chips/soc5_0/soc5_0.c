@@ -337,7 +337,7 @@ struct BUS_INFO soc5_0_bus_info = {
 
 	.host_rx_ring_base = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL0_ADDR,
 	.host_rx_ring_ext_ctrl_base =
-		WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_EXT_CTRL_ADDR,
+		WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_EXT_CTRL_ADDR,
 	.host_rx_ring_cidx_addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL2_ADDR,
 	.host_rx_ring_didx_addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL3_ADDR,
 	.host_rx_ring_cnt_addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL1_ADDR,
@@ -548,7 +548,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc5_0 = {
 	.asicWfdmaReInit_handshakeInit = asicConnac2xWfdmaDummyCrWrite,
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
 	.u4LmacWtblDUAddr = CONNAC2X_WIFI_LWTBL_BASE,
-	.u4UmacWtblDUAddr = CONNAC2X_WIFI_LWTBL_BASE,
+	.u4UmacWtblDUAddr = CONNAC2X_WIFI_UWTBL_BASE,
 	.wmmcupwron = wf_pwr_on_consys_mcu,
 	.wmmcupwroff = wf_pwr_off_consys_mcu,
 #if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
