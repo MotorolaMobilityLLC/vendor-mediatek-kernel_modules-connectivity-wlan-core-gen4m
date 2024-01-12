@@ -4627,7 +4627,7 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 		    SEQ_SMALLER(u4SeqNo, u4BarSSN) &&
 		    (u4SeqNo == prReorderQueParm->u2LastRcvdSN || /* AMSDU */
 		     SEQ_SMALLER(prReorderQueParm->u2LastRcvdSN, u4SeqNo))) {
-			qmPopOutReorderPkt(prAdapter, prSwRfb,
+			qmPopOutReorderPkt(prAdapter, prReorderQueParm, prSwRfb,
 				prReturnedQue, RX_DATA_REORDER_BEHIND_COUNT);
 			DBGLOG(RX, TRACE,
 				"QM: Data after BAR:[%d](%d){%d,%d} total:%lu",
@@ -4641,7 +4641,7 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_LOWLATENCY_MODE || CFG_SUPPORT_OSHARE
 		if (qmIsNoDropPacket(prAdapter, prSwRfb) ||
 			prReorderQueParm->fgNoDrop) {
-			qmPopOutReorderPkt(prAdapter, prSwRfb,
+			qmPopOutReorderPkt(prAdapter, prReorderQueParm, prSwRfb,
 				prReturnedQue, RX_DATA_REORDER_BEHIND_COUNT);
 			DBGLOG(RX, TEMP,
 				"QM: No drop packet:[%d](%d){%d,%d} total:%lu\n",
@@ -4654,8 +4654,8 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 
 #if QM_RX_WIN_SSN_AUTO_ADVANCING && QM_RX_INIT_FALL_BEHIND_PASS
 		if (prReorderQueParm->fgIsWaitingForPktWithSsn) {
-			qmPopOutReorderPkt(prAdapter, prSwRfb, prReturnedQue,
-				RX_DATA_REORDER_BEHIND_COUNT);
+			qmPopOutReorderPkt(prAdapter, prReorderQueParm, prSwRfb,
+				prReturnedQue, RX_DATA_REORDER_BEHIND_COUNT);
 			DBGLOG(RX, TEMP, "QM:(P)[%u](%u){%u,%u} total:%lu\n",
 				prSwRfb->ucTid, u4SeqNo, u4WinStart, u4WinEnd,
 				RX_GET_CNT(&prAdapter->rRxCtrl,
@@ -4666,13 +4666,55 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 
 		/* An erroneous packet */
 		prSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-		qmPopOutReorderPkt(prAdapter, prSwRfb, prReturnedQue,
-			RX_REORDER_BEHIND_DROP_COUNT);
+		qmPopOutReorderPkt(prAdapter, prReorderQueParm, prSwRfb,
+				prReturnedQue, RX_REORDER_BEHIND_DROP_COUNT);
 
 		qmLogDropFallBehind(prAdapter, prReorderQueParm,
 		       prSwRfb->ucTid, u4BarSSN, u4SeqNo, u4WinStart, u4WinEnd);
 		return;
 	}
+}
+
+static void clearReorderingIndexCache(IN struct RX_BA_ENTRY *prReorderQueParm,
+				IN const struct SW_RFB *prSwRfb)
+{
+#if CFG_SUPPORT_RX_CACHE_INDEX
+	prReorderQueParm->prCacheIndex[prSwRfb->u2SSN] = NULL;
+#endif
+}
+
+static void setReorderingIndexCache(IN struct RX_BA_ENTRY *prReorderQueParm,
+				IN struct SW_RFB *prSwRfb)
+{
+#if CFG_SUPPORT_RX_CACHE_INDEX
+	prReorderQueParm->prCacheIndex[prSwRfb->u2SSN] = prSwRfb;
+#endif
+}
+
+/**
+ * getReorderingIndexCache() - Get a proper pointer as starting point
+ * Returing the element by SN in cached index pinters backward,
+ * if not found, return the head of the list as a fallback solution.
+ */
+static struct SW_RFB *getReorderingIndexCache(
+				IN struct RX_BA_ENTRY *prReorderQueParm,
+				IN const struct SW_RFB *prSwRfb)
+{
+#if CFG_SUPPORT_RX_CACHE_INDEX
+	uint16_t i;
+	const struct QUE *prReorderQue;
+	struct SW_RFB **prCacheIndex = prReorderQueParm->prCacheIndex;
+	uint16_t u2WinStart = prReorderQueParm->u2WinStart;
+
+	for (i = prSwRfb->u2SSN;
+	     SEQ_SMALLER(u2WinStart, i) || u2WinStart == i; SEQ_ADD(i, -1)) {
+		if (prCacheIndex[i])
+			return prCacheIndex[i];
+	}
+#endif
+	/* Not found, fallback */
+	prReorderQue = &(prReorderQueParm->rReOrderQue);
+	return (struct SW_RFB *)QUEUE_GET_HEAD(prReorderQue);
 }
 
 void qmInsertFallWithinReorderPkt(IN struct ADAPTER *prAdapter,
@@ -4689,22 +4731,20 @@ void qmInsertFallWithinReorderPkt(IN struct ADAPTER *prAdapter,
 	ASSERT(prReturnedQue);
 
 	prReorderQue = &(prReorderQueParm->rReOrderQue);
-	prExaminedQueuedSwRfb = (struct SW_RFB *) QUEUE_GET_HEAD(
-		prReorderQue);
-
-	u8AmsduSubframeIdx = prSwRfb->ucPayloadFormat;
-
 	/* There are no packets queued in the Reorder Queue */
-	if (prExaminedQueuedSwRfb == NULL) {
+	if (QUEUE_GET_HEAD(prReorderQue) == NULL) {
 		((struct QUE_ENTRY *) prSwRfb)->prPrev = NULL;
 		((struct QUE_ENTRY *) prSwRfb)->prNext = NULL;
 		prReorderQue->prHead = (struct QUE_ENTRY *) prSwRfb;
 		prReorderQue->prTail = (struct QUE_ENTRY *) prSwRfb;
 		prReorderQue->u4NumElem++;
-	}
+		setReorderingIndexCache(prReorderQueParm, prSwRfb);
+	} else {
+		u8AmsduSubframeIdx = prSwRfb->ucPayloadFormat;
 
-	/* Determine the insert position */
-	else {
+		/* Determine the insert position */
+		prExaminedQueuedSwRfb =
+			getReorderingIndexCache(prReorderQueParm, prSwRfb);
 		do {
 			/* Case 1: Terminate. A duplicate packet */
 			if ((prExaminedQueuedSwRfb->u2SSN) ==
@@ -4744,7 +4784,7 @@ void qmInsertFallWithinReorderPkt(IN struct ADAPTER *prAdapter,
 						TRUE;
 #endif
 				prSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-				qmPopOutReorderPkt(prAdapter,
+				qmPopOutReorderPkt(prAdapter, prReorderQueParm,
 					prSwRfb, prReturnedQue,
 					RX_DUPICATE_DROP_COUNT);
 				DBGLOG(RX, TEMP,
@@ -4802,10 +4842,9 @@ void qmInsertFallWithinReorderPkt(IN struct ADAPTER *prAdapter,
 			((struct QUE_ENTRY *) prExaminedQueuedSwRfb)->prPrev =
 				(struct QUE_ENTRY *) prSwRfb;
 		}
-
 		prReorderQue->u4NumElem++;
+		setReorderingIndexCache(prReorderQueParm, prSwRfb);
 	}
-
 }
 
 void qmInsertFallAheadReorderPkt(IN struct ADAPTER *prAdapter,
@@ -4837,9 +4876,11 @@ void qmInsertFallAheadReorderPkt(IN struct ADAPTER *prAdapter,
 	}
 	prReorderQue->prTail = (struct QUE_ENTRY *) prSwRfb;
 	prReorderQue->u4NumElem++;
+	setReorderingIndexCache(prReorderQueParm, prSwRfb);
 }
 
 void qmPopOutReorderPkt(IN struct ADAPTER *prAdapter,
+	IN struct RX_BA_ENTRY *prReorderQueParm,
 	IN struct SW_RFB *prSwRfb, OUT struct QUE *prReturnedQue,
 	IN enum ENUM_RX_STATISTIC_COUNTER eRxCounter)
 {
@@ -4852,6 +4893,7 @@ void qmPopOutReorderPkt(IN struct ADAPTER *prAdapter,
 	u4PktCnt++;
 	QUEUE_INSERT_TAIL(prReturnedQue,
 		(struct QUE_ENTRY *)prSwRfb);
+	clearReorderingIndexCache(prReorderQueParm, prSwRfb);
 
 #if 0
 	u4PktCnt += prSwRfb->rAmsduQue.u4NumElem;
@@ -5005,8 +5047,9 @@ void qmPopOutDueToFallWithin(IN struct ADAPTER *prAdapter,
 					NULL;
 			}
 			prReorderQue->u4NumElem--;
-			qmPopOutReorderPkt(prAdapter, prReorderedSwRfb,
-				prReturnedQue, RX_DATA_REORDER_WITHIN_COUNT);
+			qmPopOutReorderPkt(prAdapter, prReorderQueParm,
+				prReorderedSwRfb, prReturnedQue,
+				RX_DATA_REORDER_WITHIN_COUNT);
 			DBGLOG(RX, TEMP, "QM: [%d] %d (%d) within total:%lu\n",
 				prReorderQueParm->ucTid,
 				prReorderedSwRfb->u2PacketLen,
@@ -5140,8 +5183,9 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 				prNext)->prPrev = NULL;
 			}
 			prReorderQue->u4NumElem--;
-			qmPopOutReorderPkt(prAdapter, prReorderedSwRfb,
-				prReturnedQue, RX_DATA_REORDER_AHEAD_COUNT);
+			qmPopOutReorderPkt(prAdapter, prReorderQueParm,
+				prReorderedSwRfb, prReturnedQue,
+				RX_DATA_REORDER_AHEAD_COUNT);
 			DBGLOG(RX, TEMP, "QM: [%u] %u (%u) ahead total:%lu\n",
 				prReorderQueParm->ucTid,
 				prReorderedSwRfb->u2PacketLen,
