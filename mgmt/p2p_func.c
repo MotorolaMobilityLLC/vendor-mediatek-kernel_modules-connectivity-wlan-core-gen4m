@@ -7739,6 +7739,7 @@ error:
 enum ENUM_CHNL_EXT p2pFunGetSco(IN struct ADAPTER *prAdapter,
 		enum ENUM_BAND eBand, uint8_t ucPrimaryCh) {
 	enum ENUM_CHNL_EXT eSCO = CHNL_EXT_SCN;
+	uint8_t ucSecondChannel;
 
 	if (eBand == BAND_2G4) {
 		if (ucPrimaryCh != 14)
@@ -7777,7 +7778,19 @@ enum ENUM_CHNL_EXT p2pFunGetSco(IN struct ADAPTER *prAdapter,
 			}
 		}
 	}
+	/* Check if it is boundary channel
+	 * and 40MHz BW is permitted
+	*/
+	if (eSCO != CHNL_EXT_SCN) {
+		ucSecondChannel = (eSCO == CHNL_EXT_SCA)
+			? (ucPrimaryCh + CHNL_SPAN_20)
+			: (ucPrimaryCh - CHNL_SPAN_20);
 
+		if (!rlmDomainIsLegalChannel(prAdapter,
+			eBand,
+			ucSecondChannel))
+			eSCO = CHNL_EXT_SCN;
+	}
 	return eSCO;
 }
 
