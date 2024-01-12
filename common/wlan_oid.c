@@ -13509,6 +13509,11 @@ uint32_t
 wlanoidSetGtkRekeyData(struct ADAPTER *prAdapter,
 		       void *pvSetBuffer, uint32_t u4SetBufferLen,
 		       uint32_t *pu4SetInfoLen) {
+	struct PARAM_GTK_REKEY_DATA *prGtkData;
+	uint8_t ucBssIndex;
+	struct BSS_INFO *prBssInfo;
+	OS_SYSTIME rCurrent;
+
 	DBGLOG(REQ, INFO, "wlanoidSetGtkRekeyData\n");
 
 	ASSERT(prAdapter);
@@ -13520,6 +13525,37 @@ wlanoidSetGtkRekeyData(struct ADAPTER *prAdapter,
 		       "Fail in set rekey! (Adapter not ready). ACPI=D%d, Radio=%d\n",
 		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
 		return WLAN_STATUS_ADAPTER_NOT_READY;
+	}
+
+	if (u4SetBufferLen < sizeof(struct PARAM_GTK_REKEY_DATA)) {
+		DBGLOG(REQ, ERROR, "Invalid length %u\n", u4SetBufferLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	prGtkData = (struct PARAM_GTK_REKEY_DATA *)pvSetBuffer;
+	ucBssIndex = prGtkData->ucBssIndex;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (prBssInfo && IS_BSS_AIS(prBssInfo)) {
+		GET_CURRENT_SYSTIME(&rCurrent);
+		if (prBssInfo->rRekeyTime != 0 &&
+		    !CHECK_FOR_TIMEOUT(rCurrent,
+				prBssInfo->rRekeyTime,
+				SEC_TO_SYSTIME(MSEC_TO_SEC(500)))) {
+			DBGLOG(RSN, WARN,
+				"[%d] Disconnect due to rekey period %u < 500ms\n",
+				ucBssIndex,
+				rCurrent - prBssInfo->rRekeyTime);
+			aisFsmStateAbort(prAdapter,
+					DISCONNECT_REASON_CODE_LOCALLY,
+					FALSE,
+					ucBssIndex);
+		} else {
+			/* update rekey time */
+			GET_CURRENT_SYSTIME(&prBssInfo->rRekeyTime);
+			DBGLOG(RSN, INFO,
+				"[%d] Update rekey time: %u\n",
+				ucBssIndex, prBssInfo->rRekeyTime);
+		}
 	}
 
 	return wlanSendSetQueryCmd(

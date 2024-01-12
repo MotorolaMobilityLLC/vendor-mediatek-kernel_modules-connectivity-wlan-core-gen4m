@@ -5461,6 +5461,9 @@ void aisUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 
 	prAisBssInfo->ucBeaconTimeoutCount = AIS_BEACON_TIMEOUT_COUNT_INFRA;
 
+	/* init rekey time */
+	prAisBssInfo->rRekeyTime = 0;
+
 	/*reset coex related info*/
 	prAisBssInfo->eCoexMode = COEX_NONE_BT;
 
