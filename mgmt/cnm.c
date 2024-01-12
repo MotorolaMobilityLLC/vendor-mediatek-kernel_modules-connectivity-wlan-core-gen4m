@@ -5304,6 +5304,11 @@ void cnmRddOpmodeEventHandler(
 		if (!prP2pRddDetMsg) {
 			DBGLOG(P2P, TRACE,
 				"prP2pRddDetMsg is null\n");
+			if (pEventOpMode) {
+				kalMemFree(pEventOpMode,
+					VIR_MEM_TYPE, sizeof(struct WIFI_EVENT)+
+					sizeof(struct EVENT_OPMODE_CHANGE));
+			}
 			return;
 		}
 
@@ -5314,14 +5319,10 @@ void cnmRddOpmodeEventHandler(
 			->fgIsRddOpchng = TRUE;
 		prAdapter->rWifiVar.prP2pSpecificBssInfo[ucRoleIndex]
 			->ucRddCh = prRddEvtOpMode->ucPriChannel;
-		if (pEventOpMode)
-			prAdapter->rWifiVar
-				.prP2pSpecificBssInfo[ucRoleIndex]
-				->prRddPostOpchng = pEventOpMode;
-		else
-			prAdapter->rWifiVar
-				.prP2pSpecificBssInfo[ucRoleIndex]
-				->prRddPostOpchng = NULL;
+		prAdapter->rWifiVar
+			.prP2pSpecificBssInfo[ucRoleIndex]
+			->prRddPostOpchng = pEventOpMode;
+
 		p2pRoleFsmRunEventRadarDet(prAdapter,
 		(struct MSG_HDR *) prP2pRddDetMsg);
 	} else if (p2pFuncGetDfsState() != DFS_STATE_CHECKING &&
