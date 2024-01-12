@@ -272,7 +272,7 @@ struct SDIO_RX_COALESCING_BUF {
 
 struct SDIO_INT_LOG_T {
 	uint32_t u4Idx;
-	uint8_t aucIntSts[128];
+	struct ENHANCE_MODE_DATA_STRUCT rIntSts;
 	uint32_t u4Flag;
 	uint16_t au2RxPktLen[HIF_RX_CFG_AGG_NUM];
 	uint32_t au4RxPktInfo[HIF_RX_CFG_AGG_NUM];
