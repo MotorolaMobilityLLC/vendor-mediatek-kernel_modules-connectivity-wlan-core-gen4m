@@ -122,6 +122,11 @@
 #include <linux/soc/mediatek/mtk_sip_svc.h>
 #endif
 
+/* for AEE warning */
+#if CFG_MTK_ANDROID_WMT
+#include <aee.h>
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -11633,15 +11638,18 @@ uint32_t kalSendAtfSmcCmd(uint32_t u4Opid, uint32_t u4Arg2,
 	case SMC_WLAN_SUCCESS:
 		break;
 	case -SMC_WLAN_UNKNOWN_OPID:
-		DBGLOG(SMC, WARN, "Invaild SMC opid\n");
-		WARN_ON(1);
+		DBGLOG(SMC, WARN, "Invaild SMC opid[%u]\n", u4Opid);
+		aee_kernel_warning("wlan", "Invaild SMC opid[%u]\n",
+			u4Opid);
 		break;
 	case -SMC_WLAN_INVALID_REGISTER:
 		DBGLOG(SMC, WARN, "Invaild address access[0x%08x]\n",
 			u4Arg2);
 		WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 		if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
-			WARN_ON(1);
+			aee_kernel_warning("wlan",
+				"Invaild address access[0x%08x]\n",
+				u4Arg2);
 			break;
 		}
 		GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
