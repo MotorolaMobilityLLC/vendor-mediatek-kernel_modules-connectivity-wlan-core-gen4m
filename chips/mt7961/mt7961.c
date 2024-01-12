@@ -266,6 +266,15 @@ static uint8_t mt7961SetRxRingHwAddr(
 	return TRUE;
 }
 
+static void wlanBuzzardInitPcieInt(
+	struct GLUE_INFO *prGlueInfo)
+{
+       /* PCIE interrupt DMA end enable  */
+	HAL_MCR_WR(prGlueInfo->prAdapter,
+		0x10188,
+		0x000000FF);
+}
+
 static bool mt7961LiteWfdmaAllocRxRing(
 	struct GLUE_INFO *prGlueInfo,
 	bool fgAllocMem)
@@ -278,19 +287,31 @@ static bool mt7961LiteWfdmaAllocRxRing(
 		return false;
 	}
 	/* Band0 Tx Free Done Event */
+#if CFG_SUPPORT_HOST_RX_WM_EVENT_FROM_PSE
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_TXDONE0_IDX_3, RX_RING1_SIZE,
-			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
+			RX_RING_TXDONE0_IDX_3,
+			MT7961_HOST_RX_WM_EVENT_FROM_PSE_RX_RING4_SIZE,
+			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
 		return false;
 	}
+#else
+	if (!halWpdmaAllocRxRing(prGlueInfo,
+			RX_RING_TXDONE0_IDX_3, RX_RING1_SIZE,
+			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
+		return false;
+	}
+#endif
+
 	/* Band1 Tx Free Done Event */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
 			RX_RING_TXDONE1_IDX_4, RX_RING1_SIZE,
-			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
+			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
 		return false;
 	}
+
 	return true;
 }
 
@@ -1345,13 +1366,22 @@ struct BUS_INFO mt7961_bus_info = {
 	.softwareInterruptMcu = asicConnac2xSoftwareInterruptMcu,
 	.hifRst = asicConnac2xHifRst,
 #if defined(_HIF_PCIE)
-	.initPcieInt = NULL, /* Todo: check if enable INT on driver side */
+	.initPcieInt = wlanBuzzardInitPcieInt,
 #endif
 	.devReadIntStatus = mt7961ReadIntStatus,
 	.DmaShdlInit = mt7961DmashdlInit,
 	.updateTxRingMaxQuota = mt7961UpdateDmashdlQuota,
 	.setRxRingHwAddr = mt7961SetRxRingHwAddr,
 	.wfdmaAllocRxRing = mt7961LiteWfdmaAllocRxRing,
+
+#if CFG_SUPPORT_HOST_RX_WM_EVENT_FROM_PSE
+#if defined(_HIF_PCIE)
+	.checkPortForRxEventFromPse = mt7961CheckPortForRxEventFromPse,
+#else
+	.checkPortForRxEventFromPse = NULL,
+#endif
+#endif /* CFG_SUPPORT_HOST_RX_WM_EVENT_FROM_PSE */
+
 #if (CFG_COALESCING_INTERRUPT == 1)
 #if defined(_HIF_PCIE)
 	.setWfdmaCoalescingInt = mt7961setWfdmaCoalescingInt,
@@ -1359,6 +1389,7 @@ struct BUS_INFO mt7961_bus_info = {
 	.setWfdmaCoalescingInt = NULL,
 #endif
 #endif/* (CFG_COALESCING_INTERRUPT == 1) */
+
 #endif /*_HIF_PCIE || _HIF_AXI */
 
 #if defined(_HIF_USB)
