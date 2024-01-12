@@ -1534,7 +1534,7 @@ struct cfg80211_bss * kalInformConnectionBss(struct ADAPTER *prAdapter,
 	len = prBssDesc->u2IELength;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (prStaRec->ucMldStaIndex != MLD_GROUP_NONE) {
+	if (mldIsMultiLinkFormed(prAdapter, prStaRec)) {
 		len += 6;
 		buf = pos = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, len);
 		if (buf == NULL) {
@@ -9305,12 +9305,10 @@ int kalVendorExternalAuthRequest(IN struct ADAPTER *prAdapter,
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
 	struct STA_RECORD *prStaRec;
-	struct MSDU_INFO *prMsduInfo = NULL;
 	struct BSS_INFO *prBssInfo;
-	struct WLAN_AUTH_FRAME *prAuthFrame;
 	struct PARAM_EXTERNAL_AUTH_INFO *info;
 	struct CONNECTION_SETTINGS *conn;
-	uint8_t size = 0;
+	uint16_t size = 0;
 
 	wiphy = prAdapter->prGlueInfo->prDevHandler->ieee80211_ptr->wiphy;
 	wdev = wlanGetNetDev(prAdapter->prGlueInfo, ucBssIndex)->ieee80211_ptr;
@@ -9318,42 +9316,29 @@ int kalVendorExternalAuthRequest(IN struct ADAPTER *prAdapter,
 	prStaRec = prBssInfo->prStaRecOfAP;
 	conn = aisGetConnSettings(prAdapter, ucBssIndex);
 
-	/* Allocate a MSDU_INFO_T */
-	prMsduInfo = cnmMgtPktAlloc(prAdapter, MAX_LEN_OF_MLIE);
-	if (prMsduInfo == NULL) {
-		DBGLOG(SAA, WARN,
-		       "No PKT_INFO_T for sending external auth.\n");
-		return -1;
-	}
 
-	prAuthFrame = (struct WLAN_AUTH_FRAME *)prMsduInfo->prPacket;
-	prAuthFrame->u2FrameCtrl = MAC_FRAME_AUTH;
-	prMsduInfo->u2FrameLength =
-		sortMsduPayloadOffset(prAdapter, prMsduInfo);
-
-	beGenerateExternalAuthMldIE(prAdapter, prStaRec, prMsduInfo);
-
-	size = sizeof(struct PARAM_EXTERNAL_AUTH_INFO) +
-		prMsduInfo->u2FrameLength -
-		sortMsduPayloadOffset(prAdapter, prMsduInfo);
+	size = sizeof(struct PARAM_EXTERNAL_AUTH_INFO) + MAX_LEN_OF_MLIE;
 	info = kalMemAlloc(size, VIR_MEM_TYPE);
 	if (!info) {
 		DBGLOG(AIS, ERROR, "alloc vendor external auth event fail\n");
-		cnmMgtPktFree(prAdapter, prMsduInfo);
 		return -1;
 	}
+
 	kalMemZero(info, size);
 	info->id = GRID_EXTERNAL_AUTH;
-	info->len = size - 2;
+	info->len = sizeof(struct PARAM_EXTERNAL_AUTH_INFO) - 2;
 	info->action = NL80211_EXTERNAL_AUTH_START;
-	COPY_MAC_ADDR(info->bssid, prStaRec->aucMldAddr);
+	if (mldIsMultiLinkFormed(prAdapter, prStaRec)) {
+		COPY_MAC_ADDR(info->bssid, prStaRec->aucMldAddr);
+		info->len += beGenerateExternalAuthMldIE(
+			prAdapter, prStaRec, info->ext_ie);
+	} else {
+		COPY_MAC_ADDR(info->bssid, prStaRec->aucMacAddr);
+	}
 	COPY_SSID(info->ssid, info->ssid_len, conn->aucSSID, conn->ucSSIDLen);
 	info->ssid[info->ssid_len] = '\0';
 	info->key_mgmt_suite = RSN_AKM_SUITE_SAE;
 	COPY_MAC_ADDR(info->da, prStaRec->aucMacAddr);
-	kalMemCopy(info->ext_ie, prAuthFrame->aucInfoElem,
-		prMsduInfo->u2FrameLength -
-		sortMsduPayloadOffset(prAdapter, prMsduInfo));
 
 	DBGLOG(SAA, INFO,
 		"[WPA3] "MACSTR" (link="MACSTR") %s %d %d %02x-%02x-%02x-%02x",
@@ -9366,9 +9351,8 @@ int kalVendorExternalAuthRequest(IN struct ADAPTER *prAdapter,
 	DBGLOG_MEM8(SAA, INFO, info, IE_SIZE(info));
 
 	mtk_cfg80211_vendor_event_generic_response(
-		wiphy, wdev, size, (uint8_t *)info);
+		wiphy, wdev, IE_SIZE(info), (uint8_t *)info);
 
-	cnmMgtPktFree(prAdapter, prMsduInfo);
 	kalMemFree(info, VIR_MEM_TYPE, size);
 
 	return 0;

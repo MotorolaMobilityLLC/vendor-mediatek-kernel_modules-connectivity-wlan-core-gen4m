@@ -4113,7 +4113,7 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 				  prConnSettings->ucSSIDLen);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-			if (prStaRec->ucMldStaIndex != MLD_GROUP_NONE)
+			if (mldIsMultiLinkFormed(prAdapter, prStaRec))
 				COPY_MAC_ADDR(rEventConnStatus.aucBssid,
 					      prStaRec->aucMldAddr);
 			else

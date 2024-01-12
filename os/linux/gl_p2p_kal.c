@@ -1543,8 +1543,7 @@ kalP2PGCIndicateConnectionStatus(IN struct GLUE_INFO *prGlueInfo,
 				p2pGetDefaultLinkStaRec(prAdapter,
 				IFTYPE_P2P_CLIENT);
 
-			if (prStaRec &&
-				(prStaRec->ucMldStaIndex != MLD_GROUP_NONE))
+			if (mldIsMultiLinkFormed(prAdapter, prStaRec))
 				COPY_MAC_ADDR(aucBssid,
 					prStaRec->aucMldAddr);
 			else
@@ -1617,8 +1616,7 @@ kalP2PGCIndicateConnectionStatus(IN struct GLUE_INFO *prGlueInfo,
 				p2pGetDefaultLinkStaRec(prAdapter,
 				IFTYPE_P2P_CLIENT);
 
-			if (prStaRec &&
-				(prStaRec->ucMldStaIndex != MLD_GROUP_NONE))
+			if (mldIsMultiLinkFormed(prAdapter, prStaRec))
 				COPY_MAC_ADDR(aucBssid,
 					prStaRec->aucMldAddr);
 			else
@@ -1677,7 +1675,7 @@ kalP2PGOStationUpdate(IN struct GLUE_INFO *prGlueInfo,
 		}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		if (prCliStaRec->ucMldStaIndex != MLD_GROUP_NONE)
+		if (mldIsMultiLinkFormed(prGlueInfo->prAdapter, prCliStaRec))
 			COPY_MAC_ADDR(aucBssid,
 				prCliStaRec->aucMldAddr);
 		else
