@@ -165,7 +165,7 @@ s_int32 mt_serv_set_freq_offset(struct service_test *serv_test, u_int32 type);
 s_int32 mt_serv_tx_power_operation(
 	struct service_test *serv_test, u_int32 item);
 s_int32 mt_serv_get_freq_offset(
-	struct service_test *serv_test, u_int32 *freq_offset);
+	struct service_test *serv_test, u_int32 type, u_int32 *freq_offset);
 s_int32 mt_serv_get_cfg_on_off(
 	struct service_test *serv_test,
 	u_int32 type, u_int32 *result);
