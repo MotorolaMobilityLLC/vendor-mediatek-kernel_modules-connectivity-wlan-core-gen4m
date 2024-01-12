@@ -613,6 +613,7 @@ void cnmInit(struct ADAPTER *prAdapter)
 			"HwBssNum(%d)WmmNum(%d) > BSS_DEFAULT_NUM !!!\n",
 			prAdapter->ucHwBssIdNum,
 			prAdapter->ucWmmSetNum);
+		ASSERT(0);
 	}
 
 	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
