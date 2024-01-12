@@ -7130,7 +7130,11 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	if ((prAdapter->u4LinkQualityCounter %
 	     CFG_LINK_QUALITY_MONITOR_UPDATE_FREQUENCY) == 0) {
 		prAdapter->u4LinkQualityCounter = 0;
-		wlanLinkQualityMonitor(prGlueInfo, FALSE);
+		if (prGlueInfo->fgIsInSuspendMode)
+			DBGLOG(SW4, TRACE,
+				"Skip wlanLinkQualityMonitor due to in suspend mode\n");
+		else
+			wlanLinkQualityMonitor(prGlueInfo, FALSE);
 	}
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
