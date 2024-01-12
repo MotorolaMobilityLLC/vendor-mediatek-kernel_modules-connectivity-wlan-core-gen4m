@@ -185,9 +185,12 @@ void asicConnac3xCapInit(
 		prChipInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD;
 		prChipInfo->u4HifDmaShdlBaseAddr = CONNAC3X_HIF_DMASHDL_BASE;
 
-		HAL_MCR_WR(prAdapter,
-				CONNAC3X_BN0_IRQ_ENA_ADDR,
-				BIT(0));
+		if (prBusInfo && prBusInfo->lowPowerOwnInit)
+			prBusInfo->lowPowerOwnInit(prAdapter);
+		else
+			HAL_MCR_WR(prAdapter,
+				   CONNAC3X_BN0_IRQ_ENA_ADDR,
+				   BIT(0));
 
 		if (prChipInfo->is_support_asic_lp) {
 			HAL_MCR_WR(prAdapter,
@@ -1084,9 +1087,11 @@ void asicConnac3xLowPowerOwnClear(
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
 		mtk_pcie_dump_link_info(0);
 #endif
-		DBGLOG(HAL, TRACE, "setCrypto\n");
-		if (prChipInfo->setCrypto)
+
+		if (prChipInfo->setCrypto) {
+			DBGLOG(HAL, TRACE, "setCrypto\n");
 			prChipInfo->setCrypto(prAdapter);
+		}
 
 		clear_bit(GLUE_FLAG_DRV_OWN_INT_BIT,
 			&prAdapter->prGlueInfo->ulFlag);

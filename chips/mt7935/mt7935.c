@@ -35,25 +35,14 @@
 #include "coda/mt7935/pcie_mac_ireg.h"
 #include "coda/mt7935/conn_mcu_bus_cr.h"
 #include "coda/mt7935/conn_bus_cr_von.h"
-#include "coda/mt7935/conn_host_csr_top.h"
 #include "coda/mt7935/vlp_uds_ctrl.h"
 #include "coda/mt7935/wf_rro_top.h"
 #include "coda/mt7935/wf_top_cfg_on.h"
 #include "hal_dmashdl_mt7935.h"
 #include "coda/mt7935/wf2ap_conn_infra_on_ccif4.h"
 #include "coda/mt7935/ap2wf_conn_infra_on_ccif4.h"
-#include "coda/mt7935/wf_top_cfg_on.h"
 #include "coda/mt7935/wf_wtblon_top.h"
 #include "coda/mt7935/wf_uwtbl_top.h"
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-#include "connv3.h"
-#endif
-#if CFG_MTK_WIFI_FW_LOG_MMIO
-#include "fw_log_mmio.h"
-#endif
-#if CFG_MTK_WIFI_FW_LOG_EMI
-#include "fw_log_emi.h"
-#endif
 
 #include "wlan_pinctrl.h"
 
@@ -176,25 +165,20 @@ static void mt7935ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
 static u_int8_t mt7935_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *pu4Status);
 
-static void mt7935_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
-	uint32_t sec,
-	uint32_t usec);
-static uint32_t mt7935_ccif_get_interrupt_status(struct ADAPTER *ad);
-static void mt7935_ccif_set_fw_log_read_pointer(struct ADAPTER *ad,
-	enum ENUM_FW_LOG_CTRL_TYPE type,
-	uint32_t read_pointer);
-static uint32_t mt7935_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
-	enum ENUM_FW_LOG_CTRL_TYPE type);
-static int32_t mt7935_ccif_trigger_fw_assert(struct ADAPTER *ad);
-
 static int32_t mt7935_trigger_fw_assert(struct ADAPTER *prAdapter);
 static uint32_t mt7935_mcu_init(struct ADAPTER *ad);
 static void mt7935_mcu_deinit(struct ADAPTER *ad);
-static int mt7935ConnacPccifOn(struct ADAPTER *prAdapter);
-static int mt7935ConnacPccifOff(struct ADAPTER *prAdapter);
 static int mt7935_CheckBusHang(void *priv, uint8_t rst_enable);
 static uint32_t mt7935_wlanDownloadPatch(struct ADAPTER *prAdapter);
 static void mt7935WiFiNappingCtrl(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
+
+static void mt7935LowPowerOwnInit(struct ADAPTER *prAdapter);
+static void mt7935LowPowerOwnRead(struct ADAPTER *prAdapter,
+				  u_int8_t *pfgResult);
+static void mt7935LowPowerOwnSet(struct ADAPTER *prAdapter,
+				 u_int8_t *pfgResult);
+static void mt7935LowPowerOwnClear(struct ADAPTER *prAdapter,
+				   u_int8_t *pfgResult);
 #endif
 
 /*******************************************************************************
@@ -412,56 +396,30 @@ struct pcie_msi_layout mt7935_pcie_msi_layout[] = {
 	{"conn_hif_host_int", NULL, NULL, AP_INT, 0},
 	{"conn_hif_host_int", NULL, NULL, AP_INT, 0},
 #endif
-#if CFG_MTK_MDDP_SUPPORT
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
-#else
-	{"conn_hif_host_int", NULL, NULL, NONE_INT, 0},
-	{"conn_hif_host_int", NULL, NULL, NONE_INT, 0},
-	{"conn_hif_host_int", NULL, NULL, NONE_INT, 0},
-	{"conn_hif_host_int", NULL, NULL, NONE_INT, 0},
-	{"conn_hif_host_int", NULL, NULL, NONE_INT, 0},
-	{"conn_hif_host_int", NULL, NULL, NONE_INT, 0},
-	{"conn_hif_host_int", NULL, NULL, NONE_INT, 0},
-	{"conn_hif_host_int", NULL, NULL, NONE_INT, 0},
-#endif
+	{"reserved", NULL, NULL, NONE_INT, 0},
+	{"reserved", NULL, NULL, NONE_INT, 0},
+	{"reserved", NULL, NULL, NONE_INT, 0},
+	{"reserved", NULL, NULL, NONE_INT, 0}, /* image response */
+	{"reserved", NULL, NULL, NONE_INT, 0},
+	{"reserved", NULL, NULL, NONE_INT, 0},
+	{"reserved", NULL, NULL, NONE_INT, 0}, /* boot stage */
+	{"reserved", NULL, NULL, NONE_INT, 0},
 	{"wm_conn2ap_wdt_irq", NULL, NULL, NONE_INT, 0},
 	{"wf_mcu_jtag_det_eint", NULL, NULL, NONE_INT, 0},
 	{"pmic_eint", NULL, NULL, NONE_INT, 0},
-#if CFG_MTK_CCCI_SUPPORT
-	{"ccif_bgf2ap_sw_irq", mtk_md_dummy_pci_interrupt, NULL, CCIF_INT, 0},
-#else
-	{"ccif_bgf2ap_sw_irq", NULL, NULL, NONE_INT, 0},
-#endif
-	{"ccif_wf2ap_sw_irq", pcie_sw_int_top_handler,
-	 pcie_sw_int_thread_handler, AP_MISC_INT, 0},
-#if CFG_MTK_CCCI_SUPPORT
-	{"ccif_bgf2ap_irq_0", mtk_md_dummy_pci_interrupt, NULL, CCIF_INT, 0},
-	{"ccif_bgf2ap_irq_1", mtk_md_dummy_pci_interrupt, NULL, CCIF_INT, 0},
-#else
-	{"ccif_bgf2ap_irq_0", NULL, NULL, NONE_INT, 0},
-	{"ccif_bgf2ap_irq_1", NULL, NULL, NONE_INT, 0},
-#endif
+	{"wf_msi_dfd_en", NULL, NULL, NONE_INT, 0},
+	{"cb_mcu_wdt_irq_b", NULL, NULL, NONE_INT, 0},
+	{"mbu_c3", NULL, NULL, NONE_INT, 0},
+	{"dtm_attach", NULL, NULL, NONE_INT, 0},
+	{"cbmcu_jtag_attach", NULL, NULL, NONE_INT, 0},
 	{"reserved", NULL, NULL, NONE_INT, 0},
 	{"reserved", NULL, NULL, NONE_INT, 0},
 	{"reserved", NULL, NULL, NONE_INT, 0},
-	{"reserved", NULL, NULL, NONE_INT, 0},
-	{"reserved", NULL, NULL, NONE_INT, 0},
-	{"reserved", NULL, NULL, NONE_INT, 0},
-#if CFG_MTK_WIFI_FW_LOG_MMIO || CFG_MTK_WIFI_FW_LOG_EMI
-	{"fw_log_irq", pcie_fw_log_top_handler,
-	 pcie_fw_log_thread_handler, AP_MISC_INT, 0},
-#else
-	{"reserved", NULL, NULL, NONE_INT, 0},
-#endif
-	{"reserved", NULL, NULL, NONE_INT, 0},
-	{"reserved", NULL, NULL, NONE_INT, 0},
+	{"reserved", NULL, NULL, NONE_INT, 0}, /* wf driver own */
+	{"reserved", NULL, NULL, NONE_INT, 0}, /* md driver own */
+	{"reserved", NULL, NULL, NONE_INT, 0}, /* wf log notify */
+	{"reserved", NULL, NULL, NONE_INT, 0}, /* coredump start */
+	{"reserved", NULL, NULL, NONE_INT, 0}, /* coredump finish */
 };
 #endif
 
@@ -530,8 +488,8 @@ struct BUS_INFO mt7935_bus_info = {
 	.rx_data_ring_size = 3072,
 	.rx_evt_ring_size = 128,
 	.rx_data_ring_prealloc_size = 1024,
-	.fw_own_clear_addr = CONNAC3X_BN0_IRQ_STAT_ADDR,
-	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
+	.fw_own_clear_addr = CONN_HOST_CSR_TOP_WF_BAND0_IRQ_STAT_ADDR,
+	.fw_own_clear_bit = CONN_HOST_CSR_TOP_WF_BAND0_IRQ_STAT_WF_B0_HOST_LPCR_FW_OWN_CLR_STAT_MASK,
 	.fgCheckDriverOwnInt = FALSE,
 	.u4DmaMask = 34,
 	.wfmda_host_tx_group = mt7935_wfmda_host_tx_group,
@@ -590,9 +548,10 @@ struct BUS_INFO mt7935_bus_info = {
 	.rx_ring_ext_ctrl = mt7935WfdmaRxRingExtCtrl,
 	/* null wfdmaManualPrefetch if want to disable manual mode */
 	.wfdmaManualPrefetch = mt7935WfdmaManualPrefetch,
-	.lowPowerOwnRead = asicConnac3xLowPowerOwnRead,
-	.lowPowerOwnSet = asicConnac3xLowPowerOwnSet,
-	.lowPowerOwnClear = asicConnac3xLowPowerOwnClear,
+	.lowPowerOwnInit = mt7935LowPowerOwnInit,
+	.lowPowerOwnRead = mt7935LowPowerOwnRead,
+	.lowPowerOwnSet = mt7935LowPowerOwnSet,
+	.lowPowerOwnClear = mt7935LowPowerOwnClear,
 	.wakeUpWiFi = asicWakeUpWiFi,
 	.softwareInterruptMcu = asicConnac3xSoftwareInterruptMcu,
 	.hifRst = asicConnac3xHifRst,
@@ -819,48 +778,6 @@ struct ATE_OPS_T mt7935_AteOps = {
 };
 #endif /* CFG_SUPPORT_QA_TOOL */
 
-#if defined(_HIF_PCIE)
-#if (CFG_MTK_FPGA_PLATFORM == 0)
-static struct CCIF_OPS mt7935_ccif_ops = {
-	.get_interrupt_status = mt7935_ccif_get_interrupt_status,
-	.notify_utc_time_to_fw = mt7935_ccif_notify_utc_time_to_fw,
-	.set_fw_log_read_pointer = mt7935_ccif_set_fw_log_read_pointer,
-	.get_fw_log_read_pointer = mt7935_ccif_get_fw_log_read_pointer,
-	.trigger_fw_assert = mt7935_ccif_trigger_fw_assert,
-};
-#endif
-#if CFG_MTK_WIFI_FW_LOG_MMIO
-static struct FW_LOG_OPS mt7935_fw_log_mmio_ops = {
-	.init = fwLogMmioInitMcu,
-	.deinit = fwLogMmioDeInitMcu,
-	.start = fwLogMmioStart,
-	.stop = fwLogMmioStop,
-	.handler = fwLogMmioHandler,
-};
-#endif
-
-#if CFG_MTK_WIFI_FW_LOG_EMI
-static struct FW_LOG_OPS mt7935_fw_log_emi_ops = {
-	.init = fw_log_emi_init,
-	.deinit = fw_log_emi_deinit,
-	.start = fw_log_emi_start,
-	.stop = fw_log_emi_stop,
-	.set_enabled = fw_log_emi_set_enabled,
-	.handler = fw_log_emi_handler,
-};
-#endif
-#endif
-
-#if CFG_SUPPORT_THERMAL_QUERY
-struct thermal_sensor_info mt7935_thermal_sensor_info[] = {
-	{"wifi_adie_0", THERMAL_TEMP_TYPE_ADIE, 0},
-	{"wifi_ddie_0", THERMAL_TEMP_TYPE_DDIE, 0},
-	{"wifi_ddie_1", THERMAL_TEMP_TYPE_DDIE, 1},
-	{"wifi_ddie_2", THERMAL_TEMP_TYPE_DDIE, 2},
-	{"wifi_ddie_3", THERMAL_TEMP_TYPE_DDIE, 3},
-};
-#endif
-
 #if CFG_NEW_HIF_DEV_REG_IF
 enum HIF_DEV_REG_REASON mt7935ValidMmioReadReason[] = {
 	HIF_DEV_REG_HIF_DBG,
@@ -954,8 +871,6 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
 	.u4LmacWtblDUAddr = CONNAC3X_WIFI_LWTBL_BASE,
 	.u4UmacWtblDUAddr = CONNAC3X_WIFI_UWTBL_BASE,
-	.coexpccifon = mt7935ConnacPccifOn,
-	.coexpccifoff = mt7935ConnacPccifOff,
 #if CFG_MTK_MDDP_SUPPORT
 	.isSupportMddpAOR = false,
 	.isSupportMddpSHM = true,
@@ -994,26 +909,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 		.type = EMI_ALLOC_TYPE_IN_DRIVER,
 #endif /* CFG_MTK_ANDROID_EMI */
 	},
-#if CFG_SUPPORT_THERMAL_QUERY
-	.thermal_info = {
-		.sensor_num = ARRAY_SIZE(mt7935_thermal_sensor_info),
-		.sensor_info = mt7935_thermal_sensor_info,
-	},
-#endif
 	.trigger_fw_assert = mt7935_trigger_fw_assert,
-	.fw_log_info = {
-#if CFG_MTK_WIFI_FW_LOG_MMIO
-		.ops = &mt7935_fw_log_mmio_ops,
-#endif
-#if CFG_MTK_WIFI_FW_LOG_EMI
-		.base = 0x538000,
-		.ops = &mt7935_fw_log_emi_ops,
-#endif
-		.path = ENUM_LOG_READ_POINTER_PATH_CCIF,
-	},
-#if (CFG_MTK_FPGA_PLATFORM == 0)
-	.ccif_ops = &mt7935_ccif_ops,
-#endif
 	.get_sw_interrupt_status = mt7935_get_sw_interrupt_status,
 #else
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
@@ -2725,82 +2621,8 @@ static void mt7935SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 static u_int8_t mt7935_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *pu4Status)
 {
-	*pu4Status = ccif_get_interrupt_status(prAdapter);
+	*pu4Status = 0;
 	return TRUE;
-}
-
-static uint32_t mt7935_ccif_get_interrupt_status(struct ADAPTER *ad)
-{
-	uint32_t u4Status = 0;
-
-	HAL_RMCR_RD(CCIF_READ, ad,
-		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_RCHNUM_ADDR,
-		&u4Status);
-	HAL_MCR_WR(ad,
-		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_ACK_ADDR,
-		u4Status);
-
-	return u4Status;
-}
-
-static void mt7935_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
-	uint32_t sec,
-	uint32_t usec)
-{
-	ACQUIRE_POWER_CONTROL_FROM_PM(ad);
-	if (ad->fgIsFwOwn == TRUE)
-		goto exit;
-
-	HAL_MCR_WR(ad,
-		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_DUMMY1_ADDR,
-		sec);
-	HAL_MCR_WR(ad,
-		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_DUMMY2_ADDR,
-		usec);
-	HAL_MCR_WR(ad,
-		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_TCHNUM_ADDR,
-		SW_INT_TIME_SYNC);
-
-exit:
-	RECLAIM_POWER_CONTROL_TO_PM(ad, FALSE);
-}
-
-static void mt7935_ccif_set_fw_log_read_pointer(struct ADAPTER *ad,
-	enum ENUM_FW_LOG_CTRL_TYPE type,
-	uint32_t read_pointer)
-{
-	uint32_t u4Addr = 0;
-
-	if (type == ENUM_FW_LOG_CTRL_TYPE_MCU)
-		u4Addr = WF2AP_CONN_INFRA_ON_CCIF4_WF2AP_PCCIF_DUMMY2_ADDR;
-	else
-		u4Addr = WF2AP_CONN_INFRA_ON_CCIF4_WF2AP_PCCIF_DUMMY1_ADDR;
-
-	HAL_MCR_WR(ad, u4Addr, read_pointer);
-}
-
-static uint32_t mt7935_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
-	enum ENUM_FW_LOG_CTRL_TYPE type)
-{
-	uint32_t u4Addr = 0, u4Value = 0;
-
-	if (type == ENUM_FW_LOG_CTRL_TYPE_MCU)
-		u4Addr = WF2AP_CONN_INFRA_ON_CCIF4_WF2AP_PCCIF_DUMMY2_ADDR;
-	else
-		u4Addr = WF2AP_CONN_INFRA_ON_CCIF4_WF2AP_PCCIF_DUMMY1_ADDR;
-
-	HAL_RMCR_RD(CCIF_READ, ad, u4Addr, &u4Value);
-
-	return u4Value;
-}
-
-static int32_t mt7935_ccif_trigger_fw_assert(struct ADAPTER *ad)
-{
-	HAL_MCR_WR(ad,
-		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_TCHNUM_ADDR,
-		SW_INT_SUBSYS_RESET);
-
-	return 0;
 }
 
 u_int8_t mt7935_is_ap2conn_off_readable(struct ADAPTER *ad)
@@ -2895,132 +2717,6 @@ u_int8_t mt7935_is_conn2wf_readable(struct ADAPTER *ad)
 	return TRUE;
 }
 
-static u_int8_t mt7935_check_recovery_needed(struct ADAPTER *ad)
-{
-	uint32_t u4Value = 0;
-	u_int8_t fgResult = FALSE;
-
-	/*
-	 * if (0x81021604[31:16]==0xdead &&
-	 *     (0x70005350[30:28]!=0x0 || 0x70005360[6:4]!=0x0)) == 0x1
-	 * do recovery flow
-	 */
-
-	HAL_RMCR_RD(ONOFF_READ, ad, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
-		&u4Value);
-	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
-		WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR, u4Value);
-	if ((u4Value & 0xFFFF0000) != 0xDEAD0000) {
-		fgResult = FALSE;
-		goto exit;
-	}
-
-	HAL_RMCR_RD(ONOFF_READ, ad, CBTOP_GPIO_MODE5_ADDR,
-		&u4Value);
-	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
-		CBTOP_GPIO_MODE5_ADDR, u4Value);
-	if (((u4Value & CBTOP_GPIO_MODE5_GPIO47_MASK) >>
-	    CBTOP_GPIO_MODE5_GPIO47_SHFT) != 0x0) {
-		fgResult = TRUE;
-		goto exit;
-	}
-
-	HAL_RMCR_RD(ONOFF_READ, ad, CBTOP_GPIO_MODE6_ADDR,
-		&u4Value);
-	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
-		CBTOP_GPIO_MODE6_ADDR, u4Value);
-	if (((u4Value & CBTOP_GPIO_MODE6_GPIO49_MASK) >>
-	    CBTOP_GPIO_MODE6_GPIO49_SHFT) != 0x0) {
-		fgResult = TRUE;
-		goto exit;
-	}
-
-exit:
-	return fgResult;
-}
-
-static uint32_t mt7935_mcu_reinit(struct ADAPTER *ad)
-{
-#define CONNINFRA_ID_MAX_POLLING_COUNT		10
-
-	uint32_t u4Value = 0, u4PollingCnt = 0;
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-
-	/* Check recovery needed */
-	if (mt7935_check_recovery_needed(ad) == FALSE)
-		goto exit;
-
-	DBGLOG(INIT, INFO, "mt7935_mcu_reinit.\n");
-
-	/* Force on conninfra */
-	HAL_MCR_WR(ad,
-		CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR,
-		0x1);
-
-	/* Wait conninfra wakeup */
-	while (TRUE) {
-		HAL_RMCR_RD(ONOFF_READ, ad,
-			CONN_CFG_IP_VERSION_IP_VERSION_ADDR,
-			&u4Value);
-
-		if (u4Value == MT7935_CONNINFRA_VERSION_ID)
-			break;
-
-		u4PollingCnt++;
-		if (u4PollingCnt >= CONNINFRA_ID_MAX_POLLING_COUNT) {
-			rStatus = WLAN_STATUS_FAILURE;
-			DBGLOG(INIT, ERROR,
-				"Conninfra ID polling failed, value=0x%x\n",
-				u4Value);
-			goto exit;
-		}
-
-		kalUdelay(1000);
-	}
-
-	/* Switch to GPIO mode */
-	HAL_MCR_WR(ad,
-		CBTOP_GPIO_MODE5_MOD_ADDR,
-		0x80000000);
-	HAL_MCR_WR(ad,
-		CBTOP_GPIO_MODE6_MOD_ADDR,
-		0x80);
-	kalUdelay(100);
-
-	/* Reset */
-	HAL_MCR_WR(ad,
-		CB_INFRA_RGU_BT_SUBSYS_RST_ADDR,
-		0x10351);
-	HAL_MCR_WR(ad,
-		CB_INFRA_RGU_WF_SUBSYS_RST_ADDR,
-		0x10351);
-	kalMdelay(10);
-	HAL_MCR_WR(ad,
-		CB_INFRA_RGU_BT_SUBSYS_RST_ADDR,
-		0x10340);
-	HAL_MCR_WR(ad,
-		CB_INFRA_RGU_WF_SUBSYS_RST_ADDR,
-		0x10340);
-
-	kalMdelay(50);
-
-	HAL_RMCR_RD(ONOFF_READ, ad, CBTOP_GPIO_MODE5_ADDR, &u4Value);
-	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
-		CBTOP_GPIO_MODE5_ADDR, u4Value);
-
-	HAL_RMCR_RD(ONOFF_READ, ad, CBTOP_GPIO_MODE6_ADDR, &u4Value);
-	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
-		CBTOP_GPIO_MODE6_ADDR, u4Value);
-
-	/* Clean force on conninfra */
-	HAL_MCR_WR(ad,
-		CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR,
-		0x0);
-
-exit:
-	return rStatus;
-}
-
 #if (CFG_MTK_ANDROID_WMT == 0)
 static uint32_t mt7935_mcu_reset(struct ADAPTER *ad)
 {
@@ -3060,20 +2756,6 @@ static uint32_t mt7935_mcu_reset(struct ADAPTER *ad)
 		DBGLOG(INIT, ERROR, "L0.5 reset failed.\n");
 
 	return rStatus;
-}
-#endif
-
-#if CFG_MTK_FPGA_PLATFORM != 1
-static void set_cbinfra_remap(struct ADAPTER *ad)
-{
-	DBGLOG(INIT, INFO, "set_cbinfra_remap.\n");
-
-	HAL_MCR_WR(ad,
-		CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_ADDR,
-		0x74037001);
-	HAL_MCR_WR(ad,
-		CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_BT_ADDR,
-		0x70007000);
 }
 #endif
 
@@ -3124,129 +2806,17 @@ static void mt7935_mcu_deinit(struct ADAPTER *ad)
 	}
 
 	wifi_coredump_set_enable(FALSE);
-
-	if (ad->chip_info->coexpccifoff)
-		ad->chip_info->coexpccifoff(ad);
 }
 
 static int32_t mt7935_trigger_fw_assert(struct ADAPTER *prAdapter)
 {
 	int32_t ret = 0;
 
-	ccif_trigger_fw_assert(prAdapter);
-
 #if CFG_WMT_RESET_API_SUPPORT
 	ret = reset_wait_for_trigger_completion();
 #endif
 
 	return ret;
-}
-
-#define MCIF_EMI_MEMORY_SIZE 128
-#define MCIF_EMI_COEX_SWMSG_OFFSET 0xF8518000
-#define MCIF_EMI_BASE_OFFSET 0xE4
-static int mt7935ConnacPccifOn(struct ADAPTER *prAdapter)
-{
-#if CFG_MTK_CCCI_SUPPORT
-	uint32_t mcif_emi_base, u4Val = 0;
-	void *vir_addr = NULL;
-	int size = 0;
-
-#if CFG_MTK_ANDROID_WMT
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	if (is_pwr_on_notify_processing())
-		return -1;
-#endif
-#endif
-
-	mcif_emi_base = get_smem_phy_start_addr(
-		MD_SYS1, SMEM_USER_RAW_MD_CONSYS, &size);
-	if (!mcif_emi_base) {
-		DBGLOG(INIT, ERROR, "share memory is NULL.\n");
-		return -1;
-	}
-
-	vir_addr = ioremap(mcif_emi_base, MCIF_EMI_MEMORY_SIZE);
-	if (!vir_addr) {
-		DBGLOG(INIT, ERROR, "ioremap fail.\n");
-		return -1;
-	}
-
-#if CFG_MTK_WIFI_WFDMA_WB
-#if CFG_MTK_MDDP_SUPPORT
-	if (size >= (WFDMA_WB_MEMORY_SIZE * 2)) {
-		prAdapter->u8MdRingStaBase =
-			((uint64_t)mcif_emi_base + size - WFDMA_WB_MEMORY_SIZE);
-		prAdapter->u8MdRingIdxBase =
-			prAdapter->u8MdRingStaBase - WFDMA_WB_MEMORY_SIZE;
-	}
-#endif /* CFG_MTK_MDDP_SUPPORT */
-#endif /* CFG_MTK_WIFI_WFDMA_WB */
-
-	/* To Do */
-	/*kalDevRegWrite(
-		NULL,
-		CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_1_BA_ADDR,
-		0x18051803);
-	*/
-
-	kalMemSetIo(vir_addr, 0xFF, MCIF_EMI_MEMORY_SIZE);
-	writel(0x4D4D434D, vir_addr);
-	writel(0x4D4D434D, vir_addr + 0x4);
-	writel(0x00000000, vir_addr + 0x8);
-	writel(0x00000000, vir_addr + 0xC);
-	writel(0x301B5801, vir_addr + 0x10);
-	writel(0x02000010, vir_addr + 0x14);
-	writel(0x301AF00C, vir_addr + 0x18);
-	writel(0x00000001, vir_addr + 0x1C);
-	writel(0x00000000, vir_addr + 0x70);
-	writel(0x00000000, vir_addr + 0x74);
-	writel(0x4D434D4D, vir_addr + 0x78);
-	writel(0x4D434D4D, vir_addr + 0x7C);
-
-	u4Val = readl(vir_addr + MCIF_EMI_BASE_OFFSET);
-	HAL_MCR_WR(prAdapter, MT7935_MCIF_MD_STATE_WHEN_WIFI_ON_ADDR, u4Val);
-
-	DBGLOG(INIT, TRACE, "MCIF_EMI_BASE_OFFSET=[0x%08x]\n", u4Val);
-	DBGLOG_MEM128(HAL, TRACE, vir_addr, MCIF_EMI_MEMORY_SIZE);
-
-	iounmap(vir_addr);
-#else
-	DBGLOG(INIT, ERROR, "[%s] ECCCI Driver is not supported.\n", __func__);
-#endif
-	return 0;
-}
-
-static int mt7935ConnacPccifOff(struct ADAPTER *prAdapter)
-{
-#if CFG_MTK_CCCI_SUPPORT
-	uint32_t mcif_emi_base;
-	void *vir_addr = NULL;
-	int ret = 0;
-
-	mcif_emi_base =	get_smem_phy_start_addr(
-		MD_SYS1, SMEM_USER_RAW_MD_CONSYS, &ret);
-	if (!mcif_emi_base) {
-		DBGLOG(INIT, ERROR, "share memory is NULL.\n");
-		return -1;
-	}
-
-	vir_addr = ioremap(mcif_emi_base, MCIF_EMI_MEMORY_SIZE);
-	if (!vir_addr) {
-		DBGLOG(INIT, ERROR, "ioremap fail.\n");
-		return -1;
-	}
-
-	writel(0, vir_addr + 0x10);
-	writel(0, vir_addr + 0x14);
-	writel(0, vir_addr + 0x18);
-	writel(0, vir_addr + 0x1C);
-
-	iounmap(vir_addr);
-#else
-	DBGLOG(INIT, ERROR, "[%s] ECCCI Driver is not supported.\n", __func__);
-#endif
-	return 0;
 }
 
 static int mt7935_CheckBusHang(void *priv, uint8_t rst_enable)
@@ -3352,5 +2922,60 @@ static void mt7935WiFiNappingCtrl(
 	HAL_MCR_WR(prGlueInfo->prAdapter,
 		   CONN_HOST_CSR_TOP_ADDR_CR_CONN_AON_TOP_RESERVE_ADDR,
 		   u4value);
+}
+
+static void mt7935LowPowerOwnInit(struct ADAPTER *prAdapter)
+{
+	HAL_MCR_WR(prAdapter,
+		   CONN_HOST_CSR_TOP_WF_BAND0_IRQ_ENA_ADDR,
+		   BIT(0));
+}
+
+static void mt7935LowPowerOwnRead(struct ADAPTER *prAdapter,
+				  u_int8_t *pfgResult)
+{
+	uint32_t u4RegValue = 0;
+
+	HAL_RMCR_RD(LPOWN_READ, prAdapter,
+		    CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR,
+		    &u4RegValue);
+
+	*pfgResult = (u4RegValue &
+		PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) == 0 ?
+		TRUE : FALSE;
+}
+
+static void mt7935LowPowerOwnSet(struct ADAPTER *prAdapter,
+				 u_int8_t *pfgResult)
+{
+	uint32_t u4RegValue = 0;
+
+	HAL_MCR_WR(prAdapter,
+		   CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR,
+		   PCIE_LPCR_HOST_SET_OWN);
+
+	HAL_RMCR_RD(LPOWN_READ, prAdapter,
+		    CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR,
+		    &u4RegValue);
+
+	*pfgResult = (u4RegValue &
+		PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) == 0x4;
+}
+
+static void mt7935LowPowerOwnClear(struct ADAPTER *prAdapter,
+				   u_int8_t *pfgResult)
+{
+	uint32_t u4RegValue = 0;
+
+	HAL_MCR_WR(prAdapter,
+		   CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR,
+		   PCIE_LPCR_HOST_CLR_OWN);
+
+	HAL_RMCR_RD(LPOWN_READ, prAdapter,
+		    CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR,
+		    &u4RegValue);
+
+	*pfgResult = (u4RegValue &
+		PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) == 0;
 }
 #endif  /* MT7935 */

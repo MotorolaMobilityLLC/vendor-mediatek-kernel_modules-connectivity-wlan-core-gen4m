@@ -2438,8 +2438,8 @@ static void mt6639_dumpConninfraBus(struct ADAPTER *ad)
 	connv3_conninfra_bus_dump(dumpViaBt ?
 		CONNV3_DRV_TYPE_BT : CONNV3_DRV_TYPE_WIFI);
 
-	HAL_MCR_RD(ad, CONNAC3X_BN0_LPCTL_ADDR, &WFDrvOwnStat);
-	HAL_MCR_RD(ad, CONNAC3X_BN0_LPCTL_MD_ADDR, &MDDrvOwnStat);
+	HAL_MCR_RD(ad, CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR, &WFDrvOwnStat);
+	HAL_MCR_RD(ad, CONN_HOST_CSR_TOP_WF_MD_LPCTL_ADDR, &MDDrvOwnStat);
 	DBGLOG(HAL, INFO, "WF DrvOwn stat=0x%08x, MD DrvOwn stat=0x%08x.\n",
 		WFDrvOwnStat, MDDrvOwnStat);
 #endif

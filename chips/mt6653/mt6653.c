@@ -123,12 +123,6 @@ static void mt6653ProcessRxInterrupt(
 static void mt6653WfdmaManualPrefetch(
 	struct GLUE_INFO *prGlueInfo);
 
-#if (CFG_MTK_WIFI_ON_READ_BY_CFG_SPACE == 1) && defined(_HIF_PCIE)
-static void mt6653LowPowerOwnRead(
-	struct ADAPTER *prAdapter,
-	u_int8_t *pfgResult);
-#endif
-
 static void mt6653ReadIntStatusByMsi(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus);
 
@@ -203,6 +197,14 @@ static uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
 		uint8_t ucBssIndex);
 #endif
+
+static void mt6653LowPowerOwnInit(struct ADAPTER *prAdapter);
+static void mt6653LowPowerOwnRead(struct ADAPTER *prAdapter,
+				  u_int8_t *pfgResult);
+static void mt6653LowPowerOwnSet(struct ADAPTER *prAdapter,
+				 u_int8_t *pfgResult);
+static void mt6653LowPowerOwnClear(struct ADAPTER *prAdapter,
+				   u_int8_t *pfgResult);
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -603,8 +605,8 @@ struct BUS_INFO mt6653_bus_info = {
 #endif /* CFG_ENABLE_MAWD_MD_RING */
 	.rx_evt_ring_size = 128,
 	.rx_data_ring_prealloc_size = 1024,
-	.fw_own_clear_addr = CONNAC3X_BN0_IRQ_STAT_ADDR,
-	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
+	.fw_own_clear_addr = CONN_HOST_CSR_TOP_WF_BAND0_IRQ_STAT_ADDR,
+	.fw_own_clear_bit = CONN_HOST_CSR_TOP_WF_BAND0_IRQ_STAT_WF_B0_HOST_LPCR_FW_OWN_CLR_STAT_MASK,
 #if defined(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
 	.fgCheckDriverOwnInt = TRUE,
 #else
@@ -674,13 +676,10 @@ struct BUS_INFO mt6653_bus_info = {
 	.rx_ring_ext_ctrl = mt6653WfdmaRxRingExtCtrl,
 	/* null wfdmaManualPrefetch if want to disable manual mode */
 	.wfdmaManualPrefetch = mt6653WfdmaManualPrefetch,
-#if (CFG_MTK_WIFI_ON_READ_BY_CFG_SPACE == 1) && defined(_HIF_PCIE)
+	.lowPowerOwnInit = mt6653LowPowerOwnInit,
 	.lowPowerOwnRead = mt6653LowPowerOwnRead,
-#else
-	.lowPowerOwnRead = asicConnac3xLowPowerOwnRead,
-#endif
-	.lowPowerOwnSet = asicConnac3xLowPowerOwnSet,
-	.lowPowerOwnClear = asicConnac3xLowPowerOwnClear,
+	.lowPowerOwnSet = mt6653LowPowerOwnSet,
+	.lowPowerOwnClear = mt6653LowPowerOwnClear,
 	.wakeUpWiFi = asicWakeUpWiFi,
 	.processSoftwareInterrupt = asicConnac3xProcessSoftwareInterrupt,
 	.softwareInterruptMcu = asicConnac3xSoftwareInterruptMcu,
@@ -1806,27 +1805,6 @@ static void mt6653WfdmaManualPrefetch(
 	HAL_MCR_WR(prAdapter,
 		WF_WFDMA_HOST_DMA0_WPDMA_RST_DRX_PTR_ADDR, 0xFFFFFFFF);
 }
-
-#if (CFG_MTK_WIFI_ON_READ_BY_CFG_SPACE == 1) && defined(_HIF_PCIE)
-static void mt6653LowPowerOwnRead(
-	struct ADAPTER *prAdapter,
-	u_int8_t *pfgResult)
-{
-	struct mt66xx_chip_info *prChipInfo;
-
-	prChipInfo = prAdapter->chip_info;
-
-	if (prChipInfo->is_support_asic_lp) {
-		u_int32_t u4RegValue = 0;
-		/* read own status from pcie config space: 0x48C[14] */
-		u4RegValue = glReadPcieCfgSpace(PCIE_CFGSPACE_BASE_OFFSET);
-		*pfgResult = (((u4RegValue>>PCIE_CFGSPACE_OWN_STATUS_SHIFT)
-				& PCIE_CFGSPACE_OWN_STATUS_MASK)
-				== 0) ? TRUE : FALSE;
-	} else
-		*pfgResult = TRUE;
-}
-#endif
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 static void mt6653ReadOffloadIntStatus(struct ADAPTER *prAdapter,
@@ -3281,20 +3259,6 @@ static uint32_t mt6653_mcu_reset(struct ADAPTER *ad)
 }
 #endif
 
-#if CFG_MTK_FPGA_PLATFORM != 1
-static void set_cbinfra_remap(struct ADAPTER *ad)
-{
-	DBGLOG(INIT, INFO, "set_cbinfra_remap.\n");
-
-	HAL_MCR_WR(ad,
-		CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_ADDR,
-		0x74037001);
-	HAL_MCR_WR(ad,
-		CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_BT_ADDR,
-		0x70007000);
-}
-#endif
-
 static uint32_t mt6653_mcu_check_idle(struct ADAPTER *ad)
 {
 #define MCU_IDLE		0x1D1E
@@ -3746,5 +3710,108 @@ uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 	return FALSE;
 }
 #endif /* CFG_SUPPORT_APS */
+
+static void mt6653LowPowerOwnInit(struct ADAPTER *prAdapter)
+{
+	HAL_MCR_WR(prAdapter,
+		   CONN_HOST_CSR_TOP_WF_BAND0_IRQ_ENA_ADDR,
+		   BIT(0));
+}
+
+static void mt6653LowPowerOwnRead(struct ADAPTER *prAdapter,
+				  u_int8_t *pfgResult)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	uint32_t u4RegValue = 0;
+
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo->is_support_asic_lp == FALSE) {
+		*pfgResult = TRUE;
+		return;
+	}
+
+#if (CFG_MTK_WIFI_ON_READ_BY_CFG_SPACE == 1)
+	/* read own status from pcie config space: 0x48C[14] */
+	u4RegValue = glReadPcieCfgSpace(PCIE_CFGSPACE_BASE_OFFSET);
+	*pfgResult = (((u4RegValue >> PCIE_CFGSPACE_OWN_STATUS_SHIFT)
+			& PCIE_CFGSPACE_OWN_STATUS_MASK)
+			== 0) ? TRUE : FALSE;
+#else
+	HAL_RMCR_RD(LPOWN_READ, prAdapter,
+		    CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR,
+		    &u4RegValue);
+	*pfgResult = (u4RegValue &
+		PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) == 0 ? TRUE : FALSE;
+#endif
+}
+
+static void mt6653LowPowerOwnSet(struct ADAPTER *prAdapter,
+				 u_int8_t *pfgResult)
+{
+	struct mt66xx_chip_info *prChipInfo;
+#ifndef CFG_MTK_WIFI_DRV_OWN_INT_MODE
+	uint32_t u4RegValue = 0;
+#endif
+
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo->is_support_asic_lp == FALSE) {
+		*pfgResult = TRUE;
+		return;
+	}
+
+	HAL_MCR_WR(prAdapter,
+		   CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR,
+		   PCIE_LPCR_HOST_SET_OWN);
+
+#ifndef CFG_MTK_WIFI_DRV_OWN_INT_MODE
+	HAL_RMCR_RD(LPOWN_READ, prAdapter,
+		    CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR,
+		    &u4RegValue);
+
+	*pfgResult = (u4RegValue &
+		PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) == 0x4;
+#else
+	*pfgResult = TRUE;
+#endif
+}
+
+static void mt6653LowPowerOwnClear(struct ADAPTER *prAdapter,
+				   u_int8_t *pfgResult)
+{
+	struct mt66xx_chip_info *prChipInfo;
+#ifndef CFG_MTK_WIFI_DRV_OWN_INT_MODE
+	uint32_t u4RegValue = 0;
+#endif
+
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo->is_support_asic_lp == FALSE) {
+		*pfgResult = TRUE;
+		return;
+	}
+
+#ifdef CFG_MTK_WIFI_PCIE_SUPPORT
+	mtk_pcie_dump_link_info(0);
+#endif
+
+#ifdef CFG_MTK_WIFI_DRV_OWN_INT_MODE
+	clear_bit(GLUE_FLAG_DRV_OWN_INT_BIT,
+		  &prAdapter->prGlueInfo->ulFlag);
+#endif
+
+	HAL_MCR_WR(prAdapter,
+		   CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR,
+		   PCIE_LPCR_HOST_CLR_OWN);
+
+#ifndef CFG_MTK_WIFI_DRV_OWN_INT_MODE
+	HAL_RMCR_RD(LPOWN_READ, prAdapter,
+		    CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR,
+		    &u4RegValue);
+
+	*pfgResult = (u4RegValue &
+		PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) == 0;
+#else
+	*pfgResult = TRUE;
+#endif
+}
 
 #endif  /* MT6653 */

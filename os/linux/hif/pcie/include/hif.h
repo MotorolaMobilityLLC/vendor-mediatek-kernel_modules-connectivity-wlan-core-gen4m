@@ -452,6 +452,7 @@ struct BUS_INFO {
 	void (*processTxInterrupt)(struct ADAPTER *prAdapter);
 	void (*processRxInterrupt)(struct ADAPTER *prAdapter);
 	void (*processAbnormalInterrupt)(struct ADAPTER *prAdapter);
+	void (*lowPowerOwnInit)(struct ADAPTER *prAdapter);
 	void (*lowPowerOwnRead)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
 	void (*lowPowerOwnSet)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
 	void (*lowPowerOwnClear)(struct ADAPTER *prAdapter,

@@ -24,7 +24,7 @@
 ********************************************************************************
 */
 #define CONN_INFRA_CFG_BASE			0x830C0000
-#define CONNAC3X_CONN_CFG_ON_BASE		0x7C060000
+#define CONNAC3X_CONN_CFG_ON_BASE		0x20060000
 #define MCU_SW_CR_BASE				0x7C05B100
 #define MT7935_TX_DESC_APPEND_LENGTH		32
 #define MT7935_HIF_TX_DESC_APPEND_LENGTH	44
