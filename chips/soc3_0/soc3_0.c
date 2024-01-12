@@ -2773,6 +2773,8 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		if (kalIsResetting()) {
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 			g_eWfRstSource = WF_RST_SOURCE_DRIVER;
+			if (!prAdapter->prGlueInfo->u4ReadyFlag)
+				g_IsNeedWaitCoredump = TRUE;
 #endif
 			DBGLOG(HAL, ERROR,
 				"Wi-Fi Driver trigger, need do complete(0x%x).\n",
