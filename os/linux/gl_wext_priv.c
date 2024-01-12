@@ -1843,6 +1843,10 @@ __priv_set_struct(IN struct net_device *prNetDev,
 				status = -EFAULT;
 				break;
 			}
+			if (strlen(aucOidBuf) <= 0) {
+				status = -EFAULT;
+				break;
+			}
 			pCommand = kalMemAlloc(u4CmdLen + 1, VIR_MEM_TYPE);
 			if (pCommand == NULL) {
 				DBGLOG(REQ, INFO, "alloc fail\n");
