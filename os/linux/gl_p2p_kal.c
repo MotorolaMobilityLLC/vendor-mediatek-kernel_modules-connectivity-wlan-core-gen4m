@@ -1573,6 +1573,10 @@ kalP2PGOStationUpdate(IN struct GLUE_INFO *prGlueInfo,
 		if (fgIsNew) {
 			struct station_info rStationInfo;
 
+			if (prCliStaRec->fgIsConnected == TRUE)
+				break;
+			prCliStaRec->fgIsConnected = TRUE;
+
 			kalMemZero(&rStationInfo, sizeof(rStationInfo));
 
 #if KERNEL_VERSION(4, 0, 0) > CFG80211_VERSION_CODE
@@ -1595,6 +1599,9 @@ kalP2PGOStationUpdate(IN struct GLUE_INFO *prGlueInfo,
 			 *    check GLUE_FLAG_HALT is the temporarily solution.
 			 */
 			if ((prGlueInfo->ulFlag & GLUE_FLAG_HALT) == 0) {
+				if (prCliStaRec->fgIsConnected == FALSE)
+					break;
+				prCliStaRec->fgIsConnected = FALSE;
 				cfg80211_del_sta(prP2pGlueInfo->aprRoleHandler,
 					/* struct net_device * dev, */
 					prCliStaRec->aucMacAddr, GFP_KERNEL);
