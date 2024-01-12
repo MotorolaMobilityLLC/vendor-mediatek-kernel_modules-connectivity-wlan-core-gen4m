@@ -623,6 +623,13 @@ u_int8_t halTxIsDataBufEnough(IN struct ADAPTER *prAdapter,
 		u2Port,
 		(TX_RING_SIZE - prTxRing->u4UsedCnt),
 		prHifInfo->u4TxDataQLen);
+	kalTraceEvent("Low T[%u]Ring%d[%u]L[%u] id=0x%04x sn=%d",
+		halGetMsduTokenFreeCnt(prAdapter),
+		u2Port,
+		(TX_RING_SIZE - prTxRing->u4UsedCnt),
+		prHifInfo->u4TxDataQLen,
+		GLUE_GET_PKT_IP_ID(prMsduInfo->prPacket),
+		GLUE_GET_PKT_SEQ_NO(prMsduInfo->prPacket));
 	return FALSE;
 }
 
