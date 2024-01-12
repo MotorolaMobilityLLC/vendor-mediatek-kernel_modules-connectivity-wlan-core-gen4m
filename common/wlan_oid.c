@@ -16410,3 +16410,39 @@ wlanoidExternalAuthDone(IN struct ADAPTER *prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+uint32_t
+wlanoidIndicateBssInfo(IN struct ADAPTER *prAdapter,
+			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct BSS_DESC **pprBssDesc = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint8_t i = 0;
+
+	DEBUGFUNC("wlanoidIndicateBssInfo");
+
+	ASSERT(prAdapter);
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	pprBssDesc = &prAdapter->rWifiVar.rScanInfo.rSchedScanParam.
+		     aprPendingBssDescToInd[0];
+
+	for (; i < SCN_SSID_MATCH_MAX_NUM; i++) {
+		if (pprBssDesc[i] == NULL)
+			break;
+		if (pprBssDesc[i]->u2RawLength == 0)
+			continue;
+		kalIndicateBssInfo(prGlueInfo,
+				   (uint8_t *) pprBssDesc[i]->aucRawBuf,
+				   pprBssDesc[i]->u2RawLength,
+				   pprBssDesc[i]->ucChannelNum,
+				   RCPI_TO_dBm(pprBssDesc[i]->ucRCPI));
+	}
+	DBGLOG(SCN, INFO, "pending %d sched scan results\n", i);
+	if (i > 0)
+		kalMemZero(&pprBssDesc[0], i * sizeof(struct BSS_DESC *));
+
+	return rStatus;
+}	/* wlanoidIndicateBssInfo */
