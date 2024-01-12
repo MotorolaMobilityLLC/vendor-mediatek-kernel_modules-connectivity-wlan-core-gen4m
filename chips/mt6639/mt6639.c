@@ -16,6 +16,7 @@
 #include "mt6639.h"
 #include "coda/mt6639/wf_wfdma_ext_wrap_csr.h"
 #include "coda/mt6639/wf_wfdma_host_dma0.h"
+#include "coda/mt6639/wf_wfdma_mcu_dma0.h"
 #include "coda/mt6639/wf_pse_top.h"
 #include "coda/mt6639/pcie_mac_ireg.h"
 #include "coda/mt6639/conn_mcu_bus_cr.h"
@@ -214,6 +215,16 @@ struct wfdma_group_info mt6639_wfmda_host_rx_group[] = {
 	{"P0R7:AP TDONE0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_CTRL0_ADDR},
 };
 
+struct wfdma_group_info mt6639_wfmda_wm_tx_group[] = {
+	{"P0T6:LMAC TXD", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING6_CTRL0_ADDR},
+};
+
+struct wfdma_group_info mt6639_wfmda_wm_rx_group[] = {
+	{"P0R0:FWDL", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING0_CTRL0_ADDR},
+	{"P0R2:TXD0", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING2_CTRL0_ADDR},
+	{"P0R3:TXD1", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING3_CTRL0_ADDR},
+};
+
 struct pse_group_info mt6639_pse_group[] = {
 	{"HIF0(TX data)", WF_PSE_TOP_PG_HIF0_GROUP_ADDR,
 		WF_PSE_TOP_HIF0_PG_INFO_ADDR},
@@ -334,10 +345,10 @@ struct BUS_INFO mt6639_bus_info = {
 	.wfmda_host_tx_group_len = ARRAY_SIZE(mt6639_wfmda_host_tx_group),
 	.wfmda_host_rx_group = mt6639_wfmda_host_rx_group,
 	.wfmda_host_rx_group_len = ARRAY_SIZE(mt6639_wfmda_host_rx_group),
-	.wfmda_wm_tx_group = NULL,
-	.wfmda_wm_tx_group_len = 0,
-	.wfmda_wm_rx_group = NULL,
-	.wfmda_wm_rx_group_len = 0,
+	.wfmda_wm_tx_group = mt6639_wfmda_wm_tx_group,
+	.wfmda_wm_tx_group_len = ARRAY_SIZE(mt6639_wfmda_wm_tx_group),
+	.wfmda_wm_rx_group = mt6639_wfmda_wm_rx_group,
+	.wfmda_wm_rx_group_len = ARRAY_SIZE(mt6639_wfmda_wm_rx_group),
 	.prDmashdlCfg = &rMt6639DmashdlCfg,
 	.prPleTopCr = &rMt6639PleTopCr,
 	.prPseTopCr = &rMt6639PseTopCr,
