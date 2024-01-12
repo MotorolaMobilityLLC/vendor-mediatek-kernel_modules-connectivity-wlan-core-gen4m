@@ -520,6 +520,9 @@ ccflags-y += -DCFG_P2P_NUM=3
 ifeq ($(WLAN_CONNAC3_DEV), yes)
 ccflags-y += -DCFG_STA_NUM=3
 endif
+ifneq ($(CONFIG_MTK_FPGA_PLATFORM), y)
+    CONFIG_SUPPORT_PRE_ON_PHY_ACTION=y
+endif
 endif
 
 ifneq ($(filter MT6655,$(MTK_COMBO_CHIP)),)

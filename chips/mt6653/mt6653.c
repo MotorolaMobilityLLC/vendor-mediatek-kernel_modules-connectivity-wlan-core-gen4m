@@ -261,10 +261,13 @@ struct PCIE_CHIP_CR_MAPPING mt6653_bus2chip_cr_mapping[] = {
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
 	{0x7c010000, 0x100000, 0x10000}, /* CONN_INFRA */
+	{0x7c030000, 0x1b0000, 0x10000}, /* CONN_INFRA_CCIF */
+#if (CFG_MTK_FPGA_PLATFORM == 0)
 	{0x70010000, 0x1c0000, 0x10000},
-	{0x70020000, 0x1f0000, 0x10000}, /* Reserved for CBTOP, can't switch */
-	{0x7c500000, MT6653_PCIE2AP_REMAP_BASE_ADDR, 0x200000}, /* remap */
 	{0x70000000, 0x1e0000, 0x9000},
+	{0x70020000, 0x1f0000, 0x10000}, /* Reserved for CBTOP, can't switch */
+#endif
+	{0x7c500000, MT6653_PCIE2AP_REMAP_BASE_ADDR, 0x200000}, /* remap */
 	{0x0, 0x0, 0x0} /* End */
 };
 #endif
@@ -689,6 +692,7 @@ struct ATE_OPS_T mt6653_AteOps = {
 #endif /* CFG_SUPPORT_QA_TOOL */
 
 #if defined(_HIF_PCIE)
+#if (CFG_MTK_FPGA_PLATFORM == 0)
 static struct CCIF_OPS mt6653_ccif_ops = {
 	.get_interrupt_status = mt6653_ccif_get_interrupt_status,
 	.notify_utc_time_to_fw = mt6653_ccif_notify_utc_time_to_fw,
@@ -696,7 +700,7 @@ static struct CCIF_OPS mt6653_ccif_ops = {
 	.get_fw_log_read_pointer = mt6653_ccif_get_fw_log_read_pointer,
 	.trigger_fw_assert = mt6653_ccif_trigger_fw_assert,
 };
-
+#endif
 #if CFG_MTK_WIFI_FW_LOG_MMIO
 static struct FW_LOG_OPS mt6653_fw_log_mmio_ops = {
 	.init = fwLogMmioInitMcu,
@@ -842,7 +846,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 #endif
 		.path = ENUM_LOG_READ_POINTER_PATH_CCIF,
 	},
+#if (CFG_MTK_FPGA_PLATFORM == 0)
 	.ccif_ops = &mt6653_ccif_ops,
+#endif
 	.get_sw_interrupt_status = mt6653_get_sw_interrupt_status,
 #else
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
@@ -1921,9 +1927,11 @@ static void mt6653SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 		   CONNAC3X_CONN_CFG_ON_CONN_ON_EMI_ADDR,
 		   ((uint32_t)base >> 16));
 
+#if (CFG_MTK_FPGA_PLATFORM == 0)
 	HAL_MCR_WR(prAdapter,
 		   MT6653_EMI_SIZE_ADDR,
 		   size);
+#endif
 }
 
 static u_int8_t mt6653_get_sw_interrupt_status(struct ADAPTER *prAdapter,
@@ -2279,11 +2287,7 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 		goto exit;
 	}
 
-	rStatus = mt6653_mcu_reinit(ad);
-	if (rStatus != WLAN_STATUS_SUCCESS)
-		goto dump;
-
-#if (CFG_MTK_ANDROID_WMT == 0)
+#if (CFG_MTK_ANDROID_WMT == 0) && (CFG_MTK_FPGA_PLATFORM == 0)
 	rStatus = mt6653_mcu_reset(ad);
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		goto dump;
