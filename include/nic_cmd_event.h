@@ -3728,43 +3728,6 @@ void nicCmdEventSetStopSchedScan(IN struct ADAPTER
 				 *prAdapter, IN struct CMD_INFO *prCmdInfo,
 				 IN uint8_t *pucEventBuf);
 
-/* Statistics responder */
-void nicCmdEventQueryXmitOk(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-
-void nicCmdEventQueryRecvOk(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-
-void nicCmdEventQueryXmitError(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-
-void nicCmdEventQueryRecvError(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-
-void nicCmdEventQueryRecvNoBuffer(IN struct ADAPTER
-				  *prAdapter, IN struct CMD_INFO *prCmdInfo,
-				  IN uint8_t *pucEventBuf);
-
-void nicCmdEventQueryRecvCrcError(IN struct ADAPTER
-				  *prAdapter, IN struct CMD_INFO *prCmdInfo,
-				  IN uint8_t *pucEventBuf);
-
-void nicCmdEventQueryRecvErrorAlignment(IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo,
-	IN uint8_t *pucEventBuf);
-
-void nicCmdEventQueryXmitOneCollision(IN struct ADAPTER
-				      *prAdapter, IN struct CMD_INFO *prCmdInfo,
-				      IN uint8_t *pucEventBuf);
-
-void nicCmdEventQueryXmitMoreCollisions(IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo,
-	IN uint8_t *pucEventBuf);
-
-void nicCmdEventQueryXmitMaxCollisions(IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo,
-	IN uint8_t *pucEventBuf);
-
 /* for timeout check */
 void nicOidCmdTimeoutCommon(IN struct ADAPTER *prAdapter,
 			    IN struct CMD_INFO *prCmdInfo);
