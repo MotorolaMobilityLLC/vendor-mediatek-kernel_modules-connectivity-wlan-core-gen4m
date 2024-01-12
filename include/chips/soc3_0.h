@@ -129,6 +129,8 @@
 #define WF_CONN_INFA_BUS_CLOCK_RATE 0x1000123C
 
 #define WFSYS_CPUPCR_ADDR (CONNAC2x_CONN_CFG_ON_BASE + 0x0204)
+#define WFSYS_LP_ADDR (CONNAC2x_CONN_CFG_ON_BASE + 0x0208)
+
 /*******************************************************************************
 *                         D A T A   T Y P E S
 ********************************************************************************
@@ -247,7 +249,7 @@ int soc3_0_Trigger_whole_chip_rst(char *reason);
 void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter);
 void soc3_0_Conninfra_cb_register(void);
 #endif
-
+void soc3_0_DumpWfsysdebugflag(void);
 #if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
 void soc3_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,

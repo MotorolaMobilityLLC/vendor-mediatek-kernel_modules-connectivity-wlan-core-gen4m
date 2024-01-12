@@ -862,16 +862,18 @@ uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
 #endif
 void soc3_0_DumpWfsysCpupcr(struct ADAPTER *prAdapter)
 {
-	uint32_t i = 0, u4Value = 0;
+	uint32_t i = 0, u4Value = 0, u4Value_2 = 0;
 
 	for (i = 0; i < 5; i++) {
 		HAL_MCR_RD(prAdapter, WFSYS_CPUPCR_ADDR, &u4Value);
+		HAL_MCR_RD(prAdapter, WFSYS_LP_ADDR, &u4Value_2);
 		DBGLOG(HAL, INFO,
-			"MCU programming Counter info (no sync): 0x%08x = 0x%08x\n",
-			WFSYS_CPUPCR_ADDR, u4Value);
+			"MCU PC: 0x%08x, MCU LP: 0x%08x\n", u4Value, u4Value_2);
+
 	}
 
 }
+
 int wf_ioremap_read(size_t addr, unsigned int *val)
 {
 	void *vir_addr = NULL;
@@ -905,7 +907,53 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val)
 	return 0;
 }
 
+void soc3_0_DumpWfsysdebugflag(void)
+{
+	uint32_t i = 0, u4Value = 0;
+	uint32_t RegValue = 0x000F0001;
 
+	for (i = 0; i < 15; i++) {
+		wf_ioremap_write(0x18060128, RegValue);
+		wf_ioremap_read(0x18060148, &u4Value);
+		DBGLOG(HAL, INFO,
+			"Bus hang dump: 0x18060148 = 0x%08x after 0x%08x\n",
+			u4Value, RegValue);
+		RegValue -= 0x10000;
+	}
+	RegValue = 0x00030002;
+	for (i = 0; i < 3; i++) {
+		wf_ioremap_write(0x18060128, RegValue);
+		wf_ioremap_read(0x18060148, &u4Value);
+		DBGLOG(HAL, INFO,
+			"Bus hang dump: 0x18060148 = 0x%08x after 0x%08x\n",
+			u4Value, RegValue);
+		RegValue -= 0x10000;
+	}
+		RegValue = 0x00040003;
+	for (i = 0; i < 4; i++) {
+		wf_ioremap_write(0x18060128, RegValue);
+		wf_ioremap_read(0x18060148, &u4Value);
+		DBGLOG(HAL, INFO,
+			"Bus hang dump: 0x18060148 = 0x%08x after 0x%08x\n",
+			u4Value, RegValue);
+		RegValue -= 0x10000;
+	}
+
+}
+
+void soc3_0_DumpWfsysInfo(void)
+{
+	int value;
+	int value_2;
+	int i;
+
+	for (i = 0; i < 5; i++) {
+		wf_ioremap_read(0x18060204, &value);
+		wf_ioremap_read(0x18060208, &value_2);
+		DBGLOG(HAL, INFO,
+			"MCU PC: 0x%08x, MCU LP: 0x%08x\n", value, value_2);
+	}
+}
 int soc3_0_Trigger_fw_assert(void)
 {
 	int ret = 0;
@@ -914,6 +962,8 @@ int soc3_0_Trigger_fw_assert(void)
 
 	g_IsConninfraBusHang = conninfra_is_bus_hang();
 	if (g_IsConninfraBusHang) {
+		soc3_0_DumpWfsysInfo();
+		soc3_0_DumpWfsysdebugflag();
 		glSetRstReasonString("conninfra bus hang");
 		soc3_0_Trigger_whole_chip_rst(g_reason);
 		return ret;
@@ -934,6 +984,8 @@ int soc3_0_Trigger_fw_assert(void)
 		/* Case 2: timeout */
 			DBGLOG(INIT, ERROR,
 				"Trigger assert more than 2 seconds, need to trigger rst self\n");
+			soc3_0_DumpWfsysInfo();
+			soc3_0_DumpWfsysdebugflag();
 			kalSetRstEvent();
 		}
 	}
@@ -1183,7 +1235,7 @@ int wf_pwr_off_consys_mcu(void)
 	int check;
 	int value;
 	int ret = 0;
-	unsigned int polling_count;
+	int polling_count;
 
 	DBGLOG(INIT, INFO, "wmmcu power-off start.\n");
 	/* Wakeup conn_infra off write 0x180601A4[0] = 1'b1 */
@@ -1271,7 +1323,8 @@ int wf_pwr_off_consys_mcu(void)
 		DBGLOG(INIT, ERROR,
 			"Polling WFSYS TO CONNINFRA SLEEP PROTECT fail. (0x%x)\n",
 			value);
-		return ret;
+		soc3_0_DumpWfsysInfo();
+		soc3_0_DumpWfsysdebugflag();
 	}
 	/* Turn off "wf_dma to conn_infra" bus sleep protect
 	 * 0x18001624[0] = 1'b1
@@ -1306,7 +1359,8 @@ int wf_pwr_off_consys_mcu(void)
 		DBGLOG(INIT, ERROR,
 			"Polling WFDMA TO CONNINFRA SLEEP PROTECT RDY fail. (0x%x)\n",
 			value);
-		return ret;
+		soc3_0_DumpWfsysInfo();
+		soc3_0_DumpWfsysdebugflag();
 	}
 
 	/* Turn off wfsys_top_on
