@@ -1115,8 +1115,12 @@ struct CMD_SCAN_REQ_V2 {
 	struct PARAM_SSID    arSSIDExtend[6];
 	uint8_t          aucBSSID[MAC_ADDR_LEN];
 	uint8_t          aucRandomMac[MAC_ADDR_LEN];
-	uint8_t          aucExtBSSID[MAC_ADDR_LEN*4];
-	uint8_t          aucPadding_3[40];
+	uint8_t          aucExtBSSID[CFG_SCAN_SSID_MAX_NUM][MAC_ADDR_LEN];
+	uint8_t          ucShortSSIDNum;
+	uint8_t		 ucBssidMatchCh[CFG_SCAN_SSID_MAX_NUM];
+	uint8_t		 ucBssidMatchSsidInd[CFG_SCAN_SSID_MAX_NUM];
+	uint8_t          aucPadding_3[31];
+
 };
 
 /* TLV for CMD_ID_SCAN_REQ_V2*/

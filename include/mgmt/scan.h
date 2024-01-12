@@ -186,7 +186,7 @@
 
 #define SCN_CTRL_DEFAULT_SCAN_CTRL		SCN_CTRL_IGNORE_AIS_FIX_CHANNEL
 
-#define SCN_SCAN_DONE_PRINT_BUFFER_LENGTH	300
+#define SCN_SCAN_DONE_PRINT_BUFFER_LENGTH	350
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -490,6 +490,7 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 	/* Specified SSID Type */
 	uint8_t ucSSIDType;
 	uint8_t ucSSIDNum;
+	uint8_t ucShortSSIDNum;
 
 	/* Length of Specified SSID */
 	uint8_t ucSpecifiedSSIDLen[SCN_SSID_MAX_NUM];
@@ -529,6 +530,10 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 
 	/* Feedback information */
 	uint8_t ucSeqNum;
+
+	/* For 6G OOB discovery*/
+	uint8_t ucBssidMatchCh[CFG_SCAN_SSID_MAX_NUM];
+	uint8_t ucBssidMatchSsidInd[CFG_SCAN_SSID_MAX_NUM];
 
 	/* Information Element */
 	uint16_t u2IELen;
@@ -663,8 +668,13 @@ struct MSG_SCN_SCAN_REQ_V2 {
 	struct RF_CHANNEL_INFO arChnlInfoList[MAXIMUM_OPERATION_CHANNEL_LIST];
 	uint8_t ucScnFuncMask;
 	uint8_t aucRandomMac[MAC_ADDR_LEN];	/* random mac */
-	/* pass from PARAM_SCAN_REQUEST_ADV.aucBssid*/
+
+	/* pass from PARAM_SCAN_REQUEST_ADV.aucBssid */
 	uint8_t aucExtBssid[CFG_SCAN_SSID_MAX_NUM][MAC_ADDR_LEN];
+	uint8_t ucShortSSIDNum;
+	/* For 6G OOB discovery*/
+	uint8_t ucBssidMatchCh[CFG_SCAN_SSID_MAX_NUM];
+	uint8_t ucBssidMatchSsidInd[CFG_SCAN_SSID_MAX_NUM];
 	uint16_t u2IELen;
 	uint8_t aucIE[MAX_IE_LENGTH];
 };
@@ -712,6 +722,15 @@ struct AGPS_AP_LIST {
 	struct AGPS_AP_INFO arApInfo[SCN_AGPS_AP_LIST_MAX_NUM];
 };
 #endif
+
+#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1 && CFG_SUPPORT_WIFI_6G == 1)
+struct NEIGHBOR_AP_INFO {
+	struct LINK_ENTRY rLinkEntry;
+	struct PARAM_SCAN_REQUEST_ADV rScanRequest;
+	uint8_t aucScanIEBuf[MAX_IE_LENGTH];
+};
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

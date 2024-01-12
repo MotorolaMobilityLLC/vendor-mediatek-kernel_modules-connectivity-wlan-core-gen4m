@@ -1472,6 +1472,8 @@
 #define CFG_SUPPORT_SMART_GEAR 0
 #endif
 
+#define CFG_SUPPORT_WIFI_6G_OOB_RNR  0
+
 /*------------------------------------------------------------------------------
  * Flag used for AIS persistent netdev creating.
  * Value 0: Create & register AIS netdev for each wifi on,
