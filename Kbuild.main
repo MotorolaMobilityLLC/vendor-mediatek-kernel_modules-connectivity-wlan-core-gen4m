@@ -720,6 +720,12 @@ ifneq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
 endif
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_SUPPORT_UPSTREAM_TOOL), y)
+    ccflags-y += -DCFG_SUPPORT_UPSTREAM_TOOL=1
+else
+    ccflags-y += -DCFG_SUPPORT_UPSTREAM_TOOL=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_802_11AX=1
 else
@@ -1414,6 +1420,12 @@ else
     ccflags-y += -DCFG_SUPPORT_FW_IDX_LOG_TRANS=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_FW_IDX_LOG_SAVE), y)
+    ccflags-y += -DCFG_SUPPORT_FW_IDX_LOG_SAVE=1
+else
+    ccflags-y += -DCFG_SUPPORT_FW_IDX_LOG_SAVE=0
+endif
+
 ccflags-y += -DDBG=0
 ccflags-y += -I$(KO_CODE_PATH)/os -I$(KO_CODE_PATH)/os/$(os)/include
 ccflags-y += -I$(KO_CODE_PATH)/include -I$(KO_CODE_PATH)/include/nic -I$(KO_CODE_PATH)/include/mgmt -I$(KO_CODE_PATH)/include/chips
@@ -1665,6 +1677,9 @@ OS_OBJS := 	$(OS_DIR)gl_init.o \
     endif
     ifeq ($(CONFIG_WIFI_COREDUMP_SUPPORT), y)
         OS_OBJS += $(OS_DIR)gl_coredump.o
+    endif
+    ifeq ($(CONFIG_SUPPORT_FW_IDX_LOG_SAVE), y)
+        OS_OBJS += $(OS_DIR)gl_fw_dev.o
     endif
 endif
 

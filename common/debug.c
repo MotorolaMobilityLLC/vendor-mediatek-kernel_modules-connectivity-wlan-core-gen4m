@@ -5,7 +5,6 @@
 
 #include "precomp.h"
 
-
 #if (CFG_SUPPORT_STATISTICS == 1)
 
 #define WAKE_MAX_CMD_EVENT_NUM		20
@@ -804,7 +803,62 @@ firmwareHexDump(const uint8_t *pucPreFix,
 #undef KBUILD_MODNAME
 #define KBUILD_MODNAME OLD_KBUILD_MODNAME
 }
+#if (CFG_SUPPORT_CONNAC3X == 1 && CFG_SUPPORT_UPSTREAM_TOOL == 1)
+static void PrintSuportUpstreamTool(uint8_t *pucLogContent, uint16_t u2MsgSize)
+{
+#define OLD_KBUILD_MODNAME KBUILD_MODNAME
+#define OLD_LOG_FUNC LOG_FUNC
+#undef KBUILD_MODNAME
+#undef LOG_FUNC
+#define KBUILD_MODNAME "wlan_mt6632_fw"
+#define LOG_FUNC pr_info
+	struct IDX_LOG_V2_FORMAT *prIdxHeader;
+	struct TEXT_LOG_FORMAT *prTextLog;
+	uint8_t *prLogStr;
+	uint32_t *prArg;
+	int32_t i;
+	uint8_t buf[512] = {0};
 
+	prIdxHeader = (struct IDX_LOG_V2_FORMAT *)pucLogContent;
+	prArg = (uint32_t *)(pucLogContent + sizeof(struct IDX_LOG_V2_FORMAT));
+	if (prIdxHeader->ucVerType == VER_TYPE_IDX_LOG_V2) {
+		for (i = 0;
+		    i < (u2MsgSize - sizeof(struct IDX_LOG_V2_FORMAT)) / 4;
+		    i++) {
+			if (i)
+				kalSnprintf(buf, sizeof(buf), "%s,0x%X", buf,
+					LE32_TO_CPU(prArg[i]));
+			else
+				kalSnprintf(buf, sizeof(buf), "0x%X",
+					LE32_TO_CPU(prArg[i]));
+		}
+		kalWiphy_info(gprWdev[0]->wiphy, "idx: 0x%08X,%ld,%s\n",
+			LE32_TO_CPU(prIdxHeader->u4IdxId),
+			(u2MsgSize - sizeof(struct IDX_LOG_V2_FORMAT)) / 4,
+			buf);
+	} else if (prIdxHeader->ucVerType == VER_TYPE_TXT_LOG) {
+		prTextLog = (struct TEXT_LOG_FORMAT *)pucLogContent;
+
+		prLogStr = (uint8_t *)pucLogContent +
+				      sizeof(struct TEXT_LOG_FORMAT);
+
+		/* Expect the rx text log last byte is '0x0a' */
+		prLogStr[prTextLog->ucPayloadSize_wo_padding-1] = '\0';
+		kalWiphy_info(gprWdev[0]->wiphy, "%.*s",
+			prTextLog->ucPayloadSize_wo_padding,
+			prLogStr);
+	} else {
+		LOG_FUNC("Not supported type!! type=0x%x\n",
+			prIdxHeader->ucVerType);
+	}
+#undef KBUILD_MODNAME
+#undef LOG_FUNC
+#define KBUILD_MODNAME OLD_KBUILD_MODNAME
+#define LOG_FUNC OLD_LOG_FUNC
+#undef OLD_KBUILD_MODNAME
+#undef OLD_LOG_FUNC
+}
+#endif
 void wlanPrintFwLog(uint8_t *pucLogContent,
 		    uint16_t u2MsgSize, uint8_t ucMsgType,
 		    const uint8_t *pucFmt, ...)
@@ -823,9 +877,12 @@ void wlanPrintFwLog(uint8_t *pucLogContent,
 
 	if (u2MsgSize > DEBUG_MSG_SIZE_MAX - 1) {
 		LOG_FUNC("Firmware Log Size(%d) is too large, type %d\n",
-			 u2MsgSize, ucMsgType);
+			u2MsgSize, ucMsgType);
 		return;
 	}
+#if (CFG_SUPPORT_CONNAC3X == 1 && CFG_SUPPORT_UPSTREAM_TOOL == 1)
+	PrintSuportUpstreamTool(pucLogContent, u2MsgSize);
+#endif
 	switch (ucMsgType) {
 	case DEBUG_MSG_TYPE_ASCII: {
 		uint8_t *pucChr;

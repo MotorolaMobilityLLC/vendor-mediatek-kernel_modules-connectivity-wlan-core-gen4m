@@ -2073,6 +2073,12 @@ u_int8_t kalIsChFlagMatch(uint32_t uFlags, enum CHAN_FLAGS matchFlag);
 
 #define kalIcsWrite(buf, size) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define kalIndexWrite(buf, size) \
+
+#if (CFG_SUPPORT_CONNAC3X == 1 && CFG_SUPPORT_UPSTREAM_TOOL == 1)
+#define kalWiphy_info(wiphy, format, ...) \
+
+#endif
 
 #if CFG_SUPPORT_DATA_STALL
 #define KAL_REPORT_ERROR_EVENT(_prAdapter, \

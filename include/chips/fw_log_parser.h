@@ -9,6 +9,10 @@
 #ifndef _IDX_LOG_H
 #define _IDX_LOG_H
 
+#define VER_TYPE_IDX_LOG_V2	0
+#define VER_TYPE_CTRL		1
+#define VER_TYPE_TXT_LOG	2
+
 struct FW_LOG_IDX_DATA {
 	/* FW Log Info Bin Data */
 	void *prFwBuffer;

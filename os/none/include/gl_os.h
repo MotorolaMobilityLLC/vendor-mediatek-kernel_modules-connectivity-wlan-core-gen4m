@@ -969,6 +969,9 @@ void *wlanGetNetDev(struct GLUE_INFO *prGlueInfo,
  *			 E X T E R N A L   F U N C T I O N S / V A R I A B L E
  *******************************************************************************
  */
+#if (CFG_SUPPORT_CONNAC3X == 1 && CFG_SUPPORT_UPSTREAM_TOOL == 1)
+extern struct wireless_dev *gprWdev[KAL_AIS_NUM];
+#endif
 extern uint32_t g_u4DevIdx[KAL_P2P_NUM];
 extern enum ENUM_NVRAM_STATE g_NvramFsm;
 
@@ -1059,7 +1062,6 @@ extern void connectivity_arch_setup_dma_ops(
 #endif
 
 #define wlanHardStartXmit(_prSkb, _prDev)
-
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(arr) \
 	(sizeof(arr) / sizeof((arr)[0]))
