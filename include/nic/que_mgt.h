@@ -1129,11 +1129,11 @@ void qmDelRxBaEntry(struct ADAPTER *prAdapter,
 u_int8_t qmIsIndependentPkt(struct SW_RFB *prSwRfb);
 
 void mqmProcessAssocRsp(struct ADAPTER *prAdapter,
-			struct SW_RFB *prSwRfb, uint8_t *pucIE,
+			struct SW_RFB *prSwRfb, const uint8_t *pucIE,
 			uint16_t u2IELength);
 
 void mqmProcessBcn(struct ADAPTER *prAdapter,
-		   struct SW_RFB *prSwRfb, uint8_t *pucIE,
+		   struct SW_RFB *prSwRfb, const uint8_t *pucIE,
 		   uint16_t u2IELength);
 
 #if (CFG_SUPPORT_802_11AX == 1)
@@ -1145,16 +1145,14 @@ u_int8_t
 mqmParseMUEdcaParams(
 	struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb,
-	u_int8_t *pucIE,
-	u_int16_t u2IELength,
+	const uint8_t *pucIE,
+	uint16_t u2IELength,
 	u_int8_t fgForceOverride);
 #endif
 
-u_int8_t
-mqmParseEdcaParameters(struct ADAPTER *prAdapter,
-		       struct SW_RFB *prSwRfb, uint8_t *pucIE,
-		       uint16_t u2IELength,
-		       u_int8_t fgForceOverride);
+u_int8_t mqmParseEdcaParameters(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb, const uint8_t *pucIE,
+		uint16_t u2IELength, u_int8_t fgForceOverride);
 
 u_int8_t mqmCompareEdcaParameters(struct IE_WMM_PARAM
 				  *prIeWmmParam, struct BSS_INFO *prBssInfo);

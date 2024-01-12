@@ -157,17 +157,17 @@ uint8_t heRlmPeerMaxBwCap(
 void heRlmRecHeCapInfo(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
-	u_int8_t *pucIE);
+	const uint8_t *pucIE);
 void heRlmRecHeOperation(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
-	u_int8_t *pucIE);
+	const uint8_t *pucIE);
 u_int8_t heRlmRecHeSRParams(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
 	struct SW_RFB *prSwRfb,
-	u_int8_t *pucIE,
-	u_int16_t u2IELength);
+	const uint8_t *pucIE,
+	uint16_t u2IELength);
 void heRlmInitHeHtcACtrlOMAndUPH(
 	struct ADAPTER *prAdapter);
 void heRlmParseHeHtcACtrlOM(
@@ -209,7 +209,7 @@ void heRlmReqGenerateHe6gBandCapIE(
 void heRlmRecBTWTparams(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
-	uint8_t *pucIE);
+	const uint8_t *pucIE);
 #endif
 
 void heRlmRspGenerateBssMaxIdleIE(

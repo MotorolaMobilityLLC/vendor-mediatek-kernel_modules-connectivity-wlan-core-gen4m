@@ -82,12 +82,12 @@ void ehtRlmRspGenerateOpIEImpl(
 void ehtRlmRecCapInfo(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
-	u_int8_t *pucIE);
+	const uint8_t *pucIE);
 void ehtRlmRecOperation(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
 	struct BSS_INFO *prBssInfo,
-	u_int8_t *pucIE);
+	const uint8_t *pucIE);
 uint8_t ehtRlmGetVhtOpBwByEhtOpBw(
 	struct EHT_OP_INFO *op);
 void ehtRlmInit(

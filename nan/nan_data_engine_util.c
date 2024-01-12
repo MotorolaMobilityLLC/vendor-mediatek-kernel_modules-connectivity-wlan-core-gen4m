@@ -3678,7 +3678,7 @@ nanDataEngineSetupStaRec(struct ADAPTER *prAdapter,
 	uint8_t ucVhtCapMcsOwnNotSupportOffset;
 #endif
 #if (CFG_SUPPORT_802_11AX == 1)
-	uint8_t *prHeCap;
+	const uint8_t *prHeCap;
 #endif
 	struct WIFI_VAR *prWifiVar;
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *)NULL;

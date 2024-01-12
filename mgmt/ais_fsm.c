@@ -5032,7 +5032,7 @@ void aisUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 	struct WLAN_ASSOC_RSP_FRAME *prAssocRspFrame;
 	struct BSS_DESC *prBssDesc;
 	uint16_t u2IELength;
-	uint8_t *pucIE;
+	const uint8_t *pucIE;
 	uint8_t ucBssIndex = 0;
 	uint16_t u2RxAssocId;
 

@@ -1368,7 +1368,7 @@ void heRlmRecHe6GCapInfo(
 void heRlmRecHeCapInfo(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
-	uint8_t *pucIE)
+	const uint8_t *pucIE)
 {
 	uint32_t u4Offset;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
@@ -1442,10 +1442,8 @@ void heRlmRecHeCapInfo(
 		heRlmRecHePPEThresholds(prAdapter, prStaRec, prHeCap, u4Offset);
 }
 
-void heRlmRecHeOperation(
-	struct ADAPTER *prAdapter,
-	struct BSS_INFO *prBssInfo,
-	uint8_t *pucIE)
+void heRlmRecHeOperation(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
+	const uint8_t *pucIE)
 {
 	struct _IE_HE_OP_T *prHeOp = (struct _IE_HE_OP_T *) pucIE;
 	uint8_t ucBssHeOpParams[2];
@@ -1520,7 +1518,7 @@ void heRlmRecHeOperation(
 
 uint8_t heRlmUpdateSRParams(
 	struct BSS_INFO *prBssInfo,
-	uint8_t *pucIE)
+	const uint8_t *pucIE)
 {
 	struct _IE_SR_PARAM_T *prSRParam = (struct _IE_SR_PARAM_T *) pucIE;
 	uint32_t u4IEOffset;
@@ -1588,12 +1586,11 @@ uint8_t heRlmUpdateSRParams(
 	return fgIsNew;
 }
 
-uint8_t
-heRlmRecHeSRParams(
+uint8_t heRlmRecHeSRParams(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
 	struct SW_RFB *prSwRfb,
-	uint8_t *pucIE,
+	const uint8_t *pucIE,
 	uint16_t u2IELength)
 {
 	uint16_t u2Offset;
@@ -1998,15 +1995,13 @@ void heRlmProcessSMPSAction(
 #endif
 
 #if (CFG_SUPPORT_BTWT == 1)
-void heRlmRecBTWTparams(
-	struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStaRec,
-	uint8_t *pucIE)
+void heRlmRecBTWTparams(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
+	const uint8_t *pucIE)
 {
 	uint32_t u4Offset;
 	struct _IE_BTWT_T *prBTWTIE = (struct _IE_BTWT_T *) pucIE;
-	uint8_t *pucBTWT_PARAMS_HEAD = NULL;
-	uint8_t *pucBTWT_PARAMS = NULL;
+	const uint8_t *pucBTWT_PARAMS_HEAD = NULL;
+	const uint8_t *pucBTWT_PARAMS = NULL;
 	struct _TWT_PARAMS_T  *prTWT_PARAMS = NULL;
 	uint8_t ucBtwtId = 0;
 	uint64_t u8TargetWakeTime = 0;

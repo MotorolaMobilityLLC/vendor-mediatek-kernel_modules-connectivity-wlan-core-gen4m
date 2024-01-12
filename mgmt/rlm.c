@@ -82,8 +82,8 @@ static void rlmFillHtOpIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 			  struct MSDU_INFO *prMsduInfo);
 
 static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
-				     struct BSS_INFO *prBssInfo, uint8_t *pucIE,
-				     uint16_t u2IELength);
+				     struct BSS_INFO *prBssInfo,
+				     const uint8_t *pucIE, uint16_t u2IELength);
 
 static u_int8_t rlmRecBcnFromNeighborForClient(struct ADAPTER *prAdapter,
 					       struct BSS_INFO *prBssInfo,
@@ -776,7 +776,7 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
  *             false: incorrect MTK OUI
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t rlmParseCheckMTKOuiIE(struct ADAPTER *prAdapter, uint8_t *pucBuf,
+u_int8_t rlmParseCheckMTKOuiIE(struct ADAPTER *prAdapter, const uint8_t *pucBuf,
 			      struct STA_RECORD *prStaRec)
 {
 	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
@@ -840,8 +840,8 @@ u_int8_t rlmParseCheckMTKOuiIE(struct ADAPTER *prAdapter, uint8_t *pucBuf,
  *             false: incorrect MTK OUI
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t rlmParseCheckRxsmmOuiIE(struct ADAPTER *prAdapter, uint8_t *pucBuf,
-			       u_int8_t *pfgRxsmmEnable)
+u_int8_t rlmParseCheckRxsmmOuiIE(struct ADAPTER *prAdapter,
+		const uint8_t *pucBuf, u_int8_t *pfgRxsmmEnable)
 {
 	uint8_t u1RxsmmListIdx = 0;
 	struct IE_MTK_OUI *prMtkOuiIE = (struct IE_MTK_OUI *)NULL;
@@ -2509,15 +2509,12 @@ void rlmFillVhtOpInfoByBssOpBw(struct BSS_INFO *prBssInfo, uint8_t ucBssOpBw)
 	prBssInfo->ucVhtChannelFrequencyS2 = 0;
 }
 
-void rlmParseMtkOui(
-	struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStaRec,
-	struct BSS_INFO *prBssInfo,
-	uint8_t *pucIE)
+void rlmParseMtkOui(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
+	struct BSS_INFO *prBssInfo, const uint8_t *pucIE)
 {
 	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
 	uint8_t *aucCapa = MTK_OUI_IE(pucIE)->aucCapability;
-	uint8_t *ie, *sub;
+	const uint8_t *ie, *sub;
 	uint16_t ie_len, ie_offset, sub_len, sub_offset;
 
 	if (kalMemCmp(MTK_OUI_IE(pucIE)->aucOui,
@@ -2583,8 +2580,8 @@ void rlmParseMtkOui(
  */
 /*----------------------------------------------------------------------------*/
 static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
-				     struct BSS_INFO *prBssInfo, uint8_t *pucIE,
-				     uint16_t u2IELength)
+				     struct BSS_INFO *prBssInfo,
+				     const uint8_t *pucIE, uint16_t u2IELength)
 {
 	uint16_t u2Offset;
 	struct STA_RECORD *prStaRec;
@@ -2633,7 +2630,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	struct IE_SECONDARY_OFFSET *prSecondaryOffsetIE;
 	struct IE_WIDE_BAND_CHANNEL *prWideBandChannelIE;
 #endif
-	uint8_t *pucDumpIE;
+	const uint8_t *pucDumpIE;
 	uint8_t fgDomainValid = FALSE;
 	enum ENUM_CHANNEL_WIDTH eChannelWidth = CW_20_40MHZ;
 	uint8_t ucHtOpChannelFrequencyS3 = 0;
@@ -2645,7 +2642,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_BTWT == 1)
 	uint8_t fgBtwtIeFound = FALSE;
 #endif
-	uint8_t *pucIEOpmode = NULL;
+	const uint8_t *pucIEOpmode = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -3784,8 +3781,8 @@ static void rlmRecOpModeBwForClient(uint8_t ucVhtOpModeChannelWidth,
  */
 /*----------------------------------------------------------------------------*/
 static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
-					   struct BSS_INFO *prBssInfo,
-					   uint8_t *pucIE, uint16_t u2IELength)
+		struct BSS_INFO *prBssInfo, const uint8_t *pucIE,
+		uint16_t u2IELength)
 {
 	uint16_t u2Offset;
 	struct STA_RECORD *prStaRec;
@@ -4389,7 +4386,7 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
  */
 /*----------------------------------------------------------------------------*/
 void rlmProcessAssocRsp(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
-			uint8_t *pucIE, uint16_t u2IELength)
+			const uint8_t *pucIE, uint16_t u2IELength)
 {
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;

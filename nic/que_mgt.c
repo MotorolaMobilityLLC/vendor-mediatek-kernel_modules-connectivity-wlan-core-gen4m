@@ -5996,7 +5996,7 @@ void mqmProcessAssocReq(struct ADAPTER *prAdapter,
 	}
 }
 
-void mqmParseAssocRspWmmIe(uint8_t *pucIE,
+void mqmParseAssocRspWmmIe(const uint8_t *pucIE,
 	struct STA_RECORD *prStaRec)
 {
 	uint8_t aucWfaOui[] = VENDOR_OUI_WFA;
@@ -6053,12 +6053,12 @@ void mqmParseAssocRspWmmIe(uint8_t *pucIE,
  */
 /*----------------------------------------------------------------------------*/
 void mqmProcessAssocRsp(struct ADAPTER *prAdapter,
-	struct SW_RFB *prSwRfb, uint8_t *pucIE,
+	struct SW_RFB *prSwRfb, const uint8_t *pucIE,
 	uint16_t u2IELength)
 {
 	struct STA_RECORD *prStaRec;
 	uint16_t u2Offset;
-	uint8_t *pucIEStart;
+	const uint8_t *pucIEStart;
 #if CFG_SUPPORT_RXSMM_WHITELIST
 	uint8_t  fgRxsmmEnable = FALSE;
 #endif
@@ -6182,7 +6182,7 @@ void mqmProcessAssocRsp(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void mqmProcessBcn(struct ADAPTER *prAdapter,
-	struct SW_RFB *prSwRfb, uint8_t *pucIE,
+	struct SW_RFB *prSwRfb, const uint8_t *pucIE,
 	uint16_t u2IELength)
 {
 	struct BSS_INFO *prBssInfo;
@@ -6249,8 +6249,8 @@ void mqmProcessBcn(struct ADAPTER *prAdapter,
 }
 
 
-u_int8_t mqmUpdateEdcaParameters(struct BSS_INFO	*prBssInfo,
-	uint8_t *pucIE, u_int8_t fgForceOverride)
+u_int8_t mqmUpdateEdcaParameters(struct BSS_INFO *prBssInfo,
+	const uint8_t *pucIE, u_int8_t fgForceOverride)
 {
 	struct AC_QUE_PARMS *prAcQueParams;
 	struct IE_WMM_PARAM *prIeWmmParam;
@@ -6342,7 +6342,7 @@ uint8_t mqmCompareMUEdcaParameters(
 }
 
 uint8_t mqmUpdateMUEdcaParams(struct BSS_INFO *prBssInfo,
-	uint8_t *pucIE, uint8_t fgForceOverride)
+	const uint8_t *pucIE, uint8_t fgForceOverride)
 {
 	struct _CMD_MU_EDCA_PARAMS_T *prBSSMUEdca;
 	struct _IE_MU_EDCA_PARAM_T *prIeMUEdcaParam;
@@ -6404,13 +6404,9 @@ uint8_t mqmUpdateMUEdcaParams(struct BSS_INFO *prBssInfo,
 	return fgNewParameter;
 }
 
-uint8_t
-mqmParseMUEdcaParams(
-	struct ADAPTER *prAdapter,
-	struct SW_RFB *prSwRfb,
-	uint8_t *pucIE,
-	uint16_t u2IELength,
-	uint8_t fgForceOverride)
+uint8_t mqmParseMUEdcaParams(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
+		const uint8_t *pucIE, uint16_t u2IELength,
+		uint8_t fgForceOverride)
 {
 	struct STA_RECORD *prStaRec;
 	uint16_t u2Offset;
@@ -6473,7 +6469,7 @@ mqmParseMUEdcaParams(
 /*----------------------------------------------------------------------------*/
 u_int8_t
 mqmParseEdcaParameters(struct ADAPTER *prAdapter,
-	struct SW_RFB *prSwRfb, uint8_t *pucIE,
+	struct SW_RFB *prSwRfb, const uint8_t *pucIE,
 	uint16_t u2IELength, u_int8_t fgForceOverride)
 {
 	struct STA_RECORD *prStaRec;

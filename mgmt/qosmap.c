@@ -218,7 +218,7 @@ int qosHandleQosMapConfigure(struct ADAPTER *prAdapter,
  * Copy received QoS Map request frame to cached structure in struct QOS_MAP.
  */
 static void updateCachedQosMap(struct STA_RECORD *prStaRec, uint8_t ucDscpExNum,
-		uint8_t *dscp_exception, uint8_t *dscp_range)
+		const uint8_t *dscp_exception, const uint8_t *dscp_range)
 {
 	prStaRec->rQosMap.ucDscpExNum = ucDscpExNum;
 	kalMemCopy(&prStaRec->rQosMap.arDscpException, dscp_exception,
@@ -228,8 +228,8 @@ static void updateCachedQosMap(struct STA_RECORD *prStaRec, uint8_t ucDscpExNum,
 }
 
 static void qosBuildQosMapTable(struct STA_RECORD *prStaRec,
-	uint8_t *dscp_exception,
-	uint8_t *dscp_range)
+	const uint8_t *dscp_exception,
+	const uint8_t *dscp_range)
 {
 #if QOS_MAP_LEGACY_DSCP_TABLE
 	uint8_t *qosmapping = prStaRec->qosMapTable;
@@ -273,10 +273,10 @@ static void qosBuildQosMapTable(struct STA_RECORD *prStaRec,
 }
 
 void qosParseQosMapSet(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
-			uint8_t *qosMapSet)
+			const uint8_t *qosMapSet)
 {
-	uint8_t *dscp_exception = qosMapSet + 2;
-	uint8_t *dscp_range = qosMapSet + 2 + IE_LEN(qosMapSet)
+	const uint8_t *dscp_exception = qosMapSet + 2;
+	const uint8_t *dscp_range = qosMapSet + 2 + IE_LEN(qosMapSet)
 				- WMM_UP_INDEX_NUM * 2;
 	uint8_t ie_len;
 
