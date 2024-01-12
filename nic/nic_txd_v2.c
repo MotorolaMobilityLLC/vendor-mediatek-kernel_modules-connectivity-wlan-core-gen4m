@@ -241,6 +241,72 @@ void nic_txd_v2_fill_by_pkt_option(
 
 }
 
+static u_int8_t needUpdateTargetQueueWithWmmSet(struct MSDU_INFO *prMsduInfo,
+						uint8_t ucTarPort)
+{
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	/* Note for SDIO resource ctrl
+	 * There are cases for TargetQ update
+	 * 1. ResV1 + TC <= TC4 : WmmSet may greater than 0, go to update
+	 * 2. ResV2 + TC <= TC4 : WmmSet always 0
+	 * 3. ResV2 + TC >  TC4 : TargetQ prepared in nicTxGetTxDestQIdxByTc()
+	 */
+	return (ucTarPort == PORT_INDEX_LMAC && prMsduInfo->ucTC <= TC4_INDEX);
+#else
+	return (ucTarPort == PORT_INDEX_LMAC);
+#endif
+}
+
+static uint8_t  nicConnac2TxGetTxDestQueue(struct ADAPTER *prAdapter,
+					   struct MSDU_INFO *prMsduInfo,
+					   struct BSS_INFO *prBssInfo)
+{
+	uint8_t ucTarPort;
+	uint8_t ucTarQueue;
+	uint8_t ucWmmQueSet = 0;
+	uint8_t ucControlFlag = prMsduInfo->ucControlFlag;
+
+	if (likely(prBssInfo))
+		ucWmmQueSet = prBssInfo->ucWmmQueSet;
+	else
+		DBGLOG(TX, ERROR, "prBssInfo is NULL\n");
+
+	ucTarPort = nicTxGetTxDestPortIdxByTc(prMsduInfo->ucTC);
+	ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
+
+	if (ucTarPort == PORT_INDEX_MCU) {
+		ucTarQueue = MCU_Q0_INDEX;
+		/**
+		 * Unlike Connac3, which accept 17 for always TX.
+		 * Connac2 only handle 16 (MAC_TXQ_ALTX_0_INDEX) for always TX.
+		 */
+		if (ucControlFlag & MSDU_CONTROL_FLAG_FORCE_TX)
+			ucTarQueue |= MAC_TXQ_ALTX_0_INDEX;
+	} else { /* ucTarPort == PORT_INDEX_LMAC */
+		if (needUpdateTargetQueueWithWmmSet(prMsduInfo, ucTarPort))
+			ucTarQueue += ucWmmQueSet * WMM_AC_INDEX_NUM;
+	}
+
+#if (CFG_SUPPORT_DMASHDL_SYSDVT)
+	if (prMsduInfo->ucPktType == ENUM_PKT_ICMP) {
+		/* send packets to specific mapping queue for DMASHDL DVT */
+		if (DMASHDL_DVT_QUEUE_MAPPING_TYPE1(prAdapter)) {
+			ucTarQueue = DMASHDL_DVT_GET_MAPPING_QID(prAdapter);
+			prMsduInfo->ucTarQueue = ucTarQueue;
+			DMASHDL_DVT_SET_MAPPING_QID(prAdapter,
+				(ucTarQueue + 1) % MAC_TXQ_AC33_INDEX);
+		} else if (DMASHDL_DVT_QUEUE_MAPPING_TYPE2(prAdapter)) {
+			ucTarQueue = DMASHDL_DVT_GET_MAPPING_QID(prAdapter);
+			prMsduInfo->ucTarQueue = ucTarQueue;
+			DMASHDL_DVT_SET_MAPPING_QID(prAdapter,
+				(ucTarQueue + 1) % MAC_TXQ_AC2_INDEX);
+		}
+	}
+#endif
+
+	return ucTarQueue;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
 * @brief In this function, we'll compose the Tx descriptor of the MSDU.
@@ -252,19 +318,16 @@ void nic_txd_v2_fill_by_pkt_option(
 * @retval VOID
 */
 /*----------------------------------------------------------------------------*/
-void nic_txd_v2_compose(
-	struct ADAPTER *prAdapter,
-	struct MSDU_INFO *prMsduInfo,
-	u_int32_t u4TxDescLength,
-	u_int8_t fgIsTemplate,
-	u_int8_t *prTxDescBuffer)
+void nic_txd_v2_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
+			u_int32_t u4TxDescLength, u_int8_t fgIsTemplate,
+			u_int8_t *prTxDescBuffer)
 {
 	struct HW_MAC_CONNAC2X_TX_DESC *prTxDesc;
 	struct STA_RECORD *prStaRec;
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucEtherTypeOffsetInWord;
 	u_int32_t u4TxDescAndPaddingLength;
-	uint8_t ucWmmQueSet = 0, ucTarQueue, ucTarPort;
+	uint8_t ucTarQueue;
 #if ((CFG_SISO_SW_DEVELOP == 1) || (CFG_SUPPORT_SPE_IDX_CONTROL == 1))
 	enum ENUM_WF_PATH_FAVOR_T eWfPathFavor;
 #endif
@@ -298,58 +361,8 @@ void nic_txd_v2_compose(
 	HAL_MAC_CONNAC2X_TXD_SET_ETHER_TYPE_OFFSET(prTxDesc,
 		ucEtherTypeOffsetInWord);
 
-	ucTarPort = nicTxGetTxDestPortIdxByTc(prMsduInfo->ucTC);
-#if (CFG_SUPPORT_FORCE_ALTX == 1)
-	if (ucTarPort == PORT_INDEX_MCU &&
-		prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_FORCE_TX) {
-		/* To MCU packet with always tx flag */
-		ucTarQueue = MAC_TXQ_ALTX_0_INDEX;
-	} else
-#endif
-	{
-		if (prBssInfo)
-			ucWmmQueSet = prBssInfo->ucWmmQueSet;
-		else
-			DBGLOG(TX, ERROR, "prBssInfo is NULL\n");
-
-		ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
-#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
-/* Note for SDIO resource ctrl
-* There are cases for TargetQ update
-* 1. ResV1 + TC <= TC4 : WmmSet may greater than 0, go to update
-* 2. ResV2 + TC <= TC4 : WmmSet always 0
-* 3. ResV2 + TC >	TC4 : TargetQ prepared in nicTxGetTxDestQIdxByTc()
-*/
-		if ((ucTarPort == PORT_INDEX_LMAC) &&
-			(prMsduInfo->ucTC <= TC4_INDEX))
-#else
-		if (ucTarPort == PORT_INDEX_LMAC)
-#endif
-		{
-			if (prBssInfo) {
-				ucTarQueue +=
-				  (prBssInfo->ucWmmQueSet * WMM_AC_INDEX_NUM);
-			}
-		}
-	}
-
-#if (CFG_SUPPORT_DMASHDL_SYSDVT)
-	if (prMsduInfo->ucPktType == ENUM_PKT_ICMP) {
-		/* send packets to specific mapping queue for DMASHDL DVT */
-		if (DMASHDL_DVT_QUEUE_MAPPING_TYPE1(prAdapter)) {
-			ucTarQueue = DMASHDL_DVT_GET_MAPPING_QID(prAdapter);
-			prMsduInfo->ucTarQueue = ucTarQueue;
-			DMASHDL_DVT_SET_MAPPING_QID(prAdapter,
-				(ucTarQueue + 1) % MAC_TXQ_AC33_INDEX);
-		} else if (DMASHDL_DVT_QUEUE_MAPPING_TYPE2(prAdapter)) {
-			ucTarQueue = DMASHDL_DVT_GET_MAPPING_QID(prAdapter);
-			prMsduInfo->ucTarQueue = ucTarQueue;
-			DMASHDL_DVT_SET_MAPPING_QID(prAdapter,
-				(ucTarQueue + 1) % MAC_TXQ_AC2_INDEX);
-		}
-	}
-#endif
-
+	ucTarQueue = nicConnac2TxGetTxDestQueue(prAdapter, prMsduInfo,
+						prBssInfo);
 	HAL_MAC_CONNAC2X_TXD_SET_QUEUE_INDEX(prTxDesc, ucTarQueue);
 
 	/* BMC packet */
