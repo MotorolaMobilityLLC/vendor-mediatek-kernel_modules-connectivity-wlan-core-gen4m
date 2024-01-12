@@ -195,6 +195,7 @@ struct GNU_PACKED hqa_rx_stat_band_info {
 	u_int32 aci_hit_low;
 	u_int32 aci_hit_high;
 #endif
+	u_int32 phy_rx_pd_alr;
 };
 
 struct GNU_PACKED hqa_rx_stat_path_info {

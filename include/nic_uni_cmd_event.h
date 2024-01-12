@@ -6492,9 +6492,10 @@ struct UNI_TESTMODE_STATINFO_BAND_EXT1 {
 
 	/* Common part*/
 	uint8_t u1BandIdx;
+	uint8_t u1Reserved;
 
 	/* phy part */
-	uint8_t u1Reserved[3];
+	uint16_t u2PhyRxPdAlr;
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__

@@ -2387,7 +2387,7 @@ static s_int32 hqa_get_rx_statistics_all(
 	u_int8 band_info_ver = 0, path_info_ver = 0,
 		user_info_ver = 0, comm_info_ver = 0;
 #else
-	u_int8 band_info_ver = 1, path_info_ver = 1,
+	u_int8 band_info_ver = 2, path_info_ver = 1,
 		user_info_ver = 0, comm_info_ver = 1;
 #endif
 	struct hqa_rx_stat_resp_format st_form[SERV_RX_STAT_TYPE_NUM] = {

@@ -299,7 +299,8 @@ struct TESTMODE_RX_STAT_BAND_EXT1 {
 	uint32_t u4RxU2MMpduCnt;
 
 	/* phy part */
-	uint32_t u4Reserved[4];
+	uint32_t u4PhyRxPdAlr;
+	uint32_t u4Reserved[3];
 };
 
 struct TESTMODE_RX_STAT_COMM_EXT1 {
