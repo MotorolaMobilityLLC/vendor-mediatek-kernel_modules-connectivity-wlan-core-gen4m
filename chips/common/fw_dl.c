@@ -2270,24 +2270,14 @@ uint32_t wlanReadRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 		uint32_t *pu4ManifestSize, uint32_t u4BufferMaxSize)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
-	uint32_t u4FwVerOffsetAddr = 0;
 	uint32_t u4FwVerOffset = 0;
 	uint32_t u4CopySize = 0;
 
 	*pu4ManifestSize = 0;
 	kalMemZero(pucManifestBuffer, u4BufferMaxSize);
 
-	u4FwVerOffsetAddr = kalGetFwVerOffsetAddr();
-	if (u4FwVerOffsetAddr == 0)
-		return WLAN_STATUS_NOT_ACCEPTED;
-
+	u4FwVerOffset = kalGetFwVerOffset();
 	glGetChipInfo((void **)&prChipInfo);
-	if (emi_mem_read(prChipInfo, u4FwVerOffsetAddr, &u4FwVerOffset,
-		sizeof(u4FwVerOffset))) {
-		DBGLOG(INIT, WARN, "emi_mem_read %x failed.\n",
-			u4FwVerOffsetAddr);
-		return WLAN_STATUS_FAILURE;
-	}
 
 	if (u4FwVerOffset) {
 		u4CopySize = (u4BufferMaxSize < FW_VERSION_MAX_LEN) ?

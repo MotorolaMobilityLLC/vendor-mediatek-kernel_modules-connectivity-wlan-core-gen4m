@@ -116,6 +116,16 @@ $(info $$WLAN_CHIP_ID is [${WLAN_CHIP_ID}])
 $(info $$MTK_COMBO_CHIP is [${MTK_COMBO_CHIP}])
 $(info $$WLAN_CONNAC3_DEV is [${WLAN_CONNAC3_DEV}])
 
+include $(CFG_DIR)/defconfig
+ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/defconfig),)
+    include $(CFG_DIR)/${MTK_COMBO_CHIP}/defconfig
+endif
+
+
+ifneq ($(CONFIG_MTK_EMI_LEGACY),)
+ccflags-y += -DCONFIG_WLAN_MTK_EMI=1
+endif
+
 ifneq ($(CONFIG_MTK_EMI),)
 ccflags-y += -DCONFIG_WLAN_MTK_EMI=1
 endif
