@@ -22,8 +22,7 @@ else
 	EXTRA_SYMBOLS += $(MODULE_PWD)/../adaptor/wlan_page_pool/Module.symvers
 	EXTRA_SYMBOLS += $(MODULE_PWD)/../connfem/Module.symvers
 endif
-
+MODULE_PWD=../vendor/mediatek/kernel_modules/connectivity/wlan/core/gen4m
 $(info gen4m depends on following symbols:[${EXTRA_SYMBOLS}])
-
 modules modules_install clean:
-	$(MAKE) -C $(KERNEL_DIR) M=$(MODULE_PWD) $(KBUILD_OPTIONS) EXTRA_CFLAGS="$(EXTRA_CFLAGS)" KBUILD_EXTRA_SYMBOLS="$(EXTRA_SYMBOLS)" CONNAC_VER=$(_CONNAC_VER) SEGMENT=$(SEGMENT) $(@)
+	$(MAKE) -C $(KERNEL_DIR) M=$(MODULE_PWD) $(KBUILD_OPTIONS) EXTRA_CFLAGS="$(EXTRA_CFLAGS)" KBUILD_EXTRA_SYMBOLS="$(EXTRA_SYMBOLS)" MODULE_NAME=$(_MODULE_NAME) SEGMENT=$(SEGMENT) $(@)
