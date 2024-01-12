@@ -389,6 +389,11 @@ CONFIG_NSS=4
 CONFIG_BAND_NUM=3
 CONFIG_SUPPORT_FORCE_ALTX=y
 CONFIG_MTK_WIFI_TRX_DIRECT=y
+ifeq ($(MTK_ANDROID_WMT), y)
+    ifeq ($(WLAN_CONNAC3_DEV), yes)
+        CONFIG_MTK_PCIE_PROBE_SUPPORT=y
+    endif
+endif
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 endif
@@ -404,6 +409,9 @@ CONFIG_MTK_WIFI_CONNFEM_SUPPORT=y
 endif
 ifneq ($(TARGET_BUILD_VARIANT),user)
     CONFIG_MTK_WIFI_NAN=n
+endif
+ifeq ($(MTK_ANDROID_WMT), y)
+    #CONFIG_MTK_PCIE_PROBE_SUPPORT=y
 endif
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
@@ -784,6 +792,9 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
     ccflags-y += -D_HIF_PCIE=1
     ifeq ($(CONFIG_MTK_WIFI_PCIE_MSI_SUPPORT), y)
         ccflags-y += -DCFG_MTK_WIFI_PCIE_MSI_SUPPORT=1
+    endif
+    ifeq ($(CONFIG_MTK_PCIE_PROBE_SUPPORT), y)
+        ccflags-y += -DCFG_MTK_PCIE_PROBE_SUPPORT
     endif
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
     ccflags-y += -D_HIF_USB=1

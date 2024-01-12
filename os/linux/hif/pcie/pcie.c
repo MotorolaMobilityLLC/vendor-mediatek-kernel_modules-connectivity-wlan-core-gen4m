@@ -2256,23 +2256,44 @@ static void axiDumpRx(struct GL_HIF_INFO *prHifInfo,
 
 int32_t glBusFunOn(void)
 {
-	int ret = pci_register_driver(&mtk_pci_driver);
+	int ret = 0;
 
-	if (ret)
+#if IS_ENABLED(CFG_MTK_PCIE_PROBE_SUPPORT)
+	/*
+	 * Due to connsys chip may be powered on before platform is powered on,
+	 * need to remove pcie port first to ensure no resource is occupied.
+	 */
+	mtk_pcie_remove_port(0);
+	ret = mtk_pcie_probe_port(0);
+	if (ret) {
+		DBGLOG(HAL, ERROR, "mtk_pcie_probe_port failed, ret=%d\n",
+			ret);
 		return ret;
+	}
+#endif
 
-	if (g_prDev == NULL) {
-		pci_unregister_driver(&mtk_pci_driver);
-		return -EINVAL;
+	ret = pci_register_driver(&mtk_pci_driver);
+	if (ret) {
+		DBGLOG(HAL, ERROR, "pci_register_driver failed, ret=%d\n",
+			ret);
+		return ret;
 	}
 
-	return 0;
+	if (g_fgDriverProbed == FALSE) {
+		pci_unregister_driver(&mtk_pci_driver);
+		ret = -EINVAL;
+	}
+
+	return ret;
 }
 
 void glBusFunOff(void)
 {
 	pci_unregister_driver(&mtk_pci_driver);
 	g_fgDriverProbed = FALSE;
+#if IS_ENABLED(CFG_MTK_PCIE_PROBE_SUPPORT)
+	mtk_pcie_remove_port(0);
+#endif
 }
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
