@@ -2219,10 +2219,18 @@ VOID nicCmdEventQueryStaStatistics(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prC
 			prStaStatistics->ucRateEntryIdxPrev = prEvent->ucRateEntryIdxPrev;
 			prStaStatistics->ucTxSgiDetectPassCnt = prEvent->ucTxSgiDetectPassCnt;
 			prStaStatistics->ucAvePer = prEvent->ucAvePer;
+#if (CFG_SUPPORT_RA_GEN == 0)
 			kalMemCopy(prStaStatistics->aucArRatePer, prEvent->aucArRatePer,
 				sizeof(prEvent->aucArRatePer));
 			kalMemCopy(prStaStatistics->aucRateEntryIndex, prEvent->aucRateEntryIndex,
 				sizeof(prEvent->aucRateEntryIndex));
+#else
+			prStaStatistics->u4AggRangeCtrl_0 = prEvent->u4AggRangeCtrl_0;
+			prStaStatistics->u4AggRangeCtrl_1 = prEvent->u4AggRangeCtrl_1;
+			prStaStatistics->ucRangeType = prEvent->ucRangeType;
+			kalMemCopy(prStaStatistics->aucReserved5, prEvent->aucReserved5,
+				sizeof(prEvent->aucReserved5));
+#endif
 			prStaStatistics->ucArStateCurr = prEvent->ucArStateCurr;
 			prStaStatistics->ucArStatePrev = prEvent->ucArStatePrev;
 			prStaStatistics->ucArActionType = prEvent->ucArActionType;
@@ -2236,7 +2244,10 @@ VOID nicCmdEventQueryStaStatistics(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prC
 				sizeof(prEvent->rMibInfo));
 			prStaStatistics->fgIsForceTxStream = prEvent->fgIsForceTxStream;
 			prStaStatistics->fgIsForceSeOff = prEvent->fgIsForceSeOff;
-
+#if (CFG_SUPPORT_RA_GEN == 0)
+			kalMemCopy(prStaStatistics->aucReserved6, prEvent->aucReserved6,
+				sizeof(prEvent->aucReserved6));
+#else
 			prStaStatistics->u2RaRunningCnt = prEvent->u2RaRunningCnt;
 			prStaStatistics->ucRaStatus = prEvent->ucRaStatus;
 			prStaStatistics->ucFlag = prEvent->ucFlag;
@@ -2251,7 +2262,7 @@ VOID nicCmdEventQueryStaStatistics(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prC
 			prStaStatistics->ucDynamicBWState = prEvent->ucDynamicBWState;
 			prStaStatistics->ucDynamicGband256QAMState = prEvent->ucDynamicGband256QAMState;
 			prStaStatistics->ucVhtNonSpRateState = prEvent->ucVhtNonSpRateState;
-
+#endif
 			prStaRec = cnmGetStaRecByIndex(prAdapter, prEvent->ucStaRecIdx);
 
 			if (prStaRec) {
