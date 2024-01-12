@@ -152,7 +152,7 @@ mtk_cfg80211_change_iface(struct wiphy *wiphy,
 			   wlanoidSetInfrastructureMode, &eOpMode, sizeof(eOpMode), FALSE, FALSE, TRUE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
-		DBGLOG(REQ, WARN, "set infrastructure mode error:%lx\n", rStatus);
+		DBGLOG(REQ, WARN, "set infrastructure mode error:%x\n", rStatus);
 
 	/* reset wpa info */
 	prGlueInfo->rWpaInfo.u4WpaVersion = IW_AUTH_WPA_VERSION_DISABLED;
@@ -364,7 +364,7 @@ int mtk_cfg80211_del_key(struct wiphy *wiphy, struct net_device *ndev, u8 key_in
 			   wlanoidSetRemoveKey, &rRemoveKey, rRemoveKey.u4Length, FALSE, FALSE, TRUE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
-		DBGLOG(RSN, WARN, "remove key error:%lx\n", rStatus);
+		DBGLOG(RSN, WARN, "remove key error:%x\n", rStatus);
 	else
 		i4Rslt = 0;
 
@@ -826,7 +826,7 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		prGlueInfo->prScanRequest = NULL;
-		DBGLOG(REQ, WARN, "scan error:%lx\n", rStatus);
+		DBGLOG(REQ, WARN, "scan error:%x\n", rStatus);
 		return -EINVAL;
 	}
 
@@ -901,7 +901,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 			   wlanoidSetInfrastructureMode, &eOpMode, sizeof(eOpMode), FALSE, FALSE, TRUE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, INFO, "wlanoidSetInfrastructureMode fail 0x%lx\n", rStatus);
+		DBGLOG(INIT, INFO, "wlanoidSetInfrastructureMode fail 0x%x\n", rStatus);
 		return -EFAULT;
 	}
 
@@ -1078,7 +1078,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 				   wlanoidSetWapiAssocInfo, pucIEStart, sme->ie_len, FALSE, FALSE, FALSE, &u4BufLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
-			DBGLOG(SEC, WARN, "[wapi] set wapi assoc info error:%lx\n", rStatus);
+			DBGLOG(SEC, WARN, "[wapi] set wapi assoc info error:%x\n", rStatus);
 #endif
 #if CFG_SUPPORT_WPS2
 		if (wextSrchDesiredWPSIE(pucIEStart, sme->ie_len, 0xDD, (uint8_t **) &prDesiredIE)) {
@@ -1089,7 +1089,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 					   wlanoidSetWSCAssocInfo,
 					   prDesiredIE, IE_SIZE(prDesiredIE), FALSE, FALSE, FALSE, &u4BufLen);
 			if (rStatus != WLAN_STATUS_SUCCESS)
-				DBGLOG(SEC, WARN, "[WSC] set WSC assoc info error:%lx\n", rStatus);
+				DBGLOG(SEC, WARN, "[WSC] set WSC assoc info error:%x\n", rStatus);
 		}
 #endif
 #if CFG_SUPPORT_PASSPOINT
@@ -1099,7 +1099,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 					   prDesiredIE, IE_SIZE(prDesiredIE), FALSE, FALSE, TRUE, &u4BufLen);
 #if 0
 			if (rStatus != WLAN_STATUS_SUCCESS)
-				DBGLOG(INIT, INFO, "[HS20] set HS20 assoc info error:%lx\n", rStatus);
+				DBGLOG(INIT, INFO, "[HS20] set HS20 assoc info error:%x\n", rStatus);
 #endif
 		}
 		if (wextSrchDesiredInterworkingIE(pucIEStart, sme->ie_len, (uint8_t **) &prDesiredIE)) {
@@ -1108,7 +1108,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 					   prDesiredIE, IE_SIZE(prDesiredIE), FALSE, FALSE, TRUE, &u4BufLen);
 #if 0
 			if (rStatus != WLAN_STATUS_SUCCESS)
-				DBGLOG(INIT, INFO, "[HS20] set Interworking assoc info error:%lx\n", rStatus);
+				DBGLOG(INIT, INFO, "[HS20] set Interworking assoc info error:%x\n", rStatus);
 #endif
 		}
 		if (wextSrchDesiredRoamingConsortiumIE(pucIEStart, sme->ie_len, (uint8_t **) &prDesiredIE)) {
@@ -1117,7 +1117,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 					   prDesiredIE, IE_SIZE(prDesiredIE), FALSE, FALSE, TRUE, &u4BufLen);
 #if 0
 			if (rStatus != WLAN_STATUS_SUCCESS)
-				DBGLOG(INIT, INFO, "[HS20] set RoamingConsortium assoc info error:%lx\n", rStatus);
+				DBGLOG(INIT, INFO, "[HS20] set RoamingConsortium assoc info error:%x\n", rStatus);
 #endif
 		}
 #endif /* CFG_SUPPORT_PASSPOINT */
@@ -1168,7 +1168,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidSetAuthMode, &eAuthMode, sizeof(eAuthMode), FALSE, FALSE, FALSE, &u4BufLen);
 	if (rStatus != WLAN_STATUS_SUCCESS)
-		DBGLOG(REQ, WARN, "set auth mode error:%lx\n", rStatus);
+		DBGLOG(REQ, WARN, "set auth mode error:%x\n", rStatus);
 
 	/* Enable the specific AKM suite only. */
 	for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++) {
@@ -1206,7 +1206,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidSetEncryptionStatus, &eEncStatus, sizeof(eEncStatus), FALSE, FALSE, FALSE, &u4BufLen);
 	if (rStatus != WLAN_STATUS_SUCCESS)
-		DBGLOG(REQ, WARN, "set encryption mode error:%lx\n", rStatus);
+		DBGLOG(REQ, WARN, "set encryption mode error:%x\n", rStatus);
 
 	if (sme->key_len != 0 && prGlueInfo->rWpaInfo.u4WpaVersion == IW_AUTH_WPA_VERSION_DISABLED) {
 		/* NL80211 only set the Tx wep key while connect, the max 4 wep key set prior via add key cmd */
@@ -1218,7 +1218,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 		prWepKey->u4KeyIndex = (uint32_t) sme->key_idx;
 		prWepKey->u4KeyIndex |= IS_TRANSMIT_KEY;
 		if (prWepKey->u4KeyLength > MAX_KEY_LEN) {
-			DBGLOG(REQ, WARN, "Too long key length (%lu)\n", prWepKey->u4KeyLength);
+			DBGLOG(REQ, WARN, "Too long key length (%u)\n", prWepKey->u4KeyLength);
 			return -EINVAL;
 		}
 		kalMemCopy(prWepKey->aucKeyMaterial, sme->key, prWepKey->u4KeyLength);
@@ -1227,7 +1227,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 				   wlanoidSetAddWep, prWepKey, prWepKey->u4Length, FALSE, FALSE, TRUE, &u4BufLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, INFO, "wlanoidSetAddWep fail 0x%lx\n", rStatus);
+			DBGLOG(INIT, INFO, "wlanoidSetAddWep fail 0x%x\n", rStatus);
 			return -EFAULT;
 		}
 	}
@@ -1258,7 +1258,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 				   (void *) sme->bssid, MAC_ADDR_LEN, FALSE, FALSE, TRUE, FALSE, &u4BufLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
-			DBGLOG(REQ, WARN, "set BSSID:%lx\n", rStatus);
+			DBGLOG(REQ, WARN, "set BSSID:%x\n", rStatus);
 			return -EINVAL;
 		}
 	} else if (sme->ssid_len > 0) {
@@ -1270,7 +1270,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy, struct net_device *ndev, struct cf
 				   (void *)&rNewSsid, sizeof(struct PARAM_SSID), FALSE, FALSE, TRUE, FALSE, &u4BufLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
-			DBGLOG(REQ, WARN, "set SSID:%lx\n", rStatus);
+			DBGLOG(REQ, WARN, "set SSID:%x\n", rStatus);
 			return -EINVAL;
 		}
 	}
@@ -1301,7 +1301,7 @@ int mtk_cfg80211_disconnect(struct wiphy *wiphy, struct net_device *ndev, u16 re
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetDisassociate, NULL, 0, FALSE, FALSE, TRUE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(REQ, WARN, "disassociate error:%lx\n", rStatus);
+		DBGLOG(REQ, WARN, "disassociate error:%x\n", rStatus);
 		return -EFAULT;
 	}
 
@@ -1346,7 +1346,7 @@ int mtk_cfg80211_join_ibss(struct wiphy *wiphy, struct net_device *ndev, struct 
 			   wlanoidSetSsid, (void *)&rNewSsid, sizeof(struct PARAM_SSID), FALSE, FALSE, TRUE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(REQ, WARN, "set SSID:%lx\n", rStatus);
+		DBGLOG(REQ, WARN, "set SSID:%x\n", rStatus);
 		return -EFAULT;
 	}
 
@@ -1377,7 +1377,7 @@ int mtk_cfg80211_leave_ibss(struct wiphy *wiphy, struct net_device *ndev)
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetDisassociate, NULL, 0, FALSE, FALSE, TRUE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(REQ, WARN, "disassociate error:%lx\n", rStatus);
+		DBGLOG(REQ, WARN, "disassociate error:%x\n", rStatus);
 		return -EFAULT;
 	}
 
@@ -1425,7 +1425,7 @@ int mtk_cfg80211_set_power_mgmt(struct wiphy *wiphy, struct net_device *ndev, bo
 			   &rPowerMode, sizeof(struct PARAM_POWER_MODE_), FALSE, FALSE, TRUE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(REQ, WARN, "set_power_mgmt error:%lx\n", rStatus);
+		DBGLOG(REQ, WARN, "set_power_mgmt error:%x\n", rStatus);
 		return -EFAULT;
 	}
 
@@ -1467,7 +1467,7 @@ int mtk_cfg80211_set_pmksa(struct wiphy *wiphy, struct net_device *ndev, struct 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetPmkid, prPmkid, sizeof(struct PARAM_PMKID), FALSE, FALSE, FALSE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
-		DBGLOG(INIT, INFO, "add pmkid error:%lx\n", rStatus);
+		DBGLOG(INIT, INFO, "add pmkid error:%x\n", rStatus);
 	kalMemFree(prPmkid, VIR_MEM_TYPE, 8 + sizeof(struct PARAM_BSSID_INFO));
 
 	return 0;
@@ -1523,7 +1523,7 @@ int mtk_cfg80211_flush_pmksa(struct wiphy *wiphy, struct net_device *ndev)
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetPmkid, prPmkid, sizeof(struct PARAM_PMKID), FALSE, FALSE, FALSE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
-		DBGLOG(INIT, INFO, "flush pmkid error:%lx\n", rStatus);
+		DBGLOG(INIT, INFO, "flush pmkid error:%x\n", rStatus);
 	kalMemFree(prPmkid, VIR_MEM_TYPE, 8);
 
 	return 0;
@@ -1556,7 +1556,7 @@ int mtk_cfg80211_set_rekey_data(struct wiphy *wiphy, struct net_device *dev, str
 	if (!prGtkData)
 		return WLAN_STATUS_SUCCESS;
 
-	DBGLOG(RSN, INFO, "cfg80211_set_rekey_data size( %d)\n", sizeof(*data));
+	DBGLOG(RSN, INFO, "cfg80211_set_rekey_data size(%d)\n", (uint32_t) sizeof(struct cfg80211_gtk_rekey_data));
 
 	DBGLOG(RSN, INFO, "kek\n");
 	DBGLOG_MEM8(PF, ERROR, (uint8_t *)data->kek, NL80211_KEK_LEN);
@@ -1606,7 +1606,7 @@ int mtk_cfg80211_set_rekey_data(struct wiphy *wiphy, struct net_device *dev, str
 			   prGtkData, sizeof(struct PARAM_GTK_REKEY_DATA), FALSE, FALSE, TRUE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
-		DBGLOG(INIT, INFO, "set GTK rekey data error:%lx\n", rStatus);
+		DBGLOG(INIT, INFO, "set GTK rekey data error:%x\n", rStatus);
 	else
 		i4Rslt = 0;
 
@@ -2105,7 +2105,7 @@ int mtk_cfg80211_testmode_set_key_ext(IN struct wiphy *wiphy, IN void *data, IN 
 				   wlanoidSetAddKey, prWpiKey, sizeof(struct PARAM_KEY), FALSE, FALSE, TRUE, &u4BufLen);
 
 		if (rstatus != WLAN_STATUS_SUCCESS) {
-			/* printk(KERN_INFO "[wapi] add key error:%lx\n", rStatus); */
+			/* printk(KERN_INFO "[wapi] add key error:%x\n", rStatus); */
 			fgIsValid = -EFAULT;
 		}
 
@@ -2142,7 +2142,7 @@ mtk_cfg80211_testmode_get_sta_statistics(IN struct wiphy *wiphy, IN void *data, 
 	skb = cfg80211_testmode_alloc_reply_skb(wiphy, sizeof(struct PARAM_GET_STA_STATISTICS) + 1);
 
 	if (!skb) {
-		DBGLOG(QM, TRACE, "%s allocate skb failed:%lx\n", __func__, rStatus);
+		DBGLOG(QM, TRACE, "%s allocate skb failed:%x\n", __func__, rStatus);
 		return -ENOMEM;
 	}
 	DBGLOG(QM, TRACE, "Get [" MACSTR "] STA statistics\n", MAC2STR(prParams->aucMacAddr));
@@ -2466,7 +2466,7 @@ mtk_cfg80211_testmode_get_link_detection(IN struct wiphy *wiphy, IN void *data, 
 			   prBugReport, sizeof(struct _EVENT_BUG_REPORT_T), TRUE, TRUE, TRUE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
-		DBGLOG(INIT, INFO, "query statistics error:%lx\n", rStatus);
+		DBGLOG(INIT, INFO, "query statistics error:%x\n", rStatus);
 
 	kalMemCopy(arBugReport, prBugReport, sizeof(struct _EVENT_BUG_REPORT_T));
 
@@ -2825,7 +2825,7 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 		VIR_MEM_TYPE, sizeof(struct PARAM_SCHED_SCAN_REQUEST));
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(REQ, WARN, "scheduled scan error:%lx\n", rStatus);
+		DBGLOG(REQ, WARN, "scheduled scan error:%x\n", rStatus);
 		return -EINVAL;
 	}
 
@@ -2906,7 +2906,7 @@ int mtk_cfg80211_assoc(struct wiphy *wiphy, struct net_device *ndev, struct cfg8
 					   prDesiredIE, IE_SIZE(prDesiredIE), FALSE, FALSE, TRUE, &u4BufLen);
 			if (rStatus != WLAN_STATUS_SUCCESS) {
 				/* DBGLOG(REQ, TRACE,
-				 *  ("[HS20] set HS20 assoc info error:%lx\n", rStatus));
+				 *  ("[HS20] set HS20 assoc info error:%x\n", rStatus));
 				 */
 			}
 		}
@@ -2917,7 +2917,7 @@ int mtk_cfg80211_assoc(struct wiphy *wiphy, struct net_device *ndev, struct cfg8
 					   prDesiredIE, IE_SIZE(prDesiredIE), FALSE, FALSE, TRUE, &u4BufLen);
 			if (rStatus != WLAN_STATUS_SUCCESS) {
 				/* DBGLOG(REQ, TRACE,
-				 *  ("[HS20] set Interworking assoc info error:%lx\n", rStatus));
+				 *  ("[HS20] set Interworking assoc info error:%x\n", rStatus));
 				 */
 			}
 		}
@@ -2928,7 +2928,7 @@ int mtk_cfg80211_assoc(struct wiphy *wiphy, struct net_device *ndev, struct cfg8
 					   prDesiredIE, IE_SIZE(prDesiredIE), FALSE, FALSE, TRUE, &u4BufLen);
 			if (rStatus != WLAN_STATUS_SUCCESS) {
 				/* DBGLOG(REQ, TRACE,
-				 *  ("[HS20] set RoamingConsortium assoc info error:%lx\n", rStatus));
+				 *  ("[HS20] set RoamingConsortium assoc info error:%x\n", rStatus));
 				 */
 			}
 		}
@@ -2939,7 +2939,7 @@ int mtk_cfg80211_assoc(struct wiphy *wiphy, struct net_device *ndev, struct cfg8
 			   wlanoidSetBssid, (void *) req->bss->bssid, MAC_ADDR_LEN, FALSE, FALSE, TRUE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(REQ, WARN, "set BSSID:%lx\n", rStatus);
+		DBGLOG(REQ, WARN, "set BSSID:%x\n", rStatus);
 		return -EINVAL;
 	}
 
@@ -2950,22 +2950,22 @@ int mtk_cfg80211_assoc(struct wiphy *wiphy, struct net_device *ndev, struct cfg8
 
 int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy *wiphy, IN void *data, IN int len, IN struct GLUE_INFO *prGlueInfo)
 {
+	int32_t i4Status = -EINVAL;
+
+#ifdef CONFIG_NL80211_TESTMODE
 #define NL80211_TESTMODE_P2P_SCANDONE_INVALID 0
 #define NL80211_TESTMODE_P2P_SCANDONE_STATUS 1
 
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	int32_t i4Status = -EINVAL, READY_TO_BEAM = 0;
+	int32_t READY_TO_BEAM = 0;
 
 	struct sk_buff *skb = NULL;
 
 	ASSERT(wiphy);
 	ASSERT(prGlueInfo);
 
-#ifdef CONFIG_NL80211_TESTMODE
 	skb = cfg80211_testmode_alloc_reply_skb(wiphy, sizeof(uint32_t));
-#else
-	DBGLOG(QM, WARN, "CONFIG_NL80211_TESTMODE not enabled\n");
-#endif
+
 	/* READY_TO_BEAM = */
 	/* (UINT_32)(prGlueInfo->prAdapter->rWifiVar.prP2pFsmInfo->rScanReqInfo.fgIsGOInitialDone) */
 	/* &(!prGlueInfo->prAdapter->rWifiVar.prP2pFsmInfo->rScanReqInfo.fgIsScanRequest); */
@@ -2976,7 +2976,7 @@ int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy *wiphy, IN void *data, I
 	/* prGlueInfo->prAdapter->rWifiVar.prP2pFsmInfo->rScanReqInfo.fgIsScanRequest)); */
 
 	if (!skb) {
-		DBGLOG(QM, TRACE, "%s allocate skb failed:%lx\n", __func__, rStatus);
+		DBGLOG(QM, TRACE, "%s allocate skb failed:%x\n", __func__, rStatus);
 		return -ENOMEM;
 	}
 	{
@@ -2984,7 +2984,7 @@ int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy *wiphy, IN void *data, I
 
 		if (unlikely(nla_put(skb, NL80211_TESTMODE_P2P_SCANDONE_INVALID, sizeof(u8), &__tmp) < 0)) {
 			kfree_skb(skb);
-			goto nla_put_failure;
+			return -EINVAL;
 		}
 	}
 	{
@@ -2992,19 +2992,15 @@ int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy *wiphy, IN void *data, I
 
 		if (unlikely(nla_put(skb, NL80211_TESTMODE_P2P_SCANDONE_STATUS, sizeof(u32), &__tmp) < 0)) {
 			kfree_skb(skb);
-			goto nla_put_failure;
+			return -EINVAL;
 		}
 	}
 
-#ifdef CONFIG_NL80211_TESTMODE
 	i4Status = cfg80211_testmode_reply(skb);
 #else
 	DBGLOG(QM, WARN, "CONFIG_NL80211_TESTMODE not enabled\n");
 #endif
-
-nla_put_failure:
 	return i4Status;
-
 }
 
 #endif
@@ -3824,7 +3820,7 @@ DOMAIN_SEND_CMD:
 
 		pRegdom = rlmDomainSearchRegdomainFromLocalDataBase(alpha2);
 		if (!pRegdom) {
-			DBGLOG(RLM, ERROR, "%s(): Error, Cannot find the correct RegDomain. country = %s\n",
+			DBGLOG(RLM, ERROR, "%s(): Error, Cannot find the correct RegDomain. country = %u\n",
 				__func__, rlmDomainGetCountryCode());
 
 			rlmDomianAssert(0);
