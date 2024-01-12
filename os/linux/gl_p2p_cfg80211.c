@@ -598,6 +598,8 @@ int mtk_p2p_cfg80211_del_iface_impl(
 	struct cfg80211_scan_request *prScanRequest = NULL;
 	uint32_t u4SetInfoLen;
 	uint32_t rStatus;
+	int32_t i4Ret = WLAN_STATUS_SUCCESS;
+	uint8_t fgDoDelIface = FALSE;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -611,6 +613,23 @@ int mtk_p2p_cfg80211_del_iface_impl(
 
 	prAdapter = prGlueInfo->prAdapter;
 	prP2pGlueDevInfo = prGlueInfo->prP2PDevInfo;
+
+	/* Both p2p and p2p net device should be in registered state */
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+	if (prAdapter->rP2PNetRegState == ENUM_NET_REG_STATE_REGISTERED &&
+		prAdapter->rP2PRegState == ENUM_P2P_REG_STATE_REGISTERED) {
+		prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_REGISTERING;
+		fgDoDelIface = TRUE;
+	}
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+
+	if (!fgDoDelIface) {
+		DBGLOG(P2P, ERROR,
+			"skip del_iface, p2p_state=%d, net_state=%d\n",
+			prAdapter->rP2PRegState,
+			prAdapter->rP2PNetRegState);
+		return -EBUSY;
+	}
 
 	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_DEL_INF);
 
@@ -635,14 +654,14 @@ int mtk_p2p_cfg80211_del_iface_impl(
 #else
 		unregister_netdevice(UnregRoleHander);
 #endif
-		KAL_RELEASE_MUTEX(prAdapter, MUTEX_DEL_INF);
-		return -EINVAL;
+		i4Ret = -EINVAL;
+		goto error;
 	}
 
 	prP2pRoleFsmInfo = prAdapter->rWifiVar.aprP2pRoleFsmInfo[u4Idx];
 	if (prP2pRoleFsmInfo == NULL) {
-		KAL_RELEASE_MUTEX(prAdapter, MUTEX_DEL_INF);
-		return -EINVAL;
+		i4Ret = -EINVAL;
+		goto error;
 	}
 
 	ucBssIdx = prP2pRoleFsmInfo->ucBssIndex;
@@ -665,7 +684,6 @@ int mtk_p2p_cfg80211_del_iface_impl(
 	}
 
 	/* Wait for kalSendCompleteAndAwakeQueue() complete */
-	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	if (p2pGetMode() == RUNNING_P2P_DEV_MODE)
 		prP2pInfo->aprRoleHandler = NULL;
 	else
@@ -702,7 +720,6 @@ int mtk_p2p_cfg80211_del_iface_impl(
 		}
 	}
 #endif
-	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	if (fgNeedUnreg) {
 		/* prepare for removal */
@@ -722,15 +739,22 @@ int mtk_p2p_cfg80211_del_iface_impl(
 	/* free is called at destructor */
 	/* free_netdev(UnregRoleHander); */
 
+error:
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_DEL_INF);
 
-	rStatus = kalIoctlByBssIdx(prGlueInfo,
-		wlanoidP2pDelIface, NULL, 0,
-		&u4SetInfoLen, u4Idx);
-	if (rStatus != WLAN_STATUS_SUCCESS)
-		DBGLOG(REQ, WARN, "Uninit error:%x\n", rStatus);
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+	prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_REGISTERED;
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-	return 0;
+	if (i4Ret == WLAN_STATUS_SUCCESS) {
+		rStatus = kalIoctlByBssIdx(prGlueInfo,
+			wlanoidP2pDelIface, NULL, 0,
+			&u4SetInfoLen, u4Idx);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(REQ, WARN, "Uninit error:%x\n", rStatus);
+	}
+
+	return i4Ret;
 }				/* mtk_p2p_cfg80211_del_iface */
 
 int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
