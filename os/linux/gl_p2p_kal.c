@@ -2143,7 +2143,8 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucSecondCh,
 		IN uint8_t ucSeg0Ch,
 		IN uint8_t ucSeg1Ch,
-		IN enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw)
+		IN enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
+		IN enum P2P_VENDOR_ACS_HW_MODE eHwMode)
 {
 	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
 	struct sk_buff *vendor_event = NULL;
@@ -2235,9 +2236,7 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 
 	if (unlikely(nla_put_u8(vendor_event,
 			WIFI_VENDOR_ATTR_ACS_HW_MODE,
-			eBand == BAND_2G4 ?
-				P2P_VENDOR_ACS_HW_MODE_11G :
-				P2P_VENDOR_ACS_HW_MODE_11A) < 0)) {
+			eHwMode) < 0)) {
 		DBGLOG(P2P, ERROR, "put hw mode fail.\n");
 		goto nla_put_failure;
 	}
