@@ -462,7 +462,7 @@
 #define CFG_RX_MIN_PKT_SIZE	10 /*!< 802.11 Control Frame is 10 bytes */
 
 /*! RX BA capability */
-#define CFG_NUM_OF_RX_BA_AGREEMENTS             8
+#define CFG_NUM_OF_RX_BA_AGREEMENTS             80
 #if CFG_M0VE_BA_TO_DRIVER
 #define CFG_RX_BA_MAX_WINSIZE                   64
 #endif
