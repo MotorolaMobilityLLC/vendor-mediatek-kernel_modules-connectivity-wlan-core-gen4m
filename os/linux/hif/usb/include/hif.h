@@ -185,6 +185,7 @@ typedef enum _ENUM_USB_END_POINT_T {
 #define VND_REQ_REG_WRITE               (0x66)
 #define VND_REQ_FEATURE_SET             (0x91)
 #define FEATURE_SET_WVALUE_RESUME       (0x5)
+#define FEATURE_SET_WVALUE_SUSPEND      (0x6)
 
 #define USB_TX_CMD_QUEUE_MASK           (BITS(2, 4))   /* For H2CDMA Tx CMD mapping */
 
@@ -304,6 +305,7 @@ typedef struct _BUS_INFO {
 	const UINT_32 u4UdmaWlCfg_1_Addr;
 	UINT_32 u4UdmaWlCfg_0;
 	UINT_32 u4UdmaTxTimeout; /* UDMA Tx time out limit, unit: us */
+	BOOLEAN (*asicUsbSuspend)(IN P_ADAPTER_T prAdapter, IN P_GLUE_INFO_T prGlueInfo);
 } BUS_INFO, *P_BUS_INFO;
 
 /* USB_REQ_T prPriv field for TxData */

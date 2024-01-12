@@ -238,6 +238,7 @@ int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 {
 	P_GLUE_INFO_T prGlueInfo = (P_GLUE_INFO_T)usb_get_intfdata(intf);
 	UINT_8 count = 0;
+	P_BUS_INFO prBusInfo = NULL;
 
 	DBGLOG(HAL, STATE, "mtk_usb_suspend()\n");
 
@@ -249,20 +250,28 @@ int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 		kalWowProcess(prGlueInfo, TRUE);
 	}
 
-	halUSBPreSuspendCmd(prGlueInfo->prAdapter);
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	if (prBusInfo->asicUsbSuspend) {
+		if (prBusInfo->asicUsbSuspend(prGlueInfo->prAdapter, prGlueInfo))
+			return 0;
+		else
+			return -1;
+	} else {
+		halUSBPreSuspendCmd(prGlueInfo->prAdapter);
 
-	while (prGlueInfo->rHifInfo.state != USB_STATE_PRE_SUSPEND_DONE) {
-		if (count > 25) {
-			DBGLOG(HAL, ERROR, "pre_suspend timeout\n");
-			break;
+		while (prGlueInfo->rHifInfo.state != USB_STATE_PRE_SUSPEND_DONE) {
+			if (count > 25) {
+				DBGLOG(HAL, ERROR, "pre_suspend timeout\n");
+				break;
+			}
+			msleep(20);
+			count++;
 		}
-		msleep(20);
-		count++;
-	}
 
-	prGlueInfo->rHifInfo.state = USB_STATE_SUSPEND;
-	halDisableInterrupt(prGlueInfo->prAdapter);
-	halTxCancelAllSending(prGlueInfo->prAdapter);
+		prGlueInfo->rHifInfo.state = USB_STATE_SUSPEND;
+		halDisableInterrupt(prGlueInfo->prAdapter);
+		halTxCancelAllSending(prGlueInfo->prAdapter);
+	}
 
 	DBGLOG(HAL, STATE, "mtk_usb_suspend() done!\n");
 

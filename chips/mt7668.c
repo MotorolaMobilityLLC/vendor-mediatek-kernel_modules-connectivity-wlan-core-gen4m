@@ -249,6 +249,7 @@ BUS_INFO mt7668_bus_info = {
 	.u4UdmaWlCfg_1_Addr = UDMA_WLCFG_1,
 	.u4UdmaWlCfg_0 =
 	    (UDMA_WLCFG_0_TX_EN(1) | UDMA_WLCFG_0_RX_EN(1) | UDMA_WLCFG_0_RX_MPSZ_PAD0(1)),
+	.asicUsbSuspend = NULL,
 #endif /* _HIF_USB */
 #if defined(_HIF_SDIO)
 	.halTxGetFreeResource = NULL,

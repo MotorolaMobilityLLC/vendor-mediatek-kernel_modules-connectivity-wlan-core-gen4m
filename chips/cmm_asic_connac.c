@@ -160,6 +160,8 @@ VOID asicCapInit(IN P_ADAPTER_T prAdapter)
 		prChipInfo->u4HifDmaShdlBaseAddr = USB_HIF_DMASHDL_BASE;
 		asicUsbDmaShdlInit(prAdapter);
 		asicUdmaTxTimeoutEnable(prAdapter);
+		asicUdmaRxFlush(prAdapter, FALSE);
+		asicPdmaHifReset(prAdapter, TRUE);
 		break;
 #endif /* _HIF_USB */
 #if defined(_HIF_SDIO)
@@ -218,59 +220,6 @@ VOID asicEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable)
 	default:
 		break;
 	}
-}
-
-VOID asicCmmDmaShdlInit(IN P_ADAPTER_T prAdapter, UINT_32 u4RefillGroup)
-{
-	UINT_32 u4BaseAddr, u4MacVal = 0;
-	struct mt66xx_chip_info *prChipInfo;
-
-	ASSERT(prAdapter);
-
-	prChipInfo = prAdapter->chip_info;
-	u4BaseAddr = prChipInfo->u4HifDmaShdlBaseAddr;
-
-	HAL_MCR_RD(prAdapter, CONN_HIF_DMASHDL_PACKET_MAX_SIZE(u4BaseAddr), &u4MacVal);
-	u4MacVal &= ~(PLE_PKT_MAX_SIZE_MASK | PSE_PKT_MAX_SIZE_MASK);
-	u4MacVal |= PLE_PKT_MAX_SIZE_NUM(0x1);
-	u4MacVal |= PSE_PKT_MAX_SIZE_NUM(0x8);
-	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_PACKET_MAX_SIZE(u4BaseAddr), u4MacVal);
-
-	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_REFILL_CONTROL(u4BaseAddr), u4RefillGroup);
-
-	u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x3);
-	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(0x1ff);
-	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP0_CTRL(u4BaseAddr), u4MacVal);
-	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP1_CTRL(u4BaseAddr), u4MacVal);
-	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP2_CTRL(u4BaseAddr), u4MacVal);
-	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP3_CTRL(u4BaseAddr), u4MacVal);
-	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP4_CTRL(u4BaseAddr), u4MacVal);
-
-	u4MacVal = ((arAcQIdx2GroupId[MAC_TXQ_AC0_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE0_MAPPING) |
-		(arAcQIdx2GroupId[MAC_TXQ_AC1_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE1_MAPPING) |
-		(arAcQIdx2GroupId[MAC_TXQ_AC2_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE2_MAPPING) |
-		(arAcQIdx2GroupId[MAC_TXQ_AC3_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE3_MAPPING) |
-		(arAcQIdx2GroupId[MAC_TXQ_AC10_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE4_MAPPING) |
-		(arAcQIdx2GroupId[MAC_TXQ_AC11_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE5_MAPPING) |
-		(arAcQIdx2GroupId[MAC_TXQ_AC12_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE6_MAPPING) |
-		(arAcQIdx2GroupId[MAC_TXQ_AC13_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE7_MAPPING));
-	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_Q_MAP0(u4BaseAddr), u4MacVal);
-
-	u4MacVal = ((arAcQIdx2GroupId[MAC_TXQ_AC20_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING1_QUEUE8_MAPPING) |
-		(arAcQIdx2GroupId[MAC_TXQ_AC21_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING1_QUEUE9_MAPPING) |
-		(arAcQIdx2GroupId[MAC_TXQ_AC22_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING1_QUEUE10_MAPPING) |
-		(arAcQIdx2GroupId[MAC_TXQ_AC23_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING1_QUEUE11_MAPPING) |
-		(arAcQIdx2GroupId[MAC_TXQ_AC30_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING1_QUEUE12_MAPPING) |
-		(arAcQIdx2GroupId[MAC_TXQ_AC31_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING1_QUEUE13_MAPPING) |
-		(arAcQIdx2GroupId[MAC_TXQ_AC32_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING1_QUEUE14_MAPPING) |
-		(arAcQIdx2GroupId[MAC_TXQ_AC33_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING1_QUEUE15_MAPPING));
-	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_Q_MAP1(u4BaseAddr), u4MacVal);
-
-	u4MacVal = ((arAcQIdx2GroupId[MAC_TXQ_ALTX_0_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING2_QUEUE16_MAPPING) |
-		(arAcQIdx2GroupId[MAC_TXQ_BMC_0_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING2_QUEUE17_MAPPING)|
-		(arAcQIdx2GroupId[MAC_TXQ_BCN_0_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING2_QUEUE18_MAPPING) |
-		(arAcQIdx2GroupId[MAC_TXQ_PSMP_0_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING2_QUEUE19_MAPPING));
-	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_Q_MAP2(u4BaseAddr), u4MacVal);
 }
 
 VOID fillTxDescAppendByHost(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
@@ -392,6 +341,88 @@ VOID asicLowPowerOwnClear(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult)
 
 #if defined(_HIF_USB)
 /* DMS Scheduler Init */
+VOID asicUsbDmaShdlGroupInit(IN P_ADAPTER_T prAdapter, UINT_32 u4RefillGroup)
+{
+	UINT_32 u4BaseAddr, u4MacVal = 0;
+	struct mt66xx_chip_info *prChipInfo;
+
+	ASSERT(prAdapter);
+
+	prChipInfo = prAdapter->chip_info;
+	u4BaseAddr = prChipInfo->u4HifDmaShdlBaseAddr;
+
+	HAL_MCR_RD(prAdapter, CONN_HIF_DMASHDL_PACKET_MAX_SIZE(u4BaseAddr), &u4MacVal);
+	u4MacVal &= ~(PLE_PKT_MAX_SIZE_MASK | PSE_PKT_MAX_SIZE_MASK);
+	u4MacVal |= PLE_PKT_MAX_SIZE_NUM(0x1);
+	u4MacVal |= PSE_PKT_MAX_SIZE_NUM(0x8);
+	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_PACKET_MAX_SIZE(u4BaseAddr), u4MacVal);
+
+	u4RefillGroup |= (CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP2_REFILL_PRIORITY_MASK
+		| CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP3_REFILL_PRIORITY_MASK);
+	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_REFILL_CONTROL(u4BaseAddr), u4RefillGroup);
+
+#if 1
+	u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x3);
+	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(0x1ff);
+	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP1_CTRL(u4BaseAddr), u4MacVal);
+	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP0_CTRL(u4BaseAddr), u4MacVal);
+	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP2_CTRL(u4BaseAddr), u4MacVal);
+	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP3_CTRL(u4BaseAddr), u4MacVal);
+	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP4_CTRL(u4BaseAddr), u4MacVal);
+#else
+	/* WMM0 BK - Group0 */
+	u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x1);
+	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(0x40);
+	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP0_CTRL(u4BaseAddr), u4MacVal);
+
+	/* WMM0 BE - Group1 */
+	u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x3);
+	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(0xC8);
+	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP1_CTRL(u4BaseAddr), u4MacVal);
+
+	/* WMM0 VI - Group2 */
+	u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x2);
+	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(0x40);
+	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP2_CTRL(u4BaseAddr), u4MacVal);
+
+	/* WMM0 VI - Group3 */
+	u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x2);
+	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(0x40);
+	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP3_CTRL(u4BaseAddr), u4MacVal);
+
+	/* WMM1 Group4 */
+	u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x1);
+	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(0x30);
+	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP4_CTRL(u4BaseAddr), u4MacVal);
+#endif
+
+	u4MacVal = ((arAcQIdx2GroupId[MAC_TXQ_AC0_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE0_MAPPING) |
+		(arAcQIdx2GroupId[MAC_TXQ_AC1_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE1_MAPPING) |
+		(arAcQIdx2GroupId[MAC_TXQ_AC2_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE2_MAPPING) |
+		(arAcQIdx2GroupId[MAC_TXQ_AC3_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE3_MAPPING) |
+		(arAcQIdx2GroupId[MAC_TXQ_AC10_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE4_MAPPING) |
+		(arAcQIdx2GroupId[MAC_TXQ_AC11_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE5_MAPPING) |
+		(arAcQIdx2GroupId[MAC_TXQ_AC12_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE6_MAPPING) |
+		(arAcQIdx2GroupId[MAC_TXQ_AC13_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE7_MAPPING));
+	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_Q_MAP0(u4BaseAddr), u4MacVal);
+
+	u4MacVal = ((arAcQIdx2GroupId[MAC_TXQ_AC20_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING1_QUEUE8_MAPPING) |
+		(arAcQIdx2GroupId[MAC_TXQ_AC21_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING1_QUEUE9_MAPPING) |
+		(arAcQIdx2GroupId[MAC_TXQ_AC22_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING1_QUEUE10_MAPPING) |
+		(arAcQIdx2GroupId[MAC_TXQ_AC23_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING1_QUEUE11_MAPPING) |
+		(arAcQIdx2GroupId[MAC_TXQ_AC30_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING1_QUEUE12_MAPPING) |
+		(arAcQIdx2GroupId[MAC_TXQ_AC31_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING1_QUEUE13_MAPPING) |
+		(arAcQIdx2GroupId[MAC_TXQ_AC32_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING1_QUEUE14_MAPPING) |
+		(arAcQIdx2GroupId[MAC_TXQ_AC33_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING1_QUEUE15_MAPPING));
+	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_Q_MAP1(u4BaseAddr), u4MacVal);
+
+	u4MacVal = ((arAcQIdx2GroupId[MAC_TXQ_ALTX_0_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING2_QUEUE16_MAPPING) |
+		(arAcQIdx2GroupId[MAC_TXQ_BMC_0_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING2_QUEUE17_MAPPING)|
+		(arAcQIdx2GroupId[MAC_TXQ_BCN_0_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING2_QUEUE18_MAPPING) |
+		(arAcQIdx2GroupId[MAC_TXQ_PSMP_0_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING2_QUEUE19_MAPPING));
+	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_Q_MAP2(u4BaseAddr), u4MacVal);
+}
+
 VOID asicUsbDmaShdlInit(IN P_ADAPTER_T prAdapter)
 {
 	UINT_32 u4BaseAddr, u4MacVal;
@@ -436,7 +467,7 @@ VOID asicUsbDmaShdlInit(IN P_ADAPTER_T prAdapter)
 				CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP14_REFILL_DISABLE_MASK |
 				CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP15_REFILL_DISABLE_MASK);
 
-	asicCmmDmaShdlInit(prAdapter, u4MacVal);
+	asicUsbDmaShdlGroupInit(prAdapter, u4MacVal);
 
 	/*
 	* HIF Scheduler Setting
@@ -444,6 +475,91 @@ VOID asicUsbDmaShdlInit(IN P_ADAPTER_T prAdapter)
 	*/
 	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_SHDL_SET0(u4BaseAddr), 0x6501234f);
 	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_SHDL_SET1(u4BaseAddr), 0xedcba987);
+
+	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_OPTIONAL_CONTROL(u4BaseAddr), 0x7004801c);
+}
+
+BOOLEAN asicUsbSuspend(IN P_ADAPTER_T prAdapter, IN P_GLUE_INFO_T prGlueInfo)
+{
+	UINT_32 u4Value;
+	UINT_32 count = 0;
+	INT_32 ret = 0;
+	P_BUS_INFO prBusInfo;
+
+	DBGLOG(HAL, INFO, "%s ---->\n", __func__);
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	/* Disable PDMA TX */
+	HAL_MCR_RD(prAdapter, PDMA_IF_MISC, &u4Value);
+	u4Value &= ~PDMA_IF_MISC_TX_ENABLE_MASK;
+	HAL_MCR_WR(prAdapter, PDMA_IF_MISC, u4Value);
+
+	/* Set PDMA Debug flag */
+	u4Value = 0x00000116;
+	HAL_MCR_WR(prAdapter, PDMA_DEBUG_EN, u4Value);
+	/* Polling PDMA_dmashdl_request done  */
+	while (count < PDMA_TX_IDLE_WAIT_COUNT) {
+		HAL_MCR_RD(prAdapter, PDMA_DEBUG_STATUS, &u4Value);
+		DBGLOG(HAL, INFO, "%s: 0x%08x = 0x%08x\n", __func__, PDMA_DEBUG_STATUS, u4Value);
+		if (!(u4Value & PDMA_DEBUG_DMASHDL_REQUEST_DONE_MASK) && (count >= 3))
+			break;
+		mdelay(1);
+		count++;
+	}
+
+	if (count >= PDMA_TX_IDLE_WAIT_COUNT) {
+		DBGLOG(HAL, ERROR, "%s:: 2.2 suspend fail, enable PDMA TX again.\n", __func__);
+		/* Enable PDMA TX again */
+		HAL_MCR_RD(prAdapter, PDMA_IF_MISC, &u4Value);
+		u4Value |= PDMA_IF_MISC_TX_ENABLE_MASK;
+		HAL_MCR_WR(prAdapter, PDMA_IF_MISC, u4Value);
+		return FALSE;
+	}
+
+	u4Value = 0x00000101;
+	HAL_MCR_WR(prAdapter, PDMA_DEBUG_EN, u4Value);
+	count = 0;
+	while (count < PDMA_TX_IDLE_WAIT_COUNT) {
+		HAL_MCR_RD(prAdapter, PDMA_DEBUG_STATUS, &u4Value);
+		DBGLOG(HAL, INFO, "%s:: 0x%08x = 0x%08x\n",
+			__func__, PDMA_DEBUG_STATUS, u4Value);
+		if ((u4Value == PDMA_DEBUG_TX_STATUS_MASK) && (count >= 3)) {
+			DBGLOG(HAL, ERROR, "%s:: PDMA Tx idle~\n", __func__);
+			break;
+		}
+		DBGLOG(HAL, ERROR, "%s:: PDMA Tx busy.....\n", __func__);
+		count++;
+	}
+
+	if (count >= PDMA_TX_IDLE_WAIT_COUNT) {
+		DBGLOG(HAL, ERROR, "%s:: 2.4 suspend fail, enable PDMA TX again.\n", __func__);
+		/* Enable PDMA TX again */
+		HAL_MCR_RD(prAdapter, PDMA_IF_MISC, &u4Value);
+		u4Value |= PDMA_IF_MISC_TX_ENABLE_MASK;
+		HAL_MCR_WR(prAdapter, PDMA_IF_MISC, u4Value);
+		return FALSE;
+	}
+
+	prGlueInfo->rHifInfo.state = USB_STATE_SUSPEND;
+	halDisableInterrupt(prGlueInfo->prAdapter);
+	halTxCancelAllSending(prGlueInfo->prAdapter);
+
+	ret = usb_control_msg(prGlueInfo->rHifInfo.udev,
+	usb_sndctrlpipe(prGlueInfo->rHifInfo.udev, 0), VND_REQ_FEATURE_SET,
+		DEVICE_VENDOR_REQUEST_OUT, FEATURE_SET_WVALUE_SUSPEND, 0, NULL, 0,
+		VENDOR_TIMEOUT_MS);
+	if (ret) {
+		DBGLOG(HAL, ERROR, "%s:: VendorRequest FeatureSetResume ERROR: %x, enable PDMA TX again.\n",
+			__func__, (unsigned int)ret);
+		/* Enable PDMA TX again */
+		HAL_MCR_RD(prAdapter, PDMA_IF_MISC, &u4Value);
+		u4Value |= PDMA_IF_MISC_TX_ENABLE_MASK;
+		HAL_MCR_WR(prAdapter, PDMA_IF_MISC, u4Value);
+		DBGLOG(HAL, INFO, "%s <----\n", __func__);
+		return FALSE;
+	}
+	DBGLOG(HAL, INFO, "%s <----\n", __func__);
+	return TRUE;
 }
 
 VOID asicUdmaTxTimeoutEnable(IN P_ADAPTER_T prAdapter)
@@ -460,6 +576,33 @@ VOID asicUdmaTxTimeoutEnable(IN P_ADAPTER_T prAdapter)
 	HAL_MCR_RD(prAdapter, prBusInfo->u4UdmaWlCfg_0_Addr, &u4Value);
 	u4Value |= UDMA_WLCFG_0_TX_TIMEOUT_EN_MASK;
 	HAL_MCR_WR(prAdapter, prBusInfo->u4UdmaWlCfg_0_Addr, u4Value);
+}
+
+VOID asicUdmaRxFlush(IN P_ADAPTER_T prAdapter, IN BOOLEAN bEnable)
+{
+	P_BUS_INFO prBusInfo;
+	UINT_32 u4Value;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	HAL_MCR_RD(prAdapter, prBusInfo->u4UdmaWlCfg_0_Addr, &u4Value);
+	if (bEnable)
+		u4Value |= UDMA_WLCFG_0_RX_FLUSH_MASK;
+	else
+		u4Value &= ~UDMA_WLCFG_0_RX_FLUSH_MASK;
+	HAL_MCR_WR(prAdapter, prBusInfo->u4UdmaWlCfg_0_Addr, u4Value);
+}
+
+VOID asicPdmaHifReset(IN P_ADAPTER_T prAdapter, IN BOOLEAN bRelease)
+{
+	UINT_32 u4Value;
+
+	HAL_MCR_RD(prAdapter, PDMA_HIF_RESET, &u4Value);
+	if (bRelease)
+		u4Value |= DPMA_HIF_LOGIC_RESET_MASK;
+	else
+		u4Value &= ~DPMA_HIF_LOGIC_RESET_MASK;
+	HAL_MCR_WR(prAdapter, PDMA_HIF_RESET, u4Value);
 }
 
 VOID fillUsbHifTxDesc(IN PUINT_8 * pDest, IN PUINT_16 pInfoBufLen)
