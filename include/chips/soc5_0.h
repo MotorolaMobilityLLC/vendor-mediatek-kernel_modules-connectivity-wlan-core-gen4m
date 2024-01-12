@@ -108,12 +108,6 @@
 *                         D A T A   T Y P E S
 ********************************************************************************
 */
-enum ENUM_WLAN_POWER_ON_DOWNLOAD {
-	ENUM_WLAN_POWER_ON_DOWNLOAD_EMI = 0,
-	ENUM_WLAN_POWER_ON_DOWNLOAD_ROM_PATCH = 1,
-	ENUM_WLAN_POWER_ON_DOWNLOAD_WIFI_RAM_CODE = 2
-};
-
 struct ROM_EMI_HEADER {
 	uint8_t ucDateTime[16];
 	uint8_t ucPLat[4];
@@ -214,9 +208,6 @@ void wlanCoAntVFE28Dis(void);
 #if (CFG_SUPPORT_CONNINFRA == 1)
 int wlanConnacPccifon(void);
 int wlanConnacPccifoff(void);
-int soc5_0_Trigger_whole_chip_rst(char *reason);
-bool soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter);
-void soc5_0_Conninfra_cb_register(void);
 extern void update_driver_reset_status(uint8_t fgIsResetting);
 extern int32_t get_wifi_process_status(void);
 extern int32_t get_wifi_powered_status(void);
@@ -237,15 +228,6 @@ uint32_t soc5_0_wlanPowerOnDownload(
 	IN uint8_t ucDownloadItem);
 int32_t soc5_0_wlanPowerOnInit(void);
 #endif
-
-#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
-extern struct platform_device *g_prPlatDev;
-uint32_t soc5_0_wlanPhyAction(IN struct ADAPTER *prAdapter);
-int soc5_0_wlanPreCalPwrOn(void);
-int soc5_0_wlanPreCal(void);
-uint8_t *soc5_0_wlanGetCalResult(uint32_t *prCalSize);
-void soc5_0_wlanCalDebugCmd(uint32_t cmd, uint32_t para);
-#endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
 
 void soc5_0_icapRiseVcoreClockRate(void);
 void soc5_0_icapDownVcoreClockRate(void);

@@ -348,18 +348,18 @@ uint32_t wlanDownloadSection(IN struct ADAPTER *prAdapter,
 	struct BUS_INFO *prBusInfo = NULL;
 #endif
 
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
-	prBusInfo = prAdapter->chip_info->bus_info;
-	if (prBusInfo->enableFwDlMode)
-		prBusInfo->enableFwDlMode(prAdapter);
-#endif
-
 	if (wlanImageSectionConfig(prAdapter, u4Addr, u4Len,
 				   u4DataMode, eDlIdx) != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, ERROR,
 		       "Firmware download configuration failed!\n");
 		return WLAN_STATUS_FAILURE;
 	}
+
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	prBusInfo = prAdapter->chip_info->bus_info;
+	if (prBusInfo->enableFwDlMode)
+		prBusInfo->enableFwDlMode(prAdapter);
+#endif
 
 	for (u4Offset = 0; u4Offset < u4Len;
 	     u4Offset += CMD_PKT_SIZE_FOR_IMAGE) {
@@ -471,7 +471,7 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 		return WLAN_STATUS_FAILURE;
 	}
 
-	kalMemCopy((pucEmiBaseAddr + u4Offset), pucStartPtr, u4Len);
+	memcpy_toio((pucEmiBaseAddr + u4Offset), pucStartPtr, u4Len);
 
 	kalSetEmiMpuProtection(gConEmiPhyBaseFinal, true);
 	iounmap(pucEmiBaseAddr);

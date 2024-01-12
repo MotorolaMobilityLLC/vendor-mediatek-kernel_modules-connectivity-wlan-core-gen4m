@@ -1406,9 +1406,8 @@ struct mt66xx_chip_info {
 	void (*coantSetMD)(void);
 	void (*coantVFE28En)(IN struct ADAPTER *prAdapter);
 	void (*coantVFE28Dis)(void);
-	int (*trigger_wholechiprst)(char *reason);
-	bool (*sw_interrupt_handler)(IN struct ADAPTER *prAdapter);
-	void (*conninra_cb_register)(void);
+	bool (*get_sw_interrupt_status)(struct ADAPTER *prAdapter,
+		uint32_t *status);
 	void (*dumpwfsyscpupcr)(IN struct ADAPTER *prAdapter);
 	uint8_t* (*getCalResult)(OUT uint32_t *prCalSize);
 	void (*calDebugCmd)(uint32_t cmd, uint32_t para);

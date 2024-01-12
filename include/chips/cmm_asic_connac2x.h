@@ -1039,6 +1039,26 @@ struct fwtbl_umac_struct {
 	struct wtbl_key_tb key_tb;
 };
 
+enum {
+	SW_INT_FW_LOG = 0,
+	SW_INT_SUBSYS_RESET,
+	SW_INT_WHOLE_RESET,
+	SW_INT_SW_WFDMA,
+};
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+extern u_int8_t g_IsWfsysBusHang;
+extern struct completion g_triggerComp;
+extern bool g_IsTriggerTimeout;
+extern u_int8_t fgIsResetting;
+extern u_int8_t g_fgRstRecover;
+extern struct regmap *g_regmap;
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+extern u_int8_t g_IsNeedWaitCoredump;
+#endif
+#endif
+
+
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -1298,6 +1318,9 @@ void asicConnac2xDmashdlSetOptionalControl(
 	struct ADAPTER *prAdapter,
 	uint16_t u2HifAckCntTh,
 	uint16_t u2HifGupActMap);
+bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter);
+int asicConnac2xPwrOnWmMcu(struct mt66xx_chip_info *chip_info);
+int asicConnac2xPwrOffWmMcu(struct mt66xx_chip_info *chip_info);
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 #endif /* _CMM_ASIC_CONNAC2X_H */
 
