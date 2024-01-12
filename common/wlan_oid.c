@@ -15866,3 +15866,69 @@ uint32_t wlanoidQueryAntennaSwap(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif	/* CFG_SUPPORT_ANT_SWAP */
+
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
+/* dynamic tx power control oid function */
+uint32_t wlanoidTxPowerControl(IN struct ADAPTER *prAdapter,
+			       IN void *pvSetBuffer,
+			       IN uint32_t u4SetBufferLen,
+			       OUT uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_TX_PWR_CTRL_IOCTL *prPwrCtrlParam;
+	struct TX_PWR_CTRL_ELEMENT *oldElement;
+	u_int8_t fgApplied;
+
+	if (!pvSetBuffer)
+		return WLAN_STATUS_INVALID_DATA;
+
+	prPwrCtrlParam = (struct PARAM_TX_PWR_CTRL_IOCTL *)pvSetBuffer;
+	if ((prPwrCtrlParam == NULL) || (prPwrCtrlParam->name == NULL)) {
+		DBGLOG(OID, ERROR, "prPwrCtrlParam is NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	fgApplied = prPwrCtrlParam->fgApplied;
+
+	oldElement = txPwrCtrlFindElement(prAdapter,
+					  prPwrCtrlParam->name, 0, TRUE,
+					  PWR_CTRL_TYPE_DYNAMIC_LIST);
+	if (oldElement != NULL)
+		oldElement->fgApplied = FALSE;
+
+	if (fgApplied == TRUE) {
+		oldElement = txPwrCtrlFindElement(prAdapter,
+				prPwrCtrlParam->name, prPwrCtrlParam->index,
+				FALSE, PWR_CTRL_TYPE_DYNAMIC_LIST);
+		if (oldElement != NULL) {
+			if (prPwrCtrlParam->newSetting != NULL) {
+				struct TX_PWR_CTRL_ELEMENT *newElement;
+
+				newElement = txPwrCtrlStringToStruct(
+					prPwrCtrlParam->newSetting, TRUE);
+				if (newElement == NULL) {
+					DBGLOG(OID, ERROR,
+						"parse new setting fail, <%s>\n",
+						prPwrCtrlParam->newSetting);
+					return WLAN_STATUS_FAILURE;
+				}
+
+				kalMemCopy(newElement->name, oldElement->name,
+					MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE);
+				newElement->index = oldElement->index;
+				newElement->eCtrlType = oldElement->eCtrlType;
+				txPwrCtrlDeleteElement(prAdapter,
+				       newElement->name, newElement->index,
+				       PWR_CTRL_TYPE_DYNAMIC_LIST);
+				oldElement = newElement;
+				txPwrCtrlAddElement(prAdapter, oldElement);
+			}
+			oldElement->fgApplied = TRUE;
+		}
+	}
+
+	if (oldElement != NULL)
+		rlmDomainSendPwrLimitCmd(prAdapter);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif

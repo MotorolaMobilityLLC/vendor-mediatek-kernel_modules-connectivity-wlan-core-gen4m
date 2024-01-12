@@ -180,6 +180,9 @@
 
 #define PRIV_CMD_SET_SER                37
 
+/* dynamic tx power control */
+#define PRIV_CMD_SET_PWR_CTRL		40
+
 /* wifi type: 11g, 11n, ... */
 #define  PRIV_CMD_GET_WIFI_TYPE		41
 
