@@ -7318,10 +7318,15 @@ rlmChangeOperationMode(
 		}
 
 #if CFG_SUPPORT_802_11AC
-		if (RLM_NET_IS_11AC(prBssInfo)
+		if (((RLM_NET_IS_11AC(prBssInfo) &&
+			(prStaRec->ucDesiredPhyTypeSet &
+			PHY_TYPE_SET_802_11AC))
 #if (CFG_SUPPORT_802_11AX == 1)
-			|| RLM_NET_IS_11AX(prBssInfo)
+			|| (RLM_NET_IS_11AX(prBssInfo) &&
+			(prStaRec->ucDesiredPhyTypeSet &
+			PHY_TYPE_SET_802_11AX))
 #endif
+			)
 			&& (fgIsChangeBw || fgIsChangeRxNss)) {
 			if (prBssInfo->pfOpChangeHandler)
 				prBssInfo->aucOpModeChangeState
