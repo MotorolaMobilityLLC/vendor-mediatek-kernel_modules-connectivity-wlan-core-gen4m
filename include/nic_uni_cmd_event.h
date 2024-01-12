@@ -919,7 +919,9 @@ struct UNI_CMD_STAREC_EHT_BASIC {
 	uint16_t  u2Tag;		/* Tag = 0x22 */
 	uint16_t  u2Length;
 	uint8_t   ucTidBitmap;
-	uint8_t   aucPadding[3];
+	uint8_t   aucPadding[1];
+	uint8_t   u2EhtMacCap[2];
+	uint8_t   u8EhtPhyCap[8];
 } __KAL_ATTRIB_PACKED__;
 
 /* MLD STAREC teardown (Tag 0x23) */

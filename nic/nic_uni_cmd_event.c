@@ -680,6 +680,14 @@ uint32_t nicUniCmdBssInfoPhyMode(uint8_t ucPhyTypeSet)
 		phy_mode |= WMODE_AX_6G;
 	}
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (ucPhyTypeSet & PHY_TYPE_BIT_EHT) {
+		phy_mode |= WMODE_BE_24G;
+		phy_mode |= WMODE_BE_5G;
+		phy_mode |= WMODE_BE_6G;
+	}
+#endif
+
 	return phy_mode;
 }
 
@@ -1674,6 +1682,9 @@ uint32_t nicUniCmdSetBssRlmImpl(struct ADAPTER *ad,
 	rlm_tag->ucSCO = cmd->ucRfSco;
 	rlm_tag->ucBandwidth = BW_20;
 	switch (cmd->ucVhtChannelWidth) {
+	case VHT_OP_CHANNEL_WIDTH_320:
+		rlm_tag->ucBandwidth = BW_320;
+		break;
 	case VHT_OP_CHANNEL_WIDTH_80P80:
 		rlm_tag->ucBandwidth = BW_8080;
 		break;
@@ -2450,6 +2461,30 @@ uint32_t nicUniCmdStaRecTagHe6gCap(struct ADAPTER *ad,
 }
 #endif
 
+#if (CFG_SUPPORT_802_11BE == 1)
+uint32_t nicUniCmdStaRecTagEhtInfo(struct ADAPTER *ad,
+	uint8_t *buf, struct CMD_UPDATE_STA_RECORD *cmd)
+{
+	struct UNI_CMD_STAREC_EHT_BASIC *tag =
+		(struct UNI_CMD_STAREC_EHT_BASIC *)buf;
+	static uint8_t zero[EHT_PHY_CAP_BYTE_NUM];
+
+	if (!kalMemCmp(cmd->ucEhtMacCapInfo, zero, EHT_MAC_CAP_BYTE_NUM) &&
+	    !kalMemCmp(cmd->ucEhtPhyCapInfo, zero, EHT_PHY_CAP_BYTE_NUM))
+		return 0;
+
+	tag->u2Tag = UNI_CMD_STAREC_TAG_EHT_BASIC;
+	tag->u2Length = sizeof(*tag);
+	tag->ucTidBitmap = 0xff;
+	kalMemCopy(tag->u2EhtMacCap, cmd->ucEhtMacCapInfo,
+			sizeof(tag->u2EhtMacCap));
+	kalMemCopy(tag->u8EhtPhyCap, cmd->ucEhtPhyCapInfo,
+			sizeof(tag->u8EhtPhyCap));
+
+	return tag->u2Length;
+}
+#endif
+
 uint32_t nicUniCmdStaRecTagRA(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_UPDATE_STA_RECORD *cmd)
 {
@@ -2478,7 +2513,10 @@ uint32_t nicUniCmdStaRecTagBA(struct ADAPTER *ad,
 	tag->ucRxAmsduInAmpdu = cmd->ucRxAmsduInAmpdu;
 	tag->u4TxMaxAmsduInAmpduLen = cmd->u4TxMaxAmsduInAmpduLen;
 
-	if (cmd->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AX) {
+	if (cmd->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11BE) {
+		tag->u2TxBaSize = cmd->rBaSize.rEhtBaSize.u2TxBaSize;
+		tag->u2RxBaSize = cmd->rBaSize.rEhtBaSize.u2RxBaSize;
+	} else if (cmd->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AX) {
 		tag->u2TxBaSize = cmd->rBaSize.rHeBaSize.u2TxBaSize;
 		tag->u2RxBaSize = cmd->rBaSize.rHeBaSize.u2RxBaSize;
 	} else {
@@ -2514,7 +2552,10 @@ struct UNI_CMD_STAREC_TAG_HANDLE arUpdateStaRecTable[] = {
 	{sizeof(struct UNI_CMD_STAREC_PHY_INFO), nicUniCmdStaRecTagPhyInfo},
 	{sizeof(struct UNI_CMD_STAREC_RA_INFO), nicUniCmdStaRecTagRA},
 	{sizeof(struct UNI_CMD_STAREC_BA_OFFLOAD_INFO), nicUniCmdStaRecTagBA},
-	{sizeof(struct UNI_CMD_STAREC_UAPSD_INFO), nicUniCmdStaRecTagUapsd}
+	{sizeof(struct UNI_CMD_STAREC_UAPSD_INFO), nicUniCmdStaRecTagUapsd},
+#if (CFG_SUPPORT_802_11BE == 1)
+	{sizeof(struct UNI_CMD_STAREC_EHT_BASIC), nicUniCmdStaRecTagEhtInfo},
+#endif
 };
 
 void nicUniCmdStaRecHandleEventPkt(IN struct ADAPTER
