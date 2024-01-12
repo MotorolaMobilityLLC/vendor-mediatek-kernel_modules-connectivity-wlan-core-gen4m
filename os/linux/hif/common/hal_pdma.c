@@ -826,7 +826,7 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter)
 	spin_lock_irqsave(&prTokenInfo->rTokenLock, flags);
 
 	prToken = prTokenInfo->aprTokenStack[prTokenInfo->u4UsedCnt];
-	do_gettimeofday(&prToken->rTs);
+	ktime_get_ts64(&prToken->rTs);
 	prToken->fgInUsed = TRUE;
 	prTokenInfo->u4UsedCnt++;
 
@@ -929,8 +929,8 @@ void halReturnTimeoutMsduToken(struct ADAPTER *prAdapter)
 {
 	struct MSDU_TOKEN_INFO *prTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
-	struct timeval rNowTs, rTime;
-	struct timeval rTimeout;
+	struct timespec64 rNowTs, rTime;
+	struct timespec64 rTimeout;
 	uint32_t u4Idx = 0;
 
 	ASSERT(prAdapter);
@@ -939,8 +939,8 @@ void halReturnTimeoutMsduToken(struct ADAPTER *prAdapter)
 	prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
 
 	rTimeout.tv_sec = HIF_MSDU_REPORT_RETURN_TIMEOUT;
-	rTimeout.tv_usec = 0;
-	do_gettimeofday(&rNowTs);
+	rTimeout.tv_nsec = 0;
+	ktime_get_ts64(&rNowTs);
 
 	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];
@@ -952,18 +952,18 @@ void halReturnTimeoutMsduToken(struct ADAPTER *prAdapter)
 			continue;
 
 		rTime.tv_sec = rNowTs.tv_sec - prToken->rTs.tv_sec;
-		rTime.tv_usec = rNowTs.tv_usec;
-		if (prToken->rTs.tv_usec > rNowTs.tv_usec) {
+		rTime.tv_nsec = rNowTs.tv_nsec;
+		if (prToken->rTs.tv_nsec > rNowTs.tv_nsec) {
 			rTime.tv_sec -= 1;
-			rTime.tv_usec += SEC_TO_USEC(1);
+			rTime.tv_nsec += SEC_TO_NSEC(1);
 		}
-		rTime.tv_usec -= prToken->rTs.tv_usec;
+		rTime.tv_nsec -= prToken->rTs.tv_nsec;
 
 		/* Return token to free stack */
 		if (halTimeCompare(&rTime, &rTimeout) >= 0) {
 			DBGLOG(HAL, INFO,
-			       "Free TokenId[%u] timeout[sec:%ld, usec:%ld]\n",
-			       u4Idx, rTime.tv_sec, rTime.tv_usec);
+			       "Free TokenId[%u] timeout[sec:%ld, nsec:%ld]\n",
+			       u4Idx, rTime.tv_sec, rTime.tv_nsec);
 			halReturnMsduToken(prAdapter, u4Idx);
 		}
 	}

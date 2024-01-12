@@ -371,20 +371,19 @@ uint32_t halDumpHifStatus(IN struct ADAPTER *prAdapter,
  * @retval -1            prTs1 value < prTs2 value
  */
 /*----------------------------------------------------------------------------*/
-int halTimeCompare(struct timeval *prTs1, struct timeval *prTs2)
+int halTimeCompare(struct timespec64 *prTs1, struct timespec64 *prTs2)
 {
 	if (prTs1->tv_sec > prTs2->tv_sec)
 		return 1;
 	else if (prTs1->tv_sec < prTs2->tv_sec)
 		return -1;
 	/* sec part is equal */
-	else if (prTs1->tv_usec > prTs2->tv_usec)
+	else if (prTs1->tv_nsec > prTs2->tv_nsec)
 		return 1;
-	else if (prTs1->tv_usec < prTs2->tv_usec)
+	else if (prTs1->tv_nsec < prTs2->tv_nsec)
 		return -1;
 	return 0;
 }
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Checking tx hang
@@ -398,7 +397,7 @@ static bool halIsTxHang(struct ADAPTER *prAdapter)
 {
 	struct MSDU_TOKEN_INFO *prTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
-	struct timeval rNowTs, rTime, rLongest, rTimeout;
+	struct timespec64 rNowTs, rTime, rLongest, rTimeout;
 	uint32_t u4Idx = 0, u4TokenId = 0;
 	bool fgIsTimeout = false;
 	struct WIFI_VAR *prWifiVar;
@@ -410,10 +409,10 @@ static bool halIsTxHang(struct ADAPTER *prAdapter)
 	prWifiVar = &prAdapter->rWifiVar;
 
 	rTimeout.tv_sec = prWifiVar->ucMsduReportTimeout;
-	rTimeout.tv_usec = 0;
+	rTimeout.tv_nsec = 0;
 	rLongest.tv_sec = 0;
-	rLongest.tv_usec = 0;
-	do_gettimeofday(&rNowTs);
+	rLongest.tv_nsec = 0;
+	ktime_get_ts64(&rNowTs);
 
 	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];
@@ -425,12 +424,12 @@ static bool halIsTxHang(struct ADAPTER *prAdapter)
 			continue;
 
 		rTime.tv_sec = rNowTs.tv_sec - prToken->rTs.tv_sec;
-		rTime.tv_usec = rNowTs.tv_usec;
-		if (prToken->rTs.tv_usec > rNowTs.tv_usec) {
+		rTime.tv_nsec = rNowTs.tv_nsec;
+		if (prToken->rTs.tv_nsec > rNowTs.tv_nsec) {
 			rTime.tv_sec -= 1;
-			rTime.tv_usec += SEC_TO_USEC(1);
+			rTime.tv_nsec += SEC_TO_NSEC(1);
 		}
-		rTime.tv_usec -= prToken->rTs.tv_usec;
+		rTime.tv_nsec -= prToken->rTs.tv_nsec;
 
 		if (halTimeCompare(&rTime, &rTimeout) >= 0)
 			fgIsTimeout = true;
@@ -438,7 +437,7 @@ static bool halIsTxHang(struct ADAPTER *prAdapter)
 		/* rTime > rLongest */
 		if (halTimeCompare(&rTime, &rLongest) > 0) {
 			rLongest.tv_sec = rTime.tv_sec;
-			rLongest.tv_usec = rTime.tv_usec;
+			rLongest.tv_nsec = rTime.tv_nsec;
 			u4TokenId = u4Idx;
 		}
 	}

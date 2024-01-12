@@ -1006,19 +1006,17 @@ do { \
 #define JIFFIES_TO_MSEC(_jiffie)    jiffies_to_msecs(_jiffie)
 
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
-#define do_gettimeofday(_tv) kal_do_gettimeofday(_tv)
 #define get_ds() KERNEL_DS
 #define kal_access_ok(type, addr, size) access_ok(addr, size)
 #else
 #define kal_access_ok(type, addr, size) access_ok(type, addr, size)
 #endif
-
-#define KAL_TIME_INTERVAL_DECLARATION()     struct timeval __rTs, __rTe
-#define KAL_REC_TIME_START()                do_gettimeofday(&__rTs)
-#define KAL_REC_TIME_END()                  do_gettimeofday(&__rTe)
+#define KAL_TIME_INTERVAL_DECLARATION()     struct timespec64 __rTs, __rTe
+#define KAL_REC_TIME_START()                ktime_get_ts64(&__rTs)
+#define KAL_REC_TIME_END()                  ktime_get_ts64(&__rTe)
 #define KAL_GET_TIME_INTERVAL() \
-	((SEC_TO_USEC(__rTe.tv_sec) + __rTe.tv_usec) - \
-	(SEC_TO_USEC(__rTs.tv_sec) + __rTs.tv_usec))
+	((SEC_TO_USEC(__rTe.tv_sec) + (uint32_t)NSEC_TO_USEC(__rTe.tv_nsec)) - \
+	(SEC_TO_USEC(__rTs.tv_sec) + (uint32_t)NSEC_TO_USEC(__rTs.tv_nsec)))
 #define KAL_ADD_TIME_INTERVAL(_Interval) \
 	{ \
 		(_Interval) += KAL_GET_TIME_INTERVAL(); \
@@ -1828,10 +1826,6 @@ int _kalSprintf(char *buf, const char *fmt, ...);
 /* systrace utilities */
 #if !CONFIG_WLAN_DRV_BUILD_IN
 void tracing_mark_write(const char *fmt, ...);
-#endif
-
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
-void kal_do_gettimeofday(struct timeval *tv);
 #endif
 
 uint32_t kalSetSuspendFlagToEMI(IN struct ADAPTER

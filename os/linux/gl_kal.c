@@ -6680,6 +6680,15 @@ const struct file_operations rMetProcFops = {
 	.write = kalMetWriteProcfs
 };
 #endif
+#if KERNEL_VERSION(5, 6, 0) <= CFG80211_VERSION_CODE
+const struct proc_ops rMetProcCtrlFops = {
+	.proc_write = kalMetCtrlWriteProcfs
+};
+
+const struct proc_ops rMetProcPortFops = {
+	.proc_write = kalMetPortWriteProcfs
+};
+#else
 const struct file_operations rMetProcCtrlFops = {
 	.write = kalMetCtrlWriteProcfs
 };
@@ -6687,6 +6696,7 @@ const struct file_operations rMetProcCtrlFops = {
 const struct file_operations rMetProcPortFops = {
 	.write = kalMetPortWriteProcfs
 };
+#endif
 
 int kalMetInitProcfs(IN struct GLUE_INFO *prGlueInfo)
 {
@@ -8778,16 +8788,6 @@ int _kalSprintf(char *buf, const char *fmt, ...)
 	va_end(ap);
 	return (retval < 0)?(0):(retval);
 }
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
-void kal_do_gettimeofday(struct timeval *tv)
-{
-	struct timespec64 now;
-
-	ktime_get_real_ts64(&now);
-	tv->tv_sec = now.tv_sec;
-	tv->tv_usec = now.tv_nsec / NSEC_PER_USEC;
-}
-#endif
 
 static void kalDumpHifStats(IN struct ADAPTER *prAdapter)
 {

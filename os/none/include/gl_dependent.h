@@ -727,16 +727,6 @@ void kal_warn_on(uint8_t condition);
 #define WARN_ON(_condition) kal_warn_on(_condition)
 
 /*
- * kal_do_gettimeofday - Returns the time of day in a timeval
- * @tv: pointer to the timeval to be set
- * needed by
- * common/debug.c
- * mgmt/stats.c
- */
-void kal_do_gettimeofday(struct timeval *tv);
-#define do_gettimeofday(_tv) kal_do_gettimeofday(_tv)
-
-/*
  * needed by: mgmt/wmm.c
  * anything on kalGetTimeTick (?)
  * Timespec interfaces utilizing the ktime based ones
