@@ -148,6 +148,7 @@ const uint8_t aucWmmAC2TcResourceSet2[WMM_AC_INDEX_NUM] = {
 static uint16_t arpMoniter;
 static uint8_t apIp[4];
 static uint8_t gatewayIp[4];
+static uint32_t last_rx_packets, latest_rx_packets;
 #endif
 /*******************************************************************************
  *                                 M A C R O S
@@ -7699,8 +7700,25 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	uint16_t u2EtherType = 0;
 	int arpOpCode = 0;
 	struct BSS_INFO *prAisBssInfo = NULL;
+	struct WIFI_VAR *prWifiVar = NULL;
+	uint32_t uArpMonitorNumber;
+	uint32_t uArpMonitorRxPktNum;
+	struct net_device *prNetDev = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
 
-	if (!prAdapter)
+	if (!prAdapter ||
+		!prAdapter->prGlueInfo ||
+		!prAdapter->prGlueInfo->prDevHandler) {
+		DBGLOG(QM, WARN, "Param is invalid\n");
+		return;
+	}
+	prGlueInfo = prAdapter->prGlueInfo;
+	prNetDev = prGlueInfo->prDevHandler;
+	prWifiVar = &prAdapter->rWifiVar;
+	uArpMonitorNumber = prWifiVar->uArpMonitorNumber;
+	uArpMonitorRxPktNum = prWifiVar->uArpMonitorRxPktNum;
+
+	if (uArpMonitorNumber == 0)
 		return;
 
 	/* We need to disable arp monitor in CTIA mode */
@@ -7751,8 +7769,32 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 				prAisBssInfo->u2DeauthReason =
 					BEACON_TIMEOUT_DUE_2_APR_NO_RESPONSE;
 			prAdapter->cArpNoResponseIdx = prStaRec->ucBssIndex;
-			arpMoniter = 0;
-			kalMemZero(apIp, sizeof(apIp));
+			/* Record counts of RX Packets when Tx 1st ARP Req */
+			if (!last_rx_packets) {
+				last_rx_packets = prNetDev->stats.rx_packets;
+				latest_rx_packets = 0;
+			}
+			latest_rx_packets = prNetDev->stats.rx_packets;
+			if (arpMoniter > uArpMonitorNumber) {
+				if ((latest_rx_packets - last_rx_packets) <=
+					uArpMonitorRxPktNum) {
+					DBGLOG(INIT, WARN,
+						"IOT issue, arp no resp!\n");
+					if (prAisBssInfo)
+						prAisBssInfo->u2DeauthReason =
+					BEACON_TIMEOUT_DUE_2_APR_NO_RESPONSE;
+					prAdapter->cArpNoResponseIdx =
+					prStaRec->ucBssIndex;
+				} else
+					DBGLOG(INIT, WARN,
+						"ARP, still have %d pkts\n",
+						latest_rx_packets -
+						last_rx_packets);
+				arpMoniter = 0;
+				last_rx_packets = 0;
+				latest_rx_packets = 0;
+				kalMemZero(apIp, sizeof(apIp));
+			}
 		}
 	}
 }
@@ -7924,6 +7966,8 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 void qmResetArpDetect(void)
 {
 	arpMoniter = 0;
+	last_rx_packets = 0;
+	latest_rx_packets = 0;
 	kalMemZero(apIp, sizeof(apIp));
 	kalMemZero(gatewayIp, sizeof(gatewayIp));
 }
