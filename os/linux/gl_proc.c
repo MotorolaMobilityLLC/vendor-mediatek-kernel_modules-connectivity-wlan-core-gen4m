@@ -298,6 +298,7 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 {
 	uint8_t *temp = &g_aucProcBuf[0];
 	uint8_t *str = NULL;
+	uint8_t *str2 = "\nERROR DUMP CONFIGURATION:\n";
 	uint32_t u4CopySize = 0;
 	uint32_t i;
 	uint32_t u4StrLen = 0;
@@ -335,10 +336,8 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 	kalStrnCpy(temp, str, u4StrLen + 1);
 	temp += kalStrLen(temp);
 
-
 	for (i = 0; i < WLAN_CFG_ENTRY_NUM_MAX; i++) {
 		prWlanCfgEntry = wlanCfgGetEntryByIndex(prAdapter, i, 0);
-
 
 		if ((!prWlanCfgEntry) || (prWlanCfgEntry->aucKey[0] == '\0'))
 			break;
@@ -346,6 +345,23 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 		SNPRINTF(temp, g_aucProcBuf,
 			("%s|%s\n", prWlanCfgEntry->aucKey,
 			prWlanCfgEntry->aucValue));
+
+		if ((temp - g_aucProcBuf) != kalStrLen(g_aucProcBuf)) {
+			DBGLOG(INIT, ERROR,
+			       "Dump configuration error: temp offset=%d, buf length=%u, key[%d]=[%u], val[%d]=[%u]\n",
+			       (int)(temp - g_aucProcBuf),
+			       (uint32_t)kalStrLen(g_aucProcBuf),
+			       WLAN_CFG_VALUE_LEN_MAX,
+			       (uint32_t)prWlanCfgEntry->aucKey[
+				WLAN_CFG_VALUE_LEN_MAX - 1],
+			       WLAN_CFG_VALUE_LEN_MAX,
+			       (uint32_t)prWlanCfgEntry->aucValue[
+				WLAN_CFG_VALUE_LEN_MAX - 1]);
+			kalMemSet(g_aucProcBuf, ' ', u4StrLen);
+			kalStrnCpy(g_aucProcBuf, str2, kalStrLen(str2));
+			g_aucProcBuf[u4StrLen-1] = '\n';
+			goto procCfgReadLabel;
+		}
 
 		if (kalStrLen(g_aucProcBuf) >
 			(sizeof(g_aucProcBuf) - BUFFER_RESERVE_BYTE))
@@ -363,13 +379,29 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 			("D:%s|%s\n", prWlanCfgEntry->aucKey,
 			prWlanCfgEntry->aucValue));
 
+		if ((temp - g_aucProcBuf) != kalStrLen(g_aucProcBuf)) {
+			DBGLOG(INIT, ERROR,
+			       "D:Dump configuration error: temp offset=%d, buf length=%u, key[%d]=[%u], val[%d]=[%u]\n",
+			       (int)(temp - g_aucProcBuf),
+			       (uint32_t)kalStrLen(g_aucProcBuf),
+			       WLAN_CFG_VALUE_LEN_MAX,
+			       (uint32_t)prWlanCfgEntry->aucKey[
+				WLAN_CFG_VALUE_LEN_MAX - 1],
+			       WLAN_CFG_VALUE_LEN_MAX,
+			       (uint32_t)prWlanCfgEntry->aucValue[
+				WLAN_CFG_VALUE_LEN_MAX - 1]);
+			kalMemSet(g_aucProcBuf, ' ', u4StrLen);
+			kalStrnCpy(g_aucProcBuf, str2, kalStrLen(str2));
+			g_aucProcBuf[u4StrLen-1] = '\n';
+			goto procCfgReadLabel;
+		}
+
 		if (kalStrLen(g_aucProcBuf) >
 			(sizeof(g_aucProcBuf) - BUFFER_RESERVE_BYTE))
 			break;
-
-
 	}
 
+procCfgReadLabel:
 	u4CopySize = kalStrLen(g_aucProcBuf);
 	if (u4CopySize > count)
 		u4CopySize = count;
@@ -380,10 +412,7 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 
 	*f_pos += u4CopySize;
 	return (ssize_t) u4CopySize;
-
-
 }
-
 
 static ssize_t procCfgWrite(struct file *file, const char __user *buffer,
 	size_t count, loff_t *data)
