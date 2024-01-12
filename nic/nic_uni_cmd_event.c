@@ -215,6 +215,7 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_RSSI_MONITOR] = nicUniEventRssiMonitor,
 	[UNI_EVENT_ID_HIF_CTRL] = nicUniEventHifCtrl,
 	[UNI_EVENT_ID_NAN] = nicUniEventNan,
+	[UNI_EVENT_ID_BF] = nicUniEventBF,
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -2917,21 +2918,28 @@ void nicUniCmdBFActionPnWrite(
 }
 
 struct  UNI_CMD_BF_HANDLE arBFActionTable[] = {
-	{sizeof(struct UNI_CMD_BF_SOUNDING_STOP), nicUniCmdBFActionSoundOff},
-	{sizeof(struct UNI_CMD_BF_SND), nicUniCmdBFActionSoundOn},
-	{sizeof(struct UNI_CMD_BF_TX_APPLY), nicUniCmdBFActionTxApply},
-	{sizeof(struct UNI_CMD_BF_PFMU_MEM_ALLOC), nicUniCmdBFActionMemAlloc},
-	{sizeof(struct UNI_CMD_BF_PFMU_MEM_RLS), nicUniCmdBFActionMemRelease},
+	{sizeof(struct UNI_CMD_BF_SOUNDING_STOP), nicUniCmdBFActionSoundOff,
+		nicUniCmdEventSetCommon},
+	{sizeof(struct UNI_CMD_BF_SND), nicUniCmdBFActionSoundOn,
+		nicUniCmdEventSetCommon},
+	{sizeof(struct UNI_CMD_BF_TX_APPLY), nicUniCmdBFActionTxApply,
+		nicUniCmdEventSetCommon},
+	{sizeof(struct UNI_CMD_BF_PFMU_MEM_ALLOC), nicUniCmdBFActionMemAlloc,
+		nicUniCmdEventSetCommon},
+	{sizeof(struct UNI_CMD_BF_PFMU_MEM_RLS), nicUniCmdBFActionMemRelease,
+		nicUniCmdEventSetCommon},
 	{sizeof(struct UNI_CMD_BF_PROFILE_TAG_READ_WRITE),
-		nicUniCmdBFActionTagRead},
+		nicUniCmdBFActionTagRead, nicUniCmdEventSetCommon},
 	{sizeof(struct UNI_CMD_BF_PROFILE_TAG_READ_WRITE),
-		nicUniCmdBFActionTagWrite},
+		nicUniCmdBFActionTagWrite, nicUniCmdEventSetCommon},
 	{sizeof(struct UNI_CMD_BF_PROFILE_DATA_READ),
-		nicUniCmdBFActionDataRead},
+		nicUniCmdBFActionDataRead, nicUniCmdEventSetCommon},
 	{sizeof(struct UNI_CMD_BF_PROFILE_DATA_WRITE),
-		nicUniCmdBFActionDataWrite},
-	{sizeof(struct UNI_CMD_BF_PROFILE_PN_READ), nicUniCmdBFActionPnRead},
-	{sizeof(struct UNI_CMD_BF_PROFILE_PN_WRITE), nicUniCmdBFActionPnWrite},
+		nicUniCmdBFActionDataWrite, nicUniCmdEventSetCommon},
+	{sizeof(struct UNI_CMD_BF_PROFILE_PN_READ), nicUniCmdBFActionPnRead,
+		nicUniCmdEventSetCommon},
+	{sizeof(struct UNI_CMD_BF_PROFILE_PN_WRITE), nicUniCmdBFActionPnWrite,
+		nicUniCmdEventSetCommon},
 };
 
 uint32_t nicUniCmdBFAction(struct ADAPTER *ad,
@@ -2956,7 +2964,8 @@ uint32_t nicUniCmdBFAction(struct ADAPTER *ad,
 
 	max_cmd_len += arBFActionTable[bf_action_id].u4Size;
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_BF, max_cmd_len,
-			nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+			arBFActionTable[bf_action_id].pfCmdDoneHandler,
+			nicUniCmdTimeoutCommon);
 	if (!entry)
 		return WLAN_STATUS_RESOURCES;
 
@@ -7872,3 +7881,181 @@ void nicUniCmdEventQueryMldRec(IN struct ADAPTER *prAdapter,
 #endif
 }
 
+void nicUniEventBF(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_BF);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		switch (TAG_ID(tag)) {
+		case UNI_CMD_BF_TAG_PFMU_TAG_READ: {
+			uint8_t au4RawDataTag1[7], au4RawDataTag2[7];
+			struct UNI_EVENT_BF *uni_evt = (struct UNI_EVENT_BF *)
+				evt->aucBuffer;
+			struct UNI_EVENT_BF_PFMU_READ *tag =
+				(struct UNI_EVENT_BF_PFMU_READ *)
+					uni_evt->au1TlvBuffer;
+
+			union PFMU_PROFILE_TAG1 *prPfmuTag1 =
+				(union PFMU_PROFILE_TAG1 *)
+					&tag->ru4TxBfPFMUTag1;
+			union PFMU_PROFILE_TAG2 *prPfmuTag2 =
+				(union PFMU_PROFILE_TAG2 *)
+					&tag->ru4TxBfPFMUTag2;
+
+			memcpy(au4RawDataTag1, prPfmuTag1,
+				sizeof(au4RawDataTag1));
+			memcpy(au4RawDataTag2, prPfmuTag2,
+				sizeof(au4RawDataTag2));
+
+			DBGLOG(INIT, INFO,
+				"========================== (R)Tag1 info ==========================\n"
+				" Row data0 : %x, Row data1 : %x, Row data2 : %x, Row data3 : %x\n",
+				au4RawDataTag1[0], au4RawDataTag1[1],
+				au4RawDataTag1[2], au4RawDataTag1[3]);
+			DBGLOG(INIT, INFO,
+				" Row data4 : %x, Row data5 : %x, Row data6 : %x\n",
+				au4RawDataTag1[4], au4RawDataTag1[5],
+				au4RawDataTag1[6]);
+			if (prPfmuTag1->rFieldv2.ucLM == PFMU_EHT) {
+				DBGLOG(INIT, INFO,
+					"ProfileID = %d Invalid status = %d\n",
+					prPfmuTag1->rFieldv2.ucProfileID,
+					prPfmuTag1->rFieldv2.ucInvalidProf);
+				DBGLOG(INIT, INFO, "0:iBF / 1:eBF = %d\n",
+					prPfmuTag1->rFieldv2.ucTxBf);
+				DBGLOG(INIT, INFO,
+					"DBW(0/1/2/3 BW20/40/80/160NC) = %d\n",
+					prPfmuTag1->rFieldv2.ucDBW);
+				DBGLOG(INIT, INFO, "0:SU / 1:MU = %d\n",
+					prPfmuTag1->rFieldv2.ucSU_MU);
+				DBGLOG(INIT, INFO,
+					"Nrow = %d, Ncol = %d, Ng = %d, LM = %d\n",
+					prPfmuTag1->rFieldv2.ucNrow,
+					prPfmuTag1->rFieldv2.ucNcol,
+					prPfmuTag1->rFieldv2.ucNgroup,
+					prPfmuTag1->rFieldv2.ucLM);
+				DBGLOG(INIT, INFO,
+					"ucCodeBook = %d, ucMobRuAlloc = %d\n",
+					prPfmuTag1->rFieldv2.ucCodeBook,
+					prPfmuTag1->rFieldv2.ucMobRuAlloc);
+				DBGLOG(INIT, INFO,
+					"Mem1(%d, %d), Mem2(%d, %d), Mem3(%d, %d), Mem4(%d, %d)\n",
+					prPfmuTag1->rFieldv2.ucMemAddr1ColIdx,
+					prPfmuTag1->rFieldv2.ucMemAddr1RowIdx,
+					prPfmuTag1->rFieldv2.ucMemAddr2ColIdx,
+					prPfmuTag1->rFieldv2.ucMemAddr2RowIdx,
+					prPfmuTag1->rFieldv2.ucMemAddr3ColIdx,
+					prPfmuTag1->rFieldv2.ucMemAddr3RowIdx,
+					prPfmuTag1->rFieldv2.ucMemAddr4ColIdx,
+					prPfmuTag1->rFieldv2.ucMemAddr4RowIdx);
+				DBGLOG(INIT, INFO,
+					"ucPartialBWInfo = 0x%x ucMobCalEn = 0x%x\n",
+					prPfmuTag1->rFieldv2.ucPartialBWInfo,
+					prPfmuTag1->rFieldv2.ucMobCalEn);
+				DBGLOG(INIT, INFO,
+					"SNR STS0=0x%x, SNR STS1=0x%x, SNR STS2=0x%x, SNR STS3=0x%x\n",
+					prPfmuTag1->rFieldv2.ucSNR_STS0,
+					prPfmuTag1->rFieldv2.ucSNR_STS1,
+					prPfmuTag1->rFieldv2.ucSNR_STS2,
+					prPfmuTag1->rFieldv2.ucSNR_STS3);
+				DBGLOG(INIT, INFO,
+					"SNR STS4=0x%x, SNR STS5=0x%x, SNR STS6=0x%x, SNR STS7=0x%x\n",
+					prPfmuTag1->rFieldv2.ucSNR_STS4,
+					prPfmuTag1->rFieldv2.ucSNR_STS5,
+					prPfmuTag1->rFieldv2.ucSNR_STS6,
+					prPfmuTag1->rFieldv2.ucSNR_STS7);
+			} else {
+				DBGLOG(INIT, INFO,
+					"ProfileID = %d Invalid status = %d\n",
+					prPfmuTag1->rFieldv3.ucProfileID,
+					prPfmuTag1->rFieldv3.ucInvalidProf);
+				DBGLOG(INIT, INFO, "0:iBF / 1:eBF = %d\n",
+					prPfmuTag1->rFieldv3.ucTxBf);
+				DBGLOG(INIT, INFO,
+					"DBW(0/1/2/3 BW20/40/80/160NC) = %d\n",
+					prPfmuTag1->rFieldv3.ucDBW);
+				DBGLOG(INIT, INFO, "0:SU / 1:MU = %d\n",
+					prPfmuTag1->rFieldv3.ucSU_MU);
+				DBGLOG(INIT, INFO,
+					"Nrow = %d, Ncol = %d, Ng = %d, LM = %d\n",
+					prPfmuTag1->rFieldv3.ucNrow,
+					prPfmuTag1->rFieldv3.ucNcol,
+					prPfmuTag1->rFieldv3.ucNgroup,
+					prPfmuTag1->rFieldv3.ucLM);
+				DBGLOG(INIT, INFO,
+					"ucCodeBook = %d, ucMobRuAlloc = %d\n",
+					prPfmuTag1->rFieldv3.ucCodeBook,
+					prPfmuTag1->rFieldv3.ucMobRuAlloc);
+				DBGLOG(INIT, INFO,
+					"Mem1(%d, %d), Mem2(%d, %d), Mem3(%d, %d), Mem4(%d, %d)\n",
+					prPfmuTag1->rFieldv3.ucMemAddr1ColIdx,
+					prPfmuTag1->rFieldv3.ucMemAddr1RowIdx,
+					prPfmuTag1->rFieldv3.ucMemAddr2ColIdx,
+					prPfmuTag1->rFieldv3.ucMemAddr2RowIdx,
+					prPfmuTag1->rFieldv3.ucMemAddr3ColIdx,
+					prPfmuTag1->rFieldv3.ucMemAddr3RowIdx,
+					prPfmuTag1->rFieldv3.ucMemAddr4ColIdx,
+					prPfmuTag1->rFieldv3.ucMemAddr4RowIdx);
+				DBGLOG(INIT, INFO, "ucMobCalEn = 0x%x\n",
+					prPfmuTag1->rFieldv3.ucMobCalEn);
+				DBGLOG(INIT, INFO,
+					"SNR STS0=0x%x, SNR STS1=0x%x, SNR STS2=0x%x, SNR STS3=0x%x\n",
+					prPfmuTag1->rFieldv3.ucSNR_STS0,
+					prPfmuTag1->rFieldv3.ucSNR_STS1,
+					prPfmuTag1->rFieldv3.ucSNR_STS2,
+					prPfmuTag1->rFieldv3.ucSNR_STS3);
+				DBGLOG(INIT, INFO,
+					"SNR STS4=0x%x, SNR STS5=0x%x, SNR STS6=0x%x, SNR STS7=0x%x\n",
+					prPfmuTag1->rFieldv3.ucSNR_STS4,
+					prPfmuTag1->rFieldv3.ucSNR_STS5,
+					prPfmuTag1->rFieldv3.ucSNR_STS6,
+					prPfmuTag1->rFieldv3.ucSNR_STS7);
+			}
+
+			DBGLOG(INIT, INFO,
+				"========================== (R)Tag2 info ==========================\n"
+				" Row data0 : %x, Row data1 : %x, Row data2 : %x\n",
+				au4RawDataTag2[0], au4RawDataTag2[1],
+				au4RawDataTag2[2]);
+			DBGLOG(INIT, INFO,
+				" Raw data3 : %x, Raw data4 : %x, Raw data5 : %x, Raw data6 : %x\n",
+				au4RawDataTag2[3], au4RawDataTag2[4],
+				au4RawDataTag2[5], au4RawDataTag2[6]);
+			DBGLOG(INIT, INFO, "Smart Ant Cfg = %d\n",
+				prPfmuTag2->rFieldv2.u2SmartAnt);
+			DBGLOG(INIT, INFO, "SE index = %d\n",
+				prPfmuTag2->rFieldv2.ucSEIdx);
+			DBGLOG(INIT, INFO,
+				"iBF lifetime limit(unit:4ms) = 0x%x\n",
+				prPfmuTag2->rFieldv2.uciBfTimeOut);
+			DBGLOG(INIT, INFO,
+				"iBF desired DBW = %d\n	0/1/2/3 : BW20/40/80/160NC\n",
+				prPfmuTag2->rFieldv2.uciBfDBW);
+			DBGLOG(INIT, INFO,
+				"iBF desired Ncol = %d\n  0/1/2 : Ncol = 1 ~ 3\n",
+				prPfmuTag2->rFieldv2.uciBfNcol);
+			DBGLOG(INIT, INFO,
+				"iBF desired Nrow = %d\n  0/1/2/3 : Nrow = 1 ~ 4\n",
+				prPfmuTag2->rFieldv2.uciBfNrow);
+			DBGLOG(INIT, INFO,
+				"iBf Ru = %d\n",
+				prPfmuTag2->rFieldv2.uciBfRu);
+			DBGLOG(INIT, INFO,
+				"ucMobDeltaT = %d, ucMobLQResult = %d\n",
+				prPfmuTag2->rFieldv2.ucMobDeltaT,
+				prPfmuTag2->rFieldv2.ucMobLQResult);
+		}
+			break;
+		default:
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}

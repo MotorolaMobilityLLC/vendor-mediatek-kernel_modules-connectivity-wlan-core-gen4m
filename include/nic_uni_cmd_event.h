@@ -2934,8 +2934,8 @@ typedef void (*PFN_UNI_CMD_BF_HANDLER) (IN union CMD_TXBF_ACTION *cmd,
 struct UNI_CMD_BF_HANDLE {
 	uint32_t u4Size;
 	PFN_UNI_CMD_BF_HANDLER pfHandler;
+	PFN_CMD_DONE_HANDLER pfCmdDoneHandler;
 };
-
 
 /* BF cmd tags */
 enum ENUM_UNI_CMD_BF_TAG {
@@ -4827,6 +4827,15 @@ struct UNI_EVENT_BF_STA_REC {
 	struct TXBF_PFMU_STA_INFO rTxBfPfmuInfo;
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_BF_PFMU_READ {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t fgBfer;
+	uint8_t au1Reserved[3];
+	union PFMU_PROFILE_TAG1 ru4TxBfPFMUTag1;
+	union PFMU_PROFILE_TAG2 ru4TxBfPFMUTag2;
+};
+
 struct UNI_EVENT_THERMAL {
     /* fixed field */
     uint8_t aucPadding[4];
@@ -5789,6 +5798,8 @@ void nicUniEventRssiMonitor(struct ADAPTER *ad,
 void nicUniEventHifCtrl(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventNan(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventBF(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 
 /*******************************************************************************
