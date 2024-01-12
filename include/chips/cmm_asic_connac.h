@@ -111,6 +111,8 @@ void fillTxDescTxByteCountWithCR4(IN struct ADAPTER *prAdapter,
 void asicPcieDmaShdlInit(IN struct ADAPTER *prAdapter);
 void asicPdmaLoopBackConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
 void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
+uint32_t asicUpdatTxRingMaxQuota(IN struct ADAPTER *prAdapter,
+	IN uint16_t u2Port, IN uint32_t u4MaxQuota);
 void asicEnableInterrupt(IN struct ADAPTER *prAdapter);
 void asicDisableInterrupt(IN struct ADAPTER *prAdapter);
 void asicLowPowerOwnRead(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult);

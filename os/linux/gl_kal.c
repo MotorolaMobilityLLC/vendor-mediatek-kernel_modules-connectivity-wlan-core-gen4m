@@ -3581,6 +3581,11 @@ int hif_thread(void *data)
 				       &prGlueInfo->ulFlag))
 			halPrintHifDbgInfo(prAdapter);
 
+		/* Update Tx Quota */
+		if (test_and_clear_bit(GLUE_FLAG_UPDATE_WMM_QUOTA,
+					&prGlueInfo->ulFlag))
+			halUpdateTxMaxQuota(prAdapter);
+
 		/* Set FW own */
 		if (test_and_clear_bit(GLUE_FLAG_HIF_FW_OWN_BIT,
 				       &prGlueInfo->ulFlag))
@@ -3917,6 +3922,10 @@ int main_thread(void *data)
 				wlanIST(prGlueInfo->prAdapter);
 			}
 		}
+
+		if (test_and_clear_bit(GLUE_FLAG_UPDATE_WMM_QUOTA,
+					&prGlueInfo->ulFlag))
+			halUpdateTxMaxQuota(prGlueInfo->prAdapter);
 #endif
 		/* transfer ioctl to OID request */
 #ifdef UT_TEST_MODE
@@ -4591,6 +4600,14 @@ void kalSetIntEvent(struct GLUE_INFO *pr)
 	wake_up_interruptible(&pr->waitq_hif);
 #else
 	wake_up_interruptible(&pr->waitq);
+#endif
+}
+
+void kalSetWmmUpdateEvent(struct GLUE_INFO *pr)
+{
+	set_bit(GLUE_FLAG_UPDATE_WMM_QUOTA, &pr->ulFlag);
+#if CFG_SUPPORT_MULTITHREAD
+	wake_up_interruptible(&pr->waitq_hif);
 #endif
 }
 

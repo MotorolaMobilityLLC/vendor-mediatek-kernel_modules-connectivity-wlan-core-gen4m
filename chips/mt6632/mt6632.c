@@ -366,6 +366,7 @@ struct BUS_INFO mt6632_bus_info = {
 	.u4DmaMask = 32,
 
 	.pdmaSetup = mt6632PdmaConfig,
+	.updateTxRingMaxQuota = NULL,
 	.enableInterrupt = mt6632EnableInterrupt,
 	.disableInterrupt = mt6632DisableInterrupt,
 	.lowPowerOwnRead = mt6632LowPowerOwnRead,

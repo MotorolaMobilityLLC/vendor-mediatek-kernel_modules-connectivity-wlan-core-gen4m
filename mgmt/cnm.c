@@ -80,12 +80,14 @@
 #define DBDC_ENABLE_GUARD_TIME		(4*1000)	/* ms */
 #define DBDC_DISABLE_GUARD_TIME		(1*1000)	/* ms */
 #define DBDC_DISABLE_COUNTDOWN_TIME	(2*1000)	/* ms */
+#define DBDC_WMM_TX_QUOTA		    (0x90)
 #endif /* CFG_SUPPORT_DBDC */
 
 #if CFG_SUPPORT_IDC_CH_SWITCH
 #define IDC_CSA_GUARD_TIME			(60)	/* 60 Sec */
 #endif
 
+#define CNM_WMM_QUOTA_RETRIGGER_TIME_MS (200)	/* ms */
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -218,6 +220,34 @@ struct CNM_OPMODE_BSS_CONTROL_T {
 		arReqPool[CNM_OPMODE_REQ_NUM];
 };
 
+enum ENUM_CNM_WMM_QUOTA_REQ_T {
+	CNM_WMM_REQ_DBDC    = 0,
+	CNM_WMM_REQ_NUM     = 1,
+	CNM_WMM_REQ_DEFAULT = 2 /* just for coding */
+};
+
+struct CNM_WMM_QUOTA_REQ {
+	bool fgEnable;
+	uint32_t u4ReqQuota;
+};
+
+struct CNM_WMM_QUOTA_RUNNING_REQ {
+	/* Initiator */
+	enum ENUM_CNM_WMM_QUOTA_REQ_T eReqIdx;
+	/* Highest prioirty req */
+	enum ENUM_CNM_WMM_QUOTA_REQ_T eRunReq;
+	bool fgIsRunning;
+	uint32_t u4ReqQuota;
+};
+
+struct CNM_WMM_QUOTA_CONTROL_T {
+	struct CNM_WMM_QUOTA_RUNNING_REQ
+		rRunning;
+	struct CNM_WMM_QUOTA_REQ
+		arReqPool[CNM_WMM_REQ_NUM];
+	struct TIMER rTimer;
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -325,6 +355,11 @@ cnmDbdcFsmEntryFunc_WAIT_HW_DISABLE(
 );
 
 static void
+cnmDbdcFsmEntryFunc_ENABLE_IDLE(
+	IN struct ADAPTER *prAdapter
+);
+
+static void
 cnmDbdcFsmEntryFunc_DISABLE_GUARD(
 	IN struct ADAPTER *prAdapter
 );
@@ -399,6 +434,21 @@ cnmOpModeSetTRxNss(
 	IN uint8_t ucOpTxNss
 );
 
+static void
+cnmWmmQuotaCallback(
+	IN struct ADAPTER *prAdapter,
+	IN unsigned long plParamPtr
+);
+
+static void
+cnmWmmQuotaSetMaxQuota(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucWmmIndex,
+	IN enum ENUM_CNM_WMM_QUOTA_REQ_T eNewReq,
+	IN bool fgEnable,
+	IN uint32_t u4ReqQuota
+);
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A 2
  *******************************************************************************
@@ -434,7 +484,7 @@ static struct DBDC_FSM_T arDdbcFsmActionTable[] = {
 
 	/* ENUM_DBDC_FSM_STATE_ENABLE_IDLE */
 	{
-		NULL,
+		cnmDbdcFsmEntryFunc_ENABLE_IDLE,
 		cnmDbdcFsmEventHandler_ENABLE_IDLE,
 		NULL
 	},
@@ -487,6 +537,13 @@ static uint8_t *apucCnmOpModeReqStatus[CNM_OPMODE_REQ_STATUS_NUM+1] = {
 	(uint8_t *) DISP_STRING("N/A")
 };
 
+static struct CNM_WMM_QUOTA_CONTROL_T g_arWmmQuotaControl[BSS_DEFAULT_NUM];
+static uint8_t *apucCnmWmmQuotaReq[CNM_WMM_REQ_DEFAULT+1] = {
+	(uint8_t *) DISP_STRING("DBDC"),
+	(uint8_t *) DISP_STRING("N/A"),
+	(uint8_t *) DISP_STRING("Default")
+};
+
 /*******************************************************************************
  *                                 M A C R O S 2
  *******************************************************************************
@@ -514,8 +571,10 @@ void cnmInit(struct ADAPTER *prAdapter)
 {
 	struct CNM_INFO *prCnmInfo;
 	struct CNM_OPMODE_BSS_CONTROL_T *prBssOpCtrl;
+	struct CNM_WMM_QUOTA_CONTROL_T *prWmmQuotaCtrl;
 	enum ENUM_CNM_OPMODE_REQ_T eReqIdx;
-	uint8_t ucBssIndex;
+	enum ENUM_CNM_WMM_QUOTA_REQ_T eReqIdxWmm;
+	uint8_t ucBssIndex, ucWmmIndex;
 
 	ASSERT(prAdapter);
 
@@ -538,6 +597,30 @@ void cnmInit(struct ADAPTER *prAdapter)
 			prBssOpCtrl->arReqPool[eReqIdx].fgEnable = false;
 	}
 
+	if (prAdapter->ucHwBssIdNum > MAX_BSSID_NUM ||
+		prAdapter->ucWmmSetNum > MAX_BSSID_NUM) {
+		/* Unexpected! out of bounds access may happen... */
+		DBGLOG(CNM, WARN,
+			"HwBssNum(%d)WmmNum(%d) > BSS_DEFAULT_NUM !!!\n",
+			prAdapter->ucHwBssIdNum,
+			prAdapter->ucWmmSetNum);
+	}
+
+	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
+		ucWmmIndex++) {
+		prWmmQuotaCtrl = &(g_arWmmQuotaControl[ucWmmIndex]);
+		prWmmQuotaCtrl->rRunning.fgIsRunning = false;
+		cnmTimerInitTimer(prAdapter,
+			&(prWmmQuotaCtrl->rTimer),
+			(PFN_MGMT_TIMEOUT_FUNC)
+			cnmWmmQuotaCallback,
+			(unsigned long)
+			ucWmmIndex);
+		for (eReqIdxWmm = CNM_WMM_REQ_DBDC;
+				eReqIdxWmm < CNM_WMM_REQ_NUM; eReqIdxWmm++)
+			prWmmQuotaCtrl->arReqPool[eReqIdxWmm].fgEnable = false;
+	}
+
 #if CFG_SUPPORT_IDC_CH_SWITCH
 	g_rLastCsaSysTime = 0;
 #endif
@@ -554,8 +637,17 @@ void cnmInit(struct ADAPTER *prAdapter)
 /*----------------------------------------------------------------------------*/
 void cnmUninit(struct ADAPTER *prAdapter)
 {
+	struct CNM_WMM_QUOTA_CONTROL_T *prWmmQuotaCtrl;
+	uint8_t ucWmmIndex;
+
 	cnmTimerStopTimer(prAdapter,
 		&g_rDbdcInfo.rDbdcGuardTimer);
+
+	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
+		ucWmmIndex++) {
+		prWmmQuotaCtrl = &(g_arWmmQuotaControl[ucWmmIndex]);
+		cnmTimerStopTimer(prAdapter, &(prWmmQuotaCtrl->rTimer));
+	}
 }	/* end of cnmUninit()*/
 
 /*----------------------------------------------------------------------------*/
@@ -2028,6 +2120,9 @@ void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 			prOpModeReq->ucOpTxNss = 1;
 		}
 		cnmUpdateDbdcSetting(prAdapter, TRUE);
+
+		/* Just resue dynamic DBDC FSM handler. */
+		cnmDbdcFsmEntryFunc_ENABLE_IDLE(prAdapter);
 		break;
 
 	default:
@@ -2412,7 +2507,18 @@ cnmDBDCFsmActionReqPeivilegeUnLock(IN struct ADAPTER *prAdapter)
 static void
 cnmDbdcFsmEntryFunc_DISABLE_IDLE(IN struct ADAPTER *prAdapter)
 {
+	uint8_t ucWmmIndex;
+
 	cnmDBDCFsmActionReqPeivilegeUnLock(prAdapter);
+	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
+		ucWmmIndex++) {
+		cnmWmmQuotaSetMaxQuota(
+			prAdapter,
+			ucWmmIndex,
+			CNM_WMM_REQ_DBDC,
+			false,
+			0 /* don't care */);
+	}
 }
 
 static void
@@ -2445,6 +2551,25 @@ cnmDbdcFsmEntryFunc_ENABLE_GUARD(IN struct ADAPTER *prAdapter)
 	}
 	DBDC_SET_GUARD_TIME(prAdapter, DBDC_ENABLE_GUARD_TIME);
 }
+
+static void
+cnmDbdcFsmEntryFunc_ENABLE_IDLE(
+	IN struct ADAPTER *prAdapter
+)
+{
+	uint8_t ucWmmIndex;
+
+	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
+		ucWmmIndex++) {
+		cnmWmmQuotaSetMaxQuota(
+			prAdapter,
+			ucWmmIndex,
+			CNM_WMM_REQ_DBDC,
+			true,
+			DBDC_WMM_TX_QUOTA);
+	}
+}
+
 
 static void
 cnmDbdcFsmEntryFunc_WAIT_HW_DISABLE(IN struct ADAPTER *prAdapter)
@@ -3810,4 +3935,126 @@ void cnmOpmodeEventHandler(
 	}
 }
 
+enum ENUM_CNM_WMM_QUOTA_REQ_T
+cnmWmmQuotaReqDispatcher(
+	struct CNM_WMM_QUOTA_CONTROL_T *prWmmQuotaCtrl
+)
+{
+	struct CNM_WMM_QUOTA_REQ *prReq;
+	enum ENUM_CNM_WMM_QUOTA_REQ_T eReqIdx;
+	enum ENUM_CNM_WMM_QUOTA_REQ_T eReqFinal = CNM_WMM_REQ_DEFAULT;
 
+	if (prWmmQuotaCtrl->rRunning.fgIsRunning) {
+		DBGLOG(CNM, WARN,
+			"WmmQuota,PreReq,%s,RunningReq,%s\n",
+			apucCnmWmmQuotaReq[prWmmQuotaCtrl->rRunning.eReqIdx],
+			apucCnmWmmQuotaReq[prWmmQuotaCtrl->rRunning.eRunReq]);
+	}
+
+	for (eReqIdx = CNM_WMM_REQ_DBDC;
+		  eReqIdx < CNM_WMM_REQ_NUM; eReqIdx++) {
+		prReq = &(prWmmQuotaCtrl->arReqPool[eReqIdx]);
+		if (prReq->fgEnable && eReqIdx < eReqFinal)
+			eReqFinal = eReqIdx;
+	}
+	return eReqFinal;
+}
+
+void
+cnmWmmQuotaCallback(
+	IN struct ADAPTER *prAdapter,
+	IN unsigned long plParamPtr
+)
+{
+	struct CNM_WMM_QUOTA_CONTROL_T *prWmmQuotaCtrl;
+	bool fgRun;
+	uint8_t ucWmmIndex;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	ucWmmIndex = (uint8_t)plParamPtr;
+	prWmmQuotaCtrl = &(g_arWmmQuotaControl[ucWmmIndex]);
+
+	if (!prWmmQuotaCtrl->rRunning.fgIsRunning) {
+		DBGLOG(CNM, WARN,
+			"WmmQuotaCb,%d,None runnig\n",
+			ucWmmIndex);
+		return;
+	}
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_UPDATE_WMM_QUOTA);
+	fgRun = prAdapter->rWmmQuotaReqCS[ucWmmIndex].fgRun;
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_UPDATE_WMM_QUOTA);
+
+	if (fgRun) {
+		DBGLOG(CNM, INFO,
+			"WmmQuotaCb,%d,Req,%s,Run,%s,Quota,%u,WakeUpHIF\n",
+			ucWmmIndex,
+			apucCnmWmmQuotaReq[prWmmQuotaCtrl->rRunning.eReqIdx],
+			apucCnmWmmQuotaReq[prWmmQuotaCtrl->rRunning.eRunReq],
+			prWmmQuotaCtrl->rRunning.u4ReqQuota
+			);
+		kalSetWmmUpdateEvent(prAdapter->prGlueInfo);
+		if (!timerPendingTimer(&(prWmmQuotaCtrl->rTimer))) {
+			cnmTimerStartTimer(
+				prAdapter, &(prWmmQuotaCtrl->rTimer),
+				CNM_WMM_QUOTA_RETRIGGER_TIME_MS);
+		}
+	} else {
+		prWmmQuotaCtrl->rRunning.fgIsRunning = false;
+		DBGLOG(CNM, INFO,
+			"WmmQuotaCb,%u,%s,Run,%s,Quota,%u,Finish\n",
+			ucWmmIndex,
+			apucCnmWmmQuotaReq[prWmmQuotaCtrl->rRunning.eReqIdx],
+			apucCnmWmmQuotaReq[prWmmQuotaCtrl->rRunning.eRunReq],
+			prWmmQuotaCtrl->rRunning.u4ReqQuota);
+	}
+}
+
+void cnmWmmQuotaSetMaxQuota(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucWmmIndex,
+	IN enum ENUM_CNM_WMM_QUOTA_REQ_T eNewReq,
+	IN bool fgEnable,
+	IN uint32_t u4ReqQuota
+)
+{
+	struct CNM_WMM_QUOTA_CONTROL_T *prWmmQuotaCtrl;
+	enum ENUM_CNM_WMM_QUOTA_REQ_T eRunReq;
+	uint32_t u4QuotaFinal;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	ASSERT(prAdapter);
+
+	prWmmQuotaCtrl = &(g_arWmmQuotaControl[ucWmmIndex]);
+	prWmmQuotaCtrl->arReqPool[eNewReq].fgEnable = fgEnable;
+	prWmmQuotaCtrl->arReqPool[eNewReq].u4ReqQuota = u4ReqQuota;
+
+	eRunReq = cnmWmmQuotaReqDispatcher(prWmmQuotaCtrl);
+	if (eRunReq == CNM_WMM_REQ_DEFAULT) {
+		/* unlimit */
+		u4QuotaFinal = -1;
+	} else {
+		u4QuotaFinal = prWmmQuotaCtrl->arReqPool[eRunReq].u4ReqQuota;
+	}
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_UPDATE_WMM_QUOTA);
+	prAdapter->rWmmQuotaReqCS[ucWmmIndex].u4Quota = u4QuotaFinal;
+	prAdapter->rWmmQuotaReqCS[ucWmmIndex].fgRun = true;
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_UPDATE_WMM_QUOTA);
+
+	prWmmQuotaCtrl->rRunning.fgIsRunning = true;
+	prWmmQuotaCtrl->rRunning.eReqIdx = eNewReq;
+	prWmmQuotaCtrl->rRunning.eRunReq = eRunReq;
+	prWmmQuotaCtrl->rRunning.u4ReqQuota = u4QuotaFinal;
+	DBGLOG(CNM, INFO,
+			"SetWmmQuota,%u,%s %s,Run,%s,Quota,0x%x\n",
+			ucWmmIndex,
+			apucCnmWmmQuotaReq[prWmmQuotaCtrl->rRunning.eReqIdx],
+			fgEnable ? "En" : "Dis",
+			apucCnmWmmQuotaReq[prWmmQuotaCtrl->rRunning.eRunReq],
+			prWmmQuotaCtrl->rRunning.u4ReqQuota);
+
+	cnmWmmQuotaCallback(prAdapter, ucWmmIndex);
+}

@@ -250,6 +250,7 @@ struct BUS_INFO connac2x2_bus_info = {
 	.u4DmaMask = 36,
 
 	.pdmaSetup = asicPdmaConfig,
+	.updateTxRingMaxQuota = asicUpdatTxRingMaxQuota,
 	.enableInterrupt = asicEnableInterrupt,
 	.disableInterrupt = asicDisableInterrupt,
 	.lowPowerOwnRead = asicLowPowerOwnRead,

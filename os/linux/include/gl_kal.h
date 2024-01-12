@@ -228,6 +228,7 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 	/* TX/RX Direct : END */
 	SPIN_LOCK_IO_REQ,
 	SPIN_LOCK_INT,
+	SPIN_LOCK_UPDATE_WMM_QUOTA,
 
 	SPIN_LOCK_MGT_BUF,
 	SPIN_LOCK_MSG_BUF,
@@ -1262,6 +1263,8 @@ void kalTimeoutHandler(unsigned long arg);
 void kalSetEvent(struct GLUE_INFO *pr);
 
 void kalSetIntEvent(struct GLUE_INFO *pr);
+
+void kalSetWmmUpdateEvent(struct GLUE_INFO *pr);
 
 void kalSetHifDbgEvent(struct GLUE_INFO *pr);
 

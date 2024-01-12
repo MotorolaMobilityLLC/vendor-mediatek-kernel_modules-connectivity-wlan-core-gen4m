@@ -219,6 +219,7 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 	/* TX/RX Direct : END */
 	SPIN_LOCK_IO_REQ,
 	SPIN_LOCK_INT,
+	SPIN_LOCK_UPDATE_WMM_QUOTA,
 
 	SPIN_LOCK_MGT_BUF,
 	SPIN_LOCK_MSG_BUF,
@@ -1381,6 +1382,9 @@ void kalTimeoutHandler(unsigned long arg);
 #define kalSetIntEvent(_pr) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr)
 
+#define kalSetWmmUpdateEvent(_pr) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr)
+
 #define kalSetHifDbgEvent(_pr) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr)
 #else
@@ -1389,6 +1393,8 @@ uint32_t kalRandomNumber(void);
 void kalSetEvent(struct GLUE_INFO *pr);
 
 void kalSetIntEvent(struct GLUE_INFO *pr);
+
+void kalSetWmmUpdateEvent(struct GLUE_INFO *pr);
 
 void kalSetHifDbgEvent(struct GLUE_INFO *pr);
 #endif
