@@ -114,7 +114,7 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
  *******************************************************************************
  */
 struct MIB_INFO_STAT g_arMibInfo[ENUM_BAND_NUM];
-uint8_t fgEfuseCtrlAxOn; /* run time control if support AX by efuse */
+uint8_t fgEfuseCtrlAxOn = 1; /* run time control if support AX by efuse */
 
 
 /*******************************************************************************
