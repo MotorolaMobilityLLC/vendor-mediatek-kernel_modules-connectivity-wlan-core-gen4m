@@ -113,17 +113,26 @@ void rlmUpdate6GOpInfo(struct ADAPTER *prAdapter,
 	uint8_t ucMaxBandwidth, ucS1, ucS2;
 
 	if (IS_BSS_APGO(prBssInfo) && prBssInfo->eBand == BAND_6G) {
+		uint8_t ucVhtChannelWidth = kal_min_t(
+			uint8_t,
+			prBssInfo->ucVhtChannelWidth,
+			VHT_OP_CHANNEL_WIDTH_160);
+
 		HE_SET_6G_OP_INFOR_PRESENT(prBssInfo->ucHeOpParams);
 
-		ucMaxBandwidth = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
+		/* HE bandwidth is no more than bw160 */
+		ucMaxBandwidth = kal_min_t(
+			uint8_t,
+			rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo),
+			MAX_BW_160MHZ);
 
 		ucS1 = nicGetS1(prBssInfo->eBand,
 				prBssInfo->ucPrimaryChannel,
-				prBssInfo->ucVhtChannelWidth);
+				ucVhtChannelWidth);
 
 		ucS2 = nicGetS2(prBssInfo->eBand,
 				prBssInfo->ucPrimaryChannel,
-				prBssInfo->ucVhtChannelWidth,
+				ucVhtChannelWidth,
 				ucS1);
 
 		prBssInfo->r6gOperInfor.rControl.bits.ChannelWidth =
