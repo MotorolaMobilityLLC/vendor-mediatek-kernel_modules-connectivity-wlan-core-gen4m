@@ -287,6 +287,16 @@ static uint8_t heRlmFillPPEThresholdInfo(
 	uint8_t ucNssIdx, ucRUIdx;
 	uint8_t ucT16Pos = HE_CAP_PPE_PPET16_NSS1_RU0_SHFT;
 	uint8_t ucT8Pos = HE_CAP_PPE_PPET8_NSS1_RU0_SHFT;
+	uint8_t ucMaxSupportNss = (sizeof(g_au8RlmHeCfgContellIdx) /
+				sizeof(g_au8RlmHeCfgContellIdx[0]));
+
+	/* Coverity:
+	 * due to ucSupportedNss is Supported Nss - 1
+	 * if it > first dimention of g_au8RlmHeCfgContellIdx - 1
+	 * assign it to first dimention of g_au8RlmHeCfgContellIdx - 1
+	 */
+	ucSupportedNss = (ucSupportedNss > (ucMaxSupportNss - 1)) ?
+				(ucMaxSupportNss - 1) : ucSupportedNss;
 
 	for (ucNssIdx = 0; ucNssIdx <= ucSupportedNss; ucNssIdx++) {
 		for (ucRUIdx = 0; ucRUIdx < ucRUIdxSize; ucRUIdx++) {
