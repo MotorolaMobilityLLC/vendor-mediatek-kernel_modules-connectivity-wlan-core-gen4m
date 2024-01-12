@@ -149,6 +149,8 @@ static uint8_t aisFsmUpdateRsnSetting(struct ADAPTER *prAdapter,
 static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 				     uint8_t ucBssIndex);
 
+static void aisRestoreAllLink(struct ADAPTER *ad, struct AIS_FSM_INFO *ais);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -3749,6 +3751,16 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 	default:
 		break;
 	}
+
+#if CFG_SUPPORT_ROAMING
+	if (prAisFsmInfo->ucIsStaRoaming) {
+		/* Restore all BssInfo and Link settings during roaming */
+		aisRestoreAllLink(prAdapter, prAisFsmInfo);
+		prAisFsmInfo->ucIsStaRoaming = FALSE;
+
+		DBGLOG(AIS, INFO, "roaming settings restoration is complete\n");
+	}
+#endif
 
 	if (fgIsCheckConnected
 	    && (prAisBssInfo->eConnectionState ==
