@@ -196,7 +196,7 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 
 void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
 {
-	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
 void halPrintHifDbgInfo(IN struct ADAPTER *prAdapter)
@@ -399,3 +399,66 @@ void halUpdateBssTokenCnt(struct ADAPTER *prAdapter,
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
+
+u_int8_t halIsHifStateReady(IN struct GLUE_INFO *prGlueInfo,
+	uint8_t *pucState)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+u_int8_t halProcessToken(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4Token,
+	IN struct QUE *prFreeQueue)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+u_int8_t halMawdUpdateL2Tbl(struct GLUE_INFO *prGlueInfo,
+		    union mawd_l2tbl rL2Tbl, uint32_t u4Set)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+uint8_t halSetRxRingHwAddr(
+	struct RTMP_RX_RING *prRxRing,
+	struct BUS_INFO *prBusInfo,
+	uint32_t u4SwRingIdx)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
+			 uint32_t u4Size, uint32_t u4DescSize,
+			 uint32_t u4BufSize, bool fgAllocMem)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
+	IN uint16_t u2Port)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
+	IN uint16_t u2Port)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void halMawdUpdateWfdmaRxBlk(struct GLUE_INFO *prGlueInfo, uint16_t u2Port)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
+	uint8_t fgRxData)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void halMawdReadRxBlks(struct ADAPTER *prAdapter, uint32_t u4Port)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+

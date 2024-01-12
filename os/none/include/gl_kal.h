@@ -145,6 +145,40 @@ extern int g_u4WlanInitFlag;
 #define COALESCING_INT_MAX_PKT (50)
 #endif
 
+#define OID_HDLR_REC_NUM	5
+
+/* By wifi.cfg first. If it is not set 1s by default; 100ms on more. */
+#define TX_LATENCY_STATS_UPDATE_INTERVAL (0)
+#define TX_LATENCY_STATS_CONTINUOUS_FAIL_THREHOLD (10)
+
+#define TX_LATENCY_STATS_MAX_DRIVER_DELAY_L1 (1)
+#define TX_LATENCY_STATS_MAX_DRIVER_DELAY_L2 (5)
+#define TX_LATENCY_STATS_MAX_DRIVER_DELAY_L3 (10)
+#define TX_LATENCY_STATS_MAX_DRIVER_DELAY_L4 (20)
+
+#define TX_LATENCY_STATS_MAX_CONNSYS_DELAY_L1 (10)
+#define TX_LATENCY_STATS_MAX_CONNSYS_DELAY_L2 (20)
+#define TX_LATENCY_STATS_MAX_CONNSYS_DELAY_L3 (50)
+#define TX_LATENCY_STATS_MAX_CONNSYS_DELAY_L4 (80)
+
+#define TX_LATENCY_STATS_MAX_MAC_DELAY_L1 (5)
+#define TX_LATENCY_STATS_MAX_MAC_DELAY_L2 (10)
+#define TX_LATENCY_STATS_MAX_MAC_DELAY_L3 (20)
+#define TX_LATENCY_STATS_MAX_MAC_DELAY_L4 (50)
+
+#define TX_LATENCY_STATS_MAX_FAIL_CONNSYS_DELAY_L1 (10)
+#define TX_LATENCY_STATS_MAX_FAIL_CONNSYS_DELAY_L2 (20)
+#define TX_LATENCY_STATS_MAX_FAIL_CONNSYS_DELAY_L3 (50)
+#define TX_LATENCY_STATS_MAX_FAIL_CONNSYS_DELAY_L4 (80)
+
+#ifndef UINT_MAX
+#define UINT_MAX	(~0U)
+#endif
+
+#define NETIF_F_IP_CSUM 0
+#define NETIF_F_IPV6_CSUM 0
+
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -198,6 +232,8 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 
 	SPIN_LOCK_EHPI_BUS,	/* only for EHPI */
 	SPIN_LOCK_NET_DEV,
+	SPIN_LOCK_BSSLIST_FW,
+	SPIN_LOCK_BSSLIST_CFG,
 	SPIN_LOCK_NUM
 };
 
@@ -317,7 +353,6 @@ enum ENUM_CMD_TX_RESULT {
 #define SUSPEND_FLAG_FOR_WAKEUP_REASON	(0)
 #define SUSPEND_FLAG_CLEAR_WHEN_RESUME	(1)
 
-
 /*----------------------------------------------------------------------------*/
 /* Macros of getting current thread id                                        */
 /*----------------------------------------------------------------------------*/
@@ -378,7 +413,30 @@ enum ENUM_CMD_TX_RESULT {
  */
 #define KAL_BAND_2GHZ (0)
 #define KAL_BAND_5GHZ (1)
-#define KAL_NUM_BANDS (2)
+#define KAL_BAND_60GHZ (2)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+#define KAL_BAND_6GHZ (3)
+#define ktime_get_ts64 ktime_get_real_ts64
+#define KAL_GET_USEC(_time) ((uint32_t)NSEC_TO_USEC(_time.tv_nsec))
+#define KAL_GET_PTIME_OF_USEC_OR_NSEC(_pTime) _pTime->tv_nsec
+#define KAL_GET_TIME_OF_USEC_OR_NSEC(_Time) _Time.tv_nsec
+#else
+#define KAL_BAND_6GHZ KAL_BAND_60GHZ
+#undef timespec64
+#define timespec64 timeval
+#undef ktime_get_ts64
+#define ktime_get_ts64 do_gettimeofday
+#undef ktime_get_real_ts64
+#define ktime_get_real_ts64 do_gettimeofday
+#undef rtc_time64_to_tm
+#define rtc_time64_to_tm rtc_time_to_tm
+#define KAL_GET_USEC(_time) _time.tv_usec
+#define KAL_GET_PTIME_OF_USEC_OR_NSEC(_pTime) _pTime->tv_usec
+#define KAL_GET_TIME_OF_USEC_OR_NSEC(_Time) _Time.tv_usec
+#endif
+#endif
+#define KAL_NUM_BANDS (4)
 
 /**
  * enum nl80211_reg_rule_flags - regulatory rule flags
@@ -623,6 +681,29 @@ int8_t kal_atoi(uint8_t ch);
 #else
 #define kalDevSetPowerState(prGlueInfo, ePowerMode)
 #endif
+
+#define kal_init_completion(eComp) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define kal_completion_done(eComp) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define kal_completion uint32_t
+#define kal_timer_list uint32_t
+#define complete(eComp) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define kal_kmemleak_ignore(pucAssocIEs) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define kal_ieee80211_get_channel(_rWiphy, _freq) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define kal_ieee80211_channel_to_frequency(_ch, _band) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define kal_min_t(_type, _v1, _v2) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define kal_tasklet_schedule(_rRxRfbRetTask) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -949,7 +1030,7 @@ KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, _prMacAddr)
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
 #if CFG_SUPPORT_DFS
-#define	kalIndicateChannelSwitch(_prGlueInfo, _eSco, _ucChannelNum) \
+#define	kalIndicateChannelSwitch(_prGlueInfo, _eSco, _ucChannelNum, _eBand) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 #endif
 
@@ -981,7 +1062,7 @@ kalRemainOnChannelExpired(IN struct GLUE_INFO *prGlueInfo,
 void
 kalIndicateChannelSwitch(IN struct GLUE_INFO *prGlueInfo,
 			IN enum ENUM_CHNL_EXT eSco,
-			IN uint8_t ucChannelNum);
+			IN uint8_t ucChannelNum, IN enum ENUM_BAND eBand);
 #endif
 
 void
@@ -1322,7 +1403,8 @@ u_int8_t kalSetTimer(IN struct GLUE_INFO *prGlueInfo,
 		     IN uint32_t u4Interval);
 #endif
 
-u_int8_t kalCancelTimer(IN struct GLUE_INFO *prGlueInfo);
+#define kalCancelTimer(_prGlueInfo) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
 #ifdef CFG_REMIND_IMPLEMENT
 #define kalScanDone(_prGlueInfo, _eNetTypeIdx, _status) \
@@ -1520,13 +1602,14 @@ int32_t kalRequestFirmware(const uint8_t *pucPath,
 /*----------------------------------------------------------------------------*/
 #ifdef CFG_REMIND_IMPLEMENT
 #define kalIndicateBssInfo(_prGlueInfo, _pucFrameBuf, _u4BufLen, \
-	_ucChannelNum, _i4SignalStrength) \
+	_ucChannelNum, _eBand, _i4SignalStrength) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 #else
 void
 kalIndicateBssInfo(IN struct GLUE_INFO *prGlueInfo,
 		   IN uint8_t *pucFrameBuf, IN uint32_t u4BufLen,
-		   IN uint8_t ucChannelNum, IN int32_t i4SignalStrength);
+		   IN uint8_t ucChannelNum, IN enum ENUM_BAND eBand,
+		   IN int32_t i4SignalStrength);
 #endif
 /*----------------------------------------------------------------------------*/
 /* Net device                                                                 */
@@ -1841,5 +1924,35 @@ kalApplyCustomRegulatory(IN struct wiphy *pWiphy,
 	IN const struct ieee80211_regdomain *pRegdom);
 #endif
 
+#define kalGetCpuBoostThreshold() \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define kalCheckVcoreBoost(_prAdapter, _bssInd) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define likely(_cond) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define unlikely(_cond) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define kal_mod64(_a, _b) do_div(_a, _b)
+
+#define do_div(_ret, _base) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define kalSetDrvIntEvent(_prGlueInfo) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define kalSendUevent(_src) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define kalIsHalted() \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#if CFG_SUPPORT_DBDC
+#define kalIndicateOpModeChange(_prAdapter, _ucBssIdx, _ucChannelBw, _ucTxNss, \
+				_ucRxNss) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#endif
 #endif /* _GL_KAL_H */
 

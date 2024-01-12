@@ -72,7 +72,6 @@
 #include "precomp.h"
 #include "mgmt/rsn.h"
 #include "debug.h"
-#include <linux/kmemleak.h>
 #if CFG_SUPPORT_NAN
 #include "cmd_buf.h"
 #include "nan_txm.h"
@@ -1439,7 +1438,7 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 		prConnSettings->pucAssocIEs =
 			kalMemAlloc(prConnSettings->assocIeLen, VIR_MEM_TYPE);
 		/* skip memory leak checking */
-		kmemleak_ignore(prConnSettings->pucAssocIEs);
+		kal_kmemleak_ignore(prConnSettings->pucAssocIEs);
 
 		if (prConnSettings->pucAssocIEs) {
 			kalMemCopy(prConnSettings->pucAssocIEs,

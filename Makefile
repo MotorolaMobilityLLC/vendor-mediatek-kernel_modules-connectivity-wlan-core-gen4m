@@ -382,7 +382,7 @@ CONFIG_MTK_WIFI_6G_SUPPORT=y
 CONFIG_MTK_HOST_OFFLOAD_SUPPORT=y
 CONFIG_SUPPORT_FORCE_ALTX=y
 ifneq ($(TARGET_BUILD_VARIANT),user)
-CONFIG_MTK_WIFI_NAN=y
+CONFIG_MTK_WIFI_NAN=n
 endif
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
@@ -1336,6 +1336,9 @@ HIF_OBJS :=  $(HIF_COMMON_DIR)hal_pdma.o \
              $(HIF_COMMON_DIR)dbg_pdma.o \
              $(HIF_COMMON_DIR)hif_mem.o \
              $(HIF_DIR)pcie.o
+ifeq ($(CONFIG_MTK_HOST_OFFLOAD_SUPPORT), y)
+HIF_OBJS +=  $(HIF_COMMON_DIR)hal_mawd.o
+endif
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
 HIF_OBJS :=  $(HIF_COMMON_DIR)hal_pdma.o \
              $(HIF_COMMON_DIR)kal_pdma.o \
@@ -1353,9 +1356,6 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
 HIF_OBJS :=  $(HIF_DIR)none.o
 endif
 
-ifeq ($(CONFIG_MTK_HOST_OFFLOAD_SUPPORT), y)
-HIF_OBJS +=  $(HIF_COMMON_DIR)hal_mawd.o
-endif
 # ---------------------------------------------------
 # Platform Objects List
 # ---------------------------------------------------

@@ -4,10 +4,10 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
+#include "precomp.h"
 #include "wlan_ring.h"
 #include <linux/string.h>
 #include <linux/kernel.h>
-#include <linux/bug.h>
 
 void wlan_ring_init(void *base, unsigned int max_size, unsigned int read,
 	unsigned int write, struct wlan_ring *ring)

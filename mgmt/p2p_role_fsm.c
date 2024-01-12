@@ -287,7 +287,7 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 		p2pFuncRadarInfoInit();
 #endif
 #if CFG_SUPPORT_802_11W
-		init_completion(&prP2pRoleFsmInfo->rDeauthComp);
+		kal_init_completion(&prP2pRoleFsmInfo->rDeauthComp);
 		prP2pRoleFsmInfo->encryptedDeauthIsInProcess = FALSE;
 #endif
 
@@ -769,7 +769,7 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11W
 	/* Notify completion after encrypted deauth frame tx done */
 	if (prP2pRoleFsmInfo->encryptedDeauthIsInProcess == TRUE) {
-		if (!completion_done(&prP2pRoleFsmInfo->rDeauthComp)) {
+		if (!kal_completion_done(&prP2pRoleFsmInfo->rDeauthComp)) {
 			DBGLOG(P2P, TRACE, "Complete rDeauthComp\n");
 			complete(&prP2pRoleFsmInfo->rDeauthComp);
 		}

@@ -1199,9 +1199,10 @@ void fillConnac3xTxDescAppendByMawdSdo(
 
 	kalGetIPv4Address(prDev, CFG_PF_ARP_NS_MAX_NUM, pucIPv4Addr,
 			  &u4NumIPv4);
+#if IS_ENABLED(CONFIG_IPV6)
 	kalGetIPv6Address(prDev, CFG_PF_ARP_NS_MAX_NUM, pucIPv6Addr,
 			  &u4NumIPv6);
-
+#endif
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;

@@ -372,7 +372,9 @@ struct BUS_INFO mt6639_bus_info = {
 	.wfdmaAllocRxRing = mt6639WfdmaAllocRxRing,
 	.setupMcuEmiAddr = mt6639SetupMcuEmiAddr,
 #endif /*_HIF_PCIE || _HIF_AXI */
+#if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
 	.DmaShdlInit = mt6639DmashdlInit,
+#endif
 #if defined(_HIF_USB)
 	.prDmashdlCfg = &rMt6639DmashdlCfg,
 	.u4UdmaWlCfg_0_Addr = CONNAC3X_UDMA_WLCFG_0,
@@ -412,7 +414,9 @@ struct TX_DESC_OPS_T mt6639_TxDescOps = {
 struct RX_DESC_OPS_T mt6639_RxDescOps = {};
 
 struct CHIP_DBG_OPS mt6639_DebugOps = {
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.showPdmaInfo = connac3x_show_wfdma_info,
+#endif
 	.showPseInfo = connac3x_show_pse_info,
 	.showPleInfo = connac3x_show_ple_info,
 	.showTxdInfo = connac3x_show_txd_Info,
@@ -420,14 +424,16 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 	.showMibInfo = connac3x_show_mib_info,
 	//.showUmacFwtblInfo = connac3x_show_umac_wtbl_info,
 	.showCsrInfo = NULL,
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.showDmaschInfo = connac3x_show_dmashdl_info,
+#endif
 	.showHifInfo = NULL,
 	.printHifDbgInfo = NULL,
 	.show_rx_rate_info = connac3x_show_rx_rate_info,
 	.show_rx_rssi_info = connac3x_show_rx_rssi_info,
 	.show_stat_info = connac3x_show_stat_info,
-	.show_wfdma_dbg_probe_info = mt6639_show_wfdma_dbg_probe_info,
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	.show_wfdma_dbg_probe_info = mt6639_show_wfdma_dbg_probe_info,
 	.show_wfdma_wrapper_info = mt6639_show_wfdma_wrapper_info,
 #endif
 };
@@ -881,7 +887,7 @@ static void mt6639ReadIntStatus(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	HAL_MCR_RD(prAdapter, MAWD_AP_INTERRUPT_SETTING0, &u4MawdSta);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
-
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	if (HAL_IS_CONNAC3X_EXT_RX_DONE_INTR(
 		    u4RegValue, prBusInfo->host_int_rxdone_bits)) {
 		*pu4IntStatus |= WHISR_RX0_DONE_INT;
@@ -893,7 +899,7 @@ static void mt6639ReadIntStatus(struct ADAPTER *prAdapter,
 		*pu4IntStatus |= WHISR_TX_DONE_INT;
 		u4WrValue |= (u4RegValue & prBusInfo->host_int_txdone_bits);
 	}
-
+#endif
 	if (u4RegValue & CONNAC_MCU_SW_INT) {
 		*pu4IntStatus |= WHISR_D2H_SW_INT;
 		u4WrValue |= (u4RegValue & CONNAC_MCU_SW_INT);
@@ -1040,11 +1046,13 @@ static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	union WPDMA_GLO_CFG_STRUCT GloCfg;
-	uint32_t u4DmaCfgCr;
+	uint32_t u4DmaCfgCr = 0;
 	uint32_t idx = 0, u4Val = 0;
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	asicConnac3xWfdmaControl(prGlueInfo, 0, enable);
 	u4DmaCfgCr = asicConnac3xWfdmaCfgAddrGet(prGlueInfo, 0);
+#endif
 	HAL_MCR_RD(prAdapter, u4DmaCfgCr, &GloCfg.word);
 
 	mt6639ConfigIntMask(prGlueInfo, enable);
@@ -1053,7 +1061,9 @@ static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 #if defined(_HIF_PCIE)
 		mt6639WpdmaMsiConfig(prGlueInfo->prAdapter);
 #endif
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 		u4DmaCfgCr = asicConnac3xWfdmaCfgAddrGet(prGlueInfo, idx);
+#endif
 		GloCfg.field_conn3x.tx_dma_en = 1;
 		GloCfg.field_conn3x.rx_dma_en = 1;
 		HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg.word);

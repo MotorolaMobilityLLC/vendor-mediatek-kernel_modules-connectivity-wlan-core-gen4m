@@ -57,7 +57,7 @@ void p2pLinkInitRoleFsm(IN struct ADAPTER *prAdapter)
 		if (prP2pInfo == NULL)
 			continue;
 		p2pRoleFsmInit(prAdapter, i);
-		init_completion(&prP2pInfo->rStopApComp);
+		kal_init_completion(&prP2pInfo->rStopApComp);
 	}
 }
 

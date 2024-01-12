@@ -437,8 +437,8 @@ u_int8_t kalP2PSetBlackList(IN struct GLUE_INFO *prGlueInfo,
 		IN u_int8_t fgIsblock,
 		IN uint8_t ucRoleIndex);
 
-u_int8_t kalP2PResetBlackList(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucRoleIndex);
+#define kalP2PResetBlackList(_prGlueInfo, _ucRoleIndex) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
 void kalP2PSetMaxClients(IN struct GLUE_INFO *prGlueInfo,
 		IN uint32_t u4MaxClient,
@@ -472,8 +472,8 @@ u_int8_t kalP2PMaxClients(IN struct GLUE_INFO *prGlueInfo,
 	_ucPrimaryCh, _ucSecondCh, _ucSeg0Ch, _ucSeg1Ch, _eChnlBw, eHwMode) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
-#define  kalP2pPreStartRdd( \
-		prGlueInfo, ucRoleIdx, ucPrimaryCh, eBand) \
+#define kalP2pPreStartRdd( \
+		_prGlueInfo, _ucRoleIdx, _ucPrimaryCh, _eBand) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
 #define kalP2pNotifyStopApComplete(_prAdapter, _ucRoleIndex) \

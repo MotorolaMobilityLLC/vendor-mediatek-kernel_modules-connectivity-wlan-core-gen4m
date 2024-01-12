@@ -131,6 +131,12 @@
 #define IW_AUTH_ALG_FT			0x00000008
 
 #define IW_PMKID_LEN        16
+
+#define SUITE(oui, id)	(((oui) << 8) | (id))
+#define WLAN_AKM_SUITE_SAE			SUITE(0x000FAC, 8)
+#define WLAN_EID_BSS_MAX_IDLE_PERIOD 90
+#define WLAN_EID_VENDOR_SPECIFIC 221
+
 /*
  * this highly depends on kernel version
  * why can't we just use kalGetTimeTick (?)
@@ -224,6 +230,32 @@ struct wireless_dev {
  * mgmt/p2p_role_fsm.c
  * nic/nic_cmd_event.c
  */
+struct net_device_stats {
+	unsigned long	rx_packets;
+	unsigned long	tx_packets;
+	unsigned long	rx_bytes;
+	unsigned long	tx_bytes;
+	unsigned long	rx_errors;
+	unsigned long	tx_errors;
+	unsigned long	rx_dropped;
+	unsigned long	tx_dropped;
+	unsigned long	multicast;
+	unsigned long	collisions;
+	unsigned long	rx_length_errors;
+	unsigned long	rx_over_errors;
+	unsigned long	rx_crc_errors;
+	unsigned long	rx_frame_errors;
+	unsigned long	rx_fifo_errors;
+	unsigned long	rx_missed_errors;
+	unsigned long	tx_aborted_errors;
+	unsigned long	tx_carrier_errors;
+	unsigned long	tx_fifo_errors;
+	unsigned long	tx_heartbeat_errors;
+	unsigned long	tx_window_errors;
+	unsigned long	rx_compressed;
+	unsigned long	tx_compressed;
+};
+
 struct net_device {
 	/*
 	 * access member of member of GlueInfo directly
@@ -232,6 +264,8 @@ struct net_device {
 	unsigned char *dev_addr;
 	/* needed by nic/nic_cmd_event.c */
 	struct wireless_dev	*ieee80211_ptr;
+	uint64_t features;
+	struct net_device_stats	stats;
 };
 
 struct device {
@@ -252,6 +286,10 @@ struct sk_buff {
 	unsigned char *data;
 	unsigned int len;
 	struct net_device *dev;
+	union {
+		u32 mark;
+		u32 reserved_tailroom;
+	};
 };
 
 /*
@@ -715,7 +753,7 @@ int kal_hex_dump_to_buffer(const void *buf, size_t len, int rowsize,
  * kill the machine, replace panic() to dump_stack()
  * needed by mgmt/rlm_domain.c
  */
-void kal_warn_on(uint8_t condition);
+bool kal_warn_on(uint8_t condition);
 #define WARN_ON(_condition) kal_warn_on(_condition)
 
 /*
@@ -728,17 +766,29 @@ void kal_get_monotonic_boottime(struct timespec *ts);
 #define get_monotonic_boottime(_ts) kal_get_monotonic_boottime(_ts)
 
 /*
- * needed by nic_tx.c
- * kal_mod_timer - modify a timer's timeout
- * @timer: the timer to be modified
- * @expires: new timeout in jiffies
- * The function returns whether it has modified a pending timer or not.
- * (ie. mod_timer() of an inactive timer returns 0, mod_timer() of an
- * active timer returns 1.)
+ * kal_do_gettimeofday - Returns the time of day in a timeval
+ * @tv: pointer to the timeval to be set
+ * needed by
+ * common/debug.c
+ * mgmt/stats.c
  */
-int kal_mod_timer(struct timer_list *timer, unsigned long expires);
-#define mod_timer(_timer, _expires) kal_mod_timer(_timer, _expires)
+void kal_do_gettimeofday(struct timeval *tv);
+#define do_gettimeofday(_tv) kal_do_gettimeofday(_tv)
+#undef ktime_get_real_ts64
+#define ktime_get_real_ts64 do_gettimeofday
+#define ktime_get_ts64 ktime_get_real_ts64
 
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+#define KAL_GET_USEC(_time) ((uint32_t)NSEC_TO_USEC(_time.tv_nsec))
+#define KAL_GET_TIME_OF_USEC_OR_NSEC(_Time) _Time.tv_nsec
+#else
+#define KAL_GET_USEC(_time) _time.tv_usec
+#define KAL_GET_TIME_OF_USEC_OR_NSEC(_Time) _Time.tv_usec
+#endif
+
+
+#define mod_timer(_timer, _expires) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 /*
  * kstrto* - convert a string to an *
  * @s: The start of the string. The string must be null-terminated, and may also
@@ -995,6 +1045,8 @@ void kal_kfree_skb(struct sk_buff *skb);
 /* needed by mgmt/stats.c */
 #define rtc_time_to_tm(_time, _tm) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#undef rtc_time64_to_tm
+#define rtc_time64_to_tm rtc_time_to_tm
 
 /*	implemented: os/linux/gl_wext.c
  *	used: common/wlan_oid.c, wlanoidSetWapiAssocInfo
@@ -1115,4 +1167,8 @@ int kal_test_bit(unsigned long bit, unsigned long *p);
 #ifndef test_bit
 #define test_bit(_offset, _val) kal_test_bit(_offset, _val)
 #endif
+
+#define iounmap(_vir_addr) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
 #endif

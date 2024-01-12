@@ -87,8 +87,14 @@
 #endif
 
 #define RST_FLAG_CHIP_RESET        0
-#define RST_FLAG_DO_CORE_DUMP      BIT(0)
-#define RST_FLAG_PREVENT_POWER_OFF BIT(1)
+#define RST_FLAG_DO_CORE_DUMP		BIT(0)
+#define RST_FLAG_PREVENT_POWER_OFF	BIT(1)
+#define RST_FLAG_DO_WHOLE_RESET		BIT(2)
+#define RST_FLAG_DO_PASSIVE_L0P5_RESET	BIT(3)
+#define RST_FLAG_DO_ACTIVE_L0P5_RESET	BIT(4)
+#define RST_FLAG_DO_L1_RESET		BIT(5)
+
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -187,8 +193,20 @@ extern int wifi_reset_end(enum ENUM_RESET_STATUS);
 #define GL_RESET_TRIGGER(_prAdapter, _u4Flags) \
 	glResetTrigger(_prAdapter, (_u4Flags), \
 	(const uint8_t *)__FILE__, __LINE__)
+/* You can use this macro to trigger user defined reset actions instead of the
+ * default ones.
+ */
+#define GL_USER_DEFINE_RESET_TRIGGER(_prAdapter, _eReason, _u4Flags)    \
+	do { \
+		glSetRstReason(_eReason);    \
+		glResetTrigger(_prAdapter, _u4Flags,	\
+			       (const uint8_t *)__FILE__, __LINE__);	\
+	} while (FALSE)
 #else
 #define GL_RESET_TRIGGER(_prAdapter, _u4Flags) \
+	DBGLOG(INIT, INFO, "DO NOT support chip reset\n")
+
+#define GL_USER_DEFINE_RESET_TRIGGER(_prAdapter, _eReason, _u4Flags)    \
 	DBGLOG(INIT, INFO, "DO NOT support chip reset\n")
 #endif
 
@@ -211,6 +229,7 @@ void glSendResetRequest(void);
 int32_t glIsWmtCodeDump(void);
 
 #ifdef CFG_REMIND_IMPLEMENT
+
 #define glSetRstReason(_eReason) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
@@ -233,5 +252,8 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 
 void WfsysResetHdlr(struct work_struct *work);
 #endif
+
+#define GL_DEFAULT_RESET_TRIGGER(_prAdapter, _eReason)	\
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #endif /* _GL_RST_H */

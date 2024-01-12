@@ -105,6 +105,7 @@ uint32_t au4LogLevel[ENUM_WIFI_LOG_MODULE_NUM] = {ENUM_WIFI_LOG_LEVEL_DEFAULT};
  *                           P R I V A T E   D A T A
  *****************************************************************************
  */
+u_int8_t wlan_fb_power_down = FALSE;
 
 
 /*****************************************************************************
@@ -134,4 +135,95 @@ void
 kalApplyCustomRegulatory(IN struct wiphy *pWiphy,
 	IN const struct ieee80211_regdomain *pRegdom) { }
 #endif
+
+const uint8_t *kalFindIeExtIE(uint8_t eid,
+				uint8_t exteid,
+				const uint8_t *ies, int len)
+{
+	if (eid != ELEM_ID_RESERVED)
+		return kalFindIeMatchMask(eid, ies, len, NULL, 0, 0, NULL);
+	else
+		return kalFindIeMatchMask(eid, ies, len, &exteid, 1, 2, NULL);
+}
+
+uint32_t
+kalSyncTimeToFW(IN struct ADAPTER *prAdapter, IN u_int8_t fgInitCmd,
+		unsigned int second, unsigned int usecond)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+int32_t kalGetFwFlavor(struct ADAPTER *prAdapter, uint8_t *flavor)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+const uint8_t *kalFindIeMatchMask(uint8_t eid,
+				const uint8_t *ies, int len,
+				const uint8_t *match,
+				int match_len, int match_offset,
+				const uint8_t *match_mask)
+{
+	/* match_offset can't be smaller than 2, unless match_len is
+	 * zero, in which case match_offset must be zero as well.
+	 */
+	if (WARN_ON((match_len && match_offset < 2) ||
+		(!match_len && match_offset)))
+		return NULL;
+	while (len >= 2 && len >= ies[1] + 2) {
+		if ((ies[0] == eid) &&
+			(ies[1] + 2 >= match_offset + match_len) &&
+			!kalMaskMemCmp(ies + match_offset,
+			match, match_mask, match_len))
+			return ies;
+		len -= ies[1] + 2;
+		ies += ies[1] + 2;
+	}
+	return NULL;
+}
+
+const uint8_t *kalFindVendorIe(uint32_t oui, int type,
+				const uint8_t *ies, int len)
+{
+	const uint8_t *ie;
+	uint8_t match[] = {oui >> 16, oui >> 8, oui, type};
+	int match_len = type < 0 ? 3 : sizeof(match);
+
+	if (WARN_ON(type > 0xff))
+		return NULL;
+
+	ie = kalFindIeMatchMask(ELEM_ID_VENDOR, ies, len, match,
+		match_len, 2, NULL);
+
+	if (ie && (ie[1] < 4))
+		return NULL;
+
+	return ie;
+}
+
+bool ieee80211_operating_class_to_band(u8 operating_class,
+				       enum nl80211_band *band)
+{
+	switch (operating_class) {
+	case 112:
+	case 115 ... 127:
+	case 128 ... 130:
+		*band = NL80211_BAND_5GHZ;
+		return true;
+	case 131 ... 135:
+		*band = NL80211_BAND_6GHZ;
+		return true;
+	case 81:
+	case 82:
+	case 83:
+	case 84:
+		*band = NL80211_BAND_2GHZ;
+		return true;
+	case 180:
+		*band = NL80211_BAND_60GHZ;
+		return true;
+	}
+
+	return false;
+}
 

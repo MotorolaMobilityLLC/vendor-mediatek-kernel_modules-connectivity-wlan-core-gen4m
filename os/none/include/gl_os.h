@@ -538,12 +538,34 @@ struct GLUE_INFO {
 #if (CFG_SUPPORT_PERF_IND == 1)
 	struct GL_PERF_IND_INFO PerfIndCache;
 #endif
+
 #if (CFG_CE_ASSERT_DUMP == 1)
 	wait_queue_head_t waitq_fwdump;
 	struct sk_buff_head rCoreDumpSkbQueue;
 #endif
-#if 0
 
+/* for cfg80211 scan done indication */
+	struct cfg80211_scan_request *prScanRequest;
+
+#if CFG_SUPPORT_SCHED_SCAN
+	struct PARAM_SCHED_SCAN_REQUEST *prSchedScanRequest;
+#else
+	struct cfg80211_sched_scan_request *prSchedScanRequest;
+#endif
+
+	kal_completion rPendComp;	/* indicate main thread halt complete */
+
+	unsigned long ulFlag;		/* GLUE_FLAG_XXX */
+
+	/* Host interface related information */
+	/* defined in related hif header file */
+	struct GL_HIF_INFO rHifInfo;
+
+#if (CFG_SUPPORT_RETURN_TASK == 1)
+	uint32_t rRxRfbRetTask;
+#endif
+
+#if 0
 	/* Device */
 	struct device *prDev;
 
@@ -601,10 +623,6 @@ struct GLUE_INFO {
 	/* firmware */
 	struct firmware *prFw;
 
-	/* Host interface related information */
-	/* defined in related hif header file */
-	struct GL_HIF_INFO rHifInfo;
-
 	/*! \brief wext wpa related information */
 	struct GL_WPA_INFO rWpaInfo;
 #if CFG_SUPPORT_REPLAY_DETECTION
@@ -629,15 +647,12 @@ struct GLUE_INFO {
 	struct completion rScanComp;	/* indicate scan complete */
 	struct completion
 		rHaltComp;	/* indicate main thread halt complete */
-	struct completion
-		rPendComp;	/* indicate main thread halt complete */
 #if CFG_SUPPORT_MULTITHREAD
 	struct completion
 		rHifHaltComp;	/* indicate hif_thread halt complete */
 	struct completion
 		rRxHaltComp;	/* indicate hif_thread halt complete */
 
-	uint32_t u4TxThreadPid;
 	uint32_t u4RxThreadPid;
 	uint32_t u4HifThreadPid;
 #endif
@@ -718,12 +733,6 @@ struct GLUE_INFO {
 	uint8_t rMacAddrOverride[PARAM_MAC_ADDR_LEN];
 
 	struct SET_TXPWR_CTRL rTxPwr;
-
-	/* for cfg80211 scan done indication */
-	struct cfg80211_scan_request *prScanRequest;
-
-	/* for cfg80211 scheduled scan */
-	struct cfg80211_sched_scan_request *prSchedScanRequest;
 
 	/* to indicate registered or not */
 	u_int8_t fgIsRegistered;
@@ -939,6 +948,7 @@ struct NETDEV_PRIVATE_GLUE_INFO {
 #if CFG_ENABLE_UNIFY_WIPHY
 	u_int8_t ucIsP2p;
 #endif
+	u_int8_t ucMddpSupport;
 };
 
 struct PACKET_PRIVATE_DATA {
@@ -971,6 +981,26 @@ struct CMD_CONNSYS_FW_LOG {
 	int32_t fgCmd;
 	int32_t fgValue;
 	u_int8_t fgEarlySet;
+};
+
+enum ENUM_NVRAM_STATE {
+	NVRAM_STATE_INIT = 0,
+	NVRAM_STATE_READY, /*power on or update*/
+	NVRAM_STATE_SEND_TO_FW,
+	NVRAM_STATE_NUM
+};
+
+/* WMM QOS user priority from 802.1D/802.11e */
+enum ENUM_WMM_UP {
+	WMM_UP_BE_INDEX = 0,
+	WMM_UP_BK_INDEX,
+	WMM_UP_RESV_INDEX,
+	WMM_UP_EE_INDEX,
+	WMM_UP_CL_INDEX,
+	WMM_UP_VI_INDEX,
+	WMM_UP_VO_INDEX,
+	WMM_UP_NC_INDEX,
+	WMM_UP_INDEX_NUM
 };
 
 /*******************************************************************************
@@ -1118,6 +1148,15 @@ struct CMD_CONNSYS_FW_LOG {
 #define GLUE_LOOKUP_FUN(fun_name) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
+#define GLUE_COPY_PRIV_DATA(_pDst, _pSrc) \
+	(kalMemCopy(GLUE_GET_PKT_PRIVATE_DATA(_pDst), \
+	GLUE_GET_PKT_PRIVATE_DATA(_pSrc), sizeof(struct PACKET_PRIVATE_DATA)))
+
+#define GLUE_GET_INDEPENDENT_PKT(_p)    \
+	(GLUE_GET_PKT_PRIVATE_DATA(_p)->fgIsIndependentPkt)
+
+#define GLUE_SET_INDEPENDENT_PKT(_p, _fgIsIndePkt) \
+	(GLUE_GET_PKT_PRIVATE_DATA(_p)->fgIsIndependentPkt = _fgIsIndePkt)
 
 #if CFG_MET_TAG_SUPPORT
 #define GL_MET_TAG_START(_id, _name)	met_tag_start(_id, _name)
@@ -1269,6 +1308,9 @@ extern const uint8_t *kalFindIeMatchMask(uint8_t eid,
 				int match_len, int match_offset,
 				const uint8_t *match_mask);
 
+extern const uint8_t *kalFindVendorIe(uint32_t oui, int type,
+				const uint8_t *ies, int len);
+
 extern const uint8_t *kalFindIeExtIE(uint8_t eid,
 				uint8_t exteid,
 				const uint8_t *ies, int len);
@@ -1329,4 +1371,8 @@ extern void connectivity_arch_setup_dma_ops(
 #define ARRAY_SIZE(arr) \
 	(sizeof(arr) / sizeof(((typeof(arr)){})[0]))
 #endif
+
+#define wlanNvramSetState(_state) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
 #endif /* _GL_OS_H */

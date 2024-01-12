@@ -907,7 +907,11 @@ void wlanFillTimestamp(struct ADAPTER *prAdapter, void *pvPacket,
 	uint8_t *pucEth = NULL;
 	uint32_t u4Length = 0;
 	uint8_t *pucUdp = NULL;
+#if KERNEL_VERSION(5, 0, 0) <= LINUX_VERSION_CODE
 	struct timespec64 tval;
+#else
+	struct timeval tval;
+#endif
 
 	if (!prAdapter || !prAdapter->rDebugInfo.fgVoE5_7Test || !skb)
 		return;
