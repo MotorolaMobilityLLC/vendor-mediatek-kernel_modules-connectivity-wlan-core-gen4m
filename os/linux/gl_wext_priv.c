@@ -16960,17 +16960,6 @@ static int priv_driver_get_ed(IN struct net_device *prNetDev,
 }
 #endif /* CFG_SUPPORT_DYNAMIC_EDCCA */
 
-static int priv_driver_get_tp_info(IN struct net_device *prNetDev,
-				   IN char *pcCommand, IN int i4TotalLen)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-
-	ASSERT(prNetDev);
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-
-	return kalPerMonGetInfo(prGlueInfo->prAdapter, pcCommand, i4TotalLen);
-}
-
 static int priv_driver_set_pd(IN struct net_device *prNetDev,
 			      IN char *pcCommand, IN int i4TotalLen)
 {
@@ -17112,6 +17101,17 @@ static int priv_driver_set_maxrfgain(IN struct net_device *prNetDev,
 }
 
 #endif
+
+static int priv_driver_get_tp_info(IN struct net_device *prNetDev,
+				   IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	ASSERT(prNetDev);
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	return kalPerMonGetInfo(prGlueInfo->prAdapter, pcCommand, i4TotalLen);
+}
 
 
 #if (CFG_SUPPORT_TWT == 1)
