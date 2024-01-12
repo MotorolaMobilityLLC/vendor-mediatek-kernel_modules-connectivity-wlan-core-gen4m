@@ -181,6 +181,10 @@ struct APPEND_VAR_IE_ENTRY txAssocRespIETable[] = {
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
+static uint8_t g_assocSkipIEs[] = {
+	ELEM_ID_RSN,
+	ELEM_ID_EXTENDED_CAP
+};
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -768,26 +772,33 @@ uint32_t assocCalculateConnIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 {
 	struct CONNECTION_SETTINGS *prConnSettings;
 	uint8_t ucBssIndex;
-	const uint8_t *rsnConn;
+	const uint8_t *ie;
+	uint16_t u2RetLen = 0;
+	uint8_t i;
 
 	ucBssIndex = prStaRec->ucBssIndex;
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
 	if (IS_STA_IN_AIS(prStaRec) && prConnSettings->assocIeLen > 0) {
 		prConnSettings = aisGetConnSettings(prAdapter, ucBssIdx);
-		rsnConn = kalFindIeMatchMask(ELEM_ID_RSN,
+		u2RetLen = prConnSettings->assocIeLen;
+
+		for (i = 0; i < ARRAY_SIZE(g_assocSkipIEs); i++) {
+			ie = NULL;
+			ie = kalFindIeMatchMask(g_assocSkipIEs[i],
 				       prConnSettings->pucAssocIEs,
 				       prConnSettings->assocIeLen,
 				       NULL, 0, 0, NULL);
-		/* cut out RSN IE */
-		if (rsnConn)
-			return prConnSettings->assocIeLen -
-				ELEM_HDR_LEN - RSN_IE(rsnConn)->ucLength;
-		else
-			return prConnSettings->assocIeLen;
+			/* cut out IE */
+			if (ie)
+				u2RetLen -= IE_SIZE(ie);
+		}
 	}
 
-	return 0;
+	if (u2RetLen >= 0)
+		return u2RetLen;
+	else
+		return 0;
 }
 
 void assocGenerateConnIE(struct ADAPTER *prAdapter,
@@ -796,11 +807,10 @@ void assocGenerateConnIE(struct ADAPTER *prAdapter,
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct STA_RECORD *prStaRec;
 	uint8_t *pucBuffer, *cp;
-	const uint8_t *rsnConn;
-	const uint8_t *extCapConn;
+	const uint8_t *ie;
 	uint8_t ucBssIndex;
-	uint32_t len, rsnIeLen;
-	uint32_t extCapIeLen;
+	uint8_t i;
+	uint32_t len, ieLen;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 	if (!prStaRec)
@@ -818,38 +828,23 @@ void assocGenerateConnIE(struct ADAPTER *prAdapter,
 				   prConnSettings->assocIeLen);
 		cp += prConnSettings->assocIeLen;
 
-		rsnConn = kalFindIeMatchMask(ELEM_ID_RSN,
+		for (i = 0; i < ARRAY_SIZE(g_assocSkipIEs); i++) {
+			ie = NULL;
+			ie = kalFindIeMatchMask(g_assocSkipIEs[i],
 				       pucBuffer,
 				       cp - pucBuffer,
 				       NULL, 0, 0, NULL);
+			if (ie) {
+				ieLen = IE_SIZE(ie);
 
-		if (rsnConn) {
-			rsnIeLen = IE_SIZE(rsnConn);
-
-			len = cp - rsnConn - rsnIeLen;
-			/* copy to the start of RSN IE*/
-			cp = (char *) rsnConn;
-			/* jump to the end of RSN IE to copy Remaing IEs*/
-			kalMemCopy(cp, rsnConn + rsnIeLen, len);
-			cp += len;
+				len = cp - ie - ieLen;
+				/* copy to the start of IE*/
+				cp = (char *) ie;
+				/* jump to the end of IE to copy Remaing IEs*/
+				kalMemMove(cp, ie + ieLen, len);
+				cp += len;
+			}
 		}
-
-		extCapConn = kalFindIeMatchMask(ELEM_ID_EXTENDED_CAP,
-				       pucBuffer,
-				       cp  - pucBuffer,
-				       NULL, 0, 0, NULL);
-
-		if (extCapConn) {
-			extCapIeLen = IE_SIZE(extCapConn);
-
-			len = cp - extCapConn - extCapIeLen;
-			/* copy to the start of EXT CAP IE*/
-			cp = (char *) extCapConn;
-			/* jump to the end of EXT CAP IE to copy remaing IEs */
-			kalMemCopy(cp, extCapConn + extCapIeLen, len);
-			cp += len;
-		}
-
 	}
 	prMsduInfo->u2FrameLength += cp - pucBuffer;
 	DBGLOG_MEM8(SAA, INFO, pucBuffer, cp - pucBuffer);
