@@ -13823,27 +13823,23 @@ out:
 }
 #endif /* CFG_WIFI_GET_MCS_INFO */
 
-uint32_t wlanQueryThermalTemp(struct GLUE_INFO *prGlueInfo,
-	struct THERMAL_DATA *data)
+uint32_t wlanQueryThermalTemp(struct ADAPTER *ad,
+	struct THERMAL_TEMP_DATA *data)
 {
+	struct GLUE_INFO *glue = ad->prGlueInfo;
+	PFN_OID_HANDLER_FUNC handler = NULL;
 	uint32_t status = WLAN_STATUS_SUCCESS;
 	uint32_t len = 0;
-	uint8_t band = 0;
 
 	if (!data)
 		return WLAN_STATUS_FAILURE;
 
-	for (band = 0; band < ENUM_BAND_NUM; band++, data++) {
-		data->ucBandIdx = band;
+	if (data->eType == THERMAL_TEMP_TYPE_ADIE)
+		handler = wlanoidQueryThermalAdieTemp;
+	else
+		handler = wlanoidQueryThermalDdieTemp;
 
-		status = kalIoctl(prGlueInfo,
-			  wlanoidQueryThermalTemperature,
-			  data,
-			  sizeof(struct THERMAL_DATA),
-			  &len);
-		if (status != WLAN_STATUS_SUCCESS)
-			break;
-	}
+	status = kalIoctl(glue, handler, data, sizeof(data), &len);
 
 	return status;
 }

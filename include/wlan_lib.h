@@ -1515,8 +1515,15 @@ struct RxRateInfo {
 	uint32_t u4Rate;
 };
 
-struct THERMAL_DATA {
-	uint8_t ucBandIdx;
+enum THERMAL_TEMP_TYPE {
+	THERMAL_TEMP_TYPE_ADIE,
+	THERMAL_TEMP_TYPE_DDIE,
+	THERMAL_TEMP_TYPE_NUM,
+};
+
+struct THERMAL_TEMP_DATA {
+	enum THERMAL_TEMP_TYPE eType;
+	uint8_t ucIdx;
 	uint32_t u4Temperature;
 };
 
@@ -2268,7 +2275,7 @@ void wlanRxMcsInfoMonitor(struct ADAPTER *prAdapter,
 					unsigned long ulParamPtr);
 #endif
 
-uint32_t wlanQueryThermalTemp(struct GLUE_INFO *prGlueInfo,
-	struct THERMAL_DATA *data);
+uint32_t wlanQueryThermalTemp(struct ADAPTER *ad,
+	struct THERMAL_TEMP_DATA *data);
 
 #endif /* _WLAN_LIB_H */

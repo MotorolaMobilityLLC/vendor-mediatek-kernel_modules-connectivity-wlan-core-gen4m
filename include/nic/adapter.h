@@ -2092,10 +2092,6 @@ struct ADAPTER {
 	uint32_t u4TdlsLinkCount;
 #endif /* CFG_SUPPORT_TDLS */
 
-#if CFG_SUPPORT_THERMAL_QUERY
-	void *tz;
-#endif
-
 #if CFG_MSCS_SUPPORT
 	struct MSCS_CAP_FAST_PATH rFastPathCap;
 #endif

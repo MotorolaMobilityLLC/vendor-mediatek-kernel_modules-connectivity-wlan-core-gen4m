@@ -15955,52 +15955,60 @@ exit:
 static int priv_driver_query_thermal_temp(struct net_device *prNetDev,
 	char *pcCommand, IN int i4TotalLen)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct THERMAL_DATA *data = NULL;
+	struct GLUE_INFO *glue = NULL;
+	struct ADAPTER *ad = NULL;
+	struct mt66xx_chip_info *chip_info = NULL;
+	struct thermal_info *thermal_info = NULL;
+	struct THERMAL_TEMP_DATA data;
 	uint32_t status = WLAN_STATUS_SUCCESS;
-	uint32_t size = 0;
-	int32_t i4BytesWritten = 0;
-	uint8_t band = 0;
+	uint8_t idx = 0;
+	int32_t written = 0;
 
 	if (!prNetDev)
 		goto exit;
 
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		goto exit;
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-
-	size = sizeof(struct THERMAL_DATA) * ENUM_BAND_NUM;
-	data = kalMemAlloc(size, VIR_MEM_TYPE);
-	if (!data)
+	glue = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (glue->u4ReadyFlag == 0) {
+		DBGLOG(REQ, INFO, "Skip due to driver NOT ready.\n");
 		goto exit;
-	kalMemZero(data, size);
-
-	status = wlanQueryThermalTemp(prGlueInfo, data);
-	if (status != WLAN_STATUS_SUCCESS)
-		goto exit;
-
-	for (band = 0; band < ENUM_BAND_NUM; band++, data++) {
-		if (band == 0) {
-			i4BytesWritten += kalSnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten,
-				"\n");
-		}
-		i4BytesWritten += kalSnprintf(
-			pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten,
-			"[%d] temp=%d\n",
-			data->ucBandIdx,
-			data->u4Temperature);
 	}
 
-	DBGLOG(REQ, INFO, "%s\n", pcCommand);
+	ad = glue->prAdapter;
+	chip_info = ad->chip_info;
+	thermal_info = &chip_info->thermal_info;
+
+	if (thermal_info == NULL) {
+		DBGLOG(REQ, INFO, "Skip due to chip NOT supported.\n");
+		goto exit;
+	}
+
+	written += kalSnprintf(pcCommand + written,
+			       i4TotalLen - written,
+			       "\n");
+	for (idx = 0; idx < thermal_info->sensor_num; idx++) {
+		struct thermal_sensor_info *sensor =
+			&thermal_info->sensor_info[idx];
+
+		data.eType = sensor->type;
+		data.ucIdx = sensor->sendor_idx;
+
+		status = wlanQueryThermalTemp(ad, &data);
+		if (status != WLAN_STATUS_SUCCESS)
+			break;
+
+		written += kalSnprintf(pcCommand + written,
+				       i4TotalLen - written,
+				       "[%d][%s] temp=%d\n",
+				       idx,
+				       sensor->name,
+				       data.u4Temperature);
+	}
 
 exit:
-	if (data)
-		kalMemFree(data, VIR_MEM_TYPE, size);
 
-	return i4BytesWritten;
+	return written;
 }
 
 #if CFG_SUPPORT_BATCH_SCAN
