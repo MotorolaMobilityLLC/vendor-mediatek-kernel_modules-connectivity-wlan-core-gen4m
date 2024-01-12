@@ -6923,6 +6923,7 @@ struct STA_RECORD *aisGetStaRecOfAP(
 	if (prAdapter->aprBssInfo[ucBssIndex])
 		return prAdapter->aprBssInfo[ucBssIndex]->prStaRecOfAP;
 
+	DBGLOG(AIS, WARN, "prStaRecOfAP is Null\n");
 	return NULL;
 }
 
