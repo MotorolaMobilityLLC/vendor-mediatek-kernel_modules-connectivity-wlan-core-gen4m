@@ -1118,7 +1118,7 @@ struct PACKET_PRIVATE_RX_DATA {
 /* TODO: os-related, API implementation, may refer to Linux */
 #define glPacketDataTypeCheck()
 
-#define mtk_wlan_ndev_select_queue(_prSkb)
+#define mtk_wlan_ndev_select_queue(_prNetdev, _prSkb)
 
 #define netdev_for_each_mc_addr(mclist, dev)
 
