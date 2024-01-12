@@ -6720,11 +6720,11 @@ int kalMetRemoveProcfs(void)
 
 #endif
 
-static u_int8_t kalSendUevent(const char *src)
+u_int8_t kalSendUevent(const char *src)
 {
 	int ret;
 	char *envp[2];
-	char event_string[32];
+	char event_string[300];
 
 	envp[0] = event_string;
 	envp[1] = NULL;
