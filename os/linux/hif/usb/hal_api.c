@@ -1119,6 +1119,13 @@ void halRxUSBReceiveWdtComplete(struct urb *urb)
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 
+	if (urb->status == -ESHUTDOWN || urb->status == -ENOENT) {
+		glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxWdtFreeQ, prUsbReq,
+						&prHifInfo->rRxWdtQLock, FALSE);
+		DBGLOG(RX, ERROR, "USB device shutdown skip Rx\n");
+		return;
+	}
+
 	if (urb->status == 0) {
 		glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxWdtCompleteQ,
 				prUsbReq, &prHifInfo->rRxWdtQLock, FALSE);
@@ -1266,7 +1273,11 @@ void halRxUSBProcessEventDataComplete(IN struct ADAPTER *prAdapter,
 
 #if CFG_CHIP_RESET_SUPPORT
 		spin_lock_bh(&prAdapter->rWfsysResetLock);
-		if (prAdapter->eWfsysResetState != WFSYS_RESET_STATE_IDLE) {
+		/* During WFSYS_RESET_STATE_REINIT, driver might need to receive
+		 * events like response of EXT_CMD_ID_EFUSE_BUFFER_MODE.
+		 */
+		if (prAdapter->eWfsysResetState != WFSYS_RESET_STATE_IDLE &&
+		    prAdapter->eWfsysResetState != WFSYS_RESET_STATE_REINIT) {
 			spin_unlock_bh(&prAdapter->rWfsysResetLock);
 
 			DBGLOG(RX, ERROR,
@@ -1350,6 +1361,19 @@ void halRxUSBProcessWdtComplete(IN struct ADAPTER *prAdapter,
 			continue;
 		}
 
+#if CFG_CHIP_RESET_SUPPORT
+		spin_lock_bh(&prAdapter->rWfsysResetLock);
+		if (prAdapter->eWfsysResetState != WFSYS_RESET_STATE_IDLE) {
+			spin_unlock_bh(&prAdapter->rWfsysResetLock);
+
+			DBGLOG(RX, ERROR,
+				   "skip rx urb process due to L0.5 reset\n");
+
+			goto next_urb;
+		}
+		spin_unlock_bh(&prAdapter->rWfsysResetLock);
+#endif /* CFG_CHIP_RESET_SUPPORT */
+
 		pucBufAddr = prBufCtrl->pucBuf + prBufCtrl->u4ReadSize;
 		u4BufLen = prUrb->actual_length - prBufCtrl->u4ReadSize;
 
@@ -1362,6 +1386,7 @@ void halRxUSBProcessWdtComplete(IN struct ADAPTER *prAdapter,
 			WARN_ON(1);
 		}
 
+next_urb:
 		glUsbEnqueueReq(prHifInfo, prFreeQ, prUsbReq, prLock, FALSE);
 		prUsbReq = glUsbDequeueReq(prHifInfo, prCompleteQ, prLock);
 	}

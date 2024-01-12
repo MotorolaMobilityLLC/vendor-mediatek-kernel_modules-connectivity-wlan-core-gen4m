@@ -153,6 +153,7 @@ uint8_t *apucRstReason[RST_REASON_MAX] = {
 	(uint8_t *) DISP_STRING("RST_WHOLE_CHIP_TRIGGER"),
 	(uint8_t *) DISP_STRING("RST_MDDP_MD_TRIGGER_EXCEPTION"),
 	(uint8_t *) DISP_STRING("RST_FWK_TRIGGER"),
+	(uint8_t *) DISP_STRING("RST_SER_L1_FAIL"),
 	(uint8_t *) DISP_STRING("RST_SER_L0P5_FAIL"),
 	(uint8_t *) DISP_STRING("RST_CMD_EVT_FAIL"),
 	(uint8_t *) DISP_STRING("RST_WDT")
@@ -564,6 +565,48 @@ uint32_t glResetSelectAction(IN struct ADAPTER *prAdapter)
 	prChipInfo = prAdapter->chip_info;
 
 	switch (glGetRstReason()) {
+	case RST_PROCESS_ABNORMAL_INT:
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+		u4RstFlag = RST_FLAG_DO_L1_RESET;
+#elif defined(_HIF_SDIO)
+		if (prChipInfo->fgIsSupportL0p5Reset)
+			u4RstFlag = RST_FLAG_DO_L0P5_RESET;
+		else
+			u4RstFlag = RST_FLAG_DO_WHOLE_RESET;
+#else
+		/* print log but don't execute SER */
+		DBGLOG(INIT, WARN,
+		       "USB shall not happen abnormal interrupt\n");
+#endif
+		break;
+
+	case RST_DRV_OWN_FAIL:
+#if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_SDIO)
+		if (prChipInfo->fgIsSupportL0p5Reset)
+			u4RstFlag = RST_FLAG_DO_L0P5_RESET;
+		else
+			u4RstFlag = RST_FLAG_DO_WHOLE_RESET;
+#else
+		/* print log but don't execute SER */
+		DBGLOG(INIT, WARN,
+			   "USB shall not happen set drv own fail\n");
+#endif
+		break;
+
+	case RST_SDIO_RX_ERROR:
+#if defined(_HIF_SDIO)
+		if (prChipInfo->fgIsSupportL0p5Reset)
+			u4RstFlag = RST_FLAG_DO_L0P5_RESET;
+		else
+			u4RstFlag = RST_FLAG_DO_WHOLE_RESET;
+#else
+		/* When 20201225, HIF other than SDIO doesn't have this error.
+		 * If this isn't TRUE in the future, then we need to decide
+		 * the appropriate reset at that time.
+		 */
+#endif
+		break;
+
 	case RST_FW_ASSERT:
 		/* If L0.5 is supported, then L0.5 reset will be triggered
 		 * automatically by RST_WDT. Otherwise, execute L0 reset.
@@ -573,6 +616,10 @@ uint32_t glResetSelectAction(IN struct ADAPTER *prAdapter)
 		break;
 
 	case RST_FW_ASSERT_TIMEOUT:
+	case RST_OID_TIMEOUT:
+	case RST_SER_TIMEOUT:
+	case RST_SER_L1_FAIL:
+	case RST_CMD_EVT_FAIL:
 	case RST_WDT:
 		if (prChipInfo->fgIsSupportL0p5Reset)
 			u4RstFlag = RST_FLAG_DO_L0P5_RESET;
@@ -674,9 +721,15 @@ void glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 	prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 	halPrintHifDbgInfo(prAdapter);
 
-	if ((u4RstFlag & RST_FLAG_DO_L0P5_RESET) &&
-	    prAdapter->chip_info->fgIsSupportL0p5Reset) {
+	if (u4RstFlag & RST_FLAG_DO_WHOLE_RESET) {
+		fgIsResetting = TRUE;
+		fgSimplifyResetFlow = FALSE;
+		wifi_rst.prGlueInfo = prAdapter->prGlueInfo;
+		schedule_work(&(wifi_rst.rst_work));
+	} else if ((u4RstFlag & RST_FLAG_DO_L0P5_RESET) &&
+	      prAdapter->chip_info->fgIsSupportL0p5Reset) {
 		spin_lock_bh(&prAdapter->rWfsysResetLock);
+		fgIsResetting = TRUE;
 
 		if (prAdapter->eWfsysResetState == WFSYS_RESET_STATE_IDLE) {
 			spin_unlock_bh(&prAdapter->rWfsysResetLock);
@@ -687,12 +740,9 @@ void glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 			schedule_work(&prAdapter->prGlueInfo->rWfsysResetWork);
 		} else
 			spin_unlock_bh(&prAdapter->rWfsysResetLock);
-	}
-
-	if (u4RstFlag & RST_FLAG_DO_WHOLE_RESET) {
-		fgIsResetting = TRUE;
-		wifi_rst.prGlueInfo = prAdapter->prGlueInfo;
-		schedule_work(&(wifi_rst.rst_work));
+	} else if (u4RstFlag & RST_FLAG_DO_L1_RESET) {
+		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
+					     SER_SET_L1_RECOVER, 0);
 	}
 }
 
@@ -765,7 +815,8 @@ void WfsysResetHdlr(struct work_struct *work)
 	prHifDrvData = container_of(&prAdapter->chip_info,
 				    struct mt66xx_hif_driver_data, chip_info);
 
-	DBGLOG(INIT, INFO, "WF L0.5 Reset triggered\n");
+	DBGLOG(INIT, STATE, "[SER][L0.5] Reset triggered eWfsysResetState=%d\n",
+				prAdapter->eWfsysResetState);
 
 	spin_lock_bh(&prAdapter->rWfsysResetLock);
 
@@ -776,6 +827,11 @@ void WfsysResetHdlr(struct work_struct *work)
 
 		HAL_CANCEL_TX_RX(prAdapter);
 
+		if (wlanOffAtReset() != WLAN_STATUS_SUCCESS)
+			goto FAIL;
+
+		fgIsResetting = FALSE;
+
 		if (HAL_TOGGLE_WFSYS_RST(prAdapter) != WLAN_STATUS_SUCCESS)
 			goto FAIL;
 	} else
@@ -785,9 +841,6 @@ void WfsysResetHdlr(struct work_struct *work)
 		goto POSTPONE;
 
 	glSetWfsysResetState(prAdapter, WFSYS_RESET_STATE_REINIT);
-
-	if (wlanOffAtReset() != WLAN_STATUS_SUCCESS)
-		goto FAIL;
 
 	HAL_RESUME_TX_RX(prAdapter);
 
@@ -809,6 +862,8 @@ POSTPONE:
 
 FAIL:
 	DBGLOG(INIT, ERROR, "WF L0.5 Reset fail\n");
+
+	fgIsResetting = FALSE;
 
 	GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_SER_L0P5_FAIL);
 
