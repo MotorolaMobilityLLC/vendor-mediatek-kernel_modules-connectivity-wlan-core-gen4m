@@ -302,6 +302,7 @@ void aaaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 	uint16_t u2StatusCode;
 	u_int8_t fgReplyAuth = FALSE;
 	struct WLAN_AUTH_FRAME *prAuthFrame = (struct WLAN_AUTH_FRAME *) NULL;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
 
 	ASSERT(prAdapter);
 
@@ -512,12 +513,16 @@ bow_proc:
 
 		/* NOTE: Ignore the return status for AAA */
 		/* 4 <4> Reply  Auth */
-		authSendAuthFrame(prAdapter,
-			prStaRec,
-			prBssInfo->ucBssIndex,
-			prSwRfb,
-			AUTH_TRANSACTION_SEQ_2,
-			u2StatusCode);
+		rStatus = authSendAuthFrame(prAdapter,
+					prStaRec,
+					prBssInfo->ucBssIndex,
+					prSwRfb,
+					AUTH_TRANSACTION_SEQ_2,
+					u2StatusCode);
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(AAA, WARN, "Send Auth Fail!\n");
+			return;
+		}
 
 
 		/*sta_rec might be removed

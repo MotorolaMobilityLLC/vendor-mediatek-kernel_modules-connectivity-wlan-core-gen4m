@@ -1038,6 +1038,8 @@ u_int8_t wmmParseQosAction(IN struct ADAPTER *prAdapter,
 		prSwRfb);
 
 	prWlanActionFrame = (struct WLAN_ACTION_FRAME *)prSwRfb->pvHeader;
+	kalMemZero(&rTspec, sizeof(rTspec));
+
 	DBGLOG(WMM, INFO, "[%d] Action=%d\n",
 		ucBssIndex,
 		prWlanActionFrame->ucAction);
