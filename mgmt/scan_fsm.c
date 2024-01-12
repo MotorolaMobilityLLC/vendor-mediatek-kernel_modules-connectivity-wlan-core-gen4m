@@ -239,7 +239,10 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	struct SCAN_PARAM *prScanParam;
 	/* CMD_SCAN_REQ_V2 rCmdScanReq; */
 	struct CMD_SCAN_REQ_V2 *prCmdScanReq;
-	uint32_t i;
+	uint32_t i, j;
+	uint8_t ucChannel;
+	uint8_t ucBand;
+	struct CHANNEL_INFO *prCnlInfo;
 
 	ASSERT(prAdapter);
 
@@ -271,6 +274,9 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	}
 	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED)
 		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_DBDC_SCAN_DIS;
+
+	if (wlanWfdEnabled(prAdapter) || scnEnableSpilitScan(prAdapter))
+		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_SPLIT_SCAN_EN;
 
 	/* Set SSID to scan request */
 	if (prScanParam->ucSSIDNum <= SCAN_CMD_SSID_NUM) {
@@ -317,46 +323,34 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 
 	/* Set channel info to scan request */
 	if (prScanParam->eScanChannel == SCAN_CHANNEL_SPECIFIED) {
-		if (prScanParam->ucChannelListNum <= SCAN_CMD_CHNL_NUM) {
-			prCmdScanReq->ucChannelListNum =
-				prScanParam->ucChannelListNum;
-			prCmdScanReq->ucChannelListExtNum = 0;
-		} else if (prScanParam->ucChannelListNum <=
-				MAXIMUM_OPERATION_CHANNEL_LIST) {
-			prCmdScanReq->ucChannelListNum =
-				SCAN_CMD_CHNL_NUM;
-			prCmdScanReq->ucChannelListExtNum =
-				prScanParam->ucChannelListNum -
-				SCAN_CMD_CHNL_NUM;
-		} else {
-			log_dbg(SCN, WARN, "Too many Channel %u\n",
-				prScanParam->ucChannelListNum);
-			prCmdScanReq->ucChannelListNum = 0;
-			prCmdScanReq->ucChannelListExtNum = 0;
-			prCmdScanReq->ucChannelType = SCAN_CHANNEL_FULL;
-		}
+		for (i = 0, j = 0; i < prScanParam->ucChannelListNum; i++) {
+			ucBand = (uint8_t) prScanParam->arChnlInfoList[i].eBand;
+			ucChannel = prScanParam->arChnlInfoList[i].ucChannelNum;
+			/* remove DFS channel */
+			if (prAdapter->rWifiVar.rScanInfo.fgSkipDFS &&
+				rlmDomainIsDfsChnls(prAdapter, ucChannel))
+				continue;
 
-		for (i = 0; i < prCmdScanReq->ucChannelListNum; i++) {
-			prCmdScanReq->arChannelList[i].ucBand
-				= (uint8_t) prScanParam->arChnlInfoList[i]
-					.eBand;
-
-			prCmdScanReq->arChannelList[i].ucChannelNum
-				= (uint8_t) prScanParam->arChnlInfoList[i]
-					.ucChannelNum;
-		}
-		for (i = 0; i < prCmdScanReq->ucChannelListExtNum; i++) {
-			prCmdScanReq->arChannelListExtend[i].ucBand
-				= (uint8_t)prScanParam
-					->arChnlInfoList
-					[prCmdScanReq->ucChannelListNum+i]
-					.eBand;
-
-			prCmdScanReq->arChannelListExtend[i].ucChannelNum
-				= (uint8_t) prScanParam
-					->arChnlInfoList
-					[prCmdScanReq->ucChannelListNum+i]
-					.ucChannelNum;
+			if (j < SCAN_CMD_CHNL_NUM) {
+				prCnlInfo = &(prCmdScanReq->arChannelList[j]);
+				prCnlInfo->ucBand = ucBand;
+				prCnlInfo->ucChannelNum = ucChannel;
+				prCmdScanReq->ucChannelListNum = ++j;
+			} else if (j < MAXIMUM_OPERATION_CHANNEL_LIST) {
+				prCnlInfo = &(prCmdScanReq->
+				   arChannelListExtend[j - SCAN_CMD_CHNL_NUM]);
+				prCnlInfo->ucBand = ucBand;
+				prCnlInfo->ucChannelNum = ucChannel;
+				prCmdScanReq->ucChannelListExtNum =
+					(++j - SCAN_CMD_CHNL_NUM);
+			} else {
+				log_dbg(SCN, WARN, "Too many Channel %u\n",
+					prScanParam->ucChannelListNum);
+				prCmdScanReq->ucChannelListNum = 0;
+				prCmdScanReq->ucChannelListExtNum = 0;
+				prCmdScanReq->ucChannelType = SCAN_CHANNEL_FULL;
+				break;
+			}
 		}
 	}
 
@@ -1056,6 +1050,43 @@ void scnEventSchedScanDone(IN struct ADAPTER *prAdapter,
 		scanlog_dbg(LOG_SCHED_SCAN_DONE_F2D, INFO, "Unexpected SCHEDSCANDONE event: Seq = %u, Current State = %d\n",
 			prSchedScanDone->ucSeqNum, prScanInfo->eCurrentState);
 	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief        Function to check spilit scan enable or not
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+bool scnEnableSpilitScan(struct ADAPTER *prAdapter)
+{
+	uint8_t i;
+	struct PERF_MONITOR *prPerMonitor;
+	struct BSS_INFO *prBssInfo;
+	unsigned long ulTrxPacketsDiffTotal = 0;
+
+	prPerMonitor = &prAdapter->rPerMonitor;
+
+	/* Sum all active BSS's TX and RX packets count */
+	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+		if (IS_BSS_ACTIVE(prBssInfo)) {
+			ulTrxPacketsDiffTotal += (prPerMonitor->
+						 ulTxPacketsDiffLastSec[i] +
+						  prPerMonitor->
+						 ulRxPacketsDiffLastSec[i]);
+		}
+	}
+	if (ulTrxPacketsDiffTotal > SCAN_SPLIT_PACKETS_THRESHOLD) {
+		log_dbg(SCN, TRACE, "Set SplitScan, TRXPacket=%ld",
+					ulTrxPacketsDiffTotal);
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 #if CFG_SUPPORT_SCHED_SCAN

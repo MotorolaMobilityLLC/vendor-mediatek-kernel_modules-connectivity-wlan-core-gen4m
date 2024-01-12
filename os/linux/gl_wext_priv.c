@@ -9035,6 +9035,18 @@ int priv_driver_set_miracast(IN struct net_device *prNetDev,
 				kalSnprintf(pcCommand, i4TotalLen,
 					 CMD_SET_CHIP " mira 0");
 			}
+			/* Customer request: Only scan active channels in
+			 * WFD scenario
+			*/
+			if (prWfdCfgSettings->ucWfdEnable > 0) {
+				DBGLOG(REQ, INFO,
+					"[mtk] enable Mira, set SkipDFS\n");
+				prAdapter->rWifiVar.rScanInfo.fgSkipDFS = 1;
+			} else {
+				DBGLOG(REQ, INFO,
+					"[mtk] Disable Mira, unset SkipDFS\n");
+				prAdapter->rWifiVar.rScanInfo.fgSkipDFS = 0;
+			}
 
 			mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *)
 				    prMsgWfdCfgUpdate, MSG_SEND_METHOD_BUF);
