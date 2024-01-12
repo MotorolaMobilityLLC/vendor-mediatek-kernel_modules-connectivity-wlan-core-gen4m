@@ -2537,7 +2537,7 @@ uint32_t bssGetIotApAction(IN struct ADAPTER *prAdapter,
 			prBssDesc->aucBSSID, ucCnt, prIotApRule->ucAction);
 		return prIotApRule->ucAction;
 	}
-	DBGLOG(BSS, INFO, MACSTR" is NOT IOTAP\n",
+	DBGLOG(BSS, TRACE, MACSTR" is NOT IOTAP\n",
 		prBssDesc->aucBSSID);
 	return WLAN_IOT_AP_VOID;
 }
