@@ -4529,6 +4529,70 @@ static void qmLogDropFallBehind(struct ADAPTER *prAdapter,
 		       u2WinStart, u2WinEnd, u2IpId, 0, u2BarSSN, u8Count);
 }
 
+#if CFG_SUPPORT_DHCP_RESET_BA_WINDOW
+u_int8_t qmIsBaNeedReset(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
+{
+	u_int8_t fgRet = FALSE;
+	uint8_t *pucData;
+	struct DHCP_PROTOCOL *prDhcp;
+
+	pucData = (uint8_t *)prSwRfb->pvHeader;
+	if (!pucData)
+		goto end;
+
+	/* check if pkt is dhcp from server */
+	prDhcp = (struct DHCP_PROTOCOL *) qmGetDhcpPkt(pucData,
+			prSwRfb->u2PacketLen, TRUE, NULL);
+	if (prDhcp && prSwRfb->u2SSN == 0)
+		fgRet = TRUE;
+
+end:
+	return fgRet;
+}
+
+void qmBaResetCheck(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	struct RX_BA_ENTRY *prReorderQueParm,
+	struct QUE *prReturnedQue)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint16_t u2WinStart;
+	uint16_t u2WinEnd;
+
+	if (IS_FEATURE_DISABLED(prWifiVar->fgDhcpResetBaWindow))
+		return;
+
+	if (!qmIsBaNeedReset(prAdapter, prSwRfb))
+		return;
+
+	/* Stop rReorderBubbleTimer and dequeue all pkt */
+	if (prReorderQueParm->fgHasBubble) {
+		prReorderQueParm->fgHasBubble = FALSE;
+		cnmTimerStopTimer(prAdapter,
+			&prReorderQueParm->rReorderBubbleTimer);
+
+		QUEUE_CONCATENATE_QUEUES(prReturnedQue,
+			&(prReorderQueParm->rReOrderQue));
+	}
+
+	/* Reset BA Windows */
+	u2WinStart = prReorderQueParm->u2WinStart;
+	u2WinEnd = prReorderQueParm->u2WinEnd;
+	prReorderQueParm->u2WinStart = SEQ_ADD(prSwRfb->u2SSN, 1);
+	prReorderQueParm->u2WinEnd =
+		SEQ_ADD(prReorderQueParm->u2WinStart,
+			prReorderQueParm->u2WinSize - 1);
+#if CFG_SUPPORT_RX_AMSDU
+	prReorderQueParm->u8LastAmsduSubIdx = RX_PAYLOAD_FORMAT_MSDU;
+#endif
+
+	DBGLOG(QM, INFO, "BA Win Shift STA[%u] TID[%u] {%u,%u} => {%u,%u}\n",
+		prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid,
+		u2WinStart, u2WinEnd, prReorderQueParm->u2WinStart,
+		prReorderQueParm->u2WinEnd);
+}
+#endif /* CFG_SUPPORT_DHCP_RESET_BA_WINDOW */
+
 void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb,
 	struct RX_BA_ENTRY *prReorderQueParm,
@@ -4705,6 +4769,10 @@ void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 				prSwRfb->ucTid, u2SeqNo, u2WinStart, u2WinEnd,
 				RX_GET_CNT(&prAdapter->rRxCtrl,
 					RX_DATA_REORDER_BEHIND_COUNT));
+#if CFG_SUPPORT_DHCP_RESET_BA_WINDOW
+			qmBaResetCheck(prAdapter, prSwRfb, prReorderQueParm,
+				prReturnedQue);
+#endif /* CFG_SUPPORT_DHCP_RESET_BA_WINDOW */
 			return;
 		}
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
