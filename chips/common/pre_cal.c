@@ -189,7 +189,7 @@ void wlanGetEpaElnaFromNvram(
 			*pu1DataPointer = pu1Addr + u4NvramStartOffset;
 			*pu4DataLen = u4NvramOffset - u4NvramStartOffset;
 			DBGLOG(INIT, TRACE,
-			"NVRAM datapointer %x tag7 ofst %x tag7-9 Len %x\n",
+			"NVRAM datapointer %u tag7 ofst %x tag7-9 Len %x\n",
 			*pu1DataPointer, u4NvramStartOffset, *pu4DataLen);
 			kalMemCopy(&g_aucNvram_OnlyPreCal[0],
 				&g_aucNvram[u4NvramStartOffset], *pu4DataLen);
@@ -205,7 +205,7 @@ void wlanGetEpaElnaFromNvram(
 			 &g_aucNvram[u4NvramOffset], u46GCOMM_len);
 			*pu4DataLen += u46GCOMM_len;
 			DBGLOG(INIT, TRACE,
-				"NVRAM tag(%d) u46GCOMM_len %d, u4NvramOffset %d, pu4DataLen %d\n",
+				"NVRAM tag(%x) u46GCOMM_len %x, pu4DataLen %x\n",
 				u1TypeID, u46GCOMM_len, pu4DataLen);
 		}
 		u4NvramOffset += sizeof(struct WIFI_NVRAM_TAG_FORMAT);
