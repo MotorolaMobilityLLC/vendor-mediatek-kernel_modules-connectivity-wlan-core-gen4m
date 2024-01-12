@@ -5014,7 +5014,7 @@ int priv_driver_preset_linkid(struct net_device *prNetDev,
 	char *pcCommand,
 	int i4TotalLen)
 {
-	int32_t i4Param = 0;
+	uint32_t u4Param = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	int32_t i4BytesWritten = -1;
@@ -5030,16 +5030,16 @@ int priv_driver_preset_linkid(struct net_device *prNetDev,
 	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 2) {
 		DBGLOG(REQ, TRACE, "argc is %i, %s\n", i4Argc,
 		       apcArgv[1]);
-		i4BytesWritten = kalkStrtos32(apcArgv[1], 0, &i4Param);
+		i4BytesWritten = kalkStrtou32(apcArgv[1], 0, &u4Param);
 		if (i4BytesWritten) {
 			DBGLOG(REQ, ERROR, "parse u4Param error %d\n",
 			       i4BytesWritten);
 			i4BytesWritten = -1;
 		} else {
-			DBGLOG(INIT, TRACE, "set link id %d\n", i4Param);
+			DBGLOG(INIT, TRACE, "set link id %d\n", u4Param);
 			rStatus = kalIoctl(prGlueInfo,
 				wlanoidPresetLinkId,
-				&i4Param, sizeof(uint32_t),
+				&u4Param, sizeof(uint32_t),
 				&u4SetInfoLen);
 
 			if (rStatus != WLAN_STATUS_SUCCESS) {
