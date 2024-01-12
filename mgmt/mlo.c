@@ -690,117 +690,130 @@ void mldSetMldIdFromRnrMlParam(uint8_t *aucBSSID, struct IE_RNR *rnr,
 			}
 		}
 
-		pos = (uint8_t *)rnr + 4 + u2TbttInfoCount * u2TbttInfoLength;
+		pos += (4 + (u2TbttInfoCount * u2TbttInfoLength));
 	} while (pos < ((uint8_t *)rnr) + IE_SIZE(rnr));
 }
 
-uint8_t *mldHandleRnrMlParam(uint8_t *ie,
+void mldHandleRnrMlParam(struct IE_RNR *rnr,
 	struct MULTI_LINK_INFO *prMlInfo, uint8_t fgOverride)
 {
-	struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField =
-		(struct NEIGHBOR_AP_INFO_FIELD *)ie;
-	uint8_t i, j;
+	uint8_t i, j, band;
+	uint8_t *pos = NULL;
 	uint8_t ucMldParamOffset, ucMldId, ucMldLinkId, ucBssParamChangeCount;
 	uint16_t u2TbttInfoCount, u2TbttInfoLength;
 	uint32_t u4MldParam = 0;
-	uint8_t band;
 	struct STA_PROFILE *prProfile = NULL;
 
-	/* get channel number for this neighborAPInfo */
-	scanOpClassToBand(prNeighborAPInfoField->ucOpClass, &band);
-	u2TbttInfoCount = ((prNeighborAPInfoField->u2TbttInfoHdr &
-				TBTT_INFO_HDR_COUNT)
-				>> TBTT_INFO_HDR_COUNT_OFFSET)
-				+ 1;
-	u2TbttInfoLength = (prNeighborAPInfoField->u2TbttInfoHdr &
-				TBTT_INFO_HDR_LENGTH)
-				>> TBTT_INFO_HDR_LENGTH_OFFSET;
+	pos = rnr->aucInfoField;
+	do {
+		struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField =
+			(struct NEIGHBOR_AP_INFO_FIELD *)pos;
 
-	DBGLOG(ML, LOUD, "dump RNR AP info field\n");
-	DBGLOG_MEM8(ML, LOUD, ie, 4 + u2TbttInfoCount * u2TbttInfoLength);
+		/* get channel number for this neighborAPInfo */
+		scanOpClassToBand(prNeighborAPInfoField->ucOpClass, &band);
+		u2TbttInfoCount = ((prNeighborAPInfoField->u2TbttInfoHdr &
+					TBTT_INFO_HDR_COUNT)
+					>> TBTT_INFO_HDR_COUNT_OFFSET)
+					+ 1;
+		u2TbttInfoLength = (prNeighborAPInfoField->u2TbttInfoHdr &
+					TBTT_INFO_HDR_LENGTH)
+					>> TBTT_INFO_HDR_LENGTH_OFFSET;
 
-	for (i = 0; i < u2TbttInfoCount; i++) {
-		j = i * u2TbttInfoLength;
+		DBGLOG(ML, LOUD, "dump RNR AP info field\n");
+		DBGLOG_MEM8(ML, LOUD, pos,
+				4 + u2TbttInfoCount * u2TbttInfoLength);
 
-		/* 10: Neighbor AP TBTT Offset + BSSID + MLD Parameter */
-		if (u2TbttInfoLength == 10) {
-			ucMldParamOffset = 7;
-		} else if (u2TbttInfoLength >= 16 &&
-				  u2TbttInfoLength <= 255) {
+		for (i = 0; i < u2TbttInfoCount; i++) {
+			j = i * u2TbttInfoLength;
+
+			/* 10: Neighbor AP TBTT Offset + BSSID + MLD Para */
+			if (u2TbttInfoLength == 10) {
+				ucMldParamOffset = 7;
+			} else if (u2TbttInfoLength >= 16 &&
+			  u2TbttInfoLength <= 255) {
 			/* 16: Neighbor AP TBTT Offset + BSSID + Short SSID +
 			 * BSS parameters + 20MHz PSD + MLD Parameter
 			 */
-			ucMldParamOffset = 13;
-		} else {
+				ucMldParamOffset = 13;
+			} else {
 			/* only handle neighbor AP info that MLD parameter
 			 * and BSSID both exist
 			 */
-			continue;
-		}
-
-		DBGLOG(ML, LOUD, "RnrIe[%x][" MACSTR "]\n", i,
-			MAC2STR(&prNeighborAPInfoField->aucTbttInfoSet[j + 1]));
-
-		/* Directly copy 4 bytes content, but MLD param is only 3 bytes
-		 * actually. We will only use 3 bytes content.
-		 */
-		kalMemCopy(&u4MldParam, &prNeighborAPInfoField->
-			aucTbttInfoSet[j + ucMldParamOffset],
-			sizeof(u4MldParam));
-		ucMldId = (u4MldParam & MLD_PARAM_MLD_ID_MASK);
-		ucMldLinkId = (u4MldParam & MLD_PARAM_LINK_ID_MASK) >>
-			MLD_PARAM_LINK_ID_SHIFT;
-		ucBssParamChangeCount =
-			(u4MldParam & MLD_PARAM_BSS_PARAM_CHANGE_COUNT_MASK) >>
-			MLD_PARAM_BSS_PARAM_CHANGE_COUNT_SHIFT;
-
-		DBGLOG(ML, TRACE,
-			"MldId=%d, MldLinkId=%d, BssParChangeCount=%d\n",
-			ucMldId, ucMldLinkId, ucBssParamChangeCount);
-
-		if (ucMldId != prMlInfo->ucMldId ||
-		    ucMldLinkId == prMlInfo->ucLinkId)
-			continue;
-
-		if (!fgOverride) {
-			for (j = 0; j < prMlInfo->ucProfNum; j++) {
-				prProfile = &prMlInfo->rStaProfiles[j];
-				if (prProfile->ucLinkId == ucMldLinkId)
-					break;
-			}
-			if (j >= prMlInfo->ucProfNum) {
-				DBGLOG(ML, WARN, "invalid link%d", ucMldLinkId);
 				continue;
 			}
-		} else {
-			if (prMlInfo->ucProfNum >= MLD_LINK_MAX) {
-				DBGLOG(ML, WARN, "no space for link_id: %d",
-					ucMldLinkId);
+
+			DBGLOG(ML, LOUD, "RnrIe[%x][" MACSTR "]\n", i,
+			  MAC2STR(&prNeighborAPInfoField->
+			  aucTbttInfoSet[j + 1]));
+
+			/* Directly copy 4 bytes content, but MLD param is only
+			 * 3 bytes actually. We will only use 3 bytes content.
+			 */
+			kalMemCopy(&u4MldParam, &prNeighborAPInfoField->
+				aucTbttInfoSet[j + ucMldParamOffset],
+				sizeof(u4MldParam));
+			ucMldId = (u4MldParam & MLD_PARAM_MLD_ID_MASK);
+			ucMldLinkId = (u4MldParam & MLD_PARAM_LINK_ID_MASK) >>
+				MLD_PARAM_LINK_ID_SHIFT;
+			ucBssParamChangeCount =
+			  (u4MldParam &
+				MLD_PARAM_BSS_PARAM_CHANGE_COUNT_MASK) >>
+			  MLD_PARAM_BSS_PARAM_CHANGE_COUNT_SHIFT;
+
+			DBGLOG(ML, TRACE,
+				"MldId=%d, MldLinkId=%d, BssParChangeCount=%d\n",
+				ucMldId, ucMldLinkId, ucBssParamChangeCount);
+
+			if (ucMldId != prMlInfo->ucMldId ||
+			    ucMldLinkId == prMlInfo->ucLinkId)
 				continue;
+
+			if (!fgOverride) {
+				for (j = 0; j < prMlInfo->ucProfNum; j++) {
+					prProfile = &prMlInfo->rStaProfiles[j];
+					if (prProfile->ucLinkId == ucMldLinkId)
+						break;
+				}
+				if (j >= prMlInfo->ucProfNum) {
+					DBGLOG(ML, WARN, "invalid link%d",
+						ucMldLinkId);
+					continue;
+				}
+			} else {
+				if (prMlInfo->ucProfNum >= MLD_LINK_MAX) {
+					DBGLOG(ML, WARN,
+						"no space for link_id: %d",
+						ucMldLinkId);
+					continue;
+				}
+				prProfile =
+				  &prMlInfo->
+				  rStaProfiles[prMlInfo->ucProfNum++];
+				prProfile->ucLinkId = ucMldLinkId;
 			}
-			prProfile =
-				&prMlInfo->rStaProfiles[prMlInfo->ucProfNum++];
-			prProfile->ucLinkId = ucMldLinkId;
+			prProfile->rChnlInfo.eBand = band;
+			prProfile->rChnlInfo.ucChannelNum =
+				prNeighborAPInfoField->ucChannelNum;
+
+			prProfile->rChnlInfo.ucChnlBw =
+			  rlmOpClassToBandwidth(prNeighborAPInfoField->
+			  ucOpClass);
+
+			prProfile->rChnlInfo.u4CenterFreq1 = 0;
+			prProfile->rChnlInfo.u4CenterFreq2 = 0;
+			DBGLOG(ML, TRACE,
+				"link_id:%d, op:%d, rfband:%d, ch:%d, bw:%d, s1:%d, s2:%d\n",
+				prProfile->ucLinkId,
+				prNeighborAPInfoField->ucOpClass,
+				prProfile->rChnlInfo.eBand,
+				prProfile->rChnlInfo.ucChannelNum,
+				prProfile->rChnlInfo.ucChnlBw,
+				prProfile->rChnlInfo.u4CenterFreq1,
+				prProfile->rChnlInfo.u4CenterFreq2);
 		}
-		prProfile->rChnlInfo.eBand = band;
-		prProfile->rChnlInfo.ucChannelNum =
-			prNeighborAPInfoField->ucChannelNum;
 
-		prProfile->rChnlInfo.ucChnlBw =
-			rlmOpClassToBandwidth(prNeighborAPInfoField->ucOpClass);
-
-		prProfile->rChnlInfo.u4CenterFreq1 = 0;
-		prProfile->rChnlInfo.u4CenterFreq2 = 0;
-		DBGLOG(ML, TRACE,
-			"link_id:%d, op:%d, rfband:%d, ch:%d, bw:%d\n",
-			prProfile->ucLinkId,
-			prNeighborAPInfoField->ucOpClass,
-			prProfile->rChnlInfo.eBand,
-			prProfile->rChnlInfo.ucChannelNum,
-			prProfile->rChnlInfo.ucChnlBw);
-	}
-
-	return ie + 4 + u2TbttInfoCount * u2TbttInfoLength;
+		pos += (4 + (u2TbttInfoCount * u2TbttInfoLength));
+	} while (pos < ((uint8_t *)rnr) + IE_SIZE(rnr));
 }
 
 uint32_t mldGenerateMlProbeReqIE(struct BSS_DESC *prBssDesc, uint8_t *pucIE,
@@ -847,15 +860,10 @@ uint32_t mldGenerateMlProbeReqIE(struct BSS_DESC *prBssDesc, uint8_t *pucIE,
 
 			rnr = (struct IE_RNR *)ie;
 
-			mldSetMldIdFromRnrMlParam(
-				prBssDesc->aucBSSID, rnr, info);
-
-			pos = rnr->aucInfoField;
-			do {
-				pos = mldHandleRnrMlParam(pos, info, TRUE);
-			} while (pos < ((uint8_t *)rnr) + IE_SIZE(rnr));
+			mldSetMldIdFromRnrMlParam(prBssDesc->aucBSSID,
+						rnr, info);
+			mldHandleRnrMlParam(rnr, info, TRUE);
 		}
-
 	}
 
 	if (u4IELength < 7 + info->ucProfNum * 4) {
@@ -2535,7 +2543,7 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 		(struct WLAN_MAC_MGMT_HEADER *)prSrc->pvHeader;
 	struct SW_RFB *rfb;
 	int offset = sortGetPayloadOffset(prAdapter, prSrc->pvHeader);
-	uint8_t i, ret, *pos;
+	uint8_t i, ret;
 	const uint8_t *ml, *ssid;
 	struct PARAM_SSID rSsid;
 
@@ -2569,11 +2577,7 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 		rnr = (struct IE_RNR *)ie;
 
 		mldSetMldIdFromRnrMlParam(mgmt->aucBSSID, rnr, info);
-
-		pos = rnr->aucInfoField;
-		do {
-			pos = mldHandleRnrMlParam(pos, info, FALSE);
-		} while (pos < ((uint8_t *)rnr) + IE_SIZE(rnr));
+		mldHandleRnrMlParam(rnr, info, FALSE);
 	}
 
 	kalMemZero(&rSsid, sizeof(rSsid));
