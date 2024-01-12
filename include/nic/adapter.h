@@ -2689,6 +2689,10 @@ struct ADAPTER {
 	struct STA_RECORD rSapLastStaRec;
 	u_int8_t fgSapLastStaRecSet;
 #endif
+
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode[MAX_BSSID_NUM];
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE == 1 */
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

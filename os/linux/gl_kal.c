@@ -2911,12 +2911,6 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 					prBssDesc->cPowerLimit, 1);
 			}
 #endif
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-			/* Set 6G Power mode */
-			if (prBssDesc->eBand == BAND_6G)
-				rlmDomain6GPwrModeUpdate(prAdapter,
-					prBssDesc->e6GPwrMode);
-#endif
 		}
 
 		break;
@@ -3132,13 +3126,6 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 			if (prBssDesc->cPowerLimit != RLM_INVALID_POWER_LIMIT)
 				rlmSetMaxTxPwrLimit(prAdapter, 0, 0);
 #endif
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-			/* Set 6G Power mode to default LPI */
-			if (prBssDesc->eBand == BAND_6G) {
-				rlmDomain6GPwrModeUpdate(prAdapter,
-					PWR_MODE_6G_LPI);
-			}
-#endif
 		}
 		break;
 
@@ -3325,13 +3312,6 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 			/* Disable Country IE + Power Constraint TxPwr limit */
 			if (prBssDesc->cPowerLimit != RLM_INVALID_POWER_LIMIT)
 				rlmSetMaxTxPwrLimit(prAdapter, 0, 0);
-#endif
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-			/* Set 6G Power mode to default LPI */
-			if (prBssDesc->eBand == BAND_6G) {
-				rlmDomain6GPwrModeUpdate(prAdapter,
-					PWR_MODE_6G_LPI);
-			}
 #endif
 		}
 		break;

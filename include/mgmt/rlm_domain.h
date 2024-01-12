@@ -1386,10 +1386,11 @@ struct mtk_regdomain {
 #endif
 
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+/* Order by priority */
 enum ENUM_PWR_MODE_6G_TYPE {
-	PWR_MODE_6G_LPI = 0, /* Low Power Indoor */
-	PWR_MODE_6G_SP = 1,  /* Standard Power */
-	PWR_MODE_6G_VLP = 2, /* Very Low Power */
+	PWR_MODE_6G_SP = 0,  /* Standard Power, Priority: Low */
+	PWR_MODE_6G_LPI = 1, /* Low Power Indoor*/
+	PWR_MODE_6G_VLP = 2, /* Very Low Power, Priority: High */
 	PWR_MODE_6G_NUM
 };
 
@@ -1618,21 +1619,20 @@ int32_t txPwrParseTagChainAbs(
  *        been change, it will re-send country power limit cmd to FW
  *
  * \param[in] prAdapter : Pointer to adapter
+ * \param[in] ucBssIndex : Bss index
  * \param[in] e6GPwrMode : Enum of 6G power mode
  *
  * \return value : void
  */
 /*----------------------------------------------------------------------------*/
-void rlmDomain6GPwrModeUpdate(
+uint32_t rlmDomain6GPwrModeUpdate(
 	struct ADAPTER *prAdapter,
-	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode);
+	uint8_t ucBssIndex,
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrModeCurr);
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This func is use to decide the current 6G power mode
+ * \brief This func is use to decide the current 6G power mode for STA
  *
- * \param[in] prAdapter : Pointer to adapter
- * \param[in] u2CountryCodeAP : Country code from AP
- * \param[in] u2CountryCodeSTA : Country code from STA
  * \param[in] fgIsHE6GPresent : Flag for HE 6G info have present
  * \param[in] uc6GHeRegInfo : HE regulaty info
  *
@@ -1641,8 +1641,6 @@ void rlmDomain6GPwrModeUpdate(
 /*----------------------------------------------------------------------------*/
 uint8_t rlmDomain6GPwrModeDecision(
 	struct ADAPTER *prAdapter,
-	uint16_t u2CountryCodeAP,
-	uint16_t u2CountryCodeSTA,
 	uint8_t fgIsHE6GPresent,
 	uint8_t uc6GHeRegInfo);
 /*----------------------------------------------------------------------------*/
@@ -1664,6 +1662,28 @@ uint8_t rlmDomain6GPwrModeDecision(
 uint32_t rlmDomain6GPwrModeCountrySupportChk(
 	enum ENUM_BAND eBand,
 	uint8_t ucCenterCh,
+	uint16_t u2CountryCode,
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode,
+	uint8_t *pfgSupport);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use check whether the subband of the country
+ *       support the current 6G power mode or not.
+ *
+ * \param[in] eBand : RF Band index
+ * \param[in] u1SubBand : Subband index
+ * \param[in] u2CountryCode : Country code
+ * \param[in] e6GPwrMode : Enum of 6G Power mode
+ * \param[in] pfgSupport : Pointer of flag to indicate the support or not for
+ *                         STA country
+ *
+ * \return value : Success : WLAN_STATUS_SUCCESS
+ *                 Fail    : WLAN_STATUS_INVALID_DATA
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmDomain6GPwrModeSubbandChk(
+	enum ENUM_BAND eBand,
+	uint8_t u1SubBand,
 	uint16_t u2CountryCode,
 	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode,
 	uint8_t *pfgSupport);

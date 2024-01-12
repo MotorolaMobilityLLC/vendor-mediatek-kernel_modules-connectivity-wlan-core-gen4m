@@ -1342,10 +1342,7 @@ static const uint16_t g_u2IndoorType2[] = {
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-/*  Default set 6G Power mode, LPI */
-static enum ENUM_PWR_MODE_6G_TYPE _e6GPwrMode = PWR_MODE_6G_LPI;
-#endif
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -1356,9 +1353,8 @@ static enum ENUM_PWR_MODE_6G_TYPE _e6GPwrMode = PWR_MODE_6G_LPI;
  *******************************************************************************
  */
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-static void rlmDomainPwrLmt6GPwrModeSet(enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode);
 
-static uint8_t rlmDomainPwrLmt6GPwrModeGet(void);
+static uint8_t rlmDomainPwrLmt6GPwrModeGet(struct ADAPTER *prAdapter);
 
 static uint32_t rlmDomainGetSubBandIdx(
 	enum ENUM_BAND eBand,
@@ -3653,9 +3649,13 @@ uint16_t rlmDomainPwrLimitDefaultTableDecision(struct ADAPTER *prAdapter,
 			(u2CountryCode & 0x00ff));
 	}
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-	if (rlmDomainPwrLmt6GPwrModeGet() == PWR_MODE_6G_VLP) {
+	if (rlmDomainPwrLmt6GPwrModeGet(prAdapter) == PWR_MODE_6G_VLP) {
 		prPwrLmtDefaultTable = g_rRlmPowerLimitDefault_VLP;
 		u2PwrLmtDefaultTalbeSize = sizeof(g_rRlmPowerLimitDefault_VLP) /
+			sizeof(struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT);
+	} else if (rlmDomainPwrLmt6GPwrModeGet(prAdapter) == PWR_MODE_6G_SP) {
+		prPwrLmtDefaultTable = g_rRlmPowerLimitDefault_SP;
+		u2PwrLmtDefaultTalbeSize = sizeof(g_rRlmPowerLimitDefault_SP) /
 			sizeof(struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT);
 	}
 #endif
@@ -3864,9 +3864,9 @@ rlmDomainGetSubBandDefPwrIdx(enum ENUM_PWR_LMT_SUBBAND eSubBandIdx,
  */
 /*----------------------------------------------------------------------------*/
 void
-rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
-				*prCmd,
-				uint16_t u2DefaultTableIndex)
+rlmDomainBuildCmdByDefaultTable(struct ADAPTER *prAdapter,
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
+	uint16_t u2DefaultTableIndex)
 {
 	uint16_t i, k;
 	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *prPwrLimitSubBand =
@@ -3895,9 +3895,13 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 
 	eType = prCmd->ucLimitType;
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-	if (rlmDomainPwrLmt6GPwrModeGet() == PWR_MODE_6G_VLP)
+	if (rlmDomainPwrLmt6GPwrModeGet(prAdapter) == PWR_MODE_6G_VLP) {
 		prPwrLimitSubBand =
 			&g_rRlmPowerLimitDefault_VLP[u2DefaultTableIndex];
+	} else if (rlmDomainPwrLmt6GPwrModeGet(prAdapter) == PWR_MODE_6G_SP) {
+		prPwrLimitSubBand =
+			&g_rRlmPowerLimitDefault_SP[u2DefaultTableIndex];
+	}
 #endif
 
 	if (eType == PWR_LIMIT_TYPE_COMP_11AX)
@@ -4772,7 +4776,7 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 #endif
 #endif
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-	if (rlmDomainPwrLmt6GPwrModeGet() == PWR_MODE_6G_VLP) {
+	if (rlmDomainPwrLmt6GPwrModeGet(prAdapter) == PWR_MODE_6G_VLP) {
 		prPwrLmtConf6E = g_rRlmPowerLimitConfiguration6E_VLP;
 		ucPwrLmitConfSize6E =
 			sizeof(g_rRlmPowerLimitConfiguration6E_VLP) /
@@ -4788,6 +4792,25 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 		prPwrLmtConfEHT_6G = g_rRlmPowerLimitConfigurationEHT_6G_VLP;
 		ucPwrLmitConfSizeEHT_6G =
 			sizeof(g_rRlmPowerLimitConfigurationEHT_6G_VLP) /
+			sizeof(
+			struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT_6G);
+#endif
+	} else if (rlmDomainPwrLmt6GPwrModeGet(prAdapter) == PWR_MODE_6G_SP) {
+		prPwrLmtConf6E = g_rRlmPowerLimitConfiguration6E_SP;
+		ucPwrLmitConfSize6E =
+			sizeof(g_rRlmPowerLimitConfiguration6E_SP) /
+			sizeof(
+			struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_6E);
+		prPwrLmtConfLegacy_6G =
+			g_rRlmPowerLimitConfigurationLegacy6G_SP;
+		ucPwrLmitConfSizeLegacy_6G =
+		sizeof(g_rRlmPowerLimitConfigurationLegacy6G_SP) /
+		sizeof(
+		struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY_6G);
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+		prPwrLmtConfEHT_6G = g_rRlmPowerLimitConfigurationEHT_6G_SP;
+		ucPwrLmitConfSizeEHT_6G =
+			sizeof(g_rRlmPowerLimitConfigurationEHT_6G_SP) /
 			sizeof(
 			struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT_6G);
 #endif
@@ -9576,9 +9599,11 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	}
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	DBGLOG(RLM, TRACE, "Country 6G Power mode[%d]\n",
-		rlmDomainPwrLmt6GPwrModeGet());
-	if (rlmDomainPwrLmt6GPwrModeGet() == PWR_MODE_6G_VLP)
+		rlmDomainPwrLmt6GPwrModeGet(prAdapter));
+	if (rlmDomainPwrLmt6GPwrModeGet(prAdapter) == PWR_MODE_6G_VLP)
 		prPwrLmtDefaultTable = g_rRlmPowerLimitDefault_VLP;
+	else if (rlmDomainPwrLmt6GPwrModeGet(prAdapter) == PWR_MODE_6G_SP)
+		prPwrLmtDefaultTable = g_rRlmPowerLimitDefault_SP;
 #endif
 
 	pu1PwrLmtCountryCode = &prPwrLmtDefaultTable[u2DefaultTableIndex]
@@ -9755,7 +9780,8 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	/*<1>Command - default table information,
 	 *fill all subband
 	 */
-	rlmDomainBuildCmdByDefaultTable(prCmd,
+	rlmDomainBuildCmdByDefaultTable(prAdapter,
+		prCmd,
 		u2DefaultTableIndex);
 
 	/*<2>Command - configuration table information,
@@ -9768,7 +9794,8 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	/*<1>Command - default table information,
 	 *fill all subband
 	 */
-	rlmDomainBuildCmdByDefaultTable(prCmdHE,
+	rlmDomainBuildCmdByDefaultTable(prAdapter,
+		prCmdHE,
 		u2DefaultTableIndex);
 
 	/*<2>Command - configuration table information,
@@ -9779,177 +9806,191 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 #endif
 
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
-		/*<1>Command - default table information,
-		 *fill all subband
-		 */
-		rlmDomainBuildCmdByDefaultTable(prCmdEHT_1,
-			u2DefaultTableIndex);
+	/*<1>Command - default table information,
+	 *fill all subband
+	 */
+	rlmDomainBuildCmdByDefaultTable(prAdapter,
+		prCmdEHT_1,
+		u2DefaultTableIndex);
 
-		/*<2>Command - configuration table information,
-		 * replace specified channel
-		 */
-		rlmDomainBuildCmdByConfigTable(prAdapter,
-			prCmdEHT_1);
+	/*<2>Command - configuration table information,
+	 * replace specified channel
+	 */
+	rlmDomainBuildCmdByConfigTable(prAdapter,
+		prCmdEHT_1);
 
-		/*<1>Command - default table information,
-		 *fill all subband
-		 */
-		rlmDomainBuildCmdByDefaultTable(prCmdEHT_2,
-			u2DefaultTableIndex);
+	/*<1>Command - default table information,
+	 *fill all subband
+	 */
+	rlmDomainBuildCmdByDefaultTable(prAdapter,
+		prCmdEHT_2,
+		u2DefaultTableIndex);
 
-		/*<2>Command - configuration table information,
-		 * replace specified channel
-		 */
-		rlmDomainBuildCmdByConfigTable(prAdapter,
-			prCmdEHT_2);
+	/*<2>Command - configuration table information,
+	 * replace specified channel
+	 */
+	rlmDomainBuildCmdByConfigTable(prAdapter,
+		prCmdEHT_2);
 
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		/*<1>Command - default table information,
-		 *fill all subband
-		 */
-		rlmDomainBuildCmdByDefaultTable(prCmd6E_1,
-			u2DefaultTableIndex);
+	/*<1>Command - default table information,
+	 *fill all subband
+	 */
+	rlmDomainBuildCmdByDefaultTable(prAdapter,
+		prCmd6E_1,
+		u2DefaultTableIndex);
 
-		/*<2>Command - configuration table information,
-		 * replace specified channel
-		 */
-		rlmDomainBuildCmdByConfigTable(prAdapter,
-			prCmd6E_1);
+	/*<2>Command - configuration table information,
+	 * replace specified channel
+	 */
+	rlmDomainBuildCmdByConfigTable(prAdapter,
+		prCmd6E_1);
 
-		/*<1>Command - default table information,
-		 *fill all subband
-		 */
-		rlmDomainBuildCmdByDefaultTable(prCmd6E_2,
-			u2DefaultTableIndex);
+	/*<1>Command - default table information,
+	 *fill all subband
+	 */
+	rlmDomainBuildCmdByDefaultTable(prAdapter,
+		prCmd6E_2,
+		u2DefaultTableIndex);
 
-		/*<2>Command - configuration table information,
-		 * replace specified channel
-		 */
-		rlmDomainBuildCmdByConfigTable(prAdapter,
-			prCmd6E_2);
+	/*<2>Command - configuration table information,
+	 * replace specified channel
+	 */
+	rlmDomainBuildCmdByConfigTable(prAdapter,
+		prCmd6E_2);
 
-		/*<1>Command - default table information,
-		 *fill all subband
-		 */
-		rlmDomainBuildCmdByDefaultTable(prCmd6E_3,
-			u2DefaultTableIndex);
+	/*<1>Command - default table information,
+	 *fill all subband
+	 */
+	rlmDomainBuildCmdByDefaultTable(prAdapter,
+		prCmd6E_3,
+		u2DefaultTableIndex);
 
-		/*<2>Command - configuration table information,
-		 * replace specified channel
-		 */
-		rlmDomainBuildCmdByConfigTable(prAdapter,
-			prCmd6E_3);
+	/*<2>Command - configuration table information,
+	 * replace specified channel
+	 */
+	rlmDomainBuildCmdByConfigTable(prAdapter,
+		prCmd6E_3);
 
-		/*<1>Command - default table information,
-		 *fill all subband
-		 */
-		rlmDomainBuildCmdByDefaultTable(prCmdLegacy_6G_1,
-			u2DefaultTableIndex);
+	/*<1>Command - default table information,
+	 *fill all subband
+	 */
+	rlmDomainBuildCmdByDefaultTable(prAdapter,
+		prCmdLegacy_6G_1,
+		u2DefaultTableIndex);
 
-		/*<2>Command - configuration table information,
-		 * replace specified channel
-		 */
-		rlmDomainBuildCmdByConfigTable(prAdapter,
-			prCmdLegacy_6G_1);
+	/*<2>Command - configuration table information,
+	 * replace specified channel
+	 */
+	rlmDomainBuildCmdByConfigTable(prAdapter,
+		prCmdLegacy_6G_1);
 
-		/*<1>Command - default table information,
-		 *fill all subband
-		 */
-		rlmDomainBuildCmdByDefaultTable(prCmdLegacy_6G_2,
-			u2DefaultTableIndex);
+	/*<1>Command - default table information,
+	 *fill all subband
+	 */
+	rlmDomainBuildCmdByDefaultTable(prAdapter,
+		prCmdLegacy_6G_2,
+		u2DefaultTableIndex);
 
-		/*<2>Command - configuration table information,
-		 * replace specified channel
-		 */
-		rlmDomainBuildCmdByConfigTable(prAdapter,
-			prCmdLegacy_6G_2);
+	/*<2>Command - configuration table information,
+	 * replace specified channel
+	 */
+	rlmDomainBuildCmdByConfigTable(prAdapter,
+		prCmdLegacy_6G_2);
 
-		/*<1>Command - default table information,
-		 *fill all subband
-		 */
-		rlmDomainBuildCmdByDefaultTable(prCmdLegacy_6G_3,
-			u2DefaultTableIndex);
+	/*<1>Command - default table information,
+	 *fill all subband
+	 */
+	rlmDomainBuildCmdByDefaultTable(prAdapter,
+		prCmdLegacy_6G_3,
+		u2DefaultTableIndex);
 
-		/*<2>Command - configuration table information,
-		 * replace specified channel
-		 */
-		rlmDomainBuildCmdByConfigTable(prAdapter,
+	/*<2>Command - configuration table information,
+	 * replace specified channel
+	 */
+	rlmDomainBuildCmdByConfigTable(prAdapter,
 			prCmdLegacy_6G_3);
 
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
-		/*<1>Command - default table information,
-		 *fill all subband
-		 */
-		rlmDomainBuildCmdByDefaultTable(prCmdEHT_6G_1,
-			u2DefaultTableIndex);
+	/*<1>Command - default table information,
+	 *fill all subband
+	 */
+	rlmDomainBuildCmdByDefaultTable(prAdapter,
+		prCmdEHT_6G_1,
+		u2DefaultTableIndex);
 
-		/*<2>Command - configuration table information,
-		 * replace specified channel
-		 */
-		rlmDomainBuildCmdByConfigTable(prAdapter,
-			prCmdEHT_6G_1);
+	/*<2>Command - configuration table information,
+	 * replace specified channel
+	 */
+	rlmDomainBuildCmdByConfigTable(prAdapter,
+		prCmdEHT_6G_1);
 
-		/*<1>Command - default table information,
-		 *fill all subband
-		 */
-		rlmDomainBuildCmdByDefaultTable(prCmdEHT_6G_2,
-			u2DefaultTableIndex);
+	/*<1>Command - default table information,
+	 *fill all subband
+	 */
+	rlmDomainBuildCmdByDefaultTable(prAdapter,
+		prCmdEHT_6G_2,
+		u2DefaultTableIndex);
 
-		/*<2>Command - configuration table information,
-		 * replace specified channel
-		 */
-		rlmDomainBuildCmdByConfigTable(prAdapter,
-			prCmdEHT_6G_2);
+	/*<2>Command - configuration table information,
+	 * replace specified channel
+	 */
+	rlmDomainBuildCmdByConfigTable(prAdapter,
+		prCmdEHT_6G_2);
 
-		/*<1>Command - default table information,
-		 *fill all subband
-		 */
-		rlmDomainBuildCmdByDefaultTable(prCmdEHT_6G_3,
-			u2DefaultTableIndex);
+	/*<1>Command - default table information,
+	 *fill all subband
+	 */
+	rlmDomainBuildCmdByDefaultTable(prAdapter,
+		prCmdEHT_6G_3,
+		u2DefaultTableIndex);
 
-		/*<2>Command - configuration table information,
-		 * replace specified channel
-		 */
-		rlmDomainBuildCmdByConfigTable(prAdapter,
-			prCmdEHT_6G_3);
+	/*<2>Command - configuration table information,
+	 * replace specified channel
+	 */
+	rlmDomainBuildCmdByConfigTable(prAdapter,
+		prCmdEHT_6G_3);
 
-		/*<1>Command - default table information,
-		 *fill all subband
-		 */
-		rlmDomainBuildCmdByDefaultTable(prCmdEHT_6G_4,
-			u2DefaultTableIndex);
+	/*<1>Command - default table information,
+	 *fill all subband
+	 */
+	rlmDomainBuildCmdByDefaultTable(prAdapter,
+		prCmdEHT_6G_4,
+		u2DefaultTableIndex);
 
-		/*<2>Command - configuration table information,
-		 * replace specified channel
-		 */
-		rlmDomainBuildCmdByConfigTable(prAdapter,
-			prCmdEHT_6G_4);
+	/*<2>Command - configuration table information,
+	 * replace specified channel
+	 */
+	rlmDomainBuildCmdByConfigTable(prAdapter,
+		prCmdEHT_6G_4);
 
-		/*<1>Command - default table information,
-		 *fill all subband
-		 */
-		rlmDomainBuildCmdByDefaultTable(prCmdEHT_6G_5,
-			u2DefaultTableIndex);
+	/*<1>Command - default table information,
+	 *fill all subband
+	 */
+	rlmDomainBuildCmdByDefaultTable(prAdapter,
+		prCmdEHT_6G_5,
+		u2DefaultTableIndex);
 
-		/*<2>Command - configuration table information,
-		 * replace specified channel
-		 */
-		rlmDomainBuildCmdByConfigTable(prAdapter,
-			prCmdEHT_6G_5);
+	/*<2>Command - configuration table information,
+	 * replace specified channel
+	 */
+	rlmDomainBuildCmdByConfigTable(prAdapter,
+		prCmdEHT_6G_5);
 
-		/*<1>Command - default table information,
-		 *fill all subband
-		 */
-		rlmDomainBuildCmdByDefaultTable(prCmdEHT_6G_6,
-			u2DefaultTableIndex);
+	/*<1>Command - default table information,
+	 *fill all subband
+	 */
+	rlmDomainBuildCmdByDefaultTable(prAdapter,
+		prCmdEHT_6G_6,
+		u2DefaultTableIndex);
 
-		/*<2>Command - configuration table information,
-		 * replace specified channel
-		 */
-		rlmDomainBuildCmdByConfigTable(prAdapter,
-			prCmdEHT_6G_6);
+	/*<2>Command - configuration table information,
+	 * replace specified channel
+	 */
+	rlmDomainBuildCmdByConfigTable(prAdapter,
+		prCmdEHT_6G_6);
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #endif /* CFG_SUPPORT_WIFI_6G */
 
@@ -10328,51 +10369,70 @@ err:
  *        been change, it will re-send country power limit cmd to FW
  *
  * \param[in] prAdapter : Pointer to adapter
+ * \param[in] ucBssIndex : Bss index
  * \param[in] e6GPwrMode : Enum of 6G power mode
  *
  * \return value : void
  */
 /*----------------------------------------------------------------------------*/
-void rlmDomain6GPwrModeUpdate(
+uint32_t rlmDomain6GPwrModeUpdate(
 	struct ADAPTER *prAdapter,
-	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode)
+	uint8_t ucBssIndex,
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrModeBss)
 {
-	if (e6GPwrMode > PWR_MODE_6G_NUM) {
-		DBGLOG(RLM, ERROR, "6G Pwr Mode invalid[%d], set to default",
-			e6GPwrMode);
-		e6GPwrMode = PWR_MODE_6G_LPI;
-	}
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrModeCurr = PWR_MODE_6G_LPI;
 
-	if (e6GPwrMode != rlmDomainPwrLmt6GPwrModeGet()) {
-		rlmDomainPwrLmt6GPwrModeSet(e6GPwrMode);
+	/* Sanity check parameter */
+	if ((!prAdapter) ||
+	    (ucBssIndex >= MAX_BSSID_NUM) ||
+	    (e6GPwrModeBss >= PWR_MODE_6G_NUM)) {
+		DBGLOG(RLM, ERROR, "invalid parameter, BssIdx[%d]PwrMode[%d]",
+			ucBssIndex,
+			e6GPwrModeBss);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+	e6GPwrModeCurr = rlmDomainPwrLmt6GPwrModeGet(prAdapter);
+	prAdapter->e6GPwrMode[ucBssIndex] = e6GPwrModeBss;
+
+	if (e6GPwrModeCurr != rlmDomainPwrLmt6GPwrModeGet(prAdapter)) {
+		/* Resend power limit  */
 		rlmDomainSendPwrLimitCmd(prAdapter);
 	}
+
+	DBGLOG(RLM, INFO, "Update BSS[%d]6GPwrMode[%d]Curr[%d]Final[%d]",
+			ucBssIndex,
+			e6GPwrModeBss,
+			e6GPwrModeCurr,
+			rlmDomainPwrLmt6GPwrModeGet(prAdapter));
+
+	return WLAN_STATUS_SUCCESS;
 }
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This func is use to set 6G power mode
+ * \brief This func is use to get 6G power mode, default use LPI
  *
- * \param[in] e6GPwrMode : current 6G power mode
- *
- * \return value : void
- */
-/*----------------------------------------------------------------------------*/
-static void rlmDomainPwrLmt6GPwrModeSet(enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode)
-{
-	_e6GPwrMode = e6GPwrMode;
-}
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This func is use to get 6G power mode
- *
- * \param[in] void
+ * \param[in] prAdapter
  *
  * \return value : 6G power mode
  */
 /*----------------------------------------------------------------------------*/
-static uint8_t rlmDomainPwrLmt6GPwrModeGet(void)
+static uint8_t rlmDomainPwrLmt6GPwrModeGet(struct ADAPTER *prAdapter)
 {
-	return _e6GPwrMode;
+	uint8_t ucBssIdx = 0;
+	struct BSS_INFO *prBssInfo;
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode = PWR_MODE_6G_LPI;
+
+	for (ucBssIdx = 0; ucBssIdx < MAX_BSSID_NUM; ucBssIdx++) {
+
+		prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+		/* 6G power mode priority VLP(High)->LPI->SP(Low) */
+		if ((prBssInfo->fgIsNetActive) &&
+		    (prAdapter->e6GPwrMode[ucBssIdx] > e6GPwrMode)) {
+			e6GPwrMode = prAdapter->e6GPwrMode[ucBssIdx];
+		}
+	}
+
+	return e6GPwrMode;
 }
 /*----------------------------------------------------------------------------*/
 /*!
@@ -10415,32 +10475,30 @@ static uint32_t rlmDomainGetSubBandIdx(enum ENUM_BAND eBand,
 }
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This func is use to decide the current 6G power mode
+ * \brief This func is use to decide the current 6G power mode for STA
  *
- * \param[in] prAdapter : Pointer to adapter
- * \param[in] u2CountryCodeAP : Country code from AP
- * \param[in] u2CountryCodeSTA : Country code from STA
  * \param[in] fgIsHE6GPresent : Flag for HE 6G info have present
  * \param[in] uc6GHeRegInfo : HE regulaty info
  *
  * \return value : Enum of 6G Power mode
  */
 /*----------------------------------------------------------------------------*/
-uint8_t rlmDomain6GPwrModeDecision(struct ADAPTER *prAdapter,
-	uint16_t u2CountryCodeAP,
-	uint16_t u2CountryCodeSTA,
+uint8_t rlmDomain6GPwrModeDecision(
+	struct ADAPTER *prAdapter,
 	uint8_t fgIsHE6GPresent,
 	uint8_t uc6GHeRegInfo)
 {
 	enum ENUM_PWR_MODE_6G_TYPE ePwrMode6G = 0;
 
-	if (u2CountryCodeAP == u2CountryCodeSTA) {
-		ePwrMode6G = PWR_MODE_6G_LPI;
-	} else if (fgIsHE6GPresent == TRUE &&
-			uc6GHeRegInfo == HE_REG_INFO_LOW_POWER_INDOOR) {
-		ePwrMode6G =  PWR_MODE_6G_LPI;
+	if (fgIsHE6GPresent) {
+		if (uc6GHeRegInfo == HE_REG_INFO_LOW_POWER_INDOOR)
+			ePwrMode6G =  PWR_MODE_6G_LPI;
+		else if (uc6GHeRegInfo == HE_REG_INFO_STANDARD_POWER)
+			ePwrMode6G =  PWR_MODE_6G_SP;
+		else
+			ePwrMode6G = PWR_MODE_6G_VLP;
 	} else {
-		ePwrMode6G = PWR_MODE_6G_VLP;
+		ePwrMode6G =  PWR_MODE_6G_LPI;
 	}
 
 #if WLAN_INCLUDE_SYS
@@ -10452,11 +10510,7 @@ uint8_t rlmDomain6GPwrModeDecision(struct ADAPTER *prAdapter,
 #endif
 
 	DBGLOG(RLM, TRACE,
-		"AP_Country(%d,%d)STA_Country(%d,%d)HE6GPre[%d]HeRegInfo[%d]6GPwrMode[%d]\n",
-		((u2CountryCodeAP & 0xff00) >> 8),
-		(u2CountryCodeAP & 0x00ff),
-		((u2CountryCodeSTA & 0xff00) >> 8),
-		(u2CountryCodeSTA & 0x00ff),
+		"HE6GPre[%d]HeRegInfo[%d]6GPwrMode[%d]\n",
 		fgIsHE6GPresent,
 		uc6GHeRegInfo,
 		ePwrMode6G);
@@ -10486,9 +10540,8 @@ uint32_t rlmDomain6GPwrModeCountrySupportChk(
 	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode,
 	uint8_t *pfgSupport)
 {
-	uint8_t u1CountryIdx = 0;
 	uint8_t u1SubBandIdx = 0;
-	uint16_t u2CountryCodeCheck = 0;
+	uint32_t u4Stauts = WLAN_STATUS_SUCCESS;
 
 	if ((eBand != BAND_6G) ||
 		(e6GPwrMode > PWR_MODE_6G_NUM)) {
@@ -10496,27 +10549,93 @@ uint32_t rlmDomain6GPwrModeCountrySupportChk(
 			"Invalid Data BAND[%d]6GPwrMode[%d]",
 			eBand,
 			e6GPwrMode);
-		*pfgSupport = FALSE;
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
 	if (rlmDomainGetSubBandIdx(eBand, ucCenterCh, &u1SubBandIdx)
 		!= WLAN_STATUS_SUCCESS) {
-		*pfgSupport = FALSE;
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	u4Stauts = rlmDomain6GPwrModeSubbandChk(
+			eBand,
+			u1SubBandIdx,
+			u2CountryCode,
+			e6GPwrMode,
+			pfgSupport);
+
+	return u4Stauts;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use to get 6G power mode support status
+ *
+ * \param[in] u1CountryIdx : country index
+ * \param[in] u1BandIdx : 6G Subband index
+ * \param[in] eMode : Enum of 6G Power mode
+ *
+ * \return 6G power mode support status
+ */
+/*----------------------------------------------------------------------------*/
+static uint8_t rlmDomain6GPwrModeSupportStatusGet(
+	uint8_t u1CountryIdx,
+	uint8_t u1Band,
+	enum ENUM_PWR_MODE_6G_TYPE eMode
+)
+{
+	struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE prSupportTbl =
+			&g_rCountryPwrMode6GSupport[u1CountryIdx];
+
+	return prSupportTbl->rSubBand[u1Band].fgPwrMode6GSupport[eMode];
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use check whether the subband of the country
+ *       support the current 6G power mode or not.
+ *
+ * \param[in] eBand : RF Band index
+ * \param[in] u1SubBand : Subband index
+ * \param[in] u2CountryCode : Country code
+ * \param[in] e6GPwrMode : Enum of 6G Power mode
+ * \param[in] pfgSupport : Pointer of flag to indicate the support or not for
+ *                         STA country
+ *
+ * \return value : Success : WLAN_STATUS_SUCCESS
+ *                 Fail    : WLAN_STATUS_INVALID_DATA
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmDomain6GPwrModeSubbandChk(
+	enum ENUM_BAND eBand,
+	uint8_t u1SubBand,
+	uint16_t u2CountryCode,
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode,
+	uint8_t *pfgSupport
+)
+{
+	uint8_t u16GSubBandIdx = 0;
+	uint8_t u1DefaultIdx = 0;
+	uint8_t u1CountryIdx = 0;
+	uint16_t u2CountryCodeCheck = 0;
+	bool fgDefaultExist = FALSE;
+
+	if ((eBand != BAND_6G) ||
+		(e6GPwrMode > PWR_MODE_6G_NUM)) {
+		DBGLOG(RLM, ERROR,
+			"Invalid data band[%d]PwrMode[%d]",
+			eBand,
+			e6GPwrMode);
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
 	/* 6G suband start from UNII-5 to UNII-8 */
-	if (u1SubBandIdx < PWR_LMT_SUBBAND_PWR_UNII5 ||
-		u1SubBandIdx > PWR_LMT_SUBBAND_PWR_UNII8) {
+	if ((u1SubBand < PWR_LMT_SUBBAND_PWR_UNII5) ||
+	      (u1SubBand > PWR_LMT_SUBBAND_PWR_UNII8)) {
 		DBGLOG(RLM, ERROR,
-			"Invalid Subband index,Band[%d]SubBandIdx[%d]",
-			eBand,
-			u1SubBandIdx);
-			*pfgSupport = FALSE;
+			"Invalid 6G subband idx[%d]",
+			u1SubBand);
 		return WLAN_STATUS_INVALID_DATA;
 	}
-	u1SubBandIdx = u1SubBandIdx - PWR_LMT_SUBBAND_PWR_UNII5;
+	u16GSubBandIdx = u1SubBand - PWR_LMT_SUBBAND_PWR_UNII5;
 
 	for (u1CountryIdx = 0;
 		u1CountryIdx < COUNTRY_PWR_MODE_6G_SUPPORT_TABLE_SIZE;
@@ -10528,28 +10647,49 @@ uint32_t rlmDomain6GPwrModeCountrySupportChk(
 
 		if (u2CountryCode == u2CountryCodeCheck) {
 			/* Found */
-			*pfgSupport = g_rCountryPwrMode6GSupport[u1CountryIdx].
-				rSubBand[u1SubBandIdx].
-				fgPwrMode6GSupport[e6GPwrMode];
+			*pfgSupport = rlmDomain6GPwrModeSupportStatusGet(
+					u1CountryIdx,
+					u16GSubBandIdx,
+					e6GPwrMode);
 			break;
+		}
+
+		if (u2CountryCodeCheck == COUNTRY_CODE_NULL) {
+			u1DefaultIdx = u1CountryIdx;
+			fgDefaultExist = TRUE;
 		}
 	}
 
+	/* Use default value when not found the corresponding country */
 	if (u1CountryIdx >= COUNTRY_PWR_MODE_6G_SUPPORT_TABLE_SIZE) {
-		DBGLOG(RLM, TRACE,
-			"Can't find Country(%c%c) in 6GPwrMode support table\n",
+
+		if (fgDefaultExist) {
+			DBGLOG(RLM, TRACE,
+			"6GPwrMode use default[%d] setting for Country(%c%c)\n",
+			u1DefaultIdx,
 			((u2CountryCode & 0xff00) >> 8),
 			(u2CountryCode & 0x00ff));
-		*pfgSupport = TRUE;
+			/* Follow default setting */
+			*pfgSupport = rlmDomain6GPwrModeSupportStatusGet(
+					u1DefaultIdx,
+					u16GSubBandIdx,
+					e6GPwrMode);
+		} else {
+			DBGLOG(RLM, TRACE,
+			"6GPwrMode no default setting for Country(%c%c)\n",
+			((u2CountryCode & 0xff00) >> 8),
+			(u2CountryCode & 0x00ff));
+
+			*pfgSupport = TRUE;
+		}
 	}
 
 	DBGLOG(RLM, TRACE,
-		"Band[%d]Ch[%d]Country(%c%c)6GSubBand[%d]PwrMode[%d]Support[%d]",
-		eBand,
-		ucCenterCh,
+		"Country(%c%c)Band[%d]6GSubBand[%d]PwrMode[%d]Support[%d]",
 		((u2CountryCode & 0xff00) >> 8),
 		(u2CountryCode & 0x00ff),
-		u1SubBandIdx,
+		eBand,
+		u16GSubBandIdx,
 		e6GPwrMode,
 		*pfgSupport);
 

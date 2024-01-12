@@ -43,6 +43,7 @@
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 #if (CFG_SUPPORT_WIFI_6G == 1)
 /*Set to MAX_TX_PWR = 63dBm if larger than it*/
+/* For 802.11ax 6G Low Power Indoor mode setting*/
 struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 	g_rRlmPowerLimitDefault[] = {
 
@@ -1226,8 +1227,18 @@ struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 	}
 };
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+/* For 802.11ax 6G Very Low Power mode setting */
 struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 	g_rRlmPowerLimitDefault_VLP[] = {
+	/*Default*/
+	{	{0, 0}
+		, {63, 63, 63, 63, 63, 63, 63, 63, 63}
+		, 0
+	}
+};
+/* For 802.11ax 6G Standard Power mode setting */
+struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
+	g_rRlmPowerLimitDefault_SP[] = {
 	/*Default*/
 	{	{0, 0}
 		, {63, 63, 63, 63, 63, 63, 63, 63, 63}
@@ -2504,6 +2515,21 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_6E
 			64, 64, 64}  /* RU1992 L,H,U*/
 	}
 };
+/*For 802.11ax 6G Standard Power mode setting */
+struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_6E
+	g_rRlmPowerLimitConfiguration6E_SP[] = {
+	/*Default*/
+	{	{0, 0}
+		, 1,
+			{64, 64, 64, /* RU26 L,H,U */
+			64, 64, 64,  /* RU52 L,H,U*/
+			64, 64, 64,  /* RU106 L,H,U*/
+			64, 64, 64,  /* RU242 L,H,U*/
+			64, 64, 64,  /* RU484 L,H,U*/
+			64, 64, 64,  /* RU996 L,H,U*/
+			64, 64, 64}  /* RU1992 L,H,U*/
+	}
+};
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
 
 #if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
@@ -2524,6 +2550,14 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY_6G
 		, 1, {64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64}
 	}
 };
+/* For legacy 6G Standard Power mode setting*/
+struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY_6G
+	g_rRlmPowerLimitConfigurationLegacy6G_SP[] = {
+	/*Default*/
+	{	{0, 0}
+		, 1, {64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64}
+	}
+};
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
 #else /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING */
 /* For legacy 6G Low Power Indoor mode setting*/
@@ -2538,6 +2572,14 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY_6G
 /* For legacy 6G Very Low Power mode setting*/
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY_6G
 	g_rRlmPowerLimitConfigurationLegacy6G_VLP[] = {
+	/*Default*/
+	{	{0, 0}
+		, 1, {64, 64, 64, 64, 64, 64, 64, 64, 64}
+	}
+};
+/* For legacy 6G Standard Power mode setting*/
+struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY_6G
+	g_rRlmPowerLimitConfigurationLegacy6G_SP[] = {
 	/*Default*/
 	{	{0, 0}
 		, 1, {64, 64, 64, 64, 64, 64, 64, 64, 64}
@@ -2575,6 +2617,30 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT_6G
 /* For EHT 6G Very Low Power mode setting */
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT_6G
 	g_rRlmPowerLimitConfigurationEHT_6G_VLP[] = {
+	/*Default*/
+	{	{0, 0}
+		, 1,
+			{64, 64, 64, /* EHT26 L,H,U */
+			64, 64, 64,  /* EHT52 L,H,U*/
+			64, 64, 64,  /* EHT106 L,H,U*/
+			64, 64, 64,  /* EHT242 L,H,U*/
+			64, 64, 64,  /* EHT484 L,H,U*/
+			64, 64, 64,  /* EHT996 L,H,U*/
+			64, 64, 64,  /* EHT996X2 L,H,U*/
+			64, 64, 64,  /* EHT996X4 L,H,U*/
+			64, 64, 64,  /* EHT26_52 L,H,U*/
+			64, 64, 64,  /* EHT26_106 L,H,U*/
+			64, 64, 64,  /* EHT484_242 L,H,U*/
+			64, 64, 64,  /* EHT996_484 L,H,U*/
+			64, 64, 64,  /* EHT996_484_242 L,H,U*/
+			64, 64, 64,  /* EHT996X2_484 L,H,U*/
+			64, 64, 64,  /* EHT996X3 L,H,U*/
+			64, 64, 64}  /* EHT996X3_484 L,H,U*/
+	}
+};
+/* For EHT 6G Standard Power mode setting */
+struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT_6G
+	g_rRlmPowerLimitConfigurationEHT_6G_SP[] = {
 	/*Default*/
 	{	{0, 0}
 		, 1,

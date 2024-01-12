@@ -73,6 +73,9 @@
 #include "que_mgt.h"
 #endif
 
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+#include "rlm_domain.h"
+#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -6350,6 +6353,9 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 #if CFG_WMT_WIFI_PATH_SUPPORT
 	int32_t i4RetVal = 0;
 #endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	uint8_t ucBssIdx = 0;
+#endif
 
 	DBGLOG(INIT, TRACE, "start.\n");
 	prGlueInfo->u4ReadyFlag = 0;
@@ -6429,6 +6435,10 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 #if CFG_SUPPORT_TDLS
 	prAdapter->u4TdlsLinkCount = 0;
 #endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	for (ucBssIdx = 0; ucBssIdx < MAX_BSSID_NUM; ucBssIdx++)
+		prAdapter->e6GPwrMode[ucBssIdx] = PWR_MODE_6G_LPI;
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE == 1 */
 }
 
 static
@@ -6982,6 +6992,10 @@ int32_t wlanOnAtReset(void)
 	struct BUS_INFO *prBusInfo;
 #endif
 
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	uint8_t ucBssIdx = 0;
+#endif
+
 	DBGLOG(INIT, STATE, "[SER] Driver On during Reset\n");
 
 	if (u4WlanDevNum > 0
@@ -7056,6 +7070,11 @@ int32_t wlanOnAtReset(void)
 
 		/* Trigger the action of switching Pwr state to drv_own */
 		prAdapter->fgIsFwOwn = TRUE;
+
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+		for (ucBssIdx = 0; ucBssIdx < MAX_BSSID_NUM; ucBssIdx++)
+			prAdapter->e6GPwrMode[ucBssIdx] = PWR_MODE_6G_LPI;
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE == 1 */
 
 		/* Need re-init rPendComp.done = 0, due to racing issue
 		 * between main_thread & kernel thread(kalIoctlByBssIdx)
