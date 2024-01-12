@@ -1928,7 +1928,7 @@ VOID p2pRoleFsmRunEventSwitchOPMode(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prM
 
 /* /////////////////////////////// TO BE REFINE //////////////////////////////// */
 
-VOID p2pFsmRunEventBeaconUpdate(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+VOID p2pRoleFsmRunEventBeaconUpdate(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 {
 	P_P2P_ROLE_FSM_INFO_T prRoleP2pFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
 	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
@@ -1938,7 +1938,7 @@ VOID p2pFsmRunEventBeaconUpdate(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
 
-		DBGLOG(P2P, TRACE, "p2pFsmRunEventBeaconUpdate\n");
+		DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventBeaconUpdate\n");
 
 		prBcnUpdateMsg = (P_MSG_P2P_BEACON_UPDATE_T) prMsgHdr;
 
@@ -1963,7 +1963,7 @@ VOID p2pFsmRunEventBeaconUpdate(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 			/* AP is created, Beacon Update. */
 			/* nicPmIndicateBssAbort(prAdapter, NETWORK_TYPE_P2P_INDEX); */
 
-			DBGLOG(P2P, TRACE, "p2pFsmRunEventBeaconUpdate with Bssidex(%d)\n",
+			DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventBeaconUpdate with Bssidex(%d)\n",
 				prRoleP2pFsmInfo->ucBssIndex);
 
 			bssUpdateBeaconContent(prAdapter, prRoleP2pFsmInfo->ucBssIndex);
@@ -1976,7 +1976,7 @@ VOID p2pFsmRunEventBeaconUpdate(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 	if (prMsgHdr)
 		cnmMemFree(prAdapter, prMsgHdr);
 
-}				/* p2pFsmRunEventBeaconUpdate */
+}				/* p2pRoleFsmRunEventBeaconUpdate */
 
 VOID
 p2pProcessEvent_UpdateNOAParam(IN P_ADAPTER_T prAdapter,

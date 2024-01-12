@@ -206,6 +206,7 @@
 #include "p2p_func.h"
 #include "p2p_scan.h"
 #include "p2p_dev.h"
+#include "p2p_fsm.h"
 #endif
 
 #include "privacy.h"
