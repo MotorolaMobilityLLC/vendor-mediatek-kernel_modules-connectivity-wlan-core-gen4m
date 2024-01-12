@@ -8066,6 +8066,9 @@ static int initWlan(void)
 
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	fw_log_wifi_inf_init();
+#if WLAN_INCLUDE_SYS
+	sysFwLogInit();
+#endif
 #endif
 
 	kalPlatOpsInit();
@@ -8225,6 +8228,9 @@ static void exitWlan(void)
 
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	fw_log_wifi_inf_deinit();
+#if WLAN_INCLUDE_SYS
+	sysFwLogUninit();
+#endif
 #endif
 
 #if CFG_SUPPORT_PERSIST_NETDEV
