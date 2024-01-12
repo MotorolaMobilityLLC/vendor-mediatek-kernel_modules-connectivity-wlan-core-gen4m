@@ -5384,7 +5384,7 @@ int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 		return -EINVAL;
 	}
 
-	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 4) {
+	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 5) {
 		struct BSS_DESC *prBssDesc;
 		uint32_t u4SsidNum = 0;
 		struct PARAM_SSID rSsid;
@@ -5411,7 +5411,7 @@ int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 			return -1;
 		}
 
-		if (i4Argc >= 5) {
+		if (i4Argc >= 6) {
 			u4SsidNum = 1;
 			COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
 				  apcArgv[5], strlen(apcArgv[5]));
