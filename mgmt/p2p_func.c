@@ -4771,16 +4771,17 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 		u2IELength = prMgmtTxMsdu->u2FrameLength - u2ProbeRspHdrLen;
 
 #if CFG_SUPPORT_WFD
-#if CFG_SUPPORT_WFD_VENDOR_IE
-		prAdapter->prGlueInfo
-			->prP2PInfo[prP2pBssInfo->u4PrivateData]
-			->u2VenderIELen = 0;
-#endif
 		/* Reset in each time ?? */
 		prAdapter->prGlueInfo
 			->prP2PInfo[prP2pBssInfo->u4PrivateData]
 			->u2WFDIELen = 0;
 #endif
+#if CFG_SUPPORT_CUSTOM_VENDOR_IE
+		prAdapter->prGlueInfo
+			->prP2PInfo[prP2pBssInfo->u4PrivateData]
+			->u2VenderIELen = 0;
+#endif
+
 
 		IE_FOR_EACH(pucIEBuf, u2IELength, u2Offset) {
 			switch (IE_ID(pucIEBuf)) {
@@ -4880,13 +4881,13 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 				prAdapter->prGlueInfo
 					->prP2PInfo[prP2pBssInfo->u4PrivateData]
 					->u2WFDIELen;
-#if CFG_SUPPORT_WFD_VENDOR_IE
+#endif
+#if CFG_SUPPORT_CUSTOM_VENDOR_IE
 		if (fgIsVenderIE)
 			u2EstimatedExtraIELen +=
 				prAdapter->prGlueInfo
 					->prP2PInfo[prP2pBssInfo->u4PrivateData]
 					->u2VenderIELen;
-#endif
 #endif
 
 		u2EstimateSize += u2EstimatedExtraIELen;
@@ -4969,7 +4970,6 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 
 		}
 #if CFG_SUPPORT_WFD
-
 		if (fgIsWFDIE > 0) {
 			ASSERT(prAdapter->prGlueInfo
 				->prP2PInfo[prP2pBssInfo->u4PrivateData]
@@ -4988,7 +4988,8 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 				->u2WFDIELen;
 
 		}
-#if CFG_SUPPORT_WFD_VENDOR_IE
+#endif /* CFG_SUPPORT_WFD */
+#if CFG_SUPPORT_CUSTOM_VENDOR_IE
 		if (fgIsVenderIE &&
 			prAdapter->prGlueInfo
 			->prP2PInfo[prP2pBssInfo->u4PrivateData]
@@ -5008,7 +5009,6 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 				->u2VenderIELen;
 		}
 #endif
-#endif /* CFG_SUPPORT_WFD */
 
 	} while (FALSE);
 
@@ -5143,7 +5143,7 @@ p2pFuncProcessP2pProbeRspAction(IN struct ADAPTER *prAdapter,
 			DBGLOG(P2P, INFO,
 			       "Other vender IE is found in probe resp (supp). Len %u\n",
 			       IE_SIZE(pucIEBuf));
-#if CFG_SUPPORT_WFD && CFG_SUPPORT_WFD_VENDOR_IE
+#if CFG_SUPPORT_CUSTOM_VENDOR_IE
 			if ((prAdapter->prGlueInfo->prP2PInfo
 				[((struct BSS_INFO *)*prP2pBssInfo)
 				->u4PrivateData]->u2VenderIELen
