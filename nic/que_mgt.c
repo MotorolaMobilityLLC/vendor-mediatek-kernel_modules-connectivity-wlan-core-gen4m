@@ -5255,7 +5255,7 @@ void qmHandleReorderBubbleTimeout(struct ADAPTER *prAdapter,
 	DBGLOG(QM, TRACE, "QM:(Bub Timeout Flush scheduled) STA[%u] TID[%u]\n",
 		prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid);
 
-	rc = kalScheduleFlushRxBaEntry(prAdapter->prGlueInfo);
+	rc = kalScheduleNapiTask(prAdapter);
 
 	if (rc == WLAN_STATUS_NOT_ACCEPTED) { /* Not NAPI, flush in main */
 		prReorderQueParm =
@@ -5835,7 +5835,7 @@ void qmDelRxBaEntry(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx,
 	DBGLOG(QM, TRACE, "QM:(BA Delete Flush scheduled) STA[%u] TID[%u]\n",
 		prRxBaEntry->ucStaRecIdx, prRxBaEntry->ucTid);
 
-	rc = kalScheduleFlushRxBaEntry(prAdapter->prGlueInfo);
+	rc = kalScheduleNapiTask(prAdapter);
 
 	if (rc == WLAN_STATUS_NOT_ACCEPTED) { /* Not NAPI, flush in main */
 		prRxBaEntry =

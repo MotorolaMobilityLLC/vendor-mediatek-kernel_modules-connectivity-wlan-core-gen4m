@@ -6332,7 +6332,7 @@ void nicEventHandleFwDropSSN(struct ADAPTER *prAdapter,
 
 	nicRxAddFwDropSSN(prAdapter, prSwRfb);
 
-	if (kalScheduleHandleRxFwDropSSN(prAdapter->prGlueInfo)
+	if (kalScheduleNapiTask(prAdapter)
 		== WLAN_STATUS_NOT_ACCEPTED) {
 		/* Handle Non Rx-direct call path */
 		prSwRfb = nicRxGetFwDropSSN(prAdapter);

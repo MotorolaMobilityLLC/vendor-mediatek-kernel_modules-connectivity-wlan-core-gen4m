@@ -1841,10 +1841,7 @@ void kalFlushPendingTxPackets(struct GLUE_INFO
 /*----------------------------------------------------------------------------*/
 /* RX                                                                         */
 /*----------------------------------------------------------------------------*/
-uint32_t kalScheduleFlushRxBaEntry(struct GLUE_INFO *prGlueInfo);
-#if CFG_SUPPORT_FW_DROP_SSN
-uint32_t kalScheduleHandleRxFwDropSSN(struct GLUE_INFO *prGlueInfo);
-#endif /* CFG_SUPPORT_FW_DROP_SSN */
+uint32_t kalScheduleNapiTask(struct ADAPTER *prAdapter);
 
 /*----------------------------------------------------------------------------*/
 /* Media State Indication                                                     */
