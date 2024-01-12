@@ -1661,9 +1661,11 @@ uint32_t assocProcessRxAssocReqFrameImpl(
 				prIeExtSupportedRate = EXT_SUP_RATES_IE(pucIE);
 			break;
 		case ELEM_ID_HT_CAP:
+			DBGLOG(P2P, TRACE, "HT CAP IE\n");
 			prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
 			break;
 		case ELEM_ID_VHT_CAP:
+			DBGLOG(P2P, TRACE, "VHT CAP IE\n");
 			prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
 			break;
 		case ELEM_ID_RSN:
@@ -1720,6 +1722,8 @@ uint32_t assocProcessRxAssocReqFrameImpl(
 			}
 			break;
 		case ELEM_ID_RESERVED:
+			DBGLOG(P2P, TRACE, "IE_ID_EXT=%d\n",
+				IE_ID_EXT(pucIE));
 #if (CFG_SUPPORT_802_11AX == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP)
 				prStaRec->ucPhyTypeSet |= PHY_TYPE_SET_802_11AX;
