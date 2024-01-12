@@ -232,6 +232,94 @@ uint32_t nicAllocateAdapterMemory(struct ADAPTER
 
 }				/* end of nicAllocateAdapterMemory() */
 
+static void checkLeakMemory(struct ADAPTER *prAdapter)
+{
+#if CFG_DBG_MGT_BUF
+	u_int8_t fgUnfreedMem = FALSE;
+	struct BUF_INFO *prBufInfo;
+	uint32_t u4LeakCount;
+	uint32_t u4MsgLeakCount;
+	uint32_t u4MgtLeakCount;
+	struct MEM_TRACK *prMemTrack;
+	uint32_t i;
+	struct MEM_TRACK **pLeak;
+
+	/* Dynamic allocated memory from OS */
+	u4LeakCount = prAdapter->u4MemAllocDynamicCount -
+		      prAdapter->u4MemFreeDynamicCount;
+	fgUnfreedMem |= !!u4LeakCount;
+
+	/* MSG buffer */
+	prBufInfo = &prAdapter->rMsgBufInfo;
+	u4MsgLeakCount = prBufInfo->u4AllocCount -
+			 (prBufInfo->u4FreeCount +
+			  prBufInfo->u4AllocNullCount);
+	fgUnfreedMem |= !!u4MsgLeakCount;
+
+	/* MGT buffer */
+	prBufInfo = &prAdapter->rMgtBufInfo;
+	u4MgtLeakCount = prBufInfo->u4AllocCount -
+				 (prBufInfo->u4FreeCount +
+				  prBufInfo->u4AllocNullCount);
+	fgUnfreedMem |= !!u4MgtLeakCount;
+
+	/* Check if all allocated memories are free */
+	if (fgUnfreedMem) {
+		DBGLOG(MEM, ERROR,
+		       "Unequal memory alloc/free count! leak=%u(%u-%u) msg=%u mgt=%u, NoAck=%u\n",
+		       u4LeakCount,
+		       prAdapter->u4MemAllocDynamicCount,
+		       prAdapter->u4MemFreeDynamicCount,
+		       u4MsgLeakCount, u4MgtLeakCount,
+		       wlanIsChipNoAck(prAdapter));
+
+		qmDumpQueueStatus(prAdapter, NULL, 0);
+		cnmDumpMemoryStatus(prAdapter, NULL, 0);
+	}
+
+	if (wlanIsChipNoAck(prAdapter))
+		return;	/* Skip this ASSERT if chip is no ACK */
+
+	if (!u4LeakCount)
+		return;
+
+	pLeak = kalMemAlloc(sizeof(struct MEM_TRACK *) *
+			    u4LeakCount,
+			    VIR_MEM_TYPE);
+
+	i = 0;
+	DBGLOG(MEM, ERROR, "----- Memory Leak -----\n");
+	LINK_FOR_EACH_ENTRY(prMemTrack,
+			    &prAdapter->rMemTrackLink,
+			    rLinkEntry,
+			    struct MEM_TRACK) {
+		DBGLOG(MEM, ERROR,
+		       "file:line %s, cmd id: %u, where: %u\n",
+		       prMemTrack->pucFileAndLine,
+		       prMemTrack->ucCmdId,
+		       prMemTrack->ucWhere);
+		pLeak[i++] = prMemTrack;
+	}
+	KAL_WARN_ON(prAdapter->u4MemFreeDynamicCount !=
+		    prAdapter->u4MemAllocDynamicCount);
+
+	for (i = 0; i < u4LeakCount; i++)
+		cnmMemFree(prAdapter, pLeak[i]->aucData);
+
+	kalMemFree(pLeak, VIR_MEM_TYPE,
+		   sizeof(struct MEM_TRACK *) * u4LeakCount);
+
+	DBGLOG(MEM, WARN,
+	       "%u leak entries flushed, alloc=%u, free=%u\n",
+	       u4LeakCount,
+	       prAdapter->u4MemAllocDynamicCount,
+	       prAdapter->u4MemFreeDynamicCount);
+
+	ASSERT(prAdapter->u4MemFreeDynamicCount ==
+	       prAdapter->u4MemAllocDynamicCount);
+#endif
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is responsible for releasing the allocated memory by
@@ -248,7 +336,11 @@ void nicReleaseAdapterMemory(struct ADAPTER *prAdapter)
 	struct RX_CTRL *prRxCtrl;
 	uint32_t u4Idx;
 
-	ASSERT(prAdapter);
+	if (!prAdapter) {
+		DBGLOG(MEM, ERROR, "NULL prAdapter");
+		return;
+	}
+
 	prTxCtrl = &prAdapter->rTxCtrl;
 	prRxCtrl = &prAdapter->rRxCtrl;
 
@@ -258,104 +350,42 @@ void nicReleaseAdapterMemory(struct ADAPTER *prAdapter)
 	/* 4 <4> Memory for Common Coalescing Buffer */
 	if (prAdapter->pucCoalescingBufCached) {
 #ifndef CFG_PREALLOC_MEMORY
-		kalReleaseIOBuffer((void *)
-				   prAdapter->pucCoalescingBufCached,
+		kalReleaseIOBuffer(prAdapter->pucCoalescingBufCached,
 				   prAdapter->u4CoalescingBufCachedSize);
 #endif
-		prAdapter->pucCoalescingBufCached = (uint8_t *) NULL;
+		prAdapter->pucCoalescingBufCached = NULL;
 	}
 
 	/* 4 <3> Memory for TX Descriptor */
 	if (prTxCtrl->pucTxCached) {
-		kalMemFree((void *) prTxCtrl->pucTxCached, VIR_MEM_TYPE,
+		kalMemFree(prTxCtrl->pucTxCached, VIR_MEM_TYPE,
 			   prTxCtrl->u4TxCachedSize);
-		prTxCtrl->pucTxCached = (uint8_t *) NULL;
+		prTxCtrl->pucTxCached = NULL;
 	}
 	/* 4 <2> Memory for RX Descriptor */
 	if (prRxCtrl->pucRxCached) {
-		kalMemFree((void *) prRxCtrl->pucRxCached, VIR_MEM_TYPE,
+		kalMemFree(prRxCtrl->pucRxCached, VIR_MEM_TYPE,
 			   prRxCtrl->u4RxCachedSize);
-		prRxCtrl->pucRxCached = (uint8_t *) NULL;
+		prRxCtrl->pucRxCached = NULL;
 	}
 	/* 4 <1> Memory for Management Memory Pool */
 	if (prAdapter->pucMgtBufCached) {
 #ifndef CFG_PREALLOC_MEMORY
-		kalMemFree((void *) prAdapter->pucMgtBufCached,
-			   PHY_MEM_TYPE, prAdapter->u4MgtBufCachedSize);
+		kalMemFree(prAdapter->pucMgtBufCached, PHY_MEM_TYPE,
+			   prAdapter->u4MgtBufCachedSize);
 #endif
-		prAdapter->pucMgtBufCached = (uint8_t *) NULL;
+		prAdapter->pucMgtBufCached = NULL;
 	}
 
 	/* Memory for TX Desc Template */
 	for (u4Idx = 0; u4Idx < CFG_STA_REC_NUM; u4Idx++)
-		nicTxFreeDescTemplate(prAdapter,
-				      &prAdapter->arStaRec[u4Idx]);
+		nicTxFreeDescTemplate(prAdapter, &prAdapter->arStaRec[u4Idx]);
 
 #if CFG_SUPPORT_LLS
 	prAdapter->pucLinkStatsSrcBufferAddr = NULL;
 	prAdapter->pu4TxTimePerLevels = NULL;
 #endif
-
-#if CFG_DBG_MGT_BUF
-	do {
-		u_int8_t fgUnfreedMem = FALSE;
-		struct BUF_INFO *prBufInfo;
-
-		/* Dynamic allocated memory from OS */
-		if (prAdapter->u4MemFreeDynamicCount !=
-		    prAdapter->u4MemAllocDynamicCount)
-			fgUnfreedMem = TRUE;
-
-		/* MSG buffer */
-		prBufInfo = &prAdapter->rMsgBufInfo;
-		if (prBufInfo->u4AllocCount != (prBufInfo->u4FreeCount +
-						prBufInfo->u4AllocNullCount))
-			fgUnfreedMem = TRUE;
-
-		/* MGT buffer */
-		prBufInfo = &prAdapter->rMgtBufInfo;
-		if (prBufInfo->u4AllocCount != (prBufInfo->u4FreeCount +
-						prBufInfo->u4AllocNullCount))
-			fgUnfreedMem = TRUE;
-
-		/* Check if all allocated memories are free */
-		if (fgUnfreedMem) {
-			DBGLOG(MEM, ERROR,
-				"Unequal memory alloc/free count!\n");
-
-			qmDumpQueueStatus(prAdapter, NULL, 0);
-			cnmDumpMemoryStatus(prAdapter, NULL, 0);
-		}
-
-		if (!wlanIsChipNoAck(prAdapter)) {
-			/* Skip this ASSERT if chip is no ACK */
-			if (prAdapter->u4MemFreeDynamicCount !=
-					prAdapter->u4MemAllocDynamicCount) {
-				struct MEM_TRACK *prMemTrack;
-
-				DBGLOG(MEM, INFO,
-					"u4MemFreeDynamicCount %d u4MemAllocDynamicCount %d\n",
-					prAdapter->u4MemFreeDynamicCount,
-					prAdapter->u4MemAllocDynamicCount);
-
-				DBGLOG(MEM, ERROR, "----- Memory Leak -----\n");
-				LINK_FOR_EACH_ENTRY(prMemTrack,
-						&prAdapter->rMemTrackLink,
-						rLinkEntry,
-						struct MEM_TRACK) {
-					DBGLOG(MEM, ERROR,
-						"file:line %s, cmd id: %u, where: %u\n",
-						prMemTrack->pucFileAndLine,
-						prMemTrack->ucCmdId,
-						prMemTrack->ucWhere);
-				}
-			}
-			ASSERT(prAdapter->u4MemFreeDynamicCount ==
-			       prAdapter->u4MemAllocDynamicCount);
-		}
-	} while (FALSE);
-#endif
-
+	checkLeakMemory(prAdapter);
 }
 
 void nicTriggerAHDBG(struct ADAPTER *prAdapter,
