@@ -2998,7 +2998,7 @@ void p2pRoleFsmUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 			prP2pLinkBssInfo->prStaRecOfAP = NULL;
 		}
 		/* 4 <1.3> Update BSS_INFO_T */
-		if (prAssocRspSwRfb || prAssocRspSwRfb->pvHeader) {
+		if (prAssocRspSwRfb) {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			if (prStaRec == prSetupStaRec) {
 				p2pFuncUpdateBssInfoForJOIN(

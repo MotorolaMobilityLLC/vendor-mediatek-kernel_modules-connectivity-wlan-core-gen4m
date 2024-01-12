@@ -1650,6 +1650,10 @@ kalP2PGOStationUpdate(struct GLUE_INFO *prGlueInfo,
 				prBssInfo = GET_BSS_INFO_BY_INDEX(
 					prGlueInfo->prAdapter,
 					prCliStaRec->ucBssIndex);
+
+				if (!prBssInfo)
+					break;
+
 				/* sae hostapd new_sta, when auth fail,
 				 * driver need del_sta
 				 */
