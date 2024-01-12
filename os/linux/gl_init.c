@@ -1461,7 +1461,9 @@ static int kal_napi_poll(struct napi_struct *napi, int budget)
 static int wlanInit(struct net_device *prDev)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-
+#if CFG_SUPPORT_RX_GRO
+	uint8_t ucBssIndex;
+#endif
 	if (!prDev)
 		return -ENXIO;
 
@@ -1479,16 +1481,22 @@ static int wlanInit(struct net_device *prDev)
 
 #if CFG_SUPPORT_RX_GRO
 	/* Register GRO function to kernel */
-	prDev->features |= NETIF_F_GRO;
-	prDev->hw_features |= NETIF_F_GRO;
-
-	prGlueInfo->napi.dev = prDev;
 	spin_lock_init(&prGlueInfo->napi_spinlock);
-	netif_napi_add(prGlueInfo->napi.dev,
-		&prGlueInfo->napi, kal_napi_poll, 64);
-	DBGLOG(INIT, INFO, "netif_napi_add success\n");
-#endif
 
+	ucBssIndex = wlanGetBssIdx(prDev);
+	if (ucBssIndex < MAX_BSSID_NUM) {
+		prDev->features |= NETIF_F_GRO;
+		prDev->hw_features |= NETIF_F_GRO;
+		prGlueInfo->napi[ucBssIndex].dev = prDev;
+		netif_napi_add(prGlueInfo->napi[ucBssIndex].dev,
+			&prGlueInfo->napi[ucBssIndex], kal_napi_poll, 64);
+		DBGLOG(INIT, INFO,
+			"GRO interface add success: %d\n", ucBssIndex);
+	} else {
+		DBGLOG(INIT, ERROR,
+			"invalid BSSID: %d, No GRO interface\n", ucBssIndex);
+	}
+#endif
 	return 0;		/* success */
 }				/* end of wlanInit() */
 

@@ -960,7 +960,7 @@ uint32_t kalRxIndicatePkts(IN struct GLUE_INFO *prGlueInfo,
  *
  */
 /*----------------------------------------------------------------------------*/
-uint32_t kal_is_skb_gro(struct ADAPTER *prAdapter)
+uint32_t kal_is_skb_gro(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 {
 	struct PERF_MONITOR_T *prPerMonitor;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
@@ -984,20 +984,19 @@ uint32_t kal_is_skb_gro(struct ADAPTER *prAdapter)
  *
  */
 /*----------------------------------------------------------------------------*/
-void kal_gro_flush(struct ADAPTER *prAdapter)
+void kal_gro_flush(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
 	if (CHECK_FOR_TIMEOUT(kalGetTimeTick(),
-		prAdapter->tmGROFlushTimeout,
-		MSEC_TO_SYSTIME(prWifiVar->ucGROFlushTimeout))) {
-		napi_gro_flush(&prAdapter->prGlueInfo->napi, false);
-		DBGLOG_LIMITED(INIT, INFO, "napi_gro_flush\n");
+		prAdapter->tmGROFlushTimeout[ucBssIdx],
+		prWifiVar->ucGROFlushTimeout)) {
+		napi_gro_flush(&prAdapter->prGlueInfo->napi[ucBssIdx], false);
+		DBGLOG_LIMITED(INIT, TRACE, "napi_gro_flush: %d\n", ucBssIdx);
 	}
-	GET_CURRENT_SYSTIME(&prAdapter->tmGROFlushTimeout);
+	GET_CURRENT_SYSTIME(&prAdapter->tmGROFlushTimeout[ucBssIdx]);
 }
 #endif
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief To indicate one received packets is available for higher
@@ -1016,12 +1015,14 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 	struct net_device *prNetDev = prGlueInfo->prDevHandler;
 	struct sk_buff *prSkb = NULL;
 	struct mt66xx_chip_info *prChipInfo;
+	uint8_t ucBssIdx;
 
 	ASSERT(prGlueInfo);
 	ASSERT(pvPkt);
 
 	prSkb = pvPkt;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	ucBssIdx = GLUE_GET_PKT_BSS_IDX(prSkb);
 #if DBG && 0
 	do {
 		uint8_t *pu4Head = (uint8_t *) &prSkb->cb[0];
@@ -1036,7 +1037,7 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 #if 1
 
 	prNetDev = (struct net_device *)wlanGetNetInterfaceByBssIdx(
-			   prGlueInfo, GLUE_GET_PKT_BSS_IDX(prSkb));
+			   prGlueInfo, ucBssIdx);
 	if (!prNetDev)
 		prNetDev = prGlueInfo->prDevHandler;
 #if CFG_SUPPORT_SNIFFER
@@ -1150,18 +1151,20 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 		skb_reset_transport_header(prSkb);
 		kal_skb_reset_mac_len(prSkb);
 	}
+
 #if CFG_SUPPORT_RX_GRO
-	if (kal_is_skb_gro(prGlueInfo->prAdapter)) {
+	if (ucBssIdx < MAX_BSSID_NUM &&
+		kal_is_skb_gro(prGlueInfo->prAdapter, ucBssIdx)) {
 		/* GRO receive function can't be interrupt so it need to
 		 * disable preempt and protect by spin lock
 		 */
 		preempt_disable();
 		spin_lock_bh(&prGlueInfo->napi_spinlock);
-		napi_gro_receive(&prGlueInfo->napi, prSkb);
-		kal_gro_flush(prGlueInfo->prAdapter);
+		napi_gro_receive(&prGlueInfo->napi[ucBssIdx], prSkb);
+		kal_gro_flush(prGlueInfo->prAdapter, ucBssIdx);
 		spin_unlock_bh(&prGlueInfo->napi_spinlock);
 		preempt_enable();
-		DBGLOG_LIMITED(INIT, INFO, "napi_gro_receive\n");
+		DBGLOG_LIMITED(INIT, INFO, "napi_gro_receive:%d\n", ucBssIdx);
 	} else {
 		if (!in_interrupt())
 			netif_rx_ni(prSkb);
