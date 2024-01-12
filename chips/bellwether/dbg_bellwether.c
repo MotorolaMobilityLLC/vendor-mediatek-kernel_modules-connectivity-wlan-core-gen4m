@@ -17,6 +17,7 @@
 #ifdef BELLWETHER
 
 #include "precomp.h"
+#if (DBG_DISABLE_ALL_INFO == 0)
 #include "bellwether.h"
 #include "coda/bellwether/wf_ple_top.h"
 #include "coda/bellwether/wf_pse_top.h"
@@ -795,4 +796,5 @@ void bellwether_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 	}
 }
 
+#endif /* DBG_DISABLE_ALL_INFO */
 #endif /* BELLWETHER */

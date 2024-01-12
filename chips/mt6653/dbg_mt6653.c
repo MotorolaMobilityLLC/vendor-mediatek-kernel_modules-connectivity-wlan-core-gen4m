@@ -13,10 +13,10 @@
  *[Copyright]
  *    Copyright (C) 2015 MediaTek Incorporation. All Rights Reserved.
  ******************************************************************************/
-
 #ifdef MT6653
 
 #include "precomp.h"
+#if (DBG_DISABLE_ALL_INFO == 0)
 #include "mt6653.h"
 #include "dbg_mt6653.h"
 #if defined(_HIF_PCIE)
@@ -1857,4 +1857,5 @@ wrong_rate:
 #endif
 }
 
+#endif /* DBG_DISABLE_ALL_INFO */
 #endif /* MT6653 */

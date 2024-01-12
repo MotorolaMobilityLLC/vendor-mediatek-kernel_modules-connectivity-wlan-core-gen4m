@@ -314,9 +314,11 @@ struct BUS_INFO mt7990_bus_info = {
 	.wfmda_wm_rx_group = mt7990_wfmda_wm_rx_group,
 	.wfmda_wm_rx_group_len = ARRAY_SIZE(mt7990_wfmda_wm_rx_group),
 	.prDmashdlCfg = &rMt7990DmashdlCfg,
+#if (DBG_DISABLE_ALL_INFO == 0)
 	.prPleTopCr = &rMt7990PleTopCr,
 	.prPseTopCr = &rMt7990PseTopCr,
 	.prPpTopCr = &rMt7990PpTopCr,
+#endif
 	.prPseGroup = mt7990_pse_group,
 	.u4PseGroupLen = ARRAY_SIZE(mt7990_pse_group),
 	.pdmaSetup = mt7990WpdmaConfig,
@@ -373,6 +375,7 @@ struct TX_DESC_OPS_T mt7990_TxDescOps = {
 
 struct RX_DESC_OPS_T mt7990_RxDescOps = {};
 
+#if (DBG_DISABLE_ALL_INFO == 0)
 struct CHIP_DBG_OPS mt7990_DebugOps = {
 	.showPdmaInfo = connac3x_show_wfdma_info,
 	.showPseInfo = connac3x_show_pse_info,
@@ -391,6 +394,7 @@ struct CHIP_DBG_OPS mt7990_DebugOps = {
 	.show_wfdma_dbg_probe_info = mt7990_show_wfdma_dbg_probe_info,
 	.show_wfdma_wrapper_info = mt7990_show_wfdma_wrapper_info,
 };
+#endif /* DBG_DISABLE_ALL_INFO */
 
 struct mt66xx_chip_info mt66xx_chip_info_mt7990 = {
 	.bus_info = &mt7990_bus_info,
@@ -399,7 +403,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7990 = {
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 	.prTxDescOps = &mt7990_TxDescOps,
 	.prRxDescOps = &mt7990_RxDescOps,
+#if (DBG_DISABLE_ALL_INFO == 0)
 	.prDebugOps = &mt7990_DebugOps,
+#endif
 	.chip_id = MT7990_CHIP_ID,
 	.should_verify_chip_id = FALSE,
 	.sw_sync0 = Connac3x_CONN_CFG_ON_CONN_ON_MISC_ADDR,

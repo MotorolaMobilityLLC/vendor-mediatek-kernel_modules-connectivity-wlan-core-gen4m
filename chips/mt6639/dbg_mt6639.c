@@ -13,10 +13,10 @@
  *[Copyright]
  *    Copyright (C) 2015 MediaTek Incorporation. All Rights Reserved.
  ******************************************************************************/
-
 #ifdef MT6639
 
 #include "precomp.h"
+#if (DBG_DISABLE_ALL_INFO == 0)
 #include "mt6639.h"
 #include "dbg_mt6639.h"
 #if defined(_HIF_PCIE)
@@ -5450,4 +5450,5 @@ u_int8_t mt6639_show_debug_sop_info(struct ADAPTER *ad,
 }
 #endif
 
+#endif /* DBG_DISABLE_ALL_INFO */
 #endif /* MT6639 */

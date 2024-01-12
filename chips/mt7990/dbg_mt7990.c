@@ -17,6 +17,7 @@
 #ifdef MT7990
 
 #include "precomp.h"
+#if (DBG_DISABLE_ALL_INFO == 0)
 #include "mt7990.h"
 #include "coda/mt7990/wf_ple_top.h"
 #include "coda/mt7990/wf_pse_top.h"
@@ -788,4 +789,5 @@ void mt7990_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 	}
 }
 
+#endif /* DBG_DISABLE_ALL_INFO */
 #endif /* MT7990 */

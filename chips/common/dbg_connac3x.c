@@ -13,8 +13,8 @@
  *[Copyright]
  *    Copyright (C) 2015 MediaTek Incorporation. All Rights Reserved.
  ******************************************************************************/
-
 #if (CFG_SUPPORT_CONNAC3X == 1)
+
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
  *******************************************************************************
@@ -25,6 +25,7 @@
  *******************************************************************************
  */
 #include "precomp.h"
+#if (DBG_DISABLE_ALL_INFO == 0)
 #include "mt_dmac.h"
 #include "wf_ple.h"
 #include "dbg_wtbl_connac3x.h"
@@ -3667,4 +3668,5 @@ int connac3x_get_rx_rate_info(const uint32_t *prRxV,
 	return 0;
 }
 #endif
+#endif /* DBG_DISABLE_ALL_INFO */
 #endif /* CFG_SUPPORT_CONNAC3X */

@@ -17,6 +17,7 @@
 #ifdef MT6655
 
 #include "precomp.h"
+#if (DBG_DISABLE_ALL_INFO == 0)
 #include "mt6655.h"
 #include "coda/mt6655/wf_ple_top.h"
 #include "coda/mt6655/wf_pse_top.h"
@@ -795,4 +796,5 @@ void mt6655_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 	}
 }
 
+#endif /* DBG_DISABLE_ALL_INFO */
 #endif /* MT6655 */

@@ -14,6 +14,7 @@
  *******************************************************************************
  */
 #include "precomp.h"
+#if (DBG_DISABLE_ALL_INFO == 0)
 #include "dbg_wtbl_connac3x.h"
 #ifdef BELLWETHER
 #include "coda/bellwether/wf_wtblon_top.h"
@@ -1128,4 +1129,5 @@ int32_t connac3x_show_umac_wtbl_info(
 	return i4BytesWritten;
 }
 
+#endif /* DBG_DISABLE_ALL_INFO */
 #endif /* CFG_SUPPORT_CONNAC3X */
