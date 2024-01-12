@@ -1409,11 +1409,11 @@ err_alloc_netdev:
 #if CFG_ENABLE_UNIFY_WIPHY
 u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 {
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	struct wiphy *prWiphy = wlanGetWiphy();
 	struct wireless_dev *prWdev = NULL;
 	uint8_t	i = 0;
 
-#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (!prWiphy) {
 		DBGLOG(P2P, ERROR, "unable to allocate wiphy for p2p\n");
 		return FALSE;
@@ -1453,10 +1453,11 @@ u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 #else	/* (CFG_ENABLE_UNIFY_WIPHY == 0) */
 u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 {
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	struct wiphy *prWiphy = NULL;
 	struct wireless_dev *prWdev = NULL;
 	uint8_t	i = 0;
-#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
+
 	prWdev = kzalloc(sizeof(struct wireless_dev), GFP_KERNEL);
 	if (!prWdev) {
 		DBGLOG(P2P, ERROR,
@@ -1777,10 +1778,12 @@ static int p2pStop(struct net_device *prDev)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	struct GL_P2P_DEV_INFO *prP2pGlueDevInfo = NULL;
 /* P_MSG_P2P_FUNCTION_SWITCH_T prFuncSwitch; */
 
 	GLUE_SPIN_LOCK_DECLARATION();
+#endif
 
 	ASSERT(prDev);
 
@@ -1795,12 +1798,12 @@ static int p2pStop(struct net_device *prDev)
 	if (!prAdapter || !prAdapter->fgIsP2PRegistered)
 		return -EFAULT;
 
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	prP2pGlueDevInfo = prGlueInfo->prP2PDevInfo;
 	ASSERT(prP2pGlueDevInfo);
 
 	/* 0. Do the scan done and set parameter to abort if the scan pending */
 	/*DBGLOG(INIT, INFO, "p2pStop and ucRoleIdx = %u\n", ucRoleIdx);*/
-
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	if ((prP2pGlueDevInfo->prScanRequest != NULL) &&
 	    (prP2pGlueDevInfo->prScanRequest->wdev == prDev->ieee80211_ptr)) {
@@ -1809,7 +1812,7 @@ static int p2pStop(struct net_device *prDev)
 		prP2pGlueDevInfo->prScanRequest = NULL;
 	}
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-
+#endif
 	/* zero clear old acs information */
 	kalMemZero(&(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo),
 		sizeof(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo));

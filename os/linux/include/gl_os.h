@@ -217,10 +217,8 @@
 #include "version.h"
 #include "config.h"
 
-#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 #include <linux/wireless.h>
 #include <net/cfg80211.h>
-#endif
 
 #include <linux/module.h>
 #include <linux/can/netlink.h>

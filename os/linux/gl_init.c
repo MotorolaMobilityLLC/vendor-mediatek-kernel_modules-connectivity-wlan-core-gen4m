@@ -3144,7 +3144,9 @@ static u_int8_t wlanIsAdjacentChnl(struct GL_P2P_INFO *prGlueP2pInfo,
 	uint32_t u4AdjacentFreq = 0;
 	uint32_t u4BandWidth = 20;
 	uint32_t u4StartFreq, u4EndFreq;
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	struct ieee80211_channel *chnl = NULL;
+#endif
 
 	u4AdjacentFreq = nicChannelNum2Freq(ucAdjacentChannel, eBand) / 1000;
 
@@ -3190,6 +3192,7 @@ static u_int8_t wlanIsAdjacentChnl(struct GL_P2P_INFO *prGlueP2pInfo,
 	if (u4AdjacentFreq < u4StartFreq || u4AdjacentFreq > u4EndFreq)
 		return FALSE;
 
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	/* check valid channel */
 	chnl = ieee80211_get_channel(prGlueP2pInfo->prWdev->wiphy,
 			u4AdjacentFreq);
@@ -3198,6 +3201,7 @@ static u_int8_t wlanIsAdjacentChnl(struct GL_P2P_INFO *prGlueP2pInfo,
 				u4AdjacentFreq);
 		return FALSE;
 	}
+#endif
 	return TRUE;
 }
 
@@ -4388,14 +4392,17 @@ int set_p2p_mode_handler(struct net_device *netdev,
 		for (i = 0 ; i < KAL_P2P_NUM; i++) {
 			prP2PInfo = prGlueInfo->prP2PInfo[i];
 
-			if (!prP2PInfo ||
-				!prP2PInfo->aprRoleHandler ||
-				!prP2PInfo->prWdev)
+			if (!prP2PInfo || !prP2PInfo->aprRoleHandler
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
+				|| !prP2PInfo->prWdev
+#endif
+				)
 				continue;
-
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 			/* Only restore sap part */
 			if (prP2PInfo->prWdev->iftype != NL80211_IFTYPE_AP)
 				continue;
+#endif
 
 			g_u4DevIdx[i] =
 				prP2PInfo->aprRoleHandler->ifindex;
