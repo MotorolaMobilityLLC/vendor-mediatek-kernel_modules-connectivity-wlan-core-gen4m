@@ -489,6 +489,68 @@ nanDataUtilSearchNdpByNdpId(struct ADAPTER *prAdapter,
 	return NULL;
 }
 
+static void
+nanDataGenerateNdpInstanceId(
+	struct ADAPTER *prAdapter,
+	struct _NAN_NDL_INSTANCE_T *prNDL,
+	struct _NAN_NDP_INSTANCE_T *prNDP)
+{
+	if (!prNDL || !prNDP)
+		return;
+
+	prNDP->ndp_instance_id =
+		(prNDP->ucNDPID * 100) +
+		(prNDP->ucNdlIndex) * NAN_MAX_SUPPORT_NDP_NUM +
+		prNDL->ucNDPNum;
+}
+
+struct _NAN_NDP_INSTANCE_T *
+nanDataUtilSearchNdpByNdpInstanceId(
+	struct ADAPTER *prAdapter,
+	uint32_t u4NdpInstanceId)
+{
+	uint8_t ucNdlIndex, ucNdpIndex;
+	struct _NAN_NDL_INSTANCE_T *prNDL;
+	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
+	uint32_t u4Id = u4NdpInstanceId % 100;
+
+	if (!prAdapter) {
+		DBGLOG(NAN, ERROR,
+			"[%s] prAdapter error, return NULL\n", __func__);
+		return NULL;
+	}
+
+	ucNdlIndex = (u4Id - 1) / NAN_MAX_SUPPORT_NDP_NUM;
+	ucNdpIndex = (u4Id - 1) % NAN_MAX_SUPPORT_NDP_NUM;
+	if (ucNdlIndex >= NAN_MAX_SUPPORT_NDL_NUM ||
+		ucNdpIndex >= NAN_MAX_SUPPORT_NDP_NUM) {
+		DBGLOG(NAN, ERROR,
+			"[%s] Invalid NDP instance ID = %d\n",
+			__func__, u4NdpInstanceId);
+		return NULL;
+	}
+
+	DBGLOG(NAN, INFO, "NdpId [%d,%d]\n",
+		ucNdlIndex,
+		ucNdpIndex);
+
+	prDataPathInfo = &(prAdapter->rDataPathInfo);
+
+	prNDL = &(prDataPathInfo->arNDL[ucNdlIndex]);
+	if (prNDL->arNDP[ucNdpIndex].fgNDPValid == TRUE &&
+		prNDL->arNDP[ucNdpIndex].ndp_instance_id == u4NdpInstanceId)
+		return &(prNDL->arNDP[ucNdpIndex]);
+
+	DBGLOG(NAN, ERROR,
+		"[%s] Invalid NDP (fg = %d, id = %d), instance ID = %d\n",
+		__func__,
+		prNDL->arNDP[ucNdpIndex].fgNDPValid,
+		prNDL->arNDP[ucNdpIndex].ndp_instance_id,
+		u4NdpInstanceId);
+
+	return NULL;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief
