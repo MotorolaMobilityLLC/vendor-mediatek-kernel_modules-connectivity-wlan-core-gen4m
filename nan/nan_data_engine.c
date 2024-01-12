@@ -3972,6 +3972,10 @@ int32_t nanCmdDataResponse(struct ADAPTER *prAdapter,
 			NAN_REASON_CODE_NDP_REJECTED, prAttrNDL,
 			NAN_REASON_CODE_NDP_REJECTED);
 
+		nanNdpResponderRspEvent(prAdapter,
+			prNDP,
+			WLAN_STATUS_FAILURE);
+
 		nanDataPathProtocolFsmStep(prAdapter, NDP_DISCONNECT, prNDP);
 	}
 
