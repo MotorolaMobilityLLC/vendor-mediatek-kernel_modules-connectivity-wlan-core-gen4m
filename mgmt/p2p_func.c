@@ -1495,7 +1495,8 @@ void p2pFuncStopComplete(struct ADAPTER *prAdapter,
 		/* Reset RLM related field of BSSINFO. */
 		rlmBssAborted(prAdapter, prP2pBssInfo);
 
-		if (prP2pBssInfo->ucBMCWlanIndex != WTBL_RESERVED_ENTRY) {
+		if (prP2pBssInfo->ucBMCWlanIndex != WTBL_RESERVED_ENTRY &&
+		    prP2pBssInfo->fgBcDefaultKeyExist) {
 			struct PARAM_REMOVE_KEY  pvSetBuffer;
 			uint32_t pu4SetInfoLen;
 
