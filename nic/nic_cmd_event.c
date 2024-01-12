@@ -887,6 +887,7 @@ void nicCmdEventQueryStatistics(IN struct ADAPTER
 	uint32_t u4QueryInfoLen;
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo;
+	struct SCAN_INFO *prScanInfo;
 #endif
 
 	ASSERT(prAdapter);
@@ -925,6 +926,7 @@ void nicCmdEventQueryStatistics(IN struct ADAPTER
 	prStatistics->rFCSErrorCount =
 		prEventStatistics->rFCSErrorCount;
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prStatistics->rMdrdyCnt = prEventStatistics->rMdrdyCnt;
 	prStatistics->rChnlIdleCnt = prEventStatistics->rChnlIdleCnt;
 	prStatistics->rHwAwakeDuration = prEventStatistics->rHwMacAwakeDuration;
@@ -956,6 +958,11 @@ void nicCmdEventQueryStatistics(IN struct ADAPTER
 		prStatistics->rChnlIdleCnt.QuadPart;
 	prLinkQualityInfo->u8HwMacAwakeDuration =
 		prStatistics->rHwAwakeDuration.QuadPart;
+	if (prScanInfo->eCurrentState == SCAN_STATE_SCANNING)
+		prLinkQualityInfo->u2FlagScanning = 1;
+	else
+		prLinkQualityInfo->u2FlagScanning = 0;
+
 	wlanFinishCollectingLinkQuality(prGlueInfo);
 
 	DBGLOG(SW4, TRACE,
