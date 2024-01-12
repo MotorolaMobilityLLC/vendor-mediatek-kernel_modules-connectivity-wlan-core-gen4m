@@ -2739,6 +2739,16 @@
 
 #define CFG_MTK_P2P_DROP_PROBE_DURING_CSA	1
 
+/*------------------------------------------------------------------------------
+ * Flag used for USB auto suspend support
+ * Value 0: Disable USB auto suspend.
+ * Value 1: Enable USB auto suspend. (only for LP MSP)
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_USB_AUTO_SUSPEND
+#define CFG_USB_AUTO_SUSPEND 0
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

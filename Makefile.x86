@@ -212,6 +212,10 @@ PLATFORM_FLAGS += -DCFG_COMBO_SLT_GOLDEN
 slt_postfix = _mc
 endif
 
+ifeq ($(USB_AUTO_SUSPEND), y)
+PLATFORM_FLAGS += -DCFG_USB_AUTO_SUSPEND
+endif
+
 all: driver
 
 driver:
