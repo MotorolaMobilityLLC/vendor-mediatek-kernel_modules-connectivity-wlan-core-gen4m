@@ -283,6 +283,7 @@ void nic_txd_v3_compose(
 	uint8_t ucEtherTypeOffsetInWord;
 	uint8_t fgIsALTXQueue = FALSE;
 	uint8_t fgForceSendQ0 = FALSE;
+	uint8_t ucControlFlag;
 
 	prTxDesc = (struct HW_MAC_CONNAC3X_TX_DESC *) prTxDescBuffer;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
@@ -298,6 +299,9 @@ void nic_txd_v3_compose(
 	ucTarPort = nicTxGetTxDestPortIdxByTc(prMsduInfo->ucTC);
 
 	nicTxForceAmsduForCert(prAdapter, (uint8_t *)prTxDesc);
+
+	ucControlFlag = prMsduInfo->ucControlFlag;
+
 	/** DW0 **/
 	/* Packet Format */
 	if (prBssInfo) {
@@ -314,20 +318,16 @@ void nic_txd_v3_compose(
 		DBGLOG(TX, ERROR, "prBssInfo is NULL\n");
 
 #if (CFG_SUPPORT_FORCE_ALTX == 1)
-	fgIsALTXQueue |=
-		(ucTarPort == PORT_INDEX_MCU &&
-		prMsduInfo->ucControlFlag &
-		MSDU_CONTROL_FLAG_FORCE_TX);
+	fgIsALTXQueue |= ucTarPort == PORT_INDEX_MCU &&
+		ucControlFlag & MSDU_CONTROL_FLAG_FORCE_TX;
 #endif /* CFG_SUPPORT_FORCE_ALTX == 1 */
 
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
-	fgIsALTXQueue |=
-		(prMsduInfo->fgMgmtUseDataQ &&
-		prMsduInfo->ucControlFlag &
-		MSDU_CONTROL_FLAG_FORCE_TX);
+	fgIsALTXQueue |= prMsduInfo->fgMgmtUseDataQ &&
+		ucControlFlag & MSDU_CONTROL_FLAG_FORCE_TX;
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
-	fgForceSendQ0 = (prMsduInfo->ucControlFlag &
+	fgForceSendQ0 = (ucControlFlag &
 		MSDU_CONTROL_FLAG_MGNT_2_CMD_QUE);
 
 	if (fgIsALTXQueue) {
@@ -625,15 +625,14 @@ void nic_txd_v3_compose(
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	/* altx set TGID and force link */
-	if (prMldSta && (ucTarQueue == MAC_TXQ_ALTX_0_INDEX ||
-	    (prMsduInfo->ucPktType == ENUM_PKT_1X &&
-			prStaRec->fgIsTxKeyReady != TRUE)))
+	if (prMldSta && ucControlFlag & MSDU_CONTROL_FLAG_FORCE_LINK)
 		HAL_MAC_CONNAC3X_TXD_SET_FORCE_ASSIGN_LINK(prTxDesc);
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
 	/** DW6 **/
 	/* Disable MLD to link address translation */
-	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_MGMT)
+	if (ucControlFlag &
+	    (MSDU_CONTROL_FLAG_FORCE_TX | MSDU_CONTROL_FLAG_FORCE_LINK))
 		HAL_MAC_CONNAC3X_TXD_SET_DIS_MAT(prTxDesc);
 
 	/* Msdu count */
