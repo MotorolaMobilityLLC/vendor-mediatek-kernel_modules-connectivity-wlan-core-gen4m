@@ -2293,7 +2293,10 @@ uint32_t nicUniCmdBssInfoTagBssColor(struct ADAPTER *ad,
 
 #endif
 
-#if (CFG_SUPPORT_802_11BE == 1)
+/* TODO: Fix PP eht ie parsing for performance degrade
+ * It is commom part but add "CFG_SUPPORT_802_PP_DSCB" option only for debug
+ */
+#if ((CFG_SUPPORT_802_11BE == 1) && (CFG_SUPPORT_802_PP_DSCB == 1))
 uint32_t nicUniCmdBssInfoTagEht(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_SET_BSS_INFO *cmd)
 {
@@ -2382,8 +2385,12 @@ struct UNI_CMD_BSSINFO_TAG_HANDLE arSetBssInfoTable[] = {
 	{sizeof(struct UNI_CMD_BSSINFO_BSS_COLOR), nicUniCmdBssInfoTagBssColor},
 #endif
 
-#if (CFG_SUPPORT_802_11BE == 1)
-	{sizeof(struct UNI_CMD_BSSINFO_EHT), nicUniCmdBssInfoTagEht},
+/* TODO: Fix PP eht ie parsing for performance degrade
+ * It is commom part but add "CFG_SUPPORT_802_PP_DSCB" option only for debug
+ */
+#if ((CFG_SUPPORT_802_11BE == 1) && (CFG_SUPPORT_802_PP_DSCB == 1))
+	{sizeof(struct UNI_CMD_BSSINFO_EHT),
+					nicUniCmdBssInfoTagEht},
 #endif
 	{sizeof(struct UNI_CMD_BSSINFO_11V_MBSSID), nicUniCmdBssInfoTagMBSSID},
 	{sizeof(struct UNI_CMD_BSSINFO_WAPI), nicUniCmdBssInfoTagWapi},
@@ -7665,6 +7672,7 @@ void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 								&legacy);
 		}
 			break;
+#if CFG_SUPPORT_802_PP_DSCB
 		case UNI_EVENT_SAP_TAG_SAP_DCSB_IE: {
 			struct UNI_EVENT_SAP_DCSB_IE *dscb =
 				(struct UNI_EVENT_SAP_DCSB_IE *) tag;
@@ -7678,6 +7686,7 @@ void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 								&legacy);
 		}
 			break;
+#endif
 		default:
 			fail_cnt++;
 			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)

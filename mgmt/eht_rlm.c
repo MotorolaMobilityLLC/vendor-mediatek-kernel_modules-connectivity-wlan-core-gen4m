@@ -446,9 +446,10 @@ static void ehtRlmFillOpIE(
 	struct MSDU_INFO *prMsduInfo)
 {
 	struct IE_EHT_OP *prEhtOp;
+#if CFG_SUPPORT_802_PP_DSCB
 	struct EHT_OP_INFO *prEhtOperInfo = NULL;
 	struct EHT_DSCP_INFO *prEhtDscpInfo = NULL;
-
+#endif
 	uint32_t u4OverallLen = OFFSET_OF(struct IE_EHT_OP, aucVarInfo[0]);
 	uint8_t eht_bw = 0;
 	struct EHT_OP_INFO *prEhtOpInfo;
@@ -485,6 +486,7 @@ static void ehtRlmFillOpIE(
 	DBGLOG(RLM, INFO, "EHT channel width: %d\n",
 		prEhtOpInfo->ucControl);
 
+#if CFG_SUPPORT_802_PP_DSCB
 	if (IS_BSS_APGO(prBssInfo) &&
 		(prBssInfo->fgIsEhtOpPresent)) {
 
@@ -509,6 +511,7 @@ static void ehtRlmFillOpIE(
 			u4OverallLen += sizeof(struct EHT_DSCP_INFO);
 		}
 	}
+#endif
 
 	prEhtOp->ucLength = u4OverallLen - ELEM_HDR_LEN;
 
@@ -673,6 +676,7 @@ void ehtRlmRecOperation(
 	DBGLOG(RLM, LOUD, "RlmEHTOpInfo-0x:%x\n",
 		prBssInfo->ucEhtOpParams);
 
+#if CFG_SUPPORT_802_PP_DSCB
 	if (EHT_IS_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams))
 		prBssInfo->fgIsEhtOpPresent = TRUE;
 	else
@@ -682,6 +686,7 @@ void ehtRlmRecOperation(
 		prBssInfo->fgIsEhtDscbPresent = TRUE;
 	else
 		prBssInfo->fgIsEhtDscbPresent = FALSE;
+#endif
 
 }
 void ehtRlmInit(
