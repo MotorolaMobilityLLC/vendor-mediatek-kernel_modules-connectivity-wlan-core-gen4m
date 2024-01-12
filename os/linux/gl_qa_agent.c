@@ -5823,6 +5823,7 @@ static int32_t HQA_GetDumpRecal(struct net_device *prNetDev,
 	struct RECAL_INFO_T *prReCalInfo = NULL;
 	struct RECAL_DATA_T *prCalArray = NULL;
 	uint32_t i = 0, u4Value = 0, u4RespLen = 0;
+	u_int8_t ptr;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	ASSERT(prGlueInfo);
@@ -5836,24 +5837,43 @@ static int32_t HQA_GetDumpRecal(struct net_device *prNetDev,
 	/*according nicExtEventReCalData prCalArray is 2048 groups*/
 	if (prReCalInfo->u4Count > 0 && prReCalInfo->u4Count < 2048) {
 		for (i = 0; i < prReCalInfo->u4Count; i++) {
+
 			u4Value = ntohl(prCalArray[i].u4CalId);
-			kalMemCopy(HqaCmdFrame->Data + 6 + u4RespLen,
-					   &u4Value,
-					   sizeof(u4Value));
+			ptr =  6 + u4RespLen;
+			if (ptr > sizeof(HqaCmdFrame->Data)) {
+				DBGLOG(RFTEST, INFO,
+					"GetDumpRecal HQAFrame size limit reached");
+				break;
+			}
+			kalMemCopy(HqaCmdFrame->Data + ptr,
+				&u4Value,
+				sizeof(u4Value));
 			u4RespLen += sizeof(u4Value);
 
 			u4Value = ntohl(prCalArray[i].u4CalAddr);
 			DBGLOG(RFTEST, INFO, "CalAddr[%d] = [0x%08x]\n",
 					     i, prCalArray[i].u4CalAddr);
-			kalMemCopy(HqaCmdFrame->Data + 6 + u4RespLen,
-					   &u4Value,
-					   sizeof(u4Value));
+			ptr =  6 + u4RespLen;
+			if (ptr > sizeof(HqaCmdFrame->Data)) {
+				DBGLOG(RFTEST, INFO,
+					"GetDumpRecal HQAFrame size limit reached");
+				break;
+			}
+			kalMemCopy(HqaCmdFrame->Data + ptr,
+				&u4Value,
+				sizeof(u4Value));
 			u4RespLen += sizeof(u4Value);
 
 			u4Value = ntohl(prCalArray[i].u4CalValue);
-			kalMemCopy(HqaCmdFrame->Data + 6 + u4RespLen,
-					   &u4Value,
-					   sizeof(u4Value));
+			ptr =  6 + u4RespLen;
+			if (ptr > sizeof(HqaCmdFrame->Data)) {
+				DBGLOG(RFTEST, INFO,
+					"GetDumpRecal HQAFrame size limit reached");
+				break;
+			}
+			kalMemCopy(HqaCmdFrame->Data + ptr,
+				&u4Value,
+				sizeof(u4Value));
 			u4RespLen += sizeof(u4Value);
 		}
 
