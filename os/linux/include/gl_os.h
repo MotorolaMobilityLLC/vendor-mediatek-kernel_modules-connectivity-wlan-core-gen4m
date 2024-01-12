@@ -283,6 +283,9 @@ typedef void (*wifi_fwlog_event_func_cb)(int, int);
 extern int  wifi_fwlog_onoff_status(void);
 extern void wifi_fwlog_event_func_register(wifi_fwlog_event_func_cb pfFwlog);
 #endif
+#if CFG_MTK_ANDROID_WMT
+extern void update_driver_loaded_status(uint8_t loaded);
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
