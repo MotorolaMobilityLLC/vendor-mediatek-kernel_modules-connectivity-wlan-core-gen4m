@@ -3111,20 +3111,20 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 		}
 	}
 #if 1
-	DBGLOG_LIMITED(RSN, INFO, "Add key to wlanIdx %d,BSS=%d," MACSTR
+	DBGLOG(RSN, INFO, "Add key to wlanIdx %d,BSS=%d," MACSTR
 		       "Tx=%d,type=%d,Auth=%d,cipher=%d,keyid=%d,keylen=%d\n",
 		       prCmdKey->ucWlanIndex, prCmdKey->ucBssIdx,
 		       MAC2STR(prCmdKey->aucPeerAddr), prCmdKey->ucTxKey,
 		       prCmdKey->ucKeyType, prCmdKey->ucIsAuthenticator,
 		       prCmdKey->ucAlgorithmId, prCmdKey->ucKeyId,
 		       prCmdKey->ucKeyLen);
-	DBGLOG_MEM8(RSN, INFO, prCmdKey->aucKeyMaterial, prCmdKey->ucKeyLen);
+	DBGLOG_MEM8(RSN, TRACE, prCmdKey->aucKeyMaterial, prCmdKey->ucKeyLen);
 	if (prCmdKey->ucKeyId < MAX_KEY_NUM) {
 		DBGLOG_LIMITED(RSN, INFO, "wepkeyUsed=%d,wepkeyWlanIdx=%d\n",
 		       prBssInfo->wepkeyUsed[prCmdKey->ucKeyId],
 		       prBssInfo->wepkeyWlanIdx);
 
-		DBGLOG_LIMITED(RSN, INFO,
+		DBGLOG(RSN, INFO,
 		       "ucBMCWlanIndexSUsed=%d,ucBMCWlanIndexS=%d\n",
 		       prBssInfo->ucBMCWlanIndexSUsed[prCmdKey->ucKeyId],
 		       prBssInfo->ucBMCWlanIndexS[prCmdKey->ucKeyId]);
@@ -3703,7 +3703,8 @@ wlanoidSetEncryptionStatus(IN struct ADAPTER *prAdapter,
 
 	case ENUM_ENCRYPTION4_ENABLED: /* Eanble GCMP256 */
 		secSetCipherSuite(prAdapter,
-				  CIPHER_FLAG_CCMP | CIPHER_FLAG_GCMP256,
+				  CIPHER_FLAG_CCMP | CIPHER_FLAG_GCMP256 |
+				  CIPHER_FLAG_GCMP128,
 				  ucBssIndex);
 		DBGLOG(RSN, INFO, "Enable Encryption4\n");
 		break;
@@ -3766,12 +3767,12 @@ wlanoidQueryCapability(IN struct ADAPTER *prAdapter,
 
 	prCap->u4Length = *pu4QueryInfoLen;
 	prCap->u4Version = 2;	/* WPA2 */
-	prCap->u4NoOfAuthEncryptPairsSupported = 15;
+	prCap->u4NoOfAuthEncryptPairsSupported = 16;
 
 	prAuthenticationEncryptionSupported =
 		&prCap->arAuthenticationEncryptionSupported[0];
 
-	/* fill 14 entries of supported settings */
+	/* fill 16 entries of supported settings */
 	prAuthenticationEncryptionSupported[0].eAuthModeSupported =
 		AUTH_MODE_OPEN;
 
@@ -3846,6 +3847,11 @@ wlanoidQueryCapability(IN struct ADAPTER *prAdapter,
 	prAuthenticationEncryptionSupported[14].eAuthModeSupported
 		= AUTH_MODE_WPA2_PSK;
 	prAuthenticationEncryptionSupported[14].eEncryptStatusSupported
+		= ENUM_ENCRYPTION4_ENABLED;
+
+	prAuthenticationEncryptionSupported[15].eAuthModeSupported
+		= AUTH_MODE_WPA2_PSK;
+	prAuthenticationEncryptionSupported[15].eEncryptStatusSupported
 		= ENUM_ENCRYPTION4_ENABLED;
 
 	return WLAN_STATUS_SUCCESS;

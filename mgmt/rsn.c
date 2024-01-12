@@ -942,6 +942,11 @@ u_int8_t rsnPerformPolicySelection(
 			    ENUM_ENCRYPTION4_ENABLED)
 				fgSuiteSupported = TRUE;
 			break;
+		case RSN_CIPHER_SUITE_GCMP:
+			if (eEncStatus ==
+			    ENUM_ENCRYPTION4_ENABLED)
+				fgSuiteSupported = TRUE;
+			break;
 		case WPA_CIPHER_SUITE_CCMP:
 		case RSN_CIPHER_SUITE_CCMP:
 			if (eEncStatus ==
@@ -992,7 +997,9 @@ u_int8_t rsnPerformPolicySelection(
 			* 1-1 mapping to spec cipher suite number
 			*/
 			if (prBssRsnInfo->au4PairwiseKeyCipherSuite[i] ==
-				    RSN_CIPHER_SUITE_GCMP_256) {
+				    RSN_CIPHER_SUITE_GCMP_256 ||
+			    prBssRsnInfo->au4PairwiseKeyCipherSuite[i] ==
+				    RSN_CIPHER_SUITE_GCMP) {
 				u4PairwiseCipher =
 					prBssRsnInfo->
 					au4PairwiseKeyCipherSuite[i];
@@ -1216,7 +1223,8 @@ u_int8_t rsnPerformPolicySelection(
 	/* TODO: WTBL cipher filed cannot
 	* 1-1 mapping to spec cipher suite number
 	*/
-	if (u4GroupCipher == RSN_CIPHER_SUITE_GCMP_256) {
+	if (u4GroupCipher == RSN_CIPHER_SUITE_GCMP_256 ||
+			u4GroupCipher == RSN_CIPHER_SUITE_GCMP) {
 		prBss->ucEncLevel = 4;
 	} else if (GET_SELECTOR_TYPE(u4GroupCipher) == CIPHER_SUITE_CCMP) {
 		prBss->ucEncLevel = 3;

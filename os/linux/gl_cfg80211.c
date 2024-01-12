@@ -252,10 +252,10 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 		case WLAN_CIPHER_SUITE_CCMP:
 			rKey.ucCipher = CIPHER_SUITE_CCMP;
 			break;
-#if 0
 		case WLAN_CIPHER_SUITE_GCMP:
-			rKey.ucCipher = CIPHER_SUITE_GCMP;
+			rKey.ucCipher = CIPHER_SUITE_GCMP_128;
 			break;
+#if 0
 		case WLAN_CIPHER_SUITE_CCMP_256:
 			rKey.ucCipher = CIPHER_SUITE_CCMP256;
 			break;
@@ -1361,6 +1361,10 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 			prWpaInfo->u4CipherPairwise =
 							IW_AUTH_CIPHER_GCMP256;
 			break;
+		case WLAN_CIPHER_SUITE_GCMP:
+			prWpaInfo->u4CipherPairwise =
+							IW_AUTH_CIPHER_GCMP128;
+			break;
 		case WLAN_CIPHER_SUITE_NO_GROUP_ADDR:
 			DBGLOG(REQ, INFO, "WLAN_CIPHER_SUITE_NO_GROUP_ADDR\n");
 			break;
@@ -1402,6 +1406,10 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		case WLAN_CIPHER_SUITE_GCMP_256:
 			prWpaInfo->u4CipherGroup =
 							IW_AUTH_CIPHER_GCMP256;
+			break;
+		case WLAN_CIPHER_SUITE_GCMP:
+			prWpaInfo->u4CipherGroup =
+							IW_AUTH_CIPHER_GCMP128;
 			break;
 		case WLAN_CIPHER_SUITE_NO_GROUP_ADDR:
 			break;
@@ -1651,7 +1659,8 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		 prWpaInfo->u4CipherPairwise;
 
 	if (1 /* prWpaInfo->fgPrivacyInvoke */) {
-		if (cipher & IW_AUTH_CIPHER_GCMP256) {
+		if (cipher & (IW_AUTH_CIPHER_GCMP256 |
+			      IW_AUTH_CIPHER_GCMP128)) {
 			eEncStatus = ENUM_ENCRYPTION4_ENABLED;
 		} else if (cipher & IW_AUTH_CIPHER_CCMP) {
 			eEncStatus = ENUM_ENCRYPTION3_ENABLED;

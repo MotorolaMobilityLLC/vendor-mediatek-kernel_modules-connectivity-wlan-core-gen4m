@@ -185,6 +185,10 @@ void secInit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	prMib->
 	    dot11RSNAConfigPairwiseCiphersTable[9].dot11RSNAConfigPairwiseCipher
 	    = RSN_CIPHER_SUITE_GCMP_256;
+	prMib->
+	    dot11RSNAConfigPairwiseCiphersTable[10]
+						.dot11RSNAConfigPairwiseCipher
+	    = RSN_CIPHER_SUITE_GCMP;
 
 	for (i = 0; i < MAX_NUM_SUPPORTED_CIPHER_SUITES; i++)
 		prMib->dot11RSNAConfigPairwiseCiphersTable
@@ -494,7 +498,14 @@ void secSetCipherSuite(IN struct ADAPTER *prAdapter,
 				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
 					FALSE;
 			break;
-
+		case RSN_CIPHER_SUITE_GCMP:
+			if (u4CipherSuitesFlags & CIPHER_FLAG_GCMP128)
+				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
+					TRUE;
+			else
+				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
+					FALSE;
+			break;
 		case WPA_CIPHER_SUITE_WEP40:
 		case RSN_CIPHER_SUITE_WEP40:
 			if (u4CipherSuitesFlags & CIPHER_FLAG_WEP40)
@@ -570,6 +581,10 @@ void secSetCipherSuite(IN struct ADAPTER *prAdapter,
 		RSN_CIPHER_SUITE_GCMP_256, &i, ucBssIndex))
 		prMib->dot11RSNAConfigGroupCipher =
 		    RSN_CIPHER_SUITE_GCMP_256;
+	else if (rsnSearchSupportedCipher(prAdapter,
+		RSN_CIPHER_SUITE_GCMP, &i, ucBssIndex))
+		prMib->dot11RSNAConfigGroupCipher =
+		    RSN_CIPHER_SUITE_GCMP;
 	else
 		prMib->dot11RSNAConfigGroupCipher = WPA_CIPHER_SUITE_NONE;
 

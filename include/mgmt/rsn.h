@@ -156,10 +156,11 @@
 #define CIPHER_FLAG_NONE                        0x00000000
 #define CIPHER_FLAG_WEP40                       0x00000001	/* BIT 1 */
 #define CIPHER_FLAG_TKIP                        0x00000002	/* BIT 2 */
-#define CIPHER_FLAG_CCMP                        0x00000008	/* BIT 3 */
-#define CIPHER_FLAG_WEP104                      0x00000010	/* BIT 4 */
-#define CIPHER_FLAG_WEP128                      0x00000020	/* BIT 5 */
-#define CIPHER_FLAG_GCMP256                     0x00000080	/* BIT 7 */
+#define CIPHER_FLAG_CCMP                        0x00000008	/* BIT 4 */
+#define CIPHER_FLAG_WEP104                      0x00000010	/* BIT 5 */
+#define CIPHER_FLAG_WEP128                      0x00000020	/* BIT 6 */
+#define CIPHER_FLAG_GCMP128                     0x00000040      /* BIT 7 */
+#define CIPHER_FLAG_GCMP256                     0x00000080	/* BIT 8 */
 
 #define TKIP_COUNTERMEASURE_SEC                 60	/* seconds */
 
