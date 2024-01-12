@@ -3486,6 +3486,18 @@ static bool halWpdmaWriteData(struct GLUE_INFO *prGlueInfo,
 void halWpdmaFreeMsduTasklet(unsigned long data)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
+
+#if CFG_SUPPORT_TX_FREE_MSDU_WORK
+	/* do schedule work */
+	kalTxFreeMsduWorkSchedule(prGlueInfo);
+#else /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
+	/* just run it */
+	halWpdmaFreeMsduWork(prGlueInfo);
+#endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
+}
+
+void halWpdmaFreeMsduWork(struct GLUE_INFO *prGlueInfo)
+{
 	struct MSDU_INFO *prMsduInfo;
 	struct QUE rTxMsduRetQue;
 	struct QUE *prTxMsduRetQue = &rTxMsduRetQue;
@@ -3645,7 +3657,7 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 #if CFG_SUPPORT_TASKLET_FREE_MSDU
 	if (prMsduInfo->pfTxDoneHandler == NULL &&
 		KAL_FIFO_IN(&prGlueInfo->rTxMsduRetFifo, prMsduInfo))
-		tasklet_schedule(&prGlueInfo->rTxMsduRetTask);
+		kalTxFreeMsduTaskSchedule(prGlueInfo);
 	else
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 	{
