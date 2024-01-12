@@ -232,6 +232,10 @@ uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
 	uint32_t u4PktLen = 0, u4Time;
 	u_int8_t fgStatus;
 	struct mt66xx_chip_info *prChipInfo;
+	u_int8_t	ucNewPort;
+#if CFG_SUPPORT_HOST_RX_WM_EVENT_FROM_PSE
+	struct BUS_INFO *prBusInfo;
+#endif
 
 	DEBUGFUNC("nicRxWaitResponse");
 
@@ -247,6 +251,18 @@ uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
 	u4Time = kalGetTimeTick();
 	u4PktLen = u4MaxRespBufferLen;
 
+#if CFG_SUPPORT_HOST_RX_WM_EVENT_FROM_PSE
+	prBusInfo = prAdapter->chip_info->bus_info;
+	if (prBusInfo->checkPortForRxEventFromPse != NULL) {
+		ucNewPort = prBusInfo->checkPortForRxEventFromPse(prAdapter,
+			ucPortIdx);
+	} else {
+		ucNewPort = ucPortIdx;
+	}
+#else
+	ucNewPort = ucPortIdx;
+#endif
+
 	do {
 		if (wlanIsChipNoAck(prAdapter)) {
 			DBGLOG(HAL, ERROR, "Chip No Ack\n");
@@ -254,8 +270,9 @@ uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
 		}
 
 		fgStatus = kalDevPortRead(
-			prGlueInfo, ucPortIdx, u4PktLen,
+			prGlueInfo, ucNewPort, u4PktLen,
 			pucRspBuffer, HIF_RX_COALESCING_BUFFER_SIZE);
+
 		if (fgStatus) {
 			*pu4Length = u4PktLen;
 			break;
