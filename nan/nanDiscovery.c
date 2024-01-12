@@ -12,10 +12,11 @@
 uint8_t g_ucInstanceID;
 struct _NAN_DISC_ENGINE_T g_rNanDiscEngine;
 
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _CMD_NAN_CANCEL_REQUEST {
 	uint16_t publish_or_subscribe;
 	uint16_t publish_subscribe_id;
-};
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
 int8_t atoi(uint8_t ch)
 {

@@ -115,8 +115,8 @@ typedef void(*remove_card) (void);
 #define __KAL_INLINE__                  inline
 #define __KAL_ATTRIB_PACKED_FRONT__     /* for OS compatibility not used */
 #define __KAL_ATTRIB_PACKED__           __attribute__((__packed__))
-#define __KAL_ATTRIB_ALIGN_4_FRONT__    /* for OS compatibility not used */
-#define __KAL_ATTRIB_ALIGN_4__          __aligned(4)
+#define __KAL_ATTRIB_ALIGNED_FRONT__(x) /* for OS compatibility not used */
+#define __KAL_ATTRIB_ALIGNED__(x)       __aligned(x)
 
 #ifndef BIT
 #define BIT(n)                          ((uint32_t) 1UL << (n))

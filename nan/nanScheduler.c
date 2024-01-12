@@ -377,6 +377,7 @@ struct _NAN_SCHEDULER_T {
 	uint8_t ucCommitDwInterval;
 };
 
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_SCHED_CMD_UPDATE_CRB_T {
 	uint32_t u4SchIdx;
 	uint8_t fgUseDataPath;
@@ -385,22 +386,25 @@ struct _NAN_SCHED_CMD_UPDATE_CRB_T {
 	struct _NAN_SCHEDULE_TIMELINE_T rCommRangingTimeline;
 	struct _NAN_SCHEDULE_TIMELINE_T rCommFawTimeline;
 	struct _NAN_NDC_CTRL_T rCommNdcCtrl;
-};
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_SCHED_CMD_MANAGE_PEER_SCH_REC_T {
 	uint32_t u4SchIdx;
 	uint8_t fgActivate;
 	uint8_t aucNmiAddr[MAC_ADDR_LEN];
 	uint8_t aucRsvd[1];
-};
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_SCHED_CMD_UPDATE_PEER_CAPABILITY_T {
 	uint32_t u4SchIdx;
 	uint8_t ucSupportedBands;
 	uint16_t u2MaxChnlSwitchTime;
 	uint8_t aucRsvd[1];
-};
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_SCHED_CMD_MAP_STA_REC_T {
 	uint8_t aucNmiAddr[MAC_ADDR_LEN];
 	uint8_t ucStaRecIdx;
@@ -409,8 +413,9 @@ struct _NAN_SCHED_CMD_MAP_STA_REC_T {
 	enum NAN_BSS_ROLE_INDEX eRoleIdx;
 	uint8_t aucNdiAddr[MAC_ADDR_LEN];
 	uint8_t aucRsvd[2];
-};
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_SCHED_CMD_UPDATE_AVAILABILITY_T {
 	uint8_t ucMapId;
 	uint8_t fgChkCondAvailability;
@@ -418,28 +423,32 @@ struct _NAN_SCHED_CMD_UPDATE_AVAILABILITY_T {
 
 	struct _NAN_CHANNEL_TIMELINE_T
 		arChnlList[NAN_TIMELINE_MGMT_CHNL_LIST_NUM];
-};
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_SCHED_CMD_UPDATE_AVAILABILITY_CTRL_T {
 	uint16_t u2AvailAttrControlField;
 	uint8_t ucAvailSeqID;
 	uint8_t aucRsvd[1];
-};
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_SCHED_CMD_UPDATE_PHY_PARAM_T {
 	struct _NAN_PHY_SETTING_T r2P4GPhySettings;
 	struct _NAN_PHY_SETTING_T r5GPhySettings;
-};
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_SCHED_CMD_UPDATE_PONTENTIAL_CHNL_LIST_T {
 	uint32_t u4Num;
 	struct _NAN_POTENTIAL_CHNL_T arChnlList[NAN_MAX_POTENTIAL_CHNL_LIST];
-};
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_SCHED_CMD_SET_SCHED_VER_T {
 	uint8_t ucNdlFlowCtrlVer;
 	uint8_t aucRsvd[3];
-};
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
 struct _NAN_SCHED_EVENT_SCHEDULE_CONFIG_T {
 	uint8_t fgEn2g;
@@ -4040,7 +4049,8 @@ nanSchedPeerUpdateNdcAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 
 uint32_t
 nanSchedPeerUpdateUawAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
-			  uint8_t *pucUawAttr) {
+			  uint8_t *pucUawAttr)
+{
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRecord;
 	struct _NAN_ATTR_UNALIGNED_SCHEDULE_T *prAttrUaw;
@@ -4050,6 +4060,7 @@ nanSchedPeerUpdateUawAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
 	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
 	uint8_t *pucUawBuf;
+	uint32_t u4UlwAttrSize;
 
 	do {
 		prPeerSchRecord =
@@ -4063,12 +4074,15 @@ nanSchedPeerUpdateUawAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 		DBGLOG(NAN, INFO, "------>\n");
 
 		prAttrUaw = (struct _NAN_ATTR_UNALIGNED_SCHEDULE_T *)pucUawAttr;
+		u4UlwAttrSize = OFFSET_OF(struct _NAN_ATTR_UNALIGNED_SCHEDULE_T,
+					  u2AttributeControl) +
+				prAttrUaw->u2Length;
 		nanUtilDump(prAdapter, "[Peer UAW]", (uint8_t *)prAttrUaw,
-			    prAttrUaw->u2Length + 3);
+			    u4UlwAttrSize);
 
 		u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
 				 sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +
-				 (MAC_ADDR_LEN + prAttrUaw->u2Length + 3);
+				 ALIGN_4(MAC_ADDR_LEN + u4UlwAttrSize);
 		prCmdBuffer =
 			cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4CmdBufferLen);
 		if (!prCmdBuffer) {
@@ -4080,10 +4094,9 @@ nanSchedPeerUpdateUawAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 
 		prTlvCommon->u2TotalElementNum = 0;
 
-		rStatus = nicAddNewTlvElement(
-			NAN_CMD_UPDATE_PEER_UAW,
-			(MAC_ADDR_LEN + prAttrUaw->u2Length + 3),
-			u4CmdBufferLen, prCmdBuffer);
+		rStatus = nicAddNewTlvElement(NAN_CMD_UPDATE_PEER_UAW,
+				ALIGN_4(MAC_ADDR_LEN + u4UlwAttrSize),
+				u4CmdBufferLen, prCmdBuffer);
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(NAN, ERROR, "Add new Tlv element fail\n");
 			rStatus = WLAN_STATUS_FAILURE;
@@ -4099,8 +4112,7 @@ nanSchedPeerUpdateUawAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 
 		pucUawBuf = prTlvElement->aucbody;
 		kalMemCopy(pucUawBuf, pucNmiAddr, MAC_ADDR_LEN);
-		kalMemCopy(pucUawBuf + MAC_ADDR_LEN, pucUawAttr,
-			   (prAttrUaw->u2Length + 3));
+		kalMemCopy(pucUawBuf + MAC_ADDR_LEN, pucUawAttr, u4UlwAttrSize);
 
 		rStatus = wlanSendSetQueryCmd(
 			prAdapter, CMD_ID_NAN_EXT_CMD, TRUE, FALSE, FALSE, NULL,

@@ -3682,25 +3682,28 @@ struct _TXM_CMD_EVENT_TEST_T {
 	uint8_t aucReserved[3]; /*For 4 bytes alignment*/
 };
 
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_CMD_MASTER_PREFERENCE_T {
 	uint8_t ucMasterPreference;
 	uint8_t aucReserved[3];
-};
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
 struct EVENT_UPDATE_NAN_TX_STATUS {
 	uint8_t aucFlowCtrl[CFG_STA_REC_NUM];
 };
 
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_CMD_UPDATE_ATTR_STRUCT {
 	uint8_t ucAttrId;
 	uint16_t u2AttrLen;
 	uint8_t aucAttrBuf[1024];
-};
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_CMD_DW_INTERVAL_T {
 	uint8_t ucDWInterval;
 	uint8_t aucReserved[3];
-};
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
 struct _NAN_EVENT_REPORT_BEACON {
 	enum ENUM_BAND eRfBand;
