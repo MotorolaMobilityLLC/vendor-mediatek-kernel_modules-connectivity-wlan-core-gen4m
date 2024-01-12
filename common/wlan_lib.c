@@ -1358,8 +1358,6 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			}
 		}
 
-		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
-
 		if (u4Status != WLAN_STATUS_SUCCESS) {
 			eFailReason = WAIT_FIRMWARE_READY_FAIL;
 			break;
@@ -1378,9 +1376,6 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 				"%s: load manufacture data fail\n", __func__);
 #endif
 		}
-	} while (FALSE);
-
-	if (u4Status == WLAN_STATUS_SUCCESS) {
 
 		/* restore to hardware default */
 		HAL_SET_INTR_STATUS_READ_CLEAR(prAdapter);
@@ -1398,7 +1393,11 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			thrmInit(prAdapter);
 		}
 #endif
-	} else {
+
+		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+	} while (FALSE);
+
+	if (u4Status != WLAN_STATUS_SUCCESS) {
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 		halPrintHifDbgInfo(prAdapter);
 		DBGLOG(INIT, WARN, "Fail reason: %d\n", eFailReason);

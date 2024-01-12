@@ -158,13 +158,8 @@ void asicConnac2xCapInit(
 	struct GLUE_INFO *prGlueInfo;
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo = NULL;
-	uint32_t u4HostWpdamBase = 0;
 
 	ASSERT(prAdapter);
-	if (prAdapter->chip_info->is_support_wfdma1)
-		u4HostWpdamBase = CONNAC2X_HOST_WPDMA_1_BASE;
-	else
-		u4HostWpdamBase = CONNAC2X_HOST_WPDMA_0_BASE;
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prChipInfo = prAdapter->chip_info;
@@ -227,12 +222,6 @@ void asicConnac2xCapInit(
 				CONNAC2X_BN0_IRQ_ENA_ADDR,
 				BIT(0));
 
-		if (prChipInfo->is_support_asic_lp) {
-			HAL_MCR_WR(prAdapter,
-				CONNAC2X_WPDMA_MCU2HOST_SW_INT_MASK
-					(u4HostWpdamBase),
-				BITS(0, 15));
-		}
 		break;
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
@@ -1010,8 +999,16 @@ void asicConnac2xDisablePlatformSwIRQ(IN struct ADAPTER *prAdapter)
 void asicConnac2xEnableExtInterrupt(
 	struct ADAPTER *prAdapter)
 {
-
+	struct mt66xx_chip_info *prChipInfo;
 	union WPDMA_INT_MASK IntMask;
+	uint32_t u4HostWpdamBase = 0;
+
+	prChipInfo = prAdapter->chip_info;
+
+	if (prChipInfo->is_support_wfdma1)
+		u4HostWpdamBase = CONNAC2X_HOST_WPDMA_1_BASE;
+	else
+		u4HostWpdamBase = CONNAC2X_HOST_WPDMA_0_BASE;
 
 	prAdapter->fgIsIntEnable = TRUE;
 
@@ -1057,17 +1054,33 @@ void asicConnac2xEnableExtInterrupt(
 		HAL_MCR_WR(prAdapter,
 			(CONNAC2X_HOST_WPDMA_1_BASE + 0x298), 0xf);
 	}
+
+	if (prChipInfo->is_support_asic_lp)
+		HAL_MCR_WR_FIELD(prAdapter,
+				 CONNAC2X_WPDMA_MCU2HOST_SW_INT_MASK
+				 (u4HostWpdamBase),
+				 BITS(0, 15),
+				 0,
+				 BITS(0, 15));
 }	/* end of nicEnableInterrupt() */
 
 void asicConnac2xDisableExtInterrupt(
 	struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo;
 	union WPDMA_INT_MASK IntMask;
+	uint32_t u4HostWpdamBase = 0;
 
 	ASSERT(prAdapter);
 
 	prGlueInfo = prAdapter->prGlueInfo;
+	prChipInfo = prAdapter->chip_info;
+
+	if (prChipInfo->is_support_wfdma1)
+		u4HostWpdamBase = CONNAC2X_HOST_WPDMA_1_BASE;
+	else
+		u4HostWpdamBase = CONNAC2X_HOST_WPDMA_0_BASE;
 
 	IntMask.word = 0;
 
@@ -1077,6 +1090,14 @@ void asicConnac2xDisableExtInterrupt(
 	HAL_MCR_RD(prAdapter,
 		CONNAC2X_WPDMA_EXT_INT_MASK(CONNAC2X_HOST_EXT_CONN_HIF_WRAP),
 		&IntMask.word);
+
+	if (prChipInfo->is_support_asic_lp)
+		HAL_MCR_WR_FIELD(prAdapter,
+				 CONNAC2X_WPDMA_MCU2HOST_SW_INT_MASK
+				 (u4HostWpdamBase),
+				 0,
+				 0,
+				 BITS(0, 15));
 
 	prAdapter->fgIsIntEnable = FALSE;
 
