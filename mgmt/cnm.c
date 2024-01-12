@@ -5778,7 +5778,7 @@ void cnmOwnGcCsaHandler(
 		prP2pBssInfo)) {
 		DBGLOG(P2P, ERROR,
 			"BSS%d is disabled.\n",
-			prP2pBssInfo->ucBssIndex);
+			prMsg->ucBssIndex);
 		goto error;
 	}
 
@@ -5833,7 +5833,7 @@ void cnmPeerGcCsaHandler(IN struct ADAPTER *prAdapter,
 		prBssInfo)) {
 		DBGLOG(P2P, ERROR,
 			"BSS%d is disabled.\n",
-			prBssInfo->ucBssIndex);
+			prCsaEvent->ucBssIndex);
 		return;
 	}
 
