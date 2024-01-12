@@ -1252,6 +1252,11 @@ static u_int8_t _kalDevRegReadRange(struct GLUE_INFO *glue,
 	uint32_t bus_addr = 0;
 	u_int8_t ret = TRUE;
 
+	if (glue && !glue->prAdapter) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		return FALSE;
+	}
+
 	glGetChipInfo((void **)&chip_info);
 	if (!chip_info) {
 		DBGLOG(INIT, ERROR, "chip info is NULL\n");
@@ -1307,6 +1312,11 @@ u_int8_t kalDevRegWriteRange(struct GLUE_INFO *glue,
 	struct mt66xx_chip_info *chip_info;
 	uint32_t bus_addr = 0;
 	u_int8_t ret = TRUE;
+
+	if (glue && !glue->prAdapter) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		return FALSE;
+	}
 
 	glGetChipInfo((void **)&chip_info);
 	if (!chip_info) {
