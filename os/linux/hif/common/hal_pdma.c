@@ -2548,6 +2548,9 @@ void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
 	} else
 		kalDevRegRead(prGlueInfo, prTxRing->hw_didx_addr, &u4DmaIdx);
 
+	if (prTxRing->fgStopRecycleDmad)
+		return;
+
 	u4SwIdx = prTxRing->TxSwUsedIdx;
 
 	while (u4SwIdx != u4DmaIdx) {
@@ -4274,3 +4277,14 @@ uint32_t halToggleWfsysRst(IN struct ADAPTER *prAdapter)
 	return WLAN_STATUS_SUCCESS;
 }
 #endif /* CFG_CHIP_RESET_SUPPORT */
+
+void halWpdmaStopRecycleDmad(IN struct GLUE_INFO *prGlueInfo,
+				       IN uint16_t u2Port)
+{
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct RTMP_TX_RING *prTxRing = &prHifInfo->TxRing[u2Port];
+
+	DBGLOG(HAL, INFO, "u2Port: %d\n", u2Port);
+
+	prTxRing->fgStopRecycleDmad = TRUE;
+}

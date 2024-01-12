@@ -478,6 +478,11 @@ ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
         ccflags-y += -DCFG_MTK_WIFI_PMIC_QUERY=1
     endif
     ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=5
+    ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
+        ifeq ($(CONFIG_MTK_WIFI_SUPPORT_UDS_FWDL), y)
+            ccflags-y += -DCFG_MTK_WIFI_SUPPORT_UDS_FWDL=1
+        endif
+    endif
 else
     ccflags-y += -DCFG_SUPPORT_CONNAC3X=0
     ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_NSS=1
