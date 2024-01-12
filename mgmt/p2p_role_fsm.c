@@ -2109,6 +2109,8 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 	struct MSG_P2P_CSA_DONE *prMsgP2pCsaDoneMsg;
 	struct BSS_INFO *prAisBssInfo;
 	struct GL_P2P_INFO *prP2PInfo = (struct GL_P2P_INFO *) NULL;
+	struct P2P_CHNL_REQ_INFO *prChnlReqInfo =
+		(struct P2P_CHNL_REQ_INFO *) NULL;
 
 	DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventCsaDone\n");
 
@@ -2123,6 +2125,7 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 			prP2pBssInfo->u4PrivateData);
 	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[
 			prP2pRoleFsmInfo->ucRoleIndex];
+	prChnlReqInfo = &prP2pRoleFsmInfo->rChnlReqInfo;
 
 	if (prP2PInfo)
 		prP2PInfo->eChnlSwitchPolicy = CHNL_SWITCH_POLICY_NONE;
@@ -2131,8 +2134,7 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 	if (p2pFuncIsAPMode(prAdapter->rWifiVar
 		.prP2PConnSettings[prP2pBssInfo->u4PrivateData])) {
 		if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED &&
-			prP2pBssInfo->eBand !=
-				prP2pRoleFsmInfo->rChnlReqInfo.eBand) {
+			prP2pBssInfo->eBand != prChnlReqInfo->eBand) {
 			/* Indicate PM abort to sync BSS state with FW */
 			nicPmIndicateBssAbort(prAdapter,
 				prP2pBssInfo->ucBssIndex);
@@ -2149,8 +2151,8 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_DBDC
 			cnmDbdcPreConnectionEnableDecision(prAdapter,
 				prP2pBssInfo->ucBssIndex,
-				prP2pRoleFsmInfo->rChnlReqInfo.eBand,
-				prP2pRoleFsmInfo->rChnlReqInfo.ucReqChnlNum,
+				prChnlReqInfo->eBand,
+				prChnlReqInfo->ucReqChnlNum,
 				prP2pBssInfo->ucWmmQueSet);
 #endif /*CFG_SUPPORT_DBDC*/
 
@@ -2169,7 +2171,7 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 				MEDIA_STATE_CONNECTED)) {
 				p2pFuncDfsSwitchCh(prAdapter,
 					prP2pBssInfo,
-					prP2pRoleFsmInfo->rChnlReqInfo);
+					prChnlReqInfo);
 			} else
 #endif
 				p2pRoleFsmStateTransition(prAdapter,
@@ -2178,13 +2180,12 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 		}
 	} else { /* GO */
 		DBGLOG(P2P, INFO, "GO CSA done: %s band\n",
-			prP2pBssInfo->eBand ==
-				prP2pRoleFsmInfo->rChnlReqInfo.eBand ?
+			prP2pBssInfo->eBand == prChnlReqInfo->eBand ?
 				"same" : "cross");
 
 		if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED &&
-			prP2pBssInfo->eBand !=
-				prP2pRoleFsmInfo->rChnlReqInfo.eBand) {
+			cnmGet80211Band(prP2pBssInfo->eBand) !=
+				cnmGet80211Band(prChnlReqInfo->eBand)) {
 
 			/* Indicate PM abort to sync BSS state with FW */
 			nicPmIndicateBssAbort(prAdapter,
@@ -2207,8 +2208,8 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_DBDC
 			cnmDbdcPreConnectionEnableDecision(prAdapter,
 				prP2pBssInfo->ucBssIndex,
-				prP2pRoleFsmInfo->rChnlReqInfo.eBand,
-				prP2pRoleFsmInfo->rChnlReqInfo.ucReqChnlNum,
+				prChnlReqInfo->eBand,
+				prChnlReqInfo->ucReqChnlNum,
 				prP2pBssInfo->ucWmmQueSet);
 #endif /*CFG_SUPPORT_DBDC*/
 		}
@@ -3304,12 +3305,21 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 		case P2P_ROLE_STATE_SWITCH_CHANNEL:
 			prBssInfo->fgIsSwitchingChnl = FALSE;
 
-			/* Restore connection state */
-			p2pChangeMediaState(prAdapter, prBssInfo,
-				MEDIA_STATE_CONNECTED);
+			/* Restore connection state only for P2P CSA */
+			if (!p2pFuncIsAPMode(prAdapter->rWifiVar.
+				prP2PConnSettings[prBssInfo->u4PrivateData])) {
+				p2pChangeMediaState(prAdapter, prBssInfo,
+					MEDIA_STATE_CONNECTED);
+			}
 
 			/* GC */
 			if (prBssInfo->eIftype == IFTYPE_P2P_CLIENT) {
+				/* Renew NSS */
+				cnmOpModeGetTRxNss(prAdapter,
+					prBssInfo->ucBssIndex,
+					&prBssInfo->ucOpRxNss,
+					&prBssInfo->ucOpTxNss);
+
 				nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 
 				/* Update VHT op info of target AP */
@@ -3334,8 +3344,8 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 
 				rlmChangeOperationMode(
 					prAdapter, prBssInfo->ucBssIndex,
-					cnmGetBssMaxBw(prAdapter,
-						prBssInfo->ucBssIndex),
+					rlmGetBssOpBwByOwnAndPeerCapability(
+						prAdapter, prBssInfo),
 					prBssInfo->ucOpRxNss,
 					prBssInfo->ucOpTxNss,
 					TRUE,
@@ -3354,7 +3364,7 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 			} else { /* GO */
 				p2pFuncDfsSwitchCh(prAdapter,
 					prBssInfo,
-					prP2pRoleFsmInfo->rChnlReqInfo);
+					&prP2pRoleFsmInfo->rChnlReqInfo);
 			}
 
 			p2pRoleFsmStateTransition(prAdapter,

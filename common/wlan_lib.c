@@ -7633,6 +7633,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgDbDcModeEn = false;
 #endif /*CFG_SUPPORT_DBDC*/
 
+	prWifiVar->ucCsaDeauthClient = (uint8_t) wlanCfgGetUint32(
+					prAdapter, "CsaDeauthClient",
+					FEATURE_ENABLED);
+
 #if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
 	prWifiVar->ucEfuseBufferModeCal = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "EfuseBufferModeCal", 0);

@@ -990,6 +990,12 @@ enum ENUM_BAND {
 	BAND_NUM
 };
 
+enum ENUM_BAND_80211 {
+	BAND_80211_G,	/* 2.4G */
+	BAND_80211_A,	/* 5G, 6G */
+	BAND_80211_NUM
+};
+
 enum ENUM_CH_REQ_TYPE {
 	CH_REQ_TYPE_JOIN,
 	CH_REQ_TYPE_ROC, /* requested by remain on channel type */

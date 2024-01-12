@@ -293,6 +293,7 @@ void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_IDC_CH_SWITCH == 1)
 uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
+	IN enum ENUM_BAND eBand,
 	IN uint8_t ch_num, IN uint8_t ucRoleIdx);
 
 void cnmIdcSwitchSapChannel(IN struct ADAPTER *prAdapter);
@@ -417,6 +418,8 @@ u_int8_t cnmP2pIsActive(IN struct ADAPTER *prAdapter);
 struct BSS_INFO *cnmGetP2pBssInfo(IN struct ADAPTER *prAdapter);
 
 bool cnmIsMccMode(IN struct ADAPTER *prAdapter);
+
+enum ENUM_BAND_80211 cnmGet80211Band(IN enum ENUM_BAND eBand);
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 int cnmPowerControl(struct ADAPTER *prAdapter, uint8_t level);

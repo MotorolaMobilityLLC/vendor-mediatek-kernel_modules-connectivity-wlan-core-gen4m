@@ -192,7 +192,7 @@ void p2pFuncStopRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx);
 
 void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prBssInfo,
-		IN struct P2P_CHNL_REQ_INFO rP2pChnlReqInfo);
+		IN struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo);
 
 u_int8_t p2pFuncCheckWeatherRadarBand(
 		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo);
