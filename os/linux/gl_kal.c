@@ -5608,6 +5608,8 @@ void kalSetIntEvent(struct GLUE_INFO *pr)
 	else
 		set_bit(GLUE_FLAG_INT_BIT, &pr->ulFlag);
 
+	RX_INC_CNT(&pr->prAdapter->rRxCtrl, RX_INTR_COUNT);
+
 	/* when we got interrupt, we wake up service thread */
 #if CFG_SUPPORT_MULTITHREAD
 	if (HAL_IS_RX_DIRECT(pr->prAdapter))
@@ -8933,12 +8935,14 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		);
 #undef TEMP_LOG_TEMPLATE
 #define TEMP_LOG_TEMPLATE \
-	"ndevdrp:%s NAPI[%lu,%lu,%lu,%lu,%lu:%lu] " \
+	"ndevdrp:%s NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu:%lu] " \
 	"drv[RM,IL,RI,RT,RM,RW,RA,RB,DT,NS,IB,HS,LS,DD,ME,BD,NI," \
 	"DR,TE,CE,DN,FE,DE,IE,TME]:%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
 	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu\n"
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
 		head3,
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_INTR_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_TASKLET_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_SCHEDULE_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_IN_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_OUT_COUNT),
