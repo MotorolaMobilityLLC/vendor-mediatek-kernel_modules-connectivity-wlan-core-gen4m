@@ -3183,6 +3183,52 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			else
 				prCSAParams->eCsaBand = BAND_2G4;
 
+			prCSAParams->ucCsaNewCh = prExCSAIE->ucNewChannelNum;
+			prCSAParams->ucVhtS1 = nicGetS1(prCSAParams->eCsaBand,
+				prExCSAIE->ucNewChannelNum,
+				rlmGetVhtOpBwByBssOpBw(
+					rlmOpClassToBandwidth(
+					prExCSAIE->ucNewOperatingClass)));
+			switch (rlmOpClassToBandwidth(
+				prExCSAIE->ucNewOperatingClass)) {
+			case BW_20:
+			case BW_40:
+				prCSAParams->ucVhtBw =
+					VHT_OP_CHANNEL_WIDTH_20_40;
+				break;
+			case BW_80:
+				prCSAParams->ucVhtBw =
+					VHT_OP_CHANNEL_WIDTH_80;
+				break;
+			case BW_160:
+				prCSAParams->ucVhtBw =
+					VHT_OP_CHANNEL_WIDTH_160;
+				break;
+			case BW_8080:
+				prCSAParams->ucVhtBw =
+					VHT_OP_CHANNEL_WIDTH_80P80;
+				break;
+			case BW_320:
+				prCSAParams->ucVhtBw =
+					VHT_OP_CHANNEL_WIDTH_320_1;
+				break;
+			default:
+				break;
+			}
+
+			if (prExCSAIE->ucChannelSwitchMode == 1) {
+				/* Mode 1: Need to stop data
+				 * transmission immediately
+				 */
+				if (!prCSAParams->fgHasStopTx) {
+					prCSAParams->fgHasStopTx = TRUE;
+					/* AP */
+					qmSetStaRecTxAllowed(prAdapter,
+						prStaRec,
+						FALSE);
+				}
+			}
+
 			DBGLOG(RLM, INFO,
 				"[CSA] Mode[%d], Op class[%d], Band[%d], CH[%d]\n",
 				prExCSAIE->ucChannelSwitchMode,
