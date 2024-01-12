@@ -112,7 +112,7 @@
 #endif
 
 #if defined(_HIF_PCIE)
-#if IS_MOBILE_SEGMENT
+#if CFG_MTK_ANDROID_WMT
 #define MTK_WCN_HIF_PCIE		1
 #else
 #define MTK_WCN_HIF_PCIE		0
@@ -121,10 +121,12 @@
 #define MTK_WCN_HIF_PCIE		0
 #endif
 
+#ifndef CFG_WMT_RESET_API_SUPPORT
 #if (MTK_WCN_HIF_SDIO == 1) || (MTK_WCN_HIF_AXI == 1) || (MTK_WCN_HIF_PCIE == 1)
 #define CFG_WMT_RESET_API_SUPPORT   1
 #else
 #define CFG_WMT_RESET_API_SUPPORT   0
+#endif
 #endif
 
 #define RST_FLAG_CHIP_RESET        0

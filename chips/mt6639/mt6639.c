@@ -2057,12 +2057,11 @@ static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter)
 {
 	int32_t ret = 0;
 
-	ret = ccif_trigger_fw_assert(prAdapter);
+	ccif_trigger_fw_assert(prAdapter);
 
-	if (reset_wait_for_trigger_completion()) {
-		mt6639_ccif_get_interrupt_status(prAdapter);
-		reset_done_trigger_completion();
-	}
+#if CFG_WMT_RESET_API_SUPPORT
+	ret = reset_wait_for_trigger_completion();
+#endif
 
 	return ret;
 }
