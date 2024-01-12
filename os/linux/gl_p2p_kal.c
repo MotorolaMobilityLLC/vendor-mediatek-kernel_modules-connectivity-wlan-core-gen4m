@@ -1597,6 +1597,7 @@ kalP2PGOStationUpdate(struct GLUE_INFO *prGlueInfo,
 {
 	struct GL_P2P_INFO *prP2pGlueInfo = (struct GL_P2P_INFO *) NULL;
 	uint8_t aucBssid[MAC_ADDR_LEN];
+	struct BSS_INFO *prBssInfo = NULL;
 
 	do {
 		if ((prGlueInfo == NULL) || (prCliStaRec == NULL)
@@ -1646,7 +1647,17 @@ kalP2PGOStationUpdate(struct GLUE_INFO *prGlueInfo,
 			 */
 			if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)
 				== 0) {
-				if (prCliStaRec->fgIsConnected == FALSE)
+				prBssInfo = GET_BSS_INFO_BY_INDEX(
+					prGlueInfo->prAdapter,
+					prCliStaRec->ucBssIndex);
+				/* sae hostapd new_sta, when auth fail,
+				 * driver need del_sta
+				 */
+				if (prCliStaRec->fgIsConnected == FALSE &&
+				    !rsnKeyMgmtSae(
+					prBssInfo->u4RsnSelectedAKMSuite) &&
+				    prBssInfo->u4RsnSelectedAKMSuite !=
+						RSN_AKM_SUITE_OWE)
 					break;
 				prCliStaRec->fgIsConnected = FALSE;
 				cfg80211_del_sta(prP2pGlueInfo->aprRoleHandler,
