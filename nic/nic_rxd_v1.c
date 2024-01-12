@@ -334,17 +334,18 @@ u_int8_t nic_rxd_v1_sanity_check(
 		fgDrop = TRUE;
 		if (!HAL_RX_STATUS_IS_ICV_ERROR(prRxStatus)
 		    && HAL_RX_STATUS_IS_TKIP_MIC_ERROR(prRxStatus)) {
+			uint8_t ucBssIndex =
+				secGetBssIdxByWlanIdx(prAdapter,
+				HAL_RX_STATUS_GET_WLAN_IDX(prRxStatus));
 			struct STA_RECORD *prStaRec = NULL;
 			struct PARAM_BSSID_EX *prCurrBssid =
 				aisGetCurrBssId(prAdapter,
-				secGetBssIdxByWlanIdx(prAdapter,
-					prSwRfb->ucWlanIdx));
+				ucBssIndex);
 
 			if (prCurrBssid)
 				prStaRec = cnmGetStaRecByAddress(prAdapter,
-					secGetBssIdxByWlanIdx(prAdapter,
-					prSwRfb->ucWlanIdx),
-				prCurrBssid->arMacAddress);
+					ucBssIndex,
+					prCurrBssid->arMacAddress);
 			if (prStaRec) {
 				DBGLOG(RSN, EVENT, "MIC_ERR_PKT\n");
 				rsnTkipHandleMICFailure(prAdapter, prStaRec, 0);
