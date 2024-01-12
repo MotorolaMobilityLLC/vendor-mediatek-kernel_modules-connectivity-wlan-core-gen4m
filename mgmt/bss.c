@@ -2383,11 +2383,11 @@ void bssProcessErTxModeEvent(IN struct ADAPTER *prAdapter,
 	prErTxMode = (struct EVENT_ER_TX_MODE *) (prEvent->aucBuffer);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prErTxMode->ucBssInfoIdx);
 
-	prBssInfo->fgIsTxErStarted = prErTxMode->fgIsTxErStarted;
+	prBssInfo->ucErMode = prErTxMode->ucErMode;
 
 	DBGLOG_LIMITED(BSS, WARN,
-		"Receive ER Tx mode event,BSS[%d],Enable[%d]\n",
-		prErTxMode->ucBssInfoIdx, prErTxMode->fgIsTxErStarted);
+		"Receive ER Tx mode event,BSS[%d],Mode[0x%x]\n",
+		prErTxMode->ucBssInfoIdx, prErTxMode->ucErMode);
 }
 #endif
 

@@ -603,7 +603,7 @@ struct BSS_INFO {
 #endif
 
 #if (CFG_SUPPORT_HE_ER == 1)
-	boolean fgIsTxErStarted;
+	uint8_t ucErMode;
 #endif
 
 	uint8_t ucCountryIELen;

@@ -290,7 +290,7 @@ enum ENUM_AC_PRIORITY {
 #if (CFG_SUPPORT_HE_ER == 1)
 struct EVENT_ER_TX_MODE {
 	uint8_t ucBssInfoIdx;
-	boolean fgIsTxErStarted;
+	uint8_t ucErMode;
 };
 
 void bssProcessErTxModeEvent(IN struct ADAPTER *prAdapter,
