@@ -37,8 +37,8 @@
 struct IE_ORDER_TABLE_INFO {
 	uint8_t eid;
 	uint8_t extid;
-	uint8_t *ie;
 	uint16_t size;
+	uint8_t *ie;
 };
 
 /******************************************************************************
@@ -1016,9 +1016,9 @@ void sortIE(IN struct ADAPTER *prAdapter,
 {
 	uint16_t u2Offset = 0, u2IEsBufLen;
 	uint8_t *pucBuf, *pucDst;
-	struct IE_ORDER_TABLE_INFO info[MAX_IE_NUM];
+	struct IE_ORDER_TABLE_INFO *info = NULL;
 	uint8_t num = 0, i;
-	struct MSDU_INFO *prMsduInfoInOrder;
+	struct MSDU_INFO *prMsduInfoInOrder = NULL;
 	int offset = sortGetPayloadOffset(prAdapter, prMsduInfo);
 
 	if (offset < 0) {
@@ -1037,7 +1037,14 @@ void sortIE(IN struct ADAPTER *prAdapter,
 		prMsduInfo->u2FrameLength - offset);
 	if (prMsduInfoInOrder == NULL) {
 		DBGLOG(TX, WARN, "No PKT_INFO_T for sort.\n");
-		return;
+		goto done;
+	}
+
+	info = kalMemAlloc(MAX_IE_NUM * sizeof(struct IE_ORDER_TABLE_INFO),
+		VIR_MEM_TYPE);
+	if (info == NULL) {
+		DBGLOG(TX, WARN, "No table info for sort.\n");
+		goto done;
 	}
 
 	pucBuf = (uint8_t *)prMsduInfo->prPacket + offset;
@@ -1087,7 +1094,10 @@ void sortIE(IN struct ADAPTER *prAdapter,
 	kalMemCopy((uint8_t *) prMsduInfo->prPacket + offset,
 		pucDst, u2IEsBufLen);
 
+done:
 	cnmMgtPktFree(prAdapter, prMsduInfoInOrder);
+	kalMemFree(info, VIR_MEM_TYPE,
+		MAX_IE_NUM * sizeof(struct IE_ORDER_TABLE_INFO));
 }
 
 void sortMgmtFrameIE(IN struct ADAPTER *prAdapter,
