@@ -5753,8 +5753,7 @@ u_int8_t kalRetrieveNetworkAddress(struct GLUE_INFO *prGlueInfo,
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
-void kalFlushPendingTxPackets(struct GLUE_INFO
-			      *prGlueInfo)
+void kalFlushPendingTxPackets(struct GLUE_INFO *prGlueInfo)
 {
 	struct QUE *prTxQue;
 	struct QUE_ENTRY *prQueueEntry;
@@ -5787,6 +5786,30 @@ void kalFlushPendingTxPackets(struct GLUE_INFO
 					WLAN_STATUS_NOT_ACCEPTED);
 		}
 	}
+}
+
+/**
+ * kalScheduleFlushRxBaEntry() - schedule NAPI to flush
+ *
+ * Main thread places a BA entry in prAdapter and then calls this function
+ * to schedule NAPI for flushing data.
+ * If the configuration supports NAPI to schedule the polling, this function
+ * returns WLAN_STATUS_SUCCESS; otherwise, it retuns WLAN_STATUS_NOT_ACCEPTED
+ * suggesting the caller to flush the data in main thread.
+ *
+ * Return: WLAN_STATUS_SUCCESS The task was scheduled.
+ *         WLAN_STATUS_NOT_ACCEPTED The configuration does not support NAPI.
+ */
+uint32_t kalScheduleFlushRxBaEntry(struct GLUE_INFO *prGlueInfo)
+{
+	uint32_t rc = WLAN_STATUS_NOT_ACCEPTED;
+
+	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
+		kal_napi_schedule(&prGlueInfo->napi);
+		rc = WLAN_STATUS_SUCCESS;
+	}
+
+	return rc;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -12200,12 +12223,14 @@ int kalNapiPoll(struct napi_struct *napi, int budget)
 
 	/* Added in qmHandleReorderBubbleTimeout */
 	while (prReorderQueParm =
-			getReorderQueParm(&prAdapter->rTimeoutRxBaEntry))
+			getReorderQueParm(&prAdapter->rTimeoutRxBaEntry,
+				prAdapter, SPIN_LOCK_RX_FLUSH_TIMEOUT))
 		qmFlushTimeoutReorderBubble(prAdapter, prReorderQueParm);
 
 	/* Added in qmDelRxBaEntry */
 	while (prReorderQueParm =
-			getReorderQueParm(&prAdapter->rFlushRxBaEntry))
+			getReorderQueParm(&prAdapter->rFlushRxBaEntry,
+				prAdapter, SPIN_LOCK_RX_FLUSH_BA))
 		qmFlushDeletedBaReorder(prAdapter, prReorderQueParm);
 
 	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
