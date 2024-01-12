@@ -792,8 +792,7 @@ void *kalPacketAlloc(IN struct GLUE_INFO *prGlueInfo,
 	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
 			   prChipInfo->txd_append_size;
 
-	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)
-	    && in_interrupt())
+	if (in_interrupt())
 		prSkb = __dev_alloc_skb(u4Size + u4TxHeadRoomSize,
 					GFP_ATOMIC);
 	else
