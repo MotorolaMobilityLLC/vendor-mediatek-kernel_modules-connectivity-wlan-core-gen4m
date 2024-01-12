@@ -3261,10 +3261,6 @@ void nicCmdEventQueryEepromRead(IN struct ADAPTER
 				*prAdapter, IN struct CMD_INFO *prCmdInfo,
 				IN uint8_t *pucEventBuf);
 
-void nicCmdEventSetMediaStreamMode(IN struct ADAPTER
-				   *prAdapter, IN struct CMD_INFO *prCmdInfo,
-				   IN uint8_t *pucEventBuf);
-
 void nicCmdEventSetStopSchedScan(IN struct ADAPTER
 				 *prAdapter, IN struct CMD_INFO *prCmdInfo,
 				 IN uint8_t *pucEventBuf);

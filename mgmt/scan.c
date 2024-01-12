@@ -1825,7 +1825,8 @@ void scanEhtParsingMldElement(IN struct MULTI_LINK_INFO *prMlInfo,
 		COPY_MAC_ADDR(prMlInfo->aucMldAddr, pos);
 		log_dbg(SCN, INFO, "MLD MAC addr = "MACSTR"",
 			MAC2STR(prMlInfo->aucMldAddr));
-		COPY_MAC_ADDR(prBssDesc->aucMldAddr, prMlInfo->aucMldAddr);
+		COPY_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr,
+			prMlInfo->aucMldAddr);
 		pos += MAC_ADDR_LEN;
 	}
 	if (ucMlCtrlPreBmp & ML_CTRL_LINK_ID_INFO_PRESENT) {
@@ -2070,11 +2071,13 @@ void scanEhtDuplicateBssDesc(IN struct ADAPTER *prAdapter,
 		}
 
 		/* Update ML link's MLD addr */
-		kalMemCopy(prBssDesc->aucMldAddr, prMlInfo->aucMldAddr,
+		kalMemCopy(prBssDesc->rMlInfo.aucMldAddr, prMlInfo->aucMldAddr,
 			MAC_ADDR_LEN);
 
 		/* Update ML Link's link ID */
-		prBssDesc->ucMlLinkId= prProfiles->ucLinkId;
+		prBssDesc->rMlInfo.ucLinkIndex = prProfiles->ucLinkId;
+
+		prBssDesc->rMlInfo.fgValid = TRUE;
 	}
 }
 
@@ -2568,15 +2571,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			u_int8_t fgIsConnected, fgIsConnecting;
 			struct AIS_BLACKLIST_ITEM *prBlack;
 
-			if (aisGetTargetBssDesc(prAdapter, AIS_DEFAULT_INDEX)
-				== prBssDesc) {
-				log_dbg(SCN, TRACE, "Timestamap reset. Reset prTargetBssDesc BSS:"
-					MACSTR " connected:%x connecting:%x",
-					MAC2STR(prBssDesc->aucBSSID),
-					prBssDesc->fgIsConnected,
-					prBssDesc->fgIsConnecting);
-			}
-
 			/* set flag for indicating this is a new BSS-DESC */
 			fgIsNewBssDesc = TRUE;
 
@@ -2669,8 +2663,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
 	prBssDesc->fgIsEHTPresent = FALSE;
+	prBssDesc->rMlInfo.fgValid = FALSE;
 #endif
-
 	prBssDesc->eSco = CHNL_EXT_SCN;
 	prBssDesc->fgIEWAPI = FALSE;
 	prBssDesc->fgIERSN = FALSE;

@@ -601,8 +601,8 @@ void wmmTspecSteps(struct ADAPTER *prAdapter, uint8_t ucTid,
 #if CFG_SUPPORT_SOFT_ACM
 			/* Need to change tx queue, due to we do soft ACM */
 			qmHandleDelTspec(prAdapter,
-					 prAisFsmInfo->prTargetStaRec,
-					 prCurTs->eAC);
+				aisGetTargetStaRec(prAdapter, ucBssIndex),
+				prCurTs->eAC);
 #endif
 			wmmSyncAcParamWithFw(prAdapter, prCurTs->eAC, 0, 0,
 				ucBssIndex);

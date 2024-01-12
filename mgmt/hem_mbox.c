@@ -304,10 +304,6 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_P2P_ACTIVE_BSS, p2pDevFsmRunEventActiveDevBss},
 #endif
 
-#if CFG_SUPPORT_ADHOC
-	{MID_SCN_AIS_FOUND_IBSS, aisFsmRunEventFoundIBSSPeer},
-#endif /* CFG_SUPPORT_ADHOC */
-
 	{MID_SAA_AIS_FSM_ABORT, aisFsmRunEventAbort},
 	{MID_MNY_AIS_REMAIN_ON_CHANNEL,
 		aisFsmRunEventRemainOnChannel},

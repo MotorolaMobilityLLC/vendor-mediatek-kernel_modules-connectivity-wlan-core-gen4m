@@ -299,7 +299,7 @@ wlanoidQueryNetworkTypeInUse(IN struct ADAPTER *prAdapter,
 
 	enum ENUM_PARAM_NETWORK_TYPE rCurrentNetworkTypeInUse =
 		PARAM_NETWORK_TYPE_OFDM24;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DEBUGFUNC("wlanoidQueryNetworkTypeInUse");
 
@@ -1568,7 +1568,7 @@ wlanoidQueryInfrastructureMode(IN struct ADAPTER *prAdapter,
 			       OUT uint32_t *pu4QueryInfoLen)
 {
 	struct CONNECTION_SETTINGS *prConnSettings;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DEBUGFUNC("wlanoidQueryInfrastructureMode");
 
@@ -1754,7 +1754,7 @@ wlanoidQueryAuthMode(IN struct ADAPTER *prAdapter,
 		     OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
 		     OUT uint32_t *pu4QueryInfoLen)
 {
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DEBUGFUNC("wlanoidQueryAuthMode");
 
@@ -3320,7 +3320,7 @@ wlanoidQueryEncryptionStatus(IN struct ADAPTER *prAdapter,
 	enum ENUM_WEP_STATUS eEncStatus = 0;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_INFO *prAisBssInfo;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DEBUGFUNC("wlanoidQueryEncryptionStatus");
 
@@ -3795,117 +3795,6 @@ wlanoidQuerySupportedRates(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This routine is called to query current desired rates.
- *
- * \param[in] prAdapter          Pointer to the Adapter structure.
- * \param[in] pvQueryBuffer      Pointer to the buffer that holds the result of
- *                               the query.
- * \param[in] u4QueryBufferLen   The length of the query buffer.
- * \param[out] pu4QueryInfoLen   If the call is successful, returns the number
- *				 of bytes written into the query buffer. If the
- *				 call failed due to invalid length of the query
- *				 buffer, returns the amount of storage needed.
- *
- * \retval WLAN_STATUS_SUCCESS
- * \retval WLAN_STATUS_INVALID_LENGTH
- */
-/*----------------------------------------------------------------------------*/
-uint32_t
-wlanoidQueryDesiredRates(IN struct ADAPTER *prAdapter,
-			 OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
-			 OUT uint32_t *pu4QueryInfoLen) {
-	DEBUGFUNC("wlanoidQueryDesiredRates");
-
-	ASSERT(prAdapter);
-	ASSERT(pu4QueryInfoLen);
-	if (u4QueryBufferLen)
-		ASSERT(pvQueryBuffer);
-
-	*pu4QueryInfoLen = (sizeof(uint8_t) *
-			    PARAM_MAX_LEN_RATES_EX);
-
-	if (u4QueryBufferLen < *pu4QueryInfoLen) {
-		DBGLOG(REQ, WARN, "Invalid length %u\n", u4QueryBufferLen);
-		return WLAN_STATUS_INVALID_LENGTH;
-	}
-
-	kalMemCopy(pvQueryBuffer,
-		   (void *) &(prAdapter->rWlanInfo.eDesiredRates),
-		   (sizeof(uint8_t) * PARAM_MAX_LEN_RATES));
-
-	return WLAN_STATUS_SUCCESS;
-
-}				/* end of wlanoidQueryDesiredRates() */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This routine is called to Set the desired rates.
- *
- * \param[in] prAdapter      Pointer to the Adapter structure.
- * \param[in] pvSetBuffer    Pointer to the buffer that holds the data to be
- *			     set.
- * \param[in] u4SetBufferLen The length of the set buffer.
- * \param[out] pu4SetInfoLen If the call is successful, returns the number of
- *                           bytes read from the set buffer. If the call failed
- *                           due to invalid length of the set buffer, returns
- *                           the amount of storage needed.
- *
- *
- * \retval WLAN_STATUS_SUCCESS
- * \retval WLAN_STATUS_INVALID_LENGTH
- * \retval WLAN_STATUS_INVALID_DATA
- * \retval WLAN_STATUS_ADAPTER_NOT_READY
- */
-/*----------------------------------------------------------------------------*/
-uint32_t
-wlanoidSetDesiredRates(IN struct ADAPTER *prAdapter,
-		       IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
-		       OUT uint32_t *pu4SetInfoLen) {
-	uint32_t i;
-
-	DEBUGFUNC("wlanoidSetDesiredRates");
-
-	ASSERT(prAdapter);
-	ASSERT(pvSetBuffer);
-	ASSERT(pu4SetInfoLen);
-
-	if (u4SetBufferLen < (sizeof(uint8_t) *
-			      PARAM_MAX_LEN_RATES)) {
-		DBGLOG(REQ, WARN, "Invalid length %u\n", u4SetBufferLen);
-		return WLAN_STATUS_INVALID_LENGTH;
-	}
-
-	*pu4SetInfoLen = (sizeof(uint8_t) * PARAM_MAX_LEN_RATES);
-
-	if (u4SetBufferLen < (sizeof(uint8_t) *
-			      PARAM_MAX_LEN_RATES))
-		return WLAN_STATUS_INVALID_LENGTH;
-
-	kalMemCopy((void *) &(prAdapter->rWlanInfo.eDesiredRates),
-		   pvSetBuffer, (sizeof(uint8_t) * PARAM_MAX_LEN_RATES));
-
-	prAdapter->rWlanInfo.eLinkAttr.ucDesiredRateLen =
-		PARAM_MAX_LEN_RATES;
-	for (i = 0; i < PARAM_MAX_LEN_RATES; i++)
-		prAdapter->rWlanInfo.eLinkAttr.u2DesiredRate[i] =
-			(uint16_t) (prAdapter->rWlanInfo.eDesiredRates[i]);
-
-	return wlanSendSetQueryCmd(prAdapter,
-				CMD_ID_LINK_ATTRIB,
-				TRUE,
-				FALSE,
-				TRUE,
-				nicCmdEventSetCommon,
-				nicOidCmdTimeoutCommon,
-				sizeof(struct CMD_LINK_ATTRIB),
-				(uint8_t *) &(prAdapter->rWlanInfo.eLinkAttr),
-				pvSetBuffer,
-				u4SetBufferLen);
-
-}				/* end of wlanoidSetDesiredRates() */
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief This routine is called to query the maximum frame size in bytes,
  *        not including the header.
  *
@@ -4055,7 +3944,7 @@ uint32_t
 wlanoidQueryRssi(IN struct ADAPTER *prAdapter,
 		 OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
 		 OUT uint32_t *pu4QueryInfoLen) {
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex;
 	struct PARAM_LINK_SPEED_EX *prLinkSpeed;
 	struct LINK_SPEED_EX_ *prLq;
 
@@ -4196,7 +4085,7 @@ wlanoidSetRssiTrigger(IN struct ADAPTER *prAdapter,
 		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		      OUT uint32_t *pu4SetInfoLen) {
 	int32_t rRssiTriggerValue;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DEBUGFUNC("wlanoidSetRssiTrigger");
 
@@ -4342,102 +4231,6 @@ wlanoidQueryBugReport(IN struct ADAPTER *prAdapter,
 }				/* wlanoidQueryBugReport */
 
 /*----------------------------------------------------------------------------*/
-/*! \brief  This routine is called to query current media streaming status.
- *
- * \param[in] pvAdapter Pointer to the Adapter structure
- * \param[in] pvQueryBuf A pointer to the buffer that holds the result of the
- *                          query buffer
- * \param[in] u4QueryBufLen The length of the query buffer
- * \param[out] pu4QueryInfoLen If the call is successful, returns the number of
- *                            bytes written into the query buffer. If the call
- *                            failed due to invalid length of the query buffer,
- *                            returns the amount of storage needed.
- *
- * \retval WLAN_STATUS_SUCCESS
- */
-/*----------------------------------------------------------------------------*/
-uint32_t
-wlanoidQueryMediaStreamMode(IN struct ADAPTER *prAdapter,
-			    IN void *pvQueryBuffer,
-			    IN uint32_t u4QueryBufferLen,
-			    OUT uint32_t *pu4QueryInfoLen) {
-	DEBUGFUNC("wlanoidQueryMediaStreamMode");
-
-	ASSERT(prAdapter);
-	ASSERT(pu4QueryInfoLen);
-	if (u4QueryBufferLen)
-		ASSERT(pvQueryBuffer);
-
-	*pu4QueryInfoLen = sizeof(enum ENUM_MEDIA_STREAM_MODE);
-
-	if (u4QueryBufferLen < *pu4QueryInfoLen) {
-		DBGLOG(REQ, WARN, "Invalid length %u\n", u4QueryBufferLen);
-		return WLAN_STATUS_INVALID_LENGTH;
-	}
-
-	*(enum ENUM_MEDIA_STREAM_MODE *) pvQueryBuffer =
-		prAdapter->rWlanInfo.eLinkAttr.ucMediaStreamMode == 0 ?
-		ENUM_MEDIA_STREAM_OFF : ENUM_MEDIA_STREAM_ON;
-
-	return WLAN_STATUS_SUCCESS;
-
-} /* wlanoidQueryMediaStreamMode */
-
-/*----------------------------------------------------------------------------*/
-/*! \brief  This routine is called to enter media streaming mode or exit media
- *          streaming mode
- *
- * \param[in] pvAdapter Pointer to the Adapter structure
- * \param[in] pvQueryBuf A pointer to the buffer that holds the result of the
- *                          query buffer
- * \param[in] u4QueryBufLen The length of the query buffer
- * \param[out] pu4QueryInfoLen If the call is successful, returns the number of
- *                            bytes written into the query buffer. If the call
- *                            failed due to invalid length of the query buffer,
- *                            returns the amount of storage needed.
- *
- * \retval WLAN_STATUS_SUCCESS
- */
-/*----------------------------------------------------------------------------*/
-uint32_t
-wlanoidSetMediaStreamMode(IN struct ADAPTER *prAdapter,
-			  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
-			  OUT uint32_t *pu4SetInfoLen) {
-	enum ENUM_MEDIA_STREAM_MODE eStreamMode;
-
-	DEBUGFUNC("wlanoidSetMediaStreamMode");
-
-	ASSERT(prAdapter);
-	ASSERT(pvSetBuffer);
-	ASSERT(pu4SetInfoLen);
-
-	if (u4SetBufferLen < sizeof(enum ENUM_MEDIA_STREAM_MODE)) {
-		DBGLOG(REQ, WARN, "Invalid length %u\n", u4SetBufferLen);
-		return WLAN_STATUS_INVALID_LENGTH;
-	}
-
-	*pu4SetInfoLen = sizeof(enum ENUM_MEDIA_STREAM_MODE);
-
-	eStreamMode = *(enum ENUM_MEDIA_STREAM_MODE *) pvSetBuffer;
-
-	if (eStreamMode == ENUM_MEDIA_STREAM_OFF)
-		prAdapter->rWlanInfo.eLinkAttr.ucMediaStreamMode = 0;
-	else
-		prAdapter->rWlanInfo.eLinkAttr.ucMediaStreamMode = 1;
-
-	return wlanSendSetQueryCmd(prAdapter,
-				CMD_ID_LINK_ATTRIB,
-				TRUE,
-				FALSE,
-				TRUE,
-				nicCmdEventSetMediaStreamMode,
-				nicOidCmdTimeoutCommon,
-				sizeof(struct CMD_LINK_ATTRIB),
-				(uint8_t *) &(prAdapter->rWlanInfo.eLinkAttr),
-				pvSetBuffer, u4SetBufferLen);
-} /* wlanoidSetMediaStreamMode */
-
-/*----------------------------------------------------------------------------*/
 /*! \brief  This routine is called to query the permanent MAC address of the
  *	    NIC.
  *
@@ -4546,7 +4339,7 @@ wlanQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 		   IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
 		   OUT uint32_t *pu4QueryInfoLen, IN uint8_t fgIsOid)
 {
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 	struct LINK_SPEED_EX_ *prLq;
 
 	DEBUGFUNC("wlanQueryLinkSpeed");
@@ -4593,7 +4386,7 @@ wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 			IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
 			OUT uint32_t *pu4QueryInfoLen)
 {
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex;
 	OS_SYSTIME rUpdateDeltaTime;
 	struct PARAM_LINK_SPEED_EX *pu4LinkSpeed;
 	struct LINK_SPEED_EX_ *prLq;
@@ -6371,11 +6164,11 @@ wlanoidSetMcrWrite(IN struct ADAPTER *prAdapter,
 		   OUT uint32_t *pu4SetInfoLen) {
 	struct PARAM_CUSTOM_MCR_RW_STRUCT *prMcrWrInfo;
 	struct CMD_ACCESS_REG rCmdAccessReg;
-
 #if CFG_STRESS_TEST_SUPPORT
+	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prBssInfo =
-		aisGetAisBssInfo(prAdapter, AIS_DEFAULT_INDEX);
+		aisGetAisBssInfo(prAdapter, ucBssIndex);
 	struct STA_RECORD *prStaRec = prBssInfo->prStaRecOfAP;
 	uint32_t u4McrOffset, u4McrData;
 #endif
@@ -6951,7 +6744,7 @@ wlanoidSetSwCtrlWrite(IN struct ADAPTER *prAdapter,
 	uint32_t u4Data;
 	uint8_t ucOpRxNss, ucOpTxNss;
 	uint8_t ucChannelWidth;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DEBUGFUNC("wlanoidSetSwCtrlWrite");
 	DBGLOG(INIT, LOUD, "\n");
@@ -8153,7 +7946,7 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 	int8_t orig_min_rssi_value;
 	uint32_t rStatus1 = WLAN_STATUS_SUCCESS;
 	uint32_t rStatus2;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	ASSERT(prAdapter);
 	ASSERT(pu4QueryInfoLen);
@@ -8784,7 +8577,7 @@ wlanoidQuery802dot11PowerSaveProfile(IN struct ADAPTER *prAdapter,
 				     IN void *pvQueryBuffer,
 				     IN uint32_t u4QueryBufferLen,
 				     OUT uint32_t *pu4QueryInfoLen) {
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DEBUGFUNC("wlanoidQuery802dot11PowerSaveProfile");
 
@@ -9014,7 +8807,7 @@ wlanoidQueryFrequency(IN struct ADAPTER *prAdapter,
 		      OUT uint32_t *pu4QueryInfoLen) {
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_INFO *prAisBssInfo;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DEBUGFUNC("wlanoidQueryFrequency");
 
@@ -9155,7 +8948,7 @@ wlanoidQueryBeaconInterval(IN struct ADAPTER *prAdapter,
 			   OUT uint32_t *pu4QueryInfoLen) {
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct PARAM_BSSID_EX *prCurrBssid;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DEBUGFUNC("wlanoidQueryBeaconInterval");
 	ASSERT(prAdapter);
@@ -9270,7 +9063,7 @@ wlanoidQueryAtimWindow(IN struct ADAPTER *prAdapter,
 		       OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
 		       OUT uint32_t *pu4QueryInfoLen) {
 	struct CONNECTION_SETTINGS *prConnSettings;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DEBUGFUNC("wlanoidQueryAtimWindow");
 
@@ -11312,7 +11105,7 @@ wlanoidUpdateSLTMode(IN struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc = (struct BSS_DESC *) NULL;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	/* 1. Action: Update or Initial Set
 	 * 2. Role.
@@ -13985,7 +13778,7 @@ uint32_t
 wlanoidLinkDown(IN struct ADAPTER *prAdapter,
 		IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		OUT uint32_t *pu4SetInfoLen) {
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	DEBUGFUNC("wlanoidSetDisassociate");
 
@@ -16454,8 +16247,7 @@ uint32_t wlanoidSetLowLatencyMode(
 	OUT uint32_t *pu4SetInfoLen)
 {
 	uint32_t u4Events;
-	struct BSS_INFO *prAisBssInfo;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex;
 
 	DEBUGFUNC("wlanoidSetLowLatencyMode");
 
@@ -16467,13 +16259,7 @@ uint32_t wlanoidSetLowLatencyMode(
 	}
 	ASSERT(pu4SetInfoLen);
 
-	prAisBssInfo =
-		aisGetAisBssInfo(prAdapter, ucBssIndex);
-	if (!prAisBssInfo) {
-		DBGLOG(OID, ERROR, "prAisBssInfo = NULL\n");
-		*pu4SetInfoLen = 0;
-		return WLAN_STATUS_FAILURE;
-	}
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	/* Initialize */
 	kalMemCopy(&u4Events, pvSetBuffer, u4SetBufferLen);
@@ -16481,7 +16267,7 @@ uint32_t wlanoidSetLowLatencyMode(
 	/* Set low latency mode */
 	DBGLOG(OID, INFO, "DPP LowLatencySet(from oid set) event:0x%x\n",
 		u4Events);
-	wlanSetLowLatencyMode(prAdapter, u4Events);
+	wlanSetLowLatencyMode(prAdapter, u4Events, ucBssIndex);
 
 	*pu4SetInfoLen = 0; /* We do not need to read */
 

@@ -3626,7 +3626,6 @@ u_int32_t rlmDomainInitTxBfBackoffCmd(
 	uint8_t ucChIdx = 0;
 	uint8_t ucChCnt = 0;
 	uint8_t ucBandIdx = 0;
-	uint8_t ucAisIdx = 0;
 	uint8_t ucCnt = 0;
 	const int8_t *prChannelList = NULL;
 	uint32_t u4SetCmdSize = sizeof(struct CMD_TXPWR_TXBF_SET_BACKOFF);
@@ -3651,7 +3650,7 @@ u_int32_t rlmDomainInitTxBfBackoffCmd(
 		sizeof((*prCmd)->rChannelTxBfBackoff));
 
 	(*prCmd)->ucNum = ucChNum;
-	(*prCmd)->ucBssIdx = prAdapter->prAisBssInfo[ucAisIdx]->ucBssIndex;
+	(*prCmd)->ucBssIdx = aisGetDefaultLinkBssIndex(prAdapter);
 
 	for (ucBandIdx = 0; ucBandIdx < KAL_NUM_BANDS; ucBandIdx++) {
 		if (ucBandIdx != KAL_BAND_2GHZ && ucBandIdx != KAL_BAND_5GHZ)

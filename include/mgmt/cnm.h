@@ -313,7 +313,8 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 uint8_t cnmGetBssMaxBwToChnlBW(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
-	enum ENUM_NETWORK_TYPE eNetworkType, u_int8_t fgIsP2pDevice);
+	enum ENUM_NETWORK_TYPE eNetworkType, uint8_t ucRoleIndex,
+	uint8_t fgIsP2pDevice);
 
 void cnmFreeBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 #if CFG_SUPPORT_CHNL_CONFLICT_REVISE

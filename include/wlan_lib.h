@@ -211,8 +211,6 @@
 
 #define WLAN_CFG_REC_ENTRY_NUM_MAX 400
 
-
-
 #define WLAN_CFG_SET_CHIP_LEN_MAX 10
 #define WLAN_CFG_SET_DEBUG_LEVEL_LEN_MAX 10
 #define WLAN_CFG_SET_SW_CTRL_LEN_MAX 10
@@ -1481,11 +1479,6 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER *prAdapter,
 				 IN struct REG_INFO *prRegInfo);
 
 /*----------------------------------------------------------------------------*/
-/* Media Stream Mode                                                          */
-/*----------------------------------------------------------------------------*/
-u_int8_t wlanResetMediaStreamMode(IN struct ADAPTER *prAdapter);
-
-/*----------------------------------------------------------------------------*/
 /* Timer Timeout Check (for Glue Layer)                                       */
 /*----------------------------------------------------------------------------*/
 uint32_t wlanTimerTimeoutCheck(IN struct ADAPTER *prAdapter);
@@ -1788,13 +1781,14 @@ uint8_t wlanGetSupportNss(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 #if CFG_SUPPORT_LOWLATENCY_MODE
 uint32_t wlanAdapterStartForLowLatency(IN struct ADAPTER *prAdapter);
 uint32_t wlanProbeSuccessForLowLatency(IN struct ADAPTER *prAdapter);
-uint32_t wlanConnectedForLowLatency(IN struct ADAPTER *prAdapter);
+uint32_t wlanConnectedForLowLatency(IN struct ADAPTER *prAdapter,
+				    uint8_t ucBssIndex);
 uint32_t wlanSetLowLatencyCommand(IN struct ADAPTER *prAdapter,
 				     IN u_int8_t fgEnLowLatencyMode,
 				     IN u_int8_t fgEnTxDupDetect,
 				     IN u_int8_t fgTxDupCertQuery);
 uint32_t wlanSetLowLatencyMode(IN struct ADAPTER *prAdapter,
-				IN uint32_t u4Events);
+				IN uint32_t u4Events, uint8_t ucBssIndex);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 int32_t wlanGetFileContent(struct ADAPTER *prAdapter,
 	const uint8_t *pcFileName, uint8_t *pucBuf,

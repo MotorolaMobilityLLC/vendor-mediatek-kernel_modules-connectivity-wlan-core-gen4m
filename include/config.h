@@ -164,7 +164,6 @@
 
 /* Support AP Selection */
 #define CFG_SUPPORT_RSN_SCORE		0
-#define CFG_SELECT_BSS_BASE_ON_MULTI_PARAM	1
 #define CFG_MAX_NUM_OF_CHNL_INFO		50
 #define CFG_SUPPORT_CHNL_CONFLICT_REVISE	0
 
@@ -428,6 +427,7 @@
 #define CFG_REPORT_RFBB_VERSION		1
 
 #define MAX_BSSID_NUM			4	/* MAX BSSID number */
+#define MAX_MLDDEV_NUM			4;
 
 #define CFG_CHIP_RESET_SUPPORT          1
 
@@ -818,7 +818,7 @@
  * Migration Option
  *------------------------------------------------------------------------------
  */
-#define CFG_SUPPORT_ADHOC                       1
+#define CFG_SUPPORT_ADHOC                       0
 #define CFG_SUPPORT_AAA                         1
 
 #define CFG_SUPPORT_BCM                         0

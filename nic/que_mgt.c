@@ -156,8 +156,7 @@ static uint32_t last_rx_packets, latest_rx_packets;
 #define LINK_QUALITY_COUNT_DUP(prAdapter, prSwRfb) \
 do { \
 	struct BSS_INFO *prBssInfo = NULL; \
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, \
-		AIS_DEFAULT_INDEX); \
+	prBssInfo = aisGetDefaultLinkBssInfo(prAdapter); \
 	if (prBssInfo && prBssInfo->prStaRecOfAP) \
 		if (prBssInfo->prStaRecOfAP->ucWlanIndex == \
 		    prSwRfb->ucWlanIdx) \

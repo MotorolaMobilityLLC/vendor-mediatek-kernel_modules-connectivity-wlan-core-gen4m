@@ -92,8 +92,8 @@ uint8_t p2pDevFsmInit(IN struct ADAPTER *prAdapter)
 			(PFN_MGMT_TIMEOUT_FUNC) p2pDevFsmRunEventTimeout,
 			(unsigned long) prP2pDevFsmInfo);
 
-		prP2pBssInfo =
-			cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_P2P, TRUE);
+		prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter,
+			NETWORK_TYPE_P2P, 0, TRUE);
 
 		if (prP2pBssInfo != NULL) {
 			COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,

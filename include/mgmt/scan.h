@@ -144,7 +144,6 @@
 /* dwell time setting for OCE certification */
 #define SCAN_CHANNEL_DWELL_TIME_OCE         (42 + 28)
 
-#define MLD_LINK_MAX				3
 #define MAX_LEN_OF_MLIE				255
 
 /*----------------------------------------------------------------------------*/
@@ -307,6 +306,14 @@ enum ENUM_SCAN_LOG_PREFIX {
 	LOG_SCAN_MAX
 };
 
+#if (CFG_SUPPORT_802_11BE == 1)
+struct ML_INFO {
+	uint8_t fgValid;
+	uint8_t aucMldAddr[MAC_ADDR_LEN];
+	uint8_t ucLinkIndex;
+};
+#endif
+
 /*----------------------------------------------------------------------------*/
 /* BSS Descriptors                                                            */
 /*----------------------------------------------------------------------------*/
@@ -315,16 +322,15 @@ struct BSS_DESC {
 	/* Support AP Selection*/
 	struct LINK_ENTRY rLinkEntryEss[KAL_AIS_NUM];
 
+#if (CFG_SUPPORT_802_11BE == 1)
+	/* For MLO, the MldAddr is to save common MLD MAC address */
+	struct ML_INFO rMlInfo;
+#endif
+
 	uint8_t aucBSSID[MAC_ADDR_LEN];
 
 	/* For IBSS, the SrcAddr is different from BSSID */
 	uint8_t aucSrcAddr[MAC_ADDR_LEN];
-
-	/* For MLO, the MldAddr is to save common MLD MAC address */
-	uint8_t aucMldAddr[MAC_ADDR_LEN];
-
-	/* For MLO, the Link ID used for connection */
-	uint8_t ucMlLinkId;
 
 	/* If we are going to connect to this BSS (JOIN or ROAMING to another
 	 * BSS), don't remove this record from BSS List.

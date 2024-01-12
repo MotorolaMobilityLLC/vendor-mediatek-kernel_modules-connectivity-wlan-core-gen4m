@@ -159,7 +159,7 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 #endif
 
 		prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter,
-			NETWORK_TYPE_P2P,
+			NETWORK_TYPE_P2P, 0,
 			FALSE);
 
 		if (!prP2pBssInfo) {
@@ -4223,8 +4223,7 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11ANY) {
 		struct BSS_INFO *prAisBssInfo;
 
-		prAisBssInfo = aisGetAisBssInfo(prAdapter,
-			AIS_DEFAULT_INDEX);
+		prAisBssInfo = aisGetDefaultLinkBssInfo(prAdapter);
 		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
 			/* Force SCC, indicate channel directly */
 			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,

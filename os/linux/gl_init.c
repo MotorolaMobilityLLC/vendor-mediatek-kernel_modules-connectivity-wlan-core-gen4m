@@ -2454,7 +2454,9 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 			prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
 				netdev_priv(gprWdev[u4Idx]->netdev);
 			ASSERT(prNetDevPrivate->prGlueInfo == prGlueInfo);
-			prNetDevPrivate->ucBssIdx = u4Idx;
+			prNetDevPrivate->ucBssIdx =
+				prAdapter->rWifiVar.rAisFsmInfo[u4Idx]
+							.ucMainBssIndex;
 #if CFG_ENABLE_UNIFY_WIPHY
 			prNetDevPrivate->ucIsP2p = FALSE;
 #endif
@@ -3183,11 +3185,6 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 
 		/* 4 <3.1.4> set device to glue */
 		prGlueInfo->prDev = prDev;
-
-		/* 4 <3.2> Initialize glue variables */
-		kalSetMediaStateIndicated(prGlueInfo,
-			MEDIA_STATE_DISCONNECTED,
-			i);
 	}
 
 	prGlueInfo->prDevHandler = gprWdev[0]->netdev;
@@ -4488,7 +4485,6 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 	struct REG_INFO **pprRegInfo,
 	struct mt66xx_chip_info **pprChipInfo)
 {
-	uint32_t u4Idx = 0;
 #if CFG_WMT_WIFI_PATH_SUPPORT
 	int32_t i4RetVal = 0;
 #endif
@@ -4551,26 +4547,6 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 #if 0
 		prRegInfo->fgEnArpFilter = TRUE;
 #endif
-
-	/* The Init value of u4WpaVersion/u4AuthAlg shall be
-	 * DISABLE/OPEN, not zero!
-	 */
-	/* The Init value of u4CipherGroup/u4CipherPairwise shall be
-	 * NONE, not zero!
-	 */
-	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-		struct GL_WPA_INFO *prWpaInfo =
-			aisGetWpaInfo(prAdapter, u4Idx);
-
-		if (!prWpaInfo)
-			continue;
-
-		prWpaInfo->u4WpaVersion =
-			IW_AUTH_WPA_VERSION_DISABLED;
-		prWpaInfo->u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
-		prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_NONE;
-		prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_NONE;
-	}
 
 	tasklet_init(&prGlueInfo->rRxTask, halRxTasklet,
 			(unsigned long)prGlueInfo);

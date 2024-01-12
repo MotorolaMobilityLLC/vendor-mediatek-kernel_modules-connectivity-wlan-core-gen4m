@@ -1306,7 +1306,7 @@ uint8_t secGetBssIdxByRfb(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(RSN, LOUD, "Return default index\n");
 
-	return AIS_DEFAULT_INDEX;
+	return aisGetDefaultLinkBssIndex(prAdapter);
 }
 
 /*----------------------------------------------------------------------------*/

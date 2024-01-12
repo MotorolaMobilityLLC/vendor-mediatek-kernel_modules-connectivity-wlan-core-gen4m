@@ -1590,8 +1590,7 @@ TdlsSendChSwControlCmd(struct ADAPTER *prAdapter,
 	struct CMD_TDLS_CH_SW rCmdTdlsChSwCtrl;
 	struct BSS_INFO *prBssInfo;
 
-	prBssInfo =
-		GET_BSS_INFO_BY_INDEX(prAdapter, AIS_DEFAULT_INDEX);
+	prBssInfo = aisGetDefaultLinkBssInfo(prAdapter);
 
 	/* send command packet for scan */
 	kalMemZero(&rCmdTdlsChSwCtrl,

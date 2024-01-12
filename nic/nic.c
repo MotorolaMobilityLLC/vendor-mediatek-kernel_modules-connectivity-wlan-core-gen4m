@@ -1123,7 +1123,7 @@ nicMediaStateChange(IN struct ADAPTER *prAdapter,
 				aisGetCurrBssId(prAdapter, ucBssIndex);
 			uint8_t ucAuthorized = FALSE;
 
-			if (prAisBssInfo->ucReasonOfDisconnect ==
+			if (prAisFsmInfo->ucReasonOfDisconnect ==
 			    DISCONNECT_REASON_CODE_ROAMING &&
 			    EQUAL_SSID(prCurrBssid->rSsid.aucSsid,
 			    prCurrBssid->rSsid.u4SsidLen,
@@ -1940,7 +1940,7 @@ uint32_t nicUpdateBssEx(IN struct ADAPTER *prAdapter,
 			prBssInfo->prStaRecOfAP->ucIndex;
 		cnmAisInfraConnectNotify(prAdapter);
 		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-		prBssDesc = prAisFsmInfo->prTargetBssDesc;
+		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		if (prBssDesc != NULL)
 			rCmdSetBssInfo.ucIotApAct = prBssDesc->ucIotApAct;
 #if CFG_SUPPORT_SMART_GEAR
@@ -3322,16 +3322,14 @@ void nicInitMGMT(IN struct ADAPTER *prAdapter,
 	/* SCN Module - initialization */
 	scnInit(prAdapter);
 
+	if (prAdapter->u4UapsdAcBmp == 0) {
+		prAdapter->u4UapsdAcBmp = CFG_INIT_UAPSD_AC_BMP;
+	}
+
 	for (i = 0; i < KAL_AIS_NUM; i++) {
 		/* AIS Module - intiailization */
-		aisFsmInit(prAdapter, i);
-		aisInitializeConnectionSettings(prAdapter,
-			prRegInfo,
-			i);
-#if CFG_SUPPORT_ROAMING
-		/* Roaming Module - intiailization */
-		roamingFsmInit(prAdapter, i);
-#endif /* CFG_SUPPORT_ROAMING */
+		aisFsmInit(prAdapter, &prAdapter->rWifiVar.rAisFsmInfo[i],
+			prRegInfo, i);
 	}
 
 #if CFG_SUPPORT_SWCR
@@ -4759,6 +4757,7 @@ void nicUpdateRSSI(IN struct ADAPTER *prAdapter,
 			prAdapter->rLinkQuality.rLq[ucBssIndex].
 				cLinkQuality = cLinkQuality;
 			/* indicate to glue layer */
+			// TODO: mlo
 			kalUpdateRSSI(prAdapter->prGlueInfo,
 				      ucBssIndex, cRssi, cLinkQuality);
 		}

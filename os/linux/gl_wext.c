@@ -1303,7 +1303,7 @@ wext_set_mode(IN struct net_device *prNetDev,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 	struct GL_WPA_INFO *prWpaInfo;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex;
 
 	ASSERT(prNetDev);
 	ASSERT(pu4Mode);
@@ -1330,7 +1330,7 @@ wext_set_mode(IN struct net_device *prNetDev,
 		return -EOPNOTSUPP;
 	}
 
-	/* printk("%s(): Set Mode = %d\n", __FUNCTION__, *pu4Mode); */
+	ucBssIndex = wlanGetBssIdx(prNetDev);
 	rOpMode.ucBssIdx = ucBssIndex;
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetInfrastructureMode,
 		(void *)&rOpMode, sizeof(struct PARAM_OP_MODE),
@@ -1609,7 +1609,6 @@ wext_get_ap(IN struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 
 	ASSERT(prNetDev);
 	ASSERT(prAddr);
@@ -1622,7 +1621,7 @@ wext_get_ap(IN struct net_device *prNetDev,
 	/* } */
 
 	if (kalGetMediaStateIndicated(prGlueInfo,
-		ucBssIndex) ==
+		aisGetDefaultLinkBssIndex(prGlueInfo->prAdapter)) ==
 	    MEDIA_STATE_DISCONNECTED) {
 		memset(prAddr, 0, sizeof(struct sockaddr));
 		return 0;
@@ -2253,7 +2252,7 @@ wext_set_essid(IN struct net_device *prNetDev,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 	struct GL_WPA_INFO *prWpaInfo;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
 
 	ASSERT(prNetDev);
 	ASSERT(prEssid);
@@ -2265,8 +2264,7 @@ wext_set_essid(IN struct net_device *prNetDev,
 	if (prEssid->length > IW_ESSID_MAX_SIZE)
 		return -E2BIG;
 
-	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter,
-		ucBssIndex);
+	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter, ucBssIndex);
 
 	/* set auth mode */
 	if (prWpaInfo->u4WpaVersion ==
@@ -2588,14 +2586,13 @@ wext_get_rate(IN struct net_device *prNetDev,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 	uint32_t u4Rate = 0;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
 
 	ASSERT(prNetDev);
 	ASSERT(prRate);
 	if (GLUE_CHK_PR2(prNetDev, prRate) == FALSE)
 		return -EINVAL;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	ucBssIndex = wlanGetBssIdx(prNetDev);
 
 	if (!netif_carrier_ok(prNetDev))
 		return -ENOTCONN;
@@ -2941,7 +2938,7 @@ wext_set_encode(IN struct net_device *prNetDev,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 	struct GL_WPA_INFO *prWpaInfo;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
 
 	ASSERT(prNetDev);
 	ASSERT(prEnc);
@@ -2949,9 +2946,7 @@ wext_set_encode(IN struct net_device *prNetDev,
 	if (GLUE_CHK_PR3(prNetDev, prEnc, pcExtra) == FALSE)
 		return -EINVAL;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-
-	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter,
-		ucBssIndex);
+	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter, ucBssIndex);
 
 	/* reset to default mode */
 	prWpaInfo->u4WpaVersion =
@@ -3243,18 +3238,15 @@ wext_set_auth(IN struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct GL_WPA_INFO *prWpaInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
 
 	ASSERT(prNetDev);
 	ASSERT(prAuth);
 	if (GLUE_CHK_PR2(prNetDev, prAuth) == FALSE)
 		return -EINVAL;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-
-	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter,
-		ucBssIndex);
-	prConnSettings = aisGetConnSettings(prGlueInfo->prAdapter,
-		ucBssIndex);
+	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter, ucBssIndex);
+	prConnSettings = aisGetConnSettings(prGlueInfo->prAdapter, ucBssIndex);
 
 	/* Save information to glue info and process later when ssid is set. */
 	switch (prAuth->flags & IW_AUTH_INDEX) {
@@ -3392,7 +3384,7 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 	struct GL_WPA_INFO *prWpaInfo;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
 
 	ASSERT(prNetDev);
 	ASSERT(prEnc);
@@ -3406,8 +3398,7 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter,
-		ucBssIndex);
+	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter, ucBssIndex);
 
 	memset(keyStructBuf, 0, sizeof(keyStructBuf));
 
@@ -4384,7 +4375,7 @@ wext_support_ioctl_SIOCSIWPMKSA_Action(IN struct net_device
 	uint32_t rStatus;
 	uint32_t u4BufLen;
 	struct PARAM_PMKID pmkid;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = wlanGetBssIdx(prDev);
 
 	pmkid.ucBssIdx = ucBssIndex;
 
@@ -4647,14 +4638,13 @@ struct iw_statistics *wext_get_wireless_stats(
 	struct iw_statistics *pStats = NULL;
 	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 	uint32_t bufLen = 0;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	uint8_t ucBssIndex = wlanGetBssIdx(prDev);
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 	ASSERT(prGlueInfo);
 	if (!prGlueInfo)
 		goto stat_out;
 
-	ucBssIndex = wlanGetBssIdx(prDev);
 	if (IS_BSS_INDEX_VALID(ucBssIndex))
 		pStats = (struct iw_statistics *)
 			(&(prGlueInfo->rIwStats[ucBssIndex]));
