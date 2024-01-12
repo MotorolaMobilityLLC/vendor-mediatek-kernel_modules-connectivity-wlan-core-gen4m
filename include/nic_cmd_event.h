@@ -1187,6 +1187,9 @@ struct CAP_PHY_CAP {
 	 */
 	uint8_t ucWifiPath;
 	uint8_t ucHe; /* 1:support, 0:not*/
+#if (CFG_SUPPORT_802_11BE == 1)
+	uint8_t ucEht; /* 1:support, 0:not*/
+#endif
 };
 
 #if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
