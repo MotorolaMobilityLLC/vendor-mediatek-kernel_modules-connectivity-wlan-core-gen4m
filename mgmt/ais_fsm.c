@@ -373,11 +373,10 @@ void aisInitBssInfo(IN struct ADAPTER *prAdapter,
 	/* 4 <2> Initiate BSS_INFO_T - common part */
 	BSS_INFO_INIT(prAdapter, prAisBssInfo);
 	/* update MAC address */
-	COPY_MAC_ADDR(prAisBssInfo->aucOwnMacAddr,
-		prAdapter->rWifiVar.aucMacAddress[prAisFsmInfo->ucAisIndex]);
-	prAisBssInfo->aucOwnMacAddr[5] ^= ucLinkIdx << BIT(1);
-	DBGLOG(AIS, INFO, "ucLinkIdx: %d, mac: " MACSTR "\n",
-		ucLinkIdx, MAC2STR(prAisBssInfo->aucOwnMacAddr));
+	nicApplyLinkAddress(prAdapter,
+		prAdapter->rWifiVar.aucMacAddress[prAisFsmInfo->ucAisIndex],
+		prAisBssInfo->aucOwnMacAddr,
+		ucLinkIdx);
 
 	/* 4 <3> Initiate BSS_INFO_T - private part */
 	/* TODO */
