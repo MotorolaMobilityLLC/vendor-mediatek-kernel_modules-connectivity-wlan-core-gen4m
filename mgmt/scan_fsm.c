@@ -617,7 +617,7 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter, IN struct EVENT_SCAN_DONE *p
 
 	if (fgIsNewVersion) {
 		DBGLOG(SCN, INFO,
-		       "scnEventScanDone Version%d!size of ScanDone%d,ucCompleteChanCount[%d],ucCurrentState%d, u4ScanDurBcnCnt[%lu]\n",
+		       "scnEventScanDone Version%u!size of ScanDone%zu,ucCompleteChanCount[%u],ucCurrentState%u, u4ScanDurBcnCnt[%u]\n",
 		       prScanDone->ucScanDoneVersion, sizeof(struct EVENT_SCAN_DONE), prScanDone->ucCompleteChanCount,
 		       prScanDone->ucCurrentState, prScanDone->u4ScanDurBcnCnt);
 
