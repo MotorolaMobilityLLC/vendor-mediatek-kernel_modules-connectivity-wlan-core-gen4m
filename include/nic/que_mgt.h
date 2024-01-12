@@ -443,6 +443,9 @@ struct QUE_MGT {	/* Queue Management Control Info */
 	/* The current serving STA with respect to a TC index */
 	uint32_t au4HeadStaRecIndex[NUM_OF_PER_STA_TX_QUEUES];
 
+	/* The current serving BssInfo */
+	uint32_t u4HeadBssInfoIndex;
+
 	/* For TC5 only */
 	u_int8_t fgGlobalQFirst;
 	uint32_t u4GlobalResourceUsedCount;
