@@ -116,6 +116,8 @@ void asicLowPowerOwnRead(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult);
 void asicLowPowerOwnSet(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult);
 void asicLowPowerOwnClear(IN struct ADAPTER *prAdapter,
 	OUT u_int8_t *pfgResult);
+void asicLowPowerOwnClearPCIe(IN struct ADAPTER *prAdapter,
+	OUT u_int8_t *pfgResult);
 void asicWakeUpWiFi(IN struct ADAPTER *prAdapter);
 bool asicIsValidRegAccess(IN struct ADAPTER *prAdapter, IN uint32_t u4Register);
 void asicGetMailboxStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4Val);

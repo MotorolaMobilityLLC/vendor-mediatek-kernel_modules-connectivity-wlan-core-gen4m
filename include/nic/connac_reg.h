@@ -136,6 +136,11 @@
 #define MCU2HOST_SW_INT_ENA			(PCIE_HIF_BASE + 0x01F4)
 
 #define WPDMA_PAUSE_TX_Q			(PCIE_HIF_BASE + 0x0224)
+
+/* Configuraiton Push */
+#define PCIE_DOORBELL_PUSH          (0x484)
+#define CR_PCIE_CFG_SET_OWN         (0x1 << 0)
+#define CR_PCIE_CFG_CLEAR_OWN       (0x1 << 1)
 #endif /* _HIF_PCIE */
 
 #if defined(_HIF_USB)
