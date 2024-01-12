@@ -83,6 +83,7 @@
 #define WFD_ATTRI_MAX_LEN_SESSION_INFO       0	/* 9 */	/* 24 * #Clients */
 #define WFD_ATTRI_MAX_LEN_ALTER_MAC_ADDRESS 6	/* 10 */
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct WFD_DEVICE_INFORMATION_IE {
 	uint8_t ucElemID;
 	uint16_t u2Length;

@@ -2315,10 +2315,8 @@ enum BEACON_REPORT_DETAIL {
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
-#if defined(WINDOWS_DDK) || defined(WINDOWS_CE)
-#pragma pack(1)
-#endif
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct LLC_SNAP_HEADER {
 	uint8_t ucDSAP;
 	uint8_t ucSSAP;
@@ -2329,6 +2327,7 @@ struct LLC_SNAP_HEADER {
 
 /* 3 MAC Header. */
 /* Ethernet Frame Header */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ETH_FRAME_HEADER {
 	uint8_t aucDestAddr[MAC_ADDR_LEN];
 	uint8_t aucSrcAddr[MAC_ADDR_LEN];
@@ -2336,6 +2335,7 @@ struct ETH_FRAME_HEADER {
 } __KAL_ATTRIB_PACKED__;
 
 /* Ethernet Frame Structure */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ETH_FRAME {
 	uint8_t aucDestAddr[MAC_ADDR_LEN];
 	uint8_t aucSrcAddr[MAC_ADDR_LEN];
@@ -2343,6 +2343,7 @@ struct ETH_FRAME {
 	uint8_t aucData[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct BOOTP_PROTOCOL {
 	uint8_t ucOperation;
 	uint8_t ucHdrType;
@@ -2363,6 +2364,7 @@ struct BOOTP_PROTOCOL {
 
 /* IEEE 802.11 WLAN Frame Structure */
 /* WLAN MAC Header (without Address 4 and QoS Control fields) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_MAC_HEADER {
 	uint16_t u2FrameCtrl;
 	uint16_t u2DurationID;
@@ -2373,6 +2375,7 @@ struct WLAN_MAC_HEADER {
 } __KAL_ATTRIB_PACKED__;
 
 /* WLAN MAC Header (QoS Control fields included) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_MAC_HEADER_QOS {
 	uint16_t u2FrameCtrl;
 	uint16_t u2DurationID;
@@ -2384,6 +2387,7 @@ struct WLAN_MAC_HEADER_QOS {
 } __KAL_ATTRIB_PACKED__;
 
 /* WLAN MAC Header (HT Control fields included) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_MAC_HEADER_HT {
 	uint16_t u2FrameCtrl;
 	uint16_t u2DurationID;
@@ -2396,6 +2400,7 @@ struct WLAN_MAC_HEADER_HT {
 } __KAL_ATTRIB_PACKED__;
 
 /* WLAN MAC Header (Address 4 included) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_MAC_HEADER_A4 {
 	uint16_t u2FrameCtrl;
 	uint16_t u2DurationID;
@@ -2407,6 +2412,7 @@ struct WLAN_MAC_HEADER_A4 {
 } __KAL_ATTRIB_PACKED__;
 
 /* WLAN MAC Header (Address 4 and QoS Control fields included) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_MAC_HEADER_A4_QOS {
 	uint16_t u2FrameCtrl;
 	uint16_t u2DurationID;
@@ -2418,6 +2424,7 @@ struct WLAN_MAC_HEADER_A4_QOS {
 	uint16_t u2QosCtrl;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_MAC_HEADER_A4_HT {
 	uint16_t u2FrameCtrl;
 	uint16_t u2DurationID;
@@ -2431,6 +2438,7 @@ struct WLAN_MAC_HEADER_A4_HT {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.2.3 WLAN MAC Header for Management Frame - MMPDU */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_MAC_MGMT_HEADER {
 	uint16_t u2FrameCtrl;
 	uint16_t u2Duration;
@@ -2441,6 +2449,7 @@ struct WLAN_MAC_MGMT_HEADER {
 } __KAL_ATTRIB_PACKED__;
 
 /* WLAN MAC Header for Management Frame (HT Control fields included) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_MAC_MGMT_HEADER_HT {
 	uint16_t u2FrameCtrl;
 	uint16_t u2DurationID;
@@ -2453,6 +2462,7 @@ struct WLAN_MAC_MGMT_HEADER_HT {
 
 /* 3 WLAN CONTROL Frame */
 /* 7.2.1.4 WLAN Control Frame - PS-POLL Frame */
+__KAL_ATTRIB_PACKED_FRONT__
 struct CTRL_PSPOLL_FRAME {
 	uint16_t u2FrameCtrl;	/* Frame Control */
 	uint16_t u2AID;		/* AID */
@@ -2461,6 +2471,7 @@ struct CTRL_PSPOLL_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* BAR */
+__KAL_ATTRIB_PACKED_FRONT__
 struct CTRL_BAR_FRAME {
 	uint16_t u2FrameCtrl;	/* Frame Control */
 	uint16_t u2DurationID;	/* Duration */
@@ -2472,6 +2483,7 @@ struct CTRL_BAR_FRAME {
 
 /* 3 WLAN Management Frame. */
 /* 7.2.3.1 WLAN Management Frame - Beacon Frame */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_BEACON_FRAME {
 	/* Beacon header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -2487,6 +2499,7 @@ struct WLAN_BEACON_FRAME {
 	uint8_t aucInfoElem[1];	/* Various IEs, start from SSID */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_BEACON_FRAME_BODY {
 	/* Beacon frame body */
 	uint32_t au4Timestamp[2];	/* Timestamp */
@@ -2496,6 +2509,7 @@ struct WLAN_BEACON_FRAME_BODY {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.2.3.3 WLAN Management Frame - Disassociation Frame */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_DISASSOC_FRAME {
 	/* Authentication MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -2510,6 +2524,7 @@ struct WLAN_DISASSOC_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.2.3.4 WLAN Management Frame - Association Request frame */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_ASSOC_REQ_FRAME {
 	/* Association Request MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -2525,6 +2540,7 @@ struct WLAN_ASSOC_REQ_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.2.3.5 WLAN Management Frame - Association Response frame */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_ASSOC_RSP_FRAME {
 	/* Association Response MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -2542,6 +2558,7 @@ struct WLAN_ASSOC_RSP_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.2.3.6 WLAN Management Frame - Reassociation Request frame */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_REASSOC_REQ_FRAME {
 	/* Reassociation Request MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -2563,6 +2580,7 @@ struct WLAN_REASSOC_REQ_FRAME {
 /* 7.2.3.9 WLAN Management Frame - Probe Response Frame */
 
 /* 7.2.3.10 WLAN Management Frame - Authentication Frame */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_AUTH_FRAME {
 	/* Authentication MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -2580,6 +2598,7 @@ struct WLAN_AUTH_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.2.3.11 WLAN Management Frame - Deauthentication Frame */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_DEAUTH_FRAME {
 	/* Authentication MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -2595,6 +2614,7 @@ struct WLAN_DEAUTH_FRAME {
 
 /* 3 Information Elements. */
 /* 7.3.2 Generic element format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_HDR {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2602,6 +2622,7 @@ struct IE_HDR {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.1 SSID element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_SSID {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2609,6 +2630,7 @@ struct IE_SSID {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.2 Supported Rates element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_SUPPORTED_RATE {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2616,6 +2638,7 @@ struct IE_SUPPORTED_RATE {
 } __KAL_ATTRIB_PACKED__;
 
 /* Some IOT AP will carry Rates > 8*/
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_SUPPORTED_RATE_IOT {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2623,6 +2646,7 @@ struct IE_SUPPORTED_RATE_IOT {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.4 DS Parameter Set element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_DS_PARAM_SET {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2630,6 +2654,7 @@ struct IE_DS_PARAM_SET {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.5 CF Parameter Set element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_CF_PARAM_SET {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2640,6 +2665,7 @@ struct IE_CF_PARAM_SET {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.6 TIM */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_TIM {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2650,6 +2676,7 @@ struct IE_TIM {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.7 IBSS Parameter Set element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_IBSS_PARAM_SET {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2657,6 +2684,7 @@ struct IE_IBSS_PARAM_SET {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.8 Challenge Text element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_CHALLENGE_TEXT {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2668,6 +2696,7 @@ struct IE_CHALLENGE_TEXT {
 /*! \brief COUNTRY_INFO_TRIPLET
  * is defined for the COUNTRY_INFO_ELEM structure.
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct COUNTRY_INFO_TRIPLET {
 	/*!< If param1 >= 201, this triplet is referred to as
 	 * Regulatory Triplet in 802_11J.
@@ -2677,12 +2706,14 @@ struct COUNTRY_INFO_TRIPLET {
 	uint8_t ucParam3;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct COUNTRY_INFO_SUBBAND_TRIPLET {
 	uint8_t ucFirstChnlNum;	/*!< First Channel Number */
 	uint8_t ucNumOfChnl;	/*!< Number of Channels */
 	int8_t cMaxTxPwrLv;	/*!< Maximum Transmit Power Level */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct COUNTRY_INFO_REGULATORY_TRIPLET {
 	uint8_t ucRegExtId;	/*!< Regulatory Extension Identifier, should */
 				/* be greater than or equal to 201 */
@@ -2692,6 +2723,7 @@ struct COUNTRY_INFO_REGULATORY_TRIPLET {
 				/* , 32~255 reserved */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_COUNTRY {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2701,6 +2733,7 @@ struct IE_COUNTRY {
 #endif /* CFG_SUPPORT_802_11D */
 
 /* 7.3.2.13 ERP element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_ERP {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2708,6 +2741,7 @@ struct IE_ERP {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.14 Extended Supported Rates element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_EXT_SUPPORTED_RATE {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2715,6 +2749,7 @@ struct IE_EXT_SUPPORTED_RATE {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.15 Power Constraint element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_POWER_CONSTRAINT {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2722,6 +2757,7 @@ struct IE_POWER_CONSTRAINT {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.16 Power Capability element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_POWER_CAP {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2730,12 +2766,14 @@ struct IE_POWER_CAP {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.17 TPC request element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_TPC_REQ {
 	uint8_t ucId;
 	uint8_t ucLength;
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.18 TPC report element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_TPC_REPORT {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2744,6 +2782,7 @@ struct IE_TPC_REPORT {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.19 Supported Channels element*/
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_SUPPORTED_CHANNELS {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2751,6 +2790,7 @@ struct IE_SUPPORTED_CHANNELS {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.20 Channel Switch Announcement element*/
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_CHANNEL_SWITCH {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2760,6 +2800,7 @@ struct IE_CHANNEL_SWITCH {
 } __KAL_ATTRIB_PACKED__;
 
 /* Extended Channel Switch Announcement element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_EX_CHANNEL_SWITCH {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2769,6 +2810,7 @@ struct IE_EX_CHANNEL_SWITCH {
 	uint8_t ucChannelSwitchCount;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_TIMEOUT_INTERVAL {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2781,6 +2823,7 @@ struct IE_TIMEOUT_INTERVAL {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.20 Channel Switch Announcement element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_CHNL_SWITCH {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2790,6 +2833,7 @@ struct IE_CHNL_SWITCH {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.21 Measurement Request element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_MEASUREMENT_REQ {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2800,6 +2844,7 @@ struct IE_MEASUREMENT_REQ {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.60 20/40 BSS Coexistence element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_SUP_OPERATING_CLASS {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2808,6 +2853,7 @@ struct IE_SUP_OPERATING_CLASS {
 } __KAL_ATTRIB_PACKED__;
 
 /* 8.4.2.30 BSS Load element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_BSS_LOAD {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2817,6 +2863,7 @@ struct IE_BSS_LOAD {
 } __KAL_ATTRIB_PACKED__;
 
 /* 8.4.2.39 Neighbor Report Element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_NEIGHBOR_REPORT {
 	uint8_t ucId;		/* Element ID */
 	uint8_t ucLength;	/* Length */
@@ -2828,6 +2875,7 @@ struct IE_NEIGHBOR_REPORT {
 	uint8_t aucSubElem[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_MBO_OCE {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2837,6 +2885,7 @@ struct IE_MBO_OCE {
 } __KAL_ATTRIB_PACKED__;
 
 /* 8.5.7.6/8.5.7.7 Neighbor Report Request/Response frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_NEIGHBOR_REPORT_FRAME {
 	/* Neighbor Report Request/Response MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -2852,12 +2901,14 @@ struct ACTION_NEIGHBOR_REPORT_FRAME {
 	uint8_t aucInfoElem[1];	/* subelements */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct SUB_ELEMENT {
 	uint8_t ucSubID;
 	uint8_t ucLength;
 	uint8_t aucOptInfo[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct SM_BASIC_REQ {
 	uint8_t ucChannel;
 	uint32_t au4StartTime[2];
@@ -2866,6 +2917,7 @@ struct SM_BASIC_REQ {
 
 /* SM_COMMON_REQ_T is not specified in Spec. Use it as common structure of SM */
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct RM_CHNL_LOAD_REQ {
 	uint8_t ucRegulatoryClass;
 	uint8_t ucChannel;
@@ -2875,6 +2927,7 @@ struct RM_CHNL_LOAD_REQ {
 } __KAL_ATTRIB_PACKED__;
 
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct RM_BCN_REQ {
 	uint8_t ucRegulatoryClass;
 	uint8_t ucChannel;
@@ -2885,6 +2938,7 @@ struct RM_BCN_REQ {
 	uint8_t aucSubElements[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct RM_FRAME_REQ {
 	uint8_t ucRegulatoryClass;
 	uint8_t ucChannel;
@@ -2895,6 +2949,7 @@ struct RM_FRAME_REQ {
 	uint8_t aucSubElements[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct RM_STA_STATS_REQ {
 	uint8_t aucPeerMacAddr[6];
 	uint16_t u2RandomInterval;
@@ -2903,6 +2958,7 @@ struct RM_STA_STATS_REQ {
 	uint8_t aucSubElements[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct RM_LCI_REQ {
 	uint8_t ucLocationSubject;
 	uint8_t ucLatitudeResolution;
@@ -2911,6 +2967,7 @@ struct RM_LCI_REQ {
 	uint8_t aucSubElements[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct RM_TS_MEASURE_REQ {
 	uint16_t u2RandomInterval;
 	uint16_t u2Duration;
@@ -2920,12 +2977,14 @@ struct RM_TS_MEASURE_REQ {
 	uint8_t aucSubElements[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct RM_MEASURE_PAUSE_REQ {
 	uint16_t u2PauseTime;
 	uint8_t aucSubElements[1];
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.22 Measurement Report element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_MEASUREMENT_REPORT {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -2935,6 +2994,7 @@ struct IE_MEASUREMENT_REPORT {
 	uint8_t aucReportFields[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct SM_BASIC_REPORT {
 	uint8_t ucChannel;
 	uint32_t u4StartTime[2];
@@ -2942,6 +3002,7 @@ struct SM_BASIC_REPORT {
 	uint8_t ucMap;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct SM_CCA_REPORT {
 	uint8_t ucChannel;
 	uint32_t u4StartTime[2];
@@ -2949,6 +3010,7 @@ struct SM_CCA_REPORT {
 	uint8_t ucCcaBusyFraction;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct SM_RPI_REPORT {
 	uint8_t ucChannel;
 	uint32_t u4StartTime[2];
@@ -2956,6 +3018,7 @@ struct SM_RPI_REPORT {
 	uint8_t aucRPI[8];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct RM_CHNL_LOAD_REPORT {
 	uint8_t ucRegulatoryClass;
 	uint8_t ucChannel;
@@ -2964,6 +3027,7 @@ struct RM_CHNL_LOAD_REPORT {
 	uint8_t ucChnlLoad;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct RM_IPI_REPORT {
 	uint8_t ucRegulatoryClass;
 	uint8_t ucChannel;
@@ -2974,6 +3038,7 @@ struct RM_IPI_REPORT {
 	uint8_t aucIPI[11];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct RM_BCN_REPORT {
 	uint8_t ucRegulatoryClass;
 	uint8_t ucChannel;
@@ -2988,6 +3053,7 @@ struct RM_BCN_REPORT {
 	uint8_t aucOptElem[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct RM_TSM_REPORT {
 	uint64_t u8ActualStartTime;
 	uint16_t u2Duration;
@@ -3007,6 +3073,7 @@ struct RM_TSM_REPORT {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.23 Quiet element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_QUIET {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3017,6 +3084,7 @@ struct IE_QUIET {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.27 Extended Capabilities element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_EXT_CAP {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3024,6 +3092,7 @@ struct IE_EXT_CAP {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.27 Extended Capabilities element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_RRM_ENABLED_CAP {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3031,12 +3100,14 @@ struct IE_RRM_ENABLED_CAP {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.56 HT Capabilities element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct SUP_MCS_SET_FIELD {
 	uint8_t aucRxMcsBitmask[SUP_MCS_RX_BITMASK_OCTET_NUM];
 	uint16_t u2RxHighestSupportedRate;
 	uint32_t u4TxRateInfo;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_HT_CAP {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3049,6 +3120,7 @@ struct IE_HT_CAP {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.57 HT Operation element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_HT_OP {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3060,6 +3132,7 @@ struct IE_HT_OP {
 } __KAL_ATTRIB_PACKED__;
 
 /*8.4.2.160.3 VHT Supported MCS Set field*/
+__KAL_ATTRIB_PACKED_FRONT__
 struct VHT_SUPPORTED_MCS_FIELD {
 	uint16_t u2RxMcsMap;
 	uint16_t u2RxHighestSupportedDataRate;
@@ -3067,6 +3140,7 @@ struct VHT_SUPPORTED_MCS_FIELD {
 	uint16_t u2TxHighestSupportedDataRate;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_VHT_CAP {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3075,6 +3149,7 @@ struct IE_VHT_CAP {
 } __KAL_ATTRIB_PACKED__;
 
 /*8.4.2.161 VHT Operation element*/
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_VHT_OP {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3082,6 +3157,7 @@ struct IE_VHT_OP {
 	uint16_t u2VhtBasicMcsSet;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_VENDOR_EPIGRAM_IE {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3090,6 +3166,7 @@ struct IE_VENDOR_EPIGRAM_IE {
 	uint8_t pucData[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_VENDOR_ADAPTIVE_11R_IE {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3099,6 +3176,7 @@ struct IE_VENDOR_ADAPTIVE_11R_IE {
 } __KAL_ATTRIB_PACKED__;
 
 /*8.4.1.50 Operating Mode field*/
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_VHT_OP_MODE_NOTIFICATION {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3107,6 +3185,7 @@ struct IE_VHT_OP_MODE_NOTIFICATION {
 
 
 /*8.4.2.22 Secondary Channel Offset element*/
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_SECONDARY_OFFSET {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3114,6 +3193,7 @@ struct IE_SECONDARY_OFFSET {
 } __KAL_ATTRIB_PACKED__;
 
 /*8.4.2.105 Mesh Channel Switch Parameters element*/
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_MESH_CHANNEL {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3124,6 +3204,7 @@ struct IE_MESH_CHANNEL {
 } __KAL_ATTRIB_PACKED__;
 
 /*8.4.2.163 Wide Bandwidth Channel Switch element*/
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_WIDE_BAND_CHANNEL {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3133,6 +3214,7 @@ struct IE_WIDE_BAND_CHANNEL {
 } __KAL_ATTRIB_PACKED__;
 
 /*8.4.2.168 Operating Mode Notification element*/
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_OP_MODE_NOTIFICATION {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3140,6 +3222,7 @@ struct IE_OP_MODE_NOTIFICATION {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.25 RSN Information element format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct RSN_INFO_ELEM {
 	uint8_t ucElemId;
 	uint8_t ucLength;
@@ -3154,6 +3237,7 @@ struct RSN_INFO_ELEM {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.26 WPA Information element format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WPA_INFO_ELEM {
 	uint8_t ucElemId;
 	uint8_t ucLength;
@@ -3166,6 +3250,7 @@ struct WPA_INFO_ELEM {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.58 20/40 BSS Intolerant Channel Report element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_INTOLERANT_CHNL_REPORT {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3174,6 +3259,7 @@ struct IE_INTOLERANT_CHNL_REPORT {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.59 OBSS Scan Parameters element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_OBSS_SCAN_PARAM {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3187,6 +3273,7 @@ struct IE_OBSS_SCAN_PARAM {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.60 20/40 BSS Coexistence element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_20_40_COEXIST {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3194,6 +3281,7 @@ struct IE_20_40_COEXIST {
 } __KAL_ATTRIB_PACKED__;
 
 /* 9.4.2.78 BSS Max Idle Period element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_BSS_MAX_IDLE_PERIOD {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3203,6 +3291,7 @@ struct IE_BSS_MAX_IDLE_PERIOD {
 
 #if (CFG_SUPPORT_TWT == 1)
 /* 11ax TWT element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _IE_TWT_T {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3215,12 +3304,14 @@ struct _IE_TWT_T {
 } __KAL_ATTRIB_PACKED__;
 #endif
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_HT_TPE {
 	uint8_t ucId;
 	uint8_t ucLength;
 	uint8_t u8TxPowerInfo;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_VHT_TPE {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3229,6 +3320,7 @@ struct IE_VHT_TPE {
 } __KAL_ATTRIB_PACKED__;
 
 #if (CFG_SUPPORT_BTWT == 1)
+__KAL_ATTRIB_PACKED_FRONT__
 struct _IE_BTWT_T {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3240,6 +3332,7 @@ struct _IE_BTWT_T {
 	uint16_t u2BTWTInfo;	/* TWT Channel for 11ah. Reserved for 11ax */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _IE_BTWT_PARAMS_T {
 	uint16_t u2ReqType;	/* Request Type */
 	uint16_t u2TWT;	/* Target Wake Time 16 bits */
@@ -3251,6 +3344,7 @@ struct _IE_BTWT_PARAMS_T {
 
 #if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
 /* 11be ML-TWT element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_ML_TWT_T {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3266,6 +3360,7 @@ struct IE_ML_TWT_T {
 
 /* 3 7.4 Action Frame. */
 /* 7.4 Action frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_ACTION_FRAME {
 	/* Action MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3281,6 +3376,7 @@ struct WLAN_ACTION_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* public Action frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_PUBLIC_VENDOR_ACTION_FRAME {
 	/* Action MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3299,6 +3395,7 @@ struct WLAN_PUBLIC_VENDOR_ACTION_FRAME {
 
 
 /* 7.4.1.1 Spectrum Measurement Request frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_SM_REQ_FRAME {
 	/* ADDTS Request MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3317,6 +3414,7 @@ struct ACTION_SM_REQ_FRAME {
 /* 7.4.1.2 Spectrum Measurement Report frame format */
 
 /* 7.4.1.3 Spectrum TPC Request frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_TPC_REQ_FRAME {
 	/* ADDTS Request MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3334,6 +3432,7 @@ struct ACTION_TPC_REQ_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.4.1.4 Spectrum TPC Report frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_TPC_REPORT_FRAME {
 	/* ADDTS Request MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3353,6 +3452,7 @@ struct ACTION_TPC_REPORT_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.4.1.5 Channel Switch Announcement frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_CHANNEL_SWITCH_FRAME {
 	/* ADDTS Request MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3368,6 +3468,7 @@ struct ACTION_CHANNEL_SWITCH_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 9.6.8.7 Extended Channel Switch Announcement frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_EX_CHANNEL_SWITCH_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3382,6 +3483,7 @@ struct ACTION_EX_CHANNEL_SWITCH_FRAME {
 	uint8_t aucInfoElem[6]; /* Information elements */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_MSCS_REQ_FRAME {
 	/* Action MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3398,6 +3500,7 @@ struct ACTION_MSCS_REQ_FRAME {
 	uint8_t aucMSCSDesc[0]; /* MSCS Descriptor Element */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_MSCS_RSP_FRAME {
 	/* Action MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3416,6 +3519,7 @@ struct ACTION_MSCS_RSP_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.4.2.1 ADDTS Request frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_ADDTS_REQ_FRAME {
 	/* ADDTS Request MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3433,6 +3537,7 @@ struct ACTION_ADDTS_REQ_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.4.2.2 ADDTS Response frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_ADDTS_RSP_FRAME {
 	/* ADDTS Response MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3451,6 +3556,7 @@ struct ACTION_ADDTS_RSP_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.4.2.3 DELTS frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_DELTS_FRAME {
 	/* DELTS MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3481,6 +3587,7 @@ struct _ACTION_QOS_MAP_CONFIGURE_FRAME {
 };
 
 /* 7.4.4.1 ADDBA Request frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_ADDBA_REQ_FRAME {
 	/* Action MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3498,6 +3605,7 @@ struct ACTION_ADDBA_REQ_FRAME {
 	uint8_t aucBAStartSeqCtrl[2];	/* SSN */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_ADDBA_REQ_BODY {
 	uint16_t u2BAParameterSet;	/* BA policy, TID, buffer size */
 	uint16_t u2BATimeoutValue;
@@ -3505,6 +3613,7 @@ struct ACTION_ADDBA_REQ_BODY {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.4.4.2 ADDBA Response frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_ADDBA_RSP_FRAME {
 	/* Action MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3522,6 +3631,7 @@ struct ACTION_ADDBA_RSP_FRAME {
 	uint8_t aucBATimeoutValue[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_ADDBA_RSP_BODY {
 	uint16_t u2StatusCode;
 	uint16_t u2BAParameterSet;	/* BA policy, TID, buffer size */
@@ -3529,6 +3639,7 @@ struct ACTION_ADDBA_RSP_BODY {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.4.4.3 DELBA frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_DELBA_FRAME {
 	/* Action MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3559,6 +3670,7 @@ struct _ACTION_VENDOR_SPEC_FRAME_T {
 #endif
 
 /* 7.4.6.1 Radio Measurement Request frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_RM_REQ_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3577,6 +3689,7 @@ struct ACTION_RM_REQ_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.4.6.2 Radio Measurement Report frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_RM_REPORT_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3594,6 +3707,7 @@ struct ACTION_RM_REPORT_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.4.7.1a 20/40 BSS Coexistence Management frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_20_40_COEXIST_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3615,6 +3729,7 @@ struct ACTION_20_40_COEXIST_FRAME {
 
 #if CFG_SUPPORT_802_11W
 /* 7.4.9 SA Query Management frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_SA_QUERY_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3633,6 +3748,7 @@ struct ACTION_SA_QUERY_FRAME {
 #endif
 
 /* 7.4.10 Notify Channel Width Management frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_NOTIFY_CHNL_WIDTH_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3648,6 +3764,7 @@ struct ACTION_NOTIFY_CHNL_WIDTH_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 802.11v Wireless Network Management: Timing Measurement Request */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_WNM_TIMING_MEAS_REQ_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3663,6 +3780,7 @@ struct ACTION_WNM_TIMING_MEAS_REQ_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 802.11v Wireless Network Management: Timing Measurement */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_UNPROTECTED_WNM_TIMING_MEAS_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3693,6 +3811,7 @@ struct IE_WFA_OSEN {
 };
 
 /* 8.5.23.4 Operating Mode Notification frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_OP_MODE_NOTIFICATION_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3708,6 +3827,7 @@ struct ACTION_OP_MODE_NOTIFICATION_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 8.5.12.3 SM Power Save frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_SM_POWER_SAVE_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3723,6 +3843,7 @@ struct ACTION_SM_POWER_SAVE_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 8.5.12.2 Notify Channel Width frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_NOTIFY_CHANNEL_WIDTH_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3739,6 +3860,7 @@ struct ACTION_NOTIFY_CHANNEL_WIDTH_FRAME {
 
 #if (CFG_SUPPORT_TWT == 1)
 /* 11ax TWT Setup frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _ACTION_TWT_SETUP_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3755,6 +3877,7 @@ struct _ACTION_TWT_SETUP_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 11ax TWT Teardown frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _ACTION_TWT_TEARDOWN_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3770,6 +3893,7 @@ struct _ACTION_TWT_TEARDOWN_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 11ax TWT Information frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _ACTION_TWT_INFO_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3788,6 +3912,7 @@ struct _ACTION_TWT_INFO_FRAME {
 
 #if (CFG_SUPPORT_BTWT == 1)
 /* 11ax BTWT Setup frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _ACTION_BTWT_SETUP_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3806,6 +3931,7 @@ struct _ACTION_BTWT_SETUP_FRAME {
 
 #if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
 /* 11be ML-TWT Setup frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _ACTION_ML_TWT_SETUP_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3821,6 +3947,7 @@ struct _ACTION_ML_TWT_SETUP_FRAME {
 	struct IE_ML_TWT_T rTWT;	/* TWT element */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _ACTION_ML_TWT_SETUP_FRAME_PER_LINK_DISTINCT {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3838,6 +3965,7 @@ struct _ACTION_ML_TWT_SETUP_FRAME_PER_LINK_DISTINCT {
 #endif
 
 /* 3 Information Elements from WFA. */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_WFA {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3850,6 +3978,7 @@ struct IE_WFA {
 
 #if CFG_SUPPORT_PASSPOINT
 /* HS20 3.1 - HS 2.0 Indication Information Element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_HS20_INDICATION {
 	uint8_t ucId;		/* Element ID */
 	uint8_t ucLength;	/* Length */
@@ -3860,6 +3989,7 @@ struct IE_HS20_INDICATION {
 #endif /* CFG_SUPPORT_PASSPOINT */
 
 /* WAPI Information element format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WAPI_INFO_ELEM {
 	uint8_t ucElemId;
 	uint8_t ucLength;
@@ -3873,6 +4003,7 @@ struct WAPI_INFO_ELEM {
 } __KAL_ATTRIB_PACKED__;
 
 /* Information Elements from MTK Synergies.*/
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_MTK_OUI {
 	uint8_t ucId;
 	uint8_t ucLength;
@@ -3881,6 +4012,7 @@ struct IE_MTK_OUI {
 	uint8_t aucInfoElem[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct SUB_IE_BSS_TERM_DURATION {
 	uint8_t ucSubId;
 	uint8_t ucLength;
@@ -3888,12 +4020,14 @@ struct SUB_IE_BSS_TERM_DURATION {
 	uint16_t u2Duration;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct SUB_IE_BSS_CAND_PREFERENCE {
 	uint8_t ucSubId;
 	uint8_t ucLength;
 	uint8_t ucPreference;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_BTM_QUERY_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3911,6 +4045,7 @@ struct ACTION_BTM_QUERY_FRAME {
 	uint8_t *pucNeighborBss;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_BTM_REQ_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3933,6 +4068,7 @@ struct ACTION_BTM_REQ_FRAME {
 	*/
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_BTM_RSP_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -3952,6 +4088,7 @@ struct ACTION_BTM_RSP_FRAME {
 	/* Optional Target BSSID and Transition Candidate Entry list */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_MOBILITY_DOMAIN {
 	uint8_t ucId; /* Element ID = 54 */
 	uint8_t ucLength; /* Length is 3 */
@@ -3962,6 +4099,7 @@ struct IE_MOBILITY_DOMAIN {
 	uint8_t ucBitMap;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_FAST_TRANSITION {
 	uint8_t ucId; /* Element ID = 55 */
 	uint8_t ucLength; /* Length is variable */
@@ -3975,6 +4113,7 @@ struct IE_FAST_TRANSITION {
 	uint8_t aucOptParam[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct SUB_IE_FAST_TRANSITION {
 	uint8_t ucSubId;  /* 0, 4-255: reserved; 1: R1KH-ID; 2: GTK; 3: R0KH-ID
 			     */
@@ -3982,6 +4121,7 @@ struct SUB_IE_FAST_TRANSITION {
 	uint8_t aucData[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct SUB_IE_GTK {
 	uint8_t ucSubId; /*  subId=2 */
 	uint8_t ucLength; /*  length is 15-42 */
@@ -3992,6 +4132,7 @@ struct SUB_IE_GTK {
 } __KAL_ATTRIB_PACKED__;
 
 /* 8.5.7.4 Link Measurement Request frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_LM_REQUEST_FRAME {
 	/* Link Measurement Request MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -4010,6 +4151,7 @@ struct ACTION_LM_REQUEST_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 8.5.7.5 Link Measurement Report frame format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_LM_REPORT_FRAME {
 	/* Link Measurement Report MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -4030,12 +4172,14 @@ struct ACTION_LM_REPORT_FRAME {
 	uint8_t aucInfoElem[1];	/* subelements */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_REQUEST {
 	uint8_t ucId; /* ELEM_ID_REQUEST */
 	uint8_t ucLength; /* 0 to 237 */
 	uint8_t aucReqIds[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_AP_CHNL_REPORT {
 	uint8_t ucId; /* ELEM_ID_AP_CHANNEL_REPORT */
 	uint8_t ucLength; /* 1 to 237 */
@@ -4043,6 +4187,7 @@ struct IE_AP_CHNL_REPORT {
 	uint8_t aucChnlList[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct SUB_IE_REPORTING_DETAIL {
 	uint8_t ucSubID; /* 2 */
 	uint8_t ucLength;
@@ -4052,6 +4197,7 @@ struct SUB_IE_REPORTING_DETAIL {
 	uint8_t ucDetailValue;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_TSPEC_BODY {
 	uint8_t ucId;                   /* ELEM_ID_TSPEC */
 	uint8_t ucLength;
@@ -4073,6 +4219,7 @@ struct IE_TSPEC_BODY {
 	uint16_t u2MediumTime;          /* medium time */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct WMM_ACTION_TSPEC_FRAME {
 	/* DELTS MAC header */
 	uint16_t     u2FrameCtrl;                /* Frame Control */
@@ -4090,6 +4237,7 @@ struct WMM_ACTION_TSPEC_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* 9.4.2.46 Multiple BSSID element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_MBSSID {
 	uint8_t      ucId;
 	uint8_t      ucLength;
@@ -4098,6 +4246,7 @@ struct IE_MBSSID {
 } __KAL_ATTRIB_PACKED__;
 
 /* 9.4.2.74 Multiple BSSID-Index element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_MBSSID_INDEX {
 	uint8_t      ucId;
 	uint8_t      ucLength;
@@ -4107,6 +4256,7 @@ struct IE_MBSSID_INDEX {
 } __KAL_ATTRIB_PACKED__;
 
 /* 9.4.2.72 Nontransmitted BSSID Capability element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_NON_TX_CAP {
 	uint8_t      ucId;
 	uint8_t      ucLength;
@@ -4116,6 +4266,7 @@ struct IE_NON_TX_CAP {
 } __KAL_ATTRIB_PACKED__;
 
 /** 9.4.2.178 FILS Request Parameters element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_FILS_REQ_FRAME {
 	uint8_t ucId;             /* Element ID */
 	uint8_t ucLength;         /* Length */
@@ -4124,6 +4275,7 @@ struct IE_FILS_REQ_FRAME {
 	uint8_t ucMaxChannelTime; /* Max Channel Time */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_OCE_SUPPRESSION_BSSID {
 	uint8_t ucAttrId;		/* Attribute ID */
 	uint8_t ucAttrLength;		/* Attribute Length */
@@ -4131,12 +4283,14 @@ struct IE_OCE_SUPPRESSION_BSSID {
 } __KAL_ATTRIB_PACKED__;
 
 /* 9.4.2.170 Reduced Neighbor Report element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_RNR {
 	uint8_t      ucId;
 	uint8_t      ucLength;
 	uint8_t      aucInfoField[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct NEIGHBOR_AP_INFO_FIELD {
 	uint16_t     u2TbttInfoHdr;
 	uint8_t      ucOpClass;
@@ -4145,6 +4299,7 @@ struct NEIGHBOR_AP_INFO_FIELD {
 } __KAL_ATTRIB_PACKED__;
 
 /* 9.4.2.260 Short SSID List element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_SHORT_SSID_LIST {
 	uint8_t      ucId;
 	uint8_t      ucLength;
@@ -4152,12 +4307,14 @@ struct IE_SHORT_SSID_LIST {
 	uint8_t      aucShortSsidList[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct RSNX_INFO {
 	uint8_t ucElemId;
 	uint8_t ucLength;
 	uint16_t u2Cap;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct RSNX_INFO_ELEM {
 	uint8_t ucElemId;
 	uint8_t ucLength;
@@ -4165,6 +4322,7 @@ struct RSNX_INFO_ELEM {
 } __KAL_ATTRIB_PACKED__;
 
 #if CFG_AP_80211K_SUPPORT
+__KAL_ATTRIB_PACKED_FRONT__
 struct SUB_IE_BEACON_REPORTING {
 	uint8_t ucId; /* BCN_REQ_ELEM_SUBID_BEACON_REPORTING */
 	uint8_t ucLength;
@@ -4172,12 +4330,14 @@ struct SUB_IE_BEACON_REPORTING {
 	uint8_t ucReportingRef;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct SUB_IE_REQUEST {
 	uint8_t ucId; /* BCN_REQ_ELEM_SUBID_REQUEST */
 	uint8_t ucLength;
 	uint8_t aucElems[1]; /* requested element ids */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct SUB_IE_AP_CHANNEL_REPORT {
 	uint8_t ucId; /* BCN_REQ_ELEM_SUBID_AP_CHANNEL_REPORT */
 	uint8_t ucLength;
@@ -4185,6 +4345,7 @@ struct SUB_IE_AP_CHANNEL_REPORT {
 	uint8_t aucElems[1]; /* channel lists */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct SUB_IE_WIDE_BW_CH_SWITCH {
 	uint8_t ucId; /* BCN_REQ_ELEM_SUBID_WIDE_BW_CH_SWITCH */
 	uint8_t ucLength;
@@ -4193,6 +4354,7 @@ struct SUB_IE_WIDE_BW_CH_SWITCH {
 } __KAL_ATTRIB_PACKED__;
 #endif /* CFG_AP_80211K_SUPPORT */
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_TCLAS_MASK {
 	uint8_t      ucId;
 	uint8_t      ucLength;
@@ -4201,6 +4363,7 @@ struct IE_TCLAS_MASK {
 } __KAL_ATTRIB_PACKED__;
 
 /* Frame Classifier Field */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_TCLAS_CLASS_TYPE_4 {
 	uint8_t      ucClassifierType;
 	uint8_t      ucClassifierMask;
@@ -4214,6 +4377,7 @@ struct IE_TCLAS_CLASS_TYPE_4 {
 	uint8_t      ucReserved;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_MSCS_DESC {
 	uint8_t      ucId;
 	uint8_t      ucLength;
@@ -4224,6 +4388,7 @@ struct IE_MSCS_DESC {
 	uint8_t      aucData[0]; /* TCLAS */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_VENDOR_SPEC_PROTECTED_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */

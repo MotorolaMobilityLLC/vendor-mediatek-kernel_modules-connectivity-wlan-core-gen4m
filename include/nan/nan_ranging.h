@@ -159,6 +159,7 @@ struct _NAN_RANGING_INFO_T {
 	struct NanRangeResponseCtl response_ctl_def;
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_FTM_PARAM_CMD {
 	uint8_t ucRole;
 	uint8_t ucInvoker;
@@ -166,15 +167,18 @@ struct _NAN_FTM_PARAM_CMD {
 	struct _NAN_FTM_PARAM_T rNanFtmParam;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_FTM_DONE_EVENT {
 	uint8_t aucPeerAddr[MAC_ADDR_LEN];
 	struct _NAN_FTM_REPORT_T rNanFtmReport;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_RANGING_BY_DISC_EVENT {
 	struct NanRangeRequest rReq;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_RANGING_REPORT_CMD {
 	uint32_t ucStatus;
 	uint16_t ranging_id;

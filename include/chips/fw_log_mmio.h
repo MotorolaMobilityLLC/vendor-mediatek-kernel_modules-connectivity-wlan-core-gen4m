@@ -16,6 +16,7 @@ enum ENUM_FW_LOG_CTRL_TYPE {
 	ENUM_FW_LOG_CTRL_TYPE_NUM,
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct FW_LOG_COMMON_HEADER {
 	uint32_t wifi_log_base_addr;
 	uint32_t wifi_log_length;
@@ -30,6 +31,7 @@ struct FW_LOG_COMMON_HEADER {
 	uint8_t reserved2[32];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct FW_LOG_SUB_HEADER {
 	uint32_t rp;
 	uint32_t wp;

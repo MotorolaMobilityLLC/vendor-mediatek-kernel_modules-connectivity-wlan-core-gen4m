@@ -2347,6 +2347,7 @@ struct EVENT_STATS_LLS_TX_RATE_INFO {
 
 #endif /* CFG_SUPPORT_LLS */
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct PARAM_MTK_WIFI_TEST_STRUCT {
 	uint32_t u4FuncIndex;
 	uint32_t u4FuncData;
@@ -3401,6 +3402,7 @@ struct T_MULTI_AP_STA_ASSOC_METRICS_RESP {
 
  /* TODO: check this value in user-space */
 #define STA_CAP_LEN_MAX 512
+__KAL_ATTRIB_PACKED_FRONT__
 struct T_MULTI_AP_STA_EVENT_NOTIFY {
 	uint8_t mStaMac[MAC_ADDR_LEN];
 	uint8_t mBssid[MAC_ADDR_LEN];
@@ -3441,6 +3443,7 @@ struct T_MULTI_AP_STA_EVENT_NOTIFY {
 
 #define SAP_UNASSOC_METRICS_STA_MAX 16
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct T_MULTI_AP_BSS_STATUS_REPORT {
 	uint32_t uIfIndex;
 	uint8_t mBssid[MAC_ADDR_LEN];

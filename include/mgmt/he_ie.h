@@ -852,6 +852,7 @@ enum ENUM_HEBA_TYPE {
 #define HE_IS_ER_SU_DISABLE(_aucHeOpParams) \
 	(_aucHeOpParams[2] & HE_OP_PARAM2_ER_SU_DISABLE_MASK)
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _IE_HE_CAP_T {
 	u_int8_t  ucId;
 	u_int8_t  ucLength;
@@ -861,6 +862,7 @@ struct _IE_HE_CAP_T {
 	u_int8_t  aucVarInfo[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _IE_HE_OP_T {
 	u_int8_t  ucId;
 	u_int8_t  ucLength;
@@ -873,6 +875,7 @@ struct _IE_HE_OP_T {
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 /* 9.4.2.261 HE 6 GHz Band Capabilities element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct _IE_HE_6G_BAND_CAP_T {
 	u_int8_t  ucId;
 	u_int8_t  ucLength;
@@ -881,31 +884,37 @@ struct _IE_HE_6G_BAND_CAP_T {
 } __KAL_ATTRIB_PACKED__;
 #endif
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _HE_SUPPORTED_MCS_FIELD {
 	u_int16_t u2RxMcsMap;
 	u_int16_t u2TxMcsMap;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _PPE_THRESHOLD_FIELD {
 	/* 128-bit space can support 4 NSS */
 	u_int64_t u8Space0;
 	u_int64_t u8Space1;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _VHT_OP_INFO_T {
 	u_int8_t ucVhtOperation[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _HE_MAX_BSSID_IND_T {
 	u_int8_t ucMaxBSSIDIndicator;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _MU_AC_PARAM_RECORD_T {
 	u_int8_t ucAciAifsn;
 	u_int8_t ucEcw;
 	u_int8_t ucMUEdcaTimer;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _IE_MU_EDCA_PARAM_T {
 	u_int8_t ucId;
 	u_int8_t ucLength;
@@ -914,6 +923,7 @@ struct _IE_MU_EDCA_PARAM_T {
 	struct _MU_AC_PARAM_RECORD_T arMUAcParam[4];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _SRG_SR_INFO_T {
 	u_int8_t ucObssPdMinOffset;
 	u_int8_t ucObssPdMaxOffset;
@@ -921,10 +931,12 @@ struct _SRG_SR_INFO_T {
 	u_int64_t u8PartialBSSIDBitmap;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _NON_SRG_SR_INFO_T {
 	u_int8_t ucObssPdMaxOffset;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _IE_SR_PARAM_T {
 	u_int8_t  ucId;
 	u_int8_t  ucLength;
@@ -945,6 +957,7 @@ union _6G_OPER_INFOR_CONTROL_T {
 	u_int8_t   ucRaw;
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct _6G_OPER_INFOR_T {
 	u_int8_t ucPrimaryChannel;
 	union _6G_OPER_INFOR_CONTROL_T rControl;

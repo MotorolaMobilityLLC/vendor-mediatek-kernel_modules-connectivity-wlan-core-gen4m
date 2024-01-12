@@ -254,6 +254,7 @@ enum ENUM_P2P_ACTION_FRAME_TYPE {
 /* --------------- WFA P2P IE and Attributes --------------- */
 
 /* P2P 4.1.1 - P2P Information Element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_P2P {
 	uint8_t ucId;		/* Element ID */
 	uint8_t ucLength;	/* Length */
@@ -263,6 +264,7 @@ struct IE_P2P {
 } __KAL_ATTRIB_PACKED__;
 
 /* P2P 4.1.1 - General WSC Attribute */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WSC_ATTRIBUTE {
 	uint16_t u2Id;		/* Attribute ID */
 	uint16_t u2Length;	/* Length */
@@ -270,6 +272,7 @@ struct WSC_ATTRIBUTE {
 } __KAL_ATTRIB_PACKED__;
 
 /* P2P 4.1.2 - P2P Status Attribute */
+__KAL_ATTRIB_PACKED_FRONT__
 struct P2P_ATTRI_STATUS {
 	uint8_t ucId;		/* Attribute ID */
 	uint16_t u2Length;	/* Length */
@@ -277,6 +280,7 @@ struct P2P_ATTRI_STATUS {
 } __KAL_ATTRIB_PACKED__;
 
 /* P2P 4.1.10 - Extended Listen Timing Attribute */
+__KAL_ATTRIB_PACKED_FRONT__
 struct P2P_ATTRI_EXT_LISTEN_TIMING {
 	uint8_t ucId;		/* Attribute ID */
 	uint16_t u2Length;	/* Length */
@@ -285,6 +289,7 @@ struct P2P_ATTRI_EXT_LISTEN_TIMING {
 } __KAL_ATTRIB_PACKED__;
 
 /* P2P 4.2.8.2 P2P Public Action Frame Format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct P2P_PUBLIC_ACTION_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -306,6 +311,7 @@ struct P2P_PUBLIC_ACTION_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* P2P 4.2.9.1 -  General Action Frame Format. */
+__KAL_ATTRIB_PACKED_FRONT__
 struct P2P_ACTION_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -324,6 +330,7 @@ struct P2P_ACTION_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* P2P C.1 GAS Public Action Initial Request Frame Format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct GAS_PUBLIC_ACTION_INITIAL_REQUEST_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -340,6 +347,7 @@ struct GAS_PUBLIC_ACTION_INITIAL_REQUEST_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* P2P C.2 GAS Public Action Initial Response Frame Format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct GAS_PUBLIC_ACTION_INITIAL_RESPONSE_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -359,6 +367,7 @@ struct GAS_PUBLIC_ACTION_INITIAL_RESPONSE_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* P2P C.3-1 GAS Public Action Comeback Request Frame Format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct GAS_PUBLIC_ACTION_COMEBACK_REQUEST_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -374,6 +383,7 @@ struct GAS_PUBLIC_ACTION_COMEBACK_REQUEST_FRAME {
 } __KAL_ATTRIB_PACKED__;
 
 /* P2P C.3-2 GAS Public Action Comeback Response Frame Format */
+__KAL_ATTRIB_PACKED_FRONT__
 struct GAS_PUBLIC_ACTION_COMEBACK_RESPONSE_FRAME {
 	/* MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */
@@ -392,6 +402,7 @@ struct GAS_PUBLIC_ACTION_COMEBACK_RESPONSE_FRAME {
 	uint8_t aucInfoElem[1];	/* Advertisement IE. */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct P2P_SD_VENDER_SPECIFIC_CONTENT {
 	/* Service Discovery Vendor-specific Content. */
 	uint8_t ucOuiSubtype;	/* 0x09 */
@@ -399,6 +410,7 @@ struct P2P_SD_VENDER_SPECIFIC_CONTENT {
 	uint8_t aucServiceTLV[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct P2P_SERVICE_REQUEST_TLV {
 	uint16_t u2Length;
 	uint8_t ucServiceProtocolType;
@@ -406,6 +418,7 @@ struct P2P_SERVICE_REQUEST_TLV {
 	uint8_t aucQueryData[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct P2P_SERVICE_RESPONSE_TLV {
 	uint16_t u2Length;
 	uint8_t ucServiceProtocolType;
@@ -415,6 +428,7 @@ struct P2P_SERVICE_RESPONSE_TLV {
 } __KAL_ATTRIB_PACKED__;
 
 /* P2P 4.1.1 - General P2P Attribute */
+__KAL_ATTRIB_PACKED_FRONT__
 struct P2P_ATTRIBUTE {
 	uint8_t ucId;		/* Attribute ID */
 	uint16_t u2Length;	/* Length */
@@ -422,6 +436,7 @@ struct P2P_ATTRIBUTE {
 } __KAL_ATTRIB_PACKED__;
 
 /* P2P 4.1.14 - Notice of Absence Attribute */
+__KAL_ATTRIB_PACKED_FRONT__
 struct P2P_ATTRI_NOA {
 	uint8_t ucId;		/* Attribute ID */
 	uint16_t u2Length;	/* Length */
@@ -430,12 +445,15 @@ struct P2P_ATTRI_NOA {
 	uint8_t aucNoADesc[1];	/* NoA Descriptor */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct NOA_DESCRIPTOR {
 	uint8_t ucCountType;	/* Count/Type */
 	uint32_t u4Duration;	/* Duration */
 	uint32_t u4Interval;	/* Interval */
 	uint32_t u4StartTime;	/* Start Time */
 } __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
 struct CHANNEL_ENTRY_FIELD {
 	uint8_t ucRegulatoryClass;	/* Regulatory Class */
 	uint8_t ucNumberOfChannels;	/* Number Of Channels */

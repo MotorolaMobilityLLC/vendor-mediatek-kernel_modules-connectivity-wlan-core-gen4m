@@ -57,6 +57,7 @@
 
 #define MLCIE(fp)              ((struct IE_MULTI_LINK_CONTROL *) fp)
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_MULTI_LINK_CONTROL {
 	u_int8_t  ucId;
 	u_int8_t  ucLength;
@@ -111,6 +112,7 @@ struct IE_MULTI_LINK_CONTROL {
 #define BE_IS_ML_STA_CTRL_PRESENCE_NSTR(_u2ctrl) \
 	(_u2ctrl & ML_STA_CTRL_NSTR_LINK_PAIR_PRESENT)
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_MULTI_LINK_STA_CONTROL {
 	u_int8_t ucSubID;	/* 0: Per-STA Profile */
 	u_int8_t ucLength;
@@ -118,6 +120,7 @@ struct IE_MULTI_LINK_STA_CONTROL {
 	u_int8_t aucStaInfo[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_NON_INHERITANCE {
 	uint8_t ucId;
 	uint8_t ucLength;
