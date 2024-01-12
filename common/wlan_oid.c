@@ -9127,13 +9127,20 @@ wlanoidSet802dot11PowerSaveProfile(IN struct ADAPTER *
 				return WLAN_STATUS_NOT_ACCEPTED;
 			}
 
-			status = nicConfigPowerSaveProfile(prAdapter,
-				bss->ucBssIndex,
-				prPowerMode->ePowerMode,
-				bss == LINK_PEEK_TAIL(&prMldBssInfo->rBssList,
-				struct BSS_INFO, rLinkEntryMld),
-				PS_CALLER_COMMON);
+			if (prAdapter->rWifiVar.ucLinkIdForKey == 0xff ||
+			    prAdapter->rWifiVar.ucLinkIdForKey ==
+							bss->ucLinkIndex) {
+				status = nicConfigPowerSaveProfile(prAdapter,
+					bss->ucBssIndex,
+					prPowerMode->ePowerMode,
+					bss == LINK_PEEK_TAIL(
+					&prMldBssInfo->rBssList,
+					struct BSS_INFO, rLinkEntryMld),
+					PS_CALLER_COMMON);
+			}
 		}
+
+		prAdapter->rWifiVar.ucLinkIdForKey = 0xff;
 	} else
 #endif
 	{
