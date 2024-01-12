@@ -891,7 +891,22 @@ static struct ieee80211_rate mtk_rates[] = {
 static struct ieee80211_sband_iftype_data mtk_cap[] = {
 	{
 		.types_mask =
-			BIT(NL80211_IFTYPE_STATION) | BIT(NL80211_IFTYPE_AP),
+			BIT(NL80211_IFTYPE_AP),
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		.he_cap = WLAN_HE_CAP_160_INFO,
+#else
+		.he_cap = WLAN_HE_CAP_INFO,
+#endif
+
+#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_ADVANCED_80211_MLO == 1)
+		.eht_cap = WLAN_EHT_CAP_INFO,
+#endif
+#endif
+	},
+	{
+		.types_mask =
+			BIT(NL80211_IFTYPE_STATION),
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 		.he_cap = WLAN_HE_CAP_160_INFO,
 #else
@@ -943,7 +958,15 @@ static struct ieee80211_sband_iftype_data mtk_cap[] = {
 static struct ieee80211_sband_iftype_data mtk_cap_6g[] = {
 	{
 		.types_mask =
-			BIT(NL80211_IFTYPE_STATION) | BIT(NL80211_IFTYPE_AP),
+			BIT(NL80211_IFTYPE_AP),
+		.he_cap = WLAN_HE_CAP_INFO,
+#if KERNEL_VERSION(5, 8, 0) <= CFG80211_VERSION_CODE
+		.he_6ghz_capa = WLAN_HE_6G_CAP_INFO,
+#endif
+	},
+	{
+		.types_mask =
+			BIT(NL80211_IFTYPE_STATION),
 		.he_cap = WLAN_HE_CAP_INFO,
 #if KERNEL_VERSION(5, 8, 0) <= CFG80211_VERSION_CODE
 		.he_6ghz_capa = WLAN_HE_6G_CAP_INFO,
@@ -964,7 +987,7 @@ struct ieee80211_supported_band mtk_band_2ghz = {
 	.ht_cap = WLAN_HT_CAP,
 #if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
 #if (CFG_SUPPORT_802_11AX == 1)
-	.n_iftype_data = 1,
+	.n_iftype_data = ARRAY_SIZE(mtk_cap),
 	.iftype_data = mtk_cap,
 #endif
 #endif
@@ -985,7 +1008,7 @@ struct ieee80211_supported_band mtk_band_5ghz = {
 #endif
 #if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
 #if (CFG_SUPPORT_802_11AX == 1)
-	.n_iftype_data = 1,
+	.n_iftype_data = ARRAY_SIZE(mtk_cap),
 	.iftype_data = mtk_cap,
 #endif
 #endif
@@ -1001,7 +1024,7 @@ struct ieee80211_supported_band mtk_band_6ghz = {
 	.n_bitrates = mtk_a_rates_size,
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 #if (CFG_SUPPORT_802_11AX == 1)
-	.n_iftype_data = 1,
+	.n_iftype_data = ARRAY_SIZE(mtk_cap_6g),
 	.iftype_data = mtk_cap_6g,
 #endif
 #endif
