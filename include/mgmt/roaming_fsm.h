@@ -28,7 +28,11 @@
  *******************************************************************************
  */
 /* Roaming Discovery interval, SCAN result need to be updated */
+#if (CFG_EXT_ROAMING == 1)
+#define ROAMING_DISCOVER_TIMEOUT_SEC		0	/* Seconds. */
+#else
 #define ROAMING_DISCOVER_TIMEOUT_SEC		10	/* Seconds. */
+#endif
 #define ROAMING_INACTIVE_TIMEOUT_SEC		10	/* Seconds. */
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
 #define ROAMING_ONE_AP_SKIP_TIMES		3
@@ -114,6 +118,25 @@ struct ROAMING_EVENT_INFO {
 	uint8_t ucSupportStbc;
 };
 
+#if (CFG_EXT_ROAMING == 1)
+enum ENUM_ROAMING_SCAN_SORUCE {
+	ROAMING_SCAN_INVALID = 0,
+	ROAMING_SCAN_FORCE_FULL,       /* Initial connection */
+	ROAMING_SCAN_INACTIVE_TIMER,   /* Inactive Timer */
+	ROAMING_SCAN_SINGLE_TIMER,     /* Scan Timer-1 */
+	ROAMING_SCAN_PERIODIC_TIMER,   /* Scan Timer-2 */
+	ROAMING_SCAN_NUM
+};
+
+struct ROAMING_SCAN_CADENCE {
+	struct TIMER rScanTimer;
+	uint8_t fgIsInitialConn;
+	uint8_t ucScanSource;
+	uint8_t ucFullScanCount;
+	uint32_t u4ScanScheduleSec;
+};
+#endif
+
 struct ROAMING_INFO {
 	enum ENUM_ROAMING_STATE eCurrentState;
 
@@ -131,6 +154,9 @@ struct ROAMING_INFO {
 	uint8_t ucRcpi;
 	uint8_t ucThreshold;
 	struct ROAMING_EVENT_INFO rEventInfo;
+#if (CFG_EXT_ROAMING == 1)
+	struct ROAMING_SCAN_CADENCE rScanCadence;
+#endif
 	uint8_t ucRecoverBitmap;
 
 	struct TIMER rTxReqDoneRxRespTimer;

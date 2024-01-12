@@ -37,6 +37,7 @@
 #define RM_BCN_REQ_PASSIVE_MODE                     0
 #define RM_BCN_REQ_ACTIVE_MODE                      1
 #define RM_BCN_REQ_TABLE_MODE                       2
+#define RM_BCN_REQ_MODE_MAX                         3
 
 /*******************************************************************************
  *                             D A T A   T Y P E S

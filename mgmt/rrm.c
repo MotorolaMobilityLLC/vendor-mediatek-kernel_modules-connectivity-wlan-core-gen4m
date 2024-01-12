@@ -239,8 +239,14 @@ static u_int8_t rrmAllMeasurementIssued(
 								      : TRUE;
 }
 
-void rrmComposeRmRejectRep(struct RADIO_MEASUREMENT_REPORT_PARAMS *prRep,
-		uint8_t ucToken, uint8_t ucMeasType, uint8_t ucRejectMode)
+#if (CFG_SUPPORT_ASSURANCE == 0)
+void rrmComposeRmRejectRep(
+	struct ADAPTER *prAdapter,
+	struct RADIO_MEASUREMENT_REPORT_PARAMS *prRep,
+	uint8_t ucToken,
+	uint8_t ucMeasType,
+	uint8_t ucRejectMode,
+	uint8_t ucBssIndex)
 {
 	struct IE_MEASUREMENT_REPORT *prRepIE =
 		(struct IE_MEASUREMENT_REPORT *)(prRep->pucReportFrameBuff +
@@ -253,6 +259,7 @@ void rrmComposeRmRejectRep(struct RADIO_MEASUREMENT_REPORT_PARAMS *prRep,
 	prRepIE->ucReportMode = ucRejectMode;
 	prRep->u2ReportFrameLen += 5;
 }
+#endif
 
 int rrmBeaconRepUpdateLastFrame(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
@@ -345,9 +352,10 @@ schedule_next:
 		if (prRmRep->u2ReportFrameLen + 5 > RM_REPORT_FRAME_MAX_LENGTH)
 			rrmTxRadioMeasurementReport(prAdapter, ucBssIndex);
 
-		rrmComposeRmRejectRep(prRmRep, prCurrReq->ucToken,
+		rrmComposeRmRejectRep(prAdapter, prRmRep, prCurrReq->ucToken,
 					 prCurrReq->ucMeasurementType,
-					 RM_REP_MODE_INCAPABLE);
+					 RM_REP_MODE_INCAPABLE,
+					 ucBssIndex);
 		if (rrmAllMeasurementIssued(prRmReq)) {
 			rrmTxRadioMeasurementReport(prAdapter, ucBssIndex);
 
@@ -436,9 +444,10 @@ schedule_next:
 					RM_REPORT_FRAME_MAX_LENGTH)
 				rrmTxRadioMeasurementReport(
 					prAdapter, ucBssIndex);
-			rrmComposeRmRejectRep(prRmRep, prCurrReq->ucToken,
+			rrmComposeRmRejectRep(prAdapter, prRmRep,
+				prCurrReq->ucToken,
 				prCurrReq->ucMeasurementType,
-				RM_REP_MODE_REFUSED);
+				RM_REP_MODE_REFUSED, ucBssIndex);
 		}
 		/* if Measurement is done, free report element memory */
 		if (rrmAllMeasurementIssued(prRmReq)) {
@@ -578,9 +587,10 @@ schedule_next:
 		if (prRmRep->u2ReportFrameLen + 5 > RM_REPORT_FRAME_MAX_LENGTH)
 			rrmTxRadioMeasurementReport(prAdapter, ucBssIndex);
 
-		rrmComposeRmRejectRep(prRmRep, prCurrReq->ucToken,
+		rrmComposeRmRejectRep(prAdapter, prRmRep, prCurrReq->ucToken,
 					prCurrReq->ucMeasurementType,
-					RM_REP_MODE_INCAPABLE);
+					RM_REP_MODE_INCAPABLE,
+					ucBssIndex);
 		fgNewStarted = FALSE;
 		DBGLOG(RRM, INFO,
 		       "RM type %d is not supported on this chip\n",

@@ -85,7 +85,6 @@
 #endif
 
 /* Support AP Selection */
-#define CFG_MAX_NUM_OF_CHNL_INFO		50
 #define CFG_SUPPORT_CHNL_CONFLICT_REVISE	0
 
 
@@ -850,6 +849,12 @@
 #define MAX_BAND_IE_LENGTH			(100)
 #define MAX_WSC_IE_LENGTH			(400)
 
+#if (CFG_EXT_ROAMING == 1)
+#define CFG_MAX_NUM_OF_CHNL_INFO		(MAXIMUM_OPERATION_CHANNEL_LIST)
+#else
+#define CFG_MAX_NUM_OF_CHNL_INFO		50
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Load Setup Default
  *------------------------------------------------------------------------------
@@ -1177,7 +1182,7 @@
  * after skip roaming in one ESSID AP case
  */
 #define CFG_SUPPORT_ROAMING_SKIP_ONE_AP		0
-#define CFG_SUPPORT_DRIVER_ROAMING		1
+#define CFG_SUPPORT_DRIVER_ROAMING		(!CFG_EXT_ROAMING)
 #else
 #define CFG_SUPPORT_ROAMING_SKIP_ONE_AP		0
 #define CFG_SUPPORT_DRIVER_ROAMING		0

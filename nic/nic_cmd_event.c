@@ -4651,8 +4651,13 @@ bool nicBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 			if (aisBeaconTimeoutFilterPolicy(
 					prAdapter, ucBssIdx)) {
 				DBGLOG(NIC, INFO, "Driver find better TX AP");
+#if (CFG_EXT_ROAMING == 1)
+				*ucDisconnectReason =
+				       DISCONNECT_REASON_CODE_RADIO_LOST;
+#else
 				*ucDisconnectReason =
 				       DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR;
+#endif
 			} else {
 				DBGLOG(NIC, INFO, "RX in the past duration");
 				bValid = false;

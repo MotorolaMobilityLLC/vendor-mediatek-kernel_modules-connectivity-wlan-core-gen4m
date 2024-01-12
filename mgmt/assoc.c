@@ -1241,6 +1241,13 @@ assocCheckRxReAssocRspFrameStatus(struct ADAPTER *prAdapter,
 #endif
 	*pu2StatusCode = u2RxStatusCode;
 
+#if (CFG_SUPPORT_CONN_LOG == 1)
+	connLogAssocResp(prAdapter,
+		prStaRec,
+		prAssocRspFrame,
+		*pu2StatusCode);
+#endif
+
 	return WLAN_STATUS_SUCCESS;
 
 }				/* end of assocCheckRxReAssocRspFrameStatus() */

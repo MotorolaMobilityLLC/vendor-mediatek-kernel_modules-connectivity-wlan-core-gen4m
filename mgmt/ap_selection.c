@@ -611,6 +611,10 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 
 	/* 2. Check Score */
 	/* 2.1 Cases that no need to replace candidate */
+#if (CFG_EXT_ROAMING == 1)
+	if (u2CandScore >= u2CurrScore)
+		return FALSE;
+#else
 	if (prCandBss->fgIsConnected) {
 		if ((u2CandScore + ROAMING_NO_SWING_SCORE_STEP) >= u2CurrScore)
 			return FALSE;
@@ -619,6 +623,7 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 			return FALSE;
 	} else if (u2CandScore >= u2CurrScore)
 		return FALSE;
+#endif
 	/* 2.2 other cases, replace candidate */
 	return TRUE;
 }
@@ -642,6 +647,11 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 				&disallow->aucList[index])) {
 			log_dbg(SCN, WARN, MACSTR" disallowed list\n",
 				MAC2STR(prBssDesc->aucBSSID));
+#if (CFG_SUPPORT_CONN_LOG == 1)
+			connLogDisallowedList(prAdapter,
+				ucBssIndex,
+				prBssDesc);
+#endif
 			return FALSE;
 		}
 	}
@@ -688,6 +698,11 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		if (prBssDesc->prBlack->fgIsInFWKBlacklist) {
 			log_dbg(SCN, WARN, MACSTR" in FWK blocklist\n",
 				MAC2STR(prBssDesc->aucBSSID));
+#if (CFG_SUPPORT_CONN_LOG == 1)
+			connLogBlockList(prAdapter,
+				ucBssIndex,
+				prBssDesc);
+#endif
 			return FALSE;
 		}
 
@@ -816,6 +831,11 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		ucBssIndex)) {
 		log_dbg(SCN, WARN, MACSTR " rsn policy select fail.\n",
 			MAC2STR(prBssDesc->aucBSSID));
+#if (CFG_SUPPORT_CONN_LOG == 1)
+		connLogRsnMismatch(prAdapter,
+			ucBssIndex,
+			prBssDesc);
+#endif
 		return FALSE;
 	}
 	if (aisGetAisSpecBssInfo(prAdapter,
@@ -853,6 +873,12 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 				return FALSE;
 			}
 
+#if CFG_EXT_ROAMING_WTC
+		return scanWtcCheckBssDesc(
+			prAdapter,
+			ucBssIndex,
+			prBssDesc);
+#endif
 		}
 	}
 #endif
@@ -1550,13 +1576,23 @@ try_again:
 			continue;
 		} else if (policy == CONNECT_BY_BSSID_HINT) {
 			uint8_t oce = FALSE;
+#if (CFG_EXT_ROAMING == 1)
+			uint8_t chnl = nicFreq2ChannelNum(
+					prConnSettings->u4FreqInKHz * 1000);
+#endif
 
 #if CFG_SUPPORT_MBO
 			oce = prAdapter->rWifiVar.u4SwTestMode ==
 				ENUM_SW_TEST_MODE_SIGMA_OCE;
 #endif
 			if (!oce && EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
-					prConnSettings->aucBSSIDHint)) {
+					prConnSettings->aucBSSIDHint)
+#if (CFG_EXT_ROAMING == 1)
+					&&
+					(chnl == 0 ||
+					 chnl == prBssDesc->ucChannelNum)
+#endif
+					) {
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)
 				if (IS_CHANNEL_IN_DESENSE_RANGE(prAdapter,
 					prBssDesc->ucChannelNum,

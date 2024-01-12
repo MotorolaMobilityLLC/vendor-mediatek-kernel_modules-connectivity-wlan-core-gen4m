@@ -4168,6 +4168,9 @@ void nicTxProcessTxDoneEvent(struct ADAPTER *prAdapter,
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 		if (fgStop)
 			prMsduInfo->prTxDone = prTxDone;
+#if (CFG_SUPPORT_CONN_LOG == 1)
+		prMsduInfo->u2HwSeqNum = prTxDone->u2SequenceNumber;
+#endif
 		prMsduInfo->pfTxDoneHandler(prAdapter, prMsduInfo,
 				fgStop ? prTxDone->ucStatus :
 					TX_RESULT_FLUSH_PENDING);

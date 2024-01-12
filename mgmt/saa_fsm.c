@@ -630,6 +630,11 @@ saaFsmRunEventTxDone(struct ADAPTER *prAdapter,
 						 AUTH_TRANSACTION_SEQ_1) !=
 						 WLAN_STATUS_SUCCESS)
 				break;
+#if (CFG_SUPPORT_CONN_LOG == 1)
+			connLogAuthReq(prAdapter,
+				prMsduInfo,
+				rTxDoneStatus);
+#endif
 
 			if (rTxDoneStatus == TX_RESULT_SUCCESS) {
 				eNextState = SAA_STATE_WAIT_AUTH2;
@@ -701,6 +706,12 @@ saaFsmRunEventTxDone(struct ADAPTER *prAdapter,
 
 	case SAA_STATE_SEND_ASSOC1:
 		{
+#if (CFG_SUPPORT_CONN_LOG == 1)
+			connLogAssocReq(prAdapter,
+				prMsduInfo,
+				rTxDoneStatus);
+#endif
+
 			/* Strictly check the outgoing frame is matched with
 			 * current SAA STATE
 			 */
@@ -1338,6 +1349,13 @@ uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
 			goto exit;
 
 		if (prStaRec->ucStaState > STA_STATE_1) {
+#if (CFG_SUPPORT_CONN_LOG == 1)
+			connLogRxDeauth(prAdapter,
+				prStaRec,
+				prDeauthFrame,
+				prBssDesc);
+#endif
+
 			/* Check if this is the AP we are associated
 			 * or associating with
 			 */
@@ -1633,6 +1651,12 @@ uint32_t saaFsmRunEventRxDisassoc(struct ADAPTER *prAdapter,
 		}
 
 		if (prStaRec->ucStaState > STA_STATE_1) {
+#if (CFG_SUPPORT_CONN_LOG == 1)
+			connLogRxDeassoc(prAdapter,
+				prStaRec,
+				prDisassocFrame,
+				prBssDesc);
+#endif
 
 			/* Check if this is the AP we are associated
 			 * or associating with

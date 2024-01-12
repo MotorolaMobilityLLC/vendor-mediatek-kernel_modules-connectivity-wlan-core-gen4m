@@ -1416,12 +1416,60 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	/* roaming case */
 	if ((prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED ||
 	    aisFsmIsInProcessPostpone(prAdapter, ucBssIndex))) {
+#if (CFG_EXT_ROAMING == 1)
+		int32_t r1, r2;
+		struct BSS_DESC *target = NULL;
+
+		target = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+		r1 = RCPI_TO_dBm(target ? target->ucRCPI : RCPI_LOW_BOUND);
+		r2 = RCPI_TO_dBm(prBssDesc->ucRCPI);
+		switch (eRoamReason) {
+		case ROAMING_REASON_BEACON_TIMEOUT:
+		case ROAMING_REASON_SAA_FAIL:
+		{
+			if (r2 < prAdapter->rWifiVar.cRBMinRssi) {
+				DBGLOG(APS, WARN, MACSTR " low rssi %d < %d\n",
+					MAC2STR(prBssDesc->aucBSSID),
+					r2, prAdapter->rWifiVar.cRBMinRssi);
+				return FALSE;
+			}
+			break;
+		}
+		case ROAMING_REASON_BT_COEX:
+		{
+			if (r2 < prAdapter->rWifiVar.cRBTCRssi) {
+				log_dbg(SCN, INFO,
+					MACSTR " BTCoex low rssi %d < %d\n",
+					MAC2STR(prBssDesc->aucBSSID),
+					r2, prAdapter->rWifiVar.ucRBTCDelta);
+				return FALSE;
+			}
+			break;
+		}
+		case ROAMING_REASON_POOR_RCPI:
+		case ROAMING_REASON_RETRY:
+		{
+			if (prAdapter->rNchoInfo.fgNCHOEnabled &&
+			    r2 - r1 <= prAdapter->rNchoInfo.i4RoamDelta) {
+				DBGLOG(APS, WARN,
+					MACSTR " low rssi %d - %d <= %d\n",
+					MAC2STR(prBssDesc->aucBSSID), r2, r1,
+					prAdapter->rNchoInfo.i4RoamDelta);
+				return FALSE;
+			}
+			break;
+		}
+		default:
+			break;
+		}
+#else
 		if (!connected && prBssDesc->ucRCPI < RCPI_FOR_DONT_ROAM) {
 			DBGLOG(APS, INFO, MACSTR " low rssi %d\n",
 				MAC2STR(prBssDesc->aucBSSID),
 				RCPI_TO_dBm(prBssDesc->ucRCPI));
 			return FALSE;
 		}
+#endif
 	}
 
 #if CFG_SUPPORT_NCHO
@@ -2253,6 +2301,9 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *ad,
 		count,
 		ess->u4NumElem);
 done:
+#if (CFG_SUPPORT_ROAMING_LOG == 1)
+	roamingFsmLogResult(ad, bidx, cand);
+#endif
 	apsResetEssApList(ad, bidx);
 	return cand;
 }

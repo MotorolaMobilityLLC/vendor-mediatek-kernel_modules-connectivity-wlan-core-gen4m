@@ -1974,6 +1974,12 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
+#if (CFG_SUPPORT_CONN_LOG == 1)
+	connLogConnect(prGlueInfo->prAdapter,
+		ucBssIndex,
+		sme);
+#endif
+
 	return 0;
 }
 

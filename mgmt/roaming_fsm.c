@@ -928,7 +928,12 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 				      NULL,
 				      prBtmParam->ucDialogToken,
 				      WNM_BSS_TM_REJECT_NO_SUITABLE_CANDIDATES,
-				      MBO_TRANSITION_REJECT_REASON_RSSI,
+#if CFG_EXT_ROAMING_WTC
+				      wnmWtcGetRejectStatus(prAdapter,
+					ucBssIndex),
+#else
+					MBO_TRANSITION_REJECT_REASON_RSSI,
+#endif
 				      0,
 				      NULL);
 				eNextState = ROAMING_STATE_HANDLE_NEW_CANDIDATE;

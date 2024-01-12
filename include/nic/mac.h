@@ -2160,6 +2160,7 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 /* Cisco IE */
 #define VENDOR_IE_CISCO_OUI                        0x004096
 #define VENDOR_IE_CISCO_TYPE                       0x2C
+#define VENDOR_IE_CISCO_TYPE_CCX                   0x03
 
 #if CFG_SUPPORT_PASSPOINT
 #define VENDOR_OUI_TYPE_HS20                        16
