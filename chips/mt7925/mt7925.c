@@ -53,6 +53,7 @@
 *                                 M A C R O S
 ********************************************************************************
 */
+#define CONCAT(NAME1, NAME2) (NAME1##NAME2)
 
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
@@ -195,15 +196,20 @@ struct PCIE_CHIP_CR_MAPPING mt7925_bus2chip_cr_mapping[] = {
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
 	{0x70020000, 0x1f0000, 0x10000}, /* Reserved for CBTOP, can't switch */
 	{0x7c500000, MT7925_PCIE2AP_REMAP_BASE_ADDR, 0x2000000}, /* remap */
+	{0x70000000, 0x1e0000, 0x9000},
+	{0x7c090000, 0x150000, 0x10000}, /* Remap change on owl */
 	{0x0, 0x0, 0x0} /* End */
 };
 #endif
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 struct pcie2ap_remap mt7925_pcie2ap_remap = {
-	.reg_base = CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_0_76_cr_pcie2ap_public_remapping_wf_06_ADDR,
-	.reg_mask = CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_0_76_cr_pcie2ap_public_remapping_wf_06_MASK,
-	.reg_shift = CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_0_76_cr_pcie2ap_public_remapping_wf_06_SHFT,
+	.reg_base = CONCAT(CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP,
+		_WF_0_76_CR_PCIE2AP_PUBLIC_REMAPPING_WF_06_ADDR),
+	.reg_mask = CONCAT(CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP,
+		_WF_0_76_CR_PCIE2AP_PUBLIC_REMAPPING_WF_06_MASK),
+	.reg_shift = CONCAT(CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP,
+		_WF_0_76_CR_PCIE2AP_PUBLIC_REMAPPING_WF_06_SHFT),
 	.base_addr = MT7925_PCIE2AP_REMAP_BASE_ADDR
 };
 
