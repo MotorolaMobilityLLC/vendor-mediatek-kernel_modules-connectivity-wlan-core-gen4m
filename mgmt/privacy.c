@@ -959,7 +959,7 @@ void secRemoveBssBcEntry(IN struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return;
 
-	DBGLOG(RSN, INFO, "remove all the key related with BSS!");
+	DBGLOG_LIMITED(RSN, INFO, "remove all the key related with BSS!");
 
 	if (fgRoam) {
 		struct CONNECTION_SETTINGS *prConnSettings =
@@ -1064,7 +1064,7 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 	ucStartIDX = 0;
 	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
-	DBGLOG(INIT, INFO, "OpMode:%d, NetworkType:%d, CheckKeyId:%d\n",
+	DBGLOG_LIMITED(INIT, INFO, "OpMode:%d, NetworkType:%d, CheckKeyId:%d\n",
 	       prBSSInfo->eCurrentOPMode, prBSSInfo->eNetworkType,
 	       fgCheckKeyId);
 
@@ -1116,7 +1116,7 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 			return ucEntry;
 		}
 
-		DBGLOG(RSN, INFO,
+		DBGLOG_LIMITED(RSN, INFO,
 		       "[Wlan index] BSS#%d keyid#%d P=%d use WlanIndex#%d STAIdx=%d "
 		       MACSTR
 		       "\n", ucBssIndex, ucKeyId, prWtbl[ucEntry].ucPairwise,
