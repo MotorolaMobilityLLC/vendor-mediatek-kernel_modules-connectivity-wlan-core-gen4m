@@ -9414,6 +9414,12 @@ int priv_qa_agent(struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	ASSERT(prGlueInfo);
 
+	if (prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(RFTEST, INFO, "Adapter is not ready\n");
+		i4Status = -EFAULT;
+		goto ERROR0;
+	}
+
 	/* workaroud for meta tool */
 	if (prGlueInfo->prAdapter->fgTestMode == FALSE)
 		MT_ATEStart(prNetDev, "ATESTART");
