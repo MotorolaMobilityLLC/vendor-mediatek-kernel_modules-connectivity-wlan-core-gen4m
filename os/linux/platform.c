@@ -117,6 +117,9 @@ static const uint8_t *apucDebugNetdevState[] = {
 	(uint8_t *) DISP_STRING("NETDEV_UNREGISTER"),
 	(uint8_t *) DISP_STRING("NETDEV_CHANGEMTU"),
 	(uint8_t *) DISP_STRING("NETDEV_CHANGEADDR"),
+#if (KERNEL_VERSION(5, 0, 0) <= CFG80211_VERSION_CODE)
+	(uint8_t *) DISP_STRING("NETDEV_PRE_CHANGEADDR"),
+#endif
 	(uint8_t *) DISP_STRING("NETDEV_GOING_DOWN"),
 	(uint8_t *) DISP_STRING("NETDEV_CHANGENAME"),
 	(uint8_t *) DISP_STRING("NETDEV_FEAT_CHANGE"),
@@ -125,7 +128,9 @@ static const uint8_t *apucDebugNetdevState[] = {
 	(uint8_t *) DISP_STRING("NETDEV_PRE_TYPE_CHANGE"),
 	(uint8_t *) DISP_STRING("NETDEV_POST_TYPE_CHANGE"),
 	(uint8_t *) DISP_STRING("NETDEV_POST_INIT"),
+#if (KERNEL_VERSION(4, 17, 0) > CFG80211_VERSION_CODE)
 	(uint8_t *) DISP_STRING("NETDEV_UNREGISTER_FINAL"),
+#endif
 	(uint8_t *) DISP_STRING("NETDEV_RELEASE"),
 	(uint8_t *) DISP_STRING("NETDEV_NOTIFY_PEERS"),
 	(uint8_t *) DISP_STRING("NETDEV_JOIN"),
@@ -139,6 +144,12 @@ static const uint8_t *apucDebugNetdevState[] = {
 	(uint8_t *) DISP_STRING("NETDEV_UDP_TUNNEL_PUSH_INFO"),
 	(uint8_t *) DISP_STRING("NETDEV_UNKNOWN"),
 	(uint8_t *) DISP_STRING("NETDEV_CHANGE_TX_QUEUE_LEN"),
+#if (KERNEL_VERSION(4, 17, 0) <= CFG80211_VERSION_CODE)
+	(uint8_t *) DISP_STRING("NETDEV_CVLAN_FILTER_PUSH_INFO"),
+	(uint8_t *) DISP_STRING("NETDEV_CVLAN_FILTER_DROP_INFO"),
+	(uint8_t *) DISP_STRING("NETDEV_SVLAN_FILTER_PUSH_INFO"),
+	(uint8_t *) DISP_STRING("NETDEV_SVLAN_FILTER_DROP_INFO"),
+#endif
 };
 
 /*******************************************************************************
