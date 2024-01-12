@@ -327,7 +327,7 @@ uint32_t twtSendInfoFrame(
 			(uint32_t)(prNextTWTInfo->u8NextTWT & 0xFFFFFFFF));
 
 		DBGLOG(TWT_REQUESTER, WARN,
-			"TWT Info Frame 0x%x 0x%x\n",
+			"TWT Info Frame 0x%x 0x%llx\n",
 			*pu4NextTWT, prNextTWTInfo->u8NextTWT);
 
 		break;
