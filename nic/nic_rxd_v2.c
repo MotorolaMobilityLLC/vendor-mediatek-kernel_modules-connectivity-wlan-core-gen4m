@@ -681,8 +681,8 @@ void nic_rxd_v2_check_wakeup_reason(
 		case ETH_P_AARP:
 		case ETH_P_IPV6:
 		case ETH_P_IPX:
-		case 0x8100: /* VLAN */
-		case 0x890d: /* TDLS */
+		case ETH_P_VLAN:
+		case ETH_PRO_TDLS:
 			DBGLOG(RX, INFO,
 				"Data Packet, EthType 0x%04x wakeup host\n",
 				u2Temp);
