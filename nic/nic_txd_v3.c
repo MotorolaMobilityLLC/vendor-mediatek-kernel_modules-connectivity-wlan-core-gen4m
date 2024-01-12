@@ -535,7 +535,8 @@ void nic_txd_v3_compose(
 	}
 
 	/* altx set TGID and force link */
-	if (ucTarQueue == MAC_TXQ_ALTX_0_INDEX)
+	if (ucTarQueue == MAC_TXQ_ALTX_0_INDEX ||
+	    prMsduInfo->ucPktType == ENUM_PKT_1X)
 		HAL_MAC_CONNAC3X_TXD_SET_FORCE_ASSIGN_LINK(prTxDesc);
 
 	/** DW6 **/

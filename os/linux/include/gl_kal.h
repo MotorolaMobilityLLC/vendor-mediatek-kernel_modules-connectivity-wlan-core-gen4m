@@ -1099,6 +1099,8 @@ int8_t atoi(uint8_t ch);
 #define kal_tasklet_schedule(_rRxRfbRetTask) \
 	tasklet_schedule(_rRxRfbRetTask)
 
+#define kalIsZeroEtherAddr(_addr) \
+	is_zero_ether_addr(_addr)
 
 /*----------------------------------------------------------------------------*/
 /*!

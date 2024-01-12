@@ -556,8 +556,15 @@ assocComposeReAssocReqFrameHeaderAndFF(IN struct ADAPTER *prAdapter,
 			struct WLAN_REASSOC_REQ_FRAME *prReAssocFrame =
 			    (struct WLAN_REASSOC_REQ_FRAME *)prAssocFrame;
 
-			COPY_MAC_ADDR(prReAssocFrame->aucCurrentAPAddr,
-				      prAisBssInfo->aucBSSID);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			if (mldIsMultiLinkFormed(prAdapter, prStaRec)) {
+				DBGLOG(ML, INFO,  "use mld addr");
+				COPY_MAC_ADDR(prReAssocFrame->aucCurrentAPAddr,
+					      prStaRec->aucMldAddr);
+			} else
+#endif
+				COPY_MAC_ADDR(prReAssocFrame->aucCurrentAPAddr,
+					      prAisBssInfo->aucBSSID);
 		} else {
 			ASSERT(0);
 			/* We don't support ReAssociation for other network */
