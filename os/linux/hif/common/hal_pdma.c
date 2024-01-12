@@ -2130,9 +2130,10 @@ bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
 	return true;
 }
 
-u_int8_t halIsStaticMapBusAddr(IN uint32_t u4Addr)
+u_int8_t halIsStaticMapBusAddr(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4Addr)
 {
-	if (u4Addr < MAX_PCIE_BUS_STATIC_MAP_ADDR)
+	if (u4Addr < prAdapter->chip_info->bus_info->max_static_map_addr)
 		return TRUE;
 	else
 		return FALSE;
@@ -2146,7 +2147,7 @@ u_int8_t halChipToStaticMapBusAddr(IN struct GLUE_INFO *prGlueInfo,
 	uint32_t u4StartAddr, u4EndAddr, u4BusAddr;
 	uint32_t u4Idx = 0;
 
-	if (halIsStaticMapBusAddr(u4ChipAddr)) {
+	if (halIsStaticMapBusAddr(prGlueInfo->prAdapter, u4ChipAddr)) {
 		*pu4BusAddr = u4ChipAddr;
 		return TRUE;
 	}

@@ -129,8 +129,6 @@
 #define HIF_MSDU_REPORT_RETURN_TIMEOUT		10	/* sec */
 #define HIF_SER_TIMEOUT				10000	/* msec */
 
-#define MAX_PCIE_BUS_STATIC_MAP_ADDR		0x00040000
-
 #define MT_RINGREG_DIFF		0x10
 #define MT_RINGREG_EXT_DIFF	0x04
 
@@ -418,7 +416,8 @@ void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
 			       struct MSDU_TOKEN_ENTRY *prFillToken,
 			       struct MSDU_TOKEN_ENTRY *prDataToken,
 			       uint32_t u4Idx, bool fgIsLast);
-u_int8_t halIsStaticMapBusAddr(IN uint32_t u4Addr);
+u_int8_t halIsStaticMapBusAddr(IN struct ADAPTER *prAdapter,
+					IN uint32_t u4Addr);
 u_int8_t halChipToStaticMapBusAddr(IN struct GLUE_INFO *prGlueInfo,
 				   IN uint32_t u4ChipAddr,
 				   OUT uint32_t *pu4BusAddr);

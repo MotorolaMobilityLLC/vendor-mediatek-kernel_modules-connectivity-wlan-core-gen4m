@@ -191,6 +191,7 @@ struct BUS_INFO {
 	const unsigned int tx_ring_fwdl_idx;
 	const unsigned int tx_ring0_data_idx;
 	const unsigned int tx_ring1_data_idx;
+	const unsigned int max_static_map_addr;
 	const bool fgCheckDriverOwnInt;
 	const bool fgInitPCIeInt;
 	const uint32_t u4DmaMask;
