@@ -146,6 +146,14 @@ static inline bool kalIsChipDead(struct GLUE_INFO *prGlueInfo,
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 
+#if (CFG_ENABLE_HOST_BUS_TIMEOUT == 1)
+	if (*pu4Value == 0xdead0001) {
+		DBGLOG(HAL, ERROR, "Host bus hang timeout, CR[0x%08x]\n",
+				u4Register);
+		return true;
+	}
+#endif
+
 	if (*pu4Value != HIF_DEADFEED_VALUE)
 		return false;
 

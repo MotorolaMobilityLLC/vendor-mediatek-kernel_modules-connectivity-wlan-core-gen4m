@@ -80,6 +80,8 @@
 
 #include "mt66xx_reg.h"
 #include "gl_kal.h"
+#include "host_csr.h"
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -1002,6 +1004,11 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 	INIT_LIST_HEAD(&prHifInfo->rTxCmdQ);
 	INIT_LIST_HEAD(&prHifInfo->rTxDataQ);
 	prHifInfo->u4TxDataQLen = 0;
+#endif
+
+#if (CFG_ENABLE_HOST_BUS_TIMEOUT == 1)
+	DBGLOG(HAL, INFO, "Enable Host CSR timeout mechanism.\n");
+	HAL_MCR_WR(prAdapter, HOST_CSR_BUS_TIMOUT_CTRL_ADDR, 0x80FFFFFF);
 #endif
 
 	prHifInfo->fgIsPowerOff = false;
