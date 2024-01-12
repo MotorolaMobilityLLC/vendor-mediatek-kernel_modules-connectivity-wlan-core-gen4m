@@ -1654,6 +1654,11 @@ struct ADAPTER {
 		uint32_t u4Quota;
 	} rWmmQuotaReqCS[BSS_DEFAULT_NUM];
 
+	/* TX HIF Control falgs */
+	uint32_t au4TxHifResCtl[TX_PORT_NUM];
+	uint32_t u4TxHifResCtlIdx;
+	uint32_t u4TxHifResCtlNum;
+
 #if CFG_SUPPORT_OSHARE
 	bool fgEnOshareMode;
 #endif

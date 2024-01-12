@@ -6505,6 +6505,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 #endif
+	uint32_t u4TxHifRes = 0, u4Idx = 0;
 
 	/* Feature options will be filled by config file */
 
@@ -6836,6 +6837,17 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					NIC_TX_PAGE_COUNT_TC4);
 	prWifiVar->ucTxMsduQueue = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "NicTxMsduQueue", 0);
+
+	/* 1 resource for AC_BK(TC0_INDEX), AC_BE(TC1_INDEX) */
+	/* 2 resource for AC_VI(TC2_INDEX) */
+	/* 4 resource for AC_VO(TC3_INDEX) */
+	/* 1 resource for MGMT(TC4_INDEX) & TC_NUM */
+	u4TxHifRes = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "TxHifResCtl", 0x00114211);
+	for (u4Idx = 0; u4Idx < TX_PORT_NUM && u4TxHifRes; u4Idx++) {
+		prAdapter->au4TxHifResCtl[u4Idx] = u4TxHifRes & BITS(0, 3);
+		u4TxHifRes = u4TxHifRes >> 4;
+	}
 
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	prQM->au4MinReservedTcResource[TC0_INDEX] = (uint32_t) wlanCfgGetUint32(

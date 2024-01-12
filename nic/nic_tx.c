@@ -1478,8 +1478,10 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 	struct QUE qDataPort0, qDataPort1, arTempQue[TX_PORT_NUM];
 	struct QUE *prDataPort0, *prDataPort1, *prDataPort, *prTxQue;
 	struct MSDU_INFO *prMsduInfo;
-	bool fgIsAllQueneEmpty = false;
-	int32_t i;
+	uint32_t u4Idx, u4IsNotAllQueneEmpty;
+	uint8_t ucPortIdx;
+	uint32_t au4TxCnt[TX_PORT_NUM], u4Offset = 0;
+	char aucLogBuf[512];
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1487,31 +1489,39 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 	prDataPort1 = &qDataPort1;
 	QUEUE_INITIALIZE(prDataPort0);
 	QUEUE_INITIALIZE(prDataPort1);
+	kalMemZero(aucLogBuf, 512);
 
-	for (i = 0; i < TX_PORT_NUM; i++)
-		QUEUE_INITIALIZE(&arTempQue[i]);
+	for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++) {
+		QUEUE_INITIALIZE(&arTempQue[u4Idx]);
+		au4TxCnt[u4Idx] = 0;
+	}
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 	/* Dequeue each TCQ to dataQ by round-robin  */
 	/* Check each TCQ is empty or not */
-	while (!fgIsAllQueneEmpty) {
-		fgIsAllQueneEmpty = true;
-		for (i = TC_NUM; i >= 0; i--) {
-			prTxQue = &(prAdapter->rTxPQueue[i]);
-			if (QUEUE_IS_NOT_EMPTY(prTxQue)) {
-				QUEUE_REMOVE_HEAD(
-					prTxQue, prMsduInfo,
-					struct MSDU_INFO *);
-				if (halTxRingDataSelect(prAdapter, prMsduInfo))
-					prDataPort = prDataPort1;
-				else
-					prDataPort = prDataPort0;
-
-				QUEUE_INSERT_TAIL(
-					prDataPort,
-					(struct QUE_ENTRY *) prMsduInfo);
-				fgIsAllQueneEmpty = false;
-			}
+	u4IsNotAllQueneEmpty = BITS(0, TC_NUM);
+	while (u4IsNotAllQueneEmpty) {
+		u4Idx = prAdapter->u4TxHifResCtlIdx;
+		prTxQue = &(prAdapter->rTxPQueue[u4Idx]);
+		if (QUEUE_IS_NOT_EMPTY(prTxQue)) {
+			QUEUE_REMOVE_HEAD(prTxQue, prMsduInfo,
+					  struct MSDU_INFO *);
+			ucPortIdx = halTxRingDataSelect(prAdapter, prMsduInfo);
+			prDataPort = (ucPortIdx == TX_RING_DATA1_IDX_1) ?
+				prDataPort1 : prDataPort0;
+			QUEUE_INSERT_TAIL(prDataPort,
+					  (struct QUE_ENTRY *) prMsduInfo);
+			au4TxCnt[u4Idx]++;
+		} else {
+			/* unset empty queue */
+			u4IsNotAllQueneEmpty &= ~BIT(u4Idx);
+		}
+		prAdapter->u4TxHifResCtlNum++;
+		if (prAdapter->u4TxHifResCtlNum >=
+		    prAdapter->au4TxHifResCtl[u4Idx]) {
+			prAdapter->u4TxHifResCtlIdx++;
+			prAdapter->u4TxHifResCtlIdx %= TX_PORT_NUM;
+			prAdapter->u4TxHifResCtlNum = 0;
 		}
 	}
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
@@ -1533,15 +1543,22 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 				  (struct QUE_ENTRY *) prMsduInfo);
 	}
 
-	for (i = 0; i < TX_PORT_NUM; i++) {
-		while (QUEUE_IS_NOT_EMPTY(&arTempQue[i])) {
-			QUEUE_REMOVE_HEAD(&arTempQue[i], prMsduInfo,
+	for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++) {
+		while (QUEUE_IS_NOT_EMPTY(&arTempQue[u4Idx])) {
+			QUEUE_REMOVE_HEAD(&arTempQue[u4Idx], prMsduInfo,
 					  struct MSDU_INFO *);
-			QUEUE_INSERT_HEAD(&prAdapter->rTxPQueue[i],
+			QUEUE_INSERT_HEAD(&prAdapter->rTxPQueue[u4Idx],
 					  (struct QUE_ENTRY *) prMsduInfo);
 		}
 	}
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
+
+	for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++) {
+		u4Offset += snprintf(
+			aucLogBuf + u4Offset, 512 - u4Offset,
+			"TC[%u]:%u ", u4Idx, au4TxCnt[u4Idx]);
+	}
+	DBGLOG_LIMITED(NIC, LOUD, "%s\n", aucLogBuf);
 }
 
 uint32_t nicTxGetMsduPendingCnt(IN struct ADAPTER
