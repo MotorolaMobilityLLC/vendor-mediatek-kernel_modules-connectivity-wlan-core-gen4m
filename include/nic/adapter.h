@@ -573,8 +573,6 @@ struct BSS_INFO {
 	uint8_t ucCountryIELen;
 	uint8_t aucCountryStr[3];
 	uint8_t aucSubbandTriplet[253];
-
-	enum ENUM_KEY_ACTION_TYPE_T eKeyAction;
 	enum ENUM_IFTYPE eIftype;
 };
 
