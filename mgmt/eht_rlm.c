@@ -68,18 +68,14 @@ uint32_t ehtRlmCalculateCapIELen(
 	uint8_t ucBssIndex,
 	struct STA_RECORD *prStaRec)
 {
-	enum ENUM_BAND eHePhyCapBand = BAND_5G;
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucMaxBw;
 	uint32_t u4OverallLen;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	u4OverallLen = OFFSET_OF(struct IE_EHT_CAP, aucVarInfo[0]);
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (prBssInfo->eBand == BAND_6G)
-		eHePhyCapBand = BAND_6G;
-#endif
-	ucMaxBw = cnmGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand);
+
+	ucMaxBw = cnmGetBssBandBw(prAdapter, prBssInfo, prBssInfo->eBand);
 
 	if (ucMaxBw == MAX_BW_20MHZ) {
 		u4OverallLen += sizeof(struct EHT_SUPPORTED_MCS_BW20_FIELD);
@@ -172,7 +168,6 @@ void ehtRlmFillCapIE(
 	struct MSDU_INFO *prMsduInfo)
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-	enum ENUM_BAND eHePhyCapBand = BAND_5G;
 	struct IE_EHT_CAP *prEhtCap;
 	struct EHT_PHY_CAP_INFO eht_phy_cap;
 	uint32_t phy_cap_1 = 0;
@@ -208,16 +203,15 @@ void ehtRlmFillCapIE(
 	/* PHY capabilities */
 	EHT_RESET_PHY_CAP(prEhtCap->ucEhtPhyCap);
 
+	eht_bw = cnmGetBssBandBw(prAdapter, prBssInfo, prBssInfo->eBand);
+
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (prBssInfo->eBand == BAND_6G) {
-		if (cnmGetBssBandBw(prAdapter, prBssInfo, BAND_6G)
-			>= MAX_BW_320MHZ)
+		if (eht_bw >= MAX_BW_320MHZ)
 			phy_cap_1 |= DOT11BE_PHY_CAP_320M_6G;
-		eHePhyCapBand = BAND_6G;
 	}
 #endif
 
-	eht_bw = cnmGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand);
 	if (!IS_BSS_APGO(prBssInfo)) {
 		phy_cap_2 |= DOT11BE_PHY_CAP_PARTIAL_BW_DL_MU_MIMO;
 
