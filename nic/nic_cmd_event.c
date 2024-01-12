@@ -2901,7 +2901,7 @@ uint32_t nicCmdEventLinkStatsEmiOffset(struct ADAPTER *prAdapter,
 	}
 	if (offset2 && size2 > LLS_RADIO_STAT_MAX_TX_LEVELS *
 			ENUM_BAND_NUM * sizeof(uint32_t)) {
-		DBGLOG(INIT, WARN, "Size 2 too large: %zu", size2);
+		DBGLOG(INIT, WARN, "Size 2 too large: %u", size2);
 		return WLAN_STATUS_FAILURE;
 	}
 
