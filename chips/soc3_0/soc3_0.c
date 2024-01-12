@@ -2156,8 +2156,16 @@ int hifWmmcuPwrOn(void)
 	/* conninfra power on */
 	if (!kalIsWholeChipResetting()) {
 		ret = conninfra_pwr_on(CONNDRV_TYPE_WIFI);
-		if ((ret != CONNINFRA_ERR_RST_ONGOING) && (ret != 0))
+		if (ret == CONNINFRA_ERR_RST_ONGOING) {
+			DBGLOG(INIT, ERROR,
+				"Conninfra is doing whole chip reset.\n");
 			return ret;
+		}
+		if (ret != 0) {
+			DBGLOG(INIT, ERROR,
+				"Conninfra pwr on fail.\n");
+			return ret;
+		}
 	}
 #endif
 	/* wf driver power on */
