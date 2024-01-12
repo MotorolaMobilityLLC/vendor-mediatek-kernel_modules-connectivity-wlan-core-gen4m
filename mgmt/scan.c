@@ -2810,17 +2810,6 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 				&rStatus, prBssDesc, prWlanBeaconFrame);
 		}
 #endif
-
-#if CFG_SUPPORT_802_11K
-		/* collect when running beacon request measurement */
-		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-			if (rrmBcnRmRunning(prAdapter, u4Idx)) {
-				rrmProcessBeaconAndProbeResp(prAdapter,
-					prBssDesc, u4Idx);
-			}
-		}
-#endif
-
 	}
 
 	return rStatus;
