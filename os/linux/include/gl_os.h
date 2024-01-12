@@ -501,6 +501,49 @@ enum ENUM_CPU_STAT_CNT {
 };
 #endif /* CFG_SUPPORT_CPU_STAT */
 
+enum ENUM_WORK {
+#if CFG_SUPPORT_TX_FREE_MSDU_WORK
+	TX_FREE_MSDU_WORK,
+#endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
+#if CFG_SUPPORT_RETURN_WORK
+	RX_RETURN_RFB_WORK,
+#endif /* CFG_SUPPORT_RETURN_WORK */
+#if CFG_SUPPORT_TX_WORK
+	TX_WORK,
+#endif /* CFG_SUPPORT_TX_WORK */
+#if CFG_SUPPORT_RX_WORK
+	RX_WORK,
+#endif /* CFG_SUPPORT_RX_WORK */
+#if CFG_SUPPORT_RX_NAPI_WORK
+	RX_NAPI_WORK,
+#endif /* CFG_SUPPORT_RX_NAPI_WORK */
+	WORK_MAX
+};
+
+enum ENUM_WORK_INDEX {
+	WORKER_0,
+	WORKER_1,
+	WORKER_MAX
+};
+
+struct WORK_CONTAINER {
+	struct work_struct rWork;
+	struct GLUE_INFO *pr;
+	enum ENUM_WORK eWork;
+	enum ENUM_WORK_INDEX eIdx;
+};
+
+struct GL_WORK {
+	int32_t i4WorkCpu; /* controlled by CPU Boost */
+	struct workqueue_struct *prWorkQueue;
+	uint8_t *sWorkQueueName;
+	struct WORK_CONTAINER rWorkContainer[WORKER_MAX];
+	u_int8_t fgMultipleWork;
+	enum ENUM_WORK_INDEX eWorkIdx;
+};
+
+typedef void (*GL_WORK_FUNC) (struct work_struct *work);
+
 struct GL_IO_REQ {
 	struct QUE_ENTRY rQueEntry;
 	/* wait_queue_head_t       cmdwait_q; */
@@ -714,37 +757,13 @@ struct GLUE_INFO {
 	/* cpu statistics */
 	atomic_t aCpuStatCnt[CPU_STATISTICS_MAX][CPU_STAT_MAX_CPU];
 #endif /* CFG_SUPPORT_CPU_STAT */
-#if CFG_SUPPORT_TX_WORK
-	int32_t i4TxWorkCpu; /* controlled by CPU Boost */
-	struct workqueue_struct *prTxWorkQueue;
-	struct work_struct rTxWork;
-#endif /* CFG_SUPPORT_TX_WORK */
-#if CFG_SUPPORT_RX_WORK
-	int32_t i4RxWorkCpu; /* controlled by CPU Boost */
-	struct workqueue_struct *prRxWorkQueue;
-	struct work_struct rRxWork;
-#endif /* CFG_SUPPORT_RX_WORK */
-#if CFG_SUPPORT_RX_NAPI_WORK
-	int32_t i4RxNapiWorkCpu; /* controlled by CPU Boost */
-	struct workqueue_struct *prRxNapiWorkQueue;
-	struct work_struct rRxNapiWork;
-#endif /* CFG_SUPPORT_RX_NAPI_WORK */
+	struct GL_WORK arGlWork[WORK_MAX];
 	struct tasklet_struct rRxTask;
 	uint8_t fgRxTaskReady;
 	uint32_t u4RxTaskScheduleCnt;
 #if (CFG_SUPPORT_RETURN_TASK == 1)
 	struct tasklet_struct rRxRfbRetTask;
 #endif
-#if CFG_SUPPORT_RETURN_WORK
-	struct workqueue_struct *prRxRfbRetWorkQueue;
-	struct work_struct rRxRfbRetWork;
-	int32_t i4RxRfbRetCpu;
-#endif
-#if CFG_SUPPORT_TX_FREE_MSDU_WORK
-	struct workqueue_struct *prTxFreeMsduWorkQueue;
-	struct work_struct rTxFreeMsduWork;
-	int32_t i4TxFreeMsduCpu;
-#endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
 #if CFG_SUPPORT_TASKLET_FREE_MSDU
 	struct tasklet_struct rTxMsduRetTask;
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
