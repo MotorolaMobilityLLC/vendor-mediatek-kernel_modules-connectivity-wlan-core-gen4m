@@ -528,8 +528,8 @@ int mtk_cfg80211_vendor_llstats_get_info(
 	const void *data, int data_len)
 {
 	int32_t i4Status = -EINVAL;
-	struct WIFI_RADIO_STAT *pRadioStat;
-	struct sk_buff *skb;
+	struct WIFI_RADIO_STAT *pRadioStat = NULL;
+	struct sk_buff *skb = NULL;
 	uint32_t u4BufLen = 0;
 
 	ASSERT(wiphy);
@@ -539,14 +539,16 @@ int mtk_cfg80211_vendor_llstats_get_info(
 	pRadioStat = kalMemAlloc(u4BufLen, VIR_MEM_TYPE);
 	if (!pRadioStat) {
 		DBGLOG(REQ, ERROR, "%s kalMemAlloc pRadioStat failed\n", __func__);
-		return -ENOMEM;
+		i4Status = -ENOMEM;
+		goto nla_put_failure;
 	}
 	kalMemZero(pRadioStat, u4BufLen);
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, u4BufLen);
 	if (!skb) {
 		DBGLOG(REQ, TRACE, "%s allocate skb failed:%x\n", __func__, i4Status);
-		return -ENOMEM;
+		i4Status = -ENOMEM;
+		goto nla_put_failure;
 	}
 
 #if 0
@@ -577,7 +579,10 @@ int mtk_cfg80211_vendor_llstats_get_info(
 	/* return i4Status; */
 
 nla_put_failure:
-	kfree_skb(skb);
+	if (skb != NULL)
+		kfree_skb(skb);
+	if (pRadioStat != NULL)
+		kalMemFree(pRadioStat, VIR_MEM_TYPE, u4BufLen);
 	return i4Status;
 }
 
