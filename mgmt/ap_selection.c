@@ -248,11 +248,18 @@ const struct WFA_DESENSE_CHANNEL_LIST desenseChList[BAND_NUM] = {
 };
 #endif
 
-uint8_t roamReasonToType[ROAMING_REASON_NUM] = {
-	[0 ... ROAMING_REASON_NUM - 1] = ROAM_TYPE_RCPI,
-	[ROAMING_REASON_TX_ERR]	       = ROAM_TYPE_PER,
-};
+static enum ROAM_TYPE roamReasonToType(enum ENUM_ROAMING_REASON type)
+{
+	enum ROAM_TYPE ret = ROAM_TYPE_RCPI;
 
+	if (type >= ROAMING_REASON_NUM)
+		return ret;
+
+	if (type == ROAMING_REASON_TX_ERR)
+		ret = ROAM_TYPE_PER;
+
+	return ret;
+}
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -559,7 +566,7 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 	uint16_t u2CurrMiss = u4UpdateIdx - prCurrBss->u4UpdateIdx;
 	struct BSS_DESC *prBssDesc = NULL;
 	int8_t ucOpChannelNum = 0;
-	enum ROAM_TYPE eRoamType = roamReasonToType[eRoamReason];
+	enum ROAM_TYPE eRoamType = roamReasonToType(eRoamReason);
 
 	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 	if (prBssDesc)
@@ -1135,7 +1142,7 @@ uint16_t scanCalculateScoreByPreference(struct ADAPTER *prAdapter,
 	if (eRoamReason == ROAMING_REASON_BTM) {
 		if (prBssDesc->prNeighbor) {
 			enum ROAM_TYPE eRoamType =
-				roamReasonToType[eRoamReason];
+				roamReasonToType(eRoamReason);
 
 			return prBssDesc->prNeighbor->ucPreference *
 			       gasMtkWeightConfig[eRoamType].ucPreferenceWeight;
@@ -1175,7 +1182,7 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 	char *extra = "";
 #endif
 	int8_t cRssi = -128;
-	enum ROAM_TYPE eRoamType = roamReasonToType[eRoamReason];
+	enum ROAM_TYPE eRoamType = roamReasonToType(eRoamReason);
 
 	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	cRssi = RCPI_TO_dBm(prBssDesc->ucRCPI);
@@ -1398,7 +1405,7 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prEssLink = &prAisSpecificBssInfo->rCurEssLink;
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-	eRoamType = roamReasonToType[eRoamReason];
+	eRoamType = roamReasonToType(eRoamReason);
 #if CFG_SUPPORT_CHNL_CONFLICT_REVISE
 	fgIsFixedChnl =	cnmAisDetectP2PChannel(prAdapter, &eBand, &ucChannel);
 #else
