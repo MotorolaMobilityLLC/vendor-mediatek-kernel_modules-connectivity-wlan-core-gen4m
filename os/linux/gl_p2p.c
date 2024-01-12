@@ -1043,8 +1043,10 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 				(void *)prGlueInfo->prP2PInfo->prDevHandler);
 #endif
 
-exit:
+	mtk_p2p_cfg80211_change_iface_impl(prAdapter, u4Idx,
+					   prP2pWdev->iftype);
 
+exit:
 	return 0;
 }
 

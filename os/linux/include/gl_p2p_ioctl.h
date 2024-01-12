@@ -807,4 +807,8 @@ mtk_p2p_wext_set_txpow(struct net_device *prDev,
 		union iwreq_data *prTxPow,
 		char *pcExtra);
 
+int mtk_p2p_cfg80211_change_iface_impl(struct ADAPTER *prAdapter,
+	uint8_t ucRoleIdx,
+	enum nl80211_iftype type);
+
 #endif /* _GL_P2P_IOCTL_H */
