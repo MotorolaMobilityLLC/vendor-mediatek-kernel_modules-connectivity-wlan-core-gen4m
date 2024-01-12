@@ -1068,8 +1068,7 @@ struct ADAPTER {
 	uint32_t u4CSUMFlags;
 #endif				/* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
-	enum ENUM_BAND aePreferBand[MAX_BSSID_NUM];
-	enum ENUM_BAND aeSetBand[NETWORK_TYPE_NUM];
+	enum ENUM_BAND aePreferBand[NETWORK_TYPE_NUM];
 
 	/* ADAPTER flags */
 	uint32_t u4Flags;
