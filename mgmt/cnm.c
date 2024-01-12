@@ -185,18 +185,6 @@ struct DBDC_FSM_T {
 };
 #endif /*CFG_SUPPORT_DBDC*/
 
-/* Priority Order !!!! */
-enum ENUM_CNM_OPMODE_REQ_T {
-	CNM_OPMODE_REQ_DBDC       = 0,
-	CNM_OPMODE_REQ_DBDC_SCAN  = 1,
-	CNM_OPMODE_REQ_COEX       = 2,
-	CNM_OPMODE_REQ_SMARTGEAR  = 3,
-	CNM_OPMODE_REQ_SMARTGEAR_1T2R  = 4,
-	CNM_OPMODE_REQ_COANT      = 5,
-	CNM_OPMODE_REQ_NUM        = 6,
-	CNM_OPMODE_REQ_MAX_CAP    = 7 /* just for coding */
-};
-
 enum ENUM_CNM_OPMODE_REQ_STATUS {
 	CNM_OPMODE_REQ_STATUS_SUCCESS,
 	CNM_OPMODE_REQ_STATUS_INVALID_PARAM,
@@ -603,7 +591,7 @@ void cnmInit(struct ADAPTER *prAdapter)
 		ucBssIndex++) {
 		prBssOpCtrl = &(g_arBssOpControl[ucBssIndex]);
 		prBssOpCtrl->rRunning.fgIsRunning = false;
-		for (eReqIdx = CNM_OPMODE_REQ_DBDC;
+		for (eReqIdx = CNM_OPMODE_REQ_START;
 				eReqIdx < CNM_OPMODE_REQ_NUM; eReqIdx++)
 			prBssOpCtrl->arReqPool[eReqIdx].fgEnable = false;
 	}
@@ -2196,7 +2184,12 @@ static u_int8_t cnmDbdcIsAGConcurrent(
 	enum ENUM_BAND eBandCompare = eRfBand_Connecting;
 	u_int8_t fgAGConcurrent = FALSE;
 	enum ENUM_BAND eBssBand[BSSID_NUM] = {BAND_NULL};
-
+#if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+	if (prAdapter->fgPowerForceOneNss) {
+		log_dbg(CNM, INFO, "[DBDC] disable DBDC by power");
+		return FALSE;
+	}
+#endif
 	for (ucBssIndex = 0;
 		ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
 
@@ -3788,6 +3781,9 @@ cnmOpModeMapEvtReason(
 	case EVENT_OPMODE_CHANGE_REASON_COEX:
 		eReqIdx = CNM_OPMODE_REQ_COEX;
 		break;
+	case EVENT_OPMODE_CHANGE_REASON_ANT_CTRL:
+		eReqIdx = CNM_OPMODE_REQ_ANT_CTRL;
+		break;
 	default:
 		eReqIdx = CNM_OPMODE_REQ_NUM;
 		break;
@@ -3867,7 +3863,7 @@ void cnmOpModeCallbackDispatcher(
 	prBssOpCtrl->rRunning.fgIsRunning = false;
 
 	/* Step 2. Check pending request */
-	for (eReqIdx = CNM_OPMODE_REQ_DBDC;
+	for (eReqIdx = CNM_OPMODE_REQ_START;
 		eReqIdx < CNM_OPMODE_REQ_NUM;
 		eReqIdx++) {
 		prReq = &(prBssOpCtrl->arReqPool[eReqIdx]);
@@ -3912,7 +3908,7 @@ cnmOpModeReqDispatcher(
 		return CNM_OPMODE_REQ_NUM;
 	}
 
-	for (eReqIdx = CNM_OPMODE_REQ_DBDC;
+	for (eReqIdx = CNM_OPMODE_REQ_START;
 		  eReqIdx < CNM_OPMODE_REQ_NUM; eReqIdx++) {
 		prReq = &(prBssOpCtrl->arReqPool[eReqIdx]);
 		prReq->fgNewRequest = false;
@@ -4106,7 +4102,7 @@ void cnmOpModeGetTRxNss(
 			apucCnmOpModeReq[eCurrMaxIdx],
 			apucCnmOpModeReq[prBssOpCtrl->rRunning.eReqIdx]);
 	} else {
-		for (eReqIdx = CNM_OPMODE_REQ_DBDC;
+		for (eReqIdx = CNM_OPMODE_REQ_START;
 			eReqIdx < CNM_OPMODE_REQ_NUM;
 			eReqIdx++) {
 			prReq = &(prBssOpCtrl->arReqPool[eReqIdx]);
@@ -4402,4 +4398,112 @@ struct BSS_INFO *cnmGetP2pBssInfo(IN struct ADAPTER *prAdapter)
 
 	return NULL;
 }
+
+#if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief for customize
+ *
+ * @param level
+ *
+ * @return
+ */
+/*----------------------------------------------------------------------------*/
+bool isNeedBecomeOneNss(int level)
+{
+	return level > 2;
+}
+
+bool isNeedForceOneNss(int level)
+{
+	return level > 3;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief for control power level
+ *
+ * @param prAdapter
+ *
+ * @return
+ */
+/*----------------------------------------------------------------------------*/
+int cnmPowerControl(
+	struct ADAPTER *prAdapter,
+	uint8_t level)
+{
+	struct BSS_INFO *prSta0BssInfo;
+	struct BSS_INFO *prSta1BssInfo;
+
+	prAdapter->fgPowerForceOneNss = FALSE;
+	prAdapter->fgPowerNeedDisconnect = FALSE;
+
+	if (isNeedBecomeOneNss(level))
+		prAdapter->fgPowerForceOneNss = TRUE;
+
+	if (isNeedForceOneNss(level))
+		prAdapter->fgPowerNeedDisconnect = TRUE;
+
+	DBGLOG(CNM, INFO, "ForceOneNss=%d, NeedDisconnect=%d, dbdc=%d",
+		prAdapter->fgPowerForceOneNss,
+		prAdapter->fgPowerNeedDisconnect,
+		prAdapter->rWifiVar.fgDbDcModeEn);
+
+	/* DBDC enabled need to disconnect STA */
+	if (prAdapter->rWifiVar.fgDbDcModeEn) {
+		/* check if dual sta */
+		prSta0BssInfo = aisGetAisBssInfo(prAdapter, 0);
+		prSta1BssInfo = aisGetAisBssInfo(prAdapter, 1);
+		if (prSta1BssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
+			prSta1BssInfo->u2DeauthReason =
+				REASON_CODE_DISASSOC_LEAVING_BSS;
+			aisFsmStateAbort(prAdapter,
+				DISCONNECT_REASON_CODE_DISASSOCIATED,
+				FALSE, 1);
+		} else if (prSta0BssInfo->eConnectionState ==
+				MEDIA_STATE_CONNECTED) {
+			prSta0BssInfo->u2DeauthReason =
+				REASON_CODE_DISASSOC_LEAVING_BSS;
+			aisFsmStateAbort(prAdapter,
+				DISCONNECT_REASON_CODE_DISASSOCIATED,
+				FALSE, 0);
+		}
+	}
+
+	return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief for control power level error handling
+ *
+ * @param prAdapter, prBssInfo
+ *
+ * @return
+ */
+/*----------------------------------------------------------------------------*/
+void cnmPowerControlErrorHandling(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo)
+{
+	DBGLOG(CNM, INFO, "eNetworkType=%d", prBssInfo->eNetworkType);
+	switch (prBssInfo->eNetworkType) {
+	case NETWORK_TYPE_AIS:
+		prBssInfo->u2DeauthReason = REASON_CODE_DISASSOC_LEAVING_BSS;
+		aisFsmStateAbort(prAdapter,
+			DISCONNECT_REASON_CODE_DISASSOCIATED,
+			FALSE, prBssInfo->ucBssIndex);
+		break;
+	case NETWORK_TYPE_P2P:
+		p2pFuncDisconnect(prAdapter,
+					prBssInfo,
+					prBssInfo->prStaRecOfAP,
+					FALSE,
+					REASON_CODE_OP_MODE_CHANGE_FAIL);
+		break;
+	default:
+		break;
+	}
+}
+#endif
 

@@ -1821,7 +1821,10 @@ struct ADAPTER {
 	struct LINK rPwrLevelHandlerList;
 	uint32_t u4PwrLevel;
 #endif
-
+#if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+	bool fgPowerForceOneNss;
+	bool fgPowerNeedDisconnect;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
