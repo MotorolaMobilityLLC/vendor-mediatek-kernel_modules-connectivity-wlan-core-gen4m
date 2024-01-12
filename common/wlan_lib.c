@@ -7541,6 +7541,18 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 			prAdapter, "ExtendedRange",
 			FEATURE_ENABLED);
 #endif
+
+#if (CFG_SUPPORT_P2PGO_ACS == 1)
+	prWifiVar->ucP2pGoACS = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "P2pGoACSEnable",
+			FEATURE_DISABLED);
+	DBGLOG(INIT, WARN,
+		"P2pGoACSEnable Setting:ACS Enable[%d]\n",
+		prAdapter->rWifiVar.ucP2pGoACS);
+
+#endif
+
+
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
@@ -10402,72 +10414,182 @@ wlanGetChannelNumFromIndex(IN uint8_t ucIdx)
 }
 
 void
-wlanSortChannel(IN struct ADAPTER *prAdapter)
+wlanSortChannel(IN struct ADAPTER *prAdapter,
+IN enum ENUM_CHNL_SORT_POLICY ucSortType)
 {
 	struct PARAM_GET_CHN_INFO *prChnLoadInfo = &
 			(prAdapter->rWifiVar.rChnLoadInfo);
 	int8_t ucIdx = 0, ucRoot = 0, ucChild = 0;
+#if (CFG_SUPPORT_P2PGO_ACS == 1)
+	uint8_t i = 0, ucBandIdx = 0, ucNumOfChannel = 0, uc2gChNum = 0;
+	struct RF_CHANNEL_INFO aucChannelList[MAX_CHN_NUM];
+#endif
 	struct PARAM_CHN_RANK_INFO rChnRankInfo;
-
 	/* prepare unsorted ch rank list */
-	for (ucIdx = 0; ucIdx < MAX_CHN_NUM; ++ucIdx) {
-		prChnLoadInfo->rChnRankList[ucIdx].ucChannel =
-			prChnLoadInfo->rEachChnLoad[ucIdx].ucChannel;
-		prChnLoadInfo->rChnRankList[ucIdx].u4Dirtiness =
-			prChnLoadInfo->rEachChnLoad[ucIdx].u4Dirtiness;
+#if (CFG_SUPPORT_P2PGO_ACS == 1)
+	if (ucSortType == CHNL_SORT_POLICY_BY_CH_DOMAIN) {
+		for (ucBandIdx = BAND_2G4; ucBandIdx <= BAND_5G; ucBandIdx++) {
+			rlmDomainGetChnlList(prAdapter,
+								ucBandIdx,
+								TRUE,
+								MAX_CHN_NUM,
+								&ucNumOfChannel,
+								aucChannelList);
+			DBGLOG(SCN, TRACE, "[ACS]Band=%d, Channel Number=%d\n",
+			       ucBandIdx,
+			       ucNumOfChannel);
+		for (i = 0; i < ucNumOfChannel; i++) {
+			ucIdx =
+			wlanGetChannelIndex(
+			aucChannelList[i].ucChannelNum);
+			prChnLoadInfo->
+				rChnRankList[uc2gChNum+i].ucChannel =
+			prChnLoadInfo->
+				rEachChnLoad[ucIdx].ucChannel;
+			prChnLoadInfo->
+				rChnRankList[uc2gChNum+i].u4Dirtiness =
+			prChnLoadInfo->
+				rEachChnLoad[ucIdx].u4Dirtiness;
+			DBGLOG(SCN, TRACE, "[ACS]Ch=%d eIdx=%d,Cidx[%d]",
+				aucChannelList[i].ucChannelNum,
+				ucIdx,
+				uc2gChNum+i);
+			DBGLOG(SCN, TRACE, "[ACS]ChR[%d],eCh[%d]\n",
+				prChnLoadInfo->
+				rChnRankList[uc2gChNum+i].ucChannel,
+				prChnLoadInfo->
+				rEachChnLoad[ucIdx].ucChannel);
+		}
+			uc2gChNum = uc2gChNum+ucNumOfChannel;
 	}
-
+		/*Set the reset idx to invalid value*/
+		for (i = uc2gChNum; i < MAX_CHN_NUM; i++) {
+			prChnLoadInfo->
+				rChnRankList[i].u4Dirtiness = 0xFFFFFFFF;
+			prChnLoadInfo->
+				rChnRankList[i].ucChannel = 0xFF;
+			DBGLOG(SCN, TRACE, "uc2gChNum=%d,[ACS]Chn=%d,D=%x\n",
+						uc2gChNum,
+						prChnLoadInfo->
+						rChnRankList[i].ucChannel,
+						prChnLoadInfo->
+						rChnRankList[i].u4Dirtiness);
+		}
+	} else
+#endif
+	{
+		for (ucIdx = 0; ucIdx < MAX_CHN_NUM; ++ucIdx) {
+			prChnLoadInfo->
+			rChnRankList[ucIdx].ucChannel =
+			prChnLoadInfo->
+			rEachChnLoad[ucIdx].ucChannel;
+			prChnLoadInfo->
+			rChnRankList[ucIdx].u4Dirtiness =
+			prChnLoadInfo->
+			rEachChnLoad[ucIdx].u4Dirtiness;
+		}
+	}
 	/* heapify ch rank list */
 	for (ucIdx = MAX_CHN_NUM / 2 - 1; ucIdx >= 0; --ucIdx) {
 		for (ucRoot = ucIdx; ucRoot * 2 + 1 < MAX_CHN_NUM;
 		     ucRoot = ucChild) {
-
 			ucChild = ucRoot * 2 + 1;
 			if (ucChild < MAX_CHN_NUM - 1 && prChnLoadInfo->
 			    rChnRankList[ucChild + 1].u4Dirtiness >
 			    prChnLoadInfo->rChnRankList[ucChild].u4Dirtiness)
 				ucChild += 1;
-
 			if (prChnLoadInfo->rChnRankList[ucChild].u4Dirtiness <=
 			    prChnLoadInfo->rChnRankList[ucRoot].u4Dirtiness)
 				break;
-
-			rChnRankInfo = prChnLoadInfo->rChnRankList[ucChild];
-			prChnLoadInfo->rChnRankList[ucChild] =
-				prChnLoadInfo->rChnRankList[ucRoot];
-			prChnLoadInfo->rChnRankList[ucRoot] = rChnRankInfo;
-		}
+			DBGLOG(SCN, TRACE, "[ACS]root Chn=%d,D=%x\n",
+					   prChnLoadInfo->
+					   rChnRankList[ucRoot].ucChannel,
+					   prChnLoadInfo->
+					   rChnRankList[ucRoot].u4Dirtiness);
+			DBGLOG(SCN, TRACE, "[ACS]child Chn=%d,D=%x\n",
+					   prChnLoadInfo->
+					   rChnRankList[ucChild].ucChannel,
+					   prChnLoadInfo->
+					   rChnRankList[ucChild].u4Dirtiness);
+			kalMemCopy(&rChnRankInfo,
+				&(prChnLoadInfo->rChnRankList[ucChild]),
+				sizeof(struct PARAM_CHN_RANK_INFO));
+			kalMemCopy(&prChnLoadInfo->rChnRankList[ucChild],
+				&prChnLoadInfo->rChnRankList[ucRoot],
+				sizeof(struct PARAM_CHN_RANK_INFO));
+			kalMemCopy(&prChnLoadInfo->rChnRankList[ucRoot],
+				&rChnRankInfo,
+				sizeof(struct PARAM_CHN_RANK_INFO));
+			DBGLOG(SCN, TRACE,
+				"[ACS]After root uChn=%d,D=%x\n",
+					   prChnLoadInfo->
+					   rChnRankList[ucRoot].ucChannel,
+					   prChnLoadInfo->
+					   rChnRankList[ucRoot].u4Dirtiness);
+			DBGLOG(SCN, TRACE,
+				"[ACS]AFter child Chn=%d,D=%x\n",
+					   prChnLoadInfo->
+					   rChnRankList[ucChild].ucChannel,
+					   prChnLoadInfo->
+					   rChnRankList[ucChild].u4Dirtiness);
+			}
 	}
-
 	/* sort ch rank list */
 	for (ucIdx = MAX_CHN_NUM - 1; ucIdx > 0; ucIdx--) {
 		rChnRankInfo = prChnLoadInfo->rChnRankList[0];
 		prChnLoadInfo->rChnRankList[0] =
 			prChnLoadInfo->rChnRankList[ucIdx];
 		prChnLoadInfo->rChnRankList[ucIdx] = rChnRankInfo;
-
 		for (ucRoot = 0; ucRoot * 2 + 1 < ucIdx; ucRoot = ucChild) {
 			ucChild = ucRoot * 2 + 1;
 			if (ucChild < ucIdx - 1 && prChnLoadInfo->
 			    rChnRankList[ucChild + 1].u4Dirtiness >
 			    prChnLoadInfo->rChnRankList[ucChild].u4Dirtiness)
 				ucChild += 1;
-
 			if (prChnLoadInfo->rChnRankList[ucChild].u4Dirtiness <=
 			    prChnLoadInfo->rChnRankList[ucRoot].u4Dirtiness)
 				break;
+			DBGLOG(SCN, TRACE,
+				"[ACS]root ChNum=%d D=%x",
+					   prChnLoadInfo->
+					   rChnRankList[ucRoot].ucChannel,
+					   prChnLoadInfo->
+					   rChnRankList[ucRoot].u4Dirtiness);
+			DBGLOG(SCN, TRACE, "[ACS]child ChNum=%d D=%x\n",
+					   prChnLoadInfo->
+					   rChnRankList[ucChild].ucChannel,
+					   prChnLoadInfo->
+					   rChnRankList[ucChild].u4Dirtiness);
+			kalMemCopy(&rChnRankInfo,
+				&(prChnLoadInfo->rChnRankList[ucChild]),
+				sizeof(struct PARAM_CHN_RANK_INFO));
+			kalMemCopy(&prChnLoadInfo->rChnRankList[ucChild],
+				&prChnLoadInfo->rChnRankList[ucRoot],
+				sizeof(struct PARAM_CHN_RANK_INFO));
+			kalMemCopy(&prChnLoadInfo->rChnRankList[ucRoot],
+				&rChnRankInfo,
+				sizeof(struct PARAM_CHN_RANK_INFO));
+			DBGLOG(SCN, TRACE,
+				"[ACS]New root ChNum=%d D=%x",
+					   prChnLoadInfo->
+					   rChnRankList[ucRoot].ucChannel,
+					   prChnLoadInfo->
+					   rChnRankList[ucRoot].u4Dirtiness);
 
-			rChnRankInfo = prChnLoadInfo->rChnRankList[ucChild];
-			prChnLoadInfo->rChnRankList[ucChild] =
-				prChnLoadInfo->rChnRankList[ucRoot];
-			prChnLoadInfo->rChnRankList[ucRoot] = rChnRankInfo;
+			DBGLOG(SCN, TRACE,
+				"[ACS]New child ChNum=%d D=%x",
+					   prChnLoadInfo->
+					   rChnRankList[ucChild].ucChannel,
+					   prChnLoadInfo->
+					   rChnRankList[ucChild].u4Dirtiness);
 		}
 	}
 
-	for (ucIdx = 0; ucIdx < MAX_CHN_NUM; ++ucIdx)
-		log_dbg(P2P, TEMP, "[ACS]channel=%d, dirtiness=%d\n",
+	for (ucIdx = 0; ucIdx < MAX_CHN_NUM; ++ucIdx) {
+		DBGLOG(SCN, INFO, "[ACS]channel=%d,dirtiness=%d\n",
 		       prChnLoadInfo->rChnRankList[ucIdx].ucChannel,
 		       prChnLoadInfo->rChnRankList[ucIdx].u4Dirtiness);
+	}
 
 }
 
