@@ -8202,6 +8202,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		INIT_UINT(prWifiVar->fgNanWmmSeq, "NanWmmSeq",
 		(prWifiVar->ucNanFixChnl < 36) ? 0:1);
 	}
+	INIT_UINT(prWifiVar->fgNanUnrollInstallTk, "NanUnrollInstallTk", 0);
 #endif
 
 #ifdef CFG_EXT_FEATURE
