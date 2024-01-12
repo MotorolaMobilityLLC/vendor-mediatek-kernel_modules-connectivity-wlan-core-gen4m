@@ -1452,8 +1452,10 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 	prRxDescOps = prAdapter->chip_info->prRxDescOps;
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 
-	if (prStaRec == NULL)
+	if (prStaRec == NULL) {
+		DBGLOG(SAA, WARN, "no valid starec!\n");
 		return WLAN_STATUS_FAILURE;
+	}
 
 	/* 4 <1> locate the Association Req Frame. */
 	prAssocReqFrame = (struct WLAN_ASSOC_REQ_FRAME *)prSwRfb->pvHeader;
@@ -1476,6 +1478,10 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 
 	if ((prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen)
 		<= ucFixedFieldLength) {
+		DBGLOG(SAA, WARN, "wrong packet len: %d-%d=%d <= %d!\n",
+			prSwRfb->u2PacketLen, prSwRfb->u2HeaderLen,
+			prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen,
+			ucFixedFieldLength);
 		/* Length of this (re)association req is invalid, ignore it */
 		return WLAN_STATUS_FAILURE;
 	}
@@ -1483,8 +1489,13 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
 	/* Check if this Disassoc Frame is coming from Target BSSID */
-	if (UNEQUAL_MAC_ADDR(prAssocReqFrame->aucBSSID, prBssInfo->aucBSSID))
+	if (UNEQUAL_MAC_ADDR(prAssocReqFrame->aucBSSID, prBssInfo->aucBSSID)) {
+		DBGLOG(SAA, WARN,
+			"wrong mac " MACSTR " but expected " MACSTR"\n",
+			MAC2STR(prAssocReqFrame->aucBSSID),
+			MAC2STR(prBssInfo->aucBSSID));
 		return WLAN_STATUS_FAILURE;	/* Just Ignore this MMPDU */
+	}
 
 	if (u2RxFrameCtrl == MAC_FRAME_REASSOC_REQ) {
 		prStaRec->fgIsReAssoc = TRUE;
@@ -1942,7 +1953,7 @@ assocComposeReAssocRespFrameHeaderAndFF(IN struct STA_RECORD *prStaRec,
  * @retval WLAN_STATUS_SUCCESS   Successfully send frame to TX Module
  */
 /*----------------------------------------------------------------------------*/
-uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter,
+struct MSDU_INFO * assocComposeReAssocRespFrame(IN struct ADAPTER *prAdapter,
 				   IN struct STA_RECORD *prStaRec)
 {
 	struct BSS_INFO *prBssInfo;
@@ -1988,13 +1999,16 @@ uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter,
 	}
 
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	u2EstimatedFrameLen += MAX_LEN_OF_MLIE;
+#endif
 
 	/* Allocate a MSDU_INFO_T */
 	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
 	if (prMsduInfo == NULL) {
 		DBGLOG(AAA, WARN,
 		       "No PKT_INFO_T for sending (Re)Assoc Response.\n");
-		return WLAN_STATUS_RESOURCES;
+		return NULL;
 	}
 	/* 4 <2> Compose (Re)Association Request frame header and fixed fields
 	 *       in MSDU_INfO_T.
@@ -2058,6 +2072,23 @@ uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter,
 
 	nicTxConfigPktControlFlag(prMsduInfo, MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
 
+	return prMsduInfo;
+} /* end of assocComposeReAssocRespFrame() */
+
+uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter,
+				  IN struct STA_RECORD *prStaRec)
+{
+	struct MSDU_INFO *prMsduInfo;
+
+	prMsduInfo = assocComposeReAssocRespFrame(prAdapter, prStaRec);
+	if (!prMsduInfo)
+		return WLAN_STATUS_RESOURCES;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	beGenerateAssocMldIE(prAdapter, prStaRec, prMsduInfo,
+		assocComposeReAssocRespFrame);
+#endif
+
 	/* 4 <6> Enqueue the frame to send this (Re)Association request frame.
 	 */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
@@ -2067,10 +2098,8 @@ uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter,
 			MAC2STR(prStaRec->aucMacAddr),
 			prMsduInfo->ucTxSeqNum,
 			prStaRec->u2StatusCode);
-
 	return WLAN_STATUS_SUCCESS;
-
-}				/* end of assocSendReAssocRespFrame() */
+} /* end of assocSendReAssocRespFrame() */
 
 /*-----------------------------------------------------------------------*/
 /*!
