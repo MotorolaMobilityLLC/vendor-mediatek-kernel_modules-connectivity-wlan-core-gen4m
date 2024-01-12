@@ -194,6 +194,9 @@
 #define GALS_AXI_DEBUG_FLAG                     0x3333
 #define MCU_AXI_DEBUG_FLAG                      0x4444
 #define RBUS_DEBUG_FLAG                         0x118
+
+#define WPDMA_PAUSE_TX_Q_RINGIDX_OFFSET         16
+#define WPDMA_PAUSE_TX_Q_RINGIDX_MASK           0xFFFF0000
 #endif /* _HIF_PCIE */
 
 

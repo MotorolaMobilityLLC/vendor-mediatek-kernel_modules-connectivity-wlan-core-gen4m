@@ -1609,6 +1609,12 @@ struct ADAPTER {
 	uint32_t u4TxHangFlag;
 	uint32_t u4NoMoreRfb;
 
+	/* Only for PCIE DmaSchdl usage so far. */
+	struct {
+		bool fgRun;
+		uint32_t u4Quota;
+	} rWmmQuotaReqCS[BSS_DEFAULT_NUM];
+
 #if CFG_SUPPORT_OSHARE
 	bool fgEnOshareMode;
 #endif
