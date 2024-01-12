@@ -72,12 +72,6 @@
 #include "precomp.h"
 #include "que_mgt.h"
 
-#ifndef LINUX
-#include <limits.h>
-#else
-#include <linux/limits.h>
-#endif
-
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************

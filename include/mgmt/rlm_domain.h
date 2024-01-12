@@ -1022,8 +1022,6 @@ u_int8_t rlmDomainIsLegalDfsChannel(struct ADAPTER *prAdapter,
 enum ENUM_CHNL_EXT rlmSelectSecondaryChannelType(
 	struct ADAPTER *prAdapter, enum ENUM_BAND band,
 	u8 primary_ch);
-extern void mtk_reg_notify(IN struct wiphy *pWiphy,
-			   IN struct regulatory_request *pRequest);
 void rlmDomainOidSetCountry(IN struct ADAPTER *prAdapter,
 			    char *country, u8 size_of_country);
 u32 rlmDomainGetCountryCode(void);
