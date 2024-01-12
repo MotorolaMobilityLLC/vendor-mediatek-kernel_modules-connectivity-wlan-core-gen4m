@@ -2011,55 +2011,27 @@ void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (CONNAC2X_RXV_FROM_RX_RPT(prAdapter))
-		return;
-
 	prGroup3 =
 		(struct HW_MAC_RX_STS_GROUP_3_V2 *)prRetSwRfb->prRxStatusGroup3;
+
+	prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].u4RxVector0 = 0;
+	prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].u4RxVector1 = 0;
+	prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].u4RxVector2 = 0;
+	prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].u4RxVector3 = 0;
+	prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].u4RxVector4 = 0;
+
 	if (prRetSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) {
-		/* P-RXV1[0:31] */
+		/* P-RXV0[0:31] in RXD Group3 */
 		prAdapter->arStaRec[
-			prRetSwRfb->ucStaRecIdx].u4RxVector0 =
-			CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 0);
+		prRetSwRfb->ucStaRecIdx].u4RxVector0 =
+		CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 0);
+
+		/* P-RXV0[32:63] in RXD Group3 */
 		prAdapter->arStaRec[
-			prRetSwRfb->ucStaRecIdx].u4RxVector4 =
-			CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 1);
-	} else {
-		prAdapter->arStaRec[
-			prRetSwRfb->ucStaRecIdx].u4RxVector0 = 0;
-		prAdapter->arStaRec[
-			prRetSwRfb->ucStaRecIdx].u4RxVector4 = 0;
+		prRetSwRfb->ucStaRecIdx].u4RxVector1 =
+		CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 1);
 	}
 
-	if (prRetSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_5)) {
-		/* C-B-0[0:31] */
-		prAdapter->arStaRec[
-			prRetSwRfb->ucStaRecIdx].u4RxVector1 =
-			CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(
-			prRetSwRfb->prRxStatusGroup5, 0);
-		/* C-B-1[0:31] */
-		prAdapter->arStaRec[
-			prRetSwRfb->ucStaRecIdx].u4RxVector2 =
-			CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(
-			prRetSwRfb->prRxStatusGroup5, 2);
-		/* C-B-2[0:31] */
-		prAdapter->arStaRec[
-			prRetSwRfb->ucStaRecIdx].u4RxVector3 =
-			CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(
-			prRetSwRfb->prRxStatusGroup5, 4);
-		/* C-B-3[0:31] */
-		prAdapter->arStaRec[
-			prRetSwRfb->ucStaRecIdx].u4RxVector4 =
-			CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(
-			prRetSwRfb->prRxStatusGroup5, 6);
-	} else {
-		prAdapter->arStaRec[
-			prRetSwRfb->ucStaRecIdx].u4RxVector1 = 0;
-		prAdapter->arStaRec[
-			prRetSwRfb->ucStaRecIdx].u4RxVector2 = 0;
-		prAdapter->arStaRec[
-			prRetSwRfb->ucStaRecIdx].u4RxVector3 = 0;
-	}
 	nicRxProcessRxvLinkStats(prAdapter, prRetSwRfb,
 		prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].u4RxVector0);
 }
@@ -2071,8 +2043,8 @@ uint8_t asicConnac2xRxGetRcpiValueFromRxv(
 {
 	uint8_t ucRcpi0, ucRcpi1, ucRcpi2, ucRcpi3;
 	uint8_t ucRcpiValue = 0;
-	/* falcon IP donot have this field 'ucRxNum' */
-	/* uint8_t ucRxNum; */
+	uint8_t ucRxNum;
+	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3 = NULL;
 
 	ASSERT(prSwRfb);
 
@@ -2083,60 +2055,61 @@ uint8_t asicConnac2xRxGetRcpiValueFromRxv(
 		return 0;
 	}
 
-	ucRcpi0 = HAL_RX_STATUS_GET_RCPI0(
-			  (struct HW_MAC_RX_STS_GROUP_3_V2 *)
-			  prSwRfb->prRxStatusGroup3);
-	ucRcpi1 = HAL_RX_STATUS_GET_RCPI1(
-			  (struct HW_MAC_RX_STS_GROUP_3_V2 *)
-			  prSwRfb->prRxStatusGroup3);
-	ucRcpi2 = HAL_RX_STATUS_GET_RCPI2(
-			  (struct HW_MAC_RX_STS_GROUP_3_V2 *)
-			  prSwRfb->prRxStatusGroup3);
-	ucRcpi3 = HAL_RX_STATUS_GET_RCPI3(
-			  (struct HW_MAC_RX_STS_GROUP_3_V2 *)
-			  prSwRfb->prRxStatusGroup3);
+	if ((prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) == 0) {
+		DBGLOG(RX, WARN, "%s, RXD group 3 is not valid\n", __func__);
+		return 0;
+	}
 
-	/*If Rcpi is not available, set it to zero*/
-	if (ucRcpi0 == RCPI_MEASUREMENT_NOT_AVAILABLE)
-		ucRcpi0 = RCPI_LOW_BOUND;
-	if (ucRcpi1 == RCPI_MEASUREMENT_NOT_AVAILABLE)
-		ucRcpi1 = RCPI_LOW_BOUND;
+	prGroup3 = (struct HW_MAC_RX_STS_GROUP_3_V2 *)
+				prSwRfb->prRxStatusGroup3;
+
+	ucRcpi0 = CONNAC2X_HAL_RX_VECTOR_GET_RCPI0_V2(prGroup3);
+	ucRcpi1 = CONNAC2X_HAL_RX_VECTOR_GET_RCPI1_V2(prGroup3);
+	ucRcpi2 = CONNAC2X_HAL_RX_VECTOR_GET_RCPI2_V2(prGroup3);
+	ucRcpi3 = CONNAC2X_HAL_RX_VECTOR_GET_RCPI3_V2(prGroup3);
+	ucRxNum = CONNAC2X_HAL_RX_VECTOR_GET_NUM_RX_V2(prGroup3);
+
 	DBGLOG(RX, TRACE, "RCPI WF0:%d WF1:%d WF2:%d WF3:%d\n",
 	       ucRcpi0, ucRcpi1, ucRcpi2, ucRcpi3);
 
-	switch (ucRcpiMode) {
-	case RCPI_MODE_WF0:
-		ucRcpiValue = ucRcpi0;
-		break;
+	if (ucRxNum == 0)
+		ucRcpiValue = (ucRcpi0 >= RCPI_MEASUREMENT_NOT_AVAILABLE) ?
+			(ucRcpi1):(ucRcpi0);
+	else {
+		switch (ucRcpiMode) {
+		case RCPI_MODE_WF0:
+			ucRcpiValue = ucRcpi0;
+			break;
 
-	case RCPI_MODE_WF1:
-		ucRcpiValue = ucRcpi1;
-		break;
+		case RCPI_MODE_WF1:
+			ucRcpiValue = ucRcpi1;
+			break;
 
-	case RCPI_MODE_WF2:
-		ucRcpiValue = ucRcpi2;
-		break;
+		case RCPI_MODE_WF2:
+			ucRcpiValue = ucRcpi2;
+			break;
 
-	case RCPI_MODE_WF3:
-		ucRcpiValue = ucRcpi3;
-		break;
+		case RCPI_MODE_WF3:
+			ucRcpiValue = ucRcpi3;
+			break;
 
-	case RCPI_MODE_AVG: /*Not recommended for CBW80+80*/
-		ucRcpiValue = (ucRcpi0 + ucRcpi1) / 2;
-		break;
+		case RCPI_MODE_AVG: /*Not recommended for CBW80+80*/
+			ucRcpiValue = (ucRcpi0 + ucRcpi1) / 2;
+			break;
 
-	case RCPI_MODE_MAX:
-		ucRcpiValue =
-			(ucRcpi0 > ucRcpi1) ? (ucRcpi0) : (ucRcpi1);
-		break;
+		case RCPI_MODE_MAX:
+			ucRcpiValue =
+				(ucRcpi0 > ucRcpi1) ? (ucRcpi0) : (ucRcpi1);
+			break;
 
-	case RCPI_MODE_MIN:
-		ucRcpiValue =
-			(ucRcpi0 < ucRcpi1) ? (ucRcpi0) : (ucRcpi1);
-		break;
+		case RCPI_MODE_MIN:
+			ucRcpiValue =
+				(ucRcpi0 < ucRcpi1) ? (ucRcpi0) : (ucRcpi1);
+			break;
 
-	default:
-		break;
+		default:
+			break;
+		}
 	}
 
 	return ucRcpiValue;

@@ -237,13 +237,6 @@
 	((_key_loc & 0x7F) << 6) | (_DW & 0xF) << 2)
 
 /*------------------------------------------------------------------------------
- * MACRO for decision of RXV source (RXD or RX_RPT)
- *------------------------------------------------------------------------------
- */
-#define CONNAC3X_RXV_FROM_RX_RPT(_prAdapter)	\
-	((_prAdapter)->chip_info->get_rxv_from_rxrpt)
-
-/*------------------------------------------------------------------------------
  * MACRO for CONNAC3X RXVECTOR Parsing
  *------------------------------------------------------------------------------
  */
@@ -253,6 +246,20 @@
 #define CONNAC3X_RX_VT_NSTS_MASK            BITS(7, 9)
 #define CONNAC3X_RX_VT_NSTS_OFFSET          7
 #define CONNAC3X_RX_VT_LDPC                 BIT(11)
+#define CONNAC3X_RX_VT_MU		    BIT(21)
+
+/* P-RXVector, 1st Cycle, Modified */
+#define CONNAC3X_RX_VT_FR_MODE_MASK_V2		BITS(12, 14)
+#define CONNAC3X_RX_VT_FR_MODE_OFFSET_V2	12
+#define CONNAC3X_RX_VT_SHORT_GI_MASK_V2		BITS(15, 16)
+#define CONNAC3X_RX_VT_SHORT_GI_OFFSET_V2	15
+#define CONNAC3X_RX_VT_DCM			BIT(17)
+#define CONNAC3X_RX_VT_NUM_RX_MASK_V2		BITS(18, 20)
+#define CONNAC3X_RX_VT_NUM_RX_OFFSET_V2		18
+#define CONNAC3X_RX_VT_STBC_MASK_V2		BITS(22, 23)
+#define CONNAC3X_RX_VT_STBC_OFFSET_V2		22
+#define CONNAC3X_RX_VT_RX_MODE_MASK_V2		BITS(24, 27)
+#define CONNAC3X_RX_VT_RX_MODE_OFFSET_V2	24
 
 /* C-RXC Vector, 1st Cycle */
 #define CONNAC3X_RX_VT_STBC_MASK            BITS(0, 1)
@@ -291,10 +298,21 @@
 #define CONNAC3X_HAL_RXV_GET_RCPI3_RXRPT(_RxvDw6)	\
 	(((_RxvDw6) & CONNAC3X_RX_VT_RCPI3_MASK) >> CONNAC3X_RX_VT_RCPI3_OFFSET)
 
-#define CONNAC3X_HAL_RXV_GET_NUM_RX_RXRPT(_RxvDw2)	\
-	(((_RxvDw2) & CONNAC3X_RX_VT_NUM_RX_MASK) >>	\
-	CONNAC3X_RX_VT_NUM_RX_OFFSET)
+#define CONNAC3X_HAL_RX_VECTOR_GET_RCPI0_V2(_prHwRxVector) \
+	((((_prHwRxVector)->u4RxVector[1]) & CONNAC3X_RX_VT_RCPI0_MASK) >> \
+	CONNAC3X_RX_VT_RCPI0_OFFSET)
 
+#define CONNAC3X_HAL_RX_VECTOR_GET_RCPI1_V2(_prHwRxVector) \
+	((((_prHwRxVector)->u4RxVector[1]) & CONNAC3X_RX_VT_RCPI1_MASK) >> \
+	CONNAC3X_RX_VT_RCPI1_OFFSET)
+
+#define CONNAC3X_HAL_RX_VECTOR_GET_RCPI2_V2(_prHwRxVector) \
+	((((_prHwRxVector)->u4RxVector[1]) & CONNAC3X_RX_VT_RCPI2_MASK) >> \
+	CONNAC3X_RX_VT_RCPI2_OFFSET)
+
+#define CONNAC3X_HAL_RX_VECTOR_GET_RCPI3_V2(_prHwRxVector) \
+	((((_prHwRxVector)->u4RxVector[1]) & CONNAC3X_RX_VT_RCPI3_MASK) >> \
+	CONNAC3X_RX_VT_RCPI3_OFFSET)
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 #define HAL_IS_CONNAC3X_EXT_TX_DONE_INTR(u4IntrStatus, __u4IntrBits) \
