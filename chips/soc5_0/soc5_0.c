@@ -479,6 +479,7 @@ struct CHIP_DBG_OPS soc5_0_DebugOps = {
 	.show_wfdma_dbg_probe_info = soc5_0_show_wfdma_dbg_probe_info,
 	.show_wfdma_wrapper_info = soc5_0_show_wfdma_wrapper_info,
 	.dumpMacInfo = soc5_0_dump_mac_info,
+	.dumpTxdInfo = connac2x_dump_tmac_info,
 };
 
 #if CFG_SUPPORT_QA_TOOL

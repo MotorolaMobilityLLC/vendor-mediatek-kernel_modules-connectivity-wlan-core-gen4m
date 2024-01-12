@@ -1208,7 +1208,7 @@ static char *q_idx_lmac_str[] = {"WMM0_AC0", "WMM0_AC1", "WMM0_AC2", "WMM0_AC3",
 	"Band1_ALTX", "Band1_BMC", "Band1_BNC", "Band1_PSMP",
 	"Invalid"};
 
-void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info)
+void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint8_t *tmac_info)
 {
 	struct TMAC_TXD_S *txd_s;
 	struct TMAC_TXD_0 *txd_0;
