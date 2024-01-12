@@ -1082,6 +1082,9 @@ nanDataAllocateNdl(struct ADAPTER *prAdapter, uint8_t *pucMacAddr,
 	prNDL->ucPhyTypeSet = 0;
 	kalMemZero(&(prNDL->rIeHtCap), sizeof(struct IE_HT_CAP));
 	kalMemZero(&(prNDL->rIeVhtCap), sizeof(struct IE_VHT_CAP));
+#if (CFG_SUPPORT_802_11AX == 1)
+	kalMemZero(&(prNDL->aucIeHeCap), sizeof(prNDL->aucIeHeCap));
+#endif
 
 	for (ucNdpCxtIdx = 0; ucNdpCxtIdx < NAN_MAX_SUPPORT_NDP_CXT_NUM;
 	     ucNdpCxtIdx++)
@@ -1265,6 +1268,9 @@ nanDataEngineInit(struct ADAPTER *prAdapter, uint8_t *pu1NMIAddress) {
 		   sizeof(prDataPathInfo->aucECAttr));
 	prDataPathInfo->prLocalHtCap = NULL;
 	prDataPathInfo->prLocalVhtCap = NULL;
+#if (CFG_SUPPORT_802_11AX == 1)
+	prDataPathInfo->prLocalHeCap = NULL;
+#endif
 
 	atomic_set(&(prDataPathInfo->NetDevRefCount[eRole]), 0);
 	g_ndpReqNDPE.fgEnNDPE = FALSE;
@@ -6378,8 +6384,11 @@ nanDataEngineGetECAttr(struct ADAPTER *prAdapter, uint8_t **ppucECAttr,
 	}
 
 	prBssInfo = prAdapter->aprBssInfo[nanGetSpecificBssInfo(
-				prAdapter, NAN_BSS_INDEX_BAND0)
-						  ->ucBssIndex];
+#if (CFG_SUPPORT_DBDC == 1)
+			prAdapter, NAN_BSS_INDEX_BAND1)->ucBssIndex];
+#else
+			prAdapter, NAN_BSS_INDEX_BAND0)->ucBssIndex];
+#endif
 
 	return nanDataEngineGetECAttrImpl(prAdapter, ppucECAttr,
 					  pu2ECAttrLength, prBssInfo, NULL);
@@ -6402,6 +6411,9 @@ nanDataEngineGetECAttrImpl(struct ADAPTER *prAdapter,
 	struct _NAN_ATTR_ELEMENT_CONTAINER_T *prAttrEC;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint16_t u2AttrLength;
+#if (CFG_SUPPORT_802_11AX == 1)
+	uint8_t ucHeCapLen, ucHeOpLen;
+#endif
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
@@ -6434,9 +6446,6 @@ nanDataEngineGetECAttrImpl(struct ADAPTER *prAdapter,
 				   prAdapter->rDataPathInfo.aucECAttr;
 
 		prAttrEC->ucAttrId = NAN_ATTR_ID_ELEMENT_CONTAINER;
-		prAttrEC->u2Length =
-			u2AttrLength -
-			OFFSET_OF(struct _NAN_ATTR_HDR_T, aucAttrBody);
 		prAttrEC->ucMapID = 0;
 
 		/* HT-CAP IE - leverage RLM */
@@ -6460,6 +6469,42 @@ nanDataEngineGetECAttrImpl(struct ADAPTER *prAdapter,
 						      ELEM_MAX_LEN_HT_CAP]);
 		}
 #endif
+
+#if (CFG_SUPPORT_802_11AX == 1)
+		DBGLOG(NAN, INFO, "Bring HE IE\n");
+		ucHeCapLen = heRlmFillNANHECapIE(
+			prAdapter, prBssInfo,
+			&(prAttrEC->aucElements[ELEM_HDR_LEN +
+				ELEM_MAX_LEN_HT_CAP +
+				ELEM_HDR_LEN +
+				ELEM_MAX_LEN_VHT_CAP]));
+			prAdapter->rDataPathInfo.prLocalHeCap =
+				(struct _IE_HE_CAP_T *)&(prAttrEC->aucElements
+				[ELEM_HDR_LEN +
+				ELEM_MAX_LEN_HT_CAP +
+				ELEM_HDR_LEN +
+				ELEM_MAX_LEN_VHT_CAP]);
+
+		u2AttrLength += ucHeCapLen;
+		DBGLOG(NAN, INFO, "Len HE Cap IE (%d)\n", ucHeCapLen);
+
+		ucHeOpLen = heRlmFillNANHeOpIE(
+			prAdapter, prBssInfo,
+			&(prAttrEC->aucElements[ELEM_HDR_LEN +
+				ELEM_MAX_LEN_HT_CAP +
+				ELEM_HDR_LEN +
+				ELEM_MAX_LEN_VHT_CAP +
+				ucHeCapLen]));
+
+		u2AttrLength += ucHeOpLen;
+		DBGLOG(NAN, INFO, "Len HE OP IE (%d)\n", ucHeOpLen);
+#endif
+
+		prAttrEC->u2Length =
+				u2AttrLength -
+				OFFSET_OF(struct _NAN_ATTR_HDR_T,
+				aucAttrBody);
+		DBGLOG(NAN, INFO, "Len EC (%d)\n", prAttrEC->u2Length);
 
 		prAdapter->rDataPathInfo.fgIsECSet = TRUE;
 	}

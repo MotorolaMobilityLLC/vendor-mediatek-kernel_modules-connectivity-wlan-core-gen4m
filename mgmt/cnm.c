@@ -2099,6 +2099,17 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 
 	}
 
+#if CFG_SUPPORT_NAN
+	else if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN) {
+		if (prBssInfo->eBand == BAND_2G4)
+			ucMaxBandwidth = prAdapter->rWifiVar
+					.ucNan2gBandwidth;
+		else if (prBssInfo->eBand == BAND_5G)
+			ucMaxBandwidth = prAdapter->rWifiVar
+					.ucNan5gBandwidth;
+	}
+#endif
+
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	if (IS_BSS_AIS(prBssInfo) && prBssDesc) {
 		ucChannelBw = rlmDomainGetChannelBw(prBssDesc->eBand,
@@ -2180,6 +2191,16 @@ uint8_t cnmGetBssBandBw(struct ADAPTER *prAdapter,
 #endif
 		}
 	}
+#if CFG_SUPPORT_NAN
+	else if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN) {
+		if (prBssInfo->eBand == BAND_2G4)
+			ucMaxBandwidth = prAdapter->rWifiVar
+				.ucNan2gBandwidth;
+		else if (prBssInfo->eBand == BAND_5G)
+			ucMaxBandwidth = prAdapter->rWifiVar
+				.ucNan5gBandwidth;
+	}
+#endif
 
 	return ucMaxBandwidth;
 }
