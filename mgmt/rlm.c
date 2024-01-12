@@ -1883,6 +1883,7 @@ static void rlmFillVhtCapIE(struct ADAPTER *prAdapter,
 	struct VHT_SUPPORTED_MCS_FIELD *prVhtSupportedMcsSet;
 	uint8_t i;
 	uint8_t ucMaxBw;
+	uint8_t supportNss;
 #if CFG_SUPPORT_BFEE
 	struct STA_RECORD *prStaRec;
 #endif
@@ -1902,55 +1903,53 @@ static void rlmFillVhtCapIE(struct ADAPTER *prAdapter,
 
 	prVhtCap->u4VhtCapInfo |= (prAdapter->rWifiVar.ucRxMaxMpduLen &
 				   VHT_CAP_INFO_MAX_MPDU_LEN_MASK);
-#if CFG_SUPPORT_VHT_IE_IN_2G
-	if (prBssInfo->eBand == BAND_2G4) {
+
+	if (ucMaxBw == MAX_BW_160MHZ)
+		prVhtCap->u4VhtCapInfo |=
+			VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160;
+	else if (ucMaxBw == MAX_BW_80_80_MHZ)
+		prVhtCap->u4VhtCapInfo |=
+			VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160_80P80;
+	else
 		prVhtCap->u4VhtCapInfo |=
 			VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_NONE;
-	} else {
-#endif
-		if (ucMaxBw == MAX_BW_160MHZ)
-			prVhtCap->u4VhtCapInfo |=
-				VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160;
-		else if (ucMaxBw == MAX_BW_80_80_MHZ)
-			prVhtCap->u4VhtCapInfo |=
-		VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160_80P80;
 
-		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtBfee)) {
-			prVhtCap->u4VhtCapInfo |= FIELD_VHT_CAP_INFO_BFEE;
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtBfee)) {
+		prVhtCap->u4VhtCapInfo |= FIELD_VHT_CAP_INFO_BFEE;
 #if CFG_SUPPORT_BFEE
-		prStaRec = cnmGetStaRecByIndex(prAdapter,
-					       prMsduInfo->ucStaRecIndex);
+	prStaRec = cnmGetStaRecByIndex(prAdapter,
+					prMsduInfo->ucStaRecIndex);
 
-		if (prStaRec &&
-		(prStaRec->ucVhtCapNumSoundingDimensions == 0x2) &&
-		!prAdapter->rWifiVar.fgForceSTSNum) {
+	if (prStaRec && (prStaRec->ucVhtCapNumSoundingDimensions == 0x2) &&
+	    !prAdapter->rWifiVar.fgForceSTSNum) {
 		/* For the compatibility with netgear R7000 AP */
-			prVhtCap->u4VhtCapInfo |=
-		(((uint32_t)prStaRec->ucVhtCapNumSoundingDimensions)
+		prVhtCap->u4VhtCapInfo |=
+	(((uint32_t)prStaRec->ucVhtCapNumSoundingDimensions)
 << VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_SUP_OFF);
-			DBGLOG(RLM, INFO, "Set VHT Cap BFEE STS CAP=%d\n",
-				       prStaRec->ucVhtCapNumSoundingDimensions);
-		} else {
+		DBGLOG(RLM, INFO, "Set VHT Cap BFEE STS CAP=%d\n",
+		       prStaRec->ucVhtCapNumSoundingDimensions);
+	} else {
 		/* For 11ac cert. VHT-5.2.63C MU-BFee step3,
-		 * it requires STAUT to set its maximum STS capability here
-		 */
-			prVhtCap->u4VhtCapInfo |=
+		* it requires STAUT to set its maximum STS capability here
+		*/
+		prVhtCap->u4VhtCapInfo |=
 VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUP;
-			DBGLOG(RLM, TRACE, "Set VHT Cap BFEE STS CAP=%d\n",
-				VHT_CAP_INFO_BEAMFORMEE_STS_CAP_MAX);
-		}
-/* DBGLOG(RLM, INFO, "VhtCapInfo=%x\n", prVhtCap->u4VhtCapInfo); */
-#endif
-		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtMuBfee))
-			prVhtCap->u4VhtCapInfo |=
-				VHT_CAP_INFO_MU_BEAMFOMEE_CAPABLE;
-		}
-
-		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtBfer))
-			prVhtCap->u4VhtCapInfo |= FIELD_VHT_CAP_INFO_BFER;
-#if CFG_SUPPORT_VHT_IE_IN_2G
+		DBGLOG(RLM, TRACE, "Set VHT Cap BFEE STS CAP=%d\n",
+			VHT_CAP_INFO_BEAMFORMEE_STS_CAP_MAX);
 	}
+	supportNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
+	if (supportNss == 2)
+		prVhtCap->u4VhtCapInfo |=
+		    VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_2_SUPPORTED;
 #endif
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtMuBfee))
+		prVhtCap->u4VhtCapInfo |=
+			VHT_CAP_INFO_MU_BEAMFOMEE_CAPABLE;
+	}
+
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtBfer))
+		prVhtCap->u4VhtCapInfo |= FIELD_VHT_CAP_INFO_BFER;
+
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxShortGI)) {
 		if (ucMaxBw >= MAX_BW_80MHZ)
 			prVhtCap->u4VhtCapInfo |= VHT_CAP_INFO_SHORT_GI_80;
