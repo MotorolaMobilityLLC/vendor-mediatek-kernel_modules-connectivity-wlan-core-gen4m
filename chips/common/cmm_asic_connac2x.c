@@ -2535,7 +2535,7 @@ int asicConnac2xPwrOnWmMcu(struct mt66xx_chip_info *chip_info)
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	/* conninfra power on */
-	if (!kalIsWholeChipResetting()) {
+	if (!kalIsWholeChipResetting() && !get_pre_cal_status()) {
 		ret = conninfra_pwr_on(CONNDRV_TYPE_WIFI);
 		if (ret == CONNINFRA_ERR_RST_ONGOING) {
 			DBGLOG(INIT, ERROR,
