@@ -1364,14 +1364,16 @@ struct EVENT_DUMP_MEM {
 struct CMD_ACCESS_RX_STAT {
 	uint16_t u2SeqNum;
 	uint8_t ucDbdcIdx;
-	uint8_t ucData; //bit[0] in event structure will tell new / old firmware format 
+	/* bit[0] in event structure will tell new / old firmware format */
+	uint8_t ucData;
 	uint32_t u4TotalNum;
 };
 
 struct EVENT_ACCESS_RX_STAT {
 	uint16_t u2SeqNum;
 	uint8_t ucDbdcIdx;
-	uint8_t	ucData;	//bit[0] in event structure will tell new / old firmware format 
+	/* bit[0] in event structure will tell new / old firmware format */
+	uint8_t	ucData;
 	uint32_t u4TotalNum;
 	uint32_t au4Buffer[1];
 };
