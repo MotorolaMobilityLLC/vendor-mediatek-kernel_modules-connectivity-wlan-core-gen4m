@@ -395,9 +395,6 @@
 #define CMD_NCHO_MODE_GET			"GETNCHOMODE"
 #endif
 #define CMD_REPORT_VENDOR_SPECIFIED		"EnVendorSpecifiedRpt"
-#if CFG_SUPPORT_MANIPULATE_TID
-#define CMD_MANIPULATE_TID_SET			"SET_TID"
-#endif
 
 /*****************************************************************************
 *                             D A T A   T Y P E S
