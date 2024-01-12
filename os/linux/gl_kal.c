@@ -900,8 +900,12 @@ void kalUpdateMACAddress(struct GLUE_INFO *prGlueInfo,
 
 	if (UNEQUAL_MAC_ADDR(prGlueInfo->prDevHandler->dev_addr,
 			     pucMacAddr))
+#if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
+		eth_hw_addr_set(prGlueInfo->prDevHandler, pucMacAddr);
+#else
 		memcpy(prGlueInfo->prDevHandler->dev_addr, pucMacAddr,
 		       PARAM_MAC_ADDR_LEN);
+#endif
 }
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD

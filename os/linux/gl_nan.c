@@ -757,7 +757,11 @@ glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 
 	/* change to local administrated address */
 	rRandMacAddr[0] ^= (eRole + 1) << 3;
+#if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
+	eth_hw_addr_set(prNanDev, rRandMacAddr);
+#else
 	kalMemCopy(prNanDev->dev_addr, rRandMacAddr, ETH_ALEN);
+#endif
 	kalMemCopy(prNanDev->perm_addr, prNanDev->dev_addr, ETH_ALEN);
 
 	if (glSetupNAN(prGlueInfo, prNanWdev, prNanDev, eRole) != 0) {
@@ -775,7 +779,8 @@ glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 	/* initialize NAN Data Engine */
 
 	prNANInfo = prAdapter->prGlueInfo->aprNANDevInfo[NAN_BSS_INDEX_BAND0];
-	nanDataEngineInit(prAdapter, prNANInfo->prDevHandler->dev_addr);
+	nanDataEngineInit(prAdapter,
+			(uint8_t *)prNANInfo->prDevHandler->dev_addr);
 
 	/* initialize NAN Ranging Engine */
 	nanRangingEngineInit(prAdapter);

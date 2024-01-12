@@ -6531,6 +6531,9 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 	uint8_t ucAisIndex;
 	uint32_t u4SetInfoLen;
 	struct sockaddr MacAddr;
+#if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
+	u8 addr[ETH_ALEN];
+#endif
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -6635,8 +6638,13 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 		DBGLOG(INIT, WARN, "set MAC%d addr fail 0x%x\n",
 			ucAisIndex, rStatus);
 	} else {
+#if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
+		ether_addr_copy(addr, MacAddr.sa_data);
+		eth_hw_addr_set(prDevHandler, addr);
+#else
 		kalMemCopy(prDevHandler->dev_addr,
 			&MacAddr.sa_data, ETH_ALEN);
+#endif
 		kalMemCopy(prDevHandler->perm_addr,
 			prDevHandler->dev_addr, ETH_ALEN);
 #if CFG_SHOW_MACADDR_SOURCE
