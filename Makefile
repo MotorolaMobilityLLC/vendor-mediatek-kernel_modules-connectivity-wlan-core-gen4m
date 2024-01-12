@@ -417,7 +417,7 @@ ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT6639,$(ccflags-y))
 ccflags-y += -DMT6639
 ifeq ($(MTK_ANDROID_WMT), y)
-CONFIG_MTK_WIFI_CONNFEM_SUPPORT=y
+    CONFIG_MTK_WIFI_CONNFEM_SUPPORT=y
     ifneq ($(CONFIG_PAGE_POOL),)
         CONFIG_RX_PAGE_POOL=y
     endif
