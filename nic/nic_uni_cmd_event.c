@@ -7192,9 +7192,15 @@ void nicRxProcessUniEventPacket(struct ADAPTER *prAdapter,
 #endif
 
 	if (IS_UNI_UNSOLICIT_EVENT(prEvent)) {
-		if (arUniEventTable[GET_UNI_EVENT_ID(prEvent)])
-			arUniEventTable[GET_UNI_EVENT_ID(prEvent)](
-				prAdapter, prEvent);
+		if (GET_UNI_EVENT_ID(prEvent) < UNI_EVENT_ID_NUM) {
+			if (arUniEventTable[GET_UNI_EVENT_ID(prEvent)])
+				arUniEventTable[GET_UNI_EVENT_ID(prEvent)](
+					prAdapter, prEvent);
+		} else {
+			DBGLOG(RX, TRACE,
+				"UNHANDLED RX UNI EVENT: ID[0x%02X]\n",
+				GET_UNI_EVENT_ID(prEvent));
+		}
 	} else {
 		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
 						prEvent->ucSeqNum);
