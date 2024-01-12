@@ -11151,6 +11151,7 @@ wlanProbeSuccessForLowLatency(IN struct ADAPTER *prAdapter)
 
 	/* Reset certificate flag and query capability from firmware */
 	prAdapter->fgTxDupCertificate = FALSE;
+
 	wlanSetLowLatencyCommand(prAdapter,
 			FALSE,
 			prAdapter->fgEnTxDupDetect,
@@ -11208,8 +11209,11 @@ uint32_t wlanSetLowLatencyCommand(
 	rModeHeader.ucBufferLen = sizeof(struct LOW_LATENCY_MODE_SETTING);
 	rModeHeader.rSetting.fgEnable = fgEnLowLatencyMode;
 	rModeHeader.rSetting.fgTxDupDetect = fgEnTxDupDetect;
+#if CONFIG_MTK_MD_SUPPORT
 	rModeHeader.rSetting.fgTxDupCertQuery = fgTxDupCertQuery;
-
+#else
+	rModeHeader.rSetting.fgTxDupCertQuery = FALSE;
+#endif
 	DBGLOG(AIS, INFO,
 		"Send Dpp Cmd to FW:en=%d, dup_Det=%d, CertQuery=%d\n",
 		fgEnLowLatencyMode, fgEnTxDupDetect, fgTxDupCertQuery);

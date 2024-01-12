@@ -418,6 +418,12 @@ else
     ccflags-y += -DCFG_TC10_FEATURE=0
 endif
 
+ifneq ($(CONFIG_MTK_MD1_SUPPORT), )
+    ccflags-y += -DCONFIG_MTK_MD_SUPPORT=1
+else
+    ccflags-y += -DCONFIG_MTK_MD_SUPPORT=0
+endif
+
 ifeq ($(CONFIG_MTK_TC1_FEATURE), y)
     ccflags-y += -I$(srctree)/drivers/misc/mediatek/tc1_interface
     ccflags-y += -DCFG_TC1_FEATURE=1
