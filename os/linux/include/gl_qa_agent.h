@@ -119,6 +119,10 @@ extern unsigned long long gConEmiSize;
 #endif
 #define MAX_EEPROM_BUFFER_SIZE	1200
 
+#define HQA_DBDC_BAND_NUM 2
+#define HQA_ANT_NUM 4
+#define HQA_USER_NUM	16
+
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
@@ -283,6 +287,94 @@ struct PARAM_RX_STAT {
 	uint32_t PER1;
 };
 extern struct PARAM_RX_STAT g_HqaRxStat;
+
+struct hqa_rx_stat_resp_field {
+	uint32_t type;
+	uint32_t version;
+	uint32_t item_mask;
+	uint32_t blk_cnt;
+	uint32_t blk_size;
+};
+
+struct hqa_rx_stat_band_format {
+	u_int32_t mac_rx_fcs_err_cnt;
+	u_int32_t mac_rx_mdrdy_cnt;
+	u_int32_t mac_rx_len_mismatch;
+	u_int32_t mac_rx_fcs_ok_cnt;
+	u_int32_t phy_rx_fcs_err_cnt_cck;
+	u_int32_t phy_rx_fcs_err_cnt_ofdm;
+	u_int32_t phy_rx_pd_cck;
+	u_int32_t phy_rx_pd_ofdm;
+	u_int32_t phy_rx_sig_err_cck;
+	u_int32_t phy_rx_sfd_err_cck;
+	u_int32_t phy_rx_sig_err_ofdm;
+	u_int32_t phy_rx_tag_err_ofdm;
+	u_int32_t phy_rx_mdrdy_cnt_cck;
+	u_int32_t phy_rx_mdrdy_cnt_ofdm;
+};
+
+struct hqa_rx_stat_path_format {
+	u_int32_t rcpi;
+	u_int32_t rssi;
+	u_int32_t fagc_ib_rssi;
+	u_int32_t fagc_wb_rssi;
+	u_int32_t inst_ib_rssi;
+	u_int32_t inst_wb_rssi;
+};
+
+struct hqa_rx_stat_user_format {
+	int32_t freq_offset_from_rx;
+	u_int32_t snr;
+	u_int32_t fcs_error_cnt;
+};
+
+struct hqa_rx_stat_comm_format {
+	u_int32_t rx_fifo_full;
+	u_int32_t aci_hit_low;
+	u_int32_t aci_hit_high;
+	u_int32_t mu_pkt_count;
+	u_int32_t sig_mcs;
+	u_int32_t sinr;
+	u_int32_t driver_rx_count;
+};
+
+
+struct hqa_rx_stat_u {
+	union {
+		struct hqa_rx_stat_band_format rx_st_band;
+		struct hqa_rx_stat_path_format rx_st_path;
+		struct hqa_rx_stat_user_format rx_st_user;
+		struct hqa_rx_stat_comm_format rx_st_comm;
+	} u;
+};
+
+enum {
+	HQA_SERV_RX_STAT_TYPE_BAND = 0,
+	HQA_SERV_RX_STAT_TYPE_PATH,
+	HQA_SERV_RX_STAT_TYPE_USER,
+	HQA_SERV_RX_STAT_TYPE_COMM,
+	HQA_SERV_RX_STAT_TYPE_NUM
+};
+
+enum {
+	HQA_ANT_WF0 = 0,
+	HQA_ANT_WF1 = 1,
+	HQA_MAX_ANT_NUM
+};
+
+enum {
+	HQA_M_BAND_0 = 0,
+	HQA_M_BAND_1 = 1,
+	HQA_M_BAND_NUM
+};
+
+enum {
+	HQA_RX_STAT_BAND = 0,
+	HQA_RX_STAT_PATH,
+	HQA_RX_STAT_USER,
+	HQA_RX_STAT_COMM,
+	HQA_RX_STAT_NUM
+};
 #endif
 
 struct HQA_CMD_FRAME {
