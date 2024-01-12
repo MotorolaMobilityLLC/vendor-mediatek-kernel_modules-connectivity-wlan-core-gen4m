@@ -175,6 +175,10 @@ void p2pGenerate_IEForAssocReq(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11AX
 		/* Add HE IE */
 		heRlmReqGenerateHeCapIE(prAdapter, prMsduInfo);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		/* Add HE 6G Band Cap IE */
+		heRlmReqGenerateHe6gBandCapIE(prAdapter, prMsduInfo);
+#endif
 #endif
 
 #if CFG_SUPPORT_802_11BE
