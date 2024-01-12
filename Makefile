@@ -809,6 +809,10 @@ else
     ccflags-y += -DCFG_SUPPORT_RX_FLUSH_REORDERING=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_RX_REORDERING_WAIT_LAST_FRAG), y)
+    ccflags-y += -DCFG_SUPPORT_RX_REORDERING_WAIT_LAST_FRAG=1
+endif
+
 ifeq ($(WIFI_ENABLE_GCOV), y)
     GCOV_PROFILE := y
 endif
