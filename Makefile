@@ -218,6 +218,7 @@ ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
 ccflags-y += -DCFG_SUPPORT_BW160
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
+ccflags-y += -DCFG_SUPPORT_BW160
 endif
 
 ifneq ($(filter BELLWETHER,$(MTK_COMBO_CHIP)),)
