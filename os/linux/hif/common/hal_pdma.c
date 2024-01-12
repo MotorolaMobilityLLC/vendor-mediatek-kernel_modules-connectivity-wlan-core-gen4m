@@ -2012,8 +2012,22 @@ static void halDefaultProcessMsduReport(struct ADAPTER *prAdapter,
 	else
 		u2TotalTokenCnt = prMsduReport->DW0.field.u2MsduCount;
 
+	if (u2TotalTokenCnt > MSDU_REPORT_MAX_NUM) {
+		DBGLOG(HAL, ERROR,
+		       "msdu count[%u] > max count[%u]!\n",
+		       u2TotalTokenCnt, MSDU_REPORT_MAX_NUM);
+		return;
+	}
+
 	u4Idx = u2TokenCnt = 0;
 	while (u2TokenCnt < u2TotalTokenCnt) {
+		if (u4Idx > MSDU_REPORT_MAX_NUM) {
+			DBGLOG(HAL, ERROR,
+			       "msdu idx[%u] > max count[%u]!\n",
+			       u4Idx, MSDU_REPORT_MAX_NUM);
+			break;
+		}
+
 		/* Format version of this tx done event.
 		 *	0: MT7615
 		 *	1: MT7622, CONNAC (X18/P18/MT7663)
