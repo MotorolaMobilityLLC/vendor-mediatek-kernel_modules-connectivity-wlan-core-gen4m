@@ -7130,7 +7130,8 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(IN struct ADAPTER *prAdapter,
 			}
 		}
 #if CFG_SUPPORT_NAN
-		if (prMsduInfo->ucTxToNafQueFlag == TRUE) {
+		if (prMsduInfo &&
+			prMsduInfo->ucTxToNafQueFlag == TRUE) {
 			eFrameAction = FRAME_ACTION_TX_PKT;
 			break;
 		}
