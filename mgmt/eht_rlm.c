@@ -62,82 +62,29 @@
 *                              F U N C T I O N S
 ********************************************************************************
 */
-uint8_t _ehtGetBssBandBw(struct ADAPTER *prAdapter,
-	struct BSS_INFO *prBssInfo,
-	enum ENUM_BAND eBand)
-{
-	uint8_t ucMaxBandwidth = MAX_BW_20MHZ;
-
-	if (IS_BSS_AIS(prBssInfo)) {
-		if (eBand == BAND_2G4)
-			ucMaxBandwidth = prAdapter->rWifiVar.ucSta2gBandwidth;
-		else if (eBand == BAND_5G)
-			ucMaxBandwidth = prAdapter->rWifiVar.ucSta5gBandwidth;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (eBand == BAND_6G)
-			ucMaxBandwidth = prAdapter->rWifiVar.ucSta6gBandwidth;
-#endif
-		if (ucMaxBandwidth > prAdapter->rWifiVar.ucStaBandwidth)
-			ucMaxBandwidth = prAdapter->rWifiVar.ucStaBandwidth;
-	} else if (IS_BSS_P2P(prBssInfo)) {
-		/* AP mode */
-		if (p2pFuncIsAPMode(
-				prAdapter->rWifiVar.prP2PConnSettings[
-					prBssInfo->u4PrivateData])) {
-			if (prBssInfo->eBand == BAND_2G4)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucAp2gBandwidth;
-			else if (prBssInfo->eBand == BAND_5G)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucAp5gBandwidth;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			else if (prBssInfo->eBand == BAND_6G)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucAp6gBandwidth;
-#endif
-			if (ucMaxBandwidth
-				> prAdapter->rWifiVar.ucApBandwidth)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucApBandwidth;
-		}
-		/* P2P mode */
-		else {
-			if (prBssInfo->eBand == BAND_2G4)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucP2p2gBandwidth;
-			else if (prBssInfo->eBand == BAND_5G)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucP2p5gBandwidth;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			else if (prBssInfo->eBand == BAND_6G)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucP2p6gBandwidth;
-#endif
-		}
-	}
-
-	return ucMaxBandwidth;
-}
 
 uint32_t ehtRlmCalculateCapIELen(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex,
 	struct STA_RECORD *prStaRec)
 {
+	enum ENUM_BAND eHePhyCapBand = BAND_5G;
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucMaxBw;
 	uint32_t u4OverallLen;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
-	/* struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL; */
 	u4OverallLen = OFFSET_OF(struct IE_EHT_CAP, aucVarInfo[0]);
-	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prBssInfo->eBand == BAND_6G)
+		eHePhyCapBand = BAND_6G;
+#endif
+	ucMaxBw = cnmGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand);
 
 	if (ucMaxBw == MAX_BW_20MHZ) {
 		u4OverallLen += sizeof(struct EHT_SUPPORTED_MCS_BW20_FIELD);
         } else {
-	        if (ucMaxBw >= MAX_BW_80MHZ) {
+		if (ucMaxBw >= MAX_BW_40MHZ) {
 			u4OverallLen += sizeof(
 				struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD);
 		}
@@ -211,13 +158,14 @@ static void ehtRlmFillCapIE(
 	struct BSS_INFO *prBssInfo,
 	struct MSDU_INFO *prMsduInfo)
 {
+	enum ENUM_BAND eHePhyCapBand = BAND_5G;
 	struct IE_EHT_CAP *prEhtCap;
 	struct EHT_PHY_CAP_INFO eht_phy_cap;
 	uint32_t phy_cap_1 = 0;
 	uint32_t phy_cap_2 = 0;
 	uint32_t u4OverallLen = OFFSET_OF(struct IE_EHT_CAP, aucVarInfo[0]);
 	uint8_t eht_mcs15_mru = EHT_MCS15_MRU_106_or_52_w_26_tone;
-	uint8_t eht_bw, ucSupportedNss = 0;
+	uint8_t eht_bw = 0, ucSupportedNss = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -229,7 +177,6 @@ static void ehtRlmFillCapIE(
 	prEhtCap->ucId = ELEM_ID_RESERVED;
 	prEhtCap->ucExtId = ELEM_EXT_ID_EHT_CAPS;
 
-	eht_bw = _ehtGetBssBandBw(prAdapter, prBssInfo, prBssInfo->eBand);
 	ucSupportedNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
 
 	/* MAC capabilities */
@@ -248,9 +195,10 @@ static void ehtRlmFillCapIE(
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (prBssInfo->eBand == BAND_6G) {
-		if (_ehtGetBssBandBw(prAdapter, prBssInfo, BAND_6G)
+		if (cnmGetBssBandBw(prAdapter, prBssInfo, BAND_6G)
 			>= MAX_BW_320MHZ)
 			phy_cap_1 |= DOT11BE_PHY_CAP_320M_6G;
+		eHePhyCapBand = BAND_6G;
 	}
 #endif
 
@@ -265,7 +213,8 @@ static void ehtRlmFillCapIE(
 		/* phy_cap_2 |= DOT11BE_PHY_CAP_PPE_THRLD_PRESENT; */
 	}
 
-	if (eht_bw >= MAX_BW_80MHZ) {
+	eht_bw = cnmGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand);
+	if (eht_bw >= MAX_BW_40MHZ) {
 		eht_mcs15_mru |= EHT_MCS15_MRU_484_w_242_tone_80M;
 		/* set 3 to support AP NSS 4 */
 		SET_DOT11BE_PHY_CAP_BFEE_SS_LE_EQ_80M(phy_cap_1, 3);
@@ -281,7 +230,7 @@ static void ehtRlmFillCapIE(
 		SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_160M(
 			phy_cap_1, ucSupportedNss - 1);
 	}
-	if (eht_bw == MAX_BW_320MHZ) {
+	if (eht_bw >= MAX_BW_320MHZ) {
 		eht_mcs15_mru |= EHT_MCS15_MRU_3x996_tone_320M;
 		/* set 3 to support AP NSS 4 */
 		SET_DOT11BE_PHY_CAP_BFEE_320M(phy_cap_1, 3);
@@ -350,7 +299,7 @@ static void ehtRlmFillCapIE(
 	} else {
 		uint8_t *prEhtSupportedBw80McsSet = NULL;
 
-		if (eht_bw >= MAX_BW_80MHZ) {
+		if (eht_bw >= MAX_BW_40MHZ) {
 			prEhtSupportedBw80McsSet =
 				(((uint8_t *) prEhtCap) + u4OverallLen);
 			ehtRlmFillBW80MCSMap(
@@ -504,12 +453,17 @@ static void ehtRlmRecMcsMap(
 	struct STA_RECORD *prStaRec,
 	struct IE_EHT_CAP *prEhtCap)
 {
+	enum ENUM_BAND eHePhyCapBand = BAND_5G;
 	uint32_t u4McsMapOffset;
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucMaxBw;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
-	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prBssInfo->eBand == BAND_6G)
+		eHePhyCapBand = BAND_6G;
+#endif
+	ucMaxBw = cnmGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand);
 
 	u4McsMapOffset = OFFSET_OF(struct IE_EHT_CAP, aucVarInfo[0]);
 
@@ -526,7 +480,7 @@ static void ehtRlmRecMcsMap(
 			((uint8_t *)prEhtCap) + u4McsMapOffset,
 			sizeof(struct EHT_SUPPORTED_MCS_BW20_FIELD));
         } else {
-	        if (ucMaxBw >= MAX_BW_80MHZ) {
+		if (ucMaxBw >= MAX_BW_40MHZ) {
 			memcpy(prStaRec->aucMscMap80MHz,
 				((uint8_t *)prEhtCap) + u4McsMapOffset,
 				sizeof(struct

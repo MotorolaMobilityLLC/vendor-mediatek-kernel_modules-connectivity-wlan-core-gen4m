@@ -185,69 +185,6 @@ uint8_t heRlmMaxBwToHeBw(uint8_t ucMaxBw)
 	return ucHeBw;
 }
 
-uint8_t heGetBssBandBw(struct ADAPTER *prAdapter,
-	struct BSS_INFO *prBssInfo,
-	enum ENUM_BAND eBand)
-{
-	uint8_t ucMaxBandwidth = MAX_BW_20MHZ;
-
-	if (IS_BSS_AIS(prBssInfo)) {
-		if (eBand == BAND_2G4)
-			ucMaxBandwidth = prAdapter->rWifiVar.ucSta2gBandwidth;
-		else if (eBand == BAND_5G)
-			ucMaxBandwidth = prAdapter->rWifiVar.ucSta5gBandwidth;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (eBand == BAND_6G)
-			ucMaxBandwidth = prAdapter->rWifiVar.ucSta6gBandwidth;
-#endif
-		if (ucMaxBandwidth > prAdapter->rWifiVar.ucStaBandwidth)
-			ucMaxBandwidth = prAdapter->rWifiVar.ucStaBandwidth;
-	} else if (IS_BSS_P2P(prBssInfo)) {
-		/* AP mode */
-		if (p2pFuncIsAPMode(
-				prAdapter->rWifiVar.prP2PConnSettings[
-					prBssInfo->u4PrivateData])) {
-			if (prBssInfo->eBand == BAND_2G4)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucAp2gBandwidth;
-			else if (prBssInfo->eBand == BAND_5G) {
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucAp5gBandwidth;
-				/* Use platform capability */
-				if (prAdapter->rWifiVar.u4SwTestMode ==
-					ENUM_SW_TEST_MODE_SIGMA_AX_AP)
-					ucMaxBandwidth = prAdapter->rWifiVar
-						.ucApBandwidth;
-			}
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			else if (prBssInfo->eBand == BAND_6G)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucAp6gBandwidth;
-#endif
-			if (ucMaxBandwidth
-				> prAdapter->rWifiVar.ucApBandwidth)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucApBandwidth;
-		}
-		/* P2P mode */
-		else {
-			if (prBssInfo->eBand == BAND_2G4)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucP2p2gBandwidth;
-			else if (prBssInfo->eBand == BAND_5G)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucP2p5gBandwidth;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			else if (prBssInfo->eBand == BAND_6G)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucP2p6gBandwidth;
-#endif
-		}
-	}
-
-	return ucMaxBandwidth;
-}
-
 uint32_t heRlmCalculateHeCapIELen(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex,
@@ -540,7 +477,7 @@ static void heRlmFillHeCapIE(
 	/* PHY capabilities */
 	HE_RESET_PHY_CAP(prHeCap->ucHePhyCap);
 
-	if (heGetBssBandBw(prAdapter, prBssInfo, BAND_2G4)
+	if (cnmGetBssBandBw(prAdapter, prBssInfo, BAND_2G4)
 		>= MAX_BW_40MHZ
 		&& prBssInfo->fgAssoc40mBwAllowed)
 		HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW40_2G(prHeCap->ucHePhyCap);
@@ -554,15 +491,15 @@ static void heRlmFillHeCapIE(
 		eHePhyCapBand = BAND_6G;
 #endif
 
-	if (heGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand)
+	if (cnmGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand)
 		>= MAX_BW_40MHZ)
 		HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW40_BW80_5G(prHeCap->ucHePhyCap);
 
-	if (heGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand)
+	if (cnmGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand)
 		>= MAX_BW_160MHZ)
 		HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW160_5G(prHeCap->ucHePhyCap);
 
-	if (heGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand)
+	if (cnmGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand)
 		>= MAX_BW_80_80_MHZ)
 		HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW80P80_5G(prHeCap->ucHePhyCap);
 
@@ -620,7 +557,7 @@ static void heRlmFillHeCapIE(
 	if ((fgBfEn == TRUE) && (IS_FEATURE_ENABLED(prWifiVar->ucStaHeBfee))) {
 		HE_SET_PHY_CAP_SU_BFMEE(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_BFMEE_STS_LT_OR_EQ_80M(prHeCap->ucHePhyCap, 3);
-		if (heGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand)
+		if (cnmGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand)
 				>= MAX_BW_160MHZ) {
 			HE_SET_PHY_CAP_BFMEE_STS_GT_80M(
 				prHeCap->ucHePhyCap, 3);
@@ -662,7 +599,7 @@ static void heRlmFillHeCapIE(
 	heRlmFillMCSMap(prAdapter, prBssInfo, prHeSupportedMcsSet);
 	u4OverallLen += sizeof(struct _HE_SUPPORTED_MCS_FIELD);
 
-	if (heGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand)
+	if (cnmGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand)
 		>= MAX_BW_160MHZ) {
 		prHeSupportedMcsSet = (struct _HE_SUPPORTED_MCS_FIELD *)
 			(((uint8_t *) prHeCap) + u4OverallLen);
@@ -670,7 +607,7 @@ static void heRlmFillHeCapIE(
 		u4OverallLen += sizeof(struct _HE_SUPPORTED_MCS_FIELD);
 	}
 
-	if (heGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand)
+	if (cnmGetBssBandBw(prAdapter, prBssInfo, eHePhyCapBand)
 		>= MAX_BW_80_80_MHZ) {
 		prHeSupportedMcsSet = (struct _HE_SUPPORTED_MCS_FIELD *)
 			(((uint8_t *) prHeCap) + u4OverallLen);
