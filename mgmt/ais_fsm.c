@@ -5927,35 +5927,34 @@ void aisFsmRunEventMgmtFrameTx(IN struct ADAPTER *prAdapter,
 			(struct MSG_MGMT_TX_REQUEST *) NULL;
 	uint8_t ucBssIndex = 0;
 
-	do {
-		ASSERT((prAdapter != NULL) && (prMsgHdr != NULL));
+	if (!prAdapter || !prMsgHdr)
+		return;
 
-		prMgmtTxMsg = (struct MSG_MGMT_TX_REQUEST *) prMsgHdr;
+	prMgmtTxMsg = (struct MSG_MGMT_TX_REQUEST *) prMsgHdr;
 
-		ucBssIndex = prMgmtTxMsg->ucBssIdx;
+	ucBssIndex = prMgmtTxMsg->ucBssIdx;
 
-		DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
+	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
 
-		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
-		if (prAisFsmInfo == NULL)
-			break;
+	if (prAisFsmInfo == NULL)
+		goto exit;
 
-		if (!aisFunNeedOffchnlTx(prAdapter, prMgmtTxMsg))
-			aisFuncTxMgmtFrame(prAdapter,
-					&prAisFsmInfo->rMgmtTxInfo,
-					prMgmtTxMsg->prMgmtMsduInfo,
-					prMgmtTxMsg->u8Cookie,
-					ucBssIndex);
-		else
-			aisFunHandleOffchnlTxReq(prAdapter,
-					prAisFsmInfo,
-					prMgmtTxMsg,
-					ucBssIndex);
-	} while (FALSE);
+	if (!aisFunNeedOffchnlTx(prAdapter, prMgmtTxMsg))
+		aisFuncTxMgmtFrame(prAdapter,
+				&prAisFsmInfo->rMgmtTxInfo,
+				prMgmtTxMsg->prMgmtMsduInfo,
+				prMgmtTxMsg->u8Cookie,
+				ucBssIndex);
+	else
+		aisFunHandleOffchnlTxReq(prAdapter,
+				prAisFsmInfo,
+				prMgmtTxMsg,
+				ucBssIndex);
 
-	if (prMsgHdr)
-		cnmMemFree(prAdapter, prMsgHdr);
+exit:
+	cnmMemFree(prAdapter, prMsgHdr);
 }				/* aisFsmRunEventMgmtFrameTx */
 
 #if CFG_SUPPORT_NCHO
