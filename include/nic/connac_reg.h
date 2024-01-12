@@ -82,11 +82,6 @@
 #define CONN_CFG_ON_CONN_ON_MISC_ADDR	(CONN_CFG_ON_BASE + 0x140)
 #define CONN_CFG_CHIP_ID_ADDR	        (CONN_CFG_BASE + 0x1010)
 
-#define CONN_MCU_CONFG_ON_BASE			0x81030000
-
-#define CONN_MCU_CONFG_ON_HOST_MAILBOX_WF_ADDR \
-	(CONN_MCU_CONFG_ON_BASE + 0x100)
-
 /*
  * ============================================================================
  *
