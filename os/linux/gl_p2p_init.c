@@ -150,6 +150,12 @@ void p2pSetSuspendMode(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 		prDev = prP2PInfo->aprRoleHandler;
 	} else {
 		prDev = prP2PInfo->prDevHandler;
+		/* Skip p2p dev for dev mode */
+		if (p2pGetMode() == RUNNING_P2P_DEV_MODE &&
+			!prP2PInfo->aprRoleHandler) {
+			DBGLOG(INIT, LOUD, "P2P dev SKIP!\n");
+			return;
+		}
 	}
 
 	if (!prDev) {
