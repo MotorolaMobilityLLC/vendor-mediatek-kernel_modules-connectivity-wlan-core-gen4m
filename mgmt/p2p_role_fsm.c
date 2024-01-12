@@ -254,10 +254,6 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		p2pFuncRadarInfoInit();
 #endif
-#if CFG_SUPPORT_802_11W
-		kal_init_completion(&prP2pRoleFsmInfo->rDeauthComp);
-		prP2pRoleFsmInfo->encryptedDeauthIsInProcess = FALSE;
-#endif
 
 		LINK_INITIALIZE(&prP2pBssInfo->rPmkidCache);
 
@@ -761,16 +757,6 @@ p2pRoleFsmDeauthCompleteImpl(struct ADAPTER *prAdapter,
 		DBGLOG(P2P, ERROR, "prP2PInfo shouldn't be NULL!\n");
 		return;
 	}
-#if CFG_SUPPORT_802_11W
-	/* Notify completion after encrypted deauth frame tx done */
-	if (prP2pRoleFsmInfo->encryptedDeauthIsInProcess == TRUE) {
-		if (!kal_completion_done(&prP2pRoleFsmInfo->rDeauthComp)) {
-			DBGLOG(P2P, TRACE, "Complete rDeauthComp\n");
-			complete(&prP2pRoleFsmInfo->rDeauthComp);
-		}
-	}
-	prP2pRoleFsmInfo->encryptedDeauthIsInProcess = FALSE;
-#endif
 
 	/*
 	 * After EAP exchange, GO/GC will disconnect
@@ -861,6 +847,8 @@ p2pRoleFsmDeauthCompleteImpl(struct ADAPTER *prAdapter,
 			/* Update the Media State if necessary */
 			nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
 		}
+		kalP2pNotifyDelStaComplete(prAdapter,
+			prP2pRoleFsmInfo->ucRoleIndex);
 	} else { /* GC : Stop BSS when Deauth done */
 		p2pChangeMediaState(prAdapter,
 			prP2pBssInfo,
@@ -2650,15 +2638,11 @@ void p2pRoleFsmRunEventConnectionAbort(struct ADAPTER *prAdapter,
 	prP2pRoleFsmInfo =
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prDisconnMsg->ucRoleIdx);
-
-	DBGLOG(P2P, TRACE,
-		"p2pFsmRunEventConnectionAbort: Connection Abort.\n");
-
 	if (!prP2pRoleFsmInfo) {
 		DBGLOG(P2P, ERROR,
 		       "p2pRoleFsmRunEventConnectionAbort: Corresponding P2P Role FSM empty: %d.\n",
 		       prDisconnMsg->ucRoleIdx);
-		goto error;
+		goto notify;
 	}
 
 	prP2pBssInfo = prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
@@ -2667,7 +2651,7 @@ void p2pRoleFsmRunEventConnectionAbort(struct ADAPTER *prAdapter,
 		DBGLOG(P2P, ERROR,
 		       "prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex(%d)] is NULL!",
 		       prP2pRoleFsmInfo->ucBssIndex);
-		goto error;
+		goto notify;
 	}
 
 #if CFG_SUPPORT_TDLS_P2P
@@ -2686,9 +2670,12 @@ void p2pRoleFsmRunEventConnectionAbort(struct ADAPTER *prAdapter,
 			"[TDLS] Remove [" MACSTR "], do nothing.\n",
 			MAC2STR(prDisconnMsg->aucTargetID));
 		/* cnmStaRecFree(prAdapter, prStaRec); */
-		goto error;
+		goto exit;
 	}
 #endif /* CFG_SUPPORT_TDLS_P2P */
+
+	DBGLOG(P2P, TRACE,
+		"p2pFsmRunEventConnectionAbort: Connection Abort.\n");
 
 	switch (prP2pBssInfo->eCurrentOPMode) {
 	case OP_MODE_INFRASTRUCTURE:
@@ -2715,8 +2702,9 @@ void p2pRoleFsmRunEventConnectionAbort(struct ADAPTER *prAdapter,
 						prP2pRoleFsmInfo,
 						P2P_ROLE_STATE_IDLE);
 				}
-				break;
+				goto notify;
 			}
+
 			if (UNEQUAL_MAC_ADDR(
 					prP2pBssInfo->prStaRecOfAP->aucMacAddr,
 					prDisconnMsg->aucTargetID) &&
@@ -2727,7 +2715,7 @@ void p2pRoleFsmRunEventConnectionAbort(struct ADAPTER *prAdapter,
 				MAC2STR(
 					prP2pBssInfo->prStaRecOfAP->aucMacAddr),
 				MAC2STR(prDisconnMsg->aucTargetID));
-				break;
+				goto notify;
 			}
 
 			if (IS_NET_PWR_STATE_IDLE(prAdapter,
@@ -2788,107 +2776,61 @@ void p2pRoleFsmRunEventConnectionAbort(struct ADAPTER *prAdapter,
 				prP2pBssInfo,
 				prDisconnMsg->aucTargetID);
 
-			if (prCurrStaRec && prCurrStaRec->fgIsInUse) {
-				DBGLOG(P2P, TRACE,
-					"Disconnecting: " MACSTR "\n",
-					MAC2STR(prCurrStaRec->aucMacAddr));
+			if (!prCurrStaRec || !prCurrStaRec->fgIsInUse)
+				goto notify;
 
-				if ((prP2pBssInfo->u4RsnSelectedAKMSuite ==
-					RSN_AKM_SUITE_OWE)) {
-					DBGLOG(P2P, INFO,
-						"[OWE] Ignore deauth in %d\n",
-						prCurrStaRec->eAuthAssocState);
-					break;
-				}
+			DBGLOG(P2P, TRACE,
+				"Disconnecting: " MACSTR "\n",
+				MAC2STR(prCurrStaRec->aucMacAddr));
 
-				/* Glue layer indication. */
-				/* kalP2PGOStationUpdate(prAdapter->prGlueInfo,
-				 * prCurrStaRec, FALSE);
-				 */
-
-				/* Send deauth & do indication. */
-				p2pFuncDisconnect(prAdapter,
-					prP2pBssInfo,
-					prCurrStaRec,
-					prDisconnMsg->fgSendDeauth,
-					prDisconnMsg->u2ReasonCode,
-					TRUE);
-
-				cnmTimerStopTimer(prAdapter,
-					&(prCurrStaRec->rDeauthTxDoneTimer));
-
-				cnmTimerInitTimer(prAdapter,
-					&(prCurrStaRec->rDeauthTxDoneTimer),
-					(PFN_MGMT_TIMEOUT_FUNC)
-					p2pRoleFsmDeauthTimeout,
-					(uintptr_t) prCurrStaRec);
-
-				cnmTimerStartTimer(prAdapter,
-					&(prCurrStaRec->rDeauthTxDoneTimer),
-					P2P_DEAUTH_TIMEOUT_TIME_MS);
-#if CFG_SUPPORT_802_11W
-			} else if (rsnKeyMgmtSae(
-					prP2pBssInfo->u4RsnSelectedAKMSuite)) {
-				if (!kal_completion_done(
-					&prP2pRoleFsmInfo->rDeauthComp)) {
-					DBGLOG(P2P, TRACE,
-						"Complete rDeauthComp\n");
-					complete(&prP2pRoleFsmInfo
-						->rDeauthComp);
-				}
-				prP2pRoleFsmInfo
-					->encryptedDeauthIsInProcess = FALSE;
-#endif
+			if ((prP2pBssInfo->u4RsnSelectedAKMSuite ==
+				RSN_AKM_SUITE_OWE)) {
+				DBGLOG(P2P, INFO,
+					"[OWE] Ignore deauth in %d\n",
+					prCurrStaRec->eAuthAssocState);
+				break;
 			}
-#if 0
-			LINK_FOR_EACH(prLinkEntry, prStaRecOfClientList) {
-				prCurrStaRec = LINK_ENTRY(prLinkEntry,
-					struct STA_RECORD, rLinkEntry);
 
-				ASSERT(prCurrStaRec);
+			/* Glue layer indication. */
+			/* kalP2PGOStationUpdate(prAdapter->prGlueInfo,
+			 * prCurrStaRec, FALSE);
+			 */
 
-				if (EQUAL_MAC_ADDR(prCurrStaRec->aucMacAddr,
-					prDisconnMsg->aucTargetID)) {
+			/* Send deauth & do indication. */
+			p2pFuncDisconnect(prAdapter,
+				prP2pBssInfo,
+				prCurrStaRec,
+				prDisconnMsg->fgSendDeauth,
+				prDisconnMsg->u2ReasonCode,
+				TRUE);
 
-					DBGLOG(P2P, TRACE,
-					"Disconnecting: " MACSTR "\n",
-					MAC2STR(
-					prCurrStaRec->aucMacAddr));
+			cnmTimerStopTimer(prAdapter,
+				&(prCurrStaRec->rDeauthTxDoneTimer));
 
-					/* Remove STA from client list. */
-					LINK_REMOVE_KNOWN_ENTRY(
-						prStaRecOfClientList,
-						&prCurrStaRec->rLinkEntry);
+			cnmTimerInitTimer(prAdapter,
+				&(prCurrStaRec->rDeauthTxDoneTimer),
+				(PFN_MGMT_TIMEOUT_FUNC)
+				p2pRoleFsmDeauthTimeout,
+				(uintptr_t) prCurrStaRec);
 
-					/* Glue layer indication. */
-					/* kalP2PGOStationUpdate(
-					 * prAdapter->prGlueInfo,
-					 * prCurrStaRec, FALSE);
-					 */
-
-					/* Send deauth & do indication. */
-					p2pFuncDisconnect(prAdapter,
-						prP2pBssInfo,
-						prCurrStaRec,
-						prDisconnMsg->fgSendDeauth,
-						prDisconnMsg->u2ReasonCode);
-
-					/* prTargetStaRec = prCurrStaRec; */
-
-					break;
-				}
-			}
-#endif
-
+			cnmTimerStartTimer(prAdapter,
+				&(prCurrStaRec->rDeauthTxDoneTimer),
+				P2P_DEAUTH_TIMEOUT_TIME_MS);
 		}
 		break;
 	case OP_MODE_P2P_DEVICE:
 	default:
 		ASSERT(FALSE);
-		break;
+		goto notify;
 	}
 
-error:
+	goto exit;
+
+notify:
+	kalP2pNotifyDisconnComplete(prAdapter, prDisconnMsg->ucRoleIdx);
+	kalP2pNotifyDelStaComplete(prAdapter, prDisconnMsg->ucRoleIdx);
+
+exit:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pRoleFsmRunEventConnectionAbort */
 

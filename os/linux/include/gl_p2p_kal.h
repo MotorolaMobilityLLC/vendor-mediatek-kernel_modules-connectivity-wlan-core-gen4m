@@ -361,6 +361,9 @@ void kalP2pNotifyStopApComplete(struct ADAPTER *prAdapter,
 void kalP2pNotifyDisconnComplete(struct ADAPTER *prAdapter,
 		uint8_t ucRoleIndex);
 
+void kalP2pNotifyDelStaComplete(struct ADAPTER *prAdapter,
+		uint8_t ucRoleIndex);
+
 u_int8_t kalP2pIsStoppingAp(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
 

@@ -327,12 +327,6 @@ struct P2P_ROLE_FSM_INFO {
 	struct TIMER rDfsShutDownTimer;
 #endif
 
-#if CFG_SUPPORT_802_11W
-	/* STA PMF: for encrypted deauth frame */
-	kal_completion rDeauthComp;
-	u_int8_t encryptedDeauthIsInProcess;
-#endif
-
 	struct TIMER rWaitNextReqChnlTimer;
 
 	/* Packet filter for P2P module. */
