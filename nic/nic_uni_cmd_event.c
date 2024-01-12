@@ -177,6 +177,7 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_ADD_KEY_DONE] = nicUniEventAddKeyDone,
 	[UNI_EVENT_ID_FW_LOG_2_HOST] = nicUniEventFwLog2Host,
 	[UNI_EVENT_ID_P2P] = nicUniEventP2p,
+	[UNI_EVENT_ID_RDD] = nicUniEventRDD,
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -5398,3 +5399,79 @@ void nicUniEventP2p(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 	}
 }
+
+
+void nicUniEventRDD(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_RDD);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_RDD_TAG_SEND_PULSE: {
+			struct UNI_EVENT_RDD_SEND_PULSE *rdd =
+				(struct UNI_EVENT_RDD_SEND_PULSE *) tag;
+			struct EVENT_RDD_REPORT legacy;
+
+			legacy.u1RddIdx = rdd->u1RddIdx;
+			legacy.u1LongDetected = rdd->u1LongDetected;
+			legacy.u1ConstantPRFDetected =
+						rdd->u1ConstantPRFDetected;
+			legacy.u1StaggeredPRFDetected =
+						rdd->u1StaggeredPRFDetected;
+			legacy.u1RadarTypeIdx = rdd->u1RadarTypeIdx;
+			legacy.u1PeriodicPulseNum = rdd->u1PeriodicPulseNum;
+			legacy.u1LongPulseNum = rdd->u1LongPulseNum;
+			legacy.u1HwPulseNum = rdd->u1HwPulseNum;
+			legacy.u1OutLPN = rdd->u1OutLPN;
+			legacy.u1OutSPN = rdd->u1OutSPN;
+			legacy.u1OutCRPN = rdd->u1OutCRPN;
+			legacy.u1OutCRPW = rdd->u1OutCRPW;
+			legacy.u1OutCRBN = rdd->u1OutCRBN;
+			legacy.u1OutSTGPN = rdd->u1OutSTGPN;
+			legacy.u1OutSTGPW = rdd->u1OutSTGPW;
+
+			legacy.u4OutPRI_CONST = rdd->u4OutPRI_CONST;
+			legacy.u4OutPRI_STG1 = rdd->u4OutPRI_STG1;
+			legacy.u4OutPRI_STG2 = rdd->u4OutPRI_STG2;
+			legacy.u4OutPRI_STG3 = rdd->u4OutPRI_STG3;
+			legacy.u4OutPRIStgDmin = rdd->u4OutPRIStgDmin;
+
+			// TODO: uni cmd, arLongPulse/arPeriodicPulse/arContent
+			RUN_RX_EVENT_HANDLER(EVENT_ID_RDD_REPORT, &legacy);
+		}
+			break;
+		case UNI_EVENT_RDD_TAG_REPORT: {
+			struct UNI_EVENT_RDD_REPORT *rdd =
+				(struct UNI_EVENT_RDD_REPORT *) tag;
+			struct EVENT_WIFI_RDD_TEST legacy;
+
+			legacy.u4FuncIndex = rdd->u4FuncIndex;
+			legacy.u4FuncLength = rdd->u4FuncLength;
+			legacy.u4Prefix = rdd->u4Prefix;
+			legacy.u4Count = rdd->u4Count;
+			legacy.ucRddIdx = rdd->ucRddIdx;
+
+			// TODO: uni cmd, aucBuffer
+			RUN_RX_EVENT_HANDLER(EVENT_ID_RDD_SEND_PULSE, &legacy);
+		}
+			break;
+
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+
