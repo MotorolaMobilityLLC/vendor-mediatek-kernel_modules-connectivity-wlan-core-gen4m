@@ -6650,6 +6650,76 @@ enum ENUM_UNI_EVENT_ASSERT_DUMP_TAG {
 };
 #endif
 
+struct UNI_CMD_RX_HDR_TRAN_TAG_HANDLE {
+	uint32_t u4Size;
+};
+
+struct UNI_CMD_RX_HDR_TRAN_BLACKLIST_ENTRY {
+	uint8_t ucBlackListIdx;
+	u_int8_t fgEnable;
+	uint16_t u2EtherType;
+};
+
+struct UNI_CMD_RX_HDR_TRAN_PARM {
+	/* UNI_CMD_RX_HDR_TRAN_ENABLE = 0 */
+	u_int8_t fgEnable;
+	u_int8_t fgCheckBssid;
+	uint8_t ucTranslationMode;
+
+	/* UNI_CMD_RX_HDR_TRAN_VLAN_CONFIG = 1 */
+	u_int8_t fgInsertVlan;
+	u_int8_t fgRemoveVlan;
+	u_int8_t fgUseQosTid;
+
+	/* UNI_CMD_RX_HDR_TRAN_BLACKLIST_CONFIG = 2 */
+	uint8_t ucBlackListCnt;
+	struct UNI_CMD_RX_HDR_TRAN_BLACKLIST_ENTRY *list;
+};
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_RX_HDR_TRAN {
+	/* fixed field */
+	uint8_t aucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+enum UNI_CMD_RX_HDR_TRAN_TAG {
+	UNI_CMD_RX_HDR_TRAN_ENABLE = 0,
+	UNI_CMD_RX_HDR_TRAN_VLAN_CONFIG = 1,
+	UNI_CMD_RX_HDR_TRAN_BLACKLIST_CONFIG = 2,
+	UNI_CMD_RX_HDR_TRAN_MAX_NUM
+};
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_RX_HDR_TRAN_ENABLE {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	u_int8_t fgEnable;
+	u_int8_t fgCheckBssid;
+	uint8_t ucTranslationMode;
+	uint8_t aucPadding[1];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_RX_HDR_TRAN_VLAN {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	u_int8_t fgInsertVlan;
+	u_int8_t fgRemoveVlan;
+	u_int8_t fgUseQosTid;
+	uint8_t aucPadding[1];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_RX_HDR_TRAN_BLACKLIST {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucBlackListIdx;
+	u_int8_t fgEnable;
+	uint16_t u2EtherType;
+} __KAL_ATTRIB_PACKED__;
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -7176,6 +7246,9 @@ void nicUniEventThermalProtect(struct ADAPTER *ad,
 void nicUniEventAssertDump(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt);
 #endif
 
+
+uint32_t nicUniCmdRxHdrTransUpdate(struct ADAPTER *ad,
+	struct UNI_CMD_RX_HDR_TRAN_PARM *param);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
