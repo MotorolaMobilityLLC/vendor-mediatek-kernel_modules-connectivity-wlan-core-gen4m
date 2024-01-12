@@ -2186,15 +2186,6 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 			"%s:: no nic_txd_header_format_op??\n",
 			__func__);
 
-#if CFG_SUPPORT_NAN
-	/* BMC */
-	if (prMsduInfo->ucStaRecIndex == STA_REC_INDEX_BMCAST) {
-		/* NAN Todo: not using the struct HW_MAC_TX_DESC */
-		HAL_MAC_TX_DESC_SET_BMC((struct HW_MAC_TX_DESC *)prTxDesc);
-		HAL_MAC_TX_DESC_SET_NO_ACK((struct HW_MAC_TX_DESC *)prTxDesc);
-	}
-#endif
-
 	if (pu4TxDescLength)
 		*pu4TxDescLength = u4TxDescLength;
 }
