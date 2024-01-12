@@ -331,6 +331,9 @@ struct P2P_CONNECTION_REQ_INFO {
 #define P2P_ROLE_INDEX_2_ROLE_FSM_INFO(_prAdapter, _RoleIndex) \
 	((_prAdapter)->rWifiVar.aprP2pRoleFsmInfo[_RoleIndex])
 
+#define P2P_MAIN_LINK_INDEX (0)
+#define P2P_MAIN_ROLE_INDEX (0)
+
 struct P2P_ROLE_FSM_INFO {
 	uint8_t ucRoleIndex;
 
@@ -382,6 +385,11 @@ struct P2P_ROLE_FSM_INFO {
 
 	/* Beacon Information. */
 	struct P2P_BEACON_UPDATE_INFO rBeaconUpdateInfo;
+
+	struct P2P_LINK_INFO aprP2pLinkInfo[MLD_LINK_MAX];
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prP2pMldBssInfo;
+#endif
 };
 
 /*========================= Initial ============================*/
@@ -449,6 +457,20 @@ void p2pRoleUpdateACLEntry(IN struct ADAPTER *prAdapter,
 
 u_int8_t p2pRoleProcessACLInspection(IN struct ADAPTER *prAdapter,
 		IN uint8_t *pMacAddr, IN uint8_t ucBssIdx);
+
+uint32_t
+p2pRoleFsmRunEventAAACompleteImpl(IN struct ADAPTER *prAdapter,
+		IN struct STA_RECORD *prStaRec,
+		IN struct BSS_INFO *prP2pBssInfo);
+
+uint32_t
+p2pRoleFsmRunEventAAASuccessImpl(IN struct ADAPTER *prAdapter,
+		IN struct STA_RECORD *prStaRec,
+		IN struct BSS_INFO *prP2pBssInfo);
+
+void p2pRoleFsmRunEventAAATxFailImpl(IN struct ADAPTER *prAdapter,
+		IN struct STA_RECORD *prStaRec,
+		IN struct BSS_INFO *prP2pBssInfo);
 
 uint32_t
 p2pRoleFsmRunEventAAAComplete(IN struct ADAPTER *prAdapter,

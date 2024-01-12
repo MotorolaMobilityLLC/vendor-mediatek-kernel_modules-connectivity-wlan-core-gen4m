@@ -605,6 +605,10 @@ void rlmSetMaxTxPwrLimit(IN struct ADAPTER *prAdapter, int8_t cLimit,
 void rlmSyncExtCapIEwithSupplicant(uint8_t *aucCapabilities,
 	const uint8_t *supExtCapIEs, size_t IElen);
 
+int32_t rlmGetOpClassForChannel(
+	int32_t channel,
+	enum ENUM_BAND band);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

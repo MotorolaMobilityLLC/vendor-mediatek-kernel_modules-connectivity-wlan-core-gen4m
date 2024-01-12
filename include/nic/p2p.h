@@ -319,6 +319,7 @@ struct P2P_CHNL_REQ_INFO {
 #if CFG_SUPPORT_NFC_BEAM_PLUS
 	uint32_t NFC_BEAM;	/*NFC Beam + Indication */
 #endif
+	uint8_t ucChReqNum;
 };
 
 /* Glubal Connection Settings. */
@@ -420,6 +421,12 @@ struct P2P_MGMT_TX_REQ_INFO {
 	struct LINK rTxReqLink;
 	struct MSDU_INFO *prMgmtTxMsdu;
 	u_int8_t fgIsWaitRsp;
+};
+
+struct P2P_LINK_INFO {
+	struct BSS_INFO *prP2pBss;
+	struct BSS_DESC *prP2pTargetBssDesc;
+	struct STA_RECORD *prP2pTargetStaRec;
 };
 
 /******************************************************************************

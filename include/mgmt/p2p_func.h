@@ -143,7 +143,7 @@ struct BSS_INFO *p2pFuncBSSIDFindBssInfo(IN struct ADAPTER *prAdapter,
 		IN uint8_t *pucBSSID);
 
 void p2pFuncGCJoin(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prP2pBssInfo,
+		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 		IN struct P2P_JOIN_INFO *prP2pJoinInfo);
 
 void p2pFuncStopComplete(IN struct ADAPTER *prAdapter,
@@ -319,7 +319,9 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 struct BSS_DESC *
 p2pFuncKeepOnConnection(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prBssInfo,
-		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo);
+		IN struct P2P_CONNECTION_REQ_INFO *prConnReqInfo,
+		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+		IN struct P2P_SCAN_REQ_INFO *prScanReqInfo);
 
 void p2pFuncStoreAssocRspIEBuffer(IN struct ADAPTER *prAdapter,
 		IN struct P2P_JOIN_INFO *prP2pJoinInfo,

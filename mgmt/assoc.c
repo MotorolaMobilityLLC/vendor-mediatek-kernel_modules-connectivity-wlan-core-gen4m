@@ -1410,6 +1410,12 @@ assocProcessRxDisassocFrame(IN struct ADAPTER *prAdapter,
 }				/* end of assocProcessRxDisassocFrame() */
 
 #if CFG_SUPPORT_AAA
+uint32_t assocProcessRxAssocReqFrameImpl(
+	IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb,
+	IN struct STA_RECORD *prStaRec,
+	OUT uint16_t *pu2StatusCode);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function will parse and process the incoming Association Req
@@ -1425,41 +1431,107 @@ assocProcessRxDisassocFrame(IN struct ADAPTER *prAdapter,
  * @retval WLAN_STATUS_SUCCESS   This is the frame we should handle.
  */
 /*----------------------------------------------------------------------------*/
-uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
-				     IN struct SW_RFB *prSwRfb,
-				     OUT uint16_t *pu2StatusCode)
+uint32_t assocProcessRxAssocReqFrame(
+	IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prAssocRspSwRfb,
+	OUT uint16_t *pu2StatusCode)
 {
-	struct WLAN_ASSOC_REQ_FRAME *prAssocReqFrame;
 	struct STA_RECORD *prStaRec;
-	struct BSS_INFO *prBssInfo;
-	struct IE_SSID *prIeSsid = (struct IE_SSID *)NULL;
-	struct RSN_INFO_ELEM *prIeRsn = (struct RSN_INFO_ELEM *)NULL;
-	struct IE_SUPPORTED_RATE_IOT *prIeSupportedRate =
-	    (struct IE_SUPPORTED_RATE_IOT *)NULL;
-	struct IE_EXT_SUPPORTED_RATE *prIeExtSupportedRate =
-	    (struct IE_EXT_SUPPORTED_RATE *)NULL;
-	struct WIFI_VAR *prWifiVar = NULL;
-	uint8_t *pucIE, *pucIEStart;
-	uint16_t u2IELength;
-	uint16_t u2Offset = 0;
-	uint16_t u2StatusCode = STATUS_CODE_SUCCESSFUL;
-	uint16_t u2RxFrameCtrl;
-	uint16_t u2BSSBasicRateSet;
-	uint8_t ucFixedFieldLength;
-	u_int8_t fgIsUnknownBssBasicRate;
-	uint32_t i;
-	u_int8_t fgIsTKIP = FALSE;
-	enum ENUM_BAND eBand = 0;
-	struct RX_DESC_OPS_T *prRxDescOps;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_STA_RECORD *mld_starec;
+#endif
 
-	if (!prAdapter || !prSwRfb || !pu2StatusCode) {
+	if (!prAdapter || !prAssocRspSwRfb || !pu2StatusCode) {
 		DBGLOG(SAA, WARN, "Invalid parameters, ignore pkt!\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
+	prStaRec = cnmGetStaRecByIndex(prAdapter,
+		prAssocRspSwRfb->ucStaRecIdx);
+
+	if (prStaRec == NULL)
+		return WLAN_STATUS_FAILURE;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
+
+	if (mld_starec) {
+		struct LINK *links =
+			&mld_starec->rStarecList;
+		struct STA_RECORD *starec;
+		struct SW_RFB *prSwRfb;
+		uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+		LINK_FOR_EACH_ENTRY(starec, links,
+			rLinkEntryMld,
+			struct STA_RECORD) {
+			if (starec == prStaRec) {
+				u4Status = assocProcessRxAssocReqFrameImpl(
+						prAdapter,
+						prAssocRspSwRfb,
+						starec,
+						pu2StatusCode);
+			} else {
+				prSwRfb = beDuplicateAssocSwRfb(prAdapter,
+					prAssocRspSwRfb, starec);
+				if (!prSwRfb)
+					return WLAN_STATUS_RESOURCES;
+
+				u4Status = assocProcessRxAssocReqFrameImpl(
+						prAdapter,
+						prSwRfb,
+						starec,
+						pu2StatusCode);
+				nicRxReturnRFB(prAdapter, prSwRfb);
+			}
+
+			DBGLOG(AAA, INFO, "status=0x%x code=%d\n",
+				u4Status, *pu2StatusCode);
+			if (u4Status != WLAN_STATUS_SUCCESS)
+				return u4Status;
+		}
+
+		return u4Status;
+	}
+#endif
+
+	return assocProcessRxAssocReqFrameImpl(
+		prAdapter,
+		prAssocRspSwRfb,
+		prStaRec,
+		pu2StatusCode);
+}
+
+uint32_t assocProcessRxAssocReqFrameImpl(
+	IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb,
+	IN struct STA_RECORD *prStaRec,
+	OUT uint16_t *pu2StatusCode)
+{
+	 struct WLAN_ASSOC_REQ_FRAME *prAssocReqFrame;
+	 struct BSS_INFO *prBssInfo;
+	 struct IE_SSID *prIeSsid = (struct IE_SSID *)NULL;
+	 struct RSN_INFO_ELEM *prIeRsn = (struct RSN_INFO_ELEM *)NULL;
+	 struct IE_SUPPORTED_RATE_IOT *prIeSupportedRate =
+		 (struct IE_SUPPORTED_RATE_IOT *)NULL;
+	 struct IE_EXT_SUPPORTED_RATE *prIeExtSupportedRate =
+		 (struct IE_EXT_SUPPORTED_RATE *)NULL;
+	 struct WIFI_VAR *prWifiVar = NULL;
+	 uint8_t *pucIE, *pucIEStart;
+	 uint16_t u2IELength;
+	 uint16_t u2Offset = 0;
+	 uint16_t u2StatusCode = STATUS_CODE_SUCCESSFUL;
+	 uint16_t u2RxFrameCtrl;
+	 uint16_t u2BSSBasicRateSet;
+	 uint8_t ucFixedFieldLength;
+	 u_int8_t fgIsUnknownBssBasicRate;
+	 uint32_t i;
+	 u_int8_t fgIsTKIP = FALSE;
+	 enum ENUM_BAND eBand = 0;
+	 struct RX_DESC_OPS_T *prRxDescOps;
+
 	prWifiVar = &(prAdapter->rWifiVar);
 	prRxDescOps = prAdapter->chip_info->prRxDescOps;
-	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 
 	if (prStaRec == NULL) {
 		DBGLOG(SAA, WARN, "no valid starec!\n");
@@ -1632,6 +1704,14 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS)
 				prStaRec->ucPhyTypeSet |= PHY_TYPE_SET_802_11BE;
+#else
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_MLD) {
+				*pu2StatusCode =
+				    STATUS_CODE_INVALID_INFO_ELEMENT;
+				DBGLOG(AAA, WARN,
+				    "Invalid MLO IE for non-MLO AP\n");
+				return WLAN_STATUS_FAILURE;
+			}
 #endif
 			break;
 

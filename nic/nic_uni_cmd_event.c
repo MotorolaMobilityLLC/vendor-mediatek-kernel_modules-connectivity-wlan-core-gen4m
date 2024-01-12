@@ -2256,7 +2256,7 @@ uint32_t nicUniCmdBssInfoTagMld(struct ADAPTER *ad,
 	tag->u2Length = sizeof(*tag);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (prMldBssInfo) {
+	if (prMldBssInfo && prMldBssInfo->rBssList.u4NumElem > 1) {
 		tag->ucGroupMldId = prMldBssInfo->ucGroupMldId;
 		tag->ucOwnMldId = bss->ucOwnMldId;
 		COPY_MAC_ADDR(tag->aucOwnMldAddr, prMldBssInfo->aucOwnMldAddr);

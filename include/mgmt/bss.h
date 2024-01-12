@@ -136,8 +136,6 @@ extern const uint8_t *apucNetworkType[NETWORK_TYPE_NUM];
 	(IS_BSS_INDEX_VALID(_ucBssIndex) ? \
 		(_prAdapter)->aprBssInfo[(_ucBssIndex)] : NULL)
 
-#define bssAssignAssocID(_prStaRec)         ((_prStaRec)->ucIndex + 1)
-
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************

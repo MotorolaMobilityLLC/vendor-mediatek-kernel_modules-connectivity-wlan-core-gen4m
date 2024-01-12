@@ -1347,6 +1347,16 @@ authProcessRxAuthFrame(IN struct ADAPTER *prAdapter,
 		prAuthFrame->u2AuthTransSeqNo != AUTH_TRANSACTION_SEQ_2)
 		u2ReturnStatusCode = STATUS_CODE_AUTH_OUT_OF_SEQ;
 
+#if (CFG_SUPPORT_802_11BE_MLO == 0)
+	if (kalFindIeExtIE(ELEM_ID_RESERVED, ELEM_EXT_ID_MLD,
+		prSwRfb->pvHeader + prSwRfb->u2HeaderLen,
+		prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen)) {
+		DBGLOG(AAA, WARN,
+		    "Invalid MLO IE for non-MLO AP\n");
+		u2ReturnStatusCode = STATUS_CODE_INVALID_INFO_ELEMENT;
+	}
+#endif
+
 	DBGLOG(AAA, LOUD, "u2ReturnStatusCode = %d\n", u2ReturnStatusCode);
 
 	*pu2ReturnStatusCode = u2ReturnStatusCode;
