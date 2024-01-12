@@ -640,36 +640,19 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 
 	} else {
 		/*process TLV Header Part2 */
-		prPhyTlvHeader->ucTagNums = 2;
+		prPhyTlvHeader->ucTagNums = 1;
 		prPhyTlvHeader->u2BufLength =
 			sizeof(struct HAL_PHY_ACTION_TLV) +
-			sizeof(struct INIT_CMD_PHY_ACTION_CAL) +
-			sizeof(struct HAL_PHY_ACTION_TLV) +
-			sizeof(struct COM_FEM_TAG_FORMAT);
+			sizeof(struct INIT_CMD_PHY_ACTION_CAL);
 
 		/*process TLV Content*/
-		/*TAG HAL_PHY_ACTION_TAG_CAL*/
 		prPhyTlv =
 			(struct HAL_PHY_ACTION_TLV *)prPhyTlvHeader->aucBuffer;
-		prPhyTlv->u2Tag = HAL_PHY_ACTION_TAG_CAL;
+		prPhyTlv->u2Tag = u2Tag;
 		prPhyTlv->u2BufLength = sizeof(struct INIT_CMD_PHY_ACTION_CAL);
 		prPhyCal =
 			(struct INIT_CMD_PHY_ACTION_CAL *)prPhyTlv->aucBuffer;
 		prPhyCal->ucCmd = ucCalCmd;
-
-		/*TAG HAL_PHY_ACTION_TAG_COM_FEM*/
-		prPhyTlv =
-			(struct HAL_PHY_ACTION_TLV *)
-			(prPhyTlvHeader->aucBuffer +
-			sizeof(struct HAL_PHY_ACTION_TLV) +
-			sizeof(struct INIT_CMD_PHY_ACTION_CAL));
-		prPhyTlv->u2Tag = HAL_PHY_ACTION_TAG_COM_FEM;
-		prPhyTlv->u2BufLength = sizeof(struct COM_FEM_TAG_FORMAT);
-		prTagDataComFEM =
-			(struct COM_FEM_TAG_FORMAT *)prPhyTlv->aucBuffer;
-		prTagDataComFEM->tag_fem_info_id = fem_info.id;
-		kalMemCopy(&prTagDataComFEM->tag_pin_info,
-			&pin_info, sizeof(struct connfem_epaelna_pin_info));
 	}
 
 	DBGLOG_MEM8(INIT, TRACE, prPhyTlvHeader, u4CmdSize);
@@ -954,10 +937,6 @@ int wlanPreCalPwrOn(void)
 
 		wlanSendPhyAction(prAdapter,
 			HAL_PHY_ACTION_TAG_COM_FEM,
-			0);
-
-		wlanSendPhyAction(prAdapter,
-			HAL_PHY_ACTION_TAG_LAA,
 			0);
 
 		eFailReason = POWER_ON_INIT_DONE;
