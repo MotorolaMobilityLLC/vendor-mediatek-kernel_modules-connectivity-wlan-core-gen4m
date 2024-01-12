@@ -452,9 +452,9 @@ uint32_t nicUpdateBss(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex);
 
 uint32_t nicUpdateDscb(struct ADAPTER *prAdapter,
-			uint8_t		ucBssIndex,
-			uint16_t	u2PreDscBitmap,
-			uint16_t	u2NewDscBitmap);
+			struct BSS_INFO *prBssInfo,
+			uint8_t	 u1PreDscbPresent,
+			uint16_t u2PreDscBitmap);
 
 uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex,

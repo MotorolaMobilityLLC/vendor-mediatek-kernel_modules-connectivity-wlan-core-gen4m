@@ -617,6 +617,7 @@ static void ehtRlmFillOpIE(
 				prEhtOp->ucEhtOpParams);
 			prEhtOpInfo->u2EhtDisSubChanBitmap =
 				prBssInfo->u2EhtDisSubChanBitmap;
+			u4OverallLen += 2;
 		} else {
 			EHT_RESET_OP_PARAM_DIS_SUBCHANNEL_PRESENT(
 				prEhtOp->ucEhtOpParams);
@@ -759,6 +760,10 @@ void ehtRlmRecOperation(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	struct IE_EHT_OP *prEhtOp = (struct IE_EHT_OP *) pucIE;
 	struct EHT_OP_INFO *prEhtOpInfo;
 	uint8_t ucVhtOpBw = 0;
+#if CFG_SUPPORT_802_PP_DSCB
+	uint8_t  u1PreDscbPresent = 0;
+	uint16_t u2PreDscBitmap = 0;
+#endif
 
 	/* if payload not contain any aucVarInfo,
 	 * IE size = sizeof(struct IE_EHT_OP)
@@ -802,6 +807,13 @@ void ehtRlmRecOperation(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		prBssInfo->fgIsEhtOpPresent = FALSE;
 	}
 
+	/*Backup peer VHT OpInfo*/
+	prStaRec->ucVhtOpChannelWidth = prBssInfo->ucVhtChannelWidth;
+
+#if CFG_SUPPORT_802_PP_DSCB
+
+	u1PreDscbPresent = prBssInfo->fgIsEhtDscbPresent;
+
 	if (EHT_IS_OP_PARAM_DIS_SUBCHANNEL_PRESENT(prEhtOp->ucEhtOpParams))
 		prBssInfo->fgIsEhtDscbPresent = TRUE;
 	else
@@ -810,15 +822,10 @@ void ehtRlmRecOperation(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	DBGLOG(RLM, LOUD, "RlmEHTOpInfo-0x%x\n",
 		prBssInfo->ucEhtOpParams);
 
-	/*Backup peer VHT OpInfo*/
-	prStaRec->ucVhtOpChannelWidth = prBssInfo->ucVhtChannelWidth;
-
-#if CFG_SUPPORT_802_PP_DSCB
 	if (prBssInfo->fgIsEhtOpPresent &&
 	    prBssInfo->fgIsEhtDscbPresent) {
 		struct EHT_DSCB_INFO *prEhtDscbInfo = NULL;
 		uint32_t u4EhtOffset;
-		uint16_t u2PreDscBitmap = 0;
 
 		/* struct IE_EHT_OP is packed,
 		 * save to use sizeof instead of
@@ -832,16 +839,9 @@ void ehtRlmRecOperation(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		u2PreDscBitmap = prBssInfo->u2EhtDisSubChanBitmap;
 		prBssInfo->u2EhtDisSubChanBitmap =
 			prEhtDscbInfo->u2DisSubChannelBitmap;
-		nicUpdateDscb(prAdapter,
-			prBssInfo->ucBssIndex,
-			u2PreDscBitmap,
-			prBssInfo->u2EhtDisSubChanBitmap);
-		DBGLOG(RLM, LOUD, "DscbBitmap: 0x%x\n",
-			prBssInfo->u2EhtDisSubChanBitmap);
 	} else if (prBssInfo->fgIsEhtDscbPresent) {
 		struct EHT_DSCB_INFO *prEhtDscbInfo = NULL;
 		uint32_t u4EhtOffset;
-		uint16_t u2PreDscBitmap = 0;
 
 		/* struct IE_EHT_OP is packed,
 		 * save to use sizeof instead of
@@ -854,14 +854,18 @@ void ehtRlmRecOperation(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		u2PreDscBitmap = prBssInfo->u2EhtDisSubChanBitmap;
 		prBssInfo->u2EhtDisSubChanBitmap =
 			prEhtDscbInfo->u2DisSubChannelBitmap;
-		nicUpdateDscb(prAdapter,
-			prBssInfo->ucBssIndex,
-			u2PreDscBitmap,
-			prBssInfo->u2EhtDisSubChanBitmap);
-		DBGLOG(RLM, LOUD, "DscbBitmap: 0x%x\n",
-			prBssInfo->u2EhtDisSubChanBitmap);
 	} else {
+		/* prBssInfo->fgIsEhtDscbPresent == 0
+		 * No dscb IE in beacon IE, so init DSCB as 0
+		*/
+		u2PreDscBitmap = prBssInfo->u2EhtDisSubChanBitmap;
+		prBssInfo->u2EhtDisSubChanBitmap = 0;
 	}
+
+	nicUpdateDscb(prAdapter, prBssInfo, u1PreDscbPresent, u2PreDscBitmap);
+	DBGLOG(RLM, LOUD, "DscbBitmap: 0x%x\n",
+		prBssInfo->u2EhtDisSubChanBitmap);
+
 #endif
 }
 

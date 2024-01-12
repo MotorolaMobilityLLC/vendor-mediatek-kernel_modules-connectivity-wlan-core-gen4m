@@ -2252,12 +2252,13 @@ uint32_t nicUpdateBss(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_802_PP_DSCB
 uint32_t nicUpdateDscb(struct ADAPTER *prAdapter,
-			uint8_t		ucBssIndex,
-			uint16_t	u2PreDscBitmap,
-			uint16_t	u2NewDscBitmap)
+			struct BSS_INFO *prBssInfo,
+			uint8_t	 u1PreDscbPresent,
+			uint16_t u2PreDscBitmap)
 {
-	if (u2PreDscBitmap != u2NewDscBitmap)
-		return nicUpdateBss(prAdapter, ucBssIndex);
+	if ((u1PreDscbPresent != prBssInfo->fgIsEhtDscbPresent)
+			|| (u2PreDscBitmap != prBssInfo->u2EhtDisSubChanBitmap))
+		return nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 	else
 		return WLAN_STATUS_SUCCESS;
 }
