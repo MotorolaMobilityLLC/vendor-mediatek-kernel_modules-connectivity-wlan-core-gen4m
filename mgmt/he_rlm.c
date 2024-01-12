@@ -408,23 +408,24 @@ void heRlmFillHeCapIE(
 	HE_SET_MAC_CAP_TRIGGER_PAD_DURATION(prHeCap->ucHeMacCap,
 		prWifiVar->ucTrigMacPadDur);
 
-	/* Check HTC blacklist */
-	if (IS_BSS_AIS(prBssInfo)) {
-		prAisFsmInfo = aisGetAisFsmInfo(prAdapter,
-			prBssInfo->ucBssIndex);
-		prBssDesc = aisGetTargetBssDesc(prAdapter,
+	if (IS_FEATURE_ENABLED(prWifiVar->ucHeHTC)) {
+		/* Check HTC blacklist */
+		if (IS_BSS_AIS(prBssInfo)) {
+			prAisFsmInfo = aisGetAisFsmInfo(prAdapter,
 				prBssInfo->ucBssIndex);
-		if (prAisFsmInfo && prBssDesc != NULL &&
-			queryAxBlacklist(prAdapter, prBssDesc->aucBSSID,
-			    prBssInfo->ucBssIndex, BLACKLIST_DIS_HE_HTC)) {
-			DBGLOG(BSS, INFO,
-			    "BSSID " MACSTR " is in HTC blacklist!\n",
-			    MAC2STR(prBssDesc->aucBSSID));
+			prBssDesc = aisGetTargetBssDesc(prAdapter,
+					prBssInfo->ucBssIndex);
+			if (prAisFsmInfo && prBssDesc != NULL &&
+				queryAxBlacklist(prAdapter, prBssDesc->aucBSSID,
+				   prBssInfo->ucBssIndex, BLACKLIST_DIS_HE_HTC))
+				DBGLOG(BSS, INFO,
+				    "BSSID " MACSTR " is in HTC blacklist!\n",
+				    MAC2STR(prBssDesc->aucBSSID));
+			else
+				HE_SET_MAC_CAP_HTC_HE(prHeCap->ucHeMacCap);
 		} else {
 			HE_SET_MAC_CAP_HTC_HE(prHeCap->ucHeMacCap);
 		}
-	} else {
-		HE_SET_MAC_CAP_HTC_HE(prHeCap->ucHeMacCap);
 	}
 
 	if (IS_FEATURE_ENABLED(prWifiVar->ucHeOMCtrl))
