@@ -7820,6 +7820,49 @@ void rlmSetMaxTxPwrLimit(IN struct ADAPTER *prAdapter, int8_t cLimit,
 			    (uint8_t *)&rTxPwrLimit, NULL, 0);
 }
 
+#if (CFG_SUPPORT_802_11AX == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Enable/Disable the SR function according to
+      the wifi.cfg SREnable parameter
+ *
+ * @param prAdapter      a pointer to adapter private data structure.
+ * @param fgIsEnableSr  a parameter to decide sr enable or disable.
+ *
+ * @return -
+ */
+/*----------------------------------------------------------------------------*/
+void rlmSetSrControl(IN struct ADAPTER *prAdapter, bool fgIsEnableSr)
+{
+	struct _SR_CMD_SR_CAP_T *prCmdSrCap = NULL;
+
+	ASSERT(prAdapter);
+
+	prCmdSrCap = (struct _SR_CMD_SR_CAP_T *)
+		kalMemAlloc(sizeof(struct _SR_CMD_SR_CAP_T),
+			VIR_MEM_TYPE);
+
+	prCmdSrCap->rSrCmd.u1CmdSubId = SR_CMD_SET_SR_CAP_SREN_CTRL;
+	prCmdSrCap->rSrCmd.u1DbdcIdx = 0;
+	prCmdSrCap->rSrCap.fgSrEn = fgIsEnableSr;
+
+	wlanSendSetQueryExtCmd(prAdapter,
+		CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+		EXT_CMD_ID_SR_CTRL,
+		TRUE,
+		FALSE,
+		TRUE,
+		NULL,
+		nicOidCmdTimeoutCommon,
+		sizeof(struct _SR_CMD_SR_CAP_T),
+		(uint8_t *) (prCmdSrCap),
+		NULL, 0);
+
+	kalMemFree(prCmdSrCap, VIR_MEM_TYPE,
+		   sizeof(struct _SR_CMD_SR_CAP_T));
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Send channel switch frame

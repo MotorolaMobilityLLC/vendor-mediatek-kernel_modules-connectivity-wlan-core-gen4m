@@ -778,6 +778,7 @@ struct WIFI_VAR {
 	uint8_t ucHeAmsduInAmpduRx;
 	uint8_t ucHeCertForceAmsdu;
 	uint8_t ucTrigMacPadDur;
+	uint8_t fgEnableSR;
 	uint8_t ucStaHeBfee;
 	uint8_t ucStaHeSuBfer;
 	uint8_t ucMaxAmpduLenExp;
