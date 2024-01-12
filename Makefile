@@ -1119,6 +1119,13 @@ ifeq ($(CONFIG_CHIP_RESET_SUPPORT), n)
     ccflags-y += -DCFG_CHIP_RESET_SUPPORT=0
 endif
 
+# Unified Command Support
+ifeq ($(CONFIG_SUPPORT_FW_IDX_LOG_TRANS), y)
+    ccflags-y += -DCFG_SUPPORT_FW_IDX_LOG_TRANS=1
+else
+    ccflags-y += -DCFG_SUPPORT_FW_IDX_LOG_TRANS=0
+endif
+
 ccflags-y += -DDBG=0
 ccflags-y += -I$(src)/os -I$(src)/os/$(os)/include
 ccflags-y += -I$(src)/include -I$(src)/include/nic -I$(src)/include/mgmt -I$(src)/include/chips
@@ -1464,6 +1471,10 @@ ifneq ($(filter MT7990,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt7990/mt7990.o
 CHIPS_OBJS += $(CHIPS)mt7990/dbg_mt7990.o
 CHIPS_OBJS += $(CHIPS)mt7990/hal_dmashdl_mt7990.o
+endif
+
+ifeq ($(CONFIG_SUPPORT_FW_IDX_LOG_TRANS), y)
+CHIPS_OBJS += $(CHIPS_CMM)fw_log_parser.o
 endif
 
 # ---------------------------------------------------

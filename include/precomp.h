@@ -87,6 +87,7 @@
 #endif
 
 #include "debug.h"
+#include "fw_log_parser.h"
 
 #include "link.h"
 #include "queue.h"

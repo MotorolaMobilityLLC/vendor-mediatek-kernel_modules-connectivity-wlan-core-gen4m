@@ -8345,6 +8345,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->aucThrmLvTxDuty[5] = (uint8_t) wlanCfgGetInt32(
 		prAdapter, "ThrmLv5TxDuty", THRM_PROT_DEFAULT_LV5_DUTY);
 #endif
+#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
+	prWifiVar->fgFwIdxLogTrans = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "FwIdxLogTrans",
+			FEATURE_DISABLED);
+#endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)

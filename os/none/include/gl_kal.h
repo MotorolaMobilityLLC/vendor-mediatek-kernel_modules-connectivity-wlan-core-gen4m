@@ -840,6 +840,7 @@ int kal_test_bit(unsigned long bit, unsigned long *p);
 #endif
 #define kalPrint(_Fmt...) printf(WLAN_TAG _Fmt)
 #define kalPrintLimited(_Fmt...) printf(WLAN_TAG _Fmt)
+#define kalPrintWoTag(_Fmt...)   printf(_Fmt)
 
 #define kalBreakPoint() \
 do { \
