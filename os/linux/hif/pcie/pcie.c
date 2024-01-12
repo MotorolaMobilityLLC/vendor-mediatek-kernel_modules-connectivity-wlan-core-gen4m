@@ -1342,8 +1342,9 @@ static void *pcieAllocPagePoolRxBuf(struct GL_HIF_INFO *prHifInfo,
 {
 	struct sk_buff *prSkb;
 	dma_addr_t rAddr;
+	uint8_t *pucRecvBuff;
 
-	prSkb = kalAllocRxSkb(&rAddr);
+	prSkb = kalAllocRxSkb(&pucRecvBuff);
 	if (!prSkb) {
 		DBGLOG(HAL, ERROR, "can't allocate rx %u size packet\n",
 		       prDmaBuf->AllocSize);
@@ -1355,9 +1356,17 @@ static void *pcieAllocPagePoolRxBuf(struct GL_HIF_INFO *prHifInfo,
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 	skb_reserve(prSkb, CFG_RADIOTAP_HEADROOM);
 #endif
+
 	prDmaBuf->AllocVa = (void *)prSkb->data;
 	memset(prDmaBuf->AllocVa, 0, prDmaBuf->AllocSize);
 
+	rAddr = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev, prDmaBuf->AllocVa,
+				   prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
+	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, rAddr)) {
+		DBGLOG(HAL, ERROR, "sk_buff dma mapping error!\n");
+		dev_kfree_skb(prSkb);
+		return NULL;
+	}
 	prDmaBuf->AllocPa = (phys_addr_t)rAddr;
 	return (void *)prSkb;
 }
