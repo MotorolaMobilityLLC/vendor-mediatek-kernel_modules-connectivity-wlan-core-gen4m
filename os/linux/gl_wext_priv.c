@@ -19119,61 +19119,61 @@ int priv_driver_show_txd_info(
 #if (CONFIG_WLAN_SERVICE == 1)
 int8_t *RxStatCommonUser[] = {
 	/* common user stat info */
-	"rx_fifo_full	: 0x%08x\n",
+	"RxFifoFull:0x%08x\n",
 #if (CFG_SUPPORT_CONNAC3X == 0) /* comm_info v1 */
-	"aci_hit_low	: 0x%08x\n",
-	"aci_hit_high	: 0x%08x\n",
+	"AciHitLow:0x%08x\n",
+	"AciHitHigh:0x%08x\n",
 #endif
-	"mu_pkt_cnt	: 0x%08x\n",
-	"sig_mcs		: 0x%08x\n",
-	"sinr		: 0x%08x\n",
-	"driver_rx_count: 0x%08x\n",
+	"MuPktCnt:0x%08x\n",
+	"SigMcs:0x%08x\n",
+	"Sinr:0x%08x\n",
+	"DrvRxCnt:0x%08x\n",
 #if (CFG_SUPPORT_CONNAC3X == 1) /* comm_info v1 */
-	"ne_var_db	: 0x%08x\n"
+	"NeVarDb:0x%08x\n"
 #endif
 };
 
 int8_t *RxStatPerUser[] = {
    /* per user stat info */
-	"freq_ofst_from_rx: 0x%08x\n",
-	"snr		: 0x%08x\n",
-	"fcs_err_cnt	: 0x%08x\n"
+	"FreqOfstFromRx:0x%08x\n",
+	"Snr:0x%08x\n",
+	"FcsErrCnt:0x%08x\n"
 };
 
 int8_t *RxStatPerAnt[] = {
 	/* per anternna stat info */
-	"rcpi		: %d\n",
-	"rssi		: %d\n",
-	"fagc_ib_rssi	: %d\n",
-	"fagc_wb_rssi	: %d\n",
-	"inst_ib_rssi	: %d\n",
-	"inst_wb_rssi	: %d\n",
+	"Rcpi:%d\n",
+	"Rssi:%d\n",
+	"FagcIbRssi:%d\n",
+	"FagcWbRssi:%d\n",
+	"InstIbRssi:%d\n",
+	"InstWbRssi:%d\n",
 #if (CFG_SUPPORT_CONNAC3X == 1) /* path_info v1 */
-	"adc_rssi	: %d\n"
+	"Adc_Rssi:%d\n"
 #endif
 };
 
 int8_t *RxStatPerBand[] = {
 	/* per band stat info */
-	"mac_fcs_err_cnt	: 0x%08x\n",
-	"mac_mdy_cnt	: 0x%08x\n",
-	"mac_len_mismatch: 0x%08x\n",
-	"mac_fcs_ok_cnt	: 0x%08x\n",
-	"phy_fcs_err_cnt_cck: 0x%08x\n",
-	"phy_fcs_err_cnt_ofdm: 0x%08x\n",
-	"phy_pd_cck	: 0x%08x\n",
-	"phy_pd_ofdm	: 0x%08x\n",
-	"phy_sig_err_cck	: 0x%08x\n",
-	"phy_sfd_err_cck	: 0x%08x\n",
-	"phy_sig_err_ofdm: 0x%08x\n",
-	"phy_tag_err_ofdm: 0x%08x\n",
-	"phy_mdy_cnt_cck	: 0x%08x\n",
-	"phy_mdy_cnt_ofdm: 0x%08x\n",
+	"MacFcsErr:0x%08x\n",
+	"MacMdy:0x%08x\n",
+	"MacLenMis:0x%08x\n",
+	"MacFcsOk:0x%08x\n",
+	"PhyFcsErrCck:0x%08x\n",
+	"PhyFcsErrOfdm:0x%08x\n",
+	"PhyPdCck:0x%08x\n",
+	"PhyPdOfdm:0x%08x\n",
+	"PhySigErrCck:0x%08x\n",
+	"PhySfdErrCck:0x%08x\n",
+	"PhySigErrOfdm:0x%08x\n",
+	"PhyTagErrOfdm:0x%08x\n",
+	"PhyMdyCck:0x%08x\n",
+	"PhyMdyOfdm:0x%08x\n",
 #if (CFG_SUPPORT_CONNAC3X == 1) /* band info v1*/
-	"aci_hit_low	: 0x%08x\n",
-	"aci_hit_high	: 0x%08x\n",
-	"phy_pd_alr		: 0x%08x\n",	/* band info v2*/
-	"mac_u2m_mpdu_cnt	: 0x%08x\n"	/* band info v2*/
+	"AciHitLow:0x%08x\n",
+	"AciHitHigh:0x%08x\n",
+	"PhyPdAlr:0x%08x\n",	/* band info v2*/
+	"MacU2mMpdu:0x%08x\n"	/* band info v2*/
 #endif
 };
 
@@ -19248,6 +19248,15 @@ int32_t priv_driver_rx_stat_parser(
 				dataptr[0]);
 				DBGLOG(REQ, LOUD,
 				"i4tmpContent is %x\n", i4tmpContent);
+
+				/*log boundary is 0x7ff*/
+				if (i4BytesWritten > 0x7B0) {
+					DBGLOG(REQ, WARN,
+						"%s:i4BytesWritten is 0x%x, limit is 0x%x\n",
+						__func__,
+						i4BytesWritten,
+						IW_PRIV_GET_BUF_SIZE);
+				}
 
 				if (i4Type == 0) {
 					if ((i/4) >=
