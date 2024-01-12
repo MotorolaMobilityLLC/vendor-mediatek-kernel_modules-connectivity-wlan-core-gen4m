@@ -220,11 +220,12 @@ enum ENUM_CNM_OPMODE_REQ_T {
 	CNM_OPMODE_REQ_DBDC_SCAN  = 2,
 	CNM_OPMODE_REQ_COEX       = 3,
 	CNM_OPMODE_REQ_SMARTGEAR  = 4,
-	CNM_OPMODE_REQ_SMARTGEAR_1T2R  = 5,
-	CNM_OPMODE_REQ_ANT_CTRL_1T2R   = 6,
-	CNM_OPMODE_REQ_COANT      = 7,
-	CNM_OPMODE_REQ_NUM        = 8,
-	CNM_OPMODE_REQ_MAX_CAP    = 9 /* just for coding */
+	CNM_OPMODE_REQ_USER_CONFIG     = 5,
+	CNM_OPMODE_REQ_SMARTGEAR_1T2R  = 6,
+	CNM_OPMODE_REQ_ANT_CTRL_1T2R   = 7,
+	CNM_OPMODE_REQ_COANT      = 8,
+	CNM_OPMODE_REQ_NUM        = 9,
+	CNM_OPMODE_REQ_MAX_CAP    = 10 /* just for coding */
 };
 
 /*******************************************************************************
