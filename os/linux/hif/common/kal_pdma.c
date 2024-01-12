@@ -479,11 +479,6 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 	/* Static mapping */
 #if (CFG_WLAN_ATF_SUPPORT == 1)
 	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
-
-		DBGLOG(INIT, TRACE, "Write CONSYS 0x%08x=0x%08x.\n",
-			prChipInfo->u4CsrOffset + u4BusAddr,
-			u4Value);
-
 		kalSendAtfSmcCmd(SMC_WLAN_DEV_REG_WR_CR_OPID,
 			prChipInfo->u4CsrOffset + u4BusAddr,
 			u4Value, 0);
