@@ -3248,6 +3248,81 @@ void connac2x_DumpWfsyscpupcr(struct ADAPTER *prAdapter)
 	       log_buf_lp[3],
 	       log_buf_lp[4]);
 }
-#endif
+
+void connac2x_DbgCrRead(
+	struct ADAPTER *prAdapter, size_t addr, unsigned int *val)
+{
+	if (prAdapter == NULL)
+		wf_ioremap_read(addr, val);
+	else
+		HAL_MCR_RD(prAdapter, (addr|0x64000000), val);
+}
+
+void connac2x_DbgCrWrite(
+	struct ADAPTER *prAdapter, phys_addr_t addr, unsigned int val)
+{
+	if (prAdapter == NULL)
+		wf_ioremap_write(addr, val);
+	else
+		HAL_MCR_WR(prAdapter, (addr|0x64000000), val);
+}
+
+void connac2x_dump_format_memory32(
+	uint32_t *pu4StartAddr, uint32_t u4Count, char *aucInfo)
+{
+#define ONE_LINE_MAX_COUNT	16
+#define TMP_BUF_SZ			20
+	uint32_t i, endCount;
+	char buf[ONE_LINE_MAX_COUNT*10];
+	char tmp[TMP_BUF_SZ] = {'\0'};
+
+	ASSERT(pu4StartAddr);
+
+	LOG_FUNC("%s, Count(%d)\n", aucInfo, u4Count);
+
+	while (u4Count > 0) {
+
+		kalSnprintf(buf, TMP_BUF_SZ, "%08x", pu4StartAddr[0]);
+
+		if (u4Count > ONE_LINE_MAX_COUNT)
+			endCount = ONE_LINE_MAX_COUNT;
+		else
+			endCount = u4Count;
+
+		for (i = 1; i < endCount; i++) {
+			kalSnprintf(tmp, TMP_BUF_SZ, " %08x", pu4StartAddr[i]);
+			strncat(buf, tmp, strlen(tmp));
+		}
+
+		LOG_FUNC("%s\n", buf);
+
+		if (u4Count > ONE_LINE_MAX_COUNT) {
+			u4Count -= ONE_LINE_MAX_COUNT;
+			pu4StartAddr += ONE_LINE_MAX_COUNT;
+		} else
+			u4Count = 0;
+	}
+}
+
+void connac2x_DumpCrRange(
+	struct ADAPTER *prAdapter,
+	uint32_t cr_start, uint32_t word_count, char *str)
+{
+#define LOG_MAIX_ITEM 16
+
+	uint32_t u4Cr, i;
+	uint32_t dummy[LOG_MAIX_ITEM] = {0};
+
+	if (word_count > LOG_MAIX_ITEM)
+		word_count = LOG_MAIX_ITEM;
+
+	for (i = 0, u4Cr = cr_start; i < word_count; i++) {
+		connac2x_DbgCrRead(prAdapter, u4Cr, &dummy[i]);
+		u4Cr += 0x04;
+	}
+	connac2x_dump_format_memory32(dummy, word_count, str);
+}
+
+#endif /* _HIF_PCIE || _HIF_AXI */
 
 #endif /* CFG_SUPPORT_CONNAC2X */

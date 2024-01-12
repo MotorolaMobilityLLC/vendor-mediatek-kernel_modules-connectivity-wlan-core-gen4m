@@ -62,7 +62,7 @@ static void configIntMask(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable);
 
 static void soc7_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
-		u_int8_t enable);
+		u_int8_t enable, bool fgResetHif);
 
 static void soc7_0EnableFwDlMode(struct ADAPTER *prAdapter);
 
@@ -328,7 +328,6 @@ struct CHIP_DBG_OPS soc7_0_DebugOps = {
 	.show_rx_rate_info = connac2x_show_rx_rate_info,
 	.show_rx_rssi_info = connac2x_show_rx_rssi_info,
 	.show_stat_info = connac2x_show_stat_info,
-	.show_mcu_debug_info = NULL,
 	.show_wfdma_dbg_probe_info = soc7_0_show_wfdma_dbg_probe_info,
 	.show_wfdma_wrapper_info = soc7_0_show_wfdma_wrapper_info,
 };
@@ -514,6 +513,19 @@ static void soc7_0asicConnac2xProcessRxInterrupt(
 		halRxReceiveRFBs(prAdapter, WFDMA0_RX_RING_IDX_3, FALSE);
 }
 
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+static void soc7_0SetMDRXRingPriorityInterrupt(struct ADAPTER *prAdapter)
+{
+	u_int32_t val = 0;
+
+	HAL_MCR_RD(prAdapter,
+		WF_WFDMA_HOST_DMA0_WPDMA_INT_RX_PRI_SEL_ADDR, &val);
+	val |= BITS(4, 7);
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA0_WPDMA_INT_RX_PRI_SEL_ADDR, val);
+}
+#endif /* CFG_MTK_MCIF_WIFI_SUPPORT */
+
 static void soc7_0asicConnac2xWfdmaManualPrefetch(
 	struct GLUE_INFO *prGlueInfo)
 {
@@ -559,6 +571,10 @@ static void soc7_0asicConnac2xWfdmaManualPrefetch(
 	     0x03800004);
 	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING16_EXT_CTRL_ADDR,
 	     0x03C00004);
+
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	soc7_0SetMDRXRingPriorityInterrupt(prAdapter);
+#endif /* CFG_MTK_MCIF_WIFI_SUPPORT */
 
 	/* reset dma idx */
 	HAL_MCR_WR(prAdapter,
@@ -637,7 +653,7 @@ static void configIntMask(struct GLUE_INFO *prGlueInfo,
 }
 
 static void soc7_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
-		u_int8_t enable)
+		u_int8_t enable, bool fgResetHif)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	union WPDMA_GLO_CFG_STRUCT GloCfg[CONNAC2X_WFDMA_COUNT];

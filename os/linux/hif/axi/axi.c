@@ -115,6 +115,9 @@ static const struct platform_device_id mtk_axi_ids[] = {
 #ifdef SOC5_0
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_soc5_0},
 #endif /* SOC5_0 */
+#ifdef SOC7_0
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_soc7_0},
+#endif /* SOC7_0 */
 
 	{ /* end: all zeroes */ },
 };
