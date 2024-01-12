@@ -1884,7 +1884,7 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 
 		skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, ptr - buf);
 		if (!skb) {
-			DBGLOG(REQ, WARN, "allocate skb %u bytes failed:%x",
+			DBGLOG(REQ, WARN, "allocate skb %u bytes failed",
 			       ptr - buf);
 			rStatus = -ENOMEM;
 			break;
