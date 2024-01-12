@@ -41,6 +41,7 @@
 #define MAX_MBU_RB_WAITING_CNT	(1000) /* 1000 * 1us = 1ms timeout */
 #define MAX_MBU_EMI_WAITING_CNT	(2000) /* 2000 * 5us = 10ms timeout */
 #define MBU_MSI_MIRROR_IDX	7
+#define MBU_TIMEOUT_VALUE	0xffffdead
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -123,9 +124,7 @@ void halMbuInit(struct GLUE_INFO *prGlueInfo)
 	       prMem->pa, prMem->va);
 
 	/* 1. [ALL] Program to unmask vector event for cb_infra_mbu */
-	u4Addr = CB_INFRA_MBU_CR_VECTOR_EVENT_MASK_ADDR;
-	u4Val = 0xFF7FFBF3;
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+	/* move to top pos */
 
 	/* 2. TOP POS */
 	/* Interrupt enable for IMR #0 (DMA#0) */
@@ -261,6 +260,8 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 	/* 5. Trigger events */
 	u4Addr = CB_DMA_TOP_CB_INFRA_MBU_MAILBOX_0_CMD_H_ADDR;
 	if (IS_CBTOP_PHY_ADDR(u4ReadAddr)) {
+		/* dummy write */
+		HAL_MCR_WR(prAdapter, CB_INFRA_MBU_OPD_TOP_H_ADDR, 0);
 		u4Val = u4ReadAddr;
 	} else {
 		/* set cb top remap */
@@ -278,10 +279,12 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 	/* 6. Host driver receive MSI interrupt */
 	for (u4Cnt = 0; !prMsiMirror->u4IntSta; u4Cnt++) {
 		if (u4Cnt > MAX_MBU_EMI_WAITING_CNT) {
-			DBGLOG(HAL, ERROR, "Read[0x%08x] timeout Sta[0x%08x]",
-			       u4Addr, prMsiMirror->u4IntSta);
+			DBGLOG(HAL, ERROR,
+			       "Read[0x%08x] timeout Sta[0x%08x]\n",
+			       u4ReadAddr, prMsiMirror->u4IntSta);
 			fgDbg = TRUE;
 			fgRet = FALSE;
+			*pu4Val = MBU_TIMEOUT_VALUE;
 			goto exit;
 		}
 		kalUdelay(5);
