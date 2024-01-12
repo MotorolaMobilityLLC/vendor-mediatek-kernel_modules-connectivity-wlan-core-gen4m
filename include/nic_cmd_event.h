@@ -3961,6 +3961,10 @@ void nicEventHandleDelayBar(IN struct ADAPTER *prAdapter,
 		      IN struct WIFI_EVENT *prEvent);
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 
+void nicEventHandleAddBa(IN struct ADAPTER *prAdapter,
+			IN struct STA_RECORD *prStaRec, IN uint8_t ucTid,
+			IN uint16_t u2WinSize, IN uint16_t u2WinStart);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
