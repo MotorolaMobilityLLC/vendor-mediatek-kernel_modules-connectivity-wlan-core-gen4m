@@ -1456,6 +1456,7 @@ u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 #if CFG_ENABLE_OFFCHANNEL_TX
 	prWiphy->flags |= WIPHY_FLAG_OFFCHAN_TX;
 #endif /* CFG_ENABLE_OFFCHANNEL_TX */
+	prWiphy->features |= NL80211_FEATURE_INACTIVITY_TIMER;
 
 	prWiphy->max_scan_ssids = MAX_SCAN_LIST_NUM;
 	prWiphy->max_scan_ie_len = MAX_SCAN_IE_LEN;

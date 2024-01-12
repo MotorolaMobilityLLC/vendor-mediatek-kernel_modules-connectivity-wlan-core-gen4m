@@ -2016,6 +2016,7 @@ static void wlanCreateWirelessDevice(void)
 	prWiphy->features |= NL80211_FEATURE_SCHED_SCAN_RANDOM_MAC_ADDR;
 #endif
 
+	prWiphy->features |= NL80211_FEATURE_INACTIVITY_TIMER;
 #if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 	prWiphy->vendor_commands = mtk_wlan_vendor_ops;
 	prWiphy->n_vendor_commands = sizeof(mtk_wlan_vendor_ops) /
