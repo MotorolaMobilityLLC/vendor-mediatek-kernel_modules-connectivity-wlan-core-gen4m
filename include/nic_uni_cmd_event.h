@@ -2785,6 +2785,15 @@ struct UNI_CMD_BF {
     uint8_t aucTlvBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
+typedef void (*PFN_UNI_CMD_BF_HANDLER) (IN union CMD_TXBF_ACTION *cmd,
+	IN struct UNI_CMD_BF *uni_cmd);
+
+struct UNI_CMD_BF_HANDLE {
+	uint32_t u4Size;
+	PFN_UNI_CMD_BF_HANDLER pfHandler;
+};
+
+
 /* BF cmd tags */
 enum ENUM_UNI_CMD_BF_TAG {
 	UNI_CMD_BF_TAG_SOUNDING_OFF = 0x00,
@@ -2820,6 +2829,13 @@ enum ENUM_UNI_CMD_BF_TAG {
 	UNI_CMD_BF_TAG_CMD_NUM
 };
 
+struct UNI_CMD_BF_SOUNDING_STOP {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucSndgStop;
+	uint8_t ucReserved[2];
+};
+
 struct UNI_CMD_BF_SND {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2829,6 +2845,105 @@ struct UNI_CMD_BF_SND {
 	uint16_t u2WlanId[4];
 	uint32_t u4SndIntv;
 } __KAL_ATTRIB_PACKED__;
+
+struct UNI_CMD_BF_PROFILE_TAG_READ {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucProfileIdx;
+	uint8_t fgBfer;
+	uint8_t ucBandIdx;
+};
+
+struct UNI_CMD_BF_PROFILE_TAG_WRITE {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucPfmuId;
+	uint8_t fgBFer;
+	uint8_t ucBandIdx;
+	uint8_t ucBuffer[64];
+};
+
+struct UNI_CMD_BF_PROFILE_PN_READ {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucPfmuIdx;
+	uint8_t ucReserved[2];
+};
+
+struct UNI_CMD_BF_PROFILE_PN_WRITE {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucPfmuIdx;
+	uint16_t u2bw;
+	uint8_t ucBuf[32];
+};
+
+struct UNI_CMD_BF_PROFILE_DATA_READ {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucPfmuIdx;
+	uint8_t fgBFer;
+	uint8_t ucBandIdx;
+	uint8_t ucReserved[2];
+	uint16_t u2SubCarIdx;
+};
+
+struct UNI_CMD_BF_PROFILE_DATA_WRITE {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucPfmuIdx;
+	uint8_t u2SubCarrIdxLsb;
+	uint8_t u2SubCarrIdxMsb;
+	union PFMU_DATA rTxBfPfmuData;
+};
+
+struct UNI_CMD_BF_TX_APPLY {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucWlanId;
+	uint8_t fgETxBf;
+	uint8_t fgITxBf;
+	uint8_t fgMuTxBf;
+	uint8_t ucReserved[3];
+};
+
+struct UNI_CMD_BF_PFMU_MEM_ALLOC {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucSuMuMode;
+	uint8_t ucWlanIdx;
+	uint8_t ucReserved;
+};
+
+struct UNI_CMD_BF_PFMU_MEM_RLS {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucWlanId;
+	uint8_t ucReserved[2];
+};
+
+struct UNI_CMD_STAREC_MANUAL_ASSOC {
+	/*
+	 *	uint8_t              ucBssIndex;
+	 *	uint8_t              ucWlanIdx;
+	 *	uint16_t             u2TotalElementNum;
+	 *	uint32_t             u4Reserve;
+	 */
+	/* extension */
+	uint16_t u2Tag;		/* Tag = 0x05 */
+	uint16_t u2Length;
+	uint8_t aucMac[MAC_ADDR_LEN];
+	uint8_t ucType;
+	uint8_t ucWtbl;
+	uint8_t ucOwnmac;
+	uint8_t ucMode;
+	uint8_t ucBw;
+	uint8_t ucNss;
+	uint8_t ucPfmuId;
+	uint8_t ucMarate;
+	uint8_t ucSpeIdx;
+	uint8_t ucaid;
+};
 
 /* BF read BF StaRec (Tag11) */
 struct UNI_CMD_BF_STAREC_READ {

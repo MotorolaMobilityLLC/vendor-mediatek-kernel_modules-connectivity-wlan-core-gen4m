@@ -8629,7 +8629,7 @@ void rlmETxBfTriggerPeriodicSounding(struct ADAPTER *prAdapter)
 
 	DBGLOG(RLM, INFO, "rlmETxBfTriggerPeriodicSounding\n");
 
-	rTxBfActionInfo.rTxBfSoundingStart.ucCmdCategoryID =
+	rTxBfActionInfo.rTxBfSoundingStart.ucTxBfCategory =
 								BF_SOUNDING_ON;
 
 	rTxBfActionInfo.rTxBfSoundingStart.ucSuMuSndMode =
