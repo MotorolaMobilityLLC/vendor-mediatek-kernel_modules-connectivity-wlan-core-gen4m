@@ -90,6 +90,16 @@
 #define WTBL_RATE_STBC_MASK             BIT(14)
 #define WTBL_RATE_STBC_OFFSET           14
 
+/* DW 34*/
+#define WTBL_RESP_RCPI0_MASK           BITS(0, 7)
+#define WTBL_RESP_RCPI0_OFFSET         0
+#define WTBL_RESP_RCPI1_MASK           BITS(8, 15)
+#define WTBL_RESP_RCPI1_OFFSET         8
+#define WTBL_RESP_RCPI2_MASK           BITS(16, 23)
+#define WTBL_RESP_RCPI2_OFFSET         16
+#define WTBL_RESP_RCPI3_MASK           BITS(24, 31)
+#define WTBL_RESP_RCPI3_OFFSET         2
+
 /***** WTBL(LMAC) DW Offset *****/
 /* LMAC WTBL Group - Peer Unique Information */
 #define WTBL_GROUP_PEER_INFO_DW_0               0

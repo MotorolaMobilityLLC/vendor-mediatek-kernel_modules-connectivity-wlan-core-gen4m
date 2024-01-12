@@ -35,19 +35,25 @@ enum EVENT_TYPE {
  *******************************************************************************
  */
 /* function pointer array for tx stats*/
-static struct STATS_TLV_HDLR_T apfnTxTbl[STATS_TX_TAG_MAX_NUM] = {
-	{statsTxGetQueuetLen, statsTxQueueHdlr},
-	{statsTxGetPerBssLen, statsTxTlvBss0Hdlr},
-	{statsTxGetTimeLen, statsTxTimeHdlr},
+static struct STATS_TLV_MAP_T apfnTxTbl[STATS_TX_TAG_MAX_NUM] = {
+	{STATS_TX_TAG_QUEUE, {statsTxGetQueueLen, statsTxQueueHdlr} },
+	{STATS_TX_TAG_RETRY, {statsTxGetRetryLen, statsTxGetRetryHdlr} },
+	{STATS_TX_TAG_TIME, {statsTxGetTimeLen, statsTxTimeHdlr} },
+	{STATS_TX_TAG_LAT, {statsTxGetLatLen, statsTxLatHdlr} },
 };
 
-static struct STATS_TLV_HDLR_T apfnRxTbl[STATS_RX_TAG_MAX_NUM] = {
-	{statsGetTlvU8Len, statsRxReorderDropHdlr},
+static struct STATS_TLV_MAP_T apfnRxTbl[STATS_RX_TAG_MAX_NUM] = {
+	{STATS_RX_TAG_REORDER_DROP,
+		{statsGetTlvU8Len, statsRxReorderDropHdlr} },
+	{STATS_RX_TAG_AVG_RSSI,
+		{statsRxGetAvgRssiLen, statsRxAvgRssiHdlr} },
 };
 
-static struct STATS_TLV_HDLR_T apfnCgsTbl[STATS_CGS_TAG_MAX_NUM] = {
-	{statsGetTlvU8Len, statsCgsB0IdleSlotHdlr},
-	{statsCgsGetAirLatLen, statsCgsAirLatHdlr},
+static struct STATS_TLV_MAP_T apfnCgsTbl[STATS_CGS_TAG_MAX_NUM] = {
+	{STATS_CGS_TAG_B0_IDLE_SLOT,
+		{statsGetTlvU8Len, statsCgsB0IdleSlotHdlr} },
+	{STATS_CGS_TAG_AIR_LAT,
+		{statsCgsGetAirLatLen, statsCgsAirLatHdlr} },
 };
 
 /*******************************************************************************
@@ -835,88 +841,115 @@ void StatsTxPktInfoDisplay(void *pvPacket)
 }
 
 uint32_t
-statsGetTlvU4Len(void)
+statsGetTlvU4Len(struct GLUE_INFO *prGlueInfo)
 {
 	return sizeof(uint32_t);
 }
 
 uint32_t
-statsGetTlvU8Len(void)
+statsGetTlvU8Len(struct GLUE_INFO *prGlueInfo)
 {
 	return sizeof(uint64_t);
 }
 
 uint32_t
-statsTxGetQueuetLen(void)
+statsTxGetQueueLen(struct GLUE_INFO *prGlueInfo)
 {
 	return sizeof(struct STATS_TX_QUEUE_STAT_T);
 }
 
 uint32_t
-statsTxGetPerBssLen(void)
+statsTxGetRetryLen(struct GLUE_INFO *prGlueInfo)
 {
-	return sizeof(struct STATS_TX_PER_BSS_STAT_T);
+	return sizeof(struct STATS_TX_RETRY_STAT_T);
 }
 
 uint32_t
-statsTxGetTimeLen(void)
+statsTxGetTimeLen(struct GLUE_INFO *prGlueInfo)
 {
 	return sizeof(struct STATS_TX_TIME_STAT_T);
 }
 
 uint32_t
-statsCgsGetAirLatLen(void)
+statsTxGetLatLen(struct GLUE_INFO *prGlueInfo)
+{
+	return sizeof(struct STATS_TX_LAT_STAT_T);
+}
+
+uint32_t
+statsRxGetAvgRssiLen(struct GLUE_INFO *prGlueInfo)
+{
+	return sizeof(struct STATS_RX_AVG_RSSI_STAT_T);
+}
+
+uint32_t
+statsCgsGetAirLatLen(struct GLUE_INFO *prGlueInfo)
 {
 	return sizeof(struct STATS_CGS_LAT_STAT_T);
 }
 
 uint32_t
-statsTxGetTlvStatTotalLen(void)
+stateGetTlvTag(struct STATS_TLV_MAP_T *apfnTbl, uint32_t u4TargetTag,
+	uint32_t u4MaxTagNum)
 {
-	uint32_t u4TlvLen = 0;
-	uint32_t u4TlvIdx = 0;
 
-	for (u4TlvIdx = 0; u4TlvIdx < STATS_TX_TAG_MAX_NUM; u4TlvIdx++) {
-		if (apfnTxTbl[u4TlvIdx].pfnTlvGetLen)
-			u4TlvLen += (apfnTxTbl[u4TlvIdx].pfnTlvGetLen() +
-					sizeof(struct STATS_TRX_TLV_T));
+	uint32_t i = 0;
+
+	for (i = 0; i < u4MaxTagNum; i++) {
+		if (u4TargetTag == apfnTbl[i].u4Tag)
+			break;
 	}
-	DBGLOG(TX, TRACE, "%s=%u\n", __func__, u4TlvLen);
-	return u4TlvLen;
+	return i;
 }
 
 uint32_t
-statsRxGetTlvStatTotalLen(void)
+statsGetTlvStatTotalLen(struct GLUE_INFO *prGlueInfo, uint8_t type,
+	uint8_t ucNum, uint32_t *arTagList)
 {
 	uint32_t u4TlvLen = 0;
 	uint32_t u4TlvIdx = 0;
+	uint8_t i = 0;
+	struct STATS_TLV_MAP_T *pTlvTbl = NULL;
+	uint32_t u4MaxTagNum = 0;
 
-	for (u4TlvIdx = 0; u4TlvIdx < STATS_RX_TAG_MAX_NUM; u4TlvIdx++) {
-		if (apfnRxTbl[u4TlvIdx].pfnTlvGetLen)
-			u4TlvLen += (apfnRxTbl[u4TlvIdx].pfnTlvGetLen() +
-					sizeof(struct STATS_TRX_TLV_T));
+	switch (type) {
+	case STATS_TX_TAG:
+		pTlvTbl = apfnTxTbl;
+		u4MaxTagNum = STATS_TX_TAG_MAX_NUM;
+		break;
+	case STATS_RX_TAG:
+		pTlvTbl = apfnRxTbl;
+		u4MaxTagNum = STATS_RX_TAG_MAX_NUM;
+		break;
+	case STATS_CGS_TAG:
+		pTlvTbl = apfnCgsTbl;
+		u4MaxTagNum = STATS_CGS_TAG_MAX_NUM;
+		break;
 	}
-	DBGLOG(RX, TRACE, "%s=%u\n", __func__, u4TlvLen);
-	return u4TlvLen;
-}
 
-uint32_t
-statsCgsGetTlvStatTotalLen(void)
-{
-	uint32_t u4TlvLen = 0;
-	uint32_t u4TlvIdx = 0;
+	if (!pTlvTbl || ucNum == 0)
+		return u4TlvLen;
 
-	for (u4TlvIdx = 0; u4TlvIdx < STATS_CGS_TAG_MAX_NUM; u4TlvIdx++) {
-		if (apfnCgsTbl[u4TlvIdx].pfnTlvGetLen)
-			u4TlvLen += (apfnCgsTbl[u4TlvIdx].pfnTlvGetLen() +
-					sizeof(struct STATS_TRX_TLV_T));
+	for (i = 0; i < ucNum; i++) {
+		u4TlvIdx = stateGetTlvTag(pTlvTbl, arTagList[i], u4MaxTagNum);
+
+		if (u4TlvIdx == u4MaxTagNum) {
+			DBGLOG(TX, TRACE, "type=%u invalid tag=%u\n",
+				type, arTagList[i]);
+			continue;
+		}
+
+		u4TlvLen += (pTlvTbl[u4TlvIdx].tlvHdl.pfnTlvGetLen(prGlueInfo)
+				+ sizeof(struct STATS_TRX_TLV_T));
 	}
-	DBGLOG(TX, TRACE, "%s=%u\n", __func__, u4TlvLen);
+
+	DBGLOG(TX, TRACE, "type=%u len=%u\n", type, u4TlvLen);
 	return u4TlvLen;
 }
 
 void
-statsTxQueueHdlr(struct GLUE_INFO *prGlueInfo,
+statsTxQueueHdlr(uint8_t ucBssIdx,
+	struct GLUE_INFO *prGlueInfo,
 	void *prTlvBuf, uint32_t u4TlvLen)
 {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -965,7 +998,8 @@ statsTxQueueHdlr(struct GLUE_INFO *prGlueInfo,
 }
 
 void
-statsTxTlvBss0Hdlr(struct GLUE_INFO *prGlueInfo,
+statsTxGetRetryHdlr(uint8_t ucBssIdx,
+	struct GLUE_INFO *prGlueInfo,
 	void *prTlvBuf, uint32_t u4TlvLen)
 {
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
@@ -973,16 +1007,16 @@ statsTxTlvBss0Hdlr(struct GLUE_INFO *prGlueInfo,
 	struct PARAM_GET_LINK_QUALITY_INFO rParam;
 	struct WIFI_LINK_QUALITY_INFO rLinkQualityInfo;
 	struct STATS_TRX_TLV_T *prStatTlv = prTlvBuf;
-	struct STATS_TX_PER_BSS_STAT_T *prBssStat;
+	struct STATS_TX_RETRY_STAT_T *prRetryStat;
 	uint32_t u4BufLen;
 	int32_t i4Status;
 	uint64_t u8Retry = 0;
 	uint64_t u8RtsFail = 0;
 	uint64_t u8AckFail = 0;
 
-	prBssStat = (struct STATS_TX_PER_BSS_STAT_T *)(
+	prRetryStat = (struct STATS_TX_RETRY_STAT_T *)(
 		&prStatTlv->aucBuffer[0]);
-	rParam.ucBssIdx = 0; /* prNetDevPrivate->ucBssIdx; */
+	rParam.ucBssIdx = ucBssIdx;
 	rParam.prLinkQualityInfo = &rLinkQualityInfo;
 	i4Status = kalIoctl(prGlueInfo, wlanoidGetLinkQualityInfo,
 		 &rParam, sizeof(struct PARAM_GET_LINK_QUALITY_INFO),
@@ -997,22 +1031,23 @@ statsTxTlvBss0Hdlr(struct GLUE_INFO *prGlueInfo,
 			u8RtsFail = rLinkQualityInfo.u8TxRtsFailCount;
 			u8AckFail = rLinkQualityInfo.u8TxAckFailCount;
 		} else {
-			DBGLOG(TX, TRACE, "Bss0 not connected yet.\n");
+			DBGLOG(TX, TRACE, "Bss not connected yet.\n");
 		}
 	}
-	prBssStat->u8Retry = u8Retry;
-	prBssStat->u8RtsFail = u8RtsFail;
-	prBssStat->u8AckFail = u8AckFail;
-	prStatTlv->u4Tag = STATS_TX_TAG_BSS0;
+	prRetryStat->u8Retry = u8Retry;
+	prRetryStat->u8RtsFail = u8RtsFail;
+	prRetryStat->u8AckFail = u8AckFail;
+	prStatTlv->u4Tag = STATS_TX_TAG_RETRY;
 	prStatTlv->u4Len = u4TlvLen;
-	DBGLOG(TX, TRACE, "Bss0 len=%u retry=%llu RtsFail=%llu AckFail=%llu\n",
-		u4TlvLen, prBssStat->u8Retry, prBssStat->u8RtsFail,
-		prBssStat->u8AckFail);
+	DBGLOG(TX, TRACE, "len=%u retry=%llu RtsFail=%llu AckFail=%llu\n",
+		u4TlvLen, prRetryStat->u8Retry, prRetryStat->u8RtsFail,
+		prRetryStat->u8AckFail);
 #endif
 }
 
 void
-statsTxTimeHdlr(struct GLUE_INFO *prGlueInfo,
+statsTxTimeHdlr(uint8_t ucBssIdx,
+	struct GLUE_INFO *prGlueInfo,
 	void *prTlvBuf, uint32_t u4TlvLen)
 {
 	struct STATS_TRX_TLV_T *prStatTlv = prTlvBuf;
@@ -1031,9 +1066,9 @@ statsTxTimeHdlr(struct GLUE_INFO *prGlueInfo,
 	stats = &prAdapter->rMsduReportStats.rCounting;
 	for (i = 0; i < TX_TIME_CAT_NUM; i++) {
 		prTimeStat->au4Success[i] = GLUE_GET_REF_CNT(
-					    stats->au4ConnsysLatency[i]);
+			    stats->au4ConnsysLatency[ucBssIdx][i]);
 		prTimeStat->au4Fail[i] = GLUE_GET_REF_CNT(
-					    stats->au4FailConnsysLatency[i]);
+			    stats->au4FailConnsysLatency[ucBssIdx][i]);
 	}
 
 #else
@@ -1042,8 +1077,9 @@ statsTxTimeHdlr(struct GLUE_INFO *prGlueInfo,
 	prStatTlv->u4Tag = STATS_TX_TAG_TIME;
 	prStatTlv->u4Len = u4TlvLen;
 	DBGLOG(TX, TRACE,
-		"len=%u suc=%u/%u/%u/%u/%u fail=%u/%u/%u/%u/%u\n",
-		u4TlvLen, prTimeStat->au4Success[0], prTimeStat->au4Success[1],
+		"len=%u bssIdx:%u suc=%u/%u/%u/%u/%u fail=%u/%u/%u/%u/%u\n",
+		u4TlvLen, ucBssIdx,
+		prTimeStat->au4Success[0], prTimeStat->au4Success[1],
 		prTimeStat->au4Success[2], prTimeStat->au4Success[3],
 		prTimeStat->au4Success[4], prTimeStat->au4Fail[0],
 		prTimeStat->au4Fail[1], prTimeStat->au4Fail[2],
@@ -1051,7 +1087,48 @@ statsTxTimeHdlr(struct GLUE_INFO *prGlueInfo,
 }
 
 void
-statsRxReorderDropHdlr(struct GLUE_INFO *prGlueInfo,
+statsTxLatHdlr(uint8_t ucBssIdx,
+	struct GLUE_INFO *prGlueInfo,
+	void *prTlvBuf, uint32_t u4TlvLen)
+{
+	struct STATS_TRX_TLV_T *prStatTlv = prTlvBuf;
+	struct STATS_TX_LAT_STAT_T *prLatStat;
+#if CFG_SUPPORT_TX_LATENCY_STATS
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct TX_LATENCY_STATS *stats;
+	uint8_t i;
+#endif
+
+	prLatStat = (struct STATS_TX_LAT_STAT_T *)(
+		&prStatTlv->aucBuffer[0]);
+	kalMemZero(prLatStat, sizeof(*prLatStat));
+
+#if CFG_SUPPORT_TX_LATENCY_STATS
+	stats = &prAdapter->rMsduReportStats.rCounting;
+	for (i = 0; i < TX_TIME_CAT_NUM; i++) {
+		prLatStat->au4DriverLat[i] = GLUE_GET_REF_CNT(
+			stats->au4DriverLatency[ucBssIdx][i]);
+		prLatStat->au4MacLat[i] = GLUE_GET_REF_CNT(
+			stats->au4MacLatency[ucBssIdx][i]);
+	}
+#else
+	DBGLOG(TX, INFO, "tx latency not support.\n");
+#endif
+	prStatTlv->u4Tag = STATS_TX_TAG_LAT;
+	prStatTlv->u4Len = u4TlvLen;
+	DBGLOG(TX, TRACE,
+		"len=%u bssIdx:%u driver=%u/%u/%u/%u/%u mac=%u/%u/%u/%u/%u\n",
+		u4TlvLen, ucBssIdx,
+		prLatStat->au4DriverLat[0], prLatStat->au4DriverLat[1],
+		prLatStat->au4DriverLat[2], prLatStat->au4DriverLat[3],
+		prLatStat->au4DriverLat[4], prLatStat->au4MacLat[0],
+		prLatStat->au4MacLat[1], prLatStat->au4MacLat[2],
+		prLatStat->au4MacLat[3], prLatStat->au4MacLat[4]);
+}
+
+void
+statsRxReorderDropHdlr(uint8_t ucBssIdx,
+	struct GLUE_INFO *prGlueInfo,
 	void *prTlvBuf, uint32_t u4TlvLen)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
@@ -1067,7 +1144,46 @@ statsRxReorderDropHdlr(struct GLUE_INFO *prGlueInfo,
 }
 
 void
-statsCgsB0IdleSlotHdlr(struct GLUE_INFO *prGlueInfo,
+statsRxAvgRssiHdlr(uint8_t ucBssIdx,
+	struct GLUE_INFO *prGlueInfo,
+	void *prTlvBuf, uint32_t u4TlvLen)
+{
+	struct STATS_TRX_TLV_T *prStatTlv = prTlvBuf;
+	struct STATS_RX_AVG_RSSI_STAT_T *prRssiStat;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct CHIP_DBG_OPS *prChipDbg;
+	uint8_t ucWlanIndex = 0;
+	int32_t reserved[2];
+
+	prRssiStat = (struct STATS_RX_AVG_RSSI_STAT_T *)(
+		&prStatTlv->aucBuffer[0]);
+	kalMemZero(prRssiStat, sizeof(*prRssiStat));
+
+	if (!wlanGetWlanIdxByAddress(prAdapter, NULL,
+		&ucWlanIndex)) {
+		DBGLOG(REQ, INFO, "wlan index is not found!\n");
+		goto out;
+	}
+
+	prChipDbg = prAdapter->chip_info->prDebugOps;
+	if (prChipDbg && prChipDbg->get_rssi_from_wtbl) {
+		prChipDbg->get_rssi_from_wtbl(
+			prAdapter, ucWlanIndex,
+			&(prRssiStat->i4Rssi0), &(prRssiStat->i4Rssi1),
+			&reserved[0], &reserved[1]);
+	}
+
+out:
+	prStatTlv->u4Tag = STATS_RX_TAG_AVG_RSSI;
+	prStatTlv->u4Len = u4TlvLen;
+	DBGLOG(RX, TRACE,
+		"len=%u rssi=%d/%d\n",
+		u4TlvLen, prRssiStat->i4Rssi0, prRssiStat->i4Rssi1);
+}
+
+void
+statsCgsB0IdleSlotHdlr(uint8_t ucBssIdx,
+	struct GLUE_INFO *prGlueInfo,
 	void *prTlvBuf, uint32_t u4TlvLen)
 {
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
@@ -1098,7 +1214,8 @@ err:
 }
 
 void
-statsCgsAirLatHdlr(struct GLUE_INFO *prGlueInfo,
+statsCgsAirLatHdlr(uint8_t ucBssIdx,
+	struct GLUE_INFO *prGlueInfo,
 	void *prTlvBuf, uint32_t u4TlvLen)
 {
 	struct STATS_TRX_TLV_T *prStatTlv = prTlvBuf;
@@ -1122,6 +1239,7 @@ statsCgsAirLatHdlr(struct GLUE_INFO *prGlueInfo,
 
 	kalMemZero(&query, sizeof(query));
 	query.cmd.u4Tag = STATS_LLS_TAG_PPDU_LATENCY;
+	query.cmd.ucArg0 = ucBssIdx;
 
 	rStatus = kalIoctl(prGlueInfo,
 			wlanQueryLinkStats,
@@ -1160,8 +1278,9 @@ statsCgsAirLatHdlr(struct GLUE_INFO *prGlueInfo,
 	prStatTlv->u4Tag = STATS_CGS_TAG_AIR_LAT;
 	prStatTlv->u4Len = u4TlvLen;
 	DBGLOG(TX, TRACE,
-		"len=%u lvl=%u/%u/%u/%u cnt=%u/%u/%u/%u/%u\n",
-		u4TlvLen, prAirLat->au4AirLatLvl[0], prAirLat->au4AirLatLvl[1],
+		"len=%u bssIdx:%u lvl=%u/%u/%u/%u cnt=%u/%u/%u/%u/%u\n",
+		u4TlvLen, ucBssIdx,
+		prAirLat->au4AirLatLvl[0], prAirLat->au4AirLatLvl[1],
 		prAirLat->au4AirLatLvl[2], prAirLat->au4AirLatLvl[3],
 		prAirLat->au4AirLatMpdu[0], prAirLat->au4AirLatMpdu[1],
 		prAirLat->au4AirLatMpdu[2], prAirLat->au4AirLatMpdu[3],
@@ -1169,48 +1288,41 @@ statsCgsAirLatHdlr(struct GLUE_INFO *prGlueInfo,
 }
 
 void
-statsGetTxInfoHdlr(struct GLUE_INFO *prGlueInfo,
-	void *prTlvBuf)
+statsGetInfoHdlr(uint8_t ucBssIdx, struct GLUE_INFO *prGlueInfo,
+	void *prTlvBuf, uint8_t type, uint8_t ucNum, uint32_t *arTagList)
 {
-	uint32_t u4TlvIdx = 0;
 	uint32_t u4TlvLen = 0;
+	uint32_t u4TlvIdx = 0;
+	uint8_t i = 0;
+	struct STATS_TLV_MAP_T *pTlvTbl = NULL;
+	uint32_t u4MaxTagNum = 0;
 	uint8_t *ptr = prTlvBuf;
 
-	for (u4TlvIdx = 0; u4TlvIdx < STATS_TX_TAG_MAX_NUM; u4TlvIdx++) {
-		u4TlvLen = apfnTxTbl[u4TlvIdx].pfnTlvGetLen();
-		apfnTxTbl[u4TlvIdx].pfnStstsTlvHdl(prGlueInfo,
-			ptr, u4TlvLen);
-		ptr += (u4TlvLen + sizeof(struct STATS_TRX_TLV_T));
+	switch (type) {
+	case STATS_TX_TAG:
+		pTlvTbl = apfnTxTbl;
+		u4MaxTagNum = STATS_TX_TAG_MAX_NUM;
+		break;
+	case STATS_RX_TAG:
+		pTlvTbl = apfnRxTbl;
+		u4MaxTagNum = STATS_RX_TAG_MAX_NUM;
+		break;
+	case STATS_CGS_TAG:
+		pTlvTbl = apfnCgsTbl;
+		u4MaxTagNum = STATS_CGS_TAG_MAX_NUM;
+		break;
 	}
-}
 
-void
-statsGetRxInfoHdlr(struct GLUE_INFO *prGlueInfo,
-	void *prTlvBuf)
-{
-	uint32_t u4TlvIdx = 0;
-	uint32_t u4TlvLen = 0;
-	uint8_t *ptr = prTlvBuf;
+	if (!pTlvTbl || ucNum == 0)
+		return;
 
-	for (u4TlvIdx = 0; u4TlvIdx < STATS_RX_TAG_MAX_NUM; u4TlvIdx++) {
-		u4TlvLen = apfnRxTbl[u4TlvIdx].pfnTlvGetLen();
-		apfnRxTbl[u4TlvIdx].pfnStstsTlvHdl(prGlueInfo,
-			ptr, u4TlvLen);
-		ptr += (u4TlvLen + sizeof(struct STATS_TRX_TLV_T));
-	}
-}
+	for (i = 0; i < ucNum; i++) {
+		u4TlvIdx = stateGetTlvTag(pTlvTbl, arTagList[i], u4MaxTagNum);
+		if (u4TlvIdx == u4MaxTagNum)
+			continue;
 
-void
-statsGetCgsInfoHdlr(struct GLUE_INFO *prGlueInfo,
-	void *prTlvBuf)
-{
-	uint32_t u4TlvIdx = 0;
-	uint32_t u4TlvLen = 0;
-	uint8_t *ptr = prTlvBuf;
-
-	for (u4TlvIdx = 0; u4TlvIdx < STATS_CGS_TAG_MAX_NUM; u4TlvIdx++) {
-		u4TlvLen = apfnCgsTbl[u4TlvIdx].pfnTlvGetLen();
-		apfnCgsTbl[u4TlvIdx].pfnStstsTlvHdl(prGlueInfo,
+		u4TlvLen = pTlvTbl[u4TlvIdx].tlvHdl.pfnTlvGetLen(prGlueInfo);
+		pTlvTbl[u4TlvIdx].tlvHdl.pfnStstsHdl(ucBssIdx, prGlueInfo,
 			ptr, u4TlvLen);
 		ptr += (u4TlvLen + sizeof(struct STATS_TRX_TLV_T));
 	}

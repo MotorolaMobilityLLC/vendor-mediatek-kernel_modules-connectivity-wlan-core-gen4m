@@ -1540,6 +1540,57 @@ static void connac2x_print_wtbl_info(
 	}
 }
 
+void connac2x_get_rssi_from_wtbl(
+	struct ADAPTER *prAdapter, uint32_t u4Index,
+	int32_t *pi4Rssi0, int32_t *pi4Rssi1,
+	int32_t *pi4Rssi2, int32_t *pi4Rssi3
+)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+	uint8_t u1Dw30Rssi = 1;
+	struct CMD_ACCESS_REG rCmdAccessReg = {0};
+	uint32_t rStatus;
+	uint32_t u4BufLen = 0;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prChipInfo = prAdapter->chip_info;
+	DBGLOG(REQ, INFO, "WTBL : index = %d\n", u4Index);
+
+	if (WTBL_VER < 3 && wlanGetEcoVersion(prAdapter) < ECO_VER_2)
+		u1Dw30Rssi = 0;
+
+	if (u1Dw30Rssi > 0) {
+		rCmdAccessReg.u4Address = CONNAC2X_LWTBL_IDX2BASE(
+			prChipInfo->u4LmacWtblDUAddr, u4Index, 30);
+	} else {
+		rCmdAccessReg.u4Address = CONNAC2X_LWTBL_IDX2BASE(
+			prChipInfo->u4LmacWtblDUAddr, u4Index, 29);
+	}
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidQueryMcrRead,
+			   &rCmdAccessReg, sizeof(rCmdAccessReg),
+			   &u4BufLen);
+	if (rStatus == WLAN_STATUS_SUCCESS) {
+		if (pi4Rssi0 != NULL)
+			*pi4Rssi0 = RCPI_TO_dBm((rCmdAccessReg.u4Data &
+				CONNAC2X_WTBL_RESP_RCPI0_MASK) >>
+				CONNAC2X_WTBL_RESP_RCPI0_OFFSET);
+		if (pi4Rssi1 != NULL)
+			*pi4Rssi1 = RCPI_TO_dBm((rCmdAccessReg.u4Data &
+				CONNAC2X_WTBL_RESP_RCPI1_MASK) >>
+				CONNAC2X_WTBL_RESP_RCPI1_OFFSET);
+		if (pi4Rssi2 != NULL)
+			*pi4Rssi2 = RCPI_TO_dBm((rCmdAccessReg.u4Data &
+				CONNAC2X_WTBL_RESP_RCPI2_MASK) >>
+				CONNAC2X_WTBL_RESP_RCPI2_OFFSET);
+		if (pi4Rssi3 != NULL)
+			*pi4Rssi3 = RCPI_TO_dBm((rCmdAccessReg.u4Data &
+				CONNAC2X_WTBL_RESP_RCPI3_MASK) >>
+				CONNAC2X_WTBL_RESP_RCPI3_OFFSET);
+	}
+}
+
 int32_t connac2x_show_wtbl_info(
 	struct ADAPTER *prAdapter,
 	uint32_t u4Index,

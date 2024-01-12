@@ -1074,6 +1074,7 @@ struct CHIP_DBG_OPS soc3_0_debug_ops = {
 	.showTxdInfo = connac2x_show_txd_Info,
 	.showWtblInfo = connac2x_show_wtbl_info,
 	.showUmacWtblInfo = connac2x_show_umac_wtbl_info,
+	.get_rssi_from_wtbl = connac2x_get_rssi_from_wtbl,
 	.showCsrInfo = NULL,
 	.showDmaschInfo = connac2x_show_dmashdl_info,
 	.dumpMacInfo = soc3_0_dump_mac_info,
