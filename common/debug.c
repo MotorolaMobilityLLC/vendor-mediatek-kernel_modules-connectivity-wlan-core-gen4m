@@ -340,15 +340,24 @@ void wlanDbgSetLogLevelImpl(IN struct ADAPTER *prAdapter,
 
 	wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_DRIVER, &u4DriverLevel);
 	wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_FW, &u4FwLevel);
+#if (CFG_BUILT_IN_DRIVER == 0)
+	/*
+	 * The function definition of get_logtoomuch_enable() and
+	 * set_logtoomuch_enable of Android O0 or lower version are different
+	 * from that of Android O1 or higher version. Wlan driver supports .ko
+	 * module from Android O1. Use CFG_BUILT_IN_DRIVER to distinguish
+	 * Android version higher than O1 instead.
+	 */
 	if ((u4DriverLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT ||
-		u4FwLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT) &&
-		!get_logtoomuch_enable()) {
+			u4FwLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT) &&
+			!get_logtoomuch_enable()) {
 		DBGLOG(OID, TRACE,
 			"Disable printk to much. driver: %d, fw: %d\n",
 			u4DriverLevel,
 			u4FwLevel);
 		set_logtoomuch_enable(0);
 	}
+#endif
 }
 
 u_int8_t wlanDbgGetGlobalLogLevel(uint32_t u4Module, uint32_t *pu4Level)
