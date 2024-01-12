@@ -1459,6 +1459,26 @@ int wlanParseAkmSuites(uint32_t *au4AkmSuites, uint32_t u4AkmSuitesCount,
 		}
 	}
 
+	if (*prAuthMode == AUTH_MODE_WPA2_PSK ||
+		*prAuthMode == AUTH_MODE_WPA3_SAE) {
+		/* support cross wpa2/sae/sae-ext */
+		for (j = 0; j < MAX_NUM_SUPPORTED_AKM_SUITES; j++) {
+			prEntry =
+			    &prMib->dot11RSNAConfigAuthenticationSuitesTable[j];
+
+			if (prEntry->dot11RSNAConfigAuthenticationSuite !=
+				RSN_AKM_SUITE_PSK &&
+				prEntry->dot11RSNAConfigAuthenticationSuite !=
+				RSN_AKM_SUITE_SAE &&
+				prEntry->dot11RSNAConfigAuthenticationSuite !=
+				RSN_AKM_SUITE_SAE_EXT_KEY)
+				continue;
+
+			prEntry->dot11RSNAConfigAuthenticationSuiteEnabled =
+				TRUE;
+		}
+	}
+
 	return 0;
 }
 
