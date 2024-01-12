@@ -1440,6 +1440,19 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7961 = {
 	.asicWfsysRst = mt7961HalCbtopRguWfRst,
 	.asicPollWfsysSwInitDone = mt7961HalPollWfsysSwInitDone,
 #endif
+
+	/* buzzard capability:
+	 * 1. MAC RX AMPDU max number is 256.
+	 * 2. MAC RX MPDU max length is 11454.
+	 * So, MAC RX AMPDU max length is 256 * 11454 = 2,932,224
+	 *
+	 * Set HE_CAP MAX_AMPDU_LEN_EXP to maximum which meets the condition
+	 *     1. In 2.4G, 2 ^ (16 + MAX_AMPDU_LEN_EXP) - 1 <= 2,932,224
+	 *     2. In 5G, 2 ^ (20 + MAX_AMPDU_LEN_EX) - 1 <= 2,932,224
+	 */
+	.is_specify_he_cap_max_ampdu_len_exp = TRUE,
+	.uc2G4HeCapMaxAmpduLenExp = 3, /* 2 ^ (16 + 3) - 1 = 524287 */
+	.uc5GHeCapMaxAmpduLenExp = 1, /* 2 ^ (20 + 1) - 1 = 2,097,151 */
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7961 = {
