@@ -278,9 +278,11 @@
 /* HE Operation Parameters - byte0 */
 #define HE_OP_PARAM0_DEFAULT_PE_DUR_SHFT                0
 #define HE_OP_PARAM0_TWT_REQUIRED_SHFT                  3
+#define HE_OP_PARAM0_TXOP_DUR_RTS_THRESHOLD_DEFAULT     BITS(4, 7)
 #define HE_OP_PARAM0_TXOP_DUR_RTS_THRESHOLD_SHFT        4
 
 /* HE Operation Parameters - byte1 */
+#define HE_OP_PARAM1_TXOP_DUR_RTS_THRESHOLD_DEFAULT     BITS(0, 5)
 #define HE_OP_PARAM1_TXOP_DUR_RTS_THRESHOLD_SHFT        0
 #define HE_OP_PARAM1_VHT_OP_INFO_PRESENT                BIT(6)
 #define HE_OP_PARAM1_VHT_OP_INFO_PRESENT_SHFT           6
