@@ -29,10 +29,6 @@
 #define ROAMING_NO_SWING_RCPI_STEP              (10)
 #define REPLICATED_BEACON_FRESH_PERIOD          (10000)
 #define REPLICATED_BEACON_TIME_THRESHOLD        (3000)
-#define IS_6G_PSC_CHANNEL(_ch) \
-	(((_ch - 5) % 16) == 0)
-#define IS_6G_OP_CLASS(_opClass) \
-	((_opClass >= 131) && (_opClass <= 135))
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -1369,188 +1365,26 @@ void scanParsingMBSSIDSubelement(IN struct ADAPTER *prAdapter,
  * @return   NULL, if has no space.
  */
 /*----------------------------------------------------------------------------*/
-void scanEhtParsingMldElement(IN struct MULTI_LINK_INFO *prMlInfo,
-	IN struct BSS_DESC *prBssDesc, IN uint8_t *pucIE)
+void scanEhtParsingMldElement(IN struct BSS_DESC *prBssDesc, IN uint8_t *pucIE)
 {
-	const uint8_t *pos, *end;
-	uint8_t ucMlCtrlType, ucMlCtrlPreBmp;
-	struct IE_MULTI_LINK_INFO *prMlInfoIe;
+	struct MULTI_LINK_INFO rMlInfo;
+	struct MULTI_LINK_INFO *prMlInfo = &rMlInfo;
 
-	log_dbg(SCN, INFO, "dump ML IE, IE_LEN = %d\n", IE_LEN(pucIE));
-	dumpMemory8(pucIE, IE_LEN(pucIE) + 2);
+	kalMemSet(prMlInfo, 0, sizeof(rMlInfo));
+	beParsingMldElement(prMlInfo, pucIE);
 
-	/* 2 bytes offset: EID, IE length */
-	end = pucIE + 2 + IE_LEN(pucIE);
-	/* 3 byte offset of: EID, IE length, EID extension
-	 * now pucIE point to ML Control.
-	 */
-	pucIE += 3;
+	prBssDesc->rMlInfo.fgValid = prMlInfo->ucValid;
 
-	prMlInfoIe = (struct IE_MULTI_LINK_INFO *)pucIE;
-	pos = prMlInfoIe->aucMultiLinkVarIe;
-
-	/* ML control bits[4,15] is presence bitmap */
-	ucMlCtrlPreBmp = ((prMlInfoIe->u2MlCtrl & ML_CTRL_PRE_BMP_MASK)
-				>> ML_CTRL_PRE_BMP_SHIFT);
-	/* ML control bits[0,2] is type */
-	ucMlCtrlType = (prMlInfoIe->u2MlCtrl & ML_CTRL_TYPE_MASK);
-
-	/* It shall be Basic variant ML element*/
-	if (ucMlCtrlType != ML_ELEMENT_TYPE_BASIC) {
-		log_dbg(SCN, WARN, "invalid ML control type:%d", ucMlCtrlType);
+	if (!prMlInfo->ucValid)
 		return;
-	}
 
 	/* Check ML control that which common info exist */
-	if (ucMlCtrlPreBmp & ML_CTRL_MLD_MAC_ADDR_PRESENT) {
-		COPY_MAC_ADDR(prMlInfo->aucMldAddr, pos);
-		log_dbg(SCN, INFO, "MLD MAC addr = "MACSTR"",
-			MAC2STR(prMlInfo->aucMldAddr));
+	if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_MLD_MAC_ADDR_PRESENT)
 		COPY_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr,
 			prMlInfo->aucMldAddr);
-		prBssDesc->rMlInfo.fgValid = TRUE;
-		pos += MAC_ADDR_LEN;
-	}
-	if (ucMlCtrlPreBmp & ML_CTRL_LINK_ID_INFO_PRESENT) {
-		kalMemCopy(&prBssDesc->rMlInfo.ucLinkIndex, pos,
-					sizeof(prBssDesc->rMlInfo.ucLinkIndex));
-		log_dbg(SCN, INFO, "ML common Info LinkID = %d",
-			*pos);
-		pos += 1;
-	}
-	if (ucMlCtrlPreBmp & ML_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT) {
-		/* todo: handle 1byte BSS_PARA_CHANGE_COUNT */
-		log_dbg(SCN, INFO, "ML common Info BssParaChangeCount = %d",
-			*pos);
-		pos += 1;
-	}
-	if (ucMlCtrlPreBmp & ML_CTRL_MEDIUM_SYN_DELAY_INFO_PRESENT) {
-		uint16_t u2MediumSynDelayInfo;
 
-		/* todo: handle 2byte MEDIUM_SYN_DELAY_INFO_PRESENT */
-		kalMemCopy(&u2MediumSynDelayInfo, pos,
-				sizeof(u2MediumSynDelayInfo));
-		log_dbg(SCN, INFO, "ML common Info MediumSynDelayInfo = 0x%x",
-			u2MediumSynDelayInfo);
-		pos += 2;
-	}
-	if (ucMlCtrlPreBmp & ML_CTRL_EML_CAPA_PRESENT) {
-		uint16_t u2EmlCap;
-
-		/* todo: handle 2byte EML_CAPA_PRESENT */
-		kalMemCopy(&u2EmlCap, pos, sizeof(u2EmlCap));
-		log_dbg(SCN, INFO, "ML common Info EML capa = 0x%x",
-			u2EmlCap);
-		pos += 2;
-	}
-	if (ucMlCtrlPreBmp & ML_CTRL_MLD_CAPA_PRESENT) {
-		uint16_t u2MldCap;
-
-		/* todo: handle 2byte MLD_CAPA_PRESENT */
-		kalMemCopy(&u2MldCap, pos, sizeof(u2MldCap));
-		log_dbg(SCN, INFO, "ML common Info MLD capa = 0x%x",
-			u2MldCap);
-		pos += 2;
-	}
-
-	/* pos point to link info, recusive parse it */
-	while (pos < end) {
-		struct IE_ML_PER_STA_PROFILE_INFO *prIePerStaProfile;
-		struct STA_PROFILE *prStaProfile;
-		uint8_t ucLinkId, ucPerStaProfLen, ucCurrLength;
-		uint16_t u2StaControl;
-
-		if (*pos != SUB_IE_MLD_PER_STA_PROFILE)
-			break;
-
-		ucCurrLength = 0;
-		ucPerStaProfLen = IE_LEN(pos);
-		/* 2 bytes offset: Subelement ID, IE length
-		 * now pos point to STA Control in Per-STA profile subelement
-		 */
-		pos += 2;
-
-		prIePerStaProfile = (struct IE_ML_PER_STA_PROFILE_INFO *) pos;
-		u2StaControl = prIePerStaProfile->u2StaCtrl;
-
-		ucLinkId = (u2StaControl & ML_STA_CTRL_LINK_ID_MASK);
-		if (ucLinkId >= MLD_LINK_MAX) {
-			log_dbg(SCN, WARN, "invalid link_id: %d", ucLinkId);
-			break;
-		}
-		prStaProfile = &prMlInfo->rStaProfiles[ucLinkId];
-		prStaProfile->ucLinkId = ucLinkId;
-		if (prStaProfile->ucValid == FALSE) {
-			prMlInfo->ucLinkNum++;
-			prStaProfile->ucValid = TRUE;
-		}
-
-		/* 2 bytes is length of STA control,
-		 * ucCurrLength will be length of STA control + STA Info,
-		 * and keep pos point to STA Control.
-		 */
-		ucCurrLength += 2;
-		if (u2StaControl & ML_STA_CTRL_MAC_ADDR_PRESENT) {
-			COPY_MAC_ADDR(prStaProfile->aucLinkAddr,
-					(pos + ucCurrLength));
-			log_dbg(SCN, INFO, "LinkID=%d, LinkAddr="MACSTR"",
-				ucLinkId, MAC2STR(prStaProfile->aucLinkAddr));
-			ucCurrLength += MAC_ADDR_LEN;
-		}
-		if (u2StaControl & ML_STA_CTRL_BCN_INTV_PRESENT) {
-			uint16_t u2BcnIntv;
-
-			kalMemCopy(&u2BcnIntv, (pos + ucCurrLength),
-				sizeof(u2BcnIntv));
-
-			log_dbg(SCN, INFO, "LinkID=%d, BCN_INTV = %d",
-				ucLinkId, u2BcnIntv);
-			ucCurrLength += 2;
-		}
-		if (u2StaControl & ML_STA_CTRL_DTIM_INFO_PRESENT) {
-			uint16_t u2DtimInfo;
-
-			kalMemCopy(&u2DtimInfo, (pos + ucCurrLength),
-				sizeof(u2DtimInfo));
-
-			log_dbg(SCN, INFO, "LinkID=%d, DTIM_INFO = 0x%x",
-				ucLinkId, u2DtimInfo);
-			ucCurrLength += 2;
-		}
-		/* If the Complete Profile subfield = 1 and
-		 * NSTR Link Pair Present = 1, then NSTR Indication Bitmap exist
-		 * NSTR Bitmap Size = 1 if the length of the corresponding
-		 * NSTR Indication Bitmap is 2 bytes, and = 0 if the
-		 * length of the corresponding NSTR Indication Bitmap = 1 byte
-		 */
-		if ((u2StaControl & ML_STA_CTRL_COMPLETE_PROFILE) &&
-			(u2StaControl & ML_STA_CTRL_NSTR_LINK_PAIR_PRESENT)) {
-			if (((u2StaControl & ML_STA_CTRL_NSTR_BMP_SIZE) >>
-				ML_STA_CTRL_NSTR_BMP_SIZE_SHIFT) == 0) {
-				log_dbg(SCN, INFO, "LinkID=%d, NSTR_BMP=0x%x",
-					ucLinkId, *(pos + ucCurrLength));
-				ucCurrLength += 1;
-			} else {
-				uint16_t u2NstrBmp;
-
-				kalMemCopy(&u2NstrBmp, (pos + ucCurrLength),
-					sizeof(u2NstrBmp));
-				log_dbg(SCN, INFO, "LinkID=%d, NSTR_BMP=0x%x",
-					ucLinkId, u2NstrBmp);
-				ucCurrLength += 2;
-			}
-		}
-		/*(ucPerStaProfLen - ucCurrLength) is length of STA Profile
-		 * copy STA profile in Per-STA profile subelement.
-		 * STA profile contains Inheritance and Non-Inheritance element
-		 * todo: handle Inheritance and Non-Inheritance element
-		 */
-		kalMemCopy(prStaProfile->aucIEbuf, (pos + ucCurrLength),
-				(ucPerStaProfLen - ucCurrLength));
-
-		/* point to next Per-STA profile*/
-		pos += ucCurrLength;
-	}
+	if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_LINK_ID_INFO_PRESENT)
+		prBssDesc->rMlInfo.ucLinkIndex = rMlInfo.ucLinkId;
 }
 
 void scanEhtDuplicateBssDesc(IN struct ADAPTER *prAdapter,
@@ -1673,7 +1507,7 @@ void scanHandleRnrMldParam(IN struct ADAPTER *prAdapter,
 	uint8_t ucMldParamOffset, ucMldId, ucMldLinkId, ucBssParamChangeCount;
 	uint16_t u2TbttInfoCount, u2TbttInfoLength;
 	uint32_t u4MldParam = 0;
-	enum nl80211_band band;
+	uint8_t band;
 	struct STA_PROFILE *prProfile;
 
 	/* get channel number for this neighborAPInfo */
@@ -1735,11 +1569,6 @@ void scanHandleRnrMldParam(IN struct ADAPTER *prAdapter,
 		}
 
 		prProfile = &prMlInfo->rStaProfiles[ucMldLinkId];
-		if (prProfile->ucValid == FALSE) {
-			log_dbg(SCN, WARN,
-				"invalid profile with RNR ie, link_id: %d\n",
-				ucMldLinkId);
-		}
 
 		switch (band) {
 			case KAL_BAND_2GHZ:
@@ -1811,20 +1640,20 @@ void scanHandleRnrSsid(IN struct SCAN_PARAM *prScanParam,
 	}
 }
 
-uint8_t scanGetRnrChannel(IN struct NEIGHBOR_AP_INFO_FIELD
-						*prNeighborAPInfoField)
+uint8_t scanGetRnrChannel(
+	IN struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField,
+	IN uint8_t *pucBand)
 {
 	uint8_t ucRnrChNum;
 	struct ieee80211_channel *prChannel;
-	enum nl80211_band band;
 
 	/* get channel number for this neighborAPInfo */
-	scanOpClassToBand(prNeighborAPInfoField->ucOpClass, &band);
+	scanOpClassToBand(prNeighborAPInfoField->ucOpClass, pucBand);
 
 	prChannel = ieee80211_get_channel(wlanGetWiphy(),
 					ieee80211_channel_to_frequency
 					(prNeighborAPInfoField->ucChannelNum,
-					band));
+					*pucBand));
 	if (!prChannel) {
 		log_dbg(SCN, ERROR, "RnrCh=NULL!\n");
 		return 0;
@@ -1927,6 +1756,40 @@ uint8_t scanSearchBssidInCurrentList(
 	return FALSE;
 }
 
+uint8_t scanRnrChnlIsNeedScan(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucRnrChNum, IN uint8_t ucBand)
+{
+	struct SCAN_INFO *prScanInfo;
+	struct SCAN_PARAM *prScanParam;
+	uint32_t i;
+	struct RF_CHANNEL_INFO *prCnlInfo;
+
+	ASSERT(prAdapter);
+
+	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+	prScanParam = &(prScanInfo->rScanParam);
+
+	/* sanity check */
+	if (ucRnrChNum == 0)
+		return FALSE;
+
+	/* 6g */
+	if (ucBand == KAL_BAND_6GHZ && IS_6G_PSC_CHANNEL(ucRnrChNum))
+		return FALSE;
+
+	/* Set channel info to scan request */
+	if (prScanParam->eScanChannel == SCAN_CHANNEL_SPECIFIED) {
+		for (i = 0; i < prScanParam->ucChannelListNum; i++) {
+			prCnlInfo = &prScanParam->arChnlInfoList[i];
+			if (ucBand == prCnlInfo->eBand &&
+			    ucRnrChNum == prCnlInfo->ucChannelNum)
+				return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Allocate new NEIGHBOR_AP_INFO structure
@@ -1937,26 +1800,27 @@ uint8_t scanSearchBssidInCurrentList(
  */
 /*----------------------------------------------------------------------------*/
 void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
-	IN struct BSS_DESC *prBssDesc, IN struct MULTI_LINK_INFO *prMlInfo,
-	IN uint8_t *pucIE)
+	IN struct BSS_DESC *prBssDesc, IN uint8_t *pucIE)
 {
-	uint8_t *pucProfileIE, i = 0, j = 0, ucNewLink = FALSE;
-	uint8_t ucShortSsidOffset, ucBssParamOffset;
+	uint8_t i = 0, j = 0, ucNewLink = FALSE, ucRnrChNum, ucBand = 0;
+	uint8_t ucShortSsidOffset, ucBssParamOffset, ucMldParamOffset;
 	uint8_t ucBssidNum = 0, ucCurrentLength = 0, ucShortSsidNum = 0;
-	uint8_t ucRnrChNum, ucHasBssid = FALSE, ucScanEnable = TRUE;
+	uint8_t ucHasBssid = FALSE, ucScanEnable = TRUE, ucOpClass = 0;
 	uint8_t aucNullAddr[] = NULL_MAC_ADDR;
 	uint16_t u2TbttInfoCount, u2TbttInfoLength;
+	uint8_t ucHasMlo = FALSE;
 	struct NEIGHBOR_AP_INFO *prNeighborAPInfo = NULL;
 	struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField;
 	struct SCAN_PARAM *prScanParam;
 	struct IE_SHORT_SSID_LIST *prIeShortSsidList;
 	struct BSS_DESC *prBssDescTemp = NULL;
 	struct SCAN_INFO *prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+	struct IE_RNR *prRnr = (struct IE_RNR *) pucIE;
 
 	while (ucCurrentLength < IE_LEN(pucIE)) {
-		pucProfileIE = &IE_ID_EXT(pucIE) + ucCurrentLength;
-		prNeighborAPInfoField =
-			(struct NEIGHBOR_AP_INFO_FIELD *)pucProfileIE;
+		prNeighborAPInfoField =	(struct NEIGHBOR_AP_INFO_FIELD *)
+					(prRnr->aucInfoField + ucCurrentLength);
+		ucOpClass = prNeighborAPInfoField->ucOpClass;
 
 		/* get TBTT information count and length for
 		*  this neighborAPInfo
@@ -1976,17 +1840,72 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 				u2TbttInfoLength);
 			return;
 		}
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		if (prMlInfo)
-			scanHandleRnrMldParam(prAdapter, prNeighborAPInfoField,
-						prMlInfo);
+
+		switch (u2TbttInfoLength) {
+		/* 7: Neighbor AP TBTT Offset + BSSID */
+		case 7:
+			ucShortSsidOffset = 0;
+			ucBssParamOffset = 0;
+			ucHasBssid = TRUE;
+			break;
+		/* 8: Neighbor AP TBTT Offset + BSSID + BSS parameters
+		 * 9: Neighbor AP TBTT Offset + BSSID + BSS parameters
+		 *    + 20MHz PSD
+		 */
+		case 8:
+		case 9:
+			ucShortSsidOffset = 0;
+			ucBssParamOffset = 7;
+			ucHasBssid = TRUE;
+			break;
+		/* 10: Neighbor AP TBTT Offset + BSSID + MLD Para */
+		case 10:
+			ucShortSsidOffset = 0;
+			ucBssParamOffset = 0;
+			ucMldParamOffset = 7;
+			ucHasBssid = TRUE;
+#if CFG_SUPPORT_802_11BE_MLO
+			ucHasMlo = TRUE;
 #endif
+			break;
+		/* 11: Neighbor AP TBTT Offset + BSSID + Short SSID */
+		case 11:
+			ucShortSsidOffset = 7;
+			ucBssParamOffset = 0;
+			ucHasBssid = TRUE;
+			break;
+		/* 12: Neighbor AP TBTT Offset + BSSID + Short SSID
+		 *     + BSS parameters
+		 * 13: Neighbor AP TBTT Offset + BSSID + Short SSID
+		 *     + BSS parameters + 20MHz PSD
+		 */
+		case 12:
+		case 13:
+		/* 16: Neighbor AP TBTT Offset + BSSID + Short SSID
+		 *     + BSS parameters + 20MHz PSD + MLD Parameter
+		 */
+		case 16 ... 255:
+			ucShortSsidOffset = 7;
+			ucBssParamOffset = 11;
+			ucMldParamOffset = 13;
+			ucHasBssid = TRUE;
+#if CFG_SUPPORT_802_11BE_MLO
+			ucHasMlo = TRUE;
+#endif
+			break;
+		default:
+			/* only support neighbor AP info with
+			*  BSSID
+			*/
+			continue;
+		}
 		/* If opClass is not 6G, no need to do extra scan
 		 * directly check next neighborAPInfo if exist
 		 */
-		if (!IS_6G_OP_CLASS(prNeighborAPInfoField->ucOpClass)) {
+
+		if (!IS_6G_OP_CLASS(ucOpClass) && !ucHasMlo) {
 			DBGLOG(SCN, INFO, "RNR op class(%d) is not 6G\n",
-				prNeighborAPInfoField->ucOpClass);
+				ucOpClass);
 
 			/* Calculate next NeighborAPInfo's index if exists */
 			ucCurrentLength += 4 +
@@ -1995,7 +1914,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 		} else {
 			/* RNR bring 6G channel, but chip not support 6G */
 			/* Calculate next NeighborAPInfo's index if exists */
-#if !(CFG_SUPPORT_WIFI_6G)
+#if !(CFG_SUPPORT_WIFI_6G) && (CFG_SUPPORT_802_11BE_MLO == 0)
 			ucCurrentLength += 4 +
 				(u2TbttInfoCount * u2TbttInfoLength);
 			continue;
@@ -2067,10 +1986,10 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 		}
 
 		/* Get RNR channel */
-		ucRnrChNum = scanGetRnrChannel(prNeighborAPInfoField);
-		if (ucRnrChNum == 0 || IS_6G_PSC_CHANNEL(ucRnrChNum)) {
-			DBGLOG(SCN, INFO, "Not handle RNR channel(%d)!\n",
-					ucRnrChNum);
+		ucRnrChNum = scanGetRnrChannel(prNeighborAPInfoField, &ucBand);
+		if (!scanRnrChnlIsNeedScan(prAdapter, ucRnrChNum, ucBand)) {
+			DBGLOG(SCN, INFO, "Not handle RNR chnl(%d) band(%d)!\n",
+					ucRnrChNum, ucBand);
 			if (ucNewLink)
 				cnmMemFree(prAdapter, prNeighborAPInfo);
 			/* Calculate next NeighborAPInfo's index if exists */
@@ -2081,57 +2000,6 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 
 		for (i = 0; i < u2TbttInfoCount; i++) {
 			j = i * u2TbttInfoLength;
-
-			switch (u2TbttInfoLength) {
-			/* 7: Neighbor AP TBTT Offset + BSSID */
-			case 7:
-				ucShortSsidOffset = 0;
-				ucBssParamOffset = 0;
-				ucHasBssid = TRUE;
-				break;
-			/* 8: Neighbor AP TBTT Offset + BSSID + BSS parameters
-			 * 9: Neighbor AP TBTT Offset + BSSID + BSS parameters
-			 *    + 20MHz PSD
-			 */
-			case 8:
-			case 9:
-				ucShortSsidOffset = 0;
-				ucBssParamOffset = 7;
-				ucHasBssid = TRUE;
-				break;
-			/* 10: Neighbor AP TBTT Offset + BSSID + MLD Para */
-			case 10:
-				ucShortSsidOffset = 0;
-				ucBssParamOffset = 0;
-				ucHasBssid = TRUE;
-				break;
-			/* 11: Neighbor AP TBTT Offset + BSSID + Short SSID */
-			case 11:
-				ucShortSsidOffset = 7;
-				ucBssParamOffset = 0;
-				ucHasBssid = TRUE;
-				break;
-			/* 12: Neighbor AP TBTT Offset + BSSID + Short SSID
-			 *     + BSS parameters
-			 * 13: Neighbor AP TBTT Offset + BSSID + Short SSID
-			 *     + BSS parameters + 20MHz PSD
-			 */
-			case 12:
-			case 13:
-			/* 16: Neighbor AP TBTT Offset + BSSID + Short SSID
-			 *     + BSS parameters + 20MHz PSD + MLD Parameter
-			 */
-			case 16:
-				ucShortSsidOffset = 7;
-				ucBssParamOffset = 11;
-				ucHasBssid = TRUE;
-				break;
-			default:
-				/* only support neighbor AP info with
-				*  BSSID
-				*/
-				continue;
-			}
 
 			log_dbg(SCN, INFO, "RnrIe[%x][" MACSTR "]\n", i,
 				MAC2STR(&prNeighborAPInfoField->
@@ -2216,7 +2084,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 		/* Only handle RnR with BSSID */
 		if (ucHasBssid && ucScanEnable) {
 			scanProcessRnrChannel(ucRnrChNum,
-				prNeighborAPInfoField->ucOpClass,
+				ucOpClass,
 				prScanParam);
 			if (ucNewLink) {
 				LINK_INSERT_TAIL(
@@ -2341,15 +2209,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 #if ((CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_HE_ER == 1))
 	struct _IE_HE_OP_T *prHeOp;
 	struct _IE_HE_CAP_T *prHeCap;
-#endif
-#if (CFG_SUPPORT_WIFI_RNR == 1)
-	uint8_t aucRnrIe[MAX_LEN_OF_MLIE];
-	uint8_t ucRnrIeExist = FALSE;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	/* TODO */
-	uint8_t aucMldIe[MAX_LEN_OF_MLIE];
-	uint8_t ucMldIeExist = FALSE;
-#endif
 #endif
 
 	ASSERT(prAdapter);
@@ -3080,10 +2939,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			if (IE_ID_EXT(pucIE) == EID_EXT_EHT_CAPS)
 				prBssDesc->fgIsEHTPresent = TRUE;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_MLD) {
-				ucMldIeExist = TRUE;
-				kalMemCopy(aucMldIe, pucIE, IE_LEN(pucIE) + 2);
-			}
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_MLD)
+				scanEhtParsingMldElement(prBssDesc, pucIE);
 #endif
 #endif
 			if (fgEfuseCtrlAxOn == 1) {
@@ -3200,8 +3057,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_WIFI_RNR == 1)
 		case ELEM_ID_RNR:
-			ucRnrIeExist = TRUE;
-			kalMemCopy(aucRnrIe, pucIE, IE_LEN(pucIE) + 2);
+			scanParsingRnrElement(prAdapter, prBssDesc, pucIE);
 			break;
 #endif
 			/* no default */
@@ -3487,28 +3343,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	if (prBssDesc->fgIsConnected)
 		rrmUpdateBssTimeTsf(prAdapter, prBssDesc);
 #endif
-
-#if (CFG_SUPPORT_WIFI_RNR == 1)
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	/* Both MLD IE and RNR IE exist, need to handle both */
-	if (ucMldIeExist && ucRnrIeExist) {
-		struct MULTI_LINK_INFO rMlInfo;
-
-		kalMemZero(&rMlInfo, sizeof(struct MULTI_LINK_INFO));
-		scanEhtParsingMldElement(&rMlInfo, prBssDesc,aucMldIe);
-		scanParsingRnrElement(prAdapter, prBssDesc, &rMlInfo, aucRnrIe);
-		scanEhtDuplicateBssDesc(prAdapter, prBssDesc, &rMlInfo);
-	}
-	/* Only RNR IE exist */
-	else if (!ucMldIeExist && ucRnrIeExist) {
-		scanParsingRnrElement(prAdapter, prBssDesc, NULL, aucRnrIe);
-	}
-#else
-	if (ucRnrIeExist)
-		scanParsingRnrElement(prAdapter, prBssDesc, NULL, aucRnrIe);
-#endif
-#endif
-
 	return prBssDesc;
 }
 
@@ -5625,7 +5459,7 @@ void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
 }
 #endif
 
-void scanOpClassToBand(uint8_t ucOpClass, enum nl80211_band *band)
+void scanOpClassToBand(uint8_t ucOpClass, uint8_t *band)
 {
 	switch (ucOpClass) {
 	case 112:
