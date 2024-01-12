@@ -557,6 +557,14 @@ void scanSetRequestChannel(struct ADAPTER *prAdapter,
 #endif
 				pau4ChBitMap = prScanInfo->au4ChannelBitMap;
 
+#if CFG_SUPPORT_NCHO
+			if (prAdapter->rNchoInfo.fgNCHOEnabled) {
+				if (!(BIT(eBand) &
+					prAdapter->rNchoInfo.ucBand))
+					continue;
+			} else
+#endif
+			{
 			if (prScanReqMsg->eScanChannel == SCAN_CHANNEL_2G4 &&
 				eBand != BAND_2G4)
 				continue;
@@ -568,6 +576,7 @@ void scanSetRequestChannel(struct ADAPTER *prAdapter,
 				SCAN_CHANNEL_6G && eBand != BAND_6G)
 				continue;
 #endif
+			}
 #if CFG_SUPPORT_FULL2PARTIAL_SCAN
 			if (fgIsFull2Partial && !scanIsBitSet(u4Channel,
 				pau4ChBitMap,

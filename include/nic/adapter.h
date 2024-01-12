@@ -1351,6 +1351,64 @@ struct WIFI_VAR {
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 	uint32_t u4MultiStaPrimaryQuoteTime;
 	uint32_t u4MultiStaSecondaryQuoteTime;
+#if (CFG_EXT_ROAMING == 1)
+	uint8_t ucRCMinRoamDetla;
+	uint8_t ucRCDelta;
+	uint8_t ucRIDelta;
+	uint8_t ucScanMode;
+	int8_t cRssiThreshold;
+	int8_t cRssiThreshold_24G;
+	int8_t cRssiThreshold_5G;
+	int8_t cRssiThreshold_6G;
+	uint8_t ucRBTCDelta;
+	uint8_t ucRBTCScoreW;
+	uint8_t ucRBTCETPW;
+	int8_t cRBTCRssi;
+	int8_t cRBMinRssi;
+	uint8_t ucRBTMDelta;
+	uint8_t ucRssiWeight;
+	uint8_t ucCUWeight;
+	int8_t cB1RssiFactorVal1;
+	int8_t cB1RssiFactorVal2;
+	int8_t cB1RssiFactorVal3;
+	int8_t cB1RssiFactorVal4;
+	int8_t cB1RssiFactorVal5;
+	int8_t cB2RssiFactorVal1;
+	int8_t cB2RssiFactorVal2;
+	int8_t cB2RssiFactorVal3;
+	int8_t cB2RssiFactorVal4;
+	int8_t cB2RssiFactorVal5;
+	int8_t cB3RssiFactorVal1;
+	int8_t cB3RssiFactorVal2;
+	int8_t cB3RssiFactorVal3;
+	int8_t cB3RssiFactorVal4;
+	uint8_t ucB1RssiFactorScore1;
+	uint8_t ucB1RssiFactorScore2;
+	uint8_t ucB1RssiFactorScore3;
+	uint8_t ucB1RssiFactorScore4;
+	uint8_t ucB1RssiFactorScore5;
+	uint8_t ucB2RssiFactorScore1;
+	uint8_t ucB2RssiFactorScore2;
+	uint8_t ucB2RssiFactorScore3;
+	uint8_t ucB2RssiFactorScore4;
+	uint8_t ucB2RssiFactorScore5;
+	uint8_t ucB3RssiFactorScore1;
+	uint8_t ucB3RssiFactorScore2;
+	uint8_t ucB3RssiFactorScore3;
+	uint8_t ucB3RssiFactorScore4;
+	uint8_t ucB1CUFactorVal1;
+	uint8_t ucB1CUFactorVal2;
+	uint8_t ucB2CUFactorVal1;
+	uint8_t ucB2CUFactorVal2;
+	uint8_t ucB3CUFactorVal1;
+	uint8_t ucB3CUFactorVal2;
+	uint8_t ucB1CUFactorScore1;
+	uint8_t ucB1CUFactorScore2;
+	uint8_t ucB2CUFactorScore1;
+	uint8_t ucB2CUFactorScore2;
+	uint8_t ucB3CUFactorScore1;
+	uint8_t ucB3CUFactorScore2;
+#endif
 #if CFG_SUPPORT_LIMITED_PKT_PID
 	uint32_t u4PktPIDTimeout;
 #endif /* CFG_SUPPORT_LIMITED_PKT_PID */
@@ -2283,6 +2341,8 @@ struct ADAPTER {
 
 #if CFG_SUPPORT_NCHO			/*  NCHO information */
 	struct NCHO_INFO rNchoInfo;
+#endif
+#if CFG_EXT_ROAMING_WTC
 	struct WTC_MODE_INFO rWtcModeInfo;
 #endif
 	struct CFG_SCAN_CHNL rAddRoamScnChnl;

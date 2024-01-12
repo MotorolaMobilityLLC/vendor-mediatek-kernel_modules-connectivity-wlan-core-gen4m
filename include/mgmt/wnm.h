@@ -57,11 +57,17 @@ struct BSS_TRANSITION_MGT_PARAM {
 	uint8_t aucSessionURL[255];
 	uint8_t ucDisImmiState;
 	uint8_t aucBSSID[MAC_ADDR_LEN];
+#if CFG_EXT_ROAMING_WTC
+	uint8_t ucIsCisco;
+#endif
 	/* for Respone */
 	uint8_t fgPendingResponse:1;
 	uint8_t fgIsMboPresent:1;
 	u_int8_t fgReserved:6;
 	uint8_t ucStatusCode;
+#if CFG_EXT_ROAMING_WTC
+	uint8_t ucVsieReasonCode;
+#endif
 };
 
 /*******************************************************************************

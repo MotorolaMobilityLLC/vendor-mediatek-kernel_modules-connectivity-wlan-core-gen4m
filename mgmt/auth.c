@@ -625,6 +625,13 @@ authCheckRxAuthFrameStatus(struct ADAPTER *prAdapter,
 	*pu2StatusCode = prAuthFrame->u2StatusCode;
 	/* NOTE(Kevin): Optimized for ARM */
 
+#if (CFG_SUPPORT_CONN_LOG == 1)
+	connLogAuthResp(prAdapter,
+		prStaRec,
+		prAuthFrame,
+		*pu2StatusCode);
+#endif
+
 	return WLAN_STATUS_SUCCESS;
 
 }				/* end of authCheckRxAuthFrameStatus() */
@@ -1093,6 +1100,13 @@ authSendDeauthFrame(struct ADAPTER *prAdapter,
 #endif
 	DBGLOG(SAA, INFO, "ucTxSeqNum=%d ucStaRecIndex=%d u2ReasonCode=%d\n",
 	       prMsduInfo->ucTxSeqNum, prMsduInfo->ucStaRecIndex, u2ReasonCode);
+
+#if (CFG_SUPPORT_CONN_LOG == 1)
+	connLogDeauth(prAdapter,
+		prStaRec,
+		prMsduInfo->ucTxSeqNum,
+		u2ReasonCode);
+#endif
 
 	/* 4 <8> Inform TXM to send this Deauthentication frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);

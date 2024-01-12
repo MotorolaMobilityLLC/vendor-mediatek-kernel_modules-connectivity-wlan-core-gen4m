@@ -1494,6 +1494,10 @@ endif
 ifeq ($(CONFIG_MTK_WIFI_EXT), y)
     ccflags-y += -DCFG_EXT_FEATURE=1
     ccflags-y += -DCFG_EXT_SCAN=1
+    ccflags-y += -DCFG_EXT_ROAMING=1
+    ccflags-y += -DCFG_EXT_ROAMING_WTC=1
+    ccflags-y += -DCFG_SUPPORT_ROAMING_LOG=1
+    ccflags-y += -DCFG_SUPPORT_CONN_LOG=1
     ccflags-y += -DCFG_SUPPORT_WPA3_LOG=1
     ccflags-y += -DCFG_SUPPORT_REPORT_LOG=1
     ccflags-y += -DCFG_SUPPORT_SCAN_LOG=1
@@ -1503,6 +1507,10 @@ ifeq ($(CONFIG_MTK_WIFI_EXT), y)
 else
     ccflags-y += -DCFG_EXT_FEATURE=0
     ccflags-y += -DCFG_EXT_SCAN=0
+    ccflags-y += -DCFG_EXT_ROAMING=0
+    ccflags-y += -DCFG_EXT_ROAMING_WTC=0
+    ccflags-y += -DCFG_SUPPORT_ROAMING_LOG=0
+    ccflags-y += -DCFG_SUPPORT_CONN_LOG=0
     ccflags-y += -DCFG_SUPPORT_WPA3_LOG=0
     ccflags-y += -DCFG_SUPPORT_REPORT_LOG=0
     ccflags-y += -DCFG_SUPPORT_SCAN_LOG=0

@@ -35,8 +35,13 @@
 #define AIS_MAIN_LINK_INDEX (0)
 
 /* Support driver triggers roaming */
-#define RCPI_DIFF_DRIVER_ROAM			20 /* 10 dbm */
-
+#if (CFG_EXT_ROAMING == 1)
+#define RCPI_DIFF_DRIVER_ROAM			 10 /* 5 dbm */
+#define RSSI_BAD_NEED_ROAM                      -70 /* dbm */
+#define RSSI_BAD_NEED_ROAM_24G_TO_5G_6G         -10 /* dbm */
+#else
+#define RCPI_DIFF_DRIVER_ROAM			 20 /* 10 dbm */
+#define RSSI_BAD_NEED_ROAM                      -80 /* dbm */
 /* In case 2.4G->5G, the trigger rssi is RSSI_BAD_NEED_ROAM_24G_TO_5G
  * In other case(2.4G->2.4G/5G->2.4G/5G->5G), the trigger
  * rssi is RSSI_BAD_NEED_ROAM
@@ -46,7 +51,7 @@
  * other cases.
  */
 #define RSSI_BAD_NEED_ROAM_24G_TO_5G_6G         -40 /* dbm */
-#define RSSI_BAD_NEED_ROAM                      -80 /* dbm */
+#endif
 
 /* When roam to 5G AP, the AP's rcpi should great than
  * RCPI_THRESHOLD_ROAM_2_5G dbm
@@ -2015,6 +2020,12 @@ uint8_t aisNeedTargetScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	postponing = aisFsmIsInProcessPostpone(prAdapter, ucBssIndex);
 	trial = ais->ucConnTrialCount;
 
+#if CFG_EXT_ROAMING_WTC
+	aisWtcNeedPartialScan(
+		prAdapter,
+		ucBssIndex,
+		&issued);
+#endif
 #if CFG_SUPPORT_NCHO
 	issued = ais->fgTargetChnlScanIssued ||
 		 prAdapter->rNchoInfo.u4RoamScanControl;
@@ -2865,6 +2876,16 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 
 			scanInitEssResult(prAdapter);
 
+#if (CFG_SUPPORT_ROAMING_LOG == 1)
+			/* LOG: scan start */
+			roamingFsmLogScanStart(prAdapter,
+				ucBssIndex,
+				prScanReqMsg->eScanChannel !=
+				SCAN_CHANNEL_SPECIFIED,
+				aisGetTargetBssDesc(
+				prAdapter, ucBssIndex));
+#endif
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 send_msg:
 			aisScanAddRlmIE(prAdapter, prScanReqMsg);
@@ -3162,6 +3183,12 @@ uint8_t aisFsmUpdateChannelList(uint8_t channel, enum ENUM_BAND eBand,
 
 	byteNum = channel / 8;
 	bitNum = channel % 8;
+#if (CFG_EXT_ROAMING == 1)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (eBand == BAND_6G)
+		byteNum + 32;
+#endif
+#endif
 	if (bitmap[byteNum] & BIT(bitNum))
 		return 1;
 	bitmap[byteNum] |= BIT(bitNum);
@@ -3183,7 +3210,11 @@ void aisFsmGetCurrentEssChnlList(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		aisGetConnSettings(prAdapter, ucBssIndex);
 	struct ESS_CHNL_INFO *prEssChnlInfo;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
+#if (CFG_EXT_ROAMING == 1)
+	uint8_t aucChnlBitMap[64] = {0,};
+#else
 	uint8_t aucChnlBitMap[30] = {0,};
+#endif
 	uint8_t aucChnlApNum[234] = {0,};
 	uint8_t aucChnlUtil[234] = {0,};
 	uint8_t ucChnlCount = 0;
@@ -3320,6 +3351,13 @@ updated:
 		prEssChnlInfo[j].ucApNum = aucChnlApNum[ucChnl];
 		prEssChnlInfo[j].ucUtilization = aucChnlUtil[ucChnl];
 	}
+
+#if (CFG_SUPPORT_ROAMING_LOG == 1)
+	roamingFsmLogScanDone(
+		prAdapter,
+		ucBssIndex,
+		u2ApNum);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3442,6 +3480,11 @@ void aisFsmRunEventScanDone(struct ADAPTER *prAdapter,
 			&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
 		struct BSS_DESC *prBssDesc = NULL;
 		uint32_t count = 0;
+#if (CFG_EXT_ROAMING == 1)
+		struct IE_MEASUREMENT_REQ *prCurrReq = prRmReq->prCurrMeasElem;
+		struct RM_BCN_REQ *prBcnReq =
+			(struct RM_BCN_REQ *)&prCurrReq->aucRequestFields[0];
+#endif
 
 		/* collect updated bss for beacon request measurement */
 		LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
@@ -3454,7 +3497,23 @@ void aisFsmRunEventScanDone(struct ADAPTER *prAdapter,
 				count++;
 			}
 		}
+#if (CFG_EXT_ROAMING == 1)
+		if (prBcnReq &&
+			prBcnReq->ucMeasurementMode < RM_BCN_REQ_MODE_MAX)
+			DBGLOG(RRM, INFO,
+				"BCN report (%s) mode req, total: %d\n",
+				prBcnReq->ucMeasurementMode ==
+				RM_BCN_REQ_ACTIVE_MODE ?
+				"Active" : "Passive", count);
+#else
 		DBGLOG(RRM, INFO, "BCN report Active Mode, total: %d\n", count);
+#endif
+#if (CFG_SUPPORT_REPORT_LOG == 1)
+		rrmRespBeaconReportLog(prAdapter,
+			ucBssIndex,
+			prCurrReq->ucToken,
+			count);
+#endif
 #endif
 		rrmStartNextMeasurement(prAdapter, FALSE, ucBssIndex);
 	}
@@ -4995,6 +5054,11 @@ aisIndicationOfMediaStateToHost(struct ADAPTER *prAdapter,
 			    prAisFsmInfo->ucReasonOfDisconnect;
 		}
 
+#if (CFG_SUPPORT_CONN_LOG == 1)
+		connLogDisconnect(prAdapter,
+			prAisBssInfo->ucBssIndex);
+#endif
+
 		/* 4 <2> Indication */
 		nicMediaStateChange(prAdapter,
 				    prAisBssInfo->ucBssIndex,
@@ -5850,6 +5914,9 @@ void aisFsmDisconnect(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_ROAMING
 	roamingFsmRunEventAbort(prAdapter, ucBssIndex);
 	aisFsmRemoveRoamingRequest(prAdapter, ucBssIndex);
+#if (CFG_SUPPORT_ROAMING_LOG == 1)
+	roamingFsmLogCancel(prAdapter, ucBssIndex);
+#endif
 #endif /* CFG_SUPPORT_ROAMING */
 
 	/* 4 <6> Indicate Disconnected Event to Host */
@@ -6418,19 +6485,27 @@ uint8_t aisBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 {
 #if CFG_SUPPORT_ROAMING
 	struct AIS_FSM_INFO *ais;
+#if (CFG_EXT_ROAMING == 1)
+	enum ENUM_ROAMING_REASON eReason = ROAMING_REASON_NUM;
+#else
+	enum ENUM_ROAMING_REASON eReason = ROAMING_REASON_TX_ERR;
+#endif
 	int8_t rssi;
 
 	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	rssi = prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi;
-	if (roamingFsmInDecision(prAdapter, ucBssIndex) && rssi > -70) {
+#if (CFG_EXT_ROAMING == 1)
+	if (roamingFsmInDecision(prAdapter, ucBssIndex) && rssi > -83)
+#else
+	if (roamingFsmInDecision(prAdapter, ucBssIndex) && rssi > -70)
+#endif
+	{
+		/* Good rssi but beacon timeout happened => PER */
 		struct BSS_DESC_SET set = {0};
 
-		/* Good rssi but beacon timeout happened => PER */
-		apsSearchBssDescByScore(prAdapter,
-			ROAMING_REASON_TX_ERR,
-			ucBssIndex, &set);
+		apsSearchBssDescByScore(prAdapter, eReason, ucBssIndex, &set);
 		if (aisBssDescAllowed(prAdapter, ais, &set)) {
-			DBGLOG(AIS, INFO, "Better AP for beacon timeout");
+			DBGLOG(AIS, INFO, "Better AP found for BTO\n");
 			return TRUE;
 		}
 	}
@@ -6689,6 +6764,12 @@ void aisFsmRunEventRoamingRoam(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	ais->fgTargetChnlScanIssued = FALSE;
 	ais->ucIsStaRoaming = TRUE;
 
+#if CFG_EXT_ROAMING_WTC
+	aisWtcSearchHandleBssDesc(
+		prAdapter,
+		ucBssIndex);
+#endif
+
 	eNewState = aisSearchHandleReconnect(
 		prAdapter, ucBssIndex);
 
@@ -6699,6 +6780,7 @@ void aisFsmRunEventRoamingRoam(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 uint8_t aisCheckNeedDriverRoaming(
 	struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
+#if (CFG_SUPPORT_DRIVER_ROAMING == 1)
 	struct ROAMING_INFO *roam;
 	struct AIS_FSM_INFO *ais;
 	struct CONNECTION_SETTINGS *setting;
@@ -6761,7 +6843,7 @@ uint8_t aisCheckNeedDriverRoaming(
 			}
 		}
 	}
-
+#endif
 	return FALSE;
 }
 
@@ -7635,7 +7717,11 @@ aisFsmRunEventMgmtFrameTxDone(struct ADAPTER *prAdapter,
 				(uintptr_t) prMsduInfo->u2FrameLength +
 				MAC_TX_RESERVED_FIELD);
 
-
+#if (CFG_SUPPORT_CONN_LOG == 1)
+		connLogMgmtTx(prAdapter,
+			prMsduInfo,
+			rTxDoneStatus);
+#endif
 #if CFG_SUPPORT_WPA3_LOG
 		wpa3LogMgmtTx(prAdapter,
 			prMsduInfo,
@@ -8084,7 +8170,9 @@ void aisFsmRunEventBssTransition(struct ADAPTER *prAdapter,
 		prBtmParam->ucDisImmiState = AIS_BTM_DIS_IMMI_STATE_0;
 	}
 	rRoamingData.eReason = ROAMING_REASON_BTM;
-
+#if (CFG_EXT_ROAMING == 1)
+	prRoamingFsmInfo->ucRcpi = prBssDesc->ucRCPI;
+#endif
 	DBGLOG(AIS, INFO, "BTM req roam start, DIS_IMMI_STATE %d\n",
 		prBtmParam->ucDisImmiState);
 	rRoamingData.u2Data = prBssDesc->ucRCPI;
@@ -8194,6 +8282,7 @@ uint32_t aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 	struct IE_NEIGHBOR_REPORT *prIe = (struct IE_NEIGHBOR_REPORT *)pucApBuf;
 	int16_t c2BufLen;
 	uint16_t u2PrefIsZeroCount = 0;
+	uint32_t cnt = 0;
 
 	if (!prIe || !u2ApBufLen || u2ApBufLen < prIe->ucLength)
 		return 0;
@@ -8251,12 +8340,21 @@ uint32_t aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 #endif
 
 		DBGLOG(AIS, INFO,
-		       "Bssid " MACSTR
+		       "[%d] Bssid " MACSTR
 		       ", PrefPresence %d, Pref %d, Chnl %d, BssidInfo 0x%08x\n",
+		       cnt++,
 		       MAC2STR(prNeighborAP->aucBssid),
 		       prNeighborAP->fgPrefPresence,
 		       prNeighborAP->ucPreference, prIe->ucChnlNumber,
 		       prIe->u4BSSIDInfo);
+
+#if CFG_SUPPORT_REPORT_LOG
+		wnmLogBTMReqCandiReport(
+			prAdapter,
+			ucBssIndex,
+			prNeighborAP,
+			cnt);
+#endif
 
 		if (prNeighborAP->fgPrefPresence &&
 		    prNeighborAP->ucPreference == 0)

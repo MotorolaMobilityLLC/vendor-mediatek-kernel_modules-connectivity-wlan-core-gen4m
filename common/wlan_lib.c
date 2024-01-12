@@ -8416,6 +8416,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		wlanCfgGetUint32(
 			prAdapter, "StaSapIndoorConn", FEATURE_ENABLED);
 #endif
+
+#if WLAN_INCLUDE_SYS
+	sysGetExtCfg(prAdapter);
+#endif
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)

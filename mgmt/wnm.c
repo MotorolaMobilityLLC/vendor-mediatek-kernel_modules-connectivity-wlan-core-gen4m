@@ -345,6 +345,11 @@ static uint32_t wnmBTMResponseTxDone(struct ADAPTER *prAdapter,
 {
 	DBGLOG(WNM, INFO, "Bss%d BTM Resp Tx Done Status %d\n",
 		prMsduInfo->ucBssIndex, rTxDoneStatus);
+
+#if CFG_EXT_ROAMING_WTC
+	wnmWtcCheckDiconnect(prAdapter, prMsduInfo->ucBssIndex);
+#endif
+
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -442,6 +447,14 @@ void wnmSendBTMResponseFrame(struct ADAPTER *adapter,
 	}
 #endif
 
+#if (CFG_EXT_ROAMING_WTC && CFG_SUPPORT_REPORT_LOG)
+	APPEND_WTC_IE(prBtmParam,
+		pucOptInfo,
+		adapter,
+		staRec,
+		u2PayloadLen)
+#endif
+
 	/* 4 Update information of MSDU_INFO_T */
 	TX_SET_MMPDU(adapter, prMsduInfo, staRec->ucBssIndex,
 		     staRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
@@ -458,6 +471,17 @@ void wnmSendBTMResponseFrame(struct ADAPTER *adapter,
 	DBGLOG(WNM, INFO,
 		"BTM: response token=%d, status=%d, reason=%d, delay=%d, bssid=%p\n",
 		dialogToken, status, reason, delay, bssid);
+
+#if (CFG_SUPPORT_REPORT_LOG == 1)
+	wnmLogBTMRespReport(
+		adapter,
+		prMsduInfo,
+		dialogToken,
+		status,
+		reason,
+		delay,
+		bssid);
+#endif
 }				/* end of wnmComposeBTMResponseFrame() */
 
 /*----------------------------------------------------------------------------*/
@@ -521,6 +545,13 @@ void wnmSendBTMQueryFrame(struct ADAPTER *prAdapter,
 
 	/* 5 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+
+#if (CFG_SUPPORT_REPORT_LOG == 1)
+	wnmLogBTMQueryReport(
+		prAdapter,
+		prStaRec,
+		prTxFrame);
+#endif
 }				/* end of wnmComposeBTMQueryFrame() */
 
 #if CFG_SUPPORT_MBO
@@ -639,7 +670,7 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	struct MSG_AIS_BSS_TRANSITION *prMsg = NULL;
 	uint8_t ucBssIndex = secGetBssIdxByRfb(prAdapter, prSwRfb);
 	uint8_t fgNeedResponse = FALSE;
-	uint8_t ucStatus;
+	uint8_t ucStatus = 0;
 	struct BSS_DESC *prBssDesc;
 
 	prRxFrame = (struct ACTION_BTM_REQ_FRAME *) prSwRfb->pvHeader;
@@ -675,6 +706,9 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		prRxFrame->u2DisassocTimer * prBssDesc->u2BeaconInterval :
 		prRxFrame->u2DisassocTimer * 100;
 	prBtmParam->fgIsMboPresent = FALSE;
+#if CFG_EXT_ROAMING_WTC
+	wnmWtcRecvBtmReq(prAdapter, ucBssIndex);
+#endif
 	prBtmParam->fgPendingResponse = fgNeedResponse;
 	pucOptInfo = &prRxFrame->aucOptInfo[0];
 	ucRequestMode = prBtmParam->ucRequestMode;
@@ -721,6 +755,18 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	}
 #endif
 
+#if CFG_EXT_ROAMING_WTC
+	if (prSwRfb->u2PacketLen > u2TmpLen) {
+		if (wnmWtcCheckRejectAp(prAdapter,
+			pucOptInfo,
+			prSwRfb->u2PacketLen - u2TmpLen,
+			ucBssIndex)) {
+			ucStatus = WNM_BSS_TM_REJECT_UNSPECIFIED;
+			goto send_response;
+		}
+	}
+#endif
+
 #if CFG_SUPPORT_802_11K
 	aisResetNeighborApList(prAdapter, ucBssIndex);
 #endif
@@ -735,6 +781,13 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 
 	if (ucRequestMode & WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED) {
 #if CFG_SUPPORT_802_11K
+#if (CFG_SUPPORT_REPORT_LOG == 1)
+		wnmLogBTMRecvReq(prAdapter,
+			ucBssIndex,
+			prRxFrame,
+			prSwRfb->u2PacketLen - u2TmpLen);
+#endif
+
 		if (prSwRfb->u2PacketLen <= u2TmpLen ||
 		    !aisCollectNeighborAP(prAdapter, pucOptInfo,
 					prSwRfb->u2PacketLen - u2TmpLen,
