@@ -3725,6 +3725,7 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 #endif
 }
 
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
 struct TX_PWR_LIMIT_DATA *
 rlmDomainInitTxPwrLimitData(struct ADAPTER *prAdapter)
 {
@@ -4277,6 +4278,7 @@ error:
 	if (prTxBfBackoffCmd)
 		cnmMemFree(prAdapter, prTxBfBackoffCmd);
 }
+#endif/*CFG_SUPPORT_SINGLE_SKU*/
 
 void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 {

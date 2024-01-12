@@ -1352,7 +1352,10 @@
  * Single Sku
  *------------------------------------------------------------------------------
  */
+#ifndef CFG_SUPPORT_SINGLE_SKU
 #define CFG_SUPPORT_SINGLE_SKU	1
+#endif
+
 #ifndef CFG_SUPPORT_SINGLE_SKU_LOCAL_DB
 #define CFG_SUPPORT_SINGLE_SKU_LOCAL_DB 1
 #endif
