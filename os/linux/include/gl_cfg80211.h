@@ -513,6 +513,24 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 			 enum nl80211_iftype type, u32 *flags,
 			 struct vif_params *params);
 #endif
+#if (CFG_ADVANCED_80211_MLO == 1)
+int mtk_cfg_add_key(struct wiphy *wiphy,
+		    struct net_device *ndev, int link_id, u8 key_index,
+		    bool pairwise, const u8 *mac_addr,
+		    struct key_params *params);
+int mtk_cfg_get_key(struct wiphy *wiphy,
+		    struct net_device *ndev, int link_id, u8 key_index,
+		    bool pairwise, const u8 *mac_addr, void *cookie,
+		    void (*callback)(void *cookie, struct key_params *));
+int mtk_cfg_del_key(struct wiphy *wiphy,
+		    struct net_device *ndev, int link_id, u8 key_index,
+		    bool pairwise, const u8 *mac_addr);
+int mtk_cfg_set_default_key(struct wiphy *wiphy,
+			    struct net_device *ndev, int link_id,
+			    u8 key_index, bool unicast, bool multicast);
+int mtk_cfg_set_default_mgmt_key(struct wiphy *wiphy,
+		struct net_device *ndev, int link_id, u8 key_index);
+#else
 int mtk_cfg_add_key(struct wiphy *wiphy,
 		    struct net_device *ndev, u8 key_index,
 		    bool pairwise, const u8 *mac_addr,
@@ -527,9 +545,9 @@ int mtk_cfg_del_key(struct wiphy *wiphy,
 int mtk_cfg_set_default_key(struct wiphy *wiphy,
 			    struct net_device *ndev,
 			    u8 key_index, bool unicast, bool multicast);
-
 int mtk_cfg_set_default_mgmt_key(struct wiphy *wiphy,
 		struct net_device *ndev, u8 key_index);
+#endif
 
 #if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg_get_station(struct wiphy *wiphy,
