@@ -184,6 +184,10 @@ extern struct delayed_work sched_workq;
 #define BUS_REMAP_SIZE		AXI_REMAP_SIZE
 #endif
 
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+#define PWR_LEVEL_STAT_UPDATE_INTERVAL	60	/* sec */
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -1797,17 +1801,13 @@ void kalPrintLog(const char *fmt, ...);
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 void kalPwrLevelHdlrRegister(IN struct ADAPTER *prAdapter,
 					PFN_PWR_LEVEL_HANDLER hdlr);
-
-void
-connsysPowerLevelNotify(IN struct ADAPTER *prAdapter,
+void connsysPowerLevelNotify(IN struct ADAPTER *prAdapter,
 				IN struct MSG_HDR *prMsgHdr);
-
-void
-connsysPowerTempNotify(IN struct ADAPTER *prAdapter,
+void connsysPowerTempNotify(IN struct ADAPTER *prAdapter,
 				IN struct MSG_HDR *prMsgHdr);
-
 void connsysPowerTempUpdate(enum conn_pwr_msg_type status,
 					int currentTemp);
+uint32_t kalDumpPwrLevel(IN struct ADAPTER *prAdapter);
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
