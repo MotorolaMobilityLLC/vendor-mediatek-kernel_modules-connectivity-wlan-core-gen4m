@@ -9749,7 +9749,7 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 
 	mboxSendMsg(prAdapter, MBOX_ID_0,
 		    (struct MSG_HDR *)prMsgChReq,
-		    MSG_SEND_METHOD_BUF);
+		    MSG_SEND_METHOD_UNBUF);
 }
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
