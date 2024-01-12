@@ -1324,7 +1324,7 @@ void nicRxProcessForwardPkt(struct ADAPTER *prAdapter,
 			prSwRfb->pvHeader,
 			(uint32_t) prSwRfb->u2PacketLen,
 			prSwRfb->aeCSUM) == WLAN_STATUS_SUCCESS) {
-
+		uint8_t ucTmpTid = 0;
 		/* parsing forward frame */
 		wlanProcessTxFrame(prAdapter, (void *) (prSwRfb->pvPacket));
 		/* pack into MSDU_INFO_T */
@@ -1338,6 +1338,7 @@ void nicRxProcessForwardPkt(struct ADAPTER *prAdapter,
 
 		/* release RX buffer (to rIndicatedRfbList) */
 		prSwRfb->pvPacket = NULL;
+		ucTmpTid = prSwRfb->ucTid;
 		nicRxReturnRFB(prAdapter, prSwRfb);
 
 		/* Handle if prMsduInfo out of bss index range*/
@@ -1358,7 +1359,7 @@ void nicRxProcessForwardPkt(struct ADAPTER *prAdapter,
 		/* add resource control for WMM forward packet */
 		GLUE_INC_REF_CNT(prTxCtrl
 			->i4PendingFwdFrameWMMCount[
-			aucACI2TxQIdx[aucTid2ACI[prSwRfb->ucTid]]]);
+			aucACI2TxQIdx[aucTid2ACI[ucTmpTid]]]);
 
 		/* send into TX queue */
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
