@@ -263,6 +263,16 @@
 #define CFG_SUPPORT_RX_FLUSH_REORDERING 0
 #endif
 
+/* Wait for LAST fragment in RX reordering to cope with MSDU interleaving,
+ * Currently only enabled in mobile project in T0;
+ * long term solution will be setting single queue in MDP.
+ */
+#ifndef CFG_SUPPORT_RX_REORDERING_WAIT_LAST_FRAG
+#define RX_REORDER_WAIT_FOR_LAST_FRAG 0
+#else
+#define RX_REORDER_WAIT_FOR_LAST_FRAG 1
+#endif
+
 /* Mobile(must Android) need default 1 */
 #if defined(CONFIG_ANDROID)
 #ifndef CFG_ENABLE_WAKE_LOCK
@@ -637,7 +647,6 @@
 #if CFG_M0VE_BA_TO_DRIVER
 #define CFG_RX_BA_MAX_WINSIZE                   64
 #endif
-#define CFG_RX_BA_INC_SIZE                      64
 #define CFG_RX_MAX_BA_TID_NUM                   8
 #define CFG_RX_REORDERING_ENABLED               1
 

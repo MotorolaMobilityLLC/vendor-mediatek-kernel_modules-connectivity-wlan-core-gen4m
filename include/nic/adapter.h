@@ -963,6 +963,10 @@ struct WIFI_VAR {
 	uint16_t u2RxEhtBaSize;
 	uint16_t u2TxEhtBaSize;
 #endif
+	u_int8_t fgMoveWinOnMissingLast;
+	uint16_t u2BaExtSize;
+	uint32_t u4BaVerboseLogging;
+
 	uint8_t ucThreadScheduling;
 	uint8_t ucThreadPriority;
 	int8_t cThreadNice;
