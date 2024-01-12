@@ -59,6 +59,8 @@ p2pDevStateInit_IDLE(IN struct ADAPTER *prAdapter,
 	u_int8_t fgIsTransition = FALSE, fgIsShareInterface = TRUE;
 	uint32_t u4Idx = 0;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo;
+	struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxInfo;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL)
@@ -67,6 +69,16 @@ p2pDevStateInit_IDLE(IN struct ADAPTER *prAdapter,
 		if (!LINK_IS_EMPTY(&(prChnlReqInfo->rP2pChnlReqLink))) {
 			fgIsTransition = TRUE;
 			*peNextState = P2P_DEV_STATE_REQING_CHANNEL;
+			break;
+		}
+
+		prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
+		prP2pMgmtTxInfo = prP2pDevFsmInfo != NULL ?
+				&(prP2pDevFsmInfo->rMgmtTxInfo) : NULL;
+		if (prP2pDevFsmInfo && prP2pMgmtTxInfo && !LINK_IS_EMPTY(
+				&(prP2pMgmtTxInfo->rTxReqLink))) {
+			fgIsTransition = TRUE;
+			*peNextState = P2P_DEV_STATE_OFF_CHNL_TX;
 			break;
 		}
 
