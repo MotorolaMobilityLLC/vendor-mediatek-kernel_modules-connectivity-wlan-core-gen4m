@@ -1053,7 +1053,7 @@ static ssize_t procCountryRead(struct file *filp, char __user *buf,
 	kalMemZero(g_aucProcBuf, sizeof(g_aucProcBuf));
 	if (country)
 		kalSnprintf(g_aucProcBuf, sizeof(g_aucProcBuf),
-			"Current Country Code: %d\n", &country);
+			"Current Country Code: %d\n", country);
 	else
 		kalSnprintf(g_aucProcBuf, sizeof(g_aucProcBuf),
 			"Current Country Code: NULL\n");
