@@ -560,6 +560,7 @@ struct AIS_FSM_INFO {
 	/* roaming count */
 	uint16_t u2ConnectedCount;
 #endif
+	uint8_t ucIsSapCsaPending;
 };
 
 struct AIS_OFF_CHNL_TX_REQ_INFO {
