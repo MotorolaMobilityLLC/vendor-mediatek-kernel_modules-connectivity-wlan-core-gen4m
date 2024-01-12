@@ -96,9 +96,17 @@
 
 #ifdef CONFIG_MTK_WIFI_HE160
 #define TX_RING_SIZE				1024
+#if CFG_SUPPORT_RX_PAGE_POOL
+#define RX_RING_SIZE				4095 /* Max Rx ring size */
+#else
 #define RX_RING_SIZE				1024 /* Max Rx ring size */
+#endif
 /* Data Rx ring */
+#if CFG_SUPPORT_RX_PAGE_POOL
+#define RX_RING0_SIZE				4095
+#else
 #define RX_RING0_SIZE				1024
+#endif
 /* Event/MSDU_report Rx ring */
 #define RX_RING1_SIZE				128
 #define HIF_NUM_OF_QM_RX_PKT_NUM	4096
@@ -878,4 +886,9 @@ void halRroMawdInit(struct GLUE_INFO *prGlueInfo);
 void halMawdReset(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
+#if CFG_SUPPORT_RX_PAGE_POOL
+int kalCreateRxPagePool(struct device *dev);
+struct sk_buff *kalAllocRxSkb(dma_addr_t *prAddr);
+void kalDmaSyncForDevice(void *rAddr);
+#endif
 #endif /* HIF_PDMA_H__ */

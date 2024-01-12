@@ -324,6 +324,9 @@ CONFIG_MTK_WIFI_11BE_MLO_SUPPORT=y
 CONFIG_MTK_WIFI_CONNAC3X=y
 CONFIG_NUM_OF_WFDMA_RX_RING=5
 CONFIG_NUM_OF_WFDMA_TX_RING=0
+ifneq ($(CONFIG_PAGE_POOL),)
+CONFIG_RX_PAGE_POOL=y
+endif
 CONFIG_MTK_WIFI_UNIFIED_COMMND_SUPPORT=y
 CONFIG_MTK_WIFI_TWT_SUPPORT=y
 CONFIG_MTK_WIFI_TWT_STA_DIRECT_TEARDOWN=y
@@ -354,6 +357,9 @@ CONFIG_MTK_WIFI_11BE_MLO_SUPPORT=y
 CONFIG_MTK_WIFI_CONNAC3X=y
 CONFIG_NUM_OF_WFDMA_RX_RING=2
 CONFIG_NUM_OF_WFDMA_TX_RING=0
+ifneq ($(CONFIG_PAGE_POOL),)
+CONFIG_RX_PAGE_POOL=y
+endif
 CONFIG_MTK_WIFI_UNIFIED_COMMND_SUPPORT=y
 CONFIG_MTK_WIFI_TWT_SUPPORT=y
 CONFIG_MTK_WIFI_TWT_STA_DIRECT_TEARDOWN=y
@@ -558,6 +564,12 @@ ifeq ($(CONFIG_CONTROL_ASPM_BY_FW), y)
     ccflags-y += -DCFG_CONTROL_ASPM_BY_FW=1
 else
     ccflags-y += -DCFG_CONTROL_ASPM_BY_FW=0
+endif
+
+ifeq ($(CONFIG_RX_PAGE_POOL), y)
+    ccflags-y += -DCFG_SUPPORT_RX_PAGE_POOL=1
+else
+    ccflags-y += -DCFG_SUPPORT_RX_PAGE_POOL=0
 endif
 
 ifeq ($(WIFI_ENABLE_GCOV), y)
@@ -1263,12 +1275,14 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
 HIF_OBJS :=  $(HIF_COMMON_DIR)hal_pdma.o \
              $(HIF_COMMON_DIR)kal_pdma.o \
              $(HIF_COMMON_DIR)dbg_pdma.o \
+             $(HIF_COMMON_DIR)hif_mem.o \
              $(HIF_DIR)pcie.o
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
 HIF_OBJS :=  $(HIF_COMMON_DIR)hal_pdma.o \
              $(HIF_COMMON_DIR)kal_pdma.o \
              $(HIF_COMMON_DIR)dbg_pdma.o \
              $(HIF_COMMON_DIR)sw_wfdma.o \
+             $(HIF_COMMON_DIR)hif_mem.o \
              $(HIF_DIR)axi.o
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
 HIF_OBJS :=  $(HIF_DIR)usb.o \
