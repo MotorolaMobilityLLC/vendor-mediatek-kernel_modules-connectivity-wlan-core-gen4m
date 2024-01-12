@@ -1445,6 +1445,8 @@ int32_t procInitProcfs(struct net_device *prDev,
 #endif /* WLAN_INCLUDE_PROC */
 
 #if WLAN_INCLUDE_SYS
+int sysFwLogInit(void);
+void sysFwLogUninit(void);
 int32_t sysCreateFsEntry(struct GLUE_INFO *prGlueInfo);
 int32_t sysRemoveSysfs(void);
 int32_t sysInitFs(void);
