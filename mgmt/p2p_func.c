@@ -7343,6 +7343,8 @@ void p2pFuncSwitchGcChannel(
 	prChnlReqInfo->eChannelWidth = prP2pBssInfo->ucVhtChannelWidth;
 	prChnlReqInfo->ucCenterFreqS1 = prP2pBssInfo->ucVhtChannelFrequencyS1;
 	prChnlReqInfo->ucCenterFreqS2 = prP2pBssInfo->ucVhtChannelFrequencyS2;
+	prChnlReqInfo->u4MaxInterval = P2P_AP_CHNL_HOLD_TIME_CSA_MS;
+	prChnlReqInfo->eChnlReqType = CH_REQ_TYPE_JOIN;
 
 	p2pRoleFsmStateTransition(prAdapter,
 		prP2pRoleFsmInfo,
