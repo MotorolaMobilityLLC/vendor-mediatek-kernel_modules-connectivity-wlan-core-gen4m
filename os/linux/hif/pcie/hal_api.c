@@ -1668,6 +1668,18 @@ BOOLEAN halIsPendingRx(IN P_ADAPTER_T prAdapter)
 	return FALSE;
 }
 
+UINT_32 halGetValidCoalescingBufSize(IN P_ADAPTER_T prAdapter)
+{
+	UINT_32 u4BufSize;
+
+	if (HIF_TX_COALESCING_BUFFER_SIZE > HIF_RX_COALESCING_BUFFER_SIZE)
+		u4BufSize = HIF_TX_COALESCING_BUFFER_SIZE;
+	else
+		u4BufSize = HIF_RX_COALESCING_BUFFER_SIZE;
+
+	return u4BufSize;
+}
+
 WLAN_STATUS halAllocateIOBuffer(IN P_ADAPTER_T prAdapter)
 {
 	return WLAN_STATUS_SUCCESS;
