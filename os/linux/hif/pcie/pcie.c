@@ -425,12 +425,18 @@ irqreturn_t mtk_pci_isr(int irq, void *dev_instance)
 	int i;
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
-	if (!prGlueInfo)
+	if (!prGlueInfo) {
+		disable_irq_nosync(irq);
 		goto exit;
+	}
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMsiInfo = &prGlueInfo->prAdapter->chip_info->bus_info->pcie_msi_info;
 	if (!prMsiInfo || !prMsiInfo->fgMsiEnabled) {
+		if (KAL_TEST_BIT(HIF_WFDMA_INT_BIT, prHifInfo->ulHifIntEnBits))
+			return IRQ_NONE;
+
+		disable_irq_nosync(irq);
 		KAL_SET_BIT(HIF_WFDMA_INT_BIT, prHifInfo->ulHifIntEnBits);
 		goto exit;
 	}
@@ -441,14 +447,13 @@ irqreturn_t mtk_pci_isr(int irq, void *dev_instance)
 			if (KAL_TEST_BIT(i, prMsiInfo->ulEnBits))
 				return IRQ_NONE;
 
+			disable_irq_nosync(irq);
 			KAL_SET_BIT(i, prMsiInfo->ulEnBits);
-			break;
+			goto exit;
 		}
 	}
 
 exit:
-	disable_irq_nosync(irq);
-
 	return IRQ_WAKE_THREAD;
 }
 
@@ -482,7 +487,9 @@ void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo)
 	prMsiInfo = &prBusInfo->pcie_msi_info;
 
 	if (!prMsiInfo->fgMsiEnabled) {
-		enable_irq(prHifInfo->u4IrqId);
+		if (KAL_TEST_AND_CLEAR_BIT(HIF_WFDMA_INT_BIT,
+					   prHifInfo->ulHifIntEnBits))
+			enable_irq(prHifInfo->u4IrqId);
 		return;
 	}
 
@@ -514,7 +521,12 @@ void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo)
 	prMsiInfo = &prBusInfo->pcie_msi_info;
 
 	if (!prMsiInfo->fgMsiEnabled) {
-		disable_irq_nosync(prHifInfo->u4IrqId);
+		if (!KAL_TEST_BIT(HIF_WFDMA_INT_BIT,
+				  prHifInfo->ulHifIntEnBits)) {
+			disable_irq_nosync(prHifInfo->u4IrqId);
+			KAL_SET_BIT(HIF_WFDMA_INT_BIT,
+				  prHifInfo->ulHifIntEnBits);
+		}
 		return;
 	}
 
@@ -524,9 +536,9 @@ void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo)
 		    !prMsiLayout->irq_num)
 			continue;
 
-		if (!test_bit(i, &prMsiInfo->ulEnBits)) {
-			KAL_SET_BIT(i, prMsiInfo->ulEnBits);
+		if (!KAL_TEST_BIT(i, prMsiInfo->ulEnBits)) {
 			disable_irq_nosync(prMsiLayout->irq_num);
+			KAL_SET_BIT(i, prMsiInfo->ulEnBits);
 		}
 	}
 }
