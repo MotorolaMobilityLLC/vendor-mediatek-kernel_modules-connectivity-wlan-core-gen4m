@@ -3478,6 +3478,10 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy, struct cfg80211_wowlan *wow)
 	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
 
 	DBGLOG(REQ, INFO, "CFG80211 suspend CB\n");
+	if (!wlanGetGlueInfo()) {
+		DBGLOG(REQ, ERROR, "NIC does not exist!\n");
+		return 0;
+	}
 
 	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
