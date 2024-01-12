@@ -733,7 +733,7 @@ void ehtRlmRecOperation(
 	else
 		prBssInfo->fgIsEhtDscbPresent = FALSE;
 
-	DBGLOG(RLM, LOUD, "RlmEHTOpInfo-0x:%x\n",
+	DBGLOG(RLM, LOUD, "RlmEHTOpInfo-0x%x\n",
 		prBssInfo->ucEhtOpParams);
 
 	/*Backup peer VHT OpInfo*/
@@ -752,7 +752,7 @@ void ehtRlmRecOperation(
 		 * at end
 		 */
 		u4EhtOffset = OFFSET_OF(struct IE_EHT_OP, aucVarInfo[0]) +
-			      sizeof(struct EHT_OP_INFO);
+			OFFSET_OF(struct EHT_OP_INFO, u2EhtDisSubChanBitmap);
 		prEhtDscbInfo = (struct EHT_DSCB_INFO *)
 			(((uint8_t *) pucIE) + u4EhtOffset);
 		u2PreDscBitmap = prBssInfo->u2EhtDisSubChanBitmap;
@@ -762,6 +762,31 @@ void ehtRlmRecOperation(
 			prBssInfo->ucBssIndex,
 			u2PreDscBitmap,
 			prBssInfo->u2EhtDisSubChanBitmap);
+		DBGLOG(RLM, LOUD, "DscbBitmap: 0x%x\n",
+			prBssInfo->u2EhtDisSubChanBitmap);
+	} else if (prBssInfo->fgIsEhtDscbPresent) {
+		struct EHT_DSCB_INFO *prEhtDscbInfo = NULL;
+		uint32_t u4EhtOffset;
+		uint16_t u2PreDscBitmap = 0;
+
+		/* struct IE_EHT_OP is packed,
+		 * save to use sizeof instead of
+		 * using OFFSET_OF with ZERO array
+		 * at end
+		 */
+		u4EhtOffset = OFFSET_OF(struct IE_EHT_OP, aucVarInfo[0]);
+		prEhtDscbInfo = (struct EHT_DSCB_INFO *)
+			(((uint8_t *) pucIE) + u4EhtOffset);
+		u2PreDscBitmap = prBssInfo->u2EhtDisSubChanBitmap;
+		prBssInfo->u2EhtDisSubChanBitmap =
+			prEhtDscbInfo->u2DisSubChannelBitmap;
+		nicUpdateDscb(prAdapter,
+			prBssInfo->ucBssIndex,
+			u2PreDscBitmap,
+			prBssInfo->u2EhtDisSubChanBitmap);
+		DBGLOG(RLM, LOUD, "DscbBitmap: 0x%x\n",
+			prBssInfo->u2EhtDisSubChanBitmap);
+	} else {
 	}
 #endif
 }
