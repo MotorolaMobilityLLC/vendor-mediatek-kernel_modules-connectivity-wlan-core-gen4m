@@ -1182,6 +1182,9 @@ static void wlanSetMulticastListWorkQueue(
 			return;
 		}
 
+		/* Avoid race condition with kernel net subsystem */
+		netif_addr_lock_bh(prDev);
+
 		netdev_for_each_mc_addr(ha, prDev) {
 			if (i < MAX_NUM_GROUP_ADDR) {
 				kalMemCopy((prMCAddrList + i * ETH_ALEN),
@@ -1189,6 +1192,8 @@ static void wlanSetMulticastListWorkQueue(
 				i++;
 			}
 		}
+
+		netif_addr_unlock_bh(prDev);
 
 		up(&g_halt_sem);
 
