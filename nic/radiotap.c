@@ -221,9 +221,7 @@ static void radiotap_fill_he(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, ui
 	he->u2Data4 = spatial_reuse;
 
 	/* Data 5 */
-	if (p_radiotap_info->ucTxMode == MODE_HE_SU)
-		bw_ru_alloc = p_radiotap_info->ucFrMode;
-	else if (p_radiotap_info->u2RuAllocation <= IEEE80211_RADIOTAP_HE_RU_IDX_26_RU37)
+	if (p_radiotap_info->u2RuAllocation <= IEEE80211_RADIOTAP_HE_RU_IDX_26_RU37)
 		bw_ru_alloc = IEEE80211_RADIOTAP_HE_RU_26;
 	else if (p_radiotap_info->u2RuAllocation <= IEEE80211_RADIOTAP_HE_RU_IDX_52_RU16)
 		bw_ru_alloc = IEEE80211_RADIOTAP_HE_RU_52;
@@ -238,7 +236,7 @@ static void radiotap_fill_he(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, ui
 	else if (p_radiotap_info->u2RuAllocation == IEEE80211_RADIOTAP_HE_RU_IDX_2x_996_RU1)
 		bw_ru_alloc = IEEE80211_RADIOTAP_HE_RU_2x_996;
 	else
-		bw_ru_alloc = 0xf;
+		bw_ru_alloc = p_radiotap_info->ucFrMode;
 
 	he->u2Data5 = bw_ru_alloc |
 		(p_radiotap_info->ucShortGI << IEEE80211_RADIOTAP_HE_GI_SHFT) |
