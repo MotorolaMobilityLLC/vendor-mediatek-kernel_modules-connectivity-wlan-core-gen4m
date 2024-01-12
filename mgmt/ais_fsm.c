@@ -2850,6 +2850,30 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 	}
 }				/* end of aisFsmRunEventScanDone() */
 
+void aisFsmAddBlockList(struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *ais, uint16_t u2DeauthReason)
+{
+	uint8_t i;
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct BSS_INFO *prAisBssInfo = aisGetLinkBssInfo(ais, i);
+		struct BSS_DESC *prBss = aisGetLinkBssDesc(ais, i);
+
+		if (prAisBssInfo)
+			prAisBssInfo->u2DeauthReason = u2DeauthReason;
+
+		if (prBss) {
+			struct AIS_BLACKLIST_ITEM *blk =
+			    aisAddBlacklist(prAdapter, prBss);
+
+			if (blk) {
+				blk->u2DeauthReason = u2DeauthReason;
+				blk->fgDeauthLastTime = TRUE;
+			}
+		}
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief
@@ -2864,7 +2888,6 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 {
 	struct MSG_AIS_ABORT *prAisAbortMsg;
 	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct BSS_INFO *prAisBssInfo;
 	uint8_t ucReasonOfDisconnect;
 	u_int8_t fgDelayIndication;
 	struct CONNECTION_SETTINGS *prConnSettings;
@@ -2879,7 +2902,7 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 	ucBssIndex = prAisAbortMsg->ucBssIndex;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	ucBssIndex = aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
 	cnmMemFree(prAdapter, prMsgHdr);
@@ -2893,24 +2916,10 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 	/* record join request time */
 	GET_CURRENT_SYSTIME(&(prAisFsmInfo->rJoinReqTime));
 
-	/* 4 <2> clear previous pending connection request and insert new one */
 	if (ucReasonOfDisconnect == DISCONNECT_REASON_CODE_DEAUTHENTICATED ||
-	    ucReasonOfDisconnect == DISCONNECT_REASON_CODE_DISASSOCIATED) {
-		struct STA_RECORD *prSta =
-			aisGetTargetStaRec(prAdapter, ucBssIndex);
-		struct BSS_DESC *prBss =
-			aisGetTargetBssDesc(prAdapter, ucBssIndex);
-
-		if (prSta && prBss) {
-			struct AIS_BLACKLIST_ITEM *blk =
-			    aisAddBlacklist(prAdapter, prBss);
-
-			if (blk) {
-				blk->u2DeauthReason = prSta->u2ReasonCode;
-				blk->fgDeauthLastTime = TRUE;
-			}
-		}
-	}
+	    ucReasonOfDisconnect == DISCONNECT_REASON_CODE_DISASSOCIATED)
+		aisFsmAddBlockList(prAdapter, prAisFsmInfo,
+			prAisAbortMsg->u2DeauthReason);
 
 	/* to support user space triggered roaming */
 	if (ucReasonOfDisconnect == DISCONNECT_REASON_CODE_ROAMING &&
@@ -4678,6 +4687,35 @@ void aisFsmDisconnectAllBss(IN struct ADAPTER *prAdapter,
 	}
 }
 
+void aisFsmRemoveAllBssDesc(struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *prAisFsmInfo)
+{
+	uint8_t i;
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct BSS_INFO *prAisBssInfo =
+			aisGetLinkBssInfo(prAisFsmInfo, i);
+
+		if (!prAisBssInfo)
+			break;
+
+		if (prAisFsmInfo->ucReasonOfDisconnect ==
+			DISCONNECT_REASON_CODE_RADIO_LOST ||
+		    prAisFsmInfo->ucReasonOfDisconnect ==
+			DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR) {
+			scanRemoveBssDescByBssid(prAdapter,
+						 prAisBssInfo->aucBSSID);
+
+			/* remove from scanning results as well */
+			wlanClearBssInScanningResult(prAdapter,
+						     prAisBssInfo->aucBSSID);
+		} else {
+			scanRemoveConnFlagOfBssDescByBssid(prAdapter,
+			      prAisBssInfo->aucBSSID, prAisBssInfo->ucBssIndex);
+		}
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function will modify and update necessary information to firmware
@@ -4744,27 +4782,10 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 						  FALSE, PS_CALLER_NO_TIM);
 		}
 
-		if (prAisBssInfo->prStaRecOfAP) {
-			u2ReasonCode =
-				prAisBssInfo->prStaRecOfAP->u2ReasonCode;
-		}
-		if (prAisFsmInfo->ucReasonOfDisconnect ==
-			DISCONNECT_REASON_CODE_RADIO_LOST
-			||
-			(prAisFsmInfo->ucReasonOfDisconnect ==
-			DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR)) {
-			scanRemoveBssDescByBssid(prAdapter,
-						 prAisBssInfo->aucBSSID);
+		if (prAisBssInfo->prStaRecOfAP)
+			u2ReasonCode = prAisBssInfo->prStaRecOfAP->u2ReasonCode;
 
-			/* remove from scanning results as well */
-			wlanClearBssInScanningResult(prAdapter,
-						     prAisBssInfo->aucBSSID);
-		} else {
-			scanRemoveConnFlagOfBssDescByBssid(prAdapter,
-				prAisBssInfo->aucBSSID, ucBssIndex);
-			aisTargetBssResetConnecting(prAdapter, prAisFsmInfo);
-			aisTargetBssResetConnected(prAdapter, prAisFsmInfo);
-		}
+		aisFsmRemoveAllBssDesc(prAdapter, prAisFsmInfo);
 
 		if (fgDelayIndication) {
 			struct ROAMING_INFO *roam =
@@ -5514,6 +5535,7 @@ void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	ucBssIndex = aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
