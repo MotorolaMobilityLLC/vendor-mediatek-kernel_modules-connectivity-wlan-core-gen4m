@@ -1062,6 +1062,18 @@ void nicRxProcessForwardPkt(IN struct ADAPTER *prAdapter,
 		prSwRfb->pvPacket = NULL;
 		nicRxReturnRFB(prAdapter, prSwRfb);
 
+		/* Handle if prMsduInfo out of bss index range*/
+		if (prMsduInfo->ucBssIndex > MAX_BSSID_NUM) {
+			DBGLOG(QM, INFO,
+			    "Invalid bssidx:%u\n", prMsduInfo->ucBssIndex);
+			if (prMsduInfo->pfTxDoneHandler != NULL)
+				prMsduInfo->pfTxDoneHandler(prAdapter,
+						prMsduInfo,
+						TX_RESULT_DROPPED_IN_DRIVER);
+			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
+			return;
+		}
+
 		/* increase forward frame counter */
 		GLUE_INC_REF_CNT(prTxCtrl->i4PendingFwdFrameCount);
 
@@ -1082,8 +1094,9 @@ void nicRxProcessForwardPkt(IN struct ADAPTER *prAdapter,
 	} else {		/* no TX resource */
 		DBGLOG(QM, INFO, "No Tx MSDU_INFO for forwarding frames\n");
 		nicRxReturnRFB(prAdapter, prSwRfb);
+		if (prMsduInfo)
+			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
 	}
-
 }
 
 /*----------------------------------------------------------------------------*/
