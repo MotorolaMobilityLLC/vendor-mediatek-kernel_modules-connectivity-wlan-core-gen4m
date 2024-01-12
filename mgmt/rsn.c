@@ -296,6 +296,23 @@ uint8_t rsnIsKeyMgmtSha384(uint32_t akm)
 	       akm == RSN_AKM_SUITE_FT_FILS_SHA384;
 }
 
+uint8_t rsnIsKeyMgmtIeee8021x(uint32_t akm)
+{
+	return akm == RSN_AKM_SUITE_802_1X ||
+	       akm == RSN_AKM_SUITE_FT_802_1X ||
+	       akm == RSN_AKM_SUITE_FT_802_1X_SHA384 ||
+	       akm == RSN_AKM_SUITE_FT_802_1X_SHA384_UNRESTRICTED ||
+	       akm == RSN_AKM_SUITE_OSEN ||
+	       akm == RSN_AKM_SUITE_802_1X_SHA256 ||
+	       akm == RSN_AKM_SUITE_8021X_SHA384 ||
+	       akm == RSN_AKM_SUITE_8021X_SUITE_B ||
+	       akm == RSN_AKM_SUITE_8021X_SUITE_B_192 ||
+	       akm == RSN_AKM_SUITE_FILS_SHA256 ||
+	       akm == RSN_AKM_SUITE_FILS_SHA384 ||
+	       akm == RSN_AKM_SUITE_FT_FILS_SHA256 ||
+	       akm == RSN_AKM_SUITE_FT_FILS_SHA384;
+}
+
 uint8_t rsnKekLen(uint32_t akmp, uint16_t pmk_len)
 {
 	switch (akmp) {
@@ -1074,13 +1091,21 @@ uint8_t rsnAuthModeRsn(enum ENUM_PARAM_AUTH_MODE eAuthMode)
 	       eAuthMode == AUTH_MODE_FILS;
 }
 
-uint8_t rsnKeyMgmtWpa3for6g(struct ADAPTER *ad,
+uint8_t rsnIsKeyMgmtFor6g(struct ADAPTER *ad,
 	enum ENUM_PARAM_AUTH_MODE eAuthMode,
+	uint32_t u4AkmSuite,
 	uint8_t bssidx,
 	struct BSS_DESC *prBss)
 {
 	struct GL_WPA_INFO *prWpaInfo;
 	u_int8_t fgIsOWE, fgIsSAE, fgIsSAEH2E;
+
+	if (rsnIsKeyMgmtIeee8021x(u4AkmSuite)) {
+		DBGLOG(RSN, INFO,
+			"AKM %d is allowed for 6G enterprise AP\n",
+			u4AkmSuite);
+		return TRUE;
+	}
 
 	prWpaInfo = aisGetWpaInfo(ad, bssidx);
 	fgIsOWE = eAuthMode == AUTH_MODE_WPA3_OWE;
@@ -1323,24 +1348,6 @@ u_int8_t rsnPerformPolicySelection(
 
 	u4PairwiseCipher = prMib->dot11RSNAConfigPairwiseCipher;
 	u4GroupCipher = prMib->dot11RSNAConfigGroupCipher;
-
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (prBss->eBand == BAND_6G) {
-		if (!rsnKeyMgmtWpa3for6g(
-				prAdapter, eAuthMode, ucBssIndex, prBss)) {
-#if CFG_SUPPORT_WPA3_LOG
-			wpa3Log6gPolicyFail(prAdapter,
-				ucBssIndex,
-				eAuthMode);
-#endif
-			DBGLOG(RSN, INFO,
-				"Invalid 6g security mode: only OWE & SAE H2E is allowed\n");
-#if (CFG_WLAN_CONNAC3_DEV == 0)
-			return FALSE;
-#endif
-		}
-	}
-#endif
 
 #if defined(MLD_SECURITY_RESTRICTIONS) && (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (prBss->rMlInfo.fgValid) {
@@ -1657,6 +1664,25 @@ selected:
 			eAuthMode, eNewAuthMode);
 		eAuthMode = eNewAuthMode;
 	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prBss->eBand == BAND_6G) {
+		if (!rsnIsKeyMgmtFor6g(prAdapter,
+				eAuthMode, u4AkmSuite, ucBssIndex, prBss)) {
+#if CFG_SUPPORT_WPA3_LOG
+			wpa3Log6gPolicyFail(prAdapter,
+				ucBssIndex,
+				eAuthMode);
+#endif
+			DBGLOG(RSN, INFO,
+				"Invalid 6g Auth Mode[%d], Akm[%d], only OWE & SAE H2E is allowed\n",
+				eAuthMode, u4AkmSuite);
+#if (CFG_WLAN_CONNAC3_DEV == 0)
+			return FALSE;
+#endif
+		}
+	}
+#endif
 
 #if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
 	if (rsnKeyMgmtFils(u4AkmSuite) && !prBss->ucIsFilsSkSupport) {
