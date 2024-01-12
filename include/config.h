@@ -732,6 +732,12 @@
 
 #define CFG_SUPPORT_SOFTAP_WPA3	1
 
+#if CFG_TC10_FEATURE
+#define CFG_HOTSPOT_SUPPORT_ADJUST_SCC          1
+#else
+#define CFG_HOTSPOT_SUPPORT_ADJUST_SCC          0
+#endif
+
 #ifndef CFG_ENABLE_UNIFY_WIPHY
 #define CFG_ENABLE_UNIFY_WIPHY 1
 #endif
