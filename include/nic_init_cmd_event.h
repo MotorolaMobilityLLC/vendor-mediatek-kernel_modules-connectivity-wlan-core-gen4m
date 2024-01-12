@@ -50,40 +50,43 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/nic_init_cmd_event.h#1
-*/
+ ** Id: //Department/DaVinci/BRANCHES/
+ *      MT6620_WIFI_DRIVER_V2_3/include/nic_init_cmd_event.h#1
+ */
 
 /*! \file   "nic_init_cmd_event.h"
-*    \brief This file contains the declairation file of the WLAN initialization routines
-*	   for MediaTek Inc. 802.11 Wireless LAN Adapters.
-*/
+ *    \brief This file contains the declairation file of the WLAN
+ *    initialization routines for MediaTek Inc. 802.11 Wireless LAN Adapters.
+ */
 
 #ifndef _NIC_INIT_CMD_EVENT_H
 #define _NIC_INIT_CMD_EVENT_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 #include "gl_typedef.h"
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 #define INIT_CMD_STATUS_SUCCESS                 0
 #define INIT_CMD_STATUS_REJECTED_INVALID_PARAMS 1
 #define INIT_CMD_STATUS_REJECTED_CRC_ERROR      2
 #define INIT_CMD_STATUS_REJECTED_DECRYPT_FAIL   3
 #define INIT_CMD_STATUS_UNKNOWN                 4
 
-#define EVENT_HDR_WITHOUT_RXD_SIZE     (OFFSET_OF(struct WIFI_EVENT, aucBuffer[0]) - OFFSET_OF(struct WIFI_EVENT, u2PacketLength))
+#define EVENT_HDR_WITHOUT_RXD_SIZE  \
+	(OFFSET_OF(struct WIFI_EVENT, aucBuffer[0]) - \
+	OFFSET_OF(struct WIFI_EVENT, u2PacketLength))
 
 #define INIT_PKT_FT_CMD				0x2
 #define INIT_PKT_FT_PDA_FWDL		0x3
@@ -160,9 +163,9 @@ enum ENUM_INIT_PATCH_STATUS {
 };
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /* commands */
 struct INIT_WIFI_CMD {
@@ -171,7 +174,8 @@ struct INIT_WIFI_CMD {
 	uint8_t ucReserved;
 	uint8_t ucSeqNum;
 #if 1
-	uint8_t ucD2B0Rev;	/* padding fields, hw may auto modify this field */
+	/* padding fields, hw may auto modify this field */
+	uint8_t ucD2B0Rev;
 	uint8_t ucExtenCID;	/* Extend CID */
 	uint8_t ucS2DIndex;	/* Index for Src to Dst in CMD usage */
 	uint8_t ucExtCmdOption;	/* Extend CID option */
@@ -188,8 +192,8 @@ struct INIT_HIF_TX_HEADER {
 	uint8_t ucWlanIdx;
 	uint8_t ucHeaderFormat;
 	uint8_t ucHeaderPadding;
-	uint8_t ucPktFt:2;
-	uint8_t ucOwnMAC:6;
+	uint8_t ucPktFt: 2;
+	uint8_t ucOwnMAC: 6;
 	uint32_t au4D2toD7Rev[6];
 
 	uint16_t u2Length;
@@ -284,28 +288,28 @@ struct INIT_EVENT_ACCESS_REG {
 };
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                            P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 #endif /* _NIC_INIT_CMD_EVENT_H */
