@@ -1315,6 +1315,14 @@
 #endif
 
 /*------------------------------------------------------------------------------
+ * Flags of WORKAROUND HWITS00010371 PMF_CIPHER_MISMATCH
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_WIFI_WORKAROUND_HWITS00010371_PMF_CIPHER_MISMATCH
+#define CFG_WIFI_WORKAROUND_HWITS00010371_PMF_CIPHER_MISMATCH 0
+#endif
+
+/*------------------------------------------------------------------------------
  * CONNINFRA SUPPORT (Without WMT)
  * CFG_SUPPORT_CONNINFRA: 1 : conninfra driver exist
  *                        0 : conninfra driver doesn't exist
