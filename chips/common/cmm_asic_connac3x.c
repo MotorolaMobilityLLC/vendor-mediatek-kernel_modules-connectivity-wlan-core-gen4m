@@ -909,7 +909,10 @@ void asicConnac3xLowPowerOwnClear(
 			prChipInfo->bus_info->hwControlVote(prAdapter,
 				FALSE, PCIE_VOTE_USER_DRVOWN);
 #endif
-
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+		mtk_pcie_dump_link_info(0);
+#endif
+		DBGLOG(HAL, INFO, "setCrypto\n");
 		if (prChipInfo->setCrypto)
 			prChipInfo->setCrypto(prAdapter);
 
