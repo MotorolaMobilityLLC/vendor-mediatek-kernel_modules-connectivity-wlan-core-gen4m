@@ -443,7 +443,17 @@ uint8_t p2pFunGetAcsBestCh(IN struct ADAPTER *prAdapter,
 		IN uint32_t u4LteSafeChnMask_2G,
 		IN uint32_t u4LteSafeChnMask_5G_1,
 		IN uint32_t u4LteSafeChnMask_5G_2);
+#if (CFG_SUPPORT_P2PGO_ACS == 1)
 
+void p2pFunGetAcsBestChList(IN struct ADAPTER *prAdapter,
+		IN uint8_t eBand,
+		IN enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
+		IN uint32_t u4LteSafeChnMask_2G,
+		IN uint32_t u4LteSafeChnMask_5G_1,
+		IN uint32_t u4LteSafeChnMask_5G_2,
+		OUT uint8_t *pucSortChannelNumber,
+		OUT struct RF_CHANNEL_INFO *paucSortChannelList);
+#endif
 void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucRoleIndex,
 		IN struct PARAM_GET_CHN_INFO *prLteSafeChnInfo,

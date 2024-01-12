@@ -1746,7 +1746,8 @@ uint8_t
 wlanGetChannelNumFromIndex(IN uint8_t ucIdx);
 
 void
-wlanSortChannel(IN struct ADAPTER *prAdapter);
+wlanSortChannel(IN struct ADAPTER *prAdapter,
+		IN enum ENUM_CHNL_SORT_POLICY ucSortType);
 
 void wlanSuspendPmHandle(struct GLUE_INFO *prGlueInfo);
 void wlanResumePmHandle(struct GLUE_INFO *prGlueInfo);

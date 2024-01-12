@@ -1009,6 +1009,9 @@ enum NIC_CAPABILITY_V2_TAG {
 #if CFG_SUPPORT_ANT_SWAP
 	TAG_CAP_ANTSWP = 0x16,
 #endif
+#if (CFG_SUPPORT_P2PGO_ACS == 1)
+	TAG_CAP_P2P = 0x17,
+#endif
 	TAG_CAP_TOTAL
 };
 
@@ -3070,6 +3073,13 @@ uint32_t nicCfgChipAdieHwVersion(IN struct ADAPTER *prAdapter,
 uint32_t nicCfgChipCapAntSwpCap(IN struct ADAPTER *prAdapter,
 	IN uint8_t *pucEventBuf);
 #endif
+
+#if (CFG_SUPPORT_P2PGO_ACS == 1)
+	uint32_t nicCfgChipP2PCap(IN struct ADAPTER *prAdapter,
+		IN uint8_t *pucEventBuf);
+
+#endif
+
 void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 			   IN uint8_t *pucEventBuf);
 void nicExtEventQueryMemDump(IN struct ADAPTER *prAdapter,
