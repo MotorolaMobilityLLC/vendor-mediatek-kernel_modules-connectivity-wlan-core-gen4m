@@ -60,6 +60,7 @@
 
 #if CFG_MTK_MDDP_SUPPORT
 #include "mddp_export.h"
+#include "mddp.h"
 #endif
 
 #if CFG_MTK_CCCI_SUPPORT
@@ -3561,7 +3562,12 @@ static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter)
 	writel(0x4D434D4D, vir_addr + 0x7C);
 
 	u4Val = readl(vir_addr + MCIF_EMI_BASE_OFFSET);
-	HAL_MCR_WR(prAdapter, MT6653_MCIF_MD_STATE_WHEN_WIFI_ON_ADDR, u4Val);
+
+	if (mddpIsSupportMcifWifi()) {
+		HAL_MCR_WR(prAdapter,
+			   MT6653_MCIF_MD_STATE_WHEN_WIFI_ON_ADDR,
+			   u4Val);
+	}
 
 	DBGLOG(INIT, TRACE, "MCIF_EMI_BASE_OFFSET=[0x%08x]\n", u4Val);
 	DBGLOG_MEM128(HAL, TRACE, vir_addr, MCIF_EMI_MEMORY_SIZE);
