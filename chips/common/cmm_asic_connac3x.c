@@ -390,6 +390,7 @@ u_int8_t asicConnac3xWfdmaDummyCrRead(
 void asicConnac3xWfdmaDummyCrWrite(
 	struct ADAPTER *prAdapter)
 {
+#if !CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS
 	u_int32_t u4RegValue = 0;
 
 	asicConnac3xWfdmaDummyCrRead(prAdapter, &u4RegValue);
@@ -398,6 +399,7 @@ void asicConnac3xWfdmaDummyCrWrite(
 	HAL_MCR_WR(prAdapter,
 		CONNAC3X_WFDMA_DUMMY_CR,
 		u4RegValue);
+#endif /* CFG_MTK_WIFI_WFDMA_BK_RS */
 }
 
 u_int8_t asicConnac3xWfdmaIsNeedReInit(
@@ -468,6 +470,7 @@ static void asicConnac3xWfdmaReInitImpl(struct ADAPTER *prAdapter)
 void asicConnac3xWfdmaReInit(
 	struct ADAPTER *prAdapter)
 {
+#if !CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS
 	u_int8_t fgResult = FALSE;
 	uint32_t u4Val = 0;
 
@@ -477,6 +480,7 @@ void asicConnac3xWfdmaReInit(
 		asicConnac3xWfdmaReInitImpl(prAdapter);
 		asicConnac3xWfdmaDummyCrWrite(prAdapter);
 	}
+#endif /* CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS */
 }
 
 void asicConnac3xFillCmdTxd(
@@ -2066,8 +2070,9 @@ u_int8_t conn2_rst_L0_notify_step2(void)
 }
 #endif
 
-void asicConnac3xDmashdlSetPlePktMaxPage(struct ADAPTER *prAdapter,
-				      uint16_t u2MaxPage)
+void asicConnac3xDmashdlSetPlePsePktMaxPage(
+	struct ADAPTER *prAdapter,
+	uint16_t u2MaxPlePage, uint16_t u2MaxPsePage)
 {
 	struct BUS_INFO *prBusInfo;
 	struct DMASHDL_CFG *prCfg;
@@ -2076,32 +2081,12 @@ void asicConnac3xDmashdlSetPlePktMaxPage(struct ADAPTER *prAdapter,
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prCfg = prBusInfo->prDmashdlCfg;
 
-	HAL_MCR_RD(prAdapter, prCfg->rPlePacketMaxSize.u4Addr, &u4Val);
-
-	u4Val &= ~prCfg->rPlePacketMaxSize.u4Mask;
-	u4Val |= (u2MaxPage << prCfg->rPlePacketMaxSize.u4Shift) &
+	u4Val |= (u2MaxPlePage << prCfg->rPlePacketMaxSize.u4Shift) &
 		prCfg->rPlePacketMaxSize.u4Mask;
-
-	HAL_MCR_WR(prAdapter, prCfg->rPlePacketMaxSize.u4Addr, u4Val);
-}
-
-void asicConnac3xDmashdlSetPsePktMaxPage(struct ADAPTER *prAdapter,
-				      uint16_t u2MaxPage)
-{
-	struct BUS_INFO *prBusInfo;
-	struct DMASHDL_CFG *prCfg;
-	uint32_t u4Val = 0;
-
-	prBusInfo = prAdapter->chip_info->bus_info;
-	prCfg = prBusInfo->prDmashdlCfg;
-
-	HAL_MCR_RD(prAdapter, prCfg->rPsePacketMaxSize.u4Addr, &u4Val);
-
-	u4Val &= ~prCfg->rPsePacketMaxSize.u4Mask;
-	u4Val |= (u2MaxPage << prCfg->rPsePacketMaxSize.u4Shift) &
+	u4Val |= (u2MaxPsePage << prCfg->rPsePacketMaxSize.u4Shift) &
 		 prCfg->rPsePacketMaxSize.u4Mask;
 
-	HAL_MCR_WR(prAdapter, prCfg->rPsePacketMaxSize.u4Addr, u4Val);
+	HAL_MCR_WR(prAdapter, prCfg->rPlePacketMaxSize.u4Addr, u4Val);
 }
 
 void asicConnac3xDmashdlGetPktMaxPage(struct ADAPTER *prAdapter)
@@ -2128,13 +2113,13 @@ void asicConnac3xDmashdlGetPktMaxPage(struct ADAPTER *prAdapter)
 		ple_pkt_max_sz, pse_pkt_max_sz);
 
 }
+
 void asicConnac3xDmashdlSetRefill(struct ADAPTER *prAdapter, uint8_t ucGroup,
 			       u_int8_t fgEnable)
 {
 	struct BUS_INFO *prBusInfo;
 	struct DMASHDL_CFG *prCfg;
-	uint32_t u4Mask;
-	uint32_t u4Val = 0;
+	uint32_t u4Val = 0, u4Mask;
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prCfg = prBusInfo->prDmashdlCfg;
@@ -2144,12 +2129,12 @@ void asicConnac3xDmashdlSetRefill(struct ADAPTER *prAdapter, uint8_t ucGroup,
 
 	u4Mask = prCfg->rGroup0RefillDisable.u4Mask << ucGroup;
 
-	HAL_MCR_RD(prAdapter, prCfg->rGroup0RefillDisable.u4Addr, &u4Val);
-
+	u4Val = prCfg->u4RefillCtrl;
 	if (fgEnable)
 		u4Val &= ~u4Mask;
 	else
 		u4Val |= u4Mask;
+	prCfg->u4RefillCtrl = u4Val;
 
 	HAL_MCR_WR(prAdapter, prCfg->rGroup0RefillDisable.u4Addr, u4Val);
 }
@@ -2168,33 +2153,9 @@ void asicConnac3xDmashdlGetRefill(struct ADAPTER *prAdapter)
 		prCfg->rGroup0RefillDisable.u4Addr, u4Val);
 }
 
-void asicConnac3xDmashdlSetMaxQuota(struct ADAPTER *prAdapter, uint8_t ucGroup,
-				 uint16_t u2MaxQuota)
-{
-	struct BUS_INFO *prBusInfo;
-	struct DMASHDL_CFG *prCfg;
-	uint32_t u4Addr;
-	uint32_t u4Val = 0;
-
-	prBusInfo = prAdapter->chip_info->bus_info;
-	prCfg = prBusInfo->prDmashdlCfg;
-
-	if (ucGroup >= prCfg->u4GroupNum)
-		ASSERT(0);
-
-	u4Addr = prCfg->rGroup0ControlMaxQuota.u4Addr + (ucGroup << 2);
-
-	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
-
-	u4Val &= ~prCfg->rGroup0ControlMaxQuota.u4Mask;
-	u4Val |= (u2MaxQuota << prCfg->rGroup0ControlMaxQuota.u4Shift) &
-		prCfg->rGroup0ControlMaxQuota.u4Mask;
-
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
-}
-
-void asicConnac3xDmashdlSetMinQuota(struct ADAPTER *prAdapter, uint8_t ucGroup,
-				 uint16_t u2MinQuota)
+void asicConnac3xDmashdlSetMinMaxQuota(
+	struct ADAPTER *prAdapter, uint8_t ucGroup,
+	uint16_t u2MinQuota, uint16_t u2MaxQuota)
 {
 	struct BUS_INFO *prBusInfo;
 	struct DMASHDL_CFG *prCfg;
@@ -2209,11 +2170,13 @@ void asicConnac3xDmashdlSetMinQuota(struct ADAPTER *prAdapter, uint8_t ucGroup,
 
 	u4Addr = prCfg->rGroup0ControlMinQuota.u4Addr + (ucGroup << 2);
 
-	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
-
 	u4Val &= ~prCfg->rGroup0ControlMinQuota.u4Mask;
 	u4Val |= (u2MinQuota << prCfg->rGroup0ControlMinQuota.u4Shift) &
 		prCfg->rGroup0ControlMinQuota.u4Mask;
+
+	u4Val &= ~prCfg->rGroup0ControlMaxQuota.u4Mask;
+	u4Val |= (u2MaxQuota << prCfg->rGroup0ControlMaxQuota.u4Shift) &
+		prCfg->rGroup0ControlMaxQuota.u4Mask;
 
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 }
@@ -2243,14 +2206,13 @@ void asicConnac3xDmashdlGetGroupControl(struct ADAPTER *prAdapter,
 		max_quota, min_quota);
 
 }
-void asicConnac3xDmashdlSetQueueMapping(struct ADAPTER *prAdapter,
-					uint8_t ucQueue,
-					uint8_t ucGroup)
+void asicConnac3xDmashdlSetQueueMapping(
+	struct ADAPTER *prAdapter, uint8_t ucQueue, uint8_t ucGroup)
 {
 	struct BUS_INFO *prBusInfo;
 	struct DMASHDL_CFG *prCfg;
 	uint32_t u4Addr, u4Mask, u4Shft;
-	uint32_t u4Val = 0;
+	uint32_t u4Val = 0, u4Idx = 0;
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prCfg = prBusInfo->prDmashdlCfg;
@@ -2261,30 +2223,62 @@ void asicConnac3xDmashdlSetQueueMapping(struct ADAPTER *prAdapter,
 	if (ucGroup >= prCfg->u4GroupNum)
 		ASSERT(0);
 
-	u4Addr = prCfg->rQueueMapping0Queue0.u4Addr + ((ucQueue >> 3) << 2);
+	u4Idx = ucQueue >> 3;
+	if (u4Idx >= 4)
+		return;
+
+	u4Addr = prCfg->rQueueMapping0Queue0.u4Addr + (u4Idx << 2);
 	u4Mask = prCfg->rQueueMapping0Queue0.u4Mask << ((ucQueue % 8) << 2);
 	u4Shft = (ucQueue % 8) << 2;
 
-	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
-
+	u4Val = prCfg->u4Queue2Group[u4Idx];
 	u4Val &= ~u4Mask;
 	u4Val |= (ucGroup << u4Shft) & u4Mask;
+	prCfg->u4Queue2Group[u4Idx] = u4Val;
 
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 }
 
-void asicConnac3xDmashdlSetSlotArbiter(struct ADAPTER *prAdapter,
-				    u_int8_t fgEnable)
+void asicConnac3xDmashdlSetUserDefinedPriority(
+	struct ADAPTER *prAdapter, uint8_t ucPriority, uint8_t ucGroup)
 {
 	struct BUS_INFO *prBusInfo;
 	struct DMASHDL_CFG *prCfg;
-	uint32_t u4Val = 0;
+	uint32_t u4Addr, u4Mask, u4Shft;
+	uint32_t u4Val = 0, u4Idx = 0;
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prCfg = prBusInfo->prDmashdlCfg;
 
-	HAL_MCR_RD(prAdapter, prCfg->rPageSettingGroupSeqOrderType.u4Addr,
-		   &u4Val);
+	ASSERT(ucPriority < 16);
+	ASSERT(ucGroup < prCfg->u4GroupNum);
+
+	u4Idx = ucPriority >> 3;
+	if (u4Idx >= 2)
+		return;
+
+	u4Addr = prCfg->rSchdulerSetting0Priority0Group.u4Addr + (u4Idx << 2);
+	u4Mask = prCfg->rSchdulerSetting0Priority0Group.u4Mask <<
+		((ucPriority % 8) << 2);
+	u4Shft = (ucPriority % 8) << 2;
+
+	u4Val = prCfg->u4Priority2Group[u4Idx];
+	u4Val &= ~u4Mask;
+	u4Val |= (ucGroup << u4Shft) & u4Mask;
+	prCfg->u4Priority2Group[u4Idx] = u4Val;
+
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+}
+
+void asicConnac3xDmashdlSetSlotArbiter(
+	struct ADAPTER *prAdapter, u_int8_t fgEnable, uint32_t u4DefVal)
+{
+	struct BUS_INFO *prBusInfo;
+	struct DMASHDL_CFG *prCfg;
+	uint32_t u4Val = u4DefVal;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prCfg = prBusInfo->prDmashdlCfg;
 
 	if (fgEnable)
 		u4Val |= prCfg->rPageSettingGroupSeqOrderType.u4Mask;
@@ -2293,34 +2287,6 @@ void asicConnac3xDmashdlSetSlotArbiter(struct ADAPTER *prAdapter,
 
 	HAL_MCR_WR(prAdapter, prCfg->rPageSettingGroupSeqOrderType.u4Addr,
 		   u4Val);
-}
-
-void asicConnac3xDmashdlSetUserDefinedPriority(struct ADAPTER *prAdapter,
-					    uint8_t ucPriority, uint8_t ucGroup)
-{
-	struct BUS_INFO *prBusInfo;
-	struct DMASHDL_CFG *prCfg;
-	uint32_t u4Addr, u4Mask, u4Shft;
-	uint32_t u4Val = 0;
-
-	prBusInfo = prAdapter->chip_info->bus_info;
-	prCfg = prBusInfo->prDmashdlCfg;
-
-	ASSERT(ucPriority < 16);
-	ASSERT(ucGroup < prCfg->u4GroupNum);
-
-	u4Addr = prCfg->rSchdulerSetting0Priority0Group.u4Addr +
-		((ucPriority >> 3) << 2);
-	u4Mask = prCfg->rSchdulerSetting0Priority0Group.u4Mask <<
-		((ucPriority % 8) << 2);
-	u4Shft = (ucPriority % 8) << 2;
-
-	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
-
-	u4Val &= ~u4Mask;
-	u4Val |= (ucGroup << u4Shft) & u4Mask;
-
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 }
 
 uint32_t asicConnac3xDmashdlGetRsvCount(struct ADAPTER *prAdapter,
@@ -2402,19 +2368,18 @@ void asicConnac3xDmashdlGetPKTCount(struct ADAPTER *prAdapter, uint8_t ucGroup)
 		pktin_cnt, ask_cnt);
 }
 
-void asicConnac3xDmashdlSetOptionalControl(struct ADAPTER *prAdapter,
-		uint16_t u2HifAckCntTh, uint16_t u2HifGupActMap)
+void asicConnac3xDmashdlSetOptionalControl(
+	struct ADAPTER *prAdapter,
+	uint16_t u2HifAckCntTh, uint16_t u2HifGupActMap, uint32_t u4DefVal)
 {
 	struct BUS_INFO *prBusInfo;
 	struct DMASHDL_CFG *prCfg;
-	uint32_t u4Addr, u4Val = 0;
+	uint32_t u4Addr, u4Val = u4DefVal;
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prCfg = prBusInfo->prDmashdlCfg;
 
 	u4Addr = prCfg->rOptionalControlCrHifAckCntTh.u4Addr;
-
-	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
 
 	u4Val &= ~prCfg->rOptionalControlCrHifAckCntTh.u4Mask;
 	u4Val |= (u2HifAckCntTh <<

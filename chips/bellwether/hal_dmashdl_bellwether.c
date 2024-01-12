@@ -289,26 +289,22 @@ struct DMASHDL_CFG rBellwetherDmashdlCfg = {
 
 void bellwetherDmashdlInit(struct ADAPTER *prAdapter)
 {
-	uint32_t idx;
+	uint32_t idx, u4DefVal;
 
-	asicConnac3xDmashdlSetPlePktMaxPage(prAdapter,
-					 rBellwetherDmashdlCfg.u2PktPleMaxPage);
-
-	asicConnac3xDmashdlSetPsePktMaxPage(prAdapter,
-					 rBellwetherDmashdlCfg.u2PktPseMaxPage);
+	asicConnac3xDmashdlSetPlePsePktMaxPage(
+		prAdapter,
+		rBellwetherDmashdlCfg.u2PktPleMaxPage,
+		rBellwetherDmashdlCfg.u2PktPseMaxPage);
 
 	for (idx = 0; idx < ENUM_DMASHDL_GROUP_NUM; idx++) {
 		asicConnac3xDmashdlSetRefill(
 			prAdapter, idx,
 			rBellwetherDmashdlCfg.afgRefillEn[idx]);
 
-		asicConnac3xDmashdlSetMaxQuota(
+		asicConnac3xDmashdlSetMinMaxQuota(
 			prAdapter, idx,
+			rBellwetherDmashdlCfg.au2MinQuota[idx],
 			rBellwetherDmashdlCfg.au2MaxQuota[idx]);
-
-		asicConnac3xDmashdlSetMinQuota(
-			prAdapter, idx,
-			rBellwetherDmashdlCfg.au2MinQuota[idx]);
 	}
 
 	for (idx = 0; idx < 32; idx++)
@@ -321,12 +317,25 @@ void bellwetherDmashdlInit(struct ADAPTER *prAdapter)
 			prAdapter, idx,
 			rBellwetherDmashdlCfg.aucPriority2Group[idx]);
 
-	asicConnac3xDmashdlSetSlotArbiter(prAdapter,
-				       rBellwetherDmashdlCfg.fgSlotArbiterEn);
+	u4DefVal = WF_HIF_DMASHDL_TOP_PAGE_SETTING_QUP_ACL_SLOT_CG_EN_MASK |
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_SRC_CNT_PRI_EN_MASK |
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_DUMMY_01_MASK |
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_DUMMY_00_MASK |
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_SLOT_TYPE_ARBITER_CONTROL_MASK |
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_PP_OFFSET_ADD_ENA_MASK;
+	asicConnac3xDmashdlSetSlotArbiter(
+		prAdapter,
+		rBellwetherDmashdlCfg.fgSlotArbiterEn,
+		u4DefVal);
 
+	u4DefVal =
+WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_PSEBF_BL_TH2_NOBMIN_RASIGN_ENA_MASK |
+		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_ASK_MIN_RR_ENA_MASK |
+		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_ASK_RR_ENA_MASK;
 	asicConnac3xDmashdlSetOptionalControl(prAdapter,
 		rBellwetherDmashdlCfg.u2HifAckCntTh,
-		rBellwetherDmashdlCfg.u2HifGupActMap);
+		rBellwetherDmashdlCfg.u2HifGupActMap,
+		u4DefVal);
 }
 
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */

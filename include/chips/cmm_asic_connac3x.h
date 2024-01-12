@@ -1370,36 +1370,25 @@ void asicConnac3xWfdmaControl(
 	u_int8_t ucDmaIdx,
 	u_int8_t enable);
 
-void asicConnac3xDmashdlSetPlePktMaxPage(
+void asicConnac3xDmashdlSetPlePsePktMaxPage(
 	struct ADAPTER *prAdapter,
-	uint16_t u2MaxPage);
-void asicConnac3xDmashdlSetPsePktMaxPage(
-	struct ADAPTER *prAdapter,
-	uint16_t u2MaxPage);
+	uint16_t u2MaxPlePage, uint16_t u2MaxPsePage);
 void asicConnac3xDmashdlSetRefill(
 	struct ADAPTER *prAdapter,
 	uint8_t ucGroup,
 	u_int8_t fgEnable);
-void asicConnac3xDmashdlSetMaxQuota(
-	struct ADAPTER *prAdapter,
-	uint8_t ucGroup,
-	uint16_t u2MaxQuota);
-void asicConnac3xDmashdlSetMinQuota(
-	struct ADAPTER *prAdatper,
-	uint8_t ucGroup,
-	uint16_t u2MinQuota);
+void asicConnac3xDmashdlSetMinMaxQuota(
+	struct ADAPTER *prAdapter, uint8_t ucGroup,
+	uint16_t u2MinQuota, uint16_t u2MaxQuota);
 void asicConnac3xDmashdlSetQueueMapping(
-	struct ADAPTER *prAdapter,
-	uint8_t ucQueue,
-	uint8_t ucGroup);
+	struct ADAPTER *prAdapter, uint8_t ucQueue, uint8_t ucGroup);
 void asicConnac3xDmashdlGetPktMaxPage(struct ADAPTER *prAdapter);
 void asicConnac3xDmashdlGetRefill(struct ADAPTER *prAdapter);
 void asicConnac3xDmashdlGetGroupControl(
 	struct ADAPTER *prAdapter,
 	uint8_t ucGroup);
 void asicConnac3xDmashdlSetSlotArbiter(
-	struct ADAPTER *prAdapter,
-	u_int8_t fgEnable);
+	struct ADAPTER *prAdapter, u_int8_t fgEnable, uint32_t u4DefVal);
 void asicConnac3xDmashdlSetUserDefinedPriority(
 	struct ADAPTER *prAdapter,
 	uint8_t ucPriority,
@@ -1415,8 +1404,7 @@ void asicConnac3xDmashdlGetPKTCount(
 	uint8_t ucGroup);
 void asicConnac3xDmashdlSetOptionalControl(
 	struct ADAPTER *prAdapter,
-	uint16_t u2HifAckCntTh,
-	uint16_t u2HifGupActMap);
+	uint16_t u2HifAckCntTh, uint16_t u2HifGupActMap, uint32_t u4DefVal);
 u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter);
 uint32_t asicConnac3xQueryPmicInfo(struct ADAPTER *prAdapter);
 uint32_t asicConnac3xGetFwVer(struct ADAPTER *prAdapter);

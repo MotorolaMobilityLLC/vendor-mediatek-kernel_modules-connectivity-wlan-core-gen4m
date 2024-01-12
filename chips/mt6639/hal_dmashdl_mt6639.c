@@ -301,30 +301,26 @@ uint16_t concurrentQuota[CONCURRENT_TYPE_NUM] = {
 
 void mt6639DmashdlInit(struct ADAPTER *prAdapter)
 {
-	uint32_t idx;
+	uint32_t idx, u4DefVal;
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint32_t u4Val = 0, u4Addr = 0;
 #endif
 
-	asicConnac3xDmashdlSetPlePktMaxPage(prAdapter,
-					 rMt6639DmashdlCfg.u2PktPleMaxPage);
-
-	asicConnac3xDmashdlSetPsePktMaxPage(prAdapter,
-					 rMt6639DmashdlCfg.u2PktPseMaxPage);
+	asicConnac3xDmashdlSetPlePsePktMaxPage(
+		prAdapter,
+		rMt6639DmashdlCfg.u2PktPleMaxPage,
+		rMt6639DmashdlCfg.u2PktPseMaxPage);
 
 	for (idx = 0; idx < ENUM_DMASHDL_GROUP_NUM; idx++) {
 		asicConnac3xDmashdlSetRefill(
 			prAdapter, idx,
 			rMt6639DmashdlCfg.afgRefillEn[idx]);
 
-		asicConnac3xDmashdlSetMaxQuota(
+		asicConnac3xDmashdlSetMinMaxQuota(
 			prAdapter, idx,
+			rMt6639DmashdlCfg.au2MinQuota[idx],
 			rMt6639DmashdlCfg.au2MaxQuota[idx]);
-
-		asicConnac3xDmashdlSetMinQuota(
-			prAdapter, idx,
-			rMt6639DmashdlCfg.au2MinQuota[idx]);
 	}
 
 	for (idx = 0; idx < 32; idx++)
@@ -337,12 +333,26 @@ void mt6639DmashdlInit(struct ADAPTER *prAdapter)
 			prAdapter, idx,
 			rMt6639DmashdlCfg.aucPriority2Group[idx]);
 
-	asicConnac3xDmashdlSetSlotArbiter(prAdapter,
-				       rMt6639DmashdlCfg.fgSlotArbiterEn);
+	u4DefVal = WF_HIF_DMASHDL_TOP_PAGE_SETTING_QUP_ACL_SLOT_CG_EN_MASK |
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_SRC_CNT_PRI_EN_MASK |
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_DUMMY_01_MASK |
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_DUMMY_00_MASK |
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_SLOT_TYPE_ARBITER_CONTROL_MASK |
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_PP_OFFSET_ADD_ENA_MASK;
+	asicConnac3xDmashdlSetSlotArbiter(
+		prAdapter,
+		rMt6639DmashdlCfg.fgSlotArbiterEn,
+		u4DefVal);
 
-	asicConnac3xDmashdlSetOptionalControl(prAdapter,
+	u4DefVal =
+WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_PSEBF_BL_TH2_NOBMIN_RASIGN_ENA_MASK |
+		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_ASK_MIN_RR_ENA_MASK |
+		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_ASK_RR_ENA_MASK;
+	asicConnac3xDmashdlSetOptionalControl(
+		prAdapter,
 		rMt6639DmashdlCfg.u2HifAckCntTh,
-		rMt6639DmashdlCfg.u2HifGupActMap);
+		rMt6639DmashdlCfg.u2HifGupActMap,
+		u4DefVal);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo)) {
@@ -383,8 +393,9 @@ uint32_t mt6639UpdateDmashdlQuota(struct ADAPTER *prAdapter,
 			DBGLOG(HAL, INFO,
 				"ucWmmIndex,%u ucGroupIdx,%u u2MaxQuotaFinal,0x%x\n",
 				ucWmmIndex, ucGroupIdx, u2MaxQuotaFinal);
-			asicConnac3xDmashdlSetMaxQuota(prAdapter,
+			asicConnac3xDmashdlSetMinMaxQuota(prAdapter,
 				ucGroupIdx,
+				rMt6639DmashdlCfg.au2MinQuota[ucGroupIdx],
 				u2MaxQuotaFinal);
 		}
 	}
