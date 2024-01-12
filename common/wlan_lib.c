@@ -1196,7 +1196,7 @@ wlanCopyXonvramToSysram(struct GLUE_INFO *prGlueInfo,
 	}
 
 	if (kalDevRegWriteRange(prGlueInfo, prPlat->addr,
-		prXo, prXo->u2DataLen) < 0) {
+		prXo, prXo->u2DataLen) == FALSE) {
 		DBGLOG(INIT, WARN, "Fail to copy XO to infra sysram\n");
 		return WLAN_STATUS_FAILURE;
 	}
@@ -1260,7 +1260,7 @@ wlanCopyPlatCfgToSysram(struct ADAPTER *prAdapter, struct REG_INFO *prRegInfo)
 	}
 
 	u4Addr = prPlatCfg->addr + prPlatCfg->size - u4Size;
-	if (kalDevRegWriteRange(prGlueInfo, u4Addr, pu1Cfg, u4Size) < 0) {
+	if (kalDevRegWriteRange(prGlueInfo, u4Addr, pu1Cfg, u4Size) == FALSE) {
 		DBGLOG(INIT, WARN, "Fail to copy plat cfg to infra sysram\n");
 		return WLAN_STATUS_FAILURE;
 	}
@@ -1431,6 +1431,7 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 			DBGLOG(INIT, ERROR, "wlanCopyPlatCfgToSysram failed\n");
 			u4Status = WLAN_STATUS_FAILURE;
 			eFailReason = COPY_CONNSYS_CFG_FAIL;
+			break;
 		}
 #endif
 
