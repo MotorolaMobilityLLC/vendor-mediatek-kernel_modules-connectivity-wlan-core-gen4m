@@ -153,6 +153,7 @@
 #include <linux/firmware.h>	/* for firmware download */
 #include <linux/ctype.h>
 
+#include <linux/interrupt.h>
 
 #if defined(_HIF_USB)
 #include <linux/usb.h>
@@ -162,7 +163,6 @@
 
 #if defined(_HIF_PCIE)
 #include <linux/pci.h>
-#include <linux/interrupt.h>
 #endif
 
 #if defined(_HIF_SDIO)
@@ -499,6 +499,8 @@ struct _GLUE_INFO_T {
 	struct task_struct *rx_thread;
 
 #endif
+	struct tasklet_struct rRxTask;
+	struct tasklet_struct rTxCompleteTask;
 
 	struct work_struct rTxMsduFreeWork;
 	struct delayed_work rRxPktDeAggWork;
