@@ -141,9 +141,8 @@ uint8_t nic_txd_v3_queue_idx_op(
 }
 
 #if (CFG_TCP_IP_CHKSUM_OFFLOAD == 1)
-void nic_txd_v3_chksum_op(
-	void *prTxDesc,
-	uint8_t ucChksumFlag)
+void nic_txd_v3_chksum_op(void *prTxDesc, uint8_t ucChksumFlag,
+			struct MSDU_INFO *prMsduInfo)
 {
 	if ((ucChksumFlag & TX_CS_IP_GEN))
 		HAL_MAC_CONNAC3X_TXD_SET_IP_CHKSUM(
@@ -153,8 +152,14 @@ void nic_txd_v3_chksum_op(
 			(struct HW_MAC_CONNAC3X_TX_DESC *)prTxDesc);
 	/*
 	 * If kernel do not expect HW checksum for this frame, set ~AMSDU.
+	 * The ICMP frame check were done by checking pfTxDoneHandler
+	 * in nic_txd_*_compose().
+	 * In that case ICMP do not need HW checksum would cause following
+	 * frames need checksum but skipped, but only happened if IcmpTxs
+	 * were disabled for special test case.
 	 */
-	if (!(ucChksumFlag & (TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN)))
+	if (!(ucChksumFlag & (TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN)) &&
+	    prMsduInfo->ucPktType != ENUM_PKT_ICMP)
 		HAL_MAC_CONNAC3X_TXD_UNSET_HW_AMSDU(
 			(struct HW_MAC_CONNAC3X_TX_DESC *)prTxDesc);
 }
@@ -317,6 +322,7 @@ void nic_txd_v3_compose(
 
 	ucTarPort = nicTxGetTxDestPortIdxByTc(prMsduInfo->ucTC);
 
+	nicTxForceAmsduForCert(prAdapter, (uint8_t *)prTxDesc);
 	/** DW0 **/
 	/* Packet Format */
 	ucWmmQueSet = prBssInfo->ucWmmQueSet;
@@ -513,6 +519,8 @@ void nic_txd_v3_compose(
 			apucPktType[prMsduInfo->ucPktType], prMsduInfo->ucPID);
 		HAL_MAC_CONNAC3X_TXD_SET_PID(prTxDesc, prMsduInfo->ucPID);
 		HAL_MAC_CONNAC3X_TXD_SET_TXS_TO_MCU(prTxDesc);
+		/* TXS is MPDU based, AMSDU will cause TX skb leak in driver */
+		HAL_MAC_CONNAC3X_TXD_UNSET_HW_AMSDU(prTxDesc);
 	} else if (prAdapter->rWifiVar.ucDataTxDone == 2) {
 		/* Log mode: only TxS to FW, no event to driver */
 		HAL_MAC_CONNAC3X_TXD_SET_PID(

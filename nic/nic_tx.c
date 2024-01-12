@@ -1949,23 +1949,35 @@ nicTxComposeDesc(
 		DBGLOG(TX, ERROR, "%s:: no nic_txd_compose??\n", __func__);
 }
 
-void
-nicTxForceAmsduForCert(
-	struct ADAPTER *prAdapter,
-	u_int8_t *prTxDescBuffer)
+/**
+ * NOTE: TXS is based on MPDU, for those frames set TXS the frames shall not
+ * be AMSDU.
+ * HW_AMSDU flag will be unset in nic_txd_v2_compose(), nic_txd_v3_compose()
+ * when checking Setting TXS.
+ * Therefore, this function were intended to be called at the beginning
+ * of before calling those two compose functions right after memzero the buffer.
+ */
+void nicTxForceAmsduForCert(struct ADAPTER *prAdapter, u_int8_t *prTxDescBuffer)
 {
-#if (CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_CONNAC2X == 1)
+#if (CFG_SUPPORT_802_11BE == 1) && (CFG_SUPPORT_CONNAC3X == 1)
+	struct HW_MAC_CONNAC3X_TX_DESC *prTxDesc =
+		(struct HW_MAC_CONNAC3X_TX_DESC *) prTxDescBuffer;
+#elif (CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_CONNAC2X == 1)
 	struct HW_MAC_CONNAC2X_TX_DESC *prTxDesc =
 		(struct HW_MAC_CONNAC2X_TX_DESC *) prTxDescBuffer;
+#endif
 
+#if (CFG_SUPPORT_802_11BE == 1) && (CFG_SUPPORT_CONNAC3X == 1)
+	if (/* TODO: fgEfuseCtrlBeOn == */ 1) {
+		if (prAdapter->rWifiVar.ucEhtAmsduInAmpduTx)
+			HAL_MAC_CONNAC3X_TXD_SET_HW_AMSDU(prTxDesc);
+	}
+#elif (CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_CONNAC2X == 1)
 	if (fgEfuseCtrlAxOn == 1) {
 		if (prAdapter->rWifiVar.ucHeAmsduInAmpduTx &&
-			prAdapter->rWifiVar.ucHeCertForceAmsdu)
+		    prAdapter->rWifiVar.ucHeCertForceAmsdu)
 			HAL_MAC_CONNAC2X_TXD_SET_HW_AMSDU(prTxDesc);
 	}
-#endif /* (CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_CONNAC2X == 1) */
-#if (CFG_SUPPORT_802_11BE == 1)
-	/* TODO */
 #endif
 }
 
@@ -2050,6 +2062,7 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 		prTxDescTemplate =
 			prStaRec->aprTxDescTemplate[prMsduInfo->ucUserPriority];
 	}
+
 	if (prTxDescTemplate) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 			prMsduInfo->ucBssIndex);
@@ -2108,7 +2121,6 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 					       prTxDescBuffer + u4TxDescLength);
 	}
 
-	nicTxForceAmsduForCert(prAdapter, (u_int8_t *)prTxDesc);
 	/*
 	 * --------------------------------------------------------------------
 	 * Fill up remaining parts, per-packet variant fields
@@ -2144,7 +2156,8 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 		 *   let CSO respect the ip_summed flag.
 		 */
 		if (prTxDescOps->nic_txd_chksum_op)
-			prTxDescOps->nic_txd_chksum_op(prTxDesc, ucChksumFlag);
+			prTxDescOps->nic_txd_chksum_op(prTxDesc, ucChksumFlag,
+					prMsduInfo);
 		else
 			DBGLOG(TX, ERROR, "no nic_txd_chksum_op??\n");
 	}
@@ -3142,6 +3155,42 @@ static inline bool nicTxPktPIDIsLimited(
 }
 #endif /* CFG_SUPPORT_LIMITED_PKT_PID */
 
+static u_int8_t txsRequired(IN struct ADAPTER *prAdapter,
+			IN struct MSDU_INFO *prMsduInfo)
+{
+	if (prMsduInfo->ucPktType == 0)
+		return FALSE;
+
+	/**
+	 * TXS conflicts with AMSDU since TXS is MPDU based.
+	 * In common cases, set ping = TXS + !AMSDU.
+	 * In test case reuqired AMSDU cases, set ping = !TXS + AMSDU.
+	 *
+	 * In normal case, fgIcmpTxs == 1, set ping with TXS.
+	 * For fragmented ping, each frames will set TXS required;
+	 * AMSDU will be cleared later if TX Done handler is set,
+	 * then each frame will reply its own TX Done event.
+	 *
+	 * If fgIcmpTxs == 0, no TXS requeid for ICMP. No TX Done handler
+	 * will be set, ICMP will be treated as normal frames.
+	 *
+	 * ICMP controls the AMSDU flag by itself, therefore, later in
+	 * nic_txd_*_chksum_op() skips the ICMP patch of unsetting AMSDU.
+	 */
+	if (prMsduInfo->ucPktType == ENUM_PKT_ICMP &&
+	    !prAdapter->rWifiVar.fgIcmpTxs)
+		return FALSE;
+
+#if CFG_SUPPORT_LIMITED_PKT_PID
+	if (nicTxPktPIDIsLimited(prAdapter, prMsduInfo)) {
+		TX_INC_CNT(&prAdapter->rTxCtrl, TX_DROP_PID_COUNT);
+		return FALSE;
+	}
+#endif
+
+	return TRUE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief this function fills packet information to P_MSDU_INFO_T
@@ -3238,11 +3287,10 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 				return FALSE;
 		}
 #endif
-		if (prMsduInfo->ucPktType != 0) { /* Recognized special types */
+		if (txsRequired(prAdapter, prMsduInfo)) {
+			/* Recognized special frame types need TXS */
 			prMsduInfo->u4Option |= MSDU_OPT_NO_AGGREGATE;
-#if CFG_SUPPORT_LIMITED_PKT_PID
-			if (!nicTxPktPIDIsLimited(prAdapter, prMsduInfo)) {
-#endif /* CFG_SUPPORT_LIMITED_PKT_PID */
+
 			prMsduInfo->pfTxDoneHandler = wlanPktTxDone;
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
 			if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_802_11_MGMT))
@@ -3252,12 +3300,6 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 #endif
 				prMsduInfo->ucTxSeqNum =
 					GLUE_GET_PKT_SEQ_NO(prPacket);
-#if CFG_SUPPORT_LIMITED_PKT_PID
-			} else {
-				TX_INC_CNT(&prAdapter->rTxCtrl,
-					TX_DROP_PID_COUNT);
-			}
-#endif /* CFG_SUPPORT_LIMITED_PKT_PID */
 		}
 
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
@@ -4577,9 +4619,7 @@ void nicTxFillDescByPktOption(
 	struct TX_DESC_OPS_T *prTxDescOps = prAdapter->chip_info->prTxDescOps;
 
 	if (prTxDescOps->nic_txd_fill_by_pkt_option)
-		prTxDescOps->nic_txd_fill_by_pkt_option(
-			prMsduInfo,
-			prTxDesc);
+		prTxDescOps->nic_txd_fill_by_pkt_option(prMsduInfo, prTxDesc);
 	else
 		DBGLOG(TX, ERROR, "%s:: no nic_txd_fill_by_pkt_option??\n",
 			__func__);
