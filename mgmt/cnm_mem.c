@@ -783,10 +783,10 @@ void cnmStaRecFree(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
 		nicFreePendingTxMsduInfo(prAdapter, prStaRec->ucWlanIndex,
 				MSDU_REMOVE_BY_WLAN_INDEX);
 
-		cnmStaRoutinesForAbort(prAdapter, prStaRec);
-
 		cnmStaSendRemoveCmd(prAdapter, STA_REC_CMD_ACTION_STA,
 			prStaRec->ucIndex, prStaRec->ucBssIndex);
+
+		cnmStaRoutinesForAbort(prAdapter, prStaRec);
 	} else {
 		log_dbg(CNM, ERROR, "prStaRec is not in use\n");
 	}
@@ -860,14 +860,6 @@ void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	if (ucBssIndex > prAdapter->ucHwBssIdNum)
 		return;
 
-	for (i = 0; i < CFG_STA_REC_NUM; i++) {
-		prStaRec = (struct STA_RECORD *) &prAdapter->arStaRec[i];
-
-		if (prStaRec->fgIsInUse && prStaRec->ucBssIndex == ucBssIndex
-			&& i != ucStaRecIndexExcluded)
-			cnmStaRoutinesForAbort(prAdapter, prStaRec);
-	}	/* end of for loop */
-
 	if (ucStaRecIndexExcluded < CFG_STA_REC_NUM)
 		eAction = STA_REC_CMD_ACTION_BSS_EXCLUDE_STA;
 	else
@@ -876,6 +868,14 @@ void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	cnmStaSendRemoveCmd(prAdapter,
 		eAction,
 		ucStaRecIndexExcluded, ucBssIndex);
+
+	for (i = 0; i < CFG_STA_REC_NUM; i++) {
+		prStaRec = (struct STA_RECORD *) &prAdapter->arStaRec[i];
+
+		if (prStaRec->fgIsInUse && prStaRec->ucBssIndex == ucBssIndex
+			&& i != ucStaRecIndexExcluded)
+			cnmStaRoutinesForAbort(prAdapter, prStaRec);
+	}	/* end of for loop */
 
 #if CFG_ENABLE_WIFI_DIRECT
 	/* To do: Confirm if it is invoked here or other location, but it should
