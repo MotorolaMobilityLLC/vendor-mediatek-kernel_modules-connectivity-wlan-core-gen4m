@@ -889,6 +889,11 @@ p2pFuncTagActionActionFrame(struct MSDU_INFO *prMgmtTxMsdu,
 		u8Cookie,
 		prMgmtTxMsdu->ucTxSeqNum);
 
+	if (ucAction == WLAN_PA_GAS_INITIAL_REQ ||
+		ucAction == WLAN_PA_GAS_INITIAL_RESP)
+		nicTxConfigPktControlFlag(prMgmtTxMsdu,
+			MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
+
 	if (ucAction != WLAN_PA_VENDOR_SPECIFIC)
 		return P2P_CNN_NORMAL;
 
