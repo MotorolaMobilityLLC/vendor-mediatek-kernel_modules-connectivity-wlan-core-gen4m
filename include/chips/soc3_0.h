@@ -211,6 +211,8 @@ void soc3_0_show_pse_info(
 void soc3_0_show_wfdma_info(
 	IN struct ADAPTER *prAdapter);
 
+void soc3_0_show_dmashdl_info(
+	IN struct ADAPTER *prAdapter);
 extern void kalConstructDefaultFirmwarePrio(
 				struct GLUE_INFO	*prGlueInfo,
 				uint8_t **apucNameTable,
