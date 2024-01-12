@@ -225,6 +225,8 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 #ifdef CONFIG_OF
 	struct device_node *node = NULL;
 	struct resource res;
+	signed int ret;
+	uint32_t idx = 0;
 
 	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi");
 	if (!node) {
@@ -232,7 +234,13 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 		return false;
 	}
 
-	if (of_address_to_resource(node, 0, &res)) {
+	ret = of_property_read_u32(node, "remap-idx", &idx);
+	if (ret < 0)
+		DBGLOG(INIT, TRACE, "use default remap-idx:%u\n", idx);
+	else
+		DBGLOG(INIT, TRACE, "remap-idx:%u\n", idx);
+
+	if (of_address_to_resource(node, idx, &res)) {
 		DBGLOG(INIT, ERROR, "WIFI-OF: of_address_to_resource fail\n");
 		of_node_put(node);
 		return false;
@@ -258,7 +266,7 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 
 	/* map physical address to virtual address for accessing register */
 #ifdef CONFIG_OF
-	CSRBaseAddress = of_iomap(node, 0);
+	CSRBaseAddress = of_iomap(node, idx);
 #else
 	CSRBaseAddress = ioremap(g_u8CsrOffset, g_u4CsrSize);
 #endif
@@ -274,13 +282,14 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 	prChipInfo->CSRBaseAddress = CSRBaseAddress;
 	prChipInfo->u4CsrOffset = (uint32_t)(g_u8CsrOffset & BITS(0, 31));
 
-	prChipInfo->HostCSRBaseAddress = CSRBaseAddress;
-	prChipInfo->u4HostCsrOffset = (uint32_t)g_u8CsrOffset;
-	prChipInfo->u4HostCsrSize = g_u4CsrSize;
+	/* This Base Address is aim for PCIE (for MAWD) */
+	prChipInfo->HostCSRBaseAddress = NULL;
+	prChipInfo->u4HostCsrOffset = 0;
+	prChipInfo->u4HostCsrSize = 0;
 
 	DBGLOG(INIT, INFO,
-	       "CSRBaseAddress:0x%llX ioremap region 0x%X @ 0x%llX\n",
-	       (uint64_t)CSRBaseAddress, g_u4CsrSize, g_u8CsrOffset);
+	       "CSRBaseAddress:0x%llX ioremap idx:%u region 0x%X @ 0x%llX\n",
+	       (uint64_t)CSRBaseAddress, idx, g_u4CsrSize, g_u8CsrOffset);
 
 	return true;
 }
