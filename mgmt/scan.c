@@ -1010,7 +1010,11 @@ void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
 			 * connected AP, for roaming.
 			 */
 			for (i = 0; i < KAL_AIS_NUM; i++) {
-				struct BSS_INFO *prAisBssInfo =
+				struct BSS_INFO *prAisBssInfo = NULL;
+
+				if (!IS_BSS_INDEX_AIS(prAdapter, i))
+					continue;
+				prAisBssInfo =
 					aisGetAisBssInfo(prAdapter, i);
 
 				if (kalGetMediaStateIndicated(
