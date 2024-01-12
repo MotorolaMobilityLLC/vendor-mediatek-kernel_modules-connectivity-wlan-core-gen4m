@@ -78,8 +78,6 @@ static void mt6639WfdmaRxRingExtCtrl(
 
 #if defined(_HIF_PCIE)
 static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo);
-static void mt6639ConfigPcieIntMask(struct GLUE_INFO *prGlueInfo,
-				    u_int8_t fgEn);
 #endif
 
 /*******************************************************************************
@@ -667,9 +665,6 @@ static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 	HAL_MCR_RD(prAdapter, u4DmaCfgCr, &GloCfg.word);
 
 	mt6639ConfigIntMask(prGlueInfo, enable);
-#if defined(_HIF_PCIE)
-	mt6639ConfigPcieIntMask(prGlueInfo, enable);
-#endif
 
 	if (enable) {
 		u4DmaCfgCr = asicConnac3xWfdmaCfgAddrGet(prGlueInfo, idx);
@@ -723,25 +718,7 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
 	HAL_MCR_WR(prGlueInfo->prAdapter,
 		PCIE_MAC_IREG_IMASK_HOST_ADDR,
-		PCIE_MAC_IREG_IMASK_HOST_INT_REQUEST_EN_MASK);
-}
-
-static void mt6639ConfigPcieIntMask(struct GLUE_INFO *prGlueInfo,
-					u_int8_t fgEn)
-{
-	uint32_t u4Val = 0;
-
-	HAL_MCR_RD(prGlueInfo->prAdapter,
-		   PCIE_MAC_IREG_IMASK_HOST_ADDR,
-		   &u4Val);
-	if (fgEn)
-		u4Val |= PCIE_MAC_IREG_ISTATUS_LOCAL_DMA_END_MASK;
-	else
-		u4Val &= ~PCIE_MAC_IREG_ISTATUS_LOCAL_DMA_END_MASK;
-
-	HAL_MCR_WR(prGlueInfo->prAdapter,
-		   PCIE_MAC_IREG_IMASK_HOST_ADDR,
-		   u4Val);
+		PCIE_MAC_IREG_IMASK_HOST_DMA_END_EN_MASK);
 }
 #endif
 

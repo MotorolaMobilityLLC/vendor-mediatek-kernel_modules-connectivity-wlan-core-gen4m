@@ -200,6 +200,7 @@ struct GL_HIF_INFO {
 struct BUS_INFO {
 	const uint32_t top_cfg_base;	/* TOP_CFG_BASE address */
 	const struct PCIE_CHIP_CR_MAPPING *bus2chip;
+	const struct PCIE_CHIP_CR_REMAPPING *bus2chip_remapping;
 	const struct pci_queue_layout queue_layout;
 	const uint32_t tx_ring_cmd_idx;
 	const uint32_t tx_ring_wa_cmd_idx;
@@ -327,6 +328,7 @@ struct BUS_INFO {
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
+#define PCIE_REMAP_SZ		0x10000
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A

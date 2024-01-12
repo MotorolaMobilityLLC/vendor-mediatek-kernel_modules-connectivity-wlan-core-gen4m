@@ -254,7 +254,9 @@ struct BUS_INFO soc2_2x2_bus_info = {
 	.tx_ring_ext_ctrl = asicPdmaTxRingExtCtrl,
 	.rx_ring_ext_ctrl = asicPdmaRxRingExtCtrl,
 	.hifRst = NULL,
+#if defined(_HIF_PCIE)
 	.initPcieInt = NULL,
+#endif
 	.DmaShdlInit = asicPcieDmaShdlInit,
 	.setPdmaIntMask = asicPdmaIntMaskConfig,
 #endif /* _HIF_PCIE || _HIF_AXI */

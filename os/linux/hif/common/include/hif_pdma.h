@@ -414,6 +414,26 @@ struct PCIE_CHIP_CR_MAPPING {
 	uint32_t u4Range;
 };
 
+struct L1_CR_REMAPPING {
+	uint32_t u4Base;
+	uint32_t u4Mask;
+	uint32_t u4Shift;
+	uint32_t u4RemapBase;
+};
+
+struct L2_CR_REMAPPING {
+	uint32_t u4Base;
+	uint32_t u4Mask;
+	uint32_t u4Shift;
+	uint32_t u4RemapBase;
+	uint32_t u4RemapBusBase;
+};
+
+struct PCIE_CHIP_CR_REMAPPING {
+	const struct L1_CR_REMAPPING *l1_remapping;
+	const struct L2_CR_REMAPPING *l2_remapping;
+};
+
 struct MSDU_TOKEN_ENTRY {
 	uint32_t u4Token;
 	u_int8_t fgInUsed;
