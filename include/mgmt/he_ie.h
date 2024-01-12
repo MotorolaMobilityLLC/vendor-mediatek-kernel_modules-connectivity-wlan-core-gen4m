@@ -374,10 +374,10 @@
 #define HTC_HE_2ND_A_CTRL_ID_SHIFT                     18
 
 /* 11ax_D3.0 9.2.4.6a.5 UPH Control */
-#define HTC_HE_UPH_UL_PWR_HEADROOM                     BITS(22, 27)
+#define HTC_HE_UPH_UL_PWR_HEADROOM                     BITS(22, 26)
 #define HTC_HE_UPH_UL_PWR_HEADROOM_SHIFT               22
-#define HTC_HE_UPH_MIN_TX_PWR_FLAG                     BIT(28)
-#define HTC_HE_UPH_MIN_TX_PWR_FLAG_SHIFT               28
+#define HTC_HE_UPH_MIN_TX_PWR_FLAG                     BIT(27)
+#define HTC_HE_UPH_MIN_TX_PWR_FLAG_SHIFT               27
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 #define ELEM_MAX_LEN_HE_6G_CAP \

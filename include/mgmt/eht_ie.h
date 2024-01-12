@@ -113,6 +113,129 @@ struct IE_EHT_OP {
 		(_aucMacCapInfo[0] |= EHT_MAC_CAP_MAX_MPDU_LEN)
 
 
+/* 802.11be D1.3 9.2.4.6.4 A-Control */
+#define HTC_EHT_A_CTRL_OM			7
+
+/* 11ax_D3.0 9.2.4.6 HT Control field */
+#define EHT_HTC_HE_VARIANT                                 BITS(0, 1)
+
+/* 1st - EHT OM_Ctrl, 2nd - OM_Ctrl */
+#define EHT_HTC_HE_1ST_A_CTRL_ID                           BITS(2, 5)
+#define EHT_HTC_HE_1ST_A_CTRL_ID_SHIFT                      2
+
+/* 1st - EHT OM_Ctrl, 2nd - OM_Ctrl */
+#define EHT_HTC_HE_2ND_A_CTRL_ID                           BITS(12, 15)
+#define EHT_HTC_HE_2ND_A_CTRL_ID_SHIFT                     12
+
+/* 802.11be D1.3 9.2.4.7.8 EHT OM Control */
+#define HTC_EHT_OM_RX_NSS_EXT			BIT(6)
+#define HTC_EHT_OM_RX_NSS_EXT_SHFT		6
+#define HTC_EHT_OM_CH_WIDTH_EXT			BIT(7)
+#define HTC_EHT_OM_CH_WIDTH_EXT_SHFT		7
+#define HTC_EHT_OM_TX_NSTS_EXT			BIT(8)
+#define HTC_EHT_OM_TX_NSTS_EXT_SHFT		8
+#define HTC_EHT_OM_RESERVED			BITS(9, 11)
+#define HTC_EHT_OM_RESERVED_SHFT		9
+
+/* 11ax_D3.0 9.2.4.6a.2 OM Control */
+#define EHT_HTC_HE_OM_RX_NSS                               BITS(16, 18)
+#define EHT_HTC_HE_OM_RX_NSS_SHFT                          16
+#define EHT_HTC_HE_OM_CH_WIDTH                             BITS(19, 20)
+#define EHT_HTC_HE_OM_CH_WIDTH_SHFT                        19
+#define EHT_HTC_HE_OM_UL_MU_DISABLE                        BIT(21)
+#define EHT_HTC_HE_OM_UL_MU_DISABLE_SHFT                   21
+#define EHT_HTC_HE_OM_TX_NSTS                              BITS(22, 24)
+#define EHT_HTC_HE_OM_TX_NSTS_SHFT                         22
+#define EHT_HTC_HE_OM_ER_SU_DISABLE                        BIT(25)
+#define EHT_HTC_HE_OM_ER_SU_DISABLE_SHFT                   25
+#define EHT_HTC_HE_OM_DL_MUMIMO_RESND_RECMD                BIT(26)
+#define EHT_HTC_HE_OM_DL_MUMIMO_RESND_RECMD_SHFT           26
+#define EHT_HTC_HE_OM_UL_MU_DATA_DISABLE                   BIT(27)
+#define EHT_HTC_HE_OM_UL_MU_DATA_DISABLE_SHFT              27
+
+
+#define EHT_SET_HTC_HE_VARIANT(_u4HTC) \
+	(_u4HTC |= EHT_HTC_HE_VARIANT)
+
+/* Control ID */
+#define EHT_SET_HTC_1ST_A_CTRL_ID(_u4HTC, _ctrl_id) \
+{\
+(_u4HTC) &= ~(EHT_HTC_HE_1ST_A_CTRL_ID); \
+(_u4HTC) |= (((_ctrl_id) << (EHT_HTC_HE_1ST_A_CTRL_ID_SHIFT)) \
+	& (EHT_HTC_HE_1ST_A_CTRL_ID)); \
+}
+#define EHT_SET_HTC_2ND_A_CTRL_ID(_u4HTC, _ctrl_id) \
+{\
+	(_u4HTC) &= ~(EHT_HTC_HE_2ND_A_CTRL_ID); \
+	(_u4HTC) |= (((_ctrl_id) << (EHT_HTC_HE_2ND_A_CTRL_ID_SHIFT)) \
+	& (EHT_HTC_HE_2ND_A_CTRL_ID)); \
+}
+
+/* OM - RX NSS */
+#define EHT_SET_HTC_HE_OM_RX_NSS(_u4HTC, _rx_nss) \
+{\
+(_u4HTC) &= ~(EHT_HTC_HE_OM_RX_NSS); \
+(_u4HTC) |= (((_rx_nss) << (EHT_HTC_HE_OM_RX_NSS_SHFT)) \
+	& (EHT_HTC_HE_OM_RX_NSS)); \
+}
+/* OM - Channel Width */
+#define EHT_SET_HTC_HE_OM_CH_WIDTH(_u4HTC, _bw) \
+{\
+(_u4HTC) &= ~(EHT_HTC_HE_OM_CH_WIDTH); \
+(_u4HTC) |= (((_bw) << (EHT_HTC_HE_OM_CH_WIDTH_SHFT)) \
+	& (EHT_HTC_HE_OM_CH_WIDTH)); \
+}
+/* OM - UL MU Disable */
+#define EHT_SET_HTC_HE_OM_UL_MU_DISABLE(_u4HTC, _ul_dis) \
+{\
+(_u4HTC) &= ~(EHT_HTC_HE_OM_UL_MU_DISABLE); \
+(_u4HTC) |= (((_ul_dis) << (EHT_HTC_HE_OM_UL_MU_DISABLE_SHFT)) \
+	& (EHT_HTC_HE_OM_UL_MU_DISABLE)); \
+}
+/* OM - TX NSTS */
+#define EHT_SET_HTC_HE_OM_TX_NSTS(_u4HTC, _tx_nsts) \
+{\
+(_u4HTC) &= ~(EHT_HTC_HE_OM_TX_NSTS); \
+(_u4HTC) |= (((_tx_nsts) << (EHT_HTC_HE_OM_TX_NSTS_SHFT)) \
+	& (EHT_HTC_HE_OM_TX_NSTS)); \
+}
+/* OM - ER SU Disable */
+#define EHT_SET_HTC_HE_OM_ER_SU_DISABLE(_u4HTC, _er_dis) \
+{\
+(_u4HTC) &= ~(EHT_HTC_HE_OM_ER_SU_DISABLE); \
+(_u4HTC) |= (((_er_dis) << (EHT_HTC_HE_OM_ER_SU_DISABLE_SHFT)) \
+	& (EHT_HTC_HE_OM_ER_SU_DISABLE)); \
+}
+/* OM - UL MU Data Disable */
+#define EHT_SET_HTC_HE_OM_UL_MU_DATA_DISABLE(_u4HTC, _ul_data_dis) \
+{\
+(_u4HTC) &= ~(EHT_HTC_HE_OM_UL_MU_DATA_DISABLE); \
+(_u4HTC) |= (((_ul_data_dis) << (EHT_HTC_HE_OM_UL_MU_DATA_DISABLE_SHFT)) \
+	& (EHT_HTC_HE_OM_UL_MU_DATA_DISABLE)); \
+}
+/* OM - EHT RX NSS EXT */
+#define EHT_SET_HTC_EHT_OM_RX_NSS_EXT(_u4HTC, _bw) \
+{\
+(_u4HTC) &= ~(HTC_EHT_OM_RX_NSS_EXT); \
+(_u4HTC) |= (((_bw) << (HTC_EHT_OM_RX_NSS_EXT_SHFT)) \
+	& (HTC_EHT_OM_RX_NSS_EXT)); \
+}
+/* OM - EHT Channel Width EXT */
+#define EHT_SET_HTC_EHT_OM_CH_WIDTH_EXT(_u4HTC, _bw) \
+{\
+(_u4HTC) &= ~(HTC_EHT_OM_CH_WIDTH_EXT); \
+(_u4HTC) |= (((_bw) << (HTC_EHT_OM_CH_WIDTH_EXT_SHFT)) \
+	& (HTC_EHT_OM_CH_WIDTH_EXT)); \
+}
+/* OM - EHT TX NSTS EXT */
+#define EHT_SET_HTC_EHT_OM_TX_NSTS_EXT(_u4HTC, _tx_nsts) \
+{\
+(_u4HTC) &= ~(HTC_EHT_OM_TX_NSTS_EXT); \
+(_u4HTC) |= (((_tx_nsts) << (HTC_EHT_OM_TX_NSTS_EXT_SHFT)) \
+	& (HTC_EHT_OM_TX_NSTS_EXT)); \
+}
+
+
 /* EHT PHY Capabilities Information field */
 
 /* Support Of MCS 15 subfield */
@@ -353,6 +476,7 @@ struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD {
 #define GET_RX_MAX_SS(_x) (_x&MAX_SS_MASK)
 #define SET_TX_MAX_SS(_mcs, _x) (_mcs |= ((_x&MAX_SS_MASK) << 4))
 #define SET_RX_MAX_SS(_mcs, _x) (_mcs |= (_x&MAX_SS_MASK))
+
 
 #endif /* CFG_SUPPORT_802_11BE == 1 */
 #endif /* !_EHT_IE_H */

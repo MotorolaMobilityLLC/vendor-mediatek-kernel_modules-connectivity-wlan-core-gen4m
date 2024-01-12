@@ -3948,6 +3948,10 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_OM_TX_NSS       "SET_OM_TXNSTS"
 #define CMD_SET_OM_MU_DISABLE   "SET_OM_MU_DISABLE"
 #define CMD_SET_TX_OM_PACKET    "TX_OM_PACKET"
+#define CMD_SET_EHT_OM_MODE	"SET_EHT_OM_MODE"
+#define CMD_SET_EHT_OM_RX_NSS_EXT	"SET_EHT_OM_RXNSS_EXT"
+#define CMD_SET_EHT_OM_CH_BW_EXT	"SET_EHT_OM_CHBW_EXT"
+#define CMD_SET_EHT_OM_TX_NSTS_EXT	"SET_EHT_OM_TXNSTS_EXT"
 #define CMD_SET_TX_CCK_1M_PWR   "TX_CCK_1M_PWR"
 #define CMD_SET_PAD_DUR	        "SET_PAD_DUR"
 #endif /* CFG_SUPPORT_802_11AX == 1 */
@@ -12417,9 +12421,16 @@ int priv_driver_set_om_ch_bw(IN struct net_device *prNetDev, IN char *pcCommand,
 
 		DBGLOG(REQ, STATE,
 			"priv_driver_set_om_ch_bw:: ch bw = %d\n", u4Parse);
-		if (u4Parse <= CH_BW_160)
-			HE_SET_HTC_HE_OM_CH_WIDTH(
-				prAdapter->u4HeHtcOM, u4Parse);
+		if (u4Parse <= CH_BW_160) {
+#if (CFG_SUPPORT_802_11BE == 1)
+			if (prAdapter->fgEhtHtcOM) {
+				EHT_SET_HTC_HE_OM_CH_WIDTH(
+					prAdapter->u4HeHtcOM, u4Parse);
+			} else
+#endif
+				HE_SET_HTC_HE_OM_CH_WIDTH(
+					prAdapter->u4HeHtcOM, u4Parse);
+		}
 	} else {
 		DBGLOG(INIT, ERROR,
 			"iwpriv wlanXX driver TX_ACTION <number>\n");
@@ -12462,7 +12473,12 @@ int priv_driver_set_om_rx_nss(
 
 		DBGLOG(REQ, STATE,
 			"priv_driver_set_om_rx_nss:: rx nss = %d\n", u4Parse);
-		HE_SET_HTC_HE_OM_RX_NSS(prAdapter->u4HeHtcOM, u4Parse);
+#if (CFG_SUPPORT_802_11BE == 1)
+		if (prAdapter->fgEhtHtcOM) {
+			EHT_SET_HTC_HE_OM_RX_NSS(prAdapter->u4HeHtcOM, u4Parse);
+		} else
+#endif
+			HE_SET_HTC_HE_OM_RX_NSS(prAdapter->u4HeHtcOM, u4Parse);
 	} else {
 		DBGLOG(INIT, ERROR,
 			"iwpriv wlanXX driver TX_ACTION <number>\n");
@@ -12504,7 +12520,13 @@ int priv_driver_set_om_tx_nss(
 
 		DBGLOG(REQ, STATE,
 			"priv_driver_set_om_tx_nss:: tx nss = %d\n", u4Parse);
-		HE_SET_HTC_HE_OM_TX_NSTS(prAdapter->u4HeHtcOM, u4Parse);
+#if (CFG_SUPPORT_802_11BE == 1)
+		if (prAdapter->fgEhtHtcOM) {
+			EHT_SET_HTC_HE_OM_TX_NSTS(prAdapter->u4HeHtcOM,
+						u4Parse);
+		} else
+#endif
+			HE_SET_HTC_HE_OM_TX_NSTS(prAdapter->u4HeHtcOM, u4Parse);
 	} else {
 		DBGLOG(INIT, ERROR,
 			"iwpriv wlanXX driver SET_OM_TXNSTS <number>\n");
@@ -12546,7 +12568,14 @@ int priv_driver_set_om_mu_dis(
 
 		DBGLOG(REQ, STATE,
 			"priv_driver_set_om_mu_dis:: disable = %d\n", u4Parse);
-		HE_SET_HTC_HE_OM_UL_MU_DISABLE(prAdapter->u4HeHtcOM, u4Parse);
+#if (CFG_SUPPORT_802_11BE == 1)
+		if (prAdapter->fgEhtHtcOM) {
+			EHT_SET_HTC_HE_OM_UL_MU_DISABLE(prAdapter->u4HeHtcOM,
+							u4Parse);
+		} else
+#endif
+			HE_SET_HTC_HE_OM_UL_MU_DISABLE(prAdapter->u4HeHtcOM,
+							u4Parse);
 	} else {
 		DBGLOG(INIT, ERROR,
 			"iwpriv wlanXX driver SET_OM_MU_DISABLE <number>\n");
@@ -12555,6 +12584,162 @@ int priv_driver_set_om_mu_dis(
 
 	return i4BytesWritten;
 }
+
+#if (CFG_SUPPORT_802_11BE == 1)
+int priv_driver_set_eht_om(
+	IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	struct ADAPTER *prAdapter = NULL;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc < 2) {
+		DBGLOG(REQ, STATE, "priv_driver_set_eht_om\n");
+		ehtRlmInitHtcACtrlOM(prAdapter);
+	} else {
+		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver SET_EHT_OM %d\n",
+			i4Argc);
+	}
+
+	return i4BytesWritten;
+}
+
+
+int priv_driver_set_eht_om_rx_nss_ext(
+	IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse = 0;
+	struct ADAPTER *prAdapter = NULL;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		DBGLOG(REQ, STATE,
+			"priv_driver_set_eht_om_rx_nss_ext: %d\n", u4Parse);
+		EHT_SET_HTC_EHT_OM_RX_NSS_EXT(prAdapter->u4HeHtcOM, u4Parse);
+	} else {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver SET_EHT_OM_RXNSS_EXT <number>\n");
+	}
+
+	return i4BytesWritten;
+}
+int priv_driver_set_eht_om_ch_bw_ext(
+	IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse = 0;
+	struct ADAPTER *prAdapter = NULL;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		DBGLOG(REQ, STATE,
+			"priv_driver_set_eht_om_ch_bw_ext: %d\n", u4Parse);
+		EHT_SET_HTC_EHT_OM_CH_WIDTH_EXT(prAdapter->u4HeHtcOM, u4Parse);
+	} else {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver SET_EHT_OM_CHBW_EXT <number>\n");
+	}
+
+	return i4BytesWritten;
+}
+
+int priv_driver_set_eht_om_tx_nsts_ext(
+	IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse = 0;
+	struct ADAPTER *prAdapter = NULL;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		DBGLOG(REQ, STATE,
+			"priv_driver_set_eht_om_tx_nsts_ext: %d\n", u4Parse);
+		EHT_SET_HTC_EHT_OM_TX_NSTS_EXT(prAdapter->u4HeHtcOM, u4Parse);
+	} else {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanX driver SET_EHT_OM_TXNSTS_EXT <number>\n");
+	}
+
+	return i4BytesWritten;
+}
+
+#endif
 
 int priv_driver_set_tx_om_packet(
 	IN struct net_device *prNetDev,
@@ -12577,7 +12762,9 @@ int priv_driver_set_tx_om_packet(
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
-
+#if (CFG_SUPPORT_802_11BE == 1)
+	prAdapter->fgEhtHtcOM = FALSE;
+#endif
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
@@ -16082,6 +16269,24 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			   strlen(CMD_SET_OM_MU_DISABLE)) == 0) {
 			i4BytesWritten = priv_driver_set_om_mu_dis(prNetDev,
 							pcCommand, i4TotalLen);
+#if (CFG_SUPPORT_802_11BE == 1)
+		} else if (strnicmp(pcCommand, CMD_SET_EHT_OM_MODE,
+			   strlen(CMD_SET_EHT_OM_MODE)) == 0) {
+			i4BytesWritten = priv_driver_set_eht_om(
+				prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_EHT_OM_RX_NSS_EXT,
+			   strlen(CMD_SET_EHT_OM_RX_NSS_EXT)) == 0) {
+			i4BytesWritten = priv_driver_set_eht_om_rx_nss_ext(
+				prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_EHT_OM_CH_BW_EXT,
+			   strlen(CMD_SET_EHT_OM_CH_BW_EXT)) == 0) {
+			i4BytesWritten = priv_driver_set_eht_om_ch_bw_ext(
+				prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_EHT_OM_TX_NSTS_EXT,
+			   strlen(CMD_SET_EHT_OM_TX_NSTS_EXT)) == 0) {
+			i4BytesWritten = priv_driver_set_eht_om_tx_nsts_ext(
+				prNetDev, pcCommand, i4TotalLen);
+#endif
 		} else if (strnicmp(pcCommand, CMD_SET_TX_OM_PACKET,
 			   strlen(CMD_SET_TX_OM_PACKET)) == 0) {
 			i4BytesWritten = priv_driver_set_tx_om_packet(prNetDev,

@@ -237,10 +237,9 @@ static void ehtRlmFillCapIE(
 
 	/* NSEP: not support for the time being */
 	/* SET_EHT_MAC_CAP_NSEP_PRI_ACCESS(prEhtCap->ucEhtMacCap); */
-	/* OM_CTRL: default support for AP; configurable for STA */
-	if (IS_BSS_APGO(prBssInfo)) {
-		SET_EHT_MAC_CAP_OM_CTRL(prEhtCap->ucEhtMacCap);
-	}
+	/* OM_CTRL: default support for both STA and AP; */
+	SET_EHT_MAC_CAP_OM_CTRL(prEhtCap->ucEhtMacCap);
+
 	/* TXOP_SHARING: not support */
 	/* SET_EHT_MAC_CAP_TXOP_SHARING(prEhtCap->ucEhtMacCap); */
 
@@ -648,6 +647,23 @@ uint8_t ehtRlmGetVhtOpBwByEhtOpBw(uint8_t ucBssOpBw)
 	}
 
 	return ucVhtOpBw;
+}
+
+void ehtRlmInitHtcACtrlOM(struct ADAPTER *prAdapter)
+{
+	prAdapter->fgEhtHtcOM = TRUE;
+	prAdapter->u4HeHtcOM = 0;
+	EHT_SET_HTC_HE_VARIANT(prAdapter->u4HeHtcOM);
+	EHT_SET_HTC_1ST_A_CTRL_ID(prAdapter->u4HeHtcOM, HTC_EHT_A_CTRL_OM);
+	EHT_SET_HTC_EHT_OM_RX_NSS_EXT(prAdapter->u4HeHtcOM, 1);
+	EHT_SET_HTC_EHT_OM_TX_NSTS_EXT(prAdapter->u4HeHtcOM, 1);
+	EHT_SET_HTC_EHT_OM_CH_WIDTH_EXT(prAdapter->u4HeHtcOM, CH_BW_80);
+	EHT_SET_HTC_2ND_A_CTRL_ID(prAdapter->u4HeHtcOM, HTC_HE_A_CTRL_OM);
+	EHT_SET_HTC_HE_OM_RX_NSS(prAdapter->u4HeHtcOM, 1);
+	EHT_SET_HTC_HE_OM_TX_NSTS(prAdapter->u4HeHtcOM, 1);
+	EHT_SET_HTC_HE_OM_CH_WIDTH(prAdapter->u4HeHtcOM, CH_BW_80);
+	EHT_SET_HTC_HE_OM_UL_MU_DISABLE(prAdapter->u4HeHtcOM, 0);
+	EHT_SET_HTC_HE_OM_UL_MU_DATA_DISABLE(prAdapter->u4HeHtcOM, 0);
 }
 
 #endif /* CFG_SUPPORT_802_11BE == 1 */
