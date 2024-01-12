@@ -1023,6 +1023,14 @@ int mtk_p2p_cfg80211_set_mgmt_key(struct wiphy *wiphy,
 	return 0;
 }
 
+int mtk_p2p_cfg80211_set_beacon_key(struct wiphy *wiphy,
+		struct net_device *dev, u8 key_index)
+{
+	DBGLOG(RSN, INFO, "kid:%d\n", key_index);
+
+	return 0;
+}
+
 #if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
 int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
 	struct net_device *ndev,

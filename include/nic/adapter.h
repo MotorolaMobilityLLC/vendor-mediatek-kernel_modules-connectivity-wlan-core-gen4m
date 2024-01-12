@@ -183,6 +183,9 @@ struct BSS_INFO {
 	uint8_t ucBMCWlanIndexS[MAX_KEY_NUM];
 	uint8_t ucBMCWlanIndexSUsed[MAX_KEY_NUM];
 
+	/* BIGTK install */
+	uint8_t ucBcnProtInstalled[MAX_KEY_NUM];
+
 	u_int8_t fgBcDefaultKeyExist;	/* Bc Transmit key exist or not */
 	/* Bc default key idx, for STA, the Rx just set,
 	 * for AP, the tx key id

@@ -25,8 +25,8 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-/* 0: unicast, 1-3: GTK, 4-5: IGTK*/
-#define MAX_KEY_NUM                             6
+/* 0: unicast, 1-3: GTK, 4-5: IGTK, 6-7: BIGTK */
+#define MAX_KEY_NUM                             8
 #define WEP_40_LEN                              5
 #define WEP_104_LEN                             13
 #define WEP_128_LEN                             16
@@ -65,6 +65,9 @@
 #define CIPHER_SUITE_BCN_PROT_CMAC_128  15
 #define CIPHER_SUITE_BCN_PROT_CMAC_256  16
 #define CIPHER_SUITE_BIP_GMAC_256       17
+#define CIPHER_SUITE_BCN_PROT_GMAC_128  18
+#define CIPHER_SUITE_BCN_PROT_GMAC_256  19
+
 
 /* Todo:: Move to register */
 #if defined(MT6630)

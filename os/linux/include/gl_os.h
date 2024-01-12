@@ -365,7 +365,7 @@ struct GL_WPA_INFO {
 
 #if CFG_SUPPORT_REPLAY_DETECTION
 /* copy from privacy.h */
-#define MAX_KEY_NUM                             6
+#define MAX_KEY_NUM                             8
 struct GL_REPLEY_PN_INFO {
 	uint8_t auPN[16];
 	u_int8_t fgRekey;

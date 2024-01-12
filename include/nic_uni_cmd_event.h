@@ -564,7 +564,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_BCN_PROT {
 	uint16_t u2Tag; /* Tag = 0x11 */
 	uint16_t u2Length;
-	uint8_t aucBcnProtPN[16];
+	uint8_t aucBcnProtPN[6];
 	uint8_t ucBcnProtEnabled;  /* 0: off, 1: SW mode, 2:HW mode */
 	uint8_t ucBcnProtCipherId;
 	uint8_t aucBcnProtKey[32];
@@ -7011,6 +7011,8 @@ uint32_t nicUniCmdPmEnable(struct ADAPTER *ad,
 uint32_t nicUniCmdSetBssInfo(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetBssRlm(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdBcnProt(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdUpdateStaRec(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
