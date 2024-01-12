@@ -3752,6 +3752,24 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 #endif
 
 	if (!HAS_CH_SWITCH_PARAMS(prCSAParams) && prCSAParams->fgHasStopTx) {
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+		struct BSS_DESC *prBssDesc = NULL;
+
+		if (IS_BSS_INDEX_AIS(prAdapter,
+			prBssInfo->ucBssIndex)) {
+			prBssDesc = aisGetTargetBssDesc(prAdapter,
+				prBssInfo->ucBssIndex);
+		} else if (IS_BSS_INDEX_P2P(prAdapter,
+			prBssInfo->ucBssIndex)) {
+			prBssDesc = p2pGetTargetBssDesc(prAdapter,
+				prBssInfo->ucBssIndex);
+		}
+
+		if (prBssDesc)
+			rlmDomain6GPwrModeUpdate(prAdapter,
+				prBssInfo->ucBssIndex,
+				prBssDesc->e6GPwrMode);
+#endif
 		/* AP */
 		qmSetStaRecTxAllowed(prAdapter, prStaRec, TRUE);
 

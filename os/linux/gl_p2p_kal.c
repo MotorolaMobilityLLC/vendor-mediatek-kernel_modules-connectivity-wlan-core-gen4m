@@ -1554,6 +1554,9 @@ kalP2PGCIndicateConnectionStatus(struct GLUE_INFO *prGlueInfo,
 
 		if (prP2pConnInfo) {
 			uint8_t aucBssid[MAC_ADDR_LEN];
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+			struct BSS_DESC *prBssDesc = NULL;
+#endif
 
 			COPY_MAC_ADDR(aucBssid,
 				prP2pConnInfo->aucBssid);
@@ -1598,6 +1601,17 @@ kalP2PGCIndicateConnectionStatus(struct GLUE_INFO *prGlueInfo,
 						prP2pLinkBssInfo->aucOwnMacAddr;
 					params.links[id].bssid =
 						prStaRec->aucMacAddr;
+
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+					prBssDesc = p2pGetLinkBssDesc(
+						prP2pRoleFsmInfo, i);
+					if (prBssDesc)
+						rlmDomain6GPwrModeUpdate(
+							prAdapter,
+							prP2pLinkBssInfo
+							->ucBssIndex,
+							prBssDesc->e6GPwrMode);
+#endif
 				}
 
 				cfg80211_connect_done(
@@ -1606,6 +1620,14 @@ kalP2PGCIndicateConnectionStatus(struct GLUE_INFO *prGlueInfo,
 			} else
 #endif
 			{
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+				prBssDesc = p2pGetTargetBssDesc(prAdapter,
+					prP2pRoleFsmInfo->ucBssIndex);
+				if (prBssDesc)
+					rlmDomain6GPwrModeUpdate(prAdapter,
+						prP2pRoleFsmInfo->ucBssIndex,
+						prBssDesc->e6GPwrMode);
+#endif
 				cfg80211_connect_result(
 					prGlueP2pInfo->aprRoleHandler,
 					/* struct net_device * dev, */
