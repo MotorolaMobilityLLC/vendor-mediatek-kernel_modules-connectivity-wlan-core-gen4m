@@ -670,6 +670,7 @@ struct GNU_PACKED test_rx_stat_leg {
 /* For mobile temp use */
 struct GNU_PACKED hqa_m_rx_stat {
 	u_int32 mac_rx_fcs_err_cnt;
+	u_int32 mac_fcs_ok; //new
 	u_int32 mac_rx_mdrdy_cnt;
 	u_int32 phy_rx_fcs_err_cnt_cck;
 	u_int32 phy_rx_fcs_err_cnt_ofdm;
@@ -694,6 +695,7 @@ struct GNU_PACKED hqa_m_rx_stat {
 	u_int32 rx_fifo_full;  /* out_of_resource */
 	u_int32 mac_rx_len_mismatch;
 	u_int32 mac_rx_fcs_err_cnt_band1;
+	u_int32 mac_fcs_ok_band1; //new
 	u_int32 mac_rx_mdrdy_cnt_band1;
 	u_int32 fagc_ib_RSSSI0;
 	u_int32 fagc_ib_RSSSI1;
@@ -746,7 +748,9 @@ struct GNU_PACKED hqa_m_rx_stat {
 	u_int32 all_mac_mdrdy0;
 	u_int32 all_mac_mdrdy1;
 	u_int32 all_fcs_err0;
+	u_int32 all_fcs_ok0;//new
 	u_int32 all_fcs_err1;
+	u_int32 all_fcs_ok1;//new
 	u_int32 rx_ok0;
 	u_int32 rx_ok1;
 	u_int32 per0;

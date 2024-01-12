@@ -865,7 +865,9 @@ struct PARAM_CUSTOM_SET_RADAR_DETECT_MODE {
 #endif
 
 struct PARAM_CUSTOM_ACCESS_RX_STAT {
-	uint32_t u4SeqNum;
+	uint16_t u2SeqNum;
+	uint8_t ucDbdcIdx;
+	uint8_t	ucData;	//bit[0] in event structure will tell new / old firmware format 
 	uint32_t u4TotalNum;
 };
 
@@ -1838,7 +1840,7 @@ struct PARAM_LINUX_NETDEV_STATISTICS {
 struct PARAM_MTK_WIFI_TEST_STRUCT {
 	uint32_t u4FuncIndex;
 	uint32_t u4FuncData;
-};
+}__KAL_ATTRIB_PACKED__;
 
 struct _RBIST_IQ_DATA_T {
 	int32_t u4IQArray[4][2]; /* IQ_Array[WF][IQ] */

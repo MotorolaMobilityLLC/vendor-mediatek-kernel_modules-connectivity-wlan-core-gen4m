@@ -4966,9 +4966,6 @@ wlanoidQueryRxStatistics(IN struct ADAPTER *prAdapter,
 	struct CMD_ACCESS_RX_STAT *prCmdAccessRxStat;
 	struct CMD_ACCESS_RX_STAT rCmdAccessRxStat;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	/*	UINT_32 u4MemSize = PARAM_MEM_DUMP_MAX_SIZE; */
-	uint32_t u4SeqNum = 0;
-	uint32_t u4TotalNum = 0;
 
 	prCmdAccessRxStat = &rCmdAccessRxStat;
 
@@ -4982,12 +4979,15 @@ wlanoidQueryRxStatistics(IN struct ADAPTER *prAdapter,
 
 	*pu4QueryInfoLen = 8 + prRxStatistics->u4TotalNum;
 
-	u4SeqNum = prRxStatistics->u4SeqNum;
-	u4TotalNum = prRxStatistics->u4TotalNum;
-
 	do {
-		prCmdAccessRxStat->u4SeqNum = u4SeqNum;
-		prCmdAccessRxStat->u4TotalNum = u4TotalNum;
+		prCmdAccessRxStat->u2SeqNum =
+			prRxStatistics->u2SeqNum;
+		prCmdAccessRxStat->u4TotalNum =
+			prRxStatistics->u4TotalNum;
+		prCmdAccessRxStat->ucDbdcIdx =
+			prRxStatistics->ucDbdcIdx;
+		prCmdAccessRxStat->ucData =
+			prRxStatistics->ucData;
 
 		rStatus = wlanSendSetQueryCmd(prAdapter,
 			      CMD_ID_ACCESS_RX_STAT,
@@ -4997,7 +4997,8 @@ wlanoidQueryRxStatistics(IN struct ADAPTER *prAdapter,
 			      nicCmdEventQueryRxStatistics,
 			      nicOidCmdTimeoutCommon,
 			      sizeof(struct CMD_ACCESS_RX_STAT),
-			      (uint8_t *) prCmdAccessRxStat, pvQueryBuffer,
+			      (uint8_t *) prCmdAccessRxStat,
+			      pvQueryBuffer,
 			      u4QueryBufferLen);
 	} while (FALSE);
 
@@ -9665,8 +9666,8 @@ wlanoidRftestSetTestMode(IN struct ADAPTER *prAdapter,
 	if (u4SetBufferLen == 0) {
 		if (prAdapter->fgTestMode == FALSE) {
 			/* switch to RF Test mode */
-			rCmdTestCtrl.ucAction = 0;	/* Switch mode */
-			rCmdTestCtrl.u.u4OpMode = 1;	/* RF test mode */
+			rCmdTestCtrl.ucAction = CMD_TEST_CTRL_ACT_SWITCH_MODE;
+			rCmdTestCtrl.u.u4OpMode = CMD_TEST_CTRL_ACT_SWITCH_MODE_RF_TEST;
 
 			rStatus = wlanSendSetQueryCmd(prAdapter,
 						CMD_ID_TEST_CTRL,
@@ -9728,8 +9729,8 @@ wlanoidRftestSetTestIcapMode(IN struct ADAPTER *prAdapter,
 	if (u4SetBufferLen == 0) {
 		if (prIcapInfo->eIcapState == ICAP_STATE_INIT) {
 			/* switch to RF Test mode */
-			rCmdTestCtrl.ucAction = 0;	/* Switch mode */
-			rCmdTestCtrl.u.u4OpMode = 2;	/* ICAP mode */
+			rCmdTestCtrl.ucAction = CMD_TEST_CTRL_ACT_SWITCH_MODE;
+			rCmdTestCtrl.u.u4OpMode = CMD_TEST_CTRL_ACT_SWITCH_MODE_ICAP;
 
 			rStatus = wlanSendSetQueryCmd(prAdapter,
 					      CMD_ID_TEST_CTRL,
@@ -9791,8 +9792,8 @@ wlanoidRftestSetAbortTestMode(IN struct ADAPTER *prAdapter,
 	if (u4SetBufferLen == 0) {
 		if (prAdapter->fgTestMode == TRUE) {
 			/* switch to normal mode */
-			rCmdTestCtrl.ucAction = 0;	/* Switch mode */
-			rCmdTestCtrl.u.u4OpMode = 0;	/* normal mode */
+			rCmdTestCtrl.ucAction = CMD_TEST_CTRL_ACT_SWITCH_MODE;
+			rCmdTestCtrl.u.u4OpMode = CMD_TEST_CTRL_ACT_SWITCH_MODE_NORMAL;
 
 			rStatus = wlanSendSetQueryCmd(prAdapter,
 						CMD_ID_TEST_CTRL,
@@ -9944,7 +9945,7 @@ uint32_t rftestSetATInfo(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
-	rCmdTestCtrl.ucAction = 1;	/* Set ATInfo */
+	rCmdTestCtrl.ucAction = CMD_TEST_CTRL_ACT_SET_AT;
 	rCmdTestCtrl.u.rRfATInfo.u4FuncIndex = u4FuncIndex;
 	rCmdTestCtrl.u.rRfATInfo.u4FuncData = u4FuncData;
 
@@ -10235,9 +10236,11 @@ rftestQueryATInfo(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_SUCCESS;
 	}
 
-	rCmdTestCtrl.ucAction = 2;	/* Get ATInfo */
+	rCmdTestCtrl.ucAction = CMD_TEST_CTRL_ACT_GET_AT;
 	rCmdTestCtrl.u.rRfATInfo.u4FuncIndex = u4FuncIndex;
 	rCmdTestCtrl.u.rRfATInfo.u4FuncData = u4FuncData;
+
+	DBGLOG(RFTEST, INFO, "rftestQueryATInfo\n");
 
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_TEST_CTRL,
@@ -10249,27 +10252,6 @@ rftestQueryATInfo(IN struct ADAPTER *prAdapter,
 				   sizeof(struct CMD_TEST_CTRL),
 				   (uint8_t *) &rCmdTestCtrl,
 				   pvQueryBuffer, u4QueryBufferLen);
-}
-
-uint32_t rftestSetFrequency(IN struct ADAPTER *prAdapter,
-			    IN uint32_t u4FreqInKHz,
-			    IN uint32_t *pu4SetInfoLen) {
-	struct CMD_TEST_CTRL rCmdTestCtrl;
-
-	ASSERT(prAdapter);
-
-	rCmdTestCtrl.ucAction = 5;	/* Set Channel Frequency */
-	rCmdTestCtrl.u.u4ChannelFreq = u4FreqInKHz;
-
-	return wlanSendSetQueryCmd(prAdapter,
-				   CMD_ID_TEST_CTRL,
-				   TRUE,
-				   FALSE,
-				   TRUE,
-				   nicCmdEventSetCommon,
-				   nicOidCmdTimeoutCommon,
-				   sizeof(struct CMD_TEST_CTRL),
-				   (uint8_t *) &rCmdTestCtrl, NULL, 0);
 }
 
 /*----------------------------------------------------------------------------*/

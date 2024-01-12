@@ -815,6 +815,22 @@ struct WIFI_EVENT {
 	uint8_t aucBuffer[0];
 };
 
+enum ENUM_CMD_TEST_CTRL_ACT {
+	CMD_TEST_CTRL_ACT_SWITCH_MODE = 0,
+	CMD_TEST_CTRL_ACT_SET_AT = 1,
+	CMD_TEST_CTRL_ACT_GET_AT = 2,
+	CMD_TEST_CTRL_ACT_SET_AT_ENG = 3,
+	CMD_TEST_CTRL_ACT_GET_AT_ENG = 4,
+	CMD_TEST_CTRL_ACT_NUM
+};
+
+enum ENUM_CMD_TEST_CTRL_ACT_SWITCH_MODE_OP {
+	CMD_TEST_CTRL_ACT_SWITCH_MODE_NORMAL = 0,
+	CMD_TEST_CTRL_ACT_SWITCH_MODE_RF_TEST = 1,
+	CMD_TEST_CTRL_ACT_SWITCH_MODE_ICAP = 2,
+	CMD_TEST_CTRL_ACT_SWITCH_MODE_NUM
+};
+
 /* CMD_ID_TEST_CTRL */
 struct CMD_TEST_CTRL {
 	uint8_t ucAction;
@@ -1346,12 +1362,16 @@ struct EVENT_DUMP_MEM {
 
 #if CFG_SUPPORT_QA_TOOL
 struct CMD_ACCESS_RX_STAT {
-	uint32_t u4SeqNum;
+	uint16_t u2SeqNum;
+	uint8_t ucDbdcIdx;
+	uint8_t ucData; //bit[0] in event structure will tell new / old firmware format 
 	uint32_t u4TotalNum;
 };
 
 struct EVENT_ACCESS_RX_STAT {
-	uint32_t u4SeqNum;
+	uint16_t u2SeqNum;
+	uint8_t ucDbdcIdx;
+	uint8_t	ucData;	//bit[0] in event structure will tell new / old firmware format 
 	uint32_t u4TotalNum;
 	uint32_t au4Buffer[1];
 };

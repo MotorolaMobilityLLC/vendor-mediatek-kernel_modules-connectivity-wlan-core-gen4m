@@ -4726,9 +4726,9 @@ uint32_t ServiceWlanOid(void *winfos,
 	if ((prStatsData) &&
 		(oidType == OP_WLAN_OID_QUERY_RX_STATISTICS)) {
 
-		/* 264 = 66 items * 4 bytes */
-		kalMemCopy(&prStatsData->mac_rx_fcs_err_cnt,
-		&(g_HqaRxStat.MAC_FCS_Err), 264);
+		kalMemCopy(prStatsData,
+					&g_HqaRxStat,
+					sizeof(struct hqa_m_rx_stat));
 	}
 
 	return i4Status;

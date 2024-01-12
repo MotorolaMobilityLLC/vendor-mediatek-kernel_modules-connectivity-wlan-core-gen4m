@@ -66,7 +66,7 @@
  *******************************************************************************
  */
 
-extern uint32_t u4RxStatSeqNum;
+extern uint16_t u2RxStatSeqNum;
 
 #if CFG_SUPPORT_TX_BF
 extern union PFMU_PROFILE_TAG1 g_rPfmuTag1;

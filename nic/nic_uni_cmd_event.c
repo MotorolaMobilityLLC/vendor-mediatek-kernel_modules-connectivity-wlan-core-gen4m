@@ -154,6 +154,8 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_SET_COUNTRY_POWER_LIMIT_PER_RATE] = nicUniCmdSetCountryPwrLimitPerRate,
 	[CMD_ID_SET_MDVT] = nicUniCmdSetMdvt,
 	[CMD_ID_SET_NVRAM_SETTINGS] = nicUniCmdNotSupport,
+	[CMD_ID_TEST_CTRL] = nicUniCmdTestmodeCtrl,
+	[CMD_ID_ACCESS_RX_STAT] = nicUniCmdTestmodeRxStat,
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -4417,6 +4419,105 @@ uint32_t nicUniCmdGetLinkQuality(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t nicUniCmdTestmodeCtrl(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_TEST_CTRL *cmd;
+	struct UNI_CMD_TESTMODE_CTRL *uni_cmd;
+	struct UNI_CMD_TESTMODE_RF_CTRL *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_TESTMODE_CTRL) +
+	     		       sizeof(struct UNI_CMD_TESTMODE_RF_CTRL);
+
+	if (info->ucCID != CMD_ID_TEST_CTRL)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_TEST_CTRL *) info->pucInfoBuffer;
+
+	switch (cmd->ucAction) {
+		case CMD_TEST_CTRL_ACT_SWITCH_MODE:
+			if(cmd->u.u4OpMode == CMD_TEST_CTRL_ACT_SWITCH_MODE_NORMAL) {
+				entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_TESTMODE_CTRL,
+						max_cmd_len, nicCmdEventLeaveRfTest,
+						nicUniCmdTimeoutCommon);
+
+			} else {
+				/* CMD_TEST_CTRL_ACT_SWITCH_MODE_RF_TEST */
+				/* CMD_TEST_CTRL_ACT_SWITCH_MODE_ICAP */
+				entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_TESTMODE_CTRL,
+						max_cmd_len, nicCmdEventEnterRfTest,
+						nicOidCmdEnterRFTestTimeout);
+			}
+			break;
+
+		case CMD_TEST_CTRL_ACT_SET_AT:
+			cmd->ucAction = CMD_TEST_CTRL_ACT_SET_AT_ENG; /* convert for unify cmd */
+			entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_TESTMODE_CTRL,
+					max_cmd_len, nicUniCmdEventSetCommon,
+					nicUniCmdTimeoutCommon);
+			break;
+
+		case CMD_TEST_CTRL_ACT_GET_AT:
+			cmd->ucAction = CMD_TEST_CTRL_ACT_GET_AT_ENG; /* convert for unify cmd */
+			entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_TESTMODE_CTRL,
+					max_cmd_len, nicUniEventQueryRfTestATInfo,
+					nicUniCmdTimeoutCommon);
+		break;
+
+		default:
+			return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_TESTMODE_CTRL *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_TESTMODE_RF_CTRL *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_TESTMODE_TAG_RF_CTRL;
+	tag->u2Length = sizeof(*tag);
+	tag->ucAction = cmd->ucAction;
+	kalMemCopy(&tag->u, &cmd->u, sizeof(tag->u));
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdTestmodeRxStat(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_ACCESS_RX_STAT *cmd;
+	struct UNI_CMD_TESTMODE_RX_STAT *uni_cmd;
+	struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_TESTMODE_RX_STAT) +
+	     		       sizeof(struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL);
+
+	if (info->ucCID != CMD_ID_ACCESS_RX_STAT)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_ACCESS_RX_STAT *) info->pucInfoBuffer;
+
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_TESTMODE_RX_STAT,
+				max_cmd_len, nicUniEventQueryRxStatAll,
+				nicUniCmdTimeoutCommon);
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_TESTMODE_RX_STAT *)entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL *)uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL;
+	tag->u2Length = sizeof(*tag);
+	tag->u1DbdcIdx = cmd->ucDbdcIdx;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -4919,6 +5020,47 @@ void nicUniEventLinkQuality(IN struct ADAPTER
 	}
 
 	nicCmdEventQueryLinkQuality(prAdapter, prCmdInfo, (uint8_t *)&legacy);
+}
+
+void nicUniEventQueryRfTestATInfo(IN struct ADAPTER
+	  *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *)pucEventBuf;
+	struct UNI_EVENT_TESTMODE_CTRL *evt =
+		(struct UNI_EVENT_TESTMODE_CTRL *)uni_evt->aucBuffer;
+	struct UNI_EVENT_RF_TEST_RESULT *tag =
+		(struct UNI_EVENT_RF_TEST_RESULT *)evt->aucTlvBuffer;
+
+	nicCmdEventQueryRfTestATInfo(prAdapter, prCmdInfo, tag->aucBuffer);
+}
+
+void nicUniEventQueryRxStatAll(IN struct ADAPTER
+	  *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *)pucEventBuf;
+	struct UNI_EVENT_TESTMODE_RX_STAT *rx_evt =
+		(struct UNI_EVENT_TESTMODE_RX_STAT *)uni_evt->aucBuffer;
+	struct UNI_EVENT_TESTMODE_STAT_ALL *tag =
+		(struct UNI_EVENT_TESTMODE_STAT_ALL *)rx_evt->aucTlvBuffer;
+
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	uint32_t *prElement = (uint32_t *)&g_HqaRxStat;
+	uint32_t i, u4Temp;
+
+	for (i = 0; i < UNI_EVENT_TESTMODE_RX_STAT_ALL_ITEM; i++) {
+		u4Temp = ntohl(tag->u4Buffer[i]);
+		kalMemCopy(prElement, &u4Temp, 4);
+	
+		if (i < (UNI_EVENT_TESTMODE_RX_STAT_ALL_ITEM - 1))
+			prElement++;
+	}
+
+	if (prCmdInfo->fgIsOid) {
+		kalOidComplete(prGlueInfo,
+						prCmdInfo,
+						sizeof(struct CMD_ACCESS_RX_STAT),
+						WLAN_STATUS_SUCCESS);
+	}
 }
 
 /*******************************************************************************
@@ -5884,3 +6026,4 @@ void nicUniEventCountdown(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 	}
 }
+
