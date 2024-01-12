@@ -1345,7 +1345,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			wlanQueryInformation(prGlueInfo->prAdapter,
 			     wlanoidQuerySsid, &ssid, sizeof(ssid), &bufLen);
 
-			kalStrnCpy(aucSsid, ssid.aucSsid, sizeof(aucSsid));
+			kalStrnCpy(aucSsid, ssid.aucSsid, sizeof(aucSsid) - 1);
 			aucSsid[sizeof(aucSsid) - 1] = '\0';
 
 			DBGLOG(INIT, INFO,
@@ -8035,7 +8035,7 @@ void kalScanReqLog(struct cfg80211_scan_request *request)
 
 		if (len == 0)
 			continue;
-		kalStrnCpy(ssid, request->ssids[i].ssid, sizeof(ssid));
+		kalStrnCpy(ssid, request->ssids[i].ssid, sizeof(ssid) - 1);
 		ssid[sizeof(ssid) - 1] = '\0';
 		pos += kalSnprintf(pos, end - pos, " %s", ssid);
 	}
