@@ -646,129 +646,128 @@ u16 wlanSelectQueue(struct net_device *dev, struct sk_buff *skb)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-static void glLoadNvram(IN struct GLUE_INFO *prGlueInfo, OUT struct REG_INFO *prRegInfo)
+static void glLoadNvram(IN struct GLUE_INFO *prGlueInfo,
+							OUT struct REG_INFO *prRegInfo)
 {
-	uint32_t i, j;
-	uint8_t aucTmp[2];
-	uint8_t *pucDest;
-
 	ASSERT(prGlueInfo);
 	ASSERT(prRegInfo);
-
+	DBGLOG(INIT, INFO, "glLoadNvram start\n");
 	if ((!prGlueInfo) || (!prRegInfo))
 		return;
 
-	if (kalCfgDataRead16(prGlueInfo, sizeof(struct WIFI_CFG_PARAM_STRUCT) - sizeof(uint16_t), (uint16_t *) aucTmp) == TRUE) {
-		prGlueInfo->fgNvramAvailable = TRUE;
+	/* load full NVRAM */
+	prGlueInfo->fgNvramAvailable = FALSE;
+	if (kalCfgDataRead(prGlueInfo, 0, sizeof(prRegInfo->aucNvram),
+		(uint16_t *)prRegInfo->aucNvram) == TRUE) {
 
-		/* load MAC Address */
-		for (i = 0; i < PARAM_MAC_ADDR_LEN; i += sizeof(uint16_t)) {
-			kalCfgDataRead16(prGlueInfo,
-					 OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, aucMacAddress) + i,
-					 (uint16_t *) (((uint8_t *) prRegInfo->aucMacAddr) + i));
+		struct WIFI_CFG_PARAM_STRUCT *prNvramSettings;
+
+		if (sizeof(struct WIFI_CFG_PARAM_STRUCT) >
+						sizeof(prRegInfo->aucNvram)) {
+			DBGLOG(INIT, ERROR,
+			"Size WIFI_CFG_PARAM_STRUCT %d > size aucNvram %d\n"
+			, sizeof(struct WIFI_CFG_PARAM_STRUCT),
+			sizeof(prRegInfo->aucNvram));
+			return;
 		}
-
-		/* load country code */
-		kalCfgDataRead16(prGlueInfo, OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, aucCountryCode[0]), (uint16_t *) aucTmp);
-
-		/* cast to wide characters */
-		prRegInfo->au2CountryCode[0] = (uint16_t) aucTmp[0];
-		prRegInfo->au2CountryCode[1] = (uint16_t) aucTmp[1];
-
-		/* load default normal TX power */
-		for (i = 0; i < sizeof(struct TX_PWR_PARAM); i += sizeof(uint16_t)) {
-			kalCfgDataRead16(prGlueInfo,
-					 OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, rTxPwr) + i,
-					 (uint16_t *) (((uint8_t *) &(prRegInfo->rTxPwr)) + i));
+#if CFG_SUPPORT_NVRAM_5G
+		if (sizeof(struct NEW_EFUSE_MAPPING2NVRAM) >
+						sizeof(prRegInfo->aucEFUSE)) {
+			DBGLOG(INIT, ERROR,
+			"Size NEW_EFUSE_MAPPING2NVRAM %d >size aucEFUSE %d\n"
+			, sizeof(struct NEW_EFUSE_MAPPING2NVRAM),
+			sizeof(prRegInfo->aucEFUSE));
+			return;
 		}
+#endif
 
-		/* load feature flags */
-		kalCfgDataRead16(prGlueInfo, OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, ucTxPwrValid), (uint16_t *) aucTmp);
-		prRegInfo->ucTxPwrValid = aucTmp[0];
-		prRegInfo->ucSupport5GBand = aucTmp[1];
-
-		kalCfgDataRead16(prGlueInfo, OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, uc2G4BwFixed20M), (uint16_t *) aucTmp);
-		prRegInfo->uc2G4BwFixed20M = aucTmp[0];
-		prRegInfo->uc5GBwFixed20M = aucTmp[1];
-
-		kalCfgDataRead16(prGlueInfo, OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, ucEnable5GBand), (uint16_t *) aucTmp);
-		prRegInfo->ucEnable5GBand = aucTmp[0];
-		prRegInfo->ucRxDiversity = aucTmp[1];
-
-		kalCfgDataRead16(prGlueInfo,
-				 OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, fgRssiCompensationVaildbit), (uint16_t *) aucTmp);
-		prRegInfo->ucRssiPathCompasationUsed = aucTmp[0];
-		prRegInfo->ucGpsDesense = aucTmp[1];
+		prRegInfo->prNvramSettings =
+			(struct WIFI_CFG_PARAM_STRUCT *)&prRegInfo->aucNvram;
+		prNvramSettings = prRegInfo->prNvramSettings;
 
 #if CFG_SUPPORT_NVRAM_5G
 		/* load EFUSE overriding part */
-		for (i = 0; i < sizeof(prRegInfo->aucEFUSE); i += sizeof(uint16_t)) {
-			kalCfgDataRead16(prGlueInfo,
-					 OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, EfuseMapping) + i,
-					 (uint16_t *) (((uint8_t *) &(prRegInfo->aucEFUSE)) + i));
-		}
-
-		prRegInfo->prOldEfuseMapping = (struct NEW_EFUSE_MAPPING2NVRAM *)&prRegInfo->aucEFUSE;
+		kalMemCopy(prRegInfo->aucEFUSE,
+		prNvramSettings->EfuseMapping.aucEFUSE,
+		sizeof(prRegInfo->aucEFUSE));
+		prRegInfo->prOldEfuseMapping =
+			(struct NEW_EFUSE_MAPPING2NVRAM *)&prRegInfo->aucEFUSE;
 #else
-
-/* load EFUSE overriding part */
-		for (i = 0; i < sizeof(prRegInfo->aucEFUSE); i += sizeof(uint16_t)) {
-			kalCfgDataRead16(prGlueInfo,
-					 OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, aucEFUSE) + i,
-					 (uint16_t *) (((uint8_t *) &(prRegInfo->aucEFUSE)) + i));
-		}
+		/* load EFUSE overriding part */
+		kalMemCopy(prRegInfo->aucEFUSE,
+		prNvramSettings->aucEFUSE, sizeof(prRegInfo->aucEFUSE));
 #endif
 
-		/* load band edge tx power control */
-		kalCfgDataRead16(prGlueInfo, OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, fg2G4BandEdgePwrUsed), (uint16_t *) aucTmp);
-		prRegInfo->fg2G4BandEdgePwrUsed = (u_int8_t) aucTmp[0];
-		if (aucTmp[0]) {
-			prRegInfo->cBandEdgeMaxPwrCCK = (int8_t) aucTmp[1];
+		/* load MAC Address */
+		kalMemCopy(prRegInfo->aucMacAddr,
+				prNvramSettings->aucMacAddress,
+				PARAM_MAC_ADDR_LEN*sizeof(uint8_t));
 
-			kalCfgDataRead16(prGlueInfo,
-					 OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, cBandEdgeMaxPwrOFDM20), (uint16_t *) aucTmp);
-			prRegInfo->cBandEdgeMaxPwrOFDM20 = (int8_t) aucTmp[0];
-			prRegInfo->cBandEdgeMaxPwrOFDM40 = (int8_t) aucTmp[1];
+		/* load country code */
+		/* cast to wide characters */
+		prRegInfo->au2CountryCode[0] =
+				(uint16_t) prNvramSettings->aucCountryCode[0];
+		prRegInfo->au2CountryCode[1] =
+				(uint16_t) prNvramSettings->aucCountryCode[1];
+
+		/* load default normal TX power */
+		kalMemCopy(&prRegInfo->rTxPwr,
+			&prNvramSettings->rTxPwr, sizeof(struct TX_PWR_PARAM));
+
+		/* load feature flags */
+		prRegInfo->ucTxPwrValid = prNvramSettings->ucTxPwrValid;
+
+		prRegInfo->ucSupport5GBand = prNvramSettings->ucSupport5GBand;
+
+		prRegInfo->uc2G4BwFixed20M = prNvramSettings->uc2G4BwFixed20M;
+
+		prRegInfo->uc5GBwFixed20M = prNvramSettings->uc5GBwFixed20M;
+
+		prRegInfo->ucEnable5GBand = prNvramSettings->ucEnable5GBand;
+
+		prRegInfo->ucRxDiversity = prNvramSettings->ucRxDiversity;
+
+		prRegInfo->ucRssiPathCompasationUsed =
+				prNvramSettings->fgRssiCompensationVaildbit;
+
+		prRegInfo->ucGpsDesense = prNvramSettings->ucGpsDesense;
+
+		/* load band edge tx power control */
+		prRegInfo->fg2G4BandEdgePwrUsed =
+					prNvramSettings->fg2G4BandEdgePwrUsed;
+
+		if (prRegInfo->prNvramSettings->fg2G4BandEdgePwrUsed) {
+			prRegInfo->cBandEdgeMaxPwrCCK =
+					prNvramSettings->cBandEdgeMaxPwrCCK;
+
+			prRegInfo->cBandEdgeMaxPwrOFDM20 =
+					prNvramSettings->cBandEdgeMaxPwrOFDM20;
+
+			prRegInfo->cBandEdgeMaxPwrOFDM40 =
+					prNvramSettings->cBandEdgeMaxPwrOFDM40;
 		}
 
 		/* load regulation subbands */
-		kalCfgDataRead16(prGlueInfo, OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, ucRegChannelListMap), (uint16_t *) aucTmp);
-		prRegInfo->eRegChannelListMap = (enum ENUM_REG_CH_MAP) aucTmp[0];
-		prRegInfo->ucRegChannelListIndex = aucTmp[1];
+		prRegInfo->eRegChannelListMap =
+		(enum ENUM_REG_CH_MAP) prNvramSettings->ucRegChannelListMap;
+		prRegInfo->ucRegChannelListIndex =
+					prNvramSettings->ucRegChannelListIndex;
 
 		if (prRegInfo->eRegChannelListMap == REG_CH_MAP_CUSTOMIZED) {
-			for (i = 0; i < MAX_SUBBAND_NUM; i++) {
-				pucDest = (uint8_t *) &prRegInfo->rDomainInfo.rSubBand[i];
-				for (j = 0; j < 6; j += sizeof(uint16_t)) {
-					kalCfgDataRead16(prGlueInfo, OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, aucRegSubbandInfo)
-							 + (i * 6 + j), (uint16_t *) aucTmp);
-
-					*pucDest++ = aucTmp[0];
-					*pucDest++ = aucTmp[1];
-				}
-			}
+			kalMemCopy(prRegInfo->rDomainInfo.rSubBand,
+				prNvramSettings->aucRegSubbandInfo,
+				MAX_SUBBAND_NUM*sizeof(uint8_t));
 		}
 
 		/* load rssiPathCompensation */
-		for (i = 0; i < sizeof(struct RSSI_PATH_COMPASATION); i += sizeof(uint16_t)) {
-			kalCfgDataRead16(prGlueInfo,
-					 OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT,
-						   rRssiPathCompensation) + i,
-					 (uint16_t *) (((uint8_t *) &(prRegInfo->rRssiPathCompasation))
-						     + i));
-		}
-#if 1
-		/* load full NVRAM */
-		for (i = 0; i < sizeof(struct WIFI_CFG_PARAM_STRUCT); i += sizeof(uint16_t)) {
-			kalCfgDataRead16(prGlueInfo,
-					 OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, u2Part1OwnVersion) + i,
-					 (uint16_t *) (((uint8_t *) &(prRegInfo->aucNvram)) + i));
-		}
-		prRegInfo->prNvramSettings = (struct WIFI_CFG_PARAM_STRUCT *)&prRegInfo->aucNvram;
-#endif
+		kalMemCopy(&prRegInfo->rRssiPathCompasation,
+				&prNvramSettings->rRssiPathCompensation,
+				sizeof(struct RSSI_PATH_COMPASATION));
+
+		prGlueInfo->fgNvramAvailable = TRUE;
+		DBGLOG(INIT, INFO, "glLoadNvram end\n");
 	} else {
 		DBGLOG(INIT, INFO, "glLoadNvram fail\n");
-		prGlueInfo->fgNvramAvailable = FALSE;
 	}
 
 }
