@@ -4925,7 +4925,7 @@ uint32_t wlanLoadManufactureData(struct ADAPTER
 			u4NvramOffset += (u1LenMSB << 8) | (u1LenLSB);
 			u4NvramFragmentSize = u4NvramOffset-u4NvramStartOffset;
 
-			DBGLOG(INIT, INFO,
+			DBGLOG(INIT, TRACE,
 			   "NVRAM Fragement(%d)Startofs[0x%08X]ID[%d]Len:%d\n",
 			   index, u4NvramStartOffset,
 			   u1TypeID, u4NvramFragmentSize);
