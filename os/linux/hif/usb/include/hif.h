@@ -133,7 +133,11 @@ enum ENUM_USB_END_POINT {
 #define DEVICE_VENDOR_REQUEST_OUT       (0x40)
 #define DEVICE_VENDOR_REQUEST_OUT_CONNAC2       (0x5F)
 #define VENDOR_TIMEOUT_MS               (1000)
+#if (CFG_MTK_FPGA_PLATFORM == 1)
+#define BULK_TIMEOUT_MS                 (3500)
+#else
 #define BULK_TIMEOUT_MS                 (1500)
+#endif
 #define INTERRUPT_TIMEOUT_MS            (1000)
 #define SW_RFB_RECHECK_MS               (10)
 #define SW_RFB_LOG_LIMIT_MS             (5000)

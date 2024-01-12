@@ -1281,7 +1281,7 @@
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
 #ifndef CFG_CONNAC3X_DS_VER
-#define CFG_CONNAC3X_DS_VER		2
+#define CFG_CONNAC3X_DS_VER		(3000)
 #endif
 #endif
 

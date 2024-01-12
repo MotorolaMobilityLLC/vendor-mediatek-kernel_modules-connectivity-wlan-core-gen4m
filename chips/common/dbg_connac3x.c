@@ -358,9 +358,14 @@ void connac3x_dump_tmac_info(
 	DBGLOG(HAL, INFO, "\t\tSounding = %d\n",
 		((txd->u4DW2 & CONNAC3X_TX_DESC_OM_MAP) ? 1 : 0));
 
+#if (CFG_CONNAC3X_DS_VER >= 3500)
+	DBGLOG(HAL, INFO, "\t\tRTS = %d\n",
+		((txd->u4DW7 & CONNAC3X_TX_DESC_FORCE_RTS_CTS) ? 1 : 0));
+#else
 	/* RTS [9] */
 	DBGLOG(HAL, INFO, "\t\tRTS = %d\n",
 		((txd->u4DW2 & CONNAC3X_TX_DESC_FORCE_RTS_CTS) ? 1 : 0));
+#endif
 
 	/* Header Padding [11:10] */
 	DBGLOG(HAL, INFO, "\t\tHeader_padding = %d\n",
