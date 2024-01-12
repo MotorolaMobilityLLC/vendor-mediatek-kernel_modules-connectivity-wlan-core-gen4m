@@ -545,6 +545,9 @@ struct CHIP_DBG_OPS {
 	void (*dumpwfsyscpupcr)(struct ADAPTER *prAdapter);
 	void (*dumpBusHangCr)(struct ADAPTER *prAdapter);
 	u_int8_t (*dumpPcieStatus)(struct GLUE_INFO *prGlueInfo);
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	void (*dumpPcieCr)(void);
+#endif
 };
 
 enum PKT_PHASE {

@@ -1747,6 +1747,23 @@ bool IsOverRstTimeThreshold(
 void glResetWholeChipResetTrigger(char *pcReason)
 {
 	int ret = -ENOTSUPP;
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	struct RESET_STRUCT *rst = &wifi_rst;
+	struct GLUE_INFO *prGlueInfo = rst->prGlueInfo;
+	struct ADAPTER *prAdapter = NULL;
+	struct CHIP_DBG_OPS *prDebugOps = NULL;
+	u_int8_t dumpViaBt = fgIsBusAccessFailed && fgTriggerDebugSop;
+#endif
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	if (prGlueInfo->u4ReadyFlag && dumpViaBt) {
+		prAdapter = prGlueInfo->prAdapter;
+		prDebugOps = prAdapter->chip_info->prDebugOps;
+
+		if (prDebugOps && prDebugOps->dumpBusHangCr)
+			prDebugOps->dumpBusHangCr(prAdapter);
+	}
+#endif
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	ret = conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, pcReason);
