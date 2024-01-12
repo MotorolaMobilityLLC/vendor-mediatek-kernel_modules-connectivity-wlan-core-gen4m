@@ -507,6 +507,12 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	if (prAdapter->fgIsFwDownloaded && prChipInfo->is_support_cr4)
 		fgStatus &= halDriverOwnCheckCR4(prAdapter);
 
+	if (prAdapter->fgIsFwDownloaded) {
+		/*WFDMA re-init flow after chip deep sleep*/
+		if (prChipInfo->asicWfdmaReInit)
+			prChipInfo->asicWfdmaReInit(prAdapter);
+	}
+
 	if (fgStatus) {
 		/* Check consys enter sleep mode DummyReg(0x0F) */
 		if (prBusInfo->checkDummyReg)
