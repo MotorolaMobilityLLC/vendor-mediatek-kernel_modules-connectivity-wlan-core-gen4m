@@ -357,6 +357,11 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 	wifi_rst.rst_trigger_flag = u4RstFlag;
 	schedule_work(&(wifi_rst.rst_trigger_work));
 #else
+	if (u4RstFlag & RST_FLAG_DO_CORE_DUMP)
+		g_fgRstRecover = FALSE;
+	else
+		g_fgRstRecover = TRUE;
+
 	if (u4RstFlag & RST_FLAG_DO_WHOLE_RESET) {
 		if (prChipInfo->trigger_wholechiprst)
 			prChipInfo->trigger_wholechiprst(g_reason);
