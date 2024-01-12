@@ -229,6 +229,7 @@ static void mt6639_mcu_deinit(struct ADAPTER *ad);
 static int mt6639ConnacPccifOn(struct ADAPTER *prAdapter);
 static int mt6639ConnacPccifOff(struct ADAPTER *prAdapter);
 static int mt6639_CheckBusHang(void *priv, uint8_t rst_enable);
+static void mt6639_CheckMcuOff(struct ADAPTER *ad);
 static uint32_t mt6639_wlanDownloadPatch(struct ADAPTER *prAdapter);
 #endif
 #if CFG_PCIE_LTR_UPDATE
@@ -1122,6 +1123,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 		BIT(CHIP_CAPA_FW_LOG_TIME_SYNC_BY_CCIF) |
 		BIT(CHIP_CAPA_XTAL_TRIM),
 	.checkbushang = mt6639_CheckBusHang,
+	.checkmcuoff = mt6639_CheckMcuOff,
 	.setCrypto = mt6639_set_crypto,
 	.rEmiInfo = {
 #if CFG_MTK_ANDROID_EMI
@@ -2687,10 +2689,7 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 
 	if ((u4RegVal[6] & BITS(12, 13)) == BITS(12, 13)) {
 		DBGLOG(HAL, INFO, "MCU off, 0x1F5014=0x%08x\n", u4RegVal[6]);
-		/* block pcie to prevent access */
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
-		mtk_pcie_disable_data_trans(0);
-#endif
+		/* MCU OFF, set dump via BT */
 		fgIsMcuOff = TRUE;
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 		fgTriggerDebugSop = TRUE;
@@ -3670,6 +3669,26 @@ static int mt6639_CheckBusHang(void *priv, uint8_t rst_enable)
 
 exit:
 	return readable ? 0 : 1;
+}
+
+static void mt6639_CheckMcuOff(struct ADAPTER *ad)
+{
+	uint32_t u4RegVal = 0;
+
+	if (!ad) {
+		DBGLOG(HAL, ERROR, "prAdapter is NULL\n");
+		return;
+	}
+
+	HAL_MCR_RD(ad, 0x1F5014, &u4RegVal);
+
+	if ((u4RegVal & BITS(12, 13)) == BITS(12, 13)) {
+		DBGLOG(HAL, INFO, "MCU off, 0x1F5014=0x%08x\n", u4RegVal);
+		/* block pcie to prevent access */
+#if defined(CFG_MTK_WIFI_PCIE_SUPPORT)
+		mtk_pcie_disable_data_trans(0);
+#endif
+	}
 }
 
 static uint32_t mt6639_wlanDownloadPatch(struct ADAPTER *prAdapter)
