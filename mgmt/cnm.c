@@ -2123,7 +2123,7 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 			/* No hit the ucOwnMacIndex could be
 			 * assigned to this new bss
 			 */
-			omac_choosed;
+			goto omac_choosed;
 		}
 	} while (++ucOwnMacIdx < prAdapter->ucHwBssIdNum);
 
