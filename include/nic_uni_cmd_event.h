@@ -6620,6 +6620,25 @@ struct UNI_EVENT_FAST_PATH_PROCESS_T {
 } __KAL_ATTRIB_PACKED__;
 #endif /* CFG_MSCS_SUPPORT */
 
+#if (CFG_CE_ASSERT_DUMP == 1)
+struct UNI_EVENT_ASSERT_DUMP {
+	uint8_t ucBssIndex;
+	uint8_t aucPadding[3];
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_ASSERT_CONTENT {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t aucBuf[0];
+} __KAL_ATTRIB_PACKED__;
+
+enum ENUM_UNI_EVENT_ASSERT_DUMP_TAG {
+	UNI_EVENT_ASSERT_DUMP_BASIC = 0x0,
+	UNI_EVENT_ASSERT_DUMP_TAG_NUM
+};
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -7114,6 +7133,10 @@ void nicUniEventFastPath(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventThermalProtect(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+
+#if (CFG_CE_ASSERT_DUMP == 1)
+void nicUniEventAssertDump(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt);
+#endif
 
 /*******************************************************************************
  *                              F U N C T I O N S
