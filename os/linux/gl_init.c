@@ -7297,8 +7297,6 @@ static void wlanRemove(void)
 	kalMetRemoveProcfs();
 #endif
 
-	kalWlanUeventDeinit();
-
 #if CFG_SUPPORT_CSI
 	glCsiSupportDeinit(prGlueInfo);
 #endif
@@ -7319,6 +7317,8 @@ static void wlanRemove(void)
 #endif
 
 	wlanAdapterStop(prAdapter, FALSE);
+
+	kalWlanUeventDeinit();
 
 	HAL_LP_OWN_SET(prAdapter, &fgResult);
 	DBGLOG(INIT, INFO, "HAL_LP_OWN_SET(%d)\n",
