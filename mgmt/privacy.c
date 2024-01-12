@@ -229,15 +229,26 @@ u_int8_t secCheckClassError(struct ADAPTER *prAdapter,
 {
 	void *prRxStatus;
 	struct RX_DESC_OPS_T *prRxDescOps;
+	uint8_t ucBssIndex;
+	struct BSS_INFO *prBssInfo;
+
+	if (!prStaRec)
+		return FALSE;
 
 	prRxDescOps = prAdapter->chip_info->prRxDescOps;
 	prRxStatus = prSwRfb->prRxStatus;
+	ucBssIndex = prStaRec->ucBssIndex;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+	if (!prBssInfo) {
+		DBGLOG(RX, ERROR, "Invalid bssidx:%d\n", ucBssIndex);
+		return FALSE;
+	}
 
 	if (prRxDescOps->nic_rxd_get_sw_class_error_bit(prRxStatus)
-	    || (IS_STA_IN_AIS(prStaRec)
-		&& aisGetAisBssInfo(prAdapter,
-		prStaRec->ucBssIndex)->eConnectionState ==
-		MEDIA_STATE_DISCONNECTED)) {
+		|| (prBssInfo->eNetworkType == NETWORK_TYPE_AIS
+		&& aisGetAisBssInfo(prAdapter, ucBssIndex)->eConnectionState
+			== MEDIA_STATE_DISCONNECTED)) {
 
 		DBGLOG_LIMITED(RSN, WARN,
 			"RX_CLASSERR: prStaRec=%p PktTYpe=0x%x, WlanIdx=%d,",
