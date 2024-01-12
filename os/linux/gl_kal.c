@@ -3444,6 +3444,7 @@ void kalClearCommandQueue(IN struct GLUE_INFO *prGlueInfo)
 	}
 }
 
+#if CFG_SUPPORT_LOWLATENCY_MODE
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is used to check use packet data into command Queue flow
@@ -3515,6 +3516,7 @@ u_int8_t kalIsCommandDataPath(IN struct ADAPTER
 
 	return TRUE;
 }
+#endif
 
 uint32_t kalProcessTxPacket(struct GLUE_INFO *prGlueInfo,
 			    struct sk_buff *prSkb)
@@ -3537,10 +3539,10 @@ uint32_t kalProcessTxPacket(struct GLUE_INFO *prGlueInfo,
 		} else {
 			u4Status = WLAN_STATUS_RESOURCES;
 		}
-
+	}
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	/* Data frame use command path */
-	} else if (kalIsCommandDataPath(prGlueInfo->prAdapter,
+	else if (kalIsCommandDataPath(prGlueInfo->prAdapter,
 						(void *) prSkb)) {
 		u4Status = wlanProcessCmdDataFrame(prGlueInfo->prAdapter,
 					       (void *) prSkb);
