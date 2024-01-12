@@ -422,7 +422,7 @@ VOID cnmRadarDetectEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 	prEventBody = (P_EVENT_RDD_REPORT_T)(prEvent->aucBuffer);
 
 	prP2pRddDetMsg = (P_MSG_P2P_RADAR_DETECT_T) cnmMemAlloc(prAdapter,
-					RAM_TYPE_MSG, sizeof(P_MSG_P2P_RADAR_DETECT_T));
+					RAM_TYPE_MSG, sizeof(*prP2pRddDetMsg));
 
 	prP2pRddDetMsg->rMsgHdr.eMsgId = MID_CNM_P2P_RADAR_DETECT;
 
@@ -434,6 +434,8 @@ VOID cnmRadarDetectEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 			break;
 		}
 	}
+
+	p2pFuncSetDfsState(DFS_STATE_DETECTED);
 
 	p2pFuncRadarInfoInit();
 
@@ -467,7 +469,7 @@ VOID cnmCsaDoneEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 	DBGLOG(CNM, INFO, "cnmCsaDoneEvent.\n");
 
 	prP2pCsaDoneMsg = (P_MSG_P2P_CSA_DONE_T) cnmMemAlloc(prAdapter,
-					RAM_TYPE_MSG, sizeof(P_MSG_P2P_CSA_DONE_T));
+					RAM_TYPE_MSG, sizeof(*prP2pCsaDoneMsg));
 
 	prAdapter->rWifiVar.fgCsaInProgress = FALSE;
 

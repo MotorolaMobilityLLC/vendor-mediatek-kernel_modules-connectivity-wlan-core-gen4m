@@ -80,9 +80,18 @@ APPEND_VAR_IE_ENTRY_T txProbeRspIETable[] = {
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 BOOLEAN g_fgManualCac = FALSE;
-UINT_32 g_u4ManualCacTime;
-UINT_8 g_ucRadarDetectMode;
+UINT_32 g_u4DriverCacTime;
+UINT_32 g_u4CacStartBootTime;
+UINT_8 g_ucRadarDetectMode = FALSE;
 P2P_RADAR_INFO_T g_rP2pRadarInfo;
+UINT_8 g_ucDfsState = DFS_STATE_INACTIVE;
+static PUINT_8 apucDfsState[DFS_STATE_NUM] = {
+	(PUINT_8) DISP_STRING("DFS_STATE_INACTIVE"),
+	(PUINT_8) DISP_STRING("DFS_STATE_CHECKING"),
+	(PUINT_8) DISP_STRING("DFS_STATE_ACTIVE"),
+	(PUINT_8) DISP_STRING("DFS_STATE_DETECTED")
+};
+
 PUINT_8 apucW53RadarType[3] = {
 	(PUINT_8) DISP_STRING("Unknown Type"),
 	(PUINT_8) DISP_STRING("Type 1 (short pulse)"),
@@ -1498,22 +1507,25 @@ BOOLEAN p2pFuncCheckWeatherRadarBand(IN P_P2P_CHNL_REQ_INFO_T prChnlReqInfo)
 	return FALSE;
 }
 
-INT_32 p2pFuncSetManualCacTime(IN UINT_32 u4ManualCacTime)
+INT_32 p2pFuncSetDriverCacTime(IN UINT_32 u4CacTime)
 {
 	WLAN_STATUS i4Status = WLAN_STATUS_SUCCESS;
 
-	g_fgManualCac = TRUE;
+	g_u4DriverCacTime = u4CacTime;
 
-	g_u4ManualCacTime = u4ManualCacTime * 1000;
-
-	DBGLOG(P2P, INFO, "p2pFuncSetManualCacTime: g_u4ManualCacTime = %dsec\n", g_u4ManualCacTime/1000);
+	DBGLOG(P2P, INFO, "p2pFuncSetDriverCacTime: g_u4ManualCacTime = %dsec\n", g_u4DriverCacTime);
 
 	return i4Status;
 }
 
-UINT_32 p2pFuncGetManualCacTime(VOID)
+VOID p2pFuncEnableManualCac(VOID)
 {
-	return g_u4ManualCacTime;
+	g_fgManualCac = TRUE;
+}
+
+UINT_32 p2pFuncGetDriverCacTime(VOID)
+{
+	return g_u4DriverCacTime;
 }
 
 BOOLEAN p2pFuncIsManualCac(VOID)
@@ -1523,35 +1535,7 @@ BOOLEAN p2pFuncIsManualCac(VOID)
 
 VOID p2pFuncRadarInfoInit(VOID)
 {
-
 	kalMemZero(&g_rP2pRadarInfo, sizeof(g_rP2pRadarInfo));
-
-/*	UINT_8 ucCnt;
-
-	g_rP2pRadarInfo.ucRadarReportMode = 0;
-	g_rP2pRadarInfo.ucRddIdx = 0;
-	g_rP2pRadarInfo.ucLongDetected = 0;
-	g_rP2pRadarInfo.ucPeriodicDetected = 0;
-	g_rP2pRadarInfo.ucLPBNum = 0;
-	g_rP2pRadarInfo.ucPPBNum = 0;
-	g_rP2pRadarInfo.ucLPBPeriodValid = 0;
-	g_rP2pRadarInfo.ucLPBWidthValid = 0;
-	g_rP2pRadarInfo.ucPRICountM1 = 0;
-	g_rP2pRadarInfo.ucPRICountM1TH = 0;
-	g_rP2pRadarInfo.ucPRICountM2 = 0;
-	g_rP2pRadarInfo.ucPRICountM2TH = 0;
-	g_rP2pRadarInfo.u4PRI1stUs = 0;
-
-	for (ucCnt = 0; ucCnt < 32; ucCnt++) {
-		g_rP2pRadarInfo.arPpbContent[ucCnt].u4PeriodicStartTime = 0;
-		g_rP2pRadarInfo.arPpbContent[ucCnt].u2PeriodicPulseWidth = 0;
-	}
-	for (ucCnt = 0; ucCnt < 32; ucCnt++) {
-		g_rP2pRadarInfo.arLpbContent[ucCnt].u4LongStartTime = 0;
-		g_rP2pRadarInfo.arLpbContent[ucCnt].u2LongPulseWidth = 0;
-	}
-*/
-
 }
 
 VOID p2pFuncShowRadarInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
@@ -1591,7 +1575,7 @@ VOID p2pFuncShowRadarInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 
 		DBGLOG(P2P, INFO, "Radar Content:\n");
 
-		DBGLOG(P2P, INFO, "start time	pulse width	PRI\n");
+		DBGLOG(P2P, INFO, "start time    pulse width    PRI\n");
 
 		if (g_rP2pRadarInfo.ucPeriodicDetected) {
 			DBGLOG(P2P, INFO, "%-10d    %-11d    -\n"
@@ -1619,6 +1603,11 @@ VOID p2pFuncShowRadarInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 			}
 		}
 	}
+}
+
+VOID p2pFuncGetRadarInfo(IN P_P2P_RADAR_INFO_T prP2pRadarInfo)
+{
+	kalMemCopy(prP2pRadarInfo, &g_rP2pRadarInfo, sizeof(*prP2pRadarInfo));
 }
 
 PUINT_8 p2pFuncJpW53RadarType(VOID)
@@ -1699,6 +1688,41 @@ VOID p2pFuncSetRadarDetectMode(IN UINT_8 ucRadarDetectMode)
 UINT_8 p2pFuncGetRadarDetectMode(VOID)
 {
 	return g_ucRadarDetectMode;
+}
+
+VOID p2pFuncSetDfsState(IN UINT_8 ucDfsState)
+{
+	DBGLOG(P2P, INFO, "[DFS_STATE] TRANSITION: [%s] -> [%s]\n",
+		apucDfsState[g_ucDfsState], apucDfsState[ucDfsState]);
+
+	g_ucDfsState = ucDfsState;
+}
+
+UINT_8 p2pFuncGetDfsState(VOID)
+{
+	return g_ucDfsState;
+}
+
+PUINT_8 p2pFuncShowDfsState(VOID)
+{
+	return apucDfsState[g_ucDfsState];
+}
+
+VOID p2pFuncRecordCacStartBootTime(VOID)
+{
+	g_u4CacStartBootTime = kalGetBootTime();
+}
+
+UINT_32 p2pFuncGetCacRemainingTime(VOID)
+{
+	UINT_32 u4CurrentBootTime;
+	UINT_32 u4CacRemainingTime;
+
+	u4CurrentBootTime = kalGetBootTime();
+
+	u4CacRemainingTime = g_u4DriverCacTime - (u4CurrentBootTime - g_u4CacStartBootTime)/1000000;
+
+	return u4CacRemainingTime;
 }
 #endif
 
