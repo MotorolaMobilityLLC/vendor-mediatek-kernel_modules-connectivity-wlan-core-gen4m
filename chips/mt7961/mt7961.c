@@ -953,125 +953,33 @@ void mt7961ConstructBtPatchName(struct GLUE_INFO *prGlueInfo,
 }
 
 uint32_t wlanBtPatchSendSemaControl(IN struct ADAPTER *prAdapter,
-				    IN uint32_t u4Addr,
-				    OUT uint8_t *pucSeqNum)
+	IN uint32_t u4Addr,
+	OUT uint8_t *pucPatchStatus,
+	OUT uint32_t *u4RemapAddr)
 {
-	struct mt66xx_chip_info *prChipInfo = NULL;
-	struct CMD_INFO *prCmdInfo;
+	struct INIT_CMD_BT_PATCH_SEMA_CTRL rCmd = {0};
+	struct INIT_EVENT_BT_PATCH_SEMA_CTRL rEvent = {0};
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
-	struct INIT_CMD_BT_PATCH_SEMA_CTRL *prBtPatchSemaCtrl;
 
 	if (prAdapter == NULL) {
 		DBGLOG(INIT, ERROR, "prAdapter is NULL\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
-	prChipInfo = prAdapter->chip_info;
-	if (prChipInfo == NULL) {
-		DBGLOG(INIT, ERROR, "prChipInfo is NULL\n");
-		return WLAN_STATUS_FAILURE;
-	}
+	rCmd.ucGetSemaphore = PATCH_GET_SEMA_CONTROL;
+	rCmd.u4Addr = u4Addr;
 
-	/* 1. Allocate CMD Info Packet and its Buffer. */
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter,
-		sizeof(struct INIT_HIF_TX_HEADER) +
-		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES) +
-		sizeof(struct INIT_CMD_BT_PATCH_SEMA_CTRL));
+	u4Status = wlanSendInitSetQueryCmd(prAdapter,
+		INIT_CMD_ID_PATCH_SEMAPHORE_CONTROL, &rCmd, sizeof(rCmd),
+		TRUE, FALSE,
+		INIT_EVENT_ID_BT_PATCH_SEMA_CTRL, &rEvent, sizeof(rEvent));
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		goto exit;
 
-	if (!prCmdInfo) {
-		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
-		return WLAN_STATUS_FAILURE;
-	}
+	*pucPatchStatus = rEvent.ucStatus;
+	*u4RemapAddr = rEvent.u4RemapAddr;
 
-	prCmdInfo->u2InfoBufLen = sizeof(struct INIT_HIF_TX_HEADER) +
-		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES) +
-		sizeof(struct INIT_CMD_BT_PATCH_SEMA_CTRL);
-
-	prCmdInfo->ucCID = INIT_CMD_ID_BT_PATCH_SEMAPHORE_CONTROL;
-	NIC_FILL_CMD_TX_HDR(prAdapter,
-		prCmdInfo->pucInfoBuffer,
-		prCmdInfo->u2InfoBufLen,
-		prCmdInfo->ucCID,
-		INIT_CMD_PDA_PACKET_TYPE_ID,
-		pucSeqNum, FALSE,
-		(void **)&prBtPatchSemaCtrl, TRUE, 0, S2D_INDEX_CMD_H2N);
-
-	/* Setup DOWNLOAD_BUF */
-	kalMemZero(prBtPatchSemaCtrl,
-		   sizeof(struct INIT_CMD_BT_PATCH_SEMA_CTRL));
-	prBtPatchSemaCtrl->ucGetSemaphore = PATCH_GET_SEMA_CONTROL;
-	prBtPatchSemaCtrl->u4Addr = u4Addr;
-
-	/* 4. Send FW_Download command */
-	if (nicTxInitCmd(prAdapter, prCmdInfo,
-			 prChipInfo->u2TxInitCmdPort) != WLAN_STATUS_SUCCESS) {
-		u4Status = WLAN_STATUS_FAILURE;
-		DBGLOG(INIT, ERROR, "send Get BT Patch Sema fail\n");
-	} else
-		DBGLOG(INIT, INFO, "send Get BT Patch Sema success\n");
-
-	/* 5. Free CMD Info Packet. */
-	cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
-
-	return u4Status;
-}
-
-uint32_t wlanBtPatchRecvSemaResp(IN struct ADAPTER *prAdapter,
-				 IN uint8_t ucCmdSeqNum,
-				 OUT uint8_t *pucPatchStatus,
-				 OUT uint32_t *u4RemapAddr)
-{
-	struct mt66xx_chip_info *prChipInfo;
-	uint8_t *aucBuffer;
-	uint32_t u4EventSize;
-	struct INIT_WIFI_EVENT *prInitEvent;
-	struct INIT_EVENT_BT_PATCH_SEMA_CTRL *prEventCmdResult;
-	uint32_t u4RxPktLength;
-	uint32_t u4Status = WLAN_STATUS_FAILURE;
-
-	ASSERT(prAdapter);
-	prChipInfo = prAdapter->chip_info;
-
-	if (kalIsCardRemoved(prAdapter->prGlueInfo) == TRUE
-	    || fgIsBusAccessFailed == TRUE)
-		return WLAN_STATUS_FAILURE;
-
-	u4EventSize = prChipInfo->rxd_size + prChipInfo->init_event_size +
-		sizeof(struct INIT_EVENT_BT_PATCH_SEMA_CTRL);
-	aucBuffer = kalMemAlloc(u4EventSize, PHY_MEM_TYPE);
-	if (aucBuffer == NULL) {
-		DBGLOG(INIT, ERROR, "Alloc CMD buffer failed\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	if (nicRxWaitResponse(prAdapter, 0, aucBuffer, u4EventSize,
-			      &u4RxPktLength) != WLAN_STATUS_SUCCESS) {
-
-		DBGLOG(INIT, WARN, "Wait patch semaphore response fail\n");
-		goto out;
-	}
-
-	prInitEvent = (struct INIT_WIFI_EVENT *)
-		(aucBuffer + prChipInfo->rxd_size);
-
-	if (prInitEvent->ucEID != INIT_EVENT_ID_BT_PATCH_SEMA_CTRL) {
-		DBGLOG(INIT, WARN, "Unexpected EVENT ID, get 0x%0x\n",
-		       prInitEvent->ucEID);
-		goto out;
-	}
-
-	/* BT always response prInitEvent->ucSeqNum=0 */
-
-	prEventCmdResult = (struct INIT_EVENT_BT_PATCH_SEMA_CTRL *)
-		prInitEvent->aucBuffer;
-
-	*pucPatchStatus = prEventCmdResult->ucStatus;
-	*u4RemapAddr = prEventCmdResult->u4RemapAddr;
-
-	u4Status = WLAN_STATUS_SUCCESS;
-out:
-	kalMemFree(aucBuffer, PHY_MEM_TYPE, u4EventSize);
-
+exit:
 	return u4Status;
 }
 
@@ -1181,38 +1089,23 @@ uint32_t wlanImageSectionGetBtPatchInfo(IN struct ADAPTER *prAdapter,
 	return u4Status;
 }
 
-
 int32_t wlanBtPatchIsDownloaded(IN struct ADAPTER *prAdapter,
 				 IN uint32_t u4DestAddr, OUT uint32_t *u4BtAddr)
 {
-	uint8_t ucSeqNum, ucPatchStatus;
+	uint8_t ucPatchStatus = PATCH_STATUS_NO_SEMA_NEED_PATCH;
 	uint32_t rStatus;
-	uint32_t u4Count;
+	uint32_t u4Count = 0;
 	uint32_t u4RemapAddr;
 	int32_t s4RetStatus = -1;
-
-	ucPatchStatus = PATCH_STATUS_NO_SEMA_NEED_PATCH;
-	u4Count = 0;
 
 	while (ucPatchStatus == PATCH_STATUS_NO_SEMA_NEED_PATCH) {
 		if (u4Count)
 			kalMdelay(100);
 
 		rStatus = wlanBtPatchSendSemaControl(prAdapter, u4DestAddr,
-							&ucSeqNum);
-		if (rStatus != WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, WARN,
-			       "Send patch SEMA control CMD failed!!\n");
+			&ucPatchStatus, &u4RemapAddr);
+		if (rStatus != WLAN_STATUS_SUCCESS)
 			goto out;
-		}
-
-		rStatus = wlanBtPatchRecvSemaResp(prAdapter, ucSeqNum,
-						&ucPatchStatus, &u4RemapAddr);
-		if (rStatus != WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, WARN,
-			       "Recv patch SEMA control EVT failed!!\n");
-			goto out;
-		}
 
 		u4Count++;
 

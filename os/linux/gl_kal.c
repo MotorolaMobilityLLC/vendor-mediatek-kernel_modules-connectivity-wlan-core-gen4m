@@ -10303,12 +10303,12 @@ kalSyncTimeToFW(IN struct ADAPTER *prAdapter, IN u_int8_t fgInitCmd,
 					  (uint8_t *) &rCmdChipConfig,
 					  &rChipConfigInfo, u4SetBufferLen);
 	else
-		rStatus = wlanSendInitCmd(prAdapter,
-			  INIT_CMD_ID_LOG_TIME_SYNC,
-			  TRUE,
-			  TRUE,
-			  sizeof(struct CMD_CHIP_CONFIG),
-			  (uint8_t *) &rCmdChipConfig);
+		rStatus = wlanSendInitSetQueryCmd(prAdapter,
+			INIT_CMD_ID_LOG_TIME_SYNC,
+			&rCmdChipConfig,
+			sizeof(rCmdChipConfig),
+			TRUE, FALSE,
+			INIT_EVENT_ID_CMD_RESULT, NULL, 0);
 
 	return rStatus;
 }

@@ -154,126 +154,62 @@ int wlanGetCalResultCb(uint32_t *pEmiCalOffset, uint32_t *pEmiCalSize)
 }
 
 uint32_t wlanRcvPhyActionRsp(struct ADAPTER *prAdapter,
-	uint8_t ucCmdSeqNum)
+	struct HAL_PHY_ACTION_TLV_HEADER *prPhyTlvHeader)
 {
-	struct mt66xx_chip_info *prChipInfo;
-	uint8_t *aucBuffer;
-	uint32_t u4EventSize;
-	struct INIT_WIFI_EVENT *prInitEvent;
-	struct HAL_PHY_ACTION_TLV_HEADER *prPhyTlvHeader;
 	struct HAL_PHY_ACTION_TLV *prPhyTlv;
 	struct INIT_EVENT_PHY_ACTION_RSP *prPhyEvent;
-	uint32_t u4RxPktLength;
 	uint32_t u4Status = WLAN_STATUS_FAILURE;
-	uint8_t ucPortIdx = IMG_DL_STATUS_PORT_IDX;
 
-	ASSERT(prAdapter);
-	prChipInfo = prAdapter->chip_info;
-
-	u4EventSize = prChipInfo->rxd_size +
-		prChipInfo->init_event_size +
-		sizeof(struct HAL_PHY_ACTION_TLV_HEADER) +
-		sizeof(struct HAL_PHY_ACTION_TLV) +
-		sizeof(struct INIT_EVENT_PHY_ACTION_RSP);
-	aucBuffer = kalMemAlloc(u4EventSize, PHY_MEM_TYPE);
-	if (aucBuffer == NULL) {
-		DBGLOG(INIT, ERROR, "kalMemAlloc failed\n");
-		return WLAN_STATUS_FAILURE;
+	if (prPhyTlvHeader->u4MagicNum != HAL_PHY_ACTION_MAGIC_NUM) {
+		DBGLOG(INIT, ERROR, "HAL_PHY_ACTION_MAGIC_NUM failed\n");
+		u4Status = WLAN_STATUS_FAILURE;
+		goto exit;
 	}
 
-	do {
-		if (kalIsCardRemoved(prAdapter->prGlueInfo) == TRUE
-		    || fgIsBusAccessFailed == TRUE) {
-			DBGLOG(INIT, ERROR, "kalIsCardRemoved failed\n");
-			break;
+	prPhyTlv =
+		(struct HAL_PHY_ACTION_TLV *)prPhyTlvHeader->aucBuffer;
+
+	prPhyEvent = (struct INIT_EVENT_PHY_ACTION_RSP *)
+		prPhyTlv->aucBuffer;
+
+	if (prPhyTlv->u2Tag == HAL_PHY_ACTION_TAG_CAL) {
+		DBGLOG(INIT, INFO,
+			"HAL_PHY_ACTION_TAG_CAL ucEvent[0x%x]status[0x%x]emiAddr[0x%x]emiLen[0x%x]\n",
+			prPhyEvent->ucEvent,
+			prPhyEvent->ucStatus,
+			prPhyEvent->u4EmiAddress,
+			prPhyEvent->u4EmiLength);
+
+		if ((prPhyEvent->ucEvent ==
+			HAL_PHY_ACTION_CAL_FORCE_CAL_RSP &&
+			prPhyEvent->ucStatus ==
+			HAL_PHY_ACTION_STATUS_SUCCESS) ||
+			(prPhyEvent->ucEvent ==
+			HAL_PHY_ACTION_CAL_USE_BACKUP_RSP &&
+			prPhyEvent->ucStatus ==
+			HAL_PHY_ACTION_STATUS_RECAL)) {
+
+			/* read from EMI, backup in driver */
+			wlanAccessCalibrationEMI(prPhyEvent,
+				TRUE);
 		}
 
-		if (nicRxWaitResponseByWaitingInterval(prAdapter, ucPortIdx,
-					aucBuffer, u4EventSize,
-					&u4RxPktLength,
-					CFG_PRE_CAL_SLEEP_WAITING_INTERVAL,
-					CFG_PRE_CAL_RX_RESPONSE_TIMEOUT) !=
-			   WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, ERROR, "nicRxWaitResponse failed\n");
-			break;
-		}
+		u4Status = WLAN_STATUS_SUCCESS;
+	} else if (prPhyTlv->u2Tag == HAL_PHY_ACTION_TAG_NVRAM) {
+		DBGLOG(INIT, INFO,
+			"HAL_PHY_ACTION_TAG_NVRAM status[0x%x]\n",
+			prPhyEvent->ucStatus);
 
-		prInitEvent = (struct INIT_WIFI_EVENT *)
-			(aucBuffer + prChipInfo->rxd_size);
+		u4Status = WLAN_STATUS_SUCCESS;
+	} else if (prPhyTlv->u2Tag == HAL_PHY_ACTION_TAG_COM_FEM) {
+		DBGLOG(INIT, INFO,
+			"HAL_PHY_ACTION_TAG_COM_FEM status[0x%x]\n",
+			prPhyEvent->ucStatus);
 
-		/* EID / SeqNum check */
-		if (prInitEvent->ucEID != INIT_EVENT_ID_PHY_ACTION) {
-			DBGLOG(INIT, ERROR,
-				"INIT_EVENT_ID_PHY_ACTION failed\n");
-			break;
-		}
+		u4Status = WLAN_STATUS_SUCCESS;
+	}
 
-		if (prInitEvent->ucSeqNum != ucCmdSeqNum) {
-			DBGLOG(INIT, ERROR, "ucCmdSeqNum failed\n");
-			break;
-		}
-
-		prPhyTlvHeader = (struct HAL_PHY_ACTION_TLV_HEADER *)
-			prInitEvent->aucBuffer;
-
-		if (prPhyTlvHeader->u4MagicNum != HAL_PHY_ACTION_MAGIC_NUM) {
-			DBGLOG(INIT, ERROR,
-				"HAL_PHY_ACTION_MAGIC_NUM failed\n");
-			break;
-		}
-
-		prPhyTlv =
-			(struct HAL_PHY_ACTION_TLV *)prPhyTlvHeader->aucBuffer;
-
-		prPhyEvent = (struct INIT_EVENT_PHY_ACTION_RSP *)
-			prPhyTlv->aucBuffer;
-
-		if (prPhyTlv->u2Tag == HAL_PHY_ACTION_TAG_CAL) {
-
-			DBGLOG(INIT, INFO,
-				"HAL_PHY_ACTION_TAG_CAL ucEvent[0x%x]status[0x%x]emiAddr[0x%x]emiLen[0x%x]\n",
-				prPhyEvent->ucEvent,
-				prPhyEvent->ucStatus,
-				prPhyEvent->u4EmiAddress,
-				prPhyEvent->u4EmiLength);
-
-			if ((prPhyEvent->ucEvent ==
-				HAL_PHY_ACTION_CAL_FORCE_CAL_RSP &&
-				prPhyEvent->ucStatus ==
-				HAL_PHY_ACTION_STATUS_SUCCESS) ||
-				(prPhyEvent->ucEvent ==
-				HAL_PHY_ACTION_CAL_USE_BACKUP_RSP &&
-				prPhyEvent->ucStatus ==
-				HAL_PHY_ACTION_STATUS_RECAL)) {
-
-				/* Get Emi address and send to Conninfra */
-				gEmiGetCalOffset = prPhyEvent->u4EmiAddress &
-					WIFI_EMI_ADDR_MASK;
-
-				/* read from EMI, backup in driver */
-				wlanAccessCalibrationEMI(prPhyEvent,
-					TRUE);
-			}
-
-			u4Status = WLAN_STATUS_SUCCESS;
-		} else if (prPhyTlv->u2Tag == HAL_PHY_ACTION_TAG_NVRAM) {
-
-			DBGLOG(INIT, INFO,
-				"HAL_PHY_ACTION_TAG_NVRAM status[0x%x]\n",
-				prPhyEvent->ucStatus);
-
-			u4Status = WLAN_STATUS_SUCCESS;
-		} else if (prPhyTlv->u2Tag == HAL_PHY_ACTION_TAG_COM_FEM) {
-
-			DBGLOG(INIT, INFO,
-				"HAL_PHY_ACTION_TAG_COM_FEM status[0x%x]\n",
-				prPhyEvent->ucStatus);
-
-			u4Status = WLAN_STATUS_SUCCESS;
-		}
-	} while (FALSE);
-
-	kalMemFree(aucBuffer, PHY_MEM_TYPE, u4EventSize);
+exit:
 	return u4Status;
 }
 
@@ -441,26 +377,22 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 	uint16_t u2Tag,
 	uint8_t ucCalCmd)
 {
-	struct CMD_INFO *prCmdInfo;
-	uint8_t ucTC, ucCmdSeqNum;
-	uint32_t u4CmdSize;
-	uint32_t u4Status = WLAN_STATUS_SUCCESS;
-	struct mt66xx_chip_info *prChipInfo;
-	struct HAL_PHY_ACTION_TLV_HEADER *prPhyTlvHeader;
+	struct HAL_PHY_ACTION_TLV_HEADER *prCmd = NULL;
+	struct HAL_PHY_ACTION_TLV_HEADER *prEvent = NULL;
 	struct HAL_PHY_ACTION_TLV *prPhyTlv;
 	struct INIT_CMD_PHY_ACTION_CAL *prPhyCal;
-	uint8_t *u1EpaELnaDataPointer = NULL;
-	uint32_t u4EpaELnaDataSize = 0;
 	struct COM_FEM_TAG_FORMAT *prTagDataComFEM;
 	struct LAA_TAG_FORMAT *prTagDataLAA;
 	struct connfem_epaelna_fem_info fem_info;
 	struct connfem_epaelna_pin_info pin_info;
 	struct connfem_epaelna_laa_pin_info laa_pin_info;
+	uint8_t *u1EpaELnaDataPointer = NULL;
+	uint32_t u4EpaELnaDataSize = 0, u4CmdSize = 0, u4EvtSize = 0;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	DBGLOG(INIT, INFO, "SendPhyAction begin\n");
 
 	ASSERT(prAdapter);
-	prChipInfo = prAdapter->chip_info;
 
 	wlanGetEpaElnaFromNvram(&u1EpaELnaDataPointer,
 		&u4EpaELnaDataSize);
@@ -521,52 +453,34 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 			sizeof(struct LAA_TAG_FORMAT);
 	}
 
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter,
-		sizeof(struct INIT_HIF_TX_HEADER) +
-		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES) +
-		u4CmdSize);
-
-	if (!prCmdInfo) {
-		DBGLOG(INIT, ERROR, "cmdBufAllocateCmdInfo failed\n");
-		return WLAN_STATUS_FAILURE;
+	prCmd = kalMemAlloc(u4CmdSize, VIR_MEM_TYPE);
+	if (!prCmd) {
+		DBGLOG(INIT, ERROR, "Alloc cmd packet failed.\n");
+		u4Status = WLAN_STATUS_FAILURE;
+		goto exit;
 	}
 
-	prCmdInfo->u2InfoBufLen = sizeof(struct INIT_HIF_TX_HEADER) +
-		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES) +
-		u4CmdSize;
-
-#if (CFG_USE_TC4_RESOURCE_FOR_INIT_CMD == 1)
-	/* 2. Always use TC4 (TC4 as CPU) */
-	ucTC = TC4_INDEX;
-#else
-	/* 2. Use TC0's resource to send patch finish command.
-	 * Only TC0 is allowed because SDIO HW always reports
-	 * MCU's TXQ_CNT at TXQ0_CNT in CR4 architecutre)
-	 */
-	ucTC = TC0_INDEX;
-#endif
-
-	NIC_FILL_CMD_TX_HDR(prAdapter,
-		prCmdInfo->pucInfoBuffer,
-		prCmdInfo->u2InfoBufLen,
-		INIT_CMD_ID_PHY_ACTION,
-		INIT_CMD_PACKET_TYPE_ID,
-		&ucCmdSeqNum,
-		FALSE,
-		(void **)&prPhyTlvHeader,
-		TRUE, 0, S2D_INDEX_CMD_H2N);
+	u4EvtSize = sizeof(struct HAL_PHY_ACTION_TLV_HEADER) +
+		sizeof(struct HAL_PHY_ACTION_TLV) +
+		sizeof(struct INIT_EVENT_PHY_ACTION_RSP);
+	prEvent = kalMemAlloc(u4EvtSize, VIR_MEM_TYPE);
+	if (!prEvent) {
+		DBGLOG(INIT, ERROR, "Alloc event packet failed.\n");
+		u4Status = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
 
 	/*process TLV Header Part1 */
-	prPhyTlvHeader->u4MagicNum = HAL_PHY_ACTION_MAGIC_NUM;
-	prPhyTlvHeader->ucVersion = HAL_PHY_ACTION_VERSION;
+	prCmd->u4MagicNum = HAL_PHY_ACTION_MAGIC_NUM;
+	prCmd->ucVersion = HAL_PHY_ACTION_VERSION;
 
 	if (u2Tag == HAL_PHY_ACTION_TAG_NVRAM ||
 	    u2Tag == HAL_PHY_ACTION_TAG_COM_FEM ||
 	    u2Tag == HAL_PHY_ACTION_TAG_LAA) {
 		/*process TLV Header Part2 */
 		/* Add HAL_PHY_ACTION_TAG_COM_FEM and HAL_PHY_ACTION_TAG_LAA */
-		prPhyTlvHeader->ucTagNums = 3;
-		prPhyTlvHeader->u2BufLength =
+		prCmd->ucTagNums = 3;
+		prCmd->u2BufLength =
 			sizeof(struct HAL_PHY_ACTION_TLV) +
 			u4EpaELnaDataSize +
 			sizeof(struct HAL_PHY_ACTION_TLV) +
@@ -577,7 +491,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 		/*process TLV Content*/
 		/*TAG HAL_PHY_ACTION_TAG_NVRAM*/
 		prPhyTlv =
-			(struct HAL_PHY_ACTION_TLV *)prPhyTlvHeader->aucBuffer;
+			(struct HAL_PHY_ACTION_TLV *)prCmd->aucBuffer;
 		prPhyTlv->u2Tag = HAL_PHY_ACTION_TAG_NVRAM;
 		prPhyTlv->u2BufLength = u4EpaELnaDataSize;
 		kalMemCopy(prPhyTlv->aucBuffer,
@@ -586,7 +500,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 		/*TAG HAL_PHY_ACTION_TAG_COM_FEM*/
 		prPhyTlv =
 			(struct HAL_PHY_ACTION_TLV *)
-			(prPhyTlvHeader->aucBuffer +
+			(prCmd->aucBuffer +
 			sizeof(struct HAL_PHY_ACTION_TLV) +
 			u4EpaELnaDataSize);
 		prPhyTlv->u2Tag = HAL_PHY_ACTION_TAG_COM_FEM;
@@ -600,7 +514,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 		/*TAG HAL_PHY_ACTION_TAG_LAA*/
 		prPhyTlv =
 			(struct HAL_PHY_ACTION_TLV *)
-			(prPhyTlvHeader->aucBuffer +
+			(prCmd->aucBuffer +
 			sizeof(struct HAL_PHY_ACTION_TLV) +
 			u4EpaELnaDataSize +
 			sizeof(struct HAL_PHY_ACTION_TLV) +
@@ -618,8 +532,8 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 		/*process TLV Header Part2 */
 		/* Add HAL_PHY_ACTION_TAG_NVRAM, HAL_PHY_ACTION_TAG_COM_FEM */
 		/* and HAL_PHY_ACTION_TAG_LAA */
-		prPhyTlvHeader->ucTagNums = 4;
-		prPhyTlvHeader->u2BufLength =
+		prCmd->ucTagNums = 4;
+		prCmd->u2BufLength =
 			sizeof(struct HAL_PHY_ACTION_TLV) +
 			sizeof(struct INIT_CMD_PHY_ACTION_CAL) +
 			sizeof(struct HAL_PHY_ACTION_TLV) +
@@ -632,7 +546,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 		/*process TLV Content*/
 		/*TAG HAL_PHY_ACTION_TAG_CAL*/
 		prPhyTlv =
-			(struct HAL_PHY_ACTION_TLV *)prPhyTlvHeader->aucBuffer;
+			(struct HAL_PHY_ACTION_TLV *)prCmd->aucBuffer;
 		prPhyTlv->u2Tag = HAL_PHY_ACTION_TAG_CAL;
 		prPhyTlv->u2BufLength = sizeof(struct INIT_CMD_PHY_ACTION_CAL);
 		prPhyCal =
@@ -642,7 +556,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 		/*TAG HAL_PHY_ACTION_TAG_NVRAM*/
 		prPhyTlv =
 			(struct HAL_PHY_ACTION_TLV *)
-			(prPhyTlvHeader->aucBuffer +
+			(prCmd->aucBuffer +
 			sizeof(struct HAL_PHY_ACTION_TLV) +
 			sizeof(struct INIT_CMD_PHY_ACTION_CAL));
 		prPhyTlv->u2Tag = HAL_PHY_ACTION_TAG_NVRAM;
@@ -653,7 +567,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 		/*TAG HAL_PHY_ACTION_TAG_COM_FEM*/
 		prPhyTlv =
 			(struct HAL_PHY_ACTION_TLV *)
-			(prPhyTlvHeader->aucBuffer +
+			(prCmd->aucBuffer +
 			sizeof(struct HAL_PHY_ACTION_TLV) +
 			sizeof(struct INIT_CMD_PHY_ACTION_CAL) +
 			sizeof(struct HAL_PHY_ACTION_TLV) +
@@ -669,7 +583,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 		/*TAG HAL_PHY_ACTION_TAG_LAA*/
 		prPhyTlv =
 			(struct HAL_PHY_ACTION_TLV *)
-			(prPhyTlvHeader->aucBuffer +
+			(prCmd->aucBuffer +
 			sizeof(struct HAL_PHY_ACTION_TLV) +
 			sizeof(struct INIT_CMD_PHY_ACTION_CAL) +
 			sizeof(struct HAL_PHY_ACTION_TLV) +
@@ -685,8 +599,8 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 			sizeof(struct connfem_epaelna_laa_pin_info));
 	} else {
 		/*process TLV Header Part2 */
-		prPhyTlvHeader->ucTagNums = 2;
-		prPhyTlvHeader->u2BufLength =
+		prCmd->ucTagNums = 2;
+		prCmd->u2BufLength =
 			sizeof(struct HAL_PHY_ACTION_TLV) +
 			sizeof(struct INIT_CMD_PHY_ACTION_CAL) +
 			sizeof(struct HAL_PHY_ACTION_TLV) +
@@ -695,7 +609,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 		/*process TLV Content*/
 		/*TAG HAL_PHY_ACTION_TAG_CAL*/
 		prPhyTlv =
-			(struct HAL_PHY_ACTION_TLV *)prPhyTlvHeader->aucBuffer;
+			(struct HAL_PHY_ACTION_TLV *)prCmd->aucBuffer;
 		prPhyTlv->u2Tag = HAL_PHY_ACTION_TAG_CAL;
 		prPhyTlv->u2BufLength = sizeof(struct INIT_CMD_PHY_ACTION_CAL);
 		prPhyCal =
@@ -705,7 +619,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 		/*TAG HAL_PHY_ACTION_TAG_COM_FEM*/
 		prPhyTlv =
 			(struct HAL_PHY_ACTION_TLV *)
-			(prPhyTlvHeader->aucBuffer +
+			(prCmd->aucBuffer +
 			sizeof(struct HAL_PHY_ACTION_TLV) +
 			sizeof(struct INIT_CMD_PHY_ACTION_CAL));
 		prPhyTlv->u2Tag = HAL_PHY_ACTION_TAG_COM_FEM;
@@ -717,44 +631,23 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 			&pin_info, sizeof(struct connfem_epaelna_pin_info));
 	}
 
-	DBGLOG_MEM8(INIT, TRACE, prPhyTlvHeader, u4CmdSize);
+	wlanSendInitSetQueryCmdImpl(prAdapter,
+		INIT_CMD_ID_PHY_ACTION, prCmd, u4CmdSize,
+		TRUE, FALSE,
+		INIT_EVENT_ID_PHY_ACTION, prEvent, u4EvtSize,
+		CFG_PRE_CAL_SLEEP_WAITING_INTERVAL,
+		CFG_PRE_CAL_RX_RESPONSE_TIMEOUT);
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		goto exit;
 
-	/* 5. Send WIFI start command */
-	while (1) {
-
-		/* 5.1 Acquire TX Resource */
-		if (nicTxAcquireResource(prAdapter, ucTC,
-					 halTxGetCmdPageCount(prAdapter,
-					 prCmdInfo->u2InfoBufLen, TRUE),
-					 TRUE) == WLAN_STATUS_RESOURCES) {
-			if (nicTxPollingResource(prAdapter,
-						 ucTC) != WLAN_STATUS_SUCCESS) {
-				u4Status = WLAN_STATUS_FAILURE;
-				DBGLOG(INIT, ERROR,
-				       "nicTxPollingResource failed\n");
-				goto exit;
-			}
-			continue;
-		}
-
-		/* 5.2 Send CMD Info Packet */
-		if (nicTxInitCmd(prAdapter, prCmdInfo,
-				 prChipInfo->u2TxInitCmdPort) !=
-				 WLAN_STATUS_SUCCESS) {
-			u4Status = WLAN_STATUS_FAILURE;
-			DBGLOG(INIT, ERROR,
-			       "nicTxInitCmd failed\n");
-			goto exit;
-		}
-
-		break;
-	};
-
-	u4Status = wlanRcvPhyActionRsp(prAdapter, ucCmdSeqNum);
+	u4Status = wlanRcvPhyActionRsp(prAdapter, prEvent);
 
 exit:
-	/* 6. Free CMD Info Packet. */
-	cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+	if (prCmd)
+		kalMemFree(prCmd, VIR_MEM_TYPE, u4CmdSize);
+
+	if (prEvent)
+		kalMemFree(prEvent, VIR_MEM_TYPE, u4EvtSize);
 
 	return u4Status;
 }

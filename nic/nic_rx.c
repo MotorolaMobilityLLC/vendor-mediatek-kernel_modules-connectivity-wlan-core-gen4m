@@ -4269,10 +4269,6 @@ nicRxWaitResponseByWaitingInterval(IN struct ADAPTER *prAdapter,
 					pu4Length, u4WaitingInterval,
 					u4TimeoutValue);
 	if (u4Status == WLAN_STATUS_SUCCESS) {
-		DBGLOG(RX, TRACE,
-		       "Dump Response buffer, length = %u\n", *pu4Length);
-		DBGLOG_MEM8(RX, TRACE, pucRspBuffer, *pu4Length);
-
 		prEvent = (struct WIFI_EVENT *)
 			(pucRspBuffer + prChipInfo->rxd_size);
 
@@ -4280,6 +4276,8 @@ nicRxWaitResponseByWaitingInterval(IN struct ADAPTER *prAdapter,
 		       "RX EVENT: ID[0x%02X] SEQ[%u] LEN[%u] VER[%d]\n",
 		       prEvent->ucEID, prEvent->ucSeqNum,
 		       prEvent->u2PacketLength, prEvent->ucEventVersion);
+		DBGLOG_MEM8(RX, TRACE, pucRspBuffer,
+			prChipInfo->rxd_size + prEvent->u2PacketLength);
 	} else {
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 		halPrintHifDbgInfo(prAdapter);

@@ -227,12 +227,27 @@ wlanSendSetQueryExtCmd(IN struct ADAPTER *prAdapter,
 		       uint8_t *pucInfoBuffer, OUT void *pvSetQueryBuffer,
 		       IN uint32_t u4SetQueryBufferLen);
 
-uint32_t wlanSendInitCmd(IN struct ADAPTER *prAdapter,
-		    uint8_t ucCID,
-		    u_int8_t fgSetQuery,
-		    u_int8_t fgNeedResp,
-		    uint32_t u4SetQueryInfoLen,
-		    uint8_t *pucInfoBuffer);
+uint32_t wlanSendInitSetQueryCmdImpl(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucCmdId,
+	IN void *pucCmdBuf,
+	IN uint32_t u4CmdSz,
+	IN u_int8_t fgWaitResp,
+	IN u_int8_t fgSkipCheckSeq,
+	IN uint8_t ucEvtId,
+	IN void *pucEvtBuf,
+	IN uint32_t u4EvtSz,
+	IN uint32_t u4EvtWaitInterval,
+	IN uint32_t u4EvtWaitTimeout);
+
+uint32_t wlanSendInitSetQueryCmd(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucCmdId,
+	IN void *pucCmdBuf,
+	IN uint32_t u4CmdSz,
+	IN u_int8_t fgWaitResp,
+	IN u_int8_t fgSkipCheckSeq,
+	IN uint8_t ucEvtId,
+	IN void *pucEvtBuf,
+	IN uint32_t u4EvtSz);
 
 void cmdBufDumpCmdQueue(struct QUE *prQueue,
 			int8_t *queName);
