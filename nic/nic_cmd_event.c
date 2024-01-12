@@ -1380,7 +1380,7 @@ int32_t GetIQData(struct ADAPTER *prAdapter,
 	sprintf(aucPath, "/tmp/dump_out_%05hu_WF%u.txt",
 		prAdapter->rIcapInfo.u2DumpIndex - 1, u4GetWf1);
 	if (kalCheckPath(aucPath) == -1) {
-		snprintf(aucPath, sizeof(aucPath),
+		kalSnprintf(aucPath, sizeof(aucPath),
 			"/data/dump_out_%05hu_WF%u.txt",
 			prAdapter->rIcapInfo.u2DumpIndex - 1, u4GetWf1);
 	}
@@ -1508,13 +1508,13 @@ uint32_t nicTsfRawData2IqFmt(struct EVENT_DUMP_MEM
 		/* if blbist mkdir undre /data/blbist,
 		 * the dump files wouls put on it
 		 */
-		scnprintf(aucPathWF0, sizeof(aucPathWF0),
+		kalScnprintf(aucPathWF0, sizeof(aucPathWF0),
 			  "/tmp/dump_out_%05hu_WF0.txt", prIcap->u2DumpIndex);
-		scnprintf(aucPathWF1, sizeof(aucPathWF1),
+		kalScnprintf(aucPathWF1, sizeof(aucPathWF1),
 			  "/tmp/dump_out_%05hu_WF1.txt", prIcap->u2DumpIndex);
 		if (kalCheckPath(aucPathWF0) == -1) {
 			kalMemSet(aucPathWF0, 0x00, sizeof(aucPathWF0));
-			scnprintf(aucPathWF0, sizeof(aucPathWF0),
+			kalScnprintf(aucPathWF0, sizeof(aucPathWF0),
 				"/data/dump_out_%05hu_WF0.txt",
 				prIcap->u2DumpIndex);
 		} else
@@ -1522,19 +1522,19 @@ uint32_t nicTsfRawData2IqFmt(struct EVENT_DUMP_MEM
 
 		if (kalCheckPath(aucPathWF1) == -1) {
 			kalMemSet(aucPathWF1, 0x00, sizeof(aucPathWF1));
-			scnprintf(aucPathWF1, sizeof(aucPathWF1),
+			kalScnprintf(aucPathWF1, sizeof(aucPathWF1),
 				"/data/dump_out_%05hu_WF1.txt",
 				prIcap->u2DumpIndex);
 		} else
 			kalTrunkPath(aucPathWF1);
 
-		scnprintf(aucPathRAWWF0, sizeof(aucPathRAWWF0),
+		kalScnprintf(aucPathRAWWF0, sizeof(aucPathRAWWF0),
 			  "/dump_RAW_%hu_WF0.txt", prIcap->u2DumpIndex);
-		scnprintf(aucPathRAWWF1, sizeof(aucPathRAWWF1),
+		kalScnprintf(aucPathRAWWF1, sizeof(aucPathRAWWF1),
 			  "/dump_RAW_%hu_WF1.txt", prIcap->u2DumpIndex);
 		if (kalCheckPath(aucPathRAWWF0) == -1) {
 			kalMemSet(aucPathRAWWF0, 0x00, sizeof(aucPathRAWWF0));
-			scnprintf(aucPathRAWWF0, sizeof(aucPathRAWWF0),
+			kalScnprintf(aucPathRAWWF0, sizeof(aucPathRAWWF0),
 				"/data/dump_RAW_%05hu_WF0.txt",
 				prIcap->u2DumpIndex);
 		} else
@@ -1542,7 +1542,7 @@ uint32_t nicTsfRawData2IqFmt(struct EVENT_DUMP_MEM
 
 		if (kalCheckPath(aucPathRAWWF1) == -1) {
 			kalMemSet(aucPathRAWWF1, 0x00, sizeof(aucPathRAWWF1));
-			scnprintf(aucPathRAWWF1, sizeof(aucPathRAWWF1),
+			kalScnprintf(aucPathRAWWF1, sizeof(aucPathRAWWF1),
 				"/data/dump_RAW_%05hu_WF1.txt",
 				prIcap->u2DumpIndex);
 		} else
@@ -1600,11 +1600,11 @@ uint32_t nicTsfRawData2IqFmt(struct EVENT_DUMP_MEM
 #endif
 		if (prEventDumpMem->eIcapContent == ICAP_CONTENT_FIIQ ||
 		    prEventDumpMem->eIcapContent == ICAP_CONTENT_FDIQ) {
-			u4DataWLenF0 = scnprintf(pucDataWF0, u4DataWBufSize,
+			u4DataWLenF0 = kalScnprintf(pucDataWF0, u4DataWBufSize,
 				"%8d,%8d\n",
 				icapBusData.rIqcBusData.u4Iqc0I,
 				icapBusData.rIqcBusData.u4Iqc0Q);
-			u4DataWLenF1 = scnprintf(pucDataWF1, u4DataWBufSize,
+			u4DataWLenF1 = kalScnprintf(pucDataWF1, u4DataWBufSize,
 				"%8d,%8d\n",
 				icapBusData.rIqcBusData.u4Iqc1I,
 				icapBusData.rIqcBusData.u4Iqc1Q);
@@ -1619,14 +1619,14 @@ uint32_t nicTsfRawData2IqFmt(struct EVENT_DUMP_MEM
 				icapBusData.rIqc160BusData.u4Iqc1I1P1 |
 				(icapBusData.rIqc160BusData.u4Iqc1I1P2 << 4);
 
-			u4DataWLenF0 = scnprintf(pucDataWF0, u4DataWBufSize,
+			u4DataWLenF0 = kalScnprintf(pucDataWF0, u4DataWBufSize,
 				"%8d,%8d\n%8d,%8d\n",
 				icapBusData.rIqc160BusData.u4Iqc0I0,
 				u4Iqc160WF0Q0,
 				icapBusData.rIqc160BusData.u4Iqc0I1,
 				icapBusData.rIqc160BusData.u4Iqc0Q1);
 
-			u4DataWLenF1 = scnprintf(pucDataWF1, u4DataWBufSize,
+			u4DataWLenF1 = kalScnprintf(pucDataWF1, u4DataWBufSize,
 				"%8d,%8d\n%8d,%8d\n",
 				icapBusData.rIqc160BusData.u4Iqc1I0,
 				icapBusData.rIqc160BusData.u4Iqc1Q0,
@@ -1635,13 +1635,13 @@ uint32_t nicTsfRawData2IqFmt(struct EVENT_DUMP_MEM
 
 		} else if (prEventDumpMem->eIcapContent ==
 			   ICAP_CONTENT_SPECTRUM) {
-			u4DataWLenF0 = scnprintf(pucDataWF0, u4DataWBufSize,
+			u4DataWLenF0 = kalScnprintf(pucDataWF0, u4DataWBufSize,
 				"%8d,%8d\n",
 				icapBusData.rSpectrumBusData.u4DcocI,
 				icapBusData.rSpectrumBusData.u4DcocQ);
 		} else if (prEventDumpMem->eIcapContent ==
 			   ICAP_CONTENT_ADC) {
-			u4DataWLenF0 = scnprintf(pucDataWF0, u4DataWBufSize,
+			u4DataWLenF0 = kalScnprintf(pucDataWF0, u4DataWBufSize,
 				"%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n",
 				icapBusData.rPackedAdcBusData.u4AdcI0T0,
 				icapBusData.rPackedAdcBusData.u4AdcQ0T0,
@@ -1656,7 +1656,7 @@ uint32_t nicTsfRawData2IqFmt(struct EVENT_DUMP_MEM
 				icapBusData.rPackedAdcBusData.u4AdcI0T5,
 				icapBusData.rPackedAdcBusData.u4AdcQ0T5);
 
-			u4DataWLenF1 = scnprintf(pucDataWF1, u4DataWBufSize,
+			u4DataWLenF1 = kalScnprintf(pucDataWF1, u4DataWBufSize,
 				"%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n",
 				icapBusData.rPackedAdcBusData.u4AdcI1T0,
 				icapBusData.rPackedAdcBusData.u4AdcQ1T0,
@@ -1672,7 +1672,7 @@ uint32_t nicTsfRawData2IqFmt(struct EVENT_DUMP_MEM
 				icapBusData.rPackedAdcBusData.u4AdcQ1T5);
 		} else if (prEventDumpMem->eIcapContent - 2000 ==
 			   ICAP_CONTENT_ADC) {
-			u4DataWLenF0 = scnprintf(pucDataWF0, u4DataWBufSize,
+			u4DataWLenF0 = kalScnprintf(pucDataWF0, u4DataWBufSize,
 				"%8d,%8d\n%8d,%8d\n%8d,%8d\n",
 				icapBusData.rPackedAdcBusData.u4AdcI0T0,
 				icapBusData.rPackedAdcBusData.u4AdcQ0T0,
@@ -1681,7 +1681,7 @@ uint32_t nicTsfRawData2IqFmt(struct EVENT_DUMP_MEM
 				icapBusData.rPackedAdcBusData.u4AdcI0T2,
 				icapBusData.rPackedAdcBusData.u4AdcQ0T2);
 
-			u4DataWLenF1 = scnprintf(pucDataWF1, u4DataWBufSize,
+			u4DataWLenF1 = kalScnprintf(pucDataWF1, u4DataWBufSize,
 				"%8d,%8d\n%8d,%8d\n%8d,%8d\n",
 				icapBusData.rPackedAdcBusData.u4AdcI1T0,
 				icapBusData.rPackedAdcBusData.u4AdcQ1T0,
@@ -1692,11 +1692,11 @@ uint32_t nicTsfRawData2IqFmt(struct EVENT_DUMP_MEM
 		} else if (prEventDumpMem->eIcapContent ==
 			   ICAP_CONTENT_TOAE) {
 			/* actually, this is DCOC. we take TOAE as DCOC */
-			u4DataWLenF0 = scnprintf(pucDataWF0, u4DataWBufSize,
+			u4DataWLenF0 = kalScnprintf(pucDataWF0, u4DataWBufSize,
 				"%8d,%8d\n",
 				icapBusData.rAdcBusData.u4Dcoc0I,
 				icapBusData.rAdcBusData.u4Dcoc0Q);
-			u4DataWLenF1 = scnprintf(pucDataWF1, u4DataWBufSize,
+			u4DataWLenF1 = kalScnprintf(pucDataWF1, u4DataWBufSize,
 				"%8d,%8d\n",
 				icapBusData.rAdcBusData.u4Dcoc1I,
 				icapBusData.rAdcBusData.u4Dcoc1Q);
@@ -1710,7 +1710,7 @@ uint32_t nicTsfRawData2IqFmt(struct EVENT_DUMP_MEM
 		}
 		ptr = (uint32_t *)(&prEventDumpMem->aucBuffer[0] +
 				   u4SrcOffset);
-		u4DataRAWWLenF0 = scnprintf(pucDataRAWWF0, u4DataWBufSize,
+		u4DataRAWWLenF0 = kalScnprintf(pucDataRAWWF0, u4DataWBufSize,
 					    "%08x%08x%08x\n",
 					    *(ptr + 2), *(ptr + 1), *ptr);
 		kalWriteToFile(aucPathRAWWF0, fgAppend, pucDataRAWWF0,
@@ -3276,13 +3276,13 @@ uint32_t nicExtTsfRawData2IqFmt(
 		/* if blbist mkdir undre /data/blbist,
 		 * the dump files wouls put on it
 		 */
-		scnprintf(aucPathWF0, sizeof(aucPathWF0),
+		kalScnprintf(aucPathWF0, sizeof(aucPathWF0),
 			  "/dump_out_%05hu_WF0.txt", prIcap->u2DumpIndex);
-		scnprintf(aucPathWF1, sizeof(aucPathWF1),
+		kalScnprintf(aucPathWF1, sizeof(aucPathWF1),
 			  "/dump_out_%05hu_WF1.txt", prIcap->u2DumpIndex);
 		if (kalCheckPath(aucPathWF0) == -1) {
 			kalMemSet(aucPathWF0, 0x00, sizeof(aucPathWF0));
-			scnprintf(aucPathWF0, sizeof(aucPathWF0),
+			kalScnprintf(aucPathWF0, sizeof(aucPathWF0),
 				  "/data/dump_out_%05hu_WF0.txt",
 				  prIcap->u2DumpIndex);
 		} else
@@ -3290,19 +3290,19 @@ uint32_t nicExtTsfRawData2IqFmt(
 
 		if (kalCheckPath(aucPathWF1) == -1) {
 			kalMemSet(aucPathWF1, 0x00, sizeof(aucPathWF1));
-			scnprintf(aucPathWF1, sizeof(aucPathWF1),
+			kalScnprintf(aucPathWF1, sizeof(aucPathWF1),
 				  "/data/dump_out_%05hu_WF1.txt",
 				  prIcap->u2DumpIndex);
 		} else
 			kalTrunkPath(aucPathWF1);
 
-		scnprintf(aucPathRAWWF0, sizeof(aucPathRAWWF0),
+		kalScnprintf(aucPathRAWWF0, sizeof(aucPathRAWWF0),
 			  "/dump_RAW_%05hu_WF0.txt", prIcap->u2DumpIndex);
-		scnprintf(aucPathRAWWF1, sizeof(aucPathRAWWF1),
+		kalScnprintf(aucPathRAWWF1, sizeof(aucPathRAWWF1),
 			  "/dump_RAW_%05hu_WF1.txt", prIcap->u2DumpIndex);
 		if (kalCheckPath(aucPathRAWWF0) == -1) {
 			kalMemSet(aucPathRAWWF0, 0x00, sizeof(aucPathRAWWF0));
-			scnprintf(aucPathRAWWF0, sizeof(aucPathRAWWF0),
+			kalScnprintf(aucPathRAWWF0, sizeof(aucPathRAWWF0),
 				  "/data/dump_RAW_%05hu_WF0.txt",
 				  prIcap->u2DumpIndex);
 		} else
@@ -3310,7 +3310,7 @@ uint32_t nicExtTsfRawData2IqFmt(
 
 		if (kalCheckPath(aucPathRAWWF1) == -1) {
 			kalMemSet(aucPathRAWWF1, 0x00, sizeof(aucPathRAWWF1));
-			scnprintf(aucPathRAWWF1, sizeof(aucPathRAWWF1),
+			kalScnprintf(aucPathRAWWF1, sizeof(aucPathRAWWF1),
 				  "/data/dump_RAW_%hu_WF1.txt",
 				  prIcap->u2DumpIndex);
 		} else
@@ -3357,11 +3357,11 @@ uint32_t nicExtTsfRawData2IqFmt(
 		       &prEventDumpMem->u4Data + u4SrcOffset, u4CpyLen);
 		if (prIcap->u4CapNode == ICAP_CONTENT_FIIQ
 		    || prIcap->u4CapNode == ICAP_CONTENT_FDIQ) {
-			u4DataWLenF0 = scnprintf(pucDataWF0, u4DataWBufSize,
+			u4DataWLenF0 = kalScnprintf(pucDataWF0, u4DataWBufSize,
 				"%8d,%8d\n",
 				icapBusData.rIqcBusData.u4Iqc0I,
 				icapBusData.rIqcBusData.u4Iqc0Q);
-			u4DataWLenF1 = scnprintf(pucDataWF1, u4DataWBufSize,
+			u4DataWLenF1 = kalScnprintf(pucDataWF1, u4DataWBufSize,
 				"%8d,%8d\n",
 				icapBusData.rIqcBusData.u4Iqc1I,
 				icapBusData.rIqcBusData.u4Iqc1Q);
@@ -3372,14 +3372,14 @@ uint32_t nicExtTsfRawData2IqFmt(
 			u4Iqc160WF1I1 = icapBusData.rIqc160BusData.u4Iqc1I1P1 |
 				(icapBusData.rIqc160BusData.u4Iqc1I1P2 << 4);
 
-			u4DataWLenF0 = scnprintf(pucDataWF0, u4DataWBufSize,
+			u4DataWLenF0 = kalScnprintf(pucDataWF0, u4DataWBufSize,
 				"%8d,%8d\n%8d,%8d\n",
 				icapBusData.rIqc160BusData.u4Iqc0I0,
 				u4Iqc160WF0Q0,
 				icapBusData.rIqc160BusData.u4Iqc0I1,
 				icapBusData.rIqc160BusData.u4Iqc0Q1);
 
-			u4DataWLenF1 = scnprintf(pucDataWF1, u4DataWBufSize,
+			u4DataWLenF1 = kalScnprintf(pucDataWF1, u4DataWBufSize,
 				"%8d,%8d\n%8d,%8d\n",
 				icapBusData.rIqc160BusData.u4Iqc1I0,
 				icapBusData.rIqc160BusData.u4Iqc1Q0,
@@ -3387,12 +3387,12 @@ uint32_t nicExtTsfRawData2IqFmt(
 				icapBusData.rIqc160BusData.u4Iqc1Q1);
 
 		} else if (prIcap->u4CapNode == ICAP_CONTENT_SPECTRUM) {
-			u4DataWLenF0 = scnprintf(pucDataWF0, u4DataWBufSize,
+			u4DataWLenF0 = kalScnprintf(pucDataWF0, u4DataWBufSize,
 				"%8d,%8d\n",
 				icapBusData.rSpectrumBusData.u4DcocI,
 				icapBusData.rSpectrumBusData.u4DcocQ);
 		} else if (prIcap->u4CapNode == ICAP_CONTENT_ADC) {
-			u4DataWLenF0 = scnprintf(pucDataWF0, u4DataWBufSize,
+			u4DataWLenF0 = kalScnprintf(pucDataWF0, u4DataWBufSize,
 				"%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n",
 				icapBusData.rPackedAdcBusData.u4AdcI0T0,
 				icapBusData.rPackedAdcBusData.u4AdcQ0T0,
@@ -3407,7 +3407,7 @@ uint32_t nicExtTsfRawData2IqFmt(
 				icapBusData.rPackedAdcBusData.u4AdcI0T5,
 				icapBusData.rPackedAdcBusData.u4AdcQ0T5);
 
-			u4DataWLenF1 = scnprintf(pucDataWF1, u4DataWBufSize,
+			u4DataWLenF1 = kalScnprintf(pucDataWF1, u4DataWBufSize,
 				"%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n",
 				icapBusData.rPackedAdcBusData.u4AdcI1T0,
 				icapBusData.rPackedAdcBusData.u4AdcQ1T0,
@@ -3422,7 +3422,7 @@ uint32_t nicExtTsfRawData2IqFmt(
 				icapBusData.rPackedAdcBusData.u4AdcI1T5,
 				icapBusData.rPackedAdcBusData.u4AdcQ1T5);
 		} else if (prIcap->u4CapNode - 2000 == ICAP_CONTENT_ADC) {
-			u4DataWLenF0 = scnprintf(pucDataWF0, u4DataWBufSize,
+			u4DataWLenF0 = kalScnprintf(pucDataWF0, u4DataWBufSize,
 				"%8d,%8d\n%8d,%8d\n%8d,%8d\n",
 				icapBusData.rPackedAdcBusData.u4AdcI0T0,
 				icapBusData.rPackedAdcBusData.u4AdcQ0T0,
@@ -3431,7 +3431,7 @@ uint32_t nicExtTsfRawData2IqFmt(
 				icapBusData.rPackedAdcBusData.u4AdcI0T2,
 				icapBusData.rPackedAdcBusData.u4AdcQ0T2);
 
-			u4DataWLenF1 = scnprintf(pucDataWF1, u4DataWBufSize,
+			u4DataWLenF1 = kalScnprintf(pucDataWF1, u4DataWBufSize,
 				"%8d,%8d\n%8d,%8d\n%8d,%8d\n",
 				icapBusData.rPackedAdcBusData.u4AdcI1T0,
 				icapBusData.rPackedAdcBusData.u4AdcQ1T0,
@@ -3441,11 +3441,11 @@ uint32_t nicExtTsfRawData2IqFmt(
 				icapBusData.rPackedAdcBusData.u4AdcQ1T2);
 		} else if (prIcap->u4CapNode == ICAP_CONTENT_TOAE) {
 			/* actually, this is DCOC. we take TOAE as DCOC */
-			u4DataWLenF0 = scnprintf(pucDataWF0, u4DataWBufSize,
+			u4DataWLenF0 = kalScnprintf(pucDataWF0, u4DataWBufSize,
 					"%8d,%8d\n",
 					icapBusData.rAdcBusData.u4Dcoc0I,
 					icapBusData.rAdcBusData.u4Dcoc0Q);
-			u4DataWLenF1 = scnprintf(pucDataWF1, u4DataWBufSize,
+			u4DataWLenF1 = kalScnprintf(pucDataWF1, u4DataWBufSize,
 					"%8d,%8d\n",
 					icapBusData.rAdcBusData.u4Dcoc1I,
 					icapBusData.rAdcBusData.u4Dcoc1Q);
@@ -3458,7 +3458,7 @@ uint32_t nicExtTsfRawData2IqFmt(
 				       u4DataWLenF1);
 		}
 		ptr = (uint32_t *)(&prEventDumpMem->u4Data + u4SrcOffset);
-		u4DataRAWWLenF0 = scnprintf(pucDataRAWWF0, u4DataWBufSize,
+		u4DataRAWWLenF0 = kalScnprintf(pucDataRAWWF0, u4DataWBufSize,
 					    "%08x%08x%08x\n",
 					    *(ptr + 2), *(ptr + 1), *ptr);
 		kalWriteToFile(aucPathRAWWF0, fgAppend, pucDataRAWWF0,
