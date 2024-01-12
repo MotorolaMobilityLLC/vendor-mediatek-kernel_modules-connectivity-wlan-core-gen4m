@@ -3240,7 +3240,8 @@ static u_int8_t wlanIsAdjacentChnl(struct GL_P2P_INFO *prGlueP2pInfo,
 	case VHT_OP_CHANNEL_WIDTH_160:
 		u4BandWidth = 160;
 		break;
-	case VHT_OP_CHANNEL_WIDTH_320:
+	case VHT_OP_CHANNEL_WIDTH_320_1:
+	case VHT_OP_CHANNEL_WIDTH_320_2:
 		u4BandWidth = 320;
 		break;
 	default:

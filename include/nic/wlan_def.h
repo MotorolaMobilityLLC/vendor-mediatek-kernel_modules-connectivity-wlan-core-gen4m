@@ -933,7 +933,8 @@ enum ENUM_CHANNEL_WIDTH {
 	CW_80MHZ = 1,
 	CW_160MHZ = 2,
 	CW_80P80MHZ = 3,
-	CW_320MHZ = 4
+	CW_320_1MHZ = 4,
+	CW_320_2MHZ = 5
 };
 
 /* This starting freq of the band is unit of kHz */

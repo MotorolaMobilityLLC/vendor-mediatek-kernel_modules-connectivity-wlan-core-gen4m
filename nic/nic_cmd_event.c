@@ -2446,6 +2446,15 @@ uint32_t nicCfgChipCapPhyCap(struct ADAPTER *prAdapter,
 			     uint8_t *pucEventBuf)
 {
 	struct CAP_PHY_CAP *prPhyCap = (struct CAP_PHY_CAP *)pucEventBuf;
+	uint8_t aucCapMaxBw[CAP_PHY_MAX_BW_NUM] = {
+		MAX_BW_20MHZ,
+		MAX_BW_40MHZ,
+		MAX_BW_80MHZ,
+		MAX_BW_160MHZ,
+		MAX_BW_80_80_MHZ,
+		MAX_BW_320_2MHZ,
+	};
+	uint8_t ucMaxBandwidth = MAX_BW_UNKNOWN;
 
 	prAdapter->rWifiVar.ucStaVht &= prPhyCap->ucVht;
 	wlanCfgSetUint32(prAdapter, "StaVHT", prAdapter->rWifiVar.ucStaVht);
@@ -2569,51 +2578,54 @@ uint32_t nicCfgChipCapPhyCap(struct ADAPTER *prAdapter,
 	}
 #endif
 	/* Overwrite bandwidth settings by phy capability */
-	if (prAdapter->rWifiVar.ucStaBandwidth > prPhyCap->ucMaxBandwidth) {
-		prAdapter->rWifiVar.ucStaBandwidth = prPhyCap->ucMaxBandwidth;
+	if (prPhyCap->ucMaxBandwidth < CAP_PHY_MAX_BW_NUM)
+		ucMaxBandwidth = aucCapMaxBw[prPhyCap->ucMaxBandwidth];
+
+	if (prAdapter->rWifiVar.ucStaBandwidth > ucMaxBandwidth) {
+		prAdapter->rWifiVar.ucStaBandwidth = ucMaxBandwidth;
 		wlanCfgSetUint32(prAdapter, "StaBw",
 			prAdapter->rWifiVar.ucStaBandwidth);
 	}
 
-	if (prAdapter->rWifiVar.ucSta5gBandwidth > prPhyCap->ucMaxBandwidth) {
-		prAdapter->rWifiVar.ucSta5gBandwidth = prPhyCap->ucMaxBandwidth;
+	if (prAdapter->rWifiVar.ucSta5gBandwidth > ucMaxBandwidth) {
+		prAdapter->rWifiVar.ucSta5gBandwidth = ucMaxBandwidth;
 		wlanCfgSetUint32(prAdapter, "Sta5gBw",
 			prAdapter->rWifiVar.ucSta5gBandwidth);
 	}
 
-	if (prAdapter->rWifiVar.ucApBandwidth > prPhyCap->ucMaxBandwidth) {
-		prAdapter->rWifiVar.ucApBandwidth = prPhyCap->ucMaxBandwidth;
+	if (prAdapter->rWifiVar.ucApBandwidth > ucMaxBandwidth) {
+		prAdapter->rWifiVar.ucApBandwidth = ucMaxBandwidth;
 		wlanCfgSetUint32(prAdapter, "ApBw",
 			prAdapter->rWifiVar.ucApBandwidth);
 	}
 
-	if (prAdapter->rWifiVar.ucAp5gBandwidth > prPhyCap->ucMaxBandwidth) {
-		prAdapter->rWifiVar.ucAp5gBandwidth = prPhyCap->ucMaxBandwidth;
+	if (prAdapter->rWifiVar.ucAp5gBandwidth > ucMaxBandwidth) {
+		prAdapter->rWifiVar.ucAp5gBandwidth = ucMaxBandwidth;
 		wlanCfgSetUint32(prAdapter, "Ap5gBw",
 			prAdapter->rWifiVar.ucAp5gBandwidth);
 	}
 
-	if (prAdapter->rWifiVar.ucP2p5gBandwidth > prPhyCap->ucMaxBandwidth) {
-		prAdapter->rWifiVar.ucP2p5gBandwidth = prPhyCap->ucMaxBandwidth;
+	if (prAdapter->rWifiVar.ucP2p5gBandwidth > ucMaxBandwidth) {
+		prAdapter->rWifiVar.ucP2p5gBandwidth = ucMaxBandwidth;
 		wlanCfgSetUint32(prAdapter, "P2p5gBw",
 			prAdapter->rWifiVar.ucP2p5gBandwidth);
 	}
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	if (prAdapter->rWifiVar.ucSta6gBandwidth > prPhyCap->ucMaxBandwidth) {
-		prAdapter->rWifiVar.ucSta6gBandwidth = prPhyCap->ucMaxBandwidth;
+	if (prAdapter->rWifiVar.ucSta6gBandwidth > ucMaxBandwidth) {
+		prAdapter->rWifiVar.ucSta6gBandwidth = ucMaxBandwidth;
 		wlanCfgSetUint32(prAdapter, "Sta6gBw",
 			prAdapter->rWifiVar.ucSta6gBandwidth);
 	}
 
-	if (prAdapter->rWifiVar.ucAp6gBandwidth > prPhyCap->ucMaxBandwidth) {
-		prAdapter->rWifiVar.ucAp6gBandwidth = prPhyCap->ucMaxBandwidth;
+	if (prAdapter->rWifiVar.ucAp6gBandwidth > ucMaxBandwidth) {
+		prAdapter->rWifiVar.ucAp6gBandwidth = ucMaxBandwidth;
 		wlanCfgSetUint32(prAdapter, "Ap6gBw",
 			prAdapter->rWifiVar.ucAp6gBandwidth);
 	}
 
-	if (prAdapter->rWifiVar.ucP2p6gBandwidth > prPhyCap->ucMaxBandwidth) {
-		prAdapter->rWifiVar.ucP2p6gBandwidth = prPhyCap->ucMaxBandwidth;
+	if (prAdapter->rWifiVar.ucP2p6gBandwidth > ucMaxBandwidth) {
+		prAdapter->rWifiVar.ucP2p6gBandwidth = ucMaxBandwidth;
 		wlanCfgSetUint32(prAdapter, "P2p6gBw",
 			prAdapter->rWifiVar.ucP2p6gBandwidth);
 	}
@@ -2621,24 +2633,26 @@ uint32_t nicCfgChipCapPhyCap(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE == 1)
 	DBGLOG(INIT, INFO,
-		"Vht [%u] He[%u] Eht[%u] 5gBand [%d], Nss [%d], Dbdc [%d], bw [%d]\n",
+		"Vht [%u] He[%u] Eht[%u] 5gBand [%d], Nss [%d], Dbdc [%d], bw [%d=>%d]\n",
 			prPhyCap->ucVht,
 			prPhyCap->ucHe,
 			prPhyCap->ucEht,
 			prPhyCap->uc5gBand,
 			prPhyCap->ucNss,
 			prPhyCap->ucDbdc,
-			prPhyCap->ucMaxBandwidth);
+			prPhyCap->ucMaxBandwidth,
+			ucMaxBandwidth);
 #else
 	DBGLOG(INIT, INFO,
-		"Vht [%u] He[%u] Eht[%u] 5gBand [%d], Nss [%d], Dbdc [%d], bw [%d]\n",
+		"Vht [%u] He[%u] Eht[%u] 5gBand [%d], Nss [%d], Dbdc [%d], bw [%d=>%d]\n",
 			prPhyCap->ucVht,
 			prPhyCap->ucHe,
 			0,
 			prPhyCap->uc5gBand,
 			prPhyCap->ucNss,
 			prPhyCap->ucDbdc,
-			prPhyCap->ucMaxBandwidth);
+			prPhyCap->ucMaxBandwidth,
+			ucMaxBandwidth);
 #endif
 
 	DBGLOG(INIT, INFO,

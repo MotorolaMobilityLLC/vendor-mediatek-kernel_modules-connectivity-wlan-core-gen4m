@@ -89,7 +89,7 @@ void ehtRlmRecOperation(
 	struct BSS_INFO *prBssInfo,
 	u_int8_t *pucIE);
 uint8_t ehtRlmGetVhtOpBwByEhtOpBw(
-	uint8_t ucBssOpBw);
+	struct EHT_OP_INFO *op);
 void ehtRlmInit(
 	struct ADAPTER *prAdapter);
 void ehtRlmInitHtcACtrlOM(

@@ -342,7 +342,8 @@ static uint8_t heRlmFillPPEThreshold(
 		(*pPPEThreshold) |= HE_CAP_PPE_996X2_RU_IDX;
 		ucRUIdxSize = 4;
 		break;
-	case MAX_BW_320MHZ:
+	case MAX_BW_320_1MHZ:
+	case MAX_BW_320_2MHZ:
 		//TODO: check spec
 		(*pPPEThreshold) |= HE_CAP_PPE_996X2_RU_IDX;
 		ucRUIdxSize = 4;
@@ -1216,7 +1217,7 @@ static uint32_t heRlmRecHeMcsMap(
 	prStaRec->u2HeRxMcsMapBW80Assoc = prStaRec->u2HeRxMcsMapBW80;
 
 	if (prStaRec->u2HeRxMcsMapBW80 != u2McsMap)
-		DBGLOG(RLM, WARN, "Change HeRxMcsMapBW80 from 0x%x to 0x%x\n",
+		DBGLOG(RLM, TRACE, "Change HeRxMcsMapBW80 from 0x%x to 0x%x\n",
 			u2McsMap, prStaRec->u2HeRxMcsMapBW80);
 
 	u4McsMapOffset += sizeof(uint16_t);

@@ -1587,6 +1587,14 @@ enum BF_SOUNDING_MODE {
 	SOUNDING_MAX
 };
 
+enum BF_CBW {
+	BF_CBW20 = 0,
+	BF_CBW40,
+	BF_CBW80,
+	BF_CBW160,
+	BF_CBW320,
+};
+
 struct TXBF_PFMU_STA_INFO {
 	uint16_t u2PfmuId;	/* 0xFFFF means no access right for PFMU */
 	uint8_t fgSU_MU;		/* 0 : SU, 1 : MU */
