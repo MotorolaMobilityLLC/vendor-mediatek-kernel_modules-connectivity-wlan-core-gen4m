@@ -130,6 +130,8 @@ void asicConnac2xCapInit(
 	asicConnac2xInitTxdHook(prChipInfo->prTxDescOps);
 	asicConnac2xInitRxdHook(prChipInfo->prRxDescOps);
 #if (CFG_SUPPORT_MSP == 1)
+	prChipInfo->asicRxProcessRxvChkRst
+		= asicConnac2xRxProcessRxvChkRst;
 	prChipInfo->asicRxProcessRxvforMSP = asicConnac2xRxProcessRxvforMSP;
 #endif /* CFG_SUPPORT_MSP == 1 */
 	prChipInfo->asicRxGetRcpiValueFromRxv =
@@ -1600,7 +1602,34 @@ void asicConnac2xInitRxdHook(
 }
 
 #if (CFG_SUPPORT_MSP == 1)
-void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
+void asicConnac2xRxProcessRxvChkRst(IN struct ADAPTER *prAdapter,
+	IN OUT struct SW_RFB *prRetSwRfb) {
+	uint32_t u4RetV;
+	struct RX_CTRL *prRxCtrl;
+	struct mt66xx_chip_info *prChipInfo;
+
+	prRxCtrl = &prAdapter->rRxCtrl;
+	prChipInfo = prAdapter->chip_info;
+
+	if (prChipInfo->asicRxProcessRxvforMSP) {
+		u4RetV =
+			prChipInfo->asicRxProcessRxvforMSP(
+				prAdapter, prRetSwRfb);
+		if (u4RetV == WLAN_STATUS_SUCCESS) {
+			RX_RESET_CNT(prRxCtrl,
+				RX_FATAL_ERR_CNT);
+		} else {
+			RX_INC_CNT(
+				prRxCtrl, RX_FATAL_ERR_CNT);
+			if (RX_GET_CNT(prRxCtrl, RX_FATAL_ERR_CNT)
+					>= (prAdapter->rWifiVar.u2RxHeBaSize)) {
+				GL_RESET_TRIGGER(prAdapter,
+					RST_FLAG_CHIP_RESET);
+			}
+		}
+	}
+}
+uint32_t asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 	  IN OUT struct SW_RFB *prRetSwRfb) {
 	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3;
 
@@ -1608,7 +1637,8 @@ void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 		DBGLOG(RX, WARN,
 		"prRetSwRfb->ucStaRecIdx(%d) >= CFG_STA_REC_NUM(%d)\n",
 			prRetSwRfb->ucStaRecIdx, CFG_STA_REC_NUM);
-		return;
+		RX_INC_CNT(&prAdapter->rRxCtrl, RX_FATAL_ERR_CNT);
+		return WLAN_STATUS_FAILURE;
 	}
 
 	prGroup3 =
@@ -1657,6 +1687,7 @@ void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 		prAdapter->arStaRec[
 			prRetSwRfb->ucStaRecIdx].u4RxVector3 = 0;
 	}
+	return WLAN_STATUS_SUCCESS;
 }
 #endif /* CFG_SUPPORT_MSP == 1 */
 
