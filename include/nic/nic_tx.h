@@ -852,7 +852,7 @@ struct MSDU_INFO {
 
 	/* Fixed Rate Option */
 	uint8_t ucRateMode;	/* Rate mode: AUTO, MANUAL_DESC, MANUAL_CR */
-	/* The rate option, rate code, GI, etc... */
+	/* The rate option, rate code, GI, etc. Rate Index for CONNAC3 */
 	uint32_t u4FixedRateOption;
 
 	/* There is a valid Tx descriptor for this packet */
