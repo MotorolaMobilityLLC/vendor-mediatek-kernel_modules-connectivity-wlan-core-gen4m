@@ -1068,6 +1068,7 @@ struct WIFI_VAR {
 	uint8_t fgSapOffload;
 	uint8_t ucDfsRegion;
 	uint32_t u4ByPassCacTime;
+	uint32_t u4CC2Region;
 	uint8_t fgAllowSameBandDualSta;
 
 #if CFG_SUPPORT_NAN
