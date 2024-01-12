@@ -786,7 +786,7 @@ void ehtRlmRecOperation(
 		prBssInfo->ucEhtCcfs0 = prEhtOpInfo->ucCCFS0;
 		prBssInfo->ucEhtCcfs1 = prEhtOpInfo->ucCCFS1;
 
-		DBGLOG(RLM, INFO,
+		DBGLOG(RLM, TRACE,
 			"EHT channel width: %d, s1 %d and s2 %d in IE -> s1 %d and s2 %d in driver\n",
 			prBssInfo->ucVhtChannelWidth,
 			prEhtOpInfo->ucCCFS0,
