@@ -1263,12 +1263,16 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 	}
 
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxCmdCompleteQ, list) {
+#ifndef CFG_PREALLOC_MEMORY
 		kfree(prUsbReq->prBufCtrl->pucBuf);
+#endif
 		usb_free_urb(prUsbReq->prUrb);
 	}
 
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxDataCompleteQ, list) {
+#ifndef CFG_PREALLOC_MEMORY
 		kfree(prUsbReq->prBufCtrl->pucBuf);
+#endif
 		usb_free_urb(prUsbReq->prUrb);
 	}
 
@@ -1297,12 +1301,16 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 #endif
 
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rRxDataCompleteQ, list) {
+#ifndef CFG_PREALLOC_MEMORY
 		kfree(prUsbReq->prBufCtrl->pucBuf);
+#endif
 		usb_free_urb(prUsbReq->prUrb);
 	}
 
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rRxEventCompleteQ, list) {
+#ifndef CFG_PREALLOC_MEMORY
 		kfree(prUsbReq->prBufCtrl->pucBuf);
+#endif
 		usb_free_urb(prUsbReq->prUrb);
 	}
 
