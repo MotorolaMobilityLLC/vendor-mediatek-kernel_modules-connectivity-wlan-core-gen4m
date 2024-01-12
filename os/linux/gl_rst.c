@@ -971,8 +971,10 @@ void glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 		if (u4RstFlag & BIT(i))
 			DBGLOG(INIT, ERROR, "action %s\n", apucRstAction[i]);
 
-	if (!u4RstFlag)
+	if (!u4RstFlag) {
 		DBGLOG(INIT, ERROR, "no action\n");
+		return;
+	}
 
 #if CFG_CHIP_RESET_KO_SUPPORT
 	if (u4RstFlag & RST_FLAG_DO_WHOLE_RESET) {
@@ -1329,8 +1331,6 @@ static void mtk_wifi_reset(struct work_struct *work)
 #if CFG_CHIP_RESET_KO_SUPPORT
 void resetkoNotifyFunc(unsigned int event, void *data)
 {
-	uint32_t u4Tick;
-
 	DBGLOG(INIT, INFO, "%s: %d\n", __func__, event);
 	if (wifi_rst.fgIsInitialized == FALSE) {
 		DBGLOG(INIT, WARN, "%s: reset deinited\n", __func__);
