@@ -1914,6 +1914,8 @@ u_int8_t halRxInsertRecvRfbList(
 		if (prGlueInfo->prRxDirectNapi) {
 			if (KAL_FIFO_IN(&prGlueInfo->rRxKfifoQ, prSwRfb)) {
 				RX_INC_CNT(prRxCtrl, RX_NAPI_FIFO_IN_COUNT);
+				RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
+				kal_napi_schedule(prGlueInfo->prRxDirectNapi);
 			} else {
 				/* should not enter here */
 				RX_INC_CNT(prRxCtrl,
@@ -1955,9 +1957,6 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 	struct HIF_STATS *prHifStats;
 	static int32_t ai4PortLock[RX_RING_MAX];
 	u_int8_t fgRet = TRUE;
-#if CFG_SUPPORT_RX_NAPI
-	bool fgNapiSchedule = false;
-#endif /* CFG_SUPPORT_RX_NAPI */
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -2040,8 +2039,9 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 		/* if fifo exhausted, stop deQ and schedule NAPI */
 		if (prGlueInfo->prRxDirectNapi &&
 			KAL_FIFO_IS_FULL(&prGlueInfo->rRxKfifoQ)) {
-			fgNapiSchedule = true;
 			RX_INC_CNT(prRxCtrl, RX_NAPI_FIFO_FULL_COUNT);
+			RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
+			kal_napi_schedule(prGlueInfo->prRxDirectNapi);
 			break;
 		}
 #endif /* CFG_SUPPORT_RX_NAPI */
@@ -2105,9 +2105,6 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 			prAdapter, prReceivedRfbList, prSwRfb);
 		if (!fgRet)
 			break;
-#if CFG_SUPPORT_RX_NAPI
-		fgNapiSchedule = (fgRet == TRUE);
-#endif /* CFG_SUPPORT_RX_NAPI */
 
 		RX_INC_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT);
 		DBGLOG(RX, TEMP, "Recv p=%p total:%lu\n",
@@ -2141,13 +2138,6 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 
 end:
 	GLUE_DEC_REF_CNT(ai4PortLock[u4Port]);
-
-#if CFG_SUPPORT_RX_NAPI
-	if (fgNapiSchedule) {
-		RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
-		kal_napi_schedule(prGlueInfo->prRxDirectNapi);
-	}
-#endif /* CFG_SUPPORT_RX_NAPI */
 }
 
 static void halDefaultProcessRxInterrupt(struct ADAPTER *prAdapter)
