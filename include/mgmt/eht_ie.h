@@ -478,5 +478,14 @@ struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD {
 #define SET_RX_MAX_SS(_mcs, _x) (_mcs |= (_x&MAX_SS_MASK))
 
 
+#define DOT11BE_OP_CHAN_WIDTH (0)
+
+#define EHT_SET_OP_CHAN_WIDTH(_aucInfo, _val) \
+	(_aucInfo[DOT11BE_OP_CHAN_WIDTH] = _val)
+
+#define EHT_GET_OP_CHAN_WIDTH(_aucInfo) \
+	(_aucInfo[DOT11BE_OP_CHAN_WIDTH])
+
+
 #endif /* CFG_SUPPORT_802_11BE == 1 */
 #endif /* !_EHT_IE_H */
