@@ -3051,6 +3051,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 	/* Support AP Selection */
 	prBssDesc->fgExistBssLoadIE = FALSE;
 	prBssDesc->fgMultiAnttenaAndSTBC = FALSE;
+	prBssDesc->fgIsSCC = TRUE;
 	prBssDesc->u2MaximumMpdu = 0;
 	prBssDesc->fgExistTxPwr = FALSE;
 	prBssDesc->cTransmitPwr = 0;

@@ -93,6 +93,7 @@
 
 #define WEIGHT_GBAND_COEX_DOWNGRADE		70 /* 0~100 */
 #define CU_6G_INDEX_OFFSET			256
+#define WEIGHT_MCC_DOWNGRADE			70 /* 0~100 */
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -614,6 +615,37 @@ void apsRecordCuInfo(struct ADAPTER *ad, struct BSS_DESC *bss,
 	aps->arCuInfo[u2CuOffset].ucTotalCu += bss->ucChnlUtilization;
 }
 
+void apsCheckIsScc(struct ADAPTER *ad, struct BSS_DESC *bss,
+	uint8_t bidx)
+{
+	struct APS_INFO *aps = aisGetApsInfo(ad, bidx);
+	struct BSS_INFO *prConcurrentBssInfo;
+	uint32_t bmap = aisGetBssIndexBmap(aisGetAisFsmInfo(ad, bidx));
+	uint8_t i;
+
+	bss->fgIsSCC = TRUE;
+	for (i = 0; i < MAX_BSSID_NUM + 1; i++) {
+		/* Is connected BssInfo */
+		if (BIT(i) & bmap)
+			continue;
+
+		prConcurrentBssInfo = GET_BSS_INFO_BY_INDEX(ad, i);
+		if (!prConcurrentBssInfo || !prConcurrentBssInfo->fgIsInUse)
+			continue;
+
+		if (bss->eBand == prConcurrentBssInfo->eBand) {
+			if (bss->ucChannelNum !=
+				prConcurrentBssInfo->ucPrimaryChannel) {
+				bss->fgIsSCC = FALSE;
+			} else {
+				bss->fgIsSCC = TRUE;
+				aps->fgIgnoreBssidHint = TRUE;
+				break;
+			}
+		}
+	}
+}
+
 uint8_t apsGetCuInfo(struct ADAPTER *ad, struct BSS_DESC *bss, uint8_t bidx)
 {
 	struct APS_INFO *aps = aisGetApsInfo(ad, bidx);
@@ -730,11 +762,14 @@ static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 		est = (est * WEIGHT_GBAND_COEX_DOWNGRADE / 100);
 #endif
 
+	if (!bss->fgIsSCC)
+		est = (est * WEIGHT_MCC_DOWNGRADE / 100);
+
 	DBGLOG(APS, TRACE, "BSS["MACSTR
-		"] EST:%d ideal[%d] ba[%d] amsdu[%d] a[%d] b[%d] rcpi[%d] tput[%d] airTime[%d] slot[%d] coex[%d] TxPwr[%d]\n",
+		"] EST:%d ideal[%d] ba[%d] amsdu[%d] a[%d] b[%d] rcpi[%d] tput[%d] airTime[%d] slot[%d] coex[%d] SCC[%d] TxPwr[%d]\n",
 		MAC2STR(bss->aucBSSID), est, ideal, baSize, amsduByte,
 		a, b, rcpi, tput, airTime, slot,
-		fgIsGBandCoex, bss->cTransmitPwr);
+		fgIsGBandCoex, bss->fgIsSCC, bss->cTransmitPwr);
 
 	return est;
 }
@@ -751,6 +786,7 @@ uint16_t apsUpdateEssApList(struct ADAPTER *ad,
 
 	kalMemZero(aps->arCuInfo, sizeof(aps->arCuInfo));
 	aps->ucConsiderEsp = TRUE;
+	aps->fgIgnoreBssidHint = FALSE;
 
 	LINK_FOR_EACH_ENTRY(bss, scan_result, rLinkEntry,
 		struct BSS_DESC) {
@@ -789,12 +825,15 @@ uint16_t apsUpdateEssApList(struct ADAPTER *ad,
 			apsRecordCuInfo(ad, bss, bidx);
 		if (!bss->fgExistEspIE)
 			aps->ucConsiderEsp = FALSE;
+
+		apsCheckIsScc(ad, bss, bidx);
 	}
 
 	DBGLOG(APS, INFO,
-		"Find %s in %d BSSes, result %d, Using %s estimated tput\n",
+		"Find %s in %d BSSes, result %d, Using %s estimated tput, Ignore BssidHint %d\n",
 		conn->aucSSID, scan_result->u4NumElem, count,
-		aps->ucConsiderEsp ? "ESP" : "LEGACY");
+		aps->ucConsiderEsp ? "ESP" : "LEGACY",
+		aps->fgIgnoreBssidHint ? 1 : 0);
 	return count;
 }
 
@@ -1272,6 +1311,9 @@ uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
 	if (prBssDesc->eBand == BAND_2G4 && fgIsGBandCoex)
 		u2ScoreTotal = u2ScoreTotal * WEIGHT_GBAND_COEX_DOWNGRADE / 100;
 
+	if (!prBssDesc->fgIsSCC)
+		u2ScoreTotal = (u2ScoreTotal * WEIGHT_MCC_DOWNGRADE / 100);
+
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)
 	if (fgBssInDenseRange)
 		u2ScoreTotal /= 4;
@@ -1280,7 +1322,7 @@ uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
 
 #define TEMP_LOG_TEMPLATE\
 		"BSS["MACSTR"] Score:%d Band[%s],cRSSI[%d],DE[%d]"\
-		",RSSI[%d],GBandCoex[%d],BD[%d],BL[%d],SAA[%d]"\
+		",RSSI[%d],GBandCoex[%d],SCC[%d],BD[%d],BL[%d],SAA[%d]"\
 		",BW[%d],SC[%d],ST[%d],CI[%d],IT[%d],CU[%d,%d],PF[%d]"\
 		",TPUT[%d]%s\n"
 
@@ -1288,7 +1330,7 @@ uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
 		TEMP_LOG_TEMPLATE,
 		MAC2STR(prBssDesc->aucBSSID),
 		u2ScoreTotal, apucBandStr[prBssDesc->eBand],
-		cRssi, fgIsGBandCoex, u2ScoreDeauth,
+		cRssi, fgIsGBandCoex, prBssDesc->fgIsSCC, u2ScoreDeauth,
 		u2ScoreSnrRssi, u2ScoreBand, u2BlockListScore,
 		u2ScoreSaa, u2ScoreBandwidth, u2ScoreStaCnt,
 		u2ScoreSTBC, u2ScoreChnlInfo, u2ScoreIdleTime,
@@ -1806,6 +1848,7 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 {
 	struct mt66xx_chip_info *prChipInfo = ad->chip_info;
 	struct CONNECTION_SETTINGS *conn = aisGetConnSettings(ad, bidx);
+	struct APS_INFO *aps = aisGetApsInfo(ad, bidx);
 	enum ENUM_PARAM_CONNECTION_POLICY policy = conn->eConnectionPolicy;
 	uint8_t aidx = AIS_INDEX(ad, bidx);
 	uint16_t highest_score = 0;
@@ -1850,16 +1893,16 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 				if (!oce && EQUAL_MAC_ADDR(bss->aucBSSID,
 					conn->aucBSSIDHint) &&
 				    (chnl == 0 || chnl == bss->ucChannelNum)) {
+					if (aps->fgIgnoreBssidHint) {
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)
-					if (IS_CHANNEL_IN_DESENSE_RANGE(
+					} else if (IS_CHANNEL_IN_DESENSE_RANGE(
 						ad,
 						bss->ucChannelNum,
 						bss->eBand)) {
 						DBGLOG(APS, INFO,
 							"Do network selection even match bssid_hint\n");
-					} else
 #endif
-					{
+					} else {
 						bss->u2Score =
 						     BSS_MATCH_BSSID_HINT_SCORE;
 					}
