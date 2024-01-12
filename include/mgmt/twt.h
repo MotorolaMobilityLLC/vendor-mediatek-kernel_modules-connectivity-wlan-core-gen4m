@@ -70,45 +70,6 @@
 #define TWT_MAX_WAKE_INTVAL_EXP (TWT_REQ_TYPE_TWT_WAKE_INTVAL_EXP >> \
 	TWT_REQ_TYPE_TWT_WAKE_INTVAL_EXP_OFFSET)
 
-#if (CFG_SUPPORT_BTWT == 1)
-#define SET_BTWT_RECOMMENDATION(ucRecomm) \
-	(((ucRecomm) << BTWT_REQ_TYPE_RECOMMENDATION_OFFSET) & \
-		BTWT_REQ_TYPE_RECOMMENDATION)
-
-#define SET_BTWT_RESERVED(fgReserved) \
-	(((fgReserved) << BTWT_REQ_TYPE_RESERVED_OFFSET) & \
-		BTWT_REQ_TYPE_RESERVED)
-
-#define SET_BTWT_CTRL_NEGO(ucNego) \
-	(((ucNego) << BTWT_CTRL_NEGOTIATION_OFFSET) & \
-	BTWT_CTRL_NEGOTIATION)
-
-#define GET_BTWT_CTRL_NEGO(ucNego) \
-	(((ucNego) & BTWT_CTRL_NEGOTIATION) >> \
-	BTWT_CTRL_NEGOTIATION_OFFSET)
-
-#define SET_BTWT_ID(ucBrdInfo) \
-	(((ucBrdInfo) << BTWT_INFO_BROADCAST_OFFSET) & \
-	BTWT_INFO_BROADCAST)
-
-#define GET_BTWT_ID(ucBrdInfo) \
-	(((ucBrdInfo) & BTWT_INFO_BROADCAST) >> \
-	BTWT_INFO_BROADCAST_OFFSET)
-
-#define SET_BTWT_PERSISTENCE(ucPersistence) \
-	(((ucPersistence) << BTWT_INFO_PERSISTENCE_OFFSET) & \
-	BTWT_INFO_PERSISTENCE)
-
-#define GET_BTWT_PERSISTENCE(ucPersistence) \
-	(((ucPersistence) & BTWT_INFO_PERSISTENCE) >> \
-	BTWT_INFO_PERSISTENCE_OFFSET)
-
-#define GET_BTWT_LAST_BCAST(ucLastParm) \
-	(((ucLastParm) & BTWT_REQ_TYPE_LAST_BCAST_PARAM) >> \
-	BTWT_REQ_TYPE_LAST_BCAST_PARAM_OFFSET)
-
-#endif
-
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -262,6 +223,61 @@ struct _TWT_SMART_STA_T {
 #define GET_TWT_TEARDOWN_ALL(ucFlowId) \
 	(((ucFlowId) & TWT_TEARDOWN_ALL) >> TWT_TEARDOWN_ALL_OFFSET)
 
+#if (CFG_SUPPORT_BTWT == 1)
+#define SET_BTWT_RECOMMENDATION(ucRecomm) \
+	(((ucRecomm) << BTWT_REQ_TYPE_RECOMMENDATION_OFFSET) & \
+		BTWT_REQ_TYPE_RECOMMENDATION)
+
+#define SET_BTWT_RESERVED(fgReserved) \
+	(((fgReserved) << BTWT_REQ_TYPE_RESERVED_OFFSET) & \
+		BTWT_REQ_TYPE_RESERVED)
+
+#define SET_BTWT_CTRL_NEGO(ucNego) \
+	(((ucNego) << BTWT_CTRL_NEGOTIATION_OFFSET) & \
+	BTWT_CTRL_NEGOTIATION)
+
+#define GET_BTWT_CTRL_NEGO(ucNego) \
+	(((ucNego) & BTWT_CTRL_NEGOTIATION) >> \
+	BTWT_CTRL_NEGOTIATION_OFFSET)
+
+#define SET_BTWT_ID(ucBrdInfo) \
+	(((ucBrdInfo) << BTWT_INFO_BROADCAST_OFFSET) & \
+	BTWT_INFO_BROADCAST)
+
+#define GET_BTWT_ID(ucBrdInfo) \
+	(((ucBrdInfo) & BTWT_INFO_BROADCAST) >> \
+	BTWT_INFO_BROADCAST_OFFSET)
+
+#define SET_BTWT_PERSISTENCE(ucPersistence) \
+	(((ucPersistence) << BTWT_INFO_PERSISTENCE_OFFSET) & \
+	BTWT_INFO_PERSISTENCE)
+
+#define GET_BTWT_PERSISTENCE(ucPersistence) \
+	(((ucPersistence) & BTWT_INFO_PERSISTENCE) >> \
+	BTWT_INFO_PERSISTENCE_OFFSET)
+
+#define GET_BTWT_LAST_BCAST(ucLastParm) \
+	(((ucLastParm) & BTWT_REQ_TYPE_LAST_BCAST_PARAM) >> \
+	BTWT_REQ_TYPE_LAST_BCAST_PARAM_OFFSET)
+
+#endif
+
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+#define IE_ML_TWT_LENGTH sizeof(struct IE_ML_TWT_T)
+
+#define ML_TWT_LINK_ID_BITMAP_COUNT 16
+
+#define ML_TWT_CTRL_LINK_ID_BITMAP BIT(6)
+#define ML_TWT_CTRL_LINK_ID_BITMAP_OFFSET 6
+
+#define GET_ML_TWT_CTRL_LINK_ID_BITMAP(ucCtrl) \
+	(((ucCtrl) & ML_TWT_CTRL_LINK_ID_BITMAP) >> \
+	ML_TWT_CTRL_LINK_ID_BITMAP_OFFSET)
+
+#define SET_ML_TWT_CTRL_LINK_ID_BITMAP(ucCtrl) \
+	(((ucCtrl) << ML_TWT_CTRL_LINK_ID_BITMAP_OFFSET) & \
+	ML_TWT_CTRL_LINK_ID_BITMAP)
+#endif
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -331,6 +347,46 @@ uint8_t btwtGetTxSetupFlowId(
 	struct MSDU_INFO *prMsduInfo);
 #endif
 
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+uint32_t mltwtParseTWTElement(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t *pucIE,
+	uint16_t u2IELength);
+
+uint32_t mltwtFillTWTElementAllInOne(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct IE_ML_TWT_T *prMLTWTBuf,
+	uint8_t ucTWTFlowId,
+	struct _TWT_PARAMS_T *prTWTParams);
+
+uint32_t mltwtSendSetupFrameAllInOne(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	u_int8_t ucTWTFlowId,
+	struct _TWT_PARAMS_T *prTWTParams,
+	PFN_TX_DONE_HANDLER pfTxDoneHandler);
+
+uint32_t mltwtGetLinkCount(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	uint8_t ucTWTFlowId);
+
+uint32_t mltwtFillTWTElementPerLinkDistinct(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	uint8_t *pucIE,
+	uint16_t u2IELength,
+	uint8_t ucTWTFlowId);
+
+uint32_t mltwtSendSetupFramePerLinkDistinct(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	u_int8_t ucTWTFlowId,
+	struct _TWT_PARAMS_T *prTWTParams,
+	PFN_TX_DONE_HANDLER pfTxDoneHandler);
+#endif
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

@@ -3141,9 +3141,22 @@ struct _IE_BTWT_PARAMS_T {
 	uint16_t u2WakeIntvalMantiss;	/* TWT Wake Interval Mantissa */
 	uint16_t u2BTWTInfo;	/* TWT Channel for 11ah. Reserved for 11ax */
 } __KAL_ATTRIB_PACKED__;
-
 #endif
 
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+/* 11be ML-TWT element */
+struct IE_ML_TWT_T {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucCtrl;	/* Control */
+	uint16_t u2ReqType;	/* Request Type */
+	uint64_t u8TWT;	/* Target Wake Time 64 bits */
+	uint8_t ucMinWakeDur;	/* Nominal Minimum TWT Wake Duration */
+	uint16_t u2WakeIntvalMantiss;	/* TWT Wake Interval Mantissa */
+	uint8_t ucReserved;	/* TWT Channel for 11ah. Reserved for 11ax */
+	uint16_t u2LinkIdBitmap; /* Link ID bitmap */
+} __KAL_ATTRIB_PACKED__;
+#endif
 
 /* 3 7.4 Action Frame. */
 /* 7.4 Action frame format */
@@ -3637,6 +3650,38 @@ struct _ACTION_BTWT_SETUP_FRAME {
 } __KAL_ATTRIB_PACKED__;
 #endif
 
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+/* 11be ML-TWT Setup frame format */
+struct _ACTION_ML_TWT_SETUP_FRAME {
+	/* MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* TWT Setup frame body */
+	uint8_t ucCategory;	/* Category */
+	uint8_t ucAction;	/* Action Value */
+	uint8_t ucDialogToken;	/* Dialog Token */
+	struct IE_ML_TWT_T rTWT;	/* TWT element */
+} __KAL_ATTRIB_PACKED__;
+
+struct _ACTION_ML_TWT_SETUP_FRAME_PER_LINK_DISTINCT {
+	/* MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* TWT Setup frame body */
+	uint8_t ucCategory;	/* Category */
+	uint8_t ucAction;	/* Action Value */
+	uint8_t ucDialogToken;	/* Dialog Token */
+	uint8_t rTWT[0];	/* TWT element */
+} __KAL_ATTRIB_PACKED__;
+#endif
 
 /* 3 Information Elements from WFA. */
 struct IE_WFA {

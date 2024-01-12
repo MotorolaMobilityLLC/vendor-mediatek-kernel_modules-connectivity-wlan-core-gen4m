@@ -2945,8 +2945,10 @@ struct _EXT_CMD_TWT_ARGT_UPDATE_T {
 	uint8_t  ucGrpMemberCnt;
 	uint8_t  ucReserved_c;
 	uint16_t u2Reserved_d;
+#if 0
 	/* DW7 ~ DW10 */
 	uint16_t au2StaList[TWT_GRP_MAX_MEMBER_CNT];
+#endif
 };
 #endif
 

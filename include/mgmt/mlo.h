@@ -263,4 +263,10 @@ int8_t mldStarecInit(struct ADAPTER *prAdapter);
 
 void mldStarecUninit(struct ADAPTER *prAdapter);
 
+struct BSS_INFO *mldGetBssInfoByLinkID(
+	struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
+	uint8_t ucLinkIndex,
+	uint8_t fgPeerSta);
+
 #endif /* !_MLO_H */

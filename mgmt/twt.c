@@ -625,12 +625,46 @@ void twtProcessS1GAction(
 				TRUE);
 		} else {
 #endif
+
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+			if (GET_ML_TWT_CTRL_LINK_ID_BITMAP(
+				((struct IE_ML_TWT_T *)&(prRxSetupFrame->rTWT))->ucCtrl)
+				== 1) {
+				/* We receive multi-link TWT response frame */
+				/* Parse TWT element in the unit of link ID bitmap */
+				/* Iterate all link IDs related STA_REC in MLD_GRP */
+				if (mltwtParseTWTElement(
+					prAdapter,
+					prStaRec,
+					(uint8_t *)&(prRxSetupFrame->rTWT),
+					prSwRfb->u2PacketLen -
+					sizeof(
+					struct _ACTION_ML_TWT_SETUP_FRAME_PER_LINK_DISTINCT)
+					) != WLAN_STATUS_SUCCESS) {
+					DBGLOG(RLM, ERROR, "MLTWT setup resp\n");
+
+					return;
+				}
+
+				/*
+				* After manipulation of MLTWT setup response,
+				* follow i-TWT/BTWT existening flow...
+				*/
+				ucTWTFlowId =
+					twtGetRxSetupFlowId(&(prRxSetupFrame->rTWT));
+			} else {
+#endif
+
 			/* Parse TWT element */
 			ucTWTFlowId =
 				twtGetRxSetupFlowId(&(prRxSetupFrame->rTWT));
 			twtParseTWTElement(&(prRxSetupFrame->rTWT),
 				&(prStaRec->arTWTFlow[ucTWTFlowId]
 				.rTWTPeerParams));
+
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+			}
+#endif
 
 #if (CFG_SUPPORT_BTWT == 1)
 			btwtFlagOnOff(&(prStaRec->arTWTFlow[ucTWTFlowId]),
@@ -790,7 +824,7 @@ uint32_t btwtSendSetupFrame(
 
 	ASSERT(prBssInfo);
 	DBGLOG(TWT_REQUESTER, WARN,
-		"btwtSendSetupFrame end\n");
+		"btwtSendSetupFrame begin\n");
 
 	/* Calculate MSDU buffer length */
 	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD
@@ -906,5 +940,507 @@ uint32_t btwtSendTeardownFrame(
 
 	return WLAN_STATUS_SUCCESS;
 
+}
+#endif
+
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+uint32_t mltwtParseTWTElement(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t *pucIE,
+	uint16_t u2IELength)
+{
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct STA_RECORD *prStaRecOfAP = NULL;
+	struct IE_ML_TWT_T *prMLTWTIE = NULL;
+	uint16_t u2Offset;
+	uint8_t ucLinkID;
+	uint8_t ucTWTFlowId;
+	uint16_t u2LinkIdBitMap;
+
+	/* Get MLD_BSS_INFO in MLO connection */
+	ASSERT(prAdapter);
+
+	ASSERT(prStaRec);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(
+					prAdapter, prStaRec->ucBssIndex);
+
+	ASSERT(prBssInfo);
+
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+	if (!prMldBssInfo) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"ML Invalid MLD_BSS_INFO\n");
+
+		return WLAN_STATUS_FAILURE;
+	}
+
+	IE_FOR_EACH(pucIE, u2IELength, u2Offset)
+	{
+		DBGLOG(TWT_REQUESTER, WARN,
+			"u2IELength %d u2Offset %d\n",
+			u2IELength, u2Offset);
+
+	switch (IE_ID(pucIE))
+	{
+	case ELEM_ID_TWT:
+		prMLTWTIE = (struct IE_ML_TWT_T *)pucIE;
+
+		ucTWTFlowId = twtGetRxSetupFlowId(
+					(struct _IE_TWT_T *)prMLTWTIE);
+
+		u2LinkIdBitMap = prMLTWTIE->u2LinkIdBitmap;
+
+		/* Iterate each link ID */
+		for (ucLinkID = 0;
+			ucLinkID < ML_TWT_LINK_ID_BITMAP_COUNT;
+			ucLinkID++) {
+			if ((u2LinkIdBitMap & BIT(ucLinkID))
+				== BIT(ucLinkID)) {
+				/* Get the BSS INFO of ucLinkID */
+				prBssInfo = mldGetBssInfoByLinkID(
+								prAdapter,
+								prMldBssInfo,
+								ucLinkID,
+								TRUE);
+
+				if (!prBssInfo) {
+					DBGLOG(TWT_REQUESTER, ERROR,
+						"MLTWT %d no BSS_INFO of link ID %d\n",
+						ucTWTFlowId,
+						ucLinkID);
+
+					return WLAN_STATUS_FAILURE;
+				}
+
+				prStaRecOfAP = prBssInfo->prStaRecOfAP;
+
+				if (!prStaRecOfAP) {
+					DBGLOG(TWT_REQUESTER, ERROR,
+						"TWT Flow %d no STA_REC of link ID %d\n",
+						ucTWTFlowId,
+						ucLinkID);
+
+					return WLAN_STATUS_FAILURE;
+				}
+
+				twtParseTWTElement(
+					(struct _IE_TWT_T *)pucIE,
+					&(prStaRecOfAP->arTWTFlow[ucTWTFlowId]
+					.rTWTPeerParams));
+
+				prStaRecOfAP->arTWTFlow[ucTWTFlowId].fgIsMLTWT = TRUE;
+			}
+		}
+
+		break;
+
+	default:
+		break;
+	}
+	}
+
+#if 0
+    if (kal_mod64(u2IELength, IE_ML_TWT_LENGTH) == 0) {
+		/*
+		* The frame contains multiple complete TWT elements,
+		* ex.
+		* {TWT Element[0]|TWT Element[1]|TWT Element[2]}
+		* , where TWT Element = {tag|length|CTRL|TWT param}
+		*/
+    } else {
+		/*
+		* The frame contains TWT element combinatory with 
+		* multiple TWT parameters,
+		* ex.
+		* {tag|length|CTRL|TWT param[0]|TWT param[1]|TWT param[2]}
+		*/
+    }
+#endif
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*
+* All MLTWT links sharing the same TWT parameter
+*/
+uint32_t mltwtFillTWTElementAllInOne(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct IE_ML_TWT_T *prMLTWTBuf,
+	uint8_t ucTWTFlowId,
+	struct _TWT_PARAMS_T *prTWTParams)
+{
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	struct LINK *prBssList = NULL;
+	struct BSS_INFO *prCurrBssInfo = NULL;
+	struct STA_RECORD *prStaRecOfAP = NULL;
+
+	ASSERT(prAdapter);
+	ASSERT(prBssInfo);
+	ASSERT(prMLTWTBuf);
+	ASSERT(prTWTParams);
+
+	/* Add TWT element */
+	prMLTWTBuf->ucId = ELEM_ID_TWT;
+	prMLTWTBuf->ucLength = sizeof(struct IE_ML_TWT_T) - ELEM_HDR_LEN;
+
+	/* Request Type */
+	prMLTWTBuf->u2ReqType |= SET_TWT_RT_REQUEST(prTWTParams->fgReq) |
+		SET_TWT_RT_SETUP_CMD(prTWTParams->ucSetupCmd) |
+		SET_TWT_RT_TRIGGER(prTWTParams->fgTrigger) |
+		TWT_REQ_TYPE_IMPLICIT_LAST_BCAST_PARAM |
+		SET_TWT_RT_FLOW_TYPE(prTWTParams->fgUnannounced) |
+		SET_TWT_RT_FLOW_ID(ucTWTFlowId) |
+		SET_TWT_RT_WAKE_INTVAL_EXP(prTWTParams->ucWakeIntvalExponent) |
+		SET_TWT_RT_PROTECTION(prTWTParams->fgProtect);
+
+	prMLTWTBuf->u8TWT = CPU_TO_LE64(prTWTParams->u8TWT);
+	prMLTWTBuf->ucMinWakeDur = prTWTParams->ucMinWakeDur;
+	prMLTWTBuf->u2WakeIntvalMantiss =
+		CPU_TO_LE16(prTWTParams->u2WakeIntvalMantiss);
+
+	/* CTRL link ID bitmap manipulation */
+	prMLTWTBuf->ucCtrl |= SET_ML_TWT_CTRL_LINK_ID_BITMAP(1);
+
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+	if (!prMldBssInfo) {
+		DBGLOG(TWT_REQUESTER, ERROR, "ML Invalid MLD_BSS_INFO\n");
+
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prBssList = &prMldBssInfo->rBssList;
+
+	LINK_FOR_EACH_ENTRY(prCurrBssInfo, prBssList,
+			rLinkEntryMld,
+			struct BSS_INFO) {
+		if (!prCurrBssInfo)
+			break;
+
+		prStaRecOfAP = prCurrBssInfo->prStaRecOfAP;
+
+		if (!prStaRecOfAP)
+			break;
+
+		prMLTWTBuf->u2LinkIdBitmap |= BIT(prStaRecOfAP->ucLinkIndex);
+	}
+
+	DBGLOG(TWT_REQUESTER, WARN,
+		"Link ID bitmap %x\n", prMLTWTBuf->u2LinkIdBitmap);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*
+* All MLTWT links sharing the same TWT parameter
+*/
+uint32_t mltwtSendSetupFrameAllInOne(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	u_int8_t ucTWTFlowId,
+	struct _TWT_PARAMS_T *prTWTParams,
+	PFN_TX_DONE_HANDLER pfTxDoneHandler)
+{
+	struct MSDU_INFO *prMsduInfo;
+	struct _ACTION_ML_TWT_SETUP_FRAME *prTxFrame;
+	struct BSS_INFO *prBssInfo;
+	uint16_t u2EstimatedFrameLen;
+	struct IE_ML_TWT_T *prMLTWTBuf;
+
+	ASSERT(prAdapter);
+	ASSERT(prStaRec);
+	ASSERT(prTWTParams);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	ASSERT(prBssInfo);
+
+	/* Calculate MSDU buffer length */
+	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD
+		+ sizeof(struct _ACTION_ML_TWT_SETUP_FRAME);
+
+	/* Alloc MSDU_INFO */
+	prMsduInfo = (struct MSDU_INFO *)
+			cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
+
+	if (!prMsduInfo) {
+		DBGLOG(TWT_REQUESTER, WARN,
+			"No MSDU_INFO_T for sending MLTWT Setup Frame.\n");
+		return WLAN_STATUS_RESOURCES;
+	}
+
+	kalMemZero(prMsduInfo->prPacket, u2EstimatedFrameLen);
+
+	prTxFrame = prMsduInfo->prPacket;
+
+	/* Fill frame ctrl */
+	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+
+	COPY_MAC_ADDR(prTxFrame->aucDestAddr, prStaRec->aucMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
+
+	/* Compose the frame body's frame */
+	prTxFrame->ucCategory = CATEGORY_S1G_ACTION;
+	prTxFrame->ucAction = ACTION_S1G_TWT_SETUP;
+
+	prMLTWTBuf = &(prTxFrame->rTWT);
+
+	if (mltwtFillTWTElementAllInOne(
+		prAdapter, prBssInfo,
+		prMLTWTBuf, ucTWTFlowId,
+		prTWTParams) == WLAN_STATUS_FAILURE) {
+		DBGLOG(TWT_REQUESTER, ERROR, "MLTWT setup frame error\n");
+
+		return WLAN_STATUS_FAILURE;
+	}
+
+	DBGLOG(TWT_REQUESTER, WARN,
+		"MLTWT flowid %d\n", ucTWTFlowId);
+
+	/* Update information of MSDU_INFO_T */
+	TX_SET_MMPDU(prAdapter,
+			prMsduInfo,
+			prBssInfo->ucBssIndex,
+			prStaRec->ucIndex,
+			WLAN_MAC_MGMT_HEADER_LEN,
+			sizeof(struct _ACTION_ML_TWT_SETUP_FRAME),
+			pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
+
+	/* Enqueue the frame to send this action frame */
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t mltwtGetLinkCount(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	uint8_t ucTWTFlowId)
+{
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	struct LINK *prBssList = NULL;
+	struct BSS_INFO *prCurrBssInfo = NULL;
+	struct STA_RECORD *prStaRecOfAP = NULL;
+	uint8_t ucMloLinkCount = 0;
+
+	ASSERT(prAdapter);
+	ASSERT(prBssInfo);
+
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+	if (!prMldBssInfo) {
+		DBGLOG(TWT_REQUESTER, ERROR, "ML Invalid MLD_BSS_INFO\n");
+
+		return 0;
+	}
+
+	prBssList = &prMldBssInfo->rBssList;
+
+	LINK_FOR_EACH_ENTRY(prCurrBssInfo, prBssList,
+			rLinkEntryMld,
+			struct BSS_INFO) {
+		if (!prCurrBssInfo)
+			break;
+
+		prStaRecOfAP = prCurrBssInfo->prStaRecOfAP;
+
+		if (!prStaRecOfAP)
+			break;
+
+		if (prStaRecOfAP->arTWTFlow[ucTWTFlowId].fgIsMLTWT == TRUE)
+			ucMloLinkCount++;
+	}
+
+	return ucMloLinkCount;
+}
+
+/*
+* MLTWT per link distinct TWT parameter
+*/
+uint32_t mltwtFillTWTElementPerLinkDistinct(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	uint8_t *pucIE,
+	uint16_t u2IELength,
+	uint8_t ucTWTFlowId)
+{
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	struct LINK *prBssList = NULL;
+	struct BSS_INFO *prCurrBssInfo = NULL;
+	struct STA_RECORD *prStaRecOfAP = NULL;
+	uint16_t u2Offset = 0;
+	struct _TWT_FLOW_T *prTWTFlow = NULL;
+	struct _TWT_PARAMS_T *prTWTParams = NULL;
+	struct IE_ML_TWT_T *prMLTWTBuf = NULL;
+
+	ASSERT(prAdapter);
+	ASSERT(prBssInfo);
+	ASSERT(pucIE);
+
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+	if (!prMldBssInfo) {
+		DBGLOG(TWT_REQUESTER, ERROR, "ML Invalid MLD_BSS_INFO\n");
+
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prBssList = &prMldBssInfo->rBssList;
+
+	LINK_FOR_EACH_ENTRY(prCurrBssInfo, prBssList,
+			rLinkEntryMld,
+			struct BSS_INFO) {
+		if (!prCurrBssInfo)
+			break;
+
+		prStaRecOfAP = prCurrBssInfo->prStaRecOfAP;
+
+		if (!prStaRecOfAP)
+			break;
+
+		prTWTFlow = &(prStaRecOfAP->arTWTFlow[ucTWTFlowId]);
+
+		if ((prTWTFlow->fgIsMLTWT == TRUE)
+			&& (u2Offset < u2IELength))
+		{
+			prMLTWTBuf = (struct IE_ML_TWT_T *)(pucIE + u2Offset);
+
+			prTWTParams = &(prTWTFlow->rTWTPeerParams);
+
+			/* Add TWT element */
+			prMLTWTBuf->ucId = ELEM_ID_TWT;
+			prMLTWTBuf->ucLength = sizeof(struct IE_ML_TWT_T) - ELEM_HDR_LEN;
+
+			/* CTRL link ID bitmap manipulation */
+			prMLTWTBuf->ucCtrl |= SET_ML_TWT_CTRL_LINK_ID_BITMAP(1);
+
+			/* Request Type */
+			prMLTWTBuf->u2ReqType |= SET_TWT_RT_REQUEST(prTWTParams->fgReq) |
+				SET_TWT_RT_SETUP_CMD(prTWTParams->ucSetupCmd) |
+				SET_TWT_RT_TRIGGER(prTWTParams->fgTrigger) |
+				TWT_REQ_TYPE_IMPLICIT_LAST_BCAST_PARAM |
+				SET_TWT_RT_FLOW_TYPE(prTWTParams->fgUnannounced) |
+				SET_TWT_RT_FLOW_ID(ucTWTFlowId) |
+				SET_TWT_RT_WAKE_INTVAL_EXP(prTWTParams->ucWakeIntvalExponent) |
+				SET_TWT_RT_PROTECTION(prTWTParams->fgProtect);
+
+			prMLTWTBuf->u8TWT = CPU_TO_LE64(prTWTParams->u8TWT);
+			prMLTWTBuf->ucMinWakeDur = prTWTParams->ucMinWakeDur;
+			prMLTWTBuf->u2WakeIntvalMantiss =
+				CPU_TO_LE16(prTWTParams->u2WakeIntvalMantiss);
+
+			/* Link ID bitmap manipulation */
+			prMLTWTBuf->u2LinkIdBitmap = BIT(prStaRecOfAP->ucLinkIndex);
+
+			/* Accumutate offset in the unit of (struct IE_ML_TWT_T) */
+			u2Offset += sizeof(struct IE_ML_TWT_T);
+		}
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*
+* MLTWT per link distinct TWT parameter
+*/
+uint32_t mltwtSendSetupFramePerLinkDistinct(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	u_int8_t ucTWTFlowId,
+	struct _TWT_PARAMS_T *prTWTParams,
+	PFN_TX_DONE_HANDLER pfTxDoneHandler)
+{
+	struct MSDU_INFO *prMsduInfo;
+	struct _ACTION_ML_TWT_SETUP_FRAME_PER_LINK_DISTINCT *prTxFrame;
+	struct BSS_INFO *prBssInfo;
+	uint16_t u2EstimatedFrameLen;
+	uint8_t ucMloLinkCount = 0;
+
+	ASSERT(prAdapter);
+	ASSERT(prStaRec);
+	ASSERT(prTWTParams);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	ASSERT(prBssInfo);
+
+	ucMloLinkCount = mltwtGetLinkCount(
+						prAdapter,
+						prBssInfo,
+						ucTWTFlowId);
+
+	if (ucMloLinkCount == 0) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"MLTWT %d no link.\n",
+			ucTWTFlowId);
+
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* Calculate MSDU buffer length */
+	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD
+		+ OFFSET_OF(
+			struct _ACTION_ML_TWT_SETUP_FRAME_PER_LINK_DISTINCT,
+			rTWT[0])
+		+ (ucMloLinkCount * sizeof(struct IE_ML_TWT_T));
+
+	/* Alloc MSDU_INFO */
+	prMsduInfo = (struct MSDU_INFO *)
+			cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
+
+	if (!prMsduInfo) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"No MSDU_INFO_T for sending MLTWT Setup Frame.\n");
+
+		return WLAN_STATUS_RESOURCES;
+	}
+
+	kalMemZero(prMsduInfo->prPacket, u2EstimatedFrameLen);
+
+	prTxFrame = prMsduInfo->prPacket;
+
+	/* Fill frame ctrl */
+	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+
+	COPY_MAC_ADDR(prTxFrame->aucDestAddr, prStaRec->aucMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
+
+	/* Compose the frame body's frame */
+	prTxFrame->ucCategory = CATEGORY_S1G_ACTION;
+	prTxFrame->ucAction = ACTION_S1G_TWT_SETUP;
+
+	/* Use the 1st struct _IE_ML_TWT_T fo rmanipulation */
+	if (mltwtFillTWTElementPerLinkDistinct(
+			prAdapter, prBssInfo, prTxFrame->rTWT,
+			(ucMloLinkCount * sizeof(struct IE_ML_TWT_T)),
+			ucTWTFlowId) == WLAN_STATUS_FAILURE) {
+		DBGLOG(TWT_REQUESTER, ERROR, "MLTWT setup frame error\n");
+
+		return WLAN_STATUS_FAILURE;
+	}
+
+	DBGLOG(TWT_REQUESTER, WARN,
+		"MLTWT flowid %d\n", ucTWTFlowId);
+
+	/* Update information of MSDU_INFO_T */
+	TX_SET_MMPDU(prAdapter,
+			prMsduInfo,
+			prBssInfo->ucBssIndex,
+			prStaRec->ucIndex,
+			WLAN_MAC_MGMT_HEADER_LEN,
+			u2EstimatedFrameLen,
+			pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
+
+	/* Enqueue the frame to send this action frame */
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+
+	return WLAN_STATUS_SUCCESS;
 }
 #endif
