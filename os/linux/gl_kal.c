@@ -3665,6 +3665,14 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 
 	u4PacketLen = prSkb->len;
 
+#if CFG_WIFI_TX_DROP_SHORT_PAYLOAD
+	if (u4PacketLen <= ETHER_HEADER_LEN + 2) {
+		DBGLOG(INIT, WARN, "Invalid Ether packet length: %u\n",
+		       u4PacketLen);
+		return FALSE;
+	}
+#endif
+
 	if (u4PacketLen < ETHER_HEADER_LEN) {
 		DBGLOG(INIT, WARN, "Invalid Ether packet length: %u\n",
 		       u4PacketLen);
