@@ -912,7 +912,7 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst,
 	u_int8_t fgL0Reset)
 {
 	u_int8_t fgResult = FALSE;
-	int32_t ret;
+	int32_t ret = 0;
 
 	if (rst == NULL) {
 		DBGLOG(INIT, ERROR, "input value rst is NULL.\n");
