@@ -686,7 +686,7 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	target = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 	if (prBssDesc->prBlack) {
 		if (prBssDesc->prBlack->fgIsInFWKBlacklist) {
-			log_dbg(SCN, WARN, MACSTR" in FWK blacklist\n",
+			log_dbg(SCN, WARN, MACSTR" in FWK blocklist\n",
 				MAC2STR(prBssDesc->aucBSSID));
 			return FALSE;
 		}
@@ -700,7 +700,7 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		if (prBssDesc->prBlack->ucCount >= 10)  {
 			log_dbg(SCN, WARN,
 				MACSTR
-				" Skip AP that add toblacklist count >= 10\n",
+				" Skip AP that add toblocklist count >= 10\n",
 				MAC2STR(prBssDesc->aucBSSID));
 			return FALSE;
 		}
@@ -1062,7 +1062,7 @@ done:
 	return score * gasMtkWeightConfig[eRoamType].ucChnlIdleWeight;
 }
 
-uint16_t scanCalculateScoreByBlackList(struct ADAPTER *prAdapter,
+uint16_t scanCalculateScoreByBlockList(struct ADAPTER *prAdapter,
 	    struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType)
 {
 	uint16_t u2Score = 0;
@@ -1171,7 +1171,7 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 		prBssDesc->ucChannelNum, eRoamType, prBssDesc, ucBssIndex,
 		prBssDesc->eBand);
 	u2BlackListScore =
-	       scanCalculateScoreByBlackList(prAdapter, prBssDesc, eRoamType);
+	       scanCalculateScoreByBlockList(prAdapter, prBssDesc, eRoamType);
 	u2PreferenceScore =
 	      scanCalculateScoreByPreference(prAdapter, prBssDesc, eRoamReason);
 
@@ -1441,7 +1441,7 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
 #endif
 	ucAisIdx = AIS_INDEX(prAdapter, ucBssIndex);
 
-	aisRemoveTimeoutBlacklist(prAdapter);
+	aisRemoveTimeoutBlocklist(prAdapter);
 	apsUpdateEssApList(prAdapter, ucBssIndex);
 
 #if CFG_SUPPORT_802_11K
@@ -1493,7 +1493,7 @@ try_again:
 		if (!fgSearchBlackList) {
 			/* update blacklist info */
 			prBssDesc->prBlack =
-				aisQueryBlackList(prAdapter, prBssDesc);
+				aisQueryBlockList(prAdapter, prBssDesc);
 #if CFG_SUPPORT_802_11K
 			/* update neighbor report entry */
 			prBssDesc->prNeighbor = scanGetNeighborAPEntry(
@@ -1580,7 +1580,7 @@ try_again:
 		if ((prCandBssDesc->fgIsConnected & BIT(ucBssIndex)) &&
 		    !fgSearchBlackList && prEssLink->u4NumElem > 0) {
 			fgSearchBlackList = TRUE;
-			log_dbg(SCN, INFO, "Can't roam out, try blacklist\n");
+			log_dbg(SCN, INFO, "Can't roam out, try blocklist\n");
 			goto try_again;
 		}
 
@@ -1615,7 +1615,7 @@ try_again:
 	/* if No Candidate BSS is found, try BSSes which are in blacklist */
 	if (!fgSearchBlackList && prEssLink->u4NumElem > 0) {
 		fgSearchBlackList = TRUE;
-		log_dbg(SCN, INFO, "No Bss is found, Try blacklist\n");
+		log_dbg(SCN, INFO, "No Bss is found, Try blocklist\n");
 		goto try_again;
 	}
 	log_dbg(SCN, INFO, "Selected None when find %s, " MACSTR

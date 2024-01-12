@@ -3871,7 +3871,7 @@ p2pFuncValidateAuth(struct ADAPTER *prAdapter,
 			(uint8_t) prP2pBssInfo->u4PrivateData)
 			|| !p2pRoleProcessACLInspection(prAdapter,
 			prStaRec->aucMacAddr, prP2pBssInfo->ucBssIndex)) {
-			DBGLOG(P2P, WARN, "in black list.\n");
+			DBGLOG(P2P, WARN, "in block list.\n");
 			cnmStaRecFree(prAdapter, prStaRec);
 			*pu2StatusCode
 				= STATUS_CODE_ASSOC_DENIED_OUTSIDE_STANDARD;

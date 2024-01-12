@@ -19982,12 +19982,12 @@ int32_t priv_driver_MulAPAgent_set_white_sta(
 		&aucMacAddr[4], &aucMacAddr[5]);
 	DBGLOG(INIT, INFO, "thisChar=%s\n", this_char);
 	DBGLOG(INIT, INFO,
-		"Removing MAC="MACSTR" from BlackList !!\n",
+		"Removing MAC="MACSTR" from BlockList !!\n",
 		MAC2STR(aucMacAddr));
 	for (i = 0; i < KAL_P2P_NUM; i++) {
 		DBGLOG(INIT, INFO,
 			"Removing MAC="MACSTR
-			" from BlackList !! P2P NUM=%d\n",
+			" from BlockList !! P2P NUM=%d\n",
 			&aucMacAddr[0], i);
 		i4Ret |= kalP2PSetBlackList(prGlueInfo,
 			aucMacAddr, 0, i);
@@ -20036,12 +20036,12 @@ int32_t priv_driver_MulAPAgent_set_Black_sta(
 		&aucMacAddr[4], &aucMacAddr[5]);
 	DBGLOG(INIT, INFO, "thisChar=%s\n", this_char);
 	DBGLOG(INIT, INFO,
-		"Adding MAC="MACSTR" to BlackList !!\n",
+		"Adding MAC="MACSTR" to BlockList !!\n",
 		MAC2STR(aucMacAddr));
 
 	for (i = 0; i < KAL_P2P_NUM; i++) {
 		DBGLOG(INIT, INFO,
-			"Adding MAC="MACSTR" to BlackList !! P2P NUM=%d\n",
+			"Adding MAC="MACSTR" to BlockList !! P2P NUM=%d\n",
 			&aucMacAddr[0], i);
 		i4Ret |= kalP2PSetBlackList(prGlueInfo, aucMacAddr, 1, i);
 	}

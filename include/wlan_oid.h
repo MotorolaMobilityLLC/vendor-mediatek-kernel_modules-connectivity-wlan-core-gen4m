@@ -5491,7 +5491,7 @@ wlanoidIndicateBssInfo(struct ADAPTER *prAdapter,
 			uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidSetAxBlacklist(struct ADAPTER *prAdapter,
+wlanoidSetAxBlocklist(struct ADAPTER *prAdapter,
 		void *pvSetBuffer,
 		uint32_t u4SetBufferLen,
 		uint32_t *pu4SetInfoLen);

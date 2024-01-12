@@ -771,7 +771,7 @@ uint16_t apsUpdateEssApList(struct ADAPTER *ad,
 			bss->eBSSType != BSS_TYPE_INFRASTRUCTURE)
 			continue;
 
-		bss->prBlack = aisQueryBlackList(ad, bss);
+		bss->prBlack = aisQueryBlockList(ad, bss);
 #if CFG_SUPPORT_802_11K
 		/* update neighbor report entry */
 		bss->prNeighbor = apsGetNeighborAPEntry(
@@ -1393,7 +1393,7 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 
 	if (prBssDesc->prBlack) {
 		if (prBssDesc->prBlack->fgIsInFWKBlacklist) {
-			DBGLOG(APS, WARN, MACSTR" in FWK blacklist\n",
+			DBGLOG(APS, WARN, MACSTR" in FWK blocklist\n",
 				MAC2STR(prBssDesc->aucBSSID));
 			return FALSE;
 		}
@@ -2173,7 +2173,7 @@ try_again:
 
 	if (!try_blockList && (!cand || cand->fgIsAllLinkConnected)) {
 		try_blockList = TRUE;
-		DBGLOG(APS, INFO, "No ap collection found, try blacklist\n");
+		DBGLOG(APS, INFO, "No ap collection found, try blocklist\n");
 		goto try_again;
 	}
 
@@ -2200,7 +2200,7 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *ad,
 	DBGLOG(APS, INFO, "ConnectionPolicy = %d, reason = %d\n",
 		conn->eConnectionPolicy, reason);
 
-	aisRemoveTimeoutBlacklist(ad);
+	aisRemoveTimeoutBlocklist(ad);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	aisRemoveTimeoutMldBlocklist(ad);
 #endif

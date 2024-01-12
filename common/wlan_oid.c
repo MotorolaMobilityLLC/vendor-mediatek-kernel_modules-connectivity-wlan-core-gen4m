@@ -8189,7 +8189,7 @@ wlanoidSetMulticastList(struct ADAPTER *prAdapter,
 	kalMemCopy(rCmdMacMcastAddr.arAddress, pvSetBuffer,
 		   u4SetBufferLen);
 	DBGLOG(OID, INFO,
-		"MCAST white list: total=%d MAC0="MACSTR" MAC1="MACSTR
+		"MCAST allow list: total=%d MAC0="MACSTR" MAC1="MACSTR
 		" MAC2="MACSTR" MAC3="MACSTR" MAC4="MACSTR"\n",
 		rCmdMacMcastAddr.u4NumOfGroupAddr,
 		MAC2STR(rCmdMacMcastAddr.arAddress[0]),
@@ -17201,7 +17201,7 @@ wlanoidIndicateBssInfo(struct ADAPTER *prAdapter,
 }	/* wlanoidIndicateBssInfo */
 
 uint32_t
-wlanoidSetAxBlacklist(struct ADAPTER *prAdapter,
+wlanoidSetAxBlocklist(struct ADAPTER *prAdapter,
 		     void *pvSetBuffer,
 		     uint32_t u4SetBufferLen,
 		     uint32_t *pu4SetInfoLen) {
@@ -17220,14 +17220,14 @@ wlanoidSetAxBlacklist(struct ADAPTER *prAdapter,
 	pParamAxBlacklist = (struct PARAM_AX_BLACKLIST *) pvSetBuffer;
 	count = pParamAxBlacklist->ucCount;
 
-	clearAxBlacklist(prAdapter, ucBssIndex, pParamAxBlacklist->ucType);
+	clearAxBlocklist(prAdapter, ucBssIndex, pParamAxBlacklist->ucType);
 	for (i = 0; i < count ; i++) {
 		COPY_MAC_ADDR(aucTemp,
 				&pParamAxBlacklist->aucList[i * MAC_ADDR_LEN]);
-		addAxBlacklist(prAdapter, aucTemp, ucBssIndex,
+		addAxBlocklist(prAdapter, aucTemp, ucBssIndex,
 				pParamAxBlacklist->ucType);
 		DBGLOG(OID, INFO,
-			"Set BSSID " MACSTR " into %s blacklist!\n",
+			"Set BSSID " MACSTR " into %s blocklist!\n",
 			MAC2STR(aucTemp),
 			pParamAxBlacklist->ucType == 0 ? "AX" : "+HTC");
 	}

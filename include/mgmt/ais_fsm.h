@@ -875,12 +875,12 @@ void aisTest(void);
 #endif /* CFG_TEST_MGMT_FSM */
 
 /* Support AP Selection */
-void aisRefreshFWKBlacklist(struct ADAPTER *prAdapter);
-struct AIS_BLACKLIST_ITEM *aisAddBlacklist(struct ADAPTER *prAdapter,
+void aisRefreshFWKBlocklist(struct ADAPTER *prAdapter);
+struct AIS_BLACKLIST_ITEM *aisAddBlocklist(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
-void aisRemoveBlackList(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc);
-void aisRemoveTimeoutBlacklist(struct ADAPTER *prAdapter);
-struct AIS_BLACKLIST_ITEM *aisQueryBlackList(struct ADAPTER *prAdapter,
+void aisRemoveBlockList(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc);
+void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter);
+struct AIS_BLACKLIST_ITEM *aisQueryBlockList(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
 void aisBssTmpDisallow(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 	uint32_t sec, int32_t rssiThreshold);
@@ -1117,17 +1117,17 @@ struct EAP_ERP_KEY *aisGetErpKey(
 	uint8_t ucBssIndex);
 #endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 
-u_int8_t addAxBlacklist(struct ADAPTER *prAdapter,
+u_int8_t addAxBlocklist(struct ADAPTER *prAdapter,
 	uint8_t aucBSSID[],
 	uint8_t ucBssIndex,
 	uint8_t ucType);
 
-u_int8_t queryAxBlacklist(struct ADAPTER *prAdapter,
+u_int8_t queryAxBlocklist(struct ADAPTER *prAdapter,
 	uint8_t aucBSSID[],
 	uint8_t ucBssIndex,
 	uint8_t ucType);
 
-u_int8_t clearAxBlacklist(struct ADAPTER *prAdapter,
+u_int8_t clearAxBlocklist(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex,
 	uint8_t ucType);
 
