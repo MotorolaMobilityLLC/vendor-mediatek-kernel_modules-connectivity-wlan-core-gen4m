@@ -193,6 +193,8 @@ struct BUS_INFO {
 	const uint32_t tx_ring1_data_idx;
 	const uint32_t tx_ring2_data_idx;
 	const uint32_t tx_ring3_data_idx;
+	const uint32_t tx_prio_data_idx;
+	const uint32_t tx_altx_data_idx;
 	const uint32_t rx_data_ring_num;
 	const uint32_t rx_evt_ring_num;
 	uint32_t rx_data_ring_size;

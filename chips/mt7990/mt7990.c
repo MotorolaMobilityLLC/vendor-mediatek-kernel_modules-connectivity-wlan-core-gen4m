@@ -291,7 +291,7 @@ struct BUS_INFO mt7990_bus_info = {
 	.tx_ring_cmd_idx = CONNAC3X_CMD_TX_RING_IDX,
 	.tx_ring0_data_idx = 0,
 	.tx_ring1_data_idx = 1,
-	.tx_ring2_data_idx = 2,
+	.tx_prio_data_idx = 2,
 	.rx_data_ring_num = 3,
 	.rx_evt_ring_num = 4,
 #if CFG_SUPPORT_RX_PAGE_POOL
