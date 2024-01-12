@@ -74,7 +74,7 @@
  */
 
 #if (CFG_SUPPORT_ICS == 1)
-#define ICS_BIN_LOG_MAGIC_NUM	0x44E98CAF
+#define ICS_BIN_LOG_MAGIC_NUM	0x44D9C99A
 #endif /* CFG_SUPPORT_ICS */
 
 #define UNIFIED_MAC_RX_FORMAT               1
@@ -714,6 +714,9 @@ enum {
 #if (CFG_SUPPORT_ICS == 1)
 struct ICS_BIN_LOG_HDR {
 	uint32_t u4MagicNum;
+	uint8_t  ucVer;
+	uint8_t  ucRsv;
+	uint16_t u2SeqNo;
 	uint32_t u4Timestamp;
 	uint16_t u2MsgID;
 	uint16_t u2Length;

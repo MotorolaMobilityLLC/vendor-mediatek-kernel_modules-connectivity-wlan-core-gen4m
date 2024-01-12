@@ -3569,9 +3569,13 @@ static void nicRxProcessIcsLog(IN struct ADAPTER *prAdapter,
 		/* prepare ICS header */
 		prIcsBinLogHeader = (struct ICS_BIN_LOG_HDR *)pucRecvBuff;
 		prIcsBinLogHeader->u4MagicNum = ICS_BIN_LOG_MAGIC_NUM;
+		prIcsBinLogHeader->ucVer = 1;
+		prIcsBinLogHeader->ucRsv = 0;
 		prIcsBinLogHeader->u4Timestamp = 0;
 		prIcsBinLogHeader->u2MsgID = RX_PKT_TYPE_ICS;
 		prIcsBinLogHeader->u2Length = prIcsAggHeader->rxByteCount;
+
+		prIcsBinLogHeader->u2SeqNo = prAdapter->u2IcsSeqNo;
 
 		/* prepare ICS frame */
 		kalMemCopy(pucRecvBuff + sizeof(struct ICS_BIN_LOG_HDR),
