@@ -3417,6 +3417,8 @@ void nicEventUpdateBwcsStatus(IN struct ADAPTER *prAdapter,
 			      IN struct WIFI_EVENT *prEvent);
 void nicEventUpdateBcmDebug(IN struct ADAPTER *prAdapter,
 			    IN struct WIFI_EVENT *prEvent);
+void nicEventAddPkeyDoneImpl(IN struct ADAPTER *prAdapter,
+			 IN struct EVENT_ADD_KEY_DONE_INFO *prKeyDone);
 void nicEventAddPkeyDone(IN struct ADAPTER *prAdapter,
 			 IN struct WIFI_EVENT *prEvent);
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
@@ -3455,6 +3457,8 @@ void nicCmdEventQueryCnmInfo(IN struct ADAPTER *prAdapter,
 void nicEventCnmInfo(IN struct ADAPTER *prAdapter,
 		     IN struct WIFI_EVENT *prEvent);
 #if CFG_SUPPORT_REPLAY_DETECTION
+void nicCmdEventDetectReplayInfo(IN struct ADAPTER *prAdapter,
+		uint8_t ucKeyId, uint8_t ucKeyType, uint8_t ucBssIdx);
 void nicCmdEventSetAddKey(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicOidCmdTimeoutSetAddKey(IN struct ADAPTER *prAdapter,
