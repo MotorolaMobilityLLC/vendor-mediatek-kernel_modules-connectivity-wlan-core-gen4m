@@ -1226,6 +1226,7 @@ struct WIFI_VAR {
 	uint32_t uArpMonitorNumber;
 	uint32_t uArpMonitorRxPktNum;
 	uint8_t uArpMonitorCriticalThres;
+	uint8_t ucArpMonitorUseRule; /* 0:old rule, 1:new rule */
 #endif /* ARP_MONITER_ENABLE */
 #if CFG_RFB_TRACK
 	u_int8_t fgRfbTrackEn;
@@ -2374,7 +2375,9 @@ struct ADAPTER {
 	OS_SYSTIME tmDataPipReportinterval;
 #endif
 
-	int8_t cArpNoResponseIdx;
+#if !CFG_QM_ARP_MONITOR_MSG
+	uint8_t ucArpNoRespBitmap;
+#endif /* !CFG_QM_ARP_MONITOR_MSG */
 
 	u_int8_t fgEnDbgPowerMode;
 

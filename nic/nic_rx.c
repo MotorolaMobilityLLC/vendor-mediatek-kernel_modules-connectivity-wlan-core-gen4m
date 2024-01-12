@@ -1821,6 +1821,8 @@ uint32_t nicRxProcessPacketToHost(struct ADAPTER *prAdapter,
 
 	/* STA or GC */
 	qmHandleRxDhcpPackets(prAdapter, prRetSwRfb);
+
+	qmArpMonitorGetUnicastPktTime(prAdapter, prRetSwRfb);
 #endif
 
 	if (ucBssIndex < MAX_BSSID_NUM)

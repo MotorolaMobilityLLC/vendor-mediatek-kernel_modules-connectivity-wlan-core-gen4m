@@ -829,6 +829,19 @@ struct CMD_ADDBA_REJECT {
 };
 
 #if ARP_MONITER_ENABLE
+struct ARP_MONITOR {
+	/* ARP Req Tx Cnt (Not yet Recv ARP Rsp) */
+	uint16_t arpMoniter;
+	uint8_t apIp[IPV4_ADDR_LEN];
+	uint8_t gatewayIp[IPV4_ADDR_LEN];
+	uint8_t gatewayMac[MAC_ADDR_LEN];
+	uint32_t LastRxCnt;
+	uint32_t CurrentRxCnt;
+	uint32_t LastRxUnicastTime;
+	uint32_t CurrentRxUnicastTime;
+	uint8_t arpIsCriticalThres;
+};
+
 enum ENUM_ARP_MONITOR_TYPE {
 	ARP_MONITOR_TYPE_TX_ARP = 0,
 	ARP_MONITOR_TYPE_RX_ARP,
@@ -1316,12 +1329,14 @@ void qmAdjustTcQuotaPle(struct ADAPTER *prAdapter,
 #if ARP_MONITER_ENABLE
 void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 			   struct MSDU_INFO *prMsduInfo);
-u_int8_t qmArpMonitorIsCritical(void);
-void qmResetArpDetect(void);
+u_int8_t qmArpMonitorIsCritical(uint8_t ucBssIndex);
+void qmResetArpDetect(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex);
 void qmHandleRxArpPackets(struct ADAPTER *prAdapter,
 			  struct SW_RFB *prSwRfb);
 void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 			   struct SW_RFB *prSwRfb);
+void qmArpMonitorHandleLegacyBTOEvent(struct ADAPTER *prAdapter);
 #if CFG_QM_ARP_MONITOR_MSG
 void qmArpMonitorSendMsg(struct ADAPTER *prAdapter,
 	enum ENUM_ARP_MONITOR_TYPE eType, uint8_t ucBssIndex,
@@ -1336,6 +1351,10 @@ void qmArpMonitorHandlePkt(struct ADAPTER *prAdapter,
 uint8_t *qmGetArpPkt(uint8_t *pucData, uint16_t u2PacketLen);
 struct DHCP_PROTOCOL *qmGetDhcpPkt(uint8_t *pucData, uint16_t u2PacketLen,
 	u_int8_t fgFromServer, uint16_t *pDhcpLen);
+void qmGetRxSrcMac(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb, uint8_t *prMacAddr);
+void qmArpMonitorGetUnicastPktTime(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 #endif
 
 #if defined(CFG_SUPPORT_REPLAY_DETECTION) || \

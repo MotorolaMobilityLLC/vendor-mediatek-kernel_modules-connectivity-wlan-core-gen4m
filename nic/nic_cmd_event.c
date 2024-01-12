@@ -4603,9 +4603,10 @@ bool nicBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 	GET_BOOT_SYSTIME(&u4CurrentTime);
 
 	DBGLOG(NIC, INFO,
-			"u4MonitorWindow: %d, u4CurrentTime: %d, u4LastRxTime: %d, u4LastTxTime: %d",
+			"u4MonitorWindow: %d, u4CurrentTime: %d, u4LastRxTime: %d, u4LastUnicastRxTime: %d, u4LastTxTime: %d",
 			u4MonitorWindow, u4CurrentTime,
 			prRxCtrl->u4LastRxTime[ucBssIdx],
+			prRxCtrl->u4LastUnicastRxTime[ucBssIdx],
 			prTxCtrl->u4LastTxTime[ucBssIdx]);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);

@@ -2137,6 +2137,10 @@ static bool is_critical_packet(struct net_device *dev,
 	uint8_t *pucPkt;
 	uint16_t u2EtherType;
 	bool is_critical = FALSE;
+#if ARP_MONITER_ENABLE
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
+	uint8_t ucBssIndex;
+#endif /* ARP_MONITER_ENABLE */
 
 	if (!skb)
 		return FALSE;
@@ -2150,9 +2154,14 @@ static bool is_critical_packet(struct net_device *dev,
 		if (__netif_subqueue_stopped(dev, orig_queue_index))
 			is_critical = TRUE;
 #if ARP_MONITER_ENABLE
-		if (qmArpMonitorIsCritical())
-			is_critical = true;
-#endif
+		prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+			kalGetNetDevPriv(dev);
+		if (prNetDevPrivate) {
+			ucBssIndex = prNetDevPrivate->ucBssIdx;
+			if (qmArpMonitorIsCritical(ucBssIndex))
+				is_critical = true;
+		}
+#endif /* ARP_MONITER_ENABLE */
 		break;
 	case ETH_P_1X:
 	case ETH_P_PRE_1X:
