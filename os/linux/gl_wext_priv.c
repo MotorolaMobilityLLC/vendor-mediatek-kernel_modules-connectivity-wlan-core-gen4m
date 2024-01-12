@@ -9442,6 +9442,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_get_chip_config(prNetDev, pcCommand, i4TotalLen);
 		} else if (strnicmp(pcCommand, CMD_GET_VERSION, strlen(CMD_GET_VERSION)) == 0) {
 			i4BytesWritten = priv_driver_get_version(prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_GET_CNM, strlen(CMD_GET_CNM)) == 0) {
+			i4BytesWritten = priv_driver_get_cnm(prNetDev, pcCommand, i4TotalLen);
 #if CFG_SUPPORT_DBDC
 
 		} else if (strnicmp(pcCommand, CMD_SET_DBDC, strlen(CMD_SET_DBDC)) == 0) {
