@@ -427,12 +427,16 @@ inline uint8_t *dbgFwLogIdxToStr(struct IDX_LOG_ENTRY *prLogEntry,
 		if (u4LogLen >= DBG_LOG_BUF_SIZE)
 			break;
 
-		if (prLogPtr[i] != '%') /* not special word */
+		if (prLogPtr[i] != '%') {
+			/* not special word */
 			aucLogBuf[u4LogLen++] = prLogPtr[i];
-		else if ((i < prLogEntry->u4StrLen) && (prLogPtr[i+1] == '%')) {
+		} else if ((i+1) >= prLogEntry->u4StrLen) {
+			/* only 1 '%' in the end of log, not handle it */
+			break;
+		} else if (prLogPtr[i+1] == '%') {
 			/* '%%' case */
 			aucLogBuf[u4LogLen++] = '%';
-			i += 2;
+			i += 1; /* for the 2nd '%' */
 		} else { /* ex: %0...x */
 			if (l >= prIdxV2Header->ucNumArgs) /* args mismatch */
 				goto out;
@@ -461,6 +465,8 @@ inline uint8_t *dbgFwLogIdxToStr(struct IDX_LOG_ENTRY *prLogEntry,
 	}
 
 out:
+	if (u4LogLen >= DBG_LOG_BUF_SIZE)
+		u4LogLen = DBG_LOG_BUF_SIZE - 1;
 	aucLogBuf[u4LogLen] = 0x0;
 
 	return aucLogBuf;
