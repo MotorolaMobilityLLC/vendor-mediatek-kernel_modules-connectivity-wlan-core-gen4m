@@ -986,6 +986,8 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
 	struct BSS_INFO *prBssInfo;
 	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 
+	kalMemZero(&rLinkSpeed, sizeof(struct PARAM_LINK_SPEED_EX));
+
 	ASSERT(wiphy);
 
 	do {
