@@ -1131,6 +1131,12 @@ ifeq ($(CONFIG_CHIP_RESET_SUPPORT), n)
     ccflags-y += -DCFG_CHIP_RESET_SUPPORT=0
 endif
 
+ifeq ($(CONFIG_CHIP_RESET_USE_DTS_GPIO_NUM), y)
+    ccflags-y += -DCFG_CHIP_RESET_USE_DTS_GPIO_NUM=1
+else
+    ccflags-y += -DCFG_CHIP_RESET_USE_DTS_GPIO_NUM=0
+endif
+
 # Unified Command Support
 ifeq ($(CONFIG_SUPPORT_FW_IDX_LOG_TRANS), y)
     ccflags-y += -DCFG_SUPPORT_FW_IDX_LOG_TRANS=1

@@ -76,6 +76,16 @@
 #include <linux/usb.h>
 #include <linux/mutex.h>
 
+#if CFG_CHIP_RESET_USE_DTS_GPIO_NUM
+#include <linux/of.h>
+#include <linux/of_address.h>
+#include <linux/of_irq.h>
+#include <linux/of_gpio.h>
+#endif
+#if CFG_ENABLE_GKI_SUPPORT
+#include <linux/gpio.h>
+#endif
+
 #include <linux/mm.h>
 #ifndef CONFIG_X86
 #include <asm/memory.h>
@@ -2050,26 +2060,98 @@ void glGetChipInfo(void **prChipInfo)
 #if CFG_CHIP_RESET_SUPPORT
 void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo)
 {
+	uint32_t gpio_num, default_level, action_level, invert_time;
+#if CFG_CHIP_RESET_USE_DTS_GPIO_NUM
+	struct device_node *node;
+#endif
+#if CFG_ENABLE_GKI_SUPPORT
+	uint32_t i4Status;
+#else
 	typedef void (*func_ptr) (unsigned int gpio, int init_value);
 	char *func_name = "mtk_gpio_set_value";
 	void *pvAddr = NULL;
+#endif
 
+#if CFG_CHIP_RESET_USE_DTS_GPIO_NUM
+	node = of_find_compatible_node(NULL,
+				       NULL,
+				       CHIP_RESET_DTS_COMPATIBLE_NAME);
+	if (!node) {
+		DBGLOG(HAL, ERROR,
+		       "[SER][L0]: Failed to find dts node: %s\n",
+		       CHIP_RESET_DTS_COMPATIBLE_NAME);
+		return;
+	}
+	if (of_property_read_u32(node, CHIP_RESET_GPIO_PROPERTY_NAME,
+				&gpio_num) != 0) {
+		DBGLOG(HAL, ERROR,
+		       "[SER][L0]: Failed to get gpio_num : %s\n",
+		       CHIP_RESET_GPIO_PROPERTY_NAME);
+		return;
+	}
+	if (of_property_read_u32(node, CHIP_RESET_INVERT_PROPERTY_NAME,
+				&invert_time) != 0) {
+		DBGLOG(HAL, WARN,
+		       "[SER][L0]: Failed to get invert_time : %s\n",
+		       CHIP_RESET_INVERT_PROPERTY_NAME);
+		invert_time = RESET_PIN_SET_LOW_TIME;
+	}
+	if (of_property_read_u32(node, CHIP_RESET_DEFAULT_VAL_PROPERTY_NAME,
+				&default_level) != 0) {
+		DBGLOG(HAL, WARN,
+		       "[SER][L0]: Failed to get default_level : %s\n",
+		       CHIP_RESET_DEFAULT_VAL_PROPERTY_NAME);
+		default_level = 1;
+	}
+	default_level = (default_level == 0) ? 0 : 1;
+	action_level = (default_level == 0) ? 1 : 0;
+#else
+	gpio_num = WIFI_DONGLE_RESET_GPIO_PIN;
+	invert_time = RESET_PIN_SET_LOW_TIME;
+	default_level = 1;
+	action_level = 0;
+#endif
+
+	DBGLOG(HAL, INFO,
+	       "[SER][L0]: wifi reset gpio %d pull %s %dms\n",
+	       gpio_num, (action_level == 0) ? "down" : "up", invert_time);
+
+#if CFG_ENABLE_GKI_SUPPORT
+	i4Status = gpio_request(gpio_num, "wifi-reset");
+	if (i4Status < 0) {
+		DBGLOG(HAL, ERROR,
+		       "[SER][L0]: gpio_request(%d,%s) %d failed\n",
+		       gpio_num, "wifi-reset", i4Status);
+		return;
+	}
+	i4Status = gpio_direction_output(gpio_num, action_level);
+	DBGLOG(HAL, WARN,
+	       "[SER][L0]: Invoke gpio_direction_output (%d, %d) %d\n",
+	       gpio_num, action_level, i4Status);
+	mdelay(invert_time);
+	i4Status = gpio_direction_output(gpio_num, default_level);
+	DBGLOG(HAL, WARN,
+	       "[SER][L0]: Invoke gpio_direction_output (%d, %d) %d\n",
+	       gpio_num, default_level, i4Status);
+	gpio_free(gpio_num);
+#else
 	pvAddr = GLUE_SYMBOL_GET(func_name);
 
 	if (!pvAddr) {
-		DBGLOG(HAL, WARN, "[SER][L0]%s: No Exported Func Found [%s]\n",
-				__func__, func_name);
+		DBGLOG(HAL, ERROR, "[SER][L0]%s: No Exported Func Found [%s]\n",
+		       __func__, func_name);
 	} else {
 		func_ptr pFunc = (func_ptr) pvAddr;
-		DBGLOG(HAL, ERROR, "[SER][L0]%s: Invoke %s(%d,%d)\n", __func__,
-				func_name, WIFI_DONGLE_RESET_GPIO_PIN, 0);
-		pFunc(WIFI_DONGLE_RESET_GPIO_PIN, 0);
-		mdelay(RESET_PIN_SET_LOW_TIME);
-		DBGLOG(HAL, ERROR, "[SER][L0]%s: Invoke %s(%d,%d)\n", __func__,
-				func_name, WIFI_DONGLE_RESET_GPIO_PIN, 1);
-		pFunc(WIFI_DONGLE_RESET_GPIO_PIN, 1);
+		DBGLOG(HAL, WARN, "[SER][L0]%s: Invoke %s(%d,%d)\n",
+		       __func__, func_name, gpio_num, action_level);
+		pFunc(gpio_num, action_level);
+		mdelay(invert_time);
+		DBGLOG(HAL, WARN, "[SER][L0]%s: Invoke %s(%d,%d)\n",
+		       __func__, func_name, gpio_num, default_level);
+		pFunc(gpio_num, default_level);
 		GLUE_SYMBOL_PUT(func_name);
 	}
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
