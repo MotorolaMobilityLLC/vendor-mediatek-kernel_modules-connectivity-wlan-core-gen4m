@@ -1109,8 +1109,12 @@ struct WIFI_VAR {
 	uint8_t u4ExtendedRange;
 	u_int8_t fgErTx;
 	u_int8_t fgErRx;
+	u_int8_t fgErSuRx;
 #endif
-
+#if (CFG_SUPPORT_BSS_MAX_IDLE_PERIOD == 1)
+	u_int8_t fgBssMaxIdle;
+	uint16_t u2BssMaxIdlePeriod;
+#endif
 #if CFG_SUPPORT_SMART_GEAR
 	uint8_t ucSGCfg;
 	uint8_t ucSG24GFavorANT;

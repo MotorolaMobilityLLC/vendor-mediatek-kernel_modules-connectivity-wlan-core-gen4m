@@ -196,6 +196,11 @@ struct APPEND_VAR_IE_ENTRY txAssocRespIETable[] = {
 	 heRlmReqGenerateHe6gBandCapIE}
 	,			/* 255, EXT 59 */
 #endif
+#if (CFG_SUPPORT_BSS_MAX_IDLE_PERIOD == 1)
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_BSS_MAX_IDLE), NULL,
+	 heRlmRspGenerateBssMaxIdleIE}
+	,
+#endif
 #endif
 #if CFG_SUPPORT_802_11BE
 	{0, ehtRlmCalculateCapIELen, ehtRlmRspGenerateCapIE}

@@ -261,6 +261,14 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 			prBssInfo->u2HeBasicMcsSet |=
 				(HE_CAP_INFO_MCS_NOT_SUPPORTED << 2 * i);
 
+		if (IS_FEATURE_ENABLED(
+			prAdapter->rWifiVar.fgBssMaxIdle)) {
+			prBssInfo->u2MaxIdlePeriod =
+				prAdapter->rWifiVar.u2BssMaxIdlePeriod;
+			prBssInfo->ucIdleOptions =
+				secIsProtectedBss(prAdapter, prBssInfo);
+		}
+
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		rlmUpdate6GOpInfo(prAdapter, prBssInfo);
 #endif
@@ -268,6 +276,8 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 		memset(prBssInfo->ucHeOpParams, 0, HE_OP_BYTE_NUM);
 		prBssInfo->ucBssColorInfo = 0;
 		prBssInfo->u2HeBasicMcsSet = 0;
+		prBssInfo->u2MaxIdlePeriod = 0;
+		prBssInfo->ucIdleOptions = 0;
 	}
 #endif
 
