@@ -95,6 +95,15 @@ void __KAL_INLINE__ kalGetPlatDev(void **dev)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
+
+uint32_t __KAL_INLINE__ kalScheduleNapiTask(struct ADAPTER *prAdapter)
+{
+#if CFG_SUPPORT_RX_NAPI
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prAdapter);
+#endif /* CFG_SUPPORT_RX_NAPI */
+	return WLAN_STATUS_NOT_ACCEPTED;
+}
+
 /*----------------------------------------------------------------------------*/
 /* SCAN                                                                      */
 /*----------------------------------------------------------------------------*/
@@ -107,11 +116,8 @@ void kalClearGlueSchedScanReq(struct GLUE_INFO *prGlueInfo);
 #ifdef CFG_REMIND_IMPLEMENT
 #define kalSetSerIntEvent(_pr) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr)
-#define kalScheduleFlushRxBaEntry(_prGlueInfo) \
-		KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 #else
 void kalSetSerIntEvent(struct GLUE_INFO *pr);
-uint32_t kalScheduleFlushRxBaEntry(struct GLUE_INFO *prGlueInfo);
 #endif
 
 #endif /* _GL_IMPL_H */

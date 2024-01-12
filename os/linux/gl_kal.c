@@ -6040,56 +6040,30 @@ void kalFlushPendingTxPackets(struct GLUE_INFO *prGlueInfo)
 }
 
 /**
- * kalScheduleFlushRxBaEntry() - schedule NAPI to flush
+ * kalScheduleNapiTask() - schedule NAPI to do flush/dequeue
  *
- * Main thread places a BA entry in prAdapter and then calls this function
- * to schedule NAPI for flushing data.
+ * Main thread do something in prAdapter and then calls this function
+ * to schedule NAPI for flushing/dequeueing data.
  * If the configuration supports NAPI to schedule the polling, this function
- * returns WLAN_STATUS_SUCCESS; otherwise, it retuns WLAN_STATUS_NOT_ACCEPTED
+ * returns WLAN_STATUS_SUCCESS; otherwise, it returns WLAN_STATUS_NOT_ACCEPTED
  * suggesting the caller to flush the data in main thread.
  *
  * Return: WLAN_STATUS_SUCCESS The task was scheduled.
  *         WLAN_STATUS_NOT_ACCEPTED The configuration does not support NAPI.
  */
-uint32_t kalScheduleFlushRxBaEntry(struct GLUE_INFO *prGlueInfo)
+uint32_t kalScheduleNapiTask(struct ADAPTER *prAdapter)
 {
 	uint32_t rc = WLAN_STATUS_NOT_ACCEPTED;
 
-#if (CFG_SUPPORT_RX_GRO == 1) && (CFG_SUPPORT_RX_NAPI == 1)
-	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
-		kal_napi_schedule(&prGlueInfo->napi);
+#if CFG_SUPPORT_RX_NAPI
+	if (HAL_IS_RX_DIRECT(prAdapter)) {
+		kalNapiSchedule(prAdapter);
 		rc = WLAN_STATUS_SUCCESS;
 	}
-#endif
+#endif /* CFG_SUPPORT_RX_NAPI */
 
 	return rc;
 }
-
-#if CFG_SUPPORT_FW_DROP_SSN
-/**
- * kalScheduleHandleRxFwDropSSN() - schedule NAPI to handle Fw drop SSN
- *
- * Main thread generate a prSwRfb with the SSN, enqueue into rRxFwDropSSNQue
- * and then calls this function to schedule NAPI for dequeue the data.
- * If the configuration supports NAPI to schedule the polling, this function
- * returns WLAN_STATUS_SUCCESS; otherwise, it retuns WLAN_STATUS_NOT_ACCEPTED
- * suggesting the caller to flush the data in main thread.
- *
- * Return: WLAN_STATUS_SUCCESS The task was scheduled.
- *         WLAN_STATUS_NOT_ACCEPTED The configuration does not support NAPI.
- */
-uint32_t kalScheduleHandleRxFwDropSSN(struct GLUE_INFO *prGlueInfo)
-{
-	uint32_t rc = WLAN_STATUS_NOT_ACCEPTED;
-
-	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
-		kal_napi_schedule(&prGlueInfo->napi);
-		rc = WLAN_STATUS_SUCCESS;
-	}
-
-	return rc;
-}
-#endif /* CFG_SUPPORT_FW_DROP_SSN */
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -1376,20 +1376,11 @@ void kalFlushPendingTxPackets(struct GLUE_INFO *prGlueInfo);
 /* RX                                                                         */
 /*----------------------------------------------------------------------------*/
 #ifdef CFG_REMIND_IMPLEMENT
-#define kalScheduleFlushRxBaEntry(_prGlueInfo) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
+#define kalScheduleNapiTask(_prAdapter) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prAdapter)
 #else
-uint32_t kalScheduleFlushRxBaEntry(struct GLUE_INFO *prGlueInfo);
+uint32_t kalScheduleNapiTask(struct ADAPTER *prAdapter);
 #endif
-
-#if CFG_SUPPORT_FW_DROP_SSN
-#ifdef CFG_REMIND_IMPLEMENT
-#define kalScheduleHandleRxFwDropSSN(_prGlueInfo) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
-#else
-uint32_t kalScheduleHandleRxFwDropSSN(struct GLUE_INFO *prGlueInfo);
-#endif
-#endif /* CFG_SUPPORT_FW_DROP_SSN */
 
 /*----------------------------------------------------------------------------*/
 /* Media State Indication                                                     */
