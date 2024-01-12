@@ -301,6 +301,11 @@ int hifAxiRemove(void)
 	prDriverData = get_platform_driver_data();
 	prChipInfo = prDriverData->chip_info;
 
+	if (g_fgDriverProbed) {
+		pfWlanRemove();
+		DBGLOG(INIT, TRACE, "pfWlanRemove done\n");
+	}
+
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	if (prChipInfo->coexpccifoff) {
 		prChipInfo->coexpccifoff();
@@ -310,11 +315,6 @@ int hifAxiRemove(void)
 
 	if (prChipInfo->coantVFE28Dis)
 		prChipInfo->coantVFE28Dis();
-
-	if (g_fgDriverProbed) {
-		pfWlanRemove();
-		DBGLOG(INIT, TRACE, "pfWlanRemove done\n");
-	}
 
 	if (prChipInfo->wmmcupwroff)
 		prChipInfo->wmmcupwroff();
