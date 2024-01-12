@@ -1192,7 +1192,12 @@ nanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev)
 
 	kalResetPacket(prGlueInfo, (void *)prSkb);
 
-	kalHardStartXmit(prSkb, prDev, prGlueInfo, ucBssIndex);
+	if (kalHardStartXmit(prSkb, prDev, prGlueInfo,
+			     ucBssIndex) == WLAN_STATUS_SUCCESS) {
+		/* Successfully enqueue to Tx queue */
+		if (netif_carrier_ok(prDev))
+			kalPerMonStart(prGlueInfo);
+	}
 
 	return NETDEV_TX_OK;
 } /* end of p2pHardStartXmit() */

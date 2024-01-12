@@ -2571,12 +2571,10 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
  *
  */
 /*----------------------------------------------------------------------------*/
-void
-kalIndicateStatusAndComplete(struct GLUE_INFO
-			     *prGlueInfo, uint32_t eStatus, void *pvBuf,
-			     uint32_t u4BufLen, uint8_t ucBssIndex)
+void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
+				uint32_t eStatus, void *pvBuf,
+				uint32_t u4BufLen, uint8_t ucBssIndex)
 {
-
 	uint32_t bufLen = 0;
 	struct PARAM_STATUS_INDICATION *pStatus;
 	struct PARAM_AUTH_EVENT *pAuth;
@@ -2604,8 +2602,10 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
-	if (!prBssInfo) {
-		DBGLOG(INIT, ERROR, "prBssInfo %d is null\n", ucBssIndex);
+	if (!prDevHandler || !prBssInfo) {
+		DBGLOG(INIT, ERROR,
+			"ucBssIndex=%u, prDevHandler=%p, prBssInfo=%p\n",
+			ucBssIndex, prDevHandler, prBssInfo);
 		return;
 	}
 
@@ -6030,13 +6030,17 @@ uint32_t kalScheduleHandleRxFwDropSSN(struct GLUE_INFO *prGlueInfo)
  */
 /*----------------------------------------------------------------------------*/
 enum ENUM_PARAM_MEDIA_STATE kalGetMediaStateIndicated(
-	struct GLUE_INFO *prGlueInfo,
-	uint8_t ucBssIndex)
+					struct GLUE_INFO *prGlueInfo,
+					uint8_t ucBssIndex)
 {
-	ASSERT(prGlueInfo);
+	struct AIS_FSM_INFO *prAisFsmInfo;
 
-	return aisGetAisFsmInfo(prGlueInfo->prAdapter, ucBssIndex)
-			->eParamMediaStateIndicated;
+	prAisFsmInfo = aisGetAisFsmInfo(prGlueInfo->prAdapter, ucBssIndex);
+	if (!prAisFsmInfo) {
+		DBGLOG(INIT, ERROR, "aisGetAisFsmInfo(%u)=NULL\n", ucBssIndex);
+		return MEDIA_STATE_DISCONNECTED;
+	}
+	return prAisFsmInfo->eParamMediaStateIndicated;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6048,14 +6052,19 @@ enum ENUM_PARAM_MEDIA_STATE kalGetMediaStateIndicated(
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
-void kalSetMediaStateIndicated(struct GLUE_INFO
-			       *prGlueInfo, enum ENUM_PARAM_MEDIA_STATE
-			       eParamMediaStateIndicate,
-			       uint8_t ucBssIndex)
+void kalSetMediaStateIndicated(struct GLUE_INFO *prGlueInfo,
+				enum ENUM_PARAM_MEDIA_STATE
+				eParamMediaStateIndicate,
+				uint8_t ucBssIndex)
 {
-	ASSERT(prGlueInfo);
-	aisGetAisFsmInfo(prGlueInfo->prAdapter, ucBssIndex)
-			->eParamMediaStateIndicated = eParamMediaStateIndicate;
+	struct AIS_FSM_INFO *prAisFsmInfo;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prGlueInfo->prAdapter, ucBssIndex);
+	if (!prAisFsmInfo) {
+		DBGLOG(INIT, ERROR, "aisGetAisFsmInfo(%u)=NULL\n", ucBssIndex);
+		return;
+	}
+	prAisFsmInfo->eParamMediaStateIndicated = eParamMediaStateIndicate;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7269,73 +7278,68 @@ kalReadyOnChannel(struct GLUE_INFO *prGlueInfo,
  *           none
  */
 /*----------------------------------------------------------------------------*/
-void
-kalRemainOnChannelExpired(struct GLUE_INFO *prGlueInfo,
+void kalRemainOnChannelExpired(struct GLUE_INFO *prGlueInfo,
 			  uint64_t u8Cookie, enum ENUM_BAND eBand,
 			  enum ENUM_CHNL_EXT eSco, uint8_t ucChannelNum,
 			  uint8_t ucBssIndex)
 {
 	struct ieee80211_channel *prChannel = NULL;
 	enum nl80211_channel_type rChannelType;
+	struct net_device *prDevHandler;
 
-	ucChannelNum =
-		wlanGetChannelNumberByNetwork(prGlueInfo->prAdapter,
+	ucChannelNum = wlanGetChannelNumberByNetwork(prGlueInfo->prAdapter,
 			ucBssIndex);
 
-	if (prGlueInfo->fgIsRegistered == TRUE) {
-		struct net_device *prDevHandler =
-			wlanGetNetDev(prGlueInfo, ucBssIndex);
+	if (!prGlueInfo->fgIsRegistered)
+		return;
+
+	prDevHandler = wlanGetNetDev(prGlueInfo, ucBssIndex);
+	if (!prDevHandler)
+		return;
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		if (eBand == BAND_6G) {
-			prChannel =
-				ieee80211_get_channel(
-					wlanGetWiphy(),
-					ieee80211_channel_to_frequency
-					(ucChannelNum, KAL_BAND_6GHZ));
+	if (eBand == BAND_6G) {
+		prChannel = ieee80211_get_channel(wlanGetWiphy(),
+				ieee80211_channel_to_frequency
+				(ucChannelNum, KAL_BAND_6GHZ));
 		} else
 #endif
-		if (ucChannelNum <= 14) {
-			prChannel =
-				ieee80211_get_channel(wlanGetWiphy(),
-				ieee80211_channel_to_frequency(ucChannelNum,
-				KAL_BAND_2GHZ));
-		} else {
-			prChannel =
-				ieee80211_get_channel(wlanGetWiphy(),
-				ieee80211_channel_to_frequency(ucChannelNum,
-				KAL_BAND_5GHZ));
-		}
-
-		switch (eSco) {
-		case CHNL_EXT_SCN:
-			rChannelType = NL80211_CHAN_NO_HT;
-			break;
-
-		case CHNL_EXT_SCA:
-			rChannelType = NL80211_CHAN_HT40MINUS;
-			break;
-
-		case CHNL_EXT_SCB:
-			rChannelType = NL80211_CHAN_HT40PLUS;
-			break;
-
-		case CHNL_EXT_RES:
-		default:
-			rChannelType = NL80211_CHAN_HT20;
-			break;
-		}
-
-		if (!prChannel) {
-			DBGLOG(AIS, ERROR, "prChannel is NULL, return!");
-			return;
-		}
-
-		cfg80211_remain_on_channel_expired(
-			prDevHandler->ieee80211_ptr,
-			u8Cookie, prChannel, GFP_KERNEL);
+	if (ucChannelNum <= 14) {
+		prChannel = ieee80211_get_channel(wlanGetWiphy(),
+			ieee80211_channel_to_frequency(ucChannelNum,
+			KAL_BAND_2GHZ));
+	} else {
+		prChannel = ieee80211_get_channel(wlanGetWiphy(),
+			ieee80211_channel_to_frequency(ucChannelNum,
+			KAL_BAND_5GHZ));
 	}
 
+	switch (eSco) {
+	case CHNL_EXT_SCN:
+		rChannelType = NL80211_CHAN_NO_HT;
+		break;
+
+	case CHNL_EXT_SCA:
+		rChannelType = NL80211_CHAN_HT40MINUS;
+		break;
+
+	case CHNL_EXT_SCB:
+		rChannelType = NL80211_CHAN_HT40PLUS;
+		break;
+
+	case CHNL_EXT_RES:
+	default:
+		rChannelType = NL80211_CHAN_HT20;
+		break;
+	}
+
+	if (!prChannel) {
+		DBGLOG(AIS, ERROR, "prChannel is NULL, return!");
+		return;
+	}
+
+	cfg80211_remain_on_channel_expired(prDevHandler->ieee80211_ptr,
+			u8Cookie, prChannel, GFP_KERNEL);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7349,8 +7353,7 @@ kalRemainOnChannelExpired(struct GLUE_INFO *prGlueInfo,
  *           none
  */
 /*----------------------------------------------------------------------------*/
-void
-kalIndicateMgmtTxStatus(struct GLUE_INFO *prGlueInfo,
+void kalIndicateMgmtTxStatus(struct GLUE_INFO *prGlueInfo,
 			uint64_t u8Cookie, u_int8_t fgIsAck,
 			uint8_t *pucFrameBuf, uint32_t u4FrameLen,
 			uint8_t ucBssIndex)
@@ -7369,11 +7372,11 @@ kalIndicateMgmtTxStatus(struct GLUE_INFO *prGlueInfo,
 			break;
 		}
 
-		prDevHandler =
-			wlanGetNetDev(prGlueInfo, ucBssIndex);
+		prDevHandler = wlanGetNetDev(prGlueInfo, ucBssIndex);
+		if (!prDevHandler)
+			return;
 
-		cfg80211_mgmt_tx_status(
-			prDevHandler->ieee80211_ptr,
+		cfg80211_mgmt_tx_status(prDevHandler->ieee80211_ptr,
 			u8Cookie, pucFrameBuf, u4FrameLen, fgIsAck, GFP_KERNEL);
 
 	} while (FALSE);
@@ -7420,8 +7423,9 @@ void kalIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
 			break;
 		}
 
-		prDevHandler =
-			wlanGetNetDev(prGlueInfo, ucBssIndex);
+		prDevHandler = wlanGetNetDev(prGlueInfo, ucBssIndex);
+		if (!prDevHandler)
+			return;
 
 #if (KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE)
 		cfg80211_rx_mgmt(prDevHandler->ieee80211_ptr,
@@ -7470,8 +7474,8 @@ void kalIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
  *           FALSE
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalSetSdioTestPattern(struct GLUE_INFO
-			*prGlueInfo, u_int8_t fgEn, u_int8_t fgRead)
+u_int8_t kalSetSdioTestPattern(struct GLUE_INFO *prGlueInfo,
+				u_int8_t fgEn, u_int8_t fgRead)
 {
 	const uint8_t aucPattern[] = {
 		0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55,
@@ -8130,13 +8134,17 @@ u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
 				u_int8_t fgForceReport)
 {
 	struct sk_buff *skb = NULL;
+	struct net_device *netdev;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	char uevent[30];
 
 	wiphy = wlanGetWiphy();
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, ucBssIdx))->ieee80211_ptr;
+	netdev = wlanGetNetDev(prAdapter->prGlueInfo, ucBssIdx);
+	if (!netdev)
+		return -EINVAL;
+	wdev = netdev->ieee80211_ptr;
 
 	if (!wiphy || !wdev || !prWifiVar)
 		return -EINVAL;
@@ -9631,7 +9639,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	}
 
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
-		ndev = wlanGetNetDev(glue, i);
+		ndev = wlanGetNetInterfaceByBssIdx(glue, i);
 		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
 		GLUE_ACQUIRE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
@@ -10151,7 +10159,7 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo;
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
-		prDevHandler = wlanGetNetDev(prGlueInfo, i);
+		prDevHandler = wlanGetNetInterfaceByBssIdx(prGlueInfo, i);
 		if (IS_BSS_ALIVE(prAdapter, prBssInfo) && prDevHandler) {
 			keep_alive |= netif_carrier_ok(prDevHandler);
 
@@ -11399,6 +11407,9 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 	ndev = wlanGetNetDev(prGlueInfo, ucBssIndex);
+	if (!ndev)
+		return WLAN_STATUS_INVALID_DATA;
+
 	kalMemZero(&params, sizeof(struct cfg80211_external_auth_params));
 	params.action = NL80211_EXTERNAL_AUTH_START;
 	COPY_MAC_ADDR(params.bssid, prBssDesc->aucBSSID);
