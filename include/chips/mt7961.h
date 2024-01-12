@@ -157,6 +157,16 @@ void mt7961_show_wfdma_info(
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 
+void mt7961WfdmaTxRingExtCtrl(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_TX_RING *tx_ring,
+	uint32_t index);
+
+void mt7961WfdmaRxRingExtCtrl(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_RX_RING *rx_ring,
+	uint32_t index);
+
 #if (CFG_COALESCING_INTERRUPT == 1)
 uint32_t mt7961setWfdmaCoalescingInt(
 	struct ADAPTER *prAdapter,
