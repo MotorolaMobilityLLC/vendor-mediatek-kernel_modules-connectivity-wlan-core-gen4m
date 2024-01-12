@@ -7430,7 +7430,7 @@ static int32_t HQA_CapWiFiSpectrum(struct net_device
 		/* Get IQ Data and transmit them to UI DLL */
 		ResponseToQA(HqaCmdFrame,
 			     prIwReqData,
-			     2 + 4 * 4 + u4DataLen * sizeof(int32_t),
+			     2 + 4 * 4 + u4DataLen,
 			     i4Ret);
 	} else {
 		ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
