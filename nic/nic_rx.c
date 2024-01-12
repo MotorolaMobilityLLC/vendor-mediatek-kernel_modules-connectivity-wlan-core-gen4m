@@ -4312,13 +4312,13 @@ static void nicRxReturnUnUseRFB(struct ADAPTER *prAdapter,
 	if (!prSwRfb)
 		return;
 
-	/* release skb when rfb inuse */
+	/* release skb when rfb unuse */
 	if (prSwRfb->pvPacket) {
 		kalPacketFree(prAdapter->prGlueInfo, prSwRfb->pvPacket);
 		prSwRfb->pvPacket = NULL;
 	}
 
-	/* enqueue into inuse rfb list */
+	/* enqueue into unuse rfb list */
 	prRxCtrl = &prAdapter->rRxCtrl;
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 	QUEUE_INSERT_TAIL(&prRxCtrl->rUnUseRfbList, &prSwRfb->rQueEntry);
@@ -4343,7 +4343,7 @@ void nicRxAdjustUnUseRFB(struct ADAPTER *prAdapter)
 	if (RX_GET_UNUSE_RFB_CNT(prRxCtrl) < nicRxGetUnUseCnt(prAdapter)) {
 		uint32_t u4Cnt[2] = {0};
 
-		/* inuse rfb list is not full */
+		/* unuse rfb list is not full */
 		/* dequeue indicated rfb list first */
 		while (RX_GET_UNUSE_RFB_CNT(prRxCtrl) <
 			nicRxGetUnUseCnt(prAdapter)) {
@@ -4381,12 +4381,12 @@ void nicRxAdjustUnUseRFB(struct ADAPTER *prAdapter)
 		}
 
 		DBGLOG(NIC, INFO,
-			"Move rfb[%u,%u] to inuse rfb list.\n",
+			"Move rfb[%u,%u] to unuse rfb list.\n",
 			u4Cnt[0], u4Cnt[1]);
 	} else {
 		uint32_t u4Cnt = 0;
 
-		/* inuse rfb list is full, need to dequeue from it */
+		/* unuse rfb list is full, need to dequeue from it */
 		while (RX_GET_UNUSE_RFB_CNT(prRxCtrl) >
 			nicRxGetUnUseCnt(prAdapter)) {
 			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
@@ -4405,7 +4405,7 @@ void nicRxAdjustUnUseRFB(struct ADAPTER *prAdapter)
 		}
 
 		DBGLOG(NIC, INFO,
-			"Move inuse rfb[%u] to indicated rfb list.\n",
+			"Move unuse rfb[%u] to indicated rfb list.\n",
 			u4Cnt);
 
 		wlanReturnPacketDelaySetupTimeout(prAdapter, (uintptr_t)NULL);
