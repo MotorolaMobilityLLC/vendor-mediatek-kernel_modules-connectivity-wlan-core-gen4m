@@ -206,6 +206,7 @@ void ehtRlmFillCapIE(
 	uint32_t u4OverallLen = OFFSET_OF(struct IE_EHT_CAP, aucVarInfo[0]);
 	uint8_t eht_mcs15_mru = EHT_MCS15_MRU_106_or_52_w_26_tone;
 	uint8_t eht_bw = 0, ucSupportedNss = 0;
+	u_int8_t fgBfEn = TRUE;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -217,7 +218,8 @@ void ehtRlmFillCapIE(
 	prEhtCap->ucId = ELEM_ID_RESERVED;
 	prEhtCap->ucExtId = ELEM_EXT_ID_EHT_CAPS;
 
-	ucSupportedNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
+	ucSupportedNss = wlanGetSupportNss(prAdapter,
+		prBssInfo->ucBssIndex) - 1;
 
 	/* MAC capabilities */
 	EHT_RESET_MAC_CAP(prEhtCap->ucEhtMacCap);
@@ -265,7 +267,7 @@ void ehtRlmFillCapIE(
 		if (IS_FEATURE_ENABLED(prWifiVar->ucEhtSUBfer))
 			/* set 1 to support 2 TX NSS */
 			SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_LE_EQ_80M(
-				phy_cap_1, (uint32_t)(ucSupportedNss - 1));
+				phy_cap_1, (uint32_t)ucSupportedNss);
 	}
 
 	if (eht_bw >= MAX_BW_80MHZ)
@@ -279,7 +281,7 @@ void ehtRlmFillCapIE(
 		if (IS_FEATURE_ENABLED(prWifiVar->ucEhtSUBfer))
 			/* set 1 to support TX NSS 2 */
 			SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_160M(
-				phy_cap_1, (uint32_t)(ucSupportedNss - 1));
+				phy_cap_1, (uint32_t)ucSupportedNss);
 	}
 	if (eht_bw >= MAX_BW_320_1MHZ) {
 		eht_mcs15_mru |= EHT_MCS15_MRU_3x996_tone_320M;
@@ -289,7 +291,7 @@ void ehtRlmFillCapIE(
 		if (IS_FEATURE_ENABLED(prWifiVar->ucEhtSUBfer))
 			/* set 1 to support TX NSS 2 */
 			SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_320M(
-				phy_cap_1, (uint32_t)(ucSupportedNss - 1));
+				phy_cap_1, (uint32_t)ucSupportedNss);
 	}
 
 	if (IS_FEATURE_ENABLED(prWifiVar->ucEhtNDP4xLTF3dot2usGI))
@@ -298,7 +300,43 @@ void ehtRlmFillCapIE(
 	/* phy_cap_1 &= ~DOT11BE_PHY_CAP_PARTIAL_BW_UL_MU_MIMO; */
 	if (IS_FEATURE_ENABLED(prWifiVar->ucEhtSUBfer))
 		phy_cap_1 |= DOT11BE_PHY_CAP_SU_BFER;
-	if (IS_FEATURE_ENABLED(prWifiVar->ucEhtSUBfee))
+
+#if (CFG_SUPPORT_CONDITIONAL_BFEE == 1)
+	if (prAdapter->rWifiVar.u4SwTestMode != ENUM_SW_TEST_MODE_SIGMA_AX &&
+	    prAdapter->rWifiVar.u4SwTestMode != ENUM_SW_TEST_MODE_SIGMA_BE &&
+	    IS_BSS_AIS(prBssInfo)) {
+		struct BSS_DESC *prBssDesc = aisGetTargetBssDesc(prAdapter,
+			prBssInfo->ucBssIndex);
+
+		if (prBssDesc != NULL) {
+			uint32_t soundingDim = 0;
+			uint32_t cap1 = *(uint32_t *)prBssDesc->ucEhtPhyCapInfo;
+
+			if (eht_bw >= MAX_BW_320_1MHZ)
+				soundingDim =
+				   GET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_320M(cap1);
+			else if (eht_bw >= MAX_BW_160MHZ)
+				soundingDim =
+				   GET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_160M(cap1);
+			else if (eht_bw >= MAX_BW_20MHZ)
+				soundingDim =
+			      GET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_LE_EQ_80M(cap1);
+
+			DBGLOG(RLM, INFO,
+				"eht ucSupportedNss: %d, soundingDim: %d\n",
+				ucSupportedNss, soundingDim);
+			if (ucSupportedNss == soundingDim) {
+				fgBfEn = FALSE;
+				DBGLOG(SW4, ERROR,
+					"Disable Bfee due to same Nss between STA and AP\n");
+			} else {
+				fgBfEn = TRUE;
+			}
+		}
+	}
+#endif
+
+	if (fgBfEn == TRUE && IS_FEATURE_ENABLED(prWifiVar->ucEhtSUBfee))
 		phy_cap_1 |= DOT11BE_PHY_CAP_SU_BFEE;
 	if (IS_FEATURE_ENABLED(prWifiVar->ucEhtNG16SUFeedback))
 		phy_cap_1 |= DOT11BE_PHY_CAP_NG16_SU_FEEDBACK;
@@ -316,7 +354,7 @@ void ehtRlmFillCapIE(
 	/* phy_cap_2 &= ~DOT11BE_PHY_CAP_POWER_BOOST_FACTOR; */
 	if (IS_FEATURE_ENABLED(prWifiVar->ucEhtMUPPDU4xEHTLTFdot8usGI))
 		phy_cap_2 |= DOT11BE_PHY_CAP_EHT_MU_PPDU_4X_EHT_LTF_DOT8US_GI;
-	SET_DOT11BE_PHY_CAP_MAX_NC(phy_cap_2, (uint32_t)(ucSupportedNss - 1));
+	SET_DOT11BE_PHY_CAP_MAX_NC(phy_cap_2, (uint32_t)ucSupportedNss);
 
 	if (IS_FEATURE_ENABLED(prWifiVar->ucEhtNonTrigedCQIFeedback))
 		phy_cap_2 |= DOT11BE_PHY_CAP_NON_TRIGED_CQI_FEEDBACK;
