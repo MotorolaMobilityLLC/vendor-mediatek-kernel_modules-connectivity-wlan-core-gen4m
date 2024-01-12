@@ -9606,7 +9606,7 @@ void kalSetPerfReport(struct ADAPTER *prAdapter)
 
 	prCmdPerfReport->u4VaildPeriod = PERF_UPDATE_PERIOD;
 
-	for (i = 0; i < MAX_BSSID_NUM; i++) {
+	for (i = 0; i < 4; i++) {
 		prCmdPerfReport->ulCurTxBytes[i] =
 			prAdapter->prGlueInfo->PerfIndCache.u4CurTxBytes[i];
 		prCmdPerfReport->ulCurRxBytes[i] =
