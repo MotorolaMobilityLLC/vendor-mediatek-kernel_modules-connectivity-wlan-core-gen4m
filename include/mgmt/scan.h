@@ -475,6 +475,15 @@ struct BSS_DESC {
 	uint8_t ucMlrSupportBitmap;
 	uint8_t fsIsMlrSupport;
 #endif
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+	uint8_t fgIsTxPwrEnvPresent;
+	uint8_t ucTxPwrEnvPwrLmtNum;
+	int8_t aicTxPwrEnvMaxTxPwr[TX_PWR_ENV_MAX_TXPWR_BW_NUM];
+#endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode;
+#endif
+
 };
 
 struct SCAN_PARAM {	/* Used by SCAN FSM */

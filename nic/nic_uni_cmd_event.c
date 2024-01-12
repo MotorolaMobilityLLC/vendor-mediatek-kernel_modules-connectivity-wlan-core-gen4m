@@ -5231,13 +5231,18 @@ uint32_t nicUniCmdSetCountryPwrLimit(struct ADAPTER *ad,
 	struct WIFI_UNI_CMD_ENTRY *entry;
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_POWER_LIMIT) +
 		sizeof(struct UNI_CMD_SET_PWR_LIMIT_PARAM);
-
-	if (info->ucCID != CMD_ID_SET_COUNTRY_POWER_LIMIT ||
-	    info->u4SetQueryInfoLen != sizeof(*cmd))
-		return WLAN_STATUS_NOT_ACCEPTED;
+	uint8_t tag_id = 0;
 
 	cmd = (struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *)
 		info->pucInfoBuffer;
+	tag_id = cmd->ucCategoryId;
+
+	if (info->ucCID != CMD_ID_SET_COUNTRY_POWER_LIMIT ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd) ||
+	    (tag_id != POWER_LIMIT_TABLE_CTRL &&
+		tag_id != POWER_LIMIT_TX_PWR_ENV_CTRL))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_POWER_LIMIT,
 		max_cmd_len, NULL, NULL);
 	if (!entry)
@@ -5247,7 +5252,11 @@ uint32_t nicUniCmdSetCountryPwrLimit(struct ADAPTER *ad,
 
 	tag = (struct UNI_CMD_SET_PWR_LIMIT_PARAM *)
 		uni_cmd->aucTlvBuffer;
-	tag->u2Tag = UNI_CMD_POWER_LIMIT_TABLE_CTRL;
+	if (tag_id == POWER_LIMIT_TABLE_CTRL)
+		tag->u2Tag = UNI_CMD_POWER_LIMIT_TABLE_CTRL;
+	else if (tag_id == POWER_LIMIT_TX_PWR_ENV_CTRL)
+		tag->u2Tag = UNI_CMD_POWER_LIMIT_TX_PWR_ENV;
+
 	tag->u2Length = sizeof(*tag);
 	kalMemCopy(&tag->config, cmd, sizeof(tag->config));
 

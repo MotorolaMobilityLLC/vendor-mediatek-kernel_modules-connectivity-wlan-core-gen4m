@@ -71,6 +71,13 @@
 #include <linux/soc/mediatek/mtk_sip_svc.h>
 #endif
 
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+#include "rlm.h"
+#endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+#include "rlm_domain.h"
+#endif
+
 extern void set_logtoomuch_enable(int value) __attribute__((weak));
 extern int get_logtoomuch_enable(void) __attribute__((weak));
 extern uint32_t get_wifi_standalone_log_mode(void) __attribute__((weak));
@@ -2156,6 +2163,12 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 	struct CONNECTION_SETTINGS *prConnSettings = NULL;
 	struct FT_IES *prFtIEs;
 	enum ENUM_BAND eBand;
+	struct BSS_DESC *prBssDesc = NULL;
+
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+	int8_t aicTxPwrEnvMaxTxPwr[TX_PWR_ENV_MAX_TXPWR_BW_NUM];
+#endif
+
 #if (CFG_ADVANCED_80211_MLO == 1)
 	uint8_t ucLinkIdx = 0;
 #endif
@@ -2177,7 +2190,7 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 	pPmkid = (struct PARAM_PMKID_CANDIDATE_LIST *)(pStatus + 1);
 
 	prDevHandler = wlanGetNetDev(prGlueInfo, ucBssIndex);
-
+	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 	switch (eStatus) {
 	case WLAN_STATUS_ROAM_OUT_FIND_BEST:
 	case WLAN_STATUS_MEDIA_CONNECT:
@@ -2408,6 +2421,35 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnableSR))
 			rlmSetSrControl(prAdapter, TRUE);
 #endif
+		if (prBssDesc) {
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+			/* Set Transmit Power Envelope TxPower limit */
+			if (prBssDesc->fgIsTxPwrEnvPresent) {
+				rlmTxPwrEnvMaxPwrSend(
+					prAdapter,
+					prBssDesc->eBand,
+					prBssDesc->ucChannelNum,
+					prBssDesc->ucTxPwrEnvPwrLmtNum,
+					prBssDesc->aicTxPwrEnvMaxTxPwr,
+					TRUE);
+			}
+#endif
+
+#if CFG_SUPPORT_802_11K
+			/* Set Country IE + Power Constraint TxPower limit */
+			if (prBssDesc->cPowerLimit != RLM_INVALID_POWER_LIMIT) {
+				rlmSetMaxTxPwrLimit(prAdapter,
+					prBssDesc->cPowerLimit, 1);
+			}
+#endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+			/* Set 6G Power mode */
+			if (prBssDesc->eBand == BAND_6G)
+				rlmDomain6GPwrModeUpdate(prAdapter,
+					prBssDesc->e6GPwrMode);
+#endif
+		}
+
 		break;
 
 	case WLAN_STATUS_MEDIA_DISCONNECT:
@@ -2473,7 +2515,6 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 			} __KAL_ATTRIB_PACKED__;
 
 			struct _REPORT_DISCONNECT rPayload = {0};
-			struct BSS_DESC *prTemp = NULL;
 			int8_t ret = 0;
 
 			/* u2Id: Define category of report data.
@@ -2511,13 +2552,9 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 					prGlueInfo->prAdapter->rLinkQuality
 					.rLq[ucBssIndex].u2TxLinkSpeed;
 
-				prTemp = aisGetTargetBssDesc(
-						prGlueInfo->prAdapter,
-						ucBssIndex);
-
-				if (prTemp)
+				if (prBssDesc)
 					rPayload.ucChannelNo =
-						prTemp->ucChannelNum;
+						prBssDesc->ucChannelNum;
 
 				DBGLOG(INIT, TRACE,
 		    "[D2F]type(%u)-reason(%u)-rssi(%d)-speed(%u)-channel(%u)\n",
@@ -2621,6 +2658,35 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 		/* Check SAP channel */
 		p2pFuncSwitchSapChannel(prGlueInfo->prAdapter);
 #endif
+
+		if (prBssDesc) {
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+			/* Disable Transmit Envelope Power limit */
+			if (prBssDesc->fgIsTxPwrEnvPresent) {
+				rlmTxPwrEnvMaxPwrInit(aicTxPwrEnvMaxTxPwr);
+				rlmTxPwrEnvMaxPwrSend(
+					prAdapter,
+					BAND_NULL,
+					0,
+					0,
+					aicTxPwrEnvMaxTxPwr,
+					FALSE);
+			}
+#endif
+
+#if CFG_SUPPORT_802_11K
+			/* Disable Country IE + Power Constraint TxPwr limit */
+			if (prBssDesc->cPowerLimit != RLM_INVALID_POWER_LIMIT)
+				rlmSetMaxTxPwrLimit(prAdapter, 0, 0);
+#endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+			/* Set 6G Power mode to default LPI */
+			if (prBssDesc->eBand == BAND_6G) {
+				rlmDomain6GPwrModeUpdate(prAdapter,
+					PWR_MODE_6G_LPI);
+			}
+#endif
+		}
 		break;
 
 	case WLAN_STATUS_SCAN_COMPLETE:
@@ -2905,6 +2971,35 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 		/* Check SAP channel */
 		p2pFuncSwitchSapChannel(prGlueInfo->prAdapter);
 #endif
+
+		if (prBssDesc) {
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+			/* Disable Transmit Envelope Power limit */
+			if (prBssDesc->fgIsTxPwrEnvPresent) {
+				rlmTxPwrEnvMaxPwrInit(aicTxPwrEnvMaxTxPwr);
+				rlmTxPwrEnvMaxPwrSend(
+					prAdapter,
+					BAND_NULL,
+					0,
+					0,
+					aicTxPwrEnvMaxTxPwr,
+					FALSE);
+			}
+#endif
+
+#if CFG_SUPPORT_802_11K
+			/* Disable Country IE + Power Constraint TxPwr limit */
+			if (prBssDesc->cPowerLimit != RLM_INVALID_POWER_LIMIT)
+				rlmSetMaxTxPwrLimit(prAdapter, 0, 0);
+#endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+			/* Set 6G Power mode to default LPI */
+			if (prBssDesc->eBand == BAND_6G) {
+				rlmDomain6GPwrModeUpdate(prAdapter,
+					PWR_MODE_6G_LPI);
+			}
+#endif
+		}
 		break;
 	}
 	default:

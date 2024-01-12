@@ -1434,12 +1434,6 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 
 	nicRxClearFrag(prAdapter, prStaRec);
 
-#if CFG_SUPPORT_802_11K
-	rlmSetMaxTxPwrLimit(prAdapter,
-			    (prBssDesc->cPowerLimit != RLM_INVALID_POWER_LIMIT)
-			    ? prBssDesc->cPowerLimit : RLM_MAX_TX_PWR, 1);
-#endif
-
 	/* only setup link needs to do SAA */
 	if (ucLinkIndex != 0)
 		return;
