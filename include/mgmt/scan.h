@@ -296,6 +296,7 @@ struct ML_INFO {
 	uint8_t ucLinkIndex;
 	uint8_t ucMaxSimultaneousLinks;
 	uint8_t fgMldType;
+	struct MLD_BLOCKLIST_ITEM *prBlock;
 };
 #endif
 
