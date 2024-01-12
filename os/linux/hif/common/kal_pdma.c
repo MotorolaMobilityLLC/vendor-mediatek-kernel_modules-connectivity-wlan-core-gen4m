@@ -403,6 +403,7 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 	/* Static mapping */
 	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
 		RTMP_IO_READ32(prChipInfo, u4BusAddr, pu4Value);
+#if IS_MOBILE_SEGMENT && (CFG_SUPPORT_CONNAC3X == 0)
 		if (prGlueInfo &&
 		    kalIsChipDead(prGlueInfo, u4Register, pu4Value)) {
 			/* Don't print log when resetting */
@@ -414,6 +415,7 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 			}
 			return FALSE;
 		}
+#endif
 	} else {
 		if (kalDevRegL1Remap(&u4Register))
 			kalDevRegL1Read(prGlueInfo, prChipInfo, u4Register,
