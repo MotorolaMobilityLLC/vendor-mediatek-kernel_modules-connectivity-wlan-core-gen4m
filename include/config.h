@@ -1872,6 +1872,17 @@
 #define CFG_SUPPORT_LIMITED_PKT_PID  1
 
 /*------------------------------------------------------------------------------
+ * Support FreeMsdu tasklet.
+ * Linux version only. Force remove for other platform
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SUPPORT_TASKLET_FREE_MSDU	1
+#ifndef LINUX
+#undef CFG_SUPPORT_TASKLET_FREE_MSDU
+#define CFG_SUPPORT_TASKLET_FREE_MSDU	0
+#endif /* LINUX */
+
+/*------------------------------------------------------------------------------
  * Flags of Force TX via ALTX Q Support
  *------------------------------------------------------------------------------
  */

@@ -706,6 +706,9 @@ struct GLUE_INFO {
 #if (CFG_SUPPORT_RETURN_TASK == 1)
 	struct tasklet_struct rRxRfbRetTask;
 #endif
+#if CFG_SUPPORT_TASKLET_FREE_MSDU
+	struct tasklet_struct rTxMsduRetTask;
+#endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 	struct tasklet_struct rTxCompleteTask;
 #if CFG_SUPPORT_MULTITHREAD
 	struct work_struct rTxMsduFreeWork;
@@ -785,6 +788,12 @@ struct GLUE_INFO {
 	u_int8_t fgMetProfilingEn;
 	uint16_t u2MetUdpPort;
 #endif
+
+#if CFG_SUPPORT_TASKLET_FREE_MSDU
+	struct kfifo rTxMsduRetFifo;
+	uint8_t *prTxMsduRetFifoBuf;
+	uint32_t u4TxMsduRetFifoLen;
+#endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 	uint8_t fgIsEnableMon;

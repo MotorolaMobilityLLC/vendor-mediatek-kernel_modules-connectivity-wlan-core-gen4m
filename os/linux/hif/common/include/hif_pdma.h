@@ -806,9 +806,12 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
 			struct list_head *prList,
 			uint32_t u4Num, uint16_t u2Size);
-void halWpdamFreeMsdu(struct GLUE_INFO *prGlueInfo,
+void halWpdmaFreeMsdu(struct GLUE_INFO *prGlueInfo,
 		      struct MSDU_INFO *prMsduInfo,
 		      bool fgSetEvent);
+#if CFG_SUPPORT_TASKLET_FREE_MSDU
+void halWpdmaFreeMsduTasklet(unsigned long data);
+#endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 
 bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 		    struct SW_RFB *prSwRfb);
