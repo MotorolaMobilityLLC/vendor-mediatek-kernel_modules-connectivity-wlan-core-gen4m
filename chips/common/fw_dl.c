@@ -90,11 +90,13 @@ uint32_t wlanGetDataMode(IN struct ADAPTER *prAdapter,
 {
 	uint32_t u4DataMode = 0;
 
-	if (ucFeatureSet & DOWNLOAD_CONFIG_ENCRYPTION_MODE) {
+	if (ucFeatureSet & FW_FEATURE_SET_ENCRY) {
 		u4DataMode |= DOWNLOAD_CONFIG_RESET_OPTION;
 		u4DataMode |= (ucFeatureSet &
-			       DOWNLOAD_CONFIG_KEY_INDEX_MASK);
+			       FW_FEATURE_SET_KEY_MASK);
 		u4DataMode |= DOWNLOAD_CONFIG_ENCRYPTION_MODE;
+		if (ucFeatureSet & FW_FEATURE_ENCRY_MODE)
+			u4DataMode |= DOWNLOAD_CONFIG_ENCRY_MODE_SEL;
 	}
 
 	if (eDlIdx == IMG_DL_IDX_CR4_FW)
