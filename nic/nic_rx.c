@@ -1677,7 +1677,8 @@ void nicRxProcessPacketToHost(struct ADAPTER *prAdapter,
 	qmHandleRxDhcpPackets(prAdapter, prRetSwRfb);
 #endif
 
-	GET_BOOT_SYSTIME(&prRxCtrl->u4LastRxTime[ucBssIndex]);
+	if (IS_BSS_INDEX_VALID(ucBssIndex))
+		GET_BOOT_SYSTIME(&prRxCtrl->u4LastRxTime[ucBssIndex]);
 }
 
 void nicRxIndicatePackets(struct ADAPTER *prAdapter,
