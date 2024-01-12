@@ -145,6 +145,7 @@
 #define WIFI_FEATURE_P2P_RAND_MAC  (0x80000000)
 
 /* note: WIFI_FEATURE_GSCAN be enabled just for ACTS test item: scanner */
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
 #define WIFI_HAL_FEATURE_SET ((WIFI_FEATURE_P2P) |\
 			      (WIFI_FEATURE_SOFT_AP) |\
 			      (WIFI_FEATURE_PNO) |\
@@ -154,6 +155,16 @@
 			      (WIFI_FEATURE_SET_TX_POWER_LIMIT) |\
 			      (WIFI_FEATURE_P2P_RAND_MAC)\
 			      )
+#else
+#define WIFI_HAL_FEATURE_SET ((WIFI_FEATURE_P2P) |\
+			      (WIFI_FEATURE_SOFT_AP) |\
+			      (WIFI_FEATURE_PNO) |\
+			      (WIFI_FEATURE_TDLS) |\
+			      (WIFI_FEATURE_RSSI_MONITOR) |\
+			      (WIFI_FEATURE_CONTROL_ROAMING) |\
+			      (WIFI_FEATURE_P2P_RAND_MAC)\
+			      )
+#endif
 
 #define MAX_NUM_GROUP_ADDR		32 /* max number of group addresses */
 #define AUTO_RATE_NUM			8
