@@ -274,13 +274,11 @@
 #define ED_VALUE_SITE		2
 #endif
 
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
 #define ACS_AP_RSSI_LEVEL_HIGH		-50
 #define ACS_AP_RSSI_LEVEL_LOW		-80
 #define ACS_DIRTINESS_LEVEL_HIGH	52
 #define ACS_DIRTINESS_LEVEL_MID		40
 #define ACS_DIRTINESS_LEVEL_LOW		32
-#endif
 
 
 enum CMD_VER {
@@ -1002,7 +1000,8 @@ enum ENUM_MAX_BANDWIDTH_SETTING {
 	MAX_BW_40MHZ,
 	MAX_BW_80MHZ,
 	MAX_BW_160MHZ,
-	MAX_BW_80_80_MHZ
+	MAX_BW_80_80_MHZ,
+	MAX_BW_UNKNOWN
 };
 
 struct TX_PACKET_INFO {
@@ -1604,3 +1603,21 @@ uint32_t wlanDecimalStr2Hexadecimals(uint8_t *pucDecimalStr, uint16_t *pu2Out);
 
 uint32_t wlanGetSupportedFeatureSet(IN struct GLUE_INFO *prGlueInfo);
 
+uint32_t
+wlanQueryLteSafeChannel(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucRoleIndex);
+
+uint32_t
+wlanCalculateAllChannelDirtiness(IN struct ADAPTER *prAdapter);
+
+void
+wlanInitChnLoadInfoChannelList(IN struct ADAPTER *prAdapter);
+
+uint8_t
+wlanGetChannelIndex(IN uint8_t channel);
+
+uint8_t
+wlanGetChannelNumFromIndex(IN uint8_t ucIdx);
+
+void
+wlanSortChannel(IN struct ADAPTER *prAdapter);

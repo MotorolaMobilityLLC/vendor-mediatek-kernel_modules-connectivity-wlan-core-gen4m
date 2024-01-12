@@ -332,6 +332,9 @@ struct P2P_ROLE_FSM_INFO {
 	/* Mgmt tx related. */
 	struct P2P_MGMT_TX_REQ_INFO rMgmtTxInfo;
 
+	/* Auto channel selection related. */
+	struct P2P_ACS_REQ_INFO rAcsReqInfo;
+
 	/* FSM Timer */
 	struct TIMER rP2pRoleFsmTimeoutTimer;
 
@@ -486,5 +489,11 @@ void p2pRoleFsmRunEventMgmtTx(IN struct ADAPTER *prAdapter,
 
 void p2pRoleFsmRunEventTxCancelWait(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr);
+
+void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr);
+
+u_int8_t p2pRoleFsmIsAcsProcessing(IN struct ADAPTER *prAdapter,
+		uint8_t ucRoleIdx);
 
 #endif

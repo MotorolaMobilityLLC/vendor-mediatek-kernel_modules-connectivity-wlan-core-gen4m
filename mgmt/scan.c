@@ -3760,30 +3760,9 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 #endif
 		}
 	} else {
-
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
-		/* Clear old ACS data (APNum, Dirtiness, ...)
-		 * and initialize the ch number
-		 */
-		kalMemZero(&(prAdapter->rWifiVar.rChnLoadInfo),
-			sizeof(prAdapter->rWifiVar.rChnLoadInfo));
-		wlanInitChnLoadInfoChannelList(prAdapter);
-#endif
-
 		/* Search BSS Desc from current SCAN result list. */
 		LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
 			rLinkEntry, struct BSS_DESC) {
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
-			/* Record channel loading with channel's AP number */
-			uint8_t ucIdx
-				= wlanGetChannelIndex(prBssDesc->ucChannelNum);
-
-			if (ucIdx < MAX_CHN_NUM)
-				prAdapter->rWifiVar
-					.rChnLoadInfo
-					.rEachChnLoad[ucIdx].u2APNum++;
-#endif
-
 			/* check BSSID is legal channel */
 			if (!scanCheckBssIsLegal(prAdapter, prBssDesc)) {
 				log_dbg(SCN, TRACE, "Remove SSID[%s %d]\n",
@@ -3875,13 +3854,7 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 			}
 
 		}
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
-		wlanCalculateAllChannelDirtiness(prAdapter);
-		wlanSortChannel(prAdapter);
-
-		prAdapter->rWifiVar.rChnLoadInfo.fgDataReadyBit = TRUE;
-#endif
-
+		p2pFunCalAcsChnScores(prAdapter);
 	}
 
 }

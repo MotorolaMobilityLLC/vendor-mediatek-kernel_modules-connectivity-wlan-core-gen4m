@@ -2522,7 +2522,6 @@ void nicCmdEventQueryStaStatistics(IN struct ADAPTER
 
 }
 
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is called when event for query LTE safe channels
@@ -2535,57 +2534,58 @@ void nicCmdEventQueryStaStatistics(IN struct ADAPTER
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-void nicCmdEventQueryLteSafeChn(IN struct ADAPTER
-				*prAdapter, IN struct CMD_INFO *prCmdInfo,
-				IN uint8_t *pucEventBuf)
+void nicCmdEventQueryLteSafeChn(IN struct ADAPTER *prAdapter,
+		IN struct CMD_INFO *prCmdInfo,
+		IN uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct EVENT_LTE_SAFE_CHN *prEvent;
 	struct GLUE_INFO *prGlueInfo;
 	struct PARAM_GET_CHN_INFO *prLteSafeChnInfo;
 	uint8_t ucIdx = 0;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
 
-	if ((prAdapter == NULL)
-	    || (prCmdInfo == NULL)
-	    || (pucEventBuf == NULL)
-	    || (prCmdInfo->pvInformationBuffer == NULL)) {
+	if ((prAdapter == NULL) || (prCmdInfo == NULL) || (pucEventBuf == NULL)
+			|| (prCmdInfo->pvInformationBuffer == NULL)) {
 		ASSERT(FALSE);
 		return;
 	}
 
-	if (prCmdInfo->fgIsOid) {
-		prGlueInfo = prAdapter->prGlueInfo;
-		prEvent = (struct EVENT_LTE_SAFE_CHN *)
-			  pucEventBuf;	/* FW responsed data */
+	prGlueInfo = prAdapter->prGlueInfo;
+	prEvent = (struct EVENT_LTE_SAFE_CHN *) pucEventBuf;
 
-		prLteSafeChnInfo = (struct PARAM_GET_CHN_INFO *)
-				   prCmdInfo->pvInformationBuffer;
+	prLteSafeChnInfo = (struct PARAM_GET_CHN_INFO *)
+			prCmdInfo->pvInformationBuffer;
 
-		u4QueryInfoLen = sizeof(struct PARAM_GET_CHN_INFO);
+	u4QueryInfoLen = sizeof(struct PARAM_GET_CHN_INFO);
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prLteSafeChnInfo->ucRoleIndex);
 
-		/* Statistics from FW is valid */
-		if (prEvent->u4Flags & BIT(0)) {
-			for (ucIdx = 0;
-			     ucIdx < NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_MAX;
-					ucIdx++) {
-				prLteSafeChnInfo->rLteSafeChnList.
-				au4SafeChannelBitmask[ucIdx]
-					= prEvent->rLteSafeChn.
-						au4SafeChannelBitmask[ucIdx];
+	/* Statistics from FW is valid */
+	if (prEvent->u4Flags & BIT(0)) {
+		struct LTE_SAFE_CHN_INFO *prLteSafeChnList;
 
-				DBGLOG(P2P, TRACE,
-					"[ACS]LTE safe channels[%d]=0x%08x\n",
-					ucIdx,
-					prLteSafeChnInfo->rLteSafeChnList.
-					au4SafeChannelBitmask[ucIdx]);
-			}
+		prLteSafeChnList = &prLteSafeChnInfo->rLteSafeChnList;
+		for (ucIdx = 0; ucIdx <
+				NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_MAX;
+				ucIdx++) {
+			prLteSafeChnList->au4SafeChannelBitmask[ucIdx]
+				= prEvent->rLteSafeChn.
+					au4SafeChannelBitmask[ucIdx];
+
+			DBGLOG(NIC, INFO,
+				"[ACS]LTE safe channels[%d]=0x%08x\n",
+				ucIdx,
+				prLteSafeChnList->au4SafeChannelBitmask[ucIdx]);
 		}
-
-		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
-			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	} else {
+		DBGLOG(NIC, ERROR, "FW's event is NOT valid.\n");
 	}
+	p2pFunProcessAcsReport(prAdapter,
+			prLteSafeChnInfo->ucRoleIndex,
+			prLteSafeChnInfo,
+			&(prP2pRoleFsmInfo->rAcsReqInfo));
 }
-#endif
 
 void nicEventRddPulseDump(IN struct ADAPTER *prAdapter,
 			  IN uint8_t *pucEventBuf)

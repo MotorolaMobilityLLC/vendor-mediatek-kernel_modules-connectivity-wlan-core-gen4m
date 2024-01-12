@@ -2060,3 +2060,116 @@ void kalP2pIndicateQueuedMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 		GFP_ATOMIC);
 #endif
 }
+
+void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
+		IN uint8_t ucRoleIndex,
+		IN uint8_t ucPrimaryCh,
+		IN uint8_t ucSecondCh,
+		IN uint8_t ucSeg0Ch,
+		IN uint8_t ucSeg1Ch,
+		IN enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw)
+{
+	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
+	struct sk_buff *vendor_event = NULL;
+	uint16_t ch_width = MAX_BW_20MHZ;
+
+	prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
+
+	if (!prGlueP2pInfo) {
+		DBGLOG(P2P, ERROR, "p2p glue info null.\n");
+		return;
+	}
+
+	switch (eChnlBw) {
+	case MAX_BW_20MHZ:
+		ch_width = 20;
+		break;
+	case MAX_BW_40MHZ:
+		ch_width = 40;
+		break;
+	case MAX_BW_80MHZ:
+		ch_width = 80;
+		break;
+	case MAX_BW_160MHZ:
+		ch_width = 160;
+		break;
+	default:
+		DBGLOG(P2P, ERROR, "unsupport width: %d.\n", ch_width);
+		break;
+	}
+
+	DBGLOG(P2P, INFO, "r=%d, c=%d, s=%d, s0=%d, s1=%d, ch_w=%d\n",
+			ucRoleIndex,
+			ucPrimaryCh,
+			ucSecondCh,
+			ucSeg0Ch,
+			ucSeg1Ch,
+			ch_width);
+
+#if KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE
+	vendor_event = cfg80211_vendor_event_alloc(prGlueP2pInfo->prWdev->wiphy,
+#if KERNEL_VERSION(4, 1, 0) <= LINUX_VERSION_CODE
+			prGlueP2pInfo->prWdev,
+#endif
+			4 * sizeof(u8) + 1 * sizeof(u16) + 4 + NLMSG_HDRLEN,
+			WIFI_EVENT_ACS,
+			GFP_KERNEL);
+#endif
+
+	if (!vendor_event) {
+		DBGLOG(P2P, ERROR, "allocate vendor event fail.\n");
+		goto nla_put_failure;
+	}
+
+	if (unlikely(nla_put_u8(vendor_event,
+			WIFI_VENDOR_ATTR_ACS_PRIMARY_CHANNEL,
+			ucPrimaryCh) < 0)) {
+		DBGLOG(P2P, ERROR, "put primary channel fail.\n");
+		goto nla_put_failure;
+	}
+
+	if (unlikely(nla_put_u8(vendor_event,
+			WIFI_VENDOR_ATTR_ACS_SECONDARY_CHANNEL,
+			ucSecondCh) < 0)) {
+		DBGLOG(P2P, ERROR, "put secondary channel fail.\n");
+		goto nla_put_failure;
+	}
+
+	if (unlikely(nla_put_u8(vendor_event,
+			WIFI_VENDOR_ATTR_ACS_VHT_SEG0_CENTER_CHANNEL,
+			ucSeg0Ch) < 0)) {
+		DBGLOG(P2P, ERROR, "put vht seg0 fail.\n");
+		goto nla_put_failure;
+	}
+
+	if (unlikely(nla_put_u8(vendor_event,
+			WIFI_VENDOR_ATTR_ACS_VHT_SEG1_CENTER_CHANNEL,
+			ucSeg1Ch) < 0)) {
+		DBGLOG(P2P, ERROR, "put vht seg1 fail.\n");
+		goto nla_put_failure;
+	}
+
+	if (unlikely(nla_put_u16(vendor_event,
+			WIFI_VENDOR_ATTR_ACS_CHWIDTH,
+			ch_width) < 0)) {
+		DBGLOG(P2P, ERROR, "put ch width fail.\n");
+		goto nla_put_failure;
+	}
+
+	if (unlikely(nla_put_u8(vendor_event,
+			WIFI_VENDOR_ATTR_ACS_HW_MODE,
+			ucPrimaryCh > 14 ?
+				P2P_VENDOR_ACS_HW_MODE_11A :
+				P2P_VENDOR_ACS_HW_MODE_11G) < 0)) {
+		DBGLOG(P2P, ERROR, "put hw mode fail.\n");
+		goto nla_put_failure;
+	}
+#if KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE
+	cfg80211_vendor_event(vendor_event, GFP_KERNEL);
+#endif
+	return;
+
+nla_put_failure:
+	if (vendor_event)
+		kfree_skb(vendor_event);
+}

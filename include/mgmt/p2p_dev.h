@@ -70,6 +70,7 @@ struct MSG_P2P_SCAN_REQUEST {
 	uint8_t *pucIEBuf;
 	uint32_t u4IELen;
 	u_int8_t fgIsAbort;
+	enum ENUM_SCAN_REASON eScanReason;
 	struct RF_CHANNEL_INFO arChannelListInfo[1];
 };
 
@@ -189,6 +190,18 @@ struct MSG_WFD_CONFIG_SETTINGS_CHANGED {
 	struct WFD_CFG_SETTINGS *prWfdCfgSettings;
 };
 #endif
+
+struct MSG_P2P_ACS_REQUEST {
+	struct MSG_HDR rMsgHdr; /* Must be the first member */
+	uint8_t ucRoleIdx;
+	u_int8_t fgIsHtEnable;
+	u_int8_t fgIsHt40Enable;
+	u_int8_t fgIsVhtEnable;
+	enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw;
+	enum P2P_VENDOR_ACS_HW_MODE eHwMode;
+	uint32_t u4NumChannel;
+	struct RF_CHANNEL_INFO arChannelListInfo[1];
+};
 
 /*========================= Initial ============================*/
 
