@@ -3304,7 +3304,7 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 					prTxDone->u4Timestamp,
 					prTxDone->u4TxDelay);
 			else
-				DBGLOG(NIC, TRACE,
+				DBGLOG_LIMITED(NIC, TRACE,
 					"||AMPDU[%u] PS[%u] IBF[%u] EBF[%u] TxPwr[%d%sdBm] TSF[%u] TxDelay[%uus]\n",
 					prTxDone->u4AppliedFlag &
 					BIT(TX_FRAME_IN_AMPDU_FORMAT) ?
@@ -3327,7 +3327,7 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 					*(pu4RawTxs + 3), *(pu4RawTxs + 4),
 					*(pu4RawTxs + 5), *(pu4RawTxs + 6));
 			else
-				DBGLOG(NIC, TRACE,
+				DBGLOG_LIMITED(NIC, TRACE,
 					"TxS[%08x %08x %08x %08x %08x %08x %08x]\n",
 					*pu4RawTxs,
 					*(pu4RawTxs + 1), *(pu4RawTxs + 2),
