@@ -4265,10 +4265,10 @@ void aisUpdateAllBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 				prStaRec, prSwRfb);
 			nicRxReturnRFB(prAdapter, prSwRfb);
 		} else
-#else
+#endif
 			aisUpdateBssInfoForJOIN(prAdapter,
 				prStaRec, prAssocRspSwRfb);
-#endif
+
 		/* 4 <1.3> Activate current AP's STA_RECORD_T
 		 * in Driver.
 		 */
