@@ -1778,6 +1778,10 @@ struct ADAPTER {
 	u_int8_t fgEnDbgPowerMode;
 
 	struct HIF_STATS rHifStats;
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	unsigned int u4FWLastUpdateTime;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

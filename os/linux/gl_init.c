@@ -3824,6 +3824,13 @@ struct CMD_CONNSYS_FW_LOG {
 	int32_t fgValue;
 };
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+uint32_t getFWLogOnOff(void)
+{
+	return u4LogOnOffCache;
+}
+#endif /* CFG_SUPPORT_CONNINFRA == 1 */
+
 uint32_t
 connsysFwLogControl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
