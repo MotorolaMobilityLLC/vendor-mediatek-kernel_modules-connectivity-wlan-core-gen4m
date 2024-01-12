@@ -1174,7 +1174,7 @@ wlanoidSetSsid(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(SCN, INFO, "ucBssIndex %d, SSID %s\n",
 			ucBssIndex,
-			prConnSettings->aucSSID);
+			HIDE(prConnSettings->aucSSID));
 
 	mboxSendMsg(prAdapter, MBOX_ID_0,
 		    (struct MSG_HDR *) prAisAbortMsg, MSG_SEND_METHOD_BUF);
@@ -1430,7 +1430,8 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 		"ucBssIndex %d, ssid %s, bssid " MACSTR
 		", bssid_hint " MACSTR ", conn policy %d, disc reason %d\n",
 		ucBssIndex,
-		prConnSettings->aucSSID, MAC2STR(prConnSettings->aucBSSID),
+		HIDE(prConnSettings->aucSSID),
+		MAC2STR(prConnSettings->aucBSSID),
 		MAC2STR(prConnSettings->aucBSSIDHint),
 		prConnSettings->eConnectionPolicy,
 		prAisAbortMsg->ucReasonOfDisconnect);
@@ -15485,7 +15486,7 @@ uint32_t wlanoidSendNeighborRequest(struct ADAPTER *prAdapter,
 	prSSIDIE->rSubIE.ucLength = (uint8_t)u4SetBufferLen;
 	kalMemCopy(&prSSIDIE->rSubIE.aucOptInfo[0], pucSSID,
 		   (uint8_t)u4SetBufferLen);
-	DBGLOG(OID, INFO, "Send Neighbor Request, SSID=%s\n", pucSSID);
+	DBGLOG(OID, INFO, "Send Neighbor Request, SSID=%s\n", HIDE(pucSSID));
 	rrmTxNeighborReportRequest(prAdapter, prAisBssInfo->prStaRecOfAP,
 				   prSSIDIE);
 	kalMemFree(prSSIDIE, PHY_MEM_TYPE, ucSSIDIELen);

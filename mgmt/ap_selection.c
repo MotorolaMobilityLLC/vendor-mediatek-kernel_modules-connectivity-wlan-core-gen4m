@@ -1003,7 +1003,7 @@ try_again:
 				" in %d bssid,fix channel %d.\n",
 				MAC2STR(prCandBssDesc->aucBSSID),
 				RCPI_TO_dBm(prCandBssDesc->ucRCPI),
-				prConnSettings->aucSSID,
+				HIDE(prConnSettings->aucSSID),
 				MAC2STR(prConnSettings->aucBSSID),
 				prEssLink->u4NumElem, ucChannel);
 		else
