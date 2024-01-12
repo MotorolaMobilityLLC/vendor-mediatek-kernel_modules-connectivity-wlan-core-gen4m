@@ -2190,6 +2190,33 @@ uint32_t rlmDomainSupOperatingClassIeFill(uint8_t *pBuf)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief retrun channel interval
+ *
+ * @param[in] u2SubBandIdx
+ * @param[in] ucCurrCh
+ *
+ * @return channel interval
+ */
+/*----------------------------------------------------------------------------*/
+static uint8_t
+rlmDomainGetChannelInterval(uint16_t u2SubBandIdx,
+			uint8_t ucCurrCh)
+{
+	uint8_t ucInterval = 0;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if ((g_rRlmSubBand[u2SubBandIdx].eBand == BAND_6G) &&
+		(ucCurrCh == 1 || ucCurrCh == 2))
+		ucInterval = 1;
+	else
+#endif
+		ucInterval =  g_rRlmSubBand[u2SubBandIdx].ucInterval;
+
+	return ucInterval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief
  *
  * @param[in]
@@ -2216,9 +2243,11 @@ u_int8_t rlmDomainCheckChannelEntryValid(struct ADAPTER *prAdapter,
 	for (i = PWR_LMT_SUBBAND_2G4; i < PWR_LMT_SUBAND_NUM; i++) {
 		if ((eBand == BAND_NULL || eBand == g_rRlmSubBand[i].eBand) &&
 			(ucCentralCh >= g_rRlmSubBand[i].ucStartCh) &&
-			(ucCentralCh <= g_rRlmSubBand[i].ucEndCh))
+			(ucCentralCh <= g_rRlmSubBand[i].ucEndCh)) {
+
 			ucTemp = (ucCentralCh - g_rRlmSubBand[i].ucStartCh) %
-				 g_rRlmSubBand[i].ucInterval;
+			rlmDomainGetChannelInterval(i, ucCentralCh);
+		}
 		if (ucTemp == 0)
 			break;
 	}
@@ -3772,7 +3801,7 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 
 		for (k = g_rRlmSubBand[i].ucStartCh;
 		     k <= g_rRlmSubBand[i].ucEndCh;
-		     k += g_rRlmSubBand[i].ucInterval) {
+		     k += rlmDomainGetChannelInterval(i, k)) {
 
 			/*
 			* Get subband power limit from default table
