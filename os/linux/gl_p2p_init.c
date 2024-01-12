@@ -206,13 +206,14 @@ void p2pResumeStatisticsTimer(struct GLUE_INFO *prGlueInfo,
 			"StatisticsTimer resume failed. prP2pRoleFsmInfo is NULL\n");
 		return;
 	}
-
+#if CFG_SUPPORT_WFD
 	if (prGlueInfo->prAdapter->rWifiVar.rWfdConfigureSettings.ucWfdEnable &&
 		!prGlueInfo->fgIsInSuspendMode) {
 		cnmTimerStartTimer(prGlueInfo->prAdapter,
 			&(prP2pRoleFsmInfo->rP2pRoleFsmGetStatisticsTimer),
 			P2P_ROLE_GET_STATISTICS_TIME);
 	}
+#endif
 }
 #endif
 

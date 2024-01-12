@@ -195,7 +195,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
 	[EXT_CMD_ID_STAREC_UPDATE] = nicUniCmdStaRecUpdateExt,
 	[EXT_CMD_ID_BF_ACTION] = nicUniCmdBFAction,
 	[EXT_CMD_ID_SER] = nicUniCmdSerAction,
+#if (CFG_SUPPORT_TWT == 1)
 	[EXT_CMD_ID_GET_MAC_INFO] = nicUniCmdGetTsf,
+#endif
 	[EXT_CMD_ID_DEVINFO_UPDATE] = nicUniUpdateDevInfo,
 	[EXT_CMD_ID_TX_POWER_FEATURE_CTRL] = nicUniCmdTxPowerCtrl,
 	[EXT_CMD_ID_THERMAL_PROTECT] = nicUniCmdThermalProtect,
@@ -3197,7 +3199,7 @@ uint32_t nicUniCmdSerAction(struct ADAPTER *ad,
 
 	return WLAN_STATUS_SUCCESS;
 }
-
+#if (CFG_SUPPORT_TWT == 1)
 uint32_t nicUniCmdGetTsf(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
@@ -3232,6 +3234,7 @@ uint32_t nicUniCmdGetTsf(struct ADAPTER *ad,
 
 	return WLAN_STATUS_SUCCESS;
 }
+#endif
 
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
 uint32_t nicUniCmdTwtStaGetCnmGranted(struct ADAPTER *ad,
@@ -6616,6 +6619,7 @@ void nicUniCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
 	nicCmdEventQueryMcrRead(prAdapter, prCmdInfo, (uint8_t *)&legacy);
 }
 
+#if (CFG_SUPPORT_TWT == 1)
 void nicUniCmdEventGetTsfDone(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
@@ -6631,6 +6635,7 @@ void nicUniCmdEventGetTsfDone(IN struct ADAPTER *prAdapter,
 
 	twtPlannerGetTsfDone(prAdapter, prCmdInfo, (uint8_t *)&legacy);
 }
+#endif
 
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
 void nicUniCmdEventTWTGetCnmGrantedDone(IN struct ADAPTER *prAdapter,
