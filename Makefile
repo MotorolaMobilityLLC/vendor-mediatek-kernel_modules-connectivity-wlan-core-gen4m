@@ -219,6 +219,7 @@ CONFIG_MLD_LINK_MAX=2
 CONFIG_DBDC_MODE=1
 CONFIG_MTK_WIFI_6G_SUPPORT=y
 CONFIG_NSS=4
+CONFIG_BAND_NUM=3
 endif
 
 ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
@@ -294,6 +295,12 @@ endif
 
 ifneq ($(CONFIG_NSS),)
     ccflags-y += -DCFG_NSS=$(CONFIG_NSS)
+endif
+
+ifneq ($(CONFIG_BAND_NUM),)
+    ccflags-y += -DCONFIG_BAND_NUM=$(CONFIG_BAND_NUM)
+else
+    ccflags-y += -DCONFIG_BAND_NUM=2
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT), y)
