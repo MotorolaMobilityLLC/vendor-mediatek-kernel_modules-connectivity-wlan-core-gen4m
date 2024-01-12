@@ -5008,7 +5008,7 @@ uint32_t wlanGetMiniTxPower(IN struct ADAPTER *prAdapter,
 			eBand);
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
-	if (ePhyMode >= PHY_MODE_TYPE_NUM) {
+	if (ePhyMode >= PHY_MODE_TYPE_NUM || ePhyMode < 0) {
 		DBGLOG(INIT, WARN, "check phy mode fail(%d)\n",
 			ePhyMode);
 		return WLAN_STATUS_NOT_ACCEPTED;
