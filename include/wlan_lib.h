@@ -1025,6 +1025,9 @@ struct REG_INFO {
 
 	uint8_t aucNvram[512];
 	struct WIFI_CFG_PARAM_STRUCT *prNvramSettings;
+#if CFG_SUPPORT_XONVRAM
+	struct XO_CFG_PARAM_STRUCT *prXonvCfg;
+#endif
 };
 
 /* for divided firmware loading */

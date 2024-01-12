@@ -501,6 +501,14 @@ struct WIFI_NVRAM_TAG_FORMAT {
 	uint8_t u1NvramTypeLenLsb;
 	uint8_t u1NvramTypeLenMsb;
 };
+
+#if CFG_SUPPORT_XONVRAM
+struct XO_CFG_PARAM_STRUCT {
+	uint8_t aucData[256];
+	uint16_t u2DataLen;
+};
+#endif
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************

@@ -1157,6 +1157,59 @@ void wlanOnPostFirmwareReady(struct ADAPTER *prAdapter,
 #endif
 }
 
+#if CFG_SUPPORT_XONVRAM
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Because TOP POS will set XO ATOP CR, and the XO parameter is saved in
+ *        ConnInfra sysram. Hence this function should be called before TOP POS
+ *        i.e. before patch download
+ *
+ * \param[in]  prAdapter        Pointer to the Adapter structure.
+ * \param[in]  prRegInfo        Pointer of REG_INFO_T.
+ */
+/*----------------------------------------------------------------------------*/
+static uint32_t
+wlanCopyXoNvramToSysram(struct ADAPTER *prAdapter, struct REG_INFO *prRegInfo)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct connxo_infra_sysram *prXoInfra;
+	struct XO_CFG_PARAM_STRUCT *prXoCfg;
+	uint32_t u4Size, u4Addr;
+
+	ASSERT(prAdapter);
+	ASSERT(prRegInfo);
+
+	prXoInfra = &(prAdapter->chip_info->xo_infra_sysram);
+	if ((prXoInfra->size == 0) || (prXoInfra->addr == 0)) {
+		DBGLOG(INIT, TRACE, "Not support Conn XO\n");
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prXoCfg = prRegInfo->prXonvCfg;
+	u4Size = prXoInfra->size;
+	u4Addr = prXoInfra->addr;
+
+	if (prXoCfg == NULL) {
+		DBGLOG(INIT, TRACE, "Not support Conn XO\n");
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	if ((prXoCfg->u2DataLen != 0) && (u4Size != prXoCfg->u2DataLen)) {
+		DBGLOG(INIT, WARN, "Size: Infra Sysram XO %d != Cfg XO %d\n"
+				, u4Size, prXoCfg->u2DataLen);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (kalDevRegWriteRange(prGlueInfo, u4Addr, prXoCfg, u4Size) < 0) {
+		DBGLOG(INIT, WARN, "Fail to copy XO to infra sysram\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Initialize the adapter. The sequence is
@@ -1190,6 +1243,7 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 		INIT_ADAPTER_FAIL,
 		INIT_HIFINFO_FAIL,
 		SET_CHIP_ECO_INFO_FAIL,
+		COPY_XONVRAM_FAIL,
 		RAM_CODE_DOWNLOAD_FAIL,
 		WAIT_FIRMWARE_READY_FAIL,
 		FAIL_REASON_MAX
@@ -1301,6 +1355,16 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 
 		/* recheck Asic capability depends on ECO version */
 		wlanCheckAsicCap(prAdapter);
+
+#if CFG_SUPPORT_XONVRAM
+		/* Copy XO NVRAM to ConnInfra sysram before patch download */
+		if (wlanCopyXoNvramToSysram(prAdapter, prRegInfo)
+					!= WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR, "wlanCopyXoNvramToSysram failed\n");
+			u4Status = WLAN_STATUS_FAILURE;
+			eFailReason = COPY_XONVRAM_FAIL;
+		}
+#endif
 
 #if CFG_ENABLE_FW_DOWNLOAD
 		/* 4 <8> FW/patch download */
@@ -1476,6 +1540,7 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 			/* release allocated memory */
 			switch (eFailReason) {
 			case WAIT_FIRMWARE_READY_FAIL:
+			case COPY_XONVRAM_FAIL:
 			case RAM_CODE_DOWNLOAD_FAIL:
 			case SET_CHIP_ECO_INFO_FAIL:
 				fw_log_deinit(prAdapter);

@@ -99,6 +99,9 @@ enum ENUM_NVRAM_STATE g_NvramFsm = NVRAM_STATE_INIT;
 
 uint8_t g_aucNvram[MAX_CFG_FILE_WIFI_REC_SIZE];
 uint8_t g_aucNvram_OnlyPreCal[MAX_CFG_FILE_WIFI_RECAL_SIZE];
+#if CFG_SUPPORT_XONVRAM
+struct XO_CFG_PARAM_STRUCT g_rXonvCfg;
+#endif
 struct wireless_dev *gprWdev[KAL_AIS_NUM];
 #if CFG_MTK_ANDROID_WMT
 u_int8_t g_IsPlatCbsRegistered = FALSE;
@@ -2528,7 +2531,9 @@ static void glLoadNvram(struct GLUE_INFO *prGlueInfo,
 	}
 
 	prGlueInfo->fgNvramAvailable = TRUE;
-
+#if CFG_SUPPORT_XONVRAM
+	prRegInfo->prXonvCfg = &g_rXonvCfg;
+#endif
 	prRegInfo->prNvramSettings =
 		(struct WIFI_CFG_PARAM_STRUCT *)&g_aucNvram[0];
 	prNvramSettings = prRegInfo->prNvramSettings;
@@ -4023,6 +4028,33 @@ static uint8_t wlanNvramBufHandler(void *ctx,
 	return 0;
 }
 
+static uint8_t wlanXonvBufHandler(void *ctx,
+			const char *buf,
+			uint16_t length)
+{
+#if CFG_SUPPORT_XONVRAM
+	DBGLOG(INIT, INFO, "buf = %p, length = %u\n", buf, length);
+	if (buf == NULL || length <= 0)
+		return -EFAULT;
+
+	if (length > sizeof(g_rXonvCfg.aucData)) {
+		DBGLOG(INIT, ERROR, "is over nvrm size %zu\n",
+			sizeof(g_rXonvCfg.aucData));
+		return -EINVAL;
+	}
+
+	kalMemZero(&g_rXonvCfg.aucData, sizeof(g_rXonvCfg.aucData));
+	if (copy_from_user(g_rXonvCfg.aucData, buf, length)) {
+		DBGLOG(INIT, ERROR, "copy xo nvram fail\n");
+		return -EINVAL;
+	}
+	g_rXonvCfg.u2DataLen = length;
+
+	DBGLOG(INIT, INFO, "Copy %d bytes from xo nvram\n", length);
+#endif
+	return 0;
+}
+
 #endif
 
 static void wlanCreateWirelessDevice(void)
@@ -4253,6 +4285,8 @@ static void wlanCreateWirelessDevice(void)
 	gprWdev[u4Idx] = prWdev[u4Idx];
 
 #if CFG_WLAN_ASSISTANT_NVRAM
+	register_file_buf_handler(wlanXonvBufHandler, (void *)NULL,
+			ENUM_BUF_TYPE_XONV);
 	register_file_buf_handler(wlanNvramBufHandler, (void *)NULL,
 			ENUM_BUF_TYPE_NVRAM);
 #endif

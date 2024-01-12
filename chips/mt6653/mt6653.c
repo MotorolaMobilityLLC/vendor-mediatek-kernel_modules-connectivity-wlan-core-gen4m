@@ -1108,6 +1108,12 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.prValidMmioReadReason = mt6653ValidMmioReadReason,
 	.u4ValidMmioReadReasonSize = ARRAY_SIZE(mt6653ValidMmioReadReason),
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
+#if CFG_SUPPORT_XONVRAM
+	.xo_infra_sysram = {
+		.addr = 0x7C05B28C,
+		.size = 25,
+	}
+#endif
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt6653 = {
