@@ -424,6 +424,7 @@ struct mt66xx_chip_info mt66xx_chip_info_connac2x2 = {
 	.top_hvr = TOP_HVR,
 	.top_fvr = TOP_FVR,
 	.custom_oid_interface_version = MTK_CUSTOM_OID_INTERFACE_VERSION,
+	.em_interface_version = MTK_EM_INTERFACE_VERSION,
 
 	.calDebugCmd = connac2x2wlanCalDebugCmd,
 };
