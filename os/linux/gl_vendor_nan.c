@@ -49,7 +49,7 @@
  */
 uint8_t g_enableNAN = TRUE;
 uint8_t g_disableNAN = FALSE;
-uint8_t g_deEvent = FALSE;
+uint8_t g_deEvent;
 uint8_t g_aucNanServiceName[NAN_MAX_SERVICE_NAME_LEN];
 uint8_t g_aucNanServiceId[6];
 
@@ -978,6 +978,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			rtnl_lock();
 #endif
 
+		g_deEvent = 0;
+
 		kalMemZero(&nanEnableReq, sizeof(struct NanEnableRequest));
 		kalMemZero(&nanEnableRsp, sizeof(struct NanEnableRspMsg));
 		while ((remainingLen >= 4) &&
@@ -1073,8 +1075,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		}
 
 		for (u4DelayIdx = 0; u4DelayIdx < 50; u4DelayIdx++) {
-			if (g_deEvent == TRUE) {
-				g_deEvent = FALSE;
+			if (g_deEvent == NAN_BSS_INDEX_NUM) {
+				g_deEvent = 0;
 				break;
 			}
 			msleep(100);
@@ -3030,7 +3032,7 @@ mtk_cfg80211_vendor_event_nan_schedule_config(
 	struct ADAPTER *prAdapter,
 	uint8_t *pcuEvtBuf)
 {
-	g_deEvent = TRUE;
+	g_deEvent++;
 
 	return WLAN_STATUS_SUCCESS;
 }
