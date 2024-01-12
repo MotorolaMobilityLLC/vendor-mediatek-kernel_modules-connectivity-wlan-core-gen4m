@@ -1059,6 +1059,11 @@ void qmUpdateFreeNANQouta(struct ADAPTER *prAdapter,
 			  struct EVENT_UPDATE_NAN_TX_STATUS *prTxStatus);
 #endif
 
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+void qmSetStaRecRxAllowed(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, u_int8_t fgIsRxAllowed);
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
+
 void qmSetStaRecTxAllowed(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec, u_int8_t fgIsTxAllowed);
 

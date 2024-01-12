@@ -1695,25 +1695,125 @@ void nicRxGetNoiseLevelAndLastRate(struct ADAPTER *prAdapter,
 }
 #endif /* fos_change end */
 
-void nicRxProcessPacketToHost(struct ADAPTER *prAdapter,
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+void nicRxEnqueuePendingQueue(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, struct SW_RFB *prSwRfb)
+{
+	if (!prAdapter || !prStaRec || !prSwRfb)
+		return;
+
+	DBGLOG_LIMITED(RX, TRACE,
+		"StaRecId[%u] BssId[%u] RxAllowed:%u prSwRfb:%p PktType:0x%02x\n",
+		prStaRec->ucIndex,
+		prStaRec->ucBssIndex,
+		prStaRec->fgIsRxAllowed,
+		prSwRfb,
+		GLUE_IS_PKT_FLAG_SET(prSwRfb->pvPacket));
+
+	RX_PENDING_INC_BSS_CNT(&prAdapter->rRxCtrl,
+		prStaRec->ucBssIndex);
+
+#if CFG_RFB_TRACK
+	RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb, RFB_TRACK_RX_PENDING);
+#endif /* CFG_RFB_TRACK */
+
+	KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_PENDING);
+	QUEUE_INSERT_TAIL(&prAdapter->rRxPendingQueue, prSwRfb);
+	KAL_RELEASE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_PENDING);
+}
+
+void nicRxDequeuePendingQueue(struct ADAPTER *prAdapter)
+{
+	struct QUE rSrcQ, rDstQ;
+	struct QUE *prSrcQ = &rSrcQ;
+	struct QUE *prDstQ = &rDstQ;
+	struct SW_RFB *prSwRfb;
+	struct STA_RECORD *prStaRec;
+
+	if (!prAdapter)
+		return;
+
+	if (QUEUE_IS_EMPTY(&prAdapter->rRxPendingQueue))
+		return;
+
+	QUEUE_INITIALIZE(prSrcQ);
+	QUEUE_INITIALIZE(prDstQ);
+
+	KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_PENDING);
+	QUEUE_MOVE_ALL(prSrcQ, &prAdapter->rRxPendingQueue);
+	KAL_RELEASE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_PENDING);
+
+	while (QUEUE_IS_NOT_EMPTY(prSrcQ)) {
+		QUEUE_REMOVE_HEAD(prSrcQ, prSwRfb, struct SW_RFB *);
+		if (prSwRfb == NULL)
+			break;
+
+		/*
+		 * If AP does not reply assoc resp,
+		 * AIS will disconnect and indirectly call this function,
+		 * so we need to drop it if prStaRec is not valid to
+		 * prevent SwRfb leakage.
+		 */
+		prStaRec = cnmGetStaRecByIndex(prAdapter,
+			prSwRfb->ucStaRecIdx);
+		if (!prStaRec) {
+			DBGLOG_LIMITED(RX, TRACE,
+				"StaRecId[%u] prStaRec NULL\n",
+				prSwRfb->ucStaRecIdx);
+			nicRxReturnRFB(prAdapter, prSwRfb);
+			continue;
+		}
+
+		DBGLOG_LIMITED(RX, TRACE,
+			"StaRecId[%u] BssId[%u] RxAllowed:%u prSwRfb:%p PktFlag:0x%02x\n",
+			prStaRec->ucIndex,
+			prStaRec->ucBssIndex,
+			prStaRec->fgIsRxAllowed,
+			prSwRfb,
+			GLUE_IS_PKT_FLAG_SET(prSwRfb->pvPacket));
+
+		/* Rx is not allowed, cannot dequeue the rx pkt */
+		if (!prStaRec->fgIsRxAllowed) {
+			QUEUE_INSERT_TAIL(prDstQ, prSwRfb);
+			continue;
+		}
+
+		RX_PENDING_DEC_BSS_CNT(&prAdapter->rRxCtrl,
+			prStaRec->ucBssIndex);
+
+		/* Rx is allowed, so indicate to host */
+		nicRxProcessPktWithoutReorder(prAdapter, prSwRfb);
+	}
+
+	if (QUEUE_IS_EMPTY(prDstQ))
+		return;
+
+	KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_PENDING);
+	QUEUE_CONCATENATE_QUEUES_HEAD(&prAdapter->rRxPendingQueue, prDstQ);
+	KAL_RELEASE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_PENDING);
+}
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
+
+uint32_t nicRxProcessPacketToHost(struct ADAPTER *prAdapter,
 	struct SW_RFB *prRetSwRfb)
 {
 	struct RX_CTRL *prRxCtrl;
 	struct STA_RECORD *prStaRec;
 	uint8_t ucBssIndex;
 	struct BSS_INFO *prBssInfo;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prStaRec = cnmGetStaRecByIndex(prAdapter,
 			prRetSwRfb->ucStaRecIdx);
 	if (!prStaRec)
-		return;
+		goto end;
 
 	/* store it in local variable to prevent timing issue */
 	ucBssIndex = prStaRec->ucBssIndex;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prBssInfo)
-		return;
+		goto end;
 
 #if ARP_MONITER_ENABLE
 	if (IS_BSS_INFO_IN_AIS(prBssInfo))
@@ -1727,11 +1827,23 @@ void nicRxProcessPacketToHost(struct ADAPTER *prAdapter,
 		GET_BOOT_SYSTIME(&prRxCtrl->u4LastRxTime[ucBssIndex]);
 
 	secCheckRxEapolPacketEncryption(prAdapter, prRetSwRfb, prStaRec);
+
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+	if (!prStaRec->fgIsRxAllowed) {
+		/* Rx is not Allowed to indicate to host */
+		u4Status = WLAN_STATUS_PENDING;
+		nicRxEnqueuePendingQueue(prAdapter, prStaRec, prRetSwRfb);
+	}
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
+
+end:
+	return u4Status;
 }
 
 void nicRxIndicatePackets(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfbListHead)
 {
+	uint32_t ret;
 	struct RX_CTRL *prRxCtrl;
 	struct SW_RFB *prRetSwRfb, *prNextSwRfb;
 
@@ -1752,7 +1864,8 @@ void nicRxIndicatePackets(struct ADAPTER *prAdapter,
 
 		switch (prRetSwRfb->eDst) {
 		case RX_PKT_DESTINATION_HOST:
-			nicRxProcessPacketToHost(prAdapter, prRetSwRfb);
+			ret = nicRxProcessPacketToHost(prAdapter,
+					prRetSwRfb);
 #if CFG_SUPPORT_WIFI_SYSDVT
 #if (CFG_SUPPORT_CONNAC2X == 1)
 			/* Not handle non-CONNAC2X case */
@@ -1766,7 +1879,9 @@ void nicRxIndicatePackets(struct ADAPTER *prAdapter,
 			}
 #endif
 #endif /* CFG_SUPPORT_WIFI_SYSDVT */
-			nicRxProcessPktWithoutReorder(prAdapter, prRetSwRfb);
+			if (ret == WLAN_STATUS_SUCCESS)
+				nicRxProcessPktWithoutReorder(prAdapter,
+					prRetSwRfb);
 			break;
 
 		case RX_PKT_DESTINATION_FORWARD:

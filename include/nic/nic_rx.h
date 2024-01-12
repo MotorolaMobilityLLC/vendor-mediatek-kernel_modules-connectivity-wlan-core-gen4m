@@ -578,6 +578,9 @@ enum ENUM_RFB_TRACK_STATUS {
 	RFB_TRACK_ADJUST_UNUSE,
 	RFB_TRACK_MLO,
 	RFB_TRACK_FW_DROP_SSN,
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+	RFB_TRACK_RX_PENDING,
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
 	RFB_TRACK_FAIL,
 	RFB_TRACK_STATUS_NUM
 };
@@ -1011,6 +1014,9 @@ struct RX_CTRL {
 #endif
 
 	int32_t ai4ReorderingCnt[MAX_BSSID_NUM];
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+	int32_t ai4RxPendingCnt[MAX_BSSID_NUM];
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
 #if CFG_RFB_TRACK
 	struct RFB_TRACK rRfbTrack[CFG_RX_MAX_PKT_NUM];
 	int32_t ai4RfbStatus[RFB_TRACK_STATUS_NUM];
@@ -1197,6 +1203,34 @@ struct ACTION_FRAME_SIZE_MAP {
 #define REORDERING_GET_BSS_CNT(prRxCtrl, ucBssIndex) \
 	(GLUE_GET_REF_CNT( \
 		(prRxCtrl)->ai4ReorderingCnt[(ucBssIndex)]))
+
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+#define RX_PENDING_INC_BSS_CNT(prRxCtrl, ucBssIndex) \
+	do { \
+		if (ucBssIndex >= MAX_BSSID_NUM) { \
+			DBGLOG(QM, INFO, "Invalid ucBssIndex:%u\n", \
+				ucBssIndex); \
+			break; \
+		} \
+		GLUE_INC_REF_CNT( \
+			(prRxCtrl)->ai4RxPendingCnt[ucBssIndex]); \
+	} while (0)
+
+#define RX_PENDING_DEC_BSS_CNT(prRxCtrl, ucBssIndex) \
+	do { \
+		if (ucBssIndex >= MAX_BSSID_NUM) { \
+			DBGLOG(QM, INFO, "Invalid ucBssIndex:%u\n", \
+				ucBssIndex); \
+			break; \
+		} \
+		GLUE_DEC_REF_CNT( \
+			(prRxCtrl)->ai4RxPendingCnt[ucBssIndex]); \
+	} while (0)
+
+#define RX_PENDING_GET_BSS_CNT(prRxCtrl, ucBssIndex) \
+	(GLUE_GET_REF_CNT( \
+		(prRxCtrl)->ai4RxPendingCnt[(ucBssIndex)]))
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
 
 #if CFG_RFB_TRACK
 #define RFB_TRACK_INC_CNT(prRxCtrl, eCounter) \
@@ -1654,6 +1688,13 @@ void nicRxPerfIndProcessRXV(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb,
 	uint8_t ucBssIndex);
 #endif
+
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+void nicRxEnqueuePendingQueue(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, struct SW_RFB *prSwRfb);
+
+void nicRxDequeuePendingQueue(struct ADAPTER *prAdapter);
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
 
 void nicRxIndicatePackets(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfbListHead);

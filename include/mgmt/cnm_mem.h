@@ -642,11 +642,6 @@ struct STA_RECORD {
 	uint64_t u8TotalRxPkts;
 	uint64_t u8GetDataRateTime;
 #endif
-#if 1
-	/*----------------------------------------------------------------------
-	 * To be removed, this is to make que_mgt compilation success only
-	 *----------------------------------------------------------------------
-	 */
 	/* When this STA_REC is in use, set to TRUE. */
 	u_int8_t fgIsValid;
 
@@ -668,10 +663,13 @@ struct STA_RECORD {
 	 */
 	struct QUE *aprTargetQueue[NUM_OF_PER_STA_TX_QUEUES];
 
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+	/* When the STA is ready to indicate packet to host */
+	u_int8_t fgIsRxAllowed;
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
+
 	/* Reorder Parameter reference table */
 	struct RX_BA_ENTRY *aprRxReorderParamRefTbl[CFG_RX_MAX_BA_TID_NUM];
-
-#endif
 
 #if CFG_SUPPORT_802_11V_TIMING_MEASUREMENT
 	struct TIMINGMSMT_PARAM rWNMTimingMsmt;

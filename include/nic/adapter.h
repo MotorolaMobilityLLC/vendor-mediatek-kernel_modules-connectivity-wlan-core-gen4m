@@ -1965,6 +1965,11 @@ struct ADAPTER {
 	struct QUE rTxDataDoneQueue;
 #endif
 
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+	/* Rx queue that queue rx packets before ASSOC */
+	struct QUE rRxPendingQueue;
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
+
 	struct GLUE_INFO *prGlueInfo;
 
 	uint8_t ucCmdSeqNum;
