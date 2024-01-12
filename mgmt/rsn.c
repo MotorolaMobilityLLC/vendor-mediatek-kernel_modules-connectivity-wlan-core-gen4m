@@ -1403,6 +1403,13 @@ u_int8_t rsnPerformPolicySelection(
 	 *  the given BSS, we fail to perform RSNA policy selection.
 	 */
 	/* Attempt to find any overlapping supported AKM suite. */
+	if (eAuthMode ==  AUTH_MODE_WPA2_FT_PSK &&
+	    rsnSearchAKMSuite(prAdapter, RSN_AKM_SUITE_FT_PSK, &j, ucBssIndex))
+		u4AkmSuite = RSN_AKM_SUITE_FT_PSK;
+	else if (eAuthMode == AUTH_MODE_WPA2_FT &&
+	  rsnSearchAKMSuite(prAdapter, RSN_AKM_SUITE_FT_802_1X, &j, ucBssIndex))
+		u4AkmSuite = RSN_AKM_SUITE_FT_802_1X;
+	else
 #if CFG_SUPPORT_802_11W
 	if (i != 0)
 		for (i = (prBssRsnInfo->u4AuthKeyMgtSuiteCount - 1); i >= 0;
