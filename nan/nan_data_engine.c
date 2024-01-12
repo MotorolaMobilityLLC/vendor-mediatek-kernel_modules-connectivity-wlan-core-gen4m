@@ -4394,6 +4394,27 @@ nanNdpSendDataPathResponse(
 	else
 		prNDL = NULL;
 
+#ifdef NAN_UNUSED
+	pucLocalAddr = prAdapter->rDataPathInfo.aucLocalNMIAddr;
+	if (pucDestMacAddr)
+		pucPeerAddr = pucDestMacAddr;
+	else if (prNDL)
+		pucPeerAddr = prNDL->aucPeerMacAddr;
+	else {
+		DBGLOG(NAN, ERROR, "pucDestMacAddr error\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+	prStaRec = nanGetDataPathStaRec(prAdapter, prNDL, prNDP,
+					pucLocalAddr, pucPeerAddr, FALSE);
+	/* Copy from retry MSDU */
+	if (prNDP) {
+		prMsduInfo = nanCopyFromRetryMsdu(prAdapter,
+			prNDP->prRetryMsduInfo);
+		if (prMsduInfo)
+			goto send;
+	}
+#endif
+
 	u2EstimatedFrameLen =
 		OFFSET_OF(struct _NAN_ACTION_FRAME_T, aucInfoContent);
 
