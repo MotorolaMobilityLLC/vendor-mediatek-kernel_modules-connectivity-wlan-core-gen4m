@@ -3887,14 +3887,19 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 /* clear all ESS scan result */
 void scanInitEssResult(struct ADAPTER *prAdapter)
 {
-	prAdapter->rWlanInfo.u4ScanResultEssNum = 0;
-	prAdapter->rWlanInfo.u4ScanDbgTimes1 = 0;
-	prAdapter->rWlanInfo.u4ScanDbgTimes2 = 0;
-	prAdapter->rWlanInfo.u4ScanDbgTimes3 = 0;
-	prAdapter->rWlanInfo.u4ScanDbgTimes4 = 0;
-	kalMemZero(prAdapter->rWlanInfo.arScanResultEss,
-		sizeof(prAdapter->rWlanInfo.arScanResultEss));
+	struct WLAN_INFO *prWlanInfo;
+
+	prWlanInfo = &prAdapter->rWlanInfo;
+
+	prWlanInfo->u4ScanResultEssNum = 0;
+	prWlanInfo->u4ScanDbgTimes1 = 0;
+	prWlanInfo->u4ScanDbgTimes2 = 0;
+	prWlanInfo->u4ScanDbgTimes3 = 0;
+	prWlanInfo->u4ScanDbgTimes4 = 0;
+	kalMemZero(prWlanInfo->arScanResultEss,
+		sizeof(prWlanInfo->arScanResultEss));
 }
+
 /* print all ESS into log system once scan done
  * it is useful to log that, otherwise, we have no information to
  * identify if hardware has seen a specific AP,
@@ -3902,9 +3907,10 @@ void scanInitEssResult(struct ADAPTER *prAdapter)
  */
 void scanLogEssResult(struct ADAPTER *prAdapter)
 {
-	struct ESS_SCAN_RESULT_T *prEssResult
-		= &prAdapter->rWlanInfo.arScanResultEss[0];
-	uint32_t u4ResultNum = prAdapter->rWlanInfo.u4ScanResultEssNum;
+	struct WLAN_INFO *prWlanInfo = &prAdapter->rWlanInfo;
+	struct ESS_SCAN_RESULT_T *prEssResult =
+		prWlanInfo->arScanResultEss;
+	uint32_t u4ResultNum = prWlanInfo->u4ScanResultEssNum;
 	uint32_t u4Index = 0;
 	char *strbuf = NULL, *pos = NULL, *end = NULL;
 	int slen = 0;
@@ -3912,10 +3918,10 @@ void scanLogEssResult(struct ADAPTER *prAdapter)
 
 	if (u4ResultNum == 0) {
 		scanlog_dbg(LOG_SCAN_DONE_D2K, INFO, "0 Bss is found, %d, %d, %d, %d\n",
-			prAdapter->rWlanInfo.u4ScanDbgTimes1,
-			prAdapter->rWlanInfo.u4ScanDbgTimes2,
-			prAdapter->rWlanInfo.u4ScanDbgTimes3,
-			prAdapter->rWlanInfo.u4ScanDbgTimes4);
+			prWlanInfo->u4ScanDbgTimes1,
+			prWlanInfo->u4ScanDbgTimes2,
+			prWlanInfo->u4ScanDbgTimes3,
+			prWlanInfo->u4ScanDbgTimes4);
 		return;
 	}
 
@@ -3942,7 +3948,7 @@ void scanLogEssResult(struct ADAPTER *prAdapter)
 			if (first) {
 				scanlog_dbg(LOG_SCAN_DONE_D2K, INFO,
 					"Total:%u/%u %s", u4ResultNum,
-					prAdapter->rWlanInfo.u4ScanResultNum,
+					prWlanInfo->u4ScanResultNum,
 					strbuf);
 				first = FALSE;
 			} else {
@@ -3958,7 +3964,7 @@ void scanLogEssResult(struct ADAPTER *prAdapter)
 		if (first)
 			scanlog_dbg(LOG_SCAN_DONE_D2K, INFO,
 				"Total:%u/%u %s", u4ResultNum,
-				prAdapter->rWlanInfo.u4ScanResultNum, strbuf);
+				prWlanInfo->u4ScanResultNum, strbuf);
 		else
 			scanlog_dbg(LOG_SCAN_DONE_D2K, INFO, "%s", strbuf);
 	}
@@ -3972,15 +3978,16 @@ void scanLogEssResult(struct ADAPTER *prAdapter)
 static void scanAddEssResult(struct ADAPTER *prAdapter,
 			     struct BSS_DESC *prBssDesc)
 {
-	struct ESS_SCAN_RESULT_T *prEssResult
-		= &prAdapter->rWlanInfo.arScanResultEss[0];
+	struct WLAN_INFO *prWlanInfo = &prAdapter->rWlanInfo;
+	struct ESS_SCAN_RESULT_T *prEssResult =
+		prWlanInfo->arScanResultEss;
 	uint32_t u4Index = 0;
 
 	if (prBssDesc->fgIsHiddenSSID)
 		return;
-	if (prAdapter->rWlanInfo.u4ScanResultEssNum >= CFG_MAX_NUM_BSS_LIST)
+	if (prWlanInfo->u4ScanResultEssNum >= CFG_MAX_NUM_BSS_LIST)
 		return;
-	for (; u4Index < prAdapter->rWlanInfo.u4ScanResultEssNum; u4Index++) {
+	for (; u4Index < prWlanInfo->u4ScanResultEssNum; u4Index++) {
 		if (EQUAL_SSID(prEssResult[u4Index].aucSSID,
 			(uint8_t)prEssResult[u4Index].u2SSIDLen,
 			prBssDesc->aucSSID, prBssDesc->ucSSIDLen))
@@ -3990,7 +3997,7 @@ static void scanAddEssResult(struct ADAPTER *prAdapter,
 	COPY_SSID(prEssResult[u4Index].aucSSID, prEssResult[u4Index].u2SSIDLen,
 		prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
 	COPY_MAC_ADDR(prEssResult[u4Index].aucBSSID, prBssDesc->aucBSSID);
-	prAdapter->rWlanInfo.u4ScanResultEssNum++;
+	prWlanInfo->u4ScanResultEssNum++;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4180,6 +4187,7 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 	struct SLT_INFO *prSltInfo = (struct SLT_INFO *) NULL;
 #endif
 	uint32_t u4Idx = 0;
+	struct WLAN_INFO *prWlanInfo;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -4216,9 +4224,11 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 	if (prSwRfb->fgIsMC)
 		return WLAN_STATUS_SUCCESS;
 
+	prWlanInfo = &prAdapter->rWlanInfo;
+
 	/* 4 <1> Parse and add into BSS_DESC_T */
 	prBssDesc = scanAddToBssDesc(prAdapter, prSwRfb);
-	prAdapter->rWlanInfo.u4ScanDbgTimes1++;
+	prWlanInfo->u4ScanDbgTimes1++;
 
 	if (prBssDesc) {
 		/* Full2Partial: save channel info for later scan */
@@ -4405,13 +4415,13 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 			(uint16_t) (OFFSET_OF(struct WLAN_BEACON_FRAME_BODY,
 				aucInfoElem[0])));
 
-		prAdapter->rWlanInfo.u4ScanDbgTimes2++;
+		prWlanInfo->u4ScanDbgTimes2++;
 
 		/* 4 <3> Send SW_RFB_T to HIF when we perform SCAN for HOST */
 		if (prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE
 			|| prBssDesc->eBSSType == BSS_TYPE_IBSS) {
 			/* for AIS, send to host */
-			prAdapter->rWlanInfo.u4ScanDbgTimes3++;
+			prWlanInfo->u4ScanDbgTimes3++;
 			if (prScanInfo->eCurrentState == SCAN_STATE_SCANNING
 				|| prScanInfo->fgSchedScanning) {
 				u_int8_t fgAddToScanResult = FALSE;
@@ -4419,7 +4429,7 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 				fgAddToScanResult
 					= scanCheckBssIsLegal(prAdapter,
 						prBssDesc);
-				prAdapter->rWlanInfo.u4ScanDbgTimes4++;
+				prWlanInfo->u4ScanDbgTimes4++;
 
 				if (fgAddToScanResult == TRUE) {
 					rStatus = scanAddScanResult(prAdapter,

@@ -350,8 +350,7 @@ u_int8_t wapiPerformPolicySelection(struct ADAPTER *prAdapter,
 	 */
 	prWlanInfo = &prAdapter->rWlanInfo;
 
-	prConnSettings =
-		aisGetConnSettings(prAdapter, ucBssIndex);
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
 	if (prBss->fgIEWAPI) {
 		prBssWapiInfo = &prBss->rIEWAPI;
