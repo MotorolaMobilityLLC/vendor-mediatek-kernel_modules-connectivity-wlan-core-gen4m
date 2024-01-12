@@ -944,12 +944,17 @@ void kalUpdateMACAddress(struct GLUE_INFO *prGlueInfo,
 void kalQueryTxChksumOffloadParam(void *pvPacket,
 				  uint8_t *pucFlag)
 {
+#if (CFG_FORCE_HW_CHECKSUM == 0)
 	struct sk_buff *skb = (struct sk_buff *)pvPacket;
+#endif
 	uint8_t ucFlag = 0;
 
 	ASSERT(pvPacket);
 	ASSERT(pucFlag);
 
+#if (CFG_FORCE_HW_CHECKSUM == 1)
+	ucFlag |= TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN;
+#else
 	if (skb->ip_summed == CHECKSUM_PARTIAL) {
 #if DBG
 		/* Kevin: do double check, we can remove this part in Normal
@@ -963,6 +968,7 @@ void kalQueryTxChksumOffloadParam(void *pvPacket,
 #endif
 			ucFlag |= (TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN);
 	}
+#endif
 
 	*pucFlag = ucFlag;
 }
@@ -4048,7 +4054,7 @@ kalIPv4FrameClassifier(struct GLUE_INFO *prGlueInfo,
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 #endif /* Automation */
 
-#ifdef CFG_IP_FRAG_DISABLE_HW_CHECKSUM
+#if (CFG_IP_FRAG_DISABLE_HW_CHECKSUM == 1)
 	if ((pucIpHdr[IPV4_HDR_IP_FRAG_OFFSET] & IPV4_HDR_IP_FLAGS_MF_MASK) ||
 	    (pucIpHdr[IPV4_HDR_IP_FRAG_OFFSET] & IPV4_HDR_IP_FRAG_PART1_MASK) ||
 	    (pucIpHdr[IPV4_HDR_IP_FRAG_OFFSET+1])) {
