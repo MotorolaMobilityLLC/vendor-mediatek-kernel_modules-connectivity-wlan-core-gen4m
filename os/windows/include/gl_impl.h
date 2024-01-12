@@ -149,5 +149,11 @@ int32_t __KAL_INLINE__ kalGetFwFlavor(uint8_t *flavor)
 /*----------------------------------------------------------------------------*/
 /* RX                                                                         */
 /*----------------------------------------------------------------------------*/
+#ifdef CFG_REMIND_IMPLEMENT
+#define kalSetSerIntEvent(_pr) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr)
+#else
+void kalSetSerIntEvent(struct GLUE_INFO *pr);
+#endif
 
 #endif /* _GL_IMPL_H */
