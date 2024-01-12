@@ -9926,6 +9926,7 @@ uint32_t rlmTxPwrEnvMaxTxPwrCalcByPsd(
  *        It will set a flag var(pfgIsChange) to record whether the TxPower
  *        limit have been change
  *
+ * \param[in] prAdapter : Pointer of adapter
  * \param[in] picTarget : Pointer of new TxPower limit
  * \param[in] picCompare : Pointer of old TxPower limit
  * \param[in] ucNum : Indicate the quantity to update
@@ -9936,16 +9937,21 @@ uint32_t rlmTxPwrEnvMaxTxPwrCalcByPsd(
  */
 /*----------------------------------------------------------------------------*/
 void rlmTxPwrEnvMaxPwrUpdateArbi(
+	struct ADAPTER *prAdapter,
 	int8_t *picTarget,
 	int8_t *picCompare,
 	uint8_t ucNum,
 	uint8_t *pfgIsChange)
 {
 	enum TX_PWR_ENV_MAX_TXPWR_BW_TYPE eBwType;
+	int8_t icMinPwrLmt = 0;
 
 	/* Sanity check for null pointer */
-	if (!picTarget || !picCompare || !pfgIsChange)
+	if (!prAdapter || !picTarget || !picCompare || !pfgIsChange)
 		return;
+
+	/* Align IEEE spec, to avoid AP send power limit info too low */
+	icMinPwrLmt = prAdapter->rWifiVar.icTxPwrEnvLmtMin;
 
 	/* Sanity check for quantity to update */
 	if (ucNum > TX_PWR_ENV_MAX_TXPWR_BW_NUM)
@@ -9958,10 +9964,25 @@ void rlmTxPwrEnvMaxPwrUpdateArbi(
 		}
 
 		/* Sanity check TxPower boundary */
-		if (picTarget[eBwType] > MAX_TX_POWER)
+		if (picTarget[eBwType] > MAX_TX_POWER) {
+			DBGLOG(RLM, INFO,
+			"TPE PwrLmt too big, use default[%d]Lmt[%d]BW[%d]\n",
+			MAX_TX_POWER,
+			picTarget[eBwType],
+			eBwType);
+
 			picTarget[eBwType] = MAX_TX_POWER;
-		else if (picTarget[eBwType] < MIN_TX_POWER)
-			picTarget[eBwType] = MIN_TX_POWER;
+		}
+
+		else if (picTarget[eBwType] < icMinPwrLmt) {
+			DBGLOG(RLM, INFO,
+			"TPE PwrLmt too low, use default[%d]Lmt[%d]BW[%d]\n",
+			icMinPwrLmt,
+			picTarget[eBwType],
+			eBwType);
+
+			picTarget[eBwType] = icMinPwrLmt;
+		}
 	}
 }
 /*----------------------------------------------------------------------------*/
@@ -10139,6 +10160,7 @@ uint32_t rlmTxPwrEnvMaxPwrUpdate(
 
 		/* Set minimum TxPower limit */
 		rlmTxPwrEnvMaxPwrUpdateArbi(
+			prAdapter,
 			prBssDesc->aicTxPwrEnvMaxTxPwr,
 			aicTxPwrEnvMaxTxPwr,
 			prBssDesc->ucTxPwrEnvPwrLmtNum,
