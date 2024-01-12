@@ -822,7 +822,8 @@ int glUsbSubmitUrb(struct GL_HIF_INFO *prHifInfo, struct urb *urb,
 	unsigned long flags;
 	uint32_t ret = 0;
 
-	if (type == SUBMIT_TYPE_RX_EVENT || type == SUBMIT_TYPE_RX_DATA)
+	if (type == SUBMIT_TYPE_RX_EVENT || type == SUBMIT_TYPE_RX_DATA ||
+	    type == SUBMIT_TYPE_RX_WDT)
 		return usb_submit_urb(urb, GFP_ATOMIC);
 
 	spin_lock_irqsave(&prHifInfo->rStateLock, flags);
@@ -879,6 +880,11 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 #if CFG_USB_TX_AGG
 	uint8_t ucTc;
 #endif
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 
 	prHifInfo->eEventEpType = USB_EVENT_TYPE;
 	prHifInfo->fgEventEpDetected = FALSE;
@@ -919,6 +925,8 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	spin_lock_init(&prHifInfo->rTxDataQLock);
 	spin_lock_init(&prHifInfo->rRxEventQLock);
 	spin_lock_init(&prHifInfo->rRxDataQLock);
+	if (prBusInfo->fgIsSupportWdtEp)
+		spin_lock_init(&prHifInfo->rRxWdtQLock);
 	spin_lock_init(&prHifInfo->rStateLock);
 
 	mutex_init(&prHifInfo->vendor_req_sem);
@@ -940,6 +948,8 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 #endif
 	init_usb_anchor(&prHifInfo->rRxDataAnchor);
 	init_usb_anchor(&prHifInfo->rRxEventAnchor);
+	if (prBusInfo->fgIsSupportWdtEp)
+		init_usb_anchor(&prHifInfo->rRxWdtAnchor);
 
 	/* TX CMD */
 	prHifInfo->prTxCmdReqHead = glUsbInitQ(prHifInfo, &prHifInfo->rTxCmdFreeQ, USB_REQ_TX_CMD_CNT);
@@ -1076,8 +1086,31 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 		++i;
 	}
 
+	/* RX WDT interrupt */
+	if (prBusInfo->fgIsSupportWdtEp) {
+		prHifInfo->prRxWdtReqHead = glUsbInitQ(prHifInfo,
+						       &prHifInfo->rRxWdtFreeQ,
+						       USB_REQ_RX_WDT_CNT);
+		i = 0;
+		list_for_each_entry_safe(prUsbReq, prUsbReqNext,
+					 &prHifInfo->rRxWdtFreeQ, list) {
+			prUsbReq->prBufCtrl = &prHifInfo->rRxWdtBufCtrl[i];
+			prUsbReq->prBufCtrl->pucBuf = kmalloc(
+				USB_RX_WDT_BUF_SIZE, GFP_ATOMIC);
+			if (prUsbReq->prBufCtrl->pucBuf == NULL) {
+				DBGLOG(HAL, ERROR, "kmalloc() reports error\n");
+				goto error;
+			}
+			prUsbReq->prBufCtrl->u4BufSize = USB_RX_WDT_BUF_SIZE;
+			prUsbReq->prBufCtrl->u4ReadSize = 0;
+			++i;
+		}
+	}
+
 	glUsbInitQ(prHifInfo, &prHifInfo->rRxEventCompleteQ, 0);
 	glUsbInitQ(prHifInfo, &prHifInfo->rRxDataCompleteQ, 0);
+	if (prBusInfo->fgIsSupportWdtEp)
+		glUsbInitQ(prHifInfo, &prHifInfo->rRxWdtCompleteQ, 0);
 
 	glUsbSetState(prHifInfo, USB_STATE_LINK_UP);
 	prGlueInfo->u4InfType = MT_DEV_INF_USB;
@@ -1108,6 +1141,11 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 #endif
 	struct USB_REQ *prUsbReq, *prUsbReqNext;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 
 #if CFG_USB_TX_AGG
 	for (ucTc = 0; ucTc < USB_TC_NUM; ++ucTc) {
@@ -1185,6 +1223,14 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 		usb_free_urb(prUsbReq->prUrb);
 	}
 
+	if (prBusInfo->fgIsSupportWdtEp) {
+		list_for_each_entry_safe(prUsbReq, prUsbReqNext,
+					 &prHifInfo->rRxWdtFreeQ, list) {
+			kfree(prUsbReq->prBufCtrl->pucBuf);
+			usb_free_urb(prUsbReq->prUrb);
+		}
+	}
+
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rRxDataCompleteQ, list) {
 		kfree(prUsbReq->prBufCtrl->pucBuf);
 		usb_free_urb(prUsbReq->prUrb);
@@ -1195,13 +1241,22 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 		usb_free_urb(prUsbReq->prUrb);
 	}
 
+	if (prBusInfo->fgIsSupportWdtEp) {
+		list_for_each_entry_safe(prUsbReq, prUsbReqNext,
+					 &prHifInfo->rRxWdtCompleteQ, list) {
+			kfree(prUsbReq->prBufCtrl->pucBuf);
+			usb_free_urb(prUsbReq->prUrb);
+		}
+	}
+
 	kfree(prHifInfo->prTxCmdReqHead);
 	kfree(prHifInfo->arTxDataFfaReqHead);
 	for (ucTc = 0; ucTc < USB_TC_NUM; ++ucTc)
 		kfree(prHifInfo->arTxDataReqHead[ucTc]);
 	kfree(prHifInfo->prRxEventReqHead);
 	kfree(prHifInfo->prRxDataReqHead);
-
+	if (prBusInfo->fgIsSupportWdtEp)
+		kfree(prHifInfo->prRxWdtReqHead);
 	mutex_destroy(&prHifInfo->vendor_req_sem);
 	kfree(prHifInfo->vendor_req_buf);
 	prHifInfo->vendor_req_buf = NULL;

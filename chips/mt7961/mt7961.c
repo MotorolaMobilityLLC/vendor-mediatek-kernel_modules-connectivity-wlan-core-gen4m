@@ -1274,6 +1274,7 @@ struct BUS_INFO mt7961_bus_info = {
 	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT_CONNAC2,
 	.asicUsbEventEpDetected = mt7961Connac2xUsbEventEpDetected,
 	.asicUsbRxByteCount = mt7961Connac2xUsbRxByteCount,
+	.fgIsSupportWdtEp = TRUE,
 	.DmaShdlInit = mt7961DmashdlInit,
 	.prDmashdlCfg = &rMT7961DmashdlCfg,
 	.updateTxRingMaxQuota = mt7961UpdateDmashdlQuota,

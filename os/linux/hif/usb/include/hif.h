@@ -124,6 +124,7 @@ enum ENUM_USB_END_POINT {
 #define USB_EVENT_TYPE                  (EVENT_EP_TYPE_UNKONW)
 
 #define USB_CMD_EP_OUT                  (USB_DATA_BULK_OUT_EP8)
+#define USB_WDT_EP_IN                   (0x86)
 #define USB_EVENT_EP_IN                 (0x85)
 #define USB_DATA_EP_IN                  (0x84)
 
@@ -147,6 +148,7 @@ enum ENUM_USB_END_POINT {
 
 #define USB_REQ_TX_CMD_CNT              (CFG_TX_MAX_CMD_PKT_NUM)
 #define USB_REQ_RX_EVENT_CNT            (1)
+#define USB_REQ_RX_WDT_CNT              (1)
 #ifdef CFG_USB_REQ_RX_DATA_CNT
 #define USB_REQ_RX_DATA_CNT             (CFG_USB_REQ_RX_DATA_CNT)	/* platform specific USB_REQ_RX_DATA_CNT */
 #else
@@ -165,6 +167,7 @@ enum ENUM_USB_END_POINT {
 					 NIC_TX_MAX_SIZE_PER_FRAME + LEN_USB_UDMA_TX_TERMINATOR)
 #endif
 #define USB_RX_EVENT_BUF_SIZE           (CFG_RX_MAX_PKT_SIZE + 3 + LEN_USB_RX_PADDING_CSO + 4)
+#define USB_RX_WDT_BUF_SIZE             (1)
 #define USB_RX_DATA_BUF_SIZE            (CFG_RX_MAX_PKT_SIZE + \
 					 min(USB_RX_AGGREGTAION_LIMIT * 1024, \
 					     (USB_RX_AGGREGTAION_PKT_LIMIT * \
@@ -175,6 +178,7 @@ enum ENUM_USB_END_POINT {
 
 #define USB_RX_EVENT_RFB_RSV_CNT        (0)
 #define USB_RX_DATA_RFB_RSV_CNT         (4)
+#define USB_RX_WDT_RFB_RSV_CNT          (0)
 
 #define DEVICE_VENDOR_REQUEST_IN        (0xc0)
 #define DEVICE_VENDOR_REQUEST_IN_CONNAC2       (0xdF)
@@ -234,7 +238,8 @@ enum usb_submit_type {
 	SUBMIT_TYPE_TX_CMD,
 	SUBMIT_TYPE_TX_DATA,
 	SUBMIT_TYPE_RX_EVENT,
-	SUBMIT_TYPE_RX_DATA
+	SUBMIT_TYPE_RX_DATA,
+	SUBMIT_TYPE_RX_WDT
 };
 
 enum EVENT_EP_TYPE {
@@ -267,6 +272,7 @@ struct GL_HIF_INFO {
 	spinlock_t rTxCmdQLock;
 	spinlock_t rRxEventQLock;
 	spinlock_t rRxDataQLock;
+	spinlock_t rRxWdtQLock;
 	spinlock_t rStateLock;
 
 	void *prTxCmdReqHead;
@@ -274,6 +280,7 @@ struct GL_HIF_INFO {
 	void *arTxDataReqHead[USB_TC_NUM];
 	void *prRxEventReqHead;
 	void *prRxDataReqHead;
+	void *prRxWdtReqHead;
 	struct list_head rTxCmdFreeQ;
 	spinlock_t rTxCmdFreeQLock;
 	struct list_head rTxCmdSendingQ;
@@ -300,6 +307,9 @@ struct GL_HIF_INFO {
 	/*spinlock_t rRxDataCompleteQLock;*/
 	struct list_head rTxCmdCompleteQ;
 	struct list_head rTxDataCompleteQ;
+	struct list_head rRxWdtFreeQ;
+	struct usb_anchor rRxWdtAnchor;
+	struct list_head rRxWdtCompleteQ;
 
 	struct BUF_CTRL rTxCmdBufCtrl[USB_REQ_TX_CMD_CNT];
 	struct BUF_CTRL rTxDataFfaBufCtrl[USB_REQ_TX_DATA_FFA_CNT];
@@ -310,6 +320,7 @@ struct GL_HIF_INFO {
 #endif
 	struct BUF_CTRL rRxEventBufCtrl[USB_REQ_RX_EVENT_CNT];
 	struct BUF_CTRL rRxDataBufCtrl[USB_REQ_RX_DATA_CNT];
+	struct BUF_CTRL rRxWdtBufCtrl[USB_REQ_RX_WDT_CNT];
 
 	struct mutex vendor_req_sem;
 	void *vendor_req_buf;
@@ -340,6 +351,9 @@ struct BUS_INFO {
 	uint32_t u4UdmaTxTimeout; /* UDMA Tx time out limit, unit: us */
 	uint32_t u4SuspendVer;
 	struct DMASHDL_CFG *prDmashdlCfg;
+	/* Is support USB Interrupt IN Endpoint for WDT? */
+	u_int8_t fgIsSupportWdtEp;
+
 	u_int8_t (*asicUsbSuspend)(
 		IN struct ADAPTER *prAdapter,
 		IN struct GLUE_INFO *prGlueInfo);
@@ -439,10 +453,16 @@ uint32_t halRxUSBEnqueueRFB(
 	IN struct list_head *prCompleteQ);
 uint32_t halRxUSBReceiveEvent(IN struct ADAPTER *prAdapter, IN u_int8_t fgFillUrb);
 void halRxUSBReceiveEventComplete(struct urb *urb);
+uint32_t halRxUSBReceiveWdt(IN struct ADAPTER *prAdapter);
+void halRxUSBReceiveWdtComplete(struct urb *urb);
 uint32_t halRxUSBReceiveData(IN struct ADAPTER *prAdapter);
 void halRxUSBReceiveDataComplete(struct urb *urb);
 void halRxUSBProcessEventDataComplete(IN struct ADAPTER *prAdapter,
 	struct list_head *prCompleteQ, struct list_head *prFreeQ, uint32_t u4MinRfbCnt);
+void halRxUSBProcessWdtComplete(IN struct ADAPTER *prAdapter,
+				struct list_head *prCompleteQ,
+				struct list_head *prFreeQ,
+				uint32_t u4MinRfbCnt);
 
 void halUSBPreSuspendCmd(IN struct ADAPTER *prAdapter);
 void halUSBPreResumeCmd(IN struct ADAPTER *prAdapter);
