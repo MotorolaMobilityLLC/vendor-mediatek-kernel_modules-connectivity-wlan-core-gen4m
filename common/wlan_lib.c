@@ -2660,7 +2660,12 @@ void wlanClearDataQueue(IN struct ADAPTER *prAdapter)
 		/* <2> Return sk buffer */
 		for (i = 0; i < BSS_DEFAULT_NUM; i++) {
 			for (j = 0; j < TX_PORT_NUM; j++) {
+				if (!QUEUE_GET_HEAD(prDataPort[i][j]))
+					continue;
 				nicTxReleaseMsduResource(prAdapter,
+					(struct MSDU_INFO *)
+					QUEUE_GET_HEAD(prDataPort[i][j]));
+				nicTxFreeMsduInfoPacket(prAdapter,
 					(struct MSDU_INFO *)
 					QUEUE_GET_HEAD(prDataPort[i][j]));
 				nicTxReturnMsduInfo(prAdapter,
