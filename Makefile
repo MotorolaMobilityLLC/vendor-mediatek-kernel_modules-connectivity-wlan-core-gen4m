@@ -336,6 +336,7 @@ else
     ccflags-y += -DCFG_SUPPORT_TWT=0
     ccflags-y += -DCFG_TWT_SMART_STA=0
     ccflags-y += -DCFG_SUPPORT_BTWT=0
+    ccflags-y += -DCFG_SUPPORT_802_11BE_ML_TWT=0
 endif
 
 ifneq ($(CONFIG_NUM_OF_WFDMA_TX_RING),)
