@@ -4809,48 +4809,29 @@ void nicEventUpdateNoaParams(struct ADAPTER *prAdapter,
 void nicEventStaAgingTimeout(struct ADAPTER *prAdapter,
 			     struct WIFI_EVENT *prEvent)
 {
-	if (prAdapter->fgDisStaAgingTimeoutDetection == FALSE) {
-		struct EVENT_STA_AGING_TIMEOUT *prEventStaAgingTimeout;
-		struct STA_RECORD *prStaRec;
-		struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
+	struct EVENT_STA_AGING_TIMEOUT *prEventStaAgingTimeout;
+	struct STA_RECORD *prStaRec;
 
-		prEventStaAgingTimeout = (struct EVENT_STA_AGING_TIMEOUT *)
-					 (prEvent->aucBuffer);
-		prStaRec = cnmGetStaRecByIndex(prAdapter,
-			prEventStaAgingTimeout->ucStaRecIdx);
-		if (prStaRec == NULL)
-			return;
-
-		DBGLOG(NIC, INFO, "EVENT_ID_STA_AGING_TIMEOUT: STA[%u] "
-		       MACSTR "\n",
-		       prEventStaAgingTimeout->ucStaRecIdx,
-		       MAC2STR(prStaRec->aucMacAddr));
-
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-						  prStaRec->ucBssIndex);
-		if (!prBssInfo) {
-			DBGLOG(RSN, ERROR, "prBssInfo is null\n");
-			return;
-		}
-
-		bssRemoveClient(prAdapter, prBssInfo, prStaRec);
-
-		if (prAdapter->fgIsP2PRegistered) {
-			p2pFuncDisconnect(prAdapter, prBssInfo, prStaRec, FALSE,
-				REASON_CODE_DISASSOC_INACTIVITY, TRUE);
-		}
-
-	} else {
-		struct EVENT_STA_AGING_TIMEOUT *prEventStaAgingTimeout;
-
-		prEventStaAgingTimeout = (struct EVENT_STA_AGING_TIMEOUT *)
-					 (prEvent->aucBuffer);
-
+	if (prAdapter->fgDisStaAgingTimeoutDetection ||
+	    prAdapter->fgIsP2PRegistered == FALSE) {
 		DBGLOG(NIC, INFO,
-			"Disable EVENT_ID_STA_AGING_TIMEOUT: STA[%u]\n",
-		    prEventStaAgingTimeout->ucStaRecIdx);
+			"fgDisStaAgingTimeoutDetection=%d fgIsP2PRegistered=%d\n",
+			prAdapter->fgDisStaAgingTimeoutDetection,
+			prAdapter->fgIsP2PRegistered);
+		return;
 	}
-	/* gDisStaAgingTimeoutDetection */
+
+	prEventStaAgingTimeout = (struct EVENT_STA_AGING_TIMEOUT *)
+		prEvent->aucBuffer;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter,
+				       prEventStaAgingTimeout->ucStaRecIdx);
+	if (prStaRec == NULL) {
+		DBGLOG(NIC, ERROR, "prStaRec is null\n");
+		return;
+	}
+
+	p2pRoleFsmRunEventAgingTimeout(prAdapter, prStaRec);
 }
 
 void nicEventApObssStatus(struct ADAPTER *prAdapter,

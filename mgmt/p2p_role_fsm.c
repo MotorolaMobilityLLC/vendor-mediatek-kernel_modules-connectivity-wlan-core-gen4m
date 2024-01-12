@@ -1212,60 +1212,181 @@ void p2pRoleFsmRunEventBeaconTimeout(struct ADAPTER *prAdapter,
 {
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct STA_RECORD *prStaRec;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo;
+	struct MLD_STA_RECORD *prMldSta;
+#endif
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prP2pBssInfo != NULL));
+	if (!prAdapter || !prP2pBssInfo)
+		return;
 
-		prP2pRoleFsmInfo =
-			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
-				prP2pBssInfo->u4PrivateData);
+	if (prP2pBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE) {
+		DBGLOG(P2P, ERROR,
+		       "Error case, P2P BSS %d not INFRA mode but beacon timeout\n",
+		       prP2pBssInfo->ucBssIndex);
+		return;
+	}
 
-		/* Only client mode would have beacon lost event. */
-		if (prP2pBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE) {
-			DBGLOG(P2P, ERROR,
-			       "Error case, P2P BSS %d not INFRA mode but beacon timeout\n",
-			       prP2pRoleFsmInfo->ucRoleIndex);
-			break;
+	if (prP2pBssInfo->eConnectionState != MEDIA_STATE_CONNECTED) {
+		DBGLOG(P2P, ERROR,
+		       "Error case, P2P BSS %d not connected but beacon timeout\n",
+		       prP2pBssInfo->ucBssIndex);
+		return;
+	}
+
+	DBGLOG(P2P, INFO, "Bss=%d\n", prP2pBssInfo->ucBssIndex);
+
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+		prP2pBssInfo->u4PrivateData);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldBssInfo = mldBssGetByBss(prAdapter, prP2pBssInfo);
+	if (prMldBssInfo) {
+		struct BSS_INFO *bss = p2pGetLinkBssInfo(prAdapter,
+			prP2pRoleFsmInfo, P2P_MAIN_LINK_INDEX);
+
+		if (bss && prP2pBssInfo->u4PrivateData != bss->u4PrivateData) {
+			DBGLOG(P2P, INFO,
+				"Replace p2p fsm from role %d->%d\n",
+				prP2pBssInfo->u4PrivateData,
+				bss->u4PrivateData);
+			prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
+				prAdapter,
+				bss->u4PrivateData);
 		}
+	}
+#endif
 
-		DBGLOG(P2P, TRACE,
-			"p2pFsmRunEventBeaconTimeout: BSS %d Beacon Timeout\n",
-			prP2pRoleFsmInfo->ucRoleIndex);
+	/* Indicate disconnect to Host. */
+	kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
+		prP2pRoleFsmInfo->ucRoleIndex,
+		NULL, NULL, 0,
+		REASON_CODE_DISASSOC_LEAVING_BSS,
+		WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY);
 
-		if (prP2pBssInfo->eConnectionState
-			== MEDIA_STATE_CONNECTED) {
+	prStaRec = prP2pBssInfo->prStaRecOfAP;
+	if (!prStaRec) {
+		DBGLOG(P2P, ERROR,
+		       "Error case, P2P BSS %d prStaRecOfAP is NULL but beacon timeout\n",
+		       prP2pBssInfo->ucBssIndex);
+		return;
+	}
 
-			/* Indicate disconnect to Host. */
-			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-					prP2pRoleFsmInfo->ucRoleIndex,
-					NULL, NULL, 0,
-					REASON_CODE_DISASSOC_LEAVING_BSS,
-					WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldSta = mldStarecGetByStarec(prAdapter, prStaRec);
+	if (prMldSta) {
+		struct LINK *prStarecList = &prMldSta->rStarecList;
+		struct STA_RECORD *prCurrStarec, *prNextStarec;
 
-			if (prP2pBssInfo->prStaRecOfAP != NULL) {
-				struct STA_RECORD *prStaRec =
-					prP2pBssInfo->prStaRecOfAP;
+		LINK_FOR_EACH_ENTRY_SAFE(prCurrStarec, prNextStarec,
+					 prStarecList, rLinkEntryMld,
+					 struct STA_RECORD) {
+			struct P2P_ROLE_FSM_INFO *fsm;
+			struct BSS_INFO *bss;
 
-				prP2pBssInfo->prStaRecOfAP = NULL;
+			if (!prCurrStarec)
+				break;
 
-				p2pFuncDisconnect(prAdapter,
-					prP2pBssInfo,
-					prStaRec, FALSE,
-					REASON_CODE_DISASSOC_LEAVING_BSS,
-					TRUE);
-
-				SET_NET_PWR_STATE_IDLE(prAdapter,
-					prP2pBssInfo->ucBssIndex);
-
-				p2pRoleFsmStateTransition(prAdapter,
-					prP2pRoleFsmInfo,
-					P2P_ROLE_STATE_IDLE);
-
-				p2pFuncStopComplete(prAdapter, prP2pBssInfo);
+			bss = GET_BSS_INFO_BY_INDEX(prAdapter,
+						    prCurrStarec->ucBssIndex);
+			if (!bss) {
+				DBGLOG(SAA, INFO,
+					"bss is null (%u)\n",
+					prCurrStarec->ucBssIndex);
+				continue;
 			}
+
+			fsm = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+				bss->u4PrivateData);
+			bss->prStaRecOfAP = NULL;
+
+			p2pFuncDisconnect(prAdapter, bss, prCurrStarec, FALSE,
+					  REASON_CODE_DISASSOC_LEAVING_BSS,
+					  TRUE);
+
+			SET_NET_PWR_STATE_IDLE(prAdapter, bss->ucBssIndex);
+
+			p2pRoleFsmStateTransition(prAdapter, fsm,
+						  P2P_ROLE_STATE_IDLE);
+
+			p2pFuncStopComplete(prAdapter, bss);
 		}
-	} while (FALSE);
+	} else
+#endif
+	{
+		prP2pBssInfo->prStaRecOfAP = NULL;
+
+		p2pFuncDisconnect(prAdapter, prP2pBssInfo, prStaRec, FALSE,
+				  REASON_CODE_DISASSOC_LEAVING_BSS, TRUE);
+
+		SET_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex);
+
+		p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo,
+					  P2P_ROLE_STATE_IDLE);
+
+		p2pFuncStopComplete(prAdapter, prP2pBssInfo);
+	}
 }				/* p2pFsmRunEventBeaconTimeout */
+
+void p2pRoleFsmRunEventAgingTimeout(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec)
+{
+	struct BSS_INFO *prP2pBssInfo;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_STA_RECORD *prMldSta;
+#endif
+
+	DBGLOG(NIC, INFO,
+	       "EVENT_ID_STA_AGING_TIMEOUT: STA[%u] " MACSTR ", BSS[%u]\n",
+	       prStaRec->ucIndex,
+	       MAC2STR(prStaRec->aucMacAddr),
+	       prStaRec->ucBssIndex);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldSta = mldStarecGetByStarec(prAdapter, prStaRec);
+	if (prMldSta) {
+		struct LINK *prStarecList = &prMldSta->rStarecList;
+		struct STA_RECORD *prCurrStarec, *prNextStarec;
+
+		LINK_FOR_EACH_ENTRY_SAFE(prCurrStarec, prNextStarec,
+					 prStarecList, rLinkEntryMld,
+					 struct STA_RECORD) {
+			if (!prCurrStarec)
+				break;
+
+			prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+				prCurrStarec->ucBssIndex);
+			if (!prP2pBssInfo) {
+				DBGLOG(SAA, INFO,
+					"bss is null (%u)\n",
+					prCurrStarec->ucBssIndex);
+				continue;
+			}
+
+			bssRemoveClient(prAdapter, prP2pBssInfo, prCurrStarec);
+
+			p2pFuncDisconnect(prAdapter, prP2pBssInfo, prCurrStarec,
+					  FALSE,
+					  REASON_CODE_DISASSOC_INACTIVITY,
+					  TRUE);
+		}
+	} else
+#endif
+	{
+		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+						     prStaRec->ucBssIndex);
+		if (!prP2pBssInfo) {
+			DBGLOG(NIC, ERROR, "prBssInfo is null\n");
+			return;
+		}
+
+		bssRemoveClient(prAdapter, prP2pBssInfo, prStaRec);
+
+		p2pFuncDisconnect(prAdapter, prP2pBssInfo, prStaRec, FALSE,
+				  REASON_CODE_DISASSOC_INACTIVITY, TRUE);
+	}
+}
 
 /*================== Message Event ==================*/
 void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
