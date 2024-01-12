@@ -74,6 +74,7 @@ struct AP_COLLECTION {
 	uint8_t fgIsMld;
 	uint8_t fgIsMatchBssid;
 	uint8_t fgIsMatchBssidHint;
+	uint8_t fgIsAllLinkInBlackList;
 	uint8_t aucAddr[MAC_ADDR_LEN]; /* mld addr or bssid */
 };
 

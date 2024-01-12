@@ -132,15 +132,15 @@
 #define WEIGHT_IDX_TPUT_PER                     2
 #define WEIGHT_IDX_PREFERENCE_PER               2
 
-#define ROAM_SCORE_DELTA 15
+#define ROAM_SCORE_DELTA                        5
 
-#define APS_AMSDU_HT_3K	(3839)
-#define APS_AMSDU_HT_8K	(7935)
-#define APS_AMSDU_VHT_HE_3K	(3895)
-#define APS_AMSDU_VHT_HE_8K	(7991)
-#define APS_AMSDU_VHT_HE_11K	(11454)
+#define APS_AMSDU_HT_3K                         (3839)
+#define APS_AMSDU_HT_8K                         (7935)
+#define APS_AMSDU_VHT_HE_3K                     (3895)
+#define APS_AMSDU_VHT_HE_8K                     (7991)
+#define APS_AMSDU_VHT_HE_11K                    (11454)
 
-#define PPDU_DURATION 5 /* ms */
+#define PPDU_DURATION                           5 /* ms */
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -403,6 +403,9 @@ uint32_t apsAddBssDescToList(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 {
 	uint8_t aidx = AIS_INDEX(ad, bidx);
 	uint8_t l = apsBssDescToLink(ad, ap, bss, bidx);
+
+	if (l >= MLD_LINK_MAX)
+		return WLAN_STATUS_FAILURE;
 
 	LINK_ENTRY_INITIALIZE(&bss->rLinkEntryEss[aidx]);
 	LINK_INSERT_TAIL(&ap->arLinks[l], &bss->rLinkEntryEss[aidx]);
@@ -1227,9 +1230,13 @@ try_again:
 		 * 1. sanity check fail or
 		 * 2. bssid is in driver's blacklist in 1st try
 		 */
-		if (!apsSanityCheckBssDesc(ad, bss, reason, bidx) ||
-		   (!search_blk && bss->prBlack))
+		if (!apsSanityCheckBssDesc(ad, bss, reason, bidx))
 			continue;
+		if (!search_blk && bss->prBlack) {
+			DBGLOG(APS, INFO, MACSTR" in blacklist\n",
+				MAC2STR(bss->aucBSSID));
+			continue;
+		}
 
 		/* pick by bssid first */
 		if (policy == CONNECT_BY_BSSID) {
@@ -1320,7 +1327,7 @@ void apsIntraApSelection(struct ADAPTER *ad,
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(ad, bidx);
 	struct LINK *ess = &s->rCurEssLink;
 	struct AP_COLLECTION *ap, *nap;
-	uint8_t i, num = aisGetLinkNum(ais);
+	uint8_t i, j, num = aisGetLinkNum(ais);
 	uint8_t delta = 0;
 	uint16_t base = 0, goal;
 
@@ -1336,6 +1343,9 @@ void apsIntraApSelection(struct ADAPTER *ad,
 		uint16_t score;
 		struct BSS_DESC *bss = aisGetLinkBssDesc(ais, i);
 
+		if (!bss || aisQueryBlackList(ad, bss))
+			continue;
+
 		score = scanCalculateTotalScore(ad, bss, reason, bidx);
 		if (base == 0 || score < base)
 			base = score;
@@ -1347,8 +1357,14 @@ void apsIntraApSelection(struct ADAPTER *ad,
 
 	LINK_FOR_EACH_ENTRY_SAFE(ap, nap,
 			ess, rLinkEntry, struct AP_COLLECTION) {
-		for (i = 0; i < ap->ucLinkNum; i++)
+		for (i = 0, j = 0; i < ap->ucLinkNum; i++) {
 			apsIntraUpdateTargetAp(ad, ap, i, goal, reason, bidx);
+
+			if (ap->aprTarget[i] && ap->aprTarget[i]->prBlack)
+				j++;
+		}
+		if (ap->ucLinkNum == j)
+			ap->fgIsAllLinkInBlackList = TRUE;
 	}
 }
 
@@ -1584,8 +1600,15 @@ struct BSS_DESC *apsInterApSelection(struct ADAPTER *ad,
 	struct LINK *ess = &s->rCurEssLink;
 	struct AP_COLLECTION *ap, *cand = NULL;
 	int32_t best = 0, tput = 0;
+	uint8_t tryBlackList = FALSE;
 
+try_again:
 	LINK_FOR_EACH_ENTRY(ap, ess, rLinkEntry, struct AP_COLLECTION) {
+		if (!tryBlackList && ap->fgIsAllLinkInBlackList) {
+			DBGLOG(APS, INFO, "All links in blacklist\n");
+			continue;
+		}
+
 		if (policy == CONNECT_BY_BSSID) {
 			if (ap->fgIsMatchBssid) {
 				DBGLOG(APS, INFO, "match bssid\n");
@@ -1607,6 +1630,12 @@ struct BSS_DESC *apsInterApSelection(struct ADAPTER *ad,
 			best = tput;
 			cand = ap;
 		}
+	}
+
+	if (!tryBlackList && !cand) {
+		tryBlackList = TRUE;
+		DBGLOG(APS, INFO, "No ap collection found, try blacklist\n");
+		goto try_again;
 	}
 
 	return apsFillBssDescSet(ad, cand, set, bidx);

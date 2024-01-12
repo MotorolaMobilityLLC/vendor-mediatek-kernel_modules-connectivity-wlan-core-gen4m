@@ -83,7 +83,7 @@
 #define AIS_DEFAULT_BSS_INDEX (0)
 #define AIS_SECONDARY_INDEX (1)
 
-#define AIS_BG_SCAN_INTERVAL_MSEC           10000  /* MSEC */
+#define AIS_BG_SCAN_INTERVAL_MSEC           1000  /* MSEC */
 
 #define AIS_DELAY_TIME_OF_DISCONNECT_SEC    5	/* 10 */
 
