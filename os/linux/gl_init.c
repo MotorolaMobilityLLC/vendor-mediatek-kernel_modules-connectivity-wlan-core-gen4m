@@ -95,6 +95,8 @@
 struct semaphore g_halt_sem;
 int g_u4HaltFlag;
 int g_u4WlanInitFlag;
+atomic_t g_wlanProbing;
+atomic_t g_wlanRemoving;
 enum ENUM_NVRAM_STATE g_NvramFsm = NVRAM_STATE_INIT;
 
 uint8_t g_aucNvram[MAX_CFG_FILE_WIFI_REC_SIZE];
@@ -4699,6 +4701,7 @@ netcreate_err:
 void wlanNetDestroy(struct wireless_dev *prWdev)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter;
 
 	ASSERT(prWdev);
 
@@ -4737,8 +4740,9 @@ void wlanNetDestroy(struct wireless_dev *prWdev)
 
 	glClearHifInfo(prGlueInfo);
 
-	wlanAdapterDestroy(prGlueInfo->prAdapter);
+	prAdapter = prGlueInfo->prAdapter;
 	prGlueInfo->prAdapter = NULL;
+	wlanAdapterDestroy(prAdapter);
 
 	/* Free net_device and private data, which are allocated by
 	 * alloc_netdev().
@@ -7130,6 +7134,8 @@ void wlanOffWaitWlanThreads(struct completion *prComp,
 {
 	uint32_t waitRet = 0;
 
+	if (!prThread)
+		return;
 	while (TRUE) {
 		waitRet = wait_for_completion_interruptible_timeout(
 			prComp, MSEC_TO_JIFFIES(1000));
@@ -7527,6 +7533,16 @@ int32_t wlanOnAtReset(void)
 }
 #endif
 
+u_int8_t wlanIsProbing(void)
+{
+	return GLUE_GET_REF_CNT(g_wlanProbing) ? TRUE : FALSE;
+}
+
+u_int8_t wlanIsRemoving(void)
+{
+	return GLUE_GET_REF_CNT(g_wlanRemoving) ? TRUE : FALSE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Wlan probe function. This function probes and initializes the device.
@@ -7573,6 +7589,12 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	struct BUS_INFO *prBusInfo;
 #endif
 
+	if (GLUE_GET_REF_CNT(g_wlanProbing)) {
+		DBGLOG(INIT, ERROR, "%s in process\n", __func__);
+		return 0;
+	}
+	GLUE_SET_REF_CNT(1, g_wlanProbing);
+
 #if CFG_CHIP_RESET_KO_SUPPORT
 	send_reset_event(RESET_MODULE_TYPE_WIFI, RFSM_EVENT_PROBE_START);
 #endif
@@ -7584,15 +7606,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		if (i4Status == WLAN_STATUS_SUCCESS)
 			mddpNotifyWifiOnEnd();
 #endif
-#if CFG_CHIP_RESET_KO_SUPPORT
-		if (i4Status == WLAN_STATUS_SUCCESS)
-			send_reset_event(RESET_MODULE_TYPE_WIFI,
-					 RFSM_EVENT_PROBE_SUCCESS);
-		else
-			send_reset_event(RESET_MODULE_TYPE_WIFI,
-					 RFSM_EVENT_PROBE_FAIL);
-#endif
-		return i4Status;
+		goto WLAN_PROBE_RETURN;
 	}
 	glResetUpdateFlag(FALSE);
 #endif
@@ -7833,15 +7847,12 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #if CFG_MTK_MDDP_SUPPORT
 		mddpNotifyWifiOnEnd();
 #endif
-#if CFG_CHIP_RESET_KO_SUPPORT
-		send_reset_event(RESET_MODULE_TYPE_WIFI,
-				 RFSM_EVENT_PROBE_SUCCESS);
-#endif
 	} else {
 		DBGLOG(INIT, ERROR, "wlanProbe: probe failed, reason:%d\n",
 		       eFailReason);
 		switch (eFailReason) {
 		case FAIL_BY_RESET:
+			procRemoveProcfs();
 			kal_fallthrough;
 			/* fallthrough */
 		case PROC_INIT_FAIL:
@@ -7904,9 +7915,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		default:
 			break;
 		}
-#if CFG_CHIP_RESET_KO_SUPPORT
-		send_reset_event(RESET_MODULE_TYPE_WIFI, RFSM_EVENT_PROBE_FAIL);
-#endif
 	}
 
 #if CFG_SUPPORT_PCIE_GEN_SWITCH
@@ -7915,6 +7923,10 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		prBusInfo->pcie_current_speed = PCIE_GEN3;
 	}
 #endif
+
+WLAN_PROBE_RETURN:
+	glReseProbeRemoveDone(prGlueInfo, i4Status, TRUE);
+	GLUE_SET_REF_CNT(0, g_wlanProbing);
 
 	return i4Status;
 }				/* end of wlanProbe() */
@@ -7976,6 +7988,12 @@ static void wlanRemove(void)
 
 	DBGLOG(INIT, INFO, "Remove wlan!\n");
 
+	if (GLUE_GET_REF_CNT(g_wlanRemoving)) {
+		DBGLOG(INIT, ERROR, "%s in process\n", __func__);
+		return;
+	}
+	GLUE_SET_REF_CNT(1, g_wlanRemoving);
+
 	kalSetHalted(TRUE);
 
 	/*reset NVRAM State to ready for the next wifi-no*/
@@ -7995,11 +8013,7 @@ static void wlanRemove(void)
 #if CFG_MTK_MDDP_SUPPORT
 			mddpNotifyWifiOffEnd();
 #endif
-#if CFG_CHIP_RESET_KO_SUPPORT
-			send_reset_event(RESET_MODULE_TYPE_WIFI,
-					 RFSM_EVENT_REMOVE);
-#endif
-			return;
+			goto WLAN_REMOVE_RETURN;
 		}
 	}
 #endif
@@ -8265,13 +8279,12 @@ static void wlanRemove(void)
 WLAN_REMOVE_RETURN:
 #if CFG_CHIP_RESET_SUPPORT
 	glResetUpdateFlag(FALSE);
-#if CFG_CHIP_RESET_KO_SUPPORT
-	send_reset_event(RESET_MODULE_TYPE_WIFI, RFSM_EVENT_REMOVE);
-#endif
 #endif
 #if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyWifiOffEnd();
 #endif
+	glReseProbeRemoveDone(prGlueInfo, 0, FALSE);
+	GLUE_SET_REF_CNT(0, g_wlanRemoving);
 }				/* end of wlanRemove() */
 
 int wlanFuncOnImpl(void)

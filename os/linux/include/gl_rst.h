@@ -56,6 +56,10 @@
 #define SER_L0_HANG_LOG_TIME_INTERVAL	3000
 #endif
 
+#ifndef CFG_SUPPORT_SER_DEBUGFS
+#define CFG_SUPPORT_SER_DEBUGFS		0
+#endif
+
 #define WIFI_TRIGGER_ASSERT_TIMEOUT 2000
 #define GLUE_FLAG_RST_PROCESS (GLUE_FLAG_HALT |\
 				GLUE_FLAG_RST_START |\
@@ -145,6 +149,7 @@ struct RESET_STRUCT {
 	u_int8_t is_suspend;
 	struct reset_pending_req *pending_req;
 #endif
+	u_int8_t fgIsInitialized;
 };
 
 enum ENUM_RST_MSG {
@@ -247,6 +252,9 @@ void glResetUpdateFlag(u_int8_t fgIsResetting);
 void glResetInit(struct GLUE_INFO *prGlueInfo);
 
 void glResetUninit(void);
+
+void glReseProbeRemoveDone(struct GLUE_INFO *prGlueInfo, int32_t i4Status,
+			   u_int8_t fgIsProbe);
 
 void glSendResetRequest(void);
 

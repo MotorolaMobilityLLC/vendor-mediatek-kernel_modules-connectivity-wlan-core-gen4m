@@ -4806,13 +4806,20 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 {
 	struct GL_IO_REQ *prIoReq = NULL;
 	struct KAL_THREAD_SCHEDSTATS schedstats;
-	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct ADAPTER *prAdapter;
 	uint32_t ret = WLAN_STATUS_SUCCESS;
 	uint32_t waitRet = 0;
+	uint32_t waitCount = 0;
 	int r;
-	u_int8_t fgCmdDbgEn = wlanIfCmdDbgEn(prAdapter);
+	u_int8_t fgCmdDbgEn;
 
 	KAL_TIME_INTERVAL_DECLARATION();
+
+	if ((prGlueInfo == NULL) || (prGlueInfo->prAdapter == NULL))
+		return WLAN_STATUS_FAILURE;
+
+	prAdapter = prGlueInfo->prAdapter;
+	fgCmdDbgEn = wlanIfCmdDbgEn(prAdapter);
 
 	KAL_REC_TIME_START();
 
@@ -4848,8 +4855,6 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 		up(&g_halt_sem);
 		return WLAN_STATUS_SUCCESS;
 	}
-
-	ASSERT(prGlueInfo->prAdapter);
 
 	if (wlanIsChipAssert(prGlueInfo->prAdapter)) {
 		up(&prGlueInfo->ioctl_sem);
@@ -4943,8 +4948,12 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	DBGLOG(OID, TRACE, "waiting, pfnOidHandler=%ps, BufLen=%u, QryLen=%p",
 			prIoReq->pfnOidHandler, prIoReq->u4InfoBufLen,
 			prIoReq->pu4QryInfoLen);
-	waitRet = wait_for_completion_timeout(&prGlueInfo->rPendComp,
-				MSEC_TO_JIFFIES(30*1000));
+	for (waitCount = 0; waitCount < 30; waitCount++) {
+		waitRet = wait_for_completion_timeout(&prGlueInfo->rPendComp,
+				MSEC_TO_JIFFIES(1000));
+		if ((waitRet > 0) || kalIsResetting())
+			break;
+	}
 	DBGLOG(OID, TRACE, "wait=%u, pfnOidHandler=%ps, BufLen=%u, QryLen=%p",
 			waitRet, prIoReq->pfnOidHandler,
 			prIoReq->u4InfoBufLen, prIoReq->pu4QryInfoLen);
@@ -5566,7 +5575,7 @@ int hif_thread(void *data)
 			      prHifThreadWakeLock);
 #endif
 
-	DBGLOG(INIT, TRACE, "%s:%u stopped!\n",
+	DBGLOG(INIT, INFO, "%s:%u stopped!\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
 
 #if CFG_CHIP_RESET_HANG
@@ -5701,7 +5710,7 @@ int rx_thread(void *data)
 			      prRxThreadWakeLock);
 #endif
 
-	DBGLOG(INIT, TRACE, "%s:%u stopped!\n",
+	DBGLOG(INIT, INFO, "%s:%u stopped!\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
 
 #if CFG_CHIP_RESET_HANG

@@ -1542,7 +1542,7 @@ u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
 	ucTotalFailCnt = prBusInfo->ucVndReqToMcuFailCnt;
 
 	if (ucTotalFailCnt >= VND_REQ_FAIL_TH) {
-		DBGLOG(HAL, ERROR, "vendor reqs keep failure over %d times\n",
+		DBGLOG(HAL, TRACE, "vendor reqs keep failure over %d times\n",
 		       VND_REQ_FAIL_TH);
 		return FALSE;
 	}
@@ -1581,6 +1581,20 @@ u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
 			u4Register, *pu4Value);
 	}
 
+	if (kalIsResetting() == FALSE) {
+		if (ret == -ENODEV) {
+			/* No such device error, L0.5 reset always fail */
+			ucTotalFailCnt = VND_REQ_FAIL_TH;
+			GL_DEFAULT_RESET_TRIGGER(
+				prGlueInfo->prAdapter,
+				RST_SER_L0P5_FAIL);
+		} else if (ucTotalFailCnt >= VND_REQ_FAIL_TH) {
+			GL_DEFAULT_RESET_TRIGGER(
+				prGlueInfo->prAdapter,
+				RST_CMD_EVT_FAIL);
+		}
+	}
+
 	prBusInfo->ucVndReqToMcuFailCnt = ucTotalFailCnt;
 
 	return (ret) ? FALSE : TRUE;
@@ -1612,7 +1626,7 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
 	ucTotalFailCnt = prBusInfo->ucVndReqToMcuFailCnt;
 
 	if (ucTotalFailCnt >= VND_REQ_FAIL_TH) {
-		DBGLOG(HAL, ERROR, "vendor reqs keep failure over %d times\n",
+		DBGLOG(HAL, TRACE, "vendor reqs keep failure over %d times\n",
 		       VND_REQ_FAIL_TH);
 		return FALSE;
 	}
@@ -1652,6 +1666,20 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
 		DBGLOG(HAL, INFO, "Set CR[0x%08x] value[0x%08x]\n", u4Register, u4Value);
 	}
 
+	if (kalIsResetting() == FALSE) {
+		if (ret == -ENODEV) {
+			/* No such device error, L0.5 reset always fail */
+			ucTotalFailCnt = VND_REQ_FAIL_TH;
+			GL_DEFAULT_RESET_TRIGGER(
+				prGlueInfo->prAdapter,
+				RST_SER_L0P5_FAIL);
+		} else if (ucTotalFailCnt >= VND_REQ_FAIL_TH) {
+			GL_DEFAULT_RESET_TRIGGER(
+				prGlueInfo->prAdapter,
+				RST_CMD_EVT_FAIL);
+		}
+	}
+
 	prBusInfo->ucVndReqToMcuFailCnt = ucTotalFailCnt;
 
 	return (ret) ? FALSE : TRUE;
@@ -1675,12 +1703,15 @@ u_int8_t kalDevUhwRegRead(struct GLUE_INFO *prGlueInfo,
 	struct BUS_INFO *prBusInfo = NULL;
 	int ret = 0;
 	uint8_t ucRetryCount = 0;
+	uint8_t ucTotalFailCnt;
 
 	ASSERT(prGlueInfo);
 	ASSERT(pu4Value);
 
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	*pu4Value = 0xFFFFFFFF;
+
+	ucTotalFailCnt = prBusInfo->ucVndReqToMcuFailCnt;
 
 	do {
 		ret = mtk_usb_vendor_request(prGlueInfo,
@@ -1696,6 +1727,11 @@ u_int8_t kalDevUhwRegRead(struct GLUE_INFO *prGlueInfo,
 				"usb_control_msg() status: %d retry: %u\n",
 				ret, ucRetryCount);
 
+		if (ret) {
+			if (ucTotalFailCnt < 0xff)
+				ucTotalFailCnt++;
+		} else
+			ucTotalFailCnt = 0;
 
 		ucRetryCount++;
 		if (ucRetryCount > HIF_USB_ACCESS_RETRY_LIMIT)
@@ -1712,6 +1748,22 @@ u_int8_t kalDevUhwRegRead(struct GLUE_INFO *prGlueInfo,
 		DBGLOG(HAL, TRACE, "Get CR[0x%08x] value[0x%08x]\n",
 			u4Register, *pu4Value);
 	}
+
+	if (kalIsResetting() == FALSE) {
+		if (ret == -ENODEV) {
+			/* No such device error, L0.5 reset always fail */
+			ucTotalFailCnt = VND_REQ_FAIL_TH;
+			GL_DEFAULT_RESET_TRIGGER(
+				prGlueInfo->prAdapter,
+				RST_SER_L0P5_FAIL);
+		} else if (ucTotalFailCnt >= VND_REQ_FAIL_TH) {
+			GL_DEFAULT_RESET_TRIGGER(
+				prGlueInfo->prAdapter,
+				RST_CMD_EVT_FAIL);
+		}
+	}
+
+	prBusInfo->ucVndReqToMcuFailCnt = ucTotalFailCnt;
 
 	return (ret) ? FALSE : TRUE;
 }				/* end of kalDevUhwRegRead() */
@@ -1734,9 +1786,13 @@ u_int8_t kalDevUhwRegWrite(struct GLUE_INFO *prGlueInfo,
 	int ret = 0;
 	uint8_t ucRetryCount = 0;
 	struct BUS_INFO *prBusInfo = NULL;
+	uint8_t ucTotalFailCnt;
 
 	ASSERT(prGlueInfo);
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+
+	ucTotalFailCnt = prBusInfo->ucVndReqToMcuFailCnt;
+
 	do {
 		ret = mtk_usb_vendor_request(prGlueInfo,
 			0,
@@ -1751,6 +1807,12 @@ u_int8_t kalDevUhwRegWrite(struct GLUE_INFO *prGlueInfo,
 			DBGLOG(HAL, ERROR,
 				"usb_control_msg() status: %d retry: %u\n",
 				ret, ucRetryCount);
+
+		if (ret) {
+			if (ucTotalFailCnt < 0xff)
+				ucTotalFailCnt++;
+		} else
+			ucTotalFailCnt = 0;
 
 		ucRetryCount++;
 		if (ucRetryCount > HIF_USB_ACCESS_RETRY_LIMIT)
@@ -1768,6 +1830,22 @@ u_int8_t kalDevUhwRegWrite(struct GLUE_INFO *prGlueInfo,
 		DBGLOG(HAL, TRACE, "Set CR[0x%08x] value[0x%08x]\n", u4Register,
 		       u4Value);
 	}
+
+	if (kalIsResetting() == FALSE) {
+		if (ret == -ENODEV) {
+			/* No such device error, L0.5 reset always fail */
+			ucTotalFailCnt = VND_REQ_FAIL_TH;
+			GL_DEFAULT_RESET_TRIGGER(
+				prGlueInfo->prAdapter,
+				RST_SER_L0P5_FAIL);
+		} else if (ucTotalFailCnt >= VND_REQ_FAIL_TH) {
+			GL_DEFAULT_RESET_TRIGGER(
+				prGlueInfo->prAdapter,
+				RST_CMD_EVT_FAIL);
+		}
+	}
+
+	prBusInfo->ucVndReqToMcuFailCnt = ucTotalFailCnt;
 
 	return (ret) ? FALSE : TRUE;
 }				/* end of kalDevUhwRegWrite() */
