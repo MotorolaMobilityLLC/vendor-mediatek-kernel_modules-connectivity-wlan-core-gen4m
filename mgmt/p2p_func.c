@@ -6235,3 +6235,94 @@ exit:
 	/* return; */
 }
 
+uint32_t
+p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
+		IN enum ENUM_IFTYPE eIftype, OUT uint32_t *freq_list,
+		OUT uint32_t *num_freq_list)
+{
+	struct BSS_INFO *prAisBssInfo;
+	uint8_t ucNumOfChannel;
+	uint32_t i;
+	struct RF_CHANNEL_INFO *aucChannelList;
+
+	prAisBssInfo = prAdapter->prAisBssInfo;
+
+	aucChannelList = (struct RF_CHANNEL_INFO *) kalMemAlloc(
+			sizeof(struct RF_CHANNEL_INFO) * MAX_CHN_NUM,
+			VIR_MEM_TYPE);
+	if (!aucChannelList) {
+		DBGLOG(P2P, ERROR,
+			"Allocate buffer for channel list fail\n");
+		return -ENOMEM;
+	}
+	kalMemZero(aucChannelList,
+			sizeof(struct RF_CHANNEL_INFO) * MAX_CHN_NUM);
+
+	DBGLOG(P2P, INFO, "iftype: %d, STA connection state: %d\n",
+			eIftype,
+			prAisBssInfo->eConnectionState);
+
+	if (prAisBssInfo->eConnectionState != PARAM_MEDIA_STATE_CONNECTED) {
+		/* Prefer 5G if STA is NOT connected */
+		rlmDomainGetChnlList(prAdapter, BAND_5G, TRUE,
+				MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
+		for (i = 0; i < ucNumOfChannel; i++) {
+			freq_list[i] = nicChannelNum2Freq(
+				aucChannelList[i].ucChannelNum) / 1000;
+			(*num_freq_list)++;
+		}
+	} else {
+		DBGLOG(P2P, INFO, "STA operating channel: %d, band: %d",
+				prAisBssInfo->ucPrimaryChannel,
+				prAisBssInfo->eBand);
+		if (prAisBssInfo->eBand == BAND_2G4) {
+			/* Prefer 5G if STA is connected at 2G band */
+			rlmDomainGetChnlList(prAdapter, BAND_5G, TRUE,
+					MAX_CHN_NUM,
+					&ucNumOfChannel,
+					aucChannelList);
+			for (i = 0; i < ucNumOfChannel; i++) {
+				freq_list[i] = nicChannelNum2Freq(
+					aucChannelList[i].ucChannelNum) / 1000;
+				(*num_freq_list)++;
+			}
+
+			/* Add SCC channel if DBDC enabled */
+			if (prAdapter->rWifiVar.eDbdcMode !=
+					ENUM_DBDC_MODE_DISABLED) {
+				freq_list[i + 1] = nicChannelNum2Freq(
+					prAisBssInfo->ucPrimaryChannel) / 1000;
+				(*num_freq_list)++;
+			}
+		} else {
+			enum ENUM_BAND eSpecificBand;
+
+			/* Prefer SCC if STA is connected at 5G band */
+			freq_list[0] = nicChannelNum2Freq(
+				prAisBssInfo->ucPrimaryChannel) / 1000;
+			(*num_freq_list)++;
+
+			/* Add 2G channels if DBDC enabled,
+			 * otherwise, 5G channels
+			 */
+			eSpecificBand = prAdapter->rWifiVar.eDbdcMode !=
+					ENUM_DBDC_MODE_DISABLED ?
+						BAND_2G4 :
+						BAND_5G;
+			rlmDomainGetChnlList(prAdapter, eSpecificBand, TRUE,
+					MAX_CHN_NUM,
+					&ucNumOfChannel,
+					aucChannelList);
+			for (i = 0; i < ucNumOfChannel; i++) {
+				freq_list[i + 1] = nicChannelNum2Freq(
+					aucChannelList[i].ucChannelNum) / 1000;
+				(*num_freq_list)++;
+			}
+		}
+	}
+
+	kalMemFree(aucChannelList, VIR_MEM_TYPE,
+			sizeof(struct RF_CHANNEL_INFO) * MAX_CHN_NUM);
+
+	return WLAN_STATUS_SUCCESS;
+}
