@@ -606,15 +606,6 @@ __priv_set_int(struct net_device *prNetDev,
 		status = priv_set_ndis(prNetDev, prNdisReq, &u4BufLen);
 		break;
 
-#if 0
-	case PRIV_CMD_BEACON_PERIOD:
-		/* pu4IntBuf[0] is used as input SubCmd */
-		rStatus = wlanSetInformation(prGlueInfo->prAdapter,
-				wlanoidSetBeaconInterval, (void *)&pu4IntBuf[1],
-				sizeof(uint32_t), &u4BufLen);
-		break;
-#endif
-
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	case PRIV_CMD_CSUM_OFFLOAD: {
 		uint32_t u4CSUMFlags;
@@ -671,15 +662,6 @@ __priv_set_int(struct net_device *prNetDev,
 	}
 	break;
 
-#if 0
-	case PRIV_CMD_ADHOC_MODE:
-		/* pu4IntBuf[0] is used as input SubCmd */
-		rStatus = wlanSetInformation(prGlueInfo->prAdapter,
-				wlanoidSetAdHocMode, (void *)&pu4IntBuf[1],
-				sizeof(uint32_t), &u4BufLen);
-		break;
-#endif
-
 	case PRIV_CUSTOM_BWCS_CMD:
 
 		DBGLOG(REQ, INFO,
@@ -702,11 +684,6 @@ __priv_set_int(struct net_device *prNetDev,
 		       "BCM BWCS CMD : PRIV_CUSTOM_BWCS_CMD : aucBTPParams[2] = %02x, aucBTPParams[3] = %02x.\n",
 		       prPtaIpc->u.aucBTPParams[2],
 		       prPtaIpc->u.aucBTPParams[3]);
-
-#if 0
-		status = wlanSetInformation(prGlueInfo->prAdapter, wlanoidSetBT,
-				(void *)&aucOidBuf[0], u4CmdLen, &u4BufLen);
-#endif
 
 		status = wlanoidSetBT(prGlueInfo->prAdapter,
 				(void *)&aucOidBuf[0], sizeof(struct PTA_IPC),
@@ -896,34 +873,15 @@ __priv_get_int(struct net_device *prNetDev,
 		}
 		return status;
 
-#if 0
-	case PRIV_CMD_BEACON_PERIOD:
-		status = wlanQueryInformation(prGlueInfo->prAdapter,
-				wlanoidQueryBeaconInterval, (void *) pu4IntBuf,
-				sizeof(uint32_t), &u4BufLen);
-		return status;
-
-	case PRIV_CMD_POWER_MODE:
-		status = wlanQueryInformation(prGlueInfo->prAdapter,
-				wlanoidQuery802dot11PowerSaveProfile,
-				(void *)pu4IntBuf, sizeof(uint32_t), &u4BufLen);
-		return status;
-
-	case PRIV_CMD_ADHOC_MODE:
-		status = wlanQueryInformation(prGlueInfo->prAdapter,
-				wlanoidQueryAdHocMode, (void *) pu4IntBuf,
-				sizeof(uint32_t), &u4BufLen);
-		return status;
-#endif
 /* fos_change begin */
 	case PRIV_CMD_SHOW_CHANNEL:
 	{
 		uint32_t freq = 0;
 
-		status = wlanQueryInformation(prGlueInfo->prAdapter,
+		status = kalIoctl(prGlueInfo,
 			wlanoidQueryFrequency,
 			&freq, sizeof(uint32_t), &u4BufLen);
-		if (status == 0)
+		if (status == WLAN_STATUS_SUCCESS)
 			prIwReqData->mode = freq/1000; /* Hz->MHz */
 
 		return status;
@@ -1206,33 +1164,7 @@ __priv_set_struct(struct net_device *prNetDev,
 
 	u4SubCmd = (uint32_t) prIwReqData->data.flags;
 
-#if 0
-	DBGLOG(INIT, INFO,
-	       "priv_set_struct(): prIwReqInfo->cmd(0x%X), u4SubCmd(%ld)\n",
-	       prIwReqInfo->cmd, u4SubCmd);
-#endif
-
 	switch (u4SubCmd) {
-#if 0				/* PTA_ENABLED */
-	case PRIV_CMD_BT_COEXIST:
-		u4CmdLen = prIwReqData->data.length * sizeof(uint32_t);
-		ASSERT(sizeof(PARAM_CUSTOM_BT_COEXIST_T) >= u4CmdLen);
-		if (sizeof(PARAM_CUSTOM_BT_COEXIST_T) < u4CmdLen)
-			return -EFAULT;
-
-		if (copy_from_user(&aucOidBuf[0], prIwReqData->data.pointer,
-		    u4CmdLen)) {
-			status = -EFAULT;	/* return -EFAULT; */
-			break;
-		}
-
-		rStatus = wlanSetInformation(prGlueInfo->prAdapter,
-				wlanoidSetBtCoexistCtrl, (void *)&aucOidBuf[0],
-				u4CmdLen, &u4BufLen);
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			status = -EFAULT;
-		break;
-#endif
 
 	case PRIV_CUSTOM_BWCS_CMD:
 		u4CmdLen = prIwReqData->data.length * sizeof(uint32_t);
@@ -1262,16 +1194,8 @@ __priv_set_struct(struct net_device *prNetDev,
 		       aucOidBuf[2], aucOidBuf[3],
 		       aucOidBuf[4], aucOidBuf[5]);
 #endif
-
-#if 0
-		status = wlanSetInformation(prGlueInfo->prAdapter, wlanoidSetBT,
-				(void *)&aucOidBuf[0], u4CmdLen, &u4BufLen);
-#endif
-
-#if 1
 		status = wlanoidSetBT(prGlueInfo->prAdapter,
 				(void *)&aucOidBuf[0], u4CmdLen, &u4BufLen);
-#endif
 
 		if (status != WLAN_STATUS_SUCCESS)
 			status = -EFAULT;
@@ -3047,189 +2971,6 @@ priv_set_driver(struct net_device *prNetDev,
 	return 0;
 
 }				/* priv_set_driver */
-#if 0
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This routine is called to query the radio configuration used in IBSS
- *        mode and RF test mode.
- *
- * \param[in] prGlueInfo         Pointer to the GLUE_INFO_T structure.
- * \param[out] pvQueryBuffer     Pointer to the buffer that holds the result of
- *                               the query.
- * \param[in] u4QueryBufferLen   The length of the query buffer.
- * \param[out] pu4QueryInfoLen   If the call is successful, returns the number
- *                               of bytes written into the query buffer. If the
- *                               call failed due to invalid length of the query
- *                               buffer, returns the amount of storage needed.
- *
- * \retval WLAN_STATUS_SUCCESS
- * \retval WLAN_STATUS_INVALID_LENGTH
- */
-/*----------------------------------------------------------------------------*/
-static uint32_t
-reqExtQueryConfiguration(struct GLUE_INFO *prGlueInfo,
-			 void *pvQueryBuffer, uint32_t u4QueryBufferLen,
-			 uint32_t *pu4QueryInfoLen)
-{
-	struct PARAM_802_11_CONFIG *prQueryConfig =
-		(struct PARAM_802_11_CONFIG *) pvQueryBuffer;
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	uint32_t u4QueryInfoLen = 0;
-
-	ASSERT(prGlueInfo);
-	ASSERT(pu4QueryInfoLen);
-
-	*pu4QueryInfoLen = sizeof(struct PARAM_802_11_CONFIG);
-	if (u4QueryBufferLen < sizeof(struct PARAM_802_11_CONFIG))
-		return WLAN_STATUS_INVALID_LENGTH;
-
-	ASSERT(pvQueryBuffer);
-
-	kalMemZero(prQueryConfig,
-		   sizeof(struct PARAM_802_11_CONFIG));
-
-	/* Update the current radio configuration. */
-	prQueryConfig->u4Length = sizeof(struct PARAM_802_11_CONFIG);
-
-#if defined(_HIF_SDIO)
-	rStatus = sdio_io_ctrl(prGlueInfo,
-			       wlanoidSetBeaconInterval,
-			       &prQueryConfig->u4BeaconPeriod, sizeof(uint32_t),
-			       TRUE, TRUE, &u4QueryInfoLen);
-#else
-	rStatus = wlanQueryInformation(prGlueInfo->prAdapter,
-				       wlanoidQueryBeaconInterval,
-				       &prQueryConfig->u4BeaconPeriod,
-				       sizeof(uint32_t), &u4QueryInfoLen);
-#endif
-	if (rStatus != WLAN_STATUS_SUCCESS)
-		return rStatus;
-#if defined(_HIF_SDIO)
-	rStatus = sdio_io_ctrl(prGlueInfo,
-			       wlanoidQueryAtimWindow,
-			       &prQueryConfig->u4ATIMWindow, sizeof(uint32_t),
-			       TRUE, TRUE, &u4QueryInfoLen);
-#else
-	rStatus = wlanQueryInformation(prGlueInfo->prAdapter,
-				       wlanoidQueryAtimWindow,
-				       &prQueryConfig->u4ATIMWindow,
-				       sizeof(uint32_t),
-				       &u4QueryInfoLen);
-#endif
-	if (rStatus != WLAN_STATUS_SUCCESS)
-		return rStatus;
-#if defined(_HIF_SDIO)
-	rStatus = sdio_io_ctrl(prGlueInfo,
-			       wlanoidQueryFrequency,
-			       &prQueryConfig->u4DSConfig, sizeof(uint32_t),
-			       TRUE, TRUE, &u4QueryInfoLen);
-#else
-	rStatus = wlanQueryInformation(prGlueInfo->prAdapter,
-				       wlanoidQueryFrequency,
-				       &prQueryConfig->u4DSConfig,
-				       sizeof(uint32_t),
-				       &u4QueryInfoLen);
-#endif
-	if (rStatus != WLAN_STATUS_SUCCESS)
-		return rStatus;
-
-	prQueryConfig->rFHConfig.u4Length = sizeof(
-			struct PARAM_802_11_CONFIG_FH);
-
-	return rStatus;
-
-}				/* end of reqExtQueryConfiguration() */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This routine is called to set the radio configuration used in IBSS
- *        mode.
- *
- * \param[in] prGlueInfo     Pointer to the GLUE_INFO_T structure.
- * \param[in] pvSetBuffer    A pointer to the buffer that holds the data to be
- *                           set.
- * \param[in] u4SetBufferLen The length of the set buffer.
- * \param[out] pu4SetInfoLen If the call is successful, returns the number of
- *                           bytes read from the set buffer. If the call failed
- *                           due to invalid length of the set buffer, returns
- *                           the amount of storage needed.
- *
- * \retval WLAN_STATUS_SUCCESS
- * \retval WLAN_STATUS_INVALID_LENGTH
- * \retval WLAN_STATUS_NOT_ACCEPTED
- */
-/*----------------------------------------------------------------------------*/
-static uint32_t
-reqExtSetConfiguration(struct GLUE_INFO *prGlueInfo,
-		       void *pvSetBuffer, uint32_t u4SetBufferLen,
-		       uint32_t *pu4SetInfoLen)
-{
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	struct PARAM_802_11_CONFIG *prNewConfig =
-		(struct PARAM_802_11_CONFIG *) pvSetBuffer;
-	uint32_t u4SetInfoLen = 0;
-
-	ASSERT(prGlueInfo);
-	ASSERT(pu4SetInfoLen);
-
-	*pu4SetInfoLen = sizeof(struct PARAM_802_11_CONFIG);
-
-	if (u4SetBufferLen < *pu4SetInfoLen)
-		return WLAN_STATUS_INVALID_LENGTH;
-
-	/* OID_802_11_CONFIGURATION. If associated, NOT_ACCEPTED shall be
-	 * returned.
-	 */
-	if (prGlueInfo->eParamMediaStateIndicated ==
-	    MEDIA_STATE_CONNECTED)
-		return WLAN_STATUS_NOT_ACCEPTED;
-
-	ASSERT(pvSetBuffer);
-
-#if defined(_HIF_SDIO)
-	rStatus = sdio_io_ctrl(prGlueInfo,
-			       wlanoidSetBeaconInterval,
-			       &prNewConfig->u4BeaconPeriod, sizeof(uint32_t),
-			       FALSE, TRUE, &u4SetInfoLen);
-#else
-	rStatus = wlanSetInformation(prGlueInfo->prAdapter,
-				     wlanoidSetBeaconInterval,
-				     &prNewConfig->u4BeaconPeriod,
-				     sizeof(uint32_t),
-				     &u4SetInfoLen);
-#endif
-	if (rStatus != WLAN_STATUS_SUCCESS)
-		return rStatus;
-#if defined(_HIF_SDIO)
-	rStatus = sdio_io_ctrl(prGlueInfo,
-			       wlanoidSetAtimWindow,
-			       &prNewConfig->u4ATIMWindow, sizeof(uint32_t),
-			       FALSE, TRUE, &u4SetInfoLen);
-#else
-	rStatus = wlanSetInformation(prGlueInfo->prAdapter,
-				     wlanoidSetAtimWindow,
-				     &prNewConfig->u4ATIMWindow,
-				     sizeof(uint32_t), &u4SetInfoLen);
-#endif
-	if (rStatus != WLAN_STATUS_SUCCESS)
-		return rStatus;
-#if defined(_HIF_SDIO)
-	rStatus = sdio_io_ctrl(prGlueInfo, wlanoidSetFrequency,
-			       &prNewConfig->u4DSConfig, sizeof(uint32_t),
-			       FALSE, TRUE, &u4SetInfoLen);
-#else
-	rStatus = wlanSetInformation(prGlueInfo->prAdapter, wlanoidSetFrequency,
-				     &prNewConfig->u4DSConfig,
-				     sizeof(uint32_t), &u4SetInfoLen);
-#endif
-
-	if (rStatus != WLAN_STATUS_SUCCESS)
-		return rStatus;
-
-	return rStatus;
-
-}				/* end of reqExtSetConfiguration() */
-#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3267,11 +3008,6 @@ reqExtSetAcpiDevicePowerState(struct GLUE_INFO
 	 * D0 (ParamDeviceStateD0 = 1). And vice versa
 	 */
 
-	/* rStatus = wlanSetInformation(prGlueInfo->prAdapter, */
-	/* wlanoidSetAcpiDevicePowerState, */
-	/* pvSetBuffer, */
-	/* u4SetBufferLen, */
-	/* pu4SetInfoLen); */
 	return rStatus;
 }
 
@@ -3596,29 +3332,14 @@ int priv_driver_get_bss_statistics(
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
-	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
 	uint32_t u4BufLen;
 	struct PARAM_LINK_SPEED_EX *prLinkSpeed;
 	struct PARAM_GET_BSS_STATISTICS rQueryBssStatistics;
 	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
 	int32_t i4BytesWritten = 0;
-#if 0
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
-	int32_t i4Argc = 0;
-	uint32_t	u4Index;
-#endif
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	ASSERT(prGlueInfo);
-
-	kalMemZero(arBssid, MAC_ADDR_LEN);
-	wlanQueryInformation(prGlueInfo->prAdapter, wlanoidQueryBssid,
-			     &arBssid[0], sizeof(arBssid), &u4BufLen);
-
-#if 0 /* Todo:: Get the none-AIS statistics */
-	if (i4Argc >= 2)
-		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Index);
-#endif
 
 	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
 		return WLAN_STATUS_FAILURE;
@@ -3669,52 +3390,6 @@ int priv_driver_get_bss_statistics(
 				i4TotalLen - i4BytesWritten,
 				"Tx fail count	       = %d\n",
 				rQueryBssStatistics.u4TransmitFailCount);
-#if 0
-			i4BytesWritten += kalSnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten,
-				"Rx success	       = %ld\n", 0);
-			i4BytesWritten += kalSnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten,
-				"Rx with CRC	       = %ld\n",
-				prStatistics->rFCSErrorCount.QuadPart);
-			i4BytesWritten += kalSnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten,
-				"%s", "Rx with PhyErr	     = 0\n");
-			i4BytesWritten += kalSnprintf(
-				pcCommand + i4BytesWritten,
-				"%s", "Rx with PlcpErr	     = 0\n");
-			i4BytesWritten += kalSnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten,
-				"%s", "Rx drop due to out of resource	= 0\n");
-			i4BytesWritten += kalSnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten,
-				"Rx duplicate frame    = %ld\n",
-				prStatistics->rFrameDuplicateCount.QuadPart);
-			i4BytesWritten += kalSnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten,
-				"%s", "False CCA	     = 0\n");
-			i4BytesWritten += kalSnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten,
-				"RSSI		       = %d\n", i4Rssi);
-			i4BytesWritten += kalSnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten,
-				"Last TX Rate	       = %s, %s, %s, %s, %s\n",
-				"NA", "NA", "NA", "NA", "NA");
-			i4BytesWritten += kalSnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten,
-				"Last RX Rate	       = %s, %s, %s, %s, %s\n",
-				"NA", "NA", "NA", "NA", "NA");
-#endif
-
 		}
 
 	} else {

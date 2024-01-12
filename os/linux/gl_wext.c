@@ -2367,108 +2367,6 @@ wext_get_essid(struct net_device *prNetDev,
 	return 0;
 }				/* wext_get_essid */
 
-#if 0
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief To set tx desired bit rate. Three cases here
- *      iwconfig wlan0 auto -> Set to origianl supported rate set.
- *      iwconfig wlan0 18M -> Imply "fixed" case, set to 18Mbps as desired rate.
- *      iwconfig wlan0 18M auto -> Set to auto rate lower and equal to 18Mbps
- *
- * \param[in] prNetDev       Pointer to the net_device handler.
- * \param[in] prIwReqInfo    Pointer to the Request Info.
- * \param[in] prRate         Pointer to the Rate Parameter.
- * \param[in] pcExtra        Pointer to the extra buffer.
- *
- * \retval 0         Update desired rate.
- * \retval -EINVAL   Wrong parameter
- */
-/*----------------------------------------------------------------------------*/
-int
-wext_set_rate(struct net_device *prNetDev,
-	      struct iw_request_info *prIwReqInfo,
-	      struct iw_param *prRate, char *pcExtra)
-{
-	uint8_t aucSuppRate[PARAM_MAX_LEN_RATES_EX] = { 0 };
-	uint8_t aucNewRate[PARAM_MAX_LEN_RATES_EX] = { 0 };
-	uint32_t u4NewRateLen = 0;
-	uint32_t i;
-
-	struct GLUE_INFO *prGlueInfo = NULL;
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	uint32_t u4BufLen = 0;
-
-	ASSERT(prNetDev);
-	ASSERT(prRate);
-	if (GLUE_CHK_PR2(prNetDev, prRate) == FALSE)
-		return -EINVAL;
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-
-
-	rStatus = wlanQueryInformation(prGlueInfo->prAdapter,
-				       wlanoidQuerySupportedRates, &aucSuppRate,
-				       sizeof(aucSuppRate), &u4BufLen);
-
-	/* Case: AUTO */
-	if (prRate->value < 0) {
-		if (prRate->fixed == 0) {
-			/* iwconfig wlan0 rate auto */
-
-			/* set full supported rate to device */
-
-			rStatus = wlanSetInformation(prGlueInfo->prAdapter,
-						     wlanoidSetDesiredRates,
-						     &aucSuppRate,
-						     sizeof(aucSuppRate),
-						     &u4BufLen);
-			return 0;
-		}
-		/* iwconfig wlan0 rate fixed */
-
-		/* fix rate to what? DO NOTHING */
-		return -EINVAL;
-	}
-
-	aucNewRate[0] = prRate->value /
-			500000;	/* In unit of 500k */
-
-	for (i = 0; i < PARAM_MAX_LEN_RATES_EX; i++) {
-		/* check the given value is supported */
-		if (aucSuppRate[i] == 0)
-			break;
-
-		if (aucNewRate[0] == aucSuppRate[i]) {
-			u4NewRateLen = 1;
-			break;
-		}
-	}
-
-	if (u4NewRateLen == 0) {
-		/* the given value is not supported */
-		/* return error or use given rate as upper bound? */
-		return -EINVAL;
-	}
-
-	if (prRate->fixed == 0) {
-		/* add all rates lower than desired rate */
-		for (i = 0; i < PARAM_MAX_LEN_RATES_EX; ++i) {
-			if (aucSuppRate[i] == 0)
-				break;
-
-			if (aucSuppRate[i] < aucNewRate[0])
-				aucNewRate[u4NewRateLen++] = aucSuppRate[i];
-		}
-	}
-
-	rStatus = wlanSetInformation(prGlueInfo->prAdapter,
-				     wlanoidSetDesiredRates, &aucNewRate,
-				     sizeof(aucNewRate), &u4BufLen);
-	return 0;
-}				/* wext_set_rate */
-
-#endif
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief To get current tx bit rate.
@@ -3051,24 +2949,8 @@ wext_get_power(struct net_device *prNetDev,
 		return -EINVAL;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-#if 0
-#if defined(_HIF_SDIO)
-	rStatus = sdio_io_ctrl(prGlueInfo,
-			       wlanoidQuery802dot11PowerSaveProfile,
-			       &ePowerMode, sizeof(ePowerMode), TRUE, TRUE,
-			       &u4BufLen);
-#else
-	rStatus = wlanQueryInformation(prGlueInfo->prAdapter,
-				       wlanoidQuery802dot11PowerSaveProfile,
-				       &ePowerMode, sizeof(ePowerMode),
-				       &u4BufLen);
-#endif
-#else
-	rStatus = wlanQueryInformation(prGlueInfo->prAdapter,
-				       wlanoidQuery802dot11PowerSaveProfile,
-				       &ePowerMode, sizeof(ePowerMode),
-				       &u4BufLen);
-#endif
+	rStatus = kalIoctl(prGlueInfo, wlanoidQuery802dot11PowerSaveProfile,
+			&ePowerMode, sizeof(ePowerMode), &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		return -EFAULT;
@@ -3950,9 +3832,6 @@ int wext_support_ioctl(struct net_device *prDev,
 	/* case SIOCGIWNICKN: 0x8B1D, not supported */
 
 	case SIOCSIWRATE:	/* 0x8B20, set default bit rate (bps) */
-		/* ret = wext_set_rate(prDev, &rIwReqInfo, &iwr->u.bitrate,
-		 *		       NULL);
-		 */
 		break;
 
 	case SIOCGIWRATE:	/* 0x8B21, get current bit rate (bps) */
