@@ -432,6 +432,13 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 
 	DBGLOG(INIT, TRACE, "DRIVER OWN\n");
 
+	if (nicSerIsWaitingReset(prAdapter)) {
+		DBGLOG(INIT, WARN,
+		  "[SER][L1] Still in L1 reset flow, can't issue driver own\n");
+
+		return FALSE;
+	}
+
 	u4WriteTick = 0;
 	u4CurrTick = kalGetTimeTick();
 	i = 0;
@@ -464,10 +471,6 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 			prAdapter->u4OwnFailedCount = 0;
 			prAdapter->u4OwnFailedLogCount = 0;
 
-			if (nicSerIsWaitingReset(prAdapter)) {
-				/* SER is done, start Tx/Rx */
-				nicSerStartTxRx(prAdapter);
-			}
 			break;
 		} else if ((i > LP_OWN_BACK_FAILED_RETRY_CNT) &&
 			   (kalIsCardRemoved(prAdapter->prGlueInfo) || fgIsBusAccessFailed || fgTimeout
@@ -647,9 +650,10 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 	if (prAdapter->fgIsFwOwn == TRUE)
 		goto unlock;
 
-	if ((nicProcessIST(prAdapter) != WLAN_STATUS_NOT_INDICATING) &&
-	     !nicSerIsWaitingReset(prAdapter)) {
-		DBGLOG(INIT, INFO, "FW OWN Skipped due to pending INT\n");
+	if ((nicProcessIST(prAdapter) != WLAN_STATUS_NOT_INDICATING) ||
+	     nicSerIsWaitingReset(prAdapter)) {
+		DBGLOG(INIT, INFO,
+		  "FW OWN Skipped due to pending INT or waiting L1 reset\n");
 		/* pending interrupts */
 		goto unlock;
 	}
@@ -2376,10 +2380,25 @@ void halProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter)
 	}
 
 	if (u4IntrBits & SER_SDIO_N9_HOST_STOP_TX_RX_OP) {
+		DBGLOG(INIT, WARN, "[SER][L1] fw notify host L1 start\n");
 		halPrintMailbox(prAdapter);
 		/* Stop HIF Tx/Rx operation */
 		nicSerStopTxRx(prAdapter);
+		HAL_MCR_WR(prAdapter, MCR_WSICR,
+			SER_SDIO_HOST_N9_STOP_TX_RX_OP_ACK);
 	}
+
+	if (u4IntrBits & SER_SDIO_N9_HOST_RECOVERY_DONE) {
+		DBGLOG(INIT, WARN, "[SER][L1] fw L1 rst done\n");
+
+		wlanUpdateNicResourceInformation(prAdapter);
+		/* SER is done, start Tx/Rx */
+		nicSerStartTxRx(prAdapter);
+		nicTxRelease(prAdapter, 0x0);
+	}
+
+	if (u4IntrBits & SDIO_MAILBOX_FUNC_READ_REG_IDX)
+		prAdapter->fgGetMailBoxRWAck = TRUE;
 
 	if ((u4IntrBits & ~WHISR_D2H_WKUP_BY_RX_PACKET) != 0)
 		DBGLOG(SW4, WARN, "u4IntrBits: 0x%08x\n", u4IntrBits);

@@ -939,6 +939,8 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, 
 	} while (ret);
 
 	if (ret) {
+		HAL_SET_FLAG(prGlueInfo->prAdapter, ADAPTER_FLAG_HW_ERR);
+		fgIsBusAccessFailed = TRUE;
 		kalSendAeeWarning(HIF_SDIO_ERR_TITLE_STR,
 				  HIF_SDIO_ERR_DESC_STR "sdio_readl() reports error: %x retry: %u", ret, ucRetryCount);
 		DBGLOG(HAL, ERROR, "sdio_readl() reports error: %x retry: %u\n", ret, ucRetryCount);
@@ -965,6 +967,7 @@ u_int8_t kalDevRegRead_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regist
 	uint32_t u4Time, u4Current;
 	u_int8_t ucResult;/* For Unchecked return value*/
 	u_int8_t fgOwnStatus = 0;
+	u_int8_t fgIssueOwn = FALSE;
 
 	HAL_LP_OWN_RD(prGlueInfo->prAdapter, &fgOwnStatus);
 	if (!fgOwnStatus) {
@@ -974,6 +977,8 @@ u_int8_t kalDevRegRead_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regist
 				"Driver own fail before R/W mailbox CR!");
 			ucResult = FALSE;
 			goto Exit;
+		} else {
+			fgIssueOwn = TRUE;
 		}
 	}
 
@@ -997,7 +1002,8 @@ u_int8_t kalDevRegRead_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regist
 		/* check bit16 of WHISR assert for read register response */
 		ucResult = kalDevRegRead(prGlueInfo, MCR_WHISR, &value);
 
-		if (value & SDIO_MAILBOX_FUNC_READ_REG_IDX) {
+		if ((value & SDIO_MAILBOX_FUNC_READ_REG_IDX) ||
+			prGlueInfo->prAdapter->fgGetMailBoxRWAck) {
 			/* read d2h mailbox0 for interested register address */
 			ucResult = kalDevRegRead(prGlueInfo,
 						MCR_D2HRM0R, &value);
@@ -1036,8 +1042,10 @@ u_int8_t kalDevRegRead_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regist
 	} while (1);
 
 Exit:
-	if (fgOwnStatus)
+	if (fgIssueOwn)
 		nicpmSetFWOwn(prGlueInfo->prAdapter, FALSE);
+
+	prGlueInfo->prAdapter->fgGetMailBoxRWAck = FALSE;
 
 	return ucResult;
 }
@@ -1084,6 +1092,8 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register,
 	} while (ret);
 
 	if (ret) {
+		HAL_SET_FLAG(prGlueInfo->prAdapter, ADAPTER_FLAG_HW_ERR);
+		fgIsBusAccessFailed = TRUE;
 		kalSendAeeWarning(HIF_SDIO_ERR_TITLE_STR,
 				  HIF_SDIO_ERR_DESC_STR "sdio_writel() reports error: %x retry: %u", ret, ucRetryCount);
 		DBGLOG(HAL, ERROR, "sdio_writel() reports error: %x retry: %u\n", ret, ucRetryCount);
@@ -1110,6 +1120,7 @@ u_int8_t kalDevRegWrite_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regis
 	uint32_t u4Time, u4Current;
 	uint8_t ucResult; /* For Unchecked return value*/
 	u_int8_t fgOwnStatus = 0;
+	u_int8_t fgIssueOwn = FALSE;
 
 	HAL_LP_OWN_RD(prGlueInfo->prAdapter, &fgOwnStatus);
 	if (!fgOwnStatus) {
@@ -1119,6 +1130,8 @@ u_int8_t kalDevRegWrite_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regis
 				"Driver own fail before R/W mailbox CR!");
 			ucResult = FALSE;
 			goto Exit;
+		} else {
+			fgIssueOwn = TRUE;
 		}
 	}
 
@@ -1145,7 +1158,8 @@ u_int8_t kalDevRegWrite_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regis
 		/* check bit17 of WHISR assert for response */
 		ucResult = kalDevRegRead(prGlueInfo, MCR_WHISR, &value);
 
-		if (value & SDIO_MAILBOX_FUNC_WRITE_REG_IDX) {
+		if ((value & SDIO_MAILBOX_FUNC_WRITE_REG_IDX) ||
+			prGlueInfo->prAdapter->fgGetMailBoxRWAck) {
 			/* read d2h mailbox0 for interested register address */
 			ucResult = kalDevRegRead(prGlueInfo,
 						MCR_D2HRM0R, &value);
@@ -1179,8 +1193,10 @@ u_int8_t kalDevRegWrite_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regis
 	} while (1);
 
 Exit:
-	if (fgOwnStatus)
+	if (fgIssueOwn)
 		nicpmSetFWOwn(prGlueInfo->prAdapter, FALSE);
+
+	prGlueInfo->prAdapter->fgGetMailBoxRWAck = FALSE;
 
 	return ucResult;
 }
@@ -1583,7 +1599,8 @@ u_int8_t kalDevWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *p
 	SDIO_ADD_TIME_INTERVAL(prHifInfo->rStatCounter.u4TxDataFreeTime);
 
 	/* Update pending Tx done count */
-	halUpdateTxDonePendingCount(prAdapter, TRUE, ucTC, u4Length);
+	halUpdateTxDonePendingCount(prAdapter, TRUE, ucTC,
+					prMsduInfo->u2FrameLength);
 
 	prHifInfo->rStatCounter.u4DataPktWriteCnt++;
 

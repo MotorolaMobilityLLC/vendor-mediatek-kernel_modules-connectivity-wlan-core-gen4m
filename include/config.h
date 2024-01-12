@@ -1983,6 +1983,15 @@
 #endif
 
 /*------------------------------------------------------------------------------
+* Flags for supported not free pending Tx msduInfo in nicDeactivateNetworkEx()
+* Prevent clear msdu which is still Tx(Host -> Device)
+*------------------------------------------------------------------------------
+*/
+#ifndef CFG_NOT_CLR_FREE_MSDU_IN_DEACTIVE_NETWORK
+#define CFG_NOT_CLR_FREE_MSDU_IN_DEACTIVE_NETWORK  0
+#endif
+
+/*------------------------------------------------------------------------------
  * Suppoot to get Tx/Rx MCS Info
  *------------------------------------------------------------------------------
  */
