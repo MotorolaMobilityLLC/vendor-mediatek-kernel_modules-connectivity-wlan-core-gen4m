@@ -587,6 +587,13 @@ struct SCAN_INFO {
 
 	/* Scan log cache */
 	struct SCAN_LOG_CACHE rScanLogCache;
+#if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
+	uint8_t		ucScnZeroMdrdyTimes;
+	uint8_t		ucScnZeroMdrdySerCnt;
+	uint8_t		ucScnZeroMdrdySubsysResetCnt;
+	uint8_t		ucScnTimeoutTimes;
+	uint8_t		ucScnTimeoutSubsysResetCnt;
+#endif
 };
 
 /* Incoming Mailbox Messages */
@@ -902,6 +909,16 @@ void scnSetSchedScanPlan(IN struct ADAPTER *prAdapter,
 			IN struct CMD_SCHED_SCAN_REQ *prSchedScanCmd);
 
 #endif /* CFG_SUPPORT_SCHED_SCAN */
+
+#if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
+void scnDoZeroMdrdyRecoveryCheck(IN struct ADAPTER *prAdapter,
+			IN struct EVENT_SCAN_DONE *prScanDone,
+			IN struct SCAN_INFO *prScanInfo, IN uint8_t ucBssIndex);
+
+void scnDoScanTimeoutRecoveryCheck(IN struct ADAPTER *prAdapter,
+			IN uint8_t ucBssIndex);
+
+#endif
 
 void scanLogEssResult(struct ADAPTER *prAdapter);
 void scanInitEssResult(struct ADAPTER *prAdapter);
