@@ -4870,6 +4870,14 @@ do { \
 	} \
 } while (FALSE)
 
+#define CLEAR_EXT_CAP(_aucField, _ucFieldLength, _ucBit) \
+do { \
+	if ((_ucBit) < ((_ucFieldLength) * 8)) { \
+		uint8_t *aucExtCap = (uint8_t *)(_aucField); \
+		((aucExtCap)[(_ucBit) / 8]) &= ~BIT((_ucBit) % 8); \
+	} \
+} while (FALSE)
+
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
