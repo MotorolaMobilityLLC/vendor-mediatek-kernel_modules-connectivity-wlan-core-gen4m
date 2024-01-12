@@ -215,17 +215,6 @@ enum _ENUM_IGTK_CIPHER_SUIT_T {
 	IGTK_CIPHER_SUIT_BIP_256
 };
 
-#define SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten, fmt, args...) (\
-	{\
-		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,\
-				i4TotalLen - i4BytesWritten,\
-				fmt,\
-				args);\
-		DBGLOG(HAL, INFO, fmt, args);\
-		i4BytesWritten;\
-	} \
-)
-
 u_int8_t connac3x_wtbl_get_ldpc_info(
 	uint8_t ucTxMode,
 	struct bwtbl_lmac_struct *pWtbl);
