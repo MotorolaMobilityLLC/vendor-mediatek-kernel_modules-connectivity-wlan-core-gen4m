@@ -8232,7 +8232,8 @@ void nicUniEventPsSync(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				(struct UNI_EVENT_CLIENT_PS_INFO *) tag;
 			struct EVENT_STA_CHANGE_PS_MODE legacy = {0};
 
-			legacy.ucStaRecIdx = ps->ucWtblIndex;
+			legacy.ucStaRecIdx =
+				secGetStaIdxByWlanIdx(ad, ps->ucWtblIndex);
 			legacy.ucIsInPs = ps->ucPsBit;
 			legacy.ucFreeQuota = ps->ucBufferSize;
 
@@ -8270,7 +8271,8 @@ void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				(struct UNI_EVENT_SAP_AGING_TIMEOUT *) tag;
 			struct EVENT_STA_AGING_TIMEOUT legacy = {0};
 
-			legacy.ucStaRecIdx = aging->u2StaRecIdx;
+			legacy.ucStaRecIdx =
+				secGetStaIdxByWlanIdx(ad, aging->u2WlanIdx);
 
 			RUN_RX_EVENT_HANDLER(EVENT_ID_STA_AGING_TIMEOUT,
 								&legacy);
@@ -8281,7 +8283,8 @@ void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				(struct UNI_EVENT_UPDATE_STA_FREE_QUOTA *) tag;
 			struct EVENT_STA_UPDATE_FREE_QUOTA legacy = {0};
 
-			legacy.ucStaRecIdx = quota->u2StaRecIdx;
+			legacy.ucStaRecIdx =
+				secGetStaIdxByWlanIdx(ad, quota->u2WlanIdx);
 			legacy.ucUpdateMode = quota->ucUpdateMode;
 			legacy.ucFreeQuota = quota->ucFreeQuota;
 

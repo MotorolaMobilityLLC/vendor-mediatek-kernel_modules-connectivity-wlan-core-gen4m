@@ -5179,7 +5179,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_SAP_AGING_TIMEOUT {
 	uint16_t u2Tag;    // Tag = 0x00
 	uint16_t u2Length;
-	uint16_t u2StaRecIdx;
+	uint16_t u2WlanIdx;
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
@@ -5187,7 +5187,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_UPDATE_STA_FREE_QUOTA {
 	uint16_t u2Tag;
 	uint16_t u2Length;
-	uint16_t u2StaRecIdx;
+	uint16_t u2WlanIdx;
 	uint8_t  ucUpdateMode;
 	uint8_t  ucFreeQuota;
 } __KAL_ATTRIB_PACKED__;
