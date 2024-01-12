@@ -319,6 +319,8 @@ p2pRoleStateAbort_AP_CHNL_DETECTION(IN struct ADAPTER *prAdapter,
 		if (eNextState == P2P_ROLE_STATE_REQING_CHANNEL) {
 			prBssInfo =
 				GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+			if (!prBssInfo)
+				break;
 			prP2pSpecificBssInfo =
 				prAdapter->rWifiVar
 				.prP2pSpecificBssInfo[prBssInfo->u4PrivateData];

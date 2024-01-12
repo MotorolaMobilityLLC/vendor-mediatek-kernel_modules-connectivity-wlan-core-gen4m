@@ -158,7 +158,8 @@ p2pDevStateInit_REQING_CHANNEL(IN struct ADAPTER *prAdapter,
 			&& (prChnlReqInfo != NULL) && (peNextState != NULL));
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
-
+		if (!prBssInfo)
+			break;
 		if (LINK_IS_EMPTY(&(prChnlReqInfo->rP2pChnlReqLink))) {
 			/* NO Channel Request Pending. */
 			DBGLOG(P2P, ERROR,
