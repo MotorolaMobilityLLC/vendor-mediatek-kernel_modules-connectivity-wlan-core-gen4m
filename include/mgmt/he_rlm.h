@@ -220,5 +220,14 @@ void heRlmRecBTWTparams(
 	uint8_t *pucIE);
 #endif
 
+void heRlmReqGenerateBssMaxIdleIE(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo);
+
+static void heRlmFillBssMaxIdleIE(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct MSDU_INFO *prMsduInfo);
+
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 #endif /* !_HE_RLM_H */

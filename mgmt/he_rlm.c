@@ -1662,4 +1662,57 @@ void heRlmRecBTWTparams(
 
 #endif /* CFG_SUPPORT_BTWT == 1 */
 
+void heRlmReqGenerateBssMaxIdleIE(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
+{
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+
+	if (fgEfuseCtrlAxOn == 1) {
+
+	ASSERT(prAdapter);
+	ASSERT(prMsduInfo);
+
+	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
+	if (!prBssInfo)
+		return;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+
+	if ((prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11AX)
+	    && (!prStaRec || (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AX)))
+		heRlmFillBssMaxIdleIE(prAdapter, prBssInfo, prMsduInfo);
+	}
+}
+
+static void heRlmFillBssMaxIdleIE(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct MSDU_INFO *prMsduInfo)
+{
+	struct IE_BSS_MAX_IDLE_PERIOD  *prBssMaxIdleIE;
+	uint8_t ucIdleOptions = 0;
+	struct STA_RECORD *prStaRec;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+	prBssMaxIdleIE = (struct IE_BSS_MAX_IDLE_PERIOD *)
+		(((uint8_t *)prMsduInfo->prPacket)+prMsduInfo->u2FrameLength);
+
+	prBssMaxIdleIE->ucId = ELEM_ID_BSS_MAX_IDLE_PERIOD;
+	prBssMaxIdleIE->ucLength = ELEM_MAX_LEN_BSS_MAX_IDLE;
+	WLAN_SET_FIELD_16(&prBssMaxIdleIE->u2MaxIdlePeriod,
+		BSS_MAX_IDLE_PERIOD_VALUE);
+
+	/* The Protected Keep-Alive Required subfield is set to 1
+	 * to indicate that only a protected frame indicates activity.
+	 */
+	if ((prStaRec->u2CapInfo & CAP_INFO_PRIVACY) &&
+		secEnabledInAis(prAdapter, prMsduInfo->ucBssIndex))
+		ucIdleOptions = 1;
+	prBssMaxIdleIE->ucIdleOptions = ucIdleOptions;
+
+	prMsduInfo->u2FrameLength += IE_SIZE(prBssMaxIdleIE);
+}
+
 #endif /* CFG_SUPPORT_802_11AX == 1 */
