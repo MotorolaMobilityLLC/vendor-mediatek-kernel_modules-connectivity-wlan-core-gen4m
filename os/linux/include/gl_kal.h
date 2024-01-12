@@ -1273,6 +1273,8 @@ void kalSetTxEvent2Rx(struct GLUE_INFO *pr);
 void kalSetTxCmdEvent2Hif(struct GLUE_INFO *pr);
 
 void kalSetTxCmdDoneEvent(struct GLUE_INFO *pr);
+
+void kalSetRxProcessEvent(struct GLUE_INFO *pr);
 #endif
 /*----------------------------------------------------------------------------*/
 /* NVRAM/Registry Service                                                     */
