@@ -2113,7 +2113,7 @@ void halPcieHwControlVote(
 			BIT(u4WifiUser);
 	}
 
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, TRACE,
 		"enable[%d], user[%d], Vote state[0x%08X]\n",
 		enable, u4WifiUser,
 		prAdapter->prGlueInfo->rHifInfo.u4VoteState);
