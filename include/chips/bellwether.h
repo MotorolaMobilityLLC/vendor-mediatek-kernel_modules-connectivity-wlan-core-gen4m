@@ -58,9 +58,6 @@ extern struct PLE_TOP_CR rBellwetherPleTopCr;
 extern struct PSE_TOP_CR rBellwetherPseTopCr;
 extern struct PP_TOP_CR rBellwetherPpTopCr;
 
-#define BELLWETHER_FIRMWARE_ROM			"wf_rom.bin"
-#define BELLWETHER_FIRMWARE_ROM_SRAM		"wf_rom_sram.bin"
-
 #define BELLWETHER_FIRMWARE_ROM_ADDR		0x00800000
 #define BELLWETHER_FIRMWARE_ROM_SRAM_ADDR	0xE0048000
 
