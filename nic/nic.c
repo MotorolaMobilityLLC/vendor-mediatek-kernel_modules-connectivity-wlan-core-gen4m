@@ -2317,6 +2317,20 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 	} else
 		rCmdSetBssInfo.ucBMCWlanIndex = prBssInfo->ucBMCWlanIndex;
 
+	if ((prBssInfo->eConnectionState ==
+		MEDIA_STATE_DISCONNECTED ||
+		prBssInfo->eConnectionState ==
+	    MEDIA_STATE_ROAMING_DISC_PREV) &&
+	    secCheckWTBLwlanIdxInUseByOther(prAdapter,
+		rCmdSetBssInfo.ucBMCWlanIndex, ucBssIndex)) {
+		rCmdSetBssInfo.ucBMCWlanIndex =
+			secPrivacySeekForBcEntry(
+				prAdapter, prBssInfo->ucBssIndex,
+				prBssInfo->aucOwnMacAddr,
+				STA_REC_INDEX_NOT_FOUND,
+				CIPHER_SUITE_NONE, 0xFF);
+	}
+
 	DBGLOG(RSN, TRACE, "Update BSS BMC WlanIdx %u\n",
 	       rCmdSetBssInfo.ucBMCWlanIndex);
 
