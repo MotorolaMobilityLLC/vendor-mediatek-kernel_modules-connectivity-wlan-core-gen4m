@@ -134,7 +134,7 @@
 #define WLAN_CFG_ARGV_MAX_LONG	22	/* for WOW, 2+20 */
 #define WLAN_CFG_ENTRY_NUM_MAX	200	/* 128 */
 #define WLAN_CFG_KEY_LEN_MAX	32	/* include \x00  EOL */
-#define WLAN_CFG_VALUE_LEN_MAX	32	/* include \x00 EOL */
+#define WLAN_CFG_VALUE_LEN_MAX	128	/* include \x00 EOL */
 #define WLAN_CFG_FLAG_SKIP_CB	BIT(0)
 #define WLAN_CFG_FILE_BUF_SIZE	2048
 
@@ -996,6 +996,43 @@ struct PARAM_GET_CNM_T {
 	uint8_t	au4Reserved[65]; /*Total 160 byte*/
 };
 
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
+enum ENUM_WLAN_IOT_AP_FLAG_T {
+	WLAN_IOT_AP_FG_VERSION = 0,
+	WLAN_IOT_AP_FG_OUI,
+	WLAN_IOT_AP_FG_DATA,
+	WLAN_IOT_AP_FG_DATA_MASK,
+	WLAN_IOT_AP_FG_BSSID,
+	WLAN_IOT_AP_FG_BSSID_MASK,
+	WLAN_IOT_AP_FG_NSS,
+	WLAN_IOT_AP_FG_HT,
+	WLAN_IOT_AP_FG_BAND,
+	WLAN_IOT_AP_FG_ACTION,
+	WLAN_IOT_AP_FG_MAX
+};
+
+enum ENUM_WLAN_IOT_AP_HANDLE_ACTION {
+	WLAN_IOT_AP_VOID = 0,
+	WLAN_IOT_AP_DBDC_1SS,
+	WLAN_IOT_AP_ACT_MAX
+};
+
+struct WLAN_IOT_AP_RULE_T {
+	uint16_t u2MatchFlag;
+	uint8_t  ucDataLen;
+	uint8_t  ucDataMaskLen;
+	uint8_t  ucVersion;
+	uint8_t  aVendorOui[MAC_OUI_LEN];
+	uint8_t  aVendorData[CFG_IOT_AP_DATA_MAX_LEN];
+	uint8_t  aVendorDataMask[CFG_IOT_AP_DATA_MAX_LEN];
+	uint8_t  aBssid[MAC_ADDR_LEN];
+	uint8_t  aBssidMask[MAC_ADDR_LEN];
+	uint8_t  ucNss;
+	uint8_t  ucHtType;
+	uint8_t  ucBand;
+	uint8_t  ucAction;
+};
+#endif
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -1374,9 +1411,18 @@ uint32_t wlanCfgParseArgumentLong(int8_t *cmdLine, int32_t *argc,
 				  int8_t *argv[]);
 #endif
 
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
+void wlanCfgLoadIotApRule(IN struct ADAPTER *prAdapter);
+void wlanCfgDumpIotApRule(IN struct ADAPTER *prAdapter);
+#endif
+
 int32_t wlanHexToNum(int8_t c);
 
 int32_t wlanHexToByte(int8_t *hex);
+
+int32_t wlanHexToArray(int8_t *hexString, int8_t *hexArray, uint8_t arrayLen);
+int32_t wlanHexToArrayR(int8_t *hexString, int8_t *hexArray, uint8_t arrayLen);
+
 
 int32_t wlanHwAddrToBin(int8_t *txt, uint8_t *addr);
 

@@ -2383,3 +2383,162 @@ void bssDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 
 	DBGLOG(SW4, INFO, "============== Dump Done ==============\n");
 }
+
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
+int8_t bssGetRxNss(IN struct ADAPTER *prAdapter,
+	IN struct BSS_DESC *prBssDesc)
+{
+	uint8_t  ucIeByte = 0;
+	int8_t   ucBssNss = 0;
+	uint8_t  *pucRxMcsBitMaskIe;
+	const uint8_t *pucIe;
+
+	if (!prAdapter || !prBssDesc) {
+		DBGLOG(BSS, INFO, "GetRxNss Param Error!\n");
+		return -EINVAL;
+	}
+
+	pucIe = mtk_cfg80211_find_ie_match_mask(
+		ELEM_ID_HT_CAP,
+		&prBssDesc->aucIEBuf[0],
+		prBssDesc->u2IELength,
+		NULL, 0, 0, NULL);
+
+	if (!pucIe)
+		return 1;
+
+	pucRxMcsBitMaskIe =
+		&((struct IE_HT_CAP *)pucIe)->
+		rSupMcsSet.aucRxMcsBitmask[0];
+	do {
+		ucIeByte = pucRxMcsBitMaskIe[ucBssNss];
+		if (ucIeByte)
+			ucBssNss++;
+		if (ucBssNss == 8)
+			return ucBssNss;
+	} while (ucIeByte != 0);
+
+	return ucBssNss;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief get IOT AP handle action.
+ *
+ * @param[in] prBssDesc
+ *
+ * @return ENUM_WLAN_IOT_AP_HANDLE_ACTION
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t bssGetIotApAction(IN struct ADAPTER *prAdapter,
+	IN struct BSS_DESC *prBssDesc)
+{
+	uint8_t  ucCnt = 0;
+	int8_t   ucBssNss;
+	uint8_t  *pucMask;
+	uint16_t u2MatchFlag;
+	const  uint8_t *pucIes;
+	const  uint8_t *pucIe;
+	struct WLAN_IOT_AP_RULE_T *prIotApRule;
+
+	if (!prAdapter || !prBssDesc) {
+		DBGLOG(BSS, INFO, "GetIotApAction Param Error!\n");
+		return -EINVAL;
+	}
+
+	pucIes = &prBssDesc->aucIEBuf[0];
+	for (ucCnt = 0; ucCnt < CFG_IOT_AP_RULE_MAX_CNT; ucCnt++) {
+		prIotApRule = &prAdapter->rIotApRule[ucCnt];
+		u2MatchFlag = prIotApRule->u2MatchFlag;
+
+		/*No need to match empty rule*/
+		if (prIotApRule->u2MatchFlag == 0)
+			continue;
+
+		/*Check if default rule is allowed*/
+		if (!prAdapter->rWifiVar.fgEnDefaultIotApRule &&
+			(prIotApRule->ucVersion & BIT(7)))
+			continue;
+
+		/*Match Vendor OUI*/
+		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_OUI)) {
+			pucIe = mtk_cfg80211_find_ie_match_mask(
+				ELEM_ID_VENDOR,
+				pucIes, prBssDesc->u2IELength,
+				prIotApRule->aVendorOui,
+				MAC_OUI_LEN, 2, NULL);
+			if (!pucIe)
+				continue;
+			/*Match!, Fall through*/
+		}
+
+		/*Match Vendor Data rule*/
+		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_DATA)) {
+			pucMask =
+				u2MatchFlag & BIT(WLAN_IOT_AP_FG_DATA_MASK) ?
+				&prIotApRule->aVendorDataMask[0] : NULL;
+			pucIe = mtk_cfg80211_find_ie_match_mask(
+				ELEM_ID_VENDOR,
+				pucIes, prBssDesc->u2IELength,
+				prIotApRule->aVendorData,
+				prIotApRule->ucDataLen, 5, pucMask);
+			if (!pucIe)
+				continue;
+			/*Match!, Fall through*/
+		}
+
+		/*Match BSSID rule*/
+		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_BSSID)) {
+			pucMask =
+				u2MatchFlag & BIT(WLAN_IOT_AP_FG_BSSID_MASK) ?
+				&prIotApRule->aBssidMask[0] : NULL;
+			if (kalMaskMemCmp(&prBssDesc->aucBSSID,
+				&prIotApRule->aBssid,
+				pucMask,
+				MAC_ADDR_LEN))
+				continue;
+			/*Match!, Fall through*/
+		}
+
+		/*Match Rx NSS rule*/
+		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_NSS)) {
+			ucBssNss = bssGetRxNss(prAdapter, prBssDesc);
+			if (ucBssNss < 0)
+				DBGLOG(BSS, TRACE,
+					"IOTAP Nss=%d invalid", ucBssNss);
+			if (ucBssNss != prIotApRule->ucNss)
+				continue;
+			/*Match!, Fall through*/
+		}
+
+		/*Match HT type rule*/
+		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_HT)) {
+			if (prBssDesc->fgIsVHTPresent) {
+				if (prIotApRule->ucHtType != 2)
+					continue;
+			} else if (prBssDesc->fgIsHTPresent) {
+				if (prIotApRule->ucHtType != 1)
+					continue;
+			} else {
+				if (prIotApRule->ucHtType != 0)
+					continue;
+			}
+			/*Matched, Fall through*/
+		}
+
+		/*Match Band Rule*/
+		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_BAND)) {
+			if (prBssDesc->eBand != prIotApRule->ucBand)
+				continue;
+			/*Matched, Fall through*/
+		}
+
+		/*All MATCH*/
+		DBGLOG(BSS, INFO, MACSTR" is IOTAP:%d Act:%d\n",
+			prBssDesc->aucBSSID, ucCnt, prIotApRule->ucAction);
+		return prIotApRule->ucAction;
+	}
+	DBGLOG(BSS, INFO, MACSTR" is NOT IOTAP\n",
+		prBssDesc->aucBSSID);
+	return WLAN_IOT_AP_VOID;
+}
+#endif

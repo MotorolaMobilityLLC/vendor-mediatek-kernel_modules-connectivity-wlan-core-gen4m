@@ -1041,6 +1041,10 @@ struct WIFI_VAR {
 	uint32_t ucGROFlushTimeout; /* Flush packet timeout (ms) */
 	uint32_t ucGROEnableTput; /* Threshold of enable GRO Tput */
 #endif
+
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
+	uint8_t fgEnDefaultIotApRule;
+#endif
 };
 
 /* cnm_timer module */
@@ -1573,7 +1577,9 @@ struct ADAPTER {
 #if CFG_SUPPORT_RX_GRO
 	OS_SYSTIME tmGROFlushTimeout;
 #endif
-
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
+	struct WLAN_IOT_AP_RULE_T rIotApRule[CFG_IOT_AP_RULE_MAX_CNT];
+#endif
 #if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
 	uint32_t u4StaMaxTxRate;
 #endif /* CFG_REPORT_MAX_TX_RATE */
