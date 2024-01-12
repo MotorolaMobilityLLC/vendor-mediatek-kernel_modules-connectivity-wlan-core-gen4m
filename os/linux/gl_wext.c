@@ -4438,6 +4438,7 @@ wext_indicate_wext_event(IN struct GLUE_INFO *prGlueInfo,
 				(struct PARAM_PMKID_CANDIDATE *) pucData;
 
 			struct iw_pmkid_cand rPmkidCand;
+			memset(&rPmkidCand, 0, sizeof(rPmkidCand));
 
 			pucExtraInfo = aucExtraInfoBuf;
 
