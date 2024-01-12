@@ -506,7 +506,9 @@ void cnmTimerStartTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer,
 {
 	struct ROOT_TIMER *prRootTimer;
 	struct LINK *prTimerList;
-	OS_SYSTIME rExpiredSysTime, rTimeoutSystime;
+	OS_SYSTIME rCurSysTime, rExpiredSysTime, rTimeoutSystime;
+	struct TIMER *prPendingTimer;
+	struct LINK_ENTRY *prLinkEntry;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -556,7 +558,38 @@ void cnmTimerStartTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer,
 	rTimeoutSystime = MSEC_TO_SYSTIME(u4TimeoutMs);
 	if (rTimeoutSystime == 0)
 		rTimeoutSystime = 1;
-	rExpiredSysTime = kalGetTimeTick() + rTimeoutSystime;
+	rCurSysTime = kalGetTimeTick();
+	rExpiredSysTime = rCurSysTime + rTimeoutSystime;
+
+	/* Remove out-of-date timers */
+	if (TIME_BEFORE(prRootTimer->rNextExpiredSysTime, rCurSysTime)) {
+		log_dbg(CNM, WARN, "Invalid NextExpiredSysTime: %u, currentSysTime: %u\n",
+			prRootTimer->rNextExpiredSysTime, rCurSysTime);
+
+		/* Dump timers */
+		cnmTimerDumpTimer(prAdapter);
+
+		LINK_FOR_EACH(prLinkEntry, prTimerList) {
+			if (prLinkEntry == NULL)
+				break;
+
+			prPendingTimer = LINK_ENTRY(prLinkEntry,
+				struct TIMER, rLinkEntry);
+
+			if (TIME_BEFORE(prPendingTimer->rExpiredSysTime,
+					rCurSysTime)) {
+				log_dbg(CNM, WARN, "remove out-of-date timer, timer %p func %pf\n",
+					prPendingTimer,
+					prPendingTimer->pfMgmtTimeOutFunc);
+
+				cnmTimerStopTimer_impl(prAdapter,
+					prPendingTimer, FALSE);
+			}
+		}
+		/* Set max timeout */
+		prRootTimer->rNextExpiredSysTime
+			= rCurSysTime + MGMT_MAX_TIMEOUT_INTERVAL;
+	}
 
 	/* If no timer pending or the fast time interval is used. */
 	if (LINK_IS_EMPTY(prTimerList)
