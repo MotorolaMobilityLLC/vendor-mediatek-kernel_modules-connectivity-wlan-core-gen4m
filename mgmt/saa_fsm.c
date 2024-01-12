@@ -422,6 +422,10 @@ saaFsmSendEventJoinComplete(struct ADAPTER *prAdapter,
 		DBGLOG(SAA, ERROR, "[%s]prAdapter is NULL\n", __func__);
 		return WLAN_STATUS_INVALID_PACKET;
 	}
+	if (prStaRec->ucBssIndex >= MAX_BSSID_NUM) {
+		DBGLOG(NIC, ERROR, "ucBssIndex out of range!\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	/* Store limitation about 40Mhz bandwidth capability during
 	 * association.
