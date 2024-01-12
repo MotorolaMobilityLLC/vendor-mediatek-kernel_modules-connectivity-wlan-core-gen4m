@@ -89,6 +89,7 @@
 #define OUI_QCA 0x001374
 #define OUI_MTK 0x000CE7
 
+/* QCA-OUI subcmds */
 #define NL80211_VENDOR_SUBCMD_GET_PREFER_FREQ_LIST 103
 #define NL80211_VENDOR_SUBCMD_ACS 54
 #define NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_CAC_STARTED 56
@@ -100,8 +101,7 @@
 #define NL80211_VENDOR_SUBCMD_GET_FEATURES 55
 #define QCA_NL80211_VENDOR_SUBCMD_ROAM 64
 #define QCA_NL80211_VENDOR_SUBCMD_SETBAND 105
-#define NL80211_VENDOR_SUBCMD_NAN 12
-#define NL80211_VENDOR_SUBCMD_NDP 81
+/* End of QCA-OUI subcmds */
 
 #define WIFI_VENDOR_ATTR_FEATURE_FLAGS 7
 #define WIFI_VENDOR_DATA_OP_MODE_CHANGE(bssIdx, channelBw, TxNss, RxNss) \
@@ -192,6 +192,15 @@ enum WIFI_OFFLOAD_SUB_COMMAND {
 	WIFI_OFFLOAD_STOP_MKEEP_ALIVE,
 };
 
+/* MTK subcmds should be here */
+enum MTK_WIFI_VENDOR_SUB_COMMAND {
+	MTK_SUBCMD_TRIGGER_RESET = 1,
+	MTK_SUBCMD_NAN = 12,
+	MTK_SUBCMD_NDP = 81,
+
+	MTK_SUBCMD_STRING_CMD = 0x2454,
+};
+
 enum WIFI_VENDOR_EVENT {
 	GSCAN_EVENT_SIGNIFICANT_CHANGE_RESULTS,
 	GSCAN_EVENT_HOTLIST_RESULTS_FOUND,
@@ -249,6 +258,12 @@ enum LOGGER_ATTRIBUTE {
 	LOGGER_ATTRIBUTE_DRIVER_VER = 1,
 	LOGGER_ATTRIBUTE_FW_VER     = 2,
 	LOGGER_ATTRIBUTE_MAX	    = 3
+};
+
+enum STRING_ATTRIBUTE {
+	STRING_ATTRIBUTE_INVALID = 0,
+	STRING_ATTRIBUTE_DATA    = 1,
+	STRING_ATTRIBUTE_MAX     = 2
 };
 
 enum RTT_ATTRIBUTE {
@@ -427,6 +442,10 @@ extern const struct nla_policy nla_parse_wifi_rssi_monitor[
 
 extern const struct nla_policy nla_get_version_policy[
 		LOGGER_ATTRIBUTE_MAX + 1];
+
+extern const struct nla_policy nla_string_cmd_policy[
+		STRING_ATTRIBUTE_MAX + 1];
+
 
 /*******************************************************************************
  *                           MACROS
@@ -889,5 +908,8 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 
 int mtk_cfg80211_vendor_set_scan_param(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len);
+
+int mtk_cfg80211_vendor_string_cmd(struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len);
 
 #endif /* _GL_VENDOR_H */

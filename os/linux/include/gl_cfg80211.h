@@ -467,8 +467,7 @@ int mtk_cfg80211_tdls_oper(struct wiphy *wiphy,
 #endif
 
 int32_t mtk_cfg80211_process_str_cmd(struct wiphy *wiphy,
-			struct wireless_dev *wdev,
-			uint8_t *cmd, int32_t len);
+			struct wireless_dev *wdev, uint8_t *cmd, int32_t len);
 
 int32_t mtk_cfg80211_process_str_cmd_reply(
 	IN struct wiphy *wiphy, IN char *data, IN int len);
