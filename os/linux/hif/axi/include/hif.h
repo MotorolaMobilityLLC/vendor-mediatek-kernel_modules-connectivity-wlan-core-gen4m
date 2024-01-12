@@ -138,10 +138,16 @@ struct GL_HIF_INFO {
 #if CFG_MTK_WIFI_WFDMA_WB
 	struct RTMP_DMABUF rRingDmyRd;
 	struct RTMP_DMABUF rRingDmyWr;
-	struct RTMP_DMABUF rRingIdx0;
-	struct RTMP_DMABUF rRingIntSta0;
-	struct RTMP_DMABUF rRingIdx1;
-	struct RTMP_DMABUF rRingIntSta1;
+	struct RTMP_DMABUF rRingIntSta;
+	struct RTMP_DMABUF rRingDidx;
+	struct RTMP_DMABUF rRingCidx;
+	struct RTMP_DMABUF rHwDoneFlag;
+	struct RTMP_DMABUF rSwDoneFlag;
+
+	struct RTMP_DMABUF rRingMdIntSta;
+	struct RTMP_DMABUF rRingMdDidx;
+
+	struct WFDMA_EMI_DONE_FLAG rIntFlag;
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 	uint32_t u4RxDataRingSize;
 	uint32_t u4RxEvtRingSize;

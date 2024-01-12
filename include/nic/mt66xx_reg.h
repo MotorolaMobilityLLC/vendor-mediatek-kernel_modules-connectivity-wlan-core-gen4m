@@ -1473,7 +1473,22 @@ struct mt66xx_chip_info {
 	const uint32_t *mawd_idx_patch;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	const u_int8_t is_en_wfdma_no_mmio_read;
+#if CFG_MTK_WIFI_WFDMA_WB
 	const u_int8_t is_support_wfdma_write_back;
+	const u_int8_t is_support_wfdma_cidx_fetch;
+	const uint32_t wb_int_sta_size;
+	const uint32_t wb_didx_size;
+	const uint32_t wb_cidx_size;
+	const uint32_t wb_hw_done_flag_size;
+	const uint32_t wb_sw_done_flag_size;
+	const uint32_t wb_md_int_sta_size;
+	const uint32_t wb_md_didx_size;
+	u_int8_t is_enable_wfdma_write_back;
+
+	void (*allocWfdmaWbBuffer)(struct GLUE_INFO *prGlueInfo);
+	void (*freeWfdmaWbBuffer)(struct GLUE_INFO *prGlueInfo);
+	void (*enableWfdmaWb)(struct GLUE_INFO *prGlueInfo);
+#endif /* CFG_ENABLE_MAWD_MD_RING */
 #if CFG_MTK_WIFI_EN_SW_EMI_READ
 	const u_int8_t is_en_sw_emi_read;
 #endif
