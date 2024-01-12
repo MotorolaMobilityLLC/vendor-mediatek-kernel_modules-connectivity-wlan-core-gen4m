@@ -258,6 +258,9 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 				prAdapter->u4HifTxHangDumpBitmap |=
 					BIT(prAdapter->u4HifTxHangDumpIdx);
 
+				if (prDbgOps && prDbgOps->dumpWfBusSectionA)
+					prDbgOps->dumpWfBusSectionA(prAdapter);
+
 				if (prDbgOps && prDbgOps->showPleInfo)
 					prDbgOps->showPleInfo(prAdapter, FALSE);
 

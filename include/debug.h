@@ -463,6 +463,7 @@ struct CHIP_DBG_OPS {
 	void (*showDmaschInfo)(struct ADAPTER *prAdapter);
 	void (*dumpMacInfo)(struct ADAPTER *prAdapter);
 	void (*dumpTxdInfo)(struct ADAPTER *prAdapter, uint8_t *tmac_info);
+	void (*dumpWfBusSectionA)(struct ADAPTER *prAdapter);
 	uint32_t (*getFwDebug)(struct ADAPTER *prAdapter);
 	void (*setFwDebug)(struct ADAPTER *prAdapter, bool fgTrigger,
 			   uint32_t u4SetMask, uint32_t u4ClrMask);

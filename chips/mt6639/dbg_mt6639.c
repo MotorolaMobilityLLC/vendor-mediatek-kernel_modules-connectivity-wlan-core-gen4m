@@ -1974,7 +1974,7 @@ void mt6639_dumpWfTopReg(struct ADAPTER *ad)
 	mt6639_dumpWfTopCfgon(ad);
 }
 
-static void mt6639_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad)
+void mt6639_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad)
 {
 	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4RdAddr, u4WrAddr;
 	uint32_t au4List[] = {
