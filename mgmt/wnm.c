@@ -147,6 +147,11 @@ void wnmWNMAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 		wnmTimingMeasRequest(prAdapter, prSwRfb);
 		break;
 #endif
+#if CFG_AP_80211V_SUPPORT
+	case ACTION_WNM_BSS_TRANSITION_MANAGEMENT_RSP:
+		wnmMulAPAgentRecvBTMResponse(prAdapter, prSwRfb);
+		break;
+#endif /* CFG_AP_80211V_SUPPORT */
 	case ACTION_WNM_BSS_TRANSITION_MANAGEMENT_REQ:
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
 #if CFG_SUPPORT_802_11V_BTM_OFFLOAD
@@ -843,3 +848,293 @@ uint8_t wnmSendBTMResponse(IN struct ADAPTER *prAdapter,
 	return FALSE;
 }
 
+#if CFG_AP_80211V_SUPPORT
+static void wnmMulAPAgentBTMRequestDisassocTimerFunc(
+		IN struct ADAPTER *prAdapter, unsigned long ulParamPtr)
+{
+	struct STA_RECORD *prStaRec = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+
+	DBGLOG(WNM, INFO, "BTM: Request Disassociation Imminent\n");
+	prStaRec = (struct STA_RECORD *) ulParamPtr;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	if (prStaRec->fgIsInUse)
+		p2pFuncDisconnect(prAdapter,
+			prBssInfo, prStaRec,
+			TRUE,
+			REASON_CODE_DISASSOC_INACTIVITY);
+}
+
+static uint32_t wnmMulAPAgentBTMRequestTxDone(IN struct ADAPTER *prAdapter,
+				  IN struct MSDU_INFO *prMsduInfo,
+				  IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	struct ACTION_BTM_REQ_FRAME *prTxFrame = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct STA_RECORD *prStaRec = NULL;
+	int32_t u4DisassocTime = 0;
+
+	DBGLOG(WNM, INFO,
+		"BTM: Request Frame Tx Done, Status %d\n", rTxDoneStatus);
+	if (rTxDoneStatus != TX_RESULT_SUCCESS)
+		return WLAN_STATUS_FAILURE;
+
+	prTxFrame = (struct ACTION_BTM_REQ_FRAME *)
+		((unsigned long)(prMsduInfo->prPacket) +
+				MAC_TX_RESERVED_FIELD);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+
+	/* DisassocTimer */
+	u4DisassocTime = prTxFrame->u2DisassocTimer;
+	if ((prTxFrame->ucRequestMode & BIT(2)) && (u4DisassocTime != 0)) {
+		u4DisassocTime *= prBssInfo->u2BeaconInterval;
+		if (timerPendingTimer(&prStaRec->rBTMReqDisassocTimer)) {
+			cnmTimerStopTimer(prAdapter,
+				&prStaRec->rBTMReqDisassocTimer);
+			DBGLOG(WNM, INFO, "BTM: update DisassocTimer\n");
+		}
+		cnmTimerInitTimer(prAdapter, &prStaRec->rBTMReqDisassocTimer,
+				(PFN_MGMT_TIMEOUT_FUNC)
+				wnmMulAPAgentBTMRequestDisassocTimerFunc,
+				(unsigned long) prStaRec);
+		cnmTimerStartTimer(prAdapter,
+			&prStaRec->rBTMReqDisassocTimer, u4DisassocTime);
+		DBGLOG(WNM, INFO,
+			"BTM: disconnect after %d ms\n", u4DisassocTime);
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function will compose the BTM Request frame.
+ *
+ * @param[in] prAdapter              Pointer to the Adapter structure.
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T.
+ * @param[in] prSetBtmReqInfo        Pointer to the PARAM_CUSTOM_BTM_REQ_STRUCT.
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void wnmMulAPAgentSendBTMRequestFrame(
+		IN struct ADAPTER *prAdapter,
+		IN struct STA_RECORD *prStaRec,
+		IN struct PARAM_CUSTOM_BTM_REQ_STRUCT *prSetBtmReqInfo)
+{
+	struct MSDU_INFO *prMsduInfo = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct ACTION_BTM_REQ_FRAME *prTxFrame = NULL;
+	struct IE_NEIGHBOR_REPORT *prNeighborRpt = NULL;
+	struct SUB_IE_BSS_CAND_PREFERENCE *prCandidatePrefer = NULL;
+	uint16_t u2TxFrameLen = 500;
+	uint32_t u4UrlLen = 0;
+	uint32_t u4SessionInfoLen = 0;
+	uint16_t u2NeighborListLen = 0;
+	uint8_t *prOptionInfo = NULL;
+	uint8_t ucIndex = 0;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(WNM, INFO, "WNM: prBssInfo rec is NULL\n");
+		return;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(WNM, INFO, "WNM: sta rec is NULL\n");
+		return;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(WNM, INFO, "WNM: sta rec is NULL\n");
+		return;
+	}
+
+	/* 1 Allocate MSDU Info */
+	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(
+		prAdapter, MAC_TX_RESERVED_FIELD + u2TxFrameLen);
+	if (!prMsduInfo)
+		return;
+	prTxFrame = (struct ACTION_BTM_REQ_FRAME *)
+		((unsigned long)(prMsduInfo->prPacket) +
+				MAC_TX_RESERVED_FIELD);
+
+	/* 2 Compose The Mac Header. */
+	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+	COPY_MAC_ADDR(prTxFrame->aucDestAddr, prStaRec->aucMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
+	prTxFrame->ucCategory = CATEGORY_WNM_ACTION;
+	prTxFrame->ucAction = ACTION_WNM_BSS_TRANSITION_MANAGEMENT_REQ;
+
+	/* 3 Compose the frame body's frame. */
+	prTxFrame->ucDialogToken = wnmGetBtmToken();
+	prTxFrame->ucRequestMode = 0;
+	prTxFrame->u2DisassocTimer = prSetBtmReqInfo->u2DisassocTimer;
+	prTxFrame->ucValidityInterval = prSetBtmReqInfo->ucValidityInterval;
+
+	prOptionInfo = &prTxFrame->aucOptInfo[0];
+	if (prSetBtmReqInfo->ucEssImm) {
+		prTxFrame->ucRequestMode |= BIT(4);
+		u4UrlLen = kalStrLen(prSetBtmReqInfo->aucSessionUrl);
+		*prOptionInfo = u4UrlLen;
+		prOptionInfo += 1;
+		kalMemCopy(prOptionInfo,
+			&prSetBtmReqInfo->aucSessionUrl, u4UrlLen);
+		u4SessionInfoLen = u4UrlLen + 1;
+		prOptionInfo += u4UrlLen;
+	}
+
+	for (ucIndex = 0; ucIndex < prSetBtmReqInfo->ucTargetBSSIDCnt;
+			ucIndex++) {
+		prTxFrame->ucRequestMode |= BIT(0);
+		prNeighborRpt = (struct IE_NEIGHBOR_REPORT *) prOptionInfo;
+		prNeighborRpt->ucId = ELEM_ID_NEIGHBOR_REPORT;
+		prNeighborRpt->ucLength = 6 + 4 + 1 + 1 + 1;
+		COPY_MAC_ADDR(prNeighborRpt->aucBSSID,
+			prSetBtmReqInfo->ucTargetBSSIDList[ucIndex].mMac);
+		prNeighborRpt->u4BSSIDInfo =
+			prSetBtmReqInfo->ucTargetBSSIDList[ucIndex].u4BSSIDInfo;
+		prNeighborRpt->ucOperClass =
+			prSetBtmReqInfo->ucTargetBSSIDList[ucIndex].ucOperClass;
+		prNeighborRpt->ucChnlNumber =
+			prSetBtmReqInfo->ucTargetBSSIDList[ucIndex].ucChannel;
+		prNeighborRpt->ucPhyType =
+			prSetBtmReqInfo->ucTargetBSSIDList[ucIndex].ucPhyType;
+
+		/* subelement */
+		prCandidatePrefer = (struct SUB_IE_BSS_CAND_PREFERENCE *)
+			&prNeighborRpt->aucSubElem[0];
+		prCandidatePrefer->ucSubId =
+			ELEM_ID_NR_BSS_TRANSITION_CAND_PREF;
+		prCandidatePrefer->ucLength = 1;
+		prCandidatePrefer->ucPreference =
+			prSetBtmReqInfo
+			->ucTargetBSSIDList[ucIndex].ucPreference;
+		prNeighborRpt->ucLength += (2 + prCandidatePrefer->ucLength);
+
+		prOptionInfo += (2 + prNeighborRpt->ucLength);
+		u2NeighborListLen += (2 + prNeighborRpt->ucLength);
+	}
+
+	if (prSetBtmReqInfo->ucAbridged)
+		prTxFrame->ucRequestMode |= BIT(1);
+
+	if (prTxFrame->u2DisassocTimer != 0)
+		prTxFrame->ucRequestMode |= BIT(2);
+
+	/* 4 Update information of MSDU_INFO_T */
+	TX_SET_MMPDU(prAdapter, prMsduInfo, prStaRec->ucBssIndex,
+		     prStaRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
+		     WLAN_MAC_MGMT_HEADER_LEN + 7
+		     + u4SessionInfoLen + u2NeighborListLen,
+		     wnmMulAPAgentBTMRequestTxDone,
+		     MSDU_RATE_MODE_AUTO);
+
+	/* 5 Enqueue the frame to send this action frame. */
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+}				/* end of wnmComposeBTMQueryFrame() */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ *
+ * \brief This routine is called to process the 802.11v BTM request.
+ *
+ *
+ * \note
+ *      Handle Rx mgmt request
+ */
+/*----------------------------------------------------------------------------*/
+void wnmMulAPAgentRecvBTMResponse(IN struct ADAPTER *prAdapter,
+		IN struct SW_RFB *prSwRfb)
+{
+	struct ACTION_BTM_RSP_FRAME *prRxFrame = NULL;
+	uint8_t *pucOptInfo = NULL;
+	uint16_t u2TmpLen = 0;
+	int32_t i4Ret = 0;
+	struct T_MULTI_AP_STA_STEERING_REPORT *prBtmReport = NULL;
+
+	prRxFrame = (struct ACTION_BTM_RSP_FRAME *) prSwRfb->pvHeader;
+	if (!prRxFrame)
+		return;
+	if (prSwRfb->u2PacketLen <
+		OFFSET_OF(struct ACTION_BTM_RSP_FRAME, aucOptInfo)) {
+		DBGLOG(WNM, WARN,
+		       "BTM: Request frame length is less than a standard BTM frame\n");
+		return;
+	}
+
+	prBtmReport = (struct T_MULTI_AP_STA_STEERING_REPORT *)
+			kalMemAlloc(sizeof(
+				struct T_MULTI_AP_STA_STEERING_REPORT),
+			VIR_MEM_TYPE);
+	if (prBtmReport == NULL) {
+		DBGLOG(INIT, ERROR, "alloc memory fail\n");
+		return;
+	}
+
+	kalMemZero(prBtmReport, sizeof(struct T_MULTI_AP_STA_STEERING_REPORT));
+	COPY_MAC_ADDR(prBtmReport->mStaMac, prRxFrame->aucSrcAddr);
+	COPY_MAC_ADDR(prBtmReport->mBssid, prRxFrame->aucBSSID);
+
+	pucOptInfo = &prRxFrame->aucOptInfo[0];
+	u2TmpLen = OFFSET_OF(struct ACTION_BTM_RSP_FRAME, aucOptInfo);
+
+	prBtmReport->u8Status = prRxFrame->ucStatusCode;
+
+	DBGLOG(WNM, INFO,
+		"[SAP_Test] u2FrameCtrl = 0x%x\n", prRxFrame->u2FrameCtrl);
+	DBGLOG(WNM, INFO,
+		"[SAP_Test] u2Duration = %u\n", prRxFrame->u2Duration);
+	DBGLOG(WNM, INFO,
+		"[SAP_Test] aucDestAddr = " MACSTR "\n",
+		MAC2STR(prRxFrame->aucDestAddr));
+	DBGLOG(WNM, INFO,
+		"[SAP_Test] aucSrcAddr = " MACSTR "\n",
+		MAC2STR(prRxFrame->aucSrcAddr));
+	DBGLOG(WNM, INFO,
+		"[SAP_Test] aucBSSID = " MACSTR "\n",
+		MAC2STR(prRxFrame->aucBSSID));
+	DBGLOG(WNM, INFO,
+		"[SAP_Test] u2SeqCtrl = %u\n", prRxFrame->u2SeqCtrl);
+	DBGLOG(WNM, INFO,
+		"[SAP_Test] ucCategory = %u\n", prRxFrame->ucCategory);
+	DBGLOG(WNM, INFO,
+		"[SAP_Test] ucAction = %u\n", prRxFrame->ucAction);
+	DBGLOG(WNM, INFO,
+		"[SAP_Test] ucDialogToken = %u\n", prRxFrame->ucDialogToken);
+	DBGLOG(WNM, INFO,
+		"[SAP_Test] ucStatusCode = %u\n", prRxFrame->ucStatusCode);
+	DBGLOG(WNM, INFO,
+		"[SAP_Test] ucBssTermDelay = %u\n", prRxFrame->ucBssTermDelay);
+	if (prRxFrame->ucStatusCode == BSS_TRANSITION_MGT_STATUS_ACCEPT) {
+		COPY_MAC_ADDR(prBtmReport->mDestBssid, pucOptInfo);
+		pucOptInfo += MAC_ADDR_LEN;
+		u2TmpLen += MAC_ADDR_LEN;
+	}
+	DBGLOG(WNM, INFO,
+			"[SAP_Test] Target BSSID = " MACSTR "\n",
+			MAC2STR(prBtmReport->mDestBssid));
+
+	/* BSS Transition Candidate List Entries */
+	while (prSwRfb->u2PacketLen > u2TmpLen) {
+		DBGLOG_MEM8(WNM, INFO, pucOptInfo, pucOptInfo[1] + 2);
+		pucOptInfo += pucOptInfo[1] + 2;
+		u2TmpLen += pucOptInfo[1] + 2;
+	}
+
+	i4Ret = MulAPAgentMontorSendMsg(
+		EV_WLAN_MULTIAP_STEERING_BTM_REPORT,
+		prBtmReport, sizeof(*prBtmReport));
+	if (i4Ret < 0)
+		DBGLOG(AAA, ERROR,
+			"EV_WLAN_MULTIAP_STEERING_BTM_REPORT nl send msg failed!\n");
+
+	kalMemFree(prBtmReport,
+		VIR_MEM_TYPE,
+		sizeof(struct T_MULTI_AP_STA_STEERING_REPORT));
+}
+#endif /* CFG_AP_80211V_SUPPORT */

@@ -613,6 +613,19 @@ int32_t rlmGetOpClassForChannel(
 void rlmSetSrControl(IN struct ADAPTER *prAdapter, bool fgIsEnableSr);
 #endif
 
+#if CFG_AP_80211K_SUPPORT
+void rlmMulAPAgentGenerateApRRMEnabledCapIE(
+				IN struct ADAPTER *prAdapter,
+				IN struct MSDU_INFO *prMsduInfo);
+void rlmMulAPAgentTxMeasurementRequest(
+				struct ADAPTER *prAdapter,
+				struct STA_RECORD *prStaRec,
+				struct SUB_ELEMENT_LIST *prSubIEs);
+
+void rlmMulAPAgentProcessRadioMeasurementResponse(
+		struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
+#endif /* CFG_AP_80211K_SUPPORT */
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

@@ -1386,6 +1386,16 @@ p2pFuncStartGO(IN struct ADAPTER *prAdapter,
 
 		DBGLOG(P2P, TRACE, "p2pFuncStartGO:\n");
 
+#if CFG_AP_80211KVR_INTERFACE
+#if CFG_SUPPORT_TRAFFIC_REPORT && CFG_WIFI_SUPPORT_NOISE_HISTOGRAM
+		INIT_DELAYED_WORK(
+			&(prAdapter->prGlueInfo->rChanNoiseControlWork),
+			aaaMulAPAgentChanNoiseInitWorkHandler);
+		INIT_DELAYED_WORK(
+			&(prAdapter->prGlueInfo->rChanNoiseGetInfoWork),
+			aaaMulAPAgentChanNoiseCollectionWorkHandler);
+#endif
+#endif
 		if (prP2pChnlReqInfo->eBand != BAND_5G)
 			goto SKIP_START_RDD;
 
@@ -1584,6 +1594,12 @@ SKIP_START_RDD:
 		nicPmIndicateBssCreated(prAdapter, prBssInfo->ucBssIndex);
 		if (prP2pChnlReqInfo->eBand == BAND_5G)
 			kalP2PEnableNetDev(prAdapter->prGlueInfo, prBssInfo);
+
+#if CFG_AP_80211KVR_INTERFACE
+		/* 5. BSS status notification */
+		p2pFunMulAPAgentBssStatusNotification(prAdapter,
+			prBssInfo);
+#endif /* CFG_AP_80211KVR_INTERFACE */
 	} while (FALSE);
 }				/* p2pFuncStartGO() */
 
@@ -1602,6 +1618,12 @@ void p2pFuncStopGO(IN struct ADAPTER *prAdapter,
 
 		DBGLOG(P2P, TRACE, "p2pFuncStopGO\n");
 
+#if CFG_AP_80211KVR_INTERFACE
+		cancel_delayed_work_sync(
+			&prAdapter->prGlueInfo->rChanNoiseControlWork);
+		cancel_delayed_work_sync(
+			&prAdapter->prGlueInfo->rChanNoiseGetInfoWork);
+#endif
 		u4ClientCount = bssGetClientCount(prAdapter, prP2pBssInfo);
 
 		if ((prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
@@ -3335,6 +3357,37 @@ void p2pFuncSetChannel(IN struct ADAPTER *prAdapter,
 			prRfChannelInfo->u4CenterFreq1;
 		prP2pConnReqInfo->u4CenterFreq2 =
 			prRfChannelInfo->u4CenterFreq2;
+#if CFG_AP_80211KVR_INTERFACE
+		/* Update TX-pwr as soon as channel changed */
+		{
+			struct PARAM_CUSTOM_GET_TX_POWER rGetTxPower;
+			struct BSS_INFO *prP2pRoleBssInfo =
+				(struct BSS_INFO *) NULL;
+			uint32_t rStatus = WLAN_STATUS_SUCCESS;
+			uint32_t u4BufLen = 0;
+
+			prP2pRoleBssInfo =
+				GET_BSS_INFO_BY_INDEX(prAdapter,
+				prP2pRoleFsmInfo->ucBssIndex);
+			kalMemZero(&rGetTxPower,
+				sizeof(struct PARAM_CUSTOM_GET_TX_POWER));
+			rGetTxPower.ucCenterChannel =
+				prP2pRoleBssInfo->ucPrimaryChannel;
+			rGetTxPower.ucBand = prP2pRoleBssInfo->eBand;
+			rGetTxPower.ucDbdcIdx = ENUM_BAND_0;
+
+			rStatus = kalIoctl(prAdapter->prGlueInfo,
+				wlanoidQueryGetTxPower,
+				&rGetTxPower,
+				sizeof(struct PARAM_CUSTOM_GET_TX_POWER),
+				TRUE, TRUE, TRUE, &u4BufLen);
+
+			if (rStatus != WLAN_STATUS_SUCCESS)
+				DBGLOG(OID, ERROR,
+					"ERR: Get TxPower fail (%x)\r\n",
+					rStatus);
+		}
+#endif /* CFG_AP_80211KVR_INTERFACE */
 
 	} while (FALSE);
 }				/* p2pFuncSetChannel */
@@ -8289,3 +8342,158 @@ void p2pFuncSetAclPolicy(
 	cnmMemFree(prAdapter, prCmdAclPolicy);
 }
 
+#if CFG_AP_80211KVR_INTERFACE
+void p2pFunMulAPAgentBssStatusNotification(
+		IN struct ADAPTER *prAdapter,
+		IN struct BSS_INFO *prBssInfo)
+{
+	struct T_MULTI_AP_BSS_STATUS_REPORT *prBssReport;
+	struct PARAM_CUSTOM_GET_TX_POWER rGetTxPower;
+	bool fgSGIEnable = false;
+	uint8_t ucMaxBw = 0;
+	uint8_t ucNss = 0;
+	uint8_t ucNssLoop = 0;
+	uint8_t ucOffset = 0;
+	uint8_t ucMcsMap = 0;
+	uint32_t u4BufLen = 0;
+	int32_t i4Ret = 0;
+
+	fgSGIEnable = IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxShortGI);
+	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+	ucNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
+
+	prBssReport = kalMemAlloc(sizeof(*prBssReport), VIR_MEM_TYPE);
+	if (!prBssReport) {
+		DBGLOG(AAA, ERROR, "mem alloc fail\n");
+		return;
+	}
+
+	kalMemZero(prBssReport, sizeof(*prBssReport));
+	/* Interface Index */
+	i4Ret = sscanf(prAdapter->prGlueInfo->prP2PInfo[1]->prDevHandler->name,
+		"ap%u", &prBssReport->uIfIndex);
+	if (i4Ret != 1)
+		DBGLOG(P2P, WARN, "read sap index fail: %d\n", i4Ret);
+
+	/* Bssid */
+	COPY_MAC_ADDR(prBssReport->mBssid, prBssInfo->aucBSSID);
+	/* Status */
+	prBssReport->uStatus = prBssInfo->fgIsInUse;
+	/* Channel */
+	prBssReport->u8Channel = prBssInfo->ucPrimaryChannel;
+	/* Operation Class Table E-4 in IEEE802.11-2016. */
+	if (prBssInfo->ucPrimaryChannel < 14)
+		prBssReport->u8OperClass = 81;
+	else if (prBssInfo->ucPrimaryChannel >= 36
+		&& prBssInfo->ucPrimaryChannel <= 48)
+		prBssReport->u8OperClass = 115;
+	else if (prBssInfo->ucPrimaryChannel >= 52
+		&& prBssInfo->ucPrimaryChannel <= 64)
+		prBssReport->u8OperClass = 118;
+	else if (prBssInfo->ucPrimaryChannel >= 149
+		&& prBssInfo->ucPrimaryChannel <= 161)
+		prBssReport->u8OperClass = 124;
+	else
+		DBGLOG(P2P, WARN,
+			"unknown CH %d for op-class\n",
+			prBssInfo->ucPrimaryChannel);
+	/* TX Power */
+	/*
+	 * THIS/CMD are both running in main_thread.
+	 * Cannot get result by this CMD
+	 */
+	kalMemZero(&rGetTxPower, sizeof(struct PARAM_CUSTOM_GET_TX_POWER));
+	rGetTxPower.ucCenterChannel = prBssInfo->ucPrimaryChannel;
+	rGetTxPower.ucBand = prBssInfo->eBand;
+	rGetTxPower.ucDbdcIdx = ENUM_BAND_0;
+	wlanoidQueryGetTxPower(prAdapter,
+		&rGetTxPower,
+		sizeof(struct PARAM_CUSTOM_GET_TX_POWER), &u4BufLen);
+	prBssReport->u8Txpower = prAdapter->u4GetTxPower/2;
+	/* Band */
+	prBssReport->uBand = prBssInfo->eBand;
+	/* HT Capability */
+	if (RLM_NET_IS_11N(prBssInfo)) {
+		prBssReport->uHtCap = (
+				(ucNss << SAP_HTCAP_TXSTREAMNUM_OFFSET) |
+				(ucNss << SAP_HTCAP_RXSTREAMNUM_OFFSET) |
+				(fgSGIEnable << SAP_HTCAP_SGIFOR20M_OFFSET) |
+				((prBssInfo->fgAssoc40mBwAllowed
+					? fgSGIEnable : 0)
+				<< SAP_HTCAP_SGIFOR40M_OFFSET) |
+				((prBssInfo->fgAssoc40mBwAllowed ? 1 : 0)
+				<< SAP_HTCAP_HTFOR40M_OFFSET)
+		);
+	}
+	/* VHT Capability */
+	if (RLM_NET_IS_11AC(prBssInfo)) {
+		for (ucNssLoop = 1; ucNssLoop <= 8; ucNssLoop++) {
+			ucOffset = (ucNssLoop - 1) * 2;
+			ucMcsMap = (ucNssLoop <=
+				ucNss ? VHT_CAP_INFO_MCS_MAP_MCS9
+				: VHT_CAP_INFO_MCS_NOT_SUPPORTED);
+			prBssReport->u16VhtTxMcs |=
+				(ucMcsMap << ucOffset);
+			prBssReport->u16VhtRxMcs |=
+				(ucMcsMap << ucOffset);
+		}
+		prBssReport->u16VhtCap = (
+				(ucNss << SAP_VHTCAP_TXSTREAMNUM_OFFSET) |
+				(ucNss << SAP_VHTCAP_RXSTREAMNUM_OFFSET) |
+				((ucMaxBw >= MAX_BW_80MHZ ? fgSGIEnable : 0)
+					<< SAP_VHTCAP_SGIFOR80M_OFFSET) |
+				((ucMaxBw >= MAX_BW_160MHZ ? fgSGIEnable : 0)
+					<< SAP_VHTCAP_SGIFOR160M_OFFSET) |
+				((ucMaxBw == MAX_BW_80_80_MHZ)
+					<< SAP_VHTCAP_VHTFORDUAL80M_OFFSET) |
+				((ucMaxBw == MAX_BW_160MHZ)
+					<< SAP_VHTCAP_VHTFOR160M_OFFSET) |
+				(IS_FEATURE_ENABLED(
+					prAdapter->rWifiVar.ucStaVhtBfer)
+					<< SAP_VHTCAP_SUBEAMFORMER_OFFSET) |
+				(0 << SAP_VHTCAP_MUBEAMFORMER_OFFSET)
+		);
+	}
+	/* HE Capability (not support) */
+	prBssReport->u8HeMcsNum = 0;
+	kalMemZero(&prBssReport->u8HeMcs, 16);
+	kalMemZero(&prBssReport->u16HeCap, sizeof(uint16_t));
+
+	DBGLOG(P2P, INFO,
+		"[SAP_Test] uIfIndex=%d\n", prBssReport->uIfIndex);
+	DBGLOG(P2P, INFO,
+		"[SAP_Test] mBssid=" MACSTR "\n", MAC2STR(prBssReport->mBssid));
+	DBGLOG(P2P, INFO,
+		"[SAP_Test] uStatus=%d\n", prBssReport->uStatus);
+	DBGLOG(P2P, INFO,
+		"[SAP_Test] u8Channel=%d\n", prBssReport->u8Channel);
+	DBGLOG(P2P, INFO,
+		"[SAP_Test] u8OperClass=%d\n", prBssReport->u8OperClass);
+	DBGLOG(P2P, INFO,
+		"[SAP_Test] u8Txpower=%d\n", prBssReport->u8Txpower);
+	DBGLOG(P2P, INFO,
+		"[SAP_Test] uBand=%d\n", prBssReport->uBand);
+	DBGLOG(P2P, INFO,
+		"[SAP_Test] uHtCap=0x%x\n", prBssReport->uHtCap);
+	DBGLOG(P2P, INFO,
+		"[SAP_Test] u16VhtTxMcs=0x%x\n", prBssReport->u16VhtTxMcs);
+	DBGLOG(P2P, INFO,
+		"[SAP_Test] u16VhtRxMcs=0x%x\n", prBssReport->u16VhtRxMcs);
+	DBGLOG(P2P, INFO,
+		"[SAP_Test] u16VhtCap=0x%x\n", prBssReport->u16VhtCap);
+	DBGLOG(P2P, INFO,
+		"[SAP_Test] u8HeMcsNum=%d\n", prBssReport->u8HeMcsNum);
+	DBGLOG_MEM8(P2P, WARN, prBssReport->u8HeMcs, 16);
+	DBGLOG(P2P, INFO,
+		"[SAP_Test] u16HeCap=0x%x\n", prBssReport->u16HeCap);
+
+	i4Ret = MulAPAgentMontorSendMsg(
+		EV_WLAN_MULTIAP_BSS_STATUS_REPORT,
+		prBssReport, sizeof(*prBssReport));
+	if (i4Ret < 0)
+		DBGLOG(AAA, ERROR,
+			"EV_WLAN_MULTIAP_BSS_STATUS_REPORT nl send msg failed!\n");
+
+	kalMemFree(prBssReport, VIR_MEM_TYPE, sizeof(*prBssReport));
+}
+#endif /* CFG_AP_80211KVR_INTERFACE */

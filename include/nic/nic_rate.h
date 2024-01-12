@@ -324,6 +324,10 @@ int32_t nicGetRxRateInfo(struct ADAPTER *prAdapter, IN char *pcCommand,
 uint16_t nicGetStatIdxInfo(IN struct ADAPTER *prAdapter,
 			IN uint8_t ucWlanIdx);
 
+uint16_t
+nicRateInfo2RateCode(IN uint32_t  u4TxMode,
+	IN uint32_t  u4Rate);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

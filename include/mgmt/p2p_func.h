@@ -517,3 +517,9 @@ void p2pFuncSetAclPolicy(
 	IN uint8_t aucAddr[]);
 
 #endif
+
+#if CFG_AP_80211KVR_INTERFACE
+void p2pFunMulAPAgentBssStatusNotification(
+		IN struct ADAPTER *prAdapter,
+		IN struct BSS_INFO *prBssInfo);
+#endif

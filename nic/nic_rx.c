@@ -1175,6 +1175,14 @@ void nicRxProcessPktWithoutReorder(IN struct ADAPTER
 		0))
 		prSwRfb->prStaRec->u4TotalRxPktsNumber++;
 #endif
+
+#if CFG_AP_80211KVR_INTERFACE
+	if (prSwRfb->prStaRec) {
+		prSwRfb->prStaRec->u8TotalRxBytes += prSwRfb->u2PacketLen;
+		prSwRfb->prStaRec->u8TotalRxPkts++;
+	}
+#endif
+
 	if (kalProcessRxPacket(prAdapter->prGlueInfo,
 			       prSwRfb->pvPacket,
 			       prSwRfb->pvHeader,
@@ -4742,6 +4750,12 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 #if CFG_SUPPORT_802_11K
 	case CATEGORY_RM_ACTION:
 		switch (prActFrame->ucAction) {
+#if CFG_AP_80211K_SUPPORT
+		case RM_ACTION_RM_REPORT:
+			rlmMulAPAgentProcessRadioMeasurementResponse(
+				prAdapter, prSwRfb);
+		break;
+#endif /* CFG_AP_80211K_SUPPORT */
 		case RM_ACTION_RM_REQUEST:
 #if CFG_SUPPORT_RM_BEACON_REPORT_BY_SUPPLICANT
 			/* handle RM beacon request by supplicant */

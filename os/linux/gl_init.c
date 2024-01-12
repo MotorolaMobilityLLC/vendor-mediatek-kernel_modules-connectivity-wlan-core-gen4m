@@ -118,6 +118,11 @@ uint8_t g_aucNvram[MAX_CFG_FILE_WIFI_REC_SIZE];
 uint8_t g_aucNvram_OnlyPreCal[MAX_CFG_FILE_WIFI_RECAL_SIZE];
 struct wireless_dev *gprWdev[KAL_AIS_NUM];
 
+#if CFG_AP_80211KVR_INTERFACE
+#define NETLINK_OSS_KERNEL 25
+struct sock *nl_sk;
+#endif/* CFG_AP_80211KVR_INTERFACE */
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -6649,6 +6654,11 @@ static void wlanRemove(void)
 
 	flush_delayed_work(&sched_workq);
 
+#if CFG_AP_80211KVR_INTERFACE
+	cancel_delayed_work_sync(&prAdapter->prGlueInfo->rChanNoiseControlWork);
+	cancel_delayed_work_sync(&prAdapter->prGlueInfo->rChanNoiseGetInfoWork);
+#endif
+
 	down(&g_halt_sem);
 	g_u4HaltFlag = 1;
 	up(&g_halt_sem);
@@ -7081,6 +7091,13 @@ static int initWlan(void)
 #if CFG_POWER_OFF_CTRL_SUPPORT
 	wlanRegisterRebootNotifier();
 #endif
+#if CFG_AP_80211KVR_INTERFACE
+	nl_sk = netlink_kernel_create(&init_net, NETLINK_OSS_KERNEL, NULL);
+	if (!nl_sk) {
+		DBGLOG(INIT, ERROR, "netlink create failed!\n");
+		return -EBUSY;
+	}
+#endif /* CFG_AP_80211KVR_INTERFACE */
 
 	DBGLOG(INIT, INFO, "initWlan::End\n");
 
@@ -7102,6 +7119,10 @@ static void exitWlan(void)
 #if defined(_HIF_USB) || CFG_SUPPORT_PERSIST_NETDEV
 	struct GLUE_INFO *prGlueInfo = NULL;
 #endif
+#if CFG_AP_80211KVR_INTERFACE
+	if (nl_sk != NULL)
+		netlink_kernel_release(nl_sk);
+#endif /* CFG_AP_80211KVR_INTERFACE */
 
 #if CFG_SUPPORT_PERSIST_NETDEV
 	uint32_t u4Idx = 0;

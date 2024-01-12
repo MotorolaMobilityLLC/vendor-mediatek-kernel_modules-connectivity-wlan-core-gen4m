@@ -122,6 +122,9 @@
 #define CMD_TWT_MAX_PARAMS CMD_TWT_ACTION_TWELVE_PARAMS
 #endif
 
+#define TO_STR(value) #value
+#define INT_TO_STR(value) TO_STR(value)
+
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -4001,6 +4004,17 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #endif /* CFG_SUPPORT_DMASHDL_SYSDVT */
 #endif /* CFG_SUPPORT_WIFI_SYSDVT */
 
+#if CFG_AP_80211KVR_INTERFACE
+#define CMD_WHITELIST_STA "White_sta"
+#define CMD_BLACKLIST_STA "Black_sta"
+#define CMD_BSS_STATUS_REPORT	"BssStatus"
+#define CMD_BSS_REPORT_INFO		"BssReportInfo"
+#define CMD_STA_REPORT_INFO		"StaReportInfo"
+#define CMD_STA_MEASUREMENT_ENABLE "mnt_en"
+#define CMD_STA_MEASUREMENT_INFO "mnt_info"
+#endif /* CFG_AP_80211KVR_INTERFACE */
+
+
 #define CMD_SET_SW_AMSDU_NUM      "SET_SW_AMSDU_NUM"
 #define CMD_SET_SW_AMSDU_SIZE      "SET_SW_AMSDU_SIZE"
 
@@ -4069,6 +4083,14 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #if (CFG_WIFI_GET_MCS_INFO == 1)
 #define CMD_GET_MCS_INFO		"GET_MCS_INFO"
 #endif
+
+#if CFG_AP_80211K_SUPPORT
+#define CMD_STA_BEACON_REQUEST	"BeaconRequest"
+#endif /* CFG_AP_80211K_SUPPORT */
+
+#if CFG_AP_80211V_SUPPORT
+#define CMD_STA_BTM_REQUEST		"BTMRequest"
+#endif /* CFG_AP_80211V_SUPPORT */
 
 static uint8_t g_ucMiracastMode = MIRACAST_MODE_OFF;
 
@@ -17863,6 +17885,1192 @@ static int priv_driver_neighbor_request(IN struct net_device *prNetDev,
 }
 #endif
 
+#if CFG_AP_80211KVR_INTERFACE
+int32_t MulAPAgentMontorSendMsg(IN uint16_t msgtype,
+	IN void *pvmsgbuf, IN int32_t i4TotalLen)
+{
+	struct sk_buff *skb;
+	struct nlmsghdr *nlh;
+	uint32_t u4Ret = 0;
+
+	DBGLOG(REQ, INFO, "send netlink msg start\n");
+	DBGLOG(INIT, TRACE, "msg len == %d", i4TotalLen);
+	skb = nlmsg_new(i4TotalLen, 0);
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "netlink alloc failed\n");
+		return -1;
+	}
+
+	nlh = nlmsg_put(skb, 0, 0, NLMSG_DONE, i4TotalLen, 0);
+	if (nlh == NULL) {
+		DBGLOG(REQ, ERROR, "netlink msg put failed!\n");
+		kfree_skb(skb);
+		return -1;
+	}
+
+	NETLINK_CB(skb).dst_group = 5;
+	NETLINK_CB(skb).portid = 0;
+	nlh->nlmsg_type = msgtype;
+	memcpy(NLMSG_DATA(nlh), pvmsgbuf, i4TotalLen);
+	u4Ret = netlink_broadcast(nl_sk, skb, 0, 5, GFP_KERNEL);
+
+	if (u4Ret < 0) {
+		DBGLOG(REQ, ERROR,
+			"netlink sendmsg failed,msgtype is %x, ret is %d\n",
+			msgtype, u4Ret);
+		return u4Ret;
+	}
+
+	DBGLOG(REQ, INFO, "send netlink msg success!\n");
+	return u4Ret;
+}
+
+static int32_t priv_driver_MulAPAgent_bss_status_report(
+					IN struct net_device *prNetDev,
+					IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int8_t *this_char = NULL;
+	uint32_t u4Ret = 0;
+	uint8_t ucParam = 0;
+	uint8_t ucRoleIdx = 0;
+	uint8_t ucBssIdx = 0;
+	struct BSS_INFO *prBssInfo = NULL;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		goto error;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	/* get command */
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	/* get param */
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		goto error;
+	this_char++;
+	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
+	u4Ret = kalkStrtou8(this_char, 0, &ucParam);
+	DBGLOG(REQ, LOUD, "u4Ret = %d, ucParam = %d\n", u4Ret, ucParam);
+	if (u4Ret != 0) {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver %s=[0|1]\n", CMD_BSS_REPORT_INFO);
+		goto error;
+	}
+	/* get Bss Index from ndev */
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo,
+			prGlueInfo->prP2PInfo[1]->prDevHandler,
+			&ucRoleIdx) != 0)
+		goto error;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+			ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS)
+		goto error;
+	DBGLOG(REQ, INFO, "ucRoleIdx = %d\n", ucRoleIdx);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	if (!prBssInfo) {
+		DBGLOG(REQ, WARN, "bss is not active\n");
+		goto error;
+	}
+	p2pFunMulAPAgentBssStatusNotification(prAdapter, prBssInfo);
+
+	return i4BytesWritten;
+error:
+	return -1;
+}
+
+static int32_t priv_driver_MulAPAgent_bss_report_info(
+					IN struct net_device *prNetDev,
+					IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int8_t *this_char = NULL;
+	uint32_t u4Ret = 0;
+	uint8_t ucParam = 0;
+	uint8_t ucRoleIdx = 0;
+	uint8_t ucBssIdx = 0;
+	int32_t i4Ret = 0;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct T_MULTI_AP_BSS_METRICS_RESP sBssMetricsResp;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		goto error;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	/* get command */
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	/* get param */
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		goto error;
+	this_char++;
+	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
+	u4Ret = kalkStrtou8(this_char, 0, &ucParam);
+	DBGLOG(REQ, LOUD, "u4Ret = %d, ucParam = %d\n", u4Ret, ucParam);
+	if (u4Ret != 0) {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver %s=[0|1]\n", CMD_BSS_REPORT_INFO);
+		goto error;
+	}
+
+	/* get Bss Index from ndev */
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo,
+			prGlueInfo->prP2PInfo[1]->prDevHandler,
+			&ucRoleIdx) != 0)
+		goto error;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+			ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS)
+		goto error;
+	DBGLOG(REQ, INFO, "ucRoleIdx = %d\n", ucRoleIdx);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	if (!prBssInfo) {
+		DBGLOG(REQ, WARN, "bss is not active\n");
+		goto error;
+	}
+
+	schedule_delayed_work(
+		&prAdapter->prGlueInfo->rChanNoiseControlWork, 0);
+
+
+	/* 1. BSS Measurement */
+	/* Interface Index */
+	i4Ret = sscanf(prGlueInfo->prP2PInfo[1]->prDevHandler->name,
+		"ap%u", &sBssMetricsResp.uIfIndex);
+	if (i4Ret != 1)
+		DBGLOG(P2P, WARN, "read sap index fail: %d\n", i4Ret);
+
+	COPY_MAC_ADDR(sBssMetricsResp.mBssid, prBssInfo->aucBSSID);
+	sBssMetricsResp.u8Channel = prBssInfo->ucPrimaryChannel;
+	sBssMetricsResp.u16AssocStaNum =
+		bssGetClientCount(prAdapter, prBssInfo);
+	sBssMetricsResp.u8ChanUtil = prBssInfo->u4ChanUtil;
+	sBssMetricsResp.iChanNoise = prBssInfo->i4NoiseHistogram;
+
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] uIfIndex = %u\n", sBssMetricsResp.uIfIndex);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] mBssid = " MACSTR "\n",
+		MAC2STR(sBssMetricsResp.mBssid));
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] u8Channel = %d\n", sBssMetricsResp.u8Channel);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] u16AssocStaNum = %d\n",
+		sBssMetricsResp.u16AssocStaNum);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] u8ChanUtil = %d\n", sBssMetricsResp.u8ChanUtil);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] iChanNoise = %d\n", sBssMetricsResp.iChanNoise);
+
+	i4Ret = MulAPAgentMontorSendMsg(
+		EV_WLAN_MULTIAP_BSS_METRICS_RESPONSE,
+		&sBssMetricsResp, sizeof(sBssMetricsResp));
+	if (i4Ret < 0) {
+		DBGLOG(AAA, ERROR,
+			"EV_WLAN_MULTIAP_BSS_METRICS_RESPONSE nl send msg failed!\n");
+		return i4Ret;
+	}
+
+	return i4BytesWritten;
+
+error:
+	return -1;
+}
+
+static int32_t priv_driver_MulAPAgent_sta_report_info(
+					IN struct net_device *prNetDev,
+					IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int32_t i4Ret = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int8_t *this_char = NULL;
+	uint8_t aucMacAddr[MAC_ADDR_LEN];
+	uint8_t ucRoleIdx = 0;
+	uint8_t ucBssIdx = 0;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct STA_RECORD *prStaRec = NULL;
+	u_int32_t txmode, rate, frmode, sgi, nsts, groupid;
+	u_int32_t u4RxVector0 = 0, u4RxVector1 = 0;
+	u_int16_t u2RateCode = 0;
+	u_int32_t u4BufLen = 0;
+	u_int8_t ucWlanIndex, i;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics = NULL;
+	struct PARAM_HW_WLAN_INFO *prHwWlanInfo = NULL;
+	struct T_MULTI_AP_STA_ASSOC_METRICS_RESP *sStaAssocMetricsResp = NULL;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE) {
+		i4BytesWritten = -1;
+		goto exit;
+	}
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	/* get command */
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD,
+		"argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	/* get param */
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char) {
+		i4BytesWritten = -1;
+		goto exit;
+	}
+	this_char++;
+	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
+	i4Ret = wlanHwAddrToBin(this_char, &aucMacAddr[0]);
+	if (i4Ret < 0) {
+		DBGLOG(INIT, ERROR,
+				"iwpriv wlanXX driver %s=STA_MAC\n",
+				CMD_STA_REPORT_INFO);
+		i4BytesWritten = -1;
+		goto exit;
+	}
+
+	/* get Bss Index from ndev */
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo,
+			prGlueInfo->prP2PInfo[1]->prDevHandler,
+			&ucRoleIdx) != 0) {
+		i4BytesWritten = -1;
+		goto exit;
+	}
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+			ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS) {
+		i4BytesWritten = -1;
+		goto exit;
+	}
+	DBGLOG(REQ, INFO, "ucRoleIdx = %d\n", ucRoleIdx);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	if (!prBssInfo) {
+		DBGLOG(REQ, WARN, "bss is not active\n");
+		i4BytesWritten = -1;
+		goto exit;
+	}
+
+	/* get Station Record */
+	prStaRec = bssGetClientByMac(prGlueInfo->prAdapter,
+		prBssInfo, aucMacAddr);
+	if (prStaRec == NULL) {
+		DBGLOG(REQ, WARN, "can't find station\n");
+		i4BytesWritten = -1;
+		goto exit;
+	}
+
+	/* Get WTBL info */
+	prHwWlanInfo = (struct PARAM_HW_WLAN_INFO *)
+		kalMemAlloc(sizeof(struct PARAM_HW_WLAN_INFO),
+		VIR_MEM_TYPE);
+	if (!prHwWlanInfo) {
+		DBGLOG(REQ, ERROR,
+			"Allocate memory for prHwWlanInfo failed!\n");
+		i4BytesWritten = -1;
+		goto exit;
+	}
+
+	prHwWlanInfo->u4Index = prStaRec->ucWlanIndex;
+	rStatus = kalIoctl(prGlueInfo,
+				wlanoidQueryWlanInfo,
+				prHwWlanInfo,
+				sizeof(struct PARAM_HW_WLAN_INFO),
+				TRUE, TRUE, TRUE,
+				&u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "Query prHwWlanInfo failed!\n");
+		i4BytesWritten = -1;
+		goto exit;
+	}
+
+	/* Get Statistics info */
+	prQueryStaStatistics = (struct PARAM_GET_STA_STATISTICS *)
+		kalMemAlloc(sizeof(struct PARAM_GET_STA_STATISTICS),
+		VIR_MEM_TYPE);
+	if (!prQueryStaStatistics) {
+		DBGLOG(REQ, ERROR,
+			"Allocate memory for prQueryStaStatistics failed!\n");
+		i4BytesWritten = -1;
+		goto exit;
+	}
+
+	ucWlanIndex = prStaRec->ucWlanIndex;
+	COPY_MAC_ADDR(prQueryStaStatistics->aucMacAddr, aucMacAddr);
+
+	DBGLOG(REQ, INFO, "ucWlanIndex = %d\n", ucWlanIndex);
+	DBGLOG(REQ, INFO,
+		"Query "MACSTR"\n", MAC2STR(prQueryStaStatistics->aucMacAddr));
+	rStatus = kalIoctl(prGlueInfo,
+				wlanoidQueryStaStatistics,
+				prQueryStaStatistics,
+				sizeof(struct PARAM_GET_STA_STATISTICS),
+				TRUE, TRUE, TRUE, &u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "Query prQueryStaStatistics failed!\n");
+		i4BytesWritten = -1;
+		goto exit;
+	}
+
+	sStaAssocMetricsResp = (struct T_MULTI_AP_STA_ASSOC_METRICS_RESP *)
+			kalMemAlloc(sizeof(
+				struct T_MULTI_AP_STA_ASSOC_METRICS_RESP),
+			VIR_MEM_TYPE);
+	if (sStaAssocMetricsResp == NULL) {
+		DBGLOG(INIT, ERROR, "alloc memory fail\n");
+		i4BytesWritten = -1;
+		goto exit;
+	}
+
+	/*2. Associated STA Measurement */
+	/* Interface Index */
+	i4Ret = sscanf(prGlueInfo->prP2PInfo[1]->prDevHandler->name,
+		"ap%u", &sStaAssocMetricsResp->uIfIndex);
+	if (i4Ret != 1)
+		DBGLOG(P2P, WARN, "read sap index fail: %d\n", i4Ret);
+
+	COPY_MAC_ADDR(sStaAssocMetricsResp->mBssid, prBssInfo->aucBSSID);
+	COPY_MAC_ADDR(sStaAssocMetricsResp->mStaMac, prStaRec->aucMacAddr);
+	sStaAssocMetricsResp->uBytesSent = prStaRec->u8TotalTxBytes;
+	sStaAssocMetricsResp->uBytesRecv = prStaRec->u8TotalRxBytes;
+	sStaAssocMetricsResp->uPktsSent =
+		prQueryStaStatistics->u4TransmitCount;
+	sStaAssocMetricsResp->uPktsRecv = prStaRec->u8TotalRxPkts;
+	sStaAssocMetricsResp->uPktsTxError =
+		prQueryStaStatistics->u4TransmitFailCount;
+	sStaAssocMetricsResp->uPktsRxError = 0;
+	sStaAssocMetricsResp->uRetransCnt = 0;
+	sStaAssocMetricsResp->iRssi =
+		RCPI_TO_dBm((prStaRec->u4RxVector3 & RX_VT_RCPI0_MASK)
+		>> RX_VT_RCPI0_OFFSET);
+
+	/* TxPhyRate */
+	for (i = 0; i < AUTO_RATE_NUM; i++) {
+		txmode =
+			HW_TX_RATE_TO_MODE(
+			prHwWlanInfo->rWtblRateInfo.au2RateCode[i]);
+		if (txmode >= ENUM_TX_MODE_NUM)
+			txmode = ENUM_TX_MODE_NUM - 1;
+
+		rate =
+			HW_TX_RATE_TO_MCS(
+			prHwWlanInfo->rWtblRateInfo.au2RateCode[i]);
+		nsts =
+			HW_TX_RATE_TO_NSS(
+			prHwWlanInfo->rWtblRateInfo.au2RateCode[i]) + 1;
+		frmode = prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability;
+		sgi = priv_driver_get_sgi_info(&prHwWlanInfo->rWtblPeerCap);
+
+		if (prHwWlanInfo->rWtblRateInfo.ucRateIdx != i)
+			continue;
+		else {
+			u2RateCode = nicRateInfo2RateCode(txmode, rate);
+			if (u2RateCode > 0) {
+				sStaAssocMetricsResp->uPhyTxRate =
+				nicRateCode2PhyRate(u2RateCode,
+					frmode + 4, sgi,
+					nsts - 1) / 10;
+			} else {
+				DBGLOG(REQ, WARN, "convert RateInfo fail\n");
+				sStaAssocMetricsResp->uPhyTxRate = 0;
+			}
+		}
+	}
+
+	/* RxPhyRate */
+	u4RxVector0 = prStaRec->u4RxVector0;
+	u4RxVector1 = prStaRec->u4RxVector1;
+
+	txmode = (u4RxVector0 & RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET;
+	rate = (u4RxVector0 & RX_VT_RX_RATE_MASK) >> RX_VT_RX_RATE_OFFSET;
+	frmode = (u4RxVector0 & RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET;
+	nsts = ((u4RxVector1 & RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET);
+	sgi = (u4RxVector0 & RX_VT_SHORT_GI) >> 19;
+	groupid = (u4RxVector1 & RX_VT_GROUP_ID_MASK) >> RX_VT_GROUP_ID_OFFSET;
+
+	if (!(groupid && groupid != 63))
+		nsts += 1;
+
+	u2RateCode = nicRateInfo2RateCode(txmode, rate);
+	if (u2RateCode > 0) {
+		sStaAssocMetricsResp->uPhyRxRate =
+			nicRateCode2PhyRate(u2RateCode,
+			frmode + 4, sgi, nsts - 1) / 10;
+	} else {
+		DBGLOG(REQ, WARN, "convert RateInfo fail\n");
+		sStaAssocMetricsResp->uPhyRxRate = 0;
+	}
+
+	sStaAssocMetricsResp->uAssocRate = 0;
+	sStaAssocMetricsResp->uDeltaTime = kalGetTimeTick()
+		- prStaRec->u8GetDataRateTime;
+
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] uIfIndex = %u\n",
+		sStaAssocMetricsResp->uIfIndex);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] mBssid = " MACSTR "\n",
+		sStaAssocMetricsResp->mBssid);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] mStaMac = " MACSTR "\n",
+		sStaAssocMetricsResp->mStaMac);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] uBytesSent = %llu\n",
+		sStaAssocMetricsResp->uBytesSent);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] uBytesRecv = %llu\n",
+		sStaAssocMetricsResp->uBytesRecv);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] uPktsSent = %llu\n",
+		sStaAssocMetricsResp->uPktsSent);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] uPktsRecv = %llu\n",
+		sStaAssocMetricsResp->uPktsRecv);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] uPktsTxError = %llu\n",
+		sStaAssocMetricsResp->uPktsTxError);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] uPktsRxError = %u\n",
+		sStaAssocMetricsResp->uPktsRxError);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] uRetransCnt = %u\n",
+		sStaAssocMetricsResp->uRetransCnt);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] iRssi = %d\n",
+		sStaAssocMetricsResp->iRssi);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] uPhyTxRate = %u\n",
+		sStaAssocMetricsResp->uPhyTxRate);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] uPhyRxRate = %u\n",
+		sStaAssocMetricsResp->uPhyRxRate);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] uAssocRate = %u\n",
+		sStaAssocMetricsResp->uAssocRate);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] uDeltaTime = %u\n",
+		sStaAssocMetricsResp->uDeltaTime);
+
+	i4Ret = MulAPAgentMontorSendMsg(
+		EV_WLAN_MULTIAP_ASSOC_STA_METRICS_RESPONSE,
+		sStaAssocMetricsResp, sizeof(*sStaAssocMetricsResp));
+	if (i4Ret < 0) {
+		DBGLOG(AAA, ERROR,
+			"EV_WLAN_MULTIAP_ASSOC_STA_METRICS_RESPONSE nl send msg failed!\n");
+		return i4Ret;
+	}
+	kalMemFree(sStaAssocMetricsResp,
+		VIR_MEM_TYPE,
+		sizeof(struct T_MULTI_AP_STA_ASSOC_METRICS_RESP));
+
+exit:
+	if (prHwWlanInfo)
+		kalMemFree(prHwWlanInfo,
+			VIR_MEM_TYPE,
+			sizeof(PARAM_HW_WLAN_INFO));
+
+	if (prQueryStaStatistics)
+		kalMemFree(prQueryStaStatistics,
+			VIR_MEM_TYPE,
+			sizeof(PARAM_GET_STA_STATISTICS));
+
+	return i4BytesWritten;
+}
+
+static int32_t priv_driver_MulAPAgent_sta_measurement_control(
+					IN struct net_device *prNetDev,
+					IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int8_t *this_char = NULL;
+	uint32_t u4Ret = 0;
+	uint8_t ucParam = 0;
+	uint8_t ucRoleIdx = 0;
+	uint8_t ucBssIdx = 0;
+	struct BSS_INFO *prBssInfo = NULL;
+	uint16_t ucMeasureDuration = 0;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		goto error;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	/* get command */
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	/* get param */
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		goto error;
+	this_char++;
+	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
+	u4Ret = kalkStrtou8(this_char, 0, &ucParam);
+	DBGLOG(REQ, LOUD, "u4Ret = %d, ucParam = %d\n", u4Ret, ucParam);
+	if (u4Ret != 0) {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver %s=[0|1] duration(ms)\n",
+			CMD_STA_MEASUREMENT_ENABLE);
+		goto error;
+	}
+
+	if (ucParam) {
+		if (apcArgv[1]) {
+			u4Ret = kalkStrtou16(apcArgv[1], 0, &ucMeasureDuration);
+			if (u4Ret != 0) {
+				DBGLOG(REQ, ERROR,
+					"parse ucMeasureDuration error u4Ret=%d\n",
+					u4Ret);
+				goto error;
+			}
+		} else {
+			DBGLOG(REQ, ERROR, "ucMeasureDuration is NULL\n");
+			goto error;
+		}
+	}
+
+	/* get Bss Index from ndev */
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo,
+			prGlueInfo->prP2PInfo[1]->prDevHandler,
+			&ucRoleIdx) != 0)
+		goto error;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+			ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS)
+		goto error;
+	DBGLOG(REQ, INFO, "ucRoleIdx = %d\n", ucRoleIdx);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	if (!prBssInfo) {
+		DBGLOG(REQ, WARN, "bss is not active\n");
+		goto error;
+	}
+
+	/* direct probe req to host or FW */
+	snprintf(pcCommand, i4TotalLen, "%s %s %d",
+		CMD_SET_CHIP, "N9ProbReq2Host", ucParam);
+	priv_driver_set_chip_config(prNetDev, pcCommand, i4TotalLen);
+
+	if (ucParam) {
+		DBGLOG(REQ, INFO, "Unassociated STA Measurement start...\n");
+
+		if (timerPendingTimer(&prBssInfo->rUnassocStaMeasureTimer)) {
+			cnmTimerStopTimer(prAdapter,
+				&prBssInfo->rUnassocStaMeasureTimer);
+			DBGLOG(REQ, INFO,
+				"update UnassocStaMeasureTimer\n");
+		}
+
+		cnmTimerInitTimer(prAdapter,
+			&prBssInfo->rUnassocStaMeasureTimer,
+			(PFN_MGMT_TIMEOUT_FUNC)
+				aaaMulAPAgentUnassocStaMeasureTimeout,
+			(unsigned long) prBssInfo);
+
+		cnmTimerStartTimer(prAdapter,
+			&prBssInfo->rUnassocStaMeasureTimer, ucMeasureDuration);
+		DBGLOG(REQ, INFO,
+			"ucMeasureDuration = %d ms\n", ucMeasureDuration);
+
+	} else {
+		/* reset Rx filter */
+		nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
+
+		kalMemZero(prBssInfo->arUnAssocSTA,
+			sizeof(struct T_MULTI_AP_STA_UNASSOC_METRICS)
+			* SAP_UNASSOC_METRICS_STA_MAX);
+		DBGLOG(REQ, INFO, "Unassociated STA Measurement stop...\n");
+	}
+
+	return i4BytesWritten;
+
+error:
+	return -1;
+}
+
+static int32_t priv_driver_MulAPAgent_sta_measurement_info(
+					IN struct net_device *prNetDev,
+					IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int32_t i4Ret = 0;
+	uint32_t u4Ret = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int8_t *this_char = NULL;
+	uint8_t aucMacAddr[MAC_ADDR_LEN];
+	uint8_t ucRoleIdx = 0;
+	uint8_t ucBssIdx = 0;
+	uint8_t ucMeasureIdx = 0;
+	struct BSS_INFO *prBssInfo = NULL;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE) {
+		i4BytesWritten = -1;
+		goto exit;
+	}
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	/* get command */
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD,
+		"argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	if (i4Argc != 2) {
+		DBGLOG(REQ, ERROR,
+			"argc %i is not equal to 2\n", i4Argc);
+		i4BytesWritten = -1;
+		goto exit;
+	}
+
+	/* get param */
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char) {
+		i4BytesWritten = -1;
+		goto exit;
+	}
+	this_char++;
+	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
+	i4Ret = wlanHwAddrToBin(this_char, &aucMacAddr[0]);
+	if (i4Ret < 0) {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver %s=STA_MAC [IDX]\n",
+			CMD_STA_MEASUREMENT_INFO);
+		i4BytesWritten = -1;
+		goto exit;
+	}
+
+	u4Ret = kalkStrtou8(apcArgv[1], 0, &ucMeasureIdx);
+	if (u4Ret != 0) {
+		DBGLOG(REQ, LOUD,
+			"parse ucMeasureIdx error u4Ret=%d\n", u4Ret);
+		i4BytesWritten = -1;
+		goto exit;
+	}
+
+	if (ucMeasureIdx > 15 || ucMeasureIdx < 0) {
+		DBGLOG(REQ, ERROR, "ucMeasureIdx number error\n");
+		i4BytesWritten = -1;
+		goto exit;
+	}
+
+	/* get Bss Index from ndev */
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo,
+			prGlueInfo->prP2PInfo[1]->prDevHandler,
+			&ucRoleIdx) != 0) {
+		i4BytesWritten = -1;
+		goto exit;
+	}
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+			ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS) {
+		i4BytesWritten = -1;
+		goto exit;
+	}
+	DBGLOG(REQ, INFO, "ucRoleIdx = %d\n", ucRoleIdx);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	if (!prBssInfo) {
+		DBGLOG(REQ, WARN, "bss is not active\n");
+		i4BytesWritten = -1;
+		goto exit;
+	}
+
+	COPY_MAC_ADDR(prBssInfo->arUnAssocSTA[ucMeasureIdx].mStaMac,
+		aucMacAddr);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] "MACSTR" IDX = %d\n",
+		MAC2STR(aucMacAddr), ucMeasureIdx);
+
+exit:
+	return i4BytesWritten;
+}
+
+static int32_t priv_driver_MulAPAgent_set_white_sta(
+					IN struct net_device *prNetDev,
+					IN char *pcCommand, IN int i4TotalLen)
+{
+	IN struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4Ret = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint8_t *this_char = NULL;
+	int i = 0;
+	uint8_t aucMacAddr[MAC_ADDR_LEN];
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE) {
+		i4Ret = -1;
+		goto exit;
+	}
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	/* get command */
+	DBGLOG(INIT, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(INIT, INFO,
+		"argc is %d, apcArgv[0] = %s\n\n",
+		i4Argc, *apcArgv);
+
+	/* get param */
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char) {
+		i4Ret = -1;
+		goto exit;
+	}
+
+	this_char++;
+	i4Ret = sscanf(this_char,
+		"%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+		&aucMacAddr[0], &aucMacAddr[1],
+		&aucMacAddr[2], &aucMacAddr[3],
+		&aucMacAddr[4], &aucMacAddr[5]);
+	DBGLOG(INIT, INFO, "thisChar=%s\n", this_char);
+	DBGLOG(INIT, INFO,
+		"Removing MAC="MACSTR" from BlackList !!\n",
+		MAC2STR(aucMacAddr));
+	for (i = 0; i < KAL_P2P_NUM; i++) {
+		DBGLOG(INIT, INFO,
+			"Removing MAC="MACSTR
+			" from BlackList !! P2P NUM=%d\n",
+			&aucMacAddr[0], i);
+		i4Ret |= kalP2PSetBlackList(prGlueInfo,
+			aucMacAddr, 0, i);
+	}
+exit:
+	return i4Ret;
+}
+
+static int32_t priv_driver_MulAPAgent_set_Black_sta(
+					IN struct net_device *prNetDev,
+					IN char *pcCommand, IN int i4TotalLen)
+{
+	IN struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4Ret = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint8_t *this_char = NULL;
+	int i = 0;
+	uint8_t aucMacAddr[MAC_ADDR_LEN];
+	IN struct ADAPTER *prAdapter = NULL;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE) {
+		i4Ret = -1;
+		goto exit;
+	}
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	/* get command */
+	DBGLOG(INIT, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(INIT, INFO, "argc is %d, apcArgv[0] = %s\n", i4Argc, *apcArgv);
+
+	/* get param */
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char) {
+		i4Ret = -1;
+		goto exit;
+	}
+	this_char++;
+
+	i4Ret = sscanf(this_char,
+		"%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+		&aucMacAddr[0], &aucMacAddr[1],
+		&aucMacAddr[2], &aucMacAddr[3],
+		&aucMacAddr[4], &aucMacAddr[5]);
+	DBGLOG(INIT, INFO, "thisChar=%s\n", this_char);
+	DBGLOG(INIT, INFO,
+		"Adding MAC="MACSTR" to BlackList !!\n",
+		MAC2STR(aucMacAddr));
+
+	for (i = 0; i < KAL_P2P_NUM; i++) {
+		DBGLOG(INIT, INFO,
+			"Adding MAC="MACSTR" to BlackList !! P2P NUM=%d\n",
+			&aucMacAddr[0], i);
+		i4Ret |= kalP2PSetBlackList(prGlueInfo, aucMacAddr, 1, i);
+	}
+exit:
+	return i4Ret;
+}
+#endif /* CFG_AP_80211KVR_INTERFACE */
+
+#if CFG_AP_80211K_SUPPORT
+static int32_t priv_driver_MulAPAgent_beacon_report_request(
+					IN struct net_device *prNetDev,
+					IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	uint32_t u4Ret = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int8_t *this_char = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint8_t i;
+	uint8_t ucTmpReqElemNum = 0;
+	struct PARAM_CUSTOM_BCN_REP_REQ_STRUCT *prSetBcnRepReqInfo = NULL;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE) {
+		i4BytesWritten = -1;
+		goto exit;
+	}
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	/* get command */
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD,
+		"argc is %d, apcArgv[0] = %s\n",
+		i4Argc, *apcArgv);
+
+	/* get param */
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char) {
+		i4BytesWritten = -1;
+		goto exit;
+	}
+	this_char++;
+	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
+	prSetBcnRepReqInfo = (struct PARAM_CUSTOM_BCN_REP_REQ_STRUCT *)
+			kalMemAlloc(sizeof(
+			struct PARAM_CUSTOM_BCN_REP_REQ_STRUCT),
+			VIR_MEM_TYPE);
+	if (prSetBcnRepReqInfo == NULL) {
+		DBGLOG(INIT, ERROR, "alloc memory fail\n");
+		i4BytesWritten = -1;
+		goto exit;
+	}
+	kalMemZero(prSetBcnRepReqInfo,
+		sizeof(struct PARAM_CUSTOM_BCN_REP_REQ_STRUCT));
+#define TEMP_TEMPLATE \
+	"%hhx:%hhx:%hhx:%hhx:%hhx:%hhx-%u-%u-%u-"\
+	"%hhx:%hhx:%hhx:%hhx:%hhx:%hhx-%u-%u-%u-%u-%u-%u-%u-%u"\
+	"-%" INT_TO_STR(PARAM_MAX_LEN_SSID) "s"
+
+	i4BytesWritten = sscanf(this_char, TEMP_TEMPLATE,
+			&prSetBcnRepReqInfo->aucPeerMac[0],
+			&prSetBcnRepReqInfo->aucPeerMac[1],
+			&prSetBcnRepReqInfo->aucPeerMac[2],
+			&prSetBcnRepReqInfo->aucPeerMac[3],
+			&prSetBcnRepReqInfo->aucPeerMac[4],
+			&prSetBcnRepReqInfo->aucPeerMac[5],
+			&prSetBcnRepReqInfo->u2Repetition,
+			&prSetBcnRepReqInfo->u2MeasureDuration,
+			&prSetBcnRepReqInfo->ucOperClass,
+			&prSetBcnRepReqInfo->aucBssid[0],
+			&prSetBcnRepReqInfo->aucBssid[1],
+			&prSetBcnRepReqInfo->aucBssid[2],
+			&prSetBcnRepReqInfo->aucBssid[3],
+			&prSetBcnRepReqInfo->aucBssid[4],
+			&prSetBcnRepReqInfo->aucBssid[5],
+			&prSetBcnRepReqInfo->ucChannel,
+			&prSetBcnRepReqInfo->u2RandomInterval,
+			&prSetBcnRepReqInfo->ucMeasurementMode,
+			&prSetBcnRepReqInfo->ucReportCondition,
+			&prSetBcnRepReqInfo->ucReportReference,
+			&prSetBcnRepReqInfo->ucReportingDetail,
+			&prSetBcnRepReqInfo->ucNumberOfRequest,
+			&prSetBcnRepReqInfo->ucNumberOfAPChanReport,
+			&prSetBcnRepReqInfo->aucSsid);
+#undef TEMP_TEMPLATE
+
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] aucPeerMac = " MACSTR"\n",
+		prSetBcnRepReqInfo->aucPeerMac);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] u2Repetition = %u\n",
+		prSetBcnRepReqInfo->u2Repetition);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] u2MeasureDuration = %u\n",
+		prSetBcnRepReqInfo->u2MeasureDuration);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] ucOperClass = %u\n",
+		prSetBcnRepReqInfo->ucOperClass);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] aucBssid = " MACSTR "\n",
+		prSetBcnRepReqInfo->aucBssid);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] ucChannel = %u\n",
+		prSetBcnRepReqInfo->ucChannel);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] u2RandomInterval = %u\n",
+		prSetBcnRepReqInfo->u2RandomInterval);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] ucMeasurementMode = %u\n",
+		prSetBcnRepReqInfo->ucMeasurementMode);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] ucReportCondition = %u\n",
+		prSetBcnRepReqInfo->ucReportCondition);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] ucReportReference = %u\n",
+		prSetBcnRepReqInfo->ucReportReference);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] ucReportingDetail = %u\n",
+		prSetBcnRepReqInfo->ucReportingDetail);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] ucNumberOfRequest = %u\n",
+		prSetBcnRepReqInfo->ucNumberOfRequest);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] ucNumberOfAPChanReport = %u\n",
+		prSetBcnRepReqInfo->ucNumberOfAPChanReport);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] aucSsid = %s\n", prSetBcnRepReqInfo->aucSsid);
+
+	if (i4Argc != prSetBcnRepReqInfo->ucNumberOfRequest +
+		prSetBcnRepReqInfo->ucNumberOfAPChanReport + 1) {
+		DBGLOG(INIT, ERROR,
+			"read Request Element and AP Channel List fail !!\n");
+		i4BytesWritten = -1;
+		goto exit;
+	}
+
+	ucTmpReqElemNum = prSetBcnRepReqInfo->ucNumberOfRequest;
+
+	if (prSetBcnRepReqInfo->ucReportingDetail != 1) {
+		prSetBcnRepReqInfo->ucNumberOfRequest = 0;
+		kalMemZero(prSetBcnRepReqInfo->ucRequestElemList,
+			sizeof(uint8_t) * ELEM_LEN_MAX);
+	} else {
+		for (i = 1;
+			i < prSetBcnRepReqInfo->ucNumberOfRequest + 1;
+			i++) {
+			u4Ret = kalkStrtou8(apcArgv[i],
+				0, &prSetBcnRepReqInfo->ucRequestElemList[i-1]);
+			if (u4Ret != 0) {
+				DBGLOG(INIT, ERROR,
+					"parse Request Element List fail\n");
+				i4BytesWritten = -1;
+				goto exit;
+			}
+			DBGLOG(REQ, INFO,
+				"[SAP_Test] ucRequestElemList[%d] = %u\n", i-1,
+				prSetBcnRepReqInfo->ucRequestElemList[i-1]);
+		}
+	}
+
+	if (prSetBcnRepReqInfo->ucChannel != 255) {
+		prSetBcnRepReqInfo->ucNumberOfAPChanReport = 0;
+		kalMemZero(prSetBcnRepReqInfo->ucChanList,
+			sizeof(uint8_t) * MAX_CHN_NUM);
+	} else {
+		for (i = ucTmpReqElemNum + 1; i < i4Argc; i++) {
+			u4Ret = kalkStrtou8(apcArgv[i], 0,
+				&prSetBcnRepReqInfo
+				->ucChanList[i-(ucTmpReqElemNum + 1)]);
+			if (u4Ret != 0) {
+				DBGLOG(INIT, ERROR,
+					"parse AP Channel List fail\n");
+				i4BytesWritten = -1;
+				goto exit;
+			}
+			DBGLOG(REQ, INFO,
+				"[SAP_Test] ucChanList[%d] = %u\n",
+				i-(ucTmpReqElemNum + 1),
+				prSetBcnRepReqInfo
+				->ucChanList[i-(ucTmpReqElemNum + 1)]);
+		}
+	}
+
+	/*4. Beacon Report */
+	rStatus = kalIoctl(prGlueInfo,
+				wlanoidSendBeaconReportRequest,
+				prSetBcnRepReqInfo,
+				sizeof(struct PARAM_CUSTOM_BCN_REP_REQ_STRUCT),
+				FALSE, FALSE, TRUE,
+				&i4BytesWritten);
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%d)\r\n", rStatus);
+		i4BytesWritten = -1;
+		goto exit;
+	}
+
+exit:
+	if (prSetBcnRepReqInfo)
+		kalMemFree(prSetBcnRepReqInfo,
+		VIR_MEM_TYPE,
+		sizeof(struct PARAM_CUSTOM_BCN_REP_REQ_STRUCT));
+	return i4BytesWritten;
+}
+#endif /* CFG_AP_80211K_SUPPORT */
+#if CFG_AP_80211V_SUPPORT
+static int32_t priv_driver_MulAPAgent_BTM_request(
+					IN struct net_device *prNetDev,
+					IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4Ret = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int8_t *this_char = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint8_t i;
+	struct PARAM_CUSTOM_BTM_REQ_STRUCT *prSetBtmReqInfo = NULL;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE) {
+		i4Ret = -1;
+		goto exit;
+	}
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	/* get command */
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD,
+		"argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	/* get param */
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char) {
+		i4Ret = -1;
+		goto exit;
+	}
+	this_char++;
+	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
+	prSetBtmReqInfo = (struct PARAM_CUSTOM_BTM_REQ_STRUCT *)
+			kalMemAlloc(sizeof(struct PARAM_CUSTOM_BTM_REQ_STRUCT),
+			VIR_MEM_TYPE);
+	if (prSetBtmReqInfo == NULL) {
+		DBGLOG(INIT, ERROR, "alloc memory fail\n");
+		i4Ret = -1;
+		goto exit;
+	}
+	kalMemZero(prSetBtmReqInfo, sizeof(struct PARAM_CUSTOM_BTM_REQ_STRUCT));
+
+#define TEMP_TEMPLATE \
+	"%hhx:%hhx:%hhx:%hhx:%hhx:%hhx-%u-%u-%u-%u-%u-%255s"
+
+	i4Ret = sscanf(this_char, TEMP_TEMPLATE,
+		&prSetBtmReqInfo->aucPeerMac[0],
+		&prSetBtmReqInfo->aucPeerMac[1],
+		&prSetBtmReqInfo->aucPeerMac[2],
+		&prSetBtmReqInfo->aucPeerMac[3],
+		&prSetBtmReqInfo->aucPeerMac[4],
+		&prSetBtmReqInfo->aucPeerMac[5],
+		&prSetBtmReqInfo->ucEssImm,
+		&prSetBtmReqInfo->u2DisassocTimer,
+		&prSetBtmReqInfo->ucAbridged,
+		&prSetBtmReqInfo->ucValidityInterval,
+		&prSetBtmReqInfo->ucTargetBSSIDCnt,
+		(char *) &prSetBtmReqInfo->aucSessionUrl);
+#undef TEMP_TEMPLATE
+
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] aucPeerMac = " MACSTR "\n",
+		prSetBtmReqInfo->aucPeerMac);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] u4EssImm = %u\n",
+		prSetBtmReqInfo->ucEssImm);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] u2DisassocTimer = %u\n",
+		prSetBtmReqInfo->u2DisassocTimer);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] ucAbridged = %u\n",
+		prSetBtmReqInfo->ucAbridged);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] ucValidityInterval = %u\n",
+		prSetBtmReqInfo->ucValidityInterval);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] ucTargetBSSIDCnt = %u\n",
+		prSetBtmReqInfo->ucTargetBSSIDCnt);
+	DBGLOG(REQ, INFO,
+		"[SAP_Test] aucSessionUrl = %s\n",
+		prSetBtmReqInfo->aucSessionUrl);
+
+	if (prSetBtmReqInfo->ucTargetBSSIDCnt < 1
+		|| prSetBtmReqInfo->ucTargetBSSIDCnt > DEST_BSSID_NUM_MAX) {
+		DBGLOG(INIT, ERROR,
+			"Candidate BSSID number invalid, skip send BTM Req\n");
+		i4Ret = -1;
+		goto exit;
+	}
+
+	if (i4Argc != prSetBtmReqInfo->ucTargetBSSIDCnt + 1) {
+		DBGLOG(INIT, ERROR,
+			"Read Candicate BSSID List Fail, count not match !!!\n");
+		i4Ret = -1;
+		goto exit;
+	}
+
+	for (i = 1; i < i4Argc; i++) {
+		i4Ret = sscanf(apcArgv[i],
+			"%hhx:%hhx:%hhx:%hhx:%hhx:%hhx-%x-%u-%u-%x-%u",
+			&prSetBtmReqInfo->ucTargetBSSIDList[i-1].mMac[0],
+			&prSetBtmReqInfo->ucTargetBSSIDList[i-1].mMac[1],
+			&prSetBtmReqInfo->ucTargetBSSIDList[i-1].mMac[2],
+			&prSetBtmReqInfo->ucTargetBSSIDList[i-1].mMac[3],
+			&prSetBtmReqInfo->ucTargetBSSIDList[i-1].mMac[4],
+			&prSetBtmReqInfo->ucTargetBSSIDList[i-1].mMac[5],
+			&prSetBtmReqInfo->ucTargetBSSIDList[i-1].u4BSSIDInfo,
+			&prSetBtmReqInfo->ucTargetBSSIDList[i-1].ucOperClass,
+			&prSetBtmReqInfo->ucTargetBSSIDList[i-1].ucChannel,
+			&prSetBtmReqInfo->ucTargetBSSIDList[i-1].ucPhyType,
+			&prSetBtmReqInfo->ucTargetBSSIDList[i-1].ucPreference);
+		if (i4Ret != 11) {
+			DBGLOG(INIT, ERROR, "parse Target BSSID List fail\n");
+			i4Ret = -1;
+			goto exit;
+		}
+
+		DBGLOG(REQ, INFO,
+			"[SAP_Test] TargetBSSIDList[%u] = " MACSTR"\n",
+			i-1,
+			MAC2STR(prSetBtmReqInfo->ucTargetBSSIDList[i-1].mMac));
+		DBGLOG(REQ, INFO, "[SAP_Test] u4BSSIDInfo = %x\n",
+			prSetBtmReqInfo->ucTargetBSSIDList[i-1].u4BSSIDInfo);
+		DBGLOG(REQ, INFO, "[SAP_Test] ucOperClass = %u\n",
+			prSetBtmReqInfo->ucTargetBSSIDList[i-1].ucOperClass);
+		DBGLOG(REQ, INFO, "[SAP_Test] ucChannel = %u\n",
+			prSetBtmReqInfo->ucTargetBSSIDList[i-1].ucChannel);
+		DBGLOG(REQ, INFO, "[SAP_Test] ucPhyType = %x\n",
+			prSetBtmReqInfo->ucTargetBSSIDList[i-1].ucPhyType);
+		DBGLOG(REQ, INFO, "[SAP_Test] ucPreference = %u\n",
+			prSetBtmReqInfo->ucTargetBSSIDList[i-1].ucPreference);
+	}
+
+	/*5. BTM Request */
+	rStatus = kalIoctl(prGlueInfo,
+				wlanoidSendBTMRequest,
+				prSetBtmReqInfo,
+				sizeof(struct PARAM_CUSTOM_BTM_REQ_STRUCT),
+				FALSE, FALSE, TRUE, &i4Ret);
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%d)\r\n", rStatus);
+		i4Ret = -1;
+		goto exit;
+	}
+
+exit:
+	if (prSetBtmReqInfo)
+		kalMemFree(prSetBtmReqInfo,
+		VIR_MEM_TYPE,
+		sizeof(struct PARAM_CUSTOM_BTM_REQ_STRUCT));
+	return i4Ret;
+}
+#endif /* CFG_AP_80211V_SUPPORT */
+
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			 IN int32_t i4TotalLen)
 {
@@ -18026,6 +19234,57 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 				pcCommand, i4TotalLen);
 #endif /* CFG_SUPPORT_DMASHDL_SYSDVT */
 #endif /* CFG_SUPPORT_WIFI_SYSDVT */
+#if CFG_AP_80211KVR_INTERFACE
+		else if (strnicmp(pcCommand, CMD_BSS_STATUS_REPORT,
+				strlen(CMD_BSS_STATUS_REPORT)) == 0)
+			i4BytesWritten =
+				priv_driver_MulAPAgent_bss_status_report(
+					prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_BSS_REPORT_INFO,
+				strlen(CMD_BSS_REPORT_INFO)) == 0)
+			i4BytesWritten =
+				priv_driver_MulAPAgent_bss_report_info(
+					prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_STA_REPORT_INFO,
+				strlen(CMD_STA_REPORT_INFO)) == 0)
+			i4BytesWritten =
+				priv_driver_MulAPAgent_sta_report_info(
+					prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_STA_MEASUREMENT_ENABLE,
+				strlen(CMD_STA_MEASUREMENT_ENABLE)) == 0)
+			i4BytesWritten =
+				priv_driver_MulAPAgent_sta_measurement_control(
+					prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_STA_MEASUREMENT_INFO,
+				strlen(CMD_STA_MEASUREMENT_INFO)) == 0)
+			i4BytesWritten =
+				priv_driver_MulAPAgent_sta_measurement_info(
+					prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_WHITELIST_STA,
+				strlen(CMD_WHITELIST_STA)) == 0)
+			i4BytesWritten =
+				priv_driver_MulAPAgent_set_white_sta(
+					prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_BLACKLIST_STA,
+				strlen(CMD_BLACKLIST_STA)) == 0)
+			i4BytesWritten =
+				priv_driver_MulAPAgent_set_Black_sta(
+					prNetDev, pcCommand, i4TotalLen);
+#endif /* CFG_AP_80211KVR_INTERFACE */
+#if CFG_AP_80211K_SUPPORT
+		else if (strnicmp(pcCommand, CMD_STA_BEACON_REQUEST,
+				strlen(CMD_STA_BEACON_REQUEST)) == 0)
+			i4BytesWritten =
+				priv_driver_MulAPAgent_beacon_report_request(
+					prNetDev, pcCommand, i4TotalLen);
+#endif /* CFG_AP_80211K_SUPPORT */
+#if CFG_AP_80211V_SUPPORT
+		else if (strnicmp(pcCommand, CMD_STA_BTM_REQUEST,
+				strlen(CMD_STA_BTM_REQUEST)) == 0)
+			i4BytesWritten =
+				priv_driver_MulAPAgent_BTM_request(
+					prNetDev, pcCommand, i4TotalLen);
+#endif /* CFG_AP_80211V_SUPPORT */
 		else if (strnicmp(pcCommand, CMD_DBG_SHOW_TR_INFO,
 				strlen(CMD_DBG_SHOW_TR_INFO)) == 0) {
 			kalIoctl(prGlueInfo,

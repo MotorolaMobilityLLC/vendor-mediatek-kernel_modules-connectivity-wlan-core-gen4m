@@ -331,6 +331,28 @@ enum {
 };
 #endif /* CFG_SUPPORT_ADVANCE_CONTROL */
 
+#if CFG_AP_80211KVR_INTERFACE
+extern struct sock *nl_sk;
+#define EV_WLAN_MULTIAP_START \
+	((0xA000 | 0x200) + 0x50)
+#define EV_WLAN_MULTIAP_BSS_METRICS_RESPONSE \
+	(EV_WLAN_MULTIAP_START + 0x09)
+#define EV_WLAN_MULTIAP_STA_TOPOLOGY_NOTIFY \
+	(EV_WLAN_MULTIAP_START + 0x08)
+#define EV_WLAN_MULTIAP_ASSOC_STA_METRICS_RESPONSE \
+	(EV_WLAN_MULTIAP_START + 0x0a)
+#define EV_WLAN_MULTIAP_UNASSOC_STA_METRICS_RESPONSE \
+	(EV_WLAN_MULTIAP_START + 0x0b)
+#define EV_WLAN_MULTIAP_BEACON_METRICS_RESPONSE \
+	(EV_WLAN_MULTIAP_START + 0x0c)
+#define EV_WLAN_MULTIAP_STEERING_BTM_REPORT \
+	(EV_WLAN_MULTIAP_START + 0x0d)
+#define EV_WLAN_MULTIAP_TOPOLOGY_RESPONSE \
+	(EV_WLAN_MULTIAP_START + 0x0e)
+#define EV_WLAN_MULTIAP_BSS_STATUS_REPORT \
+	(EV_WLAN_MULTIAP_START + 0x0f)
+#endif /*CFG_AP_80211KVR_INTERFACE*/
+
 typedef uint32_t(*PFN_OID_HANDLER_FUNC_REQ) (
 	IN void *prAdapter,
 	IN OUT void *pvBuf, IN uint32_t u4BufLen,
@@ -528,6 +550,12 @@ int priv_nan_struct(IN struct net_device *prNetDev,
 		    IN struct iw_request_info *prIwReqInfo,
 		    IN union iwreq_data *prIwReqData, IN char *pcExtra);
 #endif
+
+#if CFG_AP_80211KVR_INTERFACE
+int32_t MulAPAgentMontorSendMsg(IN uint16_t msgtype,
+	IN void *pvmsgbuf, IN int32_t i4TotalLen);
+#endif /* CFG_AP_80211KVR_INTERFACE */
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

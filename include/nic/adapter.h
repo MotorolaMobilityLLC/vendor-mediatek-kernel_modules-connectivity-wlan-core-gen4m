@@ -516,6 +516,14 @@ struct BSS_INFO {
 	struct AP_PMF_CFG rApPmfCfg;
 #endif
 
+#if CFG_AP_80211KVR_INTERFACE
+	uint32_t u4ChanUtil;
+	int32_t i4NoiseHistogram;
+	struct T_MULTI_AP_STA_UNASSOC_METRICS
+		arUnAssocSTA[SAP_UNASSOC_METRICS_STA_MAX];
+	struct TIMER rUnassocStaMeasureTimer;
+#endif
+
 #if (CFG_SUPPORT_HE_ER == 1)
 	uint8_t ucErMode;
 #endif

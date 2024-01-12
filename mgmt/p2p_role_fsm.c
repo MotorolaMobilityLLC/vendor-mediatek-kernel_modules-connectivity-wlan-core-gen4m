@@ -800,6 +800,11 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
+#if CFG_AP_80211KVR_INTERFACE
+	aaaMulAPAgentStaEventNotify(prStaRec,
+		prP2pBssInfo->aucBSSID, FALSE);
+#endif
+
 	/* Change station state. */
 	cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
 

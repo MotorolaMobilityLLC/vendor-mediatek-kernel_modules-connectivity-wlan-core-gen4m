@@ -1408,6 +1408,10 @@ uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter,
 		else if (prAdapter->fgIsP2PRegistered &&
 			 IS_STA_IN_P2P(prStaRec)) {
 			/* TODO(Kevin) */
+#if CFG_AP_80211KVR_INTERFACE
+			aaaMulAPAgentStaEventNotify(prStaRec,
+				prDeauthFrame->aucBSSID, FALSE);
+#endif
 			p2pRoleFsmRunEventRxDeauthentication(prAdapter,
 							     prStaRec,
 							     prSwRfb);
@@ -1664,6 +1668,10 @@ uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER *prAdapter,
 		else if (prAdapter->fgIsP2PRegistered &&
 			 (IS_STA_IN_P2P(prStaRec))) {
 			/* TODO(Kevin) */
+#if CFG_AP_80211KVR_INTERFACE
+			aaaMulAPAgentStaEventNotify(prStaRec,
+				prDisassocFrame->aucBSSID, FALSE);
+#endif
 			p2pRoleFsmRunEventRxDisassociation(prAdapter,
 							   prStaRec, prSwRfb);
 		}
