@@ -3361,21 +3361,13 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 		for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum;
 		     ucBssIndex++) {
 			prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
-
-			if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS
-			    && prBssInfo->fgIsInUse)
-				break;
+			if (IS_BSS_AIS(prBssInfo) &&
+			    prBssInfo->fgIsInUse) {
+				nicUpdateLinkQuality(prAdapter, ucBssIndex,
+				(struct EVENT_LINK_QUALITY *)
+				(prEvent->aucBuffer));
+			}
 		}
-
-		if (ucBssIndex >= prAdapter->ucHwBssIdNum)
-			ucBssIndex = 1;
-			/* No hit(bss1 for default ais network) */
-		/* printk("=======> rssi with bss%d ,%d\n",ucBssIndex,
-		 * ((struct EVENT_LINK_QUALITY *)
-		 * (prEvent->aucBuffer))->rLq[ucBssIndex].cRssi);
-		 */
-		nicUpdateLinkQuality(prAdapter, ucBssIndex,
-			(struct EVENT_LINK_QUALITY *) (prEvent->aucBuffer));
 	}
 
 #endif
