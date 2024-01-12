@@ -1659,7 +1659,6 @@ uint8_t asicRxGetRcpiValueFromRxv(
 {
 	uint8_t ucRcpi0, ucRcpi1;
 	uint8_t ucRcpiValue = 0;
-	uint8_t ucRxNum;
 	struct HW_MAC_RX_STS_GROUP_3 *prGroup3;
 
 	ASSERT(prSwRfb);
@@ -1674,71 +1673,59 @@ uint8_t asicRxGetRcpiValueFromRxv(
 	prGroup3 = (struct HW_MAC_RX_STS_GROUP_3 *)prSwRfb->prRxStatusGroup3;
 	ucRcpi0 = HAL_RX_STATUS_GET_RCPI0(prGroup3);
 	ucRcpi1 = HAL_RX_STATUS_GET_RCPI1(prGroup3);
-	ucRxNum = HAL_RX_STATUS_GET_RX_NUM(prGroup3);
 
-	if (ucRxNum == 0)
-		ucRcpiValue =
-			ucRcpi0; /*0:1R, BBP always report RCPI0 at 1R mode*/
+	switch (ucRcpiMode) {
+	case RCPI_MODE_WF0:
+		ucRcpiValue = ucRcpi0;
+		break;
 
-	else if (ucRxNum == 1) {
-		switch (ucRcpiMode) {
-		case RCPI_MODE_WF0:
-			ucRcpiValue = ucRcpi0;
-			break;
+	case RCPI_MODE_WF1:
+		ucRcpiValue = ucRcpi1;
+		break;
 
-		case RCPI_MODE_WF1:
-			ucRcpiValue = ucRcpi1;
-			break;
-
-		case RCPI_MODE_WF2:
-		case RCPI_MODE_WF3:
-			DBGLOG(RX, WARN,
-			"Rcpi Mode = %d is invalid for", ucRcpiMode);
-			DBGLOG(RX, WARN,
-			" device with only 2 antenna, use default rcpi0\n");
-			ucRcpiValue = ucRcpi0;
-			break;
-
-		case RCPI_MODE_AVG: /*Not recommended for CBW80+80*/
-			if (ucRcpi0 <= RCPI_HIGH_BOUND &&
-				ucRcpi1 <= RCPI_HIGH_BOUND)
-				ucRcpiValue = (ucRcpi0 + ucRcpi1) / 2;
-			else
-				ucRcpiValue = ucRcpi0 <= RCPI_HIGH_BOUND ?
-					(ucRcpi0) : (ucRcpi1);
-			break;
-
-		case RCPI_MODE_MAX:
-			if (ucRcpi0 <= RCPI_HIGH_BOUND &&
-				ucRcpi1 <= RCPI_HIGH_BOUND)
-				ucRcpiValue =
-					(ucRcpi0 > ucRcpi1) ?
-					(ucRcpi0) : (ucRcpi1);
-			else
-				ucRcpiValue = ucRcpi0 <= RCPI_HIGH_BOUND ?
-					(ucRcpi0) : (ucRcpi1);
-			break;
-
-		case RCPI_MODE_MIN:
-			ucRcpiValue =
-				(ucRcpi0 < ucRcpi1) ? (ucRcpi0) : (ucRcpi1);
-			break;
-
-		default:
-			break;
-		}
-	} else {
+	case RCPI_MODE_WF2:
+	case RCPI_MODE_WF3:
 		DBGLOG(RX, WARN,
-		"RX_NUM = %d is invalid for getting uint8_t value from RXV\n",
-		ucRxNum);
-		return 0;
+		"Rcpi Mode = %d is invalid for", ucRcpiMode);
+		DBGLOG(RX, WARN,
+		" device with only 2 antenna, use default rcpi0\n");
+		ucRcpiValue = ucRcpi0;
+		break;
+
+	case RCPI_MODE_AVG: /*Not recommended for CBW80+80*/
+		if (ucRcpi0 <= RCPI_HIGH_BOUND &&
+			ucRcpi1 <= RCPI_HIGH_BOUND)
+			ucRcpiValue = (ucRcpi0 + ucRcpi1) / 2;
+		else
+			ucRcpiValue = ucRcpi0 <= RCPI_HIGH_BOUND ?
+				(ucRcpi0) : (ucRcpi1);
+		break;
+
+	case RCPI_MODE_MAX:
+		if (ucRcpi0 <= RCPI_HIGH_BOUND &&
+			ucRcpi1 <= RCPI_HIGH_BOUND)
+			ucRcpiValue =
+				(ucRcpi0 > ucRcpi1) ?
+				(ucRcpi0) : (ucRcpi1);
+		else
+			ucRcpiValue = ucRcpi0 <= RCPI_HIGH_BOUND ?
+				(ucRcpi0) : (ucRcpi1);
+		break;
+
+	case RCPI_MODE_MIN:
+		ucRcpiValue =
+			(ucRcpi0 < ucRcpi1) ? (ucRcpi0) : (ucRcpi1);
+		break;
+
+	default:
+		break;
 	}
 
 	if (ucRcpiValue < RCPI_MEASUREMENT_NOT_AVAILABLE)
 		return ucRcpiValue;
 
 	DBGLOG(RX, ERROR,
-	       "ucRcpiValue == RCPI_MEASUREMENT_NOT_AVAILABLE ??\n");
+	       "Invalid ucRcpiValue: %d\n", ucRcpiValue);
 	return 0;
 }
 
