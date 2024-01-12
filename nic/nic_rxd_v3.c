@@ -156,8 +156,6 @@ void nic_rxd_v3_fill_rfb(
 	uint32_t u4HeaderOffset;
 	uint16_t u2RxStatusOffset;
 
-	DEBUGFUNC("nicRxFillRFB");
-
 	prChipInfo = prAdapter->chip_info;
 	prWifiVar = &prAdapter->rWifiVar;
 	prRxStatus = prSwRfb->prRxStatus;

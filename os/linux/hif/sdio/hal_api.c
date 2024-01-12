@@ -185,8 +185,6 @@ halRxWaitResponse(struct ADAPTER *prAdapter,
 	struct RX_CTRL *prRxCtrl;
 	struct WIFI_EVENT *prEvent;
 
-	DEBUGFUNC("halRxWaitResponse");
-
 	ASSERT(prAdapter);
 	ASSERT(pucRspBuffer);
 	prChipInfo = prAdapter->chip_info;
@@ -1159,8 +1157,6 @@ uint32_t halRxReadBuffer(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	struct RX_DESC_OPS_T *prRxDescOps;
 	uint16_t u2RxByteCount = 0;
 
-	DEBUGFUNC("halRxReadBuffer");
-
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
@@ -1269,8 +1265,6 @@ void halRxSDIOReceiveRFBs(struct ADAPTER *prAdapter)
 
 	KAL_SPIN_LOCK_DECLARATION();
 
-	DEBUGFUNC("halRxSDIOReceiveRFBs");
-
 	ASSERT(prAdapter);
 
 	prRxCtrl = &prAdapter->rRxCtrl;
@@ -1342,8 +1336,6 @@ halRxEnhanceReadBuffer(struct ADAPTER *prAdapter, uint32_t u4DataPort,
 	uint32_t *pu4HwAppendDW;
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 	struct RX_DESC_OPS_T *prRxDescOps;
-
-	DEBUGFUNC("halRxEnhanceReadBuffer");
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -1437,8 +1429,6 @@ void halRxSDIOEnhanceReceiveRFBs(struct ADAPTER *prAdapter)
 
 	KAL_SPIN_LOCK_DECLARATION();
 
-	DEBUGFUNC("halRxSDIOEnhanceReceiveRFBs");
-
 	ASSERT(prAdapter);
 
 	prSDIOCtrl = prAdapter->prGlueInfo->rHifInfo.prSDIOCtrl;
@@ -1524,8 +1514,6 @@ void halRxSDIOAggReceiveRFBs(struct ADAPTER *prAdapter)
 	u_int8_t fgNoFreeBuf = FALSE;
 
 	SDIO_TIME_INTERVAL_DEC();
-
-	DEBUGFUNC("halRxSDIOAggReceiveRFBs");
 
 	ASSERT(prAdapter);
 

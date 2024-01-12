@@ -1740,8 +1740,6 @@ void kalDevReadIntStatus(struct ADAPTER *prAdapter, uint32_t *pu4IntStatus)
 
 	SDIO_TIME_INTERVAL_DEC();
 
-	DEBUGFUNC("nicSDIOReadIntStatus");
-
 	ASSERT(prAdapter);
 	ASSERT(pu4IntStatus);
 

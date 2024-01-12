@@ -1078,8 +1078,6 @@ uint32_t wlanPatchSendSemaControl(struct ADAPTER *prAdapter,
 	struct INIT_EVENT_CMD_RESULT rEvent = {0};
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
-	DEBUGFUNC("wlanImagePatchSemaphoreCheck");
-
 	rCmd.ucGetSemaphore = PATCH_GET_SEMA_CONTROL;
 
 	u4Status = wlanSendInitSetQueryCmd(prAdapter,

@@ -148,8 +148,6 @@ halRxWaitResponse(struct ADAPTER *prAdapter,
 	u_int8_t ret = FALSE;
 	struct BUS_INFO *prBusInfo;
 
-	DEBUGFUNC("halRxWaitResponse");
-
 	ASSERT(prAdapter);
 	ASSERT(pucRspBuffer);
 

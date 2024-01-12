@@ -154,8 +154,6 @@ void nic_rxd_v2_fill_rfb(
 	uint32_t u4HeaderOffset;
 	uint16_t u2RxStatusOffset;
 
-	DEBUGFUNC("nicRxFillRFB");
-
 	prChipInfo = prAdapter->chip_info;
 	prRxStatus = prSwRfb->prRxStatus;
 

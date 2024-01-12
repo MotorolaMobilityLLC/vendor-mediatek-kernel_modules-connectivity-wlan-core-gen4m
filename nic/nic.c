@@ -141,8 +141,6 @@ uint32_t nicAllocateAdapterMemory(struct ADAPTER
 	struct RX_CTRL *prRxCtrl;
 	struct TX_CTRL *prTxCtrl;
 
-	DEBUGFUNC("nicAllocateAdapterMemory");
-
 	ASSERT(prAdapter);
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prTxCtrl = &prAdapter->rTxCtrl;
@@ -413,8 +411,6 @@ void nicSDIOReadIntStatus(struct ADAPTER *prAdapter,
 			  uint32_t *pu4IntStatus)
 {
 	struct ENHANCE_MODE_DATA_STRUCT *prSDIOCtrl;
-
-	DEBUGFUNC("nicSDIOReadIntStatus");
 
 	ASSERT(prAdapter);
 	ASSERT(pu4IntStatus);
@@ -2864,7 +2860,6 @@ nicConfigPowerSaveProfile(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prBssInfo;
 
-	DEBUGFUNC("nicConfigPowerSaveProfile");
 	DBGLOG(INIT, INFO,
 		"ucBssIndex:%d, ePwrMode:%d, fgEnCmdEvent:%d\n",
 		ucBssIndex, ePwrMode, fgEnCmdEvent);
@@ -2980,7 +2975,6 @@ uint32_t nicEnterCtiaMode(struct ADAPTER *prAdapter,
 #endif
 	u_int8_t fgEnCmdEvtSetting = 0;
 
-	DEBUGFUNC("nicEnterCtiaMode");
 	DBGLOG(INIT, TRACE, "nicEnterCtiaMode: %d\n", fgEnterCtia);
 
 	ASSERT(prAdapter);
@@ -3421,7 +3415,6 @@ nicUpdateBeaconIETemplate(struct ADAPTER *prAdapter,
 	struct GLUE_INFO *prGlueInfo;
 	struct mt66xx_chip_info *prChipInfo;
 
-	DEBUGFUNC("wlanUpdateBeaconIETemplate");
 	DBGLOG(INIT, LOUD, "\n");
 
 	ASSERT(prAdapter);
@@ -3719,8 +3712,6 @@ uint32_t nicRlmUpdateSRParams(struct ADAPTER *prAdapter,
 uint32_t nicUpdateTxPower(struct ADAPTER *prAdapter,
 			  struct CMD_TX_PWR *prTxPwrParam)
 {
-	DEBUGFUNC("nicUpdateTxPower");
-
 	ASSERT(prAdapter);
 
 	return wlanSendSetQueryCmd(prAdapter,
@@ -3745,8 +3736,6 @@ uint32_t nicUpdateTxPower(struct ADAPTER *prAdapter,
 uint32_t nicSetAutoTxPower(struct ADAPTER *prAdapter,
 			   struct CMD_AUTO_POWER_PARAM *prAutoPwrParam)
 {
-	DEBUGFUNC("nicSetAutoTxPower");
-
 	ASSERT(prAdapter);
 
 	return wlanSendSetQueryCmd(prAdapter,
@@ -3774,8 +3763,6 @@ uint32_t nicSetAutoTxPower(struct ADAPTER *prAdapter,
 uint32_t nicSetAutoTxPowerControl(struct ADAPTER
 	*prAdapter, struct CMD_TX_PWR *prTxPwrParam)
 {
-	DEBUGFUNC("nicUpdateTxPower");
-
 	ASSERT(prAdapter);
 
 	return wlanSendSetQueryCmd(prAdapter,
@@ -3801,8 +3788,6 @@ uint32_t nicUpdate5GOffset(struct ADAPTER *prAdapter,
 			   struct CMD_5G_PWR_OFFSET *pr5GPwrOffset)
 {
 #if 0				/* It is not needed anymore */
-	DEBUGFUNC("nicUpdate5GOffset");
-
 	ASSERT(prAdapter);
 
 	return wlanSendSetQueryCmd(prAdapter,
@@ -3831,8 +3816,6 @@ uint32_t nicUpdate5GOffset(struct ADAPTER *prAdapter,
 uint32_t nicUpdateDPD(struct ADAPTER *prAdapter,
 		      struct CMD_PWR_PARAM *prDpdCalResult)
 {
-	DEBUGFUNC("nicUpdateDPD");
-
 	ASSERT(prAdapter);
 
 	return wlanSendSetQueryCmd(prAdapter,
@@ -5486,8 +5469,6 @@ void nicUpdateLinkSpeed(struct ADAPTER *prAdapter,
 uint32_t nicUpdateRddTestMode(struct ADAPTER *prAdapter,
 			      struct CMD_RDD_CH *prRddChParam)
 {
-	DEBUGFUNC("nicUpdateRddTestMode.\n");
-
 	ASSERT(prAdapter);
 
 	/* aisFsmScanRequest(prAdapter, NULL); */

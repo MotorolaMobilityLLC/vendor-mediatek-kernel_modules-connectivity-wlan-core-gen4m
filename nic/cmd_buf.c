@@ -153,8 +153,6 @@ struct CMD_INFO *cmdBufAllocateCmdInfo(struct ADAPTER
 
 	KAL_SPIN_LOCK_DECLARATION();
 
-	DEBUGFUNC("cmdBufAllocateCmdInfo");
-
 	ASSERT(prAdapter);
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_RESOURCE);
@@ -262,8 +260,6 @@ void cmdBufFreeCmdInfo(struct ADAPTER *prAdapter,
 		       struct CMD_INFO *prCmdInfo)
 {
 	KAL_SPIN_LOCK_DECLARATION();
-
-	DEBUGFUNC("cmdBufFreeCmdInfo");
 
 	ASSERT(prAdapter);
 

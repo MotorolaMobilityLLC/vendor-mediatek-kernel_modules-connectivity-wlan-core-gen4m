@@ -68,8 +68,6 @@ wlanSendSetQueryExtCmd2WA(
 	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter,
 		(prChipInfo->u2CmdTxHdrSize + u4SetQueryInfoLen));
 
-	DEBUGFUNC("wlanSendSetQueryCmd");
-
 	if (!prCmdInfo) {
 		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
 		return WLAN_STATUS_FAILURE;

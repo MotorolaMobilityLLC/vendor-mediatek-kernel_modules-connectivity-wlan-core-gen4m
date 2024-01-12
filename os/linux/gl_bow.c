@@ -745,8 +745,6 @@ u_int8_t kalBowFrameClassifier(struct GLUE_INFO *prGlueInfo, void *prPacket,
 	uint8_t aucSnapBtOui[] = ETH_SNAP_BT_SIG_OUI;
 	uint8_t ucMinLength = ucEthTypeLenOffset + ETHER_TYPE_LEN + ETH_LLC_LEN + ETH_SNAP_LEN;
 
-	DEBUGFUNC("kalQoSFrameClassifierAndPacketInfo");
-
 	u4PacketLen = prSkb->len;
 
 	if (u4PacketLen < ETHER_HEADER_LEN) {

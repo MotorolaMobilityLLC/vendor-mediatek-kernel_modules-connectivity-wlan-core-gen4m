@@ -103,7 +103,6 @@ nan_sec_wlanSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
 #endif
 
 	prCmdFWKey = (struct CMD_802_11_KEY *)pvSetBuffer;
-	DEBUGFUNC("wlanSetAddKey");
 	DBGLOG(REQ, LOUD, "\n");
 
 	if (!prAdapter) {
@@ -311,7 +310,6 @@ nan_sec_wlanSetRemoveKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	uint32_t u4KeyIndex;
 
 	prCmdFWKey = (struct CMD_802_11_KEY *)pvSetBuffer;
-	DEBUGFUNC("wlanoidSetRemoveKey");
 	DBGLOG(RSN, INFO, "wlanSetRemoveKeybyFW\n");
 	if (!prAdapter) {
 		DBGLOG(NAN, ERROR, "prAdapter error!\n");

@@ -690,7 +690,6 @@ u_int8_t wlanIsHandlerNeedHwAccess(PFN_OID_HANDLER_FUNC
 /*----------------------------------------------------------------------------*/
 void wlanCardEjected(struct ADAPTER *prAdapter)
 {
-	DEBUGFUNC("wlanCardEjected");
 	/* INITLOG(("\n")); */
 
 	ASSERT(prAdapter);
@@ -751,8 +750,6 @@ struct ADAPTER *wlanAdapterCreate(struct GLUE_INFO
 				  *prGlueInfo)
 {
 	struct ADAPTER *prAdpater = (struct ADAPTER *) NULL;
-
-	DEBUGFUNC("wlanAdapterCreate");
 
 	do {
 		prAdpater = (struct ADAPTER *) kalMemAlloc(sizeof(
@@ -1266,8 +1263,6 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 	} eFailReason;
 
 	ASSERT(prAdapter);
-
-	DEBUGFUNC("wlanAdapterStart");
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 #if CFG_MTK_WIFI_SW_WFDMA
@@ -3047,8 +3042,6 @@ void wlanReleasePendingOid(struct ADAPTER *prAdapter,
 
 	KAL_SPIN_LOCK_DECLARATION();
 
-	DEBUGFUNC("wlanReleasePendingOid");
-
 	if (prAdapter == NULL) {
 		DBGLOG(INIT, WARN, "prAdapter is NULL!\n");
 
@@ -3312,8 +3305,6 @@ void wlanReturnPacket(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb = NULL;
 
 	KAL_SPIN_LOCK_DECLARATION();
-
-	DEBUGFUNC("wlanReturnPacket");
 
 	ASSERT(prAdapter);
 
@@ -3620,8 +3611,6 @@ uint32_t wlanSetChipEcoInfo(struct ADAPTER *prAdapter)
 	/* WLAN_STATUS status; */
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
-	DEBUGFUNC("wlanSetChipEcoInfo.\n");
-
 	if (wlanAccessRegister(prAdapter,
 		prChipInfo->top_hvr, &hw_version, 0, 0) !=
 	    WLAN_STATUS_SUCCESS) {
@@ -3911,8 +3900,6 @@ uint32_t wlanUpdateNetworkAddress(struct ADAPTER
 	uint8_t rMacAddr[PARAM_MAC_ADDR_LEN];
 	uint32_t u4SysTime;
 
-	DEBUGFUNC("wlanUpdateNetworkAddress");
-
 	ASSERT(prAdapter);
 
 	if (kalRetrieveNetworkAddress(prAdapter->prGlueInfo, rMacAddr) == FALSE
@@ -3971,8 +3958,6 @@ uint32_t wlanUpdateBasicConfig(struct ADAPTER *prAdapter)
 	struct CMD_BASIC_CONFIG rCmdBasicConfig = {0};
 	struct CMD_BASIC_CONFIG *prCmdBasicConfig = &rCmdBasicConfig;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-
-	DEBUGFUNC("wlanUpdateBasicConfig");
 
 	ASSERT(prAdapter);
 
@@ -4498,8 +4483,6 @@ uint32_t wlanQueryNicCapability(struct ADAPTER
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
-
-	DEBUGFUNC("wlanQueryNicCapability");
 
 	wlanSendSetQueryCmdAdv(
 		prAdapter, CMD_ID_GET_NIC_CAPABILITY, 0,
@@ -5604,8 +5587,6 @@ uint32_t wlanCheckSystemConfiguration(struct ADAPTER
 #endif
 #endif
 
-	DEBUGFUNC("wlanCheckSystemConfiguration");
-
 	ASSERT(prAdapter);
 
 #if (CFG_NVRAM_EXISTENCE_CHECK == 1)
@@ -5806,8 +5787,6 @@ wlanoidQueryBssStatistics(struct ADAPTER *prAdapter,
 	uint32_t rResult = WLAN_STATUS_FAILURE;
 	uint8_t ucBssIndex;
 	enum ENUM_WMM_ACI eAci;
-
-	DEBUGFUNC("wlanoidQueryBssStatistics");
 
 	do {
 		ASSERT(pvQueryBuffer);
@@ -6206,8 +6185,6 @@ wlanQueryStaStatistics(struct ADAPTER *prAdapter,
 	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
 	struct CMD_GET_STA_STATISTICS rQueryCmdStaStatistics = {0};
 
-	DEBUGFUNC("wlanoidQueryStaStatistics");
-
 	if (prAdapter == NULL)
 		return WLAN_STATUS_FAILURE;
 
@@ -6302,8 +6279,6 @@ wlanQueryStatistics(struct ADAPTER *prAdapter,
 		       uint32_t *pu4QueryInfoLen, uint8_t fgIsOid)
 {
 	struct CMD_QUERY_STATISTICS rQueryCmdStatistics = {0};
-
-	DEBUGFUNC("wlanQueryStatistics");
 
 	ASSERT(prAdapter);
 	if (u4QueryBufferLen)
@@ -6419,7 +6394,6 @@ wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 	if (unlikely(ucBssIndex >= BSSID_NUM))
 		return WLAN_STATUS_INVALID_DATA;
 
-	DEBUGFUNC("wlanQueryStatsOneCmd");
 	DBGLOG(NIC, TRACE, "lastAllStatsUpdateTime:%u\n",
 		prAdapter->rAllStatsUpdateTime);
 
@@ -12083,8 +12057,6 @@ uint32_t wlanSetLowLatencyMode(
 	struct PARAM_POWER_MODE_ rPowerMode;
 	struct WIFI_VAR *prWifiVar = NULL;
 	char arCmd[64]; /* Roaming command buffer */
-
-	DEBUGFUNC("wlanSetLowLatencyMode");
 
 	ASSERT(prAdapter);
 

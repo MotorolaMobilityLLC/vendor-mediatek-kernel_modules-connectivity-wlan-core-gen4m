@@ -271,7 +271,6 @@ void p2pDevFsmUninit(struct ADAPTER *prAdapter)
 	do {
 		ASSERT_BREAK(prAdapter != NULL);
 
-		DEBUGFUNC("p2pFsmUninit()");
 		DBGLOG(P2P, INFO, "->p2pFsmUninit()\n");
 
 		prP2pFsmInfo = prAdapter->rWifiVar.prP2pFsmInfo;

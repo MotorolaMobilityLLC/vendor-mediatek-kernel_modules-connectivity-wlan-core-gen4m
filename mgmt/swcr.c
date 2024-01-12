@@ -167,8 +167,6 @@ void dumpQueue(struct ADAPTER *prAdapter)
 	uint32_t i;
 	uint32_t j;
 
-	DEBUGFUNC("dumpQueue");
-
 	prTxCtrl = &prAdapter->rTxCtrl;
 	prQM = &prAdapter->rQM;
 	prGlueInfo = prAdapter->prGlueInfo;
@@ -232,8 +230,6 @@ void dumpSTA(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
 	uint8_t ucWTEntry;
 	uint32_t i;
 	struct BSS_INFO *prBssInfo;
-
-	DEBUGFUNC("dumpSTA");
 
 	ASSERT(prStaRec);
 	ucWTEntry = prStaRec->ucWlanIndex;
@@ -401,8 +397,6 @@ void swCtrlCmdCategory0(struct ADAPTER *prAdapter,
 	uint8_t ucIndex, ucRead;
 	uint32_t i;
 	struct CMD_RX_PACKET_FILTER rSetRxPacketFilter;
-
-	DEBUGFUNC("swCtrlCmdCategory0");
 
 	SWCR_GET_RW_INDEX(ucAction, ucRead, ucIndex);
 
@@ -751,8 +745,6 @@ void swCtrlCmdCategory1(struct ADAPTER *prAdapter,
 	uint8_t ucWTEntry;
 	struct STA_RECORD *prStaRec;
 
-	DEBUGFUNC("swCtrlCmdCategory1");
-
 	SWCR_GET_RW_INDEX(ucAction, ucRead, ucIndex);
 
 	if (ucOpt0 >= CFG_STA_REC_NUM)
@@ -812,7 +804,6 @@ testPsSendQoSNullFrame(struct ADAPTER *prAdapter,
 	uint16_t u2EstimatedFrameLen;
 	struct WLAN_MAC_HEADER_QOS *prQoSNullFrame;
 
-	DEBUGFUNC("testPsSendQoSNullFrame");
 	DBGLOG(SW4, LOUD, "\n");
 
 	/* 4 <1> Allocate a PKT_INFO_T for Null Frame */
@@ -864,7 +855,6 @@ void testPsSetupBss(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	uint8_t _aucZeroMacAddr[] = NULL_MAC_ADDR;
 
-	DEBUGFUNC("testPsSetupBss()");
 	DBGLOG(SW4, INFO, "index %d\n", ucBssIndex);
 
 	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
@@ -989,7 +979,6 @@ void testPsCmdCategory0(struct ADAPTER *prAdapter,
 	uint8_t ucIndex, ucRead;
 	struct STA_RECORD *prStaRec;
 
-	DEBUGFUNC("testPsCmdCategory0");
 	SWCR_GET_RW_INDEX(ucAction, ucRead, ucIndex);
 
 	DBGLOG(SW4, LOUD, "Read %u Index %u\n", ucRead, ucIndex);
@@ -1064,8 +1053,6 @@ void testPsCmdCategory1(struct ADAPTER *prAdapter,
 	uint8_t ucWTEntry;
 	struct STA_RECORD *prStaRec;
 
-	DEBUGFUNC("testPsCmdCategory1");
-
 	SWCR_GET_RW_INDEX(ucAction, ucRead, ucIndex);
 
 	if (ucOpt0 >= CFG_STA_REC_NUM)
@@ -1115,7 +1102,6 @@ void testWNMCmdCategory0(struct ADAPTER *prAdapter,
 	uint8_t ucIndex, ucRead;
 	struct STA_RECORD *prStaRec;
 
-	DEBUGFUNC("testWNMCmdCategory0");
 	SWCR_GET_RW_INDEX(ucAction, ucRead, ucIndex);
 
 	DBGLOG(SW4, INFO, "Read %u Index %u\n", ucRead, ucIndex);
@@ -1185,7 +1171,6 @@ void swCrReadWriteCmd(struct ADAPTER *prAdapter,
 	/* Address [15:8] MOD ID */
 	/* Address [7:0] OFFSET */
 
-	DEBUGFUNC("swCrReadWriteCmd");
 	DBGLOG(SW4, TRACE, "%u addr 0x%x data 0x%x\n", ucRead,
 	       u2Addr, *pu4Data);
 
