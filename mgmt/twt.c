@@ -457,8 +457,8 @@ static void btwtParseTWTElement(
 
 	DBGLOG(TWT_REQUESTER, WARN,
 		"BTWT cur TSF %x %x\nAP resp TWT %x\n",
-		(prTWTParams->u8TWT & 0x00000000FFFFFFFF),
-		((prTWTParams->u8TWT & 0xFFFFFFFF00000000) >> 32),
+		(uint32_t)(prTWTParams->u8TWT & 0x00000000FFFFFFFF),
+		(uint32_t)((prTWTParams->u8TWT & 0xFFFFFFFF00000000) >> 32),
 		prBTWTIE->u2TWT);
 
 	u8TargetWakeTime = prTWTParams->u8TWT;
@@ -470,8 +470,8 @@ static void btwtParseTWTElement(
 
 	DBGLOG(TWT_REQUESTER, WARN,
 		"BTWT twt %x %x\n",
-		(prTWTParams->u8TWT & 0x00000000FFFFFFFF),
-		((prTWTParams->u8TWT & 0xFFFFFFFF00000000) >> 32));
+		(uint32_t)(prTWTParams->u8TWT & 0x00000000FFFFFFFF),
+		(uint32_t)((prTWTParams->u8TWT & 0xFFFFFFFF00000000) >> 32));
 }
 
 uint8_t btwtGetTxSetupFlowId(
