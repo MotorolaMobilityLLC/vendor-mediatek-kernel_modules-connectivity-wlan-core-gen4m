@@ -6602,6 +6602,14 @@ void wlanOnP2pRegistration(struct GLUE_INFO *prGlueInfo,
 {
 	DBGLOG(INIT, TRACE, "start.\n");
 
+#if CFG_EXT_FEATURE
+	kalMemCopy(prGlueInfo->rRegInfo.aucMacAddr,
+		prAdapter->rWifiVar.aucMacAddress,
+		PARAM_MAC_ADDR_LEN*sizeof(uint8_t));
+	DBGLOG(INIT, INFO, "prGlueInfo->rRegInfo.aucMacAddr:" MACSTR,
+		MAC2STR(prGlueInfo->rRegInfo.aucMacAddr));
+#endif
+
 #if (CFG_ENABLE_WIFI_DIRECT && CFG_MTK_ANDROID_WMT)
 	register_set_p2p_mode_handler(set_p2p_mode_handler_wrapper);
 #endif

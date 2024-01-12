@@ -760,6 +760,15 @@ struct STA_RECORD {
 	struct HE_A_CTRL_OM_T arHeACtrlOm;
 #endif
 
+#if CFG_STAINFO_FEATURE
+	u_int8_t fgSupportProxyARP;
+	u_int8_t fgSupportTFS;
+	u_int8_t fgSupportWNMSleep;
+	u_int8_t fgSupportTIMBcast;
+	u_int8_t fgSupportDMS;
+	u_int8_t ucSupportedBand;
+#endif
+
 	/*
 	 * Flag used to record the connected status of upper layer.
 	 * Indicate connected status only when disconnected, and only

@@ -553,6 +553,11 @@ struct AIS_FSM_INFO {
 	uint8_t ucMlProbeEnable;
 	struct BSS_DESC *prMlProbeBssDesc;
 #endif
+
+#if CFG_STAINFO_FEATURE
+	/* roaming count */
+	uint16_t u2ConnectedCount;
+#endif
 };
 
 struct AIS_OFF_CHNL_TX_REQ_INFO {

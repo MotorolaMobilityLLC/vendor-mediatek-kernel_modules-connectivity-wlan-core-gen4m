@@ -3872,6 +3872,13 @@ int mtk_p2p_cfg80211_testmode_cmd(struct wiphy *wiphy,
 			mtk_p2p_cfg80211_testmode_update_sta_pmkid_cmd(
 				wiphy, wdev->netdev, data, len);
 			break;
+
+		case TESTMODE_CMD_ID_STR_CMD:
+			i4Status =
+				mtk_cfg80211_process_str_cmd(wiphy,
+					wdev, data, len);
+			break;
+
 		default:
 			i4Status = -EOPNOTSUPP;
 			break;
