@@ -544,12 +544,6 @@ void mddpNotifyWifiOffStart(void)
 	if (!mddpIsSupportMcifWifi())
 		return;
 
-	if (g_rSettings.rOps.clr) {
-		g_rSettings.rOps.clr(
-			&g_rSettings,
-			g_rSettings.u4WifiOnBit | g_rSettings.u4MdInitBit);
-	}
-
 	mddpSetMDFwOwn();
 
 	mtk_ccci_register_md_state_cb(NULL);
@@ -565,6 +559,12 @@ void mddpNotifyWifiOffEnd(void)
 {
 	if (!mddpIsSupportMcifWifi())
 		return;
+
+	if (g_rSettings.rOps.clr) {
+		g_rSettings.rOps.clr(
+			&g_rSettings,
+			g_rSettings.u4WifiOnBit | g_rSettings.u4MdInitBit);
+	}
 
 	mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_OFF_END);
 }
