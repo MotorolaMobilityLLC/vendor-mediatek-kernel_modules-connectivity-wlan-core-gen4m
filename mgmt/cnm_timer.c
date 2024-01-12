@@ -24,6 +24,7 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+#define DUMP_TIMER			TRUE
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -70,13 +71,14 @@ static u_int8_t cnmTimerIsTimerValid(struct ADAPTER *prAdapter,
  *
  */
 /*----------------------------------------------------------------------------*/
-#if 0
 static void cnmTimerDumpTimer(struct ADAPTER *prAdapter)
 {
+#ifdef DUMP_TIMER
 	struct ROOT_TIMER *prRootTimer;
 	struct LINK_ENTRY *prLinkEntry;
 	struct TIMER *prTimerEntry;
 	struct LINK *prTimerList;
+	int loopCnt = 0;
 
 	prRootTimer = &prAdapter->rRootTimer;
 	prTimerList = &prRootTimer->rLinkHead;
@@ -87,6 +89,14 @@ static void cnmTimerDumpTimer(struct ADAPTER *prAdapter)
 		if (prLinkEntry == NULL)
 			break;
 
+		loopCnt++;
+		if (loopCnt > prTimerList->u4NumElem) {
+			log_dbg(CNM, WARN,
+				"loopCnt=%d>[%d]\n",
+				loopCnt, prTimerList->u4NumElem);
+			break;
+		}
+
 		prTimerEntry = LINK_ENTRY(prLinkEntry,
 			struct TIMER, rLinkEntry);
 
@@ -95,8 +105,9 @@ static void cnmTimerDumpTimer(struct ADAPTER *prAdapter)
 			prTimerEntry->pfMgmtTimeOutFunc,
 			prTimerEntry->rExpiredSysTime);
 	}
-}
 #endif
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to check if a timer exists in timer list.
@@ -522,6 +533,7 @@ void cnmTimerDoTimeOutCheck(struct ADAPTER *prAdapter)
 	uintptr_t ulTimeoutDataPtr;
 	u_int8_t fgNeedWakeLock;
 	enum ENUM_TIMER_WAKELOCK_TYPE_T eType = TIMER_WAKELOCK_NONE;
+	int loopCnt = 0;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -545,6 +557,15 @@ void cnmTimerDoTimeOutCheck(struct ADAPTER *prAdapter)
 	LINK_FOR_EACH(prLinkEntry, prTimerList) {
 		if (prLinkEntry == NULL)
 			break;
+
+		loopCnt++;
+		if (loopCnt > prTimerList->u4NumElem) {
+			log_dbg(CNM, WARN,
+				"loopCnt=%d>[%d]\n",
+				loopCnt, prTimerList->u4NumElem);
+			cnmTimerDumpTimer(prAdapter);
+			break;
+		}
 
 		prTimer = LINK_ENTRY(prLinkEntry, struct TIMER, rLinkEntry);
 		ASSERT(prTimer);
@@ -587,6 +608,7 @@ void cnmTimerDoTimeOutCheck(struct ADAPTER *prAdapter)
 				log_dbg(CNM, WARN,
 					"timer re-inited, timer %p func %ps\n",
 					prTimer, prTimer->pfMgmtTimeOutFunc);
+				cnmTimerDumpTimer(prAdapter);
 				break;
 			}
 
@@ -597,6 +619,7 @@ void cnmTimerDoTimeOutCheck(struct ADAPTER *prAdapter)
 			prLinkEntry = (struct LINK_ENTRY *) prTimerList;
 			if (prLinkEntry == NULL)
 				break;
+			loopCnt = 0;
 
 			prRootTimer->rNextExpiredSysTime
 				= rCurSysTime + MGMT_MAX_TIMEOUT_INTERVAL;
