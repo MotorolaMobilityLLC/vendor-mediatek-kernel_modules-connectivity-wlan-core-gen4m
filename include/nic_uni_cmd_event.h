@@ -4835,11 +4835,13 @@ struct UNI_CMD_GAMING_MODE {
 	* TAG                              |ID |structure
 	* ---------------------------------|---|-------------
 	* UNI_CMD_FORCE_RTS_GAMING_MODE_SET|0x0|UNI_CMD_FORCE_RTS_GAMING_MODE_T
+	* UNI_CMD_GAMING_MODE_ATXOP_SET    |0x1|UNI_CMD_GAMING_MODE_T
 	*/
 } __KAL_ATTRIB_PACKED__;
 /* Get Gaming Mode command TLV List */
 enum ENUM_UNI_CMD_GAMING_MODE_TAG {
 	UNI_CMD_GAMING_MODE_PROCESS = 0,
+	UNI_CMD_GAMING_MODE_ATXOP_SET = 1,
 	UNI_CMD_GAMING_MODE_MAX_NUM
 };
 
@@ -4861,6 +4863,27 @@ struct UNI_CMD_GAMING_MODE_PROCESS_T {
 	uint8_t  ucForceRtsEn;
 	uint8_t ucRtsPktNum;
 	uint8_t aucReserved[2];
+} __KAL_ATTRIB_PACKED__;
+
+/** This structure is used for UNI_CMD_GAMING_MODE_ATXOP_SET tag(0x1) of
+ * UNI_CMD_ID_GAMING_MODE command (0x63)
+ * to set force rts gaming mode
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag              should be 0x0
+ * @param[in] u2Length           the length of this TLV, should be
+				sizeof(UNI_CMD_GAMING_MODE_ATXOP_SET_T)
+ * @param[in] u4Cmd
+ * @param[in] ucRtsPktNum
+ * @param[in] aucReserved[2]
+ */
+
+struct UNI_CMD_GAMING_MODE_ATXOP_SET_T {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	/* tag specific part */
+	uint32_t u4Cmd;
+	uint32_t au4Param[MAX_ATXOP_PARAM_NUM];
 } __KAL_ATTRIB_PACKED__;
 
 #if CFG_FAST_PATH_SUPPORT

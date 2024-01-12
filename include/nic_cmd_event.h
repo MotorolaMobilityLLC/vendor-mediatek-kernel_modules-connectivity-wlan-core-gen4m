@@ -1589,6 +1589,14 @@ struct CMD_MDVT_CFG {
 	uint8_t ucReserved[3];
 };
 
+#define MAX_ATXOP_PARAM_NUM 32
+
+/* CMD_ID_SET_ATXOP */
+struct CMD_ATXOP_CFG {
+	uint32_t u4Cmd;
+	uint32_t au4Param[MAX_ATXOP_PARAM_NUM];
+};
+
 #define COEX_CTRL_BUF_LEN 460
 #define COEX_INFO_LEN 115
 

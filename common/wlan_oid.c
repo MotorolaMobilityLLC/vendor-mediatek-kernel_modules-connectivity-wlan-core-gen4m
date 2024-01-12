@@ -16746,6 +16746,66 @@ uint32_t wlanoidThermalProtectAct(struct ADAPTER *prAdapter,
 }
 
 uint32_t
+wlanoidSetATXOP(struct ADAPTER *prAdapter,
+			   void *pvSetBuffer, uint32_t u4SetBufferLen,
+			   uint32_t *pu4SetInfoLen)
+{
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	struct CMD_ATXOP_CFG *cmd;
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	struct UNI_CMD_GAMING_MODE *uni_cmd;
+	struct UNI_CMD_GAMING_MODE_ATXOP_SET_T *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_GAMING_MODE) +
+			       sizeof(struct UNI_CMD_GAMING_MODE_ATXOP_SET_T);
+
+	if ((prAdapter == NULL) || (pvSetBuffer == NULL) ||
+		(pu4SetInfoLen == NULL))
+		return WLAN_STATUS_INVALID_DATA;
+
+	*pu4SetInfoLen = sizeof(struct CMD_ATXOP_CFG);
+
+	if (u4SetBufferLen < sizeof(struct CMD_ATXOP_CFG))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ASSERT(pvSetBuffer);
+
+	cmd = (struct CMD_ATXOP_CFG *)pvSetBuffer;
+
+	uni_cmd = (struct UNI_CMD_GAMING_MODE *) cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_BF ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_GAMING_MODE_ATXOP_SET_T *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_GAMING_MODE_ATXOP_SET;
+	tag->u2Length = sizeof(*tag);
+
+	tag->u4Cmd = cmd->u4Cmd;
+
+	memcpy(tag->au4Param, cmd->au4Param,
+			sizeof(uint32_t) * MAX_ATXOP_PARAM_NUM);
+
+	status = wlanSendSetQueryUniCmd(prAdapter,
+			     UNI_CMD_ID_GAMING_MODE,
+			     TRUE,
+			     FALSE,
+			     TRUE,
+			     nicUniCmdEventSetCommon,
+			     nicUniCmdTimeoutCommon,
+			     max_cmd_len,
+			     (void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(prAdapter, uni_cmd);
+	return status;
+#else
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+}	/* wlanoidSetATXOP */
+
+uint32_t
 wlanoidSetMdvt(struct ADAPTER *prAdapter,
 			   void *pvSetBuffer, uint32_t u4SetBufferLen,
 			   uint32_t *pu4SetInfoLen)

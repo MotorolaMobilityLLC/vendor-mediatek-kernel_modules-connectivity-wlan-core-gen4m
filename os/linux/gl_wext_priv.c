@@ -5276,6 +5276,66 @@ int priv_driver_set_pwr_met(struct net_device *prNetDev, char *pcCommand,
 }
 #endif
 
+int priv_driver_set_atxop(struct net_device *prNetDev, char *pcCommand,
+			int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Ret;
+	uint32_t u4Cmd;
+	uint32_t au4Param[32] = {0};
+	struct CMD_ATXOP_CFG rCmdATXOPCfg;
+
+	if ((prNetDev == NULL) || (pcCommand == NULL))
+		return -1;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Cmd);
+	if (u4Ret)
+		DBGLOG(REQ, LOUD,
+			"parse get_mcr error (Address) u4Ret=%d\n",
+			u4Ret);
+
+	u4Ret = kalkStrtou32(apcArgv[2], 0, &au4Param[0]);
+	if (u4Ret)
+		DBGLOG(REQ, LOUD,
+			"parse get_mcr error (Data) u4Ret=%d\n", u4Ret);
+
+	u4Ret = kalkStrtou32(apcArgv[3], 0, &au4Param[1]);
+	if (u4Ret)
+		DBGLOG(REQ, LOUD,
+			"parse get_mcr error (Data) u4Ret=%d\n", u4Ret);
+
+	u4Ret = kalkStrtou32(apcArgv[4], 0, &au4Param[2]);
+	if (u4Ret)
+		DBGLOG(REQ, LOUD,
+			"parse get_mcr error (Data) u4Ret=%d\n", u4Ret);
+
+	rCmdATXOPCfg.u4Cmd = u4Cmd;
+
+	memcpy(&rCmdATXOPCfg.au4Param[0], &au4Param[0],
+		sizeof(uint32_t)*MAX_ATXOP_PARAM_NUM);
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetATXOP,
+		   &rCmdATXOPCfg, sizeof(rCmdATXOPCfg),
+			   &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -1;
+
+	return i4BytesWritten;
+}
+
 int priv_driver_set_mdvt(struct net_device *prNetDev, char *pcCommand,
 			int i4TotalLen)
 {
