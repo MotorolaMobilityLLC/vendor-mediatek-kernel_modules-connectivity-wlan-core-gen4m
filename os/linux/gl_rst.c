@@ -801,6 +801,7 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 		break;
 	}
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	if ((u4RstFlag & RST_FLAG_DO_L1_RESET) &&
 	    prAdapter->rWifiVar.eEnableSerL1 != FEATURE_OPT_SER_ENABLE) {
 		DBGLOG(INIT, INFO,
@@ -818,6 +819,7 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 			u4RstFlag = RST_FLAG_DO_WHOLE_RESET;
 		}
 	}
+#endif
 
 	if ((u4RstFlag & RST_FLAG_DO_L0P5_RESET) &&
 	    prAdapter->rWifiVar.eEnableSerL0p5 != FEATURE_OPT_SER_ENABLE) {
