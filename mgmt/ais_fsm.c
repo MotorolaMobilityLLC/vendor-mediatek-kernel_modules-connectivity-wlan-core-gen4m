@@ -1835,8 +1835,6 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
-	struct BSS_DESC *prBssDesc;
-	uint8_t i;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
@@ -1931,28 +1929,8 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 					ucBssIndex);
 		}
 
-		for (i = 0; i < prBssDescSet->ucLinkNum; i++) {
-			prAisBssInfo = aisGetLinkBssInfo(prAisFsmInfo, i);
-			prBssDesc = prBssDescSet->aprBssDesc[i];
-
-			if (!prAisBssInfo) {
-				prAisBssInfo = aisAllocBssInfo(prAdapter,
-					prAisFsmInfo, i);
-				if (!prAisBssInfo)
-					continue;
-			}
-
-			aisSetLinkBssDesc(prAisFsmInfo, prBssDesc, i);
-#if CFG_SUPPORT_DBDC
-			/* DBDC decsion.may change OpNss */
-			cnmDbdcPreConnectionEnableDecision(
-				prAdapter,
-				prAisBssInfo->ucBssIndex,
-				prBssDesc->eBand,
-				prBssDesc->ucChannelNum,
-				prAisBssInfo->ucWmmQueSet);
-#endif /*CFG_SUPPORT_DBDC*/
-		}
+		aisFillBssInfoFromBssDesc(prAdapter,
+				prAisFsmInfo, prBssDescSet);
 
 		prAisFsmInfo->ucConnTrialCount++;
 		prAisFsmInfo->fgTargetChnlScanIssued = FALSE;
@@ -2506,6 +2484,12 @@ send_msg:
 				eNextState = AIS_STATE_REQ_REMAIN_ON_CHANNEL;
 				fgIsTransition = TRUE;
 			}
+
+			/* reset disconnect reason otherwise
+			 * aisSearchHandleBssDesc uses it wrongly
+			 */
+			prAisFsmInfo->ucReasonOfDisconnect =
+				DISCONNECT_REASON_CODE_RESERVED;
 
 			/* for WMM-AC cert 5.2.5 */
 			/* after reassoc, update PS flag to FW again */
