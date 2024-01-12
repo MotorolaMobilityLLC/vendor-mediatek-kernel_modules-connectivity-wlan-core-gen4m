@@ -1672,21 +1672,18 @@ uint8_t *mldHandleRnrMlParam(IN uint8_t *ie,
 	for (i = 0; i < u2TbttInfoCount; i++) {
 		j = i * u2TbttInfoLength;
 
-		switch (u2TbttInfoLength) {
-			/* 10: Neighbor AP TBTT Offset + BSSID + MLD Parameter
-			 */
-			case 10:
-				ucMldParamOffset = 7;
-				break;
+		/* 10: Neighbor AP TBTT Offset + BSSID + MLD Parameter */
+		if (u2TbttInfoLength == 10) {
+			ucMldParamOffset = 7;
+		} else if (u2TbttInfoLength >= 16 &&
+				  u2TbttInfoLength <= 255) {
 			/* 16: Neighbor AP TBTT Offset + BSSID + Short SSID +
 			 * BSS parameters + 20MHz PSD + MLD Parameter */
-			case 16 ... 255:
-				ucMldParamOffset = 13;
-				break;
-			default:
+			ucMldParamOffset = 13;
+		} else {
 			/* only handle neighbor AP info that MLD parameter
 			 * and BSSID both exist*/
-				continue;
+			continue;
 		}
 
 		DBGLOG(ML, LOUD, "RnrIe[%x][" MACSTR "]\n", i,
