@@ -5860,8 +5860,10 @@ static void updateNanStaRecTxAllowed(struct ADAPTER *prAdapter,
 {
 #if CFG_SUPPORT_NAN
 #if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
-	OS_SYSTIME rCurrentTime;
-	unsigned char fgExpired;
+	OS_SYSTIME rCurrentTime = 0, ExpiredSendTime = 0;
+	unsigned char fgExpired = 0;
+
+	KAL_SPIN_LOCK_DECLARATION();
 
 	if (!prStaRec)
 		return;
@@ -5869,25 +5871,34 @@ static void updateNanStaRecTxAllowed(struct ADAPTER *prAdapter,
 	if (prBssInfo->eNetworkType != NETWORK_TYPE_NAN)
 		return;
 
+	/* Need to protect StaRec NAN flag */
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+			SPIN_LOCK_NAN_NDL_FLOW_CTRL);
+
 	rCurrentTime = kalGetTimeTick();
+	ExpiredSendTime = prStaRec->rNanExpiredSendTime;
 	fgExpired = CHECK_FOR_EXPIRATION(rCurrentTime,
-			prStaRec->rNanExpiredSendTime);
+			ExpiredSendTime);
 
 	/* avoid to flood the kernel log, only the 1st expiry event logged */
-	if (fgExpired && !prStaRec->fgNanSendTimeExpired)
+	if (fgExpired &&
+			!prStaRec->fgNanSendTimeExpired) {
 		DBGLOG(NAN, INFO,
 			"[NAN Pkt Tx Expired] Sta:%u, Exp:%u, Now:%u\n",
 			prStaRec->ucIndex,
-			prStaRec->rNanExpiredSendTime,
+			ExpiredSendTime,
 			rCurrentTime);
 
-	if (fgExpired) {
 		prStaRec->fgNanSendTimeExpired = TRUE;
 		/* NAN StaRec Stop Tx */
 		qmSetStaRecTxAllowed(prAdapter, prStaRec, FALSE);
-	} else {
+	} else if (!fgExpired &&
+			prStaRec->fgNanSendTimeExpired) {
 		prStaRec->fgNanSendTimeExpired = FALSE;
 	}
+
+	KAL_RELEASE_SPIN_LOCK(prAdapter,
+			SPIN_LOCK_NAN_NDL_FLOW_CTRL);
 #endif
 #endif
 }
