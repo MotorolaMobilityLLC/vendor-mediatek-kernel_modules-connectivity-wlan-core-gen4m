@@ -4008,6 +4008,13 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #if CFG_MTK_WIFI_SW_WFDMA
 #define CMD_SET_SW_WFDMA         "SET_SW_WFDMA"
 #endif
+#if CFG_SUPPORT_802_11K
+#define CMD_NEIGHBOR_REQ			"neighbor-request"
+#endif
+
+#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+#define CMD_BTM_QUERY				"bss-transition-query"
+#endif
 
 static uint8_t g_ucMiracastMode = MIRACAST_MODE_OFF;
 
@@ -16247,6 +16254,108 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_SET_USE_CASE, priv_driver_set_multista_use_case},
 };
 
+#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+static int priv_driver_bss_transition_query(IN struct net_device *prNetDev,
+					IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	uint8_t *pucQueryReason = NULL;
+	uint8_t ucBssIndex = 0;
+
+	if (kalStrnLen(pcCommand, i4TotalLen) > kalStrLen(CMD_BTM_QUERY)) {
+		if (strnicmp(pcCommand + kalStrLen(CMD_BTM_QUERY),
+				" reason=", 8) == 0) {
+			pucQueryReason = pcCommand +
+				kalStrLen(CMD_BTM_QUERY) + 8;
+			DBGLOG(REQ, INFO,
+				"BSS-TRANSITION-QUERY, pucQueryReason=%s\r\n",
+				pucQueryReason);
+		}
+	}
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo)
+		return -EFAULT;
+
+	if ((pucQueryReason != NULL) && (strlen(pucQueryReason) > 3)) {
+		DBGLOG(REQ, ERROR, "ERR: BTM query wrong reason!\r\n");
+		return -EFAULT;
+	}
+
+	ucBssIndex = wlanGetBssIdx(prNetDev);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+		return -EINVAL;
+
+	DBGLOG(REQ, INFO, "ucBssIndex = %d\n", ucBssIndex);
+
+	rStatus = kalIoctlByBssIdx(prGlueInfo,
+				wlanoidSendBTMQuery,
+				(void *)pucQueryReason,
+				pucQueryReason ?
+				(kalStrLen(pucQueryReason) + 1) : 0,
+				FALSE, FALSE, TRUE, &u4BufLen, ucBssIndex);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%d)\r\n", rStatus);
+		return -1;
+	}
+
+	return i4BytesWritten;
+}
+#endif
+#if CFG_SUPPORT_802_11K
+static int priv_driver_neighbor_request(IN struct net_device *prNetDev,
+					IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	uint8_t *pucSSID = NULL;
+	uint8_t ucBssIndex = 0;
+
+	if (kalStrnLen(pcCommand, i4TotalLen) > kalStrLen(CMD_NEIGHBOR_REQ)) {
+		if (strnicmp(pcCommand + kalStrLen(CMD_NEIGHBOR_REQ),
+				" SSID=", 6) == 0) {
+			pucSSID = pcCommand + kalStrLen(CMD_NEIGHBOR_REQ) + 6;
+			DBGLOG(REQ, INFO,
+				"NEIGHBOR-REQUEST, ssid=%s\r\n", pucSSID);
+		}
+	}
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo)
+		return -EFAULT;
+
+	ucBssIndex = wlanGetBssIdx(prNetDev);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+		return -EINVAL;
+
+	DBGLOG(REQ, INFO, "ucBssIndex = %d\n", ucBssIndex);
+
+	if (pucSSID == NULL)
+		rStatus = kalIoctlByBssIdx(prGlueInfo,
+				wlanoidSendNeighborRequest,
+				NULL, 0, FALSE, FALSE, TRUE,
+				&u4BufLen, ucBssIndex);
+	else
+		rStatus = kalIoctlByBssIdx(prGlueInfo,
+				wlanoidSendNeighborRequest,
+				pucSSID, kalStrLen(pucSSID),
+				FALSE, FALSE, TRUE, &u4BufLen, ucBssIndex);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%d)\r\n", rStatus);
+		return -1;
+	}
+
+	return i4BytesWritten;
+}
+#endif
+
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			 IN int32_t i4TotalLen)
 {
@@ -16637,6 +16746,19 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			   strlen(CMD_SET_TWT_PARAMS)) == 0) {
 			i4BytesWritten = priv_driver_set_twtparams(prNetDev,
 				pcCommand, i4TotalLen);
+#endif
+
+#if CFG_SUPPORT_802_11K
+		} else if (!strnicmp(pcCommand, CMD_NEIGHBOR_REQ,
+					strlen(CMD_NEIGHBOR_REQ))) {
+			i4BytesWritten = priv_driver_neighbor_request(
+				prNetDev, pcCommand, i4TotalLen);
+#endif
+#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+		} else if (!strnicmp(pcCommand, CMD_BTM_QUERY,
+					strlen(CMD_BTM_QUERY))) {
+			i4BytesWritten = priv_driver_bss_transition_query(
+				prNetDev, pcCommand, i4TotalLen);
 #endif
 		} else
 				i4BytesWritten = priv_cmd_not_support
