@@ -2247,6 +2247,8 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_GET_CH_RANK_LIST "GET_CH_RANK_LIST"
 #endif
 
+#define CMD_EFUSE		"EFUSE"
+
 /* miracast related definition */
 #define MIRACAST_MODE_OFF	0
 #define MIRACAST_MODE_SOURCE	1
@@ -6927,6 +6929,112 @@ static int priv_driver_get_ch_rank_list(IN struct net_device *prNetDev, IN char 
 }
 #endif
 
+static int priv_driver_efuse_ops(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	enum EFUSE_OP_MODE {
+		EFUSE_READ,
+		EFUSE_WRITE,
+		EFUSE_INVALID,
+	};
+	UINT_8 ucOpMode = EFUSE_INVALID;
+	UCHAR ucOpChar;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	UINT_32 u4Ret;
+	INT_32 i4Parameter;
+	UINT_32 u4Efuse_addr = 0;
+	UINT_8 ucEfuse_value = 0;
+
+#if  (CFG_EEPROM_PAGE_ACCESS == 1)
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4Offset = 0;
+	UINT_32 u4BufLen = 0;
+	UINT_8  u4Index = 0;
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	PARAM_CUSTOM_ACCESS_EFUSE_T rAccessEfuseInfo;
+#endif
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	/* Sanity check */
+	if (i4Argc < 2)
+		goto efuse_op_invalid;
+
+	ucOpChar = (UCHAR)apcArgv[1][0];
+	if ((i4Argc == 3) && (ucOpChar == 'r' || ucOpChar == 'R'))
+		ucOpMode = EFUSE_READ;
+	else if ((i4Argc == 4) && (ucOpChar == 'w' || ucOpChar == 'W'))
+		ucOpMode = EFUSE_WRITE;
+
+	/* Print out help if input format is wrong */
+	if (ucOpMode == EFUSE_INVALID)
+		goto efuse_op_invalid;
+
+	/* convert address */
+	if (ucOpMode == EFUSE_READ || ucOpMode == EFUSE_WRITE) {
+		u4Ret = kalkStrtos32(apcArgv[2], 16, &i4Parameter);
+		u4Efuse_addr = (UINT_32)i4Parameter;
+	}
+
+	/* convert value */
+	if (ucOpMode == EFUSE_WRITE) {
+		u4Ret = kalkStrtos32(apcArgv[3], 16, &i4Parameter);
+		ucEfuse_value = (UINT_8)i4Parameter;
+	}
+
+	/* Start operation */
+#if  (CFG_EEPROM_PAGE_ACCESS == 1)
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	kalMemSet(&rAccessEfuseInfo, 0, sizeof(PARAM_CUSTOM_ACCESS_EFUSE_T));
+	rAccessEfuseInfo.u4Address = (u4Efuse_addr / EFUSE_BLOCK_SIZE) * EFUSE_BLOCK_SIZE;
+	u4Index = u4Efuse_addr % EFUSE_BLOCK_SIZE;
+
+	if (ucOpMode == EFUSE_READ) {
+		rStatus = kalIoctl(prGlueInfo,
+					wlanoidQueryProcessAccessEfuseRead,
+					&rAccessEfuseInfo,
+					sizeof(PARAM_CUSTOM_ACCESS_EFUSE_T), TRUE, TRUE, TRUE, &u4BufLen);
+
+		if (rStatus == WLAN_STATUS_SUCCESS) {
+			u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+						"Read success 0x%X = 0x%X\n", u4Efuse_addr
+						, prGlueInfo->prAdapter->aucEepromVaule[u4Index]);
+		}
+	} else if (ucOpMode == EFUSE_WRITE) {
+
+		prGlueInfo->prAdapter->aucEepromVaule[u4Index] = ucEfuse_value;
+
+		kalMemCopy(rAccessEfuseInfo.aucData, prGlueInfo->prAdapter->aucEepromVaule, 16);
+
+		rStatus = kalIoctl(prGlueInfo,
+					wlanoidQueryProcessAccessEfuseWrite,
+					&rAccessEfuseInfo,
+					sizeof(PARAM_CUSTOM_ACCESS_EFUSE_T), FALSE, FALSE, TRUE, &u4BufLen);
+		if (rStatus == WLAN_STATUS_SUCCESS) {
+			u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+						"Write success 0x%X = 0x%X\n"
+						, u4Efuse_addr
+						, ucEfuse_value);
+		}
+	}
+#else
+	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+					"efuse ops is invalid\n");
+#endif
+
+	return (INT_32)u4Offset;
+
+efuse_op_invalid:
+
+	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"\nHelp menu\n");
+	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"\tRead:\t\"efuse read addr_hex\"\n");
+	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"\tWrite:\t\"efuse write addr_hex val_hex\"\n");
+	return (INT_32)u4Offset;
+}
+
+
 INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN INT_32 i4TotalLen)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
@@ -7120,6 +7228,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 		else if (strnicmp(pcCommand, CMD_GET_CH_RANK_LIST, strlen(CMD_GET_CH_RANK_LIST)) == 0)
 			i4BytesWritten = priv_driver_get_ch_rank_list(prNetDev, pcCommand, i4TotalLen);
 #endif
+		else if (strnicmp(pcCommand, CMD_EFUSE, sizeof(CMD_EFUSE)-1) == 0)
+			i4BytesWritten = priv_driver_efuse_ops(prNetDev, pcCommand, i4TotalLen);
 		else
 			i4CmdFound = 0;
 	}
