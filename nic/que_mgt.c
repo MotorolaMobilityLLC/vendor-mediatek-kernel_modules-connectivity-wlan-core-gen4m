@@ -646,10 +646,8 @@ void qmDeactivateStaRec(IN struct ADAPTER *prAdapter,
 	qmUpdateStaRec(prAdapter, prStaRec);
 
 #if CFG_MTK_MCIF_WIFI_SUPPORT
-	if (prStaRec->eStaType == STA_TYPE_LEGACY_CLIENT
-		&& prAdapter->fgMddpActivated) {
+	if (prAdapter->fgMddpActivated)
 		mddpNotifyDrvTxd(prAdapter, prStaRec, FALSE);
-	}
 #endif
 
 	DBGLOG(QM, INFO, "QM: -STA[%u]\n", prStaRec->ucIndex);
