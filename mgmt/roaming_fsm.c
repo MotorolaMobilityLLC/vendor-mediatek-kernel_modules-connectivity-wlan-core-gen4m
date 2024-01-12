@@ -621,7 +621,7 @@ void roamingFsmRunEventDiscovery(IN struct ADAPTER *prAdapter,
 		if (prRoamingFsmInfo->eReason == ROAMING_REASON_RETRY)
 			DBGLOG(ROAMING, INFO,
 				"NCHO enable=%d,trigger=%d,delta=%d,period=%d\n",
-				prAdapter->rNchoInfo.fgECHOEnabled,
+				prAdapter->rNchoInfo.fgNCHOEnabled,
 				prAdapter->rNchoInfo.i4RoamTrigger,
 				prAdapter->rNchoInfo.i4RoamDelta,
 				prAdapter->rNchoInfo.u4RoamScanPeriod);
