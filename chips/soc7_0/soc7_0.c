@@ -1010,7 +1010,7 @@ static void soc7_0ReadIntStatus(struct ADAPTER *prAdapter,
 
 	/* clear interrupt */
 	HAL_MCR_WR(prAdapter,
-		WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR, u4RegValue);
+		WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR, u4WrValue);
 }
 
 static void soc7_0configWfDmaIntMask(struct GLUE_INFO *prGlueInfo,
