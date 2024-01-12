@@ -403,6 +403,7 @@ static void heRlmFillHeCapIE(
 	enum ENUM_BAND eHePhyCapBand = BAND_5G;
 	struct _IE_HE_CAP_T *prHeCap;
 	struct _HE_SUPPORTED_MCS_FIELD *prHeSupportedMcsSet;
+	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4OverallLen = OFFSET_OF(struct _IE_HE_CAP_T, aucVarInfo[0]);
 	u_int8_t fgBfEn = TRUE;
 	uint32_t soundingDim = 0;
@@ -422,6 +423,8 @@ static void heRlmFillHeCapIE(
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
 	ASSERT(prMsduInfo);
+
+	prChipInfo = prAdapter->chip_info;
 
 	prHeCap = (struct _IE_HE_CAP_T *)
 		(((uint8_t *)prMsduInfo->prPacket)+prMsduInfo->u2FrameLength);
@@ -457,6 +460,23 @@ static void heRlmFillHeCapIE(
 
 	HE_SET_MAC_CAP_MAX_AMPDU_LEN_EXP(prHeCap->ucHeMacCap,
 		prWifiVar->ucMaxAmpduLenExp);
+
+	if (prBssInfo->eBand == BAND_2G4 &&
+	    prChipInfo->is_specify_he_cap_max_ampdu_len_exp) {
+		HE_SET_MAC_CAP_MAX_AMPDU_LEN_EXP(prHeCap->ucHeMacCap,
+					  prChipInfo->uc2G4HeCapMaxAmpduLenExp);
+	} else if (prBssInfo->eBand == BAND_5G &&
+		   prChipInfo->is_specify_he_cap_max_ampdu_len_exp) {
+		HE_SET_MAC_CAP_MAX_AMPDU_LEN_EXP(prHeCap->ucHeMacCap,
+					   prChipInfo->uc5GHeCapMaxAmpduLenExp);
+	}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (prBssInfo->eBand == BAND_6G &&
+		 prChipInfo->is_specify_he_cap_max_ampdu_len_exp) {
+		HE_SET_MAC_CAP_MAX_AMPDU_LEN_EXP(prHeCap->ucHeMacCap,
+					   prChipInfo->uc5GHeCapMaxAmpduLenExp);
+	}
+#endif
 
 #if (CFG_SUPPORT_TWT == 1)
 	if (IS_BSS_AIS(prBssInfo) &&
