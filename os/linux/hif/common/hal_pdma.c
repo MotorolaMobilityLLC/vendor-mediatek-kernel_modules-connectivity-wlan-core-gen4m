@@ -67,8 +67,8 @@ static const char delayTypeChar[] = {'D', 'C', 'M', 'A', 'F'};
  *                                 M A C R O S
  *******************************************************************************
  */
-#define DUMP_DRV_OWN_DONE "DRIVER OWN Done[%u us]\n"
-#define DUMP_DRV_OWN_FAIL "DRIVER OWN Failed[%u us]\n"
+#define DUMP_DRV_OWN_DONE "DRIVER OWN Done[%u us] Send[%u us]\n"
+#define DUMP_DRV_OWN_FAIL "DRIVER OWN Failed[%u us] Send[%u us]\n"
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
@@ -534,10 +534,11 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	struct GL_HIF_INFO *prHifInfo;
 	struct WIFI_VAR *prWifiVar;
 	u_int8_t fgStatus = TRUE;
-	uint32_t i, u4CurrTick = 0, u4chkTick = 0, u4DrvOwnElapsed = 0;
 	u_int8_t fgTimeout;
 	u_int8_t fgResult;
 	u_int8_t fgIsDriverOwnTimeout = FALSE;
+	uint32_t i = 0, u4CurrTick = 0, u4chkTick = 0;
+	uint32_t u4DrvOwnElapsed = 0, u4Send = 0;
 
 	KAL_TIME_INTERVAL_DECLARATION();
 
@@ -556,14 +557,16 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 		goto end;
 
 	DBGLOG(INIT, TRACE, "DRIVER OWN Start\n");
-	KAL_REC_TIME_START();
-
-	u4CurrTick = kalGetTimeTick();
-	i = 0;
 
 	/* PCIE/AXI need to do clear own, then could start polling status */
+	KAL_REC_TIME_START();
 	HAL_LP_OWN_CLR(prAdapter, &fgResult);
+	KAL_REC_TIME_END();
+	u4Send = KAL_GET_TIME_INTERVAL();
 	fgResult = FALSE;
+
+	KAL_REC_TIME_START();
+	u4CurrTick = kalGetTimeTick();
 
 	while (1) {
 		/* Delay for LP engine to complete its operation. */
@@ -700,9 +703,11 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	u4DrvOwnElapsed = KAL_GET_TIME_INTERVAL();
 
 	if (fgResult)
-		DBGLOG(INIT, TRACE, DUMP_DRV_OWN_DONE, u4DrvOwnElapsed);
+		DBGLOG(INIT, TRACE, DUMP_DRV_OWN_DONE,
+			u4DrvOwnElapsed, u4Send);
 	else
-		DBGLOG(INIT, INFO, DUMP_DRV_OWN_FAIL, u4DrvOwnElapsed);
+		DBGLOG(INIT, INFO, DUMP_DRV_OWN_FAIL,
+			u4DrvOwnElapsed, u4Send);
 
 end:
 	KAL_HIF_OWN_UNLOCK(prAdapter);
