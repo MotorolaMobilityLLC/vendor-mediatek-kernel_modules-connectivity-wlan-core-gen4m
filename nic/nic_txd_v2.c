@@ -340,12 +340,11 @@ void nic_txd_v2_compose(
 #endif
 	{
 		ucWmmQueSet = prBssInfo->ucWmmQueSet;
+#if CFG_SUPPORT_DROP_INVALID_MSDUINFO
 		if (fgIsTemplate != TRUE
 			&& prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA
 			&& ucWmmQueSet != prMsduInfo->ucWmmQueSet) {
-#if CFG_SUPPORT_DROP_INVALID_MSDUINFO
 			prMsduInfo->fgDrop = TRUE;
-#endif /* CFG_SUPPORT_DROP_INVALID_MSDUINFO */
 			DBGLOG(RSN, ERROR,
 				"WmmQueSet mismatch[%u,%u,%u,%u]\n",
 				prMsduInfo->ucBssIndex,
@@ -353,6 +352,7 @@ void nic_txd_v2_compose(
 				ucWmmQueSet,
 				prMsduInfo->ucWmmQueSet);
 		}
+#endif /* CFG_SUPPORT_DROP_INVALID_MSDUINFO */
 
 		ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
 		if (ucTarPort == PORT_INDEX_LMAC)
