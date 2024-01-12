@@ -414,20 +414,12 @@ void p2pFuncGCJoin(struct ADAPTER *prAdapter,
 				"[%d]: NO Target BSS Descriptor\n", i);
 			continue;
 		}
-#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
-		if (prAdapter->rWifiVar.ucDbdcP2pLisEn) {
-			/* Prevent wrong p2p conn nss during
-			 * DBDC sw case enable -> disable.
-			 * If conn happened in WAIT_HW_DISABLE state
-			 * Nss could be set to 1, because op mode change
-			 * is done after DBDC disable sw done.
-			 */
-			cnmOpModeGetTRxNss(
-				prAdapter, prP2pBssInfo->ucBssIndex,
-				&prP2pBssInfo->ucOpRxNss,
-				&prP2pBssInfo->ucOpTxNss);
-		}
-#endif
+
+		/* Renew op trx nss */
+		cnmOpModeGetTRxNss(prAdapter, prP2pBssInfo->ucBssIndex,
+				   &prP2pBssInfo->ucOpRxNss,
+				   &prP2pBssInfo->ucOpTxNss);
+
 		if (prBssDesc->ucSSIDLen) {
 			COPY_SSID(prP2pBssInfo->aucSSID,
 				prP2pBssInfo->ucSSIDLen,
@@ -4561,7 +4553,9 @@ void p2pFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
 		((prP2pDevFsmInfo->eCurrentState !=
 			P2P_DEV_STATE_OFF_CHNL_TX &&
 		prP2pDevFsmInfo->eCurrentState !=
-			P2P_DEV_STATE_CHNL_ON_HAND) ||
+			P2P_DEV_STATE_CHNL_ON_HAND &&
+		prP2pDevFsmInfo->eCurrentState !=
+			P2P_DEV_STATE_REQING_CHANNEL) ||
 		prP2pDevFsmInfo->rChnlReqInfo.ucReqChnlNum !=
 			prSwRfb->ucChnlNum)) {
 		DBGLOG(P2P, INFO,

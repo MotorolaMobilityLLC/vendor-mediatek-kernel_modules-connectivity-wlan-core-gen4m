@@ -2758,10 +2758,6 @@ void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 				prChnlReqInfo->ucReqChnlNum,
 				prP2pBssInfo->ucWmmQueSet);
 #endif
-			cnmOpModeGetTRxNss(
-				prAdapter, prP2pBssInfo->ucBssIndex,
-				&prP2pBssInfo->ucOpRxNss,
-				&prP2pBssInfo->ucOpTxNss);
 
 			DBGLOG(P2P, INFO,
 			   "start GC CH[%u]RxNSS[%u]TxNss[%u]\n",
