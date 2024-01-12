@@ -931,8 +931,6 @@ void secPrivacyFreeSta(struct ADAPTER *prAdapter,
 void secRemoveBssBcEntry(struct ADAPTER *prAdapter,
 			 struct BSS_INFO *prBssInfo, u_int8_t fgRoam)
 {
-	int i;
-
 	if (!prBssInfo)
 		return;
 
@@ -948,18 +946,9 @@ void secRemoveBssBcEntry(struct ADAPTER *prAdapter,
 		    && (prConnSettings->eAuthMode >= AUTH_MODE_WPA &&
 			prConnSettings->eAuthMode != AUTH_MODE_WPA_NONE)) {
 
-			for (i = 0; i < MAX_KEY_NUM; i++) {
-				if (prBssInfo->ucBMCWlanIndexSUsed[i])
-					secPrivacyFreeForEntry(prAdapter,
-						prBssInfo->ucBMCWlanIndexS[i]);
-
-			prBssInfo->ucBMCWlanIndexSUsed[i] = FALSE;
-			prBssInfo->ucBMCWlanIndexS[i] = WTBL_RESERVED_ENTRY;
-
-			}
-
-			prBssInfo->fgBcDefaultKeyExist = FALSE;
-			prBssInfo->ucBcDefaultKeyIdx = 0xff;
+			prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
+			secPrivacyFreeForEntry(prAdapter,
+						prBssInfo->ucBMCWlanIndex);
 		}
 	} else {
 		/* According to discussion, it's ok to change to
