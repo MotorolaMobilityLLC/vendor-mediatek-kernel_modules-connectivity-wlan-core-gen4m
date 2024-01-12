@@ -1031,7 +1031,8 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_SUPPORT_TWT == 1)
-	SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucTWTRequester))
+		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 			    ELEM_EXT_CAP_TWT_REQUESTER_BIT);
 #endif
 
