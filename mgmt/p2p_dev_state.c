@@ -126,9 +126,14 @@ p2pDevStateInit_REQING_CHANNEL(IN struct ADAPTER *prAdapter,
 
 		LINK_REMOVE_HEAD(&(prChnlReqInfo->rP2pChnlReqLink), prP2pMsgChnlReq, struct MSG_P2P_CHNL_REQUEST *);
 
-		ASSERT(prP2pMsgChnlReq);
+		if (prP2pMsgChnlReq == NULL) {
+			ASSERT(FALSE);
+			break;
+		}
 
 #if CFG_SUPPORT_DBDC
+		kalMemZero(&rDbdcCap, sizeof(CNM_DBDC_CAP_T));
+
 		cnmGetDbdcCapability(prAdapter,
 			prBssInfo->ucBssIndex,
 			prP2pMsgChnlReq->rChannelInfo.eBand,

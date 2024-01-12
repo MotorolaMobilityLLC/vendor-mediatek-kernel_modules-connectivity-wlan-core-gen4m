@@ -2096,7 +2096,7 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 		netif_addr_lock_bh(prDev);
 
 		netdev_for_each_mc_addr(ha, prDev) {
-			if ((i < MAX_NUM_GROUP_ADDR) && (ha != NULL)) {
+			if (i < MAX_NUM_GROUP_ADDR) { /* If ha is null, it will break the loop. */
 				COPY_MAC_ADDR(&(prGlueInfo->prP2PDevInfo->aucMCAddrList[i]), GET_ADDR(ha));
 				i++;
 			}

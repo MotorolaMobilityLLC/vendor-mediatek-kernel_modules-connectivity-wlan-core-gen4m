@@ -52,8 +52,6 @@
 #ifndef _P2P_FUNC_H
 #define _P2P_FUNC_H
 
-#include "precomp.h"
-
 #define P2P_OFF_CHNL_TX_DEFAULT_TIME_MS                      1000
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)

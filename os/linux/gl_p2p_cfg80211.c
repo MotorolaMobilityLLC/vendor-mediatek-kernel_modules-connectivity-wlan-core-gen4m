@@ -348,12 +348,12 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		/*u4Idx = 0;*/
 		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_add_iface u4Idx=%d\n", u4Idx);
 
-		prP2pInfo = prGlueInfo->prP2PInfo[u4Idx];
-
 		if (u4Idx == KAL_P2P_NUM) {
 			/* Role port full. */
 			break;
 		}
+
+		prP2pInfo = prGlueInfo->prP2PInfo[u4Idx];
 
 		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_add_iface name = %s\n", name);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
