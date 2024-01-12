@@ -453,6 +453,8 @@ void wnmSendBTMResponseFrame(struct ADAPTER *adapter,
 			     u2PayloadLen,
 		     wnmBTMResponseTxDone, MSDU_RATE_MODE_AUTO);
 
+	nicTxConfigPktControlFlag(prMsduInfo, MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
+
 	/* 5 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(adapter, prMsduInfo);
 
@@ -794,7 +796,7 @@ send_response:
 	if (prBtmParam->fgPendingResponse) {
 		prBtmParam->fgPendingResponse = false;
 		wnmSendBTMResponseFrame(prAdapter,
-			aisGetStaRecOfAP(prAdapter, ucBssIndex),
+			aisGetStaRecOfAP(prAdapter,  prBtmParam->ucRspBssIndex),
 			prBtmParam->ucDialogToken,
 			ucStatus, MBO_TRANSITION_REJECT_REASON_UNSPECIFIED,
 			0, NULL);

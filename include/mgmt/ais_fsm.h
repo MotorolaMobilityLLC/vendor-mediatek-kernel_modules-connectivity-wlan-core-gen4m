@@ -628,7 +628,8 @@ bool aisFsmIsInBeaconTimeout(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
 void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
-	struct AIS_FSM_INFO *prAisFsmInfo, uint8_t ucLinkIndex);
+	struct AIS_FSM_INFO *prAisFsmInfo, struct STA_RECORD **prMainStaRec,
+	uint8_t ucLinkIndex);
 
 u_int8_t aisFsmStateInit_RetryJOIN(struct ADAPTER
 				   *prAdapter, struct STA_RECORD *prStaRec,

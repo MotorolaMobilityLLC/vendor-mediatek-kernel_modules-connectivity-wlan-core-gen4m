@@ -3642,6 +3642,43 @@ static void mldStarecUpdateMldId(struct ADAPTER *prAdapter,
 	}
 }
 
+struct MLD_STA_RECORD *mldStarecJoin(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo, struct STA_RECORD *prMainStarec,
+	struct STA_RECORD *prStarec, struct BSS_DESC *prBssDesc)
+{
+	struct MLD_STA_RECORD *prMldStaRec = NULL;
+
+	if (prMldBssInfo == NULL) {
+		DBGLOG(ML, ERROR, "no prMldBssInfo\n");
+		return NULL;
+	}
+
+#ifdef CFG_AAD_NONCE_NO_REPLACE
+	/* disable old clients before alloc new mld starec */
+	mldBssDisableAllClients(prAdapter, prMldBssInfo);
+#endif
+
+	if (prMainStarec == prStarec)
+		prMldStaRec = mldStarecAlloc(prAdapter, prMldBssInfo,
+			prBssDesc->rMlInfo.aucMldAddr,
+			prBssDesc->rMlInfo.fgMldType,
+			prBssDesc->rMlInfo.u2EmlCap,
+			prBssDesc->rMlInfo.u2MldCap);
+	else
+		prMldStaRec = mldStarecGetByStarec(prAdapter, prMainStarec);
+
+	if (prMldStaRec == NULL) {
+		DBGLOG(ML, ERROR, "MldBss%d can't alloc prMldStaRec\n",
+			prMldBssInfo->ucGroupMldId);
+		return NULL;
+	}
+
+	mldStarecRegister(prAdapter, prMldStaRec, prStarec,
+		prBssDesc->rMlInfo.ucLinkIndex);
+
+	return prMldStaRec;
+}
+
 int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 	struct MLD_STA_RECORD *prMldStarec, struct STA_RECORD *prStarec,
 	uint8_t ucLinkId)
