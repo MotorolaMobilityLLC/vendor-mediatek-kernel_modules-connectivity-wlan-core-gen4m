@@ -262,6 +262,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	prCmdScanReq->ucScanType = (uint8_t) prScanParam->eScanType;
 	prCmdScanReq->ucSSIDType = prScanParam->ucSSIDType;
 	prCmdScanReq->auVersion[0] = 1;
+	prCmdScanReq->ucScnFuncMask |= prScanParam->ucScnFuncMask;
 	if (kalIsValidMacAddr(prScanParam->aucRandomMac)) {
 		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_RANDOM_MAC_EN;
 		kalMemCopy(prCmdScanReq->aucRandomMac,
@@ -368,7 +369,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		kalMemCopy(prCmdScanReq->aucIE, prScanParam->aucIE,
 			sizeof(uint8_t) * prCmdScanReq->u2IELen);
 
-	log_dbg(SCN, INFO, "ScanReqV2: ScanType=%d,SSIDType=%d,Num=%u,Ext=%u,ChannelType=%d,Num=%d,Ext=%u,Seq=%u,Ver=%u,Mac="
+	log_dbg(SCN, INFO, "ScanReqV2: ScanType=%d,SSIDType=%d,Num=%u,Ext=%u,ChannelType=%d,Num=%d,Ext=%u,Seq=%u,Ver=%u,Func=0x%X,Mac="
 		MACSTR "\n",
 		prCmdScanReq->ucScanType,
 		prCmdScanReq->ucSSIDType,
@@ -378,6 +379,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		prCmdScanReq->ucChannelListNum,
 		prCmdScanReq->ucChannelListExtNum,
 		prCmdScanReq->ucSeqNum, prCmdScanReq->auVersion[0],
+		prCmdScanReq->ucScnFuncMask,
 		prCmdScanReq->aucRandomMac);
 
 	wlanSendSetQueryCmd(prAdapter,
@@ -628,6 +630,7 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 	prScanParam->ucBssIndex = prScanReqMsg->ucBssIndex;
 	prScanParam->ucSSIDType = prScanReqMsg->ucSSIDType;
 	prScanParam->ucSSIDNum = prScanReqMsg->ucSSIDNum;
+	prScanParam->ucScnFuncMask |= prScanReqMsg->ucScnFuncMask;
 	kalMemCopy(prScanParam->aucRandomMac, prScanReqMsg->aucRandomMac,
 		MAC_ADDR_LEN);
 
@@ -1182,12 +1185,11 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 				prSchedScanCmd->u2IELen);
 	}
 
-	if (kalIsValidMacAddr(prRequest->aucRandomMac))
-		prSchedScanCmd->ucScnFuncMask |= ENUM_SCN_RANDOM_MAC_EN;
+	prSchedScanCmd->ucScnFuncMask |= prRequest->ucScnFuncMask;
 
 	scnSetSchedScanPlan(prAdapter, prSchedScanCmd);
 
-	log_dbg(SCN, INFO, "V(%u)seq(%u)sz(%zu)chT(%u)chN(%u)ssid(%u)match(%u)IE(%u=>%u)MSP(%u)FuncMask(0x%08X)\n",
+	log_dbg(SCN, INFO, "V(%u)seq(%u)sz(%zu)chT(%u)chN(%u)ssid(%u)match(%u)IE(%u=>%u)MSP(%u)Func(0x%X)\n",
 		prSchedScanCmd->ucVersion,
 		prSchedScanCmd->ucSeqNum, sizeof(struct CMD_SCHED_SCAN_REQ),
 		prSchedScanCmd->ucChannelType, prSchedScanCmd->ucChnlNum,

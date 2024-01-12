@@ -635,10 +635,6 @@ struct GLUE_INFO {
 	/* for cfg80211 scheduled scan */
 	struct cfg80211_sched_scan_request *prSchedScanRequest;
 
-	/* Set scanning MAC OUI */
-	u_int8_t fgIsScanOuiSet;
-	uint8_t ucScanOui[MAC_OUI_LEN];
-
 	/* to indicate registered or not */
 	u_int8_t fgIsRegistered;
 

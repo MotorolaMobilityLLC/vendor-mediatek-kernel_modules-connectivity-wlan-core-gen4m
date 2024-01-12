@@ -2301,6 +2301,7 @@ struct PARAM_SCAN_REQUEST_ADV {
 	uint32_t u4ChannelNum;
 	struct RF_CHANNEL_INFO
 		arChannel[MAXIMUM_OPERATION_CHANNEL_LIST];
+	uint8_t ucScnFuncMask;
 	uint8_t aucRandomMac[MAC_ADDR_LEN];
 };
 
@@ -2315,6 +2316,7 @@ struct PARAM_SCHED_SCAN_REQUEST {
 	struct PARAM_SSID arMatchSsid[CFG_SCAN_SSID_MATCH_MAX_NUM];
 	int32_t ai4RssiThold[CFG_SCAN_SSID_MATCH_MAX_NUM];
 	int32_t i4MinRssiThold;
+	uint8_t ucScnFuncMask;
 	uint8_t aucRandomMac[MAC_ADDR_LEN];
 	uint8_t aucRandomMacMask[MAC_ADDR_LEN];
 	uint32_t u4IELength;

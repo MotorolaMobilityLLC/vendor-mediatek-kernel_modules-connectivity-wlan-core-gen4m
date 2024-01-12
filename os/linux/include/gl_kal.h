@@ -1503,15 +1503,12 @@ static inline void kal_skb_reset_mac_len(struct sk_buff
 
 void kalInitDevWakeup(struct ADAPTER *prAdapter, struct device *prDev);
 
-u_int8_t kalIsValidMacAddr(IN const uint8_t *addr);
+u_int8_t kalIsValidMacAddr(const uint8_t *addr);
 
-void kalScanParseRandomMac(
-	IN struct GLUE_INFO *prGlueInfo,
-	IN struct cfg80211_scan_request *request,
-	OUT uint8_t *pucRandomMac);
+u_int8_t kalScanParseRandomMac(const struct net_device *ndev,
+	const struct cfg80211_scan_request *request, uint8_t *pucRandomMac);
 
-void kalSchedScanParseRandomMac(
-	IN struct GLUE_INFO *prGlueInfo,
-	IN struct cfg80211_sched_scan_request *request,
-	OUT uint8_t *pucRandomMac, OUT uint8_t *pucRandomMacMask);
-#endif /* _GL_KAL_H */
+u_int8_t kalSchedScanParseRandomMac(const struct net_device *ndev,
+	const struct cfg80211_sched_scan_request *request,
+	uint8_t *pucRandomMac, uint8_t *pucRandomMacMask);
+#endif				/* _GL_KAL_H */
