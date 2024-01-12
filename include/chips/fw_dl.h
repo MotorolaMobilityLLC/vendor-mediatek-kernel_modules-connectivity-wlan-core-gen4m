@@ -98,6 +98,8 @@ struct FWDL_OPS_T {
 
 	void (*constructFirmwarePrio)(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucNameTable, PPUINT_8 apucName,
 				      PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx); /* load firmware bin priority */
+	void (*constructPatchName)(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucName, PUINT_8 pucNameIdx);
+
 	WLAN_STATUS (*downloadFirmware)(IN P_ADAPTER_T prAdapter, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
 	void (*getFwInfo)(IN P_ADAPTER_T prAdapter, IN UINT_8 u4SecIdx, IN enum ENUM_IMG_DL_IDX_T eDlIdx,
 			  OUT PUINT_32 pu4Addr, OUT PUINT_32 pu4Len,

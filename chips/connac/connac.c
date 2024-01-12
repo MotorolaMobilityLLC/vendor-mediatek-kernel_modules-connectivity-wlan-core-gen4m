@@ -82,6 +82,7 @@ PUINT_8 apucConnacFwName[] = {
 
 ECO_INFO_T connac_eco_table[] = {
 	/* HW version,  ROM version,    Factory version */
+	{0x00, 0x00, 0xA, 0x1}, /* E1 */
 	{0x00, 0x00, 0x0}	/* End of table */
 };
 
@@ -168,6 +169,12 @@ VOID connacConstructFirmwarePrio(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucNameTabl
 	}
 }
 
+VOID connacConstructPatchName(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucName, PUINT_8 pucNameIdx)
+{
+	snprintf(apucName[(*pucNameIdx)], CFG_FW_NAME_MAX_LEN, "mtsoc1_0_patch_e%x_hdr.bin",
+		wlanGetEcoVersion(prGlueInfo->prAdapter));
+}
+
 BUS_INFO connac_bus_info = {
 #if defined(_HIF_PCIE)
 	.top_cfg_base = CONNAC_TOP_CFG_BASE,
@@ -197,6 +204,7 @@ BUS_INFO connac_bus_info = {
 struct FWDL_OPS_T connac_fw_dl_ops = {
 	.tailer_format = CONNAC_TAILER_FORMAT,
 	.constructFirmwarePrio = connacConstructFirmwarePrio,
+	.constructPatchName = connacConstructPatchName,
 	.downloadFirmware = wlanConnacFormatDownload,
 	.getFwInfo = wlanGetConnacFwInfo,
 };
