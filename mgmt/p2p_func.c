@@ -3400,6 +3400,12 @@ u_int8_t p2pFuncValidateAssocReq(IN struct ADAPTER *prAdapter,
 			break;
 		}
 
+		if (prP2pBssInfo->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_SAE
+		&& prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_OPEN_SYSTEM) {
+			*pu2StatusCode = STATUS_INVALID_PMKID;
+			break;
+		}
+
 		*pu2StatusCode = STATUS_CODE_SUCCESSFUL;
 
 	} while (FALSE);
