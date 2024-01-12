@@ -1600,10 +1600,12 @@ int cnmShowStaRec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\tMLD_STA/LINK_ID/TID_BMAP/MLD_ADDR: %u/%u/0x%x/" MACSTR "\n",
+		"\tMLD_STA/LINK_ID/TID_BMAP/AP_RM/MLD_ADDR: %u/%u/0x%x/%u/"
+		MACSTR "\n",
 		prStaRec->ucMldStaIndex,
 		prStaRec->ucLinkIndex,
 		prStaRec->ucULTidBitmap,
+		prStaRec->fgApRemoval,
 		MAC2STR(prStaRec->aucMldAddr));
 #endif
 

@@ -931,7 +931,7 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (!mldIsMloFeatureEnabled(prAdapter, NETWORK_TYPE_P2P, FALSE))
+	if (!mldIsMultiLinkEnabled(prAdapter, NETWORK_TYPE_P2P, FALSE))
 		return;
 
 	DBGLOG(P2P, INFO,

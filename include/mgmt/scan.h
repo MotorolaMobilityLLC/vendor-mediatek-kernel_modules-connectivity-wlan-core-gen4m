@@ -249,8 +249,9 @@ struct ML_INFO {
 	uint8_t ucMaxSimuLinks;
 	uint16_t u2EmlCap;
 	uint16_t u2MldCap;
+	uint16_t u2DisabledLinks;
+	uint16_t u2ApRemovalTimer;
 	uint8_t fgMldType;
-	uint32_t u4DeleteTimeout;
 	struct MLD_BLOCKLIST_ITEM *prBlock;
 };
 #endif

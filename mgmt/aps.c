@@ -348,7 +348,7 @@ void apsHashDel(struct ADAPTER *ad, struct AP_COLLECTION *ap, uint8_t bidx)
 uint8_t apsCanFormMld(struct ADAPTER *ad, struct BSS_DESC *bss, uint8_t bidx)
 {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (!mldIsMloFeatureEnabled(ad, NETWORK_TYPE_AIS, bidx) ||
+	if (!mldIsMultiLinkEnabled(ad, NETWORK_TYPE_AIS, bidx) ||
 	    !aisSecondLinkAvailable(ad, bidx))
 		return FALSE;
 
@@ -532,9 +532,9 @@ uint8_t apsIsBssQualify(struct ADAPTER *ad, struct BSS_DESC *bss,
 	}
 	default:
 	{
-		if (u4CandidateApScore <= u4ConnectedApScore) {
+		if (u4CandidateApScore < u4ConnectedApScore) {
 			DBGLOG(APS, WARN, "BSS[" MACSTR
-				"] (%d <= %d) reason=%d\n",
+				"] (%d < %d) reason=%d\n",
 				MAC2STR(bss->aucBSSID),
 				u4CandidateApScore, u4ConnectedApScore,
 				eRoamReason);
@@ -544,33 +544,6 @@ uint8_t apsIsBssQualify(struct ADAPTER *ad, struct BSS_DESC *bss,
 	}
 	}
 	return TRUE;
-}
-#endif
-
-#if CFG_SUPPORT_802_11K
-struct NEIGHBOR_AP *apsGetNeighborAPEntry(
-	struct ADAPTER *prAdapter, struct BSS_DESC *bss, uint8_t ucBssIndex)
-{
-	struct LINK *prNeighborAPLink =
-		&aisGetAisSpecBssInfo(prAdapter, ucBssIndex)
-		->rNeighborApList.rUsingLink;
-	struct NEIGHBOR_AP *prNeighborAP = NULL;
-
-	LINK_FOR_EACH_ENTRY(prNeighborAP, prNeighborAPLink, rLinkEntry,
-			    struct NEIGHBOR_AP)
-	{
-		if (EQUAL_MAC_ADDR(prNeighborAP->aucBssid, bss->aucBSSID))
-			return prNeighborAP;
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		if (bss->rMlInfo.fgValid && prNeighborAP->fgIsMld &&
-		   EQUAL_MAC_ADDR(prNeighborAP->aucMldAddr,
-				  bss->rMlInfo.aucMldAddr) &&
-		   (prNeighborAP->u2ValidLinks & BIT(bss->rMlInfo.ucLinkIndex)))
-			return prNeighborAP;
-#endif
-	}
-	return NULL;
 }
 #endif
 
@@ -789,7 +762,7 @@ uint16_t apsUpdateEssApList(struct ADAPTER *ad,
 		bss->prBlack = aisQueryBlockList(ad, bss);
 #if CFG_SUPPORT_802_11K
 		/* update neighbor report entry */
-		bss->prNeighbor = apsGetNeighborAPEntry(
+		bss->prNeighbor = aisGetNeighborAPEntry(
 			ad, bss, bidx);
 #endif
 
@@ -1337,8 +1310,10 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	uint32_t i = 0;
 #endif
 
-	/* Don't skip connected AP if reassociation */
-	if (eRoamReason != ROAMING_REASON_UPPER_LAYER_TRIGGER && connected) {
+	/* Don't skip connected AP if reassociation or btm */
+	if (eRoamReason != ROAMING_REASON_UPPER_LAYER_TRIGGER &&
+	    eRoamReason != ROAMING_REASON_BTM &&
+	    connected) {
 		DBGLOG(APS, WARN, MACSTR" connected\n",
 				MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
@@ -1490,7 +1465,7 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			break;
 		}
 #else
-		if (!connected && prBssDesc->ucRCPI < RCPI_FOR_DONT_ROAM) {
+		if (prBssDesc->ucRCPI < RCPI_FOR_DONT_ROAM) {
 			DBGLOG(APS, INFO, MACSTR " low rssi %d\n",
 				MAC2STR(prBssDesc->aucBSSID),
 				RCPI_TO_dBm(prBssDesc->ucRCPI));
@@ -1535,8 +1510,7 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
-	if (!connected &&
-	    CHECK_FOR_TIMEOUT(kalGetTimeTick(), prBssDesc->rUpdateTime,
+	if (CHECK_FOR_TIMEOUT(kalGetTimeTick(), prBssDesc->rUpdateTime,
 		SEC_TO_SYSTIME(wlanWfdEnabled(prAdapter) ?
 		SCN_BSS_DESC_STALE_SEC_WFD : SCN_BSS_DESC_STALE_SEC))) {
 		DBGLOG(APS, WARN, MACSTR " description is too old.\n",
@@ -1605,6 +1579,16 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	}
 #endif
 #endif
+
+#if CFG_SUPPORT_802_11BE_MLO
+	if (mldIsMultiLinkEnabled(prAdapter, NETWORK_TYPE_AIS, ucBssIndex) &&
+	    prBssDesc->rMlInfo.u2ApRemovalTimer) {
+		DBGLOG(APS, WARN, MACSTR " is being removed.\n",
+			MAC2STR(prBssDesc->aucBSSID));
+		return FALSE;
+	}
+#endif
+
 	return TRUE;
 }
 
@@ -1670,7 +1654,7 @@ try_again:
 		} else if (policy == CONNECT_BY_BSSID_HINT) {
 			uint8_t oce = FALSE;
 			uint8_t chnl = nicFreq2ChannelNum(
-					conn->u4FreqInKHz * 1000);
+					conn->u4FreqInMHz * 1000);
 
 #if CFG_SUPPORT_MBO
 			oce = ad->rWifiVar.u4SwTestMode ==
@@ -1736,20 +1720,30 @@ uint8_t apsIsValidBssDesc(struct ADAPTER *ad, struct BSS_DESC *bss,
 	enum ENUM_ROAMING_REASON reason, uint8_t bidx)
 {
 	uint8_t valid = TRUE;
+	struct STA_RECORD *sta = aisGetTargetStaRec(ad, bidx);
 
-	if (!bss)
+	if (!bss || !sta)
 		return FALSE;
+
+	if (bss->prBlack && bss->prBlack->fgDisallowed)
+		valid = FALSE;
 
 #if CFG_SUPPORT_ROAMING
 	if (reason == ROAMING_REASON_TEMP_REJECT)
 		valid = FALSE;
 
 	if (reason == ROAMING_REASON_BTM) {
-		struct NEIGHBOR_AP *nei = apsGetNeighborAPEntry(ad, bss, bidx);
+		struct NEIGHBOR_AP *nei = aisGetNeighborAPEntry(ad, bss, bidx);
 
-		if (nei && nei->fgPrefPresence && !nei->ucPreference)
+		/* AP suggests to leave */
+		if (!nei || (nei->fgPrefPresence && !nei->ucPreference))
 			valid = FALSE;
 	}
+#endif
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (sta->fgApRemoval)
+		valid = FALSE;
 #endif
 
 	if (!valid)

@@ -5516,7 +5516,7 @@ int priv_driver_get_ml_capa(struct net_device *prNetDev,
 			i4BytesWritten = -1;
 		} else {
 			/* u4Param: 1: p2p, 0: AP */
-			if (mldIsMloFeatureEnabled(prAd,
+			if (mldIsMultiLinkEnabled(prAd,
 				NETWORK_TYPE_P2P, !u4Param) &&
 			    mldBssAllowReconfig(prAd, prMldBssInfo))
 				ucCapa = 1;

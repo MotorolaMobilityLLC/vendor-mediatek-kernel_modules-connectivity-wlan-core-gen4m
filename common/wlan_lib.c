@@ -7167,6 +7167,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucMaxSimuLinks,
 		"MaxSimultaneousLinks", 0xff);
 	INIT_UINT(prWifiVar->ucMldRetryCount, "MldRetryCount", MLD_RETRY_COUNT);
+	INIT_UINT(prWifiVar->fgApRemovalByT2LM,
+		"ApRemovalByT2LM", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->u4ApRemovalMarginMs,
+		"ApRemovalMarginMs", 250);
 	INIT_UINT(prWifiVar->ucNonApMldEMLSupport,
 		"NonApMldEML", FEATURE_DISABLED);
 	INIT_UINT(prWifiVar->ucApMldEMLSupport,

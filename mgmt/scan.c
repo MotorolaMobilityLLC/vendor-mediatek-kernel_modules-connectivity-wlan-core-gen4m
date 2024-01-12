@@ -1488,21 +1488,17 @@ void scanParseMldIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 
 		DBGLOG(ML, TRACE,
 			"MldAddr="MACSTR",BSS="MACSTR
-			",LinkID=%d,MaxSimu=%d,EmlCap=0x%x,MldCap=0x%x,Delete=%d,MldType=%d\n",
+			",LinkID=%d,MaxSimu=%d,EmlCap=0x%x,MldCap=0x%x,MldType=%d\n",
 			MAC2STR(prBssDesc->rMlInfo.aucMldAddr),
 			MAC2STR(prBssDesc->aucBSSID),
 			prBssDesc->rMlInfo.ucLinkIndex,
 			prBssDesc->rMlInfo.ucMaxSimuLinks,
 			prBssDesc->rMlInfo.u2EmlCap,
 			prBssDesc->rMlInfo.u2MldCap,
-			prBssDesc->rMlInfo.u4DeleteTimeout,
 			prBssDesc->rMlInfo.fgMldType);
 	} else if (BE_IS_ML_CTRL_TYPE(pucIE, ML_CTRL_TYPE_RECONFIG)) {
 #if (CFG_SUPPORT_ML_RECONFIG == 1)
 		uint8_t i;
-
-		if (!prBssDesc->rMlInfo.fgValid)
-			return;
 
 		MLD_PARSE_RECONFIG_MLIE(prMlInfo, pucIE, prBssDesc->aucBSSID);
 
@@ -1512,17 +1508,11 @@ void scanParseMldIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 		for (i = 0; i < prMlInfo->ucProfNum; i++) {
 			struct STA_PROFILE *sta = &prMlInfo->rStaProfiles[i];
 
-			if (prBssDesc->rMlInfo.ucLinkIndex == sta->ucLinkId) {
-				uint32_t sec = MSEC_TO_SEC(
-						prBssDesc->u2BeaconInterval *
-						sta->u2DeleteTimer);
-
-				if (!prBssDesc->prBlack)
-					aisBssTmpDisallow(prAdapter,
-						prBssDesc, sec, 0);
-			}
+			if (prBssDesc->rMlInfo.ucLinkIndex == sta->ucLinkId)
+				prBssDesc->rMlInfo.u2ApRemovalTimer =
+					sta->u2ApRemovalTimer;
 		}
-#endif
+#endif /* CFG_SUPPORT_ML_RECONFIG */
 	}
 
 	return;
@@ -1794,7 +1784,8 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc, uint8_t *pucIE)
 {
 	uint8_t i = 0, j = 0, ucNewLink = FALSE, ucRnrChNum;
-	uint8_t ucShortSsidOffset, ucBssParamOffset, ucMldParamOffset;
+	uint8_t ucShortSsidOffset, ucBssParamOffset;
+	uint8_t ucMldParamOffset = 0;
 	uint8_t ucBssidNum = 0, ucShortSsidNum = 0;
 	uint8_t ucHasBssid = FALSE, ucScanEnable = TRUE, ucOpClass = 0;
 	uint8_t aucNullAddr[] = NULL_MAC_ADDR;
@@ -2133,6 +2124,34 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 				scanHandleRnrSsid(prScanParam,
 						prAdapterScanParam,
 						prBssDesc, ucBssidNum);
+
+			if (ucMldParamOffset != 0) {
+				uint32_t u4MldParam = 0;
+				uint8_t ucMldId, ucMldLinkId;
+				uint8_t	ucBssParamChangeCount, ucDisabledLink;
+
+				kalMemCopy(&u4MldParam,
+					&prNeighborAPInfoField->aucTbttInfoSet[
+					j + ucMldParamOffset],
+					sizeof(u4MldParam));
+				ucMldId = (u4MldParam & MLD_PARAM_MLD_ID_MASK);
+				ucMldLinkId = (u4MldParam &
+					MLD_PARAM_LINK_ID_MASK) >>
+					MLD_PARAM_LINK_ID_SHIFT;
+				ucBssParamChangeCount = (u4MldParam &
+				       MLD_PARAM_BSS_PARAM_CHANGE_COUNT_MASK) >>
+				       MLD_PARAM_BSS_PARAM_CHANGE_COUNT_SHIFT;
+				ucDisabledLink = !!(u4MldParam &
+					MLD_PARAM_DISABLED_LINK);
+#if CFG_SUPPORT_802_11BE_MLO
+				if (ucDisabledLink)
+					prBssDesc->rMlInfo.u2DisabledLinks |=
+						BIT(ucMldLinkId);
+				else
+					prBssDesc->rMlInfo.u2DisabledLinks &=
+						~BIT(ucMldLinkId);
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+			}
 		}
 		/* Calculate next NeighborAPInfo's index if exists */
 		u2CurrentLength += 4 + (u2TbttInfoCount * u2TbttInfoLength);
