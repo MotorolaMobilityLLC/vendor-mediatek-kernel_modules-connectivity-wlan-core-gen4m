@@ -1054,6 +1054,8 @@ static inline void kalCfg80211VendorEvent(void *pvPacket)
 	scnprintf(buf, size, fmt, ##__VA_ARGS__)
 #define kalSprintf(buf, fmt, ...)          \
 	_kalSprintf((char *)(buf), (const char *)(fmt), ##__VA_ARGS__)
+#define kalVsnprintf(buf, size, fmt, args)          \
+	vsnprintf(buf, size, fmt, args)
 /* remove for AOSP */
 /* #define kalSScanf(buf, fmt, ...)        sscanf(buf, fmt, __VA_ARGS__) */
 #define kalStrStr(ct, cs)                  strstr(ct, cs)
