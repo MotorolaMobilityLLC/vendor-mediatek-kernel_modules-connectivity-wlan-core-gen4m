@@ -69,9 +69,7 @@
  */
 #include "precomp.h"
 #include "mgmt/ais_fsm.h"
-#if CFG_MTK_MCIF_WIFI_SUPPORT
 #include "mddp.h"
-#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -1181,7 +1179,7 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			break;
 		}
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
+#ifdef CONFIG_MTK_MDDP_SUPPORT
 		setMddpSupportRegister(prAdapter);
 #endif
 
@@ -7739,9 +7737,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 			prAdapter, "ReuseRSNIE",
 			FEATURE_DISABLED);
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
 	wlanCfgSetUint32(prAdapter, "MddpSupport", FEATURE_ENABLED);
-#endif
 
 	prWifiVar->u4DiscoverTimeout = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "DiscoverTimeout", ROAMING_DISCOVER_TIMEOUT_SEC);

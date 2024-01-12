@@ -546,19 +546,15 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 		{"AP DATA1", prBus_info->tx_ring1_data_idx, true},
 		{"AP CMD", prBus_info->tx_ring_cmd_idx, true},
 		{"FWDL", prBus_info->tx_ring_fwdl_idx, true},
-#if CFG_MTK_MCIF_WIFI_SUPPORT
 		{"MD DATA0", 8, false},
 		{"MD DATA1", 9, false},
 		{"MD CMD", 14, false},
-#endif
 	};
 	struct wfdma_ring_info wfmda_rx_group[] = {
 		{"AP DATA", 0, true},
 		{"AP EVENT", 1, true},
-#if CFG_MTK_MCIF_WIFI_SUPPORT
 		{"MD DATA", 2, false},
 		{"MD EVENT", 3, false},
-#endif
 	};
 
 	buf = (char *) kalMemAlloc(BUF_SIZE, VIR_MEM_TYPE);
@@ -581,23 +577,21 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "WPDMA MCU2HOST_SW_INT_STA:0x%08x = 0x%08x\n",
 		MCU2HOST_SW_INT_STA, u4Value);
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
 	HAL_MCR_RD(prAdapter, MD_INT_STA, &u4Value);
 	DBGLOG(HAL, INFO, "MD_INT_STA:0x%08x = 0x%08x\n",
-		MD_INT_STA, u4Value);
+	       MD_INT_STA, u4Value);
 	HAL_MCR_RD(prAdapter, MD_WPDMA_GLO_CFG, &u4Value);
 	DBGLOG(HAL, INFO, "MD_WPDMA_GLO_CFG:0x%08x = 0x%08x\n",
-		MD_WPDMA_GLO_CFG, u4Value);
+	       MD_WPDMA_GLO_CFG, u4Value);
 	HAL_MCR_RD(prAdapter, MD_INT_ENA, &u4Value);
 	DBGLOG(HAL, INFO, "MD_INT_ENA:0x%08x = 0x%08x\n",
-		MD_INT_ENA, u4Value);
+	       MD_INT_ENA, u4Value);
 	HAL_MCR_RD(prAdapter, MD_WPDMA_DLY_INIT_CFG, &u4Value);
 	DBGLOG(HAL, INFO, "MD_WPDMA_DLY_INIT_CFG:0x%08x = 0x%08x\n",
-		MD_WPDMA_DLY_INIT_CFG, u4Value);
+	       MD_WPDMA_DLY_INIT_CFG, u4Value);
 	HAL_MCR_RD(prAdapter, MD_WPDMA_MISC, &u4Value);
 	DBGLOG(HAL, INFO, "MD_WPDMA_MISC:0x%08x = 0x%08x\n",
-		MD_WPDMA_MISC, u4Value);
-#endif
+	       MD_WPDMA_MISC, u4Value);
 
 	/* PDMA Tx/Rx Ring  Info */
 	DBGLOG(HAL, INFO, "Tx Ring configuration\n");
@@ -606,8 +600,7 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 
 	if (buf) {
 		kalMemZero(buf, BUF_SIZE);
-		for (i = 0; i < sizeof(wfmda_tx_group) /
-				sizeof(struct wfdma_ring_info); i++) {
+		for (i = 0; i < ARRAY_SIZE(wfmda_tx_group); i++) {
 			int ret;
 
 			offset = wfmda_tx_group[i].ring_idx *
@@ -650,8 +643,7 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 			"Rx Ring", "Idx", "Reg", "Base", "Cnt", "CIDX", "DIDX");
 
 		kalMemZero(buf, BUF_SIZE);
-		for (i = 0; i < sizeof(wfmda_rx_group) /
-				sizeof(struct wfdma_ring_info); i++) {
+		for (i = 0; i < ARRAY_SIZE(wfmda_rx_group); i++) {
 			int ret;
 
 			offset = wfmda_rx_group[i].ring_idx * MT_RINGREG_DIFF;
@@ -692,8 +684,7 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 	/* PDMA Tx/Rx descriptor & packet content */
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
-	for (i = 0; i < sizeof(wfmda_tx_group) /
-			sizeof(struct wfdma_ring_info); i++) {
+	for (i = 0; i < ARRAY_SIZE(wfmda_tx_group); i++) {
 		if (!wfmda_tx_group[i].dump_ring_content)
 			continue;
 		DBGLOG(HAL, INFO, "Dump PDMA Tx Ring[%u]\n",
@@ -709,8 +700,7 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 			      SwIdx, true);
 	}
 
-	for (i = 0; i < sizeof(wfmda_rx_group) /
-			sizeof(struct wfdma_ring_info); i++) {
+	for (i = 0; i < ARRAY_SIZE(wfmda_rx_group); i++) {
 		if (!wfmda_rx_group[i].dump_ring_content)
 			continue;
 		DBGLOG(HAL, INFO, "Dump PDMA Rx Ring[%u]\n",
@@ -860,17 +850,21 @@ bool halShowHostCsrInfo(IN struct ADAPTER *prAdapter)
 		HOST_CSR_AP2CONN_AHB_HADDR, u4Value);
 #endif
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
-	HAL_MCR_RD(prAdapter, HOST_CSR_CONN_HIF_ON_MD_LPCTL_ADDR, &u4Value);
-	DBGLOG(HAL, INFO, "CONN_HIF_ON_MD_LPCTL_ADDR: 0x%08x = 0x%08x\n",
-		HOST_CSR_CONN_HIF_ON_MD_LPCTL_ADDR, u4Value);
-	HAL_MCR_RD(prAdapter, HOST_CSR_CONN_HIF_ON_MD_IRQ_STAT_ADDR, &u4Value);
-	DBGLOG(HAL, INFO, "CONN_HIF_ON_MD_IRQ_STAT_ADDR: 0x%08x = 0x%08x\n",
-		HOST_CSR_CONN_HIF_ON_MD_IRQ_STAT_ADDR, u4Value);
-	HAL_MCR_RD(prAdapter, HOST_CSR_CONN_HIF_ON_MD_IRQ_ENA_ADDR, &u4Value);
-	DBGLOG(HAL, INFO, "CONN_HIF_ON_MD_IRQ_ENA_ADDR: 0x%08x = 0x%08x\n",
-		HOST_CSR_CONN_HIF_ON_MD_IRQ_ENA_ADDR, u4Value);
-#endif
+	HAL_MCR_RD(prAdapter, HOST_CSR_CONN_HIF_ON_MD_LPCTL_ADDR,
+		   &u4Value);
+	DBGLOG(HAL, INFO,
+	       "CONN_HIF_ON_MD_LPCTL_ADDR: 0x%08x = 0x%08x\n",
+	       HOST_CSR_CONN_HIF_ON_MD_LPCTL_ADDR, u4Value);
+	HAL_MCR_RD(prAdapter, HOST_CSR_CONN_HIF_ON_MD_IRQ_STAT_ADDR,
+		   &u4Value);
+	DBGLOG(HAL, INFO,
+	       "CONN_HIF_ON_MD_IRQ_STAT_ADDR: 0x%08x = 0x%08x\n",
+	       HOST_CSR_CONN_HIF_ON_MD_IRQ_STAT_ADDR, u4Value);
+	HAL_MCR_RD(prAdapter, HOST_CSR_CONN_HIF_ON_MD_IRQ_ENA_ADDR,
+		   &u4Value);
+	DBGLOG(HAL, INFO,
+	       "CONN_HIF_ON_MD_IRQ_ENA_ADDR: 0x%08x = 0x%08x\n",
+	       HOST_CSR_CONN_HIF_ON_MD_IRQ_ENA_ADDR, u4Value);
 
 	HAL_MCR_WR(prAdapter, HOST_CSR_DRIVER_OWN_INFO, 0x00030000);
 	kalUdelay(1);

@@ -1750,9 +1750,7 @@ struct ADAPTER {
 	bool fgEnOshareMode;
 #endif
 
-#if CFG_MTK_MCIF_WIFI_SUPPORT
 	bool fgMddpActivated;
-#endif
 
 	struct WLAN_DEBUG_INFO rDebugInfo;
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
