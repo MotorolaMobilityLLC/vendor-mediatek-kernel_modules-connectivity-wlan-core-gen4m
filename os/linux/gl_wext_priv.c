@@ -3862,6 +3862,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define PRIV_CMD_SIZE 512
 #define CMD_SET_FIXED_RATE      "FixedRate"
 #define CMD_SET_AUTO_RATE       "AutoRate"
+#define CMD_SET_PP_CAP_CTRL      "PpCapCtrl"
 #define CMD_GET_VERSION         "VER"
 #define CMD_SET_TEST_MODE	"SET_TEST_MODE"
 #define CMD_SET_TEST_CMD	"SET_TEST_CMD"
@@ -9700,6 +9701,76 @@ int priv_driver_set_fixed_rate(IN struct net_device *prNetDev,
 	return i4BytesWritten;
 }	/* priv_driver_set_fixed_rate */
 
+#endif
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+int priv_driver_set_pp_cap_ctrl(IN struct net_device *prNetDev,
+			       IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4pp_auto = 0, u4pp_ctrl = 0, u4pp_bitmap = 0, u4pp_mgmt = 0;
+	int32_t i4Recv = 0;
+	int8_t *this_char = NULL;
+	uint8_t u1DbdcIdx = 0;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		return -1;
+	this_char++;
+
+	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
+
+	i4Recv = sscanf(this_char, "%d-%d-%x-%d",
+			&(u4pp_auto),
+			&(u4pp_ctrl),
+			&(u4pp_bitmap),
+			&(u4pp_mgmt));
+
+	if (i4Recv == 4) {
+		struct UNI_CMD_PP_EN_CTRL_T pp_cap_ctrl;
+
+		pp_cap_ctrl.u1PpMgmtMode = (uint8_t)u4pp_mgmt;
+		pp_cap_ctrl.u1PpCtrl     = (uint8_t)u4pp_ctrl;
+		pp_cap_ctrl.u1PpBitMap   = (uint16_t)u4pp_bitmap;
+		pp_cap_ctrl.u1DbdcIdx    = (uint8_t)u1DbdcIdx;
+		pp_cap_ctrl.u1PpAutoMode = (uint8_t)u4pp_auto;
+
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
+			"automode=%d\npp_ctrl=%d\npp_bitmap=0x%x\npp_mgmt=%d\n",
+			u4pp_auto, u4pp_ctrl, u4pp_bitmap, u4pp_mgmt);
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetPpCap,
+					   &pp_cap_ctrl, sizeof(pp_cap_ctrl),
+					   FALSE, FALSE, TRUE, &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+	} else {
+		DBGLOG(REQ, ERROR, "iwpriv wlanXX driver ppcapctrl=Option\n");
+		DBGLOG(REQ, ERROR,
+			"Option:[automod]-[pp_ctrl]-[pp_bitmap]-[pp_mgmt]\n");
+
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
+					"Wrong param\n");
+	}
+
+	return i4BytesWritten;
+}	/* priv_driver_set_fixed_rate */
 #endif
 
 int priv_driver_set_em_cfg(IN struct net_device *prNetDev, IN char *pcCommand,
@@ -18714,6 +18785,9 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #endif
 #else
 	{CMD_SET_FIXED_RATE, priv_driver_set_fixed_rate},
+#endif
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	{CMD_SET_PP_CAP_CTRL, priv_driver_set_pp_cap_ctrl},
 #endif
 #if (CFG_SUPPORT_ICS == 1)
 	{CMD_SET_SNIFFER, priv_driver_sniffer},
