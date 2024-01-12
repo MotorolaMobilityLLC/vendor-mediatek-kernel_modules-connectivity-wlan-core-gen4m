@@ -1356,6 +1356,8 @@ struct mt66xx_chip_info {
 #if (CFG_CHIP_RESET_SUPPORT == 1) && (CFG_WMT_RESET_API_SUPPORT == 0)
 	u_int8_t (*rst_L0_notify_step2)(void);
 #endif
+	uint32_t u4LmacWtblDUAddr;
+	uint32_t u4UmacWtblDUAddr;
 };
 
 struct mt66xx_hif_driver_data {
