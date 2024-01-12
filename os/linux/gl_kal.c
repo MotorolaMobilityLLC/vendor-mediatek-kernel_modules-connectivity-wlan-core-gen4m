@@ -59,8 +59,7 @@
 
 /* for wifi standalone log */
 #if CFG_SUPPORT_SA_LOG
-#define CREATE_TRACE_POINTS
-#include "mtk_wifi_trace.h"
+#include "gl_sa_log.h"
 #include <linux/jiffies.h>
 #include <linux/ratelimit.h>
 #include <linux/rtc.h>
@@ -11588,7 +11587,8 @@ void kalPrintUTC(char *msg_buf, int msg_buf_size)
 			kalPrintSALog("[%u] snprintf failed, ret: %d",
 				__LINE__, ret);
 		} else {
-			trace_wifi_standalone_log(msg_buf);
+			wifi_salog_write(msg_buf,
+				msg_buf_size);
 		}
 	}
 }
@@ -11611,19 +11611,22 @@ void kalPrintSALog(const char *fmt, ...)
 		buffer[strlen(buffer) - 1] = '\0';
 
 	if (strlen(buffer) < WIFI_LOG_MSG_MAX) {
-		trace_wifi_standalone_log(buffer);
+		wifi_salog_write(buffer,
+			strlen(buffer));
 	} else {
 		char sub_buffer[WIFI_LOG_MSG_MAX];
 
 		strncpy(sub_buffer, buffer,
 			WIFI_LOG_MSG_MAX - 1);
 		sub_buffer[WIFI_LOG_MSG_MAX - 1] = '\0';
-		trace_wifi_standalone_log(sub_buffer);
+		wifi_salog_write(sub_buffer,
+			WIFI_LOG_MSG_MAX);
 
 		strncpy(sub_buffer, buffer + WIFI_LOG_MSG_MAX - 1,
 			WIFI_LOG_MSG_MAX - 1);
 		sub_buffer[WIFI_LOG_MSG_MAX - 1] = '\0';
-		trace_wifi_standalone_log(sub_buffer);
+		wifi_salog_write(sub_buffer,
+			WIFI_LOG_MSG_MAX);
 	}
 
 	if (time_after(jiffies, rtc_update)) {
