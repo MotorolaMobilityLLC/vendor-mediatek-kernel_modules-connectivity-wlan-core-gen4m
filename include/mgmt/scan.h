@@ -280,6 +280,15 @@ enum ENUM_SCAN_LOG_PREFIX {
 	LOG_SCAN_MAX
 };
 
+/* IEEE Std 802.11 2020 Table 9-283 */
+enum ESP_TRAFFIC_AC {
+	ESP_AC_BK = 0,
+	ESP_AC_BE = 1,
+	ESP_AC_VI = 2,
+	ESP_AC_VO = 3,
+	ESP_AC_NUM = 4,
+};
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 struct ML_INFO {
 	uint8_t fgValid;
@@ -482,7 +491,7 @@ struct BSS_DESC {
 #if CFG_SUPPORT_MBO
 	uint8_t fgIsDisallowed;
 	uint8_t fgExistEspIE;
-	uint32_t u4EspInfo[WIFI_AC_MAX];
+	uint32_t u4EspInfo[ESP_AC_NUM];
 #endif
 	uint16_t u2StaCnt;
 	uint16_t u2AvaliableAC; /* Available Admission Capacity */

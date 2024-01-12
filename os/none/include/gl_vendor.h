@@ -413,6 +413,62 @@ struct PARAM_AP_THRESHOLD {
 	uint32_t channel;	/* channel hint */
 };
 
+/* RTT Capabilities */
+struct PARAM_WIFI_RTT_CAPABILITIES {
+	/* if 1-sided rtt data collection is supported */
+	uint8_t rtt_one_sided_supported;
+	/* if ftm rtt data collection is supported */
+	uint8_t rtt_ftm_supported;
+	/* if initiator supports LCI request. Applies to 2-sided RTT */
+	uint8_t lci_support;
+	/* if initiator supports LCR request. Applies to 2-sided RTT */
+	uint8_t lcr_support;
+	/* bit mask indicates what preamble is supported by initiator */
+	uint8_t preamble_support;
+	/* bit mask indicates what BW is supported by initiator */
+	uint8_t bw_support;
+};
+
+enum ENUM_NLA_PUT_DATE_TYPE {
+	NLA_PUT_DATE_U8 = 0,
+	NLA_PUT_DATE_U16,
+	NLA_PUT_DATE_U32,
+	NLA_PUT_DATE_U64,
+};
+
+/* RSSI Monitoring */
+struct PARAM_RSSI_MONITOR_T {
+	bool enable;	/* 1=Start, 0=Stop*/
+	int8_t max_rssi_value;
+	int8_t min_rssi_value;
+	uint8_t reserved[1];
+	uint8_t reserved2[4]; /* reserved for MT6632 */
+};
+
+struct PARAM_RSSI_MONITOR_EVENT {
+	uint8_t version;
+	int8_t rssi;
+	uint8_t BSSID[PARAM_MAC_ADDR_LEN];
+};
+
+/* Packet Keep Alive */
+struct PARAM_PACKET_KEEPALIVE_T {
+	bool enable;	/* 1=Start, 0=Stop*/
+	uint8_t index;
+	int16_t u2IpPktLen;
+	uint8_t pIpPkt[256];
+	uint8_t ucSrcMacAddr[PARAM_MAC_ADDR_LEN];
+	uint8_t ucDstMacAddr[PARAM_MAC_ADDR_LEN];
+	uint32_t u4PeriodMsec;
+	uint8_t reserved[8]; /* reserved for MT6632 */
+};
+
+struct PARAM_BSS_MAC_OUI {
+	uint8_t ucBssIndex;
+	uint8_t ucMacOui[MAC_OUI_LEN];
+};
+
+#if CFG_SUPPORT_LLS
 /* channel statistics */
 struct WIFI_CHANNEL_STAT {
 	struct WIFI_CHANNEL_INFO channel;
@@ -485,15 +541,6 @@ struct WIFI_INTERFACE_LINK_LAYER_INFO {
 	u8 country_str[3];
 };
 
-/* access categories */
-enum WIFI_TRAFFIC_AC {
-	WIFI_AC_VO = 0,
-	WIFI_AC_VI = 1,
-	WIFI_AC_BE = 2,
-	WIFI_AC_BK = 3,
-	WIFI_AC_MAX = 4,
-};
-
 /* wifi peer type */
 enum WIFI_PEER_TYPE {
 	WIFI_PEER_STA,
@@ -514,42 +561,6 @@ struct WIFI_PEER_INFO {
 	struct WIFI_RATE_STAT rate_stats[];
 };
 
-/* per access category statistics */
-struct WIFI_WMM_AC_STAT_ {
-	enum WIFI_TRAFFIC_AC ac;
-	uint32_t tx_mpdu;
-	uint32_t rx_mpdu;
-	uint32_t tx_mcast;
-
-	uint32_t rx_mcast;
-	uint32_t rx_ampdu;
-	uint32_t tx_ampdu;
-	uint32_t mpdu_lost;
-	uint32_t retries;
-	uint32_t retries_short;
-	uint32_t retries_long;
-	uint32_t contention_time_min;
-	uint32_t contention_time_max;
-	uint32_t contention_time_avg;
-	uint32_t contention_num_samples;
-};
-
-/* RTT Capabilities */
-struct PARAM_WIFI_RTT_CAPABILITIES {
-	/* if 1-sided rtt data collection is supported */
-	uint8_t rtt_one_sided_supported;
-	/* if ftm rtt data collection is supported */
-	uint8_t rtt_ftm_supported;
-	/* if initiator supports LCI request. Applies to 2-sided RTT */
-	uint8_t lci_support;
-	/* if initiator supports LCR request. Applies to 2-sided RTT */
-	uint8_t lcr_support;
-	/* bit mask indicates what preamble is supported by initiator */
-	uint8_t preamble_support;
-	/* bit mask indicates what BW is supported by initiator */
-	uint8_t bw_support;
-};
-
 /* interface statistics */
 struct WIFI_IFACE_STAT {
 	struct WIFI_INTERFACE_LINK_LAYER_INFO info;
@@ -563,45 +574,6 @@ struct WIFI_IFACE_STAT {
 	struct WIFI_WMM_AC_STAT_ ac[WIFI_AC_MAX];
 	uint32_t num_peers;
 	struct WIFI_PEER_INFO peer_info[];
-};
-
-enum ENUM_NLA_PUT_DATE_TYPE {
-	NLA_PUT_DATE_U8 = 0,
-	NLA_PUT_DATE_U16,
-	NLA_PUT_DATE_U32,
-	NLA_PUT_DATE_U64,
-};
-
-/* RSSI Monitoring */
-struct PARAM_RSSI_MONITOR_T {
-	bool enable;	/* 1=Start, 0=Stop*/
-	int8_t max_rssi_value;
-	int8_t min_rssi_value;
-	uint8_t reserved[1];
-	uint8_t reserved2[4]; /* reserved for MT6632 */
-};
-
-struct PARAM_RSSI_MONITOR_EVENT {
-	uint8_t version;
-	int8_t rssi;
-	uint8_t BSSID[PARAM_MAC_ADDR_LEN];
-};
-
-/* Packet Keep Alive */
-struct PARAM_PACKET_KEEPALIVE_T {
-	bool enable;	/* 1=Start, 0=Stop*/
-	uint8_t index;
-	int16_t u2IpPktLen;
-	uint8_t pIpPkt[256];
-	uint8_t ucSrcMacAddr[PARAM_MAC_ADDR_LEN];
-	uint8_t ucDstMacAddr[PARAM_MAC_ADDR_LEN];
-	uint32_t u4PeriodMsec;
-	uint8_t reserved[8]; /* reserved for MT6632 */
-};
-
-struct PARAM_BSS_MAC_OUI {
-	uint8_t ucBssIndex;
-	uint8_t ucMacOui[MAC_OUI_LEN];
 };
 
 /* wifi peer type */
@@ -940,6 +912,7 @@ struct STATS_LLS_PEER_AP_REC {
 	uint16_t chan_util;
 	uint8_t mac_addr[ETH_ALEN];
 };
+#endif /* CFG_SUPPORT_LLS */
 
 /*******************************************************************************
  *                                 M A C R O S
