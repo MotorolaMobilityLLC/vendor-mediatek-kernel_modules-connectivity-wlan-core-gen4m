@@ -417,8 +417,12 @@ static void heRlmFillHeCapIE(
 	struct _HE_SUPPORTED_MCS_FIELD *prHeSupportedMcsSet;
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4OverallLen = OFFSET_OF(struct _IE_HE_CAP_T, aucVarInfo[0]);
+#if (CFG_SUPPORT_BFEE == 1)
 	u_int8_t fgBfEn = TRUE;
+#if (CFG_SUPPORT_CONDITIONAL_BFEE == 1)
 	uint32_t soundingDim = 0;
+#endif
+#endif
 	uint8_t ucMaxBw;
 
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;

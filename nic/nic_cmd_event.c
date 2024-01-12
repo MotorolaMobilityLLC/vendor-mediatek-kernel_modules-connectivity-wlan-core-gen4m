@@ -244,84 +244,6 @@ void nicCmdEventQueryCfgRead(struct ADAPTER *prAdapter,
 	}
 }
 
-#if CFG_SUPPORT_QA_TOOL
-void nicCmdEventQueryRxStatistics(struct ADAPTER
-				  *prAdapter, struct CMD_INFO *prCmdInfo,
-				  uint8_t *pucEventBuf)
-{
-#if (CFG_SUPPORT_CONNAC3X == 0)
-	struct PARAM_CUSTOM_ACCESS_RX_STAT *prRxStatistics;
-	struct EVENT_ACCESS_RX_STAT *prEventAccessRxStat;
-	uint32_t u4QueryInfoLen, i;
-	struct GLUE_INFO *prGlueInfo;
-	uint32_t *prElement;
-	uint32_t u4Temp;
-	/* P_CMD_ACCESS_RX_STAT                  prCmdRxStat, prRxStat; */
-
-	ASSERT(prAdapter);
-	ASSERT(prCmdInfo);
-	ASSERT(pucEventBuf);
-
-	/* 4 <2> Update information of OID */
-	if (prCmdInfo->fgIsOid) {
-		prGlueInfo = prAdapter->prGlueInfo;
-		prEventAccessRxStat = (struct EVENT_ACCESS_RX_STAT *) (
-					      pucEventBuf);
-
-		prRxStatistics = (struct PARAM_CUSTOM_ACCESS_RX_STAT *)
-				 prCmdInfo->pvInformationBuffer;
-		prRxStatistics->u4SeqNum = prEventAccessRxStat->u4SeqNum;
-		prRxStatistics->u4TotalNum =
-			prEventAccessRxStat->u4TotalNum;
-
-		u4QueryInfoLen = sizeof(struct CMD_ACCESS_RX_STAT);
-
-		if (prRxStatistics->u4SeqNum == u4RxStatSeqNum) {
-			prElement = &g_HqaRxStat.MAC_FCS_Err;
-			for (i = 0; i < HQA_RX_STATISTIC_NUM; i++) {
-				u4Temp = NTOHL(
-					prEventAccessRxStat->au4Buffer[i]);
-				kalMemCopy(prElement, &u4Temp, 4);
-
-				if (i < (HQA_RX_STATISTIC_NUM - 1))
-					prElement++;
-			}
-
-#if 0	/* copy in for-loop */
-			g_HqaRxStat.AllMacMdrdy0 = ntohl(
-				prEventAccessRxStat->au4Buffer[i]);
-			i++;
-			g_HqaRxStat.AllMacMdrdy1 = ntohl(
-				prEventAccessRxStat->au4Buffer[i]);
-			/* i++; */
-			/* g_HqaRxStat.AllFCSErr0 =
-			 * ntohl(prEventAccessRxStat->au4Buffer[i]);
-			 */
-			/* i++; */
-			/* g_HqaRxStat.AllFCSErr1 =
-			 * ntohl(prEventAccessRxStat->au4Buffer[i]);
-			 */
-#endif
-		}
-
-		DBGLOG(INIT, ERROR,
-		       "MT6632 : RX Statistics Test SeqNum = %d, TotalNum = %d\n",
-		       (unsigned int)prEventAccessRxStat->u4SeqNum,
-		       (unsigned int)prEventAccessRxStat->u4TotalNum);
-
-		DBGLOG(INIT, ERROR,
-		       "MAC_FCS_ERR = %d, MAC_MDRDY = %d, MU_RX_CNT = %d, RX_FIFO_FULL = %d\n",
-		       (unsigned int)prEventAccessRxStat->au4Buffer[0],
-		       (unsigned int)prEventAccessRxStat->au4Buffer[1],
-		       (unsigned int)prEventAccessRxStat->au4Buffer[65],
-		       (unsigned int)prEventAccessRxStat->au4Buffer[22]);
-
-		kalOidComplete(prGlueInfo, prCmdInfo,
-			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
-	}
-#endif
-}
-
 #if CFG_SUPPORT_TX_BF
 void nicCmdEventPfmuDataRead(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
@@ -340,8 +262,9 @@ void nicCmdEventPfmuDataRead(struct ADAPTER *prAdapter,
 		prEventPfmuDataRead = (union PFMU_DATA *) (pucEventBuf);
 
 		u4QueryInfoLen = sizeof(union PFMU_DATA);
-
+#if CFG_SUPPORT_QA_TOOL
 		g_rPfmuData = *prEventPfmuDataRead;
+#endif
 	}
 
 	if (prEventPfmuDataRead == NULL)
@@ -419,9 +342,10 @@ void nicCmdEventPfmuTagRead(struct ADAPTER *prAdapter,
 
 	u4QueryInfoLen = sizeof(union CMD_TXBF_ACTION);
 
+#if CFG_SUPPORT_QA_TOOL
 	g_rPfmuTag1 = prPfumTagRead->ru4TxBfPFMUTag1;
 	g_rPfmuTag2 = prPfumTagRead->ru4TxBfPFMUTag2;
-
+#endif
 	DBGLOG(INIT, INFO,
 	       "========================== (R)Tag1 info ==========================\n");
 
@@ -517,6 +441,85 @@ void nicCmdEventPfmuTagRead(struct ADAPTER *prAdapter,
 	DBGLOG(INIT, INFO,
 	       "===============================================================\n");
 
+}
+#endif /* CFG_SUPPORT_TX_BF */
+
+#if CFG_SUPPORT_QA_TOOL
+void nicCmdEventQueryRxStatistics(struct ADAPTER
+				  *prAdapter, struct CMD_INFO *prCmdInfo,
+				  uint8_t *pucEventBuf)
+{
+#if (CFG_SUPPORT_CONNAC3X == 0)
+	struct PARAM_CUSTOM_ACCESS_RX_STAT *prRxStatistics;
+	struct EVENT_ACCESS_RX_STAT *prEventAccessRxStat;
+	uint32_t u4QueryInfoLen, i;
+	struct GLUE_INFO *prGlueInfo;
+	uint32_t *prElement;
+	uint32_t u4Temp;
+	/* P_CMD_ACCESS_RX_STAT                  prCmdRxStat, prRxStat; */
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+	ASSERT(pucEventBuf);
+
+	/* 4 <2> Update information of OID */
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+		prEventAccessRxStat = (struct EVENT_ACCESS_RX_STAT *) (
+					      pucEventBuf);
+
+		prRxStatistics = (struct PARAM_CUSTOM_ACCESS_RX_STAT *)
+				 prCmdInfo->pvInformationBuffer;
+		prRxStatistics->u4SeqNum = prEventAccessRxStat->u4SeqNum;
+		prRxStatistics->u4TotalNum =
+			prEventAccessRxStat->u4TotalNum;
+
+		u4QueryInfoLen = sizeof(struct CMD_ACCESS_RX_STAT);
+
+		if (prRxStatistics->u4SeqNum == u4RxStatSeqNum) {
+			prElement = &g_HqaRxStat.MAC_FCS_Err;
+			for (i = 0; i < HQA_RX_STATISTIC_NUM; i++) {
+				u4Temp = NTOHL(
+					prEventAccessRxStat->au4Buffer[i]);
+				kalMemCopy(prElement, &u4Temp, 4);
+
+				if (i < (HQA_RX_STATISTIC_NUM - 1))
+					prElement++;
+			}
+
+#if 0	/* copy in for-loop */
+			g_HqaRxStat.AllMacMdrdy0 = ntohl(
+				prEventAccessRxStat->au4Buffer[i]);
+			i++;
+			g_HqaRxStat.AllMacMdrdy1 = ntohl(
+				prEventAccessRxStat->au4Buffer[i]);
+			/* i++; */
+			/* g_HqaRxStat.AllFCSErr0 =
+			 * ntohl(prEventAccessRxStat->au4Buffer[i]);
+			 */
+			/* i++; */
+			/* g_HqaRxStat.AllFCSErr1 =
+			 * ntohl(prEventAccessRxStat->au4Buffer[i]);
+			 */
+#endif
+		}
+
+		DBGLOG(INIT, ERROR,
+		       "MT6632 : RX Statistics Test SeqNum = %d, TotalNum = %d\n",
+		       (unsigned int)prEventAccessRxStat->u4SeqNum,
+		       (unsigned int)prEventAccessRxStat->u4TotalNum);
+
+		DBGLOG(INIT, ERROR,
+		       "MAC_FCS_ERR = %d, MAC_MDRDY = %d, MU_RX_CNT = %d, RX_FIFO_FULL = %d\n",
+		       (unsigned int)prEventAccessRxStat->au4Buffer[0],
+		       (unsigned int)prEventAccessRxStat->au4Buffer[1],
+		       (unsigned int)prEventAccessRxStat->au4Buffer[65],
+		       (unsigned int)prEventAccessRxStat->au4Buffer[22]);
+
+		kalOidComplete(prGlueInfo, prCmdInfo,
+			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+#endif
 }
 
 #if CFG_SUPPORT_MU_MIMO
@@ -705,7 +708,6 @@ void nicCmdEventGetCalcInitMcs(struct ADAPTER *prAdapter,
 
 }
 #endif /* CFG_SUPPORT_MU_MIMO */
-#endif /* CFG_SUPPORT_TX_BF */
 #endif /* CFG_SUPPORT_QA_TOOL */
 
 void nicCmdEventQuerySwCtrlRead(struct ADAPTER
@@ -3584,6 +3586,8 @@ void nicExtEventPhyIcsRawData(struct ADAPTER *prAdapter,
 }
 #endif /* #if (CFG_SUPPORT_PHY_ICS == 1) */
 
+#if CFG_SUPPORT_QA_TOOL
+
 void nicExtEventICapIQData(struct ADAPTER *prAdapter,
 					uint8_t *pucEventBuf)
 {
@@ -3760,22 +3764,27 @@ void nicExtCmdEventSolicitICapIQData(struct ADAPTER *prAdapter,
 
 }
 #endif /* #if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1) */
+#endif
 
 uint32_t nicRfTestEventHandler(struct ADAPTER *prAdapter,
 			       struct WIFI_EVENT *prEvent)
 {
 	uint32_t u4QueryInfoLen = 0;
 	struct EXT_EVENT_RF_TEST_RESULT_T *prResult;
-	struct EXT_EVENT_RBIST_CAP_STATUS_T *prCapStatus;
 	struct mt66xx_chip_info *prChipInfo = NULL;
+#if CFG_SUPPORT_QA_TOOL
+	struct EXT_EVENT_RBIST_CAP_STATUS_T *prCapStatus;
 	struct ATE_OPS_T *prAteOps = NULL;
+#endif
 	struct ICAP_INFO_T *prIcapInfo;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
 	ASSERT(prChipInfo);
+#if CFG_SUPPORT_QA_TOOL
 	prAteOps = prChipInfo->prAteOps;
 	ASSERT(prAteOps);
+#endif
 	prIcapInfo = &prAdapter->rIcapInfo;
 
 	prResult = (struct EXT_EVENT_RF_TEST_RESULT_T *)
@@ -3784,6 +3793,7 @@ uint32_t nicRfTestEventHandler(struct ADAPTER *prAdapter,
 			__func__,
 	       prResult->u4FuncIndex);
 	switch (prResult->u4FuncIndex) {
+#if CFG_SUPPORT_QA_TOOL
 	case GET_ICAP_CAPTURE_STATUS:
 		u4QueryInfoLen = sizeof(struct
 					EXT_EVENT_RBIST_CAP_STATUS_T);
@@ -3802,7 +3812,6 @@ uint32_t nicRfTestEventHandler(struct ADAPTER *prAdapter,
 			prIcapInfo->eIcapState = ICAP_STATE_FW_DUMPING;
 		}
 		break;
-
 	case GET_ICAP_RAW_DATA:
 		if (prAteOps->getRbistDataDumpEvent) {
 			prAteOps->getRbistDataDumpEvent(prAdapter,
@@ -3813,7 +3822,7 @@ uint32_t nicRfTestEventHandler(struct ADAPTER *prAdapter,
 				0 /*prCapStatus->u4TotalBufferSize*/);
 		}
 		break;
-
+#endif
 #if (CFG_SUPPORT_PHY_ICS == 1)
 	case GET_PHY_ICS_RAW_DATA:
 		nicExtEventPhyIcsRawData(prAdapter, prEvent->aucBuffer);
@@ -6639,7 +6648,7 @@ void nicEventRttResult(struct ADAPTER *prAdapter,
 	rttEventResult(prAdapter,
 		 (struct EVENT_RTT_RESULT *) (prEvent->aucBuffer));
 }
-
+#if CFG_SUPPORT_QA_TOOL
 #if (CONFIG_WLAN_SERVICE == 1)
 void nicCmdEventListmode(struct ADAPTER
 				  *prAdapter, struct CMD_INFO *prCmdInfo,
@@ -6667,6 +6676,7 @@ void nicCmdEventListmode(struct ADAPTER
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 }
+#endif
 #endif
 
 #if (CFG_VOLT_INFO == 1)

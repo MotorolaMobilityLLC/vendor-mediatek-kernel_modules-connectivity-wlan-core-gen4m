@@ -308,6 +308,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidSetSwCtrlWrite
 	}
 	,
+#if CFG_SUPPORT_QA_TOOL
 	{
 		OID_CUSTOM_TEST_MODE,
 		DISP_STRING("OID_CUSTOM_TEST_MODE"),
@@ -346,6 +347,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidRftestSetTestIcapMode
 	}
 	,
+#endif
 	/* OID_CUSTOM_EMULATION_VERSION_CONTROL */
 
 	/* BWCS */
@@ -6093,6 +6095,7 @@ int priv_driver_get_ml_prefer_freqlist(struct net_device *prNetDev,
 
 #endif
 
+#if CFG_SUPPORT_QA_TOOL
 static int priv_driver_set_test_mode(struct net_device *prNetDev,
 				     char *pcCommand, int i4TotalLen)
 {
@@ -6243,6 +6246,7 @@ static int priv_driver_get_test_result(struct net_device *prNetDev,
 	return i4BytesWritten;
 
 }				/* priv_driver_get_test_result */
+#endif /* #CFG_SUPPORT_QA_TOOL */
 
 #if (CFG_SUPPORT_RA_GEN == 1)
 static int32_t priv_driver_set_ra_debug_proc(struct net_device *prNetDev,
@@ -7465,6 +7469,7 @@ static int priv_driver_get_sta_stat2(struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 
+#if CFG_SUPPORT_QA_TOOL
 #if (CFG_SUPPORT_CONNAC3X == 0)
 static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 					struct net_device *prNetDev,
@@ -8440,7 +8445,7 @@ static int priv_driver_show_rx_stat(struct net_device *prNetDev,
 
 	return i4BytesWritten;
 }
-
+#endif
 /*----------------------------------------------------------------------------*/
 /*
  * @ The function will set policy of ACL.
@@ -20806,6 +20811,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.ucArgNum  = PRIV_CMD_GET_ARG_NUM_2,
 		.policy    = get_mcr_policy
 	},
+#if CFG_SUPPORT_QA_TOOL
 	{
 		.pcCmdStr  = CMD_SET_TEST_MODE,
 		.pfHandler = priv_driver_set_test_mode,
@@ -20827,6 +20833,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.ucArgNum  = PRIV_CMD_GET_ARG_NUM_3,
 		.policy    = get_test_result_policy
 	},
+#endif
 	{
 		.pcCmdStr  = CMD_GET_STA_STAT2,
 		.pfHandler = priv_driver_get_sta_stat2,
@@ -20841,6 +20848,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.ucArgNum  = PRIV_CMD_GET_ARG_NUM,
 		.policy    = NULL
 	},
+#if CFG_SUPPORT_QA_TOOL
 	{
 		.pcCmdStr  = CMD_GET_STA_RX_STAT,
 		.pfHandler = priv_driver_show_rx_stat,
@@ -20848,6 +20856,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.ucArgNum  = PRIV_CMD_GET_ARG_NUM,
 		.policy    = NULL
 	},
+#endif
 	{
 		.pcCmdStr  = CMD_SET_ACL_POLICY,
 		.pfHandler = priv_driver_set_acl_policy,
@@ -21459,6 +21468,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
 		.policy    = u8_policy
 	},
+#if CFG_SUPPORT_QA_TOOL
 	{
 		.pcCmdStr  = CMD_GET_MU_RX_PKTCNT,
 		.pfHandler = priv_driver_show_rx_stat,
@@ -21466,6 +21476,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.ucArgNum  = PRIV_CMD_GET_ARG_NUM,
 		.policy    = NULL
 	},
+#endif
 	{
 		.pcCmdStr  = CMD_RUN_HQA,
 		.pfHandler = priv_driver_run_hqa,

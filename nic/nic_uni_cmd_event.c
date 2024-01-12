@@ -164,9 +164,11 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 			nicUniCmdSetCountryPwrLimitPerRate,
 	[CMD_ID_SET_NVRAM_SETTINGS] = nicUniCmdSetNvramSettings,
 	[CMD_ID_TEST_CTRL] = nicUniCmdTestmodeCtrl,
+#if CFG_SUPPORT_QA_TOOL
 	[CMD_ID_ACCESS_RX_STAT] = nicUniCmdTestmodeRxStat,
 #if (CONFIG_WLAN_SERVICE == 1)
 	[CMD_ID_LIST_MODE] = nicUniCmdTestmodeListmode,
+#endif
 #endif
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	[CMD_ID_SET_LOW_LATENCY_MODE] = nicUniCmdNotSupport,
@@ -204,7 +206,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
 	[EXT_CMD_ID_TWT_AGRT_UPDATE] = nicUniCmdTwtArgtUpdate,
 	[EXT_CMD_ID_STAREC_UPDATE] = nicUniCmdStaRecUpdateExt,
+#if CFG_SUPPORT_TX_BF
 	[EXT_CMD_ID_BF_ACTION] = nicUniCmdBFAction,
+#endif
 	[EXT_CMD_ID_SER] = nicUniCmdSerAction,
 #if (CFG_SUPPORT_TWT == 1)
 	[EXT_CMD_ID_GET_MAC_INFO] = nicUniCmdGetTsf,
@@ -212,7 +216,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
 	[EXT_CMD_ID_DEVINFO_UPDATE] = nicUniUpdateDevInfo,
 	[EXT_CMD_ID_TX_POWER_FEATURE_CTRL] = nicUniCmdTxPowerCtrl,
 	[EXT_CMD_ID_THERMAL_PROTECT] = nicUniCmdThermalProtect,
+#if CFG_SUPPORT_QA_TOOL
 	[EXT_CMD_ID_RF_TEST] = nicUniExtCmdTestmodeCtrl,
+#endif
 	[EXT_CMD_ID_EFUSE_BUFFER_MODE] = nicUniCmdEfuseBufferMode,
 	[EXT_CMD_ID_SR_CTRL] = nicUniCmdSR,
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
@@ -248,7 +254,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_RSSI_MONITOR] = nicUniEventRssiMonitor,
 	[UNI_EVENT_ID_HIF_CTRL] = nicUniEventHifCtrl,
 	[UNI_EVENT_ID_NAN] = nicUniEventNan,
+#if CFG_SUPPORT_TX_BF
 	[UNI_EVENT_ID_BF] = nicUniEventBF,
+#endif
 	[UNI_EVENT_ID_PP] = nicUniEventPpCb,
 	[UNI_EVENT_ID_WOW] = nicUniEventWow,
 	[UNI_EVENT_ID_CSI] = nicUniEventCsiData,
@@ -1919,7 +1927,7 @@ uint32_t wlanQueryNicCapabilityV2(struct ADAPTER *prAdapter)
 	}
 
 	/* Fill capability for different Chip version */
-	if (chip_id == HQA_CHIP_ID_6632) {
+	if (chip_id == 0x6632) {
 		/* 6632 only */
 		prAdapter->fgIsSupportBufferBinSize16Byte = TRUE;
 		prAdapter->fgIsSupportDelayCal = FALSE;
@@ -2786,6 +2794,7 @@ uint32_t nicUniCmdStaRecUpdateExt(struct ADAPTER *ad,
 		tag->u2ExtraInfo = cmn->u2ExtraInfo;
 	}
 		break;
+#if CFG_SUPPORT_TX_BF
 	case STA_REC_BF: {
 		struct CMD_STAREC_BF *bf;
 		struct UNI_CMD_STAREC_BF *tag;
@@ -2845,6 +2854,8 @@ uint32_t nicUniCmdStaRecUpdateExt(struct ADAPTER *ad,
 
 	}
 		break;
+#endif
+#if CFG_SUPPORT_QA_TOOL
 	case STA_REC_MAUNAL_ASSOC: {
 		struct CMD_MANUAL_ASSOC_STRUCT *cmn;
 		struct UNI_CMD_STAREC_MANUAL_ASSOC *tag;
@@ -2867,6 +2878,7 @@ uint32_t nicUniCmdStaRecUpdateExt(struct ADAPTER *ad,
 		tag->ucaid = cmn->ucaid;
 	}
 		break;
+#endif
 	}
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
@@ -2874,6 +2886,7 @@ uint32_t nicUniCmdStaRecUpdateExt(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if CFG_SUPPORT_TX_BF
 void nicUniCmdBFActionSoundOff(
 	union CMD_TXBF_ACTION *cmd, struct UNI_CMD_BF *uni_cmd)
 {
@@ -3112,6 +3125,7 @@ uint32_t nicUniCmdBFAction(struct ADAPTER *ad,
 
 	return WLAN_STATUS_SUCCESS;
 }
+#endif
 
 uint32_t nicUniCmdSerAction(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
@@ -5476,6 +5490,7 @@ uint32_t nicUniCmdTestmodeCtrl(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if CFG_SUPPORT_QA_TOOL
 #if (CONFIG_WLAN_SERVICE == 1)
 uint32_t nicUniCmdTestmodeListmode(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
@@ -5512,7 +5527,9 @@ uint32_t nicUniCmdTestmodeListmode(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif /* (CONFIG_WLAN_SERVICE == 1) */
+#endif
 
+#if CFG_SUPPORT_QA_TOOL
 uint32_t nicUniExtCmdTestmodeCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
@@ -5569,6 +5586,53 @@ uint32_t nicUniExtCmdTestmodeCtrl(struct ADAPTER *ad,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+
+uint32_t nicUniCmdTestmodeRxStat(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_ACCESS_RX_STAT *cmd;
+	struct UNI_CMD_TESTMODE_RX_STAT *uni_cmd;
+	struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_TESTMODE_RX_STAT) +
+				sizeof(struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL);
+
+	if (info->ucCID != CMD_ID_ACCESS_RX_STAT)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_ACCESS_RX_STAT *) info->pucInfoBuffer;
+#if (CFG_SUPPORT_CONNAC3X == 0)
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_TESTMODE_RX_STAT,
+				max_cmd_len, nicUniEventQueryRxStatAll,
+				nicUniCmdTimeoutCommon);
+#else
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_TESTMODE_RX_STAT,
+				max_cmd_len, nicUniEventQueryRxStatAllCon3,
+				nicUniCmdTimeoutCommon);
+#endif
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_TESTMODE_RX_STAT *)entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL *)uni_cmd->aucTlvBuffer;
+	tag->u2Length = sizeof(*tag);
+#if (CFG_SUPPORT_CONNAC3X == 0)
+	tag->u2Tag = UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL;
+	tag->u1DbdcIdx = 0;
+#else
+	tag->u2Tag = UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL_V2;
+	tag->u1DbdcIdx = cmd->ucDbdcIdx;
+#endif
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+#endif
 
 uint32_t nicUniCmdSR(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
@@ -5649,50 +5713,6 @@ uint32_t nicUniCmdSR(struct ADAPTER *ad,
 	}
 		break;
 	}
-
-	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
-
-	return WLAN_STATUS_SUCCESS;
-}
-
-uint32_t nicUniCmdTestmodeRxStat(struct ADAPTER *ad,
-		struct WIFI_UNI_SETQUERY_INFO *info)
-{
-	struct CMD_ACCESS_RX_STAT *cmd;
-	struct UNI_CMD_TESTMODE_RX_STAT *uni_cmd;
-	struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL *tag;
-	struct WIFI_UNI_CMD_ENTRY *entry;
-
-	uint32_t max_cmd_len = sizeof(struct UNI_CMD_TESTMODE_RX_STAT) +
-	     		       sizeof(struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL);
-
-	if (info->ucCID != CMD_ID_ACCESS_RX_STAT)
-		return WLAN_STATUS_NOT_ACCEPTED;
-
-	cmd = (struct CMD_ACCESS_RX_STAT *) info->pucInfoBuffer;
-#if (CFG_SUPPORT_CONNAC3X == 0)
-	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_TESTMODE_RX_STAT,
-				max_cmd_len, nicUniEventQueryRxStatAll,
-				nicUniCmdTimeoutCommon);
-#else
-	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_TESTMODE_RX_STAT,
-				max_cmd_len, nicUniEventQueryRxStatAllCon3,
-				nicUniCmdTimeoutCommon);
-#endif
-
-	if (!entry)
-		return WLAN_STATUS_RESOURCES;
-
-	uni_cmd = (struct UNI_CMD_TESTMODE_RX_STAT *)entry->pucInfoBuffer;
-	tag = (struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL *)uni_cmd->aucTlvBuffer;
-	tag->u2Length = sizeof(*tag);
-#if (CFG_SUPPORT_CONNAC3X == 0)
-	tag->u2Tag = UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL;
-	tag->u1DbdcIdx = 0;
-#else
-	tag->u2Tag = UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL_V2;
-	tag->u1DbdcIdx = cmd->ucDbdcIdx;
-#endif
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
@@ -6808,6 +6828,7 @@ void nicUniEventQueryIdcChnl(struct ADAPTER *prAdapter,
 	nicCmdEventQueryLteSafeChn(prAdapter, prCmdInfo, (uint8_t *)&legacy);
 }
 
+#if CFG_SUPPORT_TX_BF
 void nicUniEventBFStaRec(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
@@ -6902,6 +6923,7 @@ void nicUniEventBFStaRec(struct ADAPTER *prAdapter,
 		 info->u1HeLtf);
 	nicCmdEventSetCommon(prAdapter, prCmdInfo, pucEventBuf);
 }
+#endif
 
 void nicUniCmdEventQueryMcrRead(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
@@ -7147,7 +7169,9 @@ void nicUniEventRfTestHandler(struct ADAPTER
 	uint8_t *data = GET_UNI_EVENT_DATA(pucEventBuf);
 	uint8_t fail_cnt = 0;
 	struct mt66xx_chip_info *prChipInfo = NULL;
+#if CFG_SUPPORT_QA_TOOL
 	struct ATE_OPS_T *prAteOps = NULL;
+#endif
 	struct ICAP_INFO_T *prIcapInfo;
 	struct UNI_EVENT_RF_TEST_RESULT *prRfResult;
 	struct EXT_EVENT_RBIST_CAP_STATUS_T *prCapStatus;
@@ -7156,8 +7180,10 @@ void nicUniEventRfTestHandler(struct ADAPTER
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
 	ASSERT(prChipInfo);
+#if CFG_SUPPORT_QA_TOOL
 	prAteOps = prChipInfo->prAteOps;
 	ASSERT(prAteOps);
+#endif
 	prIcapInfo = &prAdapter->rIcapInfo;
 
 	tags_len = data_len - fixed_len;
@@ -7196,7 +7222,7 @@ void nicUniEventRfTestHandler(struct ADAPTER
 				DBGLOG(RFTEST, INFO, "%s:u4FuncIndex=%d\n",
 						__func__,
 					   prRfResult->u4FuncIndex);
-
+#if CFG_SUPPORT_QA_TOOL
 #if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1)
 				if (prAteOps->getICapDataDumpCmdEvent) {
 					prAteOps->getICapDataDumpCmdEvent(
@@ -7210,6 +7236,7 @@ void nicUniEventRfTestHandler(struct ADAPTER
 				prAdapter,
 				tag + sizeof(struct UNI_EVENT_RF_TEST_TLV));
 			}
+#endif
 #endif
 
 			} else {
@@ -7317,6 +7344,8 @@ void nicUniEventQueryRfTestATInfo(struct ADAPTER
 
 	nicCmdEventQueryRfTestATInfo(prAdapter, prCmdInfo, tag->aucBuffer);
 }
+
+#if CFG_SUPPORT_QA_TOOL
 #if (CFG_SUPPORT_CONNAC3X == 0)
 void nicUniEventQueryRxStatAll(struct ADAPTER
 	  *prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
@@ -7463,7 +7492,7 @@ void nicUniEventQueryRxStatAllCon3(struct ADAPTER
 			WLAN_STATUS_SUCCESS);
 	}
 }
-
+#endif
 #endif
 void nicUniEventBugReport(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
@@ -9108,6 +9137,7 @@ void nicUniCmdEventQueryMldRec(struct ADAPTER *prAdapter,
 #endif
 }
 
+#if CFG_SUPPORT_TX_BF
 void nicUniEventBF(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
 	uint16_t tags_len;
@@ -9286,6 +9316,7 @@ void nicUniEventBF(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 	}
 }
+#endif
 
 void nicUniEventWow(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
