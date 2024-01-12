@@ -8247,6 +8247,12 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgBARDelayIndicationEn,
 		"BARDelayIndicationEn", FEATURE_ENABLED);
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
+
+#if CFG_SUPPORT_DHCP_RESET_BA_WINDOW
+	INIT_UINT(prWifiVar->fgDhcpResetBaWindow,
+		"DhcpResetBaWindow", FEATURE_ENABLED);
+#endif /* CFG_SUPPORT_DHCP_RESET_BA_WINDOW */
+
 	INIT_UINT(prWifiVar->u4MultiStaPrimaryQuoteTime,
 		"MultiStaPrimaryQuoteTime", 300000);
 	INIT_UINT(prWifiVar->u4MultiStaSecondaryQuoteTime,
