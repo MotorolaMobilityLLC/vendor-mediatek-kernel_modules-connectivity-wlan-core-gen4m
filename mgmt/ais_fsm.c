@@ -83,6 +83,9 @@
 #endif
 
 #define AIS_MAIN_LINK_INDEX (0)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+#define ML_PROBE_RETRY_COUNT 2
+#endif
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -145,6 +148,30 @@ void aisChangeAllMediaState(IN struct ADAPTER *prAdapter,
 static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
 	uint8_t *ucChTokenId);
+
+static void aisScanGenMlScanReq(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex, IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
+	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest);
+
+static void aisScanReqInit(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex, IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
+	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest,
+	IN uint16_t u2ScanIELen);
+
+static void aisScanProcessReqParam(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex, IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
+	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest,
+	IN uint16_t u2ScanIELen);
+
+static void aisScanProcessReqCh(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex, IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
+	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest);
+
+static void aisScanProcessReqExtra(IN struct ADAPTER *prAdapter,
+	IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
+	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest);
+
+static void aisScanResetReq(IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -591,6 +618,8 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldBssAlloc(prAdapter, &prMldBssInfo);
 	prAisFsmInfo->prMldBssInfo = prMldBssInfo;
+	prAisFsmInfo->ucMlProbeSendCount = 0;
+	prAisFsmInfo->ucMlProbeEnable = FALSE;
 #endif
 
 	prAisFsmInfo->ucLinkNum = 0;
@@ -1833,7 +1862,30 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 			/* 4 <B> Do STATE transition and update current
 			 * Operation Mode.
 			 */
+			/* 4 <B.1> If target connected AP has MultiLink, but
+			 * we only scan one link(ucLinkNum=1), need to send ML
+			 * probe request to get completed ML info first.
+			 */
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			if (prBssDescSet->ucLinkNum == 1 &&
+				prBssDescSet->prMainBssDesc->rMlInfo.fgValid &&
+				prAisFsmInfo->ucMlProbeSendCount <
+				ML_PROBE_RETRY_COUNT) {
+
+				prAisFsmInfo->ucMlProbeSendCount++;
+				prAisFsmInfo->ucMlProbeEnable = TRUE;
+				return AIS_STATE_LOOKING_FOR;
+			}
+#endif
+			/* 4 <B.2> If target connected AP does not have
+			 * MultiLink or already scan 2 links, directly
+			 * request channel
+			 */
 			prAisFsmInfo->ucConnTrialCount++;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			prAisFsmInfo->ucMlProbeSendCount = 0;
+			prAisFsmInfo->ucMlProbeEnable = FALSE;
+#endif
 			return AIS_STATE_REQ_CHANNEL_JOIN;
 		} else {
 			/* 4 <2.b> If we don't have the matched one */
@@ -2080,8 +2132,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
 	struct AIS_REQ_HDR *prAisReq;
 	struct ROAMING_INFO *prRoamingFsmInfo = NULL;
-	enum ENUM_BAND eBand = BAND_2G4;
-	uint8_t ucChannel = 1;
 	uint16_t u2ScanIELen;
 	uint16_t u2DeauthReason;
 	u_int8_t fgIsTransition = (u_int8_t) FALSE;
@@ -2271,7 +2321,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				prAisFsmInfo->u4SleepInterval <<= 1;
 
 			break;
-
 		case AIS_STATE_SCAN:
 		case AIS_STATE_ONLINE_SCAN:
 		case AIS_STATE_LOOKING_FOR:
@@ -2294,7 +2343,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				u2ScanIELen = 0;
 #endif
 			}
-
 			prScanReqMsg =
 			    (struct MSG_SCN_SCAN_REQ_V2 *)cnmMemAlloc(prAdapter,
 					RAM_TYPE_MSG,
@@ -2307,263 +2355,42 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				DBGLOG(AIS, ERROR, "Can't trigger SCAN FSM\n");
 				return;
 			}
-			kalMemZero(prScanReqMsg, OFFSET_OF
-				   (struct MSG_SCN_SCAN_REQ_V2,
-				    aucIE)+u2ScanIELen);
-			prScanReqMsg->rMsgHdr.eMsgId = MID_AIS_SCN_SCAN_REQ_V2;
-			prScanReqMsg->ucSeqNum =
-			    ++prAisFsmInfo->ucSeqNumOfScanReq;
-			if (prAisFsmInfo->u2SeqNumOfScanReport ==
-			    AIS_SCN_REPORT_SEQ_NOT_SET) {
-				prAisFsmInfo->u2SeqNumOfScanReport =
-				    (uint16_t) prScanReqMsg->ucSeqNum;
+
+			aisScanReqInit(prAdapter, ucBssIndex,
+				prScanReqMsg, prScanRequest,
+				u2ScanIELen);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			if (prAisFsmInfo->ucMlProbeEnable) {
+				aisScanGenMlScanReq(prAdapter, ucBssIndex,
+					prScanReqMsg, prScanRequest);
+				goto send_msg;
 			}
-			prScanReqMsg->ucBssIndex =
-			    prAisBssInfo->ucBssIndex;
+#endif
+
 #if CFG_SUPPORT_802_11K
-			if (rrmFillScanMsg(prAdapter, prScanReqMsg)) {
-				mboxSendMsg(prAdapter, MBOX_ID_0,
-					    (struct MSG_HDR *)prScanReqMsg,
-					    MSG_SEND_METHOD_BUF);
-				break;
-			}
+			if (rrmFillScanMsg(prAdapter, prScanReqMsg))
+				goto send_msg;
+
 			COPY_MAC_ADDR(prScanReqMsg->aucBSSID,
 				      "\xff\xff\xff\xff\xff\xff");
 #endif
 
-#if CFG_SUPPORT_RDD_TEST_MODE
-			prScanReqMsg->eScanType = SCAN_TYPE_PASSIVE_SCAN;
-#else
-			if (prAisFsmInfo->eCurrentState == AIS_STATE_SCAN
-			    || prAisFsmInfo->eCurrentState ==
-			    AIS_STATE_ONLINE_SCAN) {
-				uint8_t ucScanSSIDNum;
-				enum ENUM_SCAN_TYPE eScanType;
-
-				ucScanSSIDNum = prScanRequest->u4SsidNum +
-					prScanRequest->ucShortSsidNum;
-				eScanType = prScanRequest->ucScanType;
-
-				if (eScanType == SCAN_TYPE_ACTIVE_SCAN
-				    && ucScanSSIDNum == 0) {
-					prScanReqMsg->eScanType = eScanType;
-
-					prScanReqMsg->ucSSIDType
-					    = SCAN_REQ_SSID_WILDCARD;
-					prScanReqMsg->ucSSIDNum = 0;
-				} else if (eScanType == SCAN_TYPE_PASSIVE_SCAN
-					   && ucScanSSIDNum == 0) {
-					prScanReqMsg->eScanType = eScanType;
-
-					prScanReqMsg->ucSSIDType = 0;
-					prScanReqMsg->ucSSIDNum = 0;
-				} else {
-					prScanReqMsg->eScanType =
-					    SCAN_TYPE_ACTIVE_SCAN;
-					prScanReqMsg->ucSSIDType =
-					    SCAN_REQ_SSID_SPECIFIED;
-					prScanReqMsg->ucShortSSIDNum =
-					    prScanRequest->ucShortSsidNum;
-					prScanReqMsg->ucSSIDNum =
-					    prScanRequest->u4SsidNum;
-					prScanReqMsg->prSsid =
-					    prScanRequest->rSsid;
-				}
-				kalMemCopy(prScanReqMsg->aucExtBssid,
-					prScanRequest->aucBssid,
-					CFG_SCAN_OOB_MAX_NUM * MAC_ADDR_LEN);
-				kalMemCopy(prScanReqMsg->aucRandomMac,
-					   prScanRequest->aucRandomMac,
-					   MAC_ADDR_LEN);
-				prScanReqMsg->ucScnFuncMask |=
-				    prScanRequest->ucScnFuncMask;
-				prScanReqMsg->u4ScnFuncMaskExtend |=
-				    prScanRequest->u4ScnFuncMaskExtend;
-			} else {
-				prScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
-
-				COPY_SSID(prAisFsmInfo->rRoamingSSID.aucSsid,
-					  prAisFsmInfo->rRoamingSSID.u4SsidLen,
-					  prConnSettings->aucSSID,
-					  prConnSettings->ucSSIDLen);
-
-				/* Scan for determined SSID */
-				prScanReqMsg->ucSSIDType =
-				    SCAN_REQ_SSID_SPECIFIED_ONLY;
-				prScanReqMsg->ucSSIDNum = 1;
-				prScanReqMsg->prSsid =
-				    &(prAisFsmInfo->rRoamingSSID);
-#if CFG_SUPPORT_SCAN_RANDOM_MAC
-				prScanReqMsg->ucScnFuncMask |=
-				    ENUM_SCN_RANDOM_MAC_EN;
-#endif
-			}
-#endif
-
-			/* using default channel dwell time/timeout value */
-			prScanReqMsg->u2ProbeDelay = 0;
-			prScanReqMsg->u2ChannelDwellTime = 0;
-			prScanReqMsg->u2ChannelMinDwellTime = 0;
-			prScanReqMsg->u2TimeoutValue = 0;
-
-			/* Reduce APP scan's dwell time, prevent it affecting
-			 * TX/RX performance
-			 */
-			if (prScanRequest->u4Flags &
-				NL80211_SCAN_FLAG_LOW_SPAN) {
-				prScanReqMsg->u2ChannelDwellTime =
-					SCAN_CHANNEL_DWELL_TIME_MSEC_APP;
-				prScanReqMsg->u2ChannelMinDwellTime =
-					SCAN_CHANNEL_MIN_DWELL_TIME_MSEC_APP;
-			}
-
-			/* for 6G OOB scan */
-			kalMemCopy(prScanReqMsg->ucBssidMatchCh,
-				prScanRequest->ucBssidMatchCh,
-				CFG_SCAN_OOB_MAX_NUM);
-			kalMemCopy(prScanReqMsg->ucBssidMatchSsidInd,
-				prScanRequest->ucBssidMatchSsidInd,
-				CFG_SCAN_OOB_MAX_NUM);
-
-			prScanReqMsg->fgOobRnrParseEn =
-				prScanRequest->fgOobRnrParseEn;
-
-			/* check if tethering is running and need to fix on
-			 * specific channel
-			 */
-			if (aisScanChannelFixed(prAdapter, &eBand,
-					&ucChannel, ucBssIndex)) {
-				prScanReqMsg->eScanChannel =
-				    SCAN_CHANNEL_SPECIFIED;
-				prScanReqMsg->ucChannelListNum = 1;
-				prScanReqMsg->arChnlInfoList[0].eBand = eBand;
-				prScanReqMsg->arChnlInfoList[0].ucChannelNum =
-				    ucChannel;
-			} else if (aisNeedTargetScan(prAdapter,
-					prAisBssInfo->ucBssIndex)) {
-				struct RF_CHANNEL_INFO *prChnlInfo =
-				    &prScanReqMsg->arChnlInfoList[0];
-				uint8_t ucChannelNum = 0;
-				uint8_t i = 0;
-				uint8_t essChnlNum =
-				    prAisSpecificBssInfo->ucCurEssChnlInfoNum;
-
-				for (i = 0; i < essChnlNum; i++) {
-					ucChannelNum =
-					    prAisSpecificBssInfo->
-					    arCurEssChnlInfo[i].ucChannel;
-					prChnlInfo[i].eBand =
-						prAisSpecificBssInfo->
-						arCurEssChnlInfo[i].eBand;
-					prChnlInfo[i].ucChannelNum
-					    = ucChannelNum;
-				}
-				prScanReqMsg->ucChannelListNum = essChnlNum;
-				prScanReqMsg->eScanChannel =
-				    SCAN_CHANNEL_SPECIFIED;
-				DBGLOG(AIS, INFO,
-				       "[Roaming] Target Scan: Total number of scan channel(s)=%d\n",
-				       prScanReqMsg->ucChannelListNum);
-			} else
-			if (prAdapter->aePreferBand
-				[KAL_NETWORK_TYPE_AIS_INDEX] ==
-				BAND_NULL) {
-				if (prAdapter->fgEnable5GBand == TRUE)
-					prScanReqMsg->eScanChannel =
-					    SCAN_CHANNEL_FULL;
-				else
-					prScanReqMsg->eScanChannel =
-					    SCAN_CHANNEL_2G4;
-
-			} else
-			if (prAdapter->aePreferBand
-				[KAL_NETWORK_TYPE_AIS_INDEX] ==
-				BAND_2G4) {
-				prScanReqMsg->eScanChannel = SCAN_CHANNEL_2G4;
-			} else
-			if (prAdapter->aePreferBand
-				[KAL_NETWORK_TYPE_AIS_INDEX] ==
-				BAND_5G) {
-				prScanReqMsg->eScanChannel = SCAN_CHANNEL_5G;
-			}
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			else if (prAdapter->aePreferBand
-				[KAL_NETWORK_TYPE_AIS_INDEX] ==
-				BAND_6G)
-				prScanReqMsg->eScanChannel = SCAN_CHANNEL_6G;
-#endif
-			else
-				prScanReqMsg->eScanChannel = SCAN_CHANNEL_FULL;
-
-			switch (prScanReqMsg->eScanChannel) {
-			case SCAN_CHANNEL_FULL:
-			case SCAN_CHANNEL_2G4:
-			case SCAN_CHANNEL_5G:
-			case SCAN_CHANNEL_6G:
-				scanSetRequestChannel(prAdapter,
-					prScanRequest->u4ChannelNum,
-					prScanRequest->arChannel,
-					prScanRequest->u4Flags,
-					prAisFsmInfo->eCurrentState ==
-					AIS_STATE_ONLINE_SCAN ||
-					wlanWfdEnabled(prAdapter),
-					prScanReqMsg);
-				break;
-			default:
-				break;
-			}
-
-			if (prAdapter->rWifiVar.u4SwTestMode ==
-			    ENUM_SW_TEST_MODE_SIGMA_VOICE_ENT &&
-			    prScanReqMsg->ucChannelListNum == 1) {
-				prScanReqMsg->u2ChannelDwellTime =
-					SCAN_CHANNEL_DWELL_TIME_VOE;
-				prScanReqMsg->u2ChannelMinDwellTime =
-					SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
-				DBGLOG(AIS, INFO,
-				       "[VoE] Adjust dwell time(50ms) for certification\n");
-			}
-
-			if (u2ScanIELen > 0) {
-				kalMemCopy(prScanReqMsg->aucIE,
-					   prScanRequest->pucIE, u2ScanIELen);
-			} else {
-#if CFG_SUPPORT_WPS2
-				if (prConnSettings->u2WSCIELen > 0) {
-					kalMemCopy(prScanReqMsg->aucIE,
-						   &prConnSettings->aucWSCIE,
-						   prConnSettings->u2WSCIELen);
-				}
-			}
-#endif
-			prScanReqMsg->u2IELen = u2ScanIELen;
+			aisScanProcessReqParam(prAdapter, ucBssIndex,
+				prScanReqMsg, prScanRequest, u2ScanIELen);
 
 			scanInitEssResult(prAdapter);
-
+send_msg:
 			mboxSendMsg(prAdapter, MBOX_ID_0,
 				    (struct MSG_HDR *)prScanReqMsg,
 				    MSG_SEND_METHOD_BUF);
-
 			/* reset prAisFsmInfo->rScanRequest */
-			kalMemZero(prAisFsmInfo->aucScanIEBuf,
-				   sizeof(prAisFsmInfo->aucScanIEBuf));
-			prScanRequest->ucShortSsidNum = 0;
-			prScanRequest->u4SsidNum = 0;
-			prScanRequest->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
-			prScanRequest->u4IELength = 0;
-			prScanRequest->u4ChannelNum = 0;
-			prScanRequest->ucScnFuncMask = 0;
-			kalMemZero(prScanRequest->aucRandomMac, MAC_ADDR_LEN);
-			prAisFsmInfo->fgIsScanning = TRUE;
+			aisScanResetReq(prScanRequest);
 
+			kalMemZero(prAisFsmInfo->aucScanIEBuf,
+					sizeof(prAisFsmInfo->aucScanIEBuf));
 			/* Support AP Selection */
 			prAisFsmInfo->ucJoinFailCntAfterScan = 0;
-			/* Scan flags will be set in next scan triggered by
-			 * upper layer, reset to 0 to avoid next scan
-			 * is triggered by Driver
-			*/
-			prScanRequest->u4Flags = 0;
-
+			prAisFsmInfo->fgIsScanning = TRUE;
 			break;
 
 		case AIS_STATE_REQ_CHANNEL_JOIN:
@@ -8212,3 +8039,303 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 		    (struct MSG_HDR *)prMsgChReq,
 		    MSG_SEND_METHOD_BUF);
 }
+#if (CFG_SUPPORT_802_11BE == 1 && CFG_SUPPORT_802_11BE_MLO == 1)
+static void aisScanGenMlScanReq(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex, IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
+	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct BSS_INFO *prAisBssInfo;
+	struct BSS_DESC *prBssDesc;
+	uint8_t aucIe[32];
+	uint32_t u4ScanIELen = 0;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prBssDesc = prAisFsmInfo->aprLinkInfo[0].prTargetBssDesc;
+
+	/* Generate ML probe request IE */
+	kalMemZero(aucIe, sizeof(aucIe));
+	mldGenerateMlProbeReqIE(aucIe, &u4ScanIELen, 0);
+
+	prScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
+	prScanReqMsg->ucSSIDType = SCAN_REQ_SSID_WILDCARD;
+
+	/* Not to handle RNR IE in this scan*/
+	prScanReqMsg->fgOobRnrParseEn = FALSE;
+
+	/* Assign channel and BSSID */
+	prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
+	prScanReqMsg->ucChannelListNum = 1;
+	prScanReqMsg->arChnlInfoList[0].eBand = prBssDesc->eBand;
+	prScanReqMsg->arChnlInfoList[0].ucChannelNum = prBssDesc->ucChannelNum;
+	prScanReqMsg->ucBssidMatchCh[0] = prBssDesc->ucChannelNum;
+	COPY_MAC_ADDR(prScanReqMsg->aucExtBssid[0], prBssDesc->aucBSSID);
+
+	/* No BssidMatchSsid, set to default value */
+	kalMemSet(prScanRequest->ucBssidMatchSsidInd, CFG_SCAN_OOB_MAX_NUM,
+				sizeof(prScanRequest->ucBssidMatchSsidInd));
+
+	/* MaskExtend set to ENUM_SCN_ML_PROBE */
+	prScanReqMsg->u4ScnFuncMaskExtend |= ENUM_SCN_ML_PROBE;
+
+	/* Copy ML probe request IE */
+	kalMemZero(prScanReqMsg->aucIE, MAX_IE_LENGTH);
+	if (u4ScanIELen > 0)
+		kalMemCopy(prScanReqMsg->aucIE, aucIe, u4ScanIELen);
+	prScanReqMsg->u2IELen = (uint16_t)u4ScanIELen;
+}
+#endif
+
+static void aisScanReqInit(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex, IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
+	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest,
+	IN uint16_t u2ScanIELen)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct BSS_INFO *prAisBssInfo;
+	struct CONNECTION_SETTINGS *prConnSettings;
+
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+	kalMemZero(prScanReqMsg, OFFSET_OF(struct MSG_SCN_SCAN_REQ_V2, aucIE)
+				+ u2ScanIELen);
+	prScanReqMsg->rMsgHdr.eMsgId = MID_AIS_SCN_SCAN_REQ_V2;
+	prScanReqMsg->ucSeqNum = ++prAisFsmInfo->ucSeqNumOfScanReq;
+	prScanReqMsg->ucBssIndex = prAisBssInfo->ucBssIndex;
+
+	if (prAisFsmInfo->u2SeqNumOfScanReport == AIS_SCN_REPORT_SEQ_NOT_SET)
+		prAisFsmInfo->u2SeqNumOfScanReport =
+			(uint16_t) prScanReqMsg->ucSeqNum;
+
+}
+
+static void aisScanProcessReqParam(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex, IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
+	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest,
+	IN uint16_t u2ScanIELen)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct CONNECTION_SETTINGS *prConnSettings;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+
+#if CFG_SUPPORT_RDD_TEST_MODE
+	prScanReqMsg->eScanType = SCAN_TYPE_PASSIVE_SCAN;
+#else
+	if (prAisFsmInfo->eCurrentState == AIS_STATE_SCAN
+		|| prAisFsmInfo->eCurrentState == AIS_STATE_ONLINE_SCAN) {
+		uint8_t ucScanSSIDNum;
+		enum ENUM_SCAN_TYPE eScanType;
+
+		ucScanSSIDNum = prScanRequest->u4SsidNum +
+			prScanRequest->ucShortSsidNum;
+		eScanType = prScanRequest->ucScanType;
+
+		if (eScanType == SCAN_TYPE_ACTIVE_SCAN && ucScanSSIDNum == 0) {
+			prScanReqMsg->eScanType = eScanType;
+			prScanReqMsg->ucSSIDType = SCAN_REQ_SSID_WILDCARD;
+			prScanReqMsg->ucSSIDNum = 0;
+		} else if (eScanType == SCAN_TYPE_PASSIVE_SCAN
+				&& ucScanSSIDNum == 0) {
+			prScanReqMsg->eScanType = eScanType;
+			prScanReqMsg->ucSSIDType = 0;
+			prScanReqMsg->ucSSIDNum = 0;
+		} else {
+			prScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
+			prScanReqMsg->ucSSIDType = SCAN_REQ_SSID_SPECIFIED;
+			prScanReqMsg->ucShortSSIDNum =
+						prScanRequest->ucShortSsidNum;
+			prScanReqMsg->ucSSIDNum = prScanRequest->u4SsidNum;
+			prScanReqMsg->prSsid = prScanRequest->rSsid;
+		}
+		kalMemCopy(prScanReqMsg->aucExtBssid,
+			prScanRequest->aucBssid,
+			CFG_SCAN_OOB_MAX_NUM * MAC_ADDR_LEN);
+		kalMemCopy(prScanReqMsg->aucRandomMac,
+			   prScanRequest->aucRandomMac,
+			   MAC_ADDR_LEN);
+		prScanReqMsg->ucScnFuncMask |= prScanRequest->ucScnFuncMask;
+		prScanReqMsg->u4ScnFuncMaskExtend |=
+					prScanRequest->u4ScnFuncMaskExtend;
+	} else {
+		prScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
+
+		COPY_SSID(prAisFsmInfo->rRoamingSSID.aucSsid,
+			  prAisFsmInfo->rRoamingSSID.u4SsidLen,
+			  prConnSettings->aucSSID,
+			  prConnSettings->ucSSIDLen);
+
+		/* Scan for determined SSID */
+		prScanReqMsg->ucSSIDType = SCAN_REQ_SSID_SPECIFIED_ONLY;
+		prScanReqMsg->ucSSIDNum = 1;
+		prScanReqMsg->prSsid = &(prAisFsmInfo->rRoamingSSID);
+#if CFG_SUPPORT_SCAN_RANDOM_MAC
+		prScanReqMsg->ucScnFuncMask |= ENUM_SCN_RANDOM_MAC_EN;
+#endif
+	}
+#endif
+
+	/* using default channel dwell time/timeout value */
+	prScanReqMsg->u2ProbeDelay = 0;
+	prScanReqMsg->u2ChannelDwellTime = 0;
+	prScanReqMsg->u2ChannelMinDwellTime = 0;
+	prScanReqMsg->u2TimeoutValue = 0;
+
+	/* for 6G OOB scan */
+	kalMemCopy(prScanReqMsg->ucBssidMatchCh,
+		prScanRequest->ucBssidMatchCh,
+		CFG_SCAN_OOB_MAX_NUM);
+	kalMemCopy(prScanReqMsg->ucBssidMatchSsidInd,
+		prScanRequest->ucBssidMatchSsidInd,
+		CFG_SCAN_OOB_MAX_NUM);
+
+	prScanReqMsg->fgOobRnrParseEn = prScanRequest->fgOobRnrParseEn;
+
+	aisScanProcessReqCh(prAdapter, ucBssIndex,
+						prScanReqMsg, prScanRequest);
+	aisScanProcessReqExtra(prAdapter, prScanReqMsg,
+						prScanRequest);
+	if (u2ScanIELen > 0) {
+		kalMemCopy(prScanReqMsg->aucIE,
+			   prScanRequest->pucIE, u2ScanIELen);
+	} else {
+#if CFG_SUPPORT_WPS2
+		if (prConnSettings->u2WSCIELen > 0) {
+			kalMemCopy(prScanReqMsg->aucIE,
+				   &prConnSettings->aucWSCIE,
+				   prConnSettings->u2WSCIELen);
+		}
+	}
+#endif
+	prScanReqMsg->u2IELen = u2ScanIELen;
+
+}
+
+static void aisScanProcessReqCh(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex, IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
+	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest)
+{
+	struct BSS_INFO *prAisBssInfo;
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	enum ENUM_BAND eBand = BAND_2G4;
+	uint8_t ucChannel = 1;
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
+
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+	/* check if tethering is running and need to fix on
+	 * specific channel
+	 */
+	if (aisScanChannelFixed(prAdapter, &eBand, &ucChannel, ucBssIndex)) {
+		prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
+		prScanReqMsg->ucChannelListNum = 1;
+		prScanReqMsg->arChnlInfoList[0].eBand = eBand;
+		prScanReqMsg->arChnlInfoList[0].ucChannelNum = ucChannel;
+	} else if (aisNeedTargetScan(prAdapter, prAisBssInfo->ucBssIndex)) {
+		struct RF_CHANNEL_INFO *prChnlInfo =
+					&prScanReqMsg->arChnlInfoList[0];
+		uint8_t ucChannelNum = 0;
+		uint8_t i = 0;
+		uint8_t essChnlNum = prAisSpecificBssInfo->ucCurEssChnlInfoNum;
+
+		for (i = 0; i < essChnlNum; i++) {
+			ucChannelNum =
+				prAisSpecificBssInfo->
+				arCurEssChnlInfo[i].ucChannel;
+			prChnlInfo[i].eBand =
+				prAisSpecificBssInfo->arCurEssChnlInfo[i].eBand;
+			prChnlInfo[i].ucChannelNum = ucChannelNum;
+		}
+		prScanReqMsg->ucChannelListNum = essChnlNum;
+		prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
+		DBGLOG(AIS, INFO,
+			   "[Roaming] Target Scan: Total number of scan channel(s)=%d\n",
+			   prScanReqMsg->ucChannelListNum);
+	} else if (prAdapter->aePreferBand[KAL_NETWORK_TYPE_AIS_INDEX] ==
+			BAND_NULL) {
+		if (prAdapter->fgEnable5GBand == TRUE)
+			prScanReqMsg->eScanChannel = SCAN_CHANNEL_FULL;
+		else
+			prScanReqMsg->eScanChannel = SCAN_CHANNEL_2G4;
+	} else if (prAdapter->aePreferBand[KAL_NETWORK_TYPE_AIS_INDEX] ==
+			BAND_2G4) {
+		prScanReqMsg->eScanChannel = SCAN_CHANNEL_2G4;
+	} else if (prAdapter->aePreferBand[KAL_NETWORK_TYPE_AIS_INDEX] ==
+			BAND_5G) {
+		prScanReqMsg->eScanChannel = SCAN_CHANNEL_5G;
+	}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (prAdapter->aePreferBand[KAL_NETWORK_TYPE_AIS_INDEX] ==
+			BAND_6G)
+		prScanReqMsg->eScanChannel = SCAN_CHANNEL_6G;
+#endif
+	else
+		prScanReqMsg->eScanChannel = SCAN_CHANNEL_FULL;
+
+	switch (prScanReqMsg->eScanChannel) {
+	case SCAN_CHANNEL_FULL:
+	case SCAN_CHANNEL_2G4:
+	case SCAN_CHANNEL_5G:
+	case SCAN_CHANNEL_6G:
+		scanSetRequestChannel(prAdapter,
+			prScanRequest->u4ChannelNum,
+			prScanRequest->arChannel,
+			prScanRequest->u4Flags,
+			prAisFsmInfo->eCurrentState ==
+			AIS_STATE_ONLINE_SCAN ||
+			wlanWfdEnabled(prAdapter),
+			prScanReqMsg);
+		break;
+	default:
+		break;
+	}
+}
+
+static void aisScanProcessReqExtra(IN struct ADAPTER *prAdapter,
+	IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
+	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest)
+{
+	/* Reduce APP scan's dwell time, prevent it affecting
+	 * TX/RX performance
+	 */
+	if (prScanRequest->u4Flags & NL80211_SCAN_FLAG_LOW_SPAN) {
+		prScanReqMsg->u2ChannelDwellTime =
+			SCAN_CHANNEL_DWELL_TIME_MSEC_APP;
+		prScanReqMsg->u2ChannelMinDwellTime =
+			SCAN_CHANNEL_MIN_DWELL_TIME_MSEC_APP;
+	}
+	if (prAdapter->rWifiVar.u4SwTestMode ==
+		ENUM_SW_TEST_MODE_SIGMA_VOICE_ENT &&
+		prScanReqMsg->ucChannelListNum == 1) {
+		prScanReqMsg->u2ChannelDwellTime =
+				SCAN_CHANNEL_DWELL_TIME_VOE;
+		prScanReqMsg->u2ChannelMinDwellTime =
+				SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
+		DBGLOG(AIS, INFO,
+				"[VoE] Adjust dwell time(50ms) for certification\n");
+	}
+}
+
+static void aisScanResetReq(IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest)
+{
+	prScanRequest->ucShortSsidNum = 0;
+	prScanRequest->u4SsidNum = 0;
+	prScanRequest->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
+	prScanRequest->u4IELength = 0;
+	prScanRequest->u4ChannelNum = 0;
+	prScanRequest->ucScnFuncMask = 0;
+	kalMemZero(prScanRequest->aucRandomMac, MAC_ADDR_LEN);
+
+	/* Scan flags will be set in next scan triggered by
+	 * upper layer, reset to 0 to avoid next scan
+	 * is triggered by Driver
+	*/
+	prScanRequest->u4Flags = 0;
+}
+
