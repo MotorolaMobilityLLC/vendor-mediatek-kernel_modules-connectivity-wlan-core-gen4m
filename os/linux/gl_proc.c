@@ -337,7 +337,7 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 	struct WLAN_CFG_ENTRY *prWlanCfgEntry;
 	struct ADAPTER *prAdapter;
 
-	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(gPrDev));
+	prGlueInfo = g_prGlueInfo_proc;
 
 	if (!prGlueInfo) {
 		pr_err("procCfgRead prGlueInfo is  NULL????\n");
