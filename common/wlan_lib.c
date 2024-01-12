@@ -1050,7 +1050,14 @@ WLAN_STATUS wlanProcessCommandQueue(IN P_ADAPTER_T prAdapter, IN P_QUE_T prCmdQu
 				set_bit(GLUE_FLAG_HIF_PRT_HIF_DBG_INFO_BIT, &(prAdapter->prGlueInfo->ulFlag));
 
 				QUEUE_INSERT_TAIL(prMergeCmdQue, prQueueEntry);
-				break;
+
+				/*
+				 * We reserve one TC4 resource for CMD specially, only break
+				 * checking the left tx request if no resource for true CMD.
+				 */
+				if ((prCmdInfo->eCmdType != COMMAND_TYPE_SECURITY_FRAME) &&
+				    (prCmdInfo->eCmdType != COMMAND_TYPE_MANAGEMENT_FRAME))
+					break;
 			} else if (rStatus == WLAN_STATUS_PENDING) {
 				/* Do nothing */
 				/* Do nothing */
