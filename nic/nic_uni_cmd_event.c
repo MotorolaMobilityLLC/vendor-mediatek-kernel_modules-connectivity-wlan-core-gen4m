@@ -3813,9 +3813,17 @@ uint32_t nicUniCmdStaRecTagMlrInfo(struct ADAPTER *ad,
 	struct UNI_CMD_STAREC_MLR_INFO *tag =
 		(struct UNI_CMD_STAREC_MLR_INFO *)buf;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	struct MLD_STA_RECORD *mld_starec = mldStarecGetByStarec(ad, prStaRec);
+	struct MLD_STA_RECORD *prMldStaRec = NULL;
+#endif
 
-	if (IS_MLD_STAREC_VALID(mld_starec)) {
+	if (!prStaRec) {
+		DBGLOG(REQ, WARN, "MLR unicmd - prStaRec is NULL\n");
+		return 0;
+	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldStaRec = mldStarecGetByStarec(ad, prStaRec);
+	if (IS_MLD_STAREC_VALID(prMldStaRec)) {
 		DBGLOG(REQ, INFO, "MLR unicmd - This is a MLD starec\n");
 		return 0;
 	}
