@@ -351,7 +351,7 @@ uint32_t twtSendInfoFrame(
 	}
 
 	DBGLOG(TWT_REQUESTER, WARN,
-			"TWT Info Frame %d %d %d 0x%x 0x%x 0x%llx\n",
+			"TWT Info Frame %u %zu %u 0x%x 0x%x 0x%llx\n",
 			u2EstimatedFrameLen,
 			sizeof(struct _ACTION_TWT_INFO_FRAME),
 			twtGetNextTWTByteCnt(
