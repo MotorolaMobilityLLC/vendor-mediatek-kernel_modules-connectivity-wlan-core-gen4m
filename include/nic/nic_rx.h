@@ -673,6 +673,7 @@ enum {
 	TFD_EVT_VER_3,
 	TFD_EVT_VER_4,
 	TFD_EVT_VER_5,
+	TFD_EVT_VER_6,
 };
 
 #define RX_TFD_EVT_V3_PAIR_SHIFT 31

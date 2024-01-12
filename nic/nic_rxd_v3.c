@@ -863,7 +863,7 @@ uint8_t nic_rxd_v3_fill_radiotap(
 }
 #endif
 
-static void handle_host_rpt_v5(struct ADAPTER *prAdapter,
+static void handle_host_rpt_v5_v6(struct ADAPTER *prAdapter,
 	struct tx_free_done_rpt *rpt,
 	struct QUE *prFreeQueue)
 {
@@ -877,9 +877,10 @@ static void handle_host_rpt_v5(struct ADAPTER *prAdapter,
 	uint16_t serial = HAL_TX_FREE_DONE_GET_SERIAL_ID(rpt->dw1);
 	uint8_t msdu_cnt_handled = 0, txd_cnt_handled = 0;
 	uint16_t wlan_idx = 0, qid = 0;
+	uint16_t rts_tx_cnt = 0, tid = 0, rls_period = 0, tx_bn = 0;
 	uint16_t tx_delay = 0, air_delay = 0, tx_cnt = 0;
 	uint8_t stat = 0;
-	uint8_t pair = 0, header = 0;
+	uint8_t pair = 0, header = 0, pair_handled_cnt = 0;
 	uint32_t msdu0 = WF_TX_FREE_DONE_EVENT_MSDU_ID0_MASK;
 	uint32_t msdu1 = WF_TX_FREE_DONE_EVENT_MSDU_ID0_MASK;
 	uint32_t *pos = (uint32_t *)rpt;
@@ -901,8 +902,18 @@ static void handle_host_rpt_v5(struct ADAPTER *prAdapter,
 		header = HAL_TX_FREE_DONE_GET_H3(*pos);
 
 		if (pair == 1) {
-			wlan_idx = HAL_TX_FREE_DONE_GET_WLAN_ID(*pos);
-			qid = HAL_TX_FREE_DONE_GET_QID(*pos);
+			if (pair_handled_cnt == 0) {
+				wlan_idx = HAL_TX_FREE_DONE_GET_WLAN_ID(*pos);
+				qid = HAL_TX_FREE_DONE_GET_QID(*pos);
+			} else if (pair_handled_cnt == 1) {
+				rts_tx_cnt =
+					HAL_TX_FREE_DONE_GET_RTS_TX_CNT(*pos);
+				tid = HAL_TX_FREE_DONE_GET_TID(*pos);
+				rls_period =
+					HAL_TX_FREE_DONE_GET_RLS_PERIOD(*pos);
+				tx_bn = HAL_TX_FREE_DONE_GET_TX_BN(*pos);
+			}
+			pair_handled_cnt++;
 		} else if (header == 1) {
 			tx_delay = HAL_TX_FREE_DONE_GET_TRANSMIT_DELAY(*pos);
 			air_delay = HAL_TX_FREE_DONE_GET_AIR_DELAY(*pos);
@@ -945,17 +956,14 @@ static void handle_host_rpt_v5(struct ADAPTER *prAdapter,
 		}
 
 #define TEMP_LOG_TEMPLATE "wlan_idx: %d, qid: %d, tx_delay: %d, " \
-				"air_delay: %d, tx_cnt: %d, stat: %d, " \
-				"msdu0: %d, msdu1: %d\n"
-			DBGLOG(HAL, TEMP, TEMP_LOG_TEMPLATE,
-				wlan_idx,
-				qid,
-				tx_delay,
-				air_delay,
-				tx_cnt,
-				stat,
-				msdu0,
-				msdu1);
+		"rts_tx_cnt: %u, tid: %u, rls_period: %u, tx_bn: %u, "\
+		"air_delay: %d, tx_cnt: %d, stat: %d, "	\
+		"msdu0: %d, msdu1: %d\n"
+		DBGLOG(HAL, TEMP, TEMP_LOG_TEMPLATE,
+		       wlan_idx, qid, tx_delay,
+		       rts_tx_cnt, tid, rls_period, tx_bn,
+		       air_delay, tx_cnt, stat,
+		       msdu0, msdu1);
 #undef TEMP_LOG_TEMPLATE
 		pos += 1;
 	} while (pos < end);
@@ -977,7 +985,8 @@ void nic_rxd_v3_handle_host_rpt(struct ADAPTER *prAdapter,
 
 	switch (ver) {
 	case TFD_EVT_VER_5:
-		handle_host_rpt_v5(prAdapter, rpt, prFreeQueue);
+	case TFD_EVT_VER_6:
+		handle_host_rpt_v5_v6(prAdapter, rpt, prFreeQueue);
 		break;
 	default:
 		DBGLOG(RX, ERROR, "Unsupported ver: %d\n",
