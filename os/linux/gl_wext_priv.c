@@ -8351,6 +8351,64 @@ int priv_driver_set_drv_mcr(struct net_device *prNetDev, char *pcCommand,
 
 }
 
+int priv_driver_get_emi_mcr(struct net_device *prNetDev,
+			    char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret;
+
+	/* Add Antenna Selection Input */
+	/* INT_32 i4ArgNum_with_ant_sel = 3; */
+
+	int32_t i4ArgNum = 2;
+
+	struct CMD_ACCESS_REG rCmdAccessReg;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= i4ArgNum) {
+		rCmdAccessReg.u4Address = 0;
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rCmdAccessReg.u4Address));
+		if (u4Ret)
+			DBGLOG(REQ, LOUD,
+			       "parse get_drv_mcr error (Address) u4Ret=%d\n",
+			       u4Ret);
+
+		/* rCmdAccessReg.u4Address = kalStrtoul(apcArgv[1], NULL, 0); */
+		rCmdAccessReg.u4Data = 0;
+
+		DBGLOG(REQ, LOUD, "address is %x\n", rCmdAccessReg.u4Address);
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidQueryEmiMcrRead,
+				   &rCmdAccessReg, sizeof(rCmdAccessReg),
+				   &u4BufLen);
+
+		DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "0x%08x",
+					  (unsigned int)rCmdAccessReg.u4Data);
+		DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__,
+		       pcCommand);
+	}
+
+	return i4BytesWritten;
+
+}
+
 int priv_driver_get_uhw_mcr(struct net_device *prNetDev,
 				   char *pcCommand, int i4TotalLen)
 {

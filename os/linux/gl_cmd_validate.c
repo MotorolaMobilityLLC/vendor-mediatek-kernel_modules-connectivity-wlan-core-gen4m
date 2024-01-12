@@ -588,6 +588,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.u4PolicySize = ARRAY_SIZE(get_mcr_policy)
 	},
 	{
+		.pcCmdStr  = CMD_GET_EMI_MCR,
+		.pfHandler = priv_driver_get_emi_mcr,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(2),
+		.policy    = get_mcr_policy,
+		.u4PolicySize = ARRAY_SIZE(get_mcr_policy)
+	},
+	{
 		.pcCmdStr  = CMD_SET_UHW_MCR,
 		.pfHandler = priv_driver_set_uhw_mcr,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
