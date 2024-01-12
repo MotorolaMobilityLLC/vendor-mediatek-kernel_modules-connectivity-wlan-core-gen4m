@@ -650,10 +650,6 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 /*----------------------------------------------------------------------------*/
 void glUnregisterBus(remove_card pfRemove)
 {
-	if (g_fgDriverProbed) {
-		pfRemove();
-		g_fgDriverProbed = FALSE;
-	}
 	usb_deregister(&mtk_usb_driver);
 }				/* end of glUnregisterBus() */
 
