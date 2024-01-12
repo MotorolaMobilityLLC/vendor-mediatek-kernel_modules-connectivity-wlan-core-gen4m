@@ -1845,7 +1845,7 @@ static void mt7935WfdmaConfigWriteBack(struct GLUE_INFO *prGlueInfo)
 
 	/* set subsys_int enable */
 	u4Addr = WF_WFDMA_HOST_DMA0_SUBSYS2HOST_INT_ENA_ADDR;
-	u4WrVal = 0xffffffff;
+	u4WrVal = 0x200;
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 
 	/* set periodic int */
