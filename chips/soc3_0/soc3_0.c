@@ -1397,22 +1397,88 @@ static void soc3_0_DumpOtherCr(void)
 	soc3_0_DumpMemory32(log, HANG_OTHER_LOG_NUM, "mailbox and other CRs");
 }
 
+static void soc3_0_DumpSpecifiedWfTop(void)
+{
+#define	HANG_TOP_LOG_NUM		2
+
+	uint32_t u4Cr;
+	uint32_t u4Value = 0;
+	uint32_t RegValue = 0;
+	uint32_t log[HANG_TOP_LOG_NUM];
+
+	DBGLOG(HAL, LOUD,
+		"Host_CSR - specified WF TOP monflg on");
+
+/* 0x1806009C[28]=1	write	enable wf_mcu_misc */
+
+	u4Cr = 0x1806009C;
+	wf_ioremap_read(u4Cr, &u4Value);
+	RegValue = u4Value | BIT(28);
+	wf_ioremap_write(u4Cr, RegValue);
+
+/* 0x1806009C[27:0]=0xC387060	write	select {FLAG_4[9:2],FLAG_27[9:2]} */
+
+	u4Cr = 0x1806009C;
+	wf_ioremap_read(u4Cr, &u4Value);
+	RegValue = 0xC387060 | (u4Value&BITS(28, 31));
+	wf_ioremap_write(u4Cr, RegValue);
+
+/* 0x18060094[20]=1	write	enable wf_monflg_on */
+
+	u4Cr = 0x18060094;
+	wf_ioremap_read(u4Cr, &u4Value);
+	RegValue = u4Value | BIT(20);
+	wf_ioremap_write(u4Cr, RegValue);
+
+/* 0x18060094[19:0]=0x39CE7	write	select wf_mcusys_dbg */
+
+	u4Cr = 0x18060094;
+	wf_ioremap_read(u4Cr, &u4Value);
+	RegValue = 0x39CE7 | (u4Value&BITS(20, 31));
+	wf_ioremap_write(u4Cr, RegValue);
+
+/* 0x1806_021c[31:0]	Read	get {FLAG_4[9:2],FLAG_27[9:2]} */
+
+	u4Cr = 0x1806021c;
+	wf_ioremap_read(u4Cr, &log[0]);
+
+/* 0x1806009C[27:0]=0xC78F162	write	select {FlAG_23[7:0],FlAG_6[9:2]} */
+
+	u4Cr = 0x1806009C;
+	wf_ioremap_read(u4Cr, &u4Value);
+	RegValue = 0xC78F162 | (u4Value&BITS(28, 31));
+	wf_ioremap_write(u4Cr, RegValue);
+
+
+/* 0x1806_021c[31:0]	Read	get {FlAG_23[7:0],FlAG_6[9:2]} */
+
+	u4Cr = 0x1806021c;
+	wf_ioremap_read(u4Cr, &log[1]);
+
+	soc3_0_DumpMemory32(log, HANG_TOP_LOG_NUM,
+		"specified WF TOP monflg on");
+}
+
 static void soc3_0_DumpHostCr(void)
 {
 	soc3_0_DumpPcLrLog();
 	soc3_0_DumpN10CoreReg();
 	soc3_0_DumpOtherCr();
 	soc3_0_DumpHwDebugFlag();
+	soc3_0_DumpSpecifiedWfTop();
 }
 
 int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
 	int ret = 1;
 	int conninfra_hang_ret = 0;
 	uint8_t conninfra_reset = FALSE;
 	uint32_t u4Cr = 0;
 	uint32_t u4Value = 0;
 	uint32_t RegValue = 0;
+
+	prGlueInfo = (struct GLUE_INFO *)wiphy_priv(wlanGetWiphy());
 
 	do {
 /*
@@ -1442,20 +1508,21 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 			break;
 		}
 
+		if (prGlueInfo->prAdapter->fgIsFwDownloaded) {
 /*
 * 2. Check MCU wake up and setting mux sel done CR (mailbox)
 *  - 0x1806_0260[31] should be 1'b1  (FW view 0x8900_0100[31])
 */
 
-		u4Cr = 0x18060260;
-		wf_ioremap_read(u4Cr, &u4Value);
+			u4Cr = 0x18060260;
+			wf_ioremap_read(u4Cr, &u4Value);
 
-		if ((u4Value&BIT(31)) != BIT(31)) {
-			DBGLOG(HAL, ERROR,
-				"Bus hang check: 0x%08x = 0x%08x\n",
-				u4Cr, u4Value);
-			break;
-		}
+			if ((u4Value&BIT(31)) != BIT(31)) {
+				DBGLOG(HAL, ERROR,
+					"Bus hang check: 0x%08x = 0x%08x\n",
+					u4Cr, u4Value);
+				break;
+			}
 
 /*
 * 3. Check wf_mcusys bus hang irq status (need set debug ctrl enable first,
@@ -1475,34 +1542,39 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 * Read Address : 0x1806_021c[0] shoulde be 1'b0
 */
 
-		u4Cr = 0x1806009c;
-		wf_ioremap_read(u4Cr, &u4Value);
-		RegValue = (u4Value&BITS(7, 31)) | 0x60;
-		wf_ioremap_write(u4Cr, RegValue);
+			u4Cr = 0x1806009c;
+			wf_ioremap_read(u4Cr, &u4Value);
+			RegValue = (u4Value&BITS(7, 31)) | 0x60;
+			wf_ioremap_write(u4Cr, RegValue);
 
-		u4Cr = 0x1806009c;
-		wf_ioremap_read(u4Cr, &u4Value);
-		RegValue = u4Value|BIT(28);
-		wf_ioremap_write(u4Cr, RegValue);
+			u4Cr = 0x1806009c;
+			wf_ioremap_read(u4Cr, &u4Value);
+			RegValue = u4Value|BIT(28);
+			wf_ioremap_write(u4Cr, RegValue);
 
-		u4Cr = 0x18060094;
-		wf_ioremap_read(u4Cr, &u4Value);
-		RegValue = (u4Value&BITS(5, 31)) | 0x7;
-		wf_ioremap_write(u4Cr, RegValue);
+			u4Cr = 0x18060094;
+			wf_ioremap_read(u4Cr, &u4Value);
+			RegValue = (u4Value&BITS(5, 31)) | 0x7;
+			wf_ioremap_write(u4Cr, RegValue);
 
-		u4Cr = 0x18060094;
-		wf_ioremap_read(u4Cr, &u4Value);
-		RegValue = u4Value|BIT(20);
-		wf_ioremap_write(u4Cr, RegValue);
+			u4Cr = 0x18060094;
+			wf_ioremap_read(u4Cr, &u4Value);
+			RegValue = u4Value|BIT(20);
+			wf_ioremap_write(u4Cr, RegValue);
 
-		u4Cr = 0x1806021c;
-		wf_ioremap_read(u4Cr, &u4Value);
+			u4Cr = 0x1806021c;
+			wf_ioremap_read(u4Cr, &u4Value);
 
-		if ((u4Value&BIT(0)) == BIT(0)) {
-			DBGLOG(HAL, ERROR,
-				"Bus hang check: 0x%08x = 0x%08x\n",
-				u4Cr, u4Value);
-			break;
+			if ((u4Value&BIT(0)) == BIT(0)) {
+				DBGLOG(HAL, ERROR,
+					"Bus hang check: 0x%08x = 0x%08x\n",
+					u4Cr, u4Value);
+				break;
+			}
+
+		} else {
+			DBGLOG(HAL, INFO,
+				"Before fgIsFwDownloaded\n");
 		}
 
 /*
@@ -1540,6 +1612,9 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 	} while (FALSE);
 
 	if (ret > 0) {
+
+		/* check again for dump log */
+		conninfra_is_bus_hang();
 
 		if ((conninfra_hang_ret != CONNINFRA_ERR_RST_ONGOING) &&
 			(conninfra_hang_ret != CONNINFRA_INFRA_BUS_HANG) &&
