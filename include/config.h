@@ -1329,6 +1329,13 @@
 #define CFG_SUPPORT_REGD_UPDATE_DISCONNECT_ALLOWED  0
 #endif
 
+/*------------------------------------------------------------------------------
+ * Notify clients to reconnect when channel switch in hotspot mode to avoid IOT
+ * issues, eg. cross band switch.
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SEND_DEAUTH_DURING_CHNL_SWITCH    1
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

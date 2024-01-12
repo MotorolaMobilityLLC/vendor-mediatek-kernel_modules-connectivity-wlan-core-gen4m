@@ -624,6 +624,7 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	enum ENUM_PARAM_MEDIA_STATE eOriMediaStatus;
+	struct GL_P2P_INFO *prP2PInfo;
 
 	if (!prAdapter) {
 		DBGLOG(P2P, ERROR, "prAdapter shouldn't be NULL!\n");
@@ -643,6 +644,8 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 	prP2pRoleFsmInfo =
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prP2pBssInfo->u4PrivateData);
+	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[
+			prP2pRoleFsmInfo->ucRoleIndex];
 
 	/*
 	 * After EAP exchange, GO/GC will disconnect
@@ -704,6 +707,11 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 					NULL, NULL, 0, 0);
 #endif
 		}
+		if (prP2PInfo && prP2PInfo->eChnlSwitchPolicy ==
+				CHNL_SWITCH_POLICY_DEAUTH) {
+			prP2PInfo->eChnlSwitchPolicy = CHNL_SWITCH_POLICY_NONE;
+			p2pFunChnlSwitchNotifyDone(prAdapter);
+		}
 	}
 
 	/* STOP BSS if power is IDLE */
@@ -762,7 +770,9 @@ p2pRoleFsmRunEventDeauthTxDone(IN struct ADAPTER *prAdapter,
 		ASSERT_BREAK((prAdapter != NULL) && (prMsduInfo != NULL));
 
 		DBGLOG(P2P, INFO,
-			"Deauth TX Done,rTxDoneStatus = %d\n",
+			"Deauth TX Done, seq = %d, sta = %d, status = %d\n",
+			prMsduInfo->ucTxSeqNum,
+			prMsduInfo->ucStaRecIndex,
 			rTxDoneStatus);
 
 		prStaRec = cnmGetStaRecByIndex(prAdapter,
@@ -1745,7 +1755,7 @@ void p2pRoleFsmRunEventSetNewChannel(IN struct ADAPTER *prAdapter,
 	prP2pRoleFsmInfo->rChnlReqInfo.ucCenterFreqS2 = 0;
 
 	cnmMemFree(prAdapter, prMsgHdr);
-}				/*p2pRoleFsmRunEventCsaDone*/
+}				/*p2pRoleFsmRunEventSetNewChannel*/
 
 void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr)
@@ -1757,6 +1767,7 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 	struct MSG_P2P_CSA_DONE *prMsgP2pCsaDoneMsg;
 	uint8_t role_idx = 0;
 	struct BSS_INFO *prAisBssInfo;
+	struct GL_P2P_INFO *prP2PInfo = (struct GL_P2P_INFO *) NULL;
 
 	DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventCsaDone\n");
 
@@ -1769,6 +1780,11 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 	prP2pRoleFsmInfo =
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prP2pBssInfo->u4PrivateData);
+	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[
+			prP2pRoleFsmInfo->ucRoleIndex];
+
+	if (prP2PInfo)
+		prP2PInfo->eChnlSwitchPolicy = CHNL_SWITCH_POLICY_NONE;
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	role_idx = prP2pRoleFsmInfo->ucRoleIndex;
