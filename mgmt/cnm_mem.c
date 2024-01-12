@@ -1409,7 +1409,7 @@ int cnmShowBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		 "\tACTIVE/HW_BAND/OMAC_IDX/OMAC_ADDR: %u/%u/%u/"MACSTR"\n",
 		prBssInfo->fgIsNetActive,
-		prBssInfo->eBandIdx,
+		prBssInfo->eHwBandIdx,
 		prBssInfo->ucOwnMacIndex,
 		MAC2STR(prBssInfo->aucOwnMacAddr));
 	i4BytesWritten += kalSnprintf(
@@ -1563,7 +1563,7 @@ void cnmDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 		prBssInfo->fgIsNetActive,
 		prBssInfo->eNetworkType,
 		prBssInfo->u4PrivateData,
-		prBssInfo->eBandIdx,
+		prBssInfo->eHwBandIdx,
 		prBssInfo->ucOwnMacIndex,
 		MAC2STR(prBssInfo->aucOwnMacAddr),
 		prBssInfo->ucBMCWlanIndex,
