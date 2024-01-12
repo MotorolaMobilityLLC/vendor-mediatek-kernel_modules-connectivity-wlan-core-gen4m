@@ -1116,14 +1116,11 @@ char *strtok_r(char *s, const char *delim, char **last);
 #else
 #define _kalRequestFirmware request_firmware
 #endif
-#define kal_init_completion(rComp) \
-	init_completion(rComp)
+#define kal_init_completion(rComp)  init_completion(rComp)
 
-#define kal_completion_done(rComp) \
-	completion_done(rComp)
+#define kal_completion_done(rComp)  completion_done(rComp)
 
-#define kal_reinit_completion(rComp) \
-	reinit_completion(rComp)
+#define kal_reinit_completion(rComp)  reinit_completion(rComp)
 
 #define kal_completion struct completion
 

@@ -673,8 +673,8 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	DBGLOG(REQ, TRACE, "kalIoctlByBssIdx()=%u, prGlueInfo=%p",
 		rStatus, prGlueInfo);
 #else
-	DBGLOG(REQ, TRACE, "Call Glue=%p, LinkSpeed=%p, size=%zu, &u4BufLen=%p",
-		prGlueInfo, &rLinkSpeed, sizeof(rLinkSpeed), &u4BufLen);
+	DBGLOG(REQ, TRACE, "Call LinkSpeed=%p, size=%zu, &u4BufLen=%p",
+		&rLinkSpeed, sizeof(rLinkSpeed), &u4BufLen);
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
 				   wlanoidQueryLinkSpeed, &rLinkSpeed,
 				   sizeof(rLinkSpeed),
