@@ -3201,6 +3201,11 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 	WLAN_GET_FIELD_BE16(&aucLookAheadBuf[ucEthTypeLenOffset],
 			    &u2EtherTypeLen);
 
+	/*
+	 * if EtherTypeLen >= ETHER_TYPE_MIN, it is a Ethernet II pkt
+	 * and this field is EtherType.
+	 * Otherwise, it is a 802.3 pkt and this field is Len instead.
+	 */
 #if CFG_WIFI_TX_ETH_CHK_EMPTY_PAYLOAD
 	if (unlikely(u4PacketLen == ETHER_HEADER_LEN &&
 		     u2EtherTypeLen >= ETHER_TYPE_MIN)) {

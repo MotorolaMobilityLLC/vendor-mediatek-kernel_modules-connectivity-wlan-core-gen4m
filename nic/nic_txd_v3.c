@@ -367,7 +367,7 @@ void nic_txd_v3_compose(
 		prTxDesc, prMsduInfo->ucPacketFormat);
 
 	/* Ether-type offset */
-	if (prMsduInfo->fgIs802_3) {
+	if (!prMsduInfo->fgIs802_11) {
 		ucEtherTypeOffsetInWord = ((ETHER_HEADER_LEN - ETHER_TYPE_LEN)
 				+ prAdapter->chip_info->pse_header_length) >> 1;
 
