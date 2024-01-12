@@ -1420,25 +1420,20 @@ uint8_t scanValidRnrTbttInfo(IN uint16_t u2TbttInfoLength)
 {
 	uint8_t ucValidInfo;
 
-	switch (u2TbttInfoLength) {
-	case 1:
-	case 2:
-	case 4:
-	case 5:
-	case 6:
-	case 7:
-	case 8:
-	case 9:
-	case 10:
-	case 11:
-	case 12:
-	case 13:
-	case 16 ... 255:
+	/*
+	 * change to if/else for other compiler
+	 * do NOT support ... in switch case
+	 * valid case.
+	 * case 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 16 ... 255
+	 */
+	if (u2TbttInfoLength <= 255 &&
+		u2TbttInfoLength != 0 &&
+		u2TbttInfoLength != 3 &&
+		u2TbttInfoLength != 14 &&
+		u2TbttInfoLength != 15) {
 		ucValidInfo = TRUE;
-		break;
-	default:
+	} else {
 		ucValidInfo = FALSE;
-		break;
 	}
 
 	return ucValidInfo;
@@ -1593,25 +1588,22 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 			return;
 		}
 
-		switch (u2TbttInfoLength) {
-		/* 7: Neighbor AP TBTT Offset + BSSID */
-		case 7:
+		if (u2TbttInfoLength == 7) {
+			/* 7: Neighbor AP TBTT Offset + BSSID */
 			ucShortSsidOffset = 0;
 			ucBssParamOffset = 0;
 			ucHasBssid = TRUE;
-			break;
-		/* 8: Neighbor AP TBTT Offset + BSSID + BSS parameters
-		 * 9: Neighbor AP TBTT Offset + BSSID + BSS parameters
-		 *    + 20MHz PSD
-		 */
-		case 8:
-		case 9:
+		} else if (u2TbttInfoLength == 8 ||
+				   u2TbttInfoLength == 9) {
+			/* 8: Neighbor AP TBTT Offset + BSSID + BSS parameters
+			 * 9: Neighbor AP TBTT Offset + BSSID + BSS parameters
+			 *	  + 20MHz PSD
+			 */
 			ucShortSsidOffset = 0;
 			ucBssParamOffset = 7;
 			ucHasBssid = TRUE;
-			break;
-		/* 10: Neighbor AP TBTT Offset + BSSID + MLD Para */
-		case 10:
+		} else if (u2TbttInfoLength == 10) {
+			/* 10: Neighbor AP TBTT Offset + BSSID + MLD Para */
 			ucShortSsidOffset = 0;
 			ucBssParamOffset = 0;
 			ucMldParamOffset = 7;
@@ -1619,24 +1611,23 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11BE_MLO
 			ucHasMlo = TRUE;
 #endif
-			break;
-		/* 11: Neighbor AP TBTT Offset + BSSID + Short SSID */
-		case 11:
+		} else if (u2TbttInfoLength == 11) {
+			/* 11: Neighbor AP TBTT Offset + BSSID + Short SSID */
 			ucShortSsidOffset = 7;
 			ucBssParamOffset = 0;
 			ucHasBssid = TRUE;
-			break;
-		/* 12: Neighbor AP TBTT Offset + BSSID + Short SSID
-		 *     + BSS parameters
-		 * 13: Neighbor AP TBTT Offset + BSSID + Short SSID
-		 *     + BSS parameters + 20MHz PSD
-		 */
-		case 12:
-		case 13:
-		/* 16: Neighbor AP TBTT Offset + BSSID + Short SSID
-		 *     + BSS parameters + 20MHz PSD + MLD Parameter
-		 */
-		case 16 ... 255:
+		} else if (u2TbttInfoLength == 12 ||
+					u2TbttInfoLength == 13 ||
+					(u2TbttInfoLength >= 16 &&
+					u2TbttInfoLength <= 255)) {
+			/* 12: Neighbor AP TBTT Offset + BSSID + Short SSID
+			 *	   + BSS parameters
+			 * 13: Neighbor AP TBTT Offset + BSSID + Short SSID
+			 *	   + BSS parameters + 20MHz PSD
+			 */
+			 /* 16: Neighbor AP TBTT Offset + BSSID + Short SSID
+			 *     + BSS parameters + 20MHz PSD + MLD Parameter
+			 */
 			ucShortSsidOffset = 7;
 			ucBssParamOffset = 11;
 			ucMldParamOffset = 13;
@@ -1644,13 +1635,13 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11BE_MLO
 			ucHasMlo = TRUE;
 #endif
-			break;
-		default:
+		} else {
 			/* only support neighbor AP info with
 			*  BSSID
 			*/
 			continue;
 		}
+
 		/* If opClass is not 6G, no need to do extra scan
 		 * directly check next neighborAPInfo if exist
 		 */
@@ -4707,12 +4698,30 @@ void scanOpClassToBand(uint8_t ucOpClass, uint8_t *band)
 {
 	switch (ucOpClass) {
 	case 112:
-	case 115 ... 127:
-	case 128 ... 130:
+	case 115:
+	case 116:
+	case 117:
+	case 118:
+	case 119:
+	case 120:
+	case 121:
+	case 122:
+	case 123:
+	case 124:
+	case 125:
+	case 126:
+	case 127:
+	case 128:
+	case 129:
+	case 130:
 		*band = KAL_BAND_5GHZ;
 		break;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	case 131 ... 135:
+	case 131:
+	case 132:
+	case 133:
+	case 134:
+	case 135:
 		*band = KAL_BAND_6GHZ;
 		break;
 #endif
