@@ -5741,6 +5741,10 @@ void aisFsmDisconnect(struct ADAPTER *prAdapter,
 	cnmTimerStopTimer(prAdapter,
 		aisGetSecModeChangeTimer(prAdapter, ucBssIndex));
 #endif
+#if CFG_SUPPORT_DFS
+	cnmTimerStopTimer(prAdapter, &prAisBssInfo->rCsaTimer);
+#endif
+
 	nicPmIndicateBssAbort(prAdapter, prAisBssInfo->ucBssIndex);
 
 #if CFG_SUPPORT_ADHOC
