@@ -1368,49 +1368,52 @@ void apsIntraApSelection(struct ADAPTER *ad,
 			ess, rLinkEntry, struct AP_COLLECTION) {
 		for (i = 0; i < ap->ucLinkNum; i++)
 			apsIntraUpdateTargetAp(ad, ap, i, goal, reason, bidx);
-	}
 
-	/* insertion sort by score */
-	for (i = 1; i < ap->ucLinkNum; i++) {
-		score = ap->au2TargetScore[i];
-		bss = ap->aprTarget[i];
+		/* insertion sort by score */
+		for (i = 1; i < ap->ucLinkNum; i++) {
+			score = ap->au2TargetScore[i];
+			bss = ap->aprTarget[i];
 
-		for (j = i - 1; j >= 0 && ap->au2TargetScore[j] < score; j--) {
-			ap->au2TargetScore[j + 1] = ap->au2TargetScore[j];
-			ap->aprTarget[j + 1] = ap->aprTarget[j];
+			for (j = i - 1;
+			     j >= 0 && ap->au2TargetScore[j] < score; j--) {
+				ap->au2TargetScore[j + 1] =
+					ap->au2TargetScore[j];
+				ap->aprTarget[j + 1] =
+					ap->aprTarget[j];
+			}
+
+			ap->au2TargetScore[j + 1] = score;
+			ap->aprTarget[j + 1] = bss;
 		}
 
-		ap->au2TargetScore[j + 1] = score;
-		ap->aprTarget[j + 1] = bss;
+		/* ensure no null target */
+		ap->ucLinkNum = 0;
+		for (i = 0; i < MAX_LINK_PLAN_NUM; i++) {
+			if (ap->aprTarget[i])
+				ap->ucLinkNum++;
+		}
+
+		/* trim ap */
+		if (ap->ucLinkNum > ad->rWifiVar.ucStaMldLinkMax) {
+			DBGLOG(APS, INFO, "trim links %d => %d",
+				ap->ucLinkNum, ad->rWifiVar.ucStaMldLinkMax);
+			ap->ucLinkNum = ad->rWifiVar.ucStaMldLinkMax;
+		}
+
+		for (i = 0, j = 0, k = 0; i < ap->ucLinkNum; i++) {
+			if (ap->aprTarget[i]->prBlack)
+				j++;
+
+			if (ap->aprTarget[i]->fgIsConnected & bmap)
+				k++;
+		}
+
+		if (j == ap->ucLinkNum)
+			ap->fgIsAllLinkInBlackList = TRUE;
+
+		if (k == ap->ucLinkNum)
+			ap->fgIsAllLinkConnected = TRUE;
 	}
-
-	/* ensure no null target */
-	ap->ucLinkNum = 0;
-	for (i = 0; i < MAX_LINK_PLAN_NUM; i++) {
-		if (ap->aprTarget[i])
-			ap->ucLinkNum++;
-	}
-
-	/* trim ap */
-	if (ap->ucLinkNum > ad->rWifiVar.ucStaMldLinkMax) {
-		DBGLOG(APS, INFO, "trim links %d => %d",
-			ap->ucLinkNum, ad->rWifiVar.ucStaMldLinkMax);
-		ap->ucLinkNum = ad->rWifiVar.ucStaMldLinkMax;
-	}
-
-	for (i = 0, j = 0, k = 0; i < ap->ucLinkNum; i++) {
-		if (ap->aprTarget[i]->prBlack)
-			j++;
-
-		if (ap->aprTarget[i]->fgIsConnected & bmap)
-			k++;
-	}
-
-	if (j == ap->ucLinkNum)
-		ap->fgIsAllLinkInBlackList = TRUE;
-
-	if (k == ap->ucLinkNum)
-		ap->fgIsAllLinkConnected = TRUE;
 }
 
 uint16_t apsGetAmsduByte(struct BSS_DESC *bss)
