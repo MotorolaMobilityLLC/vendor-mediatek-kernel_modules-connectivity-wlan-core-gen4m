@@ -296,6 +296,11 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(struct ADAPTER *prAdapter,
 	uint8_t ucBssIdx, uint8_t fgNonTxLink, uint8_t fgHide,
 	struct WLAN_BEACON_FRAME *prProbeRspFrame);
 
+void
+p2pFuncProcessP2pProbeRspAction(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMgmtTxMsdu,
+		uint8_t ucBssIdx);
+
 #if 0 /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0) */
 uint32_t
 p2pFuncCalculateExtra_IELenForBeacon(struct ADAPTER *prAdapter,

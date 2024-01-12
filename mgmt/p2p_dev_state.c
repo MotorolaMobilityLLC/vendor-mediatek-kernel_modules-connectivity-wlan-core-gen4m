@@ -434,6 +434,129 @@ p2pDevStateAbort_OFF_CHNL_TX(struct ADAPTER *prAdapter,
 			prChnlReqInfo);
 }				/* p2pDevSateAbort_OFF_CHNL_TX */
 
+void p2pComposeLoProbeRsp(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	struct WLAN_BEACON_FRAME rProbeRspFrame;
+	struct WLAN_BEACON_FRAME *prFrame;
+	struct GL_P2P_INFO *prP2PInfo =
+		(struct GL_P2P_INFO *) NULL;
+	struct MSDU_INFO *prNewMgmtTxMsdu =
+		(struct MSDU_INFO *) NULL;
+	struct MSDU_INFO *prMgmtTxMsdu =
+		(struct MSDU_INFO *) NULL;
+	struct BSS_INFO *prBssInfo =
+		(struct BSS_INFO *) NULL;
+	struct P2P_DEV_FSM_INFO *fsm =
+		(struct P2P_DEV_FSM_INFO *) NULL;
+	struct P2P_LISTEN_OFFLOAD_INFO *pLoInfo =
+		(struct P2P_LISTEN_OFFLOAD_INFO *) NULL;
+#ifdef CFG_AAD_NONCE_NO_REPLACE
+	uint8_t fgHide = TRUE;
+#else
+	uint8_t fgHide = FALSE;
+#endif
+
+	if (!prAdapter)
+		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(P2P, INFO,
+			"Bss is not active\n");
+		return;
+	}
+
+	fsm = prAdapter->rWifiVar.prP2pDevFsmInfo;
+	if (!fsm)
+		return;
+	pLoInfo = &fsm->rLoInfo;
+
+	prMgmtTxMsdu = cnmMgtPktAlloc(prAdapter,
+		(int32_t) (pLoInfo->u2IELen + sizeof(uint64_t)
+		+ MAC_TX_RESERVED_FIELD));
+	if (prMgmtTxMsdu == NULL) {
+		DBGLOG(P2P, ERROR, "Allocate TX packet fails.\n");
+		return;
+	}
+
+	prMgmtTxMsdu->prPacket = pLoInfo->aucIE;
+	prMgmtTxMsdu->u2FrameLength = pLoInfo->u2IELen;
+
+	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[
+		prBssInfo->u4PrivateData];
+
+	DBGLOG(P2P, TRACE,
+		"Dump probe response content from supplicant.\n");
+
+	DBGLOG_MEM8(P2P, TRACE,
+		prMgmtTxMsdu->prPacket,
+		prMgmtTxMsdu->u2FrameLength);
+
+	p2pFuncProcessP2pProbeRspAction(prAdapter,
+		prMgmtTxMsdu, ucBssIndex);
+
+	/* backup header before free packet from supplicant */
+	kalMemCopy(&rProbeRspFrame,
+		(uint8_t *)((uintptr_t)prMgmtTxMsdu->prPacket +
+		MAC_TX_RESERVED_FIELD),
+		sizeof(rProbeRspFrame));
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (prP2PInfo->u2MlIELen != 0)
+		fgHide = FALSE;
+#endif
+
+	/* compose p2p probe rsp frame */
+	prNewMgmtTxMsdu =
+		p2pFuncProcessP2pProbeRsp(prAdapter,
+		ucBssIndex, FALSE, fgHide,
+		&rProbeRspFrame);
+
+	if (prNewMgmtTxMsdu) {
+		cnmMgtPktFree(prAdapter, prMgmtTxMsdu);
+		prMgmtTxMsdu = prNewMgmtTxMsdu;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		/* temp solution, supplicant only build ml
+		 * common info for ml probe resp, so we have to
+		 * fill complete per-sta profile when ml ie len
+		 * is not 0.
+		 */
+		mldGenerateProbeRspIE(prAdapter, prMgmtTxMsdu,
+			ucBssIndex, &rProbeRspFrame,
+			p2pFuncProcessP2pProbeRsp);
+#endif
+	}
+
+	prFrame = (struct WLAN_BEACON_FRAME *)
+		prMgmtTxMsdu->prPacket;
+
+	DBGLOG(P2P, TRACE,
+		"Dump probe response content to FW.\n");
+	DBGLOG_MEM8(P2P, TRACE,
+		prMgmtTxMsdu->prPacket,
+		prMgmtTxMsdu->u2FrameLength);
+
+	pLoInfo->u2IELen =
+		prMgmtTxMsdu->u2FrameLength -
+		OFFSET_OF(struct WLAN_BEACON_FRAME,
+		aucInfoElem) + 2;
+	kalMemCopy(pLoInfo->aucIE,
+		(uint8_t *) prFrame->aucInfoElem - 2,
+		pLoInfo->u2IELen);
+
+	DBGLOG(P2P, TRACE,
+		"Dump probe response shift content to FW.\n");
+	DBGLOG_MEM8(P2P, TRACE,
+		pLoInfo->aucIE,
+		pLoInfo->u2IELen);
+
+	cnmMgtPktFree(prAdapter, prMgmtTxMsdu);
+}
+
 u_int8_t
 p2pDevStateInit_LISTEN_OFFLOAD(
 	struct ADAPTER *prAdapter,
@@ -441,11 +564,20 @@ p2pDevStateInit_LISTEN_OFFLOAD(
 	struct P2P_LISTEN_OFFLOAD_INFO *pLoInfo)
 {
 	struct CMD_SET_P2P_LO_START_STRUCT *prCmd;
+	struct BSS_INFO *bss = (struct BSS_INFO *) NULL;
 	uint16_t u2CmdBufLen = 0;
 
 	do {
 		if (!prAdapter)
 			return FALSE;
+
+		bss = GET_BSS_INFO_BY_INDEX(prAdapter,
+			pLoInfo->ucBssIndex);
+		if (!bss) {
+			DBGLOG(P2P, INFO,
+				"Bss is not active\n");
+			return FALSE;
+		}
 
 		u2CmdBufLen =
 			sizeof(struct CMD_SET_P2P_LO_START_STRUCT) +
@@ -466,12 +598,18 @@ p2pDevStateInit_LISTEN_OFFLOAD(
 		prCmd->u2Period = pLoInfo->u4Period;
 		prCmd->u2Interval = pLoInfo->u4Interval;
 		prCmd->u2Count = pLoInfo->u4Count;
-		prCmd->u4IELen = pLoInfo->u2IELen;
 
-		/* TODO: Gen MTK probe resp */
+		/* listen channel */
+		bss->ucPrimaryChannel =
+			prCmd->u2ListenPrimaryCh;
+
+		p2pComposeLoProbeRsp(prAdapter,
+			prAdapter->ucP2PDevBssIdx);
+
 		kalMemCopy(prCmd->aucIE,
 			pLoInfo->aucIE,
 			pLoInfo->u2IELen);
+		prCmd->u4IELen = pLoInfo->u2IELen;
 
 		wlanSendSetQueryCmd(prAdapter,
 			CMD_ID_SET_P2P_LO_START,

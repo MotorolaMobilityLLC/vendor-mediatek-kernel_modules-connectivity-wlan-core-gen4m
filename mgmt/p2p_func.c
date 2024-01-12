@@ -134,11 +134,6 @@ p2pFuncGetAttriListAction(struct ADAPTER *prAdapter,
 #endif
 
 static void
-p2pFuncProcessP2pProbeRspAction(struct ADAPTER *prAdapter,
-		struct MSDU_INFO *prMgmtTxMsdu,
-		uint8_t ucBssIdx);
-
-static void
 p2pFuncGetSpecAttriAction(struct IE_P2P *prP2pIE,
 		uint8_t ucOuiType,
 		uint8_t ucAttriID,
@@ -652,12 +647,12 @@ p2pFuncUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 		else
 			prP2pBssInfo->fgIsShortPreambleAllowed = FALSE;
 
-#if CFG_SUPPORT_TDLS
+#if CFG_SUPPORT_TDLS_P2P_OFFCHANNEL
 		prP2pBssInfo->fgTdlsIsProhibited =
 			prStaRec->fgTdlsIsProhibited;
 		prP2pBssInfo->fgTdlsIsChSwProhibited =
 			prStaRec->fgTdlsIsChSwProhibited;
-#endif /* CFG_SUPPORT_TDLS */
+#endif /* CFG_SUPPORT_TDLS_P2P_OFFCHANNEL */
 
 		/* 4 <2.3> Setup PHY Attributes and
 		 * Basic Rate Set/Operational Rate Set
@@ -5925,7 +5920,7 @@ p2pFuncProcessP2pProbeRspVendor(struct ADAPTER *prAdapter,
 }
 
 /* Code refactoring for AOSP */
-static void
+void
 p2pFuncProcessP2pProbeRspAction(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMgmtTxMsdu,
 		uint8_t ucBssIdx)

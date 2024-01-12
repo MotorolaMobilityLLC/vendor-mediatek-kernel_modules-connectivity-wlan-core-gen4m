@@ -19585,6 +19585,26 @@ error:
 }
 
 #if CFG_SUPPORT_TDLS
+static uint8_t getTdlsEnabled(struct ADAPTER *pAd)
+{
+	uint8_t fgEnabled = TRUE;
+
+
+	if (pAd->rWifiVar.fgTdlsDisable) {
+		DBGLOG(TDLS, INFO, "TDLS is disabled\n");
+		fgEnabled = FALSE;
+	}
+
+	if (pAd->u4TdlsLinkCount == MAXNUM_TDLS_PEER) {
+		DBGLOG(TDLS, INFO,
+			"TDLS link count is full. (%d)\n",
+			MAXNUM_TDLS_PEER);
+		fgEnabled = FALSE;
+	}
+
+	return fgEnabled;
+}
+
 static int priv_driver_get_tdls_available(
 	struct net_device *prNetDev,
 	char *pcCommand,
@@ -19604,28 +19624,33 @@ static int priv_driver_get_tdls_available(
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	if (prAdapter->u4TdlsLinkCount == MAXNUM_TDLS_PEER) {
-		fgAvailable = FALSE;
+	fgAvailable = getTdlsEnabled(prAdapter);
+	if (!fgAvailable)
 		goto exit;
-	}
 
 	bss = aisGetConnectedBssInfo(prAdapter);
 	if (!bss) {
-		DBGLOG(REQ, WARN, "bss is not active\n");
+		DBGLOG(REQ, INFO, "bss is not active\n");
 		fgAvailable = FALSE;
 	} else {
-		DBGLOG(REQ, INFO,
+		DBGLOG(TDLS, INFO,
 			"STA operating channel: %d, band: %d, conn state: %d",
 			bss->ucPrimaryChannel,
 			bss->eBand,
 			bss->eConnectionState);
 
-		if (rlmDomainIsLegalDfsChannel(prAdapter,
-			bss->eBand, bss->ucPrimaryChannel)) {
+		/* Check VLP */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (bss->eBand == BAND_6G &&
+			bss->ucPrimaryChannel >= 97) {
+			DBGLOG(TDLS, INFO,
+				"VLP channel (%d)\n",
+				bss->ucPrimaryChannel);
 			fgAvailable = FALSE;
 			goto exit;
 		}
-		/* TODO: Check VLP */
+#endif
+
 	}
 
 exit:
@@ -19646,6 +19671,9 @@ static int priv_driver_get_tdls_wider_bw(
 	char *pcCommand,
 	int i4TotalLen)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct BSS_INFO *bss = NULL;
 	int32_t i4BytesWritten = 0;
 	uint8_t fgEnable = FALSE;
 
@@ -19654,9 +19682,33 @@ static int priv_driver_get_tdls_wider_bw(
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		goto error;
 
-#if CFG_SUPPORT_TDLS_11AX
-	fgEnable = TRUE;
-#endif
+	prGlueInfo = *((struct GLUE_INFO **)
+		netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	fgEnable = getTdlsEnabled(prAdapter);
+	if (!fgEnable)
+		goto exit;
+
+	bss = aisGetConnectedBssInfo(prAdapter);
+	if (!bss) {
+		DBGLOG(REQ, INFO, "bss is not active\n");
+		fgEnable = FALSE;
+	} else {
+		DBGLOG(TDLS, INFO,
+			"STA operating channel: %d, band: %d, conn state: %d",
+			bss->ucPrimaryChannel,
+			bss->eBand,
+			bss->eConnectionState);
+
+		if (rlmDomainIsLegalDfsChannel(prAdapter,
+			bss->eBand, bss->ucPrimaryChannel)) {
+			fgEnable = FALSE;
+			goto exit;
+		}
+	}
+
+exit:
 
 	i4BytesWritten = kalSnprintf(
 		pcCommand, i4TotalLen, "%d", fgEnable);
@@ -22733,7 +22785,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.pcCmdStr  = CMD_SET_TDLS_ENABLED,
 		.pfHandler = priv_driver_set_tdls_enabled,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = PRIV_CMD_GET_ARG_NUM,
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
 		.policy    = NULL
 	},
 #endif
