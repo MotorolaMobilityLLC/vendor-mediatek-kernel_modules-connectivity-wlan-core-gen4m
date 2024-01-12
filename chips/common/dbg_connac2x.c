@@ -3341,9 +3341,17 @@ void connac2x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 	u_int32_t ple_peek[12] = {0};
 	u_int32_t ple_empty = 0;
 	u_int32_t ple_txd_empty = 0;
+	uint32_t buf_size = 1024, pos = 0;
+	char *buf;
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prCr = prBusInfo->prPleTopCr;
+
+	buf = (char *) kalMemAlloc(buf_size, VIR_MEM_TYPE);
+	if (!buf) {
+		DBGLOG(HAL, ERROR, "Mem allocation failed.\n");
+		return;
+	}
 
 	HAL_MCR_RD(prAdapter, prCr->rIntN9ErrSts.u4Addr, &int_n9_err);
 	HAL_MCR_RD(prAdapter, prCr->rIntN9ErrSts1.u4Addr, &int_n9_err1);
@@ -3548,18 +3556,27 @@ void connac2x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 
 	if ((ple_stat[0] & prCr->rQueueEmptyAllAcEmpty.u4Mask) == 0) {
 		for (j = 0; j < 24; j = j + 6) {
+			kalMemZero(buf, buf_size);
+			pos = 0;
 			if (j % 6 == 0) {
-				DBGLOG(HAL, INFO,
-					"\tNonempty AC%d Q of STA#: ", j / 6);
+				pos += kalSnprintf(
+					buf + pos,
+					50,
+					"\tNonempty AC%d Q of STA#: ",
+					j / 6);
 			}
 
 			for (i = 0; i < 32; i++) {
 				if (((ple_stat[j + 1] & (0x1 << i)) >> i) ==
 				    0) {
-					DBGLOG(HAL, INFO, "%d ",
+					pos += kalSnprintf(
+						buf + pos,
+						10,
+						"%d ",
 						i + (j % 6) * 32);
 				}
 			}
+			DBGLOG(HAL, INFO, "%s\n", buf);
 		}
 		DBGLOG(HAL, INFO, ", ");
 	}
@@ -3587,17 +3604,14 @@ void connac2x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 				uint32_t ac_num = j / 6, ctrl = 0;
 				uint32_t sta_num = i + (j % 6) * 32;
 
-				DBGLOG(HAL, INFO, "\tSTA%d AC%d: ", sta_num,
-				       ac_num);
-
 				if (((sta_pause[j % 6] & 0x1 << i) >> i) == 1)
 					ctrl = 2;
 
 				if (((dis_sta_map[j % 6] & 0x1 << i) >> i) == 1)
 					ctrl = 1;
 
-				DBGLOG(HAL, INFO, " ctrl = %s",
-						   sta_ctrl_reg[ctrl]);
+				DBGLOG(HAL, INFO, "\tSTA%d AC%d: ctrl = %s",
+				       sta_num, ac_num, sta_ctrl_reg[ctrl]);
 			}
 		}
 	}
@@ -3607,6 +3621,7 @@ void connac2x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 	value = (~value & prCr->rToN9IntToggle.u4Mask) |
 		(value & ~prCr->rToN9IntToggle.u4Mask);
 	HAL_MCR_WR(prAdapter, prCr->rToN9IntToggle.u4Addr, value);
+	kalMemFree(buf, VIR_MEM_TYPE, buf_size);
 }
 
 void connac2x_show_pse_info(struct ADAPTER *prAdapter)
