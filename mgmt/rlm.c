@@ -219,6 +219,106 @@ void rlmFsmEventUninit(struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
+* \brief For association request, power capability
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
+void rlmReqGeneratePowerCapIE(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
+{
+	uint8_t *pucBuffer;
+	struct BSS_INFO *prBssInfo;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+
+	/* We should add power capability IE in assoc/reassoc req if
+	 * the spectrum management bit is set to 1 in Capability Info
+	 * field, or the connection will be rejected by Marvell APs in
+	 * some TGn items. (e.g. 5.2.32). Spectrum management related
+	 * feature (802.11h) is for 5G band.
+	 */
+	if (!prBssInfo || prBssInfo->eBand != BAND_5G)
+		return;
+
+	pucBuffer = (uint8_t *)
+		(prMsduInfo->prPacket + prMsduInfo->u2FrameLength);
+
+	POWER_CAP_IE(pucBuffer)->ucId = ELEM_ID_PWR_CAP;
+	POWER_CAP_IE(pucBuffer)->ucLength = ELEM_MAX_LEN_POWER_CAP;
+	POWER_CAP_IE(pucBuffer)->cMinTxPowerCap = 15;
+	POWER_CAP_IE(pucBuffer)->cMaxTxPowerCap = 20;
+
+	prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
+	pucBuffer += IE_SIZE(pucBuffer);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief For association request, supported channels
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
+void rlmReqGenerateSupportedChIE(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
+{
+	uint8_t *pucBuffer;
+	struct BSS_INFO *prBssInfo;
+	struct RF_CHANNEL_INFO auc2gChannelList[MAX_2G_BAND_CHN_NUM];
+	struct RF_CHANNEL_INFO auc5gChannelList[MAX_5G_BAND_CHN_NUM];
+	uint8_t ucNumOf2gChannel = 0;
+	uint8_t ucNumOf5gChannel = 0;
+	uint8_t ucChIdx = 0;
+	uint8_t ucIdx = 0;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+
+	/* We should add supported channels IE in assoc/reassoc request
+	 * if the spectrum management bit is set to 1 in Capability Info
+	 * field, or the connection will be rejected by Marvell APs in
+	 * some TGn items. (e.g. 5.2.3). Spectrum management related
+	 * feature (802.11h) is for 5G band.
+	 */
+	if (!prBssInfo || prBssInfo->eBand != BAND_5G)
+		return;
+
+	pucBuffer = (uint8_t *)
+		(prMsduInfo->prPacket + prMsduInfo->u2FrameLength);
+
+	rlmDomainGetChnlList(prAdapter, BAND_2G4, TRUE,
+		MAX_2G_BAND_CHN_NUM, &ucNumOf2gChannel, auc2gChannelList);
+	rlmDomainGetChnlList(prAdapter, BAND_5G, TRUE,
+		MAX_5G_BAND_CHN_NUM, &ucNumOf5gChannel, auc5gChannelList);
+
+	SUP_CH_IE(pucBuffer)->ucId = ELEM_ID_SUP_CHS;
+	SUP_CH_IE(pucBuffer)->ucLength =
+		(ucNumOf2gChannel + ucNumOf5gChannel) * 2;
+
+	for (ucIdx = 0; ucIdx < ucNumOf2gChannel; ucIdx++, ucChIdx += 2) {
+		SUP_CH_IE(pucBuffer)->ucChannelNum[ucChIdx] =
+			auc2gChannelList[ucIdx].ucChannelNum;
+		SUP_CH_IE(pucBuffer)->ucChannelNum[ucChIdx + 1] = 1;
+	}
+
+	for (ucIdx = 0; ucIdx < ucNumOf5gChannel; ucIdx++, ucChIdx += 2) {
+		SUP_CH_IE(pucBuffer)->ucChannelNum[ucChIdx] =
+			auc5gChannelList[ucIdx].ucChannelNum;
+		SUP_CH_IE(pucBuffer)->ucChannelNum[ucChIdx + 1] = 1;
+	}
+
+	prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
+	pucBuffer += IE_SIZE(pucBuffer);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
 * \brief For probe request, association request
 *
 * \param[in]

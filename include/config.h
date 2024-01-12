@@ -175,7 +175,7 @@
 /* Quiet (802.11h) */
 #define CFG_SUPPORT_QUIET	0
 /* Spectrum Management (802.11h): TPC and DFS */
-#define CFG_SUPPORT_SPEC_MGMT	0
+#define CFG_SUPPORT_SPEC_MGMT	1
 #else
 /* Quiet (802.11h) */
 #define CFG_SUPPORT_QUIET	0
