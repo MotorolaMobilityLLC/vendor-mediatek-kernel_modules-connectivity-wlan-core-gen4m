@@ -131,10 +131,10 @@
 #define MT6885_DMASHDL_PRIORITY13_GROUP                (0xD)
 #define MT6885_DMASHDL_PRIORITY14_GROUP                (0xE)
 #define MT6885_DMASHDL_PRIORITY15_GROUP                (0xF)
-/* 2 rings are used */
-#define MT6885_DMASHDL_HIF_ACK_CNT_TH                  (0x2)
-/* Ring 0/1 are used */
-#define MT6885_DMASHDL_HIF_GUP_ACT_MAP                 (0x0003)
+/* 3 rings are used */
+#define MT6885_DMASHDL_HIF_ACK_CNT_TH                  (0x3)
+/* Ring 0/1/2 are used */
+#define MT6885_DMASHDL_HIF_GUP_ACT_MAP                 (0x0007)
 
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */
 

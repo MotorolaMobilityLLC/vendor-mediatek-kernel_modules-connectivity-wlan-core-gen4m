@@ -39,7 +39,7 @@
 #define SOC7_0_DMASHDL_PKT_PSE_MAX_PAGE                (0x18)
 #define SOC7_0_DMASHDL_GROUP_0_REFILL_EN               (1)
 #define SOC7_0_DMASHDL_GROUP_1_REFILL_EN               (1)
-#define SOC7_0_DMASHDL_GROUP_2_REFILL_EN               (0)
+#define SOC7_0_DMASHDL_GROUP_2_REFILL_EN               (1)
 #define SOC7_0_DMASHDL_GROUP_3_REFILL_EN               (0)
 #define SOC7_0_DMASHDL_GROUP_4_REFILL_EN               (0)
 #define SOC7_0_DMASHDL_GROUP_5_REFILL_EN               (0)
@@ -133,10 +133,10 @@
 #define SOC7_0_DMASHDL_PRIORITY13_GROUP                (0xD)
 #define SOC7_0_DMASHDL_PRIORITY14_GROUP                (0xE)
 #define SOC7_0_DMASHDL_PRIORITY15_GROUP                (0xF)
-/* 3 rings are used */
-#define SOC7_0_DMASHDL_HIF_ACK_CNT_TH                  (0x3)
-/* Ring 0/1/15 are used */
-#define SOC7_0_DMASHDL_HIF_GUP_ACT_MAP                 (0x8003)
+/* 4 rings are used (3 data + cmd) */
+#define SOC7_0_DMASHDL_HIF_ACK_CNT_TH                  (0x4)
+/* Ring 0/1/2/15 are used */
+#define SOC7_0_DMASHDL_HIF_GUP_ACT_MAP                 (0x8007)
 
 /*******************************************************************************
 *                         D A T A   T Y P E S

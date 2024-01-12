@@ -133,10 +133,10 @@
 #define SOC5_0_DMASHDL_PRIORITY13_GROUP                (0xD)
 #define SOC5_0_DMASHDL_PRIORITY14_GROUP                (0xE)
 #define SOC5_0_DMASHDL_PRIORITY15_GROUP                (0xF)
-/* 2 rings are used */
-#define SOC5_0_DMASHDL_HIF_ACK_CNT_TH                  (0x2)
-/* Ring 0/1 are used */
-#define SOC5_0_DMASHDL_HIF_GUP_ACT_MAP                 (0x0003)
+/* 3 rings are used */
+#define SOC5_0_DMASHDL_HIF_ACK_CNT_TH                  (0x3)
+/* Ring 0/1/2 are used */
+#define SOC5_0_DMASHDL_HIF_GUP_ACT_MAP                 (0x0007)
 
 /*******************************************************************************
 *                         D A T A   T Y P E S
