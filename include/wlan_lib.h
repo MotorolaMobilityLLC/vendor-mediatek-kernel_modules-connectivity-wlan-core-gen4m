@@ -1838,9 +1838,6 @@ uint32_t wlanSendNicPowerCtrlCmd(struct ADAPTER *prAdapter,
 u_int8_t wlanIsHandlerAllowedInRFTest(PFN_OID_HANDLER_FUNC pfnOidHandler,
 				      u_int8_t fgSetInfo);
 
-uint32_t wlanProcessQueuedSwRfb(struct ADAPTER *prAdapter,
-				struct SW_RFB *prSwRfbListHead);
-
 uint32_t wlanProcessQueuedMsduInfo(struct ADAPTER *prAdapter,
 				   struct MSDU_INFO *prMsduInfoListHead);
 
