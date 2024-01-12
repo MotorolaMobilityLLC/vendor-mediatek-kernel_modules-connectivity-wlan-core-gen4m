@@ -8515,12 +8515,7 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 
 	kalMemCopy(&rRssi, pvQueryBuffer,
 		   sizeof(struct PARAM_RSSI_MONITOR_T));
-	if (rRssi.enable) {
-		if (rRssi.max_rssi_value > PARAM_WHQL_RSSI_MAX_DBM)
-			rRssi.max_rssi_value = PARAM_WHQL_RSSI_MAX_DBM;
-		if (rRssi.min_rssi_value < -120)
-			rRssi.min_rssi_value = -120;
-	} else {
+	if (!rRssi.enable) {
 		rRssi.max_rssi_value = 0;
 		rRssi.min_rssi_value = 0;
 	}
