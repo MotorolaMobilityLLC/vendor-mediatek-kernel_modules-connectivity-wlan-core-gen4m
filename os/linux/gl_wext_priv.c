@@ -3844,6 +3844,8 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_GET_NVRAM	"GET_NVRAM"
 #define CMD_SET_DRV_MCR		"SET_DRV_MCR"
 #define CMD_GET_DRV_MCR		"GET_DRV_MCR"
+#define CMD_SET_UHW_MCR		"SET_UHW_MCR"
+#define CMD_GET_UHW_MCR		"GET_UHW_MCR"
 #define CMD_SET_SW_CTRL	        "SET_SW_CTRL"
 #define CMD_GET_SW_CTRL         "GET_SW_CTRL"
 #define CMD_SET_CFG             "SET_CFG"
@@ -8010,6 +8012,121 @@ int priv_driver_set_drv_mcr(IN struct net_device *prNetDev, IN char *pcCommand,
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			return -1;
 
+	}
+
+	return i4BytesWritten;
+
+}
+
+static int priv_driver_get_uhw_mcr(IN struct net_device *prNetDev,
+				   IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
+	uint32_t u4Ret;
+
+	/* Add Antenna Selection Input */
+	/* INT_32 i4ArgNum_with_ant_sel = 3; */
+
+	int32_t i4ArgNum = 2;
+
+	struct CMD_ACCESS_REG rCmdAccessReg;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= i4ArgNum) {
+
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rCmdAccessReg.u4Address));
+		if (u4Ret)
+			DBGLOG(REQ, LOUD,
+			       "parse get_drv_mcr error (Address) u4Ret=%d\n",
+			       u4Ret);
+
+		/* rCmdAccessReg.u4Address = kalStrtoul(apcArgv[1], NULL, 0); */
+		rCmdAccessReg.u4Data = 0;
+
+		DBGLOG(REQ, LOUD, "address is %x\n", rCmdAccessReg.u4Address);
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidQueryUhwMcrRead,
+				   &rCmdAccessReg, sizeof(rCmdAccessReg),
+				   TRUE, TRUE, TRUE, &u4BufLen);
+
+		DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			i4BytesWritten = snprintf(pcCommand, i4TotalLen,
+						  "IO FAIL");
+		else
+			i4BytesWritten = snprintf(pcCommand, i4TotalLen,
+						  "0x%08x",
+					    (unsigned int)rCmdAccessReg.u4Data);
+
+		DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__,
+		       pcCommand);
+	}
+
+	return i4BytesWritten;
+
+}
+
+int priv_driver_set_uhw_mcr(IN struct net_device *prNetDev, IN char *pcCommand,
+			    IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Ret;
+
+	/* Add Antenna Selection Input */
+	/* INT_32 i4ArgNum_with_ant_sel = 4; */
+
+	int32_t i4ArgNum = 3;
+
+	struct CMD_ACCESS_REG rCmdAccessReg;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= i4ArgNum) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rCmdAccessReg.u4Address));
+		if (u4Ret)
+			DBGLOG(REQ, LOUD,
+			       "parse get_drv_mcr error (Address) u4Ret=%d\n",
+			       u4Ret);
+
+		u4Ret = kalkStrtou32(apcArgv[2], 0, &(rCmdAccessReg.u4Data));
+		if (u4Ret)
+			DBGLOG(REQ, LOUD,
+			       "parse get_drv_mcr error (Data) u4Ret=%d\n",
+			       u4Ret);
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetUhwMcrWrite,
+				   &rCmdAccessReg, sizeof(rCmdAccessReg),
+				   FALSE, FALSE, TRUE, &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			i4BytesWritten = snprintf(pcCommand, i4TotalLen,
+						  "IO FAIL");
 	}
 
 	return i4BytesWritten;
@@ -15798,6 +15915,8 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_GET_MCR, priv_driver_get_mcr},
 	{CMD_SET_DRV_MCR, priv_driver_set_drv_mcr},
 	{CMD_GET_DRV_MCR, priv_driver_get_drv_mcr},
+	{CMD_SET_UHW_MCR, priv_driver_set_uhw_mcr},
+	{CMD_GET_UHW_MCR, priv_driver_get_uhw_mcr},
 	{CMD_SET_TEST_MODE, priv_driver_set_test_mode},
 	{CMD_SET_TEST_CMD, priv_driver_set_test_cmd},
 	{CMD_GET_TEST_RESULT, priv_driver_get_test_result},

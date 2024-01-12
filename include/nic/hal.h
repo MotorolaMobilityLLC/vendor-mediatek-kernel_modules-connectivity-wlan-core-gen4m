@@ -640,6 +640,10 @@ do { \
 
 #define HAL_IS_RX_DIRECT(_prAdapter) FALSE
 
+#define HAL_UHW_RD(_prAdapter, _u4Offset, _pu4Value, _pucSts)
+
+#define HAL_UHW_WR(_prAdapter, _u4Offset, _u4Value, _pucSts)
+
 #endif
 
 #if defined(_HIF_SDIO)
@@ -1019,6 +1023,10 @@ do { \
 
 #define HAL_IS_RX_DIRECT(_prAdapter) FALSE
 
+#define HAL_UHW_RD(_prAdapter, _u4Offset, _pu4Value, _pucSts)
+
+#define HAL_UHW_WR(_prAdapter, _u4Offset, _u4Value, _pucSts)
+
 #endif
 
 #if defined(_HIF_USB)
@@ -1164,6 +1172,24 @@ do { \
 #define HAL_IS_RX_DIRECT(_prAdapter) \
 	((CFG_RX_DIRECT_USB) ? TRUE : FALSE)
 
+#define HAL_UHW_RD(_prAdapter, _u4Offset, _pu4Value, _pucSts)	\
+{ \
+	if (_prAdapter->rAcpiState == ACPI_STATE_D3) { \
+		ASSERT(0); \
+	} \
+	*_pucSts = kalDevUhwRegRead(_prAdapter->prGlueInfo, _u4Offset, \
+				    _pu4Value); \
+}
+
+#define HAL_UHW_WR(_prAdapter, _u4Offset, _u4Value, _pucSts)	\
+{ \
+	if (_prAdapter->rAcpiState == ACPI_STATE_D3) { \
+		ASSERT(0); \
+	} \
+	*_pucSts = kalDevUhwRegWrite(_prAdapter->prGlueInfo, _u4Offset, \
+				     _u4Value); \
+}
+
 #endif
 
 /*
@@ -1202,6 +1228,12 @@ do { \
 #define HAL_IS_TX_DIRECT(_prAdapter) FALSE
 
 #define HAL_IS_RX_DIRECT(_prAdapter) FALSE
+
+#define HAL_UHW_RD(_prAdapter, _u4Offset, _pu4Value, _pfgSts)	\
+	kal_virt_uhw_rd(_prAdapter, _u4Offset, _pu4Value, _pfgSts)
+
+#define HAL_UHW_WR(_prAdapter, _u4Offset, _u4Value, _pfgSts)	\
+	kal_virt_uhw_wr(_prAdapter, _u4Offset, _u4Value, _pfgSts)
 #endif
 #define INVALID_VERSION 0xFFFF /* used by HW/FW version */
 /*******************************************************************************
