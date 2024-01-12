@@ -1710,11 +1710,6 @@ int mt6639_get_rx_rate_info(const uint32_t *prRxV,
 	if (!prRxRateInfo || !prRxV)
 		return -1;
 
-	if (prRxV[0] == 0) {
-		DBGLOG(SW4, WARN, "u4RxV0 is 0\n");
-		return -1;
-	}
-
 	rate = RXV_GET_RX_RATE(prRxV[0]);
 	nsts = RXV_GET_RX_NSTS(prRxV[0]);
 	rxmode = RXV_GET_TXMODE(prRxV[2]);
