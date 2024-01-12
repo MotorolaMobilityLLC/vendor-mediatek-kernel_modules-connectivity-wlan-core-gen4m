@@ -2495,21 +2495,17 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 	struct PARAM_STATUS_INDICATION *pStatus;
 	struct PARAM_AUTH_EVENT *pAuth;
 	struct PARAM_PMKID_CANDIDATE_LIST *pPmkid;
-	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
-	struct PARAM_SSID ssid = {0};
+	struct BSS_INFO *prBssInfo;
+	struct PARAM_BSSID_EX *prCurrBssid;
 	struct ADAPTER *prAdapter = NULL;
 	uint8_t fgScanAborted = FALSE;
 	struct net_device *prDevHandler;
-	struct CONNECTION_SETTINGS *prConnSettings = NULL;
-	struct FT_IES *prFtIEs;
 	struct BSS_DESC *prBssDesc = NULL;
 #if (CFG_SUPPORT_TX_PWR_ENV == 1)
 	int8_t aicTxPwrEnvMaxTxPwr[TX_PWR_ENV_MAX_TXPWR_BW_NUM];
 #endif
 
 	GLUE_SPIN_LOCK_DECLARATION();
-
-	kalMemZero(arBssid, MAC_ADDR_LEN);
 
 	ASSERT(prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
@@ -2518,9 +2514,15 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 	pStatus = (struct PARAM_STATUS_INDICATION *)pvBuf;
 	pAuth = (struct PARAM_AUTH_EVENT *)pStatus;
 	pPmkid = (struct PARAM_PMKID_CANDIDATE_LIST *)(pStatus + 1);
-
 	prDevHandler = wlanGetNetDev(prGlueInfo, ucBssIndex);
 	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+	if (!prBssInfo) {
+		DBGLOG(INIT, ERROR, "prBssInfo %d is null\n", ucBssIndex);
+		return;
+	}
+
 	switch (eStatus) {
 	case WLAN_STATUS_ROAM_OUT_FIND_BEST:
 	case WLAN_STATUS_MEDIA_CONNECT:
@@ -2534,34 +2536,28 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 			MEDIA_STATE_CONNECTED,
 			ucBssIndex);
 
-		/* indicate assoc event */
-		SET_IOCTL_BSSIDX(prGlueInfo->prAdapter, ucBssIndex);
-		wlanQueryInformation(prGlueInfo->prAdapter, wlanoidQueryBssid,
-					&arBssid[0], sizeof(arBssid), &bufLen);
-		wext_indicate_wext_event(prGlueInfo, SIOCGIWAP, arBssid,
-					 bufLen, ucBssIndex);
+		prCurrBssid = aisGetCurrBssId(prGlueInfo->prAdapter,
+			ucBssIndex);
+
+		wext_indicate_wext_event(prGlueInfo, SIOCGIWAP,
+					prCurrBssid->arMacAddress,
+					bufLen, ucBssIndex);
 
 		/* switch netif on */
 		netif_carrier_on(prDevHandler);
 
 		do {
 			uint8_t aucSsid[PARAM_MAX_LEN_SSID + 1] = {0};
-			struct BSS_INFO *prBssInfo;
 
-			prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
-			/* print message on console */
-			SET_IOCTL_BSSIDX(prGlueInfo->prAdapter, ucBssIndex);
-			wlanQueryInformation(prGlueInfo->prAdapter,
-			     wlanoidQuerySsid, &ssid, sizeof(ssid), &bufLen);
-
-			kalStrnCpy(aucSsid, ssid.aucSsid, sizeof(aucSsid) - 1);
+			kalStrnCpy(aucSsid, prCurrBssid->rSsid.aucSsid,
+				sizeof(aucSsid) - 1);
 			aucSsid[sizeof(aucSsid) - 1] = '\0';
 
 			DBGLOG(INIT, INFO,
 				"[wifi] %s netif_carrier_on [ssid:%s " MACSTR
 				"], Mac:" MACSTR "\n",
 				prDevHandler->name, aucSsid,
-				MAC2STR(arBssid),
+				MAC2STR(prCurrBssid->arMacAddress),
 				MAC2STR(prBssInfo->aucOwnMacAddr));
 
 		} while (0);
@@ -2653,13 +2649,10 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 		}
 
 		if (prGlueInfo->fgIsRegistered == TRUE) {
-			struct BSS_INFO *prBssInfo =
-				aisGetAisBssInfo(prAdapter, ucBssIndex);
 			uint16_t u2DeauthReason = 0;
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 
-			if (prBssInfo)
-				u2DeauthReason = prBssInfo->u2DeauthReason;
+			u2DeauthReason = prBssInfo->u2DeauthReason;
 
 #if CFG_SUPPORT_BIGDATA_PIP
 			{
@@ -2764,11 +2757,7 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 #endif
 #endif
 			{
-
-
-				if (prBssInfo)
-					u2DeauthReason =
-						prBssInfo->u2DeauthReason;
+				u2DeauthReason = prBssInfo->u2DeauthReason;
 				/* CFG80211 Indication */
 				cfg80211_disconnected(prDevHandler,
 						      u2DeauthReason, NULL, 0,
@@ -2777,36 +2766,6 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 
 
 #endif
-		}
-		prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
-		if (prConnSettings && prConnSettings->assocIeLen > 0) {
-			kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
-				   prConnSettings->assocIeLen);
-			prConnSettings->assocIeLen = 0;
-			prConnSettings->pucAssocIEs = NULL;
-		}
-
-		if (prConnSettings && prConnSettings->u4RspIeLength > 0) {
-			kalMemFree(prConnSettings->aucRspIe, VIR_MEM_TYPE,
-				prConnSettings->u4RspIeLength);
-			prConnSettings->u4RspIeLength = 0;
-			prConnSettings->aucRspIe = NULL;
-		}
-
-		if (prConnSettings && prConnSettings->u4ReqIeLength > 0) {
-			kalMemFree(prConnSettings->aucReqIe, VIR_MEM_TYPE,
-				prConnSettings->u4ReqIeLength);
-			prConnSettings->u4ReqIeLength = 0;
-			prConnSettings->aucReqIe = NULL;
-		}
-
-		prFtIEs = aisGetFtIe(prAdapter, ucBssIndex);
-		if (prFtIEs) {
-			kalMemFree(prFtIEs->pucIEBuf,
-				VIR_MEM_TYPE,
-				prFtIEs->u4IeLength);
-			kalMemZero(prFtIEs,
-				sizeof(*prFtIEs));
 		}
 
 		kalSetMediaStateIndicated(prGlueInfo,
@@ -2977,15 +2936,18 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 			aisGetConnSettings(prAdapter, ucBssIndex);
 		struct GL_WPA_INFO *prWpaInfo =
 			aisGetWpaInfo(prAdapter, ucBssIndex);
-		struct BSS_INFO *prBssInfo =
-			aisGetAisBssInfo(prAdapter, ucBssIndex);
 
-		COPY_MAC_ADDR(arBssid, prConnSettings->aucJoinBSSID);
+		COPY_SSID(prBssInfo->aucSSID,
+			prBssInfo->ucSSIDLen,
+			prConnSettings->aucSSID,
+			prConnSettings->ucSSIDLen);
+		COPY_MAC_ADDR(prBssInfo->aucBSSID,
+			prConnSettings->aucJoinBSSID);
 
 		/* Make sure we remove all WEP key */
 		if (prWpaInfo && prWpaInfo->u4WpaVersion ==
 			IW_AUTH_WPA_VERSION_DISABLED
-			&& prBssInfo && prBssInfo->wepkeyWlanIdx < WTBL_SIZE) {
+			&& prBssInfo->wepkeyWlanIdx < WTBL_SIZE) {
 			uint32_t keyId;
 			uint32_t u4SetLen;
 			struct PARAM_REMOVE_KEY rRemoveKey;
@@ -2998,7 +2960,8 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 					sizeof(struct PARAM_REMOVE_KEY);
 				rRemoveKey.u4KeyIndex = keyId;
 				rRemoveKey.ucBssIdx = ucBssIndex;
-				COPY_MAC_ADDR(rRemoveKey.arBSSID, arBssid);
+				COPY_MAC_ADDR(rRemoveKey.arBSSID,
+					      prBssInfo->aucBSSID);
 				DBGLOG(INIT, INFO,
 					"JOIN Failure: remove WEP wlanidx: %d, keyid: %d",
 					prBssInfo->wepkeyWlanIdx,
@@ -3013,36 +2976,6 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 		kalReportAllLinkInfo(prGlueInfo->prAdapter,
 				prDevHandler, eStatus, pvBuf,
 				u4BufLen, ucBssIndex);
-
-		if (prConnSettings && prConnSettings->assocIeLen > 0) {
-			kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
-				   prConnSettings->assocIeLen);
-			prConnSettings->assocIeLen = 0;
-			prConnSettings->pucAssocIEs = NULL;
-		}
-
-		if (prConnSettings && prConnSettings->u4RspIeLength > 0) {
-			kalMemFree(prConnSettings->aucRspIe, VIR_MEM_TYPE,
-				prConnSettings->u4RspIeLength);
-			prConnSettings->u4RspIeLength = 0;
-			prConnSettings->aucRspIe = NULL;
-		}
-
-		if (prConnSettings && prConnSettings->u4ReqIeLength > 0) {
-			kalMemFree(prConnSettings->aucReqIe, VIR_MEM_TYPE,
-				prConnSettings->u4ReqIeLength);
-			prConnSettings->u4ReqIeLength = 0;
-			prConnSettings->aucReqIe = NULL;
-		}
-
-		prFtIEs = aisGetFtIe(prAdapter, ucBssIndex);
-		if (prFtIEs) {
-			kalMemFree(prFtIEs->pucIEBuf,
-				VIR_MEM_TYPE,
-				prFtIEs->u4IeLength);
-			kalMemZero(prFtIEs,
-				sizeof(*prFtIEs));
-		}
 
 		kalSetMediaStateIndicated(prGlueInfo,
 			MEDIA_STATE_DISCONNECTED,
