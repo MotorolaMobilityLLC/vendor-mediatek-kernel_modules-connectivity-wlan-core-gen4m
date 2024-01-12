@@ -3345,7 +3345,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	    [ucBssIndex][u2QueueIdx]) >= u4StopTh) {
 		netif_stop_subqueue(prDev, u2QueueIdx);
 
-		DBGLOG(TX, INFO,
+		DBGLOG_LIMITED(TX, INFO,
 		       "Stop subqueue for BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%d] PER-Q_CNT[%d]\n",
 		       ucBssIndex, u2QueueIdx, u4SkbLen,
 		       GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
@@ -3498,7 +3498,7 @@ void kalSendCompleteAndAwakeQueue(struct GLUE_INFO
 		    prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex]
 		    [u2QueueIdx] <= u4StartTh) {
 			netif_wake_subqueue(prDev, u2QueueIdx);
-			DBGLOG(TX, INFO,
+			DBGLOG_LIMITED(TX, INFO,
 				"WakeUp Queue BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%d] PER-Q_CNT[%d]\n",
 				ucBssIndex, u2QueueIdx, prSkb->len,
 				GLUE_GET_REF_CNT(
