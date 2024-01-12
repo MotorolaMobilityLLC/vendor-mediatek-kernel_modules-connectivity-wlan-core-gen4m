@@ -2265,6 +2265,7 @@ uint32_t kalGetTpMbps(struct ADAPTER *prAdapter,
 uint32_t kalGetTpMbpsByBssId(struct ADAPTER *prAdapter,
 	enum ENUM_PKT_PATH ePath,
 	uint8_t ucBssIdx);
+u_int8_t kalIsRxHighTput(struct ADAPTER *prAdapter);
 #if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
 u_int8_t kalIsTputMode(struct ADAPTER *prAdapter,
 	enum ENUM_PKT_PATH ePath,

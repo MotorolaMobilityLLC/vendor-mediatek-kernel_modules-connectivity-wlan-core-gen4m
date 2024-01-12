@@ -10832,6 +10832,16 @@ uint32_t kalGetTpMbps(struct ADAPTER *prAdapter,
 	return u4TpMbps;
 }
 
+u_int8_t kalIsRxHighTput(struct ADAPTER *prAdapter)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	if (kalGetTpMbps(prAdapter, PKT_PATH_RX) < prWifiVar->u4RxHighTputTh)
+		return FALSE;
+
+	return TRUE;
+}
+
 #if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
 u_int8_t kalIsTputMode(struct ADAPTER *prAdapter,
 	enum ENUM_PKT_PATH ePath,
