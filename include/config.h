@@ -1872,6 +1872,10 @@
 #define CFG_TX_RSRC_WMM_ENHANCE  0
 #endif
 
+#ifndef CFG_EFUSE_AUTO_MODE_SUPPORT
+#define CFG_EFUSE_AUTO_MODE_SUPPORT 0
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

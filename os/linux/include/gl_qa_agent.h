@@ -117,8 +117,22 @@ extern unsigned long long gConEmiSizeFinal;
 #ifdef MAX_EEPROM_BUFFER_SIZE
 #undef MAX_EEPROM_BUFFER_SIZE
 #endif
+
+#if defined MT7915 || defined MT7961
+#define MAX_EEPROM_BUFFER_SIZE	0xe00
+#else
 //For Bellwether, Modify from 1200 to 6K
 #define MAX_EEPROM_BUFFER_SIZE	6144
+#endif
+
+#ifdef BUFFER_BIN_PAGE_SIZE
+#undef BUFFER_BIN_PAGE_SIZE
+#endif
+#if defined MT7915 || defined MT7961
+#define BUFFER_BIN_PAGE_SIZE	0x400
+#else
+#define BUFFER_BIN_PAGE_SIZE	(MAX_EEPROM_BUFFER_SIZE)
+#endif
 
 #define HQA_DBDC_BAND_NUM 2
 #define HQA_ANT_NUM 4
