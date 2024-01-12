@@ -1577,6 +1577,7 @@ nanElemContainerAttrHandler(
 				* for STA-REC params
 				*/
 			}
+			break;
 #endif
 
 		default:
