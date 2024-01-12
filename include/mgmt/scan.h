@@ -572,7 +572,7 @@ struct SCAN_INFO {
 	uint8_t		aucChannelMDRDYCnt[64];
 	/* Beacon and Probe Response Count in each Channel */
 	uint8_t		aucChannelBAndPCnt[64];
-
+	uint16_t	au2ChannelScanTime[64];
 	/* Support AP Selection */
 	uint32_t u4ScanUpdateIdx;
 
