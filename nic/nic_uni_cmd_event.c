@@ -3158,7 +3158,7 @@ uint32_t nicUniCmdBFAction(struct ADAPTER *ad,
 
 	bf_action_id = cmd->rProfileTagRead.ucTxBfCategory;
 	if (bf_action_id >= ARRAY_SIZE(arBFActionTable)) {
-		DBGLOG(NIC, ERROR, "unknown ACTION_ID:d\n", bf_action_id);
+		DBGLOG(NIC, ERROR, "unknown ACTION_ID:%d\n", bf_action_id);
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
@@ -3567,6 +3567,11 @@ uint32_t nicUniCmdStaRecTagBfee(struct ADAPTER *ad,
 		(struct UNI_CMD_STAREC_BFEE *)buf;
 
 	struct STA_RECORD *prStaRec = cnmGetStaRecByIndex(ad, cmd->ucStaIndex);
+
+	if (!prStaRec) {
+		DBGLOG(INIT, ERROR, "[BF]prStaRec is NULL!\n");
+		return 0;
+	}
 
 	tag->u2Tag = UNI_CMD_STAREC_TAG_BFEE;
 	tag->u2Length = sizeof(*tag);
