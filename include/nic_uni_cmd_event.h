@@ -3061,6 +3061,72 @@ struct UNI_EVENT_SCAN_DONE_NLO {
 	uint8_t  aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_RDD
+{
+	/* fixed field */
+	uint8_t aucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+        *
+        *   TAG                          | ID  | structure
+        *   -------------                | ----| -------------
+        *   UNI_EVENT_RDD_SEND_PULSE     | 0x0 | UNI_EVENT_RDD_SEND_PULSE_T
+        *   UNI_EVENT_RDD_REPORT         | 0x1 | UNI_EVENT_RDD_REPORT_T
+        */
+} __KAL_ATTRIB_PACKED__;
+
+/* RDD
+ event Tag */
+enum ENUM_UNI_EVENT_RDD_TAG {
+	UNI_EVENT_RDD_TAG_SEND_PULSE = 0,
+	UNI_EVENT_RDD_TAG_REPORT     = 1,
+	UNI_EVENT_RDD_TAG_NUM
+};
+
+/* Beacon timeout reason (Tag0) */
+struct UNI_EVENT_RDD_SEND_PULSE {
+	uint16_t u2Tag;    // Tag = 0x00
+	uint16_t u2Length;
+	uint8_t u1RddIdx;
+	uint8_t u1LongDetected;
+	uint8_t u1ConstantPRFDetected;
+	uint8_t u1StaggeredPRFDetected;
+	uint8_t u1RadarTypeIdx;
+	uint8_t u1PeriodicPulseNum;
+	uint8_t u1LongPulseNum;
+	uint8_t u1HwPulseNum;
+	uint8_t u1OutLPN;    /* Long Pulse Number */
+	uint8_t u1OutSPN;    /* Short Pulse Number */
+	uint8_t u1OutCRPN;
+	uint8_t u1OutCRPW;   /* Constant PRF Radar: Pulse Number */
+	uint8_t u1OutCRBN;   /* Constant PRF Radar: Burst Number */
+	uint8_t u1OutSTGPN;  /* Staggered PRF radar: Staggered pulse number */
+	uint8_t u1OutSTGPW;  /* Staggered PRF radar: maximum pulse width */
+	uint8_t u1Reserve;
+	uint32_t u4OutPRI_CONST;
+	uint32_t u4OutPRI_STG1;
+	uint32_t u4OutPRI_STG2;
+	uint32_t u4OutPRI_STG3;
+	/* Staggered PRF radar: min PRI Difference between 1st and 2nd	*/
+	uint32_t u4OutPRIStgDmin;
+	/* event body  */
+	uint8_t  aucBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* Per band SER counter (Tag1) */
+struct UNI_EVENT_RDD_REPORT {
+	uint16_t   u2Tag;    // Tag = 0x01
+	uint16_t   u2Length;
+	uint32_t u4FuncIndex;
+	uint32_t u4FuncLength;
+	uint32_t u4Prefix;
+	uint32_t u4Count;
+	uint8_t ucRddIdx;
+	uint8_t aucReserve[3];
+	uint8_t aucBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_EVENT_ADD_KEY_DONE {
 	/* fixed field */
 	uint8_t ucBssIndex;
@@ -3967,6 +4033,9 @@ void nicUniEventFwLog2Host(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventP2p(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+void nicUniEventRDD(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
