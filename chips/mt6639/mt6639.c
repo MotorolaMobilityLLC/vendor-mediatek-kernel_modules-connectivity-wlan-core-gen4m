@@ -577,8 +577,10 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 	.showMibInfo = connac3x_show_mib_info,
 	.showUmacWtblInfo = connac3x_show_umac_wtbl_info,
 	.showCsrInfo = NULL,
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
 	.showDmaschInfo = connac3x_show_dmashdl_info,
+#endif
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.getFwDebug = connac3x_get_ple_int,
 	.setFwDebug = connac3x_set_ple_int,
 #endif
