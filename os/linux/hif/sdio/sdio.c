@@ -420,6 +420,9 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 		prAdapter->rWifiVar.ucWow,
 		prAdapter->rWowCtrl.fgWowEnable);
 
+	prGlueInfo->fgIsInSuspendMode = TRUE;
+	if (!wlan_perf_monitor_force_enable)
+		kalPerMonDisable(prGlueInfo);
 	/* 1) wifi cfg "Wow" is true
 	*  2) wow is enable
 	*  3) WIfI connected => execute WOW flow
@@ -508,6 +511,8 @@ static int mtk_sdio_pm_resume(struct device *pDev)
 
 	prGlueInfo->rHifInfo.fgForceFwOwn = FALSE;
 
+	kalPerMonEnable(prGlueInfo);
+	prGlueInfo->fgIsInSuspendMode = FALSE;
 	if (prGlueInfo->prAdapter->rWifiVar.ucWow &&
 		prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
 		DBGLOG(HAL, STATE, "leave WOW flow\n");
