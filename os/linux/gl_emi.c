@@ -4,6 +4,7 @@
  */
 
 #include "precomp.h"
+#include <linux/of_reserved_mem.h>
 #include <linux/platform_device.h>
 #if (CFG_SUPPORT_CONNINFRA == 1)
 #include "conninfra.h"
@@ -13,7 +14,8 @@ static u_int8_t emi_is_remap_type(enum EMI_ALLOC_TYPE type)
 {
 	if (type == EMI_ALLOC_TYPE_WMT ||
 	    type == EMI_ALLOC_TYPE_CONNINFRA ||
-	    type == EMI_ALLOC_TYPE_LK)
+	    type == EMI_ALLOC_TYPE_LK ||
+	    type == EMI_ALLOC_TYPE_DTS)
 		return TRUE;
 	else
 		return FALSE;
@@ -49,6 +51,38 @@ static int32_t emi_init_type_lk(void *dev,
 
 	*pa = phy_addr;
 	*size = phy_size;
+
+	return 0;
+#else
+	DBGLOG(INIT, ERROR, "kernel option CONFIG_OF not enabled.\n");
+	return -1;
+#endif
+}
+
+static int32_t emi_init_type_dts(void *dev,
+	phys_addr_t *pa,
+	uint32_t *size)
+{
+#ifdef CONFIG_OF
+	struct device_node *rmem_node = NULL;
+	struct reserved_mem *rmem = NULL;
+
+	rmem_node = of_find_compatible_node(NULL, NULL,
+					    "mediatek,wifi-mcu-emi");
+	if (!rmem_node) {
+		DBGLOG(INIT, ERROR, "kernel option CONFIG_OF not enabled.\n");
+		return -EINVAL;
+	}
+
+	rmem = of_reserved_mem_lookup(rmem_node);
+	if (!rmem) {
+		DBGLOG(INIT, ERROR, "kernel option CONFIG_OF not enabled.\n");
+		return -EINVAL;
+	}
+
+	*pa = rmem->base;
+	*size = rmem->size;
+
 	return 0;
 #else
 	DBGLOG(INIT, ERROR, "kernel option CONFIG_OF not enabled.\n");
@@ -136,6 +170,9 @@ int32_t emi_mem_init(struct mt66xx_chip_info *chip, void *dev)
 		break;
 	case EMI_ALLOC_TYPE_LK:
 		ret = emi_init_type_lk(dev, &emi->pa, &emi->size);
+		break;
+	case EMI_ALLOC_TYPE_DTS:
+		ret = emi_init_type_dts(dev, &emi->pa, &emi->size);
 		break;
 	default:
 		DBGLOG(HAL, ERROR, "unexpected type: %d\n",
