@@ -1262,7 +1262,6 @@ WLAN_STATUS wlanTxCmdMthread(IN P_ADAPTER_T prAdapter)
 	while (prQueueEntry) {
 		prCmdInfo = (P_CMD_INFO_T) prQueueEntry;
 		prCmdInfo->pfHifTxCmdDoneCb = wlanTxCmdDoneCb;
-		nicTxCmd(prAdapter, prCmdInfo, TC4_INDEX);
 
 		if ((!prCmdInfo->fgSetQuery) || (prCmdInfo->fgNeedResp)) {
 			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
@@ -1271,6 +1270,9 @@ WLAN_STATUS wlanTxCmdMthread(IN P_ADAPTER_T prAdapter)
 		} else {
 			QUEUE_INSERT_TAIL(prTempCmdDoneQue, prQueueEntry);
 		}
+
+		nicTxCmd(prAdapter, prCmdInfo, TC4_INDEX);
+
 		/* DBGLOG(INIT, INFO,
 		 * ("==> TX CMD QID: %d (Q:%d)\n", prCmdInfo->ucCID, prTempCmdQue->u4NumElem));
 		 */
