@@ -1877,16 +1877,6 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 				wiphy_dev(prWdev->wiphy));
 
 		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-			if (register_netdev(gprWdev[u4Idx]->netdev)
-				< 0) {
-				DBGLOG(INIT, ERROR,
-					"Register net_device %d failed\n",
-					u4Idx);
-				wlanClearDevIdx(
-					gprWdev[u4Idx]->netdev);
-				i4DevIdx = -1;
-			}
-
 			prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
 				netdev_priv(gprWdev[u4Idx]->netdev);
 			ASSERT(prNetDevPrivate->prGlueInfo == prGlueInfo);
@@ -1897,6 +1887,15 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 			wlanBindBssIdxToNetInterface(prGlueInfo,
 				     u4Idx,
 				     (void *)gprWdev[u4Idx]->netdev);
+			if (register_netdev(gprWdev[u4Idx]->netdev)
+				< 0) {
+				DBGLOG(INIT, ERROR,
+					"Register net_device %d failed\n",
+					u4Idx);
+				wlanClearDevIdx(
+					gprWdev[u4Idx]->netdev);
+				i4DevIdx = -1;
+			}
 		}
 
 		if (i4DevIdx != -1)
