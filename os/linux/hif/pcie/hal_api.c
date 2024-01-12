@@ -686,7 +686,11 @@ VOID halRxProcessMsduReport(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 	u2TokenCnt = prMsduReport->u2MsduCount;
 
 	for (u4Idx = 0; u4Idx < u2TokenCnt; u4Idx++) {
-		u4Token = prMsduReport->au2MsduToken[u4Idx];
+		if (prMsduReport->u4Ver == 0)
+			u4Token = prMsduReport->au4MsduToken[u4Idx >> 1].rFormatV1.u2MsduID[u4Idx & 1];
+		else
+			u4Token = prMsduReport->au4MsduToken[u4Idx].rFormatV2.u2MsduID;
+
 		prTokenEntry = halGetMsduTokenEntry(prAdapter, u4Token);
 
 #if HIF_TX_PREALLOC_DATA_BUFFER

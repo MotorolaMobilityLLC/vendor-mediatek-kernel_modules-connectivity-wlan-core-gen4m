@@ -659,17 +659,31 @@ typedef struct _HW_RX_VECTOR_DESC_T {
 
 } HW_RX_VECTOR_DESC_T, *P_HW_RX_VECTOR_DESC_T;
 
+union HW_MAC_MSDU_TOKEN_T {
+	struct {
+		UINT_16         u2MsduID[2];
+	} rFormatV1;
+	struct {
+		UINT_16         u2MsduID;
+		UINT_16         u2WlanID:10;
+		UINT_16         u2Rsv:1;
+		UINT_16         u2QueIdx:5;
+	} rFormatV2;
+};
+
 typedef struct _HW_MAC_MSDU_REPORT_T {
-	/* 1st DW */
-	UINT_16         u2BufByteCount;
-	UINT_16         u2MsduCount:7;
-	UINT_16         u2DoneEventType:6;
-	UINT_16         u2PktType:3;
-	/* 2nd DW */
+	/* DW 0 */
+	UINT_32         u2BufByteCount:16;
+	UINT_32         u2MsduCount:7;
+	UINT_32         u2DoneEventType:6;
+	UINT_32         u2PktType:3;
+	/* DW 1 */
 	UINT_32         u4TxdCount:8;
-	UINT_32         u4RvS2:24;
+	UINT_32         u4Rsv1:8;
+	UINT_32         u4Ver:3;
+	UINT_32         u4Rsv2:13;
 	/* MSDU token array */
-	UINT_16         au2MsduToken[0];
+	union HW_MAC_MSDU_TOKEN_T au4MsduToken[0];
 } HW_MAC_MSDU_REPORT_T, *P_HW_MAC_MSDU_REPORT_T;
 
 struct _SW_RFB_T {
