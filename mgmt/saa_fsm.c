@@ -1190,7 +1190,24 @@ uint32_t saaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 				DBGLOG(SAA, ERROR, "Unknown BSSID\n");
 				rStatus = WLAN_STATUS_FAILURE;
 				prRetainedSwRfb = NULL;
+				if (u2StatusCode == STATUS_CODE_SUCCESSFUL)
+					prStaRec->u2StatusCode =
+						STATUS_CODE_UNSPECIFIED_FAILURE;
 			}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			if (!mldSanityCheck(prAdapter, prSwRfb->pvHeader,
+				prSwRfb->u2PacketLen, prStaRec,
+				prStaRec->ucBssIndex)) {
+				DBGLOG(SAA, WARN,
+					"Discard Assoc frame with wrong ML IE\n");
+				rStatus = WLAN_STATUS_FAILURE;
+				prRetainedSwRfb = NULL;
+				if (u2StatusCode == STATUS_CODE_SUCCESSFUL)
+					prStaRec->u2StatusCode =
+						STATUS_CODE_UNSPECIFIED_FAILURE;
+			}
+#endif
 
 			/* Reset Send Auth/(Re)Assoc Frame Count */
 			prStaRec->ucTxAuthAssocRetryCount = 0;

@@ -2975,7 +2975,7 @@ void p2pRoleFsmUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 		if (!prP2pLinkBssInfo ||
 			!prTargetBssDesc ||
 			!prStaRec)
-			break;
+			continue;
 
 		/* TODO: mlo, get AID from assoc resp frame */
 		prStaRec->u2AssocId = prSetupStaRec->u2AssocId;
