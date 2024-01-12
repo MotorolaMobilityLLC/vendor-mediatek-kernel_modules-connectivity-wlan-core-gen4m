@@ -63,6 +63,7 @@
 #include <linux/jiffies.h>
 #include <linux/ratelimit.h>
 #include <linux/rtc.h>
+#include <linux/sched/clock.h>
 #endif
 
 /* for ATF smc call */
@@ -11794,37 +11795,44 @@ void kalUpdateCompHdlrRec(struct ADAPTER *prAdapter,
 }
 
 #if CFG_SUPPORT_SA_LOG
+#define SA_LOG_TIMEBUF_LEN (128)
+
 void kalPrintUTC(char *msg_buf, int msg_buf_size)
 {
+	u64 ts;
+	unsigned long rem_nsec;
 	int ret = 0;
 	struct rtc_time tm;
 	struct timespec64 tv = { 0 };
-	struct rtc_time tm_android;
-	struct timespec64 tv_android = { 0 };
+	char s[SA_LOG_TIMEBUF_LEN] = {0};
 
 	ktime_get_real_ts64(&tv);
-	tv_android = tv;
 	rtc_time64_to_tm(tv.tv_sec, &tm);
-	tv_android.tv_sec -= sys_tz.tz_minuteswest * 60;
-	rtc_time64_to_tm(tv_android.tv_sec, &tm_android);
-	if (tm.tm_sec%10 == 0) {
-		ret = snprintf(msg_buf, msg_buf_size,
-			"[RT:%lld] %d-%02d-%02d %02d:%02d:%02d.%u UTC;"
-			"android time %d-%02d-%02d %02d:%02d:%02d.%03d",
-			sched_clock(), tm.tm_year + 1900, tm.tm_mon + 1,
-			tm.tm_mday, tm.tm_hour, tm.tm_min,
-			tm.tm_sec, (unsigned int)KAL_GET_USEC(tv),
-			tm_android.tm_year + 1900, tm_android.tm_mon + 1,
-			tm_android.tm_mday, tm_android.tm_hour,
-			tm_android.tm_min, tm_android.tm_sec,
-			(unsigned int)KAL_GET_USEC(tv_android));
-		if (ret < 0) {
-			kalPrintSALog("[%u] snprintf failed, ret: %d",
-				__LINE__, ret);
-		} else {
-			wifi_salog_write(msg_buf,
-				msg_buf_size);
-		}
+
+	ts = local_clock();
+	rem_nsec = do_div(ts, 1000000000);
+
+	ret = snprintf(s,
+		SA_LOG_TIMEBUF_LEN,
+		"[%5lu.%06lu] %d-%02d-%02d %02d:%02d:%02d.%06u %s",
+		(unsigned long)ts,
+		rem_nsec / 1000,
+		tm.tm_year + 1900,
+		tm.tm_mon + 1,
+		tm.tm_mday,
+		tm.tm_hour,
+		tm.tm_min,
+		tm.tm_sec,
+		(unsigned int)KAL_GET_USEC(tv),
+		KAL_GET_CURRENT_THREAD_NAME());
+	if (ret < 0) {
+		LOG_FUNC("snprintf failed, ret: %d",
+			ret);
+	} else {
+		wifi_salog_write(s,
+			strlen(s));
+		wifi_salog_write(msg_buf,
+			msg_buf_size);
 	}
 }
 
@@ -11837,16 +11845,13 @@ void kalPrintSALog(const char *fmt, ...)
 	va_start(args, fmt);
 	ret = vsnprintf(buffer, WIFI_LOG_MSG_BUFFER, fmt, args);
 	if (ret < 0) {
-		kalPrintSALog("[%u] vsnprintf failed, ret: %d",
-			__LINE__, ret);
+		LOG_FUNC("vsnprintf failed, ret: %d",
+			ret);
 	}
 	va_end(args);
 
-	if (buffer[strlen(buffer) - 1] == '\n')
-		buffer[strlen(buffer) - 1] = '\0';
-
 	if (strlen(buffer) < WIFI_LOG_MSG_MAX) {
-		wifi_salog_write(buffer,
+		kalPrintUTC(buffer,
 			strlen(buffer));
 	} else {
 		char sub_buffer[WIFI_LOG_MSG_MAX];
@@ -11854,19 +11859,14 @@ void kalPrintSALog(const char *fmt, ...)
 		strncpy(sub_buffer, buffer,
 			WIFI_LOG_MSG_MAX - 1);
 		sub_buffer[WIFI_LOG_MSG_MAX - 1] = '\0';
-		wifi_salog_write(sub_buffer,
+		kalPrintUTC(sub_buffer,
 			WIFI_LOG_MSG_MAX);
 
 		strncpy(sub_buffer, buffer + WIFI_LOG_MSG_MAX - 1,
 			WIFI_LOG_MSG_MAX - 1);
 		sub_buffer[WIFI_LOG_MSG_MAX - 1] = '\0';
-		wifi_salog_write(sub_buffer,
+		kalPrintUTC(sub_buffer,
 			WIFI_LOG_MSG_MAX);
-	}
-
-	if (time_after(jiffies, rtc_update)) {
-		rtc_update = jiffies + (1 * HZ);
-		kalPrintUTC(buffer, WIFI_LOG_MSG_BUFFER);
 	}
 }
 #endif /* CFG_SUPPORT_SA_LOG */
