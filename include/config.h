@@ -29,6 +29,20 @@
  *******************************************************************************
  */
 
+/*------------------------------------------------------------------------------
+ * Must define in makefile, based on TARGET_BUILD_VARIANT.
+ * 1: TARGET_BUILD_VARIANT = userdebug or eng
+ * 0: otherwise
+ *------------------------------------------------------------------------------
+ */
+#ifndef BUILD_QA_DBG
+#define BUILD_QA_DBG	0
+#endif
+
+#ifndef CFG_MTK_ANDROID_WMT
+#define CFG_MTK_ANDROID_WMT 0
+#endif
+
 /* Android build-in driver switch, Mike 2016/11/11*/
 #ifndef CFG_BUILT_IN_DRIVER
 #define CFG_BUILT_IN_DRIVER         0
@@ -1178,10 +1192,10 @@
 #define CFG_SHOW_MACADDR_SOURCE			1
 
 #if BUILD_QA_DBG
-#define CFG_SHOW_FULL_MACADDR     1
+#define CFG_SHOW_FULL_MACADDR			1
 #define CFG_SHOW_FULL_IPADDR			1
 #else
-#define CFG_SHOW_FULL_MACADDR     0
+#define CFG_SHOW_FULL_MACADDR			0
 #define CFG_SHOW_FULL_IPADDR			0
 #endif
 
