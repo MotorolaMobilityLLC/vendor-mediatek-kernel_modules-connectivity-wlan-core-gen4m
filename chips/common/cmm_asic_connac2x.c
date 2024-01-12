@@ -1588,8 +1588,8 @@ u_int8_t asicConnac2xUsbResume(IN struct ADAPTER *prAdapter,
 	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_PRE_RESUME);
 
 	/* reinit USB because LP could clear WFDMA's CR */
-	if (prChipInfo->is_support_asic_lp && prChipInfo->asicUsbInit)
-		prChipInfo->asicUsbInit(prAdapter, prChipInfo);
+	if (prChipInfo->asicWfdmaReInit)
+		prChipInfo->asicWfdmaReInit(prAdapter);
 
 	/* To trigger CR4 path */
 	wlanSendDummyCmd(prGlueInfo->prAdapter, FALSE);
