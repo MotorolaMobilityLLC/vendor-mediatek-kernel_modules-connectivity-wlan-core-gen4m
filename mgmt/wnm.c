@@ -529,8 +529,9 @@ void wnmMboIeTransReq(struct ADAPTER *adapter, uint8_t wnmMode,
 		const uint8_t *ie, uint16_t len, uint8_t bssIndex)
 {
 	const uint8_t *pos;
-	uint8_t id, elen;
+	uint8_t id = 0, elen = 0;
 	struct BSS_TRANSITION_MGT_PARAM *btm;
+	struct IE_MBO_OCE *mbo;
 
 	pos = kalFindIeMatchMask(ELEM_ID_VENDOR,
 		ie, len, "\x50\x6f\x9a\x16",
@@ -539,12 +540,19 @@ void wnmMboIeTransReq(struct ADAPTER *adapter, uint8_t wnmMode,
 	if (!pos)
 		return;
 
+	if (len < (pos - ie))
+		goto fail;
+
 	btm = aisGetBTMParam(adapter, bssIndex);
 	btm->fgIsMboPresent = TRUE;
 
 	/* MBO IE */
-	len = pos[1] - 4;
-	pos = pos + 6;
+	mbo = (struct IE_MBO_OCE *)pos;
+	if (IE_SIZE(mbo) > (len - (pos - ie)))
+		goto fail;
+
+	len = mbo->ucLength - 4;
+	pos = (uint8_t *)&mbo->aucSubElements[0];
 
 	DBGLOG_MEM8(WNM, INFO, pos, len);
 
@@ -636,7 +644,6 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	uint8_t *pucOptInfo = NULL;
 	uint8_t ucRequestMode = 0;
 	uint16_t u2TmpLen = 0;
-	uint16_t u2SubIElen = 0;
 	struct MSG_AIS_BSS_TRANSITION *prMsg = NULL;
 	uint8_t ucBssIndex = secGetBssIdxByRfb(prAdapter, prSwRfb);
 	uint8_t fgNeedResponse = FALSE;
@@ -691,15 +698,26 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		u2TmpLen += sizeof(*prBssTermDuration);
 	}
 	if (ucRequestMode & WNM_BSS_TM_REQ_ESS_DISASSOC_IMMINENT) {
-		u2SubIElen = pucOptInfo[0];
-		if (prSwRfb->u2PacketLen < u2TmpLen + u2SubIElen) {
+		struct SESSION_INFO_URL *prSessionInfoURL =
+			(struct SESSION_INFO_URL *)pucOptInfo;
+
+		if (prSwRfb->u2PacketLen <
+			u2TmpLen + prSessionInfoURL->ucURLLength) {
 			DBGLOG(WNM, WARN,
 		       "BTM: Request frame length is less than a standard BTM frame\n");
 			return;
 		}
-		kalMemCopy(prBtmParam->aucSessionURL, &pucOptInfo[1],
-			   u2SubIElen);
-		prBtmParam->ucSessionURLLen = u2SubIElen;
+
+		if (prSessionInfoURL->ucURLLength >
+			sizeof(prSessionInfoURL->aucURL)) {
+			DBGLOG(WNM, WARN,
+		       "BTM: ucURLLength is bigger than aucURL array size\n");
+			return;
+		}
+
+		kalMemCopy(prBtmParam->aucSessionURL, prSessionInfoURL->aucURL,
+			prSessionInfoURL->ucURLLength);
+		prBtmParam->ucSessionURLLen = prSessionInfoURL->ucURLLength;
 		u2TmpLen += prBtmParam->ucSessionURLLen + 1;
 		pucOptInfo += prBtmParam->ucSessionURLLen + 1;
 	}

@@ -11159,14 +11159,14 @@ const uint8_t *kalFindIeMatchMask(uint8_t eid,
 	if (WARN_ON((match_len && match_offset < 2) ||
 		(!match_len && match_offset)))
 		return NULL;
-	while (len >= 2 && len >= ies[1] + 2) {
+	while (len >= 2 && len >= IE_SIZE(ies)) {
 		if ((ies[0] == eid) &&
-			(ies[1] + 2 >= match_offset + match_len) &&
+			(IE_SIZE(ies) >= match_offset + match_len) &&
 			!kalMaskMemCmp(ies + match_offset,
 			match, match_mask, match_len))
 			return ies;
-		len -= ies[1] + 2;
-		ies += ies[1] + 2;
+		len -= IE_SIZE(ies);
+		ies += IE_SIZE(ies);
 	}
 	return NULL;
 }
