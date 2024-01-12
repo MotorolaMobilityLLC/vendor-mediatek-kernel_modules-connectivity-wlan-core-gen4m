@@ -274,6 +274,25 @@ struct PCIE_CHIP_CR_MAPPING soc3_0_bus2chip_cr_mapping[] = {
 };
 #endif
 
+struct pcie2ap_remap soc3_0_pcie2ap_remap = {
+	.reg_base = CONN_INFRA_CFG_PCIE2AP_REMAP_2_R_PCIE2AP_PUBLIC_REMAPPING_5_ADDR,
+	.reg_mask = CONN_INFRA_CFG_PCIE2AP_REMAP_2_R_PCIE2AP_PUBLIC_REMAPPING_5_MASK,
+	.reg_shift = CONN_INFRA_CFG_PCIE2AP_REMAP_2_R_PCIE2AP_PUBLIC_REMAPPING_5_SHFT,
+	.base_addr = SOC3_0_REMAP_BASE_ADDR
+};
+
+struct ap2wf_remap soc3_0_ap2wf_remap = {
+	.reg_base = CONN_INFRA_CFG_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_ADDR,
+	.reg_mask = CONN_INFRA_CFG_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_MASK,
+	.reg_shift = CONN_INFRA_CFG_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_SHFT,
+	.base_addr = SOC3_0_REMAP_BASE_ADDR
+};
+
+struct PCIE_CHIP_CR_REMAPPING soc3_0_bus2chip_cr_remapping = {
+	.pcie2ap = &soc3_0_pcie2ap_remap,
+	.ap2wf = &soc3_0_ap2wf_remap,
+};
+
 struct wfdma_group_info soc3_0_wfmda_host_tx_group[] = {
 	{"P1T0:AP DATA0", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING0_CTRL0_ADDR, true},
 	{"P1T1:AP DATA1", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING1_CTRL0_ADDR, true},
@@ -886,6 +905,7 @@ struct BUS_INFO soc3_0_bus_info = {
 			CONNAC2X_HOST_WPDMA_1_BASE),
 
 	.bus2chip = soc3_0_bus2chip_cr_mapping,
+	.bus2chip_remap = &soc3_0_bus2chip_cr_remapping,
 #if defined(_HIF_PCIE)
 	.max_static_map_addr = 0x000f0000,
 #elif defined(_HIF_AXI)
@@ -900,10 +920,6 @@ struct BUS_INFO soc3_0_bus_info = {
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
 	.fgCheckDriverOwnInt = FALSE,
 	.u4DmaMask = 32,
-#if defined(_HIF_PCIE)
-	.pcie2ap_remap_2 = CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR,
-#endif
-	.ap2wf_remap_1 = CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
 	.wfmda_host_tx_group = soc3_0_wfmda_host_tx_group,
 	.wfmda_host_tx_group_len = ARRAY_SIZE(soc3_0_wfmda_host_tx_group),
 	.wfmda_host_rx_group = soc3_0_wfmda_host_rx_group,
@@ -3767,14 +3783,11 @@ static bool soc3_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	if (!conninfra_reg_readable())
 		return false;
 
-	HAL_MCR_WR(prAdapter,
-		prBusInfo->ap2wf_remap_1,
-		CONN_MCU_CONFG_HS_BASE);
 	HAL_MCR_RD(prAdapter,
-		(CONN_INFRA_CFG_AP2WF_BUS_ADDR + 0xc0),
+		CONN_MCU_CONFG_WF2AP_SW_IRQ_CTRL_ADDR,
 		&value);
 	HAL_MCR_WR(prAdapter,
-		(CONN_INFRA_CFG_AP2WF_BUS_ADDR + 0xc8),
+		CONN_MCU_CONFG_WF2AP_SW_IRQ_CLEAR_ADDR,
 		value);
 
 	*status = value;

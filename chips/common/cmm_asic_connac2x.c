@@ -1926,51 +1926,14 @@ uint32_t downloadImgByDynMemMap(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4Addr, IN uint32_t u4Len,
 	IN uint8_t *pucStartPtr, IN enum ENUM_IMG_DL_IDX_T eDlIdx)
 {
-	struct BUS_INFO *prBusInfo;
-	uint32_t u4ReMapReg = 0;
-#if defined(_HIF_PCIE)
-	uint32_t u4OrigValue = 0, u4ChangedValue = 0;
-#endif
-
 	if (eDlIdx != IMG_DL_IDX_PATCH && eDlIdx != IMG_DL_IDX_N9_FW)
 		return WLAN_STATUS_NOT_SUPPORTED;
 
 	DBGLOG(INIT, INFO, "u4Addr: 0x%x, u4Len: %u, eDlIdx: %u\n",
 			u4Addr, u4Len, eDlIdx);
 
-	prBusInfo = prAdapter->chip_info->bus_info;
-
-#if defined(_HIF_PCIE)
-	/* To access 0x1850_xxxx, 0x7C500000 will be used, whose bus address is
-	 * 0x50000. By default, bus address 0x50000 will be remapped to
-	 * 0x1845_xxxx, we need to change this setting to 0x1850_xxxx by
-	 * register PCIE2AP_REMAP_2.
-	 * Set R_PCIE2AP_PUBLIC_REMAPPING_5[31:16] as 0x1850.
-	 */
-	HAL_MCR_RD(prAdapter, prBusInfo->pcie2ap_remap_2,
-			&u4OrigValue);
-	u4ChangedValue = (u4OrigValue & BITS(15, 0)) | ((0x1850) << 16);
-	HAL_MCR_WR(prAdapter, prBusInfo->pcie2ap_remap_2,
-			u4ChangedValue);
-#endif
-
-	HAL_MCR_WR(prAdapter, prBusInfo->ap2wf_remap_1,
-			u4Addr);
-
-	if (!halChipToStaticMapBusAddr(prAdapter->chip_info,
-			CONN_INFRA_CFG_AP2WF_BUS_ADDR,
-			&u4ReMapReg)) {
-		DBGLOG(INIT, ERROR, "map bus address fail.\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	RTMP_IO_MEM_COPY(&prAdapter->prGlueInfo->rHifInfo, u4ReMapReg,
-				pucStartPtr, u4Len);
-
-#if defined(_HIF_PCIE)
-	HAL_MCR_WR(prAdapter, prBusInfo->pcie2ap_remap_2,
-			u4OrigValue);
-#endif
+	kalDevRegWriteRange(prAdapter->prGlueInfo,
+		u4Addr, (void *)pucStartPtr, u4Len);
 
 	return WLAN_STATUS_SUCCESS;
 }

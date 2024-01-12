@@ -17,6 +17,8 @@
 #include "coda/mt6639/wf_wfdma_host_dma0.h"
 #include "coda/mt6639/wf_pse_top.h"
 #include "coda/mt6639/pcie_mac_ireg.h"
+#include "coda/mt6639/wf_mcu_bus_cr.h"
+#include "coda/mt6639/conn_infra_bus_cr_on.h"
 #include "hal_dmashdl_mt6639.h"
 
 /*******************************************************************************
@@ -159,6 +161,26 @@ struct PCIE_CHIP_CR_MAPPING mt6639_bus2chip_cr_mapping[] = {
 };
 #endif
 
+struct pcie2ap_remap mt6639_pcie2ap_remap = {
+	.reg_base = CONN_INFRA_BUS_CR_ON_CONN_INFRA_PCIE2AP_REMAP_WF__5__4_cr_pcie2ap_public_remapping_wf_5_ADDR,
+	.reg_mask = CONN_INFRA_BUS_CR_ON_CONN_INFRA_PCIE2AP_REMAP_WF__5__4_cr_pcie2ap_public_remapping_wf_5_MASK,
+	.reg_shift = CONN_INFRA_BUS_CR_ON_CONN_INFRA_PCIE2AP_REMAP_WF__5__4_cr_pcie2ap_public_remapping_wf_5_SHFT,
+	.base_addr = MT6639_REMAP_BASE_ADDR
+};
+
+struct ap2wf_remap mt6639_ap2wf_remap = {
+	.reg_base = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_ADDR,
+	.reg_mask = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_MASK,
+	.reg_shift = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_SHFT,
+	.base_addr = MT6639_REMAP_BASE_ADDR
+};
+
+struct PCIE_CHIP_CR_REMAPPING mt6639_bus2chip_cr_remapping = {
+	.pcie2ap = &mt6639_pcie2ap_remap,
+	.ap2wf = &mt6639_ap2wf_remap,
+};
+
+
 struct wfdma_group_info mt6639_wfmda_host_tx_group[] = {
 	{"P0T0:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_CTRL0_ADDR, true},
 	{"P0T1:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING1_CTRL0_ADDR, true},
@@ -233,6 +255,7 @@ struct BUS_INFO mt6639_bus_info = {
 	.host_rx_ring_cnt_addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL1_ADDR,
 
 	.bus2chip = mt6639_bus2chip_cr_mapping,
+	.bus2chip_remap = &mt6639_bus2chip_cr_remapping,
 	.max_static_map_addr = 0x000f0000,
 
 	.tx_ring_fwdl_idx = CONNAC3X_FWDL_TX_RING_IDX,
@@ -244,10 +267,6 @@ struct BUS_INFO mt6639_bus_info = {
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
 	.fgCheckDriverOwnInt = FALSE,
 	.u4DmaMask = 32,
-#if defined(_HIF_PCIE)
-	.pcie2ap_remap_2 = CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR,
-#endif
-	.ap2wf_remap_1 = CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
 	.wfmda_host_tx_group = mt6639_wfmda_host_tx_group,
 	.wfmda_host_tx_group_len = ARRAY_SIZE(mt6639_wfmda_host_tx_group),
 	.wfmda_host_rx_group = mt6639_wfmda_host_rx_group,
@@ -297,11 +316,7 @@ struct FWDL_OPS_T mt6639_fw_dl_ops = {
 	.constructPatchName = mt6639_ConstructPatchName,
 	.downloadPatch = wlanDownloadPatch,
 	.downloadFirmware = wlanConnacFormatDownload,
-#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
-	.downloadByDynMemMap = downloadImgByDynMemMap,
-#else
 	.downloadByDynMemMap = NULL,
-#endif
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
 };

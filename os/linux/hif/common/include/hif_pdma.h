@@ -248,7 +248,12 @@
 	writel(_V, (void *)((_A)->CSRBaseAddress + (_R))); \
 }
 
-#define RTMP_IO_MEM_COPY(_A, _D, _S, _N) \
+#define RTMP_IO_READ_RANGE(_A, _D, _S, _N) \
+{ \
+	memcpy_fromio((void *) _S, (void *)((_A)->CSRBaseAddress + (_D)), _N); \
+}
+
+#define RTMP_IO_WRITE_RANGE(_A, _D, _S, _N) \
 { \
 	memcpy_toio((void *)((_A)->CSRBaseAddress + (_D)), (void *) _S, _N); \
 }
@@ -414,22 +419,23 @@ struct PCIE_CHIP_CR_MAPPING {
 	uint32_t u4Range;
 };
 
-struct L1_CR_REMAPPING {
-	uint32_t u4Base;
-	uint32_t u4Mask;
-	uint32_t u4Shift;
-	uint32_t u4RemapBase;
+struct pcie2ap_remap {
+	uint32_t reg_base;
+	uint32_t reg_mask;
+	uint32_t reg_shift;
+	uint32_t base_addr;
 };
 
-struct L2_CR_REMAPPING {
-	uint32_t u4Base;
-	uint32_t u4Mask;
-	uint32_t u4Shift;
+struct ap2wf_remap {
+	uint32_t reg_base;
+	uint32_t reg_mask;
+	uint32_t reg_shift;
+	uint32_t base_addr;
 };
 
 struct PCIE_CHIP_CR_REMAPPING {
-	const struct L1_CR_REMAPPING *l1_remapping;
-	const struct L2_CR_REMAPPING *l2_remapping;
+	const struct pcie2ap_remap *pcie2ap;
+	const struct ap2wf_remap *ap2wf;
 };
 
 struct MSDU_TOKEN_ENTRY {

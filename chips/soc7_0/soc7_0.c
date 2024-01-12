@@ -15,6 +15,7 @@
 #include "precomp.h"
 #include "soc7_0.h"
 #include "coda/soc7_0/conn_host_csr_top.h"
+#include "coda/soc7_0/conn_infra_bus_cr_on.h"
 #include "coda/soc7_0/conn_infra_cfg.h"
 #include "coda/soc7_0/conn_infra_cfg_on.h"
 #include "coda/soc7_0/conn_infra_rgu_on.h"
@@ -265,6 +266,25 @@ struct PCIE_CHIP_CR_MAPPING soc7_0_bus2chip_cr_mapping[] = {
 };
 #endif
 
+struct pcie2ap_remap soc7_0_pcie2ap_remap = {
+	.reg_base = CONN_INFRA_BUS_CR_ON_PCIE2AP_REMAP_2_R_PCIE2AP_PUBLIC_REMAPPING_5_ADDR,
+	.reg_mask = CONN_INFRA_BUS_CR_ON_PCIE2AP_REMAP_2_R_PCIE2AP_PUBLIC_REMAPPING_5_MASK,
+	.reg_shift = CONN_INFRA_BUS_CR_ON_PCIE2AP_REMAP_2_R_PCIE2AP_PUBLIC_REMAPPING_5_SHFT,
+	.base_addr = SOC7_0_REMAP_BASE_ADDR
+};
+
+struct ap2wf_remap soc7_0_ap2wf_remap = {
+	.reg_base = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_ADDR,
+	.reg_mask = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_MASK,
+	.reg_shift = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_SHFT,
+	.base_addr = SOC7_0_REMAP_BASE_ADDR
+};
+
+struct PCIE_CHIP_CR_REMAPPING soc7_0_bus2chip_cr_remap = {
+	.pcie2ap = &soc7_0_pcie2ap_remap,
+	.ap2wf = &soc7_0_ap2wf_remap,
+};
+
 struct wfdma_group_info soc7_0_wfmda_host_tx_group[] = {
 	{"P0T0:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_CTRL0_ADDR, true},
 	{"P0T1:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING1_CTRL0_ADDR, true},
@@ -352,6 +372,7 @@ struct BUS_INFO soc7_0_bus_info = {
 	.host_rx_ring_cnt_addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL1_ADDR,
 
 	.bus2chip = soc7_0_bus2chip_cr_mapping,
+	.bus2chip_remap = &soc7_0_bus2chip_cr_remap,
 	.max_static_map_addr = 0x000f0000,
 
 	.tx_ring_fwdl_idx = CONNAC2X_FWDL_TX_RING_IDX,
@@ -363,10 +384,6 @@ struct BUS_INFO soc7_0_bus_info = {
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
 	.fgCheckDriverOwnInt = FALSE,
 	.u4DmaMask = 32,
-#if defined(_HIF_PCIE)
-	.pcie2ap_remap_2 = CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR,
-#endif
-	.ap2wf_remap_1 = CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
 	.wfmda_host_tx_group = soc7_0_wfmda_host_tx_group,
 	.wfmda_host_tx_group_len = ARRAY_SIZE(soc7_0_wfmda_host_tx_group),
 	.wfmda_host_rx_group = soc7_0_wfmda_host_rx_group,
@@ -1302,7 +1319,7 @@ static int wf_pwr_on_consys_mcu(void)
 	 * Data: 32'h810F0000
 	 * Action: write
 	 */
-	wf_ioremap_write(WF_MCU_BUS_CR_AP2WF_REMAP_1_ADDR,
+	kalDevRegWrite(NULL, WF_MCU_BUS_CR_AP2WF_REMAP_1_ADDR,
 		WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_DEBUG_CTRL_AO_BASE);
 
 	/* Enable debug clock (debug ctrl ao)
