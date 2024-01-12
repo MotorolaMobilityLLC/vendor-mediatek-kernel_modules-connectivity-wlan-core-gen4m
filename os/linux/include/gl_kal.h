@@ -1867,7 +1867,7 @@ int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
 			   IN uint8_t uBssIndex);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 int kalVendorExternalAuthRequest(IN struct ADAPTER *prAdapter,
-			   IN uint8_t uBssIndex);
+		IN struct STA_RECORD *prStaRec, IN uint8_t uBssIndex);
 #endif
 #endif
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT

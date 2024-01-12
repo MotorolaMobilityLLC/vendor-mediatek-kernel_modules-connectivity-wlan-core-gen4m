@@ -9356,27 +9356,56 @@ int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 int kalVendorExternalAuthRequest(IN struct ADAPTER *prAdapter,
-			   IN uint8_t ucBssIndex)
+		struct STA_RECORD *prStaRec, IN uint8_t ucBssIndex)
 {
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
-	struct STA_RECORD *prStaRec;
-	struct BSS_INFO *prBssInfo;
 	struct PARAM_EXTERNAL_AUTH_INFO *info;
-	struct CONNECTION_SETTINGS *conn;
+	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
+	struct BSS_DESC *prBssDesc = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
 	uint16_t size = 0;
 
 	wiphy = prAdapter->prGlueInfo->prDevHandler->ieee80211_ptr->wiphy;
 	wdev = wlanGetNetDev(prAdapter->prGlueInfo, ucBssIndex)->ieee80211_ptr;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	prStaRec = prBssInfo->prStaRecOfAP;
-	conn = aisGetConnSettings(prAdapter, ucBssIndex);
 
+	if (IS_BSS_AIS(prBssInfo)) {
+		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+		if (!prAisFsmInfo) {
+			DBGLOG(SAA, WARN,
+			       "SAE auth failed with NULL prAisFsmInfo\n");
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
+		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+		if (!prBssDesc) {
+			DBGLOG(SAA, WARN,
+			       "SAE auth failed without prTargetBssDesc\n");
+			return WLAN_STATUS_INVALID_DATA;
+		}
+	} else if (IS_BSS_P2P(prBssInfo)) {
+		prP2pRoleFsmInfo =
+			p2pFuncGetRoleByBssIdx(prAdapter, ucBssIndex);
+		if (!prP2pRoleFsmInfo) {
+			DBGLOG(SAA, WARN,
+			       "SAE auth failed with NULL prP2pRoleFsmInfo\n");
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
+		prBssDesc = prP2pRoleFsmInfo->rJoinInfo.prTargetBssDesc;
+		if (!prBssDesc) {
+			DBGLOG(SAA, WARN,
+			       "SAE auth failed without prTargetBssDesc\n");
+			return WLAN_STATUS_INVALID_DATA;
+		}
+	}
 
 	size = sizeof(struct PARAM_EXTERNAL_AUTH_INFO) + MAX_LEN_OF_MLIE;
 	info = kalMemAlloc(size, VIR_MEM_TYPE);
 	if (!info) {
-		DBGLOG(AIS, ERROR, "alloc vendor external auth event fail\n");
+		DBGLOG(SAA, ERROR, "alloc vendor external auth event fail\n");
 		return -1;
 	}
 
@@ -9384,10 +9413,14 @@ int kalVendorExternalAuthRequest(IN struct ADAPTER *prAdapter,
 	info->id = GRID_EXTERNAL_AUTH;
 	info->len = sizeof(struct PARAM_EXTERNAL_AUTH_INFO) - 2;
 	info->action = NL80211_EXTERNAL_AUTH_START;
-	COPY_MAC_ADDR(info->bssid, prStaRec->aucMldAddr);
+	if (prBssDesc->rMlInfo.fgValid)
+		COPY_MAC_ADDR(info->bssid, prBssDesc->rMlInfo.aucMldAddr);
+	else
+		COPY_MAC_ADDR(info->bssid, prBssDesc->aucBSSID);
 	info->len += beGenerateExternalAuthMldIE(
 		prAdapter, prStaRec, info->ext_ie);
-	COPY_SSID(info->ssid, info->ssid_len, conn->aucSSID, conn->ucSSIDLen);
+	COPY_SSID(info->ssid, info->ssid_len,
+		prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
 	info->ssid[info->ssid_len] = '\0';
 	info->key_mgmt_suite = RSN_AKM_SUITE_SAE;
 	COPY_MAC_ADDR(info->da, prStaRec->aucMacAddr);

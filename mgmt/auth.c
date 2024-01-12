@@ -90,6 +90,10 @@ struct APPEND_VAR_IE_ENTRY txAuthIETable[] = {
 	{0, authCalculateRSNIELen, authAddRSNIE}, /* Element ID: 48 */
 	{(ELEM_HDR_LEN + 1), NULL, authAddMDIE}, /* Element ID: 54 */
 	{0, rsnCalculateFTIELen, rsnGenerateFTIE}, /* Element ID: 55 */
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	{0, beCalculateMldIELen, beGenerateMldIE}
+#endif
+
 };
 
 struct HANDLE_IE_ENTRY rxAuthIETable[] = {
@@ -404,9 +408,6 @@ struct MSDU_INFO* authComposeAuthFrame(IN struct ADAPTER *prAdapter,
 	}
 
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	u2EstimatedFrameLen += MAX_LEN_OF_MLIE;
-#endif
 
 	/* Allocate a MSDU_INFO_T */
 	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
@@ -528,11 +529,6 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 		u2TransactionSeqNum, u2StatusCode);
 	if (!prMsduInfo)
 		return WLAN_STATUS_RESOURCES;
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	beGenerateAuthMldIE(prAdapter, prStaRec, ucBssIndex,
-		prFalseAuthSwRfb, prMsduInfo);
-#endif
 
 	/* 4 <6> Inform TXM  to send this Authentication frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
