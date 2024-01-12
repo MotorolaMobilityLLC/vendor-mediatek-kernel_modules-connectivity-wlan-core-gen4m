@@ -4945,7 +4945,13 @@ void aisUpdateAllBssInfoForJOIN(struct ADAPTER *prAdapter,
 			aisUpdateBssInfoForJOIN(prAdapter,
 				prStaRec, prAssocRspSwRfb);
 		} else {
-			struct SW_RFB *prSwRfb = mldDupAssocSwRfb(prAdapter,
+			struct SW_RFB *prSwRfb = NULL;
+
+			if (prAssocRspSwRfb->u2PacketLen <
+			    sizeof(struct WLAN_ASSOC_RSP_FRAME))
+				break;
+
+			prSwRfb = mldDupAssocSwRfb(prAdapter,
 				prAssocRspSwRfb, prStaRec);
 
 			if (prSwRfb) {
