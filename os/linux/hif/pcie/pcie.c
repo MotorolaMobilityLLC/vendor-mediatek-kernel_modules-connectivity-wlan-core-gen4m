@@ -1128,9 +1128,6 @@ static void mtk_pci_remove(struct pci_dev *pdev)
 #endif
 	pci_set_drvdata(pdev, NULL);
 	prChipInfo->CSRBaseAddress = NULL;
-#if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
-	pci_free_irq_vectors(pdev);
-#endif
 	pcim_iounmap_regions(pdev, BIT(0));
 }
 
@@ -1900,6 +1897,11 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 	freePlatDevIrq(g_prPlatDev, prHifInfo->u4IrqId_1);
 	prHifInfo->u4IrqId_1 = 0;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD */
+
+#if KERNEL_VERSION(4, 8, 0) <= CFG80211_VERSION_CODE
+	pci_free_irq_vectors(pdev);
+#endif
+
 }
 
 u_int8_t glIsReadClearReg(uint32_t u4Address)

@@ -8075,15 +8075,15 @@ static void wlanRemove(void)
 
 	kalWlanUeventDeinit();
 
-	HAL_LP_OWN_SET(prAdapter, &fgResult);
-	DBGLOG(INIT, INFO, "HAL_LP_OWN_SET(%d)\n",
-	       (uint32_t) fgResult);
-
 	/* 4 <x> Stopping handling interrupt and free IRQ */
 	glBusFreeIrq(prDev, prGlueInfo);
 
 	/* 4 <5> Release the Bus */
 	glBusRelease(prDev);
+
+	HAL_LP_OWN_SET(prAdapter, &fgResult);
+	DBGLOG(INIT, INFO, "HAL_LP_OWN_SET(%d)\n",
+	       (uint32_t) fgResult);
 
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 	wlanDebugTC4Uninit();
