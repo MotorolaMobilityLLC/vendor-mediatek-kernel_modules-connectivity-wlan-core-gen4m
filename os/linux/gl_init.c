@@ -6969,11 +6969,11 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	/* move before reading file
 	 * wlanLoadDefaultCustomerSetting(prAdapter);
 	 */
-	wlanFeatureToFw(prGlueInfo->prAdapter, WLAN_CFG_DEFAULT);
+	wlanFeatureToFw(prGlueInfo->prAdapter, WLAN_CFG_DEFAULT, NULL);
 
 	/*if driver backup Engineer Mode CFG setting before*/
 	wlanResoreEmCfgSetting(prGlueInfo->prAdapter);
-	wlanFeatureToFw(prGlueInfo->prAdapter, WLAN_CFG_EM);
+	wlanFeatureToFw(prGlueInfo->prAdapter, WLAN_CFG_EM, NULL);
 #endif
 
 #if CFG_SUPPORT_IOT_AP_BLACKLIST

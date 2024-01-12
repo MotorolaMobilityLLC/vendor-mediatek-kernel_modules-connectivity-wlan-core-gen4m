@@ -2083,10 +2083,10 @@ uint32_t wlanCfgSetCb(struct ADAPTER *prAdapter, const int8_t *pucKey,
 		      uint32_t u4Flags);
 
 #if CFG_SUPPORT_EASY_DEBUG
-
 uint32_t wlanCfgParse(struct ADAPTER *prAdapter, uint8_t *pucConfigBuf,
 		      uint32_t u4ConfigBufLen, u_int8_t isFwConfig);
-void wlanFeatureToFw(struct ADAPTER *prAdapter, uint32_t u4Flag);
+void wlanFeatureToFw(struct ADAPTER *prAdapter, uint32_t u4Flag,
+	uint8_t *pucKey);
 #endif
 
 void wlanLoadDefaultCustomerSetting(struct ADAPTER *prAdapter);

@@ -7960,6 +7960,8 @@ wlanoidSetKeyCfg(struct ADAPTER *prAdapter,
 		 uint32_t *pu4SetInfoLen) {
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	struct PARAM_CUSTOM_KEY_CFG_STRUCT *prKeyCfgInfo;
+	uint8_t *pucKey = NULL;
+	uint8_t aucKey[MAX_CMD_NAME_MAX_LENGTH] = {0};
 
 	DBGLOG(INIT, LOUD, "\n");
 
@@ -7982,29 +7984,14 @@ wlanoidSetKeyCfg(struct ADAPTER *prAdapter,
 	} else {
 		wlanCfgSet(prAdapter, prKeyCfgInfo->aucKey,
 			   prKeyCfgInfo->aucValue, prKeyCfgInfo->u4Flag);
+		kalStrnCpy(&aucKey[0], prKeyCfgInfo->aucKey,
+			MAX_CMD_NAME_MAX_LENGTH);
+		pucKey = &aucKey[0];
 		wlanInitFeatureOptionImpl(prAdapter, prKeyCfgInfo->aucKey);
 	}
 
-
-	DBGLOG(REQ, TRACE,
-		"StaVHT [%u], ApVHT [%u], GoVHT [%u], GcVHT [%u]\n",
-		prAdapter->rWifiVar.ucStaVht,
-		prAdapter->rWifiVar.ucApVht,
-		prAdapter->rWifiVar.ucP2pGoVht,
-		prAdapter->rWifiVar.ucP2pGcVht);
-
-	DBGLOG(REQ, TRACE, "Nss [%u], Dbdc [%u]\n",
-		prAdapter->rWifiVar.ucNSS,
-		prAdapter->rWifiVar.eDbdcMode);
-
-	DBGLOG(REQ, TRACE,
-		"TxLdpc [%u], RxLdpc [%u], StbcTx [%u], StbcRx [%u]\n",
-		prAdapter->rWifiVar.ucTxLdpc,
-		prAdapter->rWifiVar.ucRxLdpc,
-		prAdapter->rWifiVar.ucTxStbc,
-		prAdapter->rWifiVar.ucRxStbc);
 #if CFG_SUPPORT_EASY_DEBUG
-	wlanFeatureToFw(prAdapter, prKeyCfgInfo->u4Flag);
+	wlanFeatureToFw(prAdapter, prKeyCfgInfo->u4Flag, pucKey);
 #endif
 
 	return rWlanStatus;
