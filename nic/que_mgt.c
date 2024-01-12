@@ -132,77 +132,6 @@ do { \
 #define LINK_QUALITY_COUNT_DUP
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
-#if CFG_RX_REORDERING_ENABLED
-#define qmHandleRxPackets_AOSP_1 \
-do { \
-	DBGLOG(RX, TEMP, "qmHandleRxPackets_AOSP_1 %p\n", prCurrSwRfb); \
-	/* ToDo[6630]: duplicate removal */ \
-	if (!fgIsBMC && nicRxIsDuplicateFrame(prCurrSwRfb) == TRUE) { \
-		DBGLOG(RX, TEMP, "Duplicated packet is detected\n"); \
-		RX_INC_CNT(&prAdapter->rRxCtrl, RX_DUPICATE_DROP_COUNT); \
-		LINK_QUALITY_COUNT_DUP(prAdapter, prCurrSwRfb); \
-		prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL; \
-	} \
-	/* ToDo[6630]: defragmentation */ \
-	if (prCurrSwRfb->fgFragFrame) { \
-		prCurrSwRfb = nicRxDefragMPDU(prAdapter, \
-			prCurrSwRfb, prReturnedQue); \
-		if (prCurrSwRfb) { \
-			prRxStatus = prCurrSwRfb->prRxStatus; \
-			DBGLOG(RX, TEMP, \
-				"defragmentation RxStatus=%p\n", prRxStatus); \
-		} \
-	} \
-	if (prCurrSwRfb) { \
-		fgMicErr = FALSE; \
-		if (prCurrSwRfb->ucSecMode == \
-			CIPHER_SUITE_TKIP_WO_MIC) { \
-			if (prCurrSwRfb->prStaRec) { \
-				uint8_t ucBssIndex; \
-				struct BSS_INFO *prBssInfo = NULL; \
-				uint8_t *pucMicKey = NULL; \
-				ucBssIndex = \
-					prCurrSwRfb->prStaRec->ucBssIndex; \
-				ASSERT(ucBssIndex < prAdapter->ucSwBssIdNum); \
-				prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, \
-					ucBssIndex); \
-				ASSERT(prBssInfo); \
-				if (prBssInfo->eCurrentOPMode == \
-					OP_MODE_INFRASTRUCTURE) \
-					pucMicKey = \
-					&(aisGetAisSpecBssInfo(prAdapter, \
-					ucBssIndex)->aucRxMicKey[0]); \
-				else { \
-					ASSERT(FALSE); \
-				} \
-				/* SW TKIP MIC verify */ \
-				if (pucMicKey == NULL) { \
-					DBGLOG(RX, ERROR, \
-						"No TKIP Mic Key\n"); \
-					fgMicErr = TRUE; \
-				} \
-				else if (tkipMicDecapsulateInRxHdrTransMode( \
-					prAdapter, \
-					prCurrSwRfb, pucMicKey) == FALSE) { \
-					fgMicErr = TRUE; \
-				} \
-			} \
-			if (fgMicErr) { \
-				/* bypass tkip frag */ \
-				if (!prCurrSwRfb->fgFragFrame) { \
-					log_dbg(RX, ERROR, \
-					"Mark NULL for TKIP Mic Error\n"); \
-					RX_INC_CNT(&prAdapter->rRxCtrl, \
-					RX_MIC_ERROR_DROP_COUNT); \
-					prCurrSwRfb->eDst = \
-						RX_PKT_DESTINATION_NULL; \
-				} \
-			} \
-		} \
-		QUEUE_INSERT_TAIL(prReturnedQue, prCurrSwRfb); \
-	} \
-} while (0)
-#endif
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -3612,6 +3541,87 @@ static void processAPPktDst(struct ADAPTER *prAdapter,
 	    (prStaRec->ucBssIndex == prCurrSwRfb->prStaRec->ucBssIndex))
 		prCurrSwRfb->eDst = RX_PKT_DESTINATION_FORWARD;
 }
+
+#if CFG_RX_REORDERING_ENABLED
+u_int8_t qmTkipWoMicValidation(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
+{
+	u_int8_t fgMicErr = TRUE;
+	uint8_t ucBssIndex;
+	struct BSS_INFO *prBssInfo;
+	uint8_t *pucMicKey;
+
+	/* bypass tkip frag */
+	if (prSwRfb->fgFragFrame ||
+		prSwRfb->ucSecMode != CIPHER_SUITE_TKIP_WO_MIC) {
+		fgMicErr = FALSE;
+		goto end;
+	}
+
+	if (!prSwRfb->prStaRec)
+		goto end;
+
+	ucBssIndex = prSwRfb->prStaRec->ucBssIndex;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		goto end;
+
+	if (prBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE
+		|| !IS_BSS_AIS(prBssInfo)) {
+		DBGLOG_LIMITED(QM, ERROR,
+			"BSS[%u] OPMode[%u] Type[%u] not support TKIP WO MIC",
+			ucBssIndex, prBssInfo->eCurrentOPMode,
+			prBssInfo->eNetworkType);
+		goto end;
+	}
+
+	pucMicKey = &(aisGetAisSpecBssInfo(prAdapter,
+				ucBssIndex)->aucRxMicKey[0]);
+	/* SW TKIP MIC verify */
+	if (tkipMicDecapsulateInRxHdrTransMode(prAdapter,
+		prSwRfb, pucMicKey) == TRUE)
+		fgMicErr = FALSE;
+
+end:
+	return fgMicErr;
+}
+
+void qmProcessPktWithoutReordering(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	struct QUE *prReturnedQue)
+{
+	void *prRxStatus;
+	u_int8_t fgIsBMC = (prSwRfb->fgIsBC | prSwRfb->fgIsMC);
+
+	if (!fgIsBMC && nicRxIsDuplicateFrame(prSwRfb) == TRUE) {
+		DBGLOG(RX, TEMP, "Duplicated packet is detected\n");
+		RX_INC_CNT(&prAdapter->rRxCtrl, RX_DUPICATE_DROP_COUNT);
+		LINK_QUALITY_COUNT_DUP(prAdapter, prSwRfb);
+		prSwRfb->eDst = RX_PKT_DESTINATION_NULL;
+	}
+
+	if (prSwRfb->fgFragFrame) {
+		prSwRfb = nicRxDefragMPDU(prAdapter, prSwRfb, prReturnedQue);
+		if (prSwRfb) {
+			prRxStatus = prSwRfb->prRxStatus;
+			DBGLOG(RX, TEMP,
+				"defragmentation RxStatus=%p\n", prRxStatus);
+		}
+	}
+
+	if (!prSwRfb)
+		return;
+
+	if (qmTkipWoMicValidation(prAdapter, prSwRfb)) {
+		DBGLOG(RX, ERROR, "Mark NULL for TKIP Mic Error\n");
+		RX_INC_CNT(&prAdapter->rRxCtrl, RX_MIC_ERROR_DROP_COUNT);
+		prSwRfb->eDst = RX_PKT_DESTINATION_NULL;
+	}
+
+	QUEUE_INSERT_TAIL(prReturnedQue, prSwRfb);
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Handle RX packets (buffer reordering)
@@ -3633,7 +3643,6 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 	struct QUE *prReturnedQue;
 	uint8_t *pucEthDestAddr;
 	u_int8_t fgIsBMC, fgIsHTran;
-	u_int8_t fgMicErr;
 #if CFG_SUPPORT_REPLAY_DETECTION
 	u_int8_t ucBssIndexRly = 0;
 	struct BSS_INFO *prBssInfoRly = NULL;
@@ -3972,7 +3981,9 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 						prCurrSwRfb,
 						prReturnedQue);
 				} else
-					qmHandleRxPackets_AOSP_1;
+					qmProcessPktWithoutReordering(prAdapter,
+						prCurrSwRfb,
+						prReturnedQue);
 			} else {
 				DBGLOG(RX, TEMP,
 					"Mark NULL the Packet for class error\n");
