@@ -254,12 +254,9 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiDbg))
 		KAL_REC_TIME_START();
 
-	/* 4. Clear interrupt status SW IRQ #0~#8 */
+	/* 4. Clear emi int sta */
 	prMsiMirror = &prEmi->arMsiMirror[MBU_MSI_MIRROR_IDX];
 	prMsiMirror->u4IntSta = 0;
-	u4Addr = CB_INFRA_RGU_PCIE_RSV_SW_0_IRQ_CLR_PCIE_RSV_SW_0_IRQ_CLR_ADDR;
-	u4Val = 0x1;
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	/* 5. Trigger events */
 	u4Addr = CB_DMA_TOP_CB_INFRA_MBU_MAILBOX_0_CMD_H_ADDR;
@@ -289,6 +286,11 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 		}
 		kalUdelay(5);
 	}
+
+	/* Clear interrupt status SW IRQ #0~#8 */
+	u4Addr = CB_INFRA_RGU_PCIE_RSV_SW_0_IRQ_CLR_PCIE_RSV_SW_0_IRQ_CLR_ADDR;
+	u4Val = 0x1;
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	/* 7. Host driver check rdata on EMI */
 	*pu4Val = prEmi->u4Val;
