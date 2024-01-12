@@ -10222,8 +10222,15 @@ struct net_device *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
 		if (prBssInfo && IS_BSS_P2P(prBssInfo)) {
 			prGlueP2pInfo =
 				prGlueInfo->prP2PInfo[prBssInfo->u4PrivateData];
-			if (prGlueP2pInfo)
-				return prGlueP2pInfo->prDevHandler;
+
+			if (prGlueP2pInfo) {
+				if ((prGlueP2pInfo->aprRoleHandler != NULL) &&
+					(prGlueP2pInfo->aprRoleHandler !=
+						prGlueP2pInfo->prDevHandler))
+					return prGlueP2pInfo->aprRoleHandler;
+				else
+					return prGlueP2pInfo->prDevHandler;
+			}
 		}
 	}
 
