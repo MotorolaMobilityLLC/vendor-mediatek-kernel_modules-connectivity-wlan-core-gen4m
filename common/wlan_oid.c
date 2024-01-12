@@ -706,6 +706,12 @@ wlanoidSetBssidListScanAdv(struct ADAPTER *prAdapter,
 		       "Not to do scan during SAP CSA!!\n");
 			return WLAN_STATUS_FAILURE;
 		} else if (prAdapter->fgEnOnlineScan == TRUE) {
+#ifdef CFG_SUPPORT_TWT_EXT
+			if (IS_FEATURE_ENABLED(
+				prAdapter->rWifiVar.ucTWTRequester))
+				twtPlannerCheckTeardownSuspend(prAdapter,
+					TRUE, FALSE);
+#endif
 			aisFsmScanRequestAdv(prAdapter, prScanRequest);
 		} else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
 			ucBssIndex) != MEDIA_STATE_CONNECTED) {

@@ -66,11 +66,16 @@
 #endif
 
 #if (CFG_SUPPORT_TWT == 1)
+#define CMD_TWT_ACTION_FIFTEEN_PARAMS      15
 #define CMD_TWT_ACTION_TWELVE_PARAMS   12
 #define CMD_TWT_ACTION_TEN_PARAMS      10
 #define CMD_TWT_ACTION_THREE_PARAMS    3
 #define CMD_TWT_ACTION_SIX_PARAMS      6
+#ifndef CFG_SUPPORT_TWT_EXT
 #define CMD_TWT_MAX_PARAMS CMD_TWT_ACTION_TWELVE_PARAMS
+#else
+#define CMD_TWT_MAX_PARAMS CMD_TWT_ACTION_FIFTEEN_PARAMS
+#endif
 #endif
 
 #define TO_STR(value) #value
@@ -16654,6 +16659,9 @@ int priv_driver_set_twtparams(
 	if ((i4Argc == CMD_TWT_ACTION_TEN_PARAMS) ||
 		(i4Argc == CMD_TWT_ACTION_THREE_PARAMS) ||
 		(i4Argc == CMD_TWT_ACTION_SIX_PARAMS) ||
+#ifdef CFG_SUPPORT_TWT_EXT
+		(i4Argc == CMD_TWT_ACTION_FIFTEEN_PARAMS) ||
+#endif
 		(i4Argc == CMD_TWT_ACTION_TWELVE_PARAMS)) {
 		for (i = 0; i < (i4Argc - 1); i++) {
 			u4Ret = kalkStrtou32(apcArgv[i + 1],
@@ -16940,7 +16948,64 @@ int priv_driver_set_twtparams(
 		rTWTCtrl.ucBssIdx = prNetDevPrivate->ucBssIdx;
 		rTWTCtrl.ucCtrlAction = au4Setting[0];
 		rTWTCtrl.ucTWTFlowId = au4Setting[1];
-	} else {
+	}
+#ifdef CFG_SUPPORT_TWT_EXT
+	else if ((i4Argc == CMD_TWT_ACTION_FIFTEEN_PARAMS) &&
+		(IS_TWT_PARAM_ACTION_ADD(au4Setting[0]))) {
+		DBGLOG(REQ, INFO, "Action bitmap=%d\n", au4Setting[0]);
+		DBGLOG(REQ, INFO,
+			"TWT Flow ID=%d Setup Command=%d Trig enabled=%d\n",
+			au4Setting[1], au4Setting[2], au4Setting[3]);
+		DBGLOG(REQ, INFO,
+			"Unannounced enabled=%d Wake Interval Exponent=%d\n",
+			au4Setting[4], au4Setting[5]);
+		DBGLOG(REQ, INFO, "Protection enabled=%d Duration=%d\n",
+			au4Setting[6], au4Setting[7]);
+		DBGLOG(REQ, INFO, "Wake Interval Mantissa=%d\n", au4Setting[8]);
+		DBGLOG(REQ, INFO, "Desired wake time=%d\n", au4Setting[9]);
+		/*
+		*  au2Setting[0]: Whether bypassing nego or not
+		*  au2Setting[1]: TWT Flow ID
+		*  au2Setting[2]: TWT Setup Command
+		*  au2Setting[3]: Trigger enabled
+		*  au2Setting[4]: Unannounced enabled
+		*  au2Setting[5]: TWT Wake Interval Exponent
+		*  au2Setting[6]: TWT Protection enabled
+		*  au2Setting[7]: Nominal Minimum TWT Wake Duration
+		*  au2Setting[8]: TWT Wake Interval Mantissa
+		*  au2Setting[9]: Desired wake time:
+		*                 This specify when the first TWT starts
+		*/
+		if (au4Setting[1] >= TWT_MAX_FLOW_NUM ||
+			au4Setting[2] > TWT_SETUP_CMD_ID_DEMAND ||
+			au4Setting[5] > TWT_MAX_WAKE_INTVAL_EXP) {
+			/* Simple sanity check failure */
+			DBGLOG(REQ, INFO, "Invalid TWT Params\n");
+			return -1;
+		}
+
+		prTWTParams = &(rTWTCtrl.rTWTParams);
+		kalMemSet(prTWTParams, 0, sizeof(struct _TWT_PARAMS_T));
+		prTWTParams->fgReq = TRUE;
+		prTWTParams->ucSetupCmd = (uint8_t) au4Setting[2];
+		prTWTParams->fgTrigger = (au4Setting[3]) ? TRUE : FALSE;
+		prTWTParams->fgUnannounced = (au4Setting[4]) ? TRUE : FALSE;
+		prTWTParams->ucWakeIntvalExponent = (uint8_t) au4Setting[5];
+		prTWTParams->fgProtect = (au4Setting[6]) ? TRUE : FALSE;
+		prTWTParams->ucMinWakeDur = (uint8_t) au4Setting[7];
+		prTWTParams->u2WakeIntvalMantiss = au4Setting[8];
+		prTWTParams->u4DesiredWakeTime = au4Setting[9];
+		prTWTParams->u4WakeIntvalMin = au4Setting[10];
+		prTWTParams->u4WakeIntvalMax = au4Setting[11];
+		prTWTParams->ucWakeDurMin = (uint8_t) au4Setting[12];
+		prTWTParams->ucWakeDurMax = (uint8_t) au4Setting[13];
+
+		rTWTCtrl.ucBssIdx = prNetDevPrivate->ucBssIdx;
+		rTWTCtrl.ucCtrlAction = au4Setting[0];
+		rTWTCtrl.ucTWTFlowId = au4Setting[1];
+	}
+#endif
+	else {
 		DBGLOG(REQ, INFO, "wrong argc for update agrt: %d\n", i4Argc);
 		return -1;
 	}

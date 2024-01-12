@@ -3200,6 +3200,15 @@ nicConfigPowerSaveProfile(struct ADAPTER *prAdapter,
 	nicPowerSaveInfoMap(prAdapter, ucBssIndex, ePwrMode, ucCaller);
 	prBssInfo->ePwrMode = ePwrMode;
 
+#ifdef CFG_SUPPORT_TWT_EXT
+	if (ucCaller == PS_CALLER_COMMON && ePwrMode == Param_PowerModeCAM) {
+		if (IS_FEATURE_ENABLED(
+			prAdapter->rWifiVar.ucTWTRequester))
+			twtPlannerCheckTeardownSuspend(prAdapter,
+				TRUE, TRUE);
+	}
+#endif
+
 	if (PS_SYNC_WITH_FW & prBssInfo->u4PowerSaveFlag) {
 		struct CMD_PS_PROFILE ps = {0};
 		uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;

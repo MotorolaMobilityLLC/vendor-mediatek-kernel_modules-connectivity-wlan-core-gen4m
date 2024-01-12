@@ -133,7 +133,7 @@ _twtPlannerDrvAgrtGet(
 	return WLAN_STATUS_SUCCESS;
 }
 
-static uint8_t
+uint8_t
 twtPlannerDrvAgrtFind(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 	uint8_t ucFlowId, uint8_t *pucFlowId)
 {
@@ -406,7 +406,7 @@ uint32_t twtPlannerSendReqTeardown(
 	return WLAN_STATUS_SUCCESS;
 }
 
-static uint32_t
+uint32_t
 twtPlannerSendReqSuspend(struct ADAPTER *prAdapter,
 				struct STA_RECORD *prStaRec,
 				uint8_t ucTWTFlowId)
@@ -1331,6 +1331,15 @@ void twtPlannerGetTsfDone(
 		struct _TWT_FLOW_T *prTWTFlow = twtPlannerFlowFindById(
 					prStaRec, prGetTsfCtxt->ucTWTFlowId);
 
+#ifdef CFG_SUPPORT_TWT_EXT
+		DBGLOG(TWT_PLANNER, WARN,
+			"TWT cur TSF: 0x%x 0x%x 0x%x\n",
+			CPU_TO_LE32(u8CurTsf & 0xFFFFFFFF),
+			CPU_TO_LE32((uint32_t)(u8CurTsf >> 32)),
+			prGetTsfCtxt->rTWTParams.u4DesiredWakeTime);
+		u8CurTsf += prGetTsfCtxt->rTWTParams.u4DesiredWakeTime;
+#endif
+
 		/* To have mantissa alignment::Begin */
 		u8twt_interval = ((u_int64_t)
 			(prGetTsfCtxt->rTWTParams.u2WakeIntvalMantiss))
@@ -1667,7 +1676,7 @@ void twtPlannerGetTsfDone(
 	kalMemFree(prGetTsfCtxt, VIR_MEM_TYPE, sizeof(*prGetTsfCtxt));
 }
 
-static uint32_t
+uint32_t
 twtPlannerGetCurrentTSF(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
@@ -2242,6 +2251,12 @@ void twtPlannerRxNegoResult(
 	uint8_t ucTWTFlowId;
 	struct _TWT_PARAMS_T *prTWTResult, *prTWTParams;
 	struct _TWT_FLOW_T *prTWTFlow;
+#ifdef CFG_SUPPORT_TWT_EXT
+	struct _TWT_PARAMS_T *prTWTSetup;
+	uint32_t u4ResultWakeIntvl = 0;
+	uint32_t u4SetupWakeIntvl = 0;
+	bool fgSetupCheck = FALSE;
+#endif
 
 	if (!prAdapter) {
 		DBGLOG(TWT_PLANNER, ERROR,
@@ -2304,6 +2319,7 @@ void twtPlannerRxNegoResult(
 
 	switch (prTWTResult->ucSetupCmd) {
 	case TWT_SETUP_CMD_ID_ACCEPT:
+#ifndef CFG_SUPPORT_TWT_EXT
 		/* Update agreement table */
 		twtPlannerAddAgrtTbl(prAdapter, prBssInfo, prStaRec,
 			prTWTResult, ucTWTFlowId, FALSE,
@@ -2316,6 +2332,57 @@ void twtPlannerRxNegoResult(
 		prAdapter->fgEnOnlineScan = FALSE;
 
 		break;
+#else
+		prTWTSetup = &(prTWTFlow->rTWTParams);
+
+		u4ResultWakeIntvl = prTWTResult->u2WakeIntvalMantiss <<
+			prTWTResult->ucWakeIntvalExponent;
+		u4SetupWakeIntvl = prTWTSetup->u2WakeIntvalMantiss <<
+			prTWTSetup->ucWakeIntvalExponent;
+
+		if ((u4SetupWakeIntvl == u4ResultWakeIntvl) &&
+			(prTWTSetup->ucMinWakeDur ==
+			prTWTResult->ucMinWakeDur)) {
+			fgSetupCheck = TRUE;
+		} else if ((u4ResultWakeIntvl >=
+			prTWTSetup->u4WakeIntvalMin) &&
+			(u4ResultWakeIntvl <=
+			prTWTSetup->u4WakeIntvalMax) &&
+			(prTWTResult->ucMinWakeDur >=
+			prTWTSetup->ucWakeDurMin) &&
+			(prTWTResult->ucMinWakeDur <=
+			prTWTSetup->ucWakeDurMax)) {
+			fgSetupCheck = TRUE;
+		}
+
+		if (fgSetupCheck) {
+			twtPlannerAddAgrtTbl(prAdapter, prBssInfo, prStaRec,
+				prTWTResult, ucTWTFlowId, FALSE,
+				NULL, NULL);
+			DBGLOG(TWT_PLANNER, STATE,
+				"Rx nego id %d\n",
+				ucTWTFlowId);
+			/* prAdapter->fgEnOnlineScan = FALSE; */
+		} else {
+			/*
+			 * The TWT parameters suggested by AP
+			 * are larger than the upper and lower bounds,
+			 */
+			DBGLOG(TWT_PLANNER, WARN,
+				"No to setup TWT, R:[%d %d] S:[%d %d %d %d]\n",
+				u4ResultWakeIntvl,
+				prTWTResult->ucMinWakeDur,
+				u4SetupWakeIntvl,
+				prTWTSetup->ucMinWakeDur,
+				prTWTSetup->ucWakeDurMin,
+				prTWTSetup->ucWakeDurMax);
+
+			twtPlannerSendReqTeardown(prAdapter,
+				prStaRec, ucTWTFlowId);
+		}
+
+		break;
+#endif
 
 	case TWT_SETUP_CMD_ID_ALTERNATE:
 	case TWT_SETUP_CMD_ID_DICTATE:

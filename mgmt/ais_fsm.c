@@ -3365,6 +3365,11 @@ void aisFsmRunEventScanDone(struct ADAPTER *prAdapter,
 	       "ScanDone %u, status(%d) native req(%u)\n",
 	       ucSeqNumOfCompMsg, eStatus, prAisFsmInfo->ucSeqNumOfScanReq);
 
+#ifdef CFG_SUPPORT_TWT_EXT
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucTWTRequester))
+		twtPlannerCheckResume(prAdapter);
+#endif
+
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	/* No need to send Uevent if EnOnlyScan6g is enabled */
 	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgEnOnlyScan6g))
@@ -4267,6 +4272,10 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 				roamingFsmNotifyEvent(prAdapter,
 					ucBssIndex, FALSE,
 					aisGetMainLinkBssDesc(prAisFsmInfo));
+
+#ifdef CFG_SUPPORT_TWT_EXT
+				twtPlannerReset(prAdapter, prAisBssInfo);
+#endif
 
 				/* 2. Deactivate previous BSS */
 				aisFsmRoamingDisconnectPrevAllAP(prAdapter,
