@@ -8479,6 +8479,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgEnTxFragTxDone,
 		"EnTxFragTxDone", FEATURE_DISABLED);
 	INIT_UINT(prWifiVar->ucErrPos, "ErrPos", 0);
+	INIT_UINT(prWifiVar->u4MlrCfg, "MlrCfg", 1);
 #endif
 
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)

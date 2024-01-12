@@ -3058,15 +3058,21 @@ uint32_t nicCfgChipCapMlr(struct ADAPTER *prAdapter,
 	struct CAP_MLR_CAP *prMLRCap =
 		(struct CAP_MLR_CAP *)pucEventBuf;
 
+	prAdapter->u4MlrCapSupportBitmap = prMLRCap->u4MlrSupportBitmap;
 	prAdapter->ucMlrIsSupport =
-		MLR_BIT_SUPPORT(prMLRCap->u4MlrSupportBitmap);
+		MLR_BIT_SUPPORT(prMLRCap->u4MlrSupportBitmap) &&
+		MLR_BIT_SUPPORT(prAdapter->rWifiVar.u4MlrCfg);
 	prAdapter->ucMlrVersion = prMLRCap->ucVersion;
-	prAdapter->u4MlrSupportBitmap = prMLRCap->u4MlrSupportBitmap;
+	prAdapter->u4MlrSupportBitmap = prMLRCap->u4MlrSupportBitmap &
+		prAdapter->rWifiVar.u4MlrCfg;
 
-	DBGLOG(INIT, INFO, "MLR cap - MlrS=%d, Ver=%d, MlrSB=0x%04x\n",
-	       prAdapter->ucMlrIsSupport,
-	       prMLRCap->ucVersion,
-	       prMLRCap->u4MlrSupportBitmap);
+	DBGLOG(INIT, INFO,
+		"MLR cap - MlrCfg=0x%04x MlrS=%d, MlrSB=0x%04x, cMlrVer=%d, cMlrSB=0x%04x\n",
+		prAdapter->rWifiVar.u4MlrCfg,
+		prAdapter->ucMlrIsSupport,
+		prAdapter->u4MlrSupportBitmap,
+		prMLRCap->ucVersion,
+		prMLRCap->u4MlrSupportBitmap);
 
 	return WLAN_STATUS_SUCCESS;
 }
