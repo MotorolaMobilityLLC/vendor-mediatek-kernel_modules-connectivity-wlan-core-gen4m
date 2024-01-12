@@ -213,6 +213,10 @@
 #define CONNAC2X_TX_DESC_FIXDE_RATE_OFFSET               16
 #define CONNAC2X_TX_DESC_TXE_BF                          BIT(30)
 #define CONNAC2X_TX_DESC_TXI_BF                          BIT(31)
+/* DW 6 Rate to be Fixed */
+#define CONNAC2X_TX_DESC_FIXDE_RATE_NSTS_MASK            BITS(10, 12)
+#define CONNAC2X_TX_DESC_FIXDE_RATE_NSTS_OFFSET          10
+#define CONNAC2X_TX_DESC_FIXDE_RATE_STBC                 BIT(13)
 
 /* DW 7 */
 #define CONNAC2X_TX_DESC_TXD_ARRIVAL_TIME_MASK           BITS(0, 9)

@@ -1628,6 +1628,10 @@ void asicConnac2xInitTxdHook(
 		nic_txd_v2_set_pkt_fixed_rate_option;
 	prTxDescOps->nic_txd_set_hw_amsdu_template =
 		nic_txd_v2_set_hw_amsdu_template;
+	prTxDescOps->u2TxdFrNstsMask = CONNAC2X_TX_DESC_FIXDE_RATE_NSTS_MASK;
+	prTxDescOps->ucTxdFrNstsOffset =
+		CONNAC2X_TX_DESC_FIXDE_RATE_NSTS_OFFSET;
+	prTxDescOps->u2TxdFrStbcMask = CONNAC2X_TX_DESC_FIXDE_RATE_STBC;
 }
 
 void asicConnac2xInitRxdHook(
