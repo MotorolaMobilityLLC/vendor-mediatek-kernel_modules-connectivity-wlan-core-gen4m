@@ -340,7 +340,7 @@ void wlanDbgSetLogLevelImpl(IN struct ADAPTER *prAdapter,
 
 	wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_DRIVER, &u4DriverLevel);
 	wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_FW, &u4FwLevel);
-#if (CFG_BUILT_IN_DRIVER == 0)
+#if (CFG_BUILT_IN_DRIVER == 0) && (CFG_MTK_ANDROID_WMT == 1)
 	/*
 	 * The function definition of get_logtoomuch_enable() and
 	 * set_logtoomuch_enable of Android O0 or lower version are different
