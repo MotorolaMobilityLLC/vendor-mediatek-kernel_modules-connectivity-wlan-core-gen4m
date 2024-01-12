@@ -393,8 +393,10 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst)
 	wifi_reset_end(rst->rst_data);
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	update_driver_reset_status(fgIsResetting);
-	if (g_IsWholeChipRst == TRUE)
+	if (g_IsWholeChipRst == TRUE) {
+		g_IsWholeChipRst = FALSE;
 		complete(&g_RstOnComp);
+	}
 #endif
 #else
 	fgResult = rst_L0_notify_step1();
@@ -658,7 +660,6 @@ int glRstwlanPostWholeChipReset(void)
 	glRstSetRstEndEvent();
 	DBGLOG(INIT, INFO, "Wait Wi-Fi state recover.\n");
 	wait_for_completion(&g_RstOnComp);
-	g_IsWholeChipRst = FALSE;
 	DBGLOG(INIT, INFO,
 		"Leave glRstwlanPostWholeChipReset (%d).\n",
 		g_IsWholeChipRst);
