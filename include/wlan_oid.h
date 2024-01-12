@@ -101,9 +101,9 @@
 #define PARAM_EEPROM_WRITE_NVRAM				3
 
 
-#define PARAM_WHQL_RSSI_MAX_DBM                 (-10)
+#define PARAM_WHQL_RSSI_MAX_DBM                 (0)
 #define PARAM_WHQL_RSSI_INITIAL_DBM             (-50)
-#define PARAM_WHQL_RSSI_MIN_DBM                 (-200)
+#define PARAM_WHQL_RSSI_MIN_DBM                 (-110)
 
 #define PARAM_DEVICE_WAKE_UP_ENABLE                     0x00000001
 #define PARAM_DEVICE_WAKE_ON_PATTERN_MATCH_ENABLE       0x00000002
