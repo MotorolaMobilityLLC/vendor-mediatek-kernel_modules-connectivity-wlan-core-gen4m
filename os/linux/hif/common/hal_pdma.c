@@ -3017,12 +3017,23 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 		WLAN_STATUS_NOT_INDICATING)
 		DBGLOG(INIT, INFO,
 		       "Handle pending interrupt\n");
+
+	while (prHifInfo->rErrRecoveryCtl.eErrRecovState !=
+	       ERR_RECOV_STOP_IDLE) {
+		if (u4Retry >= HIF_SER_POWER_OFF_RETRY_COUNT)
+			break;
+		kalMsleep(HIF_SER_POWER_OFF_RETRY_TIME);
+		u4Retry++;
+		nicProcessISTWithSpecifiedCount(prAdapter, 1);
+		DBGLOG(INIT, INFO, "process SER...\n");
+	}
 #endif
 	/* Power off Wi-Fi */
 	wlanSendNicPowerCtrlCmd(prAdapter, TRUE);
 
 	if (prSwWfdmaInfo->fgIsEnSwWfdma &&
 	    prSwWfdmaInfo->rOps.processDmaDone) {
+		u4Retry = 0;
 		while (prSwWfdmaInfo->rOps.processDmaDone(
 			       prAdapter->prGlueInfo)) {
 			if (u4Retry >= SW_WFDMA_MAX_RETRY_COUNT) {
