@@ -1512,8 +1512,8 @@ static void halAddMacLatencyCount(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-static void halMsduReportStatsP0(IN struct ADAPTER *prAdapter,
-		union HW_MAC_MSDU_TOKEN_T *msduToken, uint32_t u4Token)
+void halMsduReportStats(IN struct ADAPTER *prAdapter, IN uint32_t u4Token,
+	IN uint32_t u4MacLatency, IN uint32_t u4Stat)
 {
 #if CFG_SUPPORT_TX_LATENCY_STATS
 	struct TX_LATENCY_REPORT_STATS *report = &prAdapter->rMsduReportStats;
@@ -1521,7 +1521,6 @@ static void halMsduReportStatsP0(IN struct ADAPTER *prAdapter,
 	struct MSDU_TOKEN_ENTRY *prTokenEntry;
 	struct WIFI_VAR *prWifiVar = NULL;
 	uint32_t u4ConnsysLatency;
-	uint32_t u4MacLatency;
 	struct timespec64 rNowTs;
 
 	if (u4Token >= HIF_TX_MSDU_TOKEN_NUM)
@@ -1555,10 +1554,9 @@ static void halMsduReportStatsP0(IN struct ADAPTER *prAdapter,
 		(rNowTs.tv_usec - prTokenEntry->rTs.tv_usec) / USEC_PER_MSEC;
 #endif
 
-	u4MacLatency = msduToken->rFormatV3.rP0.u4TxCnt;
 	halAddMacLatencyCount(prAdapter, u4MacLatency);
 
-	if (unlikely(msduToken->rFormatV3.rP0.u4Stat)) {
+	if (unlikely(u4Stat)) {
 		uint32_t lim = prWifiVar->u4ContinuousTxFailThreshold;
 
 		GLUE_INC_REF_CNT(stats->u4TxFail);
@@ -1581,6 +1579,16 @@ static void halMsduReportStatsP0(IN struct ADAPTER *prAdapter,
 	if (prWifiVar->fgPacketLatencyLog)
 		DBGLOG(HAL, INFO, "Latency C: %u M: %u; tok=%u",
 			u4ConnsysLatency, u4MacLatency, u4Token);
+#endif
+}
+
+static void halMsduV3ReportDelayStats(IN struct ADAPTER *prAdapter,
+		IN uint32_t u4Token, IN union HW_MAC_MSDU_TOKEN_T *msduToken)
+{
+#if CFG_SUPPORT_TX_LATENCY_STATS
+	halMsduReportStats(prAdapter, u4Token,
+			msduToken->rFormatV3.rP0.u4TxCnt,
+			msduToken->rFormatV3.rP0.u4Stat);
 #endif
 }
 
@@ -1619,24 +1627,23 @@ static void halDefaultProcessMsduReport(IN struct ADAPTER *prAdapter,
 		 *	2: MT7915 E1/MT6885
 		 *      3: MT7915 E2/MT7961
 		 */
-		if (ucVer == TFD_EVT_VER_0)
+		if (ucVer == TFD_EVT_VER_0) {
 			u4Token = prMsduReport->au4MsduToken[u4Idx >> 1].
 				rFormatV0.u2MsduID[u4Idx & 1];
-		else if (ucVer == TFD_EVT_VER_1)
+		} else if (ucVer == TFD_EVT_VER_1) {
 			u4Token = prMsduReport->au4MsduToken[u4Idx].
 				rFormatV1.u2MsduID;
-		else if (ucVer == TFD_EVT_VER_2)
+		} else if (ucVer == TFD_EVT_VER_2) {
 			u4Token = prMsduReport->au4MsduToken[u4Idx].
 				rFormatV2.u2MsduID;
-		else {
+		} else { /* TFD_EVT_VER_3 */
 			if (!prMsduReport->au4MsduToken[u4Idx].
 				rFormatV3.rP0.u4Pair) {
 				u4Token = prMsduReport->au4MsduToken[u4Idx].
 						rFormatV3.rP0.u4MsduID;
 
-				halMsduReportStatsP0(prAdapter,
-					&prMsduReport->au4MsduToken[u4Idx],
-					u4Token);
+				halMsduV3ReportDelayStats(prAdapter, u4Token,
+					&prMsduReport->au4MsduToken[u4Idx]);
 			} else {
 				u4Idx++;
 				continue;

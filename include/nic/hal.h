@@ -1342,6 +1342,8 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter);
 void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo);
 void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 	IN OUT struct SW_RFB *prSwRfb);
+void halMsduReportStats(IN struct ADAPTER *prAdapter, IN uint32_t u4Token,
+	IN uint32_t u4MacLatency, IN uint32_t u4Stat);
 u_int8_t halProcessToken(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4Token,
 	IN struct QUE *prFreeQueue);
