@@ -15912,6 +15912,7 @@ void kalRxRfbReturnWork(struct work_struct *work)
 #if CFG_DYNAMIC_RFB_ADJUSTMENT
 	uint32_t u4TputMbps, u4Idx;
 	uint32_t u4RfbIdx = 0;
+	u_int8_t fgRet;
 #endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 #endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 
@@ -15938,12 +15939,14 @@ void kalRxRfbReturnWork(struct work_struct *work)
 
 	/* set to target level or max level */
 	if (u4RfbIdx > prAdapter->u4RfbUnUseCntLv)
-		nicRxSetRfbCntByLevel(prAdapter, u4RfbIdx);
+		fgRet = nicRxSetRfbCntByLevel(prAdapter, u4RfbIdx);
 	else
-		nicRxDecRfbCnt(prAdapter);
+		fgRet = nicRxDecRfbCnt(prAdapter);
 
-	DBGLOG(INIT, INFO, "Tput:%uMbps u4Idx:%u u4RfbIdx:%u\n",
-		u4TputMbps, u4Idx, u4RfbIdx);
+	if (fgRet) {
+		DBGLOG(INIT, INFO, "Tput:%uMbps u4Idx:%u u4RfbIdx:%u\n",
+			u4TputMbps, u4Idx, u4RfbIdx);
+	}
 skip:
 #endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 	if (prBusInfo->u4WfdmaTh)
