@@ -1612,7 +1612,7 @@ wpa_verify_key_mic(int akmp, struct wpa_ptk *PTK, u8 *data, size_t data_len) {
 	if (data_len < sizeof(*hdr) + sizeof(*key)) {
 		wpa_printf(
 			MSG_ERROR,
-			"[%s] ERROR! size mis-match, data_len:%d, hdr+key:%d\n",
+			"[%s] ERROR! size mis-match, data_len:%zu, hdr+key:%zu\n",
 			__func__, data_len, sizeof(*hdr) + sizeof(*key));
 		return -1;
 	}
@@ -2429,7 +2429,7 @@ SM_STEP(WPA_PTK) {
 				SM_ENTER(WPA_PTK, PTKSTART);
 			else
 				wpa_printf(
-					MSG_DEBUG, "[%s] stop moving at %d",
+					MSG_DEBUG, "[%s] stop moving at %s",
 					__func__,
 					aStrWpaAuthPtkState[
 					(u8)sm->wpa_ptk_state]);
@@ -2444,7 +2444,7 @@ SM_STEP(WPA_PTK) {
 				SM_ENTER(WPA_PTK, PTKSTART);
 			else
 				wpa_printf(
-					MSG_DEBUG, "[%s] stop moving at %d",
+					MSG_DEBUG, "[%s] stop moving at %s",
 					__func__,
 					aStrWpaAuthPtkState[
 					(u8)sm->wpa_ptk_state]);
@@ -2470,7 +2470,7 @@ SM_STEP(WPA_PTK) {
 				SM_ENTER(WPA_PTK, PTKINITNEGOTIATING);
 			else
 				wpa_printf(
-					MSG_DEBUG, "[%s] stop moving at %d",
+					MSG_DEBUG, "[%s] stop moving at %s",
 					__func__,
 					aStrWpaAuthPtkState[
 					(u8)sm->wpa_ptk_state]);

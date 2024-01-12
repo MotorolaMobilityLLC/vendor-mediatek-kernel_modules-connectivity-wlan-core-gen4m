@@ -87,7 +87,7 @@ wpa_eapol_key_mic_wpa(const u8 *key, size_t key_len, int akmp, int ver,
 		      const u8 *buf, size_t len, u8 *mic) {
 	u8 hash[SHA384_MAC_LEN];
 
-	wpa_printf(MSG_INFO, "[%s] key_len:%d, akmp:%d, ver:%d, len:%d\n",
+	wpa_printf(MSG_INFO, "[%s] key_len:%zu, akmp:%d, ver:%d, len:%zu\n",
 		   __func__, key_len, akmp, ver, len);
 
 	wpa_hexdump(MSG_DEBUG, "key", key, key_len);

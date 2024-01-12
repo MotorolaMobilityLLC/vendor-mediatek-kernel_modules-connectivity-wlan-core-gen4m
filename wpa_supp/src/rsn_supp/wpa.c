@@ -1524,7 +1524,7 @@ wpa_eapol_key_dump(struct wpa_sm *sm, const struct wpa_eapol_key *key,
 
 	wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "  EAPOL-Key type=%d", key->type);
 	wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
-		"  key_info 0x%x (ver=%d keyidx=%d rsvd=%d %s%s%s%s%s%s%s%s)",
+		"  key_info 0x%x (ver=%d keyidx=%lu rsvd=%d %s%s%s%s%s%s%s%s)",
 		key_info, key_info & WPA_KEY_INFO_TYPE_MASK,
 		(key_info & WPA_KEY_INFO_KEY_INDEX_MASK) >>
 			WPA_KEY_INFO_KEY_INDEX_SHIFT,

@@ -2545,7 +2545,7 @@ mtk_cfg80211_vendor_event_nan_replied_indication(struct ADAPTER *prAdapter,
 
 	kalMemZero(prNanPubRepliedInd, message_len);
 
-	DBGLOG(NAN, INFO, "[%s] message_len : %d\n", __func__, message_len);
+	DBGLOG(NAN, INFO, "[%s] message_len : %zu\n", __func__, message_len);
 	prNanPubRepliedInd->fwHeader.msgVersion = 1;
 	prNanPubRepliedInd->fwHeader.msgId = NAN_MSG_ID_PUBLISH_REPLIED_IND;
 	prNanPubRepliedInd->fwHeader.msgLen = message_len;
@@ -2720,7 +2720,7 @@ mtk_cfg80211_vendor_event_nan_publish_terminate(struct ADAPTER *prAdapter,
 	nanPubTerInd.reason = prPubTerEvt->ucReasonCode;
 
 	DBGLOG(NAN, INFO, "[%s] Cancel Pub ID = %d\n",
-	       nanPubTerInd.fwHeader.handle);
+	       __func__, nanPubTerInd.fwHeader.handle);
 
 	/*  Fill skb and send to kernel by nl80211*/
 	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
