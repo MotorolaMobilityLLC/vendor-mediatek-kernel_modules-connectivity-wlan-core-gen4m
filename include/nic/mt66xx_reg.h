@@ -1420,12 +1420,15 @@ union WPDMA_GLO_CFG_STRUCT {
 	uint32_t word;
 };
 
+#define MIN_TEMP_QUERY_TIME		(1 * 60 * 1000) /* ms */
+#define MAX_TEMP_THRESHOLD		(60 * 1000)
+
 struct thermal_sensor_info {
 	const char name[16];
 	const enum THERMAL_TEMP_TYPE type;
 	const uint8_t sendor_idx;
 	void *tzd;
-	uint32_t last_query_time;
+	unsigned long updated_period;
 	int32_t last_query_temp;
 };
 
