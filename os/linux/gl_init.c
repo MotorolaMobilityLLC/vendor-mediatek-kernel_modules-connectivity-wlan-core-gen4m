@@ -232,8 +232,7 @@ int kalDcSetWow(void)
 	GLUE_SPIN_LOCK_DECLARATION();
 #endif
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
-
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo) {
 		DBGLOG(INIT, ERROR, "prGlueInfo == NULL\n");
 		return -ENODEV;
@@ -5112,7 +5111,7 @@ static void ics_log_event_notification(int cmd, int value)
 		return;
 	}
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo) {
 		DBGLOG(INIT, INFO, "prGlueInfo is NULL return");
 		return;
@@ -5352,7 +5351,7 @@ static void consys_log_event_notification(int cmd, int value)
 		return;
 	}
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo) {
 		DBGLOG(INIT, INFO,
 			"prGlueInfo == NULL return, u4LogOnOffCache=%d\n",
@@ -5388,7 +5387,7 @@ int connsys_power_event_notification(
 	struct conn_pwr_event_max_temp *prTempInfo;
 	int ret = -1;
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo) {
 		DBGLOG(INIT, INFO, "prGlueInfo is NULL return");
 		return ret;
