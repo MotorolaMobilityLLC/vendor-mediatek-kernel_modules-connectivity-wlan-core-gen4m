@@ -909,7 +909,7 @@ void wlanIST(IN struct ADAPTER *prAdapter)
 
 	u4Status = nicProcessIST(prAdapter);
 	if (u4Status != WLAN_STATUS_SUCCESS)
-		DBGLOG(REQ, WARN, "Fail in nicProcessIST! status [%d]\n",
+		DBGLOG(REQ, INFO, "Fail in nicProcessIST! status [%d]\n",
 		       u4Status);
 
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
