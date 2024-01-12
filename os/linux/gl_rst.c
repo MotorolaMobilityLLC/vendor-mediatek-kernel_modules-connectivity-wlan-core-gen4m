@@ -561,6 +561,24 @@ static u_int8_t glResetMsgHandler(enum ENUM_WMTMSG_TYPE eMsgType,
 
 	return TRUE;
 }
+bool glRstCheckRstCriteria(void)
+{
+	/*
+	 * for those cases which need to trigger whole chip reset
+	 * when fgIsResetting = TRUE
+	 */
+	if (g_IsSubsysRstOverThreshold || g_IsWfsysBusHang)
+		return FALSE;
+	else
+		return TRUE;
+}
+void glRstWholeChipRstParamInit(void)
+{
+	g_IsSubsysRstOverThreshold = FALSE;
+	g_SubsysRstCnt = 0;
+	g_IsTriggerTimeout = FALSE;
+	g_WholeChipRstTotalCnt++;
+}
 
 int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 {
@@ -569,25 +587,29 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 	struct GLUE_INFO *prGlueInfo;
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
-	g_IsWholeChipRst = TRUE;
 	DBGLOG(INIT, INFO,
-		"Enter glRstwlanPreWholeChipReset (%d).\n",
-		g_IsWholeChipRst);
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
-		DBGLOG(REQ, WARN, "driver is not ready\n");
-		return bRet;
-	}
-	if (!g_IsSubsysRstOverThreshold) {
-		if (!kalIsResetting()) {
-			DBGLOG(INIT, INFO,
-				"Wi-Fi Driver processes whole chip reset start.\n");
-		GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_FLAG_WF_RESET);
-		} else {
-			DBGLOG(INIT, INFO, "Wi-Fi is doing Subsys reset.\n");
-			kalSetRstEvent();
+		"Enter glRstwlanPreWholeChipReset.\n");
+
+	if (glRstCheckRstCriteria()) {
+		while ((!prGlueInfo) ||
+				(prGlueInfo->u4ReadyFlag == 0) ||
+				kalIsResetting()) {
+			prGlueInfo =
+				(struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+			DBGLOG(REQ, WARN, "wifi driver is not ready\n");
+			msleep(20);
 		}
+		g_IsWholeChipRst = TRUE;
+		DBGLOG(INIT, INFO,
+				"Wi-Fi Driver processes whole chip reset start.\n");
+			GL_RESET_TRIGGER(prGlueInfo->prAdapter,
+							 RST_FLAG_WF_RESET);
 	} else {
-		DBGLOG(INIT, INFO, "Reach subsys reset threshold!!!\n");
+		if (g_IsSubsysRstOverThreshold)
+			DBGLOG(INIT, INFO, "Reach subsys reset threshold!!!\n");
+		else if (g_IsWfsysBusHang)
+			DBGLOG(INIT, INFO, "WFSYS bus hang!!!\n");
+		g_IsWholeChipRst = TRUE;
 		kalSetRstEvent();
 	}
 	waitRet = wait_for_completion_timeout(&g_RstComp,
@@ -601,10 +623,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 			"WiFi rst takes more than 12 seconds, trigger rst self\n");
 		glResetMsgHandler(WMTMSG_TYPE_RESET,
 						WMTRSTMSG_0P5RESET_START);
-		g_IsSubsysRstOverThreshold = FALSE;
-		g_SubsysRstCnt = 0;
-		g_IsTriggerTimeout = FALSE;
-		g_WholeChipRstTotalCnt++;
+		glRstWholeChipRstParamInit();
 	}
 	return bRet;
 }
@@ -633,6 +652,7 @@ void glReset_timeinit(struct timeval *rNowTs, struct timeval *rLastTs)
 	rLastTs->tv_sec = 0;
 	rLastTs->tv_usec = 0;
 }
+
 bool IsOverRstTimeThreshold(struct timeval *rNowTs, struct timeval *rLastTs)
 {
 	struct timeval rTimeout, rTime;
@@ -671,8 +691,15 @@ bool IsOverRstTimeThreshold(struct timeval *rNowTs, struct timeval *rLastTs)
 	}
 	return fgIsTimeout;
 }
-void glResetSubsysRstProcedure(struct ADAPTER *prAdapter, bool fgIsTimeout)
+void glResetSubsysRstProcedure(
+	struct ADAPTER *prAdapter,
+	struct timeval *rNowTs,
+	struct timeval *rLastTs)
 {
+	bool fgIsTimeout;
+	struct mt66xx_chip_info *prChipInfo;
+
+	fgIsTimeout = IsOverRstTimeThreshold(rNowTs, rLastTs);
 	if (g_SubsysRstCnt > 3) {
 		if (fgIsTimeout == TRUE) {
 		/*
@@ -688,9 +715,13 @@ void glResetSubsysRstProcedure(struct ADAPTER *prAdapter, bool fgIsTimeout)
 		} else {
 			/*g_SubsysRstCnt > 3, < 30 sec, do whole chip reset */
 			g_IsSubsysRstOverThreshold = TRUE;
+			/*coredump is done, no need do again*/
+			g_IsTriggerTimeout = TRUE;
 			glSetRstReasonString(
 				"subsys reset more than 3 times");
-			GL_RESET_TRIGGER(prAdapter, RST_FLAG_WHOLE_RESET);
+			prChipInfo = prAdapter->chip_info;
+			if (prChipInfo->trigger_wholechiprst)
+				prChipInfo->trigger_wholechiprst(g_reason);
 		}
 	} else {
 		glResetMsgHandler(WMTMSG_TYPE_RESET,
@@ -702,13 +733,17 @@ void glResetSubsysRstProcedure(struct ADAPTER *prAdapter, bool fgIsTimeout)
 		if (fgIsTimeout == TRUE)
 			g_SubsysRstCnt = 1;
 	}
+	if (g_SubsysRstCnt == 1) {
+		rLastTs->tv_sec = rNowTs->tv_sec;
+		rLastTs->tv_usec = rNowTs->tv_usec;
+	}
+	g_IsTriggerTimeout = FALSE;
 }
 int wlan_reset_thread_main(void *data)
 {
 	int ret = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct timeval rNowTs, rLastTs;
-	bool fgIsTimeout = false;
 
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 	KAL_WAKE_LOCK_T *prWlanRstThreadWakeLock;
@@ -770,26 +805,16 @@ int wlan_reset_thread_main(void *data)
 			if (g_IsWholeChipRst) {
 				glResetMsgHandler(WMTMSG_TYPE_RESET,
 							WMTRSTMSG_RESET_START);
-				g_IsSubsysRstOverThreshold = FALSE;
-				g_SubsysRstCnt = 0;
+				glRstWholeChipRstParamInit();
 				glReset_timeinit(&rNowTs, &rLastTs);
-				fgIsTimeout = FALSE;
-				g_IsTriggerTimeout = FALSE;
-				g_WholeChipRstTotalCnt++;
 			} else {
 				g_SubsysRstCnt++;
-				fgIsTimeout = IsOverRstTimeThreshold(&rNowTs,
-								     &rLastTs);
 				DBGLOG(INIT, INFO,
 					"WF reset count = %d.\n",
 					g_SubsysRstCnt);
 				glResetSubsysRstProcedure(prGlueInfo->prAdapter,
-							fgIsTimeout);
-				if (g_SubsysRstCnt == 1) {
-					rLastTs.tv_sec = rNowTs.tv_sec;
-					rLastTs.tv_usec = rNowTs.tv_usec;
-				}
-				g_IsTriggerTimeout = FALSE;
+							 &rNowTs,
+							 &rLastTs);
 			}
 			DBGLOG(INIT, INFO,
 			"Whole Chip rst count /WF reset total count = (%d)/(%d).\n",
