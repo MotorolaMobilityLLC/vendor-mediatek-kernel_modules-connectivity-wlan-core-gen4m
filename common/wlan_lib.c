@@ -6991,6 +6991,11 @@ void *wlanGetNetInterfaceByBssIdx(struct GLUE_INFO
 /*----------------------------------------------------------------------------*/
 void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 {
+	wlanInitFeatureOptionImpl(prAdapter, NULL);
+}
+
+void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
+{
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	struct QUE_MGT *prQM = &prAdapter->rQM;
@@ -7004,377 +7009,268 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
+#define INIT_STR(__FEATURE, __KEY, __VAL) \
+{\
+	if (!pucKey || !kalStrnCmp(pucKey, __KEY, WLAN_CFG_KEY_LEN_MAX - 1)) { \
+		wlanCfgGet(prAdapter, __KEY, __FEATURE, __VAL, 0);\
+	} \
+}
+
+#define INIT_TYPE(__FEATURE, __FUNC, __KEY, __VAL) \
+{\
+	if (!pucKey || !kalStrnCmp(pucKey, __KEY, WLAN_CFG_KEY_LEN_MAX - 1)) { \
+		__FEATURE = TYPEOF(__FEATURE)__FUNC(prAdapter, __KEY, __VAL);\
+	} \
+}
+
+#define INIT_UINT(__FEATURE, __KEY, __VAL) \
+	INIT_TYPE(__FEATURE, wlanCfgGetUint32, __KEY, __VAL)
+
+#define INIT_INT(__FEATURE, __KEY, __VAL) \
+	INIT_TYPE(__FEATURE, wlanCfgGetInt32, __KEY, __VAL)
+
+
 	/* Feature options will be filled by config file */
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
-	prWifiVar->fgEnDefaultIotApRule = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"EnDefaultIotApRule",
-					FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgEnDefaultIotApRule,
+		"EnDefaultIotApRule", FEATURE_ENABLED);
 #endif
-	prWifiVar->ucQoS = (uint8_t) wlanCfgGetUint32(prAdapter, "Qos",
-					FEATURE_ENABLED);
 
-	prWifiVar->ucStaHt = (uint8_t) wlanCfgGetUint32(prAdapter, "StaHT",
-					FEATURE_ENABLED);
-	prWifiVar->ucStaVht = (uint8_t) wlanCfgGetUint32(prAdapter, "StaVHT",
-					FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucQoS, "Qos", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucStaHt, "StaHT", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucStaVht, "StaVHT", FEATURE_ENABLED);
 
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (fgEfuseCtrlAxOn == 1) {
-		prWifiVar->ucStaHe = (uint8_t)
-			wlanCfgGetUint32(prAdapter, "StaHE", FEATURE_ENABLED);
-		prWifiVar->ucApHe = (uint8_t)
-			wlanCfgGetUint32(prAdapter, "ApHE", FEATURE_ENABLED);
-		prWifiVar->ucP2pGoHe = (uint8_t)
-			wlanCfgGetUint32(prAdapter, "P2pGoHE",
-					FEATURE_ENABLED);
-		prWifiVar->ucP2pGcHe = (uint8_t)
-			wlanCfgGetUint32(prAdapter, "P2pGcHE",
-					FEATURE_ENABLED);
+		INIT_UINT(prWifiVar->ucStaHe, "StaHE", FEATURE_ENABLED);
+		INIT_UINT(prWifiVar->ucApHe, "ApHE", FEATURE_ENABLED);
+		INIT_UINT(prWifiVar->ucP2pGoHe, "P2pGoHE", FEATURE_ENABLED);
+		INIT_UINT(prWifiVar->ucP2pGcHe, "P2pGcHE", FEATURE_ENABLED);
 	}
 #endif
 
 #if (CFG_SUPPORT_802_11BE == 1)
-	prWifiVar->ucStaEht = (uint8_t)
-		wlanCfgGetUint32(prAdapter, "StaEHT", FEATURE_ENABLED);
-	prWifiVar->ucApEht = (uint8_t)
-		wlanCfgGetUint32(prAdapter, "ApEHT", FEATURE_FORCE_ENABLED);
-	prWifiVar->ucP2pGoEht = (uint8_t)
-		wlanCfgGetUint32(prAdapter, "P2pGoEHT",
-				FEATURE_FORCE_ENABLED);
-	prWifiVar->ucP2pGcEht = (uint8_t)
-		wlanCfgGetUint32(prAdapter, "P2pGcEHT",
-				FEATURE_ENABLED);
-	prWifiVar->u2RxEhtBaSize = wlanCfgGetUint32(prAdapter, "RxEhtBaSize",
-			WLAN_EHT_MAX_BA_SIZE);
-	prWifiVar->u2TxEhtBaSize = wlanCfgGetUint32(prAdapter, "TxEhtBaSize",
-			WLAN_EHT_MAX_BA_SIZE);
-
-	prWifiVar->fgMoveWinOnMissingLast = wlanCfgGetUint32(prAdapter,
-			"MoveWinOnMissingLast", !RX_REORDER_WAIT_FOR_LAST_FRAG);
-
-	prWifiVar->u2BaExtSize = wlanCfgGetUint32(prAdapter, "BaExtSize",
-			WLAN_RX_BA_EXT_SIZE);
+	INIT_UINT(prWifiVar->ucStaEht, "StaEHT", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucApEht, "ApEHT", FEATURE_FORCE_ENABLED);
+	INIT_UINT(prWifiVar->ucP2pGoEht, "P2pGoEHT", FEATURE_FORCE_ENABLED);
+	INIT_UINT(prWifiVar->ucP2pGcEht, "P2pGcEHT", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->u2RxEhtBaSize,
+		"RxEhtBaSize", WLAN_EHT_MAX_BA_SIZE);
+	INIT_UINT(prWifiVar->u2TxEhtBaSize,
+		"TxEhtBaSize", WLAN_EHT_MAX_BA_SIZE);
+	INIT_UINT(prWifiVar->fgMoveWinOnMissingLast,
+		"MoveWinOnMissingLast", !RX_REORDER_WAIT_FOR_LAST_FRAG);
+	INIT_UINT(prWifiVar->u2BaExtSize,
+		"BaExtSize", WLAN_RX_BA_EXT_SIZE);
 	if (prWifiVar->u2BaExtSize > WLAN_RX_BA_EXT_MAX_SIZE)
 		prWifiVar->u2BaExtSize = WLAN_RX_BA_EXT_MAX_SIZE;
-
-	prWifiVar->u4BaVerboseLogging = wlanCfgGetUint32(prAdapter,
-			"BaVerboseLog", 0);
-
-	prWifiVar->ucEhtAmsduInAmpduRx = (uint8_t) wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->u4BaVerboseLogging, "BaVerboseLog", 0);
+	INIT_UINT(prWifiVar->ucEhtAmsduInAmpduRx,
 		"EhtAmsduInAmpduRx", FEATURE_ENABLED);
-	prWifiVar->ucEhtAmsduInAmpduTx = (uint8_t) wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->ucEhtAmsduInAmpduTx,
 		"EhtAmsduInAmpduTx", FEATURE_ENABLED);
-	prWifiVar->ucStaEhtBfee = (uint8_t) wlanCfgGetUint32(prAdapter,
-		"StaEHTBfee", FEATURE_ENABLED);
-	prWifiVar->ucEhtOMCtrl = (uint8_t) wlanCfgGetUint32(prAdapter,
-		"EhtOMCtrl", FEATURE_ENABLED);
-	prWifiVar->ucStaEht242ToneRUWt20M =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->ucStaEhtBfee, "StaEHTBfee", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucEhtOMCtrl, "EhtOMCtrl", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucStaEht242ToneRUWt20M,
 		"StaEht242ToneRUWt20M", FEATURE_ENABLED);
-	prWifiVar->ucEhtNDP4xLTF3dot2usGI =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->ucEhtNDP4xLTF3dot2usGI,
 		"EhtNDP4xLTF3dot2usGI", FEATURE_ENABLED);
-	prWifiVar->ucEhtSUBfer =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
-		"EhtSUBfer", FEATURE_ENABLED);
-	prWifiVar->ucEhtSUBfee =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
-		"EhtSUBfee", FEATURE_ENABLED);
-	prWifiVar->ucEhtBfeeSSLeEq80m =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
-		"EhtBfeeSSLeEq80m", 3);
-	prWifiVar->ucEhtBfee160m =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
-		"EhtBfee160m", 3);
-	prWifiVar->ucEhtBfee320m =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
-		"EhtBfee320m", 3);
-	prWifiVar->ucEhtSUBfee =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
-		"EhtSUBfee", FEATURE_ENABLED);
-	prWifiVar->ucEhtNG16SUFeedback =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->ucEhtSUBfer, "EhtSUBfer", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucEhtSUBfee, "EhtSUBfee", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucEhtBfeeSSLeEq80m, "EhtBfeeSSLeEq80m", 3);
+	INIT_UINT(prWifiVar->ucEhtBfee160m, "EhtBfee160m", 3);
+	INIT_UINT(prWifiVar->ucEhtBfee320m, "EhtBfee320m", 3);
+	INIT_UINT(prWifiVar->ucEhtNG16SUFeedback,
 		"EhtNG16SUFeedback", FEATURE_ENABLED);
-	prWifiVar->ucEhtNG16MUFeedback =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->ucEhtNG16MUFeedback,
 		"EhtNG16MUFeedback", FEATURE_ENABLED);
-	prWifiVar->ucEhtCodebook75MuFeedback =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->ucEhtCodebook75MuFeedback,
 		"EhtCodebook75MuFeedback", FEATURE_ENABLED);
-	prWifiVar->ucEhtTrigedSUBFFeedback =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->ucEhtTrigedSUBFFeedback,
 		"EhtTrigedSUBFFeedback", FEATURE_ENABLED);
-	prWifiVar->ucEhtTrigedMUBFPartialBWFeedback =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->ucEhtTrigedMUBFPartialBWFeedback,
 		"EhtTrigedMUBFPartialBWFeedback", FEATURE_ENABLED);
-	prWifiVar->ucEhtTrigedCQIFeedback =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->ucEhtTrigedCQIFeedback,
 		"EhtTrigedCQIFeedback", FEATURE_ENABLED);
-	prWifiVar->ucEhtPartialBwDLMUMIMO =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->ucEhtPartialBwDLMUMIMO,
 		"EhtPartialBwDLMUMIMO", FEATURE_ENABLED);
-	prWifiVar->ucEhtMUPPDU4xEHTLTFdot8usGI =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->ucEhtMUPPDU4xEHTLTFdot8usGI,
 		"EhtMUPPDU4xEHTLTFdot8usGI", FEATURE_ENABLED);
-	prWifiVar->ucEhtNonTrigedCQIFeedback =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->ucEhtNonTrigedCQIFeedback,
 		"EhtNonTrigedCQIFeedback", FEATURE_ENABLED);
-	prWifiVar->ucEhtTx1024QAM4096QAMLe242ToneRU =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->ucEhtTx1024QAM4096QAMLe242ToneRU,
 		"EhtTx1024QAM4096QAMLe242ToneRU", FEATURE_ENABLED);
-	prWifiVar->ucEhtRx1024QAM4096QAMLe242ToneRU =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->ucEhtRx1024QAM4096QAMLe242ToneRU,
 		"EhtRx1024QAM4096QAMLe242ToneRU", FEATURE_ENABLED);
-	prWifiVar->ucEhtTx1024QAM4096QAMLe242ToneRU =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
-		"EhtTx1024QAM4096QAMLe242ToneRU", FEATURE_ENABLED);
-	prWifiVar->ucEhtCommonNominalPktPadding =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->ucEhtCommonNominalPktPadding,
 		"EhtCommonNominalPktPadding", COMMON_NOMINAL_PAD_16_US);
-	prWifiVar->ucEhtMaxLTFNum =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
-		"EhtMaxLTFNum", 0x0B);
-	prWifiVar->ucEhtMCS15 =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
-		"EhtMCS15", 0xff);
-	prWifiVar->ucEhtDup6G =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
-		"EhtDup6G", FEATURE_ENABLED);
-	prWifiVar->ucEht20MRxNDPWiderBW =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->ucEhtMaxLTFNum, "EhtMaxLTFNum", 0x0B);
+	INIT_UINT(prWifiVar->ucEhtMCS15, "EhtMCS15", 0xff);
+	INIT_UINT(prWifiVar->ucEhtDup6G, "EhtDup6G", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucEht20MRxNDPWiderBW,
 		"Eht20MRxNDPWiderBW", FEATURE_ENABLED);
-	prWifiVar->ucPresetLinkId = MLD_LINK_ID_NONE;
-	prWifiVar->ucMldLinkMax = (uint8_t) wlanCfgGetUint32(prAdapter,
-		"MldLinkMax", MLD_LINK_MAX);
-	prWifiVar->ucApMldMainLinkIdx = (uint8_t) wlanCfgGetInt32(
-		prAdapter, "ApMldMainLinkIdx", MLD_LINK_ID_NONE);
-	prWifiVar->ucStaMldMainLinkIdx = (uint8_t) wlanCfgGetInt32(
-		prAdapter, "StaMldMainLinkIdx", MLD_LINK_ID_NONE);
-	wlanCfgGet(prAdapter, "MloP2pPreferFreq",
-		prWifiVar->aucMloP2pPreferFreq,
-		"2462 5180 5975", 0);
-	prWifiVar->ucMlProbeRetryLimit = (uint8_t) wlanCfgGetInt32(
-		prAdapter, "MlProbeRetryLimit", ML_PROBE_RETRY_COUNT);
-	prWifiVar->ucEnableMlo = (uint8_t) wlanCfgGetUint32(prAdapter,
-		"EnableMlo", FEATURE_ENABLED);
-	prWifiVar->ucMaxSimultaneousLinks = (uint8_t)
-		wlanCfgGetUint32(prAdapter, "MaxSimultaneousLinks", 0xff);
-	prWifiVar->ucMldRetryCount = (uint8_t)
-		wlanCfgGetUint32(prAdapter, "MldRetryCount", MLD_RETRY_COUNT);
+	if (!pucKey)
+		prWifiVar->ucPresetLinkId = MLD_LINK_ID_NONE;
+	INIT_UINT(prWifiVar->ucMldLinkMax, "MldLinkMax", MLD_LINK_MAX);
+	INIT_UINT(prWifiVar->ucApMldMainLinkIdx,
+		"ApMldMainLinkIdx", MLD_LINK_ID_NONE);
+	INIT_UINT(prWifiVar->ucStaMldMainLinkIdx,
+		"StaMldMainLinkIdx", MLD_LINK_ID_NONE);
+	INIT_STR(prWifiVar->aucMloP2pPreferFreq,
+		"MloP2pPreferFreq", "2462 5180 5975");
+	INIT_UINT(prWifiVar->ucMlProbeRetryLimit,
+		"MlProbeRetryLimit", ML_PROBE_RETRY_COUNT);
+	INIT_UINT(prWifiVar->ucEnableMlo, "EnableMlo", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucMaxSimultaneousLinks,
+		"MaxSimultaneousLinks", 0xff);
+	INIT_UINT(prWifiVar->ucMldRetryCount, "MldRetryCount", MLD_RETRY_COUNT);
 #endif /* CFG_SUPPORT_802_11BE */
-	prWifiVar->ucApHt = (uint8_t) wlanCfgGetUint32(prAdapter, "ApHT",
-					FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucApHt, "ApHT", FEATURE_ENABLED);
 #if CFG_TC1_FEATURE
-	prWifiVar->ucApVht = (uint8_t) wlanCfgGetUint32(prAdapter, "ApVHT",
-					FEATURE_FORCE_ENABLED);
+	INIT_UINT(prWifiVar->ucApVht, "ApVHT", FEATURE_FORCE_ENABLED);
 #else
-	prWifiVar->ucApVht = (uint8_t) wlanCfgGetUint32(prAdapter, "ApVHT",
-					FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucApVht, "ApVHT", FEATURE_ENABLED);
 #endif
+	INIT_UINT(prWifiVar->ucP2pGoHt,	"P2pGoHT", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucP2pGoVht, "P2pGoVHT", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucP2pGcHt,	"P2pGcHT", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucP2pGcVht, "P2pGcVHT", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucAmpduRx,	"AmpduRx", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucAmpduTx,	"AmpduTx", FEATURE_ENABLED);
 
-	prWifiVar->ucP2pGoHt = (uint8_t) wlanCfgGetUint32(prAdapter, "P2pGoHT",
-					FEATURE_ENABLED);
-	prWifiVar->ucP2pGoVht = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"P2pGoVHT", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucAmsduInAmpduRx,
+		"AmsduInAmpduRx", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucAmsduInAmpduTx,
+		"AmsduInAmpduTx", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucHtAmsduInAmpduRx,
+		"HtAmsduInAmpduRx", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucHtAmsduInAmpduTx,
+		"HtAmsduInAmpduTx", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucVhtAmsduInAmpduRx,
+		"VhtAmsduInAmpduRx", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucVhtAmsduInAmpduTx,
+		"VhtAmsduInAmpduTx", FEATURE_ENABLED);
 
-	prWifiVar->ucP2pGcHt = (uint8_t) wlanCfgGetUint32(prAdapter, "P2pGcHT",
-					FEATURE_ENABLED);
-	prWifiVar->ucP2pGcVht = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"P2pGcVHT", FEATURE_ENABLED);
-
-	prWifiVar->ucAmpduRx = (uint8_t) wlanCfgGetUint32(prAdapter, "AmpduRx",
-					FEATURE_ENABLED);
-	prWifiVar->ucAmpduTx = (uint8_t) wlanCfgGetUint32(prAdapter, "AmpduTx",
-					FEATURE_ENABLED);
-
-	prWifiVar->ucAmsduInAmpduRx = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"AmsduInAmpduRx", FEATURE_ENABLED);
-	prWifiVar->ucAmsduInAmpduTx = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"AmsduInAmpduTx", FEATURE_ENABLED);
-	prWifiVar->ucHtAmsduInAmpduRx = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"HtAmsduInAmpduRx", FEATURE_ENABLED);
-	prWifiVar->ucHtAmsduInAmpduTx = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"HtAmsduInAmpduTx", FEATURE_ENABLED);
-	prWifiVar->ucVhtAmsduInAmpduRx = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"VhtAmsduInAmpduRx", FEATURE_ENABLED);
-	prWifiVar->ucVhtAmsduInAmpduTx = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"VhtAmsduInAmpduTx", FEATURE_ENABLED);
-
-	prWifiVar->ucTspec = (uint8_t) wlanCfgGetUint32(prAdapter, "Tspec",
-					FEATURE_DISABLED);
-
-	prWifiVar->ucUapsd = (uint8_t) wlanCfgGetUint32(prAdapter, "Uapsd",
-					FEATURE_ENABLED);
-	prWifiVar->ucStaUapsd = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"StaUapsd", FEATURE_DISABLED);
-	prWifiVar->ucApUapsd = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"ApUapsd", FEATURE_DISABLED);
-	prWifiVar->ucP2pUapsd = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"P2pUapsd", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucTspec, "Tspec",	FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucUapsd, "Uapsd",	FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucStaUapsd, "StaUapsd", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucApUapsd, "ApUapsd", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucP2pUapsd, "P2pUapsd", FEATURE_ENABLED);
 #if (CFG_ENABLE_WIFI_DIRECT && CFG_MTK_ANDROID_WMT)
-	prWifiVar->u4RegP2pIfAtProbe = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"RegP2pIfAtProbe", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->u4RegP2pIfAtProbe,
+		"RegP2pIfAtProbe", FEATURE_ENABLED);
 #else
-	prWifiVar->u4RegP2pIfAtProbe = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"RegP2pIfAtProbe", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->u4RegP2pIfAtProbe,
+		"RegP2pIfAtProbe", FEATURE_DISABLED);
 #endif
 
-	prWifiVar->ucRegP2pMode = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"RegP2pMode", DEFAULT_RUNNING_P2P_MODE);
+	INIT_UINT(prWifiVar->ucRegP2pMode,
+		"RegP2pMode", DEFAULT_RUNNING_P2P_MODE);
+	INIT_UINT(prWifiVar->ucP2pShareMacAddr,
+		"P2pShareMacAddr", FEATURE_DISABLED);
 
-	prWifiVar->ucP2pShareMacAddr = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"P2pShareMacAddr", FEATURE_DISABLED);
-
-	prWifiVar->ucTxShortGI = (uint8_t) wlanCfgGetUint32(prAdapter, "SgiTx",
-					FEATURE_ENABLED);
-	prWifiVar->ucRxShortGI = (uint8_t) wlanCfgGetUint32(prAdapter, "SgiRx",
-					FEATURE_ENABLED);
-
-	prWifiVar->ucTxLdpc = (uint8_t) wlanCfgGetUint32(prAdapter, "LdpcTx",
-					FEATURE_ENABLED);
-	prWifiVar->ucRxLdpc = (uint8_t) wlanCfgGetUint32(prAdapter, "LdpcRx",
-					FEATURE_ENABLED);
-
-	prWifiVar->ucTxStbc = (uint8_t) wlanCfgGetUint32(prAdapter, "StbcTx",
-					FEATURE_ENABLED);
-	prWifiVar->ucRxStbc = (uint8_t) wlanCfgGetUint32(prAdapter, "StbcRx",
-					FEATURE_ENABLED);
-	prWifiVar->ucRxStbcNss = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"StbcRxNss", 1);
-
-	prWifiVar->ucTxGf = (uint8_t) wlanCfgGetUint32(prAdapter, "GfTx",
-					FEATURE_ENABLED);
-	prWifiVar->ucRxGf = (uint8_t) wlanCfgGetUint32(prAdapter, "GfRx",
-					FEATURE_ENABLED);
-
-	prWifiVar->ucMCS32 = (uint8_t) wlanCfgGetUint32(prAdapter, "MCS32",
-					FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucTxShortGI, "SgiTx", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucRxShortGI, "SgiRx", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucTxLdpc, "LdpcTx", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucRxLdpc, "LdpcRx", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucTxStbc, "StbcTx", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucRxStbc, "StbcRx", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucRxStbcNss, "StbcRxNss", 1);
+	INIT_UINT(prWifiVar->ucTxGf, "GfTx", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucRxGf, "GfRx", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucMCS32, "MCS32", FEATURE_ENABLED);
 
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (fgEfuseCtrlAxOn == 1) {
-	prWifiVar->ucHeAmsduInAmpduRx = (uint8_t) wlanCfgGetUint32(prAdapter,
-		"HeAmsduInAmpduRx", FEATURE_ENABLED);
-	prWifiVar->ucHeAmsduInAmpduTx = (uint8_t) wlanCfgGetUint32(prAdapter,
-		"HeAmsduInAmpduTx", FEATURE_ENABLED);
-	prWifiVar->ucTrigMacPadDur = (uint8_t) wlanCfgGetUint32(prAdapter,
-		"TrigMacPadDur", HE_CAP_TRIGGER_PAD_DURATION_16);
-	prWifiVar->ucVcoreBoostEnable = (uint8_t) wlanCfgGetUint32(prAdapter,
-		"HeVcoreBoostEnable", FEATURE_DISABLED);
-	prWifiVar->ucMaxAmpduLenExp = (uint8_t) wlanCfgGetUint32(prAdapter,
-		"MaxAmpduLenExt", HE_CAP_MAX_AMPDU_LEN_EXP);
-	prWifiVar->fgEnableSR = (uint8_t) wlanCfgGetUint32(prAdapter,
-		"SREnable", FEATURE_DISABLED);
+		INIT_UINT(prWifiVar->ucHeAmsduInAmpduRx,
+			"HeAmsduInAmpduRx", FEATURE_ENABLED);
+		INIT_UINT(prWifiVar->ucHeAmsduInAmpduTx,
+			"HeAmsduInAmpduTx", FEATURE_ENABLED);
+		INIT_UINT(prWifiVar->ucTrigMacPadDur,
+			"TrigMacPadDur", HE_CAP_TRIGGER_PAD_DURATION_16);
+		INIT_UINT(prWifiVar->ucVcoreBoostEnable,
+			"HeVcoreBoostEnable", FEATURE_DISABLED);
+		INIT_UINT(prWifiVar->ucMaxAmpduLenExp,
+			"MaxAmpduLenExt", HE_CAP_MAX_AMPDU_LEN_EXP);
+		INIT_UINT(prWifiVar->fgEnableSR,
+			"SREnable", FEATURE_DISABLED);
 	}
 #endif
 
 #if (CFG_SUPPORT_TWT == 1)
-	prWifiVar->ucTWTRequester = (uint8_t)
-		wlanCfgGetUint32(prAdapter, "TWTRequester", FEATURE_ENABLED);
-	prWifiVar->ucTWTResponder = (uint8_t)
-		wlanCfgGetUint32(prAdapter, "TWTResponder", FEATURE_DISABLED);
-	prWifiVar->ucTWTStaBandBitmap = (uint8_t)
-		wlanCfgGetUint32(prAdapter,
-			"TWTStaBandBitmap",
-			BIT(BAND_2G4) | BIT(BAND_5G)
+	INIT_UINT(prWifiVar->ucTWTRequester, "TWTRequester", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucTWTResponder, "TWTResponder", FEATURE_DISABLED);
 #if (CFG_SUPPORT_WIFI_6G == 1)
-			| BIT(BAND_6G)
+	INIT_UINT(prWifiVar->ucTWTStaBandBitmap,
+	       "TWTStaBandBitmap", BIT(BAND_2G4) | BIT(BAND_5G) | BIT(BAND_6G));
+#else
+	INIT_UINT(prWifiVar->ucTWTStaBandBitmap,
+		"TWTStaBandBitmap", BIT(BAND_2G4) | BIT(BAND_5G));
 #endif
-		);
 #endif
 
 #if (CFG_SUPPORT_TWT_HOTSPOT == 1)
-	prWifiVar->ucTWTHotSpotSupport = (uint8_t)
-		wlanCfgGetUint32(prAdapter,
-			"TWTHotSpotSupport",
-			FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucTWTHotSpotSupport,
+		"TWTHotSpotSupport", FEATURE_ENABLED);
 #endif
 
 #if (CFG_SUPPORT_BTWT == 1)
-	prWifiVar->ucBTWTSupport = (uint8_t)
-		wlanCfgGetUint32(prAdapter, "BTWTSupport", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucBTWTSupport, "BTWTSupport", FEATURE_DISABLED);
 #endif
 
-	prWifiVar->ucSigTaRts = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"SigTaRts", FEATURE_DISABLED);
-	prWifiVar->ucDynBwRts = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"DynBwRts", FEATURE_DISABLED);
-	prWifiVar->ucTxopPsTx = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"TxopPsTx", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucSigTaRts, "SigTaRts", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucDynBwRts, "DynBwRts", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucTxopPsTx, "TxopPsTx", FEATURE_DISABLED);
 	/* HT BFee has IOT issue
 	 * only support HT BFee when force mode for testing
 	 */
-	prWifiVar->ucStaHtBfee = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"StaHTBfee", FEATURE_DISABLED);
-	prWifiVar->ucStaVhtBfee = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"StaVHTBfee", FEATURE_ENABLED);
-	prWifiVar->ucStaVhtMuBfee = (uint8_t)wlanCfgGetUint32(prAdapter,
-					"StaVHTMuBfee", FEATURE_ENABLED);
-	prWifiVar->ucStaHtBfer = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"StaHTBfer", FEATURE_DISABLED);
-	prWifiVar->ucStaVhtBfer = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"StaVHTBfer", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucStaHtBfee, "StaHTBfee", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucStaVhtBfee, "StaVHTBfee", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucStaVhtMuBfee, "StaVHTMuBfee", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucStaHtBfer, "StaHTBfer", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucStaVhtBfer, "StaVHTBfer", FEATURE_DISABLED);
 
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (fgEfuseCtrlAxOn == 1) {
-		prWifiVar->ucStaHeBfee = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"StaHEBfee", FEATURE_ENABLED);
-		prWifiVar->ucStaHeSuBfer = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"StaHESUBfer", FEATURE_DISABLED);
+		INIT_UINT(prWifiVar->ucStaHeBfee,
+			"StaHEBfee", FEATURE_ENABLED);
+		INIT_UINT(prWifiVar->ucStaHeSuBfer,
+			"StaHESUBfer", FEATURE_DISABLED);
 	}
-	prWifiVar->ucHeOMCtrl = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"HeOMCtrl", FEATURE_ENABLED);
-
-	prWifiVar->ucRxCtrlToMutiBss = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"RxCtrlToMutiBss", FEATURE_DISABLED);
-
-	prWifiVar->ucStaHePpRx = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"StaHePpRx", FEATURE_DISABLED);
-	prWifiVar->ucHeDynamicSMPS = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"HeDynamicSMPS", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucHeOMCtrl, "HeOMCtrl", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucRxCtrlToMutiBss,
+		"RxCtrlToMutiBss", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucStaHePpRx, "StaHePpRx", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucHeDynamicSMPS,
+		"HeDynamicSMPS", FEATURE_DISABLED);
 #endif
 
 	/* 0: disabled
 	 * 1: Tx done event to driver
 	 * 2: Tx status to FW only
 	 */
-	prWifiVar->ucDataTxDone = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "DataTxDone", 0);
-	prWifiVar->ucDataTxRateMode = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "DataTxRateMode",
-					DATA_RATE_MODE_AUTO);
-	prWifiVar->u4DataTxRateCode = wlanCfgGetUint32(
-					prAdapter, "DataTxRateCode", 0x0);
-
-	prWifiVar->ucApWpsMode = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "ApWpsMode", 0);
+	INIT_UINT(prWifiVar->ucDataTxDone, "DataTxDone", 0);
+	INIT_UINT(prWifiVar->ucDataTxRateMode,
+		"DataTxRateMode", DATA_RATE_MODE_AUTO);
+	INIT_UINT(prWifiVar->u4DataTxRateCode, "DataTxRateCode", 0x0);
+	INIT_UINT(prWifiVar->ucApWpsMode, "ApWpsMode", 0);
 	DBGLOG(INIT, TRACE, "ucApWpsMode = %u\n", prWifiVar->ucApWpsMode);
 
-	prWifiVar->ucThreadScheduling = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "ThreadSched", 0);
-	prWifiVar->ucThreadPriority = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "ThreadPriority",
-					WLAN_THREAD_TASK_PRIORITY);
-	prWifiVar->cThreadNice = (int8_t) wlanCfgGetInt32(
-					prAdapter, "ThreadNice",
-					WLAN_THREAD_TASK_NICE);
-
-	prAdapter->rQM.u4MaxForwardBufferCount = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "ApForwardBufferCnt",
-					QM_FWD_PKT_QUE_THRESHOLD);
+	INIT_UINT(prWifiVar->ucThreadScheduling, "ThreadSched", 0);
+	INIT_UINT(prWifiVar->ucThreadPriority,
+		"ThreadPriority", WLAN_THREAD_TASK_PRIORITY);
+	INIT_INT(prWifiVar->cThreadNice, "ThreadNice", WLAN_THREAD_TASK_NICE);
+	INIT_UINT(prAdapter->rQM.u4MaxForwardBufferCount,
+		"ApForwardBufferCnt", QM_FWD_PKT_QUE_THRESHOLD);
 
 	/* AP channel setting
 	 * 0: auto
 	 */
-	prWifiVar->ucApChannel = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "ApChannel", 0);
-	prWifiVar->u2ApFreq = (uint16_t) wlanCfgGetUint32(
-					prAdapter, "ApFreq", 0);
-	prWifiVar->ucApAcsChannel[0] = (uint16_t) wlanCfgGetUint32(
-					prAdapter, "ApAcs2gChannel", 0);
-	prWifiVar->ucApAcsChannel[1] = (uint16_t) wlanCfgGetUint32(
-					prAdapter, "ApAcs5gChannel", 0);
-	prWifiVar->ucApAcsChannel[2] = (uint16_t) wlanCfgGetUint32(
-					prAdapter, "ApAcs6gChannel", 0);
+	INIT_UINT(prWifiVar->ucApChannel, "ApChannel", 0);
+	INIT_UINT(prWifiVar->u2ApFreq, "ApFreq", 0);
+	INIT_UINT(prWifiVar->ucApAcsChannel[0], "ApAcs2gChannel", 0);
+	INIT_UINT(prWifiVar->ucApAcsChannel[1], "ApAcs5gChannel", 0);
+	INIT_UINT(prWifiVar->ucApAcsChannel[2], "ApAcs6gChannel", 0);
 
 	/*
 	 * 0: SCN
@@ -7382,10 +7278,8 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	 * 2: RES
 	 * 3: SCB
 	 */
-	prWifiVar->ucApSco = (uint8_t) wlanCfgGetUint32(
-						prAdapter, "ApSco", 0);
-	prWifiVar->ucP2pGoSco = (uint8_t) wlanCfgGetUint32(
-						prAdapter, "P2pGoSco", 0);
+	INIT_UINT(prWifiVar->ucApSco, "ApSco", 0);
+	INIT_UINT(prWifiVar->ucP2pGoSco, "P2pGoSco", 0);
 
 	/* Max bandwidth setting
 	 * 0: 20Mhz
@@ -7395,223 +7289,156 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	 * 4: 80+80Mhz
 	 * Note: For VHT STA, BW 80Mhz is a must!
 	 */
-	prWifiVar->ucStaBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "StaBw", MAX_BW_320MHZ);
-	prWifiVar->ucSta2gBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "Sta2gBw", MAX_BW_20MHZ);
-	prWifiVar->ucSta5gBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "Sta5gBw", MAX_BW_160MHZ);
-	prWifiVar->ucSta6gBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "Sta6gBw", MAX_BW_320MHZ);
+	INIT_UINT(prWifiVar->ucStaBandwidth, "StaBw", MAX_BW_320MHZ);
+	INIT_UINT(prWifiVar->ucSta2gBandwidth, "Sta2gBw", MAX_BW_20MHZ);
+	INIT_UINT(prWifiVar->ucSta5gBandwidth, "Sta5gBw", MAX_BW_160MHZ);
+	INIT_UINT(prWifiVar->ucSta6gBandwidth, "Sta6gBw", MAX_BW_320MHZ);
 	/* GC,GO */
-	prWifiVar->ucP2p2gBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "P2p2gBw", MAX_BW_20MHZ);
-	prWifiVar->ucP2p5gBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "P2p5gBw", MAX_BW_80MHZ);
-	prWifiVar->ucP2p6gBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "P2p6gBw", MAX_BW_320MHZ);
-	prWifiVar->ucApBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "ApBw", MAX_BW_320MHZ);
-	prWifiVar->ucAp2gBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "Ap2gBw", MAX_BW_20MHZ);
-	prWifiVar->ucAp5gBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "Ap5gBw", MAX_BW_80MHZ);
-	prWifiVar->ucAp6gBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "Ap6gBw", MAX_BW_320MHZ);
-	prWifiVar->ucApChnlDefFromCfg = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "ApChnlDefFromCfg", FEATURE_ENABLED);
-	prWifiVar->ucApAllowHtVhtTkip = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "ApAllowHtVhtTkip",
-				FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucP2p2gBandwidth, "P2p2gBw", MAX_BW_20MHZ);
+	INIT_UINT(prWifiVar->ucP2p5gBandwidth, "P2p5gBw", MAX_BW_80MHZ);
+	INIT_UINT(prWifiVar->ucP2p6gBandwidth, "P2p6gBw", MAX_BW_320MHZ);
+	INIT_UINT(prWifiVar->ucApBandwidth, "ApBw", MAX_BW_320MHZ);
+	INIT_UINT(prWifiVar->ucAp2gBandwidth, "Ap2gBw", MAX_BW_20MHZ);
+	INIT_UINT(prWifiVar->ucAp5gBandwidth, "Ap5gBw", MAX_BW_80MHZ);
+	INIT_UINT(prWifiVar->ucAp6gBandwidth, "Ap6gBw", MAX_BW_320MHZ);
+	INIT_UINT(prWifiVar->ucApChnlDefFromCfg,
+		"ApChnlDefFromCfg", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucApAllowHtVhtTkip,
+		"ApAllowHtVhtTkip", FEATURE_DISABLED);
 
-	prWifiVar->ucApForceSleep = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "ApForceSleep", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucApForceSleep, "ApForceSleep", FEATURE_ENABLED);
 
-	prWifiVar->ucNSS = (uint8_t) wlanCfgGetUint32
-				(prAdapter, "Nss", DEFAULT_NSS);
+	INIT_UINT(prWifiVar->ucNSS, "Nss", DEFAULT_NSS);
 
 #ifdef CFG_FORCE_AP1NSS
-	prWifiVar->ucAp6gNSS = (uint8_t)wlanCfgGetUint32
-				(prAdapter, "Ap6gNss", 1);
-	prWifiVar->ucAp5gNSS = (uint8_t)wlanCfgGetUint32
-				(prAdapter, "Ap5gNss", 1);
-	prWifiVar->ucAp2gNSS = (uint8_t) wlanCfgGetUint32
-				(prAdapter, "Ap2gNss", 1);
+	INIT_UINT(prWifiVar->ucAp6gNSS, "Ap6gNss", 1);
+	INIT_UINT(prWifiVar->ucAp5gNSS, "Ap5gNss", 1);
+	INIT_UINT(prWifiVar->ucAp2gNSS, "Ap2gNss", 1);
 #else
-	prWifiVar->ucAp6gNSS = (uint8_t)wlanCfgGetUint32
-				(prAdapter, "Ap6gNss", DEFAULT_NSS);
-	prWifiVar->ucAp5gNSS = (uint8_t)wlanCfgGetUint32
-				(prAdapter, "Ap5gNss", DEFAULT_NSS);
-	prWifiVar->ucAp2gNSS = (uint8_t) wlanCfgGetUint32
-				(prAdapter, "Ap2gNss", DEFAULT_NSS);
+	INIT_UINT(prWifiVar->ucAp6gNSS, "Ap6gNss", DEFAULT_NSS);
+	INIT_UINT(prWifiVar->ucAp5gNSS, "Ap5gNss", DEFAULT_NSS);
+	INIT_UINT(prWifiVar->ucAp2gNSS, "Ap2gNss", DEFAULT_NSS);
 #endif
-	prWifiVar->ucGo6gNSS = (uint8_t) wlanCfgGetUint32
-				(prAdapter, "Go6gNss", DEFAULT_NSS);
-	prWifiVar->ucGo5gNSS = (uint8_t) wlanCfgGetUint32
-				(prAdapter, "Go5gNss", DEFAULT_NSS);
-	prWifiVar->ucGo2gNSS = (uint8_t) wlanCfgGetUint32
-				(prAdapter, "Go2gNss", DEFAULT_NSS);
+	INIT_UINT(prWifiVar->ucGo6gNSS, "Go6gNss", DEFAULT_NSS);
+	INIT_UINT(prWifiVar->ucGo5gNSS, "Go5gNss", DEFAULT_NSS);
+	INIT_UINT(prWifiVar->ucGo2gNSS, "Go2gNss", DEFAULT_NSS);
 
 	/* Max Rx MPDU length setting
 	 * 0: 3k
 	 * 1: 8k
 	 * 2: 11k
 	 */
-	prWifiVar->ucRxMaxMpduLen = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "RxMaxMpduLen",
-					VHT_CAP_INFO_MAX_MPDU_LEN_3K);
+	INIT_UINT(prWifiVar->ucRxMaxMpduLen,
+		"RxMaxMpduLen",	VHT_CAP_INFO_MAX_MPDU_LEN_3K);
 
 #if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
-	prWifiVar->ucRxQuotaInfoEn = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "RxQuotaInfoEn",
-					FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucRxQuotaInfoEn,
+		"RxQuotaInfoEn", FEATURE_ENABLED);
 #endif
 	/* Max Tx AMSDU in AMPDU length *in BYTES* */
-	prWifiVar->u4TxMaxAmsduInAmpduLen = wlanCfgGetUint32(
-					prAdapter, "TxMaxAmsduInAmpduLen",
-					11454);
+	INIT_UINT(prWifiVar->u4TxMaxAmsduInAmpduLen,
+		"TxMaxAmsduInAmpduLen", 11454);
 
-	prWifiVar->ucTcRestrict = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "TcRestrict", 0xFF);
+	INIT_UINT(prWifiVar->ucTcRestrict, "TcRestrict", 0xFF);
 	/* Max Tx dequeue limit: 0 => auto */
-	prWifiVar->u4MaxTxDeQLimit = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "MaxTxDeQLimit", 0x0);
-	prWifiVar->ucAlwaysResetUsedRes = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "AlwaysResetUsedRes", 0x0);
+	INIT_UINT(prWifiVar->u4MaxTxDeQLimit, "MaxTxDeQLimit", 0x0);
+	INIT_UINT(prWifiVar->ucAlwaysResetUsedRes, "AlwaysResetUsedRes", 0x0);
 
 #if CFG_SUPPORT_MTK_SYNERGY
-	prWifiVar->ucMtkOui = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "MtkOui", FEATURE_ENABLED);
-	prWifiVar->u4MtkOuiCap = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "MtkOuiCap", 0);
-	prWifiVar->aucMtkFeature[0] = 0xff;
-	prWifiVar->aucMtkFeature[1] = 0xff;
-	prWifiVar->aucMtkFeature[2] = 0xff;
-	prWifiVar->aucMtkFeature[3] = 0xff;
-	prWifiVar->ucGbandProbe256QAM = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "Probe256QAM",
-					FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucMtkOui, "MtkOui", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->u4MtkOuiCap, "MtkOuiCap", 0);
+	if (!pucKey) {
+		prWifiVar->aucMtkFeature[0] = 0xff;
+		prWifiVar->aucMtkFeature[1] = 0xff;
+		prWifiVar->aucMtkFeature[2] = 0xff;
+		prWifiVar->aucMtkFeature[3] = 0xff;
+	}
+	INIT_UINT(prWifiVar->ucGbandProbe256QAM,
+		"Probe256QAM", FEATURE_ENABLED);
 #endif
 #if CFG_SUPPORT_VHT_IE_IN_2G
-	prWifiVar->ucVhtIeIn2g = (uint8_t) wlanCfgGetUint32(
-			prAdapter, "VhtIeIn2G", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucVhtIeIn2g, "VhtIeIn2G", FEATURE_ENABLED);
 #endif
-	prWifiVar->ucCmdRsvResource = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "TxCmdRsv",
-					QM_CMD_RESERVED_THRESHOLD);
-	prWifiVar->u4MgmtQueueDelayTimeout =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "TxMgmtQueTO",
-					QM_MGMT_QUEUED_TIMEOUT); /* ms */
+	INIT_UINT(prWifiVar->ucCmdRsvResource,
+		"TxCmdRsv", QM_CMD_RESERVED_THRESHOLD);
+	INIT_UINT(prWifiVar->u4MgmtQueueDelayTimeout,
+		"TxMgmtQueTO", QM_MGMT_QUEUED_TIMEOUT); /* ms */
 
 	/* Performance related */
-	prWifiVar->u4HifIstLoopCount = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "IstLoop",
-					CFG_IST_LOOP_COUNT);
-	prWifiVar->u4Rx2OsLoopCount = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Rx2OsLoop", 4);
-	prWifiVar->u4HifTxloopCount = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "HifTxLoop", 1);
-	prWifiVar->u4TxFromOsLoopCount = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "OsTxLoop", 1);
-	prWifiVar->u4TxRxLoopCount = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Rx2ReorderLoop", 1);
-	prWifiVar->u4TxIntThCount = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "IstTxTh",
-					HIF_IST_TX_THRESHOLD);
-
-	prWifiVar->u4NetifStopTh = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "NetifStopTh",
-					CFG_TX_STOP_NETIF_PER_QUEUE_THRESHOLD);
-	prWifiVar->u4NetifStartTh = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "NetifStartTh",
-					CFG_TX_START_NETIF_PER_QUEUE_THRESHOLD);
-	prWifiVar->ucTxBaSize = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "TxBaSize",
-					WLAN_LEGACY_MAX_BA_SIZE);
-	prWifiVar->ucRxHtBaSize = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "RxHtBaSize",
-					WLAN_LEGACY_MAX_BA_SIZE);
-	prWifiVar->ucRxVhtBaSize = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "RxVhtBaSize",
-					WLAN_LEGACY_MAX_BA_SIZE);
+	INIT_UINT(prWifiVar->u4HifIstLoopCount,
+		"IstLoop", CFG_IST_LOOP_COUNT);
+	INIT_UINT(prWifiVar->u4Rx2OsLoopCount, "Rx2OsLoop", 4);
+	INIT_UINT(prWifiVar->u4HifTxloopCount, "HifTxLoop", 1);
+	INIT_UINT(prWifiVar->u4TxFromOsLoopCount, "OsTxLoop", 1);
+	INIT_UINT(prWifiVar->u4TxRxLoopCount, "Rx2ReorderLoop", 1);
+	INIT_UINT(prWifiVar->u4TxIntThCount, "IstTxTh", HIF_IST_TX_THRESHOLD);
+	INIT_UINT(prWifiVar->u4NetifStopTh,
+		"NetifStopTh", CFG_TX_STOP_NETIF_PER_QUEUE_THRESHOLD);
+	INIT_UINT(prWifiVar->u4NetifStartTh,
+		"NetifStartTh", CFG_TX_START_NETIF_PER_QUEUE_THRESHOLD);
+	INIT_UINT(prWifiVar->ucTxBaSize, "TxBaSize", WLAN_LEGACY_MAX_BA_SIZE);
+	INIT_UINT(prWifiVar->ucRxHtBaSize,
+		"RxHtBaSize", WLAN_LEGACY_MAX_BA_SIZE);
+	INIT_UINT(prWifiVar->ucRxVhtBaSize,
+		"RxVhtBaSize", WLAN_LEGACY_MAX_BA_SIZE);
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (fgEfuseCtrlAxOn == 1) {
-		prWifiVar->u2RxHeBaSize = (uint8_t)
-			wlanCfgGetUint32(prAdapter, "RxHeBaSize",
-				WLAN_HE_MAX_BA_SIZE);
-		prWifiVar->u2TxHeBaSize = (uint8_t)
-			wlanCfgGetUint32(prAdapter, "TxHeBaSize",
-				WLAN_HE_MAX_BA_SIZE);
+		INIT_UINT(prWifiVar->u2RxHeBaSize,
+			"RxHeBaSize", WLAN_HE_MAX_BA_SIZE);
+		INIT_UINT(prWifiVar->u2TxHeBaSize,
+			"TxHeBaSize", WLAN_HE_MAX_BA_SIZE);
 	}
 #endif
 
 #if CFG_SUPPORT_SMART_GEAR
-	prWifiVar->ucSGCfg = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "SGCfg", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucSGCfg, "SGCfg", FEATURE_ENABLED);
 	/* 2.4G default is WF0 when enable SG SISO mode*/
-	prWifiVar->ucSG24GFavorANT = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "SG24GFavorANT",
-					FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucSG24GFavorANT,
+		"SG24GFavorANT", FEATURE_DISABLED);
 	/* 5G default is WF1 when enable SG SISO mode*/
-	prWifiVar->ucSG5GFavorANT = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "SG5GFavorANT",
-					FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucSG5GFavorANT,
+		"SG5GFavorANT", FEATURE_ENABLED);
 #endif
 	/* Tx Buffer Management */
-	prWifiVar->ucExtraTxDone = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "ExtraTxDone", 1);
-	prWifiVar->ucTxDbg = (uint32_t) wlanCfgGetUint32(prAdapter, "TxDbg", 0);
+	INIT_UINT(prWifiVar->ucExtraTxDone, "ExtraTxDone", 1);
+	INIT_UINT(prWifiVar->ucTxDbg, "TxDbg", 0);
 
-	kalMemZero(prWifiVar->au4TcPageCount,
-					sizeof(prWifiVar->au4TcPageCount));
+	if (!pucKey)
+		kalMemZero(prWifiVar->au4TcPageCount,
+			sizeof(prWifiVar->au4TcPageCount));
 
-	prWifiVar->au4TcPageCount[TC0_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc0Page",
-					NIC_TX_PAGE_COUNT_TC0);
-	prWifiVar->au4TcPageCount[TC1_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc1Page",
-					NIC_TX_PAGE_COUNT_TC1);
-	prWifiVar->au4TcPageCount[TC2_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc2Page",
-					NIC_TX_PAGE_COUNT_TC2);
-	prWifiVar->au4TcPageCount[TC3_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc3Page",
-					NIC_TX_PAGE_COUNT_TC3);
-	prWifiVar->au4TcPageCount[TC4_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc4Page",
-					NIC_TX_PAGE_COUNT_TC4);
+	INIT_UINT(prWifiVar->au4TcPageCount[TC0_INDEX],
+		"Tc0Page", NIC_TX_PAGE_COUNT_TC0);
+	INIT_UINT(prWifiVar->au4TcPageCount[TC1_INDEX],
+		"Tc1Page", NIC_TX_PAGE_COUNT_TC1);
+	INIT_UINT(prWifiVar->au4TcPageCount[TC2_INDEX],
+		"Tc2Page", NIC_TX_PAGE_COUNT_TC2);
+	INIT_UINT(prWifiVar->au4TcPageCount[TC3_INDEX],
+		"Tc3Page", NIC_TX_PAGE_COUNT_TC3);
+	INIT_UINT(prWifiVar->au4TcPageCount[TC4_INDEX],
+		"Tc4Page", NIC_TX_PAGE_COUNT_TC4);
 #if (CFG_TX_RSRC_WMM_ENHANCE == 1)
-	prWifiVar->au4TcPageCount[TC5_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc5Page",
-					NIC_TX_PAGE_COUNT_TC0);
-	prWifiVar->au4TcPageCount[TC6_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc6Page",
-					NIC_TX_PAGE_COUNT_TC1);
-	prWifiVar->au4TcPageCount[TC7_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc7Page",
-					NIC_TX_PAGE_COUNT_TC2);
-	prWifiVar->au4TcPageCount[TC8_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc8Page",
-					NIC_TX_PAGE_COUNT_TC3);
-	prWifiVar->au4TcPageCount[TC9_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc9Page",
-					NIC_TX_PAGE_COUNT_TC0);
-	prWifiVar->au4TcPageCount[TC10_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc10Page",
-					NIC_TX_PAGE_COUNT_TC1);
-	prWifiVar->au4TcPageCount[TC11_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc11Page",
-					NIC_TX_PAGE_COUNT_TC2);
-	prWifiVar->au4TcPageCount[TC12_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc12Page",
-					NIC_TX_PAGE_COUNT_TC3);
-	prWifiVar->au4TcPageCount[TC13_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc13Page",
-					NIC_TX_PAGE_COUNT_TC1);
+	INIT_UINT(prWifiVar->au4TcPageCount[TC5_INDEX],
+		"Tc5Page", NIC_TX_PAGE_COUNT_TC0);
+	INIT_UINT(prWifiVar->au4TcPageCount[TC6_INDEX],
+		"Tc6Page", NIC_TX_PAGE_COUNT_TC1);
+	INIT_UINT(prWifiVar->au4TcPageCount[TC7_INDEX],
+		"Tc7Page", NIC_TX_PAGE_COUNT_TC2);
+	INIT_UINT(prWifiVar->au4TcPageCount[TC8_INDEX],
+		"Tc8Page", NIC_TX_PAGE_COUNT_TC3);
+	INIT_UINT(prWifiVar->au4TcPageCount[TC9_INDEX],
+		"Tc9Page", NIC_TX_PAGE_COUNT_TC0);
+	INIT_UINT(prWifiVar->au4TcPageCount[TC10_INDEX],
+		"Tc10Page", NIC_TX_PAGE_COUNT_TC1);
+	INIT_UINT(prWifiVar->au4TcPageCount[TC11_INDEX],
+		"Tc11Page", NIC_TX_PAGE_COUNT_TC2);
+	INIT_UINT(prWifiVar->au4TcPageCount[TC12_INDEX],
+		"Tc12Page", NIC_TX_PAGE_COUNT_TC3);
+	INIT_UINT(prWifiVar->au4TcPageCount[TC13_INDEX],
+		"Tc13Page", NIC_TX_PAGE_COUNT_TC1);
 #endif
 
-	prWifiVar->ucTxMsduQueue = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "NicTxMsduQueue", 0);
+	INIT_UINT(prWifiVar->ucTxMsduQueue, "NicTxMsduQueue", 0);
 
 	prWifiVar->ucTxMsduQueueInit = prWifiVar->ucTxMsduQueue;
 
@@ -7619,8 +7446,7 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	/* 2 resource for AC_VI(TC2_INDEX) */
 	/* 4 resource for AC_VO(TC3_INDEX) */
 	/* 1 resource for MGMT(TC4_INDEX) & TC_NUM */
-	u4TxHifRes = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxHifResCtl", 0x00114211);
+	INIT_UINT(u4TxHifRes, "TxHifResCtl", 0x00114211);
 	prWifiVar->u4TxHifRes = u4TxHifRes;
 	for (u4Idx = 0; u4Idx < TC_NUM && u4TxHifRes; u4Idx++) {
 		prAdapter->au4TxHifResCtl[u4Idx] = u4TxHifRes & BITS(0, 3);
@@ -7628,29 +7454,23 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	}
 
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
-	prQM->au4MinReservedTcResource[TC0_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc0MinRsv",
-					QM_MIN_RESERVED_TC0_RESOURCE);
-	prQM->au4MinReservedTcResource[TC1_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc1MinRsv",
-					QM_MIN_RESERVED_TC1_RESOURCE);
-	prQM->au4MinReservedTcResource[TC2_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc2MinRsv",
-					QM_MIN_RESERVED_TC2_RESOURCE);
-	prQM->au4MinReservedTcResource[TC3_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc3MinRsv",
-					QM_MIN_RESERVED_TC3_RESOURCE);
-	prQM->au4MinReservedTcResource[TC4_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc4MinRsv",
-					QM_MIN_RESERVED_TC4_RESOURCE);
+	INIT_UINT(prQM->au4MinReservedTcResource[TC0_INDEX],
+		"Tc0MinRsv", QM_MIN_RESERVED_TC0_RESOURCE);
+	INIT_UINT(prQM->au4MinReservedTcResource[TC1_INDEX],
+		"Tc1MinRsv", QM_MIN_RESERVED_TC1_RESOURCE);
+	INIT_UINT(prQM->au4MinReservedTcResource[TC2_INDEX],
+		"Tc2MinRsv", QM_MIN_RESERVED_TC2_RESOURCE);
+	INIT_UINT(prQM->au4MinReservedTcResource[TC3_INDEX],
+		"Tc3MinRsv", QM_MIN_RESERVED_TC3_RESOURCE);
+	INIT_UINT(prQM->au4MinReservedTcResource[TC4_INDEX],
+		"Tc4MinRsv", QM_MIN_RESERVED_TC4_RESOURCE);
 
 #if (CFG_TX_RSRC_WMM_ENHANCE == 1)
 #define __STR_MIN_RESERVED(_idx_) STR_HELPER(Tc##_idx_##MinRsv)
 #define CONF_QM_TC_MIN_RESERVED_TEMPLATE(_idx_)\
-	(prQM->au4MinReservedTcResource[TC##_idx_##_INDEX] =\
-		(uint32_t) wlanCfgGetUint32(prAdapter,\
+	INIT_UINT(prQM->au4MinReservedTcResource[TC##_idx_##_INDEX], \
 		__STR_MIN_RESERVED(_idx_),\
-		QM_MIN_RESERVED_TC##_idx_##_RESOURCE))
+		QM_MIN_RESERVED_TC##_idx_##_RESOURCE)
 	CONF_QM_TC_MIN_RESERVED_TEMPLATE(5);
 	CONF_QM_TC_MIN_RESERVED_TEMPLATE(6);
 	CONF_QM_TC_MIN_RESERVED_TEMPLATE(7);
@@ -7664,29 +7484,23 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 #undef __STR_MIN_RESERVED
 #endif
 
-	prQM->au4GuaranteedTcResource[TC0_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc0Grt",
-					QM_GUARANTEED_TC0_RESOURCE);
-	prQM->au4GuaranteedTcResource[TC1_INDEX] =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "Tc1Grt",
-					    QM_GUARANTEED_TC1_RESOURCE);
-	prQM->au4GuaranteedTcResource[TC2_INDEX] =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "Tc2Grt",
-					    QM_GUARANTEED_TC2_RESOURCE);
-	prQM->au4GuaranteedTcResource[TC3_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc3Grt",
-					QM_GUARANTEED_TC3_RESOURCE);
-	prQM->au4GuaranteedTcResource[TC4_INDEX] = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "Tc4Grt",
-					QM_GUARANTEED_TC4_RESOURCE);
+	INIT_UINT(prQM->au4GuaranteedTcResource[TC0_INDEX],
+		"Tc0Grt", QM_GUARANTEED_TC0_RESOURCE);
+	INIT_UINT(prQM->au4GuaranteedTcResource[TC1_INDEX],
+		"Tc1Grt", QM_GUARANTEED_TC1_RESOURCE);
+	INIT_UINT(prQM->au4GuaranteedTcResource[TC2_INDEX],
+		"Tc2Grt", QM_GUARANTEED_TC2_RESOURCE);
+	INIT_UINT(prQM->au4GuaranteedTcResource[TC3_INDEX],
+		"Tc3Grt", QM_GUARANTEED_TC3_RESOURCE);
+	INIT_UINT(prQM->au4GuaranteedTcResource[TC4_INDEX],
+		"Tc4Grt", QM_GUARANTEED_TC4_RESOURCE);
 
 #if (CFG_TX_RSRC_WMM_ENHANCE == 1)
 #define __STR_GUARANTEED(_idx_) STR_HELPER(Tc##_idx_##Grt)
 #define CONF_QM_TC_GUARANTEED_TEMPLATE(_idx_)\
-	(prQM->au4GuaranteedTcResource[TC##_idx_##_INDEX] =\
-		(uint32_t) wlanCfgGetUint32(prAdapter,\
+	INIT_UINT(prQM->au4GuaranteedTcResource[TC##_idx_##_INDEX], \
 		__STR_GUARANTEED(_idx_),\
-		QM_GUARANTEED_TC##_idx_##_RESOURCE))
+		QM_GUARANTEED_TC##_idx_##_RESOURCE)
 
 	CONF_QM_TC_GUARANTEED_TEMPLATE(5);
 	CONF_QM_TC_GUARANTEED_TEMPLATE(6);
@@ -7701,347 +7515,254 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 #undef __STR_MIN_RESERVED
 #endif
 
-	prQM->u4TimeToAdjustTcResource = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "TcAdjustTime",
-					QM_INIT_TIME_TO_ADJUST_TC_RSC);
-	prQM->u4TimeToUpdateQueLen = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "QueLenUpdateTime",
-					QM_INIT_TIME_TO_UPDATE_QUE_LEN);
-	prQM->u4QueLenMovingAverage = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "QueLenMovingAvg",
-					QM_QUE_LEN_MOVING_AVE_FACTOR);
-	prQM->u4ExtraReservedTcResource = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "TcExtraRsv",
-					QM_EXTRA_RESERVED_RESOURCE_WHEN_BUSY);
+	INIT_UINT(prQM->u4TimeToAdjustTcResource,
+		"TcAdjustTime", QM_INIT_TIME_TO_ADJUST_TC_RSC);
+	INIT_UINT(prQM->u4TimeToUpdateQueLen,
+		"QueLenUpdateTime", QM_INIT_TIME_TO_UPDATE_QUE_LEN);
+	INIT_UINT(prQM->u4QueLenMovingAverage,
+		"QueLenMovingAvg", QM_QUE_LEN_MOVING_AVE_FACTOR);
+	INIT_UINT(prQM->u4ExtraReservedTcResource,
+		"TcExtraRsv", QM_EXTRA_RESERVED_RESOURCE_WHEN_BUSY);
 #endif
 
 	/* Stats log */
-	prWifiVar->u4StatsLogTimeout = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "StatsLogTO",
-					WLAN_TX_STATS_LOG_TIMEOUT);
-	prWifiVar->u4StatsLogDuration = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "StatsLogDur",
-					WLAN_TX_STATS_LOG_DURATION);
+	INIT_UINT(prWifiVar->u4StatsLogTimeout,
+		"StatsLogTO", WLAN_TX_STATS_LOG_TIMEOUT);
+	INIT_UINT(prWifiVar->u4StatsLogDuration,
+		"StatsLogDur", WLAN_TX_STATS_LOG_DURATION);
 
-	prWifiVar->ucDhcpTxDone = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "DhcpTxDone", 1);
-	prWifiVar->ucArpTxDone = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "ArpTxDone", 1);
+	INIT_UINT(prWifiVar->ucDhcpTxDone, "DhcpTxDone", 1);
+	INIT_UINT(prWifiVar->ucArpTxDone, "ArpTxDone", 1);
 
-	prWifiVar->ucMacAddrOverride = (uint8_t) wlanCfgGetInt32(
-				       prAdapter, "MacOverride", 0);
-	if (wlanCfgGet(prAdapter, "MacAddr", prWifiVar->aucMacAddrStr,
-	    "00:0c:e7:66:32:e1", 0))
-		DBGLOG(INIT, TRACE, "get MacAddr fail, use defaul\n");
+	INIT_UINT(prWifiVar->ucMacAddrOverride, "MacOverride", 0);
+	INIT_STR(prWifiVar->aucMacAddrStr, "MacAddr", "00:0c:e7:66:32:e1");
 
-	prWifiVar->ucCtiaMode = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "CtiaMode", 0);
+	INIT_UINT(prWifiVar->ucCtiaMode, "CtiaMode", 0);
 
 	/* Combine ucTpTestMode and ucSigmaTestMode in one flag */
 	/* ucTpTestMode == 0, for normal driver */
 	/* ucTpTestMode == 1, for pure throughput test mode (ex: RvR) */
 	/* ucTpTestMode == 2, for sigma TGn/TGac/PMF */
 	/* ucTpTestMode == 3, for sigma WMM PS */
-	prWifiVar->ucTpTestMode = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "TpTestMode", 0);
+	INIT_UINT(prWifiVar->ucTpTestMode, "TpTestMode", 0);
 #if CFG_SUPPORT_TPENHANCE_MODE
 	/* tp enhance config */
-	prWifiVar->ucTpEnhanceEnable = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "TpEnhanceEnable", 0);
-	prWifiVar->ucTpEnhancePktNum = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "TpEnhancePktNum", 20);
-	prWifiVar->u4TpEnhanceInterval = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "TpEnhanceInterval", 6000);
-	prWifiVar->cTpEnhanceRSSI = (int8_t) wlanCfgGetInt32(
-					prAdapter, "TpEnhanceRSSI", -65);
-	prWifiVar->u4TpEnhanceThreshold = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "TpEnhanceThreshold", 300);
+	INIT_UINT(prWifiVar->ucTpEnhanceEnable, "TpEnhanceEnable", 0);
+	INIT_UINT(prWifiVar->ucTpEnhancePktNum, "TpEnhancePktNum", 20);
+	INIT_UINT(prWifiVar->u4TpEnhanceInterval, "TpEnhanceInterval", 6000);
+	INIT_INT(prWifiVar->cTpEnhanceRSSI, "TpEnhanceRSSI", -65);
+	INIT_UINT(prWifiVar->u4TpEnhanceThreshold, "TpEnhanceThreshold", 300);
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
 
-#if 0
-	prWifiVar->ucSigmaTestMode = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "SigmaTestMode", 0);
-#endif
-
 #if CFG_SUPPORT_DBDC
-	prWifiVar->eDbdcMode = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "DbdcMode",
-					DEFAULT_DBDC_MODE);
+	INIT_UINT(prWifiVar->eDbdcMode, "DbdcMode", DEFAULT_DBDC_MODE);
 #else
 	prWifiVar->eDbdcMode = ENUM_DBDC_MODE_DISABLED;
 	prWifiVar->fgDbDcModeEn = false;
 #endif /*CFG_SUPPORT_DBDC*/
 
-	prWifiVar->ucCsaDeauthClient = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "CsaDeauthClient",
-					FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucCsaDeauthClient,
+		"CsaDeauthClient", FEATURE_ENABLED);
 
 #if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
-	prWifiVar->ucEfuseBufferModeCal = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "EfuseBufferModeCal", 0);
+	INIT_UINT(prWifiVar->ucEfuseBufferModeCal, "EfuseBufferModeCal", 0);
 #endif
-	prWifiVar->ucCalTimingCtrl = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "CalTimingCtrl",
-					0 /* power on full cal */);
-	prWifiVar->ucWow = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "Wow", FEATURE_DISABLED);
-	prWifiVar->ucOffload = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "Offload", FEATURE_DISABLED);
-	prWifiVar->ucAdvPws = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "AdvPws", FEATURE_DISABLED);
-	prWifiVar->ucWowOnMdtim = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "WowOnMdtim", 1);
-	prWifiVar->ucWowOffMdtim = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "WowOffMdtim", 3);
-	prWifiVar->ucEapolSuspendOffload = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "EapolSuspendOffload",
-					FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucCalTimingCtrl,
+		"CalTimingCtrl", 0 /* power on full cal */);
+	INIT_UINT(prWifiVar->ucWow, "Wow", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucOffload, "Offload", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucAdvPws, "AdvPws", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucWowOnMdtim, "WowOnMdtim", 1);
+	INIT_UINT(prWifiVar->ucWowOffMdtim, "WowOffMdtim", 3);
+	INIT_UINT(prWifiVar->ucEapolSuspendOffload,
+		"EapolSuspendOffload", FEATURE_DISABLED);
 
 #if CFG_WOW_SUPPORT
-	prAdapter->rWowCtrl.fgWowEnable = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "WowEnable",
-					FEATURE_ENABLED);
-	prAdapter->rWowCtrl.ucScenarioId = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "WowScenarioId", 0);
-	prAdapter->rWowCtrl.ucBlockCount = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "WowPinCnt", 1);
-	prAdapter->rWowCtrl.astWakeHif[0].ucWakeupHif =
-					(uint8_t) wlanCfgGetUint32(
-						prAdapter, "WowHif",
-						ENUM_HIF_TYPE_GPIO);
-	prAdapter->rWowCtrl.astWakeHif[0].ucGpioPin =
-		(uint8_t) wlanCfgGetUint32(prAdapter, "WowGpioPin", 0xFF);
-	prAdapter->rWowCtrl.astWakeHif[0].ucTriggerLvl =
-		(uint8_t) wlanCfgGetUint32(prAdapter, "WowTriigerLevel", 3);
-	prAdapter->rWowCtrl.astWakeHif[0].u4GpioInterval =
-		wlanCfgGetUint32(prAdapter, "GpioInterval", 0);
-	prWifiVar->ucWowDetectType = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "WowDetectType", WOWLAN_DETECT_TYPE_MAGIC);
-	prWifiVar->u2WowDetectTypeExt = (uint16_t) wlanCfgGetUint32(
-		prAdapter, "WowDetectTypeExt", WOWLAN_DETECT_TYPE_EXT_PORT);
+	INIT_UINT(prAdapter->rWowCtrl.fgWowEnable,
+		"WowEnable", FEATURE_ENABLED);
+	INIT_UINT(prAdapter->rWowCtrl.ucScenarioId,
+		"WowScenarioId", 0);
+	INIT_UINT(prAdapter->rWowCtrl.ucBlockCount, "WowPinCnt", 1);
+	INIT_UINT(prAdapter->rWowCtrl.astWakeHif[0].ucWakeupHif,
+		"WowHif", ENUM_HIF_TYPE_GPIO);
+	INIT_UINT(prAdapter->rWowCtrl.astWakeHif[0].ucGpioPin,
+		"WowGpioPin", 0xFF);
+	INIT_UINT(prAdapter->rWowCtrl.astWakeHif[0].ucTriggerLvl,
+		"WowTriigerLevel", 3);
+	INIT_UINT(prAdapter->rWowCtrl.astWakeHif[0].u4GpioInterval,
+		"GpioInterval", 0);
+	INIT_UINT(prWifiVar->ucWowDetectType,
+		"WowDetectType", WOWLAN_DETECT_TYPE_MAGIC);
+	INIT_UINT(prWifiVar->u2WowDetectTypeExt,
+		"WowDetectTypeExt", WOWLAN_DETECT_TYPE_EXT_PORT);
 #endif
 
-	prWifiVar->u4TxHangFullDumpMode = wlanCfgGetUint32(
-			prAdapter, "TxHangFullDumpMode", 0);
+	INIT_UINT(prWifiVar->u4TxHangFullDumpMode, "TxHangFullDumpMode", 0);
 
 	/* SW Test Mode: Mainly used for Sigma */
-	prWifiVar->u4SwTestMode = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "SwTestMode",
-					ENUM_SW_TEST_MODE_NONE);
-	prWifiVar->ucCtrlFlagAssertPath = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "AssertPath",
-					DBG_ASSERT_PATH_DEFAULT);
-	prWifiVar->ucCtrlFlagDebugLevel = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "AssertLevel",
-					DBG_ASSERT_CTRL_LEVEL_DEFAULT);
-	prWifiVar->u4ScanCtrl = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "ScanCtrl",
-					SCN_CTRL_DEFAULT_SCAN_CTRL);
-	prWifiVar->ucScanChannelListenTime = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "ScnChListenTime", 0);
+	INIT_UINT(prWifiVar->u4SwTestMode,
+		"SwTestMode", ENUM_SW_TEST_MODE_NONE);
+	INIT_UINT(prWifiVar->ucCtrlFlagAssertPath,
+		"AssertPath", DBG_ASSERT_PATH_DEFAULT);
+	INIT_UINT(prWifiVar->ucCtrlFlagDebugLevel,
+		"AssertLevel", DBG_ASSERT_CTRL_LEVEL_DEFAULT);
+	INIT_UINT(prWifiVar->u4ScanCtrl,
+		"ScanCtrl", SCN_CTRL_DEFAULT_SCAN_CTRL);
+	INIT_UINT(prWifiVar->ucScanChannelListenTime, "ScnChListenTime", 0);
 
 	/* Wake lock related configuration */
-	prWifiVar->u4WakeLockRxTimeout = wlanCfgGetUint32(
-					prAdapter, "WakeLockRxTO",
-					WAKE_LOCK_RX_TIMEOUT);
-	prWifiVar->u4WakeLockThreadWakeup = wlanCfgGetUint32(
-					prAdapter, "WakeLockThreadTO",
-					WAKE_LOCK_THREAD_WAKEUP_TIMEOUT);
+	INIT_UINT(prWifiVar->u4WakeLockRxTimeout,
+		"WakeLockRxTO", WAKE_LOCK_RX_TIMEOUT);
+	INIT_UINT(prWifiVar->u4WakeLockThreadWakeup,
+		"WakeLockThreadTO", WAKE_LOCK_THREAD_WAKEUP_TIMEOUT);
 
-	prWifiVar->ucSmartRTS = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "SmartRTS", 0);
-	prWifiVar->ePowerMode = (enum PARAM_POWER_MODE) wlanCfgGetUint32(
-					prAdapter, "PowerSave",
-					Param_PowerModeMax);
+	INIT_UINT(prWifiVar->ucSmartRTS, "SmartRTS", 0);
+	INIT_UINT(prWifiVar->ePowerMode, "PowerSave", Param_PowerModeMax);
 
-#if 1
 	/* add more cfg from RegInfo */
-	prWifiVar->u4UapsdAcBmp = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "UapsdAcBmp", 0);
-	prWifiVar->u4MaxSpLen = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "MaxSpLen", 0);
-	prWifiVar->u4P2pUapsdAcBmp = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "P2pUapsdAcBmp",
-					PM_UAPSD_ALL);
-	prWifiVar->u4P2pMaxSpLen = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "P2pMaxSpLen",
-					WMM_MAX_SP_LENGTH_2);
-	prWifiVar->fgDisOnlineScan = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "DisOnlineScan", 0);
-	prWifiVar->fgDisBcnLostDetection = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "DisBcnLostDetection", 0);
-	prWifiVar->fgDisAgingLostDetection = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "DisAgingLostDetection", 0);
-	prWifiVar->fgDisRoaming = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "DisRoaming", 0);
-	prWifiVar->u4AisRoamingNumber = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "AisRoamingNumber",
-					KAL_AIS_NUM);
-	prWifiVar->fgEnArpFilter = (uint32_t) wlanCfgGetUint32(
-					prAdapter, "EnArpFilter",
-					FEATURE_ENABLED);
-#endif
+	INIT_UINT(prWifiVar->u4UapsdAcBmp, "UapsdAcBmp", 0);
+	INIT_UINT(prWifiVar->u4MaxSpLen, "MaxSpLen", 0);
+	INIT_UINT(prWifiVar->u4P2pUapsdAcBmp, "P2pUapsdAcBmp", PM_UAPSD_ALL);
+	INIT_UINT(prWifiVar->u4P2pMaxSpLen,
+		"P2pMaxSpLen", WMM_MAX_SP_LENGTH_2);
+	INIT_UINT(prWifiVar->fgDisOnlineScan, "DisOnlineScan", 0);
+	INIT_UINT(prWifiVar->fgDisBcnLostDetection, "DisBcnLostDetection", 0);
+	INIT_UINT(prWifiVar->fgDisAgingLostDetection,
+		"DisAgingLostDetection", 0);
+	INIT_UINT(prWifiVar->fgDisRoaming, "DisRoaming", 0);
+	INIT_UINT(prWifiVar->u4AisRoamingNumber,
+		"AisRoamingNumber", KAL_AIS_NUM);
+	INIT_UINT(prWifiVar->fgEnArpFilter, "EnArpFilter", FEATURE_ENABLED);
 
 	/* Driver Flow Control Dequeue Quota. Now is only used by DBDC */
-	prWifiVar->uDeQuePercentEnable =
-		(uint8_t) wlanCfgGetUint32(prAdapter, "DeQuePercentEnable", 1);
-	prWifiVar->u4DeQuePercentVHT80Nss1 =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "DeQuePercentVHT80NSS1",
-					QM_DEQUE_PERCENT_VHT80_NSS1);
-	prWifiVar->u4DeQuePercentVHT40Nss1 =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "DeQuePercentVHT40NSS1",
-					QM_DEQUE_PERCENT_VHT40_NSS1);
-	prWifiVar->u4DeQuePercentVHT20Nss1 =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "DeQuePercentVHT20NSS1",
-					QM_DEQUE_PERCENT_VHT20_NSS1);
-	prWifiVar->u4DeQuePercentHT40Nss1 =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "DeQuePercentHT40NSS1",
-					QM_DEQUE_PERCENT_HT40_NSS1);
-	prWifiVar->u4DeQuePercentHT20Nss1 =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "DeQuePercentHT20NSS1",
-					QM_DEQUE_PERCENT_HT20_NSS1);
+	INIT_UINT(prWifiVar->uDeQuePercentEnable, "DeQuePercentEnable", 1);
+	INIT_UINT(prWifiVar->u4DeQuePercentVHT80Nss1,
+		"DeQuePercentVHT80NSS1", QM_DEQUE_PERCENT_VHT80_NSS1);
+	INIT_UINT(prWifiVar->u4DeQuePercentVHT40Nss1,
+		"DeQuePercentVHT40NSS1", QM_DEQUE_PERCENT_VHT40_NSS1);
+	INIT_UINT(prWifiVar->u4DeQuePercentVHT20Nss1,
+		"DeQuePercentVHT20NSS1", QM_DEQUE_PERCENT_VHT20_NSS1);
+	INIT_UINT(prWifiVar->u4DeQuePercentHT40Nss1,
+		"DeQuePercentHT40NSS1", QM_DEQUE_PERCENT_HT40_NSS1);
+	INIT_UINT(prWifiVar->u4DeQuePercentHT20Nss1,
+		"DeQuePercentHT20NSS1", QM_DEQUE_PERCENT_HT20_NSS1);
 
 	/* Support TDLS 5.5.4.2 optional case */
-	prWifiVar->fgTdlsBufferSTASleep = (u_int8_t) wlanCfgGetUint32(prAdapter,
-					"TdlsBufferSTASleep", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgTdlsBufferSTASleep,
+		"TdlsBufferSTASleep", FEATURE_ENABLED);
 
-	prWifiVar->u4PerfMonUpdatePeriod =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonPeriod",
-					    PERF_MON_UPDATE_INTERVAL);
+	INIT_UINT(prWifiVar->u4PerfMonUpdatePeriod,
+		"PerfMonPeriod", PERF_MON_UPDATE_INTERVAL);
 
-	prWifiVar->u4PerfMonTpTh[0] =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv1", 20);
-	prWifiVar->u4PerfMonTpTh[1] =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv2", 50);
-	prWifiVar->u4PerfMonTpTh[2] =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv3", 100);
-	prWifiVar->u4PerfMonTpTh[3] =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv4", 180);
-	prWifiVar->u4PerfMonTpTh[4] =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv5", 250);
-	prWifiVar->u4PerfMonTpTh[5] =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv6", 300);
-	prWifiVar->u4PerfMonTpTh[6] =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv7", 700);
-	prWifiVar->u4PerfMonTpTh[7] =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv8", 1200);
-	prWifiVar->u4PerfMonTpTh[8] =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv9", 2500);
-	prWifiVar->u4PerfMonTpTh[9] =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv10", 3500);
+	INIT_UINT(prWifiVar->u4PerfMonTpTh[0], "PerfMonLv1", 20);
+	INIT_UINT(prWifiVar->u4PerfMonTpTh[1], "PerfMonLv2", 50);
+	INIT_UINT(prWifiVar->u4PerfMonTpTh[2], "PerfMonLv3", 100);
+	INIT_UINT(prWifiVar->u4PerfMonTpTh[3], "PerfMonLv4", 180);
+	INIT_UINT(prWifiVar->u4PerfMonTpTh[4], "PerfMonLv5", 250);
+	INIT_UINT(prWifiVar->u4PerfMonTpTh[5], "PerfMonLv6", 300);
+	INIT_UINT(prWifiVar->u4PerfMonTpTh[6], "PerfMonLv7", 700);
+	INIT_UINT(prWifiVar->u4PerfMonTpTh[7], "PerfMonLv8", 1200);
+	INIT_UINT(prWifiVar->u4PerfMonTpTh[8], "PerfMonLv9", 2500);
+	INIT_UINT(prWifiVar->u4PerfMonTpTh[9], "PerfMonLv10", 3500);
 
 #if CFG_SUPPORT_LLS
-	prWifiVar->fgLinkStatsDump = (bool)wlanCfgGetUint32(
-		prAdapter, "LinkStatsDump", 0);
+	INIT_UINT(prWifiVar->fgLinkStatsDump, "LinkStatsDump", 0);
 #endif
 
 #if CFG_SUPPORT_TX_LATENCY_STATS
-	prWifiVar->fgPacketLatencyLog = (bool)wlanCfgGetUint32(
-		prAdapter, "TxLatencyPacketLog", 0);
+	INIT_UINT(prWifiVar->fgPacketLatencyLog, "TxLatencyPacketLog", 0);
 
-	prWifiVar->fgTxLatencyKeepCounting = (bool)wlanCfgGetUint32(
-		prAdapter, "TxLatencyKeepCounting", 0);
+	INIT_UINT(prWifiVar->fgTxLatencyKeepCounting,
+		"TxLatencyKeepCounting", 0);
 
-	prWifiVar->fgTxLatencyPerBss = (bool)wlanCfgGetUint32(
-		prAdapter, "TxLatencyPerBss", 0);
+	INIT_UINT(prWifiVar->fgTxLatencyPerBss, "TxLatencyPerBss", 0);
 
-	prWifiVar->u4MsduStatsUpdateInterval = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyUpdateInterval",
-		TX_LATENCY_STATS_UPDATE_INTERVAL);
-	prWifiVar->u4ContinuousTxFailThreshold = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyContinuousFailThrehold",
+	INIT_UINT(prWifiVar->u4MsduStatsUpdateInterval,
+		"TxLatencyUpdateInterval", TX_LATENCY_STATS_UPDATE_INTERVAL);
+	INIT_UINT(prWifiVar->u4ContinuousTxFailThreshold,
+		"TxLatencyContinuousFailThrehold",
 		TX_LATENCY_STATS_CONTINUOUS_FAIL_THREHOLD);
 
-	prWifiVar->au4DriverTxDelayMax[0] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyDriverDelayMaxL1",
+	INIT_UINT(prWifiVar->au4DriverTxDelayMax[0],
+		"TxLatencyDriverDelayMaxL1",
 		TX_LATENCY_STATS_MAX_DRIVER_DELAY_L1);
-	prWifiVar->au4DriverTxDelayMax[1] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyDriverDelayMaxL2",
+	INIT_UINT(prWifiVar->au4DriverTxDelayMax[1],
+		"TxLatencyDriverDelayMaxL2",
 		TX_LATENCY_STATS_MAX_DRIVER_DELAY_L2);
-	prWifiVar->au4DriverTxDelayMax[2] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyDriverDelayMaxL3",
+	INIT_UINT(prWifiVar->au4DriverTxDelayMax[2],
+		"TxLatencyDriverDelayMaxL3",
 		TX_LATENCY_STATS_MAX_DRIVER_DELAY_L3);
-	prWifiVar->au4DriverTxDelayMax[3] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyDriverDelayMaxL4",
+	INIT_UINT(prWifiVar->au4DriverTxDelayMax[3],
+		"TxLatencyDriverDelayMaxL4",
 		TX_LATENCY_STATS_MAX_DRIVER_DELAY_L4);
 	prWifiVar->au4DriverTxDelayMax[4] = UINT_MAX;
 
-	prWifiVar->au4ConnsysTxDelayMax[0] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyConnsysDelayMaxL1",
+	INIT_UINT(prWifiVar->au4ConnsysTxDelayMax[0],
+		"TxLatencyConnsysDelayMaxL1",
 		TX_LATENCY_STATS_MAX_CONNSYS_DELAY_L1);
-	prWifiVar->au4ConnsysTxDelayMax[1] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyConnsysDelayMaxL2",
+	INIT_UINT(prWifiVar->au4ConnsysTxDelayMax[1],
+		"TxLatencyConnsysDelayMaxL2",
 		TX_LATENCY_STATS_MAX_CONNSYS_DELAY_L2);
-	prWifiVar->au4ConnsysTxDelayMax[2] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyConnsysDelayMaxL3",
+	INIT_UINT(prWifiVar->au4ConnsysTxDelayMax[2],
+		"TxLatencyConnsysDelayMaxL3",
 		TX_LATENCY_STATS_MAX_CONNSYS_DELAY_L3);
-	prWifiVar->au4ConnsysTxDelayMax[3] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyConnsysDelayMaxL4",
+	INIT_UINT(prWifiVar->au4ConnsysTxDelayMax[3],
+		"TxLatencyConnsysDelayMaxL4",
 		TX_LATENCY_STATS_MAX_CONNSYS_DELAY_L4);
 	prWifiVar->au4ConnsysTxDelayMax[4] = UINT_MAX;
 
-	prWifiVar->au4MacTxDelayMax[0] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyMacDelayMaxL1",
+	INIT_UINT(prWifiVar->au4MacTxDelayMax[0],
+		"TxLatencyMacDelayMaxL1",
 		TX_LATENCY_STATS_MAX_MAC_DELAY_L1);
-	prWifiVar->au4MacTxDelayMax[1] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyMacDelayMaxL2",
+	INIT_UINT(prWifiVar->au4MacTxDelayMax[1],
+		"TxLatencyMacDelayMaxL2",
 		TX_LATENCY_STATS_MAX_MAC_DELAY_L2);
-	prWifiVar->au4MacTxDelayMax[2] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyMacDelayMaxL3",
+	INIT_UINT(prWifiVar->au4MacTxDelayMax[2],
+		"TxLatencyMacDelayMaxL3",
 		TX_LATENCY_STATS_MAX_MAC_DELAY_L3);
-	prWifiVar->au4MacTxDelayMax[3] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyMacDelayMaxL4",
+	INIT_UINT(prWifiVar->au4MacTxDelayMax[3],
+		"TxLatencyMacDelayMaxL4",
 		TX_LATENCY_STATS_MAX_MAC_DELAY_L4);
 	prWifiVar->au4MacTxDelayMax[4] = UINT_MAX;
 
-	prWifiVar->au4AirTxDelayMax[0] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyAirDelayMaxL1",
-		TX_LATENCY_STATS_MAX_AIR_DELAY_L1);
-	prWifiVar->au4AirTxDelayMax[1] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyAirDelayMaxL2",
-		TX_LATENCY_STATS_MAX_AIR_DELAY_L2);
-	prWifiVar->au4AirTxDelayMax[2] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyAirDelayMaxL3",
-		TX_LATENCY_STATS_MAX_AIR_DELAY_L3);
-	prWifiVar->au4AirTxDelayMax[3] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyAirDelayMaxL4",
-		TX_LATENCY_STATS_MAX_AIR_DELAY_L4);
+	INIT_UINT(prWifiVar->au4AirTxDelayMax[0],
+		"TxLatencyAirDelayMaxL1", TX_LATENCY_STATS_MAX_AIR_DELAY_L1);
+	INIT_UINT(prWifiVar->au4AirTxDelayMax[1],
+		"TxLatencyAirDelayMaxL2", TX_LATENCY_STATS_MAX_AIR_DELAY_L2);
+	INIT_UINT(prWifiVar->au4AirTxDelayMax[2],
+		"TxLatencyAirDelayMaxL3", TX_LATENCY_STATS_MAX_AIR_DELAY_L3);
+	INIT_UINT(prWifiVar->au4AirTxDelayMax[3],
+		"TxLatencyAirDelayMaxL4", TX_LATENCY_STATS_MAX_AIR_DELAY_L4);
 	prWifiVar->au4AirTxDelayMax[4] = UINT_MAX;
 
-	prWifiVar->au4ConnsysTxFailDelayMax[0] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyFailConnsysDelayMaxL1",
+	INIT_UINT(prWifiVar->au4ConnsysTxFailDelayMax[0],
+		"TxLatencyFailConnsysDelayMaxL1",
 		TX_LATENCY_STATS_MAX_FAIL_CONNSYS_DELAY_L1);
-	prWifiVar->au4ConnsysTxFailDelayMax[1] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyFailConnsysDelayMaxL2",
+	INIT_UINT(prWifiVar->au4ConnsysTxFailDelayMax[1],
+		"TxLatencyFailConnsysDelayMaxL2",
 		TX_LATENCY_STATS_MAX_FAIL_CONNSYS_DELAY_L2);
-	prWifiVar->au4ConnsysTxFailDelayMax[2] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyFailConnsysDelayMaxL3",
+	INIT_UINT(prWifiVar->au4ConnsysTxFailDelayMax[2],
+		"TxLatencyFailConnsysDelayMaxL3",
 		TX_LATENCY_STATS_MAX_FAIL_CONNSYS_DELAY_L3);
-	prWifiVar->au4ConnsysTxFailDelayMax[3] = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "TxLatencyFailConnsysDelayMaxL4",
+	INIT_UINT(prWifiVar->au4ConnsysTxFailDelayMax[3],
+		"TxLatencyFailConnsysDelayMaxL4",
 		TX_LATENCY_STATS_MAX_FAIL_CONNSYS_DELAY_L4);
 	prWifiVar->au4ConnsysTxFailDelayMax[4] = UINT_MAX;
 #endif /* CFG_SUPPORT_TX_LATENCY_STATS */
 
-	prWifiVar->fgBoostCpuEn =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "BoostCpuEn",
-			FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgBoostCpuEn,  "BoostCpuEn", FEATURE_ENABLED);
 	u4PlatformBoostCpuTh = kalGetCpuBoostThreshold();
-	prWifiVar->u4BoostCpuTh =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "BoostCpuTh",
-			u4PlatformBoostCpuTh);
+	INIT_UINT(prWifiVar->u4BoostCpuTh,
+		"BoostCpuTh", u4PlatformBoostCpuTh);
 	prWifiVar->fgIsBoostCpuThAdjustable = FALSE;
-
 	if (!wlanCfgGetEntry(prAdapter, "BoostCpuTh", FALSE)) {
 		prWifiVar->fgIsBoostCpuThAdjustable  = TRUE;
 		DBGLOG(INIT, TRACE, "BoostCPUTh is not config, adjustable\n");
 	}
-	prWifiVar->au4CpuBoostMinFreq = (uint32_t)wlanCfgGetUint32(
-		prAdapter, "CpuBoostMinFreq", 1300);
+	INIT_UINT(prWifiVar->au4CpuBoostMinFreq, "CpuBoostMinFreq", 1300);
 #if CFG_SUPPORT_LITTLE_CPU_BOOST
 	u4PlatformBoostLittleCpuTh = kalGetLittleCpuBoostThreshold();
-	prWifiVar->u4BoostLittleCpuTh =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "BoostLittleCpuTh",
+	INIT_UINT(prWifiVar->u4BoostLittleCpuTh, "BoostLittleCpuTh",
 			u4PlatformBoostLittleCpuTh);
 #endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
 
@@ -8050,22 +7771,22 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	 * tput imposed by SW reordering, including the operation workload and
 	 * frame drops, etc.
 	 */
-	prWifiVar->fgSwRxReordering = wlanCfgGetUint32(prAdapter,
-					"SwRxReordering", FEATURE_ENABLED);
-
+	INIT_UINT(prWifiVar->fgSwRxReordering,
+		"SwRxReordering", FEATURE_ENABLED);
 	/**
 	 * A debugging switch enables RXD, RXP dumping when driver drops packets
 	 * for ICV error.
 	 */
-	prWifiVar->fgRxIcvErrDbg = wlanCfgGetUint32(prAdapter,
-					"RxIcvErrDbg", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgRxIcvErrDbg,
+		"RxIcvErrDbg", FEATURE_DISABLED);
 	/**
 	 * Switching dumping TX/RX memory, set by bitmap format.
 	 * TXP(0x04),        TXDMAD(0x02), TXD(0x01),
 	 * RXDSEGMENT(0x40), RXDMAD(0x20), RXD(0x10).
 	 */
-	prWifiVar->u4TxRxDescDump = wlanCfgGetUint32(prAdapter,
-					"TRXDescDump", 0x40);
+	INIT_UINT(prWifiVar->u4TxRxDescDump,
+		"TRXDescDump", 0x40);
+
 	DBGLOG(INIT, TRACE,
 		"TxP,TxDmad,TxD/RxDsegment,RxDmad,RxD=%u,%u,%u/%u,%u,%u",
 		prWifiVar->fgDumpTxP, prWifiVar->fgDumpTxDmad,
@@ -8073,42 +7794,33 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 		prWifiVar->fgDumpRxDsegment, prWifiVar->fgDumpRxDmad,
 		prWifiVar->fgDumpRxD);
 
-	prWifiVar->fgFlushRxReordering = wlanCfgGetUint32(prAdapter,
-					"FlushRxReordering", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgFlushRxReordering,
+		"FlushRxReordering", FEATURE_ENABLED);
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
-	prWifiVar->u4BaShortMissTimeoutMs = wlanCfgGetUint32(prAdapter,
-					"BaShortMissTimeoutMs",
-					QM_RX_BA_ENTRY_MISS_TIMEOUT_MS_SHORT);
+	INIT_UINT(prWifiVar->u4BaShortMissTimeoutMs,
+		"BaShortMissTimeoutMs", QM_RX_BA_ENTRY_MISS_TIMEOUT_MS_SHORT);
 #endif
-	prWifiVar->u4BaMissTimeoutMs = wlanCfgGetUint32(prAdapter,
-					"BaMissTimeoutMs",
-					QM_RX_BA_ENTRY_MISS_TIMEOUT_MS);
+	INIT_UINT(prWifiVar->u4BaMissTimeoutMs,
+		"BaMissTimeoutMs", QM_RX_BA_ENTRY_MISS_TIMEOUT_MS);
 
-	prWifiVar->u4PerfMonPendingTh = (uint8_t)wlanCfgGetUint32(prAdapter,
-						"PerfMonPendingTh", 80);
+	INIT_UINT(prWifiVar->u4PerfMonPendingTh, "PerfMonPendingTh", 80);
 
-	prWifiVar->u4PerfMonUsedTh = (uint8_t)wlanCfgGetUint32(prAdapter,
-						"PerfMonUsedTh", 80);
+	INIT_UINT(prWifiVar->u4PerfMonUsedTh, "PerfMonUsedTh", 80);
 
 	/* SER related fields */
 
 	/* for L0 SER */
-	prWifiVar->fgEnableSerL0 = (uint8_t)wlanCfgGetUint32(prAdapter,
-							     "EnableSerL0",
-							     FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgEnableSerL0,
+		"EnableSerL0", FEATURE_ENABLED);
 
 	/* for L0.5 SER */
-	prWifiVar->eEnableSerL0p5 = (enum ENUM_FEATURE_OPTION_IN_SER)
-				     wlanCfgGetUint32(prAdapter,
-						      "EnableSerL0p5",
-						      FEATURE_OPT_SER_ENABLE);
+	INIT_UINT(prWifiVar->eEnableSerL0p5,
+		"EnableSerL0p5", FEATURE_OPT_SER_ENABLE);
 
 	/* for L1 SER */
-	prWifiVar->eEnableSerL1 = (enum ENUM_FEATURE_OPTION_IN_SER)
-				     wlanCfgGetUint32(prAdapter,
-							  "EnableSerL1",
-						      FEATURE_OPT_SER_ENABLE);
+	INIT_UINT(prWifiVar->eEnableSerL1,
+		"EnableSerL1", FEATURE_OPT_SER_ENABLE);
 
 	/* for L0 SER using WDT on some legacy CE USB project like MT7668 and
 	 * MT7663. The difference between fgEnableSerL0 and fgChipResetRecover
@@ -8118,373 +7830,277 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	 * is that some customers might not have dedicated reset pin on the
 	 * platform.
 	 */
-	prWifiVar->fgChipResetRecover = (u_int8_t) wlanCfgGetUint32(prAdapter,
-					"ChipResetRecover", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgChipResetRecover,
+		"ChipResetRecover", FEATURE_DISABLED);
 
-	prWifiVar->fgRstRecover = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"RstRecover", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgRstRecover,
+		"RstRecover", FEATURE_DISABLED);
 	/*
 	 * For Certification purpose,forcibly set
 	 * "Compressed Steering Number of Beamformer Antennas Supported" to our
 	 * own capability.
 	 */
-	prWifiVar->fgForceSTSNum = (uint8_t)wlanCfgGetUint32(
-					   prAdapter, "ForceSTSNum", 0);
+	INIT_UINT(prWifiVar->fgForceSTSNum, "ForceSTSNum", 0);
 #if CFG_SUPPORT_IDC_CH_SWITCH
-	prWifiVar->ucChannelSwtichColdownTime = (uint8_t) wlanCfgGetUint32(
-			prAdapter, "CSACdTime", 60);/*Second*/
-	prWifiVar->fgCrossBandSwitchEn = (uint8_t) wlanCfgGetUint32(
-			prAdapter, "SapCrossBandSwitchEn", 0);
+	INIT_UINT(prWifiVar->ucChannelSwtichColdownTime, "CSACdTime", 60);
+	INIT_UINT(prWifiVar->fgCrossBandSwitchEn, "SapCrossBandSwitchEn", 0);
 #endif
 #if CFG_SUPPORT_PERF_IND
-	prWifiVar->fgPerfIndicatorEn = (uint8_t) wlanCfgGetUint32(
-			prAdapter, "PerfIndicatorEn", 1);
+	INIT_UINT(prWifiVar->fgPerfIndicatorEn, "PerfIndicatorEn", 1);
 #endif
 #if CFG_SUPPORT_SPE_IDX_CONTROL
-	prWifiVar->ucSpeIdxCtrl = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "SpeIdxCtrl", 2);
+	INIT_UINT(prWifiVar->ucSpeIdxCtrl, "SpeIdxCtrl", 2);
 #endif
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
-	prWifiVar->ucLowLatencyModeScan = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "LowLatencyModeScan", FEATURE_ENABLED);
-	prWifiVar->ucLowLatencyModeReOrder = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "LowLatencyModeReOrder", FEATURE_ENABLED);
-	prWifiVar->ucLowLatencyModePower = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "LowLatencyModePower", FEATURE_DISABLED);
-	prWifiVar->ucLowLatencyPacketPriority = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "LowLatencyPacketPriority", BITS(0, 1));
-	prWifiVar->ucLowLatencyCmdData = (uint8_t) wlanCfgGetUint32(
-			prAdapter, "LowLatencyCmdData", FEATURE_ENABLED);
-	prWifiVar->ucLowLatencyCmdDataAllPacket = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "LowLatencyCmdDataAllPacket", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucLowLatencyModeScan,
+		"LowLatencyModeScan", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucLowLatencyModeReOrder,
+		"LowLatencyModeReOrder", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucLowLatencyModePower,
+		"LowLatencyModePower", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucLowLatencyPacketPriority,
+		"LowLatencyPacketPriority", BITS(0, 1));
+	INIT_UINT(prWifiVar->ucLowLatencyCmdData,
+		"LowLatencyCmdData", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucLowLatencyCmdDataAllPacket,
+		"LowLatencyCmdDataAllPacket", FEATURE_DISABLED);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 #if CFG_SUPPORT_SPE_IDX_CONTROL
-	prWifiVar->ucSpeIdxCtrl = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "SpeIdxCtrl", 2);
+	INIT_UINT(prWifiVar->ucSpeIdxCtrl, "SpeIdxCtrl", 2);
 #endif
 
-	prWifiVar->u4MTU = wlanCfgGetUint32(prAdapter, "MTU", 0);
+	INIT_UINT(prWifiVar->u4MTU, "MTU", 0);
 
 #if CFG_SUPPORT_RX_GRO
-	prWifiVar->ucGROFlushTimeout = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "GROFlushTimeout", 1);
-	prWifiVar->ucGROEnableTput = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "GROEnableTput", 6250000);
+	INIT_UINT(prWifiVar->ucGROFlushTimeout, "GROFlushTimeout", 1);
+	INIT_UINT(prWifiVar->ucGROEnableTput, "GROEnableTput", 6250000);
 #endif
-	prWifiVar->ucMsduReportTimeout =
-		(uint8_t) wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->ucMsduReportTimeout,
 		"MsduReportTimeout", NIC_MSDU_REPORT_DUMP_TIMEOUT);
 
 #if CFG_SUPPORT_DATA_STALL
-	prWifiVar->u4PerHighThreshole = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "PerHighThreshole",
-			EVENT_PER_HIGH_THRESHOLD);
-	prWifiVar->u4TxLowRateThreshole = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "TxLowRateThreshole",
-			EVENT_TX_LOW_RATE_THRESHOLD);
-	prWifiVar->u4RxLowRateThreshole = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "RxLowRateThreshole",
-			EVENT_RX_LOW_RATE_THRESHOLD);
-	prWifiVar->u4ReportEventInterval = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "ReportEventInterval",
-			REPORT_EVENT_INTERVAL);
-	prWifiVar->u4TrafficThreshold = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "TrafficThreshold",
-			TRAFFIC_RHRESHOLD);
+	INIT_UINT(prWifiVar->u4PerHighThreshole,
+		"PerHighThreshole", EVENT_PER_HIGH_THRESHOLD);
+	INIT_UINT(prWifiVar->u4TxLowRateThreshole,
+		"TxLowRateThreshole", EVENT_TX_LOW_RATE_THRESHOLD);
+	INIT_UINT(prWifiVar->u4RxLowRateThreshole,
+		"RxLowRateThreshole", EVENT_RX_LOW_RATE_THRESHOLD);
+	INIT_UINT(prWifiVar->u4ReportEventInterval,
+		"ReportEventInterval", REPORT_EVENT_INTERVAL);
+	INIT_UINT(prWifiVar->u4TrafficThreshold,
+		"TrafficThreshold", TRAFFIC_RHRESHOLD);
 #endif
 
 #if CFG_SUPPORT_HE_ER
-	prWifiVar->u4ExtendedRange = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "ExtendedRange",
-			FEATURE_ENABLED);
-	prWifiVar->fgErTx = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "ErTx",
-			FEATURE_ENABLED);
-	prWifiVar->fgErRx = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "ErRx",
-			FEATURE_ENABLED);
-	prWifiVar->fgErSuRx = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "ErSuRx",
-			FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->u4ExtendedRange,
+		"ExtendedRange", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgErTx,
+		"ErTx", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgErRx,
+		"ErRx", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgErSuRx,
+		"ErSuRx", FEATURE_ENABLED);
 #endif
 #if (CFG_SUPPORT_BSS_MAX_IDLE_PERIOD == 1)
-	prWifiVar->fgBssMaxIdle = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "BssMaxIdle",
-			FEATURE_DISABLED);
-	prWifiVar->u2BssMaxIdlePeriod = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "BssMaxIdlePeriod",
-			BSS_MAX_IDLE_PERIOD_VALUE);
+	INIT_UINT(prWifiVar->fgBssMaxIdle,
+		"BssMaxIdle", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->u2BssMaxIdlePeriod,
+		"BssMaxIdlePeriod", BSS_MAX_IDLE_PERIOD_VALUE);
 #endif
 
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
-	prWifiVar->ucP2pGoACS = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "P2pGoACSEnable",
-			FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucP2pGoACS,
+		"P2pGoACSEnable", FEATURE_ENABLED);
 #endif
 
 #if CFG_SUPPORT_NAN
-	prWifiVar->ucMasterPref =
-		(uint8_t)wlanCfgGetUint32(prAdapter, "NanMasterPref", 2);
-	prWifiVar->ucConfig5gChannel =
-		(uint8_t)wlanCfgGetUint32(prAdapter, "NanConfig5gChannel", 1);
-	prWifiVar->ucChannel5gVal =
-		(uint8_t)wlanCfgGetUint32(prAdapter, "NanChannel5gVal", 149);
-	prWifiVar->ucAisQuotaVal =
-		(uint8_t)wlanCfgGetUint32(prAdapter, "NanAisQuota", 8);
-	prWifiVar->ucDftNdlQuotaVal =
-		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDftNdlQuota",
+	INIT_UINT(prWifiVar->ucMasterPref, "NanMasterPref", 2);
+	INIT_UINT(prWifiVar->ucConfig5gChannel, "NanConfig5gChannel", 1);
+	INIT_UINT(prWifiVar->ucChannel5gVal, "NanChannel5gVal", 149);
+	INIT_UINT(prWifiVar->ucAisQuotaVal, "NanAisQuota", 8);
+	INIT_UINT(prWifiVar->ucDftNdlQuotaVal, "NanDftNdlQuota",
 #if (CFG_NAN_SCHEDULER_VERSION == 1)
 		NAN_DEFAULT_NDL_QUOTA_UP_BOUND);
 #else
 		5);
 #endif
-	prWifiVar->ucDftRangQuotaVal =
-		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDftRangQuota", 1);
-	prWifiVar->ucDftQuotaStartOffset =
-		(uint8_t)wlanCfgGetUint32(prAdapter,
+	INIT_UINT(prWifiVar->ucDftRangQuotaVal, "NanDftRangQuota", 1);
+	INIT_UINT(prWifiVar->ucDftQuotaStartOffset,
 		"NanDftQuotaStartOffset", 2);
-	prWifiVar->ucDftNdcStartOffset =
-		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDftNdcStartOffset", 0);
-	prWifiVar->ucNanFixChnl =
-		(uint8_t)wlanCfgGetUint32(prAdapter, "NanFixChnl", 0);
-	prWifiVar->fgEnableNDPE =
-		wlanCfgGetUint32(prAdapter, "NanEnableNDPE", 1);
-	prWifiVar->u2DftNdlQosLatencyVal =
-		wlanCfgGetUint32(prAdapter, "NanDftNdlQosLatency", 0);
-	prWifiVar->ucDftNdlQosQuotaVal =
-		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDftNdlQosQuota", 0);
-	prWifiVar->ucNanBandwidth =
-		(uint8_t)wlanCfgGetUint32(prAdapter, "NanBw", MAX_BW_20MHZ);
-	prWifiVar->fgEnNanVHT =
-		(unsigned char)wlanCfgGetUint32(prAdapter, "NanVHT", 1);
-	prWifiVar->ucNanFtmBw = (uint8_t)wlanCfgGetUint32(
-		prAdapter, "NanFtmBw", FTM_FORMAT_BW_HT_MIXED_BW20);
-	prWifiVar->ucNanDiscBcnInterval =
-		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDiscBcnInterval", 100);
-	prWifiVar->ucNanCommittedDw =
-		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDftCommittedDw", 1);
-	prWifiVar->fgNoPmf =
-		(unsigned char)wlanCfgGetUint32(prAdapter, "NanForceNoPmf", 0);
-	prWifiVar->ucNan2gBandwidth = (uint8_t) wlanCfgGetUint32(
-			prAdapter, "Nan2gBw", MAX_BW_20MHZ);
-	prWifiVar->ucNan5gBandwidth = (uint8_t) wlanCfgGetUint32(
-			prAdapter, "Nan5gBw", MAX_BW_80MHZ);
-	prWifiVar->ucNdlFlowCtrlVer =
-		(unsigned char)wlanCfgGetUint32(prAdapter,
-		"NanNdlFlowCtrlVer",
-		CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL);
-	prWifiVar->fgNanWmmSeq =
-		wlanCfgGetUint32(prAdapter, "NanWmmSeq", 1);
+	INIT_UINT(prWifiVar->ucDftNdcStartOffset, "NanDftNdcStartOffset", 0);
+	INIT_UINT(prWifiVar->ucNanFixChnl, "NanFixChnl", 0);
+	INIT_UINT(prWifiVar->fgEnableNDPE, "NanEnableNDPE", 1);
+	INIT_UINT(prWifiVar->u2DftNdlQosLatencyVal, "NanDftNdlQosLatency", 0);
+	INIT_UINT(prWifiVar->ucDftNdlQosQuotaVal, "NanDftNdlQosQuota", 0);
+	INIT_UINT(prWifiVar->ucNanBandwidth, "NanBw", MAX_BW_20MHZ);
+	INIT_UINT(prWifiVar->fgEnNanVHT, "NanVHT", 1);
+	INIT_UINT(prWifiVar->ucNanFtmBw,
+		"NanFtmBw", FTM_FORMAT_BW_HT_MIXED_BW20);
+	INIT_UINT(prWifiVar->ucNanDiscBcnInterval, "NanDiscBcnInterval", 100);
+	INIT_UINT(prWifiVar->ucNanCommittedDw, "NanDftCommittedDw", 1);
+	INIT_UINT(prWifiVar->fgNoPmf, "NanForceNoPmf", 0);
+
+
+	INIT_UINT(prWifiVar->ucNan2gBandwidth, "Nan2gBw", MAX_BW_20MHZ);
+	INIT_UINT(prWifiVar->ucNan5gBandwidth, "Nan5gBw", MAX_BW_80MHZ);
+	INIT_UINT(prWifiVar->ucNdlFlowCtrlVer,
+		"NanNdlFlowCtrlVer", CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL);
+	INIT_UINT(prWifiVar->fgNanWmmSeq, "NanWmmSeq", 1);
 #endif
 
-	prWifiVar->fgReuseRSNIE = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "ReuseRSNIE",
-			FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgReuseRSNIE, "ReuseRSNIE", FEATURE_DISABLED);
 
 #if CFG_COALESCING_INTERRUPT
-	prWifiVar->u2CoalescingIntMaxPk = (uint16_t) wlanCfgGetUint32(
-			prAdapter, "CoalescingIntMaxPkt",
-			COALESCING_INT_MAX_PKT);
-	prWifiVar->u2CoalescingIntMaxTime = (uint16_t) wlanCfgGetUint32(
-			prAdapter, "CoalescingIntMaxTime",
-			COALESCING_INT_MAX_TIME);
-	prWifiVar->u2CoalescingIntuFilterMask = (uint16_t) wlanCfgGetUint32(
-			prAdapter, "CoalescingIntFilterMask",
-			CMD_PF_CF_COALESCING_INT_FILTER_MASK_DEFAULT);
-	prWifiVar->u4PerfMonTpCoalescingIntTh = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "PerfMonTpCoalescingIntTh",
-			6);
-	prWifiVar->fgCoalescingIntEn = (u_int8_t) wlanCfgGetUint32(
-			prAdapter, "CoalescingIntEn",
-			FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->u2CoalescingIntMaxPk,
+		"CoalescingIntMaxPkt", COALESCING_INT_MAX_PKT);
+	INIT_UINT(prWifiVar->u2CoalescingIntMaxTime,
+		"CoalescingIntMaxTime", COALESCING_INT_MAX_TIME);
+	INIT_UINT(prWifiVar->u2CoalescingIntuFilterMask,
+		"CoalescingIntFilterMask",
+		CMD_PF_CF_COALESCING_INT_FILTER_MASK_DEFAULT);
+	INIT_UINT(prWifiVar->u4PerfMonTpCoalescingIntTh,
+		"PerfMonTpCoalescingIntTh", 6);
+	INIT_UINT(prWifiVar->fgCoalescingIntEn,
+		"CoalescingIntEn", FEATURE_DISABLED);
 #endif
-
-	wlanCfgSetUint32(prAdapter, "MddpSupport", FEATURE_ENABLED);
 
 #if CFG_SUPPORT_ROAMING
-	prWifiVar->u4DiscoverTimeout = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "DiscoverTimeout", ROAMING_DISCOVER_TIMEOUT_SEC);
+	INIT_UINT(prWifiVar->u4DiscoverTimeout,
+		"DiscoverTimeout", ROAMING_DISCOVER_TIMEOUT_SEC);
 #endif
+
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
-	prWifiVar->ucDbdcP2pLisEn =
-		(uint8_t) wlanCfgGetUint32(
-				prAdapter, "DbdcP2pLisEn",
-				FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucDbdcP2pLisEn,
+		"DbdcP2pLisEn", FEATURE_ENABLED);
 
-	prWifiVar->u4DbdcP2pLisSwDelayTime =
-	(uint32_t) wlanCfgGetUint32(
-			prAdapter, "DbdcP2pLisSwDelayTime",
-			DBDC_P2P_LISTEN_SW_DELAY_TIME);
+	INIT_UINT(prWifiVar->u4DbdcP2pLisSwDelayTime,
+		"DbdcP2pLisSwDelayTime", DBDC_P2P_LISTEN_SW_DELAY_TIME);
 #endif
 
-	prWifiVar->ucDisallowBand2G = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "DisallowBand2G", 0);
-	prWifiVar->ucDisallowBand5G = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "DisallowBand5G", 0);
+	INIT_UINT(prWifiVar->ucDisallowBand2G, "DisallowBand2G", 0);
+	INIT_UINT(prWifiVar->ucDisallowBand5G, "DisallowBand5G", 0);
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	prWifiVar->ucDisallowBand6G = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "DisallowBand6G", 0);
+	INIT_UINT(prWifiVar->ucDisallowBand6G, "DisallowBand6G", 0);
 #endif
-	prWifiVar->ucDisallowP2PAcs6G = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "DisallowP2PAcs6G", FEATURE_DISABLED);
-#if CFG_SUPPORT_ROAMING
-	prWifiVar->u4InactiveTimeout = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "InactiveTimeout", ROAMING_INACTIVE_TIMEOUT_SEC);
 
-	prWifiVar->u4BtmDelta = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "BtmDelta", ROAMING_BTM_DELTA);
+	INIT_UINT(prWifiVar->ucDisallowP2PAcs6G,
+		"DisallowP2PAcs6G", FEATURE_DISABLED);
+#if CFG_SUPPORT_ROAMING
+	INIT_UINT(prWifiVar->u4InactiveTimeout,
+		"InactiveTimeout", ROAMING_INACTIVE_TIMEOUT_SEC);
+	INIT_UINT(prWifiVar->u4BtmDelta, "BtmDelta", ROAMING_BTM_DELTA);
+	INIT_UINT(prWifiVar->u4BtmDisTimerThreshold,
+		 "BtmDisTimerThreshold", AIS_BTM_DIS_IMMI_TIMEOUT);
 #endif
-	prWifiVar->u4BtmDisTimerThreshold = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "BtmDisTimerThreshold", AIS_BTM_DIS_IMMI_TIMEOUT);
 
 #if ARP_MONITER_ENABLE
-	prWifiVar->uArpMonitorNumber = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "ArpMonitorNumber", 20);
-	prWifiVar->uArpMonitorRxPktNum = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "ArpMonitorRxPktNum", 0);
+	INIT_UINT(prWifiVar->uArpMonitorNumber, "ArpMonitorNumber", 20);
+	INIT_UINT(prWifiVar->uArpMonitorRxPktNum, "ArpMonitorRxPktNum", 0);
 #endif /* ARP_MONITER_ENABLE */
 
 #if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
-	prWifiVar->ucScanNoApRecover = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "ScanNoApRecover", FEATURE_ENABLED);
-	prWifiVar->ucScanNoApRecoverTh = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "ucScanNoApRecoverTh", 3);
-
+	INIT_UINT(prWifiVar->ucScanNoApRecover,
+		"ScanNoApRecover", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucScanNoApRecoverTh, "ucScanNoApRecoverTh", 3);
 #endif
+
 #if CFG_ENABLE_WIFI_DIRECT
-	prWifiVar->fgSapCheckPmkidInDriver = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "SapCheckPmkidInDriver", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgSapCheckPmkidInDriver,
+		"SapCheckPmkidInDriver", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgSapOffload, "SapOffload", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgSapSkipObss, "SapSkipObss", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgP2pGcCsa, "P2pGcCsa", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgSkipP2pIe, "SkipP2pIe", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgSkipP2pProbeResp,
+		"SkipP2pProbeResp", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgSapChannelSwitchPolicy,
+		"SapChannelSwitchPolicy", P2P_CHANNEL_SWITCH_POLICY_SCC);
+	INIT_UINT(prWifiVar->fgSapConcurrencyPolicy,
+		"SapConcurrencyPolicy", P2P_CONCURRENCY_POLICY_REMOVE);
+	INIT_UINT(prWifiVar->fgSapAuthPolicy,
+		"SapAuthPolicy", P2P_AUTH_POLICY_NONE);
+	INIT_UINT(prWifiVar->fgSapOverwriteAcsChnlBw,
+		"SapOverwriteAcsChnlBw", FEATURE_ENABLED);
 
-	prWifiVar->fgSapOffload = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "SapOffload", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgSapAddTPEIE, "SapAddTPEIE", FEATURE_DISABLED);
 
-	prWifiVar->fgSapSkipObss = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "SapSkipObss", FEATURE_DISABLED);
-
-	prWifiVar->fgP2pGcCsa = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "P2pGcCsa", FEATURE_ENABLED);
-
-	prWifiVar->fgSkipP2pIe = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "SkipP2pIe", FEATURE_ENABLED);
-
-	prWifiVar->fgSkipP2pProbeResp = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "SkipP2pProbeResp", FEATURE_DISABLED);
-
-	prWifiVar->fgSapChannelSwitchPolicy = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "SapChannelSwitchPolicy",
-		P2P_CHANNEL_SWITCH_POLICY_SCC);
-
-	prWifiVar->fgSapConcurrencyPolicy = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "SapConcurrencyPolicy",
-		P2P_CONCURRENCY_POLICY_REMOVE);
-
-	prWifiVar->fgSapAuthPolicy = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "SapAuthPolicy",
-		P2P_AUTH_POLICY_NONE);
-
-	prWifiVar->fgSapOverwriteAcsChnlBw = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "SapOverwriteAcsChnlBw", FEATURE_ENABLED);
-
-	prWifiVar->fgSapAddTPEIE = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "SapAddTPEIE", FEATURE_DISABLED);
 #endif
-	prWifiVar->ucDfsRegion = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "DfsRegion", 0);
+	INIT_UINT(prWifiVar->ucDfsRegion, "DfsRegion", 0);
 	if (prWifiVar->ucDfsRegion)
 		rlmDomainSetDfsRegion(prWifiVar->ucDfsRegion);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-	prWifiVar->u4ByPassCacTime = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "ByPassCacTime", 0);
+	INIT_UINT(prWifiVar->u4ByPassCacTime, "ByPassCacTime", 0);
 	if (prWifiVar->u4ByPassCacTime) {
 		p2pFuncEnableManualCac();
 		p2pFuncSetDriverCacTime(prWifiVar->u4ByPassCacTime);
 	}
 #endif
-	prWifiVar->u4CC2Region = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "CC2Region", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->u4CC2Region, "CC2Region", FEATURE_ENABLED);
 
 #if CFG_ENABLE_WIFI_DIRECT
-
-	prWifiVar->u4ApChnlHoldTime = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "ApChnlHoldTime", P2P_AP_CHNL_HOLD_TIME_MS);
-
-	prWifiVar->u4P2pChnlHoldTime = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "P2pChnlHoldTime", P2P_AP_CHNL_HOLD_TIME_MS);
-
-	prWifiVar->u4ProbeRspRetryLimit = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "ProbeRspRetryLimit",
-		DEFAULT_P2P_PROBERESP_RETRY_LIMIT);
+	INIT_UINT(prWifiVar->u4ApChnlHoldTime,
+		"ApChnlHoldTime", P2P_AP_CHNL_HOLD_TIME_MS);
+	INIT_UINT(prWifiVar->u4P2pChnlHoldTime,
+		"P2pChnlHoldTime", P2P_AP_CHNL_HOLD_TIME_MS);
+	INIT_UINT(prWifiVar->u4ProbeRspRetryLimit,
+		"ProbeRspRetryLimit", DEFAULT_P2P_PROBERESP_RETRY_LIMIT);
 #endif
-	prWifiVar->fgAllowSameBandDualSta = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "AllowSameBandDualSta", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgAllowSameBandDualSta,
+		"AllowSameBandDualSta", FEATURE_ENABLED);
+
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
-	prWifiVar->u4BackoffLevel = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "BackoffLevel", 0);
+	INIT_UINT(prWifiVar->u4BackoffLevel, "BackoffLevel", 0);
 #endif
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	prWifiVar->ucAbnWakeupDetectEn = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "AbnWakeupDetectEn", FEATURE_ENABLED);
-	prWifiVar->ucAbnWakeupPktThld = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "AbnWakeupPktThld", 10);
-	prWifiVar->ucAbnWakeupDetectIntv = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "AbnWakeupDetectIntv", 50);
+	INIT_UINT(prWifiVar->ucAbnWakeupDetectEn,
+		"AbnWakeupDetectEn", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucAbnWakeupPktThld, "AbnWakeupPktThld", 10);
+	INIT_UINT(prWifiVar->ucAbnWakeupDetectIntv, "AbnWakeupDetectIntv", 50);
 #endif
 
 #if (CFG_SUPPORT_APF == 1)
-	prWifiVar->ucApfEnable = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "ApfEnable", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucApfEnable, "ApfEnable", FEATURE_ENABLED);
 #endif
 
 #if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
-	prWifiVar->u4TputThresholdMbps = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "TputThresholdMbps", 50);
+	INIT_UINT(prWifiVar->u4TputThresholdMbps, "TputThresholdMbps", 50);
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
 
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
-	prWifiVar->fgBARDelayIndicationEn = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "BARDelayIndicationEn", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgBARDelayIndicationEn,
+		"BARDelayIndicationEn", FEATURE_ENABLED);
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
-	prWifiVar->u4MultiStaPrimaryQuoteTime = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "MultiStaPrimaryQuoteTime", 300000);
-	prWifiVar->u4MultiStaSecondaryQuoteTime = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "MultiStaSecondaryQuoteTime", 120000);
+	INIT_UINT(prWifiVar->u4MultiStaPrimaryQuoteTime,
+		"MultiStaPrimaryQuoteTime", 300000);
+	INIT_UINT(prWifiVar->u4MultiStaSecondaryQuoteTime,
+		"MultiStaSecondaryQuoteTime", 120000);
 #if CFG_SUPPORT_LIMITED_PKT_PID
-	prWifiVar->u4PktPIDTimeout = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "PktPIDTimeout", 1000);
+	INIT_UINT(prWifiVar->u4PktPIDTimeout, "PktPIDTimeout", 1000);
 #endif /* CFG_SUPPORT_LIMITED_PKT_PID */
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	prWifiVar->fgEnOnlyScan6g = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "EnableOnlyScan6g", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgEnOnlyScan6g,
+		"EnableOnlyScan6g", FEATURE_DISABLED);
 #endif /* CFG_SUPPORT_LIMITED_PKT_PID */
 
 #if (CFG_SUPPORT_DYNAMIC_EDCCA == 1)
-	prWifiVar->i4Ed2GNonEU = (int32_t) wlanCfgGetInt32(prAdapter,
-		"Ed2GNonEU", ED_CCA_BW20_2G_DEFAULT);
-	prWifiVar->i4Ed5GNonEU = (int32_t) wlanCfgGetInt32(prAdapter,
-		"Ed5GNonEU", ED_CCA_BW20_5G_DEFAULT);
-	prWifiVar->i4Ed2GEU = (int32_t) wlanCfgGetInt32(prAdapter,
-		"Ed2GEU", ED_CCA_BW20_2G_DEFAULT);
-	prWifiVar->i4Ed5GEU = (int32_t) wlanCfgGetInt32(prAdapter,
-		"Ed5GEU", ED_CCA_BW20_5G_DEFAULT);
+	INIT_INT(prWifiVar->i4Ed2GNonEU, "Ed2GNonEU", ED_CCA_BW20_2G_DEFAULT);
+	INIT_INT(prWifiVar->i4Ed5GNonEU, "Ed5GNonEU", ED_CCA_BW20_5G_DEFAULT);
+	INIT_INT(prWifiVar->i4Ed2GEU, "Ed2GEU", ED_CCA_BW20_2G_DEFAULT);
+	INIT_INT(prWifiVar->i4Ed5GEU, "Ed5GEU", ED_CCA_BW20_5G_DEFAULT);
 #endif
 
 #if CFG_MTK_FPGA_PLATFORM
-	prWifiVar->u4FpgaSpeedFactor = wlanCfgGetUint32(prAdapter,
-			"FpgaSpeedFactor", 0);
+	INIT_UINT(prWifiVar->u4FpgaSpeedFactor,	"FpgaSpeedFactor", 0);
 #endif
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	prWifiVar->fgEnableMawd = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "EnableMawd", FEATURE_DISABLED);
-	prWifiVar->fgEnableMawdTx = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "EnableMawdTx", FEATURE_DISABLED);
-	prWifiVar->fgEnableSdo = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "EnableSdo", FEATURE_ENABLED);
-	prWifiVar->fgEnableRro = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "EnableRro", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgEnableMawd, "EnableMawd", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgEnableMawdTx, "EnableMawdTx", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgEnableSdo, "EnableSdo", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgEnableRro, "EnableRro", FEATURE_DISABLED);
 
 	if (IS_FEATURE_FORCE_ENABLED(prWifiVar->fgEnableMawd))
 		prWifiVar->fgEnableMawd = FEATURE_ENABLED;
@@ -8502,97 +8118,79 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 		prWifiVar->fgEnableRro = FEATURE_DISABLED;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
-	prWifiVar->fgIcmpTxs = wlanCfgGetInt32(prAdapter, "IcmpTxs",
-			FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgIcmpTxs, "IcmpTxs", FEATURE_ENABLED);
 
 	/* Fast Path Config */
-	prWifiVar->ucUdpTspecUp = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "UdpTspecUp", 7);
-	prWifiVar->ucTcpTspecUp = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "TcpTspecUp", 5);
-	prWifiVar->u4UdpDelayBound = wlanCfgGetUint32(
-			prAdapter, "UdpDelayBound", 7000);
-	prWifiVar->u4TcpDelayBound = wlanCfgGetUint32(
-			prAdapter, "TcpDelayBound", 10000);
-	prWifiVar->ucDataRate = (uint8_t) wlanCfgGetUint32(
-			prAdapter, "TspecDataRate", 0);
-	prWifiVar->ucSupportProtocol = (uint8_t) wlanCfgGetUint32(
-			prAdapter, "SupportProtocol", 0);
-	prWifiVar->ucCheckBeacon = (uint8_t) wlanCfgGetUint32(
-			prAdapter, "MscsCheckBeacon", FEATURE_ENABLED);
-	prWifiVar->ucEnableFastPath = (uint8_t) wlanCfgGetUint32(
-			prAdapter, "EnableFastPath", FEATURE_ENABLED);
-	prWifiVar->ucFastPathAllPacket = (uint8_t) wlanCfgGetUint32(
-			prAdapter, "FastPathAllPacket", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucUdpTspecUp, "UdpTspecUp", 7);
+	INIT_UINT(prWifiVar->ucTcpTspecUp, "TcpTspecUp", 5);
+	INIT_UINT(prWifiVar->u4UdpDelayBound, "UdpDelayBound", 7000);
+	INIT_UINT(prWifiVar->u4TcpDelayBound, "TcpDelayBound", 10000);
+	INIT_UINT(prWifiVar->ucDataRate, "TspecDataRate", 0);
+	INIT_UINT(prWifiVar->ucSupportProtocol, "SupportProtocol", 0);
+	INIT_UINT(prWifiVar->ucCheckBeacon,
+		"MscsCheckBeacon", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucEnableFastPath,
+		"EnableFastPath", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucFastPathAllPacket,
+		"FastPathAllPacket", FEATURE_DISABLED);
 #if (CFG_TX_HIF_PORT_QUEUE == 1)
-	prWifiVar->ucEnableTxHifPortQ = (uint8_t) wlanCfgGetUint32(
-			prAdapter, "EnableTxHifPortQ", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucEnableTxHifPortQ,
+		"EnableTxHifPortQ", FEATURE_ENABLED);
 #endif
+
 #if (CFG_VOLT_INFO == 1)
-	prWifiVar->fgVnfEn = (bool) wlanCfgGetUint32(
-		prAdapter, "VoltInfoEnable", FEATURE_ENABLED);
-	prWifiVar->u4VnfDebTimes = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "VoltInfoDebTimes",
-		VOLT_INFO_DEBOUNCE_TIMES);
-	prWifiVar->u4VnfDebInterval = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "VoltInfoDebInterval",
-		VOLT_INFO_DEBOUNCE_INTERVAL);
-	prWifiVar->u4VnfDelta = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "VoltInfoDelta",
-		VOLT_INFO_DELTA);
+	INIT_UINT(prWifiVar->fgVnfEn, "VoltInfoEnable", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->u4VnfDebTimes,
+		"VoltInfoDebTimes", VOLT_INFO_DEBOUNCE_TIMES);
+	INIT_UINT(prWifiVar->u4VnfDebInterval,
+		"VoltInfoDebInterval", VOLT_INFO_DEBOUNCE_INTERVAL);
+	INIT_UINT(prWifiVar->u4VnfDelta,
+		"VoltInfoDelta", VOLT_INFO_DELTA);
 #endif /* CFG_VOLT_INFO  */
 
 #if CFG_SUPPORT_MLR
-	prWifiVar->fgEnForceTxFrag = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "EnForceTxFrag", FEATURE_DISABLED);
-	prWifiVar->u2TxFragThr = (uint16_t) wlanCfgGetUint32(
-		prAdapter, "TxFragSplitThr", 1000);
-	prWifiVar->u2TxFragSplitSize = (uint16_t) wlanCfgGetUint32(
-		prAdapter, "TxFragSplitSize", 0);
-	prWifiVar->ucTxMlrRateRcpiThr = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "TxMlrRateRcpiThr", 40);
-	prWifiVar->fgEnTxFragDebug = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "EnTxFragDebug", FEATURE_DISABLED);
-	prWifiVar->fgEnTxFragTxDone = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "EnTxFragTxDone", FEATURE_DISABLED);
-	prWifiVar->ucErrPos = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "ErrPos", 0);
+	INIT_UINT(prWifiVar->fgEnForceTxFrag,
+		"EnForceTxFrag", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->u2TxFragThr, "TxFragSplitThr", 1000);
+	INIT_UINT(prWifiVar->u2TxFragSplitSize, "TxFragSplitSize", 0);
+	INIT_UINT(prWifiVar->ucTxMlrRateRcpiThr, "TxMlrRateRcpiThr", 40);
+	INIT_UINT(prWifiVar->fgEnTxFragDebug,
+		"EnTxFragDebug", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgEnTxFragTxDone,
+		"EnTxFragTxDone", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucErrPos, "ErrPos", 0);
 #endif
 
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
-	prWifiVar->u4TxDataDelayTimeout = wlanCfgGetUint32(prAdapter,
-			"TxDataDelayTimeout", 2);
-	prWifiVar->u4TxDataDelayCnt = wlanCfgGetUint32(prAdapter,
-			"TxDataDelayCnt", 1);
+	INIT_UINT(prWifiVar->u4TxDataDelayTimeout, "TxDataDelayTimeout", 2);
+	INIT_UINT(prWifiVar->u4TxDataDelayCnt, "TxDataDelayCnt", 1);
 #endif /* CFG_SUPPORT_TX_DATA_DELAY == 1 */
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	prWifiVar->i4ThrmCtrlTemp = wlanCfgGetInt32(
-		prAdapter, "ThrmCtrlTemp", THRM_PROT_DUTY_CTRL_TEMP);
-	prWifiVar->i4ThrmRadioOffTemp = wlanCfgGetInt32(
-		prAdapter, "ThrmRadioOffTemp", THRM_PROT_RADIO_OFF_TEMP);
-	prWifiVar->aucThrmLvTxDuty[0] = (uint8_t) wlanCfgGetInt32(
-		prAdapter, "ThrmLv0TxDuty", THRM_PROT_DEFAULT_LV0_DUTY);
-	prWifiVar->aucThrmLvTxDuty[1] = (uint8_t) wlanCfgGetInt32(
-		prAdapter, "ThrmLv1TxDuty", THRM_PROT_DEFAULT_LV1_DUTY);
-	prWifiVar->aucThrmLvTxDuty[2] = (uint8_t) wlanCfgGetInt32(
-		prAdapter, "ThrmLv2TxDuty", THRM_PROT_DEFAULT_LV2_DUTY);
-	prWifiVar->aucThrmLvTxDuty[3] = (uint8_t) wlanCfgGetInt32(
-		prAdapter, "ThrmLv3TxDuty", THRM_PROT_DEFAULT_LV3_DUTY);
-	prWifiVar->aucThrmLvTxDuty[4] = (uint8_t) wlanCfgGetInt32(
-		prAdapter, "ThrmLv4TxDuty", THRM_PROT_DEFAULT_LV4_DUTY);
-	prWifiVar->aucThrmLvTxDuty[5] = (uint8_t) wlanCfgGetInt32(
-		prAdapter, "ThrmLv5TxDuty", THRM_PROT_DEFAULT_LV5_DUTY);
+	INIT_INT(prWifiVar->i4ThrmCtrlTemp,
+		"ThrmCtrlTemp", THRM_PROT_DUTY_CTRL_TEMP);
+	INIT_INT(prWifiVar->i4ThrmRadioOffTemp,
+		"ThrmRadioOffTemp", THRM_PROT_RADIO_OFF_TEMP);
+	INIT_UINT(prWifiVar->aucThrmLvTxDuty[0],
+		"ThrmLv0TxDuty", THRM_PROT_DEFAULT_LV0_DUTY);
+	INIT_UINT(prWifiVar->aucThrmLvTxDuty[1],
+		"ThrmLv1TxDuty", THRM_PROT_DEFAULT_LV1_DUTY);
+	INIT_UINT(prWifiVar->aucThrmLvTxDuty[2],
+		"ThrmLv2TxDuty", THRM_PROT_DEFAULT_LV2_DUTY);
+	INIT_UINT(prWifiVar->aucThrmLvTxDuty[3],
+		"ThrmLv3TxDuty", THRM_PROT_DEFAULT_LV3_DUTY);
+	INIT_UINT(prWifiVar->aucThrmLvTxDuty[4],
+		"ThrmLv4TxDuty", THRM_PROT_DEFAULT_LV4_DUTY);
+	INIT_UINT(prWifiVar->aucThrmLvTxDuty[5],
+		"ThrmLv5TxDuty", THRM_PROT_DEFAULT_LV5_DUTY);
 #endif
 #if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
-	prWifiVar->fgFwIdxLogTrans = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "FwIdxLogTrans",
+	INIT_UINT(prWifiVar->fgFwIdxLogTrans, "FwIdxLogTrans",
 			FEATURE_DISABLED);
 #endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
 
 #if CFG_SUPPORT_PCIE_ASPM
-	prWifiVar->fgPcieEnableL1ss = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "PcieEnableL1ss", 1);
+	INIT_UINT(prWifiVar->fgPcieEnableL1ss, "PcieEnableL1ss", 1);
 #endif
 
 }

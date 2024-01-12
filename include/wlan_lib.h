@@ -2007,6 +2007,7 @@ void *wlanGetNetInterfaceByBssIdx(struct GLUE_INFO *prGlueInfo,
 /* for windows as windows glue cannot see through P_ADAPTER_T */
 
 void wlanInitFeatureOption(struct ADAPTER *prAdapter);
+void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey);
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter);
 

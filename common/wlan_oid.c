@@ -7951,13 +7951,15 @@ wlanoidSetKeyCfg(struct ADAPTER *prAdapter,
 	prKeyCfgInfo = (struct PARAM_CUSTOM_KEY_CFG_STRUCT *)
 		       pvSetBuffer;
 
-	if (kalMemCmp(prKeyCfgInfo->aucKey, "reload", 6) == 0)
+	if (kalMemCmp(prKeyCfgInfo->aucKey, "reload", 6) == 0) {
 		wlanGetConfig(prAdapter); /* Reload config file */
-	else
+		wlanInitFeatureOption(prAdapter);
+	} else {
 		wlanCfgSet(prAdapter, prKeyCfgInfo->aucKey,
 			   prKeyCfgInfo->aucValue, prKeyCfgInfo->u4Flag);
+		wlanInitFeatureOptionImpl(prAdapter, prKeyCfgInfo->aucKey);
+	}
 
-	wlanInitFeatureOption(prAdapter);
 
 	DBGLOG(REQ, TRACE,
 		"StaVHT [%u], ApVHT [%u], GoVHT [%u], GcVHT [%u]\n",

@@ -109,6 +109,9 @@
  *                                 M A C R O S
  *******************************************************************************
  */
+
+#define TYPEOF(__F)
+
 uint32_t __KAL_INLINE__ kalGetFwVerOffsetAddr(void)
 {
 	DBGLOG(SW4, WARN, "NO firmware version build.\n");

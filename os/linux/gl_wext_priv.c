@@ -14262,7 +14262,7 @@ int priv_driver_set_ba_size(struct net_device *prNetDev, char *pcCommand,
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint32_t u4Ret, u4Parse = 0;
-	uint16_t u2HeBaSize;
+	uint16_t u2BaSize;
 	/*UINT_8 ucBssIndex;*/
 	/*P_BSS_INFO_T prBssInfo;*/
 
@@ -14283,14 +14283,21 @@ int priv_driver_set_ba_size(struct net_device *prNetDev, char *pcCommand,
 			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
 			       u4Ret);
 
-		u2HeBaSize = (uint16_t) u4Parse;
+		u2BaSize = (uint16_t) u4Parse;
 
-		prGlueInfo->prAdapter->rWifiVar.u2TxHeBaSize = u2HeBaSize;
-		prGlueInfo->prAdapter->rWifiVar.u2RxHeBaSize = u2HeBaSize;
-
+		prGlueInfo->prAdapter->rWifiVar.u2TxHeBaSize =
+			u2BaSize > WLAN_HE_MAX_BA_SIZE ?
+			WLAN_HE_MAX_BA_SIZE : u2BaSize;
+		prGlueInfo->prAdapter->rWifiVar.u2RxHeBaSize =
+			u2BaSize > WLAN_HE_MAX_BA_SIZE ?
+			WLAN_HE_MAX_BA_SIZE : u2BaSize;
 #if (CFG_SUPPORT_802_11BE == 1)
-		prGlueInfo->prAdapter->rWifiVar.u2TxEhtBaSize = u2HeBaSize;
-		prGlueInfo->prAdapter->rWifiVar.u2RxEhtBaSize = u2HeBaSize;
+		prGlueInfo->prAdapter->rWifiVar.u2TxEhtBaSize =
+			u2BaSize > WLAN_EHT_MAX_BA_SIZE ?
+			WLAN_EHT_MAX_BA_SIZE : u2BaSize;
+		prGlueInfo->prAdapter->rWifiVar.u2RxEhtBaSize =
+			u2BaSize > WLAN_EHT_MAX_BA_SIZE ?
+			WLAN_EHT_MAX_BA_SIZE : u2BaSize;
 #endif
 	} else {
 		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver SET_BA_SIZE\n");
