@@ -850,8 +850,7 @@ static int32_t scanCalculateScoreByCu(struct ADAPTER *prAdapter,
 	uint32_t slot = 0, idle;
 	uint8_t i;
 
-	if (eRoamReason == ROAMING_REASON_BEACON_TIMEOUT ||
-	    eRoamReason == ROAMING_REASON_BEACON_TIMEOUT_TX_ERR || !prBssDesc ||
+	if (eRoamReason == ROAMING_REASON_BEACON_TIMEOUT || !prBssDesc ||
 	    (prBssDesc->prBlack && prBssDesc->prBlack->fgDeauthLastTime))
 		return -1;
 
