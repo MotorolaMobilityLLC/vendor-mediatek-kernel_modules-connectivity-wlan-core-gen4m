@@ -102,11 +102,13 @@ void asicConnac2xCapInit(
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo = NULL;
 
 	ASSERT(prAdapter);
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 
 	prChipInfo->u2HifTxdSize = 0;
 	prChipInfo->u2TxInitCmdPort = 0;
@@ -179,6 +181,9 @@ void asicConnac2xCapInit(
 		prChipInfo->u4ExtraTxByteCount =
 				EXTRA_TXD_SIZE_FOR_TX_BYTE_COUNT;
 		prChipInfo->u4HifDmaShdlBaseAddr = USB_HIF_DMASHDL_BASE;
+		if (prBusInfo->DmaShdlInit)
+			prBusInfo->DmaShdlInit(prAdapter);
+
 #if (CFG_ENABLE_FW_DOWNLOAD == 1)
 		prChipInfo->asicEnableFWDownload = asicConnac2xEnableUsbFWDL;
 #endif /* CFG_ENABLE_FW_DOWNLOAD == 1 */
@@ -1070,7 +1075,7 @@ void asicConnac2xWfdmaInitForUSB(
 #endif
 	prChipInfo->is_support_dma_shdl = wlanCfgGetUint32(prAdapter,
 				    "DmaShdlEnable",
-				    FEATURE_DISABLED);
+				    FEATURE_ENABLED);
 	if (!prChipInfo->is_support_dma_shdl) {
 		/*
 		 *	To disable 0x7C0252B0[6] DMASHDL
