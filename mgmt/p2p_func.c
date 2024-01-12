@@ -252,6 +252,13 @@ void p2pFuncRequestScan(struct ADAPTER *prAdapter,
 				for (u4Idx = 0;
 					u4Idx < prScanReqInfo->ucNumChannelList;
 					u4Idx++) {
+#if (CFG_SUPPORT_WIFI_6G == 1)
+					/* Only scan 6G PSC channel */
+					if (prDomainInfo->eBand == BAND_6G &&
+						((prDomainInfo->
+						ucChannelNum - 5) % 16) != 0)
+						continue;
+#endif
 					prScanReqV2->arChnlInfoList
 						[u4Idx].ucChannelNum =
 						prDomainInfo->ucChannelNum;
