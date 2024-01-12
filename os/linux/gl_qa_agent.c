@@ -37,6 +37,10 @@
  */
 
 struct PARAM_RX_STAT g_HqaRxStat;
+#if (CFG_SUPPORT_CONNAC3X == 1)
+struct TESTMODE_CAP g_HqaCap;
+#endif
+
 #if (CFG_SUPPORT_CONNAC3X == 0)
 uint32_t u4RxStatSeqNum;
 #else

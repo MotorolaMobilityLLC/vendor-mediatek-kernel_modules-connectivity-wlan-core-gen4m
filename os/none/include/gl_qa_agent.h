@@ -336,8 +336,25 @@ struct PARAM_RX_STAT {
 	struct TESTMODE_RX_STAT_USER rInfoUser[UNI_TM_MAX_USER_NUM];
 	struct TESTMODE_RX_STAT_USER_EXT1 rInfoUserExt1[UNI_TM_MAX_USER_NUM];
 };
+
+struct TESTMODE_CAP {
+	uint8_t version;
+	uint8_t support_mimo;
+	uint8_t support_dbdc;
+	uint8_t support_emlsr;
+	uint8_t adie_num;
+	uint8_t band_num;
+	uint8_t phy_num;
+	uint8_t mimo_band0_supported_band;
+	uint8_t dbdc_band0_supported_band;
+	uint8_t dbdc_band1_supported_band;
+	uint8_t reserved[23];
+};
+
+extern struct TESTMODE_CAP g_HqaCap;
 #endif
 extern struct PARAM_RX_STAT g_HqaRxStat;
+
 #endif
 
 struct HQA_CMD_FRAME {
