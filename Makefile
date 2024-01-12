@@ -342,6 +342,12 @@ ifeq ($(CONFIG_MTK_COMBO_WIFI),y)
     ccflags-y += -DCFG_WPS_DISCONNECT=1
 endif
 
+ifeq ($(MTK_SISO_SUPPORT),yes)
+    ccflags-y += -DCFG_MTK_SISO_SUPPORT=1
+else
+    ccflags-y += -DCFG_MTK_SISO_SUPPORT=0
+endif
+
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
     ccflags-y += -D_HIF_SDIO=1
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
