@@ -1118,6 +1118,11 @@ enum NIC_CAPABILITY_V2_TAG {
 #if CFG_SUPPORT_MLR
 	TAG_CAP_MLR_CAP = 0x20,
 #endif
+#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_QA_TOOL == 1)
+	TAG_CAP_RF_TEST_CAP = 0x21,
+#endif
+#endif
 	TAG_CAP_TOTAL
 };
 
@@ -4318,6 +4323,13 @@ uint32_t nicCfgChipCapFastPath(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_MLR
 uint32_t nicCfgChipCapMlr(struct ADAPTER *prAdapter,
 			       uint8_t *pucEventBuf);
+#endif
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_QA_TOOL == 1)
+uint32_t nicCmdEventTestmodeCap(struct ADAPTER
+	  *prAdapter, uint8_t *pucEventBuf);
+#endif
 #endif
 
 #if (CFG_SUPPORT_WIFI_6G == 1)

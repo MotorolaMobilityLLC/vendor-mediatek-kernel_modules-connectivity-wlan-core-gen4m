@@ -3723,7 +3723,7 @@ struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL {
 	uint16_t u2Length;
 	uint8_t u1DbdcIdx;
 	uint8_t aucReserved[3];
-}__KAL_ATTRIB_PACKED__;
+} __KAL_ATTRIB_PACKED__;
 /** @} */
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))

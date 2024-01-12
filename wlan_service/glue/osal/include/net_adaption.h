@@ -117,6 +117,8 @@
 #define TEST_RXV_SIZE	9
 #define TEST_ANT_NUM	4
 #define TEST_USER_NUM	16
+#define TEST_PHY_SHIFT	0
+#define TEST_ADIE_SHIFT	8
 
 /* MAC address length */
 #define SERV_MAC_ADDR_LEN	6
@@ -903,7 +905,7 @@ struct GNU_PACKED hqa_comm_rx_stat {
 /* VER 0x0004: Add DBDC/MIMO switch support or not  */
 
 
-#define GET_CAPABILITY_VER		0x0004
+#define GET_CAPABILITY_VER		0x0005
 #define GET_CAPABILITY_TAG_NUM	2
 
 /* phy capability */
@@ -949,7 +951,11 @@ struct test_capability_ph_cap {
 	/* BIT16: Band3 2.4G, BIT17: Band3 5G, BIT18: Band3 6G */
 	u_int32 channel_band_dbdc_ext;	/* CFG_SUPPORT_CONNAC3X */
 
-	u_int32 reserved[8];
+	/* BIT[7:0]: Support phy quantities */
+	/* BIT[15:8]: Support Adie quantities */
+	u_int32 phy_adie_quantities; /* CFG_SUPPORT_CONNAC3X */
+
+	u_int32 reserved[7];
 };
 
 struct test_capability_ext_cap {
@@ -964,6 +970,7 @@ struct test_capability_ext_cap {
 	/* BIT2: Little core support */
 	/* BIT3: XTAL trim support */
 	/* BIT4: DBDC/MIMO switch support */
+	/* BIT5: eMLSR support */
 	u_int32 feature1;
 	u_int32 reserved[15];
 };

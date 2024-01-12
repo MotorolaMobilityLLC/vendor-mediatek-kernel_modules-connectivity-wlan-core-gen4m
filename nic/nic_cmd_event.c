@@ -114,6 +114,12 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_MLR_CAP,
 				nicCfgChipCapMlr),
 #endif
+#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_QA_TOOL == 1)
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_RF_TEST_CAP,
+				nicCmdEventTestmodeCap),
+#endif
+#endif
 };
 
 /*******************************************************************************
@@ -2908,6 +2914,16 @@ uint32_t nicCfgChipCapMlr(struct ADAPTER *prAdapter,
 }
 #endif
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_QA_TOOL == 1)
+uint32_t nicCmdEventTestmodeCap(struct ADAPTER
+	  *prAdapter, uint8_t *pucEventBuf)
+{
+	memcpy((uint8_t *)&g_HqaCap, pucEventBuf, sizeof(struct TESTMODE_CAP));
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+#endif
 uint32_t nicCmdEventHostSuspendInfo(struct ADAPTER *prAdapter,
 					uint8_t *pucEventBuf)
 {
