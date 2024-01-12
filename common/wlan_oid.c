@@ -432,6 +432,101 @@ wlanoidQueryBssid(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief This routine is called to query the bss idx
+ *        with specific BSSID in the same MLD.
+ *
+ * \param[in] prAdapter Pointer to the Adapter structure.
+ * \param[out] pvQueryBuffer A pointer to the buffer that holds the result of
+ *                           the query.
+ * \param[in] u4QueryBufferLen The length of the query buffer.
+ * \param[out] pu4QueryInfoLen If the call is successful, returns the number of
+ *                             bytes written into the query buffer. If the call
+ *                             failed due to invalid length of the query buffer,
+ *                             returns the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_ADAPTER_NOT_READY
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidQueryLinkBssInfo(struct ADAPTER *prAdapter,
+		  void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+		  uint32_t *pu4QueryInfoLen)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint8_t ucBssIndex = 0;
+	struct PARAM_LINK_BSS_INFO *prParamLinkBss;
+	struct BSS_INFO *prBssInfo;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	struct BSS_INFO *prLinkBss;
+	bool fgFindMldBssId = FALSE;
+#endif
+	if (!prAdapter || !pu4QueryInfoLen || !pvQueryBuffer)
+		return WLAN_STATUS_INVALID_DATA;
+
+	if (u4QueryBufferLen < sizeof(struct PARAM_LINK_BSS_INFO)) {
+		*pu4QueryInfoLen = sizeof(struct PARAM_LINK_BSS_INFO);
+		return WLAN_STATUS_BUFFER_TOO_SHORT;
+	} else if (u4QueryBufferLen > sizeof(struct PARAM_LINK_BSS_INFO))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	prParamLinkBss = (struct PARAM_LINK_BSS_INFO *)pvQueryBuffer;
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(REQ, WARN, "invalid bss info:%u", ucBssIndex);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo, ucBssIndex) !=
+		MEDIA_STATE_CONNECTED) {
+		DBGLOG(REQ, WARN, "not yet connected\n");
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	if (prMldBssInfo) {
+		LINK_FOR_EACH_ENTRY(prLinkBss, &prMldBssInfo->rBssList,
+			rLinkEntryMld, struct BSS_INFO) {
+			if (EQUAL_MAC_ADDR(prLinkBss->aucBSSID,
+				prParamLinkBss->aucMacAddr)) {
+				fgFindMldBssId = TRUE;
+				prParamLinkBss->ucBssIndex =
+					prLinkBss->ucBssIndex;
+				break;
+			}
+		}
+		if (!fgFindMldBssId)
+			rStatus = WLAN_STATUS_FAILURE;
+	} else
+#endif
+	{
+		/* 1. check input MAC address */
+		/* On Android O, this might be wlan0 address */
+		if (UNEQUAL_MAC_ADDR(prBssInfo->aucBSSID,
+			prParamLinkBss->aucMacAddr)) {
+			/* wrong MAC address */
+			DBGLOG(REQ, WARN,
+			       "incorrect BSSID: [" MACSTR
+			       "] currently connected BSSID["
+			       MACSTR "]\n",
+			       MAC2STR(prParamLinkBss->aucMacAddr),
+			       MAC2STR(prBssInfo->aucBSSID));
+			rStatus = WLAN_STATUS_FAILURE;
+		}
+	}
+
+	DBGLOG(REQ, TRACE, "bssidx:%u mac["MACSTR"]",
+		prParamLinkBss->ucBssIndex,
+		MAC2STR(prParamLinkBss->aucMacAddr));
+	*pu4QueryInfoLen = sizeof(struct PARAM_LINK_BSS_INFO);
+	return rStatus;
+} /* wlanoidQueryBssid */
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This routine is called to query the list of all BSSIDs detected by
  *        the driver.
  *
