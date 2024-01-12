@@ -931,7 +931,7 @@ void asicConnac2xProcessSoftwareInterrupt(
 		kalDevRegWrite(prGlueInfo,
 			CONNAC2X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase),
 			u4Status);
-		DBGLOG(HAL, ERROR, "undefined SER status[0x%x].\n", u4Status);
+		DBGLOG(HAL, TRACE, "undefined SER status[0x%x].\n", u4Status);
 	}
 }
 
