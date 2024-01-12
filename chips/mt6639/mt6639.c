@@ -268,6 +268,8 @@ struct BUS_INFO mt6639_bus_info = {
 	.disableInterrupt = asicConnac3xDisablePlatformIRQ,
 #if defined(_HIF_PCIE)
 	.initPcieInt = mt6639InitPcieInt,
+	.pdmaStop = asicConnac3xWfdmaStop,
+	.pdmaPollingIdle = asicConnac3xWfdmaPollingAllIdle,
 #endif
 	.processTxInterrupt = mt6639ProcessTxInterrupt,
 	.processRxInterrupt = mt6639ProcessRxInterrupt,

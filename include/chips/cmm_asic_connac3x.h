@@ -1016,6 +1016,8 @@ uint32_t asicConnac3xWfdmaIntRstDrxPtrAddrGet(
 uint32_t asicConnac3xWfdmaHifRstAddrGet(
 	struct GLUE_INFO *prGlueInfo,
 	u_int8_t ucDmaIdx);
+void asicConnac3xWfdmaStop(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
+u_int8_t asicConnac3xWfdmaPollingAllIdle(struct GLUE_INFO *prGlueInfo);
 uint8_t asicConnac3xWfdmaWaitIdle(
 	struct GLUE_INFO *prGlueInfo,
 	uint8_t index,
