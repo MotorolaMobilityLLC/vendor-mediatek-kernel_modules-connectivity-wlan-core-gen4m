@@ -2901,11 +2901,12 @@ struct UNI_CMD_BF_PROFILE_DATA_WRITE {
 struct UNI_CMD_BF_TX_APPLY {
 	uint16_t u2Tag;
 	uint16_t u2Length;
-	uint8_t ucWlanId;
+	uint16_t ucWlanId;
 	uint8_t fgETxBf;
 	uint8_t fgITxBf;
 	uint8_t fgMuTxBf;
-	uint8_t ucReserved[3];
+	uint8_t fgPhaseCali;
+	uint8_t ucReserved[2];
 };
 
 struct UNI_CMD_BF_PFMU_MEM_ALLOC {

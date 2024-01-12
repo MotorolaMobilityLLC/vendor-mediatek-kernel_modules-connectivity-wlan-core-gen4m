@@ -295,8 +295,8 @@ int32_t TxBfSounding(struct net_device *prNetDev,
 		    );
 int32_t TxBfSoundingStop(struct net_device *prNetDev);
 int32_t TxBfTxApply(struct net_device *prNetDev,
-		    uint8_t ucWlanId, uint8_t fgETxBf, uint8_t fgITxBf,
-		    uint8_t fgMuTxBf);
+		    uint16_t ucWlanId, uint8_t fgETxBf, uint8_t fgITxBf,
+		    uint8_t fgMuTxBf, uint8_t fgPhaseCali);
 
 int32_t TxBfManualAssoc(struct net_device *prNetDev,
 			uint8_t aucMac[MAC_ADDR_LEN],
