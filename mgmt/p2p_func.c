@@ -4832,10 +4832,12 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 				}
 				break;
 			case ELEM_ID_VHT_CAP:
+				DBGLOG(P2P, TRACE, "VHT CAP IE\n");
 				prP2pBssInfo->ucPhyTypeSet |=
 						PHY_TYPE_SET_802_11AC;
 				break;
 			case ELEM_ID_VHT_OP:
+				DBGLOG(P2P, TRACE, "VHT OP IE\n");
 				prP2pBssInfo->ucPhyTypeSet |=
 						PHY_TYPE_SET_802_11AC;
 				break;
@@ -4853,13 +4855,17 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 					= IE_SIZE(pucIE);
 				break;
 			case ELEM_ID_RESERVED:
+				DBGLOG(P2P, TRACE, "IE_ID_EXT=%d\n",
+					IE_ID_EXT(pucIE));
 #if (CFG_SUPPORT_802_11AX == 1)
-				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP)
+				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP ||
+					IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP)
 					prP2pBssInfo->ucPhyTypeSet |=
 						PHY_TYPE_SET_802_11AX;
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
-				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS)
+				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS ||
+					IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_OP)
 					prP2pBssInfo->ucPhyTypeSet |=
 						PHY_TYPE_SET_802_11BE;
 #endif

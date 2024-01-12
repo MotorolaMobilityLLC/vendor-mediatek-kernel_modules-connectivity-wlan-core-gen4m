@@ -1272,7 +1272,8 @@ uint32_t bssUpdateBeaconContentEx(IN struct ADAPTER *prAdapter,
 	if (!prMsduInfo)
 		return WLAN_STATUS_SUCCESS;
 
-	DBGLOG(P2P, TRACE, "Dump beacon content to FW, method:%d\n", eMethod);
+	DBGLOG(P2P, TRACE, "Dump beacon content %d to FW, method:%d\n",
+		ucBssIndex, eMethod);
 	if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
 		dumpMemory8((uint8_t *) prMsduInfo->prPacket,
 			(uint32_t) prMsduInfo->u2FrameLength);
