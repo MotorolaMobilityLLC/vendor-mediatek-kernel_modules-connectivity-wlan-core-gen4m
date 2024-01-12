@@ -90,6 +90,11 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 			prnanBssInfo->ucPhyTypeSet =
 				prWifiVar->ucAvailablePhyTypeSet &
 				PHY_TYPE_SET_802_11BGN;
+#if (CFG_SUPPORT_802_11AX == 1)
+			prnanBssInfo->ucPhyTypeSet =
+				prWifiVar->ucAvailablePhyTypeSet &
+				PHY_TYPE_SET_802_11ABGNACAX;
+#endif
 		}
 
 		prnanBssInfo->ucNonHTBasicPhyType = ucLegacyPhyTp;
