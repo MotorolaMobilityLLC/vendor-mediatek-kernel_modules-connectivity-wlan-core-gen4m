@@ -6732,34 +6732,38 @@ void nicEventTxMcsInfo(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_WIFI_GET_MCS_INFO */
 
+#if CFG_SUPPORT_RTT
 void nicCmdEventRttCapabilities(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
-	struct RTT_CAPABILITIES *capa =
+	struct EVENT_RTT_CAPABILITIES *prRttCapa;
+	struct RTT_CAPABILITIES *prCapaBuf =
 		 (struct RTT_CAPABILITIES *)prCmdInfo->pvInformationBuffer;
 
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
 
 	if (prCmdInfo->fgIsOid) {
+		prRttCapa = (struct EVENT_RTT_CAPABILITIES *) pucEventBuf;
 		u4QueryInfoLen = sizeof(struct RTT_CAPABILITIES);
-		kalMemCopy(prCmdInfo->pvInformationBuffer,
-			pucEventBuf, u4QueryInfoLen);
+
+		kalMemCopy(prCapaBuf, &prRttCapa->rCapabilities,
+			u4QueryInfoLen);
 
 		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 	DBGLOG(RTT, INFO,
 			"one_sided=%hhu, ftm=%hhu, lci=%hhu, lcr=%hhu, preamble=%hhu, bw=%hhu, responder=%hhu, ver=%hhu",
-			capa->fgRttOneSidedSupported,
-			capa->fgRttFtmSupported,
-			capa->fgLciSupported,
-			capa->fgLcrSupported,
-			capa->ucPreambleSupport,
-			capa->ucBwSupport,
-			capa->fgResponderSupported,
-			capa->fgMcVersion);
+			prCapaBuf->fgRttOneSidedSupported,
+			prCapaBuf->fgRttFtmSupported,
+			prCapaBuf->fgLciSupported,
+			prCapaBuf->fgLcrSupported,
+			prCapaBuf->ucPreambleSupport,
+			prCapaBuf->ucBwSupport,
+			prCapaBuf->fgResponderSupported,
+			prCapaBuf->fgMcVersion);
 }
 
 void nicEventRttDone(struct ADAPTER *prAdapter,
@@ -6775,6 +6779,8 @@ void nicEventRttResult(struct ADAPTER *prAdapter,
 	rttEventResult(prAdapter,
 		 (struct EVENT_RTT_RESULT *) (prEvent->aucBuffer));
 }
+#endif /* CFG_SUPPORT_RTT */
+
 #if CFG_SUPPORT_QA_TOOL
 #if (CONFIG_WLAN_SERVICE == 1)
 void nicCmdEventListmode(struct ADAPTER

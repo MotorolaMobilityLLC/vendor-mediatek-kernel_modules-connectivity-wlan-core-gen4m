@@ -6129,6 +6129,8 @@ int testmode_set_ax_blacklist(struct wiphy *wiphy,
 	}
 	return rStatus;
 }
+
+#if CFG_SUPPORT_RTT
 int testmode_rtt_test(struct wiphy *wiphy,
 		struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)
 {
@@ -6212,6 +6214,7 @@ int testmode_rtt_test(struct wiphy *wiphy,
 	}
 	return rStatus;
 }
+#endif
 
 int testmode_set_report_vendor_specified(struct wiphy *wiphy,
 		struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)

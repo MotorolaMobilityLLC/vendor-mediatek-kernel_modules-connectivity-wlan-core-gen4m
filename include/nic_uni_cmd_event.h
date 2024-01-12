@@ -241,6 +241,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_MLO			= 0x59, /* MLO */
 	UNI_CMD_ID_ACL_POLICY		= 0x5A, /* ACL */
 	UNI_CMD_ID_SEND_VOLT_INFO	= 0x5B, /* VOLT_INFO */
+	UNI_CMD_ID_RTT			= 0x5D, /* RTT */
 	UNI_CMD_ID_PKT_OFLD		= 0x60, /* Packet Offload */
 	UNI_CMD_ID_KEEP_ALIVE		= 0x61, /* Keep alive */
 	UNI_CMD_ID_LOW_LATENCY_MODE     = 0x62, /* Low Latency Mode */
@@ -4223,6 +4224,46 @@ struct UNI_CMD_EFUSE_BUFFER_MODE_READ {
 	uint32_t u2Count;            /* Read Total Counts */
 }__KAL_ATTRIB_PACKED__;
 
+#if CFG_SUPPORT_RTT
+/* RTT command (0x5D) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_RTT {
+	/* fixed field */
+	uint8_t ucReserved[4];
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	*
+	*   TAG                          |  ID  | structure
+	*   -----------------------------|------|--------------
+	*   UNI_CMD_RTT_TAG_GET_CAPA     | 0x00 | UNI_CMD_RTT_GET_CAPA_T
+	*   UNI_CMD_RTT_TAG_RANGE_REQ    | 0x01 | UNI_CMD_RTT_RANGE_REQ_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+/* RTT command TLV List */
+enum ENUM_UNI_CMD_RTT_TAG {
+	UNI_CMD_RTT_TAG_GET_CAPA = 0,
+	UNI_CMD_RTT_TAG_RANGE_REQ = 1,
+	UNI_CMD_RTT_TAG_NUM
+};
+/* Get RTT Capabilities (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_RTT_GET_CAPA_T {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+} __KAL_ATTRIB_PACKED__;
+/* Range request (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_RTT_RANGE_REQ_T {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucSeqNum;
+	uint8_t fgEnable;              /* request or cancel */
+	uint8_t ucConfigNum;
+	uint8_t ucPaddings[5];
+	struct RTT_CONFIG arRttConfigs[CFG_RTT_MAX_CANDIDATES];
+} __KAL_ATTRIB_PACKED__;
+#endif /* CFG_SUPPORT_RTT */
+
 #if CFG_SUPPORT_NAN
 /* NAN set command (0x56) */
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4751,6 +4792,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_PP		     = 0x5A,
 	UNI_EVENT_ID_WOW	     = 0x5B,
 	UNI_EVENT_ID_GET_VOLT_INFO   = 0x5C,
+	UNI_EVENT_ID_RTT	     = 0x5D,
 	UNI_EVENT_ID_PKT_OFLD	     = 0x60,
 	UNI_EVENT_ID_DELAY_BAR       = 0x61,
 	UNI_EVENT_ID_FW_DROP_SSN     = 0x62,
@@ -6844,6 +6886,76 @@ struct UNI_EVENT_EFUSE_ACCESS {
 	uint8_t aucData[32];
 } __KAL_ATTRIB_PACKED__;
 
+#if CFG_SUPPORT_RTT
+/* RTT event (0x5D) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_RTT {
+	/*fixed field*/
+	uint8_t ucReserved[4];
+	/* tlv */
+	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	*
+	*                TAG               | ID   | structure
+	*   -------------------------------| -----| -------------
+	*   UNI_EVENT_RTT_TAG_RTT_CAPA     | 0x00 | UNI_EVENT_RTT_CAPA_T
+	*   UNI_EVENT_RTT_TAG_RTT_RESULT   | 0x01 | UNI_EVENT_RTT_RESULT_T
+	*   UNI_EVENT_RTT_TAG_RTT_DONE     | 0x02 | UNI_EVENT_RTT_DONE_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+/* RTT command TLV List */
+enum ENUM_UNI_EVENT_RTT_TAG {
+	UNI_EVENT_RTT_TAG_RTT_CAPA = 0,
+	UNI_EVENT_RTT_TAG_RTT_RESULT = 1,
+	UNI_EVENT_RTT_TAG_RTT_DONE = 2,
+	UNI_EVENT_RTT_TAG_NUM
+};
+/* RTT capabilities (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_RTT_CAPA_T {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	struct RTT_CAPABILITIES rCapabilities;
+} __KAL_ATTRIB_PACKED__;
+/* RTT result (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_RTT_RESULT_T {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t aucMacAddr[MAC_ADDR_LEN];
+	uint8_t ucNumPerBurstPeer;
+	uint8_t ucRetryAfterDuration;
+	uint32_t u4BurstNum;
+	uint32_t u4MeasurementNumber;
+	uint32_t u4SuccessNumber;
+	uint32_t eStatus; /* enum ENUM_RTT_STATUS */
+	uint32_t eType; /* enum ENUM_RTT_TYPE */
+	int32_t i4Rssi;
+	int32_t i4RssiSpread;
+	struct WIFI_RATE rTxRate;
+	struct WIFI_RATE rRxRate;
+	int64_t i8Rtt;
+	int64_t i8RttSd;
+	int64_t i8RttSpread;
+	int32_t i4DistanceMM;
+	int32_t i4DistanceSdMM;
+	int32_t i4DistanceSpreadMM;
+	int64_t i8Ts;
+	int32_t i4BurstDuration;
+	int32_t i4NegotiatedBustNum;
+	uint16_t u2IELen;
+	uint8_t aucReserved[2];
+	/* Keep it last */
+	uint8_t aucIE[0];
+} __KAL_ATTRIB_PACKED__;
+/* RTT done (Tag2) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_RTT_DONE_T {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucSeqNum;
+} __KAL_ATTRIB_PACKED__;
+#endif /* CFG_SUPPORT_RTT */
+
 #if CFG_SUPPORT_NAN
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_NAN {
@@ -7718,6 +7830,13 @@ uint32_t nicUniCmdQueryEmlInfo(struct ADAPTER *ad,
 	void *pvQueryBuffer,
 	uint32_t u4QueryBufferLen);
 #endif
+
+#if CFG_SUPPORT_RTT
+uint32_t nicUniCmdRttGetCapabilities(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdRttRangeRequest(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif
 /*******************************************************************************
  *                   Event
  *******************************************************************************
@@ -7825,6 +7944,10 @@ void nicUniCmdEventLpDbgCtrl(struct ADAPTER *prAdapter,
 void nicUniEventEmlInfo(struct ADAPTER *ad,
 	struct CMD_INFO *cmd, uint8_t *event);
 #endif
+#if CFG_SUPPORT_RTT
+void nicUniEventRttCapabilities(struct ADAPTER	*prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+#endif
 /*******************************************************************************
  *                   Unsolicited Event
  *******************************************************************************
@@ -7924,6 +8047,7 @@ void nicUniEventFastPath(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventThermalProtect(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+
 #if (CFG_HW_ERR_REPORT == 1)
 void nicUniEventHwErrReport(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
@@ -7933,6 +8057,10 @@ void nicUniEventFwDropSSN(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 #endif /* CFG_SUPPORT_FW_DROP_SSN */
 
+#if CFG_SUPPORT_RTT
+void nicUniEventRtt(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+#endif
 #if (CFG_CE_ASSERT_DUMP == 1)
 void nicUniEventAssertDump(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt);
 #endif

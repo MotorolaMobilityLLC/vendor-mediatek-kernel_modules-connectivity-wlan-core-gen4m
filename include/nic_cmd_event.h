@@ -3972,11 +3972,12 @@ enum _ENUM_NAN_SUB_EVENT {
 };
 #endif
 
+#if CFG_SUPPORT_RTT
 struct CMD_RTT_REQUEST {
 	uint8_t ucSeqNum;
 	uint8_t fgEnable;              /* request or cancel */
 	uint8_t ucConfigNum;
-	uint8_t ucPadding;
+	uint8_t ucPaddings[5];
 	struct RTT_CONFIG arRttConfigs[CFG_RTT_MAX_CANDIDATES];
 };
 
@@ -3994,6 +3995,7 @@ struct EVENT_RTT_RESULT {
 struct EVENT_RTT_DONE {
 	uint8_t ucSeqNum;
 };
+#endif /* CFG_SUPPORT_RTT */
 
 #if (CFG_COALESCING_INTERRUPT == 1)
 /* parsing IPv4/IPv6 UDP/TCP header */

@@ -10,6 +10,7 @@
 #ifndef _RTT_H
 #define _RTT_H
 
+#if CFG_SUPPORT_RTT
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
  *******************************************************************************
@@ -162,5 +163,5 @@ void rttEventDone(struct ADAPTER *prAdapter,
 
 void rttEventResult(struct ADAPTER *prAdapter,
 		      struct EVENT_RTT_RESULT *prEvent);
-
+#endif /* CFG_SUPPORT_RTT */
 #endif /* _RTT_H */

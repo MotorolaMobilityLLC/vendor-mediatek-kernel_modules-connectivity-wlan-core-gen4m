@@ -955,6 +955,7 @@ int mtk_cfg80211_vendor_enable_roaming(struct wiphy *wiphy,
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if CFG_SUPPORT_RTT
 int mtk_cfg80211_vendor_get_rtt_capabilities(
 	struct wiphy *wiphy, struct wireless_dev *wdev,
 	const void *data, int data_len)
@@ -1251,7 +1252,7 @@ int mtk_cfg80211_vendor_cancel_rtt_config(
 
 	return WLAN_STATUS_SUCCESS;
 }
-
+#endif /* CFG_SUPPORT_RTT */
 
 #if CFG_SUPPORT_LLS
 static void dumpLinkStatsIface(struct STATS_LLS_WIFI_IFACE_STAT *iface)
