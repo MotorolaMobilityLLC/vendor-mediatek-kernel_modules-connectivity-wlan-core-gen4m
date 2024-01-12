@@ -133,7 +133,7 @@ static uint32_t roamingFtActionTxDone(struct ADAPTER *prAdapter,
 			cnmTimerStartTimer(prAdapter,
 			    &prRoam->rTxReqDoneRxRespTimer,
 			    TU_TO_MSEC(
-			    DOT11_AUTHENTICATION_RESPONSE_TIMEOUT_TU));
+			    TX_ACTION_RESPONSE_TIMEOUT_TU));
 		}
 
 		/* if TX was successful, change to next state.
@@ -858,6 +858,7 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 			break;
 
 		case ROAMING_STATE_HANDLE_NEW_CANDIDATE: {
+			prRoam->ucTxActionRetryCount = 0;
 #if CFG_SUPPORT_802_11V_BTM_OFFLOAD
 			if (prBtmParam->fgPendingResponse) {
 				eNextState = ROAMING_STATE_SEND_WNM_RESP;
@@ -966,7 +967,7 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 					cnmTimerStartTimer(prAdapter,
 					   &prRoam->rTxReqDoneRxRespTimer,
 					   TU_TO_MSEC(
-					   TX_AUTHENTICATION_RETRY_TIMEOUT_TU));
+					   TX_ACTION_RETRY_TIMEOUT_TU));
 				} else {
 					prFtParam->eFtDsState =
 						FT_DS_STATE_FAIL;
