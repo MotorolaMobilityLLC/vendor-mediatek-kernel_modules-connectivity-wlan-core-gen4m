@@ -44,7 +44,6 @@ ccflags-y += -Wno-unused-result
 ccflags-y += -Wno-format
 ccflags-y += -Wno-parentheses
 
-ccflags-y += -Wframe-larger-than=2048
 ccflags-y += -Wno-unused-function
 
 ifeq ($(os), none)
@@ -1715,4 +1714,15 @@ MODULE_NAME_RESET = $(MODULE_NAME)_reset
 RESET_OBJS := reset/reset.o
 $(MODULE_NAME_RESET)-objs += $(RESET_OBJS)
 obj-m += $(MODULE_NAME_RESET).o
+endif
+
+#
+# Frame size
+#
+ifeq ($(WMT_SUPPORT), y)
+    ifeq ($(CONFIG_FRAME_WARN),)
+        ccflags-y += -Wframe-larger-than=2048
+    endif
+else
+    ccflags-y += -Wframe-larger-than=2048
 endif
