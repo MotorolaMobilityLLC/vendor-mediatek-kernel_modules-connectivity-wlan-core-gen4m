@@ -1666,13 +1666,24 @@ uint8_t nicGetHe6gS1(uint8_t ucPrimaryChannel,
 			return 175;
 		else if (ucPrimaryChannel >= 193 && ucPrimaryChannel <= 221)
 			return 207;
-	} else if (ucBandwidth == CW_320MHZ) { /* TODO: check spec */
+	} else if (ucBandwidth == CW_320MHZ) { /* TODO: check BW320 spec */
+		if (ucPrimaryChannel >= 1 && ucPrimaryChannel <= 61)
+			return 31;
+		else if (ucPrimaryChannel >= 65 && ucPrimaryChannel <= 125)
+			return 95;
+		else if (ucPrimaryChannel >= 129 && ucPrimaryChannel <= 189)
+			return 159;
+#if 0
+		/* TODO: use BW320-1 only for the time being,
+		 *       BW320-2 may use be applied after newer spec
+		 */
 		if (ucPrimaryChannel >= 33 && ucPrimaryChannel <= 93)
 			return 63;
 		else if (ucPrimaryChannel >= 97 && ucPrimaryChannel <= 157)
 			return 127;
 		else if (ucPrimaryChannel >= 161 && ucPrimaryChannel <= 221)
 			return 191;
+#endif
 	} else {
 
 		return 0;
