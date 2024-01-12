@@ -5379,24 +5379,28 @@ void scanParseEhtOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
 	IN enum ENUM_BAND eHwBand)
 {
 	struct IE_EHT_OP *prEhtOp;
+	struct EHT_OP_INFO *prEhtOpInfo;
 
 	prEhtOp = (struct IE_EHT_OP *) pucIE;
-	prBssDesc->eChannelWidth =
-		ehtRlmGetVhtOpBwByEhtOpBw(prEhtOp->ucEhtOpParams[0]);
-	/* Get CCFS from driver temporarily instead of parsing AP's CCFS */
-	prBssDesc->ucCenterFreqS1 = nicGetS1(eHwBand,
-		prBssDesc->ucChannelNum, prBssDesc->eChannelWidth);
-	prBssDesc->ucCenterFreqS2 = 0;
 
-	DBGLOG(SCN, INFO,
-		"[EHT OP IE] BSSID:" MACSTR
-		" SSID:%s CH: %u, BW: %u S1: %u S2: %u\n",
-		MAC2STR(prBssDesc->aucBSSID),
-		prBssDesc->aucSSID,
-		prBssDesc->ucChannelNum,
-		prBssDesc->eChannelWidth,
-		prBssDesc->ucCenterFreqS1,
-		prBssDesc->ucCenterFreqS2);
+	if (EHT_IS_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams)) {
+
+		prEhtOpInfo = (struct EHT_OP_INFO *) prEhtOp->aucVarInfo;
+		prBssDesc->eChannelWidth =
+			ehtRlmGetVhtOpBwByEhtOpBw(prEhtOpInfo->ucControl);
+		prBssDesc->ucCenterFreqS1 = prEhtOpInfo->ucCCFS0;
+		prBssDesc->ucCenterFreqS2 = prEhtOpInfo->ucCCFS1;
+
+		DBGLOG(SCN, INFO,
+			"[EHT OP IE] BSSID:" MACSTR
+			" SSID:%s CH: %u, BW: %u S1: %u S2: %u\n",
+			MAC2STR(prBssDesc->aucBSSID),
+			prBssDesc->aucSSID,
+			prBssDesc->ucChannelNum,
+			prBssDesc->eChannelWidth,
+			prBssDesc->ucCenterFreqS1,
+			prBssDesc->ucCenterFreqS2);
+	}
 	DBGLOG_MEM8(SCN, INFO, pucIE, IE_SIZE(pucIE));
 }
 #endif
