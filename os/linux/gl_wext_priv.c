@@ -5385,6 +5385,68 @@ int priv_driver_dump_mld_sta(struct net_device *prNetDev,
 
 	return i4BytesWritten;
 }
+int priv_driver_dump_eml(struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	struct PARAM_EML_DEBUG_INFO rQueryEmlInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	uint8_t ucLinkIdx = 0;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo->u4ReadyFlag)
+		return i4BytesWritten;
+
+	kalMemZero(&rQueryEmlInfo, sizeof(rQueryEmlInfo));
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidQueryEmlInfo,
+		&rQueryEmlInfo, sizeof(struct PARAM_EML_DEBUG_INFO),
+		&u4BufLen);
+	if (rStatus == WLAN_STATUS_SUCCESS) {
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%s",
+					     "\n\nEML Info:\n");
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"Transition Timeout(ms)	= %d\n",
+			rQueryEmlInfo.u4TimeoutMs);
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"MLD STAREC Index	= %d\n",
+			rQueryEmlInfo.u2StaRecMldIdx);
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"EMLSR bitmap		= 0x%x\n",
+			rQueryEmlInfo.ucEmlsrBitMap);
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"Current State		= %d\n",
+			rQueryEmlInfo.ucCurrentState);
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"EML Negotiated		= %d\n",
+			rQueryEmlInfo.ucEmlNegotiated);
+		for (ucLinkIdx = 0; ucLinkIdx < MLD_LINK_MAX; ucLinkIdx++) {
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"LinkId to Band[%d/%d]\n",
+				ucLinkIdx,
+				rQueryEmlInfo.auMldLinkIdx[ucLinkIdx]);
+		}
+
+	} else
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%s",
+					     "\n\nNo EML Info:\n");
+	return i4BytesWritten;
+}
+
 #endif
 
 int priv_driver_get_bainfo(struct net_device *prNetDev,

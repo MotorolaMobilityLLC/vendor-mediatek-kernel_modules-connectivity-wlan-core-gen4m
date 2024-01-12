@@ -1582,6 +1582,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = u8_policy,
 		.u4PolicySize = ARRAY_SIZE(u8_policy)
 	},
+	{
+		.pcCmdStr  = CMD_DBG_SHOW_EML,
+		.pfHandler = priv_driver_dump_eml,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = u8_policy,
+		.u4PolicySize = ARRAY_SIZE(u8_policy)
+	},
 #endif
 	{
 		.pcCmdStr  = CMD_SET_USE_CASE,

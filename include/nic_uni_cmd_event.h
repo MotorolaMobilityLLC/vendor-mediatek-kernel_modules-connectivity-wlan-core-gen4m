@@ -2733,6 +2733,7 @@ enum ENUM_UNI_CMD_GET_STATISTICS_TAG {
 	UNI_CMD_GET_STATISTICS_TAG_LINK_QUALITY = 1,
 	UNI_CMD_GET_STATISTICS_TAG_STA = 2,
 	UNI_CMD_GET_STATISTICS_TAG_BUG_REPORT = 3,
+	UNI_CMD_GET_STATISTICS_TAG_EML_STATS = 6,
 	/* Reserved range for compatible with ENUM_STATS_LLS_TLV_TAG_ID */
 	UNI_CMD_GET_STATISTICS_TAG_LINK_LAYER_STATS = 0x80,
 	UNI_CMD_GET_STATISTICS_TAG_PPDU_LATENCY,
@@ -2781,6 +2782,12 @@ struct UNI_CMD_LINK_LAYER_STATS {
 	uint8_t ucArg1;
 	uint8_t ucArg2;
 	uint8_t ucArg3;
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_EML_INFO {
+	uint16_t u2Tag;
+	uint16_t u2Length;
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -5466,6 +5473,7 @@ enum ENUM_UNI_EVENT_STATISTICS_TAG {
 	UNI_EVENT_STATISTICS_TAG_BUG_REPORT = 3,
 	UNI_EVENT_STATISTICS_TAG_TX_STATS = 4,
 	UNI_EVENT_STATISTICS_TAG_ALL_STATS = 5,
+	UNI_EVENT_STATISTICS_TAG_EML_STATS = 6,
 	/* Reserved range for compatible with ENUM_STATS_LLS_TLV_TAG_ID */
 	UNI_EVENT_STATISTICS_TAG_LINK_LAYER_STATS = 0x80,
 	UNI_EVENT_STATISTICS_TAG_PPDU_LATENCY,
@@ -5608,6 +5616,22 @@ struct UNI_EVENT_LINK_STATS {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t  aucBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_EML_INFO {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint32_t u4TimeoutMs;
+	uint16_t u2StaRecMldIdx;
+	uint8_t ucEmlsrBitMap;
+	/* same with ENUM_EML_STATE_T */
+	uint8_t ucCurrentState;
+	/* AP MLD responded the EML notification frame */
+	uint8_t ucEmlNegotiated;
+	uint8_t ucMaxMldLinkNum;
+	/* protocol link index to band index */
+	uint8_t auMldLinkIdx[0];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -7570,6 +7594,12 @@ uint32_t nicUniCmdLpDbgCtrl(struct ADAPTER *ad,
 
 uint32_t nicUniCmdGamingMode(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint32_t nicUniCmdQueryEmlInfo(struct ADAPTER *ad,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen);
+#endif
 /*******************************************************************************
  *                   Event
  *******************************************************************************
@@ -7673,7 +7703,10 @@ void nicUniEventQueryOfldInfo(struct ADAPTER *prAdapter,
 void nicUniCmdEventLpDbgCtrl(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 
-
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+void nicUniEventEmlInfo(struct ADAPTER *ad,
+	struct CMD_INFO *cmd, uint8_t *event);
+#endif
 /*******************************************************************************
  *                   Unsolicited Event
  *******************************************************************************

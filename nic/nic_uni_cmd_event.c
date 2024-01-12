@@ -6109,6 +6109,46 @@ uint32_t nicUniCmdGetLinkStats(struct ADAPTER *ad,
 	return status;
 }
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint32_t nicUniCmdQueryEmlInfo(struct ADAPTER *ad,
+		void *pvQueryBuffer,
+		uint32_t u4QueryBufferLen)
+{
+	struct UNI_CMD_GET_STATISTICS *uni_cmd;
+	struct UNI_CMD_EML_INFO *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_GET_STATISTICS) +
+				sizeof(struct UNI_CMD_EML_INFO);
+	uint32_t status = WLAN_STATUS_SUCCESS;
+
+	uni_cmd = (struct UNI_CMD_GET_STATISTICS *) cnmMemAlloc(ad,
+			RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_GET_STATISTICS ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+	tag = (struct UNI_CMD_EML_INFO *)uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_EML_STATS;
+	tag->u2Length = sizeof(*tag);
+
+	status = wlanSendSetQueryUniCmd(ad,
+					UNI_CMD_ID_GET_STATISTICS,
+					FALSE,
+					TRUE,
+					TRUE,
+					nicUniEventEmlInfo,
+					nicUniCmdTimeoutCommon,
+					max_cmd_len,
+					(void *)uni_cmd,
+					pvQueryBuffer,
+					u4QueryBufferLen);
+
+	cnmMemFree(ad, uni_cmd);
+
+	return status;
+}
+
+#endif
 
 uint32_t nicUniCmdTestmodeCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
@@ -9111,6 +9151,45 @@ void nicUniEventThermalDdieTemp(struct ADAPTER *ad,
 		WLAN_STATUS_SUCCESS);
 }
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+void nicUniEventEmlInfo(struct ADAPTER *ad,
+	struct CMD_INFO *cmd, uint8_t *event)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *)event;
+	struct UNI_EVENT_STATISTICS *evt =
+		(struct UNI_EVENT_STATISTICS *)uni_evt->aucBuffer;
+	struct UNI_EVENT_EML_INFO *tag =
+		(struct UNI_EVENT_EML_INFO *)evt->aucTlvBuffer;
+	struct PARAM_EML_DEBUG_INFO *data;
+	uint8_t ucLinkidx = 0;
+
+	uni_evt = (struct WIFI_UNI_EVENT *) event;
+	if (uni_evt->ucEID != UNI_EVENT_ID_STATISTICS)
+		return;
+
+	if (tag->u2Tag != UNI_EVENT_STATISTICS_TAG_EML_STATS)
+		return;
+
+	if (cmd->pvInformationBuffer) {
+		data = cmd->pvInformationBuffer;
+
+		data->u4TimeoutMs = tag->u4TimeoutMs;
+		data->u2StaRecMldIdx = tag->u2StaRecMldIdx;
+		data->ucEmlsrBitMap = tag->ucEmlsrBitMap;
+		data->ucCurrentState = tag->ucCurrentState;
+		data->ucEmlNegotiated = tag->ucEmlNegotiated;
+
+		for (ucLinkidx = 0;
+				(ucLinkidx < MLD_LINK_MAX &&
+				 ucLinkidx < tag->ucMaxMldLinkNum); ucLinkidx++)
+			data->auMldLinkIdx[ucLinkidx] =
+				tag->auMldLinkIdx[ucLinkidx];
+	}
+
+	kalOidComplete(ad->prGlueInfo, cmd, cmd->u4InformationBufferLength,
+		WLAN_STATUS_SUCCESS);
+}
+#endif
 /*******************************************************************************
  *                   Unsolicited Event
  *******************************************************************************
