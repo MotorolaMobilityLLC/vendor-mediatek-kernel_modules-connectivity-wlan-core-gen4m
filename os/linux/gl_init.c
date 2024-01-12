@@ -5636,7 +5636,7 @@ uint32_t wlanServiceExit(struct GLUE_INFO *prGlueInfo)
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(INIT, WARN, "wlanServiceExit fail err:%d\n", rStatus);
-
+	KAL_ACQUIRE_MUTEX(prGlueInfo->prAdapter, MUTEX_HQA_TEST);
 	if (prGlueInfo->rService.serv_handle) {
 		if (prServiceTest->test_winfo)
 			kalMemFree(prServiceTest->test_winfo,
@@ -5648,10 +5648,10 @@ uint32_t wlanServiceExit(struct GLUE_INFO *prGlueInfo)
 
 		kalMemFree(prGlueInfo->rService.serv_handle,
 		VIR_MEM_TYPE, sizeof(struct service_test));
+		prGlueInfo->rService.serv_handle = NULL;
 	}
-
+	KAL_RELEASE_MUTEX(prGlueInfo->prAdapter, MUTEX_HQA_TEST);
 	prGlueInfo->rService.serv_id = 0;
-
 	return rStatus;
 }
 #endif

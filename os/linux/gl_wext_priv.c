@@ -19142,8 +19142,11 @@ int priv_driver_run_hqa(
 
 		local_hqa.type = 1;
 		local_hqa.hqa_frame_comm.hqa_frame_string = this_char;
+
+		KAL_ACQUIRE_MUTEX(prGlueInfo->prAdapter, MUTEX_HQA_TEST);
 		ret = mt_agent_hqa_cmd_handler(&prGlueInfo->rService,
 		&local_hqa);
+		KAL_RELEASE_MUTEX(prGlueInfo->prAdapter, MUTEX_HQA_TEST);
 	}
 
 	if (ret != WLAN_STATUS_SUCCESS)

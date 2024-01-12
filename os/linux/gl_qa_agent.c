@@ -9461,8 +9461,10 @@ int priv_qa_agent(struct net_device *prNetDev,
 		local_hqa.hqa_frame_comm.hqa_frame_eth =
 		(struct hqa_frame *)HqaCmdFrame;
 
+		KAL_ACQUIRE_MUTEX(prGlueInfo->prAdapter, MUTEX_HQA_TEST);
 		i4Status = mt_agent_hqa_cmd_handler(&prGlueInfo->rService,
 			(struct hqa_frame_ctrl *)&local_hqa);
+		KAL_RELEASE_MUTEX(prGlueInfo->prAdapter, MUTEX_HQA_TEST);
 
 		if (i4Status == WLAN_STATUS_SUCCESS) {
 			/*Response to QA */
