@@ -1198,6 +1198,8 @@ enum ENUM_PARAM_NAN_MODE_T {
 /* Macros for obtaining the Network Type
  * or the Station Role, given the ENUM_STA_TYPE_T
  */
+#define IS_BSS_INFO_IN_AIS(prBssInfo) \
+	(prBssInfo->eNetworkType == NETWORK_TYPE_AIS)
 #define IS_STA_IN_AIS(_prStaRec) \
 	(prAdapter->aprBssInfo[(_prStaRec)->ucBssIndex]->eNetworkType \
 	== NETWORK_TYPE_AIS)
