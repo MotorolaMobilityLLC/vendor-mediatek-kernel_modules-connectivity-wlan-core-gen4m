@@ -6009,6 +6009,7 @@ void rlmDomainTxPwrLimitSendPerRateCmd(
 			prTempCmd->eBand = eBand;
 			prTempCmd->u4CountryCode =
 				rlmDomainGetCountryCode();
+			prTempCmd->eLimitType = prCmd[band_idx]->eLimitType;
 			prTempCmd->bCmdFinished = bCmdFinished;
 			u2ChIdx = i * ucCmdBatchSize;
 			kalMemCopy(
@@ -6227,7 +6228,8 @@ rlmDomainSendTxPwrLimitPerRateCmd_6G(struct ADAPTER *prAdapter,
 void
 rlmDomainSendTxPwrLimitPerRateCmd(struct ADAPTER *prAdapter,
 	uint8_t ucVersion,
-	struct TX_PWR_LIMIT_DATA *pTxPwrLimitData)
+	struct TX_PWR_LIMIT_DATA *pTxPwrLimitData,
+	enum ENUM_TX_POWER_LIMIT_PER_RATE_CMD_FORMAT_T eLimitType)
 {
 	uint8_t band_idx = 0;
 	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE
@@ -6239,6 +6241,9 @@ rlmDomainSendTxPwrLimitPerRateCmd(struct ADAPTER *prAdapter,
 		prTxPwrLimitPerRateCmdSize) !=
 		WLAN_STATUS_SUCCESS)
 		goto error;
+
+	prTxPwrLimitPerRateCmd[KAL_BAND_2GHZ]->eLimitType = eLimitType;
+	prTxPwrLimitPerRateCmd[KAL_BAND_5GHZ]->eLimitType = eLimitType;
 
 	rlmDomainTxPwrLimitPerRateSetValues(ucVersion,
 		prTxPwrLimitPerRateCmd[KAL_BAND_2GHZ], pTxPwrLimitData);
@@ -6318,7 +6323,8 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 	} else if (ucVersion == 1 || ucVersion == 2 || ucVersion == 3) {
 
 		rlmDomainSendTxPwrLimitPerRateCmd(prAdapter,
-			ucVersion, pTxPwrLimitData);
+			ucVersion, pTxPwrLimitData,
+			TXPWR_LIMIT_PER_RATE_CMD_FORMAT_CH_SKU);
 
 		if (g_bTxBfBackoffExists)
 			rlmDomainSendTxBfBackoffCmd(prAdapter,
@@ -6329,6 +6335,41 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 			ucVersion);
 	}
 
+#if (CFG_SUPPORT_POWER_SKU_ENHANCE == 1)
+	/* Get Max Tx Power from MT_TxPwrLimit_1ss1t.dat */
+	if (prAdapter->chip_info->prTxPwrLimit1ss1tFile == NULL)
+		DBGLOG(RLM, ERROR, "prTxPwrLimit1ss1tFile is NULL\n");
+
+	if (prAdapter->chip_info->prTxPwrLimit1ss1tFile) {
+		if (!rlmDomainGetTxPwrLimit(
+			prAdapter->chip_info->prTxPwrLimit1ss1tFile,
+			rlmDomainGetCountryCode(),
+			&ucVersion,
+			prAdapter->prGlueInfo,
+			pTxPwrLimitData)) {
+			DBGLOG(RLM, ERROR,
+				"Load %s failed\n",
+				prAdapter->chip_info->prTxPwrLimit1ss1tFile);
+			goto error;
+		}
+
+		/* Prepare to send CMD to FW */
+		if (ucVersion == 0) {
+			rlmDomainSendTxPwrLimitCmd(prAdapter,
+			ucVersion, pTxPwrLimitData);
+		} else if (ucVersion == 1 || ucVersion == 2 || ucVersion == 3) {
+			rlmDomainSendTxPwrLimitPerRateCmd(prAdapter,
+			ucVersion, pTxPwrLimitData,
+			TXPWR_LIMIT_PER_RATE_CMD_FORMAT_CH_SKU_1SS_1T);
+		} else {
+			DBGLOG(RLM, WARN,
+			"Unsupported %s version %u\n",
+			prAdapter->chip_info->prTxPwrLimit1ss1tFile,
+			ucVersion);
+		}
+	}
+#endif /* #if (CFG_SUPPORT_POWER_SKU_ENHANCE == 1) */
+
 #if (CFG_SUPPORT_SINGLE_SKU_6G == 1)
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (prAdapter->fgIsHwSupport6G == FALSE) {
@@ -6338,80 +6379,81 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 	}
 #endif
 
-	if (prAdapter->chip_info->prTxPwrLimit6GFile == NULL) {
+	if (prAdapter->chip_info->prTxPwrLimit6GFile == NULL)
 		DBGLOG(RLM, ERROR, "prTxPwrLimit6GFile is NULL\n");
-		goto error;
-	}
 
-	/* TODO: check if buffer allocation can be replaced by MEMSET */
-	if (pTxPwrLimitData && pTxPwrLimitData->rChannelTxPwrLimit)
-		kalMemFree(pTxPwrLimitData->rChannelTxPwrLimit, VIR_MEM_TYPE,
-			sizeof(struct CHANNEL_TX_PWR_LIMIT) *
-			pTxPwrLimitData->ucChNum);
+	if (prAdapter->chip_info->prTxPwrLimit6GFile) {
+		/* TODO: check if buffer allocation can be replaced by MEMSET */
+		if (pTxPwrLimitData && pTxPwrLimitData->rChannelTxPwrLimit)
+			kalMemFree(pTxPwrLimitData->rChannelTxPwrLimit,
+				VIR_MEM_TYPE,
+				sizeof(struct CHANNEL_TX_PWR_LIMIT) *
+				pTxPwrLimitData->ucChNum);
 
-	if (pTxPwrLimitData)
-		kalMemFree(pTxPwrLimitData, VIR_MEM_TYPE,
-			sizeof(struct TX_PWR_LIMIT_DATA));
+		if (pTxPwrLimitData)
+			kalMemFree(pTxPwrLimitData, VIR_MEM_TYPE,
+				sizeof(struct TX_PWR_LIMIT_DATA));
 
-	pTxPwrLimitData = rlmDomainInitTxPwrLimitData_6G(prAdapter);
+		pTxPwrLimitData = rlmDomainInitTxPwrLimitData_6G(prAdapter);
 
-	if (!pTxPwrLimitData) {
-		DBGLOG(RLM, ERROR,
-			"Init TxPwrLimitData 6G failed\n");
-		goto error;
-	}
+		if (!pTxPwrLimitData) {
+			DBGLOG(RLM, ERROR,
+				"Init TxPwrLimitData 6G failed\n");
+			goto error;
+		}
 
-	if (!rlmDomainGetTxPwrLimit(
-		prAdapter->chip_info->prTxPwrLimit6GFile,
-		rlmDomainGetCountryCode(),
-		&ucVersion,
-		prAdapter->prGlueInfo,
-		pTxPwrLimitData)) {
-		DBGLOG(RLM, ERROR,
-			"Load TxPwrLimit6GFile failed\n");
-		goto error;
-	}
+		if (!rlmDomainGetTxPwrLimit(
+			prAdapter->chip_info->prTxPwrLimit6GFile,
+			rlmDomainGetCountryCode(),
+			&ucVersion,
+			prAdapter->prGlueInfo,
+			pTxPwrLimitData)) {
+			DBGLOG(RLM, ERROR,
+				"Load TxPwrLimit6GFile failed\n");
+			goto error;
+		}
 
-	/* Prepare to send CMD to FW */
-	if (ucVersion == 2  || ucVersion == 3) {
-		rlmDomainSendTxPwrLimitPerRateCmd_6G(prAdapter,
-			ucVersion, pTxPwrLimitData,
-			TXPWR_LIMIT_PER_RATE_CMD_FORMAT_CH_SKU);
-	} else {
-		DBGLOG(RLM, WARN,
-		"Unsupported %s version %u\n",
-		prAdapter->chip_info->prTxPwrLimit6GFile,
-		ucVersion);
+		/* Prepare to send CMD to FW */
+		if (ucVersion == 2  || ucVersion == 3) {
+			rlmDomainSendTxPwrLimitPerRateCmd_6G(prAdapter,
+				ucVersion, pTxPwrLimitData,
+				TXPWR_LIMIT_PER_RATE_CMD_FORMAT_CH_SKU);
+		} else {
+			DBGLOG(RLM, WARN,
+			"Unsupported %s version %u\n",
+			prAdapter->chip_info->prTxPwrLimit6GFile,
+			ucVersion);
+		}
 	}
 
 #if (CFG_SUPPORT_SINGLE_SKU_6G_1SS1T == 1)
-	if (prAdapter->chip_info->prTxPwrLimit6G1ss1tFile == NULL) {
+	if (prAdapter->chip_info->prTxPwrLimit6G1ss1tFile == NULL)
 		DBGLOG(RLM, ERROR, "prTxPwrLimit6G1ss1tFile is NULL\n");
-		goto error;
-	}
 
-	if (!rlmDomainGetTxPwrLimit(
-		prAdapter->chip_info->prTxPwrLimit6G1ss1tFile,
-		rlmDomainGetCountryCode(),
-		&ucVersion,
-		prAdapter->prGlueInfo,
-		pTxPwrLimitData)) {
-		DBGLOG(RLM, ERROR,
-			"Load %s failed\n",
-			prAdapter->chip_info->prTxPwrLimit6G1ss1tFile);
-		goto error;
-	}
+	if (prAdapter->chip_info->prTxPwrLimit6G1ss1tFile) {
+		if (!rlmDomainGetTxPwrLimit(
+			prAdapter->chip_info->prTxPwrLimit6G1ss1tFile,
+			rlmDomainGetCountryCode(),
+			&ucVersion,
+			prAdapter->prGlueInfo,
+			pTxPwrLimitData)) {
+			DBGLOG(RLM, ERROR,
+				"Load %s failed\n",
+				prAdapter->chip_info->prTxPwrLimit6G1ss1tFile);
+			goto error;
+		}
 
-	/* Prepare to send CMD to FW */
-	if (ucVersion == 2 || ucVersion == 3) {
-		rlmDomainSendTxPwrLimitPerRateCmd_6G(prAdapter,
-			ucVersion, pTxPwrLimitData,
-			TXPWR_LIMIT_PER_RATE_CMD_FORMAT_CH_SKU_1SS_1T);
-	} else {
-		DBGLOG(RLM, WARN,
-		"Unsupported %s version %u\n",
-		prAdapter->chip_info->prTxPwrLimit6G1ss1tFile,
-		ucVersion);
+		/* Prepare to send CMD to FW */
+		if (ucVersion == 2 || ucVersion == 3) {
+			rlmDomainSendTxPwrLimitPerRateCmd_6G(prAdapter,
+				ucVersion, pTxPwrLimitData,
+				TXPWR_LIMIT_PER_RATE_CMD_FORMAT_CH_SKU_1SS_1T);
+		} else {
+			DBGLOG(RLM, WARN,
+			"Unsupported %s version %u\n",
+			prAdapter->chip_info->prTxPwrLimit6G1ss1tFile,
+			ucVersion);
+		}
 	}
 #endif /* #if (CFG_SUPPORT_SINGLE_SKU_6G_1SS1T == 1) */
 #endif /* #if (CFG_SUPPORT_SINGLE_SKU_6G == 1) */

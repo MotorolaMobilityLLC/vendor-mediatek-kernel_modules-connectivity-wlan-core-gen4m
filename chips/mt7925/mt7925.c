@@ -742,6 +742,18 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7925 = {
 	.u4DmaShdlBaseAddr = WF_HIF_DMASHDL_TOP_BASE,
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 
+	.prTxPwrLimitFile = "TxPwrLimit_MT7925.dat",
+#if (CFG_SUPPORT_POWER_SKU_ENHANCE == 1)
+	.prTxPwrLimit1ss1tFile = "TxPwrLimit_MT7925_1ss1t.dat",
+#endif
+#if (CFG_SUPPORT_SINGLE_SKU_6G == 1)
+	.prTxPwrLimit6GFile = "TxPwrLimit6G_MT7925.dat",
+#if (CFG_SUPPORT_SINGLE_SKU_6G_1SS1T == 1)
+	.prTxPwrLimit6G1ss1tFile = "TxPwrLimit6G_MT7925_1ss1t.dat",
+#endif
+#endif
+	.ucTxPwrLimitBatchSize = 3,
+
 #if (CFG_SUPPORT_APS == 1)
 	.apsLinkPlanDecision = mt7925_apsLinkPlanDecision,
 #endif
