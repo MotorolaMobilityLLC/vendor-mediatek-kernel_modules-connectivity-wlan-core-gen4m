@@ -13238,39 +13238,6 @@ uint32_t kalGetChannelFrequency(
 
 }
 
-
-enum ENUM_BAND kalOperatingClassToBand(uint16_t u2OpClass)
-{
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	enum nl80211_band band = KAL_BAND_6GHZ;
-#else
-	enum nl80211_band band = KAL_BAND_2GHZ;
-#endif
-	enum ENUM_BAND eBand;
-
-	ieee80211_operating_class_to_band(u2OpClass, &band);
-
-	switch (band) {
-	case KAL_BAND_2GHZ:
-		eBand = BAND_2G4;
-		break;
-	case KAL_BAND_5GHZ:
-		eBand =  BAND_5G;
-		break;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	case KAL_BAND_6GHZ:
-		eBand = BAND_6G;
-		break;
-#endif
-	default:
-		eBand = BAND_2G4;
-		break;
-	}
-
-	return eBand;
-}
-
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Check if Channel supported by HW

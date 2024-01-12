@@ -8382,6 +8382,7 @@ uint16_t rlmOpClassToBandwidth(uint8_t ucOpClass)
 		case 130: /* center freqs 42, 58, 106, 122, 138, 155, 171; 80+80 MHz */
 			return BW_8080;
 		case 131: /* UHB channels, 20 MHz: 1, 5, 9.. */
+		case 136:
 			return BW_20;
 		case 132: /* UHB channels, 40 MHz: 3, 11, 19.. */
 			return BW_40;
@@ -8391,6 +8392,8 @@ uint16_t rlmOpClassToBandwidth(uint8_t ucOpClass)
 			return BW_160;
 		case 135: /* UHB channels, 80+80 MHz: 7, 23, 39.. */
 			return BW_8080;
+		case 137: /* UHB channels, 320 MHz */
+			return BW_320;
 	}
 	return BW_20;
 }
@@ -8548,6 +8551,11 @@ int32_t rlmGetOpClassForChannel(
 		if ((channel & 0x1F) == 0x0F)
 			/* 160MHz channel */
 			return 134;
+
+		/* Channels 31, 63, 95, ... */
+		if ((channel & 0x3F) == 0x1F)
+			/* 320MHz channel */
+			return 137;
 
 		if (channel == 2)
 			/* 20MHz channel */
