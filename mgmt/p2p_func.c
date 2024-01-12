@@ -229,6 +229,11 @@ void p2pFuncRequestScan(IN struct ADAPTER *prAdapter,
 			break;
 		}
 
+		kalMemZero(prScanReqV2,
+			(sizeof(struct MSG_SCN_SCAN_REQ_V2) +
+			(sizeof(struct PARAM_SSID) *
+			 prScanReqInfo->ucSsidNum)));
+
 		prScanReqV2->rMsgHdr.eMsgId = MID_P2P_SCN_SCAN_REQ_V2;
 		prScanReqV2->ucSeqNum = ++prScanReqInfo->ucSeqNumOfScnMsg;
 		prScanReqV2->ucBssIndex = ucBssIndex;
