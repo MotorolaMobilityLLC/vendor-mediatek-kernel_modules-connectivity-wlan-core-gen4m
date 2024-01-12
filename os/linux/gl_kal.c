@@ -3607,14 +3607,17 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
-	if (unlikely(ucBssIndex >= MAX_BSSID_NUM))
+	if (unlikely(ucBssIndex >= MAX_BSSID_NUM)) {
+		DBGLOG(INIT, INFO, "Invalid ucBssIndex:%u\n", ucBssIndex);
+		dev_kfree_skb(prOrgSkb);
 		return WLAN_STATUS_NOT_ACCEPTED;
+	}
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prBssInfo) {
 		DBGLOG(INIT, INFO, "prBssInfo NULL for ucBssIndex:%u\n",
 			ucBssIndex);
-		dev_kfree_skb(prSkb);
+		dev_kfree_skb(prOrgSkb);
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
