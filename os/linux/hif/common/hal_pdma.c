@@ -1222,11 +1222,18 @@ static void halResetMsduToken(struct ADAPTER *prAdapter)
 	struct HIF_MEM_OPS *prMemOps;
 	struct MSDU_TOKEN_INFO *prTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
+#if CFG_SUPPORT_PCIE_ASPM
+	struct BUS_INFO *prBusInfo = NULL;
+#endif
 	uint32_t u4Idx = 0;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
 	prTokenInfo = &prHifInfo->rTokenInfo;
+
+#if CFG_SUPPORT_PCIE_ASPM
+	prBusInfo = prAdapter->chip_info->bus_info;
+#endif
 
 	for (u4Idx = 0; u4Idx < prTokenInfo->u4TokenNum; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];
@@ -1259,6 +1266,11 @@ static void halResetMsduToken(struct ADAPTER *prAdapter)
 		prTokenInfo->u4LastTxBssCnt[u4Idx] = 0;
 #endif
 	}
+
+#if CFG_SUPPORT_PCIE_ASPM
+	if (prBusInfo->updatePcieAspm)
+		prBusInfo->updatePcieAspm(prAdapter->prGlueInfo, TRUE);
+#endif
 }
 
 void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum)

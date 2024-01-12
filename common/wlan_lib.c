@@ -7928,6 +7928,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 	INIT_UINT(prWifiVar->u4MsduReportTimeout,
 		"MsduReportTimeout", NIC_MSDU_REPORT_DUMP_TIMEOUT);
+	INIT_UINT(prWifiVar->u4MsduReportTimeoutSerTime,
+		"MsduReportTimeoutSerTime", NIC_MSDU_REPORT_TIMEOUT_SER_TIME);
 
 #if CFG_SUPPORT_DATA_STALL
 	INIT_UINT(prWifiVar->u4PerHighThreshole,
