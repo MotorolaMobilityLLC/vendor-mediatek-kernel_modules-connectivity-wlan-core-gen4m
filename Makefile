@@ -726,6 +726,7 @@ ifeq ($(CONFIG_MTK_WIFI_CONNV3_SUPPORT), y)
     $(info $$CONFIG_MTK_WIFI_CONNV3_PATH is [${CONFIG_MTK_WIFI_CONNV3_PATH}])
     ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/include
     ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/base/include
+    ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/conn_drv/connv3/debug_utility
     ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/conn_drv/connv3/debug_utility/include
     ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/conn_drv/connv3/debug_utility/connsyslog
 
