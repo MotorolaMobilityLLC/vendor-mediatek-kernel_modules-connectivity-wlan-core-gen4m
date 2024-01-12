@@ -2349,6 +2349,10 @@
 #define CFG_MTK_WIFI_MISC_RSV_MEM		0
 #endif
 
+#ifndef CFG_MTK_WIFI_TX_CMA_MEM
+#define CFG_MTK_WIFI_TX_CMA_MEM		0
+#endif
+
 #ifndef CFG_MTK_WIFI_TX_MEM_SLIM
 #define CFG_MTK_WIFI_TX_MEM_SLIM        0
 #endif

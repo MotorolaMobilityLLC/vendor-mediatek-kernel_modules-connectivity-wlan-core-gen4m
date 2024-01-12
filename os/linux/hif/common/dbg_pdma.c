@@ -690,6 +690,7 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	uint32_t u4TimeoutSerTime;
 	struct timespec64 *prLastMsduRptChangedTime;
 	uint32_t u4CurrentMsduRptCnt;
+	unsigned long flags = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prAdapter->prGlueInfo);
@@ -715,14 +716,15 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	KAL_GET_TIME_OF_USEC_OR_NSEC(rLongest) = 0;
 	ktime_get_ts64(&rNowTs);
 
-	for (u4Idx = 0; u4Idx < prTokenInfo->u4TokenNum; u4Idx++) {
-		prToken = &prTokenInfo->arToken[u4Idx];
-		if (!prToken->fgInUsed)
-			continue;
-
-		if (!halGetDeltaTime(&rNowTs, &prToken->rTs, &rTime))
-			continue;
-
+	spin_lock_irqsave(&prTokenInfo->rTokenLock, flags);
+	if (list_empty(&prTokenInfo->used_msdu_list)) {
+		spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
+		return false;
+	}
+	prToken = list_first_entry(&prTokenInfo->used_msdu_list,
+		struct MSDU_TOKEN_ENTRY, msdu_list);
+	if (prToken->fgInUsed &&
+		halGetDeltaTime(&rNowTs, &prToken->rTs, &rTime)) {
 		if (halTimeCompare(&rTime, &rTimeout) >= 0)
 			fgIsTimeout = TRUE;
 
@@ -734,6 +736,8 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 			u4TokenId = u4Idx;
 		}
 	}
+	spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
+
 	/* Save longest to be compared for pending MSDU */
 	prAdapter->u4LongestPending = rLongest.tv_sec;
 

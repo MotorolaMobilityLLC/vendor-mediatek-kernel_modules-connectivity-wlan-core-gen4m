@@ -47,6 +47,10 @@
 #endif
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */
 
+#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
+#include <linux/cma.h>
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM */
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -60,6 +64,16 @@
 #define HAL_PAGE_POOL_PAGE_DEC_NUM              256
 #define HAL_PAGE_POOL_PAGE_UPDATE_MIN_INTERVAL  500
 #endif
+
+#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
+#define TX_CMA_GROUP_SIZE		(SZ_1M)
+#define TX_CMA_TOK_SIZE			(SZ_2K)
+#define TX_CMA_GROUP_TOK_NUM	(TX_CMA_GROUP_SIZE / TX_CMA_TOK_SIZE)
+#define TX_CMA_GROUP_NUM		\
+	(HIF_TX_MSDU_TOKEN_NUM / TX_CMA_GROUP_TOK_NUM + 1)
+#define TX_CMA_MAX_SIZE			(TX_CMA_GROUP_NUM * SZ_1M)
+#define TX_CMA_MAX_DATA_NUM		(TX_CMA_MAX_SIZE / TX_CMA_TOK_SIZE)
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM */
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -84,6 +98,7 @@ struct HIF_PREALLOC_MEM {
 #if HIF_TX_PREALLOC_DATA_BUFFER
 	/* Tx Data */
 	struct HIF_MEM rMsduBuf[HIF_TX_MSDU_TOKEN_NUM];
+	uint32_t u4MsduBufIdx;
 #endif
 #if (CFG_MTK_ANDROID_WMT == 1)
 	phys_addr_t pucRsvMemBase[WIFI_RSV_MEM_MAX_NUM];
@@ -92,6 +107,38 @@ struct HIF_PREALLOC_MEM {
 	uint32_t u4Offset[WIFI_RSV_MEM_MAX_NUM];
 #endif
 };
+
+struct tx_cma_data {
+	struct list_head group_list;
+	struct list_head free_list;
+};
+
+#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
+struct tx_cma_mem_group {
+	struct list_head list;
+	uint64_t key;
+	uint32_t count;
+	void *kaddr;
+	uint32_t size;
+	bool in_used;
+	struct hlist_node node;
+};
+
+struct wifi_tx_cma_context {
+	struct device *dev;
+	struct tx_cma_mem_group groups[TX_CMA_GROUP_NUM];
+	struct hlist_head groups_htbl[TX_CMA_GROUP_NUM];
+	struct hlist_head free_group_list;
+	struct list_head free_data_list;
+	uint32_t total_groups_data_num;
+	uint32_t max_data_num;
+	uint32_t min_data_num;
+	bool is_cma_mem;
+	uint32_t config_data_num;
+	uint32_t cur_data_num;
+	spinlock_t data_num_lock;
+};
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM */
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -129,6 +176,11 @@ static struct mutex g_rPageLock;
 #endif
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */
 
+#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
+struct platform_device *g_prTxCmaPlatDev;
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM */
+
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -138,6 +190,11 @@ static struct mutex g_rPageLock;
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
+
+static int halSetMemOpsTxData(
+	struct HIF_MEM_OPS *prMemOps,
+	enum WIFI_MEM_OPER_SETS op_sets);
+
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -524,6 +581,519 @@ int halAllocHifMemForWiFiMisc(struct platform_device *pdev,
 	return 0;
 }
 #endif
+
+#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
+static void halSetTxCmaDataPlatDev(
+	struct platform_device *pdev)
+{
+	g_prTxCmaPlatDev = pdev;
+}
+
+
+static struct platform_device *halGetTxCmaDataPlatDev(void)
+{
+	return g_prTxCmaPlatDev;
+}
+
+static inline uint64_t txCmaAddr2key(void *kaddr)
+{
+	return ((uint64_t)virt_to_phys(kaddr)) &
+		~(TX_CMA_GROUP_SIZE - 1);
+}
+
+static struct tx_cma_mem_group *search_tx_cma_group(
+	struct wifi_tx_cma_context *prTxCmaCtx, uint64_t key)
+{
+	struct tx_cma_mem_group *group;
+
+	hash_for_each_possible_rcu(prTxCmaCtx->groups_htbl,
+				   group, node, key) {
+		if (group->key == key)
+			return group;
+	}
+	return NULL;
+}
+
+static struct tx_cma_mem_group *new_tx_cma_group(
+	struct wifi_tx_cma_context *prTxCmaCtx, uint64_t key)
+{
+	struct tx_cma_mem_group *group =
+		search_tx_cma_group(prTxCmaCtx, key);
+
+	if (group) {
+		DBGLOG(INIT, ERROR, "new group fail, key exist");
+		return NULL;
+	}
+
+	if (hlist_empty(&prTxCmaCtx->free_group_list)) {
+		DBGLOG(INIT, ERROR, "free_group_list is empty");
+		return NULL;
+	}
+
+	group = hlist_entry(prTxCmaCtx->free_group_list.first,
+			    struct tx_cma_mem_group, node);
+	hlist_del(prTxCmaCtx->free_group_list.first);
+	group->key = key;
+	hash_add_rcu(prTxCmaCtx->groups_htbl, &group->node, key);
+
+	return group;
+}
+
+static void init_tx_cma_mem_group(
+	struct tx_cma_mem_group *group)
+{
+	INIT_LIST_HEAD(&group->list);
+	group->key = 0;
+	group->in_used = false;
+	group->count = 0;
+	group->kaddr = NULL;
+	group->size = 0;
+}
+
+static bool del_tx_cma_group(
+	struct wifi_tx_cma_context *prTxCmaCtx, uint64_t key)
+{
+	struct tx_cma_mem_group *group =
+		search_tx_cma_group(prTxCmaCtx, key);
+
+	if (group) {
+		hash_del_rcu(&group->node);
+		init_tx_cma_mem_group(group);
+		hlist_add_head(&group->node, &prTxCmaCtx->free_group_list);
+	}
+
+	return group != NULL;
+}
+
+static void inc_tx_cma_cur_data_num(
+	struct wifi_tx_cma_context *prTxCmaCtx, uint32_t inc_num)
+{
+	unsigned long flags = 0;
+
+	spin_lock_irqsave(&prTxCmaCtx->data_num_lock, flags);
+	prTxCmaCtx->cur_data_num += inc_num;
+	spin_unlock_irqrestore(&prTxCmaCtx->data_num_lock, flags);
+}
+
+static void dec_tx_cma_cur_data_num(
+	struct wifi_tx_cma_context *prTxCmaCtx, uint32_t dec_num)
+{
+	unsigned long flags = 0;
+
+	spin_lock_irqsave(&prTxCmaCtx->data_num_lock, flags);
+	if (prTxCmaCtx->cur_data_num < dec_num)
+		prTxCmaCtx->cur_data_num = 0;
+	else
+		prTxCmaCtx->cur_data_num -= dec_num;
+	spin_unlock_irqrestore(&prTxCmaCtx->data_num_lock, flags);
+}
+
+static struct tx_cma_mem_group *alloc_tx_cma_mem_group_data(
+	struct wifi_tx_cma_context *prTxCmaCtx)
+{
+	struct tx_cma_mem_group *group = NULL;
+	struct page *pages = NULL;
+	void *kaddr = NULL;
+	uint32_t tok_cnt = TX_CMA_GROUP_TOK_NUM;
+	uint32_t u4Idx = 0;
+	struct tx_cma_data *tx_data = NULL;
+
+	pages = cma_alloc(prTxCmaCtx->dev->cma_area, tok_cnt,
+			  get_order(TX_CMA_GROUP_SIZE), GFP_KERNEL);
+	if (!pages)
+		return NULL;
+
+	kaddr = page_address(pages);
+	group = new_tx_cma_group(prTxCmaCtx, txCmaAddr2key(kaddr));
+	if (!group) {
+		DBGLOG(INIT, ERROR, "no free mem group");
+		cma_release(prTxCmaCtx->dev->cma_area, pages, tok_cnt);
+		return NULL;
+	}
+	group->in_used = true;
+	group->kaddr = kaddr;
+	group->size = TX_CMA_GROUP_SIZE;
+	group->count += TX_CMA_GROUP_TOK_NUM;
+
+	kaddr = group->kaddr;
+	for (u4Idx = 0; u4Idx < tok_cnt; u4Idx++) {
+		tx_data = (struct tx_cma_data *)kaddr;
+		list_add_tail(&tx_data->group_list, &group->list);
+		list_add_tail(&tx_data->free_list,
+			&prTxCmaCtx->free_data_list);
+		prTxCmaCtx->total_groups_data_num++;
+		group->count++;
+		kaddr += TX_CMA_TOK_SIZE;
+	}
+
+	inc_tx_cma_cur_data_num(prTxCmaCtx, tok_cnt);
+
+	return group;
+}
+
+static bool alloc_wifi_tx_cma_mem(
+	struct wifi_tx_cma_context *prTxCmaCtx,
+	struct ADAPTER *prAdapter)
+{
+	struct tx_cma_mem_group *group = NULL;
+	uint32_t alloc_num = 0, req_num = 0, alloc_cnt = 0;
+	uint32_t u4Idx = 0;
+	struct MSDU_TOKEN_ENTRY *prToken = NULL;
+	struct MSDU_TOKEN_INFO *prTokenInfo = NULL;
+	unsigned long flags = 0;
+	struct list_head *listptr, *n;
+
+	if (!prTxCmaCtx->dev) {
+		DBGLOG(INIT, ERROR, "dev null");
+		return FALSE;
+	}
+
+	if (!prTxCmaCtx->dev->cma_area) {
+		DBGLOG(INIT, ERROR, "no cma_area");
+		return FALSE;
+	}
+
+	if (prTxCmaCtx->cur_data_num >= prTxCmaCtx->config_data_num)
+		return TRUE;
+
+	req_num = prTxCmaCtx->config_data_num -
+		prTxCmaCtx->cur_data_num;
+
+	while (req_num > alloc_num) {
+		group = alloc_tx_cma_mem_group_data(prTxCmaCtx);
+		if (!group)
+			break;
+
+		alloc_num += TX_CMA_GROUP_TOK_NUM;
+	}
+
+	DBGLOG(INIT, INFO,
+		"req_size: %u, config_data_num: %u, cur_data_num: %u",
+		req_num, prTxCmaCtx->config_data_num,
+		prTxCmaCtx->cur_data_num);
+
+	if (prAdapter) {
+		prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
+		spin_lock_irqsave(&prTokenInfo->rTokenLock, flags);
+
+		alloc_cnt = 0;
+		list_for_each_safe(listptr, n, &prTokenInfo->init_msdu_list) {
+			if (alloc_cnt >= alloc_num)
+				break;
+
+			prToken = list_entry(listptr,
+				struct MSDU_TOKEN_ENTRY, msdu_list);
+
+			halCopyPathAllocTxCmaTxDataBuf(prToken, u4Idx);
+
+			list_del(&prToken->msdu_list);
+			list_add_tail(&prToken->msdu_list,
+				&prTokenInfo->free_msdu_list);
+			alloc_cnt++;
+		}
+		spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
+	}
+
+	return true;
+}
+
+static void free_tx_cma_mem_group_data(
+	struct tx_cma_mem_group *group)
+{
+	struct page *pages = NULL;
+	uint32_t tok_cnt = TX_CMA_GROUP_TOK_NUM;
+	struct list_head *listptr, *n;
+	struct tx_cma_data *data_entry = NULL;
+	struct wifi_tx_cma_context *prTxCmaCtx = NULL;
+
+	prTxCmaCtx = platform_get_drvdata(halGetTxCmaDataPlatDev());
+
+	if (!prTxCmaCtx->dev)
+		return;
+
+	list_for_each_safe(listptr, n, &group->list) {
+		data_entry = list_entry(listptr,
+			struct tx_cma_data, group_list);
+		list_del(&data_entry->free_list);
+		list_del(&data_entry->group_list);
+		prTxCmaCtx->total_groups_data_num--;
+		group->count--;
+	}
+
+	pages = virt_to_page(group->kaddr);
+	if (del_tx_cma_group(prTxCmaCtx, group->key)) {
+		cma_release(prTxCmaCtx->dev->cma_area, pages,
+			    tok_cnt);
+
+		dec_tx_cma_cur_data_num(prTxCmaCtx, tok_cnt);
+	} else {
+		DBGLOG(INIT, ERROR, "del group fail!");
+	}
+}
+
+static struct tx_cma_mem_group *free_tx_data_to_mem_group(
+	struct tx_cma_data *tx_data)
+{
+	struct tx_cma_mem_group *group;
+	void *kaddr = (void *)tx_data;
+	struct wifi_tx_cma_context *prTxCmaCtx = NULL;
+
+	prTxCmaCtx = platform_get_drvdata(halGetTxCmaDataPlatDev());
+
+	group = search_tx_cma_group(prTxCmaCtx, txCmaAddr2key(kaddr));
+	if (group == NULL) {
+		DBGLOG(INIT, INFO, "can't find mem group");
+		return NULL;
+	}
+
+	list_add_tail(&tx_data->group_list, &group->list);
+	list_add_tail(&tx_data->free_list, &prTxCmaCtx->free_data_list);
+	group->count++;
+	prTxCmaCtx->total_groups_data_num++;
+
+	if (group->count == TX_CMA_GROUP_TOK_NUM)
+		free_tx_cma_mem_group_data(group);
+
+	return group;
+}
+
+
+static void free_wifi_tx_cma_mem(
+	struct wifi_tx_cma_context *prTxCmaCtx,
+	struct ADAPTER *prAdapter)
+{
+	uint32_t release_cnt = 0, req_cnt = 0;
+	struct MSDU_TOKEN_INFO *prTokenInfo = NULL;
+	struct list_head *listptr, *n;
+	struct MSDU_TOKEN_ENTRY *prToken = NULL;
+	unsigned long flags = 0;
+
+	if (prAdapter == NULL)
+		return;
+
+	if (!prTxCmaCtx->dev)
+		return;
+
+	if (prTxCmaCtx->config_data_num >= prTxCmaCtx->cur_data_num)
+		return;
+
+	req_cnt = prTxCmaCtx->cur_data_num -
+		prTxCmaCtx->config_data_num;
+	DBGLOG(INIT, INFO, "req_cnt: %u, config num: %u, cur num: %u",
+		req_cnt, prTxCmaCtx->config_data_num,
+		prTxCmaCtx->cur_data_num);
+
+	prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
+	spin_lock_irqsave(&prTokenInfo->rTokenLock, flags);
+	list_for_each_safe(listptr, n, &prTokenInfo->free_msdu_list) {
+		if (release_cnt >= req_cnt)
+			break;
+
+		prToken = list_entry(listptr,
+			struct MSDU_TOKEN_ENTRY, msdu_list);
+		list_del(&prToken->msdu_list);
+		list_add_tail(&prToken->msdu_list,
+			&prTokenInfo->init_msdu_list);
+		halUninitOneMsduTokenInfo(prAdapter, prToken);
+		release_cnt++;
+	}
+	spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
+}
+
+static void wifi_tx_cma_update_mem_data_num(
+	struct wifi_tx_cma_context *prTxCmaCtx,
+	struct ADAPTER *prAdapter)
+{
+	if (prTxCmaCtx->config_data_num > prTxCmaCtx->cur_data_num)
+		alloc_wifi_tx_cma_mem(prTxCmaCtx, prAdapter);
+	else if (prTxCmaCtx->config_data_num < prTxCmaCtx->cur_data_num)
+		free_wifi_tx_cma_mem(prTxCmaCtx, prAdapter);
+}
+
+void wifi_tx_cma_set_mem_data_num(
+	struct ADAPTER *prAdapter,
+	uint32_t data_num)
+{
+	struct wifi_tx_cma_context *prTxCmaCtx = NULL;
+
+	prTxCmaCtx = platform_get_drvdata(halGetTxCmaDataPlatDev());
+	if (data_num > prTxCmaCtx->max_data_num)
+		data_num = prTxCmaCtx->max_data_num;
+	prTxCmaCtx->config_data_num = data_num;
+
+	if (prTxCmaCtx->is_cma_mem)
+		wifi_tx_cma_update_mem_data_num(prTxCmaCtx, prAdapter);
+	else
+		prTxCmaCtx->cur_data_num = data_num;
+}
+
+uint32_t wifi_tx_cma_get_mem_data_num(void)
+{
+	struct wifi_tx_cma_context *prTxCmaCtx = NULL;
+
+	prTxCmaCtx = platform_get_drvdata(halGetTxCmaDataPlatDev());
+	DBGLOG_LIMITED(INIT, INFO, "cur data num: %lu",
+		prTxCmaCtx->cur_data_num);
+	return prTxCmaCtx->cur_data_num;
+}
+
+int halInitTxCmaMem(struct platform_device *pdev)
+{
+	uint32_t rsv_mem_size = 0;
+	uint32_t ret = 0, i = 0;
+	struct device_node *node = NULL;
+	struct wifi_tx_cma_context *prTxCmaCtx = NULL;
+
+	node = pdev->dev.of_node;
+	if (!node) {
+		DBGLOG(INIT, ERROR, "get wifi device node fail.");
+		of_node_put(node);
+		ret = -1;
+		goto exit;
+	}
+	of_node_put(node);
+
+	ret = of_reserved_mem_device_init(&pdev->dev);
+	if (ret) {
+		DBGLOG(INIT, ERROR,
+			"of_reserved_mem_device_init failed(%d).", ret);
+	}
+
+	prTxCmaCtx = devm_kzalloc(&pdev->dev,
+		sizeof(struct wifi_tx_cma_context), GFP_KERNEL);
+	if (!prTxCmaCtx)
+		return -ENOMEM;
+	platform_set_drvdata(pdev, prTxCmaCtx);
+	halSetTxCmaDataPlatDev(pdev);
+
+	prTxCmaCtx->is_cma_mem = pdev->dev.cma_area ? true : false;
+
+	ret = of_property_read_u32(node, "emi-size", &rsv_mem_size);
+	if (!ret) {
+		prTxCmaCtx->max_data_num =
+			(rsv_mem_size / TX_CMA_TOK_SIZE) < TX_CMA_MAX_DATA_NUM ?
+			(rsv_mem_size / TX_CMA_TOK_SIZE) : TX_CMA_MAX_DATA_NUM;
+	} else
+		prTxCmaCtx->max_data_num = TX_CMA_MAX_DATA_NUM;
+
+	prTxCmaCtx->min_data_num = HIF_TX_MSDU_TOKEN_NUM_MIN;
+
+	DBGLOG(INIT, INFO,
+		"reserved memory size[0x%08x] cma[%u] max[%u] min[%u]",
+		rsv_mem_size, prTxCmaCtx->is_cma_mem,
+		prTxCmaCtx->max_data_num, prTxCmaCtx->min_data_num);
+
+	spin_lock_init(&prTxCmaCtx->data_num_lock);
+
+	hash_init(prTxCmaCtx->groups_htbl);
+	INIT_HLIST_HEAD(&prTxCmaCtx->free_group_list);
+	INIT_LIST_HEAD(&prTxCmaCtx->free_data_list);
+
+	for (i = 0; i < TX_CMA_GROUP_NUM; i++) {
+		init_tx_cma_mem_group(&prTxCmaCtx->groups[i]);
+		hlist_add_head(&prTxCmaCtx->groups[i].node,
+			       &prTxCmaCtx->free_group_list);
+	}
+
+exit:
+	prTxCmaCtx->dev = &pdev->dev;
+
+	return 0;
+}
+
+void halFreeTxCmaMem(struct platform_device *pdev)
+{
+	struct wifi_tx_cma_context *prTxCmaCtx = NULL;
+
+	if (pdev == NULL) {
+		DBGLOG(INIT, ERROR, "pdev is NULL\n");
+		return;
+	}
+
+	prTxCmaCtx = platform_get_drvdata(pdev);
+
+	devm_kfree(&pdev->dev, prTxCmaCtx);
+	wifi_tx_cma_set_mem_data_num(NULL, 0);
+}
+
+bool halTxDataCmaIsCmaMem(void)
+{
+	struct wifi_tx_cma_context *prTxCmaCtx = NULL;
+
+	prTxCmaCtx = platform_get_drvdata(halGetTxCmaDataPlatDev());
+	return prTxCmaCtx->is_cma_mem;
+}
+
+void halCopyPathAllocTxCmaTxDataBuf(
+	struct MSDU_TOKEN_ENTRY *prToken, uint32_t u4Idx)
+{
+	struct tx_cma_data *data_entry;
+	struct tx_cma_mem_group *group = NULL;
+	struct wifi_tx_cma_context *prTxCmaCtx = NULL;
+
+	prTxCmaCtx = platform_get_drvdata(halGetTxCmaDataPlatDev());
+
+	if (list_empty(&prTxCmaCtx->free_data_list)) {
+		DBGLOG_LIMITED(INIT, INFO, "free_data_list empty");
+		return;
+	}
+
+	data_entry = list_first_entry(&prTxCmaCtx->free_data_list,
+		struct tx_cma_data, free_list);
+	group = search_tx_cma_group(prTxCmaCtx,
+		txCmaAddr2key((void *)data_entry));
+	if (group == NULL) {
+		DBGLOG(INIT, INFO, "can't find mem group");
+		return;
+	}
+	list_del(&data_entry->free_list);
+	list_del(&data_entry->group_list);
+	prTxCmaCtx->total_groups_data_num--;
+	group->count--;
+
+	if (!data_entry)
+		DBGLOG(INIT, ERROR, "data_entry is null\n");
+
+	prToken->prPacket = data_entry;
+	prToken->rDmaAddr = 0;
+}
+
+bool halCopyPathCopyTxCmaTxData(struct MSDU_TOKEN_ENTRY *prToken,
+			  void *pucSrc, uint32_t u4Len)
+{
+	memcpy(prToken->prPacket, pucSrc, u4Len);
+	return true;
+}
+
+phys_addr_t halCopyPathMapTxCmaTxBuf(struct GL_HIF_INFO *prHifInfo,
+			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len)
+{
+	dma_addr_t rDmaAddr;
+
+	rDmaAddr = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev, pucBuf + u4Offset,
+				      u4Len, KAL_DMA_TO_DEVICE);
+
+	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, rDmaAddr)) {
+		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
+		return 0;
+	}
+
+	return (phys_addr_t)rDmaAddr;
+}
+
+void halCopyPathUnmapTxCmaTxBuf(struct GL_HIF_INFO *prHifInfo,
+			   phys_addr_t rDmaAddr, uint32_t u4Len)
+{
+	KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev,
+			     (dma_addr_t)rDmaAddr,
+			     u4Len, KAL_DMA_TO_DEVICE);
+}
+
+void halCopyPathFreeTxCmaBuf(void *pucSrc, uint32_t u4Len)
+{
+	free_tx_data_to_mem_group((struct tx_cma_data *)pucSrc);
+}
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM */
 
 void halCopyPathAllocTxDesc(struct GL_HIF_INFO *prHifInfo,
 			   struct RTMP_DMABUF *prDescRing,
@@ -913,7 +1483,23 @@ dma_map:
 	return true;
 }
 
-phys_addr_t halZeroCopyPathMapTxBuf(struct GL_HIF_INFO *prHifInfo,
+phys_addr_t halZeroCopyPathMapTxDataBuf(struct GL_HIF_INFO *prHifInfo,
+			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len)
+{
+	dma_addr_t rDmaAddr;
+
+	rDmaAddr = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev, pucBuf + u4Offset,
+				      u4Len, KAL_DMA_TO_DEVICE);
+	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, rDmaAddr)) {
+		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
+		return 0;
+	}
+
+	return (phys_addr_t)rDmaAddr;
+}
+
+
+phys_addr_t halZeroCopyPathMapTxCmdBuf(struct GL_HIF_INFO *prHifInfo,
 			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len)
 {
 	dma_addr_t rDmaAddr;
@@ -943,7 +1529,16 @@ phys_addr_t halZeroCopyPathMapRxBuf(struct GL_HIF_INFO *prHifInfo,
 	return (phys_addr_t)rDmaAddr;
 }
 
-void halZeroCopyPathUnmapTxBuf(struct GL_HIF_INFO *prHifInfo,
+void halZeroCopyPathUnmapTxDataBuf(struct GL_HIF_INFO *prHifInfo,
+			   phys_addr_t rDmaAddr, uint32_t u4Len)
+{
+	KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev,
+			     (dma_addr_t)rDmaAddr,
+			     u4Len, KAL_DMA_TO_DEVICE);
+}
+
+
+void halZeroCopyPathUnmapTxCmdBuf(struct GL_HIF_INFO *prHifInfo,
 			   phys_addr_t rDmaAddr, uint32_t u4Len)
 {
 	KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev,
@@ -972,7 +1567,12 @@ void halZeroCopyPathFreeDesc(struct GL_HIF_INFO *prHifInfo,
 	memset(prDescRing, 0, sizeof(struct RTMP_DMABUF));
 }
 
-void halZeroCopyPathFreeBuf(void *pucSrc, uint32_t u4Len)
+void halZeroCopyPathFreeDataBuf(void *pucSrc, uint32_t u4Len)
+{
+	kalMemFree(pucSrc, PHY_MEM_TYPE, u4Len);
+}
+
+void halZeroCopyPathFreeCmdBuf(void *pucSrc, uint32_t u4Len)
 {
 	kalMemFree(pucSrc, PHY_MEM_TYPE, u4Len);
 }
@@ -1352,22 +1952,23 @@ static int halSetMemOpsTxData(
 	if (op_sets == WF_MEM_OP_TX_DATA_ZERO_COPY_PATH) {
 		prMemOps->allocTxDataBuf = halZeroCopyPathAllocTxDataBuf;
 		prMemOps->copyTxData = halZeroCopyPathCopyTxData;
-		prMemOps->freeDataBuf = halZeroCopyPathFreeBuf;
-		prMemOps->mapTxDataBuf = halZeroCopyPathMapTxBuf;
-		prMemOps->unmapTxDataBuf = halZeroCopyPathUnmapTxBuf;
+		prMemOps->freeDataBuf = halZeroCopyPathFreeDataBuf;
+		prMemOps->mapTxDataBuf = halZeroCopyPathMapTxDataBuf;
+		prMemOps->unmapTxDataBuf = halZeroCopyPathUnmapTxDataBuf;
 	} else if (op_sets == WF_MEM_OP_TX_DATA_COPY_PATH) {
 		prMemOps->allocTxDataBuf = halCopyPathAllocTxDataBuf;
 		prMemOps->copyTxData = halCopyPathCopyTxData;
 		prMemOps->freeDataBuf = NULL;
 		prMemOps->mapTxDataBuf = NULL;
 		prMemOps->unmapTxDataBuf = NULL;
-	} else if (op_sets ==
-			WF_MEM_OP_TX_DATA_ZERO_COPY_PATH_TX_DYN_CMA) {
-		prMemOps->allocTxDataBuf = halZeroCopyPathAllocTxDataBuf;
-		prMemOps->copyTxData = halZeroCopyPathCopyTxData;
-		prMemOps->freeDataBuf = halZeroCopyPathFreeBuf;
-		prMemOps->mapTxDataBuf = halZeroCopyPathMapTxBuf;
-		prMemOps->unmapTxDataBuf = halZeroCopyPathUnmapTxBuf;
+#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
+	} else if (op_sets == WF_MEM_OP_TX_DATA_COPY_PATH_TX_DYN_CMA) {
+		prMemOps->allocTxDataBuf = halCopyPathAllocTxCmaTxDataBuf;
+		prMemOps->copyTxData = halCopyPathCopyTxCmaTxData;
+		prMemOps->freeDataBuf = halCopyPathFreeTxCmaBuf;
+		prMemOps->mapTxDataBuf = halCopyPathMapTxCmaTxBuf;
+		prMemOps->unmapTxDataBuf = halCopyPathUnmapTxCmaTxBuf;
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM */
 	} else
 		DBGLOG(INIT, ERROR, "Operation Set undefined\n");
 
@@ -1381,9 +1982,9 @@ static int halSetMemOpsTxCmd(
 	if (op_sets == WF_MEM_OP_TX_CMD_ZERO_COPY_PATH) {
 		prMemOps->allocTxCmdBuf = NULL;
 		prMemOps->copyCmd = halZeroCopyPathCopyCmd;
-		prMemOps->mapTxCmdBuf = halZeroCopyPathMapTxBuf;
-		prMemOps->unmapTxCmdBuf = halZeroCopyPathUnmapTxBuf;
-		prMemOps->freeCmdBuf = halZeroCopyPathFreeBuf;
+		prMemOps->mapTxCmdBuf = halZeroCopyPathMapTxCmdBuf;
+		prMemOps->unmapTxCmdBuf = halZeroCopyPathUnmapTxCmdBuf;
+		prMemOps->freeCmdBuf = halZeroCopyPathFreeCmdBuf;
 	} else if (op_sets == WF_MEM_OP_TX_CMD_COPY_PATH) {
 		prMemOps->allocTxCmdBuf = halCopyPathAllocTxCmdBuf;
 		prMemOps->copyCmd = halCopyPathCopyCmd;
@@ -1527,10 +2128,25 @@ static int halSetMemOpsWifiMiscEmi(
 static int halSetMemOpsAndroid(
 	struct HIF_MEM_OPS *prMemOps)
 {
+#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
+	struct wifi_tx_cma_context *prTxCmaCtx = NULL;
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM */
+
 	halSetMemOpsTrxDesc(prMemOps, WF_MEM_OP_TRX_DESC_COPY_PATH);
 
 #if (CFG_MTK_WIFI_TX_MEM_SLIM == 1)
+#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
+	prTxCmaCtx = platform_get_drvdata(halGetTxCmaDataPlatDev());
+	if (prTxCmaCtx->is_cma_mem) {
+		halSetMemOpsTxData(prMemOps,
+		WF_MEM_OP_TX_DATA_COPY_PATH_TX_DYN_CMA);
+	} else {
+		halSetMemOpsTxData(prMemOps,
+			WF_MEM_OP_TX_DATA_ZERO_COPY_PATH);
+	}
+#else /* !CFG_MTK_WIFI_TX_CMA_MEM */
 	halSetMemOpsTxData(prMemOps, WF_MEM_OP_TX_DATA_ZERO_COPY_PATH);
+#endif /* !CFG_MTK_WIFI_TX_CMA_MEM */
 #else /* !CFG_MTK_WIFI_TX_MEM_SLIM */
 	halSetMemOpsTxData(prMemOps, WF_MEM_OP_TX_DATA_COPY_PATH);
 #endif /* !CFG_MTK_WIFI_TX_MEM_SLIM */
