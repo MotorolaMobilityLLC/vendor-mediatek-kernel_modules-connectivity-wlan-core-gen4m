@@ -69,6 +69,8 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 				nicCfgChipCapMacAddr),
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_PHY_CAP,
 				nicCfgChipCapPhyCap),
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_LIMITED,
+				nicCfgChipCapLimited),
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_MAC_CAP,
 				nicCfgChipCapMacCap),
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_FRAME_BUF_CAP,
@@ -2765,6 +2767,20 @@ uint32_t nicCfgChipCapPhyCap(struct ADAPTER *prAdapter,
 			prPhyCap->ucRxStbc,
 			prPhyCap->ucWifiPath);
 
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicCfgChipCapLimited(struct ADAPTER *prAdapter,
+				 uint8_t *pucEventBuf)
+{
+	struct CAP_LIMITED *prCapLimited;
+
+	prCapLimited = (struct CAP_LIMITED *)pucEventBuf;
+
+	prAdapter->ucLimitedMaxMcs = prCapLimited->ucLimitedMaxMcs;
+	DBGLOG(INIT, INFO, "Limited max MCS = %u\n",
+	       prAdapter->ucLimitedMaxMcs);
 
 	return WLAN_STATUS_SUCCESS;
 }

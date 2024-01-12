@@ -192,6 +192,20 @@ uint32_t heRlmCalculateHeOpIELen(
 	return u4OverallLen;
 }
 
+static uint8_t heRlmGetHeSupportedMcs(struct ADAPTER *prAdapter)
+{
+	uint8_t ucMcs = HE_CAP_INFO_MCS_MAP_MCS11;
+
+	if (prAdapter->ucLimitedMaxMcs)
+		if (prAdapter->ucLimitedMaxMcs == 9)
+			ucMcs = HE_CAP_INFO_MCS_MAP_MCS9;
+
+	DBGLOG(RLM, TRACE, "Limited MCS: %u, return %u",
+	       prAdapter->ucLimitedMaxMcs, ucMcs);
+
+	return ucMcs;
+}
+
 static void heRlmFillMCSMap(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
@@ -213,7 +227,7 @@ static void heRlmFillMCSMap(
 					prAdapter->ucMcsMapSetFromSigma,
 					HE_CAP_INFO_MCS_MAP_MCS11);
 			else
-				ucMcsMap = HE_CAP_INFO_MCS_MAP_MCS11;
+				ucMcsMap = heRlmGetHeSupportedMcs(prAdapter);
 		} else {
 			ucMcsMap = HE_CAP_INFO_MCS_NOT_SUPPORTED;
 		}
