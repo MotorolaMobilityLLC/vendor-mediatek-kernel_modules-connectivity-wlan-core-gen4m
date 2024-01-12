@@ -4064,6 +4064,8 @@ u_int8_t wlanProcessTxFrame(IN struct ADAPTER *prAdapter,
 			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_DNS))
 				GLUE_SET_PKT_FLAG(prPacket, ENUM_PKT_DNS);
 
+			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_ICMPV6))
+				GLUE_SET_PKT_FLAG(prPacket, ENUM_PKT_ICMPV6);
 		}
 
 		ucMacHeaderLen = ETHER_HEADER_LEN;
@@ -10446,6 +10448,7 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
 		(uint8_t *) DISP_STRING("802_11_MGMT"),
 #endif
+		(uint8_t *) DISP_STRING("ICMPV6"),
 	};
 	if (prMsduInfo->ucPktType >= ENUM_PKT_FLAG_NUM)
 		prMsduInfo->ucPktType = 0;
