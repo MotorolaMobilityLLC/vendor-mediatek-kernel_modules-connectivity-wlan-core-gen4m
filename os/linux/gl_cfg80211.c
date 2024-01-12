@@ -6236,6 +6236,8 @@ int mtk_init_ap_role(struct GLUE_INFO *prGlueInfo,
 	uint8_t u4Idx = 0;
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 
+	GLUE_SPIN_LOCK_DECLARATION();
+
 	for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
 		if (gprP2pRoleWdev[u4Idx] == NULL)
 			break;
@@ -6246,20 +6248,22 @@ int mtk_init_ap_role(struct GLUE_INFO *prGlueInfo,
 		return -ENOMEM;
 	}
 
-	if ((u4Idx == 0) ||
-	    (prAdapter == NULL) ||
-	    (prAdapter->rP2PNetRegState !=
-	     ENUM_NET_REG_STATE_REGISTERED)) {
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+	if ((u4Idx == 0) || (prAdapter == NULL) ||
+		(prAdapter->rP2PNetRegState != ENUM_NET_REG_STATE_REGISTERED)) {
 		DBGLOG(INIT, ERROR,
 		       "The wlan0 can't set to AP without p2p0\n");
 		/* System will crash, if p2p0 isn't existing. */
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		return -EFAULT;
 	}
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	/* reference from the glRegisterP2P() */
 	gprP2pRoleWdev[u4Idx] = ndev->ieee80211_ptr;
 	if (glSetupP2P(prGlueInfo, gprP2pRoleWdev[u4Idx], ndev,
 		u4Idx, TRUE, TRUE)) {
+		DBGLOG(INIT, ERROR, "glSetupP2P failed\n");
 		gprP2pRoleWdev[u4Idx] = NULL;
 		return -EFAULT;
 	}
@@ -6268,7 +6272,9 @@ int mtk_init_ap_role(struct GLUE_INFO *prGlueInfo,
 
 	/* reference from p2pNetRegister() */
 	/* The ndev doesn't need register_netdev, only reassign the gPrP2pDev.*/
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	gPrP2pDev[u4Idx] = ndev;
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	return 0;
 }
@@ -6290,10 +6296,15 @@ mtk_oid_uninit_ap_role(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
 {
 	unsigned char u4Idx = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	GLUE_SPIN_LOCK_DECLARATION();
 
 	if ((prAdapter == NULL) || (pvSetBuffer == NULL)
 		|| (pu4SetInfoLen == NULL))
 		return WLAN_STATUS_FAILURE;
+
+	prGlueInfo = prAdapter->prGlueInfo;
 
 	/* init */
 	*pu4SetInfoLen = sizeof(unsigned char);
@@ -6305,10 +6316,20 @@ mtk_oid_uninit_ap_role(struct ADAPTER *prAdapter, void *pvSetBuffer,
 
 	DBGLOG(INIT, INFO, "ucRoleIdx = %d\n", u4Idx);
 
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+	if (prAdapter->rP2PNetRegState != ENUM_NET_REG_STATE_REGISTERED) {
+		DBGLOG(INIT, ERROR, "p2p net is already unregistered?\n");
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+		return -EFAULT;
+	}
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+
 	glUnregisterP2P(prAdapter->prGlueInfo, u4Idx);
 
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	gPrP2pDev[u4Idx] = NULL;
 	gprP2pRoleWdev[u4Idx] = NULL;
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	return 0;
 
