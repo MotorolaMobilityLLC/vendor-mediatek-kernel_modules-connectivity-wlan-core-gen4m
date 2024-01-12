@@ -63,7 +63,7 @@
 /*Max publish + subscribe numbers 4*/
 #define NAN_MAX_PUBLISH_NUM 2
 #define NAN_MAX_SUBSCRIBE_NUM 2
-#if (CFG_SUPPORT_NAN_DBDC == 1)
+#if (CFG_SUPPORT_NAN_DBDC == 1) && (CFG_EXT_FEATURE == 1)
 #define NAN_MAX_NDP_SESSIONS 5
 #else
 #define NAN_MAX_NDP_SESSIONS 2
