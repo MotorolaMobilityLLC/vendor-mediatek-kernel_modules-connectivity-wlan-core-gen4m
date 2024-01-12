@@ -7272,7 +7272,7 @@ uint8_t rlmGetBssOpBwByVhtAndHtOpInfo(struct BSS_INFO *prBssInfo)
 uint8_t rlmGetBssOpBwByOwnAndPeerCapability(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo)
 {
-	uint8_t ucOpMaxBw = MAX_BW_UNKNOWN;
+	uint8_t ucOpMaxBw;
 	uint8_t ucBssOpBw = MAX_BW_20MHZ;
 	struct STA_RECORD *prStaRec;
 
@@ -8271,7 +8271,7 @@ uint32_t rlmRegTxPwrLimitUpdate(
 	const uint8_t ucSubBandSize =
 		(uint8_t)sizeof(struct COUNTRY_INFO_SUBBAND_TRIPLET);
 	struct COUNTRY_INFO_SUBBAND_TRIPLET *prSubBand = NULL;
-	int8_t icNewPwrLimit = RLM_INVALID_POWER_LIMIT;
+	int8_t icNewPwrLimit;
 	uint8_t ucStartCh = 0;
 	uint8_t ucEndCh = 0;
 

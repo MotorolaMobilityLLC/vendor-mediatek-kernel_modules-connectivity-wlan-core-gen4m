@@ -634,7 +634,7 @@ void halZeroCopyPathAllocDesc(struct GL_HIF_INFO *prHifInfo,
 			  struct RTMP_DMABUF *prDescRing,
 			  uint32_t u4Num)
 {
-	dma_addr_t rAddr;
+	dma_addr_t rAddr = 0;
 
 	prDescRing->AllocVa = KAL_DMA_ALLOC_COHERENT(
 		prHifInfo->prDmaDev, prDescRing->AllocSize, &rAddr);

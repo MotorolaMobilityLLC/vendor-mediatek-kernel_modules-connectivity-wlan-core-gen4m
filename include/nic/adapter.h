@@ -2535,7 +2535,8 @@ struct ADAPTER {
 #define IS_BSS_ACTIVE(_prBssInfo)     ((_prBssInfo)->fgIsNetActive)
 
 #define IS_BSS_AIS(_prBssInfo) \
-	((_prBssInfo)->eNetworkType == NETWORK_TYPE_AIS && \
+	(_prBssInfo && \
+	 (_prBssInfo)->eNetworkType == NETWORK_TYPE_AIS && \
 	 (_prBssInfo)->fgIsInUse)
 
 #define IS_BSS_INDEX_AIS(_prAdapter, _BssIndex) \

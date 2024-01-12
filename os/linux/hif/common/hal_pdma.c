@@ -2218,7 +2218,7 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 	struct QUE rFreeSwRfbList, rReceivedRfbList;
 	struct HIF_STATS *prHifStats;
 	static int32_t ai4PortLock[RX_RING_MAX];
-	u_int8_t fgRet = TRUE;
+	u_int8_t fgRet;
 
 	/* Port idx sanity */
 	if (u4Port >= NUM_OF_RX_RING) {
@@ -3074,8 +3074,10 @@ void halWpdmaInitTxRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif)
 			idx = prBusInfo->tx_ring_cmd_idx;
 		} else if (i == TX_RING_FWDL)
 			idx = prBusInfo->tx_ring_fwdl_idx;
+#if (NUM_OF_WFDMA1_TX_RING == 1)
 		else if (i == TX_RING_WA_CMD)
 			idx = prBusInfo->tx_ring_wa_cmd_idx;
+#endif
 
 		offset = idx * MT_RINGREG_DIFF;
 		phy_addr = ((uint64_t)prTxCell->AllocPa) &

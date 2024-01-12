@@ -515,7 +515,7 @@ int SetATETxCount(struct net_device *prNetDev,
 
 	rv = kstrtoint(prInBuf, 0, &i4SetTxCount);
 	if (rv == 0)
-		i4Status = MT_ATESetTxCount(prNetDev, i4SetTxCount);
+		MT_ATESetTxCount(prNetDev, i4SetTxCount);
 	else
 		return -EINVAL;
 

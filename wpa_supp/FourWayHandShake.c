@@ -79,7 +79,7 @@ eloop_register_timeout(unsigned int secs, unsigned int usecs,
 		       eloop_timeout_handler handler, void *eloop_data,
 		       void *user_data) {
 	uint32_t u4TimeoutMs = 0;
-	uint8_t u1TimerIdx = WPAS_TIMER_NOT_FOUND;
+	uint8_t u1TimerIdx;
 	int8_t i1Status = 0;
 
 	u4TimeoutMs = wpas_convertToMs(secs, usecs);
@@ -109,7 +109,7 @@ eloop_register_timeout(unsigned int secs, unsigned int usecs,
 int
 eloop_cancel_timeout(eloop_timeout_handler handler, void *eloop_data,
 		     void *user_data) {
-	uint8_t u1TimerIdx = WPAS_TIMER_NOT_FOUND;
+	uint8_t u1TimerIdx;
 
 	u1TimerIdx = wpas_getCorrespondingTimer(handler);
 

@@ -2743,7 +2743,7 @@ wext_set_encode(struct net_device *prNetDev,
 	struct PARAM_WEP *prWepKey = (struct PARAM_WEP *) wepBuf;
 
 	struct GLUE_INFO *prGlueInfo = NULL;
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t rStatus;
 	uint32_t u4BufLen = 0;
 	struct GL_WPA_INFO *prWpaInfo;
 	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
@@ -2774,10 +2774,16 @@ wext_set_encode(struct net_device *prNetDev,
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetAuthMode, &eAuthMode,
 				   sizeof(eAuthMode), &u4BufLen);
 
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -EFAULT;
+
 		eEncStatus = ENUM_ENCRYPTION_DISABLED;
 
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetEncryptionStatus,
 				   &eEncStatus, sizeof(eEncStatus), &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -EFAULT;
 
 		return 0;
 	}
@@ -4342,7 +4348,7 @@ struct iw_statistics *wext_get_wireless_stats(
 	if (!prGlueInfo)
 		goto stat_out;
 
-	if (IS_BSS_INDEX_VALID(ucBssIndex))
+	if (ucBssIndex < BSSID_NUM)
 		pStats = (struct iw_statistics *)
 			(&(prGlueInfo->rIwStats[ucBssIndex]));
 

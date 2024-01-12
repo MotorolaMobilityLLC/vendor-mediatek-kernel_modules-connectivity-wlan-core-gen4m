@@ -3300,7 +3300,7 @@ p2pRoleFsmRunEventScanDone(struct ADAPTER *prAdapter,
 		(struct MSG_SCN_SCAN_DONE *) prMsgHdr;
 	struct P2P_SCAN_REQ_INFO *prScanReqInfo =
 		(struct P2P_SCAN_REQ_INFO *) NULL;
-	enum ENUM_P2P_ROLE_STATE eNextState = P2P_ROLE_STATE_NUM;
+	enum ENUM_P2P_ROLE_STATE eNextState;
 	struct P2P_CONNECTION_REQ_INFO *prConnReqInfo =
 		&(prP2pRoleFsmInfo->rConnReqInfo);
 	struct P2P_JOIN_INFO *prP2pJoinInfo =

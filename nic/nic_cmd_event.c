@@ -5623,9 +5623,6 @@ struct _CMD_EVENT_TLV_ELEMENT_T *nicGetTargetTlvElement(
 		}
 	}
 
-	/* Get target element */
-	pvCurrPtr = prCmdBuffer;
-
 	for (u2ElementNum = 1; u2ElementNum <= u2TargetTlvElement;
 	     u2ElementNum++) {
 		if (u2ElementNum == 1) {

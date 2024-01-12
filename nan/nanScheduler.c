@@ -9968,8 +9968,6 @@ nanSchedCommitNonNanChnlList(struct ADAPTER *prAdapter) {
 	uint32_t u4ChnlIdx;
 
 	prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter);
-
-	prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter);
 	prNonNanTimeline = nanGetNonNanTimeline(prAdapter, 0);
 	rNonNanChnlInfo = prNonNanTimeline->rChnlInfo;
 	eNonNanBand = nanRegGetNanChnlBand(rNonNanChnlInfo);

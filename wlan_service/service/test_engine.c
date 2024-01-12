@@ -2076,7 +2076,7 @@ s_int32 mt_engine_subscribe_tx(
 	struct test_wlan_info *winfos,
 	struct test_configuration *configs)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	struct test_tx_info tx_info;
 	u_int8 tx_mthd = 0, tone_idx = 0;
 	void *virtual_device = NULL, *virtual_wtbl = NULL;
@@ -2094,6 +2094,8 @@ s_int32 mt_engine_subscribe_tx(
 	/* Calculate duty_cycle related parameter first */
 	if (configs->duty_cycle > 0)
 		ret = mt_engine_calc_duty_cycle(configs);
+	else
+		ret = SERV_STATUS_SUCCESS;
 
 	if (ret != SERV_STATUS_SUCCESS)
 		goto err_out;

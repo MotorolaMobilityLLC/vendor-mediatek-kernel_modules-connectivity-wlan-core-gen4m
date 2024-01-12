@@ -545,10 +545,12 @@ struct BSS_INFO *p2pGetLinkBssInfo(
 {
 	struct P2P_ROLE_FSM_INFO *fsm =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
-	uint8_t ucLinkMax = 1;
+	uint8_t ucLinkMax;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	ucLinkMax = prAdapter->rWifiVar.ucP2pMldLinkMax;
+#else
+	ucLinkMax = 1;
 #endif
 
 	if (!prP2pRoleFsmInfo)

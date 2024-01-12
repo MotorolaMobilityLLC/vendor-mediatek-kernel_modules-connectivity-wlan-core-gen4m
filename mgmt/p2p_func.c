@@ -2430,7 +2430,7 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	struct P2P_UNSOL_PROBE_RESP_INFO *prUnsolProbeInfo;
 	uint8_t ucRoleIdx;
 	u_int8_t fgIsCrossBand = FALSE;
-	u_int8_t fgIsPureAp = TRUE;
+	u_int8_t fgIsPureAp;
 
 	if (!prBssInfo) {
 		DBGLOG(P2P, ERROR, "prBssInfo shouldn't be NULL!\n");

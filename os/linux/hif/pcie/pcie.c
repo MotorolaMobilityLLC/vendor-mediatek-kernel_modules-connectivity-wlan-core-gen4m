@@ -1608,7 +1608,8 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 			struct irq_data *data;
 
 			data = irq_get_irq_data(irqn);
-			irq_chip_mask_parent(data);
+			if (data)
+				irq_chip_mask_parent(data);
 		}
 #endif
 #if CFG_MTK_CCCI_SUPPORT
@@ -1616,8 +1617,10 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 			struct irq_data *data;
 
 			data = irq_get_irq_data(irqn);
-			irq_chip_mask_parent(data);
-			mtk_msi_unmask_to_other_mcu(data, 1);
+			if (data) {
+				irq_chip_mask_parent(data);
+				mtk_msi_unmask_to_other_mcu(data, 1);
+			}
 		}
 #endif
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
@@ -1980,12 +1983,12 @@ static bool pcieCheckASPML1SS(struct pci_dev *dev, int i4BitMap)
 	}
 	pci_read_config_dword(dev, i4Pos + PCI_L1PMSS_CAP, &u4Reg);
 	if (i4BitMap != 0) {
-		if ((i4BitMap & PCI_L1PM_CAP_ASPM_L12) &
+		if ((i4BitMap & PCI_L1PM_CAP_ASPM_L12) &&
 				(!(u4Reg & PCI_L1PM_CAP_ASPM_L12))) {
 			DBGLOG(INIT, INFO, "not support ASPM L1.2!\n");
 			return FALSE;
 		}
-		if ((i4BitMap & PCI_L1PM_CAP_ASPM_L11) &
+		if ((i4BitMap & PCI_L1PM_CAP_ASPM_L11) &&
 				(!(u4Reg & PCI_L1PM_CAP_ASPM_L11))) {
 			DBGLOG(INIT, INFO, "not support ASPM L1.1!\n");
 			return FALSE;

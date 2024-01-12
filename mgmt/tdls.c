@@ -732,7 +732,7 @@ uint8_t TdlsAllowed(
 	struct ADAPTER *pAd,
 	uint8_t ucBssIndex)
 {
-	uint8_t fgAvailable = TRUE;
+	uint8_t fgAvailable;
 
 	if (!TdlsValid(pAd, ucBssIndex))
 		fgAvailable = FALSE;

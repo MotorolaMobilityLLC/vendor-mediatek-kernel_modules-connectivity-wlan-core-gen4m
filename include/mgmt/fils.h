@@ -65,8 +65,8 @@
 
 struct EAP_ERP_KEY {
 	uint8_t fgValid;
-	uint8_t rRKLen;
-	uint8_t rIKLen;
+	uint16_t rRKLen;
+	uint16_t rIKLen;
 	uint8_t rRK[ERP_MAX_KEY_LEN];
 	uint8_t rIK[ERP_MAX_KEY_LEN];
 	uint32_t nextSeq; /* next seq */

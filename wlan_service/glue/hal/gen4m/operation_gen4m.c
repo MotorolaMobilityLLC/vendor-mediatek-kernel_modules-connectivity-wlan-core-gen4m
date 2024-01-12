@@ -602,7 +602,7 @@ s_int32 mt_op_set_tx_path(
 	u_char band_idx,
 	struct test_configuration *configs)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
 
 	if (pr_oid_funcptr == NULL)
@@ -675,7 +675,7 @@ s_int32 mt_op_set_cfg_on_off(
 	u_int32 band_idx,
 	u_int32 ch_band)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
 
@@ -2299,7 +2299,7 @@ s_int32 mt_op_dbdc_continuous_tx(
 	u_char band_idx,
 	struct test_configuration *configs)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
 	u_int32 tx_mode = configs->tx_mode;
 	u_int32 rate = configs->rate;

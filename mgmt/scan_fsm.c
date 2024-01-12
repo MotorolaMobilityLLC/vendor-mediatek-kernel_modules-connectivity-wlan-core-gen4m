@@ -1781,8 +1781,6 @@ scnDoZeroMdrdyRecoveryCheck(struct ADAPTER *prAdapter,
 	if (!fgRecovery)
 		return;
 
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-
 	for (i = 0; i < prScanDone->ucSparseChannelArrayValidNum; i++) {
 		if (prScanDone->aucChannelMDRDYCnt[i] > 0)
 			fgZeroMdrdy = FALSE;

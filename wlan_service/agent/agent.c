@@ -1685,7 +1685,7 @@ static s_int32 hqa_get_freq_offset(
 static s_int32 hqa_dbdc_tx_tone(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	struct hqa_tx_tone param;
 	u_char *data = hqa_frame->data;
 
@@ -3723,7 +3723,7 @@ error1:
 static s_int32 hqa_get_dump_recal(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	u_int32 resp_len = 6;
 	u_char *data = hqa_frame->data;
 	u_int32 band_idx = 0;
@@ -3813,7 +3813,7 @@ err_out:
 static s_int32 hqa_get_dump_rxv(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	u_int32 resp_len = 2;
 	u_char *data = hqa_frame->data;
 	u_int32 band_idx = 0;
@@ -3896,7 +3896,7 @@ err_out:
 static s_int32 hqa_get_dump_rdd(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	u_int32 resp_len = 2;
 	u_char *data = hqa_frame->data;
 	u_int32 band_idx = 0;
@@ -5408,7 +5408,7 @@ static s_int32 hqa_listmode_tx_seg(
 static s_int32 hqa_listmode_tx_cmd(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	u_char *data = hqa_frame->data;
 	u_int32 ext_id = 0;
 	u_char *pbuf = NULL;
@@ -5652,7 +5652,7 @@ static s_int32 hqa_listmode_rx_seg(
 static s_int32 hqa_listmode_rx_cmd(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	u_char *data = hqa_frame->data;
 	u_int32 ext_id = 0;
 	u_char *pbuf = NULL;
@@ -6126,7 +6126,7 @@ s_int32 mt_agent_hqa_cmd_string_parser(
 	u_int32 tmp_value = 0;
 	u_int16 tmp_value2 = 0;
 	u_char *data = NULL;
-	u_int16 ret = 0;
+	u_int16 ret;
 	u_int8 parasize = 0;
 
 	for (i = 0; i < sizeof(priv_hqa_cmd_mapping) / sizeof(struct

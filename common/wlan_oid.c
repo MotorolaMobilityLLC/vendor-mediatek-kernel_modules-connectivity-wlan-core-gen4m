@@ -249,8 +249,7 @@ wlanoidQueryNetworkTypeInUse(struct ADAPTER *prAdapter,
 {
 	/* TODO: need to check the OID handler content again!! */
 
-	enum ENUM_PARAM_NETWORK_TYPE rCurrentNetworkTypeInUse =
-		PARAM_NETWORK_TYPE_OFDM24;
+	enum ENUM_PARAM_NETWORK_TYPE rCurrentNetworkTypeInUse;
 	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	ASSERT(prAdapter);
@@ -3045,7 +3044,7 @@ wlanSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	uint32_t ret = WLAN_STATUS_SUCCESS;
 	struct MLD_STA_RECORD *prMldStaRec = NULL;
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
-	uint8_t ucLinkId = MLD_LINK_ID_NONE;
+	uint8_t ucLinkId;
 #endif
 
 	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
@@ -3360,7 +3359,7 @@ wlanSetRemoveKey(struct ADAPTER *prAdapter,
 	uint32_t ret = WLAN_STATUS_SUCCESS;
 	struct MLD_STA_RECORD *prMldStaRec = NULL;
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
-	uint8_t ucLinkId = MLD_LINK_ID_NONE;
+	uint8_t ucLinkId;
 	uint32_t u4KeyIndex;
 
 	*pu4SetInfoLen = sizeof(struct PARAM_REMOVE_KEY);
@@ -3600,7 +3599,7 @@ wlanoidQueryEncryptionStatus(struct ADAPTER *prAdapter,
 			     void *pvQueryBuffer,
 			     uint32_t u4QueryBufferLen,
 			     uint32_t *pu4QueryInfoLen) {
-	u_int8_t fgTransmitKeyAvailable = TRUE;
+	u_int8_t fgTransmitKeyAvailable;
 	enum ENUM_WEP_STATUS eEncStatus = 0;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_INFO *prAisBssInfo;
@@ -8585,7 +8584,7 @@ wlanoidSetCurrentPacketFilter(struct ADAPTER *prAdapter,
 			      uint32_t *pu4SetInfoLen) {
 	uint32_t u4NewPacketFilter;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	uint32_t rResult = WLAN_STATUS_FAILURE;
+	uint32_t rResult;
 	struct CMD_RX_PACKET_FILTER rSetRxPacketFilter;
 
 	ASSERT(prAdapter);

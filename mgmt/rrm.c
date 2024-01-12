@@ -968,7 +968,7 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReqParam = NULL;
 	struct RADIO_MEASUREMENT_REPORT_PARAMS *prRmRepParam = NULL;
 	enum RM_REQ_PRIORITY eNewPriority;
-	struct BSS_INFO *prBssInfo = NULL, *prRspBssInfo = NULL;
+	struct BSS_INFO *prBssInfo = NULL, *prRspBssInfo;
 	struct STA_RECORD *prStaRec = NULL;
 
 	ASSERT(prAdapter);
@@ -1002,6 +1002,9 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 #endif
 	prRspBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		prRmRepParam->ucRspBssIndex);
+
+	if (!prRspBssInfo)
+		return;
 
 	DBGLOG(RRM, INFO, "RM Request From "MACSTR", DialogToken %d, rpt %d\n",
 			MAC2STR(prRmReqFrame->aucSrcAddr),
