@@ -2294,6 +2294,10 @@ struct CMD_BSS_ACTIVATE_CTRL {
 	uint8_t ucReserved;
 };
 
+/* This struct only uses uint16_t,
+ * compiler will use 2-byte alignment.
+ * sizeof(struct CMD_SET_BSS_RLM_PARAM) is 22
+ */
 struct CMD_SET_BSS_RLM_PARAM {
 	uint8_t ucBssIndex;
 	uint8_t ucRfBand;
@@ -2313,8 +2317,13 @@ struct CMD_SET_BSS_RLM_PARAM {
 	uint8_t ucVhtChannelFrequencyS2;
 	uint16_t u2VhtBasicMcsSet;
 	uint8_t ucNss;
+	uint8_t aucPadding0[1];
 };
 
+/* This struct uses uint32_t,
+ * compiler will use 4-byte alignment.
+ * sizeof(struct CMD_SET_BSS_INFO) is 116
+ */
 struct CMD_SET_BSS_INFO {
 	uint8_t ucBssIndex;
 	uint8_t ucConnectionState;
@@ -2327,6 +2336,7 @@ struct CMD_SET_BSS_INFO {
 	uint16_t u2OperationalRateSet;
 	uint16_t u2BSSBasicRateSet;
 	uint8_t ucStaRecIdxOfAP;
+	uint8_t aucPadding0[1];
 	uint16_t u2HwDefaultFixedRateCode;
 	uint8_t ucNonHTBasicPhyType;	/* For Slot Time and CWmin */
 	uint8_t ucAuthMode;
@@ -2337,13 +2347,14 @@ struct CMD_SET_BSS_INFO {
 	uint8_t ucBMCWlanIndex;
 	uint8_t ucHiddenSsidMode;
 	uint8_t ucDisconnectDetectTh;
+	uint8_t aucPadding1[3];
 	uint32_t u4PrivateData;
-	struct CMD_SET_BSS_RLM_PARAM rBssRlmParam;
-	uint8_t ucDBDCBand;
+	struct CMD_SET_BSS_RLM_PARAM rBssRlmParam;  /* 68 */
+	uint8_t ucDBDCBand; /* 90 */
 	uint8_t ucWmmSet;
 	uint8_t  ucDBDCAction;
 	uint8_t  ucNss;
-	uint8_t aucReserved[20];
+	uint8_t aucReserved[22]; /* 94 */
 };
 
 enum ENUM_RTS_POLICY {
