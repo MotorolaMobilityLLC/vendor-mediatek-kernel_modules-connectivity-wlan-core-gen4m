@@ -194,8 +194,9 @@ struct GNU_PACKED hqa_rx_stat_band_info {
 #if (CFG_SUPPORT_CONNAC3X == 1) /* band info v1*/
 	u_int32 aci_hit_low;
 	u_int32 aci_hit_high;
+	u_int32 phy_rx_pd_alr;	/* band info v2*/
+	u_int32 mac_rx_u2m_mpdu_cnt;	/* band info v2*/
 #endif
-	u_int32 phy_rx_pd_alr;
 };
 
 struct GNU_PACKED hqa_rx_stat_path_info {

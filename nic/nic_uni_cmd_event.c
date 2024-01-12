@@ -8914,6 +8914,8 @@ void nicUniEventRxStatCastMap(struct UNI_EVENT_TESTMODE_STAT_ALL_V2 *tag,
 		(uint32_t)(tag->rInfoBand.u2PhyRxMdrdyCntOfdm);
 	pHqaRxStat->rInfoBandExt1[u1BandIdx].u4PhyRxPdAlr =
 		(uint32_t)(tag->rInfoBandExt1.u2PhyRxPdAlr);
+	pHqaRxStat->rInfoBandExt1[u1BandIdx].u4RxU2MMpduCnt =
+		(uint32_t)(tag->rInfoBandExt1.u4RxU2MMpduCnt);
 
 	/* Path part */
 	for (u1Idx = 0; u1Idx < UNI_TM_MAX_ANT_NUM; u1Idx++) {
