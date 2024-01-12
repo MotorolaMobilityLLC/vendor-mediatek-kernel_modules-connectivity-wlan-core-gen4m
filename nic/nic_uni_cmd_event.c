@@ -181,6 +181,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #if (CFG_SUPPORT_CSI == 1)
 	[CMD_ID_CSI_CONTROL] = nicUniCmdSetCsiControl,
 #endif
+#if (CFG_VOLT_INFO == 1)
+	[CMD_ID_SEND_VOLT_INFO] = nicUniCmdSendVnf,
+#endif
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -234,6 +237,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_CSI] = nicUniEventCsiData,
 	[UNI_EVENT_ID_SR] = nicUniEventSR,
 	[UNI_EVENT_ID_SPECTRUM] = nicUniEventPhyIcsRawData,
+#if (CFG_VOLT_INFO == 1)
+	[UNI_EVENT_ID_GET_VOLT_INFO] = nicUniEventGetVnf,
+#endif
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -6118,6 +6124,43 @@ uint32_t nicUniCmdSetCsiControl(struct ADAPTER *ad,
 #endif
 }
 
+#if (CFG_VOLT_INFO == 1)
+uint32_t nicUniCmdSendVnf(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_SEND_VOLT_INFO_T *cmd;
+	struct UNI_CMD_SEND_VOLT_INFO *uni_cmd;
+	struct UNI_CMD_SEND_VOLT_INFO_PARAM *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_SEND_VOLT_INFO) +
+		sizeof(struct UNI_CMD_SEND_VOLT_INFO_PARAM);
+
+	if (info->ucCID != CMD_ID_SEND_VOLT_INFO ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_SEND_VOLT_INFO_T *)
+		info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SEND_VOLT_INFO,
+		max_cmd_len, NULL, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_SEND_VOLT_INFO *) entry->pucInfoBuffer;
+
+	tag = (struct UNI_CMD_SEND_VOLT_INFO_PARAM *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_SEND_VOLT_INFO_TAG_BASIC;
+	tag->u2Length = sizeof(*tag);
+
+	kalMemCopy(&tag->rVolt, cmd, sizeof(tag->rVolt));
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_VOLT_INFO */
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -8942,3 +8985,43 @@ void nicUniEventSR(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 	}
 }
+
+#if (CFG_VOLT_INFO == 1)
+void nicUniEventGetVnf(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_GET_VOLT_INFO);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+
+	DBGLOG(SW4, INFO, "[Debugging Thread]In %s\n", __func__);
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_GET_VOLT_INFO_TAG_BASIC: {
+			struct UNI_EVENT_GET_VOLT_INFO_PARAM *volt_info =
+				(struct UNI_EVENT_GET_VOLT_INFO_PARAM *)tag;
+			struct EVENT_GET_VOLT_INFO_T legacy;
+
+			legacy.u2Volt = volt_info->u2Volt;
+			DBGLOG(SW4, INFO, "[Debug]%s volt[%d]",
+				__func__, legacy.u2Volt);
+			RUN_RX_EVENT_HANDLER(EVEN_ID_GET_VOLT_INFO, &legacy);
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+#endif /* CFG_VOLT_INFO */

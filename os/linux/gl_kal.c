@@ -82,10 +82,6 @@
 #include <net/netlink.h>
 #endif
 
-#if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
-#include "pmic_lbat_service.h"
-#endif
-
 #if CFG_TC1_FEATURE
 #include <tc1_partition.h>
 #endif
@@ -206,6 +202,19 @@ static struct notifier_block wlan_fb_notifier = {
 static struct miscdevice wlan_object;
 
 static unsigned long rtc_update;
+
+#if (CFG_VOLT_INFO == 1)
+static struct VOLT_INFO_T _rVnfInfo = {
+	.u4CurrVolt = 0,
+	.rDebParam.u4Total = 0,
+	.rDebParam.u4Cnt = 0,
+	.rBatNotify.lbat_pt = NULL,
+	.rBatNotify.fgReg = FALSE,
+	.prAdapter = NULL,
+	.eState = VOLT_INFO_STATE_INIT
+};
+#endif /* CFG_VOLT_INFO */
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -13388,3 +13397,565 @@ int kalRegulatoryHint(char *country)
 	pWiphy = wlanGetWiphy();
 	return regulatory_hint(pWiphy, country);
 }
+
+#if (CFG_VOLT_INFO == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reset volt info debounce parameter
+ *
+ * \param[in] prVnfInfo : Pointer of _rVnfInfo
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+static void kalVnfRstDebParam(IN struct VOLT_INFO_T *prVnfInfo)
+{
+	prVnfInfo->rDebParam.u4Total = 0;
+	prVnfInfo->rDebParam.u4Cnt = 0;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Start schedule volt info work
+ *
+ * \param[in] prVnfInfo : Pointer of _rVnfInfo
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+static void kalVnfSchedule(IN struct VOLT_INFO_T *prVnfInfo)
+{
+	if (prVnfInfo == NULL) {
+		DBGLOG(SW4, ERROR, "prVnfInfo is NULL\n");
+		return;
+	}
+
+	kalVnfRstDebParam(prVnfInfo);
+	prVnfInfo->eState = VOLT_INFO_STATE_IN_PROGRESS;
+
+	/* volt info entry */
+	schedule_delayed_work(&(prVnfInfo->dwork), 0);
+	DBGLOG(SW4, INFO, "VOLT_INFO Schedule\n");
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief When host receive FW event, if volt info work is in progress, it will
+ *        cancel the work, and re-trigger a new volt info work
+ *
+ * \param[in] prAdapter
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+void kalVnfEventHandler(IN struct ADAPTER *prAdapter)
+{
+	if (prAdapter == NULL) {
+		DBGLOG(SW4, ERROR, "prAdapter is NULL\n");
+		return;
+	}
+
+	/* To avoid concurrent access for _rVnfInfo
+	 * between battery notify callback thread
+	 * and FW get voltage info event handler on
+	 * Wifi driver main thread.
+	 */
+	mutex_lock(&_rVnfInfo.rMutex);
+	if (prAdapter->rWifiVar.fgVnfEn) {
+		if (_rVnfInfo.eState == VOLT_INFO_STATE_IN_PROGRESS)
+			cancel_delayed_work(&_rVnfInfo.dwork);
+
+		kalVnfSchedule(&_rVnfInfo);
+	}
+	mutex_unlock(&_rVnfInfo.rMutex);
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculate battery notify upper & lower threshold
+ *
+ *
+ * \param[in] u4Base : voltage base
+ * \param[in] u4Delta : voltage delta
+ * \param[out] pu4UprThrd : voltage upper threshold
+ * \param[out] pu4LwrThrd : voltage lower threshold
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+static void kalVnfBatNotifyGetThresh(IN uint32_t u4Base, IN uint32_t u4Delta,
+	OUT uint32_t *pu4HvThrd, OUT uint32_t *pu4LvThrd)
+{
+	if (pu4HvThrd == NULL || pu4LvThrd == NULL)
+		return;
+
+	*pu4HvThrd = u4Base + u4Delta;
+	*pu4LvThrd = u4Base - u4Delta;
+
+	/* sanity check voltage boundary*/
+	if (*pu4HvThrd >= VOLT_INFO_MAX_VOLT_THRESH)
+		*pu4HvThrd = VOLT_INFO_MAX_VOLT_THRESH - 1;
+	else if (*pu4LvThrd <= VOLT_INFO_MIN_VOLT_THRESH)
+		*pu4LvThrd = VOLT_INFO_MIN_VOLT_THRESH + 1;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Send volt info to FW by CMD : CMD_ID_SEND_VOLT_INFO
+ *
+ * \param[in] prVnfInfo : Pointer of _rVnfInfo
+ * \param[in] volt : The voltage info which will send to FW
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+static void kalVnfSendCmd(IN struct VOLT_INFO_T *prVnfInfo, unsigned int u4volt)
+{
+	struct CMD_SEND_VOLT_INFO_T rVnf;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	if (prVnfInfo == NULL || prVnfInfo->prAdapter == NULL) {
+		DBGLOG(SW4, ERROR,
+			"prVnfInfo or prVnfInfo->prAdapter is NULL\n");
+		return;
+	}
+	/* fill in CMD buffer */
+	rVnf.u2Volt = (uint16_t)u4volt;
+
+	rStatus = wlanSendSetQueryCmd(prVnfInfo->prAdapter, /* prAdapter */
+		CMD_ID_SEND_VOLT_INFO, /* ucCID */
+		TRUE, /* fgSetQuery */
+		FALSE, /* fgNeedResp */
+		FALSE, /* fgIsOid */
+		NULL, /* pfCmdDoneHandler */
+		NULL, /* pfCmdTimeoutHandler */
+		sizeof(struct CMD_SEND_VOLT_INFO_T), /* u4SetQueryInfoLen */
+		(uint8_t *) &rVnf, /* pucInfoBuffer */
+		NULL, /* pvSetQueryBuffer */
+		0	/* u4SetQueryBufferLen */);
+
+	DBGLOG(SW4, INFO, "Send volt info[%d], status[%s]",
+		rVnf.u2Volt,
+		rStatus == WLAN_STATUS_PENDING ? "Success" : "Fail");
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use to check the wlan status
+ *        e.g. Wi-Fi already start or stop
+ *
+ * \param[in] prVnfInfo : Pointer of _rVnfInfo
+ *
+ * \return value : WLAN_STATUS_SUCCESS
+ *                 WLAN_STATUS_FAILURE
+ */
+/*----------------------------------------------------------------------------*/
+static uint32_t kalVnfWlanCheck(IN struct VOLT_INFO_T *prVnfInfo)
+{
+	struct ADAPTER *prAdapter =  NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct REG_INFO *prRegInfo = NULL;
+
+	if (prVnfInfo == NULL || prVnfInfo->prAdapter == NULL) {
+		DBGLOG(SW4, ERROR,
+			"prVnfInfo or prVnfInfo->prAdapter is NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+	prAdapter = prVnfInfo->prAdapter;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	if (prGlueInfo == NULL) {
+		DBGLOG(NIC, ERROR, "prGlueInfo is NULL");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prRegInfo = &prGlueInfo->rRegInfo;
+	if (prRegInfo == NULL ||
+		prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(NIC, ERROR,
+			"wlan not start");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
+		DBGLOG(NIC, ERROR, "Wi-Fi is stopped");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use to send volt info CMD & calculate new upper & lower
+ *        battery notify threshold
+ *
+ * \param[in] volt : battery notify trigger callback volt
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+static void kalVnfBatNotifyCb(unsigned int volt)
+{
+	struct ADAPTER *prAdapter =  NULL;
+
+	if (_rVnfInfo.prAdapter == NULL) {
+		DBGLOG(SW4, ERROR,
+			"volt = %d, _rVnfInfo.prAdapter is NULL", volt);
+		return;
+	}
+	prAdapter = _rVnfInfo.prAdapter;
+
+	if (kalVnfWlanCheck(&_rVnfInfo) != WLAN_STATUS_SUCCESS) {
+		DBGLOG(SW4, ERROR,
+			"volt = %d, wifi is not in normal operate state", volt);
+		return;
+	}
+
+	/* To avoid concurrent access for _rVnfInfo
+	 * between battery notify callback thread
+	 * and FW get voltage info event handler on
+	 * Wifi driver main thread.
+	 */
+	mutex_lock(&_rVnfInfo.rMutex);
+
+	/* If there is volt info handler in process,
+	 * skip to trigger volt info work this time,
+	 * Althought the volt will be inaccurate,
+	 * but expected volt info work will re-trigger again soon
+	 */
+	if (prAdapter->rWifiVar.fgVnfEn &&
+			_rVnfInfo.eState != VOLT_INFO_STATE_IN_PROGRESS) {
+		DBGLOG(SW4, INFO, "volt[%d], Start volt info work", volt);
+		kalVnfSchedule(&_rVnfInfo);
+	} else {
+		DBGLOG(SW4, INFO, "volt[%d], Skip volt info work", volt);
+	}
+	mutex_unlock(&_rVnfInfo.rMutex);
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get volt info debounce interval
+ *
+ * \param[in] prVnfInfo : Pointer of _rVnfInfo
+ *
+ * \return value : prVnfInfo->prAdapter->rWifiVar.u4VnfDebInterval
+ */
+/*----------------------------------------------------------------------------*/
+static uint32_t kalVnfGetDebInterval(IN struct VOLT_INFO_T *prVnfInfo)
+{
+	return prVnfInfo->prAdapter->rWifiVar.u4VnfDebInterval;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get volt info debounce times
+ *        we also set a upper bounce for debounce tims, to make sure the when
+ *        doing volt debounce work, variable use to store total volt will not
+ *        be overflow
+ *
+ * \param[in] prVnfInfo : Pointer of _rVnfInfo
+ *
+ * \return value : u4DebTimes
+ */
+/*----------------------------------------------------------------------------*/
+static uint32_t kalVnfGetDebTimes(IN struct VOLT_INFO_T *prVnfInfo)
+{
+	struct ADAPTER *prAdapter = prVnfInfo->prAdapter;
+	uint32_t u4DebTimes = 0;
+
+	if (prAdapter->rWifiVar.u4VnfDebTimes > VOLT_INFO_DEBOUNCE_TIMES_MAX)
+		u4DebTimes = VOLT_INFO_DEBOUNCE_TIMES_MAX;
+	else
+		u4DebTimes = prAdapter->rWifiVar.u4VnfDebTimes;
+
+	return u4DebTimes;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set volt info notifier debounce prameter
+ *
+ * \param[in] prVnfInfo : Pointer of _rVnfInfo
+ * \param[in] lbat_pt   : Pointer of battery notify info
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+static void kalVnfBatNotifySetDebParam(
+	IN struct VOLT_INFO_T *prVnfInfo, IN struct lbat_user *lbat_pt)
+{
+	uint32_t u4HvDebTimes = 0;
+	uint32_t u4LvDebTimes = 0;
+	uint32_t u4HvDebInterval = 0;
+	uint32_t u4LvDebInterval = 0;
+
+	u4HvDebTimes = kalVnfGetDebTimes(prVnfInfo);
+	u4LvDebTimes = u4HvDebTimes;
+	u4HvDebInterval = kalVnfGetDebInterval(prVnfInfo);
+	u4LvDebInterval = u4HvDebInterval;
+
+	if (!IS_ERR(lbat_pt)) {
+		lbat_user_set_debounce(lbat_pt,
+			u4HvDebInterval,
+			u4HvDebTimes,
+			u4LvDebInterval,
+			u4LvDebTimes);
+
+		DBGLOG(SW4, INFO,
+			"Volt_Info_Notify set_debounce,[Hv:%d,%d][Lv:%d,%d]\n",
+			u4HvDebInterval,
+			u4HvDebTimes,
+			u4LvDebInterval,
+			u4LvDebTimes);
+	}
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is use to register volt info notifier.
+ *        Only register when the first Wi-Fi on after DUT boot up.
+ *
+ * \param[in] prVnfInfo : Pointer of _rVnfInfo
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+static void kalVnfBatNotifyReg(IN struct VOLT_INFO_T *prVnfInfo)
+{
+	struct ADAPTER *prAdapter = prVnfInfo->prAdapter;
+	struct lbat_user *lbat_pt;
+	int32_t i4Ret = 0;
+	uint32_t u4HvThrd = 0;
+	uint32_t u4LvThrd = 0;
+
+	/* Get register voltage Hv & Lv Threshold */
+	kalVnfBatNotifyGetThresh(
+		prVnfInfo->u4CurrVolt,
+		prAdapter->rWifiVar.u4VnfDelta,
+		&u4HvThrd, &u4LvThrd);
+
+	/* Register battery notifier */
+	lbat_pt = lbat_user_register("Volt_Info_Notify",
+				u4HvThrd, u4LvThrd, 2000,
+				kalVnfBatNotifyCb);
+
+	if (!IS_ERR(lbat_pt)) {
+		kalVnfBatNotifySetDebParam(prVnfInfo, lbat_pt);
+		prVnfInfo->rBatNotify.lbat_pt = lbat_pt;
+
+		/* 1. Battery notify will register only when the first Wi-Fi
+		 *    on after DUT boot up.
+		 * 2. If Battery notify register every time when Wi-Fi on,
+		 *    it will result in multiple sets of thesholds at the
+		 *    same time in the lbat list, since we don't unregister
+		 *    the current threshold in lbat list when Wi-Fi turn off.
+		 * 3. The lbat_pt & fgReg will be free when DUT shutdown.
+		 */
+		prVnfInfo->rBatNotify.fgReg = TRUE; /* Register success */
+
+		DBGLOG(SW4, INFO,
+			"Volt_Info_Notify Register SUCCESS, %d,%d,%d\n",
+			u4HvThrd, u4LvThrd, 2000);
+	} else {
+		i4Ret = PTR_ERR(lbat_pt);
+		prVnfInfo->rBatNotify.fgReg = FALSE; /* Register fail */
+
+		DBGLOG(SW4, ERROR,
+			"Register Volt_Info_Notifier FAIL: %d\n", i4Ret);
+	}
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Modify volt info register threshold
+ *
+ * \param[in] prVnfInfo : Pointer of _rVnfInfo
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+static void kalVnfBatNotifyModThresh(IN struct VOLT_INFO_T *prVnfInfo)
+{
+	struct ADAPTER *prAdapter = prVnfInfo->prAdapter;
+	struct lbat_user *lbat_pt = prVnfInfo->rBatNotify.lbat_pt;
+	uint32_t u4HvThrd = 0;
+	uint32_t u4LvThrd = 0;
+
+	/* Get register volt upper & lower bound */
+	kalVnfBatNotifyGetThresh(
+		prVnfInfo->u4CurrVolt,
+		prAdapter->rWifiVar.u4VnfDelta,
+		&u4HvThrd, &u4LvThrd);
+
+	if (!IS_ERR(lbat_pt)) {
+		lbat_user_modify_thd_locked(
+			lbat_pt,
+			u4HvThrd,
+			u4LvThrd,
+			2000);
+
+		DBGLOG(SW4, INFO,
+			"Volt_Info_Notify modify threshold %d,%d,%d\n",
+			u4HvThrd,
+			u4LvThrd,
+			2000);
+	}
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use to :
+ *        1. Calculate and send stable voltage info to FW which is from Vbat
+ *        2. Register volt info nofify or modify volt info notify threshold
+ *
+ * \param[in] work : parameter from schedule_delayed_work
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+static void kalVnfHandler(IN struct work_struct *work)
+{
+	uint32_t u4DebTimes;
+	uint32_t u4DebInterval;
+	uint32_t u4AvgVolt;
+
+	if (_rVnfInfo.prAdapter == NULL) {
+		DBGLOG(SW4, ERROR,
+			"_rVnfInfo->prAdapter is NULL\n");
+		return;
+	}
+
+	/* To avoid concurrent access for _rVnfInfo
+	 * between battery notify callback thread
+	 * and FW get voltage info event handler on
+	 * Wifi driver main thread.
+	 */
+	mutex_lock(&_rVnfInfo.rMutex);
+
+	u4DebTimes = kalVnfGetDebTimes(&_rVnfInfo);
+	u4DebInterval = kalVnfGetDebInterval(&_rVnfInfo);
+
+	/* Calculate Avg volt */
+	_rVnfInfo.rDebParam.u4Total += lbat_read_volt();
+	_rVnfInfo.rDebParam.u4Cnt++;
+
+	if (_rVnfInfo.rDebParam.u4Cnt < u4DebTimes) {
+		schedule_delayed_work(&_rVnfInfo.dwork,
+			msecs_to_jiffies(u4DebInterval));
+		mutex_unlock(&_rVnfInfo.rMutex);
+		return;
+	}
+	u4AvgVolt = _rVnfInfo.rDebParam.u4Total / _rVnfInfo.rDebParam.u4Cnt;
+
+	DBGLOG(SW4, INFO,
+		"Avg Volt[%d]DebTimes[%d]DebInterval[%d]",
+		u4AvgVolt,
+		u4DebTimes,
+		u4DebInterval);
+
+	kalVnfSendCmd(&_rVnfInfo, u4AvgVolt);
+	_rVnfInfo.u4CurrVolt = u4AvgVolt;
+
+	/* Bat notify register or modify threshold */
+	if (_rVnfInfo.rBatNotify.fgReg == FALSE)
+		kalVnfBatNotifyReg(&_rVnfInfo);
+	else
+		kalVnfBatNotifyModThresh(&_rVnfInfo);
+
+	_rVnfInfo.eState = VOLT_INFO_STATE_COMPLETE;
+	mutex_unlock(&_rVnfInfo.rMutex);
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Active volt info work
+ *
+ * \param[in] prAdapter
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+void kalVnfActive(IN struct ADAPTER *prAdapter)
+{
+	if (prAdapter == NULL) {
+		DBGLOG(SW4, ERROR, "prAdapter is NULL");
+		return;
+	}
+
+	/* To avoid concurrent access for _rVnfInfo
+	 * between battery notify callback thread
+	 * and FW get voltage info event handler on
+	 * Wifi driver main thread.
+	 */
+	mutex_lock(&_rVnfInfo.rMutex);
+
+	/* If there is volt info handler in process,
+	 * skip to trigger volt info work this time,
+	 * Althought the volt will be inaccurate,
+	 * but expected volt info work will re-trigger again soon
+	 */
+	if (prAdapter->rWifiVar.fgVnfEn &&
+			_rVnfInfo.eState != VOLT_INFO_STATE_IN_PROGRESS) {
+		DBGLOG(SW4, INFO, "VOLT_INFO Active\n");
+		kalVnfSchedule(&_rVnfInfo);
+	} else {
+		DBGLOG(SW4, INFO, "Skip volt info work");
+	}
+	mutex_unlock(&_rVnfInfo.rMutex);
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reset all volt info parameter, except BatNotify parameter.
+ *        Battery notify will register only when the first Wi-Fi on
+ *        after DUT boot up.
+ *        If Battery notify register every time when Wi-Fi on, it will
+ *        result in multiple sets of thesholds at the same time in the
+ *        lbat list, since we don't unregister the current threshold in
+ *        lbat list when Wi-Fi turn off.
+ *
+ * \param[in] prVnfInfo : Pointer of _rVnfInfo
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+static void kalVnfRstParam(IN struct VOLT_INFO_T *prVnfInfo)
+{
+	if (prVnfInfo == NULL) {
+		DBGLOG(SW4, ERROR, "prVnfInfo is NULL");
+		return;
+	}
+
+	prVnfInfo->u4CurrVolt = 0;
+	kalVnfRstDebParam(prVnfInfo);
+	prVnfInfo->prAdapter = NULL;
+	prVnfInfo->eState = VOLT_INFO_STATE_INIT;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Uninit Volt info work
+ *
+ * \param[in] void
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+void kalVnfUninit(void)
+{
+	uint8_t ret;
+
+	ret = cancel_delayed_work_sync(&_rVnfInfo.dwork);
+	kalVnfRstParam(&_rVnfInfo);
+	DBGLOG(SW4, INFO, "VOLT_INFO Uninit\n");
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Init volt info work
+ *
+ * \param[in] prAdapter
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+void kalVnfInit(IN struct ADAPTER *prAdapter)
+{
+	if (prAdapter == NULL) {
+		DBGLOG(SW4, ERROR, "prAdapter is NULL\n");
+		return;
+	}
+
+	kalVnfRstParam(&_rVnfInfo);
+	_rVnfInfo.prAdapter = prAdapter;
+	INIT_DELAYED_WORK(&_rVnfInfo.dwork, kalVnfHandler);
+	mutex_init(&_rVnfInfo.rMutex);
+	DBGLOG(SW4, INFO, "VOLT_INFO init\n");
+}
+#endif /* CFG_VOLT_INFO */

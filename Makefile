@@ -433,6 +433,9 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_MTK_WIFI_CONNV3_SUPPORT=y
     CONFIG_MTK_WIFI_PCIE_MSI_SUPPORT=y
     CONFIG_MTK_WIFI_FW_LOG_MMIO=y
+    ifeq ($(call kver_ge,5,15),1)
+        CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
+    endif
     ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
 endif
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
@@ -499,6 +502,12 @@ CONFIG_NSS=4
 CONFIG_BAND_NUM=3
 ccflags-y += -DCONFIG_MTK_WIFI_BW320
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO), y)
+    ccflags-y += -DCFG_VOLT_INFO=1
+else
+    ccflags-y += -DCFG_VOLT_INFO=0
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_TRX_DIRECT), y)

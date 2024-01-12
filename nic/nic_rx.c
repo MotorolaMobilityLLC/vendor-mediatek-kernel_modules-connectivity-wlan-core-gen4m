@@ -242,6 +242,9 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 #endif
 	{EVENT_ID_RTT_RESULT, nicEventRttResult},
 	{EVENT_ID_RTT_DONE, nicEventRttDone},
+#if (CFG_VOLT_INFO == 1)
+	{EVEN_ID_GET_VOLT_INFO, nicEventGetVnf},
+#endif
 };
 
 uint32_t arEventTableSize = ARRAY_SIZE(arEventTable);
