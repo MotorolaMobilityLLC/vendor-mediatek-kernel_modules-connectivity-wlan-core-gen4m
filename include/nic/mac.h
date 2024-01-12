@@ -902,6 +902,9 @@
 /* CCX CCKM reassociation failure */
 #define STATUS_CODE_CCX_CCKM_REASSOC_FAILURE        0xFFF4
 
+/* Initalization value */
+#define STATUS_CODE_INVALID                         0xFFFF
+
 /* 7.3.1.10 Timestamp field */
 #define TIMESTAMP_FIELD_LEN                         8
 
