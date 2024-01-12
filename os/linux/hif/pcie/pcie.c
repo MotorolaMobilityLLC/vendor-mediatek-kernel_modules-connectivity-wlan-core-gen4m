@@ -979,6 +979,7 @@ static int mtk_page_pool_probe(struct platform_device *pdev)
 		goto exit;
 
 	kalCreateRxPagePool(&pdev->dev);
+	kalCreateHifSkbList();
 
 exit:
 	DBGLOG(INIT, INFO, "%s() done, ret: %d\n", __func__, ret);
@@ -988,6 +989,7 @@ exit:
 
 static int mtk_page_pool_remove(struct platform_device *pdev)
 {
+	kalReleaseHifSkbList();
 	kalReleaseRxPagePool(&pdev->dev);
 	platform_set_drvdata(pdev, NULL);
 	return 0;
@@ -1440,9 +1442,8 @@ static void *pcieAllocPagePoolRxBuf(struct GL_HIF_INFO *prHifInfo,
 {
 	struct sk_buff *prSkb;
 	dma_addr_t rAddr;
-	uint8_t *pucRecvBuff;
 
-	prSkb = kalAllocRxSkb(&pucRecvBuff);
+	prSkb = kalAllocHifSkb();
 	if (!prSkb) {
 		DBGLOG(HAL, ERROR, "can't allocate rx %u size packet\n",
 		       prDmaBuf->AllocSize);
@@ -1468,6 +1469,12 @@ static void *pcieAllocPagePoolRxBuf(struct GL_HIF_INFO *prHifInfo,
 	prDmaBuf->AllocPa = (phys_addr_t)rAddr;
 	return (void *)prSkb;
 }
+
+static void pcieFreePagePoolPacket(struct GL_HIF_INFO *prHifInfo,
+				   void *pvPacket, uint32_t u4Num)
+{
+	kalFreeHifSkb((struct sk_buff *)pvPacket);
+}
 #endif
 
 static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
@@ -1478,11 +1485,6 @@ static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 	prMemOps->allocExtBuf = pcieAllocExtBuf;
 	prMemOps->allocTxCmdBuf = NULL;
 	prMemOps->allocTxDataBuf = pcieAllocTxDataBuf;
-#if CFG_SUPPORT_RX_PAGE_POOL
-	prMemOps->allocRxBuf = pcieAllocPagePoolRxBuf;
-#else
-	prMemOps->allocRxBuf = pcieAllocRxBuf;
-#endif /* CFG_SUPPORT_RX_PAGE_POOL */
 	prMemOps->allocRuntimeMem = pcieAllocRuntimeMem;
 	prMemOps->copyCmd = pcieCopyCmd;
 	prMemOps->copyEvent = pcieCopyEvent;
@@ -1495,7 +1497,13 @@ static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 	prMemOps->freeDesc = pcieFreeDesc;
 	prMemOps->freeExtBuf = pcieFreeDesc;
 	prMemOps->freeBuf = pcieFreeBuf;
+#if CFG_SUPPORT_RX_PAGE_POOL
+	prMemOps->allocRxBuf = pcieAllocPagePoolRxBuf;
+	prMemOps->freePacket = pcieFreePagePoolPacket;
+#else
+	prMemOps->allocRxBuf = pcieAllocRxBuf;
 	prMemOps->freePacket = pcieFreePacket;
+#endif /* CFG_SUPPORT_RX_PAGE_POOL */
 #if 0
 	prMemOps->dumpTx = pcieDumpTx;
 	prMemOps->dumpRx = pcieDumpRx;
