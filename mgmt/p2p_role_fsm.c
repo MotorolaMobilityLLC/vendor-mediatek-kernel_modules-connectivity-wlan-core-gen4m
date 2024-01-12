@@ -3910,7 +3910,7 @@ void p2pRoleFsmRunEventBeaconUpdate(IN struct ADAPTER *prAdapter,
 	DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventBeaconUpdate\n");
 
 	prBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *) prMsgHdr;
-	if (prBcnUpdateMsg->ucRoleIndex >= BSS_P2P_NUM)
+	if (!prBcnUpdateMsg || prBcnUpdateMsg->ucRoleIndex >= BSS_P2P_NUM)
 		goto error;
 
 	prRoleP2pFsmInfo =
@@ -3922,6 +3922,8 @@ void p2pRoleFsmRunEventBeaconUpdate(IN struct ADAPTER *prAdapter,
 	prP2pBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter,
 			prRoleP2pFsmInfo->ucBssIndex);
+	if (!prP2pBssInfo)
+		goto error;
 
 	prP2pConnReqInfo = &(prRoleP2pFsmInfo->rConnReqInfo);
 
