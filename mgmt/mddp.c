@@ -1270,7 +1270,9 @@ void __mddpNotifyWifiOffStart(void)
 
 void mddpNotifyWifiOffStart(void)
 {
+#if defined(_HIF_PCIE)
 	struct GLUE_INFO *prGlueInfo = NULL;
+#endif
 
 	if (!mddpIsSupportMcifWifi())
 		return;
@@ -1289,6 +1291,7 @@ void mddpNotifyWifiOffStart(void)
 	__mddpNotifyWifiOffStart();
 	mutex_unlock(&rMddpLock);
 
+#if defined(_HIF_PCIE)
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (prGlueInfo == NULL) {
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
@@ -1297,6 +1300,7 @@ void mddpNotifyWifiOffStart(void)
 
 	/* avoid power off process MD SER */
 	kalSetMdCrashEvent(prGlueInfo);
+#endif
 }
 
 void __mddpNotifyWifiOffEnd(void)
