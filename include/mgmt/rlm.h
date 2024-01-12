@@ -244,7 +244,7 @@ extern struct RLM_CAL_RESULT_ALL_V2 g_rBackupCalDataAllV2;
 #endif
 
 typedef void (*PFN_OPMODE_NOTIFY_DONE_FUNC)(
-	struct ADAPTER *, uint8_t, u_int8_t);
+	struct ADAPTER *, uint8_t, bool);
 
 enum ENUM_OP_NOTIFY_TYPE_T {
 	OP_NOTIFY_TYPE_VHT_NSS_BW = 0,
@@ -559,7 +559,7 @@ rlmChangeOperationMode(
 
 void
 rlmDummyChangeOpHandler(struct ADAPTER *prAdapter,
-			uint8_t ucBssIndex, u_int8_t fgIsChangeSuccess);
+	uint8_t ucBssIndex, bool fgIsChangeSuccess);
 
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST

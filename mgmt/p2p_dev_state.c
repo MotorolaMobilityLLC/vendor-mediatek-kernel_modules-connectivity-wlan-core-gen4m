@@ -143,7 +143,7 @@ p2pDevStateInit_REQING_CHANNEL(IN struct ADAPTER *prAdapter,
 		if (prBssInfo->fgIsWmmInited == FALSE)
 			prBssInfo->ucWmmQueSet = MAX_HW_WMM_INDEX;
 		prBssInfo->eBand = prP2pMsgChnlReq->rChannelInfo.eBand;
-		cnmGetOpTRxNss(
+		cnmOpModeGetTRxNss(
 			prAdapter, prBssInfo->ucBssIndex,
 			&prBssInfo->ucOpRxNss, &prBssInfo->ucOpTxNss);
 		prChnlReqInfo->u4MaxInterval = prP2pMsgChnlReq->u4Duration;
