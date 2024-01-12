@@ -7005,6 +7005,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		"HeAmsduInAmpduTx", FEATURE_ENABLED);
 	prWifiVar->ucTrigMacPadDur = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"TrigMacPadDur", HE_CAP_TRIGGER_PAD_DURATION_16);
+	prWifiVar->ucVcoreBoostEnable = (uint8_t) wlanCfgGetUint32(prAdapter,
+		"ucVcoreBoostEnable", FEATURE_ENABLED);
 	}
 #endif
 
