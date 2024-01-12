@@ -2306,7 +2306,10 @@ enum ENUM_UNI_CMD_GET_STATISTICS_TAG {
 	UNI_CMD_GET_STATISTICS_TAG_LINK_QUALITY = 1,
 	UNI_CMD_GET_STATISTICS_TAG_STA = 2,
 	UNI_CMD_GET_STATISTICS_TAG_BUG_REPORT = 3,
-	UNI_CMD_GET_STATISTICS_TAG_NUM
+	/* Reserved range for compatible with ENUM_STATS_LLS_TLV_TAG_ID */
+	UNI_CMD_GET_STATISTICS_TAG_LINK_LAYER_STATS = 0x80,
+	UNI_CMD_GET_STATISTICS_TAG_PPDU_LATENCY,
+	UNI_CMD_GET_STATISTICS_TAG_CURRENT_TX_RATE,
 };
 
 struct UNI_CMD_BASIC_STATISTICS {
@@ -2336,6 +2339,16 @@ struct UNI_CMD_STA_STATISTICS {
 	/** TRUE: (RA) clear TransmitCount, TransmitFailCount,
 	 * Rate1TxCnt, Rate1FailCnt */
 	uint8_t  ucResetCounter;
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_CMD_LINK_LAYER_STATS {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t ucArg0;
+	uint8_t ucArg1;
+	uint8_t ucArg2;
+	uint8_t ucArg3;
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_PKT_DROP {
@@ -4483,8 +4496,8 @@ struct UNI_EVENT_MAC_INFO_TWT_STA_CNM {
 struct UNI_EVENT_STATISTICS {
 	/* fixed field */
 	uint8_t aucPadding[4];
-	/* tlv */
 
+	/* tlv */
 	uint8_t aucTlvBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
@@ -4493,7 +4506,13 @@ enum ENUM_UNI_EVENT_STATISTICS_TAG {
 	UNI_EVENT_STATISTICS_TAG_BASIC = 0,
 	UNI_EVENT_STATISTICS_TAG_LINK_QUALITY = 1,
 	UNI_EVENT_STATISTICS_TAG_STA = 2,
-	UNI_EVENT_STATISTICS_TAG_NUM
+	UNI_EVENT_STATISTICS_TAG_BUG_REPORT = 3,
+	UNI_EVENT_STATISTICS_TAG_TX_STATS = 4,
+	UNI_EVENT_STATISTICS_TAG_ALL_STATS = 5,
+	/* Reserved range for compatible with ENUM_STATS_LLS_TLV_TAG_ID */
+	UNI_EVENT_STATISTICS_TAG_LINK_LAYER_STATS = 0x80,
+	UNI_EVENT_STATISTICS_TAG_PPDU_LATENCY,
+	UNI_EVENT_STATISTICS_TAG_CURRENT_TX_RATE,
 };
 
 /* Basic Scan down notify Parameters (Tag00) */
@@ -4591,8 +4610,7 @@ struct UNI_EVENT_BUG_REPORT {
 	uint32_t     u4TxCcaNavTxTime;
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_LINK_QUALITY
-{
+struct UNI_LINK_QUALITY {
 	int8_t       cRssi; /* AIS Network. */
 	int8_t       cLinkQuality;
 	uint16_t     u2LinkSpeed;            /* TX rate1 */
@@ -4601,8 +4619,7 @@ struct UNI_LINK_QUALITY
 	uint8_t      aucReserve[2];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_EVENT_LINK_QUALITY
-{
+struct UNI_EVENT_LINK_QUALITY {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	struct UNI_LINK_QUALITY rLq[4];
@@ -4615,6 +4632,12 @@ struct UNI_EVENT_STA_STATISTICS {
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_EVENT_GET_STATISTICS {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  aucBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_LINK_STATS {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t  aucBuffer[0];
@@ -5975,6 +5998,8 @@ uint32_t nicUniCmdGetStatistics(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdGetLinkQuality(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdGetLinkStats(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdGetBugReport(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdMldStaTeardown(struct ADAPTER *ad,
@@ -6090,6 +6115,8 @@ void nicUniEventQueryRxStatAllCon3(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventBugReport(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniEventLinkStats(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventRfTestHandler(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventTxPowerInfo(IN struct ADAPTER

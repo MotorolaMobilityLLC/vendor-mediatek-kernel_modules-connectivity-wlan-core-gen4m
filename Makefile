@@ -719,6 +719,7 @@ endif
 
 ifeq ($(MTK_ANDROID_WMT), y)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
+    CONFIG_AOSP_LINK_LAYER_STATS_SUPPORT=y
     WMT_SUPPORT := y
 else ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
@@ -1125,6 +1126,10 @@ ccflags-y += -DCFG_SUPPORT_APF=0
 endif
 else
 ccflags-y += -DCFG_SUPPORT_PKT_OFLD=0
+endif
+
+ifeq ($(CONFIG_AOSP_LINK_LAYER_STATS_SUPPORT), y)
+ccflags-y += -DCFG_SUPPORT_LLS=1
 endif
 
 # ---------------------------------------------------
