@@ -895,7 +895,7 @@ kalProcessRxPacket(IN struct GLUE_INFO *prGlueInfo,
 	skb_reset_tail_pointer(skb);
 	skb_trim(skb, 0);
 
-	if (skb->tail > skb->end) {
+	if (skb_tailroom(skb) < 0 || u4PacketLen > skb_tailroom(skb)) {
 		DBGLOG(RX, ERROR,
 #ifdef NET_SKBUFF_DATA_USES_OFFSET
 			"[skb:0x%p][skb->len:%d][skb->protocol:0x%02X] tail:%u, end:%u, data:%p\n",
