@@ -1576,7 +1576,7 @@ uint32_t wlanCheckWifiFunc(IN struct ADAPTER *prAdapter,
 			   IN u_int8_t fgRdyChk)
 {
 	u_int8_t fgResult, fgTimeout;
-	uint32_t u4Result, u4Status, u4StartTime, u4CurTime;
+	uint32_t u4Result = 0, u4Status, u4StartTime, u4CurTime;
 	const uint32_t ready_bits =
 		prAdapter->chip_info->sw_ready_bits;
 
@@ -5162,6 +5162,11 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 		prCmdNvramFragment = (struct CMD_NVRAM_FRAGMENT *)kalMemAlloc(
 					  sizeof(struct CMD_NVRAM_FRAGMENT),
 					  VIR_MEM_TYPE);
+		if (prCmdNvramFragment == NULL) {
+			DBGLOG(INIT, ERROR,
+				"prCmdNvramFragment allocate fail\n");
+			return WLAN_STATUS_FAILURE;
+		}
 
 		u4NvramStartOffset = 0;
 		pu1Addr = (uint8_t *)
