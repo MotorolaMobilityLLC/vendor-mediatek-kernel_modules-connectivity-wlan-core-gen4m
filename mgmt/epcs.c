@@ -186,6 +186,8 @@ void epcsTimeout(struct ADAPTER *prAdapter, uintptr_t ulParamPtr)
 
 	prMldStaRec = (struct MLD_STA_RECORD *) ulParamPtr;
 	prMldBssInfo = mldBssGetByIdx(prAdapter, prMldStaRec->ucGroupMldId);
+	if (!prMldBssInfo)
+		return;
 
 	if (prMldStaRec->fgEPCS) {
 		epcsMldMUnEdcaBackupRestore(prMldBssInfo, FALSE);
