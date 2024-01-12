@@ -922,8 +922,10 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 	prDmaBuf = &pRxCell->DmaBuf;
 
 	if (prMemOps->copyRxData &&
-	    !prMemOps->copyRxData(prHifInfo, pRxCell, prDmaBuf, prSwRfb))
-		return FALSE;
+	    !prMemOps->copyRxData(prHifInfo, pRxCell, prDmaBuf, prSwRfb)) {
+		fgRet = false;
+		goto skip;
+	}
 
 	prSwRfb->pucRecvBuff = ((struct sk_buff *)prSwRfb->pvPacket)->data;
 	prSwRfb->prRxStatus = (void *)prSwRfb->pucRecvBuff;
