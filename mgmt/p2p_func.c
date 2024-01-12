@@ -1025,6 +1025,13 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			prMgmtTxMsdu->ucStaRecIndex =
 			    (prStaRec != NULL)
 			    ? (prStaRec->ucIndex) : (STA_REC_INDEX_NOT_FOUND);
+			DBGLOG(P2P, TRACE,
+				"Dump probe response content from supplicant.\n");
+			if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
+				dumpMemory8((uint8_t *) prMgmtTxMsdu->prPacket,
+					(uint32_t) prMgmtTxMsdu->u2FrameLength);
+			}
+
 			/* Modifiy Lie time to 100 mS due
 			 * to the STA only wait 30-50mS
 			 */
@@ -1049,6 +1056,12 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			 */
 			*pu8GlCookie = u8GlCookie;
 			ucRetryLimit = 6;
+			DBGLOG(P2P, TRACE,
+				"Dump probe response content to FW.\n");
+			if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
+				dumpMemory8((uint8_t *) prMgmtTxMsdu->prPacket,
+					(uint32_t) prMgmtTxMsdu->u2FrameLength);
+			}
 			break;
 		default:
 			prMgmtTxMsdu->ucBssIndex = ucBssIndex;
