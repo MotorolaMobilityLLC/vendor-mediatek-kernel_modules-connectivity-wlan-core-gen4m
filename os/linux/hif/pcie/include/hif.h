@@ -478,6 +478,10 @@ struct BUS_INFO {
 	void (*enableFwDlMode)(struct ADAPTER *prAdapter);
 	void (*setupMcuEmiAddr)(struct ADAPTER *prAdapter);
 	void (*showDebugInfo)(struct GLUE_INFO *prGlueInfo);
+#if CFG_PCIE_LTR_UPDATE
+	void (*pcieLTRValue)(struct ADAPTER *prAdapter,
+		uint8_t ucState);
+#endif
 	void (*disableDevice)(struct GLUE_INFO *prGlueInfo);
 	void (*clearEvtRingTillCmdRingEmpty)(struct ADAPTER *prAdapter);
 

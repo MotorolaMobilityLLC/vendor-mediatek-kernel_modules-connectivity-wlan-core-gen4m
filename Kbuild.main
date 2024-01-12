@@ -2111,6 +2111,12 @@ else
     ccflags-y += -DCFG_DIRECT_READ_CHIP_INFO=0
 endif
 
+ifeq ($(CONFIG_PCIE_LTR_UPDATE), y)
+    ccflags-y += -DCFG_PCIE_LTR_UPDATE=1
+else
+    ccflags-y += -DCFG_PCIE_LTR_UPDATE=0
+endif
+
 # ---------------------------------------------------
 # Directory List
 # ---------------------------------------------------

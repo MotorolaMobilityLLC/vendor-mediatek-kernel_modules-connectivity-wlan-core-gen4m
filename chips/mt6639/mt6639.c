@@ -226,6 +226,9 @@ static int mt6639ConnacPccifOff(struct ADAPTER *prAdapter);
 static int mt6639_CheckBusHang(void *priv, uint8_t rst_enable);
 static uint32_t mt6639_wlanDownloadPatch(struct ADAPTER *prAdapter);
 #endif
+#if CFG_PCIE_LTR_UPDATE
+static void mt6639PcieLTRValue(struct ADAPTER *prAdapter, uint8_t ucState);
+#endif
 #endif
 
 /*******************************************************************************
@@ -649,6 +652,9 @@ struct BUS_INFO mt6639_bus_info = {
 #if CFG_SUPPORT_WIFI_SLEEP_COUNT
 	.wf_power_dump_start = mt6639PowerDumpStart,
 	.wf_power_dump_end = mt6639PowerDumpEnd,
+#endif
+#if CFG_PCIE_LTR_UPDATE
+	.pcieLTRValue = mt6639PcieLTRValue,
 #endif
 #endif /* _HIF_PCIE */
 	.processTxInterrupt = mt6639ProcessTxInterrupt,
@@ -3571,6 +3577,34 @@ static uint32_t mt6639_wlanDownloadPatch(struct ADAPTER *prAdapter)
 	return status;
 }
 #endif /* IS_MOBILE_SEGMENT */
+
+#if CFG_PCIE_LTR_UPDATE
+uint8_t g_ucLTRStat;
+
+static void mt6639PcieLTRValue(struct ADAPTER *prAdapter, uint8_t ucState)
+{
+	if (ucState == PCIE_LTR_STATE_TX_START) {
+		if (g_ucLTRStat == PCIE_LTR_STATE_TX_END) {
+			HAL_MCR_WR(prAdapter,
+				PCIE_MAC_IREG_PCIE_LTR_VALUES_ADDR,
+				PCIE_LOW_LATENCY_LTR_VALUE);
+			g_ucLTRStat = PCIE_LTR_STATE_TX_START;
+			DBGLOG(HAL, LOUD, "LTR val = 0x%x\n",
+				PCIE_LOW_LATENCY_LTR_VALUE);
+		}
+	} else if (ucState == PCIE_LTR_STATE_TX_END) {
+		if (g_ucLTRStat == PCIE_LTR_STATE_TX_START) {
+			HAL_MCR_WR(prAdapter,
+				PCIE_MAC_IREG_PCIE_LTR_VALUES_ADDR,
+				PCIE_HIGH_LATENCY_LTR_VALUE);
+			g_ucLTRStat = PCIE_LTR_STATE_TX_END;
+			DBGLOG(HAL, LOUD, "LTR val = 0x%x\n",
+				PCIE_HIGH_LATENCY_LTR_VALUE);
+		}
+	} else
+		DBGLOG(HAL, LOUD, "input LTR value wrong\n");
+}
+#endif
 #endif /* _HIF_PCIE */
 
 static uint32_t mt6639GetFlavorVer(uint8_t *flavor)
