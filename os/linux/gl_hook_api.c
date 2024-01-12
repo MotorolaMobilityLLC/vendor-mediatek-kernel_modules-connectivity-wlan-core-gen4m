@@ -1467,7 +1467,7 @@ int32_t MT_ATELogOnOff(struct net_device *prNetDev, uint32_t u4Type, uint32_t u4
 				rxv = rRfATInfo.u4FuncData;
 
 				if (i % 36 == 0)
-					TOOL_PRINTLOG(RFTEST, ERROR, "\%[RXV DUMP START][%d]\n", (i / 36) + 1);
+					TOOL_PRINTLOG(RFTEST, ERROR, "%%[RXV DUMP START][%d]\n", (i / 36) + 1);
 
 				TOOL_PRINTLOG(RFTEST, ERROR, "[RXVD%d]%08x\n", ((i % 36) / 4) + 1, rxv);
 
@@ -2576,6 +2576,10 @@ int32_t MT_ATEWriteEfuse(struct net_device *prNetDev, uint16_t u2Offset, uint16_
 	kalMemSet(&rAccessEfuseInfoWrite, 0, sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 	u4Index = u2Offset % EFUSE_BLOCK_SIZE;
 
+	if (u4Index >= EFUSE_BLOCK_SIZE - 1) {
+		DBGLOG(INIT, INFO, "u4Index [%d] overrun\n", u4Index);
+		return -EFAULT;
+	}
 
 	prGlueInfo->prAdapter->aucEepromVaule[u4Index] = u2Content;
 	prGlueInfo->prAdapter->aucEepromVaule[u4Index+1] = u2Content >> 8 & 0xff;
