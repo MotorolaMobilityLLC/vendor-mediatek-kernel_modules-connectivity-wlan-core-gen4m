@@ -1634,7 +1634,7 @@ s_int32 mt_serv_get_rx_stat(
 	u_int8 test_rx_stat_cat,
 	struct test_rx_stat_u *st)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret = SERV_STATUS_SERV_TEST_FAIL;
 	struct test_operation *ops;
 	struct test_wlan_info *winfos;
 	struct test_rx_stat *stat;
@@ -1649,6 +1649,9 @@ s_int32 mt_serv_get_rx_stat(
 
 	switch (test_rx_stat_cat) {
 	case TEST_RX_STAT_BAND:
+		if (blk_idx >= TEST_DBDC_BAND_NUM)
+			break;
+
 		ret = ops->op_get_rx_stat_band(
 		serv_test->test_winfo,
 		band_idx,
@@ -1669,6 +1672,9 @@ s_int32 mt_serv_get_rx_stat(
 				sizeof(struct test_rx_stat_path_info));
 		break;
 	case TEST_RX_STAT_USER:
+		if (blk_idx >= TEST_USER_NUM)
+			break;
+
 		ret = ops->op_get_rx_stat_user(
 		serv_test->test_winfo,
 		band_idx,
