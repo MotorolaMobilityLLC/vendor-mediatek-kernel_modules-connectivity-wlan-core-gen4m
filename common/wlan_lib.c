@@ -4909,7 +4909,7 @@ uint32_t wlanLoadManufactureData(struct ADAPTER
 		u4NvramOffset +=
 			OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, ucTypeID0);
 
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, TRACE,
 			   "NVRAM-Frag Startofs[0x%08X]ID[%d][0x%08X]Len:%d\n"
 			    , u4NvramStartOffset
 			    , u1TypeID
