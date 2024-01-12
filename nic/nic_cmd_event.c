@@ -4691,6 +4691,93 @@ void nicEventDumpMem(IN struct ADAPTER *prAdapter,
 	}
 }
 
+#if (CFG_CE_ASSERT_DUMP == 1)
+void nicEventAssertDump(IN struct ADAPTER *prAdapter,
+			IN struct WIFI_EVENT *prEvent)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	char aucVersionBuf[128];
+	uint16_t u2VerBufLen = 0;
+	uint16_t u2BufSize = 0;
+
+	prChipInfo = prAdapter->chip_info;
+
+	if (wlanIsChipRstRecEnabled(prAdapter))
+		wlanChipRstPreAct(prAdapter);
+
+	if (prEvent->ucS2DIndex == S2D_INDEX_EVENT_N2H) {
+		if (!prAdapter->fgN9AssertDumpOngoing) {
+			DBGLOG(NIC, ERROR,
+				"%s: EVENT_ID_ASSERT_DUMP\n", __func__);
+			DBGLOG(NIC, ERROR,
+			       "\n[DUMP_N9]====N9 ASSERT_DUMPSTART====\n");
+			prAdapter->fgKeepPrintCoreDump = TRUE;
+
+			prAdapter->fgN9AssertDumpOngoing = TRUE;
+			/* Add FW version in coredump header*/
+			kalMemZero(aucVersionBuf, sizeof(aucVersionBuf));
+			aucVersionBuf[0] = ';';
+			u2VerBufLen = kalStrLen(
+					prAdapter->rVerInfo.aucReleaseManifest);
+			kalStrnCpy(&aucVersionBuf[1],
+					prAdapter->rVerInfo.aucReleaseManifest,
+				   u2VerBufLen);
+			aucVersionBuf[u2VerBufLen + 1] = '\n';
+			aucVersionBuf[u2VerBufLen + 2] = '\0';
+
+			if (kalEnqCoreDumpLog(prAdapter,
+					aucVersionBuf, u2VerBufLen + 2,
+					&prAdapter->prGlueInfo
+					->rCoreDumpSkbQueue)
+					!= WLAN_STATUS_SUCCESS) {
+				DBGLOG(NIC, ERROR,
+						"Add FW version in core dump header fail\n");
+			}
+
+			wlanCorDumpTimerInit(prAdapter);
+		}
+		if (prAdapter->fgN9AssertDumpOngoing) {
+			u2BufSize = prEvent->u2PacketLength
+						- prChipInfo->event_hdr_size;
+			if (prAdapter->fgKeepPrintCoreDump)
+				DBGLOG(NIC, ERROR, "[DUMP_N9]%s:\n",
+					prEvent->aucBuffer);
+			if (!kalStrnCmp(prEvent->aucBuffer,
+					";more log added here", 5)
+			    || !kalStrnCmp(prEvent->aucBuffer,
+					";;[CONNSYS] coredump start", 26))
+				prAdapter->fgKeepPrintCoreDump = FALSE;
+
+			if (kalEnqCoreDumpLog(prAdapter,
+					prEvent->aucBuffer, u2BufSize,
+					&prAdapter->prGlueInfo
+					->rCoreDumpSkbQueue)
+					!= WLAN_STATUS_SUCCESS) {
+				DBGLOG(NIC, ERROR,
+						"kalEnqCoreDumpLog fail\n");
+			}
+
+			if (kalStrStr(prEvent->aucBuffer,
+					";coredump end")) {
+				DBGLOG(NIC, ERROR,
+					"core dump end, trigger whole chip reset\n");
+				prAdapter->fgN9AssertDumpOngoing = FALSE;
+				cnmTimerStopTimer(prAdapter,
+						  &prAdapter->rN9CorDumpTimer);
+				GL_DEFAULT_RESET_TRIGGER(prAdapter,
+						RST_FW_ASSERT);
+			}
+
+			wlanCorDumpTimerReset(prAdapter);
+		}
+	} else {
+		/* prEvent->ucS2DIndex == S2D_INDEX_EVENT_C2H */
+		DBGLOG(NIC, ERROR,
+				"%s: Skip CR4 Dump Handle\n", __func__);
+	}
+}
+#endif
+
 void nicEventRddSendPulse(IN struct ADAPTER *prAdapter,
 			  IN struct WIFI_EVENT *prEvent)
 {

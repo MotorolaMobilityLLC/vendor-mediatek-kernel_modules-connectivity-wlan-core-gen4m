@@ -286,6 +286,9 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 #if CFG_SUPPORT_NAN
 	SPIN_LOCK_NAN_NEGO_CRB,
 #endif
+#if (CFG_CE_ASSERT_DUMP == 1)
+	SPIN_LOCK_CORE_DUMP,
+#endif
 	SPIN_LOCK_NUM
 };
 
@@ -1725,6 +1728,12 @@ void kalSetFwOwnEvent2Hif(struct GLUE_INFO *pr);
 uint32_t kalOpenIcsDumpFile(void);
 uint32_t kalWriteIcsDumpFile(uint8_t *pucBuffer, uint16_t u2Size);
 #endif /* CFG_SUPPORT_ICS */
+
+#if (CFG_CE_ASSERT_DUMP == 1)
+uint32_t kalEnqCoreDumpLog(struct ADAPTER *prAdapter, uint8_t *pucBuffer,
+			     uint16_t u2Size, struct sk_buff_head *queue);
+#endif
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

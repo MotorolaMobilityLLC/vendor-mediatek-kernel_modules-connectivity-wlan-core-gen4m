@@ -7482,6 +7482,32 @@ uint64_t kalGetBootTime(void)
 	return bootTime;
 }
 
+#if (CFG_CE_ASSERT_DUMP == 1)
+uint32_t kalEnqCoreDumpLog(struct ADAPTER *prAdapter, uint8_t *pucBuffer,
+			     uint16_t u2Size, struct sk_buff_head *queue)
+{
+	struct sk_buff *skb_tmp = NULL;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	skb_tmp = alloc_skb(u2Size, GFP_ATOMIC);
+	if (!skb_tmp)
+		return WLAN_STATUS_RESOURCES;
+
+	memcpy(skb_tmp->data, pucBuffer, u2Size);
+	skb_tmp->len = u2Size;
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CORE_DUMP);
+	skb_queue_tail(queue, skb_tmp);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CORE_DUMP);
+
+	wake_up_interruptible(&prAdapter->prGlueInfo->waitq_coredump);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+#endif
+
 #if CFG_WOW_SUPPORT
 void kalWowInit(IN struct GLUE_INFO *prGlueInfo)
 {

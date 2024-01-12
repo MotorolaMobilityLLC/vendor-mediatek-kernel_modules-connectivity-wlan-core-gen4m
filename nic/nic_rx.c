@@ -182,6 +182,9 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 #endif
 	{EVENT_ID_RSSI_MONITOR, nicEventRssiMonitor},
 	{EVENT_ID_DUMP_MEM, nicEventDumpMem},
+#if CFG_CE_ASSERT_DUMP
+	{EVENT_ID_ASSERT_DUMP, nicEventAssertDump},
+#endif
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 	{EVENT_ID_CAL_ALL_DONE, nicEventCalAllDone},
 #endif
