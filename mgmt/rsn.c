@@ -1923,6 +1923,8 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 		prStaRec->rPmfCfg.fgMfpr = (rRsnIe.u2RsnCap &
 					    ELEM_WPA_CAP_MFPR) ? 1 : 0;
 
+		prStaRec->rPmfCfg.fgSaeRequireMfp = FALSE;
+
 		for (i = 0; i < rRsnIe.u4AuthKeyMgtSuiteCount; i++) {
 			if ((rRsnIe.au4AuthKeyMgtSuite[i] ==
 			     RSN_AKM_SUITE_802_1X_SHA256) ||
@@ -1930,6 +1932,11 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 			     RSN_AKM_SUITE_PSK_SHA256)) {
 				DBGLOG(RSN, INFO, "STA SHA256 support\n");
 				prStaRec->rPmfCfg.fgSha256 = TRUE;
+				break;
+			} else if (rRsnIe.au4AuthKeyMgtSuite[i] ==
+				RSN_AKM_SUITE_SAE) {
+				DBGLOG(RSN, INFO, "STA SAE support\n");
+				prStaRec->rPmfCfg.fgSaeRequireMfp = TRUE;
 				break;
 			}
 		}
@@ -2964,6 +2971,14 @@ uint16_t rsnPmfCapableValidation(IN struct ADAPTER
 		if (peerMfpr == TRUE) {
 			DBGLOG(RSN, ERROR,
 				"PMF policy violation for case 7\n");
+			return STATUS_CODE_ROBUST_MGMT_FRAME_POLICY_VIOLATION;
+		}
+
+		if ((prBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_SAE) &&
+			prStaRec->rPmfCfg.fgSaeRequireMfp) {
+			DBGLOG(RSN, ERROR,
+				"PMF policy violation for case sae_require_mfp\n");
 			return STATUS_CODE_ROBUST_MGMT_FRAME_POLICY_VIOLATION;
 		}
 	}
