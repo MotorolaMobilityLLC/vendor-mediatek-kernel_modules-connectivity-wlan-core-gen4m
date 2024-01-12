@@ -6340,8 +6340,17 @@ int32_t mtk_cfg80211_process_str_cmd(struct wiphy *wiphy,
 	if (pfHandler != NULL) {
 		rStatus = pfHandler(wiphy, wdev, cmd, len);
 		return rStatus;
-	} else
-		return -EOPNOTSUPP;
+	}
+
+#if CFG_EXT_FEATURE
+	pfHandler = get_str_cmd_ext_handler(cmd, len);
+	if (pfHandler != NULL) {
+		rStatus = pfHandler(wiphy, wdev, cmd, len);
+		return rStatus;
+	}
+#endif
+
+	return -EOPNOTSUPP;
 }
 
 int mtk_cfg80211_suspend(struct wiphy *wiphy,

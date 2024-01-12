@@ -61,7 +61,6 @@
 #define IOC_AP_STA_DISASSOC     (SIOCIWFIRSTPRIV+25)
 #define IOC_AP_SET_NSS           (SIOCIWFIRSTPRIV+27)
 #define IOC_AP_SET_BW           (SIOCIWFIRSTPRIV+29)
-#define IOC_AP_SET_AX_MODE      (SIOCIWFIRSTPRIV+31)
 
 #define PRIV_CMD_REG_DOMAIN             0
 #define PRIV_CMD_BEACON_PERIOD          1
@@ -527,10 +526,6 @@ int priv_driver_set_csa_ex(struct net_device *prNetDev,
 int priv_driver_set_csa(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_IDC_CH_SWITCH */
-#if CFG_SUPPORT_P2P_ECSA
-int priv_driver_set_ecsa(struct net_device *prNetDev,
-	char *pcCommand, int i4TotalLen);
-#endif /* CFG_SUPPORT_P2P_ECSA */
 int priv_driver_get_country(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_get_channels(struct net_device *prNetDev,
@@ -663,23 +658,7 @@ int priv_driver_set_rdd_op_mode(struct net_device *prNetDev,
 #if CFG_SUPPORT_IDC_CH_SWITCH
 int priv_driver_set_idc_bmp(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
-int priv_driver_set_idc_ril_bridge(struct net_device *prNetDev,
-	char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_IDC_CH_SWITCH */
-#if CFG_SUPPORT_UWB_COEX
-int priv_driver_set_uwbcx_enable(
-	struct net_device *prNetDev,
-	char *pcCommand, int i4TotalLen);
-int priv_driver_set_uwbcx_prepare(
-	struct net_device *prNetDev,
-	char *pcCommand, int i4TotalLen);
-int priv_driver_get_uwbcx_enable(
-	struct net_device *prNetDev,
-	char *pcCommand, int i4TotalLen);
-int priv_driver_get_uwbcx_prepare(
-	struct net_device *prNetDev,
-	char *pcCommand, int i4TotalLen);
-#endif
 #if CFG_WOW_SUPPORT
 int priv_driver_set_wow(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
@@ -851,8 +830,6 @@ int priv_driver_set_sw_wfdma(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #endif /* CFG_MTK_WIFI_SW_WFDMA */
 int priv_driver_get_hapd_channel(struct net_device *prNetDev,
-	char *pcCommand, int i4TotalLen);
-int priv_driver_set_ap_axmode(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 int priv_driver_set_pwr_level(struct net_device *prNetDev,
@@ -1048,18 +1025,6 @@ int priv_driver_get_mem_info(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_show_txd_info(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
-#if CFG_SUPPORT_TDLS
-int priv_driver_get_tdls_available(struct net_device *prNetDev,
-	char *pcCommand, int i4TotalLen);
-int priv_driver_get_tdls_wider_bw(struct net_device *prNetDev,
-	char *pcCommand, int i4TotalLen);
-int priv_driver_get_tdls_max_session(struct net_device *prNetDev,
-	char *pcCommand, int i4TotalLen);
-int priv_driver_get_tdls_num_of_session(
-	struct net_device *prNetDev, char *pcCommand, int i4TotalLen);
-int priv_driver_set_tdls_enabled(struct net_device *prNetDev,
-	char *pcCommand, int i4TotalLen);
-#endif /* CFG_SUPPORT_TDLS */
 #if CFG_SUPPORT_PCIE_GEN_SWITCH
 int priv_driver_set_pcie_speed(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
