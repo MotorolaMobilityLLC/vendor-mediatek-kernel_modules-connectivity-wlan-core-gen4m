@@ -1904,10 +1904,19 @@ nanNdpProcessDataResponse(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
-	/* Special condition: DPReqTXDone comes later than DataPath Rsp NAF */
-	if (prNDP->eCurrentNDPProtocolState == NDP_INITIATOR_TX_DP_REQUEST)
+	/* Special case: nanDPReqTxDone cnSecTxKdeAttrDoneomes later than
+	 * DP Response
+	 */
+	if (prNDP->eCurrentNDPProtocolState == NDP_INITIATOR_TX_DP_REQUEST) {
+		DBGLOG(NAN, INFO,
+		       "Received DP Response earlier than DP Req TX Done");
+		if (prNDP->fgSecurityRequired)
+			nanSecTxKdeAttrDone(prNDP, NAN_SEC_M1);
+
 		nanDataPathProtocolFsmStep(prAdapter,
 					   NDP_INITIATOR_RX_DP_RESPONSE, prNDP);
+		nanNdpInitiatorRspEvent(prAdapter, prNDP, WLAN_STATUS_SUCCESS);
+	}
 
 	if (prNDP->eCurrentNDPProtocolState == NDP_INITIATOR_RX_DP_RESPONSE) {
 		cnmTimerStopTimer(prAdapter, &(prNDL->rNDPProtocolExpireTimer));
@@ -2123,11 +2132,18 @@ nanNdpProcessDataConfirm(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb) {
 		return WLAN_STATUS_FAILURE;
 	}
 
-	/* Special condition: DPRespTxDone comes later than DataPath Confirm */
+	/* Special case: nanDPRespTxDone comes later than DP Confirm */
 	if (prNDP->eCurrentNDPProtocolState == NDP_RESPONDER_TX_DP_RESPONSE &&
-	    prNDP->ucNDPSetupStatus == NAN_ATTR_NDP_STATUS_CONTINUED)
+	    prNDP->ucNDPSetupStatus == NAN_ATTR_NDP_STATUS_CONTINUED) {
+		DBGLOG(NAN, INFO,
+		       "Received DP Confirm earlier than DP Resp TX Done");
+		if (prNDP->fgSecurityRequired)
+			nanSecTxKdeAttrDone(prNDP, NAN_SEC_M2);
+
 		nanDataPathProtocolFsmStep(prAdapter,
 					   NDP_RESPONDER_RX_DP_CONFIRM, prNDP);
+		nanNdpResponderRspEvent(prAdapter, prNDP, WLAN_STATUS_SUCCESS);
+	}
 
 	if (prNDP->eCurrentNDPProtocolState == NDP_RESPONDER_RX_DP_CONFIRM) {
 		cnmTimerStopTimer(prAdapter, &(prNDL->rNDPProtocolExpireTimer));
@@ -2289,13 +2305,17 @@ nanNdpProcessDataKeyInstall(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
-	/* Special condition: DPConfirmTxDone comes later than DataPath
-	 * Security Install
-	 */
+	/* Special case: nanDPConfirmTxDone comes later than DP Key Install */
 	if (prNDP->eCurrentNDPProtocolState == NDP_INITIATOR_TX_DP_CONFIRM &&
-	    prNDP->ucNDPSetupStatus == NAN_ATTR_NDP_STATUS_CONTINUED)
-		nanDataPathProtocolFsmStep(
-			prAdapter, NDP_INITIATOR_RX_DP_SECURITY_INSTALL, prNDP);
+	    prNDP->ucNDPSetupStatus == NAN_ATTR_NDP_STATUS_CONTINUED) {
+		DBGLOG(NAN, INFO,
+		       "Received DP Key Install earlier than DP Confirm TX Done");
+		if (prNDP->fgSecurityRequired)
+			nanSecTxKdeAttrDone(prNDP, NAN_SEC_M3);
+
+		nanDataPathProtocolFsmStep(prAdapter,
+				NDP_INITIATOR_RX_DP_SECURITY_INSTALL, prNDP);
+	}
 
 	/* update parameters through attribute parsing */
 	if (prNDP->eCurrentNDPProtocolState ==
@@ -2622,7 +2642,7 @@ nanNdlProcessScheduleResponse(struct ADAPTER *prAdapter,
 	prNDL = nanDataUtilSearchNdlByMac(prAdapter, prNaf->aucSrcAddr);
 	if (prNDL) {
 		/* special condition - Schedule Response earlier than
-		 *  ScheduleReqTxDone
+		 * ScheduleReqTxDone
 		 */
 		if (prNDL->eCurrentNDLMgmtState ==
 		    NDL_INITIATOR_TX_SCHEDULE_REQUEST)
@@ -5347,6 +5367,83 @@ nanNdlSendScheduleUpdateNotify(struct ADAPTER *prAdapter,
 		prStaRec);
 }
 
+static struct _NAN_NDL_INSTANCE_T *nanGetNdlByTxDoneActionFrame(
+				struct ADAPTER *prAdapter,
+				struct MSDU_INFO *prMsduInfo,
+				uint32_t *u4Status,
+				const char *func)
+{
+	struct _NAN_ACTION_FRAME_T *prNAF;
+	struct _NAN_NDL_INSTANCE_T *prNDL = NULL;
+
+	*u4Status = WLAN_STATUS_SUCCESS;
+	if (!prMsduInfo) {
+		DBGLOG(NAN, ERROR, "[%s] prMsduInfo error\n", __func__);
+		*u4Status = WLAN_STATUS_INVALID_DATA;
+		goto done;
+	}
+
+	prNAF = (struct _NAN_ACTION_FRAME_T *)prMsduInfo->prPacket;
+
+	/* search for matching NDL */
+	prNDL = nanDataUtilSearchNdlByMac(prAdapter, prNAF->aucDestAddr);
+
+done:
+	return prNDL;
+}
+
+static struct _NAN_NDP_INSTANCE_T *nanGetNdpByTxDoneActionFrame(
+				struct ADAPTER *prAdapter,
+				struct MSDU_INFO *prMsduInfo,
+				struct _NAN_NDL_INSTANCE_T **prNDL,
+				uint32_t *u4Status,
+				const char *func)
+{
+	uint8_t *pucAttrList;
+	uint16_t u2AttrListLength;
+	struct _NAN_ATTR_NDP_T *prAttrNDP;
+	struct _NAN_ATTR_NDPE_T *prAttrNDPE;
+	struct _NAN_ACTION_FRAME_T *prNAF;
+	struct _NAN_NDP_INSTANCE_T *prNDP = NULL;
+	uint8_t ucNDPID;
+
+	*u4Status = WLAN_STATUS_SUCCESS;
+
+	*prNDL = nanGetNdlByTxDoneActionFrame(prAdapter, prMsduInfo, u4Status,
+					      func);
+	if (!*prNDL)
+		goto done;
+
+	prNAF = (struct _NAN_ACTION_FRAME_T *)prMsduInfo->prPacket;
+
+	/* search for NDP-ID */
+	pucAttrList = prNAF->aucInfoContent;
+	u2AttrListLength = prMsduInfo->u2FrameLength -
+		OFFSET_OF(struct _NAN_ACTION_FRAME_T, aucInfoContent);
+
+	prAttrNDP = (struct _NAN_ATTR_NDP_T *)nanRetrieveAttrById(pucAttrList,
+				u2AttrListLength, NAN_ATTR_ID_NDP);
+
+	prAttrNDPE = (struct _NAN_ATTR_NDPE_T *)nanRetrieveAttrById(pucAttrList,
+				u2AttrListLength, NAN_ATTR_ID_NDP_EXTENSION);
+	if (prAttrNDP) {
+		ucNDPID = prAttrNDP->ucNDPID;
+		DBGLOG(NAN, INFO, "[%s] prAttrNDP exist, NDPID=%u\n",
+		       func, ucNDPID);
+	} else if (prAttrNDPE) {
+		ucNDPID = prAttrNDPE->ucNDPID;
+		DBGLOG(NAN, INFO, "[%s] prAttrNDPE exist, NDPID=%u\n",
+		       func, ucNDPID);
+	} else {
+		DBGLOG(NAN, ERROR, "[%s] Not found the NDPID\n", func);
+		goto done;
+	}
+	prNDP = nanDataUtilSearchNdpByNdpId(prAdapter, *prNDL, ucNDPID);
+
+done:
+	return prNDP;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief            NAF TX Done Callback - for NDP negotiation (DP Request)
@@ -5356,90 +5453,54 @@ nanNdlSendScheduleUpdateNotify(struct ADAPTER *prAdapter,
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanDPReqTxDone(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
-	       enum ENUM_TX_RESULT_CODE rTxDoneStatus) {
-	struct _NAN_ACTION_FRAME_T *prNAF;
-	uint8_t *pucAttrList;
-	uint16_t u2AttrListLength;
-	struct _NAN_ATTR_NDP_T *prAttrNDP;
-	struct _NAN_ATTR_NDPE_T *prAttrNDPE;
+uint32_t nanDPReqTxDone(struct ADAPTER *prAdapter,
+			struct MSDU_INFO *prMsduInfo,
+			enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
 	struct _NAN_NDL_INSTANCE_T *prNDL;
 	struct _NAN_NDP_INSTANCE_T *prNDP;
+	enum _ENUM_NDP_PROTOCOL_STATE_T eCurrentNDPProtocolState;
+	uint32_t u4Status;
+	u_int8_t fgNeedNotify = FALSE;
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter, Status:%x\n", __func__, rTxDoneStatus);
 #endif
 
-	if (!prMsduInfo) {
-		DBGLOG(NAN, ERROR, "[%s] prMsduInfo error\n", __func__);
-		return WLAN_STATUS_INVALID_DATA;
-	}
+	prNDP = nanGetNdpByTxDoneActionFrame(prAdapter, prMsduInfo, &prNDL,
+					     &u4Status, __func__);
+	if (!prNDP)
+		return u4Status;
 
-	prNAF = (struct _NAN_ACTION_FRAME_T *)prMsduInfo->prPacket;
-
-	/* search for matching NDL */
-	prNDL = nanDataUtilSearchNdlByMac(prAdapter, prNAF->aucDestAddr);
-	if (prNDL == NULL)
-		return WLAN_STATUS_SUCCESS;
-
-	/* search for NDP-ID */
-	pucAttrList = (uint8_t *)(prNAF->aucInfoContent);
-	u2AttrListLength =
-		prMsduInfo->u2FrameLength -
-		OFFSET_OF(struct _NAN_ACTION_FRAME_T, aucInfoContent);
-
-	prAttrNDP = (struct _NAN_ATTR_NDP_T *)nanRetrieveAttrById(
-		pucAttrList, u2AttrListLength, NAN_ATTR_ID_NDP);
-
-	prAttrNDPE = (struct _NAN_ATTR_NDPE_T *)nanRetrieveAttrById(
-		pucAttrList, u2AttrListLength, NAN_ATTR_ID_NDP_EXTENSION);
-	if (prAttrNDP != NULL)
-		prNDP = nanDataUtilSearchNdpByNdpId(prAdapter, prNDL,
-						    prAttrNDP->ucNDPID);
-	else if (prAttrNDPE != NULL)
-		prNDP = nanDataUtilSearchNdpByNdpId(prAdapter, prNDL,
-						    prAttrNDPE->ucNDPID);
-	else {
-		DBGLOG(NAN, ERROR, "Not found the NDPID\n");
-		return WLAN_STATUS_SUCCESS;
-	}
-	if (prNDP == NULL) {
-		/* weird condition */
-		return WLAN_STATUS_SUCCESS;
-	}
-
+	eCurrentNDPProtocolState = prNDP->eCurrentNDPProtocolState;
 	if (rTxDoneStatus == WLAN_STATUS_SUCCESS) {
-		cnmTimerStopTimer(prAdapter, &(prNDL->rNDPProtocolRetryTimer));
+		cnmTimerStopTimer(prAdapter, &prNDL->rNDPProtocolRetryTimer);
+		fgNeedNotify = TRUE;
 
-		/* Notify SEC */
-		if (prNDP->fgSecurityRequired)
-			nanSecTxKdeAttrDone(prNDP, NAN_SEC_M1);
+		if (eCurrentNDPProtocolState == NDP_INITIATOR_TX_DP_REQUEST) {
+			if (prNDP->fgSecurityRequired) /* Notify SEC */
+				nanSecTxKdeAttrDone(prNDP, NAN_SEC_M1);
 
-		if (prNDP->eCurrentNDPProtocolState ==
-		    NDP_INITIATOR_TX_DP_REQUEST)
-			nanDataPathProtocolFsmStep(
-				prAdapter, NDP_INITIATOR_RX_DP_RESPONSE, prNDP);
+			nanDataPathProtocolFsmStep(prAdapter,
+					NDP_INITIATOR_RX_DP_RESPONSE, prNDP);
+		}
 	} else {
-		if (prNDP->eCurrentNDPProtocolState ==
-		    NDP_INITIATOR_TX_DP_REQUEST) {
+		if (eCurrentNDPProtocolState == NDP_INITIATOR_TX_DP_REQUEST) {
 			prNDP->ucTxRetryCounter++;
 
-			if (prNDP->ucTxRetryCounter < NAN_DATA_RETRY_LIMIT)
-				nanDataPathProtocolFsmStep(
-					prAdapter, NDP_INITIATOR_TX_DP_REQUEST,
-					prNDP);
-
-			else
-				nanDataPathProtocolFsmStep(
-					prAdapter, NDP_DISCONNECT, prNDP);
+			if (prNDP->ucTxRetryCounter < NAN_DATA_RETRY_LIMIT) {
+				nanDataPathProtocolFsmStep(prAdapter,
+					NDP_INITIATOR_TX_DP_REQUEST, prNDP);
+			} else {
+				nanDataPathProtocolFsmStep(prAdapter,
+					NDP_DISCONNECT, prNDP);
+				fgNeedNotify = TRUE;
+			}
 		}
 	}
 
 	/* Send rsp event to wifi hal */
-	if ((rTxDoneStatus == WLAN_STATUS_SUCCESS) ||
-		(prNDP->eCurrentNDPProtocolState == NDP_DISCONNECT &&
-		prNDP->ucTxRetryCounter >= NAN_DATA_RETRY_LIMIT)) {
+	if (fgNeedNotify) {
 		nanNdpInitiatorRspEvent(prAdapter, prNDP, rTxDoneStatus);
 		DBGLOG(NAN, INFO, "NDP req event: %d\n", rTxDoneStatus);
 	}
@@ -5456,122 +5517,68 @@ nanDPReqTxDone(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanDPRespTxDone(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
-		enum ENUM_TX_RESULT_CODE rTxDoneStatus) {
-	struct _NAN_ACTION_FRAME_T *prNAF;
-	uint8_t *pucAttrList;
-	uint16_t u2AttrListLength;
-	struct _NAN_ATTR_NDP_T *prAttrNDP;
-	struct _NAN_ATTR_NDPE_T *prAttrNDPE;
+uint32_t nanDPRespTxDone(struct ADAPTER *prAdapter,
+			 struct MSDU_INFO *prMsduInfo,
+			 enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
 	struct _NAN_NDL_INSTANCE_T *prNDL;
 	struct _NAN_NDP_INSTANCE_T *prNDP;
+	enum _ENUM_NDP_PROTOCOL_STATE_T eCurrentNDPProtocolState;
+	uint32_t u4Status;
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter, Status:%x\n", __func__, rTxDoneStatus);
 #endif
 
-	if (!prMsduInfo) {
-		DBGLOG(NAN, ERROR, "[%s] prMsduInfo error\n", __func__);
-		return WLAN_STATUS_INVALID_DATA;
-	}
+	prNDP = nanGetNdpByTxDoneActionFrame(prAdapter, prMsduInfo, &prNDL,
+					     &u4Status, __func__);
+	if (!prNDP)
+		return u4Status;
 
-	prNAF = (struct _NAN_ACTION_FRAME_T *)prMsduInfo->prPacket;
-
-	/* search for matching NDL */
-	prNDL = nanDataUtilSearchNdlByMac(prAdapter, prNAF->aucDestAddr);
-	if (prNDL == NULL)
-		return WLAN_STATUS_SUCCESS;
-
-	/* search for NDP-ID */
-	pucAttrList = (uint8_t *)(prNAF->aucInfoContent);
-	u2AttrListLength =
-		prMsduInfo->u2FrameLength -
-		OFFSET_OF(struct _NAN_ACTION_FRAME_T, aucInfoContent);
-
-	prAttrNDP = (struct _NAN_ATTR_NDP_T *)nanRetrieveAttrById(
-		pucAttrList, u2AttrListLength, NAN_ATTR_ID_NDP);
-
-	prAttrNDPE = (struct _NAN_ATTR_NDPE_T *)nanRetrieveAttrById(
-		pucAttrList, u2AttrListLength, NAN_ATTR_ID_NDP_EXTENSION);
-
-	if (prAttrNDP != NULL) {
-		prNDP = nanDataUtilSearchNdpByNdpId(prAdapter, prNDL,
-						    prAttrNDP->ucNDPID);
-
-		DBGLOG(NAN, INFO, "[%s] prAttrNDP exist\n", __func__);
-		}
-	else if (prAttrNDPE != NULL) {
-		prNDP = nanDataUtilSearchNdpByNdpId(prAdapter, prNDL,
-						    prAttrNDPE->ucNDPID);
-
-		DBGLOG(NAN, INFO, "[%s] prAttrNDPE exist\n", __func__);
-	}
-	else {
-		DBGLOG(NAN, ERROR, "Not found the NDPID\n");
-		return WLAN_STATUS_SUCCESS;
-	}
-
-	if (prNDP == NULL) {
-		/* weird condition */
-		return WLAN_STATUS_SUCCESS;
-	}
-
-	/* Send rsp event to wifi hal */
+	eCurrentNDPProtocolState = prNDP->eCurrentNDPProtocolState;
 	if (rTxDoneStatus == WLAN_STATUS_SUCCESS) {
-		nanNdpResponderRspEvent(prAdapter, prNDP, rTxDoneStatus);
+		cnmTimerStopTimer(prAdapter, &prNDL->rNDPProtocolRetryTimer);
+		/* Notify framework before setpping to next NDP step  */
 		DBGLOG(NAN, INFO, "NDP resp event: %d\n", rTxDoneStatus);
-	}
+		nanNdpResponderRspEvent(prAdapter, prNDP, rTxDoneStatus);
 
-	if (rTxDoneStatus == WLAN_STATUS_SUCCESS) {
-		cnmTimerStopTimer(prAdapter, &(prNDL->rNDPProtocolRetryTimer));
+		if (eCurrentNDPProtocolState == NDP_RESPONDER_TX_DP_RESPONSE) {
+			if (prNDP->fgSecurityRequired) /* Notify SEC */
+				nanSecTxKdeAttrDone(prNDP, NAN_SEC_M2);
 
-		/* Notify SEC */
-		if (prNDP->fgSecurityRequired)
-			nanSecTxKdeAttrDone(prNDP, NAN_SEC_M2);
-
-		if (prNDP->eCurrentNDPProtocolState ==
-		    NDP_RESPONDER_TX_DP_RESPONSE) {
 			switch (prNDP->ucNDPSetupStatus) {
 			case NAN_ATTR_NDP_STATUS_CONTINUED:
-				nanDataPathProtocolFsmStep(
-					prAdapter, NDP_RESPONDER_RX_DP_CONFIRM,
-					prNDP);
+				nanDataPathProtocolFsmStep(prAdapter,
+					NDP_RESPONDER_RX_DP_CONFIRM, prNDP);
 				break;
 
 			case NAN_ATTR_NDP_STATUS_ACCEPTED:
-				nanDataPathProtocolFsmStep(
-					prAdapter, NDP_NORMAL_TR, prNDP);
+				nanDataPathProtocolFsmStep(prAdapter,
+					NDP_NORMAL_TR, prNDP);
 				break;
 
 			case NAN_ATTR_NDP_STATUS_REJECTED:
-				nanDataPathProtocolFsmStep(
-					prAdapter, NDP_DISCONNECT, prNDP);
+				nanDataPathProtocolFsmStep(prAdapter,
+					NDP_DISCONNECT, prNDP);
 				break;
 			}
 		}
 	} else {
-		if (prNDP->eCurrentNDPProtocolState ==
-		    NDP_RESPONDER_TX_DP_RESPONSE) {
+		if (eCurrentNDPProtocolState == NDP_RESPONDER_TX_DP_RESPONSE) {
 			prNDP->ucTxRetryCounter++;
 
-			if (prNDP->ucTxRetryCounter < NAN_DATA_RETRY_LIMIT)
-				nanDataPathProtocolFsmStep(
-					prAdapter, NDP_RESPONDER_TX_DP_RESPONSE,
-					prNDP);
-
-			else
-				nanDataPathProtocolFsmStep(
-					prAdapter, NDP_DISCONNECT, prNDP);
+			if (prNDP->ucTxRetryCounter < NAN_DATA_RETRY_LIMIT) {
+				nanDataPathProtocolFsmStep(prAdapter,
+					NDP_RESPONDER_TX_DP_RESPONSE, prNDP);
+			} else {
+				nanDataPathProtocolFsmStep(prAdapter,
+					NDP_DISCONNECT, prNDP);
+				DBGLOG(NAN, INFO, "NDP resp event: %d\n",
+				       rTxDoneStatus);
+				nanNdpResponderRspEvent(prAdapter, prNDP,
+							rTxDoneStatus);
+			}
 		}
-	}
-
-	/* Send rsp event to wifi hal */
-	if ((rTxDoneStatus == WLAN_STATUS_SUCCESS) ||
-		(prNDP->eCurrentNDPProtocolState == NDP_DISCONNECT &&
-		prNDP->ucTxRetryCounter >= NAN_DATA_RETRY_LIMIT)) {
-		nanNdpResponderRspEvent(prAdapter, prNDP, rTxDoneStatus);
-		DBGLOG(NAN, INFO, "NDP resp event: %d\n", rTxDoneStatus);
 	}
 
 	return WLAN_STATUS_SUCCESS;
@@ -5586,100 +5593,61 @@ nanDPRespTxDone(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanDPConfirmTxDone(struct ADAPTER *prAdapter,
-		   struct MSDU_INFO *prMsduInfo,
-		   enum ENUM_TX_RESULT_CODE rTxDoneStatus) {
-	struct _NAN_ACTION_FRAME_T *prNAF;
-	uint8_t *pucAttrList;
-	uint16_t u2AttrListLength;
-	struct _NAN_ATTR_NDP_T *prAttrNDP;
-	struct _NAN_ATTR_NDPE_T *prAttrNDPE;
+uint32_t nanDPConfirmTxDone(struct ADAPTER *prAdapter,
+			    struct MSDU_INFO *prMsduInfo,
+			    enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
 	struct _NAN_NDL_INSTANCE_T *prNDL;
 	struct _NAN_NDP_INSTANCE_T *prNDP;
+	enum _ENUM_NDP_PROTOCOL_STATE_T eCurrentNDPProtocolState;
+	uint32_t u4Status;
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter, Status:%x\n", __func__, rTxDoneStatus);
 #endif
 
-	if (!prMsduInfo) {
-		DBGLOG(NAN, ERROR, "[%s] prMsduInfo error\n", __func__);
-		return WLAN_STATUS_INVALID_DATA;
-	}
+	prNDP = nanGetNdpByTxDoneActionFrame(prAdapter, prMsduInfo, &prNDL,
+					     &u4Status, __func__);
+	if (!prNDP)
+		return u4Status;
 
-	prNAF = (struct _NAN_ACTION_FRAME_T *)prMsduInfo->prPacket;
-
-	/* search for matching NDL */
-	prNDL = nanDataUtilSearchNdlByMac(prAdapter, prNAF->aucDestAddr);
-	if (prNDL == NULL)
-		return WLAN_STATUS_SUCCESS;
-
-	/* search for NDP-ID */
-	pucAttrList = (uint8_t *)(prNAF->aucInfoContent);
-	u2AttrListLength =
-		prMsduInfo->u2FrameLength -
-		OFFSET_OF(struct _NAN_ACTION_FRAME_T, aucInfoContent);
-
-	prAttrNDP = (struct _NAN_ATTR_NDP_T *)nanRetrieveAttrById(
-		pucAttrList, u2AttrListLength, NAN_ATTR_ID_NDP);
-	prAttrNDPE = (struct _NAN_ATTR_NDPE_T *)nanRetrieveAttrById(
-		pucAttrList, u2AttrListLength, NAN_ATTR_ID_NDP_EXTENSION);
-	if (prAttrNDP != NULL)
-		prNDP = nanDataUtilSearchNdpByNdpId(prAdapter, prNDL,
-						    prAttrNDP->ucNDPID);
-	else if (prAttrNDPE != NULL)
-		prNDP = nanDataUtilSearchNdpByNdpId(prAdapter, prNDL,
-						    prAttrNDPE->ucNDPID);
-	else {
-		DBGLOG(NAN, ERROR, "Not found the NDPID\n");
-		return WLAN_STATUS_SUCCESS;
-	}
-	if (prNDP == NULL) {
-		/* weird condition */
-		return WLAN_STATUS_SUCCESS;
-	}
-
+	eCurrentNDPProtocolState = prNDP->eCurrentNDPProtocolState;
 	if (rTxDoneStatus == WLAN_STATUS_SUCCESS) {
-		cnmTimerStopTimer(prAdapter, &(prNDL->rNDPProtocolRetryTimer));
+		cnmTimerStopTimer(prAdapter, &prNDL->rNDPProtocolRetryTimer);
 
-		/* Notify SEC */
-		if (prNDP->fgSecurityRequired)
-			nanSecTxKdeAttrDone(prNDP, NAN_SEC_M3);
+		if (eCurrentNDPProtocolState == NDP_INITIATOR_TX_DP_CONFIRM) {
+			if (prNDP->fgSecurityRequired) /* Notify SEC */
+				nanSecTxKdeAttrDone(prNDP, NAN_SEC_M3);
 
-		if (prNDP->eCurrentNDPProtocolState ==
-		    NDP_INITIATOR_TX_DP_CONFIRM) {
 			switch (prNDP->ucNDPSetupStatus) {
 			case NAN_ATTR_NDP_STATUS_CONTINUED:
-				nanDataPathProtocolFsmStep(
-					prAdapter,
+				nanDataPathProtocolFsmStep(prAdapter,
 					NDP_INITIATOR_RX_DP_SECURITY_INSTALL,
 					prNDP);
 				break;
 
 			case NAN_ATTR_NDP_STATUS_ACCEPTED:
-				nanDataPathProtocolFsmStep(
-					prAdapter, NDP_NORMAL_TR, prNDP);
+				nanDataPathProtocolFsmStep(prAdapter,
+					NDP_NORMAL_TR, prNDP);
 				break;
 
 			case NAN_ATTR_NDP_STATUS_REJECTED:
-				nanDataPathProtocolFsmStep(
-					prAdapter, NDP_DISCONNECT, prNDP);
+				nanDataPathProtocolFsmStep(prAdapter,
+					NDP_DISCONNECT, prNDP);
 				break;
 			}
 		}
 	} else {
-		if (prNDP->eCurrentNDPProtocolState ==
-		    NDP_INITIATOR_TX_DP_CONFIRM) {
+		if (eCurrentNDPProtocolState == NDP_INITIATOR_TX_DP_CONFIRM) {
 			prNDP->ucTxRetryCounter++;
 
 			if (prNDP->ucTxRetryCounter < NAN_DATA_RETRY_LIMIT)
-				nanDataPathProtocolFsmStep(
-					prAdapter, NDP_INITIATOR_TX_DP_CONFIRM,
-					prNDP);
+				nanDataPathProtocolFsmStep(prAdapter,
+					NDP_INITIATOR_TX_DP_CONFIRM, prNDP);
 
 			else
-				nanDataPathProtocolFsmStep(
-					prAdapter, NDP_DISCONNECT, prNDP);
+				nanDataPathProtocolFsmStep(prAdapter,
+					NDP_DISCONNECT, prNDP);
 		}
 	}
 
@@ -5698,65 +5666,31 @@ nanDPConfirmTxDone(struct ADAPTER *prAdapter,
 uint32_t
 nanDPSecurityInstallTxDone(struct ADAPTER *prAdapter,
 			   struct MSDU_INFO *prMsduInfo,
-			   enum ENUM_TX_RESULT_CODE rTxDoneStatus) {
-	struct _NAN_ACTION_FRAME_T *prNAF;
-	uint8_t *pucAttrList;
-	uint16_t u2AttrListLength;
-	struct _NAN_ATTR_NDP_T *prAttrNDP;
-	struct _NAN_ATTR_NDPE_T *prAttrNDPE;
+			   enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
 	struct _NAN_NDL_INSTANCE_T *prNDL;
 	struct _NAN_NDP_INSTANCE_T *prNDP;
+	enum _ENUM_NDP_PROTOCOL_STATE_T eCurrentNDPProtocolState;
+	uint32_t u4Status;
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter, Status:%x\n", __func__, rTxDoneStatus);
 #endif
 
-	if (!prMsduInfo) {
-		DBGLOG(NAN, ERROR, "[%s] prMsduInfo error\n", __func__);
-		return WLAN_STATUS_INVALID_DATA;
-	}
+	prNDP = nanGetNdpByTxDoneActionFrame(prAdapter, prMsduInfo, &prNDL,
+					     &u4Status, __func__);
+	if (!prNDP)
+		return u4Status;
 
-	prNAF = (struct _NAN_ACTION_FRAME_T *)prMsduInfo->prPacket;
-
-	/* search for matching NDL */
-	prNDL = nanDataUtilSearchNdlByMac(prAdapter, prNAF->aucDestAddr);
-	if (prNDL == NULL)
-		return WLAN_STATUS_SUCCESS;
-
-	/* search for NDP-ID */
-	pucAttrList = (uint8_t *)(prNAF->aucInfoContent);
-	u2AttrListLength =
-		prMsduInfo->u2FrameLength -
-		OFFSET_OF(struct _NAN_ACTION_FRAME_T, aucInfoContent);
-
-	prAttrNDP = (struct _NAN_ATTR_NDP_T *)nanRetrieveAttrById(
-		pucAttrList, u2AttrListLength, NAN_ATTR_ID_NDP);
-	prAttrNDPE = (struct _NAN_ATTR_NDPE_T *)nanRetrieveAttrById(
-		pucAttrList, u2AttrListLength, NAN_ATTR_ID_NDP_EXTENSION);
-	if (prAttrNDP != NULL)
-		prNDP = nanDataUtilSearchNdpByNdpId(prAdapter, prNDL,
-						    prAttrNDP->ucNDPID);
-	else if (prAttrNDPE != NULL)
-		prNDP = nanDataUtilSearchNdpByNdpId(prAdapter, prNDL,
-						    prAttrNDPE->ucNDPID);
-	else {
-		DBGLOG(NAN, ERROR, "Not found the NDPID\n");
-		return WLAN_STATUS_SUCCESS;
-	}
-
-	if (prNDP == NULL) {
-		/* weird condition */
-		return WLAN_STATUS_SUCCESS;
-	}
-
+	eCurrentNDPProtocolState = prNDP->eCurrentNDPProtocolState;
 	if (rTxDoneStatus == WLAN_STATUS_SUCCESS) {
-		cnmTimerStopTimer(prAdapter, &(prNDL->rNDPProtocolRetryTimer));
+		cnmTimerStopTimer(prAdapter, &prNDL->rNDPProtocolRetryTimer);
 
 		/* Notify SEC */
 		if (prNDP->fgSecurityRequired)
 			nanSecTxKdeAttrDone(prNDP, NAN_SEC_M4);
 
-		if (prNDP->eCurrentNDPProtocolState ==
+		if (eCurrentNDPProtocolState ==
 		    NDP_RESPONDER_TX_DP_SECURITY_INSTALL) {
 			switch (prNDP->ucNDPSetupStatus) {
 			case NAN_ATTR_NDP_STATUS_ACCEPTED:
@@ -5772,7 +5706,7 @@ nanDPSecurityInstallTxDone(struct ADAPTER *prAdapter,
 			}
 		}
 	} else {
-		if (prNDP->eCurrentNDPProtocolState ==
+		if (eCurrentNDPProtocolState ==
 		    NDP_RESPONDER_TX_DP_SECURITY_INSTALL) {
 			prNDP->ucTxRetryCounter++;
 
@@ -5803,60 +5737,24 @@ nanDPSecurityInstallTxDone(struct ADAPTER *prAdapter,
 uint32_t
 nanDPTerminationTxDone(struct ADAPTER *prAdapter,
 		       struct MSDU_INFO *prMsduInfo,
-		       enum ENUM_TX_RESULT_CODE rTxDoneStatus) {
-	struct _NAN_ACTION_FRAME_T *prNAF;
-	uint8_t *pucAttrList;
-	uint16_t u2AttrListLength;
-	struct _NAN_ATTR_NDP_T *prAttrNDP;
-	struct _NAN_ATTR_NDPE_T *prAttrNDPE;
+		       enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
 	struct _NAN_NDL_INSTANCE_T *prNDL;
 	struct _NAN_NDP_INSTANCE_T *prNDP;
+	uint32_t u4Status;
+	uint8_t fgSendNdpEndRsp = TRUE;
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter, Status:%x\n", __func__, rTxDoneStatus);
 #endif
 
-	if (!prMsduInfo) {
-		DBGLOG(NAN, ERROR, "[%s] prMsduInfo error\n", __func__);
-		return WLAN_STATUS_INVALID_DATA;
-	}
-
-	prNAF = (struct _NAN_ACTION_FRAME_T *)prMsduInfo->prPacket;
-
-	/* search for matching NDL */
-	prNDL = nanDataUtilSearchNdlByMac(prAdapter, prNAF->aucDestAddr);
-	if (prNDL == NULL)
-		return WLAN_STATUS_SUCCESS;
-
-	/* search for NDP-ID */
-	pucAttrList = (uint8_t *)(prNAF->aucInfoContent);
-	u2AttrListLength =
-		prMsduInfo->u2FrameLength -
-		OFFSET_OF(struct _NAN_ACTION_FRAME_T, aucInfoContent);
-
-	prAttrNDP = (struct _NAN_ATTR_NDP_T *)nanRetrieveAttrById(
-		pucAttrList, u2AttrListLength, NAN_ATTR_ID_NDP);
-	prAttrNDPE = (struct _NAN_ATTR_NDPE_T *)nanRetrieveAttrById(
-		pucAttrList, u2AttrListLength, NAN_ATTR_ID_NDP_EXTENSION);
-	if (prAttrNDP != NULL)
-		prNDP = nanDataUtilSearchNdpByNdpId(prAdapter, prNDL,
-						    prAttrNDP->ucNDPID);
-	else if (prAttrNDPE != NULL)
-		prNDP = nanDataUtilSearchNdpByNdpId(prAdapter, prNDL,
-						    prAttrNDPE->ucNDPID);
-	else {
-		prNDP = NULL;
-		DBGLOG(NAN, ERROR, "Not found the NDPID\n");
-		return WLAN_STATUS_SUCCESS;
-	}
-
-	if (prNDP == NULL) {
-		/* weird condition */
-		return WLAN_STATUS_SUCCESS;
-	}
+	prNDP = nanGetNdpByTxDoneActionFrame(prAdapter, prMsduInfo, &prNDL,
+					     &u4Status, __func__);
+	if (!prNDP)
+		return u4Status;
 
 	if (rTxDoneStatus == WLAN_STATUS_SUCCESS) {
-		cnmTimerStopTimer(prAdapter, &(prNDL->rNDPProtocolRetryTimer));
+		cnmTimerStopTimer(prAdapter, &prNDL->rNDPProtocolRetryTimer);
 
 		if (prNDP->eCurrentNDPProtocolState == NDP_TX_DP_TERMINATION)
 			nanDataPathProtocolFsmStep(prAdapter, NDP_DISCONNECT,
@@ -5865,22 +5763,21 @@ nanDPTerminationTxDone(struct ADAPTER *prAdapter,
 		if (prNDP->eCurrentNDPProtocolState == NDP_TX_DP_TERMINATION) {
 			prNDP->ucTxRetryCounter++;
 
-			if (prNDP->ucTxRetryCounter < NAN_DATA_RETRY_LIMIT)
-				nanDataPathProtocolFsmStep(
-					prAdapter, NDP_TX_DP_TERMINATION,
-					prNDP);
-
-			else
-				nanDataPathProtocolFsmStep(
-					prAdapter, NDP_DISCONNECT, prNDP);
+			if (prNDP->ucTxRetryCounter < NAN_DATA_RETRY_LIMIT) {
+				nanDataPathProtocolFsmStep(prAdapter,
+					NDP_TX_DP_TERMINATION, prNDP);
+				fgSendNdpEndRsp = FALSE;
+			} else {
+				nanDataPathProtocolFsmStep(prAdapter,
+					NDP_DISCONNECT, prNDP);
+			}
 		}
 	}
 
 	/* Send rsp event to wifi hal*/
-	nanNdpEndRspEvent(prAdapter,
-		prNDP->eDataPathFailReason,
-		prNDP->u2TransId,
-		rTxDoneStatus);
+	if (fgSendNdpEndRsp)
+		nanNdpEndRspEvent(prAdapter, prNDP->eDataPathFailReason,
+			prNDP->u2TransId, rTxDoneStatus);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -5894,34 +5791,28 @@ nanDPTerminationTxDone(struct ADAPTER *prAdapter,
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanDataEngineScheduleReqTxDone(struct ADAPTER *prAdapter,
-			       struct MSDU_INFO *prMsduInfo,
-			       enum ENUM_TX_RESULT_CODE rTxDoneStatus) {
-	struct _NAN_ACTION_FRAME_T *prNAF;
+uint32_t nanDataEngineScheduleReqTxDone(struct ADAPTER *prAdapter,
+					struct MSDU_INFO *prMsduInfo,
+					enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
 	struct _NAN_NDL_INSTANCE_T *prNDL;
+	uint32_t u4Status;
+	enum _ENUM_NDL_MGMT_STATE_T eCurrentNDLMgmtState;
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter, Status:%x\n", __func__, rTxDoneStatus);
 #endif
 
-	if (!prMsduInfo) {
-		DBGLOG(NAN, ERROR, "[%s] prMsduInfo error\n", __func__);
-		return WLAN_STATUS_INVALID_DATA;
-	}
+	prNDL = nanGetNdlByTxDoneActionFrame(prAdapter, prMsduInfo, &u4Status,
+					     __func__);
+	if (!prNDL)
+		return u4Status;
 
-	prNAF = (struct _NAN_ACTION_FRAME_T *)prMsduInfo->prPacket;
-
-	/* search for matching NDL */
-	prNDL = nanDataUtilSearchNdlByMac(prAdapter, prNAF->aucDestAddr);
-	if (prNDL == NULL)
-		return WLAN_STATUS_SUCCESS;
-
+	eCurrentNDLMgmtState = prNDL->eCurrentNDLMgmtState;
 	if (rTxDoneStatus == WLAN_STATUS_SUCCESS) {
-		cnmTimerStopTimer(prAdapter, &(prNDL->rNDPProtocolRetryTimer));
+		cnmTimerStopTimer(prAdapter, &prNDL->rNDPProtocolRetryTimer);
 
-		if (prNDL->eCurrentNDLMgmtState ==
-		    NDL_INITIATOR_TX_SCHEDULE_REQUEST)
+		if (eCurrentNDLMgmtState == NDL_INITIATOR_TX_SCHEDULE_REQUEST)
 			nanNdlMgmtFsmStep(
 				prAdapter,
 				NDL_INITIATOR_WAITFOR_RX_SCHEDULE_RESPONSE,
@@ -5930,8 +5821,7 @@ nanDataEngineScheduleReqTxDone(struct ADAPTER *prAdapter,
 		 * unexpected state - ignore
 		 */
 	} else {
-		if (prNDL->eCurrentNDLMgmtState ==
-		    NDL_INITIATOR_TX_SCHEDULE_REQUEST) {
+		if (eCurrentNDLMgmtState == NDL_INITIATOR_TX_SCHEDULE_REQUEST) {
 			prNDL->ucTxRetryCounter++;
 
 			if (prNDL->ucTxRetryCounter < NAN_DATA_RETRY_LIMIT)
@@ -5959,33 +5849,28 @@ nanDataEngineScheduleReqTxDone(struct ADAPTER *prAdapter,
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanDataEngineScheduleRespTxDone(struct ADAPTER *prAdapter,
-				struct MSDU_INFO *prMsduInfo,
-				enum ENUM_TX_RESULT_CODE rTxDoneStatus) {
-	struct _NAN_ACTION_FRAME_T *prNAF;
+uint32_t nanDataEngineScheduleRespTxDone(struct ADAPTER *prAdapter,
+					 struct MSDU_INFO *prMsduInfo,
+					 enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
 	struct _NAN_NDL_INSTANCE_T *prNDL;
+	uint32_t u4Status;
+	enum _ENUM_NDL_MGMT_STATE_T eCurrentNDLMgmtState;
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter, Status:%x\n", __func__, rTxDoneStatus);
 #endif
 
-	if (!prMsduInfo) {
-		DBGLOG(NAN, ERROR, "[%s] prMsduInfo error\n", __func__);
-		return WLAN_STATUS_INVALID_DATA;
-	}
+	prNDL = nanGetNdlByTxDoneActionFrame(prAdapter, prMsduInfo, &u4Status,
+					     __func__);
+	if (!prNDL)
+		return u4Status;
 
-	prNAF = (struct _NAN_ACTION_FRAME_T *)prMsduInfo->prPacket;
-
-	/* search for matching NDL */
-	prNDL = nanDataUtilSearchNdlByMac(prAdapter, prNAF->aucDestAddr);
-	if (prNDL == NULL)
-		return WLAN_STATUS_SUCCESS;
-
+	eCurrentNDLMgmtState = prNDL->eCurrentNDLMgmtState;
 	if (rTxDoneStatus == WLAN_STATUS_SUCCESS) {
-		cnmTimerStopTimer(prAdapter, &(prNDL->rNDPProtocolRetryTimer));
+		cnmTimerStopTimer(prAdapter, &prNDL->rNDPProtocolRetryTimer);
 
-		if (prNDL->eCurrentNDLMgmtState ==
+		if (eCurrentNDLMgmtState ==
 		    NDL_RESPONDER_TX_SCHEDULE_RESPONSE) {
 			if (prNDL->ucNDLSetupCurrentStatus ==
 			    NAN_ATTR_NDL_STATUS_CONTINUED)
@@ -6012,7 +5897,7 @@ nanDataEngineScheduleRespTxDone(struct ADAPTER *prAdapter,
 			}
 		}
 	} else {
-		if (prNDL->eCurrentNDLMgmtState ==
+		if (eCurrentNDLMgmtState ==
 		    NDL_RESPONDER_TX_SCHEDULE_RESPONSE) {
 			prNDL->ucTxRetryCounter++;
 
@@ -6042,34 +5927,28 @@ nanDataEngineScheduleRespTxDone(struct ADAPTER *prAdapter,
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanDataEngineScheduleConfirmTxDone(struct ADAPTER *prAdapter,
-				   struct MSDU_INFO *prMsduInfo,
-				   enum ENUM_TX_RESULT_CODE rTxDoneStatus) {
-	struct _NAN_ACTION_FRAME_T *prNAF;
+uint32_t nanDataEngineScheduleConfirmTxDone(struct ADAPTER *prAdapter,
+			struct MSDU_INFO *prMsduInfo,
+			enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
 	struct _NAN_NDL_INSTANCE_T *prNDL;
+	uint32_t u4Status;
+	enum _ENUM_NDL_MGMT_STATE_T eCurrentNDLMgmtState;
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter, Status:%x\n", __func__, rTxDoneStatus);
 #endif
 
-	if (!prMsduInfo) {
-		DBGLOG(NAN, ERROR, "[%s] prMsduInfo error\n", __func__);
-		return WLAN_STATUS_INVALID_DATA;
-	}
+	prNDL = nanGetNdlByTxDoneActionFrame(prAdapter, prMsduInfo, &u4Status,
+					     __func__);
+	if (!prNDL)
+		return u4Status;
 
-	prNAF = (struct _NAN_ACTION_FRAME_T *)prMsduInfo->prPacket;
-
-	/* search for matching NDL */
-	prNDL = nanDataUtilSearchNdlByMac(prAdapter, prNAF->aucDestAddr);
-	if (prNDL == NULL)
-		return WLAN_STATUS_SUCCESS;
-
+	eCurrentNDLMgmtState = prNDL->eCurrentNDLMgmtState;
 	if (rTxDoneStatus == WLAN_STATUS_SUCCESS) {
-		cnmTimerStopTimer(prAdapter, &(prNDL->rNDPProtocolRetryTimer));
+		cnmTimerStopTimer(prAdapter, &prNDL->rNDPProtocolRetryTimer);
 
-		if (prNDL->eCurrentNDLMgmtState ==
-		    NDL_INITIATOR_TX_SCHEDULE_CONFIRM) {
+		if (eCurrentNDLMgmtState == NDL_INITIATOR_TX_SCHEDULE_CONFIRM) {
 			if (prNDL->ucNDLSetupCurrentStatus ==
 			    NAN_ATTR_NDL_STATUS_ACCEPTED) {
 				nanNdlMgmtFsmStep(prAdapter,
@@ -6087,8 +5966,7 @@ nanDataEngineScheduleConfirmTxDone(struct ADAPTER *prAdapter,
 			}
 		}
 	} else {
-		if (prNDL->eCurrentNDLMgmtState ==
-		    NDL_INITIATOR_TX_SCHEDULE_CONFIRM) {
+		if (eCurrentNDLMgmtState == NDL_INITIATOR_TX_SCHEDULE_CONFIRM) {
 			prNDL->ucTxRetryCounter++;
 
 			if (prNDL->ucTxRetryCounter < NAN_DATA_RETRY_LIMIT)
@@ -6121,28 +5999,22 @@ nanDataEngineScheduleConfirmTxDone(struct ADAPTER *prAdapter,
 uint32_t
 nanDataEngineScheduleUpdateNotificationTxDone(
 	struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
-	enum ENUM_TX_RESULT_CODE rTxDoneStatus) {
-	struct _NAN_ACTION_FRAME_T *prNAF;
+	enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
 	struct _NAN_NDL_INSTANCE_T *prNDL;
+	uint32_t u4Status;
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter, Status:%x\n", __func__, rTxDoneStatus);
 #endif
 
-	if (!prMsduInfo) {
-		DBGLOG(NAN, ERROR, "[%s] prMsduInfo error\n", __func__);
-		return WLAN_STATUS_INVALID_DATA;
-	}
-
-	prNAF = (struct _NAN_ACTION_FRAME_T *)prMsduInfo->prPacket;
-
-	/* search for matching NDL */
-	prNDL = nanDataUtilSearchNdlByMac(prAdapter, prNAF->aucDestAddr);
-	if (prNDL == NULL)
-		return WLAN_STATUS_SUCCESS;
+	prNDL = nanGetNdlByTxDoneActionFrame(prAdapter, prMsduInfo, &u4Status,
+					     __func__);
+	if (!prNDL)
+		return u4Status;
 
 	if (rTxDoneStatus == WLAN_STATUS_SUCCESS) {
-		cnmTimerStopTimer(prAdapter, &(prNDL->rNDPProtocolRetryTimer));
+		cnmTimerStopTimer(prAdapter, &prNDL->rNDPProtocolRetryTimer);
 		nanNdlMgmtFsmStep(prAdapter, NDL_SCHEDULE_ESTABLISHED, prNDL);
 	} else {
 		prNDL->ucTxRetryCounter++;
