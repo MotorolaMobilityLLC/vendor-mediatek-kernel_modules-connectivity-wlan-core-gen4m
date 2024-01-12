@@ -973,7 +973,7 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 		prChResp->rMsgHdr.eMsgId = MID_CNM_BOW_CH_GRANT;
 #endif
 #if CFG_SUPPORT_NAN
-	else if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN)
+	else if (prBssInfo && (prBssInfo->eNetworkType == NETWORK_TYPE_NAN))
 		prChResp->rMsgHdr.eMsgId = MID_CNM_NAN_CH_GRANT;
 #endif
 	else {

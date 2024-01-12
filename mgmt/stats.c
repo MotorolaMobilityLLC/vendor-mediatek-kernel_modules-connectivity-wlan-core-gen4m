@@ -927,7 +927,7 @@ statsGetTlvStatTotalLen(struct GLUE_INFO *prGlueInfo, uint8_t type,
 		break;
 	}
 
-	if (!pTlvTbl || ucNum == 0)
+	if (!pTlvTbl || ucNum == 0 || !arTagList)
 		return u4TlvLen;
 
 	for (i = 0; i < ucNum; i++) {
@@ -1313,7 +1313,7 @@ statsGetInfoHdlr(uint8_t ucBssIdx, struct GLUE_INFO *prGlueInfo,
 		break;
 	}
 
-	if (!pTlvTbl || ucNum == 0)
+	if (!pTlvTbl || ucNum == 0 || !arTagList)
 		return;
 
 	for (i = 0; i < ucNum; i++) {
