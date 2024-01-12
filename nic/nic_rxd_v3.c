@@ -323,8 +323,7 @@ void nic_rxd_v3_fill_rfb(
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-	if (prChipInfo->is_support_rro &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
 		prSwRfb->u4TcpUdpIpCksStatus =
 			HAL_MAC_CONNAC3X_RX_STATUS_GET_CLS_BITMAP(prRxStatus);
 	}

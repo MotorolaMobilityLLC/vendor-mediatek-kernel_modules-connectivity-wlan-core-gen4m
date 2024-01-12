@@ -2414,6 +2414,8 @@ int32_t kalPlatOpsInit(void);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 u_int8_t kalIsSupportMawd(void);
+u_int8_t kalIsSupportSdo(void);
+u_int8_t kalIsSupportRro(void);
 #endif
 
 #if CFG_SUPPORT_THERMAL_QUERY

@@ -779,8 +779,7 @@ void asicConnac3xEnablePlatformIRQ(IN struct ADAPTER *prAdapter)
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	/* IrqId_1 is MAWD interrupt */
-	if (prChipInfo->is_support_mawd &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
 		enable_irq(prHifInfo->u4IrqId_1);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
@@ -800,8 +799,7 @@ void asicConnac3xDisablePlatformIRQ(IN struct ADAPTER *prAdapter)
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	/* IrqId_1 is MAWD interrupt */
-	if (prChipInfo->is_support_mawd &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
 		disable_irq_nosync(prHifInfo->u4IrqId_1);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
@@ -1511,8 +1509,7 @@ void asicConnac3xInitTxdHook(
 		nic_txd_v3_set_hw_amsdu_template;
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_sdo &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo)) {
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo)) {
 		prChipInfo->txd_append_size =
 			prChipInfo->hif_txd_append_size;
 		prTxDescOps->fillNicAppend =
@@ -1524,8 +1521,7 @@ void asicConnac3xInitTxdHook(
 	}
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-	if (prChipInfo->is_support_mawd_tx &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx)) {
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx)) {
 		prChipInfo->txd_append_size =
 			prChipInfo->hif_txd_append_size;
 		prTxDescOps->fillNicAppend =

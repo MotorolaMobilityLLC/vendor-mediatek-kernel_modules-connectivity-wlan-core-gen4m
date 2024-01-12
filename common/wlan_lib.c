@@ -8245,10 +8245,23 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgEnableMawdTx = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "EnableMawdTx", FEATURE_DISABLED);
 	prWifiVar->fgEnableSdo = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "EnableSdo", FEATURE_DISABLED);
+		prAdapter, "EnableSdo", FEATURE_ENABLED);
 	prWifiVar->fgEnableRro = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "EnableRro", FEATURE_DISABLED);
-	if (!prChipInfo->is_support_rro)
+
+	if (IS_FEATURE_FORCE_ENABLED(prWifiVar->fgEnableMawd))
+		prWifiVar->fgEnableMawd = FEATURE_ENABLED;
+	else if (!prChipInfo->is_support_mawd || !kalIsSupportMawd())
+		prWifiVar->fgEnableMawd = FEATURE_DISABLED;
+
+	if (IS_FEATURE_FORCE_ENABLED(prWifiVar->fgEnableSdo))
+		prWifiVar->fgEnableSdo = FEATURE_ENABLED;
+	else if (!prChipInfo->is_support_sdo || !kalIsSupportSdo())
+		prWifiVar->fgEnableSdo = FEATURE_DISABLED;
+
+	if (IS_FEATURE_FORCE_ENABLED(prWifiVar->fgEnableRro))
+		prWifiVar->fgEnableRro = FEATURE_ENABLED;
+	else if (!prChipInfo->is_support_rro || !kalIsSupportRro())
 		prWifiVar->fgEnableRro = FEATURE_DISABLED;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 

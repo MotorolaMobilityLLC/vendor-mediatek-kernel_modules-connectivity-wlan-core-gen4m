@@ -10016,6 +10016,16 @@ u_int8_t __weak kalIsSupportMawd(void)
 {
 	return FALSE;
 }
+
+u_int8_t __weak kalIsSupportSdo(void)
+{
+	return FALSE;
+}
+
+u_int8_t __weak kalIsSupportRro(void)
+{
+	return FALSE;
+}
 #endif
 
 /* mimic store_rps_map as net-sysfs.c does */
