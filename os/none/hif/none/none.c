@@ -418,12 +418,6 @@ u_int8_t halProcessToken(IN struct ADAPTER *prAdapter,
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
-u_int8_t halMawdUpdateL2Tbl(struct GLUE_INFO *prGlueInfo,
-		    union mawd_l2tbl rL2Tbl, uint32_t u4Set)
-{
-	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
 uint8_t halSetRxRingHwAddr(
 	struct RTMP_RX_RING *prRxRing,
 	struct BUS_INFO *prBusInfo,
