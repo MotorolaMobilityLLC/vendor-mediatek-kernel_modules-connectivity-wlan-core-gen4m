@@ -287,7 +287,7 @@ void nic_txd_v3_compose(
 	struct MLD_STA_RECORD *prMldSta;
 #endif
 	u_int32_t u4TxDescAndPaddingLength;
-	u_int8_t ucWmmQueSet, ucTarQueue, ucTarPort;
+	u_int8_t ucWmmQueSet = 0, ucTarQueue, ucTarPort;
 	uint8_t ucEtherTypeOffsetInWord;
 	uint8_t fgIsALTXQueue = FALSE;
 	uint8_t *apucPktType[ENUM_PKT_FLAG_NUM] = {
@@ -325,15 +325,18 @@ void nic_txd_v3_compose(
 	nicTxForceAmsduForCert(prAdapter, (uint8_t *)prTxDesc);
 	/** DW0 **/
 	/* Packet Format */
-	ucWmmQueSet = prBssInfo->ucWmmQueSet;
-	if (fgIsTemplate != TRUE
-		&& prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA
-		&& ucWmmQueSet != prMsduInfo->ucWmmQueSet) {
-		DBGLOG(RSN, ERROR,
-			"ucStaRecIndex:%x ucWmmQueSet mismatch[%d,%d]\n",
-			prMsduInfo->ucStaRecIndex,
-			ucWmmQueSet, prMsduInfo->ucWmmQueSet);
-	}
+	if (prBssInfo) {
+		ucWmmQueSet = prBssInfo->ucWmmQueSet;
+		if (fgIsTemplate != TRUE
+			&& prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA
+			&& ucWmmQueSet != prMsduInfo->ucWmmQueSet) {
+			DBGLOG(RSN, ERROR,
+				"ucStaRecIndex:%x ucWmmQueSet mismatch[%d,%d]\n",
+				prMsduInfo->ucStaRecIndex,
+				ucWmmQueSet, prMsduInfo->ucWmmQueSet);
+		}
+	} else
+		DBGLOG(TX, ERROR, "prBssInfo is NULL\n");
 
 #if (CFG_SUPPORT_FORCE_ALTX == 1)
 	fgIsALTXQueue |=
@@ -416,12 +419,14 @@ void nic_txd_v3_compose(
 			prMsduInfo->ucUserPriority);
 	}
 
-	/* Own MAC */
-	HAL_MAC_CONNAC3X_TXD_SET_OWN_MAC_INDEX(
-		prTxDesc, prBssInfo->ucOwnMacIndex);
+	if (prBssInfo) {
+		/* Own MAC */
+		HAL_MAC_CONNAC3X_TXD_SET_OWN_MAC_INDEX(
+			prTxDesc, prBssInfo->ucOwnMacIndex);
 
-	/* TGID should align HW band idx */
-	HAL_MAC_CONNAC3X_TXD_SET_TGID(prTxDesc, prBssInfo->eBandIdx);
+		/* TGID should align HW band idx */
+		HAL_MAC_CONNAC3X_TXD_SET_TGID(prTxDesc, prBssInfo->eBandIdx);
+	}
 
 	/** DW2 **/
 	/* Type */
