@@ -10987,9 +10987,11 @@ void nicUniEventRtt(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				legacy->u2IELen = rr->u2IELen;
 				kalMemCopy(legacy->aucIE,
 					rr->aucIE, rr->u2IELen);
-			}
+			} else
+				legacy->u2IELen = 0;
 
-			RUN_RX_EVENT_HANDLER(EVENT_ID_RTT_RESULT, legacy);
+			RUN_RX_EVENT_HANDLER_EXT(EVENT_ID_RTT_RESULT,
+				legacy, u4Size);
 
 			kalMemFree(legacy, VIR_MEM_TYPE, u4Size);
 		}
