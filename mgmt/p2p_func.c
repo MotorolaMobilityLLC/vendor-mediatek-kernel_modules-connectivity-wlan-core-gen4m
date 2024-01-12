@@ -8007,7 +8007,10 @@ void p2pFuncSwitchSapChannel(
 #endif
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
-	eStaHwBand = prAisBssInfo->eHwBandIdx;
+	if (prAisBssInfo)
+		eStaHwBand = prAisBssInfo->eHwBandIdx;
+	else
+		eStaHwBand = ENUM_BAND_NUM;
 	eSapHwBand = prP2pBssInfo->eHwBandIdx;
 	DBGLOG(P2P, INFO, "StaHwBand(%d) and SapHwBand(%d)\n",
 		eStaHwBand, eSapHwBand);
