@@ -416,7 +416,7 @@ void mt6885HalDmashdlGetPKTCount(struct ADAPTER *prAdapter, uint8_t ucGroup)
 	uint32_t pktin_cnt = 0;
 	uint32_t ask_cnt = 0;
 
-	u4Addr = WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_ADDR + (ucGroup << 2);
+	u4Addr = WF_HIF_DMASHDL_TOP_RD_GROUP_PKT_CNT0_ADDR + (ucGroup << 2);
 
 	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
 	DBGLOG(HAL, INFO, "\tDMASHDL RD_group_pkt_cnt_%d(0x%08x): 0x%08x\n",
