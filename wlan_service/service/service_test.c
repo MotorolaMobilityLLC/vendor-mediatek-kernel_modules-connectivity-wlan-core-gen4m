@@ -51,6 +51,7 @@ static s_int32 mt_serv_init_op(struct test_operation *ops)
 	ops->op_stop_rx = mt_op_stop_rx;
 	ops->op_set_channel = mt_op_set_channel;
 	ops->op_set_tx_content = mt_op_set_tx_content;
+	ops->op_set_tmr = mt_op_set_tmr;
 	ops->op_set_preamble = mt_op_set_preamble;
 	ops->op_set_rate = mt_op_set_rate;
 	ops->op_set_system_bw = mt_op_set_system_bw;
@@ -2395,7 +2396,15 @@ s_int32 mt_serv_set_tmr(struct service_test *serv_test)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 
-	ret = net_ad_set_tmr(serv_test->test_winfo, &serv_test->test_tmr);
+	if (!serv_test->engine_offload) {
+		ret = net_ad_set_tmr(
+			serv_test->test_winfo,
+			&serv_test->test_tmr);
+	} else {
+		ret = serv_test->test_op->op_set_tmr(
+			serv_test->test_winfo,
+			&serv_test->test_tmr);
+	}
 
 	if (ret)
 		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,

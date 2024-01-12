@@ -232,6 +232,9 @@ s_int32 mt_op_set_tx_content(
 	struct test_wlan_info *winfos,
 	u_char band_idx,
 	struct test_configuration *configs);
+s_int32 mt_op_set_tmr(
+	struct test_wlan_info *winfos,
+	struct test_tmr_info *tmr_info);
 s_int32 mt_op_set_preamble(
 	struct test_wlan_info *winfos,
 	u_char mode);

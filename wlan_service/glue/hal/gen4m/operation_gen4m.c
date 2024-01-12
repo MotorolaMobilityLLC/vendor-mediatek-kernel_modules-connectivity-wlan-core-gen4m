@@ -2029,6 +2029,66 @@ s_int32 mt_op_set_tx_content(
 	return ret;
 }
 
+s_int32 mt_op_set_tmr(
+	struct test_wlan_info *winfos,
+	struct test_tmr_info *tmr_info)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	do {
+		ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_TMR_ROLE, tmr_info->setting);
+
+		if (ret != SERV_STATUS_SUCCESS) {
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+				("%s RF_AT_FUNCID_SET_TMR_ROLE ret=%d\n",
+				__func__, ret));
+
+			break;
+		}
+
+		ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_TMR_MODULE, tmr_info->version);
+
+		if (ret != SERV_STATUS_SUCCESS) {
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+				("%s RF_AT_FUNCID_SET_TMR_MODULE ret=%d\n",
+				__func__, ret));
+
+			break;
+		}
+
+		ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_TMR_DBM, tmr_info->through_hold);
+
+		if (ret != SERV_STATUS_SUCCESS) {
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+				("%s RF_AT_FUNCID_SET_TMR_DBM ret=%d\n",
+				__func__, ret));
+
+			break;
+		}
+
+		ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_TMR_ITER, tmr_info->iter);
+
+		if (ret != SERV_STATUS_SUCCESS) {
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+				("%s RF_AT_FUNCID_SET_TMR_ITER ret=%d\n",
+				__func__, ret));
+
+			break;
+		}
+	} while (0);
+
+	return ret;
+
+}
+
 s_int32 mt_op_set_preamble(
 	struct test_wlan_info *winfos,
 	u_char mode)
