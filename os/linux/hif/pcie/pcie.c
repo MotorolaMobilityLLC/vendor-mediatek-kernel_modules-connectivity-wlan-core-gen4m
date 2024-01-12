@@ -661,7 +661,16 @@ static pci_ers_result_t mtk_pci_error_slot_reset(struct pci_dev *pdev)
 
 static void mtk_pci_error_resume(struct pci_dev *pdev)
 {
+	struct GLUE_INFO *prGlueInfo = g_prGlueInfo;
+
 	DBGLOG(HAL, INFO, "mtk_pci_error_resume\n");
+
+	if (!prGlueInfo)
+		return;
+
+	/* trigger driver SER after AER */
+	prGlueInfo->prAdapter->u4HifChkFlag |= HIF_DRV_SER;
+	kalSetHifDbgEvent(prGlueInfo);
 }
 #endif
 
