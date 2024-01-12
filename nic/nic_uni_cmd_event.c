@@ -179,6 +179,7 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_FW_LOG_2_HOST] = nicUniEventFwLog2Host,
 	[UNI_EVENT_ID_P2P] = nicUniEventP2p,
 	[UNI_EVENT_ID_RDD] = nicUniEventRDD,
+	[UNI_EVENT_ID_IE_COUNTDOWN] = nicUniEventCountdown,
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -5458,7 +5459,6 @@ void nicUniEventP2p(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	}
 }
 
-
 void nicUniEventRDD(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
 	int32_t tags_len;
@@ -5533,3 +5533,40 @@ void nicUniEventRDD(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	}
 }
 
+void nicUniEventCountdown(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_IE_COUNTDOWNT);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_IE_COUNTDOWN_CSA: {
+			struct UNI_EVENT_CSA_NOTIFY *csa =
+				(struct UNI_EVENT_CSA_NOTIFY *) tag;
+
+			DBGLOG(CNM, INFO, "OM=%d, count=%d\n",
+				csa->ucOwnMacIdx, csa->ucChannelSwitchCount);
+			RUN_RX_EVENT_HANDLER_EXT(EVENT_ID_CSA_DONE, NULL, 0);
+		}
+			break;
+		case UNI_EVENT_IE_COUNTDOWN_BCC: {
+			// TODO: uni cmd
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
