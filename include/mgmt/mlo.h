@@ -362,6 +362,11 @@ struct MLD_STA_RECORD *mldStarecGetByLinkAddr(struct ADAPTER *prAdapter,
 int8_t mldStarecSetSetupIdx(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
 
+#if (CFG_MLD_INFO_PRESETUP == 1)
+int8_t mldSetupMlInfo(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec);
+#endif
+
 void mldStarecLogRxData(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
 	uint8_t ucHwBandIdx);

@@ -485,6 +485,10 @@ void saaFsmRunEventStart(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldStarecSetSetupIdx(prAdapter, prStaRec);
+#if (CFG_MLD_INFO_PRESETUP == 1)
+	/* Update MAT and WTBL's MLD info before AUTH */
+	mldSetupMlInfo(prAdapter, prStaRec);
+#endif /* CFG_MLD_INFO_PRESETUP */
 #endif
 
 	/* record sequence number of request message */

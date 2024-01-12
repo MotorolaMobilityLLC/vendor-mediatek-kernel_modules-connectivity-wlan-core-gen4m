@@ -1270,6 +1270,10 @@
 #define CFG_SUPPORT_802_11BE_MLO                 0
 #endif
 
+#ifndef CFG_MLD_INFO_PRESETUP
+#define CFG_MLD_INFO_PRESETUP                    0
+#endif
+
 #ifndef CFG_SUPPORT_ML_RECONFIG
 #define CFG_SUPPORT_ML_RECONFIG                  0
 #endif

@@ -7355,6 +7355,12 @@ uint32_t nicUniCmdSetBssInfo(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetBssRlm(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_MLD_INFO_PRESETUP == 1)
+uint32_t nicUniCmdSetBssMld(struct ADAPTER *ad,
+		struct BSS_INFO *prBssInfo);
+uint32_t nicUniCmdSetStarecMld(struct ADAPTER *ad,
+		struct STA_RECORD *prStaRec);
+#endif
 uint32_t nicUniCmdBcnProt(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdUpdateStaRec(struct ADAPTER *ad,
