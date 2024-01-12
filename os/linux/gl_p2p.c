@@ -1403,6 +1403,10 @@ u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 #endif
 #endif
 
+#if KERNEL_VERSION(3, 14, 0) < CFG80211_VERSION_CODE
+		prWiphy->max_ap_assoc_sta = P2P_MAXIMUM_CLIENT_COUNT;
+#endif
+
 	cfg80211_regd_set_wiphy(prWiphy);
 
 	/* 2.1 set priv as pointer to glue structure */
