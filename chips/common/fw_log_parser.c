@@ -249,6 +249,10 @@ uint32_t wlanOpenIdxLogBin(struct ADAPTER *prAdapter)
 
 	/* <5> write back info */
 	prIdxLogBin = kalMemAlloc(sizeof(struct FW_LOG_IDX_DATA), VIR_MEM_TYPE);
+	if (prIdxLogBin == NULL) {
+		DBGLOG(INIT, ERROR, "Can't alloc prIdxLogBin\n");
+		goto err_free;
+	}
 	kalMemSet(prIdxLogBin, 0, sizeof(struct FW_LOG_IDX_DATA));
 	prIdxLogBin->u4FwSize = u4FwSize;
 	prIdxLogBin->prFwBuffer = prFwBuffer;
