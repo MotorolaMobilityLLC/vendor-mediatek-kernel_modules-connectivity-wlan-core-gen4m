@@ -312,9 +312,6 @@ uint32_t halTxUSBSendCmd(struct GLUE_INFO *prGlueInfo, uint8_t ucTc,
 			  (void *)prUsbReq->prBufCtrl->pucBuf,
 			  prBufCtrl->u4WrIdx, halTxUSBSendCmdComplete, (void *)prUsbReq);
 
-#if CFG_USB_CONSISTENT_DMA
-	prUsbReq->prUrb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
-#endif
 	spin_lock_irqsave(&prHifInfo->rTxCmdQLock, flags);
 	ret = glUsbSubmitUrb(prHifInfo, prUsbReq->prUrb, SUBMIT_TYPE_TX_CMD);
 	if (ret) {
@@ -410,9 +407,7 @@ void halTxCancelAllSending(struct ADAPTER *prAdapter)
 	struct GLUE_INFO *prGlueInfo;
 	struct USB_REQ *prUsbReq, *prUsbReqNext;
 	struct GL_HIF_INFO *prHifInfo;
-#if CFG_USB_TX_AGG
 	uint8_t ucTc;
-#endif
 
 	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
@@ -422,12 +417,8 @@ void halTxCancelAllSending(struct ADAPTER *prAdapter)
 		usb_kill_urb(prUsbReq->prUrb);
 	}
 
-#if CFG_USB_TX_AGG
 	for (ucTc = 0; ucTc < USB_TC_NUM; ++ucTc)
 		usb_kill_anchored_urbs(&prHifInfo->rTxDataAnchor[ucTc]);
-#else
-	usb_kill_anchored_urbs(&prHifInfo->rTxDataAnchor);
-#endif
 }
 
 void halCancelTxRx(struct ADAPTER *prAdapter)
@@ -502,7 +493,6 @@ uint32_t halToggleWfsysRst(struct ADAPTER *prAdapter)
 }
 #endif /* CFG_CHIP_RESET_SUPPORT */
 
-#if CFG_USB_TX_AGG
 uint32_t halTxUSBSendAggData(struct GL_HIF_INFO *prHifInfo, uint8_t ucTc,
 		struct USB_REQ *prUsbReq)
 {
@@ -526,9 +516,6 @@ uint32_t halTxUSBSendAggData(struct GL_HIF_INFO *prHifInfo, uint8_t ucTc,
 			  prHifInfo->udev,
 			  usb_sndbulkpipe(prHifInfo->udev, arTcToUSBEP[ucTc]),
 			  (void *)prBufCtrl->pucBuf, prBufCtrl->u4WrIdx, halTxUSBSendDataComplete, (void *)prUsbReq);
-#if CFG_USB_CONSISTENT_DMA
-	prUsbReq->prUrb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
-#endif
 
 	usb_anchor_urb(prUsbReq->prUrb, &prHifInfo->rTxDataAnchor[ucTc]);
 	ret = glUsbSubmitUrb(prHifInfo, prUsbReq->prUrb, SUBMIT_TYPE_TX_DATA);
@@ -543,7 +530,6 @@ uint32_t halTxUSBSendAggData(struct GL_HIF_INFO *prHifInfo, uint8_t ucTc,
 #if CFG_USB_TX_HANDLE_IN_HIF_THREAD
 		kalSetIntEvent(prGlueInfo);
 #else
-		/*tasklet_hi_schedule(&prGlueInfo->rTxCompleteTask);*/
 		tasklet_schedule(&prGlueInfo->rTxCompleteTask);
 #endif
 		return WLAN_STATUS_FAILURE;
@@ -551,7 +537,6 @@ uint32_t halTxUSBSendAggData(struct GL_HIF_INFO *prHifInfo, uint8_t ucTc,
 
 	return u4Status;
 }
-#endif
 
 static uint8_t halUsbDetermineTc(struct mt66xx_chip_info *prChipInfo,
 				struct MSDU_INFO *prMsduInfo)
@@ -606,11 +591,7 @@ uint32_t halTxUSBSendData(struct GLUE_INFO *prGlueInfo,
 	uint8_t *pucBuf;
 	uint32_t u4Length;
 	uint32_t u4TotalLen;
-#if CFG_USB_TX_AGG
 	unsigned long flags;
-#else
-	int ret;
-#endif
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	skb = (struct sk_buff *)prMsduInfo->prPacket;
@@ -633,7 +614,6 @@ uint32_t halTxUSBSendData(struct GLUE_INFO *prGlueInfo,
 	}
 #endif /* CFG_SUPPORT_DMASHDL_SYSDVT */
 
-#if CFG_USB_TX_AGG
 	spin_lock_irqsave(&prHifInfo->rTxDataQLock, flags);
 
 	if (list_empty(&prHifInfo->rTxDataFreeQ[ucTc])) {
@@ -701,62 +681,6 @@ uint32_t halTxUSBSendData(struct GLUE_INFO *prGlueInfo,
 		halTxUSBSendAggData(prHifInfo, ucTc, prUsbReq);
 
 	spin_unlock_irqrestore(&prHifInfo->rTxDataQLock, flags);
-#else
-	prUsbReq = glUsbDequeueReq(prHifInfo, &prHifInfo->rTxDataFreeQ,
-					&prHifInfo->rTxDataQLock);
-	if (prUsbReq == NULL) {
-		DBGLOG(HAL, ERROR, "run out of rTxDataFreeQ!!\n");
-		wlanProcessQueuedMsduInfo(prGlueInfo->prAdapter, prMsduInfo);
-		return WLAN_STATUS_RESOURCES;
-	}
-
-	prBufCtrl = prUsbReq->prBufCtrl;
-	prBufCtrl->u4WrIdx = 0;
-
-	HAL_WRITE_HIF_TXD(prChipInfo, prBufCtrl->pucBuf, u4Length,
-			TXD_PKT_FORMAT_TXD_PAYLOAD);
-	prBufCtrl->u4WrIdx += prChipInfo->u2HifTxdSize;
-
-	memcpy(prBufCtrl->pucBuf + prChipInfo->u2HifTxdSize, pucBuf, u4Length);
-	prBufCtrl->u4WrIdx += u4Length;
-
-	u4PaddingLength = (ALIGN_4(u4TotalLen) - u4TotalLen);
-	if (u4PaddingLength) {
-		memset(prBufCtrl->pucBuf + prBufCtrl->u4WrIdx, 0, u4PaddingLength);
-		prBufCtrl->u4WrIdx += u4PaddingLength;
-	}
-
-	memset(prBufCtrl->pucBuf + prBufCtrl->u4WrIdx, 0, LEN_USB_UDMA_TX_TERMINATOR);
-	prBufCtrl->u4WrIdx += LEN_USB_UDMA_TX_TERMINATOR;
-
-	if (!prMsduInfo->pfTxDoneHandler)
-		QUEUE_INSERT_TAIL(&prUsbReq->rSendingDataMsduInfoList,
-				prMsduInfo);
-
-	*((uint8_t *)&prUsbReq->prPriv) = ucTc;
-	usb_fill_bulk_urb(prUsbReq->prUrb,
-			  prHifInfo->udev,
-			  usb_sndbulkpipe(prHifInfo->udev, arTcToUSBEP[ucTc]),
-			  (void *)prUsbReq->prBufCtrl->pucBuf,
-			  prBufCtrl->u4WrIdx, halTxUSBSendDataComplete, (void *)prUsbReq);
-#if CFG_USB_CONSISTENT_DMA
-	prUsbReq->prUrb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
-#endif
-
-	usb_anchor_urb(prUsbReq->prUrb, &prHifInfo->rTxDataAnchor);
-	ret = glUsbSubmitUrb(prHifInfo, prUsbReq->prUrb, SUBMIT_TYPE_TX_DATA);
-	if (ret) {
-		DBGLOG(HAL, ERROR,
-			"glUsbSubmitUrb() reports error (%d) [%s] (EP%d OUT)\n",
-			ret, __func__, arTcToUSBEP[ucTc]);
-		halTxUSBProcessMsduDone(prHifInfo->prGlueInfo, prUsbReq);
-		prBufCtrl->u4WrIdx = 0;
-		usb_unanchor_urb(prUsbReq->prUrb);
-		glUsbEnqueueReq(prHifInfo, &prHifInfo->rTxDataFreeQ, prUsbReq,
-					&prHifInfo->rTxDataQLock, FALSE);
-		return WLAN_STATUS_FAILURE;
-	}
-#endif
 
 	if (wlanIsChipRstRecEnabled(prGlueInfo->prAdapter)
 			&& wlanIsChipNoAck(prGlueInfo->prAdapter)) {
@@ -769,7 +693,6 @@ uint32_t halTxUSBSendData(struct GLUE_INFO *prGlueInfo,
 
 uint32_t halTxUSBKickData(struct GLUE_INFO *prGlueInfo)
 {
-#if CFG_USB_TX_AGG
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct USB_REQ *prUsbReq;
 	struct BUF_CTRL *prBufCtrl;
@@ -790,7 +713,6 @@ uint32_t halTxUSBKickData(struct GLUE_INFO *prGlueInfo)
 	}
 
 	spin_unlock_irqrestore(&prHifInfo->rTxDataQLock, flags);
-#endif
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -806,7 +728,6 @@ void halTxUSBSendDataComplete(struct urb *urb)
 #if CFG_USB_TX_HANDLE_IN_HIF_THREAD
 	kalSetIntEvent(prGlueInfo);
 #else
-	/*tasklet_hi_schedule(&prGlueInfo->rTxCompleteTask);*/
 	tasklet_schedule(&prGlueInfo->rTxCompleteTask);
 #endif
 }
@@ -841,9 +762,7 @@ void halTxUSBProcessDataComplete(struct ADAPTER *prAdapter,
 	u_int8_t fgFfa;
 	struct urb *urb = prUsbReq->prUrb;
 	struct GL_HIF_INFO *prHifInfo = prUsbReq->prHifInfo;
-#if CFG_USB_TX_AGG
 	struct BUF_CTRL *prBufCtrl = prUsbReq->prBufCtrl;
-#endif
 	unsigned long flags;
 
 	ucTc = *((uint8_t *)&prUsbReq->prPriv) & TC_MASK;
@@ -857,7 +776,6 @@ void halTxUSBProcessDataComplete(struct ADAPTER *prAdapter,
 	halTxUSBProcessMsduDone(prAdapter->prGlueInfo, prUsbReq);
 
 	spin_lock_irqsave(&prHifInfo->rTxDataQLock, flags);
-#if CFG_USB_TX_AGG
 	prBufCtrl->u4WrIdx = 0;
 
 	if ((fgFfa == FALSE) || list_empty(&prHifInfo->rTxDataFreeQ[ucTc]))
@@ -872,9 +790,6 @@ void halTxUSBProcessDataComplete(struct ADAPTER *prAdapter,
 		if (prBufCtrl->u4WrIdx != 0)
 			halTxUSBSendAggData(prHifInfo, ucTc, prUsbReq);	/* TODO */
 	}
-#else
-	list_add_tail(&prUsbReq->list, &prHifInfo->rTxDataFreeQ);
-#endif
 	spin_unlock_irqrestore(&prHifInfo->rTxDataQLock, flags);
 
 	if (!HAL_IS_TX_DIRECT(prAdapter)) {
@@ -1097,7 +1012,6 @@ void halRxUSBReceiveEventComplete(struct urb *urb)
 	if (urb->status == 0) {
 		glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxEventCompleteQ, prUsbReq, &prHifInfo->rRxEventQLock, FALSE);
 
-		/*tasklet_hi_schedule(&prGlueInfo->rRxTask);*/
 		tasklet_schedule(&prGlueInfo->rRxTask);
 	} else {
 		DBGLOG(RX, ERROR, "[%s] receive EVENT fail (status = %d)\n", __func__, urb->status);
@@ -1176,7 +1090,6 @@ void halRxUSBReceiveWdtComplete(struct urb *urb)
 		glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxWdtCompleteQ,
 				prUsbReq, &prHifInfo->rRxWdtQLock, FALSE);
 
-		/*tasklet_hi_schedule(&prGlueInfo->rRxTask);*/
 		tasklet_schedule(&prGlueInfo->rRxTask);
 	} else {
 		DBGLOG(RX, ERROR, "receive WDT fail (status = %d)\n",
@@ -1271,7 +1184,6 @@ void halRxUSBReceiveDataComplete(struct urb *urb)
 	if (urb->status == 0) {
 		glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxDataCompleteQ, prUsbReq, &prHifInfo->rRxDataQLock, FALSE);
 
-		/*tasklet_hi_schedule(&prGlueInfo->rRxTask);*/
 		tasklet_schedule(&prGlueInfo->rRxTask);
 	} else {
 		DBGLOG(RX, ERROR, "[%s] receive DATA fail (status = %d)\n", __func__, urb->status);
@@ -1700,10 +1612,8 @@ u_int8_t halTxIsDataBufEnough(struct ADAPTER *prAdapter,
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
-#if CFG_USB_TX_AGG
 	struct USB_REQ *prUsbReq;
 	struct BUF_CTRL *prBufCtrl;
-#endif
 	uint8_t ucTc;
 	struct sk_buff *skb;
 	uint32_t u4Length;
@@ -1719,7 +1629,6 @@ u_int8_t halTxIsDataBufEnough(struct ADAPTER *prAdapter,
 
 	spin_lock_irqsave(&prHifInfo->rTxDataQLock, flags);
 
-#if CFG_USB_TX_AGG
 	if (list_empty(&prHifInfo->rTxDataFreeQ[ucTc])) {
 		if (glUsbBorrowFfaReq(prHifInfo, ucTc) == FALSE) {
 			spin_unlock_irqrestore(&prHifInfo->rTxDataQLock, flags);
@@ -1743,13 +1652,6 @@ u_int8_t halTxIsDataBufEnough(struct ADAPTER *prAdapter,
 		}
 	}
 	prHifInfo->u4AggRsvSize[ucTc] += ALIGN_4(u4Length);
-#else
-	if (list_empty(&prHifInfo->rTxDataFreeQ)) {
-		spin_unlock_irqrestore(&prHifInfo->rTxDataQLock, flags);
-
-		return FALSE;
-	}
-#endif
 
 	spin_unlock_irqrestore(&prHifInfo->rTxDataQLock, flags);
 	return TRUE;
@@ -1913,7 +1815,6 @@ void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
 static uint32_t halTxGetPageCount(struct ADAPTER *prAdapter,
 	uint32_t u4FrameLength, u_int8_t fgIncludeDesc)
 {
-#if CFG_USB_TX_AGG
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	uint32_t u4RequiredBufferSize;
 	uint32_t u4PageCount;
@@ -1937,9 +1838,6 @@ static uint32_t halTxGetPageCount(struct ADAPTER *prAdapter,
 		u4PageCount = (u4RequiredBufferSize + (NIC_TX_PAGE_SIZE - 1)) / NIC_TX_PAGE_SIZE;
 
 	return u4PageCount;
-#else
-	return 1;
-#endif
 }
 
 uint32_t halTxGetDataPageCount(struct ADAPTER *prAdapter,
@@ -2251,7 +2149,6 @@ void halDeAggRxPktWorker(struct work_struct *work)
 {
 	struct GLUE_INFO *prGlueInfo = ENTRY_OF(work, struct GLUE_INFO, rRxPktDeAggWork);
 
-	/*tasklet_hi_schedule(&prGlueInfo->rRxTask);*/
 	tasklet_schedule(&prGlueInfo->rRxTask);
 }
 

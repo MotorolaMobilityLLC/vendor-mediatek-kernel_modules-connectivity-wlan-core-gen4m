@@ -237,16 +237,10 @@ static int __init preallocInit(void)
 	preallocAddBlock(MEM_ID_TX_DATA_FFA, "TX DATA FFA",
 			USB_REQ_TX_DATA_FFA_CNT, USB_TX_DATA_BUFF_SIZE,
 			GFP_KERNEL);
-#if CFG_USB_TX_AGG
 	preallocAddBlock(MEM_ID_TX_DATA, "TX AGG DATA",
 			(USB_TC_NUM * USB_REQ_TX_DATA_CNT),
 			USB_TX_DATA_BUFF_SIZE,
 			GFP_KERNEL);
-#else
-	preallocAddBlock(MEM_ID_TX_DATA, "TX DATA",
-			USB_REQ_TX_DATA_CNT, USB_TX_DATA_BUFF_SIZE,
-			GFP_KERNEL);
-#endif
 	preallocAddBlock(MEM_ID_RX_EVENT, "RX EVENT",
 			USB_REQ_RX_EVENT_CNT, USB_RX_EVENT_BUF_SIZE,
 			GFP_KERNEL);
