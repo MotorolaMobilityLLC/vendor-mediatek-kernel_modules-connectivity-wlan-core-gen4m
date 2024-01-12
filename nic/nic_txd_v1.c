@@ -360,7 +360,7 @@ void nic_txd_v1_compose(
 
 	ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
 	if (ucTarPort == PORT_INDEX_LMAC)
-		ucTarQueue += (prBssInfo->ucWmmQueSet * WMM_AC_INDEX_NUM);
+		ucTarQueue += (prMsduInfo->ucWmmQueSet * WMM_AC_INDEX_NUM);
 
 	HAL_MAC_TX_DESC_SET_QUEUE_INDEX(prTxDesc, ucTarQueue);
 
