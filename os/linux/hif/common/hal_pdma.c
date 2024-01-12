@@ -3894,3 +3894,17 @@ void halDumpHifStats(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "%s\n", buf);
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
 }
+
+#if CFG_CHIP_RESET_SUPPORT
+uint32_t halToggleWfsysRst(IN struct ADAPTER *prAdapter)
+{
+	if (!prAdapter) {
+		DBGLOG(HAL, ERROR, "ADAPTER is NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* TODO */
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_CHIP_RESET_SUPPORT */
