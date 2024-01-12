@@ -110,6 +110,8 @@
  */
 #if defined(MT7925)
 #define TX_RING_CMD_SIZE			512
+#elif defined(MT7990)
+#define TX_RING_CMD_SIZE			320
 #else
 #define TX_RING_CMD_SIZE			256
 #endif
@@ -118,11 +120,15 @@
 #define RX_RING_SIZE				4095 /* Max Rx ring size */
 /* Data Rx ring */
 #define RX_RING0_SIZE				4095
+#elif defined(MT7990)
+#define RX_RING_SIZE				256
+#define RX_RING0_SIZE				256
 #else
 #define RX_RING_SIZE				1024 /* Max Rx ring size */
 /* Data Rx ring */
 #define RX_RING0_SIZE				1024
 #endif
+
 
 /* Event/MSDU_report Rx ring */
 #define RX_RING1_SIZE				128

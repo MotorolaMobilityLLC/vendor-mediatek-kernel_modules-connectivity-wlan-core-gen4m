@@ -1057,7 +1057,7 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	struct BUS_INFO *prBusInfo;
 	struct pcie_msi_info *prMsiInfo;
 	uint32_t u4MaxMsiNum;
-	int ret = 0;
+	int ret = 0, i;
 #if CFG_CONTROL_ASPM_BY_FW
 #if CFG_SUPPORT_PCIE_ASPM
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -1065,7 +1065,6 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	struct ADAPTER *prAdapter = NULL;
 #endif
 #endif
-
 	ASSERT(pdev);
 	ASSERT(id);
 
@@ -1082,11 +1081,16 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		goto out;
 	}
 
-	ret = pcim_iomap_regions(pdev, BIT(0), pci_name(pdev));
-	if (ret) {
-		DBGLOG(INIT, INFO,
-			"pcim_iomap_regions failed, ret=%d\n", ret);
-		goto out;
+	for (i = 0; i <= PCI_STD_RESOURCE_END; i++) {
+		if (pci_resource_len(pdev, i) == 0)
+			continue;
+		ret = pcim_iomap_regions(pdev, BIT(i), pci_name(pdev));
+		if (ret) {
+			DBGLOG(INIT, INFO,
+			       "pcim_iomap_regions failed, ret=%d\n", ret);
+			goto out;
+		}
+		break;
 	}
 
 	pci_set_master(pdev);
@@ -1136,11 +1140,11 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	g_prDev = pdev;
 	prChipInfo->pdev = (void *)pdev;
 	prChipInfo->CSRBaseAddress = pcim_iomap_table(pdev) ?
-		pcim_iomap_table(pdev)[0] : NULL;
+		pcim_iomap_table(pdev)[i] : NULL;
 
-	DBGLOG(INIT, INFO, "ioremap for device %s, region 0x%lX @ 0x%lX\n",
-		pci_name(pdev), (unsigned long) pci_resource_len(pdev, 0),
-		(unsigned long) pci_resource_start(pdev, 0));
+	DBGLOG(INIT, INFO, "ioremap for device %s[i], region 0x%lX @ 0x%lX\n",
+	       pci_name(pdev), i, (unsigned long) pci_resource_len(pdev, i),
+	       (unsigned long) pci_resource_start(pdev, i));
 
 	pci_set_drvdata(pdev, (void *)id->driver_data);
 

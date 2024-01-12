@@ -123,7 +123,11 @@
 #define BUFFER_BIN_PAGE_SIZE 0x400
 #else
 //For Bellwether, Modify from 1200 to 6K
+#if defined MT7990
+#define MAX_EEPROM_BUFFER_SIZE	10000
+#else
 #define MAX_EEPROM_BUFFER_SIZE	6144
+#endif
 #define BUFFER_BIN_PAGE_SIZE 0x400
 #endif
 

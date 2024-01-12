@@ -4863,7 +4863,9 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 			DBGLOG(INIT, INFO, "can't find file\n");
 			goto label_exit;
 		}
-		DBGLOG(INIT, INFO, "u4ReadLen = %d\n", u4ReadLen);
+		DBGLOG(INIT, INFO,
+			"u4ReadLen = %d,MAX_EEPROM_BUFFER_SIZE = %d\n",
+			u4ReadLen, MAX_EEPROM_BUFFER_SIZE);
 
 		/* 1 <4> Send CMD with bin file content */
 		prGlueInfo = prAdapter->prGlueInfo;
@@ -5034,7 +5036,10 @@ uint32_t wlanConnac2XDownloadBufferBin(struct ADAPTER *prAdapter)
 			DBGLOG(INIT, INFO, "can't find file\n");
 			goto label_exit;
 		}
-		DBGLOG(INIT, INFO, "u4ReadLen = %d\n", u4ReadLen);
+
+		DBGLOG(INIT, INFO,
+			"u4ReadLen = %d,MAX_EEPROM_BUFFER_SIZE = %d\n",
+			u4ReadLen, MAX_EEPROM_BUFFER_SIZE);
 
 		/* 1 <4> Send CMD with bin file content */
 		if (u4ReadLen == 0 || u4ReadLen > MAX_EEPROM_BUFFER_SIZE)
@@ -5199,7 +5204,10 @@ uint32_t wlanConnac3XDownloadBufferBin(struct ADAPTER *prAdapter)
 			DBGLOG(INIT, INFO, "can't find file\n");
 			goto label_exit;
 		}
-		DBGLOG(INIT, INFO, "u4ReadLen = %d\n", u4ReadLen);
+
+		DBGLOG(INIT, INFO,
+			"u4ReadLen = %d,MAX_EEPROM_BUFFER_SIZE = %d\n",
+			u4ReadLen, MAX_EEPROM_BUFFER_SIZE);
 
 		/* 1 <4> Send CMD with bin file content */
 		if (u4ReadLen == 0 || u4ReadLen > MAX_EEPROM_BUFFER_SIZE)
