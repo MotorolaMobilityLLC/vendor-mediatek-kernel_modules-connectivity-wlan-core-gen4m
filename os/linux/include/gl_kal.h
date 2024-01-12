@@ -425,6 +425,20 @@ enum ENUM_PKT_PATH {
 };
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
 
+#if (CFG_WLAN_ATF_SUPPORT == 1)
+enum ENUM_WLAN_SMC_OPID {
+	/* init, on, off */
+	SMC_WLAN_PWR_ON_CONSYS_MCU_OPID = 1,
+	SMC_WLAN_PWR_OFF_CONSYS_MCU_OPID = 2,
+
+	/* HIF */
+	SMC_WLAN_HIF_OPID = 1000,
+
+	/* add new module here */
+	/* set OPID +1000 based on previous module */
+};
+#endif
+
 typedef int(*PFN_PWR_LEVEL_HANDLER)(struct ADAPTER *, uint8_t);
 
 struct PWR_LEVEL_HANDLER_ELEMENT {
@@ -2103,6 +2117,10 @@ uint32_t kalGetTxDirectQueueLength(struct GLUE_INFO *prGlueInfo);
 void kalKfreeSkb(void *pvPacket, u_int8_t fgIsFreeData);
 void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
 	u_int8_t fgIsSetLen);
+
+#if (CFG_WLAN_ATF_SUPPORT == 1)
+uint32_t kalSendAtfSmcCmd(uint32_t u4Opid);
+#endif
 
 uint32_t kalGetChannelFrequency(
 		uint8_t ucChannel,
