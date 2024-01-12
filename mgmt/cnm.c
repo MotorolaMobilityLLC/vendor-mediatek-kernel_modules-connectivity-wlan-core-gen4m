@@ -3636,16 +3636,7 @@ uint8_t cnmSapChannelSwitchReq(IN struct ADAPTER *prAdapter,
 		DBGLOG(P2P, WARN, "p2p glue info is not active\n");
 		goto error;
 	}
-	if (prGlueP2pInfo->chandef != NULL) {
-		if (prGlueP2pInfo->chandef->chan) {
-			cnmMemFree(prGlueInfo->prAdapter,
-			    prGlueP2pInfo->chandef->chan);
-			prGlueP2pInfo->chandef->chan = NULL;
-		}
-		cnmMemFree(prGlueInfo->prAdapter,
-			prGlueP2pInfo->chandef);
-		prGlueP2pInfo->chandef = NULL;
-	}
+	prGlueP2pInfo->fgChannelSwitchReq = true;
 
 	/* Fill conn info */
 	prP2pRoleFsmInfo =

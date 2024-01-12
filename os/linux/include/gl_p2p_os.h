@@ -238,6 +238,7 @@ struct GL_P2P_INFO {
 	struct completion rStopApComp;
 
 	enum ENUM_CHNL_SWITCH_POLICY eChnlSwitchPolicy;
+	u_int8_t fgChannelSwitchReq;
 };
 
 struct GL_P2P_DEV_INFO {
