@@ -108,8 +108,11 @@ const struct nla_policy mtk_scan_param_policy[
 	[WIFI_ATTR_SCAN_PASSIVE_N_CH_BACK] = {.type = NLA_U8},
 };
 
-const struct nla_policy nal_parse_wifi_setband[
+const struct nla_policy qca_wlan_vendor_attr_policy[
 	QCA_WLAN_VENDOR_ATTR_MAX + 1] = {
+	[QCA_WLAN_VENDOR_ATTR_ROAMING_POLICY] = {.type = NLA_U32},
+	[QCA_WLAN_VENDOR_ATTR_MAC_ADDR] = {.type = NLA_BINARY,
+					   .len = MAC_ADDR_LEN},
 	[QCA_WLAN_VENDOR_ATTR_SETBAND_VALUE] = {.type = NLA_U32},
 	[QCA_WLAN_VENDOR_ATTR_SETBAND_MASK] = {.type = NLA_U32},
 };
