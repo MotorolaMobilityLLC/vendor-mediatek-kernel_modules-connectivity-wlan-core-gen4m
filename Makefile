@@ -169,6 +169,10 @@ ifneq ($(filter SOC2_1X1,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -USOC2_1X1,$(ccflags-y))
 ccflags-y += -DSOC2_1X1
 ccflags-y += -DCONFIG_MTK_WIFI_VHT80
+ifneq ($(filter 6835, $(WLAN_CHIP_ID)),)
+	ccflags-y += -DCFG_WLAN_LK_FWDL_SUPPORT=1
+	ccflags-y += -DCFG_WLAN_ATF_SUPPORT=0
+endif
 endif
 
 ifneq ($(filter SOC2_2X2,$(MTK_COMBO_CHIP)),)
