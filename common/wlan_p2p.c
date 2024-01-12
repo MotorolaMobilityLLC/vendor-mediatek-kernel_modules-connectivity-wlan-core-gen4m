@@ -1457,6 +1457,7 @@ wlanoidSetUApsdParam(IN struct ADAPTER *prAdapter,
 	struct CMD_CUSTOM_UAPSD_PARAM_STRUCT rCmdUapsdParam;
 	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
 	struct BSS_INFO *prBssInfo;
+	u_int8_t fgIsOid = TRUE;
 
 	DEBUGFUNC("wlanoidSetUApsdParam");
 	DBGLOG(INIT, TRACE, "\n");
@@ -1501,6 +1502,10 @@ wlanoidSetUApsdParam(IN struct ADAPTER *prAdapter,
 	rCmdUapsdParam.ucMaxSpLen = prUapsdParam->ucMaxSpLen;
 	prPmProfSetupInfo->ucUapsdSp = prUapsdParam->ucMaxSpLen;
 
+	if (prAdapter->prGlueInfo)
+		fgIsOid = (prAdapter->prGlueInfo->u4TxThreadPid
+				!= KAL_GET_CURRENT_THREAD_ID());
+
 #if 0
 	return wlanSendSetQueryCmd(prAdapter,
 				CMD_ID_SET_UAPSD_PARAM,
@@ -1519,7 +1524,7 @@ wlanoidSetUApsdParam(IN struct ADAPTER *prAdapter,
 				prBssInfo->ucBssIndex,
 				TRUE,
 				FALSE,
-				TRUE,
+				fgIsOid,
 				nicCmdEventSetCommon,
 				nicOidCmdTimeoutCommon,
 				sizeof(struct CMD_CUSTOM_UAPSD_PARAM_STRUCT),
