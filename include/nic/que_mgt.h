@@ -1362,7 +1362,7 @@ void qmArpMonitorGetUnicastPktTime(struct ADAPTER *prAdapter,
 #endif
 
 #if defined(CFG_SUPPORT_REPLAY_DETECTION) || \
-	defined(CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION)
+	defined(CFG_SUPPORT_FRAG_AGG_VALIDATION)
 #define CCMPTSCPNNUM	6
 u_int8_t qmRxPNtoU64(uint8_t *pucPN, uint8_t uPNNum,
 	uint64_t *pu64Rets);
@@ -1373,15 +1373,15 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 			  struct SW_RFB *prSwRfb);
 #endif
 
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
 u_int8_t qmDetectRxInvalidEAPOL(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb);
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
-u_int8_t qmAmsduAttackDetection(struct ADAPTER *prAdapter,
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
+u_int8_t qmAmsduValidation(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb);
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 
 u_int8_t
 qmIsNoDropPacket(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);

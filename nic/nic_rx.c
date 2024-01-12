@@ -677,10 +677,10 @@ struct SW_RFB *nicRxDefragMPDU(struct ADAPTER *prAdapter,
 	struct HW_MAC_RX_STS_GROUP_4 *prRxStatusGroup4 = NULL;
 	struct STA_RECORD *prStaRec;
 	uint8_t ucTid = 0;
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
 	uint8_t ucSecMode = CIPHER_SUITE_NONE;
 	uint64_t u8PN;
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 
 	ASSERT(prSWRfb);
 
@@ -757,7 +757,7 @@ struct SW_RFB *nicRxDefragMPDU(struct ADAPTER *prAdapter,
 	GET_CURRENT_SYSTIME(&rCurrentTime);
 
 	/* check cipher suite to set if we need to get PN */
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
 	if (prSWRfb->ucSecMode == CIPHER_SUITE_TKIP
 		|| prSWRfb->ucSecMode == CIPHER_SUITE_TKIP_WO_MIC
 		|| prSWRfb->ucSecMode == CIPHER_SUITE_CCMP
@@ -773,7 +773,7 @@ struct SW_RFB *nicRxDefragMPDU(struct ADAPTER *prAdapter,
 			ucSecMode = CIPHER_SUITE_NONE;
 		}
 	}
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 
 
 	for (j = 0; j < MAX_NUM_CONCURRENT_FRAGMENTED_MSDUS; j++) {
@@ -816,13 +816,13 @@ struct SW_RFB *nicRxDefragMPDU(struct ADAPTER *prAdapter,
 				if (RXM_IS_QOS_DATA_FRAME(
 					prFragInfo->pr1stFrag->u2FrameCtrl)) {
 					if (u2SeqNo == prFragInfo->u2SeqNo
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
 					    && ucSecMode
 						== prFragInfo->ucSecMode
 #else
 					    && ucFragNo
 						== prFragInfo->ucNextFragNo
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 					   )
 						break;
 				}
@@ -830,13 +830,13 @@ struct SW_RFB *nicRxDefragMPDU(struct ADAPTER *prAdapter,
 				if (!RXM_IS_QOS_DATA_FRAME(
 					prFragInfo->pr1stFrag->u2FrameCtrl)) {
 					if (u2SeqNo == prFragInfo->u2SeqNo
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
 					    && ucSecMode
 						== prFragInfo->ucSecMode
 #else
 					    && ucFragNo
 						== prFragInfo->ucNextFragNo
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 					   )
 						break;
 				}
@@ -858,7 +858,7 @@ struct SW_RFB *nicRxDefragMPDU(struct ADAPTER *prAdapter,
 		return (struct SW_RFB *) NULL;
 	}
 
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
 	if (prFragInfo->pr1stFrag != (struct SW_RFB *) NULL) {
 		/* check if the FragNo is cont. */
 		if (ucFragNo != prFragInfo->ucNextFragNo
@@ -888,7 +888,7 @@ struct SW_RFB *nicRxDefragMPDU(struct ADAPTER *prAdapter,
 			return (struct SW_RFB *) NULL;
 		}
 	}
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 
 	ASSERT(prFragInfo);
 
@@ -917,13 +917,13 @@ struct SW_RFB *nicRxDefragMPDU(struct ADAPTER *prAdapter,
 		prFragInfo->u2SeqNo = u2SeqNo;
 		prFragInfo->ucNextFragNo = ucFragNo + 1; /* should be 1 */
 
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
 		prFragInfo->ucSecMode = ucSecMode;
 		if (prFragInfo->ucSecMode != CIPHER_SUITE_NONE)
 			prFragInfo->u8NextPN = u8PN + 1;
 		else
 			prFragInfo->u8NextPN = 0;
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 
 		DBGLOG(RX, LOUD,
 			"First: SeqCtrl:%04x, SN:%04x, NxFragN = %02x\n",
@@ -971,11 +971,11 @@ struct SW_RFB *nicRxDefragMPDU(struct ADAPTER *prAdapter,
 
 				prFragInfo->ucNextFragNo++;
 
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
 				if (prFragInfo->ucSecMode
 					!= CIPHER_SUITE_NONE)
 					prFragInfo->u8NextPN++;
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 
 			}
 
@@ -2038,9 +2038,9 @@ void nicRxProcessDataPacket(struct ADAPTER *prAdapter,
 	prSwRfb->fgFragFrame = FALSE;
 	prSwRfb->fgReorderBuffer = FALSE;
 
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
 	prSwRfb->fgIsFirstSubAMSDULLCMS = FALSE;
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 
 #if CFG_WIFI_SW_CIPHER_MISMATCH
 	if (prSwRfb->prStaRec &&
