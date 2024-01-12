@@ -218,6 +218,8 @@
 	(NIC_TX_DESC_LONG_FORMAT_LENGTH + NIC_TX_DESC_PADDING_LENGTH \
 	+ HW_MAC_TX_DESC_APPEND_T_LENGTH)
 
+#define NIC_MSDU_REPORT_DUMP_TIMEOUT		1	/* sec */
+
 /*------------------------------------------------------------------------*/
 /* Tx status related information                                          */
 /*------------------------------------------------------------------------*/
