@@ -12283,6 +12283,8 @@ void kalSetTxPwrBackoffByBattVolt(struct ADAPTER *prAdapter, bool ucEnable)
 	if (!prAdapter)
 		return;
 
+	kalMemZero(&rTxPwrDrop,
+		sizeof(struct CMD_TX_POWER_PERCENTAGE_DROP_CTRL_T));
 	rTxPwrDrop.ucPowerCtrlFormatId = PERCENTAGE_DROP_CTRL;
 	if (ucEnable)
 		rTxPwrDrop.i1PowerDropLevel =
