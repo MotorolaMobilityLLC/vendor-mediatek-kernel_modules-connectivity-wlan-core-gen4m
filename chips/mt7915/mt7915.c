@@ -291,6 +291,7 @@ void mt7915DumpSerDummyCR(
 
 }
 
+
 struct BUS_INFO mt7915_bus_info = {
 #if defined(_HIF_PCIE)
 	.top_cfg_base = MT7915_TOP_CFG_BASE,
@@ -441,6 +442,8 @@ struct CHIP_DBG_OPS mt7915_debug_ops = {
 	.showDmaschInfo = NULL,
 	.showHifInfo = NULL,
 	.printHifDbgInfo = NULL,
+	.show_rx_rate_info = connac2x_show_rx_rate_info,
+	.show_rx_rssi_info = connac2x_show_rx_rssi_info,
 };
 
 /* Litien code refine to support multi chip */
