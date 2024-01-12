@@ -4441,14 +4441,14 @@ static void qmLogDropFallBehind(IN struct ADAPTER *prAdapter,
 	u8Count = RX_GET_CNT(&prAdapter->rRxCtrl, RX_REORDER_BEHIND_DROP_COUNT);
 	if (IS_BAR_SSN_VALID(prReorderQueParm->u2BarSSN))
 		DBGLOG(RX, INFO,
-		       "QM:(D)[%u](~%u)(%u~){%u,%u} BAR SSN:%u/%u total:%lu",
-		       ucTid, u2LastDrop, u4SeqNo, u4WinStart, u4WinEnd, 1,
-		       u4BarSSN, u8Count);
+		       "QM:(D)[%u:%u](~%u)(%u~){%u,%u} BAR SSN:%u/%u total:%lu",
+		       prReorderQueParm->ucStaRecIdx, ucTid, u2LastDrop,
+		       u4SeqNo, u4WinStart, u4WinEnd, 1, u4BarSSN, u8Count);
 	else
 		DBGLOG(RX, TRACE,
-		       "QM:(D)[%u](~%u)(%u~){%u,%u} BAR SSN:%u/%u total:%lu",
-		       ucTid, u2LastDrop, u4SeqNo, u4WinStart, u4WinEnd, 0,
-		       u4BarSSN, u8Count);
+		       "QM:(D)[%u:%u](~%u)(%u~){%u,%u} BAR SSN:%u/%u total:%lu",
+		       prReorderQueParm->ucStaRecIdx, ucTid, u2LastDrop,
+		       u4SeqNo, u4WinStart, u4WinEnd, 0, u4BarSSN, u8Count);
 }
 
 void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
@@ -5496,6 +5496,7 @@ void qmHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	uint8_t ucTid;
 	uint16_t u2WinSize;
+	uint16_t u2WinStart;
 
 	DBGLOG(QM, INFO, "QM:Event +RxBa\n");
 
@@ -5510,8 +5511,9 @@ void qmHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
 			BA_PARAM_SET_BUFFER_SIZE_MASK) >>
 				BA_PARAM_SET_BUFFER_SIZE_MASK_OFFSET;
 
-	nicEventHandleAddBa(prAdapter, prStaRec, ucTid, u2WinSize,
-			prEventRxAddBa->u2BAStartSeqCtrl);
+	u2WinStart = prEventRxAddBa->u2BAStartSeqCtrl >> OFFSET_BAR_SSC_SN;
+
+	nicEventHandleAddBa(prAdapter, prStaRec, ucTid, u2WinSize, u2WinStart);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5637,6 +5639,8 @@ u_int8_t qmAddRxBaEntry(IN struct ADAPTER *prAdapter,
 		prRxBaEntry->fgIsValid = TRUE;
 		prRxBaEntry->fgIsWaitingForPktWithSsn = TRUE;
 		prRxBaEntry->fgHasBubble = FALSE;
+		kalMemZero(prRxBaEntry->prCacheIndex,
+				sizeof(prRxBaEntry->prCacheIndex));
 
 		g_arMissTimeout[ucStaRecIdx][ucTid] = 0;
 
