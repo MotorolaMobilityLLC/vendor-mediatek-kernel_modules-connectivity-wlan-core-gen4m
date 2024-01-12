@@ -1127,9 +1127,10 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 		COPY_SSID(prMatchSets[i].aucSsid, prMatchSets[i].ucSsidLen,
 			prRequest->arMatchSsid[i].aucSsid,
 			prRequest->arMatchSsid[i].u4SsidLen);
-		log_dbg(SCN, TRACE, "Match set(%d) %s\n",
-				i, prMatchSets[i].aucSsid);
-		prMatchSets[i].i4RssiThresold = prRequest->acRssiThold[i];
+		prMatchSets[i].i4RssiThresold = prRequest->ai4RssiThold[i];
+		log_dbg(SCN, TRACE, "Match set(%d) %s, rssi>%d\n",
+				i, prMatchSets[i].aucSsid,
+				prMatchSets[i].i4RssiThresold);
 	}
 
 	/* 2.2 Prepare command. Set channel */
