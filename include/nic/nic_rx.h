@@ -958,10 +958,7 @@ struct SW_RFB {
 	enum ENUM_RX_PKT_DESTINATION eDst;
 	/* only valid when eDst == FORWARD */
 	enum ENUM_TRAFFIC_CLASS_INDEX eTC;
-#if 0
-	/* RX reorder for one MSDU in AMSDU issue */
-	/*QUE_T rAmsduQue;*/
-#endif
+
 	uint64_t rIntTime;
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 	struct IEEE80211_RADIOTAP_INFO *prRadiotapInfo;

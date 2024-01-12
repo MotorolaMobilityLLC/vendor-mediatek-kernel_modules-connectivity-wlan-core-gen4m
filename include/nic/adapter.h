@@ -2449,10 +2449,6 @@ struct ADAPTER {
 	struct WLAN_CFG rWlanCfgEm;
 #endif
 
-#if CFG_MOVE_BA_TO_DRIVER
-	struct TIMER rMqmIdleRxBaDetectionTimer;
-	uint32_t u4FlagBitmap;
-#endif
 #if (CFG_CE_ASSERT_DUMP == 1)
 	struct TIMER rN9CorDumpTimer;
 	u_int8_t fgN9AssertDumpOngoing;

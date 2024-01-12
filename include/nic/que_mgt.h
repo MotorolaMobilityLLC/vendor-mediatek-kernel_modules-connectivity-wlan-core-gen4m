@@ -231,37 +231,6 @@ extern const uint8_t *apucACI2Str[4];
 #define QM_RX_BA_ENTRY_MISS_TIMEOUT_MS_SHORT	(50)
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
-#if CFG_MOVE_BA_TO_DRIVER
-/* MQM internal control bitmap per-bit usage
- * (for operations on g_prMqm->u4FlagBitmap)
- */
-#define MQM_FLAG_TSPEC_NEGO_ADD_IN_PROGRESS 0
-#define MQM_FLAG_IDLE_TX_BA_TIMER_STARTED   1
-#define MQM_FLAG_IDLE_RX_BA_TIMER_STARTED   2
-
-#define MQM_IDLE_RX_BA_DETECTION			0
-#define MQM_IDLE_RX_BA_CHECK_INTERVAL       5000	/* in msec */
-#define MQM_DEL_IDLE_RXBA_THRESHOLD_BK      6
-#define MQM_DEL_IDLE_RXBA_THRESHOLD_BE      12
-#define MQM_DEL_IDLE_RXBA_THRESHOLD_VI      6
-#define MQM_DEL_IDLE_RXBA_THRESHOLD_VO      6
-
-/* For indicating whether the role when generating a DELBA message */
-#define DELBA_ROLE_INITIATOR			TRUE
-#define DELBA_ROLE_RECIPIENT			FALSE
-
-#define MQM_SET_FLAG(_Bitmap, _flag)	{ (_Bitmap) |= (BIT((_flag))); }
-#define MQM_CLEAR_FLAG(_Bitmap, _flag)	{ (_Bitmap) &= (~BIT((_flag))); }
-#define MQM_CHECK_FLAG(_Bitmap, _flag)	((_Bitmap) & (BIT((_flag))))
-
-enum ENUM_BA_RESET_SEL {
-	MAC_ADDR_TID_MATCH = 0,
-	MAC_ADDR_MATCH,
-	ALWAYS_MATCH,
-	MATCH_NUM
-};
-
-#endif
 /* BW80 NSS1 rate: MCS9 433 Mbps */
 #define QM_DEQUE_PERCENT_VHT80_NSS1	23
 /* BW40 NSS1 Max rate: 200 Mbps */
@@ -370,17 +339,8 @@ struct RX_BA_ENTRY {
 	uint16_t u2FirstBubbleSn;
 	u_int8_t fgHasBubble;
 
-#if CFG_MOVE_BA_TO_DRIVER
-	uint8_t ucStatus;
-	uint8_t ucIdleCount;
-	uint16_t u2SnapShotSN;
-#endif
-	/* UINT_8                  ucTxBufferSize; */
-	/* BOOL                    fgIsAcConstrain; */
-	/* BOOL                    fgIsBaEnabled; */
 #if CFG_SUPPORT_RX_AMSDU
 	/* RX reorder for one MSDU in AMSDU issue */
-	/* P_SW_RFB_T prMpduSwRfb; */
 	uint16_t u2SeqNo; /* for statistic */
 	u_int8_t fgAmsduNeedLastFrame; /* for statistic */
 	uint8_t u8LastAmsduSubIdx;
@@ -864,18 +824,6 @@ struct MSG_ARP_MONITOR {
 };
 #endif /* ARP_MONITER_ENABLE */
 
-#if CFG_MOVE_BA_TO_DRIVER
-/* The status of an TX/RX BA entry in FW
- * (NEGO means the negotiation process is in progress)
- */
-enum ENUM_BA_ENTRY_STATUS {
-	BA_ENTRY_STATUS_INVALID = 0,
-	BA_ENTRY_STATUS_NEGO,
-	BA_ENTRY_STATUS_ACTIVE,
-	BA_ENTRY_STATUS_DELETING
-};
-#endif
-
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -1303,33 +1251,6 @@ void qmFlushTimeoutReorderBubble(struct ADAPTER *prAdapter,
 
 void qmFlushDeletedBaReorder(struct ADAPTER *prAdapter,
 		struct RX_BA_ENTRY *prReorderQueParm);
-
-#if CFG_MOVE_BA_TO_DRIVER
-void
-mqmSendDelBaFrame(struct ADAPTER *prAdapter,
-		  u_int8_t fgIsInitiator, struct STA_RECORD *prStaRec,
-		  uint32_t u4Tid
-		  uint32_t u4ReasonCode);
-
-uint32_t
-mqmCallbackAddBaRspSent(struct ADAPTER *prAdapter,
-			struct MSDU_INFO *prMsduInfo,
-			enum ENUM_TX_RESULT_CODE rTxDoneStatus);
-
-void mqmTimeoutCheckIdleRxBa(struct ADAPTER *prAdapter,
-			     uintptr_t ulParamPtr);
-
-void
-mqmRxModifyBaEntryStatus(struct ADAPTER *prAdapter,
-			 struct RX_BA_ENTRY *prRxBaEntry,
-			 enum ENUM_BA_ENTRY_STATUS eStatus);
-
-void mqmHandleAddBaReq(struct ADAPTER *prAdapter,
-		       struct SW_RFB *prSwRfb);
-
-void mqmHandleBaActionFrame(struct ADAPTER *prAdapter,
-			    struct SW_RFB *prSwRfb);
-#endif
 
 void qmResetTcControlResource(struct ADAPTER *prAdapter);
 void qmAdjustTcQuotaPle(struct ADAPTER *prAdapter,

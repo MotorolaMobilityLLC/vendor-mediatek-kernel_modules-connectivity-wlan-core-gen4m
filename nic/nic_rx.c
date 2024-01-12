@@ -276,14 +276,6 @@ static const struct ACTION_FRAME_SIZE_MAP arActionFrameReservedLen[] = {
 	 sizeof(struct WMM_ACTION_TSPEC_FRAME)},
 	{(uint16_t)(CATEGORY_WME_MGT_NOTIFICATION | ACTION_DELTS << 8),
 	 sizeof(struct WMM_ACTION_TSPEC_FRAME)},
-#if CFG_MOVE_BA_TO_DRIVER
-	{(uint16_t)(CATEGORY_BLOCK_ACK_ACTION | ACTION_ADDBA_REQ << 8),
-	 sizeof(struct ACTION_ADDBA_REQ_FRAME)},
-	{(uint16_t)(CATEGORY_BLOCK_ACK_ACTION | ACTION_ADDBA_RSP << 8),
-	 sizeof(struct ACTION_ADDBA_RSP_FRAME)},
-	{(uint16_t)(CATEGORY_BLOCK_ACK_ACTION | ACTION_DELBA << 8),
-	 sizeof(struct ACTION_DELBA_FRAME)},
-#endif
 #if CFG_SUPPORT_NAN
 	{(uint16_t)(CATEGORY_PROTECTED_DUAL_OF_PUBLIC_ACTION |
 		ACTION_PUBLIC_VENDOR_SPECIFIC << 8),
@@ -3908,16 +3900,6 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 			prSwRfb->prStaRec->ucBssIndex);
 
 	switch (prActFrame->ucCategory) {
-#if CFG_MOVE_BA_TO_DRIVER
-	case CATEGORY_BLOCK_ACK_ACTION:
-		DBGLOG(RX, WARN, "Rx CATEGORY_BLOCK_ACK_ACTION\n");
-
-		if (prSwRfb->prStaRec)
-			mqmHandleBaActionFrame(prAdapter, prSwRfb);
-
-		break;
-#endif
-
 	case CATEGORY_QOS_ACTION:
 		DBGLOG(RX, INFO, "received dscp action frame: %d\n",
 		       __LINE__);

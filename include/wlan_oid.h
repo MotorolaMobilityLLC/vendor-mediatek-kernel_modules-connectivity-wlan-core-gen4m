@@ -5030,12 +5030,6 @@ wlanoidSetStopSchedScan(struct ADAPTER *prAdapter,
 			uint32_t *pu4SetInfoLen);
 #endif /* CFG_SUPPORT_SCHED_SCAN */
 
-#if CFG_MOVE_BA_TO_DRIVER
-uint32_t wlanoidResetBAScoreboard(struct ADAPTER *prAdapter,
-				  void *pvSetBuffer,
-				  uint32_t u4SetBufferLen);
-#endif
-
 #if CFG_SUPPORT_PASSPOINT
 uint32_t
 wlanoidSetHS20Info(struct ADAPTER *prAdapter,
