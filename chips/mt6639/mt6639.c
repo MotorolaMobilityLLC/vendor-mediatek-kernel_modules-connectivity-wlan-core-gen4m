@@ -165,6 +165,10 @@ static void mt6639WfdmaRxRingExtCtrl(
 	u_int32_t index);
 
 static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo);
+static void mt6639PcieHwControlVote(
+	struct ADAPTER *prAdapter,
+	uint8_t enable,
+	uint32_t u4WifiUser);
 
 #if CFG_SUPPORT_PCIE_ASPM
 static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
@@ -552,6 +556,7 @@ struct BUS_INFO mt6639_bus_info = {
 	.configWfdmaRxRingTh = mt6639ConfigWfdmaRxRingThreshold,
 #if defined(_HIF_PCIE)
 	.initPcieInt = mt6639InitPcieInt,
+	.hwControlVote = mt6639PcieHwControlVote,
 #if CFG_SUPPORT_PCIE_ASPM
 	.configPcieAspm = mt6639ConfigPcieAspm,
 #endif
@@ -1989,6 +1994,14 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 	HAL_MCR_WR(prGlueInfo->prAdapter,
 		PCIE_MAC_IREG_IMASK_HOST_ADDR,
 		value);
+}
+
+static void mt6639PcieHwControlVote(
+	struct ADAPTER *prAdapter,
+	uint8_t enable,
+	uint32_t u4WifiUser)
+{
+	halPcieHwControlVote(prAdapter, enable, u4WifiUser);
 }
 
 #if CFG_SUPPORT_PCIE_ASPM
