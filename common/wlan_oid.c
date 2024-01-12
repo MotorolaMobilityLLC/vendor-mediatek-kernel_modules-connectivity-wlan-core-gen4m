@@ -1096,6 +1096,10 @@ wlanoidSetSsid(struct ADAPTER *prAdapter,
 			prConnSettings->eConnectionPolicy =
 				CONNECT_BY_SSID_ANY;
 	}
+	/* Init join status to a non-zero value to prevent returning
+	 * status success due to auth/assoc no response or valid ap selection
+	 */
+	prConnSettings->u2JoinStatus = STATUS_CODE_AUTH_TIMEOUT;
 
 	/* Send AIS Abort Message */
 	prAisAbortMsg = (struct MSG_AIS_ABORT *) cnmMemAlloc(
