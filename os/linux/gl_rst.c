@@ -573,7 +573,10 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 	DBGLOG(INIT, INFO,
 		"Enter glRstwlanPreWholeChipReset (%d).\n",
 		g_IsWholeChipRst);
-
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return bRet;
+	}
 	if (!g_IsSubsysRstOverThreshold) {
 		if (!kalIsResetting()) {
 			DBGLOG(INIT, INFO,
@@ -608,6 +611,13 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 
 int glRstwlanPostWholeChipReset(void)
 {
+	struct GLUE_INFO *prGlueInfo;
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return 0;
+	}
 	glResetMsgHandler(WMTMSG_TYPE_RESET, WMTRSTMSG_RESET_END);
 	g_IsWholeChipRst = FALSE;
 	DBGLOG(INIT, INFO,
@@ -752,7 +762,8 @@ int wlan_reset_thread_main(void *data)
 			KAL_WAKE_LOCK(NULL,
 				      prWlanRstThreadWakeLock);
 #endif
-		if (test_and_clear_bit(GLUE_FLAG_RST_START_BIT, &g_ulFlag)) {
+		if (test_and_clear_bit(GLUE_FLAG_RST_START_BIT, &g_ulFlag) &&
+			 ((prGlueInfo) && (prGlueInfo->u4ReadyFlag))) {
 			if (KAL_WAKE_LOCK_ACTIVE(NULL, &g_IntrWakeLock))
 				KAL_WAKE_UNLOCK(NULL, &g_IntrWakeLock);
 
