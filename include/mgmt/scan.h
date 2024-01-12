@@ -651,9 +651,10 @@ struct SCAN_INFO {
 	uint8_t		ucScnTimeoutTimes;
 	uint8_t		ucScnTimeoutSubsysResetCnt;
 #endif
-
 	/*Skip DFS channel scan or not */
 	u_int8_t	fgSkipDFS;
+	uint8_t		fgIsScanTimeout;
+	OS_SYSTIME rLastScanStartTime;
 
 #if (CFG_SUPPORT_WIFI_RNR == 1)
 	struct LINK rNeighborAPInfoList;
@@ -1001,12 +1002,14 @@ void scnSetSchedScanPlan(IN struct ADAPTER *prAdapter,
 void scnDoZeroMdrdyRecoveryCheck(IN struct ADAPTER *prAdapter,
 			IN struct EVENT_SCAN_DONE *prScanDone,
 			IN struct SCAN_INFO *prScanInfo, IN uint8_t ucBssIndex);
-
 void scnDoScanTimeoutRecoveryCheck(IN struct ADAPTER *prAdapter,
 			IN uint8_t ucBssIndex);
 
 #endif
 
+void scnFsmNotifyEvent(IN struct ADAPTER *prAdapter,
+			IN enum ENUM_SCAN_STATUS eStatus,
+			IN uint8_t ucBssIndex);
 void scanLogEssResult(struct ADAPTER *prAdapter);
 void scanInitEssResult(struct ADAPTER *prAdapter);
 #if CFG_SUPPORT_SCAN_CACHE_RESULT
