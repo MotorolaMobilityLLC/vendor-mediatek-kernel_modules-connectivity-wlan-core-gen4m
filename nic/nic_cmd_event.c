@@ -4017,10 +4017,10 @@ void nicExtEventQueryMemDump(IN struct ADAPTER *prAdapter,
 
 		prAdapter->rIcapInfo.eIcapState = ICAP_STATE_FW_DUMP_DONE;
 
-		sprintf(aucPath_done, "/file_dump_done.txt");
+		kalSprintf(aucPath_done, "/file_dump_done.txt");
 		if (kalCheckPath(aucPath_done) == -1) {
 			kalMemSet(aucPath_done, 0x00, 256);
-			sprintf(aucPath_done, "/data/file_dump_done.txt");
+			kalSprintf(aucPath_done, "/data/file_dump_done.txt");
 		}
 		DBGLOG(INIT, INFO, ": ==> gen done_file\n");
 		kalWriteToFile(aucPath_done, FALSE, aucPath_done,
@@ -5037,6 +5037,7 @@ void nicEventRssiMonitor(IN struct ADAPTER *prAdapter,
 	int32_t rssi = 0;
 	struct GLUE_INFO *prGlueInfo;
 	struct wiphy *wiphy;
+	struct net_device *dev;
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	wiphy = priv_to_wiphy(prGlueInfo);
@@ -5044,9 +5045,12 @@ void nicEventRssiMonitor(IN struct ADAPTER *prAdapter,
 	kalMemCopy(&rssi, prEvent->aucBuffer, sizeof(int32_t));
 	DBGLOG(RX, TRACE, "EVENT_ID_RSSI_MONITOR value=%d\n", rssi);
 #if KERNEL_VERSION(3, 16, 0) <= LINUX_VERSION_CODE
-	mtk_cfg80211_vendor_event_rssi_beyond_range(wiphy,
-		wlanGetNetDev(prAdapter->prGlueInfo,
-			AIS_DEFAULT_INDEX)->ieee80211_ptr, rssi);
+	dev = wlanGetNetDev(prAdapter->prGlueInfo,
+			AIS_DEFAULT_INDEX);
+	if (dev != NULL) {
+		mtk_cfg80211_vendor_event_rssi_beyond_range(wiphy,
+			dev->ieee80211_ptr, rssi);
+	}
 #endif
 }
 
