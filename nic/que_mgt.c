@@ -422,6 +422,7 @@ void qmInit(IN struct ADAPTER *prAdapter,
 		prQM->au4HeadStaRecIndex[u4Idx] = 0;
 	}
 
+	prQM->u4HeadBssInfoIndex = 0;
 	prQM->u4GlobalResourceUsedCount = 0;
 #endif
 
@@ -6331,6 +6332,11 @@ void qmHandleEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
 	struct EVENT_BSS_ABSENCE_PRESENCE *prEventBssStatus;
 	struct BSS_INFO *prBssInfo;
 	u_int8_t fgIsNetAbsentOld;
+	struct GLUE_INFO *glue = prAdapter->prGlueInfo;
+	struct GL_HIF_INFO *hif = &glue->rHifInfo;
+	char *pos = NULL, *end = NULL;
+	char buf[512];
+	int i;
 
 	prEventBssStatus = (struct EVENT_BSS_ABSENCE_PRESENCE *) (
 		prEvent->aucBuffer);
@@ -6340,9 +6346,17 @@ void qmHandleEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
 	prBssInfo->fgIsNetAbsent = prEventBssStatus->ucIsAbsent;
 	prBssInfo->ucBssFreeQuota = prEventBssStatus->ucBssFreeQuota;
 
-	DBGLOG(QM, INFO, "NAF=%d,%d,%d\n",
+	memset(buf, 0, sizeof(buf));
+	pos = buf;
+	end = pos + sizeof(buf);
+	for (i = 0; i < NUM_OF_TX_RING; ++i) {
+		pos += kalSnprintf(pos, end - pos, "[%u]",
+			hif->TxRing[i].u4UsedCnt);
+	}
+
+	DBGLOG(QM, INFO, "NAF:B=%d,A=%d,F=%d used=%d %s\n",
 		prEventBssStatus->ucBssIndex, prBssInfo->fgIsNetAbsent,
-		prBssInfo->ucBssFreeQuota);
+		prBssInfo->ucBssFreeQuota, hif->rTokenInfo.u4UsedCnt, buf);
 
 	if (!prBssInfo->fgIsNetAbsent) {
 		/* ToDo:: QM_DBG_CNT_INC */
@@ -6360,6 +6374,7 @@ void qmHandleEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
 			prAdapter->rQM.fgForceReassign = TRUE;
 #endif
 			kalSetEvent(prAdapter->prGlueInfo);
+			kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 		}
 	}
 }

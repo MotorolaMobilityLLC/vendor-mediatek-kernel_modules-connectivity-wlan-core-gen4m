@@ -1464,7 +1464,7 @@ struct ADAPTER {
 	struct QUE rTxP0Queue;
 	struct QUE rTxP1Queue;
 #else
-	struct QUE rTxPQueue[TX_PORT_NUM];
+	struct QUE rTxPQueue[BSS_DEFAULT_NUM][TX_PORT_NUM];
 #endif
 	struct QUE rRxQueue;
 	struct QUE rTxDataDoneQueue;

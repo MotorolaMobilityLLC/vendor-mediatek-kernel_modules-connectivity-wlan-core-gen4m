@@ -1277,11 +1277,10 @@ uint32_t nicTxMsduInfoListMthread(IN struct ADAPTER
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 	}
 #else
-
 	struct MSDU_INFO *prMsduInfo, *prNextMsduInfo;
-	struct QUE qDataPort[TX_PORT_NUM];
-	struct QUE *prDataPort[TX_PORT_NUM];
-	int32_t i;
+	struct QUE qDataPort[BSS_DEFAULT_NUM][TX_PORT_NUM];
+	struct QUE *prDataPort[BSS_DEFAULT_NUM][TX_PORT_NUM];
+	int32_t i, j;
 	u_int8_t fgSetTx2Hif = FALSE;
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -1291,34 +1290,29 @@ uint32_t nicTxMsduInfoListMthread(IN struct ADAPTER
 
 	prMsduInfo = prMsduInfoListHead;
 
-	for (i = 0; i < TX_PORT_NUM; i++) {
-		prDataPort[i] = &qDataPort[i];
-		QUEUE_INITIALIZE(prDataPort[i]);
+	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+		for (j = 0; j < TX_PORT_NUM; j++) {
+			prDataPort[i][j] = &qDataPort[i][j];
+			QUEUE_INITIALIZE(prDataPort[i][j]);
+		}
 	}
 
 	/* Separate MSDU_INFO_T lists into 2 categories: for Port#0 & Port#1 */
 	while (prMsduInfo) {
-
 		fgSetTx2Hif = TRUE;
 		prNextMsduInfo = (struct MSDU_INFO *) QUEUE_GET_NEXT_ENTRY((
 					 struct QUE_ENTRY *) prMsduInfo);
-
-		if (prMsduInfo->ucWmmQueSet == DBDC_2G_WMM_INDEX) {
-			QUEUE_GET_NEXT_ENTRY((struct QUE_ENTRY *) prMsduInfo) =
+		if (prMsduInfo->ucTC >= 0 &&
+		    prMsduInfo->ucTC < TC_NUM) {
+			QUEUE_GET_NEXT_ENTRY(
+				(struct QUE_ENTRY *) prMsduInfo) =
 				NULL;
-			QUEUE_INSERT_TAIL(prDataPort[TX_2G_WMM_PORT_NUM],
-					  (struct QUE_ENTRY *) prMsduInfo);
-		} else {
-			if (prMsduInfo->ucTC >= 0 &&
-			    prMsduInfo->ucTC < TC_NUM) {
-				QUEUE_GET_NEXT_ENTRY(
-					(struct QUE_ENTRY *) prMsduInfo) =
-					NULL;
-				QUEUE_INSERT_TAIL(prDataPort[prMsduInfo->ucTC],
-					(struct QUE_ENTRY *) prMsduInfo);
-			} else
-				ASSERT(0);
-		}
+			QUEUE_INSERT_TAIL(
+			   prDataPort[prMsduInfo->ucBssIndex][prMsduInfo->ucTC],
+			   (struct QUE_ENTRY *) prMsduInfo);
+		} else
+			ASSERT(0);
+
 		nicTxFillDataDesc(prAdapter, prMsduInfo);
 		GLUE_INC_REF_CNT(prAdapter->rHifStats.u4DataInCount);
 
@@ -1327,9 +1321,13 @@ uint32_t nicTxMsduInfoListMthread(IN struct ADAPTER
 
 	if (fgSetTx2Hif) {
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-		for (i = 0; i < TX_PORT_NUM; i++)
-			QUEUE_CONCATENATE_QUEUES((&(prAdapter->rTxPQueue[i])),
-						 (prDataPort[i]));
+		for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+			for (j = 0; j < TX_PORT_NUM; j++) {
+				QUEUE_CONCATENATE_QUEUES(
+					(&(prAdapter->rTxPQueue[i][j])),
+					(prDataPort[i][j]));
+			}
+		}
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 	}
@@ -1437,41 +1435,65 @@ uint32_t nicTxMsduQueueMthread(IN struct ADAPTER *prAdapter)
 /*----------------------------------------------------------------------------*/
 void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
 {
-	struct QUE qDataPort[TX_PORT_NUM];
-	struct QUE *prDataPort[TX_PORT_NUM];
-	int32_t i;
+	struct QUE qDataPort[BSS_DEFAULT_NUM][TX_PORT_NUM];
+	struct QUE *prDataPort[BSS_DEFAULT_NUM][TX_PORT_NUM];
+	int32_t i, j, k;
+	struct BSS_INFO	*prBssInfo;
+#if QM_FORWARDING_FAIRNESS
+	struct QUE_MGT *prQM = &prAdapter->rQM;
+#endif
 
 	KAL_SPIN_LOCK_DECLARATION();
 
-	for (i = 0; i < TX_PORT_NUM; i++) {
-		prDataPort[i] = &qDataPort[i];
-		QUEUE_INITIALIZE(prDataPort[i]);
-	}
-
-	for (i = TC_NUM; i >= 0; i--) {
-		while (QUEUE_IS_NOT_EMPTY(&(prAdapter->rTxPQueue[i]))) {
-			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-			QUEUE_MOVE_ALL(prDataPort[i],
-				&(prAdapter->rTxPQueue[i]));
-			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-
-			TRACE(nicTxMsduQueue(prAdapter, 0, prDataPort[i]),
-			     "Move TxPQueue%d %d", i, prDataPort[i]->u4NumElem);
-
-			if (QUEUE_IS_NOT_EMPTY(prDataPort[i])) {
-				KAL_ACQUIRE_SPIN_LOCK(
-					prAdapter,
-					SPIN_LOCK_TX_PORT_QUE);
-				QUEUE_CONCATENATE_QUEUES_HEAD(
-					&(prAdapter->rTxPQueue[i]),
-					prDataPort[i]);
-				KAL_RELEASE_SPIN_LOCK(prAdapter,
-						      SPIN_LOCK_TX_PORT_QUE);
-
-				break;
-			}
+	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+		for (j = 0; j < TX_PORT_NUM; j++) {
+			prDataPort[i][j] = &qDataPort[i][j];
+			QUEUE_INITIALIZE(prDataPort[i][j]);
 		}
 	}
+
+	for (j = TX_PORT_NUM - 1; j >= 0; j--) {
+#if QM_FORWARDING_FAIRNESS
+		i = prQM->u4HeadBssInfoIndex;
+#else
+		i = 0;
+#endif
+		for (k = 0; k < BSS_DEFAULT_NUM; k++) {
+			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+			while (!prBssInfo->fgIsNetAbsent && QUEUE_IS_NOT_EMPTY(
+				&(prAdapter->rTxPQueue[i][j]))) {
+				KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+					SPIN_LOCK_TX_PORT_QUE);
+				QUEUE_MOVE_ALL(prDataPort[i][j],
+					&(prAdapter->rTxPQueue[i][j]));
+				KAL_RELEASE_SPIN_LOCK(prAdapter,
+					SPIN_LOCK_TX_PORT_QUE);
+
+				TRACE(nicTxMsduQueue(prAdapter,
+					0, prDataPort[i][j]),
+				     "Move TxPQueue%d_%d %d",
+				     i, j, prDataPort[i][j]->u4NumElem);
+
+				if (QUEUE_IS_NOT_EMPTY(prDataPort[i][j])) {
+					KAL_ACQUIRE_SPIN_LOCK(
+						prAdapter,
+						SPIN_LOCK_TX_PORT_QUE);
+					QUEUE_CONCATENATE_QUEUES_HEAD(
+						&(prAdapter->rTxPQueue[i][j]),
+						prDataPort[i][j]);
+					KAL_RELEASE_SPIN_LOCK(prAdapter,
+						      SPIN_LOCK_TX_PORT_QUE);
+					break;
+				}
+			}
+			i++;
+			i %= BSS_DEFAULT_NUM;
+		}
+	}
+#if QM_FORWARDING_FAIRNESS
+	prQM->u4HeadBssInfoIndex++;
+	prQM->u4HeadBssInfoIndex %= BSS_DEFAULT_NUM;
+#endif
 }
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
@@ -1492,37 +1514,42 @@ static void nicTxMsduPickHighPrioPkt(struct ADAPTER *prAdapter,
 	struct QUE *prDataPort, *prTxQue;
 	struct MSDU_INFO *prMsduInfo;
 	struct sk_buff *prSkb;
-	int32_t i4TcIdx;
+	int32_t i4TcIdx, i;
 	uint32_t u4QSize, u4Idx;
 	uint8_t ucPortIdx;
 
-	for (i4TcIdx = TC_NUM; i4TcIdx >= 0; i4TcIdx--) {
-		prTxQue = &(prAdapter->rTxPQueue[i4TcIdx]);
-		u4QSize = prTxQue->u4NumElem;
-		for (u4Idx = 0; u4Idx < u4QSize; u4Idx++) {
-			QUEUE_REMOVE_HEAD(prTxQue, prMsduInfo,
-					  struct MSDU_INFO *);
-			if (!prMsduInfo || !prMsduInfo->prPacket) {
-				QUEUE_INSERT_TAIL(
-					prTxQue,
-					(struct QUE_ENTRY *)prMsduInfo);
-				continue;
-			}
+	for (i4TcIdx = TX_PORT_NUM - 1; i4TcIdx >= 0; i4TcIdx--) {
+		for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+			prTxQue = &(prAdapter->rTxPQueue[i][i4TcIdx]);
+			u4QSize = prTxQue->u4NumElem;
+			for (u4Idx = 0; u4Idx < u4QSize; u4Idx++) {
+				QUEUE_REMOVE_HEAD(prTxQue, prMsduInfo,
+						  struct MSDU_INFO *);
+				if (!prMsduInfo || !prMsduInfo->prPacket) {
+					QUEUE_INSERT_TAIL(
+						prTxQue,
+						(struct QUE_ENTRY *)prMsduInfo);
+					continue;
+				}
 
-			ucPortIdx = halTxRingDataSelect(prAdapter, prMsduInfo);
-			prDataPort = (ucPortIdx == TX_RING_DATA1_IDX_1) ?
-				prDataPort1 : prDataPort0;
+				ucPortIdx = halTxRingDataSelect(
+					prAdapter, prMsduInfo);
+				prDataPort =
+					(ucPortIdx == TX_RING_DATA1_IDX_1) ?
+					prDataPort1 : prDataPort0;
 
-			prSkb = prMsduInfo->prPacket;
-			if (prSkb->mark == NIC_TX_SKB_PRIORITY_MARK1 ||
-			    (prSkb->mark & BIT(NIC_TX_SKB_PRIORITY_MARK_BIT))) {
-				QUEUE_INSERT_TAIL(
-					prDataPort,
-					(struct QUE_ENTRY *)prMsduInfo);
-			} else {
-				QUEUE_INSERT_TAIL(
-					prTxQue,
-					(struct QUE_ENTRY *)prMsduInfo);
+				prSkb = prMsduInfo->prPacket;
+				if (prSkb->mark == NIC_TX_SKB_PRIORITY_MARK1 ||
+				    (prSkb->mark &
+					   BIT(NIC_TX_SKB_PRIORITY_MARK_BIT))) {
+					QUEUE_INSERT_TAIL(
+						prDataPort,
+						(struct QUE_ENTRY *)prMsduInfo);
+				} else {
+					QUEUE_INSERT_TAIL(
+						prTxQue,
+						(struct QUE_ENTRY *)prMsduInfo);
+				}
 			}
 		}
 	}
@@ -1542,13 +1569,16 @@ static void nicTxMsduPickHighPrioPkt(struct ADAPTER *prAdapter,
 void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 {
 	struct WIFI_VAR *prWifiVar;
-	struct QUE qDataPort0, qDataPort1, arTempQue[TX_PORT_NUM];
+	struct QUE qDataPort0, qDataPort1,
+		arTempQue[BSS_DEFAULT_NUM][TX_PORT_NUM];
 	struct QUE *prDataPort0, *prDataPort1, *prDataPort, *prTxQue;
 	struct MSDU_INFO *prMsduInfo;
-	uint32_t u4Idx, u4IsNotAllQueneEmpty;
+	uint32_t u4Idx, u4IsNotAllQueneEmpty, i, j;
 	uint8_t ucPortIdx;
-	uint32_t au4TxCnt[TX_PORT_NUM], u4Offset = 0;
+	uint32_t au4TxCnt[BSS_DEFAULT_NUM][TX_PORT_NUM], u4Offset = 0;
 	char aucLogBuf[512];
+	struct BSS_INFO	*prBssInfo;
+	struct QUE_MGT *prQM = &prAdapter->rQM;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1559,9 +1589,11 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 	QUEUE_INITIALIZE(prDataPort1);
 	kalMemZero(aucLogBuf, 512);
 
-	for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++) {
-		QUEUE_INITIALIZE(&arTempQue[u4Idx]);
-		au4TxCnt[u4Idx] = 0;
+	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+		for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++) {
+			QUEUE_INITIALIZE(&arTempQue[i][u4Idx]);
+			au4TxCnt[i][u4Idx] = 0;
+		}
 	}
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
@@ -1572,41 +1604,58 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 		nicTxMsduPickHighPrioPkt(prAdapter, prDataPort0, prDataPort1);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
-	/* Dequeue each TCQ to dataQ by round-robin  */
-	/* Check each TCQ is empty or not */
-	u4IsNotAllQueneEmpty = BITS(0, TC_NUM);
-	while (u4IsNotAllQueneEmpty) {
-		u4Idx = prAdapter->u4TxHifResCtlIdx;
-		prTxQue = &(prAdapter->rTxPQueue[u4Idx]);
-		if (QUEUE_IS_NOT_EMPTY(prTxQue)) {
-			QUEUE_REMOVE_HEAD(prTxQue, prMsduInfo,
-					  struct MSDU_INFO *);
-			if (prMsduInfo != NULL) {
-				ucPortIdx = halTxRingDataSelect(
-					prAdapter, prMsduInfo);
-				prDataPort =
-					(ucPortIdx == TX_RING_DATA1_IDX_1) ?
-					prDataPort1 : prDataPort0;
-				QUEUE_INSERT_TAIL(prDataPort,
-					(struct QUE_ENTRY *) prMsduInfo);
-				au4TxCnt[u4Idx]++;
+
+#if QM_FORWARDING_FAIRNESS
+	i = prQM->u4HeadBssInfoIndex;
+#else
+	i = 0;
+#endif
+	for (j = 0; j < BSS_DEFAULT_NUM; j++) {
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+		/* Dequeue each TCQ to dataQ by round-robin  */
+		/* Check each TCQ is empty or not */
+		u4IsNotAllQueneEmpty = BITS(0, TC_NUM - 1);
+		while (!prBssInfo->fgIsNetAbsent && u4IsNotAllQueneEmpty) {
+			u4Idx = prAdapter->u4TxHifResCtlIdx;
+			prTxQue = &(prAdapter->rTxPQueue[i][u4Idx]);
+			if (QUEUE_IS_NOT_EMPTY(prTxQue)) {
+				QUEUE_REMOVE_HEAD(prTxQue, prMsduInfo,
+						  struct MSDU_INFO *);
+				if (prMsduInfo != NULL) {
+					ucPortIdx = halTxRingDataSelect(
+						prAdapter, prMsduInfo);
+					prDataPort =
+					    (ucPortIdx == TX_RING_DATA1_IDX_1) ?
+					    prDataPort1 : prDataPort0;
+					QUEUE_INSERT_TAIL(prDataPort,
+					       (struct QUE_ENTRY *) prMsduInfo);
+					au4TxCnt[i][u4Idx]++;
+				} else {
+					/* unset empty queue */
+					u4IsNotAllQueneEmpty &= ~BIT(u4Idx);
+					DBGLOG(NIC, WARN, "prMsduInfo NULL\n");
+				}
 			} else {
 				/* unset empty queue */
 				u4IsNotAllQueneEmpty &= ~BIT(u4Idx);
-				DBGLOG(NIC, WARN, "prMsduInfo is NULL\n");
 			}
-		} else {
-			/* unset empty queue */
-			u4IsNotAllQueneEmpty &= ~BIT(u4Idx);
+			prAdapter->u4TxHifResCtlNum++;
+			if (prAdapter->u4TxHifResCtlNum >=
+			    prAdapter->au4TxHifResCtl[u4Idx]) {
+				prAdapter->u4TxHifResCtlIdx++;
+				prAdapter->u4TxHifResCtlIdx %= TC_NUM;
+				prAdapter->u4TxHifResCtlNum = 0;
+			}
+
 		}
-		prAdapter->u4TxHifResCtlNum++;
-		if (prAdapter->u4TxHifResCtlNum >=
-		    prAdapter->au4TxHifResCtl[u4Idx]) {
-			prAdapter->u4TxHifResCtlIdx++;
-			prAdapter->u4TxHifResCtlIdx %= TX_PORT_NUM;
-			prAdapter->u4TxHifResCtlNum = 0;
-		}
+		i++;
+		i %= BSS_DEFAULT_NUM;
 	}
+#if QM_FORWARDING_FAIRNESS
+	prQM->u4HeadBssInfoIndex++;
+	prQM->u4HeadBssInfoIndex %= BSS_DEFAULT_NUM;
+#endif
+
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 
 	nicTxMsduQueue(prAdapter, 0, prDataPort0);
@@ -1617,29 +1666,36 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 	/* Need to reverse dataQ by TC first */
 	while (QUEUE_IS_NOT_EMPTY(prDataPort0)) {
 		QUEUE_REMOVE_HEAD(prDataPort0, prMsduInfo, struct MSDU_INFO *);
-		QUEUE_INSERT_HEAD(&arTempQue[prMsduInfo->ucTC],
-				  (struct QUE_ENTRY *) prMsduInfo);
+		QUEUE_INSERT_HEAD(
+			&arTempQue[prMsduInfo->ucBssIndex][prMsduInfo->ucTC],
+			(struct QUE_ENTRY *) prMsduInfo);
 	}
 	while (QUEUE_IS_NOT_EMPTY(prDataPort1)) {
 		QUEUE_REMOVE_HEAD(prDataPort1, prMsduInfo, struct MSDU_INFO *);
-		QUEUE_INSERT_HEAD(&arTempQue[prMsduInfo->ucTC],
-				  (struct QUE_ENTRY *) prMsduInfo);
+		QUEUE_INSERT_HEAD(
+			&arTempQue[prMsduInfo->ucBssIndex][prMsduInfo->ucTC],
+			(struct QUE_ENTRY *) prMsduInfo);
 	}
 
-	for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++) {
-		while (QUEUE_IS_NOT_EMPTY(&arTempQue[u4Idx])) {
-			QUEUE_REMOVE_HEAD(&arTempQue[u4Idx], prMsduInfo,
-					  struct MSDU_INFO *);
-			QUEUE_INSERT_HEAD(&prAdapter->rTxPQueue[u4Idx],
-					  (struct QUE_ENTRY *) prMsduInfo);
+	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+		for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++) {
+			while (QUEUE_IS_NOT_EMPTY(&arTempQue[i][u4Idx])) {
+				QUEUE_REMOVE_HEAD(&arTempQue[i][u4Idx],
+					prMsduInfo, struct MSDU_INFO *);
+				QUEUE_INSERT_HEAD(
+					&prAdapter->rTxPQueue[i][u4Idx],
+					(struct QUE_ENTRY *) prMsduInfo);
+			}
 		}
 	}
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 
-	for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++) {
-		u4Offset += snprintf(
-			aucLogBuf + u4Offset, 512 - u4Offset,
-			"TC[%u]:%u ", u4Idx, au4TxCnt[u4Idx]);
+	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+		for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++) {
+			u4Offset += snprintf(
+				aucLogBuf + u4Offset, 512 - u4Offset,
+				"TC[%u]:%u ", u4Idx, au4TxCnt[i][u4Idx]);
+		}
 	}
 	DBGLOG_LIMITED(NIC, LOUD, "%s\n", aucLogBuf);
 }
@@ -1651,11 +1707,12 @@ uint32_t nicTxGetMsduPendingCnt(IN struct ADAPTER
 	return prAdapter->rTxP0Queue.u4NumElem +
 		prAdapter->rTxP1Queue.u4NumElem;
 #else
-	int32_t i;
+	int32_t i, j;
 	uint32_t retValue = 0;
 
-	for (i = 0; i < TX_PORT_NUM; i++)
-		retValue += prAdapter->rTxPQueue[i].u4NumElem;
+	for (i = 0; i < BSS_DEFAULT_NUM; i++)
+		for (j = 0; j < TX_PORT_NUM; j++)
+			retValue += prAdapter->rTxPQueue[i][j].u4NumElem;
 	return retValue;
 #endif
 }
@@ -4592,14 +4649,11 @@ static uint8_t nicTxDirectGetHifTc(struct MSDU_INFO
 {
 	uint8_t ucHifTc = 0;
 
-	if (prMsduInfo->ucWmmQueSet == DBDC_2G_WMM_INDEX) {
-		ucHifTc = TX_2G_WMM_PORT_NUM;
-	} else {
-		if (prMsduInfo->ucTC >= 0 && prMsduInfo->ucTC < TC_NUM)
-			ucHifTc = prMsduInfo->ucTC;
-		else
-			ASSERT(0);
-	}
+	if (prMsduInfo->ucTC >= 0 && prMsduInfo->ucTC < TC_NUM)
+		ucHifTc = prMsduInfo->ucTC;
+	else
+		ASSERT(0);
+
 	return ucHifTc;
 }
 
@@ -5279,7 +5333,7 @@ void nicTxHandleRoamingDone(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo = NULL;
 	uint8_t ucOldWlanIndex = prOldStaRec->ucWlanIndex;
 	uint8_t ucNewWlanIndex = prNewStaRec->ucWlanIndex;
-	uint8_t ucIndex = 0;
+	uint8_t ucIndex = 0, i;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -5318,14 +5372,18 @@ void nicTxHandleRoamingDone(struct ADAPTER *prAdapter,
 			&prMsduInfo->rQueEntry);
 	}
 #else
-	for (ucIndex = 0; ucIndex < TX_PORT_NUM; ucIndex++) {
-		prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_HEAD(
-			&prAdapter->rTxPQueue[ucIndex]);
-		while (prMsduInfo) {
-			if (prMsduInfo->ucWlanIndex == ucOldWlanIndex)
-				prMsduInfo->ucWlanIndex = ucNewWlanIndex;
-			prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_NEXT_ENTRY(
-				&prMsduInfo->rQueEntry);
+	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+		for (ucIndex = 0; ucIndex < TX_PORT_NUM; ucIndex++) {
+			prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_HEAD(
+				&prAdapter->rTxPQueue[i][ucIndex]);
+			while (prMsduInfo) {
+				if (prMsduInfo->ucWlanIndex == ucOldWlanIndex)
+					prMsduInfo->ucWlanIndex =
+							ucNewWlanIndex;
+				prMsduInfo =
+				      (struct MSDU_INFO *) QUEUE_GET_NEXT_ENTRY(
+				      &prMsduInfo->rQueEntry);
+			}
 		}
 	}
 #endif
