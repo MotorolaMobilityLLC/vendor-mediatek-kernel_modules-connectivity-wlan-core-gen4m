@@ -147,11 +147,11 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 
 	do {
 		u4AuthAssocState = prStaRec->eAuthAssocState;
-		if (u4AuthAssocState < AA_STATE_NUM
-				&& eNextState < AA_STATE_NUM) {
+		if ((u4AuthAssocState < AA_STATE_NUM)
+				&& ((uint32_t) eNextState < AA_STATE_NUM)) {
 			DBGLOG(SAA, STATE, "[SAA]TRANSITION: [%s] -> [%s]\n",
 				apucDebugAAState[u4AuthAssocState],
-				apucDebugAAState[eNextState]);
+				apucDebugAAState[(uint32_t)eNextState]);
 		}
 
 		ePreviousState = prStaRec->eAuthAssocState;
