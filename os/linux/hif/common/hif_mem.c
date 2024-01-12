@@ -650,11 +650,27 @@ static u_int8_t halDmaMapSingleRetry(struct GL_HIF_INFO *prHifInfo,
 		if (!i4Res)
 			break;
 
+		if (prHifInfo->pdev) {
+#if KERNEL_VERSION(5, 5, 0) <= LINUX_VERSION_CODE
+			DBGLOG(INIT, WARN,
+			       "va: 0x%llx, mask: 0x%llx, limit: 0x%llx\n",
+			       AllocVa,
+			       *prHifInfo->pdev->dev.dma_mask,
+			       prHifInfo->pdev->dev.bus_dma_limit);
+#else
+			DBGLOG(INIT, WARN,
+			       "va: 0x%llx, mask: 0x%llx\n",
+			       AllocVa,
+			       *prHifInfo->pdev->dev.dma_mask);
+#endif
+		}
+
 		kalMsleep(1);
 	}
 	if (u4Cnt == DMA_MAP_RETRY_COUNT) {
-		DBGLOG(HAL, ERROR, "dma mapping error![0x%llx][%d]\n",
-		       (uint64_t)rAddr, i4Res);
+		DBGLOG(HAL, ERROR,
+		       "dma mapping error![0x%llx][0x%llx][%u][%d]\n",
+		       (uint64_t)rAddr, AllocVa, AllocSize, i4Res);
 		fgRet = FALSE;
 	}
 
