@@ -750,16 +750,22 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 	prMsduInfo->u2FrameLength += len;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	/* add icv sub ie for mlo device */
-	MTK_OUI_IE(pucBuffer)->aucCapability[0] |=
-		MTK_SYNERGY_CAP_SUPPORT_TLV;
-	len = rlmGenerateMTKChipCapIE(MTK_OUI_IE(pucBuffer)->aucInfoElem,
-		255, FALSE, MTK_OUI_CHIP_CAP);
-	MTK_OUI_IE(pucBuffer)->ucLength += len;
-	prMsduInfo->u2FrameLength += len;
+	/* AP/GO skip mtk cap and pre-wifi 7 IE if eht unsupported */
+	if (!IS_BSS_APGO(prBssInfo) ||
+	    (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_EHT)) {
+		/* add icv sub ie for mlo device */
+		MTK_OUI_IE(pucBuffer)->aucCapability[0] |=
+			MTK_SYNERGY_CAP_SUPPORT_TLV;
+		len = rlmGenerateMTKChipCapIE(
+			MTK_OUI_IE(pucBuffer)->aucInfoElem,
+			255, FALSE, MTK_OUI_CHIP_CAP);
+		MTK_OUI_IE(pucBuffer)->ucLength += len;
+		prMsduInfo->u2FrameLength += len;
+	}
 
 	/* hide eht & ml ie in vendor ie */
-	if (prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_HIDE_INFO &&
+	if ((prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_EHT) &&
+	    prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_HIDE_INFO &&
 	   (frame_ctrl == MAC_FRAME_PROBE_RSP ||
 	    frame_ctrl == MAC_FRAME_BEACON)) {
 		struct IE_MTK_PRE_WIFI7 *prPreWifi7;
