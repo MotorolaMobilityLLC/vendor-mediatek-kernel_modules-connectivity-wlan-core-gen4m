@@ -1130,8 +1130,7 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 		return -ENOMEM;
 
 	}
-	kalMemZero(prScanRequest,
-		   sizeof(struct PARAM_SCAN_REQUEST_ADV));
+	kalMemZero(prScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV));
 
 	if (request->n_ssids == 0) {
 		prScanRequest->u4SsidNum = 0;
@@ -1246,9 +1245,10 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 		prScanRequest->ucScnFuncMask |= ENUM_SCN_RANDOM_MAC_EN;
 	}
 
-	if (request->ie_len > 0) {
+	if (request->ie_len > 0 && request->ie_len < MAX_IE_LENGTH) {
 		prScanRequest->u4IELength = request->ie_len;
-		prScanRequest->pucIE = (uint8_t *) (request->ie);
+		kalMemCopy(prScanRequest->aucIEBuf,
+			(uint8_t *) request->ie, request->ie_len);
 	}
 
 #define TEMP_LOG_TEMPLATE "n_ssid=(%u->%u) n_channel(%u==>%u) " \

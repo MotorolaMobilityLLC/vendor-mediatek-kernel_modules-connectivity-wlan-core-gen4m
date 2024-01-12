@@ -357,7 +357,6 @@ schedule_next:
 			 * do that.
 			 */
 			if (prRmReq->u2Repetitions > 0) {
-				prRmReq->fgInitialLoop = FALSE;
 				prRmReq->u2Repetitions--;
 				prCurrReq = prRmReq->prCurrMeasElem =
 					(struct IE_MEASUREMENT_REQ *)
@@ -447,7 +446,6 @@ schedule_next:
 			/* repeat measurement if repetitions is required */
 			if (prRmReq->u2Repetitions > 0) {
 				fgNewLoop = TRUE;
-				prRmReq->fgInitialLoop = FALSE;
 				prRmReq->u2Repetitions--;
 				prRmReq->prCurrMeasElem =
 					(struct IE_MEASUREMENT_REQ *)
@@ -486,13 +484,6 @@ schedule_next:
 		struct RM_BCN_REQ *prBeaconReq =
 			(struct RM_BCN_REQ *)&prCurrReq->aucRequestFields[0];
 
-		if (!prRmReq->fgInitialLoop) {
-			/* If this is the repeating measurement, then wait next
-			 ** scan done
-			 */
-			prRmReq->rBcnRmParam.eState = RM_WAITING;
-			break;
-		}
 		if (prBeaconReq->u2RandomInterval == 0)
 			rrmDoBeaconMeasurement(prAdapter, ucBssIndex);
 		else {
@@ -599,88 +590,79 @@ schedule_next:
 	}
 }
 
-u_int8_t rrmFillScanMsg(struct ADAPTER *prAdapter,
-			struct MSG_SCN_SCAN_REQ_V2 *prMsg)
+u_int8_t rrmFillScanParam(struct ADAPTER *prAdapter,
+		struct PARAM_SCAN_REQUEST_ADV *prParam, uint8_t ucBssIndex)
 {
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq = NULL;
 	struct IE_MEASUREMENT_REQ *prCurrReq = NULL;
 	struct RM_BCN_REQ *prBeaconReq = NULL;
 	uint16_t u2RemainLen = 0;
-	uint8_t *pucSubIE = NULL, i, ucOpClass;
-	static struct PARAM_SSID rBcnReqSsid;
+	uint8_t *pucSubIE = NULL, ucOpClass, i;
 
-	if (!prMsg)
+	if (!prParam)
 		return FALSE;
 
-	prRmReq = aisGetRmReqParam(prAdapter,
-		prMsg->ucBssIndex);
-
-	if (prRmReq->rBcnRmParam.eState != RM_ON_GOING)
-		return FALSE;
+	prRmReq = aisGetRmReqParam(prAdapter, ucBssIndex);
 
 	prCurrReq = prRmReq->prCurrMeasElem;
 	prBeaconReq = (struct RM_BCN_REQ *)&prCurrReq->aucRequestFields[0];
-	prMsg->ucSSIDType = SCAN_REQ_SSID_WILDCARD;
+
+	prParam->fgIsRrm = TRUE;
+	prParam->ucBssIndex = ucBssIndex;
+	prParam->u4SsidNum = 0;
 	switch (prBeaconReq->ucMeasurementMode) {
 	case RM_BCN_REQ_PASSIVE_MODE:
-		prMsg->eScanType = SCAN_TYPE_PASSIVE_SCAN;
+		prParam->ucScanType = SCAN_TYPE_PASSIVE_SCAN;
 		break;
 	case RM_BCN_REQ_ACTIVE_MODE:
-		prMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
+		prParam->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
 		break;
 	default:
 		DBGLOG(RRM, WARN,
 		       "Unexpect measure mode %d, use active mode as default\n",
 			   prBeaconReq->ucMeasurementMode);
-		prMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
+		prParam->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
 		break;
 	}
 
-	WLAN_GET_FIELD_16(&prBeaconReq->u2Duration, &prMsg->u2ChannelDwellTime);
+	COPY_MAC_ADDR(prParam->aucBSSID, prBeaconReq->aucBssid);
 
-	COPY_MAC_ADDR(prMsg->aucBSSID, prBeaconReq->aucBssid);
+	WLAN_GET_FIELD_16(&prBeaconReq->u2Duration,
+		&prParam->u2ChannelDwellTime);
+	/* not allow scan dwell time too long if */
+	if (prParam->u2ChannelDwellTime > 100)
+		prParam->u2ChannelDwellTime = 100;
 
-	prMsg->u2ProbeDelay = 0;
-	prMsg->u2TimeoutValue = 0;
-	prMsg->ucSSIDNum = 0;
-	prMsg->u2IELen = 0;
 	/* if mandatory bit is set, we should do */
 	if (prCurrReq->ucRequestMode & RM_REQ_MODE_DURATION_MANDATORY_BIT)
-		prMsg->u2ChannelMinDwellTime = prMsg->u2ChannelDwellTime;
+		prParam->u2ChannelMinDwellTime = prParam->u2ChannelDwellTime;
 	else
-		prMsg->u2ChannelMinDwellTime =
-			(prMsg->u2ChannelDwellTime * 2) / 3;
+		prParam->u2ChannelMinDwellTime =
+			(prParam->u2ChannelDwellTime * 2) / 3;
+
 	if (prBeaconReq->ucChannel == 0) {
-		if (prCurrReq->ucRequestMode &
-				RM_REQ_MODE_DURATION_MANDATORY_BIT) {
-			prMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
-			rlmDomainGetChnlListFromOpClass(prAdapter,
-				prBeaconReq->ucRegulatoryClass,
-				prMsg->arChnlInfoList,
-				&prMsg->ucChannelListNum);
-		} else {
-			prMsg->eScanChannel = SCAN_CHANNEL_FULL;
-		}
+		rlmDomainGetChnlListFromOpClass(prAdapter,
+			prBeaconReq->ucRegulatoryClass,
+			prParam->arChannel,
+			(uint8_t *)&prParam->u4ChannelNum);
 	} else if (prBeaconReq->ucChannel == 255) { /* using latest report */
 		struct BSS_DESC *prBssDesc =
-			aisGetTargetBssDesc(prAdapter,
-			prMsg->ucBssIndex);
+			aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		uint8_t *pucChnl = NULL;
 		uint8_t ucChnlNum = 0;
 		uint8_t ucIndex = 0;
-		struct RF_CHANNEL_INFO *prChnlInfo = prMsg->arChnlInfoList;
+		struct RF_CHANNEL_INFO *prChnlInfo;
+		uint8_t *pucIE = NULL;
+		uint16_t u2IELength = 0;
+		uint16_t u2Offset = 0;
 
-		prMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
-		prMsg->ucChannelListNum = 0;
-		if (prBssDesc) {
-			uint8_t *pucIE = NULL;
-			uint16_t u2IELength = 0;
-			uint16_t u2Offset = 0;
+		if (!prBssDesc)
+			goto subelem;
 
-			pucIE = prBssDesc->pucIeBuf;
-			u2IELength = prBssDesc->u2IELength;
-			IE_FOR_EACH(pucIE, u2IELength, u2Offset)
-			{
+		prChnlInfo = prParam->arChannel;
+		pucIE = prBssDesc->pucIeBuf;
+		u2IELength = prBssDesc->u2IELength;
+		IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
 			if (IE_ID(pucIE) != ELEM_ID_AP_CHANNEL_REPORT)
 				continue;
 			pucChnl = ((struct IE_AP_CHNL_REPORT *)pucIE)
@@ -692,52 +674,52 @@ u_int8_t rrmFillScanMsg(struct ADAPTER *prAdapter,
 				"Channel number in latest AP channel report %d\n",
 				ucChnlNum);
 			while (ucIndex < ucChnlNum &&
-				prMsg->ucChannelListNum <
+				prParam->u4ChannelNum <
 				MAXIMUM_OPERATION_CHANNEL_LIST) {
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 				if (rrmCheckIs6GOpClass(ucOpClass))
 					prChnlInfo
-					[prMsg->ucChannelListNum]
+					[prParam->u4ChannelNum]
 					.eBand = BAND_6G;
 				else
 #endif
 				{
 					if (pucChnl[ucIndex] <= 14)
 						prChnlInfo
-						[prMsg->ucChannelListNum]
+						[prParam->u4ChannelNum]
 						.eBand = BAND_2G4;
 					else
 						prChnlInfo
-						[prMsg->ucChannelListNum]
+						[prParam->u4ChannelNum]
 						.eBand = BAND_5G;
 				}
-				prChnlInfo[prMsg->ucChannelListNum]
-					.ucChannelNum =
-					pucChnl[ucIndex];
-				prMsg->ucChannelListNum++;
+				prChnlInfo[prParam->u4ChannelNum]
+					.ucChannelNum =	pucChnl[ucIndex];
+				prParam->u4ChannelNum++;
 				ucIndex++;
-			}
 			}
 		}
 	} else {
 		ucOpClass = prBeaconReq->ucRegulatoryClass;
-		prMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
-		prMsg->ucChannelListNum = 1;
-		prMsg->arChnlInfoList[0].ucChannelNum = prBeaconReq->ucChannel;
+
+		prParam->u4ChannelNum = 1;
+		prParam->arChannel[0].ucChannelNum = prBeaconReq->ucChannel;
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		if (rrmCheckIs6GOpClass(ucOpClass))
-			prMsg->arChnlInfoList[0].eBand = BAND_6G;
+			prParam->arChannel[0].eBand = BAND_6G;
 		else
 #endif
 		{
 			if (prBeaconReq->ucChannel <= 14)
-				prMsg->arChnlInfoList[0].eBand = BAND_2G4;
+				prParam->arChannel[0].eBand = BAND_2G4;
 			else
-				prMsg->arChnlInfoList[0].eBand = BAND_5G;
+				prParam->arChannel[0].eBand = BAND_5G;
 		}
 	}
+
+subelem:
 	u2RemainLen = prCurrReq->ucLength - 3 -
 		      OFFSET_OF(struct RM_BCN_REQ, aucSubElements);
 	pucSubIE = &prBeaconReq->aucSubElements[0];
@@ -751,12 +733,12 @@ u_int8_t rrmFillScanMsg(struct ADAPTER *prAdapter,
 			 */
 			if (!IE_LEN(pucSubIE) || !pucSubIE[2])
 				break;
-			prMsg->ucSSIDNum = 1;
-			prMsg->prSsid = &rBcnReqSsid;
-			COPY_SSID(&rBcnReqSsid.aucSsid[0],
-				  rBcnReqSsid.u4SsidLen, &pucSubIE[2],
-				  pucSubIE[1]);
-			prMsg->ucSSIDType = SCAN_REQ_SSID_SPECIFIED_ONLY;
+
+			prParam->u4SsidNum = 1;
+			COPY_SSID(prParam->rSsid[0].aucSsid,
+				prParam->rSsid[0].u4SsidLen,
+				&pucSubIE[2], pucSubIE[1]);
+
 			break;
 		case BEACON_REQUEST_SUBELEM_AP_CHANNEL: /* AP channel report */
 		{
@@ -767,35 +749,35 @@ u_int8_t rrmFillScanMsg(struct ADAPTER *prAdapter,
 
 			if (prBeaconReq->ucChannel == 0)
 				break;
-			prMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
+
 			ucOpClass = prApChnl->ucOpClass;
 			DBGLOG(RRM, INFO,
 			       "Channel number in measurement AP channel report %d\n",
 			       ucChannelCnt);
 			while (ucIndex < ucChannelCnt &&
-			       prMsg->ucChannelListNum <
+			       prParam->u4ChannelNum <
 				       MAXIMUM_OPERATION_CHANNEL_LIST) {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 				if (rrmCheckIs6GOpClass(ucOpClass))
-					prMsg->arChnlInfoList
-					[prMsg->ucChannelListNum]
+					prParam->arChannel
+					[prParam->u4ChannelNum]
 						.eBand = BAND_6G;
 				else
 #endif
 				{
 				    if (prApChnl->aucChnlList[ucIndex] <= 14)
-					prMsg->arChnlInfoList
-					[prMsg->ucChannelListNum]
+					prParam->arChannel
+					[prParam->u4ChannelNum]
 						.eBand = BAND_2G4;
 				    else
-					prMsg->arChnlInfoList
-					[prMsg->ucChannelListNum]
+					prParam->arChannel
+					[prParam->u4ChannelNum]
 						.eBand = BAND_5G;
 				}
-				prMsg->arChnlInfoList[prMsg->ucChannelListNum]
+				prParam->arChannel[prParam->u4ChannelNum]
 					.ucChannelNum =
 					prApChnl->aucChnlList[ucIndex];
-				prMsg->ucChannelListNum++;
+				prParam->u4ChannelNum++;
 				ucIndex++;
 			}
 			break;
@@ -807,24 +789,24 @@ u_int8_t rrmFillScanMsg(struct ADAPTER *prAdapter,
 		pucSubIE += IE_SIZE(pucSubIE);
 	}
 
-	for (i = 0; i < prMsg->ucChannelListNum; i++) {
+	for (i = 0; i < prParam->u4ChannelNum; i++) {
 		if (!kalIsValidChnl(prAdapter->prGlueInfo,
-				prMsg->arChnlInfoList[i].ucChannelNum,
-				prMsg->arChnlInfoList[i].eBand)) {
-			DBGLOG(RRM, WARN, "ch%d illegal! set to FULL scan\n",
-				prMsg->arChnlInfoList[i].ucChannelNum);
-			prMsg->eScanChannel = SCAN_CHANNEL_FULL;
-			prMsg->ucChannelListNum = 0;
+				prParam->arChannel[i].ucChannelNum,
+				prParam->arChannel[i].eBand)) {
+			DBGLOG(RRM, WARN,
+				"ch%d band%d illegal! set to FULL scan\n",
+				prParam->arChannel[i].ucChannelNum,
+				prParam->arChannel[i].eBand);
+			prParam->u4ChannelNum = 0;
 			break;
 		}
 	}
 
-	GET_CURRENT_SYSTIME(&prRmReq->rScanStartTime);
 	DBGLOG(RRM, INFO,
-	       "SSIDtype %d, ScanType %d, Dwell %d, MinDwell %d, ChnlType %d, ChnlNum %d\n",
-		prMsg->ucSSIDType, prMsg->eScanType, prMsg->u2ChannelDwellTime,
-	       prMsg->u2ChannelMinDwellTime, prMsg->eScanChannel,
-	       prMsg->ucChannelListNum);
+	       "ScanType %d, SsidNum %d, Dwell %d, MinDwell %d, ChnlNum %d\n",
+	       prParam->ucScanType, prParam->u4SsidNum,
+	       prParam->u2ChannelDwellTime, prParam->u2ChannelMinDwellTime,
+	       prParam->u4ChannelNum);
 
 	return TRUE;
 }
@@ -832,13 +814,16 @@ u_int8_t rrmFillScanMsg(struct ADAPTER *prAdapter,
 void rrmDoBeaconMeasurement(struct ADAPTER *prAdapter, uintptr_t ulParam)
 {
 	uint8_t ucBssIndex = (uint8_t) ulParam;
-	struct CONNECTION_SETTINGS *prConnSettings =
-		aisGetConnSettings(prAdapter, ucBssIndex);
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq =
 		aisGetRmReqParam(prAdapter, ucBssIndex);
 	struct RM_BCN_REQ *prBcnReq =
 		(struct RM_BCN_REQ *)&prRmReq->prCurrMeasElem
 			->aucRequestFields[0];
+	uint8_t ucChannelListNum = 0;
+	struct RF_CHANNEL_INFO
+		arChnlInfoList[MAXIMUM_OPERATION_CHANNEL_LIST];
+	uint8_t maxDurationSec = 5;
+	uint16_t dur;
 
 	if (prBcnReq->ucMeasurementMode == RM_BCN_REQ_TABLE_MODE) {
 		struct LINK *prBSSDescList =
@@ -859,33 +844,38 @@ void rrmDoBeaconMeasurement(struct ADAPTER *prAdapter, uintptr_t ulParam)
 		rrmStartNextMeasurement(prAdapter, FALSE, ucBssIndex);
 		return;
 	}
-	if (prConnSettings->fgIsScanReqIssued) {
-		prRmReq->rBcnRmParam.eState = RM_WAITING;
+
+	WLAN_GET_FIELD_16(&prBcnReq->u2Duration, &dur);
+	rlmDomainGetChnlListFromOpClass(prAdapter,
+		prBcnReq->ucRegulatoryClass,
+		arChnlInfoList, &ucChannelListNum);
+
+	if (!!(prRmReq->prCurrMeasElem->ucRequestMode &
+			RM_REQ_MODE_DURATION_MANDATORY_BIT) &&
+		MSEC_TO_SEC(dur * ucChannelListNum) > maxDurationSec) {
+		DBGLOG(REQ, ERROR,
+			"over threshold MSEC_TO_SEC(%d * %d) > %d)\n",
+			dur, ucChannelListNum, maxDurationSec);
+		rrmStartNextMeasurement(prAdapter, FALSE, ucBssIndex);
 	} else {
-		uint8_t ucChannelListNum = 0;
-		struct RF_CHANNEL_INFO
-			arChnlInfoList[MAXIMUM_OPERATION_CHANNEL_LIST];
-		uint8_t maxDurationSec = 5;
-		uint16_t dur;
+		struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
 
-		WLAN_GET_FIELD_16(&prBcnReq->u2Duration, &dur);
-		rlmDomainGetChnlListFromOpClass(prAdapter,
-			prBcnReq->ucRegulatoryClass,
-			arChnlInfoList, &ucChannelListNum);
-
-		if (!!(prRmReq->prCurrMeasElem->ucRequestMode &
-				RM_REQ_MODE_DURATION_MANDATORY_BIT) &&
-			MSEC_TO_SEC(dur * ucChannelListNum) > maxDurationSec) {
-			/* over threshold */
-			rrmStartNextMeasurement(prAdapter, FALSE, ucBssIndex);
-		} else {
-
-			prRmReq->rBcnRmParam.eState = RM_ON_GOING;
-			GET_CURRENT_SYSTIME(&prRmReq->rStartTime);
-			aisFsmScanRequest(prAdapter, NULL, NULL, 0,
-				ucBssIndex);
-
+		prScanRequest = kalMemZAlloc(
+			sizeof(struct PARAM_SCAN_REQUEST_ADV),
+			VIR_MEM_TYPE);
+		if (prScanRequest == NULL) {
+			DBGLOG(REQ, ERROR, "alloc scan request fail\n");
+			return;
 		}
+
+		prRmReq->rBcnRmParam.eState = RM_WAITING;
+		GET_CURRENT_SYSTIME(&prRmReq->rStartTime);
+
+		rrmFillScanParam(prAdapter, prScanRequest, ucBssIndex);
+		aisFsmScanRequestAdv(prAdapter, prScanRequest);
+
+		kalMemFree(prScanRequest, VIR_MEM_TYPE,
+			   sizeof(struct PARAM_SCAN_REQUEST_ADV));
 	}
 }
 
@@ -1055,7 +1045,6 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 
 	prRmReqParam->prCurrMeasElem =
 		(struct IE_MEASUREMENT_REQ *)prRmReqParam->pucReqIeBuf;
-	prRmReqParam->fgInitialLoop = TRUE;
 	rrmHandleBeaconReqSubelem(prAdapter, prBssInfo->ucBssIndex);
 
 	/* Step2: Prepare Report Frame and fill in Frame Header */

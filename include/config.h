@@ -844,7 +844,9 @@
 #define CFG_SCAN_OOB_MAX_NUM			(4)
 #define CFG_SCAN_SSID_MAX_NUM (SCAN_CMD_SSID_NUM+SCAN_CMD_EXT_SSID_NUM)
 #define MAXIMUM_OPERATION_CHANNEL_LIST (SCAN_CMD_CHNL_NUM+SCAN_CMD_EXT_CHNL_NUM)
-
+#define MAX_IE_LENGTH				(600)
+#define MAX_BAND_IE_LENGTH			(100)
+#define MAX_WSC_IE_LENGTH			(400)
 
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Load Setup Default

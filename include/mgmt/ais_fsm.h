@@ -59,7 +59,6 @@
 #define AIS_JOIN_CH_REQUEST_INTERVAL        4000
 #endif
 #define AIS_SCN_DONE_TIMEOUT_SEC            15 /* 15 for 2.4G + 5G */	/* 5 */
-#define AIS_SCN_REPORT_SEQ_NOT_SET          (0xFFFF)
 
 /* Support AP Selection*/
 #define AIS_BLACKLIST_TIMEOUT               15 /* seconds */
@@ -161,6 +160,11 @@ enum ENUM_AIS_REQUEST_TYPE {
 struct AIS_REQ_HDR {
 	struct LINK_ENTRY rLinkEntry;
 	enum ENUM_AIS_REQUEST_TYPE eReqType;
+};
+
+struct AIS_SCAN_REQ {
+	struct AIS_REQ_HDR rReqHdr;
+	struct PARAM_SCAN_REQUEST_ADV rScanRequest;
 };
 
 struct AIS_REQ_CHNL_INFO {
@@ -290,8 +294,6 @@ struct CONNECTION_SETTINGS {
 	enum ENUM_PARAM_AUTH_MODE eAuthMode;
 
 	enum ENUM_WEP_STATUS eEncStatus;
-
-	u_int8_t fgIsScanReqIssued;
 
 	/* MIB attributes */
 	uint16_t u2BeaconPeriod;
@@ -473,20 +475,12 @@ struct AIS_FSM_INFO {
 	uint8_t ucSeqNumOfChReq;
 	uint8_t ucSeqNumOfScanReq;
 
-	/* Save SeqNum for reporting scan done.
-	 * In order to distinguish seq num and default value, make sure that
-	 * sizeof(u2SeqNumOfScanReport) > sizeof(ucSeqNumOfScanReq).
-	 * Set AIS_SCN_REPORT_SEQ_NOT_SET as default value
-	 */
-	uint16_t u2SeqNumOfScanReport;
-
 	uint32_t u4ChGrantedInterval;
 
 	uint8_t ucConnTrialCount;
 	uint8_t ucConnTrialCountLimit;
 
 	struct PARAM_SCAN_REQUEST_ADV rScanRequest;
-	uint8_t aucScanIEBuf[MAX_IE_LENGTH];
 
 	u_int8_t fgIsScanOidAborted;
 
@@ -504,9 +498,6 @@ struct AIS_FSM_INFO {
 
 	/* Packet filter for AIS module. */
 	uint32_t u4AisPacketFilter;
-
-	/* for roaming target */
-	struct PARAM_SSID rRoamingSSID;
 
 	/* Support AP Selection */
 	uint8_t ucJoinFailCntAfterScan;
@@ -812,10 +803,6 @@ void aisFsmRunEventSecModeChangeTimeout(struct ADAPTER
 /*----------------------------------------------------------------------------*/
 /* OID/IOCTL Handling                                                         */
 /*----------------------------------------------------------------------------*/
-void aisFsmScanRequest(struct ADAPTER *prAdapter,
-		       struct PARAM_SSID *prSsid, uint8_t *pucIe,
-		       uint32_t u4IeLength,
-		       uint8_t ucBssIndex);
 
 void
 aisFsmScanRequestAdv(struct ADAPTER *prAdapter,
@@ -826,7 +813,7 @@ aisFsmScanRequestAdv(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 u_int8_t aisFsmIsRequestPending(struct ADAPTER *prAdapter,
 				enum ENUM_AIS_REQUEST_TYPE eReqType,
-				u_int8_t bRemove,
+				u_int8_t bRemove, struct AIS_REQ_HDR **prReqHdr,
 				uint8_t ucBssIndex);
 
 void aisFsmRemoveRoamingRequest(
@@ -837,6 +824,11 @@ struct AIS_REQ_HDR *aisFsmGetNextRequest(struct ADAPTER *prAdapter,
 
 u_int8_t aisFsmInsertRequest(struct ADAPTER *prAdapter,
 			     enum ENUM_AIS_REQUEST_TYPE eReqType,
+			     uint8_t ucBssIndex);
+
+u_int8_t aisFsmInsertRequestImpl(struct ADAPTER *prAdapter,
+			     struct AIS_REQ_HDR *prAisReq,
+			     uint8_t fgToHead,
 			     uint8_t ucBssIndex);
 
 u_int8_t aisFsmInsertRequestToHead(struct ADAPTER *prAdapter,
@@ -931,6 +923,10 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
  */
 
 struct AIS_FSM_INFO *aisGetAisFsmInfo(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
+struct PARAM_SCAN_REQUEST_ADV *aisGetScanReq(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 

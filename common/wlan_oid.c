@@ -636,194 +636,6 @@ wlanoidQueryBssidList(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to request the driver to perform
- *        scanning.
- *
- * \param[in] prAdapter Pointer to the Adapter structure.
- * \param[in] pvSetBuffer Pointer to the buffer that holds the data to be set.
- * \param[in] u4SetBufferLen The length of the set buffer.
- * \param[out] pu4SetInfoLen If the call is successful, returns the number of
- *                          bytes read from the set buffer. If the call failed
- *                          due to invalid length of the set buffer, returns
- *                          the amount of storage needed.
- *
- * \retval WLAN_STATUS_SUCCESS
- * \retval WLAN_STATUS_ADAPTER_NOT_READY
- * \retval WLAN_STATUS_FAILURE
- */
-/*----------------------------------------------------------------------------*/
-uint32_t
-wlanoidSetBssidListScan(struct ADAPTER *prAdapter,
-			void *pvSetBuffer, uint32_t u4SetBufferLen,
-			uint32_t *pu4SetInfoLen)
-{
-	struct PARAM_SSID *prSsid;
-	struct PARAM_SSID rSsid;
-	uint8_t ucBssIndex = 0;
-
-	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
-		DBGLOG(OID, WARN,
-		       "Fail in set BSSID list scan! (Adapter not ready). ACPI=D%d, Radio=%d\n",
-		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
-		return WLAN_STATUS_ADAPTER_NOT_READY;
-	} else if (prAdapter->fgTestMode) {
-		DBGLOG(OID, WARN, "didn't support Scan in test mode\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	ASSERT(pu4SetInfoLen);
-
-	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-
-	DBGLOG(REQ, LOUD, "ucBssIndex %d\n", ucBssIndex);
-
-	*pu4SetInfoLen = 0;
-
-	if (prAdapter->fgIsRadioOff) {
-		DBGLOG(OID, WARN,
-		       "Return from BSSID list scan! (radio off). ACPI=D%d, Radio=%d\n",
-		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
-		return WLAN_STATUS_SUCCESS;
-	}
-
-	if (pvSetBuffer != NULL && u4SetBufferLen != 0) {
-		COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen, pvSetBuffer,
-			  u4SetBufferLen);
-		prSsid = &rSsid;
-	} else {
-		prSsid = NULL;
-	}
-
-#if CFG_SUPPORT_RDD_TEST_MODE
-	if (prAdapter->prGlueInfo->prRegInfo->u4RddTestMode) {
-		if (prAdapter->fgEnOnlineScan && prAdapter->ucRddStatus) {
-			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
-				ucBssIndex)
-						!= MEDIA_STATE_CONNECTED)
-				aisFsmScanRequest(prAdapter, prSsid, NULL, 0,
-					ucBssIndex);
-			else
-				return WLAN_STATUS_FAILURE;
-		} else
-			return WLAN_STATUS_FAILURE;
-	} else
-#endif
-	{
-		if (prAdapter->fgEnOnlineScan == TRUE)
-			aisFsmScanRequest(prAdapter, prSsid, NULL, 0,
-				ucBssIndex);
-		else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
-			ucBssIndex) !=
-			 MEDIA_STATE_CONNECTED)
-			aisFsmScanRequest(prAdapter, prSsid, NULL, 0,
-				ucBssIndex);
-		else
-			return WLAN_STATUS_FAILURE;
-	}
-
-	return WLAN_STATUS_SUCCESS;
-} /* wlanoidSetBssidListScan */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This routine is called to request the driver to perform
- *        scanning with attaching information elements(IEs) specified from user
- *        space
- *
- * \param[in] prAdapter Pointer to the Adapter structure.
- * \param[in] pvSetBuffer Pointer to the buffer that holds the data to be set.
- * \param[in] u4SetBufferLen The length of the set buffer.
- * \param[out] pu4SetInfoLen If the call is successful, returns the number of
- *                          bytes read from the set buffer. If the call failed
- *                          due to invalid length of the set buffer, returns
- *                          the amount of storage needed.
- *
- * \retval WLAN_STATUS_SUCCESS
- * \retval WLAN_STATUS_ADAPTER_NOT_READY
- * \retval WLAN_STATUS_FAILURE
- */
-/*----------------------------------------------------------------------------*/
-uint32_t
-wlanoidSetBssidListScanExt(struct ADAPTER *prAdapter,
-			   void *pvSetBuffer, uint32_t u4SetBufferLen,
-			   uint32_t *pu4SetInfoLen)
-{
-	struct PARAM_SCAN_REQUEST_EXT *prScanRequest;
-	struct PARAM_SSID *prSsid;
-	uint8_t *pucIe;
-	uint32_t u4IeLength;
-	uint8_t ucBssIndex = 0;
-
-	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
-		DBGLOG(OID, WARN,
-		       "Fail in set BSSID list scan! (Adapter not ready). ACPI=D%d, Radio=%d\n",
-		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
-		return WLAN_STATUS_ADAPTER_NOT_READY;
-	} else if (prAdapter->fgTestMode) {
-		DBGLOG(OID, WARN, "didn't support Scan in test mode\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	ASSERT(pu4SetInfoLen);
-	*pu4SetInfoLen = 0;
-
-	if (u4SetBufferLen != sizeof(struct PARAM_SCAN_REQUEST_EXT))
-		return WLAN_STATUS_INVALID_LENGTH;
-
-	if (prAdapter->fgIsRadioOff) {
-		DBGLOG(OID, WARN,
-		       "Return from BSSID list scan! (radio off). ACPI=D%d, Radio=%d\n",
-		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
-		return WLAN_STATUS_SUCCESS;
-	}
-	DBGLOG(OID, TRACE, "ScanEX\n");
-	if (pvSetBuffer != NULL && u4SetBufferLen != 0) {
-		prScanRequest = (struct PARAM_SCAN_REQUEST_EXT *)
-				pvSetBuffer;
-		prSsid = &(prScanRequest->rSsid);
-		pucIe = prScanRequest->pucIE;
-		u4IeLength = prScanRequest->u4IELength;
-		ucBssIndex = prScanRequest->ucBssIndex;
-	} else {
-		prScanRequest = NULL;
-		prSsid = NULL;
-		pucIe = NULL;
-		u4IeLength = 0;
-	}
-
-#if CFG_SUPPORT_RDD_TEST_MODE
-	if (prAdapter->prGlueInfo->prRegInfo->u4RddTestMode) {
-		if (prAdapter->fgEnOnlineScan && prAdapter->ucRddStatus) {
-			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
-				ucBssIndex)
-						!= MEDIA_STATE_CONNECTED)
-				aisFsmScanRequest(prAdapter, prSsid,
-							pucIe, u4IeLength,
-							ucBssIndex);
-			else
-				return WLAN_STATUS_FAILURE;
-		} else
-			return WLAN_STATUS_FAILURE;
-	} else
-#endif
-	{
-		if (prAdapter->fgEnOnlineScan == TRUE)
-			aisFsmScanRequest(prAdapter, prSsid, pucIe, u4IeLength,
-				ucBssIndex);
-		else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
-			ucBssIndex) !=
-			 MEDIA_STATE_CONNECTED)
-			aisFsmScanRequest(prAdapter, prSsid, pucIe, u4IeLength,
-				ucBssIndex);
-		else
-			return WLAN_STATUS_FAILURE;
-	}
-
-	return WLAN_STATUS_SUCCESS;
-} /* wlanoidSetBssidListScanWithIE */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This routine is called to request the driver to perform
  *        scanning with attaching information elements(IEs) specified from user
  *        space and multiple SSID
  *
@@ -879,8 +691,7 @@ wlanoidSetBssidListScanAdv(struct ADAPTER *prAdapter,
 	if (prAdapter->prGlueInfo->prRegInfo->u4RddTestMode) {
 		if (prAdapter->fgEnOnlineScan && prAdapter->ucRddStatus) {
 			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
-				ucBssIndex)
-					!= MEDIA_STATE_CONNECTED) {
+				ucBssIndex) != MEDIA_STATE_CONNECTED) {
 				aisFsmScanRequestAdv(prAdapter, prScanRequest);
 			} else
 				return WLAN_STATUS_FAILURE;
@@ -897,8 +708,7 @@ wlanoidSetBssidListScanAdv(struct ADAPTER *prAdapter,
 		} else if (prAdapter->fgEnOnlineScan == TRUE) {
 			aisFsmScanRequestAdv(prAdapter, prScanRequest);
 		} else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
-			ucBssIndex)
-				!= MEDIA_STATE_CONNECTED) {
+			ucBssIndex) != MEDIA_STATE_CONNECTED) {
 			aisFsmScanRequestAdv(prAdapter, prScanRequest);
 		} else
 			return WLAN_STATUS_FAILURE;
@@ -906,8 +716,7 @@ wlanoidSetBssidListScanAdv(struct ADAPTER *prAdapter,
 		if (prAdapter->fgEnOnlineScan == TRUE) {
 			aisFsmScanRequestAdv(prAdapter, prScanRequest);
 		} else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
-			ucBssIndex)
-				!= MEDIA_STATE_CONNECTED) {
+			ucBssIndex) != MEDIA_STATE_CONNECTED) {
 			aisFsmScanRequestAdv(prAdapter, prScanRequest);
 		} else
 			return WLAN_STATUS_FAILURE;

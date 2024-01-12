@@ -1879,7 +1879,6 @@ void bowResponderScanDone(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 		DBGLOG(BOW, EVENT, "Sequence no. of BOW Responder scan done is not matched.\n");
 		return;
 	}
-	prConnSettings->fgIsScanReqIssued = FALSE;
 	prBssDesc = scanSearchBssDescByBssid(prAdapter, prBowFsmInfo->aucPeerAddress);
 	DBGLOG(BOW, EVENT, "End scan result searching.\n");
 	DBGLOG(BOW, EVENT, "prBowFsmInfo->aucPeerAddress: [" MACSTR "]\n", MAC2STR(prBowFsmInfo->aucPeerAddress));

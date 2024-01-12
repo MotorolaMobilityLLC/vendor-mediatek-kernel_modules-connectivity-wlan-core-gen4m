@@ -191,19 +191,14 @@ void p2pFuncRequestScan(struct ADAPTER *prAdapter,
 
 		prScanReqV2 = (struct MSG_SCN_SCAN_REQ_V2 *)
 		    cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
-				(sizeof(struct MSG_SCN_SCAN_REQ_V2) +
-				(sizeof(struct PARAM_SSID) *
-				prScanReqInfo->ucSsidNum)));
+				sizeof(struct MSG_SCN_SCAN_REQ_V2));
 		if (!prScanReqV2) {
 			DBGLOG(P2P, ERROR,
 				"p2pFuncRequestScan: Memory allocation fail, can not send SCAN MSG to scan module\n");
 			break;
 		}
 
-		kalMemZero(prScanReqV2,
-			(sizeof(struct MSG_SCN_SCAN_REQ_V2) +
-			(sizeof(struct PARAM_SSID) *
-			 prScanReqInfo->ucSsidNum)));
+		kalMemZero(prScanReqV2,	sizeof(struct MSG_SCN_SCAN_REQ_V2));
 
 		prScanReqV2->rMsgHdr.eMsgId = MID_P2P_SCN_SCAN_REQ_V2;
 		prScanReqV2->ucSeqNum = ++prScanReqInfo->ucSeqNumOfScnMsg;
@@ -211,9 +206,6 @@ void p2pFuncRequestScan(struct ADAPTER *prAdapter,
 		prScanReqV2->eScanType = prScanReqInfo->eScanType;
 		prScanReqV2->eScanChannel = prScanReqInfo->eChannelSet;
 		prScanReqV2->u2IELen = 0;
-		prScanReqV2->prSsid = (struct PARAM_SSID *)
-			((uintptr_t) prScanReqV2 +
-			sizeof(struct MSG_SCN_SCAN_REQ_V2));
 
 		/* Copy IE for Probe Request. */
 		kalMemCopy(prScanReqV2->aucIE,
@@ -275,11 +267,13 @@ void p2pFuncRequestScan(struct ADAPTER *prAdapter,
 				struct PARAM_SSID *prParamSsid =
 					(struct PARAM_SSID *) NULL;
 
-				prParamSsid = prScanReqV2->prSsid;
+				prParamSsid = prScanReqV2->arSsid;
 
 				for (prScanReqV2->ucSSIDNum = 0;
-					prScanReqV2->ucSSIDNum
-					< prScanReqInfo->ucSsidNum;
+					prScanReqV2->ucSSIDNum <
+					prScanReqInfo->ucSsidNum &&
+					prScanReqV2->ucSSIDNum <
+					CFG_SCAN_SSID_MAX_NUM;
 					prScanReqV2->ucSSIDNum++) {
 
 					COPY_SSID(prParamSsid->aucSsid,
