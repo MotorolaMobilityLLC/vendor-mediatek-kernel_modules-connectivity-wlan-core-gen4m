@@ -2456,6 +2456,9 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define ML_CTRL_MLD_ID_PRESENT				BIT(5)
 #define ML_CTRL_EXT_MLD_CAP_OP_PRESENT			BIT(6)
 
+/* EML Capability */
+#define ML_CTRL_EML_CAPA_EMLSR_SUPPORT_MASK BIT(0)
+
 /* 9.4.2.314 TID-To-LINK Mapping element */
 #define MAX_NUM_T2LM_TIDS				8
 #define T2LM_DIRECTION_DL				0x00
