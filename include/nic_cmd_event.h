@@ -823,8 +823,8 @@ struct CMD_DEFAULT_KEY {
 
 /* WPA2 PMKID cache structure */
 struct PMKID_ENTRY {
-	struct PARAM_BSSID_INFO rBssidInfo;
-	u_int8_t fgPmkidExist;
+	struct LINK_ENTRY rLinkEntry;
+	struct PARAM_PMKID rBssidInfo;
 };
 
 struct CMD_802_11_PMKID {

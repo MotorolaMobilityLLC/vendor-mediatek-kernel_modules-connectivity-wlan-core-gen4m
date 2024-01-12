@@ -219,13 +219,6 @@ void secInit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 		    [i].dot11RSNAConfigAuthenticationSuiteEnabled = FALSE;
 	}
 
-	secClearPmkid(prAdapter);
-
-	cnmTimerInitTimer(prAdapter,
-			  &prAisSpecBssInfo->rPreauthenticationTimer,
-			  (PFN_MGMT_TIMEOUT_FUNC) rsnIndicatePmkidCand,
-			  (unsigned long)NULL);
-
 #if CFG_SUPPORT_802_11W
 	cnmTimerInitTimer(prAdapter,
 			  &prAisSpecBssInfo->rSaQueryTimer,
@@ -539,31 +532,6 @@ void secSetCipherSuite(IN struct ADAPTER *prAdapter,
 		prMib->dot11RSNAConfigGroupCipher = WPA_CIPHER_SUITE_NONE;
 
 }				/* secSetCipherSuite */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This routine is called to initialize the pmkid parameters.
- *
- * \param[in] prAdapter Pointer to the Adapter structure
- *
- * \retval NONE
- */
-/*----------------------------------------------------------------------------*/
-void secClearPmkid(IN struct ADAPTER *prAdapter)
-{
-	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
-
-	DEBUGFUNC("secClearPmkid");
-
-	prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
-	DBGLOG(RSN, TRACE, "secClearPmkid\n");
-	prAisSpecBssInfo->u4PmkidCandicateCount = 0;
-	prAisSpecBssInfo->u4PmkidCacheCount = 0;
-	kalMemZero((void *)prAisSpecBssInfo->arPmkidCandicate,
-		   sizeof(struct PMKID_CANDICATE) * CFG_MAX_PMKID_CACHE);
-	kalMemZero((void *)prAisSpecBssInfo->arPmkidCache,
-		   sizeof(struct PMKID_ENTRY) * CFG_MAX_PMKID_CACHE);
-}
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -1538,14 +1538,13 @@ void rsnGenerateWPAIE(IN struct ADAPTER *prAdapter,
 void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 		      IN struct MSDU_INFO *prMsduInfo)
 {
-	uint32_t u4Entry;
+	struct PMKID_ENTRY *entry = NULL;
 	uint8_t *cp;
 	/* UINT_8                ucExpendedLen = 0; */
 	uint8_t *pucBuffer;
 	uint8_t ucBssIndex;
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
-	uint8_t fgPmkCacheExist = FALSE;
 
 	DEBUGFUNC("rsnGenerateRSNIE");
 
@@ -1665,38 +1664,29 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 
 			if (!prStaRec) {
 				DBGLOG(RSN, ERROR, "prStaRec is NULL!");
-			} else if (rsnSearchPmkidEntry(prAdapter,
-				prStaRec->aucMacAddr, &u4Entry)) {
-				if (prAdapter->rWifiVar.
-					rAisSpecificBssInfo.
-					arPmkidCache[u4Entry].fgPmkidExist)
-					fgPmkCacheExist = TRUE;
+			} else  {
+				entry = rsnSearchPmkidEntry(prAdapter,
+						prStaRec->aucMacAddr);
 			}
-
 			/* Fill PMKID Count and List field */
-			if (fgPmkCacheExist) {
+			if (entry) {
+				uint8_t *pmk = entry->rBssidInfo.arPMKID;
+
 				RSN_IE(pucBuffer)->ucLength = 38;
 				/* Fill PMKID Count field */
 				WLAN_SET_FIELD_16(cp, 1);
 				cp += 2;
-				DBGLOG(RSN, TRACE,
-				       "BSSID " MACSTR " ind=%d\n",
-				       MAC2STR(prStaRec->aucMacAddr),
-				       u4Entry);
-				DBGLOG(RSN, TRACE,
-				       "use PMKID " MACSTR "\n",
-				       MAC2STR(prAdapter->rWifiVar.
-						rAisSpecificBssInfo.
-						arPmkidCache[u4Entry].
-						rBssidInfo.arPMKID));
+				DBGLOG(RSN, INFO, "BSSID " MACSTR
+					"use PMKID " PMKSTR "\n",
+					MAC2STR(entry->rBssidInfo.arBSSID),
+					pmk[0], pmk[1], pmk[2], pmk[3], pmk[4],
+					pmk[5], pmk[6], pmk[7],	pmk[8], pmk[9],
+					pmk[10], pmk[11], pmk[12] + pmk[13],
+					pmk[14], pmk[15]);
 				/* Fill PMKID List field */
-				kalMemCopy(cp,
-					(void *) prAdapter->rWifiVar.
-						rAisSpecificBssInfo.
-						arPmkidCache[u4Entry].
-						rBssidInfo.arPMKID,
-					(sizeof(uint8_t) * 16));
-				cp += 16;
+				kalMemCopy(cp, entry->rBssidInfo.arPMKID,
+					IW_PMKID_LEN);
+				cp += IW_PMKID_LEN;
 			}
 #if CFG_SUPPORT_802_11W
 			else {
@@ -1893,35 +1883,27 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void rsnGenMicErrorEvent(IN struct ADAPTER *prAdapter, IN u_int8_t fgFlags)
 {
-	struct PARAM_AUTH_EVENT *prAuthEvent;
+	struct PARAM_INDICATION_EVENT authEvent;
 
 	DEBUGFUNC("rsnGenMicErrorEvent");
 
-	prAuthEvent = (struct PARAM_AUTH_EVENT *)
-	    prAdapter->aucIndicationEventBuffer;
-
 	/* Status type: Authentication Event */
-	prAuthEvent->rStatus.eStatusType = ENUM_STATUS_TYPE_AUTHENTICATION;
+	authEvent.rStatus.eStatusType = ENUM_STATUS_TYPE_AUTHENTICATION;
 
 	/* Authentication request */
-	prAuthEvent->arRequest[0].u4Length = sizeof(struct PARAM_AUTH_REQUEST);
-	kalMemCopy((void *)prAuthEvent->arRequest[0].arBssid,
-		   (void *)prAdapter->prAisBssInfo->aucBSSID, MAC_ADDR_LEN);
-
+	authEvent.rAuthReq.u4Length = sizeof(struct PARAM_AUTH_REQUEST);
+	COPY_MAC_ADDR(authEvent.rAuthReq.arBssid,
+		prAdapter->prAisBssInfo->aucBSSID);
 	if (fgFlags == TRUE)
-		prAuthEvent->arRequest[0].u4Flags =
-		    PARAM_AUTH_REQUEST_GROUP_ERROR;
+		authEvent.rAuthReq.u4Flags = PARAM_AUTH_REQUEST_GROUP_ERROR;
 	else
-		prAuthEvent->arRequest[0].u4Flags =
-		    PARAM_AUTH_REQUEST_PAIRWISE_ERROR;
+		authEvent.rAuthReq.u4Flags = PARAM_AUTH_REQUEST_PAIRWISE_ERROR;
 
 	kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
 				     WLAN_STATUS_MEDIA_SPECIFIC_INDICATION,
-				     (void *) prAuthEvent,
-				     sizeof(struct PARAM_STATUS_INDICATION)
-				     + sizeof(struct PARAM_AUTH_REQUEST));
-
-}				/* rsnGenMicErrorEvent */
+				     (void *)&authEvent,
+				     sizeof(struct PARAM_INDICATION_EVENT));
+} /* rsnGenMicErrorEvent */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1990,110 +1972,6 @@ void rsnTkipHandleMICFailure(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function is called to select a list of BSSID from
- *        the scan results for PMKID candidate list.
- *
- * \param[in] prBssDesc the BSS Desc at scan result list
- * \param[out] pu4CandidateCount Pointer to the number of selected candidates.
- *                      It is set to zero if no BSSID matches our requirement.
- *
- * \retval none
- */
-/*----------------------------------------------------------------------------*/
-void rsnSelectPmkidCandidateList(IN struct ADAPTER
-				 *prAdapter, IN struct BSS_DESC *prBssDesc)
-{
-	struct CONNECTION_SETTINGS *prConnSettings;
-	struct BSS_INFO *prAisBssInfo;
-
-	DEBUGFUNC("rsnSelectPmkidCandidateList");
-
-	ASSERT(prBssDesc);
-
-	prConnSettings = &prAdapter->rWifiVar.rConnSettings;
-	prAisBssInfo = prAdapter->prAisBssInfo;
-
-	/* Search a BSS with the same SSID from the given BSS description set.
-	 * DBGLOG(RSN, TRACE, ("Check scan result ["MACSTR"]\n",
-	 *     MAC2STR(prBssDesc->aucBSSID)));
-	 */
-
-	if (UNEQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
-			 prConnSettings->aucSSID, prConnSettings->ucSSIDLen)) {
-		DBGLOG(RSN, TRACE, "-- SSID not matched\n");
-		return;
-	}
-
-	rsnUpdatePmkidCandidateList(prAdapter, prBssDesc);
-
-}				/* rsnSelectPmkidCandidateList */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This function is called to select a list of BSSID from
- *        the scan results for PMKID candidate list.
- *
- * \param[in] prBssDesc the BSS DESC at scan result list
- *
- * \retval none
- */
-/*----------------------------------------------------------------------------*/
-void rsnUpdatePmkidCandidateList(IN struct ADAPTER
-				 *prAdapter, IN struct BSS_DESC *prBssDesc)
-{
-	uint32_t i;
-	struct CONNECTION_SETTINGS *prConnSettings;
-	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
-
-	DEBUGFUNC("rsnUpdatePmkidCandidateList");
-
-	ASSERT(prBssDesc);
-
-	prConnSettings = &prAdapter->rWifiVar.rConnSettings;
-	prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
-
-	if (UNEQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
-			 prConnSettings->aucSSID, prConnSettings->ucSSIDLen)) {
-		DBGLOG(RSN, TRACE, "-- SSID not matched\n");
-		return;
-	}
-
-	for (i = 0; i < CFG_MAX_PMKID_CACHE; i++) {
-		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
-			prAisSpecBssInfo->arPmkidCandicate[i].aucBssid))
-			return;
-	}
-
-	/* If the number of selected BSSID exceed MAX_NUM_PMKID_CACHE(16),
-	 *  then we only store MAX_NUM_PMKID_CACHE(16) in PMKID cache
-	 */
-	if ((prAisSpecBssInfo->u4PmkidCandicateCount + 1) > CFG_MAX_PMKID_CACHE)
-		prAisSpecBssInfo->u4PmkidCandicateCount--;
-
-	i = prAisSpecBssInfo->u4PmkidCandicateCount;
-
-	COPY_MAC_ADDR((void *)
-		      prAisSpecBssInfo->arPmkidCandicate[i].aucBssid,
-		      (void *)prBssDesc->aucBSSID);
-
-	if (prBssDesc->u2RsnCap & MASK_RSNIE_CAP_PREAUTH) {
-		prAisSpecBssInfo->arPmkidCandicate[i].u4PreAuthFlags = 1;
-		DBGLOG(RSN, TRACE,
-		       "Add " MACSTR " with pre-auth to candidate list\n",
-		       MAC2STR(prAisSpecBssInfo->arPmkidCandicate[i].aucBssid));
-	} else {
-		prAisSpecBssInfo->arPmkidCandicate[i].u4PreAuthFlags = 0;
-		DBGLOG(RSN, TRACE,
-		       "Add " MACSTR " without pre-auth to candidate list\n",
-		       MAC2STR(prAisSpecBssInfo->arPmkidCandicate[i].aucBssid));
-	}
-
-	prAisSpecBssInfo->u4PmkidCandicateCount++;
-
-}				/* rsnUpdatePmkidCandidateList */
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief This routine is called to search the desired entry in
  *        PMKID cache according to the BSSID
  *
@@ -2104,152 +1982,31 @@ void rsnUpdatePmkidCandidateList(IN struct ADAPTER
  * \retval FALSE, if not found
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t rsnSearchPmkidEntry(IN struct ADAPTER *prAdapter,
-			     IN uint8_t *pucBssid,
-			     OUT uint32_t *pu4EntryIndex)
+struct PMKID_ENTRY *rsnSearchPmkidEntry(IN struct ADAPTER *prAdapter,
+			     IN uint8_t *pucBssid)
 {
-	uint32_t i;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
-
-	DEBUGFUNC("rsnSearchPmkidEntry");
+	struct PMKID_ENTRY *entry;
+	struct LINK *cache;
 
 	ASSERT(pucBssid);
-	ASSERT(pu4EntryIndex);
 
 	prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
+	cache = &prAisSpecBssInfo->rPmkidCache;
 
-	if (prAisSpecBssInfo->u4PmkidCacheCount > CFG_MAX_PMKID_CACHE)
-		return FALSE;
-
-	ASSERT(prAisSpecBssInfo->u4PmkidCacheCount <= CFG_MAX_PMKID_CACHE);
-
-	/* Search for desired BSSID */
-	for (i = 0; i < prAisSpecBssInfo->u4PmkidCacheCount; i++) {
-		if (!kalMemCmp(
-			prAisSpecBssInfo->arPmkidCache[i].rBssidInfo.aucBssid,
-			pucBssid, MAC_ADDR_LEN))
-			break;
+	LINK_FOR_EACH_ENTRY(entry, cache, rLinkEntry, struct PMKID_ENTRY) {
+		if (EQUAL_MAC_ADDR(entry->rBssidInfo.arBSSID, pucBssid))
+			return entry;
 	}
 
-	/* If desired BSSID is found, then set the PMKID */
-	if (i < prAisSpecBssInfo->u4PmkidCacheCount) {
-		*pu4EntryIndex = i;
-
-		return TRUE;
-	}
-
-	return FALSE;
-}				/* rsnSearchPmkidEntry */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This routine is called to check if there is difference
- *        between PMKID candicate list and PMKID cache. If there
- *        is new candicate that no cache entry is available, then
- *        add a new entry for the new candicate in the PMKID cache
- *        and set the PMKID indication flag to TRUE.
- *
- * \retval TRUE, if new member in the PMKID candicate list
- * \retval FALSe, if no new member in the PMKID candicate list
- */
-/*----------------------------------------------------------------------------*/
-u_int8_t rsnCheckPmkidCandicate(IN struct ADAPTER *prAdapter)
-{
-	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
-	uint32_t i;		/* Index for PMKID candicate */
-	uint32_t j;		/* Indix for PMKID cache */
-	u_int8_t status = FALSE;
-
-	DEBUGFUNC("rsnCheckPmkidCandicate");
-
-	prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
-
-	/* Check for each candicate */
-	for (i = 0; i < prAisSpecBssInfo->u4PmkidCandicateCount; i++) {
-		for (j = 0; j < prAisSpecBssInfo->u4PmkidCacheCount; j++) {
-			if (!kalMemCmp
-			    (prAisSpecBssInfo->arPmkidCache[j].rBssidInfo.
-			     aucBssid,
-			     prAisSpecBssInfo->arPmkidCandicate[i].aucBssid,
-			     MAC_ADDR_LEN)) {
-				/* DBGLOG(
-				 * RSN, TRACE, (MACSTR" at PMKID cache!!\n",
-				 * MAC2STR(prAisSpecBssInfo->
-				 *      arPmkidCandicate[i].aucBssid)));
-				 */
-				break;
-			}
-		}
-
-		/* No entry found in PMKID cache for the candicate,
-		 * add new one
-		 */
-		if (j == prAisSpecBssInfo->u4PmkidCacheCount
-		    && prAisSpecBssInfo->u4PmkidCacheCount <
-		    CFG_MAX_PMKID_CACHE) {
-			DBGLOG(RSN, TRACE,
-			       "Add " MACSTR " to PMKID cache!!\n",
-			       MAC2STR(prAisSpecBssInfo->
-					arPmkidCandicate[i].aucBssid));
-			kalMemCopy((void *) prAisSpecBssInfo->
-					arPmkidCache[prAisSpecBssInfo->
-					u4PmkidCacheCount].rBssidInfo.aucBssid,
-				   (void *) prAisSpecBssInfo->
-					arPmkidCandicate[i].aucBssid,
-					MAC_ADDR_LEN);
-			prAisSpecBssInfo->arPmkidCache[prAisSpecBssInfo->
-				u4PmkidCacheCount].fgPmkidExist
-				= FALSE;
-			prAisSpecBssInfo->u4PmkidCacheCount++;
-
-			status = TRUE;
-		}
-	}
-
-	return status;
-}				/* rsnCheckPmkidCandicate */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This function is called to wait a duration
- *		to indicate the pre-auth AP candicate
- *
- * \return (none)
- */
-/*----------------------------------------------------------------------------*/
-void rsnIndicatePmkidCand(IN struct ADAPTER *prAdapter,
-			  IN unsigned long ulParamPtr)
-{
-	DBGLOG(RSN, EVENT, "Security - Time to indicate the PMKID cand.\n");
-
-	if (!prAdapter) {
-		DBGLOG(RSN, ERROR, "prAdapter is NULL, return!\n");
-		return;
-	}
-	if (prAdapter->prAisBssInfo == NULL) {
-		DBGLOG(RSN, ERROR, "prAisBssInfo is NULL, return!\n");
-		return;
-	}
-
-	/* If the authentication mode is WPA2 and indication PMKID flag
-	 *  is available, then we indicate the PMKID candidate list to NDIS and
-	 *  clear the flag, indicatePMKID
-	 */
-
-	if (prAdapter->prAisBssInfo->eConnectionState ==
-	    MEDIA_STATE_CONNECTED &&
-	    prAdapter->rWifiVar.rConnSettings.eAuthMode == AUTH_MODE_WPA2) {
-		rsnGeneratePmkidIndication(prAdapter);
-	}
-}				/* end of rsnIndicatePmkidCand() */
+	return NULL;
+} /* rsnSearchPmkidEntry */
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to check the BSS Desc at scan result
- *             with pre-auth cap at wpa2 mode. If there
- *             is candicate that no cache entry is available, then
- *             add a new entry for the new candicate in the PMKID cache
- *             and set the PMKID indication flag to TRUE.
+ *             with pre-auth cap at wpa2 mode. If there is no cache entry,
+ *             notify the PMKID indication.
  *
  * \param[in] prBss The BSS Desc at scan result
  *
@@ -2262,34 +2019,136 @@ void rsnCheckPmkidCache(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBss)
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
 
-	DEBUGFUNC("rsnCheckPmkidCandicate");
-
-	ASSERT(prBss);
+	if (!prBss)
+		return;
 
 	prConnSettings = &prAdapter->rWifiVar.rConnSettings;
 	prAisBssInfo = prAdapter->prAisBssInfo;
 	prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
 
-	if ((prAisBssInfo->eConnectionState ==
-	     MEDIA_STATE_CONNECTED) &&
-	    (prConnSettings->eAuthMode == AUTH_MODE_WPA2)) {
-		rsnSelectPmkidCandidateList(prAdapter, prBss);
+	/* Generate pmkid candidate indications for other APs which are
+	 * also belong to the same SSID with the current connected AP but
+	 * without available pmkid.
+	 */
+	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
+	    prConnSettings->eAuthMode == AUTH_MODE_WPA2 &&
+	    EQUAL_SSID(prBss->aucSSID, prBss->ucSSIDLen,
+		prConnSettings->aucSSID, prConnSettings->ucSSIDLen) &&
+	    UNEQUAL_MAC_ADDR(prBss->aucBSSID, prAisBssInfo->aucBSSID) &&
+	    !rsnSearchPmkidEntry(prAdapter, prBss->aucBSSID)) {
+		struct PARAM_PMKID_CANDIDATE candidate;
 
-		/* Set indication flag of PMKID to TRUE, and then
-		 *  connHandleNetworkConnection() will indicate this later
-		 */
-		if (rsnCheckPmkidCandicate(prAdapter)) {
-			DBGLOG(RSN, TRACE,
-			       "Prepare a timer to indicate candidate PMKID Candidate\n");
-			cnmTimerStopTimer(prAdapter,
-				&prAisSpecBssInfo->rPreauthenticationTimer);
-			cnmTimerStartTimer(prAdapter,
-				&prAisSpecBssInfo->rPreauthenticationTimer,
-				SEC_TO_MSEC(
-				WAIT_TIME_IND_PMKID_CANDICATE_SEC));
-		}
+		COPY_MAC_ADDR(candidate.arBSSID, prBss->aucBSSID);
+		candidate.u4Flags = prBss->u2RsnCap & MASK_RSNIE_CAP_PREAUTH;
+		rsnGeneratePmkidIndication(prAdapter, &candidate);
+
+		DBGLOG(RSN, TRACE, "Generate " MACSTR
+			" with preauth %d to pmkid candidate list\n",
+			MAC2STR(prBss->aucBSSID), candidate.u4Flags);
 	}
-}
+} /* rsnCheckPmkidCache */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to add/update pmkid.
+ *
+ * \param[in] prPmkid The new pmkid
+ *
+ * \return status
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rsnSetPmkid(IN struct ADAPTER *prAdapter,
+		    IN struct PARAM_PMKID *prPmkid)
+{
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
+	struct PMKID_ENTRY *entry;
+	struct LINK *cache;
+
+	prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
+	cache = &prAisSpecBssInfo->rPmkidCache;
+
+	entry = rsnSearchPmkidEntry(prAdapter, prPmkid->arBSSID);
+	if (!entry) {
+		entry = kalMemAlloc(sizeof(struct PMKID_ENTRY), VIR_MEM_TYPE);
+		if (!entry)
+			return -ENOMEM;
+		LINK_INSERT_TAIL(cache,	&entry->rLinkEntry);
+	}
+
+	DBGLOG(RSN, INFO, "Set " MACSTR ", total %d, PMKID " PMKSTR "\n",
+		MAC2STR(prPmkid->arBSSID), cache->u4NumElem,
+		prPmkid->arPMKID[0], prPmkid->arPMKID[1], prPmkid->arPMKID[2],
+		prPmkid->arPMKID[3], prPmkid->arPMKID[4], prPmkid->arPMKID[5],
+		prPmkid->arPMKID[6], prPmkid->arPMKID[7], prPmkid->arPMKID[8],
+		prPmkid->arPMKID[9], prPmkid->arPMKID[10], prPmkid->arPMKID[11],
+		prPmkid->arPMKID[12] + prPmkid->arPMKID[13],
+		prPmkid->arPMKID[14], prPmkid->arPMKID[15]);
+
+	kalMemCopy(&entry->rBssidInfo, prPmkid, sizeof(struct PARAM_PMKID));
+	return WLAN_STATUS_SUCCESS;
+} /* rsnSetPmkid */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to del pmkid.
+ *
+ * \param[in] prPmkid pmkid should be deleted
+ *
+ * \return status
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rsnDelPmkid(IN struct ADAPTER *prAdapter,
+		    IN struct PARAM_PMKID *prPmkid)
+{
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
+	struct PMKID_ENTRY *entry;
+	struct LINK *cache;
+
+	if (!prPmkid)
+		return WLAN_STATUS_INVALID_DATA;
+
+	DBGLOG(RSN, TRACE, "Del " MACSTR " pmkid\n", MAC2STR(prPmkid->arBSSID));
+
+	prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
+	cache = &prAisSpecBssInfo->rPmkidCache;
+	entry = rsnSearchPmkidEntry(prAdapter, prPmkid->arBSSID);
+	if (entry) {
+		if (kalMemCmp(prPmkid->arPMKID,
+			entry->rBssidInfo.arPMKID, IW_PMKID_LEN)) {
+			DBGLOG(RSN, WARN, "Del " MACSTR " pmkid but mismatch\n",
+				MAC2STR(prPmkid->arBSSID));
+		}
+		LINK_REMOVE_KNOWN_ENTRY(cache, entry);
+		kalMemFree(entry, VIR_MEM_TYPE, sizeof(struct PMKID_ENTRY));
+	}
+
+	return WLAN_STATUS_SUCCESS;
+} /* rsnDelPmkid */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to delete all pmkid.
+ *
+ * \return status
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rsnFlushPmkid(IN struct ADAPTER *prAdapter)
+{
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
+	struct PMKID_ENTRY *entry;
+	struct LINK *cache;
+
+	prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
+	cache = &prAisSpecBssInfo->rPmkidCache;
+
+	DBGLOG(RSN, INFO, "Flush Pmkid total:%d\n", cache->u4NumElem);
+
+	while (!LINK_IS_EMPTY(cache)) {
+		LINK_REMOVE_HEAD(cache, entry, struct PMKID_ENTRY *);
+		kalMemFree(entry, VIR_MEM_TYPE, sizeof(struct PMKID_ENTRY));
+	}
+	return WLAN_STATUS_SUCCESS;
+} /* rsnDelPmkid */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2303,87 +2162,25 @@ void rsnCheckPmkidCache(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBss)
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
-void rsnGeneratePmkidIndication(IN struct ADAPTER
-				*prAdapter)
+void rsnGeneratePmkidIndication(IN struct ADAPTER *prAdapter,
+				IN struct PARAM_PMKID_CANDIDATE *prCandi)
 {
-	struct PARAM_STATUS_INDICATION *prStatusEvent;
-	struct PARAM_PMKID_CANDIDATE_LIST *prPmkidEvent;
-	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
-	uint8_t i, j = 0, count = 0;
-	uint32_t u4LenOfUsedBuffer;
+	struct PARAM_INDICATION_EVENT pmkidEvent;
 
 	DEBUGFUNC("rsnGeneratePmkidIndication");
 
 	ASSERT(prAdapter);
 
-	prStatusEvent = (struct PARAM_STATUS_INDICATION *)
-	    prAdapter->aucIndicationEventBuffer;
-
 	/* Status type: PMKID Candidatelist Event */
-	prStatusEvent->eStatusType = ENUM_STATUS_TYPE_CANDIDATE_LIST;
-	ASSERT(prStatusEvent);
-
-	prPmkidEvent =
-	    (struct PARAM_PMKID_CANDIDATE_LIST *)(&prStatusEvent->eStatusType +
-						  1);
-	ASSERT(prPmkidEvent);
-
-	prAisSpecificBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
-	ASSERT(prAisSpecificBssInfo);
-
-	for (i = 0; i < prAisSpecificBssInfo->u4PmkidCandicateCount;
-	     i++) {
-		for (j = 0; j < prAisSpecificBssInfo->u4PmkidCacheCount;
-		     j++) {
-			if (EQUAL_MAC_ADDR(
-				prAisSpecificBssInfo->arPmkidCache[j].
-					rBssidInfo.aucBssid,
-				prAisSpecificBssInfo->arPmkidCandicate[i].
-					aucBssid) &&
-			    (prAisSpecificBssInfo->arPmkidCache[j].fgPmkidExist
-				== TRUE)) {
-				break;
-			}
-		}
-		if (count >= CFG_MAX_PMKID_CACHE)
-			break;
-
-		if (j == prAisSpecificBssInfo->u4PmkidCacheCount) {
-			kalMemCopy((void *)
-				   prPmkidEvent->arCandidateList[count].arBSSID,
-				   (void *) prAisSpecificBssInfo->
-					arPmkidCandicate[i].aucBssid,
-				   PARAM_MAC_ADDR_LEN);
-			prPmkidEvent->arCandidateList[count].u4Flags =
-				prAisSpecificBssInfo->arPmkidCandicate[i].
-					u4PreAuthFlags;
-			DBGLOG(RSN, TRACE,
-			       MACSTR " %x\n",
-			       MAC2STR(prPmkidEvent->arCandidateList[count].
-					arBSSID),
-			       prPmkidEvent->arCandidateList[count].u4Flags);
-			count++;
-		}
-	}
-
-	/* PMKID Candidate List */
-	prPmkidEvent->u4Version = 1;
-	prPmkidEvent->u4NumCandidates = count;
-	DBGLOG(RSN, TRACE, "rsnGeneratePmkidIndication #%d\n",
-	       prPmkidEvent->u4NumCandidates);
-	u4LenOfUsedBuffer = sizeof(enum ENUM_STATUS_TYPE) +
-			    (2 * sizeof(uint32_t)) +
-			    (count * sizeof(struct PARAM_PMKID_CANDIDATE));
-	/* dumpMemory8((uint8_t *)prAdapter->aucIndicationEventBuffer,
-	 *    u4LenOfUsedBuffer);
-	 */
+	pmkidEvent.rStatus.eStatusType = ENUM_STATUS_TYPE_CANDIDATE_LIST;
+	kalMemCopy(&pmkidEvent.rCandi, prCandi,
+		sizeof(struct PARAM_PMKID_CANDIDATE));
 
 	kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
-			WLAN_STATUS_MEDIA_SPECIFIC_INDICATION,
-			(void *) prAdapter->aucIndicationEventBuffer,
-			u4LenOfUsedBuffer);
-
-}				/* rsnGeneratePmkidIndication */
+				     WLAN_STATUS_MEDIA_SPECIFIC_INDICATION,
+				     (void *) &pmkidEvent,
+				     sizeof(struct PARAM_INDICATION_EVENT));
+} /* rsnGeneratePmkidIndication */
 
 #if CFG_SUPPORT_WPS2
 /*----------------------------------------------------------------------------*/
