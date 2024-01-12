@@ -1462,7 +1462,7 @@ static void asicFillInitCmdTxdInfo(
 	if (pucSeqNum)
 		*pucSeqNum = prInitHifTxHeader->rInitWifiCmd.ucSeqNum;
 
-	DBGLOG(INIT, INFO, "TX CMD: ID[0x%02X] SEQ[%u] LEN[%u]\n",
+	DBGLOG_LIMITED(INIT, INFO, "TX CMD: ID[0x%02X] SEQ[%u] LEN[%u]\n",
 			prInitHifTxHeader->rInitWifiCmd.ucCID,
 			prInitHifTxHeader->rInitWifiCmd.ucSeqNum,
 			prInitHifTxHeader->u2TxByteCount);
