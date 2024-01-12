@@ -2072,9 +2072,12 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 				break;
 			}
 
-			if (ucShortSsidOffset != 0) {
+			if ((ucShortSsidOffset != 0) &&
+				(prScanParam->u2IELen <= (MAX_IE_LENGTH - 4))) {
 				/*
 				*  calculate the index to save ShortSsid
+				*  and boundary check for IE length (MAX 600)
+				*  need to have 4 byte for ShortSsid copy
 				*/
 				kalMemCopy(&prIeShortSsidList->
 					aucShortSsidList[ucShortSsidNum * 4],
