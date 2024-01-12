@@ -359,7 +359,7 @@ ifeq ($(WLAN_CONNAC3_DEV), yes)
 CONFIG_MTK_WIFI_TRX_DIRECT=y
 else
     ifneq ($(filter 6983, $(WLAN_CHIP_ID)),)
-        ccflags-y += -DCFG_WLAN_IMG_SUPPORT=1
+        ccflags-y += -DCFG_WLAN_LK_FWDL_SUPPORT=1
     endif
 endif
 
