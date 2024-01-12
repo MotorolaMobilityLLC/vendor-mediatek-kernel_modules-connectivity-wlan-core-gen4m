@@ -646,7 +646,7 @@ static void soc7_0asicConnac2xWfdmaManualPrefetch(
 static void soc7_0ReadIntStatus(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus)
 {
-	uint32_t u4RegValue;
+	uint32_t u4RegValue, u4WrValue = 0;
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 
@@ -655,22 +655,28 @@ static void soc7_0ReadIntStatus(struct ADAPTER *prAdapter,
 	HAL_MCR_RD(prAdapter,
 		WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR, &u4RegValue);
 
-	if (HAL_IS_CONNAC2X_EXT_RX_DONE_INTR(u4RegValue,
-			prBusInfo->host_int_rxdone_bits))
+	if (HAL_IS_CONNAC2X_EXT_RX_DONE_INTR(
+		    u4RegValue, prBusInfo->host_int_rxdone_bits)) {
 		*pu4IntStatus |= WHISR_RX0_DONE_INT;
+		u4WrValue |= (u4RegValue & prBusInfo->host_int_rxdone_bits);
+	}
 
-	if (HAL_IS_CONNAC2X_EXT_TX_DONE_INTR(u4RegValue,
-			prBusInfo->host_int_txdone_bits))
+	if (HAL_IS_CONNAC2X_EXT_TX_DONE_INTR(
+		    u4RegValue, prBusInfo->host_int_txdone_bits)) {
 		*pu4IntStatus |= WHISR_TX_DONE_INT;
+		u4WrValue |= (u4RegValue & prBusInfo->host_int_txdone_bits);
+	}
 
-	if (u4RegValue & CONNAC_MCU_SW_INT)
+	if (u4RegValue & CONNAC_MCU_SW_INT) {
 		*pu4IntStatus |= WHISR_D2H_SW_INT;
+		u4WrValue |= (u4RegValue & CONNAC_MCU_SW_INT);
+	}
 
 	prHifInfo->u4IntStatus = u4RegValue;
 
 	/* clear interrupt */
 	HAL_MCR_WR(prAdapter,
-		WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR, u4RegValue);
+		WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR, u4WrValue);
 }
 
 static void configIntMask(struct GLUE_INFO *prGlueInfo,
