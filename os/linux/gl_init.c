@@ -4922,6 +4922,9 @@ static void wlanRemove(void)
 	prAdapter = prGlueInfo->prAdapter;
 	kalPerMonDestroy(prGlueInfo);
 
+	/* Unregister notifier callback */
+	wlanUnregisterInetAddrNotifier();
+
 	/* complete possible pending oid, which may block wlanRemove some time
 	 * and then whole chip reset may failed
 	 */
@@ -5049,9 +5052,6 @@ static void wlanRemove(void)
 		}
 	}
 #endif
-
-	/* 4 <9> Unregister notifier callback */
-	wlanUnregisterInetAddrNotifier();
 
 #if CFG_CHIP_RESET_SUPPORT
 	fgIsResetting = FALSE;
