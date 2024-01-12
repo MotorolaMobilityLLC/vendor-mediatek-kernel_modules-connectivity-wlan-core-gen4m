@@ -2720,9 +2720,9 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 				uint16_t u2DefaultTableIndex)
 {
 	uint16_t i, k;
-	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *prPwrLimitSubBand;
-	struct CMD_CHANNEL_POWER_LIMIT *prPwrLimit;
-	struct CMD_CHANNEL_POWER_LIMIT_HE *prPwrLmtHE;
+	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *prPwrLimitSubBand = NULL;
+	struct CMD_CHANNEL_POWER_LIMIT *prPwrLimit = NULL;
+	struct CMD_CHANNEL_POWER_LIMIT_HE *prPwrLmtHE = NULL;
 	enum ENUM_PWR_LIMIT_TYPE eType;
 
 	int8_t cLmtBand = 0;
@@ -3728,9 +3728,9 @@ uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 			      struct TX_PWR_CTRL_ELEMENT *prCurElement,
 			      uint8_t *bandedgeParam)
 {
-	struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit;
-	struct CMD_CHANNEL_POWER_LIMIT_HE *prCmdPwrLimitHE;
-	struct TX_PWR_CTRL_CHANNEL_SETTING *prChlSetting;
+	struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit = NULL;
+	struct CMD_CHANNEL_POWER_LIMIT_HE *prCmdPwrLimitHE = NULL;
+	struct TX_PWR_CTRL_CHANNEL_SETTING *prChlSetting = NULL;
 	uint8_t i, j, channel, channel2, channel3;
 	u_int8_t fgDoArbitrator;
 	enum ENUM_PWR_LIMIT_TYPE eType;
@@ -4708,8 +4708,10 @@ void txPwrCtrlUninit(struct ADAPTER *prAdapter)
 void rlmDomainShowPwrLimitPerCh(char *message,
 	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd)
 {
-	struct CMD_CHANNEL_POWER_LIMIT *prPwrLmt;	/* for print usage */
-	struct CMD_CHANNEL_POWER_LIMIT_HE *prPwrLmtHE;	/* for print usage */
+	/* for print usage */
+	struct CMD_CHANNEL_POWER_LIMIT *prPwrLmt = NULL;
+	/* for print usage */
+	struct CMD_CHANNEL_POWER_LIMIT_HE *prPwrLmtHE = NULL;
 	enum ENUM_PWR_LIMIT_TYPE eType;
 	uint8_t i, j;
 	char msgLimit[PWR_BUF_LEN];
