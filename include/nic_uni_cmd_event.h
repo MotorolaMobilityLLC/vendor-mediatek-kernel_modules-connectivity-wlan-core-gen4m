@@ -1922,8 +1922,7 @@ struct UNI_CMD_SCAN_SSID_MATCH_SETS {
 } __KAL_ATTRIB_PACKED__;
 
 /* RDD set command (0x19) */
-struct UNI_CMD_RDD
-{
+struct UNI_CMD_RDD {
 	/*fixed field*/
 	uint8_t aucPadding[4];
 	/* tlv */
@@ -1936,15 +1935,13 @@ struct UNI_CMD_RDD
 } __KAL_ATTRIB_PACKED__;
 
 /* RDD set command Tag */
-enum ENUM_UNI_CMD_RDD_TAG
-{
+enum ENUM_UNI_CMD_RDD_TAG {
 	UNI_CMD_RDD_TAG_ON_OFF_CTRL_PARM = 0,
 	UNI_CMD_RDD_TAG_NUM
 };
 
 /* RDD on off command (Tag0) */
-struct UNI_CMD_RDD_ON_OFF_CTRL_PARM
-{
+struct UNI_CMD_RDD_ON_OFF_CTRL_PARM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t u1DfsCtrl;
@@ -1955,8 +1952,7 @@ struct UNI_CMD_RDD_ON_OFF_CTRL_PARM
 } __KAL_ATTRIB_PACKED__;
 
 /* Get mac info command (0x1A) */
-struct UNI_CMD_GET_MAC_INFO
-{
+struct UNI_CMD_GET_MAC_INFO {
 	/* fixed field */
 	uint8_t ucReserved[4];
 
@@ -1970,15 +1966,13 @@ struct UNI_CMD_GET_MAC_INFO
 } __KAL_ATTRIB_PACKED__;
 
 /* Get mac info command TLV List */
-enum ENUM_UNI_CMD_MAC_INFO_TAG
-{
+enum ENUM_UNI_CMD_MAC_INFO_TAG {
     UNI_CMD_MAC_INFO_TAG_TSF = 0,
     UNI_CMD_MAC_INFO_TAG_NUM
 };
 
 /* Get tsf time (Tag0) */
-struct UNI_CMD_MAC_INFO_TSF
-{
+struct UNI_CMD_MAC_INFO_TSF {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t ucDbdcIdx;
@@ -1986,8 +1980,47 @@ struct UNI_CMD_MAC_INFO_TSF
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_PKT_DROP
-{
+/* TDLS command (0x1B) */
+struct UNI_CMD_TDLS {
+	/* fixed field */
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+        *
+        *   TAG                              | ID  | structure
+        *   ---------------------------------|-----|--------------
+        *   UNI_CMD_SET_TDLS_CH_SW        | 0x0 | UNI_CMD_SET_TDLS_CH_SW_T
+        */
+} __KAL_ATTRIB_PACKED__;
+
+
+/* TDLS set command TLV List */
+enum ENUM_UNI_CMD_TDLS_TAG {
+	UNI_CMD_TDLS_TAG_SET_TDLS_CH_SW = 0,
+	UNI_CMD_TDLS_TAG_NUM
+};
+
+/** @addtogroup UNI_CMD_ID_TDLS
+ * @{
+ */
+/**
+ * This structure is used for UNI_CMD_SET_TDLS_CH_SW(0x00) of UNI_CMD_ID_TDLS command (0x1B)
+ *
+ * @param[in] u2Tag                   should be 0x00
+ * @param[in] u2Length                the length of this TLV, should be 8
+ * @param[in] fgIsTDLSChSwProhibit      Flag of TDLS channel switch prohibit
+ */
+/* FW Log Basic Setting (Tag0) */
+struct UNI_CMD_SET_TDLS_CH_SW {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t fgIsTDLSChSwProhibit;
+	uint8_t aucPadding[3];
+} __KAL_ATTRIB_PACKED__;
+
+
+struct UNI_CMD_PKT_DROP {
 	/* fixed field */
 	uint8_t ucReserved[4];
 
@@ -2001,14 +2034,12 @@ struct UNI_CMD_PKT_DROP
 	*/
 } __KAL_ATTRIB_PACKED__;
 
-enum ENUM_UNI_CMD_PKT_DROP_TAG
-{
+enum ENUM_UNI_CMD_PKT_DROP_TAG {
 	UNI_CMD_PKT_DROP_TAG_CFG                    = 1,
 	UNI_CMD_PKT_DROP_TAG_NUM
 };
 
-struct UNI_CMD_PKT_DROP_SETTING
-{
+struct UNI_CMD_PKT_DROP_SETTING {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t ucMagicCode;
@@ -3543,6 +3574,8 @@ uint32_t nicUniCmdOffloadKey(struct ADAPTER *ad,
 uint32_t nicUniCmdHifCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdRddOnOffCtrl(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdTdls(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************
