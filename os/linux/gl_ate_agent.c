@@ -153,6 +153,7 @@ struct ATE_PRIV_CMD rAtePrivCmdTable[] = {
 	{"StaRecBfHeUpdate", Set_StaRecBfHeUpdate},
 	{"DevInfoUpdate", Set_DevInfoUpdate},
 	{"BssInfoUpdate", Set_BssInfoUpdate},
+	{"TxBfProfileTagPartialBw", Set_TxBfProfileTagPartialBw},
 #if CFG_SUPPORT_MU_MIMO
 	{"MUGetInitMCS", Set_MUGetInitMCS},
 	{"MUCalInitMCS", Set_MUCalInitMCS},
@@ -1202,6 +1203,30 @@ int Set_TxBfProfileTag_DesiredNr(struct net_device
 						    ucDesiredNr);
 	} else
 		return -EINVAL;
+
+	return i4Status;
+}
+
+
+int Set_TxBfProfileTagPartialBw(struct net_device *prNetDev,
+			    uint8_t *prInBuf)
+{
+	uint8_t uBitmap, uResolution;
+	int32_t i4Status = 0;
+	int32_t rv;
+
+	DBGLOG(RFTEST, INFO, "Set_TxBfProfileTagPartialBw\n");
+
+	rv = sscanf(prInBuf, "%d:%d", &uBitmap, &uResolution);
+	if (rv == 2) {
+		DBGLOG(RFTEST, INFO,
+		       "Set_TxBfProfileTagPartialBw prInBuf = %s, u4Bitmap = %d, u4Resolution = %d\n",
+		       prInBuf, uBitmap, uResolution);
+		i4Status = TxBfProfileTagPartialBw(prNetDev, &g_rPfmuTag1,
+			uBitmap, uResolution);
+	} else {
+		return -EINVAL;
+	}
 
 	return i4Status;
 }

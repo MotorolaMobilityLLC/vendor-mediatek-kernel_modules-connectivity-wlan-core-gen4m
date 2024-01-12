@@ -263,6 +263,9 @@ int32_t TxBfProfileTag_DesiredNc(struct net_device
 int32_t TxBfProfileTag_DesiredNr(struct net_device
 				 *prNetDev, union PFMU_PROFILE_TAG2 *prPfmuTag2,
 				 uint8_t ucDesiredNr);
+int32_t  TxBfProfileTagPartialBw(struct net_device *prNetDev,
+			   union PFMU_PROFILE_TAG1 *prPfmuTag1,
+			   uint8_t uBitmap, uint8_t uResolution);
 int32_t TxBfProfileTagWrite(struct net_device *prNetDev,
 			    union PFMU_PROFILE_TAG1 *prPfmuTag1,
 			    union PFMU_PROFILE_TAG2 *prPfmuTag2,
