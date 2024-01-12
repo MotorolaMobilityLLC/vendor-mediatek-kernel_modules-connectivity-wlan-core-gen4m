@@ -849,7 +849,7 @@ void wmmStartTsmMeasurement(struct ADAPTER *prAdapter, unsigned long ulParam,
 		       prTsmReq->u2Duration,
 		       prTsmReq->rTriggerCond.ucCondition);
 		cnmMemFree(prAdapter, prTsmReq);
-		rlmScheduleNextRm(prAdapter,
+		rrmScheduleNextRm(prAdapter,
 			ucBssIndex);
 		return;
 	}
@@ -858,7 +858,7 @@ void wmmStartTsmMeasurement(struct ADAPTER *prAdapter, unsigned long ulParam,
 		DBGLOG(WMM, INFO, "No station record found for %pM\n",
 		       prTsmReq->aucPeerAddr);
 		cnmMemFree(prAdapter, prTsmReq);
-		rlmScheduleNextRm(prAdapter,
+		rrmScheduleNextRm(prAdapter,
 			ucBssIndex);
 		return;
 	}
@@ -878,7 +878,7 @@ void wmmStartTsmMeasurement(struct ADAPTER *prAdapter, unsigned long ulParam,
 			DBGLOG(WMM, INFO,
 			       "ACM is set for UP %d, but No tspec is setup\n",
 			       ucTid);
-			rlmScheduleNextRm(prAdapter,
+			rrmScheduleNextRm(prAdapter,
 				ucBssIndex);
 			return;
 		}
@@ -1218,7 +1218,7 @@ static void wmmGetTsmRptTimeout(struct ADAPTER *prAdapter,
 	wmmRemoveTSM(prAdapter, (struct ACTIVE_RM_TSM_REQ *)ulParam, TRUE,
 		ucBssIndex);
 	/* schedule next measurement after a duration based TSM done */
-	rlmStartNextMeasurement(prAdapter, FALSE, ucBssIndex);
+	rrmStartNextMeasurement(prAdapter, FALSE, ucBssIndex);
 }
 
 void wmmComposeTsmRpt(struct ADAPTER *prAdapter, struct CMD_INFO *prCmdInfo,
@@ -1257,14 +1257,14 @@ void wmmComposeTsmRpt(struct ADAPTER *prAdapter, struct CMD_INFO *prCmdInfo,
 		DBGLOG(WMM, ERROR, "unexpected Tsm statistic event, tid %d\n",
 		       prTsmStatistic->ucTid);
 		/* schedule next measurement after a duration based TSM done */
-		rlmScheduleNextRm(prAdapter,
+		rrmScheduleNextRm(prAdapter,
 			ucBssIndex);
 		return;
 	}
 
 	/* Put the report IE into report frame */
 	if (u2IeSize + prRmRep->u2ReportFrameLen > RM_REPORT_FRAME_MAX_LENGTH)
-		rlmTxRadioMeasurementReport(prAdapter, ucBssIndex);
+		rrmTxRadioMeasurementReport(prAdapter, ucBssIndex);
 
 	DBGLOG(WMM, INFO, "tid %d, aci %d\n", prCurrentTsmReq->prTsmReq->ucTID,
 	       prCurrentTsmReq->prTsmReq->ucACI);
@@ -1344,8 +1344,7 @@ void wmmComposeTsmRpt(struct ADAPTER *prAdapter, struct CMD_INFO *prCmdInfo,
 				(uint8_t *)&rTsmStatistics, NULL, 0);
 		}
 		/* schedule next measurement after a duration based TSM done */
-		rlmScheduleNextRm(prAdapter,
-			ucBssIndex);
+		rrmScheduleNextRm(prAdapter, ucBssIndex);
 	} else {
 		/* Triggered TSM, we should send TSM report to peer if the first
 		 ** report time to now more than 10 second
@@ -1357,8 +1356,7 @@ void wmmComposeTsmRpt(struct ADAPTER *prAdapter, struct CMD_INFO *prCmdInfo,
 		else if (CHECK_FOR_TIMEOUT(rCurrent,
 					   prWMMInfo->rTriggeredTsmRptTime,
 					   10000)) {
-			rlmTxRadioMeasurementReport(prAdapter,
-				ucBssIndex);
+			rrmTxRadioMeasurementReport(prAdapter, ucBssIndex);
 			prWMMInfo->rTriggeredTsmRptTime = 0;
 		}
 	}

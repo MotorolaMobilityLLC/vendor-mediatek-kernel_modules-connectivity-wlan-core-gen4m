@@ -476,6 +476,7 @@ MGMT_OBJS := 	$(MGMT_DIR)ais_fsm.o \
 		$(MGMT_DIR)reg_rule.o \
 		$(MGMT_DIR)rlm_obss.o \
 		$(MGMT_DIR)rlm_protection.o \
+		$(MGMT_DIR)rrm.o \
 		$(MGMT_DIR)rsn.o \
 		$(MGMT_DIR)saa_fsm.o \
 		$(MGMT_DIR)scan.o \
