@@ -77,6 +77,9 @@
 #include "nan_data_engine.h"
 #endif
 #include "radiotap.h"
+#if (CFG_SUPPORT_ICS == 1)
+#include "ics.h"
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
