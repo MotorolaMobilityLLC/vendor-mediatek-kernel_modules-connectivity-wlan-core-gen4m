@@ -50,6 +50,9 @@ static void mt7990_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
 	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx);
 
+static void mt7990_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucName, uint8_t *pucNameIdx);
+
 static uint8_t mt7990SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo, uint32_t u4SwRingIdx);
 
@@ -329,8 +332,8 @@ struct BUS_INFO mt7990_bus_info = {
 #if CFG_ENABLE_FW_DOWNLOAD
 struct FWDL_OPS_T mt7990_fw_dl_ops = {
 	.constructFirmwarePrio = mt7990_ConstructFirmwarePrio,
-	.constructPatchName = NULL,
-	.downloadPatch = NULL,
+	.constructPatchName = mt7990_ConstructPatchName,
+	.downloadPatch = wlanDownloadPatch,
 	.downloadFirmware = wlanConnacFormatDownload,
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
 	.downloadByDynMemMap = downloadImgByDynMemMap,
@@ -444,6 +447,21 @@ static void mt7990_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 					"[%u] kalSnprintf failed, ret: %d\n",
 					__LINE__, ret);
 	}
+}
+
+static void mt7990_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucName, uint8_t *pucNameIdx)
+{
+	int ret = 0;
+
+	/* Type 1. mt7990_patch_e1_hdr.bin */
+	ret = kalSnprintf(apucName[(*pucNameIdx)],
+			  CFG_FW_NAME_MAX_LEN,
+			  "mt7990_patch_e1_hdr.bin");
+	if (ret < 0 || ret >= CFG_FW_NAME_MAX_LEN)
+		DBGLOG(INIT, ERROR,
+			"[%u] kalSnprintf failed, ret: %d\n",
+			__LINE__, ret);
 }
 
 static uint8_t mt7990SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
