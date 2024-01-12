@@ -13807,6 +13807,8 @@ void kalAcquiretHifStateLock(struct GLUE_INFO *prGlueInfo,
 	unsigned long ulFlags = 0;
 	struct GL_HIF_INFO *prHifInfo;
 
+	*plFlags = 0;
+
 	if (prGlueInfo == NULL) {
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
 		return;
