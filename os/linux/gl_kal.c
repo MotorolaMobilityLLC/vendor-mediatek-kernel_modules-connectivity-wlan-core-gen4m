@@ -2457,6 +2457,16 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
+	if ((GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->eNetworkType
+			== NETWORK_TYPE_AIS) &&
+			(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)
+			->eConnectionState != MEDIA_STATE_CONNECTED)) {
+		DBGLOG(INIT, INFO,
+			"ais status is not connected, skip this frame\n");
+		dev_kfree_skb(prOrgSkb);
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
 	if (prGlueInfo->prAdapter->fgIsEnableLpdvt) {
 		DBGLOG(INIT, INFO, "LPDVT enable, skip this frame\n");
 		dev_kfree_skb(prOrgSkb);
@@ -7610,12 +7620,27 @@ void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
 	/* GPIO parameter is necessary in suspend/resume */
 	if (enable == 1) {
 		rCmdWowlanParam.ucCmd = PM_WOWLAN_REQ_START;
-		rCmdWowlanParam.ucDetectType =
-			prGlueInfo->prAdapter->rWifiVar.ucWowDetectType;
-		rCmdWowlanParam.u2FilterFlag = WOWLAN_FF_DROP_ALL |
-				       WOWLAN_FF_SEND_MAGIC_TO_HOST |
-				       WOWLAN_FF_ALLOW_1X |
-				       WOWLAN_FF_ALLOW_ARP_REQ2ME;
+		if (!prGlueInfo->prAdapter->rWifiVar.ucMobileLikeSuspend) {
+			rCmdWowlanParam.ucDetectType =
+				prGlueInfo->prAdapter->rWifiVar.ucWowDetectType;
+			rCmdWowlanParam.u2FilterFlag = WOWLAN_FF_DROP_ALL |
+					WOWLAN_FF_SEND_MAGIC_TO_HOST |
+					WOWLAN_FF_ALLOW_1X |
+					WOWLAN_FF_ALLOW_ARP_REQ2ME;
+		} else {
+			rCmdWowlanParam.ucDetectType = WOWLAN_DETECT_TYPE_ANY;
+			rCmdWowlanParam.u2FilterFlag = WOWLAN_FF_ALLOW_UC |
+					WOWLAN_FF_ALLOW_BMC |
+					WOWLAN_FF_SEND_MAGIC_TO_HOST |
+					WOWLAN_FF_ALLOW_1X |
+					WOWLAN_FF_ALLOW_ARP_REQ2ME;
+			DBGLOG(PF, INFO, "Mobile like suspend\n");
+			DBGLOG(PF, INFO,
+				"Wow DetectType[0x%x] FilterFlag[0x%x]\n",
+				rCmdWowlanParam.ucDetectType,
+				rCmdWowlanParam.u2FilterFlag);
+		}
+
 		if (!fgWake)
 			rCmdWowlanParam.ucDetectType = WOWLAN_DETECT_TYPE_NONE;
 	} else {
