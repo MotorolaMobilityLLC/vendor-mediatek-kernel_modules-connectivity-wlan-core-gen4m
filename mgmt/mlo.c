@@ -1385,6 +1385,8 @@ uint32_t mldCalculateRnrIELen(
 
 	if (!IS_MLD_BSSINFO_MULTI(mld_bssinfo))
 		return 0;
+	if (!mld_bssinfo->rBssList.u4NumElem)
+		return 0;
 
 	/* num - 1 for skipping self,
 	 * 16: Neighbor AP TBTT Offset + BSSID + short-ssid +
@@ -1411,11 +1413,13 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 
 	if (!IS_MLD_BSSINFO_MULTI(mld_bssinfo))
 		return;
+	if (!mld_bssinfo->rBssList.u4NumElem)
+		return;
 
 	rnr = (struct IE_RNR *)	((uint8_t *)prMsduInfo->prPacket +
 						prMsduInfo->u2FrameLength);
 	rnr->ucId = ELEM_ID_RNR;
-	rnr->ucLength = mld_bssinfo->rBssList.u4NumElem *
+	rnr->ucLength = (mld_bssinfo->rBssList.u4NumElem - 1) *
 		(sizeof(struct NEIGHBOR_AP_INFO_FIELD) + 16);
 	cp = rnr->aucInfoField;
 
