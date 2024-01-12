@@ -5489,6 +5489,26 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 				gprP2pRoleWdev[i]->wiphy->bands[KAL_BAND_5GHZ] =
 				NULL;
 		}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		/* Configure 6G band for registered wiphy */
+		if (prAdapter->fgIsHwSupport6G)
+			prWdev->wiphy->bands[KAL_BAND_6GHZ] = &mtk_band_6ghz;
+		else
+			prWdev->wiphy->bands[KAL_BAND_6GHZ] = NULL;
+
+		for (i = 0 ; i < KAL_P2P_NUM; i++) {
+			if (gprP2pRoleWdev[i] == NULL)
+				continue;
+
+			if (prAdapter->fgIsHwSupport6G)
+				gprP2pRoleWdev[i]->wiphy->bands[KAL_BAND_6GHZ] =
+				&mtk_band_6ghz;
+			else
+				gprP2pRoleWdev[i]->wiphy->bands[KAL_BAND_6GHZ] =
+				NULL;
+		}
+#endif
 	} while (FALSE);
 
 	if (i4Status == 0 && kalIsResetting()) {
