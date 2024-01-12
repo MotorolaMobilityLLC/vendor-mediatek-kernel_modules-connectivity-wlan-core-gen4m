@@ -17181,7 +17181,7 @@ uint32_t wlanoidSetLowLatencyMode(
 
 	/* Set low latency mode */
 	DBGLOG(OID, INFO,
-		"DPP LowLatencySet(from oid set) event:0x%x, delay bound:udp(%d) tcp(%d), phy rate:%d, priority:udp(%d) tcp(%d), protocol:%d\n",
+		"LowLatencySet(from oid set) event:0x%x, delay bound:udp(%d) tcp(%d), phy rate:%d, priority:udp(%d) tcp(%d), protocol:%d\n",
 		rParams.u4Events, rParams.u4UdpDelayBound,
 		rParams.u4TcpDelayBound, rParams.u4DataPhyRate,
 		rParams.u4UdpPriority, rParams.u4TcpPriority,

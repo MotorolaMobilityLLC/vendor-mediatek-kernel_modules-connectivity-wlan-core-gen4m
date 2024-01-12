@@ -237,7 +237,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_SEND_VOLT_INFO	= 0x5B, /* VOLT_INFO */
 	UNI_CMD_ID_PKT_OFLD		= 0x60, /* Packet Offload */
 	UNI_CMD_ID_KEEP_ALIVE		= 0x61, /* Keep alive */
-	UNI_CMD_ID_DPP_LOW_LATENCY_MODE = 0x62, /* DPP Low Latency Mode */
+	UNI_CMD_ID_LOW_LATENCY_MODE     = 0x62, /* Low Latency Mode */
 	UNI_CMD_ID_GAMING_MODE          = 0x63, /* Gaming Mode */
 	UNI_CMD_ID_MDNS_RECORD		= 0x64, /* Keep alive */
 	UNI_CMD_ID_LP_DBG_CTRL		= 0x71, /* LP */
@@ -4434,49 +4434,6 @@ struct UNI_CMD_MDNS_RECORDE_SET {
 
 };
 #endif
-#if CFG_SUPPORT_LOWLATENCY_MODE
-/* DPP Low Latency Mode command (0x62) */
-struct UNI_CMD_DPP_LOW_LATENCY_MODE {
-	/* fixed field */
-	uint8_t ucReserved[4];
-
-	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
-	*
-	*   TAG                                | ID   | structure
-	*   -----------------------------------|------|--------------
-	*   UNI_CMD_DPP_LOW_LATENCY_MODE_SET   | 0x0  | UNI_CMD_KEEP_ALIVE_SET_T
-	*/
-} __KAL_ATTRIB_PACKED__;
-
-/* Get DPP Low Latency Mode command TLV List */
-enum ENUM_UNI_CMD_DPP_LOW_LATENCY_MODE_TAG {
-	UNI_CMD_DPP_LOWLATENCY_MODE_PROCESS = 0,
-	UNI_CMD_DPP_LOWLATENCY_MODE_MAX_NUM
-};
-
-/**
- * This structure is used for UNI_CMD_DPP_LOWLATENCY_MODE_PROCESS(0x00)
- * of UNI_CMD_DPP_LOW_LATENCY_MODE command (0x62) to calculate MIC
- * @version Supported from ver:1.0.0.0
- *
- * @param[in] u2Tag                   should be 0x00
- * @param[in] u2Length                the length of this TLV, should be 8
- * @param[in] fgEnable
- * @param[in] fgTxDupDetect
- * @param[in] fgTxDupCertQuery
- * @param[in] aucReserved[1]
- */
-/* DPP_LOW_LATENCY_MODE (Tag0) */
-struct UNI_CMD_DPP_LOW_LATENCY_MODE_PROCESS_T {
-	uint16_t u2Tag;
-	uint16_t u2Length;
-	uint8_t  fgEnable;
-	uint8_t fgTxDupDetect;
-	uint8_t fgTxDupCertQuery;
-	uint8_t aucReserved[1];
-} __KAL_ATTRIB_PACKED__;
-#endif
 
 /* Gaming Mode command (0x63) */
 struct UNI_CMD_GAMING_MODE {
@@ -7565,11 +7522,6 @@ uint32_t nicUniCmdMdnsRecorde(struct ADAPTER *ad,
 #endif
 uint32_t nicUniCmdLpDbgCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
-
-#if CFG_SUPPORT_LOWLATENCY_MODE
-uint32_t nicUniDPPLowLatencyMode(struct ADAPTER *ad,
-		struct WIFI_UNI_SETQUERY_INFO *info);
-#endif
 
 uint32_t nicUniCmdGamingMode(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);

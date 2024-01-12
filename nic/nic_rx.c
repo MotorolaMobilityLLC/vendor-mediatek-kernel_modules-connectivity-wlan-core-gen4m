@@ -182,9 +182,6 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	{EVENT_ID_RDD_OPMODE_CHANGE, cnmRddOpmodeEventHandler},
 #endif
-#if CFG_SUPPORT_LOWLATENCY_MODE
-	{EVENT_ID_LOW_LATENCY_INFO, nicEventUpdateLowLatencyInfoStatus},
-#endif
 #if CFG_FAST_PATH_SUPPORT
 	{EVENT_ID_FAST_PATH, fpEventHandler},
 #endif
