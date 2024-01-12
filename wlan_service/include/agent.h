@@ -14,7 +14,7 @@
 /*****************************************************************************
  *	Macro
  *****************************************************************************/
-#define AGENT_CFG_ARGV_MAX 20
+#define AGENT_CFG_ARGV_MAX 35
 #define SERV_TEST_ON(_config) ((((_config)->op_mode) & \
 	OP_MODE_START) == OP_MODE_START)
 
