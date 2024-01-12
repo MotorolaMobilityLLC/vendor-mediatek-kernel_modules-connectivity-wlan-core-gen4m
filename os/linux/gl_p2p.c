@@ -1511,12 +1511,17 @@ void mtk_p2p_wext_set_Multicastlist(P_GLUE_INFO_T prGlueInfo)
 		struct netdev_hw_addr *ha;
 		UINT_32 i = 0;
 
+		/* Avoid race condition with kernel net subsystem */
+		netif_addr_lock_bh(prDev);
+
 		netdev_for_each_mc_addr(ha, prDev) {
 			if ((i < MAX_NUM_GROUP_ADDR) && (ha != NULL)) {
 				COPY_MAC_ADDR(&(prGlueInfo->prP2PDevInfo->aucMCAddrList[i]), GET_ADDR(ha));
 				i++;
 			}
 		}
+
+		netif_addr_unlock_bh(prDev);
 
 		DBGLOG(P2P, TRACE, "SEt Multicast Address List\n");
 
