@@ -3096,9 +3096,9 @@ void p2pRoleFsmRunEventJoinComplete(struct ADAPTER *prAdapter,
 	/* Check SEQ NUM */
 	if (prJoinCompMsg->ucSeqNum == prJoinInfo->ucSeqNumOfReqMsg) {
 		ASSERT(prSetupStaRec == prJoinInfo->prTargetStaRec);
-		prJoinInfo->fgIsJoinComplete = TRUE;
 
 		if (prJoinCompMsg->rJoinStatus == WLAN_STATUS_SUCCESS) {
+			prJoinInfo->fgIsJoinSuccess = TRUE;
 			p2pRoleFsmUpdateBssInfoForJOIN(prAdapter,
 				prP2pRoleFsmInfo,
 				prAssocRspSwRfb,

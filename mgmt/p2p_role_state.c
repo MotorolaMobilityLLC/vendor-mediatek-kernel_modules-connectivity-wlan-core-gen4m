@@ -368,7 +368,7 @@ p2pRoleStateAbort_GC_JOIN(struct ADAPTER *prAdapter,
 		struct P2P_JOIN_INFO *prJoinInfo,
 		enum ENUM_P2P_ROLE_STATE eNextState)
 {
-	if (prJoinInfo->fgIsJoinComplete == FALSE) {
+	if (prJoinInfo->fgIsJoinSuccess != TRUE) {
 		uint8_t i;
 
 		/* Reset the flag to clear target BSS state */
