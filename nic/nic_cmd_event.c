@@ -4244,6 +4244,10 @@ void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
 		/*Record current coex mode to Ais BssInfo*/
 		prBssInfo->eCoexMode = eCoexMode;
 	}
+
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+	p2pFuncSwitchSapChannel(prAdapter);
+#endif
 }
 
 
