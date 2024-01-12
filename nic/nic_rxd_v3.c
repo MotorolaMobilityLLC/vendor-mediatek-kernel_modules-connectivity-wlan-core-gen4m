@@ -503,7 +503,6 @@ void nic_rxd_v3_check_wakeup_reason(
 	struct HW_MAC_CONNAC3X_RX_DESC *prRxStatus;
 	uint16_t u2PktLen = 0;
 	uint32_t u4HeaderOffset;
-	u_int8_t fgDrop = FALSE;
 
 	prChipInfo = prAdapter->chip_info;
 
@@ -511,18 +510,15 @@ void nic_rxd_v3_check_wakeup_reason(
 	if (!prRxStatus)
 		return;
 
-	fgDrop = nic_rxd_v3_sanity_check(prAdapter, prSwRfb);
-	if (fgDrop) {
-		DBGLOG(RX, WARN,
-			"%s: sanity check failed. drop!\n", __func__);
-		return;
-	}
-
 	prSwRfb->ucGroupVLD =
 		(uint8_t) HAL_MAC_CONNAC3X_RX_STATUS_GET_GROUP_VLD(prRxStatus);
 
 	switch (prSwRfb->ucPacketType) {
 	case RX_PKT_TYPE_SW_DEFINED:
+
+	prSwRfb->fgHdrTran = nic_rxd_v3_get_HdrTrans(prRxStatus);
+	prSwRfb->ucOFLD = nic_rxd_v3_get_ofld(prRxStatus);
+
 	if (prSwRfb->ucOFLD || prSwRfb->fgHdrTran) {
 		DBGLOG(RX, INFO, "Need to treat as data frame.\n");
 		/*
