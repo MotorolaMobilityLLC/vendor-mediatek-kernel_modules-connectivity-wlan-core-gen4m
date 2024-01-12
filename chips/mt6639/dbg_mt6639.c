@@ -1817,8 +1817,7 @@ void mt6639_dumpCbtopReg(struct ADAPTER *ad)
 	uint32_t u4Value = 0;
 
 	DBGLOG(HAL, INFO, "Start mt6639_dumpCbtopReg.\n");
-	if (fgIsBusAccessFailed) {
-		DBGLOG(HAL, INFO, "PCIE abnormal.\n");
+	if (fgIsBusAccessFailed || fgIsMcuOff) {
 
 		/* 1. dump 0x18023C00[31:0] -> 0x7c023c00 */
 		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
