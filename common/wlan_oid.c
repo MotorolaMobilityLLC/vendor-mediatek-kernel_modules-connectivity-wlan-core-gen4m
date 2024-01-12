@@ -5114,6 +5114,7 @@ wlanoidTxBfAction(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 	WLAN_STATUS rWlanStatus = WLAN_STATUS_SUCCESS;
 	BOOLEAN fgSetQuery, fgNeedResp;
 	UINT_32 u4TxBfCmdId;
+	UINT_8  ucIdx;
 
 	DEBUGFUNC("wlanoidTxBfAction");
 
@@ -5140,13 +5141,18 @@ wlanoidTxBfAction(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4S
 		fgNeedResp = TRUE;
 	}
 
+	for (ucIdx = 0; ucIdx < ARRAY_SIZE(rTxBfCmdDoneHandler); ucIdx++) {
+		if (u4TxBfCmdId == rTxBfCmdDoneHandler[ucIdx].u4TxBfCmdId)
+			break;
+	}
+
 	rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
 					     CMD_ID_LAYER_0_EXT_MAGIC_NUM,
 					     EXT_CMD_ID_BF_ACTION,
 					     fgSetQuery,
 					     fgNeedResp,
 					     TRUE,
-					     rTxBfCmdDoneHandler[u4TxBfCmdId].pFunc,
+					     rTxBfCmdDoneHandler[ucIdx].pFunc,
 					     nicOidCmdTimeoutCommon,
 					     sizeof(CMD_TXBF_ACTION_T),
 					     (PUINT_8) &rCmdTxBfActionInfo, pvSetBuffer, u4SetBufferLen);
