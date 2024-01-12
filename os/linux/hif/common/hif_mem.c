@@ -206,8 +206,8 @@ static bool halAllocRsvMemAlign(uint32_t u4Size, struct HIF_MEM *prMem,
 	if (u4Align < WFDMA_MEMORY_ALIGNMENT)
 		u4Align = WFDMA_MEMORY_ALIGNMENT;
 
-	if (u4Size & (u4Align - 1))
-		u4ExtSize = u4Align - (u4Size & (u4Align - 1));
+	if (grMem.u4Offset & (u4Align - 1))
+		u4ExtSize = u4Align - (grMem.u4Offset & (u4Align - 1));
 	u4Size += u4ExtSize;
 
 	if ((grMem.u4Offset + u4Size) >= gWifiRsvMemSize) {

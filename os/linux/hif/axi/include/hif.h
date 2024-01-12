@@ -138,13 +138,14 @@ struct GL_HIF_INFO {
 	/* Shared memory for RX descriptors */
 	struct RTMP_DMABUF RxDescRing[NUM_OF_RX_RING];
 	struct RTMP_RX_RING RxRing[NUM_OF_RX_RING];
-	struct RTMP_DMABUF rRingDmy;
-	struct RTMP_DMABUF rRingIdx;
-	struct RTMP_DMABUF rRingIntSta;
-#if CFG_ENABLE_MAWD_MD_RING
-	struct RTMP_DMABUF rMdRingIdx;
-	struct RTMP_DMABUF rMdRingIntSta;
-#endif /* CFG_ENABLE_MAWD_MD_RING */
+#if CFG_MTK_WIFI_WFDMA_WB
+	struct RTMP_DMABUF rRingDmyRd;
+	struct RTMP_DMABUF rRingDmyWr;
+	struct RTMP_DMABUF rRingIdx0;
+	struct RTMP_DMABUF rRingIntSta0;
+	struct RTMP_DMABUF rRingIdx1;
+	struct RTMP_DMABUF rRingIntSta1;
+#endif /* CFG_MTK_WIFI_WFDMA_WB */
 	uint32_t u4RxDataRingSize;
 	uint32_t u4RxEvtRingSize;
 

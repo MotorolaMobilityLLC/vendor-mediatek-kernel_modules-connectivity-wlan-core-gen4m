@@ -718,6 +718,12 @@ else
     ccflags-y += -DCFG_MTK_WIFI_PLAT_ALPS=0
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_WFDMA_WB), y)
+    ccflags-y += -DCFG_MTK_WIFI_WFDMA_WB=1
+else
+    ccflags-y += -DCFG_MTK_WIFI_WFDMA_WB=0
+endif
+
 ifeq ($(CONFIG_SUPPORT_WIFI_WFDMA_TX_RING_BK_RS), y)
     ccflags-y += -DCFG_MTK_WIFI_WFDMA_TX_RING_BK_RS=1
 else

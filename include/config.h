@@ -2219,6 +2219,10 @@
 #define CFG_MTK_WIFI_WFDMA_BK_RS		0
 #endif
 
+#ifndef CFG_MTK_WIFI_WFDMA_WB
+#define CFG_MTK_WIFI_WFDMA_WB			0
+#endif
+
 #ifndef CFG_SUPPORT_TSF_SYNC
 #define CFG_SUPPORT_TSF_SYNC    0
 #endif
