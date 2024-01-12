@@ -126,7 +126,10 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_MLO_CAP,
 				nicCfgChipCapMLO),
 #endif
-
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_STATS_REG_MONTR_EMI_OFFSET,
+				nicCfgChipCapStatsRegMontrEmiOffset),
+#endif
 };
 
 /*******************************************************************************
@@ -2934,6 +2937,69 @@ uint32_t nicCmdEventLinkStatsEmiOffset(struct ADAPTER *prAdapter,
 	DBGLOG(INIT, INFO, "EMI offset=%x, offset2=%x (%u)",
 			offset, offset2, size2);
 #endif
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
+uint32_t nicCfgChipCapStatsRegMontrEmiOffset(
+	struct ADAPTER *prAdapter,
+	uint8_t *pucEventBuf)
+{
+	struct CAP_STATS_REG_MONTR_EMI_OFFSET *prCap =
+		(struct CAP_STATS_REG_MONTR_EMI_OFFSET *)pucEventBuf;
+	uint32_t offset = prCap->u4EmiOffset;
+	uint32_t u4HostOffsetBasic =
+		OFFSET_OF(struct STATS_REG_STAT_FW_REPORT, rBasicStatistics);
+	uint32_t u4HostOffsetLq =
+		OFFSET_OF(struct STATS_REG_STAT_FW_REPORT, rLq);
+	uint32_t u4HostOffsetStaStats =
+		OFFSET_OF(struct STATS_REG_STAT_FW_REPORT, rStaStats);
+	uint32_t u4HostOffsetLlsStatus =
+		OFFSET_OF(struct STATS_REG_STAT_FW_REPORT, llsUpdateStatus);
+
+	if (!offset) {
+		DBGLOG(INIT, WARN, "NULL offset: offset=%p", offset);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	DBGLOG(INIT, INFO,
+			"Offset FW:%u/%u/%u/%u host:%u/%u/%u/%u",
+			prCap->u4OffsetOfBasic,
+			prCap->u4OffsetOfLq,
+			prCap->u4OffsetOfStaStats,
+			prCap->u4OffsetOfLlsStatus,
+			u4HostOffsetBasic,
+			u4HostOffsetLq,
+			u4HostOffsetStaStats,
+			u4HostOffsetLlsStatus);
+
+	if (prCap->u4OffsetOfBasic != u4HostOffsetBasic ||
+	    prCap->u4OffsetOfLq != u4HostOffsetLq ||
+	    prCap->u4OffsetOfStaStats != u4HostOffsetStaStats ||
+	    prCap->u4OffsetOfLlsStatus != u4HostOffsetLlsStatus) {
+		DBGLOG(INIT, WARN,
+			"Offset not match(FW):%u/%u/%u/%u host:%u/%u/%u/%u",
+			prCap->u4OffsetOfBasic,
+			prCap->u4OffsetOfLq,
+			prCap->u4OffsetOfStaStats,
+			prCap->u4OffsetOfLlsStatus,
+			u4HostOffsetBasic,
+			u4HostOffsetLq,
+			u4HostOffsetStaStats,
+			u4HostOffsetLlsStatus);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prAdapter->prStatsAllRegStat =
+		emi_mem_get_vir_base(prAdapter->chip_info) +
+		emi_mem_offset_convert(offset);
+	prAdapter->u4RegStatLastUpdateMs = 0;
+
+	DBGLOG(INIT, INFO, "offset:%x addr:%p\n",
+	       offset,
+	       prAdapter->prStatsAllRegStat);
+
 	return WLAN_STATUS_SUCCESS;
 }
 #endif

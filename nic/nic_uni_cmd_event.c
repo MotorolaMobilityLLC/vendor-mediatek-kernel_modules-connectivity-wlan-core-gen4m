@@ -8520,10 +8520,157 @@ struct STA_RECORD *findStarecByWtblIdx(struct ADAPTER
 	return prStaRec;
 }
 
+void nicUniEvtBasicStatToLegacy(
+	struct UNI_EVENT_BASIC_STATISTICS *prUniEvt,
+	struct EVENT_STATISTICS *prLegacy
+)
+{
+	kalMemSet(prLegacy, 0, sizeof(*prLegacy));
+	prLegacy->rTransmittedFragmentCount.QuadPart =
+		prUniEvt->u8TransmittedFragmentCount;
+	prLegacy->rMulticastTransmittedFrameCount.QuadPart =
+		prUniEvt->u8MulticastTransmittedFrameCount;
+	prLegacy->rFailedCount.QuadPart =
+		prUniEvt->u8FailedCount;
+	prLegacy->rRetryCount.QuadPart =
+		prUniEvt->u8RetryCount;
+	prLegacy->rMultipleRetryCount.QuadPart =
+		prUniEvt->u8MultipleRetryCount;
+	prLegacy->rRTSSuccessCount.QuadPart =
+		prUniEvt->u8RTSSuccessCount;
+	prLegacy->rRTSFailureCount.QuadPart =
+		prUniEvt->u8RTSFailureCount;
+	prLegacy->rACKFailureCount.QuadPart =
+		prUniEvt->u8ACKFailureCount;
+	prLegacy->rFrameDuplicateCount.QuadPart =
+		prUniEvt->u8FrameDuplicateCount;
+	prLegacy->rReceivedFragmentCount.QuadPart =
+		prUniEvt->u8ReceivedFragmentCount;
+	prLegacy->rMulticastReceivedFrameCount.QuadPart =
+		prUniEvt->u8MulticastReceivedFrameCount;
+	prLegacy->rFCSErrorCount.QuadPart = prUniEvt->u8FCSErrorCount;
+	prLegacy->rMdrdyCnt.QuadPart = prUniEvt->u8MdrdyCnt;
+	prLegacy->rChnlIdleCnt.QuadPart = prUniEvt->u8ChnlIdleCnt;
+	prLegacy->u4HwMacAwakeDuration = prUniEvt->u4HwMacAwakeDuration;
+}
+
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
+void nicCollectRegStatFromEmi(struct ADAPTER
+	*prAdapter
+)
+{
+	struct UNI_EVENT_BASIC_STATISTICS *prBasicUniEvt;
+	struct PARAM_802_11_STATISTICS_STRUCT *prStat;
+	struct EVENT_STATISTICS legacy = {0};
+	struct UNI_EVENT_LINK_QUALITY rUniEvtLQ;
+	struct EVENT_LINK_QUALITY lqLegacy = {0};
+	struct EVENT_STA_STATISTICS rStaStatsLegacy;
+	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
+	struct STA_RECORD *prStaRec = NULL;
+	uint8_t i, ucBssIdx;
+	uint32_t u4EmiUpdateMs = 0;
+
+	kalMemCopyFromIo(&u4EmiUpdateMs,
+			&prAdapter->prStatsAllRegStat->u4LastUpdateTime,
+			sizeof(uint32_t));
+	prAdapter->u4RegStatLastUpdateMs = u4EmiUpdateMs;
+	DBGLOG(REQ, TRACE, "EMI update time:%u\n", u4EmiUpdateMs);
+
+	prBasicUniEvt = kalMemAlloc(
+		sizeof(struct UNI_EVENT_BASIC_STATISTICS),
+		VIR_MEM_TYPE);
+
+	if (!prBasicUniEvt)
+		goto exit;
+	/* basic statistics */
+	prStat = &(prAdapter->rStat);
+	kalMemCopyFromIo(prBasicUniEvt,
+		&prAdapter->prStatsAllRegStat->rBasicStatistics,
+		sizeof(*prBasicUniEvt));
+
+	nicUniEvtBasicStatToLegacy(prBasicUniEvt, &legacy);
+	nicUpdateStatistics(prAdapter, prStat, &legacy);
+
+	kalMemFree(prBasicUniEvt, VIR_MEM_TYPE,
+		sizeof(struct UNI_EVENT_BASIC_STATISTICS));
+
+	/* link quality */
+	kalMemCopyFromIo(&rUniEvtLQ,
+		&prAdapter->prStatsAllRegStat->rLq,
+		sizeof(rUniEvtLQ));
+
+#define TEMP_LOG_TEMPLATE \
+	"rLq[%u] cRssi(0x%px):%d cLinkQuality(0x%px):%d"\
+	" u2LinkSpeed(0x%px):%u ucMediumBusyPercentage(0x%px):%u"\
+	" ucIsLQ0Rdy(0x%px):%d\n"
+
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		struct LINK_SPEED_EX_ *prLq;
+
+		DBGLOG(NIC, TRACE,
+			TEMP_LOG_TEMPLATE, i,
+			&rUniEvtLQ.rLq[i].cRssi,
+				rUniEvtLQ.rLq[i].cRssi,
+			&rUniEvtLQ.rLq[i].cLinkQuality,
+				rUniEvtLQ.rLq[i].cLinkQuality,
+			&rUniEvtLQ.rLq[i].u2LinkSpeed,
+				rUniEvtLQ.rLq[i].u2LinkSpeed,
+			&rUniEvtLQ.rLq[i].ucMediumBusyPercentage,
+				rUniEvtLQ.rLq[i].ucMediumBusyPercentage,
+			&rUniEvtLQ.rLq[i].ucIsLQ0Rdy,
+				rUniEvtLQ.rLq[i].ucIsLQ0Rdy);
+
+		if (!rUniEvtLQ.rLq[i].ucIsLQ0Rdy)
+			continue;
+		lqLegacy.rLq[i].cRssi = rUniEvtLQ.rLq[i].cRssi;
+		lqLegacy.rLq[i].cLinkQuality =
+			rUniEvtLQ.rLq[i].cLinkQuality;
+		lqLegacy.rLq[i].u2LinkSpeed =
+			rUniEvtLQ.rLq[i].u2LinkSpeed;
+		lqLegacy.rLq[i].ucMediumBusyPercentage =
+			rUniEvtLQ.rLq[i].ucMediumBusyPercentage;
+		lqLegacy.rLq[i].ucIsLQ0Rdy =
+			rUniEvtLQ.rLq[i].ucIsLQ0Rdy;
+		nicUpdateLinkQuality(prAdapter, i, &lqLegacy);
+		prLq = &prAdapter->rLinkQuality.rLq[i];
+
+		DBGLOG(NIC, INFO,
+			"ucBssIdx=%d, TxRate=%u, RxRate=%u signal=%d\n",
+			i,
+			prLq->u2TxLinkSpeed,
+			prLq->u2RxLinkSpeed,
+			prLq->cRssi);
+	}
+
+	/* sta Stats */
+	for (i = 0; i < REG_STATS_STA_MAX_NUM; i++) {
+		kalMemCopyFromIo(&rStaStatsLegacy,
+			&prAdapter->prStatsAllRegStat->rStaStats[i],
+			sizeof(rStaStatsLegacy));
+		if (rStaStatsLegacy.ucVersion != 1)
+			continue;
+		prStaRec = findStarecByWtblIdx(prAdapter,
+			rStaStatsLegacy.ucStaRecIdx);
+		if (!prStaRec)
+			continue;
+		ucBssIdx = prStaRec->ucBssIndex;
+		prQueryStaStatistics =
+			&prAdapter->rQueryStaStatistics[ucBssIdx];
+		nicUpdateStaStats(prAdapter,
+			&rStaStatsLegacy, prQueryStaStatistics,
+			prStaRec->ucIndex);
+		DBGLOG(REQ, TRACE, "update staStats[%u] wlanIdx(%u)\n",
+			i, rStaStatsLegacy.ucStaRecIdx);
+	}
+exit:
+	DBGLOG(REQ, LOUD, "%s done\n", __func__);
+}
+#endif
+
 void nicUniEventAllStatsOneCmd(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
-
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 0)
 	/* update to cache directly */
 	/* linkQuality: prAdapter->rLinkQuality.rLq[ucBssIndex] */
 	/* staStats: prGlueInfo->prAdapter->rQueryStaStatistics[ucBssIndex] */
@@ -8549,31 +8696,7 @@ void nicUniEventAllStatsOneCmd(struct ADAPTER
 
 			prStat = &(prAdapter->rStat);
 
-			kalMemSet(&legacy, 0, sizeof(legacy));
-			legacy.rTransmittedFragmentCount.QuadPart =
-				tlv->u8TransmittedFragmentCount;
-			legacy.rMulticastTransmittedFrameCount.QuadPart =
-				tlv->u8MulticastTransmittedFrameCount;
-			legacy.rFailedCount.QuadPart = tlv->u8FailedCount;
-			legacy.rRetryCount.QuadPart = tlv->u8RetryCount;
-			legacy.rMultipleRetryCount.QuadPart =
-				tlv->u8MultipleRetryCount;
-			legacy.rRTSSuccessCount.QuadPart =
-				tlv->u8RTSSuccessCount;
-			legacy.rRTSFailureCount.QuadPart =
-				tlv->u8RTSFailureCount;
-			legacy.rACKFailureCount.QuadPart =
-				tlv->u8ACKFailureCount;
-			legacy.rFrameDuplicateCount.QuadPart =
-				tlv->u8FrameDuplicateCount;
-			legacy.rReceivedFragmentCount.QuadPart =
-				tlv->u8ReceivedFragmentCount;
-			legacy.rMulticastReceivedFrameCount.QuadPart =
-				tlv->u8MulticastReceivedFrameCount;
-			legacy.rFCSErrorCount.QuadPart = tlv->u8FCSErrorCount;
-			legacy.rMdrdyCnt.QuadPart = tlv->u8MdrdyCnt;
-			legacy.rChnlIdleCnt.QuadPart = tlv->u8ChnlIdleCnt;
-			legacy.u4HwMacAwakeDuration = tlv->u4HwMacAwakeDuration;
+			nicUniEvtBasicStatToLegacy(tlv, &legacy);
 
 			DBGLOG(RX, TRACE,
 				"tag=%u Fail:%lu Retry:%lu RtsF:%lu AckF:%lu Idle:%lu\n",
@@ -8659,6 +8782,9 @@ void nicUniEventAllStatsOneCmd(struct ADAPTER
 			break;
 		}
 	}
+#else
+	nicCollectRegStatFromEmi(prAdapter);
+#endif
 
 	if (prCmdInfo->fgIsOid)
 		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,

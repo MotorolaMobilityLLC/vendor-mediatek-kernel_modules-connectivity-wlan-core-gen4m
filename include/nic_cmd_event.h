@@ -1125,6 +1125,9 @@ enum NIC_CAPABILITY_V2_TAG {
 #endif
 #endif
 	TAG_CAP_MLO_CAP = 0x22,
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
+	TAG_CAP_STATS_REG_MONTR_EMI_OFFSET = 0x23,
+#endif
 	TAG_CAP_TOTAL
 };
 
@@ -1381,6 +1384,15 @@ struct CAP_LLS_DATA_EMI_OFFSET {
 	uint32_t u4NumTxPowerLevels;
 };
 
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
+struct CAP_STATS_REG_MONTR_EMI_OFFSET {
+	uint32_t u4EmiOffset;
+	uint32_t u4OffsetOfBasic;
+	uint32_t u4OffsetOfLq;
+	uint32_t u4OffsetOfStaStats;
+	uint32_t u4OffsetOfLlsStatus;
+};
+#endif
 
 #define EFUSE_SECTION_TABLE_SIZE        (10)   /* It should not be changed. */
 
@@ -4380,6 +4392,12 @@ uint32_t nicCmdEventCasanLoadType(struct ADAPTER *prAdapter,
 uint32_t nicCfgChipCapRedlInfo(struct ADAPTER *prAdapter,
 			       uint8_t *pucEventBuf);
 #endif
+#endif
+
+#if CFG_SUPPORT_REG_STAT_FROM_EMI
+uint32_t nicCfgChipCapStatsRegMontrEmiOffset(
+		struct ADAPTER *prAdapter,
+		uint8_t *pucEventBuf);
 #endif
 
 uint32_t nicCmdEventHostSuspendInfo(struct ADAPTER *prAdapter,

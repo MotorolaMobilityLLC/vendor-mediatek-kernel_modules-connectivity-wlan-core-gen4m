@@ -5185,6 +5185,10 @@ void nicUpdateLinkQuality(struct ADAPTER *prAdapter,
 	}
 
 	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
+	DBGLOG(NIC, TRACE, "bss:%u LRValid:%u updateTime:%u\n",
+		ucBssIndex,
+		prLq->fgIsLinkRateValid,
+		prLq->rLinkRateUpdateTime);
 	switch (GET_BSS_INFO_BY_INDEX(prAdapter,
 				      ucBssIndex)->eNetworkType) {
 	case NETWORK_TYPE_AIS:
@@ -5465,6 +5469,11 @@ void nicUpdateLinkSpeed(struct ADAPTER *prAdapter,
 	prAdapter->rLinkQuality.rLq[ucBssIndex].fgIsLinkRateValid = TRUE;
 	prAdapter->rLinkQuality.rLq[ucBssIndex].rLinkRateUpdateTime
 		= kalGetTimeTick();
+	DBGLOG(NIC, TRACE, "bss:%u linkspeed:%u LRValid:%u updateTime:%u\n",
+		ucBssIndex,
+		prAdapter->rLinkQuality.rLq[ucBssIndex].u2TxLinkSpeed,
+		prAdapter->rLinkQuality.rLq[ucBssIndex].fgIsLinkRateValid,
+		prAdapter->rLinkQuality.rLq[ucBssIndex].rLinkRateUpdateTime);
 }
 
 #if CFG_SUPPORT_RDD_TEST_MODE

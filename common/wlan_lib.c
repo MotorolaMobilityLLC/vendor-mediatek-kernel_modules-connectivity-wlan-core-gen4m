@@ -6371,26 +6371,123 @@ wlanQueryStatistics(struct ADAPTER *prAdapter,
 } /* wlanQueryStatistics */
 
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
-uint32_t
-wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
-		       void *pvQueryBuffer, uint32_t u4QueryBufferLen,
-		       uint32_t *pu4QueryInfoLen, uint8_t fgIsOid)
+static uint32_t sendStatsUniCmd(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen, uint8_t fgIsOid,
+		uint32_t cmd_len)
 {
 	uint32_t rResult = WLAN_STATUS_SUCCESS;
-	struct STA_RECORD *prStaRec, *prTempStaRec;
-	uint8_t ucStaRecIdx;
-	uint8_t i, ucBssIndex;
-	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
 	struct UNI_CMD_GET_STATISTICS *uni_cmd;
 	struct UNI_CMD_BASIC_STATISTICS *basicStatsTag;
 	struct UNI_CMD_LINK_QUALITY *lQTag;
 	struct UNI_CMD_STA_STATISTICS *staStatsTag;
 	struct UNI_CMD_LINK_LAYER_STATS *llsTag;
 	uint8_t *buf;
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec, *prTempStaRec;
+	uint8_t i, ucStaRecIdx;
+	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
+
+	uni_cmd = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_GET_STATISTICS ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* prepare unified cmd tags */
+	buf = uni_cmd->aucTlvBuffer;
+
+	/* UNI_CMD_GET_STATISTICS_TAG_BASIC */
+	basicStatsTag = (struct UNI_CMD_BASIC_STATISTICS *) buf;
+	basicStatsTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_BASIC;
+	basicStatsTag->u2Length = sizeof(*basicStatsTag);
+	buf += sizeof(*basicStatsTag);
+
+	/* UNI_CMD_GET_STATISTICS_TAG_LINK_QUALITY */
+	lQTag = (struct UNI_CMD_LINK_QUALITY *) buf;
+	lQTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_LINK_QUALITY;
+	lQTag->u2Length = sizeof(*lQTag);
+	buf += sizeof(*lQTag);
+
+	/* UNI_CMD_GET_STATISTICS_TAG_STA for connected AIS BSS */
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		prStaRec = NULL;
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+		if (!prBssInfo || !IS_BSS_AIS(prBssInfo) ||
+			kalGetMediaStateIndicated(prAdapter->prGlueInfo,
+				i) != MEDIA_STATE_CONNECTED)
+			continue;
+
+		prQueryStaStatistics =
+			&prAdapter->rQueryStaStatistics[i];
+		for (ucStaRecIdx = 0; ucStaRecIdx < CFG_STA_REC_NUM;
+			ucStaRecIdx++) {
+			prTempStaRec = &(
+				prAdapter->arStaRec[ucStaRecIdx]);
+			if (!prTempStaRec->fgIsValid ||
+			    !prTempStaRec->fgIsInUse ||
+			    UNEQUAL_MAC_ADDR(prTempStaRec->aucMacAddr,
+				prQueryStaStatistics->aucMacAddr))
+				continue;
+
+			prStaRec = prTempStaRec;
+			break;
+
+		}
+		if (!prStaRec)
+			continue;
+
+		staStatsTag = (struct UNI_CMD_STA_STATISTICS *) buf;
+		staStatsTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_STA;
+		staStatsTag->u2Length = sizeof(*staStatsTag);
+		/* FW starec idx is WTBL idx */
+		staStatsTag->u1Index = prStaRec->ucWlanIndex;
+		staStatsTag->ucReadClear =
+			prQueryStaStatistics->ucReadClear;
+		staStatsTag->ucLlsReadClear =
+			prQueryStaStatistics->ucLlsReadClear;
+		staStatsTag->ucResetCounter =
+			prQueryStaStatistics->ucResetCounter;
+		buf += sizeof(*staStatsTag);
+	}
+
+	/* UNI_CMD_GET_STATISTICS_TAG_LINK_LAYER_STATS */
+	llsTag = (struct UNI_CMD_LINK_LAYER_STATS *) buf;
+	llsTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_LINK_LAYER_STATS;
+	llsTag->u2Length = sizeof(*llsTag);
+
+	rResult = wlanSendSetQueryUniCmd(prAdapter,
+			UNI_CMD_ID_GET_STATISTICS,
+			FALSE,
+			TRUE,
+			fgIsOid,
+			nicUniEventAllStatsOneCmd,
+			nicUniCmdTimeoutCommon,
+			cmd_len,
+			(void *)uni_cmd,
+			pvQueryBuffer, u4QueryBufferLen);
+	DBGLOG(REQ, TRACE, "rResult=%u, pvQueryBuffer=%p",
+			rResult, pvQueryBuffer);
+	cnmMemFree(prAdapter, uni_cmd);
+	return rResult;
+}
+
+uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen, uint8_t fgIsOid)
+{
+	uint32_t rResult = WLAN_STATUS_SUCCESS;
+	uint8_t i, ucBssIndex;
+	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
 	uint32_t max_cmd_len;
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucConnBss[MAX_BSSID_NUM] = {0};
 	struct LINK_SPEED_EX_ *prLq;
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
+	uint32_t u4EmiUpdateMs = 0;
+#endif
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 	if (unlikely(ucBssIndex >= BSSID_NUM))
@@ -6411,7 +6508,7 @@ wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 	if (prLq->fgIsLinkRateValid &&
 		!CHECK_FOR_TIMEOUT(kalGetTimeTick(),
 			prAdapter->rAllStatsUpdateTime,
-			SEC_TO_MSEC(CFG_LQ_MONITOR_FREQUENCY)))
+			SEC_TO_SYSTIME(CFG_LQ_MONITOR_FREQUENCY)))
 		return rResult;
 
 	prAdapter->rAllStatsUpdateTime = kalGetTimeTick();
@@ -6442,99 +6539,37 @@ wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 		max_cmd_len += sizeof(struct UNI_CMD_STA_STATISTICS);
 	}
 
-
-	DBGLOG(REQ, TRACE, "Call pvQueryBuffer=%p",
-			pvQueryBuffer);
-
-	uni_cmd = (struct UNI_CMD_GET_STATISTICS *) cnmMemAlloc(
-			prAdapter,
-			RAM_TYPE_MSG, max_cmd_len);
-	if (!uni_cmd) {
-		DBGLOG(INIT, ERROR,
-		       "Allocate UNI_CMD_GET_STATISTICS ==> FAILED.\n");
+	/* send cmd if emi doesnot update */
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
+	if (!prAdapter->prStatsAllRegStat) {
+		DBGLOG(REQ, WARN, "reg stat emi mapping not done.\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
-	/* prepare unified cmd tags */
-	buf = uni_cmd->aucTlvBuffer;
-
-	/* UNI_CMD_GET_STATISTICS_TAG_BASIC */
-	basicStatsTag = (struct UNI_CMD_BASIC_STATISTICS *) buf;
-	basicStatsTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_BASIC;
-	basicStatsTag->u2Length = sizeof(*basicStatsTag);
-	buf += sizeof(*basicStatsTag);
-
-	/* UNI_CMD_GET_STATISTICS_TAG_LINK_QUALITY */
-	lQTag = (struct UNI_CMD_LINK_QUALITY *) buf;
-	lQTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_LINK_QUALITY;
-	lQTag->u2Length = sizeof(*lQTag);
-	buf += sizeof(*lQTag);
-
-	/* UNI_CMD_GET_STATISTICS_TAG_STA for connected AIS BSS */
-	for (i = 0; i < MAX_BSSID_NUM; i++) {
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
-		if (!prBssInfo || !IS_BSS_AIS(prBssInfo) ||
-			kalGetMediaStateIndicated(prAdapter->prGlueInfo, i) !=
-				MEDIA_STATE_CONNECTED
-			|| ucConnBss[i] == 0)
-			continue;
-
-		prQueryStaStatistics = &prAdapter->rQueryStaStatistics[i];
-		for (ucStaRecIdx = 0; ucStaRecIdx < CFG_STA_REC_NUM;
-			ucStaRecIdx++) {
-			prTempStaRec = &(prAdapter->arStaRec[ucStaRecIdx]);
-			if (prTempStaRec->fgIsValid &&
-			    prTempStaRec->fgIsInUse) {
-				if (EQUAL_MAC_ADDR(prTempStaRec->aucMacAddr,
-				    prQueryStaStatistics->aucMacAddr)) {
-					prStaRec = prTempStaRec;
-					break;
-				}
-			}
-		}
-		if (!prStaRec)
-			continue;
-
-		staStatsTag = (struct UNI_CMD_STA_STATISTICS *) buf;
-		staStatsTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_STA;
-		staStatsTag->u2Length = sizeof(*staStatsTag);
-		/* FW starec idx is WTBL idx */
-		staStatsTag->u1Index = prStaRec->ucWlanIndex;
-		staStatsTag->ucReadClear =
-			prQueryStaStatistics->ucReadClear;
-		staStatsTag->ucLlsReadClear =
-			prQueryStaStatistics->ucLlsReadClear;
-		staStatsTag->ucResetCounter =
-			prQueryStaStatistics->ucResetCounter;
-		buf += sizeof(*staStatsTag);
-	}
-
-	/* UNI_CMD_GET_STATISTICS_TAG_LINK_LAYER_STATS */
-	llsTag = (struct UNI_CMD_LINK_LAYER_STATS *) buf;
-	llsTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_LINK_LAYER_STATS;
-	llsTag->u2Length = sizeof(*llsTag);
-
-	rResult = wlanSendSetQueryUniCmd(prAdapter,
-			      UNI_CMD_ID_GET_STATISTICS,
-			      FALSE,
-			      TRUE,
-			      fgIsOid,
-			      nicUniEventAllStatsOneCmd,
-			      nicUniCmdTimeoutCommon,
-			      max_cmd_len,
-			      (void *)uni_cmd,
-			      pvQueryBuffer, u4QueryBufferLen);
-	DBGLOG(REQ, TRACE, "rResult=%u, pvQueryBuffer=%p",
-			rResult, pvQueryBuffer);
-	cnmMemFree(prAdapter, uni_cmd);
+	/* get EMI update time */
+	kalMemCopyFromIo(&u4EmiUpdateMs,
+			&prAdapter->prStatsAllRegStat->u4LastUpdateTime,
+			sizeof(uint32_t));
+	DBGLOG(REQ, TRACE, "last update time local/EMI=%u/%u\n",
+		prAdapter->u4RegStatLastUpdateMs, u4EmiUpdateMs);
+	if (u4EmiUpdateMs != 0 &&
+		prAdapter->u4RegStatLastUpdateMs + 3000 <= u4EmiUpdateMs) {
+		nicCollectRegStatFromEmi(prAdapter);
+	} else
+#endif
+	rResult = sendStatsUniCmd(prAdapter, pvQueryBuffer, u4QueryBufferLen,
+		pu4QueryInfoLen, fgIsOid, max_cmd_len);
 
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
-		if (ucConnBss[i]) {
-			prQueryStaStatistics = (
-				&prAdapter->rQueryStaStatistics[i]);
-			prQueryStaStatistics->u4Flag |= BIT(1);
-		}
+		if (!ucConnBss[i])
+			continue;
+		prQueryStaStatistics = (
+			&prAdapter->rQueryStaStatistics[i]);
+		prQueryStaStatistics->u4Flag |= BIT(1);
 	}
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
+	prAdapter->u4RegStatLastUpdateMs = u4EmiUpdateMs;
+#endif
 	return rResult;
 
 }
