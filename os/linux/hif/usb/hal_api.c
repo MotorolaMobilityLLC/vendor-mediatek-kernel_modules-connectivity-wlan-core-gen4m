@@ -236,7 +236,7 @@ halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx, OUT uint8_
 		}
 	}
 	ret = kalDevPortRead(prAdapter->prGlueInfo, ucPortIdx,
-		ALIGN_4(u4MaxRespBufferLen) + prBusInfo->u4RxPaddingCSO,
+		ALIGN_4(u4MaxRespBufferLen) + LEN_USB_RX_PADDING_CSO,
 		prRxCtrl->pucRxCoalescingBufPtr, HIF_RX_COALESCING_BUFFER_SIZE);
 
 	kalMemCopy(pucRspBuffer, prRxCtrl->pucRxCoalescingBufPtr, u4MaxRespBufferLen);
@@ -256,10 +256,10 @@ uint32_t halTxUSBSendCmd(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucTc, IN st
 	struct BUF_CTRL *prBufCtrl;
 	uint16_t u2OverallBufferLength = 0;
 	unsigned long flags;
-	struct HW_MAC_TX_DESC *prTxDesc;
 	uint8_t ucQueIdx;
 	struct mt66xx_chip_info *prChipInfo;
 	int ret;
+	struct TX_DESC_OPS_T *prTxDescOps;
 
 	prUsbReq = glUsbDequeueReq(prHifInfo, &prHifInfo->rTxCmdFreeQ, &prHifInfo->rTxCmdQLock);
 	if (prUsbReq == NULL)
@@ -276,6 +276,7 @@ uint32_t halTxUSBSendCmd(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucTc, IN st
 	DBGLOG(HAL, INFO, "TX URB[0x%p]\n", prUsbReq->prUrb);
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prTxDescOps = prChipInfo->prTxDescOps;
 	HAL_WRITE_HIF_TXD(prChipInfo, prBufCtrl->pucBuf, (prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen));
 	u2OverallBufferLength += prChipInfo->u2HifTxdSize;
 
@@ -289,14 +290,22 @@ uint32_t halTxUSBSendCmd(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucTc, IN st
 		u2OverallBufferLength += prCmdInfo->u4TxpLen;
 	}
 
-	prTxDesc = (struct HW_MAC_TX_DESC *)prBufCtrl->pucBuf;
-	ucQueIdx = HAL_MAC_TX_DESC_GET_QUEUE_INDEX(prTxDesc);
-	/* For H2CDMA Tx CMD mapping */
-	/* Mapping port1 queue0~3 to queue28~31, and CR4 will unmask this */
-	HAL_MAC_TX_DESC_SET_QUEUE_INDEX(prTxDesc, (ucQueIdx | USB_TX_CMD_QUEUE_MASK));
+	if (prChipInfo->is_support_cr4 && prTxDescOps->nic_txd_queue_idx_op) {
+		void *prTxDesc = (void *)(prBufCtrl->pucBuf
+					+ prChipInfo->u2HifTxdSize);
+		ucQueIdx = prTxDescOps->nic_txd_queue_idx_op(
+			prTxDesc, 0, FALSE);
+		/* For H2CDMA Tx CMD mapping
+		 * Mapping port1 queue0~3 to queue28~31,
+		 * and CR4 will unmask this.
+		 */
+		prTxDescOps->nic_txd_queue_idx_op(
+			prTxDesc,
+			(ucQueIdx | USB_TX_CMD_QUEUE_MASK),
+			TRUE);
+	}
 
 	/* DBGLOG_MEM32(SW4, INFO, prBufCtrl->pucBuf, 32); */
-
 	memset(prBufCtrl->pucBuf + u2OverallBufferLength, 0,
 	       ((TFCB_FRAME_PAD_TO_DW(u2OverallBufferLength) - u2OverallBufferLength) + LEN_USB_UDMA_TX_TERMINATOR));
 	prBufCtrl->u4WrIdx = TFCB_FRAME_PAD_TO_DW(u2OverallBufferLength) + LEN_USB_UDMA_TX_TERMINATOR;
@@ -725,14 +734,18 @@ void halTxUSBProcessDataComplete(IN struct ADAPTER *prAdapter, struct USB_REQ *p
 	}
 }
 
-uint32_t halRxUSBEnqueueRFB(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN uint32_t u4Length,
-	IN uint32_t u4MinRfbCnt)
+uint32_t halRxUSBEnqueueRFB(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t *pucBuf,
+	IN uint32_t u4Length,
+	IN uint32_t u4MinRfbCnt,
+	IN struct list_head *prCompleteQ)
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct mt66xx_chip_info *prChipInfo;
 	struct RX_CTRL *prRxCtrl = &prAdapter->rRxCtrl;
 	struct SW_RFB *prSwRfb = (struct SW_RFB *) NULL;
-	struct HW_MAC_RX_DESC *prRxStatus;
+	void *prRxStatus;
 	uint32_t u4RemainCount;
 	uint16_t u2RxByteCount;
 	uint8_t *pucRxFrame;
@@ -741,18 +754,34 @@ uint32_t halRxUSBEnqueueRFB(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	uint32_t *pu4HwAppendDW;
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
+	struct RX_DESC_OPS_T *prRxDescOps;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
+	prRxDescOps = prChipInfo->prRxDescOps;
+	ASSERT(prRxDescOps->nic_rxd_get_rx_byte_count);
+	ASSERT(prRxDescOps->nic_rxd_get_pkt_type);
 
 	pucRxFrame = pucBuf;
 	u4RemainCount = u4Length;
 	while (u4RemainCount > 4) {
-		u2RxByteCount = HAL_RX_STATUS_GET_RX_BYTE_CNT((struct HW_MAC_RX_DESC *) pucRxFrame);
-		u2RxByteCount = ALIGN_4(u2RxByteCount) + LEN_USB_RX_PADDING_CSO;
+		/*
+		 * For different align support.
+		 * Ex. We need to do 8byte align for 7915u.
+		 */
+		if (prBusInfo->asicUsbRxByteCount)
+			u2RxByteCount = prBusInfo->asicUsbRxByteCount(prAdapter,
+				prBusInfo, pucRxFrame, prCompleteQ);
+		else {
+			u2RxByteCount =
+				prRxDescOps->nic_rxd_get_rx_byte_count(
+								pucRxFrame);
+			u2RxByteCount = ALIGN_4(u2RxByteCount)
+				+ LEN_USB_RX_PADDING_CSO;
+		}
 
 		if (u2RxByteCount <= CFG_RX_MAX_PKT_SIZE) {
 			prSwRfb = NULL;
@@ -769,17 +798,17 @@ uint32_t halRxUSBEnqueueRFB(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN
 			prRxStatus = prSwRfb->prRxStatus;
 			ASSERT(prRxStatus);
 
-			prSwRfb->ucPacketType = (uint8_t) HAL_RX_STATUS_GET_PKT_TYPE(prRxStatus);
+			prSwRfb->ucPacketType =
+				prRxDescOps->nic_rxd_get_pkt_type(prRxStatus);
 			/* DBGLOG(RX, TRACE, ("ucPacketType = %d\n", prSwRfb->ucPacketType)); */
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 			pu4HwAppendDW = (uint32_t *) prRxStatus;
-			pu4HwAppendDW += (ALIGN_4(prRxStatus->u2RxByteCount) >> 2);
+			pu4HwAppendDW +=
+				(ALIGN_4(u2RxByteCount - LEN_USB_RX_PADDING_CSO)
+									>> 2);
 			prSwRfb->u4TcpUdpIpCksStatus = *pu4HwAppendDW;
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
-#if DBG
-			DBGLOG(RX, TRACE, "Rx status flag = %x wlan index = %d SecMode = %d\n",
-			       prRxStatus->u2StatusFlag, prRxStatus->ucWlanIdx, HAL_RX_STATUS_GET_SEC_MODE(prRxStatus));
-#endif
+
 			if (HAL_IS_RX_DIRECT(prAdapter)) {
 				switch (prSwRfb->ucPacketType) {
 				case RX_PKT_TYPE_RX_DATA:
@@ -1035,7 +1064,12 @@ void halRxUSBProcessEventDataComplete(IN struct ADAPTER *prAdapter,
 		pucBufAddr = prBufCtrl->pucBuf + prBufCtrl->u4ReadSize;
 		u4BufLen = prUrb->actual_length - prBufCtrl->u4ReadSize;
 
-		prBufCtrl->u4ReadSize += halRxUSBEnqueueRFB(prAdapter, pucBufAddr, u4BufLen, u4MinRfbCnt);
+		prBufCtrl->u4ReadSize += halRxUSBEnqueueRFB(
+				prAdapter,
+				pucBufAddr,
+				u4BufLen,
+				u4MinRfbCnt,
+				prCompleteQ);
 
 		if (unlikely(prUrb->actual_length - prBufCtrl->u4ReadSize > 4)) {
 			if (s_fgOutOfSwRfb == FALSE) {

@@ -63,8 +63,8 @@
  */
 
 
-#ifndef _NIC_TXD_V2_H
-#define _NIC_TXD_V2_H
+#ifndef _NIC_RXD_V2_H
+#define _NIC_RXD_V2_H
 
 #if (CFG_SUPPORT_CONNAC2X == 1)
 /*******************************************************************************
@@ -77,60 +77,36 @@
  *******************************************************************************
  */
 
-uint8_t nic_txd_v2_long_format_op(
-	void *prTxDesc,
-	uint8_t fgSet);
-uint8_t nic_txd_v2_tid_op(
-	void *prTxDesc,
-	uint8_t ucTid,
-	uint8_t fgSet);
-uint8_t nic_txd_v2_queue_idx_op(
-	void *prTxDesc,
-	uint8_t ucQueIdx,
-	uint8_t fgSet);
-#if (CFG_TCP_IP_CHKSUM_OFFLOAD == 1)
-void nic_txd_v2_chksum_op(
-	void *prTxDesc,
-	uint8_t ucChksumFlag);
-#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD == 1 */
-void nic_txd_v2_header_format_op(
-	void *prTxDesc,
-	struct MSDU_INFO *prMsduInfo);
+uint16_t nic_rxd_v2_get_rx_byte_count(
+	void *prRxStatus);
+uint8_t nic_rxd_v2_get_packet_type(
+	void *prRxStatus);
+uint8_t nic_rxd_v2_get_wlan_idx(
+	void *prRxStatus);
+uint8_t nic_rxd_v2_get_sec_mode(
+	void *prRxStatus);
+uint8_t nic_rxd_v2_get_sw_class_error_bit(
+	void *prRxStatus);
+uint8_t nic_rxd_v2_get_ch_num(
+	void *prRxStatus);
+uint8_t nic_rxd_v2_get_rf_band(
+	void *prRxStatus);
+uint8_t nic_rxd_v2_get_tcl(
+	void *prRxStatus);
+uint8_t nic_rxd_v2_get_ofld(
+	void *prRxStatus);
+void nic_rxd_v2_fill_rfb(
+	struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
+u_int8_t nic_rxd_v2_sanity_check(
+	struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 
-void nic_txd_v2_fill_by_pkt_option(
-	struct MSDU_INFO *prMsduInfo,
-	void *prTxD);
+#if CFG_SUPPORT_WAKEUP_REASON_DEBUG
+void nic_rxd_v2_check_wakeup_reason(
+	struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
+#endif /* CFG_SUPPORT_WAKEUP_REASON_DEBUG */
 
-void nic_txd_v2_compose(
-	struct ADAPTER *prAdapter,
-	struct MSDU_INFO *prMsduInfo,
-	u_int32_t u4TxDescLength,
-	u_int8_t fgIsTemplate,
-	u_int8_t *prTxDescBuffer);
-void nic_txd_v2_compose_security_frame(
-	struct ADAPTER *prAdapter,
-	struct CMD_INFO *prCmdInfo,
-	uint8_t *prTxDescBuffer,
-	uint8_t *pucTxDescLength);
-void nic_txd_v2_set_pkt_fixed_rate_option_full(
-	struct MSDU_INFO *prMsduInfo,
-	uint16_t u2RateCode,
-	uint8_t ucBandwidth,
-	u_int8_t fgShortGI,
-	u_int8_t fgLDPC,
-	u_int8_t fgDynamicBwRts,
-	u_int8_t fgBeamforming,
-	uint8_t ucAntennaIndex);
-void nic_txd_v2_set_pkt_fixed_rate_option(
-	struct MSDU_INFO *prMsduInfo,
-	uint16_t u2RateCode,
-	uint8_t ucBandwidth,
-	u_int8_t fgShortGI,
-	u_int8_t fgDynamicBwRts);
-void nic_txd_v2_set_hw_amsdu_template(
-	struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStaRec,
-	uint8_t ucTid,
-	u_int8_t fgSet);
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
-#endif /* _NIC_TXD_V2_H */
+#endif /* _NIC_RXD_V2_H */

@@ -435,7 +435,9 @@ bow_proc:
 	if (prStaRec) {
 		/* update RCPI */
 		ASSERT(prSwRfb->prRxStatusGroup3);
-		prStaRec->ucRCPI = nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX,
+		prStaRec->ucRCPI = nicRxGetRcpiValueFromRxv(
+			prAdapter,
+			RCPI_MODE_MAX,
 			prSwRfb);
 	}
 	/* 4 <3> Update STA_RECORD_T and
@@ -602,7 +604,8 @@ uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 		/* update RCPI */
 		ASSERT(prSwRfb->prRxStatusGroup3);
 		prStaRec->ucRCPI =
-			nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX, prSwRfb);
+			nicRxGetRcpiValueFromRxv(
+				prAdapter, RCPI_MODE_MAX, prSwRfb);
 
 		/* 4 <2> Check P2P network conditions */
 #if CFG_ENABLE_WIFI_DIRECT

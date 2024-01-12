@@ -198,6 +198,7 @@ void mt7668CapInit(IN struct ADAPTER *prAdapter)
 	prChipInfo->u2RxSwPktEvent = RXM_RXD_PKT_TYPE_SW_EVENT;
 	prChipInfo->u2RxSwPktFrame = RXM_RXD_PKT_TYPE_SW_FRAME;
 	asicInitTxdHook(prChipInfo->prTxDescOps);
+	asicInitRxdHook(prChipInfo->prRxDescOps);
 
 	switch (prGlueInfo->u4InfType) {
 #if defined(_HIF_PCIE)
@@ -441,6 +442,7 @@ struct BUS_INFO mt7668_bus_info = {
 	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT,
 	.asicUsbSuspend = NULL,
 	.asicUsbEventEpDetected = NULL,
+	.asicUsbRxByteCount = NULL,
 #endif /* _HIF_USB */
 #if defined(_HIF_SDIO)
 	.halTxGetFreeResource = NULL,
@@ -462,6 +464,9 @@ struct TX_DESC_OPS_T mt7668TxDescOps = {
 	.fillNicAppend = fillNicTxDescAppendWithCR4,
 	.fillHifAppend = fillTxDescAppendByCR4,
 	.fillTxByteCount = fillTxDescTxByteCountWithCR4,
+};
+
+struct RX_DESC_OPS_T mt7668RxDescOps = {
 };
 
 #if CFG_SUPPORT_QA_TOOL
@@ -487,6 +492,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.bus_info = &mt7668_bus_info,
 	.fw_dl_ops = &mt7668_fw_dl_ops,
 	.prTxDescOps = &mt7668TxDescOps,
+	.prRxDescOps = &mt7668RxDescOps,
 #if CFG_SUPPORT_QA_TOOL
 	.prAteOps = &mt7668AteOps,
 #endif

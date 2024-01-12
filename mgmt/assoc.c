@@ -1347,6 +1347,8 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 	u_int8_t fgIsUnknownBssBasicRate;
 	uint32_t i;
 	u_int8_t fgIsTKIP = FALSE;
+	enum ENUM_BAND eBand = 0;
+	struct RX_DESC_OPS_T *prRxDescOps;
 
 	if (!prAdapter || !prSwRfb || !pu2StatusCode) {
 		DBGLOG(SAA, WARN, "Invalid parameters, ignore pkt!\n");
@@ -1354,6 +1356,7 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 	}
 
 	prWifiVar = &(prAdapter->rWifiVar);
+	prRxDescOps = prAdapter->chip_info->prRxDescOps;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 
@@ -1592,8 +1595,12 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 		prStaRec->u2DesiredNonHTRateSet =
 			(prStaRec->u2OperationalRateSet & RATE_SET_ALL_ABG);
 
-		if (HAL_RX_STATUS_GET_RF_BAND(prSwRfb->prRxStatus) ==
-			BAND_2G4) {
+		RX_STATUS_GET(
+			prRxDescOps,
+			eBand,
+			get_rf_band,
+			prSwRfb->prRxStatus);
+		if (eBand == BAND_2G4) {
 			if (prStaRec->u2OperationalRateSet &
 				RATE_SET_OFDM)
 				prStaRec->ucPhyTypeSet |=

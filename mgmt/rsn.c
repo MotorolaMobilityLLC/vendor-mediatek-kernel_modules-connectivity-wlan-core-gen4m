@@ -3417,8 +3417,8 @@ void rsnApSaQueryRequest(IN struct ADAPTER *prAdapter,
 
 	/* drop cipher mismatch */
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
-		if (HAL_RX_STATUS_IS_CIPHER_MISMATCH(prSwRfb->prRxStatus) ||
-		    HAL_RX_STATUS_IS_CLM_ERROR(prSwRfb->prRxStatus)) {
+		if (prSwRfb->fgIsCipherMS ||
+			prSwRfb->fgIsCipherLenMS) {
 			/* if cipher mismatch, or incorrect encrypt,
 			 * just drop
 			 */

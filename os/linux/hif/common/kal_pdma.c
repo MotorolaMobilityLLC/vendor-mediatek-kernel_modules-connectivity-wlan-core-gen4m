@@ -567,18 +567,18 @@ static uint8_t kalGetSwAmsduNum(struct GLUE_INFO *prGlueInfo,
 {
 	struct ADAPTER *prAdapter;
 	struct sk_buff *prSkb;
-	struct HW_MAC_TX_DESC *prTxDesc;
 	struct STA_RECORD *prStaRec;
 	uint8_t ucTid, ucStaRecIndex;
+	struct TX_DESC_OPS_T *prTxDescOps;
 
 	ASSERT(prGlueInfo);
 	ASSERT(prMsduInfo);
 
 	prAdapter = prGlueInfo->prAdapter;
+	prTxDescOps = prAdapter->chip_info->prTxDescOps;
 	prSkb = (struct sk_buff *)prMsduInfo->prPacket;
-	prTxDesc = (struct HW_MAC_TX_DESC *)prSkb->data;
 
-	ucTid = HAL_MAC_TX_DESC_GET_TID(prTxDesc);
+	ucTid = prTxDescOps->nic_txd_tid_op((void *)prSkb->data, 0, FALSE);
 	ucStaRecIndex = prMsduInfo->ucStaRecIndex;
 	if (ucStaRecIndex >= CFG_STA_REC_NUM || ucTid >= TX_DESC_TID_NUM)
 		return 0;
@@ -915,7 +915,7 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 		return FALSE;
 
 	prSwRfb->pucRecvBuff = ((struct sk_buff *)prSwRfb->pvPacket)->data;
-	prSwRfb->prRxStatus = (struct HW_MAC_RX_DESC *)prSwRfb->pucRecvBuff;
+	prSwRfb->prRxStatus = (void *)prSwRfb->pucRecvBuff;
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	prSwRfb->u4TcpUdpIpCksStatus = pRxD->RXINFO;

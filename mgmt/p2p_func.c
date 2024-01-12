@@ -3478,7 +3478,8 @@ u_int8_t p2pFuncValidateAssocReq(IN struct ADAPTER *prAdapter,
 		}
 		ASSERT(prSwRfb->prRxStatusGroup3);
 		prStaRec->ucRCPI =
-			nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX, prSwRfb);
+			nicRxGetRcpiValueFromRxv(
+				prAdapter, RCPI_MODE_MAX, prSwRfb);
 
 		prStaRec->u2DesiredNonHTRateSet &=
 			prP2pBssInfo->u2OperationalRateSet;
@@ -3657,8 +3658,7 @@ static void p2pFunBufferP2pActionFrame(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(P2P, INFO, "Buffer the p2p action frame.\n");
 	prFrame->ucRoleIdx = ucRoleIdx;
-	prFrame->u4Freq = nicChannelNum2Freq(
-		HAL_RX_STATUS_GET_CHNL_NUM(prSwRfb->prRxStatus)) / 1000;
+	prFrame->u4Freq = nicChannelNum2Freq(prSwRfb->ucChnlNum) / 1000;
 	prFrame->u2Length = prSwRfb->u2PacketLen;
 	prFrame->prHeader = cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
 			prSwRfb->u2PacketLen);

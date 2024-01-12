@@ -78,6 +78,7 @@
 */
 #define NORMAL_GI 0
 #define SHORT_GI  1
+#define CONNAC2X_TX_DESC_LIFE_TIME_UNIT_IN_POWER_OF_2    6
 
 /*------------------------------------------------------------------------*/
 /* Tx descriptor field related information                                */
@@ -155,6 +156,7 @@
 
 #define CONNAC2X_TX_DESC_POWER_OFFSET_MASK               BITS(24, 29)
 #define CONNAC2X_TX_DESC_POWER_OFFSET_OFFSET             24
+#define CONNAC2X_TX_DESC_FIXED_RATE_MODE                 BIT(30)
 #define CONNAC2X_TX_DESC_FIXED_RATE                      BIT(31)
 
 /* DW 3 */
@@ -565,12 +567,12 @@ CONNAC2X_TX_DESC_REMAINING_MAX_TX_TIME_OFFSET)
 /* in unit of ms (minimal value is about 40ms) */
 #define HAL_MAC_CONNAC2X_TXD_GET_REMAINING_LIFE_TIME_IN_MS(_prHwMacTxDesc) \
 (TU_TO_MSEC(HAL_MAC_CONNAC2X_TXD_GET_REMAINING_LIFE_TIME(_prHwMacTxDesc)\
-<< TX_DESC_LIFE_TIME_UNIT_IN_POWER_OF_2))
+<< CONNAC2X_TX_DESC_LIFE_TIME_UNIT_IN_POWER_OF_2))
 
 
 /*
 *    Remaining Life Time/ Max TX Time: This field indicates the remaining life
-*                                   time in unit of 32TU used for this packet.
+*                                   time in unit of 64TU used for this packet.
 *    8'h0: No life time for current packet, HW should NOT change this field
 *    8'hN: N is not 0, HW will calculation a Max. TX time and replace remaining
 *          TX time with it. The Max. value is 127.
@@ -584,7 +586,7 @@ CONNAC2X_TX_DESC_REMAINING_MAX_TX_TIME_OFFSET)
 #define HAL_MAC_CONNAC2X_TXD_SET_REMAINING_LIFE_TIME_IN_MS(_prHwTxD, _LifeMs)\
 do { \
 uint32_t u4LifeTimeInUnit = ((MSEC_TO_USEC(_LifeMs) / USEC_PER_TU) \
-			    >> TX_DESC_LIFE_TIME_UNIT_IN_POWER_OF_2); \
+			    >> CONNAC2X_TX_DESC_LIFE_TIME_UNIT_IN_POWER_OF_2); \
 if (u4LifeTimeInUnit >= BIT(7)) \
 	u4LifeTimeInUnit = BITS(0, 6); \
 else if ((u4LifeTimeInUnit != TX_DESC_TX_TIME_NO_LIMIT) \
@@ -602,6 +604,20 @@ CONNAC2X_TX_DESC_POWER_OFFSET_MASK, CONNAC2X_TX_DESC_POWER_OFFSET_OFFSET)
 TX_DESC_SET_FIELD(((_prHwTxD)->u4DW2), ((uint8_t)_ucPowerOffset), \
 CONNAC2X_TX_DESC_POWER_OFFSET_MASK, CONNAC2X_TX_DESC_POWER_OFFSET_OFFSET)
 
+#define HAL_MAC_CONNAC2X_TXD_IS_CR_FIXED_RATE_MODE(_prHwMacTxDesc) \
+(((_prHwMacTxDesc)->u4DW2 & CONNAC2X_TX_DESC_FIXED_RATE_MODE)?TRUE:FALSE)
+#define HAL_MAC_CONNAC2X_TXD_SET_FIXED_RATE_MODE_TO_DESC(_prHwMacTxDesc) \
+((_prHwMacTxDesc)->u4DW2 &= ~CONNAC2X_TX_DESC_FIXED_RATE_MODE)
+#define HAL_MAC_CONNAC2X_TXD_SET_FIXED_RATE_MODE_TO_CR(_prHwMacTxDesc) \
+((_prHwMacTxDesc)->u4DW2 |= CONNAC2X_TX_DESC_FIXED_RATE_MODE)
+
+#define HAL_MAC_CONNAC2X_TXD_IS_FIXED_RATE_ENABLE(_prHwMacTxDesc) \
+(((_prHwMacTxDesc)->u4DW2 & CONNAC2X_TX_DESC_FIXED_RATE)?TRUE:FALSE)
+#define HAL_MAC_CONNAC2X_TXD_SET_FIXED_RATE_ENABLE(_prHwMacTxDesc) \
+((_prHwMacTxDesc)->u4DW2 |= CONNAC2X_TX_DESC_FIXED_RATE)
+#define HAL_MAC_CONNAC2X_TXD_SET_FIXED_RATE_DISABLE(_prHwMacTxDesc) \
+((_prHwMacTxDesc)->u4DW2 &= ~CONNAC2X_TX_DESC_FIXED_RATE)
+
 #define HAL_MAC_CONNAC2X_TXD_IS_BA_DISABLE(_prHwMacTxDesc) \
 (((_prHwMacTxDesc)->u4DW3 & CONNAC2X_TX_DESC_BA_DISABLE)?TRUE:FALSE)
 
@@ -616,13 +632,6 @@ CONNAC2X_TX_DESC_POWER_OFFSET_MASK, CONNAC2X_TX_DESC_POWER_OFFSET_OFFSET)
 ((_prHwMacTxDesc)->u4DW3 |= CONNAC2X_TX_DESC_TIMING_MEASUREMENT)
 #define HAL_MAC_CONNAC2X_TXD_UNSET_TIMING_MEASUREMENT(_prHwMacTxDesc) \
 ((_prHwMacTxDesc)->u4DW3 &= ~CONNAC2X_TX_DESC_TIMING_MEASUREMENT)
-
-#define HAL_MAC_CONNAC2X_TXD_IS_FIXED_RATE_ENABLE(_prHwMacTxDesc) \
-(((_prHwMacTxDesc)->u4DW2 & CONNAC2X_TX_DESC_FIXED_RATE)?TRUE:FALSE)
-#define HAL_MAC_CONNAC2X_TXD_SET_FIXED_RATE_ENABLE(_prHwMacTxDesc) \
-((_prHwMacTxDesc)->u4DW2 |= CONNAC2X_TX_DESC_FIXED_RATE)
-#define HAL_MAC_CONNAC2X_TXD_SET_FIXED_RATE_DISABLE(_prHwMacTxDesc) \
-((_prHwMacTxDesc)->u4DW2 &= ~CONNAC2X_TX_DESC_FIXED_RATE)
 
 #define HAL_MAC_CONNAC2X_TXD_IS_NO_ACK(_prHwMacTxDesc) \
 (((_prHwMacTxDesc)->u4DW3 & CONNAC2X_TX_DESC_NO_ACK)?TRUE:FALSE)
@@ -786,10 +795,8 @@ CONNAC2X_TX_DESC_BANDWIDTH_MASK, CONNAC2X_TX_DESC_BANDWIDTH_OFFSET)
 #define HAL_MAC_CONNAC2X_TXD_SET_FR_ANTENNA_ID(_prHwMacTxDesc, _ucAntId) \
 TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u4DW6), ((uint8_t)_ucAntId), \
 CONNAC2X_TX_DESC_ANTENNA_INDEX_MASK, CONNAC2X_TX_DESC_ANTENNA_INDEX_OFFSET)
-
-#define HAL_MAC_CONNAC2X_TXD_SET_LDPC(_prHwMacTxDesc, _ucLdpc) \
-TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u4DW6), ((uint8_t)_ucLdpc), \
-CONNAC2X_TX_DESC_LDPC, CONNAC2X_TX_DESC_LDPC_OFFSET)
+#define HAL_MAC_CONNAC2X_TXD_SET_LDPC(_prHwMacTxDesc) \
+((_prHwMacTxDesc)->u4DW6 |= CONNAC2X_TX_DESC_LDPC)
 #define HAL_MAC_CONNAC2X_TXD_SET_HE_LTF(_prHwMacTxDesc, _ucHeLtf) \
 TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u4DW6), ((uint8_t)_ucHeLtf), \
 CONNAC2X_TX_DESC_HE_LTF_MASK, CONNAC2X_TX_DESC_HE_LTF_OFFSET)
