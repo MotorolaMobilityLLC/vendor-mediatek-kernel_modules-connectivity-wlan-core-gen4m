@@ -1266,8 +1266,8 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 		prNetDev = (struct net_device *)wlanGetNetInterfaceByBssIdx(
 			   prGlueInfo, ucBssIdx);
 	} else {
-		DBGLOG(RX, WARN, "Error ucBssIdx =%x\n", ucBssIdx);
-		DBGLOG(RX, WARN, "Error pkt info =%x:%x:%x:%x:%x:%x:%x:%x\n",
+		DBGLOG(RX, WARN, "Error ucBssIdx =%u\n", ucBssIdx);
+		DBGLOG(RX, WARN, "Error pkt info =%u:%u:%u:%u:%u:%u:%u:%lu\n",
 			GLUE_GET_PKT_TID(prSkb),
 			GLUE_IS_PKT_FLAG_SET(prSkb),
 			GLUE_GET_PKT_HEADER_LEN(prSkb),
