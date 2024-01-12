@@ -201,7 +201,7 @@ u_int8_t mt7925HalPollWfsysSwInitDone(struct ADAPTER *prAdapter)
 
 void mt7925GetSemaphore(struct ADAPTER *prAdapter)
 {
-	uint32_t u4RemapVal;
+	uint32_t u4RemapVal = 0;
 	uint32_t u4Val;
 
 	HAL_MCR_RD(prAdapter, CONN_INFRA_BUS_CR_PCIE2AP_REMAP_WF_0_54_ADDR,
@@ -226,7 +226,7 @@ void mt7925GetSemaphore(struct ADAPTER *prAdapter)
 
 void mt7925GetSemaReport(struct ADAPTER *prAdapter)
 {
-	uint32_t u4RemapVal;
+	uint32_t u4RemapVal = 0;
 	uint32_t u4Val;
 
 	/* 0x18070400 */
