@@ -1123,7 +1123,11 @@ int8_t atoi(uint8_t ch);
 		kalPrintLog(fmt, ##__VA_ARGS__);			\
 })
 
+#ifdef CFG_COMBO_SLT_GOLDEN
+#define WLAN_TAG                        "[wlan_golden]"
+#else
 #define WLAN_TAG                        "[wlan]"
+#endif
 #define kalPrint               kalPrintLog
 #define kalPrintLimited(_Fmt...) kalPrintLogLimited(WLAN_TAG _Fmt)
 
