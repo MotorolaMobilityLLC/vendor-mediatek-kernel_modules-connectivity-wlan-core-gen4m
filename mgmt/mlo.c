@@ -539,7 +539,6 @@ uint8_t *mldGenerateBasicCommonInfo(
 	struct MSDU_INFO *prMsduInfo,
 	uint16_t u2FrameCtrl)
 {
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint8_t *cp;
 	struct MLD_BSS_INFO *mld_bssinfo;
 	struct BSS_INFO *bss;
@@ -567,7 +566,10 @@ uint8_t *mldGenerateBasicCommonInfo(
 	 * the Multi-Link Control field of the element to 0
 	 */
 	if (u2FrameCtrl != MAC_FRAME_AUTH) {
-		present = ML_CTRL_MLD_CAPA_PRESENT;
+		present |= ML_CTRL_MLD_CAPA_PRESENT;
+
+		if (mld_bssinfo && mld_bssinfo->ucEmlEnabled)
+			present |= ML_CTRL_EML_CAPA_PRESENT;
 
 		if (IS_BSS_APGO(bss)) {
 			present |= (ML_CTRL_LINK_ID_INFO_PRESENT |
@@ -604,6 +606,15 @@ uint8_t *mldGenerateBasicCommonInfo(
 			"\tML common Info BssParaChangeCount = %d", 0);
 		*cp++ = 0;
 	}
+	if (BE_IS_ML_CTRL_PRESENCE_EML_CAP(common->u2Ctrl)) {
+		if (mld_bssinfo) {
+			WLAN_SET_FIELD_16(cp,
+				mld_bssinfo->u2EMLCap);
+		}
+		DBGLOG(ML, TRACE, "\tML common Info EML capa = 0x%x",
+			*(uint16_t *)cp);
+		cp += 2;
+	}
 	if (BE_IS_ML_CTRL_PRESENCE_MLD_CAP(common->u2Ctrl)) {
 		uint16_t mld_cap = 0;
 
@@ -612,12 +623,9 @@ uint8_t *mldGenerateBasicCommonInfo(
 		 * frames minus 1. For an AP MLD, set to the number of
 		 * affiliated APs minus 1
 		 */
-		if (prWifiVar->ucMaxSimuLinks != 0xff) {
+		if (mld_bssinfo) {
 			BE_SET_MLD_CAP_MAX_SIMULTANEOUS_LINKS(mld_cap,
-				prWifiVar->ucMaxSimuLinks);
-		} else if (mld_bssinfo) {
-			BE_SET_MLD_CAP_MAX_SIMULTANEOUS_LINKS(mld_cap,
-				mld_bssinfo->rBssList.u4NumElem - 1);
+				mld_bssinfo->ucMaxSimuLinks);
 		} else if (bss) {
 			BE_SET_MLD_CAP_MAX_SIMULTANEOUS_LINKS(mld_cap, 0);
 		}
@@ -2843,9 +2851,8 @@ int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
 			MAC2STR(prMldStarec->aucPeerMldAddr));
 		i4BytesWritten += kalSnprintf(
 			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"EML/STR/TYPE:0x%02x%04x/0x%02x%04x/%d\n",
-			*(uint8_t *)(prMldStarec->aucEmlCap + 2),
-			*(uint16_t *)(prMldStarec->aucEmlCap),
+			"EML/STR/TYPE:0x%04x/0x%02x%04x/%d\n",
+			prMldStarec->u2EmlCap,
 			*(uint8_t *)(prMldStarec->aucStrBitmap + 2),
 			*(uint16_t *)(prMldStarec->aucStrBitmap),
 			prMldStarec->fgMldType);
@@ -3014,6 +3021,59 @@ void mldBssUpdateBandIdxBitmap(struct ADAPTER *prAdapter,
 	}
 }
 
+void mldBssUpdateCap(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct BSS_INFO *prBssInfo = NULL;
+
+	if (!prMldBssInfo || !prMldBssInfo->fgIsInUse)
+		return;
+
+	if (prWifiVar->ucMaxSimuLinks != 0xff)
+		prMldBssInfo->ucMaxSimuLinks = prWifiVar->ucMaxSimuLinks;
+	else if (prMldBssInfo->rBssList.u4NumElem == 0)
+		prMldBssInfo->ucMaxSimuLinks = 0;
+	else
+		prMldBssInfo->ucMaxSimuLinks =
+			prMldBssInfo->rBssList.u4NumElem - 1;
+
+	prBssInfo = LINK_PEEK_HEAD(&(prMldBssInfo->rBssList),
+				struct BSS_INFO, rLinkEntryMld);
+	if (!prBssInfo)
+		return;
+
+	if (IS_BSS_APGO(prBssInfo)) {
+		if (IS_FEATURE_ENABLED(
+				prAdapter->rWifiVar.ucApMldEMLSupport)) {
+			prMldBssInfo->ucEmlEnabled = TRUE;
+			prMldBssInfo->u2EMLCap =
+				prAdapter->rWifiVar.u2ApMldEMLCap;
+		} else {
+			prMldBssInfo->ucEmlEnabled = FALSE;
+			prMldBssInfo->u2EMLCap = 0;
+		}
+	} else {
+		if (IS_FEATURE_ENABLED(
+				prAdapter->rWifiVar.ucNonApMldEMLSupport)) {
+			prMldBssInfo->ucEmlEnabled = TRUE;
+			prMldBssInfo->u2EMLCap =
+				prAdapter->rWifiVar.u2NonApMldEMLCap;
+		} else {
+			prMldBssInfo->ucEmlEnabled = FALSE;
+			prMldBssInfo->u2EMLCap = 0;
+		}
+	}
+}
+
+void mldBssUpdateCapAll(struct ADAPTER *prAdapter)
+{
+	uint8_t i = 0;
+
+	for (i = 0; i < ARRAY_SIZE(prAdapter->aprMldBssInfo); i++)
+		mldBssUpdateCap(prAdapter, &prAdapter->aprMldBssInfo[i]);
+}
+
 int8_t mldBssRegister(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
 	struct BSS_INFO *prBssInfo)
@@ -3038,6 +3098,7 @@ int8_t mldBssRegister(struct ADAPTER *prAdapter,
 
 	mldBssUpdateMldAddrByMainBss(prAdapter, prMldBssInfo);
 	mldBssUpdateOmacIdx(prAdapter, prMldBssInfo, prBssInfo);
+	mldBssUpdateCap(prAdapter, prMldBssInfo);
 
 	return 0;
 }
@@ -3072,6 +3133,8 @@ void mldBssUnregister(struct ADAPTER *prAdapter,
 		LINK_REMOVE_KNOWN_ENTRY(prBssList,
 			&prCurrBssInfo->rLinkEntryMld);
 	}
+
+	mldBssUpdateCap(prAdapter, prMldBssInfo);
 }
 
 int8_t mldBssAlloc(struct ADAPTER *prAdapter,
@@ -3093,6 +3156,9 @@ int8_t mldBssAlloc(struct ADAPTER *prAdapter,
 		prMldBssInfo->ucOmacIdx = INVALID_OMAC_IDX;
 		prMldBssInfo->ucBssBitmap = 0;
 		prMldBssInfo->ucHwBandBitmap = 0;
+		prMldBssInfo->ucMaxSimuLinks = 0;
+		prMldBssInfo->ucEmlEnabled = FALSE;
+		prMldBssInfo->u2EMLCap = 0;
 
 		*pprMldBssInfo = prMldBssInfo;
 		break;
@@ -3211,14 +3277,13 @@ void mldStarecDump(struct ADAPTER *prAdapter)
 
 
 		DBGLOG(ML, INFO,
-			"[%d] pri:%d, sec:%d, setup:%d, eml:0x%02x%04x, str:0x%02x%04x, mac:"
+			"[%d] pri:%d, sec:%d, setup:%d, eml:0x%04x, str:0x%02x%04x, mac:"
 			MACSTR "\n",
 			prMldStarec->ucIdx,
 			prMldStarec->u2PrimaryMldId,
 			prMldStarec->u2SecondMldId,
 			prMldStarec->u2SetupWlanId,
-			*(uint8_t *)(prMldStarec->aucEmlCap + 2),
-			*(uint16_t *)(prMldStarec->aucEmlCap),
+			prMldStarec->u2EmlCap,
 			*(uint8_t *)(prMldStarec->aucStrBitmap + 2),
 			*(uint16_t *)(prMldStarec->aucStrBitmap),
 			prMldStarec->aucPeerMldAddr);
@@ -3391,7 +3456,8 @@ void mldEnableCocurrentMld(struct ADAPTER *prAdapter)
 
 int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStarec, uint8_t fgMldType,
-	uint8_t aucMacAddr[], uint8_t ucLinkId)
+	uint8_t aucMacAddr[], uint8_t ucLinkId, uint16_t u2EmlCap,
+	uint16_t u2MldCap)
 {
 	int8_t rStatus = 0;
 	struct BSS_INFO *prBssInfo;
@@ -3468,6 +3534,9 @@ int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 
 	prStarec->ucMldStaIndex = prMldStarec->ucIdx;
 	prMldStarec->fgMldType = fgMldType;
+	prMldStarec->u2MldCap = u2MldCap;
+	prMldStarec->u2EmlCap = u2EmlCap;
+
 	LINK_INSERT_TAIL(prStarecList, &prStarec->rLinkEntryMld);
 
 	DBGLOG(ML, INFO,
@@ -3542,8 +3611,8 @@ int8_t mldStarecAlloc(struct ADAPTER *prAdapter,
 
 		/* TODO */
 		prMldStarec->fgNSEP = FALSE;
-		kalMemSet(prMldStarec->aucEmlCap, 0,
-			sizeof(prMldStarec->aucEmlCap));
+		prMldStarec->u2EmlCap = 0;
+		prMldStarec->u2MldCap = 0;
 #if defined(BELLWETHER) || defined(MT7990)
 		prMldStarec->aucStrBitmap[0] = BIT(2);
 		prMldStarec->aucStrBitmap[1] = BIT(1);

@@ -7100,6 +7100,13 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucMaxSimuLinks,
 		"MaxSimultaneousLinks", 0xff);
 	INIT_UINT(prWifiVar->ucMldRetryCount, "MldRetryCount", MLD_RETRY_COUNT);
+	INIT_UINT(prWifiVar->ucNonApMldEMLSupport,
+		"NonApMldEML", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucApMldEMLSupport,
+		"ApMldEML", FEATURE_DISABLED);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	mldBssUpdateCapAll(prAdapter);
+#endif
 #endif /* CFG_SUPPORT_802_11BE */
 	INIT_UINT(prWifiVar->ucApHt, "ApHT", FEATURE_ENABLED);
 #if CFG_TC1_FEATURE

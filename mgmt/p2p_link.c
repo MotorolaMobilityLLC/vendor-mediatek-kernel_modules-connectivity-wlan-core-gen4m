@@ -282,7 +282,8 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 
 	fgMldType = mldCheckMldType(prAdapter, pucIE, u2IELength);
 	mldStarecRegister(prAdapter, prStaRec, fgMldType,
-		prMlInfo->aucMldAddr, prBssInfo->ucLinkIndex);
+		prMlInfo->aucMldAddr, prBssInfo->ucLinkIndex,
+		prMlInfo->u2EmlCap, prMlInfo->u2MldCap);
 	mldStarecSetSetupIdx(prAdapter, prStaRec);
 
 	if (prMlInfo->ucProfNum == 0) {
@@ -362,7 +363,8 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 
 			/* ml link info */
 			mldStarecRegister(prAdapter, prCurr, fgMldType,
-				prMlInfo->aucMldAddr, prProfiles->ucLinkId);
+				prMlInfo->aucMldAddr, prProfiles->ucLinkId,
+				prMlInfo->u2EmlCap, prMlInfo->u2MldCap);
 		}
 	}
 

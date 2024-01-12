@@ -466,7 +466,9 @@ void p2pFuncGCJoin(struct ADAPTER *prAdapter,
 			mldStarecRegister(prAdapter, prStaRec,
 				prBssDesc->rMlInfo.fgMldType,
 				prBssDesc->rMlInfo.aucMldAddr,
-				prBssDesc->rMlInfo.ucLinkIndex);
+				prBssDesc->rMlInfo.ucLinkIndex,
+				prBssDesc->rMlInfo.u2EmlCap,
+				prBssDesc->rMlInfo.u2MldCap);
 		}
 #endif
 
@@ -2036,6 +2038,11 @@ p2pFuncSwitchOPMode(struct ADAPTER *prAdapter,
 			DBGLOG(P2P, TRACE,
 				"The BSSID is changed to " MACSTR "\n",
 				MAC2STR(prP2pBssInfo->aucBSSID));
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			mldBssUpdateCap(prAdapter,
+				mldBssGetByBss(prAdapter, prP2pBssInfo));
+#endif
 
 			/* Update BSS INFO to FW. */
 			if ((fgSyncToFW) && (eOpMode != OP_MODE_ACCESS_POINT))

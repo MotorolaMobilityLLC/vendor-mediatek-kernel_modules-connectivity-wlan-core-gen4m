@@ -1399,7 +1399,7 @@ void apsIntraApSelection(struct ADAPTER *ad,
 
 			/* use lower score to find links if already found one */
 			if (!bss) {
-				DBGLOG(APS, INFO, "GOAL SCORE[link=%d]=0\n");
+				DBGLOG(APS, INFO, "GOAL SCORE[link=%d]=0\n", i);
 				apsIntraUpdateTargetAp(ad, ap,
 					i, 0, reason, bidx);
 			}

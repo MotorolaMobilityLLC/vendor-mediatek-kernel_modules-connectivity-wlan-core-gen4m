@@ -1449,7 +1449,7 @@ int cnmShowBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		 "\tACTIVE/HW_BAND/OMAC_IDX: %u/%u/%u/\n",
+		 "\tACTIVE/HW_BAND/OMAC_IDX: %u/%u/%u\n",
 		prBssInfo->fgIsNetActive,
 		prBssInfo->eHwBandIdx,
 		prBssInfo->ucOwnMacIndex);
@@ -1482,7 +1482,7 @@ int cnmShowBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 #endif
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\tCHANNEL/WIDTH/S1/S2: %u/%u/%u/%u/\n",
+		"\tCHANNEL/WIDTH/S1/S2: %u/%u/%u/%u\n",
 		prBssInfo->ucPrimaryChannel,
 		prBssInfo->ucVhtChannelWidth,
 		prBssInfo->ucVhtChannelFrequencyS1,

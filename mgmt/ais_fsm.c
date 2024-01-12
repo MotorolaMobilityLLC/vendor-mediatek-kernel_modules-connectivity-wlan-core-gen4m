@@ -1194,7 +1194,9 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 		mldStarecRegister(prAdapter, prStaRec,
 			prBssDesc->rMlInfo.fgMldType,
 			prBssDesc->rMlInfo.aucMldAddr,
-			prBssDesc->rMlInfo.ucLinkIndex);
+			prBssDesc->rMlInfo.ucLinkIndex,
+			prBssDesc->rMlInfo.u2EmlCap,
+			prBssDesc->rMlInfo.u2MldCap);
 	}
 #endif
 
