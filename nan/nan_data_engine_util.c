@@ -301,12 +301,13 @@ nanRetrieveAttrById(uint8_t *pucAttrList, uint16_t u2Length,
  *         WLAN_STATUS_FAILURE
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanDataEngineComposeNAFHeader(struct ADAPTER *prAdapter,
-	      struct MSDU_INFO *prMsduInfo,
-	      enum _NAN_ACTION_T eAction,
-	      uint8_t *pucLocalMacAddr, uint8_t *pucPeerMacAddr,
-	      struct STA_RECORD *prStaRec) {
+uint32_t nanDataEngineComposeNAFHeader(struct ADAPTER *prAdapter,
+				       struct MSDU_INFO *prMsduInfo,
+				       enum _NAN_ACTION_T eAction,
+				       uint8_t *pucLocalMacAddr,
+				       uint8_t *pucPeerMacAddr,
+				       struct STA_RECORD *prStaRec)
+{
 	struct _NAN_ACTION_FRAME_T *prNAF = NULL;
 	const uint8_t aucOui[VENDOR_OUI_LEN] = NAN_OUI;
 
@@ -315,16 +316,16 @@ nanDataEngineComposeNAFHeader(struct ADAPTER *prAdapter,
 #endif
 
 	if (!prAdapter) {
-		DBGLOG(NAN, ERROR, "[%s] prAdapter error\n", __func__);
+		DBGLOG(NAN, ERROR, "prAdapter error\n");
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
 	if (!prMsduInfo) {
-		DBGLOG(NAN, ERROR, "[%s] prMsduInfo error\n", __func__);
+		DBGLOG(NAN, ERROR, "prMsduInfo error\n");
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	prNAF = (struct _NAN_ACTION_FRAME_T *)prMsduInfo->prPacket;
+	prNAF = prMsduInfo->prPacket;
 
 	/* MAC header */
 	WLAN_SET_FIELD_16(&(prNAF->u2FrameCtrl), MAC_FRAME_ACTION);
@@ -4967,10 +4968,11 @@ nanDataEngineUnrollNDPContext(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-struct STA_RECORD *
-nanDataEngineSearchNDPContext(struct ADAPTER *prAdapter,
-	      struct _NAN_NDL_INSTANCE_T *prNDL,
-	      uint8_t *pucLocalAddr, uint8_t *pucPeerAddr) {
+struct STA_RECORD *nanDataEngineSearchNDPContext(struct ADAPTER *prAdapter,
+					struct _NAN_NDL_INSTANCE_T *prNDL,
+					uint8_t *pucLocalAddr,
+					uint8_t *pucPeerAddr)
+{
 	uint32_t u4Idx;
 	struct _NAN_NDP_CONTEXT_T *prNdpCxt;
 
@@ -4984,10 +4986,8 @@ nanDataEngineSearchNDPContext(struct ADAPTER *prAdapter,
 		if (prNdpCxt->fgValid == FALSE)
 			continue;
 
-		if ((kalMemCmp(prNdpCxt->aucLocalNDIAddr, pucLocalAddr,
-			       MAC_ADDR_LEN) == 0) &&
-		    (kalMemCmp(prNdpCxt->aucPeerNDIAddr, pucPeerAddr,
-			       MAC_ADDR_LEN) == 0))
+		if (EQUAL_MAC_ADDR(prNdpCxt->aucLocalNDIAddr, pucLocalAddr) &&
+		    EQUAL_MAC_ADDR(prNdpCxt->aucPeerNDIAddr, pucPeerAddr))
 			return prNdpCxt->prNanStaRec;
 	}
 
