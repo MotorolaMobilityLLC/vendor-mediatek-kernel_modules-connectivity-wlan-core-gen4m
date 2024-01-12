@@ -2737,6 +2737,9 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 			   IN struct MSDU_INFO *prMsduInfo, IN void *prPacket)
 {
 	struct GLUE_INFO *prGlueInfo;
+#if CFG_CHANGE_CRITICAL_PACKET_PRIORITY
+	struct BSS_INFO *prBssInfo;
+#endif
 
 	ASSERT(prAdapter);
 
