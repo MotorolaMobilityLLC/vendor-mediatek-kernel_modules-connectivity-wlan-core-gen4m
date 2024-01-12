@@ -434,6 +434,7 @@ ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
 else
     CONFIG_MTK_WIFI_NAN=n
 endif
+CONFIG_MTK_WIFI_TRX_DIRECT=y
 ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
@@ -474,9 +475,9 @@ ifeq ($(CONFIG_MTK_WIFI_TRX_DIRECT), y)
     endif
     ifeq (,$(filter CFG_TX_DIRECT,$(PLATFORM_FLAGS)))
         ccflags-y += -DCFG_TX_DIRECT=1
-        ifeq ($(MTK_ANDROID_WMT), y)
-            ccflags-y += -DCFG_TX_DIRECT_VIA_HIF_THREAD=1
-        endif
+    endif
+    ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
+        ccflags-y += -DCFG_TX_DIRECT_VIA_HIF_THREAD=1
     endif
 endif
 
@@ -1060,15 +1061,7 @@ ccflags-y += -I$(src)/os/$(os)/hif/none/include
 endif
 
 ifneq ($(PLATFORM_FLAGS), )
-    # remove trx-direct for mt6639
-    ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
-        FILTER_FLAG += -DCFG_RX_DIRECT=1
-        FILTERED_FLAGS := $(filter-out $(FILTER_FLAG),$(PLATFORM_FLAGS))
-        $(info FILTERED_FLAGS is [${FILTERED_FLAGS}])
-        ccflags-y += $(FILTERED_FLAGS)
-    else
-        ccflags-y += $(PLATFORM_FLAGS)
-    endif
+    ccflags-y += $(PLATFORM_FLAGS)
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_ONLY),$(filter $(CONFIG_MTK_WIFI_ONLY),m y))
