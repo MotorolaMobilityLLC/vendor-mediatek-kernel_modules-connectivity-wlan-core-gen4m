@@ -2281,11 +2281,26 @@ int wf_pwr_on_consys_mcu(void)
 
 int wf_pwr_off_consys_mcu(void)
 {
+#define MAX_WAIT_COREDUMP_COUNT 10
+
 	int check;
 	int value = 0;
 	int ret = 0;
 	int conninfra_hang_ret = 0;
 	int polling_count;
+	int retryCount = 0;
+
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+	while (g_IsCoredumpOngoing) {
+		kalMsleep(100);
+		retryCount++;
+		if (retryCount >= MAX_WAIT_COREDUMP_COUNT) {
+			DBGLOG(INIT, WARN,
+				"Coredump spend long time, retryCount = %d\n",
+				retryCount);
+		}
+	}
+#endif
 
 	DBGLOG(INIT, INFO, "wmmcu power-off start.\n");
 	/* Wakeup conn_infra off write 0x180601A4[0] = 1'b1 */
