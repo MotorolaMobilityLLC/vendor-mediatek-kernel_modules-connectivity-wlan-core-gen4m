@@ -14,6 +14,7 @@
 
 #include "precomp.h"
 #include "mt6639.h"
+#include "coda/mt6639/cb_infra_misc0.h"
 #include "coda/mt6639/cb_infra_rgu.h"
 #include "coda/mt6639/cbtop_gpio_sw_def.h"
 #include "coda/mt6639/conn_cfg.h"
@@ -192,7 +193,11 @@ struct PCIE_CHIP_CR_MAPPING mt6639_bus2chip_cr_mapping[] = {
 	{0x820c0000, 0x08000, 0x4000},  /* WF_UMAC_TOP (PLE) */
 	{0x820c8000, 0x0c000, 0x2000},  /* WF_UMAC_TOP (PSE) */
 	{0x820cc000, 0x0e000, 0x2000},  /* WF_UMAC_TOP (PP) */
+#if IS_MOBILE_SEGMENT
+	{0x74030000, 0x1d0000, 0x2000},  /* PCIe MAC */
+#else
 	{0x74030000, 0x10000, 0x1000},  /* PCIe MAC */
+#endif
 	{0x820e0000, 0x20000, 0x0400},  /* WF_LMAC_TOP BN0 (WF_CFG) */
 	{0x820e1000, 0x20400, 0x0200},  /* WF_LMAC_TOP BN0 (WF_TRB) */
 	{0x820e2000, 0x20800, 0x0400},  /* WF_LMAC_TOP BN0 (WF_AGG) */
@@ -231,8 +236,10 @@ struct PCIE_CHIP_CR_MAPPING mt6639_bus2chip_cr_mapping[] = {
 	{0x7c020000, 0xd0000, 0x10000}, /* CONN_INFRA, wfdma */
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
+	{0x7c010000, 0x100000, 0x10000}, /* CONN_INFRA */
 	{0x70020000, 0x1f0000, 0x10000}, /* Reserved for CBTOP, can't switch */
 	{0x7c500000, MT6639_PCIE2AP_REMAP_BASE_ADDR, 0x2000000}, /* remap */
+	{0x70000000, 0x1e0000, 0x9000},
 	{0x0, 0x0, 0x0} /* End */
 };
 #endif
@@ -1931,12 +1938,26 @@ static uint32_t mt6639_mcu_reset(struct ADAPTER *ad)
 }
 #endif
 
+static void set_cbinfra_remap(struct ADAPTER *ad)
+{
+	DBGLOG(INIT, INFO, "set_cbinfra_remap.\n");
+
+	HAL_MCR_WR(ad,
+		CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_ADDR,
+		0x74037001);
+	HAL_MCR_WR(ad,
+		CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_BT_ADDR,
+		0x70007000);
+}
+
 static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 {
 #define MCU_IDLE		0x1D1E
 
 	uint32_t u4Value = 0, u4PollingCnt = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	set_cbinfra_remap(ad);
 
 	rStatus = mt6639_mcu_reinit(ad);
 	if (rStatus != WLAN_STATUS_SUCCESS)
