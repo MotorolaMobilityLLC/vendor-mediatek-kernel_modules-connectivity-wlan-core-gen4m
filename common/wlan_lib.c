@@ -12123,6 +12123,11 @@ wlanGetSupportNss(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_IOT_AP_BLOCKLIST
 	struct BSS_DESC *prBssDesc;
 #endif
+#if (CFG_SUPPORT_DBDC_DOWNGRADE_NSS == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *mld_bssinfo;
+#endif
+#endif
 
 	uint8_t ucRetValNss = prAdapter->rWifiVar.ucNSS;
 #if CFG_SISO_SW_DEVELOP
@@ -12143,6 +12148,24 @@ wlanGetSupportNss(struct ADAPTER *prAdapter,
 			ucBssIndex);
 		return 1;
 	}
+
+/*The chip capability as DBDC 1x1, we should set
+ *the NSS capability as 1x1 in STR mode. It is no
+ *need to switch OP mode by OMN/OMI.It can avoid
+ *some IOT issue.
+ */
+#if (CFG_SUPPORT_DBDC_DOWNGRADE_NSS == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	mld_bssinfo = mldBssGetByBss(prAdapter, prBssInfo);
+	if (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
+		mld_bssinfo->ucMaxSimuLinks >= 1 &&
+		prAdapter->rWifiVar.fgDbDcModeEn == TRUE) {
+		DBGLOG(CNM, INFO, "STR mode work in 1SS\n");
+		return 1;
+	}
+
+#endif
+#endif
 
 #if CFG_ENABLE_WIFI_DIRECT
 	if (IS_BSS_APGO(prBssInfo)) {
