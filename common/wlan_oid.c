@@ -17939,6 +17939,7 @@ wlanoidQueryThermalDdieTemp(struct ADAPTER *prAdapter,
 #endif
 }
 
+#if CFG_SUPPORT_RTT
 uint32_t wlanoidGetRttCapabilities(struct ADAPTER *prAdapter,
 	void *pvQueryBuffer,
 	uint32_t u4QueryBufferLen,
@@ -18022,6 +18023,7 @@ uint32_t wlanoidHandleRttRequest(struct ADAPTER *prAdapter,
 
 	return rttHandleRttRequest(prAdapter, prRttRequest, ucBssIndex);
 }
+#endif /* CFG_SUPPORT_RTT */
 
 #if CFG_SUPPORT_QA_TOOL
 #if (CONFIG_WLAN_SERVICE == 1)

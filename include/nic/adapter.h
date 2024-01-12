@@ -677,9 +677,9 @@ struct WIFI_VAR {
 
 	struct AIS_FSM_INFO rAisFsmInfo[KAL_AIS_NUM];
 	struct AIS_FSM_INFO *prDefaultAisFsmInfo;
-
+#if CFG_SUPPORT_RTT
 	struct RTT_INFO rRttInfo;
-
+#endif
 	enum ENUM_PWR_STATE aePwrState[MAX_BSSID_NUM + 1];
 
 	struct BSS_INFO arBssInfoPool[MAX_BSSID_NUM];

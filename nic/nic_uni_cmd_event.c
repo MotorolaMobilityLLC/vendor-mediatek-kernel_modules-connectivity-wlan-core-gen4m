@@ -144,6 +144,10 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	[CMD_ID_SET_ICS_SNIFFER] = nicUniCmdSetIcsSniffer,
 #endif
+#if (CFG_SUPPORT_RTT == 1)
+	[CMD_ID_RTT_GET_CAPABILITIES] = nicUniCmdRttGetCapabilities,
+	[CMD_ID_RTT_RANGE_REQUEST] = nicUniCmdRttRangeRequest,
+#endif
 #if (CFG_SUPPORT_NAN == 1)
 	[CMD_ID_NAN_EXT_CMD] = nicUniCmdNan,
 #endif
@@ -230,6 +234,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_BSS_ER] = nicUniEventBssER,
 	[UNI_EVENT_ID_RSSI_MONITOR] = nicUniEventRssiMonitor,
 	[UNI_EVENT_ID_HIF_CTRL] = nicUniEventHifCtrl,
+#if (CFG_SUPPORT_RTT == 1)
+	[UNI_EVENT_ID_RTT] = nicUniEventRtt,
+#endif
 	[UNI_EVENT_ID_NAN] = nicUniEventNan,
 #if CFG_SUPPORT_TX_BF
 	[UNI_EVENT_ID_BF] = nicUniEventBF,
@@ -6789,6 +6796,82 @@ uint32_t nicUniCmdEfuseFreeBlock(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if (CFG_SUPPORT_RTT == 1)
+uint32_t nicUniCmdRttGetCapabilities(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct UNI_CMD_RTT *uni_cmd;
+	struct UNI_CMD_RTT_GET_CAPA_T *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_RTT) +
+		sizeof(struct UNI_CMD_RTT_GET_CAPA_T);
+
+	if (info->ucCID != CMD_ID_RTT_GET_CAPABILITIES)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_RTT,
+		max_cmd_len, nicUniEventRttCapabilities,
+		nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_RTT *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_RTT_GET_CAPA_T *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_RTT_TAG_GET_CAPA;
+	tag->u2Length = sizeof(*tag);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdRttRangeRequest(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_RTT_REQUEST *cmd;
+	struct UNI_CMD_RTT *uni_cmd;
+	struct UNI_CMD_RTT_RANGE_REQ_T *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_RTT) +
+		sizeof(struct UNI_CMD_RTT_RANGE_REQ_T);
+
+	if (info->ucCID != CMD_ID_RTT_RANGE_REQUEST ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_RTT_REQUEST *)
+		info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_RTT,
+		max_cmd_len, nicUniCmdEventSetCommon,
+		nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_RTT *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_RTT_RANGE_REQ_T *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_RTT_TAG_RANGE_REQ;
+	tag->u2Length = sizeof(*tag);
+	tag->ucSeqNum = cmd->ucSeqNum;
+	tag->fgEnable = cmd->fgEnable;
+	tag->ucConfigNum = cmd->ucConfigNum;
+	kalMemCopy(tag->ucPaddings, cmd->ucPaddings, 5);
+	kalMemCopy(tag->arRttConfigs, cmd->arRttConfigs,
+		sizeof(struct RTT_CONFIG) * CFG_RTT_MAX_CANDIDATES);
+
+	dumpMemory32((uint32_t *)tag->arRttConfigs,
+		sizeof(struct RTT_CONFIG) * CFG_RTT_MAX_CANDIDATES);
+
+	DBGLOG(REQ, INFO, "rtt request, seq:%d, enable:%d\n",
+		tag->ucSeqNum, tag->fgEnable);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
 #if CFG_SUPPORT_NAN
 struct WIFI_UNI_CMD_ENTRY *nicUniCmdNanGenEntry(uint16_t u2Tag,
 	uint16_t u2Length, uint8_t **ppucEvtBuf, struct ADAPTER *ad)
@@ -10769,6 +10852,111 @@ void nicUniEventHifCtrl(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 	}
 }
+
+#if CFG_SUPPORT_RTT
+void nicUniEventRttCapabilities(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
+	struct UNI_EVENT_RTT *evt =
+		(struct UNI_EVENT_RTT *)uni_evt->aucBuffer;
+	struct UNI_EVENT_RTT_CAPA_T *tag =
+		(struct UNI_EVENT_RTT_CAPA_T *) evt->aucTlvBuffer;
+	struct EVENT_RTT_CAPABILITIES legacy = {0};
+
+	kalMemCopy(&legacy.rCapabilities, &tag->rCapabilities,
+		sizeof(struct RTT_CAPABILITIES));
+
+	nicCmdEventRttCapabilities(prAdapter, prCmdInfo, (uint8_t *)&legacy);
+}
+
+void nicUniEventRtt(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	uint16_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_RTT);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_RTT_TAG_RTT_RESULT: {
+			struct UNI_EVENT_RTT_RESULT_T *rr =
+				(struct UNI_EVENT_RTT_RESULT_T *) tag;
+			struct EVENT_RTT_RESULT *legacy = NULL;
+			struct RTT_RESULT *lr = NULL;
+			uint32_t u4Size;
+
+			u4Size = sizeof(struct EVENT_RTT_RESULT);
+			if (rr->u2IELen < 512) /* LCI, LCR */
+				u4Size += rr->u2IELen;
+			legacy = kalMemAlloc(u4Size, VIR_MEM_TYPE);
+
+			if (legacy == NULL) {
+				DBGLOG(NIC, WARN, "Out of memroy\n");
+				return;
+			}
+
+			lr = &legacy->rResult;
+			kalMemCopy(lr->aucMacAddr, rr->aucMacAddr,
+				MAC_ADDR_LEN);
+			lr->u4BurstNum = rr->u4BurstNum;
+			lr->u4MeasurementNumber = rr->u4MeasurementNumber;
+			lr->u4SuccessNumber = rr->u4SuccessNumber;
+			lr->ucNumPerBurstPeer = rr->ucNumPerBurstPeer;
+			lr->eStatus = rr->eStatus;
+			lr->ucRetryAfterDuration = rr->ucRetryAfterDuration;
+			lr->eType = rr->eType;
+			lr->i4Rssi = rr->i4Rssi;
+			lr->i4RssiSpread = rr->i4RssiSpread;
+			kalMemCopy(&lr->rTxRate, &rr->rTxRate,
+				sizeof(struct WIFI_RATE));
+			kalMemCopy(&lr->rRxRate, &rr->rRxRate,
+				sizeof(struct WIFI_RATE));
+			lr->i8Rtt = rr->i8Rtt;
+			lr->i8RttSd = rr->i8RttSd;
+			lr->i8RttSpread = rr->i8RttSpread;
+			lr->i4DistanceMM = rr->i4DistanceMM;
+			lr->i4DistanceSdMM = rr->i4DistanceSdMM;
+			lr->i4DistanceSpreadMM = rr->i4DistanceSpreadMM;
+			lr->i8Ts = rr->i8Ts;
+			lr->i4BurstDuration = rr->i4BurstDuration;
+			lr->i4NegotiatedBustNum = rr->i4NegotiatedBustNum;
+
+			if (rr->u2IELen < 512) { /* LCI, LCR */
+				legacy->u2IELen = rr->u2IELen;
+				kalMemCopy(legacy->aucIE,
+					rr->aucIE, rr->u2IELen);
+			}
+
+			RUN_RX_EVENT_HANDLER(EVENT_ID_RTT_RESULT, legacy);
+
+			kalMemFree(legacy, VIR_MEM_TYPE, u4Size);
+		}
+			break;
+		case UNI_EVENT_RTT_TAG_RTT_DONE: {
+			struct UNI_EVENT_RTT_DONE_T *rd =
+				(struct UNI_EVENT_RTT_DONE_T *)tag;
+			struct EVENT_RTT_DONE legacy = {0};
+
+			legacy.ucSeqNum = rd->ucSeqNum;
+
+			RUN_RX_EVENT_HANDLER(EVENT_ID_RTT_DONE,
+				&legacy);
+		}
+			break;
+		default:
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+#endif
 
 void nicUniEventNan(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {

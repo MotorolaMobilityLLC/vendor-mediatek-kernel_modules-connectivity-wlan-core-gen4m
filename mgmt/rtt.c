@@ -20,6 +20,7 @@
  */
 #include "precomp.h"
 
+#if CFG_SUPPORT_RTT
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -169,6 +170,79 @@ void rttActiveNetwork(struct ADAPTER *prAdapter,
 
 }
 
+uint8_t rttBwToBssBw(uint8_t eRttBw)
+{
+	uint8_t ucBssBw = MAX_BW_20MHZ;
+
+	switch (eRttBw) {
+	case WIFI_RTT_BW_5:
+	case WIFI_RTT_BW_10:
+	case WIFI_RTT_BW_20:
+		ucBssBw = MAX_BW_20MHZ;
+		break;
+	case WIFI_RTT_BW_40:
+		ucBssBw = MAX_BW_40MHZ;
+		break;
+	case WIFI_RTT_BW_80:
+		ucBssBw = MAX_BW_80MHZ;
+		break;
+	case WIFI_RTT_BW_160:
+		ucBssBw = MAX_BW_160MHZ;
+		break;
+	default:
+		ucBssBw = MAX_BW_160MHZ;
+		break;
+	}
+
+	return ucBssBw;
+}
+
+uint8_t rttBssBwToRttBw(uint8_t ucBssBw)
+{
+	uint8_t eRttBw = WIFI_RTT_BW_20;
+
+	switch (ucBssBw) {
+	case MAX_BW_20MHZ:
+		eRttBw = WIFI_RTT_BW_20;
+		break;
+	case MAX_BW_40MHZ:
+		eRttBw = WIFI_RTT_BW_40;
+		break;
+	case MAX_BW_80MHZ:
+		eRttBw = WIFI_RTT_BW_80;
+		break;
+	case MAX_BW_160MHZ:
+		eRttBw = WIFI_RTT_BW_160;
+		break;
+	default:
+		eRttBw = WIFI_RTT_BW_160;
+		break;
+	}
+
+	return eRttBw;
+}
+
+uint8_t rttReviseBw(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex,
+			uint8_t eRttBwIn)
+{
+	uint8_t ucRttBw;
+	uint8_t ucMaxBssBw;
+	uint8_t eRttBwOut = eRttBwIn;
+
+	ucRttBw = rttBwToBssBw(eRttBwIn);
+	ucMaxBssBw = cnmGetBssMaxBw(prAdapter, ucBssIndex);
+
+	if (ucRttBw > ucMaxBssBw) {
+		eRttBwOut = rttBssBwToRttBw(ucMaxBssBw);
+		DBGLOG(RTT, INFO,
+			"Convert RTT BW from %d to %d\n",
+			eRttBwIn, eRttBwOut);
+	}
+
+	return eRttBwOut;
+}
+
 uint32_t rttStartRttRequest(struct ADAPTER *prAdapter,
 			 struct PARAM_RTT_REQUEST *prRequest,
 			 uint8_t ucBssIndex)
@@ -214,7 +288,7 @@ uint32_t rttStartRttRequest(struct ADAPTER *prAdapter,
 			tc->ucLcrRequest = rc->ucLcrRequest;
 			tc->ucBurstDuration = rc->ucBurstDuration;
 			tc->ePreamble = rc->ePreamble;
-			tc->eBw = rc->eBw;
+			tc->eBw = rttReviseBw(prAdapter, ucBssIndex, rc->eBw);
 			/* TODO: set TSF Time */
 		} else {
 			DBGLOG(RTT, ERROR,
@@ -436,6 +510,7 @@ void rttEventResult(struct ADAPTER *prAdapter,
 			&entry->rLinkEntry);
 	}
 }
+#endif /* CFG_SUPPORT_RTT */
 
 #if 0
 void rttFreeResult(struct RTT_INFO *prRttInfo, uint8_t aucBSSID[])

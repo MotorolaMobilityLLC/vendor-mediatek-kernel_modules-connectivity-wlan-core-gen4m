@@ -201,8 +201,10 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 #if (CFG_COALESCING_INTERRUPT == 1)
 	{EVENT_ID_PF_CF_COALESCING_INT_DONE, nicEventCoalescingIntDone},
 #endif
+#if CFG_SUPPORT_RTT
 	{EVENT_ID_RTT_RESULT, nicEventRttResult},
 	{EVENT_ID_RTT_DONE, nicEventRttDone},
+#endif
 #if (CFG_VOLT_INFO == 1)
 	{EVEN_ID_GET_VOLT_INFO, nicEventGetVnf},
 #endif

@@ -2385,6 +2385,7 @@ struct STR_CMD_HANDLER str_cmd_handlers[] = {
 		.policy    = u8_policy,
 		.u4PolicySize = ARRAY_SIZE(u8_policy)
 	},
+#if CFG_SUPPORT_RTT
 	{
 		.pcCmdStr  = CMD_RTT_GET_CAP,
 		.pfHandler = testmode_rtt_test,
@@ -2393,6 +2394,7 @@ struct STR_CMD_HANDLER str_cmd_handlers[] = {
 		.policy    = u8_policy,
 		.u4PolicySize = ARRAY_SIZE(u8_policy)
 	},
+#endif
 	{
 		.pcCmdStr  = CMD_REPORT_VENDOR_SPECIFIED,
 		.pfHandler = testmode_set_report_vendor_specified,
