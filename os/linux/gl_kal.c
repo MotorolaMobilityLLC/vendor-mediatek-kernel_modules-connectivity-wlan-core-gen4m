@@ -4792,7 +4792,7 @@ int main_thread(void *data)
 			(unsigned int)time.tv_sec)) {
 			uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
-			rStatus = kalSyncTimeToFW(prGlueInfo->prAdapter,
+			rStatus = kalSyncTimeToFW(prGlueInfo->prAdapter, FALSE,
 				(unsigned int)time.tv_sec,
 				(unsigned int)KAL_GET_USEC(time));
 			if (rStatus == WLAN_STATUS_FAILURE)
@@ -9293,8 +9293,7 @@ uint32_t kalSetSuspendFlagToEMI(IN struct ADAPTER
 	return WLAN_STATUS_SUCCESS;
 }
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
-void setupTimeParameter(
+void setTimeParameter(
 		struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT *prChipConfigInfo,
 		int chipConfigInfoSize, unsigned int second,
 		unsigned int usecond)
@@ -9318,7 +9317,7 @@ void setupTimeParameter(
 }
 
 uint32_t
-kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
+kalSyncTimeToFW(IN struct ADAPTER *prAdapter, IN u_int8_t fgInitCmd,
 		unsigned int second, unsigned int usecond)
 {
 	uint32_t u4SetBufferLen = 0;
@@ -9330,7 +9329,7 @@ kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
-	setupTimeParameter(&rChipConfigInfo, sizeof(rChipConfigInfo),
+	setTimeParameter(&rChipConfigInfo, sizeof(rChipConfigInfo),
 			second, usecond);
 
 	DBGLOG(INIT, INFO,
@@ -9353,7 +9352,8 @@ kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
 	kalMemCopy(rCmdChipConfig.aucCmd, rChipConfigInfo.aucCmd,
 		   rCmdChipConfig.u2MsgSize);
 
-	rStatus = wlanSendSetQueryCmd(prAdapter,
+	if (!fgInitCmd)
+		rStatus = wlanSendSetQueryCmd(prAdapter,
 					  CMD_ID_CHIP_CONFIG,
 					  TRUE,
 					  FALSE,
@@ -9363,6 +9363,13 @@ kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
 					  sizeof(struct CMD_CHIP_CONFIG),
 					  (uint8_t *) &rCmdChipConfig,
 					  &rChipConfigInfo, u4SetBufferLen);
+	else
+		rStatus = wlanSendInitCmd(prAdapter,
+			  INIT_CMD_ID_LOG_TIME_SYNC,
+			  TRUE,
+			  TRUE,
+			  sizeof(struct CMD_CHIP_CONFIG),
+			  (uint8_t *) &rCmdChipConfig);
 
 	return rStatus;
 }
@@ -9389,7 +9396,7 @@ kalSyncTimeToFWByIoctl(void)
 		second = (unsigned int)time.tv_sec;
 		usecond = (unsigned int)KAL_GET_USEC(time);
 
-		setupTimeParameter(&rChipConfigInfo, sizeof(rChipConfigInfo),
+		setTimeParameter(&rChipConfigInfo, sizeof(rChipConfigInfo),
 				second, usecond);
 
 		DBGLOG(INIT, INFO,
@@ -9405,7 +9412,6 @@ kalSyncTimeToFWByIoctl(void)
 	}
 #endif
 }
-#endif /* (CFG_SUPPORT_CONNINFRA == 1) */
 
 void kalUpdateCompHdlrRec(IN struct ADAPTER *prAdapter,
 				IN PFN_OID_HANDLER_FUNC pfnOidHandler,
