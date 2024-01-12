@@ -1308,6 +1308,9 @@ struct test_operation {
 		u_int8 enable, u_char band_idx, u_int32 rx_pkt_len);
 	s_int32 (*op_get_antswap_capability)(
 			struct test_wlan_info *winfos,
+#if (CFG_SUPPORT_CONNAC3X == 1)
+			u_char band_idx,
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
 			u_int32 *antswap_support);
 	s_int32 (*op_set_antswap)(
 			struct test_wlan_info *winfos,

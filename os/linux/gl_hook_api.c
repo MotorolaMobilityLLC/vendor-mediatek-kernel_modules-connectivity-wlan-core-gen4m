@@ -4730,8 +4730,9 @@ uint32_t ServiceWlanOid(void *winfos,
 		}
 
 		return WLAN_STATUS_SUCCESS;
-	case OP_WLAN_OID_GET_ANTSWAP_CAPBILITY:
+
 #if CFG_SUPPORT_ANT_SWAP
+	case OP_WLAN_OID_GET_ANTSWAP_CAPBILITY:
 		if (!prChipInfo) {
 			DBGLOG(RFTEST, ERROR, "prChipInfo is NULL\n");
 			return -EFAULT;

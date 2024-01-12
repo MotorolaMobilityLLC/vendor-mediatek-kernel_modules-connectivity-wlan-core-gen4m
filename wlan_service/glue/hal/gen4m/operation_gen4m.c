@@ -247,8 +247,16 @@ enum ENUM_RF_AT_FUNCID {
 	/* Set HW TX enable */
 	RF_AT_FUNCID_SET_HWTX_MODE = 167,
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+
 	/* 11 be */
-	RF_AT_FUNCID_SET_PUNCTURE = 168
+	RF_AT_FUNCID_SET_PUNCTURE = 168,
+
+	RF_AT_FUNCID_SET_CFG_ON = 176,
+	RF_AT_FUNCID_SET_CFG_OFF = 177,
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
+
+	RF_AT_FUNCID_END = 0xff
 };
 
 /* Command */
@@ -554,8 +562,24 @@ s_int32 mt_op_set_cfg_on_off(
 	struct test_wlan_info *winfos,
 	u_int8 type, u_int8 enable, u_char band_idx)
 {
-	u_int32 func_index, func_data;
 	s_int32 ret = SERV_STATUS_SUCCESS;
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+
+	ret = tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
+
+	/* type pass through to FW */
+	if (enable)
+		ret = tm_rftest_set_auto_test(
+			winfos, RF_AT_FUNCID_SET_CFG_ON, type);
+	else
+		ret = tm_rftest_set_auto_test(
+			winfos, RF_AT_FUNCID_SET_CFG_OFF, type);
+
+#else
+
+	u_int32 func_index, func_data;
 	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
 
 	if (pr_oid_funcptr == NULL)
@@ -587,6 +611,8 @@ s_int32 mt_op_set_cfg_on_off(
 
 	ret = tm_rftest_set_auto_test(
 		winfos, func_index, func_data);
+
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
 
 	return ret;
 }
@@ -695,6 +721,9 @@ s_int32 mt_op_set_rx_filter_pkt_len(
 
 s_int32 mt_op_get_antswap_capability(
 	struct test_wlan_info *winfos,
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	u_char band_idx,
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
 	u_int32 *antswap_support)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
@@ -706,7 +735,11 @@ s_int32 mt_op_get_antswap_capability(
 
 	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
 		OP_WLAN_OID_GET_ANTSWAP_CAPBILITY,
+#if (CFG_SUPPORT_CONNAC3X == 1)
+		(void *)&band_idx,
+#else
 		NULL,
+#endif /*(CFG_SUPPORT_CONNAC3X == 1)*/
 		0,
 		antswap_support,
 		NULL);
@@ -1154,6 +1187,41 @@ s_int32 mt_op_start_tx(
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_PKTCNT, pkt_cnt);
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	/* QA tool pass through to FW */
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_PREAMBLE, configs->tx_mode);
+
+	if (configs->tx_mode == TEST_MODE_HE_TB) {
+		/*do ru operation*/
+		if (ru_sta->valid) {
+			/*Calculate HE TB PHY Info*/
+			mt_engine_calc_phy(ru_sta,
+					ru_sta->mpdu_length+13,
+					configs->stbc,
+					configs->sgi,
+					configs->max_pkt_ext);
+
+			configs->dmnt_ru_idx = 0;
+
+			/*Replace the mcs/nss/ldpc/mpdu_len setting*/
+			configs->mcs = ru_sta->rate;
+			configs->nss = ru_sta->nss;
+			configs->ldpc = ru_sta->ldpc;
+			tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_PKTLEN, ru_sta->mpdu_length);
+
+			/*Do Calc Manual HE TB TX*/
+			mt_op_set_manual_he_tb_value(winfos,
+			ru_sta, configs);
+		}
+	}
+
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_RATE, configs->mcs);
+
+#else
+
 	if (configs->tx_mode == TEST_MODE_OFDM) {
 		configs->tx_mode = TEST_MODE_CCK;
 		configs->mcs += 4;
@@ -1211,6 +1279,7 @@ s_int32 mt_op_start_tx(
 		tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_RATE, configs->mcs);
 	}
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
 
 	if (tx_pwr > 0x3F)
 		tx_pwr += 128;
@@ -1770,14 +1839,20 @@ s_int32 mt_op_dbdc_continuous_tx(
 		tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_SET_DBDC_BAND_IDX,
 			(u_int32)band_idx);
-#if 0
-		SetFreq = tm_ch_num_to_freq(configs->channel);
-		tm_rftest_set_auto_test(winfos,
-			RF_AT_FUNCID_CHNL_FREQ, SetFreq);
-#endif
+
 		tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_SET_PRIMARY_CH,
 			configs->pri_sel);
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+		/* QA tool pass through to FW */
+		ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_PREAMBLE, tx_mode);
+
+		tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_RATE, rate);
+
+#else
 
 		if (tx_mode == 1) {
 			tx_mode = 0;
@@ -1810,6 +1885,7 @@ s_int32 mt_op_dbdc_continuous_tx(
 			tm_rftest_set_auto_test(winfos,
 				RF_AT_FUNCID_RATE, rate);
 		}
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
 
 		ret = tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_SET_CBW,
@@ -2671,13 +2747,57 @@ s_int32 mt_op_get_rx_stat_band(
 	u_int8 blk_idx,
 	struct test_rx_stat_band_info *rx_st_band)
 {
-
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	struct param_custom_access_rx_stat rx_stat_test;
 	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
 
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+
+	rx_stat_test.seq_num = 0;
+	rx_stat_test.total_num = sizeof(test_hqa_rx_stat);
+	rx_stat_test.band_idx = band_idx;
+	rx_stat_test.data = 2;	/* connac3 version */
+
+	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
+		 OP_WLAN_OID_QUERY_RX_STATISTICS,
+		 &rx_stat_test,
+		 sizeof(rx_stat_test),
+		 NULL,
+		 &test_hqa_rx_stat);
+
+	rx_st_band->mac_rx_fcs_err_cnt =
+		SERV_OS_NTOHL(test_hqa_rx_stat.mac_rx_fcs_err_cnt);
+	rx_st_band->mac_rx_mdrdy_cnt =
+		SERV_OS_NTOHL(test_hqa_rx_stat.mac_rx_mdrdy_cnt);
+	rx_st_band->mac_rx_len_mismatch =
+		SERV_OS_NTOHL(test_hqa_rx_stat.mac_rx_len_mismatch);
+	rx_st_band->mac_rx_fcs_ok_cnt =
+		SERV_OS_NTOHL(test_hqa_rx_stat.mac_fcs_ok);
+	rx_st_band->phy_rx_fcs_err_cnt_cck =
+		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_fcs_err_cnt_cck);
+	rx_st_band->phy_rx_fcs_err_cnt_ofdm =
+		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_fcs_err_cnt_ofdm);
+	rx_st_band->phy_rx_pd_cck =
+		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_pd_cck);
+	rx_st_band->phy_rx_pd_ofdm =
+		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_pd_ofdm);
+	rx_st_band->phy_rx_sig_err_cck =
+		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_sig_err_cck);
+	rx_st_band->phy_rx_sfd_err_cck =
+		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_sfd_err_cck);
+	rx_st_band->phy_rx_sig_err_ofdm =
+		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_sig_err_ofdm);
+	rx_st_band->phy_rx_tag_err_ofdm =
+		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_tag_err_ofdm);
+	rx_st_band->phy_rx_mdrdy_cnt_cck =
+		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_mdrdy_cnt_cck);
+	rx_st_band->phy_rx_mdrdy_cnt_ofdm =
+		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_mdrdy_cnt_ofdm);
+
+#else
 
 	rx_stat_test.seq_num = 0;
 	rx_stat_test.total_num = 76;
@@ -2764,6 +2884,8 @@ s_int32 mt_op_get_rx_stat_band(
 			test_hqa_rx_stat.phy_rx_mdrdy_cnt_ofdm_band1);
 	}
 
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
+
 	return ret;
 }
 
@@ -2842,13 +2964,22 @@ s_int32 mt_op_get_rx_stat_user(
 
 	rx_st_user->freq_offset_from_rx =
 		SERV_OS_NTOHL(test_hqa_rx_stat.freq_offset_from_rx);
+
+	rx_st_user->fcs_error_cnt =
+		SERV_OS_NTOHL(test_hqa_rx_stat.mac_rx_fcs_err_cnt);
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+
+	rx_st_user->snr = SERV_OS_NTOHL(test_hqa_rx_stat.snr0);
+
+#else
+
 	if (band_idx == M_BAND_0)
 		rx_st_user->snr = SERV_OS_NTOHL(test_hqa_rx_stat.snr0);
 	else
 		rx_st_user->snr = SERV_OS_NTOHL(test_hqa_rx_stat.snr1);
 
-	rx_st_user->fcs_error_cnt =
-		SERV_OS_NTOHL(test_hqa_rx_stat.mac_rx_fcs_err_cnt);
+#endif /*(CFG_SUPPORT_CONNAC3X == 1)*/
 
 	return ret;
 }
@@ -2873,6 +3004,14 @@ s_int32 mt_op_get_rx_stat_comm(
 		SERV_OS_NTOHL(test_hqa_rx_stat.sig_mcs);
 	rx_st_comm->sinr =
 		SERV_OS_NTOHL(test_hqa_rx_stat.sinr);
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+
+	rx_st_comm->driver_rx_count =
+	SERV_OS_NTOHL(test_hqa_rx_stat.driver_rx_count);
+
+#else
+
 	if (band_idx == M_BAND_0) {
 		rx_st_comm->driver_rx_count =
 		SERV_OS_NTOHL(test_hqa_rx_stat.driver_rx_count);
@@ -2880,6 +3019,9 @@ s_int32 mt_op_get_rx_stat_comm(
 		rx_st_comm->driver_rx_count =
 		SERV_OS_NTOHL(test_hqa_rx_stat.driver_rx_count1);
 	}
+
+#endif /*(CFG_SUPPORT_CONNAC3X == 1)*/
+
 	return ret;
 }
 
@@ -2901,6 +3043,14 @@ s_int32 mt_op_get_wf_path_comb(
 	if (!path_len)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+
+	*path_len = 2;
+	for (i = 0; i < *path_len; i++)
+		*(path + i) = i;
+
+#else
+
 	if (dbdc_mode_en) {
 		*path_len = 1;
 		*path = 0;
@@ -2912,6 +3062,8 @@ s_int32 mt_op_get_wf_path_comb(
 
 	if (*path_len > MAX_ANT_NUM)
 		ret = FALSE;
+
+#endif /*(CFG_SUPPORT_CONNAC3X == 1)*/
 
 	return ret;
 }
