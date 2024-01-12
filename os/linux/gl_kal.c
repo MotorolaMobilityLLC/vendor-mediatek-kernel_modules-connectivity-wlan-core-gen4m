@@ -8771,6 +8771,39 @@ static void kalDumpHifStats(IN struct ADAPTER *prAdapter)
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
 }
 
+uint32_t kalSetSuspendFlagToEMI(IN struct ADAPTER
+					*prAdapter, IN u_int8_t fgSuspend)
+{
+#if CFG_MTK_ANDROID_EMI
+	uint32_t u4Offset = prAdapter->u4HostStatusEmiOffset
+				& WIFI_EMI_ADDR_MASK;
+	uint32_t suspendFlag = 0;
+
+	if (!gConEmiPhyBase) {
+#if (CFG_SUPPORT_CONNINFRA == 1)
+		conninfra_get_phy_addr(
+			(unsigned int *)&gConEmiPhyBase,
+			(unsigned int *)&gConEmiSize);
+#endif
+
+		if (!gConEmiPhyBase) {
+			DBGLOG(INIT, ERROR,
+				"[EMI_Suspend] gConEmiPhyBase invalid\n");
+			return WLAN_STATUS_FAILURE;
+		}
+	}
+	suspendFlag = (fgSuspend == TRUE) ? 0x11111111 : 0x22222222;
+
+	DBGLOG(INIT, TRACE,
+		"[EMI_Suspend] EmiPhyBase:0x%llx offset:0x%x set 0x%x",
+		(uint64_t)gConEmiPhyBase, u4Offset, suspendFlag);
+
+	wf_ioremap_write((gConEmiPhyBase + u4Offset), suspendFlag);
+
+#endif /* CFG_MTK_ANDROID_EMI */
+	return WLAN_STATUS_SUCCESS;
+}
+
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
 #endif

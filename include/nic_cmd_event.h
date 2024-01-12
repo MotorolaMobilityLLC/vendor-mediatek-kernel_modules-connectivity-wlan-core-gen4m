@@ -1015,6 +1015,7 @@ enum NIC_CAPABILITY_V2_TAG {
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 	TAG_CAP_P2P = 0x17,
 #endif
+	TAG_CAP_HOST_STATUS_EMI_OFFSET = 0x19,
 	TAG_CAP_TOTAL
 };
 
@@ -1132,6 +1133,10 @@ struct CAP_ANTSWP {
 	uint8_t  ucReserved[1];
 };
 #endif
+
+struct NIC_HOST_STATUS_EMI_OFFSET {
+	uint32_t u4EmiOffset;  /* TRUE for COEX FDD mode */
+};
 
 #define EFUSE_SECTION_TABLE_SIZE        (10)   /* It should not be changed. */
 
@@ -3161,6 +3166,9 @@ uint32_t nicCfgChipCapAntSwpCap(IN struct ADAPTER *prAdapter,
 		IN uint8_t *pucEventBuf);
 
 #endif
+
+uint32_t nicCmdEventHostStatusEmiOffset(IN struct ADAPTER *prAdapter,
+					IN uint8_t *pucEventBuf);
 
 void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 			   IN uint8_t *pucEventBuf);
