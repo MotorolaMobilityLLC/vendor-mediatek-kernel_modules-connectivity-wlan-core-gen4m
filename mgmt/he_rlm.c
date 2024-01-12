@@ -413,7 +413,7 @@ static void heRlmFillHeCapIE(
 #if CFG_SUPPORT_BFEE
 	if (IS_FEATURE_ENABLED(prWifiVar->ucStaHeBfee)) {
 		HE_SET_PHY_CAP_SU_BFMEE(prHeCap->ucHePhyCap);
-		HE_SET_PHY_CAP_BFMEE_STS_LT_OR_EQ_80M(prHeCap->ucHePhyCap, 7);
+		HE_SET_PHY_CAP_BFMEE_STS_LT_OR_EQ_80M(prHeCap->ucHePhyCap, 3);
 		HE_SET_PHY_CAP_NG_16_SU_FB(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_NG_16_MU_FB(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_CODE_BOOK_4_2_SU_FB(prHeCap->ucHePhyCap);
