@@ -608,7 +608,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	uint32_t u4BufLen, u4TxRate = 0, u4RxRate = 0, u4RxBw = 0;
 	int32_t i4Rssi = 0;
 	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
-	struct PARAM_LINK_SPEED_EX rLinkSpeed;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed = {0};
 	uint32_t u4TotalError;
 	uint32_t u4FcsError;
 	struct net_device_stats *prDevStats;
@@ -621,7 +621,8 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	ASSERT(prGlueInfo);
 
 	ucBssIndex = wlanGetBssIdx(ndev);
-	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
+	if (unlikely(ucBssIndex >= BSSID_NUM ||
+	    !IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex)))
 		return -EINVAL;
 
 	kalMemZero(arBssid, MAC_ADDR_LEN);
@@ -671,8 +672,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 			       &u4BufLen, ucBssIndex);
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
-	if (rStatus == WLAN_STATUS_SUCCESS &&
-		IS_BSS_INDEX_VALID(ucBssIndex)) {
+	if (rStatus == WLAN_STATUS_SUCCESS) {
 		u4TxRate = rLinkSpeed.rLq[ucBssIndex].u2TxLinkSpeed;
 		u4RxRate = rLinkSpeed.rLq[ucBssIndex].u2RxLinkSpeed;
 		i4Rssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
