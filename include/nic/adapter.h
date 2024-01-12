@@ -142,6 +142,9 @@ struct WLAN_INFO {
 /* CMD_PS_PROFILE_T         ePowerSaveMode; */
 	struct CMD_PS_PROFILE arPowerSaveMode[MAX_BSSID_NUM];
 
+	/* Support power save flag for the caller */
+	uint32_t u4PowerSaveFlag[MAX_BSSID_NUM];
+
 	/* trigger parameter */
 	enum ENUM_RSSI_TRIGGER_TYPE eRssiTriggerType;
 	int32_t rRssiTriggerValue;
@@ -1418,6 +1421,14 @@ struct ADAPTER {
 
 	struct PERF_MONITOR_T rPerMonitor;
 	struct ICAP_INFO_T rIcapInfo;
+
+	/* Support change QM RX BA entry miss timeout (unit: ms) dynamically */
+	uint32_t u4QmRxBaMissTimeout;
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	u_int8_t fgEnLowLatencyMode;
+	u_int8_t fgEnCfg80211Scan;
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

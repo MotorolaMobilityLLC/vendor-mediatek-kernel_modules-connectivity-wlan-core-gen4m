@@ -750,7 +750,7 @@ wlanoidSetP2pPowerSaveProfile(IN struct ADAPTER *prAdapter,
 
 	/* TODO: FIXME */
 	status = nicConfigPowerSaveProfile(prAdapter, prAdapter->ucP2PDevBssIdx,
-					   ePowerMode, TRUE);
+					   ePowerMode, TRUE, PS_CALLER_P2P);
 	return status;
 }				/* end of wlanoidSetP2pPowerSaveProfile() */
 

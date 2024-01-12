@@ -433,6 +433,16 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	,
 #endif
 
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	/* Note: we should put following code in order */
+	{OID_CUSTOM_LOWLATENCY_MODE,				/* 0xFFA0CC00 */
+	DISP_STRING("OID_CUSTOM_LOWLATENCY_MODE"),
+	FALSE, FALSE, ENUM_OID_DRIVER_CORE, sizeof(uint32_t),
+	NULL,
+	(PFN_OID_HANDLER_FUNC_REQ) wlanoidSetLowLatencyMode}
+	,
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
 	{OID_IPC_WIFI_LOG_UI,
 	DISP_STRING("OID_IPC_WIFI_LOG_UI"),
 	FALSE,
