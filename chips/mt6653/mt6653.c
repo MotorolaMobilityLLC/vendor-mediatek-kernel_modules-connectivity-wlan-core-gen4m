@@ -3353,8 +3353,8 @@ static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter)
 {
 #if CFG_MTK_CCCI_SUPPORT
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
-	uint32_t ccif_base = 0x160000, pcie2ap_base = 0x1a0000;
-	uint32_t mcif_emi_base, u4Val = 0;
+	uint32_t ccif_base = 0x160000;
+	uint32_t mcif_emi_base, u4Val = 0, u4WifiEmi = 0;
 	void *vir_addr = NULL;
 	int size = 0;
 
@@ -3365,7 +3365,6 @@ static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter)
 #endif
 #endif
 	ccif_base += (uint32_t)(prChipInfo->u8CsrOffset);
-	pcie2ap_base += (uint32_t)(prChipInfo->u8CsrOffset);
 	mcif_emi_base = get_smem_phy_start_addr(
 		MD_SYS1, SMEM_USER_RAW_MD_CONSYS, &size);
 	if (!mcif_emi_base) {
@@ -3378,6 +3377,9 @@ static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter)
 		DBGLOG(INIT, ERROR, "ioremap fail.\n");
 		return -1;
 	}
+
+	u4WifiEmi = (uint32_t)emi_mem_get_phy_base(prAdapter->chip_info) +
+		emi_mem_offset_convert(0x518001);
 
 #if CFG_MTK_WIFI_WFDMA_WB
 #if CFG_MTK_MDDP_SUPPORT
@@ -3395,8 +3397,8 @@ static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter)
 	writel(0x4D4D434D, vir_addr + 0x4);
 	writel(0x00000000, vir_addr + 0x8);
 	writel(0x00000000, vir_addr + 0xC);
-	writel(pcie2ap_base + 0x5801, vir_addr + 0x10);
-	writel(0x02000010, vir_addr + 0x14);
+	writel(u4WifiEmi, vir_addr + 0x10);
+	writel(0x04000080, vir_addr + 0x14);
 	writel(ccif_base + 0xF00C, vir_addr + 0x18);
 	writel(0x00000001, vir_addr + 0x1C);
 	writel(0x00000000, vir_addr + 0x70);
