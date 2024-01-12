@@ -640,6 +640,7 @@ void p2pRoleFsmRunEventTimeout(struct ADAPTER *prAdapter,
 	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
 		(struct P2P_CONNECTION_REQ_INFO *) NULL;
 #endif
+	uint8_t ucBssIndex = 0;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pRoleFsmInfo != NULL));
@@ -647,27 +648,31 @@ void p2pRoleFsmRunEventTimeout(struct ADAPTER *prAdapter,
 		switch (prP2pRoleFsmInfo->eCurrentState) {
 		case P2P_ROLE_STATE_IDLE:
 			prP2pChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo);
+			ucBssIndex = prP2pRoleFsmInfo->ucBssIndex;
 			if (prP2pChnlReqInfo->fgIsChannelRequested) {
-				p2pFuncReleaseCh(prAdapter,
-					prP2pRoleFsmInfo->ucBssIndex,
+				p2pFuncReleaseCh(prAdapter, ucBssIndex,
 					prP2pChnlReqInfo);
 				if (IS_NET_PWR_STATE_IDLE(prAdapter,
-					prP2pRoleFsmInfo->ucBssIndex))
+					ucBssIndex))
 					DBGLOG(P2P, ERROR,
 						"Power state was reset while request channel\n");
 			}
 
-			if (IS_NET_PWR_STATE_IDLE(prAdapter,
-				prP2pRoleFsmInfo->ucBssIndex) &&
-				IS_NET_ACTIVE(prAdapter,
-					prP2pRoleFsmInfo->ucBssIndex)) {
+			if (IS_NET_PWR_STATE_IDLE(prAdapter, ucBssIndex) &&
+				IS_NET_ACTIVE(prAdapter, ucBssIndex)) {
+				if (prAdapter->aprBssInfo[ucBssIndex]
+					->eConnectionState ==
+					MEDIA_STATE_CONNECTED) {
+					DBGLOG(P2P, TRACE,
+						"Under deauth procedure.\n");
+					break;
+				}
 				DBGLOG(P2P, TRACE,
 					"Role BSS IDLE, deactive network.\n");
 				nicDeactivateNetwork(prAdapter,
-					NETWORK_ID(prP2pRoleFsmInfo->ucBssIndex,
+					NETWORK_ID(ucBssIndex,
 					prP2pRoleFsmInfo->ucRoleIndex));
-				nicUpdateBss(prAdapter,
-					prP2pRoleFsmInfo->ucBssIndex);
+				nicUpdateBss(prAdapter, ucBssIndex);
 			}
 			break;
 		case P2P_ROLE_STATE_GC_JOIN:
