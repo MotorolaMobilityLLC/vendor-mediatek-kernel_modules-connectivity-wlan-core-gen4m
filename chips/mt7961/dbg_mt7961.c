@@ -85,6 +85,11 @@
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
+struct pse_group_info {
+	char name[8];
+	u_int32_t quota_addr;
+	u_int32_t pg_info_addr;
+};
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -136,19 +141,19 @@ static struct EMPTY_QUEUE_INFO pse_queue_empty_info[] = {
 	{"CPU Q1", ENUM_UMAC_CPU_PORT_1, ENUM_UMAC_CTX_Q_1},
 	{"CPU Q2", ENUM_UMAC_CPU_PORT_1, ENUM_UMAC_CTX_Q_2},
 	{"CPU Q3", ENUM_UMAC_CPU_PORT_1, ENUM_UMAC_CTX_Q_3},
-	{NULL, 0, 0},
-	{NULL, 0, 0},
-	{NULL, 0, 0},
-	{NULL, 0, 0},			     /* 4~7 not defined */
-	{"HIF Q0", ENUM_UMAC_HIF_PORT_0, 0}, /* Q8 */
+	{"HIF Q8", ENUM_UMAC_HIF_PORT_0, 8},
+	{"HIF Q9", ENUM_UMAC_HIF_PORT_0, 9},
+	{"HIF Q10", ENUM_UMAC_HIF_PORT_0, 10},
+	{"HIF Q11", ENUM_UMAC_HIF_PORT_0, 11},
+	{"HIF Q0", ENUM_UMAC_HIF_PORT_0, 0}, /*bit 8*/
 	{"HIF Q1", ENUM_UMAC_HIF_PORT_0, 1},
 	{"HIF Q2", ENUM_UMAC_HIF_PORT_0, 2},
 	{"HIF Q3", ENUM_UMAC_HIF_PORT_0, 3},
 	{"HIF Q4", ENUM_UMAC_HIF_PORT_0, 4},
 	{"HIF Q5", ENUM_UMAC_HIF_PORT_0, 5},
-	{NULL, 0, 0},
-	{NULL, 0, 0}, /* 14~15 not defined */
-	{"LMAC Q", ENUM_UMAC_LMAC_PORT_2, 0},
+	{"HIF Q6", ENUM_UMAC_HIF_PORT_0, 6},
+	{"HIF Q7", ENUM_UMAC_HIF_PORT_0, 7},
+	{"LMAC Q", ENUM_UMAC_LMAC_PORT_2, 0}, /*bit 16*/
 	{"MDP TX Q", ENUM_UMAC_LMAC_PORT_2, 1},
 	{"MDP RX Q", ENUM_UMAC_LMAC_PORT_2, 2},
 	{"SEC TX Q", ENUM_UMAC_LMAC_PORT_2, 3},
@@ -156,13 +161,13 @@ static struct EMPTY_QUEUE_INFO pse_queue_empty_info[] = {
 	{"SFD_PARK Q", ENUM_UMAC_LMAC_PORT_2, 5},
 	{"MDP_TXIOC Q", ENUM_UMAC_LMAC_PORT_2, 6},
 	{"MDP_RXIOC Q", ENUM_UMAC_LMAC_PORT_2, 7},
+	{"MDP_TX1 Q", ENUM_UMAC_LMAC_PORT_2, 17}, /*bit 24*/
+	{"SEC_TX1 Q", ENUM_UMAC_LMAC_PORT_2, 19},
+	{"MDP_TXIOC1 Q", ENUM_UMAC_LMAC_PORT_2, 22},
+	{"MDP_RXIOC1 Q", ENUM_UMAC_LMAC_PORT_2, 23},
 	{NULL, 0, 0},
 	{NULL, 0, 0},
-	{NULL, 0, 0},
-	{NULL, 0, 0},
-	{NULL, 0, 0},
-	{NULL, 0, 0},
-	{NULL, 0, 0}, /* 24~30 not defined */
+	{NULL, 0, 0}, /* 28~30 not defined */
 	{"RLS Q", ENUM_PLE_CTRL_PSE_PORT_3, ENUM_UMAC_PLE_CTRL_P3_Q_0X1F} };
 
 static u_int8_t *sta_ctrl_reg[] = {"ENABLE", "DISABLE", "PAUSE"};
@@ -202,6 +207,29 @@ static struct EMPTY_QUEUE_INFO ple_txcmd_queue_empty_info[] = {
 	{NULL, 0, 0},
 	{NULL, 0, 0} };
 #endif
+
+
+
+struct pse_group_info pse_group[] = {
+	{"HIF0", WF_PSE_TOP_PG_HIF0_GROUP_ADDR, WF_PSE_TOP_HIF0_PG_INFO_ADDR},
+	{"HIF1", WF_PSE_TOP_PG_HIF1_GROUP_ADDR, WF_PSE_TOP_HIF1_PG_INFO_ADDR},
+	{"HIF2", WF_PSE_TOP_PG_HIF2_GROUP_ADDR, WF_PSE_TOP_HIF2_PG_INFO_ADDR},
+	{"CPU",  WF_PSE_TOP_PG_CPU_GROUP_ADDR,  WF_PSE_TOP_CPU_PG_INFO_ADDR},
+	{"PLE",  WF_PSE_TOP_PG_PLE_GROUP_ADDR,  WF_PSE_TOP_PLE_PG_INFO_ADDR},
+	{"PLE1", WF_PSE_TOP_PG_PLE1_GROUP_ADDR, WF_PSE_TOP_PLE1_PG_INFO_ADDR},
+	{"LMAC0", WF_PSE_TOP_PG_LMAC0_GROUP_ADDR,
+			WF_PSE_TOP_LMAC0_PG_INFO_ADDR},
+	{"LMAC1", WF_PSE_TOP_PG_LMAC1_GROUP_ADDR,
+			WF_PSE_TOP_LMAC1_PG_INFO_ADDR},
+	{"LMAC2", WF_PSE_TOP_PG_LMAC2_GROUP_ADDR,
+			WF_PSE_TOP_LMAC2_PG_INFO_ADDR},
+	{"LMAC3", WF_PSE_TOP_PG_LMAC3_GROUP_ADDR,
+			WF_PSE_TOP_LMAC3_PG_INFO_ADDR},
+	{"MDP",  WF_PSE_TOP_PG_MDP_GROUP_ADDR,  WF_PSE_TOP_MDP_PG_INFO_ADDR},
+	{"MDP1", WF_PSE_TOP_PG_MDP1_GROUP_ADDR, WF_PSE_TOP_MDP1_PG_INFO_ADDR},
+	{"MDP2", WF_PSE_TOP_PG_MDP2_GROUP_ADDR, WF_PSE_TOP_MDP2_PG_INFO_ADDR},
+};
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -595,37 +623,20 @@ void mt7961_show_pse_info(
 	struct ADAPTER *prAdapter)
 {
 	u_int32_t pse_buf_ctrl, pg_sz, pg_num;
-	u_int32_t pse_stat, pg_flow_ctrl[20] = {0};
+	u_int32_t pse_stat;
 	u_int32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail;
 	u_int32_t max_q, min_q, rsv_pg, used_pg;
-	u_int32_t i;
+	u_int32_t i, group_cnt;
+	u_int32_t group_quota, group_info, freepg_cnt, freepg_head_tail;
+	struct pse_group_info *group;
+	char *str;
 
 	HAL_MCR_RD(prAdapter, WF_PSE_TOP_PBUF_CTRL_ADDR, &pse_buf_ctrl);
 	HAL_MCR_RD(prAdapter, WF_PSE_TOP_QUEUE_EMPTY_ADDR, &pse_stat);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_FREEPG_CNT_ADDR, &pg_flow_ctrl[0]);
+	HAL_MCR_RD(prAdapter, WF_PSE_TOP_FREEPG_CNT_ADDR, &freepg_cnt);
 	HAL_MCR_RD(prAdapter, WF_PSE_TOP_FREEPG_HEAD_TAIL_ADDR,
-		   &pg_flow_ctrl[1]);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_PG_HIF0_GROUP_ADDR, &pg_flow_ctrl[2]);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_HIF0_PG_INFO_ADDR, &pg_flow_ctrl[3]);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_PG_HIF1_GROUP_ADDR, &pg_flow_ctrl[4]);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_HIF1_PG_INFO_ADDR, &pg_flow_ctrl[5]);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_PG_CPU_GROUP_ADDR, &pg_flow_ctrl[6]);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_CPU_PG_INFO_ADDR, &pg_flow_ctrl[7]);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_PG_LMAC0_GROUP_ADDR, &pg_flow_ctrl[8]);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_LMAC0_PG_INFO_ADDR, &pg_flow_ctrl[9]);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_PG_LMAC1_GROUP_ADDR,
-		   &pg_flow_ctrl[10]);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_LMAC1_PG_INFO_ADDR, &pg_flow_ctrl[11]);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_PG_LMAC2_GROUP_ADDR,
-		   &pg_flow_ctrl[12]);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_LMAC2_PG_INFO_ADDR, &pg_flow_ctrl[13]);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_PG_PLE_GROUP_ADDR, &pg_flow_ctrl[14]);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_PLE_PG_INFO_ADDR, &pg_flow_ctrl[15]);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_PG_LMAC3_GROUP_ADDR,
-		   &pg_flow_ctrl[16]);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_LMAC3_PG_INFO_ADDR, &pg_flow_ctrl[17]);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_PG_MDP_GROUP_ADDR, &pg_flow_ctrl[18]);
-	HAL_MCR_RD(prAdapter, WF_PSE_TOP_MDP_PG_INFO_ADDR, &pg_flow_ctrl[19]);
+		   &freepg_head_tail);
+
 	/* Configuration Info */
 	DBGLOG(HAL, INFO, "PSE Configuration Info:\n");
 	DBGLOG(HAL, INFO, "\tPacket Buffer Control(0x%08x): 0x%08x\n",
@@ -644,248 +655,57 @@ void mt7961_show_pse_info(
 	/* Page Flow Control */
 	DBGLOG(HAL, INFO, "PSE Page Flow Control:\n");
 	DBGLOG(HAL, INFO, "\tFree page counter(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_FREEPG_CNT_ADDR,
-		pg_flow_ctrl[0]);
-	fpg_cnt = (pg_flow_ctrl[0] & WF_PSE_TOP_FREEPG_CNT_FREEPG_CNT_MASK) >>
+		WF_PSE_TOP_FREEPG_CNT_ADDR, freepg_cnt);
+	fpg_cnt = (freepg_cnt & WF_PSE_TOP_FREEPG_CNT_FREEPG_CNT_MASK) >>
 		WF_PSE_TOP_FREEPG_CNT_FREEPG_CNT_SHFT;
 	DBGLOG(HAL, INFO, "\t\tThe toal page number of free=0x%03x\n", fpg_cnt);
-	ffa_cnt = (pg_flow_ctrl[0] & WF_PSE_TOP_FREEPG_CNT_FFA_CNT_MASK) >>
+	ffa_cnt = (freepg_cnt & WF_PSE_TOP_FREEPG_CNT_FFA_CNT_MASK) >>
 		WF_PSE_TOP_FREEPG_CNT_FFA_CNT_SHFT;
 	DBGLOG(HAL, INFO, "\t\tThe free page numbers of free for all=0x%03x\n",
 		ffa_cnt);
 	DBGLOG(HAL, INFO, "\tFree page head and tail(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_FREEPG_HEAD_TAIL_ADDR,
-		pg_flow_ctrl[1]);
-	fpg_head = (pg_flow_ctrl[1] &
+		WF_PSE_TOP_FREEPG_HEAD_TAIL_ADDR, freepg_head_tail);
+	fpg_head = (freepg_head_tail &
 		WF_PSE_TOP_FREEPG_HEAD_TAIL_FREEPG_HEAD_MASK) >>
 		WF_PSE_TOP_FREEPG_HEAD_TAIL_FREEPG_HEAD_SHFT;
-	fpg_tail = (pg_flow_ctrl[1] &
+	fpg_tail = (freepg_head_tail &
 		WF_PSE_TOP_FREEPG_HEAD_TAIL_FREEPG_TAIL_MASK) >>
 		WF_PSE_TOP_FREEPG_HEAD_TAIL_FREEPG_TAIL_SHFT;
 	DBGLOG(HAL, INFO,
 	       "\t\tThe tail/head page of free page list=0x%03x/0x%03x\n",
 	       fpg_tail, fpg_head);
-	DBGLOG(HAL, INFO,
-		"\tReserved page counter of HIF0 group(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_PG_HIF0_GROUP_ADDR,
-		pg_flow_ctrl[2]);
-	DBGLOG(HAL, INFO, "\tHIF0 group page status(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_HIF0_PG_INFO_ADDR,
-		pg_flow_ctrl[3]);
-	min_q = (pg_flow_ctrl[2] &
-		WF_PSE_TOP_PG_HIF0_GROUP_HIF0_MIN_QUOTA_MASK) >>
-		WF_PSE_TOP_PG_HIF0_GROUP_HIF0_MIN_QUOTA_SHFT;
-	max_q = (pg_flow_ctrl[2] &
-		WF_PSE_TOP_PG_HIF0_GROUP_HIF0_MAX_QUOTA_MASK) >>
-		WF_PSE_TOP_PG_HIF0_GROUP_HIF0_MAX_QUOTA_SHFT;
-	DBGLOG(HAL, INFO,
-	       "\t\tThe max/min quota pages of HIF0 group=0x%03x/0x%03x\n",
-	       max_q, min_q);
-	rsv_pg =
-		(pg_flow_ctrl[3] & WF_PSE_TOP_HIF0_PG_INFO_HIF0_RSV_CNT_MASK) >>
+
+	group_cnt = sizeof(pse_group) / sizeof(struct pse_group_info);
+	for (i = 0; i < group_cnt; i++) {
+		group = &pse_group[i];
+		HAL_MCR_RD(prAdapter, group->quota_addr, &group_quota);
+		HAL_MCR_RD(prAdapter, group->pg_info_addr, &group_info);
+
+		DBGLOG(HAL, INFO,
+		       "\tReserved page counter of %s group(0x%08x): 0x%08x\n",
+		       group->name, group->quota_addr, group_quota);
+		DBGLOG(HAL, INFO, "\t%s group page status(0x%08x): 0x%08x\n",
+			group->name, group->pg_info_addr, group_info);
+		min_q = (group_quota &
+			WF_PSE_TOP_PG_HIF0_GROUP_HIF0_MIN_QUOTA_MASK) >>
+			WF_PSE_TOP_PG_HIF0_GROUP_HIF0_MIN_QUOTA_SHFT;
+		max_q = (group_quota &
+			WF_PSE_TOP_PG_HIF0_GROUP_HIF0_MAX_QUOTA_MASK) >>
+			WF_PSE_TOP_PG_HIF0_GROUP_HIF0_MAX_QUOTA_SHFT;
+		DBGLOG(HAL, INFO,
+		     "\t\tThe max/min quota pages of %s group=0x%03x/0x%03x\n",
+		       group->name, max_q, min_q);
+		rsv_pg =
+		(group_info & WF_PSE_TOP_HIF0_PG_INFO_HIF0_RSV_CNT_MASK) >>
 		WF_PSE_TOP_HIF0_PG_INFO_HIF0_RSV_CNT_SHFT;
-	used_pg =
-		(pg_flow_ctrl[3] & WF_PSE_TOP_HIF0_PG_INFO_HIF0_SRC_CNT_MASK) >>
+		used_pg =
+		(group_info & WF_PSE_TOP_HIF0_PG_INFO_HIF0_SRC_CNT_MASK) >>
 		WF_PSE_TOP_HIF0_PG_INFO_HIF0_SRC_CNT_SHFT;
-	DBGLOG(HAL, INFO,
-	       "\t\tThe used/reserved pages of HIF0 group=0x%03x/0x%03x\n",
-	       used_pg, rsv_pg);
-	DBGLOG(HAL, INFO,
-		"\tReserved page counter of HIF1 group(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_PG_HIF1_GROUP_ADDR,
-		pg_flow_ctrl[4]);
-	DBGLOG(HAL, INFO, "\tHIF1 group page status(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_HIF1_PG_INFO_ADDR,
-		pg_flow_ctrl[5]);
-	min_q = (pg_flow_ctrl[4] &
-		WF_PSE_TOP_PG_HIF1_GROUP_HIF1_MIN_QUOTA_MASK) >>
-		WF_PSE_TOP_PG_HIF1_GROUP_HIF1_MIN_QUOTA_SHFT;
-	max_q = (pg_flow_ctrl[4] &
-		WF_PSE_TOP_PG_HIF1_GROUP_HIF1_MAX_QUOTA_MASK) >>
-		WF_PSE_TOP_PG_HIF1_GROUP_HIF1_MAX_QUOTA_SHFT;
-	DBGLOG(HAL, INFO,
-	       "\t\tThe max/min quota pages of HIF1 group=0x%03x/0x%03x\n",
-	       max_q, min_q);
-	rsv_pg =
-		(pg_flow_ctrl[5] & WF_PSE_TOP_HIF1_PG_INFO_HIF1_RSV_CNT_MASK) >>
-		WF_PSE_TOP_HIF1_PG_INFO_HIF1_RSV_CNT_SHFT;
-	used_pg =
-		(pg_flow_ctrl[5] & WF_PSE_TOP_HIF1_PG_INFO_HIF1_SRC_CNT_MASK) >>
-		WF_PSE_TOP_HIF1_PG_INFO_HIF1_SRC_CNT_SHFT;
-	DBGLOG(HAL, INFO,
-		"\t\tThe used/reserved pages of HIF1 group=0x%03x/0x%03x\n",
-		used_pg, rsv_pg);
-	DBGLOG(HAL, INFO,
-		"\tReserved page counter of CPU group(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_PG_CPU_GROUP_ADDR,
-		pg_flow_ctrl[6]);
-	DBGLOG(HAL, INFO, "\tCPU group page status(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_CPU_PG_INFO_ADDR,
-		pg_flow_ctrl[7]);
-	min_q = (pg_flow_ctrl[6] &
-		 WF_PSE_TOP_PG_CPU_GROUP_CPU_MIN_QUOTA_MASK) >>
-		WF_PSE_TOP_PG_CPU_GROUP_CPU_MIN_QUOTA_SHFT;
-	max_q = (pg_flow_ctrl[6] &
-		 WF_PSE_TOP_PG_CPU_GROUP_CPU_MAX_QUOTA_MASK) >>
-		WF_PSE_TOP_PG_CPU_GROUP_CPU_MAX_QUOTA_SHFT;
-	DBGLOG(HAL, INFO,
-	       "\t\tThe max/min quota pages of CPU group=0x%03x/0x%03x\n",
-	       max_q, min_q);
-	rsv_pg = (pg_flow_ctrl[7] & WF_PSE_TOP_CPU_PG_INFO_CPU_RSV_CNT_MASK) >>
-		 WF_PSE_TOP_CPU_PG_INFO_CPU_RSV_CNT_SHFT;
-	used_pg = (pg_flow_ctrl[7] & WF_PSE_TOP_CPU_PG_INFO_CPU_SRC_CNT_MASK) >>
-		  WF_PSE_TOP_CPU_PG_INFO_CPU_SRC_CNT_SHFT;
-	DBGLOG(HAL, INFO,
-	       "\t\tThe used/reserved pages of CPU group=0x%03x/0x%03x\n",
-	       used_pg, rsv_pg);
-	DBGLOG(HAL, INFO,
-		"\tReserved page counter of LMAC0 group(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_PG_LMAC0_GROUP_ADDR,
-		pg_flow_ctrl[8]);
-	DBGLOG(HAL, INFO, "\tLMAC0 group page status(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_LMAC0_PG_INFO_ADDR,
-		pg_flow_ctrl[9]);
-	min_q = (pg_flow_ctrl[8] &
-		WF_PSE_TOP_PG_LMAC0_GROUP_LMAC0_MIN_QUOTA_MASK) >>
-		WF_PSE_TOP_PG_LMAC0_GROUP_LMAC0_MIN_QUOTA_SHFT;
-	max_q = (pg_flow_ctrl[8] &
-		WF_PSE_TOP_PG_LMAC0_GROUP_LMAC0_MAX_QUOTA_MASK) >>
-		WF_PSE_TOP_PG_LMAC0_GROUP_LMAC0_MAX_QUOTA_SHFT;
-	DBGLOG(HAL, INFO,
-		"\t\tThe max/min quota pages of LMAC0 group=0x%03x/0x%03x\n",
-		max_q, min_q);
-	rsv_pg = (pg_flow_ctrl[9] &
-		WF_PSE_TOP_LMAC0_PG_INFO_LMAC0_RSV_CNT_MASK) >>
-		WF_PSE_TOP_LMAC0_PG_INFO_LMAC0_RSV_CNT_SHFT;
-	used_pg = (pg_flow_ctrl[9] &
-		WF_PSE_TOP_LMAC0_PG_INFO_LMAC0_SRC_CNT_MASK) >>
-		WF_PSE_TOP_LMAC0_PG_INFO_LMAC0_SRC_CNT_SHFT;
-	DBGLOG(HAL, INFO,
-		"\t\tThe used/reserved pages of LMAC0 group=0x%03x/0x%03x\n",
-		used_pg, rsv_pg);
-	DBGLOG(HAL, INFO,
-		"\tReserved page counter of LMAC1 group(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_PG_LMAC1_GROUP_ADDR,
-		pg_flow_ctrl[10]);
-	DBGLOG(HAL, INFO, "\tLMAC1 group page status(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_LMAC1_PG_INFO_ADDR,
-		pg_flow_ctrl[11]);
-	min_q = (pg_flow_ctrl[10] &
-		WF_PSE_TOP_PG_LMAC1_GROUP_LMAC1_MIN_QUOTA_MASK) >>
-		WF_PSE_TOP_PG_LMAC1_GROUP_LMAC1_MIN_QUOTA_SHFT;
-	max_q = (pg_flow_ctrl[10] &
-		WF_PSE_TOP_PG_LMAC1_GROUP_LMAC1_MAX_QUOTA_MASK) >>
-		WF_PSE_TOP_PG_LMAC1_GROUP_LMAC1_MAX_QUOTA_SHFT;
-	DBGLOG(HAL, INFO,
-		"\t\tThe max/min quota pages of LMAC1 group=0x%03x/0x%03x\n",
-		max_q, min_q);
-	rsv_pg = (pg_flow_ctrl[11] &
-		WF_PSE_TOP_LMAC1_PG_INFO_LMAC1_RSV_CNT_MASK) >>
-		WF_PSE_TOP_LMAC1_PG_INFO_LMAC1_RSV_CNT_SHFT;
-	used_pg = (pg_flow_ctrl[11] &
-		WF_PSE_TOP_LMAC1_PG_INFO_LMAC1_SRC_CNT_MASK) >>
-		WF_PSE_TOP_LMAC1_PG_INFO_LMAC1_SRC_CNT_SHFT;
-	DBGLOG(HAL, INFO,
-		"\t\tThe used/reserved pages of LMAC1 group=0x%03x/0x%03x\n",
-		used_pg, rsv_pg);
-	DBGLOG(HAL, INFO,
-		"\tReserved page counter of LMAC2 group(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_PG_LMAC2_GROUP_ADDR,
-		pg_flow_ctrl[11]);
-	DBGLOG(HAL, INFO, "\tLMAC2 group page status(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_LMAC2_PG_INFO_ADDR,
-		pg_flow_ctrl[12]);
-	min_q = (pg_flow_ctrl[12] &
-		WF_PSE_TOP_PG_LMAC2_GROUP_LMAC2_MIN_QUOTA_MASK) >>
-		WF_PSE_TOP_PG_LMAC2_GROUP_LMAC2_MIN_QUOTA_SHFT;
-	max_q = (pg_flow_ctrl[12] &
-		WF_PSE_TOP_PG_LMAC2_GROUP_LMAC2_MAX_QUOTA_MASK) >>
-		WF_PSE_TOP_PG_LMAC2_GROUP_LMAC2_MAX_QUOTA_SHFT;
-	DBGLOG(HAL, INFO,
-		"\t\tThe max/min quota pages of LMAC2 group=0x%03x/0x%03x\n",
-		max_q, min_q);
-	rsv_pg = (pg_flow_ctrl[13] &
-		WF_PSE_TOP_LMAC2_PG_INFO_LMAC2_RSV_CNT_MASK) >>
-		WF_PSE_TOP_LMAC2_PG_INFO_LMAC2_RSV_CNT_SHFT;
-	used_pg = (pg_flow_ctrl[13] &
-		WF_PSE_TOP_LMAC2_PG_INFO_LMAC2_SRC_CNT_MASK) >>
-		WF_PSE_TOP_LMAC2_PG_INFO_LMAC2_SRC_CNT_SHFT;
-	DBGLOG(HAL, INFO,
-		"\t\tThe used/reserved pages of LMAC2 group=0x%03x/0x%03x\n",
-		used_pg, rsv_pg);
-	DBGLOG(HAL, INFO,
-		"\tReserved page counter of LMAC3 group(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_PG_LMAC3_GROUP_ADDR,
-		pg_flow_ctrl[16]);
-	DBGLOG(HAL, INFO, "\tLMAC3 group page status(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_LMAC3_PG_INFO_ADDR,
-		pg_flow_ctrl[17]);
-	min_q = (pg_flow_ctrl[16] &
-		 WF_PSE_TOP_PG_LMAC3_GROUP_LMAC3_MIN_QUOTA_MASK) >>
-		WF_PSE_TOP_PG_LMAC3_GROUP_LMAC3_MIN_QUOTA_SHFT;
-	max_q = (pg_flow_ctrl[16] &
-		 WF_PSE_TOP_PG_LMAC3_GROUP_LMAC3_MAX_QUOTA_MASK) >>
-		WF_PSE_TOP_PG_LMAC3_GROUP_LMAC3_MAX_QUOTA_SHFT;
-	DBGLOG(HAL, INFO,
-	       "\t\tThe max/min quota pages of LMAC3 group=0x%03x/0x%03x\n",
-	       max_q, min_q);
-	rsv_pg = (pg_flow_ctrl[17] &
-		  WF_PSE_TOP_LMAC3_PG_INFO_LMAC3_RSV_CNT_MASK) >>
-		 WF_PSE_TOP_LMAC3_PG_INFO_LMAC3_RSV_CNT_SHFT;
-	used_pg = (pg_flow_ctrl[17] &
-		   WF_PSE_TOP_LMAC3_PG_INFO_LMAC3_SRC_CNT_MASK) >>
-		  WF_PSE_TOP_LMAC3_PG_INFO_LMAC3_SRC_CNT_SHFT;
-	DBGLOG(HAL, INFO,
-		"\t\tThe used/reserved pages of LMAC3 group=0x%03x/0x%03x\n",
-		used_pg, rsv_pg);
-	DBGLOG(HAL, INFO,
-		"\tReserved page counter of PLE group(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_PG_PLE_GROUP_ADDR,
-		pg_flow_ctrl[14]);
-	DBGLOG(HAL, INFO, "\tPLE group page status(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_PLE_PG_INFO_ADDR,
-		pg_flow_ctrl[15]);
-	min_q = (pg_flow_ctrl[14] &
-		WF_PSE_TOP_PG_PLE_GROUP_PLE_MIN_QUOTA_MASK) >>
-		WF_PSE_TOP_PG_PLE_GROUP_PLE_MIN_QUOTA_SHFT;
-	max_q = (pg_flow_ctrl[14] &
-		WF_PSE_TOP_PG_PLE_GROUP_PLE_MAX_QUOTA_MASK) >>
-		WF_PSE_TOP_PG_PLE_GROUP_PLE_MAX_QUOTA_SHFT;
-	DBGLOG(HAL, INFO,
-		"\t\tThe max/min quota pages of PLE group=0x%03x/0x%03x\n",
-		max_q, min_q);
-	rsv_pg = (pg_flow_ctrl[15] & WF_PSE_TOP_PLE_PG_INFO_PLE_RSV_CNT_MASK) >>
-		WF_PSE_TOP_PLE_PG_INFO_PLE_RSV_CNT_SHFT;
-	used_pg =
-		(pg_flow_ctrl[15] & WF_PSE_TOP_PLE_PG_INFO_PLE_SRC_CNT_MASK) >>
-		WF_PSE_TOP_PLE_PG_INFO_PLE_SRC_CNT_SHFT;
-	DBGLOG(HAL, INFO,
-	       "\t\tThe used/reserved pages of PLE group=0x%03x/0x%03x\n",
-	       used_pg, rsv_pg);
-	DBGLOG(HAL, INFO,
-		"\tReserved page counter of MDP group(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_PG_MDP_GROUP_ADDR,
-		pg_flow_ctrl[18]);
-	DBGLOG(HAL, INFO, "\tMDP group page status(0x%08x): 0x%08x\n",
-		WF_PSE_TOP_MDP_PG_INFO_ADDR,
-		pg_flow_ctrl[19]);
-	min_q = (pg_flow_ctrl[18] &
-		 WF_PSE_TOP_PG_MDP_GROUP_MDP_MIN_QUOTA_MASK) >>
-		WF_PSE_TOP_PG_MDP_GROUP_MDP_MIN_QUOTA_SHFT;
-	max_q = (pg_flow_ctrl[18] &
-		 WF_PSE_TOP_PG_MDP_GROUP_MDP_MAX_QUOTA_MASK) >>
-		WF_PSE_TOP_PG_MDP_GROUP_MDP_MAX_QUOTA_SHFT;
-	DBGLOG(HAL, INFO,
-	       "\t\tThe max/min quota pages of MDP group=0x%03x/0x%03x\n",
-	       max_q, min_q);
-	rsv_pg = (pg_flow_ctrl[19] & WF_PSE_TOP_MDP_PG_INFO_MDP_RSV_CNT_MASK) >>
-		 WF_PSE_TOP_MDP_PG_INFO_MDP_RSV_CNT_SHFT;
-	used_pg =
-		(pg_flow_ctrl[19] & WF_PSE_TOP_MDP_PG_INFO_MDP_SRC_CNT_MASK) >>
-		WF_PSE_TOP_MDP_PG_INFO_MDP_SRC_CNT_SHFT;
-	DBGLOG(HAL, INFO,
-	       "\t\tThe used/reserved pages of MDP group=0x%03x/0x%03x\n",
-	       used_pg, rsv_pg);
+		DBGLOG(HAL, INFO,
+		       "\t\tThe used/reserved pages of %s group=0x%03x/0x%03x\n",
+		       group->name, used_pg, rsv_pg);
+	}
+
 	/* Queue Empty Status */
 	DBGLOG(HAL, INFO, "PSE Queue Empty Status:\n");
 	DBGLOG(HAL, INFO, "\tQUEUE_EMPTY(0x%08x): 0x%08x\n",
@@ -900,7 +720,9 @@ void mt7961_show_pse_info(
 		WF_PSE_TOP_QUEUE_EMPTY_CPU_Q2_EMPTY_SHFT),
 	       ((pse_stat & WF_PSE_TOP_QUEUE_EMPTY_CPU_Q3_EMPTY_MASK) >>
 		WF_PSE_TOP_QUEUE_EMPTY_CPU_Q3_EMPTY_SHFT));
-	DBGLOG(HAL, INFO, "\t\tHIF Q0/1/2/3/4/5 empty=%d/%d/%d/%d/%d/%d\n",
+	str = "\t\tHIF Q0/1/2/3/4/5/6/7/8/9/10/11";
+	DBGLOG(HAL, INFO,
+		"%s empty=%d/%d/%d/%d/%d/%d/%d/%d/%d/%d/%d/%d\n", str,
 	       ((pse_stat & WF_PSE_TOP_QUEUE_EMPTY_HIF_0_EMPTY_MASK) >>
 		WF_PSE_TOP_QUEUE_EMPTY_HIF_0_EMPTY_SHFT),
 	       ((pse_stat & WF_PSE_TOP_QUEUE_EMPTY_HIF_1_EMPTY_MASK) >>
@@ -912,7 +734,19 @@ void mt7961_show_pse_info(
 	       ((pse_stat & WF_PSE_TOP_QUEUE_EMPTY_HIF_4_EMPTY_MASK) >>
 		WF_PSE_TOP_QUEUE_EMPTY_HIF_4_EMPTY_SHFT),
 	       ((pse_stat & WF_PSE_TOP_QUEUE_EMPTY_HIF_5_EMPTY_MASK) >>
-		WF_PSE_TOP_QUEUE_EMPTY_HIF_5_EMPTY_SHFT));
+		WF_PSE_TOP_QUEUE_EMPTY_HIF_5_EMPTY_SHFT),
+	       ((pse_stat & WF_PSE_TOP_QUEUE_EMPTY_HIF_6_EMPTY_MASK) >>
+		WF_PSE_TOP_QUEUE_EMPTY_HIF_6_EMPTY_SHFT),
+		((pse_stat & WF_PSE_TOP_QUEUE_EMPTY_HIF_7_EMPTY_MASK) >>
+		WF_PSE_TOP_QUEUE_EMPTY_HIF_7_EMPTY_SHFT),
+		((pse_stat & WF_PSE_TOP_QUEUE_EMPTY_HIF_8_EMPTY_MASK) >>
+		WF_PSE_TOP_QUEUE_EMPTY_HIF_8_EMPTY_SHFT),
+		((pse_stat & WF_PSE_TOP_QUEUE_EMPTY_HIF_9_EMPTY_MASK) >>
+		WF_PSE_TOP_QUEUE_EMPTY_HIF_9_EMPTY_SHFT),
+		((pse_stat & WF_PSE_TOP_QUEUE_EMPTY_HIF_10_EMPTY_MASK) >>
+		WF_PSE_TOP_QUEUE_EMPTY_HIF_10_EMPTY_SHFT),
+		((pse_stat & WF_PSE_TOP_QUEUE_EMPTY_HIF_11_EMPTY_MASK) >>
+		WF_PSE_TOP_QUEUE_EMPTY_HIF_11_EMPTY_SHFT));
 	DBGLOG(HAL, INFO, "\t\tLMAC TX Q empty=%d\n",
 	       ((pse_stat & WF_PSE_TOP_QUEUE_EMPTY_LMAC_TX_QUEUE_EMPTY_MASK) >>
 		WF_PSE_TOP_QUEUE_EMPTY_LMAC_TX_QUEUE_EMPTY_SHFT));
@@ -936,6 +770,20 @@ void mt7961_show_pse_info(
 	       ((pse_stat &
 		 WF_PSE_TOP_QUEUE_EMPTY_MDP_RXIOC_QUEUE_EMPTY_MASK) >>
 		WF_PSE_TOP_QUEUE_EMPTY_MDP_RXIOC_QUEUE_EMPTY_SHFT));
+	DBGLOG(HAL, INFO, "\t\tMDP TX1 Q empty=%d\n",
+	       ((pse_stat &
+		 WF_PSE_TOP_QUEUE_EMPTY_MDP_TX1_QUEUE_EMPTY_MASK) >>
+		WF_PSE_TOP_QUEUE_EMPTY_MDP_TX1_QUEUE_EMPTY_SHFT));
+	DBGLOG(HAL, INFO, "\t\tSEC TX1 Q empty=%d\n",
+	       ((pse_stat & WF_PSE_TOP_QUEUE_EMPTY_SEC_TX1_QUEUE_EMPTY_MASK) >>
+		WF_PSE_TOP_QUEUE_EMPTY_SEC_TX1_QUEUE_EMPTY_SHFT));
+	DBGLOG(HAL, INFO, "\t\tMDP TXIOC1 Q/RXIOC1 Q empty=%d/%d\n",
+	       ((pse_stat &
+		 WF_PSE_TOP_QUEUE_EMPTY_MDP_TXIOC1_QUEUE_EMPTY_MASK) >>
+		WF_PSE_TOP_QUEUE_EMPTY_MDP_TXIOC1_QUEUE_EMPTY_SHFT),
+	       ((pse_stat &
+		 WF_PSE_TOP_QUEUE_EMPTY_MDP_RXIOC1_QUEUE_EMPTY_MASK) >>
+		WF_PSE_TOP_QUEUE_EMPTY_MDP_RXIOC1_QUEUE_EMPTY_SHFT));
 	DBGLOG(HAL, INFO, "\t\tRLS Q empty=%d\n",
 	       ((pse_stat & WF_PSE_TOP_QUEUE_EMPTY_RLS_Q_EMTPY_MASK) >>
 		WF_PSE_TOP_QUEUE_EMPTY_RLS_Q_EMTPY_SHFT));
