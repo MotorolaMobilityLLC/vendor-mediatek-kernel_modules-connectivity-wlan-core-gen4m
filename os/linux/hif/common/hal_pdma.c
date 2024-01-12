@@ -506,6 +506,9 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	fgResult = FALSE;
 
 	while (1) {
+		/* Delay for LP engine to complete its operation. */
+		kalUdelay(LP_OWN_BACK_LOOP_DELAY_MAX_US);
+
 		if (!prBusInfo->fgCheckDriverOwnInt ||
 		    test_bit(GLUE_FLAG_INT_BIT, &prAdapter->prGlueInfo->ulFlag))
 			HAL_LP_OWN_RD(prAdapter, &fgResult);
@@ -540,14 +543,14 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 			break;
 		}
 
-		/* Delay for LP engine to complete its operation. */
-		kalUsleep_range(LP_OWN_BACK_LOOP_DELAY_MIN_US,
-				LP_OWN_BACK_LOOP_DELAY_MAX_US);
 		i++;
 	}
+
+#if !CFG_CONTROL_ASPM_BY_FW
 #if CFG_SUPPORT_PCIE_ASPM
 	glBusConfigASPM(prHifInfo->pdev,
 					DISABLE_ASPM_L1);
+#endif
 #endif
 
 	/* For Low power Test */
@@ -637,12 +640,15 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 		/* Write sleep mode magic num to dummy reg */
 		if (prBusInfo->setDummyReg)
 			prBusInfo->setDummyReg(prAdapter->prGlueInfo);
+
+#if !CFG_CONTROL_ASPM_BY_FW
 #if CFG_SUPPORT_PCIE_ASPM
 		glBusConfigASPML1SS(prHifInfo->pdev,
 			PCI_L1PM_CTR1_ASPM_L12_EN |
 			PCI_L1PM_CTR1_ASPM_L11_EN);
 		glBusConfigASPM(prHifInfo->pdev,
 			ENABLE_ASPM_L1);
+#endif
 #endif
 
 		HAL_LP_OWN_SET(prAdapter, &fgResult);
