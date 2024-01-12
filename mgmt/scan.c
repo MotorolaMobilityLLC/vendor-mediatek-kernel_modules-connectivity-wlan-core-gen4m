@@ -3313,10 +3313,15 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			if (ucRxRCPI > prBssDesc->ucRCPI)
 				prBssDesc->ucRCPI = ucRxRCPI;
 
-			if (prBssDesc->ucChannelNum != ucHwChannelNum)
+			if (prBssDesc->ucChannelNum != ucHwChannelNum) {
 				log_dbg(SCN, INFO,
 				"IE_PriCh:%d mismatch with RXD_ChNum:%d\n",
 				prBssDesc->ucChannelNum, ucHwChannelNum);
+
+				if (!prBssDesc->fgIsHE6GPresent)
+					prBssDesc->ucChannelNum =
+							ucHwChannelNum;
+			}
 		}
 #endif
 	}
