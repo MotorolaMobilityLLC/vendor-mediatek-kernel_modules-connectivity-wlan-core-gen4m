@@ -565,17 +565,9 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 
 	wmmInit(prAdapter, ucBssIndex);
 
-	/* DBGPRINTF("[2] ucBmpDeliveryAC:0x%x,
-	 * ucBmpTriggerAC:0x%x, ucUapsdSp:0x%x",
-	 */
-	/* prAisBssInfo->rPmProfSetupInfo.ucBmpDeliveryAC, */
-	/* prAisBssInfo->rPmProfSetupInfo.ucBmpTriggerAC, */
-	/* prAisBssInfo->rPmProfSetupInfo.ucUapsdSp); */
-
-	/* Bind NetDev & BssInfo */
-	/* wlanBindBssIdxToNetInterface(prAdapter->prGlueInfo,
-	 * NET_DEV_WLAN_IDX, prAisBssInfo->ucBssIndex);
-	 */
+	/* keep last, indicate disconnection as default status */
+	kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
+		WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0, ucBssIndex);
 }				/* end of aisFsmInit() */
 
 /*----------------------------------------------------------------------------*/

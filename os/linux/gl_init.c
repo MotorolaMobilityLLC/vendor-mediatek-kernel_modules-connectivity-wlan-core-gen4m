@@ -2375,8 +2375,8 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 			prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
 				netdev_priv(gprWdev[u4Idx]->netdev);
 			ASSERT(prNetDevPrivate->prGlueInfo == prGlueInfo);
-			prNetDevPrivate->ucBssIdx = aisGetMainLinkBssIndex(
-				aisFsmGetInstance(prAdapter, u4Idx));
+			prNetDevPrivate->ucBssIdx =
+				AIS_MAIN_BSS_INDEX(prAdapter, u4Idx);
 
 #if CFG_ENABLE_UNIFY_WIPHY
 			prNetDevPrivate->ucIsP2p = FALSE;
@@ -4617,11 +4617,8 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 
 		/* wlan1 */
 		if (KAL_AIS_NUM > 1) {
-			struct AIS_FSM_INFO *prAisFsmInfo =
-				aisFsmGetInstance(prAdapter, 1);
-
 			prDevHandler = wlanGetNetDev(prGlueInfo,
-				aisGetMainLinkBssIndex(prAisFsmInfo));
+				AIS_MAIN_BSS_INDEX(prAdapter, 1));
 			if (prDevHandler) {
 				kalMemCopy(prDevHandler->dev_addr,
 					&prAdapter->rWifiVar.aucMacAddress1,
@@ -4675,7 +4672,7 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 			rStatus = kalIoctlByBssIdx(prGlueInfo,
 					wlanoidSync11kCapabilities, NULL, 0,
 					FALSE, FALSE, TRUE, &u4SetInfoLen,
-					u4Idx);
+					AIS_MAIN_BSS_INDEX(prAdapter, u4Idx));
 			if (rStatus != WLAN_STATUS_SUCCESS)
 				DBGLOG(INIT, WARN,
 					"[%d] Set 11k Capabilities fail 0x%x\n",
@@ -5138,13 +5135,14 @@ static int32_t wlanOnAtReset(void)
 #endif
 
 		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-			struct FT_IES *prFtIEs =
-				aisGetFtIe(prAdapter, u4Idx);
-			struct CONNECTION_SETTINGS *prConnSettings =
-				aisGetConnSettings(prAdapter, u4Idx);
+			uint8_t ucBssIdx = AIS_MAIN_BSS_INDEX(prAdapter, u4Idx);
 
-			kalMemZero(prFtIEs,
-				sizeof(*prFtIEs));
+			struct FT_IES *prFtIEs =
+				aisGetFtIe(prAdapter, ucBssIdx);
+			struct CONNECTION_SETTINGS *prConnSettings =
+				aisGetConnSettings(prAdapter, ucBssIdx);
+
+			kalMemZero(prFtIEs, sizeof(*prFtIEs));
 			prConnSettings->fgIsScanReqIssued = FALSE;
 		}
 
@@ -5160,7 +5158,7 @@ static int32_t wlanOnAtReset(void)
 				wlanoidSetDisassociate,
 				&u4DisconnectReason,
 				0, FALSE, FALSE, TRUE, &u4BufLen,
-				u4Idx);
+				AIS_MAIN_BSS_INDEX(prAdapter, u4Idx));
 
 			if (rStatus != WLAN_STATUS_SUCCESS) {
 				DBGLOG(REQ, WARN,
@@ -5429,8 +5427,8 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #endif
 
 		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-			struct FT_IES *prFtIEs =
-				aisGetFtIe(prAdapter, u4Idx);
+			struct FT_IES *prFtIEs = aisGetFtIe(prAdapter,
+					AIS_MAIN_BSS_INDEX(prAdapter, u4Idx));
 
 			kalMemZero(prFtIEs,
 				sizeof(*prFtIEs));
@@ -5553,11 +5551,13 @@ wlanOffNotifyCfg80211Disconnect(IN struct GLUE_INFO *prGlueInfo)
 	DBGLOG(INIT, TRACE, "start.\n");
 
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-		if (kalGetMediaStateIndicated(prGlueInfo,
-			u4Idx) ==
+		uint8_t ucBssIndex = AIS_MAIN_BSS_INDEX(
+				prGlueInfo->prAdapter, u4Idx);
+
+ 		if (kalGetMediaStateIndicated(prGlueInfo, ucBssIndex) ==
 		    MEDIA_STATE_CONNECTED) {
 			struct net_device *prDevHandler =
-				wlanGetNetDev(prGlueInfo, u4Idx);
+				wlanGetNetDev(prGlueInfo, ucBssIndex);
 			if (!prDevHandler)
 				continue;
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 2, 0) <= CFG80211_VERSION_CODE)

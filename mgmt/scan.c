@@ -1003,9 +1003,10 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 
 			fgIsSameSSID = FALSE;
 			for (j = 0; j < KAL_AIS_NUM; j++) {
-
+				uint8_t ucBssIndex =
+					AIS_MAIN_BSS_INDEX(prAdapter, j);
 				struct CONNECTION_SETTINGS *prConnSettings =
-					aisGetConnSettings(prAdapter, j);
+					aisGetConnSettings(prAdapter, ucBssIndex);
 
 				if (!prConnSettings)
 					continue;
@@ -2856,9 +2857,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 					= prBssDesc->rRSNInfo.u2RsnCap;
 
 				for (i = 0; i < KAL_AIS_NUM; i++) {
-					rsnCheckPmkidCache(prAdapter,
-						prBssDesc,
-						i);
+					rsnCheckPmkidCache(prAdapter, prBssDesc,
+					      AIS_MAIN_BSS_INDEX(prAdapter, i));
 				}
 			}
 			break;
@@ -3813,10 +3813,11 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 		}
 
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+		uint8_t ucBssIndex = AIS_MAIN_BSS_INDEX(prAdapter, u4Idx);
 		struct CONNECTION_SETTINGS *prConnSettings =
-			aisGetConnSettings(prAdapter, u4Idx);
+			aisGetConnSettings(prAdapter, ucBssIndex);
 		struct BSS_INFO *prAisBssInfo =
-			aisGetAisBssInfo(prAdapter, u4Idx);
+			aisGetAisBssInfo(prAdapter, ucBssIndex);
 
 		/* 4 <1.1> Beacon Change Detection for Connected BSS */
 		if ((prAisBssInfo != NULL) &&
@@ -3836,9 +3837,9 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 				prAisBssInfo, prBssDesc)
 #if CFG_SUPPORT_WAPI
 				|| (aisGetWapiMode(prAdapter,
-				u4Idx) &&
+				ucBssIndex) &&
 				!wapiPerformPolicySelection(prAdapter,
-					prBssDesc, u4Idx))
+					prBssDesc, ucBssIndex))
 #endif
 				) {
 
@@ -3851,7 +3852,7 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 					cnmTimerStartTimer(prAdapter,
 						aisGetSecModeChangeTimer(
 						prAdapter,
-						u4Idx),
+						ucBssIndex),
 						SEC_TO_MSEC(3));
 					prConnSettings
 						->fgSecModeChangeStartTimer
@@ -3862,7 +3863,7 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 					cnmTimerStopTimer(prAdapter,
 						aisGetSecModeChangeTimer(
 						prAdapter,
-						u4Idx));
+						ucBssIndex));
 					prConnSettings
 						->fgSecModeChangeStartTimer
 							= FALSE;
@@ -5211,8 +5212,8 @@ void scanRemoveBssDescFromList(IN struct LINK *prBSSDescList,
 		/* Remove this BSS Desc from the Ess Desc List */
 		for (j = 0; j < KAL_AIS_NUM; j++) {
 			struct AIS_SPECIFIC_BSS_INFO *prSpecBssInfo =
-				aisGetAisSpecBssInfo(
-				prAdapter, j);
+				aisGetAisSpecBssInfo(prAdapter,
+					AIS_MAIN_BSS_INDEX(prAdapter, j));
 			struct LINK *prEssList;
 
 			if (!prSpecBssInfo)
