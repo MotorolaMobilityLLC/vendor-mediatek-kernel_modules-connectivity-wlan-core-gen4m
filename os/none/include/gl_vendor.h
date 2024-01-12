@@ -85,7 +85,7 @@
 #define QCA_NL80211_VENDOR_SUBCMD_ROAMING 9
 #define QCA_NL80211_VENDOR_SUBCMD_ROAM 64
 #define QCA_NL80211_VENDOR_SUBCMD_SETBAND 105
-
+#define COMB_MATRIX_LEN 6
 
 #ifndef ETH_ALEN
 #define ETH_ALEN 6
@@ -317,6 +317,13 @@ enum WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST {
 	WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_LAST,
 	WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_MAX =
 		WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_LAST - 1
+};
+
+enum wifi_radio_combinations_matrix_attributes {
+	WIFI_ATTRIBUTE_RADIO_COMBINATIONS_MATRIX_INVALID    = 0,
+	WIFI_ATTRIBUTE_RADIO_COMBINATIONS_MATRIX_MATRIX     = 1,
+		/* Add more attribute here */
+	WIFI_ATTRIBUTE_RADIO_COMBINATIONS_MATRIX_MAX
 };
 
 #define MAX_FW_ROAMING_BLACKLIST_SIZE	16
@@ -913,6 +920,18 @@ struct STATS_LLS_PEER_AP_REC {
 	uint8_t mac_addr[ETH_ALEN];
 };
 #endif /* CFG_SUPPORT_LLS */
+
+struct ANDROID_T_COMB_UNIT {
+	uint8_t band_0;
+	uint8_t ant_0;
+	uint8_t band_1;
+	uint8_t ant_1;
+};
+
+struct ANDROID_T_COMB_MATRIX {
+	struct ANDROID_T_COMB_UNIT comb_mtx[COMB_MATRIX_LEN];
+};
+
 
 /*******************************************************************************
  *                                 M A C R O S
