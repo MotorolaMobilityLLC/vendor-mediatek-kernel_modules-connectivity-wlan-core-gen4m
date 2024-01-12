@@ -1417,7 +1417,7 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		if (extCapConn) {
 			extCapIeLen =
 				ELEM_HDR_LEN + RSN_IE(extCapConn)->ucLength;
-			DBGLOG_MEM8(SAA, INFO, extCapConn, extCapIeLen);
+			DBGLOG_MEM8(SAA, TRACE, extCapConn, extCapIeLen);
 		}
 	}
 
@@ -1499,11 +1499,9 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_SUPPORT_BCN_PROT == 1)
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 	if (IS_BSS_AIS(prBssInfo))
 		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 				ELEM_EXT_CAP_BCN_PROT_BIT);
-#endif
 #endif
 
 #if CFG_FAST_PATH_SUPPORT
@@ -1534,7 +1532,7 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		prExtCap->ucLength--;
 	}
 
-	DBGLOG(RLM, TRACE, "prExtCap->ucLength = %d!", prExtCap->ucLength);
+	DBGLOG_MEM8(SAA, INFO, prExtCap->aucCapabilities, prExtCap->ucLength);
 
 	ASSERT(IE_SIZE(prExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));
 
