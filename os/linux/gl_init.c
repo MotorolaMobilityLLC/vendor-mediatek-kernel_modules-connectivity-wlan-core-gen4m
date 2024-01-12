@@ -3312,7 +3312,9 @@ int set_p2p_mode_handler(struct net_device *netdev,
 		for (i = 0 ; i < KAL_P2P_NUM; i++) {
 			prP2PInfo = prGlueInfo->prP2PInfo[i];
 
-			if (!prP2PInfo || !prP2PInfo->prDevHandler)
+			if (!prP2PInfo ||
+				!prP2PInfo->aprRoleHandler ||
+				!prP2PInfo->prWdev)
 				continue;
 
 			/* Only restore sap part */
@@ -3320,7 +3322,12 @@ int set_p2p_mode_handler(struct net_device *netdev,
 				continue;
 
 			g_u4DevIdx[i] =
-				prP2PInfo->prDevHandler->ifindex;
+				prP2PInfo->aprRoleHandler->ifindex;
+		}
+
+		if (prGlueInfo->prAdapter->rWifiVar.u4RegP2pIfAtProbe) {
+			DBGLOG(INIT, WARN, "Resetting p2p mode at probe\n");
+			return 0;
 		}
 	}
 
