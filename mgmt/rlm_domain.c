@@ -4456,7 +4456,7 @@ void txPwrCtrlShowList(struct ADAPTER *prAdapter, uint8_t filterType,
 	int i, j, count = 0;
 
 	if (filterType == 1)
-		DBGLOG(RLM, INFO, "Tx Power Ctrl List=[%s], Size=[%d]",
+		DBGLOG(RLM, TRACE, "Tx Power Ctrl List=[%s], Size=[%d]",
 		       message, txPwrCtrlListSize(prAdapter, filterType));
 	else
 		DBGLOG(RLM, TRACE, "Tx Power Ctrl List=[%s], Size=[%d]",
