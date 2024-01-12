@@ -831,6 +831,79 @@ void wlanOnPostNicInitAdapter(IN struct ADAPTER *prAdapter,
 	nicRxInitialize(prAdapter);
 }
 
+#if CFG_SUPPORT_NCHO
+
+uint32_t wlanNchoSetFWEnable(IN struct ADAPTER *prAdapter, IN uint8_t fgEnable)
+{
+	char cmd[NCHO_CMD_MAX_LENGTH] = { 0 };
+	uint32_t status = WLAN_STATUS_FAILURE;
+
+	kalSnprintf(cmd, sizeof(cmd), "%s %d",
+		FW_CFG_KEY_NCHO_ENABLE, fgEnable);
+	status = wlanFwCfgParse(prAdapter, cmd);
+	if (status != WLAN_STATUS_SUCCESS)
+		DBGLOG(INIT, WARN, "set disable fail %d\n", status);
+	return status;
+}
+
+uint32_t wlanNchoSetFWRssiTrigger(IN struct ADAPTER *prAdapter,
+	IN int32_t i4RoamTriggerRssi)
+{
+	char cmd[NCHO_CMD_MAX_LENGTH] = { 0 };
+	uint32_t status = WLAN_STATUS_FAILURE;
+
+	kalSnprintf(cmd, sizeof(cmd), "%s %d",
+		FW_CFG_KEY_NCHO_ROAM_RCPI, dBm_TO_RCPI(i4RoamTriggerRssi));
+	status =  wlanFwCfgParse(prAdapter, cmd);
+	if (status != WLAN_STATUS_SUCCESS)
+		DBGLOG(INIT, WARN, "set roam rcpi fail %d\n", status);
+	return status;
+}
+
+uint32_t wlanNchoSetFWScanPeriod(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4RoamScanPeriod)
+{
+	char cmd[NCHO_CMD_MAX_LENGTH] = { 0 };
+	uint32_t status = WLAN_STATUS_FAILURE;
+
+	kalSnprintf(cmd, sizeof(cmd), "%s %d",
+		FW_CFG_KEY_NCHO_SCAN_PERIOD, u4RoamScanPeriod);
+	status = wlanFwCfgParse(prAdapter, cmd);
+	if (status != WLAN_STATUS_SUCCESS)
+		DBGLOG(INIT, WARN, "set scan period fail %d\n", status);
+	return status;
+}
+
+void wlanNchoInit(IN struct ADAPTER *prAdapter, IN uint8_t fgFwSync)
+{
+	uint8_t sync = fgFwSync && prAdapter->rNchoInfo.fgNCHOEnabled;
+
+	/* NCHO Initialization */
+	prAdapter->rNchoInfo.fgECHOEnabled = 0;
+	prAdapter->rNchoInfo.eBand = NCHO_BAND_AUTO;
+	prAdapter->rNchoInfo.fgChGranted = FALSE;
+	prAdapter->rNchoInfo.fgIsSendingAF = FALSE;
+	prAdapter->rNchoInfo.u4RoamScanControl = 0;
+	prAdapter->rNchoInfo.rRoamScnChnl.ucChannelListNum = 0;
+	prAdapter->rNchoInfo.rAddRoamScnChnl.ucChannelListNum = 0;
+	prAdapter->rNchoInfo.eDFSScnMode = NCHO_DFS_SCN_ENABLE1;
+	prAdapter->rNchoInfo.i4RoamTrigger = -75;
+	prAdapter->rNchoInfo.i4RoamDelta = 10;
+	prAdapter->rNchoInfo.u4RoamScanPeriod =	ROAMING_DISCOVER_TIMEOUT_SEC;
+	prAdapter->rNchoInfo.u4ScanChannelTime = 50;
+	prAdapter->rNchoInfo.u4ScanHomeTime = 120;
+	prAdapter->rNchoInfo.u4ScanHomeawayTime = 120;
+	prAdapter->rNchoInfo.u4ScanNProbes = 2;
+	prAdapter->rNchoInfo.u4WesMode = 0;
+	prAdapter->rAddRoamScnChnl.ucChannelListNum = 0;
+
+	/* sync with FW to let FW reset params */
+	if (sync)
+		wlanNchoSetFWEnable(prAdapter, 0);
+}
+
+#endif
+
 void wlanOnPostFirmwareReady(IN struct ADAPTER *prAdapter,
 		IN struct REG_INFO *prRegInfo)
 {
@@ -911,28 +984,9 @@ void wlanOnPostFirmwareReady(IN struct ADAPTER *prAdapter,
 
 	/* MGMT Initialization */
 	nicInitMGMT(prAdapter, prRegInfo);
-	/* NCHO Initialization */
+
 #if CFG_SUPPORT_NCHO
-	prAdapter->rNchoInfo.fgECHOEnabled = FALSE;
-	prAdapter->rNchoInfo.eBand = NCHO_BAND_AUTO;
-	prAdapter->rNchoInfo.fgChGranted = FALSE;
-	prAdapter->rNchoInfo.fgIsSendingAF = FALSE;
-	prAdapter->rNchoInfo.u4RoamScanControl = FALSE;
-	prAdapter->rNchoInfo.rRoamScnChnl.ucChannelListNum = 0;
-	prAdapter->rNchoInfo.rRoamScnChnl.arChnlInfoList[0].eBand =
-		BAND_2G4;
-	prAdapter->rNchoInfo.rRoamScnChnl.arChnlInfoList[0].ucChannelNum
-		= 1;
-	prAdapter->rNchoInfo.eDFSScnMode = NCHO_DFS_SCN_ENABLE1;
-	prAdapter->rNchoInfo.i4RoamTrigger = -70;
-	prAdapter->rNchoInfo.i4RoamDelta = 5;
-	prAdapter->rNchoInfo.u4RoamScanPeriod =
-		ROAMING_DISCOVERY_TIMEOUT_SEC;
-	prAdapter->rNchoInfo.u4ScanChannelTime = 50;
-	prAdapter->rNchoInfo.u4ScanHomeTime = 120;
-	prAdapter->rNchoInfo.u4ScanHomeawayTime = 120;
-	prAdapter->rNchoInfo.u4ScanNProbes = 2;
-	prAdapter->rNchoInfo.u4WesMode = 0;
+	wlanNchoInit(prAdapter, FALSE);
 #endif
 
 	/* Enable WZC Disassociation */
@@ -7636,6 +7690,12 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #if CFG_MTK_MCIF_WIFI_SUPPORT
 	wlanCfgSetUint32(prAdapter, "MddpSupport", FEATURE_ENABLED);
 #endif
+
+	prWifiVar->u4DiscoverTimeout = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "DiscoverTimeout", ROAMING_DISCOVER_TIMEOUT_SEC);
+
+	prWifiVar->u4InactiveTimeout = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "InactiveTimeout", ROAMING_INACTIVE_TIMEOUT_SEC);
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
@@ -12264,3 +12324,13 @@ wlanCleanAllEmCfgSetting(IN struct ADAPTER *
 
 	}
 }
+
+u_int8_t wlanWfdEnabled(struct ADAPTER *prAdapter)
+{
+#if CFG_SUPPORT_WFD
+	if (prAdapter)
+		return prAdapter->rWifiVar.rWfdConfigureSettings.ucWfdEnable;
+#endif
+	return FALSE;
+}
+

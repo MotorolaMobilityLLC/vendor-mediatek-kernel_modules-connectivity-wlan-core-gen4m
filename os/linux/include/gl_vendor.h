@@ -192,7 +192,8 @@ enum WIFI_VENDOR_EVENT {
 	GSCAN_EVENT_HOTLIST_RESULTS_LOST,
 	WIFI_EVENT_RSSI_MONITOR,
 	WIFI_EVENT_DRIVER_ERROR,
-	WIFI_EVENT_ACS
+	WIFI_EVENT_ACS,
+	WIFI_EVENT_GENERIC_RESPONSE,
 };
 
 enum WIFI_ATTRIBUTE {
@@ -640,6 +641,7 @@ struct PARAM_BSS_MAC_OUI {
 	uint8_t ucBssIndex;
 	uint8_t ucMacOui[MAC_OUI_LEN];
 };
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -753,6 +755,10 @@ int mtk_cfg80211_vendor_packet_keep_alive_stop(
 int mtk_cfg80211_vendor_get_version(struct wiphy *wiphy,
 				    struct wireless_dev *wdev,
 				    const void *data, int data_len);
+
+int mtk_cfg80211_vendor_event_generic_response(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	uint32_t len, uint8_t *data);
 
 int mtk_cfg80211_vendor_get_supported_feature_set(
 	struct wiphy *wiphy, struct wireless_dev *wdev,

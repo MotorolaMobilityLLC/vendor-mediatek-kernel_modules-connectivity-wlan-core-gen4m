@@ -461,10 +461,12 @@ int mtk_cfg80211_tdls_oper(struct wiphy *wiphy,
 			   enum nl80211_tdls_operation oper);
 #endif
 
-int32_t mtk_cfg80211_process_str_cmd(struct GLUE_INFO
-				     *prGlueInfo,
+int32_t mtk_cfg80211_process_str_cmd(struct wiphy *wiphy,
 			struct wireless_dev *wdev,
 			uint8_t *cmd, int32_t len);
+
+int32_t mtk_cfg80211_process_str_cmd_reply(
+	IN struct wiphy *wiphy, IN char *data, IN int len);
 
 void mtk_reg_notify(IN struct wiphy *pWiphy,
 		    IN struct regulatory_request *pRequest);

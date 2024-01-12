@@ -106,12 +106,9 @@
 #define SCN_BSS_DESC_SAME_SSID_THRESHOLD	20
 
 #define SCN_BSS_DESC_STALE_SEC			20 /* Scan Request Timeout */
-#if CFG_ENABLE_WIFI_DIRECT
-#if CFG_SUPPORT_WFD
+
 /* For WFD scan need about 15s. */
-#define SCN_BSS_DESC_STALE_SEC_WFD		20
-#endif
-#endif
+#define SCN_BSS_DESC_STALE_SEC_WFD		30
 
 #define SCN_PROBE_DELAY_MSEC			0
 
@@ -411,6 +408,11 @@ struct BSS_DESC {
 	 */
 #endif
 
+	/* the beacon doesn't advertise the FT AKM but will
+	 * use FT when supported clients connect
+	 */
+	uint8_t ucIsAdaptive11r;
+
 	/* The received IE length exceed the maximum IE buffer size */
 	u_int8_t fgIsIEOverflow;
 
@@ -438,7 +440,6 @@ struct BSS_DESC {
 	u_int8_t fgSeenProbeResp;
 	u_int8_t fgExsitBssLoadIE;
 	u_int8_t fgMultiAnttenaAndSTBC;
-	u_int8_t fgDeauthLastTime;
 	uint32_t u4UpdateIdx;
 #if CFG_SUPPORT_RSN_SCORE
 	u_int8_t fgIsRSNSuitableBss;
@@ -484,7 +485,7 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 
 	uint8_t aucBSSID[MAC_ADDR_LEN];
 
-	u_int8_t fgIsObssScan;
+	enum ENUM_MSG_ID eMsgId;
 	u_int8_t fgIsScanV2;
 
 	/* Run time flags */
@@ -850,6 +851,7 @@ void scnFsmRemovePendingMsg(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void
 scnFsmGenerateScanDoneMsg(IN struct ADAPTER *prAdapter,
+			  IN enum ENUM_MSG_ID eMsgId,
 			  IN uint8_t ucSeqNum,
 			  IN uint8_t ucBssIndex,
 			  IN enum ENUM_SCAN_STATUS eScanStatus);
@@ -924,5 +926,7 @@ void scanResetBssDesc(IN struct ADAPTER *prAdapter,
 void scanCheckEpigramVhtIE(IN uint8_t *pucBuf, IN struct BSS_DESC *prBssDesc);
 void scanParseVHTCapIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc);
 void scanParseVHTOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc);
+
+void scanCheckAdaptive11rIE(IN uint8_t *pucBuf, IN struct BSS_DESC *prBssDesc);
 
 #endif /* _SCAN_H */

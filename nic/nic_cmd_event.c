@@ -157,6 +157,34 @@ void nicCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
 
 }
 
+void nicCmdEventQueryCfgRead(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	uint32_t u4QueryInfoLen;
+	struct CMD_HEADER *prInCfgHeader;
+	struct GLUE_INFO *prGlueInfo;
+	struct CMD_HEADER *prOutCfgHeader;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+	ASSERT(pucEventBuf);
+
+	/* 4 <2> Update information of OID */
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+		prInCfgHeader = (struct CMD_HEADER *) (pucEventBuf);
+		u4QueryInfoLen = sizeof(struct CMD_HEADER);
+		prOutCfgHeader = (struct CMD_HEADER *)
+			(prCmdInfo->pvInformationBuffer);
+
+		kalMemCopy(prOutCfgHeader, prInCfgHeader,
+			sizeof(struct CMD_HEADER));
+
+		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+}
+
 #if CFG_SUPPORT_QA_TOOL
 void nicCmdEventQueryRxStatistics(IN struct ADAPTER
 				  *prAdapter, IN struct CMD_INFO *prCmdInfo,
@@ -4509,7 +4537,8 @@ void nicEventMibInfo(IN struct ADAPTER *prAdapter,
 */
 /*----------------------------------------------------------------------------*/
 bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter,
-	uint8_t ucReason, uint8_t ucBssIdx)
+	uint8_t ucBcnTimeoutReason, uint8_t *ucDisconnectReason,
+	uint8_t ucBssIdx)
 {
 	struct RX_CTRL	*prRxCtrl;
 	struct TX_CTRL	*prTxCtrl;
@@ -4542,17 +4571,21 @@ bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter,
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 
 	if (IS_BSS_AIS(prBssInfo)) {
-		/* Policy 1, if RX in the past duration (in ms)
-		 */
-		if (ucReason == BEACON_TIMEOUT_REASON_HIGH_PER) {
+		if (ucBcnTimeoutReason == BEACON_TIMEOUT_REASON_HIGH_PER) {
 			bValid = true;
 		} else if (!CHECK_FOR_TIMEOUT(u4CurrentTime,
 			prRxCtrl->u4LastRxTime[ucBssIdx],
-			SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow))) &&
-		    !scanBeaconTimeoutFilterPolicyForAis(prAdapter, ucBssIdx)) {
-			DBGLOG(NIC, INFO,
-				"Policy 1 hit, RX in the past duration");
-			bValid = false;
+			SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow)))) {
+			/* Policy 1, if RX in the past duration (in ms) */
+			if (scanBeaconTimeoutFilterPolicyForAis(
+					prAdapter, ucBssIdx)) {
+				DBGLOG(NIC, INFO, "Driver find better TX AP");
+				*ucDisconnectReason =
+				       DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR;
+			} else {
+				DBGLOG(NIC, INFO, "RX in the past duration");
+				bValid = false;
+			}
 		}
 	}
 #if CFG_ENABLE_WIFI_DIRECT
@@ -4603,17 +4636,26 @@ void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 			prEventBssBeaconTimeout->ucBssIndex);
 
 		if (IS_BSS_AIS(prBssInfo)) {
+			uint8_t ucDisconnectReason =
+				DISCONNECT_REASON_CODE_RADIO_LOST;
+
 			if (nicBeaconTimeoutFilterPolicy(prAdapter,
 				prEventBssBeaconTimeout->ucReasonCode,
+				&ucDisconnectReason,
 				prBssInfo->ucBssIndex))
 				aisBssBeaconTimeout_impl(prAdapter,
 					prEventBssBeaconTimeout->ucReasonCode,
+					ucDisconnectReason,
 					prBssInfo->ucBssIndex);
 		}
 #if CFG_ENABLE_WIFI_DIRECT
 		else if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
+			uint8_t ucDisconnectReason =
+				DISCONNECT_REASON_CODE_RADIO_LOST;
+
 			if (nicBeaconTimeoutFilterPolicy(prAdapter,
 					prEventBssBeaconTimeout->ucReasonCode,
+					&ucDisconnectReason,
 					prEventBssBeaconTimeout->ucBssIndex))
 				p2pRoleFsmRunEventBeaconTimeout(prAdapter,
 					prBssInfo);
