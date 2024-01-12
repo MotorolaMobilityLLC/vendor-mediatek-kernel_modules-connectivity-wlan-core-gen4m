@@ -501,6 +501,12 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 	.dumpwfsyscpupcr = mt6639_dumpWfsyscpupcr,
 	.dumpBusHangCr = mt6639_DumpBusHangCr,
 #endif
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
+	.get_rx_rate_info = mt6639_get_rx_rate_info,
+#endif
+#if CFG_SUPPORT_LLS
+	.get_rx_link_stats = mt6639_get_rx_link_stats,
+#endif
 };
 
 #if CFG_SUPPORT_QA_TOOL

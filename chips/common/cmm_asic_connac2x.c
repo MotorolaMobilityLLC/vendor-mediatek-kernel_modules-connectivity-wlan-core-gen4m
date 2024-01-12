@@ -2051,19 +2051,6 @@ void asicConnac2xInitRxdHook(
 }
 
 
-void nicRxProcessRxvLinkStats(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prRetSwRfb, uint32_t u4RxV0)
-{
-#if CFG_SUPPORT_LLS
-	struct CHIP_DBG_OPS *prChipDbg;
-
-	prChipDbg = prAdapter->chip_info->prDebugOps;
-	if (prChipDbg && prChipDbg->get_rx_link_stats) {
-		prChipDbg->get_rx_link_stats(prAdapter, prRetSwRfb, u4RxV0);
-	}
-#endif
-}
-
 
 #if (CFG_SUPPORT_MSP == 1)
 void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
@@ -2093,7 +2080,7 @@ void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 		prRxV[1] = CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 1);
 	}
 
-	nicRxProcessRxvLinkStats(prAdapter, prRetSwRfb, prRxV[0]);
+	nicRxProcessRxvLinkStats(prAdapter, prRetSwRfb, prRxV);
 }
 #endif /* CFG_SUPPORT_MSP == 1 */
 

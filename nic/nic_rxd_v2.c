@@ -181,29 +181,6 @@ uint8_t nic_rxd_v2_get_ofld(
 		(struct HW_MAC_CONNAC2X_RX_DESC *)prRxStatus);
 }
 
-static void updateLinkStatsMpduAc(struct ADAPTER *prAdapter,
-		struct SW_RFB *prSwRfb)
-{
-#if CFG_SUPPORT_LLS
-	static const uint8_t Tid2LinkStatsAc[] = {
-		STATS_LLS_WIFI_AC_BE,
-		STATS_LLS_WIFI_AC_BK,
-		STATS_LLS_WIFI_AC_BK,
-		STATS_LLS_WIFI_AC_BE,
-		STATS_LLS_WIFI_AC_VI,
-		STATS_LLS_WIFI_AC_VI,
-		STATS_LLS_WIFI_AC_VO,
-		STATS_LLS_WIFI_AC_VO,
-	};
-	uint8_t ac;
-
-	ac = Tid2LinkStatsAc[(uint8_t)(prSwRfb->ucTid & 0x7U)];
-	if (prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_MSDU ||
-	    prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU)
-		prAdapter->u4RxMpduAc[ac]++;
-#endif
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Fill RFB

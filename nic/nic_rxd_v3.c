@@ -330,6 +330,8 @@ void nic_rxd_v3_fill_rfb(
 	}
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
+	updateLinkStatsMpduAc(prAdapter, prSwRfb);
 }
 
 void nic_rxd_v3_parse_drop_pkt(struct SW_RFB *prSwRfb)

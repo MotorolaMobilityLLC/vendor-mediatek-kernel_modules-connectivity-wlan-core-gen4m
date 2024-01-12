@@ -68,6 +68,53 @@ extern struct PLE_TOP_CR rMt6639PleTopCr;
 extern struct PSE_TOP_CR rMt6639PseTopCr;
 extern struct PP_TOP_CR rMt6639PpTopCr;
 
+
+/*------------------------------------------------------------------------------
+ * MACRO for MT6639 RXVECTOR Parsing
+ *------------------------------------------------------------------------------
+ */
+/* Group3[0] */
+#define MT6639_RX_VT_RX_RATE_MASK         BITS(0, 6)
+#define MT6639_RX_VT_RX_RATE_OFFSET       0
+#define MT6639_RX_VT_NSTS_MASK            BITS(7, 10)
+#define MT6639_RX_VT_NSTS_OFFSET          7
+
+/* Group3[2] */
+#define MT6639_RX_VT_FR_MODE_MASK         BITS(0, 2) /* Group3[2] */
+#define MT6639_RX_VT_FR_MODE_OFFSET       0
+#define MT6639_RX_VT_GI_MASK              BITS(3, 4)
+#define MT6639_RX_VT_GI_OFFSET            3
+#define MT6639_RX_VT_DCM_MASK             BIT(5)
+#define MT6639_RX_VT_DCM_OFFSET           5
+#define MT6639_RX_VT_STBC_MASK            BITS(9, 10)
+#define MT6639_RX_VT_STBC_OFFSET          9
+#define MT6639_RX_VT_TXMODE_MASK          BITS(11, 14)
+#define MT6639_RX_VT_TXMODE_OFFSET        11
+
+#define RXV_GET_RX_RATE(_prRxVector)				\
+		(((_prRxVector) & MT6639_RX_VT_RX_RATE_MASK)	\
+			 >> MT6639_RX_VT_RX_RATE_OFFSET)
+
+#define RXV_GET_RX_NSTS(_prRxVector)				\
+		(((_prRxVector) & MT6639_RX_VT_NSTS_MASK)	\
+			 >> MT6639_RX_VT_NSTS_OFFSET)
+
+#define RXV_GET_FR_MODE(_prRxVector)				\
+		(((_prRxVector) & MT6639_RX_VT_FR_MODE_MASK)	\
+			 >> MT6639_RX_VT_FR_MODE_OFFSET)
+
+#define RXV_GET_GI(_prRxVector)					\
+		(((_prRxVector) & MT6639_RX_VT_GI_MASK)		\
+			 >> MT6639_RX_VT_GI_OFFSET)
+
+#define RXV_GET_STBC(_prRxVector)				\
+		(((_prRxVector) & MT6639_RX_VT_STBC_MASK)	\
+			 >> MT6639_RX_VT_STBC_OFFSET)
+
+#define RXV_GET_TXMODE(_prRxVector)				\
+		(((_prRxVector) & MT6639_RX_VT_TXMODE_MASK)	\
+			 >> MT6639_RX_VT_TXMODE_OFFSET)
+
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -86,5 +133,12 @@ void mt6639_icapDownVcoreClockRate(void);
 
 void mt6639_dumpWfsyscpupcr(struct ADAPTER *ad);
 void mt6639_DumpBusHangCr(struct ADAPTER *ad);
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
+int mt6639_get_rx_rate_info(IN const uint32_t *prRxV,
+		IN struct RxRateInfo *prRxRateInfo);
+#endif
+
+void mt6639_get_rx_link_stats(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb, IN uint32_t *pu4RxV);
 
 #endif  /* mt6639 */

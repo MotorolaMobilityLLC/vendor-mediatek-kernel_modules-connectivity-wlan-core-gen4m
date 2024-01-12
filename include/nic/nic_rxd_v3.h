@@ -91,14 +91,14 @@ struct HW_MAC_RX_STS_GROUP_4 {
 	/* For HDR_TRAN */
 	uint16_t u2FrameCtl;		/* DW8 */
 	uint8_t aucTA[6];		/* DW8 - DW9 */
-	uint16_t u2SeqFrag;		/* DW 6 */
-	uint16_t u2Qos;			/* DW 6 */
-	uint32_t u4HTC;			/* DW 7 */
+	uint16_t u2SeqFrag;		/* DW 10 */
+	uint16_t u2Qos;			/* DW 10 */
+	uint32_t u4HTC;			/* DW 11 */
 };
 
 struct HW_MAC_RX_STS_GROUP_3 {
 	/*!  RX Vector Info */
-	uint32_t u4RxVector[6];	/* DW 14~19 */
+	uint32_t u4RxVector[6];		/* DW 20 - DW 23 */
 };
 
 struct HW_MAC_RX_STS_GROUP_3_V2 {
@@ -109,7 +109,7 @@ struct HW_MAC_RX_STS_GROUP_3_V2 {
 	uint32_t u4Rcpi;		/* DW23 */
 };
 
-struct HW_MAC_RX_STS_GROUP_5 {
+struct HW_MAC_RX_STS_GROUP_5 {		/* DW24 - */
 	uint32_t u4RxVector[24];
 };
 
