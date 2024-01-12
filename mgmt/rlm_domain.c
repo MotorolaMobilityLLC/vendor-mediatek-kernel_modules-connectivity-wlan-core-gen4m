@@ -6539,7 +6539,7 @@ int32_t txPwrParseAntCfgParaPwr(
 
 	DBGLOG(RLM, INFO, "[Success] Dump aiPwrAnt[%u] para: ", eTag);
 
-	for (ucAntIdx = 0; ucAntIdx < PWR_LMT_CHAIN_ANT_NUM; ucAntIdx++)
+	for (ucAntIdx = 0; ucAntIdx < PWR_LMT_CHAIN_ANT_NUM; ucAntIdx++) {
 		DBGLOG(RLM, INFO, "[%d][%d][%d][%d][%d][%d][%d][%d][%d]",
 			pRecord->aiPwrAnt[eTag].aiPwrAnt2G4[ucAntIdx],
 			pRecord->aiPwrAnt[eTag].aiPwrAnt5GB1[ucAntIdx],
@@ -6551,6 +6551,7 @@ int32_t txPwrParseAntCfgParaPwr(
 			pRecord->aiPwrAnt[eTag].aiPwrAnt6GB3[ucAntIdx],
 			pRecord->aiPwrAnt[eTag].aiPwrAnt6GB4[ucAntIdx]);
 		DBGLOG(RLM, INFO, "\n");
+	}
 
 	return 0;
 }
