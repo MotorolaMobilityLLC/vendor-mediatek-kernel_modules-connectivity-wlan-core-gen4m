@@ -167,7 +167,9 @@ nan_sec_wlanSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	prCmdKey->ucKeyId = prCmdFWKey->ucKeyId;
 
 	/* Note: the key length may not correct for WPA-None */
-	prCmdKey->ucKeyLen = prCmdFWKey->ucKeyLen;
+	prCmdKey->ucKeyLen = (prCmdFWKey->ucKeyLen >
+		sizeof(prCmdKey->aucKeyMaterial)) ?
+		sizeof(prCmdKey->aucKeyMaterial) : prCmdFWKey->ucKeyLen;
 
 	kalMemCopy(prCmdKey->aucKeyMaterial, prCmdFWKey->aucKeyMaterial,
 		   prCmdKey->ucKeyLen);
@@ -229,8 +231,15 @@ nan_sec_wlanSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
 				prCmdKey->ucWlanIndex;
 			prBssInfo->wepkeyUsed
 				[prCmdKey->ucKeyId] = TRUE;
-		} else
+		}
 #endif
+
+		if (prCmdKey->ucKeyId > sizeof(prBssInfo->ucBMCWlanIndexS)-1) {
+			DBGLOG(NAN, ERROR,
+			"Index of array, ucKeyId, exceeds the max len of array\n");
+			return WLAN_STATUS_FAILURE;
+		}
+
 		if (!prBssInfo->prStaRecOfAP) {
 			/* AP WPA/RSN */
 			prBssInfo->ucBMCWlanIndexS
@@ -548,6 +557,12 @@ nan_sec_wpas_setkey_glue(bool fgIsAp, u8 u1BssIdx, enum wpa_alg alg,
 	}
 
 	if (key != NULL) {
+		if (sizeof(rCmdkey.aucKeyMaterial) < key_len) {
+			DBGLOG(NAN, ERROR,
+				   "Copy overflow is detected before calling kalMemCopy()\n");
+			return WLAN_STATUS_FAILURE;
+		}
+
 		if ((key_len == 32) &&
 		    (rCmdkey.ucAlgorithmId == CIPHER_SUITE_TKIP) &&
 		    (rCmdkey.ucIsAuthenticator == FALSE)) {
