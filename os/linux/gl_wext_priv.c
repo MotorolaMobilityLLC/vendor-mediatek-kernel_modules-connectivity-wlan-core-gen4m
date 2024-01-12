@@ -2852,6 +2852,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SETCASTMODE			"SET_CAST_MODE"
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
+#define CMD_SET_DFS_CHN_AVAILABLE	"SET_DFS_CHN_AVAILABLE"
 #define CMD_SHOW_DFS_STATE		"SHOW_DFS_STATE"
 #define CMD_SHOW_DFS_RADAR_PARAM	"SHOW_DFS_RADAR_PARAM"
 #define CMD_SHOW_DFS_HELP		"SHOW_DFS_HELP"
@@ -8328,6 +8329,51 @@ int priv_driver_get_channels(IN struct net_device *prNetDev,
 }
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
+int priv_driver_set_dfs_channel_available(
+				IN struct net_device *prNetDev,
+				IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t u4Ret = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t i4BytesWritten = 0;
+	uint8_t ucChannel = 0;
+	uint8_t ucAvailable = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc >= 3) {
+
+		u4Ret = kalkStrtou8(apcArgv[1], 0, &ucChannel);
+		if (u4Ret) {
+			DBGLOG(REQ, ERROR, "parse argc[1] error u4Ret=%d\n",
+			       u4Ret);
+			return -1;
+		}
+
+		u4Ret = kalkStrtou8(apcArgv[2], 0, &ucAvailable);
+		if (u4Ret) {
+			DBGLOG(REQ, ERROR, "parse argc[2] error u4Ret=%d\n",
+			       u4Ret);
+			return -1;
+		}
+
+		p2pFuncSetDfsChannelAvailable(prGlueInfo->prAdapter,
+			ucChannel, ucAvailable);
+	}
+
+	return	i4BytesWritten;
+}
+
 int priv_driver_show_dfs_state(IN struct net_device *prNetDev,
 			       IN char *pcCommand, IN int i4TotalLen)
 {
@@ -13555,6 +13601,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_SHOW_ACL_ENTRY, priv_driver_show_acl_entry},
 	{CMD_CLEAR_ACL_ENTRY, priv_driver_clear_acl_entry},
 #if (CFG_SUPPORT_DFS_MASTER == 1)
+	{CMD_SET_DFS_CHN_AVAILABLE, priv_driver_set_dfs_channel_available},
 	{CMD_SHOW_DFS_STATE, priv_driver_show_dfs_state},
 	{CMD_SHOW_DFS_RADAR_PARAM, priv_driver_show_dfs_radar_param},
 	{CMD_SHOW_DFS_HELP, priv_driver_show_dfs_help},
