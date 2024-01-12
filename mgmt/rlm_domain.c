@@ -6810,7 +6810,7 @@ int32_t txPwrOnPreParseAppendTag(
 		kalMemSet(&(pRecord->aiPwrAnt[ucTagIdx]),
 			icInitVal, sizeof(struct TX_PWR_CTRL_ANT_SETTING));
 
-		DBGLOG(RLM, INFO,
+		DBGLOG(RLM, TRACE,
 			"[Debug]PwrLmt Ant init success tag[%d],value[%d]\n",
 			ucTagIdx,
 			icInitVal);
