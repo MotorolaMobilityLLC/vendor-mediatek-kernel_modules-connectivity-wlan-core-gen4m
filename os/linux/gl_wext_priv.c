@@ -14616,8 +14616,9 @@ static int priv_driver_efuse_ops(IN struct net_device *prNetDev,
 		if (rStatus == WLAN_STATUS_SUCCESS) {
 			u4Offset += kalSnprintf(pcCommand + u4Offset,
 				     i4TotalLen - u4Offset,
-				     "Free block size 0x%X\n",
-				     prGlueInfo->prAdapter->u4FreeBlockNum);
+				     "Free block size 0x%X, Total block 0x%X\n",
+				     rEfuseFreeBlock.ucGetFreeBlock,
+				     rEfuseFreeBlock.ucGetTotalBlock);
 		}
 	}
 #else

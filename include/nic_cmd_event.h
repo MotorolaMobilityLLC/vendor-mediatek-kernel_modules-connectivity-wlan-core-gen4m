@@ -219,9 +219,10 @@ struct CMD_ACCESS_EFUSE {
 
 struct CMD_EFUSE_FREE_BLOCK {
 	uint8_t  ucGetFreeBlock;
-	uint8_t  aucReserved[3];
+	uint8_t  ucVersion;
+	uint8_t  ucDieIndex;
+	uint8_t  ucReserved;
 };
-
 
 struct CMD_GET_TX_POWER {
 	uint8_t ucTxPwrType;
@@ -3109,8 +3110,10 @@ struct EVENT_ACCESS_EFUSE {
 };
 
 struct EXT_EVENT_EFUSE_FREE_BLOCK {
-	uint16_t  u2FreeBlockNum;
-	uint8_t  aucReserved[2];
+	uint8_t  ucFreeBlockNum;
+	uint8_t  ucVersion;
+	uint8_t  ucTotalBlockNum;
+	uint8_t  ucReserved;
 };
 
 struct EXT_EVENT_GET_TX_POWER {

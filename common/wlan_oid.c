@@ -5023,6 +5023,8 @@ wlanoidQueryEfuseFreeBlock(IN struct ADAPTER *prAdapter,
 	kalMemSet(&rCmdGetEfuseFreeBlock, 0,
 		  sizeof(struct CMD_EFUSE_FREE_BLOCK));
 
+	rCmdGetEfuseFreeBlock.ucVersion = 1; /*1:new version, 0:old version*/
+	rCmdGetEfuseFreeBlock.ucDieIndex = 0; /*0:D Die, 1: A die*/
 
 	rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
 			CMD_ID_LAYER_0_EXT_MAGIC_NUM,
