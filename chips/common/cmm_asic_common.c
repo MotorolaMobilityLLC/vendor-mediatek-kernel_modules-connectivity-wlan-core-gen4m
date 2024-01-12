@@ -208,9 +208,12 @@ void fillTxDescAppendByHostV2(struct ADAPTER *prAdapter,
 	NIC_DUMP_TXD_HEADER(prAdapter, "Dump DATA TXD:\n");
 	NIC_DUMP_TXD(prAdapter, pucBuffer, NIC_TX_DESC_LONG_FORMAT_LENGTH);
 
-	NIC_DUMP_TXP_HEADER(prAdapter, "Dump DATA TXP:\n");
+	NIC_DUMP_TXP_HEADER(prAdapter, "Dump DATA TXP: append=%zu, len=%u\n",
+			sizeof(prHwTxDescAppend->CONNAC_APPEND),
+			prMsduInfo->u2FrameLength);
 	NIC_DUMP_TXP(prAdapter, (uint8_t *)prHwTxDescAppend,
-			sizeof(prHwTxDescAppend->CONNAC_APPEND));
+			sizeof(prHwTxDescAppend->CONNAC_APPEND),
+			prMsduInfo->u2FrameLength);
 }
 
 static char *q_idx_mcu_str[] = {"RQ0", "RQ1", "RQ2", "RQ3", "Invalid"};

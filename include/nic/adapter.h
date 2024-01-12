@@ -1129,7 +1129,7 @@ struct WIFI_VAR {
 			uint32_t fgDumpTxD: 1;        /* 0x01 */
 			uint32_t fgDumpTxDmad: 1;     /* 0x02 */
 			uint32_t fgDumpTxP: 1;        /* 0x04 */
-			uint32_t fgDumpReserved: 1;
+			uint32_t fgDumpTxPfull: 1;    /* 0x08 */
 
 			uint32_t fgDumpRxD: 1;        /* 0x10 */
 			uint32_t fgDumpRxDmad: 1;     /* 0x20 */
