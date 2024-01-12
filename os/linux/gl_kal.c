@@ -101,6 +101,13 @@
 #include <linux/miscdevice.h>   /* for misc_register, and SYNTH_MINOR */
 #include <linux/kobject.h>
 
+/* for wifi standalone log */
+#define CREATE_TRACE_POINTS
+#include "mtk_wifi_trace.h"
+#include <linux/jiffies.h>
+#include <linux/ratelimit.h>
+#include <linux/rtc.h>
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -152,6 +159,8 @@ static struct notifier_block wlan_fb_notifier;
 void *wlan_fb_notifier_priv_data;
 
 static struct miscdevice wlan_object;
+
+static unsigned long rtc_update;
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -4258,6 +4267,8 @@ int main_thread(void *data)
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	prGlueInfo->prAdapter->u4FWLastUpdateTime = 0;
 #endif
+
+	rtc_update = jiffies;	/* update rtc_update time base */
 
 	while (TRUE) {
 #ifdef UT_TEST_MODE
@@ -9187,6 +9198,119 @@ void kalUpdateCompHdlrRec(IN struct ADAPTER *prAdapter,
 
 	prAdapter->u4CompRecIdx = (prAdapter->u4CompRecIdx + 1)
 					% OID_HDLR_REC_NUM;
+}
+
+void kalPrintUTC(char *msg_buf, int msg_buf_size)
+{
+	int ret = 0;
+	struct rtc_time tm;
+	struct timespec64 tv = { 0 };
+	struct rtc_time tm_android;
+	struct timespec64 tv_android = { 0 };
+
+	ktime_get_real_ts64(&tv);
+	tv_android = tv;
+	rtc_time64_to_tm(tv.tv_sec, &tm);
+	tv_android.tv_sec -= sys_tz.tz_minuteswest * 60;
+	rtc_time64_to_tm(tv_android.tv_sec, &tm_android);
+	if (tm.tm_sec%10 == 0) {
+		ret = snprintf(msg_buf, msg_buf_size,
+			"[RT:%lld] %d-%02d-%02d %02d:%02d:%02d.%u UTC;"
+			"android time %d-%02d-%02d %02d:%02d:%02d.%03d",
+			sched_clock(), tm.tm_year + 1900, tm.tm_mon + 1,
+			tm.tm_mday, tm.tm_hour, tm.tm_min,
+			tm.tm_sec, (unsigned int)(tv.tv_nsec/1000),
+			tm_android.tm_year + 1900, tm_android.tm_mon + 1,
+			tm_android.tm_mday, tm_android.tm_hour,
+			tm_android.tm_min, tm_android.tm_sec,
+			(unsigned int)(tv_android.tv_nsec/1000));
+		if (ret < 0) {
+			kalPrintLog("[%u] snprintf failed, ret: %d",
+				__LINE__, ret);
+		} else {
+			trace_wifi_standalone_log(msg_buf);
+		}
+	}
+}
+
+void kalPrintTrace(char *buffer, const int len)
+{
+	if (buffer[len - 1] == '\n')
+		buffer[len - 1] = '\0';
+
+	if (len < WIFI_LOG_MSG_MAX) {
+		trace_wifi_standalone_log(buffer);
+	} else {
+		char sub_buffer[WIFI_LOG_MSG_MAX];
+
+		strncpy(sub_buffer, buffer,
+			WIFI_LOG_MSG_MAX - 1);
+		sub_buffer[WIFI_LOG_MSG_MAX - 1] = '\0';
+		trace_wifi_standalone_log(sub_buffer);
+
+		strncpy(sub_buffer, buffer + WIFI_LOG_MSG_MAX - 1,
+			WIFI_LOG_MSG_MAX - 1);
+		sub_buffer[WIFI_LOG_MSG_MAX - 1] = '\0';
+		trace_wifi_standalone_log(sub_buffer);
+	}
+
+	if (time_after(jiffies, rtc_update)) {
+		rtc_update = jiffies + (1 * HZ);
+		kalPrintUTC(buffer, WIFI_LOG_MSG_BUFFER);
+	}
+}
+
+void kalPrintLog(const char *fmt, ...)
+{
+	char buffer[WIFI_LOG_MSG_BUFFER];
+	int ret = 0;
+	struct va_format vaf;
+	va_list args;
+
+	va_start(args, fmt);
+	vaf.fmt = fmt;
+	vaf.va = &args;
+	ret = vsnprintf(buffer, sizeof(buffer), fmt, args);
+	if (ret < 0) {
+		kalPrintLog("[%u] vsnprintf failed, ret: %d",
+			__LINE__, ret);
+	} else if (get_wifi_standalone_log_mode() == 1) {
+		kalPrintTrace(buffer, strlen(buffer));
+	} else {
+		pr_info("%s%s", WLAN_TAG, buffer);
+	}
+
+	va_end(args);
+}
+
+void kalPrintLogLimited(const char *fmt, ...)
+{
+	#ifdef CONFIG_PRINTK
+	static DEFINE_RATELIMIT_STATE(_rs,
+		DEFAULT_RATELIMIT_INTERVAL, DEFAULT_RATELIMIT_BURST);
+
+	if (__ratelimit(&_rs)) {
+		char buffer[WIFI_LOG_MSG_BUFFER];
+		int ret = 0;
+		struct va_format vaf;
+		va_list args;
+
+		va_start(args, fmt);
+		vaf.fmt = fmt;
+		vaf.va = &args;
+		ret = vsnprintf(buffer, sizeof(buffer), fmt, args);
+		if (ret < 0) {
+			kalPrintLog("[%u] vsnprintf failed, ret: %d",
+				__LINE__, ret);
+		} else if (get_wifi_standalone_log_mode() == 1) {
+			kalPrintTrace(buffer, strlen(buffer));
+		} else {
+			pr_info("%s%s", WLAN_TAG, buffer);
+		}
+
+		va_end(args);
+	}
+	#endif
 }
 
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
