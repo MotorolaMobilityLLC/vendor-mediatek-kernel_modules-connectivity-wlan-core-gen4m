@@ -1812,7 +1812,9 @@ bool kalDevKickCmd(struct GLUE_INFO *prGlueInfo)
 	unsigned long flags;
 	struct list_head rTempQ;
 
+#if !CFG_TX_CMD_SMART_SEQUENCE
 	KAL_SPIN_LOCK_DECLARATION();
+#endif /* !CFG_TX_CMD_SMART_SEQUENCE */
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -1824,18 +1826,24 @@ bool kalDevKickCmd(struct GLUE_INFO *prGlueInfo)
 
 	list_for_each_safe(prCur, prNext, &rTempQ) {
 		prTxReq = list_entry(prCur, struct TX_CMD_REQ, list);
+#if !CFG_TX_CMD_SMART_SEQUENCE
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+#endif /* !CFG_TX_CMD_SMART_SEQUENCE */
 		ret = halWpdmaWriteCmd(prGlueInfo,
 				       &prTxReq->rCmdInfo, prTxReq->ucTC);
 		if (ret == CMD_TX_RESULT_SUCCESS) {
+#if !CFG_TX_CMD_SMART_SEQUENCE
 			if (prTxReq->rCmdInfo.pfHifTxCmdDoneCb)
 				prTxReq->rCmdInfo.pfHifTxCmdDoneCb(
 					prGlueInfo->prAdapter,
 					&prTxReq->rCmdInfo);
+#endif /* !CFG_TX_CMD_SMART_SEQUENCE */
 		} else {
 			DBGLOG(HAL, ERROR, "ret: %d\n", ret);
 		}
+#if !CFG_TX_CMD_SMART_SEQUENCE
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+#endif /* !CFG_TX_CMD_SMART_SEQUENCE */
 		list_del(prCur);
 		list_add_tail(prCur, &prHifInfo->rTxCmdFreeList);
 	}

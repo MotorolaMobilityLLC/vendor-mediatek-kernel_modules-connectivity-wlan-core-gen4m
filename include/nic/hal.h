@@ -425,6 +425,14 @@ do { \
 	kalDevKickData(_prAdapter->prGlueInfo); \
 }
 
+#define HAL_WRITE_TX_CMD_SMART_SEQ(_prAdapter, _prCmdInfo, _ucTC) \
+{ \
+	if (_prAdapter->rAcpiState == ACPI_STATE_D3) { \
+		ASSERT(0); \
+	} \
+	kalDevWriteCmd(_prAdapter->prGlueInfo, _prCmdInfo, _ucTC); \
+}
+
 #define HAL_WRITE_TX_CMD(_prAdapter, _prCmdInfo, _ucTC) \
 { \
 	enum ENUM_CMD_TX_RESULT ret; \
