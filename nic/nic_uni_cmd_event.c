@@ -252,6 +252,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 #if (CFG_VOLT_INFO == 1)
 	[UNI_EVENT_ID_GET_VOLT_INFO] = nicUniEventGetVnf,
 #endif
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+	[UNI_EVENT_ID_DELAY_BAR] = nicUniEventDelayBar,
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 	[UNI_EVENT_ID_FAST_PATH] = nicUniEventFastPath,
 	[UNI_EVENT_ID_THERMAL] = nicUniEventThermalProtect,
 };
@@ -9438,6 +9441,62 @@ void nicUniEventGetVnf(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	}
 }
 #endif /* CFG_VOLT_INFO */
+
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+void nicUniEventDelayBar(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	uint16_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_DELAY_BAR);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint8_t fail_cnt = 0;
+	uint8_t i;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_DELAY_BAR_INFO_TAG: {
+
+			struct UNI_EVENT_DELAY_BAR_INFO *prDelayBarInfo =
+			    (struct UNI_EVENT_DELAY_BAR_INFO *)tag;
+			struct EVENT_BAR_DELAY legacy = {0};
+
+			legacy.ucEvtVer = prDelayBarInfo->ucEvtVer;
+			legacy.ucBaNum = prDelayBarInfo->ucBaNum;
+
+			if (sizeof(struct UNI_STORED_BAR_INFO) !=
+				sizeof(struct EVENT_STORED_BAR_INFO)) {
+				DBGLOG(NIC, INFO,
+					"skip due to struct size invalid.\n");
+				break;
+			}
+
+			for (i = 0; i < prDelayBarInfo->ucBaNum; i++) {
+				kalMemCopy(&(legacy.arBAR[i]),
+					&(prDelayBarInfo->arBAR[i]),
+					sizeof(struct UNI_STORED_BAR_INFO));
+			}
+
+			RUN_RX_EVENT_HANDLER(
+				EVENT_ID_DELAY_BAR,
+				&legacy
+			);
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < UNI_EVENT_DELAY_BAR_TAG_NUM)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 
 void nicUniEventFastPath(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
