@@ -28,6 +28,10 @@
 #include "gl_csi.h"
 #endif
 
+#if (CFG_HW_ERR_REPORT == 1)
+#include "conn_dbg.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -248,6 +252,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_THERMAL] = nicUniEventThermalProtect,
 #if (CFG_CE_ASSERT_DUMP == 1)
 	[UNI_EVENT_ID_ASSERT_DUMP] = nicUniEventAssertDump,
+#endif
+#if (CFG_HW_ERR_REPORT == 1)
+	[UNI_EVENT_ID_HW_ERROR_REPORT] = nicUniEventHwErrReport,
 #endif
 };
 
@@ -7098,6 +7105,42 @@ uint32_t nicUniCmdSendVnf(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif /* CFG_VOLT_INFO */
+
+#if (CFG_HW_ERR_REPORT == 1)
+void nicUniEventHwErrReport(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_HW_ERROR_REPORT);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_HW_ERROR_REPORT_BASIC: {
+			struct UNI_EVENT_HW_ERROR_REPORT_PARAM *hw_err_report =
+				(struct UNI_EVENT_HW_ERROR_REPORT_PARAM *)tag;
+
+			DBGLOG(NIC, INFO,
+				"HW ERROR Report: %s\n",
+				hw_err_report->aucStrBuffer);
+			conn_dbg_add_log(CONN_DBG_LOG_TYPE_HW_ERR,
+				hw_err_report->aucStrBuffer);
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+#endif /* CFG_HW_ERR_REPORT */
 
 #if CFG_FAST_PATH_SUPPORT
 uint32_t nicUniCmdFastPath(struct ADAPTER *ad,
