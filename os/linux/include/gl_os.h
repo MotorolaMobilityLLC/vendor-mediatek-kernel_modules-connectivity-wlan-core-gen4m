@@ -1003,6 +1003,11 @@ struct GLUE_INFO {
 	struct sk_buff_head rCoreDumpSkbQueue;
 #endif
 
+#if (CFG_SURVEY_DUMP_FULL_CHANNEL == 1)
+	struct CHANNEL_TIMING_T  rChanTimeRecord[CH_MAX_NUM];
+	uint8_t u1NoiseLevel;
+#endif
+
 #if CFG_SUPPORT_CSI
 	wait_queue_head_t waitq_csi;
 #endif

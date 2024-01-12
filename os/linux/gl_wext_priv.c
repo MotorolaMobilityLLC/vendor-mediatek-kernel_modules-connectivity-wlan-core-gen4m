@@ -16777,6 +16777,84 @@ int priv_driver_set_maxrfgain(struct net_device *prNetDev,
 
 #endif
 
+#if (CFG_SURVEY_DUMP_FULL_CHANNEL == 1)
+int priv_driver_get_survey_dump(struct net_device *prNetDev,
+				    char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct ADAPTER *prAdapter;
+	int32_t i4BytesWritten = 0;
+	uint32_t u4ChIdx, u4StartIdx, u4EndIdx;
+	u_int8_t ucChannelNum;
+	struct ieee80211_channel *pChannel;
+	struct CMD_DOMAIN_CHANNEL *pCh;
+
+	struct PARAM_CUSTOM_SW_CTRL_STRUCT rSwCtrlInfo;
+	uint32_t u4Id;
+	int16_t u2Wf0AvgPwr;
+	int8_t i1Noise;
+	uint32_t u4BufLen = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+
+	ucChannelNum = 0;
+	u4StartIdx = 0;
+	u4EndIdx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
+			+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
+
+	u4StartIdx = 0;
+	for (u4ChIdx = u4StartIdx; u4ChIdx < u4EndIdx; u4ChIdx++) {
+		pCh = (rlmDomainGetActiveChannels() + u4ChIdx);
+		ucChannelNum = pCh->u2ChNum;
+
+		if (ucChannelNum <= 14) {
+			pChannel = ieee80211_get_channel(
+				wlanGetWiphy(),
+				ieee80211_channel_to_frequency
+				(ucChannelNum, KAL_BAND_2GHZ));
+		} else {
+			pChannel = ieee80211_get_channel(
+				wlanGetWiphy(),
+				ieee80211_channel_to_frequency(ucChannelNum,
+				KAL_BAND_5GHZ));
+		}
+
+		if (pChannel == NULL)
+			return -1;
+
+		u4Id = CMD_SW_DBGCTL_ADVCTL_GET_ID + CMD_ADVCTL_NOISE_ID;
+		rSwCtrlInfo.u4Id = u4Id;
+		rSwCtrlInfo.u4Data = 0;
+		rStatus = kalIoctl(prGlueInfo, wlanoidQuerySwCtrlRead,
+				  &rSwCtrlInfo, sizeof(rSwCtrlInfo), &u4BufLen);
+		u2Wf0AvgPwr = rSwCtrlInfo.u4Data & 0xFFFF;
+		i1Noise = u2Wf0AvgPwr;
+		prGlueInfo->u1NoiseLevel = u2Wf0AvgPwr;
+
+		DBGLOG(REQ, INFO, "\tfrequency:\t\t\t%u MHz\n",
+			pChannel->center_freq);
+		DBGLOG(REQ, INFO, "\tnoise:\t\t\t\t%d dBm\n",
+			i1Noise);
+		DBGLOG(REQ, INFO, "\tactive_time:\t\t\t %d ms\n",
+			prGlueInfo->rChanTimeRecord[u4ChIdx].u4ActiveTime);
+		DBGLOG(REQ, INFO, "\tbusy_time:\t\t\t %d us\n",
+			prGlueInfo->rChanTimeRecord[u4ChIdx].u4BusyTime);
+		DBGLOG(REQ, INFO, "\ttx_time:\t\t\t %d us\n",
+			prGlueInfo->rChanTimeRecord[u4ChIdx].u4TxTime);
+		DBGLOG(REQ, INFO, "\tchannel_num:\t\t\t %d\n\n",
+			prGlueInfo->rChanTimeRecord[u4ChIdx].u2ChannelNum);
+		DBGLOG(REQ, INFO, "\t\n\n");
+
+	}
+
+	return i4BytesWritten;
+}
+#endif
+
 int priv_driver_get_tp_info(struct net_device *prNetDev,
 				   char *pcCommand, int i4TotalLen)
 {
