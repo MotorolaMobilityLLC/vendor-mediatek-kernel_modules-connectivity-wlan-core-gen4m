@@ -674,7 +674,7 @@ int mtk_p2p_cfg80211_del_iface_impl(
 #endif
 	}
 
-	/* Wait for kalSendCompleteAndAwakeQueue() complete */
+	/* Wait for kalSendComplete() complete */
 	if (p2pGetMode() == RUNNING_P2P_DEV_MODE)
 		prP2pInfo->aprRoleHandler = NULL;
 	else if (p2pGetMode() == RUNNING_P2P_NO_GROUP_MODE &&

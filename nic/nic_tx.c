@@ -2513,24 +2513,7 @@ void nicTxMsduDoneCb(struct GLUE_INFO *prGlueInfo,
 			prNextMsduInfo =
 				QUEUE_GET_NEXT_ENTRY(&prMsduInfo->rQueEntry);
 
-#if 1
 			nicTxFreePacket(prAdapter, prMsduInfo, FALSE);
-#else
-			prNativePacket = prMsduInfo->prPacket;
-
-			/* Free MSDU_INFO */
-			if (prMsduInfo->eSrc == TX_PACKET_OS) {
-				wlanTxProfilingTagMsdu(prAdapter, prMsduInfo,
-						       TX_PROF_TAG_DRV_DEQUE);
-				kalSendComplete(
-					prAdapter->prGlueInfo, prNativePacket,
-					WLAN_STATUS_SUCCESS);
-				prMsduInfo->prPacket = NULL;
-			} else if (prMsduInfo->eSrc == TX_PACKET_FORWARDING) {
-				GLUE_DEC_REF_CNT(
-					prTxCtrl->i4PendingFwdFrameCount);
-			}
-#endif
 
 			if (!prMsduInfo->pfTxDoneHandler)
 				QUEUE_INSERT_TAIL(prFreeQueue, prMsduInfo);

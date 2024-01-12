@@ -8145,9 +8145,8 @@ uint32_t qmDumpQueueStatus(struct ADAPTER *prAdapter,
 		"BMC or unknown TxQueue Len[%u]\n",
 		prQM->arTxQueue[0].u4NumElem);
 	LOGBUF(pucBuf, u4Max, u4Len,
-		"P QLen Normal[%u] CmdData[%u] Cmd[%u]\n",
+		"P QLen Normal[%u] Cmd[%u]\n",
 		GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
-		GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingCmdDataFrameNum),
 		GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingCmdNum));
 
 #if QM_TC_RESOURCE_EMPTY_COUNTER

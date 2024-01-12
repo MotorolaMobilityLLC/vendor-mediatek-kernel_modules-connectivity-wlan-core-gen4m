@@ -491,9 +491,8 @@ uint32_t halDumpHifStatus(struct ADAPTER *prAdapter,
 	LOGBUF(pucBuf, u4Max, u4Len, "MSDU Tok: Free[%u] Used[%u]\n",
 		halGetMsduTokenFreeCnt(prGlueInfo->prAdapter),
 		prGlueInfo->rHifInfo.rTokenInfo.u4UsedCnt);
-	LOGBUF(pucBuf, u4Max, u4Len, "Pending QLen Normal[%u] CmdData[%u]\n",
-		prGlueInfo->i4TxPendingFrameNum,
-		prGlueInfo->i4TxPendingCmdDataFrameNum);
+	LOGBUF(pucBuf, u4Max, u4Len, "Pending QLen Normal[%u]\n",
+		prGlueInfo->i4TxPendingFrameNum);
 
 	LOGBUF(pucBuf, u4Max, u4Len, "---------------------------------\n\n");
 

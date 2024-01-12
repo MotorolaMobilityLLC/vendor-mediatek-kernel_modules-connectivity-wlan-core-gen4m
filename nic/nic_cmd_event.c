@@ -1172,8 +1172,7 @@ void nicCmdEventEnterRfTest(struct ADAPTER *prAdapter,
 	/* 1. Remove pending TX */
 	nicTxRelease(prAdapter, TRUE);
 
-	/* 1.1 clear pending CmdData / Management Frames */
-	kalClearCmdDataFrames(prAdapter->prGlueInfo);
+	/* 1.1 clear pending Management Frames */
 	kalClearMgmtFrames(prAdapter->prGlueInfo);
 
 	/* 1.2 clear pending TX packet queued in glue layer */
@@ -1561,8 +1560,7 @@ void nicOidCmdEnterRFTestTimeout(struct ADAPTER
 	/* 1. Remove pending TX frames */
 	nicTxRelease(prAdapter, TRUE);
 
-	/* 1.1 clear pending CmdData / Management Frames */
-	kalClearCmdDataFrames(prAdapter->prGlueInfo);
+	/* 1.1 clear pending Management Frames */
 	kalClearMgmtFrames(prAdapter->prGlueInfo);
 
 	/* 1.2 clear pending TX packet queued in glue layer */

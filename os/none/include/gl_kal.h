@@ -765,13 +765,20 @@ int kal_test_bit(unsigned long bit, unsigned long *p);
  *
  * \param[in] prGlueInfo     Pointer of GLUE Data Structure
  * \param[in] pvPacket       Pointer of Packet Handle
- * \param[in] status         Status Code for OS upper layer
+ * \param[in] u4Status         Status Code for OS upper layer
  *
  * \return -
  */
 /*----------------------------------------------------------------------------*/
-#define kalSendComplete(prGlueInfo, pvPacket, status)   \
-	    kalSendCompleteAndAwakeQueue(prGlueInfo, pvPacket)
+#ifdef CFG_REMIND_IMPLEMENT
+#define kalSendComplete(_prGlueInfo, _pvPacket, u4Status) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, \
+		_pvPacket, u4Status)
+#else
+void kalSendComplete(struct GLUE_INFO *prGlueInfo, void *pvPacket,
+	uint32_t u4Status);
+#endif
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1101,15 +1108,6 @@ kalQueryTxPacketHeader(struct GLUE_INFO *prGlueInfo,
 		       void *pvPacket, uint16_t *pu2EtherTypeLen,
 		       uint8_t *pucEthDestAddr);
 #endif /* CFG_TX_FRAGMENT */
-
-#ifdef CFG_REMIND_IMPLEMENT
-#define kalSendCompleteAndAwakeQueue(_prGlueInfo, _pvPacket) \
-KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, _pvPacket)
-#else
-void kalSendCompleteAndAwakeQueue(struct GLUE_INFO
-				  *prGlueInfo,
-				  void *pvPacket);
-#endif
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 #ifdef CFG_REMIND_IMPLEMENT
@@ -1482,26 +1480,6 @@ u_int8_t kalUninitBowDevice(struct GLUE_INFO
 #endif /* CFG_BOW_SEPARATE_DATA_PATH */
 #endif /* CFG_ENABLE_BT_OVER_WIFI */
 
-/*----------------------------------------------------------------------------*/
-/* Command Data Frame Clearance                                               */
-/*----------------------------------------------------------------------------*/
-#ifdef CFG_REMIND_IMPLEMENT
-#define kalClearCmdDataFrames(_prGlueInfo) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
-
-#define kalClearCmdDataFramesByBssIdx(_prGlueInfo, _ucBssIndex) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
-
-#define kalCmdDataFrameSendComplete(_prGlueInfo, _pvPacket, _rStatus) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
-#else
-void kalClearCmdDataFrames(struct GLUE_INFO
-			    *prGlueInfo);
-
-void kalClearCmdDataFramesByBssIdx(struct GLUE_INFO
-				    *prGlueInfo,
-				    uint8_t ucBssIndex);
-#endif
 /*----------------------------------------------------------------------------*/
 /* Management Frame Clearance                                                 */
 /*----------------------------------------------------------------------------*/

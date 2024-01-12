@@ -271,8 +271,6 @@ void nanDevFsmUninit(struct ADAPTER *prAdapter, uint8_t ucIdx)
 		/* Clear CmdQue */
 		kalClearMgmtFramesByBssIdx(prAdapter->prGlueInfo,
 					   prnanBssInfo->ucBssIndex);
-		kalClearCmdDataFramesByBssIdx(prAdapter->prGlueInfo,
-					       prnanBssInfo->ucBssIndex);
 		/* Clear PendingCmdQue */
 		wlanReleasePendingCMDbyBssIdx(prAdapter,
 					      prnanBssInfo->ucBssIndex);
