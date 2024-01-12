@@ -11183,6 +11183,11 @@ int32_t __weak kalPlatOpsInit(void)
 	return 0;
 }
 
+int32_t __weak kalGetScpDumpInfo(u64 *addr, unsigned int *size)
+{
+	return 0;
+}
+
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 u_int8_t __weak kalIsSupportMawd(void)
 {

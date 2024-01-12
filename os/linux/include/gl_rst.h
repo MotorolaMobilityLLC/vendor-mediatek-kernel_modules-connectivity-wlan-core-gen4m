@@ -296,6 +296,7 @@ int wlan_post_reset_on_v3(unsigned int type);
 u_int8_t kalIsWholeChipResetting(void);
 void glSetRstReasonString(char *reason);
 void kalSetRstEvent(u_int8_t force_dump);
+void kalSetRstFwNotifyTriggerEvent(u_int8_t force_dump);
 void glRstSetRstEndEvent(void);
 int reset_wait_for_trigger_completion(void);
 void reset_done_trigger_completion(void);

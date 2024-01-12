@@ -136,25 +136,30 @@ static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 		goto exit;
 	}
 
-	if (count != chip_info->rEmiInfo.coredump_size) {
+	if (count != (chip_info->rEmiInfo.coredump_size+
+		chip_info->rEmiInfo.coredump2_size)) {
 		DBGLOG(INIT, ERROR,
-			"coredump size mismatch (%zu %u)\n",
-			count, chip_info->rEmiInfo.coredump_size);
+			"coredump size mismatch (%zu %u %u)\n",
+			count,
+			chip_info->rEmiInfo.coredump_size,
+			chip_info->rEmiInfo.coredump2_size);
 		ret = -EINVAL;
 		goto exit;
 	}
 
-	tmp_buf = kalMemAlloc(chip_info->rEmiInfo.coredump_size, VIR_MEM_TYPE);
+	tmp_buf = kalMemAlloc(count, VIR_MEM_TYPE);
 	if (tmp_buf == NULL) {
 		DBGLOG(INIT, ERROR,
 			"buffer(%u) alloc failed\n",
-			chip_info->rEmiInfo.coredump_size);
+			count);
 		ret = -ENOMEM;
 		goto exit;
 	}
-	kalMemZero(tmp_buf, chip_info->rEmiInfo.coredump_size);
+	kalMemZero(tmp_buf, count);
 
-	if (emi_mem_read(chip_info, 0, tmp_buf,
+	/* coredump 1 */
+	if (emi_mem_read(chip_info, 0,
+			 tmp_buf,
 			 chip_info->rEmiInfo.coredump_size)) {
 		DBGLOG(INIT, ERROR,
 			"emi read failed.\n");
@@ -162,6 +167,20 @@ static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 		goto exit;
 	}
 
+	/* coredump 2 */
+	if (chip_info->rEmiInfo.coredump2_size == 0)
+		goto copy_to_user;
+
+	if (emi_mem_read(chip_info, COREDUMP_EMI2_DUMP_OFFSET,
+			 tmp_buf+chip_info->rEmiInfo.coredump_size,
+			 chip_info->rEmiInfo.coredump2_size)) {
+		DBGLOG(INIT, ERROR,
+			"emi2 read failed.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
+copy_to_user:
 	ret = simple_read_from_buffer(buf, count, f_pos, tmp_buf, count);
 	DBGLOG(INIT, INFO, "ret: %zd\n", ret);
 
@@ -420,6 +439,7 @@ int wifi_coredump_init(void *priv)
 		"%s%s", "/dev/", COREDUMP_WIFI_INF_NAME);
 	cb.emi_size = chip_info->rEmiInfo.coredump_size;
 	cb.mcif_emi_size = 0;
+	cb.emi2_size = chip_info->rEmiInfo.coredump2_size;
 	ctx->handler = connv3_coredump_init(CONNV3_DEBUG_TYPE_WIFI,
 		&cb);
 	if (!ctx->handler) {
@@ -770,9 +790,41 @@ static void __coredump_deinit_cr_region(struct coredump_ctx *ctx)
 	mem->cr_regions = NULL;
 }
 
+static void __coredump_deinit(struct coredump_ctx *ctx)
+{
+	struct coredump_mem *mem = &ctx->mem;
+
+	if (mem->aee_str_buff) {
+		kalMemFree(mem->aee_str_buff,
+			VIR_MEM_TYPE,
+			AEE_STR_LEN);
+		mem->aee_str_buff = NULL;
+	}
+
+	__coredump_deinit_mem_region(ctx);
+
+	__coredump_deinit_cr_region(ctx);
+
+	if (mem->dump_buff && mem->dump_buff_len) {
+		kalMemFree(mem->dump_buff,
+			VIR_MEM_TYPE,
+			mem->dump_buff_len);
+		mem->dump_buff = NULL;
+	}
+
+	if (mem->print_buff && mem->print_buff_len) {
+		kalMemFree(mem->print_buff,
+			VIR_MEM_TYPE,
+			mem->print_buff_len);
+		mem->print_buff = NULL;
+	}
+}
+
 static int __coredump_init(struct coredump_ctx *ctx,
 	struct mt66xx_chip_info *chip_info)
 {
+#define AEE_STR_LEN		256
+
 	struct coredump_mem *mem = &ctx->mem;
 	int ret = 0;
 
@@ -804,51 +856,13 @@ static int __coredump_init(struct coredump_ctx *ctx,
 	if (ret)
 		goto exit;
 
+	mem->aee_str_buff = kalMemAlloc(AEE_STR_LEN, VIR_MEM_TYPE);
+
 	return 0;
 
 exit:
-	__coredump_deinit_mem_region(ctx);
-
-	__coredump_deinit_cr_region(ctx);
-
-	if (mem->dump_buff && mem->dump_buff_len) {
-		kalMemFree(mem->dump_buff,
-			VIR_MEM_TYPE,
-			mem->dump_buff_len);
-		mem->dump_buff = NULL;
-	}
-
-	if (mem->print_buff && mem->print_buff_len) {
-		kalMemFree(mem->print_buff,
-			VIR_MEM_TYPE,
-			mem->print_buff_len);
-		mem->print_buff = NULL;
-	}
-
+	__coredump_deinit(ctx);
 	return ret;
-}
-
-static void __coredump_deinit(struct coredump_ctx *ctx)
-{
-	struct coredump_mem *mem = &ctx->mem;
-
-	__coredump_deinit_mem_region(ctx);
-
-	__coredump_deinit_cr_region(ctx);
-
-	if (mem->dump_buff && mem->dump_buff_len) {
-		kalMemFree(mem->dump_buff,
-			VIR_MEM_TYPE,
-			mem->dump_buff_len);
-		mem->dump_buff = NULL;
-	}
-
-	if (mem->print_buff && mem->print_buff_len) {
-		kalMemFree(mem->print_buff,
-			VIR_MEM_TYPE,
-			mem->print_buff_len);
-		mem->print_buff = NULL;
-	}
 }
 
 static int __coredump_handle_print_buff(struct coredump_ctx *ctx,
@@ -1214,9 +1228,210 @@ static int __coredump_to_userspace_mem_region(struct coredump_ctx *ctx)
 	return 0;
 }
 
+static int __coredump_to_userspace_scp_dump(struct coredump_ctx *ctx,
+	struct mt66xx_chip_info *chip_info)
+{
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+	u64 u8ScpDumpAddr = 0;
+	unsigned int u4ScpDumpSize = 0;
+	uint8_t *pScpDumpBuf = NULL;
+	uint32_t u4Ret = 0, i4Ret;
+
+	i4Ret = kalGetScpDumpInfo(&u8ScpDumpAddr, &u4ScpDumpSize);
+	if (i4Ret) {
+		DBGLOG(INIT, INFO, "no scp dump info\n");
+		return 0;
+	}
+
+	DBGLOG(INIT, INFO, "scp dump addr:0x%llx, size:%u\n",
+		u8ScpDumpAddr, u4ScpDumpSize);
+
+	pScpDumpBuf = kalMemAlloc(u4ScpDumpSize, VIR_MEM_TYPE);
+	if (pScpDumpBuf == NULL) {
+		DBGLOG(INIT, ERROR,
+				"Alloc scp dump buffer failed.\n");
+				return 0;
+	}
+
+	kalMemZero(pScpDumpBuf, u4ScpDumpSize);
+	u4Ret = emi_mem_read(chip_info,
+				(u8ScpDumpAddr-COREDUMP_EMI_BASE),
+				pScpDumpBuf, u4ScpDumpSize);
+	if (u4Ret) {
+		DBGLOG(INIT, ERROR, "read scp dump failed\n");
+		goto exit;
+	}
+
+	connv3_coredump_send(ctx->handler,
+			     "PRED",
+			     pScpDumpBuf,
+			     u4ScpDumpSize);
+exit:
+	kalMemFree(pScpDumpBuf, VIR_MEM_TYPE, u4ScpDumpSize);
+	DBGLOG(INIT, INFO, "scp dump done\n");
+#endif
+	return 0;
+}
+
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+static uint32_t wlanSendDFDInfo(
+	struct ADAPTER *prAdapter, uint32_t u4InfoIdx,
+	uint32_t u4Length, uint8_t *pBuf, uint32_t *u4RetLen)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	uint32_t u4ReservedLength = u4Length;
+	uint32_t u4Offset = 0, u4Size = u4Length;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+	if (!prAdapter)
+		return WLAN_STATUS_FAILURE;
+
+	prChipInfo = prAdapter->chip_info;
+	if (!prChipInfo->queryDFDInfo)
+		return WLAN_STATUS_FAILURE;
+
+	while (u4ReservedLength) {
+		if (u4ReservedLength > DEBUG_INFO_DFD_MAX_EVENT_LEN) {
+			u4Size = DEBUG_INFO_DFD_MAX_EVENT_LEN;
+			u4ReservedLength -= DEBUG_INFO_DFD_MAX_EVENT_LEN;
+		} else {
+			u4Size = u4ReservedLength;
+			u4ReservedLength = 0;
+		}
+
+		DBGLOG(INIT, INFO, "[%d] offset:%d, size:%d, reservedLen:%d\n",
+				u4InfoIdx, u4Offset, u4Size, u4ReservedLength);
+		if (prChipInfo->queryDFDInfo(prAdapter,
+				u4InfoIdx, u4Offset, u4Size,
+				(pBuf+u4Offset)) != u4Size) {
+			u4Status = WLAN_STATUS_FAILURE;
+			break;
+		}
+
+		u4Offset += u4Size;
+	}
+	*u4RetLen = u4Offset;
+	return u4Status;
+}
+
+static uint32_t wlanShowDFDInfo(struct coredump_ctx *ctx,
+	uint8_t *pDumBuf, uint32_t *pDumSize)
+{
+	struct GLUE_INFO *glue = ctx->priv;
+	struct ADAPTER *prAdapter = glue->prAdapter;
+	struct mt66xx_chip_info *prChipInfo;
+	uint32_t u4DumpCount = 0, u4CurPos = 0;
+	uint32_t u4Status;
+
+	*pDumSize = 0;
+	if (!prAdapter)
+		return WLAN_STATUS_FAILURE;
+
+	DBGLOG(INIT, TRACE, "DFD dump Info:\n");
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo->queryDFDInfo) {
+		/* DFD_CB_INFRA_INFO */
+		u4Status = wlanSendDFDInfo(prAdapter,
+				DEBUG_INFO_DFD_CB_INFRA_INFO,
+				DEBUG_INFO_DFD_CB_INFRA_INFO_LENG,
+				(pDumBuf+u4CurPos), &u4DumpCount);
+		u4CurPos += u4DumpCount;
+		if (u4Status != WLAN_STATUS_SUCCESS)
+			goto exit;
+		DBGLOG(INIT, INFO, "[%d] curPos:%d\n",
+				DEBUG_INFO_DFD_CB_INFRA_INFO, u4CurPos);
+
+		/* DFD_CB_INFRA_SRAM */
+		u4Status = wlanSendDFDInfo(prAdapter,
+				DEBUG_INFO_DFD_CB_INFRA_SRAM,
+				DEBUG_INFO_DFD_CB_INFRA_SRAM_LENG,
+				(pDumBuf+u4CurPos), &u4DumpCount);
+		u4CurPos += u4DumpCount;
+		if (u4Status != WLAN_STATUS_SUCCESS)
+			goto exit;
+		DBGLOG(INIT, INFO, "[%d] curPos:%d\n",
+				DEBUG_INFO_DFD_CB_INFRA_SRAM, u4CurPos);
+
+		/* DFD_CB_INFRA_WF_SRAM */
+		u4Status = wlanSendDFDInfo(prAdapter,
+				DEBUG_INFO_DFD_CB_INFRA_WF_SRAM,
+				DEBUG_INFO_DFD_CB_INFRA_WF_SRAM_LENG,
+				(pDumBuf+u4CurPos), &u4DumpCount);
+		u4CurPos += u4DumpCount;
+		if (u4Status != WLAN_STATUS_SUCCESS)
+			goto exit;
+		DBGLOG(INIT, INFO, "[%d] curPos:%d\n",
+				DEBUG_INFO_DFD_CB_INFRA_WF_SRAM, u4CurPos);
+
+		/* DFD_CB_INFRA_DEBUG_INFO */
+		u4Status = wlanSendDFDInfo(prAdapter,
+				DEBUG_INFO_DFD_CB_INFRA_DEBUG_INFO,
+				DEBUG_INFO_DFD_CB_INFRA_DEBUG_INFO_LENG,
+				(pDumBuf+u4CurPos), &u4DumpCount);
+		u4CurPos += u4DumpCount;
+		if (u4Status != WLAN_STATUS_SUCCESS)
+			goto exit;
+		DBGLOG(INIT, INFO, "[%d] curPos:%d\n",
+				DEBUG_INFO_DFD_CB_INFRA_DEBUG_INFO, u4CurPos);
+
+		/* DFD_WF_DEBUG_INFO */
+		u4Status = wlanSendDFDInfo(prAdapter,
+				DEBUG_INFO_DFD_WF_DEBUG_INFO,
+				DEBUG_INFO_DFD_WF_DEBUG_INFO_LENG,
+				(pDumBuf+u4CurPos), &u4DumpCount);
+		u4CurPos += u4DumpCount;
+		if (u4Status != WLAN_STATUS_SUCCESS)
+			goto exit;
+		DBGLOG(INIT, INFO, "[%d] curPos:%d\n",
+				DEBUG_INFO_DFD_WF_DEBUG_INFO, u4CurPos);
+	}
+
+exit:
+	*pDumSize = u4CurPos;
+	DBGLOG(INIT, TRACE, "dump total size:%d\n", *pDumSize);
+
+	if (*pDumSize == 0)
+		return WLAN_STATUS_FAILURE;
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* #if CFG_MTK_WIFI_DFD_DUMP_SUPPORT */
+
+static int __coredump_to_userspace_dfd_dump(struct coredump_ctx *ctx,
+	struct mt66xx_chip_info *chip_info)
+{
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+	uint8_t *pDfdDumpBuf = NULL;
+	uint32_t u4DfdDumpSize = 0;
+	uint32_t u4Ret = 0;
+
+	pDfdDumpBuf = kalMemAlloc(DEBUG_INFO_WIFI_DFD_DUMP_LENG, VIR_MEM_TYPE);
+	if (pDfdDumpBuf == NULL) {
+		DBGLOG(INIT, ERROR,
+				"Alloc dfd dump buffer failed.\n");
+				return 0;
+	}
+
+	kalMemZero(pDfdDumpBuf, DEBUG_INFO_WIFI_DFD_DUMP_LENG);
+	u4Ret = wlanShowDFDInfo(ctx, pDfdDumpBuf, &u4DfdDumpSize);
+	if (u4Ret) {
+		DBGLOG(INIT, ERROR, "read empty dfd dump\n");
+		goto exit;
+	}
+
+	connv3_coredump_send(ctx->handler,
+			     "PSTD",
+			     pDfdDumpBuf,
+			     u4DfdDumpSize);
+exit:
+	kalMemFree(pDfdDumpBuf, VIR_MEM_TYPE, DEBUG_INFO_WIFI_DFD_DUMP_LENG);
+#endif
+	return 0;
+}
+
 static int __coredump_to_userspace(struct coredump_ctx *ctx,
 	struct mt66xx_chip_info *chip_info,
 	enum COREDUMP_SOURCE_TYPE source,
+	enum ENUM_COREDUMP_BY_CHIP_RESET_TYPE_T type,
 	char *reason,
 	u_int8_t force_dump,
 	u_int8_t state_ready)
@@ -1228,19 +1443,17 @@ static int __coredump_to_userspace(struct coredump_ctx *ctx,
 	struct GLUE_INFO *glue = ctx->priv;
 	enum connv3_drv_type drv_type;
 	uint8_t *fw_version = NULL;
-	uint8_t *aee_str = NULL;
 	uint32_t u4Len = 0;
 	int32_t ret = 0;
 
-	aee_str = kalMemAlloc(AEE_STR_LEN, VIR_MEM_TYPE);
 	fw_version = kalMemAlloc(FW_VER_LEN, VIR_MEM_TYPE);
-	if (!aee_str || !fw_version) {
+	if (!fw_version) {
 		DBGLOG(INIT, ERROR,
-			"Alloc mem failed, aee_str: 0x%p, fw_version: 0x%p\n",
-			aee_str, fw_version);
+			"Alloc mem failed, fw_version: 0x%p\n",
+			fw_version);
 		goto exit;
 	}
-	kalMemZero(aee_str, AEE_STR_LEN);
+	kalMemZero(mem->aee_str_buff, AEE_STR_LEN);
 	kalMemZero(fw_version, FW_VER_LEN);
 
 	if (glue->u4ReadyFlag == 0) {
@@ -1298,16 +1511,20 @@ static int __coredump_to_userspace(struct coredump_ctx *ctx,
 	__coredump_to_userspace_cr_region(ctx);
 
 	__coredump_to_userspace_issue_info(ctx,
-		aee_str,
+		mem->aee_str_buff,
 		AEE_STR_LEN);
 
 	__coredump_to_userspace_mem_region(ctx);
 
-	connv3_coredump_end(ctx->handler, aee_str);
+	if (type == ENUM_COREDUMP_BY_CHIP_RST_DFD_DUMP)
+		__coredump_to_userspace_scp_dump(ctx, chip_info);
+
+	if (type != ENUM_COREDUMP_BY_CHIP_RST_DFD_DUMP) {
+		DBGLOG(INIT, INFO, "do coredump end\n");
+		connv3_coredump_end(ctx->handler, mem->aee_str_buff);
+	}
 
 exit:
-	if (aee_str)
-		kalMemFree(aee_str, VIR_MEM_TYPE, AEE_STR_LEN);
 	if (fw_version)
 		kalMemFree(fw_version, VIR_MEM_TYPE, FW_VER_LEN);
 
@@ -1398,6 +1615,7 @@ static int __coredump_start(struct coredump_ctx *ctx,
 	__coredump_to_userspace(ctx,
 				chip_info,
 				source,
+				type,
 				reason,
 				force_dump,
 				state_ready);
@@ -1414,6 +1632,7 @@ exit:
 int wifi_coredump_post_start(void)
 {
 	struct coredump_ctx *ctx = &g_coredump_ctx;
+	struct coredump_mem *mem = &ctx->mem;
 	struct mt66xx_chip_info *chip_info;
 	int ret = 0;
 
@@ -1423,20 +1642,19 @@ int wifi_coredump_post_start(void)
 		goto deinit;
 	}
 
-	ctx->processing = TRUE;
-
 	glGetChipInfo((void **)&chip_info);
 	if (!chip_info) {
 		DBGLOG(INIT, ERROR, "chip info is NULL\n");
 		goto deinit;
 	}
 
-	/* To do:dfd dump */
-	ret = __coredump_handle_dump_buff(ctx, chip_info);
-	if (ret)
-		goto deinit;
+	ctx->processing = TRUE;
+
+	/*__coredump_to_userspace_dfd_dump(ctx, chip_info);*/
 
 deinit:
+	DBGLOG(INIT, ERROR, "do coredump end\n");
+	connv3_coredump_end(ctx->handler, mem->aee_str_buff);
 	__coredump_deinit(ctx);
 	ctx->processing = FALSE;
 	return ret;

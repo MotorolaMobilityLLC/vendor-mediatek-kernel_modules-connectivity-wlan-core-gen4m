@@ -29,6 +29,7 @@ enum EMI_ALLOC_TYPE {
 struct EMI_MEM_INFO {
 	const enum EMI_ALLOC_TYPE type;
 	const uint32_t coredump_size;
+	const uint32_t coredump2_size;
 	phys_addr_t pa;
 	void *va;
 	uint32_t size;

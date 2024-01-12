@@ -1825,14 +1825,15 @@ int wlan_post_reset_on_v3(unsigned int type)
 {
 	int ret = 0;
 
-	DBGLOG(INIT, INFO, "type: %d\n", g_Coredump_type);
+	DBGLOG(INIT, INFO, "type: %d\n", type);
 
 	if (type != CONNV3_CHIP_RST_POST_ACTION_NOTHING)
 		goto exit;
 
 	ret = wlanFuncPreOnImpl();
 
-	return wifi_coredump_post_start();
+exit:
+	return 0;
 }
 #endif
 
@@ -2228,6 +2229,29 @@ int wlan_reset_thread_main(void *data)
 				g_SubsysRstTotalCnt);
 		}
 
+		if (test_and_clear_bit(GLUE_FLAG_RST_FW_NOTIFY_BIT,
+			&rst->ulFlag)) {
+#if CFG_ENABLE_WAKE_LOCK
+			if (KAL_WAKE_LOCK_ACTIVE(NULL, g_IntrWakeLock))
+				KAL_WAKE_UNLOCK(NULL, g_IntrWakeLock);
+#endif
+			/*wfsys reset start*/
+			g_IsWfsysRstDone = FALSE;
+			g_SubsysRstCnt++;
+				DBGLOG(INIT, INFO,
+					"WF reset count = %d.\n",
+					g_SubsysRstCnt);
+			glResetSubsysRstProcedure(rst,
+							 &rNowTs, &rLastTs);
+			/*wfsys reset done*/
+			g_IsWfsysRstDone = TRUE;
+
+			DBGLOG(INIT, INFO,
+			"Whole Chip rst count /WF reset total count = (%d)/(%d).\n",
+				g_WholeChipRstTotalCnt,
+				g_SubsysRstTotalCnt);
+		}
+
 		if (test_and_clear_bit(GLUE_FLAG_RST_END_BIT, &rst->ulFlag)) {
 #if (CFG_ENABLE_WAKE_LOCK)
 			if (KAL_WAKE_LOCK_ACTIVE(NULL, g_IntrWakeLock))
@@ -2266,6 +2290,19 @@ void kalSetRstEvent(u_int8_t force_dump)
 
 	rst->force_dump = force_dump;
 	set_bit(GLUE_FLAG_RST_START_BIT, &rst->ulFlag);
+
+	/* when we got interrupt, we wake up servie thread */
+	wake_up_interruptible(&g_waitq_rst);
+}
+
+void kalSetRstFwNotifyTriggerEvent(u_int8_t force_dump)
+{
+	struct RESET_STRUCT *rst = &wifi_rst;
+
+	KAL_WAKE_LOCK(NULL, g_IntrWakeLock);
+
+	rst->force_dump = force_dump;
+	set_bit(GLUE_FLAG_RST_FW_NOTIFY_BIT, &rst->ulFlag);
 
 	/* when we got interrupt, we wake up servie thread */
 	wake_up_interruptible(&g_waitq_rst);

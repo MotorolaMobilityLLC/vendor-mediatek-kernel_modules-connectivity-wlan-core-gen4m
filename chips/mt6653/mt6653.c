@@ -1099,6 +1099,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 #if defined(CFG_MTK_WIFI_PMIC_QUERY)
 	.queryPmicInfo = asicConnac3xQueryPmicInfo,
 #endif
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+	.queryDFDInfo = asicConnac3xQueryDFDInfo,
+#endif
 
 	.prTxPwrLimitFile = "TxPwrLimit_MT66x9.dat",
 #if (CFG_SUPPORT_SINGLE_SKU_6G == 1)
@@ -1118,6 +1121,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 #if CFG_MTK_ANDROID_EMI
 		.type = EMI_ALLOC_TYPE_LK,
 		.coredump_size = (7 * 1024 * 1024),
+		.coredump2_size = (1 * 1024 * 1024),
 #else
 		.type = EMI_ALLOC_TYPE_IN_DRIVER,
 #endif /* CFG_MTK_ANDROID_EMI */

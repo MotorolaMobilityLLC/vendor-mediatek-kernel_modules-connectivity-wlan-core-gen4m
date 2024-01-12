@@ -1427,6 +1427,9 @@ uint32_t asicConnac3xDynamicDmashdlQuotaDecision(
 #endif /* CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1 */
 u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter);
 uint32_t asicConnac3xQueryPmicInfo(struct ADAPTER *prAdapter);
+uint32_t asicConnac3xQueryDFDInfo(
+	struct ADAPTER *prAdapter, uint32_t u4InfoIdx, uint32_t u4Offset,
+	uint32_t u4Length, uint8_t *pBuf);
 uint32_t asicConnac3xGetFwVer(struct ADAPTER *prAdapter);
 int wlan_test_mode_on(bool uIsSwtichTestMode);
 

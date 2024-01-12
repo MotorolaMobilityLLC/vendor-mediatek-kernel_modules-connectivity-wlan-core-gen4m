@@ -1139,6 +1139,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 #if CFG_MTK_ANDROID_EMI
 		.type = EMI_ALLOC_TYPE_LK,
 		.coredump_size = (7 * 1024 * 1024),
+		.coredump2_size = 0,
 #else
 		.type = EMI_ALLOC_TYPE_IN_DRIVER,
 #endif /* CFG_MTK_ANDROID_EMI */
