@@ -509,6 +509,7 @@
 
 #define MLD_GROUP_NONE			0xff
 #define OM_REMAP_IDX_NONE		0xff
+#define MLD_LINK_ID_NONE		0xff
 
 /*------------------------------------------------------------------------------
  * Flags for workaround
