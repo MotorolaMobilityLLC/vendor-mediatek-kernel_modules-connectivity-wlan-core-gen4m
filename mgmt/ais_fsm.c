@@ -372,7 +372,6 @@ void aisFsmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prAisFsmInfo->ucSeqNumOfScanReq = 0;
 	prAisFsmInfo->u2SeqNumOfScanReport = AIS_SCN_REPORT_SEQ_NOT_SET;
 
-	prAisFsmInfo->fgIsInfraChannelFinished = TRUE;
 #if CFG_SUPPORT_ROAMING
 	prAisFsmInfo->fgIsRoamingScanPending = FALSE;
 #endif /* CFG_SUPPORT_ROAMING */
@@ -1101,9 +1100,6 @@ void aisFsmStateAbort_JOIN(IN struct ADAPTER *prAdapter,
 
 	/* 3.1 stop join timeout timer */
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rJoinTimeoutTimer);
-
-	/* 3.2 reset local variable */
-	prAisFsmInfo->fgIsInfraChannelFinished = TRUE;
 }				/* end of aisFsmAbortJOIN() */
 
 /*----------------------------------------------------------------------------*/
@@ -1172,9 +1168,6 @@ void aisFsmStateAbort_NORMAL_TR(IN struct ADAPTER *prAdapter,
 
 	/* 2.1 stop join timeout timer */
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rJoinTimeoutTimer);
-
-	/* 2.2 reset local variable */
-	prAisFsmInfo->fgIsInfraChannelFinished = TRUE;
 }				/* end of aisFsmAbortNORMAL_TR() */
 
 #if CFG_SUPPORT_ADHOC
@@ -2738,8 +2731,6 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 			/* 2.1 stop join timeout timer */
 			cnmTimerStopTimer(prAdapter,
 					  &prAisFsmInfo->rJoinTimeoutTimer);
-			/* 2.2 reset local variable */
-			prAisFsmInfo->fgIsInfraChannelFinished = TRUE;
 			aisFsmSteps(prAdapter, AIS_STATE_SEARCH,
 				ucBssIndex);
 		} else {
@@ -2773,8 +2764,6 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 			/* 2.1 stop join timeout timer */
 			cnmTimerStopTimer(prAdapter,
 					  &prAisFsmInfo->rJoinTimeoutTimer);
-			/* 2.2 reset local variable */
-			prAisFsmInfo->fgIsInfraChannelFinished = TRUE;
 
 			aisGetAisBssInfo(prAdapter, ucBssIndex)->
 			ucReasonOfDisconnect =
@@ -3214,8 +3203,6 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 				cnmTimerStopTimer(prAdapter,
 					&prAisFsmInfo->rJoinTimeoutTimer);
 
-				/* 3.2 reset local variable */
-				prAisFsmInfo->fgIsInfraChannelFinished = TRUE;
 				/* Support AP Selection */
 				prAisFsmInfo->ucJoinFailCntAfterScan++;
 
@@ -4734,7 +4721,6 @@ void aisFsmRunEventJoinTimeout(IN struct ADAPTER *prAdapter,
 	case AIS_STATE_NORMAL_TR:
 		/* 1. release channel */
 		aisFsmReleaseCh(prAdapter, ucBssIndex);
-		prAisFsmInfo->fgIsInfraChannelFinished = TRUE;
 
 		/* 2. process if there is pending scan */
 		if (aisFsmIsRequestPending(prAdapter, AIS_REQUEST_SCAN,
@@ -4858,9 +4844,9 @@ void aisFsmScanRequest(IN struct ADAPTER *prAdapter,
 		prScanRequest->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
 		if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR) {
 			if (prAisBssInfo->eCurrentOPMode ==
-			    OP_MODE_INFRASTRUCTURE
-			    && prAisFsmInfo->fgIsInfraChannelFinished ==
-			    FALSE) {
+			    OP_MODE_INFRASTRUCTURE &&
+			    timerPendingTimer(&prAisFsmInfo->
+						rJoinTimeoutTimer)) {
 				/* 802.1x might not finished yet, pend it for
 				 * later handling ..
 				 */
@@ -4952,9 +4938,9 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter,
 
 		if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR) {
 			if (prAisBssInfo->eCurrentOPMode ==
-			    OP_MODE_INFRASTRUCTURE
-			    && prAisFsmInfo->fgIsInfraChannelFinished ==
-			    FALSE) {
+			    OP_MODE_INFRASTRUCTURE &&
+			    timerPendingTimer(&prAisFsmInfo->
+						rJoinTimeoutTimer)) {
 				/* 802.1x might not finished yet, pend it for
 				 * later handling ..
 				 */
@@ -5411,7 +5397,7 @@ void aisFsmRunEventRoamingDiscovery(IN struct ADAPTER *prAdapter,
 	}
 
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR
-	    && prAisFsmInfo->fgIsInfraChannelFinished == TRUE) {
+	    && !timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
 		if (eAisRequest == AIS_REQUEST_ROAMING_SEARCH) {
 			prAisFsmInfo->fgTargetChnlScanIssued = TRUE;
 			aisFsmSteps(prAdapter, AIS_STATE_LOOKING_FOR,
@@ -5771,7 +5757,7 @@ void aisFsmRunEventRemainOnChannel(IN struct ADAPTER *prAdapter,
 
 	if ((prAisFsmInfo->eCurrentState == AIS_STATE_IDLE) ||
 	    (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR
-	     && prAisFsmInfo->fgIsInfraChannelFinished == TRUE)) {
+	     && !timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer))) {
 		/* transit to next state */
 		aisFsmSteps(prAdapter, AIS_STATE_REQ_REMAIN_ON_CHANNEL,
 			ucBssIndex);
