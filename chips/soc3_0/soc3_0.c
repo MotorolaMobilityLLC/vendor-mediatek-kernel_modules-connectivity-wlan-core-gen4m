@@ -968,13 +968,18 @@ int soc3_0_Trigger_fw_assert(void)
 	uint32_t waitRet = 0;
 
 	g_IsConninfraBusHang = conninfra_is_bus_hang();
-	if (g_IsConninfraBusHang) {
+	DBGLOG(HAL, INFO,
+		"g_IsConninfraBusHang = [%d].\n", g_IsConninfraBusHang);
+	if (g_IsConninfraBusHang > 0) {
+		DBGLOG(HAL, INFO,
+			"Trigger whole chip reset due to bus hang.\n");
 		soc3_0_DumpWfsysInfo();
 		soc3_0_DumpWfsysdebugflag();
 		glSetRstReasonString("conninfra bus hang");
 		soc3_0_Trigger_whole_chip_rst(g_reason);
 		return ret;
 	} else {
+		DBGLOG(HAL, INFO, "Trigger fw assert start.\n");
 		wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
 		value &= 0xFFFFFF7F;
 		ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);

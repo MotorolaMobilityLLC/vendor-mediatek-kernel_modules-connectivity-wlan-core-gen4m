@@ -110,7 +110,7 @@ static int g_rst_data;
 u_int8_t g_IsWholeChipRst = FALSE;
 u_int8_t g_SubsysRstCnt;
 u_int8_t g_IsSubsysRstOverThreshold = FALSE;
-u_int8_t g_IsConninfraBusHang = FALSE;
+int g_IsConninfraBusHang;
 u_int8_t g_IsWfsysBusHang = FALSE;
 char *g_reason;
 #endif
