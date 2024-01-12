@@ -1683,10 +1683,23 @@ static void mt6639_dumpConninfraBus(struct ADAPTER *ad)
 
 void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 {
+	struct mt66xx_chip_info *chip_info = NULL;
+	struct CHIP_DBG_OPS *debug_ops = NULL;
+	u_int8_t readable = TRUE;
+
 	if (!ad) {
 		DBGLOG(HAL, ERROR, "NULL ADAPTER.\n");
 		return;
 	}
+
+	chip_info = ad->chip_info;
+	debug_ops = chip_info->prDebugOps;
+
+	if (debug_ops && debug_ops->dumpPcieStatus)
+		readable = debug_ops->dumpPcieStatus(ad->prGlueInfo);
+
+	if (readable == FALSE)
+		return;
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	mt6639_dumpConninfraBus(ad);
