@@ -128,6 +128,7 @@ void mddpUninit(void);
 void mddpInHifThread(struct ADAPTER *prAdapter);
 void mddpTriggerMdFwOwnByFw(struct ADAPTER *prAdapter);
 void mddpTriggerMdSerRecovery(struct ADAPTER *prAdapter);
+void mddpTriggerReset(struct ADAPTER *prAdapter, uint32_t u4RstFlag);
 int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo);
 int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len);
 int32_t mddpGetMdStats(struct net_device *prDev);
