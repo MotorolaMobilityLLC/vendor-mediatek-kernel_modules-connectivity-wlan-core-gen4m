@@ -450,7 +450,11 @@ static void ehtRlmFillOpIE(
 	struct EHT_OP_INFO *prEhtOperInfo = NULL;
 	struct EHT_DSCP_INFO *prEhtDscpInfo = NULL;
 #endif
-	uint32_t u4OverallLen = OFFSET_OF(struct IE_EHT_OP, aucVarInfo[0]);
+	/* struct IE_EHT_OP is packed,
+	 * save to use sizeof instead of
+	 * using OFFSET_OF with ZERO array at end
+	 */
+	uint32_t u4OverallLen = sizeof(struct IE_EHT_OP);
 	uint8_t eht_bw = 0;
 	struct EHT_OP_INFO *prEhtOpInfo;
 
