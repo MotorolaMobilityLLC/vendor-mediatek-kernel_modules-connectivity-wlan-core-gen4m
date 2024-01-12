@@ -339,6 +339,12 @@ struct TDLS_CMD_CORE {
 	} Content;
 };
 
+struct TDLS_EVENT {
+	uint32_t u4HostId;
+	uint32_t u4SubId;
+	uint32_t u4StaIdx;
+};
+
 enum TDLS_EVENT_HOST_ID {
 	TDLS_HOST_EVENT_TEAR_DOWN = 0x00,
 	TDLS_HOST_EVENT_TX_DONE
