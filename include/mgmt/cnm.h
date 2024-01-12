@@ -299,12 +299,10 @@ u_int8_t cnmAisDetectP2PChannel(struct ADAPTER *prAdapter,
 	enum ENUM_BAND *prBand, uint8_t *pucPrimaryChannel);
 #endif
 
-#if (CFG_HW_WMM_BY_BSS == 1)
 u_int8_t cnmWmmIndexDecision(IN struct ADAPTER *prAdapter,
 	IN struct BSS_INFO *prBssInfo);
 void cnmFreeWmmIndex(IN struct ADAPTER *prAdapter,
 	IN struct BSS_INFO *prBssInfo);
-#endif
 
 #if CFG_SUPPORT_DBDC
 void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter);
@@ -333,7 +331,9 @@ uint8_t cnmGetDbdcBwCapability(
 void cnmDbdcEnableDecision(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucChangedBssIndex,
-	IN enum ENUM_BAND eRfBand
+	IN enum ENUM_BAND eRfBand,
+	IN uint8_t ucPrimaryChannel,
+	IN uint8_t ucWmmQueIdx
 );
 
 void cnmDbdcDisableDecision(IN struct ADAPTER *prAdapter,

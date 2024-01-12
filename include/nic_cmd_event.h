@@ -2729,8 +2729,14 @@ struct CMD_DBDC_SETTING {
 	uint8_t ucDbdcEn;
 	uint8_t ucWmmBandBitmap;
 	uint8_t ucUpdateSettingNextChReq;
-	uint8_t aucReserved1;
-	uint8_t aucReserved2[32];
+	uint8_t aucPadding0[1];
+	uint8_t ucCmdVer;
+	uint8_t aucPadding1[1];
+	uint16_t u2CmdLen;
+	uint8_t ucPrimaryChannel;
+	uint8_t ucWmmQueIdx;
+	uint8_t aucPadding2[2];
+	uint8_t aucPadding3[24];
 };
 
 struct EVENT_CH_PRIVILEGE {
