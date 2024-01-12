@@ -1472,6 +1472,9 @@ void bssAddClient(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo,
 	LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList, rLinkEntry,
 			    struct STA_RECORD) {
 
+		if (!prCurrStaRec)
+			break;
+
 		if (prCurrStaRec == prStaRec) {
 			DBGLOG(BSS, WARN,
 			       "Current Client List already contains that struct STA_RECORD["
