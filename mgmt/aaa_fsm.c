@@ -379,6 +379,11 @@ void aaaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 						return;
 					}
 #endif
+				} else if (authFloodingCheck(
+						prAdapter,
+						prBssInfo,
+						prSwRfb) == FALSE) {
+					return;
 				} else {
 					fgReplyAuth = TRUE;
 				}
