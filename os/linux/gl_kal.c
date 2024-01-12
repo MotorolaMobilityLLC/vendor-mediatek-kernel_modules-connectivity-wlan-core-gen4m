@@ -7095,7 +7095,7 @@ void kalSetPerfReport(IN struct ADAPTER *prAdapter)
 			prCmdPerfReport->ulCurRxBytes[i]);
 	}
 	if (u4CurrentTp != 0) {
-		DBGLOG(SW4, INFO,
+		DBGLOG(SW4, TRACE,
 			"Total TP[%d] TX-Byte[%d][%d][%d][%d],RX-Byte[%d][%d][%d][%d]\n",
 			u4CurrentTp,
 			prCmdPerfReport->ulCurTxBytes[0],
