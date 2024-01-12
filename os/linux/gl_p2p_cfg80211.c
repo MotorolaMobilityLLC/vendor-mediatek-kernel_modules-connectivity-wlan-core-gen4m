@@ -1230,7 +1230,8 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 									    (sizeof(MSG_P2P_BEACON_UPDATE_T)
 									     +
 									     settings->beacon.head_len +
-									     settings->beacon.tail_len));
+									     settings->beacon.tail_len +
+									     settings->beacon.assocresp_ies_len));
 
 		if (prP2pBcnUpdateMsg == NULL) {
 			ASSERT(FALSE);
@@ -1255,7 +1256,7 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 
 			prP2pBcnUpdateMsg->pucBcnHdr = pucBuffer;
 
-			pucBuffer = (PUINT_8) ((ULONG) pucBuffer + (ULONG) settings->beacon.head_len);
+			pucBuffer += settings->beacon.head_len;
 		} else {
 			prP2pBcnUpdateMsg->u4BcnHdrLen = 0;
 
@@ -1269,10 +1270,21 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 			kalMemCopy(pucBuffer, settings->beacon.tail, settings->beacon.tail_len);
 
 			prP2pBcnUpdateMsg->u4BcnBodyLen = ucLen;
+
+			pucBuffer += settings->beacon.tail_len;
 		} else {
 			prP2pBcnUpdateMsg->u4BcnBodyLen = 0;
 
 			prP2pBcnUpdateMsg->pucBcnBody = NULL;
+		}
+
+		if (settings->beacon.assocresp_ies_len != 0 && settings->beacon.assocresp_ies != NULL) {
+			prP2pBcnUpdateMsg->pucAssocRespIE = pucBuffer;
+			kalMemCopy(pucBuffer, settings->beacon.assocresp_ies, settings->beacon.assocresp_ies_len);
+			prP2pBcnUpdateMsg->u4AssocRespLen = settings->beacon.assocresp_ies_len;
+		} else {
+			prP2pBcnUpdateMsg->u4AssocRespLen = 0;
+			prP2pBcnUpdateMsg->pucAssocRespIE = NULL;
 		}
 
 		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prP2pBcnUpdateMsg, MSG_SEND_METHOD_BUF);
@@ -1661,7 +1673,8 @@ int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy, struct net_device *dev, 
 			prP2pBcnUpdateMsg =
 			    (P_MSG_P2P_BEACON_UPDATE_T) cnmMemAlloc(prGlueInfo->prAdapter,
 								    RAM_TYPE_MSG, (sizeof(MSG_P2P_BEACON_UPDATE_T)
-										   + info->head_len + info->tail_len));
+										   + info->head_len + info->tail_len
+										   + info->assocresp_ies_len));
 
 			if (prP2pBcnUpdateMsg == NULL) {
 				ASSERT(FALSE);
@@ -1680,7 +1693,7 @@ int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy, struct net_device *dev, 
 
 				prP2pBcnUpdateMsg->pucBcnHdr = pucBuffer;
 
-				pucBuffer = (PUINT_8) ((ULONG) pucBuffer + (ULONG) info->head_len);
+				pucBuffer += info->head_len;
 			} else {
 				prP2pBcnUpdateMsg->u4BcnHdrLen = 0;
 
@@ -1694,9 +1707,21 @@ int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy, struct net_device *dev, 
 				kalMemCopy(pucBuffer, info->tail, info->tail_len);
 
 				prP2pBcnUpdateMsg->u4BcnBodyLen = ucLen;
+
+				pucBuffer += info->tail_len;
 			} else {
 				prP2pBcnUpdateMsg->u4BcnBodyLen = 0;
 				prP2pBcnUpdateMsg->pucBcnBody = NULL;
+			}
+
+			if (info->assocresp_ies_len != 0 && info->assocresp_ies != NULL) {
+
+				prP2pBcnUpdateMsg->pucAssocRespIE = pucBuffer;
+				kalMemCopy(pucBuffer, info->assocresp_ies, info->assocresp_ies_len);
+				prP2pBcnUpdateMsg->u4AssocRespLen = info->assocresp_ies_len;
+			} else {
+				prP2pBcnUpdateMsg->u4AssocRespLen = 0;
+				prP2pBcnUpdateMsg->pucAssocRespIE = NULL;
 			}
 
 			kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
