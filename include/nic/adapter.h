@@ -1607,6 +1607,7 @@ struct ADAPTER {
 	/* flag to report all networks in p2p scan */
 	u_int8_t p2p_scan_report_all_bss;
 	enum ENUM_NET_REG_STATE rP2PNetRegState;
+	enum ENUM_P2P_REG_STATE rP2PRegState;
 	/* BOOLEAN             fgIsWlanLaunched; */
 	struct P2P_INFO *prP2pInfo;
 #if CFG_SUPPORT_P2P_RSSI_QUERY
