@@ -117,11 +117,6 @@ static void mt7925ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
 
 #endif
 
-#if defined(_HIF_PCIE) || defined(_HIF_USB)
-static void mt7925WpdmaBurstSizeSetup(struct ADAPTER *prAdapter,
-	u_int8_t fgFwD);
-
-#endif
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
@@ -614,9 +609,6 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7925 = {
 	.asicUsbInit_ic_specific = NULL,
 	.u4SerUsbMcuEventAddr = WF_SW_DEF_CR_USB_MCU_EVENT_ADDR,
 	.u4SerUsbHostAckAddr = WF_SW_DEF_CR_USB_HOST_ACK_ADDR,
-#endif
-#if defined(_HIF_PCIE) || defined(_HIF_USB)
-	.pdmaBurstSizeSetup = mt7925WpdmaBurstSizeSetup,
 #endif
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
 		BIT(CHIP_CAPA_XTAL_TRIM),
@@ -1399,56 +1391,4 @@ static uint32_t mt7925GetFlavorVer(uint8_t *flavor)
 	ret = kalScnprintf(flavor, CFG_FW_FLAVOR_MAX_LEN, "1");
 	return ret;
 }
-#if defined(_HIF_PCIE) || defined(_HIF_USB)
-static void mt7925WpdmaBurstSizeSetup(struct ADAPTER *prAdapter,
-	u_int8_t fgFwD)
-{
-	uint32_t u4Val = 0;
-	uint32_t u4WrVal = 0;
-#if defined(_HIF_PCIE)
-	uint32_t u4CpuIdx = 0, u4DmaIdx = 0;
-	struct RTMP_TX_RING *prTxRing = NULL;
-	struct GL_HIF_INFO *prHifInfo = NULL;
-	struct mt66xx_chip_info *prChipInfo;
-
-	prChipInfo = prAdapter->chip_info;
-	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	prTxRing = &prHifInfo->TxRing[prChipInfo->u2TxFwDlPort];
-
-	if (!fgFwD) {
-		do {
-			HAL_MCR_RD(prAdapter,
-				prTxRing->hw_cidx_addr, &u4CpuIdx);
-			HAL_MCR_RD(prAdapter,
-				prTxRing->hw_didx_addr, &u4DmaIdx);
-			if (u4CpuIdx == u4DmaIdx)
-				break;
-
-			kalUsleep(CFG_DEFAULT_SLEEP_WAITING_INTERVAL);
-		} while (TRUE);
-	}
-#endif
-
-	u4WrVal = (fgFwD == TRUE) ? 0x2 : 0x3;
-	HAL_MCR_RD(prAdapter,
-		WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_ADDR, &u4Val);
-	u4Val &=
-		~WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_PDMA_BT_SIZE_MASK;
-	u4Val |=
-		(u4WrVal << WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_PDMA_BT_SIZE_SHFT);
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_ADDR, u4Val);
-	u4Val = 0;
-
-	u4WrVal = (fgFwD == TRUE) ? 0x1 : 0x0;
-	HAL_MCR_RD(prAdapter,
-		WF_WFDMA_EXT_WRAP_CSR_WFDMA_AXI0_R2A_CTRL_0_ADDR, &u4Val);
-	u4Val &=
-		~WF_WFDMA_EXT_WRAP_CSR_WFDMA_AXI0_R2A_CTRL_0_BURST_SIZE_MASK;
-	u4Val |=
-		(u4WrVal <<
-		WF_WFDMA_EXT_WRAP_CSR_WFDMA_AXI0_R2A_CTRL_0_BURST_SIZE_SHFT);
-	HAL_MCR_WR(prAdapter,
-		WF_WFDMA_EXT_WRAP_CSR_WFDMA_AXI0_R2A_CTRL_0_ADDR, u4Val);
-}
-#endif
 #endif  /* MT7925 */
