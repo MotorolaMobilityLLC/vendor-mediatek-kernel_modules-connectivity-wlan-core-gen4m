@@ -6879,6 +6879,13 @@ void kalSetNetAddressFromInterface(IN struct GLUE_INFO
 	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
 			  netdev_priv(prDev);
 
+	if (prDev == NULL || prNetDevPrivate == NULL) {
+		DBGLOG(REQ, WARN,
+			"invalid arguments, prDev=0x%p, prNetDev=0x%p\n",
+			prDev, prNetDevPrivate);
+		return;
+	}
+
 	if (prNetDevPrivate->prGlueInfo != prGlueInfo)
 		DBGLOG(REQ, WARN, "%s: unexpected prGlueInfo(0x%p)!\n",
 		       __func__, prNetDevPrivate->prGlueInfo);
