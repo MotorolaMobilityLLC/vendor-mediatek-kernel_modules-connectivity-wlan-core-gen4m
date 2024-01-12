@@ -2494,7 +2494,7 @@ void twtPlannerFillResumeData(
 	prTWTAgrt->rTWTAgrt.u8TWT = u8NextTWT;
 
 	DBGLOG(TWT_REQUESTER, WARN,
-			"TWT Info Frame 0x%x 0x%x\n",
+			"TWT Info Frame 0x%llx 0x%llx\n",
 			prTWTAgrt->rTWTAgrt.u8TWT, u8NextTWT);
 }
 
