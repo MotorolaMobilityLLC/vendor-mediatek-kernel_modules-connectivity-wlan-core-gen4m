@@ -167,6 +167,9 @@ static int32_t __fw_log_emi_handler(u_int8_t force)
 		goto exit;
 	}
 
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK(ad, ctrl->wakelock);
+#endif
 	KAL_ACQUIRE_MUTEX(ad, MUTEX_FW_LOG);
 	for (i = 0; i < ENUM_FW_LOG_CTRL_TYPE_NUM; i++) {
 		struct FW_LOG_EMI_SUB_CTRL *sub_ctrl = &ctrl->sub_ctrls[i];
@@ -177,6 +180,9 @@ static int32_t __fw_log_emi_handler(u_int8_t force)
 					 force);
 	}
 	KAL_RELEASE_MUTEX(ad, MUTEX_FW_LOG);
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_UNLOCK(ad, ctrl->wakelock);
+#endif
 
 	stats->handled++;
 
@@ -458,6 +464,9 @@ uint32_t fw_log_emi_init(struct ADAPTER *ad)
 	kalMemZero(ctrl, sizeof(*ctrl));
 
 	ctrl->priv = ad;
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK_INIT(ad, ctrl->wakelock, "wlan_fw_log");
+#endif
 	ctrl->initialized = TRUE;
 
 	return WLAN_STATUS_SUCCESS;
@@ -470,6 +479,11 @@ void fw_log_emi_deinit(struct ADAPTER *ad)
 	DBGLOG(INIT, TRACE, "\n");
 
 	ctrl->initialized = FALSE;
+#if CFG_ENABLE_WAKE_LOCK
+	if (KAL_WAKE_LOCK_ACTIVE(ad, ctrl->wakelock))
+		KAL_WAKE_UNLOCK(ad, ctrl->wakelock);
+	KAL_WAKE_LOCK_DESTROY(ad, ctrl->wakelock);
+#endif
 	ctrl->priv = NULL;
 }
 
