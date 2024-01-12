@@ -4771,6 +4771,9 @@ void scanParseEhtCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
 	prBssDesc->fgIsEHTPresent = TRUE;
 	prBssDesc->u2MaximumMpdu = (ehtCap->ucEhtMacCap[0] &
 		EHT_MAC_CAP_MAX_MPDU_LEN_MASK);
+	memcpy(prBssDesc->ucEhtPhyCapInfo, ehtCap->ucEhtPhyCap,
+		EHT_PHY_CAP_BYTE_NUM);
+
 	DBGLOG(SCN, TRACE,
 		"BSSID:" MACSTR
 		" SSID:%s, EHT CAP IE\n",

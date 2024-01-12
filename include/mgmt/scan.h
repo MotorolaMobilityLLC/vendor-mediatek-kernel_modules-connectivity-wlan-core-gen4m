@@ -317,6 +317,7 @@ struct BSS_DESC {
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
 	u_int8_t fgIsEHTPresent;
+	uint8_t ucEhtPhyCapInfo[EHT_PHY_CAP_BYTE_NUM];
 #endif
 
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)

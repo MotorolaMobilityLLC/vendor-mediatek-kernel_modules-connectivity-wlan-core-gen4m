@@ -538,8 +538,9 @@ void heRlmFillHeCapIE(
 
 #if (CFG_SUPPORT_BFEE == 1)
 #if (CFG_SUPPORT_CONDITIONAL_BFEE == 1)
-	if ((prAdapter->rWifiVar.u4SwTestMode != ENUM_SW_TEST_MODE_SIGMA_AX) &&
-		(IS_BSS_AIS(prBssInfo) && prAisFsmInfo != NULL)) {
+	if (prAdapter->rWifiVar.u4SwTestMode != ENUM_SW_TEST_MODE_SIGMA_AX &&
+	    prAdapter->rWifiVar.u4SwTestMode != ENUM_SW_TEST_MODE_SIGMA_BE &&
+	    IS_BSS_AIS(prBssInfo)) {
 		prBssDesc = aisGetTargetBssDesc(prAdapter,
 			prBssInfo->ucBssIndex);
 		if (prBssDesc != NULL) {
@@ -552,13 +553,9 @@ void heRlmFillHeCapIE(
 						prBssDesc->ucHePhyCapInfo);
 
 			DBGLOG(RLM, INFO,
-				"bssGetRxNss: %d, soundingDim: %d\n",
-				bssGetRxNss(prAdapter, prBssDesc), soundingDim);
-			if ((bssGetRxNss(prAdapter, prBssDesc) ==
-				wlanGetSupportNss(prAdapter,
-					prBssInfo->ucBssIndex))
-				&& (bssGetRxNss(prAdapter, prBssDesc) ==
-					soundingDim + 1)) {
+				"he ucSupportedNss: %d, soundingDim: %d\n",
+				ucSupportedNss, soundingDim);
+			if (ucSupportedNss == soundingDim) {
 				fgBfEn = FALSE;
 				DBGLOG(SW4, ERROR,
 					"Disable Bfee due to same Nss between STA and AP\n");
