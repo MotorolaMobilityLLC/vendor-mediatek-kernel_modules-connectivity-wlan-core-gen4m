@@ -20,7 +20,9 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
-
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+#define TWT_CNM_GRANT_DEFAULT_INTERVAL_MS 256
+#endif
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -45,7 +47,7 @@ struct _TWT_FLOW_T {
 #endif
 	enum _ENUM_TWT_TYPE_T eTwtType;
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
-	enum _ENUM_TWT_REQUESTER_STATE_T eTwtState;
+	enum _ENUM_TWT_CNM_STATE_T eTwtCnmState;
 	struct STA_RECORD *prOwnStaRec;
 	u_int8_t ucTWTFlowId;
 #endif
@@ -208,6 +210,10 @@ struct _TWT_FLOW_T *twtPlannerFlowFindById(
 	struct STA_RECORD *prStaRec, uint8_t ucFlowId,
 	enum _ENUM_TWT_TYPE_T eTwtType);
 
+enum _ENUM_TWT_TYPE_T
+twtPlannerDrvAgrtGetTwtTypeByIndex(
+	struct ADAPTER *prAdapter, uint8_t ucAgrtIdx);
+
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
 void twtPlannerGetCnmGrantedDone(
 	struct ADAPTER *prAdapter,
@@ -221,6 +227,20 @@ uint32_t twtPlannerAbortCnmGranted(
 	uint8_t ucFlowId, uint8_t fgIsOid,
 	PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
 	PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler);
+
+void twtGetCurrentTsfTimeoutInit(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	enum _TWT_GET_TSF_REASON ucReason);
+
+void twtGetCurrentTsfTimeoutDeInit(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	enum _TWT_GET_TSF_REASON ucReason);
+
+void twtGetCurrentTsfTimeout(
+	struct ADAPTER *prAdapter,
+	uintptr_t ulParamPtr);
 #endif
 
 #if (CFG_SUPPORT_TWT_HOTSPOT == 1)

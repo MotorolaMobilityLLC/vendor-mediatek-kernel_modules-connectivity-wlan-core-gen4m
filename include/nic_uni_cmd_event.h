@@ -2412,6 +2412,7 @@ struct UNI_CMD_MAC_INFO_TWT_STA_CNM {
 	uint8_t ucHwBssidIndex;
 	uint8_t ucBssIndex;
 	uint8_t fgTwtEn;
+	uint32_t u4TwtCnmAbortTimeoutMs;
 } __KAL_ATTRIB_PACKED__;
 
 /* TDLS command (0x1B) */

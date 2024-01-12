@@ -3650,6 +3650,7 @@ uint32_t nicUniCmdTwtStaGetCnmGranted(struct ADAPTER *ad,
 	tag->ucHwBssidIndex = cmd->rExtraArgument.rTsfArg.ucHwBssidIndex;
 	tag->ucBssIndex = twt->ucBssIdx;
 	tag->fgTwtEn = (twt->ucTwtStaCnmReason == TWT_STA_CNM_SETUP) ? 1 : 0;
+	tag->u4TwtCnmAbortTimeoutMs = ad->rWifiVar.u4TwtCnmAbortTimeoutMs;
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
@@ -8650,6 +8651,9 @@ void nicUniCmdEventTWTGetCnmGrantedDone(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
 	uint8_t ucBssIdx, ucFlowId;
+	uint8_t ucAgrtTblIdx;
+	uint8_t ucFlowId_real;
+	enum _ENUM_TWT_TYPE_T eTwtType;
 
 	prGetTsfCtxt = (struct _TWT_GET_TSF_CONTEXT_T *)
 		prCmdInfo->pvInformationBuffer;
@@ -8661,7 +8665,7 @@ void nicUniCmdEventTWTGetCnmGrantedDone(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	DBGLOG(CNM, ERROR,
+	DBGLOG(TWT_PLANNER, ERROR,
 		"TWT STA(%d,%d) R=%d CNM granted result %d\n",
 		tag->ucBssIndex,
 		tag->ucDbdcIdx,
@@ -8684,7 +8688,7 @@ void nicUniCmdEventTWTGetCnmGrantedDone(struct ADAPTER *prAdapter,
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 
 		if (prBssInfo == NULL) {
-			DBGLOG(REQ, WARN, "prBssInfo is null\n");
+			DBGLOG(TWT_PLANNER, WARN, "prBssInfo is null\n");
 			return;
 		}
 
@@ -8692,6 +8696,43 @@ void nicUniCmdEventTWTGetCnmGrantedDone(struct ADAPTER *prAdapter,
 
 		/* For teardown we don't need this */
 		kalMemFree(prGetTsfCtxt, VIR_MEM_TYPE, sizeof(*prGetTsfCtxt));
+
+		/* Find and delete the agreement entry in the driver */
+		ucFlowId_real = ucFlowId;
+
+		ucAgrtTblIdx = twtPlannerDrvAgrtFind(prAdapter,
+			prBssInfo->ucBssIndex, ucFlowId, &ucFlowId_real);
+
+		if (ucAgrtTblIdx >= TWT_AGRT_MAX_NUM) {
+			DBGLOG(TWT_PLANNER, ERROR,
+				"Cannot find the flow %u to be deleted\n",
+				ucFlowId);
+
+			return;
+		}
+
+		ucFlowId = ucFlowId_real;
+
+		/* Get TWT type*/
+		eTwtType = twtPlannerDrvAgrtGetTwtTypeByIndex(
+				prAdapter, ucAgrtTblIdx);
+
+		if (eTwtType >= ENUM_TWT_TYPE_NUM) {
+			DBGLOG(TWT_PLANNER, ERROR,
+				"TWT[%d] incorrect TWT type %d\n",
+				ucFlowId, eTwtType);
+
+			return;
+		}
+
+		/*
+		 * To setup CNM abort timer in case teardown timeout
+		 */
+		twtReqFsmTeardownTimeoutInit(
+			prAdapter,
+			prStaRec,
+			ucFlowId,
+			&eTwtType);
 
 		/* Do the teardown thing in existing flow */
 		twtPlannerSendReqTeardown(prAdapter, prStaRec, ucFlowId);

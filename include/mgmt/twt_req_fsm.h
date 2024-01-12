@@ -66,6 +66,14 @@ enum _ENUM_TWT_HOTSPOT_RESPONDER_STATE_T {
 };
 #endif
 
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+enum _ENUM_TWT_CNM_STATE_T {
+	TWT_CNM_STATE_DEFAULT = 0,
+	TWT_CNM_STATE_WAIT_RESP,
+	TWT_CNM_STATE_ADD_AGRT,
+	TWT_CNM_STATE_ABORT
+};
+#endif
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -199,22 +207,49 @@ void mltwtReqFsmSync(
 #endif
 
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
-void twtReqFsmWaitRspTimeoutInit(
+u_int32_t
+twtReqFsmRunEventRejectTxDone(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+
+void twtReqFsmSetupTimeoutInit(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
-	enum _ENUM_TWT_REQUESTER_STATE_T eCurState,
+	enum _ENUM_TWT_CNM_STATE_T eCurState,
 	u_int8_t ucTWTFlowId,
 	enum _ENUM_TWT_TYPE_T *preTwtType);
 
-void twtReqFsmWaitRspTimeoutDeInit(
+void twtReqFsmSetupTimeoutDeInit(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
-	enum _ENUM_TWT_REQUESTER_STATE_T ePreState,
-	enum _ENUM_TWT_REQUESTER_STATE_T eNextState,
 	u_int8_t ucTWTFlowId,
 	enum _ENUM_TWT_TYPE_T *preTwtType);
 
-void twtReqFsmWaitRspEventTimeout(
+void twtReqFsmSetupTimeoutStateCfg(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	enum _ENUM_TWT_CNM_STATE_T eCurState,
+	u_int8_t ucTWTFlowId,
+	enum _ENUM_TWT_TYPE_T *preTwtType);
+
+void twtReqFsmSetupEventTimeout(
+	struct ADAPTER *prAdapter,
+	uintptr_t ulParamPtr);
+
+void twtReqFsmTeardownTimeoutInit(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	u_int8_t ucTWTFlowId,
+	enum _ENUM_TWT_TYPE_T *preTwtType);
+
+void twtReqFsmTeardownTimeoutDeInit(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	u_int8_t ucTWTFlowId,
+	enum _ENUM_TWT_TYPE_T *preTwtType);
+
+void twtReqFsmTeardownEventTimeout(
 	struct ADAPTER *prAdapter,
 	uintptr_t ulParamPtr);
 #endif /* #if (CFG_SUPPORT_TWT_STA_CNM == 1) */

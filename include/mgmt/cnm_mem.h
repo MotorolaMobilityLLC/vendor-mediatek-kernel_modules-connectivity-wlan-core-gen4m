@@ -768,8 +768,12 @@ struct STA_RECORD {
 #endif
 
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
-	/* FSM Timer */
+	/* Get current TSF timer */
+	struct TIMER rTwtGetCurrentTsfTimeoutTimer;
+	/* FSM Wait Resp Timer */
 	struct TIMER rTwtFsmWaitRespTimeoutTimer;
+	/* FSM Teardown Timer */
+	struct TIMER rTwtFsmTeardownTimeoutTimer;
 #endif
 #endif
 	uint32_t au4Timestamp[2];
