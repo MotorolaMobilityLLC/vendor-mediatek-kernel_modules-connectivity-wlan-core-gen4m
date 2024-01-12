@@ -3232,6 +3232,16 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 			prCSAIE = (struct IE_CHANNEL_SWITCH *)pucIE;
 
+			if (prBssInfo->ucPrimaryChannel ==
+					prCSAIE->ucNewChannelNum) {
+				DBGLOG(RLM, WARN,
+					"[CSA] BSS: " MACSTR
+					" already at channel %u\n",
+					MAC2STR(prBssInfo->aucBSSID),
+					prCSAIE->ucNewChannelNum);
+				break;
+			}
+
 			/* Mode 1 implies that addressed AP is advised to
 			 * transmit no further frames on current channel
 			 * until the scheduled channel switch.
@@ -3285,6 +3295,16 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				break;
 
 			prExCSAIE = (struct IE_EX_CHANNEL_SWITCH *)pucIE;
+
+			if (prBssInfo->ucPrimaryChannel ==
+					prExCSAIE->ucNewChannelNum) {
+				DBGLOG(RLM, WARN,
+					"[ECSA] BSS: " MACSTR
+					" already at channel %u\n",
+					MAC2STR(prBssInfo->aucBSSID),
+					prExCSAIE->ucNewChannelNum);
+				break;
+			}
 
 			ucCurrentCsaCount = prExCSAIE->ucChannelSwitchCount;
 			rlmProcessExCsaIE(prAdapter, prStaRec,
@@ -6710,6 +6730,18 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 				prChannelSwitchAnnounceIE =
 					(struct IE_CHANNEL_SWITCH *)pucIE;
 
+				if (prBssInfo->ucPrimaryChannel ==
+						prChannelSwitchAnnounceIE->
+						ucNewChannelNum) {
+					DBGLOG(RLM, WARN,
+						"[CSA Mgt] BSS: " MACSTR
+						" already at channel %u\n",
+						MAC2STR(prBssInfo->aucBSSID),
+						prChannelSwitchAnnounceIE->
+							ucNewChannelNum);
+					break;
+				}
+
 				DBGLOG(RLM, INFO,
 					"[CSA Mgt] Count = %d Mode = %d\n",
 				prChannelSwitchAnnounceIE->ucChannelSwitchCount,
@@ -6844,13 +6876,20 @@ void rlmProcessPublicActionExCsa(struct ADAPTER *prAdapter,
 		(struct ACTION_EX_CHANNEL_SWITCH_FRAME *)prSwRfb->pvHeader;
 	pucIE = prEcsaActionFrame->aucInfoElem;
 
+	if (prBssInfo->ucPrimaryChannel == prEcsaActionFrame->ucNewChannelNum)
+		DBGLOG(RLM, WARN,
+			"[ECSA Public] BSS: " MACSTR " already at channel %u\n",
+			MAC2STR(prBssInfo->aucBSSID),
+			prEcsaActionFrame->ucNewChannelNum);
+	else
+		rlmProcessExCsaIE(prAdapter, prStaRec,
+			prCSAParams,
+			prEcsaActionFrame->ucChannelSwitchMode,
+			prEcsaActionFrame->ucNewOperatingClass,
+			prEcsaActionFrame->ucNewChannelNum,
+			prEcsaActionFrame->ucChannelSwitchCount);
+
 	ucCurrentCsaCount = prEcsaActionFrame->ucChannelSwitchCount;
-	rlmProcessExCsaIE(prAdapter, prStaRec,
-		prCSAParams,
-		prEcsaActionFrame->ucChannelSwitchMode,
-		prEcsaActionFrame->ucNewOperatingClass,
-		prEcsaActionFrame->ucNewChannelNum,
-		prEcsaActionFrame->ucChannelSwitchCount);
 
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset)
 	{
@@ -6940,6 +6979,11 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 		DBGLOG(RLM, WARN,
 			"BSS: " MACSTR " already at channel %u\n",
 			MAC2STR(prBssInfo->aucBSSID), prCSAParams->ucCsaNewCh);
+		if (prCSAParams->fgHasStopTx) {
+			qmSetStaRecTxAllowed(prAdapter, prStaRec, TRUE);
+			DBGLOG(RLM, EVENT, "[CSA] TxAllowed = TRUE\n");
+		}
+		rlmResetCSAParams(prBssInfo, TRUE);
 		return;
 	}
 	prBssInfo->ucPrimaryChannel = prCSAParams->ucCsaNewCh;
