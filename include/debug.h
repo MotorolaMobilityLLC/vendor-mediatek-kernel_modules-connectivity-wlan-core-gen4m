@@ -217,8 +217,9 @@ enum ENUM_DBG_MODULE {
 	DBG_WNM_IDX,		/* 0x20 *//* WNM */
 	DBG_WMM_IDX,		/* 0x21 *//* WMM */
 	DBG_TRACE_IDX,		/* 0x22 *//* TRACE *//* don't add before */
-	DBG_TWT_REQUESTER_IDX,
-	DBG_TWT_PLANNER_IDX,
+	DBG_TWT_REQUESTER_IDX,	/* 0x23 *//* TWT REQ */
+	DBG_TWT_PLANNER_IDX,	/* 0x24 *//* TWT Planner */
+	DBG_TWT_RESPONDER_IDX,	/* 0x25 *//* TWT Hotspot */
 	DBG_RRM_IDX,
 	DBG_ML_IDX,
 #if CFG_SUPPORT_NAN

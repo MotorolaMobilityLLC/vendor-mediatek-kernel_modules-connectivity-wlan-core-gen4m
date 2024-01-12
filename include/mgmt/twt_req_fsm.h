@@ -94,6 +94,19 @@ enum _ENUM_TWT_REQUESTER_STATE_T {
 	TWT_REQ_STATE_NUM
 };
 
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+enum _ENUM_TWT_HOTSPOT_RESPONDER_STATE_T {
+	TWT_HOTSPOT_RESP_STATE_IDLE = 0,
+	TWT_HOTSPOT_RESP_STATE_RECEIVE_SETUP,
+	TWT_HOTSPOT_RESP_STATE_SETUP_RESPONSE,
+	TWT_HOTSPOT_RESP_STATE_RECEIVE_TEARDOWN,
+	TWT_HOTSPOT_RESP_STATE_SEND_TEARDOWN_TO_STA,
+	TWT_HOTSPOT_RESP_STATE_DISCONNECT,
+	TWT_HOTSPOT_RESP_STATE_IDLE_BY_FORCE,
+	TWT_HOTSPOT_RESP_STATE_NUM
+};
+#endif
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -154,6 +167,34 @@ void twtReqFsmRunEventSuspend(
 void twtReqFsmRunEventResume(
 	struct ADAPTER *prAdapter,
 	struct MSG_HDR *prMsgHdr);
+
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+uint32_t
+twtHotspotRespFsmSendEvent(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId,
+	enum ENUM_MSG_ID eMsgId);
+
+void
+twtHotspotRespFsmSteps(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	enum _ENUM_TWT_HOTSPOT_RESPONDER_STATE_T eNextState,
+	uint8_t ucTWTFlowId,
+	void *pParam);
+
+void
+twtHotspotRespFsmRunEventRxSetup(
+	struct ADAPTER *prAdapter,
+	void *pParam);
+
+u_int32_t
+twtHotspotRespFsmRunEventTxDone(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+#endif
 
 #if (CFG_SUPPORT_BTWT == 1)
 void btwtReqFsmRunEventStart(

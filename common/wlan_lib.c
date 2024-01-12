@@ -7174,6 +7174,14 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #endif
 		);
 #endif
+
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+	prWifiVar->ucTWTHotSpotSupport = (uint8_t)
+		wlanCfgGetUint32(prAdapter,
+			"TWTHotSpotSupport",
+			FEATURE_ENABLED);
+#endif
+
 #if (CFG_SUPPORT_BTWT == 1)
 	prWifiVar->ucBTWTSupport = (uint8_t)
 		wlanCfgGetUint32(prAdapter, "BTWTSupport", FEATURE_DISABLED);

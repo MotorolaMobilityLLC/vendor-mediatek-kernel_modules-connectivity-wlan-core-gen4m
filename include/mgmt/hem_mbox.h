@@ -247,8 +247,10 @@ enum ENUM_MSG_ID {
 	MID_TWT_REQ_IND_INFOFRM,
 	MID_TWT_PARAMS_SET,
 #endif
-#if (CFG_SUPPORT_NAN == 1)
-	MID_CNM_NAN_CH_GRANT,
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+	MID_TWT_RESP_PARAMS_SET,
+	MID_TWT_RESP_SETUP_AGRT_TO_FW,
+	MID_TWT_RESP_TEARDOWN_TO_FW,
 #endif
 #if (CFG_SUPPORT_BTWT == 1)
 	MID_BTWT_REQ_FSM_START,
@@ -258,6 +260,9 @@ enum ENUM_MSG_ID {
 #if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
 	MID_ML_TWT_REQ_FSM_START_ALL_LINKS,
 	MID_ML_TWT_REQ_FSM_START_ONE_BY_ONE,
+#endif
+#if (CFG_SUPPORT_NAN == 1)
+	MID_CNM_NAN_CH_GRANT,
 #endif
 	MID_TOTAL_NUM
 };
@@ -394,6 +399,14 @@ struct _MSG_TWT_PARAMS_SET_T {
 	struct MSG_HDR rMsgHdr;	/* Must be the first member */
 	struct _TWT_CTRL_T rTWTCtrl;
 };
+
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+struct _MSG_TWT_HOTSPOT_PARAMS_SET_T {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	struct _TWT_HOTSPOT_CTRL_T rTWTCtrl;
+};
+#endif
+
 #endif
 
 struct MSG_CANCEL_TX_WAIT_REQUEST {

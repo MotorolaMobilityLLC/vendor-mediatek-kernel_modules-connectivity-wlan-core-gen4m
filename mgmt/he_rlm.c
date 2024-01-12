@@ -524,6 +524,12 @@ static void heRlmFillHeCapIE(
 	if (IS_BSS_AIS(prBssInfo) &&
 		IS_FEATURE_ENABLED(prWifiVar->ucTWTRequester))
 		HE_SET_MAC_CAP_TWT_REQ(prHeCap->ucHeMacCap);
+
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+	if (IS_FEATURE_ENABLED(prWifiVar->ucTWTResponder))
+		HE_SET_MAC_CAP_TWT_RSP(prHeCap->ucHeMacCap);
+#endif
+
 #endif
 
 #if (CFG_SUPPORT_BTWT == 1)
