@@ -126,6 +126,7 @@
 
 /* UNI_CMD_ID_EFUSE_CONTROL usage */
 #define BUFFER_MODE_CONTENT_MAX 1024
+#define BUFFER_ACCESS_CONTENT_MAX 16
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -6206,10 +6207,10 @@ struct UNI_EVENT_MLR_FSM_UPDATE {
 
 /* EFUSE event Tag */
 enum ENUM_UNI_EVENT_EFUSE_TAG {
-	UNI_EVENT_EFUSE_BUFFER_MODE_READ = 0,
-	UNI_EVENT_EFUSE_FREE_BLOCK = 1,
-	UNI_EVENT_EFUSE_ACCESS = 2,
-	UNI_EVENT_EFUSE_MAX_NUM
+	UNI_EVENT_EFUSE_TAG_BUFFER_MODE_READ = 0,
+	UNI_EVENT_EFUSE_TAG_FREE_BLOCK = 1,
+	UNI_EVENT_EFUSE_TAG_ACCESS = 2,
+	UNI_EVENT_EFUSE_TAG_MAX_NUM
 };
 
 /** This structure is used for UNI_EVENT_ID_EFUSE event (0x48)
@@ -6944,6 +6945,9 @@ uint32_t nicUniCmdTxPowerCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdThermalProtect(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdEfuseAccess(struct ADAPTER *ad,
+	struct WIFI_UNI_SETQUERY_INFO *info);
+
 uint32_t nicUniCmdEfuseBufferMode(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdNan(struct ADAPTER *ad,
@@ -6963,6 +6967,10 @@ uint32_t nicUniCmdQueryThermalAdieTemp(struct ADAPTER *ad,
 uint32_t nicUniCmdQueryThermalDdieTemp(struct ADAPTER *ad,
 	void *pvQueryBuffer,
 	uint32_t u4QueryBufferLen);
+void nicUniEventEfuseAccess(struct ADAPTER	*prAdapter,
+	struct CMD_INFO *prCmdInfo,
+	uint8_t *pucEventBuf);
+
 uint32_t nicUniCmdSetCsiControl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 #if (CFG_VOLT_INFO == 1)

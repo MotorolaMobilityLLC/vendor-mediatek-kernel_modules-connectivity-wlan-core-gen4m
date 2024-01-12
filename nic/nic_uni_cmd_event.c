@@ -219,6 +219,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
 #if CFG_SUPPORT_QA_TOOL
 	[EXT_CMD_ID_RF_TEST] = nicUniExtCmdTestmodeCtrl,
 #endif
+	[EXT_CMD_ID_EFUSE_ACCESS] = nicUniCmdEfuseAccess,
 	[EXT_CMD_ID_EFUSE_BUFFER_MODE] = nicUniCmdEfuseBufferMode,
 	[EXT_CMD_ID_SR_CTRL] = nicUniCmdSR,
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
@@ -5873,6 +5874,75 @@ uint32_t nicUniCmdEfuseBufferMode(struct ADAPTER *ad,
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 	return WLAN_STATUS_SUCCESS;
 }
+
+uint32_t nicUniCmdEfuseAccess(struct ADAPTER *ad,
+	struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_ACCESS_EFUSE *cmd;
+	struct UNI_CMD_EFUSE *uni_cmd;
+	struct UNI_CMD_ACCESS_EFUSE *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_EFUSE) +
+		sizeof(struct UNI_CMD_ACCESS_EFUSE);
+
+	if (info->ucCID != CMD_ID_LAYER_0_EXT_MAGIC_NUM ||
+		info->ucExtCID != EXT_CMD_ID_EFUSE_ACCESS)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_ACCESS_EFUSE *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_EFUSE_CONTROL, max_cmd_len,
+		nicUniEventEfuseAccess, nicUniCmdTimeoutCommon);
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_EFUSE *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_ACCESS_EFUSE *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_EFUSE_CTRL_TAG_ACCESS;
+	tag->u2Length = sizeof(*tag);
+	tag->u4Address = cmd->u4Address;
+	tag->u4Valid = cmd->u4Valid;
+	kalMemCopy(tag->aucData, cmd->aucData,
+		BUFFER_ACCESS_CONTENT_MAX);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+	return WLAN_STATUS_SUCCESS;
+}
+
+
+
+void nicUniEventEfuseAccess(struct ADAPTER
+	  *prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *)pucEventBuf;
+	struct UNI_EVENT_EFUSE_CONTROL *evt =
+		(struct UNI_EVENT_EFUSE_CONTROL *)uni_evt->aucBuffer;
+
+	struct UNI_EVENT_EFUSE_ACCESS *prEfuseStatus;
+	struct PARAM_CUSTOM_ACCESS_EFUSE *prQueryBuffer;
+	struct GLUE_INFO *prGlueInfo;
+	uint32_t u4QueryInfoLen;
+
+	prEfuseStatus = (struct UNI_EVENT_EFUSE_ACCESS *) evt->aucTlvBuffer;
+
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+		prQueryBuffer = (struct PARAM_CUSTOM_ACCESS_EFUSE *)
+				prCmdInfo->pvInformationBuffer;
+
+		prQueryBuffer->u4Address = prEfuseStatus->u4Address;
+		prQueryBuffer->u4Valid = prEfuseStatus->u4Valid;
+		kalMemCopy(prQueryBuffer->aucData, prEfuseStatus->aucData,
+			   BUFFER_ACCESS_CONTENT_MAX);
+
+		u4QueryInfoLen = sizeof(struct UNI_EVENT_EFUSE_ACCESS);
+
+		/* Update Query Information Length */
+		kalOidComplete(prGlueInfo, prCmdInfo,
+			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+}
+
 
 #if CFG_SUPPORT_NAN
 struct WIFI_UNI_CMD_ENTRY *nicUniCmdNanGenEntry(uint16_t u2Tag,
