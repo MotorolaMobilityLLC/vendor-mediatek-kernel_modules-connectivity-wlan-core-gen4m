@@ -338,6 +338,7 @@ enum ENUM_CMD_ID {
 	CMD_ID_SET_OSHARE_MODE = 0x8E,
 	CMD_ID_RDD_ON_OFF_CTRL = 0x8F,      /* 0x8F(Set) */
 	CMD_ID_SET_FORCE_RTS = 0x90,
+	CMD_ID_SET_REPORT_BEACON = 0x91,    /* 0x91 (Set) */
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	CMD_ID_SET_ICS_SNIFFER = 0x93,
 #endif /* CFG_SUPPORT_ICS */
@@ -1158,6 +1159,11 @@ struct CMD_SET_WMM_PS_TEST_STRUCT {
 	/* enter PS immediately without 5 second guard after connected */
 	uint8_t  ucIsDisableUcTrigger;
 	/* not to trigger UC on beacon TIM is matched (under U-APSD) */
+};
+
+struct CMD_SET_REPORT_BEACON_STRUCT {
+	uint8_t ucReportBcnEn;
+	uint8_t aucReserved[3];
 };
 
 struct CMD_CUSTOM_NOA_PARAM_STRUCT {

@@ -337,6 +337,9 @@
 #include "ie_sort.h"
 
 #if CFG_EXT_FEATURE
+#include "log_ext.h"
+#include "p2p_ext.h"
+#include "roaming_ext.h"
 #include "twt_ext.h"
 #endif
 

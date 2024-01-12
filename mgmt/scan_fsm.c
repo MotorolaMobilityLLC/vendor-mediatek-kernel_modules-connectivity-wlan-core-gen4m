@@ -258,6 +258,13 @@ void scnSendScanReqV2(struct ADAPTER *prAdapter)
 		log_dbg(SCN, ERROR, "alloc CmdScanReq V2 fail\n");
 		return;
 	}
+
+#if CFG_SUPPORT_SCAN_LOG
+	scanAbortBeaconRecv(prAdapter,
+		prScanParam->ucBssIndex,
+		ABORT_SCAN_STARTS);
+#endif
+
 	/* send command packet for scan */
 	kalMemZero(prCmdScanReq, sizeof(struct CMD_SCAN_REQ_V2));
 	/* Modify channelList number from 32 to 54 */
