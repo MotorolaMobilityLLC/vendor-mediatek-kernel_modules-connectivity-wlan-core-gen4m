@@ -1216,6 +1216,11 @@ u_int8_t rsnPerformPolicySelection(
 	if (prBss->eBand == BAND_6G) {
 		if (!rsnKeyMgmtWpa3for6g(
 				prAdapter, eAuthMode, ucBssIndex, prBss)) {
+#if CFG_SUPPORT_WPA3_LOG
+			wpa3Log6gPolicyFail(prAdapter,
+				ucBssIndex,
+				eAuthMode);
+#endif
 			DBGLOG(RSN, INFO,
 				"Invalid 6g security mode: only OWE & SAE H2E is allowed\n");
 #if (CFG_WLAN_CONNAC3_DEV == 0)

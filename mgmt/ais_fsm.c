@@ -4136,6 +4136,10 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 	} else if (prAisFsmInfo->rJoinReqTime != 0 &&
 		CHECK_FOR_TIMEOUT(rCurrentTime, prAisFsmInfo->rJoinReqTime,
 		SEC_TO_SYSTIME(AIS_JOIN_TIMEOUT))) {
+#if CFG_SUPPORT_WPA3_LOG
+		wpa3LogJoinFail(prAdapter,
+			prAisBssInfo);
+#endif
 		/* 4.a temrminate join operation */
 		eNextState = AIS_STATE_JOIN_FAILURE;
 	} else if (prAisFsmInfo->rJoinReqTime != 0 &&
@@ -7607,6 +7611,13 @@ aisFsmRunEventMgmtFrameTxDone(struct ADAPTER *prAdapter,
 			(uint64_t *) ((uintptr_t) prMsduInfo->prPacket +
 				(uintptr_t) prMsduInfo->u2FrameLength +
 				MAC_TX_RESERVED_FIELD);
+
+
+#if CFG_SUPPORT_WPA3_LOG
+		wpa3LogMgmtTx(prAdapter,
+			prMsduInfo,
+			rTxDoneStatus);
+#endif
 
 		if (rTxDoneStatus != TX_RESULT_SUCCESS) {
 			DBGLOG(AIS, ERROR, "Mgmt Frame TX Fail, Status:%d.\n",
