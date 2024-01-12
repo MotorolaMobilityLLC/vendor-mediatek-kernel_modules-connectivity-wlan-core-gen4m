@@ -884,6 +884,10 @@ void testPsSetupBss(IN struct ADAPTER *prAdapter,
 	DBGLOG(SW4, INFO, "index %d\n", ucBssIndex);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (prBssInfo == NULL) {
+		DBGLOG(SW4, WARN, "Get BSS info by index fail.\n");
+		return;
+	}
 
 	/* 4 <1.2> Initiate PWR STATE */
 	/* SET_NET_PWR_STATE_IDLE(prAdapter, ucNetworkTypeIndex); */
