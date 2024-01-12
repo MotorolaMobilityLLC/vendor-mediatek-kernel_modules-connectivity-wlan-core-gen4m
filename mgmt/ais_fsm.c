@@ -1393,6 +1393,9 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 			if (prAisFsmInfo->u4ScanIELength > 0) {
 				kalMemCopy(prScanReqMsg->aucIE, prAisFsmInfo->aucScanIEBuf,
 					   prAisFsmInfo->u4ScanIELength);
+				kalMemZero(prAisFsmInfo->aucScanIEBuf,
+					prAisFsmInfo->u4ScanIELength);
+				prAisFsmInfo->u4ScanIELength = 0;
 			} else {
 #if CFG_SUPPORT_WPS2
 				if (prAdapter->prGlueInfo->u2WSCIELen > 0) {
@@ -1401,7 +1404,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 				}
 			}
 #endif
-
 			prScanReqMsg->u2IELen = u2ScanIELen;
 
 			mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *) prScanReqMsg, MSG_SEND_METHOD_BUF);
@@ -1702,15 +1704,17 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prM
 	eStatus = prScanDoneMsg->eScanStatus;
 	cnmMemFree(prAdapter, prMsgHdr);
 
-	DBGLOG(AIS, INFO, "ScanDone %u, status(%d)\n",
-		ucSeqNumOfCompMsg, eStatus);
+	DBGLOG(AIS, INFO, "ScanDone %u, status(%d) native req(%u)\n",
+		ucSeqNumOfCompMsg, eStatus, prAisFsmInfo->u2SeqNumOfScanReport);
 
 	eNextState = prAisFsmInfo->eCurrentState;
 
 	if ((uint16_t)ucSeqNumOfCompMsg == prAisFsmInfo->u2SeqNumOfScanReport) {
-		kalScanDone(prAdapter->prGlueInfo, KAL_NETWORK_TYPE_AIS_INDEX,
-			WLAN_STATUS_SUCCESS);
 		prAisFsmInfo->u2SeqNumOfScanReport = AIS_SCN_REPORT_SEQ_NOT_SET;
+		prConnSettings->fgIsScanReqIssued = FALSE;
+		kalScanDone(prAdapter->prGlueInfo, KAL_NETWORK_TYPE_AIS_INDEX,
+			(eStatus == SCAN_STATUS_DONE) ?
+			WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE);
 	}
 	if (ucSeqNumOfCompMsg != prAisFsmInfo->ucSeqNumOfScanReq) {
 		DBGLOG(AIS, WARN,
@@ -1720,11 +1724,6 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prM
 		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer);
 		switch (prAisFsmInfo->eCurrentState) {
 		case AIS_STATE_SCAN:
-			prConnSettings->fgIsScanReqIssued = FALSE;
-
-			/* reset scan IE buffer */
-			prAisFsmInfo->u4ScanIELength = 0;
-
 			eNextState = AIS_STATE_IDLE;
 #if CFG_SUPPORT_AGPS_ASSIST
 			scanReportScanResultToAgps(prAdapter);
@@ -1732,11 +1731,6 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prM
 			break;
 
 		case AIS_STATE_ONLINE_SCAN:
-			prConnSettings->fgIsScanReqIssued = FALSE;
-
-			/* reset scan IE buffer */
-			prAisFsmInfo->u4ScanIELength = 0;
-
 #if CFG_SUPPORT_ROAMING
 			eNextState = aisFsmRoamingScanResultsUpdate(prAdapter);
 #else
@@ -1978,7 +1972,6 @@ void aisFsmStateAbort(IN struct ADAPTER *prAdapter, uint8_t ucReasonOfDisconnect
 	case AIS_STATE_ONLINE_SCAN:
 		/* Do abort SCAN */
 		aisFsmStateAbort_SCAN(prAdapter);
-
 		/* queue for later handling */
 		if (aisFsmIsRequestPending(prAdapter, AIS_REQUEST_SCAN, FALSE) == FALSE)
 			aisFsmInsertRequest(prAdapter, AIS_REQUEST_SCAN);
@@ -3506,7 +3499,7 @@ void aisFsmScanRequest(IN struct ADAPTER *prAdapter, IN struct PARAM_SSID *prSsi
 	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
 	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
 
-	DBGLOG(AIS, TRACE, "eCurrentState=%d, fgIsScanReqIssued=%d\n",
+	DBGLOG(SCN, TRACE, "eCurrentState=%d, fgIsScanReqIssued=%u\n",
 		prAisFsmInfo->eCurrentState, prConnSettings->fgIsScanReqIssued);
 	if (!prConnSettings->fgIsScanReqIssued) {
 		prConnSettings->fgIsScanReqIssued = TRUE;
@@ -3535,7 +3528,7 @@ void aisFsmScanRequest(IN struct ADAPTER *prAdapter, IN struct PARAM_SSID *prSsi
 				aisFsmInsertRequest(prAdapter, AIS_REQUEST_SCAN);
 			} else {
 				if (prAisFsmInfo->fgIsChannelGranted == TRUE) {
-					DBGLOG(AIS, WARN,
+					DBGLOG(SCN, WARN,
 					       "Scan Request with channel granted for join operation: %d, %d",
 					       prAisFsmInfo->fgIsChannelGranted, prAisFsmInfo->fgIsChannelRequested);
 				}
@@ -3551,7 +3544,8 @@ void aisFsmScanRequest(IN struct ADAPTER *prAdapter, IN struct PARAM_SSID *prSsi
 			aisFsmInsertRequest(prAdapter, AIS_REQUEST_SCAN);
 		}
 	} else {
-		DBGLOG(AIS, WARN, "Scan Request dropped. (state: %d)\n", prAisFsmInfo->eCurrentState);
+		DBGLOG(SCN, WARN, "Scan Request dropped. (state: %d)\n",
+			prAisFsmInfo->eCurrentState);
 	}
 
 }	/* end of aisFsmScanRequest() */
@@ -3592,7 +3586,7 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter, IN uint8_t ucSsidNum,
 	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
 	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
 
-	DBGLOG(AIS, TRACE, "eCurrentState=%d, fgIsScanReqIssued=%d\n",
+	DBGLOG(SCN, TRACE, "eCurrentState=%d, fgIsScanReqIssued=%u\n",
 			prAisFsmInfo->eCurrentState, prConnSettings->fgIsScanReqIssued);
 
 	if (!prConnSettings->fgIsScanReqIssued) {
@@ -3630,7 +3624,7 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter, IN uint8_t ucSsidNum,
 				aisFsmInsertRequest(prAdapter, AIS_REQUEST_SCAN);
 			} else {
 				if (prAisFsmInfo->fgIsChannelGranted == TRUE) {
-					DBGLOG(AIS, WARN,
+					DBGLOG(SCN, WARN,
 					       "Scan Request with channel granted for join operation: %d, %d",
 					       prAisFsmInfo->fgIsChannelGranted, prAisFsmInfo->fgIsChannelRequested);
 				}
@@ -3646,7 +3640,8 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter, IN uint8_t ucSsidNum,
 			aisFsmInsertRequest(prAdapter, AIS_REQUEST_SCAN);
 		}
 	} else {
-		DBGLOG(AIS, WARN, "Scan Request dropped. (state: %d)\n", prAisFsmInfo->eCurrentState);
+		DBGLOG(SCN, WARN, "Scan Request dropped. (state: %d)\n",
+			prAisFsmInfo->eCurrentState);
 	}
 
 } /* end of aisFsmScanRequestAdv() */
