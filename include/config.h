@@ -1935,7 +1935,6 @@
 #define CFG_WIFI_ISO_DETECT  1
 #endif
 
-
 /*------------------------------------------------------------------------------
  * To enable Tx Power Table Dump
  * CFG_WIFI_TXPWR_TBL_DUMP : CCK + OFDM + HT + VHT
@@ -1949,6 +1948,14 @@
 #ifndef CFG_WIFI_TXPWR_TBL_DUMP_HE
 #define CFG_WIFI_TXPWR_TBL_DUMP_HE 0
 #endif
+#endif
+
+/*------------------------------------------------------------------------------
+ * Support tx MGMT frame use ACQ or not.
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_TX_MGMT_USE_DATAQ
+#define CFG_SUPPORT_TX_MGMT_USE_DATAQ  0
 #endif
 
 /*******************************************************************************

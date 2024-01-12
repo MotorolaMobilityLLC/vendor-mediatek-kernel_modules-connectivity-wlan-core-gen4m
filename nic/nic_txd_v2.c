@@ -306,6 +306,11 @@ void nic_txd_v2_compose(
 #if ((CFG_SISO_SW_DEVELOP == 1) || (CFG_SUPPORT_SPE_IDX_CONTROL == 1))
 	enum ENUM_WF_PATH_FAVOR_T eWfPathFavor;
 #endif
+	struct WLAN_MAC_HEADER *prWlanHeader = NULL;
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+	struct sk_buff *prSkb = NULL;
+	uint32_t u4TxHeadRoomSize;
+#endif
 
 	prTxDesc = (struct HW_MAC_CONNAC2X_TX_DESC *) prTxDescBuffer;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
@@ -484,10 +489,24 @@ void nic_txd_v2_compose(
 
 	/* Type */
 	if (prMsduInfo->fgIs802_11) {
-		struct WLAN_MAC_HEADER *prWlanHeader =
-			(struct WLAN_MAC_HEADER *)
-			((unsigned long)
-			(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+		if (prMsduInfo->ucPktType == ENUM_PKT_802_11_MGMT) {
+			u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
+			   prAdapter->chip_info->txd_append_size;
+			prSkb = (struct sk_buff *)prMsduInfo->prPacket;
+			prWlanHeader =
+				(struct WLAN_MAC_HEADER *)((unsigned long)
+				(prSkb->data + u4TxHeadRoomSize));
+
+			if (prMsduInfo->u4Option & MSDU_OPT_PROTECTED_FRAME)
+				prWlanHeader->u2FrameCtrl |=
+					MASK_FC_PROTECTED_FRAME;
+		} else
+#endif
+			prWlanHeader =
+				(struct WLAN_MAC_HEADER *)
+				((unsigned long)
+				(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
 		HAL_MAC_CONNAC2X_TXD_SET_TYPE(
 			prTxDesc,
