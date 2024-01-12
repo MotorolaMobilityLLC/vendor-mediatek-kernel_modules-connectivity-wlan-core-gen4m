@@ -1922,9 +1922,9 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter, IN struct S
 		    && EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prAisBssInfo->aucBSSID)
 		    && EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen, prAisBssInfo->aucSSID,
 				  prAisBssInfo->ucSSIDLen)) {
+#if CFG_SUPPORT_BEACON_CHANGE_DETECTION
 			u_int8_t fgNeedDisconnect = FALSE;
 
-#if CFG_SUPPORT_BEACON_CHANGE_DETECTION
 			/* <1.1.2> check if supported rate differs */
 			if (prAisBssInfo->u2OperationalRateSet != prBssDesc->u2OperationalRateSet)
 				fgNeedDisconnect = TRUE;
@@ -1937,7 +1937,9 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter, IN struct S
 				) {
 				DBGLOG(SCN, INFO, "Beacon security mode change detected\n");
 				DBGLOG_MEM8(SCN, INFO, prSwRfb->pvHeader, prSwRfb->u2PacketLen);
+#if CFG_SUPPORT_BEACON_CHANGE_DETECTION
 				fgNeedDisconnect = FALSE;
+#endif
 				if (!prConnSettings->fgSecModeChangeStartTimer) {
 					cnmTimerStartTimer(prAdapter,
 							&prAdapter->rWifiVar.rAisFsmInfo.rSecModeChangeTimer,
@@ -1951,10 +1953,11 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter, IN struct S
 					prConnSettings->fgSecModeChangeStartTimer = FALSE;
 				}
 			}
-
+#if CFG_SUPPORT_BEACON_CHANGE_DETECTION
 			/* <1.1.3> beacon content change detected, disconnect immediately */
 			if (fgNeedDisconnect == TRUE)
 				aisBssBeaconTimeout(prAdapter);
+#endif
 		}
 		/* 4 <1.1> Update AIS_BSS_INFO */
 		if ((prAisBssInfo != NULL) &&
