@@ -107,6 +107,8 @@ typedef enum _ENUM_USB_END_POINT_T {
 #define HIF_TX_BUFF_COUNT_TC5            256
 
 #define HIF_TX_RESOURCE_CTRL             0 /* enable/disable TX resource control */
+#define HIF_TX_RESOURCE_CTRL_PLE         0 /* enable/disable TX resource control PLE */
+
 
 #if CFG_USB_TX_AGG
 #define HIF_TX_PAGE_SIZE_IN_POWER_OF_2   0

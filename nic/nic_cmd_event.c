@@ -2548,7 +2548,7 @@ WLAN_STATUS nicEventQueryTxResource_v1(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucE
 	if (!prAdapter->nicTxReousrce.u4DataTotalResourcePle)
 		prAdapter->rTxCtrl.rTc.fgNeedPleCtrl = FALSE;
 	else
-		prAdapter->rTxCtrl.rTc.fgNeedPleCtrl = TRUE;
+		prAdapter->rTxCtrl.rTc.fgNeedPleCtrl = NIC_TX_RESOURCE_CTRL_PLE;
 	return WLAN_STATUS_SUCCESS;
 }
 
