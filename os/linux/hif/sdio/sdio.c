@@ -1592,7 +1592,11 @@ BOOLEAN glWakeupSdio(P_GLUE_INFO_T prGlueInfo)
 	BOOLEAN fgSuccess = TRUE;
 
 #if (HIF_SDIO_SUPPORT_GPIO_SLEEP_MODE && MTK_WCN_HIF_SDIO)
-	if (mtk_wcn_hif_sdio_wake_up_ctrl(prGlueInfo->rHifInfo.cltCtx) != 0)
+	#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
+		if (mtk_wcn_stp_sdio_wake_up_ctrl(prGlueInfo->rHifInfo.cltCtx) != 0)
+	#else
+		if (mtk_wcn_hif_sdio_wake_up_ctrl(prGlueInfo->rHifInfo.cltCtx) != 0)
+	#endif
 		fgSuccess = FALSE;
 #endif
 
