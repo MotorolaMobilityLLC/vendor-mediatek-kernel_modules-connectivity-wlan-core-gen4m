@@ -418,6 +418,9 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 	if (prAdapter->u4CasanLoadType == 1)
 		u4DrvOwnTimeoutMs = LP_OWN_BACK_FAILED_LOG_SKIP_CASAN_MS;
 
+	/* Decrease Block to Enter Low Power Semaphore count */
+	GLUE_DEC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
+
 	DBGLOG(INIT, INFO,
 		   "Driver own timeout %u ms\n",
 		   u4DrvOwnTimeoutMs);
@@ -476,7 +479,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	struct GL_HIF_INFO *prHifInfo;
 	struct WIFI_VAR *prWifiVar;
 	u_int8_t fgStatus = TRUE;
-	uint32_t i, u4CurrTick;
+	uint32_t i, u4CurrTick, u4chkTick;
 	u_int8_t fgTimeout;
 	u_int8_t fgResult;
 	u_int8_t fgIsDriverOwnTimeout = FALSE;
@@ -526,7 +529,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 		} else if (prBusInfo->fgCheckDriverOwnInt) {
 			if (test_bit(GLUE_FLAG_DRV_OWN_INT_BIT,
 				&prAdapter->prGlueInfo->ulFlag)) {
-				DBGLOG(INIT, TRACE,
+				DBGLOG(INIT, INFO,
 					"DRIVER OWN Interrupt Start\n");
 				fgResult = TRUE;
 			}
@@ -538,16 +541,17 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 			HAL_LP_OWN_RD(prAdapter, &fgResult);
 
 #if IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
-		if (KAL_TEST_BIT(SUSPEND_FLAG_FOR_WAKEUP_REASON,
-				prAdapter->ulSuspendFlag) &&
-			KAL_TEST_BIT(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
-				prAdapter->ulSuspendFlag)) {
-			DBGLOG(INIT, LOUD, "Bypass timeout in suspend\n");
+		if (test_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
+			&prAdapter->prGlueInfo->fgIsInSuspend)) {
+			DBGLOG(INIT, INFO, "Bypass timeout in suspend\n");
 			u4CurrTick = kalGetTimeTick();
 		} else
 #endif /* IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
-		fgTimeout = ((kalGetTimeTick() - u4CurrTick) >
-			     LP_OWN_BACK_TOTAL_DELAY_MS) ? TRUE : FALSE;
+		{
+			u4chkTick = kalGetTimeTick();
+			fgTimeout = ((u4chkTick - u4CurrTick) >
+				LP_OWN_BACK_TOTAL_DELAY_MS) ? TRUE : FALSE;
+		}
 
 		if (fgResult) {
 #if IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
