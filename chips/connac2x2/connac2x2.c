@@ -249,6 +249,12 @@ void connac2x2ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 		wlanGetEcoVersion(prGlueInfo->prAdapter));
 }
 
+void connac2x2wlanCalDebugCmd(uint32_t cmd, uint32_t para)
+{
+	DBGLOG(RFTEST, INFO, "Cal CMD: (%d, %d) -> WMT reset\n", cmd, para);
+	mtk_wcn_wmt_do_reset_only(WMTDRV_TYPE_WIFI);
+}
+
 struct BUS_INFO connac2x2_bus_info = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.top_cfg_base = CONNAC2X2_TOP_CFG_BASE,
@@ -417,6 +423,8 @@ struct mt66xx_chip_info mt66xx_chip_info_connac2x2 = {
 	.top_hcr = TOP_HCR,
 	.top_hvr = TOP_HVR,
 	.top_fvr = TOP_FVR,
+
+	.calDebugCmd = connac2x2wlanCalDebugCmd,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_connac2x2 = {
