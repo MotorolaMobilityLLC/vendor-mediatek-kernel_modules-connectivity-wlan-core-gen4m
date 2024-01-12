@@ -2209,6 +2209,9 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo = NULL;
+#if defined(_HIF_PCIE)
+	struct BUS_INFO *prBusInfo = NULL;
+#endif
 	uint32_t u4Status = 0;
 	u_int8_t fgRet = TRUE;
 
@@ -2217,6 +2220,16 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prChipInfo = prAdapter->chip_info;
+#if defined(_HIF_PCIE)
+	prBusInfo = prChipInfo->bus_info;
+#endif
+
+#if defined(_HIF_PCIE)
+	if (prBusInfo->hwControlVote)
+		prBusInfo->hwControlVote(prAdapter,
+					 FALSE,
+					 PCIE_VOTE_USER_LOG_RESET);
+#endif
 
 	if (!prChipInfo->get_sw_interrupt_status)
 		goto exit;
@@ -2235,6 +2248,13 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 
 	if (u4Status & BIT(SW_INT_WHOLE_RESET))
 		handle_whole_chip_reset(prAdapter);
+#endif
+
+#if defined(_HIF_PCIE)
+	if (prBusInfo->hwControlVote)
+		prBusInfo->hwControlVote(prAdapter,
+					 TRUE,
+					 PCIE_VOTE_USER_LOG_RESET);
 #endif
 
 exit:
