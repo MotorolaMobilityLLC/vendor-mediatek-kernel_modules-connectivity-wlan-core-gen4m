@@ -2538,6 +2538,7 @@ mtk_cfg80211_vendor_event_nan_replied_indication(struct ADAPTER *prAdapter,
 	if (unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NAN, message_len,
 			     prNanPubRepliedInd) < 0)) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		kfree(prNanPubRepliedInd);
 		kfree_skb(skb);
 		return -EFAULT;
 	}

@@ -6236,6 +6236,9 @@ uint32_t nicUniCmdNan(struct ADAPTER *ad,
 
 	prTlvElement = nicGetTargetTlvElement(1, info->pucInfoBuffer);
 
+	if (prTlvElement == NULL)
+		return WLAN_STATUS_FAILURE;
+
 	switch (prTlvElement->tag_type) {
 	case NAN_CMD_MASTER_PREFERENCE:
 		u2EvtTag = UNI_CMD_NAN_TAG_SET_MASTER_PREFERENCE;
