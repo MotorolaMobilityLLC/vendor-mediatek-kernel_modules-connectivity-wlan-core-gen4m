@@ -4356,7 +4356,7 @@ void cnmWmmIndexDecision(
 	prBssInfo->ucWmmQueSet = ucWmmIdx;
 
 #elif (CFG_HW_WMM_BY_BSS == 1)
-	uint8_t ucWmmIndex = HW_WMM_NUM;
+	uint8_t ucWmmIndex = 0;
 
 	if (!prAdapter || !prBssInfo || !prBssInfo->fgIsInUse) {
 		DBGLOG(CNM, ERROR, "Set WMM fail\n");
