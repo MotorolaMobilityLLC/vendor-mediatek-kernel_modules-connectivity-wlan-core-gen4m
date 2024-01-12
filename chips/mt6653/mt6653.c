@@ -983,6 +983,10 @@ enum HIF_DEV_REG_REASON mt6653ValidMmioReadReason[] = {
 	HIF_DEV_REG_UMAC_DBG,
 	HIF_DEV_REG_WTBL_DBG,
 	HIF_DEV_REG_OID_DBG,
+#if (CFG_MTK_WIFI_WFDMA_WB == 0)
+	HIF_DEV_REG_HIF_READ,
+	HIF_DEV_REG_HIF_RING,
+#endif
 };
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 
@@ -2271,6 +2275,11 @@ static void mt6653WfdmaConfigWriteBack(struct GLUE_INFO *prGlueInfo,
 
 #if (CFG_MTK_MDDP_SUPPORT == 1) && (CFG_MTK_CCCI_SUPPORT == 1) && \
 	(CFG_ENABLE_MAWD_MD_RING == 0)
+	if (!prAdapter->u8MdRingIdxBase)
+		prAdapter->u8MdRingIdxBase = (uint64_t)prRingMdDidx->AllocPa;
+	if (!prAdapter->u8MdRingStaBase)
+		prAdapter->u8MdRingStaBase = (uint64_t)prRingMdIntSta->AllocPa;
+
 	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TRINFO_WB_MD_CTRL0_ADDR;
 	u4WrVal = (prAdapter->u8MdRingIdxBase) & DMA_LOWER_32BITS_MASK;
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
