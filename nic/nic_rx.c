@@ -2408,7 +2408,7 @@ static void nicRxWriteIcsTimeSync(struct ADAPTER *prAdapter,
 		sizeof(struct ICS_BIN_TIMESYNC_HDR));
 	if (ret != sizeof(struct ICS_BIN_TIMESYNC_HDR)) {
 		DBGLOG_LIMITED(NIC, INFO,
-			"timesync dropped written:%d rxByteCount:%d\n",
+			"timesync dropped written:%ld rxByteCount:%d\n",
 			ret, prIcsTimeSyncHeader->u2Length);
 		RX_INC_CNT(&prAdapter->rRxCtrl,
 			RX_ICS_DROP_COUNT);

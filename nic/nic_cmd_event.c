@@ -3506,7 +3506,7 @@ void nicExtEventPhyIcsRawData(struct ADAPTER *prAdapter,
 		ret = kalIcsWrite(pucRecvBuff, u4Size);
 		if (ret != u4Size)
 			DBGLOG_LIMITED(NIC, ERROR,
-				"dropped written:%d write PHY ICS log into file fail\n",
+				"dropped written:%ld write PHY ICS log into file fail\n",
 				ret);
 
 		kalPacketFree(prAdapter->prGlueInfo, pvPacket);
