@@ -464,7 +464,7 @@ void mldGenerateProbeRspIE(
 			prAdapter, prMsduInfo, frame_ctrl);
 	}
 
-	if (!common || !fgComplete)
+	if (!common || !fgComplete || !mld_bssinfo)
 		return;
 
 	links = &mld_bssinfo->rBssList;
