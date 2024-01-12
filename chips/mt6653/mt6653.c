@@ -207,7 +207,7 @@ struct PCIE_CHIP_CR_MAPPING mt6653_bus2chip_cr_mapping[] = {
 	{0x820c8000, 0x0c000, 0xA000},  /* WF_UMAC_TOP (PSE) */
 	{0x820cc000, 0x0e000, 0xE000},  /* WF_UMAC_TOP (PP) */
 	{0x83000000, 0x10000, 0x10000},  /* WF_PHY_MAP3 */
-#if (y == CFG_MTK_FPGA_PLATFORM)
+#if (CFG_MTK_FPGA_PLATFORM == 1)
 	{0x74030000, 0x10000, 0x2000}, /* PCIe MAC (conninfra remap) */
 #else
 	{0x74030000, 0x1d0000, 0x2000}, /* PCIe MAC (cbtop remap) */
