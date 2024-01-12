@@ -14354,6 +14354,58 @@ wlanoidLinkDown(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 } /* wlanoidSetDisassociate */
 
+#if CFG_WIFI_TXPWR_TBL_DUMP
+#define WIFI_TXPWR_TBL_DUMP_VER 0x01
+uint32_t
+wlanoidGetTxPwrTbl(IN struct ADAPTER *prAdapter,
+		   IN void *pvQueryBuffer,
+		   IN uint32_t u4QueryBufferLen,
+		   OUT uint32_t *pu4QueryInfoLen)
+{
+	struct CMD_GET_TXPWR_TBL CmdPwrTbl;
+	struct PARAM_CMD_GET_TXPWR_TBL *prPwrTbl = NULL;
+
+	DEBUGFUNC("wlanoidGetTxPwrTbl");
+	DBGLOG(REQ, LOUD, "\n");
+
+	if (!prAdapter || (!pvQueryBuffer && u4QueryBufferLen) ||
+	    !pu4QueryInfoLen)
+		return WLAN_STATUS_INVALID_DATA;
+
+	*pu4QueryInfoLen = sizeof(struct PARAM_CMD_GET_TXPWR_TBL);
+
+	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
+		DBGLOG(REQ, WARN,
+		       "Fail in query receive error! (Adapter not ready). ACPI=D%d, Radio=%d\n",
+		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
+		*pu4QueryInfoLen = sizeof(uint32_t);
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	} else if (u4QueryBufferLen < sizeof(struct PARAM_CMD_GET_TXPWR_TBL)) {
+		DBGLOG(REQ, WARN, "Too short length %ld\n", u4QueryBufferLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	prPwrTbl = (struct PARAM_CMD_GET_TXPWR_TBL *)pvQueryBuffer;
+
+	CmdPwrTbl.ucCmdVer = WIFI_TXPWR_TBL_DUMP_VER;
+	CmdPwrTbl.u2CmdLen = sizeof(struct CMD_GET_TXPWR_TBL);
+	CmdPwrTbl.ucDbdcIdx = prPwrTbl->ucDbdcIdx;
+
+	return wlanSendSetQueryCmd(prAdapter,
+				   CMD_ID_GET_TXPWR_TBL,
+				   FALSE,
+				   TRUE,
+				   TRUE,
+				   nicCmdEventGetTxPwrTbl,
+				   nicOidCmdTimeoutCommon,
+				   sizeof(struct CMD_GET_TXPWR_TBL),
+				   (uint8_t *)&CmdPwrTbl,
+				   pvQueryBuffer,
+				   u4QueryBufferLen);
+
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is used to do AIS pre-Suspend flow.

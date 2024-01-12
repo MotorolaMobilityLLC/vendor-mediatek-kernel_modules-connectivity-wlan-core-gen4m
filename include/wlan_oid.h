@@ -2668,6 +2668,53 @@ struct PARAM_HW_MIB_INFO {
 };
 #endif
 
+#if CFG_WIFI_TXPWR_TBL_DUMP
+struct PARAM_CMD_GET_TXPWR_TBL {
+	uint8_t ucDbdcIdx;
+	uint8_t ucCenterCh;
+	struct POWER_LIMIT tx_pwr_tbl[TXPWR_TBL_NUM];
+};
+
+enum ENUM_TXPWR_TYPE {
+	DSSS = 0,
+	OFDM_24G,
+	OFDM_5G,
+	HT20,
+	HT40,
+	VHT20,
+	VHT40,
+	VHT80,
+	VHT160,
+#if (CFG_WIFI_TXPWR_TBL_DUMP_HE == 1)
+	HE26,
+	HE52,
+	HE106,
+	HE242,
+	HE484,
+	HE996,
+	HE996X2,
+#endif
+	TXPWR_TYPE_NUM,
+};
+
+enum ENUM_STREAM_MODE {
+	STREAM_SISO,
+	STREAM_CDD,
+	STREAM_MIMO,
+	STREAM_NUM
+};
+
+struct txpwr_table_entry {
+	char mcs[STREAM_NUM][8];
+	unsigned int idx;
+};
+
+struct txpwr_table {
+	char phy_mode[8];
+	struct txpwr_table_entry *tables;
+	int n_tables;
+};
+#endif /* CFG_WIFI_TXPWR_TBL_DUMP */
 
 /*--------------------------------------------------------------*/
 /*! \brief For Fixed Rate Configuration (Registry)              */
@@ -4324,6 +4371,14 @@ wlanoidLinkDown(IN struct ADAPTER *prAdapter,
 		IN void *pvSetBuffer,
 		IN uint32_t u4SetBufferLen,
 		OUT uint32_t *pu4SetInfoLen);
+
+#if CFG_WIFI_TXPWR_TBL_DUMP
+uint32_t
+wlanoidGetTxPwrTbl(IN struct ADAPTER *prAdapter,
+		IN void *pvQueryBuffer,
+		IN uint32_t u4QueryBufferLen,
+		OUT uint32_t *pu4QueryInfoLen);
+#endif
 
 uint32_t
 wlanoidAisPreSuspend(IN struct ADAPTER *prAdapter,

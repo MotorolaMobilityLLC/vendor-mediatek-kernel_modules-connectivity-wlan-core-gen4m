@@ -3173,6 +3173,31 @@ struct EVENT_UPDATE_COEX_PHYRATE {
 	uint8_t aucReserved2[2];    /* 4 byte alignment */
 };
 
+#if CFG_WIFI_TXPWR_TBL_DUMP
+struct CMD_GET_TXPWR_TBL {
+	/* DWORD_0 - Common Part */
+	uint8_t  ucCmdVer;
+	uint8_t  ucAction;
+	uint16_t u2CmdLen;
+
+	/* DWORD_1 ~ x - Command Body */
+	uint8_t ucDbdcIdx;
+	uint8_t aucReserved[3];
+};
+
+struct EVENT_GET_TXPWR_TBL {
+	/* DWORD_0 - Common Part */
+	uint8_t  ucEvtVer;
+	uint8_t  ucAction;
+	uint16_t u2EvtLen;
+
+	/* DWORD_1 ~ x - Command Body */
+	uint8_t ucCenterCh;
+	uint8_t aucReserved[3];
+	struct POWER_LIMIT tx_pwr_tbl[TXPWR_TBL_NUM];
+};
+#endif /* CFG_WIFI_TXPWR_TBL_DUMP */
+
 enum ENUM_COEX_MODE {
 	COEX_NONE_BT,
 	COEX_TDD_MODE,
@@ -4005,6 +4030,11 @@ void nicEventWowWakeUpReason(IN struct ADAPTER *prAdapter,
 #if (CFG_COALESCING_INTERRUPT == 1)
 void nicEventCoalescingIntDone(IN struct ADAPTER *prAdapter,
 		IN struct WIFI_EVENT *prEvent);
+#endif
+#if CFG_WIFI_TXPWR_TBL_DUMP
+void nicCmdEventGetTxPwrTbl(IN struct ADAPTER *prAdapter,
+		IN struct CMD_INFO *prCmdInfo,
+		IN uint8_t *pucEventBuf);
 #endif
 
 void tputEventFactorHandler(IN struct ADAPTER *prAdapter,

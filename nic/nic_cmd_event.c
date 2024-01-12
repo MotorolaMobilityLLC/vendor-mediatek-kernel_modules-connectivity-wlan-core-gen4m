@@ -5814,3 +5814,63 @@ void nicCmdEventQueryCoexIso(IN struct ADAPTER *prAdapter,
 
 }
 #endif
+
+#if CFG_WIFI_TXPWR_TBL_DUMP
+void nicCmdEventGetTxPwrTbl(IN struct ADAPTER *prAdapter,
+		IN struct CMD_INFO *prCmdInfo,
+		IN uint8_t *pucEventBuf)
+{
+	uint32_t u4QueryInfoLen;
+	struct GLUE_INFO *prGlueInfo;
+	struct EVENT_GET_TXPWR_TBL *prTxPwrTblEvent = NULL;
+	struct PARAM_CMD_GET_TXPWR_TBL *prTxPwrTbl = NULL;
+	void *info_buf = NULL;
+
+	DBGLOG(NIC, INFO, "Enter nicCmdEventGetTxPwrTbl\n");
+
+	if (!prAdapter) {
+		DBGLOG(NIC, WARN, "NULL prAdapter!\n");
+		return;
+	}
+
+	if (!prCmdInfo) {
+		DBGLOG(NIC, WARN, "NULL prCmdInfo!\n");
+		return;
+	}
+
+	if (!pucEventBuf || !prCmdInfo->pvInformationBuffer) {
+		if (prCmdInfo->fgIsOid) {
+			kalOidComplete(prAdapter->prGlueInfo,
+					prCmdInfo,
+					0,
+					WLAN_STATUS_FAILURE);
+		}
+
+		if (!pucEventBuf)
+			DBGLOG(NIC, WARN, "NULL pucEventBuf!\n");
+
+		if (!prCmdInfo->pvInformationBuffer)
+			DBGLOG(NIC, WARN, "NULL pvInformationBuffer!\n");
+
+		return;
+	}
+
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+		info_buf = prCmdInfo->pvInformationBuffer;
+
+		prTxPwrTblEvent = (struct EVENT_GET_TXPWR_TBL *) pucEventBuf;
+		prTxPwrTbl = (struct PARAM_CMD_GET_TXPWR_TBL *) info_buf;
+		u4QueryInfoLen = sizeof(struct PARAM_CMD_GET_TXPWR_TBL);
+
+		prTxPwrTbl->ucCenterCh = prTxPwrTblEvent->ucCenterCh;
+
+		kalMemCopy(prTxPwrTbl->tx_pwr_tbl,
+				prTxPwrTblEvent->tx_pwr_tbl,
+				sizeof(prTxPwrTblEvent->tx_pwr_tbl));
+
+		kalOidComplete(prGlueInfo, prCmdInfo,
+				u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+}
+#endif /* CFG_WIFI_TXPWR_TBL_DUMP */
