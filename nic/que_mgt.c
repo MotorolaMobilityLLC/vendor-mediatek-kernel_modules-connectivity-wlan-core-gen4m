@@ -9422,8 +9422,7 @@ u_int8_t qmArpMonitorIsIOTIssue(struct ADAPTER *prAdapter,
 	} else {
 		/* use unicast time for IOT checking */
 		/* no unicast rx after tx arp */
-		return (qmArpMonitorGetRxUnicastTimeDiff(
-				ucBssIndex) == 0);
+		return (qmArpMonitorGetRxUnicastTimeDiff(ucBssIndex) == 0);
 	}
 }
 
@@ -9559,9 +9558,15 @@ void qmArpMonitorHandleTxArpPkt(struct ADAPTER *prAdapter,
 #else /* CFG_QM_ARP_MONITOR_MSG */
 			qmArpMonitorSetLegacyBTOEvent(prAdapter, ucBssIndex);
 #endif /* CFG_QM_ARP_MONITOR_MSG */
-		} else
-			DBGLOG(QM, WARN, "ARP, still have %d pkts\n",
-				qmArpMonitorGetRxDiff(ucBssIndex));
+		} else {
+			if (prWifiVar->ucArpMonitorUseRule == 0)
+				DBGLOG(QM, WARN, "ARP, still have %d pkts\n",
+					qmArpMonitorGetRxDiff(ucBssIndex));
+			else
+				DBGLOG(QM, WARN, "ARP, Rx UC time diff %u\n",
+					qmArpMonitorGetRxUnicastTimeDiff(
+						ucBssIndex));
+		}
 
 		qmArpMonitorReset(ucBssIndex);
 	}
