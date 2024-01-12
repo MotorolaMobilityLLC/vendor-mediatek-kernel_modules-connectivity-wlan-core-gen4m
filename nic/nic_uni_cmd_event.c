@@ -1211,6 +1211,7 @@ uint32_t nicUniCmdSetMbmc(struct ADAPTER *ad,
 	tag->u2Tag = UNI_CMD_MBMC_TAG_SETTING;
 	tag->u2Length = sizeof(*tag);
 	tag->ucMbmcEn = cmd->ucDbdcEn;
+	tag->ucAAModeEn = cmd->ucDBDCAAMode;
 	tag->ucRfBand = 0; /* unused */
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
