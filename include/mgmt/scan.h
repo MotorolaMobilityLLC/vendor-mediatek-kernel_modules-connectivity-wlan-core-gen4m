@@ -479,7 +479,6 @@ struct BSS_DESC {
 
 	uint8_t aucRawBuf[CFG_RAW_BUFFER_SIZE];
 	uint8_t *pucIeBuf;
-	uint16_t u2JoinStatus;
 	OS_SYSTIME rJoinFailTime;
 
 	/* Support AP Selection */
