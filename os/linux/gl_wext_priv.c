@@ -22155,14 +22155,14 @@ static int priv_driver_set_csi(IN struct net_device *prNetDev,
 			prCSIInfo->eCSIOutput = CSI_OUTPUT_PROC_FILE;
 			DBGLOG(REQ, INFO,
 				"[CSI] Set CSI data output to proc file\n");
-		} else if (prCSICtrl->ucMode == CSI_VENDOR_EVENT_COMMAND) {
+		} else if (prCSICtrl->ucValue1 == CSI_VENDOR_EVENT_COMMAND) {
 			prCSIInfo->eCSIOutput = CSI_OUTPUT_VENDOR_EVENT;
 			DBGLOG(REQ, INFO,
 				"[CSI] Set CSI data output to vendor event\n");
 		} else {
 			DBGLOG(REQ, ERROR,
 				"[CSI] Invalid csi output method %d\n",
-				prCSICtrl->ucMode);
+				prCSICtrl->ucValue1);
 			i4BytesWritten = -1;
 		}
 		goto out;
