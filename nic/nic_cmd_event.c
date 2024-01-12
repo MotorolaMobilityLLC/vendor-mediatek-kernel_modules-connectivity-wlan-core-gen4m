@@ -5721,6 +5721,10 @@ uint32_t nicDumpTlv(IN void *prCmdBuffer)
 	     u2ElementNum++) {
 		prTlvElement =
 			nicGetTargetTlvElement(u2ElementNum, prCmdBuffer);
+		if (!prTlvElement) {
+			DBGLOG(TX, ERROR, "prTlvElementis null\n");
+			return WLAN_STATUS_FAILURE;
+		}
 		DBGLOG(TX, INFO, "TLV(%d) start address:%p\n", u2ElementNum,
 		       prTlvElement);
 		DBGLOG(TX, INFO, "TLV(%d) tag_type:%d\n", u2ElementNum,
@@ -6227,11 +6231,21 @@ void nicNanTestQueryInfoDone(IN struct ADAPTER *prAdapter,
 		prGlueInfo = prAdapter->prGlueInfo;
 		prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)pucEventBuf;
 		prTlvElement = nicGetTargetTlvElement(1, prTlvCommon);
+		if (!prTlvElement) {
+			DBGLOG(REQ, ERROR,
+				"prTlvElement is null\n");
+			return;
+		}
 		prEventContent =
 			(struct _TXM_CMD_EVENT_TEST_T *)prTlvElement->aucbody;
 		prQueryInfoContent =
 			(struct _TXM_CMD_EVENT_TEST_T *)
 				prCmdInfo->pvInformationBuffer;
+		if (!prEventContent || !prQueryInfoContent) {
+			DBGLOG(REQ, ERROR,
+				"prEventContent or prQueryInfoContent is null\n");
+			return;
+		}
 		prQueryInfoContent->u4TestValue0 = prEventContent->u4TestValue0;
 		prQueryInfoContent->u4TestValue1 = prEventContent->u4TestValue1;
 		prQueryInfoContent->ucTestValue2 = prEventContent->ucTestValue2;

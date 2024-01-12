@@ -99,7 +99,9 @@ nan_sec_wlanSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	struct CMD_802_11_KEY *prCmdKey = &rCmdKey;
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec = NULL;
+#if 0
 	unsigned char fgNoHandshakeSec = FALSE;
+#endif
 
 	prCmdFWKey = (struct CMD_802_11_KEY *)pvSetBuffer;
 	DEBUGFUNC("wlanSetAddKey");
@@ -222,14 +224,15 @@ nan_sec_wlanSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 				   prBssInfo->aucOwnMacAddr,
 				   MAC_ADDR_LEN);
 		}
+#if 0
 		if (fgNoHandshakeSec) { /* WEP: STA and AP */
 			prBssInfo->wepkeyWlanIdx =
 				prCmdKey->ucWlanIndex;
 			prBssInfo->wepkeyUsed
 				[prCmdKey->ucKeyId] = TRUE;
-		} else if (
-			!prBssInfo
-				 ->prStaRecOfAP) {
+		} else
+#endif
+		if (!prBssInfo->prStaRecOfAP) {
 			/* AP WPA/RSN */
 			prBssInfo->ucBMCWlanIndexS
 				[prCmdKey->ucKeyId] =
@@ -473,6 +476,10 @@ nan_sec_wpas_setkey_glue(bool fgIsAp, u8 u1BssIdx, enum wpa_alg alg,
 	}
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(g_prAdapter, u1BssIdx);
+	if (!prBssInfo) {
+		DBGLOG(NAN, ERROR, "prBssInfo is null!\n");
+		return -1;
+	}
 	prStaRec = cnmGetStaRecByAddress(g_prAdapter, prBssInfo->ucBssIndex,
 					 (uint8_t *)addr);
 
@@ -1459,11 +1466,7 @@ nan_sec_wpa_receive(struct wpa_authenticator *wpa_auth, /* AP */
 	u16 key_info, key_data_length;
 	enum { PAIRWISE_2,
 	       PAIRWISE_4,
-	       GROUP_2,
-	       REQUEST,
-	       SMK_M1,
-	       SMK_M3,
-	       SMK_ERROR } msg;
+	       GROUP_2 } msg;
 	char *msgtxt;
 	struct wpa_eapol_ie_parse kde;
 	/* int ft; */
@@ -1816,6 +1819,7 @@ continue_processing:
 			return WLAN_STATUS_FAILURE;
 		}
 		break;
+#if 0
 	case SMK_M1:
 	case SMK_M3:
 	case SMK_ERROR:
@@ -1823,6 +1827,7 @@ continue_processing:
 		/* STSL disabled - ignore SMK messages */
 	case REQUEST:
 		break;
+#endif
 	}
 
 	wpa_auth_vlogger(wpa_auth, sm->addr, LOGGER_DEBUG,
@@ -2062,7 +2067,6 @@ nan_sec_wpa_init(const u8 *addr, struct wpa_auth_config *conf,
 	wpa_auth->group = wpa_group_init(wpa_auth, 0, 1);
 	if (wpa_auth->group == NULL) {
 		os_free(wpa_auth->wpa_ie);
-		os_free(wpa_auth);
 		return NULL;
 	}
 
@@ -2389,7 +2393,11 @@ nanSecGetNdpScidAttr(IN struct _NAN_NDP_INSTANCE_T *prNdp,
 	pr1ScidAttrListHdr->u1ScidType = 1; /* PMKID */
 	pr1ScidAttrListHdr->u1PublishId = prNdp->ucPublishId;
 
-	pu1ScidPtr = &pr1ScidAttrListHdr->u1PublishId + 1;
+	/* pu1ScidPtr = &pr1ScidAttrListHdr->u1PublishId + 1; */
+	pu1ScidPtr = pucBuf +
+		sizeof(struct _NAN_SEC_SCID_ATTR_HDR) +
+		sizeof(struct _NAN_SEC_SCID_ATTR_ENTRY) +
+		1;
 	kalMemCopy(pu1ScidPtr, prNdp->au1Scid, sizeof(prNdp->au1Scid));
 
 	*ppu1ScidAttrBuf = pucBuf;
