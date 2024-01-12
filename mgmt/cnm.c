@@ -966,6 +966,8 @@ uint8_t cnmDecideSapNewChannel(
 	struct PARAM_PREFER_CHN_INFO rPreferChannel = { 0, 0xFFFF, 0 };
 	struct PARAM_PREFER_CHN_INFO
 		arChannelDirtyScore_2G[MAX_2G_BAND_CHN_NUM];
+	kalMemZero(arChannelDirtyScore_2G,
+		sizeof(struct PARAM_PREFER_CHN_INFO)*MAX_2G_BAND_CHN_NUM);
 
 	if (!prGlueInfo) {
 		DBGLOG(P2P, ERROR, "prGlueInfo is NULL\n");
@@ -1182,7 +1184,7 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 			? BAND_2G4 : BAND_5G;
 
 		/* Heritage BW from Old connection*/
-		rRfChnlInfo.ucChnlBw = CW_20_40MHZ;
+		rRfChnlInfo.ucChnlBw = (uint8_t) CW_20_40MHZ;
 		rRfChnlInfo.u2PriChnlFreq =
 			nicChannelNum2Freq((uint32_t)ch_num) / 1000;
 		rRfChnlInfo.u4CenterFreq1 =
@@ -1207,13 +1209,13 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 		prGlueInfo->prP2PInfo[ucRoleIdx]
 			->chandef->center_freq2 = rRfChnlInfo.u4CenterFreq2;
 
-		if (rRfChnlInfo.ucChnlBw == MAX_BW_20MHZ)
+		if (rRfChnlInfo.ucChnlBw == ((uint8_t)MAX_BW_20MHZ))
 			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->width
 				= NL80211_CHAN_WIDTH_20;
-		else if (rRfChnlInfo.ucChnlBw == MAX_BW_40MHZ)
+		else if (rRfChnlInfo.ucChnlBw == ((uint8_t)MAX_BW_40MHZ))
 			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->width
 				= NL80211_CHAN_WIDTH_40;
-		else if (rRfChnlInfo.ucChnlBw == MAX_BW_80MHZ)
+		else if (rRfChnlInfo.ucChnlBw == ((uint8_t)MAX_BW_80MHZ))
 			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->width
 				= NL80211_CHAN_WIDTH_80;
 		else
@@ -1253,7 +1255,8 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 		prP2pSetNewChannelMsg->rMsgHdr.eMsgId =
 			MID_MNY_P2P_SET_NEW_CHANNEL;
 
-		prP2pSetNewChannelMsg->eChannelWidth = rRfChnlInfo.ucChnlBw;
+		prP2pSetNewChannelMsg->eChannelWidth =
+			(enum ENUM_CHANNEL_WIDTH) rRfChnlInfo.ucChnlBw;
 
 		prP2pSetNewChannelMsg->ucRoleIdx = ucRoleIdx;
 
@@ -1370,6 +1373,7 @@ void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 		if (prBssInfo &&
 			(prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)) {
 			DBGLOG(CNM, INFO, "[CSA]BssIdx=%d,CurCH=%d\n",
+				prBssInfo->ucBssIndex,
 				prBssInfo->ucPrimaryChannel);
 			ucNewChannel = cnmDecideSapNewChannel(prGlueInfo,
 				prBssInfo->ucPrimaryChannel);
