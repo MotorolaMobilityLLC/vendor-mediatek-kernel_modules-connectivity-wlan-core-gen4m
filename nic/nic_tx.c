@@ -2848,6 +2848,40 @@ uint32_t nicTxMsduQueue(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief This function will update the count of TX Mgmt frame counts
+ *        according to their subtype.
+ *
+ * @param prAdapter  Pointer to the Adapter structure.
+ *        prMgmtTxMsdu Pointer to the MSDU structure of Mgmt frame.
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+static void nicUpdateMgmtSubtypeCounter(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMgmtTxMsdu)
+{
+	struct WLAN_MAC_HEADER *prWlanHdr = NULL;
+
+	prWlanHdr = (struct WLAN_MAC_HEADER *) ((uintptr_t)
+			prMgmtTxMsdu->prPacket + MAC_TX_RESERVED_FIELD);
+
+	if (!prWlanHdr)
+		return;
+
+	/* Only Mgmt frames are expected */
+	if ((prWlanHdr->u2FrameCtrl & MASK_FC_TYPE) != MAC_FRAME_TYPE_MGT) {
+		DBGLOG(INIT, TRACE, "Unexpected type: %u",
+				prWlanHdr->u2FrameCtrl & MASK_FRAME_TYPE);
+		return;
+	}
+
+	prAdapter->au4MgmtSubtypeTxCnt[
+		(prWlanHdr->u2FrameCtrl & MASK_FC_SUBTYPE)
+		>> OFFSET_OF_FC_SUBTYPE]++;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief In this function, we'll write Command(CMD_INFO_T) into HIF.
  *
  * @param prAdapter      Pointer to the Adapter structure.
@@ -2974,6 +3008,8 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 				prMsduInfo->ucWlanIndex, prMsduInfo->ucPID);
 		}
 #endif /* !CFG_TX_CMD_SMART_SEQUENCE */
+
+		nicUpdateMgmtSubtypeCounter(prAdapter, prMsduInfo);
 
 		DBGLOG(INIT, TRACE,
 			"TX MGMT Frame: BSS[%u] WIDX:PID[%u:%u] SEQ[%u] STA[%u] RSP[%u]\n",

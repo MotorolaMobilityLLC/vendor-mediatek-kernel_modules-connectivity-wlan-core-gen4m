@@ -7217,8 +7217,7 @@ uint32_t mqmGenerateWmmParamIEByParam(struct ADAPTER *prAdapter,
 
 u_int8_t isProbeResponse(struct MSDU_INFO *prMgmtTxMsdu)
 {
-	struct WLAN_MAC_HEADER *prWlanHdr =
-		(struct WLAN_MAC_HEADER *) NULL;
+	struct WLAN_MAC_HEADER *prWlanHdr = NULL;
 
 	prWlanHdr =
 		(struct WLAN_MAC_HEADER *) ((uintptr_t)

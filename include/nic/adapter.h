@@ -1846,6 +1846,9 @@ struct ADAPTER {
 	/* Element for RX PATH */
 	struct RX_CTRL rRxCtrl;
 
+	/* TypeSubtype counter, Mgmt only */
+	uint32_t au4MgmtSubtypeTxCnt[MAX_NUM_OF_FC_SUBTYPES];
+
 	/* bitmap for hif adjust control */
 	uint8_t ucAdjustCtrlBitmap;
 
