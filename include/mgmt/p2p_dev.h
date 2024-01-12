@@ -162,6 +162,8 @@ struct P2P_DEV_FSM_INFO {
 
 	/* Queued p2p action frame */
 	struct P2P_QUEUED_ACTION_FRAME rQueuedActionFrame;
+
+	u_int8_t fgInitialied;
 };
 
 struct MSG_P2P_NETDEV_REGISTER {
@@ -197,7 +199,7 @@ struct MSG_P2P_LISTEN_OFFLOAD {
 
 /*========================= Initial ============================*/
 
-uint8_t p2pDevFsmInit(struct ADAPTER *prAdapter);
+uint8_t p2pDevFsmInit(struct ADAPTER *prAdapter, uint8_t aucIntfMac[]);
 
 void p2pDevFsmUninit(struct ADAPTER *prAdapter);
 

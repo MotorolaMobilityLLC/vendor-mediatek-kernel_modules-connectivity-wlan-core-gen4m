@@ -21,7 +21,7 @@ static uint8_t *apucDebugP2pDevState[P2P_DEV_STATE_NUM] = {
 /*lint -restore */
 #endif /* DBG */
 
-uint8_t p2pDevFsmInit(struct ADAPTER *prAdapter)
+uint8_t p2pDevFsmInit(struct ADAPTER *prAdapter, uint8_t aucIntfMac[])
 {
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 		(struct P2P_DEV_FSM_INFO *) NULL;
@@ -37,6 +37,14 @@ uint8_t p2pDevFsmInit(struct ADAPTER *prAdapter)
 		prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
 
 		ASSERT_BREAK(prP2pDevFsmInfo != NULL);
+		if (prP2pDevFsmInfo->fgInitialied == TRUE) {
+			DBGLOG(P2P, WARN,
+				"p2p dev %u already initialized.\n",
+				prP2pDevFsmInfo->ucBssIndex);
+			prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+				prP2pDevFsmInfo->ucBssIndex);
+			break;
+		}
 
 		kalMemZero(prP2pDevFsmInfo, sizeof(struct P2P_DEV_FSM_INFO));
 
@@ -59,8 +67,7 @@ uint8_t p2pDevFsmInit(struct ADAPTER *prAdapter)
 
 		if (prP2pBssInfo != NULL) {
 			BSS_INFO_INIT(prAdapter, prP2pBssInfo);
-			COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,
-					prAdapter->rWifiVar.aucDeviceAddress);
+			COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr, aucIntfMac);
 			DBGLOG(INIT, TRACE, "Set p2p dev mac to " MACSTR "\n",
 					MAC2STR(prP2pBssInfo->aucOwnMacAddr));
 
@@ -119,6 +126,7 @@ uint8_t p2pDevFsmInit(struct ADAPTER *prAdapter)
 		p2pDevFsmStateTransition(prAdapter,
 			prP2pDevFsmInfo,
 			P2P_DEV_STATE_IDLE);
+		prP2pDevFsmInfo->fgInitialied = TRUE;
 	} while (FALSE);
 
 	if (prP2pBssInfo)
@@ -137,6 +145,7 @@ void p2pDevFsmUninit(struct ADAPTER *prAdapter)
 		ASSERT_BREAK(prAdapter != NULL);
 
 		prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
+		prP2pDevFsmInfo->fgInitialied = FALSE;
 
 		ASSERT_BREAK(prP2pDevFsmInfo != NULL);
 
