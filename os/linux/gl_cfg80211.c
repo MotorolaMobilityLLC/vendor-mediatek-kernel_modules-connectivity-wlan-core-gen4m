@@ -6101,7 +6101,7 @@ int testmode_set_ax_blacklist(struct wiphy *wiphy,
 			if (index + MAC_ADDR_LEN >
 				sizeof(rBlacklist.aucList)) {
 				DBGLOG(REQ, WARN,
-				    "Could only set %d BSSID in blacklist!\n",
+				    "Could only set %d BSSID in blocklist!\n",
 				    i - 2);
 				break;
 			}
@@ -6109,7 +6109,7 @@ int testmode_set_ax_blacklist(struct wiphy *wiphy,
 					aucMacAddr);
 			index += MAC_ADDR_LEN;
 		}
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetAxBlacklist,
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetAxBlocklist,
 			(void *)&rBlacklist, sizeof(struct PARAM_AX_BLACKLIST),
 			&u4BufLen);
 

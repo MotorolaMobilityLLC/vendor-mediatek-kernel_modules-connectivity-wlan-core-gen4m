@@ -771,7 +771,7 @@ int mtk_cfg80211_vendor_get_roaming_capabilities(struct wiphy *wiphy,
 	ASSERT(wiphy);
 
 	DBGLOG(REQ, INFO,
-		"Get roaming capabilities: max black/whitelist=%d/%d",
+		"Get roaming capabilities: max block/allowlist=%d/%d",
 		maxNumOfList[0], maxNumOfList[1]);
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(maxNumOfList));
@@ -826,7 +826,7 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 	int i;
 
 	DBGLOG(REQ, INFO,
-	       "Receives roaming blacklist & whitelist with data_len=%d\n",
+	       "Receives roaming blocklist & allowlist with data_len=%d\n",
 	       data_len);
 	ASSERT(wiphy);
 	ASSERT(wdev);
@@ -857,14 +857,14 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 		numOfList[0] = nla_get_u32(attrlist);
 		len_shift += NLA_ALIGN(attrlist->nla_len);
 	}
-	DBGLOG(REQ, INFO, "Get the number of blacklist=%d\n",
+	DBGLOG(REQ, INFO, "Get the number of blocklist=%d\n",
 	       numOfList[0]);
 
 	if (numOfList[0] > MAX_FW_ROAMING_BLACKLIST_SIZE)
 		return -EINVAL;
 
 	/*Refresh all the FWKBlacklist */
-	aisRefreshFWKBlacklist(prGlueInfo->prAdapter);
+	aisRefreshFWKBlocklist(prGlueInfo->prAdapter);
 
 	/* Start to receive blacklist mac addresses and set to FWK blacklist */
 	attrlist = (struct nlattr *)((uint8_t *) data + len_shift);
@@ -880,19 +880,19 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 				(struct nlattr *)((uint8_t *) data + len_shift);
 
 			if (prBssDesc == NULL) {
-				DBGLOG(REQ, ERROR, "No found blacklist BSS="
+				DBGLOG(REQ, ERROR, "No found blocklist BSS="
 					MACSTR "\n",
 					MAC2STR(aucBSSID));
 				continue;
 			}
 
-			prBlackList = aisAddBlacklist(prGlueInfo->prAdapter,
+			prBlackList = aisAddBlocklist(prGlueInfo->prAdapter,
 						      prBssDesc);
 
 			if (prBlackList) {
 				prBlackList->fgIsInFWKBlacklist = TRUE;
 				DBGLOG(REQ, INFO,
-					"Gets roaming blacklist SSID=%s addr="
+					"Gets roaming blocklist SSID=%s addr="
 					MACSTR "\n",
 					HIDE(prBssDesc->aucSSID),
 					MAC2STR(prBssDesc->aucBSSID));
@@ -2676,7 +2676,7 @@ int mtk_cfg80211_vendor_set_roaming_param(struct wiphy *wiphy,
 
 		/* Parse and fetch number of blacklist BSSID */
 		if (!tb[SET_BSSID_PARAMS_NUM_BSSID]) {
-			DBGLOG(REQ, ERROR, "Invlaid num of blacklist bssid\n");
+			DBGLOG(REQ, ERROR, "Invlaid num of blocklist bssid\n");
 			goto fail;
 		}
 		count = nla_get_u32(tb[SET_BSSID_PARAMS_NUM_BSSID]);

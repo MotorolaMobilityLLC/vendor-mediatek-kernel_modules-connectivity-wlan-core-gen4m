@@ -426,10 +426,10 @@ void heRlmFillHeCapIE(
 			prBssDesc = aisGetTargetBssDesc(prAdapter,
 					prBssInfo->ucBssIndex);
 			if (prAisFsmInfo && prBssDesc != NULL &&
-				queryAxBlacklist(prAdapter, prBssDesc->aucBSSID,
+				queryAxBlocklist(prAdapter, prBssDesc->aucBSSID,
 				   prBssInfo->ucBssIndex, BLACKLIST_DIS_HE_HTC))
 				DBGLOG(BSS, INFO,
-				    "BSSID " MACSTR " is in HTC blacklist!\n",
+				    "BSSID " MACSTR " is in HTC blocklist!\n",
 				    MAC2STR(prBssDesc->aucBSSID));
 			else
 				HE_SET_MAC_CAP_HTC_HE(prHeCap->ucHeMacCap);
@@ -957,10 +957,10 @@ uint32_t heRlmFillNANHECapIE(
 		prBssDesc = aisGetTargetBssDesc(prAdapter,
 				prBssInfo->ucBssIndex);
 		if (prBssDesc != NULL &&
-			queryAxBlacklist(prAdapter, prBssDesc->aucBSSID,
+			queryAxBlocklist(prAdapter, prBssDesc->aucBSSID,
 			    prBssInfo->ucBssIndex, BLACKLIST_DIS_HE_HTC)) {
 			DBGLOG(BSS, INFO,
-			    "BSSID " MACSTR " is in HTC blacklist!\n",
+			    "BSSID " MACSTR " is in HTC blocklist!\n",
 			    MAC2STR(prBssDesc->aucBSSID));
 		} else {
 			HE_SET_MAC_CAP_HTC_HE(prHeCap->ucHeMacCap);

@@ -12015,7 +12015,7 @@ uint32_t wlanSetLowLatencyMode(
 
 #define LOW_LATENCY_LOG_TEMPLATE \
 	"LowLatency(gaming) event - gas:0x%x, net:0x%x, " \
-	"whitelist:0x%x, disable roaming:0x%x, CAM:0x%x, " \
+	"allowlist:0x%x, disable roaming:0x%x, CAM:0x%x, " \
 	"scan=%u, reorder=%u, power=%u\n"
 
 	DBGLOG(OID, INFO, LOW_LATENCY_LOG_TEMPLATE,

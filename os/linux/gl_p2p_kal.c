@@ -1999,7 +1999,7 @@ u_int8_t kalP2PSetBlackList(struct GLUE_INFO *prGlueInfo,
 				&(prGlueInfo->prP2PInfo[ucRoleIndex]
 				->aucblackMACList[i]), rbssid)) {
 				DBGLOG(P2P, WARN, MACSTR
-					" already in black list\n",
+					" already in block list\n",
 					MAC2STR(rbssid));
 				return FALSE;
 			}
@@ -2117,7 +2117,7 @@ void kalP2PCatBlackList(struct GLUE_INFO *prGlueInfo, bool flag)
 	for (ucRoleIndex = 0; ucRoleIndex < KAL_P2P_NUM; ucRoleIndex++) {
 		for (i = 0; i < P2P_MAXIMUM_CLIENT_COUNT; i++) {
 			DBGLOG(INIT, INFO,
-				"ucRoleIndex[%d]-BlackList[%d] MA="MACSTR"\n",
+				"ucRoleIndex[%d]-BlockList[%d] MA="MACSTR"\n",
 				ucRoleIndex, i,
 				&(prGlueInfo->prP2PInfo[ucRoleIndex]
 				->aucblackMACList[i]));

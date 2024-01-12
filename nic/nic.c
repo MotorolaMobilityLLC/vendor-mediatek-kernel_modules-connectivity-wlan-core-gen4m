@@ -2485,7 +2485,7 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 			DBGLOG(SW4, INFO, "[SG]SG Get Dut NSS %d\n", ucDutNss);
 			if (rCmdSetBssInfo.ucIotApAct == WLAN_IOT_AP_DIS_SG) {
 				DBGLOG(SW4, INFO,
-					"[SG]Hit SG blacklist, disable SG\n");
+					"[SG]Hit SG blocklist, disable SG\n");
 				ucSGEnable = FALSE;
 			}
 
