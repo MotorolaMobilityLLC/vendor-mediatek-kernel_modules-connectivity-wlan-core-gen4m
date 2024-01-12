@@ -1518,16 +1518,6 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
-#if CFG_SUPPORT_WAPI
-	if (aisGetWapiMode(prAdapter, ucBssIndex)) {
-		if (!wapiPerformPolicySelection(prAdapter, prBssDesc,
-			ucBssIndex)) {
-			DBGLOG(APS, WARN, MACSTR " wapi policy select fail.\n",
-				MAC2STR(prBssDesc->aucBSSID));
-			return FALSE;
-		}
-	} else
-#endif
 	if (!rsnPerformPolicySelection(prAdapter, prBssDesc,
 		ucBssIndex)) {
 		DBGLOG(APS, WARN, MACSTR " rsn policy select fail.\n",

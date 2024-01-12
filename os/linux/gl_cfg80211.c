@@ -1611,6 +1611,8 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	if (sme->crypto.n_ciphers_pairwise) {
 		DBGLOG(RSN, INFO, "cipher pairwise (0x%x)\n",
 		       sme->crypto.ciphers_pairwise[0]);
+		prMib->dot11RSNAConfigPairwiseCipher =
+			SWAP32(sme->crypto.ciphers_pairwise[0]);
 		switch (sme->crypto.ciphers_pairwise[0]) {
 		case WLAN_CIPHER_SUITE_WEP40:
 			prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_WEP40;
@@ -1658,6 +1660,8 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	if (sme->crypto.cipher_group) {
 		DBGLOG(RSN, INFO, "cipher group (0x%x)\n",
 		       sme->crypto.cipher_group);
+		prMib->dot11RSNAConfigGroupCipher =
+			SWAP32(sme->crypto.cipher_group);
 		switch (sme->crypto.cipher_group) {
 		case WLAN_CIPHER_SUITE_WEP40:
 			prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_WEP40;

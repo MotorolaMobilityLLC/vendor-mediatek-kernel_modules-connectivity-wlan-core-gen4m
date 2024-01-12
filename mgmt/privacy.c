@@ -518,35 +518,6 @@ void secSetCipherSuite(struct ADAPTER *prAdapter,
 			break;
 		}
 	}
-
-	/* Update the group cipher suite. */
-	if (rsnSearchSupportedCipher(prAdapter,
-		WPA_CIPHER_SUITE_CCMP, ucBssIndex))
-		prMib->dot11RSNAConfigGroupCipher = WPA_CIPHER_SUITE_CCMP;
-	else if (rsnSearchSupportedCipher(prAdapter,
-		WPA_CIPHER_SUITE_TKIP, ucBssIndex))
-		prMib->dot11RSNAConfigGroupCipher = WPA_CIPHER_SUITE_TKIP;
-	else if (rsnSearchSupportedCipher(prAdapter,
-		WPA_CIPHER_SUITE_WEP104, ucBssIndex))
-		prMib->dot11RSNAConfigGroupCipher = WPA_CIPHER_SUITE_WEP104;
-	else if (rsnSearchSupportedCipher(prAdapter,
-		WPA_CIPHER_SUITE_WEP40, ucBssIndex))
-		prMib->dot11RSNAConfigGroupCipher = WPA_CIPHER_SUITE_WEP40;
-	else if (rsnSearchSupportedCipher(prAdapter,
-		RSN_CIPHER_SUITE_GROUP_NOT_USED, ucBssIndex))
-		prMib->dot11RSNAConfigGroupCipher =
-		    RSN_CIPHER_SUITE_GROUP_NOT_USED;
-	else if (rsnSearchSupportedCipher(prAdapter,
-		RSN_CIPHER_SUITE_GCMP_256, ucBssIndex))
-		prMib->dot11RSNAConfigGroupCipher =
-		    RSN_CIPHER_SUITE_GCMP_256;
-	else if (rsnSearchSupportedCipher(prAdapter,
-		RSN_CIPHER_SUITE_GCMP, ucBssIndex))
-		prMib->dot11RSNAConfigGroupCipher =
-		    RSN_CIPHER_SUITE_GCMP;
-	else
-		prMib->dot11RSNAConfigGroupCipher = WPA_CIPHER_SUITE_NONE;
-
 }				/* secSetCipherSuite */
 
 /*----------------------------------------------------------------------------*/
