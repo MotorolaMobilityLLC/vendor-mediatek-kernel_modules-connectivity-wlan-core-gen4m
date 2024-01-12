@@ -2589,7 +2589,7 @@
  *------------------------------------------------------------------------------
  */
 #if CFG_MTK_ANDROID_WMT
-#define CFG_SUPPORT_SA_LOG 0
+#define CFG_SUPPORT_SA_LOG 1
 #else
 #define CFG_SUPPORT_SA_LOG 0
 #endif
