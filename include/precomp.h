@@ -108,6 +108,7 @@
 
 #if (CFG_SUPPORT_802_11BE == 1)
 #include "eht_ie.h"
+#include "mlo.h"
 #endif
 
 #if CFG_SUPPORT_SWCR

@@ -90,6 +90,9 @@ struct APPEND_VAR_IE_ENTRY txAuthIETable[] = {
 	{0, authCalculateRSNIELen, authAddRSNIE}, /* Element ID: 48 */
 	{(ELEM_HDR_LEN + 1), NULL, authAddMDIE}, /* Element ID: 54 */
 	{0, rsnCalculateFTIELen, rsnGenerateFTIE}, /* Element ID: 55 */
+//#if (CFG_SUPPORT_802_11BE == 1)
+//	{(ELEM_HDR_LEN + MAX_LEN_OF_MLIE), NULL, beReqGenerateMLIE} /* ML IE should be in the last */
+//#endif
 };
 
 struct HANDLE_IE_ENTRY rxAuthIETable[] = {
