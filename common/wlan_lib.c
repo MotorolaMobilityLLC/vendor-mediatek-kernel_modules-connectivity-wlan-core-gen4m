@@ -7268,6 +7268,12 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucBTWTSupport, "BTWTSupport", FEATURE_DISABLED);
 #endif
 
+#if (CFG_SUPPORT_RTWT == 1)
+	INIT_UINT(prWifiVar->ucRTWTSupport, "RTWTSupport", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->ucRTWTStautProtect, "RTWTStautProtect",
+							FEATURE_DISABLED);
+#endif
+
 	INIT_UINT(prWifiVar->ucSigTaRts, "SigTaRts", FEATURE_DISABLED);
 	INIT_UINT(prWifiVar->ucDynBwRts, "DynBwRts", FEATURE_DISABLED);
 	INIT_UINT(prWifiVar->ucTxopPsTx, "TxopPsTx", FEATURE_DISABLED);

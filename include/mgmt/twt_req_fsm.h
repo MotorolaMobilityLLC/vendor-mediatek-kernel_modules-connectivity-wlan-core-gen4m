@@ -41,6 +41,11 @@ enum _ENUM_TWT_REQUESTER_STATE_T {
 	TWT_REQ_STATE_TEARING_DOWN_BTWT,
 	TWT_REQ_STATE_RX_TEARDOWN_BTWT,
 #endif
+#if (CFG_SUPPORT_RTWT == 1)
+	TWT_REQ_STATE_REQTX_RTWT,
+	TWT_REQ_STATE_TEARING_DOWN_RTWT,
+	TWT_REQ_STATE_RX_TEARDOWN_RTWT,
+#endif
 #if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
 	TWT_REQ_STATE_REQTX_ML_TWT_ALL_LINKS,
 	TWT_REQ_STATE_REQTX_ML_TWT_ONE_BY_ONE,
@@ -91,7 +96,8 @@ void twtReqFsmRunEventRxSetup(
 	struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb,
 	struct STA_RECORD *prStaRec,
-	u_int8_t ucTWTFlowId);
+	u_int8_t ucTWTFlowId,
+	enum _ENUM_TWT_TYPE_T eTwtType);
 
 void twtReqFsmRunEventRxTeardown(
 	struct ADAPTER *prAdapter,
@@ -156,6 +162,16 @@ void btwtReqFsmRunEventStart(
 	struct MSG_HDR *prMsgHdr);
 
 void btwtReqFsmRunEventTeardown(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+#endif
+
+#if (CFG_SUPPORT_RTWT == 1)
+void rtwtReqFsmRunEventStart(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+
+void rtwtReqFsmRunEventTeardown(
 	struct ADAPTER *prAdapter,
 	struct MSG_HDR *prMsgHdr);
 #endif

@@ -2332,6 +2332,27 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define BTWT_INFO_PERSISTENCE                       BITS(8, 15)
 #endif
 
+#if (CFG_SUPPORT_RTWT == 1)
+#define BTWT_INFO_RTWT_TRAFFIC_INFO_PRESENT_OFFSET  0
+#define BTWT_INFO_RTWT_TRAFFIC_INFO_PRESENT         BIT(0)
+#define BTWT_INFO_RTWT_SCHEDULE_INFO_OFFSET         1
+#define BTWT_INFO_RTWT_SCHEDULE_INFO                BITS(1, 2)
+
+#define RTWT_TRAFFIC_INFO_DL_TID_BITMAP_VALID_OFFSET 0
+#define RTWT_TRAFFIC_INFO_DL_TID_BITMAP_VALID        BIT(0)
+#define RTWT_TRAFFIC_INFO_UL_TID_BITMAP_VALID_OFFSET 1
+#define RTWT_TRAFFIC_INFO_UL_TID_BITMAP_VALID        BIT(1)
+#define RTWT_TRAFFIC_INFO_DL_TID_BITMAP_OFFSET       0
+#define RTWT_TRAFFIC_INFO_DL_TID_BITMAP              BITS(0, 7)
+#define RTWT_TRAFFIC_INFO_UL_TID_BITMAP_OFFSET       0
+#define RTWT_TRAFFIC_INFO_UL_TID_BITMAP              BITS(0, 7)
+
+#define RTWT_TRAFFIC_INFO_BYTE_LENGTH                  3
+#define RTWT_TRAFFIC_INFO_DL_UL_BMP_VALID_BYTE_LENGTH  1
+#define RTWT_TRAFFIC_INFO_DL_TID_BMP_BYTE_LENGTH       1
+#define RTWT_TRAFFIC_INFO_UL_TID_BMP_BYTE_LENGTH       1
+#endif
+
 #endif
 
 /* 9.4.2.46 Multiple BSSID element */
@@ -3614,7 +3635,7 @@ struct _IE_BTWT_T {
 	uint16_t u2TWT;	/* Target Wake Time 16 bits */
 	uint8_t ucMinWakeDur;	/* Nominal Minimum TWT Wake Duration */
 	uint16_t u2WakeIntvalMantiss;	/* TWT Wake Interval Mantissa */
-	uint16_t u2BTWTInfo;	/* TWT Channel for 11ah. Reserved for 11ax */
+	uint16_t u2BTWTInfo;	/* BTWT Info */
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -3623,8 +3644,34 @@ struct _IE_BTWT_PARAMS_T {
 	uint16_t u2TWT;	/* Target Wake Time 16 bits */
 	uint8_t ucMinWakeDur;	/* Nominal Minimum TWT Wake Duration */
 	uint16_t u2WakeIntvalMantiss;	/* TWT Wake Interval Mantissa */
-	uint16_t u2BTWTInfo;	/* TWT Channel for 11ah. Reserved for 11ax */
+	uint16_t u2BTWTInfo;	/* BTWT Info */
 } __KAL_ATTRIB_PACKED__;
+#endif
+
+#if (CFG_SUPPORT_RTWT == 1)
+__KAL_ATTRIB_PACKED_FRONT__
+struct _IE_RTWT_T {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucCtrl;	/* Control */
+	uint16_t u2ReqType;	/* Request Type */
+	uint16_t u2TWT;	/* Target Wake Time 16 bits */
+	uint8_t ucMinWakeDur;	/* Nominal Minimum TWT Wake Duration */
+	uint16_t u2WakeIntvalMantiss;	/* TWT Wake Interval Mantissa */
+	uint16_t u2BTWTInfo;	/* BTWT Info */
+	uint8_t uc_arRTWTTrafficInfo[0];  /* optional RTWT traffic info */
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct _IE_RTWT_PARAMS_T {
+	uint16_t u2ReqType;	/* Request Type */
+	uint16_t u2TWT;	/* Target Wake Time 16 bits */
+	uint8_t ucMinWakeDur;	/* Nominal Minimum TWT Wake Duration */
+	uint16_t u2WakeIntvalMantiss;	/* TWT Wake Interval Mantissa */
+	uint16_t u2BTWTInfo;	/* BTWT Info */
+	uint8_t uc_arRTWTTrafficInfo[0];  /* optional RTWT traffic info */
+} __KAL_ATTRIB_PACKED__;
+
 #endif
 
 #if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
@@ -4309,6 +4356,25 @@ struct _ACTION_BTWT_SETUP_FRAME {
 	uint8_t ucAction;	/* Action Value */
 	uint8_t ucDialogToken;	/* Dialog Token */
 	struct _IE_BTWT_T rTWT;	/* BTWT element */
+} __KAL_ATTRIB_PACKED__;
+#endif
+
+#if (CFG_SUPPORT_RTWT == 1)
+/* 11be RTWT Setup frame format */
+__KAL_ATTRIB_PACKED_FRONT__
+struct _ACTION_RTWT_SETUP_FRAME {
+	/* MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* TWT Setup frame body */
+	uint8_t ucCategory;	/* Category */
+	uint8_t ucAction;	/* Action Value */
+	uint8_t ucDialogToken;	/* Dialog Token */
+	struct _IE_RTWT_T rTWT;	/* RTWT element */
 } __KAL_ATTRIB_PACKED__;
 #endif
 

@@ -744,6 +744,12 @@ struct STA_RECORD {
 	/* TWT Requester state */
 	enum _ENUM_TWT_REQUESTER_STATE_T aeTWTReqState;
 	struct _TWT_FLOW_T arTWTFlow[TWT_MAX_FLOW_NUM];
+#if (CFG_SUPPORT_BTWT == 1)
+	struct _TWT_FLOW_T arBTWTFlow[RTWT_MAX_FLOW_NUM];
+#endif
+#if (CFG_SUPPORT_RTWT == 1)
+	struct _TWT_FLOW_T arRTWTFlow[RTWT_MAX_FLOW_NUM];
+#endif
 
 #if (CFG_SUPPORT_TWT_HOTSPOT == 1)
 	u_int8_t ucTWTHospotSupport;

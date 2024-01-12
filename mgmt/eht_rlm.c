@@ -240,6 +240,14 @@ void ehtRlmFillCapIE(
 	if (IS_BSS_AIS(prBssInfo))
 		SET_EHT_MAC_CAP_SCS(prEhtCap->ucEhtMacCap);
 
+	/*
+	 * RTWT support bit
+	 */
+#if (CFG_SUPPORT_RTWT == 1)
+	if (IS_FEATURE_ENABLED(prWifiVar->ucRTWTSupport))
+		SET_EHT_MAC_CAP_RESTRICTED_TWT(prEhtCap->ucEhtMacCap);
+#endif
+
 	/* PHY capabilities */
 	EHT_RESET_PHY_CAP(prEhtCap->ucEhtPhyCap);
 

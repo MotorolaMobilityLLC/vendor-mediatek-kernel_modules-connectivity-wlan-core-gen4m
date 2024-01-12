@@ -122,6 +122,10 @@ struct HE_A_CTRL_OM_T {
 extern uint8_t  g_fgHTSMPSEnabled;
 #endif
 
+ /* To indocate if WFA test bed */
+extern uint8_t g_IsWfaTestBed;
+extern uint8_t g_IsTwtLogo;
+
 /******************************************************************************
  *                           P R I V A T E   D A T A
  ******************************************************************************

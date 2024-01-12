@@ -3848,11 +3848,11 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_BTWT == 1)
 	if ((fgBtwtIeFound == FALSE) &&
-		(prStaRec->arTWTFlow[0].eBtwtState ==
+		(prStaRec->arBTWTFlow[0].eBtwtState ==
 			ENUM_BTWT_FLOW_STATE_ACTIVATED)) {
-		prStaRec->arTWTFlow[0].eBtwtState =
+		prStaRec->arBTWTFlow[0].eBtwtState =
 			ENUM_BTWT_FLOW_STATE_DEFAULT;
-		prStaRec->arTWTFlow[0].fgIsBTWT = FALSE;
+		prStaRec->arBTWTFlow[0].eTwtType = ENUM_TWT_TYPE_DEFAULT;
 
 		btwtPlannerDelAgrtTbl(prAdapter, prBssInfo, prStaRec, 0);
 	}
