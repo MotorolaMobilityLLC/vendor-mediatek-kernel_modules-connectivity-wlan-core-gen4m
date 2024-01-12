@@ -912,6 +912,9 @@ void nicFreePendingTxMsduInfo(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
+	DBGLOG(NIC, INFO, "ucIndex: %d, ucFreeType: %d\n",
+			ucIndex, ucFreeType);
+
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
 
 	prTxingQue = &(prAdapter->rTxCtrl.rTxMgmtTxingQueue);
@@ -930,9 +933,13 @@ void nicFreePendingTxMsduInfo(IN struct ADAPTER *prAdapter,
 		case MSDU_REMOVE_BY_BSS_INDEX:
 			ucRemoveByIndex = prMsduInfo->ucBssIndex;
 			break;
+		case MSDU_REMOVE_BY_ALL:
+			ucRemoveByIndex = 0xFF;
+			break;
 		default:
 			break;
 		}
+
 		if (ucRemoveByIndex == ucIndex) {
 			DBGLOG(TX, TRACE,
 			       "%s: Get Msdu WIDX:PID[%u:%u] SEQ[%u] from Pending Q\n",
