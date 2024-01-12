@@ -46,7 +46,10 @@
 static uint8_t *apucStaRecType[STA_TYPE_INDEX_NUM] = {
 	(uint8_t *) "LEGACY",
 	(uint8_t *) "P2P",
-	(uint8_t *) "BOW"
+	(uint8_t *) "BOW",
+#if CFG_SUPPORT_NAN
+	(uint8_t *) "NAN",
+#endif
 };
 
 static uint8_t *apucStaRecRole[STA_ROLE_INDEX_NUM] = {
@@ -1457,6 +1460,10 @@ uint8_t *cnmStaRecGetTypeString(enum ENUM_STA_TYPE eStaType)
 		pucTypeString = apucStaRecType[STA_TYPE_P2P_INDEX];
 	if (eStaType & STA_TYPE_BOW_MASK)
 		pucTypeString = apucStaRecType[STA_TYPE_BOW_INDEX];
+#if CFG_SUPPORT_NAN
+	if (eStaType & STA_TYPE_NAN)
+		pucTypeString = apucStaRecType[STA_TYPE_NAN_INDEX];
+#endif
 
 	return pucTypeString;
 }

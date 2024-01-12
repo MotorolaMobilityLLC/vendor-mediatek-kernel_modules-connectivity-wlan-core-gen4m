@@ -6317,18 +6317,17 @@ void nicNanEventDispatcher(struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prEvent);
 
-	DBGLOG(INIT, WARN, "nicNanEventDispatcher\n");
-
 	if (prAdapter->fgIsNANfromHAL == FALSE) {
-		DBGLOG(INIT, WARN, "nicNanIOEventHandler\n");
+		DBGLOG(INIT, INFO, "nicNanIOEventHandler\n");
 		/* For IOCTL use */
 		nicNanIOEventHandler(prAdapter, prEvent);
 	} else {
-		DBGLOG(INIT, WARN, "nicNanVendorEventHandler\n");
+		DBGLOG(INIT, INFO, "nicNanVendorEventHandler\n");
 		/* For Vendor command use */
 		nicNanVendorEventHandler(prAdapter, prEvent);
 	}
 }
+
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 void nicNanIOEventHandler(struct ADAPTER *prAdapter,
 		     struct WIFI_EVENT *prEvent)

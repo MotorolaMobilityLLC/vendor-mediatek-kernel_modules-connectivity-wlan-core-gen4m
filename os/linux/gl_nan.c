@@ -660,7 +660,7 @@ mtk_nan_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 			   MAX_NUM_GROUP_ADDR * ETH_ALEN);
 	}
 	g_aprNanMultiDev[ucRoleIdx].fgBMCFilterSet = FALSE;
-} /* end of p2pSetMulticastList() */
+}
 
 void
 nanSetMulticastListWorkQueueWrapper(struct GLUE_INFO *prGlueInfo)
@@ -813,7 +813,7 @@ glNanCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 
 	prWdev = kzalloc(sizeof(struct wireless_dev), GFP_KERNEL);
 	if (!prWdev) {
-		DBGLOG(NAN, ERROR, "allocate p2p wdev fail, no memory\n");
+		DBGLOG(NAN, ERROR, "allocate NAN wdev fail, no memory\n");
 		return FALSE;
 	}
 
@@ -908,7 +908,7 @@ glUnregisterNAN(struct GLUE_INFO *prGlueInfo)
 	}
 
 	return TRUE;
-} /* end of glUnregisterP2P() */
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1020,17 +1020,16 @@ nanSetSuspendMode(struct GLUE_INFO *prGlueInfo, unsigned char fgEnable)
  * \retval < 0   The execution failed.
  */
 /*----------------------------------------------------------------------------*/
-static int
-nanOpen(struct net_device *prDev)
+static int nanOpen(struct net_device *prDev)
 {
-	/* P_GLUE_INFO_T prGlueInfo = NULL; */
-	/* P_ADAPTER_T prAdapter = NULL; */
-	/* P_MSG_P2P_FUNCTION_SWITCH_T prFuncSwitch; */
+	struct GLUE_INFO *prGlueInfo;
 
 	if (!prDev) {
 		DBGLOG(NAN, ERROR, "prDev error!\n");
 		return -1;
 	}
+
+	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(prDev));
 
 	/* 2. carrier on & start TX queue */
 	/*DFS todo 20161220_DFS*/
@@ -1038,8 +1037,10 @@ nanOpen(struct net_device *prDev)
 	netif_carrier_on(prDev);
 	netif_tx_start_all_queues(prDev);
 
+	kalSetRpsMap(prGlueInfo, 0xff);
+
 	return 0; /* success */
-} /* end of p2pOpen() */
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1100,7 +1101,7 @@ nanStop(struct net_device *prDev)
 		netif_carrier_off(prDev);
 
 	return 0;
-} /* end of p2pStop() */
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1227,7 +1228,7 @@ nanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev)
 	}
 
 	return NETDEV_TX_OK;
-} /* end of p2pHardStartXmit() */
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1411,7 +1412,7 @@ nanDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 #endif /* 0 */
 
 	return ret;
-} /* end of p2pDoIOCTL() */
+}
 
 #if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
 int nanDoPrivIOCTL(struct net_device *prDev, struct ifreq *prIfReq,
@@ -1465,4 +1466,4 @@ mtk_nan_wext_get_priv(struct net_device *prDev,
 	}
 
 	return 0;
-} /* end of mtk_p2p_wext_get_priv() */
+}
