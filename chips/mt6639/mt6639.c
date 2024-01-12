@@ -25,6 +25,7 @@
 #include "coda/mt6639/conn_dbg_ctl.h"
 #include "coda/mt6639/conn_host_csr_top.h"
 #include "coda/mt6639/conn_semaphore.h"
+#include "coda/mt6639/eef_top.h"
 #include "coda/mt6639/wf_cr_sw_def.h"
 #include "coda/mt6639/wf_top_cfg.h"
 #include "coda/mt6639/wf_wfdma_ext_wrap_csr.h"
@@ -2425,6 +2426,10 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 		goto dump;
 #endif
 
+	HAL_MCR_WR(ad,
+		   CB_INFRA_SLP_CTRL_CB_INFRA_CRYPTO_TOP_MCU_OWN_SET_ADDR,
+		   BIT(0));
+
 	while (TRUE) {
 		if (u4PollingCnt >= 1000) {
 			DBGLOG(INIT, ERROR, "timeout.\n");
@@ -2472,10 +2477,11 @@ dump:
 		HAL_MCR_WR(ad,
 			   CB_CKGEN_TOP_CBTOP_ULPOSC_1_ADDR,
 			   0x001f0000);
+		kalUdelay(10);
 		HAL_MCR_WR(ad,
 			   CB_CKGEN_TOP_CBTOP_ULPOSC_1_ADDR,
 			   0x011f0000);
-		kalUdelay(1);
+		kalUdelay(10);
 		HAL_MCR_RD(ad,
 			   CB_CKGEN_TOP_CBTOP_ULPOSC_2_ADDR,
 			   &u4Value);
@@ -2489,6 +2495,158 @@ dump:
 		DBGLOG(INIT, INFO,
 			"0x%08x=0x%08x\n",
 			CB_INFRA_SLP_CTRL_CB_INFRA_CRYPTO_TOP_MCU_OWN_ADDR,
+			u4Value);
+
+		HAL_MCR_RD(ad,
+			   CB_CKGEN_TOP_CBTOP_ULPOSC_0_ADDR,
+			   &u4Value);
+		DBGLOG(INIT, INFO,
+			"0x%08x=0x%08x\n",
+			CB_CKGEN_TOP_CBTOP_ULPOSC_0_ADDR,
+			u4Value);
+		HAL_MCR_RD(ad,
+			   CB_CKGEN_TOP_CBTOP_ULPOSC_1_ADDR,
+			   &u4Value);
+		DBGLOG(INIT, INFO,
+			"0x%08x=0x%08x\n",
+			CB_CKGEN_TOP_CBTOP_ULPOSC_1_ADDR,
+			u4Value);
+		HAL_MCR_RD(ad,
+			   CB_CKGEN_TOP_CBTOP_ULPOSC_2_ADDR,
+			   &u4Value);
+		DBGLOG(INIT, INFO,
+			"0x%08x=0x%08x\n",
+			CB_CKGEN_TOP_CBTOP_ULPOSC_2_ADDR,
+			u4Value);
+		HAL_MCR_RD(ad,
+			   CB_CKGEN_TOP_CBTOP_ULPOSC_3_ADDR,
+			   &u4Value);
+		DBGLOG(INIT, INFO,
+			"0x%08x=0x%08x\n",
+			CB_CKGEN_TOP_CBTOP_ULPOSC_3_ADDR,
+			u4Value);
+		HAL_MCR_RD(ad,
+			   VLP_UDS_CTRL_CBTOP_ULPOSC_CTRL0_ADDR,
+			   &u4Value);
+		DBGLOG(INIT, INFO,
+			"0x%08x=0x%08x\n",
+			VLP_UDS_CTRL_CBTOP_ULPOSC_CTRL0_ADDR,
+			u4Value);
+		HAL_MCR_RD(ad,
+			   VLP_UDS_CTRL_CBTOP_ULPOSC_CTRL1_ADDR,
+			   &u4Value);
+		DBGLOG(INIT, INFO,
+			"0x%08x=0x%08x\n",
+			VLP_UDS_CTRL_CBTOP_ULPOSC_CTRL1_ADDR,
+			u4Value);
+		HAL_MCR_RD(ad,
+			   VLP_UDS_CTRL_CBTOP_UDS_RSV_ADDR,
+			   &u4Value);
+		DBGLOG(INIT, INFO,
+			"0x%08x=0x%08x\n",
+			VLP_UDS_CTRL_CBTOP_UDS_RSV_ADDR,
+			u4Value);
+
+		HAL_MCR_WR(ad,
+			   EEF_TOP_EFUSE_CTRL_ADDR,
+			   0x41B00000);
+		kalUdelay(100);
+		HAL_MCR_RD(ad,
+			   EEF_TOP_EFUSE_RDATA0_ADDR,
+			   &u4Value);
+		DBGLOG(INIT, INFO,
+			"0x%08x=0x%08x\n",
+			EEF_TOP_EFUSE_RDATA0_ADDR,
+			u4Value);
+		HAL_MCR_RD(ad,
+			   EEF_TOP_EFUSE_RDATA1_ADDR,
+			   &u4Value);
+		DBGLOG(INIT, INFO,
+			"0x%08x=0x%08x\n",
+			EEF_TOP_EFUSE_RDATA1_ADDR,
+			u4Value);
+
+		HAL_MCR_WR(ad,
+			   VLP_UDS_CTRL_CBTOP_ULPOSC_CTRL1_ADDR,
+			   0x06030138);
+		HAL_MCR_WR(ad,
+			   CB_CKGEN_TOP_CBTOP_ULPOSC_1_ADDR,
+			   0x000f0000);
+		HAL_MCR_WR(ad,
+			   CB_CKGEN_TOP_CBTOP_ULPOSC_1_ADDR,
+			   0x001f0000);
+		kalUdelay(10);
+		HAL_MCR_WR(ad,
+			   CB_CKGEN_TOP_CBTOP_ULPOSC_1_ADDR,
+			   0x011f0000);
+		kalUdelay(10);
+		HAL_MCR_RD(ad,
+			   CB_CKGEN_TOP_CBTOP_ULPOSC_2_ADDR,
+			   &u4Value);
+		DBGLOG(INIT, INFO,
+			"0x%08x=0x%08x\n",
+			CB_CKGEN_TOP_CBTOP_ULPOSC_2_ADDR,
+			u4Value);
+
+		HAL_MCR_RD(ad,
+			   CB_INFRA_MISC0_CBTOP_FREQ_METER_DET_CTL_ADDR,
+			   &u4Value);
+		u4Value &= ~BIT(3);
+		HAL_MCR_WR(ad,
+			   CB_INFRA_MISC0_CBTOP_FREQ_METER_DET_CTL_ADDR,
+			   u4Value);
+		HAL_MCR_WR(ad,
+			   CB_INFRA_MISC0_CBTOP_FREQ_METER_DET_CTL_ADDR,
+			   0xBC);
+		kalMdelay(1);
+		HAL_MCR_RD(ad,
+			   CB_INFRA_MISC0_CBTOP_FREQ_METER_STATUS_ADDR,
+			   &u4Value);
+		DBGLOG(INIT, INFO,
+			"0x%08x=0x%08x\n",
+			CB_INFRA_MISC0_CBTOP_FREQ_METER_STATUS_ADDR,
+			u4Value);
+
+		HAL_MCR_WR(ad,
+			   VLP_UDS_CTRL_CBTOP_ULPOSC_CTRL1_ADDR,
+			   0x06030138);
+		HAL_MCR_WR(ad,
+			   CB_CKGEN_TOP_CBTOP_ULPOSC_1_ADDR,
+			   0x000f0000);
+		HAL_MCR_WR(ad,
+			   CB_CKGEN_TOP_CBTOP_ULPOSC_1_ADDR,
+			   0x001f0000);
+		kalUdelay(10);
+		HAL_MCR_WR(ad,
+			   CB_CKGEN_TOP_CBTOP_ULPOSC_1_ADDR,
+			   0x011f0000);
+		kalUdelay(10);
+		HAL_MCR_RD(ad,
+			   CB_CKGEN_TOP_CBTOP_ULPOSC_2_ADDR,
+			   &u4Value);
+		DBGLOG(INIT, INFO,
+			"0x%08x=0x%08x\n",
+			CB_CKGEN_TOP_CBTOP_ULPOSC_2_ADDR,
+			u4Value);
+
+		HAL_MCR_RD(ad,
+			   CB_INFRA_MISC0_CBTOP_FREQ_METER_DET_CTL_ADDR,
+			   &u4Value);
+		u4Value &= ~BIT(3);
+		HAL_MCR_WR(ad,
+			   CB_INFRA_MISC0_CBTOP_FREQ_METER_DET_CTL_ADDR,
+			   u4Value);
+		kalUdelay(150);
+		HAL_MCR_WR(ad,
+			   CB_INFRA_MISC0_CBTOP_FREQ_METER_DET_CTL_ADDR,
+			   0x1C);
+		kalMdelay(1);
+		HAL_MCR_RD(ad,
+			   CB_INFRA_MISC0_CBTOP_FREQ_METER_STATUS_ADDR,
+			   &u4Value);
+		DBGLOG(INIT, INFO,
+			"0x%08x=0x%08x\n",
+			CB_INFRA_MISC0_CBTOP_FREQ_METER_STATUS_ADDR,
 			u4Value);
 	}
 
