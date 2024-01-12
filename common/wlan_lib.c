@@ -13842,6 +13842,12 @@ int wlanChipConfigWithType(struct ADAPTER *prAdapter,
 	}
 	i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%s",
 		     rChipConfigInfo.aucCmd);
+	if (i4BytesWritten < 0) {
+		DBGLOG(REQ, INFO, "%s: snprintf error ret=%d\n",
+		       __func__, i4BytesWritten);
+		return -1;
+	}
+
 	return i4BytesWritten;
 }
 
