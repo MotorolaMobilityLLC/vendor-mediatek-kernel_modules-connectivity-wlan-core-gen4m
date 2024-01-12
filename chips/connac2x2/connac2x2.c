@@ -78,6 +78,7 @@
  */
 uint8_t *apucConnac2x2FwName[] = {
 	(uint8_t *) CFG_FW_FILENAME "_soc2_0",
+	(uint8_t *) CFG_FW_FILENAME "_soc2_2",
 	NULL
 };
 
