@@ -1210,6 +1210,12 @@ else
 ccflags-y += -DCFG_SUPPORT_PKT_OFLD=0
 endif
 
+ifeq ($(CONFIG_TX_HIF_PORT_QUEUE_SUPPORT), y)
+ccflags-y += -DCFG_TX_HIF_PORT_QUEUE=1
+else
+ccflags-y += -DCFG_TX_HIF_PORT_QUEUE=0
+endif
+
 ifeq ($(CONFIG_AOSP_LINK_LAYER_STATS_SUPPORT), y)
 ccflags-y += -DCFG_SUPPORT_LLS=1
 endif
