@@ -10412,7 +10412,7 @@ wlanCalculateAllChannelDirtiness(IN struct ADAPTER
 uint8_t
 wlanGetChannelIndex(IN uint8_t channel)
 {
-	uint8_t ucIdx = MAX_CHN_NUM;
+	uint8_t ucIdx = MAX_CHN_NUM - 1;
 
 	if (channel <= 14)
 		ucIdx = channel - 1;
