@@ -1048,9 +1048,10 @@ void saaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 				AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION &&
 				rStatus != WLAN_STATUS_SUCCESS) {
 					DBGLOG(SAA, INFO,
-						"Check Rx Auth4 Frame failed, may be MIC error, %pM, status %d\n",
-					       (prStaRec->aucMacAddr),
-					       u2StatusCode);
+					      "Rx Auth4 fail [" MACSTR
+					      "], status %d, maybe MIC error\n",
+					      MAC2STR(prStaRec->aucMacAddr),
+					      u2StatusCode);
 					/* Reset Send Auth/(Re)Assoc Frame Count
 					 */
 					prStaRec->ucTxAuthAssocRetryCount = 0;
