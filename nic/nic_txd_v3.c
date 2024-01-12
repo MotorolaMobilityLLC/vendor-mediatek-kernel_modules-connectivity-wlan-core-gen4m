@@ -282,6 +282,7 @@ void nic_txd_v3_compose(
 	u_int8_t ucWmmQueSet = 0, ucTarQueue, ucTarPort;
 	uint8_t ucEtherTypeOffsetInWord;
 	uint8_t fgIsALTXQueue = FALSE;
+	uint8_t fgForceSendQ0 = FALSE;
 
 	prTxDesc = (struct HW_MAC_CONNAC3X_TX_DESC *) prTxDescBuffer;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
@@ -326,6 +327,9 @@ void nic_txd_v3_compose(
 		MSDU_CONTROL_FLAG_FORCE_TX);
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
+	fgForceSendQ0 = (prMsduInfo->ucControlFlag &
+		MSDU_CONTROL_FLAG_MGNT_2_CMD_QUE);
+
 	if (fgIsALTXQueue) {
 		/* packet with always tx flag */
 		ucTarQueue = MAC_TXQ_ALTX_0_INDEX;
@@ -340,7 +344,8 @@ void nic_txd_v3_compose(
 			 * MCUQ1(0x1), FW have correpond change will revise Q
 			 * to ALTXQ(16).
 			 */
-			ucTarQueue |= 0x1;
+			if (!fgForceSendQ0)
+				ucTarQueue |= 0x1;
 	} else {
 		ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
 
@@ -352,7 +357,10 @@ void nic_txd_v3_compose(
 		 */
 		else if (ucTarPort == PORT_INDEX_MCU &&
 		    prMsduInfo->ucPacketType == TX_PACKET_TYPE_MGMT)
-			ucTarQueue = 0x1;
+			if (fgForceSendQ0)
+				ucTarQueue = 0x0;
+			else
+				ucTarQueue = 0x1;
 	}
 
 	HAL_MAC_CONNAC3X_TXD_SET_QUEUE_INDEX(prTxDesc, ucTarQueue);
