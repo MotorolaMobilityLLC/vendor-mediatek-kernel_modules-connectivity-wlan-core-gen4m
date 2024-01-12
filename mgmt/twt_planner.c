@@ -571,6 +571,18 @@ twtPlannerAddAgrtTbl(
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
+	if (twtPlannerDrvAgrtFind(
+				prAdapter,
+				prBssInfo->ucBssIndex,
+				ucFlowId, NULL) < TWT_AGRT_MAX_NUM) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Agreement table Bss idx %d Flow ID %d exists\n",
+			prBssInfo->ucBssIndex,
+			ucFlowId);
+
+		return WLAN_STATUS_FAILURE;
+	}
+
 	rWlanStatus = twtPlannerDrvAgrtAdd(prAdapter, prBssInfo->ucBssIndex,
 		ucFlowId, prTWTParams, &ucAgrtTblIdx);
 	if (rWlanStatus) {
