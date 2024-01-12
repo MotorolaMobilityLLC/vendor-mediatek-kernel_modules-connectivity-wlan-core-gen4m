@@ -8940,8 +8940,12 @@ uint32_t wlanCfgSet(struct ADAPTER *prAdapter,
 	ASSERT(pucKey);
 
 #if CFG_TC10_FEATURE
-	i4Ret = kalkStrtos32(pucValue, 0, &i4ReadValue);
-	DBGLOG(INIT, INFO, "[%s]:[%d] OP:%d\n", pucKey, i4ReadValue, u4Flags);
+	if (pucValue) {
+		i4Ret = kalkStrtos32(pucValue, 0, &i4ReadValue);
+		DBGLOG(INIT, INFO, "[%s]:[%d] OP:%d\n",
+			pucKey, i4ReadValue, u4Flags);
+	} else
+		DBGLOG(INIT, INFO, "[%s]:[NA] OP:%d\n", pucKey, u4Flags);
 #else
 	DBGLOG(INIT, LOUD, "[%s]:[%s] OP:%d\n", pucKey, pucValue, u4Flags);
 #endif
