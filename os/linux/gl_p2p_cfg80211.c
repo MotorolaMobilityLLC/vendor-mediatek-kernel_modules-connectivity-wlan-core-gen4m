@@ -2056,6 +2056,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 		struct cfg80211_csa_settings *params)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
+	struct GL_P2P_INFO *prGlueP2pInfo = NULL;
 	int32_t i4Rslt = -EINVAL;
 	struct MSG_P2P_BEACON_UPDATE *prP2pBcnUpdateMsg =
 		(struct MSG_P2P_BEACON_UPDATE *) NULL;
@@ -2091,28 +2092,24 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 				break;
 			}
 		}
-		kalMemZero(
-			&(prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa),
-			sizeof(struct cfg80211_chan_def));
-		prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan
-			= (struct ieee80211_channel *)
-			&(prGlueInfo->prP2PInfo[ucRoleIdx]->chanCsa);
-		kalMemZero(
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan,
-			sizeof(struct ieee80211_channel));
+		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+
+		kalMemZero(&(prGlueP2pInfo->chandefCsa),
+			   sizeof(struct cfg80211_chan_def));
+		prGlueP2pInfo->chandefCsa.chan = (struct ieee80211_channel *)
+			&(prGlueP2pInfo->chanCsa);
+		kalMemZero(prGlueP2pInfo->chandefCsa.chan,
+			   sizeof(struct ieee80211_channel));
 
 		/* Copy chan def to local buffer*/
-		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandefCsa.center_freq1 =
+		prGlueP2pInfo->chandefCsa.center_freq1 =
 			params->chandef.center_freq1;
-		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandefCsa.center_freq2 =
+		prGlueP2pInfo->chandefCsa.center_freq2 =
 			params->chandef.center_freq2;
-		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandefCsa.width = params->chandef.width;
-		memcpy(prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan,
-			params->chandef.chan,
-			sizeof(struct ieee80211_channel));
+		prGlueP2pInfo->chandefCsa.width = params->chandef.width;
+		memcpy(prGlueP2pInfo->chandefCsa.chan,
+		       params->chandef.chan,
+		       sizeof(struct ieee80211_channel));
 
 		if (params) {
 			kalChannelFormatSwitch(&params->chandef,
@@ -2125,11 +2122,10 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 		DBGLOG(P2P, INFO, "ucRoleIdx: %d, ucBssIdx: %d\n",
 				ucRoleIdx, ucBssIdx);
 
-		if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan->
-			dfs_state == NL80211_DFS_AVAILABLE
+		if (prGlueP2pInfo->chandefCsa.chan->dfs_state ==
+			NL80211_DFS_AVAILABLE
 #if KERNEL_VERSION(3, 15, 0) <= CFG80211_VERSION_CODE
-			&& prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan->
-			dfs_cac_ms != 0
+			&& prGlueP2pInfo->chandefCsa.chan->dfs_cac_ms != 0
 #endif
 			)
 			p2pFuncSetDfsState(DFS_STATE_ACTIVE);
@@ -2196,6 +2192,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 		 * reported once in the beacon.
 		 */
 		prGlueInfo->prAdapter->rWifiVar.fgCsaInProgress = TRUE;
+		prGlueP2pInfo->fgChannelSwitchReq = TRUE;
 
 		/* Set new channel parameters */
 		prP2pSetNewChannelMsg = (struct MSG_P2P_SET_NEW_CHANNEL *)
