@@ -11060,16 +11060,18 @@ int priv_driver_set_ap_sta_disassoc(IN struct net_device *prNetDev,
 error:
 	return -1;
 }
-
 int priv_driver_set_ap_nss(IN struct net_device *prNetDev,
-				  IN char *pcCommand, IN int i4TotalLen)
+				IN char *pcCommand, IN int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint32_t u4Ret, u4Parse = 0;
-	uint8_t ucNSS;
+	uint8_t ucNSS = 0;
+	uint8_t ucBssIndex = 0;
 
 	ASSERT(prNetDev);
 
@@ -11077,32 +11079,91 @@ int priv_driver_set_ap_nss(IN struct net_device *prNetDev,
 		return -1;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo)
+		return -1;
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter)
+		return -1;
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
-	if (i4Argc == 2) {
-		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+	ucBssIndex = wlanGetBssIdx(prNetDev);
+	if (ucBssIndex >= BSSID_NUM)
+		return -EFAULT;
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+	if (!prBssInfo)
+		return -EFAULT;
+
+	if (i4Argc >= 1) {
+		u4Ret = kalkStrtou32(apcArgv[i4Argc - 1], 0, &u4Parse);
 		if (u4Ret) {
 			DBGLOG(REQ, WARN, "parse apcArgv error u4Ret=%d\n",
-			       u4Ret);
+				u4Ret);
 			goto error;
 		}
 		ucNSS = (uint8_t) u4Parse;
 
-		if ((ucNSS == 1) || (ucNSS == 2)) {
-			prGlueInfo->prAdapter->rWifiVar.ucAp5gNSS = ucNSS;
-			prGlueInfo->prAdapter->rWifiVar.ucAp2gNSS = ucNSS;
+		if ((ucNSS > 0) &&
+			(ucNSS <= prAdapter->rWifiVar.ucNSS)) {
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+			struct WIFI_EVENT *pEvent;
+			struct EVENT_OPMODE_CHANGE *prEvtOpMode =
+				(struct EVENT_OPMODE_CHANGE *) NULL;
+
+			pEvent = (struct WIFI_EVENT *)
+				kalMemAlloc(sizeof(struct WIFI_EVENT)+
+				sizeof(struct EVENT_OPMODE_CHANGE),
+				VIR_MEM_TYPE);
+			if (!pEvent)
+				goto error;
+
+			prAdapter->rWifiVar.ucAp6gNSS = ucNSS;
+			prAdapter->rWifiVar.ucAp5gNSS = ucNSS;
+			prAdapter->rWifiVar.ucAp2gNSS = ucNSS;
+
+			pEvent->ucEID = EVENT_ID_OPMODE_CHANGE;
+			pEvent->ucSeqNum = 0;
+
+			prEvtOpMode = (struct EVENT_OPMODE_CHANGE *)
+				&(pEvent->aucBuffer[0]);
+			prEvtOpMode->ucBssBitmap = BIT(ucBssIndex);
+			prEvtOpMode->ucEnable = (ucNSS == 1);
+			prEvtOpMode->ucOpTxNss = ucNSS;
+			prEvtOpMode->ucOpRxNss = ucNSS;
+			prEvtOpMode->ucReason =
+				EVENT_OPMODE_CHANGE_REASON_USER_CONFIG;
+
+			if (prEvtOpMode->ucEnable) {
+				prAdapter->fgANTCtrl = true;
+				prAdapter->ucANTCtrlReason =
+					EVENT_OPMODE_CHANGE_REASON_ANT_CTRL;
+				prAdapter->ucANTCtrlPendingCount = 0;
+			}
+
+			cnmOpmodeEventHandler(
+				prAdapter,
+				(struct WIFI_EVENT *) pEvent);
+
+			kalMemFree(pEvent, VIR_MEM_TYPE,
+				sizeof(struct WIFI_EVENT)+
+				sizeof(struct EVENT_OPMODE_CHANGE));
+#else
+			prAdapter->rWifiVar.ucAp6gNSS = ucNSS;
+			prAdapter->rWifiVar.ucAp5gNSS = ucNSS;
+			prAdapter->rWifiVar.ucAp2gNSS = ucNSS;
+#endif
 
 			DBGLOG(REQ, STATE,
-				"Ap2gNSS = %d\n",
-				prGlueInfo->prAdapter->rWifiVar.ucAp2gNSS);
-		} else
-			DBGLOG(REQ, WARN, "Invalid nss=%d\n",
-				ucNSS);
+				"ApNSS = %d\n",
+				prAdapter->rWifiVar.ucAp2gNSS);
+	} else
+		DBGLOG(REQ, WARN, "Invalid nss=%d\n",
+			ucNSS);
 	} else {
 		DBGLOG(INIT, ERROR,
-			"iwpriv wlanXX SET_AP_NSS <value>\n");
+			"iwpriv wlanXX AP_SET_NSS <value>\n");
 	}
 
 	return i4BytesWritten;
