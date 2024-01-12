@@ -2941,14 +2941,24 @@ void rsnStartSaQueryTimer(struct ADAPTER *prAdapter,
 	uint8_t ucTransId[ACTION_SA_QUERY_TR_ID_LEN];
 	uint8_t ucBssIndex = (uint8_t) ulParamPtr;
 
-	prBssInfo = aisGetAisBssInfo(prAdapter,
-		ucBssIndex);
+	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prBssSpecInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 
 	DBGLOG(RSN, INFO, "MFP: Start Sa Query\n");
 
 	if (prBssInfo->prStaRecOfAP == NULL) {
 		DBGLOG(RSN, INFO, "MFP: unassociated AP!\n");
+		return;
+	}
+
+	if (!EQUAL_MAC_ADDR(prBssSpecInfo->aucSaQueryBSSID,
+			    prBssInfo->aucBSSID)) {
+		DBGLOG(RSN, INFO,
+			"MFP: Sa Query AP[" MACSTR
+			"] associated AP[" MACSTR "]!\n",
+			prBssSpecInfo->aucSaQueryBSSID,
+			prBssInfo->aucBSSID);
+		rsnStopSaQuery(prAdapter, ucBssIndex);
 		return;
 	}
 

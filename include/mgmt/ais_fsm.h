@@ -234,6 +234,7 @@ struct AIS_SPECIFIC_BSS_INFO {
 	uint32_t u4SaQueryStart;
 	uint32_t u4SaQueryCount;
 	uint8_t ucSaQueryTimedOut;
+	uint8_t aucSaQueryBSSID[MAC_ADDR_LEN];
 	uint8_t *pucSaQueryTransId;
 	struct TIMER rSaQueryTimer;
 	u_int8_t fgBipKeyInstalled;
