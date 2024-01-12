@@ -8822,13 +8822,9 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 		   && ucLeftestCoveredChannel <= 100) {
 		ucLeftestCoveredChannel = 100;
 		ucLeftNeighborChannel = 0;
-	} else if (ucLeftestCoveredChannel > 140
-		   && ucLeftestCoveredChannel <= 149) {
+	} else if (ucLeftestCoveredChannel > 144 &&
+		ucLeftestCoveredChannel <= 149) {
 		ucLeftestCoveredChannel = 149;
-		ucLeftNeighborChannel = 0;
-	} else if (ucLeftestCoveredChannel > 173
-		   && ucLeftestCoveredChannel <= 184) {
-		ucLeftestCoveredChannel = 184;
 		ucLeftNeighborChannel = 0;
 	}
 
@@ -8874,13 +8870,12 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 		   && ucRightestCoveredChannel < 100) {
 		ucRightestCoveredChannel = 64;
 		ucRightNeighborChannel = 0;
-	} else if (ucRightestCoveredChannel >= 140
-		   && ucRightestCoveredChannel < 149) {
-		ucRightestCoveredChannel = 140;
+	} else if (ucRightestCoveredChannel >= 144 &&
+		ucRightestCoveredChannel < 149) {
+		ucRightestCoveredChannel = 144;
 		ucRightNeighborChannel = 0;
-	} else if (ucRightestCoveredChannel >= 173
-		   && ucRightestCoveredChannel < 184) {
-		ucRightestCoveredChannel = 173;
+	} else if (ucRightestCoveredChannel >= 165) {
+		ucRightestCoveredChannel = 165;
 		ucRightNeighborChannel = 0;
 	}
 
@@ -8888,6 +8883,11 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 
 	ucStart = wlanGetChannelIndex(ucLeftestCoveredChannel);
 	ucEnd = wlanGetChannelIndex(ucRightestCoveredChannel);
+	if (ucStart >= MAX_CHN_NUM || ucEnd >= MAX_CHN_NUM) {
+		DBGLOG(SCN, ERROR, "Invalid ch idx of start %u, or end %u\n",
+			ucStart, ucEnd);
+		return;
+	}
 
 	for (ucIdx = ucStart; ucIdx <= ucEnd; ucIdx++) {
 		prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness +=
@@ -8899,43 +8899,57 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 
 	if (ucLeftNeighborChannel != 0) {
 		ucIdx = wlanGetChannelIndex(ucLeftNeighborChannel);
-		prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness +=
-			(u4Dirtiness >> 1);
-		log_dbg(SCN, TEMP, "Add dirtiness %d, to neighbor ch %d\n",
-		       u4Dirtiness >> 1,
-		       prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
+
+		if (ucIdx < MAX_CHN_NUM) {
+			prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness +=
+				(u4Dirtiness >> 1);
+			log_dbg(SCN, TEMP,
+				"Add dirtiness %d, to neighbor ch %d\n",
+				u4Dirtiness >> 1,
+				prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
+		}
 	}
 
 	if (ucRightNeighborChannel != 0) {
 		ucIdx = wlanGetChannelIndex(ucRightNeighborChannel);
-		prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness +=
-			(u4Dirtiness >> 1);
-		log_dbg(SCN, TEMP, "Add dirtiness %d, to neighbor ch %d\n",
-		       u4Dirtiness >> 1,
-		       prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
-	}
-
-	if (!bIs5GChl) {
-		if (ucLeftNeighborChannel2 != 0) {
-			ucIdx = wlanGetChannelIndex(ucLeftNeighborChannel2);
+		if (ucIdx < MAX_CHN_NUM) {
 			prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness +=
 				(u4Dirtiness >> 1);
 			log_dbg(SCN, TEMP,
-			       "Add dirtiness %d, to neighbor ch %d\n",
-			       u4Dirtiness >> 1,
-			       prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
+				"Add dirtiness %d, to neighbor ch %d\n",
+				u4Dirtiness >> 1,
+				prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
 		}
+	}
 
-		if (ucRightNeighborChannel2 != 0) {
-			ucIdx = wlanGetChannelIndex(ucRightNeighborChannel2);
+	if (bIs5GChl)
+		return;
+
+	/* Only necesaary for 2.5G */
+	if (ucLeftNeighborChannel2 != 0) {
+		ucIdx = wlanGetChannelIndex(ucLeftNeighborChannel2);
+		if (ucIdx < MAX_CHN_NUM) {
 			prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness +=
 				(u4Dirtiness >> 1);
 			log_dbg(SCN, TEMP,
-			       "Add dirtiness %d, to neighbor ch %d\n",
-			       u4Dirtiness >> 1,
-			       prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
+				"Add dirtiness %d, to neighbor ch %d\n",
+				u4Dirtiness >> 1,
+				prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
 		}
 	}
+
+	if (ucRightNeighborChannel2 != 0) {
+		ucIdx = wlanGetChannelIndex(ucRightNeighborChannel2);
+		if (ucIdx < MAX_CHN_NUM) {
+			prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness +=
+				(u4Dirtiness >> 1);
+			log_dbg(SCN, TEMP,
+				"Add dirtiness %d, to neighbor ch %d\n",
+				u4Dirtiness >> 1,
+				prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
+		}
+	}
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -9067,20 +9081,16 @@ wlanCalculateAllChannelDirtiness(IN struct ADAPTER
 uint8_t
 wlanGetChannelIndex(IN uint8_t channel)
 {
-	uint8_t ucIdx = 1;
+	uint8_t ucIdx = MAX_CHN_NUM;
 
 	if (channel <= 14)
 		ucIdx = channel - 1;
 	else if (channel >= 36 && channel <= 64)
 		ucIdx = 14 + (channel - 36) / 4;
-	else if (channel >= 100 && channel <= 140)
+	else if (channel >= 100 && channel <= 144)
 		ucIdx = 14 + 8 + (channel - 100) / 4;
-	else if (channel >= 149 && channel <= 173)
-		ucIdx = 14 + 8 + 11 + (channel - 149) / 4;
-	else if (channel >= 184 && channel <= 216)
-		ucIdx = 14 + 8 + 11 + 7 + (channel - 184) / 4;
-	else
-		DBGLOG(SCN, ERROR, "Invalid ch %u\n", channel);
+	else if (channel >= 149 && channel <= 165)
+		ucIdx = 14 + 8 + 12 + (channel - 149) / 4;
 
 	return ucIdx;
 }
@@ -9100,10 +9110,8 @@ wlanGetChannelNumFromIndex(IN uint8_t ucIdx)
 {
 	uint8_t ucChannel = 0;
 
-	if (ucIdx >= 40)
-		ucChannel = ((ucIdx - 40) << 2) + 184;
-	else if (ucIdx >= 33)
-		ucChannel = ((ucIdx - 33) << 2) + 149;
+	if (ucIdx >= 34)
+		ucChannel = ((ucIdx - 34) << 2) + 149;
 	else if (ucIdx >= 22)
 		ucChannel = ((ucIdx - 22) << 2) + 100;
 	else if (ucIdx >= 14)
