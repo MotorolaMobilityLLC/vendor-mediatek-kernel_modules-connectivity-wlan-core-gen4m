@@ -130,6 +130,7 @@
 
 #define IW_AUTH_ALG_FT			0x00000008
 
+#define IW_PMKID_LEN        16
 /*
  * this highly depends on kernel version
  * why can't we just use kalGetTimeTick (?)
