@@ -1561,7 +1561,7 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 #endif
 #endif
 #if CFG_SUPPORT_SOFT_ACM
-	uint8_t ucAc;
+	uint8_t ucAc = ACI_BE;
 	u_int8_t fgAcmFlowCtrl = FALSE;
 	static const uint8_t aucTc2Ac[] = {ACI_BK, ACI_BE, ACI_VI, ACI_VO};
 #endif
