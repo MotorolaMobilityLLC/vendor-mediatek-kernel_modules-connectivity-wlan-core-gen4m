@@ -1325,6 +1325,8 @@ struct CMD_SCAN_REQ_V2 {
 	uint8_t		 ucPerScanChannelCnt;
 	uint8_t		 aucPadding_3[19];
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	uint8_t		 aucShortSSID[CFG_SCAN_OOB_MAX_NUM][MAX_SHORT_SSID_LEN];
+	uint8_t		 ucBssidMatchShortSsidInd[CFG_SCAN_OOB_MAX_NUM];
 	uint16_t	 u2IELenMl;
 	uint8_t		 aucIEMl[100];  /*depends on u2IELen24G*/
 	uint16_t	 u2IELen2G4;
