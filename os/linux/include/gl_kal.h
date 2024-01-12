@@ -1314,7 +1314,10 @@ do { \
 /*----------------------------------------------------------------------------*/
 /* Macros of show stack operations for using in Driver Layer                  */
 /*----------------------------------------------------------------------------*/
-#if CFG_MTK_ANDROID_WMT
+#if CFG_MTK_ANDROID_WMT && CFG_MTK_WIFI_PLAT_ALPS
+extern void connectivity_export_show_stack(struct task_struct *tsk,
+	unsigned long *sp);
+
 #define kal_show_stack(_adapter, _task, _sp) \
 	connectivity_export_show_stack(_task, _sp)
 #else

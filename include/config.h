@@ -40,15 +40,6 @@
 #define CFG_WPS_DISCONNECT         0
 #endif
 
-
-#if (CFG_SUPPORT_AEE == 1)
-/* TODO: temp remove for 7663 on mobile */
-/* #define CFG_ENABLE_AEE_MSG          1 */
-#define CFG_ENABLE_AEE_MSG          0
-#else
-#define CFG_ENABLE_AEE_MSG          0
-#endif
-
 #define CFG_ENABLE_EARLY_SUSPEND        0
 #define CFG_ENABLE_NET_DEV_NOTIFY		1
 
@@ -672,12 +663,6 @@
 /* debug which packet wake up host */
 #ifndef CFG_SUPPORT_WAKEUP_REASON_DEBUG
 #define CFG_SUPPORT_WAKEUP_REASON_DEBUG         1
-#endif
-
-#if CFG_MTK_ANDROID_WMT
-#define CFG_MODIFY_TX_POWER_BY_BAT_VOLT         1
-#else
-#define CFG_MODIFY_TX_POWER_BY_BAT_VOLT         0
 #endif
 
 #define CFG_INIT_POWER_SAVE_PROF		ENUM_PSP_FAST_SWITCH
@@ -1409,7 +1394,7 @@
  * Value of scan cache result
  *------------------------------------------------------------------------------
  */
-#if CFG_MTK_ANDROID_WMT
+#if CFG_MTK_ANDROID_WMT && CFG_MTK_WIFI_PLAT_ALPS
 #define CFG_SUPPORT_SCAN_CACHE_RESULT      (1)
 #else
 #define CFG_SUPPORT_SCAN_CACHE_RESULT      (0)

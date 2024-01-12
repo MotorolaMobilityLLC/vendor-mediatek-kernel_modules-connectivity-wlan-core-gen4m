@@ -828,13 +828,16 @@ do { \
 } while (0)
 
 #if CFG_ENABLE_AEE_MSG
+#define kalSendAeeException \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define kalSendAeeWarning \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define kalSendAeeReminding \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
-#define kalSendAeeException(_module, _desc, ...) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-#define kalSendAeeWarning(_module, _desc, ...) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-#define kalSendAeeReminding(_module, _desc, ...) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define kalSendAeeException(_module, _desc, ...)
+#define kalSendAeeWarning(_module, _desc, ...)
+#define kalSendAeeReminding(_module, _desc, ...)
 #endif
 
 #define PRINTF_ARG(...)      __VA_ARGS__

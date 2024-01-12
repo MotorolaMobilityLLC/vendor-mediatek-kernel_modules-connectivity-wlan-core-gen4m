@@ -72,11 +72,6 @@
 #include <linux/soc/mediatek/mtk_sip_svc.h>
 #endif
 
-/* for AEE warning */
-#if CFG_MTK_ANDROID_WMT
-#include <aee.h>
-#endif
-
 extern void set_logtoomuch_enable(int value) __attribute__((weak));
 extern int get_logtoomuch_enable(void) __attribute__((weak));
 extern uint32_t get_wifi_standalone_log_mode(void) __attribute__((weak));
@@ -12662,7 +12657,7 @@ uint32_t kalSendAtfSmcCmd(uint32_t u4Opid, uint32_t u4Arg2,
 	"SMC CMD failed. Opid[%u] Arg2[0x%08x] Arg3[0x%08x] Arg4[0x%08x]\n" \
 	"CRDISPATCH_KEY: WLAN SMC CMD failed\n"
 			dump_stack();
-			aee_kernel_warning("wlan", SMC_FAIL_LOG_TEMPLATE,
+			kalSendAeeWarning("wlan", SMC_FAIL_LOG_TEMPLATE,
 				u4Opid, u4Arg2, u4Arg3, u4Arg4);
 		}
 	}

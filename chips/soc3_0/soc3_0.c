@@ -38,7 +38,6 @@
 #include "soc3_0.h"
 #include "hal_dmashdl_soc3_0.h"
 #include <linux/platform_device.h>
-#include <connectivity_build_in_adapter.h>
 #include <linux/mfd/mt6359p/registers.h>
 #include <linux/regmap.h>
 #if (CFG_SUPPORT_VCODE_VDFS == 1)

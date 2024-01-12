@@ -42,10 +42,6 @@
 #include "connv3.h"
 #endif
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-#include <aee.h>
-#endif
-
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -757,7 +753,7 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 	if ((u4Register >= 0x18050000 && u4Register <= 0x18051000) ||
 	    (u4Register >= 0x7c050000 && u4Register <= 0x7c051000)) {
 		dump_stack();
-		aee_kernel_exception("WLAN",
+		kalSendAeeException("WLAN",
 			"Corrupt conninfra cmdbt:  reg: 0x%08x, val: 0x%08x\n",
 			u4Register, u4Value);
 	}
@@ -870,7 +866,7 @@ u_int8_t kalDevRegWriteRange(struct GLUE_INFO *glue,
 	if ((reg >= 0x18050000 && reg <= 0x18051000) ||
 		(reg >= 0x7c050000 && reg <= 0x7c051000)) {
 		dump_stack();
-		aee_kernel_exception("WLAN",
+		kalSendAeeException("WLAN",
 			"Corrupt conninfra cmdbt:  reg: [0x%08x~0x%08x]\n",
 			reg, reg + total_size);
 	}

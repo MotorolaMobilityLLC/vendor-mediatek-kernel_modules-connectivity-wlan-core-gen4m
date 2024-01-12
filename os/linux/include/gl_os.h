@@ -215,11 +215,11 @@
 #include "wlan_oid.h"
 
 #if CFG_ENABLE_AEE_MSG
-#ifdef CONFIG_ANDROID
-#include <mt-plat/aee.h>
-#else
-#include <linux/aee.h>
+#include <aee.h>
 #endif
+
+#if CFG_MTK_ANDROID_WMT && CFG_MTK_WIFI_PLAT_ALPS
+#include <connectivity_build_in_adapter.h>
 #endif
 
 #if CFG_MET_TAG_SUPPORT
@@ -1604,11 +1604,6 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable);
 
 #if CFG_ENABLE_UNIFY_WIPHY
 const struct net_device_ops *wlanGetNdevOps(void);
-#endif
-
-#if CFG_MTK_ANDROID_WMT
-extern void connectivity_export_show_stack(struct task_struct *tsk,
-	unsigned long *sp);
 #endif
 
 netdev_tx_t wlanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev);
