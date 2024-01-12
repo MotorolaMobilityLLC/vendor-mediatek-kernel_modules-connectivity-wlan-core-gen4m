@@ -2527,7 +2527,9 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 		fgEfuseCtrlAxOn = 1; /* default is 0 */
 	}
 #endif
-
+#if (CFG_SUPPORT_802_11BE == 1)
+	/* TODO */
+#endif
 	DBGLOG(INIT, TRACE,
 		"Vht [%u] He[%u] 5gBand [%d], Nss [%d], Dbdc [%d]\n",
 			prPhyCap->ucVht,

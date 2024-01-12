@@ -1800,6 +1800,9 @@ nicTxForceAmsduForCert(
 			HAL_MAC_CONNAC2X_TXD_SET_HW_AMSDU(prTxDesc);
 	}
 #endif /* (CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_CONNAC2X == 1) */
+#if (CFG_SUPPORT_802_11BE == 1)
+	/* TODO */
+#endif
 }
 
 u_int8_t nicTxIsTXDTemplateAllowed(IN struct ADAPTER

@@ -81,14 +81,20 @@ extern char *HW_TX_RATE_BW[];
  *                              C O N S T A N T S
  *******************************************************************************
  */
-#define BW_20		0
-#define BW_40		1
-#define BW_80		2
-#define BW_160		3
-#define BW_10		4
-#define BW_5		6
-#define BW_8080		7
-#define BW_ALL		0xFF
+enum ENUM_BAND_WIDTH {
+	BW_20 = 0,
+	BW_40,
+	BW_80,
+	BW_160,
+	BW_10,
+	BW_5,
+	BW_8080,
+	BW_320,
+	BW_25,
+	BW_20_242TONE,
+	BW_NUM,
+	BW_ALL	= 0xFF
+};
 
 #define TX_RATE_MODE_CCK	0
 #define TX_RATE_MODE_OFDM	1
@@ -100,6 +106,9 @@ extern char *HW_TX_RATE_BW[];
 #define TX_RATE_MODE_HE_ER      9
 #define TX_RATE_MODE_HE_TRIG    10
 #define TX_RATE_MODE_HE_MU      11
+#if (CFG_SUPPORT_802_11BE == 1)
+#define TX_RATE_MODE_EHT      12
+#endif
 
 #define RATE_VER_1	0	/* AC */
 #define RATE_VER_2	1	/* HE */
@@ -126,6 +135,9 @@ enum ENUM_TX_MODE_STR_IDX {
 	ENUM_TX_MODE_HE_ER,
 	ENUM_TX_MODE_HE_TRIG,
 	ENUM_TX_MODE_HE_MU,
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	ENUM_TX_MODE_EHT = TX_RATE_MODE_EHT,
 #endif
 	ENUM_TX_MODE_NUM
 };

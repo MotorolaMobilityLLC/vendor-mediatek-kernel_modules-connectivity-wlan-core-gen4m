@@ -211,6 +211,15 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 	}
 #endif
 
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_EHT) {
+		memset(prBssInfo->ucEhtOpParams, 0, EHT_OP_BYTE_NUM);
+		/* TODO */
+	} else {
+		memset(prBssInfo->ucEhtOpParams, 0, EHT_OP_BYTE_NUM);
+	}
+#endif
+
 	/*ERROR HANDLE*/
 	if ((prBssInfo->ucVhtChannelWidth == VHT_OP_CHANNEL_WIDTH_80)
 		|| (prBssInfo->ucVhtChannelWidth

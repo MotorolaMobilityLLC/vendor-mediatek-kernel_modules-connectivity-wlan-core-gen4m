@@ -1299,6 +1299,10 @@ enum BEACON_REPORT_DETAIL {
 
 #define ELEM_MAX_LEN_EXT_CAP_11ABGNAC               (8)
 
+#if (CFG_SUPPORT_802_11BE == 1)
+/* TODO */
+#endif
+
 #if (CFG_SUPPORT_802_11AX == 1)
 #define ELEM_MAX_LEN_EXT_CAP                        (10)
 #else
@@ -1457,6 +1461,7 @@ enum BEACON_REPORT_DETAIL {
 #define VHT_OP_CHANNEL_WIDTH_80             1
 #define VHT_OP_CHANNEL_WIDTH_160            2
 #define VHT_OP_CHANNEL_WIDTH_80P80          3
+#define VHT_OP_CHANNEL_WIDTH_320            7
 
 /*8.4.1.50 Operating Mode Field*/
 #define VHT_OP_MODE_CHANNEL_WIDTH                   BITS(0, 1)

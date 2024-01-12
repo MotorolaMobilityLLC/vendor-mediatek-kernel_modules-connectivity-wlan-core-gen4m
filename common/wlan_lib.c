@@ -7074,6 +7074,31 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	}
 #endif
 
+#if (CFG_SUPPORT_802_11BE == 1)
+	prWifiVar->ucStaEht = (uint8_t)
+		wlanCfgGetUint32(prAdapter, "StaEHT", FEATURE_ENABLED);
+	prWifiVar->ucApEht = (uint8_t)
+		wlanCfgGetUint32(prAdapter, "ApEHT", FEATURE_ENABLED);
+	prWifiVar->ucP2pGoEht = (uint8_t)
+		wlanCfgGetUint32(prAdapter, "P2pGoEHT",
+				FEATURE_ENABLED);
+	prWifiVar->ucP2pGcEht = (uint8_t)
+		wlanCfgGetUint32(prAdapter, "P2pGcEHT",
+				FEATURE_ENABLED);
+	prWifiVar->u2RxEhtBaSize = (uint8_t)
+		wlanCfgGetUint32(prAdapter, "RxEhtBaSize",
+			WLAN_EHT_MAX_BA_SIZE);
+	prWifiVar->u2TxEhtBaSize = (uint8_t)
+		wlanCfgGetUint32(prAdapter, "TxEhtBaSize",
+			WLAN_EHT_MAX_BA_SIZE);
+	prWifiVar->ucEhtAmsduInAmpduRx = (uint8_t) wlanCfgGetUint32(prAdapter,
+		"EhtAmsduInAmpduRx", FEATURE_ENABLED);
+	prWifiVar->ucEhtAmsduInAmpduTx = (uint8_t) wlanCfgGetUint32(prAdapter,
+		"EhtAmsduInAmpduTx", FEATURE_ENABLED);
+	prWifiVar->ucStaEhtBfee = (uint8_t) wlanCfgGetUint32(prAdapter,
+		"StaEHTBfee", FEATURE_ENABLED);
+#endif
+
 	prWifiVar->ucApHt = (uint8_t) wlanCfgGetUint32(prAdapter, "ApHT",
 					FEATURE_ENABLED);
 #if CFG_TC1_FEATURE
@@ -12032,6 +12057,11 @@ int wlanGetMaxTxRate(IN struct ADAPTER *prAdapter,
 		   "ucPhyType: 0x%x\n",
 		   ucPhyType);
 
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (ucPhyType & PHY_TYPE_SET_802_11BE)
+		ucTxMode = TX_RATE_MODE_EHT;
+	else
+#endif
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (ucPhyType & PHY_TYPE_SET_802_11AX)
 		ucTxMode = TX_RATE_MODE_HE_SU;
@@ -12605,6 +12635,11 @@ uint32_t wlanSetRxBaSize(IN struct GLUE_INFO *prGlueInfo,
 	uint32_t u4BufLen = 0;
 
 	prAdapter = prGlueInfo->prAdapter;
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (i4Type == WLAN_TYPE_EHT)
+		prAdapter->rWifiVar.u2RxEhtBaSize = u2BaSize;
+	else
+#endif
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (i4Type == WLAN_TYPE_HE)
 		prAdapter->rWifiVar.u2RxHeBaSize = u2BaSize;
@@ -12646,6 +12681,11 @@ uint32_t wlanSetTxBaSize(IN struct GLUE_INFO *prGlueInfo,
 	uint32_t u4BufLen = 0;
 
 	prAdapter = prGlueInfo->prAdapter;
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (i4Type == WLAN_TYPE_EHT)
+		prAdapter->rWifiVar.u2TxEhtBaSize = u2BaSize;
+	else
+#endif
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (i4Type == WLAN_TYPE_HE)
 		prAdapter->rWifiVar.u2TxHeBaSize = u2BaSize;

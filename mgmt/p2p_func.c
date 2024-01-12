@@ -93,6 +93,12 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 	, {0, heRlmCalculateHeOpIELen,
 			heRlmRspGenerateHeOpIE}     /* 255, EXT 36 */
 #endif
+#if CFG_SUPPORT_802_11BE
+	, {0, ehtRlmCalculateCapIELen,
+			ehtRlmRspGenerateCapIE}
+	, {0, ehtRlmCalculateOpIELen,
+			ehtRlmRspGenerateOpIE}
+#endif
 #if CFG_SUPPORT_MTK_SYNERGY
 	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL,
 			rlmGenerateMTKOuiIE}	/* 221 */
@@ -3676,6 +3682,9 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11AX == 1)
 		prP2pBssInfo->ucPhyTypeSet &= ~PHY_TYPE_SET_802_11AX;
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+		prP2pBssInfo->ucPhyTypeSet &= ~PHY_TYPE_SET_802_11BE;
+#endif
 
 		IE_FOR_EACH(pucIE, u4IELen, u2Offset) {
 			switch (IE_ID(pucIE)) {
@@ -4120,13 +4129,20 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 				prP2pSpecificBssInfo->u2RsnxIeLen
 					= IE_SIZE(pucIE);
 				break;
-#if (CFG_SUPPORT_802_11AX == 1)
 			case ELEM_ID_RESERVED:
+#if (CFG_SUPPORT_802_11AX == 1)
 				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP)
 					prP2pBssInfo->ucPhyTypeSet |=
 						PHY_TYPE_SET_802_11AX;
-				break;
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+				if (IE_ID_EXT(pucIE) == EID_EXT_EHT_CAPS)
+					prP2pBssInfo->ucPhyTypeSet |=
+						PHY_TYPE_SET_802_11BE;
+#endif
+				break;
+
+
 			default:
 				DBGLOG(P2P, TRACE,
 					"Unprocessed element ID:%d\n",

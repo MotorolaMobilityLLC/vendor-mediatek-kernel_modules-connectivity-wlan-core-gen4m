@@ -97,6 +97,9 @@ const uint8_t aucPhyCfg2PhyTypeSet[PHY_CONFIG_NUM] = {
 #if (CFG_SUPPORT_802_11AX == 1)
 	PHY_TYPE_SET_802_11ABGNACAX,
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	PHY_TYPE_SET_802_11ABGNACAXBE,
+#endif
 };
 
 /*******************************************************************************

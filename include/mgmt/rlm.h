@@ -302,6 +302,10 @@ struct SWITCH_CH_AND_BAND_PARAMS {
 #define RLM_NET_IS_11AX(_prBssInfo) \
 	((_prBssInfo)->ucPhyTypeSet & PHY_TYPE_SET_802_11AX)
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+#define RLM_NET_IS_11BE(_prBssInfo) \
+	((_prBssInfo)->ucPhyTypeSet & PHY_TYPE_SET_802_11BE)
+#endif
 
 #if CFG_SUPPORT_DFS
 #define MAX_CSA_COUNT 255

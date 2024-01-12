@@ -986,6 +986,11 @@ u_int8_t nicRxIsDuplicateFrame(IN OUT struct SW_RFB
 				   PHY_TYPE_BIT_HE) {
 				u4SeqCtrlCacheIdx = prSwRfb->ucTid;
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+			} else if (prSwRfb->prStaRec->ucDesiredPhyTypeSet &
+				   PHY_TYPE_BIT_EHT) {
+				u4SeqCtrlCacheIdx = prSwRfb->ucTid;
+#endif
 		} else {
 			if (prSwRfb->ucTid < 8) {	/* UP = 0~7 */
 				u4SeqCtrlCacheIdx = aucTid2ACI[prSwRfb->ucTid];
