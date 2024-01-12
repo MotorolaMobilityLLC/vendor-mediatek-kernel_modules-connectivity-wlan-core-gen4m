@@ -307,25 +307,6 @@ struct iw_p2p_version {
 	uint32_t u4Version;
 };
 #endif
-/*----------------------------------------------------------------------------*/
-/* NL80211 TEST MODE                                                          */
-/*----------------------------------------------------------------------------*/
-/*
- * used in nic_cmd_event.c: In function "nicCmdEventQueryLteSafeChn"?
- */
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
-enum ENUM_TESTMODE_AVAILABLE_CHAN_ATTR {
-	__NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_INVALID,
-	NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_2G_BASE_1,
-	NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_36,
-	NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_52,
-	NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_100,
-	NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_149,
-	__NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_AFTER_LAST,
-	NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_MAX
-		= __NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_AFTER_LAST - 1
-};
-#endif
 
 /******************************************************************************
  *                            P U B L I C   D A T A

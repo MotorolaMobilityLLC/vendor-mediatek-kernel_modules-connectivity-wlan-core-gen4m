@@ -2699,7 +2699,7 @@ void nicCmdEventQueryLteSafeChn(IN struct ADAPTER *prAdapter,
 
 		prLteSafeChnList = &prLteSafeChnInfo->rLteSafeChnList;
 		for (ucIdx = 0; ucIdx <
-				NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_MAX;
+				ENUM_SAFE_CH_MASK_MAX_NUM;
 				ucIdx++) {
 			prLteSafeChnList->au4SafeChannelBitmask[ucIdx]
 				= prEvent->rLteSafeChn.
