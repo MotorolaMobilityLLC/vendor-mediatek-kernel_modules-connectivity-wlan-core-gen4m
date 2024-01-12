@@ -4152,22 +4152,18 @@ uint32_t wlanServiceExit(struct GLUE_INFO *prGlueInfo)
 static uint32_t u4IcsLogOnOffCache;
 #endif /* CFG_SUPPORT_ICS */
 
-#define FW_LOG_CMD_ON_OFF        0
-#define FW_LOG_CMD_SET_LEVEL     1
 static uint32_t u4LogOnOffCache;
 static uint32_t u4LogLevelCache = -1;
 
-struct CMD_CONNSYS_FW_LOG {
-	int32_t fgCmd;
-	int32_t fgValue;
-};
-
-#if (CFG_SUPPORT_CONNINFRA == 1)
 uint32_t getFWLogOnOff(void)
 {
 	return u4LogOnOffCache;
 }
-#endif /* CFG_SUPPORT_CONNINFRA == 1 */
+
+uint32_t getFWLogLevel(void)
+{
+	return u4LogLevelCache;
+}
 
 uint32_t
 connsysFwLogControl(struct ADAPTER *prAdapter, void *pvSetBuffer,
@@ -4223,6 +4219,7 @@ connsysFwLogControl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 
 		rCmdV1Header.cmdBufferLen += sizeof(struct CMD_FORMAT_V1);
 		rCmdV1Header.itemNum = 1;
+		prAdapter->fgSetLogOnOff = false;
 
 		rStatus = wlanSendSetQueryCmd(
 				prAdapter, /* prAdapter */
@@ -4240,6 +4237,11 @@ connsysFwLogControl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 
 		/* keep in cache */
 		u4LogOnOffCache = prCmd->fgValue;
+
+		if (rStatus != WLAN_STATUS_FAILURE)
+			prAdapter->fgSetLogOnOff = true;
+		else
+			DBGLOG(INIT, INFO, "Log On/Off setting fail!\n");
 	} else if (prCmd->fgCmd == FW_LOG_CMD_SET_LEVEL) {
 		/*ENG_LOAD_OFFSET 1*/
 		/*USERDEBUG_LOAD_OFFSET 2 */

@@ -1873,6 +1873,9 @@ struct ADAPTER {
 	unsigned int u4FWLastUpdateTime;
 #endif
 
+	u_int8_t fgSetLogOnOff;
+	u_int8_t fgSetLogLevel;
+
 /* fos_change begin */
 #if CFG_SUPPORT_WAKEUP_STATISTICS
 	struct WAKEUP_STATISTIC arWakeupStatistic[WAKEUP_TYPE_NUM];

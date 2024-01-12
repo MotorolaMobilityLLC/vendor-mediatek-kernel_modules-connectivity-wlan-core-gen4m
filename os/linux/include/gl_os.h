@@ -1474,4 +1474,11 @@ enum ENUM_NVRAM_STATE wlanNvramGetState(void);
 int connsys_power_event_notification(enum conn_pwr_event_type type, void *data);
 #endif
 
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+uint32_t getFWLogOnOff(void);
+uint32_t getFWLogLevel(void);
+uint32_t connsysFwLogControl(struct ADAPTER *prAdapter,
+	void *pvSetBuffer, uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen);
+#endif
+
 #endif /* _GL_OS_H */
