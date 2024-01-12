@@ -8620,8 +8620,9 @@ static void aisScanProcessReqParam(IN struct ADAPTER *prAdapter,
 				   &prConnSettings->aucWSCIE,
 				   prConnSettings->u2WSCIELen);
 		}
-	}
 #endif
+	}
+
 	prScanReqMsg->u2IELen = u2ScanIELen;
 
 }

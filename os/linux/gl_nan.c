@@ -1168,8 +1168,10 @@ nanHardStartXmit(IN struct sk_buff *prSkb, IN struct net_device *prDev)
 		(struct NETDEV_PRIVATE_GLUE_INFO *)NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint8_t ucBssIndex;
+#if (CFG_SUPPORT_DBDC == 1)
 	struct TX_PACKET_INFO prTxPktInfo;
 	struct STA_RECORD *prStaRec;
+#endif
 
 	if (!prSkb) {
 		DBGLOG(NAN, ERROR, "prSkb error!\n");

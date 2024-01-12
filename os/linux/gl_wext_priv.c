@@ -1647,7 +1647,9 @@ __priv_set_struct(IN struct net_device *prNetDev,
 
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4BufLen = 0;
+#if CFG_SUPPORT_WPS2
 	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
+#endif
 
 	ASSERT(prNetDev);
 	/* ASSERT(prIwReqInfo); */
