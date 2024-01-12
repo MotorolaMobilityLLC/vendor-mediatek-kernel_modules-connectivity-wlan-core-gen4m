@@ -88,10 +88,25 @@
 
 /* Support driver triggers roaming */
 #define RCPI_DIFF_DRIVER_ROAM			20 /* 10 dbm */
+
+/* In case 2.4G->5G, the trigger rssi is RSSI_BAD_NEED_ROAM_24G_TO_5G
+ * In other case(2.4G->2.4G/5G->2.4G/5G->5G), the trigger
+ * rssi is RSSI_BAD_NEED_ROAM
+ *
+ * The reason of using two rssi threshold is that we only
+ * want to benifit 2.4G->5G case, and keep original logic in
+ * other cases.
+ */
+#define RSSI_BAD_NEED_ROAM_24G_TO_5G		-10 /* dbm */
 #define RSSI_BAD_NEED_ROAM			-80 /* dbm */
 
 #define CHNL_DWELL_TIME_DEFAULT  100
 #define CHNL_DWELL_TIME_ONLINE   50
+
+/* When roam to 5G AP, the AP's rcpi should great than
+ * RCPI_THRESHOLD_ROAM_2_5G dbm
+ */
+#define RCPI_THRESHOLD_ROAM_TO_5G  90 /* rssi -65 */
 
 #define WEIGHT_IDX_CHNL_UTIL                    0
 #define WEIGHT_IDX_RSSI                         2
@@ -1279,7 +1294,6 @@ uint8_t scanCheckNeedDriverRoaming(
 	 */
 	if (scanInDecidingRoaming(prAdapter, ucBssIndex) &&
 	    ais->eCurrentState == AIS_STATE_ONLINE_SCAN &&
-	    rssi < RSSI_BAD_NEED_ROAM &&
 	    CHECK_FOR_TIMEOUT(roam->rRoamingDiscoveryUpdateTime,
 		      roam->rRoamingLastDecisionTime,
 		      SEC_TO_SYSTIME(prAdapter->rWifiVar.u4InactiveTimeout))) {
@@ -1287,10 +1301,32 @@ uint8_t scanCheckNeedDriverRoaming(
 		struct BSS_DESC *bss;
 
 		target = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+
 		bss = scanSearchBssDescByScoreForAis(prAdapter,
 			ROAMING_REASON_INACTIVE, ucBssIndex);
-		if (bss && bss->ucRCPI - target->ucRCPI > RCPI_DIFF_DRIVER_ROAM)
-			return TRUE;
+
+		if (bss == NULL)
+			return FALSE;
+		/* 2.4 -> 5 */
+		if (bss->eBand == BAND_5G && target->eBand == BAND_2G4) {
+			if (rssi > RSSI_BAD_NEED_ROAM_24G_TO_5G)
+				return FALSE;
+			if (bss->ucRCPI >= RCPI_THRESHOLD_ROAM_TO_5G ||
+			bss->ucRCPI - target->ucRCPI > RCPI_DIFF_DRIVER_ROAM) {
+				log_dbg(SCN, INFO,
+					"Driver trigger roaming to 5G band.\n");
+				return TRUE;
+			}
+		} else {
+			if (rssi > RSSI_BAD_NEED_ROAM)
+				return FALSE;
+			if (bss->ucRCPI - target->ucRCPI >
+				RCPI_DIFF_DRIVER_ROAM) {
+				log_dbg(SCN, INFO,
+				"Driver trigger roaming for other cases.\n");
+				return TRUE;
+			}
+		}
 	}
 #endif
 
