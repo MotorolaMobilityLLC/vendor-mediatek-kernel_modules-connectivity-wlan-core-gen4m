@@ -202,6 +202,10 @@ const struct of_device_id mtk_axi_of_ids[] = {
  */
 static probe_card pfWlanProbe;
 static remove_card pfWlanRemove;
+#if CFG_MTK_WIFI_AER_RESET
+static u_int8_t g_AERRstTriggered;
+static u_int8_t g_AERL05Rst;
+#endif
 
 static struct platform_driver mtk_axi_driver = {
 	.driver = {
@@ -216,11 +220,27 @@ static struct platform_driver mtk_axi_driver = {
 	.remove = NULL,
 };
 
+#if CFG_MTK_WIFI_AER_RESET
+static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
+	pci_channel_state_t state);
+static pci_ers_result_t mtk_pci_error_slot_reset(struct pci_dev *pdev);
+static void mtk_pci_error_resume(struct pci_dev *pdev);
+
+static const struct pci_error_handlers mtk_pci_err_handler = {
+	.error_detected = mtk_pci_error_detected,
+	.slot_reset     = mtk_pci_error_slot_reset,
+	.resume         = mtk_pci_error_resume,
+};
+#endif
+
 static struct pci_driver mtk_pci_driver = {
 	.name = KBUILD_MODNAME,
 	.id_table = mtk_pci_ids,
 	.probe = NULL,
 	.remove = NULL,
+#if CFG_MTK_WIFI_AER_RESET
+	.err_handler = &mtk_pci_err_handler,
+#endif
 };
 
 static struct GLUE_INFO *g_prGlueInfo;
@@ -404,6 +424,14 @@ struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int msi_idx)
 	return prGlueInfo;
 }
 
+void mtk_pci_disable_device(struct GLUE_INFO *prGlueInfo)
+{
+	if (!prGlueInfo)
+		return;
+
+	pci_disable_device(prGlueInfo->rHifInfo.pdev);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is a PCIE interrupt callback function
@@ -584,6 +612,91 @@ irqreturn_t pcie_fw_log_thread_handler(int irq, void *dev_instance)
 irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance)
 {
 	return IRQ_HANDLED;
+}
+#endif
+
+#if CFG_MTK_WIFI_AER_RESET
+static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
+	pci_channel_state_t state)
+{
+	pci_ers_result_t res = PCI_ERS_RESULT_NONE;
+	uint32_t dump = 0;
+	u_int8_t fgNeedReset = FALSE;
+
+	DBGLOG(HAL, INFO,
+		"mtk_pci_error_detected state: %d, resetting: %d %d\n",
+		state, g_AERRstTriggered, kalIsResetting());
+
+	if (!pci_is_enabled(pdev)) {
+		DBGLOG(HAL, INFO, "pcie is disable\n");
+		goto exit;
+	}
+
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+	dump = mtk_pcie_dump_link_info(0);
+#endif
+
+	if (g_AERRstTriggered || kalIsResetting())
+		goto exit;
+
+	if (state == pci_channel_io_normal) {
+		uint16_t vnd_id = 0;
+
+		/* bit[6]: Completion timeout status */
+		if (dump & BIT(6)) {
+			fgNeedReset = TRUE;
+			pci_read_config_word(pdev, PCI_VENDOR_ID, &vnd_id);
+			if (vnd_id == 0) {
+				DBGLOG(HAL, WARN, "PCIE link down\n");
+				fgIsBusAccessFailed = TRUE;
+			} else {
+#if CFG_MTK_WIFI_AER_L05_RESET
+				g_AERL05Rst = TRUE;
+#endif
+			}
+		}
+	} else {
+		pci_disable_device(pdev);
+		fgNeedReset = TRUE;
+		fgIsBusAccessFailed = TRUE;
+	}
+
+exit:
+	if (fgNeedReset) {
+		if (g_AERRstTriggered || kalIsResetting())
+			res = PCI_ERS_RESULT_CAN_RECOVER;
+		else
+			res = PCI_ERS_RESULT_NEED_RESET;
+
+		g_AERRstTriggered = TRUE;
+	}
+
+	return res;
+}
+
+static pci_ers_result_t mtk_pci_error_slot_reset(struct pci_dev *pdev)
+{
+#define AER_RST_STR		"Whole chip reset by AER"
+
+	struct GLUE_INFO *prGlueInfo = g_prGlueInfo;
+
+	DBGLOG(HAL, INFO, "mtk_pci_error_slot_reset, L05_rst: %d\n",
+		g_AERL05Rst);
+
+	if (g_AERL05Rst) {
+		GL_USER_DEFINE_RESET_TRIGGER(prGlueInfo->prAdapter,
+			RST_AER, RST_FLAG_WF_RESET);
+	} else {
+		glSetRstReasonString(AER_RST_STR);
+		glResetWholeChipResetTrigger(AER_RST_STR);
+	}
+
+	return PCI_ERS_RESULT_DISCONNECT;
+}
+
+static void mtk_pci_error_resume(struct pci_dev *pdev)
+{
+	DBGLOG(HAL, INFO, "mtk_pci_error_resume\n");
 }
 #endif
 
@@ -1118,6 +1231,12 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		}
 		break;
 	}
+
+	fgIsBusAccessFailed = FALSE;
+#if CFG_MTK_WIFI_AER_RESET
+	g_AERRstTriggered = FALSE;
+	g_AERL05Rst = FALSE;
+#endif
 
 	pci_set_master(pdev);
 
