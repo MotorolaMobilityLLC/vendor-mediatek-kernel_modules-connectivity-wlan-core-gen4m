@@ -248,8 +248,7 @@ static int hifAxiProbe(void)
 	if (pfWlanProbe((void *)prPlatDev,
 			(void *)prPlatDev->id_entry->driver_data) !=
 			WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, INFO, "pfWlanProbe fail!call pfWlanRemove()\n");
-		pfWlanRemove();
+		DBGLOG(INIT, INFO, "pfWlanProbe fail!\n");
 		ret = -1;
 		goto out;
 	}
