@@ -2145,7 +2145,7 @@ uint8_t aisNeedMloScan(struct ADAPTER *prAdapter,
 
 	/* target is not mlo, no need mlo scan */
 	if (!prBssDesc->rMlInfo.fgValid ||
-	    !prBssDesc->rMlInfo.ucMaxSimultaneousLinks)
+	    !prBssDesc->rMlInfo.ucMaxSimuLinks)
 		return FALSE;
 
 	return TRUE;
@@ -2167,7 +2167,7 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(struct ADAPTER *prAdapter,
 		if (prBssDescSet->ucLinkNum > 0) {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			/* If target connected AP has MultiLink
-			 * (ucMaxSimultaneousLinks > 0, 0 means only 1 device),
+			 * (ucMaxSimuLinks > 0, 0 means only 1 device),
 			 * but we only scan one link(ucLinkNum=1), need to send
 			 * ML probe request to get completed ML info first.
 			 */
@@ -3861,8 +3861,7 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 			if (reject && reject[1] == 2) {
 				aisBssTmpDisallow(prAdapter, prBssDesc,
 				    reject[3],
-				    reject[2] + RCPI_TO_dBm(prBssDesc->ucRCPI),
-				    ucBssIndex);
+				    reject[2] + RCPI_TO_dBm(prBssDesc->ucRCPI));
 				prBssDesc->ucJoinFailureCount +=
 					SCN_BSS_JOIN_FAIL_THRESOLD;
 			}
@@ -7561,7 +7560,7 @@ void aisRefreshFWKBlacklist(struct ADAPTER *prAdapter)
 }
 
 void aisBssTmpDisallow(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
-	uint32_t sec, int32_t rssiThreshold, uint8_t ucBssIndex)
+	uint32_t sec, int32_t rssiThreshold)
 {
 #if CFG_SUPPORT_MBO
 	struct AIS_BLACKLIST_ITEM *blk =
@@ -7795,16 +7794,39 @@ void aisFsmRunEventBssTransition(struct ADAPTER *prAdapter,
 
 	if (ucRequestMode & WNM_BSS_TM_REQ_DISASSOC_IMMINENT) {
 #if CFG_SUPPORT_MBO
-		struct AIS_BLACKLIST_ITEM *blk =
-			aisAddBlacklist(prAdapter, prBssDesc);
-		if (blk) {
-			blk->fgDisallowed = TRUE;
-			blk->u2DisallowSec =
-				MSEC_TO_SEC(prBtmParam->u4ReauthDelay);
-			DBGLOG(WNM, INFO, "Disallow Sec: %d",
-				blk->u2DisallowSec);
+#if (CFG_SUPPORT_ML_RECONFIG == 1)
+		if (prBssDesc->rMlInfo.fgValid) {
+			/* link reconfiguration */
+			if (ucRequestMode &
+			    WNM_BSS_TM_REQ_LINK_REMOVAL_IMMINENT) {
+				aisBssTmpDisallow(prAdapter, prBssDesc,
+				     MSEC_TO_SEC(prBtmParam->u4ReauthDelay), 0);
+			} else {
+				struct BSS_DESC *bss;
+				struct LINK *scan_result =
+				    &prAdapter->rWifiVar.rScanInfo.rBSSDescList;
+
+				LINK_FOR_EACH_ENTRY(bss, scan_result,
+					rLinkEntry, struct BSS_DESC) {
+					if (bss->rMlInfo.fgValid &&
+					    EQUAL_MAC_ADDR(
+						bss->rMlInfo.aucMldAddr,
+						prBssDesc->rMlInfo.aucMldAddr))
+						aisBssTmpDisallow(prAdapter,
+						     bss, MSEC_TO_SEC(
+						     prBtmParam->u4ReauthDelay),
+						     0);
+				}
+			}
+		} else
+
+#endif
+		{
+			aisBssTmpDisallow(prAdapter, prBssDesc,
+				MSEC_TO_SEC(prBtmParam->u4ReauthDelay), 0);
 		}
 #endif
+
 		if (prBtmParam->u4ReauthDelay >
 			prAdapter->rWifiVar.u4BtmDisTimerThreshold)
 			prBtmParam->ucDisImmiState = AIS_BTM_DIS_IMMI_STATE_1;
@@ -7900,11 +7922,10 @@ void aisCollectNeighborMld(struct ADAPTER *prAdapter,
 
 	ml = mldFindMlIE(pucSubIe, ucLength, ML_CTRL_TYPE_BASIC);
 	if (ml) {
-		mldParseBasicMlIE(info, ml,
+		MLD_PARSE_BASIC_MLIE(info, ml,
 			IE_SIZE(ml),
 			prNeighborAP->aucBssid,
-			MAC_FRAME_BEACON,
-			__func__);
+			MAC_FRAME_BEACON);
 
 		if (!info->ucValid)
 			return;

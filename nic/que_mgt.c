@@ -6338,7 +6338,7 @@ void mqmProcessBcn(struct ADAPTER *prAdapter,
 	ASSERT(prSwRfb);
 	ASSERT(pucIE);
 
-	DBGLOG(QM, TRACE, "Enter %s\n", __func__);
+	DBGLOG(QM, LOUD, "Enter %s\n", __func__);
 
 	fgNewParameter = FALSE;
 

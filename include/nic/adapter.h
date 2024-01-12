@@ -782,7 +782,7 @@ struct WIFI_VAR {
 	uint8_t ucApMldMainLinkIdx;
 	uint8_t ucStaMldMainLinkIdx;
 	uint8_t ucEnableMlo;
-	uint8_t ucMaxSimultaneousLinks;
+	uint8_t ucMaxSimuLinks;
 	uint8_t aucMloP2pPreferFreq[WLAN_CFG_VALUE_LEN_MAX];
 	uint8_t ucMlProbeRetryLimit;
 	struct LINK_MGMT rMldBlockList;

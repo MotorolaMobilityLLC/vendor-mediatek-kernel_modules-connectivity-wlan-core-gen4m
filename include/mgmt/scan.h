@@ -244,8 +244,11 @@ struct ML_INFO {
 	uint8_t fgValid;
 	uint8_t aucMldAddr[MAC_ADDR_LEN];
 	uint8_t ucLinkIndex;
-	uint8_t ucMaxSimultaneousLinks;
+	uint8_t ucMaxSimuLinks;
+	uint16_t u2EmlCap;
+	uint16_t u2MldCap;
 	uint8_t fgMldType;
+	uint32_t u4DeleteTimeout;
 	struct MLD_BLOCKLIST_ITEM *prBlock;
 };
 #endif

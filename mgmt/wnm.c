@@ -586,19 +586,13 @@ void wnmMboIeTransReq(struct ADAPTER *adapter, uint8_t wnmMode,
 					   "Unexpected association retry delay, BSS is terminating");
 				goto fail;
 			} else if (wnmMode & WNM_BSS_TM_REQ_DISASSOC_IMMINENT) {
+				uint16_t u2DisallowSec;
 				struct BSS_DESC *bssDesc =
 					aisGetTargetBssDesc(adapter, bssIndex);
-				struct AIS_BLACKLIST_ITEM *blk =
-					aisAddBlacklist(adapter, bssDesc);
 
-				if (blk) {
-					blk->fgDisallowed = TRUE;
-					WLAN_GET_FIELD_16(pos,
-						&blk->u2DisallowSec);
-					DBGLOG(WNM, INFO,
-						"Association retry delay: %d",
-						blk->u2DisallowSec);
-				}
+				WLAN_GET_FIELD_16(pos, &u2DisallowSec);
+				aisBssTmpDisallow(adapter, bssDesc,
+					u2DisallowSec, 0);
 			}
 			break;
 		case MBO_ATTR_ID_AP_CAPA_IND:

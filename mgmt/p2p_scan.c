@@ -189,7 +189,7 @@ scanP2pProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 			prBssDesc->ucRCPI,
 			prBssDesc->rUpdateTime);
 
-		DBGLOG_MEM8(P2P, TRACE, prSwRfb->pvHeader,
+		DBGLOG_MEM8(P2P, LOUD, prSwRfb->pvHeader,
 				prSwRfb->u2PacketLen);
 
 		kalP2PIndicateBssInfo(prAdapter->prGlueInfo,

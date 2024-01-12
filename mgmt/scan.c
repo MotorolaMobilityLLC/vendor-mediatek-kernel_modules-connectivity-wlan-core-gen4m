@@ -1354,35 +1354,79 @@ void scanParsingMBSSIDSubelement(struct ADAPTER *prAdapter,
  * @return   NULL, if has no space.
  */
 /*----------------------------------------------------------------------------*/
-void scanEhtParsingMldElement(struct BSS_DESC *prBssDesc,
+void scanParseMldIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 	const uint8_t *pucIE, uint16_t u2FrameCtrl)
 {
 	struct MULTI_LINK_INFO rMlInfo;
 	struct MULTI_LINK_INFO *prMlInfo = &rMlInfo;
 
-	if (!BE_IS_ML_CTRL_TYPE(pucIE, ML_CTRL_TYPE_BASIC))
-		return;
+	if (BE_IS_ML_CTRL_TYPE(pucIE, ML_CTRL_TYPE_BASIC)) {
+		MLD_PARSE_BASIC_MLIE(prMlInfo, pucIE,
+				IE_SIZE(pucIE), /* no need fragment */
+				prBssDesc->aucBSSID,
+				u2FrameCtrl);
 
-	mldParseBasicMlIE(prMlInfo, pucIE,
-		IE_SIZE(pucIE), /* no need fragment */
-		prBssDesc->aucBSSID,
-		u2FrameCtrl, "RxBcnProbRsp");
+		prBssDesc->rMlInfo.fgValid = prMlInfo->ucValid;
 
-	prBssDesc->rMlInfo.fgValid = prMlInfo->ucValid;
+		if (!prMlInfo->ucValid)
+			return;
 
-	if (!prMlInfo->ucValid)
-		return;
+		COPY_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr,
+			prMlInfo->aucMldAddr);
 
-	/* Check ML control that which common info exist */
-	COPY_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr, prMlInfo->aucMldAddr);
+		/* Check ML control that which common info exist */
+		if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_LINK_ID_INFO_PRESENT)
+			prBssDesc->rMlInfo.ucLinkIndex = rMlInfo.ucLinkId;
 
-	if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_LINK_ID_INFO_PRESENT)
-		prBssDesc->rMlInfo.ucLinkIndex = rMlInfo.ucLinkId;
+		if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_EML_CAPA_PRESENT)
+			prBssDesc->rMlInfo.u2EmlCap = rMlInfo.u2EmlCap;
 
-	if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_MLD_CAPA_PRESENT) {
-		prBssDesc->rMlInfo.ucMaxSimultaneousLinks =
-			(rMlInfo.u2MldCap & BITS(0, 3));
+		if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_MLD_CAPA_PRESENT) {
+			prBssDesc->rMlInfo.u2MldCap = rMlInfo.u2MldCap;
+			prBssDesc->rMlInfo.ucMaxSimuLinks =
+				(rMlInfo.u2MldCap & BITS(0, 3));
+		}
+
+		DBGLOG(ML, TRACE,
+			"MldAddr="MACSTR",BSS="MACSTR
+			",LinkID=%d,MaxSimu=%d,EmlCap=0x%x,MldCap=0x%x,Delete=%d,MldType=%d\n",
+			MAC2STR(prBssDesc->rMlInfo.aucMldAddr),
+			MAC2STR(prBssDesc->aucBSSID),
+			prBssDesc->rMlInfo.ucLinkIndex,
+			prBssDesc->rMlInfo.ucMaxSimuLinks,
+			prBssDesc->rMlInfo.u2EmlCap,
+			prBssDesc->rMlInfo.u2MldCap,
+			prBssDesc->rMlInfo.u4DeleteTimeout,
+			prBssDesc->rMlInfo.fgMldType);
+	} else if (BE_IS_ML_CTRL_TYPE(pucIE, ML_CTRL_TYPE_RECONFIG)) {
+#if (CFG_SUPPORT_ML_RECONFIG == 1)
+		uint8_t i;
+
+		if (!prBssDesc->rMlInfo.fgValid)
+			return;
+
+		MLD_PARSE_RECONFIG_MLIE(prMlInfo, pucIE, prBssDesc->aucBSSID);
+
+		if (!prMlInfo->ucValid)
+			return;
+
+		for (i = 0; i < prMlInfo->ucProfNum; i++) {
+			struct STA_PROFILE *sta = &prMlInfo->rStaProfiles[i];
+
+			if (prBssDesc->rMlInfo.ucLinkIndex == sta->ucLinkId) {
+				uint32_t sec = MSEC_TO_SEC(
+						prBssDesc->u2BeaconInterval *
+						sta->u2DeleteTimer);
+
+				if (!prBssDesc->prBlack)
+					aisBssTmpDisallow(prAdapter,
+						prBssDesc, sec, 0);
+			}
+		}
+#endif
 	}
+
+	return;
 }
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
@@ -2948,7 +2992,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_MLD)
-				scanEhtParsingMldElement(prBssDesc,
+				scanParseMldIE(prAdapter, prBssDesc,
 					(const uint8_t *)pucIE,
 					prWlanBeaconFrame->u2FrameCtrl &
 					MASK_FRAME_TYPE);
@@ -2974,7 +3018,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 					prBssDesc->ucDCMMaxConRx =
 					HE_GET_PHY_CAP_DCM_MAX_CONSTELLATION_RX(
 						prHeCap->ucHePhyCap);
-					DBGLOG(SCN, TRACE,
+					DBGLOG(SCN, LOUD,
 						"ER: BSSID:" MACSTR
 						" SSID:%s,rx:%x, er:%x\n",
 						MAC2STR(prBssDesc->aucBSSID),
@@ -2995,7 +3039,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 					HE_IS_ER_SU_DISABLE(
 						prHeOp->ucHeOpParams);
 
-					DBGLOG(SCN, TRACE,
+					DBGLOG(SCN, LOUD,
 						"ER: BSSID:" MACSTR
 						" SSID:%s,rx:%x, er:%x\n",
 						MAC2STR(prBssDesc->aucBSSID),
@@ -4637,9 +4681,9 @@ void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 			struct IE_MTK_PRE_WIFI7 *prPreWifi7 =
 				(struct IE_MTK_PRE_WIFI7 *)ie;
 
-			DBGLOG(SCN, TRACE, "MTK_OUI_PRE_WIFI7 %d.%d",
+			DBGLOG(SCN, LOUD, "MTK_OUI_PRE_WIFI7 %d.%d",
 				prPreWifi7->ucVersion1, prPreWifi7->ucVersion0);
-			DBGLOG_MEM8(SCN, TRACE, ie, IE_SIZE(ie));
+			DBGLOG_MEM8(SCN, LOUD, ie, IE_SIZE(ie));
 
 			sub = prPreWifi7->aucInfoElem;
 			sub_len = IE_LEN(prPreWifi7) - 2;
@@ -4655,7 +4699,7 @@ void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 				if (IE_ID_EXT(sub) == ELEM_EXT_ID_MLD)
-					scanEhtParsingMldElement(prBssDesc,
+					scanParseMldIE(prAdapter, prBssDesc,
 						(const uint8_t *)sub,
 						u2FrameCtrl);
 #endif
@@ -4667,8 +4711,8 @@ void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 			struct IE_MTK_CHIP_CAP *prCapIe =
 				(struct IE_MTK_CHIP_CAP *)ie;
 
-			DBGLOG(SCN, TRACE, "MTK_OUI_CHIP_CAP");
-			DBGLOG_MEM8(SCN, TRACE, prCapIe, IE_SIZE(prCapIe));
+			DBGLOG(SCN, LOUD, "MTK_OUI_CHIP_CAP");
+			DBGLOG_MEM8(SCN, LOUD, prCapIe, IE_SIZE(prCapIe));
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			if (prCapIe->u8ChipCap & MLD_TYPE_ICV_METHOD_V1)
 				prBssDesc->rMlInfo.fgMldType =
@@ -4835,7 +4879,7 @@ void scanParseEhtCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
 		" SSID:%s, EHT CAP IE\n",
 		MAC2STR(prBssDesc->aucBSSID),
 		prBssDesc->aucSSID);
-	DBGLOG_MEM8(SCN, TRACE, pucIE, IE_SIZE(pucIE));
+	DBGLOG_MEM8(SCN, LOUD, pucIE, IE_SIZE(pucIE));
 }
 
 void scanParseEhtOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
@@ -4868,7 +4912,7 @@ void scanParseEhtOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 			prBssDesc->ucCenterFreqS1,
 			prBssDesc->ucCenterFreqS2);
 	}
-	DBGLOG_MEM8(SCN, TRACE, pucIE, IE_SIZE(pucIE));
+	DBGLOG_MEM8(SCN, LOUD, pucIE, IE_SIZE(pucIE));
 }
 #endif
 
