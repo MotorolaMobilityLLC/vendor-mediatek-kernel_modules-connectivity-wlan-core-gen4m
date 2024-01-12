@@ -661,7 +661,8 @@ uint8_t *mldGenerateBasicCommonInfo(
 	prMsduInfo->u2FrameLength += IE_SIZE(common);
 
 	DBGLOG(ML, LOUD, "Bss%d dump ML common IE\n", bss->ucBssIndex);
-	DBGLOG_MEM8(ML, LOUD, common, IE_SIZE(common));
+	DBGLOG_MEM8(ML, LOUD, common, common->ucLength + ELEM_HDR_LEN);
+
 
 	return (uint8_t *)common;
 }
