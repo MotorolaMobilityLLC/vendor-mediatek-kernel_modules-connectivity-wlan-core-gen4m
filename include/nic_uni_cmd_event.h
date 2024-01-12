@@ -279,7 +279,8 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_PHY_STATE_INFO	= 0x52, /* PHY_STATE */
 	UNI_CMD_ID_LED			= 0x53, /* LED */
 	UNI_CMD_ID_FAST_PATH		= 0x54,	/* Fast Path */
-	UNI_CMD_ID_NAN			= 0x56	/* NAN */
+	UNI_CMD_ID_NAN			= 0x56,	/* NAN */
+	UNI_CMD_ID_MLO			= 0x59	/* MLO */
 };
 
 struct UNI_CMD_DEVINFO {
@@ -2855,6 +2856,69 @@ struct UNI_CMD_RA_SET_AUTO_RATE {
 	uint8_t u1Mode;
 } __KAL_ATTRIB_PACKED__;
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+struct UNI_CMD_MLO {
+	/* fixed field */
+	uint8_t u1BandIdx;
+	uint8_t au1Reserved[3];
+
+	/* tlv */
+	uint8_t au1TlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_MLO {
+	/* fixed field */
+	uint8_t u1BandIdx;
+	uint8_t au1Reserved[3];
+
+	/* tlv */
+	uint8_t au1TlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* MLO Tag */
+enum ENUM_UNI_CMD_MLO_TAG {
+	UNI_CMD_MLO_TAG_RSV = 0x0,
+	UNI_CMD_MLO_TAG_MLO_MGMT = 0x1,
+	UNI_CMD_MLO_TAG_MLD_REC = 0x2,
+	UNI_CMD_MLO_TAG_MLD_REC_LINK = 0x3,
+	UNI_CMD_MLO_TAG_MLD_REC_LINK_AGC_TX = 0x4,
+	UNI_CMD_MLO_TAG_MLD_REC_LINK_AGC_TRIG = 0x5,
+};
+
+/* UNI_CMD_MLO_TAG_MLD_REC(Tag=0x2) */
+struct UNI_CMD_SET_MLD_REC {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint32_t u4Value;
+} __KAL_ATTRIB_PACKED__;
+
+/* UNI_CMD_MLO_TAG_MLD_REC_LINK_AGC_TX(Tag=0x04) */
+struct UNI_CMD_MLO_MLD_REC_LINK_AGC_TX {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	/* tag specific part */
+	uint8_t u1MldRecIdx;
+	uint8_t u1MldRecLinkIdx;
+	uint8_t u1AcIdx;
+	uint8_t u1DispPolTx;
+
+	uint8_t u1DispRatioTx;
+	uint8_t u1DispOrderTx;
+	uint16_t u2DispMgfTx;
+} __KAL_ATTRIB_PACKED__;
+
+/* UNI_CMD_MLO_TAG_MLD_REC(Tag=0x2) */
+struct UNI_EVENT_GET_MLD_REC {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	struct PARAM_MLD_REC rMldRec;
+};
+
+#endif
+
 /* BF command (0x33) */
 struct UNI_CMD_BF {
     /* fixed field */
@@ -3609,6 +3673,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_BSS_ER	     = 0x53,
 	UNI_EVENT_ID_FAST_PATH	     = 0x54,
 	UNI_EVENT_ID_NAN	     = 0x56,
+	UNI_EVENT_ID_MLO	     = 0x59,
 	UNI_EVENT_ID_NUM
 };
 
@@ -5667,6 +5732,8 @@ void nicUniEventEfuseControl(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventFwLogQueryBase(IN struct ADAPTER *ad,
 	IN struct CMD_INFO *cmd, IN uint8_t *event);
+void nicUniCmdEventQueryMldRec(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
 /*******************************************************************************
  *                   Unsolicited Event

@@ -7662,6 +7662,125 @@ wlanoidSetAutoRate(IN struct ADAPTER *prAdapter,
 #endif
 }
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint32_t
+wlanoidSetMloAgcTx(IN struct ADAPTER *prAdapter,
+			IN void *pvSetBuffer,
+			IN uint32_t u4SetBufferLen,
+			OUT uint32_t *pu4SetInfoLen)
+{
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	struct UNI_CMD_MLO *uni_cmd;
+	struct UNI_CMD_MLO_MLD_REC_LINK_AGC_TX *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_MLO) +
+			       sizeof(struct UNI_CMD_MLO_MLD_REC_LINK_AGC_TX);
+	struct UNI_CMD_MLO_MLD_REC_LINK_AGC_TX *para;
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	if (u4SetBufferLen)
+		ASSERT(pvSetBuffer);
+
+	*pu4SetInfoLen = sizeof(struct UNI_CMD_MLO_MLD_REC_LINK_AGC_TX);
+	if (u4SetBufferLen < sizeof(struct UNI_CMD_MLO_MLD_REC_LINK_AGC_TX))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	para = (struct UNI_CMD_MLO_MLD_REC_LINK_AGC_TX *)pvSetBuffer;
+
+	uni_cmd = (struct UNI_CMD_MLO *) cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_MLO ==> FAILED\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_MLO_MLD_REC_LINK_AGC_TX *) uni_cmd->au1TlvBuffer;
+	tag->u2Tag = UNI_CMD_MLO_TAG_MLD_REC_LINK_AGC_TX;
+	tag->u2Length = sizeof(*tag);
+	tag->u1MldRecIdx = para->u1MldRecIdx;
+	tag->u1MldRecLinkIdx = para->u1MldRecLinkIdx;
+	tag->u1AcIdx = para->u1AcIdx;
+	tag->u1DispPolTx = para->u1DispPolTx;
+	tag->u1DispRatioTx = para->u1DispRatioTx;
+	tag->u1DispOrderTx = para->u1DispOrderTx;
+	tag->u2DispMgfTx = para->u2DispMgfTx;
+
+	status = wlanSendSetQueryUniCmd(prAdapter,
+			     UNI_CMD_ID_MLO,
+			     TRUE,
+			     FALSE,
+			     TRUE,
+			     nicUniCmdEventSetCommon,
+			     nicUniCmdTimeoutCommon,
+			     max_cmd_len,
+			     (void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(prAdapter, uni_cmd);
+
+	return status;
+}
+
+uint32_t
+wlanoidGetMldRec(IN struct ADAPTER *prAdapter,
+		    IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
+		    OUT uint32_t *pu4QueryInfoLen)
+{
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	struct UNI_CMD_MLO *uni_cmd;
+	struct UNI_CMD_SET_MLD_REC *tag;
+	struct PARAM_MLD_REC *para;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_MLO) +
+			       sizeof(struct UNI_CMD_SET_MLD_REC);
+
+	ASSERT(prAdapter);
+	ASSERT(pu4QueryInfoLen);
+
+	if (u4QueryBufferLen)
+		ASSERT(pvQueryBuffer);
+
+	*pu4QueryInfoLen = sizeof(struct PARAM_MLD_REC);
+
+	if (u4QueryBufferLen < sizeof(struct PARAM_MLD_REC))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	para = (struct PARAM_MLD_REC *)pvQueryBuffer;
+
+	uni_cmd = (struct UNI_CMD_MLO *) cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, max_cmd_len);
+
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_MLO ==> FAILED\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_SET_MLD_REC *) uni_cmd->au1TlvBuffer;
+	tag->u2Tag = UNI_CMD_MLO_TAG_MLD_REC;
+	tag->u2Length = sizeof(*tag);
+	tag->u4Value = para->u1MldRecIdx;
+
+	status = wlanSendSetQueryUniCmd(prAdapter,
+			     UNI_CMD_ID_MLO,
+			     FALSE,
+			     TRUE,
+			     TRUE,
+			     nicUniCmdEventQueryMldRec,
+			     nicUniCmdTimeoutCommon,
+			     max_cmd_len,
+			     (void *)uni_cmd,
+			     pvQueryBuffer,
+			     u4QueryBufferLen);
+
+	cnmMemFree(prAdapter, uni_cmd);
+
+	return status;
+}
+#endif
+#endif
+
 #if (CFG_SUPPORT_ICS == 1)
 /*----------------------------------------------------------------------------*/
 /*!

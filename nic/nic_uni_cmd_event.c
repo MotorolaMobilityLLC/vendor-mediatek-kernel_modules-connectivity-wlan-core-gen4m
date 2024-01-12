@@ -7841,3 +7841,34 @@ void nicUniEventNan(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	}
 #endif
 }
+
+void nicUniCmdEventQueryMldRec(IN struct ADAPTER *prAdapter,
+		IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *)pucEventBuf;
+	struct UNI_EVENT_MLO *mlo_evt =
+		(struct UNI_EVENT_MLO *)uni_evt->aucBuffer;
+	struct UNI_EVENT_GET_MLD_REC *tag =
+		(struct UNI_EVENT_GET_MLD_REC *)mlo_evt->au1TlvBuffer;
+	struct PARAM_MLD_REC *prEvtMldRec = &tag->rMldRec;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+	ASSERT(pucEventBuf);
+
+	if (prCmdInfo->fgIsOid) {
+		struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+		uint32_t u4QueryInfoLen = sizeof(struct PARAM_MLD_REC);
+
+		kalMemCopy(prCmdInfo->pvInformationBuffer,
+				prEvtMldRec,
+				u4QueryInfoLen);
+
+		kalOidComplete(prGlueInfo, prCmdInfo,
+			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+
+#endif
+}
+

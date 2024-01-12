@@ -531,6 +531,13 @@ struct CHIP_DBG_OPS {
 		struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
 		uint8_t fgResetCnt,
 		uint32_t u4StatGroup);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	int32_t (*show_mld_info)(
+		struct ADAPTER *prAdapter,
+		char *pcCommand,
+		int32_t i4TotalLen,
+		struct PARAM_MLD_REC *mld);
+#endif
 	void (*show_wfdma_dbg_probe_info)(IN struct ADAPTER *prAdapter,
 		IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -1042,6 +1049,14 @@ int32_t connac3x_show_stat_info(
 	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
 	uint8_t fgResetCnt,
 	uint32_t u4StatGroup);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+int32_t connac3x_show_mld_info(
+		struct ADAPTER *prAdapter,
+		char *pcCommand,
+		int32_t i4TotalLen,
+		struct PARAM_MLD_REC *mld);
+#endif
 
 void connac3x_show_wfdma_interrupt_info(
 	struct ADAPTER *prAdapter,

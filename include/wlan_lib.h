@@ -2173,6 +2173,8 @@ uint32_t wlanSendFwLogControlCmd(IN struct ADAPTER *prAdapter,
 				uint32_t u4SetQueryInfoLen,
 				int8_t *pucInfoBuffer);
 
+void wlanGetChipDbgOps(struct ADAPTER *prAdapter, uint32_t **pu4Handle);
+
 #endif /* _WLAN_LIB_H */
 
 #if (CFG_SUPPORT_DYNAMIC_EDCCA == 1)
