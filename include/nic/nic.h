@@ -285,8 +285,10 @@ void nicProcessAbnormalInterrupt(IN struct ADAPTER
 void nicSetSwIntr(IN struct ADAPTER *prAdapter,
 		  IN uint32_t u4SwIntrBitmap);
 
-struct CMD_INFO *nicGetPendingCmdInfo(IN struct ADAPTER
-				      *prAdapter, IN uint8_t ucSeqNum);
+struct CMD_INFO *nicGetPendingCmdInfo(IN struct ADAPTER *prAdapter,
+					IN uint8_t ucSeqNum);
+void removeDuplicatePendingCmd(IN struct ADAPTER *prAdapter,
+				IN struct CMD_INFO *prCmdInfo);
 
 struct MSDU_INFO *nicGetPendingTxMsduInfo(
 	IN struct ADAPTER *prAdapter, IN uint8_t ucWlanIndex,
