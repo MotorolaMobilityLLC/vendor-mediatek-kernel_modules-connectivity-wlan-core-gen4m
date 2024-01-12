@@ -1010,6 +1010,133 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 
 	prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+void rlmProcessPublicAction2040Coexist(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb)
+{
+	struct ACTION_20_40_COEXIST_FRAME *prRxFrame;
+	struct IE_20_40_COEXIST *prCoexist;
+	struct IE_INTOLERANT_CHNL_REPORT *prChnlReport;
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+	uint8_t *pucIE;
+	uint16_t u2IELength, u2Offset;
+	uint8_t i, j;
+
+	ASSERT(prAdapter);
+	ASSERT(prSwRfb);
+
+	prRxFrame = (struct ACTION_20_40_COEXIST_FRAME *) prSwRfb->pvHeader;
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+
+	if (!(prSwRfb->prStaRec))
+		return;
+
+	if (prRxFrame->ucAction != ACTION_PUBLIC_20_40_COEXIST
+		|| !prStaRec
+		|| prStaRec->ucStaState != STA_STATE_3
+		|| prSwRfb->u2PacketLen < (WLAN_MAC_MGMT_HEADER_LEN + 5)
+		|| prSwRfb->prStaRec->ucBssIndex !=
+	    /* HIF_RX_HDR_GET_NETWORK_IDX(prSwRfb->prHifRxHdr) != */
+	    prStaRec->ucBssIndex) {
+		return;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prStaRec->ucBssIndex);
+	ASSERT(prBssInfo);
+
+	if (!IS_BSS_ACTIVE(prBssInfo) ||
+	    prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT
+	    || prBssInfo->eBssSCO == CHNL_EXT_SCN) {
+		return;
+	}
+
+	prCoexist = &prRxFrame->rBssCoexist;
+	if (prCoexist->ucData
+		& (BSS_COEXIST_40M_INTOLERANT
+		| BSS_COEXIST_20M_REQ)) {
+
+		ASSERT(prBssInfo->auc2G_20mReqChnlList[0]
+			<= CHNL_LIST_SZ_2G);
+
+		for (i = 1; i <= prBssInfo->auc2G_20mReqChnlList[0]
+			&& i <= CHNL_LIST_SZ_2G; i++) {
+
+			if (prBssInfo->auc2G_20mReqChnlList[i]
+				== prBssInfo->ucPrimaryChannel)
+				break;
+		}
+		if ((i > prBssInfo->auc2G_20mReqChnlList[0])
+			&& (i <= CHNL_LIST_SZ_2G)) {
+			prBssInfo->auc2G_20mReqChnlList[i] =
+				prBssInfo->ucPrimaryChannel;
+			prBssInfo->auc2G_20mReqChnlList[0]++;
+		}
+	}
+
+	/* Process intolerant channel report IE */
+	pucIE = (uint8_t *) &prRxFrame->rChnlReport;
+	u2IELength = prSwRfb->u2PacketLen - (WLAN_MAC_MGMT_HEADER_LEN + 5);
+
+	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
+		switch (IE_ID(pucIE)) {
+		case ELEM_ID_20_40_INTOLERANT_CHNL_REPORT:
+			prChnlReport =
+				(struct IE_INTOLERANT_CHNL_REPORT *) pucIE;
+
+			if (prChnlReport->ucLength <= 1)
+				break;
+
+			/* To do: process regulatory class.
+			 * Now we assume 2.4G band
+			 */
+
+			for (j = 0; j < prChnlReport->ucLength - 1; j++) {
+				/* Update non-HT channel list */
+				ASSERT(prBssInfo->auc2G_NonHtChnlList[0]
+					<= CHNL_LIST_SZ_2G);
+				for (i = 1;
+					i <= prBssInfo->auc2G_NonHtChnlList[0]
+					&& i <= CHNL_LIST_SZ_2G; i++) {
+
+					if (prBssInfo->auc2G_NonHtChnlList[i]
+						==
+						prChnlReport->aucChannelList[j])
+						break;
+				}
+				if ((i > prBssInfo->auc2G_NonHtChnlList[0])
+					&& (i <= CHNL_LIST_SZ_2G)) {
+					prBssInfo->auc2G_NonHtChnlList[i] =
+						prChnlReport->aucChannelList[j];
+					prBssInfo->auc2G_NonHtChnlList[0]++;
+				}
+			}
+			break;
+
+		default:
+			break;
+		}
+	}			/* end of IE_FOR_EACH */
+
+	if (rlmUpdateBwByChListForAP(prAdapter, prBssInfo)) {
+		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+		rlmSyncOperationParams(prAdapter, prBssInfo);
+	}
+
+	/* Check if OBSS scan exemption response should be sent */
+	if (prCoexist->ucData & BSS_COEXIST_OBSS_SCAN_EXEMPTION_REQ)
+		rlmObssScanExemptionRsp(prAdapter, prBssInfo, prSwRfb);
+}
 #endif
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3148,9 +3275,6 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 					DBGLOG(RLM, EVENT,
 						"[CSA] TxAllowed = FALSE\n");
 				}
-			} else {
-				DBGLOG(RLM, INFO,
-					"[CSA] ucChannelSwitchMode = 0\n");
 			}
 
 #ifdef CFG_DFS_CHSW_FORCE_BW20
@@ -3174,68 +3298,11 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 			prExCSAIE = (struct IE_EX_CHANNEL_SWITCH *)pucIE;
 
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			if (IS_6G_OP_CLASS(prExCSAIE->ucNewOperatingClass))
-				prCSAParams->eCsaBand = BAND_6G;
-			else
-#endif
-			if (prExCSAIE->ucNewChannelNum > 14)
-				prCSAParams->eCsaBand = BAND_5G;
-			else
-				prCSAParams->eCsaBand = BAND_2G4;
-
-			prCSAParams->ucCsaNewCh = prExCSAIE->ucNewChannelNum;
 			ucCurrentCsaCount = prExCSAIE->ucChannelSwitchCount;
-			prCSAParams->ucVhtS1 = nicGetS1(prCSAParams->eCsaBand,
-				prExCSAIE->ucNewChannelNum,
-				rlmGetVhtOpBwByBssOpBw(
-					rlmOpClassToBandwidth(
-					prExCSAIE->ucNewOperatingClass)));
-			switch (rlmOpClassToBandwidth(
-				prExCSAIE->ucNewOperatingClass)) {
-			case BW_20:
-			case BW_40:
-				prCSAParams->ucVhtBw =
-					VHT_OP_CHANNEL_WIDTH_20_40;
-				break;
-			case BW_80:
-				prCSAParams->ucVhtBw =
-					VHT_OP_CHANNEL_WIDTH_80;
-				break;
-			case BW_160:
-				prCSAParams->ucVhtBw =
-					VHT_OP_CHANNEL_WIDTH_160;
-				break;
-			case BW_8080:
-				prCSAParams->ucVhtBw =
-					VHT_OP_CHANNEL_WIDTH_80P80;
-				break;
-			case BW_320:
-				prCSAParams->ucVhtBw =
-					VHT_OP_CHANNEL_WIDTH_320_1;
-				break;
-			default:
-				break;
-			}
-
-			if (prExCSAIE->ucChannelSwitchMode == 1) {
-				/* Mode 1: Need to stop data
-				 * transmission immediately
-				 */
-				if (!prCSAParams->fgHasStopTx) {
-					prCSAParams->fgHasStopTx = TRUE;
-					/* AP */
-					qmSetStaRecTxAllowed(prAdapter,
-						prStaRec,
-						FALSE);
-				}
-			}
-
-			DBGLOG(RLM, INFO,
-				"[CSA] Mode[%d], Op class[%d], Band[%d], CH[%d], count[%d]\n",
+			rlmProcessExCsaIE(prAdapter, prStaRec,
+				prCSAParams,
 				prExCSAIE->ucChannelSwitchMode,
 				prExCSAIE->ucNewOperatingClass,
-				prCSAParams->eCsaBand,
 				prExCSAIE->ucNewChannelNum,
 				prExCSAIE->ucChannelSwitchCount);
 			break;
@@ -6289,6 +6356,75 @@ static void msmtComposeReportFrame(struct ADAPTER *prAdapter,
 
 } /* end of msmtComposeReportFrame() */
 
+void rlmProcessExCsaIE(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct SWITCH_CH_AND_BAND_PARAMS *prCSAParams,
+	uint8_t ucChannelSwitchMode, uint8_t ucNewOperatingClass,
+	uint8_t ucNewChannelNum, uint8_t ucChannelSwitchCount)
+{
+	DBGLOG(RLM, INFO,
+		"[ECSA] mode[%d], op_class[%d], channel[%d], count[%d]\n",
+		ucChannelSwitchMode,
+		ucNewOperatingClass,
+		ucNewChannelNum,
+		ucChannelSwitchCount);
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (IS_6G_OP_CLASS(ucNewOperatingClass))
+		prCSAParams->eCsaBand = BAND_6G;
+	else
+#endif
+	if (ucNewChannelNum > 14)
+		prCSAParams->eCsaBand = BAND_5G;
+	else
+		prCSAParams->eCsaBand = BAND_2G4;
+
+	prCSAParams->ucCsaNewCh = ucNewChannelNum;
+	prCSAParams->ucVhtS1 = nicGetS1(prCSAParams->eCsaBand, ucNewChannelNum,
+					rlmGetVhtOpBwByBssOpBw(
+						rlmOpClassToBandwidth(
+						ucNewOperatingClass)));
+	switch (rlmOpClassToBandwidth(ucNewOperatingClass)) {
+	case BW_20:
+	case BW_40:
+		prCSAParams->ucVhtBw = VHT_OP_CHANNEL_WIDTH_20_40;
+		break;
+	case BW_80:
+		prCSAParams->ucVhtBw = VHT_OP_CHANNEL_WIDTH_80;
+		break;
+	case BW_160:
+		prCSAParams->ucVhtBw = VHT_OP_CHANNEL_WIDTH_160;
+		break;
+	case BW_8080:
+		prCSAParams->ucVhtBw = VHT_OP_CHANNEL_WIDTH_80P80;
+		break;
+	case BW_320:
+		prCSAParams->ucVhtBw = VHT_OP_CHANNEL_WIDTH_320_1;
+		break;
+	default:
+		break;
+	}
+
+	if (ucChannelSwitchMode == 1) {
+		/* Need to stop data transmission immediately */
+		if (!prCSAParams->fgHasStopTx) {
+			prCSAParams->fgHasStopTx = TRUE;
+			/* AP */
+			qmSetStaRecTxAllowed(prAdapter,
+				   prStaRec,
+				   FALSE);
+			DBGLOG(RLM, EVENT,
+				"[ECSA] TxAllowed = FALSE\n");
+		}
+	}
+
+	DBGLOG(RLM, INFO,
+		"[ECSA] bw[%d], channel[%d], s1[%d]\n",
+		prCSAParams->ucVhtBw,
+		prCSAParams->ucCsaNewCh,
+		prCSAParams->ucVhtS1);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function handle spectrum management action frame
@@ -6445,6 +6581,11 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 				prChannelSwitchAnnounceIE =
 					(struct IE_CHANNEL_SWITCH *)pucIE;
 
+				DBGLOG(RLM, INFO,
+					"[CSA Mgt] Count = %d Mode = %d\n",
+				prChannelSwitchAnnounceIE->ucChannelSwitchCount,
+				prChannelSwitchAnnounceIE->ucChannelSwitchMode);
+
 				if (prChannelSwitchAnnounceIE
 					    ->ucChannelSwitchMode == 1) {
 
@@ -6460,9 +6601,6 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 						DBGLOG(RLM, EVENT,
 							"[CSA Mgt] TxAllowed = FALSE\n");
 					}
-				} else {
-					DBGLOG(RLM, INFO,
-					       "[CSA Mgt] ucChannelSwitchMode = 0\n");
 				}
 
 				DBGLOG(RLM, INFO,
@@ -6520,6 +6658,91 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 #endif
 	default:
 		break;
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function handle public action frame
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+void rlmProcessPublicActionExCsa(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb)
+{
+	struct SWITCH_CH_AND_BAND_PARAMS *prCSAParams;
+	struct ACTION_EX_CHANNEL_SWITCH_FRAME *prEcsaActionFrame;
+	struct IE_WIDE_BAND_CHANNEL *prWideBandIe;
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+	uint8_t *pucIE;
+	uint16_t u2IELength, u2Offset;
+	uint8_t ucCurrentCsaCount;
+
+	ASSERT(prAdapter);
+	ASSERT(prSwRfb);
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+	if (!prStaRec)
+		return;
+
+	if (prStaRec->ucBssIndex > prAdapter->ucSwBssIdNum)
+		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo)
+		return;
+
+	prCSAParams = &prBssInfo->CSAParams;
+	u2IELength = prSwRfb->u2PacketLen -
+		(uint16_t)OFFSET_OF(struct ACTION_EX_CHANNEL_SWITCH_FRAME,
+				aucInfoElem[0]);
+	prEcsaActionFrame =
+		(struct ACTION_EX_CHANNEL_SWITCH_FRAME *)prSwRfb->pvHeader;
+	pucIE = prEcsaActionFrame->aucInfoElem;
+
+	ucCurrentCsaCount = prEcsaActionFrame->ucChannelSwitchCount;
+	rlmProcessExCsaIE(prAdapter, prStaRec,
+		prCSAParams,
+		prEcsaActionFrame->ucChannelSwitchMode,
+		prEcsaActionFrame->ucNewOperatingClass,
+		prEcsaActionFrame->ucNewChannelNum,
+		prEcsaActionFrame->ucChannelSwitchCount);
+
+	IE_FOR_EACH(pucIE, u2IELength, u2Offset)
+	{
+		switch (IE_ID(pucIE)) {
+		case ELEM_ID_WIDE_BAND_CHANNEL_SWITCH:
+			if (IE_LEN(pucIE) !=
+				(sizeof(struct IE_WIDE_BAND_CHANNEL) - 2)) {
+				break;
+			}
+
+			prWideBandIe = (struct IE_WIDE_BAND_CHANNEL *)pucIE;
+
+			DBGLOG(RLM, INFO,
+				"[Wide BW] bw[%d], s1[%d], s2[%d]\n",
+				prWideBandIe->ucNewChannelWidth,
+				prWideBandIe->ucChannelS1,
+				prWideBandIe->ucChannelS2);
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	if (SHOULD_CH_SWITCH(ucCurrentCsaCount, prCSAParams)) {
+		cnmTimerStopTimer(prAdapter, &prBssInfo->rCsaTimer);
+		cnmTimerStartTimer(prAdapter, &prBssInfo->rCsaTimer,
+			prBssInfo->u2BeaconInterval * ucCurrentCsaCount);
+		prCSAParams->ucCsaCount = ucCurrentCsaCount;
+		DBGLOG(RLM, INFO,
+			"[ECSA Public] Channel switch Countdown: %d msecs\n",
+			prBssInfo->u2BeaconInterval * prCSAParams->ucCsaCount);
 	}
 }
 
@@ -6942,6 +7165,41 @@ static uint32_t rlmDummySmPowerSaveTxDone(struct ADAPTER *prAdapter,
 			OP_NOTIFY_TYPE_HT_NSS,
 			(rTxDoneStatus == TX_RESULT_SUCCESS) ? TRUE : FALSE);
 	return WLAN_STATUS_SUCCESS;
+}
+
+void rlmProcessPublicAction(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb)
+{
+	struct STA_RECORD *prStaRec = NULL;
+	struct WLAN_ACTION_FRAME *prActFrame = NULL;
+
+	ASSERT(prAdapter);
+	ASSERT(prSwRfb);
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+	if (!prStaRec)
+		return;
+
+	if (prStaRec->ucBssIndex > prAdapter->ucHwBssIdNum)
+		return;
+
+	prActFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
+
+	switch (prActFrame->ucAction) {
+#if CFG_ENABLE_WIFI_DIRECT
+	case ACTION_PUBLIC_20_40_COEXIST:
+		rlmProcessPublicAction2040Coexist(prAdapter, prSwRfb);
+		break;
+#endif
+#if CFG_SUPPORT_DFS
+	case ACTION_PUBLIC_EX_CH_SW_ANNOUNCEMENT:
+		rlmProcessPublicActionExCsa(prAdapter, prSwRfb);
+		break;
+#endif
+	case ACTION_PUBLIC_VENDOR_SPECIFIC:
+	default:
+		break;
+	}
 }
 
 /*----------------------------------------------------------------------------*/
