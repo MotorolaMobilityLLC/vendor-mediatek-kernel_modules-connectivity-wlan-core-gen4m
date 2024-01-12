@@ -15763,11 +15763,11 @@ wlanoidSetDrvRoamingPolicy(IN struct ADAPTER *prAdapter,
 		if (prRoamingFsmInfo->eCurrentState != ROAMING_STATE_IDLE)
 			roamingFsmRunEventAbort(prAdapter, ucBssIndex);
 	}
-	prRoamingFsmInfo->fgDrvRoamingAllow = (u_int8_t)
-					      u4RoamingPoily;
-
+#if !CFG_SUPPORT_802_11V_BTM_OFFLOAD
+	prRoamingFsmInfo->fgDrvRoamingAllow = (u_int8_t) u4RoamingPoily;
+#endif
 	DBGLOG(REQ, INFO,
-	       "wlanoidSetDrvRoamingPolicy, RoamingPoily= %d, conn policy= [%d] -> [%d]\n",
+	       "wlanoidSetDrvRoamingPolicy, RoamingPoily= %d, conn policy= [%d] allow [%d]\n",
 	       u4RoamingPoily, u4CurConPolicy,
 	       prConnSettings->eConnectionPolicy);
 
@@ -15956,13 +15956,12 @@ uint32_t wlanoidSendBTMQuery(struct ADAPTER *prAdapter, void *pvSetBuffer,
 			     uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
 {
 	struct STA_RECORD *prStaRec = NULL;
-	struct BSS_TRANSITION_MGT_PARAM_T *prBtmMgt = NULL;
 	struct BSS_INFO *prAisBssInfo;
 	uint8_t ucBssIndex = 0;
 	int32_t u4Ret = 0;
+	uint8_t ucQueryReason;
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 
 	if (!prAisBssInfo ||
@@ -15978,18 +15977,15 @@ uint32_t wlanoidSendBTMQuery(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		       prStaRec);
 		return WLAN_STATUS_FAILURE;
 	}
-	prBtmMgt = aisGetBTMParam(prAdapter, ucBssIndex);
-	prBtmMgt->ucDialogToken = wnmGetBtmToken();
 	if (pvSetBuffer) {
-		u4Ret = kalkStrtou8(pvSetBuffer, 0, &prBtmMgt->ucQueryReason);
+		u4Ret = kalkStrtou8(pvSetBuffer, 0, &ucQueryReason);
 		if (u4Ret)
 			DBGLOG(OID, WARN, "parse reason u4Ret=%d\n", u4Ret);
 	} else {
-		prBtmMgt->ucQueryReason = BSS_TRANSITION_LOW_RSSI;
+		ucQueryReason = BSS_TRANSITION_LOW_RSSI;
 	}
-	DBGLOG(OID, INFO, "Send BssTransitionManagementQuery, Reason %d\n",
-	       prBtmMgt->ucQueryReason);
-	wnmSendBTMQueryFrame(prAdapter, prStaRec);
+	wnmSendBTMQueryFrame(prAdapter, prStaRec, ucQueryReason);
+	DBGLOG(OID, INFO, "Send BTM Query, Reason %d\n", ucQueryReason);
 	return WLAN_STATUS_SUCCESS;
 }
 
