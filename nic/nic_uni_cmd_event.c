@@ -123,6 +123,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_ACCESS_REG] = nicUniCmdAccessReg,
 	[CMD_ID_SET_BSS_RLM_PARAM] = nicUniCmdSetBssRlm,
 	[CMD_ID_MQM_UPDATE_MU_EDCA_PARMS] = nicUniCmdUpdateMuEdca,
+	[CMD_ID_RLM_UPDATE_SR_PARAMS] = nicUniCmdUpdateSrParams,
 	[CMD_ID_SET_IP_ADDRESS] = nicUniCmdOffloadIPV4,
 	[CMD_ID_SET_IPV6_ADDRESS] = nicUniCmdOffloadIPV6,
 	[CMD_ID_GET_LTE_CHN] = nicUniCmdGetIdcChnl,
@@ -2923,6 +2924,51 @@ uint32_t nicUniCmdUpdateMuEdca(struct ADAPTER *ad,
 		tag->arMUEdcaParams[i].ucMUEdcaTimer =
 			cmd->arMUEdcaParams[i].ucMUEdcaTimer;
 	}
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+#else
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+}
+
+uint32_t nicUniCmdUpdateSrParams(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+#if (CFG_SUPPORT_802_11AX == 1)
+	struct _CMD_RLM_UPDATE_SR_PARMS_T *cmd;
+	struct UNI_CMD_SR *uni_cmd;
+	struct UNI_CMD_SR_UPDATE_SR_PARMS *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_SR) +
+	     		       sizeof(struct UNI_CMD_SR_UPDATE_SR_PARMS);
+
+	if (info->ucCID != CMD_ID_RLM_UPDATE_SR_PARAMS ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct _CMD_RLM_UPDATE_SR_PARMS_T *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SR, max_cmd_len, NULL, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_SR *) entry->pucInfoBuffer;
+	uni_cmd->u1BandIdx = ENUM_BAND_AUTO;
+	tag = (struct UNI_CMD_SR_UPDATE_SR_PARMS *) uni_cmd->au1TlvBuffer;
+	tag->u2Tag = UNI_CMD_SR_TAG_UPDATE_SR_PARAMS;
+	tag->u2Length = sizeof(*tag);
+	tag->ucCmdVer = cmd->ucCmdVer;
+	tag->u2CmdLen = cmd->u2CmdLen;
+	tag->ucBssIndex = cmd->ucBssIndex;
+	tag->ucSRControl = cmd->ucSRControl;
+	tag->ucNonSRGObssPdMaxOffset = cmd->ucNonSRGObssPdMaxOffset;
+	tag->ucSRGObssPdMinOffset = cmd->ucSRGObssPdMinOffset;
+	tag->ucSRGObssPdMaxOffset = cmd->ucSRGObssPdMaxOffset;
+	tag->u4SRGBSSColorBitmapLow = cmd->u4SRGBSSColorBitmapLow;
+	tag->u4SRGBSSColorBitmapHigh = cmd->u4SRGBSSColorBitmapHigh;
+	tag->u4SRGPartialBSSIDBitmapLow = cmd->u4SRGPartialBSSIDBitmapLow;
+	tag->u4SRGPartialBSSIDBitmapHigh = cmd->u4SRGPartialBSSIDBitmapHigh;
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 

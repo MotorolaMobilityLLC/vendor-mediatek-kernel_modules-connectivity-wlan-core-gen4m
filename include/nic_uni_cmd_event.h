@@ -2019,6 +2019,94 @@ struct UNI_CMD_SNIFFER_MODE_CONFIG {
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_CMD_SR
+{
+	/*Fixed Fields*/
+	uint8_t u1BandIdx;
+	uint8_t au1Padding[3];
+	/*TLV*/
+	uint8_t au1TlvBuffer[0];
+};
+
+/* SR Command Tag ID */
+enum ENUM_UNI_CMD_SR_TAG
+{
+    UNI_CMD_SR_TAG_RSV = 0x0,
+    UNI_CMD_SR_TAG_CFG_SR_ENABLE = 0x1,
+    UNI_CMD_SR_TAG_CFG_SR_SD_ENABLE = 0x2,
+    UNI_CMD_SR_TAG_CFG_SR_MODE = 0x3,
+    UNI_CMD_SR_TAG_CFG_DISRT_ENABLE = 0x4,
+    UNI_CMD_SR_TAG_CFG_DISRT_MIN_RSSI = 0x5,
+    UNI_CMD_SR_TAG_CFG_SR_BF = 0x6,
+    UNI_CMD_SR_TAG_CFG_SR_ATF = 0x7,
+    UNI_CMD_SR_TAG_CFG_TXC_QUEUE = 0x8,
+    UNI_CMD_SR_TAG_CFG_TXC_QID = 0x9,
+    UNI_CMD_SR_TAG_CFG_TXC_PATH = 0xA,
+    UNI_CMD_SR_TAG_CFG_AC_METHOD = 0xB,
+    UNI_CMD_SR_TAG_CFG_SR_PERIOD_THR = 0xC,
+    UNI_CMD_SR_TAG_CFG_QUERY_TXD_METHOD = 0xD,
+    UNI_CMD_SR_TAG_CFG_SR_SD_CG_RATIO = 0xE,
+    UNI_CMD_SR_TAG_CFG_SR_SD_OBSS_RATIO = 0xF,
+    UNI_CMD_SR_TAG_CFG_PROFILE = 0x10,
+    UNI_CMD_SR_TAG_CFG_FNQ_ENABLE = 0x11,
+    UNI_CMD_SR_TAG_CFG_DPD_ENABLE = 0x12,
+    UNI_CMD_SR_TAG_CFG_SR_TX_ENABLE = 0x13,
+    UNI_CMD_SR_TAG_CFG_SR_SD_OM_ENABLE = 0x14,
+    UNI_CMD_SR_TAG_CFG_SR_DABS_MODE = 0x15,
+    UNI_CMD_SR_TAG_SW_SRG_BITMAP = 0x80,
+    UNI_CMD_SR_TAG_SW_MESH_SRG_BITMAP = 0x81,
+    UNI_CMD_SR_TAG_SW_SRG_BITMAP_REFRESH = 0x82,
+    UNI_CMD_SR_TAG_SW_CNT = 0x83,
+    UNI_CMD_SR_TAG_SW_SD = 0x84,
+    UNI_CMD_SR_TAG_SW_GLOVAR_DROPTA_INFO = 0x85,
+    UNI_CMD_SR_TAG_SW_GLOVAR_STA_INFO = 0x86,
+    UNI_CMD_SR_TAG_UPDATE_SR_PARAMS = 0x87,
+    UNI_CMD_SR_TAG_HW_CAP = 0xC0,
+    UNI_CMD_SR_TAG_HW_PARA = 0xC1,
+    UNI_CMD_SR_TAG_HW_COND = 0xC2,
+    UNI_CMD_SR_TAG_HW_RCPI_TBL = 0xC3,
+    UNI_CMD_SR_TAG_HW_RCPI_TBL_OFST = 0xC4,
+    UNI_CMD_SR_TAG_HW_Q_CTRL = 0xC5,
+    UNI_CMD_SR_TAG_HW_IBPD = 0xC6,
+    UNI_CMD_SR_TAG_HW_NRT = 0xC7,
+    UNI_CMD_SR_TAG_HW_NRT_CTRL = 0xC8,
+    UNI_CMD_SR_TAG_HW_NRT_RESET = 0xC9,
+    UNI_CMD_SR_TAG_HW_CAP_SREN = 0xCA,
+    UNI_CMD_SR_TAG_HW_IND = 0xCB,
+    UNI_CMD_SR_TAG_HW_FNQ = 0xCC,
+    UNI_CMD_SR_TAG_HW_FRMFILT = 0xCD,
+    UNI_CMD_SR_TAG_HW_INTERPS_CTRL = 0xCE,
+    UNI_CMD_SR_TAG_HW_INTERPS_DBG = 0xCF,
+    UNI_CMD_SR_TAG_HW_SIGA_FLAG = 0xD0,
+    UNI_CMD_SR_TAG_NUM,
+};
+
+struct UNI_CMD_SR_UPDATE_SR_PARMS
+{
+	/* DW_0 */
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	// DWORD_1 - Common Part
+	uint8_t  ucCmdVer;
+	uint8_t  aucPadding0[1];
+	uint16_t u2CmdLen;       /* Cmd size including common part and body */
+
+	// DWORD_2 afterwards - Command Body
+	uint8_t  ucBssIndex;
+	uint8_t  ucSRControl;
+	uint8_t  ucNonSRGObssPdMaxOffset;
+	uint8_t  ucSRGObssPdMinOffset;
+	uint8_t  ucSRGObssPdMaxOffset;
+	uint8_t  aucPadding1[3];
+	uint32_t u4SRGBSSColorBitmapLow;
+	uint32_t u4SRGBSSColorBitmapHigh;
+	uint32_t u4SRGPartialBSSIDBitmapLow;
+	uint32_t u4SRGPartialBSSIDBitmapHigh;
+
+	uint8_t aucPadding2[32];
+};
+
 struct UNI_CMD_CNM {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -3393,6 +3481,8 @@ uint32_t nicUniCmdUpdateEdcaSet(struct ADAPTER *ad,
 uint32_t nicUniCmdAccessReg(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdUpdateMuEdca(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdUpdateSrParams(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdOffloadIPV4(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
