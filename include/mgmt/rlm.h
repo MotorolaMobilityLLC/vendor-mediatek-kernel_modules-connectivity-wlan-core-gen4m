@@ -170,7 +170,7 @@ extern uint8_t  g_ucHtSMPSCapValue;
 #endif
 
 #if (CFG_SUPPORT_TX_PWR_ENV == 1)
-#define TX_PWR_ENV_LMT_MIN              -20 /* 0.5dBm */
+#define TX_PWR_ENV_LMT_MIN                0 /* LSB = 0.5dBm */
 #define TX_PWR_ENV_BW_SHIFT_BW20          0
 #define TX_PWR_ENV_BW_SHIFT_BW40          2
 #define TX_PWR_ENV_BW_SHIFT_BW80          6

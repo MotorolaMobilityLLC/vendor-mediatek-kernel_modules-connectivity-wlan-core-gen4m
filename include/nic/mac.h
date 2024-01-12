@@ -1601,6 +1601,9 @@ enum BEACON_REPORT_DETAIL {
 #define ELEM_EXT_CAP_WNM_NOTIFICATION_BIT           46
 #define ELEM_EXT_CAP_WNM_NOTIFICATION_BIT           46
 #define ELEM_EXT_CAP_OP_MODE_NOTIFICATION_BIT       62
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+#define ELEM_EXT_CAP_EXT_SPEC_MGMT_CAPABLE_BIT      73
+#endif
 #if (CFG_SUPPORT_TWT == 1)
 #define ELEM_EXT_CAP_TWT_REQUESTER_BIT              77
 #endif
@@ -4963,6 +4966,13 @@ do { \
 	} \
 } while (FALSE)
 
+#define GET_EXT_CAP(_aucField, _ucFieldLength, _ucBit, _ucVal) \
+do { \
+	if ((_ucBit) < ((_ucFieldLength) * 8)) { \
+		uint8_t *aucExtCap = (uint8_t *)(_aucField); \
+		_ucVal = !!(((aucExtCap)[(_ucBit) / 8]) &= BIT((_ucBit) % 8)); \
+	} \
+} while (FALSE)
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************

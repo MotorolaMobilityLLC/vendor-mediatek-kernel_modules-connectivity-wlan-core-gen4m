@@ -10255,6 +10255,21 @@ uint32_t rlmTxPwrEnvMaxPwrUpdate(
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
+	/* If AP is not operation in 6GHz and not extended spectrum management
+	 * capable, STA no need to refer to TxPwr Env IE
+	 */
+	if ((prBssDesc->fgExtSpecMgmtCap == FALSE)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		 && (eHwBand != BAND_6G)
+#endif
+	) {
+		DBGLOG(RLM, TRACE,
+			"Skip TxPwrEnv update,band[%d]SpecMgmt[%d]\n",
+			eHwBand,
+			prBssDesc->fgExtSpecMgmtCap);
+		return WLAN_STATUS_SUCCESS;
+	}
+
 	rlmTxPwrEnvMaxPwrInit(aicTxPwrEnvMaxTxPwr);
 
 	ucTxPwrEnvIntrpt
