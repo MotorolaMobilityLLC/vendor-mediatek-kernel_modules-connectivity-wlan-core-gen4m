@@ -1431,7 +1431,7 @@ int32_t halShowStatInfo(struct ADAPTER *prAdapter,
 
 		rStatus = kalIoctlByBssIdx(prAdapter->prGlueInfo,
 				   wlanoidQueryRssi, &rLinkSpeed,
-				   sizeof(rLinkSpeed), TRUE, TRUE, TRUE,
+				   sizeof(rLinkSpeed),
 				   &u4BufLen, ucBssIndex);
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(REQ, WARN, "unable to retrieve rssi\n");
@@ -1443,8 +1443,7 @@ int32_t halShowStatInfo(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_RA_GEN == 0)
 		rStatus = kalIoctl(prAdapter->prGlueInfo,
 				   wlanoidQuerySwCtrlRead, &rSwCtrlInfo,
-				   sizeof(rSwCtrlInfo), TRUE, TRUE, TRUE,
-				   &u4BufLen);
+				   sizeof(rSwCtrlInfo), &u4BufLen);
 #endif
 		DBGLOG(REQ, LOUD, "rStatus %u, rSwCtrlInfo.u4Data 0x%x\n",
 		       rStatus, rSwCtrlInfo.u4Data);

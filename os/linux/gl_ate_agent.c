@@ -1796,7 +1796,7 @@ int Set_StaRecBfRead(struct net_device *prNetDev,
 			    wlanoidStaRecBFRead,
 			    &u2WlanId,
 			    sizeof(u2WlanId),
-			    TRUE, TRUE, TRUE, &u4BufLen);
+			    &u4BufLen);
 	return i4Status;
 }
 
@@ -1885,7 +1885,7 @@ int Set_MUGetInitMCS(struct net_device *prNetDev,
 				    wlanoidMuMimoAction,
 				    &rMuMimoActionInfo,
 				    sizeof(rMuMimoActionInfo),
-				    TRUE, TRUE, TRUE, &u4BufLen);
+				    &u4BufLen);
 	} else
 		return -EINVAL;
 
@@ -1948,7 +1948,7 @@ int Set_MUCalInitMCS(struct net_device *prNetDev,
 				    wlanoidMuMimoAction,
 				    &rMuMimoActionInfo,
 				    sizeof(rMuMimoActionInfo),
-				    FALSE, FALSE, TRUE, &u4BufLen);
+				    &u4BufLen);
 	} else
 		return -EINVAL;
 
@@ -2014,7 +2014,7 @@ int Set_MUCalLQ(struct net_device *prNetDev,
 				    wlanoidMuMimoAction,
 				    &rMuMimoActionInfo,
 				    sizeof(rMuMimoActionInfo),
-				    FALSE, FALSE, TRUE, &u4BufLen);
+				    &u4BufLen);
 	} else
 		return -EINVAL;
 
@@ -2050,7 +2050,7 @@ int Set_MUGetLQ(struct net_device *prNetDev,
 			    wlanoidMuMimoAction,
 			    &rMuMimoActionInfo,
 			    sizeof(rMuMimoActionInfo),
-			    TRUE, TRUE, TRUE, &u4BufLen);
+			    &u4BufLen);
 	/* }
 	 * else
 	 * {
@@ -2093,7 +2093,7 @@ int Set_MUSetSNROffset(struct net_device *prNetDev,
 				    wlanoidMuMimoAction,
 				    &rMuMimoActionInfo,
 				    sizeof(rMuMimoActionInfo),
-				    FALSE, FALSE, TRUE, &u4BufLen);
+				    &u4BufLen);
 	} else
 		return -EINVAL;
 
@@ -2131,7 +2131,7 @@ int Set_MUSetZeroNss(struct net_device *prNetDev,
 				    wlanoidMuMimoAction,
 				    &rMuMimoActionInfo,
 				    sizeof(rMuMimoActionInfo),
-				    FALSE, FALSE, TRUE, &u4BufLen);
+				    &u4BufLen);
 	} else
 		return -EINVAL;
 
@@ -2169,7 +2169,7 @@ int Set_MUSetSpeedUpLQ(struct net_device *prNetDev,
 				    wlanoidMuMimoAction,
 				    &rMuMimoActionInfo,
 				    sizeof(rMuMimoActionInfo),
-				    FALSE, FALSE, TRUE, &u4BufLen);
+				    &u4BufLen);
 	} else
 		return -EINVAL;
 
@@ -2216,7 +2216,7 @@ int Set_MUSetMUTable(struct net_device *prNetDev,
 			    wlanoidMuMimoAction,
 			    &rMuMimoActionInfo,
 			    sizeof(rMuMimoActionInfo),
-			    FALSE, FALSE, TRUE, &u4BufLen);
+			    &u4BufLen);
 	/* } */
 	/* else */
 	/* { */
@@ -2306,8 +2306,7 @@ int Set_MUSetGroup(struct net_device *prNetDev,
 	}
 
 	i4Status = kalIoctl(prGlueInfo, wlanoidMuMimoAction, &rMuMimoActionInfo,
-			    sizeof(rMuMimoActionInfo),
-			    FALSE, FALSE, TRUE, &u4BufLen);
+			    sizeof(rMuMimoActionInfo), &u4BufLen);
 
 	return i4Status;
 }
@@ -2350,7 +2349,7 @@ int Set_MUGetQD(struct net_device *prNetDev,
 				    wlanoidMuMimoAction,
 				    &rMuMimoActionInfo,
 				    sizeof(rMuMimoActionInfo),
-				    TRUE, TRUE, TRUE, &u4BufLen);
+				    &u4BufLen);
 	} else {
 		return -EINVAL;
 	}
@@ -2389,7 +2388,7 @@ int Set_MUSetEnable(struct net_device *prNetDev,
 				    wlanoidMuMimoAction,
 				    &rMuMimoActionInfo,
 				    sizeof(rMuMimoActionInfo),
-				    FALSE, FALSE, TRUE, &u4BufLen);
+				    &u4BufLen);
 	} else
 		return -EINVAL;
 
@@ -2435,7 +2434,7 @@ int Set_MUSetGID_UP(struct net_device *prNetDev,
 				    wlanoidMuMimoAction,
 				    &rMuMimoActionInfo,
 				    sizeof(rMuMimoActionInfo),
-				    FALSE, FALSE, TRUE, &u4BufLen);
+				    &u4BufLen);
 	} else {
 		return -EINVAL;
 	}
@@ -2508,7 +2507,7 @@ int Set_MUTriggerTx(struct net_device *prNetDev,
 				    wlanoidMuMimoAction,
 				    &rMuMimoActionInfo,
 				    sizeof(rMuMimoActionInfo),
-				    FALSE, FALSE, TRUE, &u4BufLen);
+				    &u4BufLen);
 	} else {
 		return -EINVAL;
 	}

@@ -822,9 +822,8 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 	rKey.u4Length = OFFSET_OF(struct P2P_PARAM_KEY, aucKeyMaterial)
 		+ rKey.u4KeyLength;
 
-	rStatus = kalIoctl(prGlueInfo,
-		wlanoidSetAddKey,
-		&rKey, rKey.u4Length, FALSE, FALSE, TRUE, &u4BufLen);
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetAddKey,
+		&rKey, rKey.u4Length, &u4BufLen);
 
 	if (rStatus == WLAN_STATUS_SUCCESS)
 		i4Rslt = 0;
@@ -897,10 +896,8 @@ int mtk_p2p_cfg80211_del_key(struct wiphy *wiphy,
 		rRemoveKey.u4KeyIndex |= BIT(30);
 	}
 
-	rStatus = kalIoctl(prGlueInfo,
-			wlanoidSetRemoveKey,
-			&rRemoveKey, rRemoveKey.u4Length,
-			FALSE, FALSE, TRUE, &u4BufLen);
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetRemoveKey,
+			&rRemoveKey, rRemoveKey.u4Length, &u4BufLen);
 
 	if (rStatus == WLAN_STATUS_SUCCESS)
 		i4Rslt = 0;
@@ -953,11 +950,8 @@ mtk_p2p_cfg80211_set_default_key(struct wiphy *wiphy,
 	if (!rDefaultKey.ucUnicast && rDefaultKey.ucMulticast)
 		fgMgtDef = TRUE;
 
-	rStatus = kalIoctl(prGlueInfo,
-		wlanoidSetDefaultKey,
-		&rDefaultKey,
-		sizeof(struct PARAM_DEFAULT_KEY),
-		FALSE, FALSE, TRUE, &u4BufLen);
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetDefaultKey,
+		&rDefaultKey, sizeof(struct PARAM_DEFAULT_KEY), &u4BufLen);
 
 
 	if (rStatus == WLAN_STATUS_SUCCESS)
@@ -1062,7 +1056,6 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
 		rStatus = kalIoctlByBssIdx(prGlueInfo,
 				 wlanoidQueryLinkSpeedEx,
 				 &rLinkSpeed, sizeof(rLinkSpeed),
-				 TRUE, FALSE, FALSE,
 				 &u4BufLen, ucBssIdx);
 		DBGLOG(REQ, TRACE, "rStatus=%u, prGlueInfo=%p, u4BufLen=%u",
 			rStatus, prGlueInfo, u4BufLen);
@@ -1288,10 +1281,8 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 		DBGLOG(P2P, TRACE, "Finish IE Buffer.\n");
 
 		/* Abort previous scan */
-		rStatus = kalIoctl(prGlueInfo,
-			wlanoidAbortP2pScan,
-			&ucBssIdx, sizeof(ucBssIdx),
-			FALSE, FALSE, TRUE, &u4SetInfoLen);
+		rStatus = kalIoctl(prGlueInfo, wlanoidAbortP2pScan,
+			&ucBssIdx, sizeof(ucBssIdx), &u4SetInfoLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(REQ, ERROR,
@@ -1367,10 +1358,8 @@ void mtk_p2p_cfg80211_abort_scan(struct wiphy *wiphy,
 
 	DBGLOG(P2P, INFO, "netdev: %p, ucBssIdx: %u\n", wdev->netdev, ucBssIdx);
 
-	rStatus = kalIoctl(prGlueInfo,
-		wlanoidAbortP2pScan,
-		&ucBssIdx, sizeof(ucBssIdx),
-		FALSE, FALSE, TRUE, &u4SetInfoLen);
+	rStatus = kalIoctl(prGlueInfo, wlanoidAbortP2pScan,
+		&ucBssIdx, sizeof(ucBssIdx), &u4SetInfoLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(REQ, ERROR,
@@ -1520,10 +1509,8 @@ int mtk_p2p_cfg80211_set_power_mgmt(struct wiphy *wiphy,
 	rPowerMode.ePowerMode = ePowerMode;
 
 	/* p2p_set_power_save */
-	rStatus = kalIoctl(prGlueInfo,
-		wlanoidSet802dot11PowerSaveProfile,
-		&rPowerMode, sizeof(rPowerMode),
-		FALSE, FALSE, TRUE, &u4Leng);
+	rStatus = kalIoctl(prGlueInfo, wlanoidSet802dot11PowerSaveProfile,
+		&rPowerMode, sizeof(rPowerMode), &u4Leng);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, WARN, "set_power_mgmt error:%x\n", rStatus);
@@ -3986,10 +3973,8 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(IN struct wiphy *wiphy,
 			rPowerMode.ucBssIdx = ucBssIdx;
 
 			rStatus = kalIoctl(prGlueInfo,
-				wlanoidSet802dot11PowerSaveProfile,
-				&rPowerMode,
-				sizeof(rPowerMode),
-				FALSE, FALSE, TRUE, &u4Leng);
+				wlanoidSet802dot11PowerSaveProfile, &rPowerMode,
+				sizeof(rPowerMode), &u4Leng);
 
 			if (rStatus != WLAN_STATUS_SUCCESS) {
 				DBGLOG(REQ, WARN,
@@ -4014,9 +3999,7 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(IN struct wiphy *wiphy,
 
 			rStatus = kalIoctl(prGlueInfo,
 				wlanoidSet802dot11PowerSaveProfile,
-				&rPowerMode,
-				sizeof(rPowerMode),
-				FALSE, FALSE, TRUE, &u4Leng);
+				&rPowerMode, sizeof(rPowerMode), &u4Leng);
 
 			if (rStatus != WLAN_STATUS_SUCCESS) {
 				DBGLOG(REQ, WARN,
@@ -4118,10 +4101,8 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy,
 
 		/* only to apply setting when setting NOA count */
 		rStatus = kalIoctl(prGlueInfo,
-			wlanoidSetNoaParam,
-			&prP2pSpecificBssInfo->rNoaParam,
-			sizeof(struct PARAM_CUSTOM_NOA_PARAM_STRUCT),
-			FALSE, FALSE, TRUE, &u4Leng);
+			wlanoidSetNoaParam, &prP2pSpecificBssInfo->rNoaParam,
+			sizeof(struct PARAM_CUSTOM_NOA_PARAM_STRUCT), &u4Leng);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, WARN, "set_noa error:%x\n", rStatus);
@@ -4175,10 +4156,8 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy,
 			rPowerMode.ucBssIdx = ucBssIdx;
 
 			rStatus = kalIoctl(prGlueInfo,
-				wlanoidSet802dot11PowerSaveProfile,
-				&rPowerMode,
-				sizeof(rPowerMode),
-				FALSE, FALSE, TRUE, &u4Leng);
+				wlanoidSet802dot11PowerSaveProfile, &rPowerMode,
+				sizeof(rPowerMode), &u4Leng);
 
 			if (rStatus != WLAN_STATUS_SUCCESS) {
 				DBGLOG(REQ, WARN,
@@ -4195,7 +4174,7 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy,
 			wlanoidSetOppPsParam,
 			&prP2pSpecificBssInfo->rOppPsParam,
 			sizeof(struct PARAM_CUSTOM_OPPPS_PARAM_STRUCT),
-			FALSE, FALSE, TRUE, &u4Leng);
+			&u4Leng);
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, WARN,
 				"set_opps error:%x\n", rStatus);
@@ -4211,8 +4190,7 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy,
 
 			rStatus = kalIoctl(prGlueInfo,
 				wlanoidSet802dot11PowerSaveProfile,
-				&rPowerMode, sizeof(rPowerMode),
-				FALSE, FALSE, TRUE, &u4Leng);
+				&rPowerMode, sizeof(rPowerMode), &u4Leng);
 
 			if (rStatus != WLAN_STATUS_SUCCESS) {
 				DBGLOG(REQ, WARN,
@@ -4231,10 +4209,8 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy,
 		break;
 	case 110:		/* Hotspot WPS mode */
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
-		rStatus = kalIoctl(prGlueInfo,
-			wlanoidSetP2pWPSmode,
-			&value, sizeof(value),
-			FALSE, FALSE, TRUE, &u4Leng);
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetP2pWPSmode,
+			&value, sizeof(value), &u4Leng);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, WARN,
@@ -4437,8 +4413,7 @@ int mtk_p2p_cfg80211_testmode_sw_cmd(IN struct wiphy *wiphy,
 		if (prParams->set == 1) {
 			rstatus = kalIoctl(prGlueInfo,
 				(PFN_OID_HANDLER_FUNC) wlanoidSetSwCtrlWrite,
-				&prParams->adr, (uint32_t) 8,
-				FALSE, FALSE, TRUE, &u4SetInfoLen);
+				&prParams->adr, (uint32_t) 8, &u4SetInfoLen);
 		}
 	}
 
@@ -4492,14 +4467,12 @@ int mtk_p2p_cfg80211_testmode_update_sta_pmkid_cmd(IN struct wiphy *wiphy,
 	pmkid.ucBssIdx = ucBssIdx;
 	if (prParams->ucAddRemove) {
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetPmkid, &pmkid,
-				   sizeof(struct PARAM_PMKID),
-				   FALSE, FALSE, FALSE, &u4BufLen);
+				   sizeof(struct PARAM_PMKID), &u4BufLen);
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(INIT, INFO, "add pmkid error:%x\n", rStatus);
 	} else {
 		rStatus = kalIoctl(prGlueInfo, wlanoidDelPmkid, &pmkid,
-				   sizeof(struct PARAM_PMKID),
-				   FALSE, FALSE, FALSE, &u4BufLen);
+				   sizeof(struct PARAM_PMKID), &u4BufLen);
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(INIT, INFO, "remove pmkid error:%x\n", rStatus);
 	}

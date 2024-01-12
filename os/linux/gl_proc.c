@@ -668,11 +668,9 @@ static int procEfuseDump_show(struct seq_file *s, void *v)
 	rAccessEfuseInfo.u4Address =
 		(idx_addr / EFUSE_BLOCK_SIZE) * EFUSE_BLOCK_SIZE;
 
-	rStatus = kalIoctl(prGlueInfo,
-		wlanoidQueryProcessAccessEfuseRead,
-		&rAccessEfuseInfo,
-		sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE), TRUE, TRUE,
-		TRUE, &u4BufLen);
+	rStatus = kalIoctl(prGlueInfo, wlanoidQueryProcessAccessEfuseRead,
+			&rAccessEfuseInfo,
+			sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE), &u4BufLen);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		seq_printf(s, "efuse read fail (0x%03X)\n",
 			rAccessEfuseInfo.u4Address);
@@ -1241,10 +1239,8 @@ static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
 
 
 	/* Complete the cmd/event process */
-	status = kalIoctl(prGlueInfo,
-			  wlanoidGetTxPwrTbl,
-			  &pwr_tbl,
-			  sizeof(pwr_tbl), TRUE, FALSE, TRUE, &oid_len);
+	status = kalIoctl(prGlueInfo, wlanoidGetTxPwrTbl,
+			&pwr_tbl, sizeof(pwr_tbl), &oid_len);
 
 	if (status != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, WARN, "Query Tx Power Table fail\n");
@@ -1589,7 +1585,7 @@ static ssize_t procMCRRead(struct file *filp, char __user *buf,
 
 	rStatus = kalIoctl(prGlueInfo,
 		wlanoidQueryMcrRead, (void *)&rMcrInfo,
-		sizeof(rMcrInfo), TRUE, TRUE, TRUE, &u4BufLen);
+		sizeof(rMcrInfo), &u4BufLen);
 	kalMemZero(g_aucProcBuf, sizeof(g_aucProcBuf));
 	SNPRINTF(temp, g_aucProcBuf,
 		("MCR (0x%08xh): 0x%08x\n", rMcrInfo.u4McrOffset,
@@ -1658,10 +1654,9 @@ static ssize_t procMCRWrite(struct file *file, const char __user *buffer,
 
 			/* rMcrInfo.u4McrOffset, rMcrInfo.u4McrData); */
 
-			rStatus = kalIoctl(prGlueInfo,
-					   wlanoidSetMcrWrite,
+			rStatus = kalIoctl(prGlueInfo, wlanoidSetMcrWrite,
 					   (void *)&rMcrInfo, sizeof(rMcrInfo),
-					   FALSE, FALSE, TRUE, &u4BufLen);
+					   &u4BufLen);
 
 		}
 		break;
@@ -1929,7 +1924,7 @@ static ssize_t procRoamRead(struct file *filp, char __user *buf,
 
 	rStatus =
 	    kalIoctl(g_prGlueInfo_proc, wlanoidGetRoamParams, g_aucProcBuf,
-		     sizeof(g_aucProcBuf), TRUE, FALSE, TRUE, &u4BufLen);
+		     sizeof(g_aucProcBuf), &u4BufLen);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, INFO, "failed to read roam params\n");
 		return -EINVAL;
@@ -1964,12 +1959,11 @@ static ssize_t procRoamWrite(struct file *file, const char __user *buffer,
 	if (kalStrnCmp(g_aucProcBuf, "force_roam", 10) == 0)
 		rStatus =
 		    kalIoctl(g_prGlueInfo_proc, wlanoidSetForceRoam, NULL, 0,
-			     FALSE, FALSE, TRUE, &u4BufLen);
+			     &u4BufLen);
 	else
 		rStatus =
 		    kalIoctl(g_prGlueInfo_proc, wlanoidSetRoamParams,
-			     g_aucProcBuf, kalStrLen(g_aucProcBuf), FALSE,
-			     FALSE, TRUE, &u4BufLen);
+			     g_aucProcBuf, kalStrLen(g_aucProcBuf), &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, INFO, "failed to set roam params: %s\n",
@@ -2041,7 +2035,7 @@ static ssize_t procCountryWrite(struct file *file, const char __user *buffer,
 	g_aucProcBuf[u4CopySize] = '\0';
 
 	rStatus = kalIoctl(g_prGlueInfo_proc, wlanoidSetCountryCode,
-			   &g_aucProcBuf[0], 2, FALSE, FALSE, TRUE, &u4BufLen);
+			   &g_aucProcBuf[0], 2, &u4BufLen);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, INFO, "failed set country code: %s\n",
 			g_aucProcBuf);
@@ -2885,10 +2879,8 @@ static ssize_t cfgRead(struct file *filp, char __user *buf, size_t count,
 	kalMemCopy(pr_cmd_v1->itemString, aucCfgQueryKey,
 		kalStrLen(aucCfgQueryKey));
 
-	rStatus = kalIoctl(gprGlueInfo,
-		wlanoidQueryCfgRead,
-		(void *)&cmdV1Header,
-		sizeof(cmdV1Header), TRUE, TRUE, TRUE, &u4CopySize);
+	rStatus = kalIoctl(gprGlueInfo, wlanoidQueryCfgRead,
+		(void *)&cmdV1Header, sizeof(cmdV1Header), &u4CopySize);
 	if (rStatus == WLAN_STATUS_FAILURE)
 		DBGLOG(INIT, ERROR,
 			"kalIoctl wlanoidQueryCfgRead fail 0x%x\n",

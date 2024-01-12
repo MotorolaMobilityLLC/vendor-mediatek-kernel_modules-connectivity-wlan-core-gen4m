@@ -3568,9 +3568,7 @@ void SET_IOCTL_BSSIDX(
 uint32_t
 kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 	 IN PFN_OID_HANDLER_FUNC pfnOidHandler,
-	 IN void *pvInfoBuf,
-	 IN uint32_t u4InfoBufLen, IN u_int8_t fgRead,
-	 IN u_int8_t fgWaitResp, IN u_int8_t fgCmd,
+	 IN void *pvInfoBuf, IN uint32_t u4InfoBufLen,
 	 OUT uint32_t *pu4QryInfoLen)
 {
 	return kalIoctlByBssIdx(
@@ -3578,19 +3576,26 @@ kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 		pfnOidHandler,
 		pvInfoBuf,
 		u4InfoBufLen,
-		fgRead,
-		fgWaitResp,
-		fgCmd,
 		pu4QryInfoLen,
 		AIS_DEFAULT_BSS_INDEX);
 }
 
+/**
+ * kalIoctlByBssIdx() - perform request to run in driver thread context
+ *
+ * @prGlueInfo: Pointer to Glue Info
+ * @pfnOidHandler: Pointer to oid handler function executed in driver context
+ * @pvInfoBuf: Input buffer
+ * @u4InfoBufLen: Size of Input buffer
+ * @pu4QryInfoLen: Returning stuffed bytes in query buffer
+ * @ucBssIndex: Bss Index
+ *
+ * Return: return code by kalOidComplete()
+ */
 uint32_t
 kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 	 IN PFN_OID_HANDLER_FUNC pfnOidHandler,
-	 IN void *pvInfoBuf,
-	 IN uint32_t u4InfoBufLen, IN u_int8_t fgRead,
-	 IN u_int8_t fgWaitResp, IN u_int8_t fgCmd,
+	 IN void *pvInfoBuf, IN uint32_t u4InfoBufLen,
 	 OUT uint32_t *pu4QryInfoLen,
 	 IN uint8_t ucBssIndex)
 {
@@ -3662,20 +3667,13 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 	prIoReq->pvInfoBuf = pvInfoBuf;
 	prIoReq->u4InfoBufLen = u4InfoBufLen;
 	prIoReq->pu4QryInfoLen = pu4QryInfoLen;
-	prIoReq->fgRead = fgRead;
-	prIoReq->fgWaitResp = fgWaitResp;
 	prIoReq->rStatus = WLAN_STATUS_FAILURE;
-	SET_IOCTL_BSSIDX(
-		prGlueInfo->prAdapter,
-		ucBssIndex);
+	SET_IOCTL_BSSIDX(prGlueInfo->prAdapter, ucBssIndex);
 
 	/* <5> Reset the status of pending OID */
 	prGlueInfo->rPendStatus = WLAN_STATUS_FAILURE;
 	/* prGlueInfo->u4TimeoutFlag = 0; */
 	prGlueInfo->u4OidCompleteFlag = 0;
-
-	/* <6> Check if we use the command queue */
-	prIoReq->u4Flag = fgCmd;
 
 	/* <7> schedule the OID bit
 	 * Use memory barrier to ensure OidEntry is written done and then set
@@ -4844,24 +4842,14 @@ int main_thread(void *data)
 			kalTraceBegin("OID");
 			/* get current prIoReq */
 			prIoReq = &(prGlueInfo->OidEntry);
-			DBGLOG(NIC, TRACE, "fgRead=%u, pfnOidHandler=%ps",
-					prIoReq->fgRead,
+			DBGLOG(NIC, TRACE, "pfnOidHandler=%ps",
 					prIoReq->pfnOidHandler);
-			if (prIoReq->fgRead == FALSE) {
-				prIoReq->rStatus = wlanSetInformation(
-						prIoReq->prAdapter,
-						prIoReq->pfnOidHandler,
-						prIoReq->pvInfoBuf,
-						prIoReq->u4InfoBufLen,
-						prIoReq->pu4QryInfoLen);
-			} else {
-				prIoReq->rStatus = wlanQueryInformation(
-						prIoReq->prAdapter,
-						prIoReq->pfnOidHandler,
-						prIoReq->pvInfoBuf,
-						prIoReq->u4InfoBufLen,
-						prIoReq->pu4QryInfoLen);
-			}
+			prIoReq->rStatus = wlanSetInformation(
+					prIoReq->prAdapter,
+					prIoReq->pfnOidHandler,
+					prIoReq->pvInfoBuf,
+					prIoReq->u4InfoBufLen,
+					prIoReq->pu4QryInfoLen);
 
 			if (prIoReq->rStatus != WLAN_STATUS_PENDING) {
 				/* complete ONLY if there are waiters */
@@ -6841,20 +6829,17 @@ kalSetNetAddress(IN struct GLUE_INFO *prGlueInfo,
 	prParamNetAddrList->u4AddressCount += u4NumIPv6Addr;
 
 	/* 4 <4> IOCTL to main_thread */
-	rStatus = kalIoctl(prGlueInfo,
-			   wlanoidSetNetworkAddress,
-			   (void *) prParamNetAddrList, u4Len,
-			   FALSE, FALSE, TRUE, &u4SetInfoLen);
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetNetworkAddress,
+			   (void *) prParamNetAddrList, u4Len, &u4SetInfoLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(REQ, WARN, "%s: Fail to set network address\n",
 		       __func__);
 /* fos_change begin */
 #if CFG_SUPPORT_SET_IPV6_NETWORK
-		rStatus = kalIoctl(prGlueInfo,
-				   wlanoidSetIPv6NetworkAddress,
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetIPv6NetworkAddress,
 				   (void *) prParamNetAddrList, u4Len,
-				   FALSE, FALSE, TRUE, &u4SetInfoLen);
+				   &u4SetInfoLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(REQ, WARN,
@@ -7953,10 +7938,8 @@ void kalSendMdnsEnableToFw(struct GLUE_INFO *prGlueInfo)
 	/* UDP CheckSum: Calculate by FW*/
 	prUdphdr->check = 0;
 
-	rStatus = kalIoctl(prGlueInfo, wlanoidSetMdnsCmdToFw,
-			   cmdMdnsParam,
-			   sizeof(struct CMD_MDNS_PARAM_T),
-			   TRUE, TRUE, TRUE, &u4BufLen);
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetMdnsCmdToFw, cmdMdnsParam,
+			   sizeof(struct CMD_MDNS_PARAM_T), &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(REQ, ERROR, "set mdns cmd error.\n");
@@ -8091,10 +8074,8 @@ void kalSendMdnsDisableToFw(struct GLUE_INFO *prGlueInfo)
 
 	DBGLOG(SW4, STATE, "mDNS disable.\n");
 
-	rStatus = kalIoctl(prGlueInfo, wlanoidSetMdnsCmdToFw,
-			   cmdMdnsParam,
-			   sizeof(struct CMD_MDNS_PARAM_T),
-			   TRUE, TRUE, TRUE, &u4BufLen);
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetMdnsCmdToFw, cmdMdnsParam,
+			   sizeof(struct CMD_MDNS_PARAM_T), &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(REQ, ERROR, "set mdns cmd error.\n");
@@ -8120,10 +8101,8 @@ void kalSendClearRecordToFw(struct GLUE_INFO *prGlueInfo)
 
 	cmdMdnsParam->ucCmd = MDNS_CMD_CLEAR_RECORD;
 
-	rStatus = kalIoctl(prGlueInfo, wlanoidSetMdnsCmdToFw,
-			   cmdMdnsParam,
-			   sizeof(struct CMD_MDNS_PARAM_T),
-			   TRUE, TRUE, TRUE, &u4BufLen);
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetMdnsCmdToFw, cmdMdnsParam,
+			   sizeof(struct CMD_MDNS_PARAM_T), &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(REQ, ERROR, "set mdns cmd error.\n");
@@ -8169,9 +8148,8 @@ void kalSendMdnsRecordToFw(struct GLUE_INFO *prGlueInfo)
 				sizeof(struct MDNS_PARAM_T));
 
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetMdnsCmdToFw,
-			   cmdMdnsParam,
-			   sizeof(struct CMD_MDNS_PARAM_T),
-			   TRUE, TRUE, TRUE, &u4BufLen);
+			   cmdMdnsParam, sizeof(struct CMD_MDNS_PARAM_T),
+			   &u4BufLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(REQ, ERROR, "set mdns cmd error.\n");
@@ -10523,8 +10501,7 @@ kalSyncTimeToFWByIoctl(void)
 		uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 		rStatus = kalIoctl(prGlueInfo, __kalSyncTimeToFWByIoctl,
-				   NULL, 0,
-				   FALSE, FALSE, TRUE, &u4BufLen);
+				   NULL, 0, &u4BufLen);
 		if (rStatus == WLAN_STATUS_FAILURE)
 			DBGLOG(INIT, WARN,
 				"Failed to sync kernel time to FW.");

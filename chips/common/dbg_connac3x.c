@@ -1069,7 +1069,6 @@ int32_t connac3x_show_stat_info(
 		rStatus = kalIoctlByBssIdx(prAdapter->prGlueInfo,
 				   wlanoidQueryRssi,
 				   &rLinkSpeed, sizeof(rLinkSpeed),
-				   TRUE, TRUE, TRUE,
 				   &u4BufLen, ucBssIndex);
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
@@ -1083,8 +1082,7 @@ int32_t connac3x_show_stat_info(
 #if 0
 		rStatus = kalIoctl(prAdapter->prGlueInfo,
 				   wlanoidQuerySwCtrlRead, &rSwCtrlInfo,
-				   sizeof(rSwCtrlInfo), TRUE, TRUE, TRUE,
-				   &u4BufLen);
+				   sizeof(rSwCtrlInfo), &u4BufLen);
 #endif
 		DBGLOG(REQ, LOUD, "rStatus %u, rSwCtrlInfo.u4Data 0x%x\n",
 		       rStatus, rSwCtrlInfo.u4Data);

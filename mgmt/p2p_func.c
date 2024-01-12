@@ -3433,7 +3433,7 @@ void p2pFuncSetChannel(IN struct ADAPTER *prAdapter,
 				wlanoidQueryGetTxPower,
 				&rGetTxPower,
 				sizeof(struct PARAM_CUSTOM_GET_TX_POWER),
-				TRUE, TRUE, TRUE, &u4BufLen);
+				&u4BufLen);
 
 			if (rStatus != WLAN_STATUS_SUCCESS)
 				DBGLOG(OID, ERROR,
