@@ -9821,7 +9821,7 @@ int priv_driver_set_pp_alg_ctrl(IN struct net_device *prNetDev,
 	uint32_t u4PpThrX4Shf = 0, u4PpThrX5Val = 0, u4PpThrX5Shf = 0;
 	uint32_t u4PpThrX6Val = 0, u4PpThrX6Shf = 0, u4PpThrX7Val = 0;
 	uint32_t u4PpThrX7Shf = 0, u4PpThrX8Val = 0, u4PpThrX8Shf = 0;
-	uint8_t u1PpAction = 0, u1DbdcIdx = 0;
+	uint8_t u1PpAction = 0, u1DbdcIdx = 0, u1Reset = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	int8_t *this_char = NULL;
 	struct UNI_CMD_PP_ALG_CTRL rPpAlgCtrl;
@@ -9858,9 +9858,11 @@ int priv_driver_set_pp_alg_ctrl(IN struct net_device *prNetDev,
 
 	switch (u1PpAction) {
 	case UNI_CMD_PP_ALG_SET_TIMER:
-		i4Recv1 = sscanf(this_char, "%d",
+		i4Recv1 = sscanf(this_char, "%d:%d",
+			&u1DbdcIdx,
 			&u4PpTimerIntv);
 
+		rPpAlgCtrl.u1DbdcIdx = u1DbdcIdx;
 		rPpAlgCtrl.u4PpTimerIntv = u4PpTimerIntv;
 		DBGLOG(REQ, INFO, "\x1b[32m u1PpAction = %d\x1b[m\n"
 			, rPpAlgCtrl.u1PpAction);
@@ -9869,7 +9871,7 @@ int priv_driver_set_pp_alg_ctrl(IN struct net_device *prNetDev,
 		DBGLOG(REQ, INFO, "\x1b[32m i4Recv1 = %d\x1b[m\n"
 			, i4Recv1);
 
-		if (i4Recv1 != 1)
+		if (i4Recv1 != 2)
 			goto error;
 
 		break;
@@ -9950,18 +9952,22 @@ int priv_driver_set_pp_alg_ctrl(IN struct net_device *prNetDev,
 		break;
 
 	case UNI_CMD_PP_ALG_GET_STATISTICS:
-		i4Recv1 = sscanf(this_char, "%d",
-			&u1DbdcIdx);
+		i4Recv1 = sscanf(this_char, "%d:%d",
+			&u1DbdcIdx,
+			&u1Reset);
 		rPpAlgCtrl.u1DbdcIdx = u1DbdcIdx;
+		rPpAlgCtrl.u1Reset = u1Reset;
 
 		DBGLOG(REQ, INFO, "\x1b[32m u4PpAction = %d\x1b[m\n"
 			, rPpAlgCtrl.u1PpAction);
 		DBGLOG(REQ, INFO, "\x1b[32m u1DbdcIdx = %d\x1b[m\n"
 			, rPpAlgCtrl.u1DbdcIdx);
+		DBGLOG(REQ, INFO, "\x1b[32m u1Reset = %d\x1b[m\n"
+			, rPpAlgCtrl.u1Reset);
 		DBGLOG(REQ, INFO, "\x1b[32m i4Recv1 = %d\x1b[m\n"
 			, i4Recv1);
 
-		if (i4Recv1 != 1)
+		if (i4Recv1 != 2)
 			goto error;
 
 		break;
