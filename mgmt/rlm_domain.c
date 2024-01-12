@@ -1915,6 +1915,50 @@ void rlmDomainGetChnlListFromOpClass(struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
+void rlmDomainGetDfsChnls_V2(struct ADAPTER *prAdapter,
+			  uint8_t ucMaxChannelNum, uint8_t *pucNumOfChannel,
+			  struct RF_CHANNEL_INFO *paucChannelList)
+{
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
+	uint8_t idx, start_idx, end_idx, ucNum;
+	struct CMD_DOMAIN_CHANNEL *prCh;
+
+	/* 5G band */
+	start_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
+	end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ) +
+			rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
+
+	ucNum = 0;
+	for (idx = start_idx; idx < end_idx; idx++) {
+		prCh = rlmDomainGetActiveChannels() + idx;
+		if (!kalIsChFlagMatch(prCh->eFlags, CHAN_RADAR))
+			continue;
+
+		paucChannelList[ucNum].eBand = BAND_5G;
+		paucChannelList[ucNum].ucChannelNum = prCh->u2ChNum;
+
+		ucNum++;
+		if (ucMaxChannelNum == ucNum)
+			break;
+	}
+
+	*pucNumOfChannel = ucNum;
+#else
+	*pucNumOfChannel = 0;
+#endif /* CFG_SUPPORT_SINGLE_SKU */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve DFS channels from 5G band
+ *
+ * \param[in/out] ucMaxChannelNum: max array size
+ *                pucNumOfChannel: pointer to returned channel number
+ *                paucChannelList: pointer to returned channel list array
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
 void rlmDomainGetDfsChnls(struct ADAPTER *prAdapter,
 			  uint8_t ucMaxChannelNum, uint8_t *pucNumOfChannel,
 			  struct RF_CHANNEL_INFO *paucChannelList)
@@ -1926,6 +1970,10 @@ void rlmDomainGetDfsChnls(struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(paucChannelList);
 	ASSERT(pucNumOfChannel);
+
+	if (regd_is_single_sku_en())
+		return rlmDomainGetDfsChnls_V2(prAdapter, ucMaxChannelNum,
+				pucNumOfChannel, paucChannelList);
 
 	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
 	ASSERT(prDomainInfo);
@@ -11605,8 +11653,114 @@ uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 			channelBw = MAX_BW_80MHZ;
 		if (kalIsChFlagMatch(pCh->eFlags, CHAN_NO_80MHZ))
 			channelBw = MAX_BW_40MHZ;
-		if (kalIsChFlagMatch(pCh->eFlags, CHAN_NO_HT40))
+		if (kalIsChFlagMatch(pCh->eFlags, CHAN_NO_HT40)) {
 			channelBw = MAX_BW_20MHZ;
+			break;
+		}
+
+		/* To prevent using illegal max bandwidth by channel
+		 * flag in reg domain : IEEE80211_CHAN_NO_HT40PLUS、
+		 * IEEE80211_CHAN_NO_HT40MINUS
+		 *
+		 * IEEE80211_CHAN_NO_HT40 = IEEE80211_CHAN_NO_HT40PLUS |
+		 * IEEE80211_CHAN_NO_HT40MINUS
+		 *
+		 * For example,
+		 * IEEE80211_CHAN_NO_HT40 can not limit max bandwidth for
+		 * 5G chnl 116 in CA to MAX_BW_20MHZ, because this channel
+		 * flag only has IEEE80211_CHAN_NO_HT40PLUS not
+		 * IEEE80211_CHAN_NO_HT40
+		 */
+		if (ch_idx >= rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)) {
+			uint16_t u2ChnlSeq;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			/* For example,
+			 * 5G chnl 116、6G chnl 33 -> case 1
+			 * 5G chnl 120、6G chnl 37 -> case 2
+			 * 5G chnl 124、6G chnl 41 -> case 3
+			 * 5G chnl 128、6G chnl 45 -> case 0
+			 * For 6G band : +1 is to align the cases with 5G band
+			 */
+			if (eChBand == BAND_6G)
+				u2ChnlSeq = ((pCh->u2ChNum >> 2) + 1) & 0x3;
+			else
+#endif
+			{
+				u2ChnlSeq = (pCh->u2ChNum >> 2) & 0x3;
+			}
+
+			/* Limit MAX_BW_40MHz and above to MAX_BW_20MHZ */
+			if (channelBw > MAX_BW_20MHZ) {
+				/* Check flag for 5G chnl 116 or 124 */
+				if ((u2ChnlSeq & 0x1) &&
+					kalIsChFlagMatch(pCh->eFlags,
+					CHAN_NO_HT40PLUS))
+					channelBw = MAX_BW_20MHZ;
+				/* Check flag for 5G chnl 120 or 128 */
+				else if ((!(u2ChnlSeq & 0x1)) &&
+					kalIsChFlagMatch(pCh->eFlags,
+					CHAN_NO_HT40MINUS))
+					channelBw = MAX_BW_20MHZ;
+			}
+
+			/* Limit MAX_BW_80MHz and above to MAX_BW_40MHZ */
+			if (channelBw > MAX_BW_40MHZ) {
+				struct CMD_DOMAIN_CHANNEL *pAdj20Chnl = NULL;
+				struct CMD_DOMAIN_CHANNEL *pAdj40Chnl = NULL;
+				uint32_t ch_idx_offset = 0;
+
+				switch (u2ChnlSeq) {
+				case 1:
+					/* 5G chnl 116 to check chnl 120 flag */
+					ch_idx_offset = 1;
+					if ((ch_idx + ch_idx_offset) < end_idx)
+						pAdj20Chnl = (
+						rlmDomainGetActiveChannels() +
+						(ch_idx + ch_idx_offset));
+					kal_fallthrough;
+				case 2:
+					/* 5G chnl 116 to check chnl 124 flag or
+					 * 5G chnl 120 to check chnl 124 flag
+					 */
+					ch_idx_offset++;
+					break;
+				case 0:
+					/* 5G chnl 128 to check chnl 124 flag */
+					ch_idx_offset = -1;
+					pAdj20Chnl = (
+						rlmDomainGetActiveChannels() +
+						(ch_idx + ch_idx_offset));
+					kal_fallthrough;
+				case 3:
+					/* 5G chnl 128 to check chnl 120 flag or
+					 * 5G chnl 124 to check chnl 120 flag
+					 */
+					ch_idx_offset--;
+					kal_fallthrough;
+				default:
+					break;
+				}
+
+				if ((ch_idx + ch_idx_offset) < end_idx)
+					pAdj40Chnl = (
+						rlmDomainGetActiveChannels() +
+						(ch_idx + ch_idx_offset));
+
+				if ((pAdj20Chnl) &&
+					(kalIsChFlagMatch(
+					pAdj20Chnl->eFlags, CHAN_NO_HT40PLUS) ||
+					kalIsChFlagMatch(
+					pAdj20Chnl->eFlags, CHAN_NO_HT40MINUS)))
+					channelBw = MAX_BW_40MHZ;
+				else if ((pAdj40Chnl) &&
+					(kalIsChFlagMatch(
+					pAdj40Chnl->eFlags, CHAN_NO_HT40PLUS) ||
+					kalIsChFlagMatch(
+					pAdj40Chnl->eFlags, CHAN_NO_HT40MINUS)))
+					channelBw = MAX_BW_40MHZ;
+			}
+		}
+		break;
 	}
 
 	DBGLOG(RLM, TRACE, "ch=%d, BW=%d\n", channelNum, channelBw);
