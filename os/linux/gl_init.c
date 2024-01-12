@@ -5180,6 +5180,7 @@ static void ics_log_event_notification(int cmd, int value)
 	}
 
 	if (cmd == ICS_LOG_CMD_ON_OFF || cmd == ICS_LOG_CMD_SET_LEVEL) {
+		/* band0 */
 		kalMemZero(&rSniffer, sizeof(
 			struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT));
 		rSniffer.ucModule = 2;
@@ -5187,7 +5188,7 @@ static void ics_log_event_notification(int cmd, int value)
 		rSniffer.ucFilter = 0;
 		rSniffer.ucOperation = 0;
 		rSniffer.ucCondition[0] = 2;
-		rSniffer.ucCondition[1] = 0;
+		rSniffer.ucCondition[1] = ENUM_BAND_0;
 		rSniffer.ucCondition[2] = 0;
 		rSniffer.ucCondition[3] = 0;
 		rSniffer.ucCondition[4] = 0;
@@ -5196,7 +5197,18 @@ static void ics_log_event_notification(int cmd, int value)
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetIcsSniffer,
 			&rSniffer, sizeof(rSniffer), &u4BufLen);
 		if (rStatus != WLAN_STATUS_SUCCESS)
-			DBGLOG(INIT, INFO, "wlanoidSetIcsSniffer failed");
+			DBGLOG(INIT, INFO,
+				"wlanoidSetIcsSniffer band0 failed");
+
+		/* band1 */
+		rSniffer.ucCondition[1] = ENUM_BAND_1;
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetIcsSniffer,
+			&rSniffer, sizeof(rSniffer), &u4BufLen);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(INIT, INFO,
+				"wlanoidSetIcsSniffer band1 failed");
+
 		DBGLOG(INIT, INFO, "IcsLog[Lv:OnOff]=[%d:%d]\n",
 			u4IcsLogLevelCache, u4IcsLogOnOffCache);
 	} else {
