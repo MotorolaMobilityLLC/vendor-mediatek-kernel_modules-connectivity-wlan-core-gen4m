@@ -306,38 +306,34 @@ void StatsEnvTxTime2Hif(struct ADAPTER *prAdapter,
 	}
 }
 
-void statsParseARPInfo(void *pvPacket, uint8_t *pucEthBody,
-	uint8_t eventType, uint16_t u2SSN)
+static void statsParseARPInfo(void *pvPacket, uint8_t *pucArp,
+			      uint8_t eventType, uint16_t u2SSN)
 {
-	uint16_t u2OpCode = (pucEthBody[6] << 8) | pucEthBody[7];
+	struct ARP_HEADER *prArp = (struct ARP_HEADER *)pucArp;
+	uint16_t u2OpCode = NTOHS(prArp->u2OpCode);
 
-	switch (eventType) {
-	case EVENT_RX:
+	if (eventType == EVENT_RX) {
 		GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
 		GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_ARP);
 		if (u2OpCode == ARP_PRO_REQ)
 			DBGLOG_LIMITED(RX, INFO,
 				"<RX> Arp Req From IP: " IPV4STR " SSN:%u\n",
-				IPV4TOSTR(&pucEthBody[ARP_SENDER_IP_OFFSET]),
-				u2SSN);
+				IPV4TOSTR(prArp->aucSenderIPaddr), u2SSN);
 		else if (u2OpCode == ARP_PRO_RSP)
 			DBGLOG(RX, INFO,
 				"<RX> Arp Rsp From IP: " IPV4STR " SSN:%u\n",
-				IPV4TOSTR(&pucEthBody[ARP_SENDER_IP_OFFSET]),
-				u2SSN);
-		break;
-	case EVENT_TX:
+				IPV4TOSTR(prArp->aucSenderIPaddr), u2SSN);
+	} else { /* EVENT_TX */
 		DBGLOG(TX, INFO,
 			"ARP %s SRC MAC/IP["
 			MACSTR "]/[" IPV4STR "], TAR MAC/IP["
 			MACSTR "]/[" IPV4STR "], SeqNo: %d\n",
 			u2OpCode == ARP_OPERATION_REQUEST ? "REQ" : "RSP",
-			MAC2STR(&pucEthBody[ARP_SENDER_MAC_OFFSET]),
-			IPV4TOSTR(&pucEthBody[ARP_SENDER_IP_OFFSET]),
-			MAC2STR(&pucEthBody[ARP_TARGET_MAC_OFFSET]),
-			IPV4TOSTR(&pucEthBody[ARP_TARGET_IP_OFFSET]),
+			MAC2STR(prArp->aucSenderMACaddr),
+			IPV4TOSTR(prArp->aucSenderIPaddr),
+			MAC2STR(prArp->aucTargetMACaddr),
+			IPV4TOSTR(prArp->aucTargetIPaddr),
 			GLUE_GET_PKT_SEQ_NO(pvPacket));
-		break;
 	}
 }
 
@@ -367,12 +363,66 @@ static const char *dhcp_msg(uint32_t u4DhcpTypeOpt)
 	return "";
 }
 
-void statsParseUDPInfo(void *pvPacket, uint8_t *pucEthBody,
-	uint8_t eventType, uint16_t u2IpId, uint16_t u2SSN)
+void statsParseICMPInfo(void *pvPacket, uint8_t *pucIcmp, uint8_t eventType,
+			uint16_t u2IpId, uint16_t u2SSN)
+{
+	struct ICMP_ECHO_HEADER *prIcmpEcho;
+	uint8_t ucIcmpType;
+	uint16_t u2IcmpId;
+	uint16_t u2IcmpSeq;
+
+	/* the number of ICMP packets is seldom so we print log here */
+
+	ucIcmpType = GET_ICMP_TYPE(pucIcmp);
+	/* don't log network unreachable packet */
+	if (ucIcmpType == ICMPV4_TYPE_UNREACHABLE)
+		return;
+
+	prIcmpEcho = (struct ICMP_ECHO_HEADER *)pucIcmp;
+	u2IcmpId = NTOHS(prIcmpEcho->u2Identifier);
+	u2IcmpSeq = NTOHS(prIcmpEcho->u2SequenceNumber);
+
+	if (eventType == EVENT_RX) {
+		GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
+		GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_ICMP);
+		DBGLOG_LIMITED(RX, INFO,
+			       "<RX> ICMP: IPID[0x%04x] Type %u, Id 0x%04x, Seq BE 0x%04x, SSN:%u\n",
+			       u2IpId, ucIcmpType, u2IcmpId, u2IcmpSeq, u2SSN);
+	} else { /* EVENT_TX */
+		DBGLOG_LIMITED(TX, INFO,
+			       "<TX> ICMP: IPID[0x%04x] Type %u, Id 0x%04x, Seq BE 0x%04x, SeqNo: %d\n",
+			       u2IpId, ucIcmpType, u2IcmpId, u2IcmpSeq,
+			       GLUE_GET_PKT_SEQ_NO(pvPacket));
+	}
+}
+
+static void statsParseDNSInfo(void *pvPacket, struct UDP_HEADER *prUdp,
+		       uint8_t eventType, uint16_t u2IpId, uint16_t u2SSN,
+		       const char *ipstr)
+{
+	uint16_t u2DnsTransId;
+
+	WLAN_GET_FIELD_BE16(&prUdp->aucData[0], &u2DnsTransId);
+
+	if (eventType == EVENT_RX) {
+		GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
+		GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_DNS);
+		DBGLOG_LIMITED(RX, INFO,
+			"<RX>%s DNS: IPID[0x%04x] TransID[0x%04x] SSN:%u\n",
+			ipstr, u2IpId, u2DnsTransId, u2SSN);
+	} else if (eventType == EVENT_TX) {
+		DBGLOG_LIMITED(TX, INFO,
+			"<TX>%s DNS: IPID[0x%04x] TransID[0x%04x] SeqNo[%d]\n",
+			ipstr, u2IpId, u2DnsTransId,
+			GLUE_GET_PKT_SEQ_NO(pvPacket));
+	}
+}
+
+void statsParseUDPInfo(void *pvPacket, uint8_t *pucUdp, uint8_t eventType,
+		       uint16_t u2IpId, uint16_t u2SSN)
 {
 	/* the number of DHCP packets is seldom so we print log here */
-	struct UDP_HEADER *pUdp = (struct UDP_HEADER *)
-					&pucEthBody[IP_HEADER_LEN];
+	struct UDP_HEADER *prUdp = (struct UDP_HEADER *)pucUdp;
 	struct DHCP_PROTOCOL *prDhcp;
 	uint16_t u2UdpDstPort;
 	uint16_t u2UdpSrcPort;
@@ -380,12 +430,11 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucEthBody,
 	uint32_t u4DhcpMagicCode;
 	const char *msg_type;
 	uint32_t u4DhcpOpt;
-	uint16_t u2DnsTransId;
 
-	u2UdpDstPort = NTOHS(pUdp->u2DstPort);
-	u2UdpSrcPort = NTOHS(pUdp->u2SrcPort);
+	u2UdpDstPort = NTOHS(prUdp->u2DstPort);
+	u2UdpSrcPort = NTOHS(prUdp->u2SrcPort);
 	if (u2UdpDstPort == UDP_PORT_DHCPS || u2UdpDstPort == UDP_PORT_DHCPC) {
-		prDhcp = (struct DHCP_PROTOCOL *)pUdp->aucData;
+		prDhcp = (struct DHCP_PROTOCOL *)prUdp->aucData;
 		u4TransID = NTOHL(prDhcp->u4TransId);
 		u4DhcpMagicCode = NTOHL(prDhcp->u4MagicCookie);
 
@@ -395,8 +444,7 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucEthBody,
 		WLAN_GET_FIELD_BE32(&prDhcp->aucDhcpOption[0], &u4DhcpOpt);
 		msg_type = dhcp_msg(u4DhcpOpt);
 
-		switch (eventType) {
-		case EVENT_RX:
+		if (eventType == EVENT_RX) {
 			GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
 			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_DHCP);
 
@@ -409,9 +457,7 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucEthBody,
 				GLUE_GET_PKT_BSS_IDX(pvPacket),
 				u4DhcpOpt);
 #endif
-			break;
-
-		case EVENT_TX:
+		} else { /* EVENT_TX */
 			DBGLOG_LIMITED(TX, INFO,
 				"<TX> DHCP: Send %s, XID[0x%08x] OPT[0x%08x] TYPE[%u], SeqNo: %d\n",
 				msg_type, u4TransID, u4DhcpOpt,
@@ -423,90 +469,62 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucEthBody,
 				u4DhcpOpt,
 				GLUE_GET_PKT_SEQ_NO(pvPacket));
 #endif
-			break;
 		}
 	} else if (u2UdpSrcPort == UDP_PORT_DNS ||
 		   u2UdpDstPort == UDP_PORT_DNS) {
-		WLAN_GET_FIELD_BE16(&pUdp->aucData[0], &u2DnsTransId);
-
-		if (eventType == EVENT_RX) {
-			GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
-			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_DNS);
-			DBGLOG_LIMITED(RX, INFO,
-				"<RX> DNS: IPID[0x%04x] TransID[0x%04x] SSN:%u\n",
-				u2IpId, u2DnsTransId, u2SSN);
-		} else if (eventType == EVENT_TX) {
-			DBGLOG_LIMITED(TX, INFO,
-				"<TX> DNS: IPID[0x%04x] TransID[0x%04x] SeqNo[%d]\n",
-				u2IpId, u2DnsTransId,
-				GLUE_GET_PKT_SEQ_NO(pvPacket));
-		}
+		statsParseDNSInfo(pvPacket, prUdp, eventType, u2IpId, u2SSN,
+				  "<IPv4>");
 	}
 }
 
-void statsParseIPV4Info(void *pvPacket, uint8_t *pucEthBody,
-	uint8_t eventType, uint16_t u2SSN)
+static void statsParseIPV4Info(void *pvPacket, uint8_t *pucIPv4,
+			       uint8_t eventType, uint16_t u2SSN)
 {
 	/* IP header without options */
-	uint8_t ucIpProto = pucEthBody[9];
-	uint8_t ucIpVersion =
-		(pucEthBody[0] & IPVH_VERSION_MASK)
-			>> IPVH_VERSION_OFFSET;
-	uint16_t u2IpId = pucEthBody[4] << 8 | pucEthBody[5];
+	struct IPV4_HEADER *prIPv4 = (struct IPV4_HEADER *)pucIPv4;
+	uint8_t ucIpVersion = GET_IP_VERSION(pucIPv4);
+	uint8_t ucIPv4HeaderLength;
+	uint8_t ucIpProto;
+	uint16_t u2IpId;
+	uint8_t *pucL4Header;
+	uint8_t *pucIcmp;
+	uint8_t *pucUdp;
 
 	if (ucIpVersion != IPVERSION)
 		return;
 
+	ucIpProto = prIPv4->ucProtocol;
+	u2IpId = NTOHS(prIPv4->u2Identifier);
 	GLUE_SET_PKT_IP_ID(pvPacket, u2IpId);
+
+	ucIPv4HeaderLength = GET_IPV4_HEADER_SIZE(pucIPv4);
+	if (ucIPv4HeaderLength == 0)
+		return;
+	pucL4Header = &pucIPv4[ucIPv4HeaderLength];
 
 	switch (ucIpProto) {
 	case IP_PRO_ICMP:
-	{
-		/* the number of ICMP packets is seldom so we print log here */
-		uint8_t ucIcmpType;
-		uint16_t u2IcmpId, u2IcmpSeq;
-		uint8_t *pucIcmp = &pucEthBody[20];
+		pucIcmp = pucL4Header;
+		statsParseICMPInfo(pvPacket, pucIcmp, eventType, u2IpId, u2SSN);
+		break;
 
-		ucIcmpType = pucIcmp[ICMP_TYPE_OFFSET];
-		/* don't log network unreachable packet */
-		if (ucIcmpType == 3)
-			break;
-		u2IcmpId = HTONS(*(uint16_t *)&pucIcmp[ICMP_IDENTIFIER_OFFSET]);
-		u2IcmpSeq = HTONS(*(uint16_t *)&pucIcmp[ICMP_SEQ_NUM_OFFSET]);
-
-		switch (eventType) {
-		case EVENT_RX:
-			GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
-			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_ICMP);
-			DBGLOG_LIMITED(RX, INFO,
-				"<RX> ICMP: IPID[0x%04x] Type %u, Id 0x%04x, Seq BE 0x%04x, SSN:%u\n",
-				u2IpId, ucIcmpType, u2IcmpId, u2IcmpSeq, u2SSN);
-			break;
-		case EVENT_TX:
-			DBGLOG_LIMITED(TX, INFO,
-				"<TX> ICMP: IPID[0x%04x] Type %u, Id 0x%04x, Seq BE 0x%04x, SeqNo: %d\n",
-				u2IpId, ucIcmpType, u2IcmpId, u2IcmpSeq,
-				GLUE_GET_PKT_SEQ_NO(pvPacket));
-			break;
-		}
+	case IP_PRO_UDP:
+		pucUdp = pucL4Header;
+		statsParseUDPInfo(pvPacket, pucUdp, eventType, u2IpId, u2SSN);
 		break;
 	}
-	case IP_PRO_UDP:
-		statsParseUDPInfo(pvPacket, pucEthBody, eventType, u2IpId,
-				u2SSN);
-	}
-}
-
-void statsLogData(uint8_t eventType, enum WAKE_DATA_TYPE wakeType)
-{
-	if (eventType == EVENT_TX)
-		wlanLogTxData(wakeType);
-	else if (eventType == EVENT_RX)
-		wlanLogRxData(wakeType);
 }
 
 static const char *icmpv6_msg(uint8_t ucICMPv6Type)
 {
+	static const char * const icmpv6_messages_0[] = {
+		"Reserved",
+		"Destination Unreachable",
+		"Packet Too Big",
+		"Time Exceeded",
+		"Parameter Problem",
+	};
+
 	static const char * const icmpv6_messages[] = {
 		"Echo Request",
 		"Echo Reply",
@@ -519,27 +537,314 @@ static const char *icmpv6_msg(uint8_t ucICMPv6Type)
 		"Neighbor Advertisement",
 	};
 
-	if (ucICMPv6Type >= ICMPV6_TYPE_ECHO_REQUEST &&
-	    ucICMPv6Type <= ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT)
+	if (ucICMPv6Type <= ICMPV6_TYPE_PARAMETER_PROBLEM) {
+		return icmpv6_messages_0[ucICMPv6Type];
+	} else if (ucICMPv6Type >= ICMPV6_TYPE_ECHO_REQUEST &&
+		   ucICMPv6Type <= ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT) {
 		return icmpv6_messages[ucICMPv6Type - ICMPV6_TYPE_ECHO_REQUEST];
+	}
 
 	return NULL;
 }
 
-static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
-	uint8_t status, uint8_t eventType, uint16_t u2SSN)
+/**
+ * ipv6_addr_ntop() - IPv6 address from network to presentation format
+ * @pucIPv6Addr: pointer to IPv6 address in network presentation
+ * @output: output buffer
+ * @bufsize: size of output buffer
+ */
+static void ipv6_addr_ntop(const uint8_t *pucIPv6Addr, char *output,
+			   uint32_t bufsize)
+{
+	uint32_t i;
+	int32_t n;
+
+	for (i = 0; i < IPV6_ADDR_LEN; i += 2) {
+		n = kalSnprintf(output, bufsize, "%02x%02x%s",
+				pucIPv6Addr[i], pucIPv6Addr[i + 1],
+				i == IPV6_ADDR_LEN - 2 ? "" : ":");
+		output += n;
+		bufsize -= n;
+	}
+}
+
+/**
+ * link_addr_ntop() - Link layer address from network to presentation format
+ * @pucLinkAddr: pointer to Link layer address in network presentation
+ * @output: output buffer
+ * @bufsize: size of output buffer
+ */
+static void link_addr_ntop(const uint8_t *pucLinkAddr, char *output,
+			   uint32_t bufsize)
+{
+	uint32_t i;
+	int32_t n;
+
+	for (i = 0; i < MAC_ADDR_LEN; i++) {
+		n = kalSnprintf(output, bufsize, "%02x%s", pucLinkAddr[i],
+				i == MAC_ADDR_LEN - 1 ? "" : ":");
+		output += n;
+		bufsize -= n;
+	}
+}
+
+/**
+ * get_target_link_addr() - log NS/NA messages
+ *
+ * RFC 4861, 4.3 NS, 4.4 NA, 4.6 Option Formats
+ * +----------+-----------+----------------------+----------------------+
+ * | Type (1) | Code (1)  | Checksum (2)         | Flag / Reserved (4)  |
+ * +----------+----------------------------------+-......---------------+
+ * |     Target Address (16)                                            |
+ * +----------+-----------+------......-----+------......---------------+
+ * | Type (1) | Length (1)| Address (6)     |
+ * +----------+-----------+------......-----+
+ * Type: 1 for source link-layer address
+ *       2 for target link-layer address
+ * Length: the length of the option (including the type and length
+ *	   fields) in units of 8 octets.
+ * Link-Layer address: L2 MAC address here
+ *
+ * @pucTargetAddr: pointer to Target address in IPv6 header,
+ *                 points to Target Address in the figure above
+ * @pTargetAddr: output buffer of IPv6 Target address
+ * @u4TargetAddrBufSize: buffer size of pTargetAddr
+ * @pucOption: pointer to Option field in IPv6 header,
+ *             points to Type after Target address in the figure above
+ * @pLinkAddr: output buffer of Link layer address
+ * @u4LinkAddrBufSize: buffer size of pLinkAddr
+ */
+static void get_target_link_addr(const uint8_t *pucTargetAddr,
+				 char *pTargetAddr,
+				 uint32_t u4TargetAddrBufSize,
+				 const uint8_t *pucOption, char *pLinkAddr,
+				 uint32_t u4LinkAddrBufSize)
+{
+	const uint8_t *pucLinkAddr;
+
+	ipv6_addr_ntop(pucTargetAddr, pTargetAddr, u4TargetAddrBufSize);
+
+	if ((*pucOption == ICMPV6_OPTION_SOURCE_LINK_ADDR ||
+	     *pucOption == ICMPV6_OPTION_TARGET_LINK_ADDR) &&
+	    *(pucOption + 1) == 1) { /* length == 8 octets */
+		pucLinkAddr = pucOption + 2;
+		link_addr_ntop(pucLinkAddr, pLinkAddr, u4LinkAddrBufSize);
+	} else {
+		kalSnprintf(pLinkAddr, u4LinkAddrBufSize, "NA");
+	}
+}
+
+static void statsParseIPV6Info(void *pvPacket, uint8_t *pucIPv6,
+			       uint8_t eventType, uint16_t u2SSN)
+{
+	struct IPV6_HEADER *prIPv6 = (struct IPV6_HEADER *)pucIPv6;
+	uint8_t ucIpVersion = GET_IP_VERSION(pucIPv6);
+	uint8_t ucIpv6Proto;
+	struct UDP_HEADER *prUdp;
+
+	struct ICMPV6_HEADER *prIcmp6;
+	struct ICMP_ECHO_HEADER *prIcmpEcho;
+	struct ICMPV6_NSNA_HEADER *prIcmp6NsNa;
+
+	uint16_t u2IcmpId = 0;
+	uint16_t u2IcmpSeq = 0;
+	const char *icmp6msg;
+	uint8_t ucICMPv6Type;
+	/* ICMPv6 NS/NA */
+	const uint8_t *pucTargetAddr;
+	const uint8_t *pucOption;
+	char aucTargetAddr[IPV6_ADDR_STR_BUF_SIZE] = {0};
+	char aucLinkAddr[MAC_ADDR_STR_BUF_SIZE] = {0};
+	uint16_t ucIpv6UDPSrcPort;
+	uint16_t ucIpv6UDPDstPort;
+
+	if (ucIpVersion != IP_VERSION_6)
+		return;
+
+	ucIpv6Proto = prIPv6->ucNextHeader;
+
+	switch (ucIpv6Proto) {
+	case IP_PRO_TCP:
+		if (eventType == EVENT_RX) {
+			DBGLOG(RX, TRACE, "<RX><IPv6> TCP packet SSN:%u\n",
+			       u2SSN);
+		} else { /* EVENT_TX */
+			DBGLOG(TX, TRACE, "<TX><IPv6> TCP packet\n");
+		}
+		break;
+
+	case IP_PRO_UDP:
+		prUdp = (struct UDP_HEADER *)prIPv6->aucL4;
+		ucIpv6UDPSrcPort = NTOHS(prUdp->u2SrcPort);
+		ucIpv6UDPDstPort = NTOHS(prUdp->u2DstPort);
+
+		if (ucIpv6UDPSrcPort == UDP_PORT_DNS ||
+		    ucIpv6UDPDstPort == UDP_PORT_DNS) {
+			statsParseDNSInfo(pvPacket, prUdp, eventType, 0,
+					  u2SSN, "<IPv6>");
+			break;
+		}
+
+		if (eventType == EVENT_RX) {
+			switch (ucIpv6UDPSrcPort) {
+			case IPV6_UDP_PORT_DHCPC:
+			case IPV6_UDP_PORT_DHCPS:
+				DBGLOG(RX, INFO,
+				       "<RX><IPv6> DHCP packet SSN:%u\n",
+				       u2SSN);
+				GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
+				GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_DHCP);
+				break;
+
+			case UDP_PORT_NTP:
+				DBGLOG(RX, INFO,
+				       "<RX><IPv6> NTP packet SSN:%u\n",
+				       u2SSN);
+				GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
+				break;
+
+			default:
+				DBGLOG(RX, TRACE,
+				       "<RX><IPv6> other packet srtport=%u SSN:%u\n",
+				       ucIpv6UDPSrcPort, u2SSN);
+				break;
+			}
+		} else { /* EVENT_TX */
+			DBGLOG(TX, TRACE, "<TX><IPv6> UDP packet\n");
+		}
+		break;
+
+	case IPV6_PROTOCOL_HOP_BY_HOP:
+		if (eventType == EVENT_RX) {
+			GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
+			DBGLOG_LIMITED(RX, INFO,
+				       "<RX><IPv6> hop-by-hop packet, SSN:%u\n",
+				       u2SSN);
+		} else { /* EVENT_TX */
+			DBGLOG_LIMITED(TX, INFO,
+				       "<TX><IPv6> hop-by-hop packet\n");
+		}
+		break;
+
+	case IPV6_PROTOCOL_ICMPV6:
+		prIcmp6 = (struct ICMPV6_HEADER *)prIPv6->aucL4;
+		ucICMPv6Type = prIcmp6->ucType;
+
+		if (ucICMPv6Type == ICMPV6_TYPE_ECHO_REQUEST ||
+		    ucICMPv6Type == ICMPV6_TYPE_ECHO_REPLY) {
+			prIcmpEcho = (struct ICMP_ECHO_HEADER *)prIcmp6;
+
+			u2IcmpId = NTOHS(prIcmpEcho->u2Identifier);
+			u2IcmpSeq = NTOHS(prIcmpEcho->u2SequenceNumber);
+		}
+
+		if (ucICMPv6Type == ICMPV6_TYPE_NEIGHBOR_SOLICITATION ||
+		    ucICMPv6Type == ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT) {
+			prIcmp6NsNa = (struct ICMPV6_NSNA_HEADER *)prIcmp6;
+
+			pucTargetAddr = prIcmp6NsNa->aucTargetAddress;
+			pucOption = prIcmp6NsNa->aucOption;
+			get_target_link_addr(pucTargetAddr, aucTargetAddr,
+					     sizeof(aucTargetAddr),
+					     pucOption, aucLinkAddr,
+					     sizeof(aucLinkAddr));
+		}
+
+		icmp6msg = icmpv6_msg(ucICMPv6Type);
+
+		if (eventType == EVENT_RX) {
+			/* IPv6 header without options */
+			GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
+			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_ICMPV6);
+			if (unlikely(!icmp6msg)) {
+				DBGLOG_LIMITED(RX, INFO,
+					       "<RX><IPv6> ICMPV6 type=%u SSN:%u",
+					       ucICMPv6Type, u2SSN);
+			} else if (ucICMPv6Type == ICMPV6_TYPE_ECHO_REQUEST ||
+				   ucICMPv6Type == ICMPV6_TYPE_ECHO_REPLY) {
+				DBGLOG_LIMITED(RX, INFO,
+					       "<RX><IPv6> ICMPv6: %s, Id BE 0x%04x, Seq BE 0x%04x SSN:%u",
+					       icmp6msg, u2IcmpId, u2IcmpSeq,
+					       u2SSN);
+			} else if (ucICMPv6Type ==
+				   ICMPV6_TYPE_NEIGHBOR_SOLICITATION) {
+				DBGLOG_LIMITED(RX, INFO,
+					       "<RX><IPv6> ICMPv6: %s, who has: %s link: %s, SSN:%u",
+					       icmp6msg, aucTargetAddr,
+					       aucLinkAddr, u2SSN);
+			} else if (ucICMPv6Type ==
+				   ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT) {
+				DBGLOG_LIMITED(RX, INFO,
+					       "<RX><IPv6> ICMPv6: %s, tgt is: %s link: %s, SSN:%u",
+					       icmp6msg, aucTargetAddr,
+					       aucLinkAddr, u2SSN);
+
+			} else {
+				DBGLOG_LIMITED(RX, INFO,
+					       "<RX><IPv6> ICMPv6 %s SSN:%u",
+					       icmp6msg, u2SSN);
+			}
+		} else { /* EVENT_TX */
+
+			if (unlikely(!icmp6msg)) {
+				DBGLOG_LIMITED(TX, INFO,
+					       "<TX><IPv6> ICMPV6 type=%u, SeqNo: %d",
+					       ucICMPv6Type,
+					       GLUE_GET_PKT_SEQ_NO(pvPacket));
+			} else if (ucICMPv6Type == ICMPV6_TYPE_ECHO_REQUEST ||
+				   ucICMPv6Type == ICMPV6_TYPE_ECHO_REPLY) {
+				DBGLOG_LIMITED(TX, INFO,
+					       "<TX><IPv6> ICMPv6: %s, Id 0x%04x, Seq BE 0x%04x, SeqNo: %d",
+					       icmp6msg, u2IcmpId, u2IcmpSeq,
+					       GLUE_GET_PKT_SEQ_NO(pvPacket));
+			} else if (ucICMPv6Type ==
+				   ICMPV6_TYPE_NEIGHBOR_SOLICITATION) {
+				DBGLOG_LIMITED(TX, INFO,
+					       "<TX><IPv6> ICMPv6: %s, who has: %s link: %s, SeqNo: %d",
+					       icmp6msg, aucTargetAddr,
+					       aucLinkAddr,
+					       GLUE_GET_PKT_SEQ_NO(pvPacket));
+			} else if (ucICMPv6Type ==
+				   ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT) {
+				DBGLOG_LIMITED(TX, INFO,
+					       "<TX><IPv6> ICMPv6: %s, tgt is: %s link: %s, SeqNo: %d",
+					       icmp6msg, aucTargetAddr,
+					       aucLinkAddr,
+					       GLUE_GET_PKT_SEQ_NO(pvPacket));
+			} else {
+				DBGLOG_LIMITED(TX, INFO,
+					       "<TX><IPv6> ICMPv6 %s, SeqNo: %u",
+					       icmp6msg,
+					       GLUE_GET_PKT_SEQ_NO(pvPacket));
+			}
+		}
+		break;
+
+	default:
+		if (eventType == EVENT_RX)
+			DBGLOG(RX, INFO,
+			       "<RX><IPv6> default protocol=%u SSN:%u\n",
+			       ucIpv6Proto, u2SSN);
+		break;
+	}
+}
+
+void statsLogData(uint8_t eventType, enum WAKE_DATA_TYPE wakeType)
+{
+	if (eventType == EVENT_TX)
+		wlanLogTxData(wakeType);
+	else if (eventType == EVENT_RX)
+		wlanLogRxData(wakeType);
+}
+
+static void statsParsePktInfo(uint8_t *pucData, void *pvPacket, uint8_t status,
+			      uint8_t eventType, uint16_t u2SSN)
 
 {
 	/* get ethernet protocol */
-	uint16_t u2EtherType =
-		(pucData[ETH_TYPE_LEN_OFFSET] << 8)
-			| (pucData[ETH_TYPE_LEN_OFFSET + 1]);
-	uint8_t *pucEthBody = &pucData[ETH_HLEN];
-	const char *icmp6msg;
-	uint8_t ucICMPv6Type;
-	uint8_t *pucIcmp6;
-	uint16_t u2IcmpId;
-	uint16_t u2IcmpSeq;
+	struct ETH_FRAME *prEth = (struct ETH_FRAME *)pucData;
+	uint16_t u2EtherType = NTOHS(prEth->u2TypeLen);
+	uint8_t *pucEthBody = prEth->aucData;
 
 	switch (u2EtherType) {
 	case ETH_P_ARP:
@@ -553,164 +858,10 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 		break;
 
 	case ETH_P_IPV6:
-	{
-		/* IPv6 header without options */
-		uint8_t ucIpv6Proto =
-			pucEthBody[IPV6_HDR_PROTOCOL_OFFSET];
-		uint8_t ucIpVersion =
-			(pucEthBody[0] & IPVH_VERSION_MASK)
-				>> IPVH_VERSION_OFFSET;
-
-		if (ucIpVersion != IP_VERSION_6)
-			break;
-
 		statsLogData(eventType, WLAN_WAKE_IPV6);
-		switch (ucIpv6Proto) {
-		case IP_PRO_TCP:
-			switch (eventType) {
-			case EVENT_RX:
-				DBGLOG(RX, TRACE,
-					"<RX><IPv6> tcp packet SSN:%u\n",
-					u2SSN);
-				break;
-			case EVENT_TX:
-				DBGLOG(TX, TRACE, "<TX><IPv6> tcp packet\n");
-				break;
-			}
-			break;
-
-		case IP_PRO_UDP:
-			switch (eventType) {
-			case EVENT_RX:
-			{
-				uint16_t ucIpv6UDPSrcPort = 0;
-
-				/* IPv6 header without options */
-				ucIpv6UDPSrcPort = pucEthBody[IPV6_HDR_LEN];
-				ucIpv6UDPSrcPort = ucIpv6UDPSrcPort << 8;
-				ucIpv6UDPSrcPort +=
-					pucEthBody[IPV6_HDR_LEN + 1];
-
-				switch (ucIpv6UDPSrcPort) {
-				case UDP_PORT_DNS:
-					DBGLOG(RX, TRACE,
-						"<RX><IPv6> dns packet SSN:%u\n",
-						u2SSN);
-					GLUE_SET_INDEPENDENT_PKT(
-						pvPacket, TRUE);
-					GLUE_SET_PKT_FLAG(pvPacket,
-						ENUM_PKT_DNS);
-					break;
-				case IPV6_UDP_PORT_DHCPC:
-				case IPV6_UDP_PORT_DHCPS:
-					DBGLOG(RX, INFO,
-						"<RX><IPv6> dhcp packet SSN:%u\n",
-						u2SSN);
-					GLUE_SET_INDEPENDENT_PKT(
-						pvPacket, TRUE);
-					GLUE_SET_PKT_FLAG(pvPacket,
-						ENUM_PKT_DHCP);
-					break;
-				case UDP_PORT_NTP:
-					DBGLOG(RX, INFO,
-						"<RX><IPv6> ntp packet SSN:%u\n",
-						u2SSN);
-					GLUE_SET_INDEPENDENT_PKT(
-						pvPacket, TRUE);
-					break;
-				default:
-					DBGLOG(RX, TRACE,
-					"<RX><IPv6> other packet srtport=%u SSN:%u\n",
-						ucIpv6UDPSrcPort, u2SSN);
-					break;
-				}
-			}
-				break;
-			case EVENT_TX:
-				DBGLOG(TX, TRACE, "<TX><IPv6> UDP packet\n");
-				break;
-			}
-			break;
-
-		case IPV6_PROTOCOL_HOP_BY_HOP:
-			switch (eventType) {
-			case EVENT_RX:
-				/*need chech detai pakcet type*/
-				/*130 mlti listener query*/
-				/*143 multi listener report v2*/
-				GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
-				GLUE_SET_PKT_FLAG(pvPacket,
-					ENUM_PKT_IPV6_HOP_BY_HOP);
-				DBGLOG_LIMITED(RX, INFO,
-					"<RX><IPv6> hop-by-hop packet, SSN:%u\n",
-					u2SSN);
-				break;
-			case EVENT_TX:
-				DBGLOG_LIMITED(TX, INFO,
-					"<TX><IPv6> hop-by-hop packet\n");
-				break;
-			}
-			break;
-
-		case IPV6_PROTOCOL_ICMPV6:
-			pucIcmp6 = &pucEthBody[IPV6_HDR_LEN];
-			ucICMPv6Type = pucIcmp6[0];
-			icmp6msg = icmpv6_msg(ucICMPv6Type);
-			u2IcmpId = HTONS(*(uint16_t *)
-					 &pucIcmp6[ICMP_IDENTIFIER_OFFSET]);
-			u2IcmpSeq = HTONS(*(uint16_t *)
-					  &pucIcmp6[ICMP_SEQ_NUM_OFFSET]);
-
-			switch (eventType) {
-			case EVENT_RX:
-				/* IPv6 header without options */
-				GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
-				GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_ICMPV6);
-				if (likely(icmp6msg) &&
-				    (ucICMPv6Type == ICMPV6_TYPE_ECHO_REQUEST ||
-				     ucICMPv6Type == ICMPV6_TYPE_ECHO_REPLY))
-					DBGLOG_LIMITED(RX, INFO,
-						"<RX><IPv6> ICMPv6: %s, Id BE 0x%04x, Seq BE 0x%04x SSN:%u",
-						icmp6msg, u2IcmpId, u2IcmpSeq,
-						u2SSN);
-				else if (icmp6msg)
-					DBGLOG_LIMITED(RX, INFO,
-						"<RX><IPv6> ICMPv6 %s SSN:%u",
-						icmp6msg, u2SSN);
-				else
-					DBGLOG_LIMITED(RX, INFO,
-						"<RX><IPv6> ICMPV6 type=%u SSN:%u",
-						ucICMPv6Type, u2SSN);
-				break;
-
-			case EVENT_TX:
-				if (likely(icmp6msg) &&
-				    (ucICMPv6Type == ICMPV6_TYPE_ECHO_REQUEST ||
-				     ucICMPv6Type == ICMPV6_TYPE_ECHO_REPLY))
-					DBGLOG_LIMITED(TX, INFO,
-						"<TX><IPv6> ICMPv6: %s, Id 0x%04x, Seq BE 0x%04x, SeqNo: %d",
-						icmp6msg, u2IcmpId, u2IcmpSeq,
-						GLUE_GET_PKT_SEQ_NO(pvPacket));
-				else if (icmp6msg)
-					DBGLOG_LIMITED(TX, INFO,
-						"<TX><IPv6> ICMPv6 %s",
-						icmp6msg);
-				else
-					DBGLOG_LIMITED(TX, INFO,
-						"<TX><IPv6> ICMPV6 type=%u",
-						ucICMPv6Type);
-				break;
-			}
-			break;
-		default:
-			if (eventType == EVENT_RX)
-				DBGLOG(RX, INFO,
-				"<RX><IPv6> default protocol=%u SSN:%u\n",
-				ucIpv6Proto, u2SSN);
-			break;
-		}
+		statsParseIPV6Info(pvPacket, pucEthBody, eventType, u2SSN);
 		break;
-	}
+
 	case ETH_P_1X:
 	{
 		uint8_t *pucEapol = pucEthBody;
@@ -863,6 +1014,7 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 		break;
 	}
 }
+
 /*----------------------------------------------------------------------------*/
 /*! \brief  This routine is called to display rx packet information.
  *
