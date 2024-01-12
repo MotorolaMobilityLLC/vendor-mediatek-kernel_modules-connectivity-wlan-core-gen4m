@@ -577,7 +577,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
 	.u4LmacWtblDUAddr = CONNAC2X_WIFI_LWTBL_BASE,
 	.u4UmacWtblDUAddr = CONNAC2X_WIFI_UWTBL_BASE,
-	.triggerfwassert = soc7_0_Trigger_fw_assert,
+	.trigger_fw_assert = soc7_0_Trigger_fw_assert,
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	.coexpccifon = soc7_0_ConnacPccifon,
 	.coexpccifoff = soc7_0_ConnacPccifoff,
@@ -1110,39 +1110,23 @@ static void soc7_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 	}
 }
 
-int soc7_0_Trigger_fw_assert(void)
+int soc7_0_Trigger_fw_assert(struct ADAPTER *prAdapter)
 {
 	int ret = 0;
 	int value = 0;
-	uint32_t waitRet = 0;
-	struct ADAPTER *prAdapter = NULL;
-	struct GLUE_INFO *prGlueInfo = NULL;
-
-	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
-	prAdapter = prGlueInfo->prAdapter;
 
 	if (g_IsWfsysBusHang == TRUE) {
 		DBGLOG(HAL, INFO,
 			"Already trigger conninfra whole chip reset.\n");
-		return 0;
+		return -EBUSY;
 	}
 	DBGLOG(HAL, INFO, "Trigger fw assert start.\n");
 	wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
 	value &= 0xFFFFFF7F;
 	ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
-	waitRet = wait_for_completion_timeout(&g_triggerComp,
-			MSEC_TO_JIFFIES(WIFI_TRIGGER_ASSERT_TIMEOUT));
-	if (waitRet > 0) {
-		/* Case 1: No timeout. */
-		DBGLOG(INIT, INFO, "Trigger assert successfully.\n");
-	} else {
-		/* Case 2: timeout */
-		DBGLOG(INIT, ERROR,
-			"Trigger assert more than 2 seconds, need to trigger rst self\n");
-	}
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	kalSetRstEvent();
-#endif
+
+	reset_wait_for_trigger_completion();
+
 	wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
 	value |= 0x80;
 	ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);

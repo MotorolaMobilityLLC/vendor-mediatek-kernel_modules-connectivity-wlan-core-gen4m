@@ -78,35 +78,6 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-/* 2 Flags for OS capability */
-
-#if defined(_HIF_SDIO)
-/* #ifdef CONFIG_X86 */
-/*Kernel-3.10-ARM did not provide X86_FLAG & HIF shouldn't bind platform*/
-#if (CFG_MTK_ANDROID_WMT)
-#define MTK_WCN_HIF_SDIO		1
-#else
-#define MTK_WCN_HIF_SDIO		0
-#endif
-#else
-#define MTK_WCN_HIF_SDIO		0
-#endif
-
-#if defined(_HIF_AXI)
-#ifdef LINUX
-#ifdef CONFIG_X86
-#define MTK_WCN_HIF_AXI			0
-#else
-#define MTK_WCN_HIF_AXI			1
-#endif
-#else
-#define MTK_WCN_HIF_AXI			0
-#endif
-#else
-#define MTK_WCN_HIF_AXI			0
-#endif
-
-
 
 /* Android build-in driver switch, Mike 2016/11/11*/
 #ifndef CFG_BUILT_IN_DRIVER
