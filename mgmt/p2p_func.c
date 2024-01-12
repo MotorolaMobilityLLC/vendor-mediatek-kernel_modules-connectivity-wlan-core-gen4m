@@ -6386,7 +6386,7 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 			/* Add SCC channel if DBDC enabled */
 			if (prAdapter->rWifiVar.eDbdcMode !=
 					ENUM_DBDC_MODE_DISABLED) {
-				freq_list[i + 1] = nicChannelNum2Freq(
+				freq_list[i] = nicChannelNum2Freq(
 					prAisBssInfo->ucPrimaryChannel) / 1000;
 				(*num_freq_list)++;
 			}
