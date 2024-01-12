@@ -1068,6 +1068,7 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_HE_ER
 	uint8_t u4ExtendedRange;
 #endif
+
 #if CFG_SUPPORT_SMART_GEAR
 	uint8_t ucSGCfg;
 	uint8_t ucSG24GFavorANT;
@@ -1088,6 +1089,14 @@ struct WIFI_VAR {
 	uint8_t ucScanNoApRecover;
 	uint8_t ucScanNoApRecoverTh;
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
+#if (CFG_COALESCING_INTERRUPT == 1)
+	uint16_t u2CoalescingIntMaxPk;
+	uint16_t u2CoalescingIntMaxTime;
+	uint16_t u2CoalescingIntuFilterMask;
+	u_int8_t fgCoalescingIntEn;
+	uint32_t u4PerfMonTpCoalescingIntTh;
+#endif
 
 	uint8_t fgSapCheckPmkidInDriver;
 	uint8_t fgSapChannelSwitchPolicy;

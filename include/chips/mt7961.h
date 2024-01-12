@@ -155,6 +155,15 @@ void mt7961_show_pse_info(
 void mt7961_show_wfdma_info(
 	IN struct ADAPTER *prAdapter);
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+
+#if (CFG_COALESCING_INTERRUPT == 1)
+uint32_t mt7961setWfdmaCoalescingInt(
+	struct ADAPTER *prAdapter,
+	u_int8_t fgEnable);
+#endif
+
+#endif /* _HIF_PCIE || _HIF_AXI */
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

@@ -16,8 +16,8 @@ extern "C" {
 /* WF_WFDMA_HOST_DMA0 CR Definitions */
 /* */
 /* ************************************************************************** */
-
-#define WF_WFDMA_HOST_DMA0_BASE 0x7C024000
+#define WF_WFDMA_HOST_DMA0_BASE 0x7c024000
+#define WF_WFDMA_EXT_WRAP_CSR_BASE 0x7c027000
 
 #define WF_WFDMA_HOST_DMA0_HOST_IF_TX_DONE_STS_ADDR          \
 (WF_WFDMA_HOST_DMA0_BASE + 0XA0) /* 40A0 */
@@ -8398,6 +8398,13 @@ WF_WFDMA_HOST_DMA0_WPDMA_RX_RING8_BKRS_CTRL2_ADDR
 #define WF_WFDMA_HOST_DMA0_WPDMA_RX_RING8_BKRS_CTRL2_pld_cidx_idx_MASK   \
 0x00000FFF /* pld_cidx_idx[11..0] */
 #define WF_WFDMA_HOST_DMA0_WPDMA_RX_RING8_BKRS_CTRL2_pld_cidx_idx_SHFT 0
+
+#define WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_ADDR                           \
+	(WF_WFDMA_EXT_WRAP_CSR_BASE + 0x30) /* 7030 */
+#define WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie_dly_rx_int_en_ADDR        \
+	WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_ADDR
+#define WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie_dly_rx_int_en_MASK        \
+	0x00000200				  /* pcie_dly_rx_int_en[9] */
 
 #ifdef __cplusplus
 }

@@ -349,6 +349,9 @@ enum ENUM_CMD_ID {
 
 	CMD_ID_MQM_UPDATE_MU_EDCA_PARMS = 0xB0,   /* 0xB0 (Set) */
 	CMD_ID_RLM_UPDATE_SR_PARAMS = 0xB1,       /* 0xB1 (Set) */
+#if (CFG_COALESCING_INTERRUPT == 1)
+	CMD_ID_PF_CF_COALESCING_INT = 0xB2,    /* 0xB2 (Set) */
+#endif
 
 	CMD_ID_ACCESS_REG           = 0xc0, /* 0xc0 (Set / Query) */
 	CMD_ID_MAC_MCAST_ADDR,              /* 0xc1 (Set / Query) */
@@ -539,6 +542,9 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_CAL_BACKUP_IN_HOST_V2 = 0xAE,
 	/* 0xAE (Query - CMD_ID_CAL_BACKUP) */
 	EVENT_ID_CAL_ALL_DONE = 0xAF,   /* 0xAF (FW Cal All Done Event) */
+#if (CFG_COALESCING_INTERRUPT == 1)
+	EVENT_ID_PF_CF_COALESCING_INT_DONE = 0xB2,    /* 0xB2 (Query) */
+#endif
 
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
 	EVENT_ID_RXM_DELAY_BAR = 0xB5,

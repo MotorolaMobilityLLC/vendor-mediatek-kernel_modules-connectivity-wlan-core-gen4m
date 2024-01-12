@@ -330,6 +330,11 @@ struct BUS_INFO {
 	void (*enableFwDlMode)(struct ADAPTER *prAdapter);
 	void (*setupMcuEmiAddr)(struct ADAPTER *prAdapter);
 
+#if (CFG_COALESCING_INTERRUPT == 1)
+	uint32_t (*setWfdmaCoalescingInt)(struct ADAPTER *prAdapter,
+		u_int8_t fgEnable);
+#endif
+
 	struct SW_WFDMA_INFO rSwWfdmaInfo;
 };
 

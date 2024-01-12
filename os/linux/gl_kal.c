@@ -8029,6 +8029,11 @@ inline int32_t kalPerMonStop(IN struct GLUE_INFO
 		kalBoostCpu(prGlueInfo->prAdapter,
 			    prPerMonitor->u4TarPerfLevel,
 			    prGlueInfo->prAdapter->rWifiVar.u4BoostCpuTh);
+#if (CFG_COALESCING_INTERRUPT == 1)
+		kalCoalescingInt(prGlueInfo->prAdapter,
+		prPerMonitor->u4TarPerfLevel,
+		prGlueInfo->prAdapter->rWifiVar.u4PerfMonTpCoalescingIntTh);
+#endif
 	}
 	DBGLOG(SW4, INFO, "perf monitor stopped\n");
 	return 0;
@@ -8273,6 +8278,9 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #endif
 	uint32_t u4BoostCpuTh = prAdapter->rWifiVar.u4BoostCpuTh;
+#if (CFG_COALESCING_INTERRUPT == 1)
+	uint32_t u4CoalescingIntTh;
+#endif
 
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag))
 		return;
@@ -8388,6 +8396,30 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 			kalBoostCpu(prAdapter, prPerMonitor->u4TarPerfLevel,
 				    u4BoostCpuTh);
 		}
+
+#if (CFG_COALESCING_INTERRUPT == 1)
+		u4CoalescingIntTh =
+			prAdapter->rWifiVar.u4PerfMonTpCoalescingIntTh;
+
+		if ((prPerMonitor->u4TarPerfLevel !=
+			prPerMonitor->u4CurrPerfLevel) &&
+			(u4CoalescingIntTh <
+			 PERF_MON_TP_MAX_THRESHOLD)) {
+
+			DBGLOG(SW4, INFO,
+			"PerfMon %3lu.%03lu mbps lv:%u CoalesTh:%u fg:0x%lx\n",
+			(unsigned long) (prPerMonitor->ulThroughput >> 20),
+			(unsigned long) ((prPerMonitor->ulThroughput >> 10)
+					& BITS(0, 9)),
+			prPerMonitor->u4TarPerfLevel,
+			u4CoalescingIntTh,
+			prPerMonitor->ulPerfMonFlag);
+
+			kalCoalescingInt(prAdapter,
+				prPerMonitor->u4TarPerfLevel,
+				u4CoalescingIntTh);
+		}
+#endif
 
 		prPerMonitor->u4UpdatePeriod =
 			prAdapter->rWifiVar.u4PerfMonUpdatePeriod;
@@ -10260,7 +10292,30 @@ void kalBatNotifierUnReg(void)
 {
 	wlan_bat_volt_notifier_priv_data = NULL;
 }
+#endif
 
+#if (CFG_COALESCING_INTERRUPT == 1)
+int32_t kalCoalescingInt(IN struct ADAPTER *prAdapter,
+			IN uint32_t u4TarPerfLevel,
+			IN uint32_t u4CoalescingIntTh)
+{
+	struct BUS_INFO *prBusInfo;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	if (prBusInfo->setWfdmaCoalescingInt &&
+		prAdapter->rWifiVar.fgCoalescingIntEn) {
+		if (u4TarPerfLevel >= u4CoalescingIntTh)
+			nicSetCoalescingInt(prAdapter,
+			TRUE,
+			TRUE);
+		else
+			nicSetCoalescingInt(prAdapter,
+			FALSE,
+			FALSE);
+	}
+
+	return 0;
+}
 #endif
 
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
