@@ -333,6 +333,7 @@ struct BUS_INFO {
 	void (*enableFwDlMode)(struct ADAPTER *prAdapter);
 	void (*setupMcuEmiAddr)(struct ADAPTER *prAdapter);
 	void (*showDebugInfo)(struct GLUE_INFO *prGlueInfo);
+	void (*clearEvtRingTillCmdRingEmpty)(struct ADAPTER *prAdapter);
 
 #if (CFG_COALESCING_INTERRUPT == 1)
 	uint32_t (*setWfdmaCoalescingInt)(struct ADAPTER *prAdapter,
