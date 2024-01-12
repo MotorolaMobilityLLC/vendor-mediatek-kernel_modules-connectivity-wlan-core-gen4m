@@ -1450,6 +1450,8 @@ int32_t sysRemoveSysfs(void);
 int32_t sysInitFs(void);
 int32_t sysUninitSysFs(void);
 void sysMacAddrOverride(uint8_t *prMacAddr);
+void sysInitWifiVer(void);
+void sysGetExtCfg(struct ADAPTER *prAdapter);
 #endif /* WLAN_INCLUDE_SYS */
 
 #if CFG_ENABLE_BT_OVER_WIFI

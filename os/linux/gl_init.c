@@ -5021,6 +5021,11 @@ void wlanGetConfig(struct ADAPTER *prAdapter)
 			0);
 		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, u4ConfigReadLen);
 	}
+
+#if WLAN_INCLUDE_SYS
+	sysGetExtCfg(prAdapter);
+#endif
+
 }
 
 
@@ -8096,6 +8101,9 @@ static int initWlan(void)
 #endif /* CFG_SUPPORT_SA_LOG */
 #if (CFG_SUPPORT_FW_IDX_LOG_SAVE == 1)
 	FwLogDevInit();
+#endif
+#if WLAN_INCLUDE_SYS
+	sysInitWifiVer();
 #endif
 	g_u4WlanInitFlag = 1;
 
