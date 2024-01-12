@@ -243,7 +243,7 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER *prAdapter, IN uint32_t u4Dest
 #if CFG_MTK_ANDROID_WMT
 	if (gConEmiPhyBase) {
 		kalMemCopy((void *)gConEmiPhyBase + (u4DestAddr & 0xfffff), pucStartPtr, u4Len);
-		DBGLOG(INIT, ERROR, "gConEmiPhyBase[%x], u4DestAddr[%x]\n", gConEmiPhyBase, u4DestAddr);
+		DBGLOG(INIT, INFO, "gConEmiPhyBase[%x], u4DestAddr[%x]\n", gConEmiPhyBase, u4DestAddr);
 	} else {
 		DBGLOG(INIT, ERROR, "consys emi memory address gConEmiPhyBase invalid\n");
 		return WLAN_STATUS_FAILURE;

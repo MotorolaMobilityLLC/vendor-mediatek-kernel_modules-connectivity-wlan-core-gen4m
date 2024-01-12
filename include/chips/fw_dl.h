@@ -82,6 +82,10 @@
 #define COMPRESSION_OPTION_MASK     BIT(4)
 #endif
 
+#if CFG_MTK_ANDROID_WMT
+extern phys_addr_t gConEmiPhyBase;
+#endif
+
 enum ENUM_IMG_DL_IDX_T {
 	IMG_DL_IDX_N9_FW,
 	IMG_DL_IDX_CR4_FW,
