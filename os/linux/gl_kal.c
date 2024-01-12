@@ -4405,6 +4405,7 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	uint32_t ret = WLAN_STATUS_SUCCESS;
 	uint32_t waitRet = 0;
+	int r;
 
 	KAL_TIME_INTERVAL_DECLARATION();
 
@@ -4417,8 +4418,11 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	/* return WLAN_STATUS_ADAPTER_NOT_READY; */
 	/* } */
 
-	if (down_interruptible(&g_halt_sem))
+	r = down_killable(&g_halt_sem);
+	if (r) {
+		DBGLOG(OID, WARN, "down_killable(g_halt_sem) = %d\n", r);
 		return WLAN_STATUS_FAILURE;
+	}
 
 	if (g_u4HaltFlag) {
 		up(&g_halt_sem);
@@ -4427,7 +4431,9 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 
 	ASSERT(prGlueInfo);
 
-	if (down_interruptible(&prGlueInfo->ioctl_sem)) {
+	r = down_killable(&prGlueInfo->ioctl_sem);
+	if (r) {
+		DBGLOG(OID, WARN, "down_killable(ioctl_sem) = %d\n", r);
 		up(&g_halt_sem);
 		return WLAN_STATUS_FAILURE;
 	}
