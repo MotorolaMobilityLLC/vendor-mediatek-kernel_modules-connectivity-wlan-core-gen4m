@@ -1979,10 +1979,20 @@ void mddpDisableMddpSupport(void)
 
 bool mddpIsSupportMcifWifi(void)
 {
-	if (!gMddpWFunc.get_mddp_feature || !g_fgMddpEnabled)
-		return false;
+	int32_t i4Feature = 0;
 
-	return (gMddpWFunc.get_mddp_feature() & MDDP_FEATURE_MCIF_WIFI) != 0;
+	if (!gMddpWFunc.get_mddp_feature || !g_fgMddpEnabled) {
+		DBGLOG(INIT, INFO, "mddp enable: %u.\n", g_fgMddpEnabled);
+		return false;
+	}
+
+	i4Feature = gMddpWFunc.get_mddp_feature();
+	if ((i4Feature & MDDP_FEATURE_MCIF_WIFI) == 0) {
+		DBGLOG(INIT, INFO, "feature: %d.\n", i4Feature);
+		return false;
+	}
+
+	return true;
 }
 
 bool mddpIsSupportMddpWh(void)
