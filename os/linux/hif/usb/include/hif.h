@@ -70,6 +70,10 @@ enum ENUM_USB_END_POINT {
 	USB_DATA_BULK_OUT_EP7,
 	USB_DATA_BULK_OUT_EP8,
 	USB_DATA_BULK_OUT_EP9,
+
+	USB_DATA_BULK_IN_EP4 = 4,
+	USB_DATA_BULK_IN_EP5,
+
 };
 
 /*******************************************************************************
@@ -174,7 +178,9 @@ enum ENUM_USB_END_POINT {
 #define USB_RX_DATA_RFB_RSV_CNT         (4)
 
 #define DEVICE_VENDOR_REQUEST_IN        (0xc0)
+#define DEVICE_VENDOR_REQUEST_IN_CONNAC2       (0xdF)
 #define DEVICE_VENDOR_REQUEST_OUT       (0x40)
+#define DEVICE_VENDOR_REQUEST_OUT_CONNAC2       (0x5F)
 #define VENDOR_TIMEOUT_MS               (1000)
 #define BULK_TIMEOUT_MS                 (1500)
 #define INTERRUPT_TIMEOUT_MS            (1000)
@@ -194,6 +200,7 @@ enum ENUM_USB_END_POINT {
 
 #define USB_DBDC1_TC                    (TC_NUM)/* for DBDC1 */
 #define USB_TC_NUM                      (TC_NUM + 1)/* for DBDC1 */
+#define USB_TX_EPOUT_NUM                (5)
 
 #define HIF_EXTRA_IO_BUFFER_SIZE        (0)
 
@@ -314,10 +321,20 @@ struct USB_REQ {
 struct BUS_INFO {
 	const uint32_t u4UdmaWlCfg_0_Addr;
 	const uint32_t u4UdmaWlCfg_1_Addr;
+	const uint32_t u4UdmaTxQsel;
+	const uint32_t u4device_vender_request_in;
+	const uint32_t u4device_vender_request_out;
+	const uint32_t u4usb_tx_cmd_queue_mask;
 	uint32_t u4UdmaWlCfg_0;
 	uint32_t u4UdmaTxTimeout; /* UDMA Tx time out limit, unit: us */
+	uint32_t u4RxPaddingCSO;
+	uint32_t u4RxPaddingRxInfo;
 	u_int8_t (*asicUsbSuspend)(IN struct ADAPTER *prAdapter, IN struct GLUE_INFO *prGlueInfo);
 	uint8_t (*asicUsbEventEpDetected)(IN struct ADAPTER *prAdapter);
+	uint16_t (*asicUsbRxByteCount)(IN struct ADAPTER *prAdapter,
+		IN struct BUS_INFO *prBusInfo,
+		IN uint8_t *pRXD,
+		IN struct list_head *prCompleteQ);
 };
 
 /* USB_REQ_T prPriv field for TxData */

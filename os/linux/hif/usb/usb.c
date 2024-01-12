@@ -118,6 +118,10 @@ static const struct usb_device_id mtk_usb_ids[] = {
 	{	USB_DEVICE_AND_INTERFACE_INFO(0x0E8D, 0x7663, 0xff, 0xff, 0xff),
 		.driver_info = (kernel_ulong_t)&mt66xx_driver_data_mt7663},
 #endif /* MT7663 */
+#ifdef MT7915
+	{	USB_DEVICE_AND_INTERFACE_INFO(0x0E8D, 0x7915, 0xff, 0xff, 0xff),
+		.driver_info = (kernel_ulong_t)&mt66xx_driver_data_mt7915},
+#endif /* MT7915 */
 	/* If customer usb id is presented, add to the table. */
 	CUST_USB_ID_TABLES
 	{ /* end: all zeroes */ },
@@ -315,13 +319,17 @@ static int mtk_usb_resume(struct usb_interface *intf)
 {
 	int ret = 0;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)usb_get_intfdata(intf);
+	struct BUS_INFO *prBusInfo = NULL;
 
 	DBGLOG(HAL, STATE, "mtk_usb_resume()\n");
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
 	/* NOTE: USB bus may not really do suspend and resume*/
 	ret = usb_control_msg(prGlueInfo->rHifInfo.udev,
-			      usb_sndctrlpipe(prGlueInfo->rHifInfo.udev, 0), VND_REQ_FEATURE_SET,
-			      DEVICE_VENDOR_REQUEST_OUT, FEATURE_SET_WVALUE_RESUME, 0, NULL, 0,
+			      usb_sndctrlpipe(prGlueInfo->rHifInfo.udev, 0),
+			      VND_REQ_FEATURE_SET,
+			      prBusInfo->u4device_vender_request_out,
+			      FEATURE_SET_WVALUE_RESUME, 0, NULL, 0,
 			      VENDOR_TIMEOUT_MS);
 	if (ret)
 		DBGLOG(HAL, ERROR, "VendorRequest FeatureSetResume ERROR: %x\n", (unsigned int)ret);
@@ -381,9 +389,11 @@ u_int8_t mtk_usb_vendor_request(IN struct GLUE_INFO *prGlueInfo, IN uint8_t uEnd
 			    IN uint32_t TransferBufferLength)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct BUS_INFO *prBusInfo = NULL;
 
 	/* refer to RTUSB_VendorRequest */
 	int ret = 0;
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
 	/* TODO: semaphore */
 
@@ -394,13 +404,13 @@ u_int8_t mtk_usb_vendor_request(IN struct GLUE_INFO *prGlueInfo, IN uint8_t uEnd
 
 	mutex_lock(&prHifInfo->vendor_req_sem);
 
-	if (RequestType == DEVICE_VENDOR_REQUEST_OUT)
+	if (RequestType == prBusInfo->u4device_vender_request_out)
 		ret =
 		    usb_control_msg(prHifInfo->udev,
 				    usb_sndctrlpipe(prHifInfo->udev, uEndpointAddress), Request,
 				    RequestType, Value, Index, TransferBuffer, TransferBufferLength,
 				    VENDOR_TIMEOUT_MS);
-	else if (RequestType == DEVICE_VENDOR_REQUEST_IN)
+	else if (RequestType == prBusInfo->u4device_vender_request_in)
 		ret =
 		    usb_control_msg(prHifInfo->udev,
 				    usb_rcvctrlpipe(prHifInfo->udev, uEndpointAddress), Request,
@@ -1285,17 +1295,23 @@ int32_t glGetUsbDeviceSerialNumber(struct usb_device *dev, uint8_t *buffer, uint
 /*----------------------------------------------------------------------------*/
 u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, OUT uint32_t *pu4Value)
 {
+	struct BUS_INFO *prBusInfo = NULL;
 	int ret = 0;
 	uint8_t ucRetryCount = 0;
 
 	ASSERT(prGlueInfo);
 	ASSERT(pu4Value);
 
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	*pu4Value = 0xFFFFFFFF;
 
 	do {
-		ret = mtk_usb_vendor_request(prGlueInfo, 0, DEVICE_VENDOR_REQUEST_IN, VND_REQ_REG_READ,
-				       (u4Register & 0xffff0000) >> 16, (u4Register & 0x0000ffff), pu4Value,
+		ret = mtk_usb_vendor_request(prGlueInfo,
+			0,
+			prBusInfo->u4device_vender_request_in,
+			VND_REQ_REG_READ,
+			(u4Register & 0xffff0000) >> 16,
+			(u4Register & 0x0000ffff), pu4Value,
 				       sizeof(*pu4Value));
 
 		if (ret || ucRetryCount)
@@ -1334,12 +1350,18 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register,
 {
 	int ret = 0;
 	uint8_t ucRetryCount = 0;
+	struct BUS_INFO *prBusInfo = NULL;
 
 	ASSERT(prGlueInfo);
-
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	do {
-		ret = mtk_usb_vendor_request(prGlueInfo, 0, DEVICE_VENDOR_REQUEST_OUT, VND_REQ_REG_WRITE,
-				       (u4Register & 0xffff0000) >> 16, (u4Register & 0x0000ffff), &u4Value,
+		ret = mtk_usb_vendor_request(prGlueInfo,
+			0,
+			prBusInfo->u4device_vender_request_out,
+			VND_REQ_REG_WRITE,
+			(u4Register & 0xffff0000) >> 16,
+			(u4Register & 0x0000ffff),
+			&u4Value,
 				       sizeof(u4Value));
 
 		if (ret || ucRetryCount)

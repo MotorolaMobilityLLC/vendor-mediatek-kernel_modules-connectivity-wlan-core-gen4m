@@ -155,13 +155,13 @@ u_int8_t halVerifyChipID(IN struct ADAPTER *prAdapter)
 
 	prChipInfo = prAdapter->chip_info;
 
-	HAL_MCR_RD(prAdapter, TOP_HCR, &u4CIR);
+	HAL_MCR_RD(prAdapter, prChipInfo->top_hcr, &u4CIR);
 	DBGLOG(INIT, TRACE, "Chip ID: 0x%4x\n", u4CIR);
 
 	if (u4CIR != prChipInfo->chip_id)
 		return FALSE;
 
-	HAL_MCR_RD(prAdapter, TOP_HVR, &u4CIR);
+	HAL_MCR_RD(prAdapter, prChipInfo->top_hvr, &u4CIR);
 	DBGLOG(INIT, TRACE, "Revision ID: 0x%4x\n", u4CIR);
 
 	prAdapter->ucRevID = (uint8_t) (u4CIR & 0xF);
@@ -233,7 +233,7 @@ halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx, OUT uint8_
 		}
 	}
 	ret = kalDevPortRead(prAdapter->prGlueInfo, ucPortIdx,
-		ALIGN_4(u4MaxRespBufferLen) + LEN_USB_RX_PADDING_CSO,
+		ALIGN_4(u4MaxRespBufferLen) + prBusInfo->u4RxPaddingCSO,
 		prRxCtrl->pucRxCoalescingBufPtr, HIF_RX_COALESCING_BUFFER_SIZE);
 
 	kalMemCopy(pucRspBuffer, prRxCtrl->pucRxCoalescingBufPtr, u4MaxRespBufferLen);
@@ -734,6 +734,7 @@ uint32_t halRxUSBEnqueueRFB(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN
 	uint16_t u2RxByteCount;
 	uint8_t *pucRxFrame;
 	uint32_t u4EnqCnt = 0;
+	struct BUS_INFO *prBusInfo;
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	uint32_t *pu4HwAppendDW;
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
@@ -742,6 +743,7 @@ uint32_t halRxUSBEnqueueRFB(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 
 	pucRxFrame = pucBuf;
 	u4RemainCount = u4Length;

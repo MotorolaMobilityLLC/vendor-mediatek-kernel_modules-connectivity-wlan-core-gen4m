@@ -2695,12 +2695,14 @@ uint32_t wlanSetChipEcoInfo(IN struct ADAPTER *prAdapter)
 
 	DEBUGFUNC("wlanSetChipEcoInfo.\n");
 
-	if (wlanAccessRegister(prAdapter, TOP_HVR, &hw_version, 0, 0) !=
+	if (wlanAccessRegister(prAdapter,
+		prChipInfo->top_hvr, &hw_version, 0, 0) !=
 	    WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, ERROR,
 		       "wlanSetChipEcoInfo >> get TOP_HVR failed.\n");
 		u4Status = WLAN_STATUS_FAILURE;
-	} else if (wlanAccessRegister(prAdapter, TOP_FVR, &sw_version, 0, 0) !=
+	} else if (wlanAccessRegister(prAdapter,
+		prChipInfo->top_fvr, &sw_version, 0, 0) !=
 	    WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, ERROR,
 		       "wlanSetChipEcoInfo >> get TOP_FVR failed.\n");

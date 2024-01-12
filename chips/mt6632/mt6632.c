@@ -364,6 +364,8 @@ struct BUS_INFO mt6632_bus_info = {
 	.u4UdmaWlCfg_0 =
 		(UDMA_WLCFG_0_TX_EN(1) | UDMA_WLCFG_0_RX_EN(1) |
 		UDMA_WLCFG_0_RX_MPSZ_PAD0(1)),
+	.u4device_vender_request_in = DEVICE_VENDOR_REQUEST_IN,
+	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT,
 	.asicUsbSuspend = NULL,
 	.asicUsbEventEpDetected = NULL,
 #endif /* _HIF_USB */
@@ -425,6 +427,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6632 = {
 	.is_support_cr4 = TRUE,
 	.txd_append_size = MT6632_TX_DESC_APPEND_LENGTH,
 	.rxd_size = MT6632_RX_DESC_LENGTH,
+	.pse_header_length = NIC_TX_PSE_HEADER_LENGTH,
 	.init_event_size = MT6632_RX_INIT_EVENT_LENGTH,
 	.event_hdr_size = MT6632_RX_EVENT_HDR_LENGTH,
 	.eco_info = mt6632_eco_table,
@@ -440,6 +443,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6632 = {
 	.is_support_hw_amsdu = FALSE,
 	.ucMaxSwAmsduNum = 0,
 	.workAround = 0,
+
+	.top_hcr = TOP_HCR,
+	.top_hvr = TOP_HVR,
+	.top_fvr = TOP_FVR,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt6632 = {

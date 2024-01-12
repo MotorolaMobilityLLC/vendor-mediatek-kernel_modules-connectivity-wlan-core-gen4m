@@ -100,10 +100,10 @@ void fillTxDescAppendByCR4(IN struct ADAPTER *prAdapter,
 	OUT uint8_t *pucBuffer);
 void fillTxDescTxByteCount(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo,
-	struct HW_MAC_TX_DESC *prTxDesc);
+	void *prTxDesc);
 void fillTxDescTxByteCountWithCR4(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo,
-	struct HW_MAC_TX_DESC *prTxDesc);
+	void *prTxDesc);
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 /* DMS Scheduler Init */
