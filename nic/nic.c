@@ -2302,7 +2302,7 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex,
 			uint8_t fgClearStaRec)
 {
-	uint32_t u4Status = WLAN_STATUS_NOT_ACCEPTED;
+	uint32_t u4Status;
 	struct BSS_INFO *prBssInfo;
 	struct CMD_SET_BSS_INFO rCmdSetBssInfo;
 

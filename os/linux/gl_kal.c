@@ -7799,7 +7799,7 @@ kalSetNetAddress(struct GLUE_INFO *prGlueInfo,
 		 uint8_t *pucIPv4Addr, uint32_t u4NumIPv4Addr,
 		 uint8_t *pucIPv6Addr, uint32_t u4NumIPv6Addr)
 {
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 	uint32_t u4SetInfoLen = 0;
 	uint32_t u4Len = OFFSET_OF(struct
 				   PARAM_NETWORK_ADDRESS_LIST, arAddress);
@@ -12889,15 +12889,18 @@ static int kalNapiPollSwRfb(struct napi_struct *napi, int budget)
 		RX_INC_CNT(&prAdapter->rRxCtrl,
 			RX_NAPI_FIFO_OUT_COUNT);
 		nicRxProcessPacketType(prAdapter, prSwRfb);
+#if !CFG_SUPPORT_RX_GRO_PEAK
 		work_done++;
+#endif /* !CFG_SUPPORT_RX_GRO_PEAK */
 	}
-	/* Set max work_done budget */
-	if (work_done > budget)
-		work_done = budget;
 
 #if CFG_SUPPORT_RX_GRO_PEAK
 	work_done = budget / 2;
-#endif
+#else /* CFG_SUPPORT_RX_GRO_PEAK */
+	/* Set max work_done budget */
+	if (work_done > budget)
+		work_done = budget;
+#endif /* CFG_SUPPORT_RX_GRO_PEAK */
 
 end:
 	GLUE_DEC_REF_CNT(i4UserCnt);
