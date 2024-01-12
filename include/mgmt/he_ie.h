@@ -447,6 +447,9 @@ enum ENUM_HEBA_TYPE {
 #define HE_SET_MAC_CAP_TWT_REQ(_aucHeMacCapInfo) \
 	(_aucHeMacCapInfo[0] |=  HE_MAC_CAP0_TWT_REQ)
 
+#define HE_SET_MAC_CAP_TWT_RSP(_aucHeMacCapInfo) \
+	(_aucHeMacCapInfo[0] |=  HE_MAC_CAP0_TWT_RSP)
+
 #define HE_IS_MAC_CAP_TWT_RSP(_aucHeMacCapInfo) \
 	(_aucHeMacCapInfo[0] & HE_MAC_CAP0_TWT_RSP)
 

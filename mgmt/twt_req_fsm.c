@@ -104,8 +104,19 @@ static uint8_t *apucDebugTWTReqState[TWT_REQ_STATE_NUM] = {
 	(uint8_t *) DISP_STRING("TWT_REQ_STATE_REQTX_ML_TWT_ALL_LINKS"),
 	(uint8_t *) DISP_STRING("TWT_REQ_STATE_REQTX_ML_TWT_ONE_BY_ONE"),
 #endif
-
 };
+
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+static uint8_t *apucDebugTWTRespState[TWT_HOTSPOT_RESP_STATE_NUM] = {
+	(uint8_t *) DISP_STRING("TWT_HOTSPOT_RESP_STATE_IDLE"),
+	(uint8_t *) DISP_STRING("TWT_HOTSPOT_RESP_STATE_RECEIVE_SETUP"),
+	(uint8_t *) DISP_STRING("TWT_HOTSPOT_RESP_STATE_SETUP_RESPONSE"),
+	(uint8_t *) DISP_STRING("TWT_HOTSPOT_RESP_STATE_RECEIVE_TEARDOWN"),
+	(uint8_t *) DISP_STRING("TWT_HOTSPOT_RESP_STATE_SEND_TEARDOWN_TO_STA"),
+	(uint8_t *) DISP_STRING("TWT_HOTSPOT_RESP_STATE_DISCONNECT"),
+	(uint8_t *) DISP_STRING("TWT_HOTSPOT_RESP_STATE_IDLE_BY_FORCE"),
+};
+#endif
 
 /*******************************************************************************
 *                                 M A C R O S
@@ -1054,6 +1065,270 @@ void twtReqFsmRunEventRxInfoFrm(
 		break;		/* Ignore other cases */
 	}
 }
+
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+uint32_t
+twtHotspotRespFsmSendEvent(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId,
+	enum ENUM_MSG_ID eMsgId)
+{
+	struct _MSG_TWT_HOTSPOT_PARAMS_SET_T *prTWTHotspotParamSetMsg = NULL;
+
+	prTWTHotspotParamSetMsg =
+		cnmMemAlloc(
+			prAdapter,
+			RAM_TYPE_MSG,
+			sizeof(struct _MSG_TWT_HOTSPOT_PARAMS_SET_T));
+
+	if (prTWTHotspotParamSetMsg) {
+		prTWTHotspotParamSetMsg->rMsgHdr.eMsgId = eMsgId;
+		prTWTHotspotParamSetMsg->rTWTCtrl.prStaRec = prStaRec;
+		prTWTHotspotParamSetMsg->rTWTCtrl.ucTWTFlowId = ucTWTFlowId;
+
+		mboxSendMsg(prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prTWTHotspotParamSetMsg,
+			MSG_SEND_METHOD_BUF);
+	} else
+		return WLAN_STATUS_RESOURCES;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void
+twtHotspotRespFsmSteps(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	enum _ENUM_TWT_HOTSPOT_RESPONDER_STATE_T eNextState,
+	uint8_t ucTWTFlowId,
+	void *pParam)
+{
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	enum _ENUM_TWT_HOTSPOT_RESPONDER_STATE_T ePreState;
+	uint8_t fgIsTransition;
+	struct BSS_INFO *prBssInfo;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	ASSERT(prBssInfo);
+	ASSERT(prAdapter);
+	ASSERT(prStaRec);
+
+	do {
+		DBGLOG(TWT_RESPONDER, ERROR,
+		"[TWT_RESP] Flow %d TRANSITION: [%s] -> [%s]\n",
+		ucTWTFlowId,
+		apucDebugTWTRespState[prBssInfo->aeTWTRespState],
+		apucDebugTWTRespState[eNextState]);
+
+		ePreState = prBssInfo->aeTWTRespState;
+
+		prBssInfo->aeTWTRespState = eNextState;
+		fgIsTransition = (uint8_t) FALSE;
+
+		switch (prBssInfo->aeTWTRespState) {
+		case TWT_HOTSPOT_RESP_STATE_IDLE:
+			if (ePreState ==
+				TWT_HOTSPOT_RESP_STATE_SETUP_RESPONSE) {
+				if (prStaRec->TWTHotspotCtrl.ucIsReject
+					== FALSE) {
+					/* Send TWT agrt EXT_CMD to F/W */
+					twtHotspotRespFsmSendEvent(
+						prAdapter,
+						prStaRec,
+						ucTWTFlowId,
+						MID_TWT_RESP_SETUP_AGRT_TO_FW);
+				}
+			} else if (
+				(ePreState ==
+				TWT_HOTSPOT_RESP_STATE_RECEIVE_TEARDOWN) ||
+				(ePreState ==
+				TWT_HOTSPOT_RESP_STATE_DISCONNECT)) {
+				/* Reset the TWT hotspot station node */
+				twtHotspotResetStaNode(
+					prAdapter,
+					prStaRec);
+
+				/* Return the flow ID */
+				twtHotspotReturnFlowId(
+					prAdapter,
+					prStaRec,
+					ucTWTFlowId);
+			}
+
+			break;
+
+		case TWT_HOTSPOT_RESP_STATE_RECEIVE_SETUP:
+			/* We just receive STA's TWT setup request */
+			eNextState = TWT_HOTSPOT_RESP_STATE_SETUP_RESPONSE;
+
+			fgIsTransition = TRUE;
+
+			break;
+
+		case TWT_HOTSPOT_RESP_STATE_SETUP_RESPONSE:
+		{
+			/* Send the TWT setup response frame */
+			struct _TWT_HOTSPOT_CTRL_T *pTWTHotspotCtrl =
+				(struct _TWT_HOTSPOT_CTRL_T *) pParam;
+			struct _TWT_PARAMS_T *prTWTParams =
+				(struct _TWT_PARAMS_T *)
+				(&pTWTHotspotCtrl->rTWTParams);
+
+			ASSERT(prTWTParams);
+
+			rStatus = twtHotspotSendSetupRespFrame(
+				prAdapter, prStaRec, ucTWTFlowId,
+				pTWTHotspotCtrl->ucDialogToken,
+				prTWTParams, twtHotspotRespFsmRunEventTxDone);
+
+			if (rStatus != WLAN_STATUS_SUCCESS) {
+				eNextState = TWT_HOTSPOT_RESP_STATE_IDLE;
+
+				fgIsTransition = TRUE;
+			}
+
+			break;
+		}
+
+		case TWT_HOTSPOT_RESP_STATE_RECEIVE_TEARDOWN:
+		{
+			/* TWT hotspot receives STA's teardown frame */
+			twtHotspotRespFsmSendEvent(
+				prAdapter,
+				prStaRec,
+				ucTWTFlowId,
+				MID_TWT_RESP_TEARDOWN_TO_FW);
+
+			break;
+		}
+
+		case TWT_HOTSPOT_RESP_STATE_SEND_TEARDOWN_TO_STA:
+			break;
+
+		case TWT_HOTSPOT_RESP_STATE_DISCONNECT:
+		{
+			/* TWT hotspot disconnect with this STA */
+			twtHotspotRespFsmSendEvent(
+				prAdapter,
+				prStaRec,
+				ucTWTFlowId,
+				MID_TWT_RESP_TEARDOWN_TO_FW);
+
+			break;
+		}
+
+		case TWT_HOTSPOT_RESP_STATE_IDLE_BY_FORCE:
+		{
+			fgIsTransition = (uint8_t) TRUE;
+
+			eNextState = TWT_HOTSPOT_RESP_STATE_IDLE;
+
+			break;
+		}
+
+		default:
+			DBGLOG(TWT_RESPONDER, ERROR,
+				"[TWT_RESP]Unknown TWT_RESPONDER STATE\n");
+			ASSERT(0);
+
+			break;
+		}
+	} while (fgIsTransition);
+}
+
+void
+twtHotspotRespFsmRunEventRxSetup(
+	struct ADAPTER *prAdapter,
+	void *pParam)
+{
+	struct STA_RECORD *prStaRec;
+	struct BSS_INFO *prBssInfo;
+	struct _TWT_HOTSPOT_CTRL_T *prTWTCtrl;
+
+	prTWTCtrl = (struct _TWT_HOTSPOT_CTRL_T *)pParam;
+
+	prStaRec = prTWTCtrl->prStaRec;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	ASSERT(prBssInfo);
+
+	if (p2pFuncIsAPMode(prAdapter->rWifiVar
+		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+		switch (prBssInfo->aeTWTRespState) {
+		case TWT_HOTSPOT_RESP_STATE_IDLE:
+			/* transition to the TWT hotspot receive setup state */
+			twtHotspotRespFsmSteps(
+				prAdapter,
+				prStaRec,
+				TWT_HOTSPOT_RESP_STATE_RECEIVE_SETUP,
+				prTWTCtrl->ucTWTFlowId,
+				(void *)prTWTCtrl);
+
+			break;
+
+		default:
+			break;
+		}
+	}
+}
+
+u_int32_t
+twtHotspotRespFsmRunEventTxDone(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	struct STA_RECORD *prStaRec;
+	enum _ENUM_TWT_HOTSPOT_RESPONDER_STATE_T eNextState;
+	uint8_t ucTWTFlowId;
+	struct BSS_INFO *prBssInfo;
+
+	ASSERT(prMsduInfo);
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+
+	if (!prStaRec) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]EVENT-TXDONE: No valid STA Record\n");
+		return WLAN_STATUS_INVALID_PACKET;
+	}
+
+	if (rTxDoneStatus)
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]EVENT-TX DONE [status: %d][seq: %d]: Current Time = %d\n",
+		   rTxDoneStatus, prMsduInfo->ucTxSeqNum, kalGetTimeTick());
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	ASSERT(prBssInfo);
+
+	/* Next state is set to current state
+	 *by default and check Tx done status to transition if possible
+	 */
+	eNextState = prBssInfo->aeTWTRespState;
+
+	switch (prBssInfo->aeTWTRespState) {
+	case TWT_HOTSPOT_RESP_STATE_SETUP_RESPONSE:
+		eNextState = TWT_HOTSPOT_RESP_STATE_IDLE;
+
+		ucTWTFlowId = twtGetTxSetupFlowId(prMsduInfo);
+
+		twtHotspotRespFsmSteps(prAdapter,
+			prStaRec, eNextState, ucTWTFlowId, NULL);
+
+		break;
+
+	default:
+		break;		/* Ignore other cases */
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
 
 #if (CFG_SUPPORT_BTWT == 1)
 void btwtReqFsmRunEventStart(

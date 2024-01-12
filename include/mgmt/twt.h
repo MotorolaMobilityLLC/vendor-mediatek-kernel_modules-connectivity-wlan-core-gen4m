@@ -71,6 +71,18 @@
 #define TWT_MAX_WAKE_INTVAL_EXP (TWT_REQ_TYPE_TWT_WAKE_INTVAL_EXP >> \
 	TWT_REQ_TYPE_TWT_WAKE_INTVAL_EXP_OFFSET)
 
+#define TWT_ROLE_STA		0
+#define TWT_ROLE_AP			1
+#define TWT_ROLE_APCLI		2
+#define TWT_ROLE_HOTSPOT	3
+
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+#define TWT_HOTSPOT_TSF_ALIGNMENT_EN 1
+
+/* 16TU = 16*1024usec*/
+#define TWT_HOTSPOT_TSF_ALIGNMNET_UINT		(16 * 1024)
+#endif
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -81,7 +93,6 @@ enum _ENUM_TWT_SMART_STA_STATE_T {
 	TWT_SMART_STA_STATE_SUCCESS = 2,
 	TWT_SMART_STA_STATE_FAIL = 3
 };
-
 
 struct _TWT_SMART_STA_T {
 	u_int8_t fgTwtSmartStaReq;
@@ -327,6 +338,73 @@ static inline u_int8_t twtGetNextTWTByteCnt(u_int8_t ucNextTWTSize)
 		((ucNextTWTSize == NEXT_TWT_SUBFIELD_32_BITS) ? 4 :
 		((ucNextTWTSize == NEXT_TWT_SUBFIELD_48_BITS) ? 6 : 0));
 }
+
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+void
+twtHotspotGetFreeFlowId(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t *p_ucTWTFlowId);
+
+void
+twtHotspotReturnFlowId(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId);
+
+void
+twtHotspotGetStaRecIndexByFlowId(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx,
+	uint8_t ucTWTFlowId,
+	uint8_t *p_ucIndex);
+
+void
+twtHotspotGetStaRecByFlowId(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx,
+	uint8_t ucTWTFlowId,
+	struct STA_RECORD **pprStaRec
+);
+
+void
+twtHotspotGetFreeStaNodeIndex(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t *p_ucIndex);
+
+void
+twtHotspotGetFreeStaNode(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct _TWT_HOTSPOT_STA_NODE **pprTWTHotspotStaNode);
+
+void
+twtHotspotResetStaNode(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec);
+
+uint32_t
+twtHotspotAlignDuration(
+	uint32_t sp_duration,
+	uint32_t alignment);
+
+void
+twtHotspotGetNearestTargetTSF(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct _TWT_HOTSPOT_STA_NODE *prTWTHotspotStaNode,
+	uint64_t u8CurrentTsf);
+
+uint32_t
+twtHotspotSendSetupRespFrame(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId,
+	uint8_t ucDialogToken,
+	struct _TWT_PARAMS_T *prTWTParams,
+	PFN_TX_DONE_HANDLER pfTxDoneHandler);
+#endif
 
 #if (CFG_SUPPORT_BTWT == 1)
 void btwtFillTWTElement(

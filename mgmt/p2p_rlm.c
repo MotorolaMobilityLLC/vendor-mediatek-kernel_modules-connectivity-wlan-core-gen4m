@@ -1332,6 +1332,19 @@ enum ENUM_CHNL_EXT rlmDecideScoForAP(struct ADAPTER *prAdapter,
 				eTempSCO =
 					(enum ENUM_CHNL_EXT)
 						prAdapter->rWifiVar.ucApSco;
+#if ((CFG_SUPPORT_TWT == 1) && (CFG_SUPPORT_TWT_HOTSPOT == 1))
+				prBssInfo->twt_flow_id_bitmap = 0;
+				prBssInfo->aeTWTRespState = 0;
+				LINK_INITIALIZE(&prBssInfo->twt_sch_link);
+
+				for (i = 0; i < TWT_MAX_FLOW_NUM; i++)
+					prBssInfo->arTWTSta[i].agrt_tbl_idx = i;
+
+				DBGLOG(RLM, INFO,
+					"WLAN AP BSS_INFO[%d] TWT flow id bitmap=%d\n",
+					prBssInfo->ucBssIndex,
+					prBssInfo->twt_flow_id_bitmap);
+#endif
 		}
 		/* P2P mode */
 		else {

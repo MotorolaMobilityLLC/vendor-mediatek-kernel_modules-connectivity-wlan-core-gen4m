@@ -333,8 +333,10 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_TWT_PARAMS_SET, twtPlannerSetParams},
 #endif
 
-#if (CFG_SUPPORT_NAN == 1)
-	{MID_CNM_NAN_CH_GRANT, nanDevSendEnableRequest},
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+	{MID_TWT_RESP_PARAMS_SET, twtHotspotPlannerSetParams},
+	{MID_TWT_RESP_SETUP_AGRT_TO_FW, twtHotspotPlannerSetupAgrtToFW},
+	{MID_TWT_RESP_TEARDOWN_TO_FW, twtHotspotPlannerTeardownToFW},
 #endif
 
 #if (CFG_SUPPORT_BTWT == 1)
@@ -346,6 +348,10 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 #if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
 	{MID_ML_TWT_REQ_FSM_START_ALL_LINKS, mltwtReqFsmRunEventStartAllLinks},
 	{MID_ML_TWT_REQ_FSM_START_ONE_BY_ONE, mltwtReqFsmRunEventStart},
+#endif
+
+#if (CFG_SUPPORT_NAN == 1)
+	{MID_CNM_NAN_CH_GRANT, nanDevSendEnableRequest},
 #endif
 };
 

@@ -3005,6 +3005,9 @@ p2pFuncDisconnect(IN struct ADAPTER *prAdapter,
 		IN u_int8_t fgSendDeauth, IN uint16_t u2ReasonCode)
 {
 	enum ENUM_PARAM_MEDIA_STATE eOriMediaStatus;
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+	struct _TWT_HOTSPOT_STA_NODE *prTWTHotspotStaNode = NULL;
+#endif
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL)
@@ -3029,6 +3032,22 @@ p2pFuncDisconnect(IN struct ADAPTER *prAdapter,
 #endif
 			kalP2PGOStationUpdate(prAdapter->prGlueInfo,
 				prP2pRoleFsmInfo->ucRoleIndex, prStaRec, FALSE);
+
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+			prTWTHotspotStaNode = prStaRec->prTWTHotspotStaNode;
+
+			if (prTWTHotspotStaNode != NULL) {
+				/* Teardown this STA*/
+				/* 1. send teardown command to F/W */
+				/* 2. reset this STA station record */
+				twtHotspotRespFsmSteps(
+					prAdapter,
+					prStaRec,
+					TWT_HOTSPOT_RESP_STATE_DISCONNECT,
+					prTWTHotspotStaNode->flow_id,
+					NULL);
+			}
+#endif
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 			/* restore DFS channels table */

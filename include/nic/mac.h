@@ -1916,6 +1916,8 @@ enum BEACON_REPORT_DETAIL {
 #define MTK_SYNERGY_CAP2                            0x0
 #define MTK_SYNERGY_CAP3                            0x0
 
+#define MTK_SYNERGY_CAP_SUPPORT_TWT_HOTSPOT_AC		BIT(1)
+
 /* 802.11h CSA element */
 #define ELEM_MIN_LEN_CSA                            11
 
@@ -2182,6 +2184,8 @@ enum BEACON_REPORT_DETAIL {
 #define NEXT_TWT_SUBFIELD_32_BITS                   1
 #define NEXT_TWT_SUBFIELD_48_BITS                   2
 #define NEXT_TWT_SUBFIELD_64_BITS                   3
+
+#define TWT_HOTSPOT_NO_MORE_FLOW_ID                 0xFF
 
 #if (CFG_SUPPORT_BTWT == 1)
 #define BTWT_REQ_TYPE_LAST_BCAST_PARAM              BIT(5)

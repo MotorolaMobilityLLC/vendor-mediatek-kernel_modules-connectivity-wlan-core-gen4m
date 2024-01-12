@@ -663,6 +663,14 @@ void twtProcessS1GAction(
 	struct STA_RECORD *prStaRec;
 	struct RX_DESC_OPS_T *prRxDescOps;
 
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+	uint8_t ucTWTHotspotRejectSetupReq = 0;
+	struct _TWT_HOTSPOT_STA_NODE *prTWTHotspotStaNode = NULL;
+	struct _MSG_TWT_HOTSPOT_PARAMS_SET_T *prTWTHotspotParamSetMsg = NULL;
+	struct _TWT_HOTSPOT_CTRL_T *prTWTHotspotCtrl = NULL;
+	struct _TWT_PARAMS_T *prTWTHotspotParam = NULL;
+#endif
+
 	uint8_t ucTWTFlowId = 0;
 	uint32_t u4Offset;
 	uint16_t u2ReqType;
@@ -736,6 +744,194 @@ void twtProcessS1GAction(
 		}
 #endif
 
+/* TWT hotspot code segment::Begin
+ * For TWT hotspot, we handle req type only, leave the
+ * existing code flow unchanged for the ease of maintain.
+ */
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+		u2ReqType = prRxSetupFrame->rTWT.u2ReqType;
+
+		if ((u2ReqType & TWT_REQ_TYPE_TWT_REQUEST)) {
+			/* TWT hotspot receives STA's TWT setup request */
+			/* Check if TWT hotspot is enabled */
+			if (IS_FEATURE_ENABLED(
+				prAdapter->rWifiVar.ucTWTHotSpotSupport)) {
+
+				if ((u2ReqType & TWT_REQ_TYPE_TRIGGER) ||
+				(!(u2ReqType & TWT_REQ_TYPE_FLOWTYPE))) {
+				/* Accepts only non-trigger & unannounce */
+				DBGLOG(TWT_RESPONDER, ERROR,
+					"Reject TWT Setup params tr[%d] ua[%d]\n",
+					(u2ReqType & TWT_REQ_TYPE_TRIGGER),
+					(u2ReqType & TWT_REQ_TYPE_FLOWTYPE));
+
+					ucTWTHotspotRejectSetupReq = TRUE;
+				}
+
+				if (ucTWTHotspotRejectSetupReq == FALSE) {
+					/* Get free flow id */
+					twtHotspotGetFreeFlowId(
+						prAdapter,
+						prStaRec,
+						&ucTWTFlowId);
+
+					if (ucTWTFlowId !=
+						TWT_HOTSPOT_NO_MORE_FLOW_ID) {
+					/* Accept, next to
+					* send TWT setup resp frame
+					*/
+						ucTWTHotspotRejectSetupReq
+							= FALSE;
+
+						prStaRec->ucTWTFlowId
+							= ucTWTFlowId;
+					} else {
+						/* No more flow ID avail,
+						*  just reject
+						*/
+						ucTWTHotspotRejectSetupReq
+							= TRUE;
+					}
+				}
+			} else {
+				/* TWT hotspot not enabled, just reject */
+				ucTWTHotspotRejectSetupReq = TRUE;
+			}
+
+			if (ucTWTHotspotRejectSetupReq == FALSE) {
+				twtHotspotGetFreeStaNode(
+					prAdapter,
+					prStaRec,
+					&prTWTHotspotStaNode);
+
+				if (prTWTHotspotStaNode == NULL) {
+					/* No sta node avail,
+					* just reject
+					*/
+					ucTWTHotspotRejectSetupReq
+						= TRUE;
+				} else {
+					prTWTHotspotStaNode->flow_id
+						= ucTWTFlowId;
+					prTWTHotspotStaNode->prStaRec
+						= prStaRec;
+				}
+
+				DBGLOG(TWT_RESPONDER, ERROR,
+					"[TWT_RESP]IsReject=%d\n",
+					ucTWTHotspotRejectSetupReq);
+			}
+
+			/* If this is a reject, prTWTHotspotStaNode = NULL */
+			prStaRec->prTWTHotspotStaNode
+				= prTWTHotspotStaNode;
+
+			prTWTHotspotParamSetMsg = cnmMemAlloc(
+				prAdapter, RAM_TYPE_MSG,
+				sizeof(struct _MSG_TWT_HOTSPOT_PARAMS_SET_T));
+
+			if (prTWTHotspotParamSetMsg) {
+				prTWTHotspotCtrl =
+					&prTWTHotspotParamSetMsg->rTWTCtrl;
+				prTWTHotspotCtrl->ucBssIdx
+					= prStaRec->ucBssIndex;
+				prTWTHotspotCtrl->ucCtrlAction
+					= TWT_PARAM_ACTION_ADD;
+				prTWTHotspotCtrl->ucTWTFlowId = ucTWTFlowId;
+				prTWTHotspotCtrl->ucIsReject
+					= ucTWTHotspotRejectSetupReq;
+				prTWTHotspotCtrl->ucDialogToken =
+					prRxSetupFrame->ucDialogToken;
+				prTWTHotspotCtrl->prStaRec = prStaRec;
+
+				DBGLOG(TWT_RESPONDER, ERROR,
+					"[TWT_RESP]B=%d lA=%d F=%d RJ=%d Tkn=%d\n",
+					prTWTHotspotCtrl->ucBssIdx,
+					prTWTHotspotCtrl->ucCtrlAction,
+					prTWTHotspotCtrl->ucTWTFlowId,
+					prTWTHotspotCtrl->ucIsReject,
+					prTWTHotspotCtrl->ucDialogToken);
+
+				prTWTHotspotParam =
+					&prTWTHotspotCtrl->rTWTParams;
+				prTWTHotspotParam->fgReq = FALSE;
+				prTWTHotspotParam->fgTrigger =
+					(u2ReqType & TWT_REQ_TYPE_TRIGGER) ?
+						TRUE : FALSE;
+				prTWTHotspotParam->fgProtect =
+					(u2ReqType &
+					TWT_REQ_TYPE_TWT_PROTECTION) ?
+						TRUE : FALSE;
+				prTWTHotspotParam->fgUnannounced =
+					(u2ReqType & TWT_REQ_TYPE_FLOWTYPE) ?
+						TRUE : FALSE;
+
+				/* 1st stage Accept(Reject)
+				* is determined over here
+				*/
+				prTWTHotspotParam->ucSetupCmd =
+					(ucTWTHotspotRejectSetupReq) ?
+						TWT_SETUP_CMD_ID_REJECT :
+						TWT_SETUP_CMD_ID_ACCEPT;
+
+				prTWTHotspotParam->ucMinWakeDur =
+					prRxSetupFrame->rTWT.ucMinWakeDur;
+				prTWTHotspotParam->ucWakeIntvalExponent =
+					(u2ReqType &
+					TWT_REQ_TYPE_TWT_WAKE_INTVAL_EXP) >>
+					TWT_REQ_TYPE_TWT_WAKE_INTVAL_EXP_OFFSET;
+				prTWTHotspotParam->u2WakeIntvalMantiss =
+				prRxSetupFrame->rTWT.u2WakeIntvalMantiss;
+				prTWTHotspotParam->u8TWT =
+					prRxSetupFrame->rTWT.u8TWT;
+
+				kalMemCopy(
+					&prStaRec->TWTHotspotCtrl,
+					prTWTHotspotCtrl,
+					sizeof(struct _TWT_HOTSPOT_CTRL_T));
+
+				if (ucTWTHotspotRejectSetupReq == FALSE) {
+					/* Prepare to get
+					*  the nearest target tsf
+					*/
+					prTWTHotspotStaNode->agrt_sp_duration =
+						prTWTHotspotParam->
+							ucMinWakeDur;
+					prTWTHotspotStaNode->
+						agrt_sp_wake_intvl_exponent =
+						prTWTHotspotParam->
+							ucWakeIntvalExponent;
+					prTWTHotspotStaNode->
+						agrt_sp_wake_intvl_mantissa =
+						prRxSetupFrame->
+						rTWT.u2WakeIntvalMantiss;
+					prTWTHotspotStaNode->
+						agrt_sp_start_tsf =
+							prTWTHotspotParam->
+								u8TWT;
+					prTWTHotspotStaNode->
+						schedule_sp_start_tsf = 0;
+				}
+
+				prTWTHotspotParamSetMsg->rMsgHdr.eMsgId =
+					MID_TWT_RESP_PARAMS_SET;
+
+				mboxSendMsg(prAdapter, MBOX_ID_0,
+				(struct MSG_HDR *) prTWTHotspotParamSetMsg,
+				MSG_SEND_METHOD_BUF);
+			}
+
+			return;
+		}
+#endif
+/* TWT hotspot code segment::End
+ * For TWT hotspot, we handle req type only, leave the
+ * existing code flow unchanged for the ease of maintain.
+ */
+
+/* TWT STA code segment::Begin
+ * i-TWT/BTWT/ML-TWT handling goes over here.
+ */
 #if (CFG_SUPPORT_BTWT == 1)
 		if (GET_BTWT_CTRL_NEGO(
 			((struct _IE_BTWT_T *)&(prRxSetupFrame->rTWT))->ucCtrl)
@@ -853,6 +1049,9 @@ void twtProcessS1GAction(
 #endif
 
 		}
+/* TWT STA code segment::End
+ * i-TWT/BTWT/ML-TWT handling goes over here.
+ */
 
 		break;
 
@@ -869,9 +1068,45 @@ void twtProcessS1GAction(
 
 		ucTWTFlowId = prRxTeardownFrame->ucTWTFlow;
 
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+		prTWTHotspotStaNode = prStaRec->prTWTHotspotStaNode;
+
+		if (prTWTHotspotStaNode != NULL) {
+			/* if we're over here, this is Hotspot's
+			 * STA's teardown request
+			 */
+			if (prTWTHotspotStaNode->flow_id == ucTWTFlowId) {
+				/* Proceed the teardown operation for
+				 * this Hotsopt's STA:
+				 * 1. send teardown command to F/W
+				 * 2. reset	Hotsopt's STA station record
+				 */
+				twtHotspotRespFsmSteps(
+					prAdapter,
+					prStaRec,
+					TWT_HOTSPOT_RESP_STATE_RECEIVE_TEARDOWN,
+					ucTWTFlowId,
+					NULL);
+			} else {
+				/* incorrect flow id from sta */
+				DBGLOG(TWT_RESPONDER, ERROR,
+					"[TWT_RESP]Received TWT Teardown flow id = %d\n",
+					ucTWTFlowId);
+
+				return;
+			}
+		}		else		{
+			/* We are TWT STA */
+			/* Notify TWT Requester FSM */
+			twtReqFsmRunEventRxTeardown(
+				prAdapter, prSwRfb, prStaRec,
+				ucTWTFlowId);
+		}
+#else
 		/* Notify TWT Requester FSM */
 		twtReqFsmRunEventRxTeardown(
 			prAdapter, prSwRfb, prStaRec, ucTWTFlowId);
+#endif
 
 		break;
 
@@ -934,6 +1169,717 @@ void twtProcessS1GAction(
 		break;
 	}
 }
+
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+void
+twtHotspotGetFreeFlowId(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t *p_ucTWTFlowId)
+{
+	struct BSS_INFO *prBssInfo;
+	uint8_t i = 0;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prStaRec\n");
+
+		return;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	if (!prBssInfo) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prBssInfo\n");
+
+		return;
+	}
+
+	if (p2pFuncIsAPMode(prAdapter->rWifiVar
+		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+		for (i = 0; i < TWT_MAX_FLOW_NUM; i++) {
+			if ((prBssInfo->twt_flow_id_bitmap & (1 << i)) == 0) {
+				*p_ucTWTFlowId = i;
+
+				prBssInfo->twt_flow_id_bitmap |= (1 << i);
+
+				DBGLOG(TWT_RESPONDER, ERROR,
+					"[TWT_RESP]BSS_INFO[%d] hotspot TWT flow id bitmap[%x]\n",
+					prBssInfo->ucBssIndex,
+					prBssInfo->twt_flow_id_bitmap);
+
+				return;
+			}
+		}
+
+		*p_ucTWTFlowId = TWT_HOTSPOT_NO_MORE_FLOW_ID;
+
+		DBGLOG(TWT_RESPONDER, ERROR,
+				"[TWT_RESP]Hotspot no more TWT connectivity\n");
+	}
+}
+
+void
+twtHotspotReturnFlowId(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId)
+{
+	struct BSS_INFO *prBssInfo;
+	uint8_t i = 0;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prStaRec\n");
+
+		return;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	if (!prBssInfo) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prBssInfo\n");
+
+		return;
+	}
+
+	if (p2pFuncIsAPMode(prAdapter->rWifiVar
+		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+		i = prBssInfo->twt_flow_id_bitmap;
+		prBssInfo->twt_flow_id_bitmap &= (~(1 << ucTWTFlowId));
+
+		DBGLOG(TWT_RESPONDER, ERROR,
+				"[TWT_RESP]BSS_INFO[%d] TWT flow id bitmap [%x]->[%x]\n",
+				prBssInfo->ucBssIndex,
+				i,
+				prBssInfo->twt_flow_id_bitmap);
+	}
+}
+
+void
+twtHotspotGetStaRecIndexByFlowId(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx,
+	uint8_t ucTWTFlowId,
+	uint8_t *p_ucIndex)
+{
+	struct BSS_INFO *prBssInfo;
+	uint8_t i = 0;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prAdapter\n");
+
+		return;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+
+	if (!prBssInfo) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prBssInfo\n");
+
+		return;
+	}
+
+	if (p2pFuncIsAPMode(prAdapter->rWifiVar
+		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+		for (i = 0; i < TWT_MAX_FLOW_NUM; i++) {
+			if ((prBssInfo->arTWTSta[i].used == 1) &&
+				(prBssInfo->arTWTSta[i].flow_id ==
+					ucTWTFlowId)) {
+				*p_ucIndex = i;
+
+				return;
+			}
+		}
+
+		*p_ucIndex = 0xFF;
+	}
+}
+
+void
+twtHotspotGetStaRecByFlowId(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx,
+	uint8_t ucTWTFlowId,
+	struct STA_RECORD **pprStaRec
+)
+{
+	struct BSS_INFO *prBssInfo;
+	uint8_t i = 0;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prAdapter\n");
+
+		return;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+
+	if (!prBssInfo) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prBssInfo\n");
+
+		return;
+	}
+
+	if (p2pFuncIsAPMode(prAdapter->rWifiVar
+		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+		for (i = 0; i < TWT_MAX_FLOW_NUM; i++) {
+			if ((prBssInfo->arTWTSta[i].used == 1) &&
+				(prBssInfo->arTWTSta[i].flow_id ==
+					ucTWTFlowId)) {
+				*pprStaRec = prBssInfo->arTWTSta[i].prStaRec;
+
+				return;
+			}
+		}
+
+		*pprStaRec = NULL;
+	}
+}
+
+void
+twtHotspotGetFreeStaNodeIndex(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t *p_ucIndex)
+{
+	struct BSS_INFO *prBssInfo;
+	uint8_t i = 0;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prStaRec\n");
+
+		return;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	if (!prBssInfo) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prBssInfo\n");
+
+		return;
+	}
+
+	if (p2pFuncIsAPMode(prAdapter->rWifiVar
+		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+
+		for (i = 0; i < TWT_MAX_FLOW_NUM; i++) {
+			if (prBssInfo->arTWTSta[i].used == 0) {
+				prBssInfo->arTWTSta[i].used = 1;
+
+				*p_ucIndex = i;
+
+				DBGLOG(TWT_RESPONDER, ERROR,
+					"[TWT_RESP]BSS_INFO[%d] hotspot TWT sta node[%d]\n",
+					prBssInfo->ucBssIndex,
+					i);
+
+				return;
+			}
+		}
+
+		*p_ucIndex = TWT_HOTSPOT_NO_MORE_FLOW_ID;
+
+		DBGLOG(TWT_RESPONDER, ERROR,
+					"[TWT_RESP]Hotspot no more TWT sta nodes\n");
+	}
+}
+
+void
+twtHotspotGetFreeStaNode(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct _TWT_HOTSPOT_STA_NODE **pprTWTHotspotStaNode)
+{
+	struct BSS_INFO *prBssInfo;
+	uint8_t i = 0;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prStaRec\n");
+
+		return;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	if (!prBssInfo) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prBssInfo\n");
+
+		return;
+	}
+
+	if (p2pFuncIsAPMode(prAdapter->rWifiVar
+		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+
+		for (i = 0; i < TWT_MAX_FLOW_NUM; i++) {
+			if (prBssInfo->arTWTSta[i].used == 0) {
+				prBssInfo->arTWTSta[i].used = 1;
+
+/* Caller:
+*       struct _TWT_HOTSPOT_STA_NODE *prTWTHotspotStaNode = NULL;
+*   Callee:
+*       pprTWTHotspotStaNode => &prTWTHotspotStaNode
+*       *pprTWTHotspotStaNode => prTWTHotspotStaNode
+*/
+
+				prBssInfo->arTWTSta[i].own_mac_idx =
+					prBssInfo->ucOwnMacIndex;
+				prBssInfo->arTWTSta[i].peer_id_grp_id =
+					CPU_TO_LE16(prStaRec->ucWlanIndex);
+				prBssInfo->arTWTSta[i].bss_idx =
+					prBssInfo->ucBssIndex;
+
+				*pprTWTHotspotStaNode = &prBssInfo->arTWTSta[i];
+
+				DBGLOG(TWT_RESPONDER, ERROR,
+					"[TWT_RESP]BSS_INFO[%d] hotspot TWT sta node[%d]\n",
+					prBssInfo->ucBssIndex,
+					i);
+
+				return;
+			}
+		}
+
+		*pprTWTHotspotStaNode = NULL;
+
+		DBGLOG(TWT_RESPONDER, ERROR,
+					"[TWT_RESP]Hotspot no more TWT sta nodes\n");
+	}
+}
+
+void
+twtHotspotResetStaNode(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec)
+{
+	struct BSS_INFO *prBssInfo;
+	struct _TWT_HOTSPOT_STA_NODE *prTWTHotspotStaNode = NULL;
+	struct LINK *p_twt_sch_link = NULL;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prStaRec\n");
+
+		return;
+	}
+
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	if (!prBssInfo) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prBssInfo\n");
+
+		return;
+	}
+
+	p_twt_sch_link = &prBssInfo->twt_sch_link;
+
+	prTWTHotspotStaNode = prStaRec->prTWTHotspotStaNode;
+
+	if (!prTWTHotspotStaNode) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prTWTHotspotStaNode\n");
+
+		return;
+	}
+
+
+	if (p2pFuncIsAPMode(prAdapter->rWifiVar
+		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+		/* Reset hotspot sta node */
+		prTWTHotspotStaNode->used = 0;
+
+		prTWTHotspotStaNode->own_mac_idx = 0;
+		prTWTHotspotStaNode->flow_id = 0;
+		prTWTHotspotStaNode->peer_id_grp_id = 0;
+		prTWTHotspotStaNode->agrt_sp_duration = 0;
+		prTWTHotspotStaNode->bss_idx = 0;
+
+		prTWTHotspotStaNode->schedule_sp_start_tsf = 0;
+		prTWTHotspotStaNode->twt_assigned_tsf = 0;
+		prTWTHotspotStaNode->agrt_sp_start_tsf = 0;
+		prTWTHotspotStaNode->agrt_sp_wake_intvl_mantissa = 0;
+		prTWTHotspotStaNode->agrt_sp_wake_intvl_exponent = 0;
+		prTWTHotspotStaNode->prStaRec = NULL;
+
+		/* Remove this hotspot sta node from schedule list */
+		LINK_REMOVE_KNOWN_ENTRY(
+			p_twt_sch_link,
+			&prTWTHotspotStaNode->list_entry);
+
+		/* Finally, set station record's hotspot sta node to NULL */
+		prStaRec->prTWTHotspotStaNode = NULL;
+	}
+}
+
+uint32_t
+twtHotspotAlignDuration(
+	uint32_t sp_duration,
+	uint32_t alignment)
+{
+	uint32_t sp_duration_alignment = 0;
+	uint32_t m = sp_duration % alignment;
+
+#if (TWT_HOTSPOT_TSF_ALIGNMENT_EN == 1)
+	sp_duration_alignment = sp_duration + (alignment - m);
+#else
+	sp_duration_alignment = sp_duration;
+#endif /* TWT_TSF_ALIGNMENT_EN */
+
+	return sp_duration_alignment;
+}
+
+void
+twtHotspotGetNearestTargetTSF(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct _TWT_HOTSPOT_STA_NODE *prTWTHotspotStaNode,
+	uint64_t u8CurrentTsf)
+{
+	struct BSS_INFO *prBssInfo;
+	uint16_t sp_duration = 0;
+	uint64_t u8twt_interval = 0;
+	uint64_t u8Temp = 0;
+	uint64_t u8Mod = 0;
+	u_int8_t bFound = FALSE;
+	struct LINK *p_twt_sch_link = NULL;
+	struct _TWT_HOTSPOT_STA_NODE *curr_twt_node = NULL;
+	struct _TWT_HOTSPOT_STA_NODE *next_twt_node = NULL;
+	struct _TWT_HOTSPOT_STA_NODE *temp_twt_node = NULL;
+	struct _TWT_HOTSPOT_STA_NODE *head_twt_node = NULL;
+	struct _TWT_HOTSPOT_STA_NODE *tail_twt_node = NULL;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prStaRec\n");
+
+		return;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(
+				prAdapter,
+				prStaRec->ucBssIndex);
+
+	if (!prBssInfo) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prBssInfo\n");
+
+		return;
+	}
+
+	if (p2pFuncIsAPMode(prAdapter->rWifiVar
+		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+
+		p_twt_sch_link = &prBssInfo->twt_sch_link;
+
+		/* Build the whole schedule from
+		* BssInfo's TWT schedule link
+		*/
+		sp_duration = prTWTHotspotStaNode->
+						agrt_sp_duration << 8;
+
+		if (LINK_IS_EMPTY(p_twt_sch_link)) {
+			/* insert as the 1st node */
+			prTWTHotspotStaNode->schedule_sp_start_tsf = 0;
+
+			LINK_INSERT_TAIL(
+				p_twt_sch_link,
+				&prTWTHotspotStaNode->list_entry);
+		} else if (p_twt_sch_link->u4NumElem == 1) {
+			curr_twt_node = LINK_PEEK_HEAD(
+				p_twt_sch_link,
+				struct _TWT_HOTSPOT_STA_NODE,
+				list_entry);
+
+			if (curr_twt_node->schedule_sp_start_tsf
+				>= sp_duration) {
+				/* insert before 1st node */
+				/* curr_twt_node is 1st node */
+				prTWTHotspotStaNode->schedule_sp_start_tsf = 0;
+
+				LINK_INSERT_BEFORE(
+					p_twt_sch_link,
+					&curr_twt_node->list_entry,
+					&prTWTHotspotStaNode->list_entry);
+			} else {
+				/* insert after 1st node */
+				/* curr_twt_node is 1st node */
+				prTWTHotspotStaNode->schedule_sp_start_tsf =
+					curr_twt_node->schedule_sp_start_tsf +
+					twtHotspotAlignDuration(
+					(curr_twt_node->agrt_sp_duration) << 8,
+					TWT_HOTSPOT_TSF_ALIGNMNET_UINT);
+
+				LINK_INSERT_AFTER(
+					p_twt_sch_link,
+					&curr_twt_node->list_entry,
+					&prTWTHotspotStaNode->list_entry);
+			}
+		} else {
+			/* insert at proper place */
+			head_twt_node = LINK_PEEK_HEAD(
+				p_twt_sch_link,
+				struct _TWT_HOTSPOT_STA_NODE,
+				list_entry);
+
+			LINK_FOR_EACH_ENTRY_SAFE(
+				temp_twt_node,
+				next_twt_node,
+				p_twt_sch_link,
+				list_entry,
+				struct _TWT_HOTSPOT_STA_NODE) {
+				curr_twt_node = temp_twt_node;
+
+				/* space check before 1st node */
+				if ((curr_twt_node == head_twt_node) &&
+					(curr_twt_node->
+						schedule_sp_start_tsf >=
+						sp_duration)) {
+					/* insert before head */
+					prTWTHotspotStaNode->
+						schedule_sp_start_tsf = 0;
+
+					LINK_INSERT_BEFORE(
+						p_twt_sch_link,
+						&curr_twt_node->list_entry,
+						&prTWTHotspotStaNode->
+							list_entry);
+
+					bFound = TRUE;
+
+					break;
+				}
+
+				/* space check after 1st node
+				* if current node is not the last node
+				*/
+				tail_twt_node = LINK_PEEK_TAIL(
+					p_twt_sch_link,
+					struct _TWT_HOTSPOT_STA_NODE,
+					list_entry);
+
+				if ((curr_twt_node != tail_twt_node) &&
+					(next_twt_node->
+						schedule_sp_start_tsf -
+						(curr_twt_node->
+						schedule_sp_start_tsf +
+						twtHotspotAlignDuration(
+						curr_twt_node->
+							agrt_sp_duration << 8,
+						TWT_HOTSPOT_TSF_ALIGNMNET_UINT))
+							>= sp_duration)) {
+					prTWTHotspotStaNode->
+						schedule_sp_start_tsf =
+					curr_twt_node->
+						schedule_sp_start_tsf +
+					twtHotspotAlignDuration(
+						curr_twt_node->agrt_sp_duration
+						<< 8,
+						TWT_HOTSPOT_TSF_ALIGNMNET_UINT);
+
+					LINK_INSERT_AFTER(
+						p_twt_sch_link,
+						&curr_twt_node->list_entry,
+						&prTWTHotspotStaNode->
+							list_entry);
+
+					bFound = TRUE;
+
+					break;
+				}
+			}
+
+			/* insert as the tail node */
+			if (!bFound) {
+				prTWTHotspotStaNode->schedule_sp_start_tsf =
+					curr_twt_node->schedule_sp_start_tsf +
+					twtHotspotAlignDuration(
+					curr_twt_node->agrt_sp_duration << 8,
+					TWT_HOTSPOT_TSF_ALIGNMNET_UINT);
+
+				LINK_INSERT_TAIL(
+					p_twt_sch_link,
+					&prTWTHotspotStaNode->list_entry);
+			}
+		}
+
+		/* Determine the real timestamp for this TWT activity */
+		u8twt_interval = ((u_int64_t)(prTWTHotspotStaNode->
+			agrt_sp_wake_intvl_mantissa)) <<
+			prTWTHotspotStaNode->agrt_sp_wake_intvl_exponent;
+
+		u8Temp = u8CurrentTsf -
+			prTWTHotspotStaNode->schedule_sp_start_tsf;
+
+		u8Mod = kal_mod64(u8Temp, u8twt_interval);
+
+		prTWTHotspotStaNode->twt_assigned_tsf =
+						u8CurrentTsf +
+						(u8twt_interval - u8Mod) +
+						u8twt_interval * 10;
+
+		DBGLOG(TWT_RESPONDER, ERROR,
+					"[TWT_RESP]twt_assigned_tsf=%llx\n",
+					prTWTHotspotStaNode->twt_assigned_tsf);
+		DBGLOG(TWT_RESPONDER, ERROR,
+					"[TWT_RESP]u8Temp=%llx\n",
+					u8Temp);
+		DBGLOG(TWT_RESPONDER, ERROR,
+					"[TWT_RESP]u8Mod=%llx\n",
+					u8Mod);
+	}
+}
+
+uint32_t
+twtHotspotSendSetupRespFrame(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId,
+	uint8_t ucDialogToken,
+	struct _TWT_PARAMS_T *prTWTParams,
+	PFN_TX_DONE_HANDLER pfTxDoneHandler)
+{
+	struct MSDU_INFO *prMsduInfo;
+	struct _ACTION_TWT_SETUP_FRAME *prTxFrame;
+	struct BSS_INFO *prBssInfo;
+	uint16_t u2EstimatedFrameLen;
+	struct _IE_TWT_T *prTWTBuf;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prAdapter\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prStaRec\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prTWTParams) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prTWTParams\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	if (!prBssInfo) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]invalid prBssInfo\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	/* Calculate MSDU buffer length */
+	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD
+		+ sizeof(struct _ACTION_TWT_SETUP_FRAME);
+
+	/* Alloc MSDU_INFO */
+	prMsduInfo = (struct MSDU_INFO *)
+			cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
+
+	if (!prMsduInfo) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+			"[TWT_RESP]No MSDU_INFO_T for sending TWT Setup Resp Frame.\n");
+
+		return WLAN_STATUS_RESOURCES;
+	}
+
+	kalMemZero(prMsduInfo->prPacket, u2EstimatedFrameLen);
+
+	prTxFrame = prMsduInfo->prPacket;
+
+	/* Fill frame ctrl */
+	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+
+	COPY_MAC_ADDR(prTxFrame->aucDestAddr, prStaRec->aucMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
+
+	/* Compose the frame body's frame */
+	prTxFrame->ucCategory = CATEGORY_S1G_ACTION;
+	prTxFrame->ucAction = ACTION_S1G_TWT_SETUP;
+
+	/* Must be the same as in the STA's setup req frame*/
+	prTxFrame->ucDialogToken = ucDialogToken;
+
+	prTWTBuf = &(prTxFrame->rTWT);
+	twtFillTWTElement(prTWTBuf, ucTWTFlowId, prTWTParams);
+
+	/* Update information of MSDU_INFO_T */
+	TX_SET_MMPDU(prAdapter,
+			prMsduInfo,
+			prBssInfo->ucBssIndex,
+			prStaRec->ucIndex,
+			WLAN_MAC_MGMT_HEADER_LEN,
+			sizeof(struct _ACTION_TWT_SETUP_FRAME),
+			pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
+
+	/* Enqueue the frame to send this action frame */
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
 
 #if (CFG_SUPPORT_BTWT == 1)
 void btwtFillTWTElement(
