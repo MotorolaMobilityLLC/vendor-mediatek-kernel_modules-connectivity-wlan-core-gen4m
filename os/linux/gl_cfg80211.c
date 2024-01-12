@@ -1217,6 +1217,12 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 				if (((u4channel - 5) % 16) != 0)
 					continue;
 
+#if WLAN_INCLUDE_SYS
+			/* Special case: cmd to block 6G */
+			if (!prGlueInfo->prAdapter->fgIsHwSupport6G)
+				continue;
+#endif
+
 			prScanRequest->arChannel[j].eBand = BAND_6G;
 			break;
 #endif

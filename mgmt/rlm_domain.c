@@ -10443,6 +10443,14 @@ uint8_t rlmDomain6GPwrModeDecision(struct ADAPTER *prAdapter,
 		ePwrMode6G = PWR_MODE_6G_VLP;
 	}
 
+#if WLAN_INCLUDE_SYS
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prAdapter->fgEnRfTestMode ||
+		prAdapter->fgEn6eSafeMode)
+		ePwrMode6G = PWR_MODE_6G_LPI;
+#endif
+#endif
+
 	DBGLOG(RLM, TRACE,
 		"AP_Country(%d,%d)STA_Country(%d,%d)HE6GPre[%d]HeRegInfo[%d]6GPwrMode[%d]\n",
 		((u2CountryCodeAP & 0xff00) >> 8),
