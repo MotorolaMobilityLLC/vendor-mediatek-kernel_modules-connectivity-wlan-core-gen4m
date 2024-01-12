@@ -227,6 +227,14 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 #define PWR_LEVEL_STAT_UPDATE_INTERVAL	60	/* sec */
 #endif
 
+/* Scan Request Timeout */
+#if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
+#define KAL_SCN_BSS_DESC_STALE_SEC			30
+#else
+#define KAL_SCN_BSS_DESC_STALE_SEC			20
+#endif
+
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -1984,14 +1992,20 @@ void kalRemoveBss(struct GLUE_INFO *prGlueInfo,
 	uint8_t ucChannelNum,
 	enum ENUM_BAND eBand);
 
+
 #if CFG_SUPPORT_WPA3
-int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
-			   IN uint8_t uBssIndex);
+int kalExternalAuthRequest(
+		struct GLUE_INFO *prGlueInfo,
+		uint8_t uBssIndex);
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-int kalVendorExternalAuthRequest(IN struct ADAPTER *prAdapter,
-		IN struct STA_RECORD *prStaRec, IN uint8_t uBssIndex);
+int kalVendorExternalAuthRequest(
+		struct GLUE_INFO *prGlueInfo,
+		struct STA_RECORD *prStaRec,
+		uint8_t uBssIndex);
 #endif
 #endif
+
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
 int32_t kalBatNotifierReg(IN struct GLUE_INFO *prGlueInfo);
 void kalEnableTxPwrBackoffByBattVolt(struct ADAPTER *prAdapter, bool ucEnable);
@@ -2056,6 +2070,44 @@ void kal_sched_set(struct task_struct *p, int policy,
 		const struct sched_param *param,
 		int nice);
 void kalSetThreadSchPolicyPriority(IN struct GLUE_INFO *prGlueInfo);
+void kalSetLogTooMuch(uint32_t u4DriverLevel, uint32_t u4FwLevel);
+void kalGetRealTime(struct REAL_TIME *prRealTime);
+void kalVendorEventRssiBeyondRange(struct GLUE_INFO *prGlueInfo,
+			uint8_t ucBssIdx, int rssi);
+#if CFG_SUPPORT_TPENHANCE_MODE
+inline uint64_t kalTpeTimeUs(void);
+void kalTpeUpdate(struct GLUE_INFO *prGlueInfo, struct QUE *prSrcQue,
+		uint8_t ucPktJump);
+void kalTpeFlush(struct GLUE_INFO *prGlueInfo);
+
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+void kalTpeTimeoutHandler(struct timer_list *timer);
+#else
+void kalTpeTimeoutHandler(unsigned long ulData);
+#endif
+void kalTpeInit(struct GLUE_INFO *prGlueInfo);
+void kalTpeUninit(struct GLUE_INFO *prGlueInfo);
+int kalTpeProcess(struct GLUE_INFO *prGlueInfo,
+			struct sk_buff *prSkb,
+			struct net_device *prDev);
+#endif /* CFG_SUPPORT_TPENHANCE_MODE */
+
+void kalTxDirectClearSkbQ(struct GLUE_INFO *prGlueInfo);
+void kalTxDirectStartCheckQTimer(
+	struct GLUE_INFO *prGlueInfo,
+	uint8_t offset);
+
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+void kalTxDirectTimerCheckSkbQ(kal_timer_list *timer);
+void kalTxDirectTimerCheckHifQ(kal_timer_list *timer);
+#else
+void kalTxDirectTimerCheckSkbQ(unsigned long data);
+void kalTxDirectTimerCheckHifQ(unsigned long data);
+#endif
+
+uint32_t kalTxDirectStartXmit(struct sk_buff *prSkb,
+	struct GLUE_INFO *prGlueInfo);
+uint32_t kalGetTxDirectQueueLength(IN struct GLUE_INFO *prGlueInfo);
 
 #ifndef __has_attribute
 #define __has_attribute(x) 0

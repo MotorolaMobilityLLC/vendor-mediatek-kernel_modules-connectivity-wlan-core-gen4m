@@ -2572,7 +2572,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	}
 
 #if CFG_SUPPORT_TPENHANCE_MODE
-	if (!wlanTpeProcess(prGlueInfo,
+	if (!kalTpeProcess(prGlueInfo,
 			prSkb,
 			prDev)) {
 		return WLAN_STATUS_SUCCESS;
@@ -2628,7 +2628,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		/* To reduce L3 buffer usage, release original owner ASAP */
 		skb_orphan(prSkb);
 #endif
-		return nicTxDirectStartXmit(prSkb, prGlueInfo);
+		return kalTxDirectStartXmit(prSkb, prGlueInfo);
 	}
 
 	kalSetEvent(prGlueInfo);
@@ -5165,7 +5165,7 @@ void kalFlushPendingTxPackets(IN struct GLUE_INFO
 		return;
 
 	if (HAL_IS_TX_DIRECT()) {
-		nicTxDirectClearSkbQ(prGlueInfo->prAdapter);
+		kalTxDirectClearSkbQ(prGlueInfo);
 	} else {
 		GLUE_SPIN_LOCK_DECLARATION();
 
@@ -10115,35 +10115,41 @@ int8_t atoi(uint8_t ch)
 }
 
 #if CFG_SUPPORT_WPA3
-int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
-				   IN uint8_t uBssIndex)
+int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
+				   uint8_t uBssIndex)
 {
 	struct cfg80211_external_auth_params params;
 	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
 	struct BSS_DESC *prBssDesc = NULL;
 	struct net_device *ndev = NULL;
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct BSS_INFO *prBssInfo = NULL;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
 
+	prAdapter = prGlueInfo->prAdapter;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, uBssIndex);
 
 	if (IS_BSS_AIS(prBssInfo)) {
-		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, uBssIndex);
+		prAisFsmInfo =
+			aisGetAisFsmInfo(prAdapter, uBssIndex);
 		if (!prAisFsmInfo) {
 			DBGLOG(SAA, WARN,
 			       "SAE auth failed with NULL prAisFsmInfo\n");
 			return WLAN_STATUS_INVALID_DATA;
 		}
 
-		prBssDesc = aisGetTargetBssDesc(prAdapter, uBssIndex);
+		prBssDesc =
+			aisGetTargetBssDesc(prAdapter,
+				uBssIndex);
 		if (!prBssDesc) {
 			DBGLOG(SAA, WARN,
 			       "SAE auth failed without prTargetBssDesc\n");
 			return WLAN_STATUS_INVALID_DATA;
 		}
 	} else if (IS_BSS_P2P(prBssInfo)) {
-		prP2pRoleFsmInfo = p2pFuncGetRoleByBssIdx(prAdapter, uBssIndex);
+		prP2pRoleFsmInfo =
+			p2pFuncGetRoleByBssIdx(prAdapter,
+				uBssIndex);
 		if (!prP2pRoleFsmInfo) {
 			DBGLOG(SAA, WARN,
 			       "SAE auth failed with NULL prP2pRoleFsmInfo\n");
@@ -10175,8 +10181,8 @@ int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
 }
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-int kalVendorExternalAuthRequest(IN struct ADAPTER *prAdapter,
-		struct STA_RECORD *prStaRec, IN uint8_t ucBssIndex)
+int kalVendorExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
+		struct STA_RECORD *prStaRec, uint8_t ucBssIndex)
 {
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
@@ -10185,21 +10191,26 @@ int kalVendorExternalAuthRequest(IN struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
 	uint16_t size = 0;
 
-	wiphy = prAdapter->prGlueInfo->prDevHandler->ieee80211_ptr->wiphy;
-	wdev = wlanGetNetDev(prAdapter->prGlueInfo, ucBssIndex)->ieee80211_ptr;
+	prAdapter = prGlueInfo->prAdapter;
+	wiphy = prGlueInfo->prDevHandler->ieee80211_ptr->wiphy;
+	wdev = wlanGetNetDev(prGlueInfo, ucBssIndex)->ieee80211_ptr;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
 	if (IS_BSS_AIS(prBssInfo)) {
-		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+		prAisFsmInfo =
+			aisGetAisFsmInfo(prAdapter, ucBssIndex);
 		if (!prAisFsmInfo) {
 			DBGLOG(SAA, WARN,
 			       "SAE auth failed with NULL prAisFsmInfo\n");
 			return WLAN_STATUS_INVALID_DATA;
 		}
 
-		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+		prBssDesc =
+			aisGetTargetBssDesc(prAdapter,
+				ucBssIndex);
 		if (!prBssDesc) {
 			DBGLOG(SAA, WARN,
 			       "SAE auth failed without prTargetBssDesc\n");
@@ -10207,7 +10218,8 @@ int kalVendorExternalAuthRequest(IN struct ADAPTER *prAdapter,
 		}
 	} else if (IS_BSS_P2P(prBssInfo)) {
 		prP2pRoleFsmInfo =
-			p2pFuncGetRoleByBssIdx(prAdapter, ucBssIndex);
+			p2pFuncGetRoleByBssIdx(prAdapter,
+				ucBssIndex);
 		if (!prP2pRoleFsmInfo) {
 			DBGLOG(SAA, WARN,
 			       "SAE auth failed with NULL prP2pRoleFsmInfo\n");
@@ -11499,4 +11511,608 @@ uint8_t kalRxNapiValidSkb(struct GLUE_INFO *prGlueInfo,
 
 	return kal_is_skb_gro(prGlueInfo->prAdapter, ucBssIdx);
 #endif
+}
+
+void kalSetLogTooMuch(uint32_t u4DriverLevel,
+	uint32_t u4FwLevel)
+{
+#if KERNEL_VERSION(4, 14, 0) >= LINUX_VERSION_CODE
+#if (CFG_BUILT_IN_DRIVER == 0) && (CFG_MTK_ANDROID_WMT == 1)
+	/*
+	 * The function definition of get_logtoomuch_enable() and
+	 * set_logtoomuch_enable of Android O0 or lower version are different
+	 * from that of Android O1 or higher version. Wlan driver supports .ko
+	 * module from Android O1. Use CFG_BUILT_IN_DRIVER to distinguish
+	 * Android version higher than O1 instead.
+	 */
+	if ((u4DriverLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT ||
+			u4FwLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT) &&
+			get_logtoomuch_enable()) {
+		DBGLOG(OID, TRACE,
+			"Disable print log too much. driver: %d, fw: %d\n",
+			u4DriverLevel,
+			u4FwLevel);
+		set_logtoomuch_enable(0);
+	}
+#endif
+#endif /* KERNEL_VERSION(4, 14, 0) >= LINUX_VERSION_CODE */
+}
+
+void kalGetRealTime(struct REAL_TIME *prRealTime)
+{
+	struct rtc_time tm;
+#if KERNEL_VERSION(5, 0, 0) <= LINUX_VERSION_CODE
+	struct timespec64 tv = { 0 };
+#else
+	struct timeval tv;
+#endif
+
+	ktime_get_real_ts64(&tv);
+	rtc_time64_to_tm(tv.tv_sec, &tm);
+	prRealTime->i4TmMon = tm.tm_mon;
+	prRealTime->i4TmDay = tm.tm_mday;
+	prRealTime->i4TmHour = tm.tm_hour;
+	prRealTime->i4TmMin = tm.tm_min;
+	prRealTime->i4TmSec = tm.tm_sec;
+	prRealTime->u4TvValSec = (uint32_t)tv.tv_sec;
+	prRealTime->u4TvValUsec = (uint32_t)KAL_GET_USEC(tv);
+}
+
+void kalVendorEventRssiBeyondRange(
+	struct GLUE_INFO *prGlueInfo,
+	uint8_t ucBssIdx, int rssi)
+{
+#if KERNEL_VERSION(3, 16, 0) <= LINUX_VERSION_CODE
+	mtk_cfg80211_vendor_event_rssi_beyond_range(prGlueInfo,
+		aisGetDefaultLinkBssIndex(prGlueInfo->prAdapter), rssi);
+#endif
+}
+
+
+#if CFG_SUPPORT_TPENHANCE_MODE
+inline uint64_t kalTpeTimeUs(void)
+{
+	struct timespec64 _now;
+
+	ktime_get_ts64(&_now);
+
+	return (uint64_t)((int)_now.tv_sec * 1000000 +
+			(int)KAL_GET_USEC(_now));
+}
+
+void kalTpeUpdate(struct GLUE_INFO *prGlueInfo, struct QUE *prSrcQue,
+		uint8_t ucPktJump)
+{
+	int addPktCnt = 0;
+	uint8_t *pucIpHeader = NULL;
+	uint8_t *pucPktHeadBuf = NULL;
+	uint8_t ucHitPkt;
+	uint16_t *pu2DPort, *pu2SPort;
+	uint32_t *pu4Ip;
+	uint32_t u4Cnt, u4Cnt2, u4PktMax;
+	struct QUE rTempQue;
+	struct QUE *prTempQue = &rTempQue;
+	struct QUE_ENTRY *prQueueEntry = NULL;
+	struct sk_buff *prSkb;
+	struct TPENHANCE_PKT_MAP auPktMap[TPENHANCE_SESSION_MAP_LEN];
+	struct TPENHANCE_PKT_MAP *prPktMap;
+
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
+		return;
+	}
+
+	if (!prSrcQue || QUEUE_IS_EMPTY(prSrcQue)) {
+		DBGLOG(QM, TRACE, "Nothing to handle\n");
+		return;
+	}
+
+	/* Resource init */
+	QUEUE_INITIALIZE(prTempQue);
+	kalMemZero(auPktMap, sizeof(auPktMap));
+	u4PktMax = prSrcQue->u4NumElem;
+
+	/* Queue revert */
+	while (QUEUE_IS_NOT_EMPTY(prSrcQue)) {
+		QUEUE_REMOVE_HEAD(prSrcQue, prQueueEntry,
+			  struct QUE_ENTRY *);
+		QUEUE_INSERT_HEAD(prTempQue, prQueueEntry);
+	}
+	QUEUE_MOVE_ALL(prSrcQue, prTempQue);
+
+	/* Loop all pkts in waiting-Q */
+	for (u4Cnt = 0; u4Cnt < u4PktMax; u4Cnt++) {
+		QUEUE_REMOVE_HEAD(prSrcQue, prQueueEntry,
+			  struct QUE_ENTRY *);
+		if (!prQueueEntry)
+			break;
+		prSkb = (struct sk_buff *)
+					  GLUE_GET_PKT_DESCRIPTOR(
+					  prQueueEntry);
+		pucPktHeadBuf = prSkb->data;
+		pucIpHeader = &pucPktHeadBuf[ETHER_HEADER_LEN];
+		pu4Ip = (uint32_t *)(pucIpHeader + IPV4_HDR_IP_SRC_ADDR_OFFSET);
+		pu2SPort = (uint16_t *)(pucIpHeader + IPV4_HDR_LEN);
+		pu2DPort = (uint16_t *)(pucIpHeader +
+					IPV4_HDR_LEN + 2);
+		/* Check if having this session ack already */
+		ucHitPkt = FALSE;
+		for (u4Cnt2 = 0; u4Cnt2 < ARRAY_SIZE(auPktMap);
+			u4Cnt2++) {
+			if (u4PktMax < TPENHANCE_PKT_LATCH_MIN)
+				break;
+
+			prPktMap = &auPktMap[u4Cnt2];
+
+			if (prPktMap->au2SPort == 0) {
+				/*
+				 * This is a new session.
+				 * Create a new record and keep this ack.
+				 */
+				prPktMap->au2SPort = *pu2SPort;
+				prPktMap->au2DPort = *pu2DPort;
+				prPktMap->au4Ip = *pu4Ip;
+				prPktMap->au2Hit++;
+				break;
+			}
+
+			if (prPktMap->au2SPort == *pu2SPort
+				&& prPktMap->au2DPort == *pu2DPort
+				&& prPktMap->au4Ip == *pu4Ip) {
+				/* A duplicated session found */
+				if (ucPktJump == prPktMap->au2Hit) {
+					/*
+					 * reset hit counter &&
+					 * keep this ack
+					 */
+					prPktMap->au2Hit = 0;
+				} else {
+					prPktMap->au2Hit++;
+					ucHitPkt = TRUE;
+				}
+				break;
+			}
+		}
+
+		if (ucHitPkt)
+			dev_kfree_skb(prSkb);
+		else {
+			uint8_t ucBssIndex =
+				GLUE_GET_PKT_BSS_IDX(prSkb);
+			uint16_t u2QueueIdx =
+				skb_get_queue_mapping(prSkb);
+
+			GLUE_INC_REF_CNT(
+			prGlueInfo->ai4TxPendingFrameNumPerQueue
+			[ucBssIndex][u2QueueIdx]);
+
+			GLUE_INC_REF_CNT(
+			prGlueInfo->i4TxPendingFrameNum);
+			QUEUE_INSERT_TAIL(prSrcQue, prQueueEntry);
+			addPktCnt++;
+		}
+	}
+
+	/* Queue revert */
+	while (QUEUE_IS_NOT_EMPTY(prSrcQue)) {
+		QUEUE_REMOVE_HEAD(prSrcQue, prQueueEntry,
+				struct QUE_ENTRY *);
+		QUEUE_INSERT_HEAD(prTempQue, prQueueEntry);
+	}
+	QUEUE_MOVE_ALL(prSrcQue, prTempQue);
+
+
+	if (addPktCnt != prSrcQue->u4NumElem)
+		DBGLOG(QM, ERROR, "mismatch : %d != %d\n",
+			addPktCnt, prSrcQue->u4NumElem);
+}
+
+void kalTpeFlush(struct GLUE_INFO *prGlueInfo)
+{
+	struct QUE rTempQue;
+	struct QUE *prTempQue = &rTempQue;
+	struct QUE *prTpeAckQueue;
+	struct QUE *prTxQueue;
+
+	GLUE_SPIN_LOCK_DECLARATION();
+
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
+		return;
+	}
+
+	prTpeAckQueue = &prGlueInfo->rTpeAckQueue;
+	prTxQueue = &prGlueInfo->rTxQueue;
+
+	if (QUEUE_IS_EMPTY(prTpeAckQueue))
+		return;
+
+	QUEUE_INITIALIZE(prTempQue);
+
+	/* Ack-Q clean first */
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TXACK_QUE);
+	QUEUE_CONCATENATE_QUEUES(prTempQue, prTpeAckQueue);
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TXACK_QUE);
+
+	kalTpeUpdate(prGlueInfo, prTempQue,
+		prGlueInfo->prAdapter->rWifiVar.ucTpEnhancePktNum);
+
+	prGlueInfo->u8TpeTimestamp = kalTpeTimeUs();
+
+	/* Append to Tx-Q */
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
+	QUEUE_CONCATENATE_QUEUES(prTxQueue, prTempQue);
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
+}
+
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+void kalTpeTimeoutHandler(struct timer_list *timer)
+#else
+void kalTpeTimeoutHandler(unsigned long ulData)
+#endif
+{
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+	struct GLUE_INFO *prGlueInfo = from_timer(prGlueInfo, timer, rTpeTimer);
+#else
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)ulData;
+#endif
+
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
+		return;
+	}
+
+	if (QUEUE_IS_NOT_EMPTY(&prGlueInfo->rTpeAckQueue)) {
+		/* There are some pkts in ack-Q */
+		/* de-Q all pkts right now */
+		kalTpeFlush(prGlueInfo);
+		kalSetEvent(prGlueInfo); /* Wakeup TX */
+	}
+}
+
+void kalTpeInit(struct GLUE_INFO *prGlueInfo)
+{
+	struct QUE *prTpeAckQueue;
+	struct ADAPTER *prAdapter;
+
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
+		return;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+
+	if (!prAdapter->rWifiVar.ucTpEnhanceEnable)
+		return;
+
+	prTpeAckQueue = &prGlueInfo->rTpeAckQueue;
+	QUEUE_INITIALIZE(prTpeAckQueue);
+	prGlueInfo->u4TpeMaxPktNum = TPENHANCE_PKT_KEEP_MAX;
+	prGlueInfo->u4TpeTimeout =
+		prAdapter->rWifiVar.u4TpEnhanceInterval; /* us */
+
+	DBGLOG(HAL, STATE,
+		"InitTpEnhance. PktNum:%d. Interval = %d. RSSI = %d\n",
+		prAdapter->rWifiVar.ucTpEnhancePktNum,
+		prAdapter->rWifiVar.u4TpEnhanceInterval,
+		prAdapter->rWifiVar.cTpEnhanceRSSI);
+
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+	timer_setup(&prGlueInfo->rTpeTimer, kalTpeTimeoutHandler, 0);
+#else
+	init_timer(&prGlueInfo->rTpeTimer);
+	prGlueInfo->rTpeTimer.function = kalTpeTimeoutHandler;
+	prGlueInfo->rTpeTimer.data = ((unsigned long) prGlueInfo);
+#endif
+	prGlueInfo->rTpeTimer.expires = jiffies - 10;
+	add_timer(&prGlueInfo->rTpeTimer);
+}
+
+
+void kalTpeUninit(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter = NULL;
+
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
+		return;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter->rWifiVar.ucTpEnhanceEnable)
+		return;
+
+	del_timer_sync(&(prGlueInfo->rTpeTimer));
+}
+
+int kalTpeProcess(struct GLUE_INFO *prGlueInfo,
+			struct sk_buff *prSkb,
+			struct net_device *prDev)
+{
+	struct QUE_ENTRY *prQueueEntry = NULL;
+	struct ADAPTER *prAdapter;
+	struct QUE *prTpeAckQueue;
+	struct WIFI_VAR *prWifiVar;
+	uint64_t u8Nowus;
+	uint8_t ucBssIndex;
+	int8_t cRssi;
+	struct PERF_MONITOR *prPerMonitor =
+		&prGlueInfo->prAdapter->rPerMonitor;
+
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
+		return;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL\n");
+		return;
+	}
+
+	prWifiVar = &prAdapter->rWifiVar;
+
+	if (!prWifiVar->ucTpEnhanceEnable)
+		return WLAN_STATUS_PENDING;
+
+	prTpeAckQueue = &prGlueInfo->rTpeAckQueue;
+
+	/* ranged from (-128 ~ 30) in unit of dBm */
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	cRssi = prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi;
+
+	u8Nowus = kalTpeTimeUs();
+
+	if (cRssi < prWifiVar->cTpEnhanceRSSI)
+		goto TpeEndFlush;
+	else if (!GLUE_TEST_PKT_FLAG(prSkb, ENUM_PKT_TCP_ACK))
+		goto TpeEndFlush;
+	else if (KAL_TEST_BIT(PERF_MON_RUNNING_BIT,
+		prPerMonitor->ulPerfMonFlag)) {
+		uint16_t u2TputMbps = 0;
+
+		struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
+			(struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
+		uint8_t ucBssIndex;
+
+		if (prGlueInfo == NULL || prDev == NULL ||
+			prSkb == NULL) {
+			DBGLOG(INIT, ERROR, "GlueInfo/Dev/Skb NULL\n");
+			return;
+		}
+
+		prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+				  netdev_priv(prDev);
+		ucBssIndex = prNetDevPrivate->ucBssIdx;
+
+		u2TputMbps = prPerMonitor->ulRxTp[ucBssIndex] >> 17;
+
+		if (u2TputMbps < prWifiVar->u4TpEnhanceThreshold)
+			goto TpeEndFlush;
+	}
+
+	/* more space to Q-in? */
+	if (prTpeAckQueue->u4NumElem < prGlueInfo->u4TpeMaxPktNum) {
+		/* Q-ing status */
+		GLUE_SPIN_LOCK_DECLARATION();
+		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TXACK_QUE);
+
+		/* Save timestamp for first pkt in Q */
+		if (QUEUE_IS_EMPTY(prTpeAckQueue))
+			prGlueInfo->u8TpeTimestamp = u8Nowus;
+
+		prQueueEntry = (struct QUE_ENTRY *)
+				GLUE_GET_PKT_QUEUE_ENTRY(prSkb);
+
+		QUEUE_INSERT_TAIL(prTpeAckQueue, prQueueEntry);
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TXACK_QUE);
+
+		/* Update NetDev statisitcs */
+		prDev->stats.tx_bytes += prSkb->len;
+		prDev->stats.tx_packets++;
+
+		if (u8Nowus >= prGlueInfo->u8TpeTimestamp +
+			prGlueInfo->u4TpeTimeout) {
+			/* Timeout already, flush out directly. */
+			if (timer_pending(&prGlueInfo->rTpeTimer))
+				del_timer(&prGlueInfo->rTpeTimer);
+			kalTpeFlush(prGlueInfo);
+			kalSetEvent(prGlueInfo);
+		} else {
+			/* Setup a timer for next flushing */
+			if (!timer_pending(&prGlueInfo->rTpeTimer))
+				mod_timer(&prGlueInfo->rTpeTimer,
+					jiffies + usecs_to_jiffies(
+					prGlueInfo->u4TpeTimeout * 2));
+		}
+		return WLAN_STATUS_SUCCESS;
+	} else if (QUEUE_IS_NOT_EMPTY(prTpeAckQueue)) {
+		/* cannot Q, try to flush out */
+		/* Flush ack-Q */
+		kalTpeFlush(prGlueInfo);
+	}
+
+TpeEndFlush:
+	/* Addtional check if Tpe-Q should be flushed! */
+	if (QUEUE_IS_NOT_EMPTY(prTpeAckQueue)
+		&&
+		(prTpeAckQueue->u4NumElem >= prGlueInfo->u4TpeMaxPktNum
+		|| u8Nowus >= prGlueInfo->u8TpeTimestamp +
+			prGlueInfo->u4TpeTimeout)) {
+		kalTpeFlush(prGlueInfo);
+	}
+	return WLAN_STATUS_PENDING;
+}
+#endif /* CFG_SUPPORT_TPENHANCE_MODE */
+
+void kalTxDirectClearSkbQ(IN struct GLUE_INFO *prGlueInfo)
+{
+	struct sk_buff *prSkb;
+
+	if (prGlueInfo == NULL) {
+		DBGLOG(TX, ERROR, "prGlueInfo NULL\n");
+		return;
+	}
+
+	while (TRUE) {
+		spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+		prSkb = skb_dequeue(&prGlueInfo->rTxDirectSkbQueue);
+		spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+		if (prSkb == NULL)
+			break;
+
+		kalSendComplete(prGlueInfo, prSkb,
+				WLAN_STATUS_NOT_ACCEPTED);
+	}
+}
+
+
+void kalTxDirectStartCheckQTimer(IN struct GLUE_INFO *prGlueInfo,
+				uint8_t offset)
+{
+	if (prGlueInfo == NULL) {
+		DBGLOG(TX, ERROR, "prGlueInfo NULL\n");
+		return;
+	}
+
+	mod_timer(&prGlueInfo->rTxDirectHifTimer, jiffies + offset);
+}
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief This function is the timeout function of timer rTxDirectSkbTimer.
+ *        The purpose is to check if rTxDirectSkbQueue has any skb to be sent.
+ *
+ * \param[in] data  Pointer of GlueInfo
+ *
+ * \retval none
+ */
+/*----------------------------------------------------------------------------*/
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+void kalTxDirectTimerCheckSkbQ(struct timer_list *timer)
+#else
+void kalTxDirectTimerCheckSkbQ(unsigned long data)
+#endif
+{
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+	struct GLUE_INFO *prGlueInfo =
+		from_timer(prGlueInfo, timer, rTxDirectSkbTimer);
+#else
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
+#endif
+
+	if (skb_queue_len(&prGlueInfo->rTxDirectSkbQueue))
+		kalTxDirectStartXmit(NULL, prGlueInfo);
+	else
+		DBGLOG(TX, INFO, "fgHasNoMsdu FALSE\n");
+}
+
+
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+void kalTxDirectTimerCheckHifQ(struct timer_list *timer)
+#else
+void kalTxDirectTimerCheckHifQ(unsigned long data)
+#endif
+{
+
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+	struct GLUE_INFO *prGlueInfo =
+		from_timer(prGlueInfo, timer, rTxDirectHifTimer);
+#else
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
+#endif
+
+	spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+
+	nicTxDirectTimerCheckHifQ(prGlueInfo->prAdapter);
+
+	spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+
+#if CFG_TX_DIRECT_VIA_HIF_THREAD
+	kalSetTxDirectEvent2Hif(prGlueInfo);
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
+}
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief This function is have to called by kalHardStartXmit().
+ *        The purpose is to let as many as possible TX processing in softirq
+ *        instead of in kernel thread to reduce TX CPU usage.
+ *        NOTE: Currently only USB interface can use this function.
+ *
+ * \param[in] prSkb  Pointer of the sk_buff to be sent
+ * \param[in] prGlueInfo  Pointer of prGlueInfo
+ *
+ * \retval WLAN_STATUS
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t kalTxDirectStartXmit(struct sk_buff *prSkb,
+			      struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct MSDU_INFO *prMsduInfo;
+	uint32_t ret = WLAN_STATUS_SUCCESS;
+
+	spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+
+	if (prSkb) {
+		prMsduInfo = cnmPktAlloc(prAdapter, 0);
+
+		if (prMsduInfo == NULL) {
+			DBGLOG(TX, INFO, "cnmPktAlloc NULL\n");
+			skb_queue_tail(&prGlueInfo->rTxDirectSkbQueue, prSkb);
+
+			ret = WLAN_STATUS_SUCCESS;
+			goto end;
+		}
+		if (skb_queue_len(&prGlueInfo->rTxDirectSkbQueue)) {
+			skb_queue_tail(&prGlueInfo->rTxDirectSkbQueue, prSkb);
+			prSkb = skb_dequeue(&prGlueInfo->rTxDirectSkbQueue);
+		}
+	} else {
+		prMsduInfo = cnmPktAlloc(prAdapter, 0);
+		if (prMsduInfo != NULL) {
+			prSkb = skb_dequeue(&prGlueInfo->rTxDirectSkbQueue);
+			if (prSkb == NULL) {
+				DBGLOG(TX, INFO,
+					"ERROR: no rTxDirectSkbQueue\n");
+				nicTxReturnMsduInfo(prAdapter, prMsduInfo);
+				ret = WLAN_STATUS_FAILURE;
+				goto end;
+			}
+		} else {
+			ret = WLAN_STATUS_FAILURE;
+			goto end;
+		}
+	}
+
+	while (1) {
+		nicTxDirectStartXmitMain(prSkb, prMsduInfo, prAdapter, 0xff,
+					 0xff, 0xff);
+		prSkb = skb_dequeue(&prGlueInfo->rTxDirectSkbQueue);
+		if (prSkb != NULL) {
+			prMsduInfo = cnmPktAlloc(prAdapter, 0);
+			if (prMsduInfo == NULL) {
+				skb_queue_head(&prGlueInfo->rTxDirectSkbQueue,
+					prSkb);
+				break;
+			}
+		} else {
+			break;
+		}
+	}
+
+end:
+	if (skb_queue_len(&prGlueInfo->rTxDirectSkbQueue))
+		kalTxDirectStartCheckQTimer(prGlueInfo,
+			TX_DIRECT_CHECK_INTERVAL);
+
+	spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+	return ret;
+}
+
+uint32_t kalGetTxDirectQueueLength(
+				struct GLUE_INFO *prGlueInfo)
+{
+	return skb_queue_len(&prGlueInfo->rTxDirectSkbQueue);
 }

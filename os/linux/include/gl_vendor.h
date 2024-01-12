@@ -1222,7 +1222,8 @@ int mtk_cfg80211_vendor_get_supported_feature_set(
 	struct wiphy *wiphy, struct wireless_dev *wdev,
 	const void *data, int data_len);
 
-int mtk_cfg80211_vendor_event_rssi_beyond_range(struct ADAPTER *prAdapter,
+int mtk_cfg80211_vendor_event_rssi_beyond_range(
+	struct GLUE_INFO *prGlueInfo,
 	uint8_t ucBssIdx, int rssi);
 
 int mtk_cfg80211_vendor_set_tx_power_scenario(

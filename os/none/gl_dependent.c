@@ -150,19 +150,9 @@ int kal_hex_dump_to_buffer(const void *buf, size_t len, int rowsize,
 	return 0;
 }
 
-void kal_do_gettimeofday(struct timeval *tv)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
 bool kal_warn_on(uint8_t condition)
 {
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
-void kal_get_monotonic_boottime(struct timespec *ts)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
 int kal_strtoint(const char *s, unsigned int base, int *res)
@@ -267,17 +257,6 @@ void kal_spin_lock_irqsave(spinlock_t *lock, unsigned long flags)
 }
 
 void kal_spin_unlock_irqrestore(spinlock_t *lock, unsigned long flags)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
-uint32_t kal_skb_queue_len(const struct sk_buff_head *list)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	return list->qlen;
-}
-
-void kal_skb_queue_tail(struct sk_buff_head *list, struct sk_buff *newsk)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }

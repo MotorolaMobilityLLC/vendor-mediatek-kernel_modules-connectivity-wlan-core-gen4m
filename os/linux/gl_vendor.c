@@ -2052,11 +2052,12 @@ nla_put_failure:
 	return -EFAULT;
 }
 
-int mtk_cfg80211_vendor_event_rssi_beyond_range(struct ADAPTER *prAdapter,
+int mtk_cfg80211_vendor_event_rssi_beyond_range(
+	struct GLUE_INFO *prGlueInfo,
 	uint8_t ucBssIdx, int rssi)
 {
 	struct wiphy *wiphy = wlanGetWiphy();
-	struct net_device *dev = wlanGetNetDev(prAdapter->prGlueInfo,
+	struct net_device *dev = wlanGetNetDev(prGlueInfo,
 			ucBssIdx);
 	struct sk_buff *skb;
 	struct PARAM_RSSI_MONITOR_EVENT rRSSIEvt;
@@ -2087,7 +2088,8 @@ int mtk_cfg80211_vendor_event_rssi_beyond_range(struct ADAPTER *prAdapter,
 		return -ENOMEM;
 	}
 
-	prAisBssInfo = aisGetDefaultLinkBssInfo(prAdapter);
+	prAisBssInfo = aisGetDefaultLinkBssInfo(prGlueInfo->prAdapter);
+
 	kalMemCopy(rRSSIEvt.BSSID, prAisBssInfo->aucBSSID,
 		   sizeof(uint8_t) * MAC_ADDR_LEN);
 
