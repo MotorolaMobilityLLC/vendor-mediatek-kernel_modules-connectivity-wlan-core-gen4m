@@ -58,8 +58,11 @@ struct WIFI_RTT_RESULT {
 
 static void rttRequestDoneTimeOut(struct ADAPTER *prAdapter,
 					  unsigned long ulParam);
+static void rttContRequestTimeOut(struct ADAPTER *prAdapter,
+					  unsigned long ulParam);
 static void rttFreeAllResults(struct RTT_INFO *prRttInfo);
 static void rttUpdateStatus(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
 	struct CMD_RTT_REQUEST *prCmd);
 static struct RTT_INFO *rttGetInfo(struct ADAPTER *prAdapter);
 
@@ -75,6 +78,7 @@ void rttInit(struct ADAPTER *prAdapter)
 	ASSERT(rttInfo);
 
 	rttInfo->fgIsRunning = false;
+	rttInfo->fgIsContRunning = false;
 	rttInfo->ucSeqNum = 0;
 
 	cnmTimerInitTimer(prAdapter,
@@ -82,8 +86,12 @@ void rttInit(struct ADAPTER *prAdapter)
 		  (PFN_MGMT_TIMEOUT_FUNC) rttRequestDoneTimeOut,
 		  (uintptr_t)NULL);
 
-	LINK_INITIALIZE(&rttInfo->rResultList);
+	cnmTimerInitTimer(prAdapter,
+		  &rttInfo->rRttContTimer,
+		  (PFN_MGMT_TIMEOUT_FUNC) rttContRequestTimeOut,
+		  (uintptr_t)NULL);
 
+	LINK_INITIALIZE(&rttInfo->rResultList);
 }
 
 void rttUninit(struct ADAPTER *prAdapter)
@@ -93,7 +101,7 @@ void rttUninit(struct ADAPTER *prAdapter)
 	ASSERT(rttInfo);
 
 	rttFreeAllResults(rttInfo);
-	rttUpdateStatus(prAdapter, NULL);
+	rttUpdateStatus(prAdapter, rttInfo->ucBssIndex, NULL);
 }
 
 struct RTT_INFO *rttGetInfo(struct ADAPTER *prAdapter)
@@ -117,17 +125,35 @@ void rttFreeAllResults(struct RTT_INFO *prRttInfo)
 	}
 }
 
+uint8_t rttIsRunning(struct ADAPTER *prAdapter)
+{
+	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
+
+	DBGLOG(RTT, INFO,
+		"Running = %d\n",
+		rttInfo->fgIsContRunning);
+
+	return rttInfo->fgIsContRunning;
+}
+
 void rttUpdateStatus(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
 	struct CMD_RTT_REQUEST *prCmd)
 {
 	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
 
+	rttInfo->ucBssIndex = ucBssIndex;
+
 	if (prCmd && prCmd->fgEnable) {
 		rttInfo->ucSeqNum = prCmd->ucSeqNum;
 		rttInfo->fgIsRunning = true;
+		rttInfo->fgIsContRunning = true;
 		cnmTimerStartTimer(prAdapter,
-				   &rttInfo->rRttDoneTimer,
-				   SEC_TO_MSEC(RTT_REQUEST_DONE_TIMEOUT_SEC));
+			&rttInfo->rRttDoneTimer,
+			SEC_TO_MSEC(RTT_REQUEST_DONE_TIMEOUT_SEC));
+		cnmTimerStartTimer(prAdapter,
+			&rttInfo->rRttContTimer,
+			SEC_TO_MSEC(RTT_REQUEST_CONT_TIMEOUT_SEC));
 	} else {
 		rttInfo->fgIsRunning = false;
 		cnmTimerStopTimer(prAdapter, &rttInfo->rRttDoneTimer);
@@ -135,6 +161,7 @@ void rttUpdateStatus(struct ADAPTER *prAdapter,
 }
 
 uint32_t rttSendCmd(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
 	struct CMD_RTT_REQUEST *cmd)
 {
 	uint32_t status;
@@ -150,7 +177,7 @@ uint32_t rttSendCmd(struct ADAPTER *prAdapter,
 			(uint8_t *) cmd, NULL, 0);
 	if (status != WLAN_STATUS_FAILURE) {
 		/* send cmd to FW successfully */
-		rttUpdateStatus(prAdapter, cmd);
+		rttUpdateStatus(prAdapter, ucBssIndex, cmd);
 		return WLAN_STATUS_SUCCESS;
 	}
 
@@ -168,6 +195,29 @@ void rttActiveNetwork(struct ADAPTER *prAdapter,
 		nicDeactivateNetwork(prAdapter, ucBssIndex);
 	}
 
+}
+
+uint8_t rttChannelWidthToCnmChBw(enum WIFI_CHANNEL_WIDTH eChannelWidth)
+{
+	uint8_t ucCnmBw = CW_20_40MHZ;
+
+	switch (eChannelWidth) {
+	case WIFI_CHAN_WIDTH_20:
+	case WIFI_CHAN_WIDTH_40:
+		ucCnmBw = CW_20_40MHZ;
+		break;
+	case WIFI_CHAN_WIDTH_80:
+		ucCnmBw = CW_80MHZ;
+		break;
+	case WIFI_CHAN_WIDTH_160:
+		ucCnmBw = CW_160MHZ;
+		break;
+	default:
+		ucCnmBw = CW_80MHZ;
+		break;
+	}
+
+	return ucCnmBw;
 }
 
 uint8_t rttBwToBssBw(uint8_t eRttBw)
@@ -222,16 +272,54 @@ uint8_t rttBssBwToRttBw(uint8_t ucBssBw)
 	return eRttBw;
 }
 
+uint8_t rttGetBssMaxBwByBand(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	enum ENUM_BAND eBand)
+{
+	uint8_t ucMaxBandwidth = MAX_BW_20MHZ;
+
+	if (IS_BSS_AIS(prBssInfo)) {
+		if (eBand == BAND_2G4)
+			ucMaxBandwidth = prAdapter->rWifiVar.ucSta2gBandwidth;
+		else if (eBand == BAND_5G)
+			ucMaxBandwidth = prAdapter->rWifiVar.ucSta5gBandwidth;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (eBand == BAND_6G)
+			ucMaxBandwidth = prAdapter->rWifiVar.ucSta6gBandwidth;
+#endif
+		if (ucMaxBandwidth > prAdapter->rWifiVar.ucStaBandwidth)
+			ucMaxBandwidth = prAdapter->rWifiVar.ucStaBandwidth;
+	} else if (IS_BSS_P2P(prBssInfo)) {
+		/* P2P mode */
+		if (prBssInfo->eBand == BAND_2G4)
+			ucMaxBandwidth = prAdapter->rWifiVar.ucP2p2gBandwidth;
+		else if (prBssInfo->eBand == BAND_5G)
+			ucMaxBandwidth = prAdapter->rWifiVar.ucP2p5gBandwidth;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (prBssInfo->eBand == BAND_6G)
+			ucMaxBandwidth = prAdapter->rWifiVar.ucP2p6gBandwidth;
+#endif
+	}
+
+	return ucMaxBandwidth;
+}
+
 uint8_t rttReviseBw(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex,
+			struct BSS_DESC *prBssDesc,
 			uint8_t eRttBwIn)
 {
 	uint8_t ucRttBw;
-	uint8_t ucMaxBssBw;
+	uint8_t ucMaxBssBw = MAX_BW_20MHZ;
+	struct BSS_INFO *prBssInfo;
 	uint8_t eRttBwOut = eRttBwIn;
 
 	ucRttBw = rttBwToBssBw(eRttBwIn);
-	ucMaxBssBw = cnmGetBssMaxBw(prAdapter, ucBssIndex);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (prBssInfo) {
+		ucMaxBssBw = rttGetBssMaxBwByBand(prAdapter,
+			prBssInfo, prBssDesc->eBand);
+	}
 
 	if (ucRttBw > ucMaxBssBw) {
 		eRttBwOut = rttBssBwToRttBw(ucMaxBssBw);
@@ -241,6 +329,110 @@ uint8_t rttReviseBw(struct ADAPTER *prAdapter,
 	}
 
 	return eRttBwOut;
+}
+
+uint32_t rttAddPeerStaRec(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex,
+			struct BSS_DESC *prBssDesc)
+{
+	struct STA_RECORD *prStaRec, *prStaRecOfAp;
+	struct BSS_INFO *prBssInfo;
+
+	prStaRec = cnmGetStaRecByAddress(prAdapter,
+				ucBssIndex,
+				prBssDesc->aucSrcAddr);
+
+	if (prStaRec == NULL) { /* RTT with un-associated AP */
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+		if (prBssInfo == NULL) {
+			DBGLOG(RTT, ERROR,
+				"prBssInfo %d is NULL!\n", ucBssIndex);
+			return WLAN_STATUS_FAILURE;
+		}
+
+		prStaRec = bssCreateStaRecFromBssDesc(prAdapter,
+					STA_TYPE_LEGACY_AP,
+					ucBssIndex,
+					prBssDesc);
+		if (prStaRec == NULL)
+			return WLAN_STATUS_RESOURCES;
+
+		prStaRec->ucBssIndex = ucBssIndex;
+
+		/* init the prStaRec */
+		/* prStaRec will be zero first in cnmStaRecAlloc() */
+		COPY_MAC_ADDR(prStaRec->aucMacAddr, prBssDesc->aucSrcAddr);
+		prStaRec->u2BSSBasicRateSet = prBssInfo->u2BSSBasicRateSet;
+		prStaRec->ucDesiredPhyTypeSet =
+			prAdapter->rWifiVar.ucAvailablePhyTypeSet;
+		prStaRec->u2DesiredNonHTRateSet =
+			prAdapter->rWifiVar.ucAvailablePhyTypeSet;
+		prStaRec->u2OperationalRateSet =
+			prBssInfo->u2OperationalRateSet;
+		prStaRec->ucPhyTypeSet = prBssInfo->ucPhyTypeSet;
+		prStaRec->eStaType = STA_TYPE_LEGACY_AP;
+
+		/* align setting with AP */
+		prStaRecOfAp = prBssInfo->prStaRecOfAP;
+		if (prStaRecOfAp) {
+			prStaRec->u2DesiredNonHTRateSet =
+				prStaRecOfAp->u2DesiredNonHTRateSet;
+		}
+
+		/* Init lowest rate to prevent CCK in 5G band */
+		nicTxUpdateStaRecDefaultRate(prAdapter, prStaRec);
+
+		/* Better to change state here, not at TX Done */
+		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
+	}
+
+	if (prStaRec) {
+		DBGLOG(RTT, INFO,
+			"RTT w/ %s AP " MACSTR "\n",
+			prStaRec->ucStaState == STA_STATE_1 ?
+			"un-associated" : "associated",
+			MAC2STR(prBssDesc->aucSrcAddr));
+	} else {
+		DBGLOG(RTT, ERROR,
+			"Cannot allocate StaRec for " MACSTR "\n",
+			MAC2STR(prBssDesc->aucSrcAddr));
+
+		return WLAN_STATUS_RESOURCES;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t rttRemovePeerStaRec(struct ADAPTER *prAdapter)
+{
+	struct RTT_RESULT_ENTRY *entry;
+	struct STA_RECORD *prStaRec;
+	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
+
+	if (!rttInfo)
+		return WLAN_STATUS_FAILURE;
+
+	LINK_FOR_EACH_ENTRY(entry, &rttInfo->rResultList, rLinkEntry,
+			    struct RTT_RESULT_ENTRY) {
+
+		if (!entry)
+			break;
+
+		prStaRec = cnmGetStaRecByAddress(prAdapter,
+				rttInfo->ucBssIndex,
+				entry->rResult.aucMacAddr);
+
+		if (prStaRec && prStaRec->ucStaState == STA_STATE_1) {
+			/* Free StaRec for un-assoicated AP */
+			DBGLOG(RTT, INFO,
+				"Free StaRec for un-assoicated AP " MACSTR "\n",
+				MAC2STR(entry->rResult.aucMacAddr));
+
+			cnmStaRecFree(prAdapter, prStaRec);
+		}
+	}
+
+	return WLAN_STATUS_SUCCESS;
 }
 
 uint32_t rttStartRttRequest(struct ADAPTER *prAdapter,
@@ -253,12 +445,21 @@ uint32_t rttStartRttRequest(struct ADAPTER *prAdapter,
 	uint8_t i, active;
 	uint32_t status;
 	uint32_t sz = sizeof(struct CMD_RTT_REQUEST);
-
+	enum ENUM_BAND eBand;
+	struct SCAN_INFO *prScanInfo;
+	struct SCAN_PARAM *prScanParam;
 
 	cmd = (struct CMD_RTT_REQUEST *)
 			cnmMemAlloc(prAdapter, RAM_TYPE_BUF, sz);
 	if (!cmd)
 		return WLAN_STATUS_RESOURCES;
+
+	/* Workaround: Abort scan before doing RTT. */
+	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+	prScanParam = &prScanInfo->rScanParam;
+
+	if (prScanInfo->eCurrentState == SCAN_STATE_SCANNING)
+		aisFsmStateAbort_SCAN(prAdapter, ucBssIndex);
 
 	active = IS_NET_ACTIVE(prAdapter, ucBssIndex);
 	if (!active)
@@ -277,6 +478,10 @@ uint32_t rttStartRttRequest(struct ADAPTER *prAdapter,
 		bss = scanSearchBssDescByBssid(prAdapter, rc->aucAddr);
 
 		if (bss) {
+			status = rttAddPeerStaRec(prAdapter, ucBssIndex, bss);
+			if (status != WLAN_STATUS_SUCCESS)
+				goto fail;
+
 			tc = &cmd->arRttConfigs[cmd->ucConfigNum++];
 			COPY_MAC_ADDR(tc->aucAddr, rc->aucAddr);
 			tc->eType = rc->eType;
@@ -288,8 +493,19 @@ uint32_t rttStartRttRequest(struct ADAPTER *prAdapter,
 			tc->ucLcrRequest = rc->ucLcrRequest;
 			tc->ucBurstDuration = rc->ucBurstDuration;
 			tc->ePreamble = rc->ePreamble;
-			tc->eBw = rttReviseBw(prAdapter, ucBssIndex, rc->eBw);
-			/* TODO: set TSF Time */
+			tc->eBw = rttReviseBw(prAdapter, ucBssIndex,
+				bss, rc->eBw);
+			/* internal data for channel request */
+			cnmFreqToChnl(tc->rChannel.center_freq,
+				&tc->ucPrimaryChannel, &eBand);
+			tc->eBand = (uint8_t) eBand;
+			tc->eChannelWidth = rttChannelWidthToCnmChBw(
+				tc->rChannel.width);
+			tc->ucS1 = nicGetS1(tc->eBand, tc->ucPrimaryChannel,
+				tc->eChannelWidth);
+			tc->ucS2 = nicGetS2(tc->eBand, tc->ucPrimaryChannel,
+				tc->eChannelWidth, tc->ucS1);
+			tc->ucBssIndex = ucBssIndex;
 		} else {
 			DBGLOG(RTT, ERROR,
 				"Bssid " MACSTR " is not in scan result\n",
@@ -299,7 +515,9 @@ uint32_t rttStartRttRequest(struct ADAPTER *prAdapter,
 		}
 	}
 
-	status = rttSendCmd(prAdapter, cmd);
+	status = rttSendCmd(prAdapter, ucBssIndex, cmd);
+
+fail:
 	if (status != WLAN_STATUS_SUCCESS) {
 		/* fail to send cmd, restore active network */
 		if (!active)
@@ -327,7 +545,7 @@ uint32_t rttCancelRttRequest(struct ADAPTER *prAdapter,
 
 	cmd->ucSeqNum = rttInfo->ucSeqNum;
 	cmd->fgEnable = false;
-	status = rttSendCmd(prAdapter, cmd);
+	status = rttSendCmd(prAdapter, rttInfo->ucBssIndex, cmd);
 
 	cnmMemFree(prAdapter, (void *) cmd);
 	DBGLOG(RTT, INFO, "status=%d, seq=%d", status, rttInfo->ucSeqNum);
@@ -366,6 +584,14 @@ static void rttRequestDoneTimeOut(struct ADAPTER *prAdapter,
 					  unsigned long ulParam)
 {
 	rttEventDone(prAdapter, NULL);
+}
+
+static void rttContRequestTimeOut(struct ADAPTER *prAdapter,
+					  unsigned long ulParam)
+{
+	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
+
+	rttInfo->fgIsContRunning = FALSE;
 }
 
 void rttReportDone(struct ADAPTER *prAdapter)
@@ -471,12 +697,16 @@ void rttEventDone(struct ADAPTER *prAdapter,
 		       rttInfo->ucSeqNum);
 		rttFreeAllResults(rttInfo);
 		rttCancelRttRequest(prAdapter, NULL);
+		rttRemovePeerStaRec(prAdapter);
+		rttUpdateStatus(prAdapter, rttInfo->ucBssIndex, NULL);
 	} else { /* normal rtt done */
 		DBGLOG(RTT, INFO,
 		       "Event RTT done seq: FW %u, driver %u\n",
 		       prEvent->ucSeqNum, rttInfo->ucSeqNum);
-		if (prEvent->ucSeqNum == rttInfo->ucSeqNum)
-			rttUpdateStatus(prAdapter, NULL);
+		if (prEvent->ucSeqNum == rttInfo->ucSeqNum) {
+			rttRemovePeerStaRec(prAdapter);
+			rttUpdateStatus(prAdapter, rttInfo->ucBssIndex, NULL);
+		}
 		else
 			return;
 	}
@@ -498,8 +728,12 @@ void rttEventResult(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	DBGLOG(RTT, INFO, "RTT result MAC=" MACSTR " status=%d\n",
-		MAC2STR(prEvent->rResult.aucMacAddr), prEvent->rResult.eStatus);
+	DBGLOG(RTT, INFO,
+		"RTT result MAC=" MACSTR ", status=%d, range=%d (mm)\n",
+		MAC2STR(prEvent->rResult.aucMacAddr),
+		prEvent->rResult.eStatus,
+		prEvent->rResult.i4DistanceMM);
+
 	entry = kalMemAlloc(sz + prEvent->u2IELen, VIR_MEM_TYPE);
 	if (entry) {
 		kalMemCopy(&entry->rResult, &prEvent->rResult,

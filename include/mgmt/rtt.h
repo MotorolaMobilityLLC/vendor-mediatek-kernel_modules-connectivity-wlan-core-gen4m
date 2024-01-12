@@ -27,6 +27,7 @@
  */
 
 #define RTT_REQUEST_DONE_TIMEOUT_SEC 4
+#define RTT_REQUEST_CONT_TIMEOUT_SEC 2
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -119,10 +120,13 @@ struct RTT_RESULT_ENTRY {
 };
 
 struct RTT_INFO {
+	uint8_t ucBssIndex;
 	uint8_t fgIsRunning;
+	uint8_t fgIsContRunning;
 	uint8_t ucSeqNum;
 	struct LINK rResultList;
 	struct TIMER rRttDoneTimer;
+	struct TIMER rRttContTimer; /* Continuous RTT requests */
 };
 
 /*******************************************************************************
@@ -153,6 +157,8 @@ struct RTT_INFO {
 void rttInit(struct ADAPTER *prAdapter);
 
 void rttUninit(struct ADAPTER *prAdapter);
+
+uint8_t rttIsRunning(struct ADAPTER *prAdapter);
 
 uint32_t rttHandleRttRequest(struct ADAPTER *prAdapter,
 	struct PARAM_RTT_REQUEST *prRequest,

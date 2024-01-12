@@ -1594,10 +1594,12 @@ struct RTT_CONFIG {
 	uint8_t eBw; /* enum ENUM_WIFI_RTT_BW */
 
 	/* bellow are for internal useages */
-	uint8_t fgASAP;
-	uint8_t ucMinDeltaIn100US;
-	uint64_t u8LocalTSFTime;
-	uint64_t u8PeerTSFTime;
+	uint8_t eBand; /* enum ENUM_BAND */
+	uint8_t ucPrimaryChannel;
+	uint8_t ucS1;
+	uint8_t ucS2;
+	uint8_t eChannelWidth; /* enum ENUM_CHANNEL_WIDTH */
+	uint8_t ucBssIndex;
 };
 
 struct RTT_RESULT {
