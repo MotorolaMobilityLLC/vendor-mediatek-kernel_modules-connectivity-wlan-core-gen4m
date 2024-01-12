@@ -7069,6 +7069,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucEhtDup6G, "EhtDup6G", FEATURE_ENABLED);
 	INIT_UINT(prWifiVar->ucEht20MRxNDPWiderBW,
 		"Eht20MRxNDPWiderBW", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->ucEhtTbSndFBRateLimit,
+		"EhtTbSndFBRateLimit", FEATURE_DISABLED);
 	if (!pucKey)
 		prWifiVar->ucPresetLinkId = MLD_LINK_ID_NONE;
 	INIT_UINT(prWifiVar->ucMldLinkMax, "MldLinkMax", MLD_LINK_MAX);

@@ -770,6 +770,7 @@ struct WIFI_VAR {
 	uint8_t ucEhtMCS15;
 	uint8_t ucEhtDup6G;
 	uint8_t ucEht20MRxNDPWiderBW;
+	uint8_t ucEhtTbSndFBRateLimit;
 	uint8_t ucPresetLinkId;
 	uint8_t ucMldLinkMax;
 	uint8_t ucStaMldLinkMax;
