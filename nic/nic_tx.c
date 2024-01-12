@@ -147,7 +147,7 @@ static const struct TX_TC_TRAFFIC_SETTING
 
 	/* non-StaRec frame (BMC, etc...) */
 	{
-		NIC_TX_DESC_LONG_FORMAT_LENGTH, TX_DESC_TX_TIME_NO_LIMIT,
+		NIC_TX_DESC_LONG_FORMAT_LENGTH, NIC_TX_BMC_REMAINING_TX_TIME,
 		NIC_TX_DATA_DEFAULT_RETRY_COUNT_LIMIT
 	},
 };
@@ -5259,6 +5259,10 @@ uint32_t nicTxDirectStartXmitMain(struct sk_buff
 					prAdapter, prMsduInfo);
 			break;
 		}
+
+		/* BMC pkt need limited rate according to coex report*/
+		if (prMsduInfo->ucStaRecIndex == STA_REC_INDEX_BMCAST)
+			nicTxSetPktLowestFixedRate(prAdapter, prMsduInfo);
 
 		nicTxFillDataDesc(prAdapter, prMsduInfo);
 #if CFG_SUPPORT_DROP_INVALID_MSDUINFO
