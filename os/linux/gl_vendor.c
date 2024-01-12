@@ -2778,7 +2778,7 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 	uint32_t u4SetInfoLen = 0;
 	struct sk_buff *skb = NULL;
 
-	uint8_t prProg[APF_MAX_PROGRAM_LEN];
+	uint8_t *prProg = NULL;
 	uint32_t u4ProgLen = 0, u4RecvLen = 0, u4BufLen = 0;
 	uint8_t ucFragNum = 0, ucCurrSeq = 0;
 
@@ -2792,7 +2792,15 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
+	prProg = kalMemAlloc(APF_MAX_PROGRAM_LEN, VIR_MEM_TYPE);
+
+	if (prProg == NULL) {
+		DBGLOG(REQ, ERROR, "Can not allocate memory.\n");
+		return -ENOMEM;
+	}
+
 	kalMemZero(&rInfo, sizeof(struct PARAM_OFLD_INFO));
+	kalMemZero(prProg, APF_MAX_PROGRAM_LEN);
 
 	/* Init OFLD description */
 	rInfo.ucType = PKT_OFLD_TYPE_APF;
@@ -2850,11 +2858,18 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 				u4ProgLen, prProg) < 0))
 		goto query_apf_failure;
 
+	if (prProg != NULL)
+		kalMemFree(prProg, VIR_MEM_TYPE, APF_MAX_PROGRAM_LEN);
+
 	return cfg80211_vendor_cmd_reply(skb);
 
 query_apf_failure:
 	if (skb != NULL)
 		kfree_skb(skb);
+
+	if (prProg != NULL)
+		kalMemFree(prProg, VIR_MEM_TYPE, APF_MAX_PROGRAM_LEN);
+
 	return -EFAULT;
 }
 #endif /* CFG_SUPPORT_APF */
