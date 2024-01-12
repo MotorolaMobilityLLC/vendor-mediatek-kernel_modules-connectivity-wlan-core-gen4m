@@ -1078,6 +1078,7 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_MCC_BOOST_CPU
 	uint32_t u4MccBoostTputLvTh;
 	uint32_t u4MccBoostPresentTime;
+	uint32_t u4MccBoostForAllTputLvTh;
 #endif /* CFG_SUPPORT_MCC_BOOST_CPU */
 	u_int8_t fgBoostCpuEn;
 	uint32_t u4BoostCpuTh;
@@ -2184,6 +2185,7 @@ struct ADAPTER {
 
 	struct PERF_MONITOR rPerMonitor;
 #if CFG_SUPPORT_MCC_BOOST_CPU
+	u_int8_t fgMccStateChange;
 	u_int8_t fgMccBoost;
 #endif /* CFG_SUPPORT_MCC_BOOST_CPU */
 
