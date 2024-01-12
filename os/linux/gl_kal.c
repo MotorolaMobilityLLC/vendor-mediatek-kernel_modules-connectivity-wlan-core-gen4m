@@ -873,9 +873,7 @@ void kalQueryTxChksumOffloadParam(IN void *pvPacket,
 		 * MT5912B MAC, so we'll process IP packet only.
 		 */
 		if (skb->protocol != htons(ETH_P_IP)) {
-			/* printk("Wrong skb->protocol( = %08x) for TX Checksum
-			 *        Offload.\n", skb->protocol);
-			 */
+
 		} else
 #endif
 			ucFlag |= (TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN);
@@ -2079,14 +2077,6 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 				struct PARAM_INDICATION_EVENT *prEvent =
 				(struct PARAM_INDICATION_EVENT *) pvBuf;
 
-				/*
-				 *  printk(KERN_NOTICE
-				 *      "ENUM_STATUS_TYPE_AUTHENTICATION:
-				 *      L(%d) [" MACSTR "] F:%lx\n",
-				 *      pAuth->Request[0].Length,
-				 *      MAC2STR(pAuth->Request[0].Bssid),
-				 *      pAuth->Request[0].Flags);
-				 */
 				/* indicate (UC/GC) MIC ERROR event only */
 				if ((prEvent->rAuthReq.u4Flags ==
 				     PARAM_AUTH_REQUEST_PAIRWISE_ERROR) ||
@@ -2141,17 +2131,10 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 
 			default:
 				/* case ENUM_STATUS_TYPE_MEDIA_STREAM_MODE */
-				/*
-				 * printk(KERN_NOTICE "unknown media specific
-				 * indication type:%x\n", pStatus->StatusType);
-				 */
 				break;
 			}
 		} else {
-			/*
-			 * printk(KERN_WARNING "media specific indication
-			 * buffer NULL\n");
-			 */
+
 		}
 		break;
 
@@ -2248,9 +2231,6 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 		break;
 	}
 	default:
-		/*
-		 *  printk(KERN_WARNING "unknown indication:%lx\n", eStatus);
-		 */
 		break;
 	}
 }				/* kalIndicateStatusAndComplete */
@@ -2292,18 +2272,10 @@ kalUpdateReAssocReqInfo(IN struct GLUE_INFO *prGlueInfo,
 
 	if (fgReassocRequest) {
 		if (u4FrameBodyLen < 15) {
-			/*
-			 * printk(KERN_WARNING "frameBodyLen too short:%d\n",
-			 * frameBodyLen);
-			 */
 			return;
 		}
 	} else {
 		if (u4FrameBodyLen < 9) {
-			/*
-			 * printk(KERN_WARNING "frameBodyLen too short:%d\n",
-			 * frameBodyLen);
-			 */
 			return;
 		}
 	}

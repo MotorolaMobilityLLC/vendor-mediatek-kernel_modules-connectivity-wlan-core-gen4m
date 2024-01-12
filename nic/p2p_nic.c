@@ -231,12 +231,6 @@ nicRxAddP2pDevice(IN struct ADAPTER *prAdapter,
 				(void *) prP2pResult,
 				sizeof(struct EVENT_P2P_DEV_DISCOVER_RESULT));
 
-			/* printk("DVC FND %d " MACSTR", " MACSTR "\n",
-			 * prP2pInfo->u4DeviceNum,
-			 * MAC2STR(prP2pResult->aucDeviceAddr),
-			 * MAC2STR(prTargetResult->aucDeviceAddr));
-			 */
-
 			if (u2RxIELength) {
 				prTargetResult->pucIeBuf =
 					prP2pInfo->pucCurrIePtr;
