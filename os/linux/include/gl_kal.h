@@ -1873,5 +1873,20 @@ kalApplyCustomRegulatory(IN struct wiphy *pWiphy,
 			    IN const struct ieee80211_regdomain *pRegdom);
 #endif
 
+#ifndef __has_attribute
+#define __has_attribute(x) 0
+#endif
+
+#if !defined(__GCC4_has_attribute___fallthrough__)
+#define __GCC4_has_attribute___fallthrough__ 0
+#endif
+
+/* clone 'fallthrough' in include/linux/compiler_attributes.h */
+#if __has_attribute(__fallthrough__)
+#define kal_fallthrough __attribute__((__fallthrough__))
+#else
+#define kal_fallthrough do {} while (0)  /* fallthrough */
+#endif
+
 #endif /* _GL_KAL_H */
 

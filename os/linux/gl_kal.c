@@ -556,7 +556,14 @@ kalFirmwareImageMapping(IN struct GLUE_INFO *prGlueInfo,
 
 		case IMG_DL_IDX_PATCH:
 			break;
-
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH
+		case IMG_DL_IDX_BT_PATCH:
+			break;
+#endif
+#if CFG_SUPPORT_WIFI_DL_ZB_PATCH
+		case IMG_DL_IDX_ZB_PATCH:
+			break;
+#endif
 		default:
 			ASSERT(0);
 			break;
@@ -586,6 +593,28 @@ kalFirmwareImageMapping(IN struct GLUE_INFO *prGlueInfo,
 					wlanGetEcoVersion(
 						prGlueInfo->prAdapter));
 			idx += 1;
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH
+		} else if (eDlIdx == IMG_DL_IDX_BT_PATCH) {
+			if (prChipInfo->fw_dl_ops->constructBtPatchName) {
+				prChipInfo->fw_dl_ops->constructBtPatchName(
+					prGlueInfo, apucName, &idx);
+			} else {
+				DBGLOG(INIT, ERROR, "No BT PATCH Name!\n");
+				return NULL;
+			}
+			idx += 1;
+#endif /* CFG_SUPPORT_WIFI_DL_BT_PATCH */
+#if CFG_SUPPORT_WIFI_DL_ZB_PATCH
+		} else if (eDlIdx == IMG_DL_IDX_ZB_PATCH) {
+			if (prChipInfo->fw_dl_ops->constructZbPatchName) {
+				prChipInfo->fw_dl_ops->constructZbPatchName(
+					prGlueInfo, apucName, &idx);
+			} else {
+				DBGLOG(INIT, ERROR, "No Zb PATCH Name!\n");
+				return NULL;
+			}
+			idx += 1;
+#endif /* CFG_SUPPORT_WIFI_DL_ZB_PATCH */
 		} else {
 			for (sub_idx = 0; sub_idx < max_idx; sub_idx++)
 				apucName[sub_idx] =
