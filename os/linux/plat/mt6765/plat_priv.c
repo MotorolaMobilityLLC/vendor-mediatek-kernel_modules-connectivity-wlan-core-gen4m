@@ -11,17 +11,14 @@
 
 #include <cpu_ctrl.h>
 #include <topo_ctrl.h>
-#include <linux/pm_qos.h>
+#include <linux/soc/mediatek/mtk-pm-qos.h>
 
 #include "precomp.h"
-#include <helio-dvfsrc-opp.h>
 
 #ifdef CONFIG_MTK_EMI
-#include <mt_emi_api.h>
 #define WIFI_EMI_MEM_OFFSET    0x140000
 #define WIFI_EMI_MEM_SIZE      0x130000
 #endif
-
 
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
 #define MAX_CLUSTER_NUM  3
@@ -49,14 +46,14 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 	if (u4TarPerfLevel >= u4BoostCpuTh) {
 		if (!fgRequested) {
 			fgRequested = 1;
-			pm_qos_add_request(&wifi_qos_request,
+			mtk_pm_qos_add_request(&wifi_qos_request,
 					   PM_QOS_DDR_OPP,
 					   DDR_OPP_0);
 		}
-		pm_qos_update_request(&wifi_qos_request, DDR_OPP_0);
+		mtk_pm_qos_update_request(&wifi_qos_request, DDR_OPP_0);
 	} else if (fgRequested) {
-		pm_qos_update_request(&wifi_qos_request, DDR_OPP_UNREQ);
-		pm_qos_remove_request(&wifi_qos_request);
+		mtk_pm_qos_update_request(&wifi_qos_request, DDR_OPP_UNREQ);
+		mtk_pm_qos_remove_request(&wifi_qos_request);
 		fgRequested = 0;
 	}
 	return 0;
