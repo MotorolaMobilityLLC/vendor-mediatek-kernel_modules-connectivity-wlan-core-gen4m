@@ -1113,6 +1113,10 @@ struct PACKET_PRIVATE_RX_DATA {
 
 #define GLUE_INC_REF_CNT(_refCount)     atomic_inc((atomic_t *)&(_refCount))
 #define GLUE_DEC_REF_CNT(_refCount)     atomic_dec((atomic_t *)&(_refCount))
+#define GLUE_ADD_REF_CNT(_value, _refCount) \
+	atomic_add(_value, (atomic_t *)&(_refCount))
+#define GLUE_SUB_REF_CNT(_value, _refCount) \
+	atomic_sub(_value, (atomic_t *)&(_refCount))
 #define GLUE_GET_REF_CNT(_refCount)     atomic_read((atomic_t *)&(_refCount))
 
 #define DbgPrint(...)

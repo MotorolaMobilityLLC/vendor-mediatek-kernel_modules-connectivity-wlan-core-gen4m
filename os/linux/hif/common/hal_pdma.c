@@ -1157,6 +1157,7 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 		}
 		prTokenEntry->u4CpuIdx = TX_RING_SIZE;
 		halReturnMsduToken(prAdapter, u4Token);
+		GLUE_INC_REF_CNT(prAdapter->rHifStats.u4DataMsduRptCount);
 	}
 
 #if !HIF_TX_PREALLOC_DATA_BUFFER
@@ -1241,6 +1242,8 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 	u_int8_t fgStatus;
 	uint32_t u4RxCnt;
 	struct RX_DESC_OPS_T *prRxDescOps;
+	struct RTMP_RX_RING *prRxRing;
+	struct GL_HIF_INFO *prHifInfo;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1257,6 +1260,9 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 #if DBG
 	ASSERT(prRxDescOps->nic_rxd_get_sec_mode);
 #endif /* DBG */
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prRxRing = &prHifInfo->RxRing[u4Port];
 
 	u4RxCnt = halWpdmaGetRxDmaDoneCnt(prAdapter->prGlueInfo, u4Port);
 
@@ -1334,7 +1340,8 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 		RX_INC_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT);
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
 	}
-
+	prRxRing->u4PendingCnt = halWpdmaGetRxDmaDoneCnt(prAdapter->prGlueInfo,
+			u4Port);
 }
 
 static void halDefaultProcessRxInterrupt(IN struct ADAPTER *prAdapter)
@@ -1971,6 +1978,9 @@ void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
 		prTxRing->Cell[u4SwIdx].pPacket = NULL;
 		prTxRing->u4UsedCnt--;
 
+		GLUE_INC_REF_CNT(
+			prGlueInfo->prAdapter->rHifStats.u4CmdTxdoneCount);
+
 		INC_RING_INDEX(u4SwIdx, TX_RING_SIZE);
 	} while (u4SwIdx != u4DmaIdx);
 
@@ -1982,7 +1992,7 @@ void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
 	IN uint16_t u2Port)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
-	uint32_t u4SwIdx, u4DmaIdx = 0;
+	uint32_t u4SwIdx, u4DmaIdx = 0, u4Diff = 0;
 	struct RTMP_TX_RING *prTxRing;
 
 	ASSERT(prGlueInfo);
@@ -1993,19 +2003,26 @@ void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
 	kalDevRegRead(prGlueInfo, prTxRing->hw_didx_addr, &u4DmaIdx);
 	u4SwIdx = prTxRing->TxSwUsedIdx;
 
-	if (u4DmaIdx > u4SwIdx)
-		prTxRing->u4UsedCnt -= u4DmaIdx - u4SwIdx;
-	else if (u4DmaIdx < u4SwIdx)
-		prTxRing->u4UsedCnt -= (TX_RING_SIZE + u4DmaIdx) - u4SwIdx;
-	else {
+	if (u4DmaIdx > u4SwIdx) {
+		u4Diff = u4DmaIdx - u4SwIdx;
+		prTxRing->u4UsedCnt -= u4Diff;
+	} else if (u4DmaIdx < u4SwIdx) {
+		u4Diff = (TX_RING_SIZE + u4DmaIdx) - u4SwIdx;
+		prTxRing->u4UsedCnt -= u4Diff;
+	} else {
 		/* DMA index == SW used index */
-		if (prTxRing->u4UsedCnt == TX_RING_SIZE)
+		if (prTxRing->u4UsedCnt == TX_RING_SIZE) {
+			u4Diff = TX_RING_SIZE;
 			prTxRing->u4UsedCnt = 0;
+		}
 	}
 
 	DBGLOG_LIMITED(HAL, TRACE,
 		"DMA done: port[%u] dma[%u] idx[%u] used[%u]\n", u2Port,
 		u4DmaIdx, u4SwIdx, prTxRing->u4UsedCnt);
+
+	GLUE_ADD_REF_CNT(u4Diff,
+			prGlueInfo->prAdapter->rHifStats.u4DataTxdoneCount);
 
 	prTxRing->TxSwUsedIdx = u4DmaIdx;
 }
@@ -2130,6 +2147,8 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	prTxRing->u4UsedCnt++;
 	kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr, prTxRing->TxCpuIdx);
 
+	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4CmdTxCount);
+
 	DBGLOG(HAL, TRACE,
 	       "%s: CmdInfo[0x%p], TxD[0x%p/%u] TxP[0x%p/%u] CPU idx[%u] Used[%u]\n",
 	       __func__, prCmdInfo, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen,
@@ -2212,6 +2231,8 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 	DBGLOG_LIMITED(HAL, TRACE,
 		"Tx Data:Ring%d CPU idx[0x%x] Used[%u]\n",
 		u2Port, prTxRing->TxCpuIdx, prTxRing->u4UsedCnt);
+
+	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4DataTxCount);
 
 	return TRUE;
 }
