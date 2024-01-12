@@ -8116,11 +8116,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 
 #if ARP_MONITER_ENABLE
-	INIT_UINT(prWifiVar->uArpMonitorNumber, "ArpMonitorNumber", 20);
+	INIT_UINT(prWifiVar->uArpMonitorNumber, "ArpMonitorNumber", 5);
 	INIT_UINT(prWifiVar->uArpMonitorRxPktNum, "ArpMonitorRxPktNum", 0);
 	INIT_UINT(prWifiVar->uArpMonitorCriticalThres,
-			"ArpMonitorCriticalThres", 4);
-	INIT_UINT(prWifiVar->ucArpMonitorUseRule, "ArpMonitorUseRule", 0);
+			"ArpMonitorCriticalThres", 2);
+	INIT_UINT(prWifiVar->ucArpMonitorUseRule, "ArpMonitorUseRule", 1);
 #endif /* ARP_MONITER_ENABLE */
 
 
