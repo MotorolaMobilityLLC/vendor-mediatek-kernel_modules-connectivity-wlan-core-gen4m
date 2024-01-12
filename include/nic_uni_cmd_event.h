@@ -798,6 +798,7 @@ enum ENUM_UNI_CMD_STAREC_TAG {
 	UNI_CMD_STAREC_TAG_REMOVE		= 0x25,
 	UNI_CMD_STAREC_TAG_GET_PN		= 0x26,
 	UNI_CMD_STAREC_TAG_INSTALL_KEY_V3	= 0x27,
+	UNI_CMD_STAREC_TAG_FAST_ALL		= 0x2C,
 
 	UNI_CMD_STAREC_TAG_MAX_NUM
 };
@@ -1043,6 +1044,16 @@ struct UNI_CMD_STAREC_UAPSD_INFO {
 	uint8_t       ucUapsdSp;
 	uint8_t       aucReserve[1];
 } __KAL_ATTRIB_PACKED__;
+
+#define UNI_CMD_STAREC_FASTALL_FLAG_UPDATE_BAND BIT(0)
+
+/* Update all sta info (Tag 0x2C) */
+struct UNI_CMD_STAREC_FASTALL {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint32_t ucUpdateFlag;
+	uint8_t aucReserve[16];
+};
 
 /* Remove STAREC */
 struct UNI_CMD_STAREC_REMOVE_INFO {

@@ -249,9 +249,11 @@ extern uint32_t arEventTableSize;
 /* This is for the usage of assign a 2 byte Wcid to WcidL and WcidH */
 #define WCID_SET_H_L(_HnVer, _L, _u2Value) \
 	do { \
-		_HnVer = (uint8_t)(((_u2Value) >> 8) & 0x3); \
+		_HnVer = (uint8_t)(((_u2Value) >> 8) & 0xff); \
 		_L = (uint8_t)((_u2Value) & 0xff); \
 	} while (0)
+
+#define UNI_CMD_STAREC_INVALID_WTBL_IDX 0x7ff
 
 #define	RUN_RX_EVENT_HANDLER(_EID, _pdata) \
 	nicUniEventHelper(ad, evt, _EID, 0, \
@@ -1921,7 +1923,7 @@ uint32_t nicUniCmdRemoveStaRec(struct ADAPTER *ad,
 	struct WIFI_UNI_CMD_ENTRY *entry;
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC) +
 	     		       sizeof(struct UNI_CMD_STAREC_REMOVE_INFO);
-	uint8_t widx;
+	uint32_t widx;
 
 	if (info->ucCID != CMD_ID_REMOVE_STA_RECORD ||
 	    info->u4SetQueryInfoLen != sizeof(*cmd))
@@ -1937,7 +1939,7 @@ uint32_t nicUniCmdRemoveStaRec(struct ADAPTER *ad,
 			return WLAN_STATUS_INVALID_DATA;
 	} else {
 		/* remove by bss, widx is not checked */
-		widx = 0;
+		widx = UNI_CMD_STAREC_INVALID_WTBL_IDX;
 	}
 
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_STAREC_INFO,
@@ -2434,6 +2436,44 @@ uint32_t nicUniCmdSetBssInfo(struct ADAPTER *ad,
 	for (i = 0; i < ARRAY_SIZE(arSetBssInfoTable); i++)
 		pos += arSetBssInfoTable[i].pfHandler(ad, pos, cmd);
 	entry->u4SetQueryInfoLen = pos - entry->pucInfoBuffer;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdStaRecTagFastAll(struct ADAPTER *ad,
+	struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_SET_BSS_RLM_PARAM *cmd;
+	struct UNI_CMD_STAREC *uni_cmd;
+	struct UNI_CMD_STAREC_FASTALL *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC) +
+				   sizeof(struct UNI_CMD_STAREC_FASTALL);
+
+	if (info->ucCID != CMD_ID_SET_BSS_RLM_PARAM ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_SET_BSS_RLM_PARAM *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad,
+		UNI_CMD_ID_STAREC_INFO, max_cmd_len,
+		NULL, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_STAREC *) entry->pucInfoBuffer;
+	uni_cmd->ucBssInfoIdx = cmd->ucBssIndex;
+	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer,
+		uni_cmd->ucWlanIdxL, UNI_CMD_STAREC_INVALID_WTBL_IDX);
+	tag = (struct UNI_CMD_STAREC_FASTALL *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_STAREC_TAG_FAST_ALL;
+	tag->u2Length = sizeof(struct UNI_CMD_STAREC_FASTALL);
+	tag->ucUpdateFlag = UNI_CMD_STAREC_FASTALL_FLAG_UPDATE_BAND;
+
+	DBGLOG(INIT, INFO, "bss=%d\n",
+		cmd->ucBssIndex);
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
@@ -7107,6 +7147,72 @@ void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	scnEventScanDone(ad, &legacy, TRUE);
 }
 
+uint32_t nicUniUpdateStaRecFastAll(
+	IN struct ADAPTER *ad,
+	IN struct BSS_INFO *bss)
+{
+	struct UNI_CMD_STAREC *uni_cmd;
+	struct UNI_CMD_STAREC_FASTALL *tag;
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC) +
+				   sizeof(struct UNI_CMD_STAREC_FASTALL);
+
+	if (!ad || !bss)
+		return WLAN_STATUS_FAILURE;
+
+	if (!((IS_BSS_GC(bss) && bss->prStaRecOfAP) ||
+	      (IS_BSS_APGO(bss) && bssGetClientCount(ad, bss))))
+		return WLAN_STATUS_INVALID_DATA;
+
+	uni_cmd = (struct UNI_CMD_STAREC *)
+		cnmMemAlloc(ad,
+		RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+			   "Allocate UNI_CMD_STAREC ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+	uni_cmd->ucBssInfoIdx = bss->ucBssIndex;
+	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer,
+		uni_cmd->ucWlanIdxL, UNI_CMD_STAREC_INVALID_WTBL_IDX);
+
+	tag = (struct UNI_CMD_STAREC_FASTALL *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_STAREC_TAG_FAST_ALL;
+	tag->u2Length = sizeof(*tag);
+	tag->ucUpdateFlag = UNI_CMD_STAREC_FASTALL_FLAG_UPDATE_BAND;
+
+	status = wlanSendSetQueryUniCmd(ad,
+				 UNI_CMD_ID_STAREC_INFO,
+				 TRUE,
+				 FALSE,
+				 FALSE,
+				 nicUniCmdEventSetCommon,
+				 nicUniCmdTimeoutCommon,
+				 max_cmd_len,
+				 (void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(ad, uni_cmd);
+
+	return status;
+}
+
+void nicUniUpdateMbmcIdx(struct ADAPTER *ad,
+	uint8_t ucBssIdx,
+	uint8_t ucBandIdx)
+{
+	struct BSS_INFO *prBssInfo = GET_BSS_INFO_BY_INDEX(ad,
+		ucBssIdx);
+
+	DBGLOG(CNM, INFO, "ucBssIdx=%d, ucBandIdx=%d\n", ucBssIdx, ucBandIdx);
+
+	if (prBssInfo) {
+		if (prBssInfo->eBandIdx != ucBandIdx &&
+			prBssInfo->eBandIdx != ENUM_BAND_AUTO)
+			nicUniUpdateStaRecFastAll(ad, prBssInfo);
+		prBssInfo->eBandIdx = (enum ENUM_MBMC_BN)ucBandIdx;
+	}
+}
+
 void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt)
 {
@@ -7130,7 +7236,8 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 			struct UNI_EVENT_CNM_CH_PRIVILEGE_GRANT *grant =
 				(struct UNI_EVENT_CNM_CH_PRIVILEGE_GRANT *)tag;
 
-			cnmUpdateMbmcIdx(ad, grant->ucBssIndex, grant->ucDBDCBand);
+			nicUniUpdateMbmcIdx(ad, grant->ucBssIndex,
+				grant->ucDBDCBand);
 		}
 			break;
 		case UNI_EVENT_CNM_TAG_CH_PRIVILEGE_GRANT: {
@@ -7138,7 +7245,8 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 				(struct UNI_EVENT_CNM_CH_PRIVILEGE_GRANT *)tag;
 			struct EVENT_CH_PRIVILEGE legacy;
 
-			cnmUpdateMbmcIdx(ad, grant->ucBssIndex, grant->ucDBDCBand);
+			nicUniUpdateMbmcIdx(ad, grant->ucBssIndex,
+				grant->ucDBDCBand);
 
 			legacy.ucBssIndex = grant->ucBssIndex;
 			legacy.ucTokenID = grant->ucTokenID;
