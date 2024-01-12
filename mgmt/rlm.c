@@ -5316,7 +5316,7 @@ static void rlmBssReset(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 #endif
 
 #if CFG_SUPPORT_DFS
-	rlmResetCSAParams(prBssInfo);
+	rlmResetCSAParams(prBssInfo, TRUE);
 #endif
 }
 
@@ -6269,9 +6269,10 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	}
 }
 
-void rlmResetCSAParams(struct BSS_INFO *prBssInfo)
+void rlmResetCSAParams(struct BSS_INFO *prBssInfo, uint8_t fgClearStopTx)
 {
 	struct SWITCH_CH_AND_BAND_PARAMS *prCSAParams;
+	uint8_t fgHasStopTx;
 
 	if (!prBssInfo) {
 		DBGLOG(RLM, ERROR, "Reset CSA params failed, Bssinfo null!");
@@ -6279,10 +6280,14 @@ void rlmResetCSAParams(struct BSS_INFO *prBssInfo)
 	}
 
 	prCSAParams = &(prBssInfo->CSAParams);
+	fgHasStopTx = prCSAParams->fgHasStopTx;
 	kalMemZero(prCSAParams, sizeof(struct SWITCH_CH_AND_BAND_PARAMS));
 	prCSAParams->ucCsaCount = MAX_CSA_COUNT;
-	DBGLOG(RLM, INFO, "Reset CSA count to %u for BSS%d",
-	       prCSAParams->ucCsaCount, prBssInfo->ucBssIndex);
+	if (!fgClearStopTx)
+		prCSAParams->fgHasStopTx = fgHasStopTx;
+	DBGLOG(RLM, INFO, "Reset CSA count to %u for BSS%d fgHasStopTx=%d",
+		prCSAParams->ucCsaCount, prBssInfo->ucBssIndex,
+		prCSAParams->fgHasStopTx);
 }
 
 void rlmCsaTimeout(struct ADAPTER *prAdapter,
@@ -6413,7 +6418,7 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 
 	rlmSyncOperationParams(prAdapter, prBssInfo);
 
-	rlmResetCSAParams(prBssInfo);
+	rlmResetCSAParams(prBssInfo, FALSE);
 }
 #endif /* CFG_SUPPORT_DFS */
 

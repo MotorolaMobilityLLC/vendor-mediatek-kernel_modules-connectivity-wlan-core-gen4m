@@ -1223,7 +1223,7 @@ uint8_t *mldGenerateBasicCompleteProfile(
 	prMsduInfo->u2FrameLength += cp - pos;
 	pos = cp;
 
-	/* complete STA profile carry field(s) & ie(s) */
+	/* PER-STA profile carry field(s) & ie(s) */
 
 	/* Start to fill the Capability Information field. */
 	if (fctrl == MAC_FRAME_PROBE_RSP)
@@ -1717,7 +1717,7 @@ sta:
 		prStaProfile->ucLinkId = ucLinkId;
 		prStaProfile->u2StaCtrl = u2StaControl;
 		prStaProfile->ucComplete =
-			u2StaControl & ML_STA_CTRL_COMPLETE_PROFILE;
+			!!(u2StaControl & ML_STA_CTRL_COMPLETE_PROFILE);
 
 		if (show_info)
 			DBGLOG(ML, TRACE,
@@ -1824,25 +1824,24 @@ sta:
 			goto next;
 		}
 
-		if (prStaProfile->ucComplete) {
-			WLAN_GET_FIELD_16(pos, &prStaProfile->u2CapInfo);
+		WLAN_GET_FIELD_16(pos, &prStaProfile->u2CapInfo);
+		if (show_info)
+			DBGLOG(ML, TRACE,
+				"\tLinkID=%d, CAP_INFO = 0x%x\n",
+				ucLinkId, prStaProfile->u2CapInfo);
+		pos += 2;
+
+		if (u2FrameCtrl == MAC_FRAME_ASSOC_RSP ||
+		    u2FrameCtrl == MAC_FRAME_REASSOC_RSP) {
+			WLAN_GET_FIELD_16(pos,
+				&prStaProfile->u2StatusCode);
 			if (show_info)
 				DBGLOG(ML, TRACE,
-					"\tLinkID=%d, CAP_INFO = 0x%x\n",
-					ucLinkId, prStaProfile->u2CapInfo);
+				  "\tLinkID=%d, Status = 0x%x\n",
+				  ucLinkId, prStaProfile->u2StatusCode);
 			pos += 2;
-
-			if (u2FrameCtrl == MAC_FRAME_ASSOC_RSP ||
-			    u2FrameCtrl == MAC_FRAME_REASSOC_RSP) {
-				WLAN_GET_FIELD_16(pos,
-					&prStaProfile->u2StatusCode);
-				if (show_info)
-					DBGLOG(ML, TRACE,
-					  "\tLinkID=%d, Status = 0x%x\n",
-					  ucLinkId, prStaProfile->u2StatusCode);
-				pos += 2;
-			}
 		}
+
 
 		if (pos > tail) {
 			DBGLOG(ML, WARN,
@@ -2262,24 +2261,29 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter,
 	struct WLAN_MAC_MGMT_HEADER *mgmt;
 	uint8_t i, ie_count, *ie = NULL, *ies[MAX_DUP_IE_COUNT], *pos;
 	uint16_t fctrl, ie_len;
-
-	offset = sortGetPayloadOffset(prAdapter, prSrc->pvHeader);
-	if (offset < 0 || offset > prSrc->u2PacketLen)
-		return WLAN_STATUS_INVALID_PACKET;
-
-	mgmt = (struct WLAN_MAC_MGMT_HEADER *)prSrc->pvHeader;
-	fctrl = mgmt->u2FrameCtrl & MASK_FRAME_TYPE;
+	uint8_t *addr;
 
 	if (prBssDesc && prBssDesc->fgIsConnected) {
+		offset = OFFSET_OF(struct WLAN_BEACON_FRAME, aucInfoElem[0]);
+		fctrl = prBssDesc->fgSeenProbeResp ? MAC_FRAME_PROBE_RSP :
+			MAC_FRAME_BEACON;
 		ie = prBssDesc->pucIeBuf;
 		ie_len = prBssDesc->u2IELength;
+		addr = prBssDesc->aucBSSID;
 	} else if (prSta->ucComplete) {
+		offset = sortGetPayloadOffset(prAdapter, prSrc->pvHeader);
+		if (offset < 0 || offset > prSrc->u2PacketLen)
+			return WLAN_STATUS_INVALID_PACKET;
+		mgmt = (struct WLAN_MAC_MGMT_HEADER *)prSrc->pvHeader;
+		fctrl = mgmt->u2FrameCtrl & MASK_FRAME_TYPE;
 		ie = (uint8_t *)prSrc->pvHeader + offset;
 		ie_len = prSrc->u2PacketLen - offset;
+		addr = prSta->aucLinkAddr;
 	}
 
 	if (!ie) {
-		DBGLOG(ML, WARN, "no target, complete=%d", prSta->ucComplete);
+		DBGLOG(ML, WARN, "%s no target, complete=%d",
+			pucDesc, prSta->ucComplete);
 		return WLAN_STATUS_NOT_SUPPORTED;
 	}
 
@@ -2294,10 +2298,20 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter,
 	nicRxCopyRFB(prAdapter, prDst, prSrc);
 	pos = (uint8_t *)prDst->pvHeader;
 	mgmt = (struct WLAN_MAC_MGMT_HEADER *)prDst->pvHeader;
-	COPY_MAC_ADDR(mgmt->aucSrcAddr, prSta->aucLinkAddr);
-	COPY_MAC_ADDR(mgmt->aucBSSID, prSta->aucLinkAddr);
+	COPY_MAC_ADDR(mgmt->aucSrcAddr, addr);
+	COPY_MAC_ADDR(mgmt->aucBSSID, addr);
+	mgmt->u2FrameCtrl = fctrl;
 
-	if (prStaRec) {
+	if (fctrl == MAC_FRAME_PROBE_RSP ||
+	    fctrl == MAC_FRAME_BEACON) {
+		struct WLAN_BEACON_FRAME *bcn =
+			(struct WLAN_BEACON_FRAME *)prDst->pvHeader;
+
+		if (prBssDesc)
+			bcn->u2CapInfo = prBssDesc->u2CapInfo;
+		else
+			bcn->u2CapInfo = prSta->u2CapInfo;
+	} else if (prStaRec) {
 		struct BSS_INFO *bss =
 			GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
@@ -2375,7 +2389,7 @@ done:
 	DBGLOG(ML, INFO,
 		"Dump duplicated SwRFB for id=%d addr="
 		MACSTR " len=%d, chnl=%d, band=%d\n",
-		prSta->ucLinkId, MAC2STR(prSta->aucLinkAddr),
+		prSta->ucLinkId, MAC2STR(addr),
 		offset, prDst->ucChnlNum, prDst->eRfBand);
 	DBGLOG_MEM8(ML, INFO, pos, offset);
 
@@ -2461,8 +2475,9 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 			break;
 
 		/* if already exist, try to update bssdesc */
-		prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter,
-			sta->aucLinkAddr, ssid ? TRUE : FALSE, &rSsid);
+		prBssDesc = scanSearchBssDescByLinkIdMldAddrSsid(prAdapter,
+			sta->ucLinkId, info->aucMldAddr,
+			ssid ? TRUE : FALSE, &rSsid);
 		ret = mldDupByMlStaProfile(prAdapter, rfb, prSrc,
 			sta, prBssDesc, NULL, __func__);
 		if (ret == WLAN_STATUS_SUCCESS) {

@@ -419,7 +419,7 @@ void rlmGenerateCountryIE(struct ADAPTER *prAdapter,
 void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter,
 			     struct SW_RFB *prSwRfb);
 
-void rlmResetCSAParams(struct BSS_INFO *prBssInfo);
+void rlmResetCSAParams(struct BSS_INFO *prBssInfo, uint8_t fgClearStopTx);
 
 void rlmCsaTimeout(struct ADAPTER *prAdapter,
 				uintptr_t ulParamPtr);

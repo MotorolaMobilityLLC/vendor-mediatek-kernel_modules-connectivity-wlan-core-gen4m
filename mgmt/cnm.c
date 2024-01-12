@@ -2267,7 +2267,7 @@ omac_choosed:
 				&prBssInfo->rCsaTimer,
 				(PFN_MGMT_TIMEOUT_FUNC) rlmCsaTimeout,
 				(uintptr_t)ucBssIndex);
-			rlmResetCSAParams(prBssInfo);
+			rlmResetCSAParams(prBssInfo, TRUE);
 #endif
 			prBssInfo->u4PowerSaveFlag = 0;
 			prBssInfo->ePwrMode = Param_PowerModeCAM;

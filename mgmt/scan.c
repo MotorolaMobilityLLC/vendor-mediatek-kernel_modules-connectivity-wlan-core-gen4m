@@ -713,6 +713,63 @@ scanSearchBssDescByTAAndSsid(struct ADAPTER *prAdapter,
 
 }	/* end of scanSearchBssDescByTA() */
 
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Find the corresponding BSS Descriptor according to
+ *        given linkid, mld Address, or ssid.
+ *
+ * @param[in] prAdapter          Pointer to the Adapter structure.
+ * @param[in] ucLinkId           Given Mld Link Id.
+ * @param[in] aucMldAddr         Given Mld Address.
+ * @param[in] fgCheckSsid        Need to check SSID or not. (for multiple SSID
+ *                               with single BSSID cases)
+ * @param[in] prSsid             Specified SSID
+ *
+ * @return   Pointer to BSS Descriptor, if found. NULL, if not found
+ */
+/*----------------------------------------------------------------------------*/
+struct BSS_DESC *
+scanSearchBssDescByLinkIdMldAddrSsid(struct ADAPTER *prAdapter,
+				  uint8_t ucLinkId,
+				  uint8_t aucMldAddr[],
+				  u_int8_t fgCheckSsid,
+				  struct PARAM_SSID *prSsid)
+{
+	struct SCAN_INFO *prScanInfo;
+	struct LINK *prBSSDescList;
+	struct BSS_DESC *prBssDesc;
+	struct BSS_DESC *prDstBssDesc = (struct BSS_DESC *) NULL;
+
+	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+
+	prBSSDescList = &prScanInfo->rBSSDescList;
+
+	/* Search BSS Desc from current SCAN result list. */
+	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
+		rLinkEntry, struct BSS_DESC) {
+		if (!prBssDesc->rMlInfo.fgValid)
+			continue;
+
+		if (prBssDesc->rMlInfo.ucLinkIndex == ucLinkId &&
+		    EQUAL_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr, aucMldAddr)) {
+			if (fgCheckSsid == FALSE || prSsid == NULL)
+				return prBssDesc;
+			if (EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
+					prSsid->aucSsid, prSsid->u4SsidLen)) {
+				return prBssDesc;
+			} else if (prDstBssDesc == NULL
+				&& prBssDesc->fgIsHiddenSSID == TRUE) {
+				prDstBssDesc = prBssDesc;
+			}
+		}
+	}
+
+	return prDstBssDesc;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Find the corresponding BSS Descriptor according to
