@@ -1322,10 +1322,6 @@ void __mddpNotifyWifiOffStart(void)
 {
 	int32_t ret;
 
-#if CFG_MTK_CCCI_SUPPORT
-	mtk_ccci_register_md_state_cb(NULL);
-#endif
-
 	DBGLOG(INIT, INFO, "md off start.\n");
 	if (g_rSettings.u4MDDPSupportMode == MDDP_SUPPORT_AOP) {
 		if (g_rSettings.rOps.set)
@@ -1416,6 +1412,29 @@ void mddpNotifyWifiOffEnd(void)
 	mutex_lock(&rMddpLock);
 	__mddpNotifyWifiOffEnd();
 	mutex_unlock(&rMddpLock);
+}
+
+void mddpUnregisterMdStateCB(void)
+{
+	if (!mddpIsSupportMcifWifi())
+		return;
+
+	if (!is_cal_flow_finished())
+		return;
+
+#if CFG_MTK_ANDROID_WMT
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+	if (is_pwr_on_notify_processing())
+		return;
+#endif
+#endif
+
+#if CFG_MTK_CCCI_SUPPORT
+	mutex_lock(&rMddpLock);
+	DBGLOG(INIT, INFO, "unregister mddp ccci cb\n");
+	mtk_ccci_register_md_state_cb(NULL);
+	mutex_unlock(&rMddpLock);
+#endif
 }
 
 void mddpNotifyWifiReset(void)

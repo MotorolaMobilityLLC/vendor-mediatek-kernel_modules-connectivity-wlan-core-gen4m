@@ -4737,6 +4737,10 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 		DBGLOG(INIT, INFO, "process SER...\n");
 	}
 
+#if CFG_MTK_MDDP_SUPPORT
+	mddpUnregisterMdStateCB();
+#endif
+
 	if (prBusInfo->setDmaIntMask)
 		prBusInfo->setDmaIntMask(prAdapter->prGlueInfo,
 			BIT(DMA_INT_TYPE_MCU2HOST) | BIT(DMA_INT_TYPE_TRX),

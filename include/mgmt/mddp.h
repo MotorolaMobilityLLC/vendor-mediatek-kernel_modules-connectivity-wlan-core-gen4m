@@ -143,6 +143,7 @@ void mddpNotifyWifiOnStart(void);
 int32_t mddpNotifyWifiOnEnd(void);
 void mddpNotifyWifiOffStart(void);
 void mddpNotifyWifiOffEnd(void);
+void mddpUnregisterMdStateCB(void);
 void mddpNotifyWifiReset(void);
 void setMddpSupportRegister(struct ADAPTER *prAdapter);
 #if CFG_MTK_CCCI_SUPPORT
