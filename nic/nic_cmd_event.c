@@ -5603,6 +5603,52 @@ void nicEventHandleAddBa(IN struct ADAPTER *prAdapter,
 	}
 }
 
+#if (CFG_WIFI_GET_DPD_CACHE == 1)
+void nicCmdEventQueryDpdCache(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	uint32_t u4QueryInfoLen = 0;
+	struct EVENT_GET_DPD_CACHE *prEventDpdCache;
+	struct PARAM_GET_DPD_CACHE *prParaDpdCache;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+	if (!prAdapter) {
+		DBGLOG(NIC, ERROR, "NULL prAdapter!\n");
+		return;
+	}
+
+	if (!prCmdInfo) {
+		DBGLOG(NIC, ERROR, "NULL prCmdInfo!\n");
+		return;
+	}
+
+	if (!pucEventBuf) {
+		DBGLOG(NIC, ERROR, "NULL pucEventBuf!\n");
+		u4Status = WLAN_STATUS_FAILURE;
+	}
+
+	if (!prCmdInfo->pvInformationBuffer) {
+		DBGLOG(NIC, ERROR, "NULL pvInformationBuffer!\n");
+		u4Status = WLAN_STATUS_FAILURE;
+	}
+
+	if (prCmdInfo->fgIsOid) {
+		if (u4Status == WLAN_STATUS_SUCCESS) {
+			prEventDpdCache =
+				(struct EVENT_GET_DPD_CACHE *) pucEventBuf;
+			prParaDpdCache = (struct PARAM_GET_DPD_CACHE *)
+				prCmdInfo->pvInformationBuffer;
+			u4QueryInfoLen = sizeof(struct EVENT_GET_DPD_CACHE);
+
+			kalMemCopy(prParaDpdCache, prEventDpdCache,
+				sizeof(struct PARAM_GET_DPD_CACHE));
+		}
+
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
+				u4QueryInfoLen, u4Status);
+	}
+}
+#endif /* CFG_WIFI_GET_DPD_CACHE */
 
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
 void nicEventHandleDelayBar(IN struct ADAPTER *prAdapter,

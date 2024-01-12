@@ -3098,6 +3098,15 @@ struct PARAM_COEX_GET_INFO {
 	uint32_t   u4CoexInfo[COEX_INFO_LEN];
 };
 
+#if (CFG_WIFI_GET_DPD_CACHE == 1)
+struct PARAM_GET_DPD_CACHE {
+	uint8_t		ucDpdCacheNum;
+	uint8_t		ucReserved[3];
+	uint32_t	u4DpdCacheCh[PER_CH_CAL_CACHE_NUM];
+	uint8_t		ucDpdCachePath[PER_CH_CAL_CACHE_NUM];
+};
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -4799,4 +4808,13 @@ wlanoidQueryCoexIso(IN struct ADAPTER *prAdapter,
 		    IN uint32_t u4QueryBufferLen,
 		    OUT uint32_t *pu4QueryInfoLen);
 #endif
+
+#if (CFG_WIFI_GET_DPD_CACHE == 1)
+uint32_t
+wlanoidQueryDpdCache(IN struct ADAPTER *prAdapter,
+		 IN void *pvQueryBuffer,
+		 IN uint32_t u4QueryBufferLen,
+		 OUT uint32_t *pu4QueryInfoLen);
+#endif
+
 #endif /* _WLAN_OID_H */

@@ -17532,3 +17532,43 @@ wlanoidQueryCoexIso(IN struct ADAPTER *prAdapter,
 
 }
 #endif
+
+#if (CFG_WIFI_GET_DPD_CACHE == 1)
+uint32_t
+wlanoidQueryDpdCache(IN struct ADAPTER *prAdapter,
+		 IN void *pvQueryBuffer,
+		 IN uint32_t u4QueryBufferLen,
+		 OUT uint32_t *pu4QueryInfoLen)
+{
+	struct PARAM_GET_DPD_CACHE *prDpdCache;
+
+	DEBUGFUNC("wlanoidQueryWlanInfo");
+
+	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
+		DBGLOG(REQ, WARN,
+		       "Adapter not ready. ACPI=D%d, Radio=%d\n",
+		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
+		*pu4QueryInfoLen = sizeof(uint32_t);
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	} else if (u4QueryBufferLen < sizeof(int)) {
+		DBGLOG(REQ, WARN, "Too short length %ld\n", u4QueryBufferLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	} else if (prAdapter->fgTestMode == TRUE) {
+		DBGLOG(REQ, WARN, "Not supported in Test Mode\n");
+		return WLAN_STATUS_NOT_SUPPORTED;
+	}
+
+	prDpdCache = (struct PARAM_GET_DPD_CACHE *)pvQueryBuffer;
+
+	return wlanSendSetQueryCmd(prAdapter,
+			   CMD_ID_GET_DPD_CACHE,
+			   FALSE,
+			   TRUE,
+			   TRUE,
+			   nicCmdEventQueryDpdCache,
+			   nicOidCmdTimeoutCommon,
+			   sizeof(struct PARAM_GET_DPD_CACHE),
+			   (uint8_t *) prDpdCache,
+			   pvQueryBuffer, u4QueryBufferLen);
+}
+#endif /* CFG_WIFI_GET_DPD_CACHE */
