@@ -4163,19 +4163,6 @@ void nicEventSchedScanDone(IN struct ADAPTER *prAdapter,
 	DBGLOG(INIT, INFO, "EVENT_ID_SCHED_SCAN_DONE\n");
 	scnEventSchedScanDone(prAdapter,
 		(struct EVENT_SCHED_SCAN_DONE *) (prEvent->aucBuffer));
-#if CFG_SUPPORT_PNO
-	prAdapter->prAisBssInfo->fgIsPNOEnable = FALSE;
-	if (prAdapter->prAisBssInfo->fgIsNetRequestInActive
-		&& prAdapter->prAisBssInfo->fgIsPNOEnable) {
-		UNSET_NET_ACTIVE(prAdapter,
-				prAdapter->prAisBssInfo->ucBssIndex);
-		DBGLOG(INIT, INFO,
-			"INACTIVE AIS from ACTIVE to disable PNO\n");
-		/* sync with firmware */
-		nicDeactivateNetwork(prAdapter,
-				     prAdapter->prAisBssInfo->ucBssIndex);
-	}
-#endif
 }
 
 void nicEventSleepyNotify(IN struct ADAPTER *prAdapter,

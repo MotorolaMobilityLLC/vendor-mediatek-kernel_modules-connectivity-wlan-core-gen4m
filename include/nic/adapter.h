@@ -567,10 +567,6 @@ struct BSS_INFO {
 	u_int8_t fgTdlsIsProhibited;
 	u_int8_t fgTdlsIsChSwProhibited;
 #endif
-#if CFG_SUPPORT_PNO
-	u_int8_t fgIsPNOEnable;
-	u_int8_t fgIsNetRequestInActive;
-#endif
 
 	/*link layer statistics */
 	struct WIFI_WMM_AC_STAT arLinkStatistics[WMM_AC_INDEX_NUM];

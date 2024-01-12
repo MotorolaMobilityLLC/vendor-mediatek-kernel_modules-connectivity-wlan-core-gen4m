@@ -661,8 +661,12 @@ struct GLUE_INFO {
 	/* for cfg80211 scan done indication */
 	struct cfg80211_scan_request *prScanRequest;
 
+#if CFG_SUPPORT_SCHED_SCAN
+	struct PARAM_SCHED_SCAN_REQUEST *prSchedScanRequest;
+#else
 	/* for cfg80211 scheduled scan */
 	struct cfg80211_sched_scan_request *prSchedScanRequest;
+#endif
 
 	/* to indicate registered or not */
 	u_int8_t fgIsRegistered;
@@ -1272,4 +1276,12 @@ extern void connectivity_export_show_stack(struct task_struct *tsk,
 #endif
 
 int wlanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev);
+
+typedef uint8_t (*file_buf_handler) (void *ctx,
+			const char __user *buf,
+			uint16_t length);
+extern void register_file_buf_handler(file_buf_handler handler,
+			void *ctx,
+			uint8_t ucType);
+
 #endif /* _GL_OS_H */

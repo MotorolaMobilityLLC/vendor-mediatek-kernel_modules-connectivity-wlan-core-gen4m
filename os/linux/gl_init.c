@@ -83,6 +83,9 @@
 #if CFG_TC1_FEATURE
 #include <tc1_partition.h>
 #endif
+#if CFG_CHIP_RESET_SUPPORT
+#include "gl_rst.h"
+#endif
 #include "gl_vendor.h"
 #include "gl_hook_api.h"
 
@@ -1370,6 +1373,17 @@ int wlanHardStartXmit(struct sk_buff *prSkb,
 		return NETDEV_TX_OK;
 	}
 #endif /* CFG_SUPPORT_PASSPOINT */
+
+#if CFG_CHIP_RESET_SUPPORT
+	if (!wlanIsDriverReady(prGlueInfo)) {
+		DBGLOG(INIT, WARN,
+		"u4ReadyFlag:%u, kalIsResetting():%d, dropping the packet\n",
+		prGlueInfo->u4ReadyFlag, kalIsResetting());
+
+		dev_kfree_skb(prSkb);
+		return NETDEV_TX_OK;
+	}
+#endif
 
 	kalResetPacket(prGlueInfo, (void *) prSkb);
 
@@ -3397,13 +3411,15 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 	const u_int8_t bAtResetFlow)
 {
 	DBGLOG(INIT, TRACE, "start.\n");
-	/* change net device mtu from feature option */
-	if (prWifiVar->u4MTU > 0 && prWifiVar->u4MTU <= ETH_DATA_LEN)
-		prGlueInfo->prDevHandler->mtu = prWifiVar->u4MTU;
 
+	if (!bAtResetFlow) {
+		/* change net device mtu from feature option */
+		if (prWifiVar->u4MTU > 0 && prWifiVar->u4MTU <= ETH_DATA_LEN)
+			prGlueInfo->prDevHandler->mtu = prWifiVar->u4MTU;
+		INIT_DELAYED_WORK(&prGlueInfo->rRxPktDeAggWork,
+				halDeAggRxPktWorker);
+	}
 	INIT_WORK(&prGlueInfo->rTxMsduFreeWork, kalFreeTxMsduWorker);
-	INIT_DELAYED_WORK(&prGlueInfo->rRxPktDeAggWork,
-			halDeAggRxPktWorker);
 
 	prGlueInfo->main_thread = kthread_run(main_thread,
 			prGlueInfo->prDevHandler, "main_thread");
@@ -3442,22 +3458,24 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 		       .ucThreadScheduling);
 	}
 
-	g_u4HaltFlag = 0;
+	if (!bAtResetFlow) {
+		g_u4HaltFlag = 0;
 
 #if CFG_SUPPORT_BUFFER_MODE
 #if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
-	if (prChipInfo->downloadBufferBin) {
-		if (prChipInfo->downloadBufferBin(prAdapter) !=
-		    WLAN_STATUS_SUCCESS)
-			return -1;
-	}
+		if (prChipInfo->downloadBufferBin) {
+			if (prChipInfo->downloadBufferBin(prAdapter) !=
+					WLAN_STATUS_SUCCESS)
+				return -1;
+		}
 #endif
 #endif
 
 #if CFG_SUPPORT_DBDC
-	/* Update DBDC default setting */
-	cnmInitDbdcSetting(prAdapter);
+		/* Update DBDC default setting */
+		cnmInitDbdcSetting(prAdapter);
 #endif /*CFG_SUPPORT_DBDC*/
+	}
 
 	/* send regulatory information to firmware */
 	rlmDomainSendInfoToFirmware(prAdapter);
@@ -3491,7 +3509,7 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	/* set HW checksum offload */
-	if (prAdapter->fgIsSupportCsumOffload) {
+	if (!bAtResetFlow && prAdapter->fgIsSupportCsumOffload) {
 		uint32_t rStatus = WLAN_STATUS_FAILURE;
 		uint32_t u4CSUMFlags = CSUM_OFFLOAD_EN_ALL;
 		uint32_t u4SetInfoLen = 0;
@@ -3585,10 +3603,6 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 
 	DBGLOG(INIT, TRACE, "start.\n");
 
-#if CFG_SUPPORT_AGPS_ASSIST
-	kalIndicateAgpsNotify(prAdapter, AGPS_EVENT_WLAN_ON, NULL,
-			      0);
-#endif
 #if CFG_SUPPORT_EASY_DEBUG
 	/* move before reading file
 	 * wlanLoadDefaultCustomerSetting(prAdapter);
@@ -3600,14 +3614,21 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	wlanCfgLoadIotApRule(prAdapter);
 	wlanCfgDumpIotApRule(prAdapter);
 #endif
-	wlanCfgSetSwCtrl(prGlueInfo->prAdapter);
-	wlanCfgSetChip(prGlueInfo->prAdapter);
-	wlanCfgSetCountryCode(prGlueInfo->prAdapter);
-	kalPerMonInit(prGlueInfo);
-#if CFG_MET_TAG_SUPPORT
-	if (met_tag_init() != 0)
-		DBGLOG(INIT, ERROR, "MET_TAG_INIT error!\n");
+	if (!bAtResetFlow) {
+#if CFG_SUPPORT_AGPS_ASSIST
+		kalIndicateAgpsNotify(prAdapter, AGPS_EVENT_WLAN_ON, NULL,
+				0);
 #endif
+
+		wlanCfgSetSwCtrl(prGlueInfo->prAdapter);
+		wlanCfgSetChip(prGlueInfo->prAdapter);
+		wlanCfgSetCountryCode(prGlueInfo->prAdapter);
+		kalPerMonInit(prGlueInfo);
+#if CFG_MET_TAG_SUPPORT
+		if (met_tag_init() != 0)
+			DBGLOG(INIT, ERROR, "MET_TAG_INIT error!\n");
+#endif
+	}
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 	/* Calibration Backup Flow */
@@ -3633,7 +3654,9 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	/* card is ready */
 	prGlueInfo->u4ReadyFlag = 1;
 
-	kalSetHalted(FALSE);
+	if (!bAtResetFlow)
+		kalSetHalted(FALSE);
+
 	wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_FW,
 				 &u4LogLevel);
 	if (u4LogLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT)
@@ -4153,6 +4176,274 @@ static int32_t wlanPowerOnInit(void)
 #endif
 
 
+void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
+{
+	DBGLOG(INIT, TRACE, "start.\n");
+
+	if (prGlueInfo->main_thread == NULL &&
+		prGlueInfo->hif_thread == NULL &&
+		prGlueInfo->rx_thread == NULL) {
+		DBGLOG(INIT, INFO,
+			"Threads are already NULL, skip stop and free\n");
+		return;
+	}
+
+#if CFG_SUPPORT_MULTITHREAD
+	wake_up_interruptible(&prGlueInfo->waitq_hif);
+	wait_for_completion_interruptible(
+		&prGlueInfo->rHifHaltComp);
+	wake_up_interruptible(&prGlueInfo->waitq_rx);
+	wait_for_completion_interruptible(&prGlueInfo->rRxHaltComp);
+#endif
+
+	/* wake up main thread */
+	wake_up_interruptible(&prGlueInfo->waitq);
+	/* wait main thread stops */
+	wait_for_completion_interruptible(&prGlueInfo->rHaltComp);
+
+	DBGLOG(INIT, INFO, "wlan thread stopped\n");
+
+	/* prGlueInfo->rHifInfo.main_thread = NULL; */
+	prGlueInfo->main_thread = NULL;
+#if CFG_SUPPORT_MULTITHREAD
+	prGlueInfo->hif_thread = NULL;
+	prGlueInfo->rx_thread = NULL;
+
+	prGlueInfo->u4TxThreadPid = 0xffffffff;
+	prGlueInfo->u4HifThreadPid = 0xffffffff;
+#endif
+
+}
+
+
+#if CFG_CHIP_RESET_SUPPORT
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief slight off procedure for chip reset
+ *
+ * \return
+ * WLAN_STATUS_FAILURE - reset off fail
+ * WLAN_STATUS_SUCCESS - reset off success
+ */
+/*----------------------------------------------------------------------------*/
+static int32_t wlanOffAtReset(void)
+{
+	struct ADAPTER *prAdapter = NULL;
+	struct net_device *prDev = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	DBGLOG(INIT, INFO, "Driver Off during Reset\n");
+
+	kalSetHalted(TRUE);
+	if (u4WlanDevNum > 0
+		&& u4WlanDevNum <= CFG_MAX_WLAN_DEVICES) {
+		prDev = arWlanDevInfo[u4WlanDevNum - 1].prDev;
+	}
+
+	if (prDev == NULL) {
+		DBGLOG(INIT, ERROR, "prDev is NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, INFO, "prGlueInfo is NULL\n");
+		free_netdev(prDev);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, INFO, "prAdapter is NULL\n");
+		free_netdev(prDev);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* to avoid that wpa_supplicant/hostapd triogger new cfg80211 command */
+	prGlueInfo->u4ReadyFlag = 0;
+
+	kalPerMonDestroy(prGlueInfo);
+
+	/* Stop works */
+	flush_work(&prGlueInfo->rTxMsduFreeWork);
+
+	/* 4 <2> Mark HALT, notify main thread to stop, and clean up queued
+	 *	 requests
+	 */
+	set_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag);
+	wlanOffStopWlanThreads(prGlueInfo);
+
+/* wlanAdapterStop Section Start */
+	wlanOffClearAllQueues(prAdapter);
+
+	wlanOffUninitNicModule(prAdapter, TRUE);
+/* wlanAdapterStop Section End */
+
+	/* 4 <x> Stopping handling interrupt and free IRQ */
+	glBusFreeIrq(prDev, prGlueInfo);
+
+#if (CFG_SUPPORT_TRACE_TC4 == 1)
+	wlanDebugTC4Uninit();
+#endif
+	fgSimplifyResetFlow = TRUE;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief A slight wlan on for chip reset
+ *
+ * \return
+ * WLAN_STATUS_FAILURE - reset on fail
+ * WLAN_STATUS_SUCCESS - reset on success
+ */
+/*----------------------------------------------------------------------------*/
+static int32_t wlanOnAtReset(void)
+{
+	struct net_device *prDev = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	uint32_t u4DisconnectReason = DISCONNECT_REASON_CODE_RESERVED;
+
+	enum ENUM_PROBE_FAIL_REASON {
+		BUS_INIT_FAIL,
+		NET_CREATE_FAIL,
+		BUS_SET_IRQ_FAIL,
+		ADAPTER_START_FAIL,
+		NET_REGISTER_FAIL,
+		PROC_INIT_FAIL,
+		FAIL_MET_INIT_PROCFS,
+		FAIL_REASON_NUM
+	} eFailReason = FAIL_REASON_NUM;
+
+	DBGLOG(INIT, INFO, "Driver On during Reset\n");
+
+	if (u4WlanDevNum > 0
+		&& u4WlanDevNum <= CFG_MAX_WLAN_DEVICES) {
+		prDev = arWlanDevInfo[u4WlanDevNum - 1].prDev;
+	}
+
+	if (prDev == NULL) {
+		DBGLOG(INIT, ERROR, "prDev is NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, INFO, "prGlueInfo is NULL\n");
+		free_netdev(prDev);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, INFO, "prAdapter is NULL\n");
+		free_netdev(prDev);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prGlueInfo->ulFlag = 0;
+	fgSimplifyResetFlow = FALSE;
+	do {
+#if (CFG_SUPPORT_TRACE_TC4 == 1)
+		wlanDebugTC4Init();
+#endif
+		/* wlanNetCreate partial process */
+		QUEUE_INITIALIZE(&prGlueInfo->rCmdQueue);
+		prGlueInfo->i4TxPendingCmdNum = 0;
+		QUEUE_INITIALIZE(&prGlueInfo->rTxQueue);
+
+		rStatus = glBusSetIrq(prDev, NULL, prGlueInfo);
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR, "Set IRQ error\n");
+			eFailReason = BUS_SET_IRQ_FAIL;
+			break;
+		}
+
+		/* Trigger the action of switching Pwr state to drv_own */
+		prAdapter->fgIsFwOwn = TRUE;
+
+		/* wlanAdapterStart Section Start */
+		rStatus = wlanAdapterStart(prAdapter,
+					   &prGlueInfo->rRegInfo,
+					   TRUE);
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			eFailReason = ADAPTER_START_FAIL;
+			break;
+		}
+
+		wlanOnPreNetRegister(prGlueInfo, prAdapter,
+			prAdapter->chip_info,
+			&prAdapter->rWifiVar,
+			TRUE);
+
+		/* Resend schedule scan */
+		prAdapter->rWifiVar.rConnSettings.fgIsScanReqIssued = FALSE;
+		prAdapter->rWifiVar.rScanInfo.fgSchedScanning = FALSE;
+#if CFG_SUPPORT_SCHED_SCAN
+		if (prGlueInfo->prSchedScanRequest) {
+			rStatus = kalIoctl(prGlueInfo, wlanoidSetStartSchedScan,
+					prGlueInfo->prSchedScanRequest,
+					sizeof(struct PARAM_SCHED_SCAN_REQUEST),
+					false, FALSE, TRUE, &u4BufLen);
+			if (rStatus != WLAN_STATUS_SUCCESS)
+				DBGLOG(INIT, WARN,
+				"SCN: Start sched scan failed after chip reset 0x%x\n",
+					rStatus);
+		}
+#endif
+
+		kalMemZero(&prGlueInfo->rFtIeForTx,
+			sizeof(prGlueInfo->rFtIeForTx));
+
+	} while (FALSE);
+
+	if (rStatus == WLAN_STATUS_SUCCESS) {
+		wlanOnWhenProbeSuccess(prGlueInfo, prAdapter, TRUE);
+		DBGLOG(INIT, INFO, "reset success\n");
+
+		/* Send disconnect */
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetDisassociate,
+				&u4DisconnectReason,
+				0, FALSE, FALSE, TRUE, &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(REQ, WARN, "disassociate error:%x\n", rStatus);
+			return -EFAULT;
+		}
+		DBGLOG(INIT, INFO, "inform disconnected\n");
+	} else {
+		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
+		halPrintHifDbgInfo(prAdapter);
+		DBGLOG(INIT, WARN, "Fail reason: %d\n", eFailReason);
+
+		switch (eFailReason) {
+		case ADAPTER_START_FAIL:
+			glBusFreeIrq(prDev,
+				*((struct GLUE_INFO **)
+						netdev_priv(prDev)));
+		/* fallthrough */
+		case BUS_SET_IRQ_FAIL:
+			wlanWakeLockUninit(prGlueInfo);
+			wlanNetDestroy(prDev->ieee80211_ptr);
+			/* prGlueInfo->prAdapter is released in
+			 * wlanNetDestroy
+			 */
+			/* Set NULL value for local prAdapter as well */
+			prAdapter = NULL;
+			break;
+		default:
+			break;
+		}
+
+	}
+	return rStatus;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Wlan probe function. This function probes and initializes the device.
@@ -4190,6 +4481,11 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	struct WIFI_VAR *prWifiVar;
 #if (MTK_WCN_HIF_SDIO && CFG_WMT_WIFI_PATH_SUPPORT)
 	int32_t i4RetVal = 0;
+#endif
+
+#if CFG_CHIP_RESET_SUPPORT
+	if (fgSimplifyResetFlow)
+		return wlanOnAtReset();
 #endif
 
 #if 0
@@ -4407,44 +4703,6 @@ wlanOffNotifyCfg80211Disconnect(IN struct GLUE_INFO *prGlueInfo)
 	}
 }
 
-void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
-{
-	DBGLOG(INIT, TRACE, "start.\n");
-
-	if (prGlueInfo->main_thread == NULL &&
-		prGlueInfo->hif_thread == NULL &&
-		prGlueInfo->rx_thread == NULL) {
-		DBGLOG(INIT, INFO,
-			"Threads are already NULL, skip stop and free\n");
-		return;
-	}
-
-#if CFG_SUPPORT_MULTITHREAD
-	wake_up_interruptible(&prGlueInfo->waitq_hif);
-	wait_for_completion_interruptible(
-		&prGlueInfo->rHifHaltComp);
-	wake_up_interruptible(&prGlueInfo->waitq_rx);
-	wait_for_completion_interruptible(&prGlueInfo->rRxHaltComp);
-#endif
-
-	/* wake up main thread */
-	wake_up_interruptible(&prGlueInfo->waitq);
-	/* wait main thread stops */
-	wait_for_completion_interruptible(&prGlueInfo->rHaltComp);
-
-	DBGLOG(INIT, INFO, "wlan thread stopped\n");
-
-	/* prGlueInfo->rHifInfo.main_thread = NULL; */
-	prGlueInfo->main_thread = NULL;
-#if CFG_SUPPORT_MULTITHREAD
-	prGlueInfo->hif_thread = NULL;
-	prGlueInfo->rx_thread = NULL;
-
-	prGlueInfo->u4TxThreadPid = 0xffffffff;
-	prGlueInfo->u4HifThreadPid = 0xffffffff;
-#endif
-
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -4463,6 +4721,16 @@ static void wlanRemove(void)
 	u_int8_t fgResult = FALSE;
 
 	DBGLOG(INIT, INFO, "Remove wlan!\n");
+
+#if CFG_CHIP_RESET_SUPPORT
+	/* During chip reset, use simplify remove flow first
+	 * if anything goes wrong in wlanOffAtReset then goes to normal flow
+	 */
+	if (fgSimplifyResetFlow) {
+		if (wlanOffAtReset() == WLAN_STATUS_SUCCESS)
+			return;
+	}
+#endif
 
 	kalSetHalted(TRUE);
 

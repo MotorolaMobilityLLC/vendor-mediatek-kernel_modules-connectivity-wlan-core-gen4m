@@ -1374,6 +1374,9 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 					cfg80211_unlink_bss(
 						priv_to_wiphy(prGlueInfo),
 						bss_others);
+					cfg80211_put_bss(
+						priv_to_wiphy(prGlueInfo),
+						bss_others);
 				} else
 					break;
 			}
@@ -2876,10 +2879,8 @@ kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 	uint32_t ret = WLAN_STATUS_SUCCESS;
 	uint32_t waitRet = 0;
 
-#if CFG_CHIP_RESET_SUPPORT
 	if (kalIsResetting())
 		return WLAN_STATUS_SUCCESS;
-#endif
 
 	if (wlanIsChipAssert(prGlueInfo->prAdapter))
 		return WLAN_STATUS_SUCCESS;
@@ -3459,7 +3460,6 @@ void kalProcessTxReq(struct GLUE_INFO *prGlueInfo,
 				break;
 			}
 		}
-
 		if (wlanGetTxPendingFrameCount(prGlueInfo->prAdapter) > 0)
 			wlanTxPendingPackets(prGlueInfo->prAdapter,
 					     pfgNeedHwAccess);
@@ -3513,10 +3513,8 @@ int hif_thread(void *data)
 	while (TRUE) {
 
 		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
-#if CFG_CHIP_RESET_SUPPORT
-		    || kalIsResetting()
-#endif
-		    ) {
+			|| kalIsResetting()
+			) {
 			DBGLOG(INIT, INFO, "hif_thread should stop now...\n");
 			break;
 		}
@@ -3562,10 +3560,8 @@ int hif_thread(void *data)
 			 */
 			prAdapter->fgIsIntEnable = FALSE;
 			if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
-#if CFG_CHIP_RESET_SUPPORT
-			    || kalIsResetting()
-#endif
-			   ) {
+				|| kalIsResetting()
+				) {
 				/* Should stop now... skip pending interrupt */
 				DBGLOG(INIT, INFO,
 				       "ignore pending interrupt\n");
@@ -3672,10 +3668,8 @@ int rx_thread(void *data)
 	while (TRUE) {
 
 		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
-#if CFG_CHIP_RESET_SUPPORT
-		    || kalIsResetting()
-#endif
-		   ) {
+			|| kalIsResetting()
+			) {
 			DBGLOG(INIT, INFO, "rx_thread should stop now...\n");
 			break;
 		}
@@ -3817,7 +3811,9 @@ int main_thread(void *data)
 			p2pSetMulticastListWorkQueueWrapper(prGlueInfo);
 #endif
 
-		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
+			|| kalIsResetting()
+			) {
 			DBGLOG(INIT, INFO, "%s should stop now...\n",
 			       KAL_GET_CURRENT_THREAD_NAME());
 			break;
@@ -3872,7 +3868,9 @@ int main_thread(void *data)
 				prGlueInfo->u4OsMgmtFrameFilter;
 		}
 
-		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
+			|| kalIsResetting()
+			) {
 			DBGLOG(INIT, INFO, "%s should stop now...\n",
 			       KAL_GET_CURRENT_THREAD_NAME());
 			break;
@@ -3927,7 +3925,9 @@ int main_thread(void *data)
 			prGlueInfo->prAdapter->fgIsIntEnable = FALSE;
 			/* wlanISR(prGlueInfo->prAdapter, TRUE); */
 
-			if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+			if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
+				|| kalIsResetting()
+				) {
 				/* Should stop now... skip pending interrupt */
 				DBGLOG(INIT, INFO,
 					"ignore pending interrupt\n");
@@ -7456,6 +7456,54 @@ kalChannelFormatSwitch(IN struct cfg80211_chan_def *channel_def,
 	} while (FALSE);
 
 	return fgIsValid;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Notify kernel to remove/unlink bss.
+ *
+ * \param[in] prGlueInfo     Pointer of GLUE Data Structure
+ * \param[in] prBssDesc      Pointer of BSS_DESC we want to remove
+ *
+ */
+/*----------------------------------------------------------------------------*/
+void kalRemoveBss(struct GLUE_INFO *prGlueInfo,
+	uint8_t aucBSSID[],
+	uint8_t ucChannelNum,
+	enum ENUM_BAND eBand)
+{
+	struct cfg80211_bss *bss = NULL;
+	struct ieee80211_channel *prChannel = NULL;
+
+	prChannel = ieee80211_get_channel(
+		priv_to_wiphy(prGlueInfo),
+		ieee80211_channel_to_frequency(
+			ucChannelNum,
+			eBand)
+	);
+
+#if (KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE)
+	bss = cfg80211_get_bss(priv_to_wiphy(prGlueInfo),
+			prChannel, /* channel */
+			aucBSSID,
+			NULL, /* ssid */
+			0, /* ssid length */
+			IEEE80211_BSS_TYPE_ESS,
+			IEEE80211_PRIVACY_ANY);
+#else
+	bss = cfg80211_get_bss(priv_to_wiphy(prGlueInfo),
+			prChannel, /* channel */
+			aucBSSID,
+			NULL, /* ssid */
+			0, /* ssid length */
+			WLAN_CAPABILITY_ESS,
+			WLAN_CAPABILITY_ESS);
+#endif
+
+	if (bss != NULL) {
+		cfg80211_unlink_bss(priv_to_wiphy(prGlueInfo), bss);
+		cfg80211_put_bss(priv_to_wiphy(prGlueInfo), bss);
+	}
 }
 
 int kalMaskMemCmp(const void *cs, const void *ct,

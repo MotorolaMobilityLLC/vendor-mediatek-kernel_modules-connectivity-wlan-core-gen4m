@@ -1929,10 +1929,6 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 		prBssInfo->ucBssIndex = prAdapter->ucP2PDevBssIdx;
 		prBssInfo->eNetworkType = eNetworkType;
 		prBssInfo->ucOwnMacIndex = prAdapter->ucHwBssIdNum;
-#if CFG_SUPPORT_PNO
-		prBssInfo->fgIsPNOEnable = FALSE;
-		prBssInfo->fgIsNetRequestInActive = FALSE;
-#endif
 
 		/* initialize wlan id and status for keys */
 		prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
@@ -1942,6 +1938,7 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 			prBssInfo->ucBMCWlanIndexS[i] = WTBL_RESERVED_ENTRY;
 			prBssInfo->wepkeyUsed[i] = FALSE;
 		}
+
 		return prBssInfo;
 	}
 
@@ -2020,11 +2017,6 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 	    || ucBssIndex >= prAdapter->ucHwBssIdNum)
 		prBssInfo = NULL;
 	if (prBssInfo) {
-#if CFG_SUPPORT_PNO
-		prBssInfo->fgIsPNOEnable = FALSE;
-		prBssInfo->fgIsNetRequestInActive = FALSE;
-#endif
-
 		/* initialize wlan id and status for keys */
 		prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
 		prBssInfo->wepkeyWlanIdx = WTBL_RESERVED_ENTRY;
