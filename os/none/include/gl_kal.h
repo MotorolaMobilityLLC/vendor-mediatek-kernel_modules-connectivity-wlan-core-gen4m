@@ -1941,6 +1941,11 @@ kalApplyCustomRegulatory(IN struct wiphy *pWiphy,
 #define do_div(_ret, _base) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
+#define kal_div64_u64(_a, _b) div64_u64(_a, _b)
+
+#define div64_u64(_dividend, _divisor) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
 #define kalSetDrvIntEvent(_prGlueInfo) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
