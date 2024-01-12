@@ -4404,6 +4404,7 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	}
 #endif
 
+	wlanOnP2pRegistration(prGlueInfo, prAdapter, gprWdev[0]);
 	return 0;
 }
 
@@ -4952,7 +4953,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		       "wlanProbe: probe success, feature set: 0x%llx, persistNetdev: %d\n",
 		       wlanGetSupportedFeatureSet(prGlueInfo),
 		       CFG_SUPPORT_PERSIST_NETDEV);
-		wlanOnP2pRegistration(prGlueInfo, prAdapter, prWdev);
 #if CFG_MTK_MCIF_WIFI_SUPPORT
 		mddpNotifyWifiOnEnd();
 #endif
