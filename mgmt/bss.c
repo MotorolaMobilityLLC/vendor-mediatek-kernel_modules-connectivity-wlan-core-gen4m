@@ -1536,6 +1536,9 @@ struct STA_RECORD *bssRemoveClientByMac(IN struct ADAPTER *prAdapter,
 	LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList, rLinkEntry,
 			    struct STA_RECORD) {
 
+		if (!prCurrStaRec)
+			break;
+
 		if (EQUAL_MAC_ADDR(prCurrStaRec->aucMacAddr, pucMac)) {
 
 			LINK_REMOVE_KNOWN_ENTRY(prClientList,
@@ -1565,6 +1568,9 @@ struct STA_RECORD *bssGetClientByMac(IN struct ADAPTER *prAdapter,
 
 	LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList, rLinkEntry,
 			    struct STA_RECORD) {
+
+		if (!prCurrStaRec)
+			break;
 
 		if (EQUAL_MAC_ADDR(prCurrStaRec->aucMacAddr, pucMac))
 			return prCurrStaRec;
