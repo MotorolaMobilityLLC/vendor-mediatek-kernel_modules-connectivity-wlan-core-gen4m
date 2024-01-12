@@ -230,10 +230,10 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 
 exit:
 	if (prMsduInfo == NULL) {
-		log_dbg(MEM, WARN, "MgtDesc#=%ld\n", prQueList->u4NumElem);
+		log_dbg(MEM, WARN, "MgtDesc#=%u\n", prQueList->u4NumElem);
 
 #if CFG_DBG_MGT_BUF
-		log_dbg(MEM, WARN, "rMgtBufInfo: alloc#=%ld, free#=%ld, null#=%ld\n",
+		log_dbg(MEM, WARN, "rMgtBufInfo: alloc#=%u, free#=%u, null#=%u\n",
 			prAdapter->rMgtBufInfo.u4AllocCount,
 			prAdapter->rMgtBufInfo.u4FreeCount,
 			prAdapter->rMgtBufInfo.u4AllocNullCount);
@@ -440,7 +440,7 @@ void *cnmMemAlloc(struct ADAPTER *prAdapter, enum ENUM_RAM_TYPE eRamType,
 		pvMemory = (void *)(prMemTrack + 1);
 	} else {
 		DBGLOG(MEM, WARN,
-			"kalMemAlloc fail, type: %d sz: %u\n",
+			"kalMemAlloc fail, type: %d sz: %lu\n",
 			eRamType,
 			u4Length + sizeof(struct MEM_TRACK));
 	}
