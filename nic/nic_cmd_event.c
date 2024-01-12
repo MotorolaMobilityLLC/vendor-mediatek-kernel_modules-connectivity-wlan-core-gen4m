@@ -5825,6 +5825,7 @@ void nicNanSubscribeTerminateEvt(struct ADAPTER *prAdapter,
 				sizeof(struct NanSubscribeTerminatedInd));
 }
 
+#if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
 void nicNanNdlFlowCtrlEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 {
 	struct NAN_EVT_NDL_FLOW_CTRL *prFlowCtrlEvt;
@@ -5884,6 +5885,7 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 	uint16_t u2SchId = 0;
 	uint32_t u4Idx;
 	uint32_t u4NanSendPacketGuardTime;
+	struct NAN_FLOW_CTRL *prNanFlowCtrlRecord;
 	OS_SYSTIME rCurrentTime;
 	OS_SYSTIME rExpiryTime;
 
@@ -5891,6 +5893,7 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 
 	u4NanSendPacketGuardTime = prAdapter->rWifiVar.u4NanSendPacketGuardTime;
 	prFlowCtrlEvt = (struct NAN_EVT_NDL_FLOW_CTRL_V2 *)pcuEvtBuf;
+
 	for (u2SchId = 0; u2SchId < NAN_MAX_CONN_CFG; u2SchId++) {
 		uint8_t ucSTAIdx;
 		uint16_t u4RemainingTime;
@@ -5898,13 +5901,23 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 		if (nanSchedPeerSchRecordIsValid(prAdapter, u2SchId) == FALSE)
 			continue;
 
+		prNanFlowCtrlRecord = nanSchedGetPeerSchRecFlowCtrl(prAdapter,
+								    u2SchId);
 		rCurrentTime = kalGetTimeTick();
 		u4RemainingTime = prFlowCtrlEvt->au4RemainingTime[u2SchId];
 		rExpiryTime = rCurrentTime + u4RemainingTime;
 
 		DBGLOG(NAN, INFO,
-		       "[NDL flow control] Sch:%u, Expiry:%u, Remain:%u\n",
-		       u2SchId, rExpiryTime, u4RemainingTime);
+		       "[NDL flow control] Sch:%u, Expiry:%u, Remain:%u, %sstayed %u for %u ms\n",
+		       u2SchId, rExpiryTime, u4RemainingTime,
+		       prNanFlowCtrlRecord[u2SchId].fgAllow ==
+				       !!u4RemainingTime ? "WARN " : "",
+		       prNanFlowCtrlRecord[u2SchId].fgAllow,
+		       prNanFlowCtrlRecord[u2SchId].u4Time ?
+			       rCurrentTime -
+				       prNanFlowCtrlRecord[u2SchId].u4Time : 0);
+		prNanFlowCtrlRecord[u2SchId].fgAllow = !!u4RemainingTime;
+		prNanFlowCtrlRecord[u2SchId].u4Time = rCurrentTime;
 
 		if (u4RemainingTime == 0)
 			continue;
@@ -5937,6 +5950,7 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 		kalSetEvent(prAdapter->prGlueInfo); /* Wakeup TX */
 	}
 }
+#endif
 
 void nicNanEventDispatcher(struct ADAPTER *prAdapter,
 		      struct WIFI_EVENT *prEvent)

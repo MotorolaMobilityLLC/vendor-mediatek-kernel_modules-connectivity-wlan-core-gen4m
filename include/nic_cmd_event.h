@@ -4593,9 +4593,12 @@ void nicNanGetCmdInfoQueryTestBuffer(
 	struct _TXM_CMD_EVENT_TEST_T **prCmdInfoQueryTestBuffer);
 
 void nicNanEventSTATxCTL(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf);
+
+#if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
 void nicNanNdlFlowCtrlEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf);
-void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter,
-	uint8_t *pcuEvtBuf);
+void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf);
+#endif
+
 void nicNanVendorEventHandler(struct ADAPTER *prAdapter,
 			      struct WIFI_EVENT *prEvent);
 #endif

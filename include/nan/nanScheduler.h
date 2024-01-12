@@ -68,6 +68,11 @@ struct NAN_EVT_NDL_FLOW_CTRL {
 	uint16_t au2FlowCtrl[NAN_MAX_CONN_CFG];
 };
 
+struct NAN_FLOW_CTRL {
+	u_int8_t fgAllow;
+	uint32_t u4Time;
+};
+
 union _NAN_BAND_CHNL_CTRL {
 	struct {
 		uint32_t u4Type : 1;
@@ -338,6 +343,11 @@ uint32_t nanSchedNegoCustFawConfigCmd(struct ADAPTER *prAdapter, uint8_t ucChnl,
 void nanSchedReleaseUnusedCommitSlot(struct ADAPTER *prAdapter);
 enum ENUM_BAND
 nanSchedGetSchRecBandByMac(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr);
+
+#if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
+struct NAN_FLOW_CTRL *nanSchedGetPeerSchRecFlowCtrl(struct ADAPTER *prAdapter,
+						    uint32_t u2SchId);
+#endif
 
 extern union _NAN_BAND_CHNL_CTRL g_rNullChnl;
 

@@ -199,6 +199,10 @@ struct _NAN_PEER_SCHEDULE_RECORD_T {
 	int32_t i4InNegoContext;
 	enum ENUM_BAND eBand;
 
+#if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
+	/* Logging Flow Control V2 state and duration on handling event */
+	struct NAN_FLOW_CTRL rNanFlowCtrlRecord[NAN_MAX_CONN_CFG];
+#endif
 };
 
 enum _ENUM_NAN_CRB_NEGO_STATE_T {
@@ -10049,6 +10053,18 @@ nanSchedGetSchRecBandByMac(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr) {
 	else
 		return BAND_NULL;
 }
+
+#if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
+struct NAN_FLOW_CTRL *nanSchedGetPeerSchRecFlowCtrl(struct ADAPTER *prAdapter,
+						    uint32_t u4SchId)
+{
+	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRec;
+
+	prPeerSchRec = nanSchedGetPeerSchRecord(prAdapter, u4SchId);
+	return prPeerSchRec->rNanFlowCtrlRecord;
+}
+#endif
+
 
 #if (CFG_NAN_SCHEDULER_VERSION == 1)
 struct _NAN_NONNAN_NETWORK_TIMELINE_T *
