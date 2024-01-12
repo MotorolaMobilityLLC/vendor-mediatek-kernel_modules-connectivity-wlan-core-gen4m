@@ -1617,7 +1617,6 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	}
 #endif
 
-
 	if (prChipInfo->chip_capability & BIT(CHIP_CAPA_FW_LOG_TIME_SYNC)) {
 		ktime_get_real_ts64(&time);
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
@@ -1638,8 +1637,10 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 			prAdapter->u4FWLastUpdateTime =
 				(unsigned int)time.tv_sec;
 		}
-
 	}
+
+	if (prChipInfo->queryPmicInfo)
+		prChipInfo->queryPmicInfo(prAdapter);
 
 	if (prFwDlOps->phyAction)
 		prFwDlOps->phyAction(prAdapter);
