@@ -2899,12 +2899,13 @@ rlmDomainInitTxPwrLimitData(struct ADAPTER *prAdapter)
 		return NULL;
 	}
 
-	for (ch_idx = 0; ch_idx < pTxPwrLimitData->ucChNum; ch_idx++)
+	for (ch_idx = 0; ch_idx < pTxPwrLimitData->ucChNum; ch_idx++) {
 		prChTxPwrLimit =
 			&(pTxPwrLimitData->rChannelTxPwrLimit[ch_idx]);
 		kalMemSet(prChTxPwrLimit->rTxPwrLimitValue,
 			MAX_TX_POWER,
 			sizeof(prChTxPwrLimit->rTxPwrLimitValue));
+	}
 
 	ch_cnt = 0;
 	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++) {
