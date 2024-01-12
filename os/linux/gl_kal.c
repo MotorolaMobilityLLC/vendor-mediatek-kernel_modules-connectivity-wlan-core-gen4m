@@ -13448,16 +13448,12 @@ static int kalNapiPollSwRfb(struct napi_struct *napi, int budget)
 
 	prAdapter = prGlueInfo->prAdapter;
 
-#if CFG_SUPPORT_FW_DROP_SSN
-	/* Added in nicUniHandleFwDropSSN */
-	while (prSwRfb = nicRxGetFwDropSSN(prAdapter)) {
-#if CFG_RFB_TRACK
-		RX_RFB_TRACK_UPDATE(prAdapter,
-			prSwRfb, RFB_TRACK_NAPI);
-#endif /* CFG_RFB_TRACK */
-		nicRxHandleFwDropSSN(prAdapter, prSwRfb);
-	}
-#endif /* CFG_SUPPORT_FW_DROP_SSN */
+	/*
+	 * Indicate Rfb dequeue by main_thread:
+	 * 1. nicEventHandleDelayBar
+	 * 2. nicEventHandleFwDropSSN
+	 */
+	nicRxIndicateRfbMainToNapi(prAdapter);
 
 	while (KAL_FIFO_OUT(&prGlueInfo->rRxKfifoQ, prSwRfb)) {
 		if (!prSwRfb) {
