@@ -2360,8 +2360,21 @@ static struct cfg80211_qos_map *get_qos_map(struct net_device *dev)
 			break;
 
 		ucBssIdx = wlanGetBssIdx(dev);
-		if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIdx))
+
+		if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIdx)) {
+			/**
+			 * In WMMPS test case DUT as AP, the PC endpoint sends
+			 * VO packets with TOS as 0xD0 and verify the DL frame.
+			 * If apply QoS Map, 0xD0 will be mapped to BE, since in
+			 * default QoS Map, VO could only be 0xC0 or 0xE0.
+			 * Current solution limits QoS Map as STA only.
+			 * Passing a NULL pointer to cfg80211_classify8021d()
+			 * in Linux, it will map TOS to UP by the 3-bit MSBs.
+			 */
+			if (prAdapter->rWifiVar.fgApLegacyQosMap)
+				qos_map = NULL;
 			break;
+		}
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 		if (unlikely(!prBssInfo))
@@ -2374,7 +2387,8 @@ static struct cfg80211_qos_map *get_qos_map(struct net_device *dev)
 		qos_map = (struct cfg80211_qos_map *)&prStaRec->rQosMap;
 	} while (0);
 
-	DBGLOG(TX, TEMP, "return %s qos_map\n", prStaRec ? "STA" : "default");
+	DBGLOG(TX, TEMP, "return %s qos_map %p\n",
+	       prStaRec ? "STA" : "default", qos_map);
 	return qos_map;
 }
 

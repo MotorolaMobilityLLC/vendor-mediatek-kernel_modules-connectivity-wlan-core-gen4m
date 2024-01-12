@@ -1067,6 +1067,8 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_VHT_IE_IN_2G
 	uint8_t ucVhtIeIn2g;
 #endif
+	uint8_t fgApLegacyQosMap;
+
 	uint8_t fgCsaInProgress;
 	uint8_t ucChannelSwitchMode;
 	uint8_t ucNewOperatingClass;
