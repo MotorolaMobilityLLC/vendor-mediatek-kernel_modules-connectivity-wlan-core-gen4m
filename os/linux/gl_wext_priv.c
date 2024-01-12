@@ -12458,8 +12458,10 @@ int priv_driver_set_wow(struct net_device *prNetDev,
 
 	u4Ret = kalkStrtou32(apcArgv[1], 0, &Enable);
 
-	if (u4Ret)
+	if (u4Ret) {
 		DBGLOG(REQ, LOUD, "parse bEnable error u4Ret=%d\n", u4Ret);
+		return -EINVAL;
+	}
 
 	DBGLOG(INIT, INFO, "CMD set_wow_enable = %d\n", Enable);
 	DBGLOG(INIT, INFO, "Scenario ID %d\n", pWOW_CTRL->ucScenarioId);
