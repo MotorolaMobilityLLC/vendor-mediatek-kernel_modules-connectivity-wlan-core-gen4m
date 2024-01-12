@@ -185,10 +185,10 @@ void connac2x2ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			continue;
 		}
 
-		/* Type 1. WIFI_RAM_CODE_soc1_0_1_1 */
+		/* Type 1. WIFI_RAM_CODE_soc1_0_1_1.bin */
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 				CFG_FW_NAME_MAX_LEN,
-				"%s_%u%s_%u",
+				"%s_%u%s_%u.bin",
 				apucConnac2x2FwName[ucIdx],
 				CFG_WIFI_IP_SET,
 				aucFlavor,
@@ -201,10 +201,10 @@ void connac2x2ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 					"[%u] kalSnprintf failed, ret: %d\n",
 					__LINE__, ret);
 
-		/* Type 2. WIFI_RAM_CODE_soc1_0_1_1.bin */
+		/* Type 2. WIFI_RAM_CODE_soc1_0_1_1 */
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 				CFG_FW_NAME_MAX_LEN,
-				"%s_%u%s_%u.bin",
+				"%s_%u%s_%u",
 				apucConnac2x2FwName[ucIdx],
 				CFG_WIFI_IP_SET,
 				aucFlavor,
