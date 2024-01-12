@@ -1677,8 +1677,6 @@ static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 #endif
 	HAL_MCR_RD(prAdapter, u4DmaCfgCr, &GloCfg.word);
 
-	mt6639ConfigIntMask(prGlueInfo, enable);
-
 	if (!enable)
 		return;
 
