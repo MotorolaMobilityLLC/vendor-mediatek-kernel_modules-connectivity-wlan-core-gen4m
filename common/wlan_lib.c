@@ -546,6 +546,8 @@ struct PARAM_CUSTOM_KEY_CFG_STRUCT g_rDefaulteSetting[] = {
 	{"AdapScan", "0x0", WLAN_CFG_DEFAULT},
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
 	/*Fill Iot AP blacklist here*/
+	/*AS AX89X, OUI=0x8CFDF0, NSS=8, PHY=WiFi6, Action=2:Disable SG*/
+	{"IOTAP31", "0:8CFDF0:::::8:6::2"},
 #endif
 #if CFG_TC3_FEATURE
 	{"ScreenOnBeaconTimeoutCount", "20"},
@@ -13201,7 +13203,7 @@ int wlanGetMaxTxRate(struct ADAPTER *prAdapter,
 	prBssDesc = aisGetTargetBssDesc(prAdapter, prBssInfo->ucBssIndex);
 	ucNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
 	if (prBssDesc) {
-		ucApNss = bssGetRxNss(prAdapter, prBssDesc);
+		ucApNss = bssGetRxNss(prBssDesc);
 		if (ucApNss > 0 && ucApNss < ucNss)
 			ucNss = ucApNss;
 	}
