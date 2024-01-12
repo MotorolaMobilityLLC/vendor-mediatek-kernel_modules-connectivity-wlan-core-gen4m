@@ -37,6 +37,7 @@
 #define SET_EHT_BW20_MCS_MAP 2
 #define SET_EHT_BW80_MCS_MAP 4
 
+#define REG_STATS_STA_MAX_NUM 3
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -1790,6 +1791,21 @@ struct MIB_STATS {
 #endif
 #endif
 
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
+
+struct STATS_REG_STAT_FW_REPORT {
+	struct UNI_EVENT_BASIC_STATISTICS rBasicStatistics;
+	struct UNI_EVENT_LINK_QUALITY rLq;
+	/* UNI_EVENT_STA_STATISTICS */
+	struct EVENT_STA_STATISTICS rStaStats[REG_STATS_STA_MAX_NUM];
+	/* UNI_EVENT_ID_STATISTICS_LINK_LAYER_STATS */
+	uint32_t u4LastUpdateTime;
+	uint32_t u4Padding;
+	enum ENUM_STATS_LLS_UPDATE_STATUS llsUpdateStatus;
+};
+
+#endif
+
 /*
  * Major ADAPTER structure
  * Major data structure for driver operation
@@ -2016,6 +2032,10 @@ struct ADAPTER {
 	uint32_t *pu4TxTimePerLevels;
 	uint32_t u4TxTimePerLevelsSize; /* 256 * 4bytes (uint32_t) * 2 bands */
 	struct STATS_LLS_PEER_AP_REC rPeerApRec[KAL_AIS_NUM];
+#endif
+#if CFG_SUPPORT_REG_STAT_FROM_EMI
+	uint32_t u4RegStatLastUpdateMs;
+	struct STATS_REG_STAT_FW_REPORT *prStatsAllRegStat;
 #endif
 
 #if CFG_SUPPORT_MSP
