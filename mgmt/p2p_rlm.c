@@ -568,9 +568,9 @@ void rlmProcessPublicAction2040Coexist(struct ADAPTER *prAdapter,
 void rlmProcessPublicActionExCsa(struct ADAPTER *prAdapter,
 		struct SW_RFB *prSwRfb)
 {
-	struct ACTION_EX_CHANNEL_SWITCH_FRAME *prRxFrame;
-	struct IE_EX_CHANNEL_SWITCH *prExCSAIE;
 	struct SWITCH_CH_AND_BAND_PARAMS *prCSAParams;
+	struct ACTION_EX_CHANNEL_SWITCH_FRAME *prEcsaActionFrame;
+	struct IE_WIDE_BAND_CHANNEL *prWideBandIe;
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
 	uint8_t *pucIE;
@@ -590,53 +590,53 @@ void rlmProcessPublicActionExCsa(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return;
 
+	prCSAParams = &prBssInfo->CSAParams;
 	u2IELength = prSwRfb->u2PacketLen -
 		(uint16_t)OFFSET_OF(struct ACTION_EX_CHANNEL_SWITCH_FRAME,
 				aucInfoElem[0]);
-	prRxFrame =
+	prEcsaActionFrame =
 		(struct ACTION_EX_CHANNEL_SWITCH_FRAME *)prSwRfb->pvHeader;
-	pucIE = prRxFrame->aucInfoElem;
+	pucIE = prEcsaActionFrame->aucInfoElem;
+
+	DBGLOG(RLM, INFO,
+		"[ECSA action] mode[%d], op_class[%d], channel[%d], count[%d]\n",
+		prEcsaActionFrame->ucChannelSwitchMode,
+		prEcsaActionFrame->ucNewOperatingClass,
+		prEcsaActionFrame->ucNewChannelNum,
+		prEcsaActionFrame->ucChannelSwitchCount);
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (IS_6G_OP_CLASS(prEcsaActionFrame->ucNewOperatingClass))
+		prCSAParams->eCsaBand = BAND_6G;
+	else
+#endif
+	if (prEcsaActionFrame->ucNewChannelNum > 14)
+		prCSAParams->eCsaBand = BAND_5G;
+	else
+		prCSAParams->eCsaBand = BAND_2G4;
 
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset)
 	{
 		switch (IE_ID(pucIE)) {
-		case ELEM_ID_EX_CH_SW_ANNOUNCEMENT:
-			prCSAParams = &prBssInfo->CSAParams;
-
+		case ELEM_ID_WIDE_BAND_CHANNEL_SWITCH:
 			if (IE_LEN(pucIE) !=
-				(sizeof(struct IE_EX_CHANNEL_SWITCH) - 2)) {
+				(sizeof(struct IE_WIDE_BAND_CHANNEL) - 2)) {
 				break;
 			}
 
-			prExCSAIE = (struct IE_EX_CHANNEL_SWITCH *)pucIE;
-
-			if (prExCSAIE->ucChannelSwitchMode == 1) {
-#if (CFG_SUPPORT_WIFI_6G == 1)
-				if (prExCSAIE->ucNewOperatingClass >= 131 &&
-					prExCSAIE->ucNewOperatingClass <= 135)
-					prCSAParams->eCsaBand = BAND_6G;
-				else
-#endif
-				if (prExCSAIE->ucNewChannelNum <= 14)
-					prCSAParams->eCsaBand = BAND_2G4;
-				else
-					prCSAParams->eCsaBand = BAND_5G;
-			} else {
-				DBGLOG(RLM, INFO,
-					"[CSA action] ucChannelSwitchMode=0\n");
-			}
+			prWideBandIe = (struct IE_WIDE_BAND_CHANNEL *)pucIE;
 
 			DBGLOG(RLM, INFO,
-				"[CSA action] Op class[%d], Band[%d], CH[%d]\n",
-					prExCSAIE->ucNewOperatingClass,
-					prCSAParams->eCsaBand,
-					prExCSAIE->ucNewChannelNum);
+				"[Wide BW] bw[%d], s1[%d], s2[%d]\n",
+				prWideBandIe->ucNewChannelWidth,
+				prWideBandIe->ucChannelS1,
+				prWideBandIe->ucChannelS2);
 			break;
 
 		default:
 			break;
-		} /*end of switch IE_ID */
-	}	 /*end of IE_FOR_EACH */
+		}
+	}
 }
 #endif
 

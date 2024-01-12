@@ -340,6 +340,11 @@ u_int8_t rlmParseCheckRxsmmOuiIE(struct ADAPTER *prAdapter,
 		const uint8_t *pucBuf, u_int8_t *pfgRxsmmEnable);
 #endif
 #if CFG_ENABLE_WIFI_DIRECT
+uint32_t rlmCalculateCsaIELen(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	struct STA_RECORD *prStaRec);
+
 void rlmGenerateCsaIE(struct ADAPTER *prAdapter,
 		      struct MSDU_INFO *prMsduInfo);
 #endif
@@ -451,13 +456,10 @@ rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
 
 void
 rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
-			uint8_t ucBssIndex);
+	struct BSS_INFO *prBssInfo);
 
 uint16_t
 rlmOpClassToBandwidth(uint8_t ucOpClass);
-
-void rlmSendExChannelSwitchFrame(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex);
 
 uint32_t
 rlmNotifyVhtOpModeTxDone(struct ADAPTER *prAdapter,

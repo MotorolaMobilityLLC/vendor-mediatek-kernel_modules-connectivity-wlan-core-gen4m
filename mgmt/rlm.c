@@ -882,6 +882,36 @@ u_int8_t rlmParseCheckRxsmmOuiIE(struct ADAPTER *prAdapter,
 #endif
 
 #if CFG_ENABLE_WIFI_DIRECT
+uint32_t rlmCalculateCsaIELen(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	struct STA_RECORD *prStaRec)
+{
+	uint32_t u4Length;
+
+	u4Length = ELEM_HDR_LEN + sizeof(struct IE_CHANNEL_SWITCH);
+
+	switch (prAdapter->rWifiVar.ucNewChannelWidth) {
+	case VHT_OP_CHANNEL_WIDTH_20_40:
+		if (prAdapter->rWifiVar.ucSecondaryOffset == CHNL_EXT_SCN ||
+		    prAdapter->rWifiVar.ucSecondaryOffset == CHNL_EXT_RES)
+			break;
+		u4Length += sizeof(struct IE_SECONDARY_OFFSET);
+		break;
+	case VHT_OP_CHANNEL_WIDTH_80:
+	case VHT_OP_CHANNEL_WIDTH_160:
+	case VHT_OP_CHANNEL_WIDTH_80P80:
+		u4Length += sizeof(struct IE_CHANNEL_SWITCH_WRAPPER);
+		u4Length += sizeof(struct IE_WIDE_BAND_CHANNEL);
+		break;
+	default:
+		break;
+	}
+
+	u4Length += sizeof(struct IE_EX_CHANNEL_SWITCH);
+
+	return u4Length;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -899,28 +929,33 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
 
-	if (prAdapter->rWifiVar.fgCsaInProgress) {
-		if (prMsduInfo->ucBssIndex !=
-			p2pFuncGetCsaBssIndex())
-			return;
+	if (!prAdapter->rWifiVar.fgCsaInProgress)
+		return;
 
-		pucBuffer =
-			(uint8_t *)((uintptr_t)prMsduInfo->prPacket +
-				    (uintptr_t)prMsduInfo->u2FrameLength);
+	if (prMsduInfo->ucBssIndex != p2pFuncGetCsaBssIndex())
+		return;
 
-		/* Fill Channel Switch Announcement IE */
-		CSA_IE(pucBuffer)->ucId = ELEM_ID_CH_SW_ANNOUNCEMENT;
-		CSA_IE(pucBuffer)->ucLength = 3;
-		CSA_IE(pucBuffer)->ucChannelSwitchMode =
-			prAdapter->rWifiVar.ucChannelSwitchMode;
-		CSA_IE(pucBuffer)->ucNewChannelNum =
-			prAdapter->rWifiVar.ucNewChannelNumber;
-		CSA_IE(pucBuffer)->ucChannelSwitchCount =
-			prAdapter->rWifiVar.ucChannelSwitchCount;
+	pucBuffer =
+		(uint8_t *)((uintptr_t)prMsduInfo->prPacket +
+			    (uintptr_t)prMsduInfo->u2FrameLength);
 
-		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
+	/* Fill Channel Switch Announcement IE */
+	CSA_IE(pucBuffer)->ucId = ELEM_ID_CH_SW_ANNOUNCEMENT;
+	CSA_IE(pucBuffer)->ucLength = 3;
+	CSA_IE(pucBuffer)->ucChannelSwitchMode =
+		prAdapter->rWifiVar.ucChannelSwitchMode;
+	CSA_IE(pucBuffer)->ucNewChannelNum =
+		prAdapter->rWifiVar.ucNewChannelNumber;
+	CSA_IE(pucBuffer)->ucChannelSwitchCount =
+		prAdapter->rWifiVar.ucChannelSwitchCount;
 
-		/* Fill Secondary channel offset IE */
+	prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
+
+	switch (prAdapter->rWifiVar.ucNewChannelWidth) {
+	case VHT_OP_CHANNEL_WIDTH_20_40:
+		if (prAdapter->rWifiVar.ucSecondaryOffset == CHNL_EXT_SCN ||
+		    prAdapter->rWifiVar.ucSecondaryOffset == CHNL_EXT_RES)
+			break;
 		pucBuffer += IE_SIZE(pucBuffer);
 
 		SEC_OFFSET_IE(pucBuffer)->ucId = ELEM_ID_SCO;
@@ -929,8 +964,17 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 			prAdapter->rWifiVar.ucSecondaryOffset;
 
 		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
+		break;
+	case VHT_OP_CHANNEL_WIDTH_80:
+	case VHT_OP_CHANNEL_WIDTH_160:
+	case VHT_OP_CHANNEL_WIDTH_80P80:
+		pucBuffer += IE_SIZE(pucBuffer);
 
-		/* Fill Wide Bandwidth Channel Switch IE */
+		CSA_WRAPPER_IE(pucBuffer)->ucId = ELEM_ID_CH_SW_WRAPPER;
+		CSA_WRAPPER_IE(pucBuffer)->ucLength = 5;
+
+		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
+
 		pucBuffer += IE_SIZE(pucBuffer);
 
 		WIDE_BW_IE(pucBuffer)->ucId = ELEM_ID_WIDE_BAND_CHANNEL_SWITCH;
@@ -943,23 +987,26 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 			prAdapter->rWifiVar.ucNewChannelS2;
 
 		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
-
-		/* Fill Extended Channel Switch Announcement IE */
-		pucBuffer += IE_SIZE(pucBuffer);
-
-		EX_CSA_IE(pucBuffer)->ucId = ELEM_ID_EX_CH_SW_ANNOUNCEMENT;
-		EX_CSA_IE(pucBuffer)->ucLength = 4;
-		EX_CSA_IE(pucBuffer)->ucChannelSwitchMode =
-			prAdapter->rWifiVar.ucChannelSwitchMode;
-		EX_CSA_IE(pucBuffer)->ucNewOperatingClass =
-			prAdapter->rWifiVar.ucNewOperatingClass;
-		EX_CSA_IE(pucBuffer)->ucNewChannelNum =
-			prAdapter->rWifiVar.ucNewChannelNumber;
-		EX_CSA_IE(pucBuffer)->ucChannelSwitchCount =
-			prAdapter->rWifiVar.ucChannelSwitchCount;
-
-		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
+		break;
+	default:
+		break;
 	}
+
+	/* Fill Extended Channel Switch Announcement IE */
+	pucBuffer += IE_SIZE(pucBuffer);
+
+	EX_CSA_IE(pucBuffer)->ucId = ELEM_ID_EX_CH_SW_ANNOUNCEMENT;
+	EX_CSA_IE(pucBuffer)->ucLength = 4;
+	EX_CSA_IE(pucBuffer)->ucChannelSwitchMode =
+		prAdapter->rWifiVar.ucChannelSwitchMode;
+	EX_CSA_IE(pucBuffer)->ucNewOperatingClass =
+		prAdapter->rWifiVar.ucNewOperatingClass;
+	EX_CSA_IE(pucBuffer)->ucNewChannelNum =
+		prAdapter->rWifiVar.ucNewChannelNumber;
+	EX_CSA_IE(pucBuffer)->ucChannelSwitchCount =
+		prAdapter->rWifiVar.ucChannelSwitchCount;
+
+	prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
 }
 #endif
 /*----------------------------------------------------------------------------*/
@@ -3129,26 +3176,19 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 			prExCSAIE = (struct IE_EX_CHANNEL_SWITCH *)pucIE;
 
-			/* Mode 1 implies that addressed AP is advised to
-			 * transmit no further frames on current channel
-			 * until the scheduled channel switch.
-			 */
-			if (prExCSAIE->ucChannelSwitchMode != 1)
-				continue;
-
 #if (CFG_SUPPORT_WIFI_6G == 1)
-			if (prExCSAIE->ucNewOperatingClass >= 131 &&
-				prExCSAIE->ucNewOperatingClass <= 135)
+			if (IS_6G_OP_CLASS(prExCSAIE->ucNewOperatingClass))
 				prCSAParams->eCsaBand = BAND_6G;
 			else
 #endif
-			if (prExCSAIE->ucNewChannelNum <= 14)
-				prCSAParams->eCsaBand = BAND_2G4;
-			else
+			if (prExCSAIE->ucNewChannelNum > 14)
 				prCSAParams->eCsaBand = BAND_5G;
+			else
+				prCSAParams->eCsaBand = BAND_2G4;
 
 			DBGLOG(RLM, INFO,
-				"[CSA] Op class[%d], Band[%d], CH[%d]\n",
+				"[CSA] Mode[%d], Op class[%d], Band[%d], CH[%d]\n",
+				prExCSAIE->ucChannelSwitchMode,
 				prExCSAIE->ucNewOperatingClass,
 				prCSAParams->eCsaBand,
 				prExCSAIE->ucNewChannelNum);
@@ -8433,15 +8473,6 @@ void rlmSetSrControl(struct ADAPTER *prAdapter, bool fgIsEnableSr)
 }
 #endif
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Send channel switch frame
- *
- * \param[in]
- *
- * \return none
- */
-/*----------------------------------------------------------------------------*/
 uint32_t rlmSendChannelSwitchTxDone(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
 	enum ENUM_TX_RESULT_CODE rTxDoneStatus)
@@ -8450,32 +8481,34 @@ uint32_t rlmSendChannelSwitchTxDone(struct ADAPTER *prAdapter,
 		ASSERT_BREAK((prAdapter != NULL) && (prMsduInfo != NULL));
 
 		DBGLOG(P2P, INFO,
-			"CSA TX Done Status: %d, seqNo: %d\n",
+			"CSA TX Done Status: %d, seqNo: %d, sta: %d\n",
 			rTxDoneStatus,
-			prMsduInfo->ucTxSeqNum);
+			prMsduInfo->ucTxSeqNum,
+			prMsduInfo->ucStaRecIndex);
 
 	} while (FALSE);
 
 	return WLAN_STATUS_SUCCESS;
 }
 
-void rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex)
+static void __rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct STA_RECORD *prStarec)
 {
 	struct MSDU_INFO *prMsduInfo;
-	struct ACTION_CHANNEL_SWITCH_FRAME *prTxFrame;
-	struct BSS_INFO *prBssInfo;
+	struct ACTION_CHANNEL_SWITCH_FRAME *prFrame;
 	uint16_t u2EstimatedFrameLen;
-	PFN_TX_DONE_HANDLER pfTxDoneHandler = (PFN_TX_DONE_HANDLER)NULL;
-	uint8_t aucBMC[] = BC_MAC_ADDR;
+	uint8_t *start, *pos;
 
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	if (!prBssInfo)
+	if (!prBssInfo || !prStarec)
 		return;
 
 	/* Calculate MSDU buffer length */
 	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD +
-			      sizeof(struct ACTION_CHANNEL_SWITCH_FRAME);
+			      sizeof(struct ACTION_CHANNEL_SWITCH_FRAME) +
+			      sizeof(struct IE_CHANNEL_SWITCH) +
+			      sizeof(struct IE_SECONDARY_OFFSET) +
+			      sizeof(struct IE_WIDE_BAND_CHANNEL);
 
 	/* Alloc MSDU_INFO */
 	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(prAdapter,
@@ -8484,54 +8517,69 @@ void rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
 		return;
 
 	kalMemZero(prMsduInfo->prPacket, u2EstimatedFrameLen);
+	start = pos = (uint8_t *)prMsduInfo->prPacket;
+	prFrame = (struct ACTION_CHANNEL_SWITCH_FRAME *)pos;
 
-	prTxFrame = prMsduInfo->prPacket;
+	prFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+	COPY_MAC_ADDR(prFrame->aucDestAddr, prStarec->aucMacAddr);
+	COPY_MAC_ADDR(prFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prFrame->aucBSSID, prBssInfo->aucBSSID);
+	prFrame->ucCategory = CATEGORY_SPEC_MGT;
+	prFrame->ucAction = ACTION_CHNL_SWITCH;
+	pos += sizeof(*prFrame);
 
-	/* Fill frame ctrl */
-	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+	CSA_IE(pos)->ucId = ELEM_ID_CH_SW_ANNOUNCEMENT;
+	CSA_IE(pos)->ucLength = 3;
+	CSA_IE(pos)->ucChannelSwitchMode =
+		prAdapter->rWifiVar.ucChannelSwitchMode;
+	CSA_IE(pos)->ucNewChannelNum =
+		prAdapter->rWifiVar.ucNewChannelNumber;
+	CSA_IE(pos)->ucChannelSwitchCount =
+		prAdapter->rWifiVar.ucChannelSwitchCount;
+	pos += sizeof(struct IE_CHANNEL_SWITCH);
 
-	COPY_MAC_ADDR(prTxFrame->aucDestAddr, aucBMC);
-	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
-	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
+	switch (prAdapter->rWifiVar.ucNewChannelWidth) {
+	case VHT_OP_CHANNEL_WIDTH_20_40:
+		if (prAdapter->rWifiVar.ucSecondaryOffset == CHNL_EXT_SCN ||
+		    prAdapter->rWifiVar.ucSecondaryOffset == CHNL_EXT_RES)
+			break;
 
-	/* 3 Compose the frame body's frame */
-	prTxFrame->ucCategory = CATEGORY_SPEC_MGT;
-	prTxFrame->ucAction = ACTION_CHNL_SWITCH;
+		SEC_OFFSET_IE(pos)->ucId = ELEM_ID_SCO;
+		SEC_OFFSET_IE(pos)->ucLength = 1;
+		SEC_OFFSET_IE(pos)->ucSecondaryOffset =
+			prAdapter->rWifiVar.ucSecondaryOffset;
 
-	/* 3.1 - Channel Switch Announcement element */
-	prTxFrame->aucInfoElem[0] = ELEM_ID_CH_SW_ANNOUNCEMENT;
-	prTxFrame->aucInfoElem[1] = 3;
-	prTxFrame->aucInfoElem[2]
-		= prAdapter->rWifiVar.ucChannelSwitchMode;
-	prTxFrame->aucInfoElem[3]
-		= prAdapter->rWifiVar.ucNewChannelNumber;
-	prTxFrame->aucInfoElem[4]
-		= prAdapter->rWifiVar.ucChannelSwitchCount;
+		pos += sizeof(struct IE_SECONDARY_OFFSET);
+		break;
+	case VHT_OP_CHANNEL_WIDTH_80:
+	case VHT_OP_CHANNEL_WIDTH_160:
+	case VHT_OP_CHANNEL_WIDTH_80P80:
+		WIDE_BW_IE(pos)->ucId = ELEM_ID_WIDE_BAND_CHANNEL_SWITCH;
+		WIDE_BW_IE(pos)->ucLength = 3;
+		WIDE_BW_IE(pos)->ucNewChannelWidth =
+			prAdapter->rWifiVar.ucNewChannelWidth;
+		WIDE_BW_IE(pos)->ucChannelS1 =
+			prAdapter->rWifiVar.ucNewChannelS1;
+		WIDE_BW_IE(pos)->ucChannelS2 =
+			prAdapter->rWifiVar.ucNewChannelS2;
 
-	/* 3.2 - Secondary Channel Offset element */
-	prTxFrame->aucInfoElem[5] = ELEM_ID_SCO;
-	prTxFrame->aucInfoElem[6] = 1;
-	prTxFrame->aucInfoElem[7]
-		= prAdapter->rWifiVar.ucSecondaryOffset;
-
-	/* 3.3 - Wide Bandwidth Channel Switch element */
-	prTxFrame->aucInfoElem[8] = ELEM_ID_WIDE_BAND_CHANNEL_SWITCH;
-	prTxFrame->aucInfoElem[9] = 3;
-	prTxFrame->aucInfoElem[10]
-		= prAdapter->rWifiVar.ucNewChannelWidth;
-	prTxFrame->aucInfoElem[11]
-		= prAdapter->rWifiVar.ucNewChannelS1;
-	prTxFrame->aucInfoElem[12]
-		= prAdapter->rWifiVar.ucNewChannelS2;
-
-	pfTxDoneHandler = rlmSendChannelSwitchTxDone;
+		pos += sizeof(struct IE_WIDE_BAND_CHANNEL);
+		break;
+	default:
+		break;
+	}
 
 	/* 4 Update information of MSDU_INFO_T */
 	TX_SET_MMPDU(prAdapter, prMsduInfo, prBssInfo->ucBssIndex,
-		     STA_REC_INDEX_BMCAST, WLAN_MAC_MGMT_HEADER_LEN,
-		     sizeof(struct ACTION_CHANNEL_SWITCH_FRAME),
-		     pfTxDoneHandler,
+		     prStarec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
+		     (uint16_t)(pos - start),
+		     rlmSendChannelSwitchTxDone,
 		     MSDU_RATE_MODE_AUTO);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	nicTxConfigPktControlFlag(prMsduInfo,
+			MSDU_CONTROL_FLAG_FORCE_LINK, TRUE);
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 	/* 4 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
@@ -8545,32 +8593,32 @@ uint32_t rlmSendExChannelSwitchTxDone(struct ADAPTER *prAdapter,
 		ASSERT_BREAK((prAdapter != NULL) && (prMsduInfo != NULL));
 
 		DBGLOG(P2P, INFO,
-			"Extended CSA TX Done Status: %d, seqNo: %d\n",
+			"Extended CSA TX Done Status: %d, seqNo: %d, sta: %d\n",
 			rTxDoneStatus,
-			prMsduInfo->ucTxSeqNum);
+			prMsduInfo->ucTxSeqNum,
+			prMsduInfo->ucStaRecIndex);
 
 	} while (FALSE);
 
 	return WLAN_STATUS_SUCCESS;
 }
 
-void rlmSendExChannelSwitchFrame(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex)
+static void __rlmSendExChannelSwitchFrame(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct STA_RECORD *prStarec)
 {
 	struct MSDU_INFO *prMsduInfo;
-	struct ACTION_EX_CHANNEL_SWITCH_FRAME *prTxFrame;
-	struct BSS_INFO *prBssInfo;
+	struct ACTION_EX_CHANNEL_SWITCH_FRAME *prFrame;
 	uint16_t u2EstimatedFrameLen;
-	PFN_TX_DONE_HANDLER pfTxDoneHandler = (PFN_TX_DONE_HANDLER)NULL;
-	uint8_t aucBMC[] = BC_MAC_ADDR;
+	uint8_t *start, *pos;
 
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	if (!prBssInfo)
+	if (!prBssInfo || !prStarec)
 		return;
 
 	/* Calculate MSDU buffer length */
 	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD +
-			      sizeof(struct ACTION_EX_CHANNEL_SWITCH_FRAME);
+			      sizeof(struct ACTION_EX_CHANNEL_SWITCH_FRAME) +
+			      sizeof(struct IE_WIDE_BAND_CHANNEL);
 
 	/* Alloc MSDU_INFO */
 	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(prAdapter,
@@ -8579,40 +8627,55 @@ void rlmSendExChannelSwitchFrame(struct ADAPTER *prAdapter,
 		return;
 
 	kalMemZero(prMsduInfo->prPacket, u2EstimatedFrameLen);
+	start = pos = (uint8_t *)prMsduInfo->prPacket;
+	prFrame = (struct ACTION_EX_CHANNEL_SWITCH_FRAME *)pos;
 
-	prTxFrame = prMsduInfo->prPacket;
+	prFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+	COPY_MAC_ADDR(prFrame->aucDestAddr, prStarec->aucMacAddr);
+	COPY_MAC_ADDR(prFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prFrame->aucBSSID, prBssInfo->aucBSSID);
+	prFrame->ucCategory = CATEGORY_PUBLIC_ACTION;
+	prFrame->ucAction = ACTION_PUBLIC_EX_CH_SW_ANNOUNCEMENT;
+	prFrame->ucChannelSwitchMode =
+		prAdapter->rWifiVar.ucChannelSwitchMode;
+	prFrame->ucNewOperatingClass =
+		prAdapter->rWifiVar.ucNewOperatingClass;
+	prFrame->ucNewChannelNum =
+		prAdapter->rWifiVar.ucNewChannelNumber;
+	prFrame->ucChannelSwitchCount =
+		prAdapter->rWifiVar.ucChannelSwitchCount;
+	pos += sizeof(struct ACTION_EX_CHANNEL_SWITCH_FRAME);
 
-	/* Fill frame ctrl */
-	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+	switch (prAdapter->rWifiVar.ucNewChannelWidth) {
+	case VHT_OP_CHANNEL_WIDTH_80:
+	case VHT_OP_CHANNEL_WIDTH_160:
+	case VHT_OP_CHANNEL_WIDTH_80P80:
+		WIDE_BW_IE(pos)->ucId = ELEM_ID_WIDE_BAND_CHANNEL_SWITCH;
+		WIDE_BW_IE(pos)->ucLength = 3;
+		WIDE_BW_IE(pos)->ucNewChannelWidth =
+			prAdapter->rWifiVar.ucNewChannelWidth;
+		WIDE_BW_IE(pos)->ucChannelS1 =
+			prAdapter->rWifiVar.ucNewChannelS1;
+		WIDE_BW_IE(pos)->ucChannelS2 =
+			prAdapter->rWifiVar.ucNewChannelS2;
 
-	COPY_MAC_ADDR(prTxFrame->aucDestAddr, aucBMC);
-	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
-	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
-
-	/* 3 Compose the frame body's frame */
-	prTxFrame->ucCategory = CATEGORY_PUBLIC_ACTION;
-	prTxFrame->ucAction = ACTION_PUBLIC_EX_CH_SW_ANNOUNCEMENT;
-
-	/* Extended Channel Switch Announcement element */
-	prTxFrame->aucInfoElem[0] = ELEM_ID_EX_CH_SW_ANNOUNCEMENT;
-	prTxFrame->aucInfoElem[1] = 4;
-	prTxFrame->aucInfoElem[2]
-		= prAdapter->rWifiVar.ucChannelSwitchMode;
-	prTxFrame->aucInfoElem[3]
-		= prAdapter->rWifiVar.ucNewOperatingClass;
-	prTxFrame->aucInfoElem[4]
-		= prAdapter->rWifiVar.ucNewChannelNumber;
-	prTxFrame->aucInfoElem[5]
-		= prAdapter->rWifiVar.ucChannelSwitchCount;
-
-	pfTxDoneHandler = rlmSendExChannelSwitchTxDone;
+		pos += sizeof(struct IE_WIDE_BAND_CHANNEL);
+		break;
+	default:
+		break;
+	}
 
 	/* 4 Update information of MSDU_INFO_T */
 	TX_SET_MMPDU(prAdapter, prMsduInfo, prBssInfo->ucBssIndex,
-		     STA_REC_INDEX_BMCAST, WLAN_MAC_MGMT_HEADER_LEN,
-		     sizeof(struct ACTION_EX_CHANNEL_SWITCH_FRAME),
-		     pfTxDoneHandler,
+		     prStarec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
+		     (uint16_t)(pos - start),
+		     rlmSendExChannelSwitchTxDone,
 		     MSDU_RATE_MODE_AUTO);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	nicTxConfigPktControlFlag(prMsduInfo,
+			MSDU_CONTROL_FLAG_FORCE_LINK, TRUE);
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 	/* 4 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
@@ -10187,3 +10250,36 @@ uint32_t rlmTxPwrEnvMaxPwrUpdate(
 	return u4Status;
 }
 #endif /* CFG_SUPPORT_TX_PWR_ENV */
+
+void
+rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo)
+{
+	struct LINK *prClientList;
+	struct STA_RECORD *prCurrStaRec;
+
+	if (!prBssInfo || !IS_BSS_APGO(prBssInfo))
+		return;
+
+	prClientList = &prBssInfo->rStaRecOfClientList;
+
+	LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList, rLinkEntry,
+			    struct STA_RECORD) {
+		if (!prCurrStaRec)
+			break;
+
+		DBGLOG(P2P, INFO,
+			"bss[%d] " MACSTR ", sta[%d][%d] " MACSTR "\n",
+			prBssInfo->ucBssIndex,
+			MAC2STR(prBssInfo->aucOwnMacAddr),
+			prCurrStaRec->ucIndex,
+			prCurrStaRec->ucWlanIndex,
+			MAC2STR(prCurrStaRec->aucMacAddr));
+
+		__rlmSendChannelSwitchFrame(prAdapter, prBssInfo,
+					    prCurrStaRec);
+
+		__rlmSendExChannelSwitchFrame(prAdapter, prBssInfo,
+					    prCurrStaRec);
+	}
+}
