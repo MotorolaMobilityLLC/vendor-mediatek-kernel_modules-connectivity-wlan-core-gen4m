@@ -974,7 +974,7 @@ kalUpdateRSSI(IN P_GLUE_INFO_T prGlueInfo,
 /*----------------------------------------------------------------------------*/
 /* I/O Buffer Pre-allocation                                                  */
 /*----------------------------------------------------------------------------*/
-BOOLEAN kalInitIOBuffer(VOID);
+BOOLEAN kalInitIOBuffer(BOOLEAN is_pre_alloc);
 
 VOID kalUninitIOBuffer(VOID);
 
