@@ -198,9 +198,11 @@ struct GL_P2P_INFO {
 	/* 0 for beacon, 1 for probe req, 2 for probe response */
 	uint8_t aucWFDIE[400];
 	uint16_t u2WFDIELen;
-	/* Save the other IE for prove resp */
-	/* UINT_8                      aucVenderIE[1024]; */
-/* UINT_16                     u2VenderIELen; */
+	/* Save the other IE for probe resp */
+#if CFG_SUPPORT_WFD_VENDOR_IE
+	uint8_t aucVenderIE[1024];
+	uint16_t u2VenderIELen;
+#endif
 #endif
 
 	/*UINT_8 ucOperatingChnl;*//* TH3 multiple P2P */
