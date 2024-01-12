@@ -225,6 +225,7 @@ struct CSI_INFO_T {
 	uint8_t ucStaCount;
 	struct LINK rStaList;
 	enum ENUM_CSI_OUTPUT_METHOD eCSIOutput;
+	struct CSI_DATA_T *prCSIData;
 };
 
 struct CSI_STA {
@@ -281,8 +282,11 @@ struct CSI_TLV_ELEMENT {
  */
 struct CSI_INFO_T *glCsiGetCSIInfo(void);
 uint8_t *glCsiGetCSIBuf(void);
+struct CSI_DATA_T *glCsiGetCSIData(void);
 void glCsiSupportInit(struct GLUE_INFO *prGlueInfo);
 void glCsiSupportDeinit(struct GLUE_INFO *prGlueInfo);
+void glCsiSetEnable(struct GLUE_INFO *prGlueInfo,
+	struct CSI_INFO_T *prCSIInfo, u_int8_t fgEnable);
 int32_t glCsiAddSta(struct GLUE_INFO *prGlueInfo,
 	struct CMD_CSI_CONTROL_T *prCSICtrl);
 int32_t glCsiDelSta(struct GLUE_INFO *prGlueInfo,

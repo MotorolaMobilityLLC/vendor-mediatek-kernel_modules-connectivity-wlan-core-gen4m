@@ -23079,12 +23079,9 @@ static int priv_driver_set_csi(struct net_device *prNetDev,
 
 	if (prCSICtrl->ucMode == CSI_CONTROL_MODE_STOP ||
 		prCSICtrl->ucMode == CSI_CONTROL_MODE_START) {
-		prCSIInfo->bIncomplete = FALSE;
-		prCSIInfo->u4CopiedDataSize = 0;
-		prCSIInfo->u4RemainingDataSize = 0;
-		prCSIInfo->u4CSIBufferHead = 0;
-		prCSIInfo->u4CSIBufferTail = 0;
-		prCSIInfo->u4CSIBufferUsed = 0;
+		glCsiSetEnable(prGlueInfo,
+			       prCSIInfo,
+			       prCSICtrl->ucMode == CSI_CONTROL_MODE_START);
 
 		if (prCSICtrl->ucMode == CSI_CONTROL_MODE_STOP)
 			glCsiFreeStaList(prGlueInfo);
