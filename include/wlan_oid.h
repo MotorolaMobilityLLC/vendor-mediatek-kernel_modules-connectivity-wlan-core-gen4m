@@ -1061,6 +1061,154 @@ union PFMU_PROFILE_TAG1 {
 		uint32_t ucSNR_STS7          : 8;
 		/* [191:184] : SNR_STS7 */
 	} rField;
+
+	struct {
+		uint32_t ucProfileID         : 10;
+		/* [9:0]     : 0 ~ 1023 */
+		uint32_t ucTxBf              : 1;
+		/* [10]      : 0: iBF, 1: eBF */
+		uint32_t ucDBW               : 3;
+		/* [13:11]   : 0/1/2/3/4: DW20/40/80/160/320 */
+		uint32_t ucLM                : 3;
+		/* [16:14]   : 0/1/2/3/4: Legacy/HT/VHT/HE/EHT */
+		uint32_t ucSU_MU             : 1;
+		/* [17]      : 0:SU, 1: MU */
+		uint32_t ucNrow              : 3;
+		/* [20:18]   : Nrow 3bits for 8x8 */
+		uint32_t ucNcol              : 3;
+		/* [23:21]   : Ncol 3bits for 8x8 */
+		uint32_t ucCodeBook          : 2;
+		/* [25:24]   : Code book */
+		uint32_t ucNgroup            : 2;
+		/* [27:26]   : Ngroup */
+		uint32_t ucInvalidProf       : 1;
+		/* [28]      : 0:default, 1:
+		 *                    This profile number is invalid by SW
+		 */
+		uint32_t ucRserved0          : 3;
+		/* [31:29]   : Reserved */
+		uint32_t ucMemAddr1ColIdx    : 7;
+		/* [38:32]   : column index : 0 ~ 5 */
+		uint32_t ucMemAddr1RowIdx    : 9;
+		/* [47:39]   : row index : 0 ~ 63 */
+		uint32_t ucMemAddr2ColIdx    : 7;
+		/* [54:48]   : column index : 0 ~ 5 */
+		uint32_t ucMemAddr2RowIdx    : 9;
+		/* [63:55]   : row index : 0 ~ 63 */
+		uint32_t ucMemAddr3ColIdx    : 7;
+		/* [70:64]   : column index : 0 ~ 5 */
+		uint32_t ucMemAddr3RowIdx    : 9;
+		/* [79:71]   : row index : 0 ~ 63 */
+		uint32_t ucMemAddr4ColIdx    : 7;
+		/* [86:80]   : column index : 0 ~ 5 */
+		uint32_t ucMemAddr4RowIdx    : 9;
+		/* [95:87]   : row index : 0 ~ 63 */
+		uint32_t ucPartialBWInfo     : 9;
+		/* [104:96]  : Bitmap,
+		 *               Follow NDP Partial BW Info (V matrix RU index)
+		 */
+		uint32_t ucReserved1         : 7;
+		/* [111:105] : Reserved */
+		uint32_t ucMobCalEn          : 1;
+		/* [112]     : Mobility detection calculation enable */
+		uint32_t ucReserved3         : 3;
+		/* [115:113] : Reserved */
+		uint32_t ucMobRuAlloc        : 9;
+		/* [124:116] : EHT profile use the full 9-bit */
+		uint32_t ucReserved4         : 3;
+		/* [127:125] : Reserved */
+		uint32_t ucSNR_STS0          : 8;
+		/* [135:128] : SNR_STS0 */
+		uint32_t ucSNR_STS1          : 8;
+		/* [143:136] : SNR_STS1 */
+		uint32_t ucSNR_STS2          : 8;
+		/* [151:144] : SNR_STS2 */
+		uint32_t ucSNR_STS3          : 8;
+		/* [159:152] : SNR_STS3 */
+		uint32_t ucSNR_STS4          : 8;
+		/* [167:160] : SNR_STS4 */
+		uint32_t ucSNR_STS5          : 8;
+		/* [175:168] : SNR_STS5 */
+		uint32_t ucSNR_STS6          : 8;
+		/* [183:176] : SNR_STS6 */
+		uint32_t ucSNR_STS7          : 8;
+		/* [191:184] : SNR_STS7 */
+	} rFieldv2; /* For CONNAC 3.0 EHT */
+
+	struct {
+		uint32_t ucProfileID         : 10;
+		/* [9:0]     : 0 ~ 1023 */
+		uint32_t ucTxBf              : 1;
+		/* [10]      : 0: iBF, 1: eBF */
+		uint32_t ucDBW               : 3;
+		/* [13:11]   : 0/1/2/3/4: DW20/40/80/160/320 */
+		uint32_t ucLM                : 3;
+		/* [16:14]   : 0/1/2/3/4: Legacy/HT/VHT/HE/EHT */
+		uint32_t ucSU_MU             : 1;
+		/* [17]      : 0:SU, 1: MU */
+		uint32_t ucNrow              : 3;
+		/* [20:18]   : Nrow 3bits for 8x8 */
+		uint32_t ucNcol              : 3;
+		/* [23:21]   : Ncol 3bits for 8x8 */
+		uint32_t ucCodeBook          : 2;
+		/* [25:24]   : Code book */
+		uint32_t ucNgroup            : 2;
+		/* [27:26]   : Ngroup */
+		uint32_t ucInvalidProf       : 1;
+		/* [28]      : 0:default
+		 *             1:This profile number is invalid by SW
+		 */
+		uint32_t ucRserved0          : 3;
+		/* [31:29]   : Reserved */
+		uint32_t ucMemAddr1ColIdx    : 7;
+		/* [38:32]   : column index : 0 ~ 5 */
+		uint32_t ucMemAddr1RowIdx    : 9;
+		/* [47:39]   : row index : 0 ~ 63 */
+		uint32_t ucMemAddr2ColIdx    : 7;
+		/* [54:48]   : column index : 0 ~ 5 */
+		uint32_t ucMemAddr2RowIdx    : 9;
+		/* [63:55]   : row index : 0 ~ 63 */
+		uint32_t ucMemAddr3ColIdx    : 7;
+		/* [70:64]   : column index : 0 ~ 5 */
+		uint32_t ucMemAddr3RowIdx    : 9;
+		/* [79:71]   : row index : 0 ~ 63 */
+		uint32_t ucMemAddr4ColIdx    : 7;
+		/* [86:80]   : column index : 0 ~ 5 */
+		uint32_t ucMemAddr4RowIdx    : 9;
+		/* [95:87]   : row index : 0 ~ 63 */
+		uint32_t ucRuStartIdx        : 7;
+		/* [102:96]  : 0~73, only for HE profile (V matrix RU index) */
+		uint32_t ucReserved1         : 1;
+		/* [103]     : Reserved */
+		uint32_t ucRuEndIdx          : 7;
+		/* [110:104] : 0~73, only for HE profile (V matrix RU index) */
+		uint32_t ucReserved2         : 1;
+		/* [111]     : Reserved */
+		uint32_t ucMobCalEn          : 1;
+		/* [112]     : Mobility detection calculation enable */
+		uint32_t ucReserved3         : 3;
+		/* [115:113] : Reserved */
+		uint32_t ucMobRuAlloc        : 9;
+		/* [124:116] : EHT profile use the full 9-bit */
+		uint32_t ucReserved4         : 3;
+		/* [127:125] : Reserved */
+		uint32_t ucSNR_STS0          : 8;
+		/* [135:128] : SNR_STS0 */
+		uint32_t ucSNR_STS1          : 8;
+		/* [143:136] : SNR_STS1 */
+		uint32_t ucSNR_STS2          : 8;
+		/* [151:144] : SNR_STS2 */
+		uint32_t ucSNR_STS3          : 8;
+		/* [159:152] : SNR_STS3 */
+		uint32_t ucSNR_STS4          : 8;
+		/* [167:160] : SNR_STS4 */
+		uint32_t ucSNR_STS5          : 8;
+		/* [175:168] : SNR_STS5 */
+		uint32_t ucSNR_STS6          : 8;
+		/* [183:176] : SNR_STS6 */
+		uint32_t ucSNR_STS7          : 8;
+		/* [191:184] : SNR_STS7 */
+	} rFieldv3; /* For CONNAC 3.0 HE */
 	uint32_t au4RawData[7];
 };
 
@@ -1105,6 +1253,42 @@ union PFMU_PROFILE_TAG2 {
 		uint32_t ucReserved6      : 16;
 		/* [127:112] : Reserved */
 	} rField;
+
+	struct {
+		uint32_t u2SmartAnt	  : 24;
+		/* [23:0]    : Smart Ant config */
+		uint32_t ucSEIdx	  : 5;
+		/* [28:24]   : SE index */
+		uint32_t ucReserved0	  : 3;
+		/* [31:29]   : Reserved */
+		uint32_t ucReserved1	  : 16;
+		/* [47:32]   : Reserved */
+		uint32_t uciBfTimeOut	  : 8;
+		/* [55:48]   : iBF timeout limit */
+		uint32_t ucReserved2	  : 8;
+		/* [63:56]   : Reserved */
+		uint32_t uciBfDBW	  : 3;
+		/* [66:64]   : iBF desired DBW 0/1/2/3/4 : BW20/40/80/160/320 */
+		uint32_t uciBfNcol	  : 3;
+		/* [69:67]   : iBF desired Ncol = 1 ~ 8 */
+		uint32_t uciBfNrow	  : 3;
+		/* [72:70]   : iBF desired Nrow = 1 ~ 8 */
+		uint32_t uciBfRu	  : 9;
+		/* [81:73]   : Desired RX packet RU index */
+		uint32_t ucReserved3	  : 14;
+		/* [95:82]   : Reserved */
+		uint32_t ucMobDeltaT	  : 8;
+		/* [103:96]  : Mobility detection delta T value.
+		 *                            Resolution: 1ms. Max = 255ms.
+		 */
+		uint32_t ucMobLQResult	  : 7;
+		/* [110:104] : Mobility detection calculation result. U1.6 */
+		uint32_t ucReserved4	  : 1;
+		/* [111]     : Reserved */
+		uint32_t ucReserved5	  : 16;
+		/* [127:112] : Reserved */
+	} rFieldv2; /* For CONNAC 3.0 */
+
 	uint32_t au4RawData[7];
 };
 
