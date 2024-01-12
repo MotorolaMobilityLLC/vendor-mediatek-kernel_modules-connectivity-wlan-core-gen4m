@@ -1750,7 +1750,7 @@ uint32_t asicConnac3xQueryPmicInfo(struct ADAPTER *prAdapter)
 
 	rCmd.u4QueryBitmap = BIT(INIT_CMD_QUERY_TYPE_PMIC_INFO);
 
-	u4EventSize = RX_BUFFER_AGGRESIZE;
+	u4EventSize = CFG_RX_MAX_PKT_SIZE;
 	prEvent = kalMemAlloc(u4EventSize, VIR_MEM_TYPE);
 	if (!prEvent) {
 		DBGLOG(INIT, ERROR, "Allocate event packet FAILED.\n");
