@@ -204,6 +204,9 @@ uint8_t rlmMaxBwToVhtBw(uint8_t ucMaxBw)
 	case MAX_BW_80_80_MHZ:
 		ucVhtBw = VHT_OP_CHANNEL_WIDTH_80P80;
 		break;
+	case MAX_BW_320MHZ:
+		ucVhtBw = VHT_OP_CHANNEL_WIDTH_320;
+		break;
 	default:
 		break;
 	}
