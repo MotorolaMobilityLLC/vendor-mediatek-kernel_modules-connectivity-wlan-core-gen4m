@@ -9158,6 +9158,13 @@ wlanoidSet802dot11PowerSaveProfile(struct ADAPTER *
 	    (prPowerMode->ePowerMode >= Param_PowerModeMAX_PSP))
 		prPowerMode->ePowerMode = Param_PowerModeMAX_PSP;
 
+	if (prBssInfo->eNetworkType < 0 ||
+	    prBssInfo->eNetworkType >= NETWORK_TYPE_NUM) {
+		DBGLOG(INIT, WARN,
+			   "Invalid eNetworkType: %d\n",
+			   prBssInfo->eNetworkType);
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
@@ -9194,20 +9201,13 @@ wlanoidSet802dot11PowerSaveProfile(struct ADAPTER *
 	} else
 #endif
 	{
-		if (prBssInfo->eNetworkType < 0 ||
-		    prBssInfo->eNetworkType >= NETWORK_TYPE_NUM) {
-			DBGLOG(INIT, WARN,
-				   "Invalid eNetworkType: %d\n",
-				   prBssInfo->eNetworkType);
-			return WLAN_STATUS_NOT_ACCEPTED;
-		}
-
 		status = nicConfigPowerSaveProfile(prAdapter,
 			prPowerMode->ucBssIdx, prPowerMode->ePowerMode,
 			TRUE, PS_CALLER_COMMON);
 	}
 
-	if (prPowerMode->ePowerMode < Param_PowerModeMax) {
+	if (prPowerMode->ePowerMode < Param_PowerModeMax &&
+		prPowerMode->ePowerMode >= 0) {
 		DBGLOG(INIT, TRACE,
 		       "Set %s Network BSS(%u) PS mode to %s (%d)\n",
 		       apucNetworkType[prBssInfo->eNetworkType],
