@@ -196,6 +196,7 @@ struct CHIP_DBG_OPS {
 	void (*showPleInfo)(IN struct ADAPTER *prAdapter);
 	bool (*showCsrInfo)(IN struct ADAPTER *prAdapter);
 	void (*showDmaschInfo)(IN struct ADAPTER *prAdapter);
+	void (*showHifInfo)(IN struct ADAPTER *prAdapter);
 };
 
 enum PKT_PHASE {

@@ -622,6 +622,8 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 		DBGLOG(HAL, INFO, "Set[19:16]:0x%02x, result = 0x%08x\n",
 		       i, u4Value);
 	}
+	if (prAdapter->chip_info->prDebugOps->showHifInfo)
+		prAdapter->chip_info->prDebugOps->showHifInfo(prAdapter);
 }
 
 void halShowPseInfo(IN struct ADAPTER *prAdapter)

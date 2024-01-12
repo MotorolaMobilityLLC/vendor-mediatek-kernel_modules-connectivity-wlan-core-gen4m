@@ -406,6 +406,7 @@ struct CHIP_DBG_OPS mt6632_debug_ops = {
 	.showPleInfo = NULL,
 	.showCsrInfo = NULL,
 	.showDmaschInfo = NULL,
+	.showHifInfo = NULL,
 };
 
 /* Litien code refine to support multi chip */
