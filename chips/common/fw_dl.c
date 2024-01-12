@@ -609,7 +609,7 @@ static uint32_t wlanEmiSectionDlConfig(IN struct ADAPTER *prAdapter,
 		.u4Length = u4Len,
 		.u4DataMode = u4DataMode,
 	};
-	struct INIT_EVENT_CMD_RESULT rEvt;
+	struct INIT_EVENT_CMD_RESULT rEvt = {0};
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	u4Status = wlanSendInitSetQueryCmd(prAdapter,
@@ -617,7 +617,9 @@ static uint32_t wlanEmiSectionDlConfig(IN struct ADAPTER *prAdapter,
 		TRUE, FALSE,
 		INIT_EVENT_ID_CMD_RESULT, &rEvt, sizeof(rEvt));
 
-	if (rEvt.ucStatus != 0) {
+	if (u4Status != WLAN_STATUS_SUCCESS) {
+		DBGLOG(INIT, ERROR, "Send query cmd failed: %u\n", u4Status);
+	} else if (rEvt.ucStatus != 0) {
 		DBGLOG(INIT, ERROR, "Error status: %d\n", rEvt.ucStatus);
 		u4Status = WLAN_STATUS_FAILURE;
 	}
@@ -634,7 +636,7 @@ static uint32_t wlanEmiSectionStartCmd(IN struct ADAPTER *prAdapter,
 		.u4DownloadSize = u4Len,
 		.ucDoneBit = fgLast,
 	};
-	struct INIT_EVENT_CMD_RESULT rEvt;
+	struct INIT_EVENT_CMD_RESULT rEvt = {0};
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	u4Status = wlanSendInitSetQueryCmd(prAdapter,
@@ -642,7 +644,9 @@ static uint32_t wlanEmiSectionStartCmd(IN struct ADAPTER *prAdapter,
 		TRUE, FALSE,
 		INIT_EVENT_ID_CMD_RESULT, &rEvt, sizeof(rEvt));
 
-	if (rEvt.ucStatus != 0) {
+	if (u4Status != WLAN_STATUS_SUCCESS) {
+		DBGLOG(INIT, ERROR, "Send query cmd failed: %u\n", u4Status);
+	} else if (rEvt.ucStatus != 0) {
 		DBGLOG(INIT, ERROR, "Error status: %d\n", rEvt.ucStatus);
 		u4Status = WLAN_STATUS_FAILURE;
 	}

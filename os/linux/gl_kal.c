@@ -12167,26 +12167,30 @@ uint32_t kalSendAtfSmcCmd(uint32_t u4Opid, uint32_t u4Arg2,
 		break;
 	case -SMC_WLAN_UNKNOWN_OPID:
 		DBGLOG(SMC, WARN, "Invaild SMC opid[%u]\n", u4Opid);
-		aee_kernel_warning("wlan", "Invaild SMC opid[%u]\n",
-			u4Opid);
 		break;
 	case -SMC_WLAN_INVALID_REGISTER:
 		DBGLOG(SMC, WARN, "Invaild address access[0x%08x]\n",
 			u4Arg2);
-		WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
-		if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
-			aee_kernel_warning("wlan",
-				"Invaild address access[0x%08x]\n",
-				u4Arg2);
-			break;
-		}
-		GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
-			RST_INVALID_REGISTER_ACCESS);
 		break;
 	default:
 		if (i4Ret < 0)
 			DBGLOG(SMC, WARN, "Unknown status code[%d]\n", i4Ret);
 		break;
+	}
+
+	if (i4Ret < 0) {
+		WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+		if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
+			GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
+				RST_SMC_CMD_FAIL);
+		} else {
+#define SMC_FAIL_LOG_TEMPLATE \
+	"SMC CMD failed. Opid[%u] Arg2[0x%08x] Arg3[0x%08x] Arg4[0x%08x]\n" \
+	"CRDISPATCH_KEY: WLAN SMC CMD failed\n"
+			dump_stack();
+			aee_kernel_warning("wlan", SMC_FAIL_LOG_TEMPLATE,
+				u4Opid, u4Arg2, u4Arg3, u4Arg4);
+		}
 	}
 
 	return res.a0;
