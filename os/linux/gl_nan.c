@@ -279,6 +279,8 @@ unsigned char
 nanFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucRoleIdx)
 {
 	struct ADAPTER *prAdapter;
+	struct WIFI_VAR *prWifiVar = NULL;
+	uint8_t ucIdx = 0;
 
 	if (!prGlueInfo) {
 		DBGLOG(NAN, ERROR, "prGlueInfo error\n");
@@ -286,21 +288,31 @@ nanFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucRoleIdx)
 	}
 
 	prAdapter = prGlueInfo->prAdapter;
+	prWifiVar = &(prAdapter->rWifiVar);
 
 	if (!prAdapter) {
 		DBGLOG(NAN, ERROR, "prAdapter error!\n");
 		return FALSE;
 	}
 
+	if (!prWifiVar) {
+		DBGLOG(NAN, ERROR, "prWifiVar error!\n");
+		return FALSE;
+	}
+
 	if (prGlueInfo->aprNANDevInfo[ucRoleIdx] != NULL) {
-		kalMemFree(prGlueInfo->prAdapter->rWifiVar
-				   .aprNanSpecificBssInfo[ucRoleIdx],
-			   VIR_MEM_TYPE, sizeof(_NAN_SPECIFIC_BSS_INFO_T));
-		prGlueInfo->prAdapter->rWifiVar
-			.aprNanSpecificBssInfo[ucRoleIdx] = NULL;
 		kalMemFree(prGlueInfo->aprNANDevInfo[ucRoleIdx], VIR_MEM_TYPE,
 			   sizeof(struct _GL_NAN_INFO_T *));
 		prGlueInfo->aprNANDevInfo[ucRoleIdx] = NULL;
+	}
+
+	for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
+		if (prWifiVar->aprNanSpecificBssInfo[ucIdx]) {
+			kalMemFree(prWifiVar->aprNanSpecificBssInfo[ucIdx],
+				VIR_MEM_TYPE, sizeof(_NAN_SPECIFIC_BSS_INFO_T));
+
+			prWifiVar->aprNanSpecificBssInfo[ucIdx] = NULL;
+		}
 	}
 
 	return TRUE;
@@ -902,7 +914,7 @@ glUnregisterNAN(struct GLUE_INFO *prGlueInfo)
 			}
 		}
 	}
-	/* 4 <4> Free P2P internal memory */
+	/* 4 <4> Free NAN internal memory */
 	if (!nanFreeInfo(prGlueInfo, ucIdx)) {
 		DBGLOG(INIT, ERROR, "nanFreeInfo FAILED\n");
 		return FALSE;
