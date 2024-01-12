@@ -7390,7 +7390,8 @@ void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			sched.ucSeqNum = legacy.ucSeqNum;
 
 			/* sched scan done, return directly */
-			return scnEventSchedScanDone(ad, &sched);
+			scnEventSchedScanDone(ad, &sched);
+			return;
 		}
 			break;
 		default:

@@ -1252,11 +1252,13 @@ rlmDomainGetChnlList(struct ADAPTER *prAdapter,
 	ASSERT(paucChannelList);
 	ASSERT(pucNumOfChannel);
 
-	if (regd_is_single_sku_en())
-		return rlmDomainGetChnlList_V2(prAdapter, eSpecificBand,
+	if (regd_is_single_sku_en()) {
+		rlmDomainGetChnlList_V2(prAdapter, eSpecificBand,
 					       fgNoDfs, ucMaxChannelNum,
 					       pucNumOfChannel,
 					       paucChannelList);
+		return;
+	}
 
 	/* If no matched country code, the final one will be used */
 	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
@@ -1613,8 +1615,10 @@ void rlmDomainSendDomainInfoCmd(struct ADAPTER *prAdapter)
 	struct DOMAIN_SUBBAND_INFO *prSubBand;
 	uint8_t i;
 
-	if (regd_is_single_sku_en())
-		return rlmDomainSendDomainInfoCmd_V2(prAdapter);
+	if (regd_is_single_sku_en()) {
+		rlmDomainSendDomainInfoCmd_V2(prAdapter);
+		return;
+	}
 
 
 	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
@@ -3113,23 +3117,16 @@ void rlmDomainCheckCountryPowerLimitTable(struct ADAPTER *prAdapter)
 
 		if (fgChannelValid == FALSE || fgPowerLimitValid == FALSE) {
 			fgTableValid = FALSE;
-			DBGLOG(RLM, LOUD,
 #if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+			DBGLOG(RLM, LOUD,
 				"Domain: CC=%c%c, Ch=%d, Limit: %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d, Valid:%d,%d\n",
-#else
-				"Domain: CC=%c%c, Ch=%d, Limit: %d,%d,%d,%d,%d,%d,%d,%d,%d, Valid:%d,%d\n",
-#endif
 				PwrLmtConf[i].aucCountryCode[0],
 				PwrLmtConf[i].aucCountryCode[1],
 				PwrLmtConf[i].ucCentralCh,
-#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
 				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_CCK_L],
 				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_CCK_H],
 				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_OFDM_L],
 				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_OFDM_H],
-#else
-				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_CCK],
-#endif
 				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_20M_L],
 				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_20M_H],
 				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_40M_L],
@@ -3140,6 +3137,24 @@ void rlmDomainCheckCountryPowerLimitTable(struct ADAPTER *prAdapter)
 				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_160M_H],
 				fgChannelValid,
 				fgPowerLimitValid);
+#else
+			DBGLOG(RLM, LOUD,
+				"Domain: CC=%c%c, Ch=%d, Limit: %d,%d,%d,%d,%d,%d,%d,%d,%d, Valid:%d,%d\n",
+				PwrLmtConf[i].aucCountryCode[0],
+				PwrLmtConf[i].aucCountryCode[1],
+				PwrLmtConf[i].ucCentralCh,
+				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_CCK],
+				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_20M_L],
+				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_20M_H],
+				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_40M_L],
+				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_40M_H],
+				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_80M_L],
+				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_80M_H],
+				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_160M_L],
+				PwrLmtConf[i].aucPwrLimit[PWR_LIMIT_160M_H],
+				fgChannelValid,
+				fgPowerLimitValid);
+#endif
 		}
 
 		if (u2CountryCodeTable == COUNTRY_CODE_NULL) {
@@ -3567,11 +3582,12 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 					eType == PWR_LIMIT_TYPE_COMP_11AC_V2)
 #if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
 					kalMemSet(&prPwrLimit->cPwrLimitCCK_L,
+						cLmtBand, PWR_LIMIT_NUM);
 #else
 					kalMemSet(&prPwrLimit->cPwrLimitCCK,
+						cLmtBand, PWR_LIMIT_NUM);
 #endif
-					cLmtBand,
-					PWR_LIMIT_NUM);
+
 			} else {
 					/* ex: 40MHz power limit(mW\MHz)
 					 *	= 20MHz power limit(mW\MHz) * 2
@@ -7881,8 +7897,11 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	struct DOMAIN_INFO_ENTRY *prDomainInfo;
 	/* TODO : 5G band edge */
 
-	if (regd_is_single_sku_en())
-		return rlmDomainSendPwrLimitCmd_V2(prAdapter);
+	if (regd_is_single_sku_en()) {
+		rlmDomainSendPwrLimitCmd_V2(prAdapter);
+		return;
+	}
+
 
 	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
 	if (prDomainInfo) {
