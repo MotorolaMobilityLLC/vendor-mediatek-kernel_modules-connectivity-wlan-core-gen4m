@@ -10288,6 +10288,7 @@ static void aisScanProcessReqCh(struct ADAPTER *prAdapter,
 		}
 		prScanReqMsg->ucChannelListNum = essChnlNum;
 		prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
+		prScanReqMsg->fgOobRnrParseEn = FALSE;
 		DBGLOG(AIS, INFO,
 			   "[Roaming] Target Scan: Total number of scan channel(s)=%d\n",
 			   prScanReqMsg->ucChannelListNum);
