@@ -4372,6 +4372,8 @@ uint32_t ServiceWlanOid(void *winfos,
 	struct mt66xx_chip_info *prChipInfo = NULL;
 #endif
 	struct ICAP_INFO_T *prIcapInfo = NULL;
+	struct CMD_FW_LOG_2_HOST_CTRL *prFwLog2HostCtrl;
+
 
 	ASSERT(winfos);
 
@@ -4380,6 +4382,11 @@ uint32_t ServiceWlanOid(void *winfos,
 		u4BufLen = &u4BufLen2;
 
 	prTestWinfo = (struct test_wlan_info *)winfos;
+	prFwLog2HostCtrl = (struct CMD_FW_LOG_2_HOST_CTRL *)kalMemAlloc(
+			sizeof(struct CMD_FW_LOG_2_HOST_CTRL), VIR_MEM_TYPE);
+
+	prFwLog2HostCtrl->ucMcuDest = 0;
+	prFwLog2HostCtrl->ucFwLog2HostCtrl = 0;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prTestWinfo->net_dev));
 	ASSERT(prGlueInfo);
@@ -4414,8 +4421,15 @@ uint32_t ServiceWlanOid(void *winfos,
 			fgCmd, /* fgCmd */
 			u4BufLen); /* pu4QryInfoLen */
 
+		i4Status = kalIoctl(prGlueInfo,
+		wlanoidSetFwLog2Host,
+				   prFwLog2HostCtrl,
+				   sizeof(struct CMD_FW_LOG_2_HOST_CTRL),
+				   TRUE, TRUE, TRUE, u4BufLen);
+
 		DBGLOG(RFTEST, INFO,
 			"Test Mode Start Workaround for META2!\n");
+
 	}
 
 	switch (oidType) {
