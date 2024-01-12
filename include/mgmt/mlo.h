@@ -411,4 +411,9 @@ uint8_t mldCheckMldType(struct ADAPTER *prAdapter,
 
 struct STA_RECORD *mldGetStaRecByBandIdx(struct ADAPTER *prAdapter,
 		struct STA_RECORD *prStaRec, uint8_t ucHwBandIdx);
+
+void mldDumpStarecList(struct ADAPTER *prAdapter,
+	struct MLD_STA_RECORD *prMldStarec);
+
+void mldCheckStarecList(struct ADAPTER *prAdapter);
 #endif /* !_MLO_H */
