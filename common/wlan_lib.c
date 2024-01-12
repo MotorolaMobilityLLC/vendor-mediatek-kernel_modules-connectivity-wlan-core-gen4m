@@ -6803,6 +6803,12 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	}
 #endif
 
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	prWifiVar->ucP2pPrefer6G = (uint8_t)
+		wlanCfgGetUint32(prAdapter, "P2pPrefer6G", FEATURE_DISABLED);
+#endif
+
 #if (CFG_SUPPORT_802_11BE == 1)
 	prWifiVar->ucStaEht = (uint8_t)
 		wlanCfgGetUint32(prAdapter, "StaEHT", FEATURE_ENABLED);
@@ -7001,6 +7007,12 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					prAdapter, "ApChannel", 0);
 	prWifiVar->u2ApFreq = (uint16_t) wlanCfgGetUint32(
 					prAdapter, "ApFreq", 0);
+	prWifiVar->ucApAcsChannel[0] = (uint16_t) wlanCfgGetUint32(
+					prAdapter, "ApAcs2gChannel", 0);
+	prWifiVar->ucApAcsChannel[1] = (uint16_t) wlanCfgGetUint32(
+					prAdapter, "ApAcs5gChannel", 0);
+	prWifiVar->ucApAcsChannel[2] = (uint16_t) wlanCfgGetUint32(
+					prAdapter, "ApAcs6gChannel", 0);
 
 	/*
 	 * 0: SCN
@@ -7043,7 +7055,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucAp5gBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "Ap5gBw", MAX_BW_80MHZ);
 	prWifiVar->ucAp6gBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "Ap6gBw", MAX_BW_20MHZ);
+				prAdapter, "Ap6gBw", MAX_BW_160MHZ);
 	prWifiVar->ucApChnlDefFromCfg = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "ApChnlDefFromCfg", FEATURE_ENABLED);
 	prWifiVar->ucApAllowHtVhtTkip = (uint8_t) wlanCfgGetUint32(
@@ -7627,9 +7639,35 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgSapCheckPmkidInDriver = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "SapCheckPmkidInDriver", FEATURE_ENABLED);
 
+	prWifiVar->fgSapOffload = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "SapOffload", FEATURE_DISABLED);
+
 	prWifiVar->fgSapChannelSwitchPolicy = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "SapChannelSwitchPolicy",
 		P2P_CHANNEL_SWITCH_POLICY_SCC);
+
+	prWifiVar->fgSapConcurrencyPolicy = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "SapConcurrencyPolicy",
+		P2P_CONCURRENCY_POLICY_REMOVE);
+
+	prWifiVar->fgSapAuthPolicy = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "SapAuthPolicy",
+		P2P_AUTH_POLICY_NONE);
+
+	prWifiVar->fgSapOverwriteAcsChnlBw = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "SapOverwriteAcsChnlBw", FEATURE_ENABLED);
+
+	prWifiVar->ucDfsRegion = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "DfsRegion", NL80211_DFS_UNSET);
+	if (prWifiVar->ucDfsRegion)
+		rlmDomainSetDfsRegion(prWifiVar->ucDfsRegion);
+
+	prWifiVar->u4ByPassCacTime = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "ByPassCacTime", 0);
+	if (prWifiVar->u4ByPassCacTime) {
+		p2pFuncEnableManualCac();
+		p2pFuncSetDriverCacTime(prWifiVar->u4ByPassCacTime);
+	}
 
 	prWifiVar->fgAllowSameBandDualSta = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "AllowSameBandDualSta", FEATURE_ENABLED);
@@ -10991,6 +11029,11 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 		}
 	}
 #endif
+
+	if (IS_BSS_P2P(prBssInfo) && p2pFuncIsDualAPMode(prAdapter)) {
+		DBGLOG(SW4, LOUD, "Use 1x1 due to dual ap mode\n");
+		ucRetValNss = 1;
+	}
 
 	if (ucRetValNss > prAdapter->rWifiVar.ucNSS)
 		ucRetValNss = prAdapter->rWifiVar.ucNSS;

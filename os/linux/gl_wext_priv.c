@@ -3767,9 +3767,11 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 #define CMD_SET_DFS_CHN_AVAILABLE	"SET_DFS_CHN_AVAILABLE"
 #define CMD_SHOW_DFS_STATE		"SHOW_DFS_STATE"
-#define CMD_SHOW_DFS_RADAR_PARAM	"SHOW_DFS_RADAR_PARAM"
 #define CMD_SHOW_DFS_HELP		"SHOW_DFS_HELP"
 #define CMD_SHOW_DFS_CAC_TIME		"SHOW_DFS_CAC_TIME"
+#define CMD_SET_DFS_RDDREPORT		"RDDReport"
+#define CMD_SET_DFS_RADARMODE		"RadarDetectMode"
+#define CMD_SET_DFS_RADAREVENT		"RadarEvent"
 #endif
 
 #define CMD_PNOSSIDCLR_SET	"PNOSSIDCLR"
@@ -7427,6 +7429,11 @@ static int priv_driver_set_acl_policy(IN struct net_device *prNetDev,
 
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
 
+	p2pFuncSetAclPolicy(prAdapter,
+		ucBssIdx,
+		prBssInfo->rACL.ePolicy,
+		NULL);
+
 	return i4BytesWritten;
 } /* priv_driver_set_acl_policy */
 
@@ -7546,6 +7553,11 @@ static int priv_driver_add_acl_entry(IN struct net_device *prNetDev,
 
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
 
+	p2pFuncSetAclPolicy(prAdapter,
+		ucBssIdx,
+		PARAM_CUSTOM_ACL_POLICY_ADD,
+		aucMacAddr);
+
 	return i4BytesWritten;
 } /* priv_driver_add_acl_entry */
 
@@ -7640,6 +7652,11 @@ static int priv_driver_del_acl_entry(IN struct net_device *prNetDev,
 		p2pRoleUpdateACLEntry(prAdapter, ucBssIdx);
 
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
+
+	p2pFuncSetAclPolicy(prAdapter,
+		ucBssIdx,
+		PARAM_CUSTOM_ACL_POLICY_REMOVE,
+		aucMacAddr);
 
 	return i4BytesWritten;
 } /* priv_driver_del_acl_entry */
@@ -7752,6 +7769,11 @@ static int priv_driver_clear_acl_entry(IN struct net_device *prNetDev,
 	/* check if the change in ACL affects any existent association */
 	if (prBssInfo->rACL.ePolicy == PARAM_CUSTOM_ACL_POLICY_ACCEPT)
 		p2pRoleUpdateACLEntry(prAdapter, ucBssIdx);
+
+	p2pFuncSetAclPolicy(prAdapter,
+		ucBssIdx,
+		PARAM_CUSTOM_ACL_POLICY_CLEAR,
+		NULL);
 
 	return i4BytesWritten;
 } /* priv_driver_clear_acl_entry */
@@ -9649,11 +9671,6 @@ int priv_driver_show_dfs_help(IN struct net_device *prNetDev,
 	       "\nDETECTED: Has detected radar but hasn't moved to new channel\n");
 
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-	       "\n--iwpriv wlanX driver \"show_dfs_radar_param\"\n");
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-	       "\nShow the latest pulse information\n");
-
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 	       "\n--iwpriv wlanX driver \"show_dfs_cac_time\"\n");
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 	       "\nShow the remaining time of CAC\n");
@@ -9709,6 +9726,187 @@ int priv_driver_show_dfs_cac_time(IN struct net_device *prNetDev,
 	       "\nRemaining time of CAC: %dsec", p2pFuncGetCacRemainingTime());
 
 	return	i4BytesWritten;
+}
+
+int32_t _SetRddReport(struct net_device *prNetDev,
+	uint8_t ucDbdcIdx)
+{
+	uint32_t u4BufLen = 0;
+	struct PARAM_CUSTOM_SET_RDD_REPORT rSetRddReport;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t i4Status = WLAN_STATUS_SUCCESS;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	kalMemSet(&rSetRddReport, 0,
+		sizeof(struct PARAM_CUSTOM_SET_RDD_REPORT));
+
+	/* Set Rdd Report */
+	DBGLOG(INIT, INFO, "Set RDD Report - Band: %d\n",
+		 ucDbdcIdx);
+	rSetRddReport.ucDbdcIdx = ucDbdcIdx;
+
+	i4Status = kalIoctl(prGlueInfo,
+		wlanoidQuerySetRddReport,
+		&rSetRddReport,
+		sizeof(struct PARAM_CUSTOM_SET_RDD_REPORT),
+		FALSE, FALSE, TRUE, &u4BufLen);
+
+	if (i4Status != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+
+	return i4Status;
+}
+
+int priv_driver_rddreport(IN struct net_device *prNetDev,
+				IN char *pcCommand, IN int i4TotalLen)
+{
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret = 0;
+	uint8_t ucDbdcIdx = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+
+	if (p2pFuncGetDfsState() == DFS_STATE_INACTIVE
+	    || p2pFuncGetDfsState() == DFS_STATE_DETECTED) {
+		DBGLOG(REQ, ERROR,
+			"RDD Report is not supported in this DFS state (inactive or deteted)\n");
+		return -1;
+	}
+
+	if (i4Argc >= 1) {
+		u4Ret = kalkStrtou8(apcArgv[1], 0, &ucDbdcIdx);
+		if (u4Ret)
+			DBGLOG(REQ, ERROR, "parse error u4Ret = %d\n", u4Ret);
+
+		if (ucDbdcIdx > 1)
+			ucDbdcIdx = 0;
+
+		_SetRddReport(prNetDev, ucDbdcIdx);
+	} else {
+		DBGLOG(REQ, INFO, "Input insufficent\n");
+	}
+
+	return 0;
+}
+
+int32_t _SetRadarDetectMode(
+	struct net_device *prNetDev,
+	uint8_t ucRadarDetectMode)
+{
+	uint32_t u4BufLen = 0;
+	struct PARAM_CUSTOM_SET_RADAR_DETECT_MODE
+		rSetRadarDetectMode;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t i4Status = WLAN_STATUS_SUCCESS;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	kalMemSet(&rSetRadarDetectMode, 0,
+		  sizeof(struct PARAM_CUSTOM_SET_RADAR_DETECT_MODE));
+
+	/* Set Rdd Report */
+	DBGLOG(INIT, INFO, "Set Radar Detect Mode: %d\n",
+		   ucRadarDetectMode);
+	rSetRadarDetectMode.ucRadarDetectMode = ucRadarDetectMode;
+
+	i4Status = kalIoctl(prGlueInfo,
+		wlanoidQuerySetRadarDetectMode,
+		&rSetRadarDetectMode,
+		sizeof(struct PARAM_CUSTOM_SET_RADAR_DETECT_MODE),
+		FALSE, FALSE, TRUE, &u4BufLen);
+
+	if (i4Status != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+
+	return i4Status;
+}
+
+int priv_driver_radarmode(IN struct net_device *prNetDev,
+				IN char *pcCommand, IN int i4TotalLen)
+{
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret = 0;
+	uint8_t ucRadarDetectMode = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+
+	if (p2pFuncGetDfsState() == DFS_STATE_INACTIVE
+		|| p2pFuncGetDfsState() == DFS_STATE_DETECTED) {
+		DBGLOG(REQ, ERROR,
+			"RDD Report is not supported in this DFS state (inactive or deteted)\n");
+		return -1;
+	}
+
+	if (i4Argc >= 1) {
+		u4Ret = kalkStrtou8(apcArgv[1], 0, &ucRadarDetectMode);
+		if (u4Ret)
+			DBGLOG(REQ, ERROR, "parse error u4Ret = %d\n", u4Ret);
+
+		if (ucRadarDetectMode > 1)
+			ucRadarDetectMode = 0;
+
+		_SetRadarDetectMode(prNetDev, ucRadarDetectMode);
+	} else {
+		DBGLOG(REQ, INFO, "Input insufficent\n");
+	}
+
+	return 0;
+}
+
+int priv_driver_radarevent(IN struct net_device *prNetDev,
+				IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct EVENT_RDD_REPORT rEventBody;
+	int32_t i4BytesWritten = 0;
+	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo)
+		goto error;
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
+		goto error;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS)
+		goto error;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+
+	if (p2pFuncGetDfsState() != DFS_STATE_CHECKING) {
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"\nNot in CAC period");
+		return i4BytesWritten;
+	}
+
+	cnmRadarDetectEvent(prGlueInfo->prAdapter,
+		(struct WIFI_EVENT *) &rEventBody);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\nRemaining time of CAC: %dsec",
+		p2pFuncGetCacRemainingTime());
+
+	return	i4BytesWritten;
+
+error:
+
+	return -1;
 }
 
 #endif
@@ -14978,6 +15176,9 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_SHOW_DFS_STATE, priv_driver_show_dfs_state},
 	{CMD_SHOW_DFS_HELP, priv_driver_show_dfs_help},
 	{CMD_SHOW_DFS_CAC_TIME, priv_driver_show_dfs_cac_time},
+	{CMD_SET_DFS_RDDREPORT, priv_driver_rddreport},
+	{CMD_SET_DFS_RADARMODE, priv_driver_radarmode},
+	{CMD_SET_DFS_RADAREVENT, priv_driver_radarevent},
 #endif
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 	{CMD_SET_CALBACKUP_TEST_DRV_FW, priv_driver_set_calbackup_test_drv_fw},

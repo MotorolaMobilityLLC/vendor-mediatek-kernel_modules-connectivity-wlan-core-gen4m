@@ -120,7 +120,7 @@
  */
 
 struct net_device *g_P2pPrDev;
-struct wireless_dev *gprP2pWdev;
+struct wireless_dev *gprP2pWdev[KAL_P2P_NUM];
 struct wireless_dev *gprP2pRoleWdev[KAL_P2P_NUM];
 struct net_device *gPrP2pDev[KAL_P2P_NUM];
 uint32_t g_u4DevIdx[KAL_P2P_NUM];
@@ -1431,6 +1431,9 @@ u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 	DBGLOG(INIT, TRACE, "glP2pCreateWirelessDevice (%p)\n",
 			gprP2pRoleWdev[i]->wiphy);
 
+	/* P2PDev and P2PRole[0] share the same Wdev */
+	gprP2pWdev[i] = gprP2pRoleWdev[i];
+
 	return TRUE;
 #else
 	return FALSE;
@@ -1895,7 +1898,14 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t u4SetInfoLen = 0;
 	uint32_t u4McCount;
-	struct net_device *prDev = g_P2pPrDev;
+	struct net_device *prDev = NULL;
+
+	GLUE_SPIN_LOCK_DECLARATION();
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+
+	prDev = g_P2pPrDev;
+
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	prGlueInfo = (prDev != NULL)
 		? *((struct GLUE_INFO **) netdev_priv(prDev))

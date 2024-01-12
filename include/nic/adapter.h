@@ -725,6 +725,9 @@ struct WIFI_VAR {
 	uint8_t ucApSelAxWeight;
 	uint8_t ucApSelAxScoreDiv;
 #endif
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	uint8_t ucP2pPrefer6G;
+#endif
 #if (CFG_SUPPORT_802_11BE == 1)
 	uint8_t ucStaEht;
 	uint8_t ucApEht;
@@ -806,6 +809,7 @@ struct WIFI_VAR {
 	uint8_t ucApWpsMode;
 	uint8_t ucApChannel;
 	uint16_t u2ApFreq;
+	uint8_t ucApAcsChannel[3];
 
 	uint8_t ucApSco;
 	uint8_t ucP2pGoSco;
@@ -1047,6 +1051,12 @@ struct WIFI_VAR {
 
 	uint8_t fgSapCheckPmkidInDriver;
 	uint8_t fgSapChannelSwitchPolicy;
+	uint8_t fgSapConcurrencyPolicy;
+	uint8_t fgSapAuthPolicy;
+	uint8_t fgSapOverwriteAcsChnlBw;
+	uint8_t fgSapOffload;
+	uint8_t ucDfsRegion;
+	uint32_t u4ByPassCacTime;
 	uint8_t fgAllowSameBandDualSta;
 
 #if CFG_SUPPORT_NAN
