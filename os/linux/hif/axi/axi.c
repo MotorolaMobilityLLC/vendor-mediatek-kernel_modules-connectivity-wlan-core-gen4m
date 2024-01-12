@@ -1177,9 +1177,11 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 	pdev = prHifInfo->pdev;
 
 	synchronize_irq(prHifInfo->u4IrqId);
+	irq_set_affinity_hint(prHifInfo->u4IrqId, NULL);
 	free_irq(prHifInfo->u4IrqId, prGlueInfo);
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	synchronize_irq(prHifInfo->u4IrqId_1);
+	irq_set_affinity_hint(prHifInfo->u4IrqId_1, NULL);
 	free_irq(prHifInfo->u4IrqId_1, prGlueInfo->prAdapter);
 #endif
 }
