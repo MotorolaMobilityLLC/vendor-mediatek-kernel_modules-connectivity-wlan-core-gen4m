@@ -7458,6 +7458,10 @@ void nicUniEventStatistics(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 void nicUniEventLinkQuality(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+void nicUniEventAllStatsOneCmd(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+#endif
 void nicUniEventQueryRfTestATInfo(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 void nicUniEventQueryRxStatAll(struct ADAPTER

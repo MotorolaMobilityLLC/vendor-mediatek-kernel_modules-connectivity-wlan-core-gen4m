@@ -4727,6 +4727,33 @@ wlanoidQueryMaxLinkSpeed(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+uint32_t
+wlanoidQueryStatsOneCmd(struct ADAPTER *prAdapter,
+			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+			uint32_t *pu4QueryInfoLen)
+{
+	uint32_t rResult = WLAN_STATUS_FAILURE;
+
+	DEBUGFUNC("wlanoidQueryStatsOneCmd");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4QueryInfoLen);
+	if (u4QueryBufferLen)
+		ASSERT(pvQueryBuffer);
+
+	if (prAdapter->fgIsEnableLpdvt)
+		return WLAN_STATUS_NOT_SUPPORTED;
+
+	rResult = wlanQueryStatsOneCmd(prAdapter,
+				pvQueryBuffer,
+				u4QueryBufferLen,
+				pu4QueryInfoLen,
+				TRUE);
+	return rResult;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
 * \brief extend command packet generation utility

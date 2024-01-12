@@ -6030,33 +6030,195 @@ wlanoidQueryStaStatistics(struct ADAPTER *prAdapter,
 }
 
 uint32_t
+updateStaStats(struct ADAPTER *prAdapter,
+	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics)
+{
+	struct STA_RECORD *prStaRec, *prTempStaRec;
+	uint8_t ucStaRecIdx;
+	struct QUE_MGT *prQM;
+	uint8_t ucIdx;
+	enum ENUM_WMM_ACI eAci;
+
+	prQM = &prAdapter->rQM;
+	/* 4 5. Get driver global QM counter */
+#if QM_ADAPTIVE_TC_RESOURCE_CTRL
+	for (ucIdx = TC0_INDEX; ucIdx <= TC3_INDEX; ucIdx++) {
+		prQueryStaStatistics->au4TcAverageQueLen[ucIdx] =
+			prQM->au4AverageQueLen[ucIdx];
+		prQueryStaStatistics->au4TcCurrentQueLen[ucIdx] =
+			prQM->au4CurrentTcResource[ucIdx];
+	}
+#endif
+
+	/* 4 2. Get StaRec by MAC address */
+	prStaRec = NULL;
+
+	for (ucStaRecIdx = 0; ucStaRecIdx < CFG_STA_REC_NUM;
+	     ucStaRecIdx++) {
+		prTempStaRec = &(prAdapter->arStaRec[ucStaRecIdx]);
+		if (prTempStaRec->fgIsValid &&
+		    prTempStaRec->fgIsInUse) {
+			if (EQUAL_MAC_ADDR(prTempStaRec->aucMacAddr,
+			    prQueryStaStatistics->aucMacAddr)) {
+				prStaRec = prTempStaRec;
+				break;
+			}
+		}
+	}
+
+	if (!prStaRec)
+		return WLAN_STATUS_INVALID_DATA;
+
+	prQueryStaStatistics->u4Flag |= BIT(0);
+
+#if CFG_ENABLE_PER_STA_STATISTICS
+	/* 4 3. Get driver statistics */
+	prQueryStaStatistics->u4TxTotalCount =
+		prStaRec->u4TotalTxPktsNumber;
+	prQueryStaStatistics->u4RxTotalCount =
+		prStaRec->u4TotalRxPktsNumber;
+	prQueryStaStatistics->u4TxExceedThresholdCount =
+		prStaRec->u4ThresholdCounter;
+	prQueryStaStatistics->u4TxMaxTime =
+		prStaRec->u4MaxTxPktsTime;
+	prQueryStaStatistics->u4TxMaxHifTime =
+		prStaRec->u4MaxTxPktsHifTime;
+
+	if (prStaRec->u4TotalTxPktsNumber) {
+		prQueryStaStatistics->u4TxAverageProcessTime =
+			(prStaRec->u4TotalTxPktsTime /
+			 prStaRec->u4TotalTxPktsNumber);
+		prQueryStaStatistics->u4TxAverageHifTime =
+			prStaRec->u4TotalTxPktsHifTxTime /
+			prStaRec->u4TotalTxPktsNumber;
+	} else
+		prQueryStaStatistics->u4TxAverageProcessTime = 0;
+
+	/*link layer statistics */
+	for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
+		prQueryStaStatistics->arLinkStatistics[eAci].u4TxMsdu =
+			prStaRec->arLinkStatistics[eAci].u4TxMsdu;
+		prQueryStaStatistics->arLinkStatistics[eAci].u4RxMsdu =
+			prStaRec->arLinkStatistics[eAci].u4RxMsdu;
+		prQueryStaStatistics->arLinkStatistics[
+			eAci].u4TxDropMsdu =
+			prStaRec->arLinkStatistics[eAci].u4TxDropMsdu;
+	}
+
+	for (ucIdx = TC0_INDEX; ucIdx <= TC3_INDEX; ucIdx++) {
+		prQueryStaStatistics->au4TcResourceEmptyCount[ucIdx] =
+			prQM->au4QmTcResourceEmptyCounter[
+			prStaRec->ucBssIndex][ucIdx];
+		/* Reset */
+		prQM->au4QmTcResourceEmptyCounter[
+			prStaRec->ucBssIndex][ucIdx] = 0;
+		prQueryStaStatistics->au4TcResourceBackCount[ucIdx] =
+			prQM->au4QmTcResourceBackCounter[ucIdx];
+		prQM->au4QmTcResourceBackCounter[ucIdx] = 0;
+		prQueryStaStatistics->au4DequeueNoTcResource[ucIdx]
+			= prQM->au4DequeueNoTcResourceCounter[ucIdx];
+		prQM->au4DequeueNoTcResourceCounter[ucIdx] = 0;
+		prQueryStaStatistics->au4TcResourceUsedPageCount[ucIdx]
+			= prQM->au4QmTcUsedPageCounter[ucIdx];
+		prQM->au4QmTcUsedPageCounter[ucIdx] = 0;
+		prQueryStaStatistics->au4TcResourceWantedPageCount[
+			ucIdx] = prQM->au4QmTcWantedPageCounter[ucIdx];
+		prQM->au4QmTcWantedPageCounter[ucIdx] = 0;
+	}
+
+	prQueryStaStatistics->u4EnqueueCounter =
+		prQM->u4EnqueueCounter;
+	prQueryStaStatistics->u4EnqueueStaCounter =
+		prStaRec->u4EnqueueCounter;
+
+	prQueryStaStatistics->u4DequeueCounter =
+		prQM->u4DequeueCounter;
+	prQueryStaStatistics->u4DequeueStaCounter =
+		prStaRec->u4DeqeueuCounter;
+
+	prQueryStaStatistics->IsrCnt =
+		prAdapter->prGlueInfo->IsrCnt;
+	prQueryStaStatistics->IsrPassCnt =
+		prAdapter->prGlueInfo->IsrPassCnt;
+	prQueryStaStatistics->TaskIsrCnt =
+		prAdapter->prGlueInfo->TaskIsrCnt;
+
+	prQueryStaStatistics->IsrAbnormalCnt =
+		prAdapter->prGlueInfo->IsrAbnormalCnt;
+	prQueryStaStatistics->IsrSoftWareCnt =
+		prAdapter->prGlueInfo->IsrSoftWareCnt;
+	prQueryStaStatistics->IsrRxCnt =
+		prAdapter->prGlueInfo->IsrRxCnt;
+	prQueryStaStatistics->IsrTxCnt =
+		prAdapter->prGlueInfo->IsrTxCnt;
+
+	/* 4 4.1 Reset statistics */
+	if (prQueryStaStatistics->ucReadClear) {
+		prStaRec->u4ThresholdCounter = 0;
+		prStaRec->u4TotalTxPktsNumber = 0;
+		prStaRec->u4TotalTxPktsHifTxTime = 0;
+
+		prStaRec->u4TotalTxPktsTime = 0;
+		prStaRec->u4TotalRxPktsNumber = 0;
+		prStaRec->u4MaxTxPktsTime = 0;
+		prStaRec->u4MaxTxPktsHifTime = 0;
+		prQM->u4EnqueueCounter = 0;
+		prQM->u4DequeueCounter = 0;
+		prStaRec->u4EnqueueCounter = 0;
+		prStaRec->u4DeqeueuCounter = 0;
+
+		prAdapter->prGlueInfo->IsrCnt = 0;
+		prAdapter->prGlueInfo->IsrPassCnt = 0;
+		prAdapter->prGlueInfo->TaskIsrCnt = 0;
+
+		prAdapter->prGlueInfo->IsrAbnormalCnt = 0;
+		prAdapter->prGlueInfo->IsrSoftWareCnt = 0;
+		prAdapter->prGlueInfo->IsrRxCnt = 0;
+		prAdapter->prGlueInfo->IsrTxCnt = 0;
+	}
+	/*link layer statistics */
+	if (prQueryStaStatistics->ucLlsReadClear) {
+		for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
+			prStaRec->arLinkStatistics[eAci].u4TxMsdu = 0;
+			prStaRec->arLinkStatistics[eAci].u4RxMsdu = 0;
+			prStaRec->arLinkStatistics[eAci].u4TxDropMsdu
+								  = 0;
+		}
+	}
+#endif
+
+	for (ucIdx = TC0_INDEX; ucIdx <= TC3_INDEX; ucIdx++)
+		prQueryStaStatistics->au4TcQueLen[ucIdx] =
+			prStaRec->aprTargetQueue[ucIdx]->u4NumElem;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t
 wlanQueryStaStatistics(struct ADAPTER *prAdapter,
 		       void *pvQueryBuffer,
 		       uint32_t u4QueryBufferLen,
 		       uint32_t *pu4QueryInfoLen,
 		       u_int8_t fgIsOid)
 {
-	uint32_t rResult = WLAN_STATUS_FAILURE;
-	struct STA_RECORD *prStaRec, *prTempStaRec;
-	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
 	uint8_t ucStaRecIdx;
-	struct QUE_MGT *prQM;
+	uint32_t rResult = WLAN_STATUS_FAILURE;
+	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
 	struct CMD_GET_STA_STATISTICS rQueryCmdStaStatistics = {0};
-	uint8_t ucIdx;
-#if CFG_ENABLE_PER_STA_STATISTICS
-	enum ENUM_WMM_ACI eAci;
-#endif
 
 	DEBUGFUNC("wlanoidQueryStaStatistics");
 
 	if (prAdapter == NULL)
 		return WLAN_STATUS_FAILURE;
-	prQM = &prAdapter->rQM;
 
 	if (prAdapter->fgIsEnableLpdvt)
 		return WLAN_STATUS_NOT_SUPPORTED;
 
 	do {
+		struct STA_RECORD *prStaRec, *prTempStaRec;
+
+		prStaRec = NULL;
+
 		ASSERT(pvQueryBuffer);
 
 		/* 4 1. Sanity test */
@@ -6078,18 +6240,9 @@ wlanQueryStaStatistics(struct ADAPTER *prAdapter,
 				       pvQueryBuffer;
 		*pu4QueryInfoLen = sizeof(struct PARAM_GET_STA_STATISTICS);
 
-		/* 4 5. Get driver global QM counter */
-#if QM_ADAPTIVE_TC_RESOURCE_CTRL
-		for (ucIdx = TC0_INDEX; ucIdx <= TC3_INDEX; ucIdx++) {
-			prQueryStaStatistics->au4TcAverageQueLen[ucIdx] =
-				prQM->au4AverageQueLen[ucIdx];
-			prQueryStaStatistics->au4TcCurrentQueLen[ucIdx] =
-				prQM->au4CurrentTcResource[ucIdx];
-		}
-#endif
-
-		/* 4 2. Get StaRec by MAC address */
-		prStaRec = NULL;
+		rResult = updateStaStats(prAdapter, prQueryStaStatistics);
+		if (rResult != WLAN_STATUS_SUCCESS)
+			break;
 
 		for (ucStaRecIdx = 0; ucStaRecIdx < CFG_STA_REC_NUM;
 		     ucStaRecIdx++) {
@@ -6103,137 +6256,6 @@ wlanQueryStaStatistics(struct ADAPTER *prAdapter,
 				}
 			}
 		}
-
-		if (!prStaRec) {
-			rResult = WLAN_STATUS_INVALID_DATA;
-			break;
-		}
-
-		prQueryStaStatistics->u4Flag |= BIT(0);
-
-#if CFG_ENABLE_PER_STA_STATISTICS && CFG_ENABLE_PKT_LIFETIME_PROFILE
-		/* 4 3. Get driver statistics */
-		prQueryStaStatistics->u4TxTotalCount =
-			prStaRec->u4TotalTxPktsNumber;
-		prQueryStaStatistics->u4RxTotalCount =
-			prStaRec->u4TotalRxPktsNumber;
-		prQueryStaStatistics->u4TxExceedThresholdCount =
-			prStaRec->u4ThresholdCounter;
-		prQueryStaStatistics->u4TxMaxTime =
-			prStaRec->u4MaxTxPktsTime;
-		prQueryStaStatistics->u4TxMaxHifTime =
-			prStaRec->u4MaxTxPktsHifTime;
-
-		if (prStaRec->u4TotalTxPktsNumber) {
-			prQueryStaStatistics->u4TxAverageProcessTime =
-				(prStaRec->u4TotalTxPktsTime /
-				 prStaRec->u4TotalTxPktsNumber);
-			prQueryStaStatistics->u4TxAverageHifTime =
-				prStaRec->u4TotalTxPktsHifTxTime /
-				prStaRec->u4TotalTxPktsNumber;
-		} else
-			prQueryStaStatistics->u4TxAverageProcessTime = 0;
-
-		/*link layer statistics */
-		for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
-			prQueryStaStatistics->arLinkStatistics[eAci].u4TxMsdu =
-				prStaRec->arLinkStatistics[eAci].u4TxMsdu;
-			prQueryStaStatistics->arLinkStatistics[eAci].u4RxMsdu =
-				prStaRec->arLinkStatistics[eAci].u4RxMsdu;
-			prQueryStaStatistics->arLinkStatistics[
-				eAci].u4TxDropMsdu =
-				prStaRec->arLinkStatistics[eAci].u4TxDropMsdu;
-		}
-
-		for (ucIdx = TC0_INDEX; ucIdx <= TC3_INDEX; ucIdx++) {
-			prQueryStaStatistics->au4TcResourceEmptyCount[ucIdx] =
-				prQM->au4QmTcResourceEmptyCounter[
-				prStaRec->ucBssIndex][ucIdx];
-			/* Reset */
-			prQM->au4QmTcResourceEmptyCounter[
-				prStaRec->ucBssIndex][ucIdx] = 0;
-			prQueryStaStatistics->au4TcResourceBackCount[ucIdx] =
-				prQM->au4QmTcResourceBackCounter[ucIdx];
-			prQM->au4QmTcResourceBackCounter[ucIdx] = 0;
-			prQueryStaStatistics->au4DequeueNoTcResource[ucIdx]
-				= prQM->au4DequeueNoTcResourceCounter[ucIdx];
-			prQM->au4DequeueNoTcResourceCounter[ucIdx] = 0;
-			prQueryStaStatistics->au4TcResourceUsedPageCount[ucIdx]
-				= prQM->au4QmTcUsedPageCounter[ucIdx];
-			prQM->au4QmTcUsedPageCounter[ucIdx] = 0;
-			prQueryStaStatistics->au4TcResourceWantedPageCount[
-				ucIdx] = prQM->au4QmTcWantedPageCounter[ucIdx];
-			prQM->au4QmTcWantedPageCounter[ucIdx] = 0;
-		}
-#if CFG_ENABLE_PER_STA_STATISTICS && CFG_ENABLE_PKT_LIFETIME_PROFILE
-		prQueryStaStatistics->u4EnqueueCounter =
-			prQM->u4EnqueueCounter;
-		prQueryStaStatistics->u4EnqueueStaCounter =
-			prStaRec->u4EnqueueCounter;
-		prQueryStaStatistics->u4DequeueStaCounter =
-			prStaRec->u4DeqeueuCounter;
-#endif
-		prQueryStaStatistics->u4DequeueCounter =
-			prQM->u4DequeueCounter;
-
-		prQueryStaStatistics->IsrCnt =
-			prAdapter->prGlueInfo->IsrCnt;
-		prQueryStaStatistics->IsrPassCnt =
-			prAdapter->prGlueInfo->IsrPassCnt;
-		prQueryStaStatistics->TaskIsrCnt =
-			prAdapter->prGlueInfo->TaskIsrCnt;
-
-		prQueryStaStatistics->IsrAbnormalCnt =
-			prAdapter->prGlueInfo->IsrAbnormalCnt;
-		prQueryStaStatistics->IsrSoftWareCnt =
-			prAdapter->prGlueInfo->IsrSoftWareCnt;
-		prQueryStaStatistics->IsrRxCnt =
-			prAdapter->prGlueInfo->IsrRxCnt;
-		prQueryStaStatistics->IsrTxCnt =
-			prAdapter->prGlueInfo->IsrTxCnt;
-
-		/* 4 4.1 Reset statistics */
-		if (prQueryStaStatistics->ucReadClear) {
-#if CFG_ENABLE_PER_STA_STATISTICS && CFG_ENABLE_PKT_LIFETIME_PROFILE
-			prStaRec->u4ThresholdCounter = 0;
-			prStaRec->u4TotalTxPktsNumber = 0;
-			prStaRec->u4TotalTxPktsHifTxTime = 0;
-			prStaRec->u4TotalTxPktsTime = 0;
-			prStaRec->u4TotalRxPktsNumber = 0;
-			prStaRec->u4MaxTxPktsTime = 0;
-			prStaRec->u4MaxTxPktsHifTime = 0;
-
-			prStaRec->u4EnqueueCounter = 0;
-			prStaRec->u4DeqeueuCounter = 0;
-#endif
-			prQM->u4EnqueueCounter = 0;
-			prQM->u4DequeueCounter = 0;
-
-			prAdapter->prGlueInfo->IsrCnt = 0;
-			prAdapter->prGlueInfo->IsrPassCnt = 0;
-			prAdapter->prGlueInfo->TaskIsrCnt = 0;
-
-			prAdapter->prGlueInfo->IsrAbnormalCnt = 0;
-			prAdapter->prGlueInfo->IsrSoftWareCnt = 0;
-			prAdapter->prGlueInfo->IsrRxCnt = 0;
-			prAdapter->prGlueInfo->IsrTxCnt = 0;
-		}
-		/*link layer statistics */
-		if (prQueryStaStatistics->ucLlsReadClear) {
-			for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
-				prStaRec->arLinkStatistics[eAci].u4TxMsdu = 0;
-				prStaRec->arLinkStatistics[eAci].u4RxMsdu = 0;
-				prStaRec->arLinkStatistics[eAci].u4TxDropMsdu
-									  = 0;
-			}
-		}
-#endif
-
-		for (ucIdx = TC0_INDEX; ucIdx <= TC3_INDEX; ucIdx++)
-			prQueryStaStatistics->au4TcQueLen[ucIdx] =
-				prStaRec->aprTargetQueue[ucIdx]->u4NumElem;
-
-		rResult = WLAN_STATUS_SUCCESS;
 
 		/* 4 6. Ensure FW supports get station link status */
 		rQueryCmdStaStatistics.ucIndex = prStaRec->ucIndex;
@@ -6367,6 +6389,176 @@ wlanQueryStatistics(struct ADAPTER *prAdapter,
 				pvQueryBuffer, u4QueryBufferLen);
 
 } /* wlanQueryStatistics */
+
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+uint32_t
+wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
+		       void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+		       uint32_t *pu4QueryInfoLen, uint8_t fgIsOid)
+{
+	uint32_t rResult = WLAN_STATUS_SUCCESS;
+	struct STA_RECORD *prStaRec, *prTempStaRec;
+	uint8_t ucStaRecIdx;
+	uint8_t i, ucBssIndex;
+	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
+	struct UNI_CMD_GET_STATISTICS *uni_cmd;
+	struct UNI_CMD_BASIC_STATISTICS *basicStatsTag;
+	struct UNI_CMD_LINK_QUALITY *lQTag;
+	struct UNI_CMD_STA_STATISTICS *staStatsTag;
+	struct UNI_CMD_LINK_LAYER_STATS *llsTag;
+	uint8_t *buf;
+	uint32_t max_cmd_len;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucConnBss[MAX_BSSID_NUM] = {0};
+	struct LINK_SPEED_EX_ *prLq;
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	if (unlikely(ucBssIndex >= BSSID_NUM))
+		return WLAN_STATUS_INVALID_DATA;
+
+	DEBUGFUNC("wlanQueryStatsOneCmd");
+	DBGLOG(NIC, TRACE, "lastAllStatsUpdateTime:%u\n",
+		prAdapter->rAllStatsUpdateTime);
+
+	/* caller should get from cache directly */
+	/* basic_stats: prAdapter->rStat */
+	/* linkQuality: prAdapter->rLinkQuality.rLq[ucBssIndex] */
+	/* staStats: prAdapter->rQueryStaStatistics[ucBssIndex] */
+
+	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
+	DBGLOG(NIC, TRACE, "bssIdx:%u curTime:%u LRValid:%u\n",
+		ucBssIndex, kalGetTimeTick(),
+		prLq->fgIsLinkRateValid);
+	if (prLq->fgIsLinkRateValid &&
+		!CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+			prAdapter->rAllStatsUpdateTime,
+			SEC_TO_MSEC(CFG_LQ_MONITOR_FREQUENCY)))
+		return rResult;
+
+	prAdapter->rAllStatsUpdateTime = kalGetTimeTick();
+
+	/* prepare staStats driver stuff */
+	max_cmd_len = sizeof(struct UNI_CMD_GET_STATISTICS) +
+		sizeof(struct UNI_CMD_BASIC_STATISTICS) +
+		sizeof(struct UNI_CMD_LINK_QUALITY) +
+		sizeof(struct UNI_CMD_LINK_LAYER_STATS);
+
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+		if (!prBssInfo || !IS_BSS_AIS(prBssInfo) ||
+			kalGetMediaStateIndicated(prAdapter->prGlueInfo, i) !=
+				MEDIA_STATE_CONNECTED)
+			continue;
+
+		prQueryStaStatistics = &prAdapter->rQueryStaStatistics[i];
+		COPY_MAC_ADDR(prQueryStaStatistics->aucMacAddr,
+			prBssInfo->aucBSSID);
+
+		rResult = updateStaStats(prAdapter, prQueryStaStatistics);
+
+		if (rResult != WLAN_STATUS_SUCCESS)
+			continue;
+
+		ucConnBss[i] = 1;
+		max_cmd_len += sizeof(struct UNI_CMD_STA_STATISTICS);
+	}
+
+
+	DBGLOG(REQ, TRACE, "Call pvQueryBuffer=%p",
+			pvQueryBuffer);
+
+	uni_cmd = (struct UNI_CMD_GET_STATISTICS *) cnmMemAlloc(
+			prAdapter,
+			RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_GET_STATISTICS ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* prepare unified cmd tags */
+	buf = uni_cmd->aucTlvBuffer;
+
+	/* UNI_CMD_GET_STATISTICS_TAG_BASIC */
+	basicStatsTag = (struct UNI_CMD_BASIC_STATISTICS *) buf;
+	basicStatsTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_BASIC;
+	basicStatsTag->u2Length = sizeof(*basicStatsTag);
+	buf += sizeof(*basicStatsTag);
+
+	/* UNI_CMD_GET_STATISTICS_TAG_LINK_QUALITY */
+	lQTag = (struct UNI_CMD_LINK_QUALITY *) buf;
+	lQTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_LINK_QUALITY;
+	lQTag->u2Length = sizeof(*lQTag);
+	buf += sizeof(*lQTag);
+
+	/* UNI_CMD_GET_STATISTICS_TAG_STA for connected AIS BSS */
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+		if (!prBssInfo || !IS_BSS_AIS(prBssInfo) ||
+			kalGetMediaStateIndicated(prAdapter->prGlueInfo, i) !=
+				MEDIA_STATE_CONNECTED
+			|| ucConnBss[i] == 0)
+			continue;
+
+		prQueryStaStatistics = &prAdapter->rQueryStaStatistics[i];
+		for (ucStaRecIdx = 0; ucStaRecIdx < CFG_STA_REC_NUM;
+			ucStaRecIdx++) {
+			prTempStaRec = &(prAdapter->arStaRec[ucStaRecIdx]);
+			if (prTempStaRec->fgIsValid &&
+			    prTempStaRec->fgIsInUse) {
+				if (EQUAL_MAC_ADDR(prTempStaRec->aucMacAddr,
+				    prQueryStaStatistics->aucMacAddr)) {
+					prStaRec = prTempStaRec;
+					break;
+				}
+			}
+		}
+		if (!prStaRec)
+			continue;
+
+		staStatsTag = (struct UNI_CMD_STA_STATISTICS *) buf;
+		staStatsTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_STA;
+		staStatsTag->u2Length = sizeof(*staStatsTag);
+		staStatsTag->u1Index = prStaRec->ucIndex;
+		staStatsTag->ucReadClear =
+			prQueryStaStatistics->ucReadClear;
+		staStatsTag->ucLlsReadClear =
+			prQueryStaStatistics->ucLlsReadClear;
+		staStatsTag->ucResetCounter =
+			prQueryStaStatistics->ucResetCounter;
+		buf += sizeof(*staStatsTag);
+	}
+
+	/* UNI_CMD_GET_STATISTICS_TAG_LINK_LAYER_STATS */
+	llsTag = (struct UNI_CMD_LINK_LAYER_STATS *) buf;
+	llsTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_LINK_LAYER_STATS;
+	llsTag->u2Length = sizeof(*llsTag);
+
+	rResult = wlanSendSetQueryUniCmd(prAdapter,
+			      UNI_CMD_ID_GET_STATISTICS,
+			      FALSE,
+			      TRUE,
+			      fgIsOid,
+			      nicUniEventAllStatsOneCmd,
+			      nicUniCmdTimeoutCommon,
+			      max_cmd_len,
+			      (void *)uni_cmd,
+			      pvQueryBuffer, u4QueryBufferLen);
+	DBGLOG(REQ, TRACE, "rResult=%u, pvQueryBuffer=%p",
+			rResult, pvQueryBuffer);
+	cnmMemFree(prAdapter, uni_cmd);
+
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		if (ucConnBss[i]) {
+			prQueryStaStatistics = (
+				&prAdapter->rQueryStaStatistics[i]);
+			prQueryStaStatistics->u4Flag |= BIT(1);
+		}
+	}
+	return rResult;
+
+}
+#endif
 
 /**
  * Called to save STATS_LLS_BSSLOAD_INFO information on scan operation.
@@ -13264,7 +13456,11 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 {
 	struct ADAPTER *prAdapter;
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo = NULL;
+#if (CFG_SUPPORT_STATS_ONE_CMD == 0)
 	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
+#else
+	uint32_t u4QueryInfoLen;
+#endif
 	struct PARAM_802_11_STATISTICS_STRUCT *prStat;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
 	uint32_t u4Status = WLAN_STATUS_FAILURE;
@@ -13297,9 +13493,20 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 	COPY_MAC_ADDR(arBssid, prBssInfo->aucBSSID);
 
 	/* send cmd to firmware */
-	prQueryStaStatistics = &(prAdapter->rQueryStaStatistics);
 	prStat = &(prAdapter->rStat);
+
 	kalMemZero(prStat, sizeof(struct PARAM_802_11_STATISTICS_STRUCT));
+
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+	u4Status = wlanQueryStatsOneCmd(prAdapter,
+				NULL,
+				0,
+				&u4QueryInfoLen,
+				FALSE);
+	DBGLOG(REQ, TRACE,
+			"u4Status=%u", u4Status);
+#else
+	prQueryStaStatistics = &(prAdapter->rQueryStaStatistics);
 	COPY_MAC_ADDR(prQueryStaStatistics->aucMacAddr, arBssid);
 	prQueryStaStatistics->ucReadClear = TRUE;
 	DBGLOG(REQ, TRACE, "Call prQueryStaStatistics=%p, u4BufLen=%p",
@@ -13309,14 +13516,18 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 				sizeof(struct PARAM_GET_STA_STATISTICS),
 				&(prAdapter->u4BufLen),
 				FALSE);
-	DBGLOG(REQ, TRACE, "u4Status=%u, prQueryStaStatistics=%p, u4BufLen=%p",
-			u4Status, prQueryStaStatistics, &prAdapter->u4BufLen);
+	DBGLOG(REQ, TRACE,
+			"u4Status=%u, prQueryStaStatistics=%p, u4BufLen=%p",
+			u4Status, prQueryStaStatistics,
+			&prAdapter->u4BufLen);
 
 	u4Status = wlanQueryStatistics(prAdapter,
 				prStat,
 				sizeof(struct PARAM_802_11_STATISTICS_STRUCT),
 				&(prAdapter->u4BufLen),
 				FALSE);
+
+#endif
 
 	if (bFgIsOid == FALSE)
 		u4Status = WLAN_STATUS_SUCCESS;

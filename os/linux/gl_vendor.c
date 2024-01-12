@@ -1780,14 +1780,16 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 #if CFG_SUPPORT_LLS
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter;
+	uint32_t u4QueryInfoLen;
 
+#if (CFG_SUPPORT_STATS_ONE_CMD == 0)
 	union {
 		struct CMD_GET_STATS_LLS cmd;
 		struct EVENT_STATS_LLS_DATA data;
 	} query = {0};
 
 	uint32_t u4QueryBufLen = sizeof(query);
-	uint32_t u4QueryInfoLen = sizeof(query.cmd);
+#endif
 
 	uint8_t *buf = NULL;
 	struct sk_buff *skb = NULL;
@@ -1822,6 +1824,8 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 		buf = (uint8_t *)&prAdapter->rLinkStatsDestBuffer;
 		kalMemZero(buf, sizeof(prAdapter->rLinkStatsDestBuffer));
 
+#if (CFG_SUPPORT_STATS_ONE_CMD == 0)
+		u4QueryInfoLen = sizeof(query.cmd);
 		query.cmd.u4Tag = STATS_LLS_TAG_LLS_DATA;
 		rStatus = kalIoctl(prGlueInfo,
 			   wlanQueryLinkStats, /* pfnOidHandler */
@@ -1850,6 +1854,14 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 			rStatus = -EFAULT;
 			break;
 		}
+#else
+		rStatus = kalIoctlByBssIdx(prGlueInfo,
+			   wlanoidQueryStatsOneCmd, NULL,
+			   0, &u4QueryInfoLen, ucBssIdx);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(REQ, WARN, "kalIoctl=%x",
+				rStatus);
+#endif
 
 		/* Fill returning buffer */
 		ptr = buf;

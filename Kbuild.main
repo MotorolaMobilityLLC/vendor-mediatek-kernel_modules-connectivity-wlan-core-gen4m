@@ -485,6 +485,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_MTK_WIFI_AER_RESET=y
     CONFIG_DRV_OWN_INT_MODE=y
     CONFIG_RX_WORK_SUPPORT=y
+    CONFIG_SUPPORT_STATS_ONE_CMD=y
     ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
     ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
 endif
@@ -716,6 +717,12 @@ ifeq ($(CONFIG_SUPPORT_TX_DATA_DELAY), y)
     endif
 else
     ccflags-y += -DCFG_SUPPORT_TX_DATA_DELAY=0
+endif
+
+ifeq ($(CONFIG_SUPPORT_STATS_ONE_CMD), y)
+    ccflags-y += -DCFG_SUPPORT_STATS_ONE_CMD=1
+else
+    ccflags-y += -DCFG_SUPPORT_STATS_ONE_CMD=0
 endif
 
 ifeq ($(CONFIG_UPDATE_STATIC_DBDC_QUOTA), y)

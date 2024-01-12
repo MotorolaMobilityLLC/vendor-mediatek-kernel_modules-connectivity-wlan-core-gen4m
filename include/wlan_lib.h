@@ -1925,6 +1925,14 @@ void wlanDumpBssStatistics(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 /*----------------------------------------------------------------------------*/
 /* query sta statistics information from driver and firmware                  */
 /*----------------------------------------------------------------------------*/
+
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+uint32_t
+wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
+		       void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+		       uint32_t *pu4QueryInfoLen, uint8_t fgIsOid);
+#endif
+
 uint32_t
 wlanoidQueryStaStatistics(struct ADAPTER *prAdapter,
 			  void *pvQueryBuffer, uint32_t u4QueryBufferLen,
@@ -1935,6 +1943,10 @@ wlanQueryStaStatistics(struct ADAPTER *prAdapter, void *pvQueryBuffer,
 		       uint32_t u4QueryBufferLen,
 		       uint32_t *pu4QueryInfoLen,
 		       u_int8_t fgIsOid);
+
+uint32_t
+updateStaStats(struct ADAPTER *prAdapter,
+	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics);
 
 uint32_t
 wlanQueryStatistics(struct ADAPTER *prAdapter,
