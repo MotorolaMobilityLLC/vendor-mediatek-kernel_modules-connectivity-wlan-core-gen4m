@@ -1085,6 +1085,21 @@ void saaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 		break;
 
 	case SAA_STATE_EXTERNAL_AUTH:
+		if (authCheckRxAuthFrameStatus(prAdapter,
+					       prSwRfb,
+					       AUTH_TRANSACTION_SEQ_2,
+					       &u2StatusCode) ==
+					       WLAN_STATUS_SUCCESS) {
+			/* Record join fail status code only*/
+			if (u2StatusCode != STATUS_CODE_SUCCESSFUL) {
+				DBGLOG(SAA, INFO,
+				       "Auth Req was rejected by [" MACSTR
+				       "], Status Code = %d\n",
+				       MAC2STR(prStaRec->aucMacAddr),
+				       u2StatusCode);
+				prStaRec->u2StatusCode = u2StatusCode;
+			}
+		}
 		kalIndicateRxMgmtFrame(prAdapter->prGlueInfo, prSwRfb,
 				       prStaRec->ucBssIndex);
 		break;
