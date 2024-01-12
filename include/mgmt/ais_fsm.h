@@ -66,6 +66,8 @@
 
 #define AP_HASH_SIZE	256	/* Size of hash tab must be power of 2. */
 
+#define AIS_ROAMING_CONNECTION_TRIAL_LIMIT  2
+
 #define AIS_MAIN_BSS_INDEX(_adapter, _ais_idx) \
 	aisGetMainLinkBssIndex(_adapter, aisFsmGetInstance(_adapter, _ais_idx))
 
