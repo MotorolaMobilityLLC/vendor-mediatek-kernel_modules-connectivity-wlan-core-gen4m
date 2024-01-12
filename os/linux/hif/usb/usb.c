@@ -444,7 +444,7 @@ int32_t mtk_usb_vendor_request(IN struct GLUE_INFO *prGlueInfo,
 	}
 
 	if (unlikely(TransferBufferLength > prHifInfo->vendor_req_buf_sz)) {
-		DBGLOG(REQ, ERROR, "len %u exceeds limit %zu\n",
+		DBGLOG(REQ, ERROR, "len %u exceeds limit %u\n",
 			TransferBufferLength,
 			prHifInfo->vendor_req_buf_sz);
 		return -E2BIG;
@@ -725,6 +725,11 @@ void *glUsbInitQ(struct GL_HIF_INFO *prHifInfo, struct list_head *prHead, uint32
 	INIT_LIST_HEAD(prHead);
 
 	prUsbReqs = kcalloc(u4Cnt, sizeof(struct USB_REQ), GFP_ATOMIC);
+	if (prUsbReqs == NULL) {
+		DBGLOG(HAL, ERROR, "glUsbInitQ() kcalloc error\n");
+		goto error;
+	}
+
 	prUsbReq = prUsbReqs;
 
 	for (i = 0; i < u4Cnt; ++i) {
@@ -742,6 +747,7 @@ void *glUsbInitQ(struct GL_HIF_INFO *prHifInfo, struct list_head *prHead, uint32
 		prUsbReq++;
 	}
 
+error:
 	return (void *) prUsbReqs;
 }
 
@@ -963,7 +969,7 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	mutex_init(&prHifInfo->vendor_req_sem);
 	prHifInfo->vendor_req_buf = kzalloc(VND_REQ_BUF_SIZE, GFP_KERNEL);
 	if (!prHifInfo->vendor_req_buf) {
-		DBGLOG(HAL, ERROR, "kzalloc vendor_req_buf %zu error\n",
+		DBGLOG(HAL, ERROR, "kzalloc vendor_req_buf %u error\n",
 			VND_REQ_BUF_SIZE);
 		goto error;
 	}
@@ -986,7 +992,6 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 	/* TX CMD */
 	prHifInfo->prTxCmdReqHead = glUsbInitQ(prHifInfo, &prHifInfo->rTxCmdFreeQ, USB_REQ_TX_CMD_CNT);
-	prUsbReq = list_entry(prHifInfo->rTxCmdFreeQ.next, struct USB_REQ, list);
 	i = 0;
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxCmdFreeQ, list) {
 		prUsbReq->prBufCtrl = &prHifInfo->rTxCmdBufCtrl[i];
@@ -1065,7 +1070,6 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	}
 #else
 	glUsbInitQ(prHifInfo, &prHifInfo->rTxDataFreeQ, USB_REQ_TX_DATA_CNT);
-	prUsbReq = list_entry(prHifInfo->rTxDataFreeQ.next, struct USB_REQ, list);
 	i = 0;
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxDataFreeQ, list) {
 		QUEUE_INITIALIZE(&prUsbReq->rSendingDataMsduInfoList);
