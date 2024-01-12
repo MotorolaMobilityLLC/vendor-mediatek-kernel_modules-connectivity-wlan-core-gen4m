@@ -430,7 +430,7 @@ EXPORT_SYMBOL(rstNotifyWholeChipRstStatus);
 static int __init resetInit(void)
 {
 	MR_Err("%s\n", __func__);
-
+	resetKoInit();
 	mutex_init(&g_prResetInfo.rResetMutex);
 	g_prResetInfo.eResetState = RST_STATE_UNKNOWN;
 
@@ -440,6 +440,7 @@ static int __init resetInit(void)
 static void __exit resetExit(void)
 {
 	MR_Dbg("%s\n", __func__);
+	resetKoExit();
 }
 
 module_init(resetInit);
