@@ -473,9 +473,22 @@ uint32_t halToggleWfsysRst(IN struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
+	struct CHIP_DBG_OPS *prChipDbg;
 
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
+	prChipDbg = prChipInfo->prDebugOps;
+
+	/* Although we've already executed show_mcu_debug_info() in
+	 * glResetTriggerCommon(), it may not be a successful operation at that
+	 * time in USB mode due to the context is soft_irq which forbids the
+	 * execution of usb_control_msg(). Since we don't prefer to refactor it
+	 * at this stage, this is a workaround by performing it again here
+	 * where the context is kernel thread from workqueue.
+	 */
+	if (prChipDbg->show_mcu_debug_info)
+		prChipDbg->show_mcu_debug_info(prAdapter, NULL, 0,
+					       DBG_MCU_DBG_ALL, NULL);
 
 	/* set USB EP_RST_OPT as reset scope excludes toggle bit,
 	 * sequence number, etc.

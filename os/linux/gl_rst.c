@@ -676,9 +676,11 @@ uint32_t glResetSelectAction(IN struct ADAPTER *prAdapter)
 void glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 		    const uint8_t *pucFile, uint32_t u4Line)
 {
+	struct CHIP_DBG_OPS *prChipDbg;
 	uint16_t u2FwOwnVersion;
 	uint16_t u2FwPeerVersion;
 	uint16_t i;
+	u_int8_t fgDrvOwn;
 
 	dump_stack();
 	if (kalIsResetting())
@@ -687,8 +689,10 @@ void glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 	if (prAdapter == NULL)
 		prAdapter = wifi_rst.prGlueInfo->prAdapter;
 
+	prChipDbg = prAdapter->chip_info->prDebugOps;
 	u2FwOwnVersion = prAdapter->rVerInfo.u2FwOwnVersion;
 	u2FwPeerVersion = prAdapter->rVerInfo.u2FwPeerVersion;
+	fgDrvOwn = TRUE;
 
 	if (eResetReason >= 0 && eResetReason < RST_REASON_MAX)
 		DBGLOG(INIT, ERROR,
@@ -720,6 +724,16 @@ void glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 
 	prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 	halPrintHifDbgInfo(prAdapter);
+
+	if (prChipDbg->show_mcu_debug_info) {
+		HAL_LP_OWN_RD(prAdapter, &fgDrvOwn);
+		if (fgDrvOwn)
+			prChipDbg->show_mcu_debug_info(prAdapter, NULL, 0,
+						       DBG_MCU_DBG_ALL, NULL);
+		else
+			DBGLOG(INIT, INFO,
+			       "[SER] not drv own, cannot get mcu info\n");
+	}
 
 	if (u4RstFlag & RST_FLAG_DO_WHOLE_RESET) {
 		fgIsResetting = TRUE;
@@ -987,6 +1001,30 @@ static void mtk_wifi_reset(struct work_struct *work)
 {
 	struct RESET_STRUCT *rst = container_of(work,
 						struct RESET_STRUCT, rst_work);
+	struct ADAPTER *prAdapter;
+	struct CHIP_DBG_OPS *prChipDbg;
+	u_int8_t fgDrvOwn;
+
+	prAdapter = rst->prGlueInfo->prAdapter;
+	prChipDbg = prAdapter->chip_info->prDebugOps;
+	fgDrvOwn = TRUE;
+
+	/* Although we've already executed show_mcu_debug_info() in
+	 * glResetTriggerCommon(), it may not be a successful operation at that
+	 * time in USB mode due to the context is soft_irq which forbids the
+	 * execution of usb_control_msg(). Since we don't prefer to refactor it
+	 * at this stage, this is a workaround by performing it again here
+	 * where the context is kernel thread from workqueue.
+	 */
+	if (prChipDbg->show_mcu_debug_info) {
+		HAL_LP_OWN_RD(prAdapter, &fgDrvOwn);
+		if (fgDrvOwn)
+			prChipDbg->show_mcu_debug_info(prAdapter, NULL, 0,
+						       DBG_MCU_DBG_ALL, NULL);
+		else
+			DBGLOG(INIT, INFO,
+			       "[SER][L0] not drv own, cannot get mcu info\n");
+	}
 	mtk_wifi_reset_main(rst);
 }
 

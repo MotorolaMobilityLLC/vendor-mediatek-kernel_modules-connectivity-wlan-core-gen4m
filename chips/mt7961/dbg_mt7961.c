@@ -1287,6 +1287,12 @@ u_int8_t usb_show_mcu_debug_info(IN struct ADAPTER *prAdapter,
 	uint8_t  i = 0;
 	u_int8_t fgStatus = FALSE;
 
+	if (in_interrupt()) {
+		DBGLOG(HAL, INFO,
+		       "in interrupt context, cannot get mcu info\n");
+		return FALSE;
+	}
+
 	if (pucBuf) {
 		LOGBUF(pucBuf, u4Max, *pu4Length, "\n");
 		LOGBUF(pucBuf, u4Max, *pu4Length,
