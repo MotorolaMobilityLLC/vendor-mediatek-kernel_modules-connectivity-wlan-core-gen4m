@@ -7534,7 +7534,8 @@ void p2pFuncCrossBandChannelSwitchCheck(
 {
 
 #if CFG_SUPPORT_DBDC
-	*fgDbDcModeEn = prAdapter->rWifiVar.fgDbDcModeEn;
+	*fgDbDcModeEn = (prAdapter->rWifiVar.eDbdcMode !=
+		ENUM_DBDC_MODE_DISABLED);
 #if (CFG_SUPPORT_WIFI_6G == 1)	/* Go SCC for 5G+6G */
 	if ((*eStaBand == BAND_5G && *eSapBand == BAND_6G) ||
 		(*eStaBand == BAND_6G && *eSapBand == BAND_5G))
