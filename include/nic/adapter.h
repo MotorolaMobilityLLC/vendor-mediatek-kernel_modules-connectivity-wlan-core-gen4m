@@ -1766,9 +1766,6 @@ struct ADAPTER {
 	u_int8_t ucANTCtrlReason;
 #endif
 
-#if (CFG_SUPPORT_WIFI_RNR == 1)
-	struct LINK rNeighborAPInfoList;
-#endif
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO aprMldBssInfo[MAX_BSSID_NUM];
 	struct MLD_STA_RECORD aprMldStarec[CFG_STA_REC_NUM];
