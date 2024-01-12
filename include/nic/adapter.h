@@ -2442,6 +2442,7 @@ struct ADAPTER {
 	struct QUE rRxFwDropSSNQue; /* handle FW DROP SSN by NAPI */
 #endif /* CFG_SUPPORT_FW_DROP_SSN */
 	uint32_t u4LongestPending; /* longest pending token in seconds */
+	uint32_t u4WaitOffTimeoutPeriod;
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
