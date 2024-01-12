@@ -3590,7 +3590,7 @@ static int priv_driver_get_bss_statistics(
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Index);
 #endif
 	ucBssIndex = wlanGetBssIdx(prNetDev);
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
 		return WLAN_STATUS_FAILURE;
 
 	/* 2. fill RSSI */
