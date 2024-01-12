@@ -1339,9 +1339,7 @@ struct WIFI_VAR {
 	u_int8_t fgCoalescingIntEn;
 	uint32_t u4PerfMonTpCoalescingIntTh;
 #endif
-#if CFG_MTK_MDDP_SUPPORT
 	u_int8_t fgMddpSupport;
-#endif
 
 	uint8_t fgSapCheckPmkidInDriver;
 	uint8_t fgSapChannelSwitchPolicy;
