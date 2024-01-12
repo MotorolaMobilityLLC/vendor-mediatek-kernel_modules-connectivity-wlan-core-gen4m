@@ -215,6 +215,8 @@ typedef struct _AIS_FSM_INFO_T {
 
 	TIMER_T rWaitOkcPMKTimer;
 
+	TIMER_T rSecModeChangeTimer;
+
 	UINT_8 ucSeqNumOfReqMsg;
 	UINT_8 ucSeqNumOfChReq;
 	UINT_8 ucSeqNumOfScanReq;
@@ -363,6 +365,8 @@ VOID aisBssBeaconTimeout(IN P_ADAPTER_T prAdapter);
 
 VOID aisBssLinkDown(IN P_ADAPTER_T prAdapter);
 
+VOID aisBssSecurityChanged(IN P_ADAPTER_T prAdapter);
+
 WLAN_STATUS
 aisDeauthXmitComplete(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_RESULT_CODE_T rTxDoneStatus);
 
@@ -388,6 +392,8 @@ VOID aisFsmRunEventJoinTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr);
 VOID aisFsmRunEventChannelTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr);
 
 VOID aisFsmRunEventDeauthTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr);
+
+VOID aisFsmRunEventSecModeChangeTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr);
 
 /*----------------------------------------------------------------------------*/
 /* OID/IOCTL Handling                                                         */
