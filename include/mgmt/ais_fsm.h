@@ -465,6 +465,9 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 void aisBssBeaconTimeout(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex);
 
+void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucReason, IN uint8_t ucBssIndex);
+
 void aisBssLinkDown(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex);
 

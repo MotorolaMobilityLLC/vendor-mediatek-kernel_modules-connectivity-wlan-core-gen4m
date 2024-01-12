@@ -4452,7 +4452,7 @@ void nicEventMibInfo(IN struct ADAPTER *prAdapter,
 */
 /*----------------------------------------------------------------------------*/
 bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter,
-	uint8_t ucBssIdx)
+	uint8_t ucReason, uint8_t ucBssIdx)
 {
 	struct RX_CTRL	*prRxCtrl;
 	struct TX_CTRL	*prTxCtrl;
@@ -4483,8 +4483,11 @@ bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter,
 	 * Policy 2, if TX done successfully in the past duration (in ms)
 	 *    if hit, then the beacon timeout event will be ignored
 	 */
-	if (!CHECK_FOR_TIMEOUT(u4CurrentTime, prRxCtrl->u4LastRxTime[ucBssIdx],
-			      SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow))) &&
+	if (ucReason == BEACON_TIMEOUT_REASON_HIGH_PER) {
+		bValid = true;
+	} else if (!CHECK_FOR_TIMEOUT(u4CurrentTime,
+		prRxCtrl->u4LastRxTime[ucBssIdx],
+		SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow))) &&
 	    !scanBeaconTimeoutFilterPolicyForAis(prAdapter, ucBssIdx)) {
 		DBGLOG(NIC, INFO, "Policy 1 hit, RX in the past duration");
 		bValid = false;
@@ -4525,13 +4528,16 @@ void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 
 		if (IS_BSS_AIS(prBssInfo)) {
 			if (nicBeaconTimeoutFilterPolicy(prAdapter,
+				prEventBssBeaconTimeout->ucReasonCode,
 				prBssInfo->ucBssIndex))
-				aisBssBeaconTimeout(prAdapter,
+				aisBssBeaconTimeout_impl(prAdapter,
+					prEventBssBeaconTimeout->ucReasonCode,
 					prBssInfo->ucBssIndex);
 		}
 #if CFG_ENABLE_WIFI_DIRECT
 		else if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
 			if (nicBeaconTimeoutFilterPolicy(prAdapter,
+					prEventBssBeaconTimeout->ucReasonCode,
 					prEventBssBeaconTimeout->ucBssIndex))
 				p2pRoleFsmRunEventBeaconTimeout(prAdapter,
 					prBssInfo);
