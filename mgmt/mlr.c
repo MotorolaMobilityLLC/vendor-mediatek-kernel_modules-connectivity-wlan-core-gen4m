@@ -383,7 +383,14 @@ static u_int8_t mlrProccessFragMsduInfo(struct ADAPTER *prAdapter,
 	/* Set lowest rate, using MLR rate is decided
 	 * by nicTxSetPktLowestFixedRate
 	 */
-	prMsduInfo->ucRateMode = MSDU_RATE_MODE_LOWEST_RATE;
+	/* Original flow: If there are fragment packets,
+	 * The fixed rate field of these packets will be filled in
+	 * with MLR 1.5 rate. Because RA rise and fall rate based on
+	 * auto rate packets, these fixed rate tx results will not be
+	 * referenced by RA. As a result, RA will enter low traffic flow
+	 * , so the rate rise and fall is very insensitive.
+	 */
+	/* prMsduInfo->ucRateMode = MSDU_RATE_MODE_LOWEST_RATE; */
 
 	if (MLR_CHECK_IF_ENABLE_DEBUG(prAdapter)) {
 		DBGLOG(TX, INFO, "MLR frag - MSDU_INFO: Frag[0] dump...\n");
@@ -1111,13 +1118,12 @@ u_int8_t mlrDecideIfUseMlrRate(struct ADAPTER *prAdapter,
 							.ucTxMlrRateRcpiThr);
 					}
 				}
-			/* In case of Data frame and it is fragmented */
+			/* In case of Data frame (ARP, DHCP, EAPOL) */
 			} else if (MLR_CHECK_IF_ENABLE_TX_FRAG(prStaRec)
 				&& prMsduInfo->eSrc == TX_PACKET_OS
-				&& (MLR_CHECK_IF_MSDU_IS_FRAG(prMsduInfo)
 				/* Consider fixed rate (ARP, DHCP, EAPOL) */
-				|| prMsduInfo->ucRateMode ==
-				MSDU_RATE_MODE_MANUAL_DESC)) {
+				&& prMsduInfo->ucRateMode ==
+				MSDU_RATE_MODE_MANUAL_DESC) {
 				*pu2RateCode = RATE_MLR_1_5M;
 				fgIsUseMlrRate = TRUE;
 				DBGLOG(NIC, INFO,
