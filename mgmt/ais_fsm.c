@@ -2250,7 +2250,8 @@ static enum ENUM_AIS_STATE aisSearchHandleReconnect(struct ADAPTER *ad,
 				continue;
 
 			/* same ap, need to reconnect */
-			if (EQUAL_MAC_ADDR(bss->aucBSSID,
+			if (ad->rWifiVar.fgRoamByBTO ||
+			    EQUAL_MAC_ADDR(bss->aucBSSID,
 					   prBssDesc->aucBSSID)) {
 				struct MSG_AIS_ABORT *prAisAbortMsg;
 
