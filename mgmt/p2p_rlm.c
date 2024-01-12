@@ -228,6 +228,8 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 		}
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
+		ucMaxBw = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
+		rlmFillVhtOpInfoByBssOpBw(prBssInfo, ucMaxBw);
 		rlmUpdate6GOpInfo(prAdapter, prBssInfo);
 #endif
 	} else {
