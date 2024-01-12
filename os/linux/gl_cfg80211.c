@@ -6240,7 +6240,7 @@ int mtk_init_ap_role(struct GLUE_INFO *prGlueInfo,
 	/* reference from the glRegisterP2P() */
 	gprP2pRoleWdev[u4Idx] = ndev->ieee80211_ptr;
 	if (glSetupP2P(prGlueInfo, gprP2pRoleWdev[u4Idx], ndev,
-		       u4Idx, TRUE)) {
+		u4Idx, TRUE, TRUE)) {
 		gprP2pRoleWdev[u4Idx] = NULL;
 		return -EFAULT;
 	}
