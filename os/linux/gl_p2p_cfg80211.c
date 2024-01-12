@@ -2843,6 +2843,10 @@ int _mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 				prMsgTxReq->u8Cookie);
 #undef TEMP_LOG_TEMPLATE
 
+		if (prMsgTxReq->fgIsWaitRsp || prMsgTxReq->fgIsOffChannel)
+			p2pFuncAddPendingMgmtLinkEntry(prGlueInfo->prAdapter,
+						       prMsgTxReq);
+
 		mboxSendMsg(prGlueInfo->prAdapter,
 			MBOX_ID_0,
 			(struct MSG_HDR *) prMsgTxReq,
