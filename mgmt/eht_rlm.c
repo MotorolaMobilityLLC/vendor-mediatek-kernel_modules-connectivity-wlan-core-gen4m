@@ -390,6 +390,43 @@ void ehtRlmRspGenerateCapIE(
 		ehtRlmFillCapIE(prAdapter, prBssInfo, prMsduInfo);
 }
 
+
+uint8_t ehtRlmGetEhtOpBwByBssOpBw(uint8_t ucBssOpBw)
+{
+	uint8_t ucEhtOpBw = EHT_MAX_BW_20;
+
+	switch (ucBssOpBw) {
+	case MAX_BW_20MHZ:
+		ucEhtOpBw = EHT_MAX_BW_20;
+		break;
+
+	case MAX_BW_40MHZ:
+		ucEhtOpBw = EHT_MAX_BW_40;
+		break;
+
+	case MAX_BW_80MHZ:
+		ucEhtOpBw = EHT_MAX_BW_80;
+		break;
+
+	case MAX_BW_160MHZ:
+		ucEhtOpBw = EHT_MAX_BW_160;
+		break;
+
+	case MAX_BW_320MHZ:
+		ucEhtOpBw = EHT_MAX_BW_320;
+		break;
+
+	default:
+		DBGLOG(RLM, WARN, "unexpected Bss OP BW: %d\n",
+		       ucBssOpBw);
+
+		ucEhtOpBw = EHT_MAX_BW_20;
+		break;
+	}
+
+	return ucEhtOpBw;
+}
+
 static void ehtRlmFillOpIE(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
@@ -397,6 +434,7 @@ static void ehtRlmFillOpIE(
 {
 	struct IE_EHT_OP*prEhtOp;
 	uint32_t u4OverallLen = OFFSET_OF(struct IE_EHT_OP, aucVarInfo[0]);
+	uint8_t eht_bw = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -410,6 +448,16 @@ static void ehtRlmFillOpIE(
 
 	/* MAC capabilities */
 	EHT_RESET_OP(prEhtOp->ucEhtOpParams);
+
+	eht_bw = cnmGetBssBandBw(prAdapter, prBssInfo,
+		prBssInfo->eBand);
+
+	/* EHT Operation Information */
+	EHT_SET_OP_CHAN_WIDTH(prEhtOp->ucEhtOpParams,
+		ehtRlmGetEhtOpBwByBssOpBw(eht_bw));
+
+	DBGLOG(RLM, INFO, "EHT channel width: %d\n",
+		EHT_GET_OP_CHAN_WIDTH(prEhtOp->ucEhtOpParams));
 
 	prEhtOp->ucLength = u4OverallLen - ELEM_HDR_LEN;
 
