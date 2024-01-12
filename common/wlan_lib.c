@@ -5060,6 +5060,8 @@ uint32_t wlanEnqueueTxPacket(IN struct ADAPTER *prAdapter,
 
 	if (nicTxFillMsduInfo(prAdapter, prMsduInfo,
 			      prNativePacket)) {
+		TX_INC_CNT(&prAdapter->rTxCtrl, TX_MSDUINFO_COUNT);
+
 		/* prMsduInfo->eSrc = TX_PACKET_OS; */
 
 		/* Tx profiling */

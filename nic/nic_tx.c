@@ -5627,6 +5627,8 @@ uint32_t nicTxDirectStartXmitMain(struct sk_buff
 	if (prSkb) {
 		nicTxFillMsduInfo(prAdapter, prMsduInfo, prSkb);
 
+		TX_INC_CNT(&prAdapter->rTxCtrl, TX_DIRECT_MSDUINFO_COUNT);
+
 		/* Tx profiling */
 		wlanTxProfilingTagMsdu(prAdapter, prMsduInfo,
 				       TX_PROF_TAG_DRV_ENQUE);
@@ -6058,10 +6060,10 @@ end:
 
 uint32_t nicTxDirectMsduQueueMthread(IN struct ADAPTER *prAdapter)
 {
-	uint8_t ucHifTc;
+	int8_t i;
 
-	for (ucHifTc = 0; ucHifTc < TX_PORT_NUM; ucHifTc++)
-		nicTxDirectHifXmit(prAdapter, ucHifTc);
+	for (i = TX_PORT_NUM - 1; i >= 0; i--)
+		nicTxDirectHifXmit(prAdapter, i);
 
 	return WLAN_STATUS_SUCCESS;
 }

@@ -2599,6 +2599,8 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	}
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
 
+	TX_INC_CNT(&prAdapter->rTxCtrl, TX_IN_COUNT);
+
 	if (!HAL_IS_TX_DIRECT(prGlueInfo->prAdapter)) {
 		GLUE_SPIN_LOCK_DECLARATION();
 
@@ -9002,7 +9004,8 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 #define TEMP_LOG_TEMPLATE \
 	"<%dms> Tput: %llu(%llu.%03llumbps) %s Pending:%d/%d %s " \
 	"LQ[%llu:%llu:%llu] lv:%u th:%u fg:0x%lx" \
-	" TxDp[ST:BS:FO:QM:DP]:%u:%u:%u:%u:%u\n"
+	" TxDp[ST:BS:FO:QM:DP]:%u:%u:%u:%u:%u" \
+	" Tx[TI:TM:TDD:TDM]:%u:%u:%u:%u\n"
 
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
 		period,	(unsigned long long) perf->ulThroughput,
@@ -9020,11 +9023,15 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		TX_GET_CNT(&prAdapter->rTxCtrl, TX_INACTIVE_BSS_DROP),
 		TX_GET_CNT(&prAdapter->rTxCtrl, TX_FORWARD_OVERFLOW_DROP),
 		TX_GET_CNT(&prAdapter->rTxCtrl, TX_INVALID_MSDUINFO_COUNT),
-		TX_GET_CNT(&prAdapter->rTxCtrl, TX_DROP_PID_COUNT)
+		TX_GET_CNT(&prAdapter->rTxCtrl, TX_DROP_PID_COUNT),
+		TX_GET_CNT(&prAdapter->rTxCtrl, TX_IN_COUNT),
+		TX_GET_CNT(&prAdapter->rTxCtrl, TX_MSDUINFO_COUNT),
+		TX_GET_CNT(&prAdapter->rTxCtrl, TX_DIRECT_DEQUEUE_COUNT),
+		TX_GET_CNT(&prAdapter->rTxCtrl, TX_DIRECT_MSDUINFO_COUNT)
 		);
 #undef TEMP_LOG_TEMPLATE
 #define TEMP_LOG_TEMPLATE \
-	"ndevdrp:%s NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu:%lu] " \
+	"ndevdrp:%s NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu] " \
 	"drv[RM,IL,RI,RT,RM,RW,RA,RB,DT,NS,IB,HS,LS,DD,ME,BD,NI," \
 	"DR,TE,CE,DN,FE,DE,IE,TME]:%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
 	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu\n"
@@ -12186,58 +12193,62 @@ uint32_t kalTxDirectStartXmit(struct sk_buff *prSkb,
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct MSDU_INFO *prMsduInfo;
 	uint32_t ret = WLAN_STATUS_SUCCESS;
+	struct sk_buff_head rLocalSkbQ;
+	struct sk_buff_head *prLocalSkbQ, *prTxDirectSkbQ;
+	unsigned long u4Flags;
 
-	spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+	prLocalSkbQ = &rLocalSkbQ;
+	prTxDirectSkbQ = &prGlueInfo->rTxDirectSkbQueue;
+	__skb_queue_head_init(prLocalSkbQ);
 
-	if (prSkb) {
-		prMsduInfo = cnmPktAlloc(prAdapter, 0);
+	if (!spin_trylock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT])) {
+		/* fail to get lock */
+		if (prSkb)
+			skb_queue_tail(prTxDirectSkbQ, prSkb);
 
-		if (prMsduInfo == NULL) {
-			DBGLOG(TX, INFO, "cnmPktAlloc NULL\n");
-			skb_queue_tail(&prGlueInfo->rTxDirectSkbQueue, prSkb);
-
-			ret = WLAN_STATUS_SUCCESS;
-			goto end;
-		}
-		if (skb_queue_len(&prGlueInfo->rTxDirectSkbQueue)) {
-			skb_queue_tail(&prGlueInfo->rTxDirectSkbQueue, prSkb);
-			prSkb = skb_dequeue(&prGlueInfo->rTxDirectSkbQueue);
-		}
-	} else {
-		prMsduInfo = cnmPktAlloc(prAdapter, 0);
-		if (prMsduInfo != NULL) {
-			prSkb = skb_dequeue(&prGlueInfo->rTxDirectSkbQueue);
-			if (prSkb == NULL) {
-				DBGLOG(TX, INFO,
-					"ERROR: no rTxDirectSkbQueue\n");
-				nicTxReturnMsduInfo(prAdapter, prMsduInfo);
-				ret = WLAN_STATUS_FAILURE;
-				goto end;
-			}
-		} else {
-			ret = WLAN_STATUS_FAILURE;
-			goto end;
-		}
+		mod_timer(&prGlueInfo->rTxDirectSkbTimer,
+			  jiffies + TX_DIRECT_CHECK_INTERVAL);
+		return ret;
 	}
 
-	while (1) {
-		nicTxDirectStartXmitMain(prSkb, prMsduInfo, prAdapter, 0xff,
-					 0xff, 0xff);
-		prSkb = skb_dequeue(&prGlueInfo->rTxDirectSkbQueue);
-		if (prSkb != NULL) {
-			prMsduInfo = cnmPktAlloc(prAdapter, 0);
-			if (prMsduInfo == NULL) {
-				skb_queue_head(&prGlueInfo->rTxDirectSkbQueue,
-					prSkb);
-				break;
-			}
-		} else {
+	if (skb_queue_len(prTxDirectSkbQ)) {
+		spin_lock_irqsave(&prTxDirectSkbQ->lock, u4Flags);
+		skb_queue_splice_init(prTxDirectSkbQ, prLocalSkbQ);
+		spin_unlock_irqrestore(&prTxDirectSkbQ->lock, u4Flags);
+	}
+
+	if (prSkb)
+		__skb_queue_tail(prLocalSkbQ, prSkb);
+
+	while (skb_queue_len(prLocalSkbQ)) {
+		prMsduInfo = cnmPktAlloc(prAdapter, 0);
+		if (unlikely(prMsduInfo == NULL)) {
+			DBGLOG(TX, INFO, "cnmPktAlloc NULL\n");
 			break;
 		}
+
+		prSkb = __skb_dequeue(prLocalSkbQ);
+		if (unlikely(prSkb == NULL)) {
+			/* should not enter here, just sanity check */
+			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
+			break;
+		}
+
+		nicTxDirectStartXmitMain(prSkb, prMsduInfo, prAdapter, 0xff,
+					 0xff, 0xff);
 	}
 
-end:
-	if (skb_queue_len(&prGlueInfo->rTxDirectSkbQueue))
+	TX_INC_CNT(&prGlueInfo->prAdapter->rTxCtrl,
+		TX_DIRECT_DEQUEUE_COUNT);
+
+	if (unlikely(skb_queue_len(prLocalSkbQ))) {
+		spin_lock_irqsave(&prTxDirectSkbQ->lock, u4Flags);
+		skb_queue_splice_init(prTxDirectSkbQ, prLocalSkbQ);
+		skb_queue_splice_init(prLocalSkbQ, prTxDirectSkbQ);
+		spin_unlock_irqrestore(&prTxDirectSkbQ->lock, u4Flags);
+	}
+
+	if (skb_queue_len(prTxDirectSkbQ))
 		mod_timer(&prGlueInfo->rTxDirectSkbTimer,
 			  jiffies + TX_DIRECT_CHECK_INTERVAL);
 
