@@ -4685,6 +4685,7 @@ s_int32 mt_agent_hqa_cmd_handler(
 			}
 
 			cmd_id &= 0xff;
+			ret = SERV_STATUS_AGENT_NOT_SUPPORTED;
 			while (cmd_loop < CMD_TABLES[table_idx].cmd_set_size) {
 				if (cmd_id == cmd_set[cmd_loop].index) {
 					ret = cmd_set[cmd_loop].handler(
