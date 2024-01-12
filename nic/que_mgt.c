@@ -116,6 +116,7 @@ static uint16_t arpMoniter;
 static uint8_t apIp[4];
 static uint8_t gatewayIp[4];
 static uint32_t last_rx_packets, latest_rx_packets;
+static uint8_t arpIsCriticalThres;
 #endif
 /*******************************************************************************
  *                                 M A C R O S
@@ -8993,6 +8994,7 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	prWifiVar = &prAdapter->rWifiVar;
 	uArpMonitorNumber = prWifiVar->uArpMonitorNumber;
 	uArpMonitorRxPktNum = prWifiVar->uArpMonitorRxPktNum;
+	arpIsCriticalThres = prWifiVar->uArpMonitorCriticalThres;
 
 	if (uArpMonitorNumber == 0)
 		return;
@@ -9244,6 +9246,13 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 	}
 	DBGLOG(INIT, WARN,
 	       "can't find the dhcp option 255?, need to check the net log\n");
+}
+
+u_int8_t qmArpMonitorIsCritical(void)
+{
+	DBGLOG(QM, LOUD, "arpMoniter:[Mon, Thres][%u, %u]\n",
+			arpMoniter, arpIsCriticalThres);
+	return arpMoniter >= arpIsCriticalThres;
 }
 
 void qmResetArpDetect(void)

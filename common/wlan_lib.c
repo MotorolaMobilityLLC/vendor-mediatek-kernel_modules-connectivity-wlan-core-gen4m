@@ -8015,6 +8015,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #if ARP_MONITER_ENABLE
 	INIT_UINT(prWifiVar->uArpMonitorNumber, "ArpMonitorNumber", 20);
 	INIT_UINT(prWifiVar->uArpMonitorRxPktNum, "ArpMonitorRxPktNum", 0);
+	INIT_UINT(prWifiVar->uArpMonitorCriticalThres,
+			"ArpMonitorCriticalThres", 4);
 #endif /* ARP_MONITER_ENABLE */
 
 #if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
