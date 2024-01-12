@@ -2535,10 +2535,15 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_SUPPORT_DBDC == 1 && CFG_UPDATE_STATIC_DBDC_QUOTA == 1)
+#if CFG_SUPPORT_NAN
+	/* NAN will not tx traffic on 2.4G */
+	if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN &&
+		prBssInfo->eBand == BAND_2G4)
+		return u4Status;
+#endif
 	if (prAdapter->rWifiVar.eDbdcMode ==
 		ENUM_DBDC_MODE_STATIC)
 		cnmUpdateStaticDbdcQuota(prAdapter);
-
 #endif
 	return u4Status;
 }
