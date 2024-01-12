@@ -611,10 +611,17 @@ s_int32 mt_op_set_tx_path(
 	ret = tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
 
+	if (ret != SERV_STATUS_SUCCESS)
+		goto err_out;
+
 	ret = tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_SET_TX_PATH,
 			(u_int32)configs->tx_ant);
 
+	if (ret != SERV_STATUS_SUCCESS)
+		goto err_out;
+
+err_out:
 	return ret;
 }
 
@@ -633,11 +640,18 @@ s_int32 mt_op_set_rx_path(
 	ret = tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
 
+	if (ret != SERV_STATUS_SUCCESS)
+		goto err_out;
+
 	rx_ant = ((rx_ant << 16) | (0 & BITS(0, 15)));
 	ret = tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_SET_RX_PATH,
 			rx_ant);
 
+	if (ret != SERV_STATUS_SUCCESS)
+		goto err_out;
+
+err_out:
 	return ret;
 }
 
@@ -668,8 +682,14 @@ s_int32 mt_op_set_cfg_on_off(
 	ret = tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
 
+	if (ret != SERV_STATUS_SUCCESS)
+		goto err_out;
+
 	ret = tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_BAND, ch_band);
+
+	if (ret != SERV_STATUS_SUCCESS)
+		goto err_out;
 
 	/* type pass through to FW */
 	if (enable)
@@ -678,6 +698,9 @@ s_int32 mt_op_set_cfg_on_off(
 	else
 		ret = tm_rftest_set_auto_test(
 			winfos, RF_AT_FUNCID_SET_CFG_OFF, type);
+
+	if (ret != SERV_STATUS_SUCCESS)
+		goto err_out;
 
 #else
 
@@ -716,6 +739,9 @@ s_int32 mt_op_set_cfg_on_off(
 
 #endif /* (CFG_SUPPORT_CONNAC3X == 1) */
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+err_out:
+#endif
 	return ret;
 }
 
@@ -2295,8 +2321,14 @@ s_int32 mt_op_dbdc_continuous_tx(
 		ret = tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_PREAMBLE, tx_mode);
 
-		tm_rftest_set_auto_test(winfos,
+		if (ret != SERV_STATUS_SUCCESS)
+			return SERV_STATUS_HAL_OP_FAIL;
+
+		ret = tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_RATE, rate);
+
+		if (ret != SERV_STATUS_SUCCESS)
+			return SERV_STATUS_HAL_OP_FAIL;
 
 #else
 
@@ -2309,6 +2341,9 @@ s_int32 mt_op_dbdc_continuous_tx(
 
 		ret = tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_PREAMBLE, tx_mode);
+
+		if (ret != SERV_STATUS_SUCCESS)
+			return SERV_STATUS_HAL_OP_FAIL;
 
 		if (tx_mode == 0) {
 			rate |= 0x00000000;
@@ -2336,6 +2371,9 @@ s_int32 mt_op_dbdc_continuous_tx(
 		ret = tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_SET_CBW,
 			tm_bw_hqa_mapping_at((u_int32)configs->bw));
+
+		if (ret != SERV_STATUS_SUCCESS)
+			return SERV_STATUS_HAL_OP_FAIL;
 
 		ret = tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_SET_CW_MODE,
