@@ -1770,7 +1770,7 @@ do { \
 	TX_DESC_SPE_EXT_IDX_MASK, TX_DESC_SPE_EXT_IDX_OFFSET)
 
 #define HAL_MAC_TX_DESC_IS_HW_AMSDU(_prHwMacTxDesc) \
-	(((_prHwMacTxDesc)->u2PseFid & TX_DESC_HW_AMSDU)?TRUE:FALSE)
+	((_prHwMacTxDesc)->u2PseFid & TX_DESC_HW_AMSDU)
 #define HAL_MAC_TX_DESC_SET_HW_AMSDU(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->u2PseFid |= TX_DESC_HW_AMSDU)
 #define HAL_MAC_TX_DESC_UNSET_HW_AMSDU(_prHwMacTxDesc) \

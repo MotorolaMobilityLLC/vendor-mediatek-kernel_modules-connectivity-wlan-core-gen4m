@@ -2127,14 +2127,22 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 		kalQueryTxChksumOffloadParam(prMsduInfo->prPacket,
 					     &ucChksumFlag);
 		/*
-		 * AMSDU needs this force checksum offload fix.
-		 * RX GRO from modem caused some CHECKSUM_UNNECESSARY
-		 * and some CHECKSUM_PARTIAL.
-		 * Remove this forced checksum flag setting and back to
+		 * Future:
+		 * Remove this checksum flag twicking and back to
 		 * kalQueryTxChksumOffloadParam() when per frame AMSDU is ready.
+		 *
+		 * Option 1: force checksum for all.
+		 *   AMSDU needs this force checksum offload fix.
+		 *   RX GRO from modem caused some CHECKSUM_UNNECESSARY
+		 *   and some CHECKSUM_PARTIAL.
+		 *   Set "ucChksumFlag |= TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN;"
+		 *   However, this solution will cause IP fragmented UDP filled
+		 *   with wrong values.
+		 *
+		 * Option 2. respect ip_summed and set ~AMSDU.
+		 *   For IPv6 in connac3, nic_txd_v3_header_format_op(),
+		 *   let CSO respect the ip_summed flag.
 		 */
-		ucChksumFlag |= TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN;
-
 		if (prTxDescOps->nic_txd_chksum_op)
 			prTxDescOps->nic_txd_chksum_op(prTxDesc, ucChksumFlag);
 		else
