@@ -1126,6 +1126,13 @@ nanDataUtilGetNdl(struct ADAPTER *prAdapter,
 		return NULL;
 	}
 
+	if (prNDP->ucNdlIndex >= NAN_MAX_SUPPORT_NDL_NUM) {
+		DBGLOG(NAN, ERROR,
+			"[%s] NdlIndex out of range, return NULL\n",
+			__func__);
+		return NULL;
+	}
+
 	return &(prAdapter->rDataPathInfo.arNDL[prNDP->ucNdlIndex]);
 }
 
