@@ -6437,7 +6437,8 @@ struct UNI_EVENT_CNM_OPMODE_CHANGE {
 	uint8_t          ucOpTxNss;
 	uint8_t          ucOpRxNss;
 	uint8_t          ucReason;
-	uint8_t          aucReserved[2];
+	uint8_t          ucBandWidth;
+	uint8_t          aucReserved[1];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__

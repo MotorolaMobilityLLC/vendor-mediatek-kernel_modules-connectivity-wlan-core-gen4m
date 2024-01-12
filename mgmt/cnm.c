@@ -163,6 +163,7 @@ struct CNM_OPMODE_BSS_REQ {
 	bool fgNewRequest;
 	uint8_t ucOpRxNss;
 	uint8_t ucOpTxNss;
+	uint8_t ucBandWidth; /* ENUM_MAX_BANDWIDTH_SETTING */
 };
 
 struct CNM_OPMODE_BSS_RUNNING_REQ {
@@ -173,6 +174,7 @@ struct CNM_OPMODE_BSS_RUNNING_REQ {
 	bool fgIsRunning;
 	uint8_t ucOpRxNss;
 	uint8_t ucOpTxNss;
+	uint8_t ucBandWidth; /* ENUM_MAX_BANDWIDTH_SETTING */
 };
 
 struct CNM_OPMODE_BSS_CONTROL_T {
@@ -309,6 +311,17 @@ cnmOpModeSetTRxNss(
 	bool fgEnable,
 	uint8_t ucOpRxNss,
 	uint8_t ucOpTxNss
+);
+
+static enum ENUM_CNM_OPMODE_REQ_STATUS
+cnmOpModeSetTRxNssBw(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	enum ENUM_CNM_OPMODE_REQ_T eNewReq,
+	bool fgEnable,
+	uint8_t ucOpRxNss,
+	uint8_t ucOpTxNss,
+	enum ENUM_MAX_BANDWIDTH_SETTING ucBandWidth
 );
 
 static void
@@ -499,18 +512,32 @@ OS_SYSTIME g_rLastCsaSysTime;
 
 static struct CNM_OPMODE_BSS_CONTROL_T g_arBssOpControl[MAX_BSSID_NUM];
 static uint8_t *apucCnmOpModeReq[CNM_OPMODE_REQ_MAX_CAP+1] = {
-	(uint8_t *) DISP_STRING("ANT Ctrl"),
-	(uint8_t *) DISP_STRING("DBDC"),
-	(uint8_t *) DISP_STRING("DBDC Scan"),
-	(uint8_t *) DISP_STRING("COEX"),
-	(uint8_t *) DISP_STRING("SmartGear"),
-	(uint8_t *) DISP_STRING("User"),
-	(uint8_t *) DISP_STRING("SmartGear_1T2R"),
-	(uint8_t *) DISP_STRING("ANT Ctrl_1T2R"),
-	(uint8_t *) DISP_STRING("CoAnt"),
-	(uint8_t *) DISP_STRING("RDD"),
-	(uint8_t *) DISP_STRING("N/A"),
-	(uint8_t *) DISP_STRING("MAX_CAP")
+	[CNM_OPMODE_REQ_ANT_CTRL] =
+		(uint8_t *) DISP_STRING("ANT Ctrl"),
+	[CNM_OPMODE_REQ_DBDC] =
+		(uint8_t *) DISP_STRING("DBDC"),
+	[CNM_OPMODE_REQ_DBDC_SCAN] =
+		(uint8_t *) DISP_STRING("DBDC Scan"),
+	[CNM_OPMODE_REQ_COEX] =
+		(uint8_t *) DISP_STRING("COEX"),
+	[CNM_OPMODE_REQ_SMARTGEAR] =
+		(uint8_t *) DISP_STRING("SmartGear"),
+	[CNM_OPMODE_REQ_USER_CONFIG] =
+		(uint8_t *) DISP_STRING("User"),
+	[CNM_OPMODE_REQ_SMARTGEAR_1T2R] =
+		(uint8_t *) DISP_STRING("SmartGear_1T2R"),
+	[CNM_OPMODE_REQ_ANT_CTRL_1T2R] =
+		(uint8_t *) DISP_STRING("ANT Ctrl_1T2R"),
+	[CNM_OPMODE_REQ_COANT] =
+		(uint8_t *) DISP_STRING("CoAnt"),
+	[CNM_OPMODE_REQ_RDD_OPCHNG] =
+		(uint8_t *) DISP_STRING("RDD"),
+	[CNM_OPMODE_REQ_NUM] =
+		(uint8_t *) DISP_STRING("N/A"),
+	[CNM_OPMODE_REQ_MAX_CAP] =
+		(uint8_t *) DISP_STRING("MAX_CAP"),
+	[CNM_OPMODE_REQ_HW_CONSTRIAN_CAP] =
+		(uint8_t *) DISP_STRING("HW_CONSTRIAN_CAP")
 };
 
 static uint8_t *apucCnmOpModeReqStatus[CNM_OPMODE_REQ_STATUS_NUM+1] = {
@@ -573,9 +600,13 @@ void cnmInit(struct ADAPTER *prAdapter)
 		ucBssIndex++) {
 		prBssOpCtrl = &(g_arBssOpControl[ucBssIndex]);
 		prBssOpCtrl->rRunning.fgIsRunning = false;
+		prBssOpCtrl->rRunning.ucBandWidth = MAX_BW_UNKNOWN;
 		for (eReqIdx = CNM_OPMODE_REQ_START;
-				eReqIdx < CNM_OPMODE_REQ_NUM; eReqIdx++)
+				eReqIdx < CNM_OPMODE_REQ_NUM; eReqIdx++) {
 			prBssOpCtrl->arReqPool[eReqIdx].fgEnable = false;
+			prBssOpCtrl->arReqPool[eReqIdx].ucBandWidth =
+				MAX_BW_UNKNOWN;
+		}
 	}
 
 	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
@@ -2119,6 +2150,10 @@ uint8_t cnmGetDbdcBwCapability(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
 	uint8_t ucMaxBw = MAX_BW_20MHZ;
+	struct CNM_OPMODE_BSS_REQ *prReq;
+	enum ENUM_CNM_OPMODE_REQ_T eReqIdx;
+	struct CNM_OPMODE_BSS_CONTROL_T *prBssOpCtrl;
+	enum ENUM_CNM_OPMODE_REQ_T eCurrMaxIdx = CNM_OPMODE_REQ_MAX_CAP;
 
 	if (prBssInfo && prBssInfo->ucGrantBW != MAX_BW_UNKNOWN) {
 		DBGLOG(CNM, TRACE, "BW = %d\n", prBssInfo->ucGrantBW);
@@ -2126,6 +2161,46 @@ uint8_t cnmGetDbdcBwCapability(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	}
 
 	ucMaxBw = cnmGetBssMaxBw(prAdapter, ucBssIndex);
+
+	if (ucBssIndex >= MAX_BSSID_NUM) {
+		DBGLOG(CNM, WARN,
+			"%s, invalid,B[%d]\n",
+			__func__, ucBssIndex);
+		return ucMaxBw;
+	}
+
+	prBssOpCtrl = &(g_arBssOpControl[ucBssIndex]);
+	if (prBssOpCtrl->rRunning.fgIsRunning) {
+		eCurrMaxIdx = prBssOpCtrl->rRunning.eRunReq;
+		if (eCurrMaxIdx >= 0 &&
+			eCurrMaxIdx <= CNM_OPMODE_REQ_MAX_CAP &&
+			prBssOpCtrl->rRunning.eReqIdx >= 0 &&
+			prBssOpCtrl->rRunning.eReqIdx <=
+			CNM_OPMODE_REQ_MAX_CAP) {
+			DBGLOG(CNM, INFO,
+			"%s,use running %s from %s, BW=%d\n", __func__,
+			apucCnmOpModeReq[eCurrMaxIdx],
+			apucCnmOpModeReq[prBssOpCtrl->rRunning.eReqIdx],
+			prBssOpCtrl->rRunning.ucBandWidth);
+			if (prBssOpCtrl->rRunning.ucBandWidth != MAX_BW_UNKNOWN)
+				ucMaxBw = prBssOpCtrl->rRunning.ucBandWidth;
+		}
+	} else {
+		for (eReqIdx = CNM_OPMODE_REQ_START;
+			eReqIdx < CNM_OPMODE_REQ_NUM;
+			eReqIdx++) {
+			prReq = &(prBssOpCtrl->arReqPool[eReqIdx]);
+			if (prReq->fgEnable && !prReq->fgNewRequest &&
+				prReq->ucBandWidth < ucMaxBw &&
+				prReq->ucBandWidth != MAX_BW_UNKNOWN) {
+				log_dbg(CNM, INFO, "bss=%d,BW=%d\n",
+						ucBssIndex,
+						prReq->ucBandWidth);
+				ucMaxBw = prReq->ucBandWidth;
+				break;
+			}
+		}
+	}
 
 #if CFG_SUPPORT_DBDC
 #if (CFG_SUPPORT_DBDC_DOWNGRADE_BW == 1)
@@ -5186,6 +5261,9 @@ cnmOpModeMapEvtReason(
 	case EVENT_OPMODE_CHANGE_REASON_RDD:
 		eReqIdx = CNM_OPMODE_REQ_RDD_OPCHNG;
 		break;
+	case EVENT_OPMODE_CHANGE_REASON_HW_CONSTRIAN_CAP:
+		eReqIdx = CNM_OPMODE_REQ_HW_CONSTRIAN_CAP;
+		break;
 	default:
 		eReqIdx = CNM_OPMODE_REQ_NUM;
 		break;
@@ -5428,6 +5506,61 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 	return ucOpMaxBw;
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Set the operating TRx Nss BandWidth.
+ *        If failed to change OpRxNss, the OpTxNss will not change.
+ *        If the BSS is not alive, just update to control table.
+ *
+ * @param prAdapter
+ * @param ucBssIndex
+ * @param eNewReq
+ * @param fgEnable
+ * @param ucOpRxNss
+ * @param ucOpTxNss
+ * @param ucBandWidth
+ *
+ * @return ENUM_CNM_OPMODE_REQ_STATUS
+ */
+/*----------------------------------------------------------------------------*/
+enum ENUM_CNM_OPMODE_REQ_STATUS
+cnmOpModeSetTRxNssBw(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	enum ENUM_CNM_OPMODE_REQ_T eNewReq,
+	bool fgEnable,
+	uint8_t ucOpRxNss,
+	uint8_t ucOpTxNss,
+	enum ENUM_MAX_BANDWIDTH_SETTING ucBandWidth
+)
+{
+	struct CNM_OPMODE_BSS_CONTROL_T *prBssOpCtrl;
+	struct CNM_OPMODE_BSS_REQ *prReq;
+
+	ASSERT(prAdapter);
+	if (ucBssIndex > prAdapter->ucHwBssIdNum ||
+		ucBssIndex >= MAX_BSSID_NUM) {
+		DBGLOG(CNM, WARN, "SetOpMode invalid BSS[%d]\n", ucBssIndex);
+		return CNM_OPMODE_REQ_STATUS_INVALID_PARAM;
+	}
+
+	prBssOpCtrl = &g_arBssOpControl[ucBssIndex];
+	prReq = &(prBssOpCtrl->arReqPool[eNewReq]);
+
+	/* Step 1 Update req pool */
+	prReq->ucBandWidth = ucBandWidth;
+
+	return cnmOpModeSetTRxNss(
+		prAdapter,
+		ucBssIndex,
+		eNewReq,
+		fgEnable,
+		ucOpRxNss,
+		ucOpTxNss
+	);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Set the operating TRx Nss.
@@ -5485,6 +5618,7 @@ cnmOpModeSetTRxNss(
 	prReq->ucOpTxNss = ucOpTxNss;
 
 	/* Step 2 Select the highest priority req */
+	ucOpBwFinal = MAX_BW_UNKNOWN;
 	eRunReq = cnmOpModeReqDispatcher(prBssOpCtrl);
 	if (eRunReq == CNM_OPMODE_REQ_NUM) {
 		return CNM_OPMODE_REQ_STATUS_DEFER;
@@ -5495,6 +5629,7 @@ cnmOpModeSetTRxNss(
 		prReq = &prBssOpCtrl->arReqPool[eRunReq];
 		ucOpRxNssFinal = prReq->ucOpRxNss;
 		ucOpTxNssFinal = prReq->ucOpTxNss;
+		ucOpBwFinal = prReq->ucBandWidth;
 	}
 
 	if (IS_BSS_ALIVE(prAdapter, prBssInfo)) {
@@ -5508,7 +5643,9 @@ cnmOpModeSetTRxNss(
 		 * If you want to change OpBw in the future, please
 		 * make sure you can restore to current peer's OpBw.
 		 */
-		ucOpBwFinal = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
+		if (ucOpBwFinal == MAX_BW_UNKNOWN)
+			ucOpBwFinal = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
+
 #if (CFG_SUPPORT_DBDC_DOWNGRADE_BW == 1)
 		if ((eRunReq == CNM_OPMODE_REQ_DBDC ||
 			eRunReq == CNM_OPMODE_REQ_DBDC_SCAN) &&
@@ -5529,10 +5666,13 @@ cnmOpModeSetTRxNss(
 			->ucRddBw;
 		}
 #endif
-		/* When DBDC is off, we should rollback STA's bandwidth
+		/* When DBDC is off or Hw Constrian Cap is off,
+		 * we should rollback STA's bandwidth
 		 * as peer's bandwidth capability.
 		 */
-		if (eNewReq == CNM_OPMODE_REQ_DBDC && !fgEnable) {
+		if ((eNewReq == CNM_OPMODE_REQ_DBDC && !fgEnable) ||
+			(eNewReq == CNM_OPMODE_REQ_HW_CONSTRIAN_CAP &&
+			!fgEnable)) {
 			if (prBssInfo->eCurrentOPMode ==
 				OP_MODE_INFRASTRUCTURE) {
 				ucOpBwFinal =
@@ -5611,6 +5751,7 @@ cnmOpModeSetTRxNss(
 			prBssOpCtrl->rRunning.eRunReq = eRunReq;
 			prBssOpCtrl->rRunning.ucOpTxNss = ucOpTxNssFinal;
 			prBssOpCtrl->rRunning.ucOpRxNss = ucOpRxNssFinal;
+			prBssOpCtrl->rRunning.ucBandWidth = ucOpBwFinal;
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 			if (prAdapter->fgANTCtrl)
 				prAdapter->ucANTCtrlPendingCount++;
@@ -5807,6 +5948,10 @@ void cnmOpmodeEventHandler(
 	}
 #endif
 
+	// handle connac2
+	if (prEvtOpMode->ucReason < EVENT_OPMODE_CHANGE_REASON_START_BW_UPDATE)
+		prEvtOpMode->ucBandWidth = MAX_BW_UNKNOWN;
+
 	eReqIdx = cnmOpModeMapEvtReason(
 		(enum ENUM_EVENT_OPMODE_CHANGE_REASON)
 		prEvtOpMode->ucReason);
@@ -5819,24 +5964,26 @@ void cnmOpmodeEventHandler(
 	}
 
 	DBGLOG(CNM, INFO,
-		"EvtOpMode, Req:%s BssBitmap:0x%x, En:%u T:%u R:%u\n",
+		"EvtOpMode, Req:%s BssBitmap:0x%x, En:%u T:%u R:%u BW:%u\n",
 		apucCnmOpModeReq[eReqIdx],
 		prEvtOpMode->ucBssBitmap,
 		prEvtOpMode->ucEnable,
 		prEvtOpMode->ucOpTxNss,
-		prEvtOpMode->ucOpRxNss);
+		prEvtOpMode->ucOpRxNss,
+		prEvtOpMode->ucBandWidth);
 
 	for (ucBssIndex = 0;
 		 ucBssIndex < prAdapter->ucSwBssIdNum;
 		 ucBssIndex++) {
 		if (prEvtOpMode->ucBssBitmap & BIT(ucBssIndex)) {
-			cnmOpModeSetTRxNss(
+			cnmOpModeSetTRxNssBw(
 				prAdapter,
 				ucBssIndex,
 				eReqIdx,
 				prEvtOpMode->ucEnable,
 				prEvtOpMode->ucOpRxNss,
-				prEvtOpMode->ucOpTxNss
+				prEvtOpMode->ucOpTxNss,
+				prEvtOpMode->ucBandWidth
 			);
 		}
 	}

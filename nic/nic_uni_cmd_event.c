@@ -10421,6 +10421,31 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 			legacy.ucOpTxNss = opmode->ucOpTxNss;
 			legacy.ucOpRxNss = opmode->ucOpRxNss;
 			legacy.ucReason = opmode->ucReason;
+			legacy.ucBandWidth = opmode->ucBandWidth;
+			switch (opmode->ucBandWidth) {
+			case UNI_CMD_CNM_CHANNEL_WIDTH_20_40MHZ:
+				legacy.ucBandWidth = MAX_BW_40MHZ;
+				break;
+			case UNI_CMD_CNM_CHANNEL_WIDTH_80MHZ:
+				legacy.ucBandWidth = MAX_BW_80MHZ;
+				break;
+			case UNI_CMD_CNM_CHANNEL_WIDTH_160MHZ:
+				legacy.ucBandWidth = MAX_BW_160MHZ;
+				break;
+			case UNI_CMD_CNM_CHANNEL_WIDTH_80P80MHZ:
+				legacy.ucBandWidth = MAX_BW_80_80_MHZ;
+				break;
+			case UNI_CMD_CNM_CHANNEL_WIDTH_320MHZ:
+				/* TODO: AIS, GO:
+				 * MAX_BW_320_1MHZ, MAX_BW_320_2MHZ
+				 */
+				// hardcode set to 320_2
+				legacy.ucBandWidth = MAX_BW_320_2MHZ;
+				break;
+			default:
+				legacy.ucBandWidth = MAX_BW_UNKNOWN;
+				break;
+			}
 
 			RUN_RX_EVENT_HANDLER(EVENT_ID_OPMODE_CHANGE, &legacy);
 		}
