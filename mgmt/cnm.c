@@ -2717,13 +2717,8 @@ cnmDbdcFsmEventHandler_ENABLE_GUARD(
 		break;
 
 	case DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO:
-		if (cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL)) {
-			g_rDbdcInfo.eDbdcFsmNextState =
+		g_rDbdcInfo.eDbdcFsmNextState =
 				ENUM_DBDC_FSM_STATE_ENABLE_IDLE;
-		} else {
-			g_rDbdcInfo.eDbdcFsmNextState =
-				ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE;
-		}
 		break;
 
 	case DBDC_FSM_EVENT_DISABLE_COUNT_DOWN_TO:
