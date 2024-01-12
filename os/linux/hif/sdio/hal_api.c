@@ -1631,20 +1631,47 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *
 
 uint32_t halTxGetPageCountPSE(IN struct ADAPTER *prAdapter, IN uint32_t u4FrameLength)
 {
-	uint32_t u4PageSize = prAdapter->rTxCtrl.u4PageSize;
+	uint32_t u4DataPageSize = prAdapter->rTxCtrl.u4DataPageSize;
 
-	return ((u4FrameLength + prAdapter->nicTxReousrce.ucPpTxAddCnt + u4PageSize - 1)/u4PageSize);
+	return ((u4FrameLength +
+	  prAdapter->nicTxReousrce.ucPpTxAddCnt +
+	  u4DataPageSize - 1)/u4DataPageSize);
 }
 
-uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter, IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
+
+static uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
 {
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 
 	if (prChipInfo->is_support_cr4)
 		return 1;
 
+
 	return halTxGetPageCountPSE(prAdapter, u4FrameLength);
 }
+
+uint32_t halTxGetCmdPageCount(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
+{
+
+#if (CFG_SUPPORT_CMD_OVER_WFDMA == 1)
+	/* one cmd resource = one WFDMA rx ring buffer */
+	return 1;
+#else
+	return halTxGetPageCount(prAdapter, u4FrameLength, fgIncludeDesc);
+#endif
+
+}
+
+uint32_t halTxGetDataPageCount(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
+{
+
+	return halTxGetPageCount(prAdapter, u4FrameLength, fgIncludeDesc);
+
+}
+
 
 uint32_t halDumpHifStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN uint32_t u4Max)
 {
@@ -2690,7 +2717,7 @@ void halTxResourceResetHwTQCounter(IN struct ADAPTER *prAdapter)
 		kalMemFree(pu4WHISR, PHY_MEM_TYPE, sizeof(uint32_t));
 }
 
-uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter)
+static uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter)
 {
 	if (!prAdapter->chip_info->is_support_cr4) {
 		if (prAdapter->fgIsNicTxReousrceValid)
@@ -2702,6 +2729,25 @@ uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter)
     /*cr4 mode*/
 	return HIF_TX_PAGE_SIZE;
 }
+
+uint32_t halGetHifTxDataPageSize(IN struct ADAPTER *prAdapter)
+
+{
+	return halGetHifTxPageSize(prAdapter);
+}
+
+uint32_t halGetHifTxCMDPageSize(IN struct ADAPTER *prAdapter)
+{
+
+#if (CFG_SUPPORT_CMD_OVER_WFDMA == 1)
+	/* one cmd resource = one WFDMA rx ring buffer */
+	return 1;
+#else
+	return halGetHifTxPageSize(prAdapter);
+#endif
+
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
 * @brief Generic update Tx done counter
@@ -2904,11 +2950,11 @@ void halUpdateTxDonePendingCount(IN struct ADAPTER *prAdapter, IN u_int8_t isInc
 	uint8_t u2PageCnt;
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 
-	u2PageCnt = halTxGetPageCount(prAdapter, u4Len, FALSE);
-
 #if (CFG_SUPPORT_CMD_OVER_WFDMA == 1)
 	if (ucTc == TC4_INDEX)
-		u2PageCnt = 1;
+		u2PageCnt = halTxGetCmdPageCount(prAdapter, u4Len, FALSE);
+#else
+	u2PageCnt = halTxGetDataPageCount(prAdapter, u4Len, FALSE);
 #endif
 
 	if (prBusInfo->halUpdateTxDonePendingCount)

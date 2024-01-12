@@ -1899,6 +1899,7 @@ qmDequeueTxPacketsFromPerTypeQueues(IN struct ADAPTER *prAdapter,
 	PFN_DEQUEUE_FUNCTION pfnDeQFunc[2];
 	u_int8_t fgChangeDeQFunc = TRUE;
 	u_int8_t fgGlobalQueFirst = TRUE;
+	uint32_t u4MaxPageCntPerFrame;
 
 	DBGLOG(QM, TEMP, "Enter %s (TC = %d, quota = %u)\n",
 		__func__, ucTC, u4CurrentQuota);
@@ -1935,9 +1936,15 @@ qmDequeueTxPacketsFromPerTypeQueues(IN struct ADAPTER *prAdapter,
 		(u4MaxResourceLimit - u4TotalUsedResource));
 
 	/* dequeue function comsumes no resource, change */
+	if (ucTC == TC4_INDEX)
+		u4MaxPageCntPerFrame =
+			prAdapter->rTxCtrl.u4MaxCmdPageCntPerFrame;
+	else
+		u4MaxPageCntPerFrame =
+			prAdapter->rTxCtrl.u4MaxDataPageCntPerFrame;
+
 	if ((u4LeftResource >= u4AvaliableResource) &&
-		(u4AvaliableResource >=
-		prAdapter->rTxCtrl.u4MaxPageCntPerFrame)) {
+		(u4AvaliableResource >= u4MaxPageCntPerFrame)) {
 		fgChangeDeQFunc = TRUE;
 	} else {
 		u4TotalUsedResource +=
@@ -2171,9 +2178,15 @@ struct MSDU_INFO *qmDequeueTxPacketsMthread(
 	while (prMsduInfo) {
 		prNextMsduInfo = (struct MSDU_INFO *) QUEUE_GET_NEXT_ENTRY((
 			struct QUE_ENTRY *) prMsduInfo);
+#if (CFG_SUPPORT_TRACE_TC4 == 1)
+	if (prMsduInfo->ucTC == TC4_INDEX)
+		DBGLOG(TX, ERROR, "[ERROR] sdio tx resource!! ucTC=%d\n",
+		  prMsduInfo->ucTC);
+#endif
 		nicTxAcquireResource(prAdapter, prMsduInfo->ucTC,
-			nicTxGetPageCount(prAdapter, prMsduInfo->u2FrameLength,
-				FALSE), FALSE);
+			nicTxGetDataPageCount(prAdapter,
+			    prMsduInfo->u2FrameLength,
+			    FALSE), FALSE);
 		prMsduInfo = prNextMsduInfo;
 	}
 
@@ -2276,12 +2289,23 @@ qmAdjustTcQuotasMthread(IN struct ADAPTER *prAdapter,
 		prQM->fgTcResourcePostAnnealing = (!fgResourceRedistributed);
 
 		for (i = 0; i < TC_NUM; i++) {
-			prTcqStatus->au4FreePageCount[i] +=
-				(prTcqAdjust->ai4Variation[i] *
-				prAdapter->rTxCtrl.u4MaxPageCntPerFrame);
-			prTcqStatus->au4MaxNumOfPage[i] +=
-				(prTcqAdjust->ai4Variation[i] *
-				prAdapter->rTxCtrl.u4MaxPageCntPerFrame);
+			if (i == TC4_INDEX) {
+				prTcqStatus->au4FreePageCount[i] +=
+					(prTcqAdjust->ai4Variation[i] *
+				prAdapter->rTxCtrl.u4MaxCmdPageCntPerFrame);
+				prTcqStatus->au4MaxNumOfPage[i] +=
+					(prTcqAdjust->ai4Variation[i] *
+				prAdapter->rTxCtrl.u4MaxCmdPageCntPerFrame);
+
+			} else {
+				prTcqStatus->au4FreePageCount[i] +=
+					(prTcqAdjust->ai4Variation[i] *
+				prAdapter->rTxCtrl.u4MaxDataPageCntPerFrame);
+				prTcqStatus->au4MaxNumOfPage[i] +=
+					(prTcqAdjust->ai4Variation[i] *
+				prAdapter->rTxCtrl.u4MaxDataPageCntPerFrame);
+
+			}
 
 			prTcqStatus->au4FreeBufferCount[i] +=
 				prTcqAdjust->ai4Variation[i];
@@ -6738,7 +6762,7 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(IN struct ADAPTER *prAdapter,
 			}
 			/* 4 <4.2> Sta in PS */
 			if (prStaRec->fgIsInPS) {
-				ucReqResource = nicTxGetPageCount(prAdapter,
+				ucReqResource = halTxGetCmdPageCount(prAdapter,
 					u2FrameLength, FALSE) +
 					prWifiVar->ucCmdRsvResource +
 					QM_MGMT_QUEUED_THRESHOLD;
@@ -6764,7 +6788,8 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(IN struct ADAPTER *prAdapter,
 	/* <5> Resource CHECK! */
 	/* <5.1> Reserve resource for CMD & 1X */
 	if (eFrameType == FRAME_TYPE_MMPDU) {
-		ucReqResource = nicTxGetPageCount(prAdapter, u2FrameLength,
+
+		ucReqResource = halTxGetCmdPageCount(prAdapter, u2FrameLength,
 			FALSE) + prWifiVar->ucCmdRsvResource;
 
 		if (u2FreeResource < ucReqResource) {
@@ -6772,7 +6797,7 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(IN struct ADAPTER *prAdapter,
 			DBGLOG(QM, INFO,
 				"Queue MGMT (MSDU[0x%p] Req/Rsv/Free[%u/%u/%u])\n",
 				prMsduInfo,
-				nicTxGetPageCount(prAdapter,
+				halTxGetCmdPageCount(prAdapter,
 					u2FrameLength, FALSE),
 				prWifiVar->ucCmdRsvResource, u2FreeResource);
 		}

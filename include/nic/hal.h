@@ -1315,7 +1315,9 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 u_int8_t halProcessToken(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4Token,
 	IN struct QUE *prFreeQueue);
-uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter,
+uint32_t halTxGetDataPageCount(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc);
+uint32_t halTxGetCmdPageCount(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc);
 uint32_t halDumpHifStatus(IN struct ADAPTER *prAdapter,
 	IN uint8_t *pucBuf, IN uint32_t u4Max);
@@ -1329,7 +1331,8 @@ void halTxCompleteTasklet(unsigned long data);
 void halPrintHifDbgInfo(IN struct ADAPTER *prAdapter);
 u_int8_t halIsTxResourceControlEn(IN struct ADAPTER *prAdapter);
 void halTxResourceResetHwTQCounter(IN struct ADAPTER *prAdapter);
-uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter);
+uint32_t halGetHifTxDataPageSize(IN struct ADAPTER *prAdapter);
+uint32_t halGetHifTxCmdPageSize(IN struct ADAPTER *prAdapter);
 void halTxReturnFreeResource(IN struct ADAPTER *prAdapter,
 	IN uint16_t *au2TxDoneCnt);
 void halTxGetFreeResource(IN struct ADAPTER *prAdapter,

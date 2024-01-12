@@ -3526,8 +3526,8 @@ uint32_t wlanAccessRegister(IN struct ADAPTER *prAdapter,
 	while (1) {
 		/* 6.1 Acquire TX Resource */
 		if (nicTxAcquireResource
-		    (prAdapter, ucTC, nicTxGetPageCount(prAdapter,
-		    prCmdInfo->u2InfoBufLen, TRUE), TRUE)
+		    (prAdapter, ucTC, nicTxGetCmdPageCount(prAdapter,
+		    prCmdInfo), TRUE)
 		    == WLAN_STATUS_RESOURCES) {
 			if (nicTxPollingResource(prAdapter,
 						 ucTC) != WLAN_STATUS_SUCCESS) {
@@ -6609,8 +6609,10 @@ void wlanSetNicResourceParameters(IN struct ADAPTER
 {
 	uint8_t string[128], idx;
 	uint32_t u4share;
-	uint32_t u4MaxPageCntPerFrame =
-		prAdapter->rTxCtrl.u4MaxPageCntPerFrame;
+	uint32_t u4MaxDataPageCntPerFrame =
+		prAdapter->rTxCtrl.u4MaxDataPageCntPerFrame;
+	uint32_t u4MaxCmdPageCntPerFrame =
+		prAdapter->rTxCtrl.u4MaxCmdPageCntPerFrame;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	struct QUE_MGT *prQM = &prAdapter->rQM;
@@ -6629,20 +6631,20 @@ void wlanSetNicResourceParameters(IN struct ADAPTER
 	/* 1 1. update free page count in TC control: MCU and LMAC */
 	prWifiVar->au4TcPageCount[TC4_INDEX] =
 		prAdapter->nicTxReousrce.u4CmdTotalResource *
-		u4MaxPageCntPerFrame;	 /* MCU */
+		u4MaxCmdPageCntPerFrame;	 /* MCU */
 
 	u4share = prAdapter->nicTxReousrce.u4DataTotalResource /
 		  (TC_NUM - 1); /* LMAC. Except TC_4, which is MCU */
 	for (idx = TC0_INDEX; idx < TC_NUM; idx++) {
 		if (idx != TC4_INDEX)
-			prWifiVar->au4TcPageCount[idx] = u4share *
-							 u4MaxPageCntPerFrame;
+			prWifiVar->au4TcPageCount[idx] =
+				u4share * u4MaxDataPageCntPerFrame;
 	}
 
 	/* 1 2. if there is remaings, give them to TC_3, which is VO */
 	prWifiVar->au4TcPageCount[TC3_INDEX] +=
 		(prAdapter->nicTxReousrce.u4DataTotalResource %
-		 (TC_NUM - 1)) * u4MaxPageCntPerFrame;
+		 (TC_NUM - 1)) * u4MaxDataPageCntPerFrame;
 
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	/*

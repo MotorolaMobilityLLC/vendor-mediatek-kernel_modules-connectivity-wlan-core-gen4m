@@ -10916,8 +10916,8 @@ uint32_t wlanSendInitCmd(IN struct ADAPTER *prAdapter,
 	while (1) {
 		/* 5.1 Acquire TX Resource */
 		if (nicTxAcquireResource(prAdapter, ucTC,
-					 nicTxGetPageCount(prAdapter,
-					 prCmdInfo->u2InfoBufLen, TRUE),
+					 nicTxGetCmdPageCount(prAdapter,
+					 prCmdInfo),
 					 TRUE) == WLAN_STATUS_RESOURCES) {
 			if (nicTxPollingResource(prAdapter,
 						 ucTC) != WLAN_STATUS_SUCCESS) {

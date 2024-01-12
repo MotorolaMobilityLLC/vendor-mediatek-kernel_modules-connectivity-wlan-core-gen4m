@@ -392,7 +392,8 @@ void halTxUSBProcessCmdComplete(IN struct ADAPTER *prAdapter, struct USB_REQ *pr
 	glUsbEnqueueReq(prHifInfo, &prHifInfo->rTxCmdFreeQ, prUsbReq, &prHifInfo->rTxCmdQLock, FALSE);
 
 	u4SentDataSize = urb->actual_length - LEN_USB_UDMA_TX_TERMINATOR;
-	nicTxReleaseResource_PSE(prAdapter, TC4_INDEX, nicTxGetPageCount(prAdapter, u4SentDataSize, TRUE), TRUE);
+	nicTxReleaseResource_PSE(prAdapter, TC4_INDEX,
+		halTxGetCmdPageCount(prAdapter, u4SentDataSize, TRUE), TRUE);
 }
 
 void halTxCancelSendingCmd(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo)
@@ -773,7 +774,8 @@ void halTxUSBProcessMsduDone(IN struct GLUE_INFO *prGlueInfo, struct USB_REQ *pr
 
 	u4SentDataSize = urb->actual_length - LEN_USB_UDMA_TX_TERMINATOR;
 	nicTxReleaseResource_PSE(prGlueInfo->prAdapter, ucTc,
-		nicTxGetPageCount(prGlueInfo->prAdapter, u4SentDataSize, TRUE), TRUE);
+		halTxGetDataPageCount(prGlueInfo->prAdapter, u4SentDataSize,
+			TRUE), TRUE);
 }
 
 void halTxUSBProcessDataComplete(IN struct ADAPTER *prAdapter, struct USB_REQ *prUsbReq)
@@ -1664,7 +1666,8 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *
 
 }
 
-uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter, IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
+static uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
 {
 #if CFG_USB_TX_AGG
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
@@ -1693,6 +1696,18 @@ uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter, IN uint32_t u4FrameLeng
 #else
 	return 1;
 #endif
+}
+
+uint32_t halTxGetDataPageCount(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
+{
+	return halTxGetPageCount(prAdapter, u4FrameLength, fgIncludeDesc);
+}
+
+uint32_t halTxGetCmdPageCount(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
+{
+	return halTxGetPageCount(prAdapter, u4FrameLength, fgIncludeDesc);
 }
 
 uint32_t halTxPollingResource(IN struct ADAPTER *prAdapter, IN uint8_t ucTC)
@@ -2079,9 +2094,19 @@ void halTxResourceResetHwTQCounter(IN struct ADAPTER *prAdapter)
 {
 }
 
-uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter)
+static uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter)
 {
 	return HIF_TX_PAGE_SIZE;
+}
+
+uint32_t halGetHifTxCmdPageSize(IN struct ADAPTER *prAdapter)
+{
+	return halGetHifTxPageSize(prAdapter);
+}
+
+uint32_t halGetHifTxDataPageSize(IN struct ADAPTER *prAdapter)
+{
+	return halGetHifTxPageSize(prAdapter);
 }
 
 void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
