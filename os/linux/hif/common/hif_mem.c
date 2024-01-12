@@ -40,7 +40,11 @@
 #include "gl_kal.h"
 
 #if CFG_SUPPORT_RX_PAGE_POOL
+#if KERNEL_VERSION(6, 6, 0) > LINUX_VERSION_CODE
 #include <net/page_pool.h>
+#else
+#include <net/page_pool/helpers.h>
+#endif
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */
 
 /*******************************************************************************
