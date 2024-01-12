@@ -322,6 +322,12 @@ ifeq ($(CONFIG_MTK_WIFI_UNIFIED_COMMND_SUPPORT), y)
 ccflags-y += -DCFG_SUPPORT_UNIFIED_COMMAND
 endif
 
+ifeq ($(CONFIG_MTK_FPGA_PLATFORM), y)
+    ccflags-y += -DCFG_MTK_FPGA_PLATFORM=1
+else
+    ccflags-y += -DCFG_MTK_FPGA_PLATFORM=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_CONNINFRA=1
     ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=1
