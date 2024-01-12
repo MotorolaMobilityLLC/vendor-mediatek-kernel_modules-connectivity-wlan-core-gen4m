@@ -1213,6 +1213,7 @@ struct WIFI_VAR {
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 	uint8_t fgSapCheckPmkidInDriver;
+	uint8_t fgSapChannelSwitchPolicy;
 	uint8_t fgAllowSameBandDualSta;
 
 #if CFG_SUPPORT_NAN
