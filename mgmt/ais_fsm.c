@@ -6657,9 +6657,6 @@ void aisFsmRunEventCancelTxWait(IN struct ADAPTER *prAdapter,
 			prAisBssInfo == NULL || prMgmtTxInfo == NULL)
 		goto exit;
 
-	if (prAisFsmInfo == NULL)
-		goto exit;
-
 	LINK_FOR_EACH_ENTRY(prOffChnlTxPkt,
 			&(prMgmtTxInfo->rTxReqLink),
 			rLinkEntry,
