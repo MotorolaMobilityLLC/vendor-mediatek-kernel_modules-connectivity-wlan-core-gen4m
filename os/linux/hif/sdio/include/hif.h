@@ -96,6 +96,8 @@
 /* Enable driver timing profiling */
 #define CFG_SDIO_TIMING_PROFILING       0
 
+#define CFG_SDIO_INT_LOG_CNT            8
+
 #define SDIO_X86_WORKAROUND_WRITE_MCR   0x00C4
 #define HIF_NUM_OF_QM_RX_PKT_NUM        512
 
@@ -238,6 +240,15 @@ typedef struct _SDIO_RX_COALESCING_BUF_T {
 	UINT_32 u4PktTotalLength;
 } SDIO_RX_COALESCING_BUF_T, *P_SDIO_RX_COALESCING_BUF_T;
 
+struct SDIO_INT_LOG_T {
+	UINT_32 u4Idx;
+	UINT_8 aucIntSts[128];
+	UINT_32 u4Flag;
+	UINT_16 au2RxPktLen[HIF_RX_MAX_AGG_NUM];
+	UINT_32 au4RxPktInfo[HIF_RX_MAX_AGG_NUM];
+	UINT_8 ucRxPktCnt;
+};
+
 /* host interface's private data structure, which is attached to os glue
 ** layer info structure.
  */
@@ -272,6 +283,10 @@ typedef struct _GL_HIF_INFO_T {
 
 	/* Error handling */
 	BOOLEAN fgSkipRx;
+
+	struct SDIO_INT_LOG_T arIntLog[CFG_SDIO_INT_LOG_CNT];
+	UINT_32 u4IntLogIdx;
+	UINT_8 ucIntLogEntry;
 } GL_HIF_INFO_T, *P_GL_HIF_INFO_T;
 
 typedef struct _BUS_INFO {
