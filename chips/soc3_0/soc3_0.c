@@ -3939,12 +3939,26 @@ uint32_t soc3_0_wlanPhyAction(IN struct ADAPTER *prAdapter)
 
 int soc3_0_wlanPreCalPwrOn(void)
 {
-	int ret = 0;
+#define MAX_PRE_ON_COUNT 3
+
+	int retryCount = 0;
+
+	while (g_u4WlanInitFlag == 0) {
+		DBGLOG(INIT, WARN,
+			"g_u4WlanInitFlag(%d) retryCount(%d)",
+			g_u4WlanInitFlag,
+			retryCount);
+
+		kalMsleep(100);
+		retryCount++;
+
+		if (retryCount > MAX_PRE_ON_COUNT)
+			return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
+	}
 
 	/* wf driver power on */
-	ret = wf_pwr_on_consys_mcu();
-	if (ret != 0)
-		return ret;
+	if (wf_pwr_on_consys_mcu() != 0)
+		return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
 
 	/* set FW own after power on consys mcu to
 	 * keep Driver/FW/HW state sync
@@ -3952,7 +3966,7 @@ int soc3_0_wlanPreCalPwrOn(void)
 	wf_ioremap_write(CONN_HOST_CSR_TOP_BASE_ADDR + 0x0010,
 		PCIE_LPCR_HOST_SET_OWN);
 
-	return ret;
+	return CONNINFRA_CB_RET_CAL_PASS_POWER_OFF;
 }
 
 int soc3_0_wlanPreCal(void)
@@ -3985,6 +3999,14 @@ int soc3_0_wlanPreCal(void)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct mt66xx_chip_info *prChipInfo;
+
+	if (g_u4WlanInitFlag == 0) {
+		DBGLOG(INIT, WARN,
+			"g_u4WlanInitFlag(%d)",
+			g_u4WlanInitFlag);
+
+		return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
+	}
 
 	DBGLOG(INIT, INFO, "PreCal begin\n");
 
