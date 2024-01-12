@@ -7746,7 +7746,7 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 			if (prAisBssInfo)
 				prAisBssInfo->u2DeauthReason =
 					BEACON_TIMEOUT_DUE_2_APR_NO_RESPONSE;
-			aisBssBeaconTimeout(prAdapter, prStaRec->ucBssIndex);
+			prAdapter->cArpNoResponseIdx = prStaRec->ucBssIndex;
 			arpMoniter = 0;
 			kalMemZero(apIp, sizeof(apIp));
 		}

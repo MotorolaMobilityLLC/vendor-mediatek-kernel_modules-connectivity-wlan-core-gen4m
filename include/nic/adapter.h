@@ -1099,6 +1099,15 @@ struct WIFI_VAR {
 	uint8_t fgEnDefaultIotApRule;
 #endif
 	uint8_t ucMsduReportTimeout;
+
+#if CFG_SUPPORT_DATA_STALL
+	uint32_t u4PerHighThreshole;
+	uint32_t u4TxLowRateThreshole;
+	uint32_t u4RxLowRateThreshole;
+	uint32_t u4ReportEventInterval;
+	uint32_t u4TrafficThreshold;
+#endif
+
 };
 
 /* cnm_timer module */
@@ -1674,6 +1683,12 @@ struct ADAPTER {
 #if CFG_DBG_MGT_BUF
 	struct LINK rMemTrackLink;
 #endif
+
+#if CFG_SUPPORT_DATA_STALL
+	OS_SYSTIME tmReportinterval;
+#endif
+	int8_t cArpNoResponseIdx;
+
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
