@@ -762,6 +762,7 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 
 	prMgmtTxReqInfo = &prAisFsmInfo->rMgmtTxInfo;
 	LINK_INITIALIZE(&prMgmtTxReqInfo->rTxReqLink);
+	prMgmtTxReqInfo->prMgmtTxMsdu = NULL;
 
 	/* request list initialization */
 	LINK_INITIALIZE(&prAisFsmInfo->rPendingReqList);
