@@ -7967,7 +7967,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 	prAdapter->u4LinkQualityCounter++;
 	if ((prAdapter->u4LinkQualityCounter %
-	     CFG_LINK_QUALITY_MONITOR_UPDATE_FREQUENCY) == 0) {
+	     CFG_LQ_MONITOR_FREQUENCY) == 0) {
 		prAdapter->u4LinkQualityCounter = 0;
 		if (prGlueInfo->fgIsInSuspendMode)
 			DBGLOG(SW4, TRACE,

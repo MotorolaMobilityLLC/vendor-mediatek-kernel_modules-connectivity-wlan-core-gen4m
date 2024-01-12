@@ -4809,7 +4809,7 @@ wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 	rUpdateDeltaTime = kalGetTimeTick() - prLq->rLinkRateUpdateTime;
 	if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) &&
 	    prLq->fgIsLinkRateValid == TRUE &&
-	    rUpdateDeltaTime <= CFG_LINK_QUALITY_VALID_PERIOD) {
+	    rUpdateDeltaTime <= CFG_LQ_MONITOR_FREQUENCY) {
 		pu4LinkSpeed = (struct PARAM_LINK_SPEED_EX *) (pvQueryBuffer);
 		pu4LinkSpeed->rLq[ucBssIndex].cRssi = prLq->cRssi;
 		pu4LinkSpeed->rLq[ucBssIndex].u2LinkSpeed = prLq->u2LinkSpeed;
