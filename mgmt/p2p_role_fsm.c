@@ -555,8 +555,9 @@ void p2pRoleFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
 			}
 			break;
 		case P2P_ROLE_STATE_GC_JOIN:
-			DBGLOG(P2P, ERROR,
-			       "Current P2P Role State P2P_ROLE_STATE_GC_JOIN is unexpected for FSM timeout event.\n");
+			p2pRoleFsmStateTransition(prAdapter,
+				prP2pRoleFsmInfo,
+				P2P_ROLE_STATE_IDLE);
 			break;
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		case P2P_ROLE_STATE_DFS_CAC:
@@ -2325,9 +2326,7 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 	if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_GC_JOIN) {
 		if (prP2pBssInfo->eConnectionState ==
 				PARAM_MEDIA_STATE_CONNECTED) {
-			/* Return to IDLE state. */
-			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo,
-					P2P_ROLE_STATE_IDLE);
+			/* do nothing & wait for timeout or EAPOL 4/4 TX done */
 		} else {
 			struct BSS_DESC *prBssDesc;
 			struct P2P_SSID_STRUCT rSsid;
@@ -3249,4 +3248,41 @@ p2pRoleFsmGetStaStatistics(IN struct ADAPTER *prAdapter,
 		P2P_ROLE_GET_STATISTICS_TIME);
 }
 #endif
+
+void p2pRoleFsmNotifyEapolTxStatus(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIndex,
+		IN enum ENUM_EAPOL_KEY_TYPE_T rEapolKeyType,
+		IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+			(struct P2P_ROLE_FSM_INFO *) NULL;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+	if (prAdapter == NULL || prBssInfo == NULL)
+		return;
+
+	if (prBssInfo->eNetworkType != NETWORK_TYPE_P2P)
+		return;
+
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prBssInfo->u4PrivateData);
+
+	if (prP2pRoleFsmInfo == NULL)
+		return;
+
+	if (prBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE)
+		return;
+	if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_GC_JOIN)
+		return;
+
+	if (rEapolKeyType == EAPOL_KEY_4_OF_4 &&
+			rTxDoneStatus == TX_RESULT_SUCCESS) {
+		/* Finish GC connection process. */
+		p2pRoleFsmStateTransition(prAdapter,
+				prP2pRoleFsmInfo,
+				P2P_ROLE_STATE_IDLE);
+	}
+}
 

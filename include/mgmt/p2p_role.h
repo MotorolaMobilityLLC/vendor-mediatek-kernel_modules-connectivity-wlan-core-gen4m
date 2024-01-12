@@ -470,4 +470,9 @@ void p2pRoleFsmGetStaStatistics(IN struct ADAPTER *prAdapter,
 		IN unsigned long ulParamPtr);
 #endif
 
+void p2pRoleFsmNotifyEapolTxStatus(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIndex,
+		IN enum ENUM_EAPOL_KEY_TYPE_T rEapolKeyType,
+		IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+
 #endif
