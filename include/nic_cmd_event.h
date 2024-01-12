@@ -1074,7 +1074,7 @@ struct CAP_PHY_CAP {
 	 * BIT(3): WLAN_FLAG_5G_WF1
 	 */
 	uint8_t ucWifiPath;
-	uint8_t ucReserved;
+	uint8_t ucHe; /* 1:support, 0:not*/
 };
 
 struct CAP_MAC_CAP {
