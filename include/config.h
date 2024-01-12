@@ -913,6 +913,14 @@
 #define CFG_SCAN_FULL2PARTIAL_PERIOD       (60)
 
 /*------------------------------------------------------------------------------
+ * Value of scan cache result
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SUPPORT_SCAN_CACHE_RESULT      (0)
+#define CFG_SCAN_CACHE_RESULT_PERIOD       (7)  /* in sec */
+#define CFG_SCAN_CACHE_MIN_CHANNEL_NUM     (10)
+
+/*------------------------------------------------------------------------------
  * Flags of Sniffer SUPPORT
  *------------------------------------------------------------------------------
  */

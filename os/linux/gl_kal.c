@@ -4057,6 +4057,65 @@ void kalScanDone(IN struct GLUE_INFO *prGlueInfo,
 		&fgAborted, sizeof(fgAborted));
 }
 
+#if CFG_SUPPORT_SCAN_CACHE_RESULT
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief update timestamp information of bss cache in kernel
+ *
+ * @param[in] prAdapter          Pointer to the Adapter structure.
+ * @return   status 0 if success, error code otherwise
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t kalUpdateBssTimestamp(IN struct GLUE_INFO *prGlueInfo)
+{
+	struct wiphy *wiphy;
+	struct cfg80211_registered_device *rdev;
+	struct cfg80211_internal_bss *bss = NULL;
+	struct cfg80211_bss_ies *ies;
+	uint64_t new_timestamp = kalGetBootTime();
+
+	ASSERT(prGlueInfo);
+	wiphy = priv_to_wiphy(prGlueInfo);
+	if (!wiphy) {
+		log_dbg(REQ, ERROR, "wiphy is null\n");
+		return 1;
+	}
+	rdev = container_of(wiphy, struct cfg80211_registered_device, wiphy);
+
+	log_dbg(REQ, INFO, "Update scan timestamp: %llu (%llu)\n",
+		new_timestamp, le64_to_cpu(new_timestamp));
+
+	/* add 1 ms to prevent scan time too short */
+	new_timestamp += 1000;
+
+	spin_lock_bh(&rdev->bss_lock);
+	list_for_each_entry(bss, &rdev->bss_list, list) {
+		const struct cfg80211_bss_ies *old;
+
+		ies = kzalloc(sizeof(*ies) + bss->pub.ies->len, GFP_ATOMIC);
+		if (!ies)
+			continue;
+		ies->len = bss->pub.ies->len;
+		ies->tsf = le64_to_cpu(new_timestamp);
+		ies->from_beacon = bss->pub.ies->from_beacon;
+		memcpy(ies->data, bss->pub.ies->data, bss->pub.ies->len);
+		if (ies->from_beacon) {
+			old = rcu_access_pointer(bss->pub.beacon_ies);
+			rcu_assign_pointer(bss->pub.beacon_ies, ies);
+		} else { /* proberesp */
+			old = rcu_access_pointer(bss->pub.proberesp_ies);
+			rcu_assign_pointer(bss->pub.proberesp_ies, ies);
+		}
+		rcu_assign_pointer(bss->pub.ies, ies);
+		if (old)
+			kfree_rcu((struct cfg80211_bss_ies *)old, rcu_head);
+	}
+	spin_unlock_bh(&rdev->bss_lock);
+
+	return 0;
+}
+#endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is used to generate a random number
