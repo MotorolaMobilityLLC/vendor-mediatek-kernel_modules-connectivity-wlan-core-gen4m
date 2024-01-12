@@ -1766,6 +1766,7 @@ static void glBusFreeMsiIrq(struct pci_dev *pdev,
 			continue;
 
 		synchronize_irq(irqn);
+		irq_set_affinity_hint(irqn, NULL);
 		devm_free_irq(&pdev->dev, irqn, prGlueInfo);
 	}
 #endif
@@ -1780,6 +1781,7 @@ static void glBusFreeLegacyIrq(struct pci_dev *pdev,
 	prHifInfo = &prGlueInfo->rHifInfo;
 
 	synchronize_irq(prHifInfo->u4IrqId);
+	irq_set_affinity_hint(prHifInfo->u4IrqId, NULL);
 	devm_free_irq(&pdev->dev, prHifInfo->u4IrqId, prGlueInfo);
 }
 
@@ -1820,6 +1822,7 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 
 	if (g_prPlatDev) {
 		synchronize_irq(prHifInfo->u4IrqId_1);
+		irq_set_affinity_hint(prHifInfo->u4IrqId_1, NULL);
 		free_irq(prHifInfo->u4IrqId_1, prGlueInfo);
 	}
 }

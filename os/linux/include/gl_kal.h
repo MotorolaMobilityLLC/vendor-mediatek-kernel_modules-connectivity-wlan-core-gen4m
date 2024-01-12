@@ -2328,6 +2328,8 @@ void kalTdlsOpReq(
 	);
 #endif
 
+void kalSetISRMask(IN struct ADAPTER *prAdapter, IN uint32_t set_mask);
+
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 void kalConfigChksumOffload(
 	struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);

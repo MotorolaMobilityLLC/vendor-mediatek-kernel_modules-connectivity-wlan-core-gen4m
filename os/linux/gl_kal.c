@@ -13157,9 +13157,46 @@ void kalTdlsOpReq(
 
 }
 #endif
+
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+void kalSetISRMask(IN struct ADAPTER *prAdapter, IN uint32_t set_mask)
+{
+#define CPU_ALL_CORE (0xff)
+	struct cpumask cpu_mask;
+	int i;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+
+	if (!HAL_IS_RX_DIRECT(prAdapter))
+		return;
+
+	if (!prGlueInfo)
+		return;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	if (set_mask == CPU_ALL_CORE) {
+		synchronize_irq(prHifInfo->u4IrqId);
+		irq_set_affinity_hint(prHifInfo->u4IrqId,
+			cpu_all_mask);
+	} else {
+		cpumask_clear(&cpu_mask);
+		for (i = 0; i < num_possible_cpus(); i++)
+			if ((0x1 << i) & set_mask)
+				cpumask_or(&cpu_mask, &cpu_mask,
+					cpumask_of(i));
+		synchronize_irq(prHifInfo->u4IrqId);
+		irq_set_affinity_hint(prHifInfo->u4IrqId,
+			&cpu_mask);
+	}
+
+	DBGLOG(INIT, INFO, "irq_set_affinity_hint(%u, %u)",
+		prHifInfo->u4IrqId, set_mask);
+#undef CPU_ALL_CORE
+}
+#endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */
+
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-
-
 void kalConfigChksumOffload(
 	struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 {
