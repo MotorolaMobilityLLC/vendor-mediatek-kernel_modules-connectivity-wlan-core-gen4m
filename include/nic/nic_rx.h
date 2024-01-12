@@ -589,6 +589,12 @@ enum ENUM_RX_STATISTIC_COUNTER {
 	RX_DAF_ERR_DROP_COUNT,
 	RX_ICV_ERR_DROP_COUNT,
 	RX_TKIP_MIC_ERROR_DROP_COUNT,
+	RX_NAPI_SCHEDULE_COUNT,
+	RX_NAPI_FIFO_IN_COUNT,
+	RX_NAPI_FIFO_OUT_COUNT,
+	RX_NAPI_FIFO_FULL_COUNT,
+	RX_NAPI_FIFO_ABNORMAL_COUNT,
+	RX_NAPI_FIFO_ABN_FULL_COUNT,
 	RX_STATISTIC_COUNTER_NUM
 };
 
@@ -1450,6 +1456,10 @@ struct ACTION_FRAME_SIZE_MAP {
 void nicRxInitialize(IN struct ADAPTER *prAdapter);
 
 void nicRxUninitialize(IN struct ADAPTER *prAdapter);
+
+void nicRxProcessPacketType(
+	IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb);
 
 void nicRxProcessRFBs(IN struct ADAPTER *prAdapter);
 

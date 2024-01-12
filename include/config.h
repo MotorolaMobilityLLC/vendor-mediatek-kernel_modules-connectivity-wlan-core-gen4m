@@ -473,11 +473,11 @@
 #define CFG_USB_TX_HANDLE_IN_HIF_THREAD             0
 #define CFG_USB_RX_HANDLE_IN_HIF_THREAD             0
 
-#ifndef CFG_TX_DIRECT_USB
-#define CFG_TX_DIRECT_USB                           1
+#ifndef CFG_TX_DIRECT
+#define CFG_TX_DIRECT                               0
 #endif
-#ifndef CFG_RX_DIRECT_USB
-#define CFG_RX_DIRECT_USB                           1
+#ifndef CFG_RX_DIRECT
+#define CFG_RX_DIRECT                               0
 #endif
 
 #define CFG_HW_WMM_BY_BSS                           1
@@ -1144,6 +1144,13 @@
 /* Enable driver support multicore */
 #ifndef CFG_SUPPORT_MULTITHREAD
 #define CFG_SUPPORT_MULTITHREAD		1
+#endif
+
+#ifndef CFG_TX_DIRECT_VIA_HIF_THREAD
+#define CFG_TX_DIRECT_VIA_HIF_THREAD		0
+#endif
+#if (CFG_SUPPORT_MULTITHREAD == 0) && (CFG_TX_DIRECT_VIA_HIF_THREAD == 1)
+#error "TX_DIRECT_VIA_HIF_THREAD is invalid without MULTITHREAD support"
 #endif
 
 #define CFG_SUPPORT_MTK_SYNERGY			1

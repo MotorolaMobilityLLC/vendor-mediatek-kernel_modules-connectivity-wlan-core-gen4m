@@ -766,7 +766,7 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 		prAdapter->u4HifTxHangDumpBitmap = 0;
 		prAdapter->u4HifTxHangDumpIdx = 0;
 		prAdapter->u4HifTxHangDumpNum = 0;
-		prAdapter->u4NoMoreRfb = 0;
+		prAdapter->ulNoMoreRfb = 0;
 		prAdapter->u4WaitRecIdx = 0;
 		prAdapter->u4CompRecIdx = 0;
 		prAdapter->fgSetLogOnOff = true;
@@ -796,7 +796,7 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 #endif
 	} else {
 		/* need to reset these values after the reset flow */
-		prAdapter->u4NoMoreRfb = 0;
+		prAdapter->ulNoMoreRfb = 0;
 	}
 
 	prAdapter->u4OwnFailedCount = 0;

@@ -307,6 +307,7 @@ CONFIG_MTK_WIFI_POWER_THROTTLING=y
 CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
 CONFIG_MTK_WIFI_APF_SUPPORT=y
 CONFIG_MTK_WIFI_NAN=y
+CONFIG_MTK_WIFI_TRX_DIRECT=y
 
 ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
 ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
@@ -346,6 +347,7 @@ CONFIG_MTK_WIFI_6G_SUPPORT=y
 CONFIG_NSS=4
 CONFIG_BAND_NUM=3
 CONFIG_SUPPORT_FORCE_ALTX=y
+CONFIG_MTK_WIFI_TRX_DIRECT=y
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 endif
@@ -415,6 +417,18 @@ CONFIG_NSS=4
 CONFIG_BAND_NUM=3
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_TRX_DIRECT), y)
+    ifeq (,$(filter CFG_RX_DIRECT,$(PLATFORM_FLAGS)))
+        ccflags-y += -DCFG_RX_DIRECT=1
+    endif
+    ifeq (,$(filter CFG_TX_DIRECT,$(PLATFORM_FLAGS)))
+        ccflags-y += -DCFG_TX_DIRECT=1
+        ifeq ($(MTK_ANDROID_WMT), y)
+            ccflags-y += -DCFG_TX_DIRECT_VIA_HIF_THREAD=1
+        endif
+    endif
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
@@ -955,7 +969,15 @@ ccflags-y += -I$(src)/os/$(os)/hif/none/include
 endif
 
 ifneq ($(PLATFORM_FLAGS), )
-    ccflags-y += $(PLATFORM_FLAGS)
+    # remove trx-direct for mt6639
+    ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
+        FILTER_FLAG += -DCFG_RX_DIRECT=1
+        FILTERED_FLAGS := $(filter-out $(FILTER_FLAG),$(PLATFORM_FLAGS))
+        $(info FILTERED_FLAGS is [${FILTERED_FLAGS}])
+        ccflags-y += $(FILTERED_FLAGS)
+    else
+        ccflags-y += $(PLATFORM_FLAGS)
+    endif
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_ONLY),$(filter $(CONFIG_MTK_WIFI_ONLY),m y))
@@ -1011,8 +1033,9 @@ NAN_DIR     := nan/
 CHIPS       := chips/
 CHIPS_CMM   := $(CHIPS)common/
 
-ifneq ($(WLAN_CHIP_ID),)
-PLAT_DIR    := os/$(os)/plat/mt$(WLAN_CHIP_ID)/
+ifneq ($(MTK_PLATFORM),)
+PLAT_DIR    := os/$(os)/plat/$(MTK_PLATFORM)/
+$(info $$PLAT_DIR is [$(PLAT_DIR)])
 endif
 SYSDVT_DIR  := dvt/
 

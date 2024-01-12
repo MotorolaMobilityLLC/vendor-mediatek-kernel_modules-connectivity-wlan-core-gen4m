@@ -2660,7 +2660,7 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 	}
 
 	HAL_KICK_TX_DATA(prAdapter);
-	prHifStats->u4TxDataRegCnt++;
+	GLUE_INC_REF_CNT(prHifStats->u4TxDataRegCnt);
 
 	if (QUEUE_IS_NOT_EMPTY(prQue))
 		QUEUE_CONCATENATE_QUEUES(prDataTemp, prQue);
@@ -2902,7 +2902,8 @@ void nicProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 
 	/* Indicate Service Thread */
 	if (kalGetTxPendingCmdCount(prAdapter->prGlueInfo) > 0
-	    || wlanGetTxPendingFrameCount(prAdapter) > 0)
+	    || (!HAL_IS_TX_DIRECT(prAdapter)
+		&& wlanGetTxPendingFrameCount(prAdapter)))
 		kalSetEvent(prAdapter->prGlueInfo);
 
 	/* SER break point */
@@ -2911,6 +2912,25 @@ void nicProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 		return;
 	}
 #if CFG_SUPPORT_MULTITHREAD
+	/* RX direct break point */
+	if (HAL_IS_RX_DIRECT(prAdapter) || HAL_IS_TX_DIRECT(prAdapter)) {
+		/*
+		 * In RX direct mode,
+		 * should not handle HIF-TX inside Tasklet,
+		 * wakeup hif_thread.
+		 */
+		if (kalGetTxPendingCmdCount(prAdapter->prGlueInfo))
+			kalSetTxCmdEvent2Hif(prAdapter->prGlueInfo);
+
+		/* In TX direct mode, should not handle TX here */
+		if (HAL_IS_TX_DIRECT(prAdapter))
+			return;
+
+		if (nicTxGetMsduPendingCnt(prAdapter))
+			kalSetTxEvent2Hif(prAdapter->prGlueInfo);
+		return;
+	}
+
 	/* TX Commands */
 	if (kalGetTxPendingCmdCount(prAdapter->prGlueInfo))
 		wlanTxCmdMthread(prAdapter);
@@ -4841,6 +4861,9 @@ void nicTxDirectClearHifQ(IN struct ADAPTER *prAdapter)
 	uint8_t ucHifTc = 0;
 	struct QUE rNeedToFreeQue;
 	struct QUE *prNeedToFreeQue = &rNeedToFreeQue;
+#if CFG_TX_DIRECT_VIA_HIF_THREAD
+	unsigned long flags;
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 
 	QUEUE_INITIALIZE(prNeedToFreeQue);
 
@@ -4849,8 +4872,20 @@ void nicTxDirectClearHifQ(IN struct ADAPTER *prAdapter)
 			 &prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 		if (QUEUE_IS_NOT_EMPTY(
 			    &prAdapter->rTxDirectHifQueue[ucHifTc])) {
+#if CFG_TX_DIRECT_VIA_HIF_THREAD
+			spin_lock_irqsave(
+				&prAdapter->rTxDirectHifQueueLock[ucHifTc],
+				flags
+			);
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 			QUEUE_MOVE_ALL(prNeedToFreeQue,
 				       &prAdapter->rTxDirectHifQueue[ucHifTc]);
+#if CFG_TX_DIRECT_VIA_HIF_THREAD
+			spin_unlock_irqrestore(
+				&prAdapter->rTxDirectHifQueueLock[ucHifTc],
+				flags
+			);
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 			spin_unlock_bh(
 				&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 
@@ -5135,7 +5170,7 @@ static void nicTxDirectCheckBssAbsentQ(IN struct ADAPTER
 				QUEUE_INSERT_TAIL(
 					prQue, (struct QUE_ENTRY *) prMsduInfo);
 				DBGLOG(TX, INFO,
-					"fgIsNetAbsent Quota Availalbe\n");
+					"fgIsNetAbsent Quota Available\n");
 			} else {
 				fgReturnBssAbsentQ = TRUE;
 				DBGLOG(TX, INFO, "fgIsNetAbsent NoQuota\n");
@@ -5320,6 +5355,36 @@ static uint8_t nicTxDirectGetHifTc(struct MSDU_INFO
 	return ucHifTc;
 }
 
+#if CFG_TX_DIRECT_VIA_HIF_THREAD
+uint32_t nicTxDirectToHif(struct ADAPTER *prAdapter,
+	struct QUE *prProcessingQue)
+{
+	struct MSDU_INFO *prMsduInfo = NULL;
+	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
+	uint8_t ucHifTc = 0;
+	unsigned long flags;
+
+	while (1) {
+		QUEUE_REMOVE_HEAD(prProcessingQue, prQueueEntry,
+				  struct QUE_ENTRY *);
+		if (prQueueEntry == NULL)
+			break;
+		prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
+		ucHifTc = nicTxDirectGetHifTc(prMsduInfo);
+		spin_lock_irqsave(
+			&prAdapter->rTxDirectHifQueueLock[ucHifTc], flags);
+		QUEUE_INSERT_TAIL(
+			&prAdapter->rTxDirectHifQueue[ucHifTc],
+			(struct QUE_ENTRY *) prMsduInfo);
+		spin_unlock_irqrestore(
+			&prAdapter->rTxDirectHifQueueLock[ucHifTc], flags);
+
+		kalSetTxDirectEvent2Hif(prAdapter->prGlueInfo);
+	}
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
+
 /*----------------------------------------------------------------------------*/
 /*
  * \brief This function is called by nicTxDirectStartXmit()
@@ -5344,14 +5409,17 @@ uint32_t nicTxDirectStartXmitMain(struct sk_buff
 {
 	struct STA_RECORD *prStaRec;	/* The current focused STA */
 	struct BSS_INFO *prBssInfo;
-	uint8_t ucTC = 0, ucHifTc = 0;
+	uint8_t ucTC = 0;
 	struct QUE *prTxQue = NULL;
 	u_int8_t fgDropPacket = FALSE;
-	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
 	struct QUE rProcessingQue;
 	struct QUE *prProcessingQue = &rProcessingQue;
 	uint8_t ucActivedTspec = 0;
-
+#if !CFG_TX_DIRECT_VIA_HIF_THREAD
+	uint8_t ucHifTc = 0;
+	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
+	struct HIF_STATS *prHifStats = &prAdapter->rHifStats;
+#endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 
 	QUEUE_INITIALIZE(prProcessingQue);
 
@@ -5482,6 +5550,9 @@ uint32_t nicTxDirectStartXmitMain(struct sk_buff
 		if (QUEUE_IS_EMPTY(prProcessingQue))
 			return WLAN_STATUS_SUCCESS;
 
+#if CFG_TX_DIRECT_VIA_HIF_THREAD
+		return nicTxDirectToHif(prAdapter, prProcessingQue);
+#else /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 		if (prProcessingQue->u4NumElem != 1) {
 			while (1) {
 				QUEUE_REMOVE_HEAD(prProcessingQue, prQueueEntry,
@@ -5513,6 +5584,7 @@ uint32_t nicTxDirectStartXmitMain(struct sk_buff
 				prQueueEntry, struct QUE_ENTRY *);
 			prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 		}
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 	} else {
 		if (ucStaRecIndex != 0xff || ucBssIndex != 0xff) {
 			/* Power-save STA handling */
@@ -5532,6 +5604,10 @@ uint32_t nicTxDirectStartXmitMain(struct sk_buff
 			if (QUEUE_IS_EMPTY(prProcessingQue))
 				return WLAN_STATUS_SUCCESS;
 
+#if CFG_TX_DIRECT_VIA_HIF_THREAD
+			return nicTxDirectToHif(prAdapter,
+				prProcessingQue);
+#else /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 			if (prProcessingQue->u4NumElem != 1) {
 				while (1) {
 					QUEUE_REMOVE_HEAD(
@@ -5558,7 +5634,9 @@ uint32_t nicTxDirectStartXmitMain(struct sk_buff
 					  struct QUE_ENTRY *);
 			prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 			ucHifTc = nicTxDirectGetHifTc(prMsduInfo);
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 		} else {
+#if !CFG_TX_DIRECT_VIA_HIF_THREAD
 			if (ucCheckTc != 0xff)
 				ucHifTc = ucCheckTc;
 
@@ -5573,9 +5651,14 @@ uint32_t nicTxDirectStartXmitMain(struct sk_buff
 				&prAdapter->rTxDirectHifQueue[ucHifTc],
 				prQueueEntry, struct QUE_ENTRY *);
 			prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
+#endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 		}
 	}
 
+#if !CFG_TX_DIRECT_VIA_HIF_THREAD
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	wlanAcquirePowerControl(prAdapter);
+#endif
 	while (prMsduInfo) {
 		if (!halTxIsDataBufEnough(prAdapter, prMsduInfo)) {
 			QUEUE_INSERT_HEAD(
@@ -5584,24 +5667,14 @@ uint32_t nicTxDirectStartXmitMain(struct sk_buff
 			mod_timer(&prAdapter->rTxDirectHifTimer,
 				  jiffies + TX_DIRECT_CHECK_INTERVAL);
 
-			return WLAN_STATUS_SUCCESS;
+			break;
 		}
 
-		if (prMsduInfo->pfTxDoneHandler) {
-			KAL_SPIN_LOCK_DECLARATION();
+		if (prMsduInfo->pfHifTxMsduDoneCb)
+			prMsduInfo->pfHifTxMsduDoneCb(prAdapter,
+					prMsduInfo);
 
-			/* Record native packet pointer for Tx done log */
-			WLAN_GET_FIELD_32(&prMsduInfo->prPacket,
-					  &prMsduInfo->u4TxDoneTag);
-
-			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-				SPIN_LOCK_TXING_MGMT_LIST);
-			QUEUE_INSERT_TAIL(
-				&(prAdapter->rTxCtrl.rTxMgmtTxingQueue),
-				(struct QUE_ENTRY *) prMsduInfo);
-			KAL_RELEASE_SPIN_LOCK(prAdapter,
-				SPIN_LOCK_TXING_MGMT_LIST);
-		}
+		GLUE_INC_REF_CNT(prAdapter->rHifStats.u4DataInCount);
 		HAL_WRITE_TX_DATA(prAdapter, prMsduInfo);
 
 		if (QUEUE_IS_NOT_EMPTY(
@@ -5620,6 +5693,14 @@ uint32_t nicTxDirectStartXmitMain(struct sk_buff
 		}
 	}
 
+	HAL_KICK_TX_DATA(prAdapter);
+	GLUE_INC_REF_CNT(prHifStats->u4TxDataRegCnt);
+
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	/* Release to FW own */
+	wlanReleasePowerControl(prAdapter);
+#endif
+#endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -5679,7 +5760,9 @@ void nicTxDirectTimerCheckHifQ(unsigned long data)
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 #endif
+#if !CFG_TX_DIRECT_VIA_HIF_THREAD
 	uint8_t ucHifTc = 0;
+#endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 	uint32_t u4StaPsBitmap, u4BssAbsentBitmap, u4StaPendBitmap;
 	uint8_t ucStaRecIndex, ucBssIndex;
 
@@ -5731,13 +5814,19 @@ void nicTxDirectTimerCheckHifQ(unsigned long data)
 		}
 
 
+#if !CFG_TX_DIRECT_VIA_HIF_THREAD
 	for (ucHifTc = 0; ucHifTc < TX_PORT_NUM; ucHifTc++)
 		if (QUEUE_IS_NOT_EMPTY(
 			    &prAdapter->rTxDirectHifQueue[ucHifTc]))
 			nicTxDirectStartXmitMain(NULL, NULL, prAdapter, ucHifTc,
 						 0xff, 0xff);
+#endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 
 	spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+
+#if CFG_TX_DIRECT_VIA_HIF_THREAD
+	kalSetTxDirectEvent2Hif(prGlueInfo);
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5816,6 +5905,93 @@ end:
 	spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 	return ret;
 }
+
+#if CFG_TX_DIRECT_VIA_HIF_THREAD
+static inline uint32_t nicTxDirectHifXmit(
+	struct ADAPTER *prAdapter, uint8_t ucHifTc)
+{
+	struct HIF_STATS *prHifStats = &prAdapter->rHifStats;
+	struct MSDU_INFO *prMsduInfo;
+	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
+	struct QUE *prHifQueue = &prAdapter->rTxDirectHifQueue[ucHifTc];
+	struct QUE rTempHifQueue;
+	struct QUE *prTempHifQueue;
+	bool fgSetHifTx = FALSE;
+	unsigned long flags;
+
+	prTempHifQueue = &rTempHifQueue;
+	QUEUE_INITIALIZE(prTempHifQueue);
+
+try_again:
+	if (QUEUE_IS_EMPTY(prHifQueue))
+		return WLAN_STATUS_SUCCESS;
+
+	spin_lock_irqsave(&prAdapter->rTxDirectHifQueueLock[ucHifTc],
+		flags);
+	QUEUE_MOVE_ALL(prTempHifQueue, prHifQueue);
+	spin_unlock_irqrestore(&prAdapter->rTxDirectHifQueueLock[ucHifTc],
+		flags);
+
+	while (1) {
+		if (QUEUE_IS_NOT_EMPTY(prTempHifQueue)) {
+			QUEUE_REMOVE_HEAD(prTempHifQueue,
+				prQueueEntry, struct QUE_ENTRY *);
+			prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
+			if (prMsduInfo == NULL) {
+				DBGLOG(TX, WARN,
+					"prMsduInfo is NULL\n");
+				break;
+			}
+		} else {
+			break;
+		}
+
+		if (!halTxIsDataBufEnough(prAdapter, prMsduInfo)) {
+			QUEUE_INSERT_HEAD(prTempHifQueue,
+				(struct QUE_ENTRY *) prMsduInfo);
+			break;
+		}
+
+		if (prMsduInfo->pfHifTxMsduDoneCb)
+			prMsduInfo->pfHifTxMsduDoneCb(prAdapter,
+					prMsduInfo);
+
+		GLUE_INC_REF_CNT(prAdapter->rHifStats.u4DataInCount);
+		HAL_WRITE_TX_DATA(prAdapter, prMsduInfo);
+		fgSetHifTx = TRUE;
+	}
+
+	if (!fgSetHifTx)
+		goto end;
+
+	HAL_KICK_TX_DATA(prAdapter);
+	GLUE_INC_REF_CNT(prHifStats->u4TxDataRegCnt);
+
+	if (QUEUE_IS_EMPTY(prTempHifQueue))
+		goto try_again;
+
+end:
+	if (QUEUE_IS_NOT_EMPTY(prTempHifQueue)) {
+		spin_lock_irqsave(
+			&prAdapter->rTxDirectHifQueueLock[ucHifTc], flags);
+		QUEUE_CONCATENATE_QUEUES_HEAD(prHifQueue, prTempHifQueue);
+		spin_unlock_irqrestore(
+			&prAdapter->rTxDirectHifQueueLock[ucHifTc], flags);
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicTxDirectMsduQueueMthread(IN struct ADAPTER *prAdapter)
+{
+	uint8_t ucHifTc;
+
+	for (ucHifTc = 0; ucHifTc < TX_PORT_NUM; ucHifTc++)
+		nicTxDirectHifXmit(prAdapter, ucHifTc);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 /* TX Direct functions : END */
 
 

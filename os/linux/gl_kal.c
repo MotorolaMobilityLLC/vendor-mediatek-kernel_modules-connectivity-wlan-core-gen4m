@@ -1410,13 +1410,13 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 		prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
 			netdev_priv(prNetDev);
 #if CFG_SUPPORT_RX_NAPI
-		skb_queue_tail(&prNetDevPrivate->rRxNapiSkbQ, prSkb);
-#if KERNEL_VERSION(4, 0, 0) <= LINUX_VERSION_CODE
-		if (in_interrupt())
-			napi_schedule_irqoff(&prNetDevPrivate->napi);
-		else
-#endif /* KERNEL_VERSION(4, 0, 0) */
-			napi_schedule(&prNetDevPrivate->napi);
+		if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
+			/* We should stay in NAPI context now */
+			napi_gro_receive(&prNetDevPrivate->napi, prSkb);
+		} else {
+			skb_queue_tail(&prNetDevPrivate->rRxNapiSkbQ, prSkb);
+			kal_napi_schedule(&prNetDevPrivate->napi);
+		}
 #else /* CFG_SUPPORT_RX_NAPI */
 		/* GRO receive function can't be interrupt so it need to
 		 * disable preempt and protect by spin lock
@@ -2629,8 +2629,13 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		       prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex]
 		       [u2QueueIdx]));
 
-	if (HAL_IS_TX_DIRECT(prGlueInfo->prAdapter))
+	if (HAL_IS_TX_DIRECT(prGlueInfo->prAdapter)) {
+#if defined(_HIF_PCIE) && (HIF_TX_PREALLOC_DATA_BUFFER == 0)
+		/* To reduce L3 buffer usage, release original owner ASAP */
+		skb_orphan(prSkb);
+#endif
 		return nicTxDirectStartXmit(prSkb, prGlueInfo);
+	}
 
 	kalSetEvent(prGlueInfo);
 
@@ -4441,6 +4446,14 @@ int hif_thread(void *data)
 					       &prGlueInfo->ulFlag))
 				TRACE(wlanTxCmdMthread(prAdapter), "TX_CMD");
 
+#if CFG_TX_DIRECT_VIA_HIF_THREAD
+			/* Process TX-direct data packet to HIF */
+			if (test_and_clear_bit(GLUE_FLAG_TX_DIRECT_HIF_TX_BIT,
+					       &prGlueInfo->ulFlag))
+				TRACE(nicTxDirectMsduQueueMthread(prAdapter),
+					"TX-Direct");
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
+
 			/* Process TX data packet to HIF */
 			if (test_and_clear_bit(GLUE_FLAG_HIF_TX_BIT,
 					       &prGlueInfo->ulFlag))
@@ -5645,11 +5658,18 @@ void kalSetIntEvent(struct GLUE_INFO *pr)
 {
 	KAL_WAKE_LOCK(pr->prAdapter, pr->rIntrWakeLock);
 
-	set_bit(GLUE_FLAG_INT_BIT, &pr->ulFlag);
+	/* Do not wakeup hif_thread in direct mode */
+	if (HAL_IS_RX_DIRECT(pr->prAdapter))
+		set_bit(GLUE_FLAG_RX_DIRECT_INT_BIT, &pr->ulFlag);
+	else
+		set_bit(GLUE_FLAG_INT_BIT, &pr->ulFlag);
 
-	/* when we got interrupt, we wake up servie thread */
+	/* when we got interrupt, we wake up service thread */
 #if CFG_SUPPORT_MULTITHREAD
-	wake_up_interruptible(&pr->waitq_hif);
+	if (HAL_IS_RX_DIRECT(pr->prAdapter))
+		tasklet_hi_schedule(&pr->rRxTask);
+	else
+		wake_up_interruptible(&pr->waitq_hif);
 #else
 	wake_up_interruptible(&pr->waitq);
 #endif
@@ -5694,6 +5714,23 @@ void kalSetHifDbgEvent(struct GLUE_INFO *pr)
 }
 
 #if CFG_SUPPORT_MULTITHREAD
+#if CFG_TX_DIRECT_VIA_HIF_THREAD
+void kalSetTxDirectEvent2Hif(struct GLUE_INFO *pr)
+{
+	if (!pr->hif_thread)
+		return;
+
+	KAL_WAKE_LOCK_TIMEOUT(pr->prAdapter, pr->rTimeoutWakeLock,
+			      MSEC_TO_JIFFIES(
+			      pr->prAdapter->rWifiVar.u4WakeLockThreadWakeup));
+
+	if (HAL_IS_TX_DIRECT(pr->prAdapter))
+		set_bit(GLUE_FLAG_TX_DIRECT_HIF_TX_BIT, &pr->ulFlag);
+
+	wake_up_interruptible(&pr->waitq_hif);
+}
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
+
 void kalSetTxEvent2Hif(struct GLUE_INFO *pr)
 {
 	if (!pr->hif_thread)
@@ -5704,6 +5741,12 @@ void kalSetTxEvent2Hif(struct GLUE_INFO *pr)
 			      pr->prAdapter->rWifiVar.u4WakeLockThreadWakeup));
 
 	set_bit(GLUE_FLAG_HIF_TX_BIT, &pr->ulFlag);
+
+#if CFG_TX_DIRECT_VIA_HIF_THREAD
+	if (HAL_IS_TX_DIRECT(pr->prAdapter))
+		set_bit(GLUE_FLAG_TX_DIRECT_HIF_TX_BIT, &pr->ulFlag);
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
+
 	wake_up_interruptible(&pr->waitq_hif);
 }
 
@@ -5755,6 +5798,10 @@ void kalSetTxCmdDoneEvent(struct GLUE_INFO *pr)
 
 void kalSetRxProcessEvent(struct GLUE_INFO *pr)
 {
+	/* Do not wakeup target if there is nothing waiting */
+	if (QUEUE_IS_EMPTY(&pr->prAdapter->rRxCtrl.rReceivedRfbList))
+		return;
+
 	/* do we need wake lock here ? */
 	set_bit(GLUE_FLAG_RX_BIT, &pr->ulFlag);
 	wake_up_interruptible(&pr->waitq);
@@ -8938,11 +8985,18 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		);
 #undef TEMP_LOG_TEMPLATE
 #define TEMP_LOG_TEMPLATE \
-	"ndevdrp:%s drv[RM,IL,RI,RT,RM,RW,RA,RB,DT,NS,IB,HS,LS,DD,ME,BD,NI," \
+	"ndevdrp:%s NAPI[%lu,%lu,%lu,%lu,%lu:%lu] " \
+	"drv[RM,IL,RI,RT,RM,RW,RA,RB,DT,NS,IB,HS,LS,DD,ME,BD,NI," \
 	"DR,TE,CE,DN,FE,DE,IE,TME]:%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
 	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu\n"
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
 		head3,
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_SCHEDULE_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_IN_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_OUT_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_FULL_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_ABNORMAL_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_ABN_FULL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_MPDU_TOTAL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_ICS_LOG_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_INDICATION_COUNT),
@@ -11174,12 +11228,217 @@ MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
 /* For Linux kernel version wrapper */
 void kal_napi_complete_done(struct napi_struct *n, int work_done)
 {
+	if (!n)
+		return;
 #if KERNEL_VERSION(3, 19, 0) <= LINUX_VERSION_CODE
 	napi_complete_done(n, work_done);
 #else
 	napi_complete(n);
 #endif /* KERNEL_VERSION(3, 19, 0) */
 }
+
+void kal_napi_schedule(struct napi_struct *n)
+{
+	if (!n)
+		return;
+#if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
+	if (in_interrupt())
+		napi_schedule_irqoff(n);
+	else
+#endif /* KERNEL_VERSION(4, 0, 0) */
+		napi_schedule(n);
+}
+
+uint8_t kalNapiInit(struct net_device *prDev)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
+
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(prDev);
+	prGlueInfo = prNetDevPrivate->prGlueInfo;
+	/* Register GRO function to kernel */
+	prDev->features |= NETIF_F_GRO;
+	prDev->hw_features |= NETIF_F_GRO;
+
+/*
+ * Know Issue: may introduce KE when NAT + GRO + Raw socket
+ * Disable it temporary
+ */
+#if 0
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	prDev->features |= NETIF_F_GRO_FRAGLIST_BIT;
+#endif
+#endif
+	spin_lock_init(&prNetDevPrivate->napi_spinlock);
+	prNetDevPrivate->napi.dev = prDev;
+	netif_napi_add(prNetDevPrivate->napi.dev,
+		&prNetDevPrivate->napi, kalNapiPoll, NAPI_POLL_WEIGHT);
+	skb_queue_head_init(&prNetDevPrivate->rRxNapiSkbQ);
+	DBGLOG(INIT, INFO,
+		"GRO interface added successfully:%s\n", prDev->name);
+	return 0;
+}
+
+#if (CFG_SUPPORT_RX_NAPI == 1)
+uint8_t kalNapiRxDirectInit(struct net_device *prDev)
+{
+	/* This prDev should be "wlan0" by default */
+	struct GLUE_INFO *prGlueInfo;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
+	uint8_t ucNapiUseCnt = 0;
+
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(prDev);
+	prGlueInfo = prNetDevPrivate->prGlueInfo;
+	if (!prGlueInfo
+		|| !HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
+		return FALSE;
+
+	ucNapiUseCnt = GLUE_INC_REF_CNT(prGlueInfo->ucNapiUseCnt);
+	if (ucNapiUseCnt > 1) {
+		DBGLOG(INIT, INFO, "[%s] Skip init. ucNapiUseCnt:%u\n",
+			prDev->name,
+			ucNapiUseCnt);
+		return FALSE;
+	}
+
+	/* Note: we use FIFO to transfer addresses of SwRfbs
+	 * The max size of FIFO queue should be
+	 *     MaxPktCnt * "size of data obj pointer"
+	 */
+	prGlueInfo->u4RxKfifoBufLen = CFG_RX_MAX_PKT_NUM * sizeof(void *);
+	prGlueInfo->prRxKfifoBuf = kalMemAlloc(
+		prGlueInfo->u4RxKfifoBufLen,
+		VIR_MEM_TYPE);
+
+	if (!prGlueInfo->prRxKfifoBuf) {
+		DBGLOG(INIT, ERROR,
+			"Cannot alloc buf(%d) for NapiDirect [%s]\n",
+			prGlueInfo->u4RxKfifoBufLen);
+		GLUE_DEC_REF_CNT(prGlueInfo->ucNapiUseCnt);
+		return FALSE;
+	}
+
+	KAL_FIFO_INIT(&prGlueInfo->rRxKfifoQ,
+		prGlueInfo->prRxKfifoBuf,
+		prGlueInfo->u4RxKfifoBufLen);
+
+	prGlueInfo->prRxDirectNapi = &prNetDevPrivate->napi;
+
+	DBGLOG(INIT, INFO,
+		"[%s] Init NapiDirect done Buf[%p:%u] Fifo[%p:%u]\n",
+		prDev->name,
+		prGlueInfo->prRxKfifoBuf,
+		prGlueInfo->u4RxKfifoBufLen,
+		&prGlueInfo->rRxKfifoQ,
+		KAL_FIFO_LEN(&prGlueInfo->rRxKfifoQ)
+		);
+
+	return TRUE;
+}
+
+uint8_t kalNapiRxDirectUninit(struct net_device *prDev)
+{
+	/* This prDev should be "wlan0" by default */
+	struct GLUE_INFO *prGlueInfo;
+	struct SW_RFB *prSwRfb;
+	uint8_t ucNapiUseCnt = 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
+	if (!prGlueInfo
+		|| !HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
+		return FALSE;
+
+	ucNapiUseCnt = GLUE_DEC_REF_CNT(prGlueInfo->ucNapiUseCnt);
+	if (ucNapiUseCnt > 0) {
+		DBGLOG(INIT, INFO, "[%s] Skip uninit. ucNapiUseCnt:%u\n",
+			prDev->name,
+			ucNapiUseCnt);
+		return FALSE;
+	}
+
+	prGlueInfo->prRxDirectNapi = NULL;
+
+	/* Return pending SwRFBs */
+	while (KAL_FIFO_OUT(&prGlueInfo->rRxKfifoQ, prSwRfb)) {
+		if (!prSwRfb) {
+			DBGLOG(RX, ERROR, "prSwRfb null\n");
+			break;
+		}
+		RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+			RX_NAPI_FIFO_OUT_COUNT);
+		nicRxReturnRFB(prGlueInfo->prAdapter, prSwRfb);
+	}
+
+	if (prGlueInfo->prRxKfifoBuf) {
+		kalMemFree(prGlueInfo->prRxKfifoBuf,
+			PHY_MEM_TYPE,
+			prGlueInfo->u4RxKfifoBufLen);
+		prGlueInfo->prRxKfifoBuf = NULL;
+	}
+
+	DBGLOG(INIT, INFO,
+		"[%s] Uninit NapiDirect done\n", prDev->name);
+
+	return TRUE;
+}
+
+static int kalNapiPollSwRfb(struct napi_struct *napi, int budget)
+{
+	uint32_t work_done = 1;
+	struct NETDEV_PRIVATE_GLUE_INFO *prPrivGlueInfo =
+		(struct NETDEV_PRIVATE_GLUE_INFO *)
+		container_of(napi, struct NETDEV_PRIVATE_GLUE_INFO, napi);
+	struct GLUE_INFO *prGlueInfo = prPrivGlueInfo->prGlueInfo;
+	static int32_t i4UserCnt;
+	struct SW_RFB *prSwRfb;
+
+	/* Allow one user only */
+	if (GLUE_INC_REF_CNT(i4UserCnt) > 1)
+		goto end;
+
+	while (KAL_FIFO_OUT(&prGlueInfo->rRxKfifoQ, prSwRfb)) {
+		if (!prSwRfb) {
+			DBGLOG(RX, ERROR, "prSwRfb null\n");
+			break;
+		}
+		RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+			RX_NAPI_FIFO_OUT_COUNT);
+		nicRxProcessPacketType(prGlueInfo->prAdapter, prSwRfb);
+		work_done++;
+	}
+	/* Set max work_done budget */
+	if (work_done > budget)
+		work_done = budget;
+
+#if CFG_SUPPORT_RX_GRO_PEAK
+	work_done = budget / 2;
+#endif
+
+end:
+	GLUE_DEC_REF_CNT(i4UserCnt);
+
+	kal_napi_complete_done(napi, work_done);
+
+	return work_done;
+}
+#else
+/* dummy header only */
+uint8_t kalNapiRxDirectInit(struct net_device *prDev)
+{
+	return FALSE;
+}
+uint8_t kalNapiRxDirectUninit(struct net_device *prDev)
+{
+	return FALSE;
+}
+static int kalNapiPollSwRfb(struct napi_struct *napi, int budget)
+{
+	return 0;
+}
+#endif /* (CFG_SUPPORT_RX_NAPI == 1)*/
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief A method of callback function for napi struct
@@ -11208,6 +11467,11 @@ int kalNapiPoll(struct napi_struct *napi, int budget)
 	/* follow timeout rule in net_rx_action() */
 	const unsigned long ulTimeLimit = jiffies + 2;
 #endif
+
+	if (HAL_IS_RX_DIRECT(prPrivGlueInfo->prGlueInfo->prAdapter)) {
+		/* Handle SwRFBs under RX-direct mode */
+		return kalNapiPollSwRfb(napi, budget);
+	}
 
 	prRxNapiSkbQ = &prPrivGlueInfo->rRxNapiSkbQ;
 	prFlushSkbQ = &rFlushSkbQ;
@@ -11284,27 +11548,6 @@ next_try:
 #else /* CFG_SUPPORT_RX_NAPI */
 	return 0;
 #endif /* CFG_SUPPORT_RX_NAPI */
-}
-
-uint8_t kalNapiInit(struct net_device *prDev)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
-
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
-	/* Register GRO function to kernel */
-	prDev->features |= NETIF_F_GRO;
-	prDev->hw_features |= NETIF_F_GRO;
-	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
-		netdev_priv(prDev);
-	spin_lock_init(&prNetDevPrivate->napi_spinlock);
-	prNetDevPrivate->napi.dev = prDev;
-	netif_napi_add(prNetDevPrivate->napi.dev,
-		&prNetDevPrivate->napi, kalNapiPoll, NAPI_POLL_WEIGHT);
-	skb_queue_head_init(&prNetDevPrivate->rRxNapiSkbQ);
-	DBGLOG(INIT, INFO,
-		"GRO interface added successfully:%s\n", prDev->name);
-	return 0;
 }
 
 uint8_t kalNapiEnable(struct net_device *prDev)

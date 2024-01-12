@@ -149,7 +149,8 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 	GLUE_FLAG_HIF_PRT_HIF_DBG_INFO | \
 	GLUE_FLAG_UPDATE_WMM_QUOTA | \
 	GLUE_FLAG_NOTIFY_MD_CRASH | \
-	GLUE_FLAG_DRV_INT)
+	GLUE_FLAG_DRV_INT | \
+	GLUE_FLAG_TX_DIRECT_HIF_TX)
 
 #define GLUE_FLAG_RX_PROCESS (GLUE_FLAG_HALT | GLUE_FLAG_RX_TO_OS)
 #else
@@ -740,6 +741,18 @@ kalCfg80211VendorEventAlloc(struct wiphy *wiphy, struct wireless_dev *wdev,
 	kfifo_is_empty((_prFiFoQ))
 #define KAL_FIFO_IS_FULL(_prFiFoQ) \
 	kfifo_is_full((_prFiFoQ))
+
+#define KAL_MB_RW() \
+({ \
+	/* Avoid memory barrier problem  */ \
+	smp_mb(); \
+})
+
+#define KAL_MB_W() \
+({ \
+	/* Avoid memory barrier problem  */ \
+	smp_wmb(); \
+})
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1595,6 +1608,10 @@ void kalSetMdCrashEvent(struct GLUE_INFO *pr);
 void kalSetHifDbgEvent(struct GLUE_INFO *pr);
 
 #if CFG_SUPPORT_MULTITHREAD
+#if CFG_TX_DIRECT_VIA_HIF_THREAD
+void kalSetTxDirectEvent2Hif(struct GLUE_INFO *pr);
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
+
 void kalSetTxEvent2Hif(struct GLUE_INFO *pr);
 
 void kalSetTxEvent2Rx(struct GLUE_INFO *pr);
@@ -1911,8 +1928,11 @@ kalChannelFormatSwitch(IN struct cfg80211_chan_def *channel_def,
 #if CFG_SUPPORT_RX_GRO
 uint32_t kal_is_skb_gro(struct ADAPTER *prAdapter, uint8_t ucBssIdx);
 void kal_gro_flush(struct ADAPTER *prAdapter, struct net_device *prDev);
+void kal_napi_schedule(struct napi_struct *n);
 int kalNapiPoll(struct napi_struct *napi, int budget);
 uint8_t kalNapiInit(struct net_device *prDev);
+uint8_t kalNapiRxDirectInit(struct net_device *prDev);
+uint8_t kalNapiRxDirectUninit(struct net_device *prDev);
 uint8_t kalNapiEnable(struct net_device *prDev);
 uint8_t kalNapiDisable(struct net_device *prDev);
 #endif /* CFG_SUPPORT_RX_GRO */

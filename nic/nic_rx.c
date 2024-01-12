@@ -3589,7 +3589,7 @@ static void nicRxProcessIcsLog(IN struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_ICS */
 
-static void nicRxProcessPacketType(
+void nicRxProcessPacketType(
 	struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb)
 {
@@ -3985,6 +3985,7 @@ void nicRxReturnRFB(IN struct ADAPTER *prAdapter,
 {
 	struct RX_CTRL *prRxCtrl;
 	struct QUE_ENTRY *prQueEntry;
+	struct GLUE_INFO *prGlueInfo;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -3995,6 +3996,7 @@ void nicRxReturnRFB(IN struct ADAPTER *prAdapter,
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prQueEntry = &prSwRfb->rQueEntry;
+	prGlueInfo = prAdapter->prGlueInfo;
 
 	ASSERT(prQueEntry);
 
@@ -4006,10 +4008,13 @@ void nicRxReturnRFB(IN struct ADAPTER *prAdapter,
 	if (prSwRfb->pvPacket) {
 		/* QUEUE_INSERT_TAIL */
 		QUEUE_INSERT_TAIL(&prRxCtrl->rFreeSwRfbList, prQueEntry);
-		if (prAdapter->u4NoMoreRfb != 0) {
+		if (prAdapter->ulNoMoreRfb != 0) {
 			DBGLOG_LIMITED(RX, INFO,
 				"Free rfb and set IntEvent!!!!!\n");
-			kalSetDrvIntEvent(prAdapter->prGlueInfo);
+			if (HAL_IS_RX_DIRECT(prAdapter))
+				tasklet_hi_schedule(&prGlueInfo->rRxTask);
+			else
+				kalSetDrvIntEvent(prGlueInfo);
 		}
 	} else {
 		/* QUEUE_INSERT_TAIL */
@@ -4020,7 +4025,7 @@ void nicRxReturnRFB(IN struct ADAPTER *prAdapter,
 	/* Trigger Rx if there are free SwRfb */
 	if (halIsPendingRx(prAdapter)
 	    && (prRxCtrl->rFreeSwRfbList.u4NumElem > 0))
-		kalSetIntEvent(prAdapter->prGlueInfo);
+		kalSetIntEvent(prGlueInfo);
 }				/* end of nicRxReturnRFB() */
 
 /*----------------------------------------------------------------------------*/
