@@ -607,8 +607,8 @@ ifeq ($(MTK_ANDROID_WMT), y)
     ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
     ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
     ccflags-y += -DCFG_SAP_CROSS_BAND_CSA
-    CONFIG_PHY_ICS_SW_FLOW_VER3=y
-    CONFIG_PHY_ICS_SW_FLOW_VER4=n
+    CONFIG_SUPPORT_PHY_ICS_V3=y
+    CONFIG_SUPPORT_PHY_ICS_V4=n
 endif
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
     CONFIG_MTK_WIFI_NAN=y
@@ -2383,16 +2383,16 @@ else
     ccflags-y += -DCFG_SUPPORT_PWR_LMT_EMI=0
 endif
 
-ifeq ($(CONFIG_PHY_ICS_SW_FLOW_VER3), y)
-    ccflags-y += -DCFG_SUPPORT_PHY_ICS_SW_FLOW_VER3=1
+ifeq ($(CONFIG_SUPPORT_PHY_ICS_V3), y)
+    ccflags-y += -DCFG_SUPPORT_PHY_ICS_V3=1
 else
-    ccflags-y += -DCFG_SUPPORT_PHY_ICS_SW_FLOW_VER3=0
+    ccflags-y += -DCFG_SUPPORT_PHY_ICS_V3=0
 endif
 
-ifeq ($(CONFIG_PHY_ICS_SW_FLOW_VER4), y)
-    ccflags-y += -DCFG_SUPPORT_PHY_ICS_SW_FLOW_VER4=1
+ifeq ($(CONFIG_SUPPORT_PHY_ICS_V4), y)
+    ccflags-y += -DCFG_SUPPORT_PHY_ICS_V4=1
 else
-    ccflags-y += -DCFG_SUPPORT_PHY_ICS_SW_FLOW_VER4=0
+    ccflags-y += -DCFG_SUPPORT_PHY_ICS_V4=0
 endif
 
 # ---------------------------------------------------
