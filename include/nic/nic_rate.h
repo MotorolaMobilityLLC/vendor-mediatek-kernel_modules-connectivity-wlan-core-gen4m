@@ -87,6 +87,72 @@
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
+#define BW_20		0
+#define BW_40		1
+#define BW_80		2
+#define BW_160		3
+#define BW_10		4
+#define BW_5		6
+#define BW_8080		7
+#define BW_ALL		0xFF
+
+#define HW_TX_RATE_TO_MODE(_x)			(((_x) & (0x7 << 6)) >> 6)
+#define HW_TX_RATE_TO_MCS(_x, _mode)		((_x) & (0x3f))
+#define HW_TX_RATE_TO_NSS(_x)			(((_x) & (0x3 << 9)) >> 9)
+#define HW_TX_RATE_TO_STBC(_x)			(((_x) & (0x1 << 11)) >> 11)
+
+#define TX_VECTOR_GET_TX_RATE(_txv)     (((_txv)->u4TxVector1) & BITS(0, 6))
+#define TX_VECTOR_GET_TX_LDPC(_txv)     ((((_txv)->u4TxVector1) >> 7) & BIT(0))
+#define TX_VECTOR_GET_TX_STBC(_txv)     ((((_txv)->u4TxVector1) >> 8) & \
+					BITS(0, 1))
+#define TX_VECTOR_GET_TX_FRMODE(_txv)   ((((_txv)->u4TxVector1) >> 10) & \
+					BITS(0, 1))
+#define TX_VECTOR_GET_TX_MODE(_txv)     ((((_txv)->u4TxVector1) >> 12) & \
+					BITS(0, 2))
+#define TX_VECTOR_GET_TX_NSTS(_txv)     ((((_txv)->u4TxVector1) >> 21) & \
+					BITS(0, 1))
+#define TX_VECTOR_GET_TX_PWR(_txv)      ((((_txv)->u4TxVector1) >> 24) & \
+					BITS(0, 6))
+#define TX_VECTOR_GET_BF_EN(_txv)       ((((_txv)->u4TxVector2) >> 31) & BIT(0))
+#define TX_VECTOR_GET_DYN_BW(_txv)      ((((_txv)->u4TxVector4) >> 31) & BIT(0))
+#define TX_VECTOR_GET_NO_SOUNDING(_txv) ((((_txv)->u4TxVector4) >> 28) & BIT(0))
+#define TX_VECTOR_GET_TX_SGI(_txv)      ((((_txv)->u4TxVector4) >> 27) & BIT(0))
+
+#define TX_RATE_MODE_CCK	0
+#define TX_RATE_MODE_OFDM	1
+#define TX_RATE_MODE_HTMIX	2
+#define TX_RATE_MODE_HTGF	3
+#define TX_RATE_MODE_VHT	4
+#define TX_RATE_MODE_HE_SU      8
+#define TX_RATE_MODE_HE_ER      9
+#define TX_RATE_MODE_HE_TRIG    10
+#define TX_RATE_MODE_HE_MU      11
+#define MAX_TX_MODE             11
+
+
+extern char *HW_TX_MODE_STR[];
+extern char *HW_TX_RATE_CCK_STR[];
+extern char *HW_TX_RATE_OFDM_STR[];
+extern char *HW_TX_RATE_BW[];
+
+struct FIXED_RATE_INFO {
+	uint32_t u4Mode;
+	uint32_t u4Bw;
+	uint32_t u4Mcs;
+	uint32_t u4VhtNss;
+	uint32_t u4SGI;
+	uint32_t u4Preamble;
+	uint32_t u4STBC;
+	uint32_t u4LDPC;
+	uint32_t u4SpeEn;
+	uint32_t u4HeLTF;
+	uint32_t u4HeGI;
+};
+
+enum RATE_VER {
+	RATE_VER_1 = 1,
+	RATE_VER_2,
+};
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
@@ -151,6 +217,13 @@ nicGetRateIndexFromRateSetWithLimit(
 	OUT uint8_t *pucRateSwIndex
 );
 
+char *nicHwRateOfdmStr(
+	uint16_t ofdm_idx);
+
+uint32_t nicSetFixedRateData(
+	struct FIXED_RATE_INFO *pFixedRate,
+	uint32_t u4RateVer,
+	uint32_t *pu4Data);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

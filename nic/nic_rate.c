@@ -75,6 +75,41 @@
  *******************************************************************************
  */
 
+
+#define RA_FIXEDRATE_V1_FIELD_MODE_S       6
+#define RA_FIXEDRATE_V1_FIELD_MODE_E       8
+#define RA_FIXEDRATE_V1_FIELD_VHTNSS_S     9
+#define RA_FIXEDRATE_V1_FIELD_VHTNSS_E     10
+
+#define RA_FIXEDRATE_V2_FIELD_MODE_S       6
+#define RA_FIXEDRATE_V2_FIELD_MODE_E       10
+#define RA_FIXEDRATE_V2_FIELD_VHTNSS_S     12
+#define RA_FIXEDRATE_V2_FIELD_VHTNSS_E     14
+
+
+#define RA_FIXEDRATE_FIELD_STBC         11
+#define RA_FIXEDRATE_FIELD_SGI          30
+#define RA_FIXEDRATE_FIELD_BAND         25
+
+#define RA_FIXEDRATE_FIELD_BW_S         26
+#define RA_FIXEDRATE_FIELD_BW_E         27
+
+#define RA_FIXEDRATE_FIELD_LDPC         29
+#define RA_FIXEDRATE_FIELD_SPEEN        28
+
+#define RA_FIXEDRATE_FIELD_CCK_MCS_S    0
+#define RA_FIXEDRATE_FIELD_CCK_MCS_E    1
+
+#define RA_FIXEDRATE_FIELD_S_PREAMBLE   2
+
+#define RA_FIXEDRATE_FIELD_MCS_S        0
+#define RA_FIXEDRATE_FIELD_MCS_E        5
+
+#define RA_FIXEDRATE_FIELD_HE_LTF_MASK        BITS(15, 16)
+#define RA_FIXEDRATE_FIELD_HE_LTF_OFFSET        15
+#define RA_FIXEDRATE_FIELD_HE_GI_MASK        BITS(17, 18)
+#define RA_FIXEDRATE_FIELD_HE_GI_OFFSET        17
+
 const uint16_t au2RateCCKLong[CCK_RATE_NUM] = {
 	RATE_CCK_1M_LONG,	/* RATE_1M_INDEX = 0 */
 	RATE_CCK_2M_LONG,	/* RATE_2M_INDEX */
@@ -183,6 +218,12 @@ const uint8_t aucHwRate2PhyRate[] = {
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
+
+char *HW_TX_MODE_STR[] = {"CCK", "OFDM", "MM", "GF", "VHT", "N/A"};
+char *HW_TX_RATE_CCK_STR[] = {"1M", "2M", "5.5M", "11M", "N/A"};
+char *HW_TX_RATE_OFDM_STR[] = {"6M", "9M", "12M", "18M", "24M", "36M",
+				      "48M", "54M", "N/A"};
+char *HW_TX_RATE_BW[] = {"BW20", "BW40", "BW80", "BW160/BW8080", "N/A"};
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
@@ -455,5 +496,181 @@ nicGetRateIndexFromRateSetWithLimit(
 			*pucRateSwIndex = ucLowestPhyRateSwIdx;
 	}
 	return TRUE;
+}
+
+char *nicHwRateOfdmStr(
+	uint16_t ofdm_idx)
+{
+	switch (ofdm_idx) {
+	case 11: /* 6M */
+		return HW_TX_RATE_OFDM_STR[0];
+	case 15: /* 9M */
+		return HW_TX_RATE_OFDM_STR[1];
+	case 10: /* 12M */
+		return HW_TX_RATE_OFDM_STR[2];
+	case 14: /* 18M */
+		return HW_TX_RATE_OFDM_STR[3];
+	case 9: /* 24M */
+		return HW_TX_RATE_OFDM_STR[4];
+	case 13: /* 36M */
+		return HW_TX_RATE_OFDM_STR[5];
+	case 8: /* 48M */
+		return HW_TX_RATE_OFDM_STR[6];
+	case 12: /* 54M */
+		return HW_TX_RATE_OFDM_STR[7];
+	default:
+		return HW_TX_RATE_OFDM_STR[8];
+	}
+}
+
+uint32_t nicSetFixedRateData(
+	struct FIXED_RATE_INFO *pFixedRate,
+	uint32_t u4RateVer,
+	uint32_t *pu4Data)
+{
+	uint32_t u4Data = 0x80000000;
+	uint8_t u4Nsts = 1;
+
+	if (pFixedRate->u4SGI)
+		u4Data |= BIT(RA_FIXEDRATE_FIELD_SGI);
+	if (pFixedRate->u4LDPC)
+		u4Data |= BIT(RA_FIXEDRATE_FIELD_LDPC);
+	if (pFixedRate->u4SpeEn)
+		u4Data |= BIT(RA_FIXEDRATE_FIELD_SPEEN);
+	if (pFixedRate->u4STBC)
+		u4Data |= BIT(RA_FIXEDRATE_FIELD_STBC);
+
+	if (pFixedRate->u4Bw <= MAC_BW_160)
+		u4Data |= ((pFixedRate->u4Bw << RA_FIXEDRATE_FIELD_BW_S)
+		& BITS(RA_FIXEDRATE_FIELD_BW_S, RA_FIXEDRATE_FIELD_BW_E));
+	else {
+		DBGLOG(INIT, ERROR,
+		       "Wrong BW! BW20=0, BW40=1, BW80=2,BW160=3\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (pFixedRate->u4Mode <= MAX_TX_MODE) {
+		if (u4RateVer == RATE_VER_1)
+			u4Data |=
+			((pFixedRate->u4Mode << RA_FIXEDRATE_V1_FIELD_MODE_S)
+			& BITS(RA_FIXEDRATE_V1_FIELD_MODE_S,
+				RA_FIXEDRATE_V1_FIELD_MODE_E));
+		else
+			u4Data |=
+			((pFixedRate->u4Mode << RA_FIXEDRATE_V2_FIELD_MODE_S)
+			& BITS(RA_FIXEDRATE_V2_FIELD_MODE_S,
+				RA_FIXEDRATE_V2_FIELD_MODE_E));
+		switch (pFixedRate->u4Mode) {
+		case TX_RATE_MODE_CCK:
+			if (pFixedRate->u4Mcs <= 3)
+				u4Data |= pFixedRate->u4Mcs;
+			else {
+				DBGLOG(INIT, ERROR,
+				       "CCK mode but wrong MCS!\n");
+				return WLAN_STATUS_INVALID_DATA;
+			}
+
+			if (pFixedRate->u4Preamble)
+				u4Data |= BIT(RA_FIXEDRATE_FIELD_S_PREAMBLE);
+			else
+				u4Data &= ~BIT(RA_FIXEDRATE_FIELD_S_PREAMBLE);
+			break;
+		case TX_RATE_MODE_OFDM:
+			switch (pFixedRate->u4Mcs) {
+			case 0:
+				/* 6'b001011 */
+				u4Data |= 11;
+				break;
+			case 1:
+				/* 6'b001111 */
+				u4Data |= 15;
+				break;
+			case 2:
+				/* 6'b001010 */
+				u4Data |= 10;
+				break;
+			case 3:
+				/* 6'b001110 */
+				u4Data |= 14;
+				break;
+			case 4:
+				/* 6'b001001 */
+				u4Data |= 9;
+				break;
+			case 5:
+				/* 6'b001101 */
+				u4Data |= 13;
+				break;
+			case 6:
+				/* 6'b001000 */
+				u4Data |= 8;
+				break;
+			case 7:
+				/* 6'b001100 */
+				u4Data |= 12;
+				break;
+			default:
+				DBGLOG(INIT, ERROR,
+				       "OFDM mode but wrong MCS!\n");
+				return WLAN_STATUS_INVALID_DATA;
+			}
+			break;
+		case TX_RATE_MODE_HTMIX:
+		case TX_RATE_MODE_HTGF:
+			if (pFixedRate->u4Mcs <= 32)
+				u4Data |= pFixedRate->u4Mcs;
+			else {
+				DBGLOG(INIT, ERROR,
+				       "HT mode but wrong MCS!\n");
+				return WLAN_STATUS_INVALID_DATA;
+			}
+			if (pFixedRate->u4Mcs != 32) {
+				u4Nsts += (pFixedRate->u4Mcs >> 3);
+				if (pFixedRate->u4STBC && (u4Nsts == 1))
+					u4Nsts++;
+			}
+			break;
+		case TX_RATE_MODE_VHT:
+		case TX_RATE_MODE_HE_SU:
+		case TX_RATE_MODE_HE_ER:
+		case TX_RATE_MODE_HE_TRIG:
+		case TX_RATE_MODE_HE_MU:
+			if (pFixedRate->u4Mcs <= 11)
+				u4Data |= pFixedRate->u4Mcs;
+			else {
+			    DBGLOG(INIT, ERROR,
+				   "Wrong MCS(=%d)!\n",
+				   pFixedRate->u4Mcs);
+			    return WLAN_STATUS_INVALID_DATA;
+			}
+			if (pFixedRate->u4STBC && (pFixedRate->u4VhtNss == 1))
+				u4Nsts++;
+			else
+				u4Nsts = pFixedRate->u4VhtNss;
+			break;
+		default:
+			break;
+		}
+	} else {
+		DBGLOG(INIT, ERROR,
+			"Wrong TxMode! CCK=0, OFDM=1, HT=2, GF=3, VHT=4\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (u4RateVer == RATE_VER_1)
+		u4Data |= (((u4Nsts - 1) << RA_FIXEDRATE_V1_FIELD_VHTNSS_S)
+		& BITS(RA_FIXEDRATE_V1_FIELD_VHTNSS_S,
+			RA_FIXEDRATE_V1_FIELD_VHTNSS_E));
+	else
+		u4Data |= (((u4Nsts - 1) << RA_FIXEDRATE_V2_FIELD_VHTNSS_S)
+		& BITS(RA_FIXEDRATE_V2_FIELD_VHTNSS_S,
+			RA_FIXEDRATE_V2_FIELD_VHTNSS_E));
+
+	u4Data |= ((pFixedRate->u4HeLTF << RA_FIXEDRATE_FIELD_HE_LTF_OFFSET)
+			& RA_FIXEDRATE_FIELD_HE_LTF_MASK);
+	u4Data |= ((pFixedRate->u4HeGI << RA_FIXEDRATE_FIELD_HE_GI_OFFSET)
+			& RA_FIXEDRATE_FIELD_HE_GI_MASK);
+	*pu4Data = u4Data;
+	return WLAN_STATUS_SUCCESS;
 }
 

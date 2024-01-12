@@ -432,8 +432,11 @@ struct RX_DESC_OPS_T mt7915RxDescOps = {
 
 struct CHIP_DBG_OPS mt7915_debug_ops = {
 	.showPdmaInfo = NULL,
-	.showPseInfo = NULL,
-	.showPleInfo = NULL,
+	.showPseInfo = mt7915_show_pse_info,
+	.showPleInfo = mt7915_show_ple_info,
+	.showTxdInfo = connac2x_show_txd_Info,
+	.showWtblInfo = connac2x_show_wtbl_info,
+	.showUmacFwtblInfo = connac2x_show_umac_wtbl_info,
 	.showCsrInfo = NULL,
 	.showDmaschInfo = NULL,
 	.showHifInfo = NULL,

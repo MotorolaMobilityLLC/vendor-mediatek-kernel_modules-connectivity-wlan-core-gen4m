@@ -4012,6 +4012,28 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 			/* return prCmdInfo */
 			cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 		}
+	} else if (prEvent->ucExtenEID == EXT_EVENT_ID_DUMP_MEM) {
+		u4QueryInfoLen = sizeof(struct EXT_CMD_EVENT_DUMP_MEM_T);
+		prCmdInfo = nicGetPendingCmdInfo(
+			prAdapter,
+			prEvent->ucSeqNum);
+
+		if (prCmdInfo != NULL) {
+			if (prCmdInfo->pfCmdDoneHandler) {
+				prCmdInfo->pfCmdDoneHandler(
+					prAdapter,
+					prCmdInfo,
+					prEvent->aucBuffer
+				);
+			} else if ((prCmdInfo->fgIsOid) != 0)
+				kalOidComplete(
+					prAdapter->prGlueInfo,
+					prCmdInfo->fgSetQuery,
+					u4QueryInfoLen,
+					WLAN_STATUS_SUCCESS);
+			/* return prCmdInfo */
+			cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+		}
 	}
 }
 
