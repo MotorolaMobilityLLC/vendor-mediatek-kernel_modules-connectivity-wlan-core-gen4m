@@ -491,6 +491,10 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 
 		if (u4Status != WLAN_STATUS_SUCCESS) {
 			eFailReason = RAM_CODE_DOWNLOAD_FAIL;
+#if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
+			mtk_wcn_wmt_assert_keyword(WMTDRV_TYPE_WIFI,
+				"[Wi-Fi On] [Ram code download fail!]");
+#endif
 			break;
 		}
 #endif
