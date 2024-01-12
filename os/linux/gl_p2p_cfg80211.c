@@ -220,6 +220,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	struct mt66xx_chip_info *prChipInfo;
 	struct wireless_dev *prOrigWdev = NULL;
 	u_int8_t fgDoRegister = FALSE;
+	uint8_t  ucBssIdx = 0;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -274,10 +275,17 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 				!prAdapter->rWifiVar.aprP2pRoleFsmInfo[u4Idx]) {
 				mtk_p2p_initsettings(prGlueInfo->prAdapter,
 					type, u4Idx);
-				p2pRoleFsmInit(prGlueInfo->prAdapter, u4Idx);
+				ucBssIdx =
+					p2pRoleFsmInit(prGlueInfo->prAdapter,
+						u4Idx);
 				init_completion(&prP2pInfo->rStopApComp);
 				break;
 			}
+		}
+
+		if (ucBssIdx >= MAX_BSS_INDEX) {
+			DBGLOG(P2P, ERROR, "can't init p2p fsm\n");
+			break;
 		}
 
 		/*u4Idx = 0;*/
