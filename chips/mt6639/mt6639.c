@@ -737,6 +737,7 @@ static struct FW_LOG_OPS mt6639_fw_log_emi_ops = {
 	.deinit = fw_log_emi_deinit,
 	.start = fw_log_emi_start,
 	.stop = fw_log_emi_stop,
+	.set_enabled = fw_log_emi_set_enabled,
 	.handler = fw_log_emi_handler,
 };
 #endif

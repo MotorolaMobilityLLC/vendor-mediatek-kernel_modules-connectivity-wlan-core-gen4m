@@ -191,6 +191,53 @@ int32_t fw_log_emi_handler(void)
 	return __fw_log_emi_handler(FALSE);
 }
 
+static u_int8_t __fw_log_emi_should_flush_buffer(struct FW_LOG_EMI_CTRL *ctrl,
+	struct FW_LOG_EMI_SUB_CTRL *sub_ctrl)
+{
+	uint32_t rest = 0;
+
+	if (sub_ctrl->irp == sub_ctrl->wp)
+		return FALSE;
+
+	if (sub_ctrl->irp > sub_ctrl->wp)
+		rest = sub_ctrl->length - sub_ctrl->irp + sub_ctrl->wp;
+	else
+		rest = sub_ctrl->wp - sub_ctrl->irp;
+
+	if (rest >= sub_ctrl->length / 2)
+		return TRUE;
+	else
+		return FALSE;
+}
+
+static void __fw_log_emi_force_reset_buffer(struct ADAPTER *ad,
+	struct FW_LOG_EMI_CTRL *ctrl)
+{
+	uint8_t i = 0;
+
+	KAL_ACQUIRE_MUTEX(ad, MUTEX_FW_LOG);
+	for (i = 0; i < ENUM_FW_LOG_CTRL_TYPE_NUM; i++) {
+		struct FW_LOG_EMI_SUB_CTRL *sub_ctrl = &ctrl->sub_ctrls[i];
+
+		fw_log_emi_refresh_sub_header(ad, ctrl, sub_ctrl);
+
+		if (!__fw_log_emi_should_flush_buffer(ctrl, sub_ctrl))
+			continue;
+
+		DBGLOG(INIT, WARN,
+			"[%d %s] Force reset rp from 0x%x to 0x%x\n",
+			sub_ctrl->type,
+			fw_log_type_to_str(sub_ctrl->type),
+			sub_ctrl->irp,
+			sub_ctrl->wp);
+		sub_ctrl->irp = sub_ctrl->wp;
+		fw_log_emi_update_rp(ad, ctrl, sub_ctrl, sub_ctrl->irp);
+	}
+	KAL_RELEASE_MUTEX(ad, MUTEX_FW_LOG);
+
+	fw_log_emi_stats_dump(ad, ctrl, TRUE);
+}
+
 static u_int8_t __fw_log_emi_check_alignment(uint32_t value)
 {
 	if (value & BITS(0, 2))
@@ -390,6 +437,16 @@ void fw_log_emi_stop(struct ADAPTER *ad)
 
 	for (i = 0; i < ENUM_FW_LOG_CTRL_TYPE_NUM; i++)
 		fw_log_emi_sub_ctrl_deinit(ctrl->priv, ctrl, i);
+}
+
+void fw_log_emi_set_enabled(struct ADAPTER *ad, u_int8_t enabled)
+{
+	struct FW_LOG_EMI_CTRL *ctrl = &g_fw_log_emi_ctx;
+
+	DBGLOG(INIT, INFO, "enabled: %d\n", enabled);
+
+	if (enabled)
+		__fw_log_emi_force_reset_buffer(ad, ctrl);
 }
 
 uint32_t fw_log_emi_init(struct ADAPTER *ad)

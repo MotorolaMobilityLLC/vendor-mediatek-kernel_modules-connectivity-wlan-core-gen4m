@@ -197,10 +197,15 @@ uint32_t fw_log_notify_rcv(enum ENUM_FW_LOG_CTRL_TYPE type,
 	}
 	written = connv3_log_handler(CONNV3_DEBUG_TYPE_WIFI, eType,
 		buffer, size);
-	DBGLOG(INIT, TRACE,
-		"[%d] connv3_log_handler written=%d\n",
-		type,
-		written);
+	if (written == 0)
+		DBGLOG(INIT, WARN,
+			"[%d] connv3 driver buffer full.\n",
+			type);
+	else
+		DBGLOG(INIT, TRACE,
+			"[%d] connv3_log_handler written=%d\n",
+			type,
+			written);
 #endif
 
 	return written;
