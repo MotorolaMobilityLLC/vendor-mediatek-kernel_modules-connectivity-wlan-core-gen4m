@@ -6114,6 +6114,50 @@ int testmode_rtt_test(struct wiphy *wiphy,
 	return rStatus;
 }
 
+int testmode_set_report_vendor_specified(struct wiphy *wiphy,
+		struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)
+{
+	int32_t i4Argc = 0, i4BytesWritten = -1;
+	uint32_t u4SetInfoLen = 0;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint8_t ucParam = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(INIT, TRACE, "Report vendor specified frame: %s (%d)(%s)\n",
+		pcCommand, i4Argc, apcArgv[1]);
+
+	if (rStatus == WLAN_STATUS_SUCCESS) {
+		i4BytesWritten = kalkStrtou8(apcArgv[1], 0, &ucParam);
+		if (i4BytesWritten) {
+			DBGLOG(REQ, ERROR, "Parsing failed(%d)\n",
+			       i4BytesWritten);
+			i4BytesWritten = -1;
+		} else {
+			rStatus = kalIoctl(prGlueInfo,
+					   wlanoidEnableVendorSpecifiedRpt,
+					   &ucParam, sizeof(uint8_t),
+					   &u4SetInfoLen);
+
+			if (rStatus != WLAN_STATUS_SUCCESS)
+				DBGLOG(INIT, ERROR,
+				       "Set report VS failed 0x%x\n", rStatus);
+			else
+				DBGLOG(INIT, TRACE,
+				       "Set report VS successed\n");
+		}
+	} else {
+		DBGLOG(REQ, ERROR,
+			"Unknown fail - failed to set report vendor specified frame\n");
+		rStatus = WLAN_STATUS_INVALID_DATA;
+	}
+
+	return rStatus;
+}
+
 int32_t mtk_cfg80211_process_str_cmd_reply(
 	struct wiphy *wiphy, char *data, int len)
 {

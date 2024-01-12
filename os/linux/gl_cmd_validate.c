@@ -2436,6 +2436,14 @@ struct STR_CMD_HANDLER str_cmd_handlers[] = {
 		.policy    = u8_policy,
 		.u4PolicySize = ARRAY_SIZE(u8_policy)
 	},
+	{
+		.pcCmdStr  = CMD_REPORT_VENDOR_SPECIFIED,
+		.pfHandler = testmode_set_report_vendor_specified,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = u8_policy,
+		.u4PolicySize = ARRAY_SIZE(u8_policy)
+	},
 /*
  *	{
  *		.pcCmdStr  = <command string>,

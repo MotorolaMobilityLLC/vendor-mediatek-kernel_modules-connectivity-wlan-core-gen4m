@@ -2286,6 +2286,7 @@ struct ADAPTER {
 #if CFG_MSCS_SUPPORT
 	struct MSCS_CAP_FAST_PATH rFastPathCap;
 #endif
+	uint8_t ucEnVendorSpecifiedRpt;
 
 #if CFG_SUPPORT_MLR
 	uint8_t ucMlrIsSupport;

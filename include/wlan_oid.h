@@ -5453,6 +5453,10 @@ uint32_t wlanoidSendBTMRequest(struct ADAPTER *prAdapter,
 				    uint32_t *pu4SetInfoLen);
 #endif /* CFG_AP_80211V_SUPPORT */
 
+uint32_t wlanoidEnableVendorSpecifiedRpt(struct ADAPTER *prAdapter,
+				    void *pvSetBuffer, uint32_t u4SetBufferLen,
+				    uint32_t *pu4SetInfoLen);
+
 uint32_t wlanoidQuerySerInfo(struct ADAPTER *prAdapter,
 			     void *pvQueryBuffer,
 			     uint32_t u4QueryBufferLen,
