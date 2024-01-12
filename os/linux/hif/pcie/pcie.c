@@ -350,11 +350,6 @@ static void pcieFreeMcuEmiMem(struct GL_HIF_INFO *prHifInfo);
 
 static void halPciePreSuspendCmd(struct ADAPTER *prAdapter);
 static void halPcieResumeCmd(struct ADAPTER *prAdapter);
-static void halPciePreSuspendDone(struct ADAPTER *prAdapter,
-				  struct CMD_INFO *prCmdInfo,
-				  uint8_t *pucEventBuf);
-static void halPciePreSuspendTimeout(struct ADAPTER *prAdapter,
-				     struct CMD_INFO *prCmdInfo);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -1639,7 +1634,7 @@ static void halPcieResumeCmd(struct ADAPTER *prAdapter)
 	ASSERT(rStatus == WLAN_STATUS_PENDING);
 }
 
-static void halPciePreSuspendDone(
+void halPciePreSuspendDone(
 	struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo,
 	uint8_t *pucEventBuf)
@@ -1650,7 +1645,7 @@ static void halPciePreSuspendDone(
 		PCIE_STATE_PRE_SUSPEND_DONE;
 }
 
-static void halPciePreSuspendTimeout(
+void halPciePreSuspendTimeout(
 	struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo)
 {

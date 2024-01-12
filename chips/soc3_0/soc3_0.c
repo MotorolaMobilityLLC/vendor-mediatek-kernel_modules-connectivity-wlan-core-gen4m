@@ -952,6 +952,10 @@ struct BUS_INFO soc3_0_bus_info = {
 	.prPseGroup = rSoc3_0_pse_group,
 	.u4PseGroupLen = ARRAY_SIZE(rSoc3_0_pse_group),
 	.pdmaSetup = soc3_0asicConnac2xWpdmaConfig,
+#if defined(_HIF_PCIE)
+	.pdmaStop = NULL,
+	.pdmaPollingIdle = NULL,
+#endif
 	.enableInterrupt = asicConnac2xEnablePlatformIRQ,
 	.disableInterrupt = asicConnac2xDisablePlatformIRQ,
 #if defined(_HIF_AXI)

@@ -162,6 +162,7 @@ enum pcie_suspend_state {
 /* host interface's private data structure, which is attached to os glue
  ** layer info structure.
  */
+
 struct GL_HIF_INFO {
 	struct pci_dev *pdev;
 	struct pci_dev *prDmaDev;
@@ -417,6 +418,10 @@ void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev);
 static struct mt66xx_hif_driver_data *get_platform_driver_data(void);
 
 void glGetChipInfo(void **prChipInfo);
+void halPciePreSuspendDone(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void halPciePreSuspendTimeout(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo);
 
 /*******************************************************************************
  *                              F U N C T I O N S
