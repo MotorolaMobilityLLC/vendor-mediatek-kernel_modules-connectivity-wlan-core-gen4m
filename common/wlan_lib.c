@@ -4831,6 +4831,11 @@ WLAN_STATUS wlanQueryNicCapability(IN P_ADAPTER_T prAdapter)
 	if (prEventNicCapability->ucHwSetNss1x1)
 		prAdapter->rWifiVar.ucNSS = 1;
 
+#if CFG_SUPPORT_DBDC
+	if (prEventNicCapability->ucHwNotSupportDBDC)
+		prAdapter->rWifiVar.ucDbdcMode = DBDC_MODE_DISABLED;
+#endif
+
 #if CFG_ENABLE_CAL_LOG
 	DBGLOG(INIT, TRACE, "RF CAL FAIL  = (%d),BB CAL FAIL  = (%d)\n",
 	       prEventNicCapability->ucRfCalFail, prEventNicCapability->ucBbCalFail);
