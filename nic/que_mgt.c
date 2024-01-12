@@ -3630,7 +3630,7 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 				ucBssIndex);
 
-			if (!IS_BSS_ACTIVE(prBssInfo)) {
+			if (!prBssInfo || !IS_BSS_ACTIVE(prBssInfo)) {
 				log_dbg(RX, TEMP, "Mark NULL the Packet for inactive Bss %u\n",
 					ucBssIndex);
 				RX_INC_CNT(&prAdapter->rRxCtrl,
