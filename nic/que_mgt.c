@@ -6291,6 +6291,9 @@ void mqmProcessBcn(struct ADAPTER *prAdapter,
 	ASSERT(pucIE);
 
 	DBGLOG(QM, LOUD, "Enter %s\n", __func__);
+	DBGLOG(QM, LOUD, "[BCN] Frame content:");
+	DBGLOG_MEM8(QM, LOUD, prSwRfb->pvHeader, prSwRfb->u2PacketLen);
+	DBGLOG(QM, LOUD, "[BCN] !=======================================!\n");
 
 	fgNewParameter = FALSE;
 
@@ -6600,6 +6603,8 @@ u_int8_t mqmIsBssEdcaParamsUpdated(struct ADAPTER *prAdapter,
 	uint8_t aucWfaOui[] = VENDOR_OUI_WFA;
 	struct BSS_INFO *prBssInfo;
 	u_int8_t fgNewParameter = FALSE;
+	const uint8_t *pucIEEdca = NULL;
+	const uint8_t *pucIEWmm = NULL;
 
 	if (!prSwRfb)
 		return FALSE;
@@ -6630,8 +6635,8 @@ u_int8_t mqmIsBssEdcaParamsUpdated(struct ADAPTER *prAdapter,
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
 		switch (IE_ID(pucIE)) {
 		case ELEM_ID_EDCA_PARAM_SET:
-			fgNewParameter = mqmHandle80211EdcaParamSet(
-					prBssInfo, pucIE, fgForceOverwrite);
+			DBGLOG(QM, TRACE, "Exist Ieee, %p", pucIE);
+			pucIEEdca = pucIE;
 			break;
 		case ELEM_ID_WMM:
 			if (!((WMM_IE_OUI_TYPE(pucIE) == VENDOR_OUI_TYPE_WMM) &&
@@ -6640,13 +6645,24 @@ u_int8_t mqmIsBssEdcaParamsUpdated(struct ADAPTER *prAdapter,
 			if (WMM_IE_OUI_SUBTYPE(pucIE) !=
 					VENDOR_OUI_SUBTYPE_WMM_PARAM)
 				break;
-			fgNewParameter = mqmHandleWMMEdcaParams(prBssInfo,
-					pucIE, fgForceOverwrite);
-
+			DBGLOG(QM, TRACE, "Exist Wmm, %p", pucIE);
+			pucIEWmm = pucIE;
 			break;
 		default:
 			break;
 		}
+	}
+	if (pucIEWmm) {
+		fgNewParameter = mqmHandleWMMEdcaParams(prBssInfo,
+				pucIEWmm, fgForceOverwrite);
+		DBGLOG(QM, TRACE, "Wmm, %d", fgNewParameter);
+		return fgNewParameter;
+	}
+	if (pucIEEdca) {
+		fgNewParameter = mqmHandle80211EdcaParamSet(
+				prBssInfo, pucIEEdca, fgForceOverwrite);
+		DBGLOG(QM, TRACE, "Ieee, %d", fgNewParameter);
+		return fgNewParameter;
 	}
 
 	return fgNewParameter;
