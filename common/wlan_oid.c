@@ -8005,8 +8005,6 @@ wlanoidSetCurrentPacketFilter(IN struct ADAPTER *prAdapter,
 	uint32_t rResult = WLAN_STATUS_FAILURE;
 	struct CMD_RX_PACKET_FILTER rSetRxPacketFilter;
 
-	DBGLOG(REQ, INFO, "wlanoidSetCurrentPacketFilter");
-
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
 
@@ -8106,7 +8104,7 @@ uint32_t wlanoidSetPacketFilter(struct ADAPTER *prAdapter,
 			(PARAM_PACKET_FILTER_MULTICAST);
 	}
 #endif
-	DBGLOG(OID, INFO,
+	DBGLOG(OID, TRACE,
 	       "[MC debug] u4PacketFilter=%x, IsSuspend=%d\n",
 	       prSetRxPacketFilter->u4RxPacketFilter,
 	       prAdapter->prGlueInfo->fgIsInSuspendMode);
