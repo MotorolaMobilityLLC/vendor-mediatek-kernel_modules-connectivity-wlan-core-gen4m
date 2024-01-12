@@ -470,6 +470,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 	.downloadBufferBin = NULL,
 	.is_support_hw_amsdu = TRUE,
+	.is_support_nvram_fragment = TRUE,
 	.is_support_asic_lp = TRUE,
 	.asicWfdmaReInit = asicConnac3xWfdmaReInit,
 	.asicWfdmaReInit_handshakeInit = asicConnac3xWfdmaDummyCrWrite,
