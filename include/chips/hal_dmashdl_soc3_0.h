@@ -131,6 +131,10 @@
 #define MT6885_DMASHDL_PRIORITY13_GROUP                (0xD)
 #define MT6885_DMASHDL_PRIORITY14_GROUP                (0xE)
 #define MT6885_DMASHDL_PRIORITY15_GROUP                (0xF)
+/* 2 rings are used */
+#define MT6885_DMASHDL_HIF_ACK_CNT_TH                  (0x2)
+/* Ring 0/1 are used */
+#define MT6885_DMASHDL_HIF_GUP_ACT_MAP                 (0x0003)
 
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */
 
@@ -168,6 +172,8 @@ struct MT6885_DMASHDL_CFG {
 	uint16_t au2MinQuota[ENUM_MT6885_DMASHDL_GROUP_NUM];
 	uint8_t aucQueue2Group[32];
 	uint8_t aucPriority2Group[16];
+	uint16_t u2HifAckCntTh;
+	uint16_t u2HifGupActMap;
 };
 
 /*******************************************************************************
