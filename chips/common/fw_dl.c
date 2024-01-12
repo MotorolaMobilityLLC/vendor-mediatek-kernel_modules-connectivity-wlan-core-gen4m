@@ -2934,8 +2934,8 @@ uint32_t wlanDownloadDspFw(struct ADAPTER *prAdapter)
 				&u4FwSize,
 				IMG_DL_IDX_DSP_FW);
 	if (!prFwBuffer) {
-		DBGLOG(INIT, WARN, "FW load error!\n");
-		return WLAN_STATUS_FAILURE;
+		DBGLOG(INIT, INFO, "No DSP image, skip download\n");
+		return WLAN_STATUS_SUCCESS;
 	}
 
 	prVerInfo = kalMemAlloc(sizeof(struct WIFI_VER_INFO),
