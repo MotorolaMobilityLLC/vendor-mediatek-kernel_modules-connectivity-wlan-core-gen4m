@@ -4434,6 +4434,9 @@ void qmProcessBarFrame(struct ADAPTER *prAdapter,
 		return;
 	}
 
+	DBGLOG(QM, TRACE, "BAR: STA[%u] TID[%u] SSN[%u]\n",
+		prSwRfb->ucStaRecIdx, prSwRfb->ucTid, prSwRfb->u2SSN);
+
 	qmHandleRxReorderWinShift(prAdapter, prSwRfb->ucStaRecIdx,
 		prSwRfb->ucTid, prSwRfb->u2SSN, prReturnedQue);
 }
@@ -5251,8 +5254,11 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
 	u_int8_t fgDequeuHead;
 	uint8_t fgIsAmsduSubframe; /* RX reorder for one MSDU in AMSDU issue */
 	u_int8_t fgWinAdvanced = FALSE;
+	OS_SYSTIME *prMissTimeout;
 
 	prReorderQue = &(prReorderQueParm->rReOrderQue);
+	prMissTimeout = &g_arMissTimeout[
+		prReorderQueParm->ucStaRecIdx][prReorderQueParm->ucTid];
 
 	/* Check whether any packet can be indicated to the higher layer */
 	while (TRUE) {
@@ -5364,6 +5370,16 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
 	prReorderQueParm->u2WinEnd =
 		SEQ_ADD(prReorderQueParm->u2WinStart,
 			prReorderQueParm->u2WinSize - 1);
+
+	/* stop rReorderBubbleTimer if queue empty*/
+	if (QUEUE_IS_EMPTY(prReorderQue)) {
+		*prMissTimeout = 0;
+		if (prReorderQueParm->fgHasBubble) {
+			prReorderQueParm->fgHasBubble = FALSE;
+			cnmTimerStopTimer(prAdapter,
+				&prReorderQueParm->rReorderBubbleTimer);
+		}
+	}
 }
 
 /**
