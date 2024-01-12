@@ -727,8 +727,11 @@ uint8_t nic_rxd_v3_fill_radiotap(
 	prSwRfb->u2RxByteCount =
 		(uint16_t) HAL_MAC_CONNAC3X_RX_STATUS_GET_RX_BYTE_CNT(prRxStatus);
 
+	prSwRfb->ucHwBandIdx =
+		HAL_MAC_CONNAC3X_RX_STATUS_GET_BAND_IDX(prRxStatus);
+
 	if (HAL_MAC_CONNAC3X_RX_STATUS_GET_RXV_SEQ_NO(prRxStatus) != 0)
-		prGlueInfo->u4AmpduRefNum += 1;
+		prGlueInfo->u4AmpduRefNum[prSwRfb->ucHwBandIdx] += 1;
 
 	u4HeaderOffset = (uint32_t) (
 		HAL_MAC_CONNAC3X_RX_STATUS_GET_HEADER_OFFSET(prRxStatus));
@@ -737,7 +740,8 @@ uint8_t nic_rxd_v3_fill_radiotap(
 	prRadiotapInfo = prSwRfb->prRadiotapInfo;
 	prRadiotapInfo->u2VendorLen = u2RxStatusOffset;
 	prRadiotapInfo->ucSubNamespace = 3;
-	prRadiotapInfo->u4AmpduRefNum = prGlueInfo->u4AmpduRefNum;
+	prRadiotapInfo->u4AmpduRefNum =
+		prGlueInfo->u4AmpduRefNum[prSwRfb->ucHwBandIdx];
 	prRadiotapInfo->u4Timestamp = prRxStatusGroup2->u4Timestamp;
 	prRadiotapInfo->ucFcsErr = HAL_MAC_CONNAC3X_RX_STATUS_IS_FCS_ERROR(prRxStatus);
 	prRadiotapInfo->ucFrag = HAL_MAC_CONNAC3X_RX_STATUS_IS_FRAG(prRxStatus);

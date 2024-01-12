@@ -829,7 +829,7 @@ struct GLUE_INFO {
 	uint8_t fgDropFcsErrorFrame;
 	uint8_t aucBandIdxEn[CFG_MONITOR_BAND_NUM];
 	uint16_t u2Aid;
-	uint32_t u4AmpduRefNum;
+	uint32_t u4AmpduRefNum[CFG_MONITOR_BAND_NUM];
 #endif
 
 	int32_t i4RssiCache[BSSID_NUM];
