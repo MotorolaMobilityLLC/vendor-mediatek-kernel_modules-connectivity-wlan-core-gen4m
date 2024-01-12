@@ -2303,7 +2303,7 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		  (CONN_INFRA_CFG_AP2WF_BUS_ADDR + 0xc0),
 		  &value);
 
-	DBGLOG(HAL, INFO, "SW INT happended!!!!!(0x%x)\n", value);
+	DBGLOG(HAL, TRACE, "SW INT happended!!!!!(0x%x)\n", value);
 	HAL_MCR_WR(prAdapter,
 		  (CONN_INFRA_CFG_AP2WF_BUS_ADDR + 0xc8),
 		  value);
@@ -2314,7 +2314,8 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 #endif
 	if (get_wifi_process_status() == 1) {
 		DBGLOG(HAL, ERROR,
-			"Wi-Fi on/off process is ongoing, ignore interrupt.\n");
+			"Wi-Fi on/off process is ongoing, ignore interrupt(0x%x).\n",
+			value);
 		return;
 	}
 	if (value & BIT(1)) {
@@ -2323,14 +2324,15 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 			g_eWfRstSource = WF_RST_SOURCE_DRIVER;
 #endif
 			DBGLOG(HAL, ERROR,
-				"Wi-Fi Driver trigger, need do complete.\n");
+				"Wi-Fi Driver trigger, need do complete(0x%x).\n",
+				value);
 			complete(&g_triggerComp);
 		} else {
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 			g_eWfRstSource = WF_RST_SOURCE_FW;
 #endif
 			DBGLOG(HAL, ERROR,
-				"FW trigger assert.\n");
+				"FW trigger assert(0x%x).\n", value);
 			fgIsResetting = TRUE;
 			update_driver_reset_status(fgIsResetting);
 			kalSetRstEvent();
@@ -2341,7 +2343,7 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		g_eWfRstSource = WF_RST_SOURCE_FW;
 #endif
 		DBGLOG(HAL, ERROR,
-			"FW trigger whole chip reset.\n");
+			"FW trigger whole chip reset(0x%x).\n", value);
 		fgIsResetting = TRUE;
 		update_driver_reset_status(fgIsResetting);
 		g_IsWfsysBusHang = TRUE;
