@@ -4719,9 +4719,18 @@ uint32_t nicUniCmdOffloadKey(struct ADAPTER *ad,
 	kalMemCopy(tag->aucKck, cmd->aucKck, sizeof(tag->aucKck));
 	kalMemCopy(tag->aucReplayCtr,
 		cmd->aucReplayCtr, sizeof(tag->aucReplayCtr));
-	tag->ucRekeyMode = GTK_REKEY_CMD_MODE_OFFLOAD_UPDATE;
+
+	if (cmd->ucRekeyMode == GTK_REKEY_CMD_MODE_OFFLOAD_UPDATE) {
+		tag->ucRekeyMode = GTK_REKEY_CMD_MODE_OFFLOAD_UPDATE;
+		tag->ucOption = GTK_REKEY_UPDATE_ONLY;
+	} else if (cmd->ucRekeyMode == GTK_REKEY_CMD_MODE_OFFLOAD_ON) {
+		tag->ucRekeyMode = GTK_REKEY_CMD_MODE_OFFLOAD_UPDATE;
+		tag->ucOption = GTK_REKEY_UPDATE_AND_ON;
+	} else if (cmd->ucRekeyMode == GTK_REKEY_CMD_MODE_OFLOAD_OFF) {
+		tag->ucRekeyMode = GTK_REKEY_CMD_MODE_OFLOAD_OFF;
+	}
+
 	tag->ucCurKeyId = 0;
-	tag->ucOption = GTK_REKEY_UPDATE_AND_ON;
 	tag->u4Proto = cmd->u4Proto;
 	tag->u4PairwiseCipher = cmd->u4PairwiseCipher;
 	tag->u4GroupCipher = cmd->u4GroupCipher;
