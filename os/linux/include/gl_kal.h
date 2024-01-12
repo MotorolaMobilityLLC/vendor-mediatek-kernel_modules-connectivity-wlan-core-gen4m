@@ -132,7 +132,7 @@ extern struct platform_device *g_prPlatDev;
 
 #define PERF_MON_UPDATE_MIN_INTERVAL (500)
 #define PERF_MON_UPDATE_INTERVAL (1000)
-#define PERF_MON_TP_MAX_THRESHOLD (10)
+#define PERF_MON_TP_MAX_THRESHOLD (12)
 
 #define PERF_MON_TP_CONDITION (125000)
 #define PERF_MON_COEX_TP_THRESHOLD (100)
