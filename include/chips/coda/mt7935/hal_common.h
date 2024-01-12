@@ -12,7 +12,8 @@ extern "C" {
 
 #define AP2CONN_REMAPPING_OFFSET 0x3FC00000
 #define CONN_INFRA_REMAPPING_OFFSET 0x64000000
-#define CONN_INFRA_ON_REMAPPING_OFFSET 0x08000000
+/* using old project wfdma mapping 0x08000000 -> 0x64000000 */
+#define CONN_INFRA_ON_REMAPPING_OFFSET 0x64000000
 
 // ---------------------------------------------------------------------------
 //  Register Manipulations

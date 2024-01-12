@@ -2270,10 +2270,8 @@ NIC_OBJS += $(NIC_DIR)nic_ext_cmd_event.o \
             $(NIC_DIR)nic_rxd_v2.o
 else ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
 CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac3x.o
-ifeq ($(filter MT7935, $(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS_CMM)dbg_connac3x.o \
               $(CHIPS_CMM)dbg_wtbl_connac3x.o
-endif
     ifeq ($(CONFIG_MTK_WIFI_FW_LOG_MMIO), y)
         CHIPS_OBJS += $(CHIPS_CMM)fw_log_mmio.o
     endif
@@ -2394,7 +2392,7 @@ endif
 
 ifneq ($(filter MT7935,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt7935/mt7935.o
-# CHIPS_OBJS += $(CHIPS)mt7935/dbg_mt7935.o
+CHIPS_OBJS += $(CHIPS)mt7935/dbg_mt7935.o
 CHIPS_OBJS += $(CHIPS)mt7935/hal_dmashdl_mt7935.o
 endif
 

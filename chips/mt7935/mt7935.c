@@ -558,15 +558,7 @@ struct BUS_INFO mt7935_bus_info = {
 	.wfmda_wm_rx_group = mt7935_wfmda_wm_rx_group,
 	.wfmda_wm_rx_group_len = ARRAY_SIZE(mt7935_wfmda_wm_rx_group),
 	.prDmashdlCfg = &rMt7935DmashdlCfg,
-#if (CFG_MT7935_NEED_UPDATE == 1)
-	.prPleTopCr = NULL,
-	.prPseTopCr = NULL,
-	.prPpTopCr = NULL,
-#else
-	.prPleTopCr = &rMt7935PleTopCr,
-	.prPseTopCr = &rMt7935PseTopCr,
 	.prPpTopCr = &rMt7935PpTopCr,
-#endif
 	.prPseGroup = mt7935_pse_group,
 	.u4PseGroupLen = ARRAY_SIZE(mt7935_pse_group),
 	.pdmaSetup = mt7935WpdmaConfig,
@@ -692,89 +684,41 @@ struct RX_DESC_OPS_T mt7935_RxDescOps = {0};
 
 struct CHIP_DBG_OPS mt7935_DebugOps = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-#if (CFG_MT7935_NEED_UPDATE == 1)
-	.showPdmaInfo = NULL,
-#else
 	.showPdmaInfo = connac3x_show_wfdma_info,
 #endif
-#endif
-#if (CFG_MT7935_NEED_UPDATE == 1)
-	.showPseInfo = NULL,
-	.showPleInfo = NULL,
-	.showTxdInfo = NULL,
-	.showWtblInfo = NULL,
-	.showUmacWtblInfo = NULL,
-#else
-	.showPseInfo = connac3x_show_pse_info,
-	.showPleInfo = connac3x_show_ple_info,
 	.showTxdInfo = connac3x_show_txd_Info,
 	.showWtblInfo = connac3x_show_wtbl_info,
 	.showUmacWtblInfo = connac3x_show_umac_wtbl_info,
-#endif
 	.showCsrInfo = NULL,
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-#if (CFG_MT7935_NEED_UPDATE == 1)
-	.showDmaschInfo = NULL,
-#else
 	.showDmaschInfo = connac3x_show_dmashdl_info,
-#endif
 #endif
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.getFwDebug = NULL,
-#if (CFG_MT7935_NEED_UPDATE == 1)
-	.setFwDebug = NULL,
-#else
 	.setFwDebug = connac3x_set_ple_int_no_read,
-#endif
 #endif
 	.showHifInfo = NULL,
 	.printHifDbgInfo = NULL,
-#if (CFG_MT7935_NEED_UPDATE == 1)
-	.show_rx_rate_info = NULL,
-	.show_rx_rssi_info = NULL,
-	.show_stat_info = NULL,
-	.get_tx_info_from_txv = NULL,
-#else
 	.show_rx_rate_info = connac3x_show_rx_rate_info,
 	.show_rx_rssi_info = connac3x_show_rx_rssi_info,
 	.show_stat_info = connac3x_show_stat_info,
 	.get_tx_info_from_txv = connac3x_get_tx_info_from_txv,
-#endif
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-#if (CFG_MT7935_NEED_UPDATE == 1)
-	.show_mld_info = NULL,
-#else
 	.show_mld_info = connac3x_show_mld_info,
 #endif
-#endif
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-#if (CFG_MT7935_NEED_UPDATE == 1)
-	.show_wfdma_dbg_probe_info = NULL,
-	.show_wfdma_wrapper_info = NULL,
-	.dumpwfsyscpupcr = NULL,
-	.dumpBusHangCr = NULL,
-#else
 	.show_wfdma_dbg_probe_info = mt7935_show_wfdma_dbg_probe_info,
 	.show_wfdma_wrapper_info = mt7935_show_wfdma_wrapper_info,
 	.dumpwfsyscpupcr = mt7935_dumpWfsyscpupcr,
 	.dumpBusHangCr = mt7935_DumpBusHangCr,
 #endif
-#endif
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
-#if (CFG_MT7935_NEED_UPDATE == 1)
-	.get_rx_rate_info = NULL,
-#else
 	.get_rx_rate_info = mt7935_get_rx_rate_info,
-#endif
 #endif
 #if CFG_SUPPORT_LLS
 	.get_rx_link_stats = mt7935_get_rx_link_stats,
 #endif
-#if (CFG_MT7935_NEED_UPDATE == 1)
-	.dumpTxdInfo = NULL,
-#else
 	.dumpTxdInfo = connac3x_dump_tmac_info,
-#endif
 };
 
 #if CFG_SUPPORT_QA_TOOL

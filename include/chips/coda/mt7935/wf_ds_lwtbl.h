@@ -1,7 +1,6 @@
 #ifndef __WF_DS_LWTBL_REGS_H__
 #define __WF_DS_LWTBL_REGS_H__
 
-#include "common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,7 +10,6 @@ extern "C" {
 // ----------------- WF_DS_LWTBL Bit Field Definitions -------------------
 
 #define PACKING
-typedef unsigned int FIELD;
 
 typedef PACKING union
 {
@@ -28,7 +26,7 @@ typedef PACKING union
         FIELD WPI_FLAG                  : 1;
         FIELD rsv_31                    : 1;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_PEER_INFO_DW00, *PWF_DS_LWTBL_REG_PEER_INFO_DW00;
 
 typedef PACKING union
@@ -37,7 +35,7 @@ typedef PACKING union
     {
         FIELD PEER_LINK_ADDRESS_31_0_   : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_PEER_INFO_DW01, *PWF_DS_LWTBL_REG_PEER_INFO_DW01;
 
 typedef PACKING union
@@ -62,7 +60,7 @@ typedef PACKING union
         FIELD EHT                       : 1;
         FIELD MESH                      : 1;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_PEER_CAP_DW02, *PWF_DS_LWTBL_REG_PEER_CAP_DW02;
 
 typedef PACKING union
@@ -85,7 +83,7 @@ typedef PACKING union
         FIELD TBF_EHT                   : 1;
         FIELD IGN_FBK                   : 1;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_PEER_CAP_DW03, *PWF_DS_LWTBL_REG_PEER_CAP_DW03;
 
 typedef PACKING union
@@ -108,7 +106,7 @@ typedef PACKING union
         FIELD LDPC_EHT                  : 1;
         FIELD BA_MODE                   : 1;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_PEER_CAP_DW04, *PWF_DS_LWTBL_REG_PEER_CAP_DW04;
 
 typedef PACKING union
@@ -134,7 +132,7 @@ typedef PACKING union
         FIELD PSM                       : 1;
         FIELD SKIP_TX                   : 1;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_PEER_CAP_DW05, *PWF_DS_LWTBL_REG_PEER_CAP_DW05;
 
 typedef PACKING union
@@ -160,7 +158,7 @@ typedef PACKING union
         FIELD G8_HE                     : 2;
         FIELD G16_HE                    : 2;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_PEER_CAP_DW06, *PWF_DS_LWTBL_REG_PEER_CAP_DW06;
 
 typedef PACKING union
@@ -176,7 +174,7 @@ typedef PACKING union
         FIELD BA_WIN_SIZE6              : 4;
         FIELD BA_WIN_SIZE7              : 4;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_PEER_CAP_DW07, *PWF_DS_LWTBL_REG_PEER_CAP_DW07;
 
 typedef PACKING union
@@ -191,7 +189,7 @@ typedef PACKING union
         FIELD rsv_29                    : 2;
         FIELD CHK_PER                   : 1;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_PEER_CAP_DW08, *PWF_DS_LWTBL_REG_PEER_CAP_DW08;
 
 typedef PACKING union
@@ -209,7 +207,7 @@ typedef PACKING union
         FIELD MPDU_OK_CNT               : 3;
         FIELD RATE_IDX                  : 3;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_PEER_CAP_DW09, *PWF_DS_LWTBL_REG_PEER_CAP_DW09;
 
 typedef PACKING union
@@ -221,7 +219,7 @@ typedef PACKING union
         FIELD RATE2                     : 15;
         FIELD rsv_31                    : 1;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_AUTO_RATE_TABLE_DW10, *PWF_DS_LWTBL_REG_AUTO_RATE_TABLE_DW10;
 
 typedef PACKING union
@@ -233,7 +231,7 @@ typedef PACKING union
         FIELD RATE4                     : 15;
         FIELD rsv_31                    : 1;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_AUTO_RATE_TABLE_DW11, *PWF_DS_LWTBL_REG_AUTO_RATE_TABLE_DW11;
 
 typedef PACKING union
@@ -245,7 +243,7 @@ typedef PACKING union
         FIELD RATE6                     : 15;
         FIELD rsv_31                    : 1;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_AUTO_RATE_TABLE_DW12, *PWF_DS_LWTBL_REG_AUTO_RATE_TABLE_DW12;
 
 typedef PACKING union
@@ -257,7 +255,7 @@ typedef PACKING union
         FIELD RATE8                     : 15;
         FIELD rsv_31                    : 1;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_AUTO_RATE_TABLE_DW13, *PWF_DS_LWTBL_REG_AUTO_RATE_TABLE_DW13;
 
 typedef PACKING union
@@ -267,7 +265,7 @@ typedef PACKING union
         FIELD RATE1_TX_CNT              : 16;
         FIELD RATE1_FAIL_CNT            : 16;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_AUTO_RATE_CTR_DW14_0, *PWF_DS_LWTBL_REG_AUTO_RATE_CTR_DW14_0;
 
 typedef PACKING union
@@ -280,7 +278,7 @@ typedef PACKING union
         FIELD CIPHER_SUIT_BIGTK         : 3;
         FIELD rsv_15                    : 17;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_AUTO_RATE_CTR_DW14_1, *PWF_DS_LWTBL_REG_AUTO_RATE_CTR_DW14_1;
 
 typedef PACKING union
@@ -290,7 +288,7 @@ typedef PACKING union
         FIELD RATE2_OK_CNT              : 16;
         FIELD RATE3_OK_CNT              : 16;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_AUTO_RATE_CTR_DW15_0, *PWF_DS_LWTBL_REG_AUTO_RATE_CTR_DW15_0;
 
 typedef PACKING union
@@ -300,7 +298,7 @@ typedef PACKING union
         FIELD CURRENT_BW_TX_CNT         : 16;
         FIELD CURRENT_BW_FAIL_CNT       : 16;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_AUTO_RATE_CTR_DW16_0, *PWF_DS_LWTBL_REG_AUTO_RATE_CTR_DW16_0;
 
 typedef PACKING union
@@ -310,7 +308,7 @@ typedef PACKING union
         FIELD OTHER_BW_TX_CNT           : 16;
         FIELD OTHER_BW_FAIL_CNT         : 16;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_AUTO_RATE_CTR_DW17_0, *PWF_DS_LWTBL_REG_AUTO_RATE_CTR_DW17_0;
 
 typedef PACKING union
@@ -320,7 +318,7 @@ typedef PACKING union
         FIELD RTS_OK_CNT                : 16;
         FIELD RTS_FAIL_CNT              : 16;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_PPDU_CTR_DW18_0, *PWF_DS_LWTBL_REG_PPDU_CTR_DW18_0;
 
 typedef PACKING union
@@ -330,7 +328,7 @@ typedef PACKING union
         FIELD DATA_RETRY_CNT            : 16;
         FIELD MGNT_RETRY_CNT            : 16;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_PPDU_CTR_DW19_0, *PWF_DS_LWTBL_REG_PPDU_CTR_DW19_0;
 
 typedef PACKING union
@@ -339,7 +337,7 @@ typedef PACKING union
     {
         FIELD AC0_CTT_CDT_CRB__CTT      : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_ADM_CTR_DW20_0, *PWF_DS_LWTBL_REG_ADM_CTR_DW20_0;
 
 typedef PACKING union
@@ -348,7 +346,7 @@ typedef PACKING union
     {
         FIELD AC0_CTB_CRT_CTB__CRT      : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_ADM_CTR_DW21_0, *PWF_DS_LWTBL_REG_ADM_CTR_DW21_0;
 
 typedef PACKING union
@@ -357,7 +355,7 @@ typedef PACKING union
     {
         FIELD AC1_CTT_CDT_CRB__CTMC     : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_ADM_CTR_DW22_0, *PWF_DS_LWTBL_REG_ADM_CTR_DW22_0;
 
 typedef PACKING union
@@ -366,7 +364,7 @@ typedef PACKING union
     {
         FIELD AC1_CTB_CRT_CTB__CRMC     : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_ADM_CTR_DW23_0, *PWF_DS_LWTBL_REG_ADM_CTR_DW23_0;
 
 typedef PACKING union
@@ -375,7 +373,7 @@ typedef PACKING union
     {
         FIELD AC2_CTT_CDT_CRB__CTDB     : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_ADM_CTR_DW24_0, *PWF_DS_LWTBL_REG_ADM_CTR_DW24_0;
 
 typedef PACKING union
@@ -384,7 +382,7 @@ typedef PACKING union
     {
         FIELD AC2_CTB_CRT_CTB__CRDB     : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_ADM_CTR_DW25_0, *PWF_DS_LWTBL_REG_ADM_CTR_DW25_0;
 
 typedef PACKING union
@@ -393,7 +391,7 @@ typedef PACKING union
     {
         FIELD AC3_CTT_CDT_CRB__CTODB    : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_ADM_CTR_DW26_0, *PWF_DS_LWTBL_REG_ADM_CTR_DW26_0;
 
 typedef PACKING union
@@ -402,7 +400,7 @@ typedef PACKING union
     {
         FIELD AC3_CTB_CRT_CTB__         : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_ADM_CTR_DW27_0, *PWF_DS_LWTBL_REG_ADM_CTR_DW27_0;
 
 typedef PACKING union
@@ -416,7 +414,7 @@ typedef PACKING union
         FIELD RELATED_BAND1             : 2;
         FIELD SECONDARY_MLD_BAND        : 2;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_MLO_INFO_DW28, *PWF_DS_LWTBL_REG_MLO_INFO_DW28;
 
 typedef PACKING union
@@ -441,7 +439,7 @@ typedef PACKING union
         FIELD rsv_28                    : 1;
         FIELD STR_BITMAP                : 3;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_MLO_INFO_DW29, *PWF_DS_LWTBL_REG_MLO_INFO_DW29;
 
 typedef PACKING union
@@ -453,7 +451,7 @@ typedef PACKING union
         FIELD EMLSR_TRANS_DLY_IDX       : 2;
         FIELD LINK_MGF                  : 16;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_MLO_INFO_DW30, *PWF_DS_LWTBL_REG_MLO_INFO_DW30;
 
 typedef PACKING union
@@ -469,7 +467,7 @@ typedef PACKING union
         FIELD RXD_DUP_MODE              : 2;
         FIELD ACK_EN                    : 1;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_RESP_INFO_DW31, *PWF_DS_LWTBL_REG_RESP_INFO_DW31;
 
 typedef PACKING union
@@ -482,7 +480,7 @@ typedef PACKING union
         FIELD RXD_DUP_WHITE_LIST        : 12;
         FIELD rsv_29                    : 3;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_RX_DUP_INFO_DW32, *PWF_DS_LWTBL_REG_RX_DUP_INFO_DW32;
 
 typedef PACKING union
@@ -497,7 +495,7 @@ typedef PACKING union
         FIELD HT_AMSDU                  : 1;
         FIELD AMSDU_CROSS_LG            : 1;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_RX_STAT_DW33, *PWF_DS_LWTBL_REG_RX_STAT_DW33;
 
 typedef PACKING union
@@ -509,7 +507,7 @@ typedef PACKING union
         FIELD RESP_RCPI2                : 8;
         FIELD RESP_RCPI3                : 8;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_RX_STAT_DW34, *PWF_DS_LWTBL_REG_RX_STAT_DW34;
 
 typedef PACKING union
@@ -521,7 +519,7 @@ typedef PACKING union
         FIELD SNR_RX2                   : 8;
         FIELD SNR_RX3                   : 8;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_RX_STAT_DW35, *PWF_DS_LWTBL_REG_RX_STAT_DW35;
 
 typedef PACKING union
@@ -530,7 +528,7 @@ typedef PACKING union
     {
         FIELD VERSION_CODE              : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_LWTBL_REG_VERSION_CODE, *PWF_DS_LWTBL_REG_VERSION_CODE;
 
 // ----------------- WF_DS_LWTBL  Grouping Definitions -------------------
@@ -538,80 +536,80 @@ typedef PACKING union
 typedef volatile PACKING struct
 {
     WF_DS_LWTBL_REG_PEER_INFO_DW00  PEER_INFO_DW00;   // 8000
-    UINT32                          rsv_8004[7];      // 8004..801C
+    uint32_t                          rsv_8004[7];      // 8004..801C
     WF_DS_LWTBL_REG_PEER_INFO_DW01  PEER_INFO_DW01;   // 8020
-    UINT32                          rsv_8024[7];      // 8024..803C
+    uint32_t                          rsv_8024[7];      // 8024..803C
     WF_DS_LWTBL_REG_PEER_CAP_DW02   PEER_CAP_DW02;    // 8040
-    UINT32                          rsv_8044[7];      // 8044..805C
+    uint32_t                          rsv_8044[7];      // 8044..805C
     WF_DS_LWTBL_REG_PEER_CAP_DW03   PEER_CAP_DW03;    // 8060
-    UINT32                          rsv_8064[7];      // 8064..807C
+    uint32_t                          rsv_8064[7];      // 8064..807C
     WF_DS_LWTBL_REG_PEER_CAP_DW04   PEER_CAP_DW04;    // 8080
-    UINT32                          rsv_8084[7];      // 8084..809C
+    uint32_t                          rsv_8084[7];      // 8084..809C
     WF_DS_LWTBL_REG_PEER_CAP_DW05   PEER_CAP_DW05;    // 80A0
-    UINT32                          rsv_80A4[7];      // 80A4..80BC
+    uint32_t                          rsv_80A4[7];      // 80A4..80BC
     WF_DS_LWTBL_REG_PEER_CAP_DW06   PEER_CAP_DW06;    // 80C0
-    UINT32                          rsv_80C4[7];      // 80C4..80DC
+    uint32_t                          rsv_80C4[7];      // 80C4..80DC
     WF_DS_LWTBL_REG_PEER_CAP_DW07   PEER_CAP_DW07;    // 80E0
-    UINT32                          rsv_80E4[7];      // 80E4..80FC
+    uint32_t                          rsv_80E4[7];      // 80E4..80FC
     WF_DS_LWTBL_REG_PEER_CAP_DW08   PEER_CAP_DW08;    // 8100
-    UINT32                          rsv_8104[7];      // 8104..811C
+    uint32_t                          rsv_8104[7];      // 8104..811C
     WF_DS_LWTBL_REG_PEER_CAP_DW09   PEER_CAP_DW09;    // 8120
-    UINT32                          rsv_8124[7];      // 8124..813C
+    uint32_t                          rsv_8124[7];      // 8124..813C
     WF_DS_LWTBL_REG_AUTO_RATE_TABLE_DW10 AUTO_RATE_TABLE_DW10; // 8140
-    UINT32                          rsv_8144[7];      // 8144..815C
+    uint32_t                          rsv_8144[7];      // 8144..815C
     WF_DS_LWTBL_REG_AUTO_RATE_TABLE_DW11 AUTO_RATE_TABLE_DW11; // 8160
-    UINT32                          rsv_8164[7];      // 8164..817C
+    uint32_t                          rsv_8164[7];      // 8164..817C
     WF_DS_LWTBL_REG_AUTO_RATE_TABLE_DW12 AUTO_RATE_TABLE_DW12; // 8180
-    UINT32                          rsv_8184[7];      // 8184..819C
+    uint32_t                          rsv_8184[7];      // 8184..819C
     WF_DS_LWTBL_REG_AUTO_RATE_TABLE_DW13 AUTO_RATE_TABLE_DW13; // 81A0
-    UINT32                          rsv_81A4[7];      // 81A4..81BC
+    uint32_t                          rsv_81A4[7];      // 81A4..81BC
     WF_DS_LWTBL_REG_AUTO_RATE_CTR_DW14_0 AUTO_RATE_CTR_DW14_0; // 81C0
     WF_DS_LWTBL_REG_AUTO_RATE_CTR_DW14_1 AUTO_RATE_CTR_DW14_1; // 81C4
-    UINT32                          rsv_81C8[6];      // 81C8..81DC
+    uint32_t                          rsv_81C8[6];      // 81C8..81DC
     WF_DS_LWTBL_REG_AUTO_RATE_CTR_DW15_0 AUTO_RATE_CTR_DW15_0; // 81E0
-    UINT32                          rsv_81E4[7];      // 81E4..81FC
+    uint32_t                          rsv_81E4[7];      // 81E4..81FC
     WF_DS_LWTBL_REG_AUTO_RATE_CTR_DW16_0 AUTO_RATE_CTR_DW16_0; // 8200
-    UINT32                          rsv_8204[7];      // 8204..821C
+    uint32_t                          rsv_8204[7];      // 8204..821C
     WF_DS_LWTBL_REG_AUTO_RATE_CTR_DW17_0 AUTO_RATE_CTR_DW17_0; // 8220
-    UINT32                          rsv_8224[7];      // 8224..823C
+    uint32_t                          rsv_8224[7];      // 8224..823C
     WF_DS_LWTBL_REG_PPDU_CTR_DW18_0 PPDU_CTR_DW18_0;  // 8240
-    UINT32                          rsv_8244[7];      // 8244..825C
+    uint32_t                          rsv_8244[7];      // 8244..825C
     WF_DS_LWTBL_REG_PPDU_CTR_DW19_0 PPDU_CTR_DW19_0;  // 8260
-    UINT32                          rsv_8264[7];      // 8264..827C
+    uint32_t                          rsv_8264[7];      // 8264..827C
     WF_DS_LWTBL_REG_ADM_CTR_DW20_0  ADM_CTR_DW20_0;   // 8280
-    UINT32                          rsv_8284[7];      // 8284..829C
+    uint32_t                          rsv_8284[7];      // 8284..829C
     WF_DS_LWTBL_REG_ADM_CTR_DW21_0  ADM_CTR_DW21_0;   // 82A0
-    UINT32                          rsv_82A4[7];      // 82A4..82BC
+    uint32_t                          rsv_82A4[7];      // 82A4..82BC
     WF_DS_LWTBL_REG_ADM_CTR_DW22_0  ADM_CTR_DW22_0;   // 82C0
-    UINT32                          rsv_82C4[7];      // 82C4..82DC
+    uint32_t                          rsv_82C4[7];      // 82C4..82DC
     WF_DS_LWTBL_REG_ADM_CTR_DW23_0  ADM_CTR_DW23_0;   // 82E0
-    UINT32                          rsv_82E4[7];      // 82E4..82FC
+    uint32_t                          rsv_82E4[7];      // 82E4..82FC
     WF_DS_LWTBL_REG_ADM_CTR_DW24_0  ADM_CTR_DW24_0;   // 8300
-    UINT32                          rsv_8304[7];      // 8304..831C
+    uint32_t                          rsv_8304[7];      // 8304..831C
     WF_DS_LWTBL_REG_ADM_CTR_DW25_0  ADM_CTR_DW25_0;   // 8320
-    UINT32                          rsv_8324[7];      // 8324..833C
+    uint32_t                          rsv_8324[7];      // 8324..833C
     WF_DS_LWTBL_REG_ADM_CTR_DW26_0  ADM_CTR_DW26_0;   // 8340
-    UINT32                          rsv_8344[7];      // 8344..835C
+    uint32_t                          rsv_8344[7];      // 8344..835C
     WF_DS_LWTBL_REG_ADM_CTR_DW27_0  ADM_CTR_DW27_0;   // 8360
-    UINT32                          rsv_8364[7];      // 8364..837C
+    uint32_t                          rsv_8364[7];      // 8364..837C
     WF_DS_LWTBL_REG_MLO_INFO_DW28   MLO_INFO_DW28;    // 8380
-    UINT32                          rsv_8384[7];      // 8384..839C
+    uint32_t                          rsv_8384[7];      // 8384..839C
     WF_DS_LWTBL_REG_MLO_INFO_DW29   MLO_INFO_DW29;    // 83A0
-    UINT32                          rsv_83A4[7];      // 83A4..83BC
+    uint32_t                          rsv_83A4[7];      // 83A4..83BC
     WF_DS_LWTBL_REG_MLO_INFO_DW30   MLO_INFO_DW30;    // 83C0
-    UINT32                          rsv_83C4[7];      // 83C4..83DC
+    uint32_t                          rsv_83C4[7];      // 83C4..83DC
     WF_DS_LWTBL_REG_RESP_INFO_DW31  RESP_INFO_DW31;   // 83E0
-    UINT32                          rsv_83E4[7];      // 83E4..83FC
+    uint32_t                          rsv_83E4[7];      // 83E4..83FC
     WF_DS_LWTBL_REG_RX_DUP_INFO_DW32 RX_DUP_INFO_DW32; // 8400
-    UINT32                          rsv_8404[7];      // 8404..841C
+    uint32_t                          rsv_8404[7];      // 8404..841C
     WF_DS_LWTBL_REG_RX_STAT_DW33    RX_STAT_DW33;     // 8420
-    UINT32                          rsv_8424[7];      // 8424..843C
+    uint32_t                          rsv_8424[7];      // 8424..843C
     WF_DS_LWTBL_REG_RX_STAT_DW34    RX_STAT_DW34;     // 8440
-    UINT32                          rsv_8444[7];      // 8444..845C
+    uint32_t                          rsv_8444[7];      // 8444..845C
     WF_DS_LWTBL_REG_RX_STAT_DW35    RX_STAT_DW35;     // 8460
-    UINT32                          rsv_8464[16102];  // 8464..7FF8
-    UINT8                           rsv_7FFC;         // 7FFC
-    UINT16                          rsv_7FFD;         // 7FFD
+    uint32_t                          rsv_8464[16102];  // 8464..7FF8
+    uint8_t                           rsv_7FFC;         // 7FFC
+    uint16_t                          rsv_7FFD;         // 7FFD
     WF_DS_LWTBL_REG_VERSION_CODE    VERSION_CODE;     // 7FFF
 }WF_DS_LWTBL_REGS, *PWF_DS_LWTBL_REGS;
 

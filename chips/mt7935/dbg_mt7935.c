@@ -11,8 +11,6 @@
 #if defined(_HIF_PCIE)
 #include "hif_pdma.h"
 #endif
-#include "coda/mt7935/wf_ple_top.h"
-#include "coda/mt7935/wf_pse_top.h"
 #include "coda/mt7935/wf_wfdma_host_dma0.h"
 #include "coda/mt7935/wf_hif_dmashdl_top.h"
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
@@ -537,6 +535,7 @@ struct dump_cr_set n45_ctrl_status_dump_list[] = {
 },
 };
 
+#ifdef WF_PLE_TOP_BASE
 struct PLE_TOP_CR rMt7935PleTopCr = {
 	.rAc0QueueEmpty0 = {
 		WF_PLE_TOP_AC0_QUEUE_EMPTY0_ADDR,
@@ -871,7 +870,9 @@ struct PLE_TOP_CR rMt7935PleTopCr = {
 		WF_PLE_TOP_TO_N9_INT_TOGGLE_SHFT
 	},
 };
+#endif /* WF_PLE_TOP_BASE */
 
+#ifdef WF_PSE_TOP_BASE
 struct PSE_TOP_CR rMt7935PseTopCr = {
 	.rFlQueCtrl0 = {
 		WF_PSE_TOP_FL_QUE_CTRL_0_ADDR,
@@ -1194,6 +1195,7 @@ struct PSE_TOP_CR rMt7935PseTopCr = {
 		WF_PSE_TOP_QUEUE_EMPTY_SFD_PARK_QUEUE_EMPTY_SHFT
 	},
 };
+#endif /* WF_PSE_TOP_BASE */
 
 struct PP_TOP_CR rMt7935PpTopCr = {
 	.rDbgCtrl = {

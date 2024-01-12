@@ -56,7 +56,6 @@
 #include "coda/mt7935/wf_wtblon_top.h"
 #include "coda/mt7935/wf_uwtbl_top.h"
 #include "coda/mt7935/wf_ds_uwtbl.h"
-#include "coda/mt7935/wf_ds_lwtbl.h"
 #endif
 
 /*******************************************************************************
@@ -841,6 +840,7 @@ void connac3x_get_rssi_from_wtbl(
 
 static bool is_wtbl_bigtk_exist(struct ADAPTER *prAdapter, uint32_t u4Index)
 {
+#ifdef WF_DS_LWTBL_BASE
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t wtbl_lmac_baseaddr;
 	uint32_t dw_value = 0;
@@ -865,6 +865,7 @@ static bool is_wtbl_bigtk_exist(struct ADAPTER *prAdapter, uint32_t u4Index)
 			IGTK_CIPHER_SUIT_NONE)
 			return TRUE;
 	}
+#endif
 
 	return FALSE;
 }

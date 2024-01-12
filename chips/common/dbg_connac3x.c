@@ -93,8 +93,6 @@
 #endif
 #ifdef MT7935
 #include "coda/mt7935/wf_hif_dmashdl_top.h"
-#include "coda/mt7935/wf_ple_top.h"
-#include "coda/mt7935/wf_pse_top.h"
 #include "coda/mt7935/wf_wfdma_host_dma0.h"
 #include "coda/mt7935/bn0_wf_mib_top.h"
 #include "coda/mt7935/bn1_wf_mib_top.h"
@@ -126,6 +124,7 @@ static char *RATE_TBLE[] = {"B", "G", "N", "N_2SS", "AC", "AC_2SS", "BG",
 static char *RA_STATUS_TBLE[] = {"INVALID", "POWER_SAVING", "SLEEP", "STANDBY",
 					"RUNNING", "N/A"};
 
+#ifdef WF_PLE_TOP_BASE
 static struct EMPTY_QUEUE_INFO ple_queue_empty_info[] = {
 	{"CPU Q0",  ENUM_UMAC_CPU_PORT_1,     ENUM_UMAC_CTX_Q_0, 0},
 	{"CPU Q1",  ENUM_UMAC_CPU_PORT_1,     ENUM_UMAC_CTX_Q_1, 0},
@@ -154,7 +153,9 @@ static struct EMPTY_QUEUE_INFO ple_queue_empty_info[] = {
 	{"RLS2 Q",   ENUM_PLE_CTRL_PSE_PORT_3, 0x7e, 0},
 	{"RLS Q",  ENUM_PLE_CTRL_PSE_PORT_3, 0x7f, 0}
 };
+#endif /* WF_PLE_TOP_BASE */
 
+#ifdef WF_PSE_TOP_BASE
 static struct EMPTY_QUEUE_INFO pse_queue_empty_info[] = {
 	{"CPU Q0", ENUM_UMAC_CPU_PORT_1, ENUM_UMAC_CTX_Q_0},
 	{"CPU Q1", ENUM_UMAC_CPU_PORT_1, ENUM_UMAC_CTX_Q_1},
@@ -221,8 +222,11 @@ static struct EMPTY_QUEUE_INFO pse_queue_empty2_info[] = {
 	{"HIF Q13", ENUM_UMAC_HIF_PORT_0,    13},
 	{NULL, 0, 0}, {NULL, 0, 0}
 };
+#endif /* WF_PSE_TOP_BASE */
 
+#ifdef WF_PLE_TOP_BASE
 static u_int8_t *sta_ctrl_reg[] = {"ENABLE", "DISABLE", "PAUSE"};
+#endif /* WF_PLE_TOP_BASE */
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -3087,6 +3091,7 @@ void connac3x_show_dmashdl_info(struct ADAPTER *prAdapter)
 		DBGLOG(HAL, INFO, "DMASHDL: no counter mismatch\n");
 }
 
+#ifdef WF_PLE_TOP_BASE
 static void chip_get_ple_acq_stat(struct ADAPTER *prAdapter, uint32_t *ple_stat)
 {
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_QUEUE_EMPTY_ADDR, &ple_stat[0]);
@@ -3123,6 +3128,7 @@ static void chip_get_dis_sta_map(struct ADAPTER *prAdapter, uint32_t *dis_sta_ma
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_DIS_STA_MAP3_ADDR, &dis_sta_map[3]);
 #endif
 }
+#endif /* WF_PLE_TOP_BASE */
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 /* =============================================================================
@@ -3196,6 +3202,7 @@ void connac3x_set_ple_int_no_read(struct ADAPTER *prAdapter, bool fgTrigger,
 
 #endif /*_HIF_PCIE || _HIF_AXI */
 
+#ifdef WF_PLE_TOP_BASE
 void connac3x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 {
 	uint32_t int_n9_sts = 0, int_n9_err_sts = 0, int_n9_err_sts_1 = 0;
@@ -3344,7 +3351,9 @@ void connac3x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 		}
 	}
 }
+#endif /* WF_PLE_TOP_BASE */
 
+#ifdef WF_PSE_TOP_BASE
 void connac3x_show_pse_info(struct ADAPTER *prAdapter)
 {
 	uint32_t int_n9_sts = 0, int_n9_err_sts = 0, int_n9_err_sts_1 = 0;
@@ -3623,6 +3632,7 @@ void connac3x_show_pse_info(struct ADAPTER *prAdapter)
 				DBGLOG(HAL, INFO, "\t%s: ", pse_queue_empty2_info[i].QueueName);
 	}
 }
+#endif /* WF_PSE_TOP_BASE */
 
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 int connac3x_get_rx_rate_info(const uint32_t *prRxV,
