@@ -69,6 +69,8 @@ struct IEEE_802_11_MIB {
 
 	/* dot11RSNAConfigTable                         (dot11smt 8) */
 	uint32_t dot11RSNAConfigGroupCipher;	/* dot11RSNAConfigEntry 4 */
+	uint32_t dot11RSNAConfigPairwiseCipher;
+	uint32_t dot11RSNAConfigAkm;
 
 	/* dot11RSNAConfigPairwiseCiphersTable          (dot11smt 9) */
 	struct DOT11_RSNA_CONFIG_PAIRWISE_CIPHERS_ENTRY

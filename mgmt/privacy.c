@@ -427,6 +427,7 @@ void secSetCipherSuite(struct ADAPTER *prAdapter,
 
 	if (u4CipherSuitesFlags == CIPHER_FLAG_NONE) {
 		/* Disable all the pairwise cipher suites. */
+		prMib->dot11RSNAConfigPairwiseCipher = WPA_CIPHER_SUITE_NONE;
 		for (i = 0; i < MAX_NUM_SUPPORTED_CIPHER_SUITES; i++)
 			prMib->dot11RSNAConfigPairwiseCiphersTable
 			    [i].dot11RSNAConfigPairwiseCipherEnabled = FALSE;
@@ -442,69 +443,76 @@ void secSetCipherSuite(struct ADAPTER *prAdapter,
 
 		switch (prEntry->dot11RSNAConfigPairwiseCipher) {
 		case RSN_CIPHER_SUITE_GCMP_256:
-			if (u4CipherSuitesFlags & CIPHER_FLAG_GCMP256)
+			if (u4CipherSuitesFlags & CIPHER_FLAG_GCMP256) {
 				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
 					TRUE;
-			else
-				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
-					FALSE;
+				prMib->dot11RSNAConfigPairwiseCipher |=
+					rsnCipherToBit(
+					prEntry->dot11RSNAConfigPairwiseCipher);
+			}
 			break;
 		case RSN_CIPHER_SUITE_GCMP:
-			if (u4CipherSuitesFlags & CIPHER_FLAG_GCMP128)
+			if (u4CipherSuitesFlags & CIPHER_FLAG_GCMP128) {
 				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
 					TRUE;
-			else
-				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
-					FALSE;
+				prMib->dot11RSNAConfigPairwiseCipher |=
+					rsnCipherToBit(
+					prEntry->dot11RSNAConfigPairwiseCipher);
+			}
 			break;
 		case WPA_CIPHER_SUITE_WEP40:
 		case RSN_CIPHER_SUITE_WEP40:
-			if (u4CipherSuitesFlags & CIPHER_FLAG_WEP40)
+			if (u4CipherSuitesFlags & CIPHER_FLAG_WEP40) {
 				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
 				    TRUE;
-			else
-				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
-				    FALSE;
+				prMib->dot11RSNAConfigPairwiseCipher |=
+					rsnCipherToBit(
+					prEntry->dot11RSNAConfigPairwiseCipher);
+			}
 			break;
 
 		case WPA_CIPHER_SUITE_TKIP:
 		case RSN_CIPHER_SUITE_TKIP:
-			if (u4CipherSuitesFlags & CIPHER_FLAG_TKIP)
+			if (u4CipherSuitesFlags & CIPHER_FLAG_TKIP) {
 				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
 				    TRUE;
-			else
-				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
-				    FALSE;
+				prMib->dot11RSNAConfigPairwiseCipher |=
+					rsnCipherToBit(
+					prEntry->dot11RSNAConfigPairwiseCipher);
+			}
 			break;
 
 		case WPA_CIPHER_SUITE_CCMP:
 		case RSN_CIPHER_SUITE_CCMP:
-			if (u4CipherSuitesFlags & CIPHER_FLAG_CCMP)
+			if (u4CipherSuitesFlags & CIPHER_FLAG_CCMP) {
 				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
 				    TRUE;
-			else
-				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
-				    FALSE;
+				prMib->dot11RSNAConfigPairwiseCipher |=
+					rsnCipherToBit(
+					prEntry->dot11RSNAConfigPairwiseCipher);
+			}
 			break;
 
 		case RSN_CIPHER_SUITE_GROUP_NOT_USED:
 			if (u4CipherSuitesFlags &
-			    (CIPHER_FLAG_CCMP | CIPHER_FLAG_TKIP))
+			    (CIPHER_FLAG_CCMP | CIPHER_FLAG_TKIP)) {
 				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
 				    TRUE;
-			else
-				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
-				    FALSE;
+				prMib->dot11RSNAConfigPairwiseCipher |=
+					rsnCipherToBit(
+					prEntry->dot11RSNAConfigPairwiseCipher);
+			}
 			break;
 
 		case WPA_CIPHER_SUITE_WEP104:
 		case RSN_CIPHER_SUITE_WEP104:
-			if (u4CipherSuitesFlags & CIPHER_FLAG_WEP104)
+			if (u4CipherSuitesFlags & CIPHER_FLAG_WEP104) {
 				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
 				    TRUE;
-			else
-				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
-				    FALSE;
+				prMib->dot11RSNAConfigPairwiseCipher |=
+					rsnCipherToBit(
+					prEntry->dot11RSNAConfigPairwiseCipher);
+			}
 			break;
 		default:
 			break;
@@ -513,27 +521,27 @@ void secSetCipherSuite(struct ADAPTER *prAdapter,
 
 	/* Update the group cipher suite. */
 	if (rsnSearchSupportedCipher(prAdapter,
-		WPA_CIPHER_SUITE_CCMP, &i, ucBssIndex))
+		WPA_CIPHER_SUITE_CCMP, ucBssIndex))
 		prMib->dot11RSNAConfigGroupCipher = WPA_CIPHER_SUITE_CCMP;
 	else if (rsnSearchSupportedCipher(prAdapter,
-		WPA_CIPHER_SUITE_TKIP, &i, ucBssIndex))
+		WPA_CIPHER_SUITE_TKIP, ucBssIndex))
 		prMib->dot11RSNAConfigGroupCipher = WPA_CIPHER_SUITE_TKIP;
 	else if (rsnSearchSupportedCipher(prAdapter,
-		WPA_CIPHER_SUITE_WEP104, &i, ucBssIndex))
+		WPA_CIPHER_SUITE_WEP104, ucBssIndex))
 		prMib->dot11RSNAConfigGroupCipher = WPA_CIPHER_SUITE_WEP104;
 	else if (rsnSearchSupportedCipher(prAdapter,
-		WPA_CIPHER_SUITE_WEP40, &i, ucBssIndex))
+		WPA_CIPHER_SUITE_WEP40, ucBssIndex))
 		prMib->dot11RSNAConfigGroupCipher = WPA_CIPHER_SUITE_WEP40;
 	else if (rsnSearchSupportedCipher(prAdapter,
-		RSN_CIPHER_SUITE_GROUP_NOT_USED, &i, ucBssIndex))
+		RSN_CIPHER_SUITE_GROUP_NOT_USED, ucBssIndex))
 		prMib->dot11RSNAConfigGroupCipher =
 		    RSN_CIPHER_SUITE_GROUP_NOT_USED;
 	else if (rsnSearchSupportedCipher(prAdapter,
-		RSN_CIPHER_SUITE_GCMP_256, &i, ucBssIndex))
+		RSN_CIPHER_SUITE_GCMP_256, ucBssIndex))
 		prMib->dot11RSNAConfigGroupCipher =
 		    RSN_CIPHER_SUITE_GCMP_256;
 	else if (rsnSearchSupportedCipher(prAdapter,
-		RSN_CIPHER_SUITE_GCMP, &i, ucBssIndex))
+		RSN_CIPHER_SUITE_GCMP, ucBssIndex))
 		prMib->dot11RSNAConfigGroupCipher =
 		    RSN_CIPHER_SUITE_GCMP;
 	else

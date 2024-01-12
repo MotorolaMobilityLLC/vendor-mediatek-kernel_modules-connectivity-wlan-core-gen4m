@@ -32,33 +32,7 @@
  */
 #define RSN_MAX_NR_AKN_SUITES		3
 
-/* ----- Definitions for Cipher Suite Selectors ----- */
-#define RSN_CIPHER_SUITE_USE_GROUP_KEY  0x00AC0F00
-#define RSN_CIPHER_SUITE_WEP40          0x01AC0F00
-#define RSN_CIPHER_SUITE_TKIP           0x02AC0F00
-#define RSN_CIPHER_SUITE_CCMP           0x04AC0F00
-#define RSN_CIPHER_SUITE_WEP104         0x05AC0F00
-#define RSN_CIPHER_SUITE_AES_128_CMAC   0x06AC0F00
-#define RSN_CIPHER_SUITE_BIP_CMAC_128   0x06AC0F00
-#define RSN_CIPHER_SUITE_GROUP_NOT_USED 0x07AC0F00
-#define RSN_CIPHER_SUITE_GCMP           0x08AC0F00
-#define RSN_CIPHER_SUITE_GCMP_256       0x09AC0F00
-#define RSN_CIPHER_SUITE_CCMP_256       0x0AAC0F00
-#define RSN_CIPHER_SUITE_BIP_GMAC_128   0x0BAC0F00
-#define RSN_CIPHER_SUITE_BIP_GMAC_256   0x0CAC0F00
-#define RSN_CIPHER_SUITE_BIP_CMAC_256   0x0DAC0F00
-
-#define WPA_CIPHER_SUITE_NONE           0x00F25000
-#define WPA_CIPHER_SUITE_WEP40          0x01F25000
-#define WPA_CIPHER_SUITE_TKIP           0x02F25000
-#define WPA_CIPHER_SUITE_CCMP           0x04F25000
-#define WPA_CIPHER_SUITE_WEP104         0x05F25000
-
-/* Definitions for Authentication and Key Management Suite Selectors */
-#define WPA_AKM_SUITE_NONE              0x00F25000
-#define WPA_AKM_SUITE_802_1X            0x01F25000
-#define WPA_AKM_SUITE_PSK               0x02F25000
-
+/* Add AKM SUITE since kernel haven't defined it. */
 #ifndef WLAN_AKM_SUITE_FT_8021X
 #define WLAN_AKM_SUITE_FT_8021X         0x000FAC03
 #endif
@@ -86,7 +60,6 @@
 #ifndef WLAN_AKM_SUITE_FT_FILS_SHA384
 #define WLAN_AKM_SUITE_FT_FILS_SHA384	0x000FAC11
 #endif
-/* Add AKM SUITE for OWE since kernel haven't defined it. */
 #ifndef WLAN_AKM_SUITE_OWE
 #define WLAN_AKM_SUITE_OWE              0x000FAC12
 #endif
@@ -102,6 +75,47 @@
 #ifndef WLAN_AKM_SUITE_FT_SAE_EXT_KEY
 #define WLAN_AKM_SUITE_FT_SAE_EXT_KEY	0x000FAC19
 #endif
+
+/* ----- Definitions for Cipher Suite Selectors ----- */
+#define RSN_CIPHER_SUITE_USE_GROUP_KEY  0x00AC0F00
+#define RSN_CIPHER_SUITE_WEP40          0x01AC0F00
+#define RSN_CIPHER_SUITE_TKIP           0x02AC0F00
+#define RSN_CIPHER_SUITE_CCMP           0x04AC0F00
+#define RSN_CIPHER_SUITE_WEP104         0x05AC0F00
+#define RSN_CIPHER_SUITE_AES_128_CMAC   0x06AC0F00
+#define RSN_CIPHER_SUITE_BIP_CMAC_128   0x06AC0F00
+#define RSN_CIPHER_SUITE_GROUP_NOT_USED 0x07AC0F00
+#define RSN_CIPHER_SUITE_GCMP           0x08AC0F00
+#define RSN_CIPHER_SUITE_GCMP_256       0x09AC0F00
+#define RSN_CIPHER_SUITE_CCMP_256       0x0AAC0F00
+#define RSN_CIPHER_SUITE_BIP_GMAC_128   0x0BAC0F00
+#define RSN_CIPHER_SUITE_BIP_GMAC_256   0x0CAC0F00
+#define RSN_CIPHER_SUITE_BIP_CMAC_256   0x0DAC0F00
+
+#define WPA_CIPHER_SUITE_NONE           0x00F25000
+#define WPA_CIPHER_SUITE_WEP40          0x01F25000
+#define WPA_CIPHER_SUITE_TKIP           0x02F25000
+#define WPA_CIPHER_SUITE_CCMP           0x04F25000
+#define WPA_CIPHER_SUITE_WEP104         0x05F25000
+
+/* sync with dot11RSNAConfigPairwiseCiphersTable */
+#define WPA_CIPHER_SUITE_WEP40_BIT		BIT(0)
+#define	WPA_CIPHER_SUITE_TKIP_BIT		BIT(1)
+#define WPA_CIPHER_SUITE_CCMP_BIT		BIT(2)
+#define WPA_CIPHER_SUITE_WEP104_BIT		BIT(3)
+#define RSN_CIPHER_SUITE_WEP40_BIT		BIT(4)
+#define RSN_CIPHER_SUITE_TKIP_BIT		BIT(5)
+#define RSN_CIPHER_SUITE_CCMP_BIT		BIT(6)
+#define RSN_CIPHER_SUITE_WEP104_BIT		BIT(7)
+#define RSN_CIPHER_SUITE_GROUP_NOT_USED_BIT	BIT(8)
+#define RSN_CIPHER_SUITE_GCMP_256_BIT		BIT(9)
+#define RSN_CIPHER_SUITE_GCMP_BIT		BIT(10)
+
+
+/* Definitions for Authentication and Key Management Suite Selectors */
+#define WPA_AKM_SUITE_NONE              0x00F25000
+#define WPA_AKM_SUITE_802_1X            0x01F25000
+#define WPA_AKM_SUITE_PSK               0x02F25000
 
 #define RSN_AKM_SUITE_NONE              0x00AC0F00
 #define RSN_AKM_SUITE_802_1X            0x01AC0F00
@@ -136,8 +150,27 @@
  */
 #define WLAN_AKM_SUITE_OSEN             0x506f9a01
 #define WLAN_CIPHER_SUITE_NO_GROUP_ADDR 0x000fac07
-
 #define WLAN_AKM_SUITE_DPP              0x506F9A02
+
+/* sync with dot11RSNAConfigAuthenticationSuitesTable */
+#define WPA_AKM_SUITE_NONE_BIT			BIT(0)
+#define WPA_AKM_SUITE_802_1X_BIT		BIT(1)
+#define WPA_AKM_SUITE_PSK_BIT			BIT(2)
+#define RSN_AKM_SUITE_NONE_BIT			BIT(3)
+#define RSN_AKM_SUITE_802_1X_BIT		BIT(4)
+#define RSN_AKM_SUITE_PSK_BIT			BIT(5)
+#define RSN_AKM_SUITE_FT_802_1X_BIT		BIT(6)
+#define RSN_AKM_SUITE_FT_PSK_BIT		BIT(7)
+#define RSN_AKM_SUITE_OSEN_BIT			BIT(8)
+#define RSN_AKM_SUITE_SAE_BIT			BIT(9)
+#define RSN_AKM_SUITE_OWE_BIT			BIT(10)
+#define RSN_AKM_SUITE_DPP_BIT			BIT(11)
+#define RSN_AKM_SUITE_8021X_SUITE_B_192_BIT	BIT(12)
+#define RSN_AKM_SUITE_SAE_EXT_KEY_BIT		BIT(13)
+#define RSN_AKM_SUITE_802_1X_SHA256_BIT		BIT(14)
+#define RSN_AKM_SUITE_PSK_SHA256_BIT		BIT(15)
+#define RSN_AKM_SUITE_FT_OVER_SAE_BIT		BIT(16)
+#define RSN_AKM_SUITE_FT_SAE_EXT_KEY_BIT	BIT(17)
 
 /* The RSN IE len for associate request */
 #define ELEM_ID_RSN_LEN_FIXED           20
@@ -249,9 +282,8 @@ u_int8_t rsnParseWpaIE(struct ADAPTER *prAdapter,
 		       struct WPA_INFO_ELEM *prInfoElem,
 		       struct RSN_INFO *prWpaInfo);
 
-u_int8_t rsnSearchSupportedCipher(struct ADAPTER
-				  *prAdapter,
-				  uint32_t u4Cipher, uint32_t *pu4Index,
+u_int8_t rsnSearchSupportedCipher(struct ADAPTER *prAdapter,
+				  uint32_t u4Cipher,
 				  uint8_t ucBssIndex);
 
 void rsnDumpSupportedCipher(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
@@ -262,8 +294,7 @@ u_int8_t rsnIsSuitableBSS(struct ADAPTER *prAdapter,
 			  uint8_t ucBssIndex);
 
 u_int8_t rsnSearchAKMSuite(struct ADAPTER *prAdapter,
-			   uint32_t u4AkmSuite, uint32_t *pu4Index,
-			   uint8_t ucBssIndex);
+			   uint32_t u4AkmSuite, uint8_t ucBssIndex);
 
 void rsnDumpSupportedAKMSuite(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
@@ -412,6 +443,9 @@ uint8_t rsnKeyMgmtSae(uint32_t akm);
 uint8_t rsnKeyMgmtFT(uint32_t akm);
 uint32_t rsnKeyMgmtToAuthMode(enum ENUM_PARAM_AUTH_MODE eOriAuthMode,
 	uint32_t version, uint32_t akm);
+void rsnAllowCrossAkm(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+uint32_t rsnCipherToBit(uint32_t cipher);
+uint32_t rsnKeyMgmtToBit(uint32_t akm);
 uint8_t rsnApOverload(uint16_t status, uint16_t reason);
 uint8_t rsnApInvalidPMK(uint16_t status);
 uint8_t rsnIsFilsAuthAlg(uint8_t alg);
