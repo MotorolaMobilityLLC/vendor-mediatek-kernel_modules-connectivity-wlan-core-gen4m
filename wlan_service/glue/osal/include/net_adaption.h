@@ -922,7 +922,7 @@ struct GNU_PACKED hqa_comm_rx_stat {
  *             Bandwidth duplicated debug
  *****************************************************************************/
 
-#define GET_CAPABILITY_VER	0x0006
+#define GET_CAPABILITY_VER	0x0008
 #define GET_CAPABILITY_TAG_NUM	2
 
 /* phy capability */
@@ -968,9 +968,9 @@ struct test_capability_ph_cap {
 	/* BIT16: Band3 2.4G, BIT17: Band3 5G, BIT18: Band3 6G */
 	u_int32 channel_band_dbdc_ext;	/* CFG_SUPPORT_CONNAC3X */
 
-	/* BIT[7:0]: Support phy quantities */
-	/* BIT[15:8]: Support Adie quantities */
-	u_int32 phy_adie_quantities; /* CFG_SUPPORT_CONNAC3X */
+	/* BIT[7:0]: PHY index (bitwise) */
+	/* BIT[15:8]: Adie index (bitwise) */
+	u_int32 phy_adie_index; /* phy_adie_index CFG_SUPPORT_CONNAC3X */
 
 	/* BIT[7:0]: Band0 TX path num */
 	/* BIT[15:8]: Band0 RX path num */
@@ -1008,6 +1008,7 @@ struct test_capability_ext_cap {
 	/* BIT5: eMLSR support */
 	/* BIT6: MLR+, ALR support */
 	/* BIT7: Bandwidth duplicated debug support */
+	/* BIT8: dRU support */
 
 	u_int32 feature1;
 	u_int32 reserved[15];
@@ -1138,6 +1139,8 @@ struct test_ru_info {
 #if (CFG_SUPPORT_CONNAC3X == 1)
 	u_int8 ps160;
 	u_int8 isEHT;
+	boolean dRU_valid;
+	boolean dRU_en;
 #endif
 };
 
@@ -1302,6 +1305,8 @@ struct test_configuration {
 
 	/* off ch scan */
 	struct test_off_ch_param off_ch_param;
+
+	u_int32 seg_sta_cnt[4];
 };
 
 /* Test wlan information for service */

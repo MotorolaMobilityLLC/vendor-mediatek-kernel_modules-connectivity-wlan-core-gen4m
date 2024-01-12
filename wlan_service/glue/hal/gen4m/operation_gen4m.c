@@ -317,6 +317,9 @@ enum ENUM_RF_AT_FUNCID {
 	RF_AT_FUNCID_SET_GAIN_ENABLE = 200,
 	RF_AT_FUNCID_SET_GAIN_VALUE = 201,
 
+	/* EHT TB dRU enable */
+	RF_AT_FUNCID_SET_EHTTB_DRU_ENABLE = 222,
+
 	/* Get EEPROM/NVRAM/Bufferbin default power */
 	RF_AT_FUNCID_GET_DEFAULT_TX_POWER = 224,
 
@@ -1475,11 +1478,20 @@ static void mt_op_set_manual_eht_tb_value(
 	u_int8 ltf_sym_code[] = {
 		0, 0, 1, 2, 2, 3, 3, 4, 4   /* SS 1~8 */
 	};
+	u_int8 i;
 
 	/* setup MAC start */
 	/* step 1-1, common info of TF */
 	sys_ad_zero_mem(&cmm, sizeof(cmm));
 	cmm.field.sig_a_reserved = 0x1fc;
+
+	for (i = 0; i < 4; i++) {
+		if ((configs->seg_sta_cnt[i] > 0) && (ru_sta->dRU_en == TRUE))
+			cmm.field.sig_a_reserved &= ~BIT(2+i);
+	}
+
+	/* assign dRU EN */
+
 	cmm.field.ul_length = ru_sta->l_len;
 	cmm.field.t_pe =
 	(ru_sta->afactor_init & 0x3) | ((ru_sta->pe_disamb & 0x1) << 2);
@@ -1685,6 +1697,10 @@ s_int32 mt_op_start_tx(
 
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_RATE, configs->mcs);
+
+	if (ru_sta->dRU_valid)
+		tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_EHTTB_DRU_ENABLE, ru_sta->dRU_en);
 
 #else
 	tm_trans_Preamble_rate(winfos, configs);
