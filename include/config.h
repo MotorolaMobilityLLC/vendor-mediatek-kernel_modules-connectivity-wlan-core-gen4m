@@ -859,8 +859,8 @@
 #define CONFIG_SUPPORT_GTK_REKEY        1
 #endif
 #else /* !LINUX */
-#define CFG_ENABLE_WIFI_DIRECT           0
-#define CFG_SUPPORT_802_11W              0	/* Not support at WinXP */
+#define CFG_ENABLE_WIFI_DIRECT           1
+#define CFG_SUPPORT_802_11W              1	/* Not support at WinXP */
 #endif /* LINUX */
 
 #define CFG_SUPPORT_PERSISTENT_GROUP            0
