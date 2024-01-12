@@ -4824,10 +4824,10 @@ WLAN_STATUS wlanQueryNicCapability(IN P_ADAPTER_T prAdapter)
 	COPY_MAC_ADDR(prAdapter->rWifiVar.aucPermanentAddress, prEventNicCapability->aucMacAddr);
 	COPY_MAC_ADDR(prAdapter->rWifiVar.aucMacAddress, prEventNicCapability->aucMacAddr);
 
-	prAdapter->rWifiVar.ucStaVht = (!(prEventNicCapability->ucHwNotSupportAC));
-	prAdapter->rWifiVar.ucApVht = (!(prEventNicCapability->ucHwNotSupportAC));
-	prAdapter->rWifiVar.ucP2pGoVht = (!(prEventNicCapability->ucHwNotSupportAC));
-	prAdapter->rWifiVar.ucP2pGcVht = (!(prEventNicCapability->ucHwNotSupportAC));
+	prAdapter->rWifiVar.ucStaVht &= (!(prEventNicCapability->ucHwNotSupportAC));
+	prAdapter->rWifiVar.ucApVht &= (!(prEventNicCapability->ucHwNotSupportAC));
+	prAdapter->rWifiVar.ucP2pGoVht &= (!(prEventNicCapability->ucHwNotSupportAC));
+	prAdapter->rWifiVar.ucP2pGcVht &= (!(prEventNicCapability->ucHwNotSupportAC));
 
 	prAdapter->u4FwCompileFlag0 = prEventNicCapability->u4CompileFlag0;
 	prAdapter->u4FwCompileFlag1 = prEventNicCapability->u4CompileFlag1;
