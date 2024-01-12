@@ -1802,8 +1802,7 @@ void rsnGenerateWPAIE(struct ADAPTER *prAdapter,
 
 #if CFG_ENABLE_WIFI_DIRECT
 		if (prAdapter->fgIsP2PRegistered
-		    && GET_BSS_INFO_BY_INDEX(prAdapter,
-			     ucBssIndex)->eNetworkType == NETWORK_TYPE_P2P) {
+		    && IS_BSS_INDEX_P2P(prAdapter, ucBssIndex)) {
 			WLAN_SET_FIELD_32(
 				&WPA_IE(pucBuffer)->u4GroupKeyCipherSuite,
 				WPA_CIPHER_SUITE_TKIP);
