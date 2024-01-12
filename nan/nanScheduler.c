@@ -40,8 +40,14 @@
 	  BIT(u2SlotIdx % NAN_SLOTS_PER_DW_INTERVAL)) != 0)
 
 #define NAN_TIMELINE_SET(pu4AvailMap, u2SlotIdx)                               \
-	(pu4AvailMap[(u2SlotIdx) / NAN_SLOTS_PER_DW_INTERVAL] |=               \
-	 BIT((u2SlotIdx) % NAN_SLOTS_PER_DW_INTERVAL))
+do {									       \
+	pu4AvailMap[(u2SlotIdx) / NAN_SLOTS_PER_DW_INTERVAL] |=		       \
+		BIT((u2SlotIdx) % NAN_SLOTS_PER_DW_INTERVAL);		       \
+	DBGLOG(NAN, TEMP, "SET in %s, %p, set %u, 0x%08x\n",		       \
+	       __func__, pu4AvailMap, u2SlotIdx,			       \
+	       pu4AvailMap[(u2SlotIdx) / NAN_SLOTS_PER_DW_INTERVAL]);	       \
+} while (0)
+
 #define NAN_TIMELINE_UNSET(pu4AvailMap, u2SlotIdx)                             \
 	(pu4AvailMap[(u2SlotIdx) / NAN_SLOTS_PER_DW_INTERVAL] &=               \
 	 (~BIT((u2SlotIdx) % NAN_SLOTS_PER_DW_INTERVAL)))
@@ -10096,25 +10102,37 @@ nanQueryNonNanChnlInfoBySlot(struct ADAPTER *prAdapter,
 	return g_rNullChnl;
 }
 
-uint32_t
-nanSchedGetAisChnlUsage(struct ADAPTER *prAdapter,
-	union _NAN_BAND_CHNL_CTRL *prChnl,
-	uint32_t *pu4SlotBitmap) {
-	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
-	struct _NAN_SCHEDULER_T *prNanScheduler;
+/**
+ * nanSchedGetAisChnlUsage() - Get connected AIS channel slots
+ * @prAdapter: pointer to adapter
+ * @prChnl: return channel info of connected AIS BSS
+ * @pu4SlotBitmap: return bitmap slots of connected AIS BSS
+ *
+ * Context: Check current AIS status, used to determine the non-NAN timeline.
+ *
+ * Return: WLAN_STATUS_SUCCESS.
+ *	   WLAN_STATUS_FAILURE if passed in invalid pointers.
+ */
+uint32_t nanSchedGetAisChnlUsage(struct ADAPTER *prAdapter,
+				 union _NAN_BAND_CHNL_CTRL *prChnl,
+				 uint32_t *pu4SlotBitmap)
+{
 	struct BSS_INFO *prBssInfo = NULL;
 	uint32_t u4Bw;
 	uint8_t i;
+	const uint32_t band_2G4_slots =  0xFF00FF00;
+	uint32_t band_5G_slots = 0x00FF00FF;
 
-	ASSERT(prAdapter);
-	prNanScheduler = nanGetScheduler(prAdapter);
+	if (!prAdapter || !prChnl || !pu4SlotBitmap)
+		return WLAN_STATUS_FAILURE;
+
+	prChnl->u4RawData = 0;
 	*pu4SlotBitmap = 0;
 
 	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 		if (IS_BSS_AIS(prBssInfo) &&
-			(prBssInfo->eConnectionState ==
-			MEDIA_STATE_CONNECTED)) {
+		    prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
 			/* Use NAN BW instead of max(AIS,NAN) */
 			u4Bw = nanSchedConfigGetAllowedBw(prAdapter,
 				prBssInfo->ucPrimaryChannel);
@@ -10125,22 +10143,22 @@ nanSchedGetAisChnlUsage(struct ADAPTER *prAdapter,
 			break;
 		}
 
-		prChnl->u4RawData = 0;
 	}
 
 	/* Todo: Temporarily use predefined bitmap
-	* should change to get the bitmap from CNM
-	*/
-	if (prChnl->u4RawData == 0)
-		*pu4SlotBitmap = 0;
-	else if (prBssInfo != NULL) {
+	 * should change to get the bitmap from CNM
+	 */
+	if (!prAdapter->rWifiVar.fgDbDcModeEn)
+		band_5G_slots = 0x00FF00FC; /* skip slots for channel switch */
+
+	if (prChnl->u4RawData) {
 		if (prBssInfo->eBand == BAND_2G4)
-			*pu4SlotBitmap = 0xFF00FF00;
+			*pu4SlotBitmap = band_2G4_slots;
 		else
-			*pu4SlotBitmap = 0x00FF00FF;
+			*pu4SlotBitmap = band_5G_slots;
 	}
 
-	return rRetStatus;
+	return WLAN_STATUS_SUCCESS;
 }
 
 uint32_t
@@ -10164,7 +10182,7 @@ nanSchedUpdateNonNanTimelineByAis(struct ADAPTER *prAdapter) {
 	nanSchedGetAisChnlUsage(prAdapter, &rChnlInfo, &u4SlotBitmap);
 
 	DBGLOG(NAN, INFO,
-		"AIS chnlRaw:%x, PrimCh:%d, bitmap:%x\n",
+		"AIS chnlRaw:0x%08x, PrimCh:%d, bitmap:%08x\n",
 		rChnlInfo.u4RawData, rChnlInfo.rChannel.u4PrimaryChnl,
 		u4SlotBitmap);
 
