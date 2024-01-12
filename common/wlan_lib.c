@@ -6927,6 +6927,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucGROEnableTput = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "GROEnableTput", 6250000);
 #endif
+	prWifiVar->ucMsduReportTimeout =
+		(uint8_t) wlanCfgGetUint32(prAdapter,
+		"MsduReportTimeout", NIC_MSDU_REPORT_DUMP_TIMEOUT);
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
