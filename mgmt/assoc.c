@@ -260,6 +260,9 @@ uint16_t assocBuildCapabilityInfo(IN struct ADAPTER *prAdapter,
 	uint16_t u2CapInfo;
 	struct BSS_INFO *prBssInfo;
 
+	if (!prStaRec)
+		return 0;
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
 	/* Set up our requested capabilities. */
