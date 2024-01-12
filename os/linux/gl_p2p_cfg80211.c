@@ -446,7 +446,11 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			|| type == NL80211_IFTYPE_P2P_GO)) {
 			rMacAddr[0] = gPrP2pDev[0]->dev_addr[0];
 		}
+#if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
+		eth_hw_addr_set(prNewNetDevice, rMacAddr);
+#else
 		kalMemCopy(prNewNetDevice->dev_addr, rMacAddr, ETH_ALEN);
+#endif
 		kalMemCopy(prNewNetDevice->perm_addr, rMacAddr, ETH_ALEN);
 
 		DBGLOG(P2P, INFO,

@@ -2823,6 +2823,9 @@ static int wlanSetMacAddress(struct net_device *ndev, void *addr)
 	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
 	struct BSS_INFO *prAisBssInfo = NULL;
 	uint8_t i = 0;
+#if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
+	u8 _addr[MAC_ADDR_LEN];
+#endif
 
 	/**********************************************************************
 	 * Check if kernel passes valid data to us                            *
@@ -2872,7 +2875,12 @@ static int wlanSetMacAddress(struct net_device *ndev, void *addr)
 #endif
 	}
 
+#if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
+	ether_addr_copy(_addr, sa->sa_data);
+	eth_hw_addr_set(ndev, _addr);
+#else
 	COPY_MAC_ADDR(ndev->dev_addr, sa->sa_data);
+#endif
 
 	return WLAN_STATUS_SUCCESS;
 }				/* end of wlanSetMacAddr() */
@@ -5983,6 +5991,9 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 		uint32_t rStatus = WLAN_STATUS_FAILURE;
 		struct sockaddr MacAddr = {0};
 		uint32_t u4SetInfoLen = 0;
+#if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
+		u8 addr[ETH_ALEN];
+#endif
 
 		for (i = 0; i < KAL_AIS_NUM; i++) {
 			struct net_device *ndev =
@@ -6000,8 +6011,13 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 				DBGLOG(INIT, WARN, "set MAC%d addr fail 0x%x\n",
 								i, rStatus);
 			} else {
+#if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
+				ether_addr_copy(addr, MacAddr.sa_data);
+				eth_hw_addr_set(ndev, addr);
+#else
 				kalMemCopy(ndev->dev_addr,
 					&MacAddr.sa_data, ETH_ALEN);
+#endif
 				kalMemCopy(ndev->perm_addr,
 					ndev->dev_addr,	ETH_ALEN);
 #if CFG_SHOW_MACADDR_SOURCE

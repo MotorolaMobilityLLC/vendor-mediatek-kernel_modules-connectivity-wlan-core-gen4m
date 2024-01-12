@@ -1332,7 +1332,11 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 			"Set p2p role[%d] mac to " MACSTR " fgIsApMode(%d)\n",
 			i, MAC2STR(rMacAddr), fgIsApMode);
 
+#if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
+		eth_hw_addr_set(prP2pDev, rMacAddr);
+#else
 		kalMemCopy(prP2pDev->dev_addr, rMacAddr, ETH_ALEN);
+#endif
 		kalMemCopy(prP2pDev->perm_addr, prP2pDev->dev_addr, ETH_ALEN);
 
 		if (glSetupP2P(prGlueInfo, prP2pWdev, prP2pDev, i,
@@ -2210,6 +2214,9 @@ int p2pSetMACAddress(struct net_device *prDev, void *addr)
 	struct BSS_INFO *prDevBssInfo = NULL;
 	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
 	struct GL_P2P_INFO *prP2pInfo = NULL;
+#if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
+	u8 _addr[ETH_ALEN];
+#endif
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 	ASSERT(prGlueInfo);
@@ -2263,7 +2270,12 @@ skip_role:
 		return -EINVAL;
 	}
 
+#if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
+	ether_addr_copy(_addr, sa->sa_data);
+	eth_hw_addr_set(prDev, _addr);
+#else
 	COPY_MAC_ADDR(prDev->dev_addr, sa->sa_data);
+#endif
 
 	if ((prP2pInfo->prDevHandler == prDev)
 		&& mtk_IsP2PNetDevice(prGlueInfo, prDev)) {
