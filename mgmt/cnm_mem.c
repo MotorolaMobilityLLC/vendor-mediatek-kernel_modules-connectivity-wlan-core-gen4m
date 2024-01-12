@@ -1303,7 +1303,7 @@ void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx)
 		prStaRec->u2DesiredNonHTRateSet,
 		prStaRec->u2HwDefaultFixedRateCode);
 
-	log_dbg(SW4, TRACE, "[21][0x%x],[22][0x%x],[23][0x%x],[24][0x%x],[25][%u],[26][0x%x],[27][0x%x],[28][0x%x],[29][0x%x],[30][%u]\n",
+	log_dbg(SW4, INFO, "[21][0x%x],[22][0x%x],[23][0x%x],[24][0x%x],[25][%u],[26][0x%x],[27][0x%x],[28][0x%x],[29][0x%x],[30][%u]\n",
 		prStaRec->u2HtCapInfo,
 		prStaRec->u2HtExtendedCap,
 		prStaRec->u4TxBeamformingCap,
