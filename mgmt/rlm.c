@@ -875,7 +875,7 @@ u_int8_t rlmParseCheckRxsmmOuiIE(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 	}
 #endif
 
-	DBGLOG(QM, INFO, "RxSMM: OUI enable = %d\n", *pfgRxsmmEnable);
+	DBGLOG(QM, TRACE, "RxSMM: OUI enable = %d\n", *pfgRxsmmEnable);
 
 	return TRUE;
 } /* rlmParseCheckRxsmmOuiIE */
@@ -3221,7 +3221,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 					(fgRxsmmEnable) ? (fgRxsmmEnable) :
 						(prStaRec->fgRxsmmEnable);
 
-			DBGLOG(RLM, INFO, "RxSMM: STAREC enable = %d\n",
+			DBGLOG(RLM, TRACE, "RxSMM: STAREC enable = %d\n",
 				prStaRec->fgRxsmmEnable);
 #endif
 			break;
