@@ -8161,12 +8161,14 @@ void aisBssTmpDisallow(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 		aisAddBlocklist(prAdapter, prBssDesc);
 
 	if (blk) {
-		blk->fgDisallowed = TRUE;
-		blk->u2DisallowSec = sec;
-		blk->i4RssiThreshold = rssiThreshold;
 		DBGLOG(AIS, INFO,
-			"Temp disallow: retry delay %d, rssi threshold %d",
-			sec, rssiThreshold);
+			"New delay %d, Original timer %d, rssi threshold %d",
+			sec, blk->u2DisallowSec, rssiThreshold);
+
+		blk->fgDisallowed = TRUE;
+		if (sec > blk->u2DisallowSec)
+			blk->u2DisallowSec = sec;
+		blk->i4RssiThreshold = rssiThreshold;
 	}
 #endif
 }
