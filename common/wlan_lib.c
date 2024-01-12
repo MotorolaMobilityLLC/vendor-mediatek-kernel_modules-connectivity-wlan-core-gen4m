@@ -1311,6 +1311,10 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			pu4WHISR = (uint32_t *)kalMemAlloc(sizeof(uint32_t),
 							   PHY_MEM_TYPE);
 			if (!pu4WHISR) {
+				/* Every break should have a fail reason
+				 * for driver clean up.
+				 */
+				eFailReason = RAM_CODE_DOWNLOAD_FAIL;
 				DBGLOG(INIT, ERROR,
 				       "Allocate pu4WHISR fail\n");
 				u4Status = WLAN_STATUS_FAILURE;
