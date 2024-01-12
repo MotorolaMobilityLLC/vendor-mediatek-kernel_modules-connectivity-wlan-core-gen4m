@@ -143,7 +143,7 @@ twtReqFsmSteps(
 	do {
 		if (prStaRec->aeTWTReqState >= TWT_REQ_STATE_NUM ||
 			eNextState >= TWT_REQ_STATE_NUM) {
-			DBGLOG(TWT_RESPONDER, ERROR,
+			DBGLOG(TWT_REQUESTER, ERROR,
 				"Invalid stat eNextState[%d]\n", eNextState);
 			return;
 		}
@@ -1784,6 +1784,14 @@ void mltwtReqFsmSync(
 
 		if (!prStaRecOfAP)
 			break;
+
+		if (prStaRec->aeTWTReqState >= TWT_REQ_STATE_NUM ||
+			eNextState >= TWT_REQ_STATE_NUM) {
+			DBGLOG(TWT_REQUESTER, ERROR,
+				"Invalid stat eNextState[%d]\n", eNextState);
+
+			break;
+		}
 
 		DBGLOG(TWT_REQUESTER, STATE,
 			"[MLTWT_STA_SYNC]BSS %d Flow %d: [%s] -> [%s]\n",
