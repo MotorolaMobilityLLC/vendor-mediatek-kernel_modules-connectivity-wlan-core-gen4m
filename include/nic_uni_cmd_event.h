@@ -2786,6 +2786,7 @@ enum ENUM_UNI_CMD_GET_STATISTICS_TAG {
 	UNI_CMD_GET_STATISTICS_TAG_LINK_LAYER_STATS = 0x80,
 	UNI_CMD_GET_STATISTICS_TAG_PPDU_LATENCY,
 	UNI_CMD_GET_STATISTICS_TAG_CURRENT_TX_RATE,
+	UNI_CMD_GET_STATISTICS_TAG_BEACON_REPORT = 0x86,
 };
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -2819,6 +2820,14 @@ struct UNI_CMD_STA_STATISTICS {
 	/** TRUE: (RA) clear TransmitCount, TransmitFailCount,
 	 * Rate1TxCnt, Rate1FailCnt */
 	uint8_t  ucResetCounter;
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_BEACON_REPORT {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  ucEnable;
+	uint8_t ucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -7828,6 +7837,8 @@ uint32_t nicUniCmdGetStaStatistics(struct ADAPTER *ad,
 uint32_t nicUniCmdGetStatistics(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdGetLinkQuality(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdBeaconReport(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdGetLinkStats(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);

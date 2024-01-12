@@ -105,6 +105,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_MIB_INFO] = nicUniCmdMibInfo,
 	[CMD_ID_GET_STA_STATISTICS] = nicUniCmdGetStaStatistics,
 	[CMD_ID_GET_STATISTICS] = nicUniCmdGetStatistics,
+	[CMD_ID_SET_REPORT_BEACON] = nicUniCmdBeaconReport,
 	[CMD_ID_GET_LINK_QUALITY] = nicUniCmdGetLinkQuality,
 	[CMD_ID_GET_BUG_REPORT] = nicUniCmdGetBugReport,
 	[CMD_ID_GET_STATS_LLS] = nicUniCmdGetLinkStats,
@@ -6171,6 +6172,43 @@ uint32_t nicUniCmdGetStatistics(struct ADAPTER *ad,
 	tag = (struct UNI_CMD_BASIC_STATISTICS *) uni_cmd->aucTlvBuffer;
 	tag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_BASIC;
 	tag->u2Length = sizeof(*tag);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdBeaconReport(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct UNI_CMD_GET_STATISTICS *uni_cmd;
+	struct UNI_CMD_BEACON_REPORT *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_GET_STATISTICS) +
+			       sizeof(struct UNI_CMD_BEACON_REPORT);
+	struct CMD_SET_REPORT_BEACON_STRUCT *cmd =
+		(struct CMD_SET_REPORT_BEACON_STRUCT *)
+		info->pucInfoBuffer;
+
+	if (info->ucCID != CMD_ID_SET_REPORT_BEACON)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	entry = nicUniCmdAllocEntry(ad,
+		UNI_CMD_ID_GET_STATISTICS,
+		max_cmd_len,
+		nicUniEventStatistics,
+		nicUniCmdTimeoutCommon);
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_GET_STATISTICS *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_BEACON_REPORT *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_BEACON_REPORT;
+	tag->u2Length = sizeof(*tag);
+	tag->ucEnable = cmd->ucReportBcnEn;
+
+	DBGLOG(SCN, INFO, "Set: %d\n", cmd->ucReportBcnEn);
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
