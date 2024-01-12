@@ -4459,14 +4459,7 @@ int main_thread(void *data)
 			kalTraceBegin("FRAME_FILTER_AIS");
 			for (i = 0; i < KAL_AIS_NUM; i++) {
 				struct AIS_FSM_INFO *prAisFsmInfo =
-					(struct AIS_FSM_INFO *)NULL;
-
-			/* printk("prGlueInfo->u4OsMgmtFrameFilter = %x",
-			 * prGlueInfo->u4OsMgmtFrameFilter);
-			 */
-				prAisFsmInfo =
-					aisGetAisFsmInfo(prGlueInfo->prAdapter,
-					i);
+				    aisFsmGetInstance(prGlueInfo->prAdapter, i);
 
 				if (!prAisFsmInfo)
 					continue;

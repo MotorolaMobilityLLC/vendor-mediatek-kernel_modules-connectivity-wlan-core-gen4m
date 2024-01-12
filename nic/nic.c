@@ -3318,8 +3318,6 @@ void nicInitMGMT(IN struct ADAPTER *prAdapter,
 	/* CNM Module - initialization */
 	cnmInit(prAdapter);
 
-	wmmInit(prAdapter);
-
 	/* RLM Module - initialization */
 	rlmFsmEventInit(prAdapter);
 
@@ -3332,8 +3330,7 @@ void nicInitMGMT(IN struct ADAPTER *prAdapter,
 
 	for (i = 0; i < KAL_AIS_NUM; i++) {
 		/* AIS Module - intiailization */
-		aisFsmInit(prAdapter, &prAdapter->rWifiVar.rAisFsmInfo[i],
-			prRegInfo, i);
+		aisFsmInit(prAdapter, prRegInfo, i);
 	}
 
 #if CFG_SUPPORT_SWCR
@@ -3362,19 +3359,12 @@ void nicUninitMGMT(IN struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_SWCR */
 
 	for (i = 0; i < KAL_AIS_NUM; i++) {
-#if CFG_SUPPORT_ROAMING
-		/* Roaming Module - unintiailization */
-		roamingFsmUninit(prAdapter, i);
-#endif /* CFG_SUPPORT_ROAMING */
-
 		/* AIS Module - unintiailization */
 		aisFsmUninit(prAdapter, i);
 	}
 
 	/* SCN Module - unintiailization */
 	scnUninit(prAdapter);
-
-	wmmUnInit(prAdapter);
 
 	/* RLM Module - uninitialization */
 	rlmFsmEventUninit(prAdapter);

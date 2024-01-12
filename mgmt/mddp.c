@@ -601,9 +601,8 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 
 		/* Notify STA's TXD to MD */
 		for (i = 0; i < KAL_AIS_NUM; i++) {
-			struct BSS_INFO *prAisBssInfo = aisGetAisBssInfo(
-					prAdapter,
-					i);
+ 			struct BSS_INFO *prAisBssInfo =	aisGetMainLinkBssInfo(
+					aisFsmGetInstance(prAdapter, i));
 
 			if (prAisBssInfo && prAisBssInfo->eConnectionState ==
 					MEDIA_STATE_CONNECTED)

@@ -2375,9 +2375,9 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 			prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
 				netdev_priv(gprWdev[u4Idx]->netdev);
 			ASSERT(prNetDevPrivate->prGlueInfo == prGlueInfo);
-			prNetDevPrivate->ucBssIdx =
-				prAdapter->rWifiVar.rAisFsmInfo[u4Idx]
-							.ucMainBssIndex;
+			prNetDevPrivate->ucBssIdx = aisGetMainLinkBssIndex(
+				aisFsmGetInstance(prAdapter, u4Idx));
+
 #if CFG_ENABLE_UNIFY_WIPHY
 			prNetDevPrivate->ucIsP2p = FALSE;
 #endif
@@ -4617,7 +4617,11 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 
 		/* wlan1 */
 		if (KAL_AIS_NUM > 1) {
-			prDevHandler = wlanGetNetDev(prGlueInfo, 1);
+			struct AIS_FSM_INFO *prAisFsmInfo =
+				aisFsmGetInstance(prAdapter, 1);
+
+			prDevHandler = wlanGetNetDev(prGlueInfo,
+				aisGetMainLinkBssIndex(prAisFsmInfo));
 			if (prDevHandler) {
 				kalMemCopy(prDevHandler->dev_addr,
 					&prAdapter->rWifiVar.aucMacAddress1,
