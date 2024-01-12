@@ -1298,8 +1298,14 @@ void scanFillSecondaryLink(struct ADAPTER *prAdapter,
 			    !EQUAL_MAC_ADDR(prMainBssDesc->rMlInfo.aucMldAddr,
 					prBssDesc->rMlInfo.aucMldAddr) ||
 			    !scanSanityCheckSecondary(prAdapter, prBssDescSet,
-					prBssDesc, eRoamReason, ucBssIndex))
+					prBssDesc, eRoamReason, ucBssIndex)) {
+				log_dbg(SCN, INFO,
+					MACSTR " valid=%d mld_addr="MACSTR"\n",
+					MAC2STR(prBssDesc->aucBSSID),
+					prBssDesc->rMlInfo.fgValid,
+					MAC2STR(prBssDesc->rMlInfo.aucMldAddr));
 				continue;
+			}
 
 			u2ScoreTotal = scanCalculateTotalScore(prAdapter,
 				prBssDesc, eRoamReason, ucBssIndex);
@@ -1331,6 +1337,7 @@ void scanFillSecondaryLink(struct ADAPTER *prAdapter,
 
 	/* first bss desc is main bss */
 	prBssDescSet->prMainBssDesc = prBssDescSet->aprBssDesc[0];
+	log_dbg(SCN, INFO, " Total %d link(s)\n", prBssDescSet->ucLinkNum);
 }
 #endif
 

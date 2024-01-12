@@ -2421,7 +2421,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 #endif
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prBssDesc->fgIsEHTPresent = FALSE;
-	prBssDesc->rMlInfo.fgValid = FALSE;
+	kalMemSet(&prBssDesc->rMlInfo, 0, sizeof(prBssDesc->rMlInfo));
 #endif
 	prBssDesc->eSco = CHNL_EXT_SCN;
 	prBssDesc->fgIEWAPI = FALSE;

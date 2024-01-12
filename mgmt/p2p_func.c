@@ -103,6 +103,10 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 			ehtRlmRspGenerateCapIE}
 	, {0, ehtRlmCalculateOpIELen,
 			ehtRlmRspGenerateOpIE}
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	, {0, beCalculateRnrIELen, beGenerateRnrIE}
+	, {0, beCalculateMldIELen, beGenerateMldIE}
+#endif
 #endif
 #if CFG_SUPPORT_MTK_SYNERGY
 	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL,
@@ -3699,6 +3703,7 @@ p2pFuncValidateAuth(IN struct ADAPTER *prAdapter,
 
 	prStaRec->ucJoinFailureCount = 0;
 
+	prStaRec->ucAuthAlgNum = prAuthFrame->u2AuthAlgNum;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (p2pLinkProcessRxAuthReqFrame(prAdapter,

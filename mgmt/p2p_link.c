@@ -106,8 +106,14 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 	u2RxFrameCtrl &= MASK_FRAME_TYPE;
 
 	if (u2RxFrameCtrl != MAC_FRAME_AUTH) {
-		DBGLOG(AAA, WARN, "Incorrect frame type, skip!\n");
+		DBGLOG(AAA, WARN, "Incorrect frame type, failure!\n");
 		return WLAN_STATUS_FAILURE;
+	}
+
+	/* sae auth frames are handled by hostapd, delay register until assoc */
+	if (prAuthFrame->u2AuthAlgNum == AUTH_ALGORITHM_NUM_SAE) {
+		DBGLOG(AAA, INFO, "auth_alg=SAE, handle ml ie when assoc\n");
+		return WLAN_STATUS_SUCCESS;
 	}
 
 	u2IELength = prSwRfb->u2PacketLen -
@@ -201,6 +207,13 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 	} else {
 		DBGLOG(AAA, INFO, "no ml ie\n");
 		return WLAN_STATUS_SUCCESS;
+	}
+
+	/* sae auth frames are handled by hostapd, delay register until assoc */
+	if (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_SAE) {
+		prStaRec->ucLinkIndex = MLD_GROUP_NONE;
+		COPY_MAC_ADDR(prStaRec->aucMldAddr, prMlInfo->aucMldAddr);
+		mldStarecRegister(prAdapter, prStaRec);
 	}
 
 	prMldStarec = mldStarecGetByAddr(prAdapter, prStaRec->aucMldAddr);

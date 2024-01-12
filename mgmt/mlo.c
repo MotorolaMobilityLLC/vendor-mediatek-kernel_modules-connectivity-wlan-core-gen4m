@@ -70,15 +70,24 @@ uint8_t beSanityCheckMld(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 			if (!info->ucValid || frame_ctrl == MAC_FRAME_AUTH)
 				return TRUE;
 
-			if (!prStaRec || !mld_starec) {
-				DBGLOG(ML, ERROR,
-					"no starec(%d)=%p mld_starec=%p\n",
-					prStaRec ? prStaRec->ucWlanIndex : -1,
-					prStaRec, mld_starec);
+			if (!prStaRec) {
+				DBGLOG(ML, ERROR, "no starec\n");
 				return FALSE;
 			}
 
-			if (UNEQUAL_MAC_ADDR(info->aucMldAddr,
+			if (!mld_starec) {
+				/* SAE auth is handled by hostapd. mld_starec
+				 * can be null, so bypass sanity check.
+				 */
+				if (prStaRec->ucAuthAlgNum !=
+						AUTH_ALGORITHM_NUM_SAE) {
+					DBGLOG(ML, ERROR,
+						"starec(%d, %d) without mld_starec\n",
+						prStaRec->ucIndex,
+						prStaRec->ucWlanIndex);
+					return FALSE;
+				}
+			} else if (UNEQUAL_MAC_ADDR(info->aucMldAddr,
 				mld_starec->aucPeerMldAddr)) {
 				DBGLOG(ML, ERROR,
 					"STA wrong ML ie (addr=" MACSTR
@@ -190,42 +199,43 @@ uint8_t beSanityCheckMld(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 	return TRUE;
 }
 
-void beGenerateAuthMldIE(
+uint32_t beCalculateMldIELen(
 	struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStaRec,
 	uint8_t ucBssIndex,
-	struct SW_RFB *prRecvAuthSwRfb,
+	struct STA_RECORD *prStaRec)
+{
+	/* header: 2, extid: 1, common control: 2, common info: 11
+	 * (len:1, mac:6, link id:1, bss change count: 1, mld cap: 2)
+	 */
+	return 16;
+}
+
+void beGenerateMldIE(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo)
 {
-	struct IE_MULTI_LINK_CONTROL *common = NULL;
 	struct MLD_STA_RECORD *mld_starec;
 	struct MLD_BSS_INFO *mld_bssinfo;
+	struct STA_RECORD *prStaRec;
 	struct BSS_INFO *bss;
+	struct WLAN_MAC_MGMT_HEADER *mgmt;
+	uint8_t ucBssIndex;
+	uint16_t frame_ctrl;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsduInfo);
-
+	ucBssIndex = prMsduInfo->ucBssIndex;
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
 	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
+	mgmt = (struct WLAN_MAC_MGMT_HEADER *)(prMsduInfo->prPacket);
+	frame_ctrl = mgmt->u2FrameCtrl & MASK_FRAME_TYPE;
 
-	if (IS_MLD_STAREC_VALID(mld_starec)) {
+	if (frame_ctrl == MAC_FRAME_PROBE_RSP ||
+	    frame_ctrl == MAC_FRAME_BEACON) {
+		beGenerateMldBasicInfo(prAdapter, prMsduInfo);
+	} else if (IS_MLD_STAREC_VALID(mld_starec) ||
+		  (IS_MLD_BSSINFO_VALID(mld_bssinfo) && mld_starec)) {
 		DBGLOG(ML, INFO,  "Start MLO");
-		common = beGenerateMldCommonInfo(prAdapter, prMsduInfo);
-	} else if (IS_MLD_BSSINFO_VALID(mld_bssinfo) && prRecvAuthSwRfb) {
-		const uint8_t *ml;
-
-		/* look for ml ie from recev auth frame */
-		ml = kalFindIeExtIE(ELEM_ID_RESERVED, ELEM_EXT_ID_MLD,
-		   prRecvAuthSwRfb->pvHeader + prRecvAuthSwRfb->u2HeaderLen,
-		   prRecvAuthSwRfb->u2PacketLen - prRecvAuthSwRfb->u2HeaderLen);
-
-		/* ml not found, skip it */
-		if (!ml)
-			return;
-
-		DBGLOG(ML, INFO,  "Start MLO");
-		common = beGenerateMldCommonInfo(prAdapter, prMsduInfo);
+		beGenerateMldBasicInfo(prAdapter, prMsduInfo);
 	}
 }
 
@@ -249,7 +259,7 @@ uint8_t beGenerateExternalAuthMldIE(
 		}
 
 		prMsduInfo->u2FrameLength = 0;
-		common = beGenerateMldCommonInfo(prAdapter, prMsduInfo);
+		common = beGenerateMldBasicInfo(prAdapter, prMsduInfo);
 		if (!common) {
 			cnmMgtPktFree(prAdapter, prMsduInfo);
 			return 0;
@@ -290,7 +300,7 @@ void beGenerateAssocMldIE(
 	if (!IS_MLD_STAREC_VALID(mld_starec))
 		return;
 
-	common = beGenerateMldCommonInfo(prAdapter, prMsduInfo);
+	common = beGenerateMldBasicInfo(prAdapter, prMsduInfo);
 	if (!common)
 		return;
 
@@ -338,74 +348,7 @@ void beGenerateAssocMldIE(
 	DBGLOG_MEM8(ML, INFO, common, IE_SIZE(common));
 }
 
-void beGenerateBeaconMldIE(
-	struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex,
-	uint8_t ucComplete,
-	struct MSDU_INFO *prMsduInfo,
-	PFN_COMPOSE_BEACON_IE_FUNC pfnComposeIE)
-{
-	struct IE_MULTI_LINK_CONTROL* common;
-	struct MSDU_INFO *msdu_sta;
-	struct MLD_BSS_INFO *mld_bssinfo;
-	struct LINK *links;
-	struct BSS_INFO *bss;
-	uint32_t offset, len;
-	uint8_t count = 0;
-
-	ASSERT(prAdapter);
-	ASSERT(prMsduInfo);
-
-	bss = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
-	offset = sortMsduPayloadOffset(prAdapter, prMsduInfo);
-	len = prMsduInfo->u2FrameLength;
-
-	if (!IS_MLD_BSSINFO_VALID(mld_bssinfo))
-		return;
-
-	common = beGenerateMldCommonInfo(prAdapter, prMsduInfo);
-	if (!common)
-		return;
-
-	if (!ucComplete)
-		goto DONE;
-
-	links =  &mld_bssinfo->rBssList;
-	LINK_FOR_EACH_ENTRY(bss, links, rLinkEntryMld, struct BSS_INFO) {
-		if (count >= MLD_LINK_MAX) {
-			DBGLOG(ML, ERROR, "too many links!!!\n");
-			return;
-		}
-
-		DBGLOG(ML, INFO,
-			"\tsta: bss_idx: %d, mac: " MACSTR "\n",
-			bss->ucBssIndex,
-			MAC2STR(bss->aucOwnMacAddr));
-
-		/* compose frame for each starec,
-		 * dont care Header and some Fixed Fields
-		 */
-		msdu_sta = pfnComposeIE(prAdapter, bss->ucBssIndex);
-		if (msdu_sta == NULL) {
-			DBGLOG(ML, WARN,
-				"No PKT_INFO_T for sending MLD STA.\n");
-			continue;
-		}
-
-		beGenerateMldSTAInfo(prAdapter, common,
-			prMsduInfo, offset, len,
-			msdu_sta, bss->ucBssIndex);
-
-		count++;
-	}
-
-DONE:
-	DBGLOG(ML, INFO, "Dump total MLIE\n");
-	DBGLOG_MEM8(ML, INFO, common, IE_SIZE(common));
-}
-
-struct IE_MULTI_LINK_CONTROL *beGenerateMldCommonInfo(
+struct IE_MULTI_LINK_CONTROL *beGenerateMldBasicInfo(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo)
 {
@@ -718,7 +661,6 @@ DONE:
 	DBGLOG(ML, INFO, "Dump ML Link%d IE\n", link);
 	DBGLOG_MEM8(ML, INFO, sta_ctrl, IE_SIZE(sta_ctrl));
 }
-
 
 uint32_t beCalculateRnrIELen(
 	struct ADAPTER *prAdapter,

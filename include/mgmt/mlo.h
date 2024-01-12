@@ -156,38 +156,18 @@ struct MULTI_LINK_INFO {
 typedef struct MSDU_INFO* (*PFN_COMPOSE_ASSOC_IE_FUNC) (struct ADAPTER *,
 	struct STA_RECORD *);
 
-typedef struct MSDU_INFO* (*PFN_COMPOSE_AUTH_IE_FUNC) (struct ADAPTER *,
-	  struct STA_RECORD *, uint8_t, struct SW_RFB *, uint16_t, uint16_t);
-
-typedef struct MSDU_INFO* (*PFN_COMPOSE_BEACON_IE_FUNC) (struct ADAPTER *,
-	uint8_t);
-
 void beGenerateAssocMldIE(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
 	struct MSDU_INFO *prMsduInfo,
 	PFN_COMPOSE_ASSOC_IE_FUNC pfnComposeIE);
 
-void beGenerateAuthMldIE(
-	struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStaRec,
-	uint8_t ucBssIndex,
-	struct SW_RFB *prRecvAuthSwRfb,
-	struct MSDU_INFO *prMsduInfo);
-
 uint8_t beGenerateExternalAuthMldIE(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
 	uint8_t *pucBuf);
 
-void beGenerateBeaconMldIE(
-	struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex,
-	uint8_t ucComplete,
-	struct MSDU_INFO *prMsduInfo,
-	PFN_COMPOSE_BEACON_IE_FUNC pfnComposeIE);
-
-struct IE_MULTI_LINK_CONTROL *beGenerateMldCommonInfo(
+struct IE_MULTI_LINK_CONTROL *beGenerateMldBasicInfo(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
 
@@ -202,6 +182,14 @@ void beGenerateMldSTAInfo(
 	uint32_t u4PrimaryLength,
 	struct MSDU_INFO *prMsduInfoSta,
 	uint8_t ucBssIndex);
+
+uint32_t beCalculateMldIELen(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	struct STA_RECORD *prStaRec);
+
+void beGenerateMldIE(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo);
 
 uint32_t beCalculateRnrIELen(
 	struct ADAPTER *prAdapter,

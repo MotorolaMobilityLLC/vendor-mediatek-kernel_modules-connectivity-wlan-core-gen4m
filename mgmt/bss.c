@@ -161,8 +161,8 @@ struct APPEND_VAR_IE_ENTRY txBcnIETable[] = {
 	, {0, ehtRlmCalculateOpIELen,
 	   ehtRlmRspGenerateOpIE}
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	, {0, beCalculateRnrIELen,
-	   beGenerateRnrIE}
+	, {0, beCalculateRnrIELen, beGenerateRnrIE}
+	, {0, beCalculateMldIELen, beGenerateMldIE}
 #endif
 #endif
 #if CFG_SUPPORT_MTK_SYNERGY
@@ -1251,11 +1251,6 @@ uint32_t bssUpdateBeaconContentEx(IN struct ADAPTER *prAdapter,
 	prMsduInfo = bssComposeBeaconContent(prAdapter, ucBssIndex);
 	if (!prMsduInfo)
 		return WLAN_STATUS_SUCCESS;
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	beGenerateBeaconMldIE(prAdapter, ucBssIndex, FALSE, prMsduInfo,
-		bssComposeBeaconContent);
-#endif
 
 	DBGLOG(P2P, TRACE, "Dump beacon content to FW, method:%d\n", eMethod);
 	if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
