@@ -1345,6 +1345,61 @@ uint8_t *cnmStaRecGetRoleString(enum ENUM_STA_TYPE eStaType)
 	return pucRoleString;
 }
 
+void cnmDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
+{
+	struct BSS_INFO *prBssInfo;
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+
+	if (!prBssInfo->fgIsInUse)
+		return;
+
+	log_dbg(MEM, INFO, "============= DUMP BSS[%u] ===========\n",
+		ucBssIdx);
+
+	/*
+	 * [1] BASIC [BSS_IDX, ACTIVE, TYPE, PRIVATE_DATA, OMAC_IDX, OMAC_ADDR, BMC_IDX, MODE]
+	 * [2] CONNECTION [STATE, BSSID, SSID, AID, BCN_INT, PHY_TYPE]
+	 * [3] RLM [BAND, CHANNEL, WIDTH, S1, S2]
+	 * [4] MLO [GROUP_IDX, OWN_MLD_ID]
+	 * [5] TRX [ABSENT, QBSS]
+	 */
+	log_dbg(MEM, INFO, "\tBASIC [%u %d %u %u %u %u " MACSTR " %u %u]\n",
+		prBssInfo->ucBssIndex,
+		prBssInfo->fgIsNetActive,
+		prBssInfo->eNetworkType,
+		prBssInfo->u4PrivateData,
+		prBssInfo->eBandIdx,
+		prBssInfo->ucOwnMacIndex,
+		MAC2STR(prBssInfo->aucOwnMacAddr),
+		prBssInfo->ucBMCWlanIndex,
+		prBssInfo->eCurrentOPMode);
+	log_dbg(MEM, INFO, "\tCONNECTION [%u " MACSTR " %u %s 0x%x %u 0x%x]\n",
+		prBssInfo->eConnectionState,
+		MAC2STR(prBssInfo->aucBSSID),
+		prBssInfo->ucSSIDLen,
+		prBssInfo->aucSSID,
+		prBssInfo->u2AssocId,
+		prBssInfo->u2BeaconInterval,
+		prBssInfo->ucPhyTypeSet);
+	log_dbg(MEM, INFO, "\tRLM [%u %u %u %u %u]\n",
+		prBssInfo->eBand,
+		prBssInfo->ucPrimaryChannel,
+		prBssInfo->ucVhtChannelWidth,
+		prBssInfo->ucVhtChannelFrequencyS1,
+		prBssInfo->ucVhtChannelFrequencyS2);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	log_dbg(MEM, INFO, "\tMLO [%u %u]\n",
+		prBssInfo->ucGroupMldId,
+		prBssInfo->ucOwnMldId);
+#endif
+	log_dbg(MEM, INFO, "\tTRX [%u %u]\n",
+		prBssInfo->fgIsNetAbsent,
+		prBssInfo->fgIsQBSS);
+
+	log_dbg(MEM, INFO, "============= DUMP END ===========\n");
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief
@@ -1456,6 +1511,30 @@ void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx)
 		prStaRec->ucFreeQuotaForNonDelivery,
 		prStaRec->aucRxMcsBitmask[0],
 		prStaRec->aucRxMcsBitmask[1]);
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	log_dbg(SW4, INFO, "[HeMacCap]\n");
+	DBGLOG_MEM8(SW4, INFO, prStaRec->ucHeMacCapInfo,
+		sizeof(prStaRec->ucHeMacCapInfo));
+	log_dbg(SW4, INFO, "[HePhyCap]\n");
+	DBGLOG_MEM8(SW4, INFO, prStaRec->ucHePhyCapInfo,
+		sizeof(prStaRec->ucHePhyCapInfo));
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	log_dbg(SW4, INFO, "[EhtMacCap]\n");
+	DBGLOG_MEM8(SW4, INFO, prStaRec->ucEhtMacCapInfo,
+		sizeof(prStaRec->ucEhtMacCapInfo));
+	log_dbg(SW4, INFO, "[EhtPhyCap]\n");
+	DBGLOG_MEM8(SW4, INFO, prStaRec->ucEhtPhyCapInfo,
+		sizeof(prStaRec->ucEhtPhyCapInfo));
+#endif
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	log_dbg(SW4, INFO, "[MldStaIndex][%u], [LinkIndex][%u], [TidBitmap][%u], [MldAddr][" MACSTR "]\n",
+		prStaRec->ucMldStaIndex,
+		prStaRec->ucLinkIndex,
+		prStaRec->ucTidBitmap,
+		MAC2STR(prStaRec->aucMldAddr));
+#endif
 
 	for (i = 0; i < CFG_RX_MAX_BA_TID_NUM; i++) {
 		if (prStaRec->aprRxReorderParamRefTbl[i]) {

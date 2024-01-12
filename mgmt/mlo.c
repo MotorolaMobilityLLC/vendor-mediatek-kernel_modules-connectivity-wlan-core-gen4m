@@ -744,6 +744,41 @@ void beParsingMldElement(IN struct MULTI_LINK_INFO *prMlInfo, IN uint8_t *pucIE)
 	}
 }
 
+void mldBssDump(struct ADAPTER *prAdapter)
+{
+	struct MLD_BSS_INFO *prMldBssInfo;
+	uint8_t i = 0;
+
+	DBGLOG(INIT, INFO, "========== START ==========\n");
+
+	for (i = 0; i < ARRAY_SIZE(prAdapter->aprMldBssInfo); i++) {
+		struct BSS_INFO *prBssInfo;
+		struct LINK *prBssList;
+
+		prMldBssInfo = &prAdapter->aprMldBssInfo[i];
+
+		if (!prMldBssInfo->fgIsInUse)
+			continue;
+
+		DBGLOG(INIT, INFO, "[%d] om:%d, group:%d, om_remap:%d, mld_mac:" MACSTR "\n",
+			i,
+			prMldBssInfo->ucOmacIdx,
+			prMldBssInfo->ucGroupMldId,
+			prMldBssInfo->ucOmRemapIdx,
+			prMldBssInfo->aucOwnMldAddr);
+
+		DBGLOG(INIT, INFO, "\tBss list:\n");
+		prBssList = &prMldBssInfo->rBssList;
+		LINK_FOR_EACH_ENTRY(prBssInfo, prBssList, rLinkEntryMld,
+		    struct BSS_INFO)
+			cnmDumpBssInfo(prAdapter, prBssInfo->ucBssIndex);
+
+		DBGLOG(INIT, INFO, "\n");
+	}
+
+	DBGLOG(INIT, INFO, "========== END ==========\n");
+}
+
 int8_t mldBssRegister(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
 	struct BSS_INFO *prBssInfo)
@@ -902,7 +937,9 @@ void mldBssUninit(struct ADAPTER *prAdapter)
 
 void mldStarecDump(struct ADAPTER *prAdapter)
 {
-	uint8_t i = 0;
+	uint8_t i = 0, j = 0;
+
+	DBGLOG(INIT, INFO, "========== START ==========\n");
 
 	for (i = 0; i < ARRAY_SIZE(prAdapter->aprMldStarec); i++) {
 		struct MLD_STA_RECORD *prMldStarec = &prAdapter->aprMldStarec[i];
@@ -912,7 +949,7 @@ void mldStarecDump(struct ADAPTER *prAdapter)
 		if (!prMldStarec->fgIsInUse)
 			continue;
 
-		DBGLOG(INIT, INFO, "idx: %d, pri_mld: %d, sec_mld: %d, setup: %d, emlmr: %d, emlsr: %d, str: [0x%x,0x%x,0x%x], mac: " MACSTR "\n",
+		DBGLOG(INIT, INFO, "[%d] pri:%d, sec:%d, setup:%d, emlmr:%d, emlsr:%d, str:[0x%x,0x%x,0x%x], mac:" MACSTR "\n",
 			prMldStarec->ucIdx,
 			prMldStarec->u2PrimaryMldId,
 			prMldStarec->u2SecondMldId,
@@ -924,16 +961,20 @@ void mldStarecDump(struct ADAPTER *prAdapter)
 			prMldStarec->aucStrBitmap[2],
 			prMldStarec->aucPeerMldAddr);
 
+		DBGLOG(INIT, INFO, "\tRX pkt count:\n");
+		for (j = 0; j < MLD_LINK_MAX; j++)
+			DBGLOG(INIT, INFO, "\t\tband%d:0x%llx\n",
+				j, prMldStarec->aucRxPktCnt[j]);
+
+		DBGLOG(INIT, INFO, "\tSta list:\n");
 		prStarecList = &prMldStarec->rStarecList;
 		LINK_FOR_EACH_ENTRY(prCurrStarec, prStarecList, rLinkEntryMld,
-		    struct STA_RECORD) {
-			DBGLOG(INIT, INFO, "\tsta: %d, wlan_idx: %d, bss_idx: %d, mac: " MACSTR "\n",
-				prCurrStarec->ucIndex,
-				prCurrStarec->ucWlanIndex,
-				prCurrStarec->ucBssIndex,
-				prCurrStarec->aucMacAddr);
-		}
+		    struct STA_RECORD)
+			cnmDumpStaRec(prAdapter, prCurrStarec->ucIndex);
+
+		DBGLOG(INIT, INFO, "\n");
 	}
+	DBGLOG(INIT, INFO, "========== END ==========\n");
 }
 
 static struct MLD_STA_RECORD *mldStarecGetByAddr(struct ADAPTER *prAdapter,
@@ -1127,6 +1168,22 @@ int8_t mldStarecSetSetupIdx(struct ADAPTER *prAdapter,
 	prMldStarec->u2SetupWlanId = prStaRec->ucWlanIndex;
 
 	return 0;
+}
+
+void mldStarecLogRxData(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucHwBandIdx)
+{
+	struct MLD_STA_RECORD *mld_sta = mldStarecGetByStarec(prAdapter,
+		prStaRec);
+
+	if (!mld_sta)
+		return;
+
+	if (ucHwBandIdx >= MLD_LINK_MAX)
+		return;
+
+	mld_sta->aucRxPktCnt[ucHwBandIdx]++;
 }
 
 int8_t mldStarecInit(struct ADAPTER *prAdapter)
