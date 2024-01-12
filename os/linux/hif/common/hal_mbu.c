@@ -38,7 +38,8 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-#define MAX_MBU_EMI_WAITING_CNT	(100 *  100) /* 100ms timeout */
+#define MAX_MBU_RB_WAITING_CNT	(1000) /* 1000 * 1us = 1ms timeout */
+#define MAX_MBU_EMI_WAITING_CNT	(2000) /* 2000 * 5us = 10ms timeout */
 #define MBU_MSI_MIRROR_IDX	7
 
 /*******************************************************************************
@@ -203,7 +204,7 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 	struct SW_EMI_RING_INFO *prMbuInfo;
 	struct MBU_EMI_CTX *prEmi;
 	struct MBU_MSI_MIRROR *prMsiMirror;
-	uint32_t u4Addr = 0, u4Val = 0, u4Cnt = 0;
+	uint32_t u4Addr = 0, u4Val = 0, u4Cnt = 0, u4ReadBlockCnt = 0;
 	u_int8_t fgRet = TRUE, fgDbg = FALSE;
 
 	KAL_TIME_INTERVAL_DECLARATION();
@@ -227,6 +228,19 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 	if (!prAp2wf) {
 		DBGLOG(INIT, ERROR, "ap2wf remap NOT supported\n");
 		return FALSE;
+	}
+
+	GLUE_INC_REF_CNT(prMbuInfo->u4ReadBlockCnt);
+	for (u4Cnt = 0; u4Cnt < MAX_MBU_RB_WAITING_CNT; u4Cnt++) {
+		u4ReadBlockCnt = GLUE_GET_REF_CNT(prMbuInfo->u4ReadBlockCnt);
+		if (u4ReadBlockCnt == 1)
+			break;
+		kalUdelay(1);
+	}
+	if (u4Cnt == MAX_MBU_RB_WAITING_CNT) {
+		DBGLOG(INIT, WARN, "ReadBlockCnt = %u\n", u4ReadBlockCnt);
+		fgRet = FALSE;
+		goto exit;
 	}
 
 	/* set remap */
@@ -273,13 +287,15 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 			fgRet = FALSE;
 			goto exit;
 		}
-		kalUdelay(10);
+		kalUdelay(5);
 	}
 
 	/* 7. Host driver check rdata on EMI */
 	*pu4Val = prEmi->u4Val;
 
 exit:
+	GLUE_DEC_REF_CNT(prMbuInfo->u4ReadBlockCnt);
+
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiDbg)) {
 		KAL_REC_TIME_END();
 		fgDbg = TRUE;

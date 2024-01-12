@@ -115,7 +115,7 @@ u_int8_t halSwEmiRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
 	struct WIFI_VAR *prWifiVar;
 	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
 	struct SW_EMI_CTX *prEmi;
-	uint32_t u4DrvIdx = 0, u4Cnt = 0;
+	uint32_t u4DrvIdx = 0, u4Cnt = 0, u4ReadBlockCnt = 0;
 	u_int8_t fgRet = TRUE, fgDbg = FALSE;
 
 	KAL_TIME_INTERVAL_DECLARATION();
@@ -152,14 +152,13 @@ u_int8_t halSwEmiRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiDbg))
 		KAL_REC_TIME_START();
 
-	if (GLUE_GET_REF_CNT(prSwEmiRingInfo->u4ReadBlockCnt) != 0) {
-		DBGLOG(INIT, WARN, "ReadBlockCnt = %u\n",
-		       prSwEmiRingInfo->u4ReadBlockCnt);
-		fgRet = FALSE;
-		goto exit;
-	}
-
 	GLUE_INC_REF_CNT(prSwEmiRingInfo->u4ReadBlockCnt);
+	u4ReadBlockCnt = GLUE_GET_REF_CNT(prSwEmiRingInfo->u4ReadBlockCnt);
+	if (u4ReadBlockCnt > 1) {
+		DBGLOG(INIT, WARN, "ReadBlockCnt = %u\n", u4ReadBlockCnt);
+		fgRet = FALSE;
+		goto end;
+	}
 
 	if (prEmi->u4DrvIdx != prEmi->u4FwIdx) {
 		DBGLOG(HAL, ERROR, "DrvIdx[%u] & FwIdx[%u] mismatch!\n",
