@@ -155,7 +155,7 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 	struct MULTI_LINK_INFO *prMlInfo = &rMlInfo;
 	uint8_t *pucIE;
 	uint16_t u2IELength;
-	const uint8_t *ml;
+	const uint8_t *ml = NULL;
 	uint16_t u2RxFrameCtrl;
 
 	if (IS_FEATURE_DISABLED(prWifiVar->ucEnableMlo))
@@ -169,7 +169,9 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 		return WLAN_STATUS_FAILURE;
 	}
 
-	if (prSwRfb->u2PacketLen < sizeof(struct WLAN_AUTH_FRAME)) {
+	if (prSwRfb->u2PacketLen <
+			(uint16_t) OFFSET_OF(struct WLAN_AUTH_FRAME,
+			aucInfoElem[0])) {
 		DBGLOG(AAA, WARN,
 			"Invalid packet length (%u)\n",
 			prSwRfb->u2PacketLen);
@@ -198,9 +200,11 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 	u2IELength = prSwRfb->u2PacketLen -
 		(uint16_t) OFFSET_OF(struct WLAN_AUTH_FRAME,
 		aucInfoElem[0]);
-	pucIE = prAuthFrame->aucInfoElem;
+	if (u2IELength > 0) {
+		pucIE = prAuthFrame->aucInfoElem;
+		ml = mldFindMlIE(pucIE, u2IELength, ML_CTRL_TYPE_BASIC);
+	}
 
-	ml = mldFindMlIE(pucIE, u2IELength, ML_CTRL_TYPE_BASIC);
 	if (ml) {
 		MLD_PARSE_BASIC_MLIE(prMlInfo, ml,
 			IE_SIZE(ml), /* no need fragment */
