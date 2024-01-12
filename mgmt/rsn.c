@@ -4306,6 +4306,63 @@ u_int8_t rsnIsFtOverTheAir(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 	return FALSE;
 }
 
+void rsnReqDumpWTBL(struct ADAPTER *prAdapter,
+	enum ENUM_FW_DUMP eType, uint8_t ucBssIndex)
+{
+	struct MSG_FW_DUMP *prFwDumpMsg;
+
+	if (!IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgRxIcvErrDbg))
+		return;
+
+	if (rsnFwDumpIsLimited(prAdapter))
+		return;
+
+	prFwDumpMsg = (struct MSG_FW_DUMP *) cnmMemAlloc(prAdapter,
+		RAM_TYPE_MSG, sizeof(struct MSG_FW_DUMP));
+
+	if (!prFwDumpMsg) {
+		DBGLOG(RSN, WARN, "cnmMemAlloc Fail\n");
+		return;
+	}
+
+	prFwDumpMsg->rMsgHdr.eMsgId = MID_RSN_FW_DUMP;
+	prFwDumpMsg->eType = eType;
+	prFwDumpMsg->ucBssIndex = ucBssIndex;
+
+	DBGLOG(RSN, TRACE,
+		"Request WTBL dump for ICV error!\n");
+	DBGLOG(RSN, LOUD,
+		"Send Msg eMsgId:%u eType:%u ucBssIndex:%u\n",
+		prFwDumpMsg->rMsgHdr.eMsgId,
+		prFwDumpMsg->eType,
+		prFwDumpMsg->ucBssIndex);
+	mboxSendMsg(prAdapter, MBOX_ID_0,
+		(struct MSG_HDR *) prFwDumpMsg, MSG_SEND_METHOD_BUF);
+}
+
+void rsnTriggerDumpWTBL(struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr)
+{
+	struct MSG_FW_DUMP *prFwDumpMsg;
+
+	prFwDumpMsg = (struct MSG_FW_DUMP *) prMsgHdr;
+	DBGLOG(RSN, LOUD,
+		"Handle Msg eMsgId:%u eType:%u ucBssIndex:%u\n",
+		prFwDumpMsg->rMsgHdr.eMsgId,
+		prFwDumpMsg->eType,
+		prFwDumpMsg->ucBssIndex);
+	switch (prFwDumpMsg->eType) {
+	case FW_DUMP_WTBL:
+		rsnDumpWTBL(prAdapter);
+		break;
+	default:
+		DBGLOG(RSN, WARN, "Invalid eType:%u\n",
+			prFwDumpMsg->eType);
+		break;
+	}
+	cnmMemFree(prAdapter, prMsgHdr);
+}
+
 void rsnDumpWTBL(struct ADAPTER *prAdapter)
 {
 	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
@@ -4315,12 +4372,24 @@ void rsnDumpWTBL(struct ADAPTER *prAdapter)
 
 	strLen = kalSnprintf(cmd, sizeof(cmd),
 			"icvErrDumpWTBL");
-	DBGLOG(RLM, INFO, "Notify FW %s, strlen=%d", cmd, strLen);
-
-	rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_ASCII;
+	DBGLOG(RSN, TRACE,
+		"Trigger WTBL Dump to FW: %s, strlen=%d", cmd, strLen);
+	rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_WO_RESPONSE;
 	rChipConfigInfo.u2MsgSize = strLen;
 	kalStrnCpy(rChipConfigInfo.aucCmd, cmd, strLen);
 	wlanSetChipConfig(prAdapter, &rChipConfigInfo,
 			sizeof(rChipConfigInfo), &strOutLen, FALSE);
+}
+
+bool rsnFwDumpIsLimited(struct ADAPTER *prAdapter)
+{
+	if (CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+				prAdapter->rRsnFwDumpTime,
+				SEC_TO_SYSTIME(1))) {
+		GET_CURRENT_SYSTIME(
+			&prAdapter->rRsnFwDumpTime);
+		return FALSE;
+	}
+	return TRUE;
 }
 

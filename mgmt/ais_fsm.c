@@ -928,6 +928,10 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 	/* keep last, indicate disconnection as default status */
 	kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
 		WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0, ucBssIndex);
+
+	GET_CURRENT_SYSTIME(
+		&prAdapter->rRsnFwDumpTime);
+
 }				/* end of aisFsmInit() */
 
 /*----------------------------------------------------------------------------*/
