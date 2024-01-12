@@ -3978,3 +3978,46 @@ void nicEventCnmInfo(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent
 		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 	}
 }
+
+#if CFG_SUPPORT_REPLAY_DETECTION
+void nicCmdEventSetAddKey(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	struct WIFI_CMD *prWifiCmd = NULL;
+	struct CMD_802_11_KEY *prCmdKey = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+
+	if (prCmdInfo->fgIsOid) {
+		/* Update Set Information Length */
+		kalOidComplete(prAdapter->prGlueInfo,
+			       prCmdInfo->fgSetQuery, prCmdInfo->u4InformationBufferLength, WLAN_STATUS_SUCCESS);
+	}
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prDetRplyInfo = &prGlueInfo->prDetRplyInfo;
+	if (pucEventBuf) {
+		prWifiCmd = (struct WIFI_CMD *) (pucEventBuf);
+		prCmdKey = (struct CMD_802_11_KEY *) (prWifiCmd->aucBuffer);
+		if (!prCmdKey->ucKeyType) {
+			prDetRplyInfo->ucCurKeyId = prCmdKey->ucKeyId;
+			prDetRplyInfo->ucKeyType = prCmdKey->ucKeyType;
+			prDetRplyInfo->arReplayPNInfo[prCmdKey->ucKeyId].fgRekey = TRUE;
+			prDetRplyInfo->arReplayPNInfo[prCmdKey->ucKeyId].fgFirstPkt = TRUE;
+			DBGLOG(NIC, TRACE, "Keyid is %d, ucKeyType is %d\n",
+				prCmdKey->ucKeyId, prCmdKey->ucKeyType);
+		}
+	}
+}
+void nicOidCmdTimeoutSetAddKey(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo)
+{
+	ASSERT(prAdapter);
+
+	DBGLOG(NIC, WARN, "Wlan setaddkey timeout.\n");
+	if (prCmdInfo->fgIsOid)
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo->fgSetQuery, 0, WLAN_STATUS_FAILURE);
+}
+#endif
+
