@@ -9717,7 +9717,7 @@ wlanoidSetIPv6NetworkAddress(IN struct ADAPTER *prAdapter,
 
 		prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
 			((unsigned long) prNetworkAddress +
-			(unsigned long) (prNetworkAddress->u2AddressLength +
+			(unsigned long) (prNetworkAddress->u2AddressLength * 2 +
 			OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress)));
 	}
 
@@ -9772,9 +9772,10 @@ wlanoidSetIPv6NetworkAddress(IN struct ADAPTER *prAdapter,
 
 			prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
 			    ((unsigned long)prNetworkAddress +
-			    (unsigned long)(prNetworkAddress->u2AddressLength +
-			    OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
-				      aucAddress)));
+			    (unsigned long)(
+				prNetworkAddress->u2AddressLength * 2
+				+ OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
+				aucAddress)));
 		}
 
 	} else {
