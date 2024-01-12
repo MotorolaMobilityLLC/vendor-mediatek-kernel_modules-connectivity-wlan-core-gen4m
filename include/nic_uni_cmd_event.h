@@ -2616,12 +2616,14 @@ struct UNI_CMD_POWER_METRICS {
 	*   TAG                        | ID  | structure
 	*   ---------------------------|-----|--------------
 	*   UNI_CMD_POWER_METRICS_PARAM| 0x00| UNI_CMD_POWER_METRICS_PARAM_T
+	*   UNI_CMD_ICCM_PARAM         | 0x01| UNI_CMD_ICCM_PARAM_T
 	*/
 } __KAL_ATTRIB_PACKED__;
 
 /* Power metrics command TLV List */
 enum ENUM_UNI_CMD_POWER_METRICS_TAG {
 	UNI_CMD_POWER_METRICS_TAG_PARAM = 0,
+	UNI_CMD_ICCM_TAG_PARAM = 1,
 	UNI_CMD_POWER_METRICS_TAG_NUM
 };
 
@@ -2631,7 +2633,18 @@ struct UNI_CMD_POWER_METRICS_PARAM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t u4Enable;
-	uint8_t u4Value;
+	uint32_t u4Value;
+	uint8_t aucPadding[2];
+} __KAL_ATTRIB_PACKED__;
+
+/* Set ICCM parameters (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_ICCM_PARAM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t u4Enable;
+	uint8_t u4EnablePrintFw;
+	uint32_t u4Value;
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 #endif
@@ -5793,6 +5806,7 @@ struct UNI_EVENT_ID_POWER_METRICS {
 /* Power Metrics event tag */
 enum UNI_EVENT_ID_POWER_METRICS_TAG {
 	UNI_EVENT_POWER_METRICS_INFO_TAG = 0,
+	UNI_EVENT_ICCM_TAG = 1,
 	UNI_EVENT_POWER_METRICS_TAG_NUM
 };
 
@@ -5818,6 +5832,14 @@ struct UNI_EVENT_ID_POWER_METRICS_INFO {
 	uint32_t arStatsPmVhtRateStat[30];
 	uint32_t arStatsPmHeRateStat[48];
 	uint32_t arStatsPmEhtRateStat[80];
+};
+
+struct UNI_EVENT_ID_PWR_MET_ICCM_INFO {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	/* event body */
+	uint32_t u4TotalTime;
+	struct UNI_POWER_STATE_INFO u4BandRatio[5];
 };
 #endif
 

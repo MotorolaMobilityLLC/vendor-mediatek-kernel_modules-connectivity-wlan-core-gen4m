@@ -302,6 +302,9 @@ enum ENUM_CMD_ID {
 	CMD_ID_FAST_SCAN_DUMMY3,            /* 0x69 (Get), NO USE */
 
 	CMD_ID_UPDATE_AC_PARMS = 0x6A,     /* 0x6A (Set) */
+#if CFG_SUPPORT_WIFI_ICCM
+	CMD_ID_SET_ICCM = 0x6B,				/* 0x6B (Set) */
+#endif
 	CMD_ID_SET_ROAMING_SKIP = 0x6D,
 	/* 0x6D (Set) used to setting roaming skip*/
 	CMD_ID_SET_DROP_PACKET_CFG = 0x6E,

@@ -6298,6 +6298,48 @@ wlanoidSetMcrWrite(struct ADAPTER *prAdapter,
 		}
 }				/* wlanoidSetMcrWrite */
 
+#if CFG_SUPPORT_WIFI_ICCM
+uint32_t
+wlanoidSetIccm(struct ADAPTER *prAdapter,
+		   void *pvSetBuffer, uint32_t u4SetBufferLen,
+		   uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_CUSTOM_ICCM_STRUCT *prIccmInfo;
+	struct CMD_ICCM_INFO_T rCmdIccm;
+
+	DBGLOG(INIT, LOUD, "\n");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = sizeof(struct PARAM_CUSTOM_ICCM_STRUCT);
+
+	if (u4SetBufferLen < sizeof(struct
+				    PARAM_CUSTOM_ICCM_STRUCT))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ASSERT(pvSetBuffer);
+
+	prIccmInfo = (struct PARAM_CUSTOM_ICCM_STRUCT *)
+		      pvSetBuffer;
+
+	rCmdIccm.u4Enable = prIccmInfo->u4Enable;
+	rCmdIccm.u4EnablePrintFw = prIccmInfo->u4EnablePrintFw;
+	rCmdIccm.u4Value = prIccmInfo->u4Value;
+
+	return wlanSendSetQueryCmd(prAdapter,
+					CMD_ID_SET_ICCM,
+					TRUE,
+					FALSE,
+					FALSE,
+					NULL,
+					NULL,
+					sizeof(struct CMD_ICCM_INFO_T),
+					(uint8_t *) &rCmdIccm,
+					pvSetBuffer, u4SetBufferLen);
+}	/* wlanoidSetIccm */
+#endif
+
 #if CFG_SUPPORT_WIFI_POWER_METRICS
 uint32_t
 wlanoidSetPowerMetrics(struct ADAPTER *prAdapter,

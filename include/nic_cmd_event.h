@@ -1532,6 +1532,14 @@ struct EVENT_CMD_RESULT {
 	uint8_t aucReserved[2];
 };
 
+#if CFG_SUPPORT_WIFI_ICCM
+struct CMD_ICCM_INFO_T {
+	uint8_t u4Enable;
+	uint8_t u4EnablePrintFw;
+	uint32_t u4Value;
+};
+#endif
+
 #if CFG_SUPPORT_WIFI_POWER_METRICS
 struct CMD_POWER_METRICS_INFO_T {
 	uint32_t u4Enable;
