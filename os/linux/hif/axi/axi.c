@@ -280,7 +280,7 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 	}
 
 	prChipInfo->CSRBaseAddress = CSRBaseAddress;
-	prChipInfo->u4CsrOffset = (uint32_t)(g_u8CsrOffset & BITS(0, 31));
+	prChipInfo->u8CsrOffset = g_u8CsrOffset & BITS(0, 31);
 
 	/* This Base Address is aim for PCIE (for MAWD) */
 	prChipInfo->HostCSRBaseAddress = NULL;

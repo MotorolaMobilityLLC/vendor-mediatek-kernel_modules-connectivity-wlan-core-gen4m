@@ -1128,8 +1128,9 @@ static u_int8_t kalDevRegWriteStatic(struct GLUE_INFO *prGlueInfo,
 	/* Static mapping */
 #if (CFG_WLAN_ATF_SUPPORT == 1)
 	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
-		kalSendAtfSmcCmd(SMC_WLAN_DEV_REG_WR_CR_OPID,
-			prChipInfo->u4CsrOffset + u4BusAddr,
+		kalSendAtfSmcCmd(
+			SMC_WLAN_DEV_REG_WR_CR_OPID,
+			(uint32_t)(prChipInfo->u8CsrOffset + u4BusAddr),
 			u4Value, 0);
 	} else {
 		DBGLOG(INIT, ERROR, "Write CONSYS ERROR 0x%08x=0x%08x.\n",
@@ -1229,8 +1230,9 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 	/* Static mapping */
 #if (CFG_WLAN_ATF_SUPPORT == 1)
 	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
-		kalSendAtfSmcCmd(SMC_WLAN_DEV_REG_WR_CR_OPID,
-			prChipInfo->u4CsrOffset + u4BusAddr,
+		kalSendAtfSmcCmd(
+			SMC_WLAN_DEV_REG_WR_CR_OPID,
+			(uint32_t)(prChipInfo->u8CsrOffset + u4BusAddr),
 			u4Value, 0);
 	} else {
 		DBGLOG(INIT, ERROR, "Write CONSYS ERROR 0x%08x=0x%08x.\n",

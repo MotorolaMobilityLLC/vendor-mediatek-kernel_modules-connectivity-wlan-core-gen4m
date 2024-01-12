@@ -73,6 +73,7 @@ enum wsvc_drv_info_id {
 	WSVC_DRVINFO_PCIE_L_UNLOCK_SUCCESS = 8,
 	WSVC_DRVINFO_CHECK_SER             = 9,
 	WSVC_DRVINFO_INVALID_ID            = 10,
+	WFPM_DRVINFO_PCIE_MMIO             = 128,
 };
 
 /* MDDPW_MD_INFO_DRV_EXCEPTION */
@@ -140,6 +141,12 @@ struct mddp_txd_t {
 	uint8_t txd_length;
 	uint8_t txd[0];
 } __packed;
+
+struct mddp_pcie_bar_info {
+	uint8_t version;
+	uint8_t reserved[7];
+	uint64_t offset;
+};
 
 enum BOOTMODE g_wifi_boot_mode = NORMAL_BOOT;
 u_int8_t g_fgMddpEnabled = TRUE;
@@ -895,6 +902,60 @@ exit:
 	return ret;
 }
 
+#if defined(_HIF_PCIE)
+int32_t mddpNotifyWifiPcieBarInfo(void)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct mddpw_drv_notify_info_t *prNotifyInfo;
+	struct mddpw_drv_info_t *prDrvInfo;
+	struct mddp_pcie_bar_info *prBarInfo;
+	uint32_t u4BufSize = 0;
+	uint8_t *buff = NULL;
+	int32_t ret = 0, feature = 0;
+
+	glGetChipInfo((void **)&prChipInfo);
+	if (prChipInfo == NULL) {
+		DBGLOG(HAL, ERROR, "prChipInfo in NULL\n");
+		return -1;
+	}
+
+	if (!gMddpWFunc.notify_drv_info) {
+		DBGLOG(INIT, ERROR, "notify_drv_info is NULL.\n");
+		return -1;
+	}
+
+	if (gMddpWFunc.get_mddp_feature)
+		feature = gMddpWFunc.get_mddp_feature();
+
+	u4BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
+		     sizeof(struct mddpw_drv_info_t) +
+		     sizeof(struct mddp_pcie_bar_info));
+	buff = kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
+	if (buff == NULL) {
+		DBGLOG(NIC, ERROR, "Can't allocate buffer.\n");
+		return -1;
+	}
+	prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
+	prNotifyInfo->version = 0;
+	prNotifyInfo->buf_len = sizeof(struct mddpw_drv_info_t) +
+		sizeof(struct mddp_pcie_bar_info);
+	prNotifyInfo->info_num = 1;
+	prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
+	prDrvInfo->info_id = WFPM_DRVINFO_PCIE_MMIO;
+	prDrvInfo->info_len = sizeof(struct mddp_pcie_bar_info);
+	prBarInfo = (struct mddp_pcie_bar_info *) &(prDrvInfo->info[0]);
+	prBarInfo->version = 0;
+	prBarInfo->offset = prChipInfo->u8CsrOffset;
+
+	ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
+	DBGLOG(INIT, INFO, "pcie bar info 0x%llx, ret: %d, feature:0x%x.\n",
+	       prBarInfo->offset, ret, feature);
+	kalMemFree(buff, VIR_MEM_TYPE, u4BufSize);
+
+	return ret;
+}
+#endif /* _HIF_PCIE */
+
 int32_t mddpNotifyWifiStatus(enum ENUM_MDDPW_DRV_INFO_STATUS status)
 {
 	struct mddpw_drv_notify_info_t *prNotifyInfo;
@@ -1215,6 +1276,9 @@ void __mddpNotifyWifiOnStart(void)
 #endif
 
 	mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_START);
+#if defined(_HIF_PCIE)
+	mddpNotifyWifiPcieBarInfo();
+#endif
 }
 
 void mddpNotifyWifiOnStart(void)

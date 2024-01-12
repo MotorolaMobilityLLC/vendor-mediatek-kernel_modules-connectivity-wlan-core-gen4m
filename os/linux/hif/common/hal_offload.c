@@ -60,16 +60,14 @@
 #if (CFG_MTK_FPGA_PLATFORM == 1)
 #define MAWD_WFDMA_HIGH_ADDR	0x4
 #define MAWD_WFDMA_LOW_ADDR	0x0
-#define MAWD_RRO_ADDR_OFFSET	(WF_RRO_TOP_BASE - 0xDA000)
-#define MAWD_WFDMA_ADDR_OFFSET	\
-	(CONN_INFRA_REMAPPING_OFFSET - 0xD0000 + 0x18020000)
 #else
 #define MAWD_WFDMA_HIGH_ADDR	0x0
 #define MAWD_WFDMA_LOW_ADDR	0x18000000
-#define MAWD_RRO_ADDR_OFFSET	(WF_RRO_TOP_BASE - 0x300DA000)
-#define MAWD_WFDMA_ADDR_OFFSET	\
-	(CONN_INFRA_REMAPPING_OFFSET - 0x300D0000 + 0x18020000)
 #endif
+
+#define MAWD_RRO_ADDR_OFFSET	(WF_RRO_TOP_BASE - 0xDA000)
+#define MAWD_WFDMA_ADDR_OFFSET	\
+	(CONN_INFRA_REMAPPING_OFFSET - 0xD0000 + 0x18020000)
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -563,14 +561,19 @@ static void halRroSetupTimeoutConfig(struct GLUE_INFO *prGlueInfo)
 void halRroMawdInit(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter;
+	struct mt66xx_chip_info *prChipInfo;
 	struct GL_HIF_INFO *prHifInfo;
 	struct RTMP_DMABUF *prAddrArray, *prIndCmd;
 	uint32_t u4Addr, u4Val;
+	uint32_t u4MawdRroAddrOffset = MAWD_RRO_ADDR_OFFSET;
 
 	prAdapter = prGlueInfo->prAdapter;
+	prChipInfo = prAdapter->chip_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prAddrArray = &prHifInfo->AddrArray;
 	prIndCmd = &prHifInfo->IndCmdRing;
+	u4MawdRroAddrOffset -=
+		(uint32_t)(prChipInfo->u8CsrOffset & BITS(0, 31));
 
 	prHifInfo->fgIsMawdSuspend = FALSE;
 
@@ -604,7 +607,7 @@ void halRroMawdInit(struct GLUE_INFO *prGlueInfo)
 
 	/* setup ack sn */
 	u4Addr = MAWD_RRO_ACK_SN_BASE_L;
-	u4Val = WF_RRO_TOP_ACK_SN_CTRL_ADDR - MAWD_RRO_ADDR_OFFSET;
+	u4Val = WF_RRO_TOP_ACK_SN_CTRL_ADDR - u4MawdRroAddrOffset;
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	u4Addr = MAWD_RRO_ACK_SN_BASE_M;
@@ -2339,18 +2342,21 @@ static void halMawdSetupTxRing(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Base = u4Idx, u4Val = 0, u4Addr, u4DWCnt;
 	uint32_t u4HifTxdOffset = u4Base * 0xC;
 	uint32_t u4WfdmaOffset = u4Base * 0x14;
+	uint32_t u4MawdWfdmaAddrOffset = MAWD_WFDMA_ADDR_OFFSET;
 
 	prAdapter = prGlueInfo->prAdapter;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
+	u4MawdWfdmaAddrOffset -=
+		(uint32_t)(prChipInfo->u8CsrOffset & BITS(0, 31));
 
 	u4Addr = prBusInfo->mawd_ring_ctrl0 + u4WfdmaOffset;
 	HAL_MCR_WR(prAdapter, u4Addr, u4PhyAddr);
 	u4Addr = prBusInfo->mawd_ring_ctrl1 + u4WfdmaOffset;
-	u4Val = prWfdmaTxRing->hw_cidx_addr - MAWD_WFDMA_ADDR_OFFSET;
+	u4Val = prWfdmaTxRing->hw_cidx_addr - u4MawdWfdmaAddrOffset;
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 	u4Addr = prBusInfo->mawd_ring_ctrl2 + u4WfdmaOffset;
-	u4Val = prWfdmaTxRing->hw_didx_addr - MAWD_WFDMA_ADDR_OFFSET;
+	u4Val = prWfdmaTxRing->hw_didx_addr - u4MawdWfdmaAddrOffset;
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 	u4Addr = prBusInfo->mawd_ring_ctrl3 + u4WfdmaOffset;
 	u4Val = (TX_RING_DATA_SIZE << 19) | (TXD_SIZE << 12) |
