@@ -85,12 +85,14 @@ VOID asicCapInit(IN P_ADAPTER_T prAdapter)
 	prChipInfo->u2TxInitCmdPort = 0;
 	prChipInfo->u2TxFwDlPort = 0;
 	prChipInfo->fillHifTxDesc = NULL;
+	prChipInfo->u2ExtraTxByteCount = 0;
 
 	switch (prGlueInfo->u4InfType) {
 #if defined(_HIF_PCIE)
 	case MT_DEV_INF_PCIE:
 		prChipInfo->u2TxInitCmdPort = TX_RING_FWDL_IDX_3;
 		prChipInfo->u2TxFwDlPort = TX_RING_FWDL_IDX_3;
+		prChipInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD;
 		break;
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
@@ -99,8 +101,16 @@ VOID asicCapInit(IN P_ADAPTER_T prAdapter)
 		prChipInfo->fillHifTxDesc = fillUsbHifTxDesc;
 		prChipInfo->u2TxInitCmdPort = USB_DATA_BULK_OUT_EP8;
 		prChipInfo->u2TxFwDlPort = USB_DATA_BULK_OUT_EP4;
+		prChipInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD_PAYLOAD;
+		prChipInfo->u2ExtraTxByteCount = EXTRA_TXD_SIZE_FOR_TX_BYTE_COUNT;
 		break;
 #endif /* _HIF_USB */
+#if defined(_HIF_SDIO)
+	case MT_DEV_INF_SDIO:
+		prChipInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD_PAYLOAD;
+		prChipInfo->u2ExtraTxByteCount = EXTRA_TXD_SIZE_FOR_TX_BYTE_COUNT;
+		break;
+#endif /* _HIF_SDIO */
 	default:
 		break;
 	}
@@ -193,6 +203,7 @@ VOID fillUsbHifTxDesc(IN PUINT_8 * pDest, IN PUINT_16 pInfoBufLen)
 {
 	/*USB TX Descriptor (4 bytes)*/
 	/*BIT[15:0] - TX Bytes Count (Not including USB TX Descriptor and 4-bytes zero padding.*/
+	kalMemZero((PVOID)*pDest, sizeof(UINT_32));
 	kalMemCopy((PVOID)*pDest, (PVOID) pInfoBufLen, sizeof(UINT_16));
 }
 #endif /* _HIF_USB */

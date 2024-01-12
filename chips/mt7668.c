@@ -180,6 +180,8 @@ VOID mt7668CapInit(IN P_ADAPTER_T prAdapter)
 	prChipInfo->u2TxInitCmdPort = 0;
 	prChipInfo->u2TxFwDlPort = 0;
 	prChipInfo->fillHifTxDesc = NULL;
+	prChipInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD;
+	prChipInfo->u2ExtraTxByteCount = 0;
 
 	switch (prGlueInfo->u4InfType) {
 #if defined(_HIF_PCIE)

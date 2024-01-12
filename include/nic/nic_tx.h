@@ -714,6 +714,7 @@ struct _MSDU_INFO_T {
 	UINT_8 ucStaRecIndex;	/* STA_REC index */
 	UINT_8 ucBssIndex;	/* BSS_INFO_T index */
 	UINT_8 ucWlanIndex;	/* Wlan entry index */
+	UINT_8 ucPacketFormat;  /* TXD.DW1[25:24] Packet Format */
 
 	BOOLEAN fgIs802_1x;	/* TRUE: 802.1x frame */
 	BOOLEAN fgIs802_1x_NonProtected;	/* TRUE: 802.1x frame - Non-Protected */
