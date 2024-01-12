@@ -281,7 +281,6 @@ static struct pci_driver mtk_pci_driver = {
 	.remove = NULL,
 };
 
-struct platform_device *g_prPlatDev;
 static struct GLUE_INFO *g_prGlueInfo;
 static void *CSRBaseAddress;
 static u64 g_u8CsrOffset;

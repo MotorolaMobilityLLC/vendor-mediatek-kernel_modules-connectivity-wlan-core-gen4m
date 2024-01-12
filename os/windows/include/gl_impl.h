@@ -134,4 +134,10 @@ uint8_t  __KAL_INLINE__ kalIsSupportRro(void)
 	return 0;
 }
 #endif
+
+void __KAL_INLINE__ kalGetPlatDev(void **dev)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
 #endif /* _GL_IMPL_H */
