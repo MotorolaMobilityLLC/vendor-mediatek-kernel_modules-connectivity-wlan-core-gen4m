@@ -349,6 +349,8 @@ struct BUS_INFO {
 	void (*DmaShdlInit)(IN struct ADAPTER *prAdapter);
 	void (*processAbnormalInterrupt)(struct ADAPTER *prAdapter);
 	void (*asicUdmaRxFlush)(IN struct ADAPTER *prAdapter, uint8_t bEnable);
+	uint32_t (*updateTxRingMaxQuota)(struct ADAPTER *prAdapter,
+		uint8_t ucWmmIndex, uint32_t u4MaxQuota);
 };
 
 /* USB_REQ_T prPriv field for TxData */

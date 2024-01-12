@@ -1343,6 +1343,50 @@ uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
 
 void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter)
 {
+	struct BUS_INFO *prBusInfo;
+	uint32_t u4Ret;
+	uint32_t u4Quota;
+	bool fgRun;
+	uint8_t ucWmmIndex;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
+		ucWmmIndex++) {
+		u4Ret = WLAN_STATUS_SUCCESS;
+
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_UPDATE_WMM_QUOTA);
+		u4Quota = prAdapter->rWmmQuotaReqCS[ucWmmIndex].u4Quota;
+		fgRun = prAdapter->rWmmQuotaReqCS[ucWmmIndex].fgRun;
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_UPDATE_WMM_QUOTA);
+
+		if (fgRun) {
+			if (prBusInfo->updateTxRingMaxQuota) {
+				u4Ret = prBusInfo->updateTxRingMaxQuota(
+							prAdapter,
+							(uint16_t)ucWmmIndex,
+							u4Quota);
+			} else {
+				DBGLOG(HAL, INFO,
+					"updateTxRingMaxQuota not implemented\n");
+				u4Ret = WLAN_STATUS_NOT_ACCEPTED;
+			}
+		}
+
+		DBGLOG(HAL, INFO,
+			"WmmQuota,Run,%u,Wmm,%u,Quota,0x%x,ret=0x%x\n",
+			fgRun, ucWmmIndex, u4Quota, u4Ret);
+		if (u4Ret != WLAN_STATUS_PENDING) {
+			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+				SPIN_LOCK_UPDATE_WMM_QUOTA);
+			prAdapter->rWmmQuotaReqCS[ucWmmIndex].fgRun
+				= false;
+			KAL_RELEASE_SPIN_LOCK(prAdapter,
+				SPIN_LOCK_UPDATE_WMM_QUOTA);
+		}
+	}
 }
 
 void halUpdateBssTokenCnt(struct ADAPTER *prAdapter,

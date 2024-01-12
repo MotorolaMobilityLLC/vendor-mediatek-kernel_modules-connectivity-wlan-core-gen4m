@@ -350,5 +350,92 @@ void mt7961DmashdlInit(struct ADAPTER *prAdapter)
 				       rMT7961DmashdlCfg.fgSlotArbiterEn);
 }
 
+uint32_t mt7961UpdateDmashdlQuota(struct ADAPTER *prAdapter,
+			uint8_t ucWmmIndex, uint32_t u4MaxQuota)
+{
+	uint8_t ucGroupIdx, ucAcIdx;
+	uint32_t idx;
+	uint16_t u2MaxQuotaFinal;
+	bool fgIsMaxQuotaInvalid = FALSE;
+
+	ASSERT(prAdapter);
+	if (u4MaxQuota > (DMASHDL_MAX_QUOTA_MASK >> DMASHDL_MAX_QUOTA_OFFSET))
+		fgIsMaxQuotaInvalid = TRUE;
+
+	for (idx = 0; idx < WMM_AC_INDEX_NUM; idx++) {
+		ucAcIdx = idx + (ucWmmIndex * WMM_AC_INDEX_NUM);
+		ucGroupIdx = rMT7961DmashdlCfg.aucQueue2Group[ucAcIdx];
+		u2MaxQuotaFinal = u4MaxQuota;
+		if (fgIsMaxQuotaInvalid) {
+			/* Set quota to default */
+			u2MaxQuotaFinal =
+				rMT7961DmashdlCfg.au2MaxQuota[ucGroupIdx];
+		}
+
+		if (u2MaxQuotaFinal) {
+			DBGLOG(HAL, INFO,
+				"ucWmmIndex,%u,ucGroupIdx,%u,u2MaxQuotaFinal,0x%x\n",
+				ucWmmIndex, ucGroupIdx, u2MaxQuotaFinal);
+			asicConnac2xDmashdlSetMaxQuota(prAdapter,
+				ucGroupIdx,
+				u2MaxQuotaFinal);
+		}
+	}
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t mt7961dmashdlQuotaDecision(struct ADAPTER *prAdapter,
+			uint8_t ucWmmIndex)
+{
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIndex;
+	uint16_t u2MaxQuota = 0;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	u_int8_t fgIs5g = FALSE, fgIs6g = FALSE;
+#endif
+	enum ENUM_BAND eTargetBand = BAND_NULL;
+
+	for (ucBssIndex = 0;
+		ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
+
+		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+
+		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
+			continue;
+
+		if (prBssInfo->eBand != BAND_2G4
+			&& prBssInfo->eBand != BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			&& prBssInfo->eBand != BAND_6G
+#endif
+			)
+			continue;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (prBssInfo->eBand == BAND_6G)
+			fgIs6g = TRUE;
+		else if (prBssInfo->eBand == BAND_5G)
+			fgIs5g = TRUE;
+#endif
+		if (prBssInfo->ucWmmQueSet == ucWmmIndex)
+			eTargetBand = prBssInfo->eBand;
+
+	}
+
+	if (eTargetBand != BAND_NULL) {
+		if (eTargetBand == BAND_2G4) /* for 2G in case 2+6 or 2+5 */
+			u2MaxQuota = MT7961_DMASHDL_DBDC_2G_MAX_QUOTA;
+		else /* for 5G and 6G in case 2+6 or 2+5 */
+			u2MaxQuota = MT7961_DMASHDL_DBDC_5G_MAX_QUOTA;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (fgIs6g && fgIs5g) /* for 5+6 case */
+			u2MaxQuota = MT7961_DMASHDL_DBDC_5G_6G_MAX_QUOTA;
+#endif
+	}
+
+	return u2MaxQuota;
+}
+
+
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB) */
 #endif /* MT7961 */

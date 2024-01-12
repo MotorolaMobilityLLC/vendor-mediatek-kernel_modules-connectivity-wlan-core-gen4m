@@ -1297,7 +1297,6 @@ void halUpdateBssTokenCnt(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 void halSetHifIntEvent(struct GLUE_INFO *pr, unsigned long ulBit);
 #endif
 void halDumpHifStats(IN struct ADAPTER *prAdapter);
-
 #if defined(_HIF_USB)
 void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter);
 #endif /* defined(_HIF_USB) */
@@ -1312,6 +1311,9 @@ u_int8_t halWpdmaWaitIdle(struct GLUE_INFO *prGlueInfo,
 bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 			 uint32_t u4Size, uint32_t u4DescSize,
 			 uint32_t u4BufSize, bool fgAllocMem);
+uint8_t halRingDataSelectByWmmIndex(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucWmmIndex);
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */
 
 #endif /* _HAL_H */

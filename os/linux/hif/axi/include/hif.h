@@ -301,7 +301,7 @@ struct BUS_INFO {
 	void (*pdmaSetup)(struct GLUE_INFO *prGlueInfo, u_int8_t enable,
 		bool fgResetHif);
 	uint32_t (*updateTxRingMaxQuota)(struct ADAPTER *prAdapter,
-		uint16_t u2Port, uint32_t u4MaxQuota);
+		uint8_t ucWmmIndex, uint32_t u4MaxQuota);
 	void (*enableInterrupt)(struct ADAPTER *prAdapter);
 	void (*disableInterrupt)(struct ADAPTER *prAdapter);
 	void (*disableSwInterrupt)(struct ADAPTER *prAdapter);
