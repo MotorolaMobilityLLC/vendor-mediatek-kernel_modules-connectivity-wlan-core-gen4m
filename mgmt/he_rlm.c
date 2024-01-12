@@ -1082,7 +1082,7 @@ void heRlmRecHeCapInfo(
 			prStaRec->ucHePhyCapInfo[5]
 			);
 
-	log_dbg(RLM, LOUD, "ucHePhyCapInfo-1-%x,%x,%x,%x,%x,%x\n",
+	log_dbg(RLM, LOUD, "ucHePhyCapInfo-1-%x,%x,%x,%x,%x\n",
 			prStaRec->ucHePhyCapInfo[6],
 			prStaRec->ucHePhyCapInfo[7],
 			prStaRec->ucHePhyCapInfo[8],

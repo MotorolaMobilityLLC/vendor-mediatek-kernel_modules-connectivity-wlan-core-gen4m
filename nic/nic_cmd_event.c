@@ -297,41 +297,39 @@ void nicCmdEventPfmuDataRead(IN struct ADAPTER *prAdapter,
 		g_rPfmuData = *prEventPfmuDataRead;
 	}
 
-	DBGLOG(INIT, INFO, "=========== Before ===========\n");
-	if (prEventPfmuDataRead != NULL) {
-		DBGLOG(INIT, INFO, "u2Phi11 = 0x%x\n",
-		       prEventPfmuDataRead->rField.u2Phi11);
-		DBGLOG(INIT, INFO, "ucPsi21 = 0x%x\n",
-		       prEventPfmuDataRead->rField.ucPsi21);
-		DBGLOG(INIT, INFO, "u2Phi21 = 0x%x\n",
-		       prEventPfmuDataRead->rField.u2Phi21);
-		DBGLOG(INIT, INFO, "ucPsi31 = 0x%x\n",
-		       prEventPfmuDataRead->rField.ucPsi31);
-		DBGLOG(INIT, INFO, "u2Phi31 = 0x%x\n",
-		       prEventPfmuDataRead->rField.u2Phi31);
-		DBGLOG(INIT, INFO, "ucPsi41 = 0x%x\n",
-		       prEventPfmuDataRead->rField.ucPsi41);
-		DBGLOG(INIT, INFO, "u2Phi22 = 0x%x\n",
-		       prEventPfmuDataRead->rField.u2Phi22);
-		DBGLOG(INIT, INFO, "ucPsi32 = 0x%x\n",
-		       prEventPfmuDataRead->rField.ucPsi32);
-		DBGLOG(INIT, INFO, "u2Phi32 = 0x%x\n",
-		       prEventPfmuDataRead->rField.u2Phi32);
-		DBGLOG(INIT, INFO, "ucPsi42 = 0x%x\n",
-		       prEventPfmuDataRead->rField.ucPsi42);
-		DBGLOG(INIT, INFO, "u2Phi33 = 0x%x\n",
-		       prEventPfmuDataRead->rField.u2Phi33);
-		DBGLOG(INIT, INFO, "ucPsi43 = 0x%x\n",
-		       prEventPfmuDataRead->rField.ucPsi43);
-		DBGLOG(INIT, INFO, "u2dSNR00 = 0x%x\n",
-		       prEventPfmuDataRead->rField.u2dSNR00);
-		DBGLOG(INIT, INFO, "u2dSNR01 = 0x%x\n",
-		       prEventPfmuDataRead->rField.u2dSNR01);
-		DBGLOG(INIT, INFO, "u2dSNR02 = 0x%x\n",
-		       prEventPfmuDataRead->rField.u2dSNR02);
-		DBGLOG(INIT, INFO, "u2dSNR03 = 0x%x\n",
-		       prEventPfmuDataRead->rField.u2dSNR03);
-	}
+	if (prEventPfmuDataRead == NULL)
+		return;
+
+	DBGLOG(INIT, INFO, "=========== Low Seg Angles ===========\n");
+	DBGLOG(INIT, INFO, "Psi21 = 0x%02x, Phi11 = 0x%03x\n",
+		prEventPfmuDataRead->rField.rLowSegAng.ucPsi21,
+		prEventPfmuDataRead->rField.rLowSegAng.u2Phi11);
+	DBGLOG(INIT, INFO, "Psi31 = 0x%02x, Phi21 = 0x%03x\n",
+		prEventPfmuDataRead->rField.rLowSegAng.ucPsi31,
+		prEventPfmuDataRead->rField.rLowSegAng.u2Phi21);
+	DBGLOG(INIT, INFO, "Psi41 = 0x%02x, Phi31 = 0x%03x\n",
+		prEventPfmuDataRead->rField.rLowSegAng.ucPsi41,
+		prEventPfmuDataRead->rField.rLowSegAng.u2Phi31);
+	DBGLOG(INIT, INFO, "Psi32 = 0x%02x, Phi22 = 0x%03x\n",
+		prEventPfmuDataRead->rField.rLowSegAng.ucPsi32,
+		prEventPfmuDataRead->rField.rLowSegAng.u2Phi22);
+	DBGLOG(INIT, INFO, "Psi42 = 0x%02x, Phi32 = 0x%03x\n",
+		prEventPfmuDataRead->rField.rLowSegAng.ucPsi42,
+		prEventPfmuDataRead->rField.rLowSegAng.u2Phi32);
+	DBGLOG(INIT, INFO, "Psi43 = 0x%02x, Phi33 = 0x%03x\n",
+		prEventPfmuDataRead->rField.rLowSegAng.ucPsi43,
+		prEventPfmuDataRead->rField.rLowSegAng.u2Phi33);
+
+	DBGLOG(INIT, INFO, "============ Low Seg SNRs ============\n");
+	DBGLOG(INIT, INFO, "SNR00 = 0x%03x, SNR01 = 0x%03x\n",
+		prEventPfmuDataRead->rField.rLowSegSnr.u2dSNR00,
+		prEventPfmuDataRead->rField.rLowSegSnr.u2dSNR01);
+	DBGLOG(INIT, INFO, "SNR02 = 0x%03x, SNR03 = 0x%03x\n",
+		prEventPfmuDataRead->rField.rLowSegSnr.u2dSNR02,
+		prEventPfmuDataRead->rField.rLowSegSnr.u2dSNR03_MSB << 2 |
+		prEventPfmuDataRead->rField.rLowSegSnr.u2dSNR03);
+
+	DBGLOG(INIT, INFO, "======================================\n");
 }
 
 void nicCmdEventPfmuTagRead(IN struct ADAPTER *prAdapter,
