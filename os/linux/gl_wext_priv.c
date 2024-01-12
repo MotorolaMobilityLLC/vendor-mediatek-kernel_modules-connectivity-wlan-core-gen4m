@@ -19751,26 +19751,6 @@ error:
 }
 
 #if CFG_SUPPORT_TDLS
-static uint8_t getTdlsEnabled(struct ADAPTER *pAd)
-{
-	uint8_t fgEnabled = TRUE;
-
-
-	if (pAd->rWifiVar.fgTdlsDisable) {
-		DBGLOG(TDLS, INFO, "TDLS is disabled\n");
-		fgEnabled = FALSE;
-	}
-
-	if (pAd->u4TdlsLinkCount == MAXNUM_TDLS_PEER) {
-		DBGLOG(TDLS, INFO,
-			"TDLS link count is full. (%d)\n",
-			MAXNUM_TDLS_PEER);
-		fgEnabled = FALSE;
-	}
-
-	return fgEnabled;
-}
-
 static int priv_driver_get_tdls_available(
 	struct net_device *prNetDev,
 	char *pcCommand,
@@ -19778,48 +19758,29 @@ static int priv_driver_get_tdls_available(
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
-	struct BSS_INFO *bss = NULL;
 	int32_t i4BytesWritten = 0;
 	uint8_t fgAvailable = TRUE;
+	uint8_t ucBssIndex = 0;
 
 	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
 
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		goto error;
 
+	ucBssIndex = wlanGetBssIdx(prNetDev);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+		DBGLOG(REQ, WARN,
+			"bss [%d] is invalid!\n", ucBssIndex);
+		goto error;
+	}
+
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	fgAvailable = getTdlsEnabled(prAdapter);
-	if (!fgAvailable)
-		goto exit;
+	fgAvailable =
+		TdlsEnabled(prAdapter) &&
+		TdlsAllowed(prAdapter, ucBssIndex);
 
-	bss = aisGetConnectedBssInfo(prAdapter);
-	if (!bss) {
-		DBGLOG(REQ, INFO, "bss is not active\n");
-		fgAvailable = FALSE;
-	} else {
-		DBGLOG(TDLS, INFO,
-			"STA operating channel: %d, band: %d, conn state: %d",
-			bss->ucPrimaryChannel,
-			bss->eBand,
-			bss->eConnectionState);
-
-		/* Check VLP */
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		if (bss->eBand == BAND_6G &&
-			bss->ucPrimaryChannel >= 97) {
-			DBGLOG(TDLS, INFO,
-				"VLP channel (%d)\n",
-				bss->ucPrimaryChannel);
-			fgAvailable = FALSE;
-			goto exit;
-		}
-#endif
-
-	}
-
-exit:
 	i4BytesWritten = kalSnprintf(
 		pcCommand, i4TotalLen, "%d", fgAvailable);
 
@@ -19839,42 +19800,29 @@ static int priv_driver_get_tdls_wider_bw(
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
-	struct BSS_INFO *bss = NULL;
 	int32_t i4BytesWritten = 0;
 	uint8_t fgEnable = FALSE;
+	uint8_t ucBssIndex = 0;
 
 	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
 
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		goto error;
 
+	ucBssIndex = wlanGetBssIdx(prNetDev);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+		DBGLOG(REQ, WARN,
+			"bss [%d] is invalid!\n", ucBssIndex);
+		goto error;
+	}
+
 	prGlueInfo = *((struct GLUE_INFO **)
 		netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	fgEnable = getTdlsEnabled(prAdapter);
-	if (!fgEnable)
-		goto exit;
-
-	bss = aisGetConnectedBssInfo(prAdapter);
-	if (!bss) {
-		DBGLOG(REQ, INFO, "bss is not active\n");
-		fgEnable = FALSE;
-	} else {
-		DBGLOG(TDLS, INFO,
-			"STA operating channel: %d, band: %d, conn state: %d",
-			bss->ucPrimaryChannel,
-			bss->eBand,
-			bss->eConnectionState);
-
-		if (rlmDomainIsLegalDfsChannel(prAdapter,
-			bss->eBand, bss->ucPrimaryChannel)) {
-			fgEnable = FALSE;
-			goto exit;
-		}
-	}
-
-exit:
+	fgEnable =
+		TdlsEnabled(prAdapter) &&
+		TdlsNeedAdjustBw(prAdapter, ucBssIndex);
 
 	i4BytesWritten = kalSnprintf(
 		pcCommand, i4TotalLen, "%d", fgEnable);

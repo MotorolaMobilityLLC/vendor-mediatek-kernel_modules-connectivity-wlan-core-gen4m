@@ -3670,6 +3670,9 @@ static void wlanCreateWirelessDevice(void)
 
 #if (CFG_SUPPORT_TDLS == 1)
 	TDLSEX_WIPHY_FLAGS_INIT(prWiphy->flags);
+#if CFG_SUPPORT_TDLS_OFFCHANNEL
+	prWiphy->features |= NL80211_FEATURE_TDLS_CHANNEL_SWITCH;
+#endif
 #endif /* CFG_SUPPORT_TDLS */
 	prWiphy->max_remain_on_channel_duration = 5000;
 	prWiphy->mgmt_stypes = mtk_cfg80211_ais_default_mgmt_stypes;

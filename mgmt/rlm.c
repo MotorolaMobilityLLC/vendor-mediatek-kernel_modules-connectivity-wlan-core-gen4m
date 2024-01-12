@@ -5356,6 +5356,15 @@ uint32_t rlmFillVhtCapIEByAdapter(struct ADAPTER *prAdapter,
 	prVhtCap->u4VhtCapInfo = VHT_CAP_INFO_DEFAULT_VAL;
 
 	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+#if CFG_SUPPORT_TDLS_ADJUST_BW
+	if (TdlsNeedAdjustBw(prAdapter, prBssInfo->ucBssIndex)) {
+		uint8_t ucNewMaxBw =
+			rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
+
+		DBGLOG(TDLS, INFO,
+			"Adjust bw %d to %d\n", ucMaxBw, ucNewMaxBw);
+	}
+#endif
 	supportNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
 
 	prVhtCap->u4VhtCapInfo |= (prAdapter->rWifiVar.ucRxMaxMpduLen &

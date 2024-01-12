@@ -75,6 +75,131 @@ static u_int8_t fgIsWaitForTxDone = FALSE;
  *******************************************************************************
  */
 
+uint8_t TdlsEnabled(struct ADAPTER *pAd)
+{
+	uint8_t fgEnabled = TRUE;
+
+	if (pAd->rWifiVar.fgTdlsDisable) {
+		DBGLOG(TDLS, INFO, "TDLS is disabled\n");
+		fgEnabled = FALSE;
+	}
+
+	return fgEnabled;
+}
+
+uint8_t TdlsValid(
+	struct ADAPTER *pAd,
+	uint8_t ucBssIndex)
+{
+	uint8_t fgValid = TRUE;
+	struct BSS_INFO *bss =
+		GET_BSS_INFO_BY_INDEX(
+		pAd, ucBssIndex);
+
+	if (!pAd || !bss) {
+		DBGLOG(TDLS, TRACE, "bss is not active\n");
+		fgValid = FALSE;
+	} else if (bss->eCurrentOPMode !=
+		OP_MODE_INFRASTRUCTURE) {
+		DBGLOG(TDLS, TRACE, "bss is not client\n");
+		fgValid = FALSE;
+	} else if (
+		bss->eConnectionState !=
+		MEDIA_STATE_CONNECTED) {
+		DBGLOG(TDLS, TRACE, "bss is not connected\n");
+		fgValid = FALSE;
+	}
+
+	return fgValid;
+}
+
+uint8_t TdlsAllowed(
+	struct ADAPTER *pAd,
+	uint8_t ucBssIndex)
+{
+	uint8_t fgAvailable = TRUE;
+
+	if (!TdlsValid(pAd, ucBssIndex))
+		fgAvailable = FALSE;
+	else {
+		struct BSS_INFO *bss =
+			GET_BSS_INFO_BY_INDEX(
+			pAd, ucBssIndex);
+
+		DBGLOG(TDLS, INFO,
+			"STA ch: %d, band: %d, conn state: %d",
+			bss->ucPrimaryChannel,
+			bss->eBand,
+			bss->eConnectionState);
+
+		/* Check VLP */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (bss->eBand == BAND_6G &&
+			bss->ucPrimaryChannel >= 97) {
+			DBGLOG(TDLS, INFO,
+				"VLP channel (%d)\n",
+				bss->ucPrimaryChannel);
+			fgAvailable = FALSE;
+		}
+#endif
+	}
+
+	return fgAvailable;
+}
+
+uint8_t TdlsNeedAdjustBw(
+	struct ADAPTER *pAd,
+	uint8_t ucBssIndex)
+{
+	uint8_t fgEnable = FALSE;
+
+	if (!TdlsValid(pAd, ucBssIndex))
+		fgEnable = FALSE;
+	else {
+		struct BSS_INFO *bss =
+			GET_BSS_INFO_BY_INDEX(
+			pAd, ucBssIndex);
+
+		DBGLOG(TDLS, TRACE,
+			"STA ch: %d, band: %d, conn state: %d",
+			bss->ucPrimaryChannel,
+			bss->eBand,
+			bss->eConnectionState);
+
+		if (rlmDomainIsLegalDfsChannel(pAd,
+			bss->eBand, bss->ucPrimaryChannel)) {
+			fgEnable = TRUE;
+		}
+	}
+
+	return fgEnable;
+}
+
+uint8_t TdlsAdjustBw(
+	struct ADAPTER *pAd,
+	struct STA_RECORD *sta,
+	uint8_t bss,
+	uint8_t bw)
+{
+	if (TdlsValid(pAd, bss) &&
+		TdlsNeedAdjustBw(pAd, bss) &&
+		sta &&
+		IS_DLS_STA(sta)) {
+		uint8_t newbw =
+			rlmGetBssOpBwByVhtAndHtOpInfo(
+			GET_BSS_INFO_BY_INDEX(pAd,
+			bss));
+
+		DBGLOG(TDLS, INFO,
+			"Adjust bw %d to %d\n",
+			bw,
+			newbw);
+		return newbw;
+	}
+
+	return bw;
+}
+
 #if CFG_SUPPORT_TDLS_11AX
 uint16_t _TdlsComposeCapIE(
 	struct ADAPTER *ad,
@@ -206,6 +331,10 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 		prStaRec = prBssInfo->prStaRecOfAP;
 		if (prStaRec == NULL)
 			return 0;
+#if CFG_SUPPORT_TDLS_11AX
+		if (!TdlsAllowed(prAdapter, prCmd->ucBssIdx))
+			return 0;
+#endif
 	} else {
 		return -EINVAL;
 	}
