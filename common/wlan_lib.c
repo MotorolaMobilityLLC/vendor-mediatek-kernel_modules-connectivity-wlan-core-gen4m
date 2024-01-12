@@ -14013,7 +14013,7 @@ uint32_t wlanQueryThermalTemp(struct ADAPTER *ad,
 	else
 		handler = wlanoidQueryThermalDdieTemp;
 
-	status = kalIoctl(glue, handler, data, sizeof(data), &len);
+	status = kalIoctl(glue, handler, data, sizeof(*data), &len);
 
 	return status;
 }

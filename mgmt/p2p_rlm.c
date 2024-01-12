@@ -739,7 +739,7 @@ void rlmHandleObssStatusEventPkt(struct ADAPTER *prAdapter,
 	prBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, prObssStatus->ucBssIndex);
 
-	if (prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT)
+	if (!prBssInfo || prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT)
 		return;
 
 	prBssInfo->fgObssErpProtectMode =
