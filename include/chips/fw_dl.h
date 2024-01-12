@@ -299,14 +299,19 @@ struct FW_IMAGE_TAILER_CHECK {
 };
 #endif
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct PATCH_FORMAT_T {
 	uint8_t aucBuildDate[16];
 	uint8_t aucPlatform[4];
 	uint32_t u4SwHwVersion;
 	uint32_t u4PatchVersion;
 	uint16_t u2CRC;		/* CRC calculated for image only */
-	uint8_t ucPatchImage[0];
-};
+	/* avoid use [0] at the last for this struct may be used in
+	 * the middle of other struct, which may make the size of struct
+	 * hard to be calculate for different compiler
+	 */
+	/* uint8_t ucPatchImage[0]; */
+} __KAL_ATTRIB_PACKED__;
 
 struct PATCH_FORMAT_V2_T {
 	uint8_t aucBuildDate[16];
