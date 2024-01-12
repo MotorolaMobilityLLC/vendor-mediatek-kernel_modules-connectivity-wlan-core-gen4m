@@ -838,6 +838,15 @@ scanSearchBssDescByTAAndSsid(struct ADAPTER *prAdapter,
 			     u_int8_t fgCheckSsid,
 			     struct PARAM_SSID *prSsid);
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+struct BSS_DESC *
+scanSearchBssDescByLinkIdMldAddrSsid(struct ADAPTER *prAdapter,
+				  uint8_t ucLinkId,
+				  uint8_t aucMldAddr[],
+				  u_int8_t fgCheckSsid,
+				  struct PARAM_SSID *prSsid);
+#endif
+
 /* BSS-DESC Search - Alternative */
 struct BSS_DESC *
 scanSearchExistingBssDesc(struct ADAPTER *prAdapter,
