@@ -2235,12 +2235,44 @@ u_int8_t rlmDomainIsLegalChannel(struct ADAPTER *prAdapter,
 	return FALSE;
 }
 
+u_int8_t rlmDomainIsLegalDfsChannel_V2(struct ADAPTER *prAdapter,
+		enum ENUM_BAND eBand, uint8_t ucChannel)
+{
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
+	uint8_t idx, start_idx, end_idx;
+	struct CMD_DOMAIN_CHANNEL *prCh;
+
+	if (eBand != BAND_5G)
+		return FALSE;
+
+	start_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
+	end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ) +
+			rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
+
+	for (idx = start_idx; idx < end_idx; idx++) {
+		prCh = rlmDomainGetActiveChannels() + idx;
+		if (prCh->u2ChNum == ucChannel &&
+			kalIsChFlagMatch(prCh->eFlags, CHAN_RADAR)) {
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+#else
+	return FALSE;
+#endif
+}
+
 u_int8_t rlmDomainIsLegalDfsChannel(struct ADAPTER *prAdapter,
 		enum ENUM_BAND eBand, uint8_t ucChannel)
 {
 	uint8_t i, j;
 	struct DOMAIN_SUBBAND_INFO *prSubband;
 	struct DOMAIN_INFO_ENTRY *prDomainInfo;
+
+	if (regd_is_single_sku_en())
+		return rlmDomainIsLegalDfsChannel_V2(
+				prAdapter, eBand, ucChannel);
 
 	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
 	ASSERT(prDomainInfo);
