@@ -192,6 +192,8 @@ ifeq ($(WIFI_ENABLE_GCOV), y)
 GCOV_PROFILE := y
 endif
 
+ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=3
+
 ifneq ($(filter 6765, $(WLAN_CHIP_ID)),)
     ccflags-y += -DCFG_SUPPORT_DUAL_STA=0
 else
