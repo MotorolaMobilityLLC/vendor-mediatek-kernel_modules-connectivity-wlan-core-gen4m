@@ -963,8 +963,40 @@ WLAN_STATUS wlanProcessCommandQueue(IN P_ADAPTER_T prAdapter, IN P_QUE_T prCmdQu
 		prCmdInfo = (P_CMD_INFO_T) prQueueEntry;
 
 		switch (prCmdInfo->eCmdType) {
-		case COMMAND_TYPE_GENERAL_IOCTL:
 		case COMMAND_TYPE_NETWORK_IOCTL:
+		{
+			P_WIFI_CMD_T prWifiCmd = (P_WIFI_CMD_T) NULL;
+			P_CMD_802_11_KEY prKey = (P_CMD_802_11_KEY) NULL;
+			P_BSS_INFO_T prBssInfo = (P_BSS_INFO_T) NULL;
+
+			eFrameAction = FRAME_ACTION_TX_PKT;
+			do {
+				prWifiCmd = (P_WIFI_CMD_T) (prCmdInfo->pucInfoBuffer);
+				prKey = (P_CMD_802_11_KEY) (prWifiCmd->aucBuffer);
+				prBssInfo = prAdapter->aprBssInfo[prKey->ucBssIdx];
+
+				if ((prCmdInfo->ucCID != CMD_ID_ADD_REMOVE_KEY) ||
+					!prKey->ucTxKey ||
+					!prKey->ucAddRemove ||
+					(prKey->ucAlgorithmId != CIPHER_SUITE_TKIP &&
+						prKey->ucAlgorithmId != CIPHER_SUITE_CCMP))
+					break;
+				switch (prBssInfo->eKeyAction) {
+				case SEC_DROP_KEY_COMMAND:
+					eFrameAction = FRAME_ACTION_DROP_PKT;
+					break;
+				case SEC_QUEUE_KEY_COMMAND:
+					eFrameAction = FRAME_ACTION_QUEUE_PKT;
+					break;
+				case SEC_TX_KEY_COMMAND:
+				default:
+					eFrameAction = FRAME_ACTION_TX_PKT;
+					break;
+				}
+			} while (FALSE);
+			break;
+		}
+		case COMMAND_TYPE_GENERAL_IOCTL:
 			/* command packet will be always sent */
 			eFrameAction = FRAME_ACTION_TX_PKT;
 			break;
@@ -7300,6 +7332,9 @@ wlanPktTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_
 	DBGLOG(TX, INFO, "TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] Status[%u], SeqNo: %d\n",
 	       apucPktType[prMsduInfo->ucPktType], prMsduInfo->u4TxDoneTag, prMsduInfo->ucWlanIndex,
 	       prMsduInfo->ucPID, rTxDoneStatus, prMsduInfo->ucTxSeqNum);
+
+	if (prMsduInfo->ucPktType == ENUM_PKT_1X)
+		secHandleEapolTxStatus(prAdapter, prMsduInfo, rTxDoneStatus);
 
 	return WLAN_STATUS_SUCCESS;
 }

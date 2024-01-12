@@ -348,9 +348,11 @@ saaFsmSendEventJoinComplete(IN P_ADAPTER_T prAdapter,
 	if (prStaRec->ucBssIndex < prAdapter->ucHwBssIdNum) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
-		if (rJoinStatus == WLAN_STATUS_SUCCESS)
+		if (rJoinStatus == WLAN_STATUS_SUCCESS) {
 			prBssInfo->fg40mBwAllowed = prBssInfo->fgAssoc40mBwAllowed;
-
+			/* reset add key action */
+			prBssInfo->eKeyAction = SEC_TX_KEY_COMMAND;
+		}
 		prBssInfo->fgAssoc40mBwAllowed = FALSE;
 	}
 

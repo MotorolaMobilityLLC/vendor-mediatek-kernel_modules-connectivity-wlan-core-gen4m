@@ -238,6 +238,14 @@ BOOLEAN tkipMicDecapsulateInRxHdrTransMode(IN P_SW_RFB_T prSwRfb, IN PUINT_8 puc
 
 void secPostUpdateAddr(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo);
 
+enum ENUM_EAPOL_KEY_TYPE_T secGetEapolKeyType(PUINT_8 pucPacket);
+
+VOID secHandleRxEapolPacket(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prRetSwRfb,
+		IN P_STA_RECORD_T prStaRec);
+
+VOID secHandleEapolTxStatus(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
+		IN ENUM_TX_RESULT_CODE_T rTxDoneStatus);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  ********************************************************************************
