@@ -86,8 +86,6 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-#define RX_RESPONSE_TIMEOUT (3000)
-
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -227,7 +225,8 @@ u_int8_t halVerifyChipID(IN struct ADAPTER *prAdapter)
 
 uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
 	OUT uint8_t *pucRspBuffer, IN uint32_t u4MaxRespBufferLen,
-	OUT uint32_t *pu4Length, IN uint32_t u4WaitingInterval)
+	OUT uint32_t *pu4Length, IN uint32_t u4WaitingInterval,
+	IN uint32_t u4TimeoutValue)
 {
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4PktLen = 0, u4Time;
@@ -262,7 +261,7 @@ uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
 			break;
 		}
 
-		if (halIsTimeout(u4Time, RX_RESPONSE_TIMEOUT)) {
+		if (halIsTimeout(u4Time, u4TimeoutValue)) {
 #if (CFG_SUPPORT_CONNAC2X == 0)
 			uint32_t u4Value = 0;
 
