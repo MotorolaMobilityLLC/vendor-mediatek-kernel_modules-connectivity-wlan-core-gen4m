@@ -1213,8 +1213,6 @@ static void wlanSetMulticastListWorkQueue(
 	if (!IS_BSS_INDEX_VALID(ucBssIndex))
 		return;
 
-	DBGLOG(INIT, INFO, "ucBssIndex = %d\n", ucBssIndex);
-
 	down(&g_halt_sem);
 	if (g_u4HaltFlag) {
 		up(&g_halt_sem);
