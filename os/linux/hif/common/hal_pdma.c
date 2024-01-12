@@ -2764,6 +2764,11 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 			DBGLOG(HAL, INFO, "SER(M) Host enable PDMA\n");
 			halWpdmaInitRing(prGlueInfo, false);
 
+			/* reset SW value after InitRing */
+			prChipInfo = prAdapter->chip_info;
+			if (prChipInfo->asicWfdmaReInit)
+				prChipInfo->asicWfdmaReInit(prAdapter);
+
 			DBGLOG(HAL, INFO,
 				"SER(N) Host interrupt MCU PDMA ring init done\n");
 			prErrRecoveryCtrl->eErrRecovState =
