@@ -234,7 +234,17 @@ static const struct iw_priv_args rIwPrivTable[] = {
 		2, 0, "set_met_prof"},
 	{PRIV_CMD_SET_SER, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
 		1, 0, "set_ser"},
-
+/* fos_change begin */
+	{PRIV_CMD_CONNSTATUS, 0, IW_PRIV_TYPE_CHAR | 2000,
+	"connStatus"},
+#if CFG_SUPPORT_STAT_STATISTICS
+	{PRIV_CMD_STAT, 0, IW_PRIV_TYPE_CHAR | 2000,
+	"stat"},
+#endif
+#if CFG_SUPPORT_WAKEUP_STATISTICS
+	{PRIV_CMD_INT_STAT, 0, IW_PRIV_TYPE_CHAR | 2000,
+	"get_int_stat" },
+#endif
 };
 
 static const iw_handler rIwPrivHandler[] = {
@@ -243,7 +253,7 @@ static const iw_handler rIwPrivHandler[] = {
 	[IOCTL_SET_ADDRESS - SIOCIWFIRSTPRIV] = NULL,
 	[IOCTL_GET_ADDRESS - SIOCIWFIRSTPRIV] = NULL,
 	[IOCTL_SET_STR - SIOCIWFIRSTPRIV] = NULL,
-	[IOCTL_GET_STR - SIOCIWFIRSTPRIV] = NULL,
+	[IOCTL_GET_STR - SIOCIWFIRSTPRIV] = priv_get_string,
 	[IOCTL_SET_KEY - SIOCIWFIRSTPRIV] = NULL,
 	[IOCTL_GET_KEY - SIOCIWFIRSTPRIV] = NULL,
 	[IOCTL_SET_STRUCT - SIOCIWFIRSTPRIV] = priv_set_struct,
