@@ -1399,7 +1399,20 @@
 #define CFG_SUPPORT_PERSIST_NETDEV 1
 
 
-
+/*------------------------------------------------------------------------------
+ * Dynamic tx power control:
+ * Support additional tx power setting on OFDM
+ *
+ * No define: CCK,HT20L,HT20H,HT40L,HT40H,HT80L,HT80H,HT160L,HT160H
+ * Defined: CCK,OFDM_L,OFDM_H,HT20L,HT20H,HT40L,HT40H,HT80L,HT80H,HT160L,HT160H
+ *
+ * note: need to confirm firmware support this feature
+ *       COUNTRY_CHANNEL_TXPOWER_LIMIT_TYPE_COMP_11AG_11N
+ *------------------------------------------------------------------------------
+ */
+#if CFG_TC1_FEATURE
+#define CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
+#endif
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
