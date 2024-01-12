@@ -8277,7 +8277,8 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	DBGLOG(SW4, TRACE, "enter kalPerMonHandler\n");
 
 #if (CFG_SUPPORT_PERF_IND == 1)
-	if (prWifiVar->fgPerfIndicatorEn)
+	if (prWifiVar->fgPerfIndicatorEn &&
+		!prGlueInfo->fgIsInSuspendMode)
 		kalSetPerfReport(prAdapter);
 
 	kalPerfIndReset(prAdapter);
