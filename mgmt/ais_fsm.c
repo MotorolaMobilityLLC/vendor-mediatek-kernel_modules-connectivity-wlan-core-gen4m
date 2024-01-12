@@ -895,21 +895,8 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 	prJoinReqMsg->ucSeqNum = ++prAisFsmInfo->ucSeqNumOfReqMsg;
 	prJoinReqMsg->prStaRec = prStaRec;
 
-	if (1) {
-		int j;
-		struct FRAG_INFO *prFragInfo;
+	nicRxClearFrag(prAdapter, prStaRec);
 
-		for (j = 0; j < MAX_NUM_CONCURRENT_FRAGMENTED_MSDUS; j++) {
-			prFragInfo = &prStaRec->rFragInfo[j];
-
-			if (prFragInfo->pr1stFrag) {
-				/* nicRxReturnRFB(prAdapter,
-				 * prFragInfo->pr1stFrag);
-				 */
-				prFragInfo->pr1stFrag = (struct SW_RFB *)NULL;
-			}
-		}
-	}
 #if CFG_SUPPORT_802_11K
 	rlmSetMaxTxPwrLimit(prAdapter,
 			    (prBssDesc->cPowerLimit != RLM_INVALID_POWER_LIMIT)
