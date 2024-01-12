@@ -173,7 +173,7 @@ uint32_t
 halRxWaitResponse(IN struct ADAPTER *prAdapter,
 		  IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
 		  IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length,
-		  IN uint32_t u4WaitingInterval)
+		  IN uint32_t u4WaitingInterval, IN uint32_t u4TimeoutValue)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
