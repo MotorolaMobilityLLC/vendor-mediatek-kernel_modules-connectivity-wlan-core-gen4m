@@ -641,11 +641,12 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t asicUpdatTxRingMaxQuota(IN struct ADAPTER *prAdapter,
-	IN uint16_t u2Port, IN uint32_t u4MaxQuota)
+	IN uint8_t ucWmmIndex, IN uint32_t u4MaxQuota)
 {
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4BaseAddr, u4GroupIdx;
 	uint32_t u4MacVal = 0, u4SrcCnt, u4RsvCnt, u4TxRingBitmap = 0;
+	uint16_t u2Port;
 
 #define DMASHDL_MAX_QUOTA (DMASHDL_MAX_QUOTA_MASK >> DMASHDL_MAX_QUOTA_OFFSET)
 	ASSERT(prAdapter);
@@ -655,6 +656,7 @@ uint32_t asicUpdatTxRingMaxQuota(IN struct ADAPTER *prAdapter,
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	u4BaseAddr = prAdapter->chip_info->u4HifDmaShdlBaseAddr;
+	u2Port = halRingDataSelectByWmmIndex(prAdapter, ucWmmIndex);
 
 	/* The mapping must be equal to CONN_HIF_DMASHDL_Q_MAP0
 	 * in asicPcieDmaShdlInit.

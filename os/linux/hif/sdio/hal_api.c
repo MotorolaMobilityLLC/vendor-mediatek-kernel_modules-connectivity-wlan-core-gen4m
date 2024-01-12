@@ -694,6 +694,22 @@ uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
 
 void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter)
 {
+	uint8_t ucWmmIndex;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	/* Quota update is not implemented for SDIO, set fgRun=false to stop
+	 * cnmWmmQuotaCallback trigger update timer every 200ms.
+	 */
+	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
+		ucWmmIndex++) {
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+			SPIN_LOCK_UPDATE_WMM_QUOTA);
+		prAdapter->rWmmQuotaReqCS[ucWmmIndex].fgRun
+			= false;
+		KAL_RELEASE_SPIN_LOCK(prAdapter,
+			SPIN_LOCK_UPDATE_WMM_QUOTA);
+	}
 }
 
 void halUpdateBssTokenCnt(struct ADAPTER *prAdapter,

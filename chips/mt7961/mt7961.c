@@ -1256,6 +1256,7 @@ struct BUS_INFO mt7961_bus_info = {
 #endif
 	.devReadIntStatus = mt7961ReadIntStatus,
 	.DmaShdlInit = mt7961DmashdlInit,
+	.updateTxRingMaxQuota = mt7961UpdateDmashdlQuota,
 	.setRxRingHwAddr = mt7961SetRxRingHwAddr,
 	.wfdmaAllocRxRing = mt7961LiteWfdmaAllocRxRing,
 #endif /*_HIF_PCIE || _HIF_AXI */
@@ -1275,6 +1276,7 @@ struct BUS_INFO mt7961_bus_info = {
 	.asicUsbRxByteCount = mt7961Connac2xUsbRxByteCount,
 	.DmaShdlInit = mt7961DmashdlInit,
 	.prDmashdlCfg = &rMT7961DmashdlCfg,
+	.updateTxRingMaxQuota = mt7961UpdateDmashdlQuota,
 	.asicUdmaRxFlush = asicConnac2xUdmaRxFlush,
 #endif
 };
@@ -1376,6 +1378,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7961 = {
 
 	.prTxPwrLimitFile = "TxPwrLimit_MT79x1.dat",
 	.ucTxPwrLimitBatchSize = 8,
+#if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
+	.dmashdlQuotaDecision = mt7961dmashdlQuotaDecision,
+#endif
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7961 = {
