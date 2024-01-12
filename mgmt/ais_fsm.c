@@ -418,7 +418,9 @@ void aisInitBssInfo(IN struct ADAPTER *prAdapter,
 
 	/* For BSS_INFO back trace to AIS FSM. */
 	prAisBssInfo->u4PrivateData = prAisFsmInfo->ucAisIndex;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prAisBssInfo->ucLinkIndex = ucLinkIdx;
+#endif
 
 	LINK_INITIALIZE(&prAisBssInfo->rPmkidCache);
 }
