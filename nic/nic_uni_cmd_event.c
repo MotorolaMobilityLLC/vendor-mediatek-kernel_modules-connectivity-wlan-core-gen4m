@@ -7475,9 +7475,12 @@ void nicUniEventHwErrReport(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				(struct UNI_EVENT_HW_ERROR_REPORT_PARAM *)tag;
 
 			DBGLOG(NIC, INFO,
-				"HW ERROR Report: %s\n",
+				"HW Detect Report: %s\n",
 				hw_err_report->aucStrBuffer);
 			conn_dbg_add_log(CONN_DBG_LOG_TYPE_HW_ERR,
+				hw_err_report->aucStrBuffer);
+
+			kalSendAeeWarning("WLAN", "HW Detect Report: %s\n",
 				hw_err_report->aucStrBuffer);
 		}
 			break;
