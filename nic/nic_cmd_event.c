@@ -2054,6 +2054,7 @@ void nicCmdEventQueryStaStatistics(struct ADAPTER
 				   *prAdapter, struct CMD_INFO *prCmdInfo,
 				   uint8_t *pucEventBuf)
 {
+	uint8_t ucStaRecIdx;
 	uint32_t u4QueryInfoLen;
 	struct EVENT_STA_STATISTICS *prEvent;
 	struct GLUE_INFO *prGlueInfo;
@@ -2071,8 +2072,14 @@ void nicCmdEventQueryStaStatistics(struct ADAPTER
 
 	u4QueryInfoLen = sizeof(struct PARAM_GET_STA_STATISTICS);
 
-	nicUpdateStaStats(prAdapter, prEvent, prStaStatistics,
-		prEvent->ucStaRecIdx);
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	ucStaRecIdx = secGetStaIdxByWlanIdx(prAdapter, prEvent->ucStaRecIdx);
+#else
+	ucStaRecIdx = prEvent->ucStaRecIdx;
+#endif
+	if (ucStaRecIdx < CFG_STA_REC_NUM)
+		nicUpdateStaStats(prAdapter, prEvent, prStaStatistics,
+			ucStaRecIdx);
 
 	if (prCmdInfo->fgIsOid)
 		kalOidComplete(prGlueInfo,
