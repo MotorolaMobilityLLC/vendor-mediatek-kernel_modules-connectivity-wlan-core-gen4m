@@ -2443,10 +2443,15 @@ aisIndicationOfMediaStateToHost(IN P_ADAPTER_T prAdapter,
 	/* For indicating the Disconnect Event only if current media state is
 	 * disconnected and we didn't do indication yet.
 	 */
-	if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_DISCONNECTED) {
+	DBGLOG(AIS, INFO, "Current state: %d, connection state indicated: %d\n",
+		prAisFsmInfo->eCurrentState, prAisBssInfo->eConnectionStateIndicated);
+
+	if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_DISCONNECTED &&
+		/* if receive DEAUTH in JOIN state, report disconnect*/
+		!(prAisBssInfo->ucReasonOfDisconnect == DISCONNECT_REASON_CODE_DEAUTHENTICATED &&
+		 prAisFsmInfo->eCurrentState == AIS_STATE_JOIN)) {
 		if (prAisBssInfo->eConnectionStateIndicated == eConnectionState)
 			return;
-
 	}
 
 	if (!fgDelayIndication) {
