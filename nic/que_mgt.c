@@ -6249,17 +6249,7 @@ void mqmProcessAssocRsp(struct ADAPTER *prAdapter,
 		DBGLOG(QM, TRACE,
 			"MQM: Assoc_Rsp Parsing (QoS Enabled=%d)\n",
 			prStaRec->fgIsQoS);
-		if (prStaRec->fgIsWmmSupported)
-			nicQmUpdateWmmParms(prAdapter, prStaRec->ucBssIndex);
-#if (CFG_SUPPORT_802_11AX == 1)
-		if (fgEfuseCtrlAxOn == 1) {
-		if (prStaRec->fgIsMuEdcaSupported ||
-			prAdapter->fgMuEdcaOverride) {
-			nicQmUpdateMUEdcaParams(prAdapter,
-				prStaRec->ucBssIndex);
-		}
-		}
-#endif
+
 #if (CFG_SUPPORT_802_11BE == 1)
 		/*TODO */
 #endif
