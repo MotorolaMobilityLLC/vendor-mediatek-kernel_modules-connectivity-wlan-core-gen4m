@@ -191,7 +191,9 @@
 #ifndef CFG_SUPPORT_DFS_MASTER
 #define CFG_SUPPORT_DFS_MASTER		1
 /* SoftAp Cross Band Channel Switch */
+#ifndef CFG_SUPPORT_IDC_CH_SWITCH
 #define CFG_SUPPORT_IDC_CH_SWITCH	1
+#endif
 #endif
 
 #if (CFG_SUPPORT_DFS == 1)	/* Add by Enlai */
