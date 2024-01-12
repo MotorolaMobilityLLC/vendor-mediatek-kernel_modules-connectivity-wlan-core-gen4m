@@ -137,6 +137,7 @@
 #define HE_PHY_CAP0_CHAN_WIDTH_SET_SHFT                1
 
 /* HE PHY Capablilites byte1 */
+#define HE_PHY_CAP1_PUNCTURED_PREAMBLE_RX_MASK         BITS(0, 3)
 #define HE_PHY_CAP1_PUNCTURED_PREAMBLE_RX_SHFT         0
 #define HE_PHY_CAP1_DEVICE_CALSS_SHFT                  4
 #define HE_PHY_CAP1_LDPC_CODING_IN_PAYLOAD             BIT(5)
@@ -508,6 +509,14 @@ enum ENUM_HEBA_TYPE {
 
 #define HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW80P80_5G(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[0] |= HE_PHY_CAP0_CHAN_WIDTH_SET_BW80P80_5G)
+
+#define HE_SET_PHY_CAP_PUNCTURED_PREAMBLE_RX(_aucHePhyCapInfo, _ucPpRx) \
+{ \
+	_aucHePhyCapInfo[1] &= ~(HE_PHY_CAP1_PUNCTURED_PREAMBLE_RX_MASK); \
+	_aucHePhyCapInfo[1] |= \
+		((_ucPpRx << HE_PHY_CAP1_PUNCTURED_PREAMBLE_RX_SHFT) \
+			& HE_PHY_CAP1_PUNCTURED_PREAMBLE_RX_MASK); \
+}
 
 #define HE_SET_PHY_CAP_LDPC_CODING_IN_PAYLOAD(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[1] |= HE_PHY_CAP1_LDPC_CODING_IN_PAYLOAD)
