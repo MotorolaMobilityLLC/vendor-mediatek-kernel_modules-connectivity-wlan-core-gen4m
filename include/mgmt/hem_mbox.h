@@ -247,7 +247,7 @@ enum ENUM_MSG_ID {
 	MID_TWT_REQ_IND_INFOFRM,
 	MID_TWT_PARAMS_SET,
 #endif
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	/* Connsys power adapter notify driver new power level */
 	MID_CNS_DRV_PWR_LEVEL,
 	/* Connsys power adapter notify driver new power temp */
@@ -411,7 +411,7 @@ struct MSG_SAA_EXTERNAL_AUTH_DONE {
 	uint16_t status;
 };
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
 struct MSG_PWR_LEVEL_NOTIFY {
 	struct MSG_HDR rMsgHdr; /* Must be the first member */
 	uint32_t level;

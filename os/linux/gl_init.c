@@ -4181,7 +4181,7 @@ static void consys_log_event_notification(int cmd, int value)
 }
 #endif
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
 int connsys_power_event_notification(
 		enum conn_pwr_event_type type, void *data)
 {
@@ -5170,9 +5170,15 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		prAdapter = prGlueInfo->prAdapter;
 		prWifiVar = &prAdapter->rWifiVar;
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
 		prAdapter->u4PwrLevel = ((struct mt66xx_hif_driver_data *)
 						pvDriverData)->prPwrLevel;
+		prAdapter->rTempInfo = ((struct mt66xx_hif_driver_data *)
+						pvDriverData)->rTempInfo;
+		connsys_power_event_notification(CONN_PWR_EVENT_LEVEL,
+						&(prAdapter->u4PwrLevel));
+		connsys_power_event_notification(CONN_PWR_EVENT_MAX_TEMP,
+						prAdapter->rTempInfo);
 #endif
 
 		wlanOnPreAdapterStart(prGlueInfo,

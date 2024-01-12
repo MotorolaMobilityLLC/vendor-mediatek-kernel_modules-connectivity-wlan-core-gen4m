@@ -1817,9 +1817,10 @@ struct ADAPTER {
 	u_int8_t fgEnRmacICS;
 #endif /* CFG_SUPPORT_ICS */
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	struct LINK rPwrLevelHandlerList;
 	uint32_t u4PwrLevel;
+	struct conn_pwr_event_max_temp *rTempInfo;
 #endif
 #if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 	bool fgPowerForceOneNss;
