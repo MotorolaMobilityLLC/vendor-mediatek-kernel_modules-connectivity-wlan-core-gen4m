@@ -1382,14 +1382,13 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 		kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
 			prConnSettings->assocIeLen);
 		prConnSettings->assocIeLen = 0;
+		prConnSettings->pucAssocIEs = NULL;
 	}
 
 	if (pParamConn->u4IesLen > 0) {
 		prConnSettings->assocIeLen = pParamConn->u4IesLen;
 		prConnSettings->pucAssocIEs =
 			kalMemAlloc(prConnSettings->assocIeLen, VIR_MEM_TYPE);
-		/* skip memory leak checking */
-		kal_kmemleak_ignore(prConnSettings->pucAssocIEs);
 
 		if (prConnSettings->pucAssocIEs) {
 			kalMemCopy(prConnSettings->pucAssocIEs,
@@ -1460,6 +1459,7 @@ wlanoidUpdateConnect(struct ADAPTER *prAdapter,
 			kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
 				prConnSettings->assocIeLen);
 			prConnSettings->assocIeLen = 0;
+			prConnSettings->pucAssocIEs = NULL;
 		}
 
 		if (pParamConn->u4IesLen > 0) {
@@ -1467,8 +1467,6 @@ wlanoidUpdateConnect(struct ADAPTER *prAdapter,
 			prConnSettings->pucAssocIEs =
 				kalMemAlloc(prConnSettings->assocIeLen,
 					    VIR_MEM_TYPE);
-			/* skip memory leak checking */
-			kal_kmemleak_ignore(prConnSettings->pucAssocIEs);
 
 			if (prConnSettings->pucAssocIEs) {
 				kalMemCopy(prConnSettings->pucAssocIEs,
