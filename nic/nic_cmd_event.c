@@ -5947,6 +5947,12 @@ void nicNanIOEventHandler(struct ADAPTER *prAdapter,
 
 	DBGLOG(NAN, INFO, "nicNanIOEventHandler, subEvent:%d\n", u4SubEvent);
 
+	if (prAdapter->fgIsNANRegistered == FALSE) {
+		DBGLOG(NAN, ERROR,
+			"nicNanIOEventHandler, NAN is unregistered\n");
+		return;
+	}
+
 	switch (u4SubEvent) {
 	case UNI_EVENT_NAN_TAG_DISCOVERY_RESULT:
 		nicNanEventDiscoveryResult(prAdapter, prTlvElement->aucbody);
@@ -6027,6 +6033,12 @@ void nicNanIOEventHandler(struct ADAPTER *prAdapter,
 	u4SubEvent = prTlvElement->tag_type;
 
 	DBGLOG(NAN, INFO, "nicNanIOEventHandler, subEvent:%d\n", u4SubEvent);
+
+	if (prAdapter->fgIsNANRegistered == FALSE) {
+		DBGLOG(NAN, ERROR,
+			"nicNanIOEventHandler, NAN is unregistered\n");
+		return;
+	}
 
 	switch (u4SubEvent) {
 	case NAN_EVENT_TEST:

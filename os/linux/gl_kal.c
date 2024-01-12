@@ -11540,6 +11540,12 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 
 	DBGLOG(NAN, INFO, "[%s] subEvent:%d\n", __func__, u4SubEvent);
 
+	if (prAdapter->fgIsNANRegistered == FALSE) {
+		DBGLOG(NAN, ERROR,
+			"kalNanHandleVendorEvent, NAN is unregistered\n");
+		return;
+	}
+
 	switch (u4SubEvent) {
 	case UNI_EVENT_NAN_TAG_ID_DE_EVENT_IND:
 		status = mtk_cfg80211_vendor_event_nan_event_indication(
@@ -11638,6 +11644,12 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 	u4SubEvent = prTlvElement->tag_type;
 
 	DBGLOG(NAN, INFO, "[%s] subEvent:%d\n", __func__, u4SubEvent);
+
+	if (prAdapter->fgIsNANRegistered == FALSE) {
+		DBGLOG(NAN, ERROR,
+			"kalNanHandleVendorEvent, NAN is unregistered\n");
+		return;
+	}
 
 	switch (u4SubEvent) {
 	case NAN_EVENT_ID_DE_EVENT_IND:
