@@ -436,7 +436,7 @@ void bssDetermineApBssInfoPhyTypeSet(struct ADAPTER *prAdapter,
 	uint8_t ucHeOption;
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
-	uint8_t ucEhtOption = FEATURE_ENABLED;
+	uint8_t ucEhtOption;
 #endif
 
 	/* Decide AP mode PHY type set */
@@ -779,6 +779,13 @@ bssComposeQoSNullFrame(struct ADAPTER *prAdapter,
 
 	ucBssIndex = prStaRec->ucBssIndex;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+	if (prBssInfo == NULL) {
+		DBGLOG(BSS, ERROR, "Can't find the valid bssinfo (idx=%d)\n",
+			ucBssIndex);
+		return;
+	}
+
 	prQoSNullFrame = (struct WLAN_MAC_HEADER_QOS *)pucBuffer;
 
 	/* 4 <1> Decide the Frame Control Field */
