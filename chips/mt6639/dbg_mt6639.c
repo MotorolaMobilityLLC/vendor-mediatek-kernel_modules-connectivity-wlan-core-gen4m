@@ -1708,6 +1708,12 @@ void mt6639_dumpPcieReg(void)
 		0x74031080, &u4Value);
 	DBGLOG(HAL, INFO, "CR[0x74031080] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+		0x74031020, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x74031020] value[0x%08x]\n", u4Value);
+	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+		0x74031024, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x74031024] value[0x%08x]\n", u4Value);
+	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031084, &u4Value);
 	DBGLOG(HAL, INFO, "CR[0x74031084] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
@@ -1728,6 +1734,21 @@ void mt6639_dumpPcieReg(void)
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x7403109C, &u4Value);
 	DBGLOG(HAL, INFO, "CR[0x7403109C] value[0x%08x]\n", u4Value);
+	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+		0x740310E0, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x740310E0] value[0x%08x]\n", u4Value);
+	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+		0x740310E4, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x740310E4] value[0x%08x]\n", u4Value);
+	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+		0x740310EC, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x740310EC] value[0x%08x]\n", u4Value);
+	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+		0x740310F0, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x740310F0] value[0x%08x]\n", u4Value);
+	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+		0x740310F4, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x740310F4] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x74031110, &u4Value);
 	DBGLOG(HAL, INFO, "CR[0x74031110] value[0x%08x]\n", u4Value);
