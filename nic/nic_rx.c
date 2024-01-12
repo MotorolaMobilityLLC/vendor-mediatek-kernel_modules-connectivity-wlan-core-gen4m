@@ -180,7 +180,9 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_UPDATE_BCM_DEBUG, nicEventUpdateBcmDebug},
 	{EVENT_ID_ADD_PKEY_DONE, nicEventAddPkeyDone},
 	{EVENT_ID_DEBUG_MSG, nicEventDebugMsg},
+#if CFG_SUPPORT_TDLS
 	{EVENT_ID_TDLS, nicEventTdls},
+#endif
 #if (CFG_SUPPORT_HE_ER == 1)
 	{EVENT_ID_BSS_ER_TX_MODE, bssProcessErTxModeEvent},
 #endif

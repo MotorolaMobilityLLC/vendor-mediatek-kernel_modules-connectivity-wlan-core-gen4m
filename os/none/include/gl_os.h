@@ -1085,11 +1085,6 @@ void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo,
 #endif
 #endif
 
-#if (CFG_MTK_ANDROID_WMT || WLAN_INCLUDE_PROC)
-int set_p2p_mode_handler(struct net_device *netdev,
-			 struct PARAM_CUSTOM_P2P_SET_STRUCT p2pmode);
-#endif
-
 #if CFG_ENABLE_UNIFY_WIPHY
 const struct net_device_ops *wlanGetNdevOps(void);
 #endif

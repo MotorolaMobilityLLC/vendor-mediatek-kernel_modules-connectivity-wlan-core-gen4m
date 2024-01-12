@@ -238,7 +238,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_IE_COUNTDOWN] = nicUniEventCountdown,
 	[UNI_EVENT_ID_STAREC] = nicUniEventStaRec,
 	[UNI_EVENT_ID_RDD] = nicUniEventRDD,
+#if CFG_SUPPORT_TDLS
 	[UNI_EVENT_ID_TDLS] = nicUniEventTdls,
+#endif
 	[UNI_EVENT_ID_BSS_ER] = nicUniEventBssER,
 	[UNI_EVENT_ID_RSSI_MONITOR] = nicUniEventRssiMonitor,
 	[UNI_EVENT_ID_HIF_CTRL] = nicUniEventHifCtrl,
@@ -8793,6 +8795,7 @@ void nicUniEventStaRec(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	}
 }
 
+#if CFG_SUPPORT_TDLS
 void nicUniEventTdls(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
 	uint16_t tags_len;
@@ -8829,6 +8832,7 @@ void nicUniEventTdls(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 	}
 }
+#endif
 
 void nicUniEventBssER(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {

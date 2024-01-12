@@ -7082,8 +7082,10 @@ void nicUniEventCountdown(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventStaRec(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+#if CFG_SUPPORT_TDLS
 void nicUniEventTdls(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+#endif
 void nicUniEventBssER(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventRssiMonitor(struct ADAPTER *ad,
