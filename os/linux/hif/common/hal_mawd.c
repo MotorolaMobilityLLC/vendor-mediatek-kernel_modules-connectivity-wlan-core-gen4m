@@ -1143,7 +1143,7 @@ bool halMawdFillTxRing(struct GLUE_INFO *prGlueInfo,
 	struct mt66xx_chip_info *prChipInfo;
 	struct RTMP_TX_RING *prTxRing, *prWfdmaTxRing;
 	struct RTMP_DMACB *pTxCell;
-	uint16_t u2Port = TX_RING_DATA0_IDX_0;
+	uint16_t u2Port = TX_RING_DATA0;
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;

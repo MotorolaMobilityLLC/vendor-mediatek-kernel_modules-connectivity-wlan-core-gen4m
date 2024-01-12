@@ -470,34 +470,34 @@ static uint8_t mt7990SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 	uint32_t offset = 0;
 
 	/*
-	 * RX_RING_EVT_IDX_1           (RX_Ring0) - WM Event
-	 * RX_RING_DATA_IDX_0          (RX_Ring4) - Band0 Rx Data
-	 * RX_RING_DATA1_IDX_2         (RX_Ring5) - Band1 Rx Data
-	 * RX_RING_TXDONE0_IDX_3       (RX_Ring6) - Band0 Tx Free Done Event
-	 * RX_RING_TXDONE1_IDX_4       (RX_Ring7) - Band1 Tx Free Done Event
-	 * RX_RING_DATA2_IDX_5         (RX_Ring8) - Band2 Rx Data
-	 * RX_RING_TXDONE2_IDX_6       (RX_Ring9) - Band2 Tx Free Done Event
+	 * RX_RING_EVT           (RX_Ring0) - WM Event
+	 * RX_RING_DATA0          (RX_Ring4) - Band0 Rx Data
+	 * RX_RING_DATA1         (RX_Ring5) - Band1 Rx Data
+	 * RX_RING_TXDONE0       (RX_Ring6) - Band0 Tx Free Done Event
+	 * RX_RING_TXDONE1       (RX_Ring7) - Band1 Tx Free Done Event
+	 * RX_RING_DATA2         (RX_Ring8) - Band2 Rx Data
+	 * RX_RING_TXDONE2       (RX_Ring9) - Band2 Tx Free Done Event
 	*/
 	switch (u4SwRingIdx) {
-	case RX_RING_EVT_IDX_1:
+	case RX_RING_EVT:
 		offset = 0;
 		break;
-	case RX_RING_DATA_IDX_0:
+	case RX_RING_DATA0:
 		offset = 4;
 		break;
-	case RX_RING_DATA1_IDX_2:
+	case RX_RING_DATA1:
 		offset = 5;
 		break;
-	case RX_RING_DATA2_IDX_5:
+	case RX_RING_DATA2:
 		offset = 8;
 		break;
-	case RX_RING_TXDONE0_IDX_3:
+	case RX_RING_TXDONE0:
 		offset = 6;
 		break;
-	case RX_RING_TXDONE1_IDX_4:
+	case RX_RING_TXDONE1:
 		offset = 7;
 		break;
-	case RX_RING_TXDONE2_IDX_6:
+	case RX_RING_TXDONE2:
 		offset = 9;
 		break;
 	default:
@@ -514,32 +514,32 @@ static bool mt7990WfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
 {
 	/* Band1 Data Rx path */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_DATA1_IDX_2, RX_RING0_SIZE,
+			RX_RING_DATA1, RX_RING0_SIZE,
 			RXD_SIZE, CFG_RX_MAX_MPDU_SIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[2] fail\n");
 		return false;
 	}
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_DATA2_IDX_5, RX_RING0_SIZE,
+			RX_RING_DATA2, RX_RING0_SIZE,
 			RXD_SIZE, CFG_RX_MAX_MPDU_SIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[5] fail\n");
 		return false;
 	}
 	/* Band0 Tx Free Done Event */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_TXDONE0_IDX_3, RX_RING1_SIZE,
+			RX_RING_TXDONE0, RX_RING1_SIZE,
 			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[3] fail\n");
 		return false;
 	}
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_TXDONE1_IDX_4, RX_RING1_SIZE,
+			RX_RING_TXDONE1, RX_RING1_SIZE,
 			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[4] fail\n");
 		return false;
 	}
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_TXDONE2_IDX_6, RX_RING1_SIZE,
+			RX_RING_TXDONE2, RX_RING1_SIZE,
 			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[6] fail\n");
 		return false;
@@ -553,29 +553,29 @@ static void mt7990ProcessTxInterrupt(
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	uint32_t u4Sta = prHifInfo->u4IntStatus;
 
-	if (u4Sta | WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_16_MASK)
+	if (u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_16_MASK)
 		halWpdmaProcessCmdDmaDone(
-			prAdapter->prGlueInfo, TX_RING_FWDL_IDX_4);
+			prAdapter->prGlueInfo, TX_RING_FWDL);
 
-	if (u4Sta | WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_17_MASK)
+	if (u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_17_MASK)
 		halWpdmaProcessCmdDmaDone(
-			prAdapter->prGlueInfo, TX_RING_CMD_IDX_3);
+			prAdapter->prGlueInfo, TX_RING_CMD);
 
-	if (u4Sta | WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_0_MASK) {
+	if (u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_0_MASK) {
 		halWpdmaProcessDataDmaDone(
-			prAdapter->prGlueInfo, TX_RING_DATA0_IDX_0);
+			prAdapter->prGlueInfo, TX_RING_DATA0);
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 	}
 
-	if (u4Sta | WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_1_MASK) {
+	if (u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_1_MASK) {
 		halWpdmaProcessDataDmaDone(
-			prAdapter->prGlueInfo, TX_RING_DATA1_IDX_1);
+			prAdapter->prGlueInfo, TX_RING_DATA1);
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 	}
 
-	if (u4Sta | WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_2_MASK) {
+	if (u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_2_MASK) {
 		halWpdmaProcessDataDmaDone(
-			prAdapter->prGlueInfo, TX_RING_DATA2_IDX_2);
+			prAdapter->prGlueInfo, TX_RING_DATA_PRIO);
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 	}
 }
@@ -586,33 +586,33 @@ static void mt7990ProcessRxInterrupt(
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	uint32_t u4Sta = prHifInfo->u4IntStatus;
 
-	if ((u4Sta | WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_4_MASK) ||
-	    (KAL_TEST_BIT(RX_RING_DATA_IDX_0, prAdapter->ulNoMoreRfb)))
-		halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0, TRUE);
+	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_4_MASK) ||
+	    (KAL_TEST_BIT(RX_RING_DATA0, prAdapter->ulNoMoreRfb)))
+		halRxReceiveRFBs(prAdapter, RX_RING_DATA0, TRUE);
 
-	if ((u4Sta | WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_5_MASK) ||
-	    (KAL_TEST_BIT(RX_RING_DATA1_IDX_2, prAdapter->ulNoMoreRfb)))
-		halRxReceiveRFBs(prAdapter, RX_RING_DATA1_IDX_2, TRUE);
+	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_5_MASK) ||
+	    (KAL_TEST_BIT(RX_RING_DATA1, prAdapter->ulNoMoreRfb)))
+		halRxReceiveRFBs(prAdapter, RX_RING_DATA1, TRUE);
 
-	if ((u4Sta | WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_8_MASK) ||
-	    (KAL_TEST_BIT(RX_RING_DATA2_IDX_5, prAdapter->ulNoMoreRfb)))
-		halRxReceiveRFBs(prAdapter, RX_RING_DATA2_IDX_5, TRUE);
+	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_8_MASK) ||
+	    (KAL_TEST_BIT(RX_RING_DATA2, prAdapter->ulNoMoreRfb)))
+		halRxReceiveRFBs(prAdapter, RX_RING_DATA2, TRUE);
 
-	if ((u4Sta | WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_0_MASK) ||
-	    (KAL_TEST_BIT(RX_RING_EVT_IDX_1, prAdapter->ulNoMoreRfb)))
-		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, FALSE);
+	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_0_MASK) ||
+	    (KAL_TEST_BIT(RX_RING_EVT, prAdapter->ulNoMoreRfb)))
+		halRxReceiveRFBs(prAdapter, RX_RING_EVT, FALSE);
 
-	if ((u4Sta | WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_6_MASK) ||
-	    (KAL_TEST_BIT(RX_RING_TXDONE0_IDX_3, prAdapter->ulNoMoreRfb)))
-		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0_IDX_3, FALSE);
+	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_6_MASK) ||
+	    (KAL_TEST_BIT(RX_RING_TXDONE0, prAdapter->ulNoMoreRfb)))
+		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0, FALSE);
 
-	if ((u4Sta | WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_7_MASK) ||
-	    (KAL_TEST_BIT(RX_RING_TXDONE1_IDX_4, prAdapter->ulNoMoreRfb)))
-		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE1_IDX_4, FALSE);
+	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_7_MASK) ||
+	    (KAL_TEST_BIT(RX_RING_TXDONE1, prAdapter->ulNoMoreRfb)))
+		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE1, FALSE);
 
-	if ((u4Sta | WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_9_MASK) ||
-	    (KAL_TEST_BIT(RX_RING_TXDONE2_IDX_6, prAdapter->ulNoMoreRfb)))
-		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE2_IDX_6, FALSE);
+	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_9_MASK) ||
+	    (KAL_TEST_BIT(RX_RING_TXDONE2, prAdapter->ulNoMoreRfb)))
+		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE2, FALSE);
 }
 
 static void mt7990WfdmaManualPrefetch(
@@ -773,25 +773,25 @@ static void mt7990WfdmaRxRingExtCtrl(struct GLUE_INFO *prGlueInfo,
 	prBusInfo = prChipInfo->bus_info;
 
 	switch (index) {
-	case RX_RING_DATA_IDX_0:
+	case RX_RING_DATA0:
 		ext_offset *= 4;
 		break;
-	case RX_RING_EVT_IDX_1:
+	case RX_RING_EVT:
 		ext_offset *= 0;
 		break;
-	case RX_RING_DATA1_IDX_2:
+	case RX_RING_DATA1:
 		ext_offset *= 5;
 		break;
-	case RX_RING_TXDONE0_IDX_3:
+	case RX_RING_TXDONE0:
 		ext_offset *= 6;
 		break;
-	case RX_RING_TXDONE1_IDX_4:
+	case RX_RING_TXDONE1:
 		ext_offset *= 7;
 		break;
-	case RX_RING_DATA2_IDX_5:
+	case RX_RING_DATA2:
 		ext_offset *= 8;
 		break;
-	case RX_RING_TXDONE2_IDX_6:
+	case RX_RING_TXDONE2:
 		ext_offset *= 9;
 		break;
 	default:

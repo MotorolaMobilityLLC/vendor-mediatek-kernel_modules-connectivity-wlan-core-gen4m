@@ -87,12 +87,13 @@
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
 /*
- * 3 data ring (ring0 + ring1[DBDC] + ring2[priority])
+ * 3 data ring (ring0 + ring1[DBDC] + ring2[priority] + ring3[ALTX])
  * fwdl ring
  * cmd ring
+ * wa cmd ring
  */
-#define NUM_OF_TX_RING				(5+NUM_OF_WFDMA1_TX_RING)
-#define NUM_OF_RX_RING				(2+NUM_OF_WFDMA1_RX_RING)
+#define NUM_OF_TX_RING				(6 + NUM_OF_WFDMA1_TX_RING)
+#define NUM_OF_RX_RING				(2 + NUM_OF_WFDMA1_RX_RING)
 
 #ifdef CONFIG_MTK_WIFI_HE160
 #define TX_RING_SIZE				1024
@@ -183,7 +184,7 @@
 #define HIF_CR4_FWDL_SECTION_NUM			1
 #define HIF_IMG_DL_STATUS_PORT_IDX			1
 
-#define HIF_TX_INIT_CMD_PORT				TX_RING_FWDL_IDX_4
+#define HIF_TX_INIT_CMD_PORT				TX_RING_FWDL
 
 #define HIF_TX_PAYLOAD_LENGTH				72
 

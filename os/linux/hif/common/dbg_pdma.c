@@ -457,14 +457,14 @@ uint32_t halDumpHifStatus(IN struct ADAPTER *prAdapter,
 			u4CpuIdx, prTxRing->TxDmaIdx,
 			u4DmaIdx, prTxRing->TxSwUsedIdx, prTxRing->u4UsedCnt);
 
-		if (u4Idx == TX_RING_DATA0_IDX_0) {
+		if (u4Idx == TX_RING_DATA0) {
 			halDumpTxRing(prGlueInfo, u4Idx, prTxRing->TxCpuIdx);
 			halDumpTxRing(prGlueInfo, u4Idx, u4CpuIdx);
 			halDumpTxRing(prGlueInfo, u4Idx, u4DmaIdx);
 			halDumpTxRing(prGlueInfo, u4Idx, prTxRing->TxSwUsedIdx);
 		}
 
-		if (u4Idx == TX_RING_DATA1_IDX_1) {
+		if (u4Idx == TX_RING_DATA1) {
 			halDumpTxRing(prGlueInfo, u4Idx, prTxRing->TxCpuIdx);
 			halDumpTxRing(prGlueInfo, u4Idx, u4CpuIdx);
 			halDumpTxRing(prGlueInfo, u4Idx, u4DmaIdx);

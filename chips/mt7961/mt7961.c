@@ -255,22 +255,22 @@ static uint8_t mt7961SetRxRingHwAddr(
 	uint32_t offset = 0;
 
 	/*
-	 * RX_RING_EVT_IDX_1    (RX_Ring0) - Rx Event
-	 * RX_RING_DATA_IDX_0   (RX_Ring2) - Band0 Rx Data
-	 * RX_RING_DATA1_IDX_2 (RX_Ring3) - Band1 Rx Data
-	 * RX_RING_TXDONE0_IDX_3 (RX_Ring4) - Band0 Tx Free Done Event
-	 * RX_RING_TXDONE1_IDX_4 (RX_Ring5) - Band1 Tx Free Done Event
+	 * RX_RING_EVT    (RX_Ring0) - Rx Event
+	 * RX_RING_DATA0   (RX_Ring2) - Band0 Rx Data
+	 * RX_RING_DATA1 (RX_Ring3) - Band1 Rx Data
+	 * RX_RING_TXDONE0 (RX_Ring4) - Band0 Tx Free Done Event
+	 * RX_RING_TXDONE1 (RX_Ring5) - Band1 Tx Free Done Event
 	*/
 	switch (u4SwRingIdx) {
-	case RX_RING_EVT_IDX_1:
+	case RX_RING_EVT:
 		offset = 0;
 		break;
-	case RX_RING_DATA_IDX_0:
+	case RX_RING_DATA0:
 		offset = RX_DATA_RING_BASE_IDX;
 		break;
-	case RX_RING_DATA1_IDX_2:
-	case RX_RING_TXDONE0_IDX_3:
-	case RX_RING_TXDONE1_IDX_4:
+	case RX_RING_DATA1:
+	case RX_RING_TXDONE0:
+	case RX_RING_TXDONE1:
 		offset = (u4SwRingIdx + 1);
 		break;
 	default:
@@ -297,7 +297,7 @@ static bool mt7961LiteWfdmaAllocRxRing(
 {
 	/* Band1 Data Rx path */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_DATA1_IDX_2, RX_RING0_SIZE,
+			RX_RING_DATA1, RX_RING0_SIZE,
 			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[0] fail\n");
 		return false;
@@ -305,7 +305,7 @@ static bool mt7961LiteWfdmaAllocRxRing(
 	/* Band0 Tx Free Done Event */
 #if CFG_SUPPORT_HOST_RX_WM_EVENT_FROM_PSE
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_TXDONE0_IDX_3,
+			RX_RING_TXDONE0,
 			MT7961_HOST_RX_WM_EVENT_FROM_PSE_RX_RING4_SIZE,
 			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
@@ -313,7 +313,7 @@ static bool mt7961LiteWfdmaAllocRxRing(
 	}
 #else
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_TXDONE0_IDX_3, RX_RING1_SIZE,
+			RX_RING_TXDONE0, RX_RING1_SIZE,
 			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
 		return false;
@@ -322,7 +322,7 @@ static bool mt7961LiteWfdmaAllocRxRing(
 
 	/* Band1 Tx Free Done Event */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_TXDONE1_IDX_4, RX_RING1_SIZE,
+			RX_RING_TXDONE1, RX_RING1_SIZE,
 			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
 		return false;
@@ -340,15 +340,15 @@ static void mt7961Connac2xProcessTxInterrupt(
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
 	if (rIntrStatus.field_conn2x_single.wfdma0_tx_done_16)
 		halWpdmaProcessCmdDmaDone(
-			prAdapter->prGlueInfo, TX_RING_FWDL_IDX_4);
+			prAdapter->prGlueInfo, TX_RING_FWDL);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_tx_done_17)
 		halWpdmaProcessCmdDmaDone(
-			prAdapter->prGlueInfo, TX_RING_CMD_IDX_3);
+			prAdapter->prGlueInfo, TX_RING_CMD);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_tx_done_0) {
 		halWpdmaProcessDataDmaDone(
-			prAdapter->prGlueInfo, TX_RING_DATA0_IDX_0);
+			prAdapter->prGlueInfo, TX_RING_DATA0);
 #if CFG_SUPPORT_MULTITHREAD
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 #endif
@@ -356,7 +356,7 @@ static void mt7961Connac2xProcessTxInterrupt(
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_tx_done_1) {
 		halWpdmaProcessDataDmaDone(
-			prAdapter->prGlueInfo, TX_RING_DATA1_IDX_1);
+			prAdapter->prGlueInfo, TX_RING_DATA1);
 #if CFG_SUPPORT_MULTITHREAD
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 #endif
@@ -371,19 +371,19 @@ static void mt7961Connac2xProcessRxInterrupt(
 
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_0)
-		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, FALSE);
+		halRxReceiveRFBs(prAdapter, RX_RING_EVT, FALSE);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_2)
-		halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0, TRUE);
+		halRxReceiveRFBs(prAdapter, RX_RING_DATA0, TRUE);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_3)
-		halRxReceiveRFBs(prAdapter, RX_RING_DATA1_IDX_2, TRUE);
+		halRxReceiveRFBs(prAdapter, RX_RING_DATA1, TRUE);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_4)
-		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0_IDX_3, TRUE);
+		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0, TRUE);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_5)
-		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE1_IDX_4, TRUE);
+		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE1, TRUE);
 }
 
 void mt7961WfdmaTxRingExtCtrl(
@@ -397,25 +397,25 @@ void mt7961WfdmaTxRingExtCtrl(
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
 	/*
-	 * TX_RING_DATA0_IDX_0   (TX_Ring0)  - Band0 Tx Data
-	 * TX_RING_DATA1_IDX_1   (TX_Ring1)  - Band1 Tx Data
-	 * TX_RING_FWDL_IDX_4    (TX_Ring16) - FW download
-	 * TX_RING_CMD_IDX_3     (TX_Ring17) - FW CMD
+	 * TX_RING_DATA0   (TX_Ring0)  - Band0 Tx Data
+	 * TX_RING_DATA1   (TX_Ring1)  - Band1 Tx Data
+	 * TX_RING_FWDL    (TX_Ring16) - FW download
+	 * TX_RING_CMD     (TX_Ring17) - FW CMD
 	 */
 	switch (index) {
-	case TX_RING_DATA0_IDX_0:
+	case TX_RING_DATA0:
 		u4Offset = HW_WFDMA0_TX_RING_IDX_0 * MT_RINGREG_EXT_DIFF;
 		break;
 
-	case TX_RING_DATA1_IDX_1:
+	case TX_RING_DATA1:
 		u4Offset = HW_WFDMA0_TX_RING_IDX_1 * MT_RINGREG_EXT_DIFF;
 		break;
 
-	case TX_RING_FWDL_IDX_4:
+	case TX_RING_FWDL:
 		u4Offset = HW_WFDMA0_TX_RING_IDX_16 * MT_RINGREG_EXT_DIFF;
 		break;
 
-	case TX_RING_CMD_IDX_3:
+	case TX_RING_CMD:
 		u4Offset = HW_WFDMA0_TX_RING_IDX_17 * MT_RINGREG_EXT_DIFF;
 		break;
 
@@ -438,30 +438,30 @@ void mt7961WfdmaRxRingExtCtrl(
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
 	/*
-	 * RX_RING_EVT_IDX_1    (RX_Ring0) - Rx Event
-	 * RX_RING_DATA_IDX_0   (RX_Ring2) - Band0 Rx Data
-	 * RX_RING_DATA1_IDX_2 (RX_Ring3) - Band1 Rx Data
-	 * RX_RING_TXDONE0_IDX_3 (RX_Ring4) - Band0 Tx Free Done Event
-	 * RX_RING_TXDONE1_IDX_4 (RX_Ring5) - Band1 Tx Free Done Event
+	 * RX_RING_EVT    (RX_Ring0) - Rx Event
+	 * RX_RING_DATA0   (RX_Ring2) - Band0 Rx Data
+	 * RX_RING_DATA1 (RX_Ring3) - Band1 Rx Data
+	 * RX_RING_TXDONE0 (RX_Ring4) - Band0 Tx Free Done Event
+	 * RX_RING_TXDONE1 (RX_Ring5) - Band1 Tx Free Done Event
 	*/
 	switch (index) {
-	case RX_RING_EVT_IDX_1:
+	case RX_RING_EVT:
 		u4Offset = HW_WFDMA0_RX_RING_IDX_0 * MT_RINGREG_EXT_DIFF;
 		break;
 
-	case RX_RING_DATA_IDX_0:
+	case RX_RING_DATA0:
 		u4Offset = HW_WFDMA0_RX_RING_IDX_2 * MT_RINGREG_EXT_DIFF;
 		break;
 
-	case RX_RING_DATA1_IDX_2:
+	case RX_RING_DATA1:
 		u4Offset = HW_WFDMA0_RX_RING_IDX_3 * MT_RINGREG_EXT_DIFF;
 		break;
 
-	case RX_RING_TXDONE0_IDX_3:
+	case RX_RING_TXDONE0:
 		u4Offset = HW_WFDMA0_RX_RING_IDX_4 * MT_RINGREG_EXT_DIFF;
 		break;
 
-	case RX_RING_TXDONE1_IDX_4:
+	case RX_RING_TXDONE1:
 		u4Offset = HW_WFDMA0_RX_RING_IDX_5 * MT_RINGREG_EXT_DIFF;
 		break;
 
@@ -551,29 +551,29 @@ static void mt7961ReadIntStatus(
 	if (prAdapter->ulNoMoreRfb)
 		*pu4IntStatus |= WHISR_RX0_DONE_INT;
 
-	if (KAL_TEST_BIT(RX_RING_EVT_IDX_1, prAdapter->ulNoMoreRfb)) {
+	if (KAL_TEST_BIT(RX_RING_EVT, prAdapter->ulNoMoreRfb)) {
 		prIntrStatus->field_conn2x_single.wfdma0_rx_done_0 = 1;
-		DBGLOG(HAL, ERROR, "retry process RX_RING_EVT_IDX_1\n");
+		DBGLOG(HAL, ERROR, "retry process RX_RING_EVT\n");
 	}
 
-	if (KAL_TEST_BIT(RX_RING_DATA_IDX_0, prAdapter->ulNoMoreRfb)) {
+	if (KAL_TEST_BIT(RX_RING_DATA0, prAdapter->ulNoMoreRfb)) {
 		prIntrStatus->field_conn2x_single.wfdma0_rx_done_2 = 1;
-		DBGLOG(HAL, ERROR, "retry process RX_RING_DATA_IDX_0\n");
+		DBGLOG(HAL, ERROR, "retry process RX_RING_DATA0\n");
 	}
 
-	if (KAL_TEST_BIT(RX_RING_DATA1_IDX_2, prAdapter->ulNoMoreRfb)) {
+	if (KAL_TEST_BIT(RX_RING_DATA1, prAdapter->ulNoMoreRfb)) {
 		prIntrStatus->field_conn2x_single.wfdma0_rx_done_3 = 1;
-		DBGLOG(HAL, ERROR, "retry process RX_RING_DATA1_IDX_2\n");
+		DBGLOG(HAL, ERROR, "retry process RX_RING_DATA1\n");
 	}
 
-	if (KAL_TEST_BIT(RX_RING_TXDONE0_IDX_3, prAdapter->ulNoMoreRfb)) {
+	if (KAL_TEST_BIT(RX_RING_TXDONE0, prAdapter->ulNoMoreRfb)) {
 		prIntrStatus->field_conn2x_single.wfdma0_rx_done_4 = 1;
-		DBGLOG(HAL, ERROR, "retry process RX_RING_TXDONE0_IDX_3\n");
+		DBGLOG(HAL, ERROR, "retry process RX_RING_TXDONE0\n");
 	}
 
-	if (KAL_TEST_BIT(RX_RING_TXDONE1_IDX_4, prAdapter->ulNoMoreRfb)) {
+	if (KAL_TEST_BIT(RX_RING_TXDONE1, prAdapter->ulNoMoreRfb)) {
 		prIntrStatus->field_conn2x_single.wfdma0_rx_done_5 = 1;
-		DBGLOG(HAL, ERROR, "retry process RX_RING_TXDONE1_IDX_4\n");
+		DBGLOG(HAL, ERROR, "retry process RX_RING_TXDONE1\n");
 	}
 
 	prHifInfo->u4IntStatus = u4RegValue;
@@ -595,9 +595,9 @@ static void mt7961ReadIntStatus(
 uint8_t mt7961CheckPortForRxEventFromPse(IN struct ADAPTER *prAdapter,
 				IN uint8_t u2Port)
 {
-	if (u2Port == RX_RING_EVT_IDX_1 &&
+	if (u2Port == RX_RING_EVT &&
 			prAdapter->fgIsFwDownloaded == TRUE)
-		return RX_RING_TXDONE0_IDX_3;
+		return RX_RING_TXDONE0;
 	else
 		return u2Port;
 }
@@ -1273,7 +1273,7 @@ uint32_t mt7961setWfdmaCoalescingInt(struct ADAPTER *prAdapter,
 	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_INT_RX_PRI_SEL_ADDR;
 	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
 	/*
-	 * RX_RING_DATA_IDX_0   (RX_Ring2) - Band0 Rx Data
+	 * RX_RING_DATA0   (RX_Ring2) - Band0 Rx Data
 	 * WFDMA0_RX_RING_IDX_2 (RX_Ring3) - Band1 Rx Data
 	*/
 

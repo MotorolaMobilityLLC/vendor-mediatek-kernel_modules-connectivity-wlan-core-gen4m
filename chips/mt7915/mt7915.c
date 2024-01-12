@@ -257,31 +257,31 @@ static bool mt7915WfdmaAllocRxRing(
 	struct GLUE_INFO *prGlueInfo,
 	bool fgAllocMem)
 {
-	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_DATA1_IDX_2,
+	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_DATA1,
 			RX_RING_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
 			fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
 		return false;
 	}
-	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_TXDONE0_IDX_3,
+	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_TXDONE0,
 			RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
 			fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
 		return false;
 	}
-	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_TXDONE1_IDX_4,
+	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_TXDONE1,
 			RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
 			fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
 		return false;
 	}
-	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_WAEVT0_IDX_5,
+	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_WAEVT0,
 			RX_RING_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
 			fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
 		return false;
 	}
-	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_WAEVT1_IDX_6,
+	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_WAEVT1,
 			RX_RING_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
 			fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");

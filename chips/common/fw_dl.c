@@ -2117,7 +2117,7 @@ static void fwDlSetupRedlDmad(struct ADAPTER *prAdapter,
 	uint32_t u4Size)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	struct RTMP_TX_RING *prTxRing = &prHifInfo->TxRing[TX_RING_FWDL_IDX_4];
+	struct RTMP_TX_RING *prTxRing = &prHifInfo->TxRing[TX_RING_FWDL];
 	struct RTMP_DMACB *pTxCell = &prTxRing->Cell[prTxRing->TxCpuIdx];
 	struct TXD_STRUCT *pTxD = (struct TXD_STRUCT *)pTxCell->AllocVa;
 
@@ -2178,11 +2178,11 @@ uint32_t fwDlSetupReDl(struct ADAPTER *prAdapter,
 
 	/* 1. Recycle used dmad first */
 	halWpdmaProcessCmdDmaDone(prAdapter->prGlueInfo,
-		TX_RING_FWDL_IDX_4);
+		TX_RING_FWDL);
 
 	/* 2. Stop recycle TX dmad for FWDL ring */
 	halWpdmaStopRecycleDmad(prAdapter->prGlueInfo,
-		TX_RING_FWDL_IDX_4);
+		TX_RING_FWDL);
 
 	/* 3. Setup DMAD for redl packets */
 	fwDlSetupRedlImg(prAdapter,

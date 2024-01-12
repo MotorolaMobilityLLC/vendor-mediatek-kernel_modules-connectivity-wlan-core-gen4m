@@ -553,11 +553,14 @@ static int axiAllocHifMem(struct platform_device *pdev,
 			grMem.u4RsvMemSize);
 
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
-		if (u4Idx == TX_RING_DATA1_IDX_1 &&
+		if (u4Idx == TX_RING_DATA1 &&
 				!prChipInfo->bus_info->tx_ring1_data_idx)
 			continue;
-		else if (u4Idx == TX_RING_DATA2_IDX_2 &&
+		else if (u4Idx == TX_RING_DATA_PRIO &&
 				!prChipInfo->bus_info->tx_ring2_data_idx)
+			continue;
+		else if (u4Idx == TX_RING_DATA_ALTX &&
+				!prChipInfo->bus_info->tx_ring3_data_idx)
 			continue;
 		if (!axiAllocRsvMem(TX_RING_SIZE * TXD_SIZE,
 				    &grMem.rTxDesc[u4Idx]))
@@ -565,7 +568,7 @@ static int axiAllocHifMem(struct platform_device *pdev,
 	}
 
 	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
-		if (u4Idx == RX_RING_DATA_IDX_0 || u4Idx == RX_RING_DATA1_IDX_2)
+		if (u4Idx == RX_RING_DATA0 || u4Idx == RX_RING_DATA1)
 			u4Size = RX_RING0_SIZE;
 		else
 			u4Size = RX_RING1_SIZE;
@@ -1239,7 +1242,7 @@ static bool axiAllocTxCmdBuf(struct RTMP_DMABUF *prDmaBuf,
 			     uint32_t u4Num, uint32_t u4Idx)
 {
 	/* only for cmd & fw download ring */
-	if (u4Num == TX_RING_CMD_IDX_3 || u4Num == TX_RING_FWDL_IDX_4) {
+	if (u4Num == TX_RING_CMD || u4Num == TX_RING_FWDL) {
 		prDmaBuf->AllocSize = AXI_TX_CMD_BUFF_SIZE;
 		prDmaBuf->AllocPa = grMem.rTxCmdBuf[u4Idx].pa;
 		prDmaBuf->AllocVa = grMem.rTxCmdBuf[u4Idx].va;
@@ -1263,24 +1266,24 @@ static void *axiAllocRxBuf(struct GL_HIF_INFO *prHifInfo,
 			   uint32_t u4Num, uint32_t u4Idx)
 {
 	switch (u4Num) {
-	case RX_RING_DATA_IDX_0:
+	case RX_RING_DATA0:
 		prDmaBuf->AllocPa = grMem.rRxDataBuf[u4Idx].pa;
 		prDmaBuf->AllocVa = grMem.rRxDataBuf[u4Idx].va;
 		break;
-	case RX_RING_EVT_IDX_1:
+	case RX_RING_EVT:
 		prDmaBuf->AllocPa = grMem.rRxEventBuf[u4Idx].pa;
 		prDmaBuf->AllocVa = grMem.rRxEventBuf[u4Idx].va;
 		break;
 #if (CFG_SUPPORT_CONNAC2X == 1)
-	case RX_RING_DATA1_IDX_2:
+	case RX_RING_DATA1:
 		prDmaBuf->AllocPa = grMem.rRxData1Buf[u4Idx].pa;
 		prDmaBuf->AllocVa = grMem.rRxData1Buf[u4Idx].va;
 		break;
-	case RX_RING_TXDONE0_IDX_3:
+	case RX_RING_TXDONE0:
 		prDmaBuf->AllocPa = grMem.rTxFreeDoneEvent0Buf[u4Idx].pa;
 		prDmaBuf->AllocVa = grMem.rTxFreeDoneEvent0Buf[u4Idx].va;
 		break;
-	case RX_RING_TXDONE1_IDX_4:
+	case RX_RING_TXDONE1:
 		prDmaBuf->AllocPa = grMem.rTxFreeDoneEvent1Buf[u4Idx].pa;
 		prDmaBuf->AllocVa = grMem.rTxFreeDoneEvent1Buf[u4Idx].va;
 		break;
