@@ -224,13 +224,6 @@ enum test_dbdc_enable {
 	TEST_DBDC_ENABLE
 };
 
-/* HWTX enable for QA */
-enum test_hwtx_enable {
-	TEST_HWTX_DISABLE = 0,
-	TEST_HWTX_ENABLE
-};
-
-
 /* Test backup CR type */
 enum test_bk_cr_type {
 	SERV_TEST_EMPTY_BKCR = 0,
@@ -1133,10 +1126,6 @@ struct test_wlan_info {
 
 	/*connsys emi total phy memory size*/
 	unsigned long long emi_phy_size;
-
-	/* HW Tx on off */
-	u_int32 hw_tx_enable;
-
 };
 
 /* Test control register read/write for service */
