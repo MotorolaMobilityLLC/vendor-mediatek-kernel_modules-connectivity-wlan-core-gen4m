@@ -55,19 +55,20 @@ uint8_t *fw_log_type_to_str(enum ENUM_FW_LOG_CTRL_TYPE type)
 uint32_t fw_log_init(struct ADAPTER *ad)
 {
 	struct FW_LOG_INFO *fw_log = NULL;
+	uint32_t status = WLAN_STATUS_SUCCESS;
 
 	if (!ad ||
 	    !ad->chip_info)
 		return 0;
 
 	fw_log = &ad->chip_info->fw_log_info;
-	if (!fw_log->ops ||
-	    !fw_log->ops->init)
-		return 0;
-
 	fw_log_info = fw_log;
 
-	return fw_log->ops->init(ad);
+	if (fw_log->ops &&
+	    fw_log->ops->init)
+		status = fw_log->ops->init(ad);
+
+	return status;
 }
 
 void fw_log_deinit(struct ADAPTER *ad)
@@ -78,14 +79,12 @@ void fw_log_deinit(struct ADAPTER *ad)
 	    !ad->chip_info)
 		return;
 
-	fw_log_info = NULL;
-
 	fw_log = &ad->chip_info->fw_log_info;
-	if (!fw_log->ops ||
-	    !fw_log->ops->deinit)
-		return;
+	if (fw_log->ops &&
+	    fw_log->ops->deinit)
+		fw_log->ops->deinit(ad);
 
-	fw_log->ops->deinit(ad);
+	fw_log_info = NULL;
 }
 
 uint32_t fw_log_start(struct ADAPTER *ad)
