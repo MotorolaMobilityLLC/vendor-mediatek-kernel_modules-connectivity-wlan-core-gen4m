@@ -114,6 +114,7 @@ extern unsigned int wlan_bat_volt;
 extern bool fgIsTxPowerDecreased;
 #endif
 
+extern u_int8_t wlan_perf_monitor_force_enable;
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
