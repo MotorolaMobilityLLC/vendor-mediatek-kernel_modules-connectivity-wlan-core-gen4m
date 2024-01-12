@@ -7,7 +7,6 @@
 #define _GL_EMI_H
 
 #define EMI_NAME		"WIFI-EMI"
-#define MCU_EMI_SIZE		(2 * 64 * 1024)
 #define WIFI_EMI_ADDR_MASK	0xFFFFFF
 
 enum EMI_ALLOC_TYPE {
@@ -21,6 +20,7 @@ enum EMI_ALLOC_TYPE {
 
 struct EMI_MEM_INFO {
 	const enum EMI_ALLOC_TYPE type;
+	const uint32_t coredump_size;
 	phys_addr_t pa;
 	void *va;
 	uint32_t size;

@@ -2242,6 +2242,7 @@ u_int8_t conn2_rst_L0_notify_step2(void)
 }
 #endif
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
 uint32_t downloadImgByDynMemMap(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4Addr, IN uint32_t u4Len,
@@ -2254,10 +2255,13 @@ uint32_t downloadImgByDynMemMap(IN struct ADAPTER *prAdapter,
 			u4Addr, u4Len, eDlIdx);
 
 	kalDevRegWriteRange(prAdapter->prGlueInfo,
-		u4Addr, (void *)pucStartPtr, u4Len);
+			    u4Addr,
+			    (void *)pucStartPtr,
+			    u4Len);
 
 	return WLAN_STATUS_SUCCESS;
 }
+#endif
 #endif
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
