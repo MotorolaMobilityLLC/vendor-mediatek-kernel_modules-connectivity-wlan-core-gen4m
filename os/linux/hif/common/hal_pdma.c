@@ -353,7 +353,7 @@ static u_int8_t halDriverOwnCheckCR4(struct ADAPTER *prAdapter)
 			       LP_OWN_BACK_FAILED_LOG_SKIP_MS);
 			fgStatus = FALSE;
 #if CFG_CHIP_RESET_SUPPORT
-			glGetRstReason(RST_DRV_OWN_FAIL);
+			glSetRstReason(RST_DRV_OWN_FAIL);
 			GL_RESET_TRIGGER(prAdapter,
 					 RST_FLAG_CHIP_RESET);
 #endif
@@ -405,7 +405,7 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 				prChipDbgOps->showCsrInfo(prAdapter);
 #if CFG_CHIP_RESET_SUPPORT
 			/* Trigger RESET */
-			glGetRstReason(RST_DRV_OWN_FAIL);
+			glSetRstReason(RST_DRV_OWN_FAIL);
 			GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
 #endif
 		}

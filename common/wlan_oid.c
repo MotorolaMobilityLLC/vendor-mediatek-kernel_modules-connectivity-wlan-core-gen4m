@@ -14575,6 +14575,11 @@ uint32_t wlanoidSetSer(IN struct ADAPTER *prAdapter,
 				  SER_ENABLE_L3_BF_RECOVER), 0);
 		break;
 
+	case SER_USER_CMD_L0_RECOVER:
+		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
+				SER_SET_L0_RECOVER, 0);
+		break;
+
 	case SER_USER_CMD_L1_RECOVER:
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
 				 SER_SET_L1_RECOVER, 0);

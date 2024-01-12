@@ -122,3 +122,9 @@ uint32_t au4LogLevel[ENUM_WIFI_LOG_MODULE_NUM] = {ENUM_WIFI_LOG_LEVEL_DEFAULT};
  *                              F U N C T I O N S
  *****************************************************************************
  */
+#if CFG_CHIP_RESET_SUPPORT
+void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo)
+{
+	DBGLOG(INIT, WARN, "[SER][L0] not support..\n");
+}
+#endif

@@ -125,6 +125,9 @@ void asicConnac2xCapInit(
 #endif /* CFG_SUPPORT_MSP == 1 */
 	prChipInfo->asicRxGetRcpiValueFromRxv =
 			asicConnac2xRxGetRcpiValueFromRxv;
+#if (CFG_CHIP_RESET_SUPPORT == 1) && (CFG_WMT_RESET_API_SUPPORT == 0)
+	prChipInfo->rst_L0_notify_step2 = conn2_rst_L0_notify_step2;
+#endif
 #if CFG_SUPPORT_WIFI_SYSDVT
 	prAdapter->u2TxTest = TX_TEST_UNLIMITIED;
 	prAdapter->u2TxTestCount = 0;
@@ -1628,4 +1631,31 @@ uint8_t asicConnac2xRxGetRcpiValueFromRxv(
 
 	return ucRcpiValue;
 }
+
+#if (CFG_CHIP_RESET_SUPPORT == 1) && (CFG_WMT_RESET_API_SUPPORT == 0)
+u_int8_t conn2_rst_L0_notify_step2(void)
+{
+	if (glGetRstReason() == RST_BT_TRIGGER) {
+		typedef void (*p_bt_fun_type) (void);
+		p_bt_fun_type bt_func;
+		char *bt_func_name = "WF_rst_L0_notify_BT_step2";
+
+		bt_func = (p_bt_fun_type)(uintptr_t)
+				GLUE_LOOKUP_FUN(bt_func_name);
+		if (bt_func) {
+			bt_func();
+		} else {
+			DBGLOG(INIT, WARN, "[SER][L0] %s does not exist\n",
+							bt_func_name);
+			return FALSE;
+		}
+	} else {
+		/* if wifi trigger, then wait bt ready notify */
+		DBGLOG(INIT, WARN, "[SER][L0] not support..\n");
+	}
+
+	return TRUE;
+}
+#endif
+
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */

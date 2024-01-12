@@ -3619,6 +3619,13 @@ int hif_thread(void *data)
 	DBGLOG(INIT, TRACE, "%s:%u stopped!\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
 
+#if CFG_CHIP_RESET_HANG
+	while (fgIsResetHangState == SER_L0_HANG_RST_HANG) {
+		kalMsleep(SER_L0_HANG_LOG_TIME_INTERVAL);
+		DBGLOG(INIT, STATE, "[SER][L0] SQC hang!\n");
+	}
+#endif
+
 	return 0;
 }
 
@@ -3742,6 +3749,13 @@ int rx_thread(void *data)
 
 	DBGLOG(INIT, TRACE, "%s:%u stopped!\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
+
+#if CFG_CHIP_RESET_HANG
+	while (fgIsResetHangState == SER_L0_HANG_RST_HANG) {
+		kalMsleep(SER_L0_HANG_LOG_TIME_INTERVAL);
+		DBGLOG(INIT, STATE, "[SER][L0] SQC hang!\n");
+	}
+#endif
 
 	return 0;
 }
@@ -4071,6 +4085,13 @@ int main_thread(void *data)
 
 	DBGLOG(INIT, TRACE, "%s:%u stopped!\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
+
+#if CFG_CHIP_RESET_HANG
+	while (fgIsResetHangState == SER_L0_HANG_RST_HANG) {
+		kalMsleep(SER_L0_HANG_LOG_TIME_INTERVAL);
+		DBGLOG(INIT, STATE, "[SER][L0] SQC hang!\n");
+	}
+#endif
 
 	return 0;
 

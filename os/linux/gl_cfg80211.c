@@ -3094,7 +3094,7 @@ mtk_cfg80211_testmode_get_link_detection(IN struct wiphy
 	kalMemCopy(arBugReport, prBugReport,
 		   sizeof(struct EVENT_BUG_REPORT));
 
-	rStatistics.u4RstReason = eResetReason;
+	rStatistics.u4RstReason = glGetRstReason();
 	rStatistics.u8RstTime = u8ResetTime;
 	rStatistics.u4RoamFailCnt = prGlueInfo->u4RoamFailCnt;
 	rStatistics.u8RoamFailTime = prGlueInfo->u8RoamFailTime;
