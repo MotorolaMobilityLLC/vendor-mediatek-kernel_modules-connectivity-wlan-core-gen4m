@@ -2769,8 +2769,9 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 
 			if (prAisReq == NULL ||
 			    prAisReq->eReqType == AIS_REQUEST_RECONNECT) {
-				aisDeactivateAllLink(prAdapter, prAisFsmInfo);
 				if (prAisReq != NULL) {
+					aisDeactivateAllLink(prAdapter,
+							prAisFsmInfo);
 #if CFG_SUPPORT_DBDC
 					if (cnmDBDCIsReqPeivilegeLock()) {
 						DBGLOG(AIS, INFO,
@@ -2790,12 +2791,14 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 				} else {
 					SET_NET_PWR_STATE_IDLE(prAdapter,
 					prAisBssInfo->ucBssIndex);
-
-					if (prAdapter->rWifiVar.
-						rScanInfo.fgSchedScanning) {
-						nicActivateNetwork(prAdapter,
-						prAisBssInfo->ucBssIndex);
-					}
+					/* If sched scan is ongoing, let sched
+					 * scan deactivate newtwork when sched
+					 * scan done.
+					 */
+					if (!prAdapter->rWifiVar.rScanInfo.
+						fgSchedScanning)
+						aisDeactivateAllLink(prAdapter,
+								prAisFsmInfo);
 				}
 
 				if (prAisReq) {
