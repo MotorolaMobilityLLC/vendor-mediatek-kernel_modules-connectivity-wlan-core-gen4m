@@ -216,8 +216,8 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 		prP2pBssInfo->ucPrimaryChannel = P2P_DEFAULT_LISTEN_CHANNEL;
 		prP2pBssInfo->eBand = BAND_2G4;
 		prP2pBssInfo->eBssSCO = CHNL_EXT_SCN;
-		prP2pBssInfo->ucNss = wlanGetSupportNss(prAdapter,
-			prP2pBssInfo->ucBssIndex);
+		prP2pBssInfo->ucOpRxNss = prP2pBssInfo->ucOpTxNss =
+			wlanGetSupportNss(prAdapter, prP2pBssInfo->ucBssIndex);
 #if (CFG_HW_WMM_BY_BSS == 0)
 		prP2pBssInfo->ucWmmQueSet = (prAdapter->rWifiVar.eDbdcMode ==
 			ENUM_DBDC_MODE_DISABLED)
@@ -1130,9 +1130,6 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo =
 		(struct P2P_SPECIFIC_BSS_INFO *) NULL;
-#if CFG_SUPPORT_DBDC
-	struct CNM_DBDC_CAP rDbdcCap;
-#endif /*CFG_SUPPORT_DBDC*/
 
 	DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventStartAP\n");
 
@@ -1243,28 +1240,24 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 		prP2pBssInfo->ucWmmQueSet = cnmWmmIndexDecision(prAdapter,
 			prP2pBssInfo);
 #if CFG_SUPPORT_DBDC
-	kalMemZero(&rDbdcCap, sizeof(struct CNM_DBDC_CAP));
+	/* DBDC decsion.may change OpNss */
 	cnmDbdcEnableDecision(prAdapter,
 		prP2pBssInfo->ucBssIndex,
 		prP2pConnReqInfo->rChannelInfo.eBand,
 		prP2pConnReqInfo->rChannelInfo.ucChannelNum,
 		prP2pBssInfo->ucWmmQueSet);
-	cnmGetDbdcCapability(prAdapter,
-		prP2pBssInfo->ucBssIndex,
-		prP2pConnReqInfo->rChannelInfo.eBand,
-		prP2pConnReqInfo->rChannelInfo.ucChannelNum,
-		wlanGetSupportNss(prAdapter, prP2pBssInfo->ucBssIndex),
-		&rDbdcCap);
-
-	DBGLOG(P2P, TRACE,
-	   "p2pRoleFsmRunEventStartAP: start AP at CH %u NSS=%u.\n",
-	   prP2pConnReqInfo->rChannelInfo.ucChannelNum,
-	   rDbdcCap.ucNss);
-
-	prP2pBssInfo->ucNss = rDbdcCap.ucNss;
 #endif /*CFG_SUPPORT_DBDC*/
+
+	cnmGetOpTRxNss(
+		prAdapter, prP2pBssInfo->ucBssIndex,
+		&prP2pBssInfo->ucOpRxNss, &prP2pBssInfo->ucOpTxNss);
 	prP2pBssInfo->eHiddenSsidType = prP2pStartAPMsg->ucHiddenSsidType;
 
+	DBGLOG(P2P, TRACE,
+		"p2pRoleFsmRunEventStartAP: start AP CH[%u]",
+		prP2pConnReqInfo->rChannelInfo.ucChannelNum);
+	DBGLOG(P2P, TRACE, "RxNSS[%u]TxNss[%u].\n",
+		prP2pBssInfo->ucOpRxNss, prP2pBssInfo->ucOpTxNss);
 	/*
 	 * beacon content is related with Nss number ,
 	 * need to update because of modification
@@ -1308,11 +1301,12 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 		if (prP2pRoleFsmInfo->rConnReqInfo
 			.rChannelInfo.ucChannelNum != 0) {
 			DBGLOG(P2P, INFO,
-				"Role(%d) StartAP at CH(%d) NSS = %u\n",
+				"Role(%d) StartAP at CH[%u]RxNSS[%u]TxNss[%u]\n",
 				prP2pStartAPMsg->ucRoleIdx,
 				prP2pRoleFsmInfo->rConnReqInfo
 					.rChannelInfo.ucChannelNum,
-				rDbdcCap.ucNss);
+				prP2pBssInfo->ucOpRxNss,
+				prP2pBssInfo->ucOpTxNss);
 
 			p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(
 				prAdapter,
@@ -1507,10 +1501,6 @@ void p2pRoleFsmRunEventDfsCac(IN struct ADAPTER *prAdapter,
 		(struct P2P_CONNECTION_REQ_INFO *) NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	enum ENUM_CHANNEL_WIDTH rChannelWidth;
-#if CFG_SUPPORT_DBDC
-	struct CNM_DBDC_CAP rDbdcCap;
-#endif /*CFG_SUPPORT_DBDC*/
-
 
 	DBGLOG(P2P, INFO, "p2pRoleFsmRunEventDfsCac\n");
 
@@ -1556,26 +1546,24 @@ void p2pRoleFsmRunEventDfsCac(IN struct ADAPTER *prAdapter,
 			prP2pBssInfo);
 
 #if CFG_SUPPORT_DBDC
-	kalMemZero(&rDbdcCap, sizeof(struct CNM_DBDC_CAP));
+	/* DBDC decsion.may change OpNss */
 	cnmDbdcEnableDecision(prAdapter,
 		prP2pBssInfo->ucBssIndex,
 		prP2pConnReqInfo->rChannelInfo.eBand,
 		prP2pConnReqInfo->rChannelInfo.ucChannelNum,
 		prP2pBssInfo->ucWmmQueSet
 	);
-	cnmGetDbdcCapability(prAdapter,
-		prP2pBssInfo->ucBssIndex,
-		prP2pConnReqInfo->rChannelInfo.eBand,
-		prP2pConnReqInfo->rChannelInfo.ucChannelNum,
-		prAdapter->rWifiVar.ucNSS,
-		&rDbdcCap);
+#endif /*CFG_SUPPORT_DBDC*/
+
+	cnmGetOpTRxNss(
+		prAdapter, prP2pBssInfo->ucBssIndex,
+		&prP2pBssInfo->ucOpRxNss, &prP2pBssInfo->ucOpTxNss);
 
 	DBGLOG(P2P, INFO,
-		"p2pRoleFsmRunEventDfsCac: Set channel at CH %u.\n",
-		prP2pConnReqInfo->rChannelInfo.ucChannelNum);
-
-	prP2pBssInfo->ucNss = rDbdcCap.ucNss;
-#endif /*CFG_SUPPORT_DBDC*/
+		"p2pRoleFsmRunEventDfsCac: CH[%u]RxNSS[%u]TxNss[%u].\n",
+		prP2pConnReqInfo->rChannelInfo.ucChannelNum,
+		prP2pBssInfo->ucOpRxNss,
+		prP2pBssInfo->ucOpTxNss);
 
 	if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_IDLE) {
 		/* Make sure the state is in IDLE state. */
@@ -1796,9 +1784,6 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 	struct P2P_CHNL_REQ_INFO *prChnlReqInfo =
 		(struct P2P_CHNL_REQ_INFO *) NULL;
 	struct P2P_JOIN_INFO *prJoinInfo = (struct P2P_JOIN_INFO *) NULL;
-#if CFG_SUPPORT_DBDC
-	struct CNM_DBDC_CAP rDbdcCap;
-#endif /*CFG_SUPPORT_DBDC*/
 	uint8_t ucRfBw;
 
 	prP2pConnReqMsg = (struct MSG_P2P_CONNECTION_REQUEST *) prMsgHdr;
@@ -1899,27 +1884,24 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 				cnmWmmIndexDecision(prAdapter, prP2pBssInfo);
 
 #if CFG_SUPPORT_DBDC
-		kalMemZero(&rDbdcCap, sizeof(struct CNM_DBDC_CAP));
+		/* DBDC decsion.may change OpNss */
 		cnmDbdcEnableDecision(prAdapter,
 			prP2pBssInfo->ucBssIndex,
 			prChnlReqInfo->eBand,
 			prChnlReqInfo->ucReqChnlNum,
 			prP2pBssInfo->ucWmmQueSet);
-		cnmGetDbdcCapability(prAdapter,
-			prP2pBssInfo->ucBssIndex,
-			prChnlReqInfo->eBand,
-			prChnlReqInfo->ucReqChnlNum,
-			wlanGetSupportNss(prAdapter, prP2pBssInfo->ucBssIndex),
-			&rDbdcCap);
+#endif /* CFG_SUPPORT_DBDC */
+
+		cnmGetOpTRxNss(
+			prAdapter, prP2pBssInfo->ucBssIndex,
+			&prP2pBssInfo->ucOpRxNss, &prP2pBssInfo->ucOpTxNss);
 
 		DBGLOG(P2P, INFO,
-		   "p2pRoleFsmRunEventConnectionRequest: start GC at CH %u, NSS=%u.\n",
+		   "p2pRoleFsmRunEventConnectionRequest: start GC CH[%u]RxNSS[%u]TxNss[%u]\n",
 		   prChnlReqInfo->ucReqChnlNum,
-		   rDbdcCap.ucNss);
+		   prP2pBssInfo->ucOpRxNss,
+		   prP2pBssInfo->ucOpTxNss);
 
-		prP2pBssInfo->ucNss = rDbdcCap.ucNss;
-
-#endif
 
 		/* Decide RF BW by own OP and Peer OP BW */
 		ucRfBw = cnmGetDbdcBwCapability(prAdapter,
@@ -2492,9 +2474,6 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	struct P2P_CHNL_REQ_INFO *prChnlReqInfo =
 		(struct P2P_CHNL_REQ_INFO *) NULL;
-#if CFG_SUPPORT_DBDC
-	struct CNM_DBDC_CAP rDbdcCap;
-#endif /*CFG_SUPPORT_DBDC*/
 
 	if (!prP2pRoleFsmInfo) {
 		DBGLOG(P2P, TRACE, "prP2pRoleFsmInfo is NULL\n");
@@ -2553,29 +2532,25 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 						cnmWmmIndexDecision(prAdapter,
 							prP2pBssInfo);
 #if CFG_SUPPORT_DBDC
-				kalMemZero(&rDbdcCap,
-					sizeof(struct CNM_DBDC_CAP));
+				/* DBDC decsion.may change OpNss */
 				cnmDbdcEnableDecision(prAdapter,
 					prP2pRoleFsmInfo->ucBssIndex,
 					prChnlReqInfo->eBand,
 					prChnlReqInfo->ucReqChnlNum,
 					prP2pBssInfo->ucWmmQueSet);
-				cnmGetDbdcCapability(prAdapter,
-					prP2pRoleFsmInfo->ucBssIndex,
-					prChnlReqInfo->eBand,
-					prChnlReqInfo->ucReqChnlNum,
-					wlanGetSupportNss(prAdapter,
-					prP2pRoleFsmInfo->ucBssIndex),
-					&rDbdcCap);
+#endif /* CFG_SUPPORT_DBDC */
+
+				cnmGetOpTRxNss(
+					prAdapter, prP2pRoleFsmInfo->ucBssIndex,
+					&prP2pBssInfo->ucOpRxNss,
+					&prP2pBssInfo->ucOpTxNss);
 
 				DBGLOG(P2P, INFO,
-					"p2pRoleFsmRunEventScanDone: start GC at CH %u, NSS=%u.\n",
+					"p2pRoleFsmRunEventScanDone: start GC CH[%u]RxNSS[%u]TxNss[%u]\n",
 					prChnlReqInfo->ucReqChnlNum,
-					rDbdcCap.ucNss);
+					prP2pBssInfo->ucOpRxNss,
+					prP2pBssInfo->ucOpTxNss);
 
-
-				prP2pBssInfo->ucNss = rDbdcCap.ucNss;
-#endif
 				/* For GC join. */
 				eNextState = P2P_ROLE_STATE_REQING_CHANNEL;
 			}

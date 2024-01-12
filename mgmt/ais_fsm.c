@@ -376,12 +376,12 @@ void aisFsmInit(IN struct ADAPTER *prAdapter)
 	prAisBssInfo->eBand = BAND_2G4;
 	prAisBssInfo->ucPrimaryChannel = 1;
 	prAisBssInfo->prStaRecOfAP = (struct STA_RECORD *) NULL;
-	prAisBssInfo->ucNss =
-	    wlanGetSupportNss(prAdapter, prAisBssInfo->ucBssIndex);
+	prAisBssInfo->ucOpRxNss = prAisBssInfo->ucOpTxNss =
+		wlanGetSupportNss(prAdapter, prAisBssInfo->ucBssIndex);
 #if (CFG_HW_WMM_BY_BSS == 0)
 	prAisBssInfo->ucWmmQueSet =
-	    (prAdapter->rWifiVar.eDbdcMode ==
-	     ENUM_DBDC_MODE_DISABLED) ? DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
+		(prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED) ?
+			DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
 #endif
 	/* 4 <4> Allocate MSDU_INFO_T for Beacon */
 	prAisBssInfo->prBeacon = cnmMgtPktAlloc(prAdapter,
@@ -1046,9 +1046,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 	uint8_t ucChannel;
 	uint16_t u2ScanIELen;
 	u_int8_t fgIsTransition = (u_int8_t) FALSE;
-#if CFG_SUPPORT_DBDC
-	struct CNM_DBDC_CAP rDbdcCap;
-#endif /*CFG_SUPPORT_DBDC */
 	uint8_t ucRfBw;
 
 	DEBUGFUNC("aisFsmSteps()");
@@ -1289,21 +1286,19 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 						cnmWmmIndexDecision(prAdapter,
 						prAisBssInfo);
 #if CFG_SUPPORT_DBDC
+					/* DBDC decsion.may change OpNss */
 					cnmDbdcEnableDecision(prAdapter,
 						prAisBssInfo->ucBssIndex,
 						prBssDesc->eBand,
 						prBssDesc->ucChannelNum,
 						prAisBssInfo->ucWmmQueSet);
-					cnmGetDbdcCapability(prAdapter,
-						prAisBssInfo->ucBssIndex,
-						prBssDesc->eBand,
-						prBssDesc->ucChannelNum,
-						wlanGetSupportNss(prAdapter,
-						    prAisBssInfo->ucBssIndex),
-						&rDbdcCap);
-
-					prAisBssInfo->ucNss = rDbdcCap.ucNss;
 #endif /*CFG_SUPPORT_DBDC*/
+
+					cnmGetOpTRxNss(prAdapter,
+						prAisBssInfo->ucBssIndex,
+						&prAisBssInfo->ucOpRxNss,
+						&prAisBssInfo->ucOpTxNss);
+
 					/* 4 <B> Do STATE transition and update
 					 * current Operation Mode.
 					 */

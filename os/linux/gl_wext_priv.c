@@ -11468,7 +11468,7 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 	uint8_t			ucBssIdx;
 	struct BSS_INFO *prBssInfo;
 	enum ENUM_CNM_NETWORK_TYPE_T eNetworkType;
-	uint8_t ucNss;
+	uint8_t ucOpRxNss, ucOpTxNss;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -11542,6 +11542,7 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 		       eNetworkType == ENUM_CNM_NETWORK_TYPE_P2P_GC) &&
 		      (prCnmInfo->ucBssConnectState[ucBssIdx] ==
 		       PARAM_MEDIA_STATE_CONNECTED)))) {
+			ucOpRxNss = prBssInfo->ucOpRxNss;
 			if (eNetworkType == ENUM_CNM_NETWORK_TYPE_P2P_GO) {
 				struct STA_RECORD *prCurrStaRec =
 						(struct STA_RECORD *) NULL;
@@ -11553,19 +11554,21 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 				if (prCurrStaRec != NULL &&
 				    IS_CONNECTION_NSS2(prBssInfo,
 				    prCurrStaRec)) {
-					ucNss = 2;
+					ucOpTxNss = 2;
 				} else
-					ucNss = 1;
+					ucOpTxNss = 1;
+
+				ucOpRxNss = prBssInfo->ucOpRxNss;
 			} else if (prBssInfo->prStaRecOfAP != NULL &&
 				   IS_CONNECTION_NSS2(prBssInfo,
 				   prBssInfo->prStaRecOfAP)) {
-				ucNss = 2;
+				ucOpTxNss = 2;
 			} else
-				ucNss = 1;
-
+				ucOpTxNss = 1;
 		} else {
 			eNetworkType = ENUM_CNM_NETWORK_TYPE_OTHER;
-			ucNss = prBssInfo->ucNss;
+			ucOpTxNss = prBssInfo->ucOpTxNss;
+			ucOpRxNss = prBssInfo->ucOpRxNss;
 			/* Do not show history information */
 			/* if argc is 1 */
 			if (i4Argc < 2)
@@ -11574,7 +11577,7 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 
 		i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"BSS%u Inuse%u Act%u ConnStat%u [NetType%u][CH%3u][DBDC b%u][WMM%u b%u][OMAC%u b%u][BW%3u][NSS%u]\n",
+			"BSS%u Inuse%u Act%u ConnStat%u [NetType%u][CH%3u][DBDC b%u][WMM%u b%u][OMAC%u b%u][BW%3u][TxNSS%u][RxNss%u]\n",
 			ucBssIdx,
 			prCnmInfo->ucBssInuse[ucBssIdx],
 			prCnmInfo->ucBssActive[ucBssIdx],
@@ -11587,7 +11590,8 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 			prCnmInfo->ucBssOMACSet[ucBssIdx],
 			prCnmInfo->ucBssOMACDBDCBand[ucBssIdx],
 			20 * (0x01 << rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo)),
-			ucNss);
+			ucOpTxNss,
+			ucOpRxNss);
 	}
 
 	kalMemFree(prCnmInfo, VIR_MEM_TYPE, sizeof(struct PARAM_GET_CNM_T));

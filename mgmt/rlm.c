@@ -176,7 +176,8 @@ static uint8_t rlmGetOpModeBwByVhtAndHtOpInfo(struct BSS_INFO *prBssInfo);
 static u_int8_t rlmCheckOpChangeParamValid(struct ADAPTER *prAdapter,
 					   struct BSS_INFO *prBssInfo,
 					   uint8_t ucChannelWidth,
-					   uint8_t ucNss);
+					   uint8_t ucOpRxNss,
+					   uint8_t ucOpTxNss);
 static void rlmRecOpModeBwForClient(uint8_t ucVhtOpModeChannelWidth,
 				    struct BSS_INFO *prBssInfo);
 
@@ -839,9 +840,14 @@ static void rlmFillHtCapIE(struct ADAPTER *prAdapter,
 					  HT_CAP_INFO_SHORT_GI_40M |
 					  HT_CAP_INFO_DSSS_CCK_IN_40M);
 
-	/* SM power saving */ /* TH3_Huang */
-	if (prBssInfo->ucNss <
-	    wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex))
+	/* SM power saving (IEEE 802.11, 2016, 10.2.4)
+	 * A non-AP HT STA may also use SM Power Save bits in the HT
+	 * Capabilities element of its Association Request to achieve
+	 * the same purpose. The latter allows the STA to use only a
+	 * single receive chain immediately after association.
+	 */
+	if (prBssInfo->ucOpRxNss <
+		wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex))
 		prHtCap->u2HtCapInfo &=
 			~HT_CAP_INFO_SM_POWER_SAVE; /*Set as static power save*/
 
@@ -1360,7 +1366,7 @@ static void rlmFillVhtOpNotificationIE(struct ADAPTER *prAdapter,
 		sizeof(struct IE_VHT_OP_MODE_NOTIFICATION) - ELEM_HDR_LEN;
 
 	DBGLOG(RLM, TRACE, "rlmFillVhtOpNotificationIE(%d) %u %u\n",
-	       prBssInfo->ucBssIndex, fgIsOwnCap, prBssInfo->ucNss);
+	       prBssInfo->ucBssIndex, fgIsOwnCap, prBssInfo->ucOpRxNss);
 
 	if (fgIsOwnCap) {
 		ucOpModeBw = cnmGetDbdcBwCapability(prAdapter,
@@ -1372,7 +1378,8 @@ static void rlmFillVhtOpNotificationIE(struct ADAPTER *prAdapter,
 
 		prVhtOpMode->ucOperatingMode |= ucOpModeBw;
 		prVhtOpMode->ucOperatingMode |=
-			(((prBssInfo->ucNss - 1) << VHT_OP_MODE_RX_NSS_OFFSET) &
+			(((prBssInfo->ucOpRxNss - 1)
+				<< VHT_OP_MODE_RX_NSS_OFFSET) &
 			 VHT_OP_MODE_RX_NSS);
 
 	} else {
@@ -1381,7 +1388,8 @@ static void rlmFillVhtOpNotificationIE(struct ADAPTER *prAdapter,
 
 		prVhtOpMode->ucOperatingMode |= ucOpModeBw;
 		prVhtOpMode->ucOperatingMode |=
-			(((prBssInfo->ucNss - 1) << VHT_OP_MODE_RX_NSS_OFFSET) &
+			(((prBssInfo->ucOpRxNss - 1)
+				<< VHT_OP_MODE_RX_NSS_OFFSET) &
 			 VHT_OP_MODE_RX_NSS);
 	}
 
@@ -1612,6 +1620,62 @@ void rlmFillVhtOpIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 	prVhtOp->u2VhtBasicMcsSet = prBssInfo->u2VhtBasicMcsSet;
 
 	prMsduInfo->u2FrameLength += IE_SIZE(prVhtOp);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get RxNss from VHT CAP IE.
+ *
+ * \param[in] prVhtCap
+ *
+ * \return ucRxNss
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t
+rlmGetSupportRxNssInVhtCap(struct IE_VHT_CAP *prVhtCap)
+{
+	uint8_t ucRxNss = 1;
+
+	if (prVhtCap) {
+		if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
+			VHT_CAP_INFO_MCS_2SS_MASK) >>
+			VHT_CAP_INFO_MCS_2SS_OFFSET)
+			!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
+			ucRxNss = 2;
+		if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
+			VHT_CAP_INFO_MCS_3SS_MASK)
+			>> VHT_CAP_INFO_MCS_3SS_OFFSET)
+			!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
+			ucRxNss = 3;
+		if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
+			VHT_CAP_INFO_MCS_4SS_MASK)
+			>> VHT_CAP_INFO_MCS_4SS_OFFSET)
+			!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
+			ucRxNss = 4;
+		if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
+			VHT_CAP_INFO_MCS_5SS_MASK)
+			>> VHT_CAP_INFO_MCS_5SS_OFFSET)
+			!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
+			ucRxNss = 5;
+		if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
+			VHT_CAP_INFO_MCS_6SS_MASK)
+			>> VHT_CAP_INFO_MCS_6SS_OFFSET)
+			!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
+			ucRxNss = 6;
+		if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
+			VHT_CAP_INFO_MCS_7SS_MASK)
+			>> VHT_CAP_INFO_MCS_7SS_OFFSET)
+			!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
+			ucRxNss = 7;
+		if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
+			VHT_CAP_INFO_MCS_8SS_MASK)
+			>> VHT_CAP_INFO_MCS_8SS_OFFSET)
+			!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
+			ucRxNss = 8;
+		} else
+			DBGLOG(RLM, WARN, "null prVhtCap, assume RxNss=1\n");
+
+	return ucRxNss;
 }
 
 #endif
@@ -2128,10 +2192,11 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_802_11AC
 	struct IE_VHT_OP *prVhtOp;
-	struct IE_VHT_CAP *prVhtCap;
+	struct IE_VHT_CAP *prVhtCap = NULL;
 	struct IE_OP_MODE_NOTIFICATION
 		*prOPModeNotification; /* Operation Mode Notification */
-	u_int8_t fgHasOPModeIE = FALSE;
+	uint8_t fgHasOPModeIE = FALSE;
+	uint8_t fgHasNewOPModeIE = FALSE;
 	uint8_t ucVhtOpModeChannelWidth = 0;
 	uint8_t ucVhtOpModeRxNss = 0;
 	uint8_t ucMaxBwAllowed;
@@ -2398,14 +2463,6 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 					   &prBssInfo->ucVhtChannelFrequencyS2,
 					   &prBssInfo->ucVhtChannelWidth);
 
-			/* Set initial value of VHT OP mode */
-			ucInitVhtOpMode = 0;
-			ucInitVhtOpMode |=
-				rlmGetOpModeBwByVhtAndHtOpInfo(prBssInfo);
-			ucInitVhtOpMode |= ((prBssInfo->ucNss - 1)
-					    << VHT_OP_MODE_RX_NSS_OFFSET) &
-					   VHT_OP_MODE_RX_NSS;
-
 			/* Revise by own OP BW if needed */
 			if ((prBssInfo->fgIsOpChangeChannelWidth) &&
 			    (rlmGetVhtOpBwByBssOpBw(
@@ -2429,11 +2486,12 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			if ((prOPModeNotification->ucOpMode &
 			     VHT_OP_MODE_RX_NSS_TYPE) !=
 			    VHT_OP_MODE_RX_NSS_TYPE) {
+				fgHasOPModeIE = TRUE;
 				if (prStaRec->ucVhtOpMode !=
 				    prOPModeNotification->ucOpMode) {
 					prStaRec->ucVhtOpMode =
 						prOPModeNotification->ucOpMode;
-					fgHasOPModeIE = TRUE;
+					fgHasNewOPModeIE = TRUE;
 					ucVhtOpModeChannelWidth =
 						((prOPModeNotification
 							  ->ucOpMode) &
@@ -2624,7 +2682,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	 *  The channel bandwidth of OP Mode IE  is  3, represent as
 	 * 160/80+80MHz.
 	 */
-	if (fgHasOPModeIE == TRUE) {
+	if (fgHasNewOPModeIE == TRUE) {
 		if (prStaRec->ucStaState == STA_STATE_3) {
 			/* 1. Modify channel width parameters */
 			rlmRecOpModeBwForClient(ucVhtOpModeChannelWidth,
@@ -2659,8 +2717,16 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			}
 		}
 	} else { /* Set Default if the VHT OP mode field is not present */
+		if (!fgHasOPModeIE) {
+			ucInitVhtOpMode |=
+				rlmGetOpModeBwByVhtAndHtOpInfo(prBssInfo);
+			ucInitVhtOpMode |=
+				((rlmGetSupportRxNssInVhtCap(prVhtCap) - 1)
+				<< VHT_OP_MODE_RX_NSS_OFFSET) &
+				VHT_OP_MODE_RX_NSS;
+		}
 		if ((prStaRec->ucVhtOpMode != ucInitVhtOpMode) &&
-		    (prStaRec->ucStaState == STA_STATE_3)) {
+			(prStaRec->ucStaState == STA_STATE_3)) {
 			prStaRec->ucVhtOpMode = ucInitVhtOpMode;
 			DBGLOG(RLM, INFO, "Update OpMode to 0x%x",
 			       prStaRec->ucVhtOpMode);
@@ -3232,29 +3298,34 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 	rBssRlmParam.ucVhtChannelFrequencyS2 =
 		prBssInfo->ucVhtChannelFrequencyS2;
 	rBssRlmParam.u2VhtBasicMcsSet = prBssInfo->u2VhtBasicMcsSet;
-	rBssRlmParam.ucNss = prBssInfo->ucNss;
+	rBssRlmParam.ucOpRxNss = prBssInfo->ucOpRxNss;
+	rBssRlmParam.ucOpTxNss = prBssInfo->ucOpTxNss;
 
 	rlmRecIeInfoForClient(prAdapter, prBssInfo, pucIE, u2IELength);
 
 	if (rBssRlmParam.ucRfBand != prBssInfo->eBand ||
-	    rBssRlmParam.ucPrimaryChannel != prBssInfo->ucPrimaryChannel ||
-	    rBssRlmParam.ucRfSco != prBssInfo->eBssSCO ||
-	    rBssRlmParam.ucErpProtectMode != prBssInfo->fgErpProtectMode ||
-	    rBssRlmParam.ucHtProtectMode != prBssInfo->eHtProtectMode ||
-	    rBssRlmParam.ucGfOperationMode != prBssInfo->eGfOperationMode ||
-	    rBssRlmParam.ucTxRifsMode != prBssInfo->eRifsOperationMode ||
-	    rBssRlmParam.u2HtOpInfo3 != prBssInfo->u2HtOpInfo3 ||
-	    rBssRlmParam.u2HtOpInfo2 != prBssInfo->u2HtOpInfo2 ||
-	    rBssRlmParam.ucHtOpInfo1 != prBssInfo->ucHtOpInfo1 ||
-	    rBssRlmParam.ucUseShortPreamble != prBssInfo->fgUseShortPreamble ||
-	    rBssRlmParam.ucUseShortSlotTime != prBssInfo->fgUseShortSlotTime ||
-	    rBssRlmParam.ucVhtChannelWidth != prBssInfo->ucVhtChannelWidth ||
-	    rBssRlmParam.ucVhtChannelFrequencyS1 !=
-		    prBssInfo->ucVhtChannelFrequencyS1 ||
-	    rBssRlmParam.ucVhtChannelFrequencyS2 !=
-		    prBssInfo->ucVhtChannelFrequencyS2 ||
-	    rBssRlmParam.u2VhtBasicMcsSet != prBssInfo->u2VhtBasicMcsSet ||
-	    rBssRlmParam.ucNss != prBssInfo->ucNss)
+		rBssRlmParam.ucPrimaryChannel != prBssInfo->ucPrimaryChannel ||
+		rBssRlmParam.ucRfSco != prBssInfo->eBssSCO ||
+		rBssRlmParam.ucErpProtectMode != prBssInfo->fgErpProtectMode ||
+		rBssRlmParam.ucHtProtectMode != prBssInfo->eHtProtectMode ||
+		rBssRlmParam.ucGfOperationMode != prBssInfo->eGfOperationMode ||
+		rBssRlmParam.ucTxRifsMode != prBssInfo->eRifsOperationMode ||
+		rBssRlmParam.u2HtOpInfo3 != prBssInfo->u2HtOpInfo3 ||
+		rBssRlmParam.u2HtOpInfo2 != prBssInfo->u2HtOpInfo2 ||
+		rBssRlmParam.ucHtOpInfo1 != prBssInfo->ucHtOpInfo1 ||
+		rBssRlmParam.ucUseShortPreamble !=
+			prBssInfo->fgUseShortPreamble ||
+		rBssRlmParam.ucUseShortSlotTime !=
+			prBssInfo->fgUseShortSlotTime ||
+		rBssRlmParam.ucVhtChannelWidth !=
+			prBssInfo->ucVhtChannelWidth ||
+		rBssRlmParam.ucVhtChannelFrequencyS1 !=
+			prBssInfo->ucVhtChannelFrequencyS1 ||
+		rBssRlmParam.ucVhtChannelFrequencyS2 !=
+			prBssInfo->ucVhtChannelFrequencyS2 ||
+		rBssRlmParam.u2VhtBasicMcsSet != prBssInfo->u2VhtBasicMcsSet ||
+		rBssRlmParam.ucOpRxNss != prBssInfo->ucOpRxNss ||
+		rBssRlmParam.ucOpTxNss != prBssInfo->ucOpTxNss)
 		fgNewParameter = TRUE;
 	else {
 		DBGLOG(RLM, TRACE,
@@ -3702,11 +3773,12 @@ void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM *prCmdBody,
 	prCmdBody->ucVhtChannelFrequencyS1 = prBssInfo->ucVhtChannelFrequencyS1;
 	prCmdBody->ucVhtChannelFrequencyS2 = prBssInfo->ucVhtChannelFrequencyS2;
 	prCmdBody->u2VhtBasicMcsSet = prBssInfo->u2BSSBasicRateSet;
-	prCmdBody->ucNss = prBssInfo->ucNss;
+	prCmdBody->ucOpTxNss = prBssInfo->ucOpTxNss;
+	prCmdBody->ucOpRxNss = prBssInfo->ucOpRxNss;
 
 	if (RLM_NET_PARAM_VALID(prBssInfo)) {
 		DBGLOG(RLM, INFO,
-		       "N=%d b=%d c=%d s=%d e=%d h=%d I=0x%02x l=%d p=%d w=%d s1=%d s2=%d n=%d\n",
+		       "N=%d b=%d c=%d s=%d e=%d h=%d I=0x%02x l=%d p=%d w=%d s1=%d s2=%d RxN=%d, TxN=%d\n",
 		       prCmdBody->ucBssIndex, prCmdBody->ucRfBand,
 		       prCmdBody->ucPrimaryChannel, prCmdBody->ucRfSco,
 		       prCmdBody->ucErpProtectMode, prCmdBody->ucHtProtectMode,
@@ -3714,7 +3786,9 @@ void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM *prCmdBody,
 		       prCmdBody->ucUseShortPreamble,
 		       prCmdBody->ucVhtChannelWidth,
 		       prCmdBody->ucVhtChannelFrequencyS1,
-		       prCmdBody->ucVhtChannelFrequencyS2, prCmdBody->ucNss);
+		       prCmdBody->ucVhtChannelFrequencyS2,
+		       prCmdBody->ucOpRxNss,
+		       prCmdBody->ucOpTxNss);
 	} else {
 		DBGLOG(RLM, INFO, "N=%d closed\n", prCmdBody->ucBssIndex);
 	}
@@ -3792,7 +3866,7 @@ void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	uint16_t u2Offset;
 	struct IE_HT_CAP *prHtCap;
 #if CFG_SUPPORT_802_11AC
-	struct IE_VHT_CAP *prVhtCap;
+	struct IE_VHT_CAP *prVhtCap = NULL;
 	struct IE_OP_MODE_NOTIFICATION
 		*prOPModeNotification; /* Operation Mode Notification */
 	u_int8_t fgHasOPModeIE = FALSE;
@@ -3946,7 +4020,7 @@ void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 			prStaRec->ucVhtOpMode |=
 				rlmGetOpModeBwByVhtAndHtOpInfo(prBssInfo);
 			prStaRec->ucVhtOpMode |=
-				((prBssInfo->ucNss - 1)
+				((rlmGetSupportRxNssInVhtCap(prVhtCap) - 1)
 				 << VHT_OP_MODE_RX_NSS_OFFSET) &
 				VHT_OP_MODE_RX_NSS;
 
@@ -4085,7 +4159,8 @@ static void rlmBssReset(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 
 	/* OP mode change control parameters */
 	prBssInfo->fgIsOpChangeChannelWidth = FALSE;
-	prBssInfo->fgIsOpChangeNss = FALSE;
+	prBssInfo->fgIsOpChangeRxNss = FALSE;
+	prBssInfo->fgIsOpChangeTxNss = FALSE;
 }
 
 #if CFG_SUPPORT_TDLS
@@ -4679,7 +4754,7 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 /*----------------------------------------------------------------------------*/
 void rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter,
 				    struct STA_RECORD *prStaRec,
-				    uint8_t ucChannelWidth, uint8_t ucNss)
+				    uint8_t ucChannelWidth, uint8_t ucOpRxNss)
 {
 
 	struct MSDU_INFO *prMsduInfo;
@@ -4725,9 +4800,10 @@ void rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter,
 	prTxFrame->ucOperatingMode |=
 		(ucChannelWidth & VHT_OP_MODE_CHANNEL_WIDTH);
 
-	if (ucNss == 0)
-		ucNss = 1;
-	prTxFrame->ucOperatingMode |= (((ucNss - 1) << 4) & VHT_OP_MODE_RX_NSS);
+	if (ucOpRxNss == 0)
+		ucOpRxNss = 1;
+	prTxFrame->ucOperatingMode |=
+		(((ucOpRxNss - 1) << 4) & VHT_OP_MODE_RX_NSS);
 	prTxFrame->ucOperatingMode &= ~VHT_OP_MODE_RX_NSS_TYPE;
 
 	if (prBssInfo->pfOpChangeHandler)
@@ -4753,7 +4829,7 @@ void rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
-			     struct STA_RECORD *prStaRec, uint8_t ucNss)
+			     struct STA_RECORD *prStaRec, uint8_t ucOpRxNss)
 {
 	struct MSDU_INFO *prMsduInfo;
 	struct ACTION_SM_POWER_SAVE_FRAME *prTxFrame;
@@ -4795,14 +4871,14 @@ void rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
 	prTxFrame->ucCategory = CATEGORY_HT_ACTION;
 	prTxFrame->ucAction = ACTION_HT_SM_POWER_SAVE;
 
-	if (ucNss == 1)
+	if (ucOpRxNss == 1)
 		prTxFrame->ucSmPowerCtrl |= HT_SM_POWER_SAVE_CONTROL_ENABLED;
-	else if (ucNss == 2)
+	else if (ucOpRxNss == 2)
 		prTxFrame->ucSmPowerCtrl &= ~HT_SM_POWER_SAVE_CONTROL_ENABLED;
 	else {
 		DBGLOG(RLM, WARN,
-		       "Can't switch to Nss = %d since we don't support.\n",
-		       ucNss);
+		       "Can't switch to RxNss = %d since we don't support.\n",
+		       ucOpRxNss);
 		return;
 	}
 
@@ -5117,16 +5193,18 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 						 OP_NOTIFY_TYPE_HT_NSS)
 						rlmSendSmPowerSaveFrame(
 							prAdapter, prStaRec,
-							prBssInfo->ucNss);
+							prBssInfo->ucOpRxNss);
 
 					DBGLOG(RLM, INFO,
-					       "Bss[%d] OpType[%d] Tx Failed, send OpType[%d] for roll back to BW[%d] Nss[%d]\n",
-					       prMsduInfo->ucBssIndex,
-					       ucRelatedFrameType,
-					       ucOpChangeType,
-					       rlmGetBssOpBwByVhtAndHtOpInfo(
-						       prBssInfo),
-					       prBssInfo->ucNss);
+						"Bss[%d] OpType[%d] Tx Failed, send OpType",
+						prMsduInfo->ucBssIndex,
+						ucRelatedFrameType);
+					DBGLOG(RLM, INFO,
+						"[%d] for roll back to BW[%d] RxNss[%d]\n",
+						ucOpChangeType,
+						rlmGetBssOpBwByVhtAndHtOpInfo
+							(prBssInfo),
+						prBssInfo->ucOpRxNss);
 
 					return;
 				}
@@ -5159,12 +5237,12 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 					rlmSendOpModeNotificationFrame(
 					prAdapter, prStaRec,
 					prBssInfo->ucOpChangeChannelWidth,
-					prBssInfo->ucOpChangeNss);
+					prBssInfo->ucOpChangeRxNss);
 				else if (ucOpChangeType ==
 					 OP_NOTIFY_TYPE_HT_NSS)
 					rlmSendSmPowerSaveFrame(
 						prAdapter, prStaRec,
-						prBssInfo->ucOpChangeNss);
+						prBssInfo->ucOpChangeRxNss);
 				else if (ucOpChangeType == OP_NOTIFY_TYPE_HT_BW)
 					rlmSendNotifyChannelWidthFrame(
 					prAdapter, prStaRec,
@@ -5237,16 +5315,16 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 						   OP_NOTIFY_TYPE_HT_NSS)
 						rlmSendSmPowerSaveFrame(
 							prAdapter, prStaRec,
-							prBssInfo->ucNss);
+							prBssInfo->ucOpRxNss);
 
 					DBGLOG(RLM, INFO,
-					       "Bss[%d] OpType[%d] Tx Failed, send a OpType[%d] for roll back to BW[%d] Nss[%d]\n",
+					       "Bss[%d] OpType[%d] Tx Failed, send a OpType[%d] for roll back to BW[%d] RxNss[%d]\n",
 					       prMsduInfo->ucBssIndex,
 					       ucOpChangeType,
 					       ucRelatedFrameType,
 					       rlmGetBssOpBwByVhtAndHtOpInfo(
 						       prBssInfo),
-					       prBssInfo->ucNss);
+					       prBssInfo->ucOpRxNss);
 
 					return;
 				}
@@ -5287,8 +5365,10 @@ static void rlmRollbackOpChangeParam(struct BSS_INFO *prBssInfo,
 	}
 
 	if (fgIsRollbackNss == TRUE) {
-		prBssInfo->fgIsOpChangeNss = FALSE;
-		prBssInfo->ucOpChangeNss = prBssInfo->ucNss;
+		prBssInfo->fgIsOpChangeRxNss = FALSE;
+		prBssInfo->fgIsOpChangeTxNss = FALSE;
+		prBssInfo->ucOpChangeRxNss = prBssInfo->ucOpRxNss;
+		prBssInfo->ucOpChangeTxNss = prBssInfo->ucOpTxNss;
 	}
 }
 
@@ -5493,10 +5573,18 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 		}
 	}
 
-	/* Update own operating Nss */
-	if (prBssInfo->fgIsOpChangeNss) {
-		prBssInfo->ucNss = prBssInfo->ucOpChangeNss;
-		DBGLOG(RLM, INFO, "Update OP Nss = %d\n", prBssInfo->ucNss);
+	/* Update own operating RxNss */
+	if (prBssInfo->fgIsOpChangeRxNss) {
+		prBssInfo->ucOpRxNss = prBssInfo->ucOpChangeRxNss;
+		DBGLOG(RLM, INFO, "Update OP RxNss[%d]\n",
+			prBssInfo->ucOpRxNss);
+	}
+
+	/* Update own operating TxNss */
+	if (prBssInfo->fgIsOpChangeTxNss) {
+		prBssInfo->ucOpTxNss = prBssInfo->ucOpChangeTxNss;
+		DBGLOG(RLM, INFO, "Update OP TxNss[%d]\n",
+			prBssInfo->ucOpTxNss);
 	}
 }
 
@@ -5517,7 +5605,8 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 	ASSERT((prAdapter != NULL) && (prBssInfo != NULL));
 
 	if ((prBssInfo->fgIsOpChangeChannelWidth) ||
-	    (prBssInfo->fgIsOpChangeNss)) {
+		(prBssInfo->fgIsOpChangeRxNss) ||
+		(prBssInfo->fgIsOpChangeTxNss)) {
 
 		/* <1> Update own OP BW/Nss */
 		rlmChangeOwnOpInfo(prAdapter, prBssInfo);
@@ -5533,9 +5622,13 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 					       prBssInfo->ucBssIndex);
 	}
 
-	DBGLOG(RLM, INFO, "Complete BSS[%d] OP Mode change to BW[%d] Nss[%d]\n",
-	       prBssInfo->ucBssIndex, rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo),
-	       prBssInfo->ucNss);
+	DBGLOG(RLM, INFO,
+		"Complete BSS[%d] OP Mode change to BW[%d] ",
+		prBssInfo->ucBssIndex,
+		rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo));
+	DBGLOG(RLM, INFO, "RxNss[%d] TxNss[%d]\n",
+		prBssInfo->ucOpRxNss,
+		prBssInfo->ucOpTxNss);
 
 	/* <4> Tell OpMode change caller the change result */
 	if (prBssInfo->pfOpChangeHandler) {
@@ -5558,14 +5651,16 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 enum ENUM_OP_CHANGE_STATUS_T
-rlmChangeOperationMode(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
-		       uint8_t ucChannelWidth, uint8_t ucNss,
-		       PFN_OPMODE_NOTIFY_DONE_FUNC pfOpChangeHandler)
+rlmChangeOperationMode(
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex,
+	uint8_t ucChannelWidth, uint8_t ucOpRxNss, uint8_t ucOpTxNss,
+	PFN_OPMODE_NOTIFY_DONE_FUNC pfOpChangeHandler)
 {
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *)NULL;
 	u_int8_t fgIsChangeBw = TRUE,
-		 fgIsChangeNss = TRUE; /* Indicate if need to change */
+		 fgIsChangeRxNss = TRUE, /* Indicate if need to change */
+		 fgIsChangeTxNss = TRUE;
 	uint8_t i;
 
 	/* Sanity check */
@@ -5579,7 +5674,7 @@ rlmChangeOperationMode(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 
 	/* <1>Check if OP change parameter is valid */
 	if (rlmCheckOpChangeParamValid(prAdapter, prBssInfo, ucChannelWidth,
-				       ucNss) == FALSE)
+				       ucOpRxNss, ucOpTxNss) == FALSE)
 		return OP_CHANGE_STATUS_INVALID;
 
 	/* <2>Check if OpMode notification is ongoing, if not, register the call
@@ -5600,10 +5695,13 @@ rlmChangeOperationMode(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	if (ucChannelWidth == rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo))
 		fgIsChangeBw = FALSE;
 
-	if (ucNss == prBssInfo->ucNss)
-		fgIsChangeNss = FALSE;
+	if (ucOpRxNss == prBssInfo->ucOpRxNss)
+		fgIsChangeRxNss = FALSE;
 
-	if ((!fgIsChangeBw) && (!fgIsChangeNss)) {
+	if (ucOpTxNss == prBssInfo->ucOpTxNss)
+		fgIsChangeTxNss = FALSE;
+
+	if ((!fgIsChangeBw) && (!fgIsChangeRxNss) && (!fgIsChangeTxNss)) {
 		if (prBssInfo->pfOpChangeHandler) {
 			/* (1) Don't need to call callback at no need to change
 			 * OP mode case
@@ -5614,14 +5712,14 @@ rlmChangeOperationMode(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 		}
 
 		DBGLOG(RLM, INFO,
-		       "BSS[%d] target OpMode BW[%d] Nss[%d] is the same as cuurent\n",
-		       ucBssIndex, ucChannelWidth, ucNss);
+			"BSS[%d] target OpMode BW[%d] RxNss[%d] TxNss[%d] No change, return\n",
+			ucBssIndex, ucChannelWidth, ucOpRxNss, ucOpTxNss);
 		return OP_CHANGE_STATUS_VALID_NO_CHANGE;
 	}
 
 	DBGLOG(RLM, INFO,
-	       "Intend to change BSS[%d] OP Mode to BW[%d] Nss[%d]\n",
-	       ucBssIndex, ucChannelWidth, ucNss);
+		"Intend to change BSS[%d] OP Mode to BW[%d] RxNss[%d] TxNss[%d]\n",
+		ucBssIndex, ucChannelWidth, ucOpRxNss, ucOpTxNss);
 
 	/* <4> Fill OP Change Info into BssInfo*/
 	if (fgIsChangeBw) {
@@ -5630,18 +5728,23 @@ rlmChangeOperationMode(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 		DBGLOG(RLM, INFO, "Intend to change BSS[%d] to BW[%d]\n",
 		       ucBssIndex, ucChannelWidth);
 	}
-	if (fgIsChangeNss) {
-		prBssInfo->ucOpChangeNss = ucNss;
-		prBssInfo->fgIsOpChangeNss = TRUE;
-		DBGLOG(RLM, INFO, "Intend to change BSS[%d] to Nss[%d]\n",
-		       ucBssIndex, ucNss);
+	if (fgIsChangeRxNss) {
+		prBssInfo->ucOpChangeRxNss = ucOpRxNss;
+		prBssInfo->fgIsOpChangeRxNss = TRUE;
+		DBGLOG(RLM, INFO, "Intend to change BSS[%d] to RxNss[%d]\n",
+		       ucBssIndex, ucOpRxNss);
+	}
+	if (fgIsChangeTxNss) {
+		prBssInfo->ucOpChangeTxNss = ucOpTxNss;
+		prBssInfo->fgIsOpChangeTxNss = TRUE;
+		DBGLOG(RLM, INFO, "Intend to change BSS[%d] to TxNss[%d]\n",
+			ucBssIndex, ucOpTxNss);
 	}
 
 	/* <5>Handling OP Info change for STA/GC */
 	if ((prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) &&
 	    (prBssInfo->prStaRecOfAP)) {
 		prStaRec = prBssInfo->prStaRecOfAP;
-
 		/* <5.1>Initialize OP mode change parameters related to
 		 * notification Tx done handler (STA mode)
 		 */
@@ -5652,27 +5755,29 @@ rlmChangeOperationMode(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 				prBssInfo->aucOpModeChangeRetryCnt[i] = 0;
 			}
 		}
-
-/* <5.2> Send operating mode notification frame (STA mode) */
+		/* <5.2> Send operating mode notification frame (STA mode)
+		 * No action frame is needed if we only changed OpTxNss.
+		 */
 #if CFG_SUPPORT_802_11AC
-		if (RLM_NET_IS_11AC(prBssInfo)) {
+		if (RLM_NET_IS_11AC(prBssInfo) &&
+			(fgIsChangeBw || fgIsChangeRxNss)) {
 			if (prBssInfo->pfOpChangeHandler)
 				prBssInfo->aucOpModeChangeState
 					[OP_NOTIFY_TYPE_VHT_NSS_BW] =
 					OP_NOTIFY_STATE_SENDING;
-
 			DBGLOG(RLM, INFO,
-			       "Send VHT OP notification frame: BSS[%d] BW[%d] Nss[%d]\n",
-			       ucBssIndex, ucChannelWidth, ucNss);
-
-			rlmSendOpModeNotificationFrame(prAdapter, prStaRec,
-						       ucChannelWidth, ucNss);
+				"Send VHT OP notification frame: BSS[%d] BW[%d] RxNss[%d]\n",
+				ucBssIndex, ucChannelWidth, ucOpRxNss);
+			rlmSendOpModeNotificationFrame(
+				prAdapter, prStaRec,
+				ucChannelWidth, ucOpRxNss);
 		} else
 #endif
 		{
-			if (RLM_NET_IS_11N(prBssInfo)) {
+			if (RLM_NET_IS_11N(prBssInfo) &&
+				(fgIsChangeBw || fgIsChangeRxNss)) {
 				if (prBssInfo->pfOpChangeHandler) {
-					if (fgIsChangeNss)
+					if (fgIsChangeRxNss)
 						prBssInfo->aucOpModeChangeState
 						[OP_NOTIFY_TYPE_HT_NSS] =
 						OP_NOTIFY_STATE_SENDING;
@@ -5681,28 +5786,30 @@ rlmChangeOperationMode(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 							[OP_NOTIFY_TYPE_HT_BW] =
 							OP_NOTIFY_STATE_SENDING;
 				}
-
-				if (fgIsChangeNss) {
+				if (fgIsChangeRxNss) {
 					rlmSendSmPowerSaveFrame(
-						prAdapter, prStaRec, ucNss);
+						prAdapter, prStaRec, ucOpRxNss);
 					DBGLOG(RLM, INFO,
-					       "Send HT SM Power Save frame: BSS[%d] Nss[%d]\n",
-					       ucBssIndex, ucNss);
+						"Send HT SM Power Save frame ");
+					DBGLOG(RLM, INFO,
+						"BSS[%d] RxNss[%d]\n",
+						ucBssIndex, ucOpRxNss);
 				}
-
 				if (fgIsChangeBw) {
 					rlmSendNotifyChannelWidthFrame(
 						prAdapter, prStaRec,
 						ucChannelWidth);
 					DBGLOG(RLM, INFO,
-					       "Send HT Notify Channel Width frame: BSS[%d] BW[%d]\n",
-					       ucBssIndex, ucChannelWidth);
+						"Send HT Notify Channel Width frame: ");
+					DBGLOG(RLM, INFO,
+						"BSS[%d] BW[%d]\n",
+						ucBssIndex, ucChannelWidth);
 				}
 			}
 		}
-
 		/* <5.3> Change OP Info w/o waiting for notification Tx done */
-		if (prBssInfo->pfOpChangeHandler == NULL) {
+		if (prBssInfo->pfOpChangeHandler == NULL ||
+			(!fgIsChangeBw && !fgIsChangeRxNss)) {
 			rlmCompleteOpModeChange(prAdapter, prBssInfo, TRUE);
 			/* No callback */
 			return OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE;
@@ -5714,13 +5821,27 @@ rlmChangeOperationMode(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 		rlmCompleteOpModeChange(prAdapter, prBssInfo, TRUE);
 		return OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE;
 	}
-
 	return OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_WAIT;
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check our desired BW/RxNss is less or equal than peer's capability to
+ *        prevent IOT issue.
+ *
+ * \param[in] prBssInfo
+ * \param[in] ucChannelWidth
+ * \param[in] ucOpTxNss
+ *
+ * \return
+ *	TRUE : Can change to desired BW/RxNss
+ *	FALSE: Should not change operation mode
+ */
+/*----------------------------------------------------------------------------*/
 static u_int8_t rlmCheckOpChangeParamForClient(struct BSS_INFO *prBssInfo,
 					       uint8_t ucChannelWidth,
-					       uint8_t ucNss)
+					       uint8_t ucOpRxNss)
 {
 	struct STA_RECORD *prStaRec;
 
@@ -5786,7 +5907,7 @@ static u_int8_t rlmCheckOpChangeParamForClient(struct BSS_INFO *prBssInfo,
 		}
 
 		/* Check peer Rx Nss Cap */
-		if (ucNss == 2 &&
+		if (ucOpRxNss == 2 &&
 		    ((prStaRec->u2VhtRxMcsMap & VHT_CAP_INFO_MCS_2SS_MASK) >>
 		     VHT_CAP_INFO_MCS_2SS_OFFSET) ==
 			    VHT_CAP_INFO_MCS_NOT_SUPPORTED) {
@@ -5823,7 +5944,8 @@ static u_int8_t rlmCheckOpChangeParamForClient(struct BSS_INFO *prBssInfo,
 			}
 
 			/* Check peer Rx Nss Cap */
-			if (ucNss == 2 && (prStaRec->aucRxMcsBitmask[1] == 0)) {
+			if (ucOpRxNss == 2 &&
+				(prStaRec->aucRxMcsBitmask[1] == 0)) {
 				DBGLOG(RLM, INFO,
 				       "Don't change Nss since HT peer doesn't support 2ss\n");
 				return FALSE;
@@ -5836,8 +5958,10 @@ static u_int8_t rlmCheckOpChangeParamForClient(struct BSS_INFO *prBssInfo,
 static u_int8_t rlmCheckOpChangeParamValid(struct ADAPTER *prAdapter,
 					   struct BSS_INFO *prBssInfo,
 					   uint8_t ucChannelWidth,
-					   uint8_t ucNss)
+					   uint8_t ucOpRxNss,
+					   uint8_t ucOpTxNss)
 {
+	uint8_t ucCapNss;
 
 	ASSERT(prBssInfo);
 
@@ -5859,17 +5983,17 @@ static u_int8_t rlmCheckOpChangeParamValid(struct ADAPTER *prAdapter,
 	}
 
 	/* <3>Check if target OP BW/Nss <= Own Cap BW/Nss */
-	if (ucNss > wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex)) {
+	ucCapNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
+	if (ucOpRxNss > ucCapNss || ucOpTxNss > ucCapNss) {
 		DBGLOG(RLM, WARN,
-		       "Can't change BSS[%d] OP Nss to:%d since own Cap Nss is:%d\n",
-		       prBssInfo->ucBssIndex, ucNss,
-		       wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex));
+		       "Can't change BSS[%d] OP RxNss[%d]TxNss[%d] due to CapNss[%d]\n",
+		       prBssInfo->ucBssIndex, ucOpRxNss, ucOpTxNss, ucCapNss);
 		return FALSE;
 	}
 
 	if (ucChannelWidth > cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex)) {
 		DBGLOG(RLM, WARN,
-		       "Can't change BSS[%d] OP BW to:%d since own Cap BW is:%d\n",
+		       "Can't change BSS[%d] OP BW[%d] due to CapBW[%d]\n",
 		       prBssInfo->ucBssIndex, ucChannelWidth,
 		       cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex));
 		return FALSE;
@@ -5911,7 +6035,7 @@ static u_int8_t rlmCheckOpChangeParamValid(struct ADAPTER *prAdapter,
 	/* <5>Check if target OP BW/Nss <= peer's BW/Nss (STA mode) */
 	if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
 		if (rlmCheckOpChangeParamForClient(prBssInfo, ucChannelWidth,
-						   ucNss) == FALSE)
+						   ucOpRxNss) == FALSE)
 			return FALSE;
 	}
 
