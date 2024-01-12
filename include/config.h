@@ -774,7 +774,7 @@
 #define CFG_ENABLE_STATISTICS_BUFFERING         0
 #endif
 #define CFG_STATISTICS_VALID_CYCLE              2000
-#define CFG_LINK_QUALITY_VALID_PERIOD           500
+#define CFG_LINK_QUALITY_VALID_PERIOD           1000
 
 /*------------------------------------------------------------------------------
  * Migration Option
@@ -1322,12 +1322,12 @@
 /*------------------------------------------------------------------------------
  * Link Quality Monitor
  * Link quality monitor execution period base on performance monitor timer
- * CFG_LINK_QUALITY_MONITOR_UPDATE_FREQUENCY base on PERF_MON_UPDATE_INTERVAL
+ * CFG_LQ_MONITOR_FREQUENCY base on PERF_MON_UPDATE_INTERVAL
  *------------------------------------------------------------------------------
  */
 #define CFG_SUPPORT_LINK_QUALITY_MONITOR
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
-#define CFG_LINK_QUALITY_MONITOR_UPDATE_FREQUENCY	1
+#define CFG_LQ_MONITOR_FREQUENCY 1
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
 /*------------------------------------------------------------------------------

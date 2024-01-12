@@ -6069,8 +6069,25 @@ wlanoidQueryStaStatistics(IN struct ADAPTER *prAdapter,
 			  IN uint32_t u4QueryBufferLen,
 			  OUT uint32_t *pu4QueryInfoLen)
 {
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	if (ucBssIndex == AIS_DEFAULT_INDEX &&
+	    !CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+		prAdapter->u4LastLinkQuality,
+		SEC_TO_MSEC(CFG_LQ_MONITOR_FREQUENCY))) {
+		kalMemCopy((struct PARAM_GET_STA_STATISTICS *)pvQueryBuffer,
+			   &prAdapter->rQueryStaStatistics,
+			   sizeof(struct PARAM_GET_STA_STATISTICS));
+		return WLAN_STATUS_SUCCESS;
+	} else
+		return wlanQueryStaStatistics(prAdapter, pvQueryBuffer,
+				u4QueryBufferLen, pu4QueryInfoLen, TRUE);
+#else
 	return wlanQueryStaStatistics(prAdapter, pvQueryBuffer,
 				      u4QueryBufferLen, pu4QueryInfoLen, TRUE);
+#endif
 }
 
 uint32_t
