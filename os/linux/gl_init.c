@@ -2107,10 +2107,8 @@ static void wlanNvramUpdateOnTestMode(void)
 	struct REG_INFO *prRegInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 
-
 	/* <1> Sanity Check */
-	if ((u4WlanDevNum == 0)
-		&& (u4WlanDevNum > CFG_MAX_WLAN_DEVICES)) {
+	if (u4WlanDevNum == 0) {
 		DBGLOG(INIT, ERROR,
 			   "wlanNvramUpdateOnTestMode invalid!!\n");
 		return;
@@ -2118,25 +2116,25 @@ static void wlanNvramUpdateOnTestMode(void)
 
 	prGlueInfo = wlanGetGlueInfo();
 	if (prGlueInfo == NULL) {
-		DBGLOG(INIT, ERROR,
+		DBGLOG(INIT, WARN,
 			   "prGlueInfo invalid!!\n");
 		return;
 	}
 	prAdapter = prGlueInfo->prAdapter;
 	if (prAdapter == NULL) {
-		DBGLOG(INIT, ERROR,
+		DBGLOG(INIT, WARN,
 			   "prAdapter invalid!!\n");
 		return;
 	}
 	prRegInfo = &prGlueInfo->rRegInfo;
 	if (prRegInfo == NULL) {
-		DBGLOG(INIT, ERROR,
+		DBGLOG(INIT, WARN,
 			   "prRegInfo invalid!!\n");
 		return;
 	}
 
 	if (prAdapter->fgTestMode == FALSE) {
-		DBGLOG(INIT, ERROR,
+		DBGLOG(INIT, INFO,
 			   "by-pass on Normal mode\n");
 		return;
 	}
@@ -2153,15 +2151,12 @@ static void wlanNvramUpdateOnTestMode(void)
 			DBGLOG(INIT, WARN, "%s: load manufacture data fail\n",
 					   __func__);
 	}
-
-
 }
 static uint8_t wlanNvramBufHandler(void *ctx,
 			const char *buf,
 			uint16_t length)
 {
-
-	DBGLOG(INIT, ERROR, "buf = %p, length = %u\n", buf, length);
+	DBGLOG(INIT, INFO, "buf = %p, length = %u\n", buf, length);
 	if (buf == NULL || length <= 0)
 		return -EFAULT;
 

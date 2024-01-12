@@ -4199,6 +4199,12 @@ int soc3_0_wlanPreCal(void)
 		break;
 	}
 
+	/* set FW own after power on consys mcu to
+	 * keep Driver/FW/HW state sync
+	 */
+	wf_ioremap_write(CONN_HOST_CSR_TOP_BASE_ADDR + 0x0010,
+		PCIE_LPCR_HOST_SET_OWN);
+
 	wf_pwr_off_consys_mcu();
 
 	DBGLOG(INIT, INFO, "PreCal end (%d)\n", eFailReason);
