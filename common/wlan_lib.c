@@ -7906,7 +7906,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucNan5gBandwidth, "Nan5gBw", MAX_BW_80MHZ);
 	INIT_UINT(prWifiVar->ucNdlFlowCtrlVer,
 		"NanNdlFlowCtrlVer", CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL);
-	INIT_UINT(prWifiVar->fgNanWmmSeq, "NanWmmSeq", 1);
+	INIT_UINT(prWifiVar->fgNanWmmSeq, "NanWmmSeq",
+		(prWifiVar->ucNanFixChnl < 36) ? 0:1);
 #endif
 
 	INIT_UINT(prWifiVar->fgReuseRSNIE, "ReuseRSNIE", FEATURE_DISABLED);
