@@ -310,7 +310,7 @@ void dumpMemory32(uint32_t *pu4StartAddr,
 
 	ASSERT(pu4StartAddr);
 
-	LOG_FUNC("DUMP32 ADDRESS: 0x%x, Length: %d\n", pu4StartAddr,
+	LOG_FUNC("DUMP32 ADDRESS: 0x%p, Length: %d\n", pu4StartAddr,
 		 u4Length);
 
 	if (IS_NOT_ALIGN_4((uintptr_t)pu4StartAddr)) {
@@ -324,15 +324,15 @@ void dumpMemory32(uint32_t *pu4StartAddr,
 
 		switch (u4ProtrudeLen) {
 		case 1:
-			LOG_FUNC("(0x%x) %02x------\n", pu4StartAddr,
+			LOG_FUNC("(0x%p) %02x------\n", pu4StartAddr,
 				pucAddr[0]);
 			break;
 		case 2:
-			LOG_FUNC("(0x%x) %02x%02x----\n", pu4StartAddr,
+			LOG_FUNC("(0x%p) %02x%02x----\n", pu4StartAddr,
 				 pucAddr[1], pucAddr[0]);
 			break;
 		case 3:
-			LOG_FUNC("(0x%x) %02x%02x%02x--\n", pu4StartAddr,
+			LOG_FUNC("(0x%p) %02x%02x%02x--\n", pu4StartAddr,
 				 pucAddr[2], pucAddr[1], pucAddr[0]);
 			break;
 		default:

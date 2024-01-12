@@ -50,7 +50,7 @@ void met_log_print_data(uint8_t *buffer, uint32_t size,
 	uint32_t u4Length = size;
 
 	DBGLOG(MET, INFO,
-		"DUMP ADDRESS: 0x%x, Length: %d\n",
+		"DUMP ADDRESS: 0x%p, Length: %d\n",
 		pu4StartAddr, u4Length);
 
 	while (u4Length > 0) {
@@ -152,7 +152,7 @@ int met_log_start(struct GLUE_INFO *prGlueInfo)
 				kalGetEmiMetOffset());
 
 	DBGLOG(MET, INFO,
-		"u4ConEmiPhyBase:0x%x",
+		"u4ConEmiPhyBase:%llx",
 		u4ConEmiPhyBase);
 	if (!u4ConEmiPhyBase) {
 		DBGLOG(MET, ERROR,
