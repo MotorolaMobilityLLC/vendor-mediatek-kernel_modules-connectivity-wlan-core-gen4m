@@ -19,7 +19,9 @@
 *                    E X T E R N A L   R E F E R E N C E S
 ***********************************************************************
 */
+#include "reset_fsm.h"
 #include "reset_fsm_def.h"
+#include "reset_hif.h"
 
 /**********************************************************************
 *                                 M A C R O S
@@ -41,6 +43,12 @@ enum ReturnStatus {
 	RESET_RETURN_STATUS_FAIL,
 
 	RESET_RETURN_STATUS_MAX
+};
+
+enum HifInfoType {
+	HIF_INFO_SDIO_HOST = 0,
+
+	HIF_INFO_MAX
 };
 
 struct ModuleMsg {
@@ -65,6 +73,8 @@ enum ReturnStatus send_reset_event(enum ModuleType module,
 enum ReturnStatus send_msg_to_module(enum ModuleType srcModule,
 				    enum ModuleType dstModule,
 				    void *msg);
+
+enum ReturnStatus update_hif_info(enum HifInfoType type, void *info);
 
 
 /**********************************************************************

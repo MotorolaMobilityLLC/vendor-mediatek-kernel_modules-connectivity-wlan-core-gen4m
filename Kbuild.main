@@ -2668,6 +2668,7 @@ endif
 RESET_OBJS += reset/reset.o
 RESET_OBJS += reset/reset_fsm.o
 RESET_OBJS += reset/reset_fsm_def.o
+RESET_OBJS += reset/reset_hif.o
 $(MODULE_NAME_RESET)-objs += $(RESET_OBJS)
 obj-m += $(MODULE_NAME_RESET).o
 else
