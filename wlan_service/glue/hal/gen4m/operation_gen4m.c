@@ -241,6 +241,11 @@ enum ENUM_RF_AT_FUNCID {
 	RF_AT_FUNCID_SET_TX_HE_TB_TTRCR4 = 162,
 	RF_AT_FUNCID_SET_TX_HE_TB_TTRCR5 = 163,
 	RF_AT_FUNCID_SET_TX_HE_TB_TTRCR6 = 164,
+	RF_AT_FUNCID_SET_SECURITY_MODE = 165,
+	RF_AT_FUNCID_SET_LP_MODE = 166,
+
+	/* Set HW TX enable */
+	RF_AT_FUNCID_SET_HWTX_MODE = 167
 };
 
 /* Command */
@@ -1217,10 +1222,14 @@ s_int32 mt_op_start_tx(
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_NSS, configs->nss);
 	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_HWTX_MODE, winfos->hw_tx_enable);
+	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_COMMAND, RF_AT_COMMAND_STARTTX);
 
 	/* For production line test, get tx count for wait calibration ready */
+#if (CFG_WAIT_TSSI_READY == 1)
 	for (i = 0; i < 100; i++) {
+#endif
 		if (band_idx == TEST_DBDC_BAND0)
 			rf_at_info.func_idx = RF_AT_FUNCID_TXED_COUNT;
 		else
@@ -1240,10 +1249,8 @@ s_int32 mt_op_start_tx(
 			break;
 
 		msleep(20);
-#else
-		break;
-#endif
 	}
+#endif
 
 	return ret;
 }
