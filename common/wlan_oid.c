@@ -2476,7 +2476,7 @@ wlanoidPresetLinkId(struct ADAPTER *prAdapter,
 	pParam = (uint32_t *) pvSetBuffer;
 	prAdapter->rWifiVar.ucPresetLinkId = *pParam;
 
-	DBGLOG(ML, INFO, "Preset link id 0x%x\n", *pParam);
+	DBGLOG(ML, INFO, "Preset link id %d\n", *pParam);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -3063,6 +3063,7 @@ wlanoidSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	uint32_t ret = WLAN_STATUS_SUCCESS;
 	struct MLD_STA_RECORD *prMldStaRec = NULL;
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	uint8_t ucLinkId = MLD_LINK_ID_NONE;
 #endif
 
 	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
@@ -3111,8 +3112,18 @@ wlanoidSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
-	prMldStaRec = mldStarecGetByLinkAddr(prAdapter,
-		prMldBssInfo, prNewKey->arBSSID);
+	/* KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE */
+	if (prNewKey->i4LinkId != MLD_LINK_ID_NONE) {
+		prMldStaRec = mldStarecGetByMldAddr(prAdapter,
+			prMldBssInfo, prNewKey->arBSSID);
+		ucLinkId = prNewKey->i4LinkId == -1 ?
+			MLD_LINK_ID_NONE : prNewKey->i4LinkId;
+	} else { /* old kernel version */
+		prMldStaRec = mldStarecGetByLinkAddr(prAdapter,
+			prMldBssInfo, prNewKey->arBSSID);
+		ucLinkId = prAdapter->rWifiVar.ucPresetLinkId;
+		prAdapter->rWifiVar.ucPresetLinkId = MLD_LINK_ID_NONE;
+	}
 	if (prMldStaRec && prNewKey->u4KeyIndex & IS_UNICAST_KEY) {
 		struct STA_RECORD *sta;
 
@@ -3123,7 +3134,8 @@ wlanoidSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
 			COPY_MAC_ADDR(prNewKey->arBSSID, sta->aucMacAddr);
 
 			/* set oid is true only for the last cmd
-			 * otherwise oid may complete wrongly */
+			 * otherwise oid may complete wrongly
+			 */
 			ret = wlanoidSetAddKeyImpl(prAdapter, pvSetBuffer,
 				u4SetBufferLen, pu4SetInfoLen,
 				sta == LINK_PEEK_TAIL(&prMldStaRec->rStarecList,
@@ -3133,13 +3145,12 @@ wlanoidSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
 				return ret;
 		}
 	} else if (IS_MLD_BSSINFO_VALID(prMldBssInfo) &&
-		prAdapter->rWifiVar.ucPresetLinkId != MLD_LINK_ID_NONE) {
+		ucLinkId != MLD_LINK_ID_NONE) {
 		struct BSS_INFO *bss;
 
 		LINK_FOR_EACH_ENTRY(bss, &prMldBssInfo->rBssList,
 					rLinkEntryMld, struct BSS_INFO) {
-			if (bss->ucLinkIndex ==
-			    prAdapter->rWifiVar.ucPresetLinkId) {
+			if (ucLinkId == bss->ucLinkIndex) {
 				/* overwrite key info by link */
 				prNewKey->ucBssIdx = bss->ucBssIndex;
 
@@ -3155,13 +3166,12 @@ wlanoidSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		ret = wlanoidSetAddKeyImpl(prAdapter, pvSetBuffer,
 				u4SetBufferLen, pu4SetInfoLen, TRUE);
 	}
-	/* for single link mlo, supplicant also set link id, so always clear */
-	prAdapter->rWifiVar.ucPresetLinkId = MLD_LINK_ID_NONE;
+
 	return ret;
-#else
+#else /*  (CFG_SUPPORT_802_11BE_MLO == 1) */
 	return wlanoidSetAddKeyImpl(prAdapter, pvSetBuffer,
 				u4SetBufferLen, pu4SetInfoLen, TRUE);
-#endif
+#endif /*  (CFG_SUPPORT_802_11BE_MLO == 1) */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3186,15 +3196,14 @@ wlanoidSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
 uint32_t
 wlanoidSetRemoveKey(struct ADAPTER *prAdapter,
 		    void *pvSetBuffer, uint32_t u4SetBufferLen,
-		    uint32_t *pu4SetInfoLen) {
-	DEBUGFUNC("wlanoidSetRemoveKey");
-
+		    uint32_t *pu4SetInfoLen)
+{
 	return wlanSetRemoveKey(prAdapter, pvSetBuffer, u4SetBufferLen,
 				pu4SetInfoLen, TRUE);
 }				/* wlanoidSetRemoveKey */
 
 uint32_t
-wlanSetRemoveKey(struct ADAPTER *prAdapter,
+wlanSetRemoveKeyImpl(struct ADAPTER *prAdapter,
 		    void *pvSetBuffer, uint32_t u4SetBufferLen,
 		    uint32_t *pu4SetInfoLen, uint8_t fgIsOid)
 {
@@ -3350,6 +3359,103 @@ wlanSetRemoveKey(struct ADAPTER *prAdapter,
 			  (uint8_t *)&rCmdKey,
 			  pvSetBuffer,
 			  u4SetBufferLen);
+}
+
+uint32_t
+wlanSetRemoveKey(struct ADAPTER *prAdapter,
+		    void *pvSetBuffer, uint32_t u4SetBufferLen,
+		    uint32_t *pu4SetInfoLen, uint8_t fgIsOid)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct PARAM_REMOVE_KEY *prRemovedKey;
+	struct BSS_INFO *prBssInfo;
+	uint32_t ret = WLAN_STATUS_SUCCESS;
+	struct MLD_STA_RECORD *prMldStaRec = NULL;
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	uint8_t ucLinkId = MLD_LINK_ID_NONE;
+	uint32_t u4KeyIndex;
+
+	*pu4SetInfoLen = sizeof(struct PARAM_REMOVE_KEY);
+
+	if (u4SetBufferLen < sizeof(struct PARAM_REMOVE_KEY))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	prRemovedKey = (struct PARAM_REMOVE_KEY *) pvSetBuffer;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					  prRemovedKey->ucBssIdx);
+	u4KeyIndex = prRemovedKey->u4KeyIndex & 0x000000FF;
+
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	/* KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE */
+	if (prRemovedKey->i4LinkId != MLD_LINK_ID_NONE) {
+		prMldStaRec = mldStarecGetByMldAddr(prAdapter,
+			prMldBssInfo, prRemovedKey->arBSSID);
+		ucLinkId = prRemovedKey->i4LinkId == -1 ?
+			MLD_LINK_ID_NONE : prRemovedKey->i4LinkId;
+	} else { /* old kernel version */
+		prMldStaRec = mldStarecGetByLinkAddr(prAdapter,
+			prMldBssInfo, prRemovedKey->arBSSID);
+		ucLinkId = prAdapter->rWifiVar.ucPresetLinkId;
+		prAdapter->rWifiVar.ucPresetLinkId = MLD_LINK_ID_NONE;
+	}
+
+	DBGLOG(RSN, INFO, "Remove: BSSID(" MACSTR
+		"), BSS_INDEX (%d), Length(0x%08x), Key Index(0x%08x, %d) LinkId = %d\n",
+		MAC2STR(prRemovedKey->arBSSID),
+		prRemovedKey->ucBssIdx,
+		prRemovedKey->u4Length, prRemovedKey->u4KeyIndex, u4KeyIndex,
+		ucLinkId);
+
+	if (prMldStaRec && u4KeyIndex & IS_UNICAST_KEY) {
+		struct STA_RECORD *sta;
+
+		LINK_FOR_EACH_ENTRY(sta, &prMldStaRec->rStarecList,
+					rLinkEntryMld, struct STA_RECORD) {
+			/* overwrite key info by link */
+			prRemovedKey->ucBssIdx = sta->ucBssIndex;
+			COPY_MAC_ADDR(prRemovedKey->arBSSID, sta->aucMacAddr);
+
+			/* set oid is true only for the last cmd
+			 * otherwise oid may complete wrongly
+			 */
+			ret = wlanSetRemoveKeyImpl(prAdapter, pvSetBuffer,
+				u4SetBufferLen, pu4SetInfoLen,
+				fgIsOid &&
+				sta == LINK_PEEK_TAIL(&prMldStaRec->rStarecList,
+				struct STA_RECORD, rLinkEntryMld));
+			if (ret != WLAN_STATUS_SUCCESS &&
+			    ret != WLAN_STATUS_PENDING)
+				return ret;
+		}
+	} else if (IS_MLD_BSSINFO_VALID(prMldBssInfo) &&
+		ucLinkId != MLD_LINK_ID_NONE) {
+		struct BSS_INFO *bss;
+
+		LINK_FOR_EACH_ENTRY(bss, &prMldBssInfo->rBssList,
+					rLinkEntryMld, struct BSS_INFO) {
+			if (ucLinkId == bss->ucLinkIndex) {
+				/* overwrite key info by link */
+				prRemovedKey->ucBssIdx = bss->ucBssIndex;
+
+				ret = wlanSetRemoveKeyImpl(prAdapter,
+					pvSetBuffer, u4SetBufferLen,
+					pu4SetInfoLen, fgIsOid);
+				if (ret != WLAN_STATUS_SUCCESS &&
+				    ret != WLAN_STATUS_PENDING)
+					return ret;
+			}
+		}
+	} else {
+		ret = wlanSetRemoveKeyImpl(prAdapter, pvSetBuffer,
+				u4SetBufferLen, pu4SetInfoLen, fgIsOid);
+	}
+
+	return ret;
+#else
+	return wlanSetRemoveKeyImpl(prAdapter,
+		    pvSetBuffer, u4SetBufferLen,
+		    pu4SetInfoLen, fgIsOid);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

@@ -2111,12 +2111,12 @@ uint32_t kalGetTxDirectQueueLength(
 #if CFG_SUPPORT_WPA3
 int kalExternalAuthRequest(
 	struct GLUE_INFO *prGlueInfo,
-	uint8_t uBssIndex);
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct STA_RECORD *prStaRec);
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 int kalVendorExternalAuthRequest(
 		struct GLUE_INFO *prGlueInfo,
-		struct STA_RECORD *prStaRec, uint8_t ucBssIndex);
+		struct STA_RECORD *prStaRec);
 #endif
 #endif
 

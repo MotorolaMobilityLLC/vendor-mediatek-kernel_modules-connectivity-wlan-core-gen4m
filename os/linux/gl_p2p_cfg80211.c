@@ -746,7 +746,7 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 }
 
 int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
-		 struct net_device *ndev,
+		 struct net_device *ndev, int link_id,
 		 u8 key_index, bool pairwise,
 		 const u8 *mac_addr,
 		 struct key_params *params)
@@ -859,6 +859,7 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 	rKey.u4KeyLength = params->key_len;
 	rKey.u4Length = OFFSET_OF(struct P2P_PARAM_KEY, aucKeyMaterial)
 		+ rKey.u4KeyLength;
+	rKey.i4LinkId = link_id;
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetAddKey,
 		&rKey, rKey.u4Length, &u4BufLen);
@@ -870,7 +871,7 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 }
 
 int mtk_p2p_cfg80211_get_key(struct wiphy *wiphy,
-		struct net_device *ndev,
+		struct net_device *ndev, int link_id,
 		u8 key_index,
 		bool pairwise,
 		const u8 *mac_addr, void *cookie,
@@ -890,7 +891,7 @@ int mtk_p2p_cfg80211_get_key(struct wiphy *wiphy,
 }
 
 int mtk_p2p_cfg80211_del_key(struct wiphy *wiphy,
-		struct net_device *ndev,
+		struct net_device *ndev, int link_id,
 		u8 key_index, bool pairwise, const u8 *mac_addr)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -933,6 +934,7 @@ int mtk_p2p_cfg80211_del_key(struct wiphy *wiphy,
 		COPY_MAC_ADDR(rRemoveKey.arBSSID, mac_addr);
 		rRemoveKey.u4KeyIndex |= BIT(30);
 	}
+	rRemoveKey.i4LinkId = link_id;
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetRemoveKey,
 			&rRemoveKey, rRemoveKey.u4Length, &u4BufLen);
@@ -945,7 +947,7 @@ int mtk_p2p_cfg80211_del_key(struct wiphy *wiphy,
 
 int
 mtk_p2p_cfg80211_set_default_key(struct wiphy *wiphy,
-		struct net_device *netdev,
+		struct net_device *netdev, int link_id,
 		u8 key_index, bool unicast, bool multicast)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -988,6 +990,8 @@ mtk_p2p_cfg80211_set_default_key(struct wiphy *wiphy,
 	if (!rDefaultKey.ucUnicast && rDefaultKey.ucMulticast)
 		fgMgtDef = TRUE;
 
+	rDefaultKey.i4LinkId = link_id;
+
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetDefaultKey,
 		&rDefaultKey, sizeof(struct PARAM_DEFAULT_KEY), &u4BufLen);
 
@@ -1010,18 +1014,16 @@ mtk_p2p_cfg80211_set_default_key(struct wiphy *wiphy,
  */
 /*---------------------------------------------------------------------------*/
 int mtk_p2p_cfg80211_set_mgmt_key(struct wiphy *wiphy,
-		struct net_device *dev, u8 key_index)
+		struct net_device *dev, int link_id, u8 key_index)
 {
-	DBGLOG(RSN, INFO, "mtk_p2p_cfg80211_set_mgmt_key, kid:%d\n", key_index);
-
+	DBGLOG(RSN, INFO, "lid: %d, kid:%d\n", link_id, key_index);
 	return 0;
 }
 
 int mtk_p2p_cfg80211_set_beacon_key(struct wiphy *wiphy,
-		struct net_device *dev, u8 key_index)
+		struct net_device *dev, int link_id, u8 key_index)
 {
-	DBGLOG(RSN, INFO, "kid:%d\n", key_index);
-
+	DBGLOG(RSN, INFO, "lid: %d, kid:%d\n", link_id, key_index);
 	return 0;
 }
 

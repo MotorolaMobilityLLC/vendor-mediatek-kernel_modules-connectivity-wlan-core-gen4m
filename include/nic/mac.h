@@ -926,6 +926,10 @@
 #if (CFG_SUPPORT_TWT == 1)
 #define CATEGORY_S1G_ACTION                         22  /* S1G action */
 #endif
+/* EHT */
+#define CATEGORY_EHT_ACTION			    36
+/* Protected EHT */
+#define CATEGORY_PROTECTED_EHT_ACTION		    37
 /* Vendor-specific Protected */
 #define CATEGORY_VENDOR_SPECIFIC_PROTECTED_ACTION   126
 /* Vendor-specific */

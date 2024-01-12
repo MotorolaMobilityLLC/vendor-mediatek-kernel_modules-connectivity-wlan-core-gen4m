@@ -57,11 +57,16 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 			bss->aucOwnMacAddr,
 			frame_ctrl);
 
+	if (!mldSingleLink(prAdapter, prStaRec, ucBssIndex) && ml) {
+		DBGLOG(ML, ERROR, "%s should not have ML ie\n",
+			IS_BSS_APGO(bss) ? "STA" : "AP");
+		return FALSE;
+	}
+
 	if (IS_BSS_APGO(bss)) {
 		/* ap mode, check auth/assoc req */
-		mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
-		mld_bssinfo = mldBssGetByBss(prAdapter, bss);
-		if (IS_MLD_BSSINFO_VALID(mld_bssinfo)) {
+		if (mldSingleLink(prAdapter, NULL, ucBssIndex)) {
+			mld_bssinfo = mldBssGetByBss(prAdapter, bss);
 			links =  &mld_bssinfo->rBssList;
 
 			/* reject if sta has unexpected link info */
@@ -137,7 +142,7 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 	} else {
 		/* sta mode, check auth/assoc resp */
 		mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
-		if (IS_MLD_STAREC_VALID(mld_starec)) {
+		if (mld_starec) {
 			links =  &mld_starec->rStarecList;
 
 			/* auth is handled in supplicant */
@@ -204,30 +209,6 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 		}
 	}
 
-	if (mldSingleLink(prAdapter, prStaRec, ucBssIndex)) {
-		/* for sta, we has ml in assoc req, ap should reply ml ie */
-		if (!IS_BSS_APGO(bss) && !ml) {
-			DBGLOG(ML, ERROR, "AP doesn't reply ML ie");
-			return FALSE;
-		}
-		if (ml && (!info->ucValid || info->ucProfNum)) {
-			DBGLOG(ML, ERROR,
-				"%s wrong ML ie (addr=" MACSTR
-				", valid=%d, num=%d)\n",
-				IS_BSS_APGO(bss) ? "STA" : "AP",
-				MAC2STR(info->aucMldAddr),
-				info->ucValid,
-				info->ucProfNum);
-			return FALSE;
-		}
-	} else {
-		if (ml) {
-			DBGLOG(ML, ERROR, "%s should not have ML ie\n",
-				IS_BSS_APGO(bss) ? "STA" : "AP");
-			return FALSE;
-		}
-	}
-
 	return TRUE;
 }
 
@@ -269,8 +250,7 @@ void mldGenerateMlIEImpl(struct ADAPTER *prAdapter,
 	switch (frame_ctrl) {
 	case MAC_FRAME_PROBE_RSP:
 	case MAC_FRAME_BEACON:
-		if (IS_MLD_BSSINFO_VALID(mld_bssinfo) ||
-		    mldSingleLink(prAdapter, sta, ucBssIndex))
+		if (mldSingleLink(prAdapter, sta, ucBssIndex))
 			mldGenerateBasicCommonInfo(prAdapter,
 				prMsduInfo, frame_ctrl);
 		break;
@@ -486,8 +466,7 @@ void mldGenerateProbeRspIE(
 	if (prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_HIDE_INFO)
 		return;
 
-	if (IS_MLD_BSSINFO_VALID(mld_bssinfo) ||
-	    mldSingleLink(prAdapter, NULL, ucBssIdx)) {
+	if (mldSingleLink(prAdapter, NULL, ucBssIdx)) {
 		cur = common = mldGenerateBasicCommonInfo(
 			prAdapter, prMsduInfo, frame_ctrl);
 	}
@@ -1387,13 +1366,15 @@ uint32_t mldCalculateRnrIELen(
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
 
-	if (!IS_MLD_BSSINFO_VALID(mld_bssinfo))
+	if (!mldSingleLink(prAdapter, NULL, ucBssIndex) ||
+	    !IS_MLD_BSSINFO_VALID(mld_bssinfo))
 		return 0;
 
-	/* 16: Neighbor AP TBTT Offset + BSSID + short-ssid +
+	/* num - 1 for skipping self,
+	 * 16: Neighbor AP TBTT Offset + BSSID + short-ssid +
 	 * Bss Param + PSD + MLD Para
 	 */
-	return sizeof(struct IE_RNR) + mld_bssinfo->rBssList.u4NumElem *
+	return sizeof(struct IE_RNR) + (mld_bssinfo->rBssList.u4NumElem - 1) *
 		(sizeof(struct NEIGHBOR_AP_INFO_FIELD) + 16);
 }
 
@@ -1412,7 +1393,8 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
 
-	if (!IS_MLD_BSSINFO_VALID(mld_bssinfo))
+	if (!mldSingleLink(prAdapter, NULL, prMsduInfo->ucBssIndex) ||
+	    !IS_MLD_BSSINFO_VALID(mld_bssinfo))
 		return;
 
 	rnr = (struct IE_RNR *)	((uint8_t *)prMsduInfo->prPacket +
@@ -1429,6 +1411,9 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 			DBGLOG(ML, ERROR, "too many links!!!\n");
 			return;
 		}
+
+		if (bss->ucBssIndex == prMsduInfo->ucBssIndex)
+			continue;
 
 		info = (struct NEIGHBOR_AP_INFO_FIELD *) cp;
 
@@ -3858,6 +3843,7 @@ uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec, uint8_t ucBssIndex)
 {
 	struct BSS_INFO *bss;
+	struct MLD_BSS_INFO *mld_bssinfo;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint8_t enable;
 
@@ -3867,9 +3853,20 @@ uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
+	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
+	if (!mld_bssinfo) {
+		DBGLOG(ML, LOUD, "Mld Bss is NULL!\n");
+		return FALSE;
+	}
+
 	enable = IS_FEATURE_ENABLED(prWifiVar->ucEnableMlo);
 
 	if (IS_BSS_APGO(bss)) {
+#ifdef MLD_SECURITY_RESTRICTIONS
+		/* ap-mld must support rsne & pmf */
+		enable &= secIsProtectedBss(prAdapter, bss);
+		enable &= !!(bss->u2RsnSelectedCapInfo & ELEM_WPA_CAP_MFPC);
+#endif
 		enable &= !!(bss->ucPhyTypeSet & PHY_TYPE_BIT_EHT);
 	} else if (prStaRec) {
 		enable &= !!(prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_EHT);

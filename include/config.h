@@ -496,6 +496,7 @@
 #define MLD_RETRY_COUNT			6
 /* Reserve 0~31 for group mld index */
 #define MAT_OWN_MLD_ID_BASE		32
+#define MLD_MAX_NUM_LINKS		15
 
 #define MLD_TYPE_INVALID		0
 #define MLD_TYPE_ICV_METHOD_V1		1

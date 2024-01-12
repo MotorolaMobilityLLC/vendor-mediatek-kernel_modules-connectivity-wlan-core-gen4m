@@ -163,7 +163,7 @@ mtk_cfg80211_change_iface(struct wiphy *wiphy,
 /*----------------------------------------------------------------------------*/
 int
 mtk_cfg80211_add_key(struct wiphy *wiphy,
-		     struct net_device *ndev,
+		     struct net_device *ndev, int link_id,
 		     u8 key_index, bool pairwise, const u8 *mac_addr,
 		     struct key_params *params)
 {
@@ -277,7 +277,7 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 	}
 
 	rKey.ucBssIdx = ucBssIndex;
-
+	rKey.i4LinkId = link_id;
 	rKey.u4KeyLength = params->key_len;
 	rKey.u4Length = OFFSET_OF(struct PARAM_KEY, aucKeyMaterial)
 				+ rKey.u4KeyLength;
@@ -336,7 +336,7 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 /*----------------------------------------------------------------------------*/
 int
 mtk_cfg80211_get_key(struct wiphy *wiphy,
-		     struct net_device *ndev,
+		     struct net_device *ndev, int link_id,
 		     u8 key_index,
 		     bool pairwise,
 		     const u8 *mac_addr, void *cookie,
@@ -368,7 +368,8 @@ mtk_cfg80211_get_key(struct wiphy *wiphy,
  */
 /*----------------------------------------------------------------------------*/
 int mtk_cfg80211_del_key(struct wiphy *wiphy,
-			 struct net_device *ndev, u8 key_index, bool pairwise,
+			 struct net_device *ndev, int link_id,
+			 u8 key_index, bool pairwise,
 			 const u8 *mac_addr)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -414,6 +415,7 @@ int mtk_cfg80211_del_key(struct wiphy *wiphy,
 		return i4Rslt;
 
 	rRemoveKey.ucBssIdx = ucBssIndex;
+	rRemoveKey.i4LinkId = link_id;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
 		ucBssIndex);
@@ -457,7 +459,8 @@ int mtk_cfg80211_del_key(struct wiphy *wiphy,
 /*----------------------------------------------------------------------------*/
 int
 mtk_cfg80211_set_default_key(struct wiphy *wiphy,
-		     struct net_device *ndev, u8 key_index, bool unicast,
+		     struct net_device *ndev, int link_id,
+		     u8 key_index, bool unicast,
 		     bool multicast)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -495,6 +498,7 @@ mtk_cfg80211_set_default_key(struct wiphy *wiphy,
 		fgMgtDef = TRUE;
 
 	rDefaultKey.ucBssIdx = ucBssIndex;
+	rDefaultKey.i4LinkId = link_id;
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetDefaultKey, &rDefaultKey,
 				sizeof(struct PARAM_DEFAULT_KEY), &u4BufLen);
@@ -7222,7 +7226,8 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 	return 0;
 }
 
-#if (CFG_ADVANCED_80211_MLO == 1)
+#if (CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 int mtk_cfg_add_key(struct wiphy *wiphy,
 		    struct net_device *ndev, int link_id, u8 key_index,
 		    bool pairwise, const u8 *mac_addr,
@@ -7235,6 +7240,11 @@ int mtk_cfg_add_key(struct wiphy *wiphy,
 #endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	int i4LinkId = MLD_LINK_ID_NONE;
+
+#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
+	i4LinkId = link_id;
+#endif
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -7246,17 +7256,18 @@ int mtk_cfg_add_key(struct wiphy *wiphy,
 
 #if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
-		return mtk_p2p_cfg80211_add_key(wiphy, ndev, key_index,
-						pairwise, mac_addr, params);
+		return mtk_p2p_cfg80211_add_key(wiphy, ndev, i4LinkId,
+			key_index, pairwise, mac_addr, params);
 	}
 #endif
 	/* STA Mode */
-	return mtk_cfg80211_add_key(wiphy, ndev, key_index,
+	return mtk_cfg80211_add_key(wiphy, ndev, i4LinkId, key_index,
 				    pairwise,
 				    mac_addr, params);
 }
 
-#if (CFG_ADVANCED_80211_MLO == 1)
+#if (CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 int mtk_cfg_get_key(struct wiphy *wiphy,
 		    struct net_device *ndev, int link_id, u8 key_index,
 		    bool pairwise, const u8 *mac_addr, void *cookie,
@@ -7269,6 +7280,11 @@ int mtk_cfg_get_key(struct wiphy *wiphy,
 #endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	int i4LinkId = MLD_LINK_ID_NONE;
+
+#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
+	i4LinkId = link_id;
+#endif
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -7280,16 +7296,17 @@ int mtk_cfg_get_key(struct wiphy *wiphy,
 
 #if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
-		return mtk_p2p_cfg80211_get_key(wiphy, ndev, key_index,
-					pairwise, mac_addr, cookie, callback);
+		return mtk_p2p_cfg80211_get_key(wiphy, ndev, i4LinkId,
+			key_index, pairwise, mac_addr, cookie, callback);
 	}
 #endif
 	/* STA Mode */
-	return mtk_cfg80211_get_key(wiphy, ndev, key_index,
+	return mtk_cfg80211_get_key(wiphy, ndev, i4LinkId, key_index,
 				    pairwise, mac_addr, cookie, callback);
 }
 
-#if (CFG_ADVANCED_80211_MLO == 1)
+#if (CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 int mtk_cfg_del_key(struct wiphy *wiphy,
 		    struct net_device *ndev, int link_id, u8 key_index,
 		    bool pairwise, const u8 *mac_addr)
@@ -7300,6 +7317,11 @@ int mtk_cfg_del_key(struct wiphy *wiphy,
 #endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	int i4LinkId = MLD_LINK_ID_NONE;
+
+#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
+	i4LinkId = link_id;
+#endif
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -7311,16 +7333,17 @@ int mtk_cfg_del_key(struct wiphy *wiphy,
 
 #if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
-		return mtk_p2p_cfg80211_del_key(wiphy, ndev, key_index,
-						pairwise, mac_addr);
+		return mtk_p2p_cfg80211_del_key(wiphy, ndev, i4LinkId,
+			key_index, pairwise, mac_addr);
 	}
 #endif
 	/* STA Mode */
-	return mtk_cfg80211_del_key(wiphy, ndev, key_index,
+	return mtk_cfg80211_del_key(wiphy, ndev, i4LinkId, key_index,
 				    pairwise, mac_addr);
 }
 
-#if (CFG_ADVANCED_80211_MLO == 1)
+#if (CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 int mtk_cfg_set_default_key(struct wiphy *wiphy,
 			    struct net_device *ndev, int link_id,
 			    u8 key_index, bool unicast, bool multicast)
@@ -7331,6 +7354,11 @@ int mtk_cfg_set_default_key(struct wiphy *wiphy,
 #endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	int i4LinkId = MLD_LINK_ID_NONE;
+
+#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
+	i4LinkId = link_id;
+#endif
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -7342,16 +7370,17 @@ int mtk_cfg_set_default_key(struct wiphy *wiphy,
 
 #if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
-		return mtk_p2p_cfg80211_set_default_key(wiphy, ndev,
+		return mtk_p2p_cfg80211_set_default_key(wiphy, ndev, i4LinkId,
 						key_index, unicast, multicast);
 	}
 #endif
 	/* STA Mode */
-	return mtk_cfg80211_set_default_key(wiphy, ndev,
+	return mtk_cfg80211_set_default_key(wiphy, ndev, i4LinkId,
 					    key_index, unicast, multicast);
 }
 
-#if (CFG_ADVANCED_80211_MLO == 1)
+#if (CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 int mtk_cfg_set_default_mgmt_key(struct wiphy *wiphy,
 		struct net_device *ndev, int link_id, u8 key_index)
 #else
@@ -7360,6 +7389,11 @@ int mtk_cfg_set_default_mgmt_key(struct wiphy *wiphy,
 #endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	int i4LinkId = MLD_LINK_ID_NONE;
+
+#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
+	i4LinkId = link_id;
+#endif
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -7371,14 +7405,16 @@ int mtk_cfg_set_default_mgmt_key(struct wiphy *wiphy,
 
 #if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0)
-		return mtk_p2p_cfg80211_set_mgmt_key(wiphy, ndev, key_index);
+		return mtk_p2p_cfg80211_set_mgmt_key(wiphy, ndev,
+			i4LinkId, key_index);
 #endif
 	/* STA Mode */
 	DBGLOG(REQ, WARN, "STA don't support this function\n");
 	return -EFAULT;
 }
 
-#if (CFG_ADVANCED_80211_MLO == 1)
+#if (CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 int mtk_cfg_set_default_beacon_key(struct wiphy *wiphy,
 		struct net_device *ndev, int link_id, u8 key_index)
 #else
@@ -7387,6 +7423,11 @@ int mtk_cfg_set_default_beacon_key(struct wiphy *wiphy,
 #endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	int i4LinkId = MLD_LINK_ID_NONE;
+
+#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
+	i4LinkId = link_id;
+#endif
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -7397,11 +7438,23 @@ int mtk_cfg_set_default_beacon_key(struct wiphy *wiphy,
 	}
 
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0)
-		return mtk_p2p_cfg80211_set_beacon_key(wiphy, ndev, key_index);
+		return mtk_p2p_cfg80211_set_beacon_key(wiphy, ndev,
+			i4LinkId, key_index);
 	/* STA Mode */
 	DBGLOG(REQ, WARN, "STA don't support this function\n");
 	return -EFAULT;
 }
+
+#if (CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
+int mtk_cfg_get_channel(struct wiphy *wiphy,
+			struct wireless_dev *wdev,
+			unsigned int link_id,
+			struct cfg80211_chan_def *chandef)
+{
+	return -EINVAL;
+}
+#endif /* (CFG_ADVANCED_80211_MLO == 1) || K(6.1) <= CFG80211_VERSION_CODE) */
 
 #if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg_get_station(struct wiphy *wiphy,

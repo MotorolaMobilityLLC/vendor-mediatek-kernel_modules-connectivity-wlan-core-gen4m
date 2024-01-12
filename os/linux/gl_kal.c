@@ -2156,6 +2156,323 @@ struct cfg80211_bss * kalInformConnectionBss(struct ADAPTER *prAdapter,
 	return bss;
 }
 
+struct LINK_INFO {
+	uint8_t *addr;
+	uint8_t *bssid;
+	struct ieee80211_channel *channel;
+	struct cfg80211_bss *bss;
+};
+
+uint32_t kalCollectLinkInfo(struct ADAPTER *prAdapter,
+	struct LINK_INFO links[MLD_MAX_NUM_LINKS], uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prBssInfo = NULL;
+	struct ieee80211_channel *prChannel = NULL;
+	struct cfg80211_bss *bss = NULL;
+	struct cfg80211_bss *bss_others = NULL;
+	uint8_t chnlNum, band;
+	enum ENUM_BAND eBand;
+	uint8_t ucLoopCnt = 15; /* only loop 15 times to avoid dead loop */
+	uint8_t ucLinkIndex = 0;
+
+	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(REQ, ERROR, "Invalid prBssInfo:%d!\n", ucBssIndex);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* retrieve channel */
+	chnlNum = wlanGetChannelNumberByNetwork(prAdapter, ucBssIndex);
+	eBand = wlanGetBandIndexByNetwork(prAdapter, ucBssIndex);
+	if (eBand > BAND_NULL && eBand < BAND_NUM)
+		band = aucBandTranslate[eBand];
+	else {
+		DBGLOG(REQ, ERROR, "Invalid band:%d!\n", eBand);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prChannel = ieee80211_get_channel(wlanGetWiphy(),
+		    ieee80211_channel_to_frequency(chnlNum, band));
+
+	if (!prChannel)
+		DBGLOG(SCN, ERROR,
+		       "prChannel is NULL and ucChannelNum is %d\n",
+		       chnlNum);
+
+	/* ensure BSS exists */
+#if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
+	bss = cfg80211_get_bss(
+		wlanGetWiphy(),
+		prChannel, prBssInfo->aucBSSID,
+		prBssInfo->aucSSID, prBssInfo->ucSSIDLen,
+		IEEE80211_BSS_TYPE_ESS,
+		IEEE80211_PRIVACY_ANY);
+#else
+	bss = cfg80211_get_bss(
+		wlanGetWiphy(),
+		prChannel, prBssInfo->aucBSSID,
+		prBssInfo->aucSSID, prBssInfo->ucSSIDLen,
+		WLAN_CAPABILITY_ESS,
+		WLAN_CAPABILITY_ESS);
+#endif
+
+	if (bss == NULL) {
+		DBGLOG(SCN, WARN,
+			"cannot find bss by cfg80211_get_bss");
+		bss = kalInformConnectionBss(prAdapter,
+			prChannel, prBssInfo->aucBSSID, ucBssIndex);
+	}
+
+#if (CFG_SUPPORT_STATISTICS == 1)
+	StatsResetTxRx();
+#endif
+	/* remove all bsses that before and only channel
+	 * different with the current connected one
+	 * if without this patch, UI will show channel A is
+	 * connected even if AP has change channel from A to B
+	 */
+	while (ucLoopCnt--) {
+#if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
+		bss_others = cfg80211_get_bss(
+				wlanGetWiphy(),
+				NULL, prBssInfo->aucBSSID,
+				prBssInfo->aucSSID, prBssInfo->ucSSIDLen,
+				IEEE80211_BSS_TYPE_ESS,
+				IEEE80211_PRIVACY_ANY);
+#else
+		bss_others = cfg80211_get_bss(
+				wlanGetWiphy(),
+				NULL, prBssInfo->aucBSSID,
+				prBssInfo->aucSSID, prBssInfo->ucSSIDLen,
+				WLAN_CAPABILITY_ESS,
+				WLAN_CAPABILITY_ESS);
+#endif
+		if (bss && bss_others && bss_others != bss) {
+			DBGLOG(SCN, INFO,
+			       "remove BSSes that only channel different\n");
+			cfg80211_unlink_bss(
+				wlanGetWiphy(),
+				bss_others);
+			cfg80211_put_bss(
+				wlanGetWiphy(),
+				bss_others);
+		} else {
+			if (bss_others) {
+				DBGLOG(SCN, TRACE,
+					"call cfg80211_put_bss for bss_others");
+				cfg80211_put_bss(
+					wlanGetWiphy(),
+					bss_others);
+			}
+			break;
+		}
+	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	ucLinkIndex = prBssInfo->ucLinkIndex;
+#endif
+
+	if (ucLinkIndex < MLD_MAX_NUM_LINKS) {
+		links[ucLinkIndex].addr = prBssInfo->aucOwnMacAddr;
+		links[ucLinkIndex].bssid = prBssInfo->aucBSSID;
+		links[ucLinkIndex].channel = prChannel;
+		links[ucLinkIndex].bss = bss;
+	} else {
+		DBGLOG(INIT, INFO, "wrong linkid=%d", ucLinkIndex);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
+	struct net_device *netdev,
+	uint32_t eStatus, void *pvBuf,
+	uint32_t u4BufLen, uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+	struct CONNECTION_SETTINGS *prConnSettings = NULL;
+	struct LINK_INFO links[MLD_MAX_NUM_LINKS] = {0};
+#if ((CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE)) && \
+	(CFG_SUPPORT_802_11BE_MLO == 1)
+	uint16_t valid_links = 0;
+	struct MLD_STA_RECORD *prMldStaRec = NULL;
+	uint8_t i;
+#endif
+	uint32_t status;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(INIT, INFO, "BSS Info not exist !!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prStaRec = prBssInfo->prStaRecOfAP;
+	if (!prStaRec) {
+		DBGLOG(INIT, INFO, "StaRec not exist !!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+#if ((CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE)) && \
+	(CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldStaRec = mldStarecGetByStarec(prAdapter, prStaRec);
+	if (prMldStaRec) {
+		struct STA_RECORD *sta;
+
+		LINK_FOR_EACH_ENTRY(sta, &prMldStaRec->rStarecList,
+					rLinkEntryMld, struct STA_RECORD) {
+
+			status = kalCollectLinkInfo(prAdapter,
+				links, sta->ucBssIndex);
+			if (status != WLAN_STATUS_SUCCESS)
+				return status;
+
+			valid_links |= BIT(sta->ucLinkIndex);
+		}
+	} else
+#endif
+	{
+		status = kalCollectLinkInfo(prAdapter, links, ucBssIndex);
+		if (status != WLAN_STATUS_SUCCESS)
+			return status;
+		/* no need to update valid_links for non-mlo */
+	}
+
+	/* CFG80211 Indication */
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+	if (eStatus == WLAN_STATUS_ROAM_OUT_FIND_BEST) {
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+		struct cfg80211_roam_info rRoamInfo = {0};
+		uint8_t ucAuthorized = pvBuf ? *(uint8_t *) pvBuf : FALSE;
+
+#if (CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (prMldStaRec) {
+			rRoamInfo.ap_mld_addr = prMldStaRec->aucPeerMldAddr;
+			rRoamInfo.valid_links = valid_links;
+			for (i = 0; i < MLD_MAX_NUM_LINKS; i++) {
+				if (valid_links & BIT(i)) {
+					rRoamInfo.links[i].addr =
+						links[i].addr;
+					rRoamInfo.links[i].bssid =
+						links[i].bssid;
+					rRoamInfo.links[i].bss =
+						links[i].bss;
+					rRoamInfo.links[i].channel =
+						links[i].channel;
+				}
+			}
+		} else
+#endif /*  (CFG_SUPPORT_802_11BE_MLO == 1) */
+		{
+			rRoamInfo.ap_mld_addr = prStaRec->aucMacAddr;
+			rRoamInfo.valid_links = 0;
+			rRoamInfo.links[0].addr = links[0].addr;
+			rRoamInfo.links[0].bssid = links[0].bssid;
+			rRoamInfo.links[0].bss = links[0].bss;
+			rRoamInfo.links[0].channel = links[0].channel;
+		}
+#else /* (CFG_ADVANCED_80211_MLO == 1) || 6.0.0 <= CFG80211_VERSION_CODE */
+		rRoamInfo.bss = links[0].bss;
+#endif /* (CFG_ADVANCED_80211_MLO == 1) || 6.0.0 <= CFG80211_VERSION_CODE */
+
+		rRoamInfo.req_ie = prConnSettings->aucReqIe;
+		rRoamInfo.req_ie_len = prConnSettings->u4ReqIeLength;
+		rRoamInfo.resp_ie = prConnSettings->aucRspIe;
+		rRoamInfo.resp_ie_len =	prConnSettings->u4RspIeLength;
+#if KERNEL_VERSION(4, 15, 0) > CFG80211_VERSION_CODE
+		rRoamInfo.authorized = ucAuthorized;
+#endif
+		cfg80211_roamed(netdev, &rRoamInfo, GFP_KERNEL);
+#if KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE
+		if (ucAuthorized)
+			cfg80211_port_authorized(netdev,
+				links[0].bssid, GFP_KERNEL);
+#endif
+#else /* KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE */
+		cfg80211_roamed_bss(
+			netdev,
+			links[0].bss,
+			prConnSettings->aucReqIe,
+			prConnSettings->u4ReqIeLength,
+			prConnSettings->aucRspIe,
+			prConnSettings->u4RspIeLength,
+			GFP_KERNEL);
+#endif /* KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE */
+	} else {
+		uint16_t u2JoinStatus;
+
+		if (eStatus == WLAN_STATUS_MEDIA_CONNECT) {
+			u2JoinStatus = WLAN_STATUS_SUCCESS;
+		} else {
+			if (prConnSettings->u2JoinStatus !=
+					STATUS_CODE_AUTH_TIMEOUT &&
+			    prConnSettings->u2JoinStatus !=
+					STATUS_CODE_ASSOC_TIMEOUT)
+				u2JoinStatus = prConnSettings->u2JoinStatus;
+			else
+				u2JoinStatus = WLAN_STATUS_AUTH_TIMEOUT;
+		}
+
+#if ((CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE)) && \
+	(CFG_SUPPORT_802_11BE_MLO == 1)
+		if (prMldStaRec) {
+			struct cfg80211_connect_resp_params params;
+
+			kalMemSet(&params, 0, sizeof(params));
+			params.status = u2JoinStatus;
+			params.req_ie = prConnSettings->aucReqIe;
+			params.req_ie_len = prConnSettings->u4ReqIeLength;
+			params.resp_ie = prConnSettings->aucRspIe;
+			params.resp_ie_len = prConnSettings->u4RspIeLength;
+			params.timeout_reason = NL80211_TIMEOUT_UNSPECIFIED;
+			params.ap_mld_addr = prMldStaRec->aucPeerMldAddr;
+			params.valid_links = valid_links;
+			for (i = 0; i < MLD_MAX_NUM_LINKS; i++) {
+				if (valid_links & BIT(i)) {
+					params.links[i].addr = links[i].addr;
+					params.links[i].bssid = links[i].bssid;
+					params.links[i].bss = links[i].bss;
+				}
+			}
+
+			DBGLOG(INIT, INFO, "JOIN %s: MLD "MACSTR" Status=%d",
+				u2JoinStatus == WLAN_STATUS_SUCCESS ?
+				"Success" : "Failure",
+				MAC2STR(params.ap_mld_addr), u2JoinStatus);
+
+			cfg80211_connect_done(netdev, &params, GFP_KERNEL);
+		} else
+#endif /*  (CFG_SUPPORT_802_11BE_MLO == 1) */
+		{
+			DBGLOG(INIT, INFO, "JOIN %s: AP "MACSTR" Status=%d",
+				u2JoinStatus == WLAN_STATUS_SUCCESS ?
+				"Success" : "Failure",
+				MAC2STR(links[0].bssid), u2JoinStatus);
+
+			cfg80211_connect_result(
+				netdev,
+				links[0].bssid,
+				prConnSettings->aucReqIe,
+				prConnSettings->u4ReqIeLength,
+				prConnSettings->aucRspIe,
+				prConnSettings->u4RspIeLength,
+				u2JoinStatus,
+				GFP_KERNEL);
+
+			if (links[0].bss)
+				cfg80211_put_bss(wlanGetWiphy(), links[0].bss);
+		}
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Called by driver to indicate event to upper layer, for example, the
@@ -2182,27 +2499,14 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 	struct PARAM_PMKID_CANDIDATE_LIST *pPmkid;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
 	struct PARAM_SSID ssid = {0};
-	struct ieee80211_channel *prChannel = NULL;
-	struct cfg80211_bss *bss = NULL;
-	uint8_t chnlNum, band;
 	struct ADAPTER *prAdapter = NULL;
 	uint8_t fgScanAborted = FALSE;
 	struct net_device *prDevHandler;
 	struct CONNECTION_SETTINGS *prConnSettings = NULL;
 	struct FT_IES *prFtIEs;
-	enum ENUM_BAND eBand;
 	struct BSS_DESC *prBssDesc = NULL;
-
 #if (CFG_SUPPORT_TX_PWR_ENV == 1)
 	int8_t aicTxPwrEnvMaxTxPwr[TX_PWR_ENV_MAX_TXPWR_BW_NUM];
-#endif
-
-#if (CFG_ADVANCED_80211_MLO == 1)
-	uint8_t ucLinkIdx = 0;
-#endif
-
-#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
-	struct cfg80211_roam_info rRoamInfo = { 0 };
 #endif
 
 	GLUE_SPIN_LOCK_DECLARATION();
@@ -2265,181 +2569,10 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 		} while (0);
 
 		if (prGlueInfo->fgIsRegistered == TRUE) {
-			struct cfg80211_bss *bss_others = NULL;
-			uint8_t ucLoopCnt =
-				15; /* only loop 15 times to avoid dead loop */
+			kalReportAllLinkInfo(prGlueInfo->prAdapter,
+				prDevHandler, eStatus, pvBuf,
+				u4BufLen, ucBssIndex);
 
-			/* retrieve channel */
-			chnlNum = wlanGetChannelNumberByNetwork(
-					prGlueInfo->prAdapter,
-					ucBssIndex);
-			eBand = wlanGetBandIndexByNetwork(
-					prGlueInfo->prAdapter,
-					ucBssIndex);
-
-			if (eBand > BAND_NULL && eBand < BAND_NUM)
-				band = aucBandTranslate[eBand];
-			else {
-				DBGLOG(REQ, ERROR, "Invalid band:%d!\n", eBand);
-				return;
-			}
-
-			prChannel = ieee80211_get_channel(
-					wlanGetWiphy(),
-					ieee80211_channel_to_frequency(
-						chnlNum, band));
-
-			if (!prChannel)
-				DBGLOG(SCN, ERROR,
-				       "prChannel is NULL and ucChannelNum is %d\n",
-				       chnlNum);
-
-			/* ensure BSS exists */
-#if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
-			bss = cfg80211_get_bss(
-				wlanGetWiphy(),
-				prChannel, arBssid,
-				ssid.aucSsid, ssid.u4SsidLen,
-				IEEE80211_BSS_TYPE_ESS,
-				IEEE80211_PRIVACY_ANY);
-#else
-			bss = cfg80211_get_bss(
-				wlanGetWiphy(),
-				prChannel, arBssid,
-				ssid.aucSsid, ssid.u4SsidLen,
-				WLAN_CAPABILITY_ESS,
-				WLAN_CAPABILITY_ESS);
-#endif
-
-			if (bss == NULL) {
-				DBGLOG(SCN, WARN,
-					"cannot find bss by cfg80211_get_bss");
-				bss = kalInformConnectionBss(prAdapter,
-					prChannel, arBssid, ucBssIndex);
-			}
-
-#if (CFG_SUPPORT_STATISTICS == 1)
-			StatsResetTxRx();
-#endif
-			/* remove all bsses that before and only channel
-			 * different with the current connected one
-			 * if without this patch, UI will show channel A is
-			 * connected even if AP has change channel from A to B
-			 */
-			while (ucLoopCnt--) {
-#if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
-				bss_others = cfg80211_get_bss(
-						wlanGetWiphy(),
-						NULL, arBssid, ssid.aucSsid,
-						ssid.u4SsidLen,
-						IEEE80211_BSS_TYPE_ESS,
-						IEEE80211_PRIVACY_ANY);
-#else
-				bss_others = cfg80211_get_bss(
-						wlanGetWiphy(),
-						NULL, arBssid, ssid.aucSsid,
-						ssid.u4SsidLen,
-						WLAN_CAPABILITY_ESS,
-						WLAN_CAPABILITY_ESS);
-#endif
-				if (bss && bss_others && bss_others != bss) {
-					DBGLOG(SCN, INFO,
-					       "remove BSSes that only channel different\n");
-					cfg80211_unlink_bss(
-						wlanGetWiphy(),
-						bss_others);
-					cfg80211_put_bss(
-						wlanGetWiphy(),
-						bss_others);
-				} else {
-					if (bss_others) {
-						DBGLOG(SCN, TRACE,
-							"call cfg80211_put_bss for bss_others");
-						cfg80211_put_bss(
-							wlanGetWiphy(),
-							bss_others);
-					}
-					break;
-				}
-			}
-
-			/* CFG80211 Indication */
-			prConnSettings =
-				aisGetConnSettings(prAdapter, ucBssIndex);
-			if (eStatus == WLAN_STATUS_ROAM_OUT_FIND_BEST) {
-#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
-				uint8_t ucAuthorized = pvBuf ?
-					*(uint8_t *) pvBuf : FALSE;
-
-#if (CFG_ADVANCED_80211_MLO == 1)
-				struct BSS_INFO *prBssInfo =
-					aisGetAisBssInfo(prAdapter, ucBssIndex);
-
-				rRoamInfo.ap_mld_addr = arBssid;
-				if (prBssInfo)
-					rRoamInfo.links[ucLinkIdx].addr =
-						prBssInfo->aucOwnMacAddr;
-				rRoamInfo.links[ucLinkIdx].bssid = arBssid;
-				rRoamInfo.links[ucLinkIdx].bss = bss;
-				rRoamInfo.links[ucLinkIdx].channel = prChannel;
-#else
-				rRoamInfo.bss = bss;
-#endif
-				rRoamInfo.req_ie = prConnSettings->aucReqIe;
-				rRoamInfo.req_ie_len =
-					prConnSettings->u4ReqIeLength;
-				rRoamInfo.resp_ie = prConnSettings->aucRspIe;
-				rRoamInfo.resp_ie_len =
-					prConnSettings->u4RspIeLength;
-#if KERNEL_VERSION(4, 15, 0) > CFG80211_VERSION_CODE
-				rRoamInfo.authorized = ucAuthorized;
-#endif
-				cfg80211_roamed(prDevHandler,
-					&rRoamInfo, GFP_KERNEL);
-#if KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE
-				if (ucAuthorized)
-					cfg80211_port_authorized(prDevHandler,
-						arBssid, GFP_KERNEL);
-#endif
-#else
-				cfg80211_roamed_bss(
-					prDevHandler,
-					bss,
-					prConnSettings->aucReqIe,
-					prConnSettings->u4ReqIeLength,
-					prConnSettings->aucRspIe,
-					prConnSettings->u4RspIeLength,
-					GFP_KERNEL);
-#endif
-			} else {
-#if (CFG_ADVANCED_80211_MLO == 1)
-				cfg80211_connect_bss(
-					prDevHandler,
-					arBssid,
-					bss,
-					prConnSettings->aucReqIe,
-					prConnSettings->u4ReqIeLength,
-					prConnSettings->aucRspIe,
-					prConnSettings->u4RspIeLength,
-					WLAN_STATUS_SUCCESS,
-					GFP_KERNEL,
-					NL80211_TIMEOUT_UNSPECIFIED);
-#else
-				cfg80211_connect_result(
-					prDevHandler,
-					arBssid,
-					prConnSettings->aucReqIe,
-					prConnSettings->u4ReqIeLength,
-					prConnSettings->aucRspIe,
-					prConnSettings->u4RspIeLength,
-					WLAN_STATUS_SUCCESS,
-					GFP_KERNEL);
-				if (bss)
-					cfg80211_put_bss(
-						wlanGetWiphy(),
-						bss);
-#endif
-			}
 #if CFG_ENABLE_WIFI_DIRECT
 			/* Check SAP channel */
 			p2pFuncSwitchSapChannel(prGlueInfo->prAdapter);
@@ -2848,17 +2981,8 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 			aisGetWpaInfo(prAdapter, ucBssIndex);
 		struct BSS_INFO *prBssInfo =
 			aisGetAisBssInfo(prAdapter, ucBssIndex);
-		uint16_t u2JoinStatus;
 
 		COPY_MAC_ADDR(arBssid, prConnSettings->aucJoinBSSID);
-		if (prConnSettings->u2JoinStatus != STATUS_CODE_AUTH_TIMEOUT &&
-		    prConnSettings->u2JoinStatus != STATUS_CODE_ASSOC_TIMEOUT)
-			u2JoinStatus = prConnSettings->u2JoinStatus;
-		else
-			u2JoinStatus = WLAN_STATUS_AUTH_TIMEOUT;
-
-		DBGLOG(INIT, INFO, "JOIN Failure: "MACSTR" Status=%d",
-			MAC2STR(arBssid), u2JoinStatus);
 
 		/* Make sure we remove all WEP key */
 		if (prWpaInfo && prWpaInfo->u4WpaVersion ==
@@ -2888,78 +3012,9 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 			}
 		}
 
-#if (CFG_ADVANCED_80211_MLO == 1)
-		/* retrieve channel */
-		chnlNum = wlanGetChannelNumberByNetwork(
-				prGlueInfo->prAdapter,
-				ucBssIndex);
-		eBand = wlanGetBandIndexByNetwork(
-				prGlueInfo->prAdapter,
-				ucBssIndex);
-
-		if (eBand > BAND_NULL && eBand < BAND_NUM)
-			band = aucBandTranslate[eBand];
-		else {
-			DBGLOG(REQ, ERROR, "Invalid band:%d!\n", eBand);
-			return;
-		}
-
-		prChannel = ieee80211_get_channel(
-				wlanGetWiphy(),
-				ieee80211_channel_to_frequency(
-					chnlNum, band));
-
-		if (!prChannel)
-			DBGLOG(SCN, ERROR,
-				 "prChannel is NULL and ucChannelNum is %d\n",
-				chnlNum);
-
-		/* ensure BSS exists */
-#if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
-		bss = cfg80211_get_bss(
-				wlanGetWiphy(),
-				prChannel, arBssid,
-				prConnSettings->aucSSID,
-				prConnSettings->ucSSIDLen,
-				IEEE80211_BSS_TYPE_ESS,
-				IEEE80211_PRIVACY_ANY);
-#else
-		bss = cfg80211_get_bss(
-				wlanGetWiphy(),
-				prChannel, arBssid,
-				prConnSettings->aucSSID,
-				prConnSettings->ucSSIDLen,
-				WLAN_CAPABILITY_ESS,
-				WLAN_CAPABILITY_ESS);
-#endif
-		if (bss == NULL)
-			bss = kalInformConnectionBss(prAdapter,
-				prChannel, arBssid, ucBssIndex);
-#endif /* (CFG_ADVANCED_80211_MLO == 1) */
-
-#if (CFG_ADVANCED_80211_MLO == 1)
-			cfg80211_connect_bss(
-				prDevHandler,
-				arBssid,
-				bss,
-				prConnSettings->aucReqIe,
-				prConnSettings->u4ReqIeLength,
-				prConnSettings->aucRspIe,
-				prConnSettings->u4RspIeLength,
-				u2JoinStatus,
-				GFP_KERNEL,
-				NL80211_TIMEOUT_UNSPECIFIED);
-#else
-			cfg80211_connect_result(
-				prDevHandler,
-				arBssid,
-				prConnSettings->aucReqIe,
-				prConnSettings->u4ReqIeLength,
-				prConnSettings->aucRspIe,
-				prConnSettings->u4RspIeLength,
-				u2JoinStatus,
-				GFP_KERNEL);
-#endif
+		kalReportAllLinkInfo(prGlueInfo->prAdapter,
+				prDevHandler, eStatus, pvBuf,
+				u4BufLen, ucBssIndex);
 
 		if (prConnSettings && prConnSettings->assocIeLen > 0) {
 			kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
@@ -11236,7 +11291,7 @@ int8_t atoi(uint8_t ch)
 
 #if CFG_SUPPORT_WPA3
 int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
-				   uint8_t uBssIndex)
+			   struct STA_RECORD *prStaRec)
 {
 	struct cfg80211_external_auth_params params;
 	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
@@ -11247,9 +11302,10 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
 #endif
 	struct ADAPTER *prAdapter = NULL;
+	uint8_t ucBssIndex = prStaRec->ucBssIndex;
 
 	prAdapter = prGlueInfo->prAdapter;
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, uBssIndex);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (prBssInfo == NULL) {
 		DBGLOG(SAA, WARN,
 			"SAE auth failed with NULL prBssInfo\n");
@@ -11258,7 +11314,7 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 
 	if (IS_BSS_AIS(prBssInfo)) {
 		prAisFsmInfo =
-			aisGetAisFsmInfo(prAdapter, uBssIndex);
+			aisGetAisFsmInfo(prAdapter, ucBssIndex);
 		if (!prAisFsmInfo) {
 			DBGLOG(SAA, WARN,
 			       "SAE auth failed with NULL prAisFsmInfo\n");
@@ -11267,7 +11323,7 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 
 		prBssDesc =
 			aisGetTargetBssDesc(prAdapter,
-				uBssIndex);
+				ucBssIndex);
 		if (!prBssDesc) {
 			DBGLOG(SAA, WARN,
 			       "SAE auth failed without prTargetBssDesc\n");
@@ -11278,7 +11334,7 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 	else if (IS_BSS_P2P(prBssInfo)) {
 		prP2pRoleFsmInfo =
 			p2pFuncGetRoleByBssIdx(prAdapter,
-				uBssIndex);
+				ucBssIndex);
 		if (!prP2pRoleFsmInfo) {
 			DBGLOG(SAA, WARN,
 			       "SAE auth failed with NULL prP2pRoleFsmInfo\n");
@@ -11299,13 +11355,17 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 			"SAE auth failed with NULL prBssDesc\n");
 		return WLAN_STATUS_INVALID_DATA;
 	}
-	ndev = wlanGetNetDev(prGlueInfo, uBssIndex);
+	ndev = wlanGetNetDev(prGlueInfo, ucBssIndex);
 	kalMemZero(&params, sizeof(struct cfg80211_external_auth_params));
 	params.action = NL80211_EXTERNAL_AUTH_START;
 	COPY_MAC_ADDR(params.bssid, prBssDesc->aucBSSID);
 	COPY_SSID(params.ssid.ssid, params.ssid.ssid_len,
 		  prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
-	params.key_mgmt_suite = prBssDesc->u4RsnSelectedAKMSuite;
+	if (prBssDesc->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_SAE)
+		params.key_mgmt_suite = prBssDesc->u4RsnSelectedAKMSuite;
+	else
+		WLAN_GET_FIELD_BE32(&prBssDesc->u4RsnSelectedAKMSuite,
+			&params.key_mgmt_suite);
 	DBGLOG(AIS, INFO, "[WPA3] "MACSTR" %s %d %d %02x-%02x-%02x-%02x",
 	       MAC2STR(params.bssid), params.ssid.ssid,
 	       params.ssid.ssid_len, params.action,
@@ -11318,7 +11378,7 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 int kalVendorExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
-		struct STA_RECORD *prStaRec, uint8_t ucBssIndex)
+				 struct STA_RECORD *prStaRec)
 {
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
@@ -11331,7 +11391,7 @@ int kalVendorExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 #endif
 	struct ADAPTER *prAdapter = NULL;
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
-
+	uint8_t ucBssIndex = prStaRec->ucBssIndex;
 	uint16_t size = 0;
 
 	prAdapter = prGlueInfo->prAdapter;
@@ -11397,7 +11457,11 @@ int kalVendorExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 	COPY_SSID(info->ssid, info->ssid_len,
 		prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
 	info->ssid[info->ssid_len] = '\0';
-	info->key_mgmt_suite = prBssDesc->u4RsnSelectedAKMSuite;
+	if (prBssDesc->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_SAE)
+		info->key_mgmt_suite = prBssDesc->u4RsnSelectedAKMSuite;
+	else
+		WLAN_GET_FIELD_BE32(&prBssDesc->u4RsnSelectedAKMSuite,
+			&info->key_mgmt_suite);
 	info->dot11MultiLinkActivated = TRUE;
 	if (prMldBssInfo)
 		COPY_MAC_ADDR(info->own_ml_addr, prMldBssInfo->aucOwnMldAddr);

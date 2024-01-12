@@ -4120,6 +4120,19 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 							     prAisFsmInfo,
 							     prAssocRspSwRfb,
 							     prStaRec);
+
+
+				/* 4 <1.6> Indicate Connected Event to Host
+				 * immediately.
+				 */
+				/* Require BSSID, Association ID,
+				 * Beacon Interval
+				 */
+				/* .. from AIS_BSS_INFO_T */
+				aisIndicationOfMediaStateToHost(prAdapter,
+					MEDIA_STATE_CONNECTED,
+					FALSE,
+					ucBssIndex);
 #endif /* CFG_SUPPORT_ROAMING */
 			} else {
 #if CFG_SUPPORT_ROAMING
@@ -6794,13 +6807,6 @@ void aisUpdateBssInfoForRoamingAP(struct ADAPTER *prAdapter,
 
 	/* 4 <1.3> Activate current AP's STA_RECORD_T in Driver. */
 	cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_3);
-
-	/* 4 <1.6> Indicate Connected Event to Host immediately. */
-	/* Require BSSID, Association ID, Beacon Interval..
-	 * from AIS_BSS_INFO_T
-	 */
-	aisIndicationOfMediaStateToHost(prAdapter, MEDIA_STATE_CONNECTED,
-					FALSE, ucBssIndex);
 }				/* end of aisFsmRoamingUpdateBss() */
 
 void aisUpdateBssInfoForRoamingAllAP(struct ADAPTER *prAdapter,

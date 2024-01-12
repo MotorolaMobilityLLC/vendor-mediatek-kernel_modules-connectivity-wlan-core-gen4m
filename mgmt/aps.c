@@ -1286,14 +1286,30 @@ try_again:
 
 		ap->aprTarget[link_idx] = cand;
 		ap->au2TargetScore[link_idx] = goal_score;
-		DBGLOG(APS, INFO,
-			"%s[" MACSTR "][link=%d] select BSS[" MACSTR
-			" %s] score[%d] conn[%d] policy[%d] bssid[%d] bssid_hint[%d]\n",
-			ap->fgIsMld ? "MLD" : "AP", MAC2STR(ap->aucAddr),
-			link_idx, MAC2STR(cand->aucBSSID),
-			apucBandStr[cand->eBand], goal_score,
-			cand->fgIsConnected & bmap, policy,
-			ap->fgIsMatchBssid, ap->fgIsMatchBssidHint);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (cand->rMlInfo.fgValid)
+			DBGLOG(APS, INFO,
+				"%s[" MACSTR "][link=%d] select BSS["
+				MACSTR " %s mld=" MACSTR
+				"] score[%d] conn[%d] policy[%d] bssid[%d] bssid_hint[%d]\n",
+				ap->fgIsMld ? "ML" : "SL",
+				MAC2STR(ap->aucAddr),
+				link_idx, MAC2STR(cand->aucBSSID),
+				apucBandStr[cand->eBand],
+				MAC2STR(cand->rMlInfo.aucMldAddr), goal_score,
+				cand->fgIsConnected & bmap, policy,
+				ap->fgIsMatchBssid, ap->fgIsMatchBssidHint);
+		else
+#endif
+			DBGLOG(APS, INFO,
+				"%s[" MACSTR "][link=%d] select BSS[" MACSTR
+				" %s] score[%d] conn[%d] policy[%d] bssid[%d] bssid_hint[%d]\n",
+				ap->fgIsMld ? "ML" : "SL", MAC2STR(ap->aucAddr),
+				link_idx, MAC2STR(cand->aucBSSID),
+				apucBandStr[cand->eBand], goal_score,
+				cand->fgIsConnected & bmap, policy,
+				ap->fgIsMatchBssid, ap->fgIsMatchBssidHint);
 		goto done;
 	}
 
@@ -1307,7 +1323,7 @@ try_again:
 	DBGLOG(APS, INFO,
 		"%s[" MACSTR
 		"][link=%d] select NONE policy[%d] bssid[%d] bssid_hint[%d]\n",
-		ap->fgIsMld ? "MLD" : "AP", MAC2STR(ap->aucAddr),
+		ap->fgIsMld ? "ML" : "SL", MAC2STR(ap->aucAddr),
 		link_idx, policy, ap->fgIsMatchBssid, ap->fgIsMatchBssidHint);
 done:
 	return cand != NULL;
@@ -1600,8 +1616,8 @@ int32_t apsCalculateTotalTput(struct ADAPTER *ad,
 
 	if (found) {
 		DBGLOG(APS, INFO,
-			"AP[" MACSTR "][%s], Total(%d) EST: %d (Reason=%d)",
-			MAC2STR(ap->aucAddr), ap->fgIsMld ? "MLD" : "LEGACY",
+			"%s[" MACSTR "], Total(%d) EST: %d (Reason=%d)",
+			ap->fgIsMld ? "ML" : "SL", MAC2STR(ap->aucAddr),
 			ap->ucLinkNum, tput, reason);
 		return tput;
 	}
