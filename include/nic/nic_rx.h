@@ -1017,8 +1017,7 @@ struct RFB_TRACK {
 
 /*! RX configuration type structure */
 struct RX_CTRL {
-	uint32_t u4RxCachedSize;
-	uint8_t *pucRxCached;
+	struct SW_RFB *prRxCached;
 	struct QUE rFreeSwRfbList;
 	struct QUE rReceivedRfbList;
 	struct QUE rIndicatedRfbList;
