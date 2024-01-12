@@ -499,6 +499,9 @@ struct wireless_dev *mtk_cfg_add_iface(struct wiphy *wiphy,
 #endif
 int mtk_cfg_del_iface(struct wiphy *wiphy,
 		      struct wireless_dev *wdev);
+
+int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev);
+
 #if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg_change_iface(struct wiphy *wiphy,
 			 struct net_device *ndev,

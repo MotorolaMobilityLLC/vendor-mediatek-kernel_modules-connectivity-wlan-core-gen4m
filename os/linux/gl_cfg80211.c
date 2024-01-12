@@ -81,6 +81,7 @@
 #include "gl_cfg80211.h"
 #include "gl_vendor.h"
 #include "gl_p2p_os.h"
+#include "wlan_lib.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -6556,6 +6557,7 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 	struct wireless_dev *prWdev = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
+	uint8_t ucBssIdx = 0;
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 	uint8_t ucAisIndex;
 	uint32_t u4SetInfoLen;
@@ -6576,7 +6578,7 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 
 	DBGLOG(AIS, TRACE, "%s: u4Idx=%d\n", __func__, ucAisIndex);
 
-	if (ucAisIndex == KAL_AIS_NUM) {
+	if (ucAisIndex >= KAL_AIS_NUM) {
 		DBGLOG(INIT, ERROR, "wdev num reaches limit\n");
 		goto fail;
 	}
@@ -6689,7 +6691,26 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 	/* prepare aisfsm/bssinfo */
 	kalIoctl(prGlueInfo, wlanoidInitAisFsm, &ucAisIndex, 1, &u4SetInfoLen);
 
-	return prWdev;
+	/* BssIdx should not be 0 if add successfully */
+	ucBssIdx = wlanGetBssIdxByNetInterface(prGlueInfo,
+					       gprWdev[ucAisIndex]->netdev);
+	if (ucBssIdx != AIS_DEFAULT_INDEX && ucBssIdx != HW_BSSID_NUM)
+		return prWdev;
+
+	/* Do uninit flow since wlanoidInitAisFsm failed */
+	gprWdev[ucAisIndex] = NULL;
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+	cfg80211_unregister_netdevice(prDevHandler);
+#else
+	unregister_netdevice(prDevHandler);
+#endif
+	/* Don't free netdev and wdev manually here!
+	 * Netdev and wdev will be free after kernel invoke
+	 * netdev priv_destructor/desctructor.
+	 * (after unregister netdev and unlock rtnl lock)
+	 */
+	prDevHandler = NULL;
+	prWdev = NULL;
 fail:
 	if (prDevHandler != NULL)
 		free_netdev(prDevHandler);
@@ -6795,15 +6816,30 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 
 	/* make sure netdev is disconnected */
 	DBGLOG(REQ, INFO, "ucBssIndex = %d\n", ucBssIndex);
-	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetDisassociate,
-			&u4DisconnectReason, sizeof(u4DisconnectReason),
-			&u4SetInfoLen, ucBssIndex);
+	if (!kalIsResetting()) {
+		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetDisassociate,
+				&u4DisconnectReason, sizeof(u4DisconnectReason),
+				&u4SetInfoLen, ucBssIndex);
 
-	if (rStatus != WLAN_STATUS_SUCCESS)
-		DBGLOG(REQ, WARN, "disassociate error:%x\n", rStatus);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(REQ, WARN, "disassociate error:%x\n", rStatus);
 
-	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidUninitAisFsm, NULL, 0,
-			&u4SetInfoLen, ucBssIndex);
+		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidUninitAisFsm,
+				NULL, 0, &u4SetInfoLen, ucBssIndex);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(REQ, WARN, "uninit ais error:%x\n", rStatus);
+	} else {
+		/* Invoke directly since ioctl will be invalid during reset */
+		if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
+			ucBssIndex) ==
+		    MEDIA_STATE_CONNECTED)
+			kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
+				     WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY, NULL,
+				     0, ucBssIndex);
+
+		aisFsmUninit(prAdapter, AIS_INDEX(prAdapter, ucBssIndex));
+	}
 
 	/* prepare for removal */
 	if (netif_carrier_ok(prDevHandler))
