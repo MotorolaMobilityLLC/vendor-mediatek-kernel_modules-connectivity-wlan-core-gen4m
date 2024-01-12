@@ -91,7 +91,7 @@
 #define MT7961_TOP_CFG_BASE			CONN_CFG_BASE
 #define MT7961_TX_DESC_APPEND_LENGTH   32
 #define MT7961_RX_DESC_LENGTH   24
-#define MT7961_ARB_AC_MODE_ADDR (0x820e3020)
+#define MT7961_ARB_AC_MODE_ADDR (0x820E315C)
 
 /*******************************************************************************
 *                         D A T A   T Y P E S
@@ -117,6 +117,11 @@
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+void mt7961_show_ple_info(
+	struct ADAPTER *prAdapter,
+	u_int8_t fgDumpTxd);
+void mt7961_show_pse_info(
+	struct ADAPTER *prAdapter);
 
 /*******************************************************************************
 *                              F U N C T I O N S
