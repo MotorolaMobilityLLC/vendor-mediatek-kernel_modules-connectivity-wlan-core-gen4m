@@ -1419,7 +1419,10 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 				SEC_TO_SYSTIME(AIS_JOIN_TIMEOUT))) {
 				return AIS_STATE_JOIN_FAILURE;
 			}
-
+#if CFG_SUPPORT_RN
+			if (prAisBssInfo->fgDisConnReassoc == TRUE)
+				return AIS_STATE_JOIN_FAILURE;
+#endif
 			return aisFsmStateSearchAction(prAdapter, ucBssIndex);
 		}
 	} else {
@@ -2099,6 +2102,14 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			break;
 
 		case AIS_STATE_JOIN_FAILURE:
+#if CFG_SUPPORT_RN
+			if (prAisBssInfo->fgDisConnReassoc == TRUE) {
+				nicMediaJoinFailure(prAdapter,
+					prAisBssInfo->ucBssIndex,
+					WLAN_STATUS_MEDIA_DISCONNECT);
+				prAisBssInfo->fgDisConnReassoc = FALSE;
+			} else
+#endif
 			nicMediaJoinFailure(prAdapter,
 					    prAisBssInfo->ucBssIndex,
 					    WLAN_STATUS_JOIN_FAILURE);
@@ -2839,6 +2850,11 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 	do {
 		/* 4 <1> JOIN was successful */
 		if (prJoinCompMsg->rJoinStatus == WLAN_STATUS_SUCCESS) {
+#if CFG_SUPPORT_RN
+			GET_CURRENT_SYSTIME(&prAisBssInfo->rConnTime);
+			prAisBssInfo->fgDisConnReassoc = FALSE;
+#endif
+
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 			prConnSettings->fgSecModeChangeStartTimer = FALSE;
 #endif
@@ -3107,6 +3123,11 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 					if (!prAisFsmInfo->prTargetBssDesc)
 						DBGLOG(AIS, ERROR,
 						       "Can't retrieve target bss descriptor\n");
+#if CFG_SUPPORT_RN
+				} else if (prAisBssInfo->fgDisConnReassoc
+					== TRUE) {
+					eNextState = AIS_STATE_JOIN_FAILURE;
+#endif
 				} else if (prAisFsmInfo->rJoinReqTime != 0
 					   && CHECK_FOR_TIMEOUT(rCurrentTime,
 						prAisFsmInfo->rJoinReqTime,
@@ -3601,11 +3622,19 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 #endif
 		}
 	} else {
-		DBGLOG(AIS, INFO,
-		       "Postpone the indication of Disconnect for %d seconds\n",
-		       prConnSettings->ucDelayTimeOfDisconnectEvent);
+#if CFG_SUPPORT_RN
+		if (prAisBssInfo->fgDisConnReassoc) {
+			DBGLOG(AIS, INFO,
+				"Reassoc the AP once beacause of receive deauth/deassoc\n");
+		} else
+#endif
+		{
+			DBGLOG(AIS, INFO,
+			       "Postpone the indication of Disconnect for %d seconds\n",
+			       prConnSettings->ucDelayTimeOfDisconnectEvent);
 
-		prAisFsmInfo->u4PostponeIndStartTime = kalGetTimeTick();
+			prAisFsmInfo->u4PostponeIndStartTime = kalGetTimeTick();
+		}
 	}
 }				/* end of aisIndicationOfMediaStateToHost() */
 
@@ -3647,6 +3676,10 @@ void aisPostponedEventOfDisconnTimeout(IN struct ADAPTER *prAdapter,
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	fgIsPostponeTimeout = !aisFsmIsInProcessPostpone(prAdapter, ucBssIndex);
 	policy = prConnSettings->eConnectionPolicy;
+
+#if CFG_SUPPORT_RN
+		fgIsPostponeTimeout &= !prAisBssInfo->fgDisConnReassoc;
+#endif
 
 	DBGLOG(AIS, EVENT, "policy %d, timeout %d, trial %d, limit %d\n",
 		policy,	fgIsPostponeTimeout, prAisFsmInfo->ucConnTrialCount,
@@ -4206,10 +4239,14 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 			u2ReasonCode =
 				prAisBssInfo->prStaRecOfAP->u2ReasonCode;
 		}
-		if (prAisBssInfo->ucReasonOfDisconnect ==
-			DISCONNECT_REASON_CODE_RADIO_LOST ||
-		    prAisBssInfo->ucReasonOfDisconnect ==
-			DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR) {
+		if ((prAisBssInfo->ucReasonOfDisconnect ==
+			DISCONNECT_REASON_CODE_RADIO_LOST
+#if CFG_SUPPORT_RN
+			&& (prAisBssInfo->fgDisConnReassoc == FALSE))
+#endif
+			||
+			(prAisBssInfo->ucReasonOfDisconnect ==
+			DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR)) {
 			scanRemoveBssDescByBssid(prAdapter,
 						 prAisBssInfo->aucBSSID);
 
