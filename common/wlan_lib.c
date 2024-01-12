@@ -6257,6 +6257,9 @@ wlanQueryStaStatistics(struct ADAPTER *prAdapter,
 			}
 		}
 
+		if (!prStaRec)
+			return WLAN_STATUS_INVALID_DATA;
+
 		/* 4 6. Ensure FW supports get station link status */
 		rQueryCmdStaStatistics.ucIndex = prStaRec->ucIndex;
 		COPY_MAC_ADDR(rQueryCmdStaStatistics.aucMacAddr,
