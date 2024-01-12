@@ -13092,7 +13092,8 @@ static int priv_driver_efuse_ops(IN struct net_device *prNetDev,
 		goto efuse_op_invalid;
 	}
 
-	if (prGlueInfo->prAdapter &&
+	if (prGlueInfo &&
+	    prGlueInfo->prAdapter &&
 	    prGlueInfo->prAdapter->chip_info &&
 	    !prGlueInfo->prAdapter->chip_info->is_support_efuse) {
 		u4Offset += snprintf(pcCommand + u4Offset,
@@ -13105,6 +13106,7 @@ static int priv_driver_efuse_ops(IN struct net_device *prNetDev,
 		  sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 	rAccessEfuseInfo.u4Address = (u4Efuse_addr / EFUSE_BLOCK_SIZE)
 				     * EFUSE_BLOCK_SIZE;
+
 	u4Index = u4Efuse_addr % EFUSE_BLOCK_SIZE;
 
 	if (ucOpMode == EFUSE_READ) {
