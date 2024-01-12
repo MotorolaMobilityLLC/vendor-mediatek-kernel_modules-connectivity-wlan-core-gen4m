@@ -1733,7 +1733,7 @@ static struct TX_CMD_REQ *kalCloneCmd(struct GLUE_INFO *prGlueInfo,
 	struct GL_HIF_INFO *prHifInfo;
 	struct list_head *prNode;
 	struct TX_CMD_REQ *prCmdReq;
-	uint32_t u4Size;
+	uint32_t u4TxdSize, u4TxpSize;
 	unsigned long flags;
 	uint8_t *aucBuff;
 
@@ -1753,20 +1753,18 @@ static struct TX_CMD_REQ *kalCloneCmd(struct GLUE_INFO *prGlueInfo,
 	kalMemCopy(&prCmdReq->rCmdInfo, prCmdInfo, sizeof(struct CMD_INFO));
 
 	aucBuff = prCmdReq->aucBuff;
-	u4Size = prCmdInfo->u4TxdLen;
-	if (u4Size > TX_BUFFER_NORMSIZE)
-		u4Size = TX_BUFFER_NORMSIZE;
-	kalMemCopy(aucBuff, prCmdInfo->pucTxd, u4Size);
+	u4TxdSize = prCmdInfo->u4TxdLen;
+	if (u4TxdSize > TX_BUFFER_NORMSIZE)
+		u4TxdSize = TX_BUFFER_NORMSIZE;
+	kalMemCopy(aucBuff, prCmdInfo->pucTxd, u4TxdSize);
 	prCmdReq->rCmdInfo.pucTxd = aucBuff;
-	aucBuff += u4Size;
+	aucBuff += u4TxdSize;
 
-	if (prCmdInfo->u4TxdLen < TX_BUFFER_NORMSIZE) {
-		u4Size = prCmdInfo->u4TxpLen;
-		if ((u4Size + prCmdInfo->u4TxdLen) > TX_BUFFER_NORMSIZE)
-			u4Size = TX_BUFFER_NORMSIZE - prCmdInfo->u4TxdLen;
-		kalMemCopy(aucBuff, prCmdInfo->pucTxp, u4Size);
-		prCmdReq->rCmdInfo.pucTxp = aucBuff;
-	}
+	u4TxpSize = prCmdInfo->u4TxpLen;
+	if ((u4TxdSize + u4TxpSize) > TX_BUFFER_NORMSIZE)
+		u4TxpSize = TX_BUFFER_NORMSIZE - u4TxdSize;
+	kalMemCopy(aucBuff, prCmdInfo->pucTxp, u4TxpSize);
+	prCmdReq->rCmdInfo.pucTxp = aucBuff;
 
 	return prCmdReq;
 }
@@ -2592,8 +2590,8 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val)
 	void *vir_addr = NULL;
 	vir_addr = ioremap(addr, 0x10);
 	if (!vir_addr) {
-		DBGLOG(INIT, ERROR, "%s: Cannot remap address[%pa].\n",
-		       __func__, addr);
+		DBGLOG(INIT, ERROR, "%s: Cannot remap address[0x%08x].\n",
+		       __func__, (uint32_t)addr);
 		return -1;
 	}
 

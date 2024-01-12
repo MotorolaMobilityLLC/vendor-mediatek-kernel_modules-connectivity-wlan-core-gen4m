@@ -1795,9 +1795,9 @@ static void glBusFreeMsiIrq(struct pci_dev *pdev,
 
 		written += kalSnprintf(dbg + written,
 				       sizeof(dbg) - written,
-				       "[%d] %llu, ",
+				       "[%d] %u, ",
 				       irqn,
-				       KAL_GET_TIME_INTERVAL());
+				       (uint32_t)KAL_GET_TIME_INTERVAL());
 	}
 	KAL_REC_TIME_END();
 
