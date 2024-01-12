@@ -5337,36 +5337,46 @@ void nicSerTimerHandler(IN struct ADAPTER *prAdapter,
 
 void nicSerInit(IN struct ADAPTER *prAdapter, IN const u_int8_t bAtResetFlow)
 {
-	if (!bAtResetFlow) {
-#if defined(_HIF_USB)
-		/* check SER is supported or not */
-		if (prAdapter->rWifiVar.fgEnableSerL1 == TRUE &&
-		    prAdapter->chip_info->u4SerUsbMcuEventAddr != 0) {
-			cnmTimerInitTimer(prAdapter,
-					  &rSerSyncTimer,
-				     (PFN_MGMT_TIMEOUT_FUNC) nicSerTimerHandler,
-					  (unsigned long) NULL);
-			cnmTimerStartTimer(prAdapter,
-					   &rSerSyncTimer,
-					   WIFI_SER_SYNC_TIMER_TIMEOUT_IN_MS);
+#if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
+	if (prAdapter->chip_info->fgIsSupportL0p5Reset) {
+		if (!bAtResetFlow) {
+			INIT_WORK(&prAdapter->prGlueInfo->rWfsysResetWork,
+				  WfsysResetHdlr);
 		}
-#endif
+		if (prAdapter->rWifiVar.eEnableSerL0p5 ==
+		    FEATURE_OPT_SER_DISABLE)
+			wlanoidSerExtCmd(prAdapter, SER_ACTION_L0P5_CTRL,
+					 SER_ACTION_L0P5_CTRL_PAUSE_WDT, 0);
 	}
-
-	/* if ser is not enabled, disable this feature in FW */
-	if (prAdapter->rWifiVar.fgEnableSerL1 == FALSE
-#if defined(_HIF_USB)
-	    || prAdapter->chip_info->u4SerUsbMcuEventAddr == 0
 #endif
-	) {
+
+	/* if SER L1 is not enabled, disable this feature in FW */
+	if (prAdapter->rWifiVar.eEnableSerL1 == FEATURE_OPT_SER_DISABLE)
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_SET,
 				SER_SET_DISABLE, 0);
-	}
 
+#if defined(_HIF_USB)
+	if (prAdapter->chip_info->u4SerUsbMcuEventAddr != 0) {
+		if (!bAtResetFlow) {
+			cnmTimerInitTimer(prAdapter,
+					  &rSerSyncTimer,
+			      (PFN_MGMT_TIMEOUT_FUNC) nicSerTimerHandler,
+					  (unsigned long) NULL);
+		}
+		cnmTimerStartTimer(prAdapter,
+				   &rSerSyncTimer,
+				   WIFI_SER_SYNC_TIMER_TIMEOUT_IN_MS);
+	}
+#endif /* _HIF_USB */
 }
 
 void nicSerDeInit(IN struct ADAPTER *prAdapter)
 {
+#if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
+	if (prAdapter->chip_info->fgIsSupportL0p5Reset)
+		cancel_work_sync(&prAdapter->prGlueInfo->rWfsysResetWork);
+#endif
+
 #if defined(_HIF_USB)
 	cnmTimerStopTimer(prAdapter, &rSerSyncTimer);
 #endif

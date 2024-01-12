@@ -5524,11 +5524,6 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 
 	glTaskletInit(prGlueInfo);
 
-#if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
-	if (prAdapter->chip_info->fgIsSupportL0p5Reset)
-		INIT_WORK(&prGlueInfo->rWfsysResetWork, WfsysResetHdlr);
-#endif
-
 #if CFG_SUPPORT_NAN
 	prAdapter->fgIsNANfromHAL = TRUE;
 	prAdapter->ucNanPubNum = 0;
@@ -6749,8 +6744,6 @@ static void wlanRemove(void)
 	if (kalIsResetting())
 		wlanReleasePendingOid(prGlueInfo->prAdapter, 1);
 
-	nicSerDeInit(prGlueInfo->prAdapter);
-
 #if CFG_ENABLE_BT_OVER_WIFI
 	if (prGlueInfo->rBowInfo.fgIsNetRegistered) {
 		bowNotifyAllLinkDisconnected(prGlueInfo->prAdapter);
@@ -6784,10 +6777,8 @@ static void wlanRemove(void)
 	flush_work(&prGlueInfo->rTxMsduFreeWork);
 #endif
 	cancel_delayed_work_sync(&prGlueInfo->rRxPktDeAggWork);
-#if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
-	if (prAdapter->chip_info->fgIsSupportL0p5Reset)
-		cancel_work_sync(&prGlueInfo->rWfsysResetWork);
-#endif
+
+	nicSerDeInit(prGlueInfo->prAdapter);
 
 	wlanOffStopWlanThreads(prGlueInfo);
 

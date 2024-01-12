@@ -2160,6 +2160,13 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 		/* clear MCU SER event */
 		kalDevRegWrite(prAdapter->prGlueInfo,
 				prChipInfo->u4SerUsbMcuEventAddr, 0);
+
+		if (prAdapter->rWifiVar.eEnableSerL1 !=
+		     FEATURE_OPT_SER_ENABLE) {
+			DBGLOG(HAL, WARN,
+			       "[SER][L1] Bypass L1 reset due to wifi.cfg\n");
+			return;
+		}
 	}
 
 	switch (ucSerState) {

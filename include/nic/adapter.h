@@ -1029,8 +1029,8 @@ struct WIFI_VAR {
 
 	uint8_t fgRstRecover;
 	u_int8_t fgEnableSerL0;
-	u_int8_t fgEnableSerL0p5;
-	u_int8_t fgEnableSerL1;
+	enum ENUM_FEATURE_OPTION_IN_SER eEnableSerL0p5;
+	enum ENUM_FEATURE_OPTION_IN_SER eEnableSerL1;
 
 #if CFG_SUPPORT_SPE_IDX_CONTROL
 	u_int8_t ucSpeIdxCtrl;	/* 0: WF0, 1: WF1, 2: duplicate */
