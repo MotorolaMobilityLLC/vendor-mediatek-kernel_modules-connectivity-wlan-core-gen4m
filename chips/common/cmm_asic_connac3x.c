@@ -834,7 +834,8 @@ void asicConnac3xWfdmaRxRingExtCtrl(
 }
 
 #if CFG_MTK_WIFI_WFDMA_WB
-void asicConnac3xAllocWfdmaWbBuffer(struct GLUE_INFO *prGlueInfo)
+void asicConnac3xAllocWfdmaWbBuffer(struct GLUE_INFO *prGlueInfo,
+				    bool fgAllocMem)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct mt66xx_chip_info *prChipInfo;
@@ -856,53 +857,71 @@ void asicConnac3xAllocWfdmaWbBuffer(struct GLUE_INFO *prGlueInfo)
 	prRingDmyWr = &prHifInfo->rRingDmyWr;
 	prRingDmyRd->AllocSize = sizeof(uint32_t);
 	prRingDmyWr->AllocSize = sizeof(uint32_t);
-	prMemOps->allocExtBuf(prHifInfo, prRingDmyRd,
-			      WFDMA_WB_MEMORY_ALIGNMENT);
-	prMemOps->allocExtBuf(prHifInfo, prRingDmyWr,
-			      WFDMA_WB_MEMORY_ALIGNMENT);
+	if (fgAllocMem) {
+		prMemOps->allocExtBuf(prHifInfo, prRingDmyRd,
+				      WFDMA_WB_MEMORY_ALIGNMENT);
+		prMemOps->allocExtBuf(prHifInfo, prRingDmyWr,
+				      WFDMA_WB_MEMORY_ALIGNMENT);
+	}
+	kalMemZero(prRingDmyRd->AllocVa, prRingDmyRd->AllocSize);
+	kalMemZero(prRingDmyWr->AllocVa, prRingDmyWr->AllocSize);
 
 	if (prChipInfo->wb_int_sta_size) {
 		prBuf = &prHifInfo->rRingIntSta;
 		prBuf->AllocSize = prChipInfo->wb_int_sta_size;
-		prMemOps->allocExtBuf(prHifInfo, prBuf,
-				      WFDMA_WB_MEMORY_ALIGNMENT);
+		if (fgAllocMem)
+			prMemOps->allocExtBuf(prHifInfo, prBuf,
+					      WFDMA_WB_MEMORY_ALIGNMENT);
+		kalMemZero(prBuf->AllocVa, prBuf->AllocSize);
 	}
 	if (prChipInfo->wb_didx_size) {
 		prBuf = &prHifInfo->rRingDidx;
 		prBuf->AllocSize = prChipInfo->wb_didx_size;
-		prMemOps->allocExtBuf(prHifInfo, prBuf,
-				      WFDMA_WB_MEMORY_ALIGNMENT);
+		if (fgAllocMem)
+			prMemOps->allocExtBuf(prHifInfo, prBuf,
+					      WFDMA_WB_MEMORY_ALIGNMENT);
+		kalMemZero(prBuf->AllocVa, prBuf->AllocSize);
 	}
 	if (prChipInfo->wb_cidx_size) {
 		prBuf = &prHifInfo->rRingCidx;
 		prBuf->AllocSize = prChipInfo->wb_cidx_size;
-		prMemOps->allocExtBuf(prHifInfo, prBuf,
-				      WFDMA_WB_MEMORY_ALIGNMENT);
+		if (fgAllocMem)
+			prMemOps->allocExtBuf(prHifInfo, prBuf,
+					      WFDMA_WB_MEMORY_ALIGNMENT);
+		kalMemZero(prBuf->AllocVa, prBuf->AllocSize);
 	}
 	if (prChipInfo->wb_hw_done_flag_size) {
 		prBuf = &prHifInfo->rHwDoneFlag;
 		prBuf->AllocSize = prChipInfo->wb_hw_done_flag_size;
-		prMemOps->allocExtBuf(prHifInfo, prBuf,
-				      WFDMA_WB_MEMORY_ALIGNMENT);
+		if (fgAllocMem)
+			prMemOps->allocExtBuf(prHifInfo, prBuf,
+					      WFDMA_WB_MEMORY_ALIGNMENT);
+		kalMemZero(prBuf->AllocVa, prBuf->AllocSize);
 	}
 	if (prChipInfo->wb_sw_done_flag_size) {
 		prBuf = &prHifInfo->rSwDoneFlag;
 		prBuf->AllocSize = prChipInfo->wb_sw_done_flag_size;
-		prMemOps->allocExtBuf(prHifInfo, prBuf,
-				      WFDMA_WB_MEMORY_ALIGNMENT);
+		if (fgAllocMem)
+			prMemOps->allocExtBuf(prHifInfo, prBuf,
+					      WFDMA_WB_MEMORY_ALIGNMENT);
+		kalMemZero(prBuf->AllocVa, prBuf->AllocSize);
 	}
 
 	if (prChipInfo->wb_md_int_sta_size) {
 		prBuf = &prHifInfo->rRingMdIntSta;
 		prBuf->AllocSize = prChipInfo->wb_md_int_sta_size;
-		prMemOps->allocExtBuf(prHifInfo, prBuf,
-				      WFDMA_WB_MEMORY_ALIGNMENT);
+		if (fgAllocMem)
+			prMemOps->allocExtBuf(prHifInfo, prBuf,
+					      WFDMA_WB_MEMORY_ALIGNMENT);
+		kalMemZero(prBuf->AllocVa, prBuf->AllocSize);
 	}
 	if (prChipInfo->wb_md_didx_size) {
 		prBuf = &prHifInfo->rRingMdDidx;
 		prBuf->AllocSize = prChipInfo->wb_md_didx_size;
-		prMemOps->allocExtBuf(prHifInfo, prBuf,
-				      WFDMA_WB_MEMORY_ALIGNMENT);
+		if (fgAllocMem)
+			prMemOps->allocExtBuf(prHifInfo, prBuf,
+					      WFDMA_WB_MEMORY_ALIGNMENT);
+		kalMemZero(prBuf->AllocVa, prBuf->AllocSize);
 	}
 }
 

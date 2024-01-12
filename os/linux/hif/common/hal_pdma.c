@@ -1630,16 +1630,16 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	halOffloadAllocMem(prAdapter->prGlueInfo);
-#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
-
 	if (prBusInfo->DmaShdlInit)
 		prBusInfo->DmaShdlInit(prAdapter);
 
 #if CFG_CHIP_RESET_SUPPORT
 	if (prAdapter->eWfsysResetState != WFSYS_RESET_STATE_IDLE) {
 		DBGLOG(INIT, INFO, "[SER][L0.5] Host re-initialize WFDMA\n");
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+		halOffloadAllocMem(prAdapter->prGlueInfo, FALSE);
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 		/*only reset TXD & RXD*/
 		if (!halWpdmaAllocRing(prAdapter->prGlueInfo, false))
@@ -1651,6 +1651,10 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	} else
 #endif
 	{
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+		halOffloadAllocMem(prAdapter->prGlueInfo, TRUE);
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
 		if (!halWpdmaAllocRing(prAdapter->prGlueInfo, true))
 			return false;
 
@@ -2827,8 +2831,8 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem)
 	prBusInfo = prChipInfo->bus_info;
 
 #if CFG_MTK_WIFI_WFDMA_WB
-	if (fgAllocMem && prChipInfo->allocWfdmaWbBuffer)
-		prChipInfo->allocWfdmaWbBuffer(prGlueInfo);
+	if (prChipInfo->allocWfdmaWbBuffer)
+		prChipInfo->allocWfdmaWbBuffer(prGlueInfo, fgAllocMem);
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 
 	/*
