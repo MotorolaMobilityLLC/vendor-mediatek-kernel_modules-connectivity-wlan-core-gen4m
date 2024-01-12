@@ -1230,6 +1230,12 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 	if (*prMainStaRec == NULL)
 		*prMainStaRec = prStaRec;
 
+#if CFG_SUPPORT_SCAN_LOG
+	scanAbortBeaconRecv(prAdapter,
+		ucBssIndex,
+		ABORT_CONNECT_STARTS);
+#endif
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (mldSingleLink(prAdapter, prStaRec, ucBssIndex)) {
 		prBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
@@ -4830,6 +4836,12 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 		kalMemZero(&prConnSettings->rErpKey,
 			   sizeof(prConnSettings->rErpKey));
 #endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+
+#if CFG_SUPPORT_SCAN_LOG
+	scanAbortBeaconRecv(prAdapter,
+		ucBssIndex,
+		ABORT_DISCONNECT);
+#endif
 
 #if CFG_EXT_SCAN
 	if (prAisFsmInfo->ucReasonOfDisconnect ==

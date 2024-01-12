@@ -166,6 +166,10 @@ void scnInit(struct ADAPTER *prAdapter)
 #endif
 
 	kalMemZero(&(prScanInfo->rSlotInfo), sizeof(struct CHNL_IDLE_SLOT));
+
+#if CFG_SUPPORT_SCAN_LOG
+	prScanInfo->fgBcnReport = FALSE;
+#endif
 }	/* end of scnInit() */
 
 void scnFreeAllPendingScanRquests(struct ADAPTER *prAdapter)
@@ -4133,6 +4137,18 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 			}
 #endif /* CFG_SUPPORT_ADHOC */
 		}
+#if CFG_SUPPORT_SCAN_LOG
+		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
+			prAisBssInfo->aucBSSID) &&
+			(prAisBssInfo->eConnectionState ==
+			MEDIA_STATE_CONNECTED) &&
+			(prWlanBeaconFrame->u2FrameCtrl &
+			MASK_FRAME_TYPE) == MAC_FRAME_BEACON)
+			scanUpdateBcn(
+				prAdapter,
+				prBssDesc,
+				prAisBssInfo->ucBssIndex);
+#endif
 	}
 
 		rlmProcessBcn(prAdapter,

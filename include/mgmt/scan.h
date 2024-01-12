@@ -684,6 +684,10 @@ struct SCAN_INFO {
 #if (CFG_SUPPORT_WIFI_RNR == 1)
 	struct LINK rNeighborAPInfoList;
 #endif
+
+#if CFG_SUPPORT_SCAN_LOG
+	uint8_t fgBcnReport;
+#endif
 };
 
 /* Incoming Mailbox Messages */
