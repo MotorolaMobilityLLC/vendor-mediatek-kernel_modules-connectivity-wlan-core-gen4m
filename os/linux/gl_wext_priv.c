@@ -2987,7 +2987,7 @@ priv_get_string(IN struct net_device *prNetDev,
 	}
 
 	if (pcExtra)
-		pcExtra[u4TotalLen] = '\0';
+		pcExtra[u4TotalLen-1] = '\0';
 
 	pos += kalScnprintf(buf + pos, u4TotalLen - pos, "\n");
 
