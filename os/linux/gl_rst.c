@@ -116,6 +116,8 @@ bool g_IsTriggerTimeout = FALSE;
 u_int8_t g_IsSubsysRstOverThreshold = FALSE;
 u_int8_t g_IsWfsysBusHang = FALSE;
 char *g_reason;
+enum consys_drv_type g_WholeChipRstType;
+char *g_WholeChipRstReason;
 #endif
 
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
@@ -617,6 +619,9 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 	DBGLOG(INIT, INFO,
 		"Enter glRstwlanPreWholeChipReset.\n");
 
+	g_WholeChipRstType = type;
+	g_WholeChipRstReason = reason;
+
 	if (glRstCheckRstCriteria()) {
 		while ((!prGlueInfo) ||
 				(prGlueInfo->u4ReadyFlag == 0) ||
@@ -729,6 +734,7 @@ void glResetSubsysRstProcedure(
 			if (eResetReason >= RST_REASON_MAX)
 				eResetReason = 0;
 			fw_log_connsys_coredump_start(
+					CONNDRV_TYPE_WIFI,
 					apucRstReason[eResetReason]);
 #endif
 			glResetMsgHandler(WMTMSG_TYPE_RESET,
@@ -749,10 +755,11 @@ void glResetSubsysRstProcedure(
 				prChipInfo->trigger_wholechiprst(g_reason);
 		}
 	} else {
-	#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 		if (eResetReason >= RST_REASON_MAX)
 			eResetReason = 0;
 		fw_log_connsys_coredump_start(
+				CONNDRV_TYPE_WIFI,
 				apucRstReason[eResetReason]);
 #endif
 		glResetMsgHandler(WMTMSG_TYPE_RESET,
@@ -831,7 +838,8 @@ int wlan_reset_thread_main(void *data)
 				if (eResetReason >= RST_REASON_MAX)
 					eResetReason = 0;
 				fw_log_connsys_coredump_start(
-					apucRstReason[eResetReason]);
+					g_WholeChipRstType,
+					g_WholeChipRstReason);
 #endif
 				glResetMsgHandler(WMTMSG_TYPE_RESET,
 							WMTRSTMSG_RESET_START);
