@@ -2062,11 +2062,15 @@ struct ADAPTER {
 	uint32_t u4CompRecIdx;
 	const char *fw_flavor;
 
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	u_int8_t fgEnTmacICS;
 	u_int8_t fgEnRmacICS;
 	uint16_t u2IcsSeqNo;
 #endif /* CFG_SUPPORT_ICS */
+
+#if CFG_SUPPORT_PHY_ICS
+	u_int8_t fgEnPhyICS;
+#endif
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	struct LINK rPwrLevelHandlerList;

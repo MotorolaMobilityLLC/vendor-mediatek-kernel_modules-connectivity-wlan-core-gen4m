@@ -7,7 +7,7 @@
 #include "debug.h"
 #include "precomp.h"
 
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/types.h>
