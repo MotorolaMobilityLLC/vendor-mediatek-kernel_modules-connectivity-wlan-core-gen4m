@@ -5412,6 +5412,8 @@ int32_t mtk_cfg80211_process_str_cmd(IN struct wiphy *wiphy,
 	if (!IS_BSS_INDEX_VALID(ucBssIndex))
 		return -EINVAL;
 
+	DBGLOG(REQ, INFO, "cmd: %s\n", cmd);
+
 	if (strnicmp(cmd, "tdls-ps ", 8) == 0) {
 #if CFG_SUPPORT_TDLS
 		rStatus = kalIoctl(prGlueInfo,
