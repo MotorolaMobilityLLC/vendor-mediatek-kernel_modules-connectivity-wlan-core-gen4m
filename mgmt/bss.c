@@ -414,10 +414,10 @@ void bssDetermineApBssInfoPhyTypeSet(IN struct ADAPTER *prAdapter,
 				     OUT struct BSS_INFO *prBssInfo)
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-	uint8_t ucHtOption = FEATURE_ENABLED;
-	uint8_t ucVhtOption = FEATURE_ENABLED;
+	uint8_t ucHtOption;
+	uint8_t ucVhtOption;
 #if (CFG_SUPPORT_802_11AX == 1)
-	uint8_t ucHeOption = FEATURE_ENABLED;
+	uint8_t ucHeOption;
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
 	uint8_t ucEhtOption = FEATURE_ENABLED;
@@ -2463,9 +2463,7 @@ void bssDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	       MAC2STR(prBssInfo->aucOwnMacAddr), MAC2STR(prBssInfo->aucBSSID),
 	       HIDE(prBssInfo->aucSSID));
 
-	if (prBssInfo->eNetworkType >= 0
-			&& prBssInfo->eNetworkType < NETWORK_TYPE_NUM
-			&& prBssInfo->eCurrentOPMode >= 0
+	if (prBssInfo->eNetworkType < NETWORK_TYPE_NUM
 			&& prBssInfo->eCurrentOPMode < OP_MODE_NUM) {
 		DBGLOG(SW4, INFO,
 			"BSS IDX[%u] Type[%s] OPMode[%s] ConnState[%u] Absent[%u]\n",

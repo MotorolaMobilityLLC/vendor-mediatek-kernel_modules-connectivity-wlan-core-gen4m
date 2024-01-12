@@ -137,7 +137,7 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 	    IN struct STA_RECORD *prStaRec, IN enum ENUM_AA_STATE eNextState,
 	    IN struct SW_RFB *prRetainedSwRfb)
 {
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 	enum ENUM_AA_STATE ePreviousState;
 	u_int8_t fgIsTransition;
 
@@ -146,9 +146,7 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 
 	do {
 
-		if (prStaRec->eAuthAssocState >= 0
-				&& prStaRec->eAuthAssocState < AA_STATE_NUM
-				&& eNextState >= 0
+		if (prStaRec->eAuthAssocState < AA_STATE_NUM
 				&& eNextState < AA_STATE_NUM) {
 			DBGLOG(SAA, STATE, "[SAA]TRANSITION: [%s] -> [%s]\n",
 				apucDebugAAState[prStaRec->eAuthAssocState],
@@ -1757,8 +1755,7 @@ void saaFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 	cnmTimerStopTimer(prAdapter, &prStaRec->rTxReqDoneOrRxRespTimer);
 
 	if (prStaRec->eAuthAssocState != AA_STATE_IDLE) {
-		if (prStaRec->eAuthAssocState >= 0
-				&& prStaRec->eAuthAssocState < AA_STATE_NUM) {
+		if (prStaRec->eAuthAssocState < AA_STATE_NUM) {
 			DBGLOG(SAA, LOUD,
 			"EVENT-ABORT: Previous Auth/Assoc State == %s.\n",
 			apucDebugAAState[prStaRec->eAuthAssocState]);
