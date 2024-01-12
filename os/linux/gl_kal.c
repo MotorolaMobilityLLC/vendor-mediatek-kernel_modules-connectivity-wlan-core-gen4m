@@ -6395,6 +6395,18 @@ kalSetNetAddress(IN struct GLUE_INFO *prGlueInfo,
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(REQ, WARN, "%s: Fail to set network address\n",
 		       __func__);
+/* fos_change begin */
+#if CFG_SUPPORT_SET_IPV6_NETWORK
+		rStatus = kalIoctl(prGlueInfo,
+				   wlanoidSetIPv6NetworkAddress,
+				   (void *) prParamNetAddrList, u4Len,
+				   FALSE, FALSE, TRUE, &u4SetInfoLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(REQ, WARN,
+				"%s: Fail to set IPv6 network address\n",
+				   __func__);
+#endif /* fos_change end */
 
 	kalMemFree(prParamNetAddrList, VIR_MEM_TYPE, u4Len);
 

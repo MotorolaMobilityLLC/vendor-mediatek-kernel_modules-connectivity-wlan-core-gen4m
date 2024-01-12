@@ -3041,6 +3041,12 @@ void nicCmdEventSetCommon(IN struct ADAPTER *prAdapter,
 void nicCmdEventSetIpAddress(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
+/* fos_change begin */
+#if CFG_SUPPORT_SET_IPV6_NETWORK
+void nicCmdEventSetIpv6Address(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+#endif /* fos_change end */
+
 void nicCmdEventQueryLinkQuality(IN struct ADAPTER
 				 *prAdapter, IN struct CMD_INFO *prCmdInfo,
 				 IN uint8_t *pucEventBuf);
