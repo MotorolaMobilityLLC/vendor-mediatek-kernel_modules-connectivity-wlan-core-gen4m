@@ -736,9 +736,11 @@ void connac3x_get_lwtbl(
 	uint32_t wtbl_offset, addr;
 
 	prChipInfo = prAdapter->chip_info;
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 	CONNAC3X_LWTBL_CONFIG(prAdapter, prChipInfo->u4LmacWtblDUAddr, u4Index);
 	wtbl_lmac_baseaddr = CONNAC3X_LWTBL_IDX2BASE(
 		prChipInfo->u4LmacWtblDUAddr, u4Index, 0);
+
 	HAL_MCR_RD(prAdapter, prChipInfo->u4LmacWtblDUAddr,
 				&u4Value);
 
@@ -758,6 +760,7 @@ void connac3x_get_lwtbl(
 			(uint32_t *)&wtbl_raw_dw[wtbl_offset],
 			&u4Value, sizeof(uint32_t));
 	}
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 }
 
 static bool is_wtbl_bigtk_exist(struct ADAPTER *prAdapter, uint32_t u4Index)
@@ -893,6 +896,7 @@ int32_t connac3x_show_umac_wtbl_info(
 		UWTBL_IDX2BASE(u4Index, 0));
 
 	prChipInfo = prAdapter->chip_info;
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 	/* UMAC */
 	CONNAC3X_UWTBL_CONFIG(prAdapter, prChipInfo->u4UmacWtblDUAddr, u4Index);
 	wtbl_umac_baseaddr = CONNAC3X_UWTBL_IDX2BASE(
@@ -1004,6 +1008,7 @@ int32_t connac3x_show_umac_wtbl_info(
 		puwtbl->key_msdu_mlo.wtbl_d7.field.key_loc0,
 		puwtbl->key_msdu_mlo.wtbl_d7.field.key_loc1,
 		keyloc2);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 
 	/* UMAC WTBL DW 8 */
 	amsdu_len = puwtbl->key_msdu_mlo.wtbl_d8.field.amsdu_len;
