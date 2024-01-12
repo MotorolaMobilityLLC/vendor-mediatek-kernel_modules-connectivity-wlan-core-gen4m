@@ -1777,7 +1777,8 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 			prScanParam->u2IELen = IE_SIZE(prIeShortSsidList);
 			prScanParam->ucScnFuncMask |=
 						ENUM_SCN_USE_PADDING_AS_BSSID;
-			prScanParam->ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+			prScanParam->ucBssIndex =
+					prScanInfo->rScanParam.ucBssIndex;
 			prScanParam->ucSSIDType = SCAN_REQ_SSID_WILDCARD;
 
 			/* Init value = CFG_SCAN_OOB_MAX_NUM, if init value = 0

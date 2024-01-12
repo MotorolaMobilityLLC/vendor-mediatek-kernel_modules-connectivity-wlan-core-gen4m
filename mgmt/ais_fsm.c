@@ -2156,7 +2156,8 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 					   MAC_ADDR_LEN);
 				prScanReqMsg->ucScnFuncMask |=
 				    prScanRequest->ucScnFuncMask;
-
+				prScanReqMsg->u4ScnFuncMaskExtend |=
+				    prScanRequest->u4ScnFuncMaskExtend;
 			} else {
 				prScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
 
