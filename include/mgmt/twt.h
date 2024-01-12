@@ -208,11 +208,11 @@ struct _TWT_SMART_STA_T {
 /* Next TWT from the packet should be little endian */
 #define GET_48_BITS_NEXT_TWT_FROM_PKT(pMem) \
 	((u_int64_t)(*((u_int8_t *)(pMem))) | \
-	((u_int64_t)(*(((u_int8_t *)(pMem)) + 1)) >> 8) | \
-	((u_int64_t)(*(((u_int8_t *)(pMem)) + 2)) >> 16) | \
-	((u_int64_t)(*(((u_int8_t *)(pMem)) + 3)) >> 24) | \
-	((u_int64_t)(*(((u_int8_t *)(pMem)) + 4)) >> 32) | \
-	((u_int64_t)(*(((u_int8_t *)(pMem)) + 5)) >> 40))
+	((u_int64_t)(*(((u_int8_t *)(pMem)) + 1)) << 8) | \
+	((u_int64_t)(*(((u_int8_t *)(pMem)) + 2)) << 16) | \
+	((u_int64_t)(*(((u_int8_t *)(pMem)) + 3)) << 24) | \
+	((u_int64_t)(*(((u_int8_t *)(pMem)) + 4)) << 32) | \
+	((u_int64_t)(*(((u_int8_t *)(pMem)) + 5)) << 40))
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S

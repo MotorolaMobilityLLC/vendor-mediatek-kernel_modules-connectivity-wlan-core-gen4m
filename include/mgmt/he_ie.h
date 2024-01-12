@@ -85,6 +85,8 @@
 #define HE_MAC_CAP0_TWT_REQ_SHFT                       1
 #define HE_MAC_CAP0_TWT_RSP                            BIT(2)
 #define HE_MAC_CAP0_TWT_RSP_SHFT                       2
+#define HE_MAC_CAP0_TWT_SCHEDULE_SUPPORT   BIT(30)
+#define HE_MAC_CAP0_TWT_SCHEDULE_SUPPORT_SHIFT   30
 #define HE_MAC_CAP0_FRAGMENTATION_SHFT                 3
 #define HE_MAC_CAP0_MAX_NUM_OF_FRAGMENTATION_SHFT      5
 

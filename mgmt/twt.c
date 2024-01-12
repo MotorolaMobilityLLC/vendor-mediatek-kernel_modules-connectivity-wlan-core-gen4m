@@ -299,8 +299,8 @@ uint32_t twtSendInfoFrame(
 	prTxFrame->ucCategory = CATEGORY_S1G_ACTION;
 	prTxFrame->ucAction = ACTION_S1G_TWT_INFORMATION;
 	prTxFrame->ucNextTWTCtrl = (ucTWTFlowId & TWT_INFO_FLOW_ID) |
-		((prNextTWTInfo->ucNextTWTSize & TWT_INFO_NEXT_TWT_SIZE) <<
-		TWT_INFO_NEXT_TWT_SIZE_OFFSET);
+		((prNextTWTInfo->ucNextTWTSize  <<
+		TWT_INFO_NEXT_TWT_SIZE_OFFSET) & TWT_INFO_NEXT_TWT_SIZE);
 
 	switch (prNextTWTInfo->ucNextTWTSize) {
 	case NEXT_TWT_SUBFIELD_64_BITS:
@@ -317,6 +317,11 @@ uint32_t twtSendInfoFrame(
 			(uint32_t *)(((uint8_t *)prTxFrame) + u4Pos);
 		*pu4NextTWT = CPU_TO_LE32(
 			(uint32_t)(prNextTWTInfo->u8NextTWT & 0xFFFFFFFF));
+
+		DBGLOG(TWT_REQUESTER, WARN,
+			"TWT Info Frame 0x%x 0x%x\n",
+			*pu4NextTWT, prNextTWTInfo->u8NextTWT);
+
 		break;
 	}
 
@@ -337,6 +342,18 @@ uint32_t twtSendInfoFrame(
 		break;
 	}
 
+	DBGLOG(TWT_REQUESTER, WARN,
+			"TWT Info Frame %d %d %d 0x%x 0x%x 0x%x\n",
+			u2EstimatedFrameLen,
+			sizeof(struct _ACTION_TWT_INFO_FRAME),
+			twtGetNextTWTByteCnt(
+				prNextTWTInfo->ucNextTWTSize),
+			prTxFrame->ucNextTWTCtrl,
+			twtGetNextTWTByteCnt(
+				prNextTWTInfo->ucNextTWTSize) == 0 ?
+			0 : *((uint32_t *)(((uint8_t *)prTxFrame) + u4Pos)),
+			prNextTWTInfo->u8NextTWT);
+
 	/* Update information of MSDU_INFO_T */
 	TX_SET_MMPDU(prAdapter,
 			prMsduInfo,
@@ -344,7 +361,8 @@ uint32_t twtSendInfoFrame(
 			prStaRec->ucIndex,
 			WLAN_MAC_MGMT_HEADER_LEN,
 			(sizeof(struct _ACTION_TWT_INFO_FRAME) +
-				prNextTWTInfo->ucNextTWTSize),
+				twtGetNextTWTByteCnt(
+					prNextTWTInfo->ucNextTWTSize)),
 			pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
 
 	/* Enqueue the frame to send this action frame */
