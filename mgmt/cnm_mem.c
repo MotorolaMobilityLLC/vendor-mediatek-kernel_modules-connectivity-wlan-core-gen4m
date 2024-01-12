@@ -633,6 +633,7 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 			prStaRec->ucBssIndex = ucBssIndex;
 			prStaRec->fgIsInUse = TRUE;
 			prStaRec->eStaType = eStaType;
+			prStaRec->u2StatusCode = STATUS_CODE_INVALID;
 
 			/* Initialize the SN caches for duplicate detection */
 			for (k = 0; k < TID_NUM + 1; k++) {
