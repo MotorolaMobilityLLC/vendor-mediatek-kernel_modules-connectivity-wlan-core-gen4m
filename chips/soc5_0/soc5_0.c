@@ -416,6 +416,7 @@ struct BUS_INFO soc5_0_bus_info = {
 #endif
 	.devReadIntStatus = soc5_0ReadIntStatus,
 	.DmaShdlInit = soc5_0DmashdlInit,
+	.DmaShdlReInit = NULL,
 	.setRxRingHwAddr = soc5_0SetRxRingHwAddr,
 	.wfdmaAllocRxRing = soc5_0WfdmaAllocRxRing,
 

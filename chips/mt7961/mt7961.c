@@ -1367,6 +1367,7 @@ struct BUS_INFO mt7961_bus_info = {
 #endif
 	.devReadIntStatus = mt7961ReadIntStatus,
 	.DmaShdlInit = mt7961DmashdlInit,
+	.DmaShdlReInit = mt7961DmashdlReInit,
 	.updateTxRingMaxQuota = mt7961UpdateDmashdlQuota,
 	.setRxRingHwAddr = mt7961SetRxRingHwAddr,
 	.wfdmaAllocRxRing = mt7961LiteWfdmaAllocRxRing,
@@ -1409,6 +1410,7 @@ struct BUS_INFO mt7961_bus_info = {
 	.asicUsbSuspend = NULL, /*asicUsbSuspend*/
 	.asicUsbResume = asicConnac2xUsbResume,
 	.DmaShdlInit = mt7961DmashdlInit,
+	.DmaShdlReInit = mt7961DmashdlReInit,
 	.prDmashdlCfg = &rMT7961DmashdlCfg,
 	.updateTxRingMaxQuota = mt7961UpdateDmashdlQuota,
 	.asicUdmaRxFlush = asicConnac2xUdmaRxFlush,

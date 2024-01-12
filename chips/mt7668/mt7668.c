@@ -458,6 +458,7 @@ struct BUS_INFO mt7668_bus_info = {
 	.hifRst = NULL,
 	.initPcieInt = NULL,
 	.DmaShdlInit = NULL,
+	.DmaShdlReInit = NULL,
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = UDMA_WLCFG_0,
@@ -472,6 +473,11 @@ struct BUS_INFO mt7668_bus_info = {
 	.asicUsbEventEpDetected = NULL,
 	.asicUsbRxByteCount = NULL,
 	.DmaShdlInit = NULL,
+	.DmaShdlReInit = NULL,
+	.asicUdmaRxFlush = NULL,
+#if CFG_CHIP_RESET_SUPPORT
+	.asicUsbEpctlRstOpt = NULL,
+#endif
 #endif /* _HIF_USB */
 #if defined(_HIF_SDIO)
 	.halTxGetFreeResource = NULL,
