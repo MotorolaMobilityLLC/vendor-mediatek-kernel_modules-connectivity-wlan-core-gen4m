@@ -1646,9 +1646,7 @@ static struct wireless_dev *wlanNetCreate(PVOID pvData, PVOID pvDriverData)
 
 	/* 4 <3.1.2> co-relate with wiphy bi-directionally */
 	prGlueInfo->prDevHandler->ieee80211_ptr = prWdev;
-#if CFG_TCP_IP_CHKSUM_OFFLOAD
-	prGlueInfo->prDevHandler->features = NETIF_F_HW_CSUM;
-#endif
+
 	prWdev->netdev = prGlueInfo->prDevHandler;
 
 	/* 4 <3.1.3> co-relate net device & prDev */
@@ -2180,7 +2178,8 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		prGlueInfo->u4ReadyFlag = 0;
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-		prAdapter->u4CSUMFlags = (CSUM_OFFLOAD_EN_TX_TCP | CSUM_OFFLOAD_EN_TX_UDP | CSUM_OFFLOAD_EN_TX_IP);
+		prAdapter->fgIsSupportCsumOffload = FALSE;
+		prAdapter->u4CSUMFlags = CSUM_OFFLOAD_EN_ALL;
 #endif
 
 #if CFG_SUPPORT_CFG_FILE
@@ -2300,7 +2299,7 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 		/* set HW checksum offload */
-		{
+		if (prAdapter->fgIsSupportCsumOffload) {
 			WLAN_STATUS rStatus = WLAN_STATUS_FAILURE;
 			UINT_32 u4CSUMFlags = CSUM_OFFLOAD_EN_ALL;
 			UINT_32 u4SetInfoLen = 0;
@@ -2309,8 +2308,13 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 					   wlanoidSetCSUMOffload,
 					   (PVOID) &u4CSUMFlags, sizeof(UINT_32), FALSE, FALSE, TRUE, &u4SetInfoLen);
 
-			if (rStatus != WLAN_STATUS_SUCCESS)
+			if (rStatus == WLAN_STATUS_SUCCESS) {
+				prGlueInfo->prDevHandler->features = NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM |
+								     NETIF_F_RXCSUM;
+			} else {
 				DBGLOG(INIT, WARN, "set HW checksum offload fail 0x%lx\n", rStatus);
+				prAdapter->fgIsSupportCsumOffload = FALSE;
+			}
 		}
 #endif
 

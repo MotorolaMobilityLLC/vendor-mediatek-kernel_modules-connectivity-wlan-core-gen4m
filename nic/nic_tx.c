@@ -1357,7 +1357,7 @@ nicTxFillDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 
 	/* Checksum offload */
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-	if (prMsduInfo->eSrc == TX_PACKET_OS) {
+	if (prAdapter->fgIsSupportCsumOffload && prMsduInfo->eSrc == TX_PACKET_OS) {
 		if (prAdapter->u4CSUMFlags &
 				(CSUM_OFFLOAD_EN_TX_TCP | CSUM_OFFLOAD_EN_TX_UDP | CSUM_OFFLOAD_EN_TX_IP)) {
 			ASSERT(prMsduInfo->prPacket);

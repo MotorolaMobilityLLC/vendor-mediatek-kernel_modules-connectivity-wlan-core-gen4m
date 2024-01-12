@@ -800,7 +800,8 @@ kalProcessRxPacket(IN P_GLUE_INFO_T prGlueInfo, IN PVOID pvPacket, IN PUINT_8 pu
 	skb_put(skb, u4PacketLen);
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-	kalUpdateRxCSUMOffloadParam(skb, aerCSUM);
+	if (prGlueInfo->prAdapter->fgIsSupportCsumOffload)
+		kalUpdateRxCSUMOffloadParam(skb, aerCSUM);
 #endif
 
 	return rStatus;

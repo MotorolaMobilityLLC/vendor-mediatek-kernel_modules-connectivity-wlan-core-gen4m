@@ -1430,7 +1430,7 @@ VOID nicRxProcessDataPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 #endif
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD || CFG_TCP_IP_CHKSUM_OFFLOAD_NDIS_60
-	if (fgDrop == FALSE) {
+	if (prAdapter->fgIsSupportCsumOffload && fgDrop == FALSE) {
 		UINT_32 u4TcpUdpIpCksStatus;
 		PUINT_32 pu4Temp;
 
