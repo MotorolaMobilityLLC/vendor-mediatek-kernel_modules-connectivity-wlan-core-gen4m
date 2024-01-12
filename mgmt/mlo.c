@@ -1697,10 +1697,10 @@ link_info:
 		tmp_pos = tail; /* traverse original buffer */
 		tmp_end = end;
 		while (tmp_end - tmp_pos >= 2 &&
-		       tmp_pos[0] == SUB_IE_MLD_FRAGMENT &&
-		       2 + tmp_pos[1] <= tmp_end - tmp_pos) {
+		       IE_ID(tmp_pos) == SUB_IE_MLD_FRAGMENT &&
+		       IE_SIZE(tmp_pos) <= tmp_end - tmp_pos) {
 			found = TRUE;
-			tmp_pos += 2 + tmp_pos[1];
+			tmp_pos += IE_SIZE(tmp_pos);
 			break;
 		}
 
@@ -1724,11 +1724,11 @@ link_info:
 
 		/* Add possible fragments */
 		while (tmp_end - tmp_pos >= 2 &&
-		       tmp_pos[0] == SUB_IE_MLD_FRAGMENT &&
-		       2 + tmp_pos[1] <= tmp_end - tmp_pos) {
-			kalMemCopy(p, tmp_pos + 2, tmp_pos[1]);
-			p += tmp_pos[1];
-			tmp_pos += 2 + tmp_pos[1];
+		       IE_ID(tmp_pos) == SUB_IE_MLD_FRAGMENT &&
+		       IE_SIZE(tmp_pos) <= tmp_end - tmp_pos) {
+			kalMemCopy(p, &IE_DATA(tmp_pos), IE_LEN(tmp_pos));
+			p += IE_LEN(tmp_pos);
+			tmp_pos += IE_SIZE(tmp_pos);
 		}
 
 		/* parsing tmp buffer for a per-sta profile */

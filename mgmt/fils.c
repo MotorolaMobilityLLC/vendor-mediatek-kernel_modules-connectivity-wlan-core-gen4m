@@ -1060,10 +1060,10 @@ uint32_t filsRxAuthWrapped(struct ADAPTER *ad,
 		tmp_pos = end; /* traverse original buffer */
 		tmp_end = head + left;
 		while (tmp_end - tmp_pos >= 2 &&
-		       tmp_pos[0] == ELEM_ID_FRAGMENT &&
-		       2 + tmp_pos[1] <= tmp_end - tmp_pos) {
+		       IE_ID(tmp_pos) == ELEM_ID_FRAGMENT &&
+		       IE_SIZE(tmp_pos) <= tmp_end - tmp_pos) {
 			found = TRUE;
-			tmp_pos += 2 + tmp_pos[1];
+			tmp_pos += IE_SIZE(tmp_pos);
 			break;
 		}
 
@@ -1086,11 +1086,11 @@ uint32_t filsRxAuthWrapped(struct ADAPTER *ad,
 
 		/* Add possible fragments */
 		while (tmp_end - tmp_pos >= 2 &&
-		       tmp_pos[0] == ELEM_ID_FRAGMENT &&
-		       2 + tmp_pos[1] <= tmp_end - tmp_pos) {
-			kalMemCopy(p, tmp_pos + 2, tmp_pos[1]);
-			p += tmp_pos[1];
-			tmp_pos += 2 + tmp_pos[1];
+		       IE_ID(tmp_pos) == ELEM_ID_FRAGMENT &&
+		       IE_SIZE(tmp_pos) <= tmp_end - tmp_pos) {
+			kalMemCopy(p, &IE_DATA(tmp_pos), IE_LEN(tmp_pos));
+			p += IE_LEN(tmp_pos);
+			tmp_pos += IE_SIZE(tmp_pos);
 		}
 
 		/* | wrapped data ie + frag(no hdr) + frag(no hdr) + ... |
