@@ -584,6 +584,87 @@ static void halNotifyTxHangEvent(struct ADAPTER *prAdapter,
 	kalSendUevent("abnormaltrx=DIR:TX,Event:Hang");
 }
 
+static void halCalcTxTimeoutParams(struct ADAPTER *prAdapter,
+	uint32_t u4TokenId)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo;
+	uint32_t u4TmpIdleSlotDiff = 0;
+
+	if (IS_FEATURE_DISABLED(prWifiVar->fgWarningTxTimeout))
+		return;
+
+	 /* Update SameTokenDuration and Idle slot parameter
+	  * Assume the TokenId is same before 1st time TX timeout coming
+	  */
+	if (prAdapter->u4LastTokenId == HIF_TX_MSDU_TOKEN_NUM ||
+		prAdapter->u4LastTokenId == u4TokenId) {
+		prAdapter->u4SameTokenCnt++;
+	} else {
+		prAdapter->u4SameTokenCnt = 0;
+	}
+	prAdapter->u4LastTokenId = u4TokenId;
+
+	prLinkQualityInfo = &(prAdapter->rLinkQualityInfo);
+
+	/* Idle slot diff is less than max of 32bit uint */
+	u4TmpIdleSlotDiff = (uint32_t)prLinkQualityInfo->u8DiffIdleSlotCount;
+	if (checkAddOverflow(prAdapter->u4SumIdleSlot, u4TmpIdleSlotDiff)) {
+		DBGLOG(HAL, INFO, "idle slot sum is overflow\n");
+		return;
+	}
+
+	prAdapter->u4SumIdleSlot += u4TmpIdleSlotDiff;
+	prAdapter->u4TxTimeoutCnt++;
+}
+
+static void halResetTxTimeoutParams(struct ADAPTER *prAdapter)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	if (IS_FEATURE_DISABLED(prWifiVar->fgWarningTxTimeout))
+		return;
+
+	/* Reset SameTokenDuration and Idle slot parameter */
+	prAdapter->u4SumIdleSlot = 0;
+	prAdapter->u4SameTokenCnt = 0;
+	prAdapter->u4TxTimeoutCnt = 0;
+	prAdapter->u4LastTokenId = HIF_TX_MSDU_TOKEN_NUM;
+}
+
+static void halWarningTxTimeout(struct ADAPTER *prAdapter,
+	uint32_t u4LongestPending)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	if (IS_FEATURE_DISABLED(prWifiVar->fgWarningTxTimeout))
+		return;
+
+	/* always show if SameToken > thr */
+	if (prAdapter->u4SameTokenCnt > prWifiVar->u4SameTokenThr) {
+		kalSendAeeWarning("Tx Timeout",
+			"Tx timeout in same token more than %d times\n",
+			prWifiVar->u4SameTokenThr);
+	} else if (u4LongestPending >= prWifiVar->u4TxTimeoutWarningThr) {
+		uint32_t u4AvgIdleSlot = 0;
+
+		if (prAdapter->u4TxTimeoutCnt > 0)
+			u4AvgIdleSlot = prAdapter->u4SumIdleSlot /
+				prAdapter->u4TxTimeoutCnt;
+
+		/* Ignore low idle slow < thr if setting in wifi.cfg */
+		if (IS_FEATURE_ENABLED(prWifiVar->fgIgnoreLowIdleSlot)) {
+			if (u4AvgIdleSlot < prWifiVar->u4LowIdleSlotThr)
+				return;
+		}
+
+		kalSendAeeWarning("Tx Timeout",
+			"Tx timeout > %ds, Warning, idle slot %ld\n",
+			prWifiVar->u4TxTimeoutWarningThr,
+			u4AvgIdleSlot);
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Checking tx timeout
@@ -678,6 +759,8 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 		if (prToken->prPacket)
 			DBGLOG_MEM32(HAL, INFO, prToken->prPacket, 64);
 
+		halCalcTxTimeoutParams(prAdapter, u4TokenId);
+
 		prHistory->au4List[prHistory->u4CurIdx].u4LongestId = u4TokenId;
 		prHistory->au4List[prHistory->u4CurIdx].u4UsedCnt =
 			prTokenInfo->u4UsedCnt;
@@ -686,16 +769,15 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 		halNotifyTxHangEvent(prAdapter, prHistory);
 	} else {
 		kalMemZero(prHistory, sizeof(struct MSDU_TOKEN_HISTORY_INFO));
+		halResetTxTimeoutParams(prAdapter);
 	}
+
+	halWarningTxTimeout(prAdapter, rLongest.tv_sec);
 
 	/* Trigger SER */
 	if (rLongest.tv_sec >= prWifiVar->u4MsduReportTimeoutSerTime) {
 		prAdapter->u4HifChkFlag |= HIF_DRV_SER;
 
-		if (IS_FEATURE_ENABLED(prWifiVar->ucWarningTxTimeout))
-			kalSendAeeWarning("Tx Timeout",
-				"Tx timeout > %ds, Warning\n",
-				prWifiVar->u4MsduReportTimeoutSerTime);
 		DBGLOG(HAL, INFO, "Timeout > %ds, trigger SER\n",
 		       prWifiVar->u4MsduReportTimeoutSerTime);
 	}

@@ -8008,8 +8008,16 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4LTOValue, "LTOValue", 2000);
 #endif /* CFG_TX_CUSTOMIZE_LTO */
 
-	INIT_UINT(prWifiVar->ucWarningTxTimeout,
+	INIT_UINT(prWifiVar->fgWarningTxTimeout,
 		"WarningTxTimeout", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->u4TxTimeoutWarningThr,
+		"TxTimeoutWarningThr", NIC_MSDU_REPORT_TIMEOUT_SER_TIME);
+
+	INIT_UINT(prWifiVar->fgIgnoreLowIdleSlot,
+		"IgnoreLowIdleSlot", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->u4LowIdleSlotThr, "LowIdleSlotThr", 10000);
+
+	INIT_UINT(prWifiVar->u4SameTokenThr, "SameTokenThr", 9);
 
 	/**
 	 * A debugging switch for development phase to check the difference of
