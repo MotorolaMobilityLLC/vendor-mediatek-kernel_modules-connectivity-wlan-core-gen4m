@@ -1778,7 +1778,7 @@ int soc3_0_CheckBusHang(struct ADAPTER *prAdapter,
 		/* check again for dump log */
 		conninfra_is_bus_hang();
 		soc3_0_DumpHostCr(prAdapter);
-		return ret;
+		return 0;
 	}
 
 	do {
