@@ -2099,6 +2099,76 @@ twtPlannerGetCnmGranted(
 
 	return rWlanStatus;
 }
+
+uint32_t twtPlannerAbortCnmGranted(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucFlowId, uint8_t fgIsOid,
+	PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
+	PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler)
+{
+	uint8_t ucAgrtTblIdx;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	struct _EXT_CMD_TWT_ARGT_UPDATE_T *prTWTAgrtUpdate;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (prBssInfo == NULL) {
+		DBGLOG(TWT_PLANNER, ERROR, "No bssinfo to delete agrt\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prStaRec\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	/* Use the AGRT tbl idx 0 for CNM abort purpose */
+	ucAgrtTblIdx = 0;
+
+	/* Send cmd to delete agreement entry in FW */
+	prTWTAgrtUpdate = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+		sizeof(struct _EXT_CMD_TWT_ARGT_UPDATE_T));
+	if (!prTWTAgrtUpdate) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Alloc _EXT_CMD_TWT_ARGT_UPDATE_T for del FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prTWTAgrtUpdate->ucAgrtTblIdx = ucAgrtTblIdx;
+	prTWTAgrtUpdate->ucAgrtCtrlFlag = TWT_AGRT_CTRL_CNM_ABORT;
+	prTWTAgrtUpdate->ucOwnMacId =
+				prBssInfo->ucOwnMacIndex;
+	prTWTAgrtUpdate->ucFlowId = ucFlowId;
+	prTWTAgrtUpdate->u2PeerIdGrpId =
+		CPU_TO_LE16(prStaRec->ucWlanIndex);
+	prTWTAgrtUpdate->ucIsRoleAp = 0;  /* STA role */
+	prTWTAgrtUpdate->ucBssIndex = prBssInfo->ucBssIndex;
+
+	rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
+			CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+			EXT_CMD_ID_TWT_AGRT_UPDATE,
+			TRUE,
+			FALSE,
+			fgIsOid,
+			pfCmdDoneHandler,
+			pfCmdTimeoutHandler,
+			sizeof(struct _EXT_CMD_TWT_ARGT_UPDATE_T),
+			(uint8_t *) (prTWTAgrtUpdate),
+			NULL, 0);
+
+	cnmMemFree(prAdapter, prTWTAgrtUpdate);
+
+	return WLAN_STATUS_SUCCESS;
+}
 #endif
 
 void twtPlannerSetParams(
