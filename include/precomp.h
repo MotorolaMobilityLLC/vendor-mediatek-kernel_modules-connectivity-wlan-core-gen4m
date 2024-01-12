@@ -155,6 +155,8 @@
 #include "wlan_oid.h"
 #include "wlan_bow.h"
 
+#include "fw_dl.h"
+
 #if CFG_ENABLE_WIFI_DIRECT
 #include "wlan_p2p.h"
 #endif

@@ -957,20 +957,9 @@ enum enum_mt66xx_chip {
 	MT66XX_CHIP_NUM
 };
 
-struct firmware_download_operations {
-	const unsigned int tailer_format;	/* FW download tailer format */
-
-	void (*constructFirmwarePrio)(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucNameTable, PPUINT_8 apucName,
-				      PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx); /* load firmware bin priority */
-	WLAN_STATUS (*downloadFirmware)(IN P_ADAPTER_T prAdapter, IN ENUM_IMG_DL_IDX_T eDlIdx);
-	void (*getFwInfo)(IN P_ADAPTER_T prAdapter, IN UINT_8 u4SecIdx, IN ENUM_IMG_DL_IDX_T eDlIdx,
-			  OUT PUINT_32 pu4Addr, OUT PUINT_32 pu4Len,
-			  OUT PUINT_32 pu4DataMode, OUT PBOOLEAN pfgIsEMIDownload);
-};
-
 struct mt66xx_chip_info {
 	P_BUS_INFO bus_info;
-	struct firmware_download_operations *fw_dl_ops;
+	struct FWDL_OPS_T *fw_dl_ops;
 
 	const unsigned int chip_id;	/* chip id */
 	const unsigned int should_verify_chip_id;	/* verify chip id */

@@ -877,24 +877,24 @@ typedef struct {
 	UINT_8 aucFwBranchInfo[4];
 	UINT_8 aucFwDateCode[16];
 
-	TAILER_COMMON_FORMAT_T rCommonTailer;
-	TAILER_REGION_FORMAT_T rRegionTailers[MAX_FWDL_SECTION_NUM];
+	struct TAILER_COMMON_FORMAT_T rCommonTailer;
+	struct TAILER_REGION_FORMAT_T rRegionTailers[MAX_FWDL_SECTION_NUM];
 
 	/* N9 tailer */
-	tailer_format_t rN9tailer[N9_FWDL_SECTION_NUM];
+	struct TAILER_FORMAT_T rN9tailer[N9_FWDL_SECTION_NUM];
 
 	/* CR4 tailer */
-	tailer_format_t rCR4tailer[CR4_FWDL_SECTION_NUM];
+	struct TAILER_FORMAT_T rCR4tailer[CR4_FWDL_SECTION_NUM];
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 	/* N9 Compressed tailer */
-	tailer_format_t_2 rN9Compressedtailer;
+	struct TAILER_FORMAT_T_2 rN9Compressedtailer;
 	/* CR4 tailer */
-	tailer_format_t_2 rCR4Compressedtailer;
+	struct TAILER_FORMAT_T_2 rCR4Compressedtailer;
 	BOOLEAN fgIsN9CompressedFW;
 	BOOLEAN fgIsCR4CompressedFW;
 #endif
 	/* Patch header */
-	PATCH_FORMAT_T rPatchHeader;
+	struct PATCH_FORMAT_T rPatchHeader;
 	BOOLEAN fgPatchIsDlByDrv;
 } WIFI_VER_INFO_T, *P_WIFI_VER_INFO_T;
 

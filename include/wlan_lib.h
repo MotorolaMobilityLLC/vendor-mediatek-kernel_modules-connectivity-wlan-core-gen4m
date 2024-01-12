@@ -75,6 +75,7 @@
 #include "CFG_Wifi_File.h"
 #include "rlm_domain.h"
 #include "nic_init_cmd_event.h"
+#include "fw_dl.h"
 
 
 /*******************************************************************************
@@ -238,11 +239,6 @@ typedef enum _CMD_DEFAULT_STR_SETTING_VALUE {
 	CMD_STR_TEST_STR,
 	CMD_STR_MAX,
 } CMD_DEFAULT_STR_SETTING_VALUE;
-
-typedef enum _FWDL_TAILER_FORMAT_T {
-	HARVARD_TAILER_FORMAT,
-	CONNAC_TAILER_FORMAT,
-} FWDL_TAILER_FORMAT_T, *P_FWDL_TAILER_FORMAT_T;
 
 typedef struct _CMD_FORMAT_V1_T {
 	UINT_8 itemType;
@@ -598,113 +594,6 @@ typedef struct _FIRMWARE_DIVIDED_DOWNLOAD_T {
 #endif
 	FWDL_SECTION_INFO_T arSection[2];
 } FIRMWARE_DIVIDED_DOWNLOAD_T, *P_FIRMWARE_DIVIDED_DOWNLOAD_T;
-
-#if (CFG_UMAC_GENERATION >= 0x20)
-#define LEN_4_BYTE_CRC	(4)
-
-typedef struct _TAILER_COMMON_FORMAT_T {
-	UINT_8 ucChipInfo;
-	UINT_8 ucEcoCode;
-	UINT_8 ucRegionNum;
-	UINT_8 aucReserved[4];
-	UINT_8 aucRamVersion[10];
-	UINT_8 aucRamBuiltDate[15];
-	UINT_32 u4CRC;
-} TAILER_COMMON_FORMAT_T;
-
-typedef struct _TAILER_REGION_FORMAT_T {
-	UINT_32 u4CRC;
-	UINT_32 u4RealSize;
-	UINT_32 u4BlockSize;
-	UINT_8 aucReserved1[4];
-	UINT_32 u4Addr;
-	UINT_32 u4Len;
-	UINT_8 ucFeatureSet;
-	UINT_8 aucReserved2[15];
-} TAILER_REGION_FORMAT_T;
-
-typedef struct _tailer_format_tag {
-	UINT_32 addr;
-	UINT_8 chip_info;
-	UINT_8 feature_set;
-	UINT_8 eco_code;
-	UINT_8 ram_version[10];
-	UINT_8 ram_built_date[15];
-	UINT_32 len;
-} tailer_format_t;
-
-#if CFG_SUPPORT_COMPRESSION_FW_OPTION
-typedef struct _tailer_format_tag_2 {
-	UINT_32 crc;
-	UINT_32 addr;
-	UINT_32 block_size;
-	UINT_32 real_size;
-	UINT_8  chip_info;
-	UINT_8  feature_set;
-	UINT_8  eco_code;
-	UINT_8  ram_version[10];
-	UINT_8  ram_built_date[15];
-	UINT_32 len;
-} tailer_format_t_2;
-
-typedef struct _fw_image_tailer_tag_2 {
-	tailer_format_t_2 ilm_info;
-	tailer_format_t_2 dlm_info;
-} fw_image_tailer_t_2;
-
-typedef struct _fw_image_tailer_check {
-	UINT_8	chip_info;
-	UINT_8	feature_set;
-	UINT_8	eco_code;
-	UINT_8	ram_version[10];
-	UINT_8	ram_built_date[15];
-	UINT_32 len;
-} fw_image_tailer_check;
-#endif
-
-typedef struct _PATCH_FORMAT_T {
-	UINT_8 aucBuildDate[16];
-	UINT_8 aucPlatform[4];
-	UINT_32 u4SwHwVersion;
-	UINT_32 u4PatchVersion;
-	UINT_16 u2CRC;		/* CRC calculated for image only */
-	UINT_8 ucPatchImage[0];
-} PATCH_FORMAT_T, *P_PATCH_FORMAT_T;
-
-#if 0
-#define DATA_MODE_BIT_SHFT_ENCRYPT_MODE       (0)	/* bit0 */
-#define DATA_MODE_MASK_ENCRYPT_MODE           (0x01 << DATA_MODE_BIT_SHFT_ENCRYPT_MODE)	/* bit0 */
-
-#define DATA_MODE_BIT_SHFT_KEY_INDEX          (1)	/* bit[2:1] */
-#define DATA_MODE_MASK_KEY_INDEX              (0x03 << DATA_MODE_BIT_SHFT_KEY_INDEX)	/* bit[2:1] */
-
-#define DATA_MODE_BIT_SHFT_RESET_IV           (3)	/* bit3 */
-#define DATA_MODE_MASK_RESET_IV               (0x1 << DATA_MODE_BIT_SHFT_RESET_IV)
-
-#define DATA_MODE_BIT_SHFT_WORKING_PDA_OPTION (4)	/* bit4 */
-#define DATA_MODE_MASK_WORKING_PDA_OPTION     (0x1 << DATA_MODE_BIT_SHFT_WORKING_PDA_OPTION)
-
-#define DATA_MODE_BIT_SHFT_NEED_ACK           (31)	/* bit31 */
-#define DATA_MODE_MASK_NEED_ACK               (0x01 << DATA_MODE_BIT_SHFT_NEED_ACK)	/* bit31 */
-#endif
-
-/* PDA - Patch Decryption Accelerator */
-#define PDA_N9                 0
-#define PDA_CR4                1
-
-#define N9_FWDL_SECTION_NUM    2
-#define CR4_FWDL_SECTION_NUM   HIF_CR4_FWDL_SECTION_NUM
-#define IMG_DL_STATUS_PORT_IDX HIF_IMG_DL_STATUS_PORT_IDX
-
-#define MAX_FWDL_SECTION_NUM   10
-
-typedef enum _ENUM_IMG_DL_IDX_T {
-	IMG_DL_IDX_N9_FW,
-	IMG_DL_IDX_CR4_FW,
-	IMG_DL_IDX_PATCH
-} ENUM_IMG_DL_IDX_T, *P_ENUM_IMG_DL_IDX_T;
-
-#endif
 
 typedef struct _PARAM_MCR_RW_STRUCT_T {
 	UINT_32 u4McrOffset;
@@ -1138,56 +1027,6 @@ BOOLEAN wlanIsHandlerNeedHwAccess(IN PFN_OID_HANDLER_FUNC pfnOidHandler, IN BOOL
 
 VOID wlanSetPromiscuousMode(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgEnablePromiscuousMode);
 
-#if CFG_ENABLE_FW_DOWNLOAD
-UINT_32 wlanGetDataMode(IN P_ADAPTER_T prAdapter, IN ENUM_IMG_DL_IDX_T eDlIdx, IN UINT_8 ucFeatureSet);
-
-VOID wlanGetHarvardFwInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 u4SecIdx, IN ENUM_IMG_DL_IDX_T eDlIdx,
-			 OUT PUINT_32 pu4Addr, OUT PUINT_32 pu4Len,
-			 OUT PUINT_32 pu4DataMode, OUT PBOOLEAN pfgIsEMIDownload);
-
-VOID wlanGetConnacFwInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 u4SecIdx, IN ENUM_IMG_DL_IDX_T eDlIdx,
-			 OUT PUINT_32 pu4Addr, OUT PUINT_32 pu4Len,
-			 OUT PUINT_32 pu4DataMode, OUT PBOOLEAN pfgIsEMIDownload);
-
-#if CFG_SUPPORT_COMPRESSION_FW_OPTION
-WLAN_STATUS wlanCompressedImageSectionDownloadStage(IN P_ADAPTER_T prAdapter,
-						    IN PVOID pvFwImageMapFile, IN UINT_32 u4FwImageFileLength,
-						    UINT_8 ucSectionNumber, IN ENUM_IMG_DL_IDX_T eDlIdx,
-						    OUT PUINT_8 ucIsCompressed,
-						    OUT P_INIT_CMD_WIFI_DECOMPRESSION_START prFwImageInFo);
-#endif
-WLAN_STATUS wlanImageSectionDownloadStage(IN P_ADAPTER_T prAdapter, IN PVOID pvFwImageMapFile,
-					  IN UINT_32 u4FwImageFileLength, IN UINT_8 ucSectionNumber,
-					  IN ENUM_IMG_DL_IDX_T eDlIdx);
-
-WLAN_STATUS wlanDownloadSection(IN P_ADAPTER_T prAdapter, IN UINT_32 u4Addr, IN UINT_32 u4Len,
-				IN UINT_32 u4DataMode, IN PUINT_8 pucStartPtr, IN ENUM_IMG_DL_IDX_T eDlIdx);
-
-WLAN_STATUS wlanDownloadEMISection(IN P_ADAPTER_T prAdapter, IN UINT_32 u4Len,
-				   IN UINT_32 u4DestAddr, IN PUINT_8 pucStartPtr);
-
-WLAN_STATUS wlanGetHarvardTailerInfo(IN P_ADAPTER_T prAdapter, IN PVOID prFwBuffer, IN UINT_32 u4FwSize,
-				     IN UINT_32 ucTotSecNum, IN ENUM_IMG_DL_IDX_T eDlIdx);
-
-WLAN_STATUS wlanGetConnacTailerInfo(IN P_ADAPTER_T prAdapter, IN PVOID prFwBuffer,
-				    IN UINT_32 u4FwSize, IN ENUM_IMG_DL_IDX_T eDlIdx);
-
-WLAN_STATUS wlanImageSectionConfig(IN P_ADAPTER_T prAdapter,
-				   IN UINT_32 u4DestAddr, IN UINT_32 u4ImgSecSize, IN UINT_32 u4DataMode,
-				   IN ENUM_IMG_DL_IDX_T eDlIdx);
-
-WLAN_STATUS wlanImageSectionDownload(IN P_ADAPTER_T prAdapter, IN UINT_32 u4ImgSecSize, IN PUINT_8 pucImgSecBuf);
-
-WLAN_STATUS wlanImageQueryStatus(IN P_ADAPTER_T prAdapter);
-
-WLAN_STATUS wlanConfigWifiFuncStatus(IN P_ADAPTER_T prAdapter, IN UINT_8 ucCmdSeqNum);
-
-WLAN_STATUS wlanConfigWifiFunc(IN P_ADAPTER_T prAdapter,
-			       IN BOOLEAN fgEnable, IN UINT_32 u4StartAddress, IN UINT_8 ucPDA);
-
-UINT_32 wlanCRC32(PUINT_8 buf, UINT_32 len);
-#endif
-
 WLAN_STATUS wlanSendDummyCmd(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgIsReqTxRsrc);
 
 WLAN_STATUS wlanSendNicPowerCtrlCmd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPowerMode);
@@ -1447,18 +1286,6 @@ WLAN_STATUS wlanTriggerStatsLog(IN P_ADAPTER_T prAdapter, IN UINT_32 u4DurationI
 
 WLAN_STATUS wlanPktTxDone(IN P_ADAPTER_T prAdapter,
 			   IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_RESULT_CODE_T rTxDoneStatus);
-
-WLAN_STATUS wlanDownloadCR4FW(IN P_ADAPTER_T prAdapter, PVOID prFwBuffer);
-
-WLAN_STATUS wlanDownloadFW(IN P_ADAPTER_T prAdapter);
-
-WLAN_STATUS wlanDownloadPatch(IN P_ADAPTER_T prAdapter);
-
-WLAN_STATUS wlanHarvardFormatDownload(IN P_ADAPTER_T prAdapter, IN ENUM_IMG_DL_IDX_T eDlIdx);
-
-WLAN_STATUS wlanConnacFormatDownload(IN P_ADAPTER_T prAdapter, IN ENUM_IMG_DL_IDX_T eDlIdx);
-
-WLAN_STATUS wlanGetPatchInfo(IN P_ADAPTER_T prAdapter);
 
 WLAN_STATUS wlanPowerOffWifi(IN P_ADAPTER_T prAdapter);
 
