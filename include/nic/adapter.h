@@ -534,6 +534,9 @@ struct BSS_INFO {
 
 	uint8_t ucVhtChannelWidthBackup;
 
+	uint16_t u2MaxIdlePeriod;
+	uint8_t ucIdleOptions;
+
 #if CFG_SUPPORT_DFS
 	struct TIMER rCsaTimer;
 	struct SWITCH_CH_AND_BAND_PARAMS CSAParams;

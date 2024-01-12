@@ -2276,6 +2276,26 @@ uint32_t nicUniCmdBssInfoTagMld(struct ADAPTER *ad,
 	return tag->u2Length;
 }
 
+uint32_t nicUniCmdBssInfoTagMaxIdlePeriod(struct ADAPTER *ad,
+	uint8_t *buf, struct CMD_SET_BSS_INFO *cmd)
+{
+	struct UNI_CMD_BSSINFO_MAX_IDLE_PERIOD *tag =
+		(struct UNI_CMD_BSSINFO_MAX_IDLE_PERIOD *)buf;
+	struct BSS_INFO *bss = GET_BSS_INFO_BY_INDEX(ad, cmd->ucBssIndex);
+
+	tag->u2Tag = UNI_CMD_BSSINFO_TAG_MAX_IDLE_PERIOD;
+	tag->u2Length = sizeof(*tag);
+	tag->u2MaxIdlePeriod = bss->u2MaxIdlePeriod;
+	tag->ucIdleOptions = bss->ucIdleOptions;
+
+	DBGLOG(INIT, INFO, "Bss=%d, MaxIdlePeriod=%d, IdleOptions=%d\n",
+		bss->ucBssIndex,
+		tag->u2MaxIdlePeriod,
+		tag->ucIdleOptions);
+
+	return tag->u2Length;
+}
+
 struct UNI_CMD_BSSINFO_TAG_HANDLE arSetBssInfoTable[] = {
 	{sizeof(struct UNI_CMD_BSSINFO_BASIC), nicUniCmdBssInfoTagBasic},
 	{sizeof(struct UNI_CMD_BSSINFO_RLM) +
@@ -2292,7 +2312,9 @@ struct UNI_CMD_BSSINFO_TAG_HANDLE arSetBssInfoTable[] = {
 #endif
 	{sizeof(struct UNI_CMD_BSSINFO_11V_MBSSID), nicUniCmdBssInfoTagMBSSID},
 	{sizeof(struct UNI_CMD_BSSINFO_WAPI), nicUniCmdBssInfoTagWapi},
-	{sizeof(struct UNI_CMD_BSSINFO_MLD), nicUniCmdBssInfoTagMld}
+	{sizeof(struct UNI_CMD_BSSINFO_MLD), nicUniCmdBssInfoTagMld},
+	{sizeof(struct UNI_CMD_BSSINFO_MAX_IDLE_PERIOD),
+					nicUniCmdBssInfoTagMaxIdlePeriod}
 };
 
 uint32_t nicUniCmdSetBssInfo(struct ADAPTER *ad,
