@@ -3307,7 +3307,28 @@ void nicRxProcessMgmtPacket(IN struct ADAPTER *prAdapter,
 void nicRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 	IN OUT struct SW_RFB *prSwRfb)
 {
-	halRxProcessMsduReport(prAdapter, prSwRfb);
+	struct RX_DESC_OPS_T *prRxDescOps;
+	struct QUE rFreeQueue;
+
+	prRxDescOps = prAdapter->chip_info->prRxDescOps;
+	QUEUE_INITIALIZE(&rFreeQueue);
+
+	if (prRxDescOps->nic_rxd_handle_host_rpt)
+		prRxDescOps->nic_rxd_handle_host_rpt(
+			prAdapter, prSwRfb, &rFreeQueue);
+	else
+		halRxProcessMsduReport(
+			prAdapter, prSwRfb, &rFreeQueue);
+
+#if !HIF_TX_PREALLOC_DATA_BUFFER
+	nicTxMsduDoneCb(prAdapter->prGlueInfo, &rFreeQueue);
+#endif
+
+	/* Indicate Service Thread */
+	if (wlanGetTxPendingFrameCount(prAdapter) > 0)
+		kalSetEvent(prAdapter->prGlueInfo);
+
+	kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 
 	nicRxReturnRFB(prAdapter, prSwRfb);
 }

@@ -759,24 +759,6 @@ struct HW_RX_VECTOR_DESC {
 
 };
 
-// DW4
-#define WF_TX_FREE_DONE_EVENT_MSDU_ID0_DW               4
-#define WF_TX_FREE_DONE_EVENT_MSDU_ID0_ADDR             16
-#define WF_TX_FREE_DONE_EVENT_MSDU_ID0_MASK             0x00007fff // 14- 0
-#define WF_TX_FREE_DONE_EVENT_MSDU_ID0_SHIFT            0
-#define WF_TX_FREE_DONE_EVENT_MSDU_ID1_DW               4
-#define WF_TX_FREE_DONE_EVENT_MSDU_ID1_ADDR             16
-#define WF_TX_FREE_DONE_EVENT_MSDU_ID1_MASK             0x3fff8000 // 29-15
-#define WF_TX_FREE_DONE_EVENT_MSDU_ID1_SHIFT            15
-#define WF_TX_FREE_DONE_EVENT_H4_DW                     4
-#define WF_TX_FREE_DONE_EVENT_H4_ADDR                   16
-#define WF_TX_FREE_DONE_EVENT_H4_MASK                   0x40000000 // 30-30
-#define WF_TX_FREE_DONE_EVENT_H4_SHIFT                  30
-#define WF_TX_FREE_DONE_EVENT_P4_DW                     4
-#define WF_TX_FREE_DONE_EVENT_P4_ADDR                   16
-#define WF_TX_FREE_DONE_EVENT_P4_MASK                   0x80000000 // 31-31
-#define WF_TX_FREE_DONE_EVENT_P4_SHIFT                  31
-
 union HW_MAC_MSDU_TOKEN_T {
 	struct {
 		uint16_t         u2MsduID[2];
@@ -812,23 +794,6 @@ union HW_MAC_MSDU_TOKEN_T {
 			uint32_t         u4Pair:1;
 		} rP1;
 	} rFormatV3;
-	struct {
-		struct {
-			uint32_t         u4TransmitDelay:12;
-			uint32_t         u4AirDelay:12;
-			uint32_t         u4TxCount:4;
-			uint32_t         u4Stat:2;
-			uint32_t         u4H:1;
-			uint32_t         u4Pair:1;
-		} rP0;
-		struct {
-			uint32_t         u4MsduId0:15;
-			uint32_t         u4MsduId1:15;
-			uint32_t         u4H:1;
-			uint32_t         u4Pair:1;
-		} rP1;
-	} rFormatV5;
-
 };
 
 struct HW_MAC_MSDU_REPORT {
@@ -861,15 +826,6 @@ struct HW_MAC_MSDU_REPORT {
 
 		uint32_t word;
 	} DW1;
-
-#if (CFG_SUPPORT_CONNAC3X == 1)
-	struct {
-		uint32_t	 u4Rsv:12;
-		uint32_t	 u4MldId:12;
-		uint32_t	 u4QID:7;
-		uint32_t	 u4Pair:1;
-	} DW2;
-#endif /* CFG_SUPPORT_CONNAC3X == 1 */
 
 	/* MSDU token array */
 	union HW_MAC_MSDU_TOKEN_T au4MsduToken[0];
@@ -1084,6 +1040,10 @@ struct RX_DESC_OPS_T {
 		struct ADAPTER *prAdapter,
 		struct SW_RFB *prSwRfb);
 #endif
+	void (*nic_rxd_handle_host_rpt)(
+		struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb,
+		struct QUE *prFreeQueue);
 };
 
 struct ACTION_FRAME_SIZE_MAP {
