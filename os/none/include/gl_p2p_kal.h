@@ -449,7 +449,7 @@ u_int8_t kalP2PMaxClients(IN struct GLUE_INFO *prGlueInfo,
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
 #define kalP2pIndicateAcsResult(_prGlueInfo, _eBand, _ucRoleIndex, \
-	_ucPrimaryCh, _ucSecondCh, _ucSeg0Ch, _ucSeg1Ch, _eChnlBw) \
+	_ucPrimaryCh, _ucSecondCh, _ucSeg0Ch, _ucSeg1Ch, _eChnlBw, eHwMode) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
 #define kalP2pNotifyStopApComplete(_prAdapter, _ucRoleIndex) \
@@ -470,7 +470,8 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucSecondCh,
 		IN uint8_t ucSeg0Ch,
 		IN uint8_t ucSeg1Ch,
-		IN enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw);
+		IN enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
+		IN enum P2P_VENDOR_ACS_HW_MODE eHwMode);
 
 void kalP2pNotifyStopApComplete(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucRoleIndex);
