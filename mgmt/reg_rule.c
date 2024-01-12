@@ -198,6 +198,35 @@ const struct ieee80211_regdomain regdom_us01 = {
 	REG_RULE_LIGHT(5745-10, 5825+10, 40, 0) }
 };
 
+const struct ieee80211_regdomain regdom_cn = {
+	.n_reg_rules = 5,
+	.reg_rules = {
+	/* channels 1..11 */
+	REG_RULE_LIGHT(2412-10, 2462+10, 40, 0),
+	/* channels 12,13 */
+	REG_RULE_LIGHT(2467-10, 2472+10, 40, 0),
+	/* channels 36..48 */
+	REG_RULE_LIGHT(5180-10, 5240+10, 80, 0),
+	/* channels 52..64 */
+	REG_RULE_LIGHT(5260-10, 5320+10, 80, NL80211_RRF_DFS),
+	/* channels 149..165 */
+	REG_RULE_LIGHT(5745-10, 5825+10, 80, 0) }
+};
+
+const struct ieee80211_regdomain regdom_cz_nl = {
+	.n_reg_rules = 5,
+	.reg_rules = {
+	/* channels 1..11 */
+	REG_RULE_LIGHT(2412-10, 2462+10, 40, 0),
+	/* channels 12,13 */
+	REG_RULE_LIGHT(2467-10, 2472+10, 40, 0),
+	/* channels 36..48 */
+	REG_RULE_LIGHT(5180-10, 5240+10, 80, 0),
+	/* channels 52..64 */
+	REG_RULE_LIGHT(5260-10, 5320+10, 80, NL80211_RRF_DFS),
+	/* channels 100..140 */
+	REG_RULE_LIGHT(5500-10, 5700+10, 160, NL80211_RRF_DFS) }
+};
 
 /*
  * Step2. Decclare struct mtk_regdomain
@@ -213,6 +242,20 @@ const struct mtk_regdomain my_regdom_us = {
 	.prRegdRules = &regdom_us01
 };
 
+const struct mtk_regdomain my_regdom_cn = {
+	.country_code = "CN",
+	.prRegdRules = &regdom_cn
+};
+
+const struct mtk_regdomain my_regdom_nl = {
+	.country_code = "NL",
+	.prRegdRules = &regdom_cz_nl
+};
+
+const struct mtk_regdomain my_regdom_cz = {
+	.country_code = "CZ",
+	.prRegdRules = &regdom_cz_nl
+};
 
 /*
  * Step3. Register to table
@@ -221,6 +264,9 @@ const struct mtk_regdomain my_regdom_us = {
 const struct mtk_regdomain *g_prRegRuleTable[] = {
 	&my_regdom_us01,
 	&my_regdom_us,
+	&my_regdom_cn,
+	&my_regdom_nl,
+	&my_regdom_cz,
 	NULL /* this NULL SHOULD be at the end of the array */
 };
 
