@@ -1320,6 +1320,9 @@ void nicProcessRxInterrupt(IN struct ADAPTER *prAdapter);
 void nicRxProcessPktWithoutReorder(IN struct ADAPTER *prAdapter,
 	IN struct SW_RFB *prSwRfb);
 
+u_int8_t nicRxCheckForwardPktResource(
+	IN struct ADAPTER *prAdapter, uint32_t ucTid);
+
 void nicRxProcessForwardPkt(IN struct ADAPTER *prAdapter,
 	IN struct SW_RFB *prSwRfb);
 
