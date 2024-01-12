@@ -2391,6 +2391,8 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 	enum ENUM_PWR_MODE_6G_TYPE e6GPwrModeCurr = PWR_MODE_6G_LPI;
 	uint8_t fg6GPwrModeValid = FALSE;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+	uint8_t ucBssIdx = 0;
+	struct BSS_INFO *prBssInfo;
 #endif
 
 	struct IE_COUNTRY *prCountryIE = NULL;
@@ -2590,33 +2592,30 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 		return NULL;
 	}
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-	 if ((eHwBand == BAND_6G) && (u2CurrCountryCode != COUNTRY_CODE_NULL)) {
-		e6GPwrModeCurr = rlmDomain6GPwrModeDecision(prAdapter,
-					u2CurrCountryCode,
-					prAdapter->rWifiVar.u2CountryCode,
+	if (eHwBand == BAND_6G) {
+		e6GPwrModeCurr = rlmDomain6GPwrModeDecision(
+					prAdapter,
 					fgIsHE6GPresent,
 					uc6GHeRegInfo);
 		fg6GPwrModeValid = TRUE;
 
-		if (e6GPwrModeCurr == PWR_MODE_6G_VLP) {
-			u4Status = rlmDomain6GPwrModeCountrySupportChk(
-					eHwBand,
-					ucChnlNum,
-					prAdapter->rWifiVar.u2CountryCode,
-					e6GPwrModeCurr,
-					&fgPwrMode6GSupport);
+		u4Status = rlmDomain6GPwrModeCountrySupportChk(
+				eHwBand,
+				ucChnlNum,
+				prAdapter->rWifiVar.u2CountryCode,
+				e6GPwrModeCurr,
+				&fgPwrMode6GSupport);
 
-			if (u4Status != WLAN_STATUS_SUCCESS
-				|| fgPwrMode6GSupport == FALSE){
+		if (u4Status == WLAN_STATUS_SUCCESS &&
+			fgPwrMode6GSupport == FALSE) {
 
-				DBGLOG(SCN, WARN,
-					"Skip scan, BSSID["MACSTR
-					"] SSID:%s non support 6G VLP,0x%08x",
-					MAC2STR(prWlanBeaconFrame->aucBSSID),
-					rSsid.aucSsid,
-					u4Status);
-				return NULL;
-			}
+			DBGLOG(SCN, WARN, "Skip scan, BSSID["MACSTR
+				"] SSID:%s non support 6G pwr mode[%d],0x%08x",
+				MAC2STR(prWlanBeaconFrame->aucBSSID),
+				rSsid.aucSsid,
+				e6GPwrModeCurr,
+				u4Status);
+			return NULL;
 		}
 	}
 #endif
@@ -3536,9 +3535,19 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	if (eHwBand == BAND_6G && fg6GPwrModeValid == TRUE) {
 		prBssDesc->e6GPwrMode = e6GPwrModeCurr;
-		if (prBssDesc->fgIsConnected)
-			rlmDomain6GPwrModeUpdate(prAdapter,
-			prBssDesc->e6GPwrMode);
+		if (prBssDesc->fgIsConnected) {
+			for (ucBssIdx = 0; ucBssIdx < prAdapter->ucHwBssIdNum;
+			     ucBssIdx++) {
+				prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+				if (EQUAL_MAC_ADDR(prBssInfo->aucBSSID,
+							prBssDesc->aucBSSID)) {
+					rlmDomain6GPwrModeUpdate(prAdapter,
+						ucBssIdx,
+						prBssDesc->e6GPwrMode);
+					break;
+				}
+			}
+		}
 	}
 #endif
 
