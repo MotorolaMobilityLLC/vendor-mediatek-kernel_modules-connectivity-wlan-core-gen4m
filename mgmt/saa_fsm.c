@@ -1002,9 +1002,9 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 				DBGLOG(SAA, INFO,
 				       "Auth Req was %s by [" MACSTR
 				       "], Status Code = %d\n",
+					u2StatusCode != STATUS_CODE_SUCCESSFUL ?
+					"rejected" : "invalid",
 				       MAC2STR(prStaRec->aucMacAddr),
-				       u2StatusCode != STATUS_CODE_SUCCESSFUL ?
-				       "rejected" : "invalid",
 				       u2StatusCode);
 				eNextState = AA_STATE_IDLE;
 			}
@@ -1358,7 +1358,7 @@ uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
 					ucBssIndex);
 
 				DBGLOG(RSN, INFO,
-				       "QM RX MGT: Deauth frame, P=%d Sec=%d CM=%d BC=%d fc=%02x wlanIdx=%d\n",
+				       "QM RX MGT: Deauth frame, P=%d Sec=%d CM=%d BC=%d fc=%02x wlanIdx=%d, txAllowed=%d\n",
 				       prAisSpecBssInfo->
 					fgMgmtProtection, (uint8_t)
 					prSwRfb->ucSecMode,
@@ -1366,11 +1366,8 @@ uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
 					IS_BMCAST_MAC_ADDR
 					(prDeauthFrame->aucDestAddr),
 					prDeauthFrame->u2FrameCtrl,
-					ucWlanIdx);
-
-				if (prStaRec->fgIsTxAllowed)
-					DBGLOG(RSN, INFO,
-					"ignore no sec deauth\n");
+					ucWlanIdx,
+					prStaRec->fgIsTxAllowed);
 
 				if (IS_STA_IN_AIS(prStaRec) &&
 				    prStaRec->fgIsTxAllowed &&
@@ -1647,7 +1644,7 @@ uint32_t saaFsmRunEventRxDisassoc(struct ADAPTER *prAdapter,
 					ucBssIndex);
 
 				DBGLOG(RSN, INFO,
-				       "QM RX MGT: Disassoc frame, P=%d Sec=%d CM=%d BC=%d fc=%02x wlanIdx=%d\n",
+				       "QM RX MGT: Disassoc frame, P=%d Sec=%d CM=%d BC=%d fc=%02x wlanIdx=%d txAllowed=%d\n",
 				       prAisSpecBssInfo->
 					fgMgmtProtection, (uint8_t)
 					prSwRfb->ucSecMode,
@@ -1655,11 +1652,8 @@ uint32_t saaFsmRunEventRxDisassoc(struct ADAPTER *prAdapter,
 					IS_BMCAST_MAC_ADDR
 					(prDisassocFrame->aucDestAddr),
 					prDisassocFrame->u2FrameCtrl,
-					ucWlanIdx);
-
-				if (prStaRec->fgIsTxAllowed)
-					DBGLOG(RSN, INFO,
-					"ignore no sec disassoc\n");
+					ucWlanIdx,
+					prStaRec->fgIsTxAllowed);
 
 				if (IS_STA_IN_AIS(prStaRec) &&
 				    prStaRec->fgIsTxAllowed &&
