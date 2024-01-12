@@ -17565,8 +17565,8 @@ static int priv_driver_set_smpsparams(
 	struct ADAPTER *prAdapter = NULL;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX_LONG] = { 0 };
-	struct _SMPS_CTRL_T rSMPSCtrl;
-	struct _SMPS_PARAMS_T *prSMPSParams;
+	struct _SMPS_CTRL_T rSMPSCtrl = { 0x00 };
+	struct _SMPS_PARAMS_T *prSMPSParams = NULL;
 	uint16_t i;
 	int32_t u4Ret = 0;
 	uint32_t au4Setting[CMD_SMPS_MAX_PARAMS];
