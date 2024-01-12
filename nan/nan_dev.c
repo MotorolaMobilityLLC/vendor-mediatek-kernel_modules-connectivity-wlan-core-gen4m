@@ -727,6 +727,110 @@ nanDevSendAbortRequestToCnm(struct ADAPTER *prAdapter)
 }
 
 void
+nanDevGenEnableRequest(struct ADAPTER *prAdapter)
+{
+	struct NanEnableRequest rEnableReq;
+
+	/** Send NAN enable request to FW */
+	kalMemZero(&rEnableReq, sizeof(struct NanEnableRequest));
+	rEnableReq.master_pref = prAdapter->rWifiVar.ucMasterPref;
+	rEnableReq.config_random_factor_force = 0;
+	rEnableReq.random_factor_force_val = 0;
+	rEnableReq.config_hop_count_force = 0;
+	rEnableReq.hop_count_force_val = 0;
+	rEnableReq.config_5g_channel =
+		prAdapter->rWifiVar.ucConfig5gChannel;
+	rEnableReq.channel_5g_val =
+		prAdapter->rWifiVar.ucChannel5gVal;
+
+	nanDevEnableRequest(prAdapter, &rEnableReq);
+}
+
+enum NanStatusType
+nanDevEnableUnsync(
+	struct ADAPTER *prAdapter,
+	struct NanEnableUnsync *prEnableUnsync)
+{
+	uint32_t rStatus;
+	void *prCmdBuffer;
+	uint32_t u4CmdBufferLen;
+	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
+	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
+	struct NanEnableUnsync *prCmdNanEnableUnsync = NULL;
+
+	u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
+			 sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +
+			 sizeof(struct NanEnableUnsync);
+
+	prCmdBuffer = cnmMemAlloc(prAdapter,
+		RAM_TYPE_BUF, u4CmdBufferLen);
+
+	if (!prCmdBuffer) {
+		DBGLOG(CNM, ERROR, "Memory allocation fail\n");
+		cnmMemFree(prAdapter, prCmdBuffer);
+		return NAN_STATUS_NO_RESOURCE_AVAILABLE;
+	}
+
+	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)prCmdBuffer;
+
+	prTlvCommon->u2TotalElementNum = 0;
+
+	rStatus = nicAddNewTlvElement(NAN_CMD_ENABLE_UNSYNC,
+				      sizeof(struct NanEnableUnsync),
+				      u4CmdBufferLen, prCmdBuffer);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(TX, ERROR, "Add new Tlv element fail\n");
+		cnmMemFree(prAdapter, prCmdBuffer);
+		return NAN_STATUS_NO_RESOURCE_AVAILABLE;
+	}
+
+	prTlvElement = nicGetTargetTlvElement(1, prCmdBuffer);
+
+	if (prTlvElement == NULL) {
+		DBGLOG(TX, ERROR, "Get target Tlv element fail\n");
+		cnmMemFree(prAdapter, prCmdBuffer);
+		return NAN_STATUS_NO_RESOURCE_AVAILABLE;
+	}
+
+	prCmdNanEnableUnsync =
+		(struct NanEnableUnsync *)prTlvElement->aucbody;
+	kalMemCopy(
+		prCmdNanEnableUnsync, prEnableUnsync,
+		sizeof(struct NanEnableUnsync));
+
+	rStatus = wlanSendSetQueryCmd(prAdapter,
+		CMD_ID_NAN_EXT_CMD, TRUE,
+		FALSE, FALSE, nanDevCommonSetCb,
+		nicCmdTimeoutCommon, u4CmdBufferLen,
+		(uint8_t *)prCmdBuffer, NULL, 0);
+
+	cnmMemFree(prAdapter, prCmdBuffer);
+
+	if (rStatus == WLAN_STATUS_SUCCESS)
+		return NAN_STATUS_SUCCESS;
+	else
+		return NAN_STATUS_INTERNAL_FAILURE;
+}
+
+void
+nanDevGenEnableUnsync(struct ADAPTER *prAdapter)
+{
+	struct NanEnableUnsync rEnableUnsync;
+
+	/** Send NAN enable Unsync to FW */
+	kalMemZero(&rEnableUnsync, sizeof(struct NanEnableUnsync));
+	rEnableUnsync.default_publish_channel = 6;
+	rEnableUnsync.minDwellMultiplier = 5;
+	rEnableUnsync.maxDwellMultiplier = 10;
+	rEnableUnsync.publish_channel_list[0] = 6;
+	rEnableUnsync.publish_channel_list[1] = 149;
+	rEnableUnsync.ucChannelListNum = 2;
+
+	nanDevEnableUnsync(prAdapter, &rEnableUnsync);
+}
+
+void
 nanDevSendEnableRequest(
 	struct ADAPTER *prAdapter,
 	struct MSG_HDR *prMsgHdr)
@@ -777,21 +881,10 @@ nanDevSendEnableRequest(
 	}
 
 	if (nanGetFeatureIsSigma(prAdapter)) {
-		struct NanEnableRequest rEnableReq;
-
-		/** Send NAN enable request to FW */
-		kalMemZero(&rEnableReq, sizeof(struct NanEnableRequest));
-		rEnableReq.master_pref = prAdapter->rWifiVar.ucMasterPref;
-		rEnableReq.config_random_factor_force = 0;
-		rEnableReq.random_factor_force_val = 0;
-		rEnableReq.config_hop_count_force = 0;
-		rEnableReq.hop_count_force_val = 0;
-		rEnableReq.config_5g_channel =
-			prAdapter->rWifiVar.ucConfig5gChannel;
-		rEnableReq.channel_5g_val =
-			prAdapter->rWifiVar.ucChannel5gVal;
-
-		nanDevEnableRequest(prAdapter, &rEnableReq);
+		if (prAdapter->rNanDiscType == NAN_UNSYNC_DISC)
+			nanDevGenEnableUnsync(prAdapter);
+		else
+			nanDevGenEnableRequest(prAdapter);
 	} else
 	/** Set complete for mtk_cfg80211_vendor_nan send nan enable */
 		complete(&prAdapter->prGlueInfo->rNanHaltComp);

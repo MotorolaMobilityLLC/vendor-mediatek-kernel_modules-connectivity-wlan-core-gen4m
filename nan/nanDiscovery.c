@@ -568,6 +568,15 @@ nanTransmitRequest(struct ADAPTER *prAdapter,
 		   msg->service_specific_info,
 		   prTransmitReq->service_specific_info_len);
 
+	/*
+	 * FIXME: cmd/event cannot support 1500 bytes len
+	 * prTransmitReq->sdea_service_specific_info_len =
+	 *     msg->sdea_service_specific_info_len;
+	 * kalMemCopy(prTransmitReq->sdea_service_specific_info,
+	 *     msg->sdea_service_specific_info,
+	 *     prTransmitReq->sdea_service_specific_info_len);
+	 */
+
 	DBGLOG(CNM, INFO,
 	       "[%s]: publish_subscribe_id: %d, requestor_instance_id: %d\n",
 	       __func__, prTransmitReq->publish_subscribe_id,
