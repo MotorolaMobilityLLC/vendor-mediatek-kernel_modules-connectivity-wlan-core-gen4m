@@ -2729,7 +2729,8 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 				DBGLOG(P2P, WARN,
 				       "p2pRoleFsmRunEventChnlGrant: Invalid Channel Request Type:%d\n",
 				       prChnlReqInfo->eChnlReqType);
-				ASSERT(FALSE);
+				GL_RESET_TRIGGER(prAdapter,
+					RST_FLAG_CHIP_RESET);
 				break;
 			}
 
@@ -2797,7 +2798,8 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 				DBGLOG(P2P, WARN,
 				       "p2pRoleFsmRunEventChnlGrant: Invalid CurrentState:%d\n",
 				       prP2pRoleFsmInfo->eCurrentState);
-				ASSERT(FALSE);
+				GL_RESET_TRIGGER(prAdapter,
+					RST_FLAG_CHIP_RESET);
 			}
 			break;
 		}
