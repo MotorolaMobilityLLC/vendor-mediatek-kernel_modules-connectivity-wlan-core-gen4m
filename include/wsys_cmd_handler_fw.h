@@ -828,7 +828,10 @@ struct CMD_SET_BSS_INFO {
 	uint16_t u2HeBasicMcsSet;
 	uint8_t  ucMaxBSSIDIndicator;
 	uint8_t  ucMBSSIDIndex;
-	uint8_t  aucPadding[12];
+	uint8_t  ucHeChannelWidth; /* for 6g band */
+	uint8_t  ucHeChannelFrequencyS1; /* for 6g band */
+	uint8_t  ucHeChannelFrequencyS2; /* for 6g band */
+	uint8_t  aucPadding[9];
 };
 
 struct CMD_HTVHT_BA_SIZE {

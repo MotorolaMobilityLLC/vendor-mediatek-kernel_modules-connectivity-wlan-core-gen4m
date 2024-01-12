@@ -525,7 +525,7 @@ struct BSS_INFO {
 #if (CFG_SUPPORT_802_11AX == 1)
 	uint8_t ucHeOpParams[HE_OP_BYTE_NUM];
 	uint8_t ucBssColorInfo;
-	enum ENUM_CHANNEL_WIDTH ucHeChannelWidth;
+	uint8_t ucHeChannelWidth;
 	uint8_t ucHeChannelFrequencyS1;
 	uint8_t ucHeChannelFrequencyS2;
 	uint16_t u2HeBasicMcsSet;
