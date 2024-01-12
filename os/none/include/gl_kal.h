@@ -1065,7 +1065,7 @@ KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, _prMacAddr)
 	_pucFrameBuf, _u4FrameLen, _ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
-#define kalIndicateRxMgmtFrame(_prGlueInfo, _prSwRfb, _ucBssIndex) \
+#define kalIndicateRxMgmtFrame(prAdapter, _prGlueInfo, _prSwRfb, _ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 #else
 u_int8_t kalRetrieveNetworkAddress(IN struct GLUE_INFO *prGlueInfo,
@@ -1097,7 +1097,8 @@ kalIndicateMgmtTxStatus(IN struct GLUE_INFO *prGlueInfo,
 			IN uint8_t *pucFrameBuf, IN uint32_t u4FrameLen,
 			IN uint8_t ucBssIndex);
 
-void kalIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
+void kalIndicateRxMgmtFrame(IN struct ADAPTER *prAdapter,
+				IN struct GLUE_INFO *prGlueInfo,
 			    IN struct SW_RFB *prSwRfb,
 			    IN uint8_t ucBssIndex);
 #endif

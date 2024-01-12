@@ -9065,12 +9065,14 @@ wlanoidQueryFrequency(IN struct ADAPTER *prAdapter,
 			ucBssIndex) ==
 		    MEDIA_STATE_CONNECTED)
 			*(uint32_t *) pvQueryBuffer = nicChannelNum2Freq(
-				prAisBssInfo->ucPrimaryChannel);
+				prAisBssInfo->ucPrimaryChannel,
+				prAisBssInfo->eBand);
 		else
 			*(uint32_t *) pvQueryBuffer = 0;
 	} else
 		*(uint32_t *) pvQueryBuffer = nicChannelNum2Freq(
-			prConnSettings->ucAdHocChannelNum);
+			prConnSettings->ucAdHocChannelNum,
+			prConnSettings->eAdHocBand);
 
 	return WLAN_STATUS_SUCCESS;
 }				/* end of wlanoidQueryFrequency() */
@@ -12059,7 +12061,9 @@ wlanoidSetCountryCode(IN struct ADAPTER *prAdapter,
 			prAisBssInfo->ucPrimaryChannel, /* primary channel */
 			0, /* bandwidth */
 			0, /* sco */
-			0 /* center frequency */);
+			0, /* center frequency */
+			prAisBssInfo->eBand /* eBand */
+			);
 	}
 #endif
 
@@ -13204,11 +13208,13 @@ batchSetCmd(IN struct ADAPTER *prAdapter,
 					       i4Ret);
 				prRfChannelInfo->ucChannelNum =
 							(uint8_t) u4Value;
-				DBGLOG(SCN, TRACE,
-				       "Scanning Channel:%d, freq: %d\n",
+				DBGLOG(SCN, INFO,
+				       "Scanning Channel:%d,freq:%d,band:%d\n",
 				       prRfChannelInfo->ucChannelNum,
 				       nicChannelNum2Freq(
-				       prRfChannelInfo->ucChannelNum));
+				       prRfChannelInfo->ucChannelNum,
+				       prRfChannelInfo->ucBand),
+				       prRfChannelInfo->ucBand);
 				prRfChannelInfo->ucBand =
 					prRfChannelInfo->ucChannelNum < 15
 							? BAND_2G4 : BAND_5G;

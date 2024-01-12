@@ -148,6 +148,10 @@ uint8_t g_au8RlmHeCfgContellIdx[4][4][2] = {
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+static void heRlmFillHe6gBandCapIE(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo, struct MSDU_INFO *prMsduInfo);
+#endif
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -690,6 +694,77 @@ void heRlmRspGenerateHeOpIE(
 		heRlmFillHeOpIE(prAdapter, prBssInfo, prMsduInfo);
 }
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+static void heRlmFillHe6gBandCapIE(struct ADAPTER *prAdapter,
+			    struct BSS_INFO *prBssInfo,
+			    struct MSDU_INFO *prMsduInfo)
+{
+	struct _IE_HE_6G_BAND_CAP_T *prHe6gBandCap;
+
+	ASSERT(prAdapter);
+	ASSERT(prBssInfo);
+	ASSERT(prMsduInfo);
+
+	prHe6gBandCap = (struct _IE_HE_6G_BAND_CAP_T *)
+		(((uint8_t *)prMsduInfo->prPacket) +
+			prMsduInfo->u2FrameLength);
+
+	prHe6gBandCap->ucId = ELEM_ID_RESERVED;
+	prHe6gBandCap->ucLength =
+		sizeof(struct _IE_HE_6G_BAND_CAP_T) - ELEM_HDR_LEN;
+	prHe6gBandCap->ucExtId = ELEM_EXT_ID_HE_6G_BAND_CAP;
+
+	prHe6gBandCap->u2CapInfo = HE_6G_CAP_INFO_DEFAULT_VAL;
+
+	prHe6gBandCap->u2CapInfo |= ((prAdapter->rWifiVar.ucRxMaxMpduLen
+			<< HE_6G_CAP_INFO_MAX_MPDU_LEN_OFFSET) &
+			   HE_6G_CAP_INFO_MAX_MPDU_LEN_MASK);
+
+	if (prBssInfo->ucOpRxNss <
+		wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex)) {
+		/*Set as static power save*/
+		prHe6gBandCap->u2CapInfo &=
+			~HE_6G_CAP_INFO_SM_POWER_SAVE;
+	}
+
+	ASSERT(IE_SIZE(prHe6gBandCap) <=
+		(ELEM_HDR_LEN + ELEM_MAX_LEN_HE_6G_CAP));
+
+	prMsduInfo->u2FrameLength += IE_SIZE(prHe6gBandCap);
+}
+
+void heRlmReqGenerateHe6gBandCapIE(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
+{
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsduInfo);
+
+	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
+	if (!prBssInfo)
+		return;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+
+	if (((prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11AX)
+	    && (!prStaRec || (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AX)))
+	    && (prBssInfo->eBand == BAND_6G))
+		heRlmFillHe6gBandCapIE(prAdapter, prBssInfo, prMsduInfo);
+}
+#endif /* CFG_SUPPORT_WIFI_6G == 1 */
+
 static uint16_t heRlmGetHeMcsMap(uint8_t *pSrc)
 {
 	uint16_t u2McsMap;
@@ -907,8 +982,26 @@ void heRlmRecHeOperation(
 #endif
 
 	memcpy(prBssInfo->ucHeOpParams, prHeOp->ucHeOpParams, HE_OP_BYTE_NUM);
+
 	prBssInfo->ucBssColorInfo = prHeOp->ucBssColorInfo;
-	prBssInfo->u2HeBasicMcsSet = LE16_TO_CPU(prHeOp->u2HeBasicMcsSet);
+	prBssInfo->u2HeBasicMcsSet = prHeOp->u2HeBasicMcsSet;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (HE_IS_CO_HOSTED_BSS(prHeOp->ucHeOpParams))
+		prBssInfo->fgIsCoHostedBssPresent = TRUE;
+	else
+		prBssInfo->fgIsCoHostedBssPresent = FALSE;
+
+	if (prBssInfo->eBand == BAND_6G &&
+		HE_IS_VHT_OP_INFO_PRESENT(prHeOp->ucHeOpParams))
+		prBssInfo->fgIsHE6GPresent = FALSE;
+	else if (prBssInfo->eBand == BAND_6G) {
+		if (HE_IS_6G_OP_INFOR_PRESENT(prHeOp->ucHeOpParams))
+			prBssInfo->fgIsHE6GPresent = TRUE;
+		else
+			prBssInfo->fgIsHE6GPresent = FALSE;
+	}
+#endif
 }
 
 uint8_t heRlmUpdateSRParams(

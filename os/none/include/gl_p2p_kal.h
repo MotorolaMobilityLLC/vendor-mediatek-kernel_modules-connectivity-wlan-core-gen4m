@@ -322,7 +322,7 @@ void kalP2PIndicateSecCheckRsp(IN struct GLUE_INFO *prGlueInfo,
 	_prChannelInfo, _i4SignalStrength) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
-#define kalP2PIndicateRxMgmtFrame(_prGlueInfo, _prSwRfb, \
+#define kalP2PIndicateRxMgmtFrame(_prAdapter, _prGlueInfo, _prSwRfb, \
 	_fgIsDevInterface, _ucRoleIdx) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
@@ -360,7 +360,8 @@ kalP2PIndicateBssInfo(IN struct GLUE_INFO *prGlueInfo,
 		IN int32_t i4SignalStrength);
 
 void
-kalP2PIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
+kalP2PIndicateRxMgmtFrame(IN struct ADAPTER *prAdapter,
+		IN struct GLUE_INFO *prGlueInfo,
 		IN struct SW_RFB *prSwRfb,
 		IN u_int8_t fgIsDevInterface,
 		IN uint8_t ucRoleIdx);

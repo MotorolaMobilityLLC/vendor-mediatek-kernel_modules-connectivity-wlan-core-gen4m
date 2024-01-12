@@ -1186,6 +1186,10 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	if (fgEfuseCtrlAxOn == 1) {
 	cnmStaRecCmdHeContentFill(prStaRec, prCmdContent);
 	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	prCmdContent->u2He6gBandCapInfo = prStaRec->u2He6gBandCapInfo;
+#endif
 #endif
 
 	log_dbg(REQ, TRACE, "Update StaRec[%u] WIDX[%u] State[%u] Type[%u] BssIdx[%u] AID[%u]\n",

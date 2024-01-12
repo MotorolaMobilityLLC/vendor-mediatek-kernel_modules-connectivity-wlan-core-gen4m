@@ -6073,12 +6073,15 @@ kalIndicateMgmtTxStatus(IN struct GLUE_INFO *prGlueInfo,
 
 }				/* kalIndicateMgmtTxStatus */
 
-void kalIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
+void kalIndicateRxMgmtFrame(IN struct ADAPTER *prAdapter,
+				IN struct GLUE_INFO *prGlueInfo,
 			    IN struct SW_RFB *prSwRfb,
 			    IN uint8_t ucBssIndex)
 {
 	int32_t i4Freq = 0;
 	uint8_t ucChnlNum = 0;
+	struct RX_DESC_OPS_T *prRxDescOps;
+	enum ENUM_BAND eBand;
 
 	do {
 		struct net_device *prDevHandler;
@@ -6090,7 +6093,17 @@ void kalIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 
 		ucChnlNum = prSwRfb->ucChnlNum;
 
-		i4Freq = nicChannelNum2Freq(ucChnlNum) / 1000;
+		prRxDescOps = prAdapter->chip_info->prRxDescOps;
+
+		RX_STATUS_GET(
+			prRxDescOps,
+			eBand,
+			get_rf_band,
+			prSwRfb->prRxStatus);
+
+		nicRxdChNumTranslate(eBand, &ucChnlNum);
+
+		i4Freq = nicChannelNum2Freq(ucChnlNum, eBand) / 1000;
 
 		if (!prGlueInfo->fgIsRegistered) {
 			DBGLOG(AIS, WARN,

@@ -65,6 +65,11 @@
 /* Spatial Reuse Parameter Set element */
 #define ELEM_EXT_ID_SR_PARAM             39
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+/* HE 6G Band Capabilities */
+#define ELEM_EXT_ID_HE_6G_BAND_CAP       59
+#endif
+
 #define ELEM_EXT_CAP_TWT_REQUESTER_SUPP_BIT       77
 #define ELEM_EXT_CAP_TWT_RESPONDER_SUPP_BIT       78
 
@@ -281,22 +286,25 @@
 #define HE_OP_BYTE_NUM                                 3
 
 /* HE Operation Parameters - byte0 */
-#define HE_OP_PARAM0_DEFAULT_PE_DUR_MASK                BITS(0, 2)
-#define HE_OP_PARAM0_DEFAULT_PE_DUR_SHFT                0
-#define HE_OP_PARAM0_TWT_REQUIRED_SHFT                  3
-#define HE_OP_PARAM0_TXOP_DUR_RTS_THRESHOLD_MASK        BITS(4, 7)
-#define HE_OP_PARAM0_TXOP_DUR_RTS_THRESHOLD_SHFT        4
+#define HE_OP_PARAM0_DEFAULT_PE_DUR_MASK		BITS(0, 2)
+#define HE_OP_PARAM0_DEFAULT_PE_DUR_SHFT		0
+#define HE_OP_PARAM0_TWT_REQUIRED_SHFT			3
+#define HE_OP_PARAM0_TXOP_DUR_RTS_THRESHOLD_MASK	BITS(4, 7)
+#define HE_OP_PARAM0_TXOP_DUR_RTS_THRESHOLD_SHFT	4
 
 /* HE Operation Parameters - byte1 */
-#define HE_OP_PARAM1_TXOP_DUR_RTS_THRESHOLD_MASK        BITS(0, 5)
-#define HE_OP_PARAM1_TXOP_DUR_RTS_THRESHOLD_SHFT        0
-#define HE_OP_PARAM1_VHT_OP_INFO_PRESENT                BIT(6)
-#define HE_OP_PARAM1_VHT_OP_INFO_PRESENT_SHFT           6
-#define HE_OP_PARAM1_CO_LOCATED_BSS_SHFT                7
+#define HE_OP_PARAM1_TXOP_DUR_RTS_THRESHOLD_MASK	BITS(0, 5)
+#define HE_OP_PARAM1_TXOP_DUR_RTS_THRESHOLD_SHFT	0
+#define HE_OP_PARAM1_VHT_OP_INFO_PRESENT		BIT(6)
+#define HE_OP_PARAM1_VHT_OP_INFO_PRESENT_SHFT		6
+#define HE_OP_PARAM1_CO_HOSTED_BSS			BIT(7)
+#define HE_OP_PARAM1_CO_HOSTED_BSS_SHFT			7
 
 /* HE Operation Parameters - byte2 */
-#define HE_OP_PARAM2_ER_SU_DISABLE_MASK					BIT(0)
-#define HE_OP_PARAM2_ER_SU_DISABLE_SHFT                 0
+#define HE_OP_PARAM2_ER_SU_DISABLE_MASK			BIT(0)
+#define HE_OP_PARAM2_ER_SU_DISABLE_SHFT			0
+#define HE_OP_PARAM2_6G_OP_INFOR_PRESENT		BIT(1)
+#define HE_OP_PARAM2_6G_OP_INFOR_PRESENT_SHFT		1
 
 /* HE Operation element - BSS Color Information */
 #define HE_OP_BSSCOLOR_BSS_COLOR_SHFT                   0
@@ -356,6 +364,44 @@
 #define HTC_HE_UPH_MIN_TX_PWR_FLAG                     BIT(28)
 #define HTC_HE_UPH_MIN_TX_PWR_FLAG_SHIFT               28
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+#define ELEM_MAX_LEN_HE_6G_CAP \
+	(5 - ELEM_HDR_LEN)	/* sizeof(_IE_HE_6G_BAND_CAP_T)-2 */
+
+/* HE 6G CAP Info*/
+/* B0-B2: Minimum MPDU Start Spacing */
+#define HE_6G_CAP_INFO_MSS_NO_RESTRICIT                0
+#define HE_6G_CAP_INFO_MSS_1_4_US                      BIT(0)
+#define HE_6G_CAP_INFO_MSS_1_2_US                      BIT(1)
+#define HE_6G_CAP_INFO_MSS_1_US                        BITS(0, 1)
+#define HE_6G_CAP_INFO_MSS_2_US                        BIT(2)
+#define HE_6G_CAP_INFO_MSS_4_US                        (BIT(2) | BIT(0))
+#define HE_6G_CAP_INFO_MSS_8_US                        BITS(1, 2)
+#define HE_6G_CAP_INFO_MSS_16_US                       BITS(0, 2)
+/* B3-B5: Maximum A-MPDU Length Exponent */
+#define HE_6G_CAP_INFO_MAX_AMPDU_LEN_8K                0
+#define HE_6G_CAP_INFO_MAX_AMPDU_LEN_16K               BIT(3)
+#define HE_6G_CAP_INFO_MAX_AMPDU_LEN_32K               BIT(4)
+#define HE_6G_CAP_INFO_MAX_AMPDU_LEN_64K               BITS(3, 4)
+#define HE_6G_CAP_INFO_MAX_AMPDU_LEN_128K              BIT(5)
+#define HE_6G_CAP_INFO_MAX_AMPDU_LEN_256K              (BIT(5) | BIT(3))
+#define HE_6G_CAP_INFO_MAX_AMPDU_LEN_512K              BITS(4, 5)
+#define HE_6G_CAP_INFO_MAX_AMPDU_LEN_1024K             BITS(3, 5)
+/* B6-B7: Maximum MPDU Length */
+#define HE_6G_CAP_INFO_MAX_MPDU_LEN_3K                 0
+#define HE_6G_CAP_INFO_MAX_MPDU_LEN_8K                 BIT(6)
+#define HE_6G_CAP_INFO_MAX_MPDU_LEN_11K                BIT(7)
+#define HE_6G_CAP_INFO_MAX_MPDU_LEN_MASK               BITS(6, 7)
+#define HE_6G_CAP_INFO_MAX_MPDU_LEN_OFFSET             6
+/* B9-B10: SM Power Save */
+#define HE_6G_CAP_INFO_SM_POWER_SAVE                   BITS(9, 10)
+/* B11: RD Responder */
+#define HE_6G_CAP_INFO_RD_RESPONDER                    BIT(11)
+/* B12/B13: Rx/TX Antenna Pattern Consistency */
+#define HE_6G_CAP_INFO_RX_ANTENNA_PATTERN_CONSISTENCY  BIT(12)
+#define HE_6G_CAP_INFO_TX_ANTENNA_PATTERN_CONSISTENCY  BIT(13)
+#endif
+
 enum ENUM_HTC_HE_OM_CH_WIDTH  {
 	CH_BW_20 = 0,
 	CH_BW_40 = 1,
@@ -407,6 +453,9 @@ enum ENUM_HEBA_TYPE {
 /* should use macro to access field of HE PHY CAP*/
 #define HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW40_2G(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[0] |=  HE_PHY_CAP0_CHAN_WIDTH_SET_BW40_2G)
+
+#define HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW40_BW80_5G(_aucHePhyCapInfo) \
+	(_aucHePhyCapInfo[0] & HE_PHY_CAP0_CHAN_WIDTH_SET_BW40_BW80_5G)
 
 #define HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW40_BW80_5G(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[0] |=  HE_PHY_CAP0_CHAN_WIDTH_SET_BW40_BW80_5G)
@@ -541,8 +590,19 @@ enum ENUM_HEBA_TYPE {
 
 /* should use macro to access field of HE OP*/
 #define HE_IS_VHT_OP_INFO_PRESENT(_aucHeOpParams) \
+	((_aucHeOpParams[1] & HE_OP_PARAM1_VHT_OP_INFO_PRESENT) \
+	== HE_OP_PARAM1_VHT_OP_INFO_PRESENT)
+
+#define HE_SET_VHT_OP_INFO_PRESENT(_aucHeOpParams) \
 	(_aucHeOpParams[1] |=  HE_OP_PARAM1_VHT_OP_INFO_PRESENT)
 
+#define HE_IS_CO_HOSTED_BSS(_aucHeOpParams) \
+	((_aucHeOpParams[1] & HE_OP_PARAM1_CO_HOSTED_BSS) \
+	== HE_OP_PARAM1_CO_HOSTED_BSS)
+
+#define HE_IS_6G_OP_INFOR_PRESENT(_aucHeOpParams) \
+	((_aucHeOpParams[2] & HE_OP_PARAM2_6G_OP_INFOR_PRESENT) \
+	== HE_OP_PARAM2_6G_OP_INFOR_PRESENT)
 
 #define HE_IS_HTC_HE_VARIANT(_u4HTC) \
 	(_u4HTC & HTC_HE_VARIANT == HTC_HE_VARIANT)
@@ -677,6 +737,16 @@ struct _IE_HE_OP_T {
 	u_int8_t  aucVarInfo[0];
 } __KAL_ATTRIB_PACKED__;
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+/* 9.4.2.261 HE 6 GHz Band Capabilities element */
+struct _IE_HE_6G_BAND_CAP_T {
+	u_int8_t  ucId;
+	u_int8_t  ucLength;
+	u_int8_t  ucExtId;
+	u_int16_t u2CapInfo;
+} __KAL_ATTRIB_PACKED__;
+#endif
+
 struct _HE_SUPPORTED_MCS_FIELD {
 	u_int16_t u2RxMcsMap;
 	u_int16_t u2TxMcsMap;
@@ -727,6 +797,26 @@ struct _IE_SR_PARAM_T {
 	u_int8_t  ucExtId;
 	u_int8_t  ucSRControl;
 	u_int8_t  aucVarInfo[1];
+} __KAL_ATTRIB_PACKED__;
+
+/*ax D5.0 9.4.2.248 HE Operation element */
+union _6G_OPER_INFOR_CONTROL_T {
+	/* bit endian issue */
+	struct {
+		u_int8_t ChannelWidth : 2;
+		u_int8_t DuplicateBeacon : 1;
+		u_int8_t Reserved : 5;
+	} bits;
+	/* byte endian issue */
+	u_int8_t   ucRaw;
+};
+
+struct _6G_OPER_INFOR_T {
+	u_int8_t ucPrimaryChannel;
+	union _6G_OPER_INFOR_CONTROL_T rControl;
+	u_int8_t ucChannelCenterFreqSeg0;
+	u_int8_t ucChannelCenterFreqSeg1;
+	u_int8_t ucMinimumRate;
 } __KAL_ATTRIB_PACKED__;
 
 #endif /* CFG_SUPPORT_802_11AX == 1 */

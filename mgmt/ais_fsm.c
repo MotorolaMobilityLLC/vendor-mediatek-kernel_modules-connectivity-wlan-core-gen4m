@@ -222,7 +222,11 @@ void aisInitializeConnectionSettings(IN struct ADAPTER *prAdapter,
 	if (prRegInfo) {
 		prConnSettings->ucAdHocChannelNum = 0;
 		prConnSettings->eAdHocBand =
-		    prRegInfo->u4StartFreq < 5000000 ? BAND_2G4 : BAND_5G;
+			prRegInfo->u4StartFreq < 5000000 ? BAND_2G4 :
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			prRegInfo->u4StartFreq > 5950000 ? BAND_6G :
+#endif
+			BAND_5G;
 		prConnSettings->eAdHocMode =
 		    (enum ENUM_PARAM_AD_HOC_MODE)(prRegInfo->u4AdhocMode);
 	}
@@ -1975,14 +1979,21 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				[KAL_NETWORK_TYPE_AIS_INDEX] ==
 				BAND_5G) {
 				prScanReqMsg->eScanChannel = SCAN_CHANNEL_5G;
-			} else {
-				prScanReqMsg->eScanChannel = SCAN_CHANNEL_FULL;
 			}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			else if (prAdapter->aePreferBand
+				[KAL_NETWORK_TYPE_AIS_INDEX] ==
+				BAND_6G)
+				prScanReqMsg->eScanChannel = SCAN_CHANNEL_6G;
+#endif
+			else
+				prScanReqMsg->eScanChannel = SCAN_CHANNEL_FULL;
 
 			switch (prScanReqMsg->eScanChannel) {
 			case SCAN_CHANNEL_FULL:
 			case SCAN_CHANNEL_2G4:
 			case SCAN_CHANNEL_5G:
+			case SCAN_CHANNEL_6G:
 				scanSetRequestChannel(prAdapter,
 					prScanRequest->u4ChannelNum,
 					prScanRequest->arChannel,
@@ -2090,9 +2101,18 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 
 			prMsgChReq->eRfChannelWidth = ucRfBw;
 			/* TODO: BW80+80 support */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (prMsgChReq->eRfBand == BAND_6G) {
+			prMsgChReq->ucRfCenterFreqSeg1 =
+			    nicGetHe6gS1(prMsgChReq->ucPrimaryChannel,
+					prMsgChReq->eRfChannelWidth);
+			} else
+#endif
+			{
 			prMsgChReq->ucRfCenterFreqSeg1 =
 			    nicGetVhtS1(prMsgChReq->ucPrimaryChannel,
 					prMsgChReq->eRfChannelWidth);
+			}
 			DBGLOG(RLM, INFO,
 			       "AIS req CH for CH:%d, Bw:%d, s1=%d\n",
 			       prAisBssInfo->ucPrimaryChannel,
@@ -3613,7 +3633,9 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 			rEventConnStatus.u2BeaconPeriod =
 			    prAisBssInfo->u2BeaconInterval;
 			rEventConnStatus.u4FreqInKHz =
-			    nicChannelNum2Freq(prAisBssInfo->ucPrimaryChannel);
+			    nicChannelNum2Freq(
+					prAisBssInfo->ucPrimaryChannel,
+					prAisBssInfo->eBand);
 
 			switch (prAisBssInfo->ucNonHTBasicPhyType) {
 			case PHY_TYPE_HR_DSSS_INDEX:
@@ -6181,7 +6203,10 @@ void aisFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 		 */
 		) {
 			/* Leave the action frame to wpa_supplicant. */
-			kalIndicateRxMgmtFrame(prAdapter->prGlueInfo, prSwRfb,
+			kalIndicateRxMgmtFrame(
+				prAdapter,
+				prAdapter->prGlueInfo,
+				prSwRfb,
 				ucBssIndex);
 		}
 

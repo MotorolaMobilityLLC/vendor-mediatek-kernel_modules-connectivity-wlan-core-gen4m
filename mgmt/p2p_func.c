@@ -1739,7 +1739,8 @@ void p2pFuncSetDfsChannelAvailable(IN struct ADAPTER *prAdapter,
 		ucAvailable == 1 ? ucChannel : 0, /* primary channel */
 		0, /* bandwidth */
 		0, /* sco */
-		0 /* center frequency */);
+		0, /* center frequency */
+		0 /* eBand */);
 }
 
 void p2pFuncStartRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
@@ -1988,7 +1989,11 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 		prBssInfo->ucPrimaryChannel,
 		prBssInfo->ucVhtChannelWidth,
 		prBssInfo->eBssSCO,
-		nicChannelNum2Freq(prBssInfo->ucVhtChannelFrequencyS1) / 1000);
+		nicChannelNum2Freq(
+			prBssInfo->ucVhtChannelFrequencyS1,
+			prBssInfo->eBand) / 1000,
+		prBssInfo->eBand
+		);
 #endif
 
 	kalP2pIndicateChnlSwitch(prAdapter, prBssInfo);
@@ -2792,7 +2797,8 @@ p2pFuncDisconnect(IN struct ADAPTER *prAdapter,
 				0, /* primary channel */
 				0, /* bandwidth */
 				0, /* sco */
-				0 /* center frequency */);
+				0, /* center frequency */
+				0 /* eBand */);
 #endif
 		} else {
 			struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
@@ -3410,7 +3416,8 @@ p2pFuncValidateProbeReq(IN struct ADAPTER *prAdapter,
 			(prP2pRoleFsmInfo->u4P2pPacketFilter
 			& PARAM_PACKET_FILTER_PROBE_REQ))) {
 			/* Leave the probe response to p2p_supplicant. */
-			kalP2PIndicateRxMgmtFrame(prAdapter->prGlueInfo,
+			kalP2PIndicateRxMgmtFrame(prAdapter,
+				prAdapter->prGlueInfo,
 				prSwRfb, fgIsDevInterface, ucRoleIdx);
 		}
 
@@ -3461,7 +3468,8 @@ static void p2pFunBufferP2pActionFrame(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(P2P, INFO, "Buffer the p2p action frame.\n");
 	prFrame->ucRoleIdx = ucRoleIdx;
-	prFrame->u4Freq = nicChannelNum2Freq(prSwRfb->ucChnlNum) / 1000;
+	prFrame->u4Freq = nicChannelNum2Freq(
+		prSwRfb->ucChnlNum, BAND_NULL) / 1000;
 	prFrame->u2Length = prSwRfb->u2PacketLen;
 	prFrame->prHeader = cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
 			prSwRfb->u2PacketLen);
@@ -3559,7 +3567,8 @@ void p2pFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 	if (prAdapter->u4OsPacketFilter
 		& PARAM_PACKET_FILTER_ACTION_FRAME) {
 		/* Leave the Action frame to p2p_supplicant. */
-		kalP2PIndicateRxMgmtFrame(prAdapter->prGlueInfo,
+		kalP2PIndicateRxMgmtFrame(prAdapter,
+			prAdapter->prGlueInfo,
 			prSwRfb, fgIsDevInterface, ucRoleIdx);
 	}
 
@@ -6213,13 +6222,12 @@ void p2pFuncSwitchGcChannel(
 
 	/* Update channel parameters & channel request info */
 	rRfChnlInfo.ucChannelNum = prP2pBssInfo->ucPrimaryChannel;
-	rRfChnlInfo.eBand =
-		(rRfChnlInfo.ucChannelNum <= 14)
-		? BAND_2G4 : BAND_5G;
+	rRfChnlInfo.eBand = prP2pBssInfo->eBand;
 	rRfChnlInfo.ucChnlBw =
 		rlmGetBssOpBwByVhtAndHtOpInfo(prP2pBssInfo);
 	rRfChnlInfo.u2PriChnlFreq =
-		nicChannelNum2Freq(rRfChnlInfo.ucChannelNum) / 1000;
+		nicChannelNum2Freq(rRfChnlInfo.ucChannelNum,
+			rRfChnlInfo.eBand) / 1000;
 	rRfChnlInfo.u4CenterFreq1 =
 		rRfChnlInfo.u2PriChnlFreq;
 	rRfChnlInfo.u4CenterFreq2 = 0;
@@ -6292,7 +6300,8 @@ void p2pFuncSwitchSapChannel(
 			0, /* primary channel */
 			0, /* bandwidth */
 			0, /* sco */
-			0 /* center frequency */);
+			0, /* center frequency */
+			0 /* eBand */);
 #endif
 	} else {
 		/* Get current channel info */
@@ -6306,7 +6315,8 @@ void p2pFuncSwitchSapChannel(
 			ucStaChannelNum, /* primary channel */
 			0, /* bandwidth */
 			0, /* sco */
-			0 /* center frequency */);
+			0, /* center frequency */
+			0 /* eBand */);
 #endif
 		if (eStaBand != BAND_2G4 && eStaBand != BAND_5G) {
 			DBGLOG(P2P, WARN, "STA has invalid band\n");
@@ -6457,7 +6467,8 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 			ucNumOfChannel);
 		for (i = 0; i < ucNumOfChannel; i++) {
 			freq_list[i] = nicChannelNum2Freq(
-				aucChannelList[i].ucChannelNum) / 1000;
+				aucChannelList[i].ucChannelNum,
+				aucChannelList[i].eBand) / 1000;
 			(*num_freq_list)++;
 		}
 	} else if (prAdapter->rWifiVar.eDbdcMode ==
@@ -6468,7 +6479,8 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 			prAisBssInfo->ucPrimaryChannel,
 			prAisBssInfo->eConnectionState);
 		freq_list[0] = nicChannelNum2Freq(
-			prAisBssInfo->ucPrimaryChannel) / 1000;
+			prAisBssInfo->ucPrimaryChannel,
+			prAisBssInfo->eBand) / 1000;
 		(*num_freq_list)++;
 	} else {
 		/* DBDC enabled */
@@ -6485,18 +6497,21 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 					aucChannelList);
 			for (i = 0; i < ucNumOfChannel; i++) {
 				freq_list[i] = nicChannelNum2Freq(
-					aucChannelList[i].ucChannelNum) / 1000;
+					aucChannelList[i].ucChannelNum,
+					aucChannelList[i].eBand) / 1000;
 				(*num_freq_list)++;
 			}
 
 			/* Add SCC channel */
 			freq_list[i] = nicChannelNum2Freq(
-				prAisBssInfo->ucPrimaryChannel) / 1000;
+				prAisBssInfo->ucPrimaryChannel,
+				prAisBssInfo->eBand) / 1000;
 				(*num_freq_list)++;
 		} else {
 			/* Prefer SCC if STA is connected at 5G band */
 			freq_list[0] = nicChannelNum2Freq(
-				prAisBssInfo->ucPrimaryChannel) / 1000;
+				prAisBssInfo->ucPrimaryChannel,
+				prAisBssInfo->eBand) / 1000;
 			(*num_freq_list)++;
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 			if (prWifiVar->ucP2pGoACS == TRUE) {
@@ -6514,7 +6529,8 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 					aucChannelList);
 			for (i = 0; i < ucNumOfChannel; i++) {
 				freq_list[i + 1] = nicChannelNum2Freq(
-					aucChannelList[i].ucChannelNum) / 1000;
+					aucChannelList[i].ucChannelNum,
+					aucChannelList[i].eBand) / 1000;
 				(*num_freq_list)++;
 			}
 		}
