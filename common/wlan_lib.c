@@ -7257,7 +7257,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldBssUpdateCapAll(prAdapter);
 	INIT_UINT(prWifiVar->ucT2LMNegotiationSupport,
-		"T2LMNegotiationSupport", T2LM_NO_SUPPORT);
+		"T2LMNegotiationSupport", T2LM_ALL_TIDS_SAME_LINK);
 	INIT_UINT(prWifiVar->u4T2LMMarginMs, "T2LMMarginMs", 250);
 #if (CFG_SUPPORT_802_11BE_EPCS == 1)
 	INIT_UINT(prWifiVar->fgEnEpcs, "EnableEpcs", FEATURE_ENABLED);
