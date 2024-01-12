@@ -147,6 +147,8 @@ enum ENUM_INIT_CMD_ID {
 	INIT_CMD_ID_HIF_LOOPBACK = 0x20,
 	INIT_CMD_ID_LOG_BUF_CTRL = 0x21,
 	INIT_CMD_ID_QUERY_INFO = 0x22,
+	INIT_CMD_ID_EMI_FW_DOWNLOAD_CONFIG = 0x23,
+	INIT_CMD_ID_EMI_FW_TRIGGER_AXI_DMA = 0x24,
 
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
 	INIT_CMD_ID_DYN_MEM_MAP_PATCH_FINISH = 0x40,
@@ -384,6 +386,8 @@ struct INIT_WIFI_EVENT_LOG_BUF_CTRL {
 
 enum INIT_CMD_QUERY_TYPE {
 	INIT_CMD_QUERY_TYPE_PMIC_INFO = 0,
+	INIT_CMD_QUERY_TYPE_FWDL_EMI_SIZE,
+	INIT_CMD_QUERY_TYPE_NUM
 };
 
 struct INIT_CMD_QUERY_INFO {
@@ -407,6 +411,22 @@ struct INIT_EVENT_QUERY_INFO_PMIC {
 	uint32_t u4PmicId;
 	uint32_t u4Length;
 	uint8_t aucPMICCoreDumpbuf[0];
+};
+
+struct INIT_EVENT_QUERY_INFO_FWDL_EMI_SIZE {
+	uint32_t u4Length;
+};
+
+struct INIT_CMD_EMI_FW_DOWNLOAD_CONFIG {
+	uint32_t u4Address;
+	uint32_t u4Length;
+	uint32_t u4DataMode;
+};
+
+struct INIT_CMD_EMI_FW_TRIGGER_AXI_DMA {
+	uint32_t u4DownloadSize;
+	uint8_t ucDoneBit;
+	uint8_t aucReserved[3];
 };
 
 /*******************************************************************************

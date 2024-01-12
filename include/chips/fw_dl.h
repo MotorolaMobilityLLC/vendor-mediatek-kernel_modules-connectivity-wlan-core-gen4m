@@ -193,6 +193,11 @@ struct FWDL_OPS_T {
 		uint8_t **apucName, uint8_t *pucNameIdx);
 	uint32_t (*downloadZbPatch)(IN struct ADAPTER *prAdapter);
 #endif
+	uint32_t (*downloadEMI)(IN struct ADAPTER *prAdapter,
+		IN uint32_t u4DestAddr,
+		IN uint32_t u4DataMode,
+		IN uint8_t *pucStartPtr,
+		IN uint32_t u4Len);
 };
 
 #if (CFG_UMAC_GENERATION >= 0x20)
@@ -410,7 +415,15 @@ uint32_t wlanDownloadSectionV2(IN struct ADAPTER *prAdapter,
 
 uint32_t wlanDownloadEMISection(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4DestAddr,
-	IN uint32_t u4Len, IN uint8_t *pucStartPtr);
+	IN uint32_t u4DataMode,
+	IN uint8_t *pucStartPtr,
+	IN uint32_t u4Len);
+
+uint32_t wlanDownloadEMISectionViaDma(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4DestAddr,
+	IN uint32_t u4DataMode,
+	IN uint8_t *pucStartPtr,
+	IN uint32_t u4Len);
 
 uint32_t wlanGetHarvardTailerInfo(IN struct ADAPTER *prAdapter,
 	IN void *prFwBuffer, IN uint32_t u4FwSize,

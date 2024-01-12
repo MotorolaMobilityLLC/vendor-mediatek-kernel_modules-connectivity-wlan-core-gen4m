@@ -477,9 +477,11 @@ out:
 	return u4Status;
 }
 
-uint32_t wlanDownloadEMISection(IN struct ADAPTER
-				*prAdapter, IN uint32_t u4DestAddr,
-				IN uint32_t u4Len, IN uint8_t *pucStartPtr)
+uint32_t wlanDownloadEMISection(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4DestAddr,
+	IN uint32_t u4DataMode,
+	IN uint8_t *pucStartPtr,
+	IN uint32_t u4Len)
 {
 #if CFG_MTK_ANDROID_EMI
 	uint8_t __iomem *pucEmiBaseAddr = NULL;
@@ -510,6 +512,168 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 	release_mem_region(gConEmiPhyBaseFinal, gConEmiSizeFinal);
 #endif /* CFG_MTK_ANDROID_EMI */
 	return WLAN_STATUS_SUCCESS;
+}
+
+static uint32_t wlanEmiSectionGetBufSize(IN struct ADAPTER *prAdapter,
+	IN OUT uint32_t *pu4Size)
+{
+	struct INIT_CMD_QUERY_INFO rCmd = {0};
+	struct INIT_EVENT_QUERY_INFO *prEvent = NULL;
+	struct INIT_EVENT_TLV_GENERAL *prTlv = NULL;
+	struct INIT_EVENT_QUERY_INFO_FWDL_EMI_SIZE *prEmiEvent = NULL;
+	uint32_t u4EventSize;
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+
+	rCmd.u4QueryBitmap = BIT(INIT_CMD_QUERY_TYPE_FWDL_EMI_SIZE);
+
+	u4EventSize = sizeof(struct INIT_EVENT_QUERY_INFO) +
+		sizeof(struct INIT_EVENT_TLV_GENERAL) +
+		sizeof(struct INIT_EVENT_QUERY_INFO_FWDL_EMI_SIZE);
+	prEvent = kalMemAlloc(u4EventSize, VIR_MEM_TYPE);
+	if (!prEvent) {
+		DBGLOG(INIT, ERROR, "Allocate event packet FAILED.\n");
+		goto exit;
+	}
+
+	u4Status = wlanSendInitSetQueryCmd(prAdapter,
+		INIT_CMD_ID_QUERY_INFO, &rCmd, sizeof(rCmd),
+		TRUE, FALSE,
+		INIT_EVENT_ID_QUERY_INFO_RESULT, prEvent, u4EventSize);
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		goto exit;
+
+	if (prEvent->u2TotalElementNum != 1) {
+		DBGLOG(INIT, ERROR, "Unexpected element num: %d.\n",
+			prEvent->u2TotalElementNum);
+		goto exit;
+	}
+
+	prTlv = (struct INIT_EVENT_TLV_GENERAL *)&prEvent->aucTlvBuffer[0];
+	if (prTlv->u2Tag != INIT_CMD_QUERY_TYPE_FWDL_EMI_SIZE) {
+		DBGLOG(INIT, ERROR, "Unexpected tag id: %d.\n",
+			prTlv->u2Tag);
+		goto exit;
+	}
+
+	prEmiEvent = (struct INIT_EVENT_QUERY_INFO_FWDL_EMI_SIZE *)
+		&prTlv->aucBuffer[0];
+	/* sanity check */
+	if (prEmiEvent->u4Length <= CMD_PKT_SIZE_FOR_IMAGE) {
+		DBGLOG(INIT, ERROR, "Invalid emi buffer size(%d).\n",
+			prEmiEvent->u4Length);
+		goto exit;
+	}
+
+	DBGLOG(INIT, INFO, "u4Length: 0x%x\n", prEmiEvent->u4Length);
+	*pu4Size = prEmiEvent->u4Length;
+
+	u4Status = WLAN_STATUS_SUCCESS;
+
+exit:
+	if (prEvent)
+		kalMemFree(prEvent, VIR_MEM_TYPE, u4EventSize);
+
+	return u4Status;
+}
+
+static uint32_t wlanEmiSectionDlConfig(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4DestAddr,
+	IN uint32_t u4DataMode,
+	IN uint32_t u4Len)
+{
+	struct INIT_CMD_EMI_FW_DOWNLOAD_CONFIG rCmd = {
+		.u4Address = u4DestAddr,
+		.u4Length = u4Len,
+		.u4DataMode = u4DataMode,
+	};
+	struct INIT_EVENT_CMD_RESULT rEvt;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+	u4Status = wlanSendInitSetQueryCmd(prAdapter,
+		INIT_CMD_ID_EMI_FW_DOWNLOAD_CONFIG, &rCmd, sizeof(rCmd),
+		TRUE, FALSE,
+		INIT_EVENT_ID_CMD_RESULT, &rEvt, sizeof(rEvt));
+
+	if (rEvt.ucStatus != 0) {
+		DBGLOG(INIT, ERROR, "Error status: %d\n", rEvt.ucStatus);
+		u4Status = WLAN_STATUS_FAILURE;
+	}
+
+	return u4Status;
+}
+
+static uint32_t wlanEmiSectionStartCmd(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4DestAddr,
+	IN uint32_t u4Len,
+	IN u_int8_t fgLast)
+{
+	struct INIT_CMD_EMI_FW_TRIGGER_AXI_DMA rCmd = {
+		.u4DownloadSize = u4Len,
+		.ucDoneBit = fgLast,
+	};
+	struct INIT_EVENT_CMD_RESULT rEvt;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+	u4Status = wlanSendInitSetQueryCmd(prAdapter,
+		INIT_CMD_ID_EMI_FW_TRIGGER_AXI_DMA, &rCmd, sizeof(rCmd),
+		TRUE, FALSE,
+		INIT_EVENT_ID_CMD_RESULT, &rEvt, sizeof(rEvt));
+
+	if (rEvt.ucStatus != 0) {
+		DBGLOG(INIT, ERROR, "Error status: %d\n", rEvt.ucStatus);
+		u4Status = WLAN_STATUS_FAILURE;
+	}
+
+	return u4Status;
+}
+
+uint32_t wlanDownloadEMISectionViaDma(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4DestAddr,
+	IN uint32_t u4DataMode,
+	IN uint8_t *pucStartPtr,
+	IN uint32_t u4Len)
+{
+	uint8_t *prImgPos = pucStartPtr, *prImgEnd = pucStartPtr + u4Len;
+	uint32_t u4UmacSz = 0;
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+
+	if (u4Len == 0)
+		goto exit;
+
+	if (wlanEmiSectionGetBufSize(prAdapter, &u4UmacSz) !=
+			WLAN_STATUS_SUCCESS)
+		goto exit;
+
+	while (prImgPos != prImgEnd) {
+		uint8_t *prSecStart, *prSecEnd;
+		uint32_t u4SecLen;
+
+		prSecStart = prImgPos;
+		prSecEnd = prSecStart + u4UmacSz > prImgEnd ?
+			prImgEnd : prSecStart + u4UmacSz;
+		u4SecLen = prSecEnd - prSecStart;
+
+		if (wlanEmiSectionDlConfig(prAdapter, u4DestAddr, u4DataMode,
+					   u4SecLen) != WLAN_STATUS_SUCCESS)
+			goto exit;
+
+		if (wlanImageSectionDownload(prAdapter, prSecStart,
+					     u4SecLen) !=
+				WLAN_STATUS_SUCCESS)
+			goto exit;
+
+		if (wlanEmiSectionStartCmd(prAdapter, u4DestAddr, u4SecLen,
+					   (prSecEnd == prImgEnd) ?
+						TRUE : FALSE) !=
+				WLAN_STATUS_SUCCESS)
+			goto exit;
+
+		prImgPos += u4SecLen;
+	}
+	u4Status = WLAN_STATUS_SUCCESS;
+
+exit:
+	return u4Status;
 }
 
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
@@ -722,9 +886,11 @@ uint32_t wlanImageSectionDownloadStage(
 			if (fgIsNotDownload)
 				continue;
 			else if (fgIsEMIDownload)
-				u4Status = wlanDownloadEMISection(prAdapter,
-					u4Addr, u4Len,
-					pvFwImageMapFile + u4Offset);
+				u4Status = prFwDlOps->downloadEMI(prAdapter,
+					u4Addr,
+					u4DataMode,
+					pvFwImageMapFile + u4Offset,
+					u4Len);
 /* For dynamic memory map:: Begin */
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
 			else if ((u4DataMode &
