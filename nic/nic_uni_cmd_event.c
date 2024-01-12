@@ -804,6 +804,7 @@ uint32_t nicUniCmdBssInfoMld(struct ADAPTER *ad,
 		tag->ucOwnMldId = bss->ucOwnMldId;
 		COPY_MAC_ADDR(tag->aucOwnMldAddr, prMldBssInfo->aucOwnMldAddr);
 		tag->ucOmRemapIdx = prMldBssInfo->ucOmRemapIdx;
+		tag->ucLinkId = bss->ucLinkIndex;
 	} else
 #endif
 	{
@@ -811,15 +812,17 @@ uint32_t nicUniCmdBssInfoMld(struct ADAPTER *ad,
 		tag->ucOwnMldId = bss->ucOwnMldId;
 		COPY_MAC_ADDR(tag->aucOwnMldAddr, bss->aucOwnMacAddr);
 		tag->ucOmRemapIdx = OM_REMAP_IDX_NONE;
+		tag->ucLinkId = MLD_LINK_ID_NONE;
 	}
 
 	DBGLOG(INIT, INFO,
-		"Bss=%d, GroupMldId=%d, OwnMldId=%d, OmRemapIdx=%d, OwnMldAddr="
+		"Bss=%d, GroupMldId=%d, OwnMldId=%d, OmRemapIdx=%d, LinkId=%d, OwnMldAddr="
 		MACSTR "\n",
 		bss->ucBssIndex,
 		tag->ucGroupMldId,
 		tag->ucOwnMldId,
 		tag->ucOmRemapIdx,
+		tag->ucLinkId,
 		MAC2STR(tag->aucOwnMldAddr));
 
 	return tag->u2Length;
