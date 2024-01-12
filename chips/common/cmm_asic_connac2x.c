@@ -82,6 +82,10 @@
 #include "gl_coredump.h"
 #include "gl_fw_log.h"
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+#include "connsys_debug_utility.h"
+#endif
+
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************
@@ -2806,7 +2810,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 
 		if (get_wifi_process_status() == 1) {
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-			fw_log_wifi_irq_handler();
+			fw_log_handler();
 #endif
 #if (CFG_WIFI_COREDUMP_SUPPORT == 1)
 			wifi_coredump_start(g_ucWfRstSource, NULL);
@@ -2890,7 +2894,7 @@ bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
 
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	if (status & BIT(SW_INT_FW_LOG))
-		fw_log_wifi_irq_handler();
+		fw_log_handler();
 #endif
 
 	if (status & BIT(SW_INT_SUBSYS_RESET))
@@ -2934,5 +2938,12 @@ void connsys_power_off(void)
 	conninfra_pwr_off(CONNDRV_TYPE_WIFI);
 #endif
 }
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+int32_t fw_log_wifi_irq_handler(void)
+{
+	return connsys_log_irq_handler(CONN_DEBUG_TYPE_WIFI);
+}
+#endif
 
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */

@@ -464,7 +464,6 @@ irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 
 irqreturn_t pcie_sw_int_top_handler(int irq, void *dev_instance)
 {
-	disable_irq_nosync(irq);
 	return IRQ_WAKE_THREAD;
 }
 
@@ -472,7 +471,6 @@ irqreturn_t pcie_sw_int_thread_handler(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
-	u_int8_t fgEnInt = true;
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 	prAdapter = prGlueInfo->prAdapter;
@@ -489,15 +487,48 @@ irqreturn_t pcie_sw_int_thread_handler(int irq, void *dev_instance)
 	}
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
-	fgEnInt = asicConnac3xSwIntHandler(prAdapter);
+	asicConnac3xSwIntHandler(prAdapter);
 #endif
 
 exit:
-	if (fgEnInt)
-		enable_irq(irq);
 
 	return IRQ_HANDLED;
 }
+
+
+#if CFG_MTK_WIFI_FW_LOG_MMIO || CFG_MTK_WIFI_FW_LOG_EMI
+irqreturn_t pcie_fw_log_top_handler(int irq, void *dev_instance)
+{
+	return IRQ_WAKE_THREAD;
+}
+
+irqreturn_t pcie_fw_log_thread_handler(int irq, void *dev_instance)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+
+	prGlueInfo = (struct GLUE_INFO *)dev_instance;
+
+	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
+		DBGLOG(HAL, WARN, "GLUE_FLAG_HALT skip INT\n");
+		return IRQ_NONE;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter) {
+		DBGLOG(HAL, WARN, "NULL prAdapter.\n");
+		return IRQ_NONE;
+	}
+
+	GLUE_INC_REF_CNT(prAdapter->rHifStats.u4SwIsrCount);
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	fw_log_handler();
+#endif
+
+	return IRQ_HANDLED;
+}
+#endif
 
 #if CFG_MTK_MDDP_SUPPORT
 irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance)

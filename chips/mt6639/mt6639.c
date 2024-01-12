@@ -45,6 +45,13 @@
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #include "connv3.h"
 #endif
+#if CFG_MTK_WIFI_FW_LOG_MMIO
+#include "fw_log_mmio.h"
+#endif
+#if CFG_MTK_WIFI_FW_LOG_EMI
+#include "fw_log_emi.h"
+#endif
+
 #if (CFG_SUPPORT_DEBUG_SOP == 1)
 #include "dbg_mt6639.h"
 #endif
@@ -378,7 +385,12 @@ struct pcie_msi_layout mt6639_pcie_msi_layout[] = {
 	{"reserved", NULL, NULL, 0},
 	{"reserved", NULL, NULL, 0},
 	{"reserved", NULL, NULL, 0},
+#if CFG_MTK_WIFI_FW_LOG_MMIO || CFG_MTK_WIFI_FW_LOG_EMI
+	{"fw_log_irq", pcie_fw_log_top_handler,
+		pcie_fw_log_thread_handler, 0},
+#else
 	{"reserved", NULL, NULL, 0},
+#endif
 	{"reserved", NULL, NULL, 0},
 	{"reserved", NULL, NULL, 0},
 };
@@ -662,6 +674,26 @@ static struct CCIF_OPS mt6639_ccif_ops = {
 	.get_fw_log_read_pointer = mt6639_ccif_get_fw_log_read_pointer,
 	.trigger_fw_assert = mt6639_ccif_trigger_fw_assert,
 };
+
+#if CFG_MTK_WIFI_FW_LOG_MMIO
+static struct FW_LOG_OPS mt6639_fw_log_mmio_ops = {
+	.init = fwLogMmioInitMcu,
+	.deinit = fwLogMmioDeInitMcu,
+	.start = fwLogMmioStart,
+	.stop = fwLogMmioStop,
+	.handler = fwLogMmioHandler,
+};
+#endif
+
+#if CFG_MTK_WIFI_FW_LOG_EMI
+static struct FW_LOG_OPS mt6639_fw_log_emi_ops = {
+	.init = fw_log_emi_init,
+	.deinit = fw_log_emi_deinit,
+	.start = fw_log_emi_start,
+	.stop = fw_log_emi_stop,
+	.handler = fw_log_emi_handler,
+};
+#endif
 #endif
 
 #if CFG_SUPPORT_THERMAL_QUERY
@@ -781,6 +813,16 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	},
 #endif
 	.trigger_fw_assert = mt6639_trigger_fw_assert,
+	.fw_log_info = {
+#if CFG_MTK_WIFI_FW_LOG_MMIO
+		.ops = &mt6639_fw_log_mmio_ops,
+#endif
+#if CFG_MTK_WIFI_FW_LOG_EMI
+		.base = 0x538000,
+		.ops = &mt6639_fw_log_emi_ops,
+#endif
+		.path = ENUM_LOG_READ_POINTER_PATH_CCIF,
+	},
 #else
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
 		BIT(CHIP_CAPA_XTAL_TRIM),

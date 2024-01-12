@@ -61,6 +61,7 @@
 #define _MT66XX_REG_H
 
 #include "gl_emi.h"
+#include "fw_log.h"
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
@@ -1663,6 +1664,7 @@ struct mt66xx_chip_info {
 	struct WLAN_PINCTRL_OPS *pinctrl_ops;
 	struct EMI_MEM_INFO rEmiInfo;
 	struct thermal_info thermal_info;
+	struct FW_LOG_INFO fw_log_info;
 };
 
 struct mt66xx_hif_driver_data {

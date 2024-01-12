@@ -22,6 +22,7 @@
 		$(SRC_ROOT)\..\..\..\chips\common\cmm_asic_common.c
 		$(SRC_ROOT)\..\..\..\chips\common\fw_dl.c
 		$(SRC_ROOT)\..\..\..\chips\common\fw_log_parser.c
+		$(SRC_ROOT)\..\..\..\chips\common\fw_log.c
 		</SOURCES>
 	</PropertyGroup>
 	<!-- BY GENERATION -->

@@ -216,6 +216,19 @@ void emi_mem_uninit(struct mt66xx_chip_info *chip, void *dev)
 #endif
 }
 
+static u_int8_t __emi_mem_sanity_chk(struct mt66xx_chip_info *chip,
+	uint32_t offset, void *buf, uint32_t size)
+{
+	if (!buf)
+		return FALSE;
+	else if (size > emi_mem_get_size(chip))
+		return FALSE;
+	else if ((offset + size) > emi_mem_get_size(chip))
+		return FALSE;
+
+	return TRUE;
+}
+
 int32_t emi_mem_write(struct mt66xx_chip_info *chip,
 	uint32_t offset, void *buf, uint32_t size)
 {
@@ -226,10 +239,10 @@ int32_t emi_mem_write(struct mt66xx_chip_info *chip,
 	if (!emi->initialized)
 		return -EINVAL;
 
-	if (size > emi_mem_get_size(chip))
-		return -EINVAL;
-
 	offset = emi_mem_offset_convert(offset);
+
+	if (!__emi_mem_sanity_chk(chip, offset, buf, size))
+		return -EINVAL;
 
 	if (emi_is_remap_type(emi->type)) {
 #if CFG_MTK_ANDROID_EMI
@@ -258,10 +271,10 @@ int32_t emi_mem_read(struct mt66xx_chip_info *chip,
 	if (!emi->initialized)
 		return -EINVAL;
 
-	if (size > emi_mem_get_size(chip))
-		return -EINVAL;
-
 	offset = emi_mem_offset_convert(offset);
+
+	if (!__emi_mem_sanity_chk(chip, offset, buf, size))
+		return -EINVAL;
 
 	if (emi_is_remap_type(emi->type)) {
 #if CFG_MTK_ANDROID_EMI

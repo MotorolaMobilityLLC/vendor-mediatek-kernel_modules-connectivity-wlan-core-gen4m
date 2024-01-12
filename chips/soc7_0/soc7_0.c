@@ -532,6 +532,10 @@ static struct CCIF_OPS soc7_0_ccif_ops = {
 	.notify_utc_time_to_fw = soc7_0_ccif_notify_utc_time_to_fw,
 };
 
+static struct FW_LOG_OPS soc7_0_fw_log_ops = {
+	.handler = fw_log_wifi_irq_handler,
+};
+
 struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 	.bus_info = &soc7_0_bus_info,
 #if CFG_ENABLE_FW_DOWNLOAD
@@ -601,6 +605,9 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 		.type = EMI_ALLOC_TYPE_CONNINFRA,
 	},
 #endif
+	.fw_log_info = {
+		.ops = &soc7_0_fw_log_ops,
+	},
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_soc7_0 = {
