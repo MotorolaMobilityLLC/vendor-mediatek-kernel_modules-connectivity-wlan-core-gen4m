@@ -360,6 +360,7 @@ nanPublishRequest(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 	nan_rdf_sha256_init(&r_SHA_256_state);
 	sha256_process(&r_SHA_256_state, aucServiceName,
 		       kalStrLen(aucServiceName));
+	kalMemZero(auc_tk, sizeof(auc_tk));
 	sha256_done(&r_SHA_256_state, auc_tk);
 	kalMemCopy(prPublishReq->service_name_hash, auc_tk,
 		   NAN_SERVICE_HASH_LENGTH);
@@ -664,6 +665,7 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 	nan_rdf_sha256_init(&r_SHA_256_state);
 	sha256_process(&r_SHA_256_state, aucServiceName,
 		       kalStrLen(aucServiceName));
+	kalMemZero(auc_tk, sizeof(auc_tk));
 	sha256_done(&r_SHA_256_state, auc_tk);
 	kalMemCopy(prSubscribeReq->service_name_hash, auc_tk,
 		   NAN_SERVICE_HASH_LENGTH);
