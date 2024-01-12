@@ -3366,6 +3366,9 @@ uint32_t nicUniCmdSerAction(struct ADAPTER *ad,
 	case SER_ACTION_RECOVER:
 		max_cmd_len += sizeof(struct UNI_CMD_SER_TRIGGER);
 		break;
+	case SER_ACTION_L0P5_CTRL:
+		max_cmd_len += sizeof(struct UNI_CMD_SER_L05);
+		break;
 	default:
 		DBGLOG(NIC, ERROR, "unknown action %d\n", cmd->ucAction);
 		return WLAN_STATUS_NOT_ACCEPTED;
@@ -3414,6 +3417,14 @@ uint32_t nicUniCmdSerAction(struct ADAPTER *ad,
 		tag->ucDbdcIdx = cmd->ucDbdcIdx;
 	}
 		break;
+	case SER_ACTION_L0P5_CTRL:{
+		struct UNI_CMD_SER_L05 *tag =
+			(struct UNI_CMD_SER_L05 *)uni_cmd->aucTlvBuffer;
+
+		tag->u2Tag = UNI_CMD_SER_TAG_L0P5_CTRL;
+		tag->u2Length = sizeof(*tag);
+		tag->ucCtrlAction = cmd->ucSerSet;
+	}
 	}
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);

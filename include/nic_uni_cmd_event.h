@@ -1918,6 +1918,14 @@ struct UNI_CMD_SER_TRIGGER {
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_SER_L05 {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucCtrlAction;
+	uint8_t aucPadding[3];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_TWT {
 	/*fixed field*/
 	uint8_t ucBssInfoIdx;
