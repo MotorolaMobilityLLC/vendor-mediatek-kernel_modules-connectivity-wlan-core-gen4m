@@ -433,6 +433,10 @@ static struct cfg80211_ops mtk_wlan_ops = {
 	.tdls_mgmt = mtk_cfg80211_tdls_mgmt,
 #endif
 	.update_ft_ies = mtk_cfg80211_update_ft_ies,
+
+#if CFG_SUPPORT_WPA3
+	.external_auth = mtk_cfg80211_external_auth,
+#endif
 };
 #else /* CFG_ENABLE_UNIFY_WIPHY */
 static struct cfg80211_ops mtk_cfg_ops = {
@@ -509,6 +513,9 @@ static struct cfg80211_ops mtk_cfg_ops = {
 	.get_tx_power = mtk_cfg_get_txpower,
 #endif
 	.update_ft_ies = mtk_cfg80211_update_ft_ies,
+#if CFG_SUPPORT_WPA3
+	.external_auth = mtk_cfg80211_external_auth,
+#endif
 };
 #endif	/* CFG_ENABLE_UNIFY_WIPHY */
 
@@ -774,7 +781,8 @@ static const struct ieee80211_txrx_stypes
 	[NL80211_IFTYPE_STATION] = {
 		.tx = 0xffff,
 		.rx = BIT(IEEE80211_STYPE_ACTION >> 4) |
-		      BIT(IEEE80211_STYPE_PROBE_REQ >> 4)
+		      BIT(IEEE80211_STYPE_PROBE_REQ >> 4) |
+		      BIT(IEEE80211_STYPE_AUTH >> 4)
 	},
 	[NL80211_IFTYPE_AP] = {
 		.tx = 0xffff,
@@ -2081,6 +2089,9 @@ static void wlanCreateWirelessDevice(void)
 #endif
 
 	prWiphy->features |= NL80211_FEATURE_INACTIVITY_TIMER;
+#if CFG_SUPPORT_WPA3
+	prWiphy->features |= NL80211_FEATURE_SAE;
+#endif
 #if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 	prWiphy->vendor_commands = mtk_wlan_vendor_ops;
 	prWiphy->n_vendor_commands = sizeof(mtk_wlan_vendor_ops) /
@@ -2121,8 +2132,10 @@ static void wlanCreateWirelessDevice(void)
 				    BIT(NL80211_IFTYPE_P2P_GO) |
 				    BIT(NL80211_IFTYPE_STATION);
 	prWiphy->software_iftypes |= BIT(NL80211_IFTYPE_P2P_DEVICE);
-	prWiphy->flags |= WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL |
-			  WIPHY_FLAG_HAVE_AP_SME;
+	prWiphy->flags |= WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL;
+#if CFG_SUPPORT_WPA3
+	prWiphy->flags |= WIPHY_FLAG_HAVE_AP_SME;
+#endif
 	prWiphy->ap_sme_capa = 1;
 #endif
 
@@ -4206,7 +4219,6 @@ static int32_t wlanOnAtReset(void)
 		default:
 			break;
 		}
-
 	}
 	return rStatus;
 }

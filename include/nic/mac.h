@@ -607,6 +607,7 @@
 #define AUTH_ALGORITHM_NUM_SHARED_KEY           1	/* Shared Key */
 #define AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION  \
 	2	/* Fast BSS Transition */
+#define AUTH_ALGORITHM_NUM_SAE                  3	/* WPA3 - SAE */
 
 /* 7.3.1.2 Authentication Transaction Sequence Number field */
 #define AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN      2
