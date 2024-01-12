@@ -642,6 +642,7 @@ void wlanDbgSetLogLevelImpl(IN struct ADAPTER *prAdapter,
 {
 	uint32_t u4DriverLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
 	uint32_t u4FwLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 	if (u4level >= ENUM_WIFI_LOG_LEVEL_NUM)
 		return;
@@ -668,13 +669,14 @@ void wlanDbgSetLogLevelImpl(IN struct ADAPTER *prAdapter,
 		case ENUM_WIFI_LOG_MODULE_FW:
 		{
 			struct CMD_EVENT_LOG_UI_INFO cmd;
+			prAdapter->fgSetLogLevel = false;
 
 			kalMemZero(&cmd,
 					sizeof(struct CMD_EVENT_LOG_UI_INFO));
 			cmd.ucVersion = u4Version;
 			cmd.ucLogLevel = u4level;
 
-			wlanSendSetQueryCmd(prAdapter,
+			rStatus = wlanSendSetQueryCmd(prAdapter,
 					CMD_ID_LOG_UI_INFO,
 					TRUE,
 					FALSE,
@@ -685,6 +687,10 @@ void wlanDbgSetLogLevelImpl(IN struct ADAPTER *prAdapter,
 					(uint8_t *)&cmd,
 					NULL,
 					0);
+			if (rStatus != WLAN_STATUS_FAILURE)
+				prAdapter->fgSetLogLevel = true;
+			else
+				DBGLOG(INIT, INFO, "Log level setting fail!\n");
 		}
 			break;
 		default:

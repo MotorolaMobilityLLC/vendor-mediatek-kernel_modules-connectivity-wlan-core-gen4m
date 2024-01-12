@@ -1000,7 +1000,7 @@ int8_t atoi(uint8_t ch);
 
 #define WLAN_TAG                        "[wlan]"
 #define kalPrint               kalPrintLog
-#define kalPrintLimited        kalPrintLogLimited
+#define kalPrintLimited(_Fmt...)        pr_info_ratelimited(WLAN_TAG _Fmt)
 
 #define kalBreakPoint() \
 do { \
