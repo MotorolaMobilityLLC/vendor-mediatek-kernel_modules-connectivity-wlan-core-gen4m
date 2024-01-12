@@ -433,13 +433,10 @@ void p2pDeactivateAllLink(
 			p2pGetLinkBssInfo(prAdapter,
 			prP2pRoleFsmInfo, i);
 
-		if (bss &&
-			IS_NET_ACTIVE(prAdapter, bss->ucBssIndex)) {
-			UNSET_NET_ACTIVE(prAdapter, bss->ucBssIndex);
+		if (bss && IS_NET_ACTIVE(prAdapter, bss->ucBssIndex))
 			nicDeactivateNetworkEx(prAdapter,
 				NETWORK_ID(bss->ucBssIndex, i),
 				fgClearStaRec);
-		}
 	}
 }
 
@@ -709,13 +706,10 @@ void p2pLinkAcquireChJoin(
 			continue;
 
 		/* for secondary link */
-		if (!IS_NET_ACTIVE(prAdapter, prBss->ucBssIndex)) {
-			SET_NET_ACTIVE(prAdapter,
-				prBss->ucBssIndex);
+		if (!IS_NET_ACTIVE(prAdapter, prBss->ucBssIndex))
 			/* sync with firmware */
 			nicActivateNetwork(prAdapter,
 				NETWORK_ID(prBss->ucBssIndex, i));
-		}
 
 		ucReqChNum++;
 	}

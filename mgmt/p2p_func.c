@@ -1350,7 +1350,6 @@ void p2pFuncStopComplete(IN struct ADAPTER *prAdapter,
 		/* Reset RLM related field of BSSINFO. */
 		rlmBssAborted(prAdapter, prP2pBssInfo);
 
-		UNSET_NET_ACTIVE(prAdapter, prP2pBssInfo->ucBssIndex);
 		nicDeactivateNetwork(prAdapter,
 			NETWORK_ID(prP2pBssInfo->ucBssIndex,
 			prP2pBssInfo->u4PrivateData));
@@ -6870,8 +6869,6 @@ void p2pFuncSwitchGcChannel(
 		prP2pBssInfo->ucDTIMPeriod = 0;
 
 		/* Update BSS with temp. disconnect state to FW */
-		UNSET_NET_ACTIVE(prAdapter,
-			prP2pBssInfo->ucBssIndex);
 		p2pDeactivateAllLink(prAdapter,
 			prP2pRoleFsmInfo,
 			FALSE);

@@ -312,8 +312,6 @@ void p2pDevFsmUninit(IN struct ADAPTER *prAdapter)
 			prP2pBssInfo->ucBssIndex, MSDU_REMOVE_BY_BSS_INDEX);
 
 		/* Deactivate BSS. */
-		UNSET_NET_ACTIVE(prAdapter, prP2pBssInfo->ucBssIndex);
-
 		nicDeactivateNetwork(prAdapter, prP2pBssInfo->ucBssIndex);
 
 		cnmFreeBssInfo(prAdapter, prP2pBssInfo);
@@ -399,8 +397,6 @@ p2pDevFsmStateTransition(IN struct ADAPTER *prAdapter,
 			prAdapter->aprBssInfo[prP2pDevFsmInfo->ucBssIndex])) {
 			if (!cnmP2PIsPermitted(prAdapter))
 				return;
-
-			SET_NET_ACTIVE(prAdapter, prP2pDevFsmInfo->ucBssIndex);
 			nicActivateNetwork(prAdapter,
 				prP2pDevFsmInfo->ucBssIndex);
 		}

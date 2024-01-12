@@ -379,8 +379,6 @@ void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 		}
 
 		/* Deactivate BSS. */
-		UNSET_NET_ACTIVE(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
-
 		nicDeactivateNetwork(prAdapter,
 			NETWORK_ID(prP2pBssInfo->ucBssIndex,
 			prP2pRoleFsmInfo->ucRoleIndex));
@@ -525,8 +523,6 @@ p2pRoleFsmStateTransition(IN struct ADAPTER *prAdapter,
 					prP2pRoleFsmInfo->ucBssIndex,
 					p2pRoleFsmGetFsmState(eNextState));
 			} else {
-				SET_NET_ACTIVE(prAdapter,
-					prP2pRoleBssInfo->ucBssIndex);
 				nicActivateNetwork(prAdapter,
 					NETWORK_ID(prP2pRoleBssInfo->ucBssIndex,
 					prP2pRoleFsmInfo->ucRoleIndex));
@@ -691,8 +687,6 @@ void p2pRoleFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
 					prP2pRoleFsmInfo->ucBssIndex)) {
 				DBGLOG(P2P, TRACE,
 					"Role BSS IDLE, deactive network.\n");
-				UNSET_NET_ACTIVE(prAdapter,
-					prP2pRoleFsmInfo->ucBssIndex);
 				nicDeactivateNetwork(prAdapter,
 					NETWORK_ID(prP2pRoleFsmInfo->ucBssIndex,
 					prP2pRoleFsmInfo->ucRoleIndex));
@@ -1760,8 +1754,6 @@ void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
 			prP2pBssInfo->ucBssIndex, MSDU_REMOVE_BY_BSS_INDEX);
 
 		/* Deactivate BSS. */
-		UNSET_NET_ACTIVE(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
-
 		nicDeactivateNetwork(prAdapter,
 			NETWORK_ID(prP2pRoleFsmInfo->ucBssIndex,
 			prP2pRoleFsmInfo->ucRoleIndex));
@@ -2270,8 +2262,6 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 				prP2pBssInfo->ucBssIndex);
 
 			/* Update BSS with temp. disconnect state to FW */
-			UNSET_NET_ACTIVE(prAdapter,
-				prP2pBssInfo->ucBssIndex);
 			nicDeactivateNetworkEx(prAdapter,
 				NETWORK_ID(prP2pRoleFsmInfo->ucBssIndex,
 				prP2pRoleFsmInfo->ucRoleIndex),
@@ -2393,10 +2383,8 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 	/* In case the network is already activated, we need to re-activate
 	 * the network. Otherwise, the connection may be failed in dbdc cases.
 	 */
-	if (IS_NET_ACTIVE(prAdapter, bss->ucBssIndex)) {
-		UNSET_NET_ACTIVE(prAdapter, bss->ucBssIndex);
+	if (IS_NET_ACTIVE(prAdapter, bss->ucBssIndex))
 		nicDeactivateNetwork(prAdapter, bss->ucBssIndex);
-	}
 
 	SET_NET_PWR_STATE_ACTIVE(prAdapter, bss->ucBssIndex);
 
