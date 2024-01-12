@@ -9221,6 +9221,9 @@ void nicCollectRegStatFromEmi(struct ADAPTER
 	struct EVENT_LINK_QUALITY lqLegacy = {0};
 	struct EVENT_STA_STATISTICS rStaStatsLegacy;
 	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
+#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
+	struct EVENT_STATS_LLS_TX_RATE_INFO rLlsRateInfo = {0};
+#endif
 	struct STA_RECORD *prStaRec = NULL;
 	uint8_t i, ucBssIdx;
 
@@ -9312,6 +9315,21 @@ void nicCollectRegStatFromEmi(struct ADAPTER
 		DBGLOG(REQ, TRACE, "update staStats[%u] wlanIdx(%u)\n",
 			i, rStaStatsLegacy.ucStaRecIdx);
 	}
+	/* get bw from emi */
+#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
+	if (prAdapter->fgTxRateOffsetMapped) {
+		kalMemCopyFromIo(&rLlsRateInfo,
+				&prAdapter->prStatsAllRegStat->rLlsRateInfo,
+				sizeof(rLlsRateInfo));
+		for (i = 0; i < MAX_BSSID_NUM; i++) {
+			prAdapter->prGlueInfo->u4TxBwCache[i] =
+				rLlsRateInfo.arTxRateInfo[i].bw;
+			DBGLOG(NIC, INFO,
+				"ucBssIdx=%d, bw=%u\n", i,
+				prAdapter->prGlueInfo->u4TxBwCache[i]);
+		}
+	}
+#endif
 exit:
 	DBGLOG(REQ, LOUD, "%s done\n", __func__);
 }
@@ -9416,7 +9434,6 @@ void nicUniEventAllStatsOneCmd(struct ADAPTER
 			break;
 		}
 		case UNI_EVENT_STATISTICS_TAG_LINK_LAYER_STATS: {
-			/* do nothing, caller can read emi directly. */
 			struct UNI_EVENT_LINK_STATS *tlv =
 				(struct UNI_EVENT_LINK_STATS *) tag;
 			uint32_t resultSize;
@@ -9428,6 +9445,22 @@ void nicUniEventAllStatsOneCmd(struct ADAPTER
 					tlv->u2Tag, resultSize);
 			}
 			break;
+		}
+		case UNI_EVENT_STATISTICS_TAG_CURRENT_TX_RATE: {
+			/* do nothing, caller can read emi directly. */
+			struct UNI_EVENT_CURRENT_TX_RATE *tlv =
+				(struct UNI_EVENT_CURRENT_TX_RATE *) tag;
+			struct EVENT_STATS_LLS_TX_RATE_INFO *prTxRate;
+			uint8_t i = 0;
+
+			prTxRate = (struct EVENT_STATS_LLS_TX_RATE_INFO *)
+				   tlv->aucBuffer;
+			for (i = 0; i < MAX_BSSID_NUM; i++) {
+				prAdapter->prGlueInfo->u4TxBwCache[i] =
+					rLlsRateInfo.arTxRateInfo[i].bw;
+			}
+			break;
+
 		}
 		default:
 			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
