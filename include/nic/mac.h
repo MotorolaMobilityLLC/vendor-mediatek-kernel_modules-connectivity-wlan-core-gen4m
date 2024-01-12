@@ -2558,15 +2558,6 @@ struct LLC_SNAP_HEADER {
 	uint16_t u2Type;
 } __KAL_ATTRIB_PACKED__;
 
-/* 3 MAC Header. */
-/* Ethernet Frame Header */
-__KAL_ATTRIB_PACKED_FRONT__
-struct ETH_FRAME_HEADER {
-	uint8_t aucDestAddr[MAC_ADDR_LEN];
-	uint8_t aucSrcAddr[MAC_ADDR_LEN];
-	uint16_t u2TypeLen;
-} __KAL_ATTRIB_PACKED__;
-
 /* Ethernet Frame Structure */
 __KAL_ATTRIB_PACKED_FRONT__
 struct ETH_FRAME {
