@@ -1974,6 +1974,8 @@ s_int32 mt_op_set_band_mode(
 	else
 		dbdc_enb = TEST_DBDC_DISABLE;
 
+	SET_TEST_DBDC(winfos, dbdc_enb);
+
 	ret = tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_DBDC_ENABLE, dbdc_enb);
 
