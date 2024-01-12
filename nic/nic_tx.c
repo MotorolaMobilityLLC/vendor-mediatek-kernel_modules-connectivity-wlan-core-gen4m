@@ -1442,7 +1442,8 @@ void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
 				&(prAdapter->rTxPQueue[i]));
 			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 
-			nicTxMsduQueue(prAdapter, 0, prDataPort[i]);
+			TRACE(nicTxMsduQueue(prAdapter, 0, prDataPort[i]),
+			     "Move TxPQueue%d %d", i, prDataPort[i]->u4NumElem);
 
 			if (QUEUE_IS_NOT_EMPTY(prDataPort[i])) {
 				KAL_ACQUIRE_SPIN_LOCK(
@@ -2201,7 +2202,7 @@ void nicTxMsduDoneCb(IN struct GLUE_INFO *prGlueInfo,
 
 		wlanTxProfilingTagMsdu(prAdapter,
 			(struct MSDU_INFO *) QUEUE_GET_HEAD(&rFreeQueue),
-			TX_PROF_TAG_DRV_FREE_MSDU);
+			TX_PROF_TAG_DRV_FREE);
 
 		nicTxReturnMsduInfo(prAdapter,
 		  (struct MSDU_INFO *)
@@ -2561,6 +2562,8 @@ void nicTxFreePacket(IN struct ADAPTER *prAdapter,
 	prTxCtrl = &prAdapter->rTxCtrl;
 
 	prNativePacket = prMsduInfo->prPacket;
+
+	wlanTxProfilingTagMsdu(prAdapter, prMsduInfo, TX_PROF_TAG_DRV_FREE);
 
 	if (fgDrop)
 		rStatus = WLAN_STATUS_FAILURE;
