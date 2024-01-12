@@ -781,7 +781,11 @@ void set_cal_enabled(u_int8_t enabled)
 
 u_int8_t is_cal_flow_finished(void)
 {
+#if (CFG_WLAN_CONNAC3_DEV == 1)
+	return TRUE;
+#else
 	return g_fgEverCal;
+#endif
 }
 #endif
 
