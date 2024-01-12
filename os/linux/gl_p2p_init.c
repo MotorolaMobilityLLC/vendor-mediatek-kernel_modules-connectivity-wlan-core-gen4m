@@ -294,7 +294,6 @@ void p2pSetMode(uint8_t ucAPMode)
 u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo, uint8_t fgIsRtnlLockAcquired)
 {
 	struct ADAPTER *prAdapter = NULL;
-	u_int8_t idx = 0;
 	u_int32_t wait = 0;
 
 	GLUE_SPIN_LOCK_DECLARATION();
@@ -359,28 +358,6 @@ retry:
 	prAdapter->p2p_scan_report_all_bss = FALSE;
 
 	glUnregisterP2P(prGlueInfo, 0xff, fgIsRtnlLockAcquired);
-
-	/* Release ap0 wdev.
-	 * ap0 wdev is created in wlanProbe. So we need to release it in
-	 * wlanRemove. Other wdevs shall be released in exitWlan.
-	 */
-	for (idx = 0 ; idx < KAL_P2P_NUM; idx++) {
-		if (gprP2pRoleWdev[idx] == NULL)
-			continue;
-		if (wlanIsAisDev(gprP2pRoleWdev[idx]->netdev)) {
-			/* This is AIS/AP Interface */
-			gprP2pRoleWdev[idx] = NULL;
-			continue;
-		}
-		/* free gprP2pWdev in wlanDestroyAllWdev */
-		if (gprP2pRoleWdev[idx] == gprP2pWdev[idx])
-			continue;
-
-		DBGLOG(INIT, INFO, "Unregister gprP2pRoleWdev[%d]\n", idx);
-		kfree(gprP2pRoleWdev[idx]);
-		gprP2pRoleWdev[idx] = NULL;
-		break;
-	}
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	prAdapter->rP2PRegState = ENUM_P2P_REG_STATE_UNREGISTERED;
