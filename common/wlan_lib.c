@@ -7268,6 +7268,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 				prAdapter, "ApAllowHtVhtTkip",
 				FEATURE_DISABLED);
 
+	prWifiVar->ucApForceSleep = (uint8_t) wlanCfgGetUint32(
+				prAdapter, "ApForceSleep", FEATURE_ENABLED);
+
 	prWifiVar->ucNSS = (uint8_t) wlanCfgGetUint32
 				(prAdapter, "Nss", DEFAULT_NSS);
 
