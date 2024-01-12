@@ -5115,7 +5115,7 @@ enum ENUM_ICS_LOG_LEVEL_T {
 };
 
 static uint32_t u4IcsLogOnOffCache;
-static uint32_t u4IcsLogLevelCache = ENUM_ICS_LOG_LEVEL_MAC;
+static uint32_t u4IcsLogLevelCache = ENUM_ICS_LOG_LEVEL_DISABLE;
 
 static void ics_log_event_notification(int cmd, int value)
 {
@@ -5126,23 +5126,6 @@ static void ics_log_event_notification(int cmd, int value)
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 
 	DBGLOG(INIT, INFO, "cmd=%d, value=%d\n", cmd, value);
-
-	if (kalIsHalted()) {
-		DBGLOG(INIT, INFO, "device not ready return");
-		return;
-	}
-
-	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
-	if (!prGlueInfo) {
-		DBGLOG(INIT, INFO, "prGlueInfo is NULL return");
-		return;
-	}
-
-	prAdapter = prGlueInfo->prAdapter;
-	if (!prAdapter) {
-		DBGLOG(INIT, INFO, "prAdapter is NULL return");
-		return;
-	}
 
 	/*
 	 * Special code that matches App behavior:
@@ -5165,6 +5148,23 @@ static void ics_log_event_notification(int cmd, int value)
 			DBGLOG(INIT, INFO, "IcsLv set to MAC ICS.\n");
 			u4IcsLogOnOffCache = 1;
 		}
+	}
+
+	if (kalIsHalted()) {
+		DBGLOG(INIT, INFO, "device not ready return");
+		return;
+	}
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (!prGlueInfo) {
+		DBGLOG(INIT, INFO, "prGlueInfo is NULL return");
+		return;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter) {
+		DBGLOG(INIT, INFO, "prAdapter is NULL return");
+		return;
 	}
 
 	if (cmd == ICS_LOG_CMD_ON_OFF || cmd == ICS_LOG_CMD_SET_LEVEL) {
@@ -5191,7 +5191,6 @@ static void ics_log_event_notification(int cmd, int value)
 		DBGLOG(INIT, INFO, "unknown cmd %d\n", cmd);
 	}
 }
-
 #endif /* CFG_SUPPORT_ICS */
 
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
