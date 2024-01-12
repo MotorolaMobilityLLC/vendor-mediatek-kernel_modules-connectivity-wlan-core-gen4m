@@ -2923,6 +2923,11 @@ nla_put_failure:
 }
 
 #if CFG_SUPPORT_IDC_RIL_BRIDGE
+struct CP_NOTI_INFO {
+	uint8_t ucRat; /* LTE or NR */
+	uint32_t u4Band;
+	uint32_t u4Channel;
+} __packed;
 #if !CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
 struct dev_ril_bridge_msg {
 	unsigned int dev_id;
@@ -2989,7 +2994,7 @@ static int kalIdcRilNotifier(
 	void *buf)
 {
 	struct dev_ril_bridge_msg *msg;
-	struct CMD_SET_IDC_RIL_BRIDGE *cmd;
+	struct CP_NOTI_INFO *cmd;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
 	if (!g_init_ril_notifier) {
@@ -3017,9 +3022,9 @@ static int kalIdcRilNotifier(
 
 	if (msg->dev_id == IDC_RIL_CHANNEL_INFO
 		&& msg->data_len ==
-		sizeof(struct CMD_SET_IDC_RIL_BRIDGE)) {
+		sizeof(struct CP_NOTI_INFO)) {
 
-		cmd = (struct CMD_SET_IDC_RIL_BRIDGE *)msg->data;
+		cmd = (struct CP_NOTI_INFO *)msg->data;
 
 		DBGLOG(INIT, TRACE,
 			"Update CP channel info [%d,%d,%d]\n",
