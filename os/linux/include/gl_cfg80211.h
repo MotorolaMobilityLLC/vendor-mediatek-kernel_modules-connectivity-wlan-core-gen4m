@@ -369,7 +369,13 @@ int mtk_cfg80211_del_station(struct wiphy *wiphy,
 			     struct net_device *ndev,
 			     const u8 *mac);
 #endif
-#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(6, 4, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy,
+			   struct net_device *dev, const u8 *peer,
+			   int link_id, u8 action_code, u8 dialog_token,
+			   u16 status_code, u32 peer_capability,
+			   bool initiator, const u8 *buf, size_t len);
+#elif KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy,
 			   struct net_device *dev,
 			   const u8 *peer, u8 action_code, u8 dialog_token,
@@ -554,7 +560,14 @@ int mtk_cfg_tdls_oper(struct wiphy *wiphy,
 		      struct net_device *ndev,
 		      u8 *peer, enum nl80211_tdls_operation oper);
 #endif
-#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(6, 4, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_tdls_mgmt(struct wiphy *wiphy,
+		      struct net_device *ndev, const u8 *peer,
+		      int link_id, u8 action_code, u8 dialog_token,
+		      u16 status_code,
+		      u32 peer_capability, bool initiator, const u8 *buf,
+		      size_t len);
+#elif KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg_tdls_mgmt(struct wiphy *wiphy,
 		      struct net_device *ndev,
 		      const u8 *peer, u8 action_code, u8 dialog_token,
