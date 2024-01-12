@@ -15898,6 +15898,15 @@ inline void kalRxNapiWorkUninit(struct GLUE_INFO *pr)
 
 inline void kalRxNapiWorkSchedule(struct GLUE_INFO *pr)
 {
+	int32_t i4RxNapiWorkCpu;
+
+	i4RxNapiWorkCpu = kalWorkGetCpu(pr, RX_NAPI_WORK);
+	if (i4RxNapiWorkCpu == -1) {
+		/* no BoostCpu, favour latency over tput */
+		__kalNapiSchedule(pr->prAdapter);
+		return;
+	}
+
 	kalWorkSchedule(pr, RX_NAPI_WORK);
 }
 #endif /* CFG_SUPPORT_RX_NAPI_WORK */
