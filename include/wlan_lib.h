@@ -675,18 +675,10 @@ struct REG_INFO {
 	uint16_t u2Part1PeerVersion;
 #endif
 	uint8_t aucMacAddr[6];
-
 	/* Country code (in ISO 3166-1 expression, ex: "US", "TW")  */
 	uint16_t au2CountryCode[4];
-
-	struct TX_PWR_PARAM rTxPwr;
-	uint8_t aucEFUSE[144];
-	uint8_t ucTxPwrValid;
 	uint8_t ucSupport5GBand;
-	uint8_t fg2G4BandEdgePwrUsed;
-	int8_t cBandEdgeMaxPwrCCK;
-	int8_t cBandEdgeMaxPwrOFDM20;
-	int8_t cBandEdgeMaxPwrOFDM40;
+
 	enum ENUM_REG_CH_MAP eRegChannelListMap;
 	uint8_t ucRegChannelListIndex;
 	struct DOMAIN_INFO_ENTRY rDomainInfo;
@@ -695,11 +687,7 @@ struct REG_INFO {
 	/* NVRAM - MP Data -END- */
 
 	/* NVRAM - Functional Data -START- */
-	uint8_t uc2G4BwFixed20M;
-	uint8_t uc5GBwFixed20M;
 	uint8_t ucEnable5GBand;
-	uint8_t ucGpsDesense;
-	uint8_t ucRxDiversity;
 	/* NVRAM - Functional Data -END- */
 
 	struct NEW_EFUSE_MAPPING2NVRAM *prOldEfuseMapping;
@@ -1418,7 +1406,6 @@ enum ENUM_ACPI_STATE wlanGetAcpiState(IN struct ADAPTER *prAdapter);
 void wlanSetAcpiState(IN struct ADAPTER *prAdapter,
 		      IN enum ENUM_ACPI_STATE ePowerState);
 
-void wlanDefTxPowerCfg(IN struct ADAPTER *prAdapter);
 
 /*----------------------------------------------------------------------------*/
 /* get ECO version from Revision ID register (for Win32)                      */

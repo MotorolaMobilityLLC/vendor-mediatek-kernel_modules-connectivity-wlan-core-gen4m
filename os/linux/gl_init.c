@@ -96,7 +96,9 @@
 /* #define MAX_IOREQ_NUM   10 */
 struct semaphore g_halt_sem;
 int g_u4HaltFlag;
+u_int8_t g_fgNvramAvailable;
 
+uint8_t g_aucNvram[CFG_FILE_WIFI_REC_SIZE];
 struct wireless_dev *gprWdev[KAL_AIS_NUM];
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -874,69 +876,35 @@ u16 wlanSelectQueue(struct net_device *dev,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-static void glLoadNvram(IN struct GLUE_INFO *prGlueInfo,
-			OUT struct REG_INFO *prRegInfo)
+static void glLoadNvram(OUT struct REG_INFO *prRegInfo)
 {
-	ASSERT(prGlueInfo);
+	struct WIFI_CFG_PARAM_STRUCT *prNvramSettings;
+
 	ASSERT(prRegInfo);
-	DBGLOG(INIT, INFO, "glLoadNvram start\n");
-	if ((!prGlueInfo) || (!prRegInfo))
+
+	DBGLOG(INIT, INFO, "g_fgNvramAvailable = %u\n", g_fgNvramAvailable);
+	if (!g_fgNvramAvailable) {
+		DBGLOG(INIT, WARN, "Nvram not available\n");
 		return;
+	}
 
-	/* load full NVRAM */
-	prGlueInfo->fgNvramAvailable = FALSE;
-	if (kalCfgDataRead(prGlueInfo, 0,
-			   sizeof(prRegInfo->aucNvram),
-			   (uint16_t *)prRegInfo->aucNvram) == TRUE) {
+	if (sizeof(struct WIFI_CFG_PARAM_STRUCT) >
+					sizeof(g_aucNvram)) {
+		DBGLOG(INIT, ERROR,
+		"Size WIFI_CFG_PARAM_STRUCT %zu > size aucNvram %zu\n"
+		, sizeof(struct WIFI_CFG_PARAM_STRUCT),
+		sizeof(g_aucNvram));
+		return;
+	}
 
-		struct WIFI_CFG_PARAM_STRUCT *prNvramSettings;
+	prRegInfo->prNvramSettings =
+		(struct WIFI_CFG_PARAM_STRUCT *)&g_aucNvram[0];
+	prNvramSettings = prRegInfo->prNvramSettings;
 
-		if (sizeof(struct WIFI_CFG_PARAM_STRUCT) >
-		    sizeof(prRegInfo->aucNvram)) {
-			DBGLOG(INIT, ERROR,
-			       "Size WIFI_CFG_PARAM_STRUCT %zu > size aucNvram %zu\n"
-			       , sizeof(struct WIFI_CFG_PARAM_STRUCT),
-			       sizeof(prRegInfo->aucNvram));
-			return;
-		}
-#if CFG_SUPPORT_NVRAM_5G
-		if (sizeof(struct NEW_EFUSE_MAPPING2NVRAM) >
-		    sizeof(prRegInfo->aucEFUSE)) {
-			DBGLOG(INIT, ERROR,
-			       "Size NEW_EFUSE_MAPPING2NVRAM %zu >size aucEFUSE %zu\n"
-			       , sizeof(struct NEW_EFUSE_MAPPING2NVRAM),
-			       sizeof(prRegInfo->aucEFUSE));
-			return;
-		}
-#endif
-
-		prRegInfo->prNvramSettings =
-			(struct WIFI_CFG_PARAM_STRUCT *)&prRegInfo->aucNvram;
-		prNvramSettings = prRegInfo->prNvramSettings;
-
-#if CFG_SUPPORT_NVRAM_5G
-		/* load EFUSE overriding part */
-		kalMemCopy(prRegInfo->aucEFUSE,
-			   prNvramSettings->EfuseMapping.aucEFUSE,
-			   sizeof(prRegInfo->aucEFUSE));
-		prRegInfo->prOldEfuseMapping =
-			(struct NEW_EFUSE_MAPPING2NVRAM *)&prRegInfo->aucEFUSE;
-#else
-		/* load EFUSE overriding part */
-		kalMemCopy(prRegInfo->aucEFUSE, prNvramSettings->aucEFUSE,
-			   sizeof(prRegInfo->aucEFUSE));
-#endif
-
-#if CFG_TC1_FEATURE
-		TC1_FAC_NAME(FacReadWifiMacAddr)(prRegInfo->aucMacAddr);
-		DBGLOG(INIT, INFO,
-			"MAC address: " MACSTR, MAC2STR(prRegInfo->aucMacAddr));
-#else
-		/* load MAC Address */
-		kalMemCopy(prRegInfo->aucMacAddr,
-			   prNvramSettings->aucMacAddress,
-			   PARAM_MAC_ADDR_LEN * sizeof(uint8_t));
-#endif
+	/* load MAC Address */
+	kalMemCopy(prRegInfo->aucMacAddr,
+			prNvramSettings->aucMacAddress,
+			PARAM_MAC_ADDR_LEN*sizeof(uint8_t));
 
 		/* load country code */
 		/* cast to wide characters */
@@ -945,70 +913,24 @@ static void glLoadNvram(IN struct GLUE_INFO *prGlueInfo,
 		prRegInfo->au2CountryCode[1] =
 			(uint16_t) prNvramSettings->aucCountryCode[1];
 
-		/* load default normal TX power */
-		kalMemCopy(&prRegInfo->rTxPwr, &prNvramSettings->rTxPwr,
-			   sizeof(struct TX_PWR_PARAM));
-
-		/* load feature flags */
-		prRegInfo->ucTxPwrValid = prNvramSettings->ucTxPwrValid;
-
-		prRegInfo->ucSupport5GBand =
+	prRegInfo->ucSupport5GBand =
 			prNvramSettings->ucSupport5GBand;
 
-		prRegInfo->uc2G4BwFixed20M =
-			prNvramSettings->uc2G4BwFixed20M;
+	prRegInfo->ucEnable5GBand = prNvramSettings->ucEnable5GBand;
 
-		prRegInfo->uc5GBwFixed20M = prNvramSettings->uc5GBwFixed20M;
+	/* load regulation subbands */
+	prRegInfo->eRegChannelListMap = 0;
+	prRegInfo->ucRegChannelListIndex = 0;
 
-		prRegInfo->ucEnable5GBand = prNvramSettings->ucEnable5GBand;
-
-		prRegInfo->ucRxDiversity = prNvramSettings->ucRxDiversity;
-
-		prRegInfo->ucRssiPathCompasationUsed =
-			prNvramSettings->fgRssiCompensationVaildbit;
-
-		prRegInfo->ucGpsDesense = prNvramSettings->ucGpsDesense;
-
-		/* load band edge tx power control */
-		prRegInfo->fg2G4BandEdgePwrUsed =
-			prNvramSettings->fg2G4BandEdgePwrUsed;
-
-		if (prRegInfo->prNvramSettings->fg2G4BandEdgePwrUsed) {
-			prRegInfo->cBandEdgeMaxPwrCCK =
-				prNvramSettings->cBandEdgeMaxPwrCCK;
-
-			prRegInfo->cBandEdgeMaxPwrOFDM20 =
-				prNvramSettings->cBandEdgeMaxPwrOFDM20;
-
-			prRegInfo->cBandEdgeMaxPwrOFDM40 =
-				prNvramSettings->cBandEdgeMaxPwrOFDM40;
-		}
-
-		/* load regulation subbands */
-		prRegInfo->eRegChannelListMap =
-					(enum ENUM_REG_CH_MAP)
-					prNvramSettings->ucRegChannelListMap;
-		prRegInfo->ucRegChannelListIndex =
-			prNvramSettings->ucRegChannelListIndex;
-
-		if (prRegInfo->eRegChannelListMap ==
-		    REG_CH_MAP_CUSTOMIZED) {
-			kalMemCopy(prRegInfo->rDomainInfo.rSubBand,
-				   prNvramSettings->aucRegSubbandInfo,
-				   MAX_SUBBAND_NUM * sizeof(uint8_t));
-		}
-
-		/* load rssiPathCompensation */
-		kalMemCopy(&prRegInfo->rRssiPathCompasation,
-			   &prNvramSettings->rRssiPathCompensation,
-			   sizeof(struct RSSI_PATH_COMPASATION));
-
-		prGlueInfo->fgNvramAvailable = TRUE;
-		DBGLOG(INIT, INFO, "glLoadNvram end\n");
-	} else {
-		DBGLOG(INIT, INFO, "glLoadNvram fail\n");
+	if (prRegInfo->eRegChannelListMap == REG_CH_MAP_CUSTOMIZED) {
+		kalMemCopy(prRegInfo->rDomainInfo.rSubBand,
+			prNvramSettings->aucRegSubbandInfo,
+			MAX_SUBBAND_NUM*sizeof(uint8_t));
 	}
 
+	log_dbg(INIT, INFO, "u2Part1OwnVersion = %08x, u2Part1PeerVersion = %08x\n",
+				 prNvramSettings->u2Part1OwnVersion,
+				 prNvramSettings->u2Part1PeerVersion);
 }
 
 static void wlanFreeNetDev(void)
@@ -2019,6 +1941,28 @@ const struct net_device_ops *wlanGetNdevOps(void)
 }
 #endif
 
+#if CFG_MTK_ANDROID_WMT
+#if CFG_WLAN_ASSISTANT_NVRAM
+static uint8_t wlanNvramBufHandler(void *ctx,
+			const char *buf,
+			uint16_t length)
+{
+	DBGLOG(INIT, INFO, "buf = %p, length = %u\n", buf, length);
+	if (buf == NULL || length <= 0 || length != sizeof(g_aucNvram))
+		return -EFAULT;
+
+	if (copy_from_user(g_aucNvram, buf, length)) {
+		DBGLOG(INIT, ERROR, "copy nvram fail\n");
+		g_fgNvramAvailable = FALSE;
+		return -EINVAL;
+	}
+
+	g_fgNvramAvailable = TRUE;
+	return 0;
+}
+#endif
+#endif
+
 static void wlanCreateWirelessDevice(void)
 {
 	struct wiphy *prWiphy = NULL;
@@ -2187,6 +2131,12 @@ static void wlanCreateWirelessDevice(void)
 		prWdev[u4Idx]->wiphy = prWiphy;
 		gprWdev[u4Idx] = prWdev[u4Idx];
 	}
+#if CFG_MTK_ANDROID_WMT
+#if CFG_WLAN_ASSISTANT_NVRAM
+	register_file_buf_handler(wlanNvramBufHandler, (void *)NULL,
+			ENUM_BUF_TYPE_NVRAM);
+#endif
+#endif
 	DBGLOG(INIT, INFO, "Create wireless device success\n");
 	return;
 
@@ -3495,7 +3445,7 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 	nicpmWakeUpWiFi(prAdapter);
 
 	/* Load NVRAM content to REG_INFO_T */
-	glLoadNvram(prGlueInfo, *pprRegInfo);
+	glLoadNvram(*pprRegInfo);
 
 	/* kalMemCopy(&prGlueInfo->rRegInfo, prRegInfo,
 	 *            sizeof(REG_INFO_T));

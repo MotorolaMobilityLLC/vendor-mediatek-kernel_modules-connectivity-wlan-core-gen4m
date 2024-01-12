@@ -942,13 +942,6 @@
 /* Handle IOT issue for 11ac certification */
 #define CFG_OPMODE_CONFLICT_OPINFO	1
 
-
-/*------------------------------------------------------------------------------
- * Flags of 5G NVRAM SUPPORT
- *------------------------------------------------------------------------------
- */
-#define CFG_SUPPORT_NVRAM_5G                1
-
 /*------------------------------------------------------------------------------
  * Flags of Packet Lifetime Profiling Mechanism
  *------------------------------------------------------------------------------
@@ -1266,6 +1259,12 @@
 #ifndef CFG_SUPPORT_DMASHDL_SYSDVT
 #define CFG_SUPPORT_DMASHDL_SYSDVT  0
 #endif
+
+/*------------------------------------------------------------------------------
+ * Flags of using wlan_assistant to read/write NVRAM
+ *------------------------------------------------------------------------------
+ */
+#define CFG_WLAN_ASSISTANT_NVRAM		0
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
