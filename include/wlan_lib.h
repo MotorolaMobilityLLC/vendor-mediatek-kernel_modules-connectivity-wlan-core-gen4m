@@ -942,6 +942,14 @@ struct REAL_TIME {
 	uint32_t u4TvValSec;
 };
 
+struct FT_EVENT_PARAMS {
+	const uint8_t *pcIe;
+	uint16_t u2IeLen;
+	const uint8_t *pcTargetAp;
+	const uint8_t *pcRicIes;
+	uint16_t u2RicIesLen;
+};
+
 enum ENUM_NVRAM_MTK_FEATURE {
 	MTK_FEATURE_2G_256QAM_DISABLED = 0,
 	MTK_FEATURE_NUM

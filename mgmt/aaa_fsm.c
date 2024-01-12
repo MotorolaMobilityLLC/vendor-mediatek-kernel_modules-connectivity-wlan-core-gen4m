@@ -1288,7 +1288,7 @@ void  aaaMulAPAgentChanNoiseCollectionWorkHandler(
 
 	/* get Bss Index from ndev */
 	if (mtk_Netdev_To_RoleIdx(prGlueInfo,
-			prGlueInfo->prP2PInfo[1]->prDevHandler,
+			kalGetP2pNetHdl(prGlueInfo, 1, FALSE),
 			&ucRoleIdx) != 0)
 		goto error;
 	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
@@ -1381,8 +1381,9 @@ void  aaaMulAPAgentChanNoiseCollectionWorkHandler(
 
 	/* 1. BSS Measurement */
 	/* Interface Index */
-	i4Ret = sscanf(prGlueInfo->prP2PInfo[1]->prDevHandler->name,
-		"ap%u", &sBssMetricsResp->uIfIndex);
+	i4Ret = kalGetMulAPIfIdx(prGlueInfo, 1,
+				&sBssMetricsResp->uIfIndex);
+
 	if (i4Ret != 1)
 		DBGLOG(P2P, WARN, "read sap index fail: %d\n", i4Ret);
 
@@ -1517,8 +1518,9 @@ void aaaMulAPAgentUnassocStaMeasureTimeout(
 		sizeof(struct T_MULTI_AP_STA_UNASSOC_METRICS_RESP));
 
 	/* Interface Index */
-	i4Ret = sscanf(prGlueInfo->prP2PInfo[1]->prDevHandler->name,
-		"ap%u", &sStaUnAssocMetricsResp->uIfIndex);
+	i4Ret = kalGetMulAPIfIdx(prGlueInfo, 1,
+				&sStaUnAssocMetricsResp->uIfIndex);
+
 	if (i4Ret != 1)
 		DBGLOG(P2P, WARN, "read sap index fail: %d\n", i4Ret);
 

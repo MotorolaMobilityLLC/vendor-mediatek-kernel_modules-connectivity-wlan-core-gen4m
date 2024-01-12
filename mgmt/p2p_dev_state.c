@@ -61,6 +61,8 @@ p2pDevStateInit_IDLE(IN struct ADAPTER *prAdapter,
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo;
 	struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxInfo;
+	void *prRoleHandler = NULL;
+	void *prDevHandler = NULL;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL)
@@ -89,13 +91,12 @@ p2pDevStateInit_IDLE(IN struct ADAPTER *prAdapter,
 		prGlueInfo = prAdapter->prGlueInfo;
 		if (prGlueInfo) {
 			for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
-				if ((prGlueInfo->prP2PInfo[u4Idx] != NULL) &&
-				(prGlueInfo->prP2PInfo[u4Idx]->aprRoleHandler
-				!= NULL) &&
-				(prGlueInfo->prP2PInfo[u4Idx]->aprRoleHandler
-				!=
-				prGlueInfo->prP2PInfo[u4Idx]->prDevHandler)
-				&&
+				prRoleHandler = kalGetP2pNetHdl(prGlueInfo,
+								u4Idx, TRUE);
+				prDevHandler = kalGetP2pNetHdl(prGlueInfo,
+								u4Idx, FALSE);
+				if ((prRoleHandler != NULL) &&
+				(prRoleHandler != prDevHandler) &&
 				!p2pFuncIsAPMode(
 				prAdapter->rWifiVar.prP2PConnSettings
 				[u4Idx])) {

@@ -148,10 +148,21 @@ void kalP2PIndicateTXDone(IN struct GLUE_INFO *prGlueInfo,
  */
 
 /*UINT_32 kalP2PGetFreqInKHz(IN P_GLUE_INFO_T prGlueInfo);*/
-
 int32_t mtk_Netdev_To_RoleIdx(struct GLUE_INFO *prGlueInfo,
-		struct net_device *ndev,
+		void *pvNdev,
 		uint8_t *pucRoleIdx);
+
+
+void *kalGetP2pNetHdl(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Idx, u_int8_t fgIsRole);
+
+#if CFG_AP_80211KVR_INTERFACE
+int32_t kalGetMulAPIfIdx(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Idx, uint32_t *pu4IfIndex);
+#endif
+
+void *kalGetP2pDevScanReq(
+			struct GLUE_INFO *prGlueInfo);
 
 #ifdef CFG_REMIND_IMPLEMENT
 #define kalP2PUpdateAssocInfo(_prGlueInfo, _pucFrameBody, _u4FrameBodyLen, \

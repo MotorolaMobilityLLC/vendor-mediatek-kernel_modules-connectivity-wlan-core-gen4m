@@ -161,30 +161,6 @@ int kal_strtoint(const char *s, unsigned int base, int *res)
 	return 0;
 }
 
-int kal_strtou8(const char *s, unsigned int base, uint8_t *res)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	return 0;
-}
-
-int kal_strtou16(const char *s, unsigned int base, uint16_t *res)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	return 0;
-}
-
-int kal_strtou32(const char *s, unsigned int base, uint32_t *res)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	return 0;
-}
-
-int kal_strtos32(const char *s, unsigned int base, int32_t *res)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	return 0;
-}
-
 int kal_strtoul(const char *s, unsigned int base, unsigned long *res)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
@@ -223,58 +199,6 @@ void kal_kfree(void *addr)
 void kal_vfree(void *addr)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
-int kal_test_and_clear_bit(unsigned long bit, unsigned long *p)
-{
-	unsigned int res;
-	unsigned long mask = 1UL << (bit & 31);
-
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	p += bit >> 5;
-	/* TODO: disable interrupt */
-	res = *p;
-	*p = res & ~mask;
-	/* TODO: restore interrupt */
-
-	return (res & mask) != 0;
-}
-
-void kal_clear_bit(unsigned long bit, unsigned long *p)
-{
-	unsigned long mask = 1UL << (bit & 31);
-
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	p += bit >> 5;
-	/* TODO: disable interrupt */
-	*p &= ~mask;
-	/* TOD: restore interrupt */
-}
-
-void kal_set_bit(unsigned long nr, unsigned long *addr)
-{
-	unsigned long mask = BIT(nr % 32);
-	unsigned long *p = ((unsigned long *)addr) + (nr / 32);
-
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	/* TODO: disable interrupt */
-	*p |= mask;
-	/* TODO: restore interrupt */
-}
-
-int kal_test_bit(unsigned long nr, unsigned long *addr)
-{
-	unsigned long mask = BIT(nr % 32);
-	unsigned long *p = ((unsigned long *)addr) + (nr / 32);
-	int res = 0;
-
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	/* TODO: disable interrupt */
-
-	res = mask & *p;
-	/* TODO: restore interrupt */
-
-	return res;
 }
 
 u_int8_t halTxIsCmdBufEnough(IN struct ADAPTER *prAdapter)

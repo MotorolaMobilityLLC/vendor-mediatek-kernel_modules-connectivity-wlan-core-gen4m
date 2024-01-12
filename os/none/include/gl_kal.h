@@ -350,11 +350,11 @@ enum ENUM_CMD_TX_RESULT {
  *******************************************************************************
  */
 /* os-related: need implementation */
-#define KAL_SET_BIT(bitOffset, value)      set_bit(bitOffset, &value)
-#define KAL_CLR_BIT(bitOffset, value)      clear_bit(bitOffset, &value)
+#define KAL_SET_BIT(bitOffset, value)      kal_set_bit(bitOffset, &value)
+#define KAL_CLR_BIT(bitOffset, value)      kal_clear_bit(bitOffset, &value)
 #define KAL_TEST_AND_CLEAR_BIT(bitOffset, value)  \
-	test_and_clear_bit(bitOffset, &value)
-#define KAL_TEST_BIT(bitOffset, value)     test_bit(bitOffset, &value)
+	kal_test_and_clear_bit(bitOffset, &value)
+#define KAL_TEST_BIT(bitOffset, value)     kal_test_bit(bitOffset, &value)
 #define SUSPEND_FLAG_FOR_WAKEUP_REASON	(0)
 #define SUSPEND_FLAG_CLEAR_WHEN_RESUME	(1)
 
@@ -726,6 +726,11 @@ enum ENUM_VENDOR_DRIVER_EVENT {
 /* implementation for no op API */
 int8_t kal_atoi(uint8_t ch);
 #define kalAtoi(_ch) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+void kal_clear_bit(unsigned long bit, unsigned long *p);
+int kal_test_and_clear_bit(unsigned long bit, unsigned long *p);
+void kal_set_bit(unsigned long bit, unsigned long *p);
+int kal_test_bit(unsigned long bit, unsigned long *p);
 
 /* defined for wince sdio driver only */
 #if defined(_HIF_SDIO)
@@ -1827,11 +1832,11 @@ void kalSetFwOwnEvent2Hif(struct GLUE_INFO *pr);
 
 #if (CFG_CE_ASSERT_DUMP == 1)
 #ifdef CFG_REMIND_IMPLEMENT
-#define kalEnqCoreDumpLog(_prAdapter, _pucBuffer, _u2Size, _queue) \
+#define kalEnqCoreDumpLog(_prAdapter, _pucBuffer, _u2Size) \
 		KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
 uint32_t kalEnqCoreDumpLog(struct ADAPTER *prAdapter, uint8_t *pucBuffer,
-			     uint16_t u2Size, struct sk_buff_head *queue)
+			     uint16_t u2Size)
 #endif
 #endif
 /*******************************************************************************
@@ -2220,4 +2225,17 @@ uint8_t kalNlaPut(void *pvPacket, uint32_t attrType,
 void *
 kalProcessRttReportDone(struct GLUE_INFO *prGlueInfo,
 		uint32_t u4DataLen, uint32_t u4Count);
+
+void *kalGetGlueNetDevHdl(struct GLUE_INFO *prGlueInfo);
+void *kalGetGlueDevHdl(struct GLUE_INFO *prGlueInfo);
+void kalClearGlueScanReq(struct GLUE_INFO *prGlueInfo);
+void *kalGetGlueScanReq(struct GLUE_INFO *prGlueInfo);
+void kalGetFtIeParam(void *pvftie,
+	uint16_t *pu2MDID, uint32_t *pu4IeLength,
+	const uint8_t **pucIe);
+
+int kal_strtou8(const char *s, unsigned int base, uint8_t *res);
+int kal_strtou16(const char *s, unsigned int base, uint16_t *res);
+int kal_strtou32(const char *s, unsigned int base, uint32_t *res);
+int kal_strtos32(const char *s, unsigned int base, int32_t *res);
 #endif /* _GL_KAL_H */

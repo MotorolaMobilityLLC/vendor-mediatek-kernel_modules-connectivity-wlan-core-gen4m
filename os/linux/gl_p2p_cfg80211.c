@@ -126,12 +126,14 @@
  *                              F U N C T I O N S
  ******************************************************************************
  */
-
 int32_t mtk_Netdev_To_RoleIdx(struct GLUE_INFO *prGlueInfo,
-		struct net_device *ndev, uint8_t *pucRoleIdx)
+		void *pvNdev, uint8_t *pucRoleIdx)
 {
+
 	int32_t i4Ret = -1;
 	uint32_t u4Idx = 0;
+	struct net_device *ndev = (struct net_device *)pvNdev;
+
 
 	if ((pucRoleIdx == NULL) || (ndev == NULL))
 		return i4Ret;

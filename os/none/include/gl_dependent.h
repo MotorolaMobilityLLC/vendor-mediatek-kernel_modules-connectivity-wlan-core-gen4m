@@ -148,18 +148,6 @@ struct timespec {
 };
 #endif
 /*
- * needed by nic/nic_cmd_event.c
- * defined in uapi/asm-generic/fcntl.h
- */
-#define O_RDONLY	00000000
-
-/*
- * needed by que_mgt.c
- * ETH_P_IP, include/linux/if_ether.h
- */
-#define ETH_P_IP    0x0800      /* Internet Protocol packet */
-
-/*
  * needed by cmm_asic_connac.c
  *	Potential risk in this function
  *	#ifdef CONFIG_PHYS_ADDR_T_64BIT
@@ -202,21 +190,6 @@ enum {
 #endif
 #define CFG80211_VERSION_CODE LINUX_VERSION_CODE
 #define KERNEL_VERSION(a, b, c) (((a) << 16) + ((b) << 8) + (c))
-/*
- * needed by common/wlan_oid.c
- * struct cfg80211_update_ft_ies_params - FT IE Information
- * This structure provides information needed to update the fast transition IE
- *
- * @md: The Mobility Domain ID, 2 Octet value
- * @ie: Fast Transition IEs
- * @ie_len: Length of ft_ie in octets
- */
-struct cfg80211_update_ft_ies_params {
-	u16 md;
-	const u8 *ie;
-	size_t ie_len;
-};
-
 /*
  * needed by
  * include/mgmt/rlm_domain.h
@@ -358,22 +331,6 @@ enum gfp_t {
 	__GFP_HIGHMEM,
 	__GFP_HIGH
 };
-/*
- * needed by mgmt/auth.c
- * struct cfg80211_ft_event - FT Information Elements
- * @ies: FT IEs
- * @ies_len: length of the FT IE in bytes
- * @target_ap: target AP's MAC address
- * @ric_ies: RIC IE
- * @ric_ies_len: length of the RIC IE in bytes
- */
-struct cfg80211_ft_event_params {
-	const u8 *ies;
-	size_t ies_len;
-	const u8 *target_ap;
-	const u8 *ric_ies;
-	size_t ric_ies_len;
-};
 /* need by include/hal.h, halDeAggRxPktWorker
  * comment: use os-related structure directly outside headers of gl layer
  * while the implementation is in os/linux/hif*
@@ -459,11 +416,6 @@ bool kal_warn_on(uint8_t condition);
  * be checked.
  */
 int kal_strtoint(const char *s, unsigned int base, int *res);
-int kal_strtou8(const char *s, unsigned int base, uint8_t *res);
-int kal_strtou16(const char *s, unsigned int base, uint16_t *res);
-int kal_strtou32(const char *s, unsigned int base, uint32_t *res);
-int kal_strtos32(const char *s, unsigned int base, int32_t *res);
-
 /*
  * kstrtoul - convert a string to an unsigned long
  * @s: The start of the string. The string must be null-terminated, and may also
@@ -536,60 +488,8 @@ void kal_vfree(void *addr);
 #define IS_ERR(_ptr) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
-/*
- * os endian related, need to find corresponding API in OS
- * eg.
- * #if __BYTE_ORDER == __BIG_ENDIAN
- * #define cpu_to_le16 bswap_16
- * #else
- * #define cpu_to_le16
- * #endif
- */
-#define cpu_to_le16(_val) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
-#define cpu_to_le32(_val) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
-#define cpu_to_le64(_val) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
-#define le16_to_cpu(_val) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-#define le32_to_cpu(_val) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-#define le64_to_cpu(_val) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
 #define div_u64(_val, _div) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
-int kal_test_and_clear_bit(unsigned long bit, unsigned long *p);
-#ifndef test_and_clear_bit
-#define test_and_clear_bit(_offset, _val) \
-	kal_test_and_clear_bit(_offset, _val)
-#endif
-
-void kal_clear_bit(unsigned long bit, unsigned long *p);
-#ifndef clear_bit
-#define clear_bit(_offset, _val) kal_clear_bit(_offset, _val)
-#endif
-
-/*
- * kal_set_bit: set bit atomically
- * @nr: bit to set
- * @addr: addr to set bit
- */
-void kal_set_bit(unsigned long bit, unsigned long *p);
-#ifndef set_bit
-#define set_bit(_offset, _val) kal_set_bit(_offset, _val)
-#endif
-
-/* needed by mgmt/scan.c */
-int kal_test_bit(unsigned long bit, unsigned long *p);
-#ifndef test_bit
-#define test_bit(_offset, _val) kal_test_bit(_offset, _val)
-#endif
 
 #define iounmap(_vir_addr) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)

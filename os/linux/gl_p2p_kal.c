@@ -2796,3 +2796,48 @@ void kalSetP2pDevMac(
 	COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,
 		      prP2PInfo->prDevHandler->dev_addr);
 }
+
+void *kalGetP2pNetHdl(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Idx, u_int8_t fgIsRole)
+{
+	void *pvHandler = NULL;
+
+	if (prGlueInfo != NULL &&
+			prGlueInfo->prP2PInfo[u4Idx] != NULL) {
+		pvHandler = fgIsRole ?
+		(void *)prGlueInfo->prP2PInfo[u4Idx]->aprRoleHandler :
+		(void *)prGlueInfo->prP2PInfo[u4Idx]->prDevHandler;
+	}
+
+	return pvHandler;
+}
+
+#if CFG_AP_80211KVR_INTERFACE
+int32_t kalGetMulAPIfIdx(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Idx, uint32_t *pu4IfIndex)
+{
+	int32_t i4Ret = 0;
+
+	if (prGlueInfo != NULL &&
+			prGlueInfo->prP2PInfo[u4Idx] != NULL) {
+		i4Ret = sscanf(
+			prGlueInfo->prP2PInfo[u4Idx]->prDevHandler->name,
+			"ap%u", pu4IfIndex);
+	}
+
+	return i4Ret;
+}
+#endif
+
+void *kalGetP2pDevScanReq(struct GLUE_INFO *prGlueInfo)
+{
+	void *pvRet = NULL;
+
+	if (prGlueInfo != NULL &&
+			prGlueInfo->prP2PDevInfo != NULL) {
+		pvRet =
+			(void *)(prGlueInfo->prP2PDevInfo->prScanRequest);
+	}
+
+	return pvRet;
+}

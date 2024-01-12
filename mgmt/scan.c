@@ -3429,8 +3429,8 @@ uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter,
 
 	scanAddEssResult(prAdapter, prBssDesc);
 	if (prAdapter->rWifiVar.rScanInfo.fgSchedScanning &&
-		test_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
-			&prAdapter->ulSuspendFlag)) {
+		KAL_TEST_BIT(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
+			prAdapter->ulSuspendFlag)) {
 		uint8_t i = 0;
 		struct BSS_DESC **pprPendBssDesc
 			= &prScanInfo->rSchedScanParam.

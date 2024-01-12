@@ -16587,10 +16587,13 @@ uint32_t wlanoidUpdateFtIes(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	struct FT_IES *prFtIes = NULL;
 	uint32_t u4IeLen = 0;
 	uint8_t *pucIEStart = NULL;
-	struct cfg80211_update_ft_ies_params *ftie = NULL;
+	uint16_t u2MD = 0;
+	uint32_t u4IeFtLen = 0;
+	const uint8_t *pucIe = NULL;
 	struct STA_RECORD *prStaRec = NULL;
 	struct MSG_SAA_FT_CONTINUE *prFtContinueMsg = NULL;
 	uint8_t ucBssIndex = 0;
+
 
 	if (!pvSetBuffer || u4SetBufferLen == 0) {
 		DBGLOG(OID, ERROR,
@@ -16602,40 +16605,42 @@ uint32_t wlanoidUpdateFtIes(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	prStaRec = aisGetTargetStaRec(prAdapter, ucBssIndex);
-	ftie = (struct cfg80211_update_ft_ies_params *)pvSetBuffer;
+	kalGetFtIeParam(pvSetBuffer, &u2MD, &u4IeFtLen, &pucIe);
+
 	prFtIes = aisGetFtIe(prAdapter, ucBssIndex);
 	if (!prFtIes) {
 		DBGLOG(OID, ERROR, "FT: bss%d is not ais\n", ucBssIndex);
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	if (ftie->ie_len == 0) {
+	if (u4IeFtLen == 0) {
 		DBGLOG(OID, WARN, "FT: FT Ies length is 0\n");
 		return WLAN_STATUS_SUCCESS;
 	}
-	if (prFtIes->u4IeLength != ftie->ie_len) {
+	if (prFtIes->u4IeLength != u4IeFtLen) {
 		kalMemFree(prFtIes->pucIEBuf, VIR_MEM_TYPE,
 			   prFtIes->u4IeLength);
-		prFtIes->pucIEBuf = kalMemAlloc(ftie->ie_len, VIR_MEM_TYPE);
-		prFtIes->u4IeLength = ftie->ie_len;
+		prFtIes->pucIEBuf = kalMemAlloc(u4IeFtLen, VIR_MEM_TYPE);
+		prFtIes->u4IeLength = u4IeFtLen;
 	}
 
 	if (!prFtIes->pucIEBuf) {
 		DBGLOG(OID, ERROR,
 		       "FT: prFtIes->pucIEBuf memory allocation failed, ft ie_len=%u\n",
-		       ftie->ie_len);
+		       u4IeFtLen);
 		return WLAN_STATUS_FAILURE;
 	}
-
 	pucIEStart = prFtIes->pucIEBuf;
 	u4IeLen = prFtIes->u4IeLength;
-	prFtIes->u2MDID = ftie->md;
+	prFtIes->u2MDID = u2MD;
 	prFtIes->prFTIE = NULL;
 	prFtIes->prMDIE = NULL;
 	prFtIes->prRsnIE = NULL;
 	prFtIes->prTIE = NULL;
+
 	if (u4IeLen)
-		kalMemCopy(pucIEStart, ftie->ie, u4IeLen);
+		kalMemCopy(pucIEStart, pucIe, u4IeLen);
+
 	while (u4IeLen >= 2) {
 		uint32_t u4InfoElemLen = IE_SIZE(pucIEStart);
 
@@ -16663,10 +16668,12 @@ uint32_t wlanoidUpdateFtIes(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		u4IeLen -= u4InfoElemLen;
 		pucIEStart += u4InfoElemLen;
 	}
+
 	DBGLOG(OID, INFO,
 	       "FT: MdId %d IesLen %u, MDIE %d FTIE %d RSN %d TIE %d\n",
-	       ftie->md, prFtIes->u4IeLength, !!prFtIes->prMDIE,
+	       u2MD, prFtIes->u4IeLength, !!prFtIes->prMDIE,
 	       !!prFtIes->prFTIE, !!prFtIes->prRsnIE, !!prFtIes->prTIE);
+
 	/* check if SAA is waiting to send Reassoc req */
 	if (!prStaRec || prStaRec->ucAuthTranNum != AUTH_TRANSACTION_SEQ_2 ||
 		!prStaRec->fgIsReAssoc || prStaRec->ucStaState != STA_STATE_1)
