@@ -282,6 +282,7 @@ struct BSS_INFO {
 
 	uint32_t u4RsnSelectedGroupCipher;
 	uint32_t u4RsnSelectedPairwiseCipher;
+	uint32_t u4RsnSelectedGroupMgmtCipher;
 	uint32_t u4RsnSelectedAKMSuite;
 	uint16_t u2RsnSelectedCapInfo;
 
