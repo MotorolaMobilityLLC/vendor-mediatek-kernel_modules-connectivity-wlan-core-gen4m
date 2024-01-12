@@ -5814,7 +5814,7 @@ static void ics_log_event_notification(int cmd, int value)
 	struct ADAPTER *prAdapter = NULL;
 	struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT rSniffer;
 	uint32_t u4BufLen = 0;
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 
 	/*
 	 * Special code that matches App behavior:
