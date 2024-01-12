@@ -1426,6 +1426,12 @@ static void mt6653ProcessRxInterrupt(struct ADAPTER *prAdapter)
 	    (KAL_TEST_BIT(RX_RING_TXDONE0, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0, FALSE);
 
+#if CFG_ENABLE_MAWD_MD_RING
+	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_12_MASK) ||
+	    (KAL_TEST_BIT(RX_RING_TXDONE1, prAdapter->ulNoMoreRfb)))
+		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE1, FALSE);
+#endif /* CFG_ENABLE_MAWD_MD_RING */
+
 	mt6653ProcessRxDataInterrupt(prAdapter);
 }
 

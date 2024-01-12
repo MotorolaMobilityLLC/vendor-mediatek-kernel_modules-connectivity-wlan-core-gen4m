@@ -2569,7 +2569,7 @@ void connac3x_show_mawd_info(struct ADAPTER *prAdapter)
 			break;
 		DBGLOG(HAL, INFO, "ErrRpt[%d]:0x%08x!\n",
 		       u4Cidx, pu4ErrRpt[u4Cidx]);
-		INC_RING_INDEX(u4Cidx, MAWD_RX_BLK_RING_SIZE);
+		INC_RING_INDEX(u4Cidx, prHifInfo->u4RxEvtRingSize);
 	}
 	HAL_MCR_WR(prAdapter, prBusInfo->mawd_err_rpt_ctrl2, u4Cidx);
 
@@ -2602,6 +2602,8 @@ void connac3x_show_rro_info(struct ADAPTER *prAdapter)
 	struct RTMP_DMABUF *prAddrArray, *prIndCmd;
 	struct RRO_ADDR_ELEM *prAddrElem;
 	uint32_t u4Val = 0, u4Idx, u4AddrNum, u4Addr;
+	uint32_t u4BufferSize = 512, u4Pos = 0;
+	char *aucBuf;
 
 	prChipInfo = prAdapter->chip_info;
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -2718,16 +2720,32 @@ void connac3x_show_rro_info(struct ADAPTER *prAdapter)
 		}
 	}
 
-	DBGLOG(HAL, INFO,
-	       "BLK Used[%u][%u][%u] Free[%u] Err[%u] Skip[%u] Fix[%u] Head[%u]",
-	       prHifInfo->u4RcbUsedListCnt[RX_RING_DATA0],
-	       prHifInfo->u4RcbUsedListCnt[RX_RING_DATA1],
-	       prHifInfo->u4RcbUsedListCnt[RX_RING_DATA2],
-	       prHifInfo->u4RcbFreeListCnt,
-	       prHifInfo->u4RcbErrorCnt,
-	       prHifInfo->u4RcbSkipCnt,
-	       prHifInfo->u4RcbFixCnt,
-	       prHifInfo->u4RcbHeadCnt);
+	aucBuf = kalMemAlloc(u4BufferSize, PHY_MEM_TYPE);
+	if (aucBuf == NULL)
+		return;
+	kalMemZero(aucBuf, u4BufferSize);
+
+	u4Pos += kalSnprintf(aucBuf + u4Pos, u4BufferSize - u4Pos, "BLK Used");
+	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
+		if (halIsDataRing(RX_RING, u4Idx)) {
+			u4Pos += kalSnprintf(
+				aucBuf + u4Pos,
+				u4BufferSize - u4Pos,
+				"[%u]",
+				prHifInfo->u4RcbUsedListCnt[u4Idx]);
+		}
+	}
+	u4Pos += kalSnprintf(
+		aucBuf + u4Pos, u4BufferSize - u4Pos,
+		" Free[%u] Err[%u] Skip[%u] Fix[%u] Head[%u]",
+		prHifInfo->u4RcbFreeListCnt,
+		prHifInfo->u4RcbErrorCnt,
+		prHifInfo->u4RcbSkipCnt,
+		prHifInfo->u4RcbFixCnt,
+		prHifInfo->u4RcbHeadCnt);
+	DBGLOG(HAL, INFO, "%s", aucBuf);
+
+	kalMemFree(aucBuf, PHY_MEM_TYPE, u4BufferSize);
 }
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 

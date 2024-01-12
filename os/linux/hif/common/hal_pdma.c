@@ -2457,6 +2457,7 @@ static int32_t halWpdmaFreeRingDesc(struct GLUE_INFO *prGlueInfo,
 bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 			 uint32_t u4Size, uint32_t u4DescSize, bool fgAllocMem)
 {
+	struct ADAPTER *prAdapter;
 	struct GL_HIF_INFO *prHifInfo;
 	struct HIF_MEM_OPS *prMemOps;
 	struct RTMP_TX_RING *pTxRing;
@@ -2468,6 +2469,7 @@ bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 	uint32_t u4Idx;
 
 	ASSERT(prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
 	prTxDesc = &prHifInfo->TxDescRing[u4Num];
@@ -2523,6 +2525,10 @@ bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 
 		pTxD = (struct TXD_STRUCT *)prTxCell->AllocVa;
 		pTxD->DMADONE = 0;
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnableMawdTx))
+			pTxD->DMADONE = 1;
+#endif
 	}
 
 	DBGLOG(HAL, TRACE, "TxRing[%d]: total %d entry allocated\n",
@@ -6127,6 +6133,15 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 				KAL_TEST_BIT(i, prAdapter->ulNoMoreRfb),
 				(i == NUM_OF_RX_RING - 1) ? "]" : " ");
 	}
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1) && (CFG_ENABLE_MAWD_MD_RING == 1)
+	for (i = 0; i < MAWD_MD_TX_RING_NUM; ++i) {
+		prTxRing = &prHifInfo->MawdTxRing[i];
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u:%u%s",
+				(i == 0) ? " MawdTxT_Q:T_R[" : "",
+				prTxRing->u4UsedCnt,
+				(i == NUM_OF_TX_RING - 1) ? "] " : " ");
+	}
+#endif
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
 			" Msdu[%u/%u] Tok[%u/%u] Rfb[%u/%u/%u/%u]",
 			prTxCtrl->rFreeMsduInfoList.u4NumElem,
