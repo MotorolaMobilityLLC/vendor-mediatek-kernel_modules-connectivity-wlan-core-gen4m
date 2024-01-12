@@ -6833,6 +6833,9 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev,
 		goto out;
 	}
 
+	kalMemZero(prQueryStaStatistics,
+		sizeof(struct PARAM_GET_STA_STATISTICS));
+
 	prQueryStaStatistics->ucResetCounter = fgResetCnt;
 
 	pucMacAddr = wlanGetStaAddrByWlanIdx(prGlueInfo->prAdapter,
