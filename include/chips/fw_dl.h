@@ -123,7 +123,9 @@ extern unsigned long long gConEmiSize;
 enum ENUM_IMG_DL_IDX_T {
 	IMG_DL_IDX_N9_FW,
 	IMG_DL_IDX_CR4_FW,
-	IMG_DL_IDX_PATCH
+	IMG_DL_IDX_PATCH,
+	IMG_DL_IDX_MCU_ROM_EMI,
+	IMG_DL_IDX_WIFI_ROM_EMI
 };
 
 struct FWDL_OPS_T {
@@ -300,6 +302,19 @@ void wlanGetConnacFwInfo(IN struct ADAPTER *prAdapter,
 	OUT uint32_t *pu4DataMode, OUT u_int8_t *pfgIsEMIDownload,
 	OUT u_int8_t *pfgIsNotDownload);
 
+void wlanImageSectionGetPatchInfoV2(IN struct ADAPTER
+	*prAdapter,
+	IN void *pvFwImageMapFile, IN uint32_t u4FwImageFileLength,
+	OUT uint32_t *pu4DataMode,
+	struct patch_dl_target *target);
+
+void wlanImageSectionGetPatchInfo(IN struct ADAPTER
+	*prAdapter,
+	IN void *pvFwImageMapFile, IN uint32_t u4FwImageFileLength,
+	OUT uint32_t *pu4StartOffset, OUT uint32_t *pu4Addr,
+	OUT uint32_t *pu4Len,
+	OUT uint32_t *pu4DataMode);
+
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 uint32_t wlanCompressedImageSectionDownloadStage(IN struct ADAPTER *prAdapter,
 	IN void *pvFwImageMapFile, IN uint32_t u4FwImageFileLength,
@@ -324,6 +339,11 @@ uint32_t wlanDownloadSection(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4Addr, IN uint32_t u4Len,
 	IN uint32_t u4DataMode, IN uint8_t *pucStartPtr,
 	IN enum ENUM_IMG_DL_IDX_T eDlIdx);
+
+uint32_t wlanDownloadSectionV2(IN struct ADAPTER *prAdapter,
+		IN uint32_t u4DataMode,
+		IN enum ENUM_IMG_DL_IDX_T eDlIdx,
+		struct patch_dl_target *target);
 
 uint32_t wlanDownloadEMISection(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4DestAddr,
@@ -379,6 +399,10 @@ void fwDlGetReleaseManifest(struct ADAPTER *prAdapter,
 			    struct HEADER_RELEASE_INFO *prRelInfo,
 			    uint8_t *pucStartPtr);
 
+#endif
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+extern void conninfra_get_phy_addr(unsigned int *addr, unsigned int *size);
 #endif
 
 #endif /* _FW_DL_H */

@@ -20,17 +20,9 @@ extern "C" {
 *
 *****************************************************************************
 */
-
-#if defined(_HIF_AXI)
-#define CONN_INFRA_CFG_BASE                                    0x7c001000
-#define CONN_INFRA_CFG_AP2WF_BUS_ADDR                          0x7c500000
-#endif
-
-#if defined(_HIF_PCIE)
 #define CONN_INFRA_CFG_BASE                                    0x7C001000
 #define CONN_INFRA_CFG_AP2WF_BUS_ADDR                          0x7C500000
 #define CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR_DE_HARDCODE        0x18501844
-#endif
 
 #define CONN_INFRA_CFG_CONN_HW_VER_ADDR \
 	(CONN_INFRA_CFG_BASE + 0x0000) /* 1000 */

@@ -73,6 +73,10 @@
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
+#if CFG_MTK_ANDROID_EMI
+phys_addr_t gConEmiPhyBase;
+unsigned long long gConEmiSize;
+#endif
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
@@ -444,9 +448,17 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 	uint32_t u4Offset = u4DestAddr & WIFI_EMI_ADDR_MASK;
 
 	if (!gConEmiPhyBase) {
-		DBGLOG(INIT, ERROR,
-		       "Consys emi memory address gConEmiPhyBase invalid\n");
-		return WLAN_STATUS_FAILURE;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+		conninfra_get_phy_addr(
+			(unsigned int *)&gConEmiPhyBase,
+			(unsigned int *)&gConEmiSize);
+#endif
+
+		if (!gConEmiPhyBase) {
+			DBGLOG(INIT, ERROR,
+			       "Consys emi memory address gConEmiPhyBase invalid\n");
+			return WLAN_STATUS_FAILURE;
+		}
 	}
 
 	request_mem_region(gConEmiPhyBase, gConEmiSize, "WIFI-EMI");
