@@ -1664,7 +1664,7 @@ kalP2PGOStationUpdate(struct GLUE_INFO *prGlueInfo,
 
 	do {
 		if ((prGlueInfo == NULL) || (prCliStaRec == NULL)
-			|| (ucRoleIndex >= 2))
+			|| (ucRoleIndex >= KAL_P2P_NUM))
 			break;
 
 		prP2pGlueInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
