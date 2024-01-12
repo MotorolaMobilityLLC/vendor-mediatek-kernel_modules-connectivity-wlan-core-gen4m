@@ -1366,6 +1366,7 @@ exit:
 		g_fgPreCal = FALSE;
 		update_pre_cal_status(0);
 		g_fgEverCal = TRUE;
+		wlan_precal_done_notify();
 
 		wfsys_unlock();
 	}
@@ -1438,8 +1439,10 @@ int wlan_precal_docal_v2(void)
 
 	DBGLOG(INIT, INFO, "\n");
 
-	if (!g_fgEverCal)
+	if (!g_fgEverCal) {
 		g_fgEverCal = TRUE;
+		wlan_precal_done_notify();
+	}
 
 	if (wfsys_is_locked())
 		wfsys_unlock();
@@ -1471,6 +1474,7 @@ exit:
 		g_fgPreCal = FALSE;
 		update_pre_cal_status(0);
 		g_fgEverCal = TRUE;
+		wlan_precal_done_notify();
 
 		wfsys_unlock();
 	}
@@ -1483,8 +1487,10 @@ int wlan_precal_err(void)
 {
 	DBGLOG(INIT, INFO, "\n");
 
-	if (!g_fgEverCal)
+	if (!g_fgEverCal) {
 		g_fgEverCal = TRUE;
+		wlan_precal_done_notify();
+	}
 
 	if (wfsys_is_locked())
 		wfsys_unlock();
@@ -1508,6 +1514,19 @@ u_int8_t is_cal_flow_finished(void)
 	return g_fgEverCal;
 #endif
 }
+
+void wlan_precal_done_notify(void)
+{
+	DBGLOG(RFTEST, INFO, "wlan precal done\n");
+
+#if CFG_TESTMODE_WMT_WIFI_ON_SUPPORT
+	/* prevent turn on wifi by wmt driver before precal finished */
+	/* so we register cb function after precal done */
+	register_set_wifi_test_mode_fwdl_handler(set_wifi_test_mode_fwdl);
+#endif
+
+}
+
 #endif
 
 void wlanCalDebugCmd(uint32_t cmd, uint32_t para)
