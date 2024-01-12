@@ -2061,6 +2061,8 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 			uint8_t aucBCBSSID[] = BC_BSSID;
 
 			if (!prP2pBssInfo->prStaRecOfAP) {
+				struct P2P_JOIN_INFO *prJoinInfo;
+
 				DBGLOG(P2P, TRACE, "GO's StaRec is NULL\n");
 				/* Receive disconnection request during GC join.
 				  * Abort GC join to prevent STA record leak.
