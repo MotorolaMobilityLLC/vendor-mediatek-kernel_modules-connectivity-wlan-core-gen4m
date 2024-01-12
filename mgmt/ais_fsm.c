@@ -8852,7 +8852,11 @@ void aisFsmRunEventCancelTxWait(struct ADAPTER *prAdapter,
 	aisFunClearAllTxReq(prAdapter, &(prAisFsmInfo->rMgmtTxInfo));
 	aisFsmReleaseCh(prAdapter, ucBssIndex);
 
-	if (prAisBssInfo->eConnectionState ==
+	if (timerPendingTimer(&prAisFsmInfo->rDeauthDoneTimer)) {
+		DBGLOG(AIS, INFO,
+			"[AIS%d][%d] DEAUTH frame is transmitting.\n",
+			prAisFsmInfo->ucAisIndex, ucBssIndex);
+	} else if (prAisBssInfo->eConnectionState ==
 			MEDIA_STATE_CONNECTED)
 		aisFsmSteps(prAdapter, AIS_STATE_NORMAL_TR, ucBssIndex);
 	else
