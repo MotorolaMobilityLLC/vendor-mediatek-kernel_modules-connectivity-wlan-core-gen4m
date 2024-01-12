@@ -1052,6 +1052,10 @@ int priv_driver_get_tdls_num_of_session(
 int priv_driver_set_tdls_enabled(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_TDLS */
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+int priv_driver_set_pcie_speed(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+#endif /* CFG_SUPPORT_PCIE_GEN_SWITCH */
 
 /*******************************************************************************
  *                              F U N C T I O N S

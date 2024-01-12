@@ -8515,6 +8515,14 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #if CFG_SUPPORT_PCIE_ASPM
 	INIT_UINT(prWifiVar->fgPcieEnableL1ss, "PcieEnableL1ss", 1);
 #endif
+
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+	prWifiVar->u4PcieGenSwitchTputThr = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "PcieGenSwitchTputThr", 100);
+	prWifiVar->u4PcieGenSwitchJudgeTime = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "PcieGenSwitchJudgeTime", 10);
+#endif
+
 	prWifiVar->fgEnWfdmaNoMmioRead = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "EnWfdmaNoMmioRead", FEATURE_ENABLED);
 	if (IS_FEATURE_FORCE_ENABLED(prWifiVar->fgEnWfdmaNoMmioRead))

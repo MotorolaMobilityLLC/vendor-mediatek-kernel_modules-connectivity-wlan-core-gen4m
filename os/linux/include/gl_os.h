@@ -1355,6 +1355,11 @@ struct MTK_WCN_WLAN_CB_INFO {
 
 #define MET_TAG_ID	0
 
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+#define PCIE_GEN1    1
+#define PCIE_GEN3    3
+#endif
+
 /*----------------------------------------------------------------------------*/
 /* Macros of Data Type Check                                                  */
 /*----------------------------------------------------------------------------*/

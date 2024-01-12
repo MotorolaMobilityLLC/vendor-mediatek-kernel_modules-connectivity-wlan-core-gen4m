@@ -2282,6 +2282,15 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+	{
+		.pcCmdStr  = CMD_SET_PCIE_SPEED,
+		.pfHandler = priv_driver_set_pcie_speed,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = NULL
+	},
+#endif
 /*
  *	{
  *		.pcCmdStr  = <command string>,

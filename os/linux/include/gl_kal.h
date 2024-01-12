@@ -217,6 +217,10 @@ extern struct platform_device *g_prPlatDev;
 #define VOLT_INFO_MIN_VOLT_THRESH 2650 /* mV */
 #endif
 
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+#define PCIE_GEN_SWITCH_MONITOR_TIMES_MAX 1000000
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -2604,6 +2608,9 @@ void kalRxWorkInit(struct GLUE_INFO *pr);
 void kalRxWorkUninit(struct GLUE_INFO *pr);
 void kalRxWorkSchedule(struct GLUE_INFO *pr);
 #endif /* CFG_SUPPORT_RX_WORK */
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+void kalSetPcieGen(struct ADAPTER *prAdapter);
+#endif /* CFG_SUPPORT_PCIE_GEN_SWITCH */
 
 #endif /* _GL_KAL_H */
 
