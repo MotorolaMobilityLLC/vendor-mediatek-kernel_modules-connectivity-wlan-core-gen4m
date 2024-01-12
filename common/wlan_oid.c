@@ -7832,13 +7832,13 @@ wlanoidSetPpCap(IN struct ADAPTER *prAdapter,
 	tag->u2Length =  sizeof(*tag);
 	tag->u1DbdcIdx = para->u1DbdcIdx;
 	tag->u1PpMgmtMode = para->u1PpMgmtMode;
-	tag->u1PpAutoMode = para->u1PpAutoMode;
+	tag->u1PpMgmtEn = para->u1PpMgmtEn;
 	tag->u1PpCtrl = para->u1PpCtrl;
 	tag->u1PpBitMap = para->u1PpBitMap;
 
 	DBGLOG(INIT, ERROR, "pp_cap_ctrl: %d-%d-%d-%d\n",
 			tag->u1PpMgmtMode,
-			tag->u1PpAutoMode,
+			tag->u1PpMgmtEn,
 			tag->u1PpCtrl,
 			tag->u1PpBitMap);
 
