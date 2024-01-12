@@ -458,14 +458,21 @@ endif
 # ---------------------------------------------------
 # Service git List
 # ---------------------------------------------------
-ifeq ($(MTK_WLAN_SERVICE), yes)
 SERVICE_DIR  := wlan_service/
+
+ifneq ($(findstring wlan_service,$(MTK_WLAN_SERVICE_PATH)),)
+MTK_WLAN_SERVICE=yes
+SERVICE_DIR  := $(MTK_WLAN_SERVICE_PATH)
+$(info SERVICE_DIR is [{$(MTK_WLAN_SERVICE_PATH)}])
+endif
+
+ifeq ($(MTK_WLAN_SERVICE), yes)
 ccflags-y += -DCONFIG_WLAN_SERVICE=1
 ccflags-y += -DCONFIG_TEST_ENGINE_OFFLOAD=1
-ccflags-y += -I$(src)/wlan_service/include
-ccflags-y += -I$(src)/wlan_service/service/include
-ccflags-y += -I$(src)/wlan_service/glue/osal/include
-ccflags-y += -I$(src)/wlan_service/glue/hal/include
+ccflags-y += -I$(src)/$(SERVICE_DIR)include
+ccflags-y += -I$(src)/$(SERVICE_DIR)service/include
+ccflags-y += -I$(src)/$(SERVICE_DIR)glue/osal/include
+ccflags-y += -I$(src)/$(SERVICE_DIR)glue/hal/include
 $(info $$CCFLAG is [{$(ccflags-y)}])
 SERVICE_OBJS := $(SERVICE_DIR)agent/agent.o \
                 $(SERVICE_DIR)service/service_test.o \
