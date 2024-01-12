@@ -160,6 +160,8 @@ VOID kalP2PSetCipher(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Cipher, IN UINT_8
 
 BOOLEAN kalP2PGetCipher(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRoleIdx);
 
+BOOLEAN kalP2PGetWepCipher(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRoleIdx);
+
 BOOLEAN kalP2PGetTkipCipher(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRoleIdx);
 
 BOOLEAN kalP2PGetCcmpCipher(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRoleIdx);

@@ -1482,14 +1482,21 @@ UINT_32 TsfRawData2IqFmt(P_EVENT_DUMP_MEM_T prEventDumpMem)
 	static UINT_8 aucPathWF1[40];	/* the path for iq data dump out */
 	static UINT_8 aucPathRAWWF0[40];	/* the path for iq data dump out */
 	static UINT_8 aucPathRAWWF1[40];	/* the path for iq data dump out */
-	PUINT_8 pucDataWF0;	/* the data write into file */
-	PUINT_8 pucDataWF1;	/* the data write into file */
-	PUINT_8 pucDataRAWWF0;	/* the data write into file */
-	PUINT_8 pucDataRAWWF1;	/* the data write into file */
+	PUINT_8 pucDataWF0 = NULL;	/* the data write into file */
+	PUINT_8 pucDataWF1 = NULL;	/* the data write into file */
+	PUINT_8 pucDataRAWWF0 = NULL;	/* the data write into file */
+	PUINT_8 pucDataRAWWF1 = NULL;	/* the data write into file */
 	UINT_32 u4SrcOffset;	/* record the buffer offset */
 	UINT_32 u4FmtLen = 0;	/* bus format length */
 	UINT_32 u4CpyLen = 0;
 	UINT_32 u4RemainByte;
+	UINT_32 u4DataWBufSize = 150;
+	UINT_32 u4DataRAWWBufSize = 150;
+	UINT_32 u4DataWLenF0 = 0;
+	UINT_32 u4DataWLenF1 = 0;
+	UINT_32 u4DataRAWWLenF0 = 0;
+	UINT_32 u4DataRAWWLenF1 = 0;
+
 	BOOLEAN fgAppend;
 	INT_32 u4Iqc160WF0Q0, u4Iqc160WF1I1;
 
@@ -1500,10 +1507,21 @@ UINT_32 TsfRawData2IqFmt(P_EVENT_DUMP_MEM_T prEventDumpMem)
 	static ICAP_BUS_FMT icapBusData;
 	UINT_32 *ptr;
 
-	pucDataWF0 = kmalloc(150, GFP_KERNEL);
-	pucDataWF1 = kmalloc(150, GFP_KERNEL);
-	pucDataRAWWF0 = kmalloc(150, GFP_KERNEL);
-	pucDataRAWWF1 = kmalloc(150, GFP_KERNEL);
+	pucDataWF0 = kmalloc(u4DataWBufSize, GFP_KERNEL);
+	pucDataWF1 = kmalloc(u4DataWBufSize, GFP_KERNEL);
+	pucDataRAWWF0 = kmalloc(u4DataRAWWBufSize, GFP_KERNEL);
+	pucDataRAWWF1 = kmalloc(u4DataRAWWBufSize, GFP_KERNEL);
+
+
+	if ((!pucDataWF0) || (!pucDataWF1) || (!pucDataRAWWF0) || (!pucDataRAWWF1)) {
+		DBGLOG(INIT, ERROR, "kmalloc failed.\n");
+		kfree(pucDataWF0);
+		kfree(pucDataWF1);
+		kfree(pucDataRAWWF0);
+		kfree(pucDataRAWWF1);
+		ASSERT(-1);
+		return -1;
+	}
 
 	fgAppend = TRUE;
 	if (prEventDumpMem->ucFragNum == 1) {
@@ -1515,31 +1533,31 @@ UINT_32 TsfRawData2IqFmt(P_EVENT_DUMP_MEM_T prEventDumpMem)
 #if defined(LINUX)
 
 		/*if blbist mkdir undre /data/blbist, the dump files wouls put on it */
-		sprintf(aucPathWF0, "/dump_out_%05ld_WF0.txt", g_u2DumpIndex);
-		sprintf(aucPathWF1, "/dump_out_%05ld_WF1.txt", g_u2DumpIndex);
+		scnprintf(aucPathWF0, sizeof(aucPathWF0), "/dump_out_%05ld_WF0.txt", g_u2DumpIndex);
+		scnprintf(aucPathWF1, sizeof(aucPathWF1), "/dump_out_%05ld_WF1.txt", g_u2DumpIndex);
 		if (kalCheckPath(aucPathWF0) == -1) {
 			kalMemSet(aucPathWF0, 0x00, sizeof(aucPathWF0));
-			sprintf(aucPathWF0, "/data/dump_out_%05ld_WF0.txt", g_u2DumpIndex);
+			scnprintf(aucPathWF0, sizeof(aucPathWF0), "/data/dump_out_%05ld_WF0.txt", g_u2DumpIndex);
 		} else
 			kalTrunkPath(aucPathWF0);
 
 		if (kalCheckPath(aucPathWF1) == -1) {
 			kalMemSet(aucPathWF1, 0x00, sizeof(aucPathWF1));
-			sprintf(aucPathWF1, "/data/dump_out_%05ld_WF1.txt", g_u2DumpIndex);
+			scnprintf(aucPathWF1, sizeof(aucPathWF1), "/data/dump_out_%05ld_WF1.txt", g_u2DumpIndex);
 		} else
 			kalTrunkPath(aucPathWF1);
 
-		sprintf(aucPathRAWWF0, "/dump_RAW_%05ld_WF0.txt", g_u2DumpIndex);
-		sprintf(aucPathRAWWF1, "/dump_RAW_%05ld_WF1.txt", g_u2DumpIndex);
+		scnprintf(aucPathRAWWF0, sizeof(aucPathRAWWF0), "/dump_RAW_%05ld_WF0.txt", g_u2DumpIndex);
+		scnprintf(aucPathRAWWF1, sizeof(aucPathRAWWF1), "/dump_RAW_%05ld_WF1.txt", g_u2DumpIndex);
 		if (kalCheckPath(aucPathRAWWF0) == -1) {
 			kalMemSet(aucPathRAWWF0, 0x00, sizeof(aucPathRAWWF0));
-			sprintf(aucPathRAWWF0, "/data/dump_RAW_%05ld_WF0.txt", g_u2DumpIndex);
+			scnprintf(aucPathRAWWF0, sizeof(aucPathRAWWF0), "/data/dump_RAW_%05ld_WF0.txt", g_u2DumpIndex);
 		} else
 			kalTrunkPath(aucPathRAWWF0);
 
 		if (kalCheckPath(aucPathRAWWF1) == -1) {
 			kalMemSet(aucPathRAWWF1, 0x00, sizeof(aucPathRAWWF1));
-			sprintf(aucPathRAWWF1, "/data/dump_RAW_%05ld_WF1.txt", g_u2DumpIndex);
+			scnprintf(aucPathRAWWF1, sizeof(aucPathRAWWF1), "/data/dump_RAW_%05ld_WF1.txt", g_u2DumpIndex);
 		} else
 			kalTrunkPath(aucPathRAWWF1);
 
@@ -1586,10 +1604,12 @@ UINT_32 TsfRawData2IqFmt(P_EVENT_DUMP_MEM_T prEventDumpMem)
 #endif
 		if (prEventDumpMem->eIcapContent == ICAP_CONTENT_FIIQ ||
 		    prEventDumpMem->eIcapContent == ICAP_CONTENT_FDIQ) {
-			sprintf(pucDataWF0, "%8d,%8d\n", icapBusData.rIqcBusData.u4Iqc0I,
-				icapBusData.rIqcBusData.u4Iqc0Q);
-			sprintf(pucDataWF1, "%8d,%8d\n", icapBusData.rIqcBusData.u4Iqc1I,
-				icapBusData.rIqcBusData.u4Iqc1Q);
+			u4DataWLenF0 = scnprintf(pucDataWF0, u4DataWBufSize, "%8d,%8d\n",
+						 icapBusData.rIqcBusData.u4Iqc0I,
+						 icapBusData.rIqcBusData.u4Iqc0Q);
+			u4DataWLenF1 = scnprintf(pucDataWF1, u4DataWBufSize, "%8d,%8d\n",
+						 icapBusData.rIqcBusData.u4Iqc1I,
+						 icapBusData.rIqcBusData.u4Iqc1Q);
 		} else if (prEventDumpMem->eIcapContent - 1000 == ICAP_CONTENT_FIIQ
 			   || prEventDumpMem->eIcapContent - 1000 == ICAP_CONTENT_FDIQ) {
 			u4Iqc160WF0Q0 =
@@ -1597,57 +1617,82 @@ UINT_32 TsfRawData2IqFmt(P_EVENT_DUMP_MEM_T prEventDumpMem)
 			u4Iqc160WF1I1 =
 			    icapBusData.rIqc160BusData.u4Iqc1I1P1 | (icapBusData.rIqc160BusData.u4Iqc1I1P2 << 4);
 
-			sprintf(pucDataWF0, "%8d,%8d\n%8d,%8d\n", icapBusData.rIqc160BusData.u4Iqc0I0, u4Iqc160WF0Q0,
-				icapBusData.rIqc160BusData.u4Iqc0I1, icapBusData.rIqc160BusData.u4Iqc0Q1);
+			u4DataWLenF0 = scnprintf(pucDataWF0, u4DataWBufSize, "%8d,%8d\n%8d,%8d\n",
+						 icapBusData.rIqc160BusData.u4Iqc0I0, u4Iqc160WF0Q0,
+						 icapBusData.rIqc160BusData.u4Iqc0I1,
+						 icapBusData.rIqc160BusData.u4Iqc0Q1);
 
-			sprintf(pucDataWF1, "%8d,%8d\n%8d,%8d\n", icapBusData.rIqc160BusData.u4Iqc1I0,
-				icapBusData.rIqc160BusData.u4Iqc1Q0, u4Iqc160WF1I1,
-				icapBusData.rIqc160BusData.u4Iqc1Q1);
+			u4DataWLenF1 = scnprintf(pucDataWF1, u4DataWBufSize, "%8d,%8d\n%8d,%8d\n",
+						 icapBusData.rIqc160BusData.u4Iqc1I0,
+						 icapBusData.rIqc160BusData.u4Iqc1Q0, u4Iqc160WF1I1,
+						 icapBusData.rIqc160BusData.u4Iqc1Q1);
 
 		} else if (prEventDumpMem->eIcapContent == ICAP_CONTENT_SPECTRUM) {
-			sprintf(pucDataWF0, "%8d,%8d\n", icapBusData.rSpectrumBusData.u4DcocI,
-				icapBusData.rSpectrumBusData.u4DcocQ);
+			u4DataWLenF0 = scnprintf(pucDataWF0, u4DataWBufSize, "%8d,%8d\n",
+						 icapBusData.rSpectrumBusData.u4DcocI,
+						 icapBusData.rSpectrumBusData.u4DcocQ);
 		} else if (prEventDumpMem->eIcapContent == ICAP_CONTENT_ADC) {
-			sprintf(pucDataWF0, "%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n",
-				icapBusData.rPackedAdcBusData.u4AdcI0T0, icapBusData.rPackedAdcBusData.u4AdcQ0T0,
-				icapBusData.rPackedAdcBusData.u4AdcI0T1, icapBusData.rPackedAdcBusData.u4AdcQ0T1,
-				icapBusData.rPackedAdcBusData.u4AdcI0T2, icapBusData.rPackedAdcBusData.u4AdcQ0T2,
-				icapBusData.rPackedAdcBusData.u4AdcI0T3, icapBusData.rPackedAdcBusData.u4AdcQ0T3,
-				icapBusData.rPackedAdcBusData.u4AdcI0T4, icapBusData.rPackedAdcBusData.u4AdcQ0T4,
-				icapBusData.rPackedAdcBusData.u4AdcI0T5, icapBusData.rPackedAdcBusData.u4AdcQ0T5);
+			u4DataWLenF0 = scnprintf(pucDataWF0, u4DataWBufSize,
+						 "%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n",
+						 icapBusData.rPackedAdcBusData.u4AdcI0T0,
+						 icapBusData.rPackedAdcBusData.u4AdcQ0T0,
+						 icapBusData.rPackedAdcBusData.u4AdcI0T1,
+						 icapBusData.rPackedAdcBusData.u4AdcQ0T1,
+						 icapBusData.rPackedAdcBusData.u4AdcI0T2,
+						 icapBusData.rPackedAdcBusData.u4AdcQ0T2,
+						 icapBusData.rPackedAdcBusData.u4AdcI0T3,
+						 icapBusData.rPackedAdcBusData.u4AdcQ0T3,
+						 icapBusData.rPackedAdcBusData.u4AdcI0T4,
+						 icapBusData.rPackedAdcBusData.u4AdcQ0T4,
+						 icapBusData.rPackedAdcBusData.u4AdcI0T5,
+						 icapBusData.rPackedAdcBusData.u4AdcQ0T5);
 
-			sprintf(pucDataWF1, "%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n",
-				icapBusData.rPackedAdcBusData.u4AdcI1T0, icapBusData.rPackedAdcBusData.u4AdcQ1T0,
-				icapBusData.rPackedAdcBusData.u4AdcI1T1, icapBusData.rPackedAdcBusData.u4AdcQ1T1,
-				icapBusData.rPackedAdcBusData.u4AdcI1T2, icapBusData.rPackedAdcBusData.u4AdcQ1T2,
-				icapBusData.rPackedAdcBusData.u4AdcI1T3, icapBusData.rPackedAdcBusData.u4AdcQ1T3,
-				icapBusData.rPackedAdcBusData.u4AdcI1T4, icapBusData.rPackedAdcBusData.u4AdcQ1T4,
-				icapBusData.rPackedAdcBusData.u4AdcI1T5, icapBusData.rPackedAdcBusData.u4AdcQ1T5);
+			u4DataWLenF1 = scnprintf(pucDataWF1, u4DataWBufSize,
+						 "%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n%8d,%8d\n",
+						 icapBusData.rPackedAdcBusData.u4AdcI1T0,
+						 icapBusData.rPackedAdcBusData.u4AdcQ1T0,
+						 icapBusData.rPackedAdcBusData.u4AdcI1T1,
+						 icapBusData.rPackedAdcBusData.u4AdcQ1T1,
+						 icapBusData.rPackedAdcBusData.u4AdcI1T2,
+						 icapBusData.rPackedAdcBusData.u4AdcQ1T2,
+						 icapBusData.rPackedAdcBusData.u4AdcI1T3,
+						 icapBusData.rPackedAdcBusData.u4AdcQ1T3,
+						 icapBusData.rPackedAdcBusData.u4AdcI1T4,
+						 icapBusData.rPackedAdcBusData.u4AdcQ1T4,
+						 icapBusData.rPackedAdcBusData.u4AdcI1T5,
+						 icapBusData.rPackedAdcBusData.u4AdcQ1T5);
 		} else if (prEventDumpMem->eIcapContent - 2000 == ICAP_CONTENT_ADC) {
-			sprintf(pucDataWF0, "%8d,%8d\n%8d,%8d\n%8d,%8d\n",
-				icapBusData.rPackedAdcBusData.u4AdcI0T0, icapBusData.rPackedAdcBusData.u4AdcQ0T0,
-				icapBusData.rPackedAdcBusData.u4AdcI0T1, icapBusData.rPackedAdcBusData.u4AdcQ0T1,
-				icapBusData.rPackedAdcBusData.u4AdcI0T2, icapBusData.rPackedAdcBusData.u4AdcQ0T2);
+			u4DataWLenF0 = scnprintf(pucDataWF0, u4DataWBufSize, "%8d,%8d\n%8d,%8d\n%8d,%8d\n",
+						 icapBusData.rPackedAdcBusData.u4AdcI0T0,
+						 icapBusData.rPackedAdcBusData.u4AdcQ0T0,
+						 icapBusData.rPackedAdcBusData.u4AdcI0T1,
+						 icapBusData.rPackedAdcBusData.u4AdcQ0T1,
+						 icapBusData.rPackedAdcBusData.u4AdcI0T2,
+						 icapBusData.rPackedAdcBusData.u4AdcQ0T2);
 
-			sprintf(pucDataWF1, "%8d,%8d\n%8d,%8d\n%8d,%8d\n",
-				icapBusData.rPackedAdcBusData.u4AdcI1T0, icapBusData.rPackedAdcBusData.u4AdcQ1T0,
-				icapBusData.rPackedAdcBusData.u4AdcI1T1, icapBusData.rPackedAdcBusData.u4AdcQ1T1,
-				icapBusData.rPackedAdcBusData.u4AdcI1T2, icapBusData.rPackedAdcBusData.u4AdcQ1T2);
+			u4DataWLenF1 = scnprintf(pucDataWF1, u4DataWBufSize, "%8d,%8d\n%8d,%8d\n%8d,%8d\n",
+						 icapBusData.rPackedAdcBusData.u4AdcI1T0,
+						 icapBusData.rPackedAdcBusData.u4AdcQ1T0,
+						 icapBusData.rPackedAdcBusData.u4AdcI1T1,
+						 icapBusData.rPackedAdcBusData.u4AdcQ1T1,
+						 icapBusData.rPackedAdcBusData.u4AdcI1T2,
+						 icapBusData.rPackedAdcBusData.u4AdcQ1T2);
 		} else if (prEventDumpMem->eIcapContent == ICAP_CONTENT_TOAE) {
 			/* actually, this is DCOC. we take TOAE as DCOC */
-			sprintf(pucDataWF0, "%8d,%8d\n", icapBusData.rAdcBusData.u4Dcoc0I,
-				icapBusData.rAdcBusData.u4Dcoc0Q);
-			sprintf(pucDataWF1, "%8d,%8d\n", icapBusData.rAdcBusData.u4Dcoc1I,
-				icapBusData.rAdcBusData.u4Dcoc1Q);
+			u4DataWLenF0 = scnprintf(pucDataWF0, u4DataWBufSize, "%8d,%8d\n",
+						 icapBusData.rAdcBusData.u4Dcoc0I, icapBusData.rAdcBusData.u4Dcoc0Q);
+			u4DataWLenF1 = scnprintf(pucDataWF1, u4DataWBufSize, "%8d,%8d\n",
+						 icapBusData.rAdcBusData.u4Dcoc1I, icapBusData.rAdcBusData.u4Dcoc1Q);
 		}
 		if (u4CpyLen == u4FmtLen) {	/* the data format is complete */
-			kalWriteToFile(aucPathWF0, fgAppend, pucDataWF0, strlen(pucDataWF0));
-			kalWriteToFile(aucPathWF1, fgAppend, pucDataWF1, strlen(pucDataWF1));
+			kalWriteToFile(aucPathWF0, fgAppend, pucDataWF0, u4DataWLenF0);
+			kalWriteToFile(aucPathWF1, fgAppend, pucDataWF1, u4DataWLenF1);
 		}
 		ptr = (PUINT_32)(&prEventDumpMem->aucBuffer[0] + u4SrcOffset);
-		sprintf(pucDataRAWWF0, "%08x%08x%08x\n", *(ptr + 2), *(ptr + 1), *ptr);
-		kalWriteToFile(aucPathRAWWF0, fgAppend, pucDataRAWWF0, strlen(pucDataRAWWF0));
-		kalWriteToFile(aucPathRAWWF1, fgAppend, pucDataRAWWF1, strlen(pucDataRAWWF1));
+		u4DataRAWWLenF0 = scnprintf(pucDataRAWWF0, u4DataWBufSize, "%08x%08x%08x\n",
+					    *(ptr + 2), *(ptr + 1), *ptr);
+		kalWriteToFile(aucPathRAWWF0, fgAppend, pucDataRAWWF0, u4DataRAWWLenF0);
+		kalWriteToFile(aucPathRAWWF1, fgAppend, pucDataRAWWF1, u4DataRAWWLenF1);
 
 		u4RemainByte -= u4CpyLen;
 		u4SrcOffset += u4CpyLen;	/* shift offset */
@@ -2265,11 +2310,11 @@ VOID nicEventRddPulseDump(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
 
 	u2PulseCnt = (prRddPulseEvent->u4FuncLength - RDD_EVENT_HDR_SIZE) / RDD_ONEPLUSE_SIZE;
 
-	TOOL_PRINTLOG(INIT, INFO, "[RDD]0x%08x %08d[RDD%d]\n", prRddPulseEvent->u4Prefix
+	DBGLOG(INIT, INFO, "[RDD]0x%08x %08d[RDD%d]\n", prRddPulseEvent->u4Prefix
 			, prRddPulseEvent->u4Count, prRddPulseEvent->ucRddIdx);
 
 	for (u2Idx = 0; u2Idx < u2PulseCnt; u2Idx++) {
-		TOOL_PRINTLOG(INIT, INFO, "[RDD]0x%02x%02x%02x%02x %02x%02x%02x%02x[RDD%d]\n"
+		DBGLOG(INIT, INFO, "[RDD]0x%02x%02x%02x%02x %02x%02x%02x%02x[RDD%d]\n"
 			, prRddPulseEvent->aucBuffer[RDD_ONEPLUSE_SIZE*u2Idx+RDD_PULSE_OFFSET3]
 			, prRddPulseEvent->aucBuffer[RDD_ONEPLUSE_SIZE*u2Idx+RDD_PULSE_OFFSET2]
 			, prRddPulseEvent->aucBuffer[RDD_ONEPLUSE_SIZE*u2Idx+RDD_PULSE_OFFSET1]
@@ -2282,7 +2327,7 @@ VOID nicEventRddPulseDump(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
 			);
 	}
 
-	TOOL_PRINTLOG(INIT, INFO, "[RDD]0x%08x %08x[RDD%d]\n", prRddPulseEvent->u4SubBandRssi0
+	DBGLOG(INIT, INFO, "[RDD]0x%08x %08x[RDD%d]\n", prRddPulseEvent->u4SubBandRssi0
 			, prRddPulseEvent->u4SubBandRssi1, prRddPulseEvent->ucRddIdx);
 
 }

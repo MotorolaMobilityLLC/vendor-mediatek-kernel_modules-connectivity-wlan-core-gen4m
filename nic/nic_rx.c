@@ -3012,6 +3012,7 @@ VOID nicRxQueryStatus(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuffer, OUT PUINT_
 {
 	P_RX_CTRL_T prRxCtrl;
 	PUINT_8 pucCurrBuf = pucBuffer;
+	UINT_32 u4CurrCount;
 
 	ASSERT(prAdapter);
 	prRxCtrl = &prAdapter->rRxCtrl;
@@ -3020,13 +3021,21 @@ VOID nicRxQueryStatus(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuffer, OUT PUINT_
 	/* if (pucBuffer) {} *//* For Windows, we'll print directly instead of sprintf() */
 	ASSERT(pu4Count);
 
-	SPRINTF(pucCurrBuf, ("\n\nRX CTRL STATUS:"));
-	SPRINTF(pucCurrBuf, ("\n==============="));
-	SPRINTF(pucCurrBuf, ("\nFREE RFB w/i BUF LIST :%9ld", prRxCtrl->rFreeSwRfbList.u4NumElem));
-	SPRINTF(pucCurrBuf, ("\nFREE RFB w/o BUF LIST :%9ld", prRxCtrl->rIndicatedRfbList.u4NumElem));
-	SPRINTF(pucCurrBuf, ("\nRECEIVED RFB LIST     :%9ld", prRxCtrl->rReceivedRfbList.u4NumElem));
+#define SPRINTF_RX_QSTATUS(arg) \
+	{ \
+		u4CurrCount = scnprintf(pucCurrBuf, *pu4Count, PRINTF_ARG arg); \
+		pucCurrBuf += (UINT_8)u4CurrCount; \
+		*pu4Count -= u4CurrCount; \
+	}
 
-	SPRINTF(pucCurrBuf, ("\n\n"));
+
+	SPRINTF_RX_QSTATUS(("\n\nRX CTRL STATUS:"));
+	SPRINTF_RX_QSTATUS(("\n==============="));
+	SPRINTF_RX_QSTATUS(("\nFREE RFB w/i BUF LIST :%9ld", prRxCtrl->rFreeSwRfbList.u4NumElem));
+	SPRINTF_RX_QSTATUS(("\nFREE RFB w/o BUF LIST :%9ld", prRxCtrl->rIndicatedRfbList.u4NumElem));
+	SPRINTF_RX_QSTATUS(("\nRECEIVED RFB LIST     :%9ld", prRxCtrl->rReceivedRfbList.u4NumElem));
+
+	SPRINTF_RX_QSTATUS(("\n\n"));
 
 	/* *pu4Count = (UINT_32)((UINT_32)pucCurrBuf - (UINT_32)pucBuffer); */
 
@@ -3068,6 +3077,7 @@ VOID nicRxQueryStatistics(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuffer, OUT PU
 {
 	P_RX_CTRL_T prRxCtrl;
 	PUINT_8 pucCurrBuf = pucBuffer;
+	UINT_32 u4CurrCount;
 
 	ASSERT(prAdapter);
 	prRxCtrl = &prAdapter->rRxCtrl;
@@ -3077,7 +3087,12 @@ VOID nicRxQueryStatistics(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuffer, OUT PU
 	ASSERT(pu4Count);
 
 #define SPRINTF_RX_COUNTER(eCounter) \
-	SPRINTF(pucCurrBuf, ("%-30s : %ld\n", #eCounter, (UINT_32)prRxCtrl->au8Statistics[eCounter]))
+	{ \
+		u4CurrCount = scnprintf(pucCurrBuf, *pu4Count, "%-30s : %ld\n", \
+					#eCounter, (UINT_32)prRxCtrl->au8Statistics[eCounter]); \
+		pucCurrBuf += (UINT_8)u4CurrCount; \
+		*pu4Count -= u4CurrCount; \
+	}
 
 	SPRINTF_RX_COUNTER(RX_MPDU_TOTAL_COUNT);
 	SPRINTF_RX_COUNTER(RX_SIZE_ERR_DROP_COUNT);
