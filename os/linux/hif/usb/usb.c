@@ -1629,10 +1629,11 @@ u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
+enum ENUM_CMD_TX_RESULT kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo,
+		IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
 {
 	halTxUSBSendCmd(prGlueInfo, ucTC, prCmdInfo);
-	return TRUE;
+	return CMD_TX_RESULT_SUCCESS;
 }
 
 void glGetDev(void *ctx, struct device **dev)

@@ -2030,7 +2030,7 @@ uint32_t halWpdmaGetRxDmaDoneCnt(IN struct GLUE_INFO *prGlueInfo,
 	return u4RxPktCnt;
 }
 
-bool halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
+enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 		      IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
@@ -2078,7 +2078,7 @@ bool halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 		DBGLOG(HAL, ERROR, "Error TxCpuIdx[%u]\n", prTxRing->TxCpuIdx);
 		if (prMemOps->freeBuf)
 			prMemOps->freeBuf(pucSrc, u4TotalLen);
-		return FALSE;
+		return CMD_TX_RESULT_FAILED;
 	}
 
 	pTxCell = &prTxRing->Cell[prTxRing->TxCpuIdx];
@@ -2093,7 +2093,7 @@ bool halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 		if (prMemOps->freeBuf)
 			prMemOps->freeBuf(pucSrc, u4TotalLen);
 		ASSERT(0);
-		return FALSE;
+		return CMD_TX_RESULT_FAILED;
 	}
 
 	pTxD->SDPtr0 = (uint64_t)pTxCell->PacketPa & DMA_LOWER_32BITS_MASK;
@@ -2136,7 +2136,7 @@ bool halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 				TRUE),
 			TRUE);
 
-	return TRUE;
+	return CMD_TX_RESULT_SUCCESS;
 }
 
 static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
@@ -2812,6 +2812,7 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 			/* update Beacon frame if operating in AP mode. */
 			DBGLOG(HAL, INFO, "SER(T) Host re-initialize BCN\n");
 			nicSerReInitBeaconFrame(prAdapter);
+			wlanClearPendingCommandQueue(prAdapter);
 
 			kalDevKickCmd(prAdapter->prGlueInfo);
 			kalDevKickData(prAdapter->prGlueInfo);

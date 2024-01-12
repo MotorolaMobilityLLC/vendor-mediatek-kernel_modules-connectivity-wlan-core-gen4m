@@ -422,6 +422,13 @@ struct KAL_THREAD_SCHEDSTATS {
 	unsigned long long iowait;
 };
 
+enum ENUM_CMD_TX_RESULT {
+	CMD_TX_RESULT_SUCCESS,
+	CMD_TX_RESULT_FAILED,
+	CMD_TX_RESULT_QUEUED,
+	CMD_TX_RESULT_NUM
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -1139,7 +1146,7 @@ KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 #else
 u_int8_t kalDevWriteData(IN struct GLUE_INFO *prGlueInfo,
 			 IN struct MSDU_INFO *prMsduInfo);
-u_int8_t kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo,
+enum ENUM_CMD_TX_RESULT kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 			IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC);
 u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo);
 #endif

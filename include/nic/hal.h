@@ -335,10 +335,15 @@ do { \
 
 #define HAL_WRITE_TX_CMD(_prAdapter, _prCmdInfo, _ucTC) \
 { \
+	enum ENUM_CMD_TX_RESULT ret; \
 	if (_prAdapter->rAcpiState == ACPI_STATE_D3) { \
 		ASSERT(0); \
 	} \
-	kalDevWriteCmd(_prAdapter->prGlueInfo, _prCmdInfo, _ucTC); \
+	ret = kalDevWriteCmd(_prAdapter->prGlueInfo, _prCmdInfo, _ucTC); \
+	if (ret == CMD_TX_RESULT_SUCCESS) { \
+		if (_prCmdInfo && _prCmdInfo->pfHifTxCmdDoneCb) \
+			_prCmdInfo->pfHifTxCmdDoneCb(_prAdapter, _prCmdInfo); \
+	} \
 }
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
