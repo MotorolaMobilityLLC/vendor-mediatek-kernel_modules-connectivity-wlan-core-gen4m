@@ -432,26 +432,26 @@ void *cnmMemAlloc(struct ADAPTER *prAdapter, enum ENUM_RAM_TYPE eRamType,
 
 #ifdef LINUX
 #if CFG_DBG_MGT_BUF
-	pvMemory = (void *) kalMemAlloc(u4Length + sizeof(struct MEM_TRACK),
+	pvMemory = kalMemAlloc(u4Length + sizeof(struct MEM_TRACK),
 		PHY_MEM_TYPE);
 	if (pvMemory) {
-		struct MEM_TRACK *prMemTrack = (struct MEM_TRACK *)pvMemory;
+		struct MEM_TRACK *prMemTrack = pvMemory;
 
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MGT_BUF);
 		LINK_INSERT_TAIL(
 			&prAdapter->rMemTrackLink, &prMemTrack->rLinkEntry);
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MGT_BUF);
 		prMemTrack->pucFileAndLine = fileAndLine;
-		prMemTrack->u2CmdIdAndWhere = 0x0000;
-		pvMemory = (void *)(prMemTrack + 1);
+		prMemTrack->ucCmdId = 0;
+		prMemTrack->ucWhere = 0;
+		pvMemory = prMemTrack->aucData;
 	} else {
 		DBGLOG(MEM, WARN,
 			"kalMemAlloc fail, type: %d sz: %lu\n",
-			eRamType,
-			u4Length + sizeof(struct MEM_TRACK));
+			eRamType, u4Length + sizeof(struct MEM_TRACK));
 	}
 #else
-	pvMemory = (void *) kalMemAlloc(u4Length, PHY_MEM_TYPE);
+	pvMemory = kalMemAlloc(u4Length, PHY_MEM_TYPE);
 	if (!pvMemory)
 		DBGLOG(MEM, WARN,
 			"kalMemAlloc fail, type: %d sz: %u\n",
@@ -533,8 +533,9 @@ void cnmMemFree(struct ADAPTER *prAdapter, void *pvMemory)
 	} else {
 #ifdef LINUX
 #if CFG_DBG_MGT_BUF
-		struct MEM_TRACK *prTrack = (struct MEM_TRACK *)
-			((uint8_t *)pvMemory - sizeof(struct MEM_TRACK));
+		struct MEM_TRACK *prTrack =
+			CONTAINER_OF((uint8_t (*)[])pvMemory,
+				     struct MEM_TRACK, aucData);
 
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_MGT_BUF);
 		LINK_REMOVE_KNOWN_ENTRY(

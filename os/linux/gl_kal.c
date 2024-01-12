@@ -6452,17 +6452,16 @@ void kalEnqueueCommand(struct GLUE_INFO *prGlueInfo,
 
 #if CFG_DBG_MGT_BUF
 	if (prCmdInfo->pucInfoBuffer &&
-			!IS_FROM_BUF(prGlueInfo->prAdapter,
-				prCmdInfo->pucInfoBuffer)) {
-		prMemTrack = (struct MEM_TRACK *)
-			((uint8_t *)prCmdInfo->pucInfoBuffer -
-				sizeof(struct MEM_TRACK));
-		prMemTrack->u2CmdIdAndWhere = 0;
-		prMemTrack->u2CmdIdAndWhere |= prCmdInfo->ucCID;
-		/* 0x10 means the CmdId enqueue to rCmdQueue
-		 *	and is waiting for main_thread handling
+	    !IS_FROM_BUF(prGlueInfo->prAdapter, prCmdInfo->pucInfoBuffer)) {
+		prMemTrack =
+			CONTAINER_OF((uint8_t (*)[])prCmdInfo->pucInfoBuffer,
+				     struct MEM_TRACK, aucData);
+
+		prMemTrack->ucCmdId = prCmdInfo->ucCID;
+		/* 0x10 means the CmdId enqueue to rCmdQueue and is waiting for
+		 * main_thread handling
 		 */
-		prMemTrack->u2CmdIdAndWhere |= 0x1000;
+		prMemTrack->ucWhere = 0x10;
 
 	}
 #endif
