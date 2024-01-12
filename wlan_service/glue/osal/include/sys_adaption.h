@@ -336,4 +336,6 @@ boolean sys_ad_wait_os_task(
 	void *reserved, struct serv_os_task *task, s_int32 *status);
 void sys_ad_wakeup_os_task(struct serv_os_task *task);
 
+void sys_ad_mem_dump32(void *ptr, u_long length);
+
 #endif /* __SYS_ADAPTION_H__ */

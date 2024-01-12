@@ -2228,17 +2228,21 @@ static s_int32 hqa_calibration_test_mode(
 	/* Set parameters */
 	test_config = &serv_test->test_config[serv_test->ctrl_band_idx];
 
-	if (mode == fTEST_OPER_NORMAL_MODE) {
-		test_config->op_mode &=
-			~(fTEST_FFT_ENABLE | fTEST_IN_RFTEST);
-	} else if (mode == fTEST_OPER_RFTEST_MODE) {
-		test_config->op_mode |= fTEST_IN_RFTEST;
-	} else if (mode == fTEST_OPER_ICAP_MODE) {
-		test_config->op_mode |= fTEST_IN_RFTEST;
-	} else {
+	if (test_config) {
+		if (mode == fTEST_OPER_NORMAL_MODE) {
+			test_config->op_mode &=
+				~(fTEST_FFT_ENABLE | fTEST_IN_RFTEST);
+		} else if (mode == fTEST_OPER_RFTEST_MODE) {
+			test_config->op_mode |= fTEST_IN_RFTEST;
+		} else if (mode == fTEST_OPER_ICAP_MODE) {
+			test_config->op_mode |= fTEST_IN_RFTEST;
+		} else {
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: Mode = %d error!!!\n", __func__, mode));
+		}
+	} else
 		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
-		("%s: Mode = %d error!!!\n", __func__, mode));
-	}
+			("%s: Mode = test_config is null!!!\n", __func__));
 
 	ret = mt_serv_calibration_test_mode(serv_test, mode);
 
@@ -4414,6 +4418,10 @@ static struct priv_hqa_cmd_id_mapping priv_hqa_cmd_mapping[] = {
 	{4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 6} },
 	{"GetRXStatisticsAll", 0x1506,
 	{0} },
+	{"CalibrationTestMode", 0x1509,
+	{4, 4} },
+	{"CapWiFiSpectrum", 0x1580,
+	{4, 4, 4, 4, 4, 4, 4, 4, 4, 6} },
 };
 
 s_int32 mt_agent_hqa_cmd_string_parser(

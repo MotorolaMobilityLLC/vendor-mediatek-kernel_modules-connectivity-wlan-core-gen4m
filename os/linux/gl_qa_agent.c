@@ -7624,7 +7624,7 @@ int32_t mt6632GetICapStatus(struct GLUE_INFO *prGlueInfo)
 	prAdapter = prGlueInfo->prAdapter;
 	ASSERT(prAdapter);
 
-	if (prAdapter->rIcapInfo.fgCaptureDone) {
+	if (prAdapter->rIcapInfo.eIcapState == ICAP_STATE_FW_DUMP_DONE) {
 		DBGLOG(RFTEST, INFO,
 		       "QA_AGENT HQA_CapWiFiSpectrum Done!!!!!!!!!!!!!!!!!\n");
 		return 0;
@@ -7646,13 +7646,14 @@ int32_t connacSetICapStart(struct GLUE_INFO *prGlueInfo,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 	if (u4Trigger) {
-		if (prGlueInfo->prAdapter->rIcapInfo.fgIcapEnable) {
+		if (prGlueInfo->prAdapter->rIcapInfo.eIcapState
+			!= ICAP_STATE_INIT) {
 			log_dbg(RFTEST, ERROR, "Already starting, ignore\n");
 			return 1;
 		}
 	} else {
 		log_dbg(RFTEST, INFO, "Shutdown Icap\n");
-		prGlueInfo->prAdapter->rIcapInfo.fgIcapEnable = FALSE;
+		prGlueInfo->prAdapter->rIcapInfo.eIcapState = ICAP_STATE_INIT;
 		if (prGlueInfo->prAdapter->rIcapInfo.prIQArray != NULL)
 			kalMemFree(prGlueInfo->prAdapter->rIcapInfo.prIQArray,
 				   VIR_MEM_TYPE,
@@ -7660,7 +7661,6 @@ int32_t connacSetICapStart(struct GLUE_INFO *prGlueInfo,
 		prGlueInfo->prAdapter->rIcapInfo.u4IQArrayIndex = 0;
 		prGlueInfo->prAdapter->rIcapInfo.u4ICapEventCnt = 0;
 		prGlueInfo->prAdapter->rIcapInfo.prIQArray = NULL;
-		prGlueInfo->prAdapter->rIcapInfo.fgICapStartDump = FALSE;
 		return 0;
 	}
 
@@ -7708,7 +7708,7 @@ int32_t connacSetICapStart(struct GLUE_INFO *prGlueInfo,
 	prICapInfo->u4EnBitWidth = 0;
 	prICapInfo->u4Architech = 1;
 	prICapInfo->u4PhyIdx = 0;
-#ifdef CONFIG_MTK_EMI
+#if (CFG_MTK_ANDROID_EMI == 1)
 	prICapInfo->u4EmiStartAddress =
 		(uint32_t) (gConEmiPhyBase & 0xFFFFFFFF);
 	prICapInfo->u4EmiEndAddress =
@@ -7758,18 +7758,23 @@ int32_t connacGetICapStatus(struct GLUE_INFO *prGlueInfo)
 	struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T rRfATInfo;
 	uint32_t u4BufLen = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	enum ENUM_ICAP_STATE eIcapState = ICAP_STATE_INIT;
+
 
 	ASSERT(prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
 	ASSERT(prAdapter);
 
-	if (prAdapter->rIcapInfo.fgCaptureDone) {
+	eIcapState = prGlueInfo->prAdapter->rIcapInfo.eIcapState;
+
+	/*FW dump IQ data done*/
+	if (eIcapState == ICAP_STATE_FW_DUMP_DONE) {
 		DBGLOG(RFTEST, INFO,
 		       "QA_AGENT HQA_CapWiFiSpectrum Done!!!!!!!!!!!!!!!!!\n");
 		return 0;
 	}
 
-	if (!prGlueInfo->prAdapter->rIcapInfo.fgICapStartDump) {
+	if (eIcapState != ICAP_STATE_FW_DUMPING) {
 		rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
 				   wlanoidExtRfTestICapStatus,
 				   &rRfATInfo,	/* pvInfoBuf */
@@ -7819,44 +7824,54 @@ int32_t commonGetICapIQData(struct GLUE_INFO *prGlueInfo,
 int32_t connacGetICapIQData(struct GLUE_INFO *prGlueInfo,
 			    uint8_t *pData, uint32_t u4IQType, uint32_t u4WFNum)
 {
+	struct RBIST_DUMP_IQ_T rRbistDump;
 	struct ADAPTER *prAdapter;
-	struct _RBIST_IQ_DATA_T *prIQArray = NULL;
 	struct ICAP_INFO_T *prICapInfo = NULL;
-	int32_t i = 0;
-	uint32_t u4MaxTxCount = 0;
-	uint32_t u4DumpIndex = 0;
-	uint32_t u4Value, u4RespLen = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	uint32_t i = 0;
+	uint32_t u4Value = 0;
 
 	ASSERT(prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
 	ASSERT(prAdapter);
 	prICapInfo = &prAdapter->rIcapInfo;
-	prIQArray = prICapInfo->prIQArray;
-	ASSERT(prIQArray);
-	u4DumpIndex = prICapInfo->au4ICapDumpIndex[u4WFNum][u4IQType];
 
-	/* 1. Maximum 1KB = ICAP_EVENT_DATA_SAMPLE (256) slots */
-	u4MaxTxCount = prICapInfo->u4IQArrayIndex - u4DumpIndex;
-	if (u4MaxTxCount > ICAP_EVENT_DATA_SAMPLE)
-		u4MaxTxCount = ICAP_EVENT_DATA_SAMPLE;
+	rRbistDump.u4IQType = u4IQType;
+	rRbistDump.u4WfNum = u4WFNum;
+	rRbistDump.u4IcapCnt = 0;
+	rRbistDump.u4IcapDataLen = 0;
+	rRbistDump.pucIcapData = pData;
 
-	DBGLOG(RFTEST, INFO, "prICapInfo->au4ICapDumpIndex[%d][%c] = %d\n",
-						u4WFNum,
-						(u4IQType == CAP_I_TYPE) ?
-						'I' : 'Q',
-						u4DumpIndex);
+	if ((prICapInfo->eIcapState == ICAP_STATE_FW_DUMP_DONE) ||
+		(prICapInfo->eIcapState == ICAP_STATE_QA_TOOL_CAPTURE)) {
+		rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
+				   wlanoidRfTestICapGetIQData,
+				   &rRbistDump,	/* pvInfoBuf */
+				   sizeof(rRbistDump),	/* u4InfoBufLen */
+				   TRUE,	/* fgRead */
+				   TRUE,	/* fgWaitResp */
+				   FALSE,	/* fgCmd */
+				   &u4BufLen);	/* pu4QryInfoLen */
 
-	/* 2. Copy to buffer */
-	for (i = 0; i < u4MaxTxCount; i++) {
-		u4Value = prIQArray[u4DumpIndex++].u4IQArray[u4WFNum][u4IQType];
-		u4Value = ntohl(u4Value);
-		kalMemCopy(pData + u4RespLen, (uint8_t *) &u4Value,
-						sizeof(u4Value));
-		u4RespLen += sizeof(u4Value);
+	} else
+		DBGLOG(RFTEST, ERROR, "ICAP IQ Dump fail in State = %d\n",
+			prICapInfo->eIcapState);
+
+	/*IQ data network byte oder transfer to host byte order*/
+	/*each (I or Q) data size is 4Byte*/
+	if (rStatus == WLAN_STATUS_SUCCESS) {
+		for (i = 0; i < rRbistDump.u4IcapDataLen;
+		  i += sizeof(uint32_t)) {
+			u4Value = *(pData + i);
+			u4Value = ntohl(u4Value);
+			kalMemCopy((pData + i),
+				(uint8_t *) &u4Value,
+				sizeof(u4Value));
+		}
 	}
-	prICapInfo->au4ICapDumpIndex[u4WFNum][u4IQType] = u4DumpIndex;
-	DBGLOG(RFTEST, INFO, "u4MaxTxCount = %d\n", u4MaxTxCount);
-	return u4MaxTxCount;
+
+	return rRbistDump.u4IcapDataLen;
 }
 
 

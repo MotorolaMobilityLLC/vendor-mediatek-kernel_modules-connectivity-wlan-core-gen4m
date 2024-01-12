@@ -71,6 +71,7 @@
 #if KERNEL_VERSION(3, 8, 0) <= CFG80211_VERSION_CODE
 #include <uapi/linux/nl80211.h>
 #endif
+
 /*******************************************************************************
  *						C O N S T A N T S
  *******************************************************************************
@@ -4226,6 +4227,89 @@ int32_t TxBfPseudoTagUpdate(struct net_device *prNetDev,
 #endif
 #endif /*CFG_SUPPORT_QA_TOOL */
 #if (CONFIG_WLAN_SERVICE == 1)
+uint32_t ServiceIcapInit(struct ADAPTER *prAdapter)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct ATE_OPS_T *prAteOps = NULL;
+	struct ICAP_INFO_T *prIcapInfo = NULL;
+	uint32_t u4IQArrayLen = 0;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+
+	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
+	ASSERT(prChipInfo);
+	prAteOps = prChipInfo->prAteOps;
+	ASSERT(prAteOps);
+	prIcapInfo = &prAdapter->rIcapInfo;
+	ASSERT(prIcapInfo);
+
+	u4IQArrayLen =
+		MAX_ICAP_IQ_DATA_CNT * sizeof(struct _RBIST_IQ_DATA_T);
+
+	/*init IQ data array*/
+	if (!prIcapInfo->prIQArray) {
+		prIcapInfo->prIQArray =
+				kalMemAlloc(u4IQArrayLen, VIR_MEM_TYPE);
+		if (!prIcapInfo->prIQArray) {
+			DBGLOG(RFTEST, ERROR,
+				"Not enough memory for IQ_Array\n");
+			return WLAN_STATUS_NOT_ACCEPTED;
+		}
+	}
+	prIcapInfo->u4IQArrayIndex = 0;
+	prIcapInfo->u4ICapEventCnt = 0;
+
+	kalMemZero(prIcapInfo->au4ICapDumpIndex,
+		sizeof(prIcapInfo->au4ICapDumpIndex));
+	kalMemZero(prIcapInfo->prIQArray, u4IQArrayLen);
+
+
+	if (prIcapInfo->eIcapState == ICAP_STATE_INIT) {
+
+		if (prAteOps->icapRiseVcoreClockRate)
+			prAteOps->icapRiseVcoreClockRate();
+
+		u4Status = WLAN_STATUS_SUCCESS;
+	} else {
+		DBGLOG(RFTEST, ERROR, "icap start ignore state in %d\n",
+			prIcapInfo->eIcapState);
+		u4Status = WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	DBGLOG(RFTEST, STATE, "%s done\n", __func__);
+
+	return u4Status;
+}
+uint32_t ServiceIcapDeInit(struct ADAPTER *prAdapter)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct ATE_OPS_T *prAteOps = NULL;
+	struct ICAP_INFO_T *prIcapInfo = NULL;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
+	ASSERT(prChipInfo);
+	prAteOps = prChipInfo->prAteOps;
+	ASSERT(prAteOps);
+	prIcapInfo = &prAdapter->rIcapInfo;
+	ASSERT(prIcapInfo);
+
+	if (prAteOps->icapDownVcoreClockRate)
+		prAteOps->icapDownVcoreClockRate();
+
+	if (prIcapInfo->prIQArray != NULL)
+		kalMemFree(prIcapInfo->prIQArray,
+			   VIR_MEM_TYPE,
+			   0);
+
+	prIcapInfo->u4IQArrayIndex = 0;
+	prIcapInfo->u4ICapEventCnt = 0;
+	prIcapInfo->prIQArray = NULL;
+
+	return u4Status;
+}
 uint32_t ServiceWlanOid(void *winfos,
 	 enum op_wlan_oid oidType,
 	 void *param,
@@ -4235,6 +4319,7 @@ uint32_t ServiceWlanOid(void *winfos,
 {
 	int32_t i4Status = 0;
 	uint32_t u4BufLen2;
+	uint32_t *resp;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct RECAL_INFO_T *prReCalInfo = NULL;
@@ -4245,6 +4330,7 @@ uint32_t ServiceWlanOid(void *winfos,
 #if CFG_SUPPORT_ANT_SWAP
 	struct mt66xx_chip_info *prChipInfo = NULL;
 #endif
+	struct ICAP_INFO_T *prIcapInfo = NULL;
 
 	ASSERT(winfos);
 
@@ -4255,13 +4341,16 @@ uint32_t ServiceWlanOid(void *winfos,
 	prTestWinfo = (struct test_wlan_info *)winfos;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prTestWinfo->net_dev));
+	ASSERT(prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
+	ASSERT(prAdapter);
 	prReCalInfo = &prAdapter->rReCalInfo;
-
-	if (prGlueInfo == NULL) {
-		DBGLOG(INIT, WARN, "prGlueInfo is NULL:%d\n");
-		return WLAN_STATUS_FAILURE;
-	}
+#if CFG_SUPPORT_ANT_SWAP
+	prChipInfo = prAdapter->chip_info;
+	ASSERT(prChipInfo);
+#endif
+	prIcapInfo = &prAdapter->rIcapInfo;
+	ASSERT(prIcapInfo);
 
 	/* Normal set */
 	fgRead = FALSE;
@@ -4285,9 +4374,63 @@ uint32_t ServiceWlanOid(void *winfos,
 		fgWaitResp = TRUE;
 		fgCmd = TRUE;
 		break;
+	/* ICAP Operation Function -- Start*/
 	case OP_WLAN_OID_SET_TEST_ICAP_MODE:
 		pfnOidHandler = wlanoidRftestSetTestIcapMode;
 		break;
+	case OP_WLAN_OID_SET_TEST_ICAP_START:
+		ServiceIcapInit(prAdapter);
+		pfnOidHandler = wlanoidExtRfTestICapStart;
+		prIcapInfo->eIcapState = ICAP_STATE_START;
+		break;
+	case OP_WLAN_OID_SET_TEST_ICAP_ABORT:
+		i4Status = ServiceIcapDeInit(prAdapter);
+		prIcapInfo->eIcapState = ICAP_STATE_INIT;
+		return i4Status;
+	case OP_WLAN_OID_SET_TEST_ICAP_STATUS:
+
+		if (!rsp_data)
+			return WLAN_STATUS_INVALID_DATA;
+
+		resp = (uint32_t *)rsp_data;
+
+		if (prIcapInfo->eIcapState == ICAP_STATE_FW_DUMP_DONE) {
+			DBGLOG(RFTEST, INFO, "icap capture done!\n");
+			*resp = 0; /*response QA TOOL CAPTURE success*/
+			 return WLAN_STATUS_SUCCESS;
+		} else if (prIcapInfo->eIcapState == ICAP_STATE_FW_DUMPING) {
+			DBGLOG(RFTEST, INFO, "icap fw dumping !!!\n");
+			*resp = 1; /*response QA TOOL CAPTURE wait*/
+			return WLAN_STATUS_SUCCESS;
+		}
+
+		pfnOidHandler = wlanoidExtRfTestICapStatus;
+		prIcapInfo->eIcapState = ICAP_STATE_QUERY_STATUS;
+		*resp = 1; /*response QA TOOL CAPTURE wait*/
+
+		break;
+	case OP_WLAN_OID_GET_TEST_ICAP_MAX_DATA_LEN:
+		/* Maximum 1KB = ICAP_EVENT_DATA_SAMPLE (256) slots */
+		if (!rsp_data)
+			return WLAN_STATUS_INVALID_DATA;
+
+		resp = (uint32_t *)rsp_data;
+		*resp = ICAP_EVENT_DATA_SAMPLE * sizeof(uint32_t);
+		return WLAN_STATUS_SUCCESS;
+	case OP_WLAN_OID_GET_TEST_ICAP_DATA:
+		if ((prIcapInfo->eIcapState != ICAP_STATE_QA_TOOL_CAPTURE) &&
+			(prIcapInfo->eIcapState != ICAP_STATE_FW_DUMP_DONE)) {
+			DBGLOG(RFTEST, ERROR, "ICAP State = %d don't support\n",
+				prIcapInfo->eIcapState);
+			return WLAN_STATUS_NOT_SUPPORTED;
+		}
+		pfnOidHandler = wlanoidRfTestICapGetIQData;
+		prIcapInfo->eIcapState = ICAP_STATE_QA_TOOL_CAPTURE;
+		fgRead = TRUE;
+		fgWaitResp = FALSE;
+		fgCmd = FALSE;
+		break;
+	/* ICAP Operation Function -- END*/
 	case OP_WLAN_OID_RFTEST_QUERY_AUTO_TEST:
 		pfnOidHandler = wlanoidRftestQueryAutoTest;
 		fgRead = TRUE;
@@ -4316,7 +4459,6 @@ uint32_t ServiceWlanOid(void *winfos,
 		return WLAN_STATUS_SUCCESS;
 	case OP_WLAN_OID_GET_ANTSWAP_CAPBILITY:
 #if CFG_SUPPORT_ANT_SWAP
-		prChipInfo = prGlueInfo->prAdapter->chip_info;
 		if (!prChipInfo) {
 			DBGLOG(RFTEST, ERROR, "prChipInfo is NULL\n");
 			return -EFAULT;
