@@ -114,9 +114,7 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 					}
 
 					if (profile->ucLinkId ==
-						bss->ucLinkIndex &&
-					    EQUAL_MAC_ADDR(profile->aucLinkAddr,
-						bss->aucOwnMacAddr)) {
+					    bss->ucLinkIndex) {
 						found = TRUE;
 						break;
 					}
