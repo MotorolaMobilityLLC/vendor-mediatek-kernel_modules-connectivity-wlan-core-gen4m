@@ -1782,20 +1782,9 @@ u_int8_t wlanQueryTestMode(struct ADAPTER *prAdapter);
 u_int8_t wlanProcessTxFrame(struct ADAPTER *prAdapter,
 			    void *prPacket);
 
-uint32_t wlanProcessCmdDataFrame(struct ADAPTER *prAdapter,
-				 void *prPacket);
-
-void wlanCmdDataFrameTxTimeout(struct ADAPTER *prAdapter,
-				struct CMD_INFO *prCmdInfo);
-
 uint32_t wlanGetThreadWakeUp(struct ADAPTER *prAdapter);
 
 uint32_t wlanGetTxdAppendSize(struct ADAPTER *prAdapter);
-
-void wlanCmdDataFrameTxDone(struct ADAPTER *prAdapter,
-			     struct CMD_INFO *prCmdInfo,
-			     uint8_t *pucEventBuf);
-
 
 /*----------------------------------------------------------------------------*/
 /* OID/IOCTL Handling                                                         */

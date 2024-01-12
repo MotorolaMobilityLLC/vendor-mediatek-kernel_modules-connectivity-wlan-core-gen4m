@@ -1152,10 +1152,6 @@ uint8_t nicTxGetCmdResourceType(struct CMD_INFO
 		ucTC = TC4_INDEX;
 		break;
 
-	case COMMAND_TYPE_DATA_FRAME:
-		ucTC = nicTxGetFrameResourceType(FRAME_TYPE_802_1X, NULL);
-		break;
-
 	case COMMAND_TYPE_MANAGEMENT_FRAME:
 		ucTC = nicTxGetFrameResourceType(FRAME_TYPE_MMPDU,
 						 prCmdInfo->prMsduInfo);
@@ -2929,64 +2925,7 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 	if (!halTxIsCmdBufEnough(prAdapter))
 		return WLAN_STATUS_RESOURCES;
 
-	if (prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME) {
-		prMsduInfo = prCmdInfo->prMsduInfo;
-
-		/* dump TXD to debug TX issue */
-		if (prAdapter->rWifiVar.ucDataTxDone == 3) {
-			struct CHIP_DBG_OPS *prDbgOps =
-				prAdapter->chip_info->prDebugOps;
-			if (prDbgOps && prDbgOps->dumpTxdInfo)
-				prDbgOps->dumpTxdInfo(prAdapter,
-				(uint8_t *)prMsduInfo->aucTxDescBuffer);
-		}
-
-		prCmdInfo->pucTxd = prMsduInfo->aucTxDescBuffer;
-		if (prTxDescOps->nic_txd_long_format_op(
-			prMsduInfo->aucTxDescBuffer, FALSE))
-			prCmdInfo->u4TxdLen = NIC_TX_DESC_LONG_FORMAT_LENGTH;
-		else
-			prCmdInfo->u4TxdLen = NIC_TX_DESC_SHORT_FORMAT_LENGTH;
-
-		kalGetPacketBuf(prMsduInfo->prPacket,
-				&(prCmdInfo->pucTxp));
-		prCmdInfo->u4TxpLen =
-			kalQueryPacketLength(prMsduInfo->prPacket);
-
-#if CFG_TX_CMD_SMART_SEQUENCE
-		HAL_WRITE_TX_CMD_SMART_SEQ(prAdapter, prCmdInfo, ucTC);
-#else /* CFG_TX_CMD_SMART_SEQUENCE */
-		HAL_WRITE_TX_CMD(prAdapter, prCmdInfo, ucTC);
-#endif /* CFG_TX_CMD_SMART_SEQUENCE */
-
-		prMsduInfo->prPacket = NULL;
-
-		DBGLOG_LIMITED(INIT, TRACE,
-		       "TX Data Frame: BSS[%u] WIDX:PID[%u:%u] SEQ[%u] STA[%u] RSP[%u]\n",
-		       prMsduInfo->ucBssIndex, prMsduInfo->ucWlanIndex,
-		       prMsduInfo->ucPID,
-		       prMsduInfo->ucTxSeqNum, prMsduInfo->ucStaRecIndex,
-		       prMsduInfo->pfTxDoneHandler ? TRUE : FALSE);
-
-		if (prMsduInfo->pfTxDoneHandler) {
-#if !CFG_TX_CMD_SMART_SEQUENCE
-			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-					SPIN_LOCK_TXING_MGMT_LIST);
-			QUEUE_INSERT_TAIL(&(prTxCtrl->rTxMgmtTxingQueue),
-					prMsduInfo);
-			KAL_RELEASE_SPIN_LOCK(prAdapter,
-					SPIN_LOCK_TXING_MGMT_LIST);
-#endif /* !CFG_TX_CMD_SMART_SEQUENCE */
-		} else {
-			/* Only return MSDU_INFO */
-			/* NativePacket will be freed at
-			 * CmdData frame CMD callback
-			 */
-			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
-		}
-
-	} else if (prCmdInfo->eCmdType ==
-		   COMMAND_TYPE_MANAGEMENT_FRAME) {
+	if (prCmdInfo->eCmdType == COMMAND_TYPE_MANAGEMENT_FRAME) {
 		prMsduInfo = prCmdInfo->prMsduInfo;
 
 		ASSERT(prMsduInfo->fgIs802_11 == TRUE);
@@ -3904,117 +3843,6 @@ uint32_t nicTxInitResetResource(struct ADAPTER
 
 #endif
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Handle data packet that will send to firmware
- *
- *
- * @param prAdapter      Pointer to the Adapter structure.
- * @param prMsduInfo     Pointer of MSDU_INFO
- *
- * @retval TRUE   Process success.
- */
-/*----------------------------------------------------------------------------*/
-u_int8_t nicTxProcessCmdDataPacket(struct ADAPTER *prAdapter,
-			       struct MSDU_INFO *prMsduInfo)
-{
-#if (CFG_SUPPORT_CONNAC2X == 0)
-#define _SET_PKT_FORMAT HAL_MAC_TX_DESC_SET_PKT_FORMAT
-#define _SET_REMAINING_LIFE_TIME_IN_MS \
-	HAL_MAC_TX_DESC_SET_REMAINING_LIFE_TIME_IN_MS
-#define _SET_PID HAL_MAC_TX_DESC_SET_PID
-#define _TX_DESC struct HW_MAC_TX_DESC*
-#else
-#define _SET_PKT_FORMAT HAL_MAC_CONNAC2X_TXD_SET_PKT_FORMAT
-#define _SET_REMAINING_LIFE_TIME_IN_MS \
-	HAL_MAC_CONNAC2X_TXD_SET_REMAINING_LIFE_TIME_IN_MS
-#define _SET_PID HAL_MAC_CONNAC2X_TXD_SET_PID
-#define _TX_DESC struct HW_MAC_CONNAC2X_TX_DESC*
-#endif
-#if NIC_TX_DESC_PID_RESERVED
-	static const uint8_t DATA_PID_MIN = NIC_TX_DESC_DRIVER_PID_DATA_MIN;
-#else
-	static const uint8_t DATA_PID_MIN = NIC_TX_DESC_DRIVER_PID_MIN;
-#endif
-	struct BSS_INFO *prBssInfo;
-	_TX_DESC prTxDesc;
-
-	/* Sanity check */
-	if (!prMsduInfo->prPacket) {
-		DBGLOG_LIMITED(TX, WARN, "MSDU prPacket is null\n");
-		return FALSE;
-	}
-
-	if (!prMsduInfo->u2FrameLength) {
-		DBGLOG_LIMITED(TX, WARN, "MSDU u2FrameLength is 0\n");
-		return FALSE;
-	}
-
-	if (!prMsduInfo->ucMacHeaderLength) {
-		DBGLOG_LIMITED(TX, WARN, "MSDU ucMacHeaderLength is 0\n");
-		return FALSE;
-	}
-
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-					  prMsduInfo->ucBssIndex);
-	/* Set StaRecIndex here*/
-	qmDetermineStaRecIndex(prAdapter, prMsduInfo);
-	prMsduInfo->eSrc = TX_PACKET_OS;
-
-	/* MMPDU: force stick to TC4 */
-	prMsduInfo->ucTC = TC4_INDEX;
-
-	/* No Tx descriptor template for MMPDU */
-	prMsduInfo->fgIsTXDTemplateValid = FALSE;
-
-	/* Set packet type to data to fill correct TxD */
-	prMsduInfo->ucPacketType = TX_PACKET_TYPE_DATA;
-
-#if CFG_SUPPORT_MULTITHREAD
-	nicTxFillDesc(prAdapter, prMsduInfo,
-		      prMsduInfo->aucTxDescBuffer, NULL);
-	/* DBGLOG_MEM32(HAL, ERROR, prMsduInfo->aucTxDescBuffer, 64); */
-#endif
-
-	/*
-	 * Adjust TxD for command data after fill description
-	 */
-	prTxDesc = (_TX_DESC) prMsduInfo->aucTxDescBuffer;
-
-	/* (1) Force set packet format to command for command data*/
-#if (UNIFIED_MAC_TX_FORMAT == 1)
-	_SET_PKT_FORMAT(prTxDesc, TXD_PKT_FORMAT_COMMAND);
-#endif
-
-	/* (2) Set remaining TX time to no limit as cut-through data.
-	 * Not use arTcTrafficSettings[TC4_INDEX].u4RemainingTxTime;
-	 */
-	if (!(prMsduInfo->u4Option & MSDU_OPT_MANUAL_LIFE_TIME))
-		prMsduInfo->u4RemainingLifetime = TX_DESC_TX_TIME_NO_LIMIT;
-
-	_SET_REMAINING_LIFE_TIME_IN_MS(prTxDesc,
-			prMsduInfo->u4RemainingLifetime);
-
-	/* (3) If prMsduInfo->pfTxDoneHandler is not set (ie. PID is not set)
-	 * Still set PID for command data packet for firmware usage. Driver
-	 * does not handle EVENT_ID_TX_DONE in this case
-	 */
-	if (prMsduInfo->ucPID < DATA_PID_MIN) {
-		prMsduInfo->ucPID = nicTxAssignPID(prAdapter,
-					   prMsduInfo->ucWlanIndex,
-					   TX_PACKET_TYPE_DATA);
-
-		_SET_PID(prTxDesc, prMsduInfo->ucPID);
-	}
-
-#undef _SET_PKT_FORMAT
-#undef _SET_REMAINING_LIFE_TIME_IN_MS
-#undef _SET_PID
-#undef _TX_DESC
-
-	return TRUE;
-}
-
 u_int8_t nicTxProcessMngPacket(struct ADAPTER *prAdapter,
 			       struct MSDU_INFO *prMsduInfo)
 {
@@ -4854,7 +4682,6 @@ uint32_t nicTxGetCmdPageCount(struct ADAPTER *prAdapter,
 		break;
 
 	case COMMAND_TYPE_MANAGEMENT_FRAME:
-	case COMMAND_TYPE_DATA_FRAME:
 		/* No TxD append field for management packet */
 		u4PageCount = halTxGetCmdPageCount(prAdapter,
 			prCmdInfo->u2InfoBufLen +
