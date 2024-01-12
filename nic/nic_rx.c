@@ -839,7 +839,7 @@ struct SW_RFB *nicRxDefragMPDU(struct ADAPTER *prAdapter,
 
 			if (ucSecMode != CIPHER_SUITE_NONE)
 				DBGLOG(RX, INFO,
-					"SN:%04x NxPN:%016x PN:%016x\n",
+					"SN:%04x NxPN:%llx PN:%llx\n",
 					prFragInfo->u2SeqNo,
 					prFragInfo->u8NextPN,
 					u8PN);
@@ -2322,7 +2322,7 @@ static void nicRxProcessIcsLog(struct ADAPTER *prAdapter,
 		ret = kalIcsWrite(pucRecvBuff, u4Size);
 		if (ret != u4Size) {
 			DBGLOG_LIMITED(NIC, INFO,
-				"dropped written:%d rxByteCount:%d\n",
+				"dropped written:%zd rxByteCount:%u\n",
 				ret, prIcsAggHeader->rxByteCount);
 			RX_INC_CNT(&prAdapter->rRxCtrl,
 				RX_ICS_DROP_COUNT);

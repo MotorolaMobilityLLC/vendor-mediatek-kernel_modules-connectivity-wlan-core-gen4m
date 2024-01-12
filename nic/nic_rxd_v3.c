@@ -762,7 +762,7 @@ void nic_rxd_v3_check_wakeup_reason(
 #endif
 				} else {
 					DBGLOG(RX, INFO,
-						"Wakeup by frame type[0x%x]\n",
+						"Wakeup by frame type[0x%lx]\n",
 						prHeader->u2FrameCtrl &
 							MASK_FRAME_TYPE);
 				}
