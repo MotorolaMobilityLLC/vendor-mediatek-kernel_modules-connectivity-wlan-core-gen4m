@@ -161,6 +161,7 @@ struct PCIE_CHIP_CR_MAPPING bellwether_bus2chip_cr_mapping[] = {
 	{0x7c500000, 0x50000, 0x10000}, /* CONN_INFRA, dyn mem map */
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
+	{0x0, 0x0, 0x0} /* End */
 };
 #endif
 

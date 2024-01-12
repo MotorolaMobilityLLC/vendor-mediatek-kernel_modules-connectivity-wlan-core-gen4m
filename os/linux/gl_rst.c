@@ -76,7 +76,7 @@
 #include "precomp.h"
 #include "gl_rst.h"
 
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 #include "fw_log_wifi.h"
 #endif
 

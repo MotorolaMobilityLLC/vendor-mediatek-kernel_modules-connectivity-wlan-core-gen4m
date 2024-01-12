@@ -304,7 +304,7 @@ wlanSendSetQueryCmdHelper(IN struct ADAPTER *prAdapter,
 		    enum EUNM_CMD_SEND_METHOD eMethod)
 {
 	struct WIFI_UNI_SETQUERY_INFO info;
-	struct LINK *link;
+	struct LINK *link = &info.rUniCmdList;
 	struct WIFI_UNI_CMD_ENTRY *entry, *next;
 	uint32_t status = 0;
 
@@ -340,8 +340,6 @@ wlanSendSetQueryCmdHelper(IN struct ADAPTER *prAdapter,
 	status = arUniCmdTable[ucCID](prAdapter, &info);
 	if (status != WLAN_STATUS_SUCCESS)
 		goto done;
-
-	link = &info.rUniCmdList;
 
 	LINK_FOR_EACH_ENTRY_SAFE(entry, next,
 		link, rLinkEntry, struct WIFI_UNI_CMD_ENTRY) {

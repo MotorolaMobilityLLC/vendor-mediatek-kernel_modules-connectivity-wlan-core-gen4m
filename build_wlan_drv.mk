@@ -6,13 +6,13 @@ LOCAL_MODULE_OWNER := mtk
 
 LOCAL_REQUIRED_MODULES := $(WIFI_CHRDEV_MODULE)
 
-ifeq ($(CONNAC_VER), 2_0)
-LOCAL_REQUIRED_MODULES += conninfra.ko
+ifeq ($(CONNAC_VER), 3_0)
+else ifeq ($(CONNAC_VER), 2_0)
+	LOCAL_REQUIRED_MODULES += conninfra.ko
+	LOCAL_REQUIRED_MODULES += connfem.ko
 else
-LOCAL_REQUIRED_MODULES += wmt_drv.ko
+	LOCAL_REQUIRED_MODULES += wmt_drv.ko
 endif
-
-LOCAL_REQUIRED_MODULES += connfem.ko
 
 include $(MTK_KERNEL_MODULE)
 
