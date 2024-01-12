@@ -1492,6 +1492,8 @@ else
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_EXT), y)
+    EXT_DIR     := ext/
+    ccflags-y += -DCFG_EXT_VERSION=2
     ccflags-y += -DCFG_EXT_FEATURE=1
     ccflags-y += -DCFG_EXT_SCAN=1
     ccflags-y += -DCFG_EXT_ROAMING=1
@@ -1732,6 +1734,10 @@ ccflags-y += -I$(KO_CODE_PATH)/os -I$(KO_CODE_PATH)/os/$(os)/include
 ccflags-y += -I$(KO_CODE_PATH)/include -I$(KO_CODE_PATH)/include/nic -I$(KO_CODE_PATH)/include/mgmt -I$(KO_CODE_PATH)/include/chips -I$(KO_CODE_PATH)/include/wpa_supp
 ifeq ($(CONFIG_MTK_WIFI_NAN), y)
 ccflags-y += -I$(KO_CODE_PATH)/include/nan
+endif
+ifeq ($(CONFIG_MTK_WIFI_EXT), y)
+ccflags-y += -I$(KO_CODE_PATH)/$(EXT_DIR)include/
+ccflags-y += -I$(KO_CODE_PATH)/$(EXT_DIR)include/mgmt
 endif
 ifeq ($(CFG_SUPPORT_WIFI_SYSDVT), 1)
 ccflags-y += -I$(KO_CODE_PATH)/include/dvt
@@ -1984,9 +1990,6 @@ endif
 # ---------------------------------------------------
 COMMON_DIR  := common/
 OS_DIR      := os/$(os)/
-ifeq ($(CONFIG_MTK_WIFI_EXT), y)
-EXT_DIR     := ../gen4m_ext/
-endif
 HIF_COMMON_DIR := $(OS_DIR)hif/common/
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
 HIF_DIR	    := os/$(os)/hif/sdio/

@@ -812,7 +812,7 @@ subelem:
 		}
 	}
 
-#if CFG_EXT_SCAN
+#ifdef CFG_EXT_SCAN_FIXME /* CFG_EXT_SCAN */
 	if (prMsg->eScanChannel == SCAN_CHANNEL_SPECIFIED &&
 		prMsg->ucChannelListNum == 0) {
 		DBGLOG(RRM, WARN, "ch num is 0! set to FULL scan\n");

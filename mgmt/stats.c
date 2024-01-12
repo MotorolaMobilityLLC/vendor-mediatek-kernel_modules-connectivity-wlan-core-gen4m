@@ -404,7 +404,7 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucEthBody,
 				msg_type, u2IpId, prDhcp->aucDhcpOption[2],
 				u4TransID);
 #if (CFG_SUPPORT_CONN_LOG == 1)
-			connLogDhcpRx(prAdapter,
+			connLogDhcpRx(g_prAdapter,
 				GLUE_GET_PKT_BSS_IDX(pvPacket),
 				u4DhcpOpt);
 #endif
@@ -417,7 +417,7 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucEthBody,
 				prDhcp->aucDhcpOption[2],
 				GLUE_GET_PKT_SEQ_NO(pvPacket));
 #if (CFG_SUPPORT_CONN_LOG == 1)
-			connLogDhcpTx(prAdapter,
+			connLogDhcpTx(g_prAdapter,
 				GLUE_GET_PKT_BSS_IDX(pvPacket),
 				u4DhcpOpt,
 				GLUE_GET_PKT_SEQ_NO(pvPacket));
@@ -730,7 +730,7 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 					pucEapol[8]);
 #if (CFG_SUPPORT_CONN_LOG == 1)
 				connLogEapRx(
-					prAdapter,
+					g_prAdapter,
 					GLUE_GET_PKT_BSS_IDX(pvPacket),
 					u2EapLen,
 					pucEapol[8],
@@ -746,7 +746,7 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 					GLUE_GET_PKT_SEQ_NO(pvPacket));
 #if (CFG_SUPPORT_CONN_LOG == 1)
 				connLogEapTx(
-					prAdapter,
+					g_prAdapter,
 					GLUE_GET_PKT_BSS_IDX(pvPacket),
 					u2EapLen,
 					pucEapol[8],
@@ -772,7 +772,7 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 		case ETH_EAPOL_KEY: /* key */
 			WLAN_GET_FIELD_BE16(&pucEapol[5], &u2KeyInfo);
 #if (CFG_SUPPORT_CONN_LOG == 1)
-			connLogEapKey(prAdapter,
+			connLogEapKey(g_prAdapter,
 				GLUE_GET_PKT_BSS_IDX(pvPacket),
 				eventType,
 				pucEapol,

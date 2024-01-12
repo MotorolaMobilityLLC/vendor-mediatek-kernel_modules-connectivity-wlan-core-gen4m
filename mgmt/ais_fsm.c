@@ -3219,6 +3219,9 @@ void aisFsmGetCurrentEssChnlList(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	struct LINK *prNeighborAPLink;
 #endif
 	struct CFG_SCAN_CHNL *prRoamScnChnl = &prAdapter->rAddRoamScnChnl;
+#if (CFG_SUPPORT_ROAMING_LOG == 1)
+	uint16_t u2ApNum = 0;
+#endif
 
 	if (!prConnSettings)  {
 		log_dbg(SCN, INFO, "No prConnSettings\n");
@@ -3263,6 +3266,9 @@ void aisFsmGetCurrentEssChnlList(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 			prBssDesc->eBSSType != BSS_TYPE_INFRASTRUCTURE)
 			continue;
 
+#if (CFG_SUPPORT_ROAMING_LOG == 1)
+		u2ApNum++;
+#endif
 #if CFG_SUPPORT_NCHO
 		/* scan control is 1: use NCHO channel list only */
 		if (prAdapter->rNchoInfo.u4RoamScanControl)
