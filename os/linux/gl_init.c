@@ -4228,12 +4228,12 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 		}
 #endif
 #endif
+	}
 
 #if CFG_SUPPORT_DBDC
-		/* Update DBDC default setting */
-		cnmInitDbdcSetting(prAdapter);
+	/* Update DBDC default setting */
+	cnmInitDbdcSetting(prAdapter);
 #endif /*CFG_SUPPORT_DBDC*/
-	}
 
 	/* send regulatory information to firmware */
 	rlmDomainSendInfoToFirmware(prAdapter);
