@@ -425,6 +425,8 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
 /* HIF Sys Revision */
 #define HIF_SYS_REV						(PCIE_HIF_BASE + 0x0000)
 
+#define CONN_HIF_RST					(PCIE_HIF_BASE + 0x0100)
+
 /* HIF Low Power Control Host Register */
 #define CFG_PCIE_LPCR_HOST				(PCIE_HIF_BASE + 0x01F0)
 

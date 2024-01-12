@@ -367,6 +367,7 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 {
 	halUninitMsduTokenInfo(prGlueInfo->prAdapter);
 	halWpdmaFreeRing(prGlueInfo);
+	halHifRst(prGlueInfo);
 }
 
 /*----------------------------------------------------------------------------*/
