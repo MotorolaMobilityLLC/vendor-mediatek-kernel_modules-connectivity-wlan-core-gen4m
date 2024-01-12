@@ -3842,11 +3842,7 @@ void cnmDbdcPreConnectionEnableDecision(
 		}
 	}
 
-	if (eRfBand != BAND_2G4 && eRfBand != BAND_5G
-#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
-							&& eRfBand != BAND_6G
-#endif
-	){
+	if (eRfBand == BAND_NULL) {
 		log_dbg(CNM, INFO, "[DBDC Debug] Wrong RF band Return");
 		return;
 	}

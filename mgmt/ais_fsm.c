@@ -1757,7 +1757,7 @@ uint8_t aisBssDescAllowed(IN struct ADAPTER *prAdapter,
 	 * order driver connect to specific AP, we need still do connect
 	 */
 	return
-	     (prBssDesc->fgIsConnected & BIT(ucBssIndex) && \
+	     !(prBssDesc->fgIsConnected & BIT(ucBssIndex) && \
 	     prConnSettings->eConnectionPolicy != CONNECT_BY_BSSID && \
 	     prConnSettings->eConnectionPolicy != CONNECT_BY_BSSID_HINT);
 }
