@@ -500,8 +500,8 @@ uint32_t halToggleWfsysRst(IN struct ADAPTER *prAdapter)
 	if (prChipInfo->asicWfsysRst)
 		prChipInfo->asicWfsysRst(prAdapter, TRUE);
 
-	/* wait 1us */
-	kalUdelay(1);
+	/* wait 2 ticks of 32K */
+	kalUdelay(64);
 
 	/* de-assert WF L0.5 reset */
 	if (prChipInfo->asicWfsysRst)
