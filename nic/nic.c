@@ -4655,7 +4655,7 @@ void nicSerStopTx(IN struct ADAPTER *prAdapter)
 void nicSerStartTxRx(IN struct ADAPTER *prAdapter)
 {
 	DBGLOG(NIC, WARN, "SER: Start HIF T/R!\n");
-	halSerHifReset(prAdapter);
+
 	prAdapter->ucSerState = SER_IDLE_DONE;
 }
 
