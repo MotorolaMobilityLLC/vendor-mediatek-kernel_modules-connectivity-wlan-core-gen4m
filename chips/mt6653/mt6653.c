@@ -1002,7 +1002,12 @@ enum HIF_DEV_REG_REASON mt6653ValidMmioReadReason[] = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 struct EMI_WIFI_MISC_RSV_MEM_INFO mt6653_wifi_misc_rsv_mem_info[] = {
 	{WIFI_MISC_MEM_BLOCK_NON_MMIO, 2048, {0}},
-	{WIFI_MISC_MEM_BLOCK_TX_POWER, 20480, {0}}
+	{WIFI_MISC_MEM_BLOCK_TX_POWER_LIMIT, 20480, {0}},
+	{WIFI_MISC_MEM_BLOCK_TX_POWER_STATUS, 16, {0}},
+	{WIFI_MISC_MEM_BLOCK_SER_STATUS, 16, {0}},
+	{WIFI_MISC_MEM_BLOCK_SCREEN_STATUS, 16, {0}},
+	{WIFI_MISC_MEM_BLOCK_WF_RSVED, 42960, {0}},
+	{WIFI_MISC_MEM_BLOCK_PRECAL, 589824, {0}}
 };
 #endif
 static struct sw_sync_emi_info mt6653_sw_sync_emi_info[SW_SYNC_TAG_NUM];
