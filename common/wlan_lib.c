@@ -8400,6 +8400,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 			FEATURE_DISABLED);
 #endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
 
+#if (CFG_SUPPORT_FW_IDX_LOG_SAVE == 1)
+	INIT_UINT(prWifiVar->fgFwIdxLogSave, "FwIdxLogSave",
+			FW_IDX_LOG_SAVE_DISABLE);
+#endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
+
 #if CFG_SUPPORT_PCIE_ASPM
 	INIT_UINT(prWifiVar->fgPcieEnableL1ss, "PcieEnableL1ss", 1);
 #endif

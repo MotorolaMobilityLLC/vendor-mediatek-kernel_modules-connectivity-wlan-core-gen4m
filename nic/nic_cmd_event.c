@@ -26,7 +26,9 @@
 #if (CFG_SUPPORT_FW_IDX_LOG_SAVE == 1)
 #include "gl_fw_dev.h"
 #endif
+#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
 #include "fw_log_parser.h"
+#endif
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 #include "gl_ics.h"
@@ -5034,6 +5036,13 @@ void nicEventDebugMsg(struct ADAPTER *prAdapter,
 	}
 #endif
 
+#if (CFG_SUPPORT_FW_IDX_LOG_SAVE == 1)
+	if (prAdapter->rWifiVar.fgFwIdxLogSave != FW_IDX_LOG_SAVE_DISABLE)
+		kalIndexWrite(pucMsg, u2MsgSize);
+	if (prAdapter->rWifiVar.fgFwIdxLogSave == FW_IDX_LOG_SAVE_ONLY)
+		return;
+#endif
+
 #if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgFwIdxLogTrans))
 		wlanFwLogIdxToStr(prAdapter, pucMsg, u2MsgSize);
@@ -5041,9 +5050,6 @@ void nicEventDebugMsg(struct ADAPTER *prAdapter,
 #endif
 	{
 		wlanPrintFwLog(pucMsg, u2MsgSize, ucMsgType, NULL);
-#if (CFG_SUPPORT_FW_IDX_LOG_SAVE == 1)
-		kalIndexWrite(pucMsg, u2MsgSize);
-#endif
 	}
 }
 
