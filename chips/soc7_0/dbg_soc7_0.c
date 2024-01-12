@@ -954,8 +954,7 @@ void soc7_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
 			rate.nss /= 2;
 	}
 
-	rate.rateMcsIdx = RXV_GET_RX_RATE(u4RxV0);
-
+	rate.rateMcsIdx = RXV_GET_RX_RATE(u4RxV0) & 0xF; /* 0 ~ 15 */
 	if (rate.preamble == LLS_MODE_CCK)
 		rate.rateMcsIdx &= 0x3; /* 0: 1M; 1: 2M; 2: 5.5M; 3: 11M  */
 	else if (rate.preamble == LLS_MODE_OFDM)
