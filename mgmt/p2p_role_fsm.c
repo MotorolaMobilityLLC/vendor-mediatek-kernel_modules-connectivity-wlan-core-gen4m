@@ -5080,14 +5080,22 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
 		}
 	} else if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11A) {
+		struct BSS_INFO *prAisBssInfo;
+
+		prAisBssInfo = aisGetDefaultLinkBssInfo(prAdapter);
+		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
+			prAisBssInfo->eBand > BAND_2G4) {
+			/* Force SCC, indicate channel directly */
+			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
+				prAisBssInfo);
+			goto exit;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		if (prAdapter->fgIsHwSupport6G) {
+		} else if (prAdapter->fgIsHwSupport6G) {
 			/* Trim 5G + 6G PSC channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_6G) | BIT(BAND_5G));
-		} else
 #endif
-		if (prAdapter->fgEnable5GBand) {
+		} else if (prAdapter->fgEnable5GBand) {
 			/* Trim 5G channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_5G));
