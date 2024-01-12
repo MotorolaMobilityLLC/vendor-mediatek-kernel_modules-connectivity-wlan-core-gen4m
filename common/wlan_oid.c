@@ -13015,8 +13015,6 @@ wlanoidSetStopSchedScan(IN struct ADAPTER *prAdapter,
 
 	/* ask SCN module to stop scan request */
 	if (scnFsmSchedScanStopRequest(prAdapter) == TRUE) {
-		kalMemFree(prSchedScanRequest->pucChannels,
-			   VIR_MEM_TYPE, prSchedScanRequest->ucChnlNum);
 		kalMemFree(prSchedScanRequest->pucIE,
 			   VIR_MEM_TYPE,
 			   prGlueInfo->prSchedScanRequest->u4IELength);

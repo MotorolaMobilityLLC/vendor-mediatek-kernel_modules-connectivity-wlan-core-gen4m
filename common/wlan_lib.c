@@ -5628,6 +5628,11 @@ void wlanSetPreferBandByNetwork(IN struct ADAPTER *prAdapter,
 	else if (eBand == BAND_5G)
 		scanRemoveBssDescByBandAndNetwork(prAdapter, BAND_2G4,
 						  ucBssIndex);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (eBand == BAND_6G)
+		scanRemoveBssDescByBandAndNetwork(prAdapter, BAND_6G,
+						  ucBssIndex);
+#endif
 
 }
 

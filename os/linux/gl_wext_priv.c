@@ -9275,6 +9275,7 @@ int priv_driver_set_band(IN struct net_device *prNetDev, IN char *pcCommand,
 			eBand = BAND_5G;
 		else if (ucBand == CMD_BAND_TYPE_2G)
 			eBand = BAND_2G4;
+
 		prAdapter->aePreferBand[KAL_NETWORK_TYPE_AIS_INDEX] = eBand;
 		/* XXX call wlanSetPreferBandByNetwork directly in different
 		 * thread
