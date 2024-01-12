@@ -441,6 +441,17 @@
 #ifndef CFG_SUPPORT_RX_GRO
 #define CFG_SUPPORT_RX_GRO                      1
 #endif
+
+/*
+ * Support dynamic disable GRO when TC(traffic control) is applied to prevent
+ * tput drop due to GRO
+ */
+#define CFG_SUPPORT_SKIP_RX_GRO_FOR_TC          0
+#if CFG_TC10_FEATURE && CFG_SUPPORT_RX_GRO
+#undef CFG_SUPPORT_SKIP_RX_GRO_FOR_TC
+#define CFG_SUPPORT_SKIP_RX_GRO_FOR_TC          1
+#endif /* CFG_TC10_FEATURE && CFG_SUPPORT_RX_GRO */
+
 /* 0 : direct-GRO mode (without NAPI poll-callback)
  * 1 : NAPI+GRO mode
  */

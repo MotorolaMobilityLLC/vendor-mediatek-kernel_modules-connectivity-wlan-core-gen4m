@@ -203,6 +203,11 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter);
 static int32_t kalWorkGetCpu(struct GLUE_INFO *pr,
 	enum ENUM_WORK eWork);
 
+#if CFG_SUPPORT_SKIP_RX_GRO_FOR_TC
+static u_int8_t kalGetSkipRxGro(struct net_device *prNetDev);
+static void kalRxGroTcCheck(struct GLUE_INFO *glue);
+#endif /* CFG_SUPPORT_SKIP_RX_GRO_FOR_TC */
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -2032,6 +2037,11 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 	kalTraceEvent("Rx ipid=0x%04x", GLUE_GET_PKT_IP_ID(prSkb));
 
 #if CFG_SUPPORT_RX_GRO
+#if CFG_SUPPORT_SKIP_RX_GRO_FOR_TC
+	if (kalGetSkipRxGro(prNetDev))
+		goto skip_gro;
+#endif /* CFG_SUPPORT_SKIP_RX_GRO_FOR_TC */
+
 	if (kal_is_skb_gro(prGlueInfo->prAdapter, ucBssIdx)) {
 #if CFG_SUPPORT_RX_PAGE_POOL
 		/* avoid recycle & non-recycle skb merged to non-recycle skb */
@@ -2068,6 +2078,9 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 #endif /* CFG_SUPPORT_RX_NAPI */
 		return WLAN_STATUS_SUCCESS;
 	}
+#if CFG_SUPPORT_SKIP_RX_GRO_FOR_TC
+skip_gro:
+#endif /* CFG_SUPPORT_SKIP_RX_GRO_FOR_TC */
 #endif /* CFG_SUPPORT_RX_GRO */
 
 #if KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE
@@ -5980,6 +5993,10 @@ int main_thread(void *data)
 #if CFG_RFB_TRACK
 		nicRxRfbTrackCheck(prGlueInfo->prAdapter);
 #endif /* CFG_RFB_TRACK */
+
+#if CFG_SUPPORT_SKIP_RX_GRO_FOR_TC
+		kalRxGroTcCheck(prGlueInfo);
+#endif /* CFG_SUPPORT_SKIP_RX_GRO_FOR_TC */
 
 		if (test_and_clear_bit(GLUE_FLAG_TIMEOUT_BIT,
 				       &prGlueInfo->ulFlag))
@@ -11066,6 +11083,104 @@ void kalSetRpsMap(struct GLUE_INFO *glue, unsigned long value)
 		}
 	}
 }
+
+#if CFG_SUPPORT_SKIP_RX_GRO_FOR_TC
+static u_int8_t kalCheckIfTcApplied(struct net_device *prNetDev)
+{
+	struct netdev_queue *ingress_q;
+	struct Qdisc *ingress_qdisc;
+	const struct Qdisc_ops *qdisc_ops;
+	const struct Qdisc_class_ops *qdisc_cops;
+	struct tcf_block *ingress_block;
+	u_int8_t fgRet = FALSE;
+
+	if (!prNetDev) {
+		DBGLOG(INIT, INFO, "prNetDev is NULL\n");
+		return fgRet;
+	}
+
+	rcu_read_lock();
+
+	ingress_q = rcu_dereference(prNetDev->ingress_queue);
+	if (unlikely(!ingress_q))
+		goto unlock;
+
+	ingress_qdisc = rcu_dereference(ingress_q->qdisc);
+	if (unlikely(!ingress_qdisc))
+		goto unlock;
+
+	qdisc_ops = ingress_qdisc->ops;
+	if (!kalStrCmp(qdisc_ops->id, "clsact")) {
+		qdisc_cops = qdisc_ops->cl_ops;
+		if (unlikely(!qdisc_cops))
+			goto unlock;
+		if (unlikely(!(qdisc_cops->tcf_block)))
+			goto unlock;
+
+#if (KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE)
+		ingress_block = qdisc_cops->tcf_block(ingress_qdisc,
+					TC_H_MIN_INGRESS, NULL);
+#else
+		ingress_block = qdisc_cops->tcf_block(ingress_qdisc,
+					TC_H_MIN_INGRESS);
+#endif
+		if (unlikely(!ingress_block))
+			goto unlock;
+
+		/* chain list will be empty when there is no filter */
+		if (!list_empty(&(ingress_block->chain_list)))
+			fgRet = TRUE;
+	}
+unlock:
+	rcu_read_unlock();
+	return fgRet;
+}
+
+static u_int8_t kalGetSkipRxGro(struct net_device *prNetDev)
+{
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
+
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(prNetDev);
+
+	return prNetDevPrivate->fgSkipRxGro;
+}
+
+static void kalSetSkipRxGro(struct net_device *prNetDev, u_int8_t fgSkipRxGro)
+{
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
+
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(prNetDev);
+
+	prNetDevPrivate->fgSkipRxGro = fgSkipRxGro;
+}
+
+static void kalRxGroTcCheck(struct GLUE_INFO *glue)
+{
+	uint8_t i;
+	struct net_device *dev;
+	u_int8_t fgSkipGro, fgTcApplied;
+
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		dev = wlanGetNetDev(glue, i);
+		if (!dev)
+			continue;
+
+		fgSkipGro = kalGetSkipRxGro(dev);
+		fgTcApplied = kalCheckIfTcApplied(dev);
+
+		/* skip gro when tc is applied */
+		if (fgTcApplied != fgSkipGro) {
+			kalSetSkipRxGro(dev, fgTcApplied);
+			DBGLOG(INIT, INFO,
+				"B:[%u] SkipRxGro:[%u->%u]",
+				i,
+				fgSkipGro, fgTcApplied);
+		}
+	}
+}
+#endif /* CFG_SUPPORT_SKIP_RX_GRO_FOR_TC */
 
 int32_t kalPerMonSetForceEnableFlag(uint8_t uFlag)
 {
