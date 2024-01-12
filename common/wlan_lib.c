@@ -10001,7 +10001,8 @@ void wlanChipRstPreAct(IN struct ADAPTER *prAdapter)
 				kalP2PGCIndicateConnectionStatus(prGlueInfo,
 					(uint8_t) prBssInfo->u4PrivateData,
 					NULL, NULL, 0,
-					REASON_CODE_DEAUTH_LEAVING_BSS);
+					REASON_CODE_DEAUTH_LEAVING_BSS,
+					WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY);
 				prBssInfo->prStaRecOfAP = NULL;
 
 			}
