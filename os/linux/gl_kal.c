@@ -4753,7 +4753,7 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 
 	KAL_REC_TIME_END();
 	if (ret != WLAN_STATUS_SUCCESS)
-		DBGLOG(OID, WARN, "ret(%x) time: %lu us\n",
+		DBGLOG(OID, WARN, "ret(%x) time: %u us\n",
 			ret,
 			KAL_GET_TIME_INTERVAL());
 

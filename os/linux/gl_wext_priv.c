@@ -1425,6 +1425,7 @@ __priv_set_struct(struct net_device *prNetDev,
 			}
 			kalMemZero(pCommand, u4CmdLen + 1);
 			kalMemCopy(pCommand, aucOidBuf, u4CmdLen);
+			pCommand[u4CmdLen] = '\0';
 			priv_driver_cmds(prNetDev, pCommand, u4CmdLen);
 			kalMemFree(pCommand, VIR_MEM_TYPE, i4TotalLen);
 		}
@@ -2537,7 +2538,7 @@ priv_get_string(struct net_device *prNetDev,
 	case PRIV_CMD_CONNSTATUS:
 	{
 		uint8_t arBssid[PARAM_MAC_ADDR_LEN];
-		struct PARAM_SSID rSsid;
+		struct PARAM_SSID rSsid = {0};
 
 		kalMemZero(arBssid, PARAM_MAC_ADDR_LEN);
 		rStatus = kalIoctl(prGlueInfo, wlanoidQueryBssid,
@@ -6473,7 +6474,7 @@ static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter,
 				i4BytesWritten += kalScnprintf(
 					pcCommand + i4BytesWritten,
 					i4TotalLen - i4BytesWritten,
-					"%05s", allRateStr[ucTxPwrIdx]);
+					"%5s", allRateStr[ucTxPwrIdx]);
 			}
 
 			i4BytesWritten += kalScnprintf(
@@ -6539,7 +6540,7 @@ static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter,
 					i4BytesWritten += kalScnprintf(
 					pcCommand + i4BytesWritten,
 					i4TotalLen - i4BytesWritten,
-					"%03s:%03d, ",
+					"%3s:%03d, ",
 					rateStr,
 					rRatePowerInfo.
 					aicFramePowerConfig[u2Idx][ucBandIdx].

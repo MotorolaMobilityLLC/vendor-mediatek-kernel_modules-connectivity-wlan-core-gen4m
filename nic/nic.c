@@ -1366,6 +1366,11 @@ uint32_t nicMediaJoinFailure(struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
 
+	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+		DBGLOG(NIC, ERROR, "ucBssIndex out of range!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
 	switch (GET_BSS_INFO_BY_INDEX(prAdapter,
 				      ucBssIndex)->eNetworkType) {
 	case NETWORK_TYPE_AIS:
