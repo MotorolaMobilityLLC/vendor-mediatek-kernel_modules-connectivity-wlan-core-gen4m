@@ -173,30 +173,14 @@ int32_t mtk_Netdev_To_RoleIdx(struct GLUE_INFO *prGlueInfo,
 static void mtk_vif_destructor(struct net_device *dev)
 {
 	struct wireless_dev *prWdev = ERR_PTR(-ENOMEM);
-	uint32_t u4Idx = 0;
 
 	DBGLOG(P2P, INFO, "mtk_vif_destructor\n");
 	if (dev) {
 		prWdev = dev->ieee80211_ptr;
 		free_netdev(dev);
 		/* Expect that the gprP2pWdev isn't freed here */
-		if ((prWdev) && (prWdev != gprP2pWdev)) {
-			/* Role[i] and Dev share the same wdev by default */
-			for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
-				if (prWdev != gprP2pRoleWdev[u4Idx])
-					continue;
-				/* In the initWlan gprP2pRoleWdev[0] is equal to
-				 * gprP2pWdev. And other gprP2pRoleWdev[] should
-				 * be NULL, if the 2nd P2P dev isn't created.
-				 */
-				if (u4Idx == 0)
-					gprP2pRoleWdev[u4Idx] = gprP2pWdev;
-				else
-					gprP2pRoleWdev[u4Idx] = NULL;
-				break;
-			}
+		if (prWdev)
 			kfree(prWdev);
-		}
 	}
 }
 
@@ -395,6 +379,10 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 				FALSE);
 		}
 #endif
+
+		/* Backup */
+		prP2pInfo->prOrigWdev = prP2pInfo->prWdev;
+		prP2pInfo->prWdev = prWdev;
 
 		/* 4.2 fill hardware address */
 		COPY_MAC_ADDR(rMacAddr, prAdapter->rMyMacAddr);
@@ -604,6 +592,9 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	/* Wait for kalSendCompleteAndAwakeQueue() complete */
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	prP2pInfo->aprRoleHandler = prP2pInfo->prDevHandler;
+	/* Restore */
+	prP2pInfo->prWdev = prP2pInfo->prOrigWdev;
+	gprP2pRoleWdev[u4Idx] = prP2pInfo->prOrigWdev;
 #if 1
 	prScanRequest = prP2pGlueDevInfo->prScanRequest;
 	if ((prScanRequest != NULL) &&
