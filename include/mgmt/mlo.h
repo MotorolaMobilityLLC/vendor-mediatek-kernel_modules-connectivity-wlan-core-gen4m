@@ -119,6 +119,90 @@ void beReqGenerateMultiLinkSTAInfo(
 #define STA1_LINK_ID 9
 #define STA2_LINK_ID 10
 
+int8_t mldBssRegister(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
+	struct BSS_INFO *prBss);
+
+void mldBssUnregister(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
+	struct BSS_INFO *prBss);
+
+int8_t mldBssAlloc(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO **pprMldBss);
+
+void mldBssFree(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo);
+
+struct MLD_BSS_INFO *mldBssGetByBss(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo);
+
+struct MLD_BSS_INFO *mldBssGetByIdx(struct ADAPTER *prAdapter,
+	uint8_t ucIdx);
+
+int8_t mldBssInit(struct ADAPTER *prAdapter);
+
+void mldBssUninit(struct ADAPTER *prAdapter);
+
+void mldStarecDump(struct ADAPTER *prAdapter);
+
+int8_t mldStarecRegister(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStarec);
+
+void mldStarecUnregister(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStarec);
+
+int8_t mldStarecAlloc(struct ADAPTER *prAdapter,
+	struct MLD_STA_RECORD **pprMldStarec,
+	uint8_t *aucMacAddr);
+
+void mldStarecFree(struct ADAPTER *prAdapter,
+	struct MLD_STA_RECORD *prMldStarec);
+
+struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec);
+
+int8_t mldStarecSetSetupIdx(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec);
+
+int8_t mldStarecInit(struct ADAPTER *prAdapter);
+
+void mldStarecUninit(struct ADAPTER *prAdapter);
+
+#else
+
+static inline
+int8_t mldBssRegister(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
+	struct BSS_INFO *prBss)
+{
+	return 0;
+}
+
+static inline
+int8_t mldBssAlloc(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO **pprMldBss)
+{
+	return 0;
+}
+
+#define mldBssUnregister(_a, _b, _c)
+#define mldBssFree(_a, _b)
+#define mldBssInit(_a)
+#define mldBssUninit(_a)
+
+static inline
+struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec)
+{
+	return NULL;
+}
+
+#define mldStarecRegister(_a, _b)
+#define mldStarecUnregister(_a, _b)
+#define mldStarecSetSetupIdx(_a, _b)
+#define mldStarecInit(_a)
+#define mldStarecUninit(_a)
+
 #endif /* CFG_SUPPORT_802_11BE == 1 */
 
 #endif /* !_MLO_H */

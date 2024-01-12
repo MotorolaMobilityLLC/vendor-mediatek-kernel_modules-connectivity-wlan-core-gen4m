@@ -222,8 +222,8 @@ void nic_rxd_v3_fill_rfb(
 			((uint8_t *) prRxStatus + u2RxStatusOffset);
 		u2RxStatusOffset += sizeof(struct HW_MAC_RX_STS_GROUP_4);
 #if (CFG_DUMP_RXD == 1)
-		DBGLOG(RX, INFO, "****** RXD GROUP 4 ******\n");
-		DBGLOG_MEM8(RX, INFO, (uint32_t *) prSwRfb->prRxStatusGroup4,
+		DBGLOG(RX, TRACE, "****** RXD GROUP 4 ******\n");
+		DBGLOG_MEM8(RX, TRACE, (uint32_t *) prSwRfb->prRxStatusGroup4,
 			sizeof(struct HW_MAC_RX_STS_GROUP_4));
 #endif
 	}
@@ -232,8 +232,8 @@ void nic_rxd_v3_fill_rfb(
 			((uint8_t *) prRxStatus + u2RxStatusOffset);
 		u2RxStatusOffset += sizeof(struct HW_MAC_RX_STS_GROUP_1);
 #if (CFG_DUMP_RXD == 1)
-		DBGLOG(RX, INFO, "****** RXD GROUP 1 ******\n");
-		DBGLOG_MEM8(RX, INFO, (uint32_t *) prSwRfb->prRxStatusGroup1,
+		DBGLOG(RX, TRACE, "****** RXD GROUP 1 ******\n");
+		DBGLOG_MEM8(RX, TRACE, (uint32_t *) prSwRfb->prRxStatusGroup1,
 			sizeof(struct HW_MAC_RX_STS_GROUP_1));
 #endif
 	}
@@ -242,8 +242,8 @@ void nic_rxd_v3_fill_rfb(
 			((uint8_t *) prRxStatus + u2RxStatusOffset);
 		u2RxStatusOffset += sizeof(struct HW_MAC_RX_STS_GROUP_2);
 #if (CFG_DUMP_RXD == 1)
-		DBGLOG(RX, INFO, "****** RXD GROUP 2 ******\n");
-		DBGLOG_MEM8(RX, INFO, (uint32_t *) prSwRfb->prRxStatusGroup2,
+		DBGLOG(RX, TRACE, "****** RXD GROUP 2 ******\n");
+		DBGLOG_MEM8(RX, TRACE, (uint32_t *) prSwRfb->prRxStatusGroup2,
 			sizeof(struct HW_MAC_RX_STS_GROUP_2));
 #endif
 	}
@@ -252,8 +252,8 @@ void nic_rxd_v3_fill_rfb(
 			((uint8_t *) prRxStatus + u2RxStatusOffset);
 		u2RxStatusOffset += sizeof(struct HW_MAC_RX_STS_GROUP_3_V2);
 #if (CFG_DUMP_RXD == 1)
-		DBGLOG(RX, INFO, "****** RXD GROUP 3 ******\n");
-		DBGLOG_MEM8(RX, INFO, (uint32_t *) prSwRfb->prRxStatusGroup3,
+		DBGLOG(RX, TRACE, "****** RXD GROUP 3 ******\n");
+		DBGLOG_MEM8(RX, TRACE, (uint32_t *) prSwRfb->prRxStatusGroup3,
 			sizeof(struct HW_MAC_RX_STS_GROUP_3_V2));
 #endif
 	}
@@ -263,8 +263,8 @@ void nic_rxd_v3_fill_rfb(
 			((uint8_t *) prRxStatus + u2RxStatusOffset);
 		u2RxStatusOffset += prChipInfo->group5_size;
 #if (CFG_DUMP_RXD == 1)
-		DBGLOG(RX, INFO, "****** RXD GROUP 5 ******\n");
-		DBGLOG_MEM8(RX, INFO, (uint32_t *) prSwRfb->prRxStatusGroup5,
+		DBGLOG(RX, TRACE, "****** RXD GROUP 5 ******\n");
+		DBGLOG_MEM8(RX, TRACE, (uint32_t *) prSwRfb->prRxStatusGroup5,
 			prChipInfo->group5_size);
 #endif
 	}

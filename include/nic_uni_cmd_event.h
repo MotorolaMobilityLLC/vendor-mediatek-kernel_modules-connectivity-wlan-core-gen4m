@@ -97,8 +97,7 @@
 /* Customer Config Cmd for Gen4m */
 #define UNICMD_CHIP_CONFIG_RESP_SIZE       320
 
-// TODO: uni cmd
-#define MLD_LINK_MAX 2
+#define UNI_MLD_LINK_MAX 3
 #define MLD_GROUP_NONE 0xff
 #define OM_REMAP_IDX_NONE 0xff
 
@@ -659,11 +658,27 @@ enum ENUM_UNSOLICIT_TX {
 struct UNI_CMD_BSSINFO_MLD {
 	uint16_t u2Tag;   /* Tag = 0x1A */
 	uint16_t u2Length;
-	uint8_t  ucGroupMldId; /* mld_addr in mat_table index, legacy=0xff */
-	uint8_t  ucOwnMldId; /* own_mac_addr in mat_table idex */
-	uint8_t  aucOwnMldAddr[MAC_ADDR_LEN]; /* legacy=don't care */
-	uint8_t  ucOmRemapIdx;/* for AGG: 0~15,
-	0xFF means this is a legacy BSS, no need to do remapping */
+	/*
+	 * the own MLD id for MLD address, range from 0 to 63
+	 * 0xFF means this is a legacy bss, not in any MLD group
+	 */
+	uint8_t  ucGroupMldId;
+	/*
+	 * own_mac_addr in mat_table idx
+	 * the own MLD id for ownmac address, range from 0 to 63
+	 * 0xFF means no need to do remapping
+	 */
+	uint8_t  ucOwnMldId;
+	/*
+	 * the MLD address
+	 * legacy=don't care
+	 */
+	uint8_t  aucOwnMldAddr[MAC_ADDR_LEN];
+	/*
+	 * for own mac id remapping for AGG, range from 0 to 15,
+	 * 0xFF means no need to do remapping
+	 */
+	uint8_t  ucOmRemapIdx;
 	uint8_t  aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
@@ -920,9 +935,30 @@ struct UNI_CMD_STAREC_EHT_MLD {
 	uint16_t  u2Tag;		/* Tag = 0x21 */
 	uint16_t  u2Length;
 	uint8_t   fgNSEP;
+	/*
+	 * bit0: band0 link enable emlmr
+	 * bit1: band1 link enable emlmr
+	 * bit2: band2 link enable emlmr
+	 */
 	uint8_t  ucEmlmrBitmap;
+	/*
+	 * bit0: band0 link enable emlsr
+	 * bit1: band1 link enable emlsr
+	 * bit2: band2 link enable emlsr
+	 */
 	uint8_t  ucEmlsrBitmap;
-	uint8_t   afgStrCapBitmap[MLD_LINK_MAX];
+	/*
+	 * pucStrBitmap[0] bit[0]: don't care
+	 * pucStrBitmap[0] bit[1]: band0 and band1 str capability
+	 * pucStrBitmap[0] bit[2]: band0 and band2 str capability
+	 * pucStrBitmap[1] bit[0]: band1 and band0 str capability
+	 * pucStrBitmap[1] bit[1]: don't care
+	 * pucStrBitmap[1] bit[2]: band1 and band2 str capability
+	 * pucStrBitmap[2] bit[0]: band2 and band0 str capability
+	 * pucStrBitmap[2] bit[1]: band2 and band1 str capability
+	 * pucStrBitmap[2] bit[2]: don't care
+	 */
+	uint8_t   afgStrCapBitmap[UNI_MLD_LINK_MAX];
 	uint8_t   aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
@@ -2275,6 +2311,7 @@ enum ENUM_UNI_CMD_CNM_TAG {
 	UNI_CMD_CNM_TAG_CH_PRIVILEGE_REQ = 0,
 	UNI_CMD_CNM_TAG_CH_PRIVILEGE_ABORT = 1,
 	UNI_CMD_CNM_TAG_GET_INFO = 2,
+	UNI_CMD_CNM_TAG_CH_PRIVILEGE_MLO_SUB_REQ = 3,
 	UNI_CMD_CNM_TAG_NUM
 };
 
@@ -3167,6 +3204,7 @@ struct UNI_EVENT_CNM {
 	*   UNI_EVENT_CNM_GET_CHANNEL_INFO   | 0x1 | UNI_EVENT_CNM_GET_CHANNEL_INFO_T
 	*   UNI_EVENT_CNM_GET_BSS_INFO       | 0x2 | UNI_EVENT_CNM_GET_BSS_INFO_T
 	*   UNI_EVENT_CNM_OPMODE_CHANGE      | 0x3 | UNI_EVENT_CNM_OPMODE_CHANGE_T
+	*   UNI_EVENT_CNM_CH_PRIVILEGE_GRANT | 0x4 | UNI_EVENT_CH_PRIVILEGE_GRANT_T
 	*/
 } __KAL_ATTRIB_PACKED__;
 
@@ -3176,6 +3214,7 @@ enum ENUM_UNI_EVENT_CNM_TAG {
 	UNI_EVENT_CNM_TAG_GET_CHANNEL_INFO = 1,
 	UNI_EVENT_CNM_TAG_GET_BSS_INFO = 2,
 	UNI_EVENT_CNM_TAG_OPMODE_CHANGE = 3,
+	UNI_EVENT_CNM_TAG_CH_PRIVILEGE_MLO_SUB_GRANT = 4,
 	UNI_EVENT_CNM_TAG_NUM
 }__KAL_ATTRIB_PACKED__;
 
@@ -3756,6 +3795,8 @@ uint32_t nicUniCmdGetStatistics(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdGetLinkQuality(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdMldStaTeardown(struct ADAPTER *ad,
+		struct STA_RECORD *prStaRec);
 
 /*******************************************************************************
  *                   Event

@@ -12494,7 +12494,7 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	struct PARAM_GET_CNM_T *prCnmInfo = NULL;
 
-	enum ENUM_DBDC_BN	eDbdcIdx, eDbdcIdxMax;
+	enum ENUM_MBMC_BN	eDbdcIdx, eDbdcIdxMax;
 	uint8_t			ucBssIdx;
 	struct BSS_INFO *prBssInfo;
 	enum ENUM_CNM_NETWORK_TYPE_T eNetworkType;

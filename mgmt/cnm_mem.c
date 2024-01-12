@@ -674,6 +674,10 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 #if DSCP_SUPPORT
 			qosMapSetInit(prStaRec);
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+			prStaRec->ucMldStaIndex = MLD_GROUP_NONE;
+			prStaRec->ucTidBitmap = 0xFF;
+#endif
 			break;
 		}
 	}
@@ -749,6 +753,8 @@ static void cnmStaRoutinesForAbort(struct ADAPTER *prAdapter,
 
 	if (!prStaRec)
 		return;
+
+	mldStarecUnregister(prAdapter, prStaRec);
 
 	/* To do: free related resources, e.g. timers, buffers, etc */
 	cnmTimerStopTimer(prAdapter, &prStaRec->rTxReqDoneOrRxRespTimer);
