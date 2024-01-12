@@ -2590,6 +2590,9 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	struct CMD_RDD_ON_OFF_CTRL *prCmdRddOnOffCtrl;
 	struct WIFI_VAR *prWifiVar;
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo;
+#endif
 	struct P2P_FILS_DISCOVERY_INFO *prFilsInfo;
 	struct P2P_UNSOL_PROBE_RESP_INFO *prUnsolProbeInfo;
 	uint8_t ucRoleIdx;
@@ -2686,7 +2689,24 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	 */
 	prBssInfo->fgIsOpChangeRxNss = TRUE;
 
-	bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	if (prMldBssInfo) {
+		struct LINK *prBssList;
+		struct BSS_INFO *prTempBss;
+
+		/* loop all links to re-generate beacons after csa */
+		prBssList = &prMldBssInfo->rBssList;
+		LINK_FOR_EACH_ENTRY(prTempBss, prBssList, rLinkEntryMld,
+				    struct BSS_INFO) {
+			bssUpdateBeaconContent(prAdapter,
+					       prTempBss->ucBssIndex);
+		}
+	} else
+#endif
+	{
+		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+	}
 
 	if (prFilsInfo->fgValid) {
 		nicUpdateFilsDiscIETemplate(prAdapter,
@@ -7452,7 +7472,6 @@ void p2pFuncSwitchGcChannel(
 #if CFG_SUPPORT_DBDC
 	struct DBDC_DECISION_INFO rDbdcDecisionInfo = {0};
 #endif
-
 #if CFG_SUPPORT_DFS_MASTER
 	fgEnable = TRUE;
 #endif
@@ -7502,30 +7521,35 @@ void p2pFuncSwitchGcChannel(
 	}
 #endif
 
-	/* Indicate PM abort to sync BSS state with FW */
-	nicPmIndicateBssAbort(prAdapter, prP2pBssInfo->ucBssIndex);
-	prP2pBssInfo->ucDTIMPeriod = 0;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (!IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter, prP2pBssInfo)))
+#endif
+	{
+		/* Indicate PM abort to sync BSS state with FW */
+		nicPmIndicateBssAbort(prAdapter, prP2pBssInfo->ucBssIndex);
+		prP2pBssInfo->ucDTIMPeriod = 0;
 
-	/* Update BSS with temp. disconnect state to FW */
-	p2pDeactivateAllLink(prAdapter,
-		prP2pRoleFsmInfo,
-		FALSE);
-	p2pChangeMediaState(prAdapter, prP2pBssInfo,
-		MEDIA_STATE_DISCONNECTED);
-	nicUpdateBssEx(prAdapter,
-		prP2pBssInfo->ucBssIndex,
-		FALSE);
+		/* Update BSS with temp. disconnect state to FW */
+		p2pDeactivateAllLink(prAdapter,
+			prP2pRoleFsmInfo,
+			FALSE);
+		p2pChangeMediaState(prAdapter, prP2pBssInfo,
+			MEDIA_STATE_DISCONNECTED);
+		nicUpdateBssEx(prAdapter,
+			prP2pBssInfo->ucBssIndex,
+			FALSE);
 
 #if CFG_SUPPORT_DBDC
-	CNM_DBDC_ADD_DECISION_INFO(rDbdcDecisionInfo,
-		prP2pBssInfo->ucBssIndex,
-		prP2pBssInfo->eBand,
-		prP2pBssInfo->ucPrimaryChannel,
-		prP2pBssInfo->ucWmmQueSet);
+		CNM_DBDC_ADD_DECISION_INFO(rDbdcDecisionInfo,
+			prP2pBssInfo->ucBssIndex,
+			prP2pBssInfo->eBand,
+			prP2pBssInfo->ucPrimaryChannel,
+			prP2pBssInfo->ucWmmQueSet);
 
-	cnmDbdcPreConnectionEnableDecision(prAdapter,
-		&rDbdcDecisionInfo);
+		cnmDbdcPreConnectionEnableDecision(prAdapter,
+			&rDbdcDecisionInfo);
 #endif
+	}
 
 	/* Update channel parameters & channel request info */
 	rRfChnlInfo.ucChannelNum = prP2pBssInfo->ucPrimaryChannel;
@@ -7550,7 +7574,8 @@ void p2pFuncSwitchGcChannel(
 	rlmBssUpdateChannelParams(prAdapter, prP2pBssInfo);
 
 	DBGLOG(P2P, INFO,
-		"SCO=%d H1=%d H2=%d H3=%d BW=%d S1=%d S2=%d CH=%d Band=%d TxN=%d RxN=%d\n",
+		"[%d] SCO=%d H1=%d H2=%d H3=%d BW=%d S1=%d S2=%d CH=%d Band=%d TxN=%d RxN=%d\n",
+		prP2pBssInfo->ucBssIndex,
 		prP2pBssInfo->eBssSCO,
 		prP2pBssInfo->ucHtOpInfo1,
 		prP2pBssInfo->u2HtOpInfo2,
@@ -7572,9 +7597,10 @@ void p2pFuncSwitchGcChannel(
 	prChnlReqInfo->u4MaxInterval = P2P_AP_CHNL_HOLD_TIME_CSA_MS;
 	prChnlReqInfo->eChnlReqType = CH_REQ_TYPE_JOIN;
 
-	p2pRoleFsmStateTransition(prAdapter,
-		prP2pRoleFsmInfo,
-		P2P_ROLE_STATE_SWITCH_CHANNEL);
+	p2pRoleFsmStateTransitionImpl(prAdapter,
+				      prP2pRoleFsmInfo,
+				      prP2pBssInfo->ucBssIndex,
+				      P2P_ROLE_STATE_SWITCH_CHANNEL);
 }
 
 void p2pFuncRemoveOneSap(struct ADAPTER *prAdapter)

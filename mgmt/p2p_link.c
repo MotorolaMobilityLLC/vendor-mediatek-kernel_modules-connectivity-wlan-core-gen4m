@@ -83,6 +83,7 @@ void p2pLinkInitGCRole(struct ADAPTER *prAdapter,
 			break;
 
 		prBssInfo->ucLinkIndex = prMldBssInfo->rBssList.u4NumElem;
+		prBssInfo->eIftype = IFTYPE_P2P_CLIENT;
 		mldBssRegister(prAdapter, prMldBssInfo, prBssInfo);
 		p2pSetLinkBssInfo(prP2pRoleFsmInfo, i, prBssInfo);
 	}

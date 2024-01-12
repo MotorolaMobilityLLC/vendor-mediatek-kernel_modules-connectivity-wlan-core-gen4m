@@ -456,14 +456,13 @@ p2pRoleStateInit_SWITCH_CHANNEL(struct ADAPTER *prAdapter,
 
 void
 p2pRoleStateAbort_SWITCH_CHANNEL(struct ADAPTER *prAdapter,
-		struct BSS_INFO *prP2pRoleBssInfo,
-		struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-		enum ENUM_P2P_ROLE_STATE eNextState)
+		uint8_t ucBssIdx,
+		struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
 {
 	do {
 		p2pFuncReleaseCh(prAdapter,
-			prP2pRoleFsmInfo->ucBssIndex,
-			&(prP2pRoleFsmInfo->rChnlReqInfo[0]));
+			ucBssIdx,
+			prChnlReqInfo);
 	} while (FALSE);
 }				/* p2pRoleStateAbort_SWITCH_CHANNEL */
 #endif

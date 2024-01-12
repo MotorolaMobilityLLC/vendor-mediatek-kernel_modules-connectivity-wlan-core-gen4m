@@ -3267,7 +3267,9 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			 * transmit no further frames on current channel
 			 * until the scheduled channel switch.
 			 */
-			DBGLOG(RLM, INFO, "[CSA] Count = %d Mode = %d\n",
+			DBGLOG(RLM, INFO,
+			       "[CSA] Bss = %d Count = %d Mode = %d\n",
+			       prBssInfo->ucBssIndex,
 			       prCSAIE->ucChannelSwitchCount,
 			       prCSAIE->ucChannelSwitchMode);
 			prCSAParams->ucCsaNewCh = prCSAIE->ucNewChannelNum;
@@ -6748,7 +6750,8 @@ void rlmProcessExCsaIE(struct ADAPTER *prAdapter,
 	uint8_t ucNewChannelNum, uint8_t ucChannelSwitchCount)
 {
 	DBGLOG(RLM, INFO,
-		"[ECSA] mode[%d], op_class[%d], channel[%d], count[%d]\n",
+		"[ECSA] bss[%d] mode[%d], op_class[%d], channel[%d], count[%d]\n",
+		prStaRec->ucBssIndex,
 		ucChannelSwitchMode,
 		ucNewOperatingClass,
 		ucNewChannelNum,
@@ -7282,8 +7285,9 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 
 	if (prBssDesc) {
 		DBGLOG(RLM, INFO,
-		       "DFS: BSS: " MACSTR
+		       "[%d] DFS: BSS: " MACSTR
 		       " Desc found, channel from %u to %u (band from %u to %u) with sco:%u\n ",
+		       ucBssIndex,
 		       MAC2STR(prBssInfo->aucBSSID),
 		       prBssDesc->ucChannelNum, prCSAParams->ucCsaNewCh,
 		       prBssDesc->eBand, prBssInfo->eBand, prBssInfo->eBssSCO);
