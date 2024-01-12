@@ -346,7 +346,8 @@ void kalP2PIndicateSecCheckRsp(IN struct GLUE_INFO *prGlueInfo,
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
 #define kalP2PGCIndicateConnectionStatus(_prGlueInfo, _ucRoleIndex, \
-	_prP2pConnInfo, _pucRxIEBuf, _u2RxIELen, _u2StatusReason) \
+	_prP2pConnInfo, _pucRxIEBuf, _u2RxIELen, _u2StatusReason, \
+	_eStatus) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
 #define kalP2PGOStationUpdate(_pr, _ucRoleIndex, _prCliStaRec, _fgIsNew) \

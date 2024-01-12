@@ -146,9 +146,8 @@ const uint8_t *kalFindIeExtIE(uint8_t eid,
 		return kalFindIeMatchMask(eid, ies, len, &exteid, 1, 2, NULL);
 }
 
-uint32_t
-kalSyncTimeToFW(IN struct ADAPTER *prAdapter, IN u_int8_t fgInitCmd,
-		unsigned int second, unsigned int usecond)
+uint32_t kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
+	IN u_int8_t fgInitCmd)
 {
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }

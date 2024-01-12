@@ -453,4 +453,6 @@ void kal_virt_uhw_rd(struct ADAPTER *ad, uint32_t u4Offset, uint32_t *pu4Value,
 void kal_virt_uhw_wr(struct ADAPTER *ad, uint32_t u4Offset, uint32_t u4Value,
 		     u_int8_t *pfgSts);
 
+void kal_virt_cancel_tx_rx(struct ADAPTER *ad);
+
 #endif /* _HIF_H */

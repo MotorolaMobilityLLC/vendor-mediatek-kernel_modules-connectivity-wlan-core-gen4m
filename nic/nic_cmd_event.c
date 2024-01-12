@@ -4869,22 +4869,12 @@ void nicEventRssiMonitor(IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent)
 {
 	int32_t rssi = 0;
-	struct GLUE_INFO *prGlueInfo;
-	struct wiphy *wiphy;
-	struct net_device *dev;
-
-	prGlueInfo = prAdapter->prGlueInfo;
-	wiphy = wlanGetWiphy();
 
 	kalMemCopy(&rssi, prEvent->aucBuffer, sizeof(int32_t));
 	DBGLOG(RX, TRACE, "EVENT_ID_RSSI_MONITOR value=%d\n", rssi);
 #if KERNEL_VERSION(3, 16, 0) <= LINUX_VERSION_CODE
-	dev = wlanGetNetDev(prAdapter->prGlueInfo,
-			aisGetDefaultLinkBssIndex(prAdapter));
-	if (dev != NULL) {
-		mtk_cfg80211_vendor_event_rssi_beyond_range(wiphy,
-			dev->ieee80211_ptr, rssi);
-	}
+	mtk_cfg80211_vendor_event_rssi_beyond_range(prAdapter,
+		aisGetDefaultLinkBssIndex(prAdapter), rssi);
 #endif
 }
 
@@ -5801,7 +5791,7 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 
 		iEventTime = 0;
 		for (i = 0 ; i < 8 ; i++)
-			iEventTime = iEventTime*10 + atoi(event[i]);
+			iEventTime = iEventTime*10 + kalAtoi(event[i]);
 
 		KAL_REPORT_ERROR_EVENT(prAdapter,
 			iEventTime,
@@ -5838,7 +5828,7 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 			 */
 			iEventTime = 0;
 			for (i = 0 ; i < 8 ; i++)
-				iEventTime = iEventTime*10 + atoi(event[i]);
+				iEventTime = iEventTime*10 + kalAtoi(event[i]);
 
 			KAL_REPORT_ERROR_EVENT(prAdapter,
 				iEventTime,
