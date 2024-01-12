@@ -341,6 +341,12 @@ struct TPENHANCE_PKT_MAP {
 #define HIF_SUSPEND_MAX_WAIT_TIME 50 /* unit: 5ms */
 #endif
 
+#if (CFG_SUPPORT_DYNAMIC_EDCCA == 1)
+/* Default ED threshold -65 dBm */
+#define ED_CCA_BW20_2G_DEFAULT (-65)
+#define ED_CCA_BW20_5G_DEFAULT (-65)
+#endif
+
 #define WLAN_DRV_READY_CHECK_WLAN_ON       BIT(0)
 #define WLAN_DRV_READY_CHECK_HIF_SUSPEND   BIT(1)
 #define WLAN_DRV_READY_CHECK_RESET         BIT(2)
@@ -2094,3 +2100,9 @@ uint32_t wlanSendFwLogControlCmd(IN struct ADAPTER *prAdapter,
 				int8_t *pucInfoBuffer);
 
 #endif /* _WLAN_LIB_H */
+
+#if (CFG_SUPPORT_DYNAMIC_EDCCA == 1)
+uint32_t wlanSetEd(IN struct ADAPTER *prAdapter, int32_t i4EdVal2G,
+					int32_t i4EdVal5G, uint32_t u4Sel);
+#endif
+

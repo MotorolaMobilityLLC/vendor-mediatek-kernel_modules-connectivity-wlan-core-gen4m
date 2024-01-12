@@ -3968,7 +3968,10 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_NOISE		"SET_NOISE"
 #define CMD_GET_NOISE           "GET_NOISE"
 #define CMD_SET_POP		"SET_POP"
+#if (CFG_SUPPORT_DYNAMIC_EDCCA == 1)
 #define CMD_SET_ED		"SET_ED"
+#define CMD_GET_ED		"GET_ED"
+#endif
 #define CMD_SET_PD		"SET_PD"
 #define CMD_SET_MAX_RFGAIN	"SET_MAX_RFGAIN"
 #endif
@@ -14840,60 +14843,130 @@ static int priv_driver_set_pop(IN struct net_device *prNetDev,
 
 }
 
+#if (CFG_SUPPORT_DYNAMIC_EDCCA == 1)
 static int priv_driver_set_ed(IN struct net_device *prNetDev,
 			      IN char *pcCommand, IN int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	uint32_t u4BufLen = 0;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
-	int32_t u4Ret = 0, u4EdVal = 0;
-	uint32_t u4Id = CMD_SW_DBGCTL_ADVCTL_SET_ID + 3;
+	int32_t i4Ret = 0;
 	uint32_t u4Sel = 0;
-	struct PARAM_CUSTOM_SW_CTRL_STRUCT rSwCtrlInfo;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t i4EdVal[2] = { 0 };
 
-	ASSERT(prNetDev);
+	if (!prNetDev) {
+		DBGLOG(REQ, ERROR, "prNetDev is NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
-		return -1;
+		return WLAN_STATUS_FAILURE;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter) {
+		DBGLOG(REQ, LOUD, "Adapter is NULL!\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
-	rSwCtrlInfo.u4Id = u4Id;
-
 	if (i4Argc <= 2) {
+		DBGLOG(REQ, ERROR, "Argc(%d) ERR! Parameters for SET_ED:\n",
+			i4Argc);
 		DBGLOG(REQ, ERROR,
-		       "Argc(%d) ERR: SET_ED <Sel> <EDCCA(-49~-81dBm)>\n",
-		       i4Argc);
-		return -1;
+			"<Sel> <2.4G & 5G ED(-49~-81dBm)> or\n");
+		DBGLOG(REQ, ERROR,
+			"<Sel> <2.4G ED(-49~-81dBm)> <5G ED(-49~-81dBm)>\n");
+		return WLAN_STATUS_FAILURE;
 	}
 
-	u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Sel);
-	if (u4Ret)
-		DBGLOG(REQ, ERROR, "parse rSwCtrlInfo error u4Ret=%d\n", u4Ret);
-	u4Ret = kalkStrtos32(apcArgv[2], 0, &u4EdVal);
-	if (u4Ret)
-		DBGLOG(REQ, ERROR, "parse rSwCtrlInfo error u4Ret=%d\n", u4Ret);
+	i4Ret = kalkStrtou32(apcArgv[1], 0, &u4Sel);
+	if (i4Ret)
+		DBGLOG(REQ, ERROR, "parse u4Sel error i4Ret=%d\n", i4Ret);
 
-	rSwCtrlInfo.u4Data = ((u4EdVal & 0xFF) | (u4Sel << 31));
-	DBGLOG(REQ, LOUD, "u4Sel=%d u4EdCcaVal=%d, u4Data=0x%x,\n",
-		u4Sel, u4EdVal, rSwCtrlInfo.u4Data);
+	i4Ret = kalkStrtos32(apcArgv[2], 0, &i4EdVal[0]);
+	if (i4Ret)
+		DBGLOG(REQ, ERROR,
+			"parse i4EdVal(2.4G) error i4Ret=%d\n", i4Ret);
 
-	rStatus = kalIoctl(prGlueInfo, wlanoidSetSwCtrlWrite, &rSwCtrlInfo,
-			   sizeof(rSwCtrlInfo), FALSE, FALSE, TRUE, &u4BufLen);
+	if (i4Argc >= 4) {
+		i4Ret = kalkStrtos32(apcArgv[3], 0, &i4EdVal[1]);
+		if (i4Ret)
+			DBGLOG(REQ, ERROR,
+				"parse i4EdVal(5G) error u4Ret=%d\n", i4Ret);
 
-	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%d)\n", rStatus);
-		return -1;
+		/* Set the 2G & 5G ED with different value */
+		u4Status = wlanSetEd(prAdapter, i4EdVal[0], i4EdVal[1], u4Sel);
+	} else {
+		/* Set the 2G & 5G ED with different value */
+		u4Status = wlanSetEd(prAdapter, i4EdVal[0], i4EdVal[0], u4Sel);
+	}
+
+	if (u4Status != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%d)\n", u4Status);
+		return WLAN_STATUS_FAILURE;
 	}
 
 	return i4BytesWritten;
 
 }
+
+static int priv_driver_get_ed(IN struct net_device *prNetDev,
+				IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Id = CMD_SW_DBGCTL_ADVCTL_GET_ID + CMD_ADVCTL_ED_ID;
+	uint32_t u4Offset = 0;
+	struct PARAM_CUSTOM_SW_CTRL_STRUCT rSwCtrlInfo;
+	int8_t iEdVal[2] = { 0 };
+
+	if (!prNetDev) {
+		DBGLOG(REQ, ERROR, "prNetDev is NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return WLAN_STATUS_FAILURE;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	rSwCtrlInfo.u4Data = 0;
+	rSwCtrlInfo.u4Id = u4Id;
+
+	u4Status = kalIoctl(prGlueInfo,
+			wlanoidQuerySwCtrlRead,
+			&rSwCtrlInfo, sizeof(rSwCtrlInfo),
+			TRUE, TRUE, TRUE, &u4BufLen);
+
+	DBGLOG(REQ, LOUD, "Status %u\n", u4Status);
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		return WLAN_STATUS_FAILURE;
+
+	iEdVal[0] = rSwCtrlInfo.u4Data & 0xFF;
+	iEdVal[1] = (rSwCtrlInfo.u4Data >> 16) & 0xFF;
+
+	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+			"ED: 2.4G(%ddB), 5G(%ddB)\n", iEdVal[0], iEdVal[1]);
+
+	i4BytesWritten = (int32_t)u4Offset;
+
+	return i4BytesWritten;
+}
+#endif /* CFG_SUPPORT_DYNAMIC_EDCCA */
 
 static int priv_driver_get_tp_info(IN struct net_device *prNetDev,
 				   IN char *pcCommand, IN int i4TotalLen)
@@ -16886,7 +16959,10 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_SET_NOISE, priv_driver_set_noise},
 	{CMD_GET_NOISE, priv_driver_get_noise},
 	{CMD_SET_POP, priv_driver_set_pop},
+#if (CFG_SUPPORT_DYNAMIC_EDCCA == 1)
 	{CMD_SET_ED, priv_driver_set_ed},
+	{CMD_GET_ED, priv_driver_get_ed},
+#endif
 	{CMD_SET_PD, priv_driver_set_pd},
 	{CMD_SET_MAX_RFGAIN, priv_driver_set_maxrfgain},
 #endif
