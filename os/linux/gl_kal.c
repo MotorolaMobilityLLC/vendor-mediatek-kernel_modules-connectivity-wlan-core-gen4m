@@ -7785,10 +7785,9 @@ u_int8_t kalParseRandomMac(const struct net_device *ndev,
 	else
 		eth_zero_addr(ucMacAddr);
 
-	if (prBssInfo->fgIsScanOuiSet) {
-		kalMemCopy(ucMacAddr, prBssInfo->ucScanOui, MAC_OUI_LEN);
-		kalMemSet(pucMacAddrMask, 0xFF, MAC_OUI_LEN);
-	}
+	/* Randomize all 6-bytes MAC.
+	 * Not to keep first 3-bytes MAC OUI to be constant.
+	 */
 	get_random_mask_addr(pucRandomMac, ucMacAddr, pucMacAddrMask);
 
 	return TRUE;
