@@ -2019,6 +2019,10 @@ wrong_rate:
 
 #if (CFG_SUPPORT_DEBUG_SOP == 1)
 #define MAP_DRIVER_SIDE(ADDR) (ADDR - (CONN_INFRA_REMAPPING_OFFSET))
+#define PC_LOG_NUM_CE   32
+#define GPR_LOG_NUM_CE  32
+#define CURRENT_PC_IDX  0x22
+#define PC_LOG_CTRL_IDX 0x20
 
 struct dump_cr_set conninfra_pwr_off_domain_dump_list[] = {
 	{
@@ -3816,6 +3820,143 @@ static void usb_mt6639_dump_sleep_dbg_cr(struct ADAPTER *ad)
 	usb_mt6639_dumpConninfraClkDbg(ad, FALSE);
 }
 
+u_int8_t mt6639_usb_show_mcu_debug_info(struct ADAPTER *ad,
+	uint8_t *pucBuf, uint32_t u4Max, uint8_t ucFlag,
+	uint32_t *pu4Length)
+{
+	uint32_t u4Val = 0, u4Addr = 0, u4RdAddr = 0;
+	uint32_t u4Shft = 0, u4Mask = 0;
+	uint8_t  i = 0;
+	u_int8_t fgStatus = FALSE;
+
+	if (pucBuf) {
+		LOGBUF(pucBuf, u4Max, *pu4Length, "\n");
+		LOGBUF(pucBuf, u4Max, *pu4Length,
+			"----<Dump MCU Debug Information>----\n");
+	}
+	u4Addr =
+	  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_ADDR);
+	/* Enable mcu debug function. */
+	HAL_UHW_WR_FIELD(ad,
+		u4Addr,
+		0x0,
+		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_SHFT,
+		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_MASK);
+
+	u4Addr =
+	  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_ADDR);
+	/* Get currenct PC log. */
+	HAL_UHW_WR_FIELD(ad,
+		u4Addr,
+		CURRENT_PC_IDX,
+		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_SHFT,
+		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_MASK);
+
+	u4RdAddr =
+	  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR);
+
+	HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+
+	DBGLOG(INIT, INFO, "Current PC LOG: 0x%08x\n", u4Val);
+	if (pucBuf)
+		LOGBUF(pucBuf, u4Max, *pu4Length,
+		"Current PC LOG: 0x%08x\n", u4Val);
+
+	if (ucFlag != DBG_MCU_DBG_CURRENT_PC) {
+		u4Shft =
+		  CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_SHFT;
+		u4Mask =
+		  CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_MASK;
+		u4Addr =
+		  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_ADDR);
+
+		HAL_UHW_WR_FIELD(ad, u4Addr, PC_LOG_CTRL_IDX,
+		  u4Shft, u4Mask);
+
+		u4RdAddr =
+		  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR);
+
+		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+
+		DBGLOG(INIT, INFO, "PC log contorl=0x%08x\n", u4Val);
+		if (pucBuf)
+			LOGBUF(pucBuf, u4Max, *pu4Length,
+			"PC log contorl=0x%08x\n", u4Val);
+
+		u4Addr =
+		  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_ADDR);
+
+		u4RdAddr =
+		  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR);
+
+		for (i = 0; i < PC_LOG_NUM_CE; i++) {
+			HAL_UHW_WR_FIELD(ad,
+			u4Addr,
+			i,
+			u4Shft,
+			u4Mask);
+
+		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+
+		DBGLOG(INIT, INFO, "PC log(%d)=0x%08x\n", i, u4Val);
+		if (pucBuf)
+			LOGBUF(pucBuf, u4Max, *pu4Length,
+			"PC log(%d)=0x%08x\n", i, u4Val);
+		}
+		/* Read LR log. */
+		u4Shft =
+		CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_SHFT;
+
+		u4Mask =
+		CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_MASK;
+
+		u4Addr =
+		  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_ADDR);
+
+		HAL_UHW_WR_FIELD(ad,
+		  u4Addr,
+		  PC_LOG_CTRL_IDX,
+		  u4Shft,
+		  u4Mask);
+
+		u4RdAddr =
+		  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR);
+
+		HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+
+		DBGLOG(INIT, INFO, "LR log contorl=0x%08x\n", u4Val);
+
+		u4Addr =
+		  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_ADDR);
+
+		u4RdAddr =
+		  MAP_DRIVER_SIDE(CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR);
+
+		if (pucBuf)
+			LOGBUF(pucBuf, u4Max, *pu4Length,
+			"LR log contorl=0x%08x\n", u4Val);
+
+		for (i = 0; i < GPR_LOG_NUM_CE; i++) {
+			HAL_UHW_WR_FIELD(ad,
+			u4Addr,
+			i,
+			u4Shft,
+			u4Mask);
+
+			HAL_UHW_RD(ad, u4RdAddr, &u4Val, &fgStatus);
+
+			DBGLOG(INIT, INFO, "LR log(%d)=0x%08x\n", i, u4Val);
+			if (pucBuf)
+				LOGBUF(pucBuf, u4Max, *pu4Length,
+				"LR log(%d)=0x%08x\n", i, u4Val);
+		}
+	}
+
+	return TRUE;
+
+}
+
+
 #elif defined(_HIF_PCIE)
 static u_int8_t mt6639_ConninfraOnRdableChk(struct ADAPTER *ad)
 {
@@ -4274,6 +4415,117 @@ static void mt6639_dump_sleep_dbg_cr(struct ADAPTER *ad)
 	/* Dump off domain */
 	mt6639_dumpConninfraClkDbg(ad, FALSE);
 }
+
+u_int8_t mt6639_pcie_show_mcu_debug_info(struct ADAPTER *ad,
+	uint8_t *pucBuf, uint32_t u4Max, uint8_t ucFlag,
+	uint32_t *pu4Length)
+{
+	uint32_t u4Val = 0;
+	uint32_t u4Shft = 0, u4Mask = 0;
+	uint8_t  i = 0;
+
+	if (pucBuf) {
+		LOGBUF(pucBuf, u4Max, *pu4Length, "\n");
+		LOGBUF(pucBuf, u4Max, *pu4Length,
+			"----<Dump MCU Debug Information>----\n");
+	}
+	/* Enable mcu debug function. */
+	HAL_MCR_WR_FIELD(ad,
+		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_ADDR,
+		0x0,
+		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_SHFT,
+		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_MASK);
+
+	/* Get currenct PC log. */
+	HAL_MCR_WR_FIELD(ad,
+		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_ADDR,
+		CURRENT_PC_IDX,
+		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_SHFT,
+		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_MASK);
+
+	HAL_MCR_RD(ad,
+		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
+		&u4Val);
+
+	DBGLOG(INIT, INFO, "Current PC LOG: 0x%08x\n", u4Val);
+	if (pucBuf)
+		LOGBUF(pucBuf, u4Max, *pu4Length,
+		"Current PC LOG: 0x%08x\n", u4Val);
+
+	if (ucFlag != DBG_MCU_DBG_CURRENT_PC) {
+		u4Shft =
+		  CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_SHFT;
+		u4Mask =
+		  CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_MASK;
+
+		HAL_MCR_WR_FIELD(ad,
+		  CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_ADDR,
+		  PC_LOG_CTRL_IDX,
+		  u4Shft,
+		  u4Mask);
+
+		HAL_MCR_RD(ad,
+			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
+			&u4Val);
+
+		DBGLOG(INIT, INFO, "PC log contorl=0x%08x\n", u4Val);
+		if (pucBuf)
+			LOGBUF(pucBuf, u4Max, *pu4Length,
+			"PC log contorl=0x%08x\n", u4Val);
+
+		for (i = 0; i < PC_LOG_NUM_CE; i++) {
+			HAL_MCR_WR_FIELD(ad,
+			  CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_ADDR,
+			  i,
+			  u4Shft,
+			  u4Mask);
+			HAL_MCR_RD(ad,
+			  CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
+			  &u4Val);
+
+			DBGLOG(INIT, INFO, "PC log(%d)=0x%08x\n", i, u4Val);
+			if (pucBuf)
+				LOGBUF(pucBuf, u4Max, *pu4Length,
+				"PC log(%d)=0x%08x\n", i, u4Val);
+		}
+		/* Read LR log. */
+		u4Shft =
+		CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_SHFT;
+		u4Mask =
+		CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_MASK;
+		HAL_MCR_WR_FIELD(ad,
+			CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_ADDR,
+			PC_LOG_CTRL_IDX,
+			u4Shft,
+			u4Mask);
+		HAL_MCR_RD(ad,
+			CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR,
+			&u4Val);
+		DBGLOG(INIT, INFO, "LR log contorl=0x%08x\n", u4Val);
+		if (pucBuf)
+			LOGBUF(pucBuf, u4Max, *pu4Length,
+			"LR log contorl=0x%08x\n", u4Val);
+
+		for (i = 0; i < GPR_LOG_NUM_CE; i++) {
+			HAL_MCR_WR_FIELD(ad,
+			  CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_ADDR,
+			  i,
+			  u4Shft,
+			  u4Mask);
+			HAL_MCR_RD(ad,
+			  CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR,
+			  &u4Val);
+			DBGLOG(INIT, INFO, "LR log(%d)=0x%08x\n", i, u4Val);
+			if (pucBuf)
+				LOGBUF(pucBuf, u4Max, *pu4Length,
+				"LR log(%d)=0x%08x\n", i, u4Val);
+		}
+	}
+
+	return TRUE;
+
+}
+
 #endif
 
 u_int8_t mt6639_show_debug_sop_info(struct ADAPTER *ad,

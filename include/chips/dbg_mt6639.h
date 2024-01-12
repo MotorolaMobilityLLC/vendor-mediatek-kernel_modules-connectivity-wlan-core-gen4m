@@ -39,4 +39,14 @@ u_int8_t mt6639_show_debug_sop_info(struct ADAPTER *ad,
 	uint8_t ucCase);
 #endif
 
+#if defined(_HIF_PCIE)
+u_int8_t mt6639_pcie_show_mcu_debug_info(struct ADAPTER *ad,
+	uint8_t *pucBuf, uint32_t u4Max, uint8_t ucFlag,
+	uint32_t *pu4Length);
+#elif defined(_HIF_USB)
+u_int8_t mt6639_usb_show_mcu_debug_info(struct ADAPTER *ad,
+	uint8_t *pucBuf, uint32_t u4Max, uint8_t ucFlag,
+	uint32_t *pu4Length);
+#endif
+
 #endif
