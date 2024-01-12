@@ -805,6 +805,9 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *req
 
 		prGlueInfo = *((P_GLUE_INFO_T *) wiphy_priv(wiphy));
 
+		if (wlanIsChipAssert(prGlueInfo->prAdapter))
+			break;
+
 		prP2pGlueInfo = prGlueInfo->prP2PInfo[0];
 		prP2pGlueDevInfo = prGlueInfo->prP2PDevInfo;
 

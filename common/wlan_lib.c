@@ -6850,7 +6850,7 @@ VOID wlanInitFeatureOption(IN P_ADAPTER_T prAdapter)
 	/* Support TDLS 5.5.4.2 optional case */
 	prWifiVar->fgTdlsBufferSTASleep = (BOOLEAN) wlanCfgGetUint32(prAdapter, "TdlsBufferSTASleep", FEATURE_DISABLED);
 	/* Support USB Whole chip reset recover */
-	prWifiVar->fgChipResetRecover = (BOOLEAN) wlanCfgGetUint32(prAdapter, "ChipResetRecover", FEATURE_ENABLED);
+	prWifiVar->fgChipResetRecover = (BOOLEAN) wlanCfgGetUint32(prAdapter, "ChipResetRecover", FEATURE_DISABLED);
 }
 
 VOID wlanCfgSetSwCtrl(IN P_ADAPTER_T prAdapter)
@@ -8325,6 +8325,72 @@ BOOLEAN wlanIsChipNoAck(IN P_ADAPTER_T prAdapter)
 BOOLEAN wlanIsChipRstRecEnabled(IN P_ADAPTER_T prAdapter)
 {
 	return prAdapter->rWifiVar.fgChipResetRecover;
+}
+
+BOOLEAN wlanIsChipAssert(IN P_ADAPTER_T prAdapter)
+{
+	return (prAdapter->rWifiVar.fgChipResetRecover && prAdapter->fgIsChipAssert);
+}
+
+VOID wlanChipRstPreAct(IN P_ADAPTER_T prAdapter)
+{
+	P_BSS_INFO_T prBssInfo = (P_BSS_INFO_T) NULL;
+	INT_32 i4BssIdx;
+	UINT_32 u4ClientCount = 0;
+	P_STA_RECORD_T prCurrStaRec = (P_STA_RECORD_T) NULL;
+	P_STA_RECORD_T prNextCurrStaRec = (P_STA_RECORD_T) NULL;
+	P_LINK_T prClientList;
+	P_GLUE_INFO_T prGlueInfo = prAdapter->prGlueInfo;
+
+	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_CHIP_RST);
+	if (prAdapter->fgIsChipAssert) {
+		KAL_RELEASE_MUTEX(prAdapter, MUTEX_CHIP_RST);
+		return;
+	}
+	prAdapter->fgIsChipAssert = TRUE;
+	KAL_RELEASE_MUTEX(prAdapter, MUTEX_CHIP_RST);
+
+	for (i4BssIdx = 0; i4BssIdx < HW_BSSID_NUM; i4BssIdx++) {
+		prBssInfo = prAdapter->aprBssInfo[i4BssIdx];
+
+		if (!prBssInfo->fgIsInUse)
+			continue;
+
+		if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
+
+			if (prGlueInfo->eParamMediaStateIndicated == PARAM_MEDIA_STATE_CONNECTED)
+				kalIndicateStatusAndComplete(prGlueInfo, WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0);
+		} else if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
+			if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
+				u4ClientCount = bssGetClientCount(prAdapter, prBssInfo);
+
+				if (u4ClientCount == 0)
+					continue;
+
+				prClientList = &prBssInfo->rStaRecOfClientList;
+				LINK_FOR_EACH_ENTRY_SAFE(prCurrStaRec, prNextCurrStaRec,
+					prClientList, rLinkEntry, STA_RECORD_T) {
+					kalP2PGOStationUpdate(prAdapter->prGlueInfo,
+						(UINT_8) prBssInfo->u4PrivateData, prCurrStaRec, FALSE);
+					LINK_REMOVE_KNOWN_ENTRY(prClientList, &prCurrStaRec->rLinkEntry);
+				}
+			} else if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
+				if (prBssInfo->prStaRecOfAP == NULL)
+					continue;
+#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= LINUX_VERSION_CODE)
+				kalP2PGCIndicateConnectionStatus(prGlueInfo,
+					(UINT_8) prBssInfo->u4PrivateData,
+					NULL, NULL, 0, 0,
+					WLAN_STATUS_MEDIA_DISCONNECT);
+#else
+				kalP2PGCIndicateConnectionStatus(prGlueInfo,
+							 (UINT_8) prBssInfo->u4PrivateData, NULL, NULL, 0, 0);
+#endif
+				prBssInfo->prStaRecOfAP = NULL;
+
+			}
+		}
+	}
 }
 
 #if CFG_ENABLE_PER_STA_STATISTICS
