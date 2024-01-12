@@ -2225,3 +2225,47 @@ s_int32 mt_op_listmode_cmd(
 	return SERV_STATUS_SERV_TEST_NOT_SUPPORTED;
 }
 
+s_int32 mt_op_set_efem_mode(
+	struct test_wlan_info *winfos,
+	u_int32 band_idx,
+	u_int32 ch_band,
+	u_int32 wf_path,
+	u_int32 enable,
+	u_int32 mode,
+	u_int32 level)
+{
+	return SERV_STATUS_SERV_TEST_NOT_SUPPORTED;
+}
+
+s_int32 mt_op_set_tx_gain(
+	struct test_wlan_info *winfos,
+	u_int32 band_idx,
+	u_int32 ch_band,
+	u_int32 wf_path,
+	u_int32 enable,
+	u_int32 gain_type,
+	u_int32 value)
+{
+	return SERV_STATUS_SERV_TEST_NOT_SUPPORTED;
+}
+
+s_int32 mt_op_set_etssi_gain(
+	struct test_wlan_info *winfos,
+	u_int32 band_idx,
+	u_int32 ch_band,
+	u_int32 wf_path,
+	u_int32 enable,
+	u_int32 gain_value)
+{
+	return SERV_STATUS_SERV_TEST_NOT_SUPPORTED;
+}
+
+s_int32 mt_op_get_tssi_meas_dbv(
+	struct test_wlan_info *winfos,
+	u_int32 band_idx,
+	u_int32 wf_path,
+	u_int32 *dbv_value)
+{
+	return SERV_STATUS_SERV_TEST_NOT_SUPPORTED;
+}
+

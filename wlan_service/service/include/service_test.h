@@ -294,5 +294,33 @@ s_int32 mt_serv_get_rx_stat(struct service_test *serv_test, u_int8 band_idx,
 	u_int8 blk_idx, u_int8 test_rx_stat_cat, struct test_rx_stat_u *st);
 s_int32 mt_serv_listmode_cmd(struct service_test *serv_test,
 	u_int8 *para, u_int16 para_len, u_int32 *rsp_len, void *rsp_data);
+s_int32 mt_serv_set_efem_mode(
+	struct service_test *serv_test,
+	u_int32 band_idx,
+	u_int32 ch_band,
+	u_int32 wf_path,
+	u_int32 enable,
+	u_int32 mode,
+	u_int32 level);
+s_int32 mt_serv_set_tx_gain(
+	struct service_test *serv_test,
+	u_int32 band_idx,
+	u_int32 ch_band,
+	u_int32 wf_path,
+	u_int32 enable,
+	u_int32 gain_type,
+	u_int32 value);
+s_int32 mt_serv_set_etssi_gain(
+	struct service_test *serv_test,
+	u_int32 band_idx,
+	u_int32 ch_band,
+	u_int32 wf_path,
+	u_int32 enable,
+	u_int32 gain_value);
+s_int32 mt_serv_get_tssi_meas_dbv(
+	struct service_test *serv_test,
+	u_int32 band_idx,
+	u_int32 wf_path,
+	u_int32 *dbv_value);
 
 #endif /* __SERVICE_TEST_H__ */

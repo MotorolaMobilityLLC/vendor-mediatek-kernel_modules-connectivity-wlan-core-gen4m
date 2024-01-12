@@ -522,5 +522,33 @@ s_int32 mt_op_listmode_cmd(
 	u_int16 para_len,
 	uint32_t *rsp_len,
 	void *rsp_data);
+s_int32 mt_op_set_efem_mode(
+	struct test_wlan_info *winfos,
+	u_int32 band_idx,
+	u_int32 ch_band,
+	u_int32 wf_path,
+	u_int32 enable,
+	u_int32 mode,
+	u_int32 level);
+s_int32 mt_op_set_tx_gain(
+	struct test_wlan_info *winfos,
+	u_int32 band_idx,
+	u_int32 ch_band,
+	u_int32 wf_path,
+	u_int32 enable,
+	u_int32 gain_type,
+	u_int32 value);
+s_int32 mt_op_set_etssi_gain(
+	struct test_wlan_info *winfos,
+	u_int32 band_idx,
+	u_int32 ch_band,
+	u_int32 wf_path,
+	u_int32 enable,
+	u_int32 gain_value);
+s_int32 mt_op_get_tssi_meas_dbv(
+	struct test_wlan_info *winfos,
+	u_int32 band_idx,
+	u_int32 wf_path,
+	u_int32 *dbv_value);
 
 #endif /* __OPERATION_H__ */
