@@ -7528,16 +7528,15 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"Tc13Page", NIC_TX_PAGE_COUNT_TC1);
 #endif
 
-	INIT_UINT(prWifiVar->ucTxMsduQueue, "NicTxMsduQueue", 0);
-
-	prWifiVar->ucTxMsduQueueInit = prWifiVar->ucTxMsduQueue;
+	INIT_UINT(prWifiVar->ucTxMsduQueueInit, "NicTxMsduQueue", 0);
+	prWifiVar->ucTxMsduQueue = prWifiVar->ucTxMsduQueueInit;
 
 	/* 1 resource for AC_BK(TC0_INDEX), AC_BE(TC1_INDEX) */
 	/* 2 resource for AC_VI(TC2_INDEX) */
 	/* 4 resource for AC_VO(TC3_INDEX) */
 	/* 1 resource for MGMT(TC4_INDEX) & TC_NUM */
-	INIT_UINT(u4TxHifRes, "TxHifResCtl", 0x00114211);
-	prWifiVar->u4TxHifRes = u4TxHifRes;
+	INIT_UINT(prWifiVar->u4TxHifRes, "TxHifResCtl", 0x00114211);
+	u4TxHifRes = prWifiVar->u4TxHifRes;
 	for (u4Idx = 0; u4Idx < TC_NUM && u4TxHifRes; u4Idx++) {
 		prAdapter->au4TxHifResCtl[u4Idx] = u4TxHifRes & BITS(0, 3);
 		u4TxHifRes = u4TxHifRes >> 4;

@@ -3922,6 +3922,28 @@ void nicSetAvailablePhyTypeSet(struct ADAPTER *prAdapter)
 
 }
 
+static u_int8_t nicIsWmmPriorityInverse(struct AC_QUE_PARMS arACQueParms[])
+{
+	enum ENUM_WMM_ACI eLowPrioAc;
+	enum ENUM_WMM_ACI eHighPrioAc;
+
+	for (eLowPrioAc = WMM_AC_BE_INDEX;
+	     eLowPrioAc < WMM_AC_VI_INDEX; eLowPrioAc++) {
+		for (eHighPrioAc = WMM_AC_VI_INDEX;
+		     eHighPrioAc < WMM_AC_INDEX_NUM; eHighPrioAc++) {
+			if (arACQueParms[eLowPrioAc].u2Aifsn <=
+			    arACQueParms[eHighPrioAc].u2Aifsn)
+				return TRUE;
+
+			if (arACQueParms[eLowPrioAc].u2CWmin <=
+			    arACQueParms[eHighPrioAc].u2CWmin)
+				return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This utility function is used to update WMM Parms
@@ -3956,7 +3978,7 @@ uint32_t nicQmUpdateWmmParms(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	rCmdUpdateWmmParms.ucBssIndex = (uint8_t) ucBssIndex;
 	kalMemCopy(&rCmdUpdateWmmParms.arACQueParms[0],
 		   &prBssInfo->arACQueParms[0],
-		   (sizeof(struct AC_QUE_PARMS) * AC_NUM));
+		   sizeof(struct AC_QUE_PARMS) * WMM_AC_INDEX_NUM);
 
 	rCmdUpdateWmmParms.fgIsQBSS = prBssInfo->fgIsQBSS;
 	rCmdUpdateWmmParms.ucWmmSet = (uint8_t) prBssInfo->ucWmmQueSet;
@@ -3973,15 +3995,10 @@ uint32_t nicQmUpdateWmmParms(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		rCmdUpdateWmmParms.arACQueParms[AC1].u2CWmin,
 		rCmdUpdateWmmParms.arACQueParms[AC2].u2CWmin);
 
-	/* If VI use worse parameter than BE, need to use round-robbin queue
-	 *   to enqueue data from HIF to HW.
-	 *  (Should revise if HIF can have separate queue for each AC)
-	 */
-	if ((rCmdUpdateWmmParms.arACQueParms[AC1].u2Aifsn <
-	     rCmdUpdateWmmParms.arACQueParms[AC2].u2Aifsn) ||
-	    (rCmdUpdateWmmParms.arACQueParms[AC1].u2CWmin <
-	     rCmdUpdateWmmParms.arACQueParms[AC2].u2CWmin)) {
-		/* Use round-robbin queuing in HIF */
+	if (nicIsWmmPriorityInverse(rCmdUpdateWmmParms.arACQueParms)) {
+		/* Use round-robbin queuing in HIF to enqueue data to HW
+		 * Should revise if HIF can have separate queue for each AC
+		 */
 		prAdapter->rWifiVar.ucTxMsduQueue = 1;
 
 		/* The ratio of each AC is 1:1:1:1 in this case */
@@ -3993,7 +4010,7 @@ uint32_t nicQmUpdateWmmParms(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		u4TxHifRes = prAdapter->rWifiVar.u4TxHifRes;
 	}
 
-	DBGLOG_LIMITED(QM, INFO, "ucTxMsduQueue:[%u], u4TxHifRes[%d]",
+	DBGLOG_LIMITED(QM, INFO, "ucTxMsduQueue:[%u], u4TxHifRes[0x%08x]",
 		prAdapter->rWifiVar.ucTxMsduQueue, u4TxHifRes);
 
 	for (u4Idx = 0; u4Idx < TC_NUM && u4TxHifRes; u4Idx++) {
@@ -4044,7 +4061,8 @@ uint32_t nicQmUpdateMUEdcaParams(struct ADAPTER *prAdapter,
 	} else {
 		kalMemCopy(&rCmdUpdateMUEdcaParms.arMUEdcaParams[0],
 			&prBssInfo->arMUEdcaParams[0],
-			(sizeof(struct _CMD_MU_EDCA_PARAMS_T) * AC_NUM));
+			sizeof(struct _CMD_MU_EDCA_PARAMS_T) *
+				WMM_AC_INDEX_NUM);
 	}
 
 	rCmdUpdateMUEdcaParms.fgIsQBSS = prBssInfo->fgIsQBSS;

@@ -1680,7 +1680,6 @@ void nicTxMsduQueueByPrioBackTxPortQ(struct ADAPTER *prAdapter)
 #endif
 }
 
-
 #if (CFG_TX_HIF_PORT_QUEUE == 1)
 void nicTxMsduQueueByPrioTxHifPortQ(struct ADAPTER *prAdapter)
 {

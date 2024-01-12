@@ -791,7 +791,7 @@ enum ENUM_FREE_QUOTA_MODET {
 };
 
 struct CMD_UPDATE_WMM_PARMS {
-	struct AC_QUE_PARMS arACQueParms[AC_NUM];
+	struct AC_QUE_PARMS arACQueParms[WMM_AC_INDEX_NUM];
 	uint8_t ucBssIndex;
 	uint8_t fgIsQBSS;
 	uint8_t ucWmmSet;
@@ -811,7 +811,7 @@ struct _CMD_MQM_UPDATE_MU_EDCA_PARMS_T {
 	uint8_t ucWmmSet;
 	uint8_t aucPadding1[1];
 
-	struct _CMD_MU_EDCA_PARAMS_T arMUEdcaParams[AC_NUM];
+	struct _CMD_MU_EDCA_PARAMS_T arMUEdcaParams[WMM_AC_INDEX_NUM];
 	uint8_t aucPadding[32];
 };
 #endif
