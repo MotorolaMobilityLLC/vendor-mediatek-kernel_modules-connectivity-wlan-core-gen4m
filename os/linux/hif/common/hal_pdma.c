@@ -82,6 +82,7 @@
 #include "gl_kal.h"
 #include "host_csr.h"
 
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -759,6 +760,7 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 
 		DBGLOG(INIT, INFO, "FW OWN:%u, IntSta:0x%08x\n",
 		       fgResult, prHifInfo->u4WakeupIntSta);
+		prHifInfo->u4WakeupIntSta = 0;
 	}
 
 unlock:
