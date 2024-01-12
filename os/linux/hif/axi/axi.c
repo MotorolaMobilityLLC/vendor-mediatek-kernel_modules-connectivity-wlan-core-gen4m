@@ -506,7 +506,7 @@ static void axiAllocHifMem(struct platform_device *pdev)
 		if (!axiAllocRsvMem(RX_BUFFER_AGGRESIZE,
 				    &grMem.rRxEventBuf[u4Idx], false))
 			DBGLOG(INIT, ERROR,
-			       "RxEventBuf[%u] alloc fail\n", u4Idx);
+			       "RxDataBuf[%u] alloc fail\n", u4Idx);
 	}
 
 	for (u4Idx = 0; u4Idx < RX_RING1_SIZE; u4Idx++) {

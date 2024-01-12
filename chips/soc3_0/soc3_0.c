@@ -312,6 +312,13 @@ void soc3_0asicConnac2xProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 	}
 
+	if (rIntrStatus.field_conn2x_ext.wfdma1_tx_done_1) {
+		halWpdmaProcessDataDmaDone(prAdapter->prGlueInfo,
+			TX_RING_DATA1_IDX_1);
+
+		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
+	}
+
 }
 
 void soc3_0asicConnac2xProcessRxInterrupt(
