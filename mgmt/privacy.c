@@ -128,8 +128,6 @@ void secInit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 
 	DEBUGFUNC("secInit");
 
-	ASSERT(prAdapter);
-
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	prAisSpecBssInfo =
@@ -263,11 +261,7 @@ u_int8_t secCheckClassError(IN struct ADAPTER *prAdapter,
 	void *prRxStatus;
 	struct RX_DESC_OPS_T *prRxDescOps;
 
-	ASSERT(prAdapter);
-	ASSERT(prSwRfb);
 	prRxDescOps = prAdapter->chip_info->prRxDescOps;
-	ASSERT(prRxDescOps->nic_rxd_get_sw_class_error_bit);
-
 	prRxStatus = prSwRfb->prRxStatus;
 
 	if (prRxDescOps->nic_rxd_get_sw_class_error_bit(prRxStatus)
@@ -452,11 +446,7 @@ void secSetCipherSuite(IN struct ADAPTER *prAdapter,
 	struct DOT11_RSNA_CONFIG_PAIRWISE_CIPHERS_ENTRY *prEntry;
 	struct IEEE_802_11_MIB *prMib;
 
-	ASSERT(prAdapter);
-
 	prMib = aisGetMib(prAdapter, ucBssIndex);
-
-	ASSERT(prMib);
 
 	if (u4CipherSuitesFlags == CIPHER_FLAG_NONE) {
 		/* Disable all the pairwise cipher suites. */
@@ -568,9 +558,6 @@ u_int8_t secEnabledInAis(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("secEnabledInAis");
 
-	ASSERT(eEncStatus <
-	       ENUM_ENCRYPTION3_KEY_ABSENT);
-
 	switch (eEncStatus) {
 	case ENUM_ENCRYPTION_DISABLED:
 		return FALSE;
@@ -591,8 +578,6 @@ u_int8_t secIsProtected1xFrame(IN struct ADAPTER *prAdapter,
 			       IN struct STA_RECORD *prStaRec)
 {
 	struct BSS_INFO *prBssInfo;
-
-	ASSERT(prAdapter);
 
 	if (prStaRec) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
@@ -625,12 +610,6 @@ u_int8_t secIsProtectedFrame(IN struct ADAPTER *prAdapter,
 			     IN struct MSDU_INFO *prMsdu,
 			     IN struct STA_RECORD *prStaRec)
 {
-	/* P_BSS_INFO_T prBssInfo; */
-
-	ASSERT(prAdapter);
-	ASSERT(prMsdu);
-	/* ASSERT(prStaRec); */
-
 #if CFG_SUPPORT_802_11W
 	if (prMsdu->ucPacketType == TX_PACKET_TYPE_MGMT)
 		return FALSE;
@@ -650,8 +629,6 @@ u_int8_t secIsProtectedBss(IN struct ADAPTER *prAdapter,
 {
 	uint8_t ucBssIndex = 0;
 
-	ASSERT(prBssInfo);
-
 	ucBssIndex = prBssInfo->ucBssIndex;
 
 	if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
@@ -670,7 +647,6 @@ u_int8_t secIsProtectedBss(IN struct ADAPTER *prAdapter,
 	else if (prBssInfo->eNetworkType == NETWORK_TYPE_BOW)
 		return TRUE;
 
-	ASSERT(FALSE);
 	return FALSE;
 }
 
@@ -678,8 +654,6 @@ u_int8_t secIsWepBss(IN struct ADAPTER *prAdapter,
 		     IN struct BSS_INFO *prBssInfo)
 {
 	enum ENUM_WEP_STATUS eEncStatus;
-
-	ASSERT(prBssInfo);
 
 	eEncStatus = aisGetEncStatus(prAdapter,
 		prBssInfo->ucBssIndex);
@@ -723,10 +697,10 @@ u_int8_t secPrivacySeekForEntry(
 	struct WLAN_TABLE *prWtbl;
 	uint8_t ucRoleIdx = 0;
 
-	ASSERT(prSta);
-
-	if (!prSta->fgIsInUse)
-		ASSERT(FALSE);
+	if (!prSta->fgIsInUse) {
+		DBGLOG(RSN, ERROR, "sta is not in use\n");
+		return FALSE;
+	}
 
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prSta->ucBssIndex);
 	ucRoleIdx = prP2pBssInfo->u4PrivateData;
@@ -839,8 +813,6 @@ u_int8_t secPrivacySeekForEntry(
 void secPrivacyFreeForEntry(IN struct ADAPTER *prAdapter, IN uint8_t ucEntry)
 {
 	struct WLAN_TABLE *prWtbl;
-
-	ASSERT(prAdapter);
 
 	if (ucEntry >= WTBL_SIZE)
 		return;
@@ -1004,8 +976,6 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 	    GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
 	prWtbl = prAdapter->rWifiVar.arWtbl;
-	ASSERT(prAdapter);
-	ASSERT(pucAddr);
 
 	if (ucAlg == CIPHER_SUITE_WPI ||	/* CIPHER_SUITE_GCM_WPI || */
 	    ucAlg == CIPHER_SUITE_WEP40 ||
@@ -1106,15 +1076,7 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 u_int8_t secCheckWTBLAssign(IN struct ADAPTER *prAdapter)
 {
-	u_int8_t fgCheckFail = FALSE;
-
 	secPrivacyDumpWTBL(prAdapter);
-
-	/* AIS STA should just has max 2 entry */
-	/* Max STA check */
-	if (fgCheckFail)
-		ASSERT(FALSE);
-
 	return TRUE;
 }
 
@@ -1131,8 +1093,6 @@ u_int8_t secCheckWTBLAssign(IN struct ADAPTER *prAdapter)
 uint8_t secGetStaIdxByWlanIdx(struct ADAPTER *prAdapter, uint8_t ucWlanIdx)
 {
 	struct WLAN_TABLE *prWtbl;
-
-	ASSERT(prAdapter);
 
 	if (ucWlanIdx >= WTBL_SIZE)
 		return STA_REC_INDEX_NOT_FOUND;
@@ -1163,8 +1123,6 @@ uint8_t secGetStaIdxByWlanIdx(struct ADAPTER *prAdapter, uint8_t ucWlanIdx)
 uint8_t secGetBssIdxByWlanIdx(struct ADAPTER *prAdapter, uint8_t ucWlanIdx)
 {
 	struct WLAN_TABLE *prWtbl;
-
-	ASSERT(prAdapter);
 
 	if (ucWlanIdx >= WTBL_SIZE)
 		return WTBL_RESERVED_ENTRY;
@@ -1224,7 +1182,6 @@ uint8_t secLookupStaRecIndexFromTA(
 	int i;
 	struct WLAN_TABLE *prWtbl;
 
-	ASSERT(prAdapter);
 	prWtbl = prAdapter->rWifiVar.arWtbl;
 
 	for (i = 0; i < WTBL_SIZE; i++) {

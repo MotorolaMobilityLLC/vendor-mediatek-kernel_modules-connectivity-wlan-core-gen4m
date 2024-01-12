@@ -137,9 +137,6 @@ void wnmWNMAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 {
 	struct WLAN_ACTION_FRAME *prRxFrame;
 
-	ASSERT(prAdapter);
-	ASSERT(prSwRfb);
-
 	prRxFrame = (struct WLAN_ACTION_FRAME *)prSwRfb->pvHeader;
 
 	DBGLOG(WNM, TRACE, "WNM action frame: %d from " MACSTR "\n",
@@ -210,9 +207,6 @@ wnmRunEventTimgingMeasTxDone(IN struct ADAPTER *prAdapter,
 {
 	struct STA_RECORD *prStaRec;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsduInfo);
-
 	DBGLOG(WNM, LOUD, "WNM: EVENT-TX DONE: Current Time = %ld\n",
 	       kalGetTimeTick());
 
@@ -259,8 +253,6 @@ static void wnmComposeTimingMeasFrame(IN struct ADAPTER *prAdapter,
 	uint16_t u2PayloadLen;
 
 	prBssInfo = &prAdapter->rWifiVar.arBssInfo[prStaRec->ucNetTypeIndex];
-	ASSERT(prBssInfo);
-
 	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(
 		prAdapter, MAC_TX_RESERVED_FIELD + PUBLIC_ACTION_MAX_LEN);
 
@@ -394,8 +386,6 @@ static uint32_t wnmBTMResponseTxDone(IN struct ADAPTER *prAdapter,
 	struct BSS_TRANSITION_MGT_PARAM_T *prBtm;
 	struct AIS_FSM_INFO *prAisFsmInfo;
 
-	ASSERT(prMsduInfo);
-
 	ucBssIndex =
 		prMsduInfo->ucBssIndex;
 	prBtm =
@@ -440,7 +430,6 @@ void wnmSendBTMResponseFrame(IN struct ADAPTER *prAdapter,
 	}
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
-	ASSERT(prBssInfo);
 	prBtmParam =
 		aisGetBTMParam(prAdapter, prStaRec->ucBssIndex);
 
@@ -513,7 +502,6 @@ void wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
 	struct BSS_TRANSITION_MGT_PARAM_T *prBtmParam;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
-	ASSERT(prBssInfo);
 	prBtmParam =
 		aisGetBTMParam(prAdapter, prStaRec->ucBssIndex);
 
