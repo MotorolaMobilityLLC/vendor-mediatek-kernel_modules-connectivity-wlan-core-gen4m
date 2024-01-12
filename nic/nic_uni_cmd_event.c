@@ -2728,16 +2728,19 @@ uint32_t nicUniCmdAccessReg(struct ADAPTER *ad,
 {
 	struct CMD_ACCESS_REG *cmd;
 	struct UNI_CMD_ACCESS_REG *uni_cmd;
-	struct UNI_CMD_ACCESS_REG_BASIC *tag;
 	struct WIFI_UNI_CMD_ENTRY *entry;
-	uint32_t max_cmd_len = sizeof(struct UNI_CMD_ACCESS_REG) +
-	     		       sizeof(struct UNI_CMD_ACCESS_REG_BASIC);
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_ACCESS_REG);
 
 	if (info->ucCID != CMD_ID_ACCESS_REG ||
 	    info->u4SetQueryInfoLen != sizeof(*cmd))
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	cmd = (struct CMD_ACCESS_REG *) info->pucInfoBuffer;
+
+	if (UNI_IS_RFCR(cmd->u4Address))
+		max_cmd_len += sizeof(struct UNI_CMD_ACCESS_RF_REG_BASIC);
+	else
+		max_cmd_len += sizeof(struct UNI_CMD_ACCESS_REG_BASIC);
 
 	if (info->fgSetQuery)
 		entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_ACCESS_REG,
@@ -2752,11 +2755,24 @@ uint32_t nicUniCmdAccessReg(struct ADAPTER *ad,
 		return WLAN_STATUS_RESOURCES;
 
 	uni_cmd = (struct UNI_CMD_ACCESS_REG *) entry->pucInfoBuffer;
-	tag = (struct UNI_CMD_ACCESS_REG_BASIC *) uni_cmd->aucTlvBuffer;
-	tag->u2Tag = UNI_CMD_ACCESS_REG_TAG_BASIC;
-	tag->u2Length = sizeof(*tag);
-	tag->u4Addr = cmd->u4Address;
-	tag->u4Value = cmd->u4Data;
+	if (UNI_IS_RFCR(cmd->u4Address)) {
+		struct UNI_CMD_ACCESS_RF_REG_BASIC *tag =
+		   (struct UNI_CMD_ACCESS_RF_REG_BASIC *) uni_cmd->aucTlvBuffer;
+
+		tag->u2Tag = UNI_CMD_ACCESS_REG_TAG_RF_REG_BASIC;
+		tag->u2Length = sizeof(*tag);
+		tag->u2WifiStream = UNI_STREAM_FROM_RFCR(cmd->u4Address);
+		tag->u4Addr = cmd->u4Address;
+		tag->u4Value = cmd->u4Data;
+	} else {
+		struct UNI_CMD_ACCESS_REG_BASIC *tag =
+		      (struct UNI_CMD_ACCESS_REG_BASIC *) uni_cmd->aucTlvBuffer;
+
+		tag->u2Tag = UNI_CMD_ACCESS_REG_TAG_BASIC;
+		tag->u2Length = sizeof(*tag);
+		tag->u4Addr = cmd->u4Address;
+		tag->u4Value = cmd->u4Data;
+	}
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 

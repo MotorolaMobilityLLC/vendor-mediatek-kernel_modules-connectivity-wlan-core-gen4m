@@ -123,6 +123,10 @@
 /* UNI_EVENT_MD_SAFE_CHN */
 #define UNI_WIFI_CH_MASK_IDX_NUM 4
 
+/* UNI_CMD_ACCESS_REG */
+#define UNI_IS_RFCR(_addr) (((_addr) & BITS(24,31)) == 0x99000000)
+#define UNI_STREAM_FROM_RFCR(_addr) (((_addr) & BITS(16,23)) >> 16)
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
