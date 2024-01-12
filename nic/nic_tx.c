@@ -5430,15 +5430,15 @@ static void nicTxDirectCheckStaPsQ(struct ADAPTER
 	prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 
 	if (prMsduInfo == NULL) {
-		DBGLOG(TX, INFO, "prMsduInfo empty\n");
+		DBGLOG(TX, LOUD, "prMsduInfo empty\n");
 		return;
 	}
 
 	if (qmIsStaInPS(prAdapter, prStaRec)) {
 		KAL_SPIN_LOCK_DECLARATION();
 
+		DBGLOG_LIMITED(TX, INFO, "fgIsInPS!\n");
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
-		DBGLOG(TX, INFO, "fgIsInPS!\n");
 		while (1) {
 			if (prStaRec->fgIsQoS && prStaRec->fgIsUapsdSupported &&
 			    (prStaRec->ucBmpTriggerAC
@@ -5465,10 +5465,8 @@ static void nicTxDirectCheckStaPsQ(struct ADAPTER
 					&prAdapter->rStaPsQueue[ucStaRecIndex],
 					prQueueEntry, struct QUE_ENTRY *);
 				prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
-				if (prMsduInfo == NULL) {
-					DBGLOG(TX, INFO, "prMsduInfo null\n");
+				if (!prMsduInfo)
 					break;
-				}
 			} else {
 				break;
 			}
@@ -5552,24 +5550,22 @@ static void nicTxDirectCheckBssAbsentQ(struct ADAPTER
 	prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 
 	if (prMsduInfo == NULL) {
-		DBGLOG(TX, INFO, "prMsduInfo empty\n");
+		/* Log too much When StaInPS */
+		DBGLOG(TX, LOUD, "prMsduInfo empty\n");
 		return;
 	}
 
 	if (isNetAbsent(prAdapter, prBssInfo)) {
 		KAL_SPIN_LOCK_DECLARATION();
 
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 		DBGLOG(TX, TRACE, "fgIsNetAbsent!\n");
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 		while (1) {
 			if (prBssInfo->ucBssFreeQuota > 0) {
 				prBssInfo->ucBssFreeQuota--;
 				QUEUE_INSERT_TAIL(prQue, prMsduInfo);
-				DBGLOG(TX, TRACE,
-					"fgIsNetAbsent Quota Available\n");
 			} else {
 				fgReturnBssAbsentQ = TRUE;
-				DBGLOG(TX, TRACE, "fgIsNetAbsent NoQuota\n");
 				break;
 			}
 			if (QUEUE_IS_NOT_EMPTY(
@@ -5589,7 +5585,8 @@ static void nicTxDirectCheckBssAbsentQ(struct ADAPTER
 				(struct QUE_ENTRY *) prMsduInfo);
 			prAdapter->u4BssAbsentTxBufferBitmap |= BIT(ucBssIndex);
 			return;
-		}
+		} else
+			DBGLOG(TX, TRACE, "fgIsNetAbsent NoQuota\n");
 	} else {
 		if (prAdapter->u4BssAbsentTxBufferBitmap)
 			DBGLOG(TX, TRACE, "fgIsNetAbsent END!\n");
