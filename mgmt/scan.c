@@ -2702,6 +2702,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				prBssLoad->ucChnlUtilizaion;
 			prBssDesc->u2AvaliableAC = prBssLoad->u2AvailabeAC;
 			prBssDesc->fgExsitBssLoadIE = TRUE;
+
+			updateLinkStatsApRec(prAdapter, prBssDesc);
 			break;
 		}
 		/* end Support AP Selection */
