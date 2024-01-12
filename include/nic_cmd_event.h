@@ -352,9 +352,67 @@ enum ENUM_EXT_CMD_ID {
 	EXT_CMD_ID_SER = 0x81,
 	EXT_CMD_ID_TWT_AGRT_UPDATE = 0x94,
 	EXT_CMD_ID_SYSDVT_TEST = 0x99,
+#if (CFG_SUPPORT_802_11AX == 1)
+	EXT_CMD_ID_SR_CTRL = 0xA8,
+#endif
 	EXT_CMD_ID_CR4_DMASHDL_DVT = 0xAB,
 	EXT_CMD_ID_END
 };
+
+#if (CFG_SUPPORT_802_11AX == 1)
+/* SR Command */
+enum ENUM_SR_CMD_SUBID {
+	/** SET **/
+	SR_CMD_Reserve = 0x0,
+	SR_CMD_SET_SR_CAP_SREN_CTRL,
+	SR_CMD_SET_SR_CAP_ALL_CTRL,
+	SR_CMD_SET_SR_PARA_ALL_CTRL,
+	SR_CMD_SET_SR_GLO_VAR_DROP_TA_CTRL,
+	SR_CMD_SET_SR_GLO_VAR_STA_CTRL,
+	SR_CMD_SET_SR_GLO_VAR_STA_INIT_CTRL,
+	SR_CMD_SET_SR_COND_ALL_CTRL,
+	SR_CMD_SET_SR_RCPI_TBL_ALL_CTRL,
+	SR_CMD_SET_SR_RCPI_TBL_OFST_ALL_CTRL,
+	SR_CMD_SET_SR_Q_CTRL_ALL_CTRL,
+	SR_CMD_SET_SR_IBPD_ALL_CTRL,
+	SR_CMD_SET_SR_NRT_ALL_CTRL,
+	SR_CMD_SET_SR_NRT_RESET_CTRL,
+	SR_CMD_SET_SR_NRT_CTRL_ALL_CTRL,
+	/** GET **/
+	SR_CMD_GET_SR_CAP_ALL_INFO,
+	SR_CMD_GET_SR_PARA_ALL_INFO,
+	SR_CMD_GET_SR_GLO_VAR_SINGLE_DROP_TA_INFO,
+	SR_CMD_GET_SR_IND_ALL_INFO,
+	SR_CMD_GET_SR_COND_ALL_INFO,
+	SR_CMD_GET_SR_RCPI_TBL_ALL_INFO,
+	SR_CMD_GET_SR_RCPI_TBL_OFST_ALL_INFO,
+	SR_CMD_GET_SR_Q_CTRL_ALL_INFO,
+	SR_CMD_GET_SR_IBPD_ALL_INFO,
+	SR_CMD_GET_SR_NRT_ALL_INFO,
+	SR_CMD_GET_SR_NRT_CTRL_ALL_INFO,
+	SR_CMD_NUM
+};
+/* End SR Command */
+
+/* SR Event */
+enum ENUM_SR_EVENT_SUBID {
+	SR_EVENT_Reserve = 0x0,
+	/** GET **/
+	SR_EVENT_GET_SR_CAP_ALL_INFO,
+	SR_EVENT_GET_SR_PARA_ALL_INFO,
+	SR_EVENT_GET_SR_GLO_VAR_SINGLE_DROP_TA_INFO,
+	SR_EVENT_GET_SR_IND_ALL_INFO,
+	SR_EVENT_GET_SR_COND_ALL_INFO,
+	SR_EVENT_GET_SR_RCPI_TBL_ALL_INFO,
+	SR_EVENT_GET_SR_RCPI_TBL_OFST_ALL_INFO,
+	SR_EVENT_GET_SR_Q_CTRL_ALL_INFO,
+	SR_EVENT_GET_SR_IBPD_ALL_INFO,
+	SR_EVENT_GET_SR_NRT_ALL_INFO,
+	SR_EVENT_GET_SR_NRT_CTRL_ALL_INFO,
+	SR_EVENT_NUM
+};
+/* End SR Event */
+#endif
 
 enum NDIS_802_11_WEP_STATUS {
 	Ndis802_11WEPEnabled,
@@ -702,6 +760,9 @@ struct CMD_RX_PACKET_FILTER {
 #define EXT_EVENT_ID_G_BAND_256QAM_PROBE_RESULT 0x6B
 #define EXT_EVENT_ID_MPDU_TIME_UPDATE 0x6F
 #define EXT_EVENT_ID_SYSDVT_TEST 0x99
+#if (CFG_SUPPORT_802_11AX == 1)
+#define EXT_EVENT_ID_SR_INFO 0xA8
+#endif
 /*#endif*/
 
 #if (CFG_SUPPORT_TXPOWER_INFO == 1)
@@ -3142,6 +3203,94 @@ struct _CMD_RLM_UPDATE_SR_PARMS_T {
 	uint32_t u4SRGPartialBSSIDBitmapHigh;
 
 	uint8_t  aucPadding2[32];
+};
+
+/** SR Capability */
+struct _WH_SR_CAP_T {
+	/** RMAC */
+	uint8_t fgSrEn;
+	uint8_t fgSrgEn;
+	uint8_t fgNonSrgEn;
+	uint8_t fgSingleMdpuRtsctsEn;
+	uint8_t fgHdrDurEn;
+	uint8_t fgTxopDurEn;
+	uint8_t fgNonSrgInterPpduPresv;
+	uint8_t fgSrgInterPpduPresv;
+	/** AGG */
+	uint8_t fgSrRemTimeEn;
+	uint8_t fgProtInSrWinDis;
+	uint8_t fgTxCmdDlRateSelEn;
+	/** MIB */
+	uint8_t fgAmpduTxCntEn;
+};
+
+/** SR Indicator */
+struct _WH_SR_IND_T {
+	/** RMAC */
+	uint8_t u1NonSrgInterPpduRcpi;
+	uint8_t u1SrgInterPpduRcpi;
+	uint16_t u2NonSrgVldCnt;
+	uint16_t u2SrgVldCnt;
+	uint16_t u2IntraBssPpduCnt;
+	uint16_t u2InterBssPpduCnt;
+	uint16_t u2NonSrgPpduVldCnt;
+	uint16_t u2SrgPpduVldCnt;
+	/** Reserve for 4-byte aligned*/
+	uint8_t u1Reserved[2];
+	/** MIB */
+	uint32_t u4SrAmpduMpduCnt;
+	uint32_t u4SrAmpduMpduAckedCnt;
+};
+
+/* SR CMD related structure*/
+struct _SR_CMD_T {
+	uint8_t u1CmdSubId;
+	uint8_t u1ArgNum;
+	uint8_t u1DbdcIdx;
+	uint8_t u1Status;
+	uint8_t u1DropTaIdx;
+	uint8_t u1StaIdx;
+	uint8_t u1Rsv[2];
+};
+
+struct _SR_CMD_SR_CAP_T {
+	struct _SR_CMD_T rSrCmd;
+	struct _WH_SR_CAP_T rSrCap;
+};
+
+struct _SR_CMD_SR_IND_T {
+	struct _SR_CMD_T rSrCmd;
+	struct _WH_SR_IND_T rSrInd;
+};
+
+/* SR EVENT related structure*/
+struct _SR_EVENT_T {
+	uint8_t u1EventSubId;
+	uint8_t u1ArgNum;
+	uint8_t u1DbdcIdx;
+	uint8_t u1Status;
+	uint8_t u1DropTaIdx;
+	uint8_t u1StaIdx;
+	uint8_t u1Rsv[2];
+};
+
+enum ENUM_SR_EVENT_STATUS_T {
+	SR_STATUS_SUCCESS = 0x0,
+	SR_STATUS_SANITY_FAIL,
+	SR_STATUS_CALL_MIDDLE_FAIL,
+	SR_STATUS_SW_HW_VAL_NOT_SYNC,
+	SR_STATUS_UNKNOWN,
+	SR_STATUS_NUM
+};
+
+struct _SR_EVENT_SR_CAP_T {
+	struct _SR_EVENT_T rSrEvent;
+	struct _WH_SR_CAP_T rSrCap;
+};
+
+struct _SR_EVENT_SR_IND_T {
+	struct _SR_EVENT_T rSrEvent;
+	struct _WH_SR_IND_T rSrInd;
 };
 
 struct _EXTRA_ARG_TSF_T {
