@@ -470,6 +470,11 @@ static int procEfuseDump_show(struct seq_file *s, void *v)
 		return -EPERM;
 	}
 
+	if (prGlueInfo->prAdapter == NULL) {
+		seq_puts(s, "prAdapter is null\n");
+		return -EPERM;
+	}
+
 	if (prGlueInfo &&
 	    prGlueInfo->prAdapter &&
 	    prGlueInfo->prAdapter->chip_info &&
