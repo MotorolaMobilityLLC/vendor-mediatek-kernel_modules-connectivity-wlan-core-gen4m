@@ -1763,7 +1763,7 @@ struct ADAPTER {
 	u_int8_t ucANTCtrlReason;
 #endif
 
-#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
+#if (CFG_SUPPORT_WIFI_RNR == 1)
 	struct LINK rNeighborAPInfoList;
 #endif
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
