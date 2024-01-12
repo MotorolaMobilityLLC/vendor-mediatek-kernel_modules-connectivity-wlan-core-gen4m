@@ -1645,7 +1645,7 @@ enum BEACON_REPORT_DETAIL {
 #define MTK_SYNERGY_CAP3                            0x0
 
 /* 802.11h CSA element */
-#define ELEM_MIN_LEN_CSA                            3
+#define ELEM_MIN_LEN_CSA                            11
 
 /* 3 Management frame body components (III): 7.4 Action frame format details. */
 /* 7.4.1 Spectrum Measurement Action frame details */
