@@ -3342,6 +3342,8 @@ uint32_t nicUniCmdCustomerCfg(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdChipCfg(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSwDbgCtrl(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetRxFilter(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetMbmc(struct ADAPTER *ad,
@@ -3432,6 +3434,8 @@ void nicUniCmdTimeoutCommon(IN struct ADAPTER *prAdapter,
 void nicUniCmdEventQueryCfgRead(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventQueryChipConfig(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniEventQuerySwDbgCtrl(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniCmdStaRecHandleEventPkt(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo,

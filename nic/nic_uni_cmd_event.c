@@ -100,6 +100,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_BSS_ACTIVATE_CTRL] = nicUniCmdBssActivateCtrl,
 	[CMD_ID_GET_SET_CUSTOMER_CFG] = nicUniCmdCustomerCfg,
 	[CMD_ID_CHIP_CONFIG] = nicUniCmdChipCfg,
+	[CMD_ID_SW_DBG_CTRL] = nicUniCmdSwDbgCtrl,
 	[CMD_ID_REMOVE_STA_RECORD] = nicUniCmdRemoveStaRec,
 	[CMD_ID_INDICATE_PM_BSS_CREATED] = nicUniCmdBcnContent,
 	[CMD_ID_INDICATE_PM_BSS_ABORT] = nicUniCmdPmDisable,
@@ -883,6 +884,40 @@ uint32_t nicUniCmdChipCfg(struct ADAPTER *ad,
 	resp->ucType = cmd->ucType;
 	resp->ucRespType = cmd->ucRespType;
 	kalMemCopy(resp->aucCmd, cmd->aucCmd, cmd->u2MsgSize);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdSwDbgCtrl(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_SW_DBG_CTRL *cmd;
+	struct UNI_CMD_CHIP_CONFIG *uni_cmd;
+	struct UNI_CMD_CHIP_CONFIG_SW_DBG_CTRL *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_CHIP_CONFIG) +
+			       sizeof(struct UNI_CMD_CHIP_CONFIG_SW_DBG_CTRL);
+
+	if (info->ucCID != CMD_ID_SW_DBG_CTRL ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_SW_DBG_CTRL *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_CHIP_CONFIG,	max_cmd_len,
+			info->fgSetQuery ? nicUniCmdEventSetCommon :
+			nicUniEventQuerySwDbgCtrl, nicUniCmdTimeoutCommon);
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_CHIP_CONFIG *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_CHIP_CONFIG_SW_DBG_CTRL *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_CHIP_CONFIG_TAG_SW_DBG_CTRL;
+	tag->u2Length = sizeof(*tag);
+	tag->u4Id = cmd->u4Id;
+	tag->u4Data = cmd->u4Data;
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
@@ -3375,6 +3410,21 @@ void nicUniEventQueryChipConfig(IN struct ADAPTER *prAdapter,
 	kalMemCopy(legacy.aucCmd, resp->aucCmd, resp->u2MsgSize);
 
 	nicCmdEventQueryChipConfig(prAdapter, prCmdInfo, (uint8_t *)&legacy);
+}
+
+void nicUniEventQuerySwDbgCtrl(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	struct UNI_EVENT_CHIP_CONFIG *evt =
+		(struct UNI_EVENT_CHIP_CONFIG *)pucEventBuf;
+	struct UNI_CMD_CHIP_CONFIG_SW_DBG_CTRL *tag =
+		(struct UNI_CMD_CHIP_CONFIG_SW_DBG_CTRL *) evt->aucTlvBuffer;
+	struct CMD_SW_DBG_CTRL legacy;
+
+	legacy.u4Id = tag->u4Id;
+	legacy.u4Data = tag->u4Data;
+
+	nicCmdEventQuerySwCtrlRead(prAdapter, prCmdInfo, (uint8_t *)&legacy);
 }
 
 void nicUniCmdStaRecHandleEventPkt(IN struct ADAPTER
