@@ -1272,7 +1272,7 @@ void wlanAdapterDestroy(IN struct ADAPTER *prAdapter);
 
 void wlanCardEjected(IN struct ADAPTER *prAdapter);
 
-void wlanIST(IN struct ADAPTER *prAdapter);
+void wlanIST(IN struct ADAPTER *prAdapter, bool fgEnInt);
 
 u_int8_t wlanISR(IN struct ADAPTER *prAdapter, IN u_int8_t fgGlobalIntrCtrl);
 
