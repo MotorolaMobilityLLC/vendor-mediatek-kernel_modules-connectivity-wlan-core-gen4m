@@ -402,6 +402,7 @@ struct BUS_INFO {
 		uint8_t enable, uint32_t u4WifiUser);
 #if CFG_SUPPORT_PCIE_ASPM
 	void (*configPcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
+	u_int8_t (*dumpPcieStatus)(struct GLUE_INFO *prGlueInfo);
 #endif
 	void (*devReadIntStatus)(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus);
