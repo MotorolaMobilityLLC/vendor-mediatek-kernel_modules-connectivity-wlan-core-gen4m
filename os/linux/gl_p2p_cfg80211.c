@@ -1238,12 +1238,23 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 			break;
 		}
 
-		/* Should find out why the n_channels so many? */
 		if (request->n_channels > MAXIMUM_OPERATION_CHANNEL_LIST) {
+			DBGLOG(P2P, WARN,
+				"number of channel list[%u] exceeds.\n",
+				request->n_channels);
 			request->n_channels = MAXIMUM_OPERATION_CHANNEL_LIST;
 			fgIsFullChanScan = TRUE;
-			DBGLOG(P2P, WARN,
-				"Channel list exceed the maximun support.\n");
+		}
+
+		if (request->n_ssids < 0 ||
+			request->n_ssids > CFG_SCAN_SSID_MAX_NUM) {
+			DBGLOG(P2P, WARN, "number of ssid[%d] exceeds.\n");
+			request->n_ssids = CFG_SCAN_SSID_MAX_NUM;
+		}
+
+		if (request->ie_len > MAX_IE_LENGTH) {
+			DBGLOG(P2P, ERROR, "IE len[%d] exceeds.\n");
+			break;
 		}
 
 		if (prP2pGlueInfo->aprRoleHandler !=
@@ -1770,6 +1781,23 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			DBGLOG(P2P, ERROR, "!!! no CH def!!!\n");
 		}
 
+		if (settings->beacon.head_len +
+			settings->beacon.tail_len > MAX_BEACON_LENGTH ||
+			settings->beacon.assocresp_ies_len > MAX_IE_LENGTH
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+			|| settings->beacon.proberesp_ies_len > MAX_IE_LENGTH
+#endif
+			) {
+			DBGLOG(P2P, ERROR,
+				"Invalid len! head_len[%d] tail_len[%d] assocresp_len[%d] proberesp_len[%d]\n",
+				settings->beacon.head_len,
+				settings->beacon.tail_len,
+				settings->beacon.assocresp_ies_len,
+				settings->beacon.proberesp_ies_len);
+			i4Rslt = -EINVAL;
+			goto err;
+		}
+
 		u4MsgLen = sizeof(struct MSG_P2P_BEACON_UPDATE) +
 			   settings->beacon.head_len +
 			   settings->beacon.tail_len +
@@ -2219,102 +2247,92 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 			MSG_SEND_METHOD_BUF);
 
 		/* Update beacon */
-		if ((params->beacon_csa.head_len != 0)
-			|| (params->beacon_csa.tail_len != 0)) {
-			u4Len = (sizeof(struct MSG_P2P_BEACON_UPDATE)
-				+ params->beacon_csa.head_len
-				+ params->beacon_csa.tail_len);
-
-			prP2pBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *)
-				cnmMemAlloc(prGlueInfo->prAdapter,
-					RAM_TYPE_MSG,
-					u4Len);
-
-			if (prP2pBcnUpdateMsg == NULL) {
-				i4Rslt = -ENOMEM;
-				break;
-			}
-
-			kalMemZero(prP2pBcnUpdateMsg, u4Len);
-
-			prP2pBcnUpdateMsg->ucRoleIndex = ucRoleIdx;
-			prP2pBcnUpdateMsg->rMsgHdr.eMsgId =
-				MID_MNY_P2P_BEACON_UPDATE;
-			pucBuffer = prP2pBcnUpdateMsg->aucBuffer;
-
-			if (params->beacon_csa.head_len != 0) {
-				kalMemCopy(pucBuffer,
-					params->beacon_csa.head,
-					params->beacon_csa.head_len);
-
-				prP2pBcnUpdateMsg->u4BcnHdrLen =
-					params->beacon_csa.head_len;
-
-				prP2pBcnUpdateMsg->pucBcnHdr = pucBuffer;
-
-				pucBuffer = (uint8_t *) ((unsigned long)
-					pucBuffer
-					+ (unsigned long)
-					params->beacon_csa.head_len);
-			} else {
-				prP2pBcnUpdateMsg->u4BcnHdrLen = 0;
-
-				prP2pBcnUpdateMsg->pucBcnHdr = NULL;
-			}
-
-			if (params->beacon_csa.tail_len != 0) {
-				prP2pBcnUpdateMsg->pucBcnBody = pucBuffer;
-				kalMemCopy(pucBuffer,
-					params->beacon_csa.tail,
-					params->beacon_csa.tail_len);
-
-				prP2pBcnUpdateMsg->u4BcnBodyLen =
-					params->beacon_csa.tail_len;
-			} else {
-				prP2pBcnUpdateMsg->u4BcnBodyLen = 0;
-				prP2pBcnUpdateMsg->pucBcnBody = NULL;
-			}
-
-			kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
-
-			mboxSendMsg(prGlueInfo->prAdapter,
-				MBOX_ID_0,
-				(struct MSG_HDR *) prP2pBcnUpdateMsg,
-				MSG_SEND_METHOD_BUF);
-
-			prBssInfo = GET_BSS_INFO_BY_INDEX(
-				prGlueInfo->prAdapter,
-				ucBssIdx);
-			kalP2pIndicateChnlSwitchStarted(prGlueInfo->prAdapter,
-				prBssInfo,
-				&rRfChnlInfo,
-				params->count,
-				params->block_tx);
-
-			i4Rslt = 0; /* Return Success */
+		if (params->beacon_csa.head_len +
+			params->beacon_csa.tail_len > MAX_BEACON_LENGTH) {
+			DBGLOG(P2P, ERROR,
+				"Invalid len! head_len[%d] tail_len[%d]\n",
+				params->beacon_csa.head_len,
+				params->beacon_csa.tail_len);
+			i4Rslt = -EINVAL;
+			break;
 		}
 
+		u4Len = (sizeof(struct MSG_P2P_BEACON_UPDATE)
+			+ params->beacon_csa.head_len
+			+ params->beacon_csa.tail_len);
+
+		prP2pBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *)
+			cnmMemAlloc(prGlueInfo->prAdapter,
+				RAM_TYPE_MSG,
+				u4Len);
+
+		if (prP2pBcnUpdateMsg == NULL) {
+			i4Rslt = -ENOMEM;
+			break;
+		}
+
+		kalMemZero(prP2pBcnUpdateMsg, u4Len);
+
+		prP2pBcnUpdateMsg->ucRoleIndex = ucRoleIdx;
+		prP2pBcnUpdateMsg->rMsgHdr.eMsgId =
+			MID_MNY_P2P_BEACON_UPDATE;
+		pucBuffer = prP2pBcnUpdateMsg->aucBuffer;
+
+		if (params->beacon_csa.head_len != 0) {
+			kalMemCopy(pucBuffer,
+				params->beacon_csa.head,
+				params->beacon_csa.head_len);
+
+			prP2pBcnUpdateMsg->u4BcnHdrLen =
+				params->beacon_csa.head_len;
+
+			prP2pBcnUpdateMsg->pucBcnHdr = pucBuffer;
+
+			pucBuffer = (uint8_t *) ((unsigned long)
+				pucBuffer
+				+ (unsigned long)
+				params->beacon_csa.head_len);
+		} else {
+			prP2pBcnUpdateMsg->u4BcnHdrLen = 0;
+
+			prP2pBcnUpdateMsg->pucBcnHdr = NULL;
+		}
+
+		if (params->beacon_csa.tail_len != 0) {
+			prP2pBcnUpdateMsg->pucBcnBody = pucBuffer;
+			kalMemCopy(pucBuffer,
+				params->beacon_csa.tail,
+				params->beacon_csa.tail_len);
+
+			prP2pBcnUpdateMsg->u4BcnBodyLen =
+				params->beacon_csa.tail_len;
+		} else {
+			prP2pBcnUpdateMsg->u4BcnBodyLen = 0;
+			prP2pBcnUpdateMsg->pucBcnBody = NULL;
+		}
+
+		kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
+
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prP2pBcnUpdateMsg,
+			MSG_SEND_METHOD_BUF);
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(
+			prGlueInfo->prAdapter,
+			ucBssIdx);
+		kalP2pIndicateChnlSwitchStarted(prGlueInfo->prAdapter,
+			prBssInfo,
+			&rRfChnlInfo,
+			params->count,
+			params->block_tx);
+
+		i4Rslt = 0; /* Return Success */
 	} while (FALSE);
 
 	return i4Rslt;
 }
 #endif
-#endif
-
-#if 0
-struct cfg80211_beacon_data {
-	const u8 *head, *tail;
-	const u8 *beacon_ies;
-	const u8 *proberesp_ies;
-	const u8 *assocresp_ies;
-	const u8 *probe_resp;
-
-	size_t head_len, tail_len;
-	size_t beacon_ies_len;
-	size_t proberesp_ies_len;
-	size_t assocresp_ies_len;
-	size_t probe_resp_len;
-};
 #endif
 
 int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy,
@@ -2339,142 +2357,117 @@ int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy,
 		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
 			break;
 
-		if ((info->head_len != 0) || (info->tail_len != 0)) {
-			u4Len = (sizeof(struct MSG_P2P_BEACON_UPDATE)
-				+ info->head_len
-				+ info->tail_len
-				+ info->assocresp_ies_len
+		if (info->head_len + info->tail_len > MAX_BEACON_LENGTH ||
+			info->assocresp_ies_len > MAX_IE_LENGTH
 #if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
-				+ info->proberesp_ies_len
+			|| info->proberesp_ies_len > MAX_IE_LENGTH
 #endif
-				);
-
-			prP2pBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *)
-			    cnmMemAlloc(prGlueInfo->prAdapter,
-					RAM_TYPE_MSG,
-					u4Len);
-
-			if (prP2pBcnUpdateMsg == NULL) {
-				i4Rslt = -ENOMEM;
-				break;
-			}
-
-			kalMemZero(prP2pBcnUpdateMsg, u4Len);
-
-			prP2pBcnUpdateMsg->ucRoleIndex = ucRoleIdx;
-			prP2pBcnUpdateMsg->rMsgHdr.eMsgId =
-				MID_MNY_P2P_BEACON_UPDATE;
-			pucBuffer = prP2pBcnUpdateMsg->aucBuffer;
-
-			if (info->head_len != 0) {
-				kalMemCopy(pucBuffer,
-					info->head,
-					info->head_len);
-
-				prP2pBcnUpdateMsg->u4BcnHdrLen = info->head_len;
-
-				prP2pBcnUpdateMsg->pucBcnHdr = pucBuffer;
-
-				pucBuffer += info->head_len;
-			} else {
-				prP2pBcnUpdateMsg->u4BcnHdrLen = 0;
-
-				prP2pBcnUpdateMsg->pucBcnHdr = NULL;
-			}
-
-			if (info->tail_len != 0) {
-				prP2pBcnUpdateMsg->pucBcnBody = pucBuffer;
-				kalMemCopy(pucBuffer,
-					info->tail,
-					info->tail_len);
-
-				prP2pBcnUpdateMsg->u4BcnBodyLen =
-					info->tail_len;
-
-				pucBuffer += info->tail_len;
-			} else {
-				prP2pBcnUpdateMsg->u4BcnBodyLen = 0;
-				prP2pBcnUpdateMsg->pucBcnBody = NULL;
-			}
-
-			if (info->assocresp_ies_len != 0
-				&& info->assocresp_ies != NULL) {
-
-				prP2pBcnUpdateMsg->pucAssocRespIE = pucBuffer;
-				kalMemCopy(pucBuffer,
-					info->assocresp_ies,
-					info->assocresp_ies_len);
-				prP2pBcnUpdateMsg->u4AssocRespLen =
-					info->assocresp_ies_len;
-			} else {
-				prP2pBcnUpdateMsg->u4AssocRespLen = 0;
-				prP2pBcnUpdateMsg->pucAssocRespIE = NULL;
-			}
-
-#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
-			if (info->proberesp_ies_len != 0
-				&& info->proberesp_ies != NULL) {
-
-				prP2pBcnUpdateMsg->pucProbeRespIE = pucBuffer;
-				kalMemCopy(pucBuffer,
-					info->proberesp_ies,
-					info->proberesp_ies_len);
-				prP2pBcnUpdateMsg->u4ProbeRespLen =
-					info->proberesp_ies_len;
-			} else {
-				prP2pBcnUpdateMsg->u4ProbeRespLen = 0;
-				prP2pBcnUpdateMsg->pucProbeRespIE = NULL;
-			}
-#endif
-
-			kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
-
-			mboxSendMsg(prGlueInfo->prAdapter,
-				MBOX_ID_0,
-				(struct MSG_HDR *) prP2pBcnUpdateMsg,
-				MSG_SEND_METHOD_BUF);
-
-			i4Rslt = 0; /* Return Success */
+			) {
+			DBGLOG(P2P, ERROR,
+				"Invalid len! head_len[%d] tail_len[%d] assocresp_len[%d] proberesp_len[%d]\n",
+				info->head_len,
+				info->tail_len,
+				info->assocresp_ies_len,
+				info->proberesp_ies_len);
+			i4Rslt = -EINVAL;
+			break;
 		}
 
-		/* TODO: Probe Rsp, Assoc Rsp, Beacon IE update. */
+		u4Len = (sizeof(struct MSG_P2P_BEACON_UPDATE)
+			+ info->head_len
+			+ info->tail_len
+			+ info->assocresp_ies_len
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+			+ info->proberesp_ies_len
+#endif
+			);
 
-/* ////////////////////////// */
-/**
- * struct cfg80211_beacon_data - beacon data
- * @head: head portion of beacon (before TIM IE)
- *     or %NULL if not changed
- * @tail: tail portion of beacon (after TIM IE)
- *     or %NULL if not changed
- * @head_len: length of @head
- * @tail_len: length of @tail
- * @beacon_ies: extra information element(s) to add into Beacon frames or %NULL
- * @beacon_ies_len: length of beacon_ies in octets
- * @proberesp_ies: extra information element(s) to add into Probe Response
- *      frames or %NULL
- * @proberesp_ies_len: length of proberesp_ies in octets
- * @assocresp_ies: extra information element(s) to add into (Re)Association
- *      Response frames or %NULL
- * @assocresp_ies_len: length of assocresp_ies in octets
- * @probe_resp_len: length of probe response template (@probe_resp)
- * @probe_resp: probe response template (AP mode only)
- */
-/* struct cfg80211_beacon_data { */
-/* const u8 *head, *tail; */
-/* const u8 *beacon_ies; */
-/* const u8 *proberesp_ies; */
-/* const u8 *assocresp_ies; */
-/* const u8 *probe_resp; */
+		prP2pBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *)
+		    cnmMemAlloc(prGlueInfo->prAdapter,
+				RAM_TYPE_MSG,
+				u4Len);
 
-/* size_t head_len, tail_len; */
-/* size_t beacon_ies_len; */
-/* size_t proberesp_ies_len; */
-/* size_t assocresp_ies_len; */
-/* size_t probe_resp_len; */
-/* }; */
+		if (prP2pBcnUpdateMsg == NULL) {
+			i4Rslt = -ENOMEM;
+			break;
+		}
 
-/* ////////////////////////// */
+		kalMemZero(prP2pBcnUpdateMsg, u4Len);
 
+		prP2pBcnUpdateMsg->ucRoleIndex = ucRoleIdx;
+		prP2pBcnUpdateMsg->rMsgHdr.eMsgId =
+			MID_MNY_P2P_BEACON_UPDATE;
+		pucBuffer = prP2pBcnUpdateMsg->aucBuffer;
+
+		if (info->head_len != 0) {
+			kalMemCopy(pucBuffer,
+				info->head,
+				info->head_len);
+
+			prP2pBcnUpdateMsg->u4BcnHdrLen = info->head_len;
+
+			prP2pBcnUpdateMsg->pucBcnHdr = pucBuffer;
+
+			pucBuffer += info->head_len;
+		} else {
+			prP2pBcnUpdateMsg->u4BcnHdrLen = 0;
+
+			prP2pBcnUpdateMsg->pucBcnHdr = NULL;
+		}
+
+		if (info->tail_len != 0) {
+			prP2pBcnUpdateMsg->pucBcnBody = pucBuffer;
+			kalMemCopy(pucBuffer,
+				info->tail,
+				info->tail_len);
+
+			prP2pBcnUpdateMsg->u4BcnBodyLen =
+				info->tail_len;
+
+			pucBuffer += info->tail_len;
+		} else {
+			prP2pBcnUpdateMsg->u4BcnBodyLen = 0;
+			prP2pBcnUpdateMsg->pucBcnBody = NULL;
+		}
+
+		if (info->assocresp_ies_len != 0
+			&& info->assocresp_ies != NULL) {
+
+			prP2pBcnUpdateMsg->pucAssocRespIE = pucBuffer;
+			kalMemCopy(pucBuffer,
+				info->assocresp_ies,
+				info->assocresp_ies_len);
+			prP2pBcnUpdateMsg->u4AssocRespLen =
+				info->assocresp_ies_len;
+		} else {
+			prP2pBcnUpdateMsg->u4AssocRespLen = 0;
+			prP2pBcnUpdateMsg->pucAssocRespIE = NULL;
+		}
+
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+		if (info->proberesp_ies_len != 0
+			&& info->proberesp_ies != NULL) {
+
+			prP2pBcnUpdateMsg->pucProbeRespIE = pucBuffer;
+			kalMemCopy(pucBuffer,
+				info->proberesp_ies,
+				info->proberesp_ies_len);
+			prP2pBcnUpdateMsg->u4ProbeRespLen =
+				info->proberesp_ies_len;
+		} else {
+			prP2pBcnUpdateMsg->u4ProbeRespLen = 0;
+			prP2pBcnUpdateMsg->pucProbeRespIE = NULL;
+		}
+#endif
+
+		kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
+
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prP2pBcnUpdateMsg,
+			MSG_SEND_METHOD_BUF);
+
+		i4Rslt = 0; /* Return Success */
 	} while (FALSE);
 
 	return i4Rslt;
@@ -2716,19 +2709,26 @@ int _mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		bool no_cck, bool dont_wait_for_ack, int link_id, u64 *cookie)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
-	int32_t i4Rslt = -EINVAL;
 	struct MSG_MGMT_TX_REQUEST *prMsgTxReq =
 		(struct MSG_MGMT_TX_REQUEST *) NULL;
 	const struct ieee80211_mgmt *mgmt = (void *)buf;
 	struct MSDU_INFO *prMgmtFrame = (struct MSDU_INFO *) NULL;
-	uint8_t *pucFrameBuf = (uint8_t *) NULL;
 	uint64_t *pu8GlCookie = (uint64_t *) NULL;
+	uint32_t u4PacketLen = 0;
+	uint8_t *pucFrameBuf = (uint8_t *) NULL;
 	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
+	int32_t i4Rslt = -EINVAL;
 	struct net_device *dev = NULL;
 
 	do {
-		if ((wiphy == NULL) || (wdev == NULL) || (cookie == NULL))
+		if ((wiphy == NULL) || (wdev == NULL) ||
+			(cookie == NULL) || (len == 0)) {
+			DBGLOG(P2P, ERROR,
+				"Invalid argv! wiphy[%p] wdev[%p] cookie[%p] len[%d]\n",
+				wiphy, wdev, cookie, len);
+			i4Rslt = -EINVAL;
 			break;
+		}
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -2786,9 +2786,18 @@ int _mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		else
 			prMsgTxReq->fgIsWaitRsp = TRUE;
 
+		if (checkAddOverflow(len, sizeof(uint64_t) +
+			MAC_TX_RESERVED_FIELD)) {
+			DBGLOG(P2P, ERROR,
+				"Invalid len! len[%d]\n",
+				len);
+			i4Rslt = -EINVAL;
+			break;
+		}
+		u4PacketLen = len + sizeof(uint64_t) + MAC_TX_RESERVED_FIELD;
+
 		prMgmtFrame = cnmMgtPktAlloc(prGlueInfo->prAdapter,
-				(int32_t) (len + sizeof(uint64_t)
-				+ MAC_TX_RESERVED_FIELD));
+					u4PacketLen);
 		prMsgTxReq->prMgmtMsduInfo = prMgmtFrame;
 		if (prMsgTxReq->prMgmtMsduInfo == NULL) {
 			/* ASSERT(FALSE); */
