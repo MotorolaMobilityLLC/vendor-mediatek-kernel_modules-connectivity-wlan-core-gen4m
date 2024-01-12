@@ -1215,9 +1215,10 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	prP2PInfo->prDevHandler = prP2pDev;
 
 	/* XXX: All the P2P/AP devices do p2pDevFsmInit in the original code */
+#if 0
 	wlanBindBssIdxToNetInterface(prGlueInfo, p2pDevFsmInit(prAdapter),
 					(void *) prP2PInfo->prDevHandler);
-
+#endif
 	prP2PInfo->aprRoleHandler = prP2PInfo->prDevHandler;
 
 	DBGLOG(P2P, INFO,
