@@ -688,6 +688,12 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 	sysResetTrigger();
 #endif
 
+	/* Avoid doing reset triggered by CMD when WIFI write is processing */
+	if (get_wifi_process_status() == 1 &&
+	   (eResetReason == RST_CMD_TRIGGER ||
+	    eResetReason == RST_FWK_TRIGGER))
+		goto exit;
+
 #if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyWifiReset();
 #endif
