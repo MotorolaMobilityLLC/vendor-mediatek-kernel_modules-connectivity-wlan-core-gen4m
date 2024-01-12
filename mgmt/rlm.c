@@ -7443,7 +7443,7 @@ void rlmProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 	rRepParams.ucRSNI =
 		255; /* 255 means RSNI not available. see 7.3.2.41 */
 	rRepParams.ucFrameInfo = 0;
-	DBGLOG_MEM8(SW4, INFO, (uint8_t *)prWlanBeacon,
+	DBGLOG_MEM8(SW4, TRACE, (uint8_t *)prWlanBeacon,
 		    OFFSET_OF(struct WLAN_BEACON_FRAME, aucInfoElem));
 	WLAN_GET_FIELD_64(&prWlanBeacon->au4Timestamp[0],
 		&rRepParams.aucBcnFixedField);
