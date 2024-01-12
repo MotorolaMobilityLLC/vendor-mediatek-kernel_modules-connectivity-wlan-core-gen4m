@@ -1488,7 +1488,6 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 	const uint8_t *pos, *end;
 	uint8_t ucMlCtrlType, ucMlCtrlPreBmp;
 	struct IE_MULTI_LINK_CONTROL *prMlInfoIe;
-	uint64_t linkid_map = 0;
 	uint8_t show_info = pucDesc != NULL;
 	uint8_t *tmp = NULL;
 
@@ -1497,6 +1496,8 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 			pucDesc, IE_LEN(pucIE));
 		DBGLOG_MEM8(ML, TRACE, (uint8_t *)pucIE, IE_SIZE(pucIE));
 	}
+
+	kalMemSet(prMlInfo, 0, sizeof(struct MULTI_LINK_INFO));
 
 	end = pucIE + IE_SIZE(pucIE);
 	prMlInfoIe = (struct IE_MULTI_LINK_CONTROL *)pucIE;
@@ -1530,7 +1531,8 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 	pos += MAC_ADDR_LEN;
 
 	if (ucMlCtrlPreBmp & ML_CTRL_LINK_ID_INFO_PRESENT) {
-		prMlInfo->ucLinkId = *pos;
+		prMlInfo->ucLinkId = (*pos & BITS(0, 3));
+		prMlInfo->u2ValidLinks |= BIT(prMlInfo->ucLinkId);
 		if (show_info)
 			DBGLOG(ML, TRACE,
 				"\tML common Info LinkID = %d ("MACSTR")\n",
@@ -1701,14 +1703,13 @@ link_info:
 sta:
 		u2StaControl = prIeSta->u2StaCtrl;
 		ucLinkId = (u2StaControl & ML_STA_CTRL_LINK_ID_MASK);
-
-		if (linkid_map & (uint64_t)BIT(ucLinkId)) {
+		if (prMlInfo->u2ValidLinks & BIT(ucLinkId)) {
 			DBGLOG(ML, WARN, "dup sta profile, LinkID=%d\n",
 				ucLinkId);
 			goto next;
 		}
 
-		linkid_map |= (uint64_t)BIT(ucLinkId);
+		prMlInfo->u2ValidLinks |= BIT(ucLinkId);
 		prStaProfile = &prMlInfo->rStaProfiles[prMlInfo->ucProfNum++];
 		prStaProfile->ucLinkId = ucLinkId;
 		prStaProfile->u2StaCtrl = u2StaControl;
@@ -2388,7 +2389,6 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 		return NULL;
 
 	/* parsing rnr & ml */
-	kalMemSet(info, 0, sizeof(*info));
 	mldParseBasicMlIE(info, ml,
 		(uint8_t *)prSrc->pvHeader + prSrc->u2PacketLen - (uint8_t *)ml,
 		mgmt->aucBSSID,
@@ -2501,7 +2501,6 @@ struct SW_RFB *mldDupAssocSwRfb(struct ADAPTER *prAdapter,
 		goto fail;
 	}
 
-	kalMemSet(info, 0, sizeof(*info));
 	mldParseBasicMlIE(info, ml,
 		(uint8_t *)prSrc->pvHeader + prSrc->u2PacketLen - (uint8_t *)ml,
 		mgmt->aucBSSID,

@@ -574,6 +574,11 @@ struct NEIGHBOR_AP {
 	uint8_t ucChannel;
 	uint64_t u8TermTsf;
 	enum ENUM_BAND eBand;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	uint8_t fgIsMld;
+	uint8_t aucMldAddr[MAC_ADDR_LEN];
+	uint16_t u2ValidLinks; /* bitmap of valid MLO link IDs */
+#endif
 };
 
 struct BOW_SPECIFIC_BSS_INFO {

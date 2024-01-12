@@ -171,8 +171,6 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 		return WLAN_STATUS_FAILURE;
 	}
 
-	kalMemSet(prMlInfo, 0, sizeof(rMlInfo));
-
 	prAuthFrame = (struct WLAN_AUTH_FRAME *)prSwRfb->pvHeader;
 
 	u2RxFrameCtrl = prAuthFrame->u2FrameCtrl;
@@ -234,8 +232,6 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 	const uint8_t *ml;
 	uint16_t u2RxFrameCtrl;
 	uint8_t i, fgMldType;
-
-	kalMemSet(prMlInfo, 0, sizeof(rMlInfo));
 
 	if (!prAdapter || !prSwRfb || !prBssInfo) {
 		DBGLOG(AAA, WARN, "Invalid parameters, ignore pkt!\n");

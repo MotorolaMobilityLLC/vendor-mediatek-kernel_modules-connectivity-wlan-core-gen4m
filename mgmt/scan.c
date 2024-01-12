@@ -1306,7 +1306,6 @@ void scanEhtParsingMldElement(struct BSS_DESC *prBssDesc,
 	if (!BE_IS_ML_CTRL_TYPE(pucIE, ML_CTRL_TYPE_BASIC))
 		return;
 
-	kalMemSet(prMlInfo, 0, sizeof(rMlInfo));
 	mldParseBasicMlIE(prMlInfo, pucIE,
 		IE_SIZE(pucIE), /* no need fragment */
 		prBssDesc->aucBSSID,

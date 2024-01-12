@@ -1151,8 +1151,8 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 }
 
 #if CFG_SUPPORT_802_11K
-struct NEIGHBOR_AP *scanGetNeighborAPEntry(
-	struct ADAPTER *prAdapter, uint8_t *pucBssid, uint8_t ucBssIndex)
+struct NEIGHBOR_AP *apsGetNeighborAPEntry(
+	struct ADAPTER *prAdapter, struct BSS_DESC *bss, uint8_t ucBssIndex)
 {
 	struct LINK *prNeighborAPLink =
 		&aisGetAisSpecBssInfo(prAdapter, ucBssIndex)
@@ -1162,8 +1162,16 @@ struct NEIGHBOR_AP *scanGetNeighborAPEntry(
 	LINK_FOR_EACH_ENTRY(prNeighborAP, prNeighborAPLink, rLinkEntry,
 			    struct NEIGHBOR_AP)
 	{
-		if (EQUAL_MAC_ADDR(prNeighborAP->aucBssid, pucBssid))
+		if (EQUAL_MAC_ADDR(prNeighborAP->aucBssid, bss->aucBSSID))
 			return prNeighborAP;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (bss->rMlInfo.fgValid && prNeighborAP->fgIsMld &&
+		   EQUAL_MAC_ADDR(prNeighborAP->aucMldAddr,
+				  bss->rMlInfo.aucMldAddr) &&
+		   (prNeighborAP->u2ValidLinks & BIT(bss->rMlInfo.ucLinkIndex)))
+			return prNeighborAP;
+#endif
 	}
 	return NULL;
 }
@@ -1207,8 +1215,8 @@ try_again:
 			bss->prBlack = aisQueryBlackList(ad, bss);
 #if CFG_SUPPORT_802_11K
 			/* update neighbor report entry */
-			bss->prNeighbor = scanGetNeighborAPEntry(
-				ad, bss->aucBSSID, bidx);
+			bss->prNeighbor = apsGetNeighborAPEntry(
+				ad, bss, bidx);
 #endif
 		}
 
@@ -1317,8 +1325,7 @@ uint8_t apsIsValidBssDesc(struct ADAPTER *ad, struct BSS_DESC *bss,
 	if (reason == ROAMING_REASON_TEMP_REJECT)
 		return FALSE;
 	if (reason == ROAMING_REASON_BTM) {
-		struct NEIGHBOR_AP *nei =
-			scanGetNeighborAPEntry(ad, bss->aucBSSID, bidx);
+		struct NEIGHBOR_AP *nei = apsGetNeighborAPEntry(ad, bss, bidx);
 
 		if (nei && nei->fgPrefPresence && !nei->ucPreference)
 			return FALSE;
@@ -1537,13 +1544,27 @@ int32_t apsCalculateTotalTput(struct ADAPTER *ad,
 			continue;
 
 		found = TRUE;
-		tput += apsGetEstimatedTput(ad, ap->aprTarget[i]);
+#if CFG_SUPPORT_ROAMING
+		if (reason == ROAMING_REASON_BTM) {
+			uint32_t pref = scanCalculateScoreByPreference(
+				ad, ap->aprTarget[i], reason);
+
+			/* select highest pref as tput score */
+			if (tput == 0 || pref > tput)
+				tput = pref;
+		} else
+#endif
+		{
+			tput += apsGetEstimatedTput(ad,
+				ap->aprTarget[i]);
+		}
 	}
 
 	if (found) {
-		DBGLOG(APS, INFO, "AP[" MACSTR "][%s], Total(%d) EST: %d",
+		DBGLOG(APS, INFO,
+			"AP[" MACSTR "][%s], Total(%d) EST: %d (Reason=%d)",
 			MAC2STR(ap->aucAddr), ap->fgIsMld ? "MLD" : "LEGACY",
-			ap->ucLinkNum, tput);
+			ap->ucLinkNum, tput, reason);
 		return tput;
 	}
 
