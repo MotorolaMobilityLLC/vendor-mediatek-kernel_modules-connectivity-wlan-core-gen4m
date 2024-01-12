@@ -552,7 +552,9 @@ struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter, IN struct SW_RFB *p
 		/* The last fragment frame */
 		if (ucFragNum) {
 			DBGLOG(RX, LOUD,
-			       "FC %04x M %04x SQ %04x\n", u2FrameCtrl, (u2FrameCtrl & MASK_FC_MORE_FRAG), u2SeqCtrl);
+			       "FC %04x M %04x SQ %04x\n", u2FrameCtrl,
+			       (uint16_t) (u2FrameCtrl & MASK_FC_MORE_FRAG),
+			       u2SeqCtrl);
 			fgLast = TRUE;
 		}
 		/* Non-fragment frame */
@@ -563,11 +565,15 @@ struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter, IN struct SW_RFB *p
 	else {
 		if (ucFragNum == 0) {
 			DBGLOG(RX, LOUD,
-			       "FC %04x M %04x SQ %04x\n", u2FrameCtrl, (u2FrameCtrl & MASK_FC_MORE_FRAG), u2SeqCtrl);
+			       "FC %04x M %04x SQ %04x\n", u2FrameCtrl,
+			       (uint16_t) (u2FrameCtrl & MASK_FC_MORE_FRAG),
+			       u2SeqCtrl);
 			fgFirst = TRUE;
 		} else {
 			DBGLOG(RX, LOUD,
-			       "FC %04x M %04x SQ %04x\n", u2FrameCtrl, (u2FrameCtrl & MASK_FC_MORE_FRAG), u2SeqCtrl);
+			       "FC %04x M %04x SQ %04x\n", u2FrameCtrl,
+			       (uint16_t) (u2FrameCtrl & MASK_FC_MORE_FRAG),
+			       u2SeqCtrl);
 		}
 	}
 
@@ -805,7 +811,7 @@ u_int8_t nicRxIsDuplicateFrame(IN OUT struct SW_RFB *prSwRfb)
 			prSwRfb->prStaRec->au2CachedSeqCtrl[u4SeqCtrlCacheIdx] = u2SequenceControl;
 			if (fgIsAmsduSubframe == RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU)
 				prSwRfb->prStaRec->afgIsIgnoreAmsduDuplicate[u4SeqCtrlCacheIdx] = TRUE;
-			DBGLOG(RX, LOUD, "RXM: SC= 0x%X (Cache[%lu] updated)\n", u2SequenceControl, u4SeqCtrlCacheIdx);
+			DBGLOG(RX, LOUD, "RXM: SC= 0x%x (Cache[%u] updated)\n", u2SequenceControl, u4SeqCtrlCacheIdx);
 		} else {
 			/* A duplicate. */
 			if (prSwRfb->prStaRec->afgIsIgnoreAmsduDuplicate[u4SeqCtrlCacheIdx]) {
@@ -813,7 +819,7 @@ u_int8_t nicRxIsDuplicateFrame(IN OUT struct SW_RFB *prSwRfb)
 					prSwRfb->prStaRec->afgIsIgnoreAmsduDuplicate[u4SeqCtrlCacheIdx] = FALSE;
 			} else {
 				fgIsDuplicate = TRUE;
-				DBGLOG(RX, LOUD, "RXM: SC= 0x%X (Cache[%lu] duplicate)\n",
+				DBGLOG(RX, LOUD, "RXM: SC= 0x%x (Cache[%u] duplicate)\n",
 				       u2SequenceControl, u4SeqCtrlCacheIdx);
 			}
 		}
@@ -825,7 +831,7 @@ u_int8_t nicRxIsDuplicateFrame(IN OUT struct SW_RFB *prSwRfb)
 		prSwRfb->prStaRec->au2CachedSeqCtrl[u4SeqCtrlCacheIdx] = u2SequenceControl;
 		prSwRfb->prStaRec->afgIsIgnoreAmsduDuplicate[u4SeqCtrlCacheIdx] = FALSE;
 
-		DBGLOG(RX, LOUD, "RXM: SC= 0x%X (Cache[%lu] updated)\n", u2SequenceControl, u4SeqCtrlCacheIdx);
+		DBGLOG(RX, LOUD, "RXM: SC= 0x%x (Cache[%u] updated)\n", u2SequenceControl, u4SeqCtrlCacheIdx);
 	}
 
 	return fgIsDuplicate;
@@ -1073,7 +1079,7 @@ void nicRxProcessGOBroadcastPkt(IN struct ADAPTER *prAdapter, IN struct SW_RFB *
 		}
 	} else {
 		DBGLOG(RX, WARN,
-		       "Stop to forward BMC packet due to less free Sw Rfb %lu\n", prRxCtrl->rFreeSwRfbList.u4NumElem);
+		       "Stop to forward BMC packet due to less free Sw Rfb %u\n", prRxCtrl->rFreeSwRfbList.u4NumElem);
 	}
 
 	/* 3. Indicate to host */
@@ -3039,9 +3045,9 @@ void nicRxQueryStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuffer, OUT u
 
 	SPRINTF_RX_QSTATUS(("\n\nRX CTRL STATUS:"));
 	SPRINTF_RX_QSTATUS(("\n==============="));
-	SPRINTF_RX_QSTATUS(("\nFREE RFB w/i BUF LIST :%9ld", prRxCtrl->rFreeSwRfbList.u4NumElem));
-	SPRINTF_RX_QSTATUS(("\nFREE RFB w/o BUF LIST :%9ld", prRxCtrl->rIndicatedRfbList.u4NumElem));
-	SPRINTF_RX_QSTATUS(("\nRECEIVED RFB LIST     :%9ld", prRxCtrl->rReceivedRfbList.u4NumElem));
+	SPRINTF_RX_QSTATUS(("\nFREE RFB w/i BUF LIST :%9u", prRxCtrl->rFreeSwRfbList.u4NumElem));
+	SPRINTF_RX_QSTATUS(("\nFREE RFB w/o BUF LIST :%9u", prRxCtrl->rIndicatedRfbList.u4NumElem));
+	SPRINTF_RX_QSTATUS(("\nRECEIVED RFB LIST     :%9u", prRxCtrl->rReceivedRfbList.u4NumElem));
 
 	SPRINTF_RX_QSTATUS(("\n\n"));
 
@@ -3096,7 +3102,7 @@ void nicRxQueryStatistics(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuffer, O
 
 #define SPRINTF_RX_COUNTER(eCounter) \
 	{ \
-		u4CurrCount = scnprintf(pucCurrBuf, *pu4Count, "%-30s : %ld\n", \
+		u4CurrCount = scnprintf(pucCurrBuf, *pu4Count, "%-30s : %u\n", \
 					#eCounter, (uint32_t)prRxCtrl->au8Statistics[eCounter]); \
 		pucCurrBuf += (uint8_t)u4CurrCount; \
 		*pu4Count -= u4CurrCount; \
@@ -3147,7 +3153,8 @@ nicRxWaitResponse(IN struct ADAPTER *prAdapter,
 
 	u4Status = halRxWaitResponse(prAdapter, ucPortIdx, pucRspBuffer, u4MaxRespBufferLen, pu4Length);
 	if (u4Status == WLAN_STATUS_SUCCESS) {
-		DBGLOG(RX, TRACE, "Dump Response buffer, length = 0x%lx\n", *pu4Length);
+		DBGLOG(RX, TRACE,
+			"Dump Response buffer, length = %u\n", *pu4Length);
 		DBGLOG_MEM8(RX, TRACE, pucRspBuffer, *pu4Length);
 
 		prEvent = (struct WIFI_EVENT *) pucRspBuffer;
