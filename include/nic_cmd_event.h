@@ -961,6 +961,7 @@ struct CMD_DEFAULT_KEY {
 struct PMKID_ENTRY {
 	struct LINK_ENTRY rLinkEntry;
 	struct PARAM_PMKID rBssidInfo;
+	uint16_t u2StatusCode;
 };
 
 struct CMD_802_11_PMKID {

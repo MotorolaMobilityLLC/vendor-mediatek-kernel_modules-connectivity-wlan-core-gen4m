@@ -1014,14 +1014,6 @@ assocCheckRxReAssocRspFrameStatus(struct ADAPTER *prAdapter,
 
 	}
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (!mldSanityCheck(prAdapter, prSwRfb->pvHeader,
-		prSwRfb->u2PacketLen, prStaRec, prStaRec->ucBssIndex)) {
-		DBGLOG(SAA, WARN, "Discard Assoc frame with wrong ML IE\n");
-		return WLAN_STATUS_FAILURE;
-	}
-#endif
-
 	/* 4 <3> Parse the Fixed Fields of (Re)Association Resp Frame Body. */
 	/* WLAN_GET_FIELD_16(&prAssocRspFrame->u2CapInfo, &u2RxCapInfo); */
 	u2RxCapInfo = prAssocRspFrame->u2CapInfo;

@@ -2966,7 +2966,7 @@ static int wlanSetMacAddress(struct net_device *ndev, void *addr)
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		prAisBssInfo = aisGetLinkBssInfo(prAisFsmInfo, i);
 		if (!prAisBssInfo)
-			break;
+			continue;
 
 		/* update MAC address */
 		nicApplyLinkAddress(prAdapter, sa->sa_data,

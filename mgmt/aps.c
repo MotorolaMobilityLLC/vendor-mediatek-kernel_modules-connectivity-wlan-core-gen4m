@@ -1342,7 +1342,6 @@ void apsIntraApSelection(struct ADAPTER *ad,
 	struct LINK *ess = &s->rCurEssLink;
 	struct AP_COLLECTION *ap, *nap;
 	struct BSS_DESC *bss;
-	uint8_t num = aisGetLinkNum(ais);
 	uint16_t delta = 0, base = 0, goal = 0, score = 0;
 	int i, j, k;
 
@@ -1355,7 +1354,7 @@ void apsIntraApSelection(struct ADAPTER *ad,
 		delta += ROAM_SCORE_DELTA;
 
 	/* minium requirement */
-	for (i = 0; i < num; i++) {
+	for (i = 0; i < MLD_LINK_MAX; i++) {
 		bss = aisGetLinkBssDesc(ais, i);
 
 		if (!apsIsValidBssDesc(ad, bss, reason, bidx))

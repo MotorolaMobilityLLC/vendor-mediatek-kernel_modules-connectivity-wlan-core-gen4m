@@ -1816,19 +1816,9 @@ void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 
 			prWpaInfo = aisGetWpaInfo(prAdapter, ucBssIndex);
 
-			if (!prStaRec) {
-				DBGLOG(RSN, ERROR, "prStaRec is NULL!");
-			} else  {
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-				if (mldIsMultiLinkFormed(prAdapter, prStaRec)) {
-					DBGLOG(RSN, INFO, "Use mld addr!");
-					entry = rsnSearchPmkidEntry(prAdapter,
-					      prStaRec->aucMldAddr, ucBssIndex);
-				} else
-#endif
-					entry = rsnSearchPmkidEntry(prAdapter,
-					      prStaRec->aucMacAddr, ucBssIndex);
-			}
+			entry = aisSearchPmkidEntry(prAdapter,
+					prStaRec, ucBssIndex);
+
 			/* Fill PMKID Count and List field */
 			if (entry) {
 				uint8_t *pmk = entry->rBssidInfo.arPMKID;
@@ -2370,6 +2360,7 @@ uint32_t rsnSetPmkid(struct ADAPTER *prAdapter,
 		prPmkid->arPMKID[14], prPmkid->arPMKID[15]);
 
 	kalMemCopy(&entry->rBssidInfo, prPmkid, sizeof(struct PARAM_PMKID));
+	entry->u2StatusCode = STATUS_CODE_SUCCESSFUL;
 	return WLAN_STATUS_SUCCESS;
 } /* rsnSetPmkid */
 
