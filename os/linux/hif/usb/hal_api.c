@@ -976,6 +976,79 @@ void halRxUSBReceiveEventComplete(struct urb *urb)
 #endif
 }
 
+uint32_t halRxUSBReceiveWdt(IN struct ADAPTER *prAdapter)
+{
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct USB_REQ *prUsbReq;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+	int ret;
+
+	while (1) {
+		prUsbReq = glUsbDequeueReq(prHifInfo, &prHifInfo->rRxWdtFreeQ,
+					   &prHifInfo->rRxWdtQLock);
+		if (prUsbReq == NULL)
+			return WLAN_STATUS_RESOURCES;
+
+		usb_anchor_urb(prUsbReq->prUrb, &prHifInfo->rRxWdtAnchor);
+
+		prUsbReq->prBufCtrl->u4ReadSize = 0;
+
+		usb_fill_int_urb(prUsbReq->prUrb,
+				 prHifInfo->udev,
+				 usb_rcvintpipe(prHifInfo->udev,
+						USB_WDT_EP_IN),
+				 (void *)prUsbReq->prBufCtrl->pucBuf,
+				 prUsbReq->prBufCtrl->u4BufSize,
+				 halRxUSBReceiveWdtComplete,
+				 (void *)prUsbReq,
+				 1);
+
+		ret = glUsbSubmitUrb(prHifInfo, prUsbReq->prUrb,
+				     SUBMIT_TYPE_RX_WDT);
+		if (ret) {
+			DBGLOG(HAL, ERROR,
+			       "glUsbSubmitUrb() reports error (%d)\n", ret);
+
+			usb_unanchor_urb(prUsbReq->prUrb);
+			glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxWdtFreeQ,
+					prUsbReq, &prHifInfo->rRxWdtQLock,
+					FALSE);
+			break;
+		}
+	}
+
+	return u4Status;
+}
+
+void halRxUSBReceiveWdtComplete(struct urb *urb)
+{
+	struct USB_REQ *prUsbReq = urb->context;
+	struct GL_HIF_INFO *prHifInfo = prUsbReq->prHifInfo;
+	struct GLUE_INFO *prGlueInfo = prHifInfo->prGlueInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+
+	if (urb->status == 0) {
+		glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxWdtCompleteQ,
+				prUsbReq, &prHifInfo->rRxWdtQLock, FALSE);
+
+		/*tasklet_hi_schedule(&prGlueInfo->rRxTask);*/
+		tasklet_schedule(&prGlueInfo->rRxTask);
+	} else {
+		DBGLOG(RX, ERROR, "receive WDT fail (status = %d)\n",
+		       urb->status);
+		glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxWdtFreeQ, prUsbReq,
+				&prHifInfo->rRxWdtQLock, FALSE);
+
+		if (prBusInfo->fgIsSupportWdtEp)
+			halRxUSBReceiveWdt(prGlueInfo->prAdapter);
+	}
+}
+
 uint32_t halRxUSBReceiveData(IN struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
@@ -1132,6 +1205,44 @@ void halRxUSBProcessEventDataComplete(IN struct ADAPTER *prAdapter,
 	}
 }
 
+void halRxUSBProcessWdtComplete(IN struct ADAPTER *prAdapter,
+				struct list_head *prCompleteQ,
+				struct list_head *prFreeQ, uint32_t u4MinRfbCnt)
+{
+	struct USB_REQ *prUsbReq;
+	struct urb *prUrb;
+	struct BUF_CTRL *prBufCtrl;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	spinlock_t *prLock = &prHifInfo->rRxWdtQLock;
+
+	/* Process complete WDT interrupt */
+	prUsbReq = glUsbDequeueReq(prHifInfo, prCompleteQ, prLock);
+	while (prUsbReq) {
+		prUrb = prUsbReq->prUrb;
+		prBufCtrl = prUsbReq->prBufCtrl;
+
+		DBGLOG(RX, LOUD, "Rx URB[0x%p] Len[%u] Sts[%u]\n",
+			prUrb, prUrb->actual_length, prUrb->status);
+
+		if (prUrb->status != 0) {
+			DBGLOG(RX, ERROR, "receive WDT fail (status = %d)\n",
+			       prUrb->status);
+
+			glUsbEnqueueReq(prHifInfo, prFreeQ, prUsbReq, prLock,
+					FALSE);
+			prUsbReq = glUsbDequeueReq(prHifInfo, prCompleteQ,
+						prLock);
+			continue;
+		}
+
+		/* TODO: handle WDT packet */
+
+		glUsbEnqueueReq(prHifInfo, prFreeQ, prUsbReq, prLock, FALSE);
+		prUsbReq = glUsbDequeueReq(prHifInfo, prCompleteQ, prLock);
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
 * @brief enable global interrupt
@@ -1145,15 +1256,22 @@ void halEnableInterrupt(IN struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
 
 	ASSERT(prAdapter);
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 
 	halRxUSBReceiveData(prAdapter);
 	if (prHifInfo->eEventEpType != EVENT_EP_TYPE_DATA_EP)
 		halRxUSBReceiveEvent(prAdapter, TRUE);
+
+	if (prBusInfo->fgIsSupportWdtEp)
+		halRxUSBReceiveWdt(prAdapter);
 
 	glUdmaRxAggEnable(prGlueInfo, TRUE);
 } /* end of halEnableInterrupt() */
@@ -1171,13 +1289,19 @@ void halDisableInterrupt(IN struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
 
 	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 
 	usb_kill_anchored_urbs(&prHifInfo->rRxDataAnchor);
 	usb_kill_anchored_urbs(&prHifInfo->rRxEventAnchor);
+	if (prBusInfo->fgIsSupportWdtEp)
+		usb_kill_anchored_urbs(&prHifInfo->rRxWdtAnchor);
 
 	glUdmaRxAggEnable(prGlueInfo, FALSE);
 	prAdapter->fgIsIntEnable = FALSE;
@@ -1519,6 +1643,11 @@ void halSerHifReset(IN struct ADAPTER *prAdapter)
 void halProcessRxInterrupt(IN struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 
 	/* Process complete data */
 	halRxUSBProcessEventDataComplete(prAdapter, &prHifInfo->rRxDataCompleteQ,
@@ -1530,6 +1659,15 @@ void halProcessRxInterrupt(IN struct ADAPTER *prAdapter)
 		halRxUSBProcessEventDataComplete(prAdapter, &prHifInfo->rRxEventCompleteQ,
 			&prHifInfo->rRxEventFreeQ, USB_RX_EVENT_RFB_RSV_CNT);
 		halRxUSBReceiveEvent(prAdapter, FALSE);
+	}
+
+	if (prBusInfo->fgIsSupportWdtEp) {
+		halRxUSBProcessWdtComplete(prAdapter,
+					   &prHifInfo->rRxWdtCompleteQ,
+					   &prHifInfo->rRxWdtFreeQ,
+					   USB_RX_WDT_RFB_RSV_CNT);
+
+		halRxUSBReceiveWdt(prAdapter);
 	}
 }
 
