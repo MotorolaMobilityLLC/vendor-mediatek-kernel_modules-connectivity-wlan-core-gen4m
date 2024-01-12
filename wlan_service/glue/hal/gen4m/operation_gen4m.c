@@ -6,6 +6,7 @@
 #include "operation.h"
 
 #define CFG_WAIT_TSSI_READY 0
+#define MAC_TA_ADDRESS_OFFSET_ENB BIT(18)
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
 #define PROACTIVE_BW160 3
@@ -301,6 +302,8 @@ enum ENUM_RF_AT_FUNCID {
 	RF_AT_FUNCID_SET_CFG_ON = 176,
 	RF_AT_FUNCID_SET_CFG_OFF = 177,
 
+	RF_AT_FUNCID_SET_BSSID = 189,
+	RF_AT_FUNCID_SET_TX_TIME = 190,
 	RF_AT_FUNCID_SET_MAX_PE = 191,
 	RF_AT_FUNCID_SET_TX_HE_TB_TTRCR7 = 192,
 	RF_AT_FUNCID_SET_TX_HE_TB_TTRCR8 = 193,
@@ -1875,6 +1878,10 @@ s_int32 mt_op_set_tx_content(
 	u_int32 tx_len = configs->tx_len;
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	u_int32 tx_time = configs->tx_time_param.pkt_tx_time;
+	boolean enable = FALSE;
+#endif
 
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
@@ -1895,9 +1902,49 @@ s_int32 mt_op_set_tx_content(
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_PAYLOAD,
 		((gen_payload_rule << 16) | pay_load));
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	enable = configs->tx_time_param.pkt_tx_time_en;
+	if (enable) {
+		tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_PKTLEN, 0);
+		tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_TX_TIME, tx_time);
+	} else {
+		tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_PKTLEN, tx_len);
+		tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_TX_TIME, 0);
+	}
+
+	sys_ad_move_mem(&func_data, configs->addr2[0], 4);
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_TA, func_data);
+	func_data = 0;
+	sys_ad_move_mem(&func_data, configs->addr2[0] + 4, 2);
+	tm_rftest_set_auto_test(winfos,
+		(RF_AT_FUNCID_SET_TA | MAC_TA_ADDRESS_OFFSET_ENB), func_data);
+
+	sys_ad_move_mem(&func_data, configs->addr3[0], 4);
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_BSSID, func_data);
+	func_data = 0;
+	sys_ad_move_mem(&func_data, configs->addr3[0] + 4, 2);
+	tm_rftest_set_auto_test(winfos,
+		(RF_AT_FUNCID_SET_BSSID | MAC_TA_ADDRESS_OFFSET_ENB),
+			func_data);
+
+	sys_ad_move_mem(&func_data, configs->addr1[0], 4);
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_MAC_ADDRESS, func_data);
+	func_data = 0;
+	sys_ad_move_mem(&func_data, configs->addr1[0] + 4, 2);
+	tm_rftest_set_auto_test(winfos,
+		(RF_AT_FUNCID_SET_MAC_ADDRESS | MAC_TA_ADDRESS_OFFSET_ENB),
+		func_data);
+#else
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_PKTLEN, tx_len);
-
 
 	sys_ad_move_mem(&func_data, configs->addr1[0], 4);
 
@@ -1907,7 +1954,7 @@ s_int32 mt_op_set_tx_content(
 	func_data = 0;
 	sys_ad_move_mem(&func_data, configs->addr1[0] + 4, 2);
 	tm_rftest_set_auto_test(winfos,
-		(RF_AT_FUNCID_SET_MAC_ADDRESS | BIT(18)),
+		(RF_AT_FUNCID_SET_MAC_ADDRESS | MAC_TA_ADDRESS_OFFSET_ENB),
 		func_data);
 
 	sys_ad_move_mem(&func_data, configs->addr2[0], 4);
@@ -1917,7 +1964,8 @@ s_int32 mt_op_set_tx_content(
 	func_data = 0;
 	sys_ad_move_mem(&func_data, configs->addr2[0] + 4, 2);
 	tm_rftest_set_auto_test(winfos,
-		(RF_AT_FUNCID_SET_TA | BIT(18)), func_data);
+		(RF_AT_FUNCID_SET_TA | MAC_TA_ADDRESS_OFFSET_ENB), func_data);
+#endif  /* #if (CFG_SUPPORT_CONNAC3X == 1) */
 
 	return ret;
 }
