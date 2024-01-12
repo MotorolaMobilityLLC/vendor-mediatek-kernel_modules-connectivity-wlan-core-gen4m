@@ -309,6 +309,7 @@ struct BUS_INFO connac2x2_bus_info = {
 	.hifRst = NULL,
 	.initPcieInt = NULL,
 	.DmaShdlInit = asicPcieDmaShdlInit,
+	.setPdmaIntMask = asicPdmaIntMaskConfig,
 #endif /* _HIF_PCIE || _HIF_AXI */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = CONNAC_UDMA_WLCFG_0,
