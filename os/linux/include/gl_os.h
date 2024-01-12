@@ -1093,6 +1093,10 @@ struct PACKET_PRIVATE_RX_DATA {
 #define GLUE_GET_PKT_ETHER_DEST_ADDR(_p)    \
 	    ((uint8_t *)&(((struct sk_buff *)(_p))->data))
 
+#define GLUE_COPY_PRIV_DATA(_pDst, _pSrc) \
+	(kalMemCopy(GLUE_GET_PKT_PRIVATE_DATA(_pDst), \
+	GLUE_GET_PKT_PRIVATE_DATA(_pSrc), sizeof(struct PACKET_PRIVATE_DATA)))
+
 /* Check validity of prDev, private data, and pointers */
 #define GLUE_CHK_DEV(prDev) \
 	((prDev && *((struct GLUE_INFO **) netdev_priv(prDev))) ? TRUE : FALSE)
