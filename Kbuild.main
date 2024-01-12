@@ -1476,9 +1476,17 @@ else
 endif
 
 ifeq ($(CONFIG_MTK_TC10_FEATURE), y)
+    CONFIG_MTK_WIFI_EXT=y
     ccflags-y += -DCFG_TC10_FEATURE=1
 else
+    CONFIG_MTK_WIFI_EXT=n
     ccflags-y += -DCFG_TC10_FEATURE=0
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_EXT), y)
+    ccflags-y += -DCFG_EXT_FEATURE=1
+else
+    ccflags-y += -DCFG_EXT_FEATURE=0
 endif
 
 ifneq ($(CONFIG_MTK_MD1_SUPPORT), )
@@ -1905,6 +1913,9 @@ endif
 # ---------------------------------------------------
 COMMON_DIR  := common/
 OS_DIR      := os/$(os)/
+ifeq ($(CONFIG_MTK_WIFI_EXT), y)
+EXT_DIR     := ../gen4m_ext/
+endif
 HIF_COMMON_DIR := $(OS_DIR)hif/common/
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
 HIF_DIR	    := os/$(os)/hif/sdio/
@@ -2069,6 +2080,11 @@ CRYPTO_OBJS :=  $(WPA_DIR)FourWayHandShake.o\
                 $(WPA_DIR)src/crypto/sha384-kdf.o
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_EXT), y)
+COMMON_OBJS += 	$(EXT_DIR)$(COMMON_DIR)wlan_oid_ext.o
+OS_OBJS +=	$(EXT_DIR)$(OS_DIR)gl_sys.o \
+            $(EXT_DIR)$(OS_DIR)gl_wext_priv_ext.o
+endif
 
 # ---------------------------------------------------
 # Chips Objects List
