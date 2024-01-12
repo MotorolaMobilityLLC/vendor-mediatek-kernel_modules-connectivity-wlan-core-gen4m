@@ -437,6 +437,101 @@ uint32_t wlanGetPatchInfoAndDownloadV2(IN struct ADAPTER
 	return u4Status;
 }
 
+#if CFG_SUPPORT_SINGLE_FW_BINARY
+uint32_t wlanParseSingleBinaryFile(void *pvFileBuf,
+	uint32_t u4FileLength, void **ppvIdxFileBuf,
+	uint32_t *pu4IdxFileLength, enum ENUM_IMG_DL_IDX_T eDlIdx)
+{
+	struct HEADER_SINGLE_BINARY *prHeader;
+	uint32_t u4FixedHeaderSize, u4DynamicHeaderSize;
+	void *u4FilePtr;
+	void *u4FileOffsetPtr;
+	void *u4FileLengthPtr;
+	uint32_t u4IdxFileOffset;
+	uint32_t u4IdxFileLength;
+	uint32_t u4NextIdxFileOffset;
+	uint32_t ret = WLAN_STATUS_SUCCESS;
+	uint32_t u4Idx = 0;
+	uint32_t i;
+	void *pvFwBuffer = NULL;
+
+	*ppvIdxFileBuf = NULL;
+	*pu4IdxFileLength = 0;
+
+	prHeader = (struct HEADER_SINGLE_BINARY *) pvFileBuf;
+
+	for (i = 0; i < sizeof(prHeader->aucFileType); i++) {
+		if (prHeader->aucFileType[i] == eDlIdx) {
+			u4Idx = i;
+			break;
+		}
+	}
+
+	if (i >= sizeof(prHeader->aucFileType)) {
+		DBGLOG(INIT, WARN,
+			"No match file type\n");
+		ret = WLAN_STATUS_NOT_SUPPORTED;
+		goto exit;
+	}
+
+	if (u4Idx >= prHeader->u4FileNumber) {
+		DBGLOG(INIT, WARN,
+			"File number not match\n");
+		ret = WLAN_STATUS_NOT_SUPPORTED;
+		goto exit;
+	}
+
+	u4FixedHeaderSize = sizeof(struct HEADER_SINGLE_BINARY);
+	/* Per file has 2 uint32_t in Dynamic Header,
+	 * 1 for file offset, 1 for file length
+	 * and extra 1 uint32_t for end padding, 0xEDED
+	 */
+	u4DynamicHeaderSize =
+		((prHeader->u4FileNumber * 2) + 1) * sizeof(uint32_t);
+
+	u4FileOffsetPtr = pvFileBuf +
+			u4FixedHeaderSize +
+			u4Idx * 2 * sizeof(uint32_t);
+	u4FileLengthPtr = u4FileOffsetPtr + sizeof(uint32_t);
+	u4IdxFileOffset = *((uint32_t *)u4FileOffsetPtr);
+	u4IdxFileLength = *((uint32_t *)u4FileLengthPtr);
+	u4FilePtr = pvFileBuf + u4FixedHeaderSize +
+			u4DynamicHeaderSize +
+			u4IdxFileOffset;
+
+	if (u4Idx == prHeader->u4FileNumber - 1)
+		u4NextIdxFileOffset = u4FileLength -
+				u4FixedHeaderSize -
+				u4DynamicHeaderSize;
+	else
+		u4NextIdxFileOffset =
+			*((uint32_t *)(u4FileOffsetPtr +
+			2 * sizeof(uint32_t)));
+
+	if (u4IdxFileLength != u4NextIdxFileOffset - u4IdxFileOffset) {
+		DBGLOG(INIT, WARN,
+			"File length not match\n");
+		ret = WLAN_STATUS_NOT_SUPPORTED;
+		goto exit;
+	}
+
+	pvFwBuffer = kalMemAlloc(u4IdxFileLength, VIR_MEM_TYPE);
+	if (!pvFwBuffer) {
+		DBGLOG(INIT, ERROR, "vmalloc(%u) failed\n",
+			u4IdxFileLength);
+		ret = WLAN_STATUS_RESOURCES;
+		goto exit;
+	}
+
+	kalMemCopy(pvFwBuffer, u4FilePtr, u4IdxFileLength);
+	*ppvIdxFileBuf = pvFwBuffer;
+	*pu4IdxFileLength = u4IdxFileLength;
+
+exit:
+	return ret;
+}
+#endif
+
 uint32_t wlanDownloadSection(IN struct ADAPTER *prAdapter,
 			     IN uint32_t u4Addr, IN uint32_t u4Len,
 			     IN uint32_t u4DataMode, IN uint8_t *pucStartPtr,
@@ -2177,7 +2272,9 @@ void wlanParseRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 	struct WIFI_VER_INFO *prVerInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	void *pvDev;
-	uint32_t u4ReadLen;
+	void *pvMapFileBuf = NULL;
+	uint32_t u4FileLength = 0;
+	uint32_t u4ReadLen = 0;
 	uint8_t *prFwBuffer = NULL;
 	uint8_t *aucFwName[FW_FILE_NAME_TOTAL + 1];
 	uint8_t aucFwNameBody[FW_FILE_NAME_TOTAL][FW_FILE_NAME_MAX_LEN];
@@ -2190,8 +2287,14 @@ void wlanParseRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 	*pu4ManifestSize = 0;
 
 	glGetChipInfo((void **)&prChipInfo);
+	if (prChipInfo == NULL) {
+		DBGLOG(INIT, WARN, "glGetChipInfo failed\n");
+		goto exit;
+	}
+
 	for (idx = 0; idx < FW_FILE_NAME_TOTAL; idx++)
 		aucFwName[idx] = (uint8_t *)(aucFwNameBody + idx);
+
 	idx = 0;
 	if (prChipInfo->fw_dl_ops->constructFirmwarePrio) {
 		prChipInfo->fw_dl_ops->constructFirmwarePrio(
@@ -2222,6 +2325,24 @@ void wlanParseRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 	if (!fgResult)
 		goto exit;
 
+#if CFG_SUPPORT_SINGLE_FW_BINARY
+	if (prChipInfo->fw_dl_ops->parseSingleBinaryFile &&
+		prChipInfo->fw_dl_ops->parseSingleBinaryFile(
+			prFwBuffer,
+			u4ReadLen,
+			&pvMapFileBuf,
+			&u4FileLength,
+			0) == WLAN_STATUS_SUCCESS) {
+		kalMemFree(prFwBuffer, VIR_MEM_TYPE, u4ReadLen);
+	} else {
+		pvMapFileBuf = prFwBuffer;
+		u4FileLength = u4ReadLen;
+	}
+#else
+	pvMapFileBuf = prFwBuffer;
+	u4FileLength = u4ReadLen;
+#endif
+
 	prVerInfo = (struct WIFI_VER_INFO *)
 		kalMemAlloc(sizeof(struct WIFI_VER_INFO), VIR_MEM_TYPE);
 	if (!prVerInfo) {
@@ -2230,7 +2351,7 @@ void wlanParseRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 		goto free_buf;
 	}
 
-	if (wlanGetConnacTailerInfo(prVerInfo, prFwBuffer, u4ReadLen,
+	if (wlanGetConnacTailerInfo(prVerInfo, pvMapFileBuf, u4FileLength,
 			IMG_DL_IDX_N9_FW) != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, WARN, "Get tailer info error!\n");
 		goto free_buf;
@@ -2247,8 +2368,8 @@ free_buf:
 	if (prVerInfo)
 		kalMemFree(prVerInfo, VIR_MEM_TYPE,
 			sizeof(struct WIFI_VER_INFO));
-	if (prFwBuffer)
-		kalMemFree(prFwBuffer, VIR_MEM_TYPE, u4ReadLen);
+	if (pvMapFileBuf)
+		kalMemFree(pvMapFileBuf, VIR_MEM_TYPE, u4FileLength);
 exit:
 	return;
 }
