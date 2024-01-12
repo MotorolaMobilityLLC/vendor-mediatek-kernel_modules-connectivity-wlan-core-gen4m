@@ -1705,6 +1705,33 @@ nanNdpProcessDataRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb) {
 
 	/* 2. create NDP on-the-fly - using specified peer-specified NDPID */
 	prNDL = nanDataUtilSearchNdlByMac(prAdapter, prNaf->aucSrcAddr);
+
+	if (prNDL &&
+		prNDL->prOperatingNDP &&
+		(prNDL->eNDLRole == NAN_PROTOCOL_INITIATOR) &&
+		(ucNDPID > prNDL->prOperatingNDP->ucNDPID)) {
+		DBGLOG(NAN, WARN,
+			"Cross sending to free NDL with small NDPID\n");
+
+		if (prNDL->prOperatingNDP->eCurrentNDPProtocolState ==
+			NDP_INITIATOR_TX_DP_REQUEST)
+			nanNdpInitiatorRspEvent(prAdapter,
+				prNDL->prOperatingNDP,
+				WLAN_STATUS_FAILURE);
+
+		if (prNDL->prOperatingNDP->eCurrentNDPProtocolState ==
+			NDP_INITIATOR_RX_DP_RESPONSE)
+			nanNdpResponderRspEvent(prAdapter,
+				prNDL->prOperatingNDP,
+				WLAN_STATUS_FAILURE);
+
+		prNDL->eCurrentNDLMgmtState = NDL_TEARDOWN;
+		nanNdlMgmtFsmStep(prAdapter, NDL_TEARDOWN,
+				  prNDL);
+		prNDL->prOperatingNDP = NULL;
+		prNDL = NULL;
+	}
+
 	if (prNDL) {
 		if (prNDL->prOperatingNDP == NULL) {
 			prNDP = nanDataUtilSearchNdpByNdpId(prAdapter, prNDL,
