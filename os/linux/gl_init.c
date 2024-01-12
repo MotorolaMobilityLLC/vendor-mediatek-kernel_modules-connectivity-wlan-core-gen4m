@@ -95,14 +95,14 @@
 #if (CFG_SUPPORT_ICS == 1)
 #include "ics.h"
 #endif
-#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-#include "fw_log_wifi.h"
-#endif
 
 #if CFG_POWER_OFF_CTRL_SUPPORT
 #include <linux/reboot.h>
 #endif
-
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+#include "gl_coredump.h"
+#endif
+#include "gl_fw_log.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -7167,6 +7167,10 @@ static int initWlan(void)
 	} while (0);
 #endif
 
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
+	fw_log_wifi_inf_init();
+#endif
+
 	ret = ((glRegisterBus(wlanProbe,
 			      wlanRemove) == WLAN_STATUS_SUCCESS) ? 0 : -EIO);
 	if (ret == -EIO) {
@@ -7293,6 +7297,11 @@ static void exitWlan(void)
 #endif /* CFG_MTK_ANDROID_WMT */
 
 	glUnregisterBus(wlanRemove);
+
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
+	fw_log_wifi_inf_deinit();
+#endif
+
 #if CFG_SUPPORT_PERSIST_NETDEV
 
 	wiphy = wlanGetWiphy();

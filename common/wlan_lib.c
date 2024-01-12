@@ -1282,6 +1282,8 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			break;
 		}
 
+		fwLogMmioInitMcu(prAdapter);
+
 		/* 4 <6> Enable HIF cut-through to N9 mode, not visiting CR4 */
 		HAL_ENABLE_FWDL(prAdapter, TRUE);
 
@@ -1358,6 +1360,8 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 #endif
 			/* Set FW download success flag */
 			prAdapter->fgIsFwDownloaded = TRUE;
+
+			fwLogMmioStart();
 
 			/* 2. query & reset TX Resource for normal operation */
 			wlanQueryNicResourceInformation(prAdapter);
@@ -1559,6 +1563,8 @@ uint32_t wlanAdapterStop(IN struct ADAPTER *prAdapter,
 
 	wlanOffClearAllQueues(prAdapter);
 
+	fwLogMmioStop();
+
 	/* Hif power off wifi */
 	if (prAdapter->rAcpiState == ACPI_STATE_D0 &&
 		!wlanIsChipNoAck(prAdapter)
@@ -1569,6 +1575,7 @@ uint32_t wlanAdapterStop(IN struct ADAPTER *prAdapter,
 		HAL_CANCEL_TX_RX(prAdapter);
 	}
 
+	fwLogMmioDeInitMcu();
 	halHifSwInfoUnInit(prAdapter->prGlueInfo);
 	wlanOffUninitNicModule(prAdapter, bAtResetFlow);
 

@@ -1573,7 +1573,7 @@ struct mt66xx_chip_info {
 	void (*coantSetMD)(void);
 	void (*coantVFE28En)(IN struct ADAPTER *prAdapter);
 	void (*coantVFE28Dis)(void);
-	bool (*get_sw_interrupt_status)(struct ADAPTER *prAdapter,
+	u_int8_t (*get_sw_interrupt_status)(struct ADAPTER *prAdapter,
 		uint32_t *status);
 	void (*dumpwfsyscpupcr)(IN struct ADAPTER *prAdapter);
 	uint8_t* (*getCalResult)(OUT uint32_t *prCalSize);

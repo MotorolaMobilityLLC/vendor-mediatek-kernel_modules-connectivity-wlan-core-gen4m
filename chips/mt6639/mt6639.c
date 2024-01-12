@@ -99,9 +99,18 @@ static void mt6639WfdmaRxRingExtCtrl(
 
 static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo);
 
+static u_int8_t mt6639_get_sw_interrupt_status(struct ADAPTER *prAdapter,
+	uint32_t *pu4Status);
+
 static void mt6639_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
 	uint32_t sec,
 	uint32_t usec);
+static uint32_t mt6639_ccif_get_interrupt_status(struct ADAPTER *ad);
+static void mt6639_ccif_set_fw_log_read_pointer(struct ADAPTER *ad,
+	enum ENUM_FW_LOG_CTRL_TYPE type,
+	uint32_t read_pointer);
+static uint32_t mt6639_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
+	enum ENUM_FW_LOG_CTRL_TYPE type);
 #endif
 
 /*******************************************************************************
@@ -480,7 +489,10 @@ struct ATE_OPS_T mt6639_AteOps = {
 
 #if defined(_HIF_PCIE)
 static struct CCIF_OPS mt6639_ccif_ops = {
+	.get_interrupt_status = mt6639_ccif_get_interrupt_status,
 	.notify_utc_time_to_fw = mt6639_ccif_notify_utc_time_to_fw,
+	.set_fw_log_read_pointer = mt6639_ccif_set_fw_log_read_pointer,
+	.get_fw_log_read_pointer = mt6639_ccif_get_fw_log_read_pointer,
 };
 #endif
 
@@ -560,6 +572,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC),
 #endif
 	.ccif_ops = &mt6639_ccif_ops,
+	.get_sw_interrupt_status = mt6639_get_sw_interrupt_status,
 #else
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC),
 #endif /* _HIF_PCIE */
@@ -1230,6 +1243,27 @@ static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 		   ((uint32_t)prHifInfo->rMcuEmiMem.pa >> 16));
 }
 
+static u_int8_t mt6639_get_sw_interrupt_status(struct ADAPTER *prAdapter,
+	uint32_t *pu4Status)
+{
+	*pu4Status = ccif_get_interrupt_status(prAdapter);
+	return TRUE;
+}
+
+static uint32_t mt6639_ccif_get_interrupt_status(struct ADAPTER *ad)
+{
+	uint32_t u4Status = 0;
+
+	HAL_MCR_RD(ad,
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_RCHNUM_ADDR,
+		&u4Status);
+	HAL_MCR_WR(ad,
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_ACK_ADDR,
+		u4Status);
+
+	return u4Status;
+}
+
 static void mt6639_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
 	uint32_t sec,
 	uint32_t usec)
@@ -1252,6 +1286,35 @@ static uint32_t mt6639GetFlavorVer(struct ADAPTER *prAdapter)
 		return 0x1;
 	else
 		return 0x2;
+}
+
+static void mt6639_ccif_set_fw_log_read_pointer(struct ADAPTER *ad,
+	enum ENUM_FW_LOG_CTRL_TYPE type,
+	uint32_t read_pointer)
+{
+	uint32_t u4Addr = 0;
+
+	if (type == ENUM_FW_LOG_CTRL_TYPE_MCU)
+		u4Addr = WF2AP_CONN_INFRA_ON_CCIF4_WF2AP_PCCIF_DUMMY2_ADDR;
+	else
+		u4Addr = WF2AP_CONN_INFRA_ON_CCIF4_WF2AP_PCCIF_DUMMY1_ADDR;
+
+	HAL_MCR_WR(ad, u4Addr, read_pointer);
+}
+
+static uint32_t mt6639_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
+	enum ENUM_FW_LOG_CTRL_TYPE type)
+{
+	uint32_t u4Addr = 0, u4Value = 0;
+
+	if (type == ENUM_FW_LOG_CTRL_TYPE_MCU)
+		u4Addr = WF2AP_CONN_INFRA_ON_CCIF4_WF2AP_PCCIF_DUMMY2_ADDR;
+	else
+		u4Addr = WF2AP_CONN_INFRA_ON_CCIF4_WF2AP_PCCIF_DUMMY1_ADDR;
+
+	HAL_MCR_RD(ad, u4Addr, &u4Value);
+
+	return u4Value;
 }
 
 #endif  /* MT6639 */
