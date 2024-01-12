@@ -509,7 +509,7 @@ VOID cnmStaRecInit(P_ADAPTER_T prAdapter)
 
 		prStaRec->ucIndex = (UINT_8) i;
 		prStaRec->fgIsInUse = FALSE;
-#ifdef DSCP_SUPPORT
+#if DSCP_SUPPORT
 		prStaRec->qosMapSet = NULL;
 #endif
 	}
@@ -615,7 +615,7 @@ VOID cnmStaRecFree(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec)
 	cnmStaRoutinesForAbort(prAdapter, prStaRec);
 
 	cnmStaSendRemoveCmd(prAdapter, STA_REC_CMD_ACTION_STA, ucStaRecIndex, ucBssIndex);
-#ifdef DSCP_SUPPORT
+#if DSCP_SUPPORT
 	if (prStaRec->qosMapSet) {
 		QosMapSetRelease(prStaRec);
 		prStaRec->qosMapSet = NULL;

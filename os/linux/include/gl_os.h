@@ -467,7 +467,7 @@ struct _GLUE_INFO_T {
 	/* Pointer to ADAPTER_T - main data structure of internal protocol stack */
 	P_ADAPTER_T prAdapter;
 
-#ifdef WLAN_INCLUDE_PROC
+#if WLAN_INCLUDE_PROC
 	struct proc_dir_entry *pProcRoot;
 #endif				/* WLAN_INCLUDE_PROC */
 
@@ -1005,7 +1005,7 @@ static inline u16 mtk_wlan_ndev_select_queue(struct sk_buff *skb)
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-#ifdef WLAN_INCLUDE_PROC
+#if WLAN_INCLUDE_PROC
 INT_32 procCreateFsEntry(P_GLUE_INFO_T prGlueInfo);
 INT_32 procRemoveProcfs(VOID);
 

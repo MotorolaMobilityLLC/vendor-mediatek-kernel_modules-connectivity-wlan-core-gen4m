@@ -107,7 +107,7 @@
 #define SC_CACHE_INDEX_NUM          5	/* Number of SC caches in each STA_REC: AC0~AC4 */
 
 /* P2P related definitions */
-#ifdef CFG_ENABLE_WIFI_DIRECT
+#if CFG_ENABLE_WIFI_DIRECT
 /* Moved from p2p_fsm.h */
 #define WPS_ATTRI_MAX_LEN_DEVICE_NAME               32	/* 0x1011 */
 #define P2P_GC_MAX_CACHED_SEC_DEV_TYPE_COUNT        8	/* NOTE(Kevin): Shall <= 16 */
@@ -238,7 +238,7 @@ struct STA_PMF_CFG {
 };
 #endif
 
-#ifdef DSCP_SUPPORT
+#if DSCP_SUPPORT
 struct _DSCP_EXCEPTION {
 	UINT_8 dscp;
 	UINT_8 userPriority;
@@ -590,7 +590,7 @@ struct _STA_RECORD_T {
 	/* AP PMF */
 	struct STA_PMF_CFG rPmfCfg;
 #endif
-#ifdef DSCP_SUPPORT
+#if DSCP_SUPPORT
 	struct _QOS_MAP_SET *qosMapSet;
 #endif
 };
