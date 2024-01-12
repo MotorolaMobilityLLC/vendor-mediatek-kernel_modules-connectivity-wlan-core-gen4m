@@ -1098,6 +1098,8 @@ void p2pRoleFsmRunEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 					prStaRec, FALSE,
 					REASON_CODE_DISASSOC_LEAVING_BSS);
 
+				p2pFuncStopComplete(prAdapter, prP2pBssInfo);
+
 				SET_NET_PWR_STATE_IDLE(prAdapter,
 					prP2pBssInfo->ucBssIndex);
 				/* 20120830 moved into p2pFuncDisconnect() */
