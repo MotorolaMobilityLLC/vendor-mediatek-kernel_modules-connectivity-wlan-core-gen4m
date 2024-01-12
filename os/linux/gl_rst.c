@@ -525,7 +525,7 @@ static void triggerHifDumpIfNeed(void)
 	prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 
 	if (prAdapter->chip_info->dumpBusHangCr)
-		prAdapter->chip_info->dumpBusHangCr(prAdapter);
+		prAdapter->chip_info->dumpBusHangCr(NULL);
 
 	kalSetHifDbgEvent(prAdapter->prGlueInfo);
 	/* wait for hif_thread finish dump */
