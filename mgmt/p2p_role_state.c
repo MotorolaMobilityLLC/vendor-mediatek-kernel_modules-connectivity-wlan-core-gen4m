@@ -435,6 +435,8 @@ p2pRoleStateAbort_GC_JOIN(IN struct ADAPTER *prAdapter,
 			prP2pRoleFsmInfo->ucBssIndex,
 			&(prP2pRoleFsmInfo->rChnlReqInfo));
 
+		prP2pRoleFsmInfo->rJoinInfo.prTargetStaRec = NULL;
+
 	} while (FALSE);
 }
 

@@ -2929,6 +2929,9 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 						prJoinInfo->aucIEBuf,
 						prJoinInfo->u4BufLength,
 						prSetupStaRec->u2StatusCode);
+
+					prP2pRoleFsmInfo->
+						rJoinInfo.prTargetStaRec = NULL;
 				}
 			}
 		}
