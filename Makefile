@@ -531,6 +531,9 @@ $(info VERSION_STR=$(VERSION_STR))
 X = $(firstword $(VERSION_STR))
 Y = $(word 2 ,$(VERSION_STR))
 Z = $(word 3 ,$(VERSION_STR))
+ifeq ($Z, )
+    Z = 0
+endif
 VERSION := $(shell echo "$$(( $X * 65536 + $Y * 256 + $Z))" )
 ccflags-y += -DCFG_CFG80211_VERSION=$(VERSION)
 $(info DCFG_CFG80211_VERSION=$(VERSION))
