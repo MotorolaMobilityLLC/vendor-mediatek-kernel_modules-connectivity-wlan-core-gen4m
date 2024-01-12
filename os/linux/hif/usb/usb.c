@@ -65,6 +65,9 @@
 #define MTK_USB_BULK_IN_MAX_EP          5
 #define MTK_USB_BULK_OUT_MIN_EP         4
 #define MTK_USB_BULK_OUT_MAX_EP         9
+#if CFG_DC_USB_WOW_CALLBACK
+#define WIFI_POWER_OFF_DONE     (0x7C05B120)
+#endif
 
 static const struct usb_device_id mtk_usb_ids[] = {
 	/* {USB_DEVICE(0x0E8D,0x6632), .driver_info = MT_MAC_BASE}, */
@@ -231,10 +234,15 @@ static void mtk_usb_disconnect(struct usb_interface *intf)
 	prGlueInfo  = (struct GLUE_INFO *)usb_get_intfdata(intf);
 
 	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_LINK_DOWN);
-
+#if CFG_DC_USB_WOW_CALLBACK
+	if (prGlueInfo->rHifInfo.fgUsbShutdown) {
+		DBGLOG(HAL, WARN, "usb shutdown\n");
+	} else
+#endif
+	{
 	if (g_fgDriverProbed)
 		pfWlanRemove();
-
+	}
 	usb_set_intfdata(intf, NULL);
 	usb_put_dev(interface_to_usbdev(intf));
 
@@ -488,6 +496,36 @@ int32_t mtk_usb_vendor_request(struct GLUE_INFO *prGlueInfo,
 
 	return (ret == TransferBufferLength) ? 0 : ret;
 }
+
+#if CFG_DC_USB_WOW_CALLBACK
+void mtk_usb_shutdown_vnd_cmd(struct GLUE_INFO *prGlueInfo)
+{
+	int ret = 0;
+	uint32_t u4Data = 0;
+
+	DBGLOG(INIT, ERROR, "mtk_usb_vnd_cmd\n");
+
+	if (prGlueInfo && prGlueInfo->prAdapter) {
+
+		HAL_MCR_RD(prGlueInfo->prAdapter, WIFI_POWER_OFF_DONE, &u4Data);
+		DBGLOG(REQ, STATE, "Read data is: %x\n", u4Data);
+
+		u4Data |= BIT(1);
+		DBGLOG(REQ, STATE, "Write data is: %x\n", u4Data);
+		HAL_MCR_WR(prGlueInfo->prAdapter, WIFI_POWER_OFF_DONE, u4Data);
+
+		ret = usb_control_msg(prGlueInfo->rHifInfo.udev,
+				usb_sndctrlpipe(prGlueInfo->rHifInfo.udev, 0),
+				VND_REQ_USB_SHUTDOWN,
+				DEVICE_VENDOR_REQUEST_OUT,
+				0, 0, NULL, 0, 100);
+
+		if (ret)
+			DBGLOG(INIT, ERROR,
+			"mtk_usb_vnd_cmd ERROR: %d\n", ret);
+	}
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -947,7 +985,9 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 	prHifInfo->eEventEpType = USB_EVENT_TYPE;
 	prHifInfo->fgEventEpDetected = FALSE;
-
+#if CFG_DC_USB_WOW_CALLBACK
+	prHifInfo->fgUsbShutdown = FALSE;
+#endif
 	prHifInfo->intf = (struct usb_interface *)ulCookie;
 	prHifInfo->udev = interface_to_usbdev(prHifInfo->intf);
 
