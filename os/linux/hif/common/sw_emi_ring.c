@@ -34,7 +34,6 @@
  *******************************************************************************
  */
 #define SW_EMI_WAITING_FW_READY_CNT	(100 *  100) /* 100ms timeout */
-#define SW_EMI_RING_DEBUG		0
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -110,18 +109,19 @@ u_int8_t halSwEmiRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 	struct CHIP_DBG_OPS *prDbgOps;
+	struct WIFI_VAR *prWifiVar;
 	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
 	struct SW_EMI_CTX *prEmi;
 	uint32_t u4DrvIdx = 0, u4Cnt = 0;
 	u_int8_t fgRet = TRUE, fgDbg = FALSE;
 	unsigned long ulFlags = 0;
-#if SW_EMI_RING_DEBUG
+
 	KAL_TIME_INTERVAL_DECLARATION();
-#endif
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prDbgOps = prChipInfo->prDebugOps;
+	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 	prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
 	prEmi = prSwEmiRingInfo->prEmi;
 
@@ -141,9 +141,9 @@ u_int8_t halSwEmiRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
 		goto debug;
 	}
 
-#if SW_EMI_RING_DEBUG
-	KAL_REC_TIME_START();
-#endif
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiDbg))
+		KAL_REC_TIME_START();
+
 	kalAcquireSpinLock(prGlueInfo, SPIN_LOCK_SW_EMI_RING, &ulFlags);
 
 	if (prEmi->u4DrvIdx != prEmi->u4FwIdx) {
@@ -179,12 +179,14 @@ u_int8_t halSwEmiRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
 
 unlock:
 	kalReleaseSpinLock(prGlueInfo, SPIN_LOCK_SW_EMI_RING, ulFlags);
-#if SW_EMI_RING_DEBUG
-	KAL_REC_TIME_END();
-	DBGLOG(HAL, INFO,
-	       "read [0x%08x]=[0x%08x] time[%lu us]\n",
-	       u4Addr, *pu4Val, KAL_GET_TIME_INTERVAL());
-#endif
+
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiDbg)) {
+		KAL_REC_TIME_END();
+		fgDbg = TRUE;
+		DBGLOG(HAL, INFO,
+		       "read [0x%08x]=[0x%08x] time[%u us]\n",
+		       u4Addr, *pu4Val, KAL_GET_TIME_INTERVAL());
+	}
 debug:
 	if (fgDbg) {
 		DBGLOG(HAL, ERROR,

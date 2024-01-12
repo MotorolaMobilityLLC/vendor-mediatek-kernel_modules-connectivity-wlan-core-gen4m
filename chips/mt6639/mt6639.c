@@ -307,9 +307,7 @@ struct PCIE_CHIP_CR_MAPPING mt6639_bus2chip_cr_mapping[] = {
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
 	{0x7c010000, 0x100000, 0x10000}, /* CONN_INFRA */
-#if CFG_MTK_CCCI_SUPPORT
 	{0x7c030000, 0x1a0000, 0x10000}, /* CONN_INFRA_ON_CCIF */
-#endif
 	{0x70020000, 0x1f0000, 0x10000}, /* Reserved for CBTOP, can't switch */
 	{0x7c500000, MT6639_PCIE2AP_REMAP_BASE_ADDR, 0x200000}, /* remap */
 	{0x70000000, 0x1e0000, 0x9000},
@@ -3004,6 +3002,11 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 	}
 #endif
 
+	/* setup 1a/1b remapping for mcif interrupt */
+	HAL_MCR_WR(ad,
+		   CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_1_BA_ADDR,
+		   0x18051803);
+
 	if (ad->chip_info->coexpccifon)
 		ad->chip_info->coexpccifon(ad);
 #if CFG_SUPPORT_PCIE_ASPM
@@ -3276,11 +3279,6 @@ static int mt6639ConnacPccifOn(struct ADAPTER *prAdapter)
 		DBGLOG(INIT, ERROR, "ioremap fail.\n");
 		return -1;
 	}
-
-	kalDevRegWrite(
-		NULL,
-		CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_1_BA_ADDR,
-		0x18051803);
 
 #if CFG_SUPPORT_WIFI_MCIF_NO_MMIO_READ
 	u4WifiEmi = (uint32_t)emi_mem_get_phy_base(prAdapter->chip_info) +

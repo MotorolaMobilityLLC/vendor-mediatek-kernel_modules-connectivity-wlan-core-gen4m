@@ -1428,6 +1428,7 @@ struct WIFI_VAR {
 #endif
 
 	u_int8_t fgEnWfdmaNoMmioRead;
+	u_int8_t fgEnSwEmiDbg;
 #if CFG_MTK_WIFI_EN_SW_EMI_READ
 	u_int8_t fgEnSwEmiRead;
 #endif
