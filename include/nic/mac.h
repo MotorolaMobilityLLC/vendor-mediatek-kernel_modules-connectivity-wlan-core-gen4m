@@ -1985,7 +1985,6 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #endif
 
 #if CFG_SUPPORT_RXSMM_WHITELIST
-#define VENDOR_OUI_RXSMM_LIST_NUM                   0
 #define VENDOR_OUI_RXSMM_OUI_IE_NUM                 3
 #endif
 

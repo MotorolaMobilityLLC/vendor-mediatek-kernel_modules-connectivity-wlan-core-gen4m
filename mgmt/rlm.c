@@ -105,9 +105,9 @@ uint8_t  g_fgHTSMPSEnabled = 0xFF;
  *******************************************************************************
  */
 #if CFG_SUPPORT_RXSMM_WHITELIST
-uint8_t Rxsmm_Iot_Whitelist[VENDOR_OUI_RXSMM_LIST_NUM]
+uint8_t Rxsmm_Iot_Whitelist[]
 	[VENDOR_OUI_RXSMM_OUI_IE_NUM] = {
-/*	{0x00, 0x0C, 0xE7}, */
+	{0xF8, 0x32, 0xE4}
 };
 #endif
 
@@ -923,8 +923,9 @@ u_int8_t rlmParseCheckRxsmmOuiIE(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 
 	*pfgRxsmmEnable = FALSE;
 
+#if CFG_SUPPORT_MTK_SYNERGY
 	for (u1RxsmmListIdx = 0;
-		u1RxsmmListIdx < VENDOR_OUI_RXSMM_LIST_NUM;
+		u1RxsmmListIdx < ARRAY_SIZE(Rxsmm_Iot_Whitelist);
 		u1RxsmmListIdx++) {
 
 		prMtkOuiIE = (struct IE_MTK_OUI *)pucBuf;
@@ -944,8 +945,9 @@ u_int8_t rlmParseCheckRxsmmOuiIE(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 		*pfgRxsmmEnable = TRUE;
 
 	}
+#endif
 
-	DBGLOG(QM, INFO, "RxSMM: RxSMM enable = %d\n", *pfgRxsmmEnable);
+	DBGLOG(QM, INFO, "RxSMM: OUI enable = %d\n", *pfgRxsmmEnable);
 
 	return TRUE;
 } /* rlmParseCheckRxsmmOuiIE */
@@ -2682,6 +2684,10 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 #endif
 	u_int8_t IsfgHtCapChange = FALSE;
 
+#if CFG_SUPPORT_RXSMM_WHITELIST
+	u_int8_t fgRxsmmEnable = FALSE;
+#endif
+
 #if CFG_SUPPORT_802_11AC
 	struct IE_VHT_OP *prVhtOp;
 	struct IE_VHT_CAP *prVhtCap = NULL;
@@ -3293,6 +3299,16 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_802_11AX */
 		case ELEM_ID_VENDOR:
 			rlmParseMtkOui(prAdapter, prStaRec, prBssInfo, pucIE);
+#if CFG_SUPPORT_RXSMM_WHITELIST
+			if (rlmParseCheckRxsmmOuiIE(prAdapter,
+				pucIE, &fgRxsmmEnable))
+				prStaRec->fgRxsmmEnable =
+					(fgRxsmmEnable) ? (fgRxsmmEnable) :
+						(prStaRec->fgRxsmmEnable);
+
+			DBGLOG(RLM, INFO, "RxSMM: STAREC enable = %d\n",
+				prStaRec->fgRxsmmEnable);
+#endif
 			break;
 		default:
 			break;
