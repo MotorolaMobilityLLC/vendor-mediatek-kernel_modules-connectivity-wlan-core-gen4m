@@ -119,6 +119,8 @@ void halPrintHifDbgInfo(IN struct ADAPTER *prAdapter)
 {
 	halCheckHifState(prAdapter);
 	halDumpHifDebugLog(prAdapter);
+	if (prAdapter->chip_info->dumpwfsyscpupcr)
+		prAdapter->chip_info->dumpwfsyscpupcr(prAdapter);
 }
 
 static void halCheckHifState(struct ADAPTER *prAdapter)
