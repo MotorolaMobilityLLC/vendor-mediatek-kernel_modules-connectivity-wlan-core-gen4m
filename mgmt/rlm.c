@@ -6045,6 +6045,7 @@ rlmChangeOperationMode(
 		DBGLOG(RLM, INFO,
 			"BSS[%d] target OpMode BW[%d] RxNss[%d] TxNss[%d] No change, return\n",
 			ucBssIndex, ucChannelWidth, ucOpRxNss, ucOpTxNss);
+		rlmCompleteOpModeChange(prAdapter, prBssInfo, TRUE);
 		return OP_CHANGE_STATUS_VALID_NO_CHANGE;
 	}
 
