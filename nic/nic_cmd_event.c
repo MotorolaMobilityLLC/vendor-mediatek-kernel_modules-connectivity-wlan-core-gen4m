@@ -6410,14 +6410,18 @@ void nicCmdEventQuerySerInfo(struct ADAPTER *prAdapter,
 				 prCmdInfo->pvInformationBuffer;
 		prEventSer = (struct EXT_EVENT_SER_T *) pucEventBuf;
 
-		if (prEventSer->ucEvtVer >= EXT_EVENT_SER_VER)
-			u4QueryInfoLen = sizeof(struct PARAM_SER_INFO_T);
-		else
+#if (EXT_EVENT_SER_VER > 0)
+		if (prEventSer->ucEvtVer < EXT_EVENT_SER_VER)
 			u4QueryInfoLen = prEventSer->u2EvtLen;
+		else
+#endif /* EXT_EVENT_SER_VER */
+			u4QueryInfoLen = sizeof(struct PARAM_SER_INFO_T);
 
 		kalMemCopy(prQuerySerInfo, pucEventBuf, u4QueryInfoLen);
 
+#if (EXT_EVENT_SER_VER > 0) /* for coverity */
 		if (prEventSer->ucEvtVer >= EXT_EVENT_SER_VER)
+#endif
 			prQuerySerInfo->ucEvtVer = EXT_EVENT_SER_VER;
 
 		kalOidComplete(prGlueInfo, prCmdInfo,
