@@ -1606,10 +1606,6 @@ struct mt66xx_chip_info {
 #endif
 	uint32_t u4LmacWtblDUAddr;
 	uint32_t u4UmacWtblDUAddr;
-	int (*wmmcupwron)(void);
-	int (*wmmcupwroff)(void);
-	uint32_t (*pwrondownload)(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucDownloadItem);
 	int (*triggerfwassert)(void);
 	int (*coexpccifon)(void);
 	int (*coexpccifoff)(void);

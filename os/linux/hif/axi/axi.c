@@ -272,27 +272,10 @@ static int hifAxiProbe(void)
 	prDriverData = get_platform_driver_data();
 	prChipInfo = prDriverData->chip_info;
 
-#if CFG_MTK_ANDROID_WMT
-#if (CFG_SUPPORT_CONNINFRA == 0)
-	mtk_wcn_consys_hw_wifi_paldo_ctrl(1);
-#else
-	ret = asicConnac2xPwrOnWmMcu(prChipInfo);
-	if (ret != 0) {
-		asicConnac2xPwrOffWmMcu(prChipInfo);
-		goto out;
-	}
-#endif
-#endif
-
 	if (pfWlanProbe((void *) g_prPlatDev, (void *) prDriverData) !=
 			WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, INFO, "pfWlanProbe fail!\n");
 		ret = -1;
-#if CFG_MTK_ANDROID_WMT
-#if (CFG_SUPPORT_CONNINFRA == 1)
-		asicConnac2xPwrOffWmMcu(prChipInfo);
-#endif
-#endif
 		goto out;
 	}
 	g_fgDriverProbed = TRUE;
@@ -316,23 +299,6 @@ int hifAxiRemove(void)
 		DBGLOG(INIT, TRACE, "pfWlanRemove done\n");
 	}
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	if (prChipInfo->coexpccifoff) {
-		prChipInfo->coexpccifoff();
-		DBGLOG(INIT, TRACE, "pccif off\n");
-	}
-#endif
-
-	if (prChipInfo->coantVFE28Dis)
-		prChipInfo->coantVFE28Dis();
-
-#if CFG_MTK_ANDROID_WMT
-#if (CFG_SUPPORT_CONNINFRA == 0)
-	mtk_wcn_consys_hw_wifi_paldo_ctrl(0);
-#else
-	asicConnac2xPwrOffWmMcu(prChipInfo);
-#endif /* CFG_SUPPORT_CONNINFRA */
-#endif /* CFG_MTK_ANDROID_WMT */
 	g_fgDriverProbed = FALSE;
 
 	DBGLOG(INIT, TRACE, "hifAxiRemove() done\n");
@@ -1687,12 +1653,12 @@ static void axiDumpRx(struct GL_HIF_INFO *prHifInfo,
 }
 #endif /* AXI_CFG_PREALLOC_MEMORY_BUFFER */
 
-int32_t glBusFunOn(void)
+int32_t glBusFuncOn(void)
 {
 	return hifAxiProbe();
 }
 
-void glBusFunOff(void)
+void glBusFuncOff(void)
 {
 	hifAxiRemove();
 	g_fgDriverProbed = FALSE;

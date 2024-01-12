@@ -883,8 +883,34 @@ uint32_t wlanImageSectionDownloadStage(
 								+ u4Offset,
 						       eDlIdx);
 #endif
+			if (prFwDlOps->setup_date_info)
+				prFwDlOps->setup_date_info(prAdapter,
+					eDlIdx,
+					prPatchHeader->aucBuildDate);
 		}
 /* For dynamic memory map::End */
+	} else if ((eDlIdx == IMG_DL_IDX_MCU_ROM_EMI) ||
+		   (eDlIdx == IMG_DL_IDX_WIFI_ROM_EMI)) {
+		struct ROM_EMI_HEADER *prRomEmiHeader =
+			(struct ROM_EMI_HEADER *)pvFwImageMapFile;
+
+		DBGLOG(INIT, INFO,
+			"DL ROM EMI idx=%d, date=%s\n",
+			eDlIdx,
+			prRomEmiHeader->aucBuildDate);
+
+		u4Addr = prRomEmiHeader->u4PatchAddr;
+		u4Len = u4FwImageFileLength - sizeof(struct ROM_EMI_HEADER);
+		u4Offset = sizeof(struct ROM_EMI_HEADER);
+		u4Status = prFwDlOps->downloadEMI(prAdapter,
+				u4Addr,
+				0,
+				pvFwImageMapFile + u4Offset,
+				u4Len);
+		if (prFwDlOps->setup_date_info)
+			prFwDlOps->setup_date_info(prAdapter,
+				eDlIdx,
+				prRomEmiHeader->aucBuildDate);
 	} else {
 		for (u4SecIdx = 0; u4SecIdx < ucSectionNumber;
 		     u4SecIdx++, u4Offset += u4Len) {
@@ -1838,9 +1864,6 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	uint32_t rStatus = 0;
 	struct mt66xx_chip_info *prChipInfo;
 	struct FWDL_OPS_T *prFwDlOps;
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	uint32_t rPccifstatus = 0;
-#endif
 
 	if (!prAdapter)
 		return WLAN_STATUS_FAILURE;
@@ -1892,17 +1915,7 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	if (prFwDlOps->phyAction)
 		prFwDlOps->phyAction(prAdapter);
 
-	if (prChipInfo->coantVFE28En)
-		prChipInfo->coantVFE28En(prAdapter);
-
 	DBGLOG(INIT, INFO, "FW download Start\n");
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	if (prChipInfo->coexpccifon) {
-		rPccifstatus = prChipInfo->coexpccifon();
-		if (rPccifstatus != 0)
-			DBGLOG(INIT, WARN, "pccif on fail\n");
-	}
-#endif
 
 	if (prFwDlOps->downloadFirmware) {
 		rStatus = prFwDlOps->downloadFirmware(prAdapter,
@@ -1911,14 +1924,6 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 		    && rStatus == WLAN_STATUS_SUCCESS)
 			rStatus = prFwDlOps->downloadFirmware(prAdapter,
 						IMG_DL_IDX_CR4_FW);
-	} else {
-		DBGLOG(INIT, WARN, "Without downlaod firmware Ops\n");
-#if (CFG_SUPPORT_CONNINFRA == 1)
-		if (prChipInfo->coexpccifoff) {
-			prChipInfo->coexpccifoff();
-			DBGLOG(INIT, TRACE, "pccif off\n");
-		}
-#endif
 	}
 
 exit:

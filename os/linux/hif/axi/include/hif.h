@@ -452,8 +452,8 @@ struct mt66xx_hif_driver_data *get_platform_driver_data(void);
 
 void glGetChipInfo(void **prChipInfo);
 
-int32_t glBusFunOn(void);
-void glBusFunOff(void);
+int32_t glBusFuncOn(void);
+void glBusFuncOff(void);
 
 /*******************************************************************************
  *                              F U N C T I O N S

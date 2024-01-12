@@ -405,3 +405,17 @@ void fillUsbHifTxDesc(OUT uint8_t **pDest, IN uint16_t *pInfoBufLen,
 }
 #endif
 
+__weak int connsys_power_on(void)
+{
+	return 0;
+}
+
+__weak int connsys_power_done(void)
+{
+	return 0;
+}
+
+__weak void connsys_power_off(void)
+{
+}
+

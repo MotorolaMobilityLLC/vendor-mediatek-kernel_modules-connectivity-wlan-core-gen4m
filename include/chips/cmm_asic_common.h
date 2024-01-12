@@ -77,5 +77,9 @@ void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter,
 	OUT uint8_t *pucBuffer);
 void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint8_t *tmac_info);
 void asicWakeUpWiFi(IN struct ADAPTER *prAdapter);
+
+int connsys_power_on(void);
+int connsys_power_done(void);
+void connsys_power_off(void);
 #endif /* _CMM_ASIC_COMMON_H */
 

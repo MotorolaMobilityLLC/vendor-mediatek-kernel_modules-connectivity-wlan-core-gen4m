@@ -76,6 +76,9 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+static uint32_t connac_McuInit(struct ADAPTER *prAdapter);
+static void connac_McuDeInit(struct ADAPTER *prAdapter);
+
 uint8_t *apucConnacFwName[] = {
 	(uint8_t *) CFG_FW_FILENAME "_soc1_0",
 	NULL
@@ -296,6 +299,8 @@ struct FWDL_OPS_T connac_fw_dl_ops = {
 	.getFwDlInfo = asicGetFwDlInfo,
 	.phyAction = NULL,
 	.downloadEMI = wlanDownloadEMISection,
+	.mcu_init = connac_McuInit,
+	.mcu_deinit = connac_McuDeInit,
 };
 
 struct TX_DESC_OPS_T connacTxDescOps = {
@@ -402,5 +407,16 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 struct mt66xx_hif_driver_data mt66xx_driver_data_connac = {
 	.chip_info = &mt66xx_chip_info_connac,
 };
+
+static uint32_t connac_McuInit(struct ADAPTER *prAdapter)
+{
+	mtk_wcn_consys_hw_wifi_paldo_ctrl(1);
+	return WLAN_STATUS_SUCCESS;
+}
+
+static void connac_McuDeInit(struct ADAPTER *prAdapter)
+{
+	mtk_wcn_consys_hw_wifi_paldo_ctrl(0);
+}
 
 #endif /* CONNAC */

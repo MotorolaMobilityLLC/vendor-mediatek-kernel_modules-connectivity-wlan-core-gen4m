@@ -979,7 +979,7 @@ struct RX_CTRL_BLK *halRroGetFreeRcbBlk(
 	struct RTMP_DMABUF *pDmaBuf,
 	uint32_t u4Idx);
 void halRroMawdInit(struct GLUE_INFO *prGlueInfo);
-void halMawdPwrOn(void);
+int halMawdPwrOn(void);
 void halMawdPwrOff(void);
 u_int8_t halMawdCheckInfra(struct ADAPTER *prAdapter);
 u_int8_t halMawdAllocTxRing(struct GLUE_INFO *prGlueInfo, u_int8_t fgAllocMem);
@@ -994,6 +994,9 @@ void halMawdSleep(struct GLUE_INFO *prGlueInfo);
 void halMawdReset(struct GLUE_INFO *prGlueInfo);
 void halMawdUpdateL2Tbl(struct GLUE_INFO *prGlueInfo,
 			union mawd_l2tbl rL2Tbl, uint32_t u4Set);
+#else
+static inline int halMawdPwrOn(void) { return 0; }
+static inline void halMawdPwrOff(void) {}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 #if CFG_SUPPORT_RX_PAGE_POOL

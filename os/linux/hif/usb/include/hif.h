@@ -539,12 +539,12 @@ int32_t glGetUsbDeviceManufacturerName(struct usb_device *dev, uint8_t *buffer, 
 int32_t glGetUsbDeviceProductName(struct usb_device *dev, uint8_t *buffer, uint32_t bufLen);
 int32_t glGetUsbDeviceSerialNumber(struct usb_device *dev, uint8_t *buffer, uint32_t bufLen);
 
-static inline int32_t glBusFunOn(void)
+static inline int32_t glBusFuncOn(void)
 {
 	return 0;
 }
 
-static inline void glBusFunOff(void)
+static inline void glBusFuncOff(void)
 {
 }
 

@@ -543,6 +543,13 @@ kalFirmwareImageMapping(IN struct GLUE_INFO *prGlueInfo,
 
 		case IMG_DL_IDX_PATCH:
 			break;
+
+		case IMG_DL_IDX_MCU_ROM_EMI:
+			break;
+
+		case IMG_DL_IDX_WIFI_ROM_EMI:
+			break;
+
 #if CFG_SUPPORT_WIFI_DL_BT_PATCH
 		case IMG_DL_IDX_BT_PATCH:
 			break;
@@ -607,6 +614,11 @@ kalFirmwareImageMapping(IN struct GLUE_INFO *prGlueInfo,
 			}
 			idx += 1;
 #endif /* CFG_SUPPORT_WIFI_DL_ZB_PATCH */
+		} else if (eDlIdx == IMG_DL_IDX_MCU_ROM_EMI ||
+			   eDlIdx == IMG_DL_IDX_WIFI_ROM_EMI) {
+			if (prChipInfo->fw_dl_ops->constructRomName)
+				prChipInfo->fw_dl_ops->constructRomName(
+					prGlueInfo, eDlIdx, apucName, &idx);
 		} else {
 			for (sub_idx = 0; sub_idx < max_idx; sub_idx++)
 				apucName[sub_idx] =

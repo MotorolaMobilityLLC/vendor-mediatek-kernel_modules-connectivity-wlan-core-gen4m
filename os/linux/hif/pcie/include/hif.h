@@ -547,8 +547,9 @@ void halPciePreSuspendDone(IN struct ADAPTER *prAdapter,
 void halPciePreSuspendTimeout(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo);
 void halPcieShowDebugInfo(struct GLUE_INFO *prGlueInfo);
-int32_t glBusFunOn(void);
-void glBusFunOff(void);
+
+int32_t glBusFuncOn(void);
+void glBusFuncOff(void);
 
 irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance);
 irqreturn_t pcie_sw_int_top_handler(int irq, void *dev_instance);

@@ -463,12 +463,12 @@ void halPreSuspendCmd(IN struct ADAPTER *prAdapter);
 void halPreResumeCmd(IN struct ADAPTER *prAdapter);
 void glSdioSetState(struct GL_HIF_INFO *prHifInfo, enum sdio_state state);
 
-static inline int32_t glBusFunOn(void)
+static inline int32_t glBusFuncOn(void)
 {
 	return 0;
 }
 
-static inline void glBusFunOff(void)
+static inline void glBusFuncOff(void)
 {
 }
 
