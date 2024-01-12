@@ -219,6 +219,7 @@ typedef struct _BUS_INFO {
 	VOID (*lowPowerOwnRead)(P_ADAPTER_T prAdapter, PBOOLEAN pfgResult);
 	VOID (*lowPowerOwnSet)(P_ADAPTER_T prAdapter, PBOOLEAN pfgResult);
 	VOID (*lowPowerOwnClear)(P_ADAPTER_T prAdapter, PBOOLEAN pfgResult);
+	VOID (*getMailboxStatus)(P_ADAPTER_T prAdapter, PUINT_32 pu4Val);
 } BUS_INFO, *P_BUS_INFO;
 
 

@@ -166,6 +166,7 @@ BUS_INFO mt7663_bus_info = {
 	.lowPowerOwnRead = asicLowPowerOwnRead,
 	.lowPowerOwnSet = asicLowPowerOwnSet,
 	.lowPowerOwnClear = asicLowPowerOwnClear,
+	.getMailboxStatus = asicGetMailboxStatus,
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = CONNAC_UDMA_WLCFG_0,
@@ -188,10 +189,11 @@ BUS_INFO mt7663_bus_info = {
 };
 
 struct FWDL_OPS_T mt7663_fw_dl_ops = {
-	.tailer_format = CONNAC_TAILER_FORMAT,
 	.constructFirmwarePrio = NULL,
+	.downloadPatch = wlanDownloadPatch,
 	.downloadFirmware = wlanConnacFormatDownload,
 	.getFwInfo = wlanGetConnacFwInfo,
+	.getFwDlInfo = asicGetFwDlInfo,
 };
 
 struct TX_DESC_OPS_T mt7663TxDescOps = {
