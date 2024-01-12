@@ -2314,7 +2314,6 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 
 	switch (prErrRecoveryCtrl->eErrRecovState) {
 	case ERR_RECOV_STOP_IDLE:
-	case ERR_RECOV_EVENT_REENTRY:
 		if (u4Status & ERROR_DETECT_STOP_PDMA) {
 			if (!prHifInfo->fgIsErrRecovery) {
 				prHifInfo->fgIsErrRecovery = TRUE;
@@ -2332,8 +2331,7 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 
 			/* re-call for change status to stop dma0 */
 			prErrRecoveryCtrl->eErrRecovState =
-				ERR_RECOV_STOP_IDLE_DONE;
-			halHwRecoveryFromError(prAdapter);
+				ERR_RECOV_STOP_PDMA0;
 		} else {
 			DBGLOG(HAL, ERROR, "SER CurStat=%u Event=%x\n",
 			       prErrRecoveryCtrl->eErrRecovState, u4Status);
@@ -2352,7 +2350,7 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 			kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_TX_Q, 0);
 
 			DBGLOG(HAL, INFO,
-				"SER(N) Host interrupt N9 PDMA ring init done\n");
+				"SER(N) Host interrupt MCU PDMA ring init done\n");
 			prErrRecoveryCtrl->eErrRecovState =
 				ERR_RECOV_RESET_PDMA0;
 			kalDevRegWrite(prGlueInfo, HOST2MCU_SW_INT_SET,
@@ -2366,9 +2364,9 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 	case ERR_RECOV_RESET_PDMA0:
 		if (u4Status & ERROR_DETECT_RECOVERY_DONE) {
 			DBGLOG(HAL, INFO,
-				"SER(Q) Host interrupt N9 SER handle done\n");
+				"SER(Q) Host interrupt MCU SER handle done\n");
 			prErrRecoveryCtrl->eErrRecovState =
-				ERR_RECOV_WAIT_N9_NORMAL;
+				ERR_RECOV_WAIT_MCU_NORMAL;
 			kalDevRegWrite(prGlueInfo, HOST2MCU_SW_INT_SET,
 				MCU_INT_PDMA0_RECOVERY_DONE);
 		} else {
@@ -2377,12 +2375,8 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 		}
 		break;
 
-	case ERR_RECOV_STOP_IDLE_DONE:
-		prErrRecoveryCtrl->eErrRecovState = ERR_RECOV_STOP_PDMA0;
-		break;
-
-	case ERR_RECOV_WAIT_N9_NORMAL:
-		if (u4Status & ERROR_DETECT_N9_NORMAL_STATE) {
+	case ERR_RECOV_WAIT_MCU_NORMAL:
+		if (u4Status & ERROR_DETECT_MCU_NORMAL_STATE) {
 			del_timer_sync(&prHifInfo->rSerTimer);
 
 			/* update Beacon frame if operating in AP mode. */
@@ -2396,12 +2390,6 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 			prHifInfo->fgIsErrRecovery = FALSE;
 			nicSerStartTxRx(prAdapter);
 			prErrRecoveryCtrl->eErrRecovState = ERR_RECOV_STOP_IDLE;
-		} else if (u4Status & ERROR_DETECT_STOP_PDMA) {
-			DBGLOG(HAL, ERROR, "SER re-entry CurStat=%u Event=%x\n",
-			       prErrRecoveryCtrl->eErrRecovState, u4Status);
-			prErrRecoveryCtrl->eErrRecovState =
-				ERR_RECOV_EVENT_REENTRY;
-			halHwRecoveryFromError(prAdapter);
 		} else {
 			DBGLOG(HAL, ERROR, "SER CurStat=%u Event=%x\n",
 			       prErrRecoveryCtrl->eErrRecovState, u4Status);

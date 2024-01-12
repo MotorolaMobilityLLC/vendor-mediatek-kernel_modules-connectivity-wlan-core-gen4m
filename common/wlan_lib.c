@@ -805,6 +805,15 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 
 		/* Enable interrupt */
 		nicEnableInterrupt(prAdapter);
+#if defined(_HIF_USB)
+		cnmTimerInitTimer(prAdapter,
+			&rSerSyncTimer,
+			(PFN_MGMT_TIMEOUT_FUNC) halSerSyncTimerHandler,
+			(unsigned long) NULL);
+		cnmTimerStartTimer(prAdapter,
+			&rSerSyncTimer,
+			WIFI_SER_SYNC_TIMER_TIMEOUT_IN_MS);
+#endif
 
 	} else {
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;

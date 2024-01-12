@@ -151,7 +151,8 @@ void asicConnac2xCapInit(
 #if (CFG_ENABLE_FW_DOWNLOAD == 1)
 		prChipInfo->asicEnableFWDownload = asicConnac2xEnableUsbFWDL;
 #endif /* CFG_ENABLE_FW_DOWNLOAD == 1 */
-		asicConnac2xWfdmaInitForUSB(prAdapter, prChipInfo);
+		if (prChipInfo->asicUsbInit)
+			prChipInfo->asicUsbInit(prAdapter, prChipInfo);
 		break;
 #endif /* _HIF_USB */
 	default:
