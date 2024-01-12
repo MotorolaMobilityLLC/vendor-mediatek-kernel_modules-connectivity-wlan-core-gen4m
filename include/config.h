@@ -2790,10 +2790,6 @@
 #define CFG_MTK_WIFI_MET_LOG_EMI	0
 #endif
 
-#if (CFG_SUPPORT_WIFI_6G == 1)
-#define CFG_MTK_FORCE_ENABLE_UNSOL_PROBE_RESP	1
-#endif
-
 #define CFG_MTK_P2P_DROP_PROBE_DURING_CSA	1
 
 /*------------------------------------------------------------------------------

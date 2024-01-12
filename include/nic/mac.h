@@ -1708,6 +1708,9 @@ enum BEACON_REPORT_DETAIL {
 #define ELEM_MAX_LEN_TPE \
 	(8 - ELEM_HDR_LEN)	/* sizeof(IE_VHT_TPE)-2 */
 
+#define ELEM_MAX_LEN_RNR \
+	(19 - ELEM_HDR_LEN)	/* sizeof(IE_RNR)-2 */
+
 #define ELEM_MAX_LEN_BSS_MAX_IDLE \
 	(5 - ELEM_HDR_LEN)
 
@@ -5079,6 +5082,7 @@ struct WLAN_DEAUTH_FRAME_WITH_MIC {
 #define QUIET_IE(fp)            ((struct IE_QUIET *) fp)
 
 #define MTK_OUI_IE(fp)          ((struct IE_MTK_OUI *) fp)
+#define RNR_IE(fp)          ((struct IE_RNR *) fp)
 
 #define CSA_IE(fp)		((struct IE_CHANNEL_SWITCH *) fp)
 #define EX_CSA_IE(fp)		((struct IE_EX_CHANNEL_SWITCH *) fp)

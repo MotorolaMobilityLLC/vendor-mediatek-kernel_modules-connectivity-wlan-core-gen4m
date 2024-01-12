@@ -1582,7 +1582,9 @@ static void p2pFuncStartGOBcnImpl(struct ADAPTER *prAdapter,
 	struct P2P_FILS_DISCOVERY_INFO *prFilsInfo;
 	struct P2P_UNSOL_PROBE_RESP_INFO *prUnsolProbeInfo;
 	uint8_t ucRoleIdx;
-
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	uint8_t ucUnsolProbeResp = prAdapter->rWifiVar.ucUnsolProbeResp;
+#endif
 	ucRoleIdx = prBssInfo->u4PrivateData;
 	prWifiVar = &prAdapter->rWifiVar;
 	prP2pSpecificBssInfo = prWifiVar->prP2pSpecificBssInfo[ucRoleIdx];
@@ -1620,7 +1622,7 @@ static void p2pFuncStartGOBcnImpl(struct ADAPTER *prAdapter,
 	}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	else if (prBssInfo->eBand == BAND_6G &&
-		 (CFG_MTK_FORCE_ENABLE_UNSOL_PROBE_RESP ||
+		 (IS_FEATURE_FORCE_ENABLED(ucUnsolProbeResp) ||
 		  prUnsolProbeInfo->fgValid)) {
 		/* Update unsolicited probe response as beacon */
 		bssUpdateBeaconContentEx(prAdapter,
@@ -2470,7 +2472,9 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	uint8_t ucRoleIdx;
 	u_int8_t fgIsCrossBand = FALSE;
 	u_int8_t fgIsPureAp;
-
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	uint8_t ucUnsolProbeResp = prAdapter->rWifiVar.ucUnsolProbeResp;
+#endif
 	if (!prBssInfo) {
 		DBGLOG(P2P, ERROR, "prBssInfo shouldn't be NULL!\n");
 		return;
@@ -2574,7 +2578,7 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	else if (prBssInfo->eBand == BAND_6G &&
-		 (CFG_MTK_FORCE_ENABLE_UNSOL_PROBE_RESP ||
+		 (IS_FEATURE_FORCE_ENABLED(ucUnsolProbeResp) ||
 		  prUnsolProbeInfo->fgValid)) {
 		/* Update unsolicited probe response as beacon */
 		bssUpdateBeaconContentEx(prAdapter,
@@ -4521,6 +4525,8 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 	uint8_t ucEht = 0;
 #endif
 	u_int8_t fgIsApMode = FALSE;
+	struct IE_RNR *rnr =  NULL;
+	struct NEIGHBOR_AP_INFO_FIELD *info;
 
 	kalMemZero(&rRsnIe, sizeof(struct RSN_INFO));
 
@@ -5058,6 +5064,27 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 #endif
 				break;
 
+				case ELEM_ID_RNR:
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+				/* rnr is composed in driver for mlo case */
+				if (p2pRoleFsmNeedMlo(prAdapter,
+					prP2pBssInfo->u4PrivateData))
+					break;
+#endif
+				kalMemCopy(prP2pSpecificBssInfo->aucRnrIeBuffer,
+					   pucIE, IE_SIZE(pucIE));
+				prP2pSpecificBssInfo->u2RnrIeLen =
+					IE_SIZE(pucIE);
+				rnr = (struct IE_RNR *)pucIE;
+				info = (struct NEIGHBOR_AP_INFO_FIELD *)
+					rnr->aucInfoField;
+				DBGLOG(P2P, INFO,
+					"(RNR IE length,op,ch) = (%u,%u,%u)\n",
+					IE_LEN(pucIE),
+					info->ucOpClass,
+					info->ucChannelNum);
+
+				break;
 
 			default:
 				DBGLOG(P2P, TRACE,
@@ -5066,7 +5093,6 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 				break;
 			}
 		}
-
 	} while (FALSE);
 
 	bssDetermineApBssInfoPhyTypeSet(prAdapter, fgIsApMode, prP2pBssInfo);

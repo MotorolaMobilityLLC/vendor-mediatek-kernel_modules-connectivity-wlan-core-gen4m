@@ -739,6 +739,36 @@ void heRlmRspGenerateHeCapIE(
 		heRlmFillHeCapIE(prAdapter, prBssInfo, prMsduInfo);
 }
 
+void heRlmRspGenerateHeRnrIE(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
+{
+#if CFG_ENABLE_WIFI_DIRECT
+	struct BSS_INFO *prBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
+	uint8_t *pucBuffer;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+	if (!prBssInfo || !IS_BSS_APGO(prBssInfo))
+		return;
+
+	prP2pSpecBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo[
+		prBssInfo->u4PrivateData];
+	if (!prP2pSpecBssInfo || prP2pSpecBssInfo->u2RnrIeLen == 0)
+		return;
+
+	pucBuffer = (uint8_t *) ((uintptr_t)prMsduInfo->prPacket +
+		(uintptr_t)prMsduInfo->u2FrameLength);
+	kalMemCopy(pucBuffer,
+		   prP2pSpecBssInfo->aucRnrIeBuffer,
+		   prP2pSpecBssInfo->u2RnrIeLen);
+	prMsduInfo->u2FrameLength += prP2pSpecBssInfo->u2RnrIeLen;
+
+	DBGLOG(RSN, INFO, "[%d] Keep supplicant RNR IE content w/o update\n",
+		prBssInfo->ucBssIndex);
+#endif
+}
+
 static void heRlmFillHeOpIE(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
