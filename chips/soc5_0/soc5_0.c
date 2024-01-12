@@ -291,6 +291,7 @@ struct BUS_INFO soc5_0_bus_info = {
 	.pdmaSetup = soc5_0asicConnac2xWpdmaConfig,
 	.enableInterrupt = asicConnac2xEnablePlatformIRQ,
 	.disableInterrupt = asicConnac2xDisablePlatformIRQ,
+	.disableSwInterrupt = asicConnac2xDisablePlatformSwIRQ,
 	.processTxInterrupt = soc5_0asicConnac2xProcessTxInterrupt,
 	.processRxInterrupt = soc5_0asicConnac2xProcessRxInterrupt,
 	.tx_ring_ext_ctrl = asicConnac2xWfdmaTxRingExtCtrl,
@@ -530,7 +531,18 @@ static void soc5_0asicConnac2xProcessTxInterrupt(
 		struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 	union WPDMA_INT_STA_STRUCT rIntrStatus;
+
+	if (test_and_clear_bit(HIF_FLAG_SW_WFDMA_INT_BIT,
+			       &prHifInfo->ulIntFlag)) {
+		if (prSwWfdmaInfo->rOps.processDmaDone)
+			prSwWfdmaInfo->rOps.
+				processDmaDone(prAdapter->prGlueInfo);
+		else
+			DBGLOG(HAL, ERROR, "SwWfdma ops unsupported!");
+	}
 
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
 	if (rIntrStatus.field_conn2x_single.wfdma0_tx_done_16)
@@ -644,6 +656,9 @@ static void soc5_0ReadIntStatus(struct ADAPTER *prAdapter,
 
 	if (HAL_IS_CONNAC2X_EXT_TX_DONE_INTR(u4RegValue,
 			prBusInfo->host_int_txdone_bits))
+		*pu4IntStatus |= WHISR_TX_DONE_INT;
+
+	if (prHifInfo->ulIntFlag & HIF_FLAG_SW_WFDMA_INT)
 		*pu4IntStatus |= WHISR_TX_DONE_INT;
 
 	if (u4RegValue & CONNAC_MCU_SW_INT)
@@ -1406,11 +1421,13 @@ void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 {
 	int value = 0;
 	struct GL_HIF_INFO *prHifInfo = NULL;
-	struct BUS_INFO *prBusInfo;
+	struct BUS_INFO *prBusInfo = NULL;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo = NULL;
 
 	ASSERT(prAdapter);
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prBusInfo = prAdapter->chip_info->bus_info;
+	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 
 	if (!conninfra_reg_readable_no_lock()) {
 		DBGLOG(HAL, ERROR,
@@ -1496,8 +1513,13 @@ void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 
 	/* SW wfdma cmd done interrupt */
 	if (value & BIT(3) && prSwWfdmaInfo->fgIsEnSwWfdma) {
-		DBGLOG(HAL, TRACE, "FW trigger SwWfdma INT.\n");
-		kalSetDrvIntEvent(prAdapter->prGlueInfo);
+		if (prAdapter->prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+			DBGLOG(HAL, TRACE, "GLUE_FLAG_HALT skip SwWfdma INT\n");
+		} else {
+			DBGLOG(HAL, TRACE, "FW trigger SwWfdma INT.\n");
+			kalSetHifIntEvent(prAdapter->prGlueInfo,
+					  HIF_FLAG_SW_WFDMA_INT_BIT);
+		}
 	}
 }
 
@@ -1990,7 +2012,7 @@ static void soc5_0_getIntSta(struct GLUE_INFO *prGlueInfo,  uint32_t *pu4Sta)
 
 	HAL_MCR_RD(prGlueInfo->prAdapter,
 		   prSwWfdmaInfo->u4CcifStartAddr,
-		   *pu4Sta);
+		   pu4Sta);
 }
 
 #endif  /* soc5_0 */

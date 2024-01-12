@@ -1061,6 +1061,8 @@ void asicConnac2xEnablePlatformIRQ(
 	struct ADAPTER *prAdapter);
 void asicConnac2xDisablePlatformIRQ(
 	struct ADAPTER *prAdapter);
+void asicConnac2xDisablePlatformSwIRQ(
+	struct ADAPTER *prAdapter);
 void asicConnac2xEnableExtInterrupt(
 	struct ADAPTER *prAdapter);
 void asicConnac2xDisableExtInterrupt(

@@ -3063,7 +3063,10 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 
 	if (prBusInfo->setPdmaIntMask)
 		prBusInfo->setPdmaIntMask(prAdapter->prGlueInfo, FALSE);
+
 	nicDisableInterrupt(prAdapter);
+	if (prBusInfo->disableSwInterrupt)
+		prBusInfo->disableSwInterrupt(prAdapter);
 
 	return rStatus;
 }

@@ -168,6 +168,7 @@ struct GL_HIF_INFO {
 	u_int8_t fgMbxReadClear;
 
 	uint32_t u4IntStatus;
+	unsigned long ulIntFlag;
 
 	struct MSDU_TOKEN_INFO rTokenInfo;
 
@@ -257,6 +258,7 @@ struct BUS_INFO {
 		uint16_t u2Port, uint32_t u4MaxQuota);
 	void (*enableInterrupt)(struct ADAPTER *prAdapter);
 	void (*disableInterrupt)(struct ADAPTER *prAdapter);
+	void (*disableSwInterrupt)(struct ADAPTER *prAdapter);
 	void (*processTxInterrupt)(struct ADAPTER *prAdapter);
 	void (*processRxInterrupt)(struct ADAPTER *prAdapter);
 	void (*lowPowerOwnRead)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
