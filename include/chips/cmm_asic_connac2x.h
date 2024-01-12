@@ -1054,6 +1054,10 @@ void asicConnac2xWfdmaRxRingExtCtrl(
 	uint32_t index);
 void asicConnac2xWfdmaManualPrefetch(
 	struct GLUE_INFO *prGlueInfo);
+void asicConnac2xEnablePlatformIRQ(
+	struct ADAPTER *prAdapter);
+void asicConnac2xDisablePlatformIRQ(
+	struct ADAPTER *prAdapter);
 void asicConnac2xEnableExtInterrupt(
 	struct ADAPTER *prAdapter);
 void asicConnac2xDisableExtInterrupt(
