@@ -6912,9 +6912,6 @@ u_int8_t kalParseRandomMac(const struct net_device *ndev,
 		kalMemSet(pucMacAddrMask, 0xFF, MAC_OUI_LEN);
 	}
 	get_random_mask_addr(pucRandomMac, ucMacAddr, pucMacAddrMask);
-	log_dbg(SCN, INFO, "random mac=" MACSTR ", mac_addr=" MACSTR
-		", mac_addr_mask=%pM\n", MAC2STR(pucRandomMac),
-		MAC2STR(ucMacAddr), pucMacAddrMask);
 
 	return TRUE;
 }
@@ -6985,100 +6982,65 @@ u_int8_t kalSchedScanParseRandomMac(const struct net_device *ndev,
 
 void kalScanReqLog(struct cfg80211_scan_request *request)
 {
+	char *strbuf = NULL, *pos = NULL, *end = NULL;
+	uint32_t slen = 0;
+	int i, snum, cnum;
+
+	snum = min_t(int, request->n_ssids, SCN_SSID_MAX_NUM + 1);
+	cnum = min_t(u32, request->n_channels, MAXIMUM_OPERATION_CHANNEL_LIST);
+
+	for (i = 0; i < snum; ++i) {
+		if (request->ssids[i].ssid_len > 0)
+			slen += request->ssids[i].ssid_len + 1;
+	}
+
+	/* The length should be added 11 + 15 + 8 + 1 for the format
+	 * "n_ssids=%d:" and " n_channels=%u:" and 2 " ..." and null byte.
+	 */
+	slen += 35 + 4 * cnum;
+	pos = strbuf = kalMemAlloc(slen, VIR_MEM_TYPE);
+	if (strbuf == NULL) {
+		scanlog_dbg(LOG_SCAN_REQ_K2D, INFO, "Can't allocate memory\n");
+		return;
+	}
+	end = strbuf + slen;
+
+	pos += kalSnprintf(pos, end - pos,
+		"n_ssids=%d:", request->n_ssids % 100);
+	for (i = 0; i < snum; ++i) {
+		uint8_t len = request->ssids[i].ssid_len;
+		char ssid[PARAM_MAX_LEN_SSID + 1] = {0};
+
+		if (len == 0)
+			continue;
+		kalStrnCpy(ssid, request->ssids[i].ssid, sizeof(ssid));
+		ssid[sizeof(ssid) - 1] = '\0';
+		pos += kalSnprintf(pos, end - pos, " %s", ssid);
+	}
+	if (snum < request->n_ssids)
+		pos += kalSnprintf(pos, end - pos, "%s", " ...");
+
+	pos += kalSnprintf(pos, end - pos, " n_channels=%u:",
+		request->n_channels % 100);
+	for (i = 0; i < cnum; ++i) {
+		pos += kalSnprintf(pos, end - pos, " %u",
+			request->channels[i]->hw_value % 1000);
+	}
+	if (cnum < request->n_channels)
+		pos += kalSnprintf(pos, end - pos, "%s", " ...");
+
 #if (KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE)
 	scanlog_dbg(LOG_SCAN_REQ_K2D, INFO, "Scan flags=0x%x [mac]addr="
-		MACSTR " mask=" MACSTR "\n",
+		MACSTR " mask=" MACSTR " %s\n",
 		request->flags,
 		MAC2STR(request->mac_addr),
-		MAC2STR(request->mac_addr_mask));
+		MAC2STR(request->mac_addr_mask), strbuf);
 #else
-	scanlog_dbg(LOG_SCAN_REQ_K2D, INFO, "Scan flags=0x%x\n",
-		request->flags);
+	scanlog_dbg(LOG_SCAN_REQ_K2D, INFO, "Scan flags=0x%x %s\n",
+		request->flags, strbuf);
 #endif
-	kalScanSsidLog(request, SCAN_LOG_MSG_MAX_LEN);
-	kalScanChannelLog(request, SCAN_LOG_MSG_MAX_LEN);
-}
 
-void kalScanChannelLog(struct cfg80211_scan_request *request,
-	const uint16_t logBufLen)
-{
-	char logBuf[logBufLen];
-	uint32_t idx = 0;
-	int i = 0;
-	/* the decimal value could be 0 ~ 65535 */
-	const char *fmt = "%u ";
-	const uint8_t dataLen = 6;
-
-	/* The maximum characters of int32_t could be 10. Thus, the
-	 * length should be 10+14 for the format "n_channels=%u: ".
-	 */
-	idx += kalSnprintf(logBuf, 24, "n_channels=%u: ", request->n_channels);
-
-	for (i = 0; i < request->n_channels; ++i) {
-		if (dataLen+1 > logBufLen) {
-			scanlog_dbg(LOG_SCAN_REQ_K2D, INFO, "Need buffer size %u for log\n",
-				dataLen+1);
-			break;
-		} else if (idx+dataLen+1 > logBufLen) {
-			logBuf[idx] = 0; /* terminating null byte */
-			scanlog_dbg(LOG_SCAN_REQ_K2D, INFO, "%s\n",
-				logBuf);
-			idx = 0;
-		}
-
-		/* number + terminating null byte + a space */
-		idx += kalSnprintf(logBuf+idx, dataLen+1, fmt,
-			request->channels[i]->hw_value);
-	}
-	if (idx != 0) {
-		logBuf[idx] = 0; /* terminating null byte */
-		scanlog_dbg(LOG_SCAN_REQ_K2D, INFO, "%s\n",
-			logBuf);
-		idx = 0;
-	}
-}
-
-void kalScanSsidLog(struct cfg80211_scan_request *request,
-	const uint16_t logBufLen)
-{
-	char logBuf[logBufLen];
-	uint32_t idx = 0;
-	int i = 0;
-
-	/* The maximum characters of uint32_t could be 10. Thus, the
-	 * length should be 10+11 for the format "n_ssids=%d: ".
-	 */
-	idx += kalSnprintf(logBuf, 21, "n_ssids=%d: ", request->n_ssids);
-
-	for (i = 0; i < request->n_ssids; ++i) {
-		uint8_t len = request->ssids[i].ssid_len;
-
-		if (len == 0) {
-			continue;
-		} else if (len+1+1 > logBufLen) {
-			scanlog_dbg(LOG_SCAN_REQ_K2D, INFO, "Need buffer size %u for log\n",
-				len+1+1);
-			break;
-		} else if (idx+len+1+1 > logBufLen) {
-			logBuf[idx] = 0; /* terminating null byte */
-			scanlog_dbg(LOG_SCAN_REQ_K2D, INFO, "%s\n",
-				logBuf);
-			idx = 0;
-		}
-
-		/* SSID without terminating null byte */
-		kalStrnCpy(logBuf+idx, request->ssids[i].ssid, len);
-		idx = idx + len;
-
-		kalMemCopy(logBuf+idx, " ", 1);
-		idx = idx + 1;
-	}
-	if (idx != 0) {
-		logBuf[idx] = 0; /* terminating null byte */
-		scanlog_dbg(LOG_SCAN_REQ_K2D, INFO, "%s\n",
-			logBuf);
-		idx = 0;
-	}
+	kalMemFree(strbuf, VIR_MEM_TYPE, slen);
 }
 
 void kalScanResultLog(struct ADAPTER *prAdapter, struct ieee80211_mgmt *mgmt)
