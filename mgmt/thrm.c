@@ -313,7 +313,7 @@ int thrmProtLvHandler(struct ADAPTER *prAdapter, uint8_t ucLevel)
 
 	ucOrigLevel = prAdapter->rThrmProtCfg.ucLevel;
 
-	DBGLOG(NIC, INFO, "Lv[%d/%d] Duty[%d/%d]\n", ucLevel,
+	DBGLOG(NIC, TRACE, "Lv[%d/%d] Duty[%d/%d]\n", ucLevel,
 		    ucOrigLevel, prAdapter->rThrmProtCfg.ucCurrDutyCfg,
 			prAdapter->rWifiVar.aucThrmLvTxDuty[ucLevel]);
 
