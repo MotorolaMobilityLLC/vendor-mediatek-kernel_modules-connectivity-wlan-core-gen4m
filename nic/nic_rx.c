@@ -599,7 +599,6 @@ struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter,
 
 	if (HAL_RX_STATUS_IS_HEADER_TRAN(prRxStatus) == FALSE) {
 		prWlanHeader = (struct WLAN_MAC_HEADER *) prSWRfb->pvHeader;
-		prSWRfb->u2SequenceControl = prWlanHeader->u2SeqCtrl;
 		u2FrameCtrl = prWlanHeader->u2FrameCtrl;
 	} else {
 		prRxStatusGroup4 = prSWRfb->prRxStatusGroup4;
@@ -839,7 +838,7 @@ u_int8_t nicRxIsDuplicateFrame(IN OUT struct SW_RFB
 				    prRxStatus);
 	if (HAL_RX_STATUS_IS_HEADER_TRAN(prRxStatus) == FALSE) {
 		prWlanHeader = (struct WLAN_MAC_HEADER *) prSwRfb->pvHeader;
-		u2SequenceControl = prWlanHeader->u2SeqCtrl;
+		u2SequenceControl = prSwRfb->u2SequenceControl;
 		u2FrameCtrl = prWlanHeader->u2FrameCtrl;
 	} else {
 		prRxStatusGroup4 = prSwRfb->prRxStatusGroup4;

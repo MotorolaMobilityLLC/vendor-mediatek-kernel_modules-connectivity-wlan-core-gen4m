@@ -3125,6 +3125,8 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 			prWlanHeader = (struct WLAN_MAC_HEADER *)
 				prCurrSwRfb->pvHeader;
 			u2FrameCtrl = prWlanHeader->u2FrameCtrl;
+			prCurrSwRfb->u2SequenceControl =
+				prWlanHeader->u2SeqCtrl;
 			if (prCurrSwRfb->prStaRec == NULL &&
 				RXM_IS_DATA_FRAME(u2FrameCtrl) &&
 				(prAdapter->prAisBssInfo) &&
@@ -3136,7 +3138,13 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 					prCurrSwRfb->ucStaRecIdx,
 					prCurrSwRfb->ucWlanIdx,
 					prCurrSwRfb->u2PacketLen);
-
+				DBGLOG_MEM8(QM, WARN,
+						(uint8_t *)
+						prCurrSwRfb->pvHeader,
+						(prCurrSwRfb->
+						u2PacketLen > 64) ? 64 :
+						prCurrSwRfb->
+						u2PacketLen);
 				if (prAdapter->prAisBssInfo
 				    && prAdapter->prAisBssInfo->prStaRecOfAP)
 				if (EQUAL_MAC_ADDR(
