@@ -7160,8 +7160,9 @@ uint32_t nicUniUpdateStaRecFastAll(
 	if (!ad || !bss)
 		return WLAN_STATUS_FAILURE;
 
-	if (!((IS_BSS_GC(bss) && bss->prStaRecOfAP) ||
-	      (IS_BSS_APGO(bss) && bssGetClientCount(ad, bss))))
+	if (IS_BSS_AIS(bss) ||
+	   (IS_BSS_GC(bss) && !bss->prStaRecOfAP) ||
+	   (IS_BSS_APGO(bss) && !bssGetClientCount(ad, bss)))
 		return WLAN_STATUS_INVALID_DATA;
 
 	uni_cmd = (struct UNI_CMD_STAREC *)
