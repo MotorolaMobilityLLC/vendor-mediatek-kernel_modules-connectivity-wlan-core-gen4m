@@ -4601,6 +4601,10 @@ uint32_t ServiceWlanOid(void *winfos,
 		capability->ext_cap.feature1 |= BIT(2);
 #endif /* (CFG_SUPPORT_CONNAC3X == 1) */
 
+		if (prAdapter->chip_info->chip_capability
+			& BIT(CHIP_CAPA_XTAL_TRIM))
+			capability->ext_cap.feature1 |= BIT(3);
+
 		return WLAN_STATUS_SUCCESS;
 	/* ICAP Operation Function -- Start*/
 	case OP_WLAN_OID_SET_TEST_ICAP_MODE:

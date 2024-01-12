@@ -589,7 +589,8 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 #if defined(_HIF_PCIE)
 #if IS_MOBILE_SEGMENT
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
-		BIT(CHIP_CAPA_FW_LOG_TIME_SYNC_BY_CCIF),
+		BIT(CHIP_CAPA_FW_LOG_TIME_SYNC_BY_CCIF) |
+		BIT(CHIP_CAPA_XTAL_TRIM),
 	.rEmiInfo = {
 #if CFG_MTK_ANDROID_EMI
 		.type = EMI_ALLOC_TYPE_LK,
@@ -598,12 +599,14 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 #endif /* CFG_MTK_ANDROID_WMT */
 	},
 #else
-	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC),
+	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
+		BIT(CHIP_CAPA_XTAL_TRIM),
 #endif
 	.ccif_ops = &mt6639_ccif_ops,
 	.get_sw_interrupt_status = mt6639_get_sw_interrupt_status,
 #else
-	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC),
+	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
+		BIT(CHIP_CAPA_XTAL_TRIM),
 #endif /* _HIF_PCIE */
 	.custom_oid_interface_version = MTK_CUSTOM_OID_INTERFACE_VERSION,
 	.em_interface_version = MTK_EM_INTERFACE_VERSION,
