@@ -125,7 +125,8 @@ void StatsEnvSetPktDelay(IN uint8_t ucTxOrRx, IN uint8_t ucIpProto,
 	}
 }
 
-void StatsEnvRxTime2Host(IN struct ADAPTER *prAdapter, struct sk_buff *prSkb)
+void StatsEnvRxTime2Host(IN struct ADAPTER *prAdapter,
+	struct sk_buff *prSkb, struct net_device *prNetDev)
 {
 	uint8_t *pucEth = prSkb->data;
 	uint16_t u2EthType = 0;
@@ -145,7 +146,8 @@ void StatsEnvRxTime2Host(IN struct ADAPTER *prAdapter, struct sk_buff *prSkb)
 	pucEth += ETH_HLEN;
 	u2IPID = pucEth[4] << 8 | pucEth[5];
 
-	DBGLOG(RX, LOUD, "StatsEnvRxTime2Host: u2IpId after:%d\n", u2IPID);
+	DBGLOG(RX, TEMP, "u2IpId=%d rx_packets=%lu\n",
+		u2IPID, prNetDev->stats.rx_packets);
 
 	if ((g_ucTxRxFlag & BIT(1)) == 0)
 		return;
@@ -219,7 +221,7 @@ void StatsEnvTxTime2Hif(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
-	kalTraceEvent("Move id=0x%04x sn=%d",
+	kalTraceEvent("Move ipid=0x%04x sn=%d",
 		GLUE_GET_PKT_IP_ID(prMsduInfo->prPacket),
 		GLUE_GET_PKT_SEQ_NO(prMsduInfo->prPacket));
 
@@ -438,10 +440,12 @@ void statsParseIPV4Info(struct sk_buff *skb,
 	uint8_t ucIpVersion =
 		(pucEthBody[0] & IPVH_VERSION_MASK)
 			>> IPVH_VERSION_OFFSET;
-	uint16_t u2IpId = GLUE_GET_PKT_IP_ID(skb);
+	uint16_t u2IpId = pucEthBody[4] << 8 | pucEthBody[5];
 
 	if (ucIpVersion != IPVERSION)
 		return;
+
+	GLUE_SET_PKT_IP_ID(skb, u2IpId);
 	switch (ucIpProto) {
 	case IP_PRO_ICMP:
 	{
@@ -782,9 +786,10 @@ void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb)
 
 	statsParsePktInfo(pPkt, skb, 0, EVENT_RX);
 
-	kalTraceEvent("Pkt id=0x%04x sn=%d",
-		GLUE_GET_PKT_IP_ID(skb),
-		GLUE_GET_PKT_SEQ_NO(skb));
+	DBGLOG(RX, TEMP, "RxPkt p=%p ipid=%d\n",
+		prSwRfb, GLUE_GET_PKT_IP_ID(skb));
+	kalTraceEvent("RxPkt p=%p ipid=0x%04x",
+		prSwRfb, GLUE_GET_PKT_IP_ID(skb));
 }
 
 /*----------------------------------------------------------------------------*/
