@@ -11,6 +11,8 @@
  *******************************************************************************
  */
 
+#define MAX_LINK_PLAN_NUM		3
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -19,15 +21,17 @@
 struct AP_COLLECTION {
 	struct LINK_ENTRY rLinkEntry;
 	struct AP_COLLECTION *hnext; /* next entry in hash table list */
-	struct BSS_DESC *aprTarget[MLD_LINK_MAX];
-	struct LINK arLinks[MLD_LINK_MAX]; /* categorize AP by link */
+	struct BSS_DESC *aprTarget[MAX_LINK_PLAN_NUM];
+	uint16_t au2TargetScore[MAX_LINK_PLAN_NUM];
+	struct LINK arLinks[MAX_LINK_PLAN_NUM]; /* categorize AP by link */
 	uint8_t ucLinkNum;
 	uint8_t ucTotalCount; /* total BssDesc count */
-	uint8_t aucMask[MLD_LINK_MAX];
+	uint8_t aucMask[MAX_LINK_PLAN_NUM];
 	uint8_t fgIsMld;
 	uint8_t fgIsMatchBssid;
 	uint8_t fgIsMatchBssidHint;
 	uint8_t fgIsAllLinkInBlackList;
+	uint8_t fgIsAllLinkConnected;
 	uint8_t aucAddr[MAC_ADDR_LEN]; /* mld addr or bssid */
 };
 

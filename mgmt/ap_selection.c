@@ -1249,7 +1249,7 @@ void scanFillSecondaryLink(struct ADAPTER *prAdapter,
 	if (!prMainBssDesc || !prMainBssDesc->rMlInfo.fgValid)
 		return;
 
-	if (!mldIsMloFeatureEnabled(prAdapter, FALSE))
+	if (!mldIsMloFeatureEnabled(prAdapter, NETWORK_TYPE_AIS, FALSE))
 		return;
 
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
@@ -1257,7 +1257,7 @@ void scanFillSecondaryLink(struct ADAPTER *prAdapter,
 	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	prEssLink = &prAisSpecificBssInfo->rCurEssLink;
 
-	for (i = 1; i < prAdapter->rWifiVar.ucMldLinkMax; ++i) {
+	for (i = 1; i < prAdapter->rWifiVar.ucStaMldLinkMax; ++i) {
 		uint16_t u2ScoreTotal = 0;
 		uint16_t u2CandBssScore = 0;
 		struct BSS_DESC *prCandBssDesc = NULL;

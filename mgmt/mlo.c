@@ -2547,11 +2547,11 @@ int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\nMldLinkMax:%d\nEnableMlo:%d\nNonApMld:%d\nApMld:%d\n",
+		"\nMldLinkMax:%d\nStaMldLinkMax:%d\nP2pMldLinkMax:%d\nEnableMlo:%d\n",
 		prAdapter->rWifiVar.ucMldLinkMax,
-		prAdapter->rWifiVar.ucEnableMlo,
-		mldIsMloFeatureEnabled(prAdapter, FALSE),
-		mldIsMloFeatureEnabled(prAdapter, TRUE));
+		prAdapter->rWifiVar.ucStaMldLinkMax,
+		prAdapter->rWifiVar.ucP2pMldLinkMax,
+		prAdapter->rWifiVar.ucEnableMlo);
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
@@ -2943,6 +2943,26 @@ void mldBssFree(struct ADAPTER *prAdapter,
 	}
 	prMldBssInfo->fgIsInUse = FALSE;
 	prMldBssInfo->ucOmacIdx = INVALID_OMAC_IDX;
+}
+
+uint8_t mldBssAllowReconfig(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo)
+{
+	uint8_t i;
+
+	/* already multi link */
+	if (prMldBssInfo && prMldBssInfo->rBssList.u4NumElem > 1)
+		return TRUE;
+
+	/* currently, support only 1 multi-link mlo */
+	for (i = 0; i < ARRAY_SIZE(prAdapter->aprMldBssInfo); i++) {
+		struct MLD_BSS_INFO *mld = &prAdapter->aprMldBssInfo[i];
+
+		if (mld->fgIsInUse && mld->rBssList.u4NumElem > 1)
+			return FALSE;
+	}
+
+	return TRUE;
 }
 
 struct MLD_BSS_INFO *mldBssGetByBss(struct ADAPTER *prAdapter,
@@ -3499,11 +3519,28 @@ uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,
 
 uint8_t mldIsMloFeatureEnabled(
 	struct ADAPTER *prAdapter,
+	enum ENUM_NETWORK_TYPE eNetworkType,
 	uint8_t fgIsApMode)
 {
 	uint8_t ret;
+	uint8_t linkMax = 0;
 
-	if (prAdapter->rWifiVar.ucMldLinkMax <= 1 ||
+	if (eNetworkType == NETWORK_TYPE_AIS) {
+		linkMax = kal_min_t(uint8_t,
+			prAdapter->rWifiVar.ucMldLinkMax,
+			prAdapter->rWifiVar.ucStaMldLinkMax);
+	} else if (eNetworkType == NETWORK_TYPE_P2P &&
+		   p2pGetMode() == RUNNING_P2P_DEV_MODE) {
+		if (fgIsApMode) {
+			linkMax = prAdapter->rWifiVar.ucMldLinkMax;
+		} else {
+			linkMax = kal_min_t(uint8_t,
+				prAdapter->rWifiVar.ucMldLinkMax,
+				prAdapter->rWifiVar.ucP2pMldLinkMax);
+		}
+	}
+
+	if (linkMax <= 1 ||
 		IS_FEATURE_DISABLED(
 		prAdapter->rWifiVar.ucEnableMlo))
 		ret = FALSE;
@@ -3516,11 +3553,16 @@ uint8_t mldIsMloFeatureEnabled(
 	else
 		ret = FALSE;
 
+
 	if (ret == FALSE)
 		DBGLOG(ML, TRACE,
-			"ucMldLinkMax:%d, ucEnableMlo:%d, isApMode:%d => mlo feature disabled\n",
+			"ucMldLinkMax:%d,(sta=%d,p2p=%d) ucEnableMlo:%d, eNetworkType:%d, p2pMode:%d isApMode:%d => mlo feature disabled\n",
 			prAdapter->rWifiVar.ucMldLinkMax,
+			prAdapter->rWifiVar.ucStaMldLinkMax,
+			prAdapter->rWifiVar.ucP2pMldLinkMax,
 			prAdapter->rWifiVar.ucEnableMlo,
+			eNetworkType,
+			p2pGetMode(),
 			fgIsApMode);
 
 	return ret;

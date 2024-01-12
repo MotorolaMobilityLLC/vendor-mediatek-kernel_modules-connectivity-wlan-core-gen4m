@@ -55,7 +55,7 @@ uint8_t p2pDevFsmInit(struct ADAPTER *prAdapter)
 			(uintptr_t) prP2pDevFsmInfo);
 #endif
 		prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter,
-			NETWORK_TYPE_P2P, TRUE, FALSE);
+			NETWORK_TYPE_P2P, TRUE);
 
 		if (prP2pBssInfo != NULL) {
 			COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,
@@ -131,7 +131,7 @@ uint8_t p2pDevFsmInit(struct ADAPTER *prAdapter)
 	if (prP2pBssInfo)
 		return prP2pBssInfo->ucBssIndex;
 	else
-		return prAdapter->ucP2PDevBssIdx + 1;
+		return P2P_DEV_BSS_INDEX + 1;
 
 #if 0
 	do {

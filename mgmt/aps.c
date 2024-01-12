@@ -201,6 +201,26 @@ const uint16_t mpduLen[CW_320MHZ + 1] = {
 	[CW_320MHZ]  = 320
 };
 
+#if (CFG_MLO_LINK_PLAN_MODE == 0)
+const uint8_t aucLinkPlan[] = {
+	BIT(BAND_2G4),
+	BIT(BAND_5G)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	 | BIT(BAND_6G)
+#endif
+};
+#endif
+
+#if (CFG_MLO_LINK_PLAN_MODE == 1)
+const uint8_t aucLinkPlan[] = {
+	BIT(BAND_2G4),
+	BIT(BAND_5G),
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	BIT(BAND_6G)
+#endif
+};
+#endif
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -301,7 +321,7 @@ void apsHashDel(struct ADAPTER *ad, struct AP_COLLECTION *ap, uint8_t bidx)
 uint8_t apsCanFormMld(struct ADAPTER *ad, struct BSS_DESC *bss, uint8_t bidx)
 {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (!mldIsMloFeatureEnabled(ad, FALSE) ||
+	if (!mldIsMloFeatureEnabled(ad, NETWORK_TYPE_AIS, FALSE) ||
 	    !aisSecondLinkAvailable(ad, bidx))
 		return FALSE;
 
@@ -323,29 +343,24 @@ uint8_t apsCanFormMld(struct ADAPTER *ad, struct BSS_DESC *bss, uint8_t bidx)
 uint8_t apsBssDescToLink(struct ADAPTER *ad,
 	struct AP_COLLECTION *ap, struct BSS_DESC *bss, uint8_t bidx)
 {
-	uint8_t i = 0;
+	uint8_t i = 0, j = 0;
 
 	for (i = 0; i < ap->ucLinkNum; i++) {
 		if (ap->aucMask[i] & BIT(bss->eBand))
 			return i;
 	}
 
-	if (i == ap->ucLinkNum && i < ad->rWifiVar.ucMldLinkMax) {
-#ifdef MT7990
-		/* wifi7 PF testbed only, support 5+6 */
-		ap->aucMask[i] = BIT(bss->eBand);
-#else
-		if (bss->eBand == BAND_2G4) {
-			ap->aucMask[i] = BIT(BAND_2G4);
-		} else {
-			ap->aucMask[i] = BIT(BAND_5G);
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			ap->aucMask[i] |= BIT(BAND_6G);
-#endif
+	if (i == ap->ucLinkNum && i < MAX_LINK_PLAN_NUM) {
+		for (j = 0; j < ARRAY_SIZE(aucLinkPlan); j++) {
+			if (aucLinkPlan[j] & BIT(bss->eBand))
+				break;
 		}
-#endif
-		ap->ucLinkNum++;
-		return i;
+
+		if (j < ARRAY_SIZE(aucLinkPlan)) {
+			ap->aucMask[i] = aucLinkPlan[j];
+			ap->ucLinkNum++;
+			return i;
+		}
 	}
 
 	return 0;
@@ -1213,8 +1228,7 @@ try_again:
 			if (EQUAL_MAC_ADDR(bss->aucBSSID, conn->aucBSSID)) {
 				ap->fgIsMatchBssid = TRUE;
 				cand = bss;
-				goal_score = scanCalculateTotalScore(
-					ad, bss, reason, bidx);
+				goal_score = 20000;
 				break;
 			}
 		} else if (policy == CONNECT_BY_BSSID_HINT) {
@@ -1238,8 +1252,7 @@ try_again:
 				{
 					ap->fgIsMatchBssidHint = TRUE;
 					cand = bss;
-					goal_score = scanCalculateTotalScore(
-						ad, bss, reason, bidx);
+					goal_score = 10000;
 					break;
 				}
 			}
@@ -1254,6 +1267,7 @@ try_again:
 	}
 
 	ap->aprTarget[link_idx] = cand;
+	ap->au2TargetScore[link_idx] = goal_score;
 
 	if (cand) {
 		if ((cand->fgIsConnected & bmap) &&
@@ -1314,11 +1328,14 @@ void apsIntraApSelection(struct ADAPTER *ad,
 {
 	struct AIS_SPECIFIC_BSS_INFO *s = aisGetAisSpecBssInfo(ad, bidx);
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(ad, bidx);
+	uint32_t bmap = aisGetBssIndexBmap(ais);
 	struct LINK *ess = &s->rCurEssLink;
 	struct AP_COLLECTION *ap, *nap;
-	uint8_t i, j, num = aisGetLinkNum(ais);
-	uint8_t delta = 0;
-	uint16_t base = 0, goal;
+	struct BSS_DESC *bss;
+	uint8_t num = aisGetLinkNum(ais);
+	uint16_t delta = 0, base = 0, goal = 0, score = 0;
+	int i, j, k;
+
 
 	if (reason == CONNECTING_ROAMING_REASON_POOR_RCPI
 #if CFG_SUPPORT_ROAMING
@@ -1329,8 +1346,7 @@ void apsIntraApSelection(struct ADAPTER *ad,
 
 	/* minium requirement */
 	for (i = 0; i < num; i++) {
-		uint16_t score;
-		struct BSS_DESC *bss = aisGetLinkBssDesc(ais, i);
+		bss = aisGetLinkBssDesc(ais, i);
 
 		if (!apsIsValidBssDesc(ad, bss, reason, bidx))
 			continue;
@@ -1346,15 +1362,51 @@ void apsIntraApSelection(struct ADAPTER *ad,
 
 	LINK_FOR_EACH_ENTRY_SAFE(ap, nap,
 			ess, rLinkEntry, struct AP_COLLECTION) {
-		for (i = 0, j = 0; i < ap->ucLinkNum; i++) {
+		for (i = 0; i < ap->ucLinkNum; i++)
 			apsIntraUpdateTargetAp(ad, ap, i, goal, reason, bidx);
-
-			if (ap->aprTarget[i] && ap->aprTarget[i]->prBlack)
-				j++;
-		}
-		if (ap->ucLinkNum == j)
-			ap->fgIsAllLinkInBlackList = TRUE;
 	}
+
+	/* insertion sort by score */
+	for (i = 1; i < ap->ucLinkNum; i++) {
+		score = ap->au2TargetScore[i];
+		bss = ap->aprTarget[i];
+
+		for (j = i - 1; j >= 0 && ap->au2TargetScore[j] < score; j--) {
+			ap->au2TargetScore[j + 1] = ap->au2TargetScore[j];
+			ap->aprTarget[j + 1] = ap->aprTarget[j];
+		}
+
+		ap->au2TargetScore[j + 1] = score;
+		ap->aprTarget[j + 1] = bss;
+	}
+
+	/* ensure no null target */
+	ap->ucLinkNum = 0;
+	for (i = 0; i < MAX_LINK_PLAN_NUM; i++) {
+		if (ap->aprTarget[i])
+			ap->ucLinkNum++;
+	}
+
+	/* trim ap */
+	if (ap->ucLinkNum > ad->rWifiVar.ucStaMldLinkMax) {
+		DBGLOG(APS, INFO, "trim links %d => %d",
+			ap->ucLinkNum, ad->rWifiVar.ucStaMldLinkMax);
+		ap->ucLinkNum = ad->rWifiVar.ucStaMldLinkMax;
+	}
+
+	for (i = 0, j = 0, k = 0; i < ap->ucLinkNum; i++) {
+		if (ap->aprTarget[i]->prBlack)
+			j++;
+
+		if (ap->aprTarget[i]->fgIsConnected & bmap)
+			k++;
+	}
+
+	if (j == ap->ucLinkNum)
+		ap->fgIsAllLinkInBlackList = TRUE;
+
+	if (k == ap->ucLinkNum)
+		ap->fgIsAllLinkConnected = TRUE;
 }
 
 uint16_t apsGetAmsduByte(struct BSS_DESC *bss)
@@ -1621,7 +1673,7 @@ try_again:
 		}
 	}
 
-	if (!tryBlackList && !cand) {
+	if (!tryBlackList && (!cand || cand->fgIsAllLinkConnected)) {
 		tryBlackList = TRUE;
 		DBGLOG(APS, INFO, "No ap collection found, try blacklist\n");
 		goto try_again;
