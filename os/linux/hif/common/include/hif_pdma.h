@@ -1067,6 +1067,7 @@ void halWpdmaProcessDataDmaDone(struct GLUE_INFO *prGlueInfo,
 u_int8_t halIsWfdmaRxRingReady(struct GLUE_INFO *prGlueInfo, uint8_t ucRingNum);
 uint32_t halWpdmaGetRxDmaDoneCnt(struct GLUE_INFO *prGlueInfo,
 				 uint8_t ucRingNum);
+uint32_t halGetWfdmaRxCnt(struct ADAPTER *prAdapter);
 void halInitMsduTokenInfo(struct ADAPTER *prAdapter);
 void halUninitMsduTokenInfo(struct ADAPTER *prAdapter);
 uint32_t halGetMsduTokenFreeCnt(struct ADAPTER *prAdapter);

@@ -1636,6 +1636,9 @@ struct WIFI_VAR {
 	uint32_t u4WfdmaCidxFetchTimeout;
 	u_int8_t fgWfdmaCidxFetchDbg;
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
+
+	uint32_t u4RecoveryMsiRxCnt;
+	uint32_t u4RecoveryMsiTime;
 };
 
 /* cnm_timer module */

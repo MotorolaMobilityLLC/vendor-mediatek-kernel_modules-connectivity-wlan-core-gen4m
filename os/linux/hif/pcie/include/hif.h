@@ -450,6 +450,7 @@ struct BUS_INFO {
 	void (*powerOffPcieMac)(struct ADAPTER *prAdapter);
 	void (*hwControlVote)(struct ADAPTER *prAdapter,
 		uint8_t enable, uint32_t u4WifiUser);
+	void (*checkFwOwnMsiStatus)(struct ADAPTER *prAdapter);
 #if CFG_SUPPORT_WIFI_SLEEP_COUNT
 	int (*wf_power_dump_start)(void *priv_data, unsigned int force_dump);
 	int (*wf_power_dump_end)(void *priv_data);

@@ -8588,6 +8588,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgWfdmaCidxFetchDbg,
 		  "WfdmaCidxFetchDbg", FEATURE_DISABLED);
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
+
+	INIT_UINT(prWifiVar->u4RecoveryMsiRxCnt, "RecoveryMsiRxCnt", 5);
+	INIT_UINT(prWifiVar->u4RecoveryMsiTime, "RecoveryMsiTime", 1000);
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)

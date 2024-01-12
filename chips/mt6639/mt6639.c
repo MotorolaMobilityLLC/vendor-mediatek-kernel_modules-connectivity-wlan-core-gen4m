@@ -175,6 +175,9 @@ static void mt6639WfdmaRxRingExtCtrl(
 	struct RTMP_RX_RING *rx_ring,
 	u_int32_t index);
 
+static void mt6639CheckFwOwnMsiStatus(struct ADAPTER *prAdapter);
+static void mt6639RecoveryMsiStatus(struct ADAPTER *prAdapter);
+
 static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo);
 static void mt6639PowerOffPcieMac(struct ADAPTER *prAdpater);
 static void mt6639PcieHwControlVote(
@@ -601,6 +604,9 @@ struct BUS_INFO mt6639_bus_info = {
 #else
 	.fgCheckDriverOwnInt = FALSE,
 #endif /* IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
+#if defined(_HIF_PCIE)
+	.checkFwOwnMsiStatus = mt6639CheckFwOwnMsiStatus,
+#endif
 	.u4DmaMask = 32,
 	.wfmda_host_tx_group = mt6639_wfmda_host_tx_group,
 	.wfmda_host_tx_group_len = ARRAY_SIZE(mt6639_wfmda_host_tx_group),
@@ -2319,6 +2325,65 @@ static void mt6639WfdmaRxRingExtCtrl(
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
+
+#if defined(_HIF_PCIE)
+static unsigned long g_ulRecoveryMsiCheckTime;
+static void mt6639RecoveryMsiStatus(struct ADAPTER *prAdapter)
+{
+	struct PERF_MONITOR *perf = &prAdapter->rPerMonitor;
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct pcie_msi_info *prMsiInfo = &prBusInfo->pcie_msi_info;
+	uint32_t u4Addr = 0, u4Val = 0, u4WrVal = 0, u4Cnt = 0;
+#if CFG_MTK_WIFI_EN_SW_EMI_READ
+	struct SW_EMI_RING_INFO *prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
+	u_int8_t fgRet = FALSE;
+#endif
+
+	/* tput < 10mbps */
+	if (perf->u4CurrPerfLevel > 0)
+		return;
+
+	/* check wfdma bits(0-7) */
+	if (prMsiInfo->ulEnBits & 0xff)
+		return;
+
+	if (time_before(jiffies, g_ulRecoveryMsiCheckTime))
+		return;
+
+	g_ulRecoveryMsiCheckTime = jiffies +
+		prAdapter->rWifiVar.u4RecoveryMsiTime * HZ / 1000;
+
+	u4Cnt = halGetWfdmaRxCnt(prAdapter);
+	if (u4Cnt < prWifiVar->u4RecoveryMsiRxCnt)
+		return;
+
+	/* read PCIe EP MSI status */
+	u4Addr = 0x740310F0;
+#if CFG_MTK_WIFI_EN_SW_EMI_READ
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiRead) &&
+	    prSwEmiRingInfo->rOps.read) {
+		fgRet = prSwEmiRingInfo->rOps.read(
+			prAdapter->prGlueInfo, u4Addr, &u4Val);
+	}
+	if (!fgRet)
+#endif
+		HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
+
+	if ((u4Val & 0xff) == 0)
+		return;
+
+	u4WrVal = u4Val & 0xffffff00;
+	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
+	DBGLOG(HAL, WARN, "Rx[%u] CR[0x%08x]=[0x%08x] WR[0x%08x]",
+	       u4Cnt, u4Addr, u4Val, u4WrVal);
+}
+
+static void mt6639CheckFwOwnMsiStatus(struct ADAPTER *prAdapter)
+{
+	mt6639RecoveryMsiStatus(prAdapter);
+}
+#endif
 
 #if CFG_SUPPORT_PCIE_ASPM
 void *pcie_vir_addr;
