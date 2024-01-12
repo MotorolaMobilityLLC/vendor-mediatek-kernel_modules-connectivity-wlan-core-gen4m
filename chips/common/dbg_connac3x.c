@@ -93,6 +93,7 @@
 #endif
 #ifdef MT7935
 #include "coda/mt7935/wf_hif_dmashdl_top.h"
+#include "coda/mt7935/wf_hif_dmashdl_lite_top.h"
 #include "coda/mt7935/wf_wfdma_host_dma0.h"
 #include "coda/mt7935/bn0_wf_mib_top.h"
 #include "coda/mt7935/bn1_wf_mib_top.h"
@@ -2975,6 +2976,51 @@ static void asicConnac3xDmashdlGetRefill(struct ADAPTER *prAdapter)
 		prCfg->rGroup0RefillDisable.u4Addr, u4Val);
 }
 
+static void asicConnac3xDmashdlLiteGetMainInfo(struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo;
+	struct DMASHDL_CFG *prCfg;
+	uint32_t u4Val = 0, u4Val1 = 0;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prCfg = prBusInfo->prDmashdlCfg;
+
+	HAL_RMCR_RD(HIF_DBG, prAdapter,
+		    prCfg->rMainControl.u4Addr, &u4Val);
+	DBGLOG(HAL, INFO, "DMASHDL Main Control (0x%08x): 0x%08x\n",
+	       prCfg->rMainControl.u4Addr, u4Val);
+
+	HAL_RMCR_RD(HIF_DBG, prAdapter,
+		    prCfg->rGroup0RefillDisable.u4Addr, &u4Val);
+	HAL_RMCR_RD(HIF_DBG, prAdapter,
+		    prCfg->rGroup0RefillDisable.u4Addr + 0x4, &u4Val1);
+	DBGLOG(HAL, INFO,
+	       "DMASHDL GROUP DISABLE (0x%08x/0x%08x): 0x%08x/0x%08x\n",
+	       prCfg->rGroup0RefillDisable.u4Addr,
+	       prCfg->rGroup0RefillDisable.u4Addr + 0x4,
+	       u4Val, u4Val1);
+
+	HAL_RMCR_RD(HIF_DBG, prAdapter,
+		    prCfg->rGroupSnChk.u4Addr, &u4Val);
+	HAL_RMCR_RD(HIF_DBG, prAdapter,
+		    prCfg->rGroupSnChk.u4Addr + 0x4, &u4Val1);
+	DBGLOG(HAL, INFO,
+	       "DMASHDL GROUP SN CHK (0x%08x/0x%08x): 0x%08x/0x%08x\n",
+	       prCfg->rGroupSnChk.u4Addr,
+	       prCfg->rGroupSnChk.u4Addr + 0x4,
+	       u4Val, u4Val1);
+
+	HAL_RMCR_RD(HIF_DBG, prAdapter,
+		    prCfg->rGroupUdfChk.u4Addr, &u4Val);
+	HAL_RMCR_RD(HIF_DBG, prAdapter,
+		    prCfg->rGroupUdfChk.u4Addr + 0x4, &u4Val1);
+	DBGLOG(HAL, INFO,
+	       "DMASHDL GROUP UDF (0x%08x/0x%08x): 0x%08x/0x%08x\n",
+	       prCfg->rGroupUdfChk.u4Addr,
+	       prCfg->rGroupUdfChk.u4Addr + 0x4, u4Val
+	       , u4Val1);
+}
+
 static void asicConnac3xDmashdlGetGroupControl(struct ADAPTER *prAdapter,
 					       uint8_t ucGroup)
 {
@@ -3046,6 +3092,36 @@ static uint32_t asicConnac3xDmashdlGetSrcCount(struct ADAPTER *prAdapter,
 		prCfg->rStatusRdGp0SrcCnt.u4Shift;
 
 	DBGLOG(HAL, TRACE, "\tsrc_cnt = 0x%03x\n", src_cnt);
+	return src_cnt;
+}
+
+static uint32_t asicConnac3xDmashdlLiteGetSrcCount(
+	struct ADAPTER *prAdapter, uint8_t ucGroup)
+{
+	struct BUS_INFO *prBusInfo;
+	struct DMASHDL_CFG *prCfg;
+	uint32_t u4Addr;
+	uint32_t u4Val = 0;
+	uint32_t src_cnt = 0;
+	uint32_t pktin_cnt = 0;
+	uint32_t add_return_cnt = 0;
+	uint32_t return_cnt = 0;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prCfg = prBusInfo->prDmashdlCfg;
+
+	u4Addr = prCfg->rStatusRdGp0AckCnt.u4Addr + (ucGroup << 2);
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Val);
+	pktin_cnt = u4Val & 0xff;
+	add_return_cnt = (u4Val >> 8) & 0xff;
+	return_cnt = (u4Val >> 16) & 0xff;
+	src_cnt = asicConnac3xDmashdlGetSrcCount(prAdapter, ucGroup);
+	DBGLOG(HAL, INFO, "\tDMASHDL RD_group_pkt_cnt_%d(0x%08x): 0x%08x\n",
+		ucGroup, u4Addr, u4Val);
+	DBGLOG(HAL, INFO,
+	       "\tsrc_cnt=0x%04x, pktin_cnt=0x%02x, add_return_cnt=0x%02x, return_cnt=0x%02x",
+	       src_cnt, pktin_cnt, add_return_cnt, return_cnt);
+
 	return src_cnt;
 }
 
@@ -3141,7 +3217,7 @@ void connac3x_show_dmashdl_info(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "\tfree page cnt = 0x%03x, ffa cnt = 0x%03x\n",
 		free_pg_cnt, ffa_cnt);
 
-	DBGLOG(HAL, INFO, "\nDMASHDL Counter Check:\n");
+	DBGLOG(HAL, INFO, "DMASHDL Counter Check:\n");
 	HAL_RMCR_RD(HIF_DBG, prAdapter,
 		       prCfg->rHifPgInfoHifRsvCnt.u4Addr, &value);
 	ple_rpg_hif = (value & prCfg->rHifPgInfoHifRsvCnt.u4Mask) >>
@@ -3185,6 +3261,73 @@ void connac3x_show_dmashdl_info(struct ADAPTER *prAdapter)
 
 	if (!is_mismatch)
 		DBGLOG(HAL, INFO, "DMASHDL: no counter mismatch\n");
+}
+
+void connac3x_show_dmashdl_lite_info(struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo;
+	struct DMASHDL_CFG *prCfg;
+	uint32_t value = 0;
+	uint8_t idx;
+	uint32_t src_cnt = 0;
+	uint32_t total_src_cnt = 0;
+	uint32_t ple_rpg_hif = 0;
+	uint32_t ple_upg_hif = 0;
+
+	DBGLOG(HAL, INFO, "DMASHDL lite info:\n");
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prCfg = prBusInfo->prDmashdlCfg;
+
+	asicConnac3xDmashdlLiteGetMainInfo(prAdapter);
+
+	HAL_RMCR_RD(HIF_DBG, prAdapter,
+		    prCfg->rPleTotalPageSize.u4Addr, &value);
+	DBGLOG(HAL, INFO, "PLE/PSE total page (0x%08x): 0x%04x/0x%04x\n",
+	       prCfg->rPleTotalPageSize.u4Addr,
+	       ((value & (0x1FFF << 16)) >> 16),
+	       ((value & (0x1FFF << 0)) >> 0));
+
+	asicConnac3xDmashdlGetPktMaxPage(prAdapter);
+
+	for (idx = 0; idx <= ENUM_DMASHDL_GROUP_14; idx++) {
+		if (prCfg->afgRefillEn[idx] == 0)
+			continue;
+		DBGLOG(HAL, INFO, "Group %d info:\n", idx);
+		asicConnac3xDmashdlGetGroupControl(prAdapter, idx);
+		src_cnt = asicConnac3xDmashdlLiteGetSrcCount(prAdapter, idx);
+		total_src_cnt += src_cnt;
+	}
+
+	/* Dump Group 15 info */
+	for (idx = ENUM_DMASHDL_GROUP_15;
+	     idx < ENUM_DMASHDL_LITE_GROUP_NUM;
+	     idx++) {
+		if (prCfg->afgRefillEn[idx] == 0)
+			continue;
+		DBGLOG(HAL, INFO, "Group %d info:\n", idx);
+		asicConnac3xDmashdlGetGroupControl(prAdapter, idx);
+		asicConnac3xDmashdlLiteGetSrcCount(prAdapter, idx);
+	}
+
+	DBGLOG(HAL, INFO, "DMASHDL Counter Check:\n");
+	HAL_RMCR_RD(HIF_DBG, prAdapter,
+		       prCfg->rHifPgInfoHifRsvCnt.u4Addr, &value);
+	ple_rpg_hif = (value & prCfg->rHifPgInfoHifRsvCnt.u4Mask) >>
+		  prCfg->rHifPgInfoHifRsvCnt.u4Shift;
+	ple_upg_hif = (value & prCfg->rHifPgInfoHifSrcCnt.u4Mask) >>
+		prCfg->rHifPgInfoHifSrcCnt.u4Shift;
+	DBGLOG(HAL, INFO,
+		"\tPLE:The used/reserved pages of PLE HIF group=0x%03x/0x%03x\n",
+		 ple_upg_hif, ple_rpg_hif);
+	DBGLOG(HAL, INFO,
+		"\tDMASHDL:The total used pages of group0~14=0x%03x\n",
+		total_src_cnt);
+
+	if (ple_upg_hif != total_src_cnt) {
+		DBGLOG(HAL, INFO,
+			"\tPLE used pages & total used pages mismatch!\n");
+	}
 }
 
 #ifdef WF_PLE_TOP_BASE

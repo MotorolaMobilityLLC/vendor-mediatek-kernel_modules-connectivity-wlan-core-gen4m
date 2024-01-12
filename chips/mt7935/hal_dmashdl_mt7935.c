@@ -27,7 +27,7 @@
 #include "mt7935.h"
 #include "coda/mt7935/wf_ple_top.h"
 #include "coda/mt7935/wf_pse_top.h"
-#include "coda/mt7935/wf_hif_dmashdl_top.h"
+#include "coda/mt7935/wf_hif_dmashdl_lite_top.h"
 #include "hal_dmashdl_mt7935.h"
 
 /*******************************************************************************
@@ -57,10 +57,9 @@
 */
 
 struct DMASHDL_CFG rMt7935DmashdlCfg = {
-	.fgSlotArbiterEn = MT7935_DMASHDL_SLOT_ARBITER_EN,
-
+	.u2PleTotalPageSize = MT7935_DMASHDL_PLE_TOTAL_PAGE_SIZE,
+	.u2PseTotalPageSize = MT7935_DMASHDL_PSE_TOTAL_PAGE_SIZE,
 	.u2PktPleMaxPage = MT7935_DMASHDL_PKT_PLE_MAX_PAGE,
-
 	.u2PktPseMaxPage = MT7935_DMASHDL_PKT_PSE_MAX_PAGE,
 
 	.afgRefillEn = {
@@ -155,123 +154,84 @@ struct DMASHDL_CFG rMt7935DmashdlCfg = {
 		MT7935_DMASHDL_QUEUE_31_TO_GROUP,
 	},
 
-	.aucPriority2Group = {
-		MT7935_DMASHDL_PRIORITY0_GROUP,
-		MT7935_DMASHDL_PRIORITY1_GROUP,
-		MT7935_DMASHDL_PRIORITY2_GROUP,
-		MT7935_DMASHDL_PRIORITY3_GROUP,
-		MT7935_DMASHDL_PRIORITY4_GROUP,
-		MT7935_DMASHDL_PRIORITY5_GROUP,
-		MT7935_DMASHDL_PRIORITY6_GROUP,
-		MT7935_DMASHDL_PRIORITY7_GROUP,
-		MT7935_DMASHDL_PRIORITY8_GROUP,
-		MT7935_DMASHDL_PRIORITY9_GROUP,
-		MT7935_DMASHDL_PRIORITY10_GROUP,
-		MT7935_DMASHDL_PRIORITY11_GROUP,
-		MT7935_DMASHDL_PRIORITY12_GROUP,
-		MT7935_DMASHDL_PRIORITY13_GROUP,
-		MT7935_DMASHDL_PRIORITY14_GROUP,
-		MT7935_DMASHDL_PRIORITY15_GROUP,
+	.u4GroupNum = ENUM_DMASHDL_LITE_GROUP_NUM,
+
+	.rMainControl = {
+		WF_HIF_DMASHDL_LITE_TOP_MAIN_CONTROL_ADDR,
+		0,
+		0,
 	},
 
-	.u2HifAckCntTh = MT7935_DMASHDL_HIF_ACK_CNT_TH,
-	.u2HifGupActMap = MT7935_DMASHDL_HIF_GUP_ACT_MAP,
-	.u4GroupNum = ENUM_DMASHDL_GROUP_NUM,
+	.rGroupSnChk = {
+		WF_HIF_DMASHDL_LITE_TOP_GROUP_SN_CHK_0_ADDR,
+		0,
+		0,
+	},
+
+	.rGroupUdfChk = {
+		WF_HIF_DMASHDL_LITE_TOP_GROUP_UDF_CHK_0_ADDR,
+		0,
+		0,
+	},
+
+	.rPleTotalPageSize = {
+		WF_HIF_DMASHDL_LITE_TOP_TOTAL_PAGE_SIZE_ADDR,
+	WF_HIF_DMASHDL_LITE_TOP_TOTAL_PAGE_SIZE_ple_total_page_size_MASK,
+	WF_HIF_DMASHDL_LITE_TOP_TOTAL_PAGE_SIZE_ple_total_page_size_SHFT
+	},
+
+	.rPseTotalPageSize = {
+		WF_HIF_DMASHDL_LITE_TOP_TOTAL_PAGE_SIZE_ADDR,
+	WF_HIF_DMASHDL_LITE_TOP_TOTAL_PAGE_SIZE_pse_total_page_size_MASK,
+	WF_HIF_DMASHDL_LITE_TOP_TOTAL_PAGE_SIZE_pse_total_page_size_SHFT
+	},
 
 	.rPlePacketMaxSize = {
-		WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_ADDR,
-		WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_PLE_PACKET_MAX_SIZE_MASK,
-		WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_PLE_PACKET_MAX_SIZE_SHFT
+		WF_HIF_DMASHDL_LITE_TOP_PACKET_MAX_SIZE_ADDR,
+	WF_HIF_DMASHDL_LITE_TOP_PACKET_MAX_SIZE_ple_packet_max_size_MASK,
+	WF_HIF_DMASHDL_LITE_TOP_PACKET_MAX_SIZE_ple_packet_max_size_SHFT,
 	},
 
 	.rPsePacketMaxSize = {
-		WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_ADDR,
-		WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_PSE_PACKET_MAX_SIZE_MASK,
-		WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_PSE_PACKET_MAX_SIZE_SHFT
+		WF_HIF_DMASHDL_LITE_TOP_PACKET_MAX_SIZE_ADDR,
+	WF_HIF_DMASHDL_LITE_TOP_PACKET_MAX_SIZE_pse_packet_max_size_MASK,
+	WF_HIF_DMASHDL_LITE_TOP_PACKET_MAX_SIZE_pse_packet_max_size_SHFT,
 	},
 
 	.rGroup0RefillDisable = {
-		WF_HIF_DMASHDL_TOP_REFILL_CONTROL_ADDR,
-		WF_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP0_REFILL_DISABLE_MASK,
-		0
+		WF_HIF_DMASHDL_LITE_TOP_GROUP_DISABLE_0_ADDR,
+		WF_HIF_DMASHDL_LITE_TOP_GROUP_DISABLE_0_group0_disable_MASK,
+		WF_HIF_DMASHDL_LITE_TOP_GROUP_DISABLE_0_group0_disable_SHFT,
 	},
 
 	.rGroup0ControlMaxQuota = {
-		WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_ADDR,
-		WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_GROUP0_MAX_QUOTA_MASK,
-		WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_GROUP0_MAX_QUOTA_SHFT
+		WF_HIF_DMASHDL_LITE_TOP_GROUP0_CONTROL_ADDR,
+		WF_HIF_DMASHDL_LITE_TOP_GROUP0_CONTROL_group0_max_quota_MASK,
+		WF_HIF_DMASHDL_LITE_TOP_GROUP0_CONTROL_group0_max_quota_SHFT
 	},
 
 	.rGroup0ControlMinQuota = {
-		WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_ADDR,
-		WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_GROUP0_MIN_QUOTA_MASK,
-		WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_GROUP0_MIN_QUOTA_SHFT
+		WF_HIF_DMASHDL_LITE_TOP_GROUP0_CONTROL_ADDR,
+		WF_HIF_DMASHDL_LITE_TOP_GROUP0_CONTROL_group0_min_quota_MASK,
+		WF_HIF_DMASHDL_LITE_TOP_GROUP0_CONTROL_group0_min_quota_SHFT
 	},
 
 	.rQueueMapping0Queue0 = {
-		WF_HIF_DMASHDL_TOP_QUEUE_MAPPING0_ADDR,
-		WF_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE0_MAPPING_MASK,
-		WF_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE0_MAPPING_SHFT
-	},
-
-	.rPageSettingGroupSeqOrderType = {
-		WF_HIF_DMASHDL_TOP_PAGE_SETTING_ADDR,
-		WF_HIF_DMASHDL_TOP_PAGE_SETTING_GROUP_SEQUENCE_ORDER_TYPE_MASK,
-		WF_HIF_DMASHDL_TOP_PAGE_SETTING_GROUP_SEQUENCE_ORDER_TYPE_SHFT,
-	},
-
-	.rSchdulerSetting0Priority0Group = {
-		WF_HIF_DMASHDL_TOP_HIF_SCHEDULER_SETTING0_ADDR,
-		WF_HIF_DMASHDL_TOP_HIF_SCHEDULER_SETTING0_PRIORITY0_GROUP_MASK,
-		WF_HIF_DMASHDL_TOP_HIF_SCHEDULER_SETTING0_PRIORITY0_GROUP_SHFT
-	},
-
-	.rStatusRdGp0RsvCnt = {
-		WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_ADDR,
-		WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_G0_RSV_CNT_MASK,
-		WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_G0_RSV_CNT_SHFT
+		WF_HIF_DMASHDL_LITE_TOP_QUEUE_MAPPING0_ADDR,
+		WF_HIF_DMASHDL_LITE_TOP_QUEUE_MAPPING0_queue0_mapping_MASK,
+		WF_HIF_DMASHDL_LITE_TOP_QUEUE_MAPPING0_queue0_mapping_SHFT
 	},
 
 	.rStatusRdGp0SrcCnt = {
-		WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_ADDR,
-		WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_G0_SRC_CNT_MASK,
-		WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_G0_SRC_CNT_SHFT
+		WF_HIF_DMASHDL_LITE_TOP_GROUP0_SRC_CNT_ADDR,
+		WF_HIF_DMASHDL_LITE_TOP_GROUP0_SRC_CNT_group0_src_cnt_MASK,
+		WF_HIF_DMASHDL_LITE_TOP_GROUP0_SRC_CNT_group0_src_cnt_SHFT,
 	},
 
-	.rRdGroupPktCnt0 = {
-		WF_HIF_DMASHDL_TOP_RD_GROUP_PKT_CNT0_ADDR,
-		0,
-		0
-	},
-
-	.rOptionalControlCrHifAckCntTh = {
-		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_ADDR,
-		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_ACK_CNT_TH_MASK,
-		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_ACK_CNT_TH_SHFT
-	},
-
-	.rOptionalControlCrHifGupActMap = {
-		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_ADDR,
-		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_GUP_ACT_MAP_MASK,
-		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_GUP_ACT_MAP_SHFT,
-	},
-
-	.rErrorFlagCtrl = {
-		WF_HIF_DMASHDL_TOP_ERROR_FLAG_CTRL_ADDR,
-		0,
-		0
-	},
-
-	.rStatusRdFfaCnt = {
-		WF_HIF_DMASHDL_TOP_STATUS_RD_ADDR,
-		WF_HIF_DMASHDL_TOP_STATUS_RD_FFA_CNT_MASK,
-		WF_HIF_DMASHDL_TOP_STATUS_RD_FFA_CNT_SHFT
-	},
-
-	.rStatusRdFreePageCnt = {
-		WF_HIF_DMASHDL_TOP_STATUS_RD_ADDR,
-		WF_HIF_DMASHDL_TOP_STATUS_RD_FREE_PAGE_CNT_MASK,
-		WF_HIF_DMASHDL_TOP_STATUS_RD_FREE_PAGE_CNT_SHFT
+	.rStatusRdGp0AckCnt = {
+		WF_HIF_DMASHDL_LITE_TOP_GROUP0_ACK_CNT_ADDR,
+		WF_HIF_DMASHDL_LITE_TOP_GROUP0_ACK_CNT_group0_ack_cnt_MASK,
+		WF_HIF_DMASHDL_LITE_TOP_GROUP0_ACK_CNT_group0_ack_cnt_SHFT
 	},
 
 	.rHifPgInfoHifRsvCnt = {
@@ -289,65 +249,77 @@ struct DMASHDL_CFG rMt7935DmashdlCfg = {
 
 void mt7935DmashdlInit(struct ADAPTER *prAdapter)
 {
-	uint32_t idx, u4DefVal;
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-	uint32_t u4Val = 0, u4Addr = 0;
-#endif
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+	struct DMASHDL_CFG *prCfg = &rMt7935DmashdlCfg;
+	uint32_t idx, u4Val = 0, u4Addr = 0;
+
+	prBusInfo->prDmashdlCfg = prCfg;
+
+	u4Addr = WF_HIF_DMASHDL_LITE_TOP_MAIN_CONTROL_ADDR;
+	u4Val = WF_HIF_DMASHDL_LITE_TOP_MAIN_CONTROL_sw_rst_b_MASK |
+		WF_HIF_DMASHDL_LITE_TOP_MAIN_CONTROL_wlan_id_dec_en_MASK;
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+
+	asicConnac3xDmashdlLiteSetTotalPlePsePageSize(
+		prAdapter,
+		prCfg->u2PleTotalPageSize,
+		prCfg->u2PseTotalPageSize);
 
 	asicConnac3xDmashdlSetPlePsePktMaxPage(
 		prAdapter,
-		rMt7935DmashdlCfg.u2PktPleMaxPage,
-		rMt7935DmashdlCfg.u2PktPseMaxPage);
+		prCfg->u2PktPleMaxPage,
+		prCfg->u2PktPseMaxPage);
 
-	for (idx = 0; idx < ENUM_DMASHDL_GROUP_NUM; idx++) {
-		asicConnac3xDmashdlSetRefill(
+	u4Addr = WF_HIF_DMASHDL_LITE_TOP_GROUP_SN_CHK_0_ADDR;
+	u4Val = 0xffffffff;
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+
+	u4Addr = WF_HIF_DMASHDL_LITE_TOP_GROUP_SN_CHK_1_ADDR;
+	u4Val = 0xffffffff;
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+
+	u4Addr = WF_HIF_DMASHDL_LITE_TOP_GROUP_UDF_CHK_0_ADDR;
+	u4Val = 0xffffffff;
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+
+	u4Addr = WF_HIF_DMASHDL_LITE_TOP_GROUP_UDF_CHK_1_ADDR;
+	u4Val = 0xffffffff;
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+
+	for (idx = 0; idx < 32; idx++) {
+		asicConnac3xDmashdlLiteSetQueueMapping(
 			prAdapter, idx,
-			rMt7935DmashdlCfg.afgRefillEn[idx]);
+			prCfg->aucQueue2Group[idx]);
+	}
 
+	/* group 0~31 */
+	u4Addr = WF_HIF_DMASHDL_LITE_TOP_GROUP_DISABLE_0_ADDR;
+	u4Val = 0;
+	for (idx = 0; idx < (ENUM_DMASHDL_LITE_GROUP_NUM / 2); idx++) {
+		if (prCfg->afgRefillEn[idx])
+			u4Val &= ~(1 << idx);
+		else
+			u4Val |= (1 << idx);
+	}
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+
+	/* group 32~63 */
+	u4Addr = WF_HIF_DMASHDL_LITE_TOP_GROUP_DISABLE_1_ADDR;
+	u4Val = 0;
+	for (; idx < ENUM_DMASHDL_LITE_GROUP_NUM; idx++) {
+		if (prCfg->afgRefillEn[idx])
+			u4Val &= ~(1 << idx);
+		else
+			u4Val |= (1 << idx);
+	}
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+
+	for (idx = 0; idx < ENUM_DMASHDL_LITE_GROUP_NUM; idx++) {
 		asicConnac3xDmashdlSetMinMaxQuota(
 			prAdapter, idx,
-			rMt7935DmashdlCfg.au2MinQuota[idx],
-			rMt7935DmashdlCfg.au2MaxQuota[idx]);
+			prCfg->au2MinQuota[idx],
+			prCfg->au2MaxQuota[idx]);
 	}
-
-	for (idx = 0; idx < 32; idx++)
-		asicConnac3xDmashdlSetQueueMapping(
-			prAdapter, idx,
-			rMt7935DmashdlCfg.aucQueue2Group[idx]);
-
-	for (idx = 0; idx < 16; idx++)
-		asicConnac3xDmashdlSetUserDefinedPriority(
-			prAdapter, idx,
-			rMt7935DmashdlCfg.aucPriority2Group[idx]);
-
-	u4DefVal = WF_HIF_DMASHDL_TOP_PAGE_SETTING_QUP_ACL_SLOT_CG_EN_MASK |
-		WF_HIF_DMASHDL_TOP_PAGE_SETTING_SRC_CNT_PRI_EN_MASK |
-		WF_HIF_DMASHDL_TOP_PAGE_SETTING_DUMMY_01_MASK |
-		WF_HIF_DMASHDL_TOP_PAGE_SETTING_DUMMY_00_MASK |
-		WF_HIF_DMASHDL_TOP_PAGE_SETTING_SLOT_TYPE_ARBITER_CONTROL_MASK;
-	asicConnac3xDmashdlSetSlotArbiter(
-		prAdapter,
-		rMt7935DmashdlCfg.fgSlotArbiterEn,
-		u4DefVal);
-
-	u4DefVal =
-WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_PSEBF_BL_TH2_NOBMIN_RASIGN_ENA_MASK |
-		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_ASK_MIN_RR_ENA_MASK |
-		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_ASK_RR_ENA_MASK;
-	asicConnac3xDmashdlSetOptionalControl(prAdapter,
-		rMt7935DmashdlCfg.u2HifAckCntTh,
-		rMt7935DmashdlCfg.u2HifGupActMap,
-		u4DefVal);
-
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo)) {
-		u4Addr = WF_HIF_DMASHDL_TOP_CONTROL_SIGNAL_ADDR;
-		/* default value mask CR_TXD_ADD_RTN_ENA */
-		u4Val = 0x151000 & ~BIT(18);
-		HAL_MCR_WR(prAdapter, u4Addr, u4Val);
-	}
-#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */

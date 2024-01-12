@@ -1374,6 +1374,11 @@ void asicConnac3xWfdmaControl(
 	u_int8_t ucDmaIdx,
 	u_int8_t enable);
 
+void asicConnac3xDmashdlLiteSetTotalPlePsePageSize(
+	struct ADAPTER *prAdapter,
+	uint16_t u2PlePageSize, uint16_t u2PsePageSize);
+void asicConnac3xDmashdlLiteSetQueueMapping(
+	struct ADAPTER *prAdapter, uint8_t ucQueue, uint8_t ucGroup);
 void asicConnac3xDmashdlSetPlePsePktMaxPage(
 	struct ADAPTER *prAdapter,
 	uint16_t u2MaxPlePage, uint16_t u2MaxPsePage);

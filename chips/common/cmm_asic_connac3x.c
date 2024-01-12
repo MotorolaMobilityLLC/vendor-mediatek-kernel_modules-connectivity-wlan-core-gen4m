@@ -2144,6 +2144,58 @@ u_int8_t conn2_rst_L0_notify_step2(void)
 }
 #endif
 
+void asicConnac3xDmashdlLiteSetTotalPlePsePageSize(
+	struct ADAPTER *prAdapter,
+	uint16_t u2PlePageSize, uint16_t u2PsePageSize)
+{
+	struct BUS_INFO *prBusInfo;
+	struct DMASHDL_CFG *prCfg;
+	uint32_t u4Val = 0;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prCfg = prBusInfo->prDmashdlCfg;
+
+	u4Val |= (u2PlePageSize << prCfg->rPleTotalPageSize.u4Shift) &
+		prCfg->rPleTotalPageSize.u4Mask;
+	u4Val |= (u2PsePageSize << prCfg->rPseTotalPageSize.u4Shift) &
+		prCfg->rPseTotalPageSize.u4Mask;
+
+	HAL_MCR_WR(prAdapter, prCfg->rPleTotalPageSize.u4Addr, u4Val);
+}
+
+void asicConnac3xDmashdlLiteSetQueueMapping(
+	struct ADAPTER *prAdapter, uint8_t ucQueue, uint8_t ucGroup)
+{
+	struct BUS_INFO *prBusInfo;
+	struct DMASHDL_CFG *prCfg;
+	uint32_t u4Addr, u4Mask, u4Shft;
+	uint32_t u4Val = 0, u4Idx = 0;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prCfg = prBusInfo->prDmashdlCfg;
+
+	if (ucQueue >= 64)
+		return;
+
+	if (ucGroup >= prCfg->u4GroupNum)
+		return;
+
+	u4Idx = ucQueue >> 2;
+	if (u4Idx >= 16)
+		return;
+
+	u4Addr = prCfg->rQueueMapping0Queue0.u4Addr + (u4Idx << 2);
+	u4Mask = prCfg->rQueueMapping0Queue0.u4Mask << ((ucQueue % 4) << 3);
+	u4Shft = (ucQueue % 4) << 3;
+
+	u4Val = prCfg->u4Queue2Group[u4Idx];
+	u4Val &= ~u4Mask;
+	u4Val |= (ucGroup << u4Shft) & u4Mask;
+	prCfg->u4Queue2Group[u4Idx] = u4Val;
+
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+}
+
 void asicConnac3xDmashdlSetPlePsePktMaxPage(
 	struct ADAPTER *prAdapter,
 	uint16_t u2MaxPlePage, uint16_t u2MaxPsePage)

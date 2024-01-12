@@ -271,19 +271,20 @@ enum ENUM_DMASHDL_GROUP_IDX {
 	ENUM_DMASHDL_GROUP_13,
 	ENUM_DMASHDL_GROUP_14,
 	ENUM_DMASHDL_GROUP_15,
-	ENUM_DMASHDL_GROUP_NUM
+	ENUM_DMASHDL_GROUP_NUM,
+	ENUM_DMASHDL_LITE_GROUP_NUM = 64
 };
 
 struct DMASHDL_CFG {
 	u_int8_t fgSlotArbiterEn;
 	uint16_t u2PktPleMaxPage;
 	uint16_t u2PktPseMaxPage;
-	u_int8_t afgRefillEn[ENUM_DMASHDL_GROUP_NUM];
+	u_int8_t afgRefillEn[ENUM_DMASHDL_LITE_GROUP_NUM];
 	uint32_t u4RefillCtrl;
-	uint16_t au2MaxQuota[ENUM_DMASHDL_GROUP_NUM];
-	uint16_t au2MinQuota[ENUM_DMASHDL_GROUP_NUM];
-	uint8_t aucQueue2Group[ENUM_DMASHDL_GROUP_NUM * 2];
-	uint32_t u4Queue2Group[4];
+	uint16_t au2MaxQuota[ENUM_DMASHDL_LITE_GROUP_NUM];
+	uint16_t au2MinQuota[ENUM_DMASHDL_LITE_GROUP_NUM];
+	uint8_t aucQueue2Group[ENUM_DMASHDL_LITE_GROUP_NUM];
+	uint32_t u4Queue2Group[ENUM_DMASHDL_LITE_GROUP_NUM];
 	uint8_t aucPriority2Group[ENUM_DMASHDL_GROUP_NUM];
 	uint32_t u4Priority2Group[2];
 	uint16_t u2HifAckCntTh;
@@ -311,6 +312,16 @@ struct DMASHDL_CFG {
 	struct CODA_CR_INFO rStatusRdFreePageCnt;
 	struct CODA_CR_INFO rHifPgInfoHifRsvCnt;
 	struct CODA_CR_INFO rHifPgInfoHifSrcCnt;
+
+	/* lite */
+	uint16_t u2PleTotalPageSize;
+	uint16_t u2PseTotalPageSize;
+	struct CODA_CR_INFO rMainControl;
+	struct CODA_CR_INFO rPleTotalPageSize;
+	struct CODA_CR_INFO rPseTotalPageSize;
+	struct CODA_CR_INFO rGroupSnChk;
+	struct CODA_CR_INFO rGroupUdfChk;
+	struct CODA_CR_INFO rStatusRdGp0AckCnt;
 };
 
 struct PLE_TOP_CR {
@@ -1134,6 +1145,7 @@ void connac3x_show_wfdma_info_by_type(
 
 void connac3x_show_wfdma_info(struct ADAPTER *prAdapter);
 void connac3x_show_dmashdl_info(struct ADAPTER *prAdapter);
+void connac3x_show_dmashdl_lite_info(struct ADAPTER *prAdapter);
 uint32_t connac3x_get_ple_int(struct ADAPTER *prAdapter);
 void connac3x_set_ple_int(struct ADAPTER *prAdapter, bool fgTrigger,
 			  uint32_t u4ClrMask, uint32_t u4SetMask);

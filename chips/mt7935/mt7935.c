@@ -665,7 +665,7 @@ struct CHIP_DBG_OPS mt7935_DebugOps = {
 	.showUmacWtblInfo = connac3x_show_umac_wtbl_info,
 	.showCsrInfo = NULL,
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-	.showDmaschInfo = connac3x_show_dmashdl_info,
+	.showDmaschInfo = connac3x_show_dmashdl_lite_info,
 #endif
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.getFwDebug = NULL,
@@ -887,6 +887,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 	.patch_addr = MT7935_PATCH_START_ADDR,
 	.is_support_cr4 = FALSE,
 	.is_support_wacpu = FALSE,
+	.is_support_dmashdl_lite = TRUE,
 #if defined(_HIF_PCIE)
 	.is_en_wfdma_no_mmio_read = FALSE,
 #endif /* _HIF_PCIE */
@@ -1889,10 +1890,16 @@ WF_WFDMA_HOST_DMA0_WPDMA_SW_DONE_BASE_PTR_EXT_SW_DONE_FLAG_BASR_PTR_EXT_MASK;
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 
 	kalMemZero(prSwDone, sizeof(struct WFDMA_EMI_DONE_FLAG));
+
 #if (CFG_SUPPORT_DISABLE_TX_DDONE_INTR == 1)
 	/* disable tx done interrupt */
-	prSwDone->tx_int0 = 0xffffffff;
-	prSwDone->tx_int1 = 0xffffffff;
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TRINFO_WB_TX_INT_EN0_ADDR;
+	u4WrVal = 0;
+	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
+
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TRINFO_WB_TX_INT_EN1_ADDR;
+	u4WrVal = 0;
+	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 #endif /* CFG_SUPPORT_DISABLE_TX_DDONE_INTR == 1 */
 
 	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TRINFO_WB_CTRL2_ADDR;
@@ -1932,7 +1939,7 @@ static void mt7935WfdmaConfigCidxFetch(struct GLUE_INFO *prGlueInfo)
 
 	/* set rxring cidx fetch threshold */
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_CFET_TH_01_ADDR;
-	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_RX_CFET_TH_1415_ADDR;
+	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_RX_CFET_TH_67_ADDR;
 	     u4Addr += 4) {
 		u4WrVal = u4RxPps;
 		u4WrVal |= u4RxPps <<
@@ -1943,6 +1950,17 @@ static void mt7935WfdmaConfigCidxFetch(struct GLUE_INFO *prGlueInfo)
 	/* set rx periodic fetch timer */
 	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_CFET_CTRL0_ADDR;
 	u4WrVal = 0x32; /* 50 * 20us */
+	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
+
+	/* enable pcie txp first qos priority */
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_QOS_QTM_CFG1_ADDR;
+	u4WrVal =
+	WF_WFDMA_HOST_DMA0_WPDMA_TX_QOS_QTM_CFG1_CSR_QOS_DYNAMIC_SET_MASK |
+	WF_WFDMA_HOST_DMA0_WPDMA_TX_QOS_QTM_CFG1_CSR_QOS_PRI_SEL_MASK |
+	(3 << WF_WFDMA_HOST_DMA0_WPDMA_TX_QOS_QTM_CFG1_CSR_TXD_RSVD_QTM_SHFT) |
+	(13 << WF_WFDMA_HOST_DMA0_WPDMA_TX_QOS_QTM_CFG1_CSR_TXD_FFA_QTM_SHFT) |
+	(1 << WF_WFDMA_HOST_DMA0_WPDMA_TX_QOS_QTM_CFG1_CSR_DMAD_RSVD_QTM_SHFT) |
+	(7 << WF_WFDMA_HOST_DMA0_WPDMA_TX_QOS_QTM_CFG1_CSR_DMAD_FFA_QTM_SHFT);
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 
 	/* set tx periodic fetch mode */
@@ -2336,7 +2354,7 @@ static void mt7935ConfigWfdmaRxRingThreshold(
 	}
 
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH10_ADDR;
-	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH1110_ADDR;
+	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH76_ADDR;
 	     u4Addr += 0x4)
 		HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
@@ -2353,11 +2371,8 @@ static void mt7935WpdmaConfigExt0(struct ADAPTER *prAdapter)
 {
 #if CFG_MTK_WIFI_WFDMA_WB
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+#endif /* CFG_MTK_WIFI_WFDMA_WB */
 	uint32_t u4Addr = 0, u4Val = 0;
-
-	if (!prChipInfo->is_enable_wfdma_write_back ||
-	    !prChipInfo->is_support_wfdma_cidx_fetch)
-		return;
 
 	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_ADDR;
 	/* default settings */
@@ -2366,7 +2381,7 @@ static void mt7935WpdmaConfigExt0(struct ADAPTER *prAdapter)
 	WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_CSR_RX_INFO_WB_EN_MASK |
 	WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_CSR_BID_CHECK_BYPASS_EN_MASK |
 	WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_CSR_RX_WB_KEEP_RSVD_MASK |
-	WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_CSR_TX_DMASHDL_ENABLE_MASK |
+	WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_CSR_TX_DMASHDL_LITE_ENABLE_MASK |
 	WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_CSR_MEM_ARB_LOCK_EN_MASK;
 	u4Val |= 0x8 <<
 	WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_CSR_AXI_AW_OUTSTANDING_NUM_SHFT;
@@ -2375,10 +2390,14 @@ static void mt7935WpdmaConfigExt0(struct ADAPTER *prAdapter)
 	u4Val |= 0x3 <<
 	WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_CSR_MAX_PREFETCH_CNT_SHFT;
 
+#if CFG_MTK_WIFI_WFDMA_WB
 	/* enable cidx fetch */
-	u4Val |= WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_CSR_CFET_EN_MASK;
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+	if (prChipInfo->is_enable_wfdma_write_back &&
+	    prChipInfo->is_support_wfdma_cidx_fetch)
+		u4Val |= WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_CSR_CFET_EN_MASK;
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
+
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 }
 
 static void mt7935WpdmaConfigExt1(struct ADAPTER *prAdapter)

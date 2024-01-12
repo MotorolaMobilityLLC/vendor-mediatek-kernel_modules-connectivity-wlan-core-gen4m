@@ -31,10 +31,9 @@
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 
-/* 1: 3rd arbitration makes decision based on group priority in current slot.
- * 0: 3rd arbitration makes decision based on fixed user-defined priority.
- */
 #define MT7935_DMASHDL_SLOT_ARBITER_EN                 (0)
+#define MT7935_DMASHDL_PLE_TOTAL_PAGE_SIZE             (0x6E0)
+#define MT7935_DMASHDL_PSE_TOTAL_PAGE_SIZE             (0x10)
 #define MT7935_DMASHDL_PKT_PLE_MAX_PAGE                (0x1)
 #define MT7935_DMASHDL_PKT_PSE_MAX_PAGE                (0x8)
 #define MT7935_DMASHDL_GROUP_0_REFILL_EN               (1)
@@ -52,13 +51,13 @@
 #define MT7935_DMASHDL_GROUP_12_REFILL_EN              (0)
 #define MT7935_DMASHDL_GROUP_13_REFILL_EN              (0)
 #define MT7935_DMASHDL_GROUP_14_REFILL_EN              (0)
-#define MT7935_DMASHDL_GROUP_15_REFILL_EN              (0)
-#define MT7935_DMASHDL_GROUP_0_MAX_QUOTA               (0x490)
-#define MT7935_DMASHDL_GROUP_1_MAX_QUOTA               (0x490)
-#define MT7935_DMASHDL_GROUP_2_MAX_QUOTA               (0x490)
-#define MT7935_DMASHDL_GROUP_3_MAX_QUOTA               (0x490)
-#define MT7935_DMASHDL_GROUP_4_MAX_QUOTA               (0x490)
-#define MT7935_DMASHDL_GROUP_5_MAX_QUOTA               (0x490)
+#define MT7935_DMASHDL_GROUP_15_REFILL_EN              (1)
+#define MT7935_DMASHDL_GROUP_0_MAX_QUOTA               (0x300)
+#define MT7935_DMASHDL_GROUP_1_MAX_QUOTA               (0x300)
+#define MT7935_DMASHDL_GROUP_2_MAX_QUOTA               (0x300)
+#define MT7935_DMASHDL_GROUP_3_MAX_QUOTA               (0x300)
+#define MT7935_DMASHDL_GROUP_4_MAX_QUOTA               (0x300)
+#define MT7935_DMASHDL_GROUP_5_MAX_QUOTA               (0x300)
 #define MT7935_DMASHDL_GROUP_6_MAX_QUOTA               (0x0)
 #define MT7935_DMASHDL_GROUP_7_MAX_QUOTA               (0x0)
 #define MT7935_DMASHDL_GROUP_8_MAX_QUOTA               (0x0)
