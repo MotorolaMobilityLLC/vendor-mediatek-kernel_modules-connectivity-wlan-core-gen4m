@@ -1329,12 +1329,11 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 
 	/* Disable BTM cap for WPA3 cert. */
 	if (IS_BSS_AIS(prBssInfo)
-		&& prAdapter->rWifiVar.u4SwTestMode ==
-		ENUM_SW_TEST_MODE_SIGMA_WPA3) {
+		&& IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucBtmCap)) {
 		CLEAR_EXT_CAP(prExtCap->aucCapabilities,
 					ELEM_MAX_LEN_EXT_CAP,
 					ELEM_EXT_CAP_BSS_TRANSITION_BIT);
-		DBGLOG(RLM, INFO, "Disable BTM cap in WPA3 testmode!");
+		DBGLOG(RLM, INFO, "Disable BTM cap due to wifi.cfg");
 	}
 
 	while (prExtCap->ucLength > 0 &&
