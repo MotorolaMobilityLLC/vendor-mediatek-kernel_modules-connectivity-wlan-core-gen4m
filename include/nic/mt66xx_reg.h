@@ -1523,6 +1523,7 @@ struct mt66xx_chip_info {
 	const unsigned int cmd_max_pkt_size;
 	const bool isSupportMddpAOR;
 	const bool isSupportMddpSHM;
+	const unsigned int u4MdLpctlAddr;
 
 	const uint32_t u4HostWfdmaBaseAddr;
 	const uint32_t u4HostWfdmaWrapBaseAddr;

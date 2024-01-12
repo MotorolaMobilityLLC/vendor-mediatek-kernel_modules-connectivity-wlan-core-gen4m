@@ -1092,6 +1092,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 #if CFG_MTK_MDDP_SUPPORT
 	.isSupportMddpAOR = false,
 	.isSupportMddpSHM = true,
+	.u4MdLpctlAddr = CONN_HOST_CSR_TOP_WF_MD_LPCTL_ADDR,
 #else
 	.isSupportMddpAOR = false,
 	.isSupportMddpSHM = false,
