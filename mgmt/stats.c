@@ -1027,9 +1027,9 @@ statsTxTimeHdlr(struct GLUE_INFO *prGlueInfo,
 	stats = (struct TX_LATENCY_REPORT_STATS *)&prAdapter->rMsduReportStats;
 	for (i = 0; i < TX_TIME_CAT_NUM; i++) {
 		prTimeStat->au4Success[i] = GLUE_GET_REF_CNT(
-					    stats->au2ConnsysLatency[i]);
+					    stats->au4ConnsysLatency[i]);
 		prTimeStat->au4Fail[i] = GLUE_GET_REF_CNT(
-					    stats->au2FailConnsysLatency[i]);
+					    stats->au4FailConnsysLatency[i]);
 	}
 
 #else

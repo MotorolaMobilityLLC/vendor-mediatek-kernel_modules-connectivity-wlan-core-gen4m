@@ -1233,21 +1233,6 @@ u_int8_t halProcessToken(IN struct ADAPTER *prAdapter,
 }
 
 #if CFG_SUPPORT_TX_LATENCY_STATS
-void halAddDriverLatencyCount(IN struct ADAPTER *prAdapter,
-	uint32_t u4DriverLatency)
-{
-	struct TX_LATENCY_REPORT_STATS *stats = &prAdapter->rMsduReportStats;
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-	uint8_t i;
-
-	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
-		if (u4DriverLatency <= prWifiVar->au4DriverTxDelayMax[i]) {
-			GLUE_INC_REF_CNT(stats->au2DriverLatency[i]);
-			break;
-		}
-	}
-}
-
 static void halAddConnsysLatencyCount(IN struct ADAPTER *prAdapter,
 	uint32_t u4ConnsysLatency)
 {
@@ -1257,7 +1242,23 @@ static void halAddConnsysLatencyCount(IN struct ADAPTER *prAdapter,
 
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
 		if (u4ConnsysLatency <= prWifiVar->au4ConnsysTxDelayMax[i]) {
-			GLUE_INC_REF_CNT(stats->au2ConnsysLatency[i]);
+			GLUE_INC_REF_CNT(stats->au4ConnsysLatency[i]);
+			break;
+		}
+	}
+}
+
+static void halAddTxFailConnsysLatencyCount(IN struct ADAPTER *prAdapter,
+	uint32_t u4ConnsysLatency)
+{
+	struct TX_LATENCY_REPORT_STATS *stats = &prAdapter->rMsduReportStats;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint8_t i;
+
+	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
+		if (u4ConnsysLatency <=
+			    prWifiVar->au4ConnsysTxFailDelayMax[i]) {
+			GLUE_INC_REF_CNT(stats->au4FailConnsysLatency[i]);
 			break;
 		}
 	}
@@ -1272,7 +1273,7 @@ static void halAddMacLatencyCount(IN struct ADAPTER *prAdapter,
 
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
 		if (u4MacLatency <= prWifiVar->au4MacTxDelayMax[i]) {
-			GLUE_INC_REF_CNT(stats->au2MacLatency[i]);
+			GLUE_INC_REF_CNT(stats->au4MacLatency[i]);
 			break;
 		}
 	}
@@ -1320,30 +1321,31 @@ static void halMsduReportStatsP0(IN struct ADAPTER *prAdapter,
 		(rNowTs.tv_sec - prTokenEntry->rTs.tv_sec) * MSEC_PER_SEC +
 		(rNowTs.tv_usec - prTokenEntry->rTs.tv_usec) / USEC_PER_MSEC;
 #endif
-	halAddConnsysLatencyCount(prAdapter, u4ConnsysLatency);
 
 	u4MacLatency = msduToken->rFormatV3.rP0.u4TxCnt;
 	halAddMacLatencyCount(prAdapter, u4MacLatency);
 
-	if (prWifiVar->fgPacketLatencyLog)
-		DBGLOG(HAL, INFO, "Latency C: %u M: %u; tok=%u",
-			u4ConnsysLatency, u4MacLatency, u4Token);
-
 	if (unlikely(msduToken->rFormatV3.rP0.u4Stat)) {
-		GLUE_INC_REF_CNT(stats->u2TxFail);
-		GLUE_INC_REF_CNT(stats->u2ContinuousTxFail);
+		GLUE_INC_REF_CNT(stats->u4TxFail);
+		GLUE_INC_REF_CNT(stats->u4ContinuousTxFail);
+		halAddTxFailConnsysLatencyCount(prAdapter, u4ConnsysLatency);
 		if (prAdapter->rWifiVar.u4ContinuousTxFailThreshold <=
-			stats->u2ContinuousTxFail) {
+			stats->u4ContinuousTxFail) {
 			char uevent[64];
 
 			kalSnprintf(uevent, sizeof(uevent),
 				"Continuous TX Failed %u",
-				stats->u2ContinuousTxFail);
+				stats->u4ContinuousTxFail);
 			kalSendUevent(uevent);
 		}
 	} else {
-		stats->u2ContinuousTxFail = 0;
+		halAddConnsysLatencyCount(prAdapter, u4ConnsysLatency);
+		stats->u4ContinuousTxFail = 0;
 	}
+
+	if (prWifiVar->fgPacketLatencyLog)
+		DBGLOG(HAL, INFO, "Latency C: %u M: %u; tok=%u",
+			u4ConnsysLatency, u4MacLatency, u4Token);
 #endif
 }
 
@@ -3711,41 +3713,48 @@ static void halDumpMsduReportStats(IN struct ADAPTER *prAdapter)
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos, "TX_Delay ");
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS-1; i++)
 		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
-			i == 0 ? "[" : ":",
+			i == 0 ? "D:[" : ":",
 			prWifiVar->au4DriverTxDelayMax[i],
 			i != LATENCY_STATS_MAX_SLOTS-2 ? "" : "]=");
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++)
 		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
-			i == 0 ? "[" : ":", stats->au2DriverLatency[i],
+			i == 0 ? "[" : ":", stats->au4DriverLatency[i],
 			i != LATENCY_STATS_MAX_SLOTS-1 ? "" : "] ");
 
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS-1; i++)
 		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
-			i == 0 ? "[" : ":",
+			i == 0 ? "C:[" : ":",
 			prWifiVar->au4ConnsysTxDelayMax[i],
 			i != LATENCY_STATS_MAX_SLOTS-2 ? "" : "]=");
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++)
 		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
-			i == 0 ? "[" : ":", stats->au2ConnsysLatency[i],
+			i == 0 ? "[" : ":", stats->au4ConnsysLatency[i],
 			i != LATENCY_STATS_MAX_SLOTS-1 ? "" : "] ");
 
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS-1; i++)
 		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
-			i == 0 ? "[" : ":",
+			i == 0 ? "M:[" : ":",
 			prWifiVar->au4MacTxDelayMax[i],
 			i != LATENCY_STATS_MAX_SLOTS-2 ? "" : "]=");
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++)
 		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
-			i == 0 ? "[" : ":", stats->au2MacLatency[i],
+			i == 0 ? "[" : ":", stats->au4MacLatency[i],
 			i != LATENCY_STATS_MAX_SLOTS-1 ? "" : "] ");
 
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos, "Txfail:%u",
-			stats->u2TxFail);
+			stats->u4TxFail);
 
-	kalMemZero(stats->au2DriverLatency, sizeof(stats->au2DriverLatency));
-	kalMemZero(stats->au2ConnsysLatency, sizeof(stats->au2ConnsysLatency));
-	kalMemZero(stats->au2MacLatency, sizeof(stats->au2MacLatency));
-	stats->u2TxFail = 0;
+	if (!prWifiVar->fgTxLatencyKeepCounting) {
+		kalMemZero(stats->au4DriverLatency,
+				sizeof(stats->au4DriverLatency));
+		kalMemZero(stats->au4ConnsysLatency,
+				sizeof(stats->au4ConnsysLatency));
+		kalMemZero(stats->au4MacLatency,
+				sizeof(stats->au4MacLatency));
+		kalMemZero(stats->au4FailConnsysLatency,
+				sizeof(stats->au4FailConnsysLatency));
+		stats->u4TxFail = 0;
+	}
 
 	DBGLOG(HAL, INFO, "%s", buf);
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);

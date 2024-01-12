@@ -814,9 +814,6 @@ bool halSwWfdmaWriteCmd(struct GLUE_INFO *prGlueInfo);
 bool halSwWfdmaProcessDmaDone(IN struct GLUE_INFO *prGlueInfo);
 void halSwWfdmaDumpDebugLog(struct GLUE_INFO *prGlueInfo);
 
-void halAddDriverLatencyCount(IN struct ADAPTER *prAdapter,
-	uint32_t u4DriverLatency);
-
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 /* MAWD */
 void halRroInit(struct GLUE_INFO *prGlueInfo);
