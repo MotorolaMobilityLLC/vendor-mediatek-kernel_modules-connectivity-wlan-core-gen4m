@@ -1110,6 +1110,9 @@ struct WIFI_VAR {
 	uint32_t u4TrafficThreshold;
 #endif
 
+#if CFG_SUPPORT_HE_ER
+	uint8_t u4ExtendedRange;
+#endif
 };
 
 /* cnm_timer module */
