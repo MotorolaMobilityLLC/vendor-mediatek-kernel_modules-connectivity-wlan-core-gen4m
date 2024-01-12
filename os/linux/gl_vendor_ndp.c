@@ -122,6 +122,94 @@ const struct nla_policy
 				.len = NAN_MAX_SERVICE_NAME_LEN },
 	};
 
+uint32_t nanOidDataRequest(
+	struct ADAPTER *prAdapter,
+	void *pvSetBuffer,
+	uint32_t u4SetBufferLen,
+	uint32_t *pu4SetInfoLen)
+{
+	struct _NAN_CMD_DATA_REQUEST *prNanCmdDataRequest;
+	int32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct NanDataReqReceive rDataRcv;
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+	ASSERT(pvSetBuffer);
+
+	*pu4SetInfoLen = u4SetBufferLen;
+	prNanCmdDataRequest =
+		(struct _NAN_CMD_DATA_REQUEST *) pvSetBuffer;
+
+	if (u4SetBufferLen <
+		sizeof(struct _NAN_CMD_DATA_REQUEST))
+		return WLAN_STATUS_INVALID_DATA;
+
+	rStatus = nanCmdDataRequest(prAdapter,
+		prNanCmdDataRequest,
+		&rDataRcv.ndpid,
+		rDataRcv.initiator_data_addr);
+
+	DBGLOG(NAN, INFO, "Initiator request to peer " MACSTR ", status = %d\n",
+		   MAC2STR(prNanCmdDataRequest->aucResponderDataAddress),
+		   rStatus);
+
+	return rStatus;
+}
+
+
+uint32_t nanOidDataResponse(
+	struct ADAPTER *prAdapter,
+	void *pvSetBuffer,
+	uint32_t u4SetBufferLen,
+	uint32_t *pu4SetInfoLen)
+{
+	struct _NAN_CMD_DATA_RESPONSE *prNanCmdDataResponse;
+	int32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+	ASSERT(pvSetBuffer);
+
+	*pu4SetInfoLen = u4SetBufferLen;
+	prNanCmdDataResponse =
+		(struct _NAN_CMD_DATA_RESPONSE *) pvSetBuffer;
+
+	if (u4SetBufferLen <
+		sizeof(struct _NAN_CMD_DATA_RESPONSE))
+		return WLAN_STATUS_INVALID_DATA;
+
+	rStatus = nanCmdDataResponse(prAdapter, prNanCmdDataResponse);
+
+	DBGLOG(NAN, INFO,
+	   "Responder response to peer " MACSTR ", status = %d\n",
+	   MAC2STR(prNanCmdDataResponse->aucInitiatorDataAddress),
+	   rStatus);
+
+	return rStatus;
+}
+
+uint32_t nanOidEndReq(
+	struct ADAPTER *prAdapter,
+	void *pvSetBuffer,
+	uint32_t u4SetBufferLen,
+	uint32_t *pu4SetInfoLen)
+{
+	struct _NAN_CMD_DATA_END *prNanCmdDataEnd;
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+	ASSERT(pvSetBuffer);
+
+	*pu4SetInfoLen = u4SetBufferLen;
+	prNanCmdDataEnd = (struct _NAN_CMD_DATA_END *) pvSetBuffer;
+
+	if (u4SetBufferLen <
+		sizeof(struct _NAN_CMD_DATA_END))
+		return WLAN_STATUS_INVALID_DATA;
+
+	return nanCmdDataEnd(prAdapter, prNanCmdDataEnd);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
 * \brief After NDI interface create, send create response to wifi hal
@@ -685,11 +773,11 @@ int32_t nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo,
 		struct nlattr **tb)
 {
 	struct _NAN_CMD_DATA_REQUEST rNanCmdDataRequest;
-	struct NanDataReqReceive rDataRcv;
 	int32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint8_t aucPassphrase[64] = {0};
 	uint8_t aucSalt[] = { 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
 				 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	uint32_t u4BufLen;
 
 	kalMemZero(&rNanCmdDataRequest, sizeof(rNanCmdDataRequest));
 
@@ -838,11 +926,11 @@ int32_t nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo,
 		__func__, g_ndpReqNDPE.fgEnNDPE);
 
 	/* Send cmd request */
-	rStatus = nanCmdDataRequest(prGlueInfo->prAdapter, &rNanCmdDataRequest,
-				    &rDataRcv.ndpid,
-				    rDataRcv.initiator_data_addr);
-	DBGLOG(NAN, INFO, "Initiator request to peer " MACSTR ", status = %d\n",
-	       MAC2STR(rNanCmdDataRequest.aucResponderDataAddress), rStatus);
+	rStatus =  kalIoctl(prGlueInfo,
+		nanOidDataRequest,
+		&rNanCmdDataRequest,
+		sizeof(struct _NAN_CMD_DATA_REQUEST),
+		&u4BufLen);
 
 	/* Return status */
 	return rStatus;
@@ -869,6 +957,7 @@ int32_t nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo,
 				 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 	struct BSS_INFO *prBssInfo;
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNanSpecificBssInfo;
+	uint32_t u4BufLen;
 
 	if (prGlueInfo->prAdapter == NULL) {
 		DBGLOG(NAN, ERROR, "prAdapter is null\n");
@@ -1018,12 +1107,13 @@ int32_t nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo,
 
 		dumpMemory8(rNanCmdDataResponse.aucPMK, 32);
 	}
+
 	/* Send data response */
-	rStatus =
-		nanCmdDataResponse(prGlueInfo->prAdapter, &rNanCmdDataResponse);
-	DBGLOG(NAN, INFO,
-	       "Responder response to peer " MACSTR ", status = %d\n",
-	       MAC2STR(rNanCmdDataResponse.aucInitiatorDataAddress), rStatus);
+	rStatus =  kalIoctl(prGlueInfo,
+		nanOidDataResponse,
+		&rNanCmdDataResponse,
+		sizeof(struct _NAN_CMD_DATA_RESPONSE),
+		&u4BufLen);
 
 	/* Return */
 	return rStatus;
@@ -1073,10 +1163,21 @@ int32_t nanNdpEndReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb)
 	}
 
 	for (i = 0; i < instanceIdNum; i++) {
-		rNanCmdDataEnd.ucNDPId = nla_get_u32(
-			tb[MTK_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID_ARRAY] +
-			i * sizeof(uint32_t));
-		rStatus = nanCmdDataEnd(prGlueInfo->prAdapter, &rNanCmdDataEnd);
+		uint32_t u4BufLen;
+
+		if (nanGetFeatureIsSigma(prGlueInfo->prAdapter))
+			rNanCmdDataEnd.ucNDPId = nla_get_u32(
+				tb[MTK_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID_ARRAY] +
+				i * sizeof(uint32_t));
+		else
+			rNanCmdDataEnd.ndp_instance_id = nla_get_u32(
+				tb[MTK_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID_ARRAY] +
+				i * sizeof(uint32_t));
+		rStatus =  kalIoctl(prGlueInfo,
+			nanOidEndReq,
+			&rNanCmdDataEnd,
+			sizeof(struct _NAN_CMD_DATA_END),
+			&u4BufLen);
 	}
 	return rStatus;
 }
