@@ -202,9 +202,12 @@ extern int mtk_wcn_wmt_msgcb_unreg(enum ENUM_WMTDRV_TYPE
 #endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
 extern int wifi_reset_start(void);
 extern int wifi_reset_end(enum ENUM_RESET_STATUS);
+
+
 #if (CFG_SUPPORT_CONNINFRA == 1)
 extern int hifAxiRemove(void);
 extern void kalSetRstEvent(void);
+extern void update_driver_reset_status(uint8_t fgIsResetting);
 #endif
 
 #if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
