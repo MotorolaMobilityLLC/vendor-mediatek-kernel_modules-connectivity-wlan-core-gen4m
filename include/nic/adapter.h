@@ -557,8 +557,10 @@ struct BSS_INFO {
 
 	enum ENUM_MBMC_BN eHwBandIdx;
 	/* TODO other code block  use this in uni_cmd_event.c w/o define */
+#if (CFG_SUPPORT_802_11BE_MLO == 1) || defined(CFG_SUPPORT_UNIFIED_COMMAND)
 	uint8_t ucGroupMldId;
 	uint8_t ucOwnMldId;
+#endif
 
 	uint8_t ucVhtChannelWidthBackup;
 
