@@ -1537,11 +1537,6 @@ void halRxSDIOAggReceiveRFBs(struct ADAPTER *prAdapter)
 		if (u2RxPktNum == 0)
 			continue;
 
-#if CFG_HIF_STATISTICS
-		prRxCtrl->u4TotalRxAccessNum++;
-		prRxCtrl->u4TotalRxPacketNum += u2RxPktNum;
-#endif
-
 		mutex_lock(&prHifInfo->rRxFreeBufQueMutex);
 		fgNoFreeBuf = QUEUE_IS_EMPTY(&prHifInfo->rRxFreeBufQueue);
 		mutex_unlock(&prHifInfo->rRxFreeBufQueMutex);
