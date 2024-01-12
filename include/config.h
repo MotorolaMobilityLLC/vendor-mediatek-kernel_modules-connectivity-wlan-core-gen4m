@@ -718,7 +718,7 @@
 #define CFG_ENABLE_UNIFY_WIPHY 1
 #endif
 
-#define CFG_ENABLE_OFFCHANNEL_TX 0
+#define CFG_ENABLE_OFFCHANNEL_TX 1
 
 /*------------------------------------------------------------------------------
  * Configuration Flags (Linux Only)
