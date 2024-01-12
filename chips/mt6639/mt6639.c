@@ -3321,6 +3321,7 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 #endif
 dump:
 	if (rStatus != WLAN_STATUS_SUCCESS) {
+		WARN_ON_ONCE(TRUE);
 		DBGLOG(INIT, ERROR, "u4Value: 0x%x\n",
 			u4Value);
 		mt6639_dumpWfsyscpupcr(ad);

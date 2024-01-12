@@ -121,6 +121,12 @@ static void mt6653ProcessRxInterrupt(
 static void mt6653WfdmaManualPrefetch(
 	struct GLUE_INFO *prGlueInfo);
 
+#if (CFG_MTK_WIFI_ON_READ_BY_CFG_SPACE == 1) && defined(_HIF_PCIE)
+static void mt6653LowPowerOwnRead(
+	struct ADAPTER *prAdapter,
+	u_int8_t *pfgResult);
+#endif
+
 static void mt6653ReadIntStatusByMsi(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus);
 
@@ -633,7 +639,11 @@ struct BUS_INFO mt6653_bus_info = {
 	.rx_ring_ext_ctrl = mt6653WfdmaRxRingExtCtrl,
 	/* null wfdmaManualPrefetch if want to disable manual mode */
 	.wfdmaManualPrefetch = mt6653WfdmaManualPrefetch,
+#if (CFG_MTK_WIFI_ON_READ_BY_CFG_SPACE == 1) && defined(_HIF_PCIE)
+	.lowPowerOwnRead = mt6653LowPowerOwnRead,
+#else
 	.lowPowerOwnRead = asicConnac3xLowPowerOwnRead,
+#endif
 	.lowPowerOwnSet = asicConnac3xLowPowerOwnSet,
 	.lowPowerOwnClear = asicConnac3xLowPowerOwnClear,
 	.wakeUpWiFi = asicWakeUpWiFi,
@@ -1732,6 +1742,27 @@ static void mt6653WfdmaManualPrefetch(
 	HAL_MCR_WR(prAdapter,
 		WF_WFDMA_HOST_DMA0_WPDMA_RST_DRX_PTR_ADDR, 0xFFFFFFFF);
 }
+
+#if (CFG_MTK_WIFI_ON_READ_BY_CFG_SPACE == 1) && defined(_HIF_PCIE)
+static void mt6653LowPowerOwnRead(
+	struct ADAPTER *prAdapter,
+	u_int8_t *pfgResult)
+{
+	struct mt66xx_chip_info *prChipInfo;
+
+	prChipInfo = prAdapter->chip_info;
+
+	if (prChipInfo->is_support_asic_lp) {
+		u_int32_t u4RegValue = 0;
+		/* read own status from pcie config space: 0x48C[14] */
+		u4RegValue = glReadPcieCfgSpace(PCIE_CFGSPACE_BASE_OFFSET);
+		*pfgResult = (((u4RegValue>>PCIE_CFGSPACE_OWN_STATUS_SHIFT)
+				& PCIE_CFGSPACE_OWN_STATUS_MASK)
+				== 0) ? TRUE : FALSE;
+	} else
+		*pfgResult = TRUE;
+}
+#endif
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 static void mt6653ReadOffloadIntStatus(struct ADAPTER *prAdapter,
@@ -3222,11 +3253,96 @@ static void set_cbinfra_remap(struct ADAPTER *ad)
 }
 #endif
 
-static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
+static uint32_t mt6653_mcu_check_idle(struct ADAPTER *ad)
 {
 #define MCU_IDLE		0x1D1E
+#define MCU_ON_RDY		0xDEAD1234
 
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
 	uint32_t u4Value = 0, u4PollingCnt = 0;
+
+#if (CFG_MTK_WIFI_ON_READ_BY_CFG_SPACE == 1) && defined(_HIF_PCIE)
+	/* 1. check config space */
+	while (TRUE) {
+		if (u4PollingCnt >= 1000) {
+			DBGLOG(INIT, ERROR, "read cfg space timeout: 0x%08x\n",
+				u4Value);
+			break;
+		}
+
+		/* read mcu ilde from pcie config space: 0x490 */
+		u4Value = glReadPcieCfgSpace(PCIE_CFGSPACE_MCU_IDLE_OFFSET);
+
+		if ((u4Value == MCU_IDLE)
+#if (CFG_MTK_ANDROID_WMT == 0)
+			|| (u4Value == MCU_ON_RDY)
+#endif
+		) {
+			DBGLOG(INIT, TRACE, "read 0x%08x by cfg space\n",
+				u4Value);
+			rStatus = WLAN_STATUS_SUCCESS;
+			goto exit;
+		}
+		u4PollingCnt++;
+		kalUdelay(1000);
+	}
+
+	/* 2. check sram */
+	u4PollingCnt = 0;
+	while (TRUE) {
+		if (u4PollingCnt >= 1000) {
+			DBGLOG(INIT, ERROR, "read sram timeout: 0x%08x\n",
+				u4Value);
+			break;
+		}
+
+		HAL_RMCR_RD(ONOFF_READ, ad, 0x7c05b160, &u4Value);
+
+		if ((u4Value == MCU_IDLE)
+#if (CFG_MTK_ANDROID_WMT == 0)
+			|| (u4Value == MCU_ON_RDY)
+#endif
+		) {
+			DBGLOG(INIT, TRACE, "read 0x%08x by sram\n", u4Value);
+			rStatus = WLAN_STATUS_SUCCESS;
+			goto exit;
+		}
+		u4PollingCnt++;
+		kalUdelay(1000);
+	}
+#endif
+
+	/* 3. check CR */
+	u4PollingCnt = 0;
+	while (TRUE) {
+		if (u4PollingCnt >= 1000) {
+			DBGLOG(INIT, ERROR, "read timeout: 0x%08x\n", u4Value);
+			break;
+		}
+
+		HAL_RMCR_RD(ONOFF_READ, ad, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
+			&u4Value);
+
+		if ((u4Value == MCU_IDLE)
+#if (CFG_MTK_ANDROID_WMT == 0)
+			|| (u4Value == MCU_ON_RDY)
+#endif
+		) {
+			DBGLOG(INIT, TRACE, "read 0x%08x by CR\n", u4Value);
+			rStatus = WLAN_STATUS_SUCCESS;
+			goto exit;
+		}
+		u4PollingCnt++;
+		kalUdelay(1000);
+	}
+
+exit:
+	return rStatus;
+}
+
+static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
+{
+	uint32_t u4Value = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 #if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
 	struct mt66xx_chip_info *prChipInfo = NULL;
@@ -3255,21 +3371,11 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 		goto dump;
 #endif
 
-	while (TRUE) {
-		if (u4PollingCnt >= 1000) {
-			DBGLOG(INIT, ERROR, "timeout.\n");
-			rStatus = WLAN_STATUS_FAILURE;
-			goto dump;
-		}
-
-		HAL_RMCR_RD(ONOFF_READ, ad, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
-			&u4Value);
-		if (u4Value == MCU_IDLE)
-			break;
-
-		u4PollingCnt++;
-		kalUdelay(1000);
-	}
+	HAL_MCR_WR(ad,
+		CONN_HOST_CSR_TOP_CSR_AP2CONN_ACCESS_DETECT_EN_ADDR, 0x0);
+	rStatus = mt6653_mcu_check_idle(ad);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		goto dump;
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	if (connv3_ext_32k_on()) {
@@ -3284,8 +3390,7 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 
 dump:
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, ERROR, "u4Value: 0x%x\n",
-			u4Value);
+		WARN_ON_ONCE(TRUE);
 		mt6653_dumpWfsyscpupcr(ad);
 		mt6653_dumpPcGprLog(ad);
 		mt6653_dumpN45CoreReg(ad);

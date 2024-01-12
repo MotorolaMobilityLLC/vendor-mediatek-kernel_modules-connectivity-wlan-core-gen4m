@@ -591,6 +591,15 @@ do { \
 	     == (_checkItem << prChipInfo->sw_ready_bit_offset)) \
 		*_pfgResult = TRUE; \
 } while (0)
+#elif (CFG_MTK_WIFI_ON_READ_BY_CFG_SPACE == 1) && defined(_HIF_PCIE)
+#define HAL_WIFI_FUNC_READY_CHECK(_prAdapter, _checkItem, _pfgResult) \
+do { \
+	uint32_t u4Value = 0; \
+	u4Value = glReadPcieCfgSpace(PCIE_CFGSPACE_BASE_OFFSET); \
+	*_pfgResult = (((u4Value >> PCIE_CFGSPACE_FW_STATUS_SYNC_SHIFT) \
+		       & PCIE_CFGSPACE_FW_STATUS_SYNC_MASK) \
+		       == (PCIE_CFGSPACE_FW_STATUS_SYNC_MASK)) ? TRUE : FALSE; \
+} while (0)
 #else
 #define HAL_WIFI_FUNC_READY_CHECK(_prAdapter, _checkItem, _pfgResult) \
 do { \
