@@ -255,7 +255,7 @@ nanGetBssIdxbyBand(IN struct ADAPTER *prAdapter,
 			prAdapter,
 			prNANSpecInfo->ucBssIndex);
 
-		if (prBssInfo->eBand == eBand)
+		if ((prBssInfo != NULL) && (prBssInfo->eBand == eBand))
 			break;
 	}
 
@@ -544,8 +544,10 @@ nanDevSendEnableRequestToCnm(IN struct ADAPTER *prAdapter)
 			"[%s] prNANSpecInfo is NULL\n", __func__);
 		return WLAN_STATUS_FAILURE;
 	}
+
 	prnanBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, prNANSpecInfo->ucBssIndex);
+
 	prMsgChReq =
 		(struct MSG_CH_REQ *)cnmMemAlloc(prAdapter,
 		RAM_TYPE_MSG,
