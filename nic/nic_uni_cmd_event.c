@@ -8435,7 +8435,8 @@ void nicUniEventQueryCnmInfo(struct ADAPTER
 			      (struct UNI_EVENT_CNM_BSS_INFO *)info->aucBssInfo;
 
 			for (i = 0; i < info->ucBssNum; i++) {
-				if (i > BSSID_NUM) break;
+				if (i > MAX_BSSID_NUM)
+					break;
 
 				legacy.ucBssInuse[i] = bss->ucBssInuse;
 				legacy.ucBssActive[i] = bss->ucBssActive;
@@ -8473,7 +8474,7 @@ void nicUniEventQueryCnmInfo(struct ADAPTER
 				legacy.ucChSco[b][i] = chnl->ucChSco;
 				legacy.ucChNetNum[b][i] = chnl->ucChBssNum;
 
-				for (j = 0; j < BSSID_NUM; j++) {
+				for (j = 0; j < MAX_BSSID_NUM; j++) {
 					if (chnl->u2ChBssBitmapList & BIT(j))
 						legacy.ucChBssList[b][i][j] = 1;
 				}

@@ -15827,7 +15827,7 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 				   i4TotalLen - i4BytesWritten, "\n");
 
-	for (ucBssIdx = BSSID_0; ucBssIdx < (BSSID_NUM + 1); ucBssIdx++) {
+	for (ucBssIdx = BSSID_0; ucBssIdx < (MAX_BSSID_NUM + 1); ucBssIdx++) {
 
 		prBssInfo = prGlueInfo->prAdapter->aprBssInfo[ucBssIdx];
 		if (!prBssInfo)

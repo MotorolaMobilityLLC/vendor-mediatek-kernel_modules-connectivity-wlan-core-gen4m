@@ -1367,20 +1367,20 @@ struct PARAM_GET_CNM_T {
 	uint8_t	ucChBw[ENUM_BAND_NUM][MAX_OP_CHNL_NUM];
 	uint8_t	ucChSco[ENUM_BAND_NUM][MAX_OP_CHNL_NUM];
 	uint8_t	ucChNetNum[ENUM_BAND_NUM][MAX_OP_CHNL_NUM];
-	uint8_t	ucChBssList[ENUM_BAND_NUM][MAX_OP_CHNL_NUM][BSSID_NUM];
+	uint8_t	ucChBssList[ENUM_BAND_NUM][MAX_OP_CHNL_NUM][MAX_BSSID_NUM];
 
-	uint8_t	ucBssInuse[BSSID_NUM + 1];
-	uint8_t	ucBssActive[BSSID_NUM + 1];
-	uint8_t	ucBssConnectState[BSSID_NUM + 1];
+	uint8_t	ucBssInuse[MAX_BSSID_NUM + 1];
+	uint8_t	ucBssActive[MAX_BSSID_NUM + 1];
+	uint8_t	ucBssConnectState[MAX_BSSID_NUM + 1];
 
-	uint8_t	ucBssCh[BSSID_NUM + 1];
-	uint8_t	ucBssDBDCBand[BSSID_NUM + 1];
-	uint8_t	ucBssWmmSet[BSSID_NUM + 1];
-	uint8_t	ucBssWmmDBDCBand[BSSID_NUM + 1];
-	uint8_t	ucBssOMACSet[BSSID_NUM + 1];
-	uint8_t	ucBssOMACDBDCBand[BSSID_NUM + 1];
-	uint8_t	ucBssOpTxNss[BSSID_NUM + 1];
-	uint8_t	ucBssOpRxNss[BSSID_NUM + 1];
+	uint8_t	ucBssCh[MAX_BSSID_NUM + 1];
+	uint8_t	ucBssDBDCBand[MAX_BSSID_NUM + 1];
+	uint8_t	ucBssWmmSet[MAX_BSSID_NUM + 1];
+	uint8_t	ucBssWmmDBDCBand[MAX_BSSID_NUM + 1];
+	uint8_t	ucBssOMACSet[MAX_BSSID_NUM + 1];
+	uint8_t	ucBssOMACDBDCBand[MAX_BSSID_NUM + 1];
+	uint8_t	ucBssOpTxNss[MAX_BSSID_NUM + 1];
+	uint8_t	ucBssOpRxNss[MAX_BSSID_NUM + 1];
 
 	/* Reserved fields */
 	uint8_t	au4Reserved[54]; /*Total 160 byte*/
