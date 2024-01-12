@@ -264,11 +264,11 @@ static struct test_datalen_limit_map datalen_limit[] = {
 #endif
 
 static u_int8 test_he_bpscs[] = {
-	1, 2, 2, 4, 4, 6, 6, 6, 8, 8, 10, 10, 12, 12	/* MCS0~13 */
+	1, 2, 2, 4, 4, 6, 6, 6, 8, 8, 10, 10, 12, 12, 1, 1	/* MCS0~13 */
 };
 
 static u_int8 test_he_rate_density[] = {
-	2, 2, 4, 2, 4, 3, 4, 6, 4, 6, 4, 6, 4, 6	/* MCS0~13 */
+	2, 2, 4, 2, 4, 3, 4, 6, 4, 6, 4, 6, 4, 6, 2, 2	/* MCS0~13 */
 };
 
 static u_int8 test_ltf_sym[] = {
@@ -1856,7 +1856,7 @@ s_int32 mt_engine_calc_phy(
 {
 	u_char rate_den = 0;
 
-	rate_den = test_he_rate_density[ru_info->rate & ~BIT(5)];
+	rate_den = test_he_rate_density[ru_info->rate & ~BIT(4)];
 	mt_engine_calc_symbol_by_bytes(ru_info, stbc, rate_den, apep_length);
 	mt_engine_calc_afactor(ru_info);
 	mt_engine_calc_pe_disamb(ru_info, ltf_gi, max_tpe);
