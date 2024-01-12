@@ -220,6 +220,7 @@ VOID dumpMemory8(IN PUINT_8 pucStartAddr, IN UINT_32 u4Length)
 					 pucStartAddr[12], pucStartAddr[13]);
 				break;
 			case 15:
+			default:
 				LOG_FUNC(
 				"(%p) %02x %02x %02x %02x  %02x %02x %02x %02x - %02x %02x %02x %02x  %02x %02x %02x\n",
 					 pucStartAddr,
@@ -227,8 +228,6 @@ VOID dumpMemory8(IN PUINT_8 pucStartAddr, IN UINT_32 u4Length)
 					 pucStartAddr[4], pucStartAddr[5], pucStartAddr[6], pucStartAddr[7],
 					 pucStartAddr[8], pucStartAddr[9], pucStartAddr[10], pucStartAddr[11],
 					 pucStartAddr[12], pucStartAddr[13], pucStartAddr[14]);
-				break;
-			default:
 				break;
 			}
 			u4Length = 0;
@@ -354,13 +353,12 @@ VOID dumpMemory32(IN PUINT_32 pu4StartAddr, IN UINT_32 u4Length)
 					 pu4StartAddr[0], pu4StartAddr[1], pu4StartAddr[2], pucAddr[1], pucAddr[0]);
 				break;
 			case 15:
+			default:
 				pucAddr = (PUINT_8) &pu4StartAddr[3];
 				LOG_FUNC("(%p) %08x %08x %08x --%02x%02x%02x\n",
 					 pu4StartAddr,
 					 pu4StartAddr[0], pu4StartAddr[1], pu4StartAddr[2],
 					 pucAddr[2], pucAddr[1], pucAddr[0]);
-				break;
-			default:
 				break;
 			}
 			u4Length = 0;
