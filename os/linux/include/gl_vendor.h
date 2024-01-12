@@ -68,6 +68,11 @@
 #define MTK_NL80211_TRIGGER_RESET 15
 #define COMB_MATRIX_LEN 6
 
+#define NL80211_VENDOR_SUBCMD_SET_TX_LAT_MONTR_PARAM 49
+
+#define NL80211_VENDOR_SUBCMD_GET_WFD_PRED_TX_BR 50
+#define NL80211_VENDOR_SUBCMD_SET_WFD_TX_BR_MONTR 51
+
 #define WIFI_VENDOR_ATTR_FEATURE_FLAGS 7
 #define WIFI_VENDOR_DATA_OP_MODE_CHANGE(bssIdx, channelBw, TxNss, RxNss) \
 	(uint32_t)((((bssIdx) << 24) + ((channelBw) << 16) + \
@@ -227,7 +232,6 @@ enum WIFI_STATS_ATTRIBUTE {
 	WIFI_ATTRIBUTE_STATS_MAX,
 };
 
-#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
 #define TX_LAT_MONTR_INTVL_MIN		10
 #define TX_LAT_MONTR_INTVL_MAX		5000
 #define TX_LAT_MONTR_CRIT_MIN		1
@@ -254,7 +258,6 @@ enum WIFI_WFD_ATTRIBUTE {
 	WIFI_ATTR_WFD_PRED_TX_BR   = 1,
 	WIFI_ATTR_WFD_MAX
 };
-#endif
 
 enum WIFI_RSSI_MONITOR_ATTRIBUTE {
 	WIFI_ATTRIBUTE_RSSI_MONITOR_INVALID	  = 0,
@@ -579,6 +582,8 @@ extern const struct nla_policy nla_get_csi_policy[
 		WIFI_ATTRIBUTE_CSI_MAX + 1];
 #endif
 
+extern const struct nla_policy mtk_wfd_tx_br_montr_policy[
+		WIFI_ATTR_WFD_TX_BR_MONTR_MAX + 1];
 /*******************************************************************************
  *                           MACROS
  *******************************************************************************
@@ -1369,6 +1374,15 @@ int mtk_cfg80211_vendor_string_cmd(struct wiphy *wiphy,
 	struct wireless_dev *wdev, const void *data, int data_len);
 
 int mtk_cfg80211_vendor_get_trx_stats(struct wiphy *wiphy,
+					   struct wireless_dev *wdev,
+					   const void *data,
+					   int data_len);
+
+int mtk_cfg80211_vendor_set_wfd_tx_br_montr(struct wiphy *wiphy,
+					   struct wireless_dev *wdev,
+					   const void *data,
+					   int data_len);
+int mtk_cfg80211_vendor_get_wfd_pred_tx_br(struct wiphy *wiphy,
 					   struct wireless_dev *wdev,
 					   const void *data,
 					   int data_len);
