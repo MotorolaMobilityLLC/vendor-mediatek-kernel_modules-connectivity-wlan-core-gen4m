@@ -4118,8 +4118,7 @@ static int initWlan(void)
 
 #if CFG_MTK_ANDROID_EMI
 	/* Set WIFI EMI protection to consys permitted on system boot up */
-	kalSetEmiMpuProtection(gConEmiPhyBase, WIFI_EMI_MEM_OFFSET,
-			       WIFI_EMI_MEM_SIZE, true);
+	kalSetEmiMpuProtection(gConEmiPhyBase, true);
 #endif
 	return ret;
 }				/* end of initWlan() */
