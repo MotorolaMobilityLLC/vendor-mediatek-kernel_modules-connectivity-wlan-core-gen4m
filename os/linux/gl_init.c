@@ -158,6 +158,9 @@ module_param_named(p2p, gprifnamep2p, charp, 0000);
 module_param_named(ap, gprifnameap, charp, 0000);
 #endif /* CFG_DRIVER_INF_NAME_CHANGE */
 
+char *gprifnamenvram = "";
+module_param_named(nvram, gprifnamenvram, charp, 0000);
+
 /* NIC interface name */
 #ifdef CFG_COMBO_SLT_GOLDEN
 #define NIC_INF_NAME    "ra%d"
@@ -1737,9 +1740,38 @@ static void glLoadNvram(struct GLUE_INFO *prGlueInfo,
 	struct REG_INFO *prRegInfo)
 {
 	struct WIFI_CFG_PARAM_STRUCT *prNvramSettings;
+	const struct firmware *fw = NULL;
+	int err = 0;
 
 	ASSERT(prRegInfo);
 	ASSERT(prGlueInfo);
+
+	/*
+	* In Linux scenario, bring nvram by insmod
+	* If there is both exit nvram in wmtWifi & insmod,
+	* it will apply insomd nvram
+	*/
+	if (gprifnamenvram != NULL) {
+		err = request_firmware(&fw, gprifnamenvram, prGlueInfo->prDev);
+
+		if (!err) {
+			DBGLOG(INIT, INFO,
+				"Find nvram file: %s by insmod data:0x%p,size:%d\n",
+				gprifnamenvram,
+				fw->data,
+				fw->size);
+
+			/*
+			*  No need to handle CRC
+			*  WlanLoadManufactureData will parse nvram by TLV
+			*/
+			if (fw->size > 0 && fw->size <= sizeof(g_aucNvram)) {
+				kalMemCopy(g_aucNvram, fw->data, fw->size);
+				g_NvramFsm = NVRAM_STATE_READY;
+			}
+			release_firmware(fw);
+		}
+	}
 
 	DBGLOG(INIT, INFO, "g_NvramFsm = %d\n", g_NvramFsm);
 	if (g_NvramFsm != NVRAM_STATE_READY) {

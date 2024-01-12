@@ -155,7 +155,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_SET_MDVT] = nicUniCmdSetMdvt,
 	[CMD_ID_SET_COUNTRY_POWER_LIMIT_PER_RATE] =
 			nicUniCmdSetCountryPwrLimitPerRate,
-	[CMD_ID_SET_NVRAM_SETTINGS] = nicUniCmdNotSupport,
+	[CMD_ID_SET_NVRAM_SETTINGS] = nicUniCmdSetNvramSettings,
 	[CMD_ID_TEST_CTRL] = nicUniCmdTestmodeCtrl,
 	[CMD_ID_ACCESS_RX_STAT] = nicUniCmdTestmodeRxStat,
 	[CMD_ID_SET_LOW_LATENCY_MODE] = nicUniCmdNotSupport,
