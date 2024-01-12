@@ -2416,9 +2416,28 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 		/* Radio Measurement is on-going, schedule to next Measurement
 		 ** Element
 		 */
-	} else
-		rrmStartNextMeasurement(prAdapter, FALSE, ucBssIndex);
+	} else {
+#if CFG_SUPPORT_802_11K
+		struct LINK *prBSSDescList =
+			&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
+		struct BSS_DESC *prBssDesc = NULL;
+		uint32_t count = 0;
 
+		/* collect updated bss for beacon request measurement */
+		LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
+				    struct BSS_DESC)
+		{
+			if (TIME_BEFORE(prRmReq->rScanStartTime,
+				prBssDesc->rUpdateTime)) {
+				rrmCollectBeaconReport(
+					prAdapter, prBssDesc, ucBssIndex);
+				count++;
+			}
+		}
+		DBGLOG(RRM, INFO, "BCN report Active Mode, total: %d\n", count);
+#endif
+		rrmStartNextMeasurement(prAdapter, FALSE, ucBssIndex);
+	}
 }				/* end of aisFsmRunEventScanDone() */
 
 /*----------------------------------------------------------------------------*/
