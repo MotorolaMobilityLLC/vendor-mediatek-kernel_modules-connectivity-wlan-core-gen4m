@@ -4603,6 +4603,22 @@ uint32_t ServiceWlanOid(void *winfos,
 		if (prTestWinfo->chip_cap.support_6g)
 			capability->ph_cap.bandwidth |= BITS(3, 4);
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+
+		if (prTestWinfo->chip_id == 0x7903) {
+			/* band0 (2.4G) */
+			capability->ph_cap.channel_band_dbdc = BIT(0);
+			/* band2 (5G+6G) */
+			capability->ph_cap.channel_band_dbdc_ext = BIT(1)+BIT(2);
+		}
+		else {
+			/* band0 (2.4G) band1 (5G+6G) */
+			capability->ph_cap.channel_band_dbdc = BIT(0)+BIT(17)+BIT(18);
+			/* band3 (2.4G+5G+6G) */
+			capability->ph_cap.channel_band_dbdc_ext = BIT(16)+BIT(17)+BIT(18);
+		}
+#else
+
 		/* ph_cap.channel_band_dbdc */
 		if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED) {
 			/* band0 (2.4G + 5G) */
@@ -4611,13 +4627,14 @@ uint32_t ServiceWlanOid(void *winfos,
 			if (prTestWinfo->chip_cap.support_6g)
 				capability->ph_cap.channel_band_dbdc |= BIT(2);
 		} else {
-			/* 6635: band0 (2.4G);  band1 (5G) */
+			/* 6635: band0 (2.4G);	band1 (5G) */
 			capability->ph_cap.channel_band_dbdc = BIT(0)+BIT(17);
 
 			/* 6637: band0 (2.4G);	band1 (5G+6G) */
 			if (prTestWinfo->chip_cap.support_6g)
 				capability->ph_cap.channel_band_dbdc |= BIT(18);
 		}
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
 
 		/* ext_cap.feature1: BIT0: AntSwap */
 #if CFG_SUPPORT_ANT_SWAP
@@ -4629,6 +4646,10 @@ uint32_t ServiceWlanOid(void *winfos,
 		/* currently, only AX support */
 		if (capability->ph_cap.protocol & BIT(3))
 			capability->ext_cap.feature1 |= BIT(1);
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+		capability->ext_cap.feature1 |= BIT(2);
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
 
 		return WLAN_STATUS_SUCCESS;
 	/* ICAP Operation Function -- Start*/
