@@ -1352,6 +1352,12 @@ int wlanParseAkmSuites(uint32_t *au4AkmSuites, uint32_t u4AkmSuitesCount,
 			case WLAN_AKM_SUITE_PSK:
 				u4AkmSuite = WPA_AKM_SUITE_PSK;
 				break;
+			case WLAN_AKM_SUITE_8021X_SHA256:
+				u4AkmSuite = RSN_AKM_SUITE_802_1X_SHA256;
+				break;
+			case WLAN_AKM_SUITE_PSK_SHA256:
+				u4AkmSuite = RSN_AKM_SUITE_PSK_SHA256;
+				break;
 			default:
 				DBGLOG(REQ, WARN, "invalid Akm Suite (%08x)\n",
 				       au4AkmSuites[i]);
