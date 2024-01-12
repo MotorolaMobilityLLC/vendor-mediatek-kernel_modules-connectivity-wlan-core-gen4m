@@ -224,14 +224,14 @@
 
 /* CONNAC3X */
 #define CONNAC3X_WIFI_LWTBL_BASE 0x820d4000
-#define CONNAC3X_WIFI_LWTBL_GROUP_MASK 0x00000007 /* GROUP[2..0] */
-#define CONNAC3X_WIFI_LWTBL_GROUP_SHFT 0
+#define CONNAC3X_WIFI_LWTBL_GROUP_MASK WF_WTBLON_TOP_WDUCR_GROUP_MASK
+#define CONNAC3X_WIFI_LWTBL_GROUP_SHFT WF_WTBLON_TOP_WDUCR_GROUP_SHFT
 
 #define CONNAC3X_WIFI_UWTBL_BASE 0x820c4000
-#define CONNAC3X_WIFI_UWTBL_TARGET_MASK 0x80000000 /* TARGET[31] */
-#define CONNAC3X_WIFI_UWTBL_TARGET_SHFT 31
-#define CONNAC3X_WIFI_UWTBL_GROUP_MASK 0x0000000F /* GROUP[3..0] */
-#define CONNAC3X_WIFI_UWTBL_GROUP_SHFT 0
+#define CONNAC3X_WIFI_UWTBL_TARGET_MASK WF_UWTBL_TOP_WDUCR_TARGET_MASK
+#define CONNAC3X_WIFI_UWTBL_TARGET_SHFT WF_UWTBL_TOP_WDUCR_TARGET_SHFT
+#define CONNAC3X_WIFI_UWTBL_GROUP_MASK WF_UWTBL_TOP_WDUCR_GROUP_ADDR
+#define CONNAC3X_WIFI_UWTBL_GROUP_SHFT WF_UWTBL_TOP_WDUCR_GROUP_SHFT
 
 
 /* UWTBL DW 5 */
@@ -432,14 +432,12 @@ struct CONNAC3X_WIFI_UNI_CMD {
 
 union WTBL_LMAC_DW0 {
 	struct {
-		uint32_t addr_4:8;
-		uint32_t addr_5:8;
+		uint32_t peer_addr:15;
 		uint32_t muar_idx:6;
 		uint32_t rc_a1:1;
 		uint32_t kid:2;
 		uint32_t rc_id:1;
-		uint32_t fd:1;
-		uint32_t td:1;
+		uint32_t band:2;
 		uint32_t rv:1;
 		uint32_t rc_a2:1;
 		uint32_t wpi_flg:1;
@@ -450,7 +448,7 @@ union WTBL_LMAC_DW0 {
 
 union WTBL_LMAC_DW1 {
 	struct {
-		uint32_t addr_0;
+		uint32_t peer_addr;
 	} field;
 	uint32_t word;
 };
@@ -479,9 +477,9 @@ union WTBL_LMAC_DW2 {
 		uint32_t spp_en:1;
 		uint32_t wpi_even:1;
 		uint32_t aad_om:1;
-		uint32_t cipher_suit:5;
-		uint32_t cipher_suit_igtk:2;
-		uint32_t rsvd:1;
+		uint32_t cipher_suit_pgkt:5;
+		uint32_t fd:1;
+		uint32_t td:1;
 		uint32_t sw:1;
 		uint32_t ul:1;
 		uint32_t tx_ps:1;
@@ -489,6 +487,7 @@ union WTBL_LMAC_DW2 {
 		uint32_t ht:1;
 		uint32_t vht:1;
 		uint32_t he:1;
+		uint32_t eht:1;
 		uint32_t mesh:1;
 	} field;
 	uint32_t word;
@@ -497,55 +496,41 @@ union WTBL_LMAC_DW2 {
 union WTBL_LMAC_DW3 {
 	struct {
 		uint32_t wmm_q:2;
-		uint32_t rxd_dup_mode:2;
-		uint32_t vlan_2e_th:1;
-		uint32_t pad:3;
-		uint32_t pfmu_index:8;
-		uint32_t bf_rsvd:8;
-		uint32_t ribf:1;
-		uint32_t bf_rsvd2:4;
-		uint32_t tebf:1;
-		uint32_t tebf_vht:1;
-		uint32_t tebf_he:1;
-	} field;
-
-	struct {
-		uint32_t wmm_q:2;
-		uint32_t rxd_dup_mode:2;
-		uint32_t vlan_2e_th:1;
+		uint32_t eht_sig_mcs:2;
+		uint32_t hdrt_mode:1;
 		uint32_t beam_chg:1;
-		uint32_t ba_mode:2;
+		uint32_t eht_ltf_sym_num_opt:2;
 		uint32_t pfmu_index:8;
 		uint32_t ulpf_index:8;
 		uint32_t ribf:1;
 		uint32_t ulpf:1;
+		uint32_t rsvd:1;
+		uint32_t tbf_ht:1;
+		uint32_t tbf_vht:1;
+		uint32_t tbf_he:1;
+		uint32_t tbf_eht:1;
 		uint32_t ign_fbk:1;
-		uint32_t bf_rsvd2:2;
-		uint32_t tebf:1;
-		uint32_t tebf_vht:1;
-		uint32_t tebf_he:1;
-	} field_v2;
+	} field;
 	uint32_t word;
 };
 
 union WTBL_LMAC_DW4 {
 	struct {
-		uint32_t ant_id_sts0:3;
-		uint32_t ant_id_sts1:3;
-		uint32_t ant_id_sts2:3;
-		uint32_t ant_id_sts3:3;
-		uint32_t ant_id_sts4:3;
-		uint32_t ant_id_sts5:3;
-		uint32_t ant_id_sts6:3;
-		uint32_t ant_id_sts7:3;
-		uint32_t cascad:1;
+		uint32_t ant_id0:3;
+		uint32_t ant_id1:3;
+		uint32_t ant_id2:3;
+		uint32_t ant_id3:3;
+		uint32_t ant_id4:3;
+		uint32_t ant_id5:3;
+		uint32_t ant_id6:3;
+		uint32_t ant_id7:3;
+		uint32_t pe:2;
+		uint32_t dis_rhtr:1;
 		uint32_t ldpc_ht:1;
 		uint32_t ldpc_vht:1;
 		uint32_t ldpc_he:1;
-		uint32_t dis_rhtr:1;
-		uint32_t all_ack:1;
-		uint32_t drop:1;
-		uint32_t ack_en:1;
+		uint32_t ldpc_eht:1;
+		uint32_t pad:1;
 	} field;
 	uint32_t word;
 };
@@ -559,12 +544,11 @@ union WTBL_LMAC_DW5 {
 		uint32_t dyn_bw:1;
 		uint32_t mmss:3;
 		uint32_t usr:1;
-		uint32_t sr_r:2;
-		uint32_t beam_chg:1;
+		uint32_t sr_r:3;
 		uint32_t sr_abort:1;
 		uint32_t tx_power_offset:6;
-		uint32_t mpdu_size:2;
-		uint32_t pe:2;
+		uint32_t ltf_eht:2;
+		uint32_t gi_eht:2;
 		uint32_t doppl:1;
 		uint32_t txop_ps_cap:1;
 		uint32_t du_i_psm:1;
@@ -572,50 +556,15 @@ union WTBL_LMAC_DW5 {
 		uint32_t psm:1;
 		uint32_t skip_tx:1;
 	} field;
-
-	struct {
-		uint32_t af:3;
-		uint32_t af_he:2;
-		uint32_t rts:1;
-		uint32_t smps:1;
-		uint32_t dyn_bw:1;
-		uint32_t mmss:3;
-		uint32_t usr:1;
-		uint32_t sr_r:3;
-		uint32_t sr_abort:1;
-		uint32_t tx_power_offset:6;
-		uint32_t mpdu_size:2;
-		uint32_t pe:2;
-		uint32_t doppl:1;
-		uint32_t txop_ps_cap:1;
-		uint32_t du_i_psm:1;
-		uint32_t i_psm:1;
-		uint32_t psm:1;
-		uint32_t skip_tx:1;
-	} field_v2;
 	uint32_t word;
 };
 
 union WTBL_LMAC_DW6 {
 	struct {
-		uint32_t ba_win_size_tid0:4;
-		uint32_t ba_win_size_tid1:4;
-		uint32_t ba_win_size_tid2:4;
-		uint32_t ba_win_size_tid3:4;
-		uint32_t ba_win_size_tid4:4;
-		uint32_t ba_win_size_tid5:4;
-		uint32_t ba_win_size_tid6:4;
-		uint32_t ba_win_size_tid7:4;
-	} field;
-	uint32_t word;
-};
-
-union WTBL_LMAC_DW7 {
-	struct {
-		uint32_t cb_rn:3;
+		uint32_t cbrn:3;
 		uint32_t dbnss_en:1;
-		uint32_t bafen:1;
-		uint32_t rdg_ba:1;
+		uint32_t baf_en:1;
+		uint32_t rdgba:1;
 		uint32_t r:1;
 		uint32_t spe_idx:5;
 		uint32_t g2:1;
@@ -630,6 +579,20 @@ union WTBL_LMAC_DW7 {
 		uint32_t g4_he:2;
 		uint32_t g8_he:2;
 		uint32_t g16_he:2;
+	} field;
+	uint32_t word;
+};
+
+union WTBL_LMAC_DW7 {
+	struct {
+		uint32_t ba_win_size_tid0:4;
+		uint32_t ba_win_size_tid1:4;
+		uint32_t ba_win_size_tid2:4;
+		uint32_t ba_win_size_tid3:4;
+		uint32_t ba_win_size_tid4:4;
+		uint32_t ba_win_size_tid5:4;
+		uint32_t ba_win_size_tid6:4;
+		uint32_t ba_win_size_tid7:4;
 	} field;
 	uint32_t word;
 };
@@ -650,68 +613,56 @@ union WTBL_LMAC_DW8 {
 union WTBL_LMAC_DW9 {
 	struct {
 		uint32_t rx_avg_mpdu_size:14;
-		uint32_t pad:4;
-		uint32_t pritx_dcm:1;
-		uint32_t pritx_er160:1;
+		uint32_t pad:1;
+		uint32_t pritx_sw_mode:1;
 		uint32_t pritx_ersu:1;
-		uint32_t fcap:2;
+		uint32_t pritx_plr:1;
+		uint32_t pritx_dcm:1;
+		uint32_t pritx_er106t:1;
+		uint32_t fcap:3;
 		uint32_t mpdu_fail_cnt:3;
 		uint32_t mpdu_ok_cnt:3;
 		uint32_t rate_idx:3;
 	} field;
-
-	struct {
-		uint32_t rx_avg_mpdu_size:14;
-		uint32_t pad:2;
-		uint32_t pritx_sw_mode:1;
-		uint32_t pritx_plr:1;
-		uint32_t pritx_dcm:1;
-		uint32_t pritx_er160:1;
-		uint32_t pritx_ersu:1;
-		uint32_t fcap:2;
-		uint32_t mpdu_fail_cnt:3;
-		uint32_t mpdu_ok_cnt:3;
-		uint32_t rate_idx:3;
-	} field_v2;
 	uint32_t word;
 };
 
 union WTBL_LMAC_DW10 {
 	struct {
-		uint32_t rate1:14;
-		uint32_t pad:2;
-		uint32_t rate2:14;
-		uint32_t pad2:2;
+		uint32_t rate1:15;
+		uint32_t pad:1;
+		uint32_t rate2:15;
+		uint32_t pad2:1;
 	} field;
 	uint32_t word;
 };
 
 union WTBL_LMAC_DW11 {
 	struct {
-		uint32_t rate3:14;
-		uint32_t pad:2;
-		uint32_t rate4:14;
-		uint32_t pad2:2;
+		uint32_t rate3:15;
+		uint32_t pad:1;
+		uint32_t rate4:15;
+		uint32_t pad2:1;
 	} field;
 	uint32_t word;
 };
 
 union WTBL_LMAC_DW12 {
 	struct {
-		uint32_t rate5:14;
-		uint32_t pad:2;
-		uint32_t rate6:14;
-		uint32_t pad2:2;
+		uint32_t rate5:15;
+		uint32_t pad:1;
+		uint32_t rate6:15;
+		uint32_t pad2:1;
 	} field;
 	uint32_t word;
 };
 
 union WTBL_LMAC_DW13 {
 	struct {
-		uint32_t rate7:14;
-		uint32_t pad:2;
-		uint32_t rate8:14;
-		uint32_t pad2:2;
+		uint32_t rate7:15;
+		uint32_t pad:1;
+		uint32_t rate8:15;
+		uint32_t pad2:1;
 	} field;
 	uint32_t word;
 };
@@ -721,6 +672,13 @@ union WTBL_LMAC_DW14 {
 		uint32_t rate_1_tx_cnt:16;
 		uint32_t rate_1_fail_cnt:16;
 	} field;
+
+	struct {
+		uint32_t pad:12;
+		uint32_t cipher_suit_igtk:2;
+		uint32_t cipher_suit_bigtk:2;
+		uint32_t pad2:16;
+	} field_v2;
 	uint32_t word;
 };
 
@@ -798,61 +756,104 @@ union WTBL_LMAC_DW27 {
 
 union WTBL_LMAC_DW28 {
 	struct {
-		uint32_t usr_rssi:9;
-		uint32_t usr_snr:6;
-		uint32_t pad:1;
-		uint32_t rapid_reaction_rate:11;
-		uint32_t pad2:3;
-		uint32_t ht_amsdu:1;
-		uint32_t amsdu_cros_lg:1;
+		uint32_t related_idx0:12;
+		uint32_t related_band0:2;
+		uint32_t pri_mld_band:2;
+		uint32_t related_idx1:12;
+		uint32_t related_band1:2;
+		uint32_t sec_mld_band:2;
 	} field;
-
-	struct {
-		uint32_t om_info:12;
-		uint32_t rxd_dup_om_chg:1;
-		uint32_t pad:19;
-	} field_v2;
 	uint32_t word;
 };
 
 union WTBL_LMAC_DW29 {
 	struct {
-		uint32_t resp_rcpi_0:8;
-		uint32_t resp_rcpi_1:8;
-		uint32_t resp_rcpi_2:8;
-		uint32_t resp_rcpi_3:8;
-	} field;
-
-	struct {
-		uint32_t usr_rssi:9;
-		uint32_t usr_snr:6;
+		uint32_t dispatch_policy0:2;
+		uint32_t dispatch_policy1:2;
+		uint32_t dispatch_policy2:2;
+		uint32_t dispatch_policy3:2;
+		uint32_t dispatch_policy4:2;
+		uint32_t dispatch_policy5:2;
+		uint32_t dispatch_policy6:2;
+		uint32_t dispatch_policy7:2;
+		uint32_t own_mld_id:6;
+		uint32_t emlsr0:1;
+		uint32_t emlmr0:1;
+		uint32_t emlsr1:1;
+		uint32_t emlmr1:1;
+		uint32_t emlsr2:1;
+		uint32_t emlmr2:1;
 		uint32_t pad:1;
-		uint32_t rapid_reaction_rate:11;
-		uint32_t pad2:3;
-		uint32_t ht_amsdu:1;
-		uint32_t amsdu_cros_lg:1;
-	} field_2;
+		uint32_t str_bitmap:3;
+	} field;
 	uint32_t word;
 };
 
 union WTBL_LMAC_DW30 {
 	struct {
-		uint32_t resp_rcpi_4:8;
-		uint32_t resp_rcpi_5:8;
-		uint32_t resp_rcpi_6:8;
-		uint32_t resp_rcpi_7:8;
+		uint32_t dispatch_order:7;
+		uint32_t dispatch_ratio:7;
+		uint32_t pad:2;
+		uint32_t link_mgf:16;
 	} field;
+	uint32_t word;
+};
 
+union WTBL_LMAC_DW31 {
+	struct {
+		uint32_t nego_winsize0:3;
+		uint32_t nego_winsize1:3;
+		uint32_t nego_winsize2:3;
+		uint32_t nego_winsize3:3;
+		uint32_t nego_winsize4:3;
+		uint32_t nego_winsize5:3;
+		uint32_t nego_winsize6:3;
+		uint32_t nego_winsize7:3;
+		uint32_t drop:1;
+		uint32_t cascad:1;
+		uint32_t all_ack:1;
+		uint32_t mpdu_size:2;
+		uint32_t ba_mode:3;
+	} field;
+	uint32_t word;
+};
+
+union WTBL_LMAC_DW32 {
+	struct {
+		uint32_t om_info:12;
+		uint32_t om_info_eht:4;
+		uint32_t rxd_dup_from_om_chg:1;
+		uint32_t rxd_dup_white_list:12;
+		uint32_t rxd_dup_mode:2;
+		uint32_t ack_en:1;
+	} field;
+	uint32_t word;
+};
+
+union WTBL_LMAC_DW33 {
+	struct {
+		uint32_t user_rssi:9;
+		uint32_t user_snr:6;
+		uint32_t pad:1;
+		uint32_t rapid_reaction_rate:12;
+		uint32_t pad2:2;
+		uint32_t ht_amsdu:1;
+		uint32_t amsdu_cross_lg:1;
+	} field;
+	uint32_t word;
+};
+
+union WTBL_LMAC_DW34 {
 	struct {
 		uint32_t resp_rcpi_0:8;
 		uint32_t resp_rcpi_1:8;
 		uint32_t resp_rcpi_2:8;
 		uint32_t resp_rcpi_3:8;
-	} field_v2;
+	} field;
 	uint32_t word;
 };
 
-union WTBL_LMAC_DW31 {
+union WTBL_LMAC_DW35 {
 	struct {
 		uint32_t snr_rx0:6;
 		uint32_t snr_rx1:6;
@@ -863,23 +864,24 @@ union WTBL_LMAC_DW31 {
 	uint32_t word;
 };
 
-union WTBL_LMAC_DW32 {
-	struct {
-		uint32_t snr_rx4:6;
-		uint32_t snr_rx5:6;
-		uint32_t snr_rx6:6;
-		uint32_t snr_rx7:6;
-		uint32_t pad:8;
-	} field;
-	uint32_t word;
+struct wtbl_rx_stat {
+	union WTBL_LMAC_DW33 wtbl_d33;
+	union WTBL_LMAC_DW34 wtbl_d34;
+	union WTBL_LMAC_DW35 wtbl_d35;
 };
 
-struct wtbl_rx_stat {
+struct wtbl_rx_dup_info {
+	union WTBL_LMAC_DW32 wtbl_d32;
+};
+
+struct wtbl_resp_info {
+	union WTBL_LMAC_DW31 wtbl_d31;
+};
+
+struct wtbl_mlo_info {
 	union WTBL_LMAC_DW28 wtbl_d28;
 	union WTBL_LMAC_DW29 wtbl_d29;
 	union WTBL_LMAC_DW30 wtbl_d30;
-	union WTBL_LMAC_DW31 wtbl_d31;
-	union WTBL_LMAC_DW32 wtbl_d32;
 };
 
 struct wtbl_adm_ctrl {
@@ -894,6 +896,7 @@ struct wtbl_adm_ctrl {
 };
 
 struct wtbl_ppdu_cnt {
+	union WTBL_LMAC_DW18 wtbl_d18;
 	union WTBL_LMAC_DW19 wtbl_d19;
 };
 
@@ -902,7 +905,6 @@ struct wtbl_auto_rate_cnt {
 	union WTBL_LMAC_DW15 wtbl_d15;
 	union WTBL_LMAC_DW16 wtbl_d16;
 	union WTBL_LMAC_DW17 wtbl_d17;
-	union WTBL_LMAC_DW18 wtbl_d18;
 };
 
 struct wtbl_auto_rate_tb {
@@ -928,24 +930,43 @@ struct wtbl_basic_info {
 	union WTBL_LMAC_DW1 wtbl_d1;
 };
 
-struct fwtbl_lmac_struct {
+struct bwtbl_lmac_struct {
 	struct wtbl_basic_info peer_basic_info;
 	struct wtbl_tx_rx_cap trx_cap;
 	struct wtbl_auto_rate_tb auto_rate_tb;
 	struct wtbl_auto_rate_cnt auto_rate_counters;
 	struct wtbl_ppdu_cnt ppdu_counters;
 	struct wtbl_adm_ctrl adm_ctrl;
+	struct wtbl_mlo_info mlo_info;
+	struct wtbl_resp_info resp_info;
+	struct wtbl_rx_dup_info rx_dup_info;
 	struct wtbl_rx_stat rx_stat;
 };
 
 union WTBL_UMAC_DW0 {
+	struct {
+		uint32_t peer_mld_addr:16;
+		uint32_t own_mld_id:6;
+		uint32_t pad:10;
+	} field;
+	uint32_t word;
+};
+
+union WTBL_UMAC_DW1 {
+	struct {
+		uint32_t peer_mld_addr;
+	} field;
+	uint32_t word;
+};
+
+union WTBL_UMAC_DW2 {
 	struct {
 		uint32_t pn0;
 	} field;
 	uint32_t word;
 };
 
-union WTBL_UMAC_DW1 {
+union WTBL_UMAC_DW3 {
 	struct {
 		uint32_t pn1:16;
 		uint32_t com_sn:12;
@@ -954,82 +975,109 @@ union WTBL_UMAC_DW1 {
 	uint32_t word;
 };
 
-union WTBL_UMAC_DW2 {
+union WTBL_UMAC_DW4 {
 	struct {
 		uint32_t ac0_sn:12;
 		uint32_t ac1_sn:12;
 		uint32_t ac2_sn:8;
 	} field;
+
+	struct {
+		uint32_t rx_bipn0;
+	} field_v2;
 	uint32_t word;
 };
 
-union WTBL_UMAC_DW3 {
+union WTBL_UMAC_DW5 {
 	struct {
 		uint32_t ac2_sn:4;
 		uint32_t ac3_sn:12;
 		uint32_t ac4_sn:12;
 		uint32_t ac5_sn:4;
 	} field;
-	uint32_t word;
-};
 
-union WTBL_UMAC_DW4 {
-	struct {
-		uint32_t ac5_sn:8;
-		uint32_t ac6_sn:12;
-		uint32_t ac7_sn:12;
-	} field;
-	uint32_t word;
-};
-
-union WTBL_UMAC_DW5 {
-	struct {
-		uint32_t key_loc0:11;
-		uint32_t pad:5;
-		uint32_t key_loc1:11;
-		uint32_t qos:1;
-		uint32_t ht:1;
-		uint32_t pad2:3;
-	} field;
+		struct {
+		uint32_t rx_bipn1:16;
+		uint32_t pad:16;
+	} field_v2;
 	uint32_t word;
 };
 
 union WTBL_UMAC_DW6 {
 	struct {
-		uint32_t hw_amsdu_cfg:10;
-		uint32_t pad:22;
+		uint32_t ac5_sn:8;
+		uint32_t ac6_sn:12;
+		uint32_t ac7_sn:12;
 	} field;
+
+	struct {
+		uint32_t key_loc2:13;
+		uint32_t pad:19;
+	} field_v2;
 	uint32_t word;
 };
 
 union WTBL_UMAC_DW7 {
 	struct {
-		uint32_t pad:32;
+		uint32_t key_loc0:13;
+		uint32_t pad:3;
+		uint32_t key_loc1:13;
+		uint32_t pad2:3;
 	} field;
 	uint32_t word;
 };
 
-struct wtbl_key_tb {
-	union WTBL_UMAC_DW7 wtbl_d7;
+union WTBL_UMAC_DW8 {
+	struct {
+		/* hw_amsdu_cfg */
+		uint32_t amsdu_len:6;
+		uint32_t amsdu_num:5;
+		uint32_t amsdu_en:1;
+		uint32_t pad:13;
+		uint32_t wmm_q:2;
+		uint32_t qos:1;
+		uint32_t ht:1;
+		uint32_t hdrt_mode:1;
+		uint32_t pad2:2;
+	} field;
+	uint32_t word;
 };
 
-struct wtbl_keylink_amsdu {
+union WTBL_UMAC_DW9 {
+	struct {
+		uint32_t related_idx0:12;
+		uint32_t related_band0:2;
+		uint32_t pri_mld_band:2;
+		uint32_t related_idx1:12;
+		uint32_t related_band1:2;
+		uint32_t sec_mld_band:2;
+	} field;
+	uint32_t word;
+};
+
+struct wtbl_key_msdu_mlo {
+	union WTBL_UMAC_DW7 wtbl_d7;
+	union WTBL_UMAC_DW8 wtbl_d8;
+	union WTBL_UMAC_DW9 wtbl_d9;
+};
+
+struct wtbl_pn_sn {
+	union WTBL_UMAC_DW2 wtbl_d2;
+	union WTBL_UMAC_DW3 wtbl_d3;
+	union WTBL_UMAC_DW4 wtbl_d4;
 	union WTBL_UMAC_DW5 wtbl_d5;
 	union WTBL_UMAC_DW6 wtbl_d6;
 };
 
-struct wtbl_serial_num {
+struct wtbl_umac_mlo_info {
 	union WTBL_UMAC_DW0 wtbl_d0;
 	union WTBL_UMAC_DW1 wtbl_d1;
-	union WTBL_UMAC_DW2 wtbl_d2;
-	union WTBL_UMAC_DW3 wtbl_d3;
-	union WTBL_UMAC_DW4 wtbl_d4;
 };
 
-struct fwtbl_umac_struct {
-	struct wtbl_serial_num serial_no;
-	struct wtbl_keylink_amsdu klink_amsdu;
-	struct wtbl_key_tb key_tb;
+struct bwtbl_umac_struct {
+	struct wtbl_umac_mlo_info mlo_info;
+	struct wtbl_pn_sn pn_sn;
+	struct wtbl_key_msdu_mlo key_msdu_mlo;
 };
 
 /*******************************************************************************

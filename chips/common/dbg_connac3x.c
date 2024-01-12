@@ -73,6 +73,7 @@
 #include "precomp.h"
 #include "mt_dmac.h"
 #include "wf_ple.h"
+#include "dbg_wtbl_connac3x.h"
 #ifdef BELLWETHER
 #include "coda/bellwether/wf_hif_dmashdl_top.h"
 #include "coda/bellwether/wf_ple_top.h"
@@ -2984,11 +2985,12 @@ int32_t connac3x_show_mib_info(
 	char *pcCommand,
 	int i4TotalLen)
 {
+	int32_t i4BytesWritten = 0;
 	uint8_t bss_nums = 4;
 	uint32_t idx;
 	uint32_t mac_val, band_idx = u4Index, band_offset = 0, band_offset_umib = 0;
 	uint32_t msdr6, msdr9, msdr18;
-	uint32_t rvsr0, rscr26, rscr35, mctr5, mctr6, msr0, msr1, msr2;
+	uint32_t rvsr0, rscr26, mctr5, mctr6, msr0, msr1, msr2;
 	uint32_t tbcr0, tbcr1, tbcr2, tbcr3, tbcr4;
 	uint32_t btscr[7];
 	uint32_t tdrcr[5];
@@ -2997,9 +2999,11 @@ int32_t connac3x_show_mib_info(
 #if defined(BELLWETHER) || defined(MT7990)
 	uint32_t mu_cnt[5];
 #endif
+	uint32_t rx_cnt[6];
 	uint32_t ampdu_cnt[3];
 	uint64_t per;
 	uint32_t per_rem;
+	struct RX_CTRL *prRxCtrl;
 
 	switch (band_idx) {
 	case 0:
@@ -3019,15 +3023,160 @@ int32_t connac3x_show_mib_info(
 	default:
 		return TRUE;
 	}
+	prRxCtrl = &prAdapter->rRxCtrl;
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"Dump MIB info of IDX         = %d\n",
+			band_idx);
 
-	DBGLOG(HAL, INFO, "Band %d MIB Status\n", band_idx);
-	DBGLOG(HAL, INFO, "===============================\n");
-	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_M0SCR0_ADDR + band_offset, &mac_val);
-	DBGLOG(HAL, INFO, "MIB Status Control=0x%x\n", mac_val);
+	/* RX count */
+	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_RSCR1_ADDR + band_offset,
+		&rx_cnt[0]);
+	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_RSCR33_ADDR + band_offset,
+		&rx_cnt[1]);
+	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_RSCR36_ADDR + band_offset,
+		&rx_cnt[2]);
+	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_RSCR31_ADDR + band_offset,
+		&rx_cnt[3]);
+	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_RSCR27_ADDR + band_offset,
+		&rx_cnt[4]);
+	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_RSCR28_ADDR + band_offset,
+		&rx_cnt[5]);
+	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_RVSR0_ADDR + band_offset,
+		&rvsr0);
 
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"%s", "===Rx Related Counters===\n");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx with CRC=%d\n",
+		rx_cnt[0] &
+			BN0_WF_MIB_TOP_RSCR1_RX_FCS_ERROR_COUNT_MASK);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx drop due to out of resource=%d\n",
+		rx_cnt[1] &
+			BN0_WF_MIB_TOP_RSCR33_RX_FIFO_FULL_COUNT_MASK);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx Mpdu=%d\n",
+		rx_cnt[3] & BN0_WF_MIB_TOP_RSCR31_RX_MPDU_COUNT_MASK);
+
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx AMpdu=%d\n",
+		rx_cnt[4]);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx Vec Q Mismatch=%d\n",
+		rvsr0 & BN0_WF_MIB_TOP_RVSR0_VEC_MISS_COUNT_MASK);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx Len Mismatch=%d\n",
+		rx_cnt[2] &
+			BN0_WF_MIB_TOP_RSCR36_RX_LEN_MISMATCH_MASK);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx data indicate total=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DATA_INDICATION_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx data retain total=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DATA_RETAINED_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx drop by SW total=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx reorder miss=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_MISS_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx reorder within=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_WITHIN_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx reorder ahead=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_AHEAD_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx reorder behind=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_BEHIND_COUNT));
+
+	do {
+		uint32_t u4AmsduCntx100 = 0;
+
+		if (RX_GET_CNT(prRxCtrl, RX_DATA_AMSDU_COUNT))
+			u4AmsduCntx100 = (uint32_t)div64_u64(
+				RX_GET_CNT(prRxCtrl,
+					RX_DATA_MSDU_IN_AMSDU_COUNT) * 100,
+				RX_GET_CNT(prRxCtrl, RX_DATA_AMSDU_COUNT));
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tRx avg MSDU in AMSDU=%1d.%02d\n",
+			u4AmsduCntx100 / 100, u4AmsduCntx100 % 100);
+
+	} while (FALSE);
+
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx total MSDU in AMSDU=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DATA_MSDU_IN_AMSDU_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx AMSDU=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DATA_AMSDU_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx AMSDU miss=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DATA_AMSDU_MISS_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx no StaRec drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_NO_STA_DROP_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx inactive BSS drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_INACTIVE_BSS_DROP_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx HS20 drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_HS20_DROP_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx low SwRfb drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_LESS_SW_RFB_DROP_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx dupicate drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DUPICATE_DROP_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx MIC err drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_MIC_ERROR_DROP_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx BAR handle=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_BAR_DROP_COUNT));
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx BAR delayed=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_BAR_DELAY_COUNT));
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx non-interest drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_NO_INTEREST_DROP_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx type err drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_TYPE_ERR_DROP_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx class err drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_CLASS_ERR_DROP_COUNT));
+
+#if defined(BELLWETHER) || defined(MT7990)
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"%s", "===MU TX Counters===\n");
+	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_BSCR2_ADDR + band_offset,
+		&mu_cnt[0]);
+	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TSCR5_ADDR + band_offset,
+		&mu_cnt[1]);
+	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TSCR6_ADDR + band_offset,
+		&mu_cnt[2]);
+	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TSCR8_ADDR + band_offset,
+		&mu_cnt[3]);
+	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TSCR7_ADDR + band_offset,
+		&mu_cnt[4]);
+
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tMUBF=%u, MuToMuFail=%u (PPDU)\n",
+		mu_cnt[0] & BN0_WF_MIB_TOP_BSCR2_MUBF_TX_COUNT_MASK,
+		mu_cnt[3]);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tMuTotal=%u, MuOK=%u, SU_OK=%u (MPDU)\n",
+		mu_cnt[1],
+		mu_cnt[2],
+		mu_cnt[4]);
+#endif
+
+	/* PHY/Timing count  */
 	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_M0SDR6_ADDR + band_offset, &msdr6);
-	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_RVSR0_ADDR + band_offset, &rvsr0);
-	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_RSCR35_ADDR + band_offset, &rscr35);
 	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_M0SDR9_ADDR + band_offset, &msdr9);
 	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_RSCR26_ADDR + band_offset, &rscr26);
 	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_MCTR5_ADDR + band_offset, &mctr5);
@@ -3042,127 +3191,150 @@ int32_t connac3x_show_mib_info(
 	ampdu_cnt[1] &= BN0_WF_MIB_TOP_TSCR3_AMPDU_MPDU_COUNT_MASK;
 	ampdu_cnt[2] &= BN0_WF_MIB_TOP_TSCR4_AMPDU_ACKED_COUNT_MASK;
 
-	DBGLOG(HAL, INFO, "===Phy/Timing Related Counters===\n");
-	DBGLOG(HAL, INFO, "\tChannelIdleCnt=0x%x\n",
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"%s", "===Phy/Timing Related Counters===\n");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tChannelIdleCnt=%d\n",
 		msdr6 & BN0_WF_MIB_TOP_M0SDR6_CHANNEL_IDLE_COUNT_MASK);
-	DBGLOG(HAL, INFO, "\tCCA_NAV_Tx_Time=0x%x\n",
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tCCA_NAV_Tx_Time=%d\n",
 		msdr9 & BN0_WF_MIB_TOP_M0SDR9_CCA_NAV_TX_TIME_MASK);
-	DBGLOG(HAL, INFO, "\tRx_MDRDY_CNT=0x%x\n",
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx_MDRDY_CNT=%d\n",
 		rscr26 & BN0_WF_MIB_TOP_RSCR26_RX_MDRDY_COUNT_MASK);
-	DBGLOG(HAL, INFO, "\tCCK_MDRDY_TIME=0x%x, OFDM_MDRDY_TIME=0x%x",
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tMdrdyTime CCK=%d, OFDM=0x%x, OFDM_GREEN=0x%x\n",
 		msr0 & BN0_WF_MIB_TOP_MSR0_CCK_MDRDY_TIME_MASK,
-		msr1 & BN0_WF_MIB_TOP_MSR1_OFDM_LG_MIXED_VHT_MDRDY_TIME_MASK);
-	DBGLOG(HAL, INFO, ", OFDM_GREEN_MDRDY_TIME=0x%x\n",
+		msr1 &
+			BN0_WF_MIB_TOP_MSR1_OFDM_LG_MIXED_VHT_MDRDY_TIME_MASK,
 		msr2 & BN0_WF_MIB_TOP_MSR2_OFDM_GREEN_MDRDY_TIME_MASK);
-	DBGLOG(HAL, INFO, "\tPrim CCA Time=0x%x\n",
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tPrim CCA Time=%d\n",
 		mctr5 & BN0_WF_MIB_TOP_MCTR5_P_CCA_TIME_MASK);
-	DBGLOG(HAL, INFO, "\tSec CCA Time=0x%x\n",
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tSec CCA Time=%d\n",
 		mctr6 & BN0_WF_MIB_TOP_MCTR6_S_CCA_TIME_MASK);
-	DBGLOG(HAL, INFO, "\tPrim ED Time=0x%x\n",
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tPrim ED Time=%d\n",
 		msdr18 & BN0_WF_MIB_TOP_M0SDR18_P_ED_TIME_MASK);
-
-	DBGLOG(HAL, INFO, "===Tx Related Counters(Generic)===\n");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"%s", "===Tx Related Counters(Generic)===\n");
 	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TSCR18_ADDR + band_offset, &mac_val);
-	DBGLOG(HAL, INFO, "\tBeaconTxCnt=0x%x\n", mac_val);
 	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TBCR0_ADDR + band_offset, &tbcr0);
-	DBGLOG(HAL, INFO, "\tTx 20MHz Cnt=0x%x\n",
-		tbcr0 & BN0_WF_MIB_TOP_TBCR0_TX_20MHZ_CNT_MASK);
 	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TBCR1_ADDR + band_offset, &tbcr1);
-	DBGLOG(HAL, INFO, "\tTx 40MHz Cnt=0x%x\n",
-		tbcr1 & BN0_WF_MIB_TOP_TBCR1_TX_40MHZ_CNT_MASK);
 	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TBCR2_ADDR + band_offset, &tbcr2);
-	DBGLOG(HAL, INFO, "\tTx 80MHz Cnt=0x%x\n",
-		tbcr2 & BN0_WF_MIB_TOP_TBCR2_TX_80MHZ_CNT_MASK);
 	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TBCR3_ADDR + band_offset, &tbcr3);
-	DBGLOG(HAL, INFO, "\tTx 160MHz Cnt=0x%x\n",
-		tbcr3 & BN0_WF_MIB_TOP_TBCR3_TX_160MHZ_CNT_MASK);
 	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TBCR4_ADDR + band_offset, &tbcr4);
-	DBGLOG(HAL, INFO, "\tTx 320MHz Cnt=0x%x\n",
+
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tBeaconTxCnt=%d\n",
+		mac_val);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tTx 40MHz Cnt=%d\n",
+		tbcr1 & BN0_WF_MIB_TOP_TBCR1_TX_40MHZ_CNT_MASK);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tTx 80MHz Cnt=%d\n",
+		tbcr2 & BN0_WF_MIB_TOP_TBCR2_TX_80MHZ_CNT_MASK);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tTx 160MHz Cnt=%d\n",
+		tbcr3 & BN0_WF_MIB_TOP_TBCR3_TX_160MHZ_CNT_MASK);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tTx 320MHz Cnt=%d\n",
 		tbcr4 & BN0_WF_MIB_TOP_TBCR4_TX_320MHZ_CNT_MASK);
-	DBGLOG(HAL, INFO, "\tAMPDU Cnt=0x%x\n", ampdu_cnt[0]);
-	DBGLOG(HAL, INFO, "\tAMPDU MPDU Cnt=0x%x\n", ampdu_cnt[1]);
-	DBGLOG(HAL, INFO, "\tAMPDU MPDU Ack Cnt=0x%x\n", ampdu_cnt[2]);
 	per = (ampdu_cnt[2] == 0 ?
 		0 : 1000 * (ampdu_cnt[1] - ampdu_cnt[2]) / ampdu_cnt[1]);
 	per_rem = do_div(per, 10);
-	DBGLOG(HAL, INFO, "\tAMPDU MPDU PER=%ld.%1ld%%\n", per, per_rem);
 
-#if defined(BELLWETHER) || defined(MT7990)
-	DBGLOG(HAL, INFO, "===MU Related Counters===\n");
-	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_BSCR2_ADDR + band_offset, &mu_cnt[0]);
-	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TSCR5_ADDR + band_offset, &mu_cnt[1]);
-	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TSCR6_ADDR + band_offset, &mu_cnt[2]);
-	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TSCR8_ADDR + band_offset, &mu_cnt[3]);
-	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TSCR7_ADDR + band_offset, &mu_cnt[4]);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tAMPDU[Cnt:MpduCnt:MpduAckCnt:MpduPER]=[%u:%u:%u:%ld.%1ld%%]\n",
+		ampdu_cnt[0],
+		ampdu_cnt[1],
+		ampdu_cnt[2],
+		per, per_rem);
 
-	DBGLOG(HAL, INFO, "\tMUBF_TX_COUNT=0x%x\n",
-		mu_cnt[0] & BN0_WF_MIB_TOP_BSCR2_MUBF_TX_COUNT_MASK);
-	DBGLOG(HAL, INFO, "\tMU_TX_MPDU_COUNT(Ok+Fail)=0x%x\n", mu_cnt[1]);
-	DBGLOG(HAL, INFO, "\tMU_TX_OK_MPDU_COUNT=0x%x\n", mu_cnt[2]);
-	DBGLOG(HAL, INFO, "\tMU_TO_MU_FAIL_PPDU_COUNT=0x%x\n", mu_cnt[3]);
-	DBGLOG(HAL, INFO, "\tSU_TX_OK_MPDU_COUNT=0x%x\n", mu_cnt[4]);
-#endif
+	for (idx = 0; idx < BSSID_NUM; idx++) {
+		HAL_MCR_RD(prAdapter,
+			BN0_WF_MIB_TOP_BTSCR5_ADDR + band_offset + idx * 4,
+			&btscr[0]);
+		HAL_MCR_RD(prAdapter,
+			BN0_WF_MIB_TOP_BTSCR6_ADDR + band_offset + idx * 4,
+			&btscr[1]);
+		HAL_MCR_RD(prAdapter,
+			BN0_WF_MIB_TOP_BTSCR0_ADDR + band_offset + idx * 4,
+			&btscr[2]);
+		HAL_MCR_RD(prAdapter,
+			BN0_WF_MIB_TOP_BTSCR1_ADDR + band_offset + idx * 4,
+			&btscr[3]);
+		HAL_MCR_RD(prAdapter,
+			BN0_WF_MIB_TOP_BTSCR2_ADDR + band_offset + idx * 4,
+			&btscr[4]);
+		HAL_MCR_RD(prAdapter,
+			BN0_WF_MIB_TOP_BTSCR3_ADDR + band_offset + idx * 4,
+			&btscr[5]);
+		HAL_MCR_RD(prAdapter,
+			BN0_WF_MIB_TOP_BTSCR4_ADDR + band_offset + idx * 4,
+			&btscr[6]);
+		HAL_MCR_RD(prAdapter,
+			BN0_WF_MIB_TOP_BTCR_ADDR + band_offset + idx * 4,
+			&btcr);
+		HAL_MCR_RD(prAdapter,
+			BN0_WF_MIB_TOP_BTDCR_ADDR + band_offset + idx * 4,
+			&btdcr);
+		HAL_MCR_RD(prAdapter,
+			BN0_WF_MIB_TOP_BTBCR_ADDR + band_offset + idx * 4,
+			&btbcr);
 
-	DBGLOG(HAL, INFO, "===Rx Related Counters(Generic)===\n");
-	DBGLOG(HAL, INFO, "\tVector Mismacth Cnt=0x%x\n",
-		rvsr0 & BN0_WF_MIB_TOP_RVSR0_VEC_MISS_COUNT_MASK);
-	DBGLOG(HAL, INFO, "\tDelimiter Fail Cnt=0x%x\n",
-		rscr35 & BN0_WF_MIB_TOP_RSCR35_DELIMITER_FAIL_COUNT_MASK);
+		HAL_MCR_RD(prAdapter,
+			WF_UMIB_TOP_B0BROCR_ADDR + band_offset_umib + idx * 4,
+			&brocr);
+		HAL_MCR_RD(prAdapter,
+			WF_UMIB_TOP_B0BRDCR_ADDR + band_offset_umib + idx * 4,
+			&brdcr);
+		HAL_MCR_RD(prAdapter,
+			WF_UMIB_TOP_B0BRBCR_ADDR + band_offset_umib + idx * 4,
+			&brbcr);
 
-	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_RSCR1_ADDR + band_offset, &mac_val);
-	DBGLOG(HAL, INFO, "\tRxFCSErrCnt=0x%x\n",
-		(mac_val & BN0_WF_MIB_TOP_RSCR1_RX_FCS_ERROR_COUNT_MASK));
-	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_RSCR33_ADDR + band_offset, &mac_val);
-	DBGLOG(HAL, INFO, "\tRxFifoFullCnt=0x%x\n",
-		(mac_val & BN0_WF_MIB_TOP_RSCR33_RX_FIFO_FULL_COUNT_MASK));
-	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_RSCR36_ADDR + band_offset, &mac_val);
-	DBGLOG(HAL, INFO, "\tRxLenMismatch=0x%x\n",
-		(mac_val & BN0_WF_MIB_TOP_RSCR36_RX_LEN_MISMATCH_MASK));
-	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_RSCR31_ADDR + band_offset, &mac_val);
-	DBGLOG(HAL, INFO, "\tRxMPDUCnt=0x%x\n",
-		(mac_val & BN0_WF_MIB_TOP_RSCR31_RX_MPDU_COUNT_MASK));
-	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_RSCR27_ADDR + band_offset, &mac_val);
-	DBGLOG(HAL, INFO, "\tRx AMPDU Cnt=0x%x\n", mac_val);
-	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_RSCR28_ADDR + band_offset, &mac_val);
-	DBGLOG(HAL, INFO, "\tRx Total ByteCnt=0x%x\n", mac_val);
-
-	/* Per-BSS T/RX Counters */
-	DBGLOG(HAL, INFO, "===Per-BSS Related Tx/Rx Counters===\n");
-	DBGLOG(HAL, INFO, "BSS Idx TxCnt/DataCnt TxByteCnt RxOkCnt/DataCnt RxByteCnt\n");
-	for (idx = 0; idx < bss_nums; idx++) {
-		HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_BTCR_ADDR + band_offset + idx * 4, &btcr);
-		HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_BTDCR_ADDR + band_offset + idx * 4, &btdcr);
-		HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_BTBCR_ADDR + band_offset + idx * 4, &btbcr);
-
-		HAL_MCR_RD(prAdapter, WF_UMIB_TOP_B0BROCR_ADDR + band_offset_umib + idx * 4, &brocr);
-		HAL_MCR_RD(prAdapter, WF_UMIB_TOP_B0BRDCR_ADDR + band_offset_umib + idx * 4, &brdcr);
-		HAL_MCR_RD(prAdapter, WF_UMIB_TOP_B0BRBCR_ADDR + band_offset_umib + idx * 4, &brbcr);
-
-		DBGLOG(HAL, INFO, "%d\t 0x%x/0x%x\t 0x%x \t 0x%x/0x%x \t 0x%x\n",
-			idx, btcr, btdcr, btbcr, brocr, brdcr, brbcr);
-	}
-
-	DBGLOG(HAL, INFO, "===Per-BSS Related MIB Counters===\n");
-	DBGLOG(HAL, INFO, "BSS Idx RTSTx/RetryCnt BAMissCnt AckFailCnt FrmRetry1/2/3Cnt\n");
-
-	/* Per-BSS TX Status */
-	for (idx = 0; idx < bss_nums; idx++) {
-		HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_BTSCR5_ADDR + band_offset + idx * 4, &btscr[0]);
-		HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_BTSCR6_ADDR + band_offset + idx * 4, &btscr[1]);
-		HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_BTSCR0_ADDR + band_offset + idx * 4, &btscr[2]);
-		HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_BTSCR1_ADDR + band_offset + idx * 4, &btscr[3]);
-		HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_BTSCR2_ADDR + band_offset + idx * 4, &btscr[4]);
-		HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_BTSCR3_ADDR + band_offset + idx * 4, &btscr[5]);
-		HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_BTSCR4_ADDR + band_offset + idx * 4, &btscr[6]);
-
-		DBGLOG(HAL, INFO, "%d:\t0x%x/0x%x  0x%x \t 0x%x \t  0x%x/0x%x/0x%x\n",
-			idx, (btscr[0] & BN0_WF_MIB_TOP_BTSCR5_RTSTXCOUNTn_MASK),
-			(btscr[1] & BN0_WF_MIB_TOP_BTSCR6_RTSRETRYCOUNTn_MASK),
-			(btscr[2] & BN0_WF_MIB_TOP_BTSCR0_BAMISSCOUNTn_MASK),
-			(btscr[3] & BN0_WF_MIB_TOP_BTSCR1_ACKFAILCOUNTn_MASK),
-			(btscr[4] & BN0_WF_MIB_TOP_BTSCR2_FRAMERETRYCOUNTn_MASK),
-			(btscr[5] & BN0_WF_MIB_TOP_BTSCR3_FRAMERETRY2COUNTn_MASK),
-			(btscr[6] & BN0_WF_MIB_TOP_BTSCR4_FRAMERETRY3COUNTn_MASK));
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"===BSSID[%d] Related Counters===\n", idx);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tBA Miss Cnt=%d\n",
+			btscr[2] & BN0_WF_MIB_TOP_BTSCR0_BAMISSCOUNTn_MASK);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tRTS Tx Cnt=%d\n",
+			btscr[0] & BN0_WF_MIB_TOP_BTSCR5_RTSTXCOUNTn_MASK);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tFrame Retry Cnt=%d\n",
+			btscr[4] & BN0_WF_MIB_TOP_BTSCR2_FRAMERETRYCOUNTn_MASK);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tFrame Retry >2 Cnt=%d\n",
+			btscr[5] &
+				BN0_WF_MIB_TOP_BTSCR3_FRAMERETRY2COUNTn_MASK);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tFrame Retry >3 Cnt=%d\n",
+			btscr[6] &
+				BN0_WF_MIB_TOP_BTSCR4_FRAMERETRY3COUNTn_MASK);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tRTS Retry Cnt=%d\n",
+			btscr[1] & BN0_WF_MIB_TOP_BTSCR6_RTSRETRYCOUNTn_MASK);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tAck Failed Cnt=%d\n",
+			btscr[3] & BN0_WF_MIB_TOP_BTSCR1_ACKFAILCOUNTn_MASK);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tTxOk=%u, TxData=%u, TxByte=%u\n",
+			btcr, btdcr, btbcr);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tRxOk=%u, RxData=%u, RxByte=%u\n",
+			brocr, brdcr, brbcr);
 	}
 
 	/* Dummy delimiter insertion result */
@@ -3172,18 +3344,11 @@ int32_t connac3x_show_mib_info(
 	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TDRCR2_ADDR + band_offset, &tdrcr[2]);
 	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TDRCR3_ADDR + band_offset, &tdrcr[3]);
 	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TDRCR4_ADDR + band_offset, &tdrcr[4]);
-
-	DBGLOG(HAL, INFO, "Range0 = %d\t Range1 = %d\t Range2 = %d\t Range3 = %d\t Range4 = %d\n",
-		tdrcr[0],
-		tdrcr[1],
-		tdrcr[2],
-		tdrcr[3],
-		tdrcr[4]);
+	DBGLOG(HAL, INFO, "\tRange[0:1:2:3:4]=[%u:%u:%u:%u:%u]\n",
+		tdrcr[0], tdrcr[1], tdrcr[2], tdrcr[3], tdrcr[4]);
 
 	/* Per-MBSS T/RX Counters */
-	DBGLOG(HAL, INFO, "===Per-MBSS Related Tx/Rx Counters===\n");
-	DBGLOG(HAL, INFO, "MBSSIdx   TxOkCnt  TxByteCnt  RxOkCnt  RxByteCnt\n");
-
+	DBGLOG(HAL, INFO, "===MBSSID Related Counters===\n", idx);
 	for (idx = 0; idx < 16; idx++) {
 		HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_BTOCR_ADDR + band_offset + (bss_nums + idx) * 4, &mbtocr[idx]);
 		HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_BTBCR_ADDR + band_offset + (bss_nums + idx) * 4, &mbtbcr[idx]);
@@ -3191,12 +3356,12 @@ int32_t connac3x_show_mib_info(
 		HAL_MCR_RD(prAdapter, WF_UMIB_TOP_B0BROCR_ADDR + band_offset_umib + (bss_nums + idx) * 4, &mbrocr[idx]);
 		HAL_MCR_RD(prAdapter, WF_UMIB_TOP_B0BRBCR_ADDR + band_offset_umib + (bss_nums + idx) * 4, &mbrbcr[idx]);
 	}
-
 	for (idx = 0; idx < 16; idx++) {
-		DBGLOG(HAL, INFO, "%d\t 0x%x\t 0x%x \t 0x%x \t 0x%x\n",
+		DBGLOG(HAL, INFO, "%s\n",
+			"\tID[%d] TxOk=%u TxByte=%u RxOk=%u RxByte=%u",
 			idx, mbtocr[idx], mbtbcr[idx], mbrocr[idx], mbrbcr[idx]);
 	}
-	return 0;
+	return i4BytesWritten;
 }
 
 #endif /* CFG_SUPPORT_CONNAC3X */

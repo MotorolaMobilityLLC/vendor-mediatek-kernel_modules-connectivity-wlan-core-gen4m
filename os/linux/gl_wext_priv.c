@@ -3406,7 +3406,7 @@ priv_set_driver(IN struct net_device *prNetDev,
 			       __func__, i4BytesWritten);
 			return -EFAULT;
 		}
-		if (prIwReqData->data.length >= IW_PRIV_BUF_SIZE)
+		if (prIwReqData->data.length >= IW_PRIV_SET_BUF_SIZE)
 			return -EFAULT;
 		if (copy_from_user(pcExtra, prIwReqData->data.pointer,
 				   prIwReqData->data.length)) {
@@ -3423,19 +3423,19 @@ priv_set_driver(IN struct net_device *prNetDev,
 		DBGLOG(REQ, INFO, "pcExtra %s\n", pcExtra);
 		/* Please check max length in rIwPrivTable */
 		DBGLOG(REQ, INFO, "%s prIwReqData->data.length = %d\n",
-		       __func__, prIwReqData->data.length);
+		    __func__, prIwReqData->data.length);
 		i4BytesWritten = priv_driver_cmds(prNetDev, pcExtra,
-					  2000 /*prIwReqData->data.length */);
+			IW_PRIV_GET_BUF_SIZE /*prIwReqData->data.length */);
 		DBGLOG(REQ, INFO, "%s i4BytesWritten = %d\n", __func__,
-		       i4BytesWritten);
+		    i4BytesWritten);
 	}
 
 	DBGLOG(REQ, INFO, "pcExtra done\n");
 
 	if (i4BytesWritten > 0) {
 
-		if (i4BytesWritten > IW_PRIV_BUF_SIZE)
-			i4BytesWritten = IW_PRIV_BUF_SIZE;
+		if (i4BytesWritten > IW_PRIV_GET_BUF_SIZE)
+			i4BytesWritten = IW_PRIV_GET_BUF_SIZE;
 		prIwReqData->data.length =
 			i4BytesWritten;	/* the iwpriv will use the length */
 
@@ -4042,6 +4042,10 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #if (CFG_SUPPORT_CONNAC2X == 1)
 #define CMD_GET_FWTBL_UMAC      "GET_UMAC_FWTBL"
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
+#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
+#define CMD_GET_UWTBL      "GET_UWTBL"
+#endif
+
 /* Debug for consys */
 #define CMD_DBG_SHOW_TR_INFO			"show-tr"
 #define CMD_DBG_SHOW_PLE_INFO			"show-ple"
@@ -17350,8 +17354,8 @@ static int priv_driver_trigger_wfsys_reset(
 }
 #endif
 
-#if (CFG_SUPPORT_CONNAC2X == 1)
-static int priv_driver_get_umac_fwtbl(
+#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
+static int priv_driver_get_uwtbl(
 	struct net_device *prNetDev,
 	char *pcCommand,
 	int i4TotalLen)
@@ -17380,8 +17384,8 @@ static int priv_driver_get_umac_fwtbl(
 
 	prDbgOps = prGlueInfo->prAdapter->chip_info->prDebugOps;
 
-	if (prDbgOps->showUmacFwtblInfo)
-		return prDbgOps->showUmacFwtblInfo(
+	if (prDbgOps->showUmacWtblInfo)
+		return prDbgOps->showUmacWtblInfo(
 			prGlueInfo->prAdapter, u4Index, pcCommand, i4TotalLen);
 	else
 		return -1;
@@ -18342,8 +18346,11 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_SET_WFSYS_RESET, priv_driver_trigger_wfsys_reset},
 #endif
 #if (CFG_SUPPORT_CONNAC2X == 1)
-	{CMD_GET_FWTBL_UMAC, priv_driver_get_umac_fwtbl},
+	{CMD_GET_FWTBL_UMAC, priv_driver_get_uwtbl},
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
+#if CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1
+	{CMD_GET_UWTBL, priv_driver_get_uwtbl},
+#endif
 	{CMD_SHOW_TXD_INFO, priv_driver_show_txd_info},
 	{CMD_GET_MU_RX_PKTCNT, priv_driver_show_rx_stat},
 	{CMD_RUN_HQA, priv_driver_run_hqa},
