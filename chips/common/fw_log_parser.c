@@ -23,10 +23,6 @@
  */
 #define IDXLOGSTX		0xA8
 
-#define VER_TYPE_IDX_LOG_V2	0
-#define VER_TYPE_CTRL		1
-#define VER_TYPE_TXT_LOG	2
-
 #define CTRL_TYPE_TIME_SYNC	1
 #define CTRL_TYPE_LOG_LOST	2
 

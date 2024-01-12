@@ -50,7 +50,9 @@
 #endif
 #include "gl_coredump.h"
 #include "gl_fw_log.h"
-
+#if (CFG_SUPPORT_FW_IDX_LOG_SAVE == 1)
+#include "gl_fw_dev.h"
+#endif
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #include "connv3.h"
 #include "conninfra.h"
@@ -7730,7 +7732,9 @@ static int initWlan(void)
 		wifi_ics_event_func_register(ics_log_event_notification);
 	}
 #endif /* CFG_SUPPORT_ICS */
-
+#if (CFG_SUPPORT_FW_IDX_LOG_SAVE == 1)
+	FwLogDevInit();
+#endif
 	g_u4WlanInitFlag = 1;
 
 #if CFG_POWER_OFF_CTRL_SUPPORT
@@ -7898,7 +7902,9 @@ static void exitWlan(void)
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	IcsDeInit();
 #endif /* CFG_SUPPORT_ICS */
-
+#if (CFG_SUPPORT_FW_IDX_LOG_SAVE == 1)
+	FwLogDevUninit();
+#endif
 	g_u4WlanInitFlag = 0;
 
 #if CFG_POWER_OFF_CTRL_SUPPORT

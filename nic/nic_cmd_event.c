@@ -23,8 +23,10 @@
 #include "precomp.h"
 #include "gl_ate_agent.h"
 #include "bss.h"
-
-
+#if (CFG_SUPPORT_FW_IDX_LOG_SAVE == 1)
+#include "gl_fw_dev.h"
+#endif
+#include "fw_log_parser.h"
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 #include "gl_ics.h"
@@ -4848,7 +4850,12 @@ void nicEventDebugMsg(struct ADAPTER *prAdapter,
 		wlanFwLogIdxToStr(prAdapter, pucMsg, u2MsgSize);
 	else
 #endif
+	{
 		wlanPrintFwLog(pucMsg, u2MsgSize, ucMsgType, NULL);
+#if (CFG_SUPPORT_FW_IDX_LOG_SAVE == 1)
+		kalIndexWrite(pucMsg, u2MsgSize);
+#endif
+	}
 }
 
 #if CFG_SUPPORT_TDLS

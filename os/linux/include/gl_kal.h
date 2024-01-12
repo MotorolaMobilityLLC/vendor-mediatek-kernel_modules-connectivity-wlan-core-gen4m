@@ -2482,7 +2482,12 @@ void *kalProcessRttReportDone(
 
 #define kalIcsWrite(buf, size) \
 	wifi_ics_fwlog_write(buf, size)
-
+#define kalIndexWrite(buf, size) \
+	wifi_index_fwlog_write(buf, size)
+#if (CFG_SUPPORT_CONNAC3X == 1 && CFG_SUPPORT_UPSTREAM_TOOL == 1)
+#define kalWiphy_info(wiphy, format, ...) \
+	wiphy_info(wiphy, format, ##__VA_ARGS__)
+#endif
 int32_t kalPlatOpsInit(void);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
