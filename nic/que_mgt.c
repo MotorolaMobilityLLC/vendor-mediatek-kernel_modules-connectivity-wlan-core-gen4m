@@ -3478,7 +3478,7 @@ static void processNanBmcRx(struct ADAPTER *prAdapter,
 
 /**
  * When prCurrSwRfb->prStaRec == NULL, prBssInfo exist and start is connected,
- * update the information from prBssInfo if address matched.
+ * fill the information from prBssInfo if address matched.
  * Update these information:
  *   prCurrSwRfb->pvHeader and the MAC address at where it points to
  *   prCurrSwRfb->u2PacketLen
@@ -3486,7 +3486,7 @@ static void processNanBmcRx(struct ADAPTER *prAdapter,
  *   prCurrSwRfb->ucStaRecIdx
  *   prCurrSwRfb->ucWlanIdx
  */
-static void fixRxNullStaRec(struct ADAPTER *prAdapter,
+static void fillRxNullStaRec(struct ADAPTER *prAdapter,
 		struct SW_RFB *prCurrSwRfb, uint16_t u2FrameCtrl,
 		struct BSS_INFO *prBssInfo,
 		struct WLAN_MAC_HEADER *prWlanHeader)
@@ -3795,7 +3795,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 					prWlanHeader, u2FrameCtrl);
 
 			if (!prCurrSwRfb->prStaRec)
-				fixRxNullStaRec(prAdapter, prCurrSwRfb,
+				fillRxNullStaRec(prAdapter, prCurrSwRfb,
 						u2FrameCtrl, prBssInfo,
 						prWlanHeader);
 		}
