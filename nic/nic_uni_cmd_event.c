@@ -3320,6 +3320,10 @@ uint32_t nicUniCmdStaRecConnType(struct ADAPTER *ad, uint32_t legacy_sta_type)
 		return CONNECTION_P2P_GO;
 	else if (legacy_sta_type == STA_TYPE_P2P_GC)
 		return CONNECTION_P2P_GC;
+#if CFG_SUPPORT_TDLS
+	else if (legacy_sta_type == STA_TYPE_DLS_PEER)
+		return CONNECTION_TDLS;
+#endif
 #if CFG_SUPPORT_NAN
 	else if (legacy_sta_type == STA_TYPE_NAN)
 		return CONNECTION_NAN;
