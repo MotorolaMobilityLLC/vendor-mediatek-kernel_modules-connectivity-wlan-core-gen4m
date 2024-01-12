@@ -11360,7 +11360,8 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
 		ucBssIndex);
-	linkIdx = prBssInfo->ucLinkIndex;
+	if (prBssInfo)
+		linkIdx = prBssInfo->ucLinkIndex;
 
 	if (eBand > BAND_NULL && eBand < BAND_NUM)
 		band = aucBandTranslate[eBand];
