@@ -733,14 +733,14 @@ p2pFuncUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 
 void
 p2pFuncAddPendingMgmtLinkEntry(struct ADAPTER *prAdapter,
-	uint8_t ucBssIdx, uint64_t u8Cookie)
+	struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg)
 {
 	struct GL_P2P_INFO *prGlueP2pInfo = NULL;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
 	struct P2P_PENDING_MGMT_INFO *prPendingMgmtInfo = NULL;
 
 	prP2pRoleFsmInfo = p2pFuncGetRoleByBssIdx(prAdapter,
-		ucBssIdx);
+		prMgmtTxMsg->ucBssIdx);
 
 	if (prP2pRoleFsmInfo)
 		prGlueP2pInfo = prAdapter->prGlueInfo
@@ -752,15 +752,22 @@ p2pFuncAddPendingMgmtLinkEntry(struct ADAPTER *prAdapter,
 		sizeof(struct P2P_PENDING_MGMT_INFO));
 	if (!prPendingMgmtInfo) {
 		DBGLOG(P2P, WARN, "Allocate memory fail. cookie:0x%llx\n",
-			u8Cookie);
+			prMgmtTxMsg->u8Cookie);
 		return;
 	}
 
-	prPendingMgmtInfo->u8PendingMgmtCookie = u8Cookie;
+	prPendingMgmtInfo->u8PendingMgmtCookie = prMgmtTxMsg->u8Cookie;
+	prPendingMgmtInfo->eBand = prMgmtTxMsg->rChannelInfo.eBand;
+	prPendingMgmtInfo->ucChannelNum =
+		prMgmtTxMsg->rChannelInfo.ucChannelNum;
+	prPendingMgmtInfo->fgIsOffChannel = prMgmtTxMsg->fgIsOffChannel;
 	LINK_INSERT_TAIL(&prGlueP2pInfo->rWaitTxDoneLink,
 		&prPendingMgmtInfo->rLinkEntry);
 
-	DBGLOG(P2P, TRACE, "Add pending mgmt TX cookie:0x%llx\n", u8Cookie);
+	DBGLOG(P2P, TRACE,
+		"Add pending mgmt TX cookie:0x%llx eBand:%d ucChannelNum:%u\n",
+		prPendingMgmtInfo->u8PendingMgmtCookie,
+		prPendingMgmtInfo->eBand, prPendingMgmtInfo->ucChannelNum);
 }
 
 void
@@ -797,6 +804,62 @@ p2pFuncRemovePendingMgmtLinkEntry(struct ADAPTER *prAdapter,
 			break;
 		}
 	}
+}
+
+uint32_t
+p2pFuncIsPendingTxMgmtNeedWait(struct ADAPTER *prAdapter, uint8_t ucRoleIndex,
+	enum ENUM_P2P_MGMT_TX_TYPE eP2pMgmtTxType)
+{
+	struct GL_P2P_INFO *prGlueP2pInfo = NULL;
+	struct P2P_PENDING_MGMT_INFO *prPendingMgmtInfo = NULL;
+	struct P2P_PENDING_MGMT_INFO *prPendingMgmtInfoNext = NULL;
+
+	prGlueP2pInfo = prAdapter->prGlueInfo->prP2PInfo[ucRoleIndex];
+
+	if (eP2pMgmtTxType == P2P_MGMT_REMAIN_ON_CH_TX) {
+		struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = NULL;
+		struct P2P_CHNL_REQ_INFO *prChnlReqInfo = NULL;
+		enum ENUM_BAND eBand;
+		uint8_t ucChannelNum;
+
+		prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
+		if (prP2pDevFsmInfo == NULL)
+			return FALSE;
+
+		prChnlReqInfo = &(prP2pDevFsmInfo->rChnlReqInfo);
+
+		if ((prChnlReqInfo->fgIsChannelRequested) &&
+			prChnlReqInfo->eChnlReqType == CH_REQ_TYPE_ROC) {
+			eBand = prChnlReqInfo->eBand;
+			ucChannelNum = prChnlReqInfo->ucReqChnlNum;
+		} else
+			return FALSE;
+
+		LINK_FOR_EACH_ENTRY_SAFE(prPendingMgmtInfo,
+			prPendingMgmtInfoNext, &prGlueP2pInfo->rWaitTxDoneLink,
+			rLinkEntry, struct P2P_PENDING_MGMT_INFO) {
+			/* The non off ch TX frame is rely on RoC channel */
+			if (prPendingMgmtInfo->fgIsOffChannel == FALSE)
+				return TRUE;
+
+			/* The off ch TX frame is not enqueue if RoC on the
+			 * different channel. Only need wait the off ch TX
+			 * on the same channel.
+			 */
+			if (prPendingMgmtInfo->fgIsOffChannel &&
+				prPendingMgmtInfo->eBand == eBand &&
+				prPendingMgmtInfo->ucChannelNum == ucChannelNum)
+				return TRUE;
+		}
+	} else if (eP2pMgmtTxType == P2P_MGMT_OFF_CH_TX) {
+		LINK_FOR_EACH_ENTRY_SAFE(prPendingMgmtInfo,
+			prPendingMgmtInfoNext, &prGlueP2pInfo->rWaitTxDoneLink,
+			rLinkEntry, struct P2P_PENDING_MGMT_INFO) {
+			if (prPendingMgmtInfo->fgIsOffChannel)
+				return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 uint32_t
@@ -4430,7 +4493,11 @@ void p2pFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
 	u_int32_t u4Oui;
 	u_int8_t ucOuiType;
 	u_int8_t fgBufferFrame = FALSE;
+	uint8_t fgIsRoleChannel = FALSE;
+	uint8_t i;
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
+	struct BSS_INFO *prP2pBssInfo = NULL;
 
 	if (prAdapter == NULL || prSwRfb == NULL) {
 		DBGLOG(P2P, ERROR, "Invalid parameter.\n");
@@ -4440,16 +4507,34 @@ void p2pFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
 
 	prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
 
+	for (i = 0; i < KAL_P2P_NUM; i++) {
+		prP2pRoleFsmInfo =
+			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, i);
+		if (!prP2pRoleFsmInfo)
+			continue;
+
+		prP2pBssInfo = prAdapter->aprBssInfo[
+			prP2pRoleFsmInfo->ucBssIndex];
+		if (!prP2pBssInfo ||
+		    p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[i]))
+			continue;
+
+		if (prP2pBssInfo->ucPrimaryChannel == prSwRfb->ucChnlNum) {
+			fgIsRoleChannel = TRUE;
+			break;
+		}
+	}
+
 	/* In case channel is not granted yet, we should ignore action
 	  * frames which may come from unexpected channels.
 	  */
-	if (fgIsDevInterface && prP2pDevFsmInfo &&
-		((prP2pDevFsmInfo->eCurrentState ==
-			P2P_DEV_STATE_REQING_CHANNEL) ||
-		((prP2pDevFsmInfo->eCurrentState ==
-			P2P_DEV_STATE_CHNL_ON_HAND) &&
-			prP2pDevFsmInfo->rChnlReqInfo.ucReqChnlNum !=
-				prSwRfb->ucChnlNum))) {
+	if (fgIsDevInterface && prP2pDevFsmInfo && !fgIsRoleChannel &&
+		((prP2pDevFsmInfo->eCurrentState !=
+			P2P_DEV_STATE_OFF_CHNL_TX &&
+		prP2pDevFsmInfo->eCurrentState !=
+			P2P_DEV_STATE_CHNL_ON_HAND) ||
+		prP2pDevFsmInfo->rChnlReqInfo.ucReqChnlNum !=
+			prSwRfb->ucChnlNum)) {
 		DBGLOG(P2P, INFO,
 			"ignore rx action frame %d on state:%d, ReqChnl:%d, RxChnl:%d\n",
 			prActFrame->ucCategory,
