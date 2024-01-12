@@ -718,7 +718,8 @@ u_int8_t secIsRobustActionFrame(struct ADAPTER *prAdapter, void *prPacket)
 	       ucCategory == CATEGORY_DMG_ACTION ||
 	       ucCategory == CATEGORY_FST_ACTION ||
 	       ucCategory == CATEGORY_ROBUST_AV_STREAMING_ACTION ||
-	       ucCategory == CATEGORY_VENDOR_SPECIFIC_PROTECTED_ACTION
+	       ucCategory == CATEGORY_VENDOR_SPECIFIC_PROTECTED_ACTION ||
+	       ucCategory == CATEGORY_PROTECTED_EHT_ACTION
 	       ? TRUE : FALSE;
 }
 

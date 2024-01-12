@@ -584,6 +584,7 @@ struct PARAM_KEY {
 	uint8_t arBSSID[PARAM_MAC_ADDR_LEN];	/*!< MAC address */
 	uint64_t rKeyRSC;
 	uint8_t ucBssIdx;
+	int32_t i4LinkId;
 	uint8_t ucCipher;
 	uint8_t aucKeyMaterial[32];	/*!< Key content by above setting */
 	/* Following add to change the original windows structure */
@@ -595,6 +596,7 @@ struct PARAM_REMOVE_KEY {
 	uint32_t u4KeyIndex;	/*!< KeyID */
 	uint8_t arBSSID[PARAM_MAC_ADDR_LEN];	/*!< MAC address */
 	uint8_t ucBssIdx;
+	int32_t i4LinkId;
 };
 
 /*! \brief Default key */
@@ -603,6 +605,7 @@ struct PARAM_DEFAULT_KEY {
 	uint8_t ucUnicast;
 	uint8_t ucMulticast;
 	uint8_t ucBssIdx;
+	int32_t i4LinkId;
 };
 
 #if CFG_SUPPORT_WAPI

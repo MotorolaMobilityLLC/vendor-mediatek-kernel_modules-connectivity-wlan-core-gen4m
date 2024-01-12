@@ -283,15 +283,14 @@ saaFsmSteps(struct ADAPTER *prAdapter,
 			if (mldIsMultiLinkFormed(prAdapter, prStaRec)) {
 				kalVendorExternalAuthRequest(
 					prAdapter->prGlueInfo,
-					prStaRec, prStaRec->ucBssIndex);
+					prStaRec);
 			} else
-#endif
+#endif /* (CFG_SUPPORT_802_11BE_MLO == 1) */
 				kalExternalAuthRequest(
 					prAdapter->prGlueInfo,
-					prStaRec->ucBssIndex);
+					prStaRec);
 			break;
-#endif
-
+#endif /* CFG_SUPPORT_WPA3 */
 		case SAA_STATE_SEND_ASSOC1:
 			/* Do tasks in INIT STATE */
 			if (prStaRec->ucTxAuthAssocRetryCount >=

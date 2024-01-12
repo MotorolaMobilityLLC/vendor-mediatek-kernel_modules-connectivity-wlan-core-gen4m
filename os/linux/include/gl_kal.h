@@ -2285,13 +2285,12 @@ void kalRemoveBss(struct GLUE_INFO *prGlueInfo,
 #if CFG_SUPPORT_WPA3
 int kalExternalAuthRequest(
 		struct GLUE_INFO *prGlueInfo,
-		uint8_t uBssIndex);
+		struct STA_RECORD *prStaRec);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 int kalVendorExternalAuthRequest(
 		struct GLUE_INFO *prGlueInfo,
-		struct STA_RECORD *prStaRec,
-		uint8_t uBssIndex);
+		struct STA_RECORD *prStaRec);
 #endif
 #endif
 

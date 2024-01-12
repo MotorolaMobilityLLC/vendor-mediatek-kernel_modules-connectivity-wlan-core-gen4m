@@ -1081,6 +1081,10 @@ static struct cfg80211_ops mtk_cfg_ops = {
 #endif
 	.set_default_key = mtk_cfg_set_default_key,
 	.get_station = mtk_cfg_get_station,
+#if (CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
+	.get_channel = mtk_cfg_get_channel,
+#endif
 #if CFG_SUPPORT_TDLS
 	.change_station = mtk_cfg_change_station,
 	.add_station = mtk_cfg_add_station,
@@ -3756,6 +3760,12 @@ static void wlanCreateWirelessDevice(void)
 #if (CFG_SUPPORT_ROAMING == 1)
 	prWiphy->flags |= WIPHY_FLAG_SUPPORTS_FW_ROAM;
 #endif /* CFG_SUPPORT_ROAMING */
+
+#if (CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE) && \
+	(CFG_SUPPORT_802_11BE_MLO == 1)
+	prWiphy->flags |= WIPHY_FLAG_SUPPORTS_MLO;
+#endif
 
 #if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
 	prWiphy->flags |= WIPHY_FLAG_CUSTOM_REGULATORY;

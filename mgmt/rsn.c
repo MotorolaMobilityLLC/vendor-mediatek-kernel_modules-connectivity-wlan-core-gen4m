@@ -884,6 +884,17 @@ u_int8_t rsnPerformPolicySelection(
 	}
 #endif
 
+#if defined(MLD_SECURITY_RESTRICTIONS) && (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (prBss->rMlInfo.fgValid) {
+		if (!prBss->fgIERSN || !(prBss->u2RsnCap & ELEM_WPA_CAP_MFPC)) {
+			DBGLOG(RSN, INFO,
+				"Invalid rsne security mode: RSNE=%d, RsnCap=0x%x\n",
+				prBss->fgIERSN, prBss->u2RsnCap);
+			return FALSE;
+		}
+	}
+#endif
+
 #if CFG_SUPPORT_WPS
 	fgIsWpsActive = aisGetConnSettings(prAdapter,
 		ucBssIndex)->fgWpsActive;
@@ -964,6 +975,8 @@ u_int8_t rsnPerformPolicySelection(
 	if (!rsnIsSuitableBSS(prAdapter, prBss, prBssRsnInfo, ucBssIndex))
 		return FALSE;
 #endif
+
+
 
 	/* end Support AP Selection */
 

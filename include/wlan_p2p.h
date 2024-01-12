@@ -94,6 +94,7 @@ struct P2P_PARAM_KEY {
 	uint64_t rKeyRSC;
 	/* Following add to change the original windows structure */
 	uint8_t ucBssIdx;	/* for specific P2P BSS interface. */
+	int32_t i4LinkId;
 	uint8_t ucCipher;
 	uint8_t aucKeyMaterial[32];	/*!< Key content by above setting */
 };
