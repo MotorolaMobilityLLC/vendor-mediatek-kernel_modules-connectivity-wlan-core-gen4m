@@ -225,6 +225,7 @@ static remove_card pfWlanRemove;
 #if CFG_MTK_WIFI_AER_RESET
 static u_int8_t g_AERRstTriggered;
 static u_int8_t g_AERL05Rst;
+static uint32_t g_u4AERDumpInfo;
 #endif
 
 static struct platform_driver mtk_axi_driver = {
@@ -580,6 +581,7 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
 	dump = mtk_pcie_dump_link_info(0);
+	g_u4AERDumpInfo = dump;
 #endif
 
 	if (g_AERRstTriggered || kalIsResetting())
@@ -642,11 +644,19 @@ exit:
 static pci_ers_result_t mtk_pci_error_slot_reset(struct pci_dev *pdev)
 {
 #define AER_RST_STR		"Whole chip reset by AER"
+#define AER_RSN_SIZE		50
 
 	struct GLUE_INFO *prGlueInfo = g_prGlueInfo;
+	static char aucAerRsn[AER_RSN_SIZE];
+	uint32_t pos = 0;
 
 	DBGLOG(HAL, INFO, "mtk_pci_error_slot_reset, L05_rst: %d\n",
 		g_AERL05Rst);
+
+	kalMemZero(aucAerRsn, AER_RSN_SIZE);
+	pos = kalScnprintf(aucAerRsn, AER_RSN_SIZE, AER_RST_STR);
+	pos += kalScnprintf(aucAerRsn + pos, AER_RSN_SIZE - pos,
+			    " [0x%x]", g_u4AERDumpInfo);
 
 	if (g_AERL05Rst) {
 		GL_USER_DEFINE_RESET_TRIGGER(prGlueInfo->prAdapter,
@@ -655,6 +665,8 @@ static pci_ers_result_t mtk_pci_error_slot_reset(struct pci_dev *pdev)
 		glSetRstReasonString(AER_RST_STR);
 		glResetWholeChipResetTrigger(AER_RST_STR);
 	}
+
+	DBGLOG(HAL, INFO, "%s\n", aucAerRsn);
 
 	return PCI_ERS_RESULT_DISCONNECT;
 }
