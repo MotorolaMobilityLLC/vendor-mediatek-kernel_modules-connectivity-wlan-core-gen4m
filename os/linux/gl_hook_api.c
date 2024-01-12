@@ -243,6 +243,24 @@ int32_t MT_ICAPCommand(struct net_device *prNetDev,
 			kalMemFree(buf, VIR_MEM_TYPE, 1024);
 		} else
 			i4Status = 1;
+	} else if (prInBuf[0] == '5') {
+		if (prAteOps->getICapIQData) {
+			buf = (uint32_t *) kalMemAlloc(1024, VIR_MEM_TYPE);
+			i4Status = prAteOps->getICapIQData(prGlueInfo,
+						(uint8_t *) buf, CAP_I_TYPE, 1);
+			dumpMemory32((uint32_t *)buf, i4Status);
+			kalMemFree(buf, VIR_MEM_TYPE, 1024);
+		} else
+			i4Status = 1;
+	} else if (prInBuf[0] == '6') {
+		if (prAteOps->getICapIQData) {
+			buf = (uint32_t *) kalMemAlloc(1024, VIR_MEM_TYPE);
+			i4Status = prAteOps->getICapIQData(prGlueInfo,
+						(uint8_t *) buf, CAP_Q_TYPE, 1);
+			dumpMemory32((uint32_t *)buf, i4Status);
+			kalMemFree(buf, VIR_MEM_TYPE, 1024);
+		} else
+			i4Status = 1;
 	}
 
 	return i4Status;

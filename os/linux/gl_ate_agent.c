@@ -234,7 +234,8 @@ int SetATE(struct net_device *prNetDev, uint8_t *prInBuf)
 		DBGLOG(REQ, INFO, "ATE_AGENT iwpriv SetATE - ICAPSTART\n");
 		i4Status = MT_ICAPStart(prNetDev, prInBuf);
 	} else if (prInBuf[0] == '1' || prInBuf[0] == '2'
-		   || prInBuf[0] == '3' || prInBuf[0] == '4') {
+		   || prInBuf[0] == '3' || prInBuf[0] == '4'
+		   || prInBuf[0] == '5' || prInBuf[0] == '6') {
 		DBGLOG(REQ, INFO,
 		       "ATE_AGENT iwpriv SetATE - ICAP COMMAND\n");
 		i4Status = MT_ICAPCommand(prNetDev, prInBuf);
