@@ -399,6 +399,12 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	prHif->rErrRecoveryCtl.u4Status = 0;
 	prHif->fgIsErrRecovery = FALSE;
 
+	init_timer(&prHif->rSerTimer);
+	prHif->rSerTimer.function = halHwRecoveryTimeout;
+	prHif->rSerTimer.data = (unsigned long)prGlueInfo;
+	prHif->rSerTimer.expires =
+		jiffies + HIF_SER_TIMEOUT * HZ / MSEC_PER_SEC;
+
 	INIT_LIST_HEAD(&prHif->rTxCmdQ);
 	INIT_LIST_HEAD(&prHif->rTxDataQ);
 	prHif->u4TxDataQLen = 0;
@@ -443,6 +449,8 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 	struct list_head *prCur, *prNext;
 	struct TX_CMD_REQ *prTxCmdReq;
 	struct TX_DATA_REQ *prTxDataReq;
+
+	del_timer_sync(&prHifInfo->rSerTimer);
 
 	halUninitMsduTokenInfo(prGlueInfo->prAdapter);
 	halWpdmaFreeRing(prGlueInfo);

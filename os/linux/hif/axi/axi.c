@@ -97,12 +97,11 @@
  */
 
 static const struct platform_device_id mtk_axi_ids[] = {
-#ifdef CONNAC
 	{	.name = "CONNAC",
+#ifdef CONNAC
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_connac},
 #endif /* CONNAC */
 #ifdef CONNAC2X2
-	{	.name = "CONNAC2X2",
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_connac2x2},
 #endif /* CONNAC2X2 */
 	{ /* end: all zeroes */ },
@@ -396,7 +395,11 @@ static bool axiAllocRsvMem(uint32_t u4Size, struct HIF_MEM *prMem,
 
 static void axiAllocHifMem(struct platform_device *pdev)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4Idx;
+
+	prChipInfo = ((struct mt66xx_hif_driver_data *)
+		mtk_axi_ids[0].driver_data)->chip_info;
 
 	request_mem_region(gWifiRsvMemPhyBase, gWifiRsvMemSize, axi_name(pdev));
 
@@ -445,7 +448,8 @@ static void axiAllocHifMem(struct platform_device *pdev)
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
 	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
-		if (!axiAllocRsvMem(AXI_TX_MAX_SIZE_PER_FRAME,
+		if (!axiAllocRsvMem(AXI_TX_MAX_SIZE_PER_FRAME +
+				    prChipInfo->txd_append_size,
 				    &grMem.rMsduBuf[u4Idx], true))
 			DBGLOG(INIT, ERROR, "MsduBuf[%u] alloc fail\n", u4Idx);
 	}
@@ -679,6 +683,12 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	prHif->rErrRecoveryCtl.u4Status = 0;
 	prHif->fgIsErrRecovery = FALSE;
 
+	init_timer(&prHif->rSerTimer);
+	prHif->rSerTimer.function = halHwRecoveryTimeout;
+	prHif->rSerTimer.data = (unsigned long)prGlueInfo;
+	prHif->rSerTimer.expires =
+		jiffies + HIF_SER_TIMEOUT * HZ / MSEC_PER_SEC;
+
 	INIT_LIST_HEAD(&prHif->rTxCmdQ);
 	INIT_LIST_HEAD(&prHif->rTxDataQ);
 	prHif->u4TxDataQLen = 0;
@@ -746,6 +756,8 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 	struct list_head *prCur, *prNext;
 	struct TX_CMD_REQ *prTxCmdReq;
 	struct TX_DATA_REQ *prTxDataReq;
+
+	del_timer_sync(&prHifInfo->rSerTimer);
 
 	halUninitMsduTokenInfo(prGlueInfo->prAdapter);
 	halWpdmaFreeRing(prGlueInfo);
