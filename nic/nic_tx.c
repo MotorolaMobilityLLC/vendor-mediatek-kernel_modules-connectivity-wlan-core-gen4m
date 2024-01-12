@@ -3031,6 +3031,7 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 		}
 #endif
 		if (prMsduInfo->ucPktType != 0) {
+			prMsduInfo->u4Option |= MSDU_OPT_NO_AGGREGATE;
 #if CFG_SUPPORT_LIMITED_PKT_PID
 			if (!nicTxPktPIDIsLimited(prAdapter, prMsduInfo)) {
 #endif /* CFG_SUPPORT_LIMITED_PKT_PID */
