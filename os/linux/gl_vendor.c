@@ -3827,6 +3827,53 @@ nla_put_failure:
 	return -EINVAL;
 }
 
+int mtk_cfg80211_vendor_get_chip_capabilities(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len)
+{
+	struct sk_buff *reply_skb;
+	int32_t chip_capabilities[NUM_CHIP_CAPABILITIES] = {0};
+
+	if (!wiphy || !wdev)
+		return -EINVAL;
+
+	reply_skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
+				sizeof(chip_capabilities) + NLMSG_HDRLEN);
+
+	if (!reply_skb)
+		goto nla_put_failure;
+
+	/* return -1 if driver doesn't support the capabilities */
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	chip_capabilities[MAX_MLO_ASSOCIATION_LINK_COUNT] = MLD_LINK_MAX;
+	chip_capabilities[MAX_MLO_STR_LINK_COUNT] = MLD_LINK_MAX;
+#else
+	chip_capabilities[MAX_MLO_ASSOCIATION_LINK_COUNT] = -1;
+	chip_capabilities[MAX_MLO_STR_LINK_COUNT] = -1;
+#endif /* (CFG_SUPPORT_802_11BE_MLO == 1) */
+
+	chip_capabilities[MAX_CONCURRENT_TDLS_SESSION_COUNT] = MAXNUM_TDLS_PEER;
+
+	if (unlikely(nla_put_s32(reply_skb,
+		MAX_MLO_ASSOCIATION_LINK_COUNT,
+		chip_capabilities[MAX_MLO_ASSOCIATION_LINK_COUNT]) < 0))
+		goto nla_put_failure;
+	if (unlikely(nla_put_s32(reply_skb,
+		MAX_MLO_STR_LINK_COUNT,
+		chip_capabilities[MAX_MLO_STR_LINK_COUNT]) < 0))
+		goto nla_put_failure;
+	if (unlikely(nla_put_s32(reply_skb,
+		MAX_CONCURRENT_TDLS_SESSION_COUNT,
+		chip_capabilities[MAX_CONCURRENT_TDLS_SESSION_COUNT]) < 0))
+		goto nla_put_failure;
+
+	return cfg80211_vendor_cmd_reply(reply_skb);
+
+nla_put_failure:
+	if (reply_skb)
+		kfree_skb(reply_skb);
+	return -EINVAL;
+}
+
 int mtk_cfg80211_vendor_get_apf_capabilities(struct wiphy *wiphy,
 	struct wireless_dev *wdev, const void *data, int data_len)
 {
