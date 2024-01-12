@@ -626,6 +626,17 @@ void roamingFsmRunEventDiscovery(IN struct ADAPTER *prAdapter,
 			DBGLOG(ROAMING, INFO, "ucRCPI %u\n",
 				prBssDesc->ucRCPI);
 		}
+
+		/* Save roaming reason code and PER value for AP selection */
+		prRoamingFsmInfo->eReason = prTransit->eReason;
+		if (prTransit->eReason == ROAMING_REASON_TX_ERR) {
+			prRoamingFsmInfo->ucPER =
+				(prTransit->u2Data >> 8) & 0xff;
+			DBGLOG(ROAMING, INFO, "ucPER %u\n",
+				prRoamingFsmInfo->ucPER);
+		} else {
+			prRoamingFsmInfo->ucPER = 0;
+		}
 		roamingFsmSteps(prAdapter, eNextState);
 	}
 }				/* end of roamingFsmRunEventDiscovery() */
@@ -778,16 +789,15 @@ uint32_t roamingFsmProcessEvent(IN struct ADAPTER *prAdapter,
 	       kalGetTimeTick());
 
 	if (prTransit->u2Event == ROAMING_EVENT_DISCOVERY) {
+		DBGLOG(ROAMING, TRACE,
+			"RX ROAMING_EVENT_DISCOVERY Data[%d] RCPI[%d] PER[%d] Thr[%d] Reason[%d] Time[%ld]\n",
+			prTransit->u2Data,
+			(prTransit->u2Data) & 0xff,      /* L[8], RCPI */
+			(prTransit->u2Data >> 8) & 0xff, /* H[8], PER */
+			prTransit->u2RcpiLowThreshold,
+			prTransit->eReason,
+			prTransit->u4RoamingTriggerTime);
 		roamingFsmRunEventDiscovery(prAdapter, prTransit);
-
-#if 0
-		DBGLOG(ROAMING, INFO,
-		       "RX ROAMING_EVENT_DISCOVERY RCPI[%d] Thr[%d] Reason[%d] Time[%ld]\n",
-		       prTransit->u2Data,
-		       prTransit->u2RcpiLowThreshold,
-		       prTransit->eReason,
-		       prTransit->u4RoamingTriggerTime);
-#endif
 	}
 
 	return WLAN_STATUS_SUCCESS;
