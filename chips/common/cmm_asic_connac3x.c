@@ -2585,9 +2585,16 @@ static void __wlan_pwr_on_notify(struct work_struct *work)
 {
 	struct GLUE_INFO *glue = NULL;
 	int32_t ret = 0;
-
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK_T *prWlanOnOffWakeLock;
+#endif
 	DBGLOG(INIT, INFO, "__wlan_pwr_on_notify.\n");
 
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK_INIT(NULL,
+		prWlanOnOffWakeLock, "WLAN pwr_on");
+	KAL_WAKE_LOCK(NULL, prWlanOnOffWakeLock);
+#endif
 	wfsys_lock();
 
 	WIPHY_PRIV(wlanGetWiphy(), glue);
@@ -2611,6 +2618,10 @@ exit:
 	if (ret)
 		DBGLOG(INIT, ERROR, "failed, ret=%d\n", ret);
 	wfsys_unlock();
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_UNLOCK(NULL, prWlanOnOffWakeLock);
+	KAL_WAKE_LOCK_DESTROY(NULL, prWlanOnOffWakeLock);
+#endif
 }
 
 u_int8_t is_pwr_on_notify_processing(void)
