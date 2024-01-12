@@ -2038,7 +2038,10 @@ struct ADAPTER {
 
 #if CFG_SUPPORT_LLS
 	uint8_t ucLinkStatsBssNum;
-	struct HAL_LLS_FULL_REPORT rLinkStatsDestBuffer;
+	union {
+		struct HAL_LLS_FULL_REPORT rLinkStatsDestBuffer_v1;
+		struct HAL_LLS_FULL_REPORT_V2 rLinkStatsDestBuffer_v2;
+	} rLinkStatsDestBuffer;
 	struct HAL_LLS_FW_REPORT *pucLinkStatsSrcBufferAddr;
 	/* Store in LLS order */
 	uint32_t *pu4TxTimePerLevels;

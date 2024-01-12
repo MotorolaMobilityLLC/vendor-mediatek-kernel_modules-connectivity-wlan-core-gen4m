@@ -820,7 +820,7 @@ struct STATS_LLS_WIFI_RADIO_STAT {
 	uint32_t on_time_pno_scan;
 	uint32_t on_time_hs20;
 	uint32_t num_channels;
-	struct STATS_LLS_CHANNEL_STAT channels[0];
+	struct STATS_LLS_CHANNEL_STAT channels[];
 };
 
 /**

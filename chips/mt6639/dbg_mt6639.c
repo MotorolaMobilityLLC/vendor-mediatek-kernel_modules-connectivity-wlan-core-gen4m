@@ -2242,7 +2242,7 @@ void mt6639_get_rx_link_stats(struct ADAPTER *prAdapter,
 			RXV_GET_RX_RATE(pu4RxV[0]));
 
 	if (!(prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_MSDU ||
-		prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU))
+	      prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU))
 		return;
 
 	rate.preamble = TX_MODE_2_LLS_MODE[RXV_GET_TXMODE(pu4RxV[2])];
@@ -2268,8 +2268,18 @@ void mt6639_get_rx_link_stats(struct ADAPTER *prAdapter,
 		goto wrong_rate;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	/**
+	 * For MLO, it should read prSwRfb->ucHwBandIdx to match the RX link.
+	 * Locate a starec in same MLD by matching eHwBandIdx.
+	 */
+	prStaRec = mldGetStaRecByBandIdx(prAdapter, prStaRec,
+					prSwRfb->ucHwBandIdx);
+#endif
 	if (!prStaRec) {
-		DBGLOG(RX, WARN, "StaRec %u not found", prSwRfb->ucStaRecIdx);
+		DBGLOG(RX, WARN, "StaRec %u band=%u not found",
+				prSwRfb->ucStaRecIdx,
+				prSwRfb->ucHwBandIdx);
 		goto wrong_rate;
 	}
 

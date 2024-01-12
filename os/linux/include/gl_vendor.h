@@ -807,7 +807,7 @@ struct STATS_LLS_WIFI_RADIO_STAT {
 	uint32_t on_time_pno_scan;
 	uint32_t on_time_hs20;
 	uint32_t num_channels;
-	struct STATS_LLS_CHANNEL_STAT channels[0];
+	struct STATS_LLS_CHANNEL_STAT channels[];
 };
 
 
@@ -905,6 +905,11 @@ enum ENUM_WIFI_INTERFACE_MODE {
  *                     slicing on a radio with one or more ifaces (i.e MCC),
  *                     then the duty cycle assigned to this iface in %.
  *                     If not using time slicing (i.e SCC or DBS), set to 100.
+ *
+ * This structure is common part of legacy STATS_LLS_WIFI_IFACE_STAT and
+ * multi-link STATS_LLS_WIFI_IFACE_ML_STAT.
+ *
+ * Total size = 4 + 6 (+2) + 4 + 4 + 4 + 33 + 6 + 3 + 3 + 1 = 70 bytes
  */
 struct WIFI_INTERFACE_LINK_LAYER_INFO {
 	enum ENUM_WIFI_INTERFACE_MODE mode;
@@ -1015,7 +1020,87 @@ struct STATS_LLS_WMM_AC_STAT {
 };
 
 /**
- * interface statistics
+ * Varioud sttes for the link
+ * @WIFI_LINK_STATE_UNKNOWN: Chip does not support reporting the state of the
+ *	link
+ * @WIFI_LINK_STATE_NOT_IN_USE: Link has not been in use since laste report.
+ *	It is placed in power save.
+ *	All management, control and data frames for the MLO connection are
+ *	carried over links. In this state the link will not listen to beacons
+ *	even in DTIM period and does not perform any GTK/IGTK/BIGTK updates but
+ *	remains associated.
+ * @WIFI_LINK_STATE_IN_USE: Link is in use. In presence of traffic,it is set to
+ *	be power active.
+ *	When the traffic stops, the link will go into power save mode and will
+ *	listen for beacons every DTIM period.
+ */
+enum wifi_link_state {
+	WIFI_LINK_STATE_UNKNOWN = 0,
+	WIFI_LINK_STATE_NOT_IN_USE = 1,
+	WIFI_LINK_STATE_IN_USE = 2,
+};
+
+/**
+ * Link statistics
+ * @link_id: (NEW) Identifier for the link.
+ * @state: (NEW) state for the link
+ * @radio: (NEW) Radio on which link stats are sampled.
+ * @frequency: (NEW) Frequency on which link is operating.
+ *
+ * @beacon_rx: access point beacon received count from connected AP
+ * @average_tsf_offset: average beacon offset encountered (beacon_TSF - TBTT)
+ *               The average_tsf_offset field is used so as to calculate the
+ *               typical beacon contention time on the channel as well may be
+ *               used to debug beacon synchronization and related power
+ *               consumption issue
+ * @leaky_ap_detected: indicate that this AP typically leaks packets
+ *                     beyond the driver guard time.
+ * @leaky_ap_avg_num_frames_leaked: average number of frame leaked by AP
+ *                                  after frame with PM bit set was ACK'ed by AP
+ * @leaky_ap_guard_time: guard time currently in force
+ *                       (when implementing IEEE power management based on
+ *                       frame control PM bit), How long driver waits before
+ *                       shutting down the radio and after receiving an ACK
+ *                       for a data frame with PM bit set)
+ * @mgmt_rx: access point mgmt frames received count from connected AP
+ *           (including Beacon)
+ * @mgmt_action_rx: action frames received count
+ * @mgmt_action_tx: action frames transmit count
+ * @rssi_mgmt: access Point Beacon and Management frames RSSI (averaged)
+ * @rssi_data: access Point Data Frames RSSI (averaged) from connected AP
+ * @rssi_ack: access Point ACK RSSI (averaged) from connected AP
+ * @ac[WIFI_AC_MAX]: per ac data packet statistics
+ * @time_slicing_duty_cycle_percent: (NEW) If this link is being served using
+ *	time slicing on a radio with one or more links, then the duty cycle
+ *	assigned to this link in %.
+ * @num_peers: number of peers
+ * @peer_info[]: per peer statistics
+ */
+struct STATS_LLS_WIFI_LINK_STAT {
+	uint8_t link_id; /* NEW, 1 byte (+ 3 bytes) */
+	enum wifi_link_state state; /* NEW, 4 bytes, 2023/03/29 */
+	int32_t radio; /* NEW, 4 bytes */
+	uint32_t frequency; /* NEW, 4 bytes */
+	uint32_t beacon_rx; /* 4 bytes */
+	/* 4 bytes padding */
+	uint64_t average_tsf_offset; /* 8 bytes */
+	uint32_t leaky_ap_detected;
+	uint32_t leaky_ap_avg_num_frames_leaked;
+	uint32_t leaky_ap_guard_time;
+	uint32_t mgmt_rx;
+	uint32_t mgmt_action_rx;
+	uint32_t mgmt_action_tx;
+	int32_t rssi_mgmt;
+	int32_t rssi_data;
+	int32_t rssi_ack;
+	struct STATS_LLS_WMM_AC_STAT ac[STATS_LLS_WIFI_AC_MAX];
+	uint8_t time_slicing_duty_cycle_precent; /* NEW */
+	uint32_t num_peers;
+	struct STATS_LLS_PEER_INFO peer_info[];
+};
+
+/**
+ * interface statistics, used by single link (Android T)
  *
  * @iface: wifi interface
  * @info: current state of the interface
@@ -1044,12 +1129,15 @@ struct STATS_LLS_WMM_AC_STAT {
  * @ac[WIFI_AC_MAX]: per ac data packet statistics
  * @num_peers: number of peers
  * @peer_info[]: per peer statistics
+ *
+ * The bottom part from beacon_rx have been moved to STATS_LLS_WIFI_LINK_STAT
+ * in the new multi-link netdev level structure STATS_LLS_WIFI_IFACE_ML_STAT.
  */
 struct STATS_LLS_WIFI_IFACE_STAT {
 	void *iface;
-	struct WIFI_INTERFACE_LINK_LAYER_INFO info;
-	uint32_t beacon_rx;
-	uint64_t average_tsf_offset;
+	struct WIFI_INTERFACE_LINK_LAYER_INFO info; /* 70 bytes + 2 bytes */
+	uint32_t beacon_rx; /* + a hole of 4 bytes */
+	uint64_t average_tsf_offset; /* 8-byte aligned */
 	uint32_t leaky_ap_detected;
 	uint32_t leaky_ap_avg_num_frames_leaked;
 	uint32_t leaky_ap_guard_time;
@@ -1063,6 +1151,21 @@ struct STATS_LLS_WIFI_IFACE_STAT {
 	uint32_t num_peers;
 	struct STATS_LLS_PEER_INFO peer_info[];
 };
+
+/* Multi link stats for interface, used by Android U
+ *
+ * @iface: wifi interface
+ * @info: current state of the interface
+ * @num_links: Number of links
+ * @links: Stats per link
+ */
+struct STATS_LLS_WIFI_IFACE_ML_STAT {
+	void *iface;
+	struct WIFI_INTERFACE_LINK_LAYER_INFO info; /* 70 bytes + 2 bytes */
+	int32_t num_links;
+	struct STATS_LLS_WIFI_LINK_STAT links[MLD_LINK_MAX];
+};
+
 
 /* Shared EMI Memory layout */
 struct PEER_INFO_RATE_STAT {
@@ -1092,6 +1195,14 @@ struct HAL_LLS_FW_REPORT {
 /* Buffer to hold collected data from FW reported EMI address */
 struct HAL_LLS_FULL_REPORT {
 	struct STATS_LLS_WIFI_IFACE_STAT iface;
+	struct PEER_INFO_RATE_STAT peer_info[CFG_STA_REC_NUM];
+	struct WIFI_RADIO_CHANNEL_STAT radio[ENUM_BAND_NUM];
+	uint32_t tx_levels[ENUM_BAND_NUM][LLS_RADIO_STAT_MAX_TX_LEVELS];
+};
+
+/* Buffer to hold collected data from FW reported EMI address */
+struct HAL_LLS_FULL_REPORT_V2 {
+	struct STATS_LLS_WIFI_IFACE_ML_STAT iface;
 	struct PEER_INFO_RATE_STAT peer_info[CFG_STA_REC_NUM];
 	struct WIFI_RADIO_CHANNEL_STAT radio[ENUM_BAND_NUM];
 	uint32_t tx_levels[ENUM_BAND_NUM][LLS_RADIO_STAT_MAX_TX_LEVELS];

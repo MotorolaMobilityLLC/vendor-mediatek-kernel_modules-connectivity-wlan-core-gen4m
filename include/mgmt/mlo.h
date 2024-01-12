@@ -419,4 +419,6 @@ uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 uint8_t mldCheckMldType(struct ADAPTER *prAdapter,
 	uint8_t *pucIe, uint16_t u2Len);
 
+struct STA_RECORD *mldGetStaRecByBandIdx(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec, uint8_t ucHwBandIdx);
 #endif /* !_MLO_H */
