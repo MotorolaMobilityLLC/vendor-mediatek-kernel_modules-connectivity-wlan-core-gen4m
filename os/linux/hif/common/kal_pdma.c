@@ -1025,19 +1025,25 @@ static enum ENUM_CMD_TX_RESULT kalDevWriteCmdByQueue(
 
 bool kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
 {
+	struct ADAPTER *prAdapter = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct list_head *prCur, *prNext;
 	struct TX_CMD_REQ *prTxReq;
 	enum ENUM_CMD_TX_RESULT ret;
 	unsigned long flags;
 
+	KAL_SPIN_LOCK_DECLARATION();
+
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prAdapter = prGlueInfo->prAdapter;
 
 	spin_lock_irqsave(&prHifInfo->rTxCmdQLock, flags);
 	list_for_each_safe(prCur, prNext, &prHifInfo->rTxCmdQ) {
 		prTxReq = list_entry(prCur, struct TX_CMD_REQ, list);
 		if (prTxReq->prCmdInfo) {
+			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+				SPIN_LOCK_CMD_PENDING);
 			ret = halWpdmaWriteCmd(prGlueInfo,
 				prTxReq->prCmdInfo, prTxReq->ucTC);
 			if (ret == CMD_TX_RESULT_SUCCESS) {
@@ -1048,6 +1054,8 @@ bool kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
 			} else {
 				DBGLOG(HAL, ERROR, "ret: %d\n", ret);
 			}
+			KAL_RELEASE_SPIN_LOCK(prAdapter,
+				SPIN_LOCK_CMD_PENDING);
 		}
 		list_del(prCur);
 		kfree(prTxReq);

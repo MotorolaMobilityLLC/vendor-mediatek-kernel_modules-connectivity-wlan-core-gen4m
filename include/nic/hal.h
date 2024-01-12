@@ -433,14 +433,18 @@ do { \
 #define HAL_WRITE_TX_CMD(_prAdapter, _prCmdInfo, _ucTC) \
 { \
 	enum ENUM_CMD_TX_RESULT ret; \
+	KAL_SPIN_LOCK_DECLARATION(); \
+	\
 	if (_prAdapter->rAcpiState == ACPI_STATE_D3) { \
 		ASSERT(0); \
 	} \
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING); \
 	ret = kalDevWriteCmd(_prAdapter->prGlueInfo, _prCmdInfo, _ucTC); \
 	if (ret == CMD_TX_RESULT_SUCCESS) { \
 		if (_prCmdInfo && _prCmdInfo->pfHifTxCmdDoneCb) \
 			_prCmdInfo->pfHifTxCmdDoneCb(_prAdapter, _prCmdInfo); \
 	} \
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING); \
 }
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
