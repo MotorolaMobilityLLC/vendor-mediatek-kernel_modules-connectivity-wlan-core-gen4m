@@ -433,6 +433,11 @@ twtPlannerAddAgrtTbl(
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	struct _EXT_CMD_TWT_ARGT_UPDATE_T *prTWTAgrtUpdate;
 
+	if (prBssInfo == NULL) {
+		DBGLOG(TWT_PLANNER, ERROR, "No bssinfo to add agrt\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	rWlanStatus = twtPlannerDrvAgrtAdd(prAdapter, prBssInfo->ucBssIndex,
 		ucFlowId, prTWTParams, &ucAgrtTblIdx);
 	if (rWlanStatus) {
@@ -506,6 +511,11 @@ twtPlannerResumeAgrtTbl(struct ADAPTER *prAdapter,
 	struct _EXT_CMD_TWT_ARGT_UPDATE_T *prTWTAgrtUpdate;
 	struct _TWT_PARAMS_T rTWTParams;
 
+	if (prBssInfo == NULL) {
+		DBGLOG(TWT_PLANNER, ERROR, "No bssinfo to resume agrt\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	rWlanStatus = twtPlannerDrvAgrtGet(prAdapter, prBssInfo->ucBssIndex,
 		ucFlowId, &ucAgrtTblIdx, &rTWTParams);
 	if (rWlanStatus) {
@@ -574,6 +584,11 @@ twtPlannerModifyAgrtTbl(struct ADAPTER *prAdapter,
 	struct _EXT_CMD_TWT_ARGT_UPDATE_T *prTWTAgrtUpdate;
 	struct _TWT_PARAMS_T rTWTParams;
 
+	if (prBssInfo == NULL) {
+		DBGLOG(TWT_PLANNER, ERROR, "No bssinfo to modify agrt\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	/* Handle driver agreement table */
 	rWlanStatus = twtPlannerDrvAgrtModify(prAdapter, prBssInfo->ucBssIndex,
 		ucFlowId, prNextTWTInfo, &ucAgrtTblIdx, &rTWTParams);
@@ -635,6 +650,11 @@ twtPlannerDelAgrtTbl(struct ADAPTER *prAdapter,
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	struct _TWT_PLANNER_T *prTWTPlanner = &(prAdapter->rTWTPlanner);
 	struct _EXT_CMD_TWT_ARGT_UPDATE_T *prTWTAgrtUpdate;
+
+	if (prBssInfo == NULL) {
+		DBGLOG(TWT_PLANNER, ERROR, "No bssinfo to delete agrt\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
 
 	/* Find and delete the agreement entry in the driver */
 	ucAgrtTblIdx = twtPlannerDrvAgrtFind(prAdapter,
