@@ -524,6 +524,7 @@ struct BSS_INFO {
 	struct LINK rPmkidCache;
 
 	enum ENUM_MBMC_BN eHwBandIdx;
+	enum ENUM_MBMC_BN eBackupHwBandIdx; /* backup to restore hw band */
 	/* TODO other code block  use this in uni_cmd_event.c w/o define */
 #if (CFG_SUPPORT_802_11BE_MLO == 1) || defined(CFG_SUPPORT_UNIFIED_COMMAND)
 	uint8_t ucGroupMldId;
