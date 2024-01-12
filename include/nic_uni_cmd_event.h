@@ -4452,13 +4452,14 @@ struct UNI_EVENT_SLEEP_INFO {
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_SPECTRUM {
 	/* fixed field */
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
-	*
+	uint8_t aucTlvBuffer[0];
+	/**< the TLVs included in this field:
 	*   TAG                           | ID  | structure
 	*   ------------------------------|-----|-----------------------------
 	*   UNI_EVENT_SPECTRUM_TAG_STATUS | 0x0 | UNI_EVENT_SPECTRUM_STATUS
@@ -4476,6 +4477,7 @@ enum UNI_EVENT_SPECTRUM_TAG {
 };
 
 /* SPECTRUM_STATUS (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_SPECTRUM_STATUS {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -4486,6 +4488,7 @@ struct UNI_EVENT_SPECTRUM_STATUS {
 } __KAL_ATTRIB_PACKED__;
 
 /* SPECTRUM_DATA (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_SPECTRUM_DATA {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -4501,6 +4504,7 @@ struct UNI_EVENT_SPECTRUM_DATA {
 } __KAL_ATTRIB_PACKED__;
 
 /* PHY_ICS_DATA (Tag2) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_PHY_ICS_DUMP_RAW_DATA {
 	uint16_t u2Tag;
 	uint16_t u2Length;

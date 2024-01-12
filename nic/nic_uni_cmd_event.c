@@ -7011,7 +7011,7 @@ void nicUniEventQueryRxStatAll(IN struct ADAPTER
 	uint32_t i, u4Temp;
 
 	for (i = 0; i < UNI_EVENT_TESTMODE_RX_STAT_ALL_ITEM; i++) {
-		u4Temp = ntohl(tag->u4Buffer[i]);
+		u4Temp = NTOHL(tag->u4Buffer[i]);
 		kalMemCopy(prElement, &u4Temp, 4);
 
 		if (i < (UNI_EVENT_TESTMODE_RX_STAT_ALL_ITEM - 1))

@@ -3667,7 +3667,7 @@ void rsnApSaQueryAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 
 	/* MLME-SAQuery.confirm */
 	/* transform to network byte order */
-	u2SwapTrID = htons(prStaRec->rPmfCfg.u2TransactionID);
+	u2SwapTrID = HTONS(prStaRec->rPmfCfg.u2TransactionID);
 	if (kalMemCmp((uint8_t *) &u2SwapTrID, prRxFrame->ucTransId,
 		      ACTION_SA_QUERY_TR_ID_LEN) == 0) {
 		DBGLOG(RSN, INFO, "AP Reply to SA Query received\n");

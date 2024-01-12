@@ -276,7 +276,7 @@ void nicCmdEventQueryRxStatistics(IN struct ADAPTER
 		if (prRxStatistics->u4SeqNum == u4RxStatSeqNum) {
 			prElement = &g_HqaRxStat.MAC_FCS_Err;
 			for (i = 0; i < HQA_RX_STATISTIC_NUM; i++) {
-				u4Temp = ntohl(
+				u4Temp = NTOHL(
 					prEventAccessRxStat->au4Buffer[i]);
 				kalMemCopy(prElement, &u4Temp, 4);
 
