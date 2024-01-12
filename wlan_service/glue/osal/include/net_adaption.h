@@ -935,6 +935,7 @@ struct test_capability_ph_cap {
 
 	/* BIT0: BW20, BIT1: BW40, BIT2: BW80 */
 	/* BIT3: BW160C, BIT4: BW80+80(BW160NC) */
+	/* BIT5: BW320*/
 	u_int32 bandwidth;
 
 	/* BIT0: Band0 2.4G, BIT1: Band0 5G, BIT2: Band0 6G */
