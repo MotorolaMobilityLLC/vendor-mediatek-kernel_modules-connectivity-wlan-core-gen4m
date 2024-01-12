@@ -318,10 +318,27 @@ struct HIF_MEM {
 struct HIF_PREALLOC_MEM {
 	struct HIF_MEM rTxDesc[NUM_OF_TX_RING];
 	struct HIF_MEM rRxDesc[NUM_OF_RX_RING];
+	/* Tx Command */
 	struct HIF_MEM rTxCmdBuf[TX_RING_SIZE];
+	/* Rx Data */
 	struct HIF_MEM rRxDataBuf[RX_RING0_SIZE];
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	/* Connac1.0 = RX Event, Connac2.0 = Rx Data band1 */
+	struct HIF_MEM rRxEventBuf[RX_RING0_SIZE];
+	/* Band 0 TxFreeDoneEvent */
+	struct HIF_MEM wfdma0_rx_ring_idx2[RX_RING1_SIZE];
+	/* Band 1 TxFreeDoneEvent */
+	struct HIF_MEM wfdma0_rx_ring_idx3[RX_RING1_SIZE];
+	/* WM Event */
+	struct HIF_MEM wfdma1_rx_ring_idx0[RX_RING1_SIZE];
+#else
+	/* Connac1.0 = RX Event, Connac2.0 = Rx Data band1 */
 	struct HIF_MEM rRxEventBuf[RX_RING1_SIZE];
+#endif /* CFG_SUPPORT_CONNAC2X == 1 */
+
 #if HIF_TX_PREALLOC_DATA_BUFFER
+	/* Tx Data */
 	struct HIF_MEM rMsduBuf[HIF_TX_MSDU_TOKEN_NUM];
 #endif
 	phys_addr_t pucRsvMemBase;
