@@ -610,6 +610,10 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 #endif
 
 	prGlueInfo->fgIsInSuspendMode = TRUE;
+#if (CFG_SUPPORT_PERMON == 1)
+	if (!wlan_perf_monitor_force_enable)
+		kalPerMonDisable(prGlueInfo);
+#endif
 
 	wlanSuspendPmHandle(prGlueInfo);
 
@@ -652,7 +656,7 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 	*  1. The other unfinished ownership handshakes
 	*  2. FW own back
 	*/
-	while (wait < 100) {
+	while (wait < 500) {
 		if ((prAdapter->u4PwrCtrlBlockCnt == 0) &&
 		    (prAdapter->fgIsFwOwn == TRUE) &&
 		    (drv_own_fail == FALSE)) {
@@ -672,13 +676,13 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 		else
 			drv_own_fail = TRUE;
 		/* For single core CPU, let hif_thread can be completed */
-		kalMsleep(10);
+		usleep_range(1000, 3000);
 		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 
 		wait++;
 	}
 
-	if (wait >= 100) {
+	if (wait >= 500) {
 		DBGLOG(HAL, ERROR, "Set FW Own Timeout !!\n");
 		return -EAGAIN;
 	}
@@ -707,6 +711,15 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 		}
 	}
 
+	glSdioSetState(&prGlueInfo->rHifInfo, SDIO_STATE_SUSPEND);
+
+	/* pending cmd will be kept in queue,
+	 * And no one to handle it after HIF resume.
+	 * In STR, it will result in cmd buf full and then cmd buf alloc fail .
+	 */
+	if (IS_FEATURE_ENABLED(prGlueInfo->prAdapter->rWifiVar.ucWow))
+		wlanReleaseAllTxCmdQueue(prGlueInfo->prAdapter);
+
 	DBGLOG(HAL, STATE, "<==\n");
 	return 0;
 }
@@ -715,25 +728,63 @@ static int mtk_sdio_pm_resume(struct device *pDev)
 {
 	struct sdio_func *func;
 	struct GLUE_INFO *prGlueInfo = NULL;
+#if CFG_SUPPORT_WOW_EINT
+	struct ADAPTER *prAdapter = NULL;
+#endif
+	uint32_t count = 0;
 
 	DBGLOG(HAL, STATE, "==>\n");
 
 	func = dev_to_sdio_func(pDev);
 	prGlueInfo = sdio_get_drvdata(func);
 
-	DBGLOG(REQ, STATE, "Wow:%d, WowEnable:%d\n",
-		prGlueInfo->prAdapter->rWifiVar.ucWow,
-		prGlueInfo->prAdapter->rWowCtrl.fgWowEnable);
+	halEnableInterrupt(prGlueInfo->prAdapter);
+
+#if CFG_SUPPORT_WOW_EINT
+	prAdapter = prGlueInfo->prAdapter;
+
+	if (prAdapter->rWowlanDevNode.wowlan_irq != 0 &&
+		atomic_read(
+		&(prAdapter->rWowlanDevNode.irq_enable_count)) == 1) {
+		DBGLOG(HAL, ERROR, "%s:disable WIFI IRQ:%d\n", __func__,
+			prAdapter->rWowlanDevNode.wowlan_irq);
+		atomic_dec(&(prAdapter->rWowlanDevNode.irq_enable_count));
+		disable_irq_wake(prAdapter->rWowlanDevNode.wowlan_irq);
+		disable_irq(prAdapter->rWowlanDevNode.wowlan_irq);
+	} else {
+		DBGLOG(HAL, ERROR, "%s:irq_enable count:%d\n", __func__,
+			atomic_read(
+			&(prAdapter->rWowlanDevNode.irq_enable_count)));
+	}
+#endif
+
+	glSdioSetState(&prGlueInfo->rHifInfo, SDIO_STATE_PRE_RESUME);
 
 	prGlueInfo->rHifInfo.fgForceFwOwn = FALSE;
 
+	halPreResumeCmd(prGlueInfo->prAdapter);
+
 	kalPerMonEnable(prGlueInfo);
 	prGlueInfo->fgIsInSuspendMode = FALSE;
-	if (prGlueInfo->prAdapter->rWifiVar.ucWow &&
-		prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
-		DBGLOG(HAL, STATE, "leave WOW flow\n");
-		kalWowProcess(prGlueInfo, FALSE);
+
+	while (prGlueInfo->rHifInfo.state != SDIO_STATE_LINK_UP) {
+		if (count > 500) {
+			DBGLOG(HAL, ERROR, "pre_resume timeout\n");
+			break;
+		}
+
+		kalUdelay(2000);
+		schedule();
+		count++;
 	}
+
+	wlanResumePmHandle(prGlueInfo);
+
+	/* change to READY state to allow cfg80211 ops */
+	glSdioSetState(&prGlueInfo->rHifInfo, SDIO_STATE_READY);
+
+	/* Allow upper layers to call the device hard_start_xmit routine. */
+	netif_tx_start_all_queues(prGlueInfo->prDevHandler);
 
 	DBGLOG(HAL, STATE, "<==\n");
 	return 0;
@@ -1100,6 +1151,11 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 #else
 	mtk_wcn_hif_sdio_enable_irq(prHifInfo->cltCtx, FALSE);
 #endif
+
+#if CFG_SUPPORT_WOW_EINT
+	mtk_sdio_eint_free_irq(prHifInfo->func);
+#endif
+
 }				/* end of glBusreeIrq() */
 
 u_int8_t glIsReadClearReg(uint32_t u4Address)
