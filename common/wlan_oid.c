@@ -10844,6 +10844,7 @@ wlanSendSetQueryCmdAdv(IN struct ADAPTER *prAdapter,
 }
 
 static uint32_t wlanWaitInitEvt(IN struct ADAPTER *prAdapter,
+	IN u_int8_t fgSkipCheckSeq,
 	IN uint8_t ucSeq,
 	IN uint8_t ucEvtId,
 	IN uint8_t *pucEvtBuf,
@@ -10903,7 +10904,8 @@ static uint32_t wlanWaitInitEvt(IN struct ADAPTER *prAdapter,
 				prInitEvtHeader->ucEID);
 			u4Status = WLAN_STATUS_FAILURE;
 			break;
-		} else if (ucSeq && ucSeq != prInitEvtHeader->ucSeqNum) {
+		} else if (!fgSkipCheckSeq &&
+			   ucSeq != prInitEvtHeader->ucSeqNum) {
 			DBGLOG(INIT, ERROR,
 				"Expect seq: 0x%x, but 0x%x\n",
 				ucSeq,
@@ -11008,37 +11010,41 @@ uint32_t wlanSendInitSetQueryCmdImpl(IN struct ADAPTER *prAdapter,
 		TRUE, 0, S2D_INDEX_CMD_H2N);
 	if (u4CmdSz > 0 && pucCmdBuf != NULL)
 		kalMemCopy(pucCmdInfoBuf, pucCmdBuf, u4CmdSz);
-	if (fgSkipCheckSeq == FALSE)
-		ucCmdSeq = 0;
 
-	while (1) {
-		uint32_t u4PageCnt = nicTxGetCmdPageCount(prAdapter,
-			prCmdInfo);
+	while (TRUE) {
+		uint32_t u4PageCnt = 0;
+
+		/*
+		 * No need to do resource control for download packets
+		 */
+		if (ucCmdId == 0)
+			break;
+
+		u4PageCnt = nicTxGetCmdPageCount(prAdapter, prCmdInfo);
 
 		if (nicTxAcquireResource(prAdapter, ucTc, u4PageCnt, TRUE) ==
-				WLAN_STATUS_RESOURCES) {
-			if (nicTxPollingResource(prAdapter, ucTc) !=
-			    WLAN_STATUS_SUCCESS) {
-				DBGLOG(INIT, ERROR,
-					"Fail to get TX resource\n");
-				u4Status = WLAN_STATUS_RESOURCES;
-				goto exit;
-			}
-			continue;
-		}
+				WLAN_STATUS_SUCCESS)
+			break;
 
-		if (nicTxInitCmd(prAdapter, prCmdInfo, ucPort) !=
+		if (nicTxPollingResource(prAdapter, ucTc) !=
 				WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, ERROR, "Fail to send cmd.\n");
-			u4Status = WLAN_STATUS_FAILURE;
+			DBGLOG(INIT, ERROR,
+				"Fail to get TX resource\n");
+			u4Status = WLAN_STATUS_RESOURCES;
 			goto exit;
 		}
-
-		break;
 	};
+
+	if (nicTxInitCmd(prAdapter, prCmdInfo, ucPort) !=
+			WLAN_STATUS_SUCCESS) {
+		DBGLOG(INIT, ERROR, "Fail to send cmd.\n");
+		u4Status = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
 
 	if (fgWaitResp)
 		u4Status = wlanWaitInitEvt(prAdapter,
+			fgSkipCheckSeq,
 			ucCmdSeq,
 			ucEvtId, pucEvtBuf, u4EvtSz,
 			u4EvtWaitInterval, u4EvtWaitTimeout);

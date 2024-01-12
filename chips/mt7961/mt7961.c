@@ -961,8 +961,8 @@ uint32_t wlanBtPatchSendSemaControl(IN struct ADAPTER *prAdapter,
 	rCmd.u4Addr = u4Addr;
 
 	u4Status = wlanSendInitSetQueryCmd(prAdapter,
-		INIT_CMD_ID_PATCH_SEMAPHORE_CONTROL, &rCmd, sizeof(rCmd),
-		TRUE, FALSE,
+		INIT_CMD_ID_BT_PATCH_SEMAPHORE_CONTROL, &rCmd, sizeof(rCmd),
+		TRUE, TRUE,
 		INIT_EVENT_ID_BT_PATCH_SEMA_CTRL, &rEvent, sizeof(rEvent));
 	if (u4Status != WLAN_STATUS_SUCCESS)
 		goto exit;
