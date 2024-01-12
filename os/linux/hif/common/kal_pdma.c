@@ -389,8 +389,12 @@ u_int8_t kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 	}
 
 	pRxD->SDPtr0 = (uint64_t)prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
+#ifdef CONFIG_PHYS_ADDR_T_64BIT
 	pRxD->SDPtr1 = ((uint64_t)prDmaBuf->AllocPa >> DMA_BITS_OFFSET) &
 		DMA_HIGHER_4BITS_MASK;
+#else
+	pRxD->SDPtr1 = 0;
+#endif
 skip:
 	pRxD->SDLen0 = prRxRing->u4BufSize;
 	pRxD->DMADONE = 0;
@@ -467,8 +471,12 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 	pTxD->SDLen0 = u4Len;
 	pTxD->SDLen1 = 0;
 	pTxD->SDPtr0 = (uint64_t)pTxCell->PacketPa & DMA_LOWER_32BITS_MASK;
+#ifdef CONFIG_PHYS_ADDR_T_64BIT
 	pTxD->SDPtr0Ext = ((uint64_t)pTxCell->PacketPa >> DMA_BITS_OFFSET) &
 		DMA_HIGHER_4BITS_MASK;
+#else
+	pTxD->SDPtr0Ext = 0;
+#endif
 	pTxD->SDPtr1 = 0;
 	pTxD->Burst = 0;
 	pTxD->DMADONE = 0;
@@ -929,8 +937,12 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 	pRxD->SDPtr0 = (uint64_t)prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
+#ifdef CONFIG_PHYS_ADDR_T_64BIT
 	pRxD->SDPtr1 = ((uint64_t)prDmaBuf->AllocPa >>
 		DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
+#else
+	pRxD->SDPtr1 = 0;
+#endif
 skip:
 	pRxD->SDLen0 = prRxRing->u4BufSize;
 	pRxD->DMADONE = 0;

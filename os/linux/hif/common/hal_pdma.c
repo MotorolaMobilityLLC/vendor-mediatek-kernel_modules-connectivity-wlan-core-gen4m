@@ -688,7 +688,7 @@ void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 	prTokenInfo = &prHifInfo->rTokenInfo;
 	prChipInfo = prAdapter->chip_info;
 
-	prTokenInfo->i4UsedCnt = 0;
+	prTokenInfo->u4UsedCnt = 0;
 	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
 		prChipInfo->txd_append_size;
 
@@ -710,7 +710,7 @@ void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 				prToken->u4DmaLength);
 			*/
 		} else {
-			prTokenInfo->i4UsedCnt++;
+			prTokenInfo->u4UsedCnt++;
 			DBGLOG(HAL, WARN,
 				"Msdu Token Memory alloc failed[%u]\n",
 				u4Idx);
@@ -732,7 +732,7 @@ void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 	spin_lock_init(&prTokenInfo->rTokenLock);
 
 	DBGLOG(HAL, INFO, "Msdu Token Init: Tot[%u] Used[%u]\n",
-		HIF_TX_MSDU_TOKEN_NUM, prTokenInfo->i4UsedCnt);
+		HIF_TX_MSDU_TOKEN_NUM, prTokenInfo->u4UsedCnt);
 }
 
 void halUninitMsduTokenInfo(IN struct ADAPTER *prAdapter)
@@ -778,10 +778,10 @@ void halUninitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 #endif
 	}
 
-	prTokenInfo->i4UsedCnt = 0;
+	prTokenInfo->u4UsedCnt = 0;
 
 	DBGLOG(HAL, INFO, "Msdu Token Uninit: Tot[%u] Used[%u]\n",
-		HIF_TX_MSDU_TOKEN_NUM, prTokenInfo->i4UsedCnt);
+		HIF_TX_MSDU_TOKEN_NUM, prTokenInfo->u4UsedCnt);
 }
 
 uint32_t halGetMsduTokenFreeCnt(IN struct ADAPTER *prAdapter)
@@ -790,9 +790,9 @@ uint32_t halGetMsduTokenFreeCnt(IN struct ADAPTER *prAdapter)
 	struct MSDU_TOKEN_INFO *prTokenInfo =
 		&prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
 	prPerMonitor = &prAdapter->rPerMonitor;
-	prPerMonitor->u4UsedCnt = prTokenInfo->i4UsedCnt;
+	prPerMonitor->u4UsedCnt = prTokenInfo->u4UsedCnt;
 
-	return HIF_TX_MSDU_TOKEN_NUM - prTokenInfo->i4UsedCnt;
+	return HIF_TX_MSDU_TOKEN_NUM - prTokenInfo->u4UsedCnt;
 }
 
 struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(IN struct ADAPTER *prAdapter,
@@ -813,16 +813,16 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter)
 
 	if (!halGetMsduTokenFreeCnt(prAdapter)) {
 		DBGLOG(HAL, INFO, "No more free MSDU token, Used[%u]\n",
-			prTokenInfo->i4UsedCnt);
+			prTokenInfo->u4UsedCnt);
 		return NULL;
 	}
 
 	spin_lock_irqsave(&prTokenInfo->rTokenLock, flags);
 
-	prToken = prTokenInfo->aprTokenStack[prTokenInfo->i4UsedCnt];
+	prToken = prTokenInfo->aprTokenStack[prTokenInfo->u4UsedCnt];
 	do_gettimeofday(&prToken->rTs);
 	prToken->fgInUsed = TRUE;
-	prTokenInfo->i4UsedCnt++;
+	prTokenInfo->u4UsedCnt++;
 
 	spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
 
@@ -879,7 +879,7 @@ static void halResetMsduToken(IN struct ADAPTER *prAdapter)
 		prToken->fgInUsed = FALSE;
 		prTokenInfo->aprTokenStack[u4Idx] = prToken;
 	}
-	prTokenInfo->i4UsedCnt = 0;
+	prTokenInfo->u4UsedCnt = 0;
 }
 
 void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum)
@@ -889,9 +889,9 @@ void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 	struct MSDU_TOKEN_ENTRY *prToken;
 	unsigned long flags = 0;
 
-	if (!prTokenInfo->i4UsedCnt) {
-		DBGLOG(HAL, INFO, "MSDU token is full, Used[%u]\n",
-			prTokenInfo->i4UsedCnt);
+	if (!prTokenInfo->u4UsedCnt) {
+		DBGLOG(HAL, WARN, "MSDU token is full, Used[%u]\n",
+			prTokenInfo->u4UsedCnt);
 		return;
 	}
 
@@ -904,8 +904,8 @@ void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 	spin_lock_irqsave(&prTokenInfo->rTokenLock, flags);
 
 	prToken->fgInUsed = FALSE;
-	prTokenInfo->i4UsedCnt--;
-	prTokenInfo->aprTokenStack[prTokenInfo->i4UsedCnt] = prToken;
+	prTokenInfo->u4UsedCnt--;
+	prTokenInfo->aprTokenStack[prTokenInfo->u4UsedCnt] = prToken;
 
 	spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
 }
@@ -1515,8 +1515,12 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 		pRxD = (struct RXD_STRUCT *)prRxCell->AllocVa;
 		pRxD->SDPtr0 = ((uint64_t)pDmaBuf->AllocPa) &
 			DMA_LOWER_32BITS_MASK;
+#ifdef CONFIG_PHYS_ADDR_T_64BIT
 		pRxD->SDPtr1 = (((uint64_t)pDmaBuf->AllocPa >>
 			DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK);
+#else
+		pRxD->SDPtr1 = 0;
+#endif
 		pRxD->SDLen0 = u4BufSize;
 		pRxD->DMADONE = 0;
 	}
@@ -1756,9 +1760,6 @@ void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo)
 	struct RTMP_TX_RING *prTxRing = NULL;
 	struct RTMP_DMACB *prTxCell;
 	uint32_t i = 0, offset = 0, phy_addr = 0;
-#if (CFG_SUPPORT_CONNAC2X == 1)
-	uint32_t idx = 0;
-#endif /* CFG_SUPPORT_CONNAC2X == 1 */
 	struct mt66xx_chip_info *prChipInfo;
 
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -1776,6 +1777,8 @@ void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo)
 			offset = prBusInfo->tx_ring_fwdl_idx * MT_RINGREG_DIFF;
 #if (CFG_SUPPORT_CONNAC2X == 1)
 		else if (prChipInfo->is_support_wacpu) {
+			uint32_t idx = 0;
+
 			if (i == TX_RING_DATA0_IDX_0)
 				idx = prBusInfo->tx_ring0_data_idx;
 			else if (i == TX_RING_DATA1_IDX_1)
@@ -2070,8 +2073,12 @@ bool halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	}
 
 	pTxD->SDPtr0 = (uint64_t)pTxCell->PacketPa & DMA_LOWER_32BITS_MASK;
+#ifdef CONFIG_PHYS_ADDR_T_64BIT
 	pTxD->SDPtr0Ext = ((uint64_t)pTxCell->PacketPa >> DMA_BITS_OFFSET) &
 		DMA_HIGHER_4BITS_MASK;
+#else
+	pTxD->SDPtr0Ext = 0;
+#endif
 	pTxD->SDLen0 = u4TotalLen;
 	pTxD->SDPtr1 = 0;
 	pTxD->SDLen1 = 0;
@@ -2141,8 +2148,12 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 
 	pTxD = (struct TXD_STRUCT *)pTxCell->AllocVa;
 	pTxD->SDPtr0 = (uint64_t)prToken->rDmaAddr & DMA_LOWER_32BITS_MASK;
+#ifdef CONFIG_PHYS_ADDR_T_64BIT
 	pTxD->SDPtr0Ext = ((uint64_t)prToken->rDmaAddr >> DMA_BITS_OFFSET) &
 		DMA_HIGHER_4BITS_MASK;
+#else
+	pTxD->SDPtr0Ext = 0;
+#endif
 	pTxD->SDLen0 = NIC_TX_DESC_AND_PADDING_LENGTH +
 		prChipInfo->txd_append_size;
 	if (prChipInfo->is_support_cr4)

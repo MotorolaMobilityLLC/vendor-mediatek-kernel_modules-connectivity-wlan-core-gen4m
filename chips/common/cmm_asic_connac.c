@@ -234,8 +234,8 @@ uint32_t asicGetFwDlInfo(struct ADAPTER *prAdapter,
 
 	prComTailer = &prAdapter->rVerInfo.rCommonTailer;
 
-	kalMemZero(aucBuf, 32);
-	kalMemCopy(aucBuf, prComTailer->aucRamVersion, 10);
+	kalMemZero(aucBuf, sizeof(aucBuf));
+	kalMemCopy(aucBuf, prComTailer->aucRamVersion, sizeof(aucBuf) - 1);
 	u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
 			     "Tailer Ver[%u:%u] %s (%s) info %u:E%u\n",
 			     prComTailer->ucFormatVer,
@@ -937,8 +937,10 @@ void asicPdmaTxRingExtCtrl(
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	prTxCell = &tx_ring->Cell[0];
 
+#ifdef CONFIG_PHYS_ADDR_T_64BIT
 	phy_addr_ext = (((uint64_t)prTxCell->AllocPa >>
 			DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK);
+#endif
 	ext_offset = index * MT_RINGREG_EXT_DIFF;
 
 	tx_ring->hw_desc_base_ext =
@@ -959,8 +961,10 @@ void asicPdmaRxRingExtCtrl(
 
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
+#ifdef CONFIG_PHYS_ADDR_T_64BIT
 	phy_addr_ext = (((uint64_t)rx_ring->Cell[0].AllocPa >>
 			DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK);
+#endif
 	ext_offset = index * MT_RINGREG_EXT_DIFF;
 	rx_ring->hw_desc_base_ext =
 		prBusInfo->host_rx_ring_ext_ctrl_base + ext_offset;
