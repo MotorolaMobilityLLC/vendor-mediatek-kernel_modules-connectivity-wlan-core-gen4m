@@ -139,7 +139,7 @@ struct APPEND_VAR_IE_ENTRY txAssocReqIETable[] = {
 	,
 #endif
 #if CFG_SUPPORT_MTK_SYNERGY
-	{(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL, rlmGenerateMTKOuiIE}
+	{0, rlmCalculateMTKOuiIELen, rlmGenerateMTKOuiIE}
 				/* 221 */
 	,
 #endif
@@ -214,7 +214,7 @@ struct APPEND_VAR_IE_ENTRY txAssocRespIETable[] = {
 	 rsnGenerateWSCIEForAssocRsp}
 	,			/* 221 */
 #if CFG_SUPPORT_MTK_SYNERGY
-	{(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL, rlmGenerateMTKOuiIE}
+	{0, rlmCalculateMTKOuiIELen, rlmGenerateMTKOuiIE}
 	,			/* 221 */
 #endif
 #if CFG_SUPPORT_802_11W
