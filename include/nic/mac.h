@@ -1921,6 +1921,11 @@ enum BEACON_REPORT_DETAIL {
 
 /* TWT Flow Field in teardown frame */
 #define TWT_TEARDOWN_FLOW_ID                        BITS(0, 2)
+#define TWT_TEARDOWN_NEGO                           BITS(5, 6)
+#define TWT_TEARDOWN_NEGO_OFFSET                    5
+#define TWT_TEARDOWN_ALL                            BIT(7)
+#define TWT_TEARDOWN_ALL_OFFSET                     7
+
 
 /* TWT Information Field */
 #define TWT_INFO_FLOW_ID                            BITS(0, 2)
@@ -1939,6 +1944,22 @@ enum BEACON_REPORT_DETAIL {
 #define NEXT_TWT_SUBFIELD_32_BITS                   1
 #define NEXT_TWT_SUBFIELD_48_BITS                   2
 #define NEXT_TWT_SUBFIELD_64_BITS                   3
+
+#if (CFG_SUPPORT_BTWT == 1)
+#define BTWT_REQ_TYPE_LAST_BCAST_PARAM              BIT(5)
+#define BTWT_REQ_TYPE_LAST_BCAST_PARAM_OFFSET       5
+#define BTWT_REQ_TYPE_RECOMMENDATION_OFFSET         7
+#define BTWT_REQ_TYPE_RECOMMENDATION                BITS(7, 9)
+#define BTWT_REQ_TYPE_RESERVED_OFFSET               15
+#define BTWT_REQ_TYPE_RESERVED                      BIT(15)
+#define BTWT_CTRL_NEGOTIATION_OFFSET                2
+#define BTWT_CTRL_NEGOTIATION                       BITS(2, 3)
+#define BTWT_INFO_BROADCAST_OFFSET                  3
+#define BTWT_INFO_BROADCAST                         BITS(3, 7)
+#define BTWT_INFO_PERSISTENCE_OFFSET                8
+#define BTWT_INFO_PERSISTENCE                       BITS(8, 15)
+#endif
+
 #endif
 
 /* 9.4.2.46 Multiple BSSID element */
@@ -2885,6 +2906,29 @@ struct _IE_TWT_T {
 } __KAL_ATTRIB_PACKED__;
 #endif
 
+#if (CFG_SUPPORT_BTWT == 1)
+struct _IE_BTWT_T {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucCtrl;	/* Control */
+	uint16_t u2ReqType;	/* Request Type */
+	uint16_t u2TWT;	/* Target Wake Time 16 bits */
+	uint8_t ucMinWakeDur;	/* Nominal Minimum TWT Wake Duration */
+	uint16_t u2WakeIntvalMantiss;	/* TWT Wake Interval Mantissa */
+	uint16_t u2BTWTInfo;	/* TWT Channel for 11ah. Reserved for 11ax */
+} __KAL_ATTRIB_PACKED__;
+
+struct _IE_BTWT_PARAMS_T {
+	uint16_t u2ReqType;	/* Request Type */
+	uint16_t u2TWT;	/* Target Wake Time 16 bits */
+	uint8_t ucMinWakeDur;	/* Nominal Minimum TWT Wake Duration */
+	uint16_t u2WakeIntvalMantiss;	/* TWT Wake Interval Mantissa */
+	uint16_t u2BTWTInfo;	/* TWT Channel for 11ah. Reserved for 11ax */
+} __KAL_ATTRIB_PACKED__;
+
+#endif
+
+
 /* 3 7.4 Action Frame. */
 /* 7.4 Action frame format */
 struct WLAN_ACTION_FRAME {
@@ -3358,6 +3402,25 @@ struct _ACTION_TWT_INFO_FRAME {
 	uint8_t aucNextTWT[0];
 } __KAL_ATTRIB_PACKED__;
 #endif
+
+#if (CFG_SUPPORT_BTWT == 1)
+/* 11ax BTWT Setup frame format */
+struct _ACTION_BTWT_SETUP_FRAME {
+	/* MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* TWT Setup frame body */
+	uint8_t ucCategory;	/* Category */
+	uint8_t ucAction;	/* Action Value */
+	uint8_t ucDialogToken;	/* Dialog Token */
+	struct _IE_BTWT_T rTWT;	/* BTWT element */
+} __KAL_ATTRIB_PACKED__;
+#endif
+
 
 /* 3 Information Elements from WFA. */
 struct IE_WFA {

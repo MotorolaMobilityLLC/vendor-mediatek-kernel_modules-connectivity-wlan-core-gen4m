@@ -82,6 +82,11 @@ enum _ENUM_TWT_REQUESTER_STATE_T {
 	TWT_REQ_STATE_TEARING_DOWN,
 	TWT_REQ_STATE_RX_TEARDOWN,
 	TWT_REQ_STATE_RX_INFOFRM,
+#if (CFG_SUPPORT_BTWT == 1)
+	TWT_REQ_STATE_REQTX_BTWT,
+	TWT_REQ_STATE_TEARING_DOWN_BTWT,
+	TWT_REQ_STATE_RX_TEARDOWN_BTWT,
+#endif
 	TWT_REQ_STATE_NUM
 };
 
@@ -145,6 +150,17 @@ void twtReqFsmRunEventSuspend(
 void twtReqFsmRunEventResume(
 	struct ADAPTER *prAdapter,
 	struct MSG_HDR *prMsgHdr);
+
+#if (CFG_SUPPORT_BTWT == 1)
+void btwtReqFsmRunEventStart(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+
+void btwtReqFsmRunEventTeardown(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+#endif
+
 
 /*******************************************************************************
 *                              F U N C T I O N S

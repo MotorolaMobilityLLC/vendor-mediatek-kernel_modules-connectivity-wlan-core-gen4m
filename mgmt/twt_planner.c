@@ -80,6 +80,7 @@
 ********************************************************************************
 */
 uint8_t g_IsWfaTestBed;  /* To indocate if WFA test bed */
+uint8_t g_IsTwtLogo = 0xFF;
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -535,6 +536,15 @@ twtPlannerAddAgrtTbl(
 
 	prTWTAgrtUpdate->ucGrpMemberCnt = 0;
 
+#if (CFG_SUPPORT_BTWT == 1)
+	if ((ucFlowId == 0) && (prStaRec->arTWTFlow[ucFlowId].fgIsBTWT
+		== TRUE)) {
+		if (g_IsTwtLogo == 1) {
+			prTWTAgrtUpdate->ucReserved_a = 0xAB;
+		}
+	}
+#endif
+
 	rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
 				CMD_ID_LAYER_0_EXT_MAGIC_NUM,
 				EXT_CMD_ID_TWT_AGRT_UPDATE,
@@ -559,6 +569,13 @@ twtPlannerAddAgrtTbl(
 #endif
 
 	cnmMemFree(prAdapter, prTWTAgrtUpdate);
+
+#if (CFG_SUPPORT_BTWT == 1)
+	if (prStaRec->arTWTFlow[ucFlowId].fgIsBTWT == TRUE) {
+		prStaRec->arTWTFlow[ucFlowId].eBtwtState
+			= ENUM_BTWT_FLOW_STATE_ACTIVATED;
+	}
+#endif
 
 	return rWlanStatus;
 }
@@ -1163,6 +1180,24 @@ void twtPlannerGetTsfDone(
 		break;
 	}
 
+	case TWT_GET_TSF_FOR_ADD_AGRT_BTWT:
+	{
+		struct _TWT_PARAMS_T *prTWTParams;
+		struct _TWT_FLOW_T *prTWTFlow = twtPlannerFlowFindById(
+					prStaRec, prGetTsfCtxt->ucTWTFlowId);
+
+		if (prStaRec->arTWTFlow[prGetTsfCtxt->ucTWTFlowId]
+				.eBtwtState == ENUM_BTWT_FLOW_STATE_DEFAULT) {
+			prTWTParams = &(prTWTFlow->rTWTPeerParams);
+			prTWTParams->u8TWT = u8CurTsf;
+
+			btwtPlannerSendReqStart(prAdapter, prStaRec,
+				prGetTsfCtxt->ucTWTFlowId);
+		}
+
+		break;
+	}
+
 	default:
 		DBGLOG(TWT_PLANNER, ERROR,
 			"Unknown reason to get TSF %u\n",
@@ -1275,8 +1310,9 @@ void twtPlannerSetParams(
 	}
 
 	/* Check if peer has TWT responder capability and local config */
-	if (!HE_IS_MAC_CAP_TWT_RSP(prStaRec->ucHeMacCapInfo) ||
-		!IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucTWTRequester)) {
+	if ((prTWTCtrl->ucCtrlAction == TWT_PARAM_ACTION_ADD) &&
+		(!HE_IS_MAC_CAP_TWT_RSP(prStaRec->ucHeMacCapInfo) ||
+		!IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucTWTRequester))) {
 		DBGLOG(TWT_PLANNER, ERROR,
 			"Peer cap 0x%x user config of TWT req %u\n",
 			prStaRec->ucHeMacCapInfo[0],
@@ -1293,12 +1329,27 @@ void twtPlannerSetParams(
 		return;
 	}
 
+#if (CFG_SUPPORT_BTWT == 1)
+	if ((prTWTCtrl->ucCtrlAction == TWT_PARAM_ACTION_ADD_BTWT) &&
+		(!HE_IS_MAC_CAP_BTWT_SUPT(prStaRec->ucHeMacCapInfo) ||
+		!IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucBTWTSupport))) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Peer cap 0x%x user config of bTWT req %u\n",
+			prStaRec->ucHeMacCapInfo[2],
+			prAdapter->rWifiVar.ucBTWTSupport);
+		return;
+	}
+#endif
+
 	ucFlowId = prTWTCtrl->ucTWTFlowId;
 
 	ucFlowId_real = ucFlowId;
 
 	switch (prTWTCtrl->ucCtrlAction) {
 	case TWT_PARAM_ACTION_ADD:
+#if (CFG_SUPPORT_BTWT == 1)
+	case TWT_PARAM_ACTION_ADD_BTWT:
+#endif
 		if (twtPlannerDrvAgrtFind(
 			prAdapter, ucBssIdx,
 			ucFlowId, &ucFlowId_real) >= TWT_AGRT_MAX_NUM) {
@@ -1313,7 +1364,19 @@ void twtPlannerSetParams(
 				return;
 			}
 
+#if (CFG_SUPPORT_BTWT == 1)
+			if (prTWTCtrl->ucCtrlAction == TWT_PARAM_ACTION_ADD)
+				prGetTsfCtxt->ucReason =
+					TWT_GET_TSF_FOR_ADD_AGRT;
+
+			else
+				prGetTsfCtxt->ucReason =
+					TWT_GET_TSF_FOR_ADD_AGRT_BTWT;
+
+#else
 			prGetTsfCtxt->ucReason = TWT_GET_TSF_FOR_ADD_AGRT;
+#endif
+
 			prGetTsfCtxt->ucBssIdx = ucBssIdx;
 			prGetTsfCtxt->ucTWTFlowId = prTWTCtrl->ucTWTFlowId;
 			prGetTsfCtxt->fgIsOid = FALSE;
@@ -1342,9 +1405,19 @@ void twtPlannerSetParams(
 			&ucFlowId_real) < TWT_AGRT_MAX_NUM) {
 			/* Start the process to tear down this TWT agreement */
 			ucFlowId = ucFlowId_real;
-
+#if (CFG_SUPPORT_BTWT == 1)
+			if ((prStaRec->arTWTFlow[ucFlowId].fgIsBTWT == TRUE) &&
+				(prStaRec->arTWTFlow[ucFlowId].eBtwtState ==
+				ENUM_BTWT_FLOW_STATE_ACTIVATED)) {
+				btwtPlannerSendReqTeardown(prAdapter,
+				prStaRec, ucFlowId);
+			} else {
+#endif
 			twtPlannerSendReqTeardown(prAdapter,
 				prStaRec, ucFlowId);
+#if (CFG_SUPPORT_BTWT == 1)
+			}
+#endif
 		} else {
 			DBGLOG(TWT_PLANNER, ERROR,
 				"BSS %u TWT flow %u doesn't exist\n",
@@ -1451,6 +1524,9 @@ void twtPlannerRxNegoResult(
 		twtPlannerAddAgrtTbl(prAdapter, prBssInfo, prStaRec,
 			prTWTResult, ucTWTFlowId, FALSE,
 			NULL, NULL /* handle TWT cmd timeout? */);
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Rx nego id %d\n",
+			ucTWTFlowId);
 
 		/* Disable SCAN during TWT activity */
 		prAdapter->fgEnOnlineScan = FALSE;
@@ -1696,3 +1772,183 @@ void twtPlannerRxInfoFrm(
 		NULL, NULL /* handle TWT cmd timeout? */);
 
 }
+
+#if (CFG_SUPPORT_BTWT == 1)
+uint32_t
+btwtPlannerSendReqStart(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId)
+{
+	struct _MSG_TWT_REQFSM_START_T *prTWTReqFsmStartMsg;
+
+	prTWTReqFsmStartMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+		sizeof(struct _MSG_TWT_REQFSM_START_T));
+	if (prTWTReqFsmStartMsg) {
+		prTWTReqFsmStartMsg->rMsgHdr.eMsgId = MID_BTWT_REQ_FSM_START;
+		prTWTReqFsmStartMsg->prStaRec = prStaRec;
+		prTWTReqFsmStartMsg->ucTWTFlowId = ucTWTFlowId;
+
+		prStaRec->arTWTFlow[ucTWTFlowId].eBtwtState
+			= ENUM_BTWT_FLOW_STATE_REQUESTING;
+
+		mboxSendMsg(prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prTWTReqFsmStartMsg,
+			MSG_SEND_METHOD_BUF);
+	} else
+		return WLAN_STATUS_RESOURCES;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t
+btwtPlannerSendReqTeardown(struct ADAPTER *prAdapter,
+				struct STA_RECORD *prStaRec,
+				uint8_t ucTWTFlowId)
+{
+	struct _MSG_TWT_REQFSM_TEARDOWN_T *prTWTReqFsmTeardownMsg;
+
+	prTWTReqFsmTeardownMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+		sizeof(struct _MSG_TWT_REQFSM_TEARDOWN_T));
+	if (prTWTReqFsmTeardownMsg) {
+		prTWTReqFsmTeardownMsg->rMsgHdr.eMsgId =
+			MID_BTWT_REQ_FSM_TEARDOWN;
+		prTWTReqFsmTeardownMsg->prStaRec = prStaRec;
+		prTWTReqFsmTeardownMsg->ucTWTFlowId = ucTWTFlowId;
+
+		mboxSendMsg(prAdapter, MBOX_ID_0,
+			(struct MSG_HDR *) prTWTReqFsmTeardownMsg,
+			MSG_SEND_METHOD_BUF);
+	} else
+		return WLAN_STATUS_RESOURCES;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void btwtPlannerTeardownDone(
+	struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
+{
+	struct _MSG_TWT_REQFSM_IND_RESULT_T *prTWTFsmResultMsg;
+	struct STA_RECORD *prStaRec;
+	struct BSS_INFO *prBssInfo;
+	struct _TWT_FLOW_T *prTwtFlow;
+	uint8_t ucTWTFlowId, ucIdx;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsgHdr);
+
+	prTWTFsmResultMsg = (struct _MSG_TWT_REQFSM_IND_RESULT_T *) prMsgHdr;
+	prStaRec = prTWTFsmResultMsg->prStaRec;
+	ucTWTFlowId = prTWTFsmResultMsg->ucTWTFlowId;
+
+	if ((!prStaRec) || (prStaRec->fgIsInUse == FALSE)) {
+		cnmMemFree(prAdapter, prMsgHdr);
+		return;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	cnmMemFree(prAdapter, prMsgHdr);
+
+	if (!IS_AP_STA(prStaRec)) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Rx teardown result: invalid STA Type %d\n",
+			prStaRec->eStaType);
+		return;
+	}
+
+	if (GET_TWT_TEARDOWN_ALL(ucTWTFlowId) == 0x1) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"BTWT teardown %d\n", ucTWTFlowId);
+
+		for (ucIdx = 1; ucIdx < TWT_MAX_FLOW_NUM; ucIdx++) {
+			prTwtFlow = &prStaRec->arTWTFlow[ucIdx];
+			if (prTwtFlow->eBtwtState
+				== ENUM_BTWT_FLOW_STATE_ACTIVATED) {
+				prTwtFlow->eBtwtState
+					= ENUM_BTWT_FLOW_STATE_DEFAULT;
+				prTwtFlow->fgIsBTWT = FALSE;
+
+				/* Delete driver & FW TWT agreement entry */
+				/* handle TWT cmd timeout? */
+				twtPlannerDelAgrtTbl(prAdapter, prBssInfo,
+					prStaRec, ucIdx, FALSE,
+					NULL, NULL, TRUE);
+
+				/* Teardown FW TWT agreement entry */
+				/* handle TWT cmd timeout? */
+				twtPlannerTeardownAgrtTbl(prAdapter, prStaRec,
+					FALSE, NULL, NULL);
+			}
+		}
+	} else {
+		ucIdx = (ucTWTFlowId & TWT_TEARDOWN_FLOW_ID);
+
+		DBGLOG(TWT_PLANNER, ERROR,
+			"BTWT teardown1 %d\n", ucIdx);
+		/* Delete driver & FW TWT agreement entry */
+		twtPlannerDelAgrtTbl(prAdapter, prBssInfo, prStaRec,
+			ucIdx, FALSE,
+			NULL, NULL /* handle TWT cmd timeout? */, TRUE);
+
+		/* Teardown FW TWT agreement entry */
+		twtPlannerTeardownAgrtTbl(prAdapter, prStaRec,
+			FALSE, NULL, NULL /* handle TWT cmd timeout? */);
+
+		prStaRec->arTWTFlow[ucIdx].eBtwtState =
+			ENUM_BTWT_FLOW_STATE_DEFAULT;
+		prStaRec->arTWTFlow[ucIdx].fgIsBTWT = FALSE;
+	}
+}
+
+uint32_t
+btwtPlannerAddAgrtTbl(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct STA_RECORD *prStaRec,
+	struct _TWT_PARAMS_T *prTWTParams,
+	uint8_t ucFlowId,
+	uint8_t fgIsOid,
+	PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
+	PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler)
+{
+	if (!IS_FEATURE_ENABLED(
+		prAdapter->rWifiVar.ucBTWTSupport)) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"BTWT support %d\n",
+			prAdapter->rWifiVar.ucBTWTSupport);
+
+		return WLAN_STATUS_FAILURE;
+	}
+
+	return twtPlannerAddAgrtTbl(
+	prAdapter, prBssInfo, prStaRec, prTWTParams,
+		ucFlowId, fgIsOid, pfCmdDoneHandler,
+		pfCmdTimeoutHandler);
+}
+
+void
+btwtPlannerDelAgrtTbl(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucFlowId)
+{
+	DBGLOG(TWT_PLANNER, ERROR,
+		"BTWT teardown2 %d\n", ucFlowId);
+
+	/* Delete driver & FW TWT agreement entry */
+	twtPlannerDelAgrtTbl(prAdapter, prBssInfo, prStaRec,
+		ucFlowId, FALSE,
+		NULL, NULL /* handle TWT cmd timeout? */, TRUE);
+
+	/* Teardown FW TWT agreement entry */
+	twtPlannerTeardownAgrtTbl(prAdapter, prStaRec,
+		FALSE, NULL, NULL /* handle TWT cmd timeout? */);
+
+}
+
+
+#endif
+

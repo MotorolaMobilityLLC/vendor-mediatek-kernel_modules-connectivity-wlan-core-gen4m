@@ -70,6 +70,45 @@
 #define TWT_MAX_WAKE_INTVAL_EXP (TWT_REQ_TYPE_TWT_WAKE_INTVAL_EXP >> \
 	TWT_REQ_TYPE_TWT_WAKE_INTVAL_EXP_OFFSET)
 
+#if (CFG_SUPPORT_BTWT == 1)
+#define SET_BTWT_RECOMMENDATION(ucRecomm) \
+	(((ucRecomm) << BTWT_REQ_TYPE_RECOMMENDATION_OFFSET) & \
+		BTWT_REQ_TYPE_RECOMMENDATION)
+
+#define SET_BTWT_RESERVED(fgReserved) \
+	(((fgReserved) << BTWT_REQ_TYPE_RESERVED_OFFSET) & \
+		BTWT_REQ_TYPE_RESERVED)
+
+#define SET_BTWT_CTRL_NEGO(ucNego) \
+	(((ucNego) << BTWT_CTRL_NEGOTIATION_OFFSET) & \
+	BTWT_CTRL_NEGOTIATION)
+
+#define GET_BTWT_CTRL_NEGO(ucNego) \
+	(((ucNego) & BTWT_CTRL_NEGOTIATION) >> \
+	BTWT_CTRL_NEGOTIATION_OFFSET)
+
+#define SET_BTWT_ID(ucBrdInfo) \
+	(((ucBrdInfo) << BTWT_INFO_BROADCAST_OFFSET) & \
+	BTWT_INFO_BROADCAST)
+
+#define GET_BTWT_ID(ucBrdInfo) \
+	(((ucBrdInfo) & BTWT_INFO_BROADCAST) >> \
+	BTWT_INFO_BROADCAST_OFFSET)
+
+#define SET_BTWT_PERSISTENCE(ucPersistence) \
+	(((ucPersistence) << BTWT_INFO_PERSISTENCE_OFFSET) & \
+	BTWT_INFO_PERSISTENCE)
+
+#define GET_BTWT_PERSISTENCE(ucPersistence) \
+	(((ucPersistence) & BTWT_INFO_PERSISTENCE) >> \
+	BTWT_INFO_PERSISTENCE_OFFSET)
+
+#define GET_BTWT_LAST_BCAST(ucLastParm) \
+	(((ucLastParm) & BTWT_REQ_TYPE_LAST_BCAST_PARAM) >> \
+	BTWT_REQ_TYPE_LAST_BCAST_PARAM_OFFSET)
+
+#endif
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -214,6 +253,16 @@ struct _TWT_SMART_STA_T {
 	((u_int64_t)(*(((u_int8_t *)(pMem)) + 4)) << 32) | \
 	((u_int64_t)(*(((u_int8_t *)(pMem)) + 5)) << 40))
 
+#define GET_TWT_TEARDOWN_NEGO(ucFlowId) \
+	(((ucFlowId) & TWT_TEARDOWN_NEGO) >> TWT_TEARDOWN_NEGO_OFFSET)
+
+#define SET_TWT_TEARDOWN_NEGO(ucFlowId) \
+	(((ucFlowId) << TWT_TEARDOWN_NEGO_OFFSET) & TWT_TEARDOWN_NEGO)
+
+#define GET_TWT_TEARDOWN_ALL(ucFlowId) \
+	(((ucFlowId) & TWT_TEARDOWN_ALL) >> TWT_TEARDOWN_ALL_OFFSET)
+
+
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -258,6 +307,30 @@ static inline u_int8_t twtGetNextTWTByteCnt(u_int8_t ucNextTWTSize)
 		((ucNextTWTSize == NEXT_TWT_SUBFIELD_32_BITS) ? 4 :
 		((ucNextTWTSize == NEXT_TWT_SUBFIELD_48_BITS) ? 6 : 0));
 }
+
+#if (CFG_SUPPORT_BTWT == 1)
+void btwtFillTWTElement(
+	struct _IE_BTWT_T *prTWTBuf,
+	uint8_t ucTWTFlowId,
+	struct _TWT_PARAMS_T *prTWTParams);
+
+uint32_t btwtSendSetupFrame(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	u_int8_t ucTWTFlowId,
+	struct _TWT_PARAMS_T *prTWTParams,
+	PFN_TX_DONE_HANDLER pfTxDoneHandler);
+
+uint32_t btwtSendTeardownFrame(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	u_int8_t ucTWTFlowId,
+	PFN_TX_DONE_HANDLER pfTxDoneHandler);
+
+uint8_t btwtGetTxSetupFlowId(
+	struct MSDU_INFO *prMsduInfo);
+#endif
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

@@ -93,6 +93,13 @@ static uint8_t *apucDebugTWTReqState[TWT_REQ_STATE_NUM] = {
 	(uint8_t *) DISP_STRING("TWT_REQ_STATE_SUSPENDED"),
 	(uint8_t *) DISP_STRING("TWT_REQ_STATE_RESUMING"),
 	(uint8_t *) DISP_STRING("TWT_REQ_STATE_TEARING_DOWN"),
+	(uint8_t *) DISP_STRING("TWT_REQ_STATE_RX_TEARDOWN"),
+	(uint8_t *) DISP_STRING("TWT_REQ_STATE_RX_INFOFRM"),
+#if (CFG_SUPPORT_BTWT == 1)
+	(uint8_t *) DISP_STRING("TWT_REQ_STATE_REQTX_BTWT"),
+	(uint8_t *) DISP_STRING("TWT_REQ_STATE_TEARING_DOWN_BTWT"),
+	(uint8_t *) DISP_STRING("TWT_REQ_STATE_RX_TEARDOWN_BTWT")
+#endif
 };
 
 /*******************************************************************************
@@ -177,6 +184,13 @@ twtReqFsmSteps(
 			} else if (ePreState == TWT_REQ_STATE_RESUMING) {
 				/* At the end of resuming */
 			}
+#if (CFG_SUPPORT_BTWT == 1)
+			else if (ePreState == TWT_REQ_STATE_TEARING_DOWN_BTWT) {
+				twtReqFsmSendEvent(prAdapter, prStaRec,
+					ucTWTFlowId,
+					MID_BTWT_REQ_IND_TEARDOWN_DONE);
+			}
+#endif
 			break;
 
 		case TWT_REQ_STATE_REQTX:
@@ -273,6 +287,41 @@ twtReqFsmSteps(
 				ucTWTFlowId, prNextTWTInfo);
 			break;
 		}
+#if (CFG_SUPPORT_BTWT == 1)
+		case TWT_REQ_STATE_REQTX_BTWT:
+		{
+			struct _TWT_PARAMS_T *prTWTParams =
+				(struct _TWT_PARAMS_T *)pParam;
+			ASSERT(prTWTParams);
+			rStatus = btwtSendSetupFrame(
+				prAdapter, prStaRec, ucTWTFlowId,
+				prTWTParams, twtReqFsmRunEventTxDone);
+			if (rStatus != WLAN_STATUS_SUCCESS) {
+				eNextState = TWT_REQ_STATE_IDLE;
+				fgIsTransition = TRUE;
+			}
+			break;
+		}
+
+		case TWT_REQ_STATE_TEARING_DOWN_BTWT:
+		{
+			rStatus = btwtSendTeardownFrame(
+				prAdapter, prStaRec, ucTWTFlowId,
+				twtReqFsmRunEventTxDone);
+			if (rStatus != WLAN_STATUS_SUCCESS) {
+				eNextState = TWT_REQ_STATE_IDLE;
+				fgIsTransition = TRUE;
+			}
+			break;
+		}
+
+		case TWT_REQ_STATE_RX_TEARDOWN_BTWT:
+		{
+			twtReqFsmSendEvent(prAdapter, prStaRec,
+				ucTWTFlowId, MID_BTWT_REQ_IND_TEARDOWN_DONE);
+			break;
+		}
+#endif
 
 		default:
 			DBGLOG(TWT_REQUESTER, ERROR,
@@ -619,6 +668,31 @@ twtReqFsmRunEventTxDone(
 		}
 
 		break;
+#if (CFG_SUPPORT_BTWT == 1)
+		case TWT_REQ_STATE_REQTX_BTWT:
+			if (rTxDoneStatus == TX_RESULT_SUCCESS)
+				eNextState = TWT_REQ_STATE_WAIT_RSP;
+			else
+				eNextState = TWT_REQ_STATE_IDLE;
+
+			ucTWTFlowId = btwtGetTxSetupFlowId(prMsduInfo);
+			twtReqFsmSteps(prAdapter,
+				prStaRec, eNextState, ucTWTFlowId, NULL);
+
+	DBGLOG(TWT_REQUESTER, INFO,
+		"EVENT-TX DONE flowID= %d\n", ucTWTFlowId);
+			break;
+
+		case TWT_REQ_STATE_TEARING_DOWN_BTWT:
+			if (rTxDoneStatus == TX_RESULT_SUCCESS)
+				eNextState = TWT_REQ_STATE_IDLE;
+
+			ucTWTFlowId = twtGetTxTeardownFlowId(prMsduInfo);
+			twtReqFsmSteps(prAdapter, prStaRec, eNextState,
+				ucTWTFlowId, NULL);
+
+			break;
+#endif
 
 	default:
 		break;		/* Ignore other cases */
@@ -659,9 +733,20 @@ void twtReqFsmRunEventRxTeardown(
 
 	switch (prStaRec->aeTWTReqState) {
 	case TWT_REQ_STATE_IDLE:
-		/* transition to the RX TEARDOWN state */
-		twtReqFsmSteps(prAdapter, prStaRec, TWT_REQ_STATE_RX_TEARDOWN,
-			ucTWTFlowId, NULL);
+#if (CFG_SUPPORT_BTWT == 1)
+		if (GET_TWT_TEARDOWN_NEGO(ucTWTFlowId) == 3) {
+			twtReqFsmSteps(prAdapter, prStaRec,
+				TWT_REQ_STATE_RX_TEARDOWN_BTWT,
+				ucTWTFlowId, NULL);
+		} else {
+#endif
+			twtReqFsmSteps(prAdapter, prStaRec,
+				TWT_REQ_STATE_RX_TEARDOWN,
+				ucTWTFlowId, NULL);
+#if (CFG_SUPPORT_BTWT == 1)
+		}
+#endif
+
 		break;
 
 	default:
@@ -690,3 +775,94 @@ void twtReqFsmRunEventRxInfoFrm(
 		break;		/* Ignore other cases */
 	}
 }
+
+#if (CFG_SUPPORT_BTWT == 1)
+void btwtReqFsmRunEventStart(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr)
+{
+	struct _MSG_TWT_REQFSM_START_T *prTWTReqFsmStartMsg;
+	struct STA_RECORD *prStaRec;
+	struct _TWT_PARAMS_T *prTWTParams;
+	uint8_t ucTWTFlowId;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsgHdr);
+
+	prTWTReqFsmStartMsg = (struct _MSG_TWT_REQFSM_START_T *) prMsgHdr;
+	prStaRec = prTWTReqFsmStartMsg->prStaRec;
+	ucTWTFlowId = prTWTReqFsmStartMsg->ucTWTFlowId;
+	prTWTParams = &(prStaRec->arTWTFlow[ucTWTFlowId].rTWTParams);
+
+	if ((!prStaRec) || (prStaRec->fgIsInUse == FALSE)) {
+		cnmMemFree(prAdapter, prMsgHdr);
+		return;
+	}
+
+	ASSERT(prStaRec);
+	ASSERT(prTWTParams);
+
+	DBGLOG(TWT_REQUESTER, LOUD,
+		"EVENT-START: TWT Requester FSM %d\n", ucTWTFlowId);
+
+	cnmMemFree(prAdapter, prMsgHdr);
+
+	/* Validation of TWT Requester Start Event */
+	if (!IS_AP_STA(prStaRec)) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"EVENT-START: Invalid Type %d\n",
+			prStaRec->eStaType);
+
+		/* TODO: Notify TWT Planner */
+
+		return;
+	}
+
+	twtReqFsmSteps(prAdapter, prStaRec,
+		TWT_REQ_STATE_REQTX_BTWT, ucTWTFlowId, prTWTParams);
+}
+
+void btwtReqFsmRunEventTeardown(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr)
+{
+	struct _MSG_TWT_REQFSM_TEARDOWN_T *prTWTReqFsmTeardownMsg;
+	struct STA_RECORD *prStaRec;
+	uint8_t ucTWTFlowId;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsgHdr);
+
+	prTWTReqFsmTeardownMsg = (struct _MSG_TWT_REQFSM_TEARDOWN_T *) prMsgHdr;
+	prStaRec = prTWTReqFsmTeardownMsg->prStaRec;
+	ucTWTFlowId = prTWTReqFsmTeardownMsg->ucTWTFlowId;
+
+	if ((!prStaRec) || (prStaRec->fgIsInUse == FALSE)) {
+		cnmMemFree(prAdapter, prMsgHdr);
+		return;
+	}
+
+	ASSERT(prStaRec);
+
+	DBGLOG(TWT_REQUESTER, LOUD, "EVENT-TEARDOWN: BTWT Requester FSM %d\n",
+		ucTWTFlowId);
+
+	cnmMemFree(prAdapter, prMsgHdr);
+
+	/* Validation of TWT Requester Teardown Event */
+	if (!IS_AP_STA(prStaRec)) {
+		DBGLOG(TWT_REQUESTER, ERROR, "Invalid STA Type %d\n",
+			prStaRec->eStaType);
+
+		/* TODO: Notify TWT Planner */
+
+		return;
+	}
+
+	twtReqFsmSteps(prAdapter, prStaRec, TWT_REQ_STATE_TEARING_DOWN_BTWT,
+		ucTWTFlowId, NULL);
+}
+
+
+#endif
+
