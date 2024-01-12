@@ -507,10 +507,10 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 	uint8_t ucShortSSIDNum;
 
 	/* Length of Specified SSID */
-	uint8_t ucSpecifiedSSIDLen[SCN_SSID_MAX_NUM];
+	uint8_t ucSpecifiedSSIDLen[CFG_SCAN_SSID_MAX_NUM];
 
 	/* Specified SSID */
-	uint8_t aucSpecifiedSSID[SCN_SSID_MAX_NUM][ELEM_MAX_LEN_SSID];
+	uint8_t aucSpecifiedSSID[CFG_SCAN_SSID_MAX_NUM][ELEM_MAX_LEN_SSID];
 
 #if CFG_ENABLE_WIFI_DIRECT
 	u_int8_t fgFindSpecificDev;	/* P2P: Discovery Protocol */
@@ -789,9 +789,40 @@ struct AGPS_AP_LIST {
 #endif
 
 #if (CFG_SUPPORT_WIFI_RNR == 1)
+struct NEIGHBOR_AP_PARAM {
+	/* Specified SSID Type */
+	uint8_t ucSSIDType;
+	uint8_t ucSSIDNum;
+	uint8_t ucShortSSIDNum;
+
+	/* Length of Specified SSID */
+	uint8_t ucSpecifiedSSIDLen[CFG_SCAN_SSID_MAX_NUM];
+
+	/* Specified SSID */
+	uint8_t aucSpecifiedSSID[CFG_SCAN_SSID_MAX_NUM][ELEM_MAX_LEN_SSID];
+	uint8_t aucBSSID[CFG_SCAN_OOB_MAX_NUM][MAC_ADDR_LEN];
+
+	/* channel information */
+	enum ENUM_SCAN_CHANNEL eScanChannel;
+	uint8_t ucChannelListNum;
+	struct RF_CHANNEL_INFO arChnlInfoList[CFG_SCAN_SSID_MAX_NUM];
+
+	/* random mac */
+	uint8_t ucScnFuncMask;
+	uint8_t aucRandomMac[MAC_ADDR_LEN];
+
+	/* For 6G OOB discovery*/
+	uint8_t ucBssidMatchCh[CFG_SCAN_OOB_MAX_NUM];
+	uint8_t ucBssidMatchSsidInd[CFG_SCAN_OOB_MAX_NUM];
+
+	/* Information Element */
+	uint16_t u2IELen;
+	uint8_t aucIE[MAX_IE_LENGTH];
+};
+
 struct NEIGHBOR_AP_INFO {
 	struct LINK_ENTRY rLinkEntry;
-	struct SCAN_PARAM rScanParam;
+	struct NEIGHBOR_AP_PARAM rNeighborParam;
 };
 #endif
 
