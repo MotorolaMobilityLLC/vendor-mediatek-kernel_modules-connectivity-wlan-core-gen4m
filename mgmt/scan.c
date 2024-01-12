@@ -1305,10 +1305,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	u_int8_t ucPowerConstraint = 0;
 	struct IE_COUNTRY *prCountryIE = NULL;
 	struct RX_DESC_OPS_T *prRxDescOps;
-#if (CFG_SUPPORT_HE_ER == 1)
-	struct _IE_HE_OP_T *prHeOp;
-	struct _IE_HE_CAP_T *prHeCap;
-#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -1649,10 +1645,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	/* 4 <2.2> reset prBssDesc variables in case that AP
 	 * has been reconfigured
 	 */
-#if (CFG_SUPPORT_HE_ER == 1)
-	prBssDesc->fgIsERSUDisable = TRUE;
-	prBssDesc->ucDCMMaxConRx = 0;
-#endif
 	prBssDesc->fgIsERPPresent = FALSE;
 	prBssDesc->fgIsHTPresent = FALSE;
 	prBssDesc->fgIsVHTPresent = FALSE;
@@ -1950,33 +1942,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11AX == 1)
 		case ELEM_ID_RESERVED:
 			if (fgEfuseCtrlAxOn == 1) {
-			{
-#if (CFG_SUPPORT_HE_ER == 1)
-				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP) {
-					prHeCap = (struct _IE_HE_CAP_T *) pucIE;
-					prBssDesc->fgIsHEPresent = TRUE;
-					prBssDesc->ucDCMMaxConRx =
-					HE_GET_PHY_CAP_DCM_MAX_CONSTELLATION_RX(
-						prHeCap->ucHePhyCap);
-					DBGLOG(SCN, INFO, "ER: SSID:%s,rx:%x\n",
-						MAC2STR(prBssDesc->aucBSSID),
-						prBssDesc->aucSSID,
-						prBssDesc->ucDCMMaxConRx);
-				}
-				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP) {
-					prHeOp = (struct _IE_HE_OP_T *) pucIE;
-					prBssDesc->fgIsERSUDisable =
-					HE_IS_ER_SU_DISABLE(
-						prHeOp->ucHeOpParams);
-					DBGLOG(SCN, INFO, "ER: SSID:%s,er:%x\n",
-						MAC2STR(prBssDesc->aucBSSID),
-						prBssDesc->aucSSID,
-						prBssDesc->fgIsERSUDisable);
-				}
-#else
 				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP)
 					prBssDesc->fgIsHEPresent = TRUE;
-#endif
 			}
 			break;
 #endif
