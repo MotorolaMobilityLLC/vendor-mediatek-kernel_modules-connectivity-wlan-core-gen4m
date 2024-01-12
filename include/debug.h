@@ -806,6 +806,12 @@ enum WAIT_TO_PERIOD {
 	kalSendAeeWarning("Wlan_Gen4 No Mem", "Memory Alloate Failed %s:%d",\
 		__FILE__, __LINE__); \
 }
+#define ASSERT_QUEUE_DEBUG() \
+{ \
+	LOG_FUNC("queue debug failed at %s:%d\n", __FILE__, __LINE__); \
+	kalSendAeeWarning("Wlan_Gen4 Queue Debug",\
+		"Queue Debug Failed %s:%d", __FILE__, __LINE__); \
+}
 #ifdef _lint
 #define ASSERT(_exp) \
 	{ \
@@ -854,6 +860,13 @@ enum WAIT_TO_PERIOD {
 		__FILE__, __LINE__); \
 }
 
+#define ASSERT_QUEUE_DEBUG() \
+{ \
+	LOG_FUNC("queue debug failed at %s:%d\n", __FILE__, __LINE__); \
+	kalSendAeeWarning("Wlan_Gen4 Queue Debug",\
+		"Queue Debug Failed %s:%d", __FILE__, __LINE__); \
+}
+
 #define ASSERT(_exp) \
 	{ \
 		if (!(_exp)) { \
@@ -874,6 +887,7 @@ enum WAIT_TO_PERIOD {
 #endif /* WINDOWS_CE */
 #else
 #define ASSERT_NOMEM() {}
+#define ASSERT_QUEUE_DEBUG() {}
 #define ASSERT(_exp) {}
 #define ASSERT_REPORT(_exp, _fmt) {}
 #endif /* BUILD_QA_DBG */
