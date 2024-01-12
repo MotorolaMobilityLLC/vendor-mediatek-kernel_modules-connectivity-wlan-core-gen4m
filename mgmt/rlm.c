@@ -558,6 +558,9 @@ static VOID rlmFillHtCapIE(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, P_MSDU
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxLdpc))
 		prHtCap->u2HtCapInfo |= HT_CAP_INFO_LDPC_CAP;
 
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucTxStbc))
+		prHtCap->u2HtCapInfo |= HT_CAP_INFO_TX_STBC;
+
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucRxStbc)) {
 
 		UINT_8 tempRxStbcNss;
