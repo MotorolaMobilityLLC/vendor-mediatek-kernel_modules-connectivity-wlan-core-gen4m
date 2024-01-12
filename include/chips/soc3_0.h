@@ -239,6 +239,9 @@ extern struct regmap *g_regmap;
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 extern u_int8_t g_IsNeedWaitCoredump;
 #endif
+
+extern struct PLE_TOP_CR rSoc3_0_PleTopCr;
+extern struct PSE_TOP_CR rSoc3_0_PseTopCr;
 /*******************************************************************************
 *                           P R I V A T E   D A T A
 ********************************************************************************
