@@ -531,7 +531,7 @@ u_int8_t kalDevRegReadRange(IN struct GLUE_INFO *prGlueInfo,
 
 		kalDevRegWrite(prGlueInfo, ap2wf->reg_base, (u4Register + offset));
 
-		RTMP_IO_READ_RANGE(&prGlueInfo->rHifInfo,
+		RTMP_IO_READ_RANGE(chip_info,
 			offset_addr,
 			(void *)(prBuf + offset), size);
 
@@ -610,7 +610,7 @@ u_int8_t kalDevRegWriteRange(IN struct GLUE_INFO *prGlueInfo,
 		kalDevRegWrite(prGlueInfo, ap2wf->reg_base,
 			(u4Register + offset));
 
-		RTMP_IO_WRITE_RANGE(&prGlueInfo->rHifInfo,
+		RTMP_IO_WRITE_RANGE(chip_info,
 			offset_addr,
 			(void *)(prBuf + offset), size);
 

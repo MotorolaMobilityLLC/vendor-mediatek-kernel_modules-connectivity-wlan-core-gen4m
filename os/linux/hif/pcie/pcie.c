@@ -244,9 +244,7 @@ static struct pci_driver mtk_pci_driver = {
 
 static struct GLUE_INFO *g_prGlueInfo;
 static u_int8_t g_fgDriverProbed = FALSE;
-static uint32_t g_u4DmaMask = 32;
 struct pci_dev *g_prDev;
-static void *CSRBaseAddress;
 
 struct platform_device *g_prPlatDev = NULL;
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
@@ -393,7 +391,7 @@ struct mt66xx_hif_driver_data *get_platform_driver_data(void)
 	return (struct mt66xx_hif_driver_data *) pci_get_drvdata(g_prDev);
 }
 
-static irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
+irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	static DEFINE_RATELIMIT_STATE(_rs, 2 * HZ, 1);
@@ -404,6 +402,7 @@ static irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 		return IRQ_NONE;
 	}
 
+	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4HwIsrCount);
 	halDisableInterrupt(prGlueInfo->prAdapter);
 
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
@@ -413,7 +412,44 @@ static irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 
 	kalSetIntEvent(prGlueInfo);
 	if (__ratelimit(&_rs))
-		pr_info("[wlan] In HIF ISR.\n");
+		pr_info("[wlan] In HIF ISR(%d).\n", irq);
+
+	return IRQ_HANDLED;
+}
+
+irqreturn_t pcie_sw_int_top_handler(int irq, void *dev_instance)
+{
+	disable_irq_nosync(irq);
+	return IRQ_WAKE_THREAD;
+}
+
+irqreturn_t pcie_sw_int_thread_handler(int irq, void *dev_instance)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	u_int8_t fgEnInt = true;
+
+	prGlueInfo = (struct GLUE_INFO *)dev_instance;
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter) {
+		DBGLOG(HAL, WARN, "NULL prAdapter.\n");
+		goto exit;
+	}
+
+	GLUE_INC_REF_CNT(prAdapter->rHifStats.u4SwIsrCount);
+
+	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip INT\n");
+		goto exit;
+	}
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	fgEnInt = asicConnac3xSwIntHandler(prAdapter);
+#endif
+
+exit:
+	if (fgEnInt)
+		enable_irq(irq);
 
 	return IRQ_HANDLED;
 }
@@ -741,6 +777,9 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 {
 	struct mt66xx_hif_driver_data *prDriverData;
 	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+	struct pcie_msi_info *prMsiInfo;
+	uint32_t u4MaxMsiNum;
 	int ret = 0;
 
 	ASSERT(pdev);
@@ -748,41 +787,63 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	prDriverData = (struct mt66xx_hif_driver_data *)id->driver_data;
 	prChipInfo = prDriverData->chip_info;
-	g_u4DmaMask = prChipInfo->bus_info->u4DmaMask;
+	prBusInfo = prChipInfo->bus_info;
+	prMsiInfo = &prBusInfo->pcie_msi_info;
 
 	ret = pcim_enable_device(pdev);
 
 	if (ret) {
-		DBGLOG(INIT, INFO, "pci_enable_device failed!\n");
+		DBGLOG(INIT, INFO,
+			"pci_enable_device failed, ret=%d\n", ret);
 		goto out;
 	}
 
-	DBGLOG(INIT, INFO, "pci_enable_device done!\n");
-
 	ret = pcim_iomap_regions(pdev, BIT(0), pci_name(pdev));
-	if (ret != 0) {
-		DBGLOG(INIT, INFO, "pcim iomap failed!errno=%d\n", ret);
-		return FALSE;
+	if (ret) {
+		DBGLOG(INIT, INFO,
+			"pcim_iomap_regions failed, ret=%d\n", ret);
+		goto out;
 	}
 
 	pci_set_master(pdev);
 
-	ret = pci_set_dma_mask(pdev, DMA_BIT_MASK(g_u4DmaMask));
-	if (ret != 0) {
-		DBGLOG(INIT, INFO, "set DMA mask failed!errno=%d\n", ret);
-		return FALSE;
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_MSI_SUPPORT)
+	u4MaxMsiNum = prMsiInfo->u4MaxMsiNum ?
+		prMsiInfo->u4MaxMsiNum : 1;
+#else
+	u4MaxMsiNum = 1;
+#endif
+	ret = pci_alloc_irq_vectors(pdev, 1,
+				    u4MaxMsiNum,
+				    PCI_IRQ_MSI);
+	if (ret < 0) {
+		DBGLOG(INIT, INFO,
+			"pci_alloc_irq_vectors(1, %d) failed, ret=%d\n",
+			u4MaxMsiNum,
+			ret);
+		goto err_free_iomap;
 	}
+	if (u4MaxMsiNum > 1 && ret == prMsiInfo->u4MaxMsiNum) {
+		prMsiInfo->fgMsiEnabled = TRUE;
+		prMsiInfo->u4MsiNum = ret;
+	} else {
+		prMsiInfo->fgMsiEnabled = FALSE;
+		prMsiInfo->u4MsiNum = 1;
+	}
+	DBGLOG(INIT, INFO, "ret=%d, fgMsiEnabled=%d, u4MsiNum=%d\n",
+		ret, prMsiInfo->fgMsiEnabled, prMsiInfo->u4MsiNum);
+
+	ret = pci_set_dma_mask(pdev,
+		DMA_BIT_MASK(prChipInfo->bus_info->u4DmaMask));
+	if (ret != 0) {
+		DBGLOG(INIT, INFO,
+			"pci_set_dma_mask failed, ret=%d\n", ret);
+		goto err_free_irq_vectors;
+	}
+
 	g_prDev = pdev;
 	prChipInfo->pdev = (void *)pdev;
-
-	/* map physical address to virtual address for accessing register */
-	CSRBaseAddress = pcim_iomap_table(pdev)[0];
-	if (!CSRBaseAddress) {
-		DBGLOG(INIT, INFO, "ioremap failed\n");
-		goto out;
-	}
-
-	prChipInfo->CSRBaseAddress = CSRBaseAddress;
+	prChipInfo->CSRBaseAddress = pcim_iomap_table(pdev)[0];
 
 	DBGLOG(INIT, INFO, "ioremap for device %s, region 0x%lX @ 0x%lX\n",
 		pci_name(pdev), (unsigned long) pci_resource_len(pdev, 0),
@@ -790,17 +851,21 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	pci_set_drvdata(pdev, (void *)id->driver_data);
 
-#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
-	g_fgDriverProbed = TRUE;
-#else
 	if (pfWlanProbe((void *) pdev,
 		(void *) id->driver_data) != WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, INFO, "pfWlanProbe fail!\n");
+		DBGLOG(INIT, INFO, "pfWlanProbe fail!call pfWlanRemove()\n");
 		ret = -1;
-	} else {
-		g_fgDriverProbed = TRUE;
+		goto err_free_irq_vectors;
 	}
-#endif
+
+	g_fgDriverProbed = TRUE;
+	goto out;
+
+err_free_irq_vectors:
+	pci_free_irq_vectors(pdev);
+
+err_free_iomap:
+	pcim_iounmap_regions(pdev, BIT(0));
 
 out:
 	DBGLOG(INIT, INFO, "mtk_pci_probe() done(%d)\n", ret);
@@ -816,8 +881,9 @@ static void mtk_pci_remove(struct pci_dev *pdev)
 		pfWlanRemove();
 		DBGLOG(INIT, INFO, "pfWlanRemove done\n");
 	}
-
-	DBGLOG(INIT, INFO, "mtk_pci_remove() done\n");
+	pci_set_drvdata(pdev, NULL);
+	pci_free_irq_vectors(pdev);
+	pcim_iounmap_regions(pdev, BIT(0));
 }
 
 static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
@@ -1129,6 +1195,7 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	struct HIF_MEM_OPS *prMemOps;
 
 	prHif = &prGlueInfo->rHifInfo;
+	glGetChipInfo((void **)&prChipInfo);
 
 	prHif->pdev = (struct pci_dev *)ulCookie;
 	prMemOps = &prHif->rMemOps;
@@ -1136,8 +1203,8 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 	g_prGlueInfo = prGlueInfo;
 
-	prHif->CSRBaseAddress = CSRBaseAddress;
-	glGetChipInfo((void **)&prChipInfo);
+	if (!prChipInfo)
+		prHif->CSRBaseAddress = prChipInfo->CSRBaseAddress;
 
 	SET_NETDEV_DEV(prGlueInfo->prDevHandler, &prHif->pdev->dev);
 
@@ -1203,6 +1270,71 @@ void glBusRelease(void *pvData)
 {
 }
 
+static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
+	struct GLUE_INFO *prGlueInfo,
+	struct BUS_INFO *prBusInfo)
+{
+	struct pcie_msi_info *prMsiInfo = &prBusInfo->pcie_msi_info;
+	uint8_t i = 0;
+	int ret = 0;
+
+	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
+		struct pcie_msi_layout *prMsiLayout =
+			&prMsiInfo->prMsiLayout[i];
+		int irqn = pci_irq_vector(pdev, i);
+		int en_wake_ret = 0;
+
+		if (prMsiLayout && !prMsiLayout->top_handler &&
+		    !prMsiLayout->thread_handler)
+			continue;
+
+		ret = devm_request_threaded_irq(&pdev->dev,
+			irqn,
+			prMsiLayout->top_handler,
+			prMsiLayout->thread_handler,
+			IRQF_SHARED,
+			KBUILD_MODNAME,
+			prGlueInfo);
+		en_wake_ret = enable_irq_wake(irqn);
+		DBGLOG(INIT, INFO, "request_irq(%d %s %d %d)\n",
+			irqn, prMsiLayout->name, ret, en_wake_ret);
+		if (ret)
+			goto err;
+	}
+
+	return 0;
+
+err:
+	while (i--) {
+		struct pcie_msi_layout *prMsiLayout =
+			&prMsiInfo->prMsiLayout[i];
+		int irqn = pci_irq_vector(pdev, i);
+
+		if (prMsiLayout && !prMsiLayout->top_handler &&
+		    !prMsiLayout->thread_handler)
+			continue;
+
+		devm_free_irq(&pdev->dev, irqn, prGlueInfo);
+	}
+	return ret;
+}
+
+static int32_t glBusSetLegacyIrq(struct pci_dev *pdev,
+	struct GLUE_INFO *prGlueInfo,
+	struct BUS_INFO *prBusInfo)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	return devm_request_irq(&pdev->dev,
+			prHifInfo->u4IrqId,
+			mtk_pci_interrupt,
+			IRQF_SHARED,
+			KBUILD_MODNAME,
+			prGlueInfo);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Setup bus interrupt operation and interrupt handler for os.
@@ -1217,37 +1349,36 @@ void glBusRelease(void *pvData)
 /*----------------------------------------------------------------------------*/
 int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 {
-	struct BUS_INFO *prBusInfo;
-	struct net_device *prNetDevice = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct pcie_msi_info *prMsiInfo = NULL;
 	struct pci_dev *pdev = NULL;
 	int ret = 0;
 
-	ASSERT(pvData);
-	if (!pvData)
-		return -1;
-
-	prNetDevice = (struct net_device *)pvData;
 	prGlueInfo = (struct GLUE_INFO *)pvCookie;
 	ASSERT(prGlueInfo);
 	if (!prGlueInfo)
 		return -1;
 
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
-
+	prMsiInfo = &prBusInfo->pcie_msi_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	pdev = prHifInfo->pdev;
 
 	prHifInfo->u4IrqId = pdev->irq;
-	ret = request_irq(prHifInfo->u4IrqId, mtk_pci_interrupt,
-		IRQF_SHARED, prNetDevice->name, prGlueInfo);
-	if (ret != 0)
-		DBGLOG(INIT, INFO,
-			"glBusSetIrq: request_irq  ERROR(%d)\n", ret);
-	else if (prBusInfo->initPcieInt)
+	if (prMsiInfo && prMsiInfo->fgMsiEnabled)
+		ret = glBusSetMsiIrq(pdev, prGlueInfo, prBusInfo);
+	else
+		ret = glBusSetLegacyIrq(pdev, prGlueInfo, prBusInfo);
+
+	if (ret)
+		goto exit;
+
+	if (prBusInfo->initPcieInt)
 		prBusInfo->initPcieInt(prGlueInfo);
 
+exit:
 	return ret;
 }
 
@@ -1263,17 +1394,13 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 /*----------------------------------------------------------------------------*/
 void glBusFreeIrq(void *pvData, void *pvCookie)
 {
-	struct net_device *prNetDevice = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
+	struct pcie_msi_info *prMsiInfo = NULL;
 	struct pci_dev *pdev = NULL;
+	uint8_t i = 0;
 
-	ASSERT(pvData);
-	if (!pvData) {
-		DBGLOG(INIT, INFO, "%s null pvData\n", __func__);
-		return;
-	}
-	prNetDevice = (struct net_device *)pvData;
 	prGlueInfo = (struct GLUE_INFO *) pvCookie;
 	ASSERT(prGlueInfo);
 	if (!prGlueInfo) {
@@ -1282,10 +1409,22 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 	}
 
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prMsiInfo = &prBusInfo->pcie_msi_info;
 	pdev = prHifInfo->pdev;
 
-	synchronize_irq(pdev->irq);
-	free_irq(pdev->irq, prGlueInfo);
+	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
+		struct pcie_msi_layout *prMsiLayout =
+			&prMsiInfo->prMsiLayout[i];
+		int irqn = pci_irq_vector(pdev, i);
+
+		if (prMsiLayout && !prMsiLayout->top_handler &&
+		    !prMsiLayout->thread_handler)
+			continue;
+
+		synchronize_irq(irqn);
+		devm_free_irq(&pdev->dev, irqn, prGlueInfo);
+	}
 }
 
 u_int8_t glIsReadClearReg(uint32_t u4Address)

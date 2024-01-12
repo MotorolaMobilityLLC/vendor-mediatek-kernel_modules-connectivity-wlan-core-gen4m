@@ -618,25 +618,6 @@ struct pci_queue_desc {
 	char *const q_info;
 };
 
-struct pci_tx_queue_desc {
-	struct pci_queue_desc cmm;
-	/*tx specific*/
-};
-
-struct pci_rx_queue_desc {
-	struct pci_queue_desc cmm;
-	u32 event_type;
-	u16 max_rx_process_cnt;
-	u16 max_sw_read_idx_inc;
-	u16 rx_buf_size;
-	u8 buf_type;
-};
-
-struct pci_queue_layout {
-	const struct pci_tx_queue_desc *tx_queue_layout;
-	const struct pci_rx_queue_desc *rx_queue_layout;
-};
-
 enum ENUM_DMA_INT_TYPE {
 	DMA_INT_TYPE_MCU2HOST,
 	DMA_INT_TYPE_TRX,
@@ -712,6 +693,19 @@ struct RRO_ACK_SN_CMD {
 	uint32_t is_last:1;
 };
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
+struct pcie_msi_layout {
+	uint8_t name[32];
+	irqreturn_t (*top_handler)(int irq, void *dev_instance);
+	irqreturn_t (*thread_handler)(int irq, void *dev_instance);
+};
+
+struct pcie_msi_info {
+	struct pcie_msi_layout *prMsiLayout;
+	const uint32_t u4MaxMsiNum;
+	u_int8_t fgMsiEnabled;
+	uint32_t u4MsiNum;
+};
 
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S

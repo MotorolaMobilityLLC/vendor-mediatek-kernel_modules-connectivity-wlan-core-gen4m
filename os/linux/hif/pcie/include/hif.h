@@ -240,7 +240,6 @@ struct BUS_INFO {
 	const uint32_t top_cfg_base;	/* TOP_CFG_BASE address */
 	const struct PCIE_CHIP_CR_MAPPING *bus2chip;
 	const struct PCIE_CHIP_CR_REMAPPING *bus2chip_remap;
-	const struct pci_queue_layout queue_layout;
 	const uint32_t tx_ring_cmd_idx;
 	const uint32_t tx_ring_wa_cmd_idx;
 	const uint32_t tx_ring_fwdl_idx;
@@ -339,6 +338,7 @@ struct BUS_INFO {
 	struct PP_TOP_CR *prPpTopCr;
 	struct pse_group_info *prPseGroup;
 	const uint32_t u4PseGroupLen;
+	struct pcie_msi_info pcie_msi_info;
 
 	void (*pdmaSetup)(struct GLUE_INFO *prGlueInfo, u_int8_t enable,
 		bool fgResetHif);
@@ -486,6 +486,10 @@ void halPciePreSuspendTimeout(IN struct ADAPTER *prAdapter,
 
 int32_t glBusFunOn(void);
 void glBusFunOff(void);
+
+irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance);
+irqreturn_t pcie_sw_int_top_handler(int irq, void *dev_instance);
+irqreturn_t pcie_sw_int_thread_handler(int irq, void *dev_instance);
 
 /*******************************************************************************
  *                              F U N C T I O N S
