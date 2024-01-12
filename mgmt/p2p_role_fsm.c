@@ -197,11 +197,9 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 		prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter,
 			NETWORK_TYPE_P2P,
 			FALSE,
-			/*
-			 * Allow role1 to use reserve bss.
-			 * p2pRoleFsmNeedMlo(prAdapter, ucRoleIdx) &&
-			 *
-			 */
+#if (KAL_P2P_NUM > 2)
+			p2pRoleFsmNeedMlo(prAdapter, ucRoleIdx) &&
+#endif
 			(ucRoleIdx != P2P_MAIN_LINK_INDEX));
 
 		if (!prP2pBssInfo) {
@@ -392,6 +390,7 @@ void p2pRoleFsmUninit(struct ADAPTER *prAdapter, uint8_t ucRoleIdx)
 		nicDeactivateNetwork(prAdapter,
 			NETWORK_ID(prP2pBssInfo->ucBssIndex,
 			prP2pRoleFsmInfo->ucRoleIndex));
+		nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
 
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, ucRoleIdx) = NULL;
 
@@ -887,10 +886,10 @@ p2pRoleFsmDeauthCompleteImpl(struct ADAPTER *prAdapter,
 			prP2pRoleFsmInfo->ucBssIndex)
 			&& (bssGetClientCount(prAdapter, prP2pBssInfo) == 0)) {
 			/* All Peer disconnected !! Stop BSS now!! */
-			p2pFuncStopComplete(prAdapter, prP2pBssInfo);
 			p2pRoleFsmStateTransition(prAdapter,
 				prP2pRoleFsmInfo,
 				P2P_ROLE_STATE_IDLE);
+			p2pFuncStopComplete(prAdapter, prP2pBssInfo);
 		} else if (eOriMediaStatus != prP2pBssInfo->eConnectionState) {
 			/* Update the Media State if necessary */
 			nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
@@ -899,12 +898,11 @@ p2pRoleFsmDeauthCompleteImpl(struct ADAPTER *prAdapter,
 		p2pChangeMediaState(prAdapter,
 			prP2pBssInfo,
 			MEDIA_STATE_DISCONNECTED);
-		p2pFuncStopComplete(prAdapter,
-			prP2pBssInfo);
-
 		p2pRoleFsmStateTransition(prAdapter,
 			prP2pRoleFsmInfo,
 			P2P_ROLE_STATE_IDLE);
+		p2pFuncStopComplete(prAdapter,
+			prP2pBssInfo);
 	}
 }
 
@@ -940,6 +938,8 @@ p2pRoleFsmDeauthComplete(struct ADAPTER *prAdapter,
 
 			p2pRoleFsmDeauthCompleteImpl(prAdapter,
 				starec);
+			cnmTimerStopTimer(prAdapter,
+				&(starec->rDeauthTxDoneTimer));
 		}
 	} else
 #endif
@@ -1050,6 +1050,24 @@ void p2pRoleFsmRunEventRxDeauthentication(struct ADAPTER *prAdapter,
 
 				if (prP2pBssInfo->prStaRecOfAP != prStaRec)
 					break;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+				if (mldIsMultiLinkFormed(
+					prAdapter,
+					prStaRec)) {
+					/* Get default link */
+					struct BSS_INFO *bss =
+						p2pGetDefaultLinkBssInfo(
+						prAdapter, prP2pBssInfo);
+
+					if (bss &&
+						bss->prStaRecOfAP &&
+						(bss != prP2pBssInfo)) {
+						prP2pBssInfo = bss;
+						prStaRec = bss->prStaRecOfAP;
+					}
+				}
+#endif
 
 				prStaRec->u2ReasonCode = u2ReasonCode;
 				u2IELength = prSwRfb->u2PacketLen
@@ -1200,6 +1218,24 @@ void p2pRoleFsmRunEventRxDisassociation(struct ADAPTER *prAdapter,
 
 			u2IELength = prSwRfb->u2PacketLen
 				- (WLAN_MAC_HEADER_LEN + REASON_CODE_FIELD_LEN);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			if (mldIsMultiLinkFormed(
+				prAdapter,
+				prStaRec)) {
+				/* Get default link */
+				struct BSS_INFO *bss =
+					p2pGetDefaultLinkBssInfo(
+					prAdapter, prP2pBssInfo);
+
+				if (bss &&
+					bss->prStaRecOfAP &&
+					(bss != prP2pBssInfo)) {
+					prP2pBssInfo = bss;
+					prStaRec = bss->prStaRecOfAP;
+				}
+			}
+#endif
 
 			/* Indicate disconnect to Host. */
 			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
@@ -1713,6 +1749,52 @@ error:
 
 }				/* p2pRoleFsmRunEventStartAP */
 
+void p2pRoleFsmDelIfaceDone(
+	struct ADAPTER *prAdapter,
+	uint8_t ucRoleIdx)
+{
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct GL_P2P_INFO *prP2pInfo =
+		(struct GL_P2P_INFO *) NULL;
+
+	if (!prAdapter || !prAdapter->prGlueInfo) {
+		DBGLOG(P2P, ERROR, "pAd is null.\n");
+		return;
+	}
+
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
+		prAdapter, ucRoleIdx);
+	prP2pInfo =
+		prAdapter->prGlueInfo->prP2PInfo[ucRoleIdx];
+	if (!prP2pRoleFsmInfo || !prP2pInfo) {
+		DBGLOG(P2P, ERROR, "Fsm is null.\n");
+		return;
+	} else if (!prAdapter->fgDelIface[ucRoleIdx]) {
+		DBGLOG(P2P, INFO,
+			"No need to delete iface done\n");
+		return;
+	}
+
+	DBGLOG(P2P, INFO,
+		"Delete iface for role %d\n", ucRoleIdx);
+
+	prAdapter->fgDelIface[ucRoleIdx] = FALSE;
+
+	if (p2pGetMode() == RUNNING_P2P_DEV_MODE) {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		/* don't use u4ConnType to check gc role because
+		 * upper layer might change iface fist
+		 */
+		if (p2pGetGCBssNum(prP2pRoleFsmInfo) > 1)
+			p2pLinkUninitGCRole(prAdapter);
+		else
+#endif
+			p2pRoleFsmUninit(prAdapter, ucRoleIdx);
+	}
+}
+
 void p2pRoleFsmDelIface(
 	struct ADAPTER *prAdapter,
 	uint8_t ucRoleIdx)
@@ -1749,6 +1831,56 @@ void p2pRoleFsmDelIface(
 		prP2pBssInfo->eNetworkType,
 		prP2pBssInfo->eCurrentOPMode,
 		prP2pBssInfo->eIntendOPMode);
+
+	/* Case: Delete iface without disconnection */
+	prAdapter->fgDelIface[ucRoleIdx] = TRUE;
+
+	if (!IS_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex) &&
+		IS_NET_ACTIVE(prAdapter, prP2pBssInfo->ucBssIndex) &&
+		prP2pBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
+		struct STA_RECORD *prStaRec =
+			(struct STA_RECORD *) prP2pBssInfo->prStaRecOfAP;
+
+		if (IS_BSS_APGO(prP2pBssInfo)) {
+			struct MSG_P2P_STOP_AP *prP2pStopApMsg =
+				(struct MSG_P2P_STOP_AP *) NULL;
+
+			prP2pStopApMsg = cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, sizeof(struct MSG_P2P_STOP_AP));
+			if (prP2pStopApMsg) {
+				prP2pStopApMsg->ucRoleIdx = ucRoleIdx;
+				DBGLOG(P2P, INFO,
+					"GO: Delete before disconnection\n");
+				p2pRoleFsmRunEventStopAP(prAdapter,
+					(struct MSG_HDR *) prP2pStopApMsg);
+			}
+		} else if (prStaRec && prStaRec->fgIsInUse) {
+			p2pFuncDisconnect(prAdapter,
+				prP2pBssInfo,
+				prStaRec,
+				TRUE,
+				REASON_CODE_DEAUTH_LEAVING_BSS,
+				TRUE);
+
+			cnmTimerStopTimer(prAdapter,
+				&(prStaRec->rDeauthTxDoneTimer));
+			cnmTimerInitTimer(prAdapter,
+				&(prStaRec->rDeauthTxDoneTimer),
+				(PFN_MGMT_TIMEOUT_FUNC)
+					p2pRoleFsmDeauthTimeout,
+				(uintptr_t) prStaRec);
+			cnmTimerStartTimer(prAdapter,
+				&(prStaRec->rDeauthTxDoneTimer),
+				P2P_DEAUTH_TIMEOUT_TIME_MS);
+			SET_NET_PWR_STATE_IDLE(prAdapter,
+				prP2pBssInfo->ucBssIndex);
+			p2pRoleFsmStateTransition(prAdapter,
+				prP2pRoleFsmInfo,
+				P2P_ROLE_STATE_IDLE);
+			DBGLOG(P2P, INFO,
+				"GC: Delete before disconnection\n");
+		}
+	}
 
 	/* The state is in disconnecting and can not change any BSS status */
 	if (IS_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex) &&
@@ -1788,18 +1920,11 @@ void p2pRoleFsmDelIface(
 			prP2pRoleFsmInfo->ucRoleIndex));
 		nicUpdateBss(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
 		prP2pBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
-	}
+		p2pFuncInitConnectionSettings(prAdapter,
+			prAdapter->rWifiVar.prP2PConnSettings[ucRoleIdx],
+			FALSE);
 
-	if (p2pGetMode() == RUNNING_P2P_DEV_MODE) {
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		/* don't use u4ConnType to check gc role because
-		 * upper layer might change iface fist
-		 */
-		if (p2pGetGCBssNum(prP2pRoleFsmInfo) > 1)
-			p2pLinkUninitGCRole(prAdapter);
-		else
-#endif
-			p2pRoleFsmUninit(prAdapter, ucRoleIdx);
+		p2pRoleFsmDelIfaceDone(prAdapter, ucRoleIdx);
 	}
 
 error:
