@@ -5132,7 +5132,7 @@ void aisUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 	prAisBssInfo->ucBMCWlanIndex = secPrivacySeekForBcEntry(
 				prAdapter, prAisBssInfo->ucBssIndex,
 				prAisBssInfo->aucOwnMacAddr,
-				STA_REC_INDEX_NOT_FOUND,
+				prStaRec->ucIndex,
 				CIPHER_SUITE_NONE, 0xFF);
 
 	nicUpdateBss(prAdapter, ucBssIndex);
