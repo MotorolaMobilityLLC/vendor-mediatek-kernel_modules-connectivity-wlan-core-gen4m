@@ -96,7 +96,7 @@
 /* #define MAX_IOREQ_NUM   10 */
 struct semaphore g_halt_sem;
 int g_u4HaltFlag;
-u_int8_t g_fgNvramAvailable;
+static enum ENUM_NVRAM_STATE g_NvramFsm = NVRAM_STATE_INIT;
 
 uint8_t g_aucNvram[MAX_CFG_FILE_WIFI_REC_SIZE];
 struct wireless_dev *gprWdev[KAL_AIS_NUM];
@@ -916,8 +916,8 @@ static void glLoadNvram(struct GLUE_INFO *prGlueInfo,
 	ASSERT(prRegInfo);
 	ASSERT(prGlueInfo);
 
-	DBGLOG(INIT, INFO, "g_fgNvramAvailable = %u\n", g_fgNvramAvailable);
-	if (!g_fgNvramAvailable) {
+	DBGLOG(INIT, INFO, "g_NvramFsm = %d\n", g_NvramFsm);
+	if (g_NvramFsm != NVRAM_STATE_READY) {
 		DBGLOG(INIT, WARN, "Nvram not available\n");
 		return;
 	}
@@ -2043,12 +2043,76 @@ const struct net_device_ops *wlanGetNdevOps(void)
 	return &wlan_netdev_ops;
 }
 #endif
-
+void wlanNvramSetState(enum ENUM_NVRAM_STATE state)
+{
+	g_NvramFsm = state;
+}
+enum ENUM_NVRAM_STATE wlanNvramGetState(void)
+{
+	return g_NvramFsm;
+}
 #if CFG_WLAN_ASSISTANT_NVRAM
+static void wlanNvramUpdateOnTestMode(void)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	enum ENUM_NVRAM_STATE nvrmState;
+	struct REG_INFO *prRegInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+
+
+	/* <1> Sanity Check */
+	if ((u4WlanDevNum == 0)
+		&& (u4WlanDevNum > CFG_MAX_WLAN_DEVICES)) {
+		DBGLOG(INIT, ERROR,
+			   "wlanNvramUpdateOnTestMode invalid!!\n");
+		return;
+	}
+
+	prGlueInfo = wlanGetGlueInfo();
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR,
+			   "prGlueInfo invalid!!\n");
+		return;
+	}
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR,
+			   "prAdapter invalid!!\n");
+		return;
+	}
+	prRegInfo = &prGlueInfo->rRegInfo;
+	if (prRegInfo == NULL) {
+		DBGLOG(INIT, ERROR,
+			   "prRegInfo invalid!!\n");
+		return;
+	}
+
+	if (prAdapter->fgTestMode == FALSE) {
+		DBGLOG(INIT, ERROR,
+			   "by-pass on Normal mode\n");
+		return;
+	}
+
+	nvrmState = wlanNvramGetState();
+
+	if (nvrmState == NVRAM_STATE_READY) {
+		DBGLOG(RFTEST, INFO,
+		"update nvram to fw on test mode!\n");
+
+		if (kalIsConfigurationExist(prGlueInfo) == TRUE)
+			wlanLoadManufactureData(prAdapter, prRegInfo);
+		else
+			DBGLOG(INIT, WARN, "%s: load manufacture data fail\n",
+					   __func__);
+	}
+
+
+}
 static uint8_t wlanNvramBufHandler(void *ctx,
 			const char *buf,
 			uint16_t length)
 {
+
 	DBGLOG(INIT, ERROR, "buf = %p, length = %u\n", buf, length);
 	if (buf == NULL || length <= 0)
 		return -EFAULT;
@@ -2058,15 +2122,22 @@ static uint8_t wlanNvramBufHandler(void *ctx,
 			sizeof(g_aucNvram));
 		return -EINVAL;
 	}
+
+	kalMemZero(&g_aucNvram, sizeof(g_aucNvram));
 	if (copy_from_user(g_aucNvram, buf, length)) {
 		DBGLOG(INIT, ERROR, "copy nvram fail\n");
-		g_fgNvramAvailable = FALSE;
+		g_NvramFsm = NVRAM_STATE_INIT;
 		return -EINVAL;
 	}
 
-	g_fgNvramAvailable = TRUE;
+	g_NvramFsm = NVRAM_STATE_READY;
+
+	/*do nvram update on test mode then driver sent new NVRAM to FW*/
+	wlanNvramUpdateOnTestMode();
+
 	return 0;
 }
+
 #endif
 
 static void wlanCreateWirelessDevice(void)
@@ -4635,6 +4706,11 @@ static void wlanRemove(void)
 	uint32_t u4Idx = 0;
 
 	DBGLOG(INIT, INFO, "Remove wlan!\n");
+
+
+	/*reset NVRAM State to ready for the next wifi-no*/
+	if (g_NvramFsm == NVRAM_STATE_SEND_TO_FW)
+		g_NvramFsm = NVRAM_STATE_READY;
 
 #if CFG_CHIP_RESET_SUPPORT
 	/* During chip reset, use simplify remove flow first

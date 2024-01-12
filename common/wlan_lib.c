@@ -4590,6 +4590,10 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 		kalMemFree(prCmdNvramSettings, VIR_MEM_TYPE,
 				   sizeof(struct CMD_NVRAM_SETTING));
 	}
+
+
+	wlanNvramSetState(NVRAM_STATE_SEND_TO_FW);
+
 	return WLAN_STATUS_SUCCESS;
 }
 
