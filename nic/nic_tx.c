@@ -4129,6 +4129,7 @@ uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
 			u4TotLen = NIC_TX_DESC_AND_PADDING_LENGTH
 				+ u4TxDescAppendSize
 				+ prMsduInfoHead->u2FrameLength;
+
 			/* prepare skb to hif */
 			pkt = kalBuildSkb(prMsduInfoHead->prHead, u4TotLen,
 						TRUE);
@@ -4159,11 +4160,11 @@ uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
 			prMsduInfoHead->prTxP = prMsduInfoHead->prPacket;
 			prMsduInfoHead->prPacket = pkt;
 
-			KAL_ACQUIRE_SPIN_LOCK_IRQ(prAdapter,
+			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
 				SPIN_LOCK_TX_MGMT_DIRECT_Q);
 			QUEUE_INSERT_TAIL(&prAdapter->rMgmtDirectTxQueue,
 				(struct QUE_ENTRY *) prMsduInfoHead);
-			KAL_RELEASE_SPIN_LOCK_IRQ(prAdapter,
+			KAL_RELEASE_SPIN_LOCK(prAdapter,
 				SPIN_LOCK_TX_MGMT_DIRECT_Q);
 			prMsduInfoHead = prNextMsduInfo;
 		}
@@ -4314,27 +4315,40 @@ uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
 	return u4Status;
 }
 
-#if (CFG_TX_MGMT_BY_DATA_Q == 1)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief this function set mgmt frame to be sent by Data Q
+ * \brief this function alloc mgmt frame to be sent by Data Q
  *
  * @param prAdapter     Pointer to the Adapter structure.
  *
- * @param prMsduInfo	Pointer to the MSDU_INFO
+ * @param u4Length	Length to alloc
  */
 /*----------------------------------------------------------------------------*/
-void nicTxSetMgmtByDataQ(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo)
+struct MSDU_INFO *nicAllocMgmtPktForDataQ(IN struct ADAPTER *prAdapter,
+	uint32_t u4Length)
 {
-	if (prMsduInfo == NULL) {
-		DBGLOG(TX, WARN, "prMsduInfo is NULL\n");
-		return;
-	}
+	struct MSDU_INFO *prRetMsduInfo = NULL;
 
-	prMsduInfo->fgMgmtUseDataQ = TRUE;
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+	/* add size for SKB shared info size */
+	/* if this MSDU will send by data Q */
+	u4Length += kalGetSKBSharedInfoSize();
+
+	prRetMsduInfo = cnmMgtPktAlloc(prAdapter, u4Length);
+
+	if (prRetMsduInfo) {
+		/* Mark this MSDU will send by data Q */
+		prRetMsduInfo->fgMgmtUseDataQ = TRUE;
+	}
+#else
+	prRetMsduInfo = cnmMgtPktAlloc(prAdapter, u4Length);
+#endif
+
+	return prRetMsduInfo;
 }
 
+
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
 uint32_t nicTxMgmtDirectTxMsduMthread(IN struct ADAPTER *prAdapter)
 {
 	struct QUE *prMgmtQueue = &prAdapter->rMgmtDirectTxQueue;
@@ -4348,10 +4362,10 @@ uint32_t nicTxMgmtDirectTxMsduMthread(IN struct ADAPTER *prAdapter)
 	prTempHifQueue = &rTempHifQueue;
 	QUEUE_INITIALIZE(prTempHifQueue);
 
-	KAL_ACQUIRE_SPIN_LOCK_IRQ(prAdapter,
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter,
 		SPIN_LOCK_TX_MGMT_DIRECT_Q);
 	QUEUE_MOVE_ALL(prTempHifQueue, prMgmtQueue);
-	KAL_RELEASE_SPIN_LOCK_IRQ(prAdapter,
+	KAL_RELEASE_SPIN_LOCK(prAdapter,
 		SPIN_LOCK_TX_MGMT_DIRECT_Q);
 
 	while (1) {
@@ -4405,10 +4419,10 @@ uint32_t nicTxMgmtDirectTxMsduMthread(IN struct ADAPTER *prAdapter)
 		HAL_KICK_TX_DATA(prAdapter);
 
 	if (QUEUE_IS_NOT_EMPTY(prTempHifQueue)) {
-		KAL_ACQUIRE_SPIN_LOCK_IRQ(prAdapter,
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter,
 			SPIN_LOCK_TX_MGMT_DIRECT_Q);
 		QUEUE_CONCATENATE_QUEUES_HEAD(prMgmtQueue, prTempHifQueue);
-		KAL_RELEASE_SPIN_LOCK_IRQ(prAdapter,
+		KAL_RELEASE_SPIN_LOCK(prAdapter,
 			SPIN_LOCK_TX_MGMT_DIRECT_Q);
 	}
 
