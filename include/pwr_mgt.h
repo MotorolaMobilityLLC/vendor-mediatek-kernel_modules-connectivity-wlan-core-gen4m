@@ -84,14 +84,22 @@ struct PM_PROFILE_SETUP_INFO {
 #define ACQUIRE_POWER_CONTROL_FROM_PM(_prAdapter)
 #define RECLAIM_POWER_CONTROL_TO_PM(_prAdapter, _fgEnableGINT_in_IST)
 #else
+
+#if CFG_MTK_ANDROID_WMT
 #define ACQUIRE_POWER_CONTROL_FROM_PM(_prAdapter) \
 	{ \
-			nicpmSetDriverOwn(_prAdapter); \
+		wlanAcquirePowerControl(_prAdapter); \
 	}
+#else
+#define ACQUIRE_POWER_CONTROL_FROM_PM(_prAdapter) \
+	{ \
+		nicpmSetDriverOwn(_prAdapter); \
+	}
+#endif
 
 #define RECLAIM_POWER_CONTROL_TO_PM(_prAdapter, _fgEnableGINT_in_IST) \
 	{ \
-			nicpmSetFWOwn(_prAdapter, _fgEnableGINT_in_IST); \
+		nicpmSetFWOwn(_prAdapter, _fgEnableGINT_in_IST); \
 	}
 #endif
 
