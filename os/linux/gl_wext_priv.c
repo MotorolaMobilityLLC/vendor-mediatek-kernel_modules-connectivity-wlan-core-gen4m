@@ -4115,8 +4115,8 @@ static int priv_driver_get_rx_statistics(IN struct net_device *prNetDev,
 	       "MT6632 : priv_driver_get_rx_statistics\n");
 
 	if (i4Argc >= 2) {
-		u4Ret = kalkStrtou32(apcArgv[1], 0,
-				     &(rRxStatisticsTest.u4SeqNum));
+		u4Ret = kalkStrtou16(apcArgv[1], 0,
+				     &(rRxStatisticsTest.u2SeqNum));
 		rRxStatisticsTest.u4TotalNum = sizeof(struct
 						      PARAM_RX_STAT) / 4;
 
@@ -7386,7 +7386,7 @@ static int priv_driver_show_rx_stat(IN struct net_device *prNetDev,
 		if (!prRxStatisticsTest)
 			return -1;
 
-		prRxStatisticsTest->u4SeqNum = u4RxStatSeqNum;
+		prRxStatisticsTest->u2SeqNum = u2RxStatSeqNum;
 		prRxStatisticsTest->u4TotalNum =
 					sizeof(struct PARAM_RX_STAT) / 4;
 
