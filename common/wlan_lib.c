@@ -7021,13 +7021,15 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (fgEfuseCtrlAxOn == 1) {
 		prWifiVar->ucStaHe = (uint8_t)
-		wlanCfgGetUint32(prAdapter, "StaHE", FEATURE_ENABLED);
+			wlanCfgGetUint32(prAdapter, "StaHE", FEATURE_ENABLED);
 		prWifiVar->ucApHe = (uint8_t)
-			wlanCfgGetUint32(prAdapter, "ApHE", FEATURE_ENABLED);
+			wlanCfgGetUint32(prAdapter, "ApHE", FEATURE_DISABLED);
 		prWifiVar->ucP2pGoHe = (uint8_t)
-			wlanCfgGetUint32(prAdapter, "P2pGoHE", FEATURE_ENABLED);
+			wlanCfgGetUint32(prAdapter, "P2pGoHE",
+					FEATURE_DISABLED);
 		prWifiVar->ucP2pGcHe = (uint8_t)
-			wlanCfgGetUint32(prAdapter, "P2pGcHE", FEATURE_ENABLED);
+			wlanCfgGetUint32(prAdapter, "P2pGcHE",
+					FEATURE_DISABLED);
 
 		prWifiVar->ucApSelAxWeight = (uint8_t)
 		wlanCfgGetUint32(prAdapter, "ApSelAxWeight", AX_SEL_DEF_WEIGHT);
