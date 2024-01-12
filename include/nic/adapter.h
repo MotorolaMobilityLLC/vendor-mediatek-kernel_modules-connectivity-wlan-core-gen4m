@@ -1264,6 +1264,11 @@ struct WIFI_VAR {
 	uint32_t u4VnfDebInterval;
 	uint32_t u4VnfDelta;
 #endif /* CFG_VOLT_INFO */
+
+#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+	uint32_t u4TxDataDelayTimeout;
+	uint32_t u4TxDataDelayCnt;
+#endif /* CFG_SUPPORT_TX_DATA_DELAY == 1 */
 };
 
 /* cnm_timer module */

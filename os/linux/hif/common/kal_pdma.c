@@ -1412,10 +1412,16 @@ u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct HIF_STATS *prHifStats;
+	struct WIFI_VAR *prWifiVar;
 	struct RTMP_TX_RING *prTxRing;
 	struct list_head rTempList;
-	uint32_t u4Idx;
 	static int32_t ai4RingLock[NUM_OF_TX_RING];
+	uint32_t u4Idx;
+#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+	u_int8_t fgIsTxData = FALSE;
+	uint32_t u4DataCnt = 0;
+#endif
 
 	KAL_HIF_TXDATAQ_LOCK_DECLARATION();
 #if !CFG_TX_DIRECT_VIA_HIF_THREAD
@@ -1426,11 +1432,30 @@ u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prHifStats = &prGlueInfo->prAdapter->rHifStats;
+	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
+#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++)
+		u4DataCnt += prHifInfo->u4TxDataQLen[u4Idx];
+	if (KAL_TEST_AND_CLEAR_BIT(
+		    HIF_TX_DATA_DELAY_TIMEOUT_BIT,
+		    prHifInfo->ulTxDataTimeout) ||
+	    u4DataCnt >= prWifiVar->u4TxDataDelayCnt)
+		fgIsTxData = TRUE;
+
+	if (!fgIsTxData) {
+		halStartTxDelayTimer(prGlueInfo->prAdapter);
+		return 0;
+	}
+#endif
 	/* disable softirq to improve processing efficiency */
 	local_bh_disable();
 
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
+		if (!halIsDataRing(TX_RING, u4Idx))
+			continue;
+
 		if (unlikely(GLUE_INC_REF_CNT(ai4RingLock[u4Idx]) > 1)) {
 			/* Single user allowed per port read */
 			DBGLOG(TX, WARN, "Single user only R[%u] [%d]\n",
@@ -1454,8 +1479,6 @@ u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
 		KAL_HIF_TXRING_LOCK(prTxRing);
 #endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 
-		kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr,
-			      &prTxRing->TxCpuIdx);
 		if (prChipInfo->ucMaxSwAmsduNum > 1)
 			kalDevKickAmsduData(prGlueInfo, &rTempList);
 		else
@@ -1481,6 +1504,13 @@ end:
 	}
 
 	local_bh_enable();
+
+	GLUE_INC_REF_CNT(prHifStats->u4TxDataRegCnt);
+#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+	del_timer_sync(&prHifInfo->rTxDelayTimer);
+	KAL_CLR_BIT(HIF_TX_DATA_DELAY_TIMER_RUNNING_BIT,
+		    prHifInfo->ulTxDataTimeout);
+#endif
 
 	return 0;
 }
@@ -1546,7 +1576,8 @@ static bool kalDevKickMsduData(struct GLUE_INFO *prGlueInfo,
 	return fgRet;
 }
 
-#if KERNEL_VERSION(5, 10, 70) <= CFG80211_VERSION_CODE && !defined(CONFIG_SUPPORT_OPENWRT)
+#if KERNEL_VERSION(5, 10, 70) <= LINUX_VERSION_CODE && \
+	!defined(CONFIG_SUPPORT_OPENWRT)
 static int kalAmsduTxDCmp(void *prPriv, const struct list_head *prList1,
 			  const struct list_head *prList2)
 #else
