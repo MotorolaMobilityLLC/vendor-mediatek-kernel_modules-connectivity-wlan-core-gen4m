@@ -2110,7 +2110,7 @@ static void wlan_late_resume(struct early_suspend *h)
 }
 #endif
 
-#if ((MTK_WCN_HIF_SDIO && CFG_SUPPORT_MTK_ANDROID_KK) || WLAN_INCLUDE_PROC)
+#if (CFG_MTK_ANDROID_WMT || WLAN_INCLUDE_PROC)
 
 int set_p2p_mode_handler(struct net_device *netdev, PARAM_CUSTOM_P2P_SET_STRUCT_T p2pmode)
 {
@@ -2747,7 +2747,7 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		glRegisterAmpc(prGlueInfo);
 #endif
 
-#if (CFG_ENABLE_WIFI_DIRECT && MTK_WCN_HIF_SDIO && CFG_SUPPORT_MTK_ANDROID_KK)
+#if (CFG_ENABLE_WIFI_DIRECT && CFG_MTK_ANDROID_WMT)
 		register_set_p2p_mode_handler(set_p2p_mode_handler);
 #elif (CFG_ENABLE_WIFI_DIRECT)
 		if (prAdapter->rWifiVar.u4RegP2pIfAtProbe) {
@@ -2878,7 +2878,7 @@ static VOID wlanRemove(VOID)
 		DBGLOG(INIT, ERROR, "u4WlanDevNum = 0\n");
 		return;
 	}
-#if (CFG_ENABLE_WIFI_DIRECT && MTK_WCN_HIF_SDIO && CFG_SUPPORT_MTK_ANDROID_KK)
+#if (CFG_ENABLE_WIFI_DIRECT && CFG_MTK_ANDROID_WMT)
 	register_set_p2p_mode_handler(NULL);
 #endif
 	if (u4WlanDevNum > 0 && u4WlanDevNum <= CFG_MAX_WLAN_DEVICES) {
