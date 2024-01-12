@@ -3908,7 +3908,6 @@ nla_put_failure:
 	return -EINVAL;
 }
 
-#if (CFG_IFACE_CONCURRENT_MODE == 2)
 struct wifi_iface_limit sta_sta[] = {
 	{
 		.max_limit = 2,
@@ -3920,6 +3919,39 @@ struct wifi_iface_limit ap_ap[] = {
 	{
 		.max_limit = 1,
 		.iface_mask = BIT(WIFI_INTERFACE_TYPE_AP_BRIDGED),
+	},
+};
+
+struct wifi_iface_limit sta_ap[] = {
+	{
+		.max_limit = 1,
+		.iface_mask = BIT(WIFI_INTERFACE_TYPE_STA),
+	},
+	{
+		.max_limit = 1,
+		.iface_mask = BIT(WIFI_INTERFACE_TYPE_AP),
+	},
+};
+
+struct wifi_iface_limit sta_p2p[] = {
+	{
+		.max_limit = 1,
+		.iface_mask = BIT(WIFI_INTERFACE_TYPE_STA),
+	},
+	{
+		.max_limit = 1,
+		.iface_mask = BIT(WIFI_INTERFACE_TYPE_P2P),
+	},
+};
+
+struct wifi_iface_limit sta_nan[] = {
+	{
+		.max_limit = 1,
+		.iface_mask = BIT(WIFI_INTERFACE_TYPE_STA),
+	},
+	{
+		.max_limit = 1,
+		.iface_mask = BIT(WIFI_INTERFACE_TYPE_NAN),
 	},
 };
 
@@ -3979,6 +4011,7 @@ struct wifi_iface_limit sta_p2p_nan[] = {
 	},
 };
 
+#if (CFG_IFACE_CONCURRENT_MODE == 2)
 struct mtk_wifi_iface_combination mtk_ifaces_combinations[] = {
 	{
 		.max_ifaces = 2,
@@ -4012,53 +4045,6 @@ struct mtk_wifi_iface_combination mtk_ifaces_combinations[] = {
 	},
 };
 #else
-struct wifi_iface_limit sta_sta[] = {
-	{
-		.max_limit = 2,
-		.iface_mask = BIT(WIFI_INTERFACE_TYPE_STA),
-	},
-};
-
-struct wifi_iface_limit ap_ap[] = {
-	{
-		.max_limit = 1,
-		.iface_mask = BIT(WIFI_INTERFACE_TYPE_AP_BRIDGED),
-	},
-};
-
-struct wifi_iface_limit sta_ap[] = {
-	{
-		.max_limit = 1,
-		.iface_mask = BIT(WIFI_INTERFACE_TYPE_STA),
-	},
-	{
-		.max_limit = 1,
-		.iface_mask = BIT(WIFI_INTERFACE_TYPE_AP),
-	},
-};
-
-struct wifi_iface_limit sta_p2p[] = {
-	{
-		.max_limit = 1,
-		.iface_mask = BIT(WIFI_INTERFACE_TYPE_STA),
-	},
-	{
-		.max_limit = 1,
-		.iface_mask = BIT(WIFI_INTERFACE_TYPE_P2P),
-	},
-};
-
-struct wifi_iface_limit sta_nan[] = {
-	{
-		.max_limit = 1,
-		.iface_mask = BIT(WIFI_INTERFACE_TYPE_STA),
-	},
-	{
-		.max_limit = 1,
-		.iface_mask = BIT(WIFI_INTERFACE_TYPE_NAN),
-	},
-};
-
 struct mtk_wifi_iface_combination mtk_ifaces_combinations[] = {
 	{
 		.max_ifaces = 2,
@@ -4088,9 +4074,37 @@ struct mtk_wifi_iface_combination mtk_ifaces_combinations[] = {
 };
 #endif
 
+struct mtk_wifi_iface_combination mtk_ifaces_combinations_6631[] = {
+	{
+		.max_ifaces = 1,
+		.num_iface_limits = ARRAY_SIZE(ap_ap),
+		.iface_limits = ap_ap,
+	},
+	{
+		.max_ifaces = 2,
+		.num_iface_limits = ARRAY_SIZE(sta_ap),
+		.iface_limits = sta_ap,
+	},
+	{
+		.max_ifaces = 2,
+		.num_iface_limits = ARRAY_SIZE(sta_p2p),
+		.iface_limits = sta_p2p,
+	},
+	{
+		.max_ifaces = 2,
+		.num_iface_limits = ARRAY_SIZE(sta_nan),
+		.iface_limits = sta_nan,
+	},
+};
+
 struct mtk_wifi_iface_concurrency_matrix mtk_ifaces_matrix = {
 	.num_iface_combinations = ARRAY_SIZE(mtk_ifaces_combinations),
 	.iface_combinations = mtk_ifaces_combinations,
+};
+
+struct mtk_wifi_iface_concurrency_matrix mtk_ifaces_matrix_6631 = {
+	.num_iface_combinations = ARRAY_SIZE(mtk_ifaces_combinations_6631),
+	.iface_combinations = mtk_ifaces_combinations_6631,
 };
 
 int mtk_cfg80211_vendor_get_chip_concurrency_matrix(struct wiphy *wiphy,
@@ -4100,16 +4114,28 @@ int mtk_cfg80211_vendor_get_chip_concurrency_matrix(struct wiphy *wiphy,
 
 	struct mtk_wifi_iface_concurrency_matrix *src = &mtk_ifaces_matrix;
 	struct wifi_iface_concurrency_matrix *dest = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct sk_buff *skb;
 	uint8_t i, j;
 	uint8_t buffer[DEBUG_BUFFER_SZ];
 	int32_t written = 0;
+	static const uint32_t WLAN_DRV_READY =
+		WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND |
+		WLAN_DRV_READY_CHECK_RESET;
 
 	if (!wiphy || !wdev) {
 		DBGLOG(REQ, ERROR,
 			"wiphy=0x%p, wdev=0x%p\n",
 			wiphy, wdev);
 		return -EINVAL;
+	}
+
+	prGlueInfo = wlanGetGlueInfo();
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY)) {
+		DBGLOG(REQ, ERROR, "driver is not ready\n");
+		return -EFAULT;
 	}
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(*dest));
@@ -4131,6 +4157,18 @@ int mtk_cfg80211_vendor_get_chip_concurrency_matrix(struct wiphy *wiphy,
 	}
 	kalMemZero(dest, sizeof(*dest));
 	kalMemZero(buffer, sizeof(buffer));
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	if (!prChipInfo) {
+		DBGLOG(REQ, ERROR, "prChipInfo=0x%p\n",	prChipInfo);
+		goto nla_put_failure;
+	}
+
+	if (prChipInfo->asicGetChipID &&
+	    prChipInfo->asicGetChipID(prGlueInfo->prAdapter) == 0x31)
+		src = &mtk_ifaces_matrix_6631;
+	else
+		src = &mtk_ifaces_matrix;
 
 	dest->num_iface_combinations = src->num_iface_combinations;
 	written += kalSnprintf(buffer + written,
