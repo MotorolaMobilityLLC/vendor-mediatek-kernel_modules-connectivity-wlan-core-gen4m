@@ -501,6 +501,20 @@ uint32_t halTxUSBSendData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *
 	u4Length = skb->len;
 	u4TotalLen = u4Length + prChipInfo->u2HifTxdSize;
 	ucTc = USB_TRANS_MSDU_TC(prMsduInfo);
+#if (CFG_SUPPORT_DMASHDL_SYSDVT)
+	if (prMsduInfo->ucPktType == ENUM_PKT_ICMP) {
+		if (DMASHDL_DVT_QUEUE_MAPPING_TYPE1(prGlueInfo->prAdapter)
+		|| DMASHDL_DVT_QUEUE_MAPPING_TYPE2(prGlueInfo->prAdapter)) {
+			/* send ping packets to each EP for DMASHDL DVT */
+			ucTc = prMsduInfo->ucTarQueue % TC_NUM;
+			/* skip TC4, TC4=>EP8 is reserved for CMD */
+			if (ucTc == TC4_INDEX)
+				ucTc = TC_NUM;
+			DMASHDL_DVT_INC_PING_PKT_CNT(prGlueInfo->prAdapter,
+				prMsduInfo->ucTarQueue);
+		}
+	}
+#endif /* CFG_SUPPORT_DMASHDL_SYSDVT */
 
 #if CFG_USB_TX_AGG
 	spin_lock_irqsave(&prHifInfo->rTxDataQLock, flags);

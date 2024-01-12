@@ -153,6 +153,11 @@ void mt6632CapInit(IN struct ADAPTER *prAdapter)
 	prChipInfo->u2RxSwPktFrame = RXM_RXD_PKT_TYPE_SW_FRAME;
 	asicInitTxdHook(prChipInfo->prTxDescOps);
 	asicInitRxdHook(prChipInfo->prRxDescOps);
+#if CFG_SUPPORT_WIFI_SYSDVT
+	prAdapter->u2TxTest = TX_TEST_UNLIMITIED;
+	prAdapter->u2TxTestCount = 0;
+	prAdapter->ucTxTestUP = TX_TEST_UP_UNDEF;
+#endif /* CFG_SUPPORT_WIFI_SYSDVT */
 
 	switch (prGlueInfo->u4InfType) {
 #if defined(_HIF_PCIE)

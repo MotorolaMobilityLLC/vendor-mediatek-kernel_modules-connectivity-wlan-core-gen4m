@@ -1563,6 +1563,13 @@ struct ADAPTER {
 	u_int8_t fgEnCfg80211Scan;
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
+#if CFG_SUPPORT_WIFI_SYSDVT
+	struct AUTOMATION_DVT *auto_dvt;
+	uint16_t u2TxTest;
+	uint16_t u2TxTestCount;
+	uint8_t  ucTxTestUP;
+#endif /* CFG_SUPPORT_WIFI_SYSDVT */
+
 	bool fgEnHifDbgInfo;
 	uint32_t u4HifDbgFlag;
 	uint32_t u4HifChkFlag;
