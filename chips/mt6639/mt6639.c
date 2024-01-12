@@ -1154,7 +1154,7 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 
 static void mt6639WpdmaMsiConfig(struct ADAPTER *prAdapter)
 {
-#define WFDMA_AP_MSI_NUM		8
+#define WFDMA_AP_MSI_NUM		1
 #if CFG_MTK_MDDP_SUPPORT
 #define WFDMA_MD_MSI_NUM		8
 #endif
