@@ -501,7 +501,7 @@ nanDataGenerateNdpInstanceId(
 	prNDP->ndp_instance_id =
 		(prNDP->ucNDPID * 100) +
 		(prNDP->ucNdlIndex) * NAN_MAX_SUPPORT_NDP_NUM +
-		prNDL->ucNDPNum;
+		(prNDP - prNDL->arNDP);
 }
 
 struct _NAN_NDP_INSTANCE_T *
@@ -520,8 +520,8 @@ nanDataUtilSearchNdpByNdpInstanceId(
 		return NULL;
 	}
 
-	ucNdlIndex = (u4Id - 1) / NAN_MAX_SUPPORT_NDP_NUM;
-	ucNdpIndex = (u4Id - 1) % NAN_MAX_SUPPORT_NDP_NUM;
+	ucNdlIndex = u4Id / NAN_MAX_SUPPORT_NDP_NUM;
+	ucNdpIndex = u4Id % NAN_MAX_SUPPORT_NDP_NUM;
 	if (ucNdlIndex >= NAN_MAX_SUPPORT_NDL_NUM ||
 		ucNdpIndex >= NAN_MAX_SUPPORT_NDP_NUM) {
 		DBGLOG(NAN, ERROR,
@@ -530,7 +530,8 @@ nanDataUtilSearchNdpByNdpInstanceId(
 		return NULL;
 	}
 
-	DBGLOG(NAN, INFO, "NdpId [%d,%d]\n",
+	DBGLOG(NAN, INFO, "NdpId %u [%d,%d]\n",
+		u4NdpInstanceId,
 		ucNdlIndex,
 		ucNdpIndex);
 
