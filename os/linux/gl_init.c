@@ -2358,7 +2358,10 @@ int set_p2p_mode_handler(struct net_device *netdev,
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 
-	if (prGlueInfo && prGlueInfo->u4ReadyFlag == 0) {
+	if (!prGlueInfo)
+		return -1;
+
+	if (prGlueInfo->u4ReadyFlag == 0) {
 		DBGLOG(INIT, ERROR, "adapter is not ready\n");
 		return -1;
 	}
