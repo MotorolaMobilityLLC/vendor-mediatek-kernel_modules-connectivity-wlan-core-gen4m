@@ -1092,6 +1092,12 @@ else
     ccflags-y += -DCFG_SUPPORT_WPA3=0
 endif
 
+ifeq ($(CONFIG_GKI_SUPPORT), y)
+    ccflags-y += -DCFG_ENABLE_GKI_SUPPORT=1
+else
+    ccflags-y += -DCFG_ENABLE_GKI_SUPPORT=0
+endif
+
 ifeq ($(MODULE_NAME),)
 MODULE_NAME := wlan_$(shell echo $(strip $(WLAN_CHIP_ID)) | tr A-Z a-z)_$(CONFIG_MTK_COMBO_WIFI_HIF)
 endif

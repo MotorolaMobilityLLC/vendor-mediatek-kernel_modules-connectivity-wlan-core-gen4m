@@ -1316,6 +1316,9 @@ struct MTK_WCN_WLAN_CB_INFO {
 #define GLUE_SYMBOL_GET(fun_name)	__symbol_get(fun_name)
 #define GLUE_SYMBOL_PUT(fun_name)	__symbol_put(fun_name)
 
+#if (CFG_ENABLE_GKI_SUPPORT != 0)
+#define GLUE_LOOKUP_FUN(fun_name)	NULL
+#else
 #if KERNEL_VERSION(5, 7, 0) <= LINUX_VERSION_CODE
 #define GLUE_LOOKUP_FUN(fun_name)	NULL
 #else
@@ -1323,6 +1326,7 @@ struct MTK_WCN_WLAN_CB_INFO {
 #define GLUE_LOOKUP_FUN(fun_name)	kallsyms_lookup_name
 #else
 #define GLUE_LOOKUP_FUN(fun_name)	NULL
+#endif
 #endif
 #endif
 
