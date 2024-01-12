@@ -901,9 +901,11 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 #else
 	u4MaxMsiNum = 1;
 #endif
+#if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
 	ret = pci_alloc_irq_vectors(pdev, 1,
 				    u4MaxMsiNum,
 				    PCI_IRQ_MSI);
+#endif
 	if (ret < 0) {
 		DBGLOG(INIT, INFO,
 			"pci_alloc_irq_vectors(1, %d) failed, ret=%d\n",
@@ -962,7 +964,9 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	goto out;
 
 err_free_irq_vectors:
+#if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
 	pci_free_irq_vectors(pdev);
+#endif
 
 err_free_iomap:
 	pcim_iounmap_regions(pdev, BIT(0));
@@ -983,7 +987,9 @@ static void mtk_pci_remove(struct pci_dev *pdev)
 		DBGLOG(INIT, INFO, "pfWlanRemove done\n");
 	}
 	pci_set_drvdata(pdev, NULL);
+#if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
 	pci_free_irq_vectors(pdev);
+#endif
 	pcim_iounmap_regions(pdev, BIT(0));
 }
 
@@ -1423,6 +1429,7 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 	struct GLUE_INFO *prGlueInfo,
 	struct BUS_INFO *prBusInfo)
 {
+#if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
 	struct pcie_msi_info *prMsiInfo = &prBusInfo->pcie_msi_info;
 	uint8_t i = 0;
 	int ret = 0;
@@ -1466,6 +1473,9 @@ err:
 		devm_free_irq(&pdev->dev, irqn, prGlueInfo);
 	}
 	return ret;
+#else
+	return -EOPNOTSUPP;
+#endif
 }
 
 static int32_t glBusSetLegacyIrq(struct pci_dev *pdev,
@@ -1531,6 +1541,43 @@ exit:
 	return ret;
 }
 
+static void glBusFreeMsiIrq(struct pci_dev *pdev,
+	struct GLUE_INFO *prGlueInfo,
+	struct BUS_INFO *prBusInfo)
+{
+#if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
+	struct pcie_msi_info *prMsiInfo = NULL;
+	uint8_t i = 0;
+
+	prMsiInfo = &prBusInfo->pcie_msi_info;
+
+	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
+		struct pcie_msi_layout *prMsiLayout =
+			&prMsiInfo->prMsiLayout[i];
+		int irqn = pci_irq_vector(pdev, i);
+
+		if (prMsiLayout && !prMsiLayout->top_handler &&
+		    !prMsiLayout->thread_handler)
+			continue;
+
+		synchronize_irq(irqn);
+		devm_free_irq(&pdev->dev, irqn, prGlueInfo);
+	}
+#endif
+}
+
+static void glBusFreeLegacyIrq(struct pci_dev *pdev,
+	struct GLUE_INFO *prGlueInfo,
+	struct BUS_INFO *prBusInfo)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	synchronize_irq(prHifInfo->u4IrqId);
+	devm_free_irq(&pdev->dev, prHifInfo->u4IrqId, prGlueInfo);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Stop bus interrupt operation and disable interrupt handling for os.
@@ -1548,7 +1595,6 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 	struct BUS_INFO *prBusInfo = NULL;
 	struct pcie_msi_info *prMsiInfo = NULL;
 	struct pci_dev *pdev = NULL;
-	uint8_t i = 0;
 
 	prGlueInfo = (struct GLUE_INFO *) pvCookie;
 	ASSERT(prGlueInfo);
@@ -1562,18 +1608,10 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 	prMsiInfo = &prBusInfo->pcie_msi_info;
 	pdev = prHifInfo->pdev;
 
-	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
-		struct pcie_msi_layout *prMsiLayout =
-			&prMsiInfo->prMsiLayout[i];
-		int irqn = pci_irq_vector(pdev, i);
-
-		if (prMsiLayout && !prMsiLayout->top_handler &&
-		    !prMsiLayout->thread_handler)
-			continue;
-
-		synchronize_irq(irqn);
-		devm_free_irq(&pdev->dev, irqn, prGlueInfo);
-	}
+	if (prMsiInfo->fgMsiEnabled)
+		glBusFreeMsiIrq(pdev, prGlueInfo, prBusInfo);
+	else
+		glBusFreeLegacyIrq(pdev, prGlueInfo, prBusInfo);
 }
 
 u_int8_t glIsReadClearReg(uint32_t u4Address)
