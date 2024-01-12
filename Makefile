@@ -48,8 +48,16 @@ endif
 
 ifeq ($(MTK_ANDROID_WMT), y)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
+else ifneq ($(findstring 6632,$(MTK_COMBO_CHIP)),)
+    ccflags-y += -DCFG_MTK_ANDROID_WMT=1
 else
     ccflags-y += -DCFG_MTK_ANDROID_WMT=0
+endif
+
+ifeq ($(MTK_ANDROID_EMI), y)
+    ccflags-y += -DCFG_MTK_ANDROID_EMI=1
+else
+    ccflags-y += -DCFG_MTK_ANDROID_EMI=0
 endif
 
 ifneq ($(filter MTK_WCN_REMOVE_KERNEL_MODULE,$(KBUILD_SUBDIR_CCFLAGS)),)

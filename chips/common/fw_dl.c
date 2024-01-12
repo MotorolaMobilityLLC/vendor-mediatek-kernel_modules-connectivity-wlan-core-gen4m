@@ -240,7 +240,7 @@ uint32_t wlanDownloadSection(IN struct ADAPTER *prAdapter, IN uint32_t u4Addr, I
 uint32_t wlanDownloadEMISection(IN struct ADAPTER *prAdapter, IN uint32_t u4DestAddr,
 				IN uint32_t u4Len, IN uint8_t *pucStartPtr)
 {
-#if CFG_MTK_ANDROID_WMT
+#if CFG_MTK_ANDROID_EMI
 	uint8_t __iomem *pucEmiBaseAddr = NULL;
 	uint32_t u4Offset = u4DestAddr & 0xFFFFF;
 
