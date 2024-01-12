@@ -5283,6 +5283,7 @@ wlanoidBssInfoBasic(IN struct ADAPTER *prAdapter,
 		    OUT uint32_t *pu4SetInfoLen) {
 	struct CMD_BSS_INFO_UPDATE *prBssInfoUpdateBasic;
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	struct BSSINFO_BASIC *prBssinfoBasic = NULL;
 
 	DEBUGFUNC("wlanoidManualAssoc");
 
@@ -5303,8 +5304,19 @@ wlanoidBssInfoBasic(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
-	/* fix me: configurable ucBssIndex */
-	prBssInfoUpdateBasic->ucBssIndex = 0;
+	if (pvSetBuffer == NULL) {
+		prBssInfoUpdateBasic->ucBssIndex = 0;
+		DBGLOG(RFTEST, INFO,
+			"prBssInfoUpdateBasic->ucBssIndex=0(default)\n");
+	} else {
+		prBssinfoBasic =
+			(struct BSSINFO_BASIC *)(pvSetBuffer);
+		prBssInfoUpdateBasic->ucBssIndex =
+			prBssinfoBasic->ucBcMcWlanidx;
+		DBGLOG(RFTEST, INFO,
+			"prBssInfoUpdateBasic->ucBssIndex =%d\n",
+			prBssInfoUpdateBasic->ucBssIndex);
+	}
 	prBssInfoUpdateBasic->u2TotalElementNum = 1;
 	kalMemCopy(prBssInfoUpdateBasic->aucBuffer, pvSetBuffer,
 		   u4SetBufferLen);
@@ -5331,6 +5343,7 @@ wlanoidDevInfoActive(IN struct ADAPTER *prAdapter,
 		     OUT uint32_t *pu4SetInfoLen) {
 	struct CMD_DEV_INFO_UPDATE *prDevInfoUpdateActive;
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	struct CMD_DEVINFO_ACTIVE *prCmdDevinfoActive = NULL;
 
 	DEBUGFUNC("wlanoidManualAssoc");
 
@@ -5352,7 +5365,19 @@ wlanoidDevInfoActive(IN struct ADAPTER *prAdapter,
 	}
 
 	/* fix me: configurable ucOwnMacIdx */
-	prDevInfoUpdateActive->ucOwnMacIdx = 0;
+	if (pvSetBuffer == NULL) {
+		prDevInfoUpdateActive->ucOwnMacIdx = 0;
+		DBGLOG(RFTEST, INFO,
+			"prDevInfoUpdateActive->ucOwnMacIdx = 0(default)\n");
+	} else {
+		prCmdDevinfoActive =
+			(struct CMD_DEVINFO_ACTIVE *)pvSetBuffer;
+		prDevInfoUpdateActive->ucOwnMacIdx =
+			prCmdDevinfoActive->aucReserve[0];
+		DBGLOG(RFTEST, INFO,
+			"prDevInfoUpdateActive->ucOwnMacIdx = %d\n",
+			prDevInfoUpdateActive->ucOwnMacIdx);
+	}
 	prDevInfoUpdateActive->ucAppendCmdTLV = 0;
 	prDevInfoUpdateActive->u2TotalElementNum = 1;
 	kalMemCopy(prDevInfoUpdateActive->aucBuffer, pvSetBuffer,
