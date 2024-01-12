@@ -173,9 +173,9 @@ void bssDumpBssInfo(IN struct ADAPTER *prAdapter,
 void bssDetermineApBssInfoPhyTypeSet(IN struct ADAPTER
 				     *prAdapter, IN u_int8_t fgIsPureAp,
 				     OUT struct BSS_INFO *prBssInfo);
-#if CFG_SUPPORT_IOT_AP_BLACKLIST
 int8_t bssGetRxNss(IN struct ADAPTER *prAdapter,
 	IN struct BSS_DESC *prBssDesc);
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
 uint32_t bssGetIotApAction(IN struct ADAPTER *prAdapter,
 	IN struct BSS_DESC *prBssDesc);
 #endif

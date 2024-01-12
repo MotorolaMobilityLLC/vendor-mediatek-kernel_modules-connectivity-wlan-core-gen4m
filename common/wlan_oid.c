@@ -4564,6 +4564,46 @@ wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 				pvQueryBuffer, u4QueryBufferLen);
 }
 
+#if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
+uint32_t
+wlanoidQueryMaxLinkSpeed(IN struct ADAPTER *prAdapter,
+		      IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
+		      OUT uint32_t *pu4QueryInfoLen)
+{
+	uint32_t u4CurRate = 0, u4MaxRate = 0;
+	uint32_t rv = WLAN_STATUS_FAILURE;
+
+	DEBUGFUNC("wlanoidQueryMaxLinkSpeed");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4QueryInfoLen);
+	if (u4QueryBufferLen)
+		ASSERT(pvQueryBuffer);
+
+	if (prAdapter->fgIsEnableLpdvt)
+		return WLAN_STATUS_NOT_SUPPORTED;
+
+	*pu4QueryInfoLen = sizeof(uint32_t);
+
+	if (u4QueryBufferLen < sizeof(uint32_t))
+		return WLAN_STATUS_BUFFER_TOO_SHORT;
+
+	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) !=
+	    MEDIA_STATE_CONNECTED) {
+		rv = WLAN_STATUS_ADAPTER_NOT_READY;
+	} else {
+		if (wlanGetMaxTxRate(prAdapter, prAdapter->prAisBssInfo,
+				      prAdapter->prAisBssInfo->prStaRecOfAP,
+				      &u4CurRate, &u4MaxRate) >= 0) {
+			u4MaxRate = u4MaxRate * 1000;
+			memcpy(pvQueryBuffer, &u4MaxRate, sizeof(uint32_t));
+			rv = WLAN_STATUS_SUCCESS;
+		}
+	}
+	return rv;
+}
+#endif /* CFG_REPORT_MAX_TX_RATE */
+
 /*----------------------------------------------------------------------------*/
 /*!
 * \brief extend command packet generation utility

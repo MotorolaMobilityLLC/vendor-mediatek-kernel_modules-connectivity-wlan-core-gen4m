@@ -2821,6 +2821,12 @@ wlanoidQueryPermanentAddr(IN struct ADAPTER *prAdapter,
 			  OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
+wlanoidQueryMaxLinkSpeed(IN struct ADAPTER *prAdapter,
+		      IN void *pvQueryBuffer,
+		      IN uint32_t u4QueryBufferLen,
+		      OUT uint32_t *pu4QueryInfoLen);
+
+uint32_t
 wlanoidQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 		      IN void *pvQueryBuffer,
 		      IN uint32_t u4QueryBufferLen,

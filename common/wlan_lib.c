@@ -132,10 +132,10 @@ struct dataRateMappingTable_t {
 } g_rDataRateMappingTable = {
 { { { { { /* 20MHz */
 	{ /* no SGI */
-	{65, 130, 195, 260, 390, 520, 585, 650, 780, 867}
+	{65, 130, 195, 260, 390, 520, 585, 650, 780, 780}
 	},
 	{ /* SGI */
-	{72, 144, 217, 289, 433, 578, 650, 722, 867, 963}
+	{72, 144, 217, 289, 433, 578, 650, 722, 867, 867}
 	}
 } },
 {
@@ -168,10 +168,10 @@ struct dataRateMappingTable_t {
 { { {
 	{ /* 20MHz */
 	{ /* no SGI */
-	{130, 260, 390, 520, 780, 1040, 1170, 1300, 1560, 1733}
+	{130, 260, 390, 520, 780, 1040, 1170, 1300, 1560, 1560}
 	},
 	{ /* SGI */
-	{144, 289, 433, 578, 867, 1156, 1303, 1444, 1733, 1926}
+	{144, 289, 433, 578, 867, 1156, 1303, 1444, 1733, 1733}
 	}
 } },
 {
@@ -195,7 +195,7 @@ struct dataRateMappingTable_t {
 {
 	{ /* 160MHz */
 	{ /* no SGI */
-	{1170, 2340, 3510, 4680, 7020, 9360, 1053, 1170, 1404, 1560}
+	{1170, 2340, 3510, 4680, 7020, 9360, 10530, 11700, 14040, 15600}
 	},
 	{ /* SGI */
 	{1300, 2600, 3900, 5200, 7800, 10400, 11700, 13000, 15600, 17333}
@@ -231,10 +231,10 @@ struct dataRateMappingTable_t {
 {
 	{ /* 160MHz */
 	{ /* no SGI */
-	{1755, 3510, 5265, 7020, 10530, 14040, 15795, 17550, 21060, 23400}
+	{1755, 3510, 5265, 7020, 10530, 14040, 15795, 17550, 21060, 21060}
 	},
 	{ /* SGI */
-	{1950, 3900, 5850, 7800, 11700, 15600, 17550, 19500, 23400, 26001}
+	{1950, 3900, 5850, 7800, 11700, 15600, 17550, 19500, 23400, 23400}
 	}
 } } } } }
 };
@@ -10154,15 +10154,11 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		u4MaxRate = g_rOfdmDataRateMappingTable.rate[ucMaxSize - 1];
 	} else if ((txmode == TX_RATE_MODE_HTMIX) ||
 		   (txmode == TX_RATE_MODE_HTGF)) { /* 11N */
-		if (rate < 8)
-			nsts = 0;
-		else if (rate < 16) {
-			nsts = 1;
+		if (rate >= 8 && rate <= 15) {
 			rate -= 8;
-		} else if (rate <= 23) {
-			nsts = 2;
+		} else if (rate >= 16 && rate <= 23) {
 			rate -= 16;
-		} else {
+		} else if (rate < 0 || rate > 23) {
 			DBGLOG(SW4, ERROR, "rate error for 11N: %u\n",
 			       rate);
 			return -1;
@@ -10173,10 +10169,10 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 			       frmode);
 			return -1;
 		}
-		u4CurRate = g_rDataRateMappingTable.nsts[nsts].bw[frmode]
+		u4CurRate = g_rDataRateMappingTable.nsts[nsts - 1].bw[frmode]
 				.sgi[sgi].rate[rate];
 		ucMaxSize = 8;
-		u4MaxRate = g_rDataRateMappingTable.nsts[nsts].bw[frmode]
+		u4MaxRate = g_rDataRateMappingTable.nsts[nsts - 1].bw[frmode]
 				.sgi[sgi].rate[ucMaxSize - 1];
 	} else { /* 11AC */
 		if ((nsts == 0) || (nsts >= 4)) {
@@ -10202,94 +10198,128 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 }
 
 #if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
-int wlanSaveStaMaxTxRate(struct ADAPTER *prAdapter, void *prBssPtr,
-			struct STA_RECORD *prStaRec)
+int wlanGetMaxTxRate(IN struct ADAPTER *prAdapter,
+		 IN void *prBssPtr, IN struct STA_RECORD *prStaRec,
+		 OUT uint32_t *pu4CurRate, OUT uint32_t *pu4MaxRate)
 {
 	struct BSS_INFO *prBssInfo;
-	uint8_t ucPhyType, ucMaxBw, ucNss, txmode, rate, sgi;
-	uint8_t bShortPreambleAllowed;
-	uint32_t u4CurRate, u4MaxRate;
-	int rv;
+	uint8_t ucPhyType, ucTxMode = 0, ucMcsIdx = 0, ucSgi = 0;
+	uint8_t ucBw = 0, ucAPBwPermitted = 0, ucNss = 0, ucApNss = 0;
+	uint8_t ucOffset = (MAX_BW_80MHZ - CW_80MHZ);
+	struct BSS_DESC *prBssDesc = NULL;
 
+	*pu4CurRate = 0;
+	*pu4MaxRate = 0;
 	prBssInfo = (struct BSS_INFO *) prBssPtr;
-	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
-	DBGLOG(RLM, TRACE, "cnmGetBssMaxBw:%d\n", ucMaxBw);
 
-	bShortPreambleAllowed = prBssInfo->fgIsShortPreambleAllowed;
-	DBGLOG(RLM, TRACE, "bShortPreambleAllowed:%d\n", bShortPreambleAllowed);
+	/* get tx mode and MCS index */
+	ucPhyType = prBssInfo->ucPhyTypeSet;
+	if (ucPhyType & PHY_TYPE_SET_802_11AC)
+		ucTxMode = TX_RATE_MODE_VHT;
+	else if (ucPhyType & PHY_TYPE_SET_802_11N)
+		ucTxMode = TX_RATE_MODE_HTMIX;
+	else if (ucPhyType & PHY_TYPE_SET_802_11G) {
+		ucTxMode = TX_RATE_MODE_OFDM;
+		ucMcsIdx = 12;
+	} else if (ucPhyType & PHY_TYPE_SET_802_11A) {
+		ucTxMode = TX_RATE_MODE_OFDM;
+		ucMcsIdx = 12;
+	} else if (ucPhyType & PHY_TYPE_SET_802_11B)
+		ucTxMode = TX_RATE_MODE_CCK;
+	else {
+		DBGLOG(SW4, ERROR,
+		       "unknown wifi type, prBssInfo->ucPhyTypeSet: %u\n",
+		       ucPhyType);
+		goto errhandle;
+	}
 
-	/* Get Short GI Tx capability */
-	sgi = 0;
+	/* get bandwidth */
+	ucBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+	if (IS_BSS_AIS(prBssInfo))
+		prBssDesc = prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
+	if (prBssDesc) {
+		ucAPBwPermitted = MAX_BW_160MHZ;
+		if (prBssDesc->eChannelWidth == CW_20_40MHZ) {
+			if ((prBssDesc->eSco == CHNL_EXT_SCA)
+			     || (prBssDesc->eSco == CHNL_EXT_SCB))
+				ucAPBwPermitted = MAX_BW_40MHZ;
+			else
+				ucAPBwPermitted = MAX_BW_20MHZ;
+		} else {
+			ucAPBwPermitted = prBssDesc->eChannelWidth + ucOffset;
+		}
+		if ((ucAPBwPermitted < MAX_BW_20MHZ) ||
+		    (ucAPBwPermitted > MAX_BW_80_80_MHZ)) {
+			DBGLOG(SW4, ERROR,
+			       "unknown band width: %u\n", ucAPBwPermitted);
+			goto errhandle;
+		} else if (ucAPBwPermitted == MAX_BW_80_80_MHZ)
+			ucAPBwPermitted = MAX_BW_160MHZ;
+	} else {
+		DBGLOG(SW4, ERROR, "prBssDesc is null\n");
+		goto errhandle;
+	}
+	if (ucAPBwPermitted < ucBw)
+		ucBw = ucAPBwPermitted;
+
+	/* get Short GI Tx capability */
 	if ((prStaRec->u2HtCapInfo & HT_CAP_INFO_SHORT_GI_20M) ==
 	    HT_CAP_INFO_SHORT_GI_20M) {
 		DBGLOG(RLM, TRACE, "HT_CAP_INFO_SHORT_GI_20M\n");
-		sgi = 1;
+		ucSgi = 1;
 	}
 	if ((prStaRec->u2HtCapInfo & HT_CAP_INFO_SHORT_GI_40M) ==
 	    HT_CAP_INFO_SHORT_GI_40M) {
 		DBGLOG(RLM, TRACE, "HT_CAP_INFO_SHORT_GI_40M\n");
-		sgi = 1;
+		ucSgi = 1;
 	}
 #if CFG_SUPPORT_802_11AC
 	if ((prStaRec->u4VhtCapInfo & VHT_CAP_INFO_SHORT_GI_80) ==
 	    VHT_CAP_INFO_SHORT_GI_80) {
 		DBGLOG(RLM, TRACE, "VHT_CAP_INFO_SHORT_GI_80\n");
-		sgi = 1;
+		ucSgi = 1;
 	}
 	if ((prStaRec->u4VhtCapInfo & VHT_CAP_INFO_SHORT_GI_160_80P80) ==
 	    VHT_CAP_INFO_SHORT_GI_160_80P80) {
 		DBGLOG(RLM, TRACE, "VHT_CAP_INFO_SHORT_GI_160_80P80\n");
-		sgi = 1;
+		ucSgi = 1;
 	}
 #endif
-	ucNss = prAdapter->rWifiVar.ucNSS;
+
+	/* get antenna number */
+	ucNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
+	if (prBssDesc) {
+		ucApNss = bssGetRxNss(prAdapter, prBssDesc);
+		if (ucApNss > 0 && ucApNss < ucNss)
+			ucNss = ucApNss;
+	}
 	if ((ucNss < 1) && (ucNss > 3)) {
 		DBGLOG(RLM, ERROR, "error ucNss: %u\n", ucNss);
-		return -1;
-	}
-	DBGLOG(RLM, TRACE, "NSS:%d, IsNss2=%d\n",
-	       ucNss, IS_CONNECTION_NSS2(prBssInfo, prStaRec));
-
-	rate = 0;
-	ucPhyType = prBssInfo->ucPhyTypeSet;
-	if (ucPhyType & PHY_TYPE_SET_802_11AC)
-		txmode = TX_RATE_MODE_VHT;
-	else if (ucPhyType & PHY_TYPE_SET_802_11N)
-		txmode = TX_RATE_MODE_HTMIX;
-	else if (ucPhyType & PHY_TYPE_SET_802_11G) {
-		txmode = TX_RATE_MODE_OFDM;
-		rate = 12;
-	} else if (ucPhyType & PHY_TYPE_SET_802_11A) {
-		txmode = TX_RATE_MODE_OFDM;
-		rate = 12;
-	} else if (ucPhyType & PHY_TYPE_SET_802_11B)
-		txmode = TX_RATE_MODE_CCK;
-	else {
-		DBGLOG(RLM, ERROR,
-		       "unknown wifi type, prBssInfo->ucPhyTypeSet: %u\n",
-		       ucPhyType);
-		return -1;
+		goto errhandle;
 	}
 
-	if ((ucMaxBw < MAX_BW_20MHZ) || (ucMaxBw > MAX_BW_80_80_MHZ)) {
-		DBGLOG(RLM, ERROR,
-		       "unknown band width: %u\n", ucMaxBw);
-		return -1;
-	} else if (ucMaxBw == MAX_BW_80_80_MHZ)
-		ucMaxBw = MAX_BW_160MHZ;
+	DBGLOG(SW4, TRACE,
+	       "txmode=[%u], mcs idx=[%u], bandwidth=[%u], sgi=[%u], nsts=[%u]\n",
+	       ucTxMode, ucMcsIdx, ucBw, ucSgi, ucNss
+	);
 
-	rv = wlanQueryRateByTable(txmode, rate, ucMaxBw, sgi, ucNss,
-				 &u4CurRate, &u4MaxRate);
-	if (rv == 0)
-		prAdapter->u4StaMaxTxRate = u4MaxRate;
+	if (wlanQueryRateByTable(ucTxMode, ucMcsIdx, ucBw, ucSgi,
+				ucNss, pu4CurRate, pu4MaxRate) < 0)
+		goto errhandle;
 
-	return rv;
+	return 0;
+
+errhandle:
+	DBGLOG(SW4, ERROR,
+	       "txmode=[%u], mcs idx=[%u], bandwidth=[%u], sgi=[%u], nsts=[%u]\n",
+	       ucTxMode, ucMcsIdx, ucBw, ucSgi, ucNss);
+	return -1;
 }
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
-		 IN uint32_t *pu4CurRate, IN uint32_t *pu4MaxRate)
+		 OUT uint32_t *pu4CurRate, OUT uint32_t *pu4MaxRate)
 {
 	struct ADAPTER *prAdapter;
 	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nsts = 0;
@@ -10310,7 +10340,7 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 	}
 
 	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
-	    WLAN_STATUS_SUCCESS) {
+		WLAN_STATUS_SUCCESS) {
 		u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
 		u4RxVector1 = prAdapter->arStaRec[ucStaIdx].u4RxVector1;
 		if ((u4RxVector0 == 0) || (u4RxVector1 == 0)) {
@@ -10340,6 +10370,11 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 		goto errhandle;
 	}
 
+	DBGLOG(SW4, TRACE,
+		   "rxmode=[%u], rate=[%u], bandwidth=[%u], sgi=[%u], nsts=[%u]\n",
+		   rxmode, rate, frmode, sgi, nsts
+	);
+
 	rv = wlanQueryRateByTable(rxmode, rate, frmode, sgi, nsts,
 				 pu4CurRate, pu4MaxRate);
 	if (rv < 0)
@@ -10349,8 +10384,8 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 
 errhandle:
 	DBGLOG(SW4, ERROR,
-	       "u4RxVector0=[%x], u4RxVector1=[%x], rxmode=[%u], rate=[%u], frmode=[%u], sgi=[%u], nsts=[%u]\n",
-	       u4RxVector0, u4RxVector1, rxmode, rate, frmode, sgi, nsts
+		"u4RxVector0=[%x], u4RxVector1=[%x], rxmode=[%u], rate=[%u], frmode=[%u], sgi=[%u], nsts=[%u]\n",
+		u4RxVector0, u4RxVector1, rxmode, rate, frmode, sgi, nsts
 	);
 	return -1;
 }

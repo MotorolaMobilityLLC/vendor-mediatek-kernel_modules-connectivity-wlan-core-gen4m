@@ -1703,13 +1703,14 @@ void wlanSuspendPmHandle(struct GLUE_INFO *prGlueInfo);
 void wlanResumePmHandle(struct GLUE_INFO *prGlueInfo);
 
 #if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
-int wlanSaveStaMaxTxRate(struct ADAPTER *prAdapter, void *prBssPtr,
-			struct STA_RECORD *prStaRec);
+int wlanGetMaxTxRate(IN struct ADAPTER *prAdapter,
+		 IN void *prBssPtr, IN struct STA_RECORD *prStaRec,
+		 OUT uint32_t *pu4CurRate, OUT uint32_t *pu4MaxRate);
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
-		 IN uint32_t *pu4CurRate, IN uint32_t *pu4MaxRate);
+		 OUT uint32_t *pu4CurRate, OUT uint32_t *pu4MaxRate);
 uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid);
 void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
