@@ -267,16 +267,9 @@ saaFsmSteps(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_WPA3
 		case SAA_STATE_EXTERNAL_AUTH:
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-			if (mldIsMultiLinkFormed(prAdapter, prStaRec)) {
-				kalVendorExternalAuthRequest(
-					prAdapter->prGlueInfo,
-					prStaRec);
-			} else
-#endif /* (CFG_SUPPORT_802_11BE_MLO == 1) */
-				kalExternalAuthRequest(
-					prAdapter->prGlueInfo,
-					prStaRec);
+			kalExternalAuthRequest(
+				prAdapter->prGlueInfo,
+				prStaRec);
 			break;
 #endif /* CFG_SUPPORT_WPA3 */
 

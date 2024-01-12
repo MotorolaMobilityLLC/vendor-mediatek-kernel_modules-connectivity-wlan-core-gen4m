@@ -3286,6 +3286,7 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 
 		prConnReqMsg->rMsgHdr.eMsgId = MID_MNY_P2P_CONNECTION_REQ;
 		prConnReqMsg->ucRoleIdx = ucRoleIdx;
+		prConnReqMsg->u4ConnFlags = sme->flags;
 
 		COPY_SSID(prConnReqMsg->rSsid.aucSsid,
 			prConnReqMsg->rSsid.ucSsidLen,
@@ -3300,9 +3301,8 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 		kalMemCopy(prConnReqMsg->aucIEBuf, sme->ie, sme->ie_len);
 		prConnReqMsg->u4IELen = sme->ie_len;
 
-		DBGLOG(REQ, INFO, "[%d] sme->auth_type=%x",
-			ucRoleIdx,
-			sme->auth_type);
+		DBGLOG(REQ, INFO, "[%d] sme->auth_type=%x flags=0x%x",
+			ucRoleIdx, sme->auth_type, sme->flags);
 
 		switch (sme->auth_type) {
 		case NL80211_AUTHTYPE_OPEN_SYSTEM:

@@ -335,6 +335,7 @@ struct CONNECTION_SETTINGS {
 
 	uint8_t aucJoinBSSID[MAC_ADDR_LEN];
 	uint16_t u2JoinStatus;
+	uint32_t u4ConnFlags;
 
 	/*
 	 * Buffer to hold non-wfa vendor specific IEs set

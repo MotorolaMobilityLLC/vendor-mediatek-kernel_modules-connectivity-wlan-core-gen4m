@@ -101,6 +101,7 @@ struct MSG_P2P_CHNL_ABORT {
 struct MSG_P2P_CONNECTION_REQUEST {
 	struct MSG_HDR rMsgHdr;	/* Must be the first member */
 	uint8_t ucRoleIdx;
+	uint32_t u4ConnFlags;
 	struct P2P_SSID_STRUCT rSsid;
 	uint8_t aucBssid[MAC_ADDR_LEN];
 	uint8_t aucSrcMacAddr[MAC_ADDR_LEN];
@@ -263,6 +264,7 @@ enum ENUM_P2P_CONNECTION_TYPE {
 struct P2P_JOIN_INFO {
 	uint8_t ucSeqNumOfReqMsg;
 	uint8_t ucAvailableAuthTypes;
+	uint32_t u4ConnFlags;
 	struct STA_RECORD *prTargetStaRec;
 	struct BSS_DESC *prTargetBssDesc;
 	u_int8_t fgIsJoinComplete;

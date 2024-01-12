@@ -1534,11 +1534,13 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
 		return -EINVAL;
 
-	DBGLOG(REQ, INFO, "[wlan] mtk_cfg80211_connect %p %zu %d\n",
-	       sme->ie, sme->ie_len, sme->auth_type);
+	DBGLOG(REQ, INFO,
+	       "[wlan] mtk_cfg80211_connect %p %zu auth_type=%d flags=0x%x\n",
+	       sme->ie, sme->ie_len, sme->auth_type, sme->flags);
 	prConnSettings = aisGetConnSettings(prGlueInfo->prAdapter, ucBssIndex);
 	/* init to prevent returning status success due to no valid ap. */
 	prConnSettings->u2JoinStatus = WLAN_STATUS_AUTH_TIMEOUT;
+	prConnSettings->u4ConnFlags = sme->flags;
 	if (prConnSettings->eOPMode > NET_TYPE_AUTO_SWITCH)
 		rOpMode.eOpMode = NET_TYPE_AUTO_SWITCH;
 	else

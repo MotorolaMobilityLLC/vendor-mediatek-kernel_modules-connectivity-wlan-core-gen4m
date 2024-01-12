@@ -11725,16 +11725,13 @@ cont:
 int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 			   struct STA_RECORD *prStaRec)
 {
-	struct cfg80211_external_auth_params params;
-	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
 	struct BSS_DESC *prBssDesc = NULL;
 	struct net_device *ndev = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
-#if CFG_ENABLE_WIFI_DIRECT
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
-#endif
 	struct ADAPTER *prAdapter = NULL;
 	uint8_t ucBssIndex = prStaRec->ucBssIndex;
+	uint8_t *mld_addr = NULL;
+	uint8_t fgConnReqMloSupport = FALSE;
 
 	prAdapter = prGlueInfo->prAdapter;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
@@ -11745,17 +11742,18 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 	}
 
 	if (IS_BSS_AIS(prBssInfo)) {
-		prAisFsmInfo =
-			aisGetAisFsmInfo(prAdapter, ucBssIndex);
-		if (!prAisFsmInfo) {
+		struct CONNECTION_SETTINGS *prConnSettings = NULL;
+
+		prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+		if (!prConnSettings) {
 			DBGLOG(SAA, WARN,
 			       "SAE auth failed with NULL prAisFsmInfo\n");
 			return WLAN_STATUS_INVALID_DATA;
 		}
 
-		prBssDesc =
-			aisGetTargetBssDesc(prAdapter,
-				ucBssIndex);
+		fgConnReqMloSupport = !!(prConnSettings->u4ConnFlags &
+					 CONNECT_REQ_MLO_SUPPORT);
+		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		if (!prBssDesc) {
 			DBGLOG(SAA, WARN,
 			       "SAE auth failed without prTargetBssDesc\n");
@@ -11764,16 +11762,18 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 	}
 #if CFG_ENABLE_WIFI_DIRECT
 	else if (IS_BSS_P2P(prBssInfo)) {
-		prP2pRoleFsmInfo =
-			p2pFuncGetRoleByBssIdx(prAdapter,
-				ucBssIndex);
-		if (!prP2pRoleFsmInfo) {
+		struct P2P_ROLE_FSM_INFO *prP2pRole = NULL;
+
+		prP2pRole = p2pFuncGetRoleByBssIdx(prAdapter, ucBssIndex);
+		if (!prP2pRole) {
 			DBGLOG(SAA, WARN,
 			       "SAE auth failed with NULL prP2pRoleFsmInfo\n");
 			return WLAN_STATUS_INVALID_DATA;
 		}
 
-		prBssDesc = prP2pRoleFsmInfo->rJoinInfo.prTargetBssDesc;
+		fgConnReqMloSupport = !!(prP2pRole->rJoinInfo.u4ConnFlags &
+					 CONNECT_REQ_MLO_SUPPORT);
+		prBssDesc = prP2pRole->rJoinInfo.prTargetBssDesc;
 		if (!prBssDesc) {
 			DBGLOG(SAA, WARN,
 			       "SAE auth failed without prTargetBssDesc\n");
@@ -11792,139 +11792,106 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 	if (!ndev)
 		return WLAN_STATUS_INVALID_DATA;
 
-	kalMemZero(&params, sizeof(struct cfg80211_external_auth_params));
-	params.action = NL80211_EXTERNAL_AUTH_START;
-	COPY_MAC_ADDR(params.bssid, prBssDesc->aucBSSID);
-	COPY_SSID(params.ssid.ssid, params.ssid.ssid_len,
-		  prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
-	if (prBssDesc->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_SAE)
-		params.key_mgmt_suite = prBssDesc->u4RsnSelectedAKMSuite;
-	else
-		WLAN_GET_FIELD_BE32(&prBssDesc->u4RsnSelectedAKMSuite,
-			&params.key_mgmt_suite);
-	DBGLOG(AIS, INFO, "[WPA3] "MACSTR" %s %d %d %02x-%02x-%02x-%02x",
-	       MAC2STR(params.bssid), params.ssid.ssid,
-	       params.ssid.ssid_len, params.action,
-	       (uint8_t) (params.key_mgmt_suite & 0x000000FF),
-	       (uint8_t) ((params.key_mgmt_suite >> 8) & 0x000000FF),
-	       (uint8_t) ((params.key_mgmt_suite >> 16) & 0x000000FF),
-	       (uint8_t) ((params.key_mgmt_suite >> 24) & 0x000000FF));
-	return cfg80211_external_auth_request(ndev, &params, GFP_KERNEL);
-}
-
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-int kalVendorExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
-				 struct STA_RECORD *prStaRec)
-{
-	struct wiphy *wiphy;
-	struct wireless_dev *wdev;
-	struct PARAM_EXTERNAL_AUTH_INFO *info;
-	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
-	struct BSS_DESC *prBssDesc = NULL;
-	struct BSS_INFO *prBssInfo = NULL;
-#if CFG_ENABLE_WIFI_DIRECT
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
+	if (mldIsMultiLinkFormed(prAdapter, prStaRec))
+		mld_addr = prStaRec->aucMldAddr;
+#endif /* (CFG_SUPPORT_802_11BE_MLO == 1) */
+
+	if (mld_addr == NULL || fgConnReqMloSupport) {
+		struct cfg80211_external_auth_params params = {0};
+		uint8_t mld_addr_str[50];
+
+		params.action = NL80211_EXTERNAL_AUTH_START;
+		COPY_MAC_ADDR(params.bssid, prBssDesc->aucBSSID);
+		COPY_SSID(params.ssid.ssid, params.ssid.ssid_len,
+			  prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
+		if (prBssDesc->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_SAE)
+			params.key_mgmt_suite = RSN_AKM_SUITE_SAE;
+		else
+			WLAN_GET_FIELD_BE32(&prBssDesc->u4RsnSelectedAKMSuite,
+				&params.key_mgmt_suite);
+
+		mld_addr_str[0] = '\0';
+#if (CFG_ADVANCED_80211_MLO == 1) || \
+	KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE
+		if (mld_addr) {
+			COPY_MAC_ADDR(params.mld_addr, mld_addr);
+			kalSnprintf(mld_addr_str, sizeof(mld_addr_str),
+				" MLD[" MACSTR "]", MAC2STR(mld_addr));
+		}
 #endif
-	struct ADAPTER *prAdapter = NULL;
-	struct MLD_BSS_INFO *prMldBssInfo = NULL;
-	uint8_t ucBssIndex = prStaRec->ucBssIndex;
-	uint16_t size = 0;
 
-	prAdapter = prGlueInfo->prAdapter;
-	wiphy = prGlueInfo->prDevHandler->ieee80211_ptr->wiphy;
-	wdev = wlanGetNetDev(prGlueInfo, ucBssIndex)->ieee80211_ptr;
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+		DBGLOG(SAA, INFO, "[WPA3] "MACSTR
+		       "%s %s %d %d %02x-%02x-%02x-%02x",
+		       MAC2STR(params.bssid), mld_addr_str,
+		       params.ssid.ssid, params.ssid.ssid_len, params.action,
+		       (uint8_t) (params.key_mgmt_suite & 0x000000FF),
+		       (uint8_t) ((params.key_mgmt_suite >> 8) & 0x000000FF),
+		       (uint8_t) ((params.key_mgmt_suite >> 16) & 0x000000FF),
+		       (uint8_t) ((params.key_mgmt_suite >> 24) & 0x000000FF));
 
-	if (!prBssInfo)
-		return WLAN_STATUS_INVALID_DATA;
-
-	if (IS_BSS_AIS(prBssInfo)) {
-		prAisFsmInfo =
-			aisGetAisFsmInfo(prAdapter, ucBssIndex);
-		if (!prAisFsmInfo) {
-			DBGLOG(SAA, WARN,
-			       "SAE auth failed with NULL prAisFsmInfo\n");
-			return WLAN_STATUS_INVALID_DATA;
-		}
-
-		prBssDesc =
-			aisGetTargetBssDesc(prAdapter,
-				ucBssIndex);
-		if (!prBssDesc) {
-			DBGLOG(SAA, WARN,
-			       "SAE auth failed without prTargetBssDesc\n");
-			return WLAN_STATUS_INVALID_DATA;
-		}
+		return cfg80211_external_auth_request(
+				ndev, &params, GFP_KERNEL);
 	}
-#if CFG_ENABLE_WIFI_DIRECT
-	else if (IS_BSS_P2P(prBssInfo)) {
-		prP2pRoleFsmInfo =
-			p2pFuncGetRoleByBssIdx(prAdapter,
-				ucBssIndex);
-		if (!prP2pRoleFsmInfo) {
-			DBGLOG(SAA, WARN,
-			       "SAE auth failed with NULL prP2pRoleFsmInfo\n");
-			return WLAN_STATUS_INVALID_DATA;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	else { /* vendor external auth to support proprierary mlo */
+		struct wiphy *wiphy;
+		struct wireless_dev *wdev;
+		struct PARAM_EXTERNAL_AUTH_INFO *info;
+		struct MLD_BSS_INFO *prMldBssInfo = NULL;
+		uint16_t size = 0;
+
+		wiphy = prGlueInfo->prDevHandler->ieee80211_ptr->wiphy;
+		wdev = wlanGetNetDev(prGlueInfo, ucBssIndex)->ieee80211_ptr;
+		prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+		size = sizeof(struct PARAM_EXTERNAL_AUTH_INFO);
+		info = kalMemZAlloc(size, VIR_MEM_TYPE);
+		if (!info) {
+			DBGLOG(SAA, ERROR,
+				"alloc vendor external auth event fail\n");
+			return -1;
 		}
 
-		prBssDesc = prP2pRoleFsmInfo->rJoinInfo.prTargetBssDesc;
-		if (!prBssDesc) {
-			DBGLOG(SAA, WARN,
-			       "SAE auth failed without prTargetBssDesc\n");
-			return WLAN_STATUS_INVALID_DATA;
-		}
-		prBssDesc->u4RsnSelectedAKMSuite = RSN_AKM_SUITE_SAE;
+		info->id = GRID_EXTERNAL_AUTH;
+		info->len = sizeof(struct PARAM_EXTERNAL_AUTH_INFO) - 2;
+		info->action = NL80211_EXTERNAL_AUTH_START;
+		COPY_MAC_ADDR(info->bssid, prBssDesc->aucBSSID);
+		COPY_SSID(info->ssid, info->ssid_len,
+			prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
+		info->ssid[info->ssid_len] = '\0';
+		if (prBssDesc->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_SAE)
+			info->key_mgmt_suite = RSN_AKM_SUITE_SAE;
+		else
+			WLAN_GET_FIELD_BE32(&prBssDesc->u4RsnSelectedAKMSuite,
+				&info->key_mgmt_suite);
+		info->dot11MultiLinkActivated = TRUE;
+		COPY_MAC_ADDR(info->own_ml_addr, prMldBssInfo ?
+			prMldBssInfo->aucOwnMldAddr : prBssInfo->aucOwnMacAddr);
+		COPY_MAC_ADDR(info->peer_ml_addr, mld_addr);
+
+		DBGLOG(SAA, INFO,
+			"[WPA3] "MACSTR" %s %d %d mlo=%d["
+			MACSTR"] %02x-%02x-%02x-%02x",
+			MAC2STR(info->bssid), info->ssid, info->ssid_len,
+			info->action, info->dot11MultiLinkActivated,
+			MAC2STR(info->peer_ml_addr),
+			(uint8_t) (info->key_mgmt_suite & 0xFF),
+			(uint8_t) ((info->key_mgmt_suite >> 8) & 0xFF),
+			(uint8_t) ((info->key_mgmt_suite >> 16) & 0xFF),
+			(uint8_t) ((info->key_mgmt_suite >> 24) & 0xFF));
+
+		mtk_cfg80211_vendor_event_generic_response(
+			wiphy, wdev, IE_SIZE(info), (uint8_t *)info);
+
+		kalMemFree(info, VIR_MEM_TYPE, size);
+
+		return WLAN_STATUS_SUCCESS;
 	}
-#endif
-	size = sizeof(struct PARAM_EXTERNAL_AUTH_INFO);
-	info = kalMemAlloc(size, VIR_MEM_TYPE);
-	if (!info) {
-		DBGLOG(SAA, ERROR, "alloc vendor external auth event fail\n");
-		return -1;
-	}
-	if (!prBssDesc)
-		return WLAN_STATUS_INVALID_DATA;
-
-	kalMemZero(info, size);
-	info->id = GRID_EXTERNAL_AUTH;
-	info->len = sizeof(struct PARAM_EXTERNAL_AUTH_INFO) - 2;
-	info->action = NL80211_EXTERNAL_AUTH_START;
-	COPY_MAC_ADDR(info->bssid, prBssDesc->aucBSSID);
-	COPY_SSID(info->ssid, info->ssid_len,
-		prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
-	info->ssid[info->ssid_len] = '\0';
-	if (prBssDesc->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_SAE)
-		info->key_mgmt_suite = prBssDesc->u4RsnSelectedAKMSuite;
-	else
-		WLAN_GET_FIELD_BE32(&prBssDesc->u4RsnSelectedAKMSuite,
-			&info->key_mgmt_suite);
-	info->dot11MultiLinkActivated = TRUE;
-	if (prMldBssInfo)
-		COPY_MAC_ADDR(info->own_ml_addr, prMldBssInfo->aucOwnMldAddr);
-	else
-		COPY_MAC_ADDR(info->own_ml_addr, prBssInfo->aucOwnMacAddr);
-	COPY_MAC_ADDR(info->peer_ml_addr, prBssDesc->rMlInfo.aucMldAddr);
-
-	DBGLOG(SAA, INFO,
-		"[WPA3] "MACSTR" %s %d %d mlo=%d["MACSTR"] %02x-%02x-%02x-%02x",
-		MAC2STR(info->bssid), info->ssid,
-		info->ssid_len, info->action, info->dot11MultiLinkActivated,
-		MAC2STR(info->peer_ml_addr),
-		(uint8_t) (info->key_mgmt_suite & 0xFF),
-		(uint8_t) ((info->key_mgmt_suite >> 8) & 0xFF),
-		(uint8_t) ((info->key_mgmt_suite >> 16) & 0xFF),
-		(uint8_t) ((info->key_mgmt_suite >> 24) & 0xFF));
-
-	mtk_cfg80211_vendor_event_generic_response(
-		wiphy, wdev, IE_SIZE(info), (uint8_t *)info);
-
-	kalMemFree(info, VIR_MEM_TYPE, size);
-
-	return 0;
-}
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
+	return WLAN_STATUS_NOT_ACCEPTED;
+}
 #endif /* CFG_SUPPORT_WPA3 */
 
 const uint8_t *kalFindIeMatchMask(uint8_t eid,
