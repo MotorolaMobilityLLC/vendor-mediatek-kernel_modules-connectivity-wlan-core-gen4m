@@ -129,6 +129,12 @@
 #define TXD_PKT_FT_PDA_FW           0X3
 #endif
 
+#if (CFG_WIFI_IP_SET == 1 || CFG_WIFI_IP_SET == 2)
+#define INIT_EVENT_RXD_LEN                   16
+#else
+#define INIT_EVENT_RXD_LEN                   20
+#endif
+
 enum ENUM_INIT_CMD_ID {
 	INIT_CMD_ID_DOWNLOAD_CONFIG = 1,
 	INIT_CMD_ID_WIFI_START,
