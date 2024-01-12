@@ -7782,6 +7782,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucApfEnable = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "ApfEnable", FEATURE_ENABLED);
 #endif
+
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+	prWifiVar->fgBARDelayIndicationEn = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "BARDelayIndicationEn", FEATURE_ENABLED);
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)

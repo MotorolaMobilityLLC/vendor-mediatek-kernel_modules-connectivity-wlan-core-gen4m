@@ -1118,6 +1118,10 @@ struct WIFI_VAR {
 #if (CFG_SUPPORT_APF == 1)
 	uint8_t ucApfEnable;
 #endif
+
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+	u_int8_t fgBARDelayIndicationEn;
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 };
 
 /* cnm_timer module */
