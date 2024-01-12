@@ -635,29 +635,42 @@ uint32_t glResetSelectAction(IN struct ADAPTER *prAdapter)
 		break;
 	}
 
-	if ((u4RstFlag & RST_FLAG_DO_WHOLE_RESET) &&
-	    !prAdapter->rWifiVar.fgEnableSerL0) {
-		DBGLOG(INIT, WARN,
-		       "[SER][L0] Bypass L0 reset due to wifi.cfg\n");
+	if ((u4RstFlag & RST_FLAG_DO_L1_RESET) &&
+	    prAdapter->rWifiVar.eEnableSerL1 != FEATURE_OPT_SER_ENABLE) {
+		DBGLOG(INIT, INFO,
+		       "[SER][L1] Bypass L1 reset due to wifi.cfg\n");
 
-		u4RstFlag &= ~RST_FLAG_DO_WHOLE_RESET;
+		if (prChipInfo->fgIsSupportL0p5Reset) {
+			DBGLOG(INIT, INFO,
+			       "[SER][L1] Try L0.5 reset instead\n");
+
+			u4RstFlag = RST_FLAG_DO_L0P5_RESET;
+		} else {
+			DBGLOG(INIT, INFO,
+			       "[SER][L1] Try L0 reset instead\n");
+
+			u4RstFlag = RST_FLAG_DO_WHOLE_RESET;
+		}
 	}
 
 	if ((u4RstFlag & RST_FLAG_DO_L0P5_RESET) &&
 	    prAdapter->rWifiVar.eEnableSerL0p5 != FEATURE_OPT_SER_ENABLE) {
-		DBGLOG(INIT, WARN,
-		       "[SER][L0.5] Bypass L0.5 reset due to wifi.cfg\n");
-
-		u4RstFlag &= ~RST_FLAG_DO_L0P5_RESET;
-	}
-
-	if ((u4RstFlag & RST_FLAG_DO_L1_RESET) &&
-		prAdapter->rWifiVar.eEnableSerL1 != FEATURE_OPT_SER_ENABLE) {
 		DBGLOG(INIT, INFO,
-			   "[SER][L1] Bypass L1 reset due to wifi.cfg\n");
+		       "[SER][L0.5] Bypass L0.5 reset due to wifi.cfg\n");
+		DBGLOG(INIT, INFO,
+		       "[SER][L0.5] Try L0 reset instead\n");
 
-		u4RstFlag &= ~RST_FLAG_DO_L1_RESET;
+		u4RstFlag = RST_FLAG_DO_WHOLE_RESET;
 	}
+
+	if ((u4RstFlag & RST_FLAG_DO_WHOLE_RESET) &&
+	    !prAdapter->rWifiVar.fgEnableSerL0) {
+		DBGLOG(INIT, INFO,
+		       "[SER][L0] Bypass L0 reset due to wifi.cfg\n");
+
+		u4RstFlag = 0;
+	}
+
 	return u4RstFlag;
 }
 
