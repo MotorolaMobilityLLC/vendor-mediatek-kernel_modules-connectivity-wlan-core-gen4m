@@ -67,15 +67,16 @@ void p2pLinkInitGCRole(IN struct ADAPTER *prAdapter)
 		if (prP2pInfo == NULL)
 			continue;
 		DBGLOG(INIT, TRACE, "\n");
-		p2pRoleFsmInitImpl(prAdapter,
-			i, i != P2P_MAIN_LINK_INDEX);
-		kal_init_completion(&prP2pInfo->rStopApComp);
-
+		p2pRoleFsmInit(prAdapter, i);
 		fsm = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
 			prAdapter,
 			i);
-		if (!fsm)
+		if (!fsm ||
+			!IS_BSS_INDEX_P2P(prAdapter,
+			fsm->ucBssIndex))
 			continue;
+
+		kal_init_completion(&prP2pInfo->rStopApComp);
 
 		wlanBindBssIdxToNetInterface(
 			prGlueInfo,
@@ -116,7 +117,9 @@ void p2pLinkUninitGCRole(IN struct ADAPTER *prAdapter)
 		fsm = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
 			prAdapter,
 				i);
-		if (!fsm)
+		if (!fsm ||
+			!IS_BSS_INDEX_P2P(prAdapter,
+			fsm->ucBssIndex))
 			continue;
 
 		wlanBindBssIdxToNetInterface(
