@@ -3334,6 +3334,51 @@ void connac2x_show_dmashdl_info(IN struct ADAPTER *prAdapter)
 		DBGLOG(HAL, INFO, "DMASHDL: no counter mismatch\n");
 }
 
+
+/* ============================================================================
+ *                         Debug Interrupt Interface
+ * +--------------------------------------------------------------------------+
+ * |Toggle|  Reserved[30:16]  | BandNum[15:14] | Module[13:08] | Reason[7:0]  |
+ * +--------------------------------------------------------------------------+
+ * ============================================================================
+ */
+uint32_t connac2x_get_ple_int(struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo;
+	struct PLE_TOP_CR *prCr;
+	uint32_t u4Val = 0;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prCr = prBusInfo->prPleTopCr;
+
+	HAL_MCR_RD(prAdapter, prCr->rToN9IntToggle.u4Addr, &u4Val);
+
+	return u4Val;
+}
+
+void connac2x_set_ple_int(struct ADAPTER *prAdapter, bool fgTrigger,
+			  uint32_t u4ClrMask, uint32_t u4SetMask)
+{
+	struct BUS_INFO *prBusInfo;
+	struct PLE_TOP_CR *prCr;
+	uint32_t u4Val = 0;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prCr = prBusInfo->prPleTopCr;
+
+	HAL_MCR_RD(prAdapter, prCr->rToN9IntToggle.u4Addr, &u4Val);
+
+	if (fgTrigger) {
+		u4Val = (~u4Val & prCr->rToN9IntToggle.u4Mask) |
+			(u4Val & ~prCr->rToN9IntToggle.u4Mask);
+	}
+
+	u4Val &= ~u4ClrMask;
+	u4Val |= u4SetMask;
+
+	HAL_MCR_WR(prAdapter, prCr->rToN9IntToggle.u4Addr, u4Val);
+}
+
 void connac2x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 {
 	struct BUS_INFO *prBusInfo;
@@ -3345,7 +3390,7 @@ void connac2x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 	u_int32_t sta_pause[6] = {0}, dis_sta_map[6] = {0};
 	u_int32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail, hif_max_q, hif_min_q;
 	u_int32_t rpg_hif, upg_hif, cpu_max_q, cpu_min_q, rpg_cpu, upg_cpu;
-	u_int32_t i, j, value = 0;
+	u_int32_t i, j;
 	u_int32_t ple_peek[12] = {0};
 	u_int32_t ple_empty = 0;
 	u_int32_t ple_txd_empty = 0;
@@ -3625,23 +3670,6 @@ void connac2x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 	}
 
 	kalMemFree(buf, VIR_MEM_TYPE, buf_size);
-
-/* ============================================================================
- *                         Debug Interrupt Interface
- * +--------------------------------------------------------------------------+
- * |Toggle|  Reserved[30:16]  | BandNum[15:14] | Module[13:08] | Reason[7:0]  |
- * +--------------------------------------------------------------------------+
- * ============================================================================
- */
-	/* Trigger Fw dump log */
-	/* Band 0, TX */
-	HAL_MCR_RD(prAdapter, prCr->rToN9IntToggle.u4Addr, &value);
-	value = (~value & prCr->rToN9IntToggle.u4Mask) | (1 << 8);
-	HAL_MCR_WR(prAdapter, prCr->rToN9IntToggle.u4Addr, value);
-	/* Band 1, TX */
-	HAL_MCR_RD(prAdapter, prCr->rToN9IntToggle.u4Addr, &value);
-	value = (~value & prCr->rToN9IntToggle.u4Mask) | (1 << 14) | (1 << 8);
-	HAL_MCR_WR(prAdapter, prCr->rToN9IntToggle.u4Addr, value);
 }
 
 void connac2x_show_pse_info(struct ADAPTER *prAdapter)

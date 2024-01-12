@@ -397,6 +397,41 @@ static struct EMPTY_QUEUE_INFO Queue_Empty_info[] = {
 	{"RLS2 Q",  ENUM_PLE_CTRL_PSE_PORT_3, ENUM_UMAC_PLE_CTRL_P3_Q_0X1F}
 };
 
+
+/* ============================================================================
+ *                         Debug Interrupt Interface
+ * +--------------------------------------------------------------------------+
+ * |Toggle|  Reserved[30:16]  | BandNum[15:14] | Module[13:08] | Reason[7:0]  |
+ * +--------------------------------------------------------------------------+
+ * ============================================================================
+ */
+uint32_t halGetPleInt(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Val = 0;
+
+	HAL_MCR_RD(prAdapter, PLE_TO_N9_INT, &u4Val);
+
+	return u4Val;
+}
+
+void halSetPleInt(struct ADAPTER *prAdapter, bool fgTrigger,
+		  uint32_t u4ClrMask, uint32_t u4SetMask)
+{
+	uint32_t u4Val = 0;
+
+	HAL_MCR_RD(prAdapter, PLE_TO_N9_INT, &u4Val);
+
+	if (fgTrigger) {
+		u4Val = (~u4Val & PLE_TO_N9_INT_TOGGLE_MASK) |
+			(u4Val & ~PLE_TO_N9_INT_TOGGLE_MASK);
+	}
+
+	u4Val &= ~u4ClrMask;
+	u4Val |= u4SetMask;
+
+	HAL_MCR_WR(prAdapter, PLE_TO_N9_INT, u4Val);
+}
+
 void halShowPleInfo(IN struct ADAPTER *prAdapter,
 	u_int8_t fgDumpTxd)
 {
