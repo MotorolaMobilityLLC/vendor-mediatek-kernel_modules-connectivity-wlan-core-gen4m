@@ -718,6 +718,21 @@ kalCfg80211VendorEventAlloc(struct wiphy *wiphy, struct wireless_dev *wdev,
 #define KAL_WAKE_LOCK_ACTIVE(_prAdapter, _prWakeLock)
 #endif
 
+#define KAL_FIFO_INIT(_prFiFoQ, _prBuf, _rBufLen) \
+	kfifo_init((_prFiFoQ), (_prBuf), _rBufLen)
+#define KAL_FIFO_IN(_prFiFoQ, _rObj) \
+	kfifo_in((_prFiFoQ), &(_rObj), sizeof(_rObj))
+#define KAL_FIFO_OUT(_prFiFoQ, _rObj) \
+	kfifo_out((_prFiFoQ), &(_rObj), sizeof(_rObj))
+#define KAL_FIFO_LEN(_prFiFoQ) \
+	kfifo_len((_prFiFoQ))
+#define KAL_FIFO_AVAIL(_prFiFoQ) \
+	kfifo_avail((_prFiFoQ))
+#define KAL_FIFO_IS_EMPTY(_prFiFoQ) \
+	kfifo_is_empty((_prFiFoQ))
+#define KAL_FIFO_IS_FULL(_prFiFoQ) \
+	kfifo_is_full((_prFiFoQ))
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Cache memory allocation
