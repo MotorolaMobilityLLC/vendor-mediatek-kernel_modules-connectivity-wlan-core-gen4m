@@ -200,9 +200,9 @@ int halInitResvMem(struct platform_device *pdev)
 
 static bool halAllocRsvMem(uint32_t u4Size, struct HIF_MEM *prMem)
 {
-	/* 8 bytes alignment */
-	if (u4Size & 7)
-		u4Size += 8 - (u4Size & 7);
+	/* 256 bytes alignment */
+	if (u4Size & 255)
+		u4Size += 256 - (u4Size & 255);
 
 	if ((grMem.u4Offset + u4Size) >= gWifiRsvMemSize) {
 		prMem->pa = 0;
@@ -219,9 +219,9 @@ static bool halAllocRsvMem(uint32_t u4Size, struct HIF_MEM *prMem)
 
 static bool halFreeRsvMem(uint32_t u4Size)
 {
-	/* 8 bytes alignment */
-	if (u4Size & 7)
-		u4Size += 8 - (u4Size & 7);
+	/* 256 bytes alignment */
+	if (u4Size & 255)
+		u4Size += 256 - (u4Size & 255);
 
 	if (u4Size > grMem.u4Offset)
 		return false;

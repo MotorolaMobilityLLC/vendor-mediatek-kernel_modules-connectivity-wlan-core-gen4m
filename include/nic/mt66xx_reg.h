@@ -1467,6 +1467,7 @@ struct mt66xx_chip_info {
 	const uint32_t *mawd_idx_patch;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	const u_int8_t is_en_wfdma_no_mmio_read;
+	const u_int8_t is_support_wfdma_write_back;
 #if CFG_MTK_WIFI_EN_SW_EMI_READ
 	const u_int8_t is_en_sw_emi_read;
 #endif
