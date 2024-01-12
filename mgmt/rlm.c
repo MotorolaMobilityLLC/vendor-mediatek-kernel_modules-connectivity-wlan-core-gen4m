@@ -938,7 +938,10 @@ static void rlmFillHtCapIE(struct ADAPTER *prAdapter,
 		|| (prBssInfo->eBand == BAND_6G)
 #endif
 	) {
-		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfee))
+		/* HT BFee has IOT issue
+		 * only support HT BFee when force mode for testing
+		 */
+		if (IS_FEATURE_FORCE_ENABLED(prAdapter->rWifiVar.ucStaHtBfee))
 			prHtCap->u4TxBeamformingCap = TX_BEAMFORMING_CAP_BFEE;
 		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfer))
 			prHtCap->u4TxBeamformingCap |= TX_BEAMFORMING_CAP_BFER;
@@ -1174,56 +1177,54 @@ void rlmReqGenerateVhtCapIE(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
-#if CFG_SUPPORT_VHT_IE_IN_2G
 	struct BSS_DESC *prBssDesc = NULL;
-	u_int8_t fgIsVHTPresent = FALSE;
-#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
 
-	if (prAdapter) {
-		prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
-#if CFG_SUPPORT_VHT_IE_IN_2G
-		prBssDesc = aisGetTargetBssDesc(prAdapter,
-			prMsduInfo->ucBssIndex);
-		if (prBssDesc) {
-			fgIsVHTPresent = prBssDesc->fgIsVHTPresent;
-			DBGLOG(RLM, TRACE,
-				"fgIsVHTPresent=%d", fgIsVHTPresent);
-		}
-#endif
-	} else {
-		DBGLOG(RLM, ERROR, "prAdapter is NULL, return!");
-		return;
-	}
-
-	if (!prBssInfo) {
-		DBGLOG(RLM, ERROR, "prBssInfo is NULL, return!");
-		return;
-	}
-
+	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
-	if (!prStaRec) {
-		DBGLOG(RLM, ERROR, "prStaRec is NULL, return!");
+	if (!prBssInfo || !prStaRec) {
+		DBGLOG(RLM, ERROR, "prBssInfo=%p, prStaRec=%p, return!!\n",
+			prBssInfo, prStaRec);
 		return;
 	}
 
-	if ((prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11AC)
+	if (IS_BSS_AIS(prBssInfo))
+		prBssDesc =
+			aisGetTargetBssDesc(prAdapter, prMsduInfo->ucBssIndex);
+#if CFG_ENABLE_WIFI_DIRECT
+	else if (IS_BSS_P2P(prBssInfo))
+		prBssDesc =
+			p2pGetTargetBssDesc(prAdapter, prMsduInfo->ucBssIndex);
+#endif
+
+	if (!prBssDesc) {
+		DBGLOG(RLM, ERROR, "prBssDesc is NULL, return!\n");
+		return;
+	}
+
+	DBGLOG(RLM, TRACE,
+		"eBand=%d,PhyType=0x%02x, AvailPhyType=0x%02x, VHTPresent=%d\n",
+		prBssDesc->eBand,
+		prStaRec->ucPhyTypeSet,
+		prAdapter->rWifiVar.ucAvailablePhyTypeSet,
+		prBssDesc->fgIsVHTPresent);
+
+	if ((prBssDesc->eBand == BAND_5G) &&
+		(prAdapter->rWifiVar.ucAvailablePhyTypeSet &
+		PHY_TYPE_SET_802_11AC)
 		&& (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AC))
 		rlmFillVhtCapIE(prAdapter, prBssInfo, prMsduInfo);
 #if CFG_SUPPORT_VHT_IE_IN_2G
-	else if ((prBssInfo->eBand == BAND_2G4) &&
+	else if ((prBssDesc->eBand == BAND_2G4) &&
 			(prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N) &&
 			((prAdapter->rWifiVar.ucVhtIeIn2g
 				==  FEATURE_FORCE_ENABLED) ||
-			((prAdapter->rWifiVar.ucVhtIeIn2g
-				== FEATURE_ENABLED) && fgIsVHTPresent))) {
-		DBGLOG(RLM, TRACE,
-			"Add VHT IE in 2.4G, ucPhyTypeSet=%02x, ucVhtIeIn2g=%02x",
-			prStaRec->ucPhyTypeSet,
-			prAdapter->rWifiVar.ucVhtIeIn2g);
+			((prAdapter->rWifiVar.ucVhtIeIn2g == FEATURE_ENABLED) &&
+				(prBssDesc->fgIsVHTPresent)))) {
+		DBGLOG(RLM, TRACE, "Add VHT IE in 2.4G\n");
 		rlmFillVhtCapIE(prAdapter, prBssInfo, prMsduInfo);
 	}
 #endif
@@ -5301,7 +5302,10 @@ uint32_t rlmFillNANHTCapIE(struct ADAPTER *prAdapter,
 	prHtCap->u4TxBeamformingCap = TX_BEAMFORMING_CAP_DEFAULT_VAL;
 
 	if (prBssInfo->eBand == BAND_5G) {
-		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfee))
+		/* HT BFee has IOT issue
+		 * only support HT BFee when force mode for testing
+		 */
+		if (IS_FEATURE_FORCE_ENABLED(prAdapter->rWifiVar.ucStaHtBfee))
 			prHtCap->u4TxBeamformingCap = TX_BEAMFORMING_CAP_BFEE;
 		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfer))
 			prHtCap->u4TxBeamformingCap |= TX_BEAMFORMING_CAP_BFER;

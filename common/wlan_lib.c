@@ -7242,7 +7242,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					"DynBwRts", FEATURE_DISABLED);
 	prWifiVar->ucTxopPsTx = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"TxopPsTx", FEATURE_DISABLED);
-
+	/* HT BFee has IOT issue
+	 * only support HT BFee when force mode for testing
+	 */
 	prWifiVar->ucStaHtBfee = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"StaHTBfee", FEATURE_DISABLED);
 	prWifiVar->ucStaVhtBfee = (uint8_t) wlanCfgGetUint32(prAdapter,
@@ -8029,6 +8031,12 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_HE_ER
 	prWifiVar->u4ExtendedRange = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "ExtendedRange",
+			FEATURE_ENABLED);
+	prWifiVar->fgErTx = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "ErTx",
+			FEATURE_ENABLED);
+	prWifiVar->fgErRx = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "ErRx",
 			FEATURE_ENABLED);
 #endif
 
@@ -12514,8 +12522,12 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		u4MaxRate = g_rDataRateMappingTable.nsts[nsts - 1].bw[frmode]
 				.sgi[sgi].rate[MCS_IDX_MAX_RATE_VHT];
 	} else if ((txmode == TX_RATE_MODE_HE_SU) ||
-		(txmode == TX_RATE_MODE_HE_ER)) { /* AX */
+		(txmode == TX_RATE_MODE_HE_ER) ||
+		(txmode == TX_RATE_MODE_HE_MU)) { /* AX */
 		uint8_t dcm = 0, ru106 = 0;
+
+		if (txmode == TX_RATE_MODE_HE_MU)
+			nsts--;
 
 		if ((nsts == 0) || (nsts >= 5)) {
 			DBGLOG(SW4, ERROR, "nsts error: %u\n", nsts);

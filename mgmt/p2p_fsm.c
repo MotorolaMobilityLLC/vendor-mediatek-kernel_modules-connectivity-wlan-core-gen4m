@@ -212,7 +212,7 @@ void p2pFsmRunEventChGrant(IN struct ADAPTER *prAdapter,
 
 		DBGLOG(P2P, TRACE, "P2P Run Event Channel Grant\n");
 
-#if CFG_SISO_SW_DEVELOP
+#if ((CFG_SISO_SW_DEVELOP == 1) || (CFG_SUPPORT_SPE_IDX_CONTROL == 1))
 		/* Driver record granted CH in BSS info */
 		prP2pBssInfo->fgIsGranted = TRUE;
 		prP2pBssInfo->eBandGranted = prMsgChGrant->eRfBand;
@@ -476,5 +476,27 @@ void p2pFsmRunEventTxCancelWait(IN struct ADAPTER *prAdapter,
 	} while (FALSE);
 
 }				/* p2pFsmRunEventTxCancelWait */
+
+struct BSS_DESC *p2pGetTargetBssDesc(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex) {
+
+	uint8_t i = 0;
+
+	for (i = 0 ; i < BSS_P2P_NUM; i++) {
+		if (!prAdapter->rWifiVar.aprP2pRoleFsmInfo[i])
+			continue;
+
+		if (prAdapter->rWifiVar.aprP2pRoleFsmInfo[i]->ucBssIndex
+			== ucBssIndex)
+			break;
+	}
+
+	if (i >= BSS_P2P_NUM)
+		return NULL;
+
+	return prAdapter->rWifiVar.aprP2pRoleFsmInfo[i]
+		->rJoinInfo.prTargetBssDesc;
+}
 
 #endif /* CFG_ENABLE_WIFI_DIRECT */

@@ -3174,6 +3174,16 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		} else {
 			prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_OFDM;
 		}
+	} else {
+		if (prBssDesc->eBand == BAND_2G4) {
+			if ((prBssDesc->u2OperationalRateSet & RATE_SET_OFDM)
+			    || prBssDesc->fgIsERPPresent)
+				prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_ERP;
+		} else {
+			prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_OFDM;
+		}
+
+		prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
 	}
 
 	/* Support AP Selection */

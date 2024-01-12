@@ -199,11 +199,15 @@ enum HE_LTF {
 #define HW_TX_RATE_TO_NSS(_x)		CONNAC3X_HW_TX_RATE_TO_NSS(_x)
 #define HW_TX_RATE_TO_STBC(_x)		CONNAC3X_HW_TX_RATE_TO_STBC(_x)
 #define HW_TX_RATE_TO_MCS(_x)		CONNAC3X_HW_TX_RATE_TO_MCS(_x)
+#define HW_TX_RATE_TO_DCM(_x)		CONNAC2X_HW_TX_RATE_TO_DCM(_x)
+#define HW_TX_RATE_TO_106T(_x)		CONNAC2X_HW_TX_RATE_TO_106T(_x)
 #elif (CFG_SUPPORT_CONNAC2X == 1)
 #define HW_TX_RATE_TO_MODE(_x)		CONNAC2X_HW_TX_RATE_TO_MODE(_x)
 #define HW_TX_RATE_TO_NSS(_x)		CONNAC2X_HW_TX_RATE_TO_NSS(_x)
 #define HW_TX_RATE_TO_STBC(_x)		CONNAC2X_HW_TX_RATE_TO_STBC(_x)
 #define HW_TX_RATE_TO_MCS(_x)		((_x) & (0x3f))
+#define HW_TX_RATE_TO_DCM(_x)		CONNAC2X_HW_TX_RATE_TO_DCM(_x)
+#define HW_TX_RATE_TO_106T(_x)		CONNAC2X_HW_TX_RATE_TO_106T(_x)
 #else
 #define HW_TX_RATE_TO_MODE(_x)		(((_x) & (0x7 << 6)) >> 6)
 #define HW_TX_RATE_TO_NSS(_x)		(((_x) & (0x3 << 9)) >> 9)
@@ -220,6 +224,8 @@ enum HE_LTF {
 #define TX_VECTOR_GET_TX_NSTS(_txv)	CONNAC2X_TXV_GET_TX_NSTS(_txv)
 #define TX_VECTOR_GET_TX_PWR(_txv)	CONNAC2X_TXV_GET_TX_PWR(_txv)
 #define TX_VECTOR_GET_TX_SGI(_txv)	CONNAC2X_TXV_GET_TX_SGI(_txv)
+#define TX_VECTOR_GET_TX_DCM(_txv)	CONNAC2X_TXV_GET_TX_DCM(_txv)
+#define TX_VECTOR_GET_TX_106T(_txv)	CONNAC2X_TXV_GET_TX_106T(_txv)
 #else
 #define TX_VECTOR_GET_TX_RATE(_txv)     (((_txv)->u4TxV[0]) & BITS(0, 6))
 #define TX_VECTOR_GET_TX_LDPC(_txv)     ((((_txv)->u4TxV[0]) >> 7) & BIT(0))
@@ -304,6 +310,7 @@ uint8_t nicGetTxSgiInfo(
 	IN uint8_t u1TxMode);
 
 uint8_t nicGetTxLdpcInfo(
+	IN uint8_t ucTxMode,
 	IN struct PARAM_TX_CONFIG *prWtblTxConfig);
 
 int32_t nicGetTxRateInfo(IN char *pcCommand, IN int i4TotalLen,

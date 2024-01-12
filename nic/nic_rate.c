@@ -726,12 +726,12 @@ uint32_t nicSetFixedRateData(
 			RA_FIXEDRATE_FIELD_HE_LTF_OFFSET)
 			& RA_FIXEDRATE_FIELD_HE_LTF_MASK);
 
-		if (pFixedRate->u4Mode == TX_RATE_MODE_HE_ER) {
-			if (pFixedRate->u4HeErDCM)
-				u4Data |= RA_FIXEDRATE_FIELD_HE_ER_DCM;
+		if (pFixedRate->u4HeErDCM)
+			u4Data |= BIT(RA_FIXEDRATE_FIELD_HE_ER_DCM);
+
+		if (pFixedRate->u4Mode == TX_RATE_MODE_HE_ER)
 			if (pFixedRate->u4HeEr106t)
-				u4Data |= RA_FIXEDRATE_FIELD_HE_ER_106;
-		}
+				u4Data |= BIT(RA_FIXEDRATE_FIELD_HE_ER_106);
 	}
 
 	*pu4Data = u4Data;
@@ -815,17 +815,29 @@ uint8_t nicGetTxSgiInfo(
 }
 
 uint8_t nicGetTxLdpcInfo(
+	IN uint8_t ucTxMode,
 	IN struct PARAM_TX_CONFIG *prWtblTxConfig)
 {
 	if (!prWtblTxConfig)
-		return FALSE;
+		return 0;
 
-	if (prWtblTxConfig->fgIsHE)
-		return prWtblTxConfig->fgHeLDPC;
-	else if (prWtblTxConfig->fgIsVHT)
-		return prWtblTxConfig->fgVhtLDPC;
-	else
+	switch (ucTxMode) {
+	case ENUM_TX_MODE_MM:
+	case ENUM_TX_MODE_GF:
 		return prWtblTxConfig->fgLDPC;
+	case ENUM_TX_MODE_VHT:
+		return prWtblTxConfig->fgVhtLDPC;
+#if (CFG_SUPPORT_802_11AX == 1)
+	case ENUM_TX_MODE_HE_SU:
+	case ENUM_TX_MODE_HE_ER:
+	case ENUM_TX_MODE_HE_MU:
+		return prWtblTxConfig->fgHeLDPC;
+#endif
+	case ENUM_TX_MODE_CCK:
+	case ENUM_TX_MODE_OFDM:
+	default:
+		return 0;
+	}
 }
 
 uint16_t nicGetStatIdxInfo(IN struct ADAPTER *prAdapter,
@@ -887,6 +899,9 @@ int32_t nicGetTxRateInfo(IN char *pcCommand, IN int i4TotalLen,
 	uint8_t i, txmode, rate, stbc, sgi;
 	uint8_t nsts;
 	int32_t i4BytesWritten = 0;
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	uint8_t dcm, ersu106t;
+#endif
 
 	for (i = 0; i < AUTO_RATE_NUM; i++) {
 		txmode = HW_TX_RATE_TO_MODE(
@@ -900,7 +915,17 @@ int32_t nicGetTxRateInfo(IN char *pcCommand, IN int i4TotalLen,
 		stbc = HW_TX_RATE_TO_STBC(
 			prHwWlanInfo->rWtblRateInfo.au2RateCode[i]);
 		sgi = nicGetTxSgiInfo(&prHwWlanInfo->rWtblPeerCap, txmode);
+#if (CFG_SUPPORT_CONNAC2X == 1)
+		dcm = HW_TX_RATE_TO_DCM(
+			prHwWlanInfo->rWtblRateInfo.au2RateCode[i]);
+		ersu106t = HW_TX_RATE_TO_106T(
+			prHwWlanInfo->rWtblRateInfo.au2RateCode[i]);
 
+		if (dcm)
+			rate = CONNAC2X_HW_TX_RATE_UNMASK_DCM(rate);
+		if (ersu106t)
+			rate = CONNAC2X_HW_TX_RATE_UNMASK_106T(rate);
+#endif
 		if (fgDumpAll) {
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
@@ -1028,11 +1053,16 @@ int32_t nicGetTxRateInfo(IN char *pcCommand, IN int i4TotalLen,
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
-				"%s%s%s\n",
+				"%s%s%s%s%s\n",
 				txmode <= ENUM_TX_MODE_NUM ?
 				    HW_TX_MODE_STR[txmode] : "N/A",
+#if (CFG_SUPPORT_CONNAC2X == 1)
+				dcm ? ", DCM" : "", ersu106t ? ", 106t" : "",
+#else
+				"", "",
+#endif
 				stbc ? ", STBC, " : ", ",
-				nicGetTxLdpcInfo(
+				nicGetTxLdpcInfo(txmode,
 				    &prHwWlanInfo->rWtblTxConfig) == 0 ?
 				    "BCC" : "LDPC");
 		} else {
@@ -1046,7 +1076,7 @@ int32_t nicGetTxRateInfo(IN char *pcCommand, IN int i4TotalLen,
 					txmode < ENUM_TX_MODE_NUM ?
 					    HW_TX_MODE_STR[txmode] : "N/A",
 					stbc ? ", STBC, " : ", ",
-					((nicGetTxLdpcInfo(
+					((nicGetTxLdpcInfo(txmode,
 					    &prHwWlanInfo->rWtblTxConfig) == 0)
 					    || (txmode == TX_RATE_MODE_CCK)
 					    || (txmode == TX_RATE_MODE_OFDM)) ?
@@ -1059,7 +1089,7 @@ int32_t nicGetTxRateInfo(IN char *pcCommand, IN int i4TotalLen,
 					txmode < ENUM_TX_MODE_NUM ?
 					    HW_TX_MODE_STR[txmode] : "N/A",
 					stbc ? ", STBC, " : ", ",
-					((nicGetTxLdpcInfo(
+					((nicGetTxLdpcInfo(txmode,
 					    &prHwWlanInfo->rWtblTxConfig) == 0)
 					    || (txmode == TX_RATE_MODE_CCK)
 					    || (txmode == TX_RATE_MODE_OFDM))
@@ -1071,11 +1101,16 @@ int32_t nicGetTxRateInfo(IN char *pcCommand, IN int i4TotalLen,
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
-				"%s%s%s\n",
+				"%s%s%s%s%s\n",
 				txmode < ENUM_TX_MODE_NUM ?
 				    HW_TX_MODE_STR[txmode] : "N/A",
+#if (CFG_SUPPORT_CONNAC2X == 1)
+				dcm ? ", DCM" : "", ersu106t ? ", 106t" : "",
+#else
+				"", "",
+#endif
 				stbc ? ", STBC, " : ", ",
-				((nicGetTxLdpcInfo(
+				((nicGetTxLdpcInfo(txmode,
 				    &prHwWlanInfo->rWtblTxConfig) == 0) ||
 				    (txmode == TX_RATE_MODE_CCK) ||
 				    (txmode == TX_RATE_MODE_OFDM)) ?
