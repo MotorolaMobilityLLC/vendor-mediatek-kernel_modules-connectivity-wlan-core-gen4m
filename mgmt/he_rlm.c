@@ -486,10 +486,15 @@ void heRlmFillHeCapIE(
 	/* PHY capabilities */
 	HE_RESET_PHY_CAP(prHeCap->ucHePhyCap);
 
-	if (prBssInfo->eBand == BAND_2G4) {
-		if (ucMaxBw >= MAX_BW_40MHZ && prBssInfo->fgAssoc40mBwAllowed)
+	if (prBssInfo->eBand == BAND_2G4 && ucMaxBw >= MAX_BW_40MHZ) {
+		if (IS_BSS_APGO(prBssInfo)) {
+			if (prBssInfo->fgAssoc40mBwAllowed)
+				HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW40_2G(
+					prHeCap->ucHePhyCap);
+		} else {
 			HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW40_2G(
 				prHeCap->ucHePhyCap);
+		}
 	} else if ((prBssInfo->eBand == BAND_5G)
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		|| (prBssInfo->eBand == BAND_6G)
