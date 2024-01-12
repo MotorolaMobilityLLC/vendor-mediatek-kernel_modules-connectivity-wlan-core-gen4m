@@ -2491,6 +2491,12 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				fgIsTransition = TRUE;
 			}
 
+			/* for WMM-AC cert 5.2.5 */
+			/* after reassoc, update PS flag to FW again */
+			if (aisFsmIsReassociation(prAdapter, ucBssIndex) &&
+			    (prAisFsmInfo->ePreviousState == AIS_STATE_JOIN))
+				wmmReSyncPsParamWithFw(prAdapter, ucBssIndex);
+
 			break;
 
 		case AIS_STATE_DISCONNECTING:
@@ -2975,7 +2981,8 @@ void aisFsmStateAbort(IN struct ADAPTER *prAdapter,
 	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
 	    prAisFsmInfo->eCurrentState != AIS_STATE_DISCONNECTING &&
 	    ucReasonOfDisconnect != DISCONNECT_REASON_CODE_REASSOCIATION &&
-	    ucReasonOfDisconnect != DISCONNECT_REASON_CODE_ROAMING)
+	    ucReasonOfDisconnect != DISCONNECT_REASON_CODE_ROAMING &&
+	    !aisFsmIsReassociation(prAdapter, ucBssIndex))
 		wmmNotifyDisconnected(prAdapter, ucBssIndex);
 
 
