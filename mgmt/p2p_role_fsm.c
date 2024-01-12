@@ -74,7 +74,7 @@ u_int8_t p2pRoleFsmNeedMlo(
 }
 
 uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
-	uint8_t ucRoleIdx)
+	uint8_t ucRoleIdx, uint8_t fgUseInterfaceAddr)
 {
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
@@ -174,8 +174,11 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 		 * using Role type.
 		 */
 
-		kalSetP2pDevMac(prAdapter->prGlueInfo,
-			prP2pBssInfo, ucRoleIdx);
+		if (fgUseInterfaceAddr)
+			kalSetP2pRoleMac(prAdapter, prP2pBssInfo, ucRoleIdx);
+		else
+			kalSetP2pDevMac(prAdapter->prGlueInfo,
+				prP2pBssInfo, ucRoleIdx);
 
 		/* For BSS_INFO back trace to P2P Role & get Role FSM. */
 		prP2pBssInfo->u4PrivateData = ucRoleIdx;

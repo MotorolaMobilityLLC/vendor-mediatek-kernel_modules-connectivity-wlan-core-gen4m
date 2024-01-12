@@ -331,7 +331,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 					type, u4Idx);
 				ucBssIdx =
 					p2pRoleFsmInit(prGlueInfo->prAdapter,
-						u4Idx);
+						u4Idx, TRUE);
 				break;
 			}
 		}

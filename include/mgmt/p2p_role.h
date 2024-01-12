@@ -366,7 +366,8 @@ struct P2P_ROLE_FSM_INFO {
 
 /*========================= Initial ============================*/
 
-uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter, uint8_t ucRoleIdx);
+uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter, uint8_t ucRoleIdx,
+	uint8_t fgUseInterfaceAddr);
 
 u_int8_t p2pRoleFsmNeedMlo(
 	struct ADAPTER *prAdapter,

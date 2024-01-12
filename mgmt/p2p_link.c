@@ -68,7 +68,7 @@ void p2pLinkInitGCRole(struct ADAPTER *prAdapter)
 		if (prP2pInfo == NULL)
 			continue;
 		DBGLOG(INIT, TRACE, "\n");
-		p2pRoleFsmInit(prAdapter, i);
+		p2pRoleFsmInit(prAdapter, i, TRUE);
 		fsm = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
 			prAdapter,
 			i);

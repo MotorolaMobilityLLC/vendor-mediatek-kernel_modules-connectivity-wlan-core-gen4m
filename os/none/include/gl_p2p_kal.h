@@ -476,6 +476,9 @@ u_int8_t kalP2PMaxClients(struct GLUE_INFO *prGlueInfo,
 #define kalP2pClearCsaChan(prGlueP2pInfo) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
+#define kalSetP2pRoleMac(_prAdapter, _prP2pBssInfo, _ucRoleIdx) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
 #define kalSetP2pDevMac(_prGlueInfo, _prBssInfo, _ucRoleIdx) \
 		KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
