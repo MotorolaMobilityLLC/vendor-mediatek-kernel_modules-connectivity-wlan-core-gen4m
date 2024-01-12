@@ -2097,3 +2097,7 @@ VOID halPrintHifDbgInfo(IN P_ADAPTER_T prAdapter)
 	halPollDbgCr(prAdapter, LP_OWN_BACK_FAILED_DBGCR_POLL_ROUND);
 }
 
+BOOLEAN halIsTxResourceControlEn(IN P_ADAPTER_T prAdapter)
+{
+	return TRUE;
+}

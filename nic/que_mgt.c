@@ -230,7 +230,7 @@ do { \
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID qmInit(IN P_ADAPTER_T prAdapter)
+VOID qmInit(IN P_ADAPTER_T prAdapter, IN BOOLEAN isTxResrouceControlEn)
 {
 	UINT_32 u4Idx;
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
@@ -272,6 +272,8 @@ VOID qmInit(IN P_ADAPTER_T prAdapter)
 	prQM->ucRxBaCount = 0;
 
 	kalMemSet(&g_arMissTimeout, 0, sizeof(g_arMissTimeout));
+
+	prQM->fgIsTxResrouceControlEn = isTxResrouceControlEn;
 
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	/* 4 <4> Initialize TC resource control variables */
@@ -1295,7 +1297,7 @@ qmDequeueTxPacketsFromPerStaQueues(IN P_ADAPTER_T prAdapter, OUT P_QUE_T prQue,
 					u4MaxForwardFrameCountLimit = prBssInfo->ucBssFreeQuota;
 			}
 #if CFG_SUPPORT_DBDC
-			if (prAdapter->rWifiVar.uDeQuePercentEnable && prAdapter->rWifiVar.fgDbDcModeEn)
+			if (prAdapter->rWifiVar.fgDbDcModeEn)
 				u4MaxResourceLimit = gmGetDequeueQuota(prAdapter, prStaRec, prBssInfo, u4TotalQuota);
 #endif
 			/* 4 <2.3> Dequeue packet */
@@ -2147,6 +2149,12 @@ gmGetDequeueQuota(
 {
 	UINT_32	u4Weight = 100;
 	UINT_32	u4Quota;
+
+	P_QUE_MGT_T prQM = &prAdapter->rQM;
+
+	if ((prAdapter->rWifiVar.uDeQuePercentEnable == FALSE) ||
+		(prQM->fgIsTxResrouceControlEn == FALSE))
+		return u4TotalQuota;
 
 	if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_VHT) {
 		if (prBssInfo->ucVhtChannelWidth > VHT_OP_CHANNEL_WIDTH_20_40) {
