@@ -292,19 +292,12 @@ struct mtk_regd_control g_mtk_regd_control = {
 	.state = REGD_STATE_UNDEFINED
 };
 
-<<<<<<< HEAD   (35b651 [ALPS05574842] nic: remove starec by bssinfo)
 #if CFG_SUPPORT_BW160
 #define BW_5G 160
 #define BW_6G 160
 #else
 #define BW_5G 80
 #define BW_6G 80
-=======
-#ifdef CFG_SUPPORT_BW160
-#define BW_5G 160
-#else
-#define BW_5G 80
->>>>>>> CHANGE (4d4204 [ALPS05977350] radiotap sniffer: support 802.11 be)
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
