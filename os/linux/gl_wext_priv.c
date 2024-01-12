@@ -10070,18 +10070,21 @@ int priv_driver_set_ap_set_mac_acl(IN struct net_device *prNetDev,
 	}
 
 	/* Count */
-	if (parseValueInString(&pcCommand,
-		"MAC_CNT=", &aucValue, WLAN_CFG_ARGV_MAX)) {
-		DBGLOG(REQ, ERROR, "[CNT] parse count error\n");
-		goto error;
-	}
-	if (kalkStrtou32(aucValue, 0, &i4Count)) {
-		DBGLOG(REQ, ERROR, "[CNT] convert to int error\n");
-		goto error;
-	}
-	if (i4Count > MAX_NUMBER_OF_ACL) {
-		DBGLOG(REQ, ERROR, "[CNT] invalid count > max ACL\n");
-		goto error;
+	/* No need to parse count for diabled mode */
+	if (prBssInfo->rACL.ePolicy != PARAM_CUSTOM_ACL_POLICY_DISABLE) {
+		if (parseValueInString(&pcCommand,
+			"MAC_CNT=", &aucValue, WLAN_CFG_ARGV_MAX)) {
+			DBGLOG(REQ, ERROR, "[CNT] parse count error\n");
+			goto error;
+		}
+		if (kalkStrtou32(aucValue, 0, &i4Count)) {
+			DBGLOG(REQ, ERROR, "[CNT] convert to int error\n");
+			goto error;
+		}
+		if (i4Count > MAX_NUMBER_OF_ACL) {
+			DBGLOG(REQ, ERROR, "[CNT] invalid count > max ACL\n");
+			goto error;
+		}
 	}
 
 	/* MAC */
@@ -10324,7 +10327,7 @@ error:
 }
 
 int
-priv_set_ap(IN struct net_device *prNetDev,
+__priv_set_ap(IN struct net_device *prNetDev,
 	IN struct iw_request_info *prIwReqInfo,
 	IN union iwreq_data *prIwReqData, IN OUT char *pcExtra)
 {
@@ -10332,7 +10335,6 @@ priv_set_ap(IN struct net_device *prNetDev,
 	uint16_t u2Cmd = 0;
 	int32_t i4TotalFixLen = 1024;
 	int32_t i4CmdFound = 0;
-
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4BytesWritten = 0;
 
@@ -10371,7 +10373,7 @@ priv_set_ap(IN struct net_device *prNetDev,
 				__func__, i4BytesWritten);
 			return -EFAULT;
 		}
-		if (copy_from_user(&pcExtra,
+		if (copy_from_user(aucOidBuf,
 			prIwReqData->data.pointer,
 			prIwReqData->data.length)) {
 			DBGLOG(REQ, INFO,
@@ -10381,10 +10383,10 @@ priv_set_ap(IN struct net_device *prNetDev,
 				return -EFAULT;
 		}
 		/* prIwReqData->data.length include the terminate '\0' */
-		pcExtra[prIwReqData->data.length - 1] = 0;
+		aucOidBuf[prIwReqData->data.length - 1] = 0;
 	}
 
-	DBGLOG(REQ, INFO, "%s pcExtra %s\n", __func__, pcExtra);
+	DBGLOG(REQ, INFO, "%s aucBuf %s\n", __func__, aucOidBuf);
 
 	if (!pcExtra)
 		goto exit;
@@ -10402,21 +10404,21 @@ priv_set_ap(IN struct net_device *prNetDev,
 	i4BytesWritten =
 		priv_driver_set_ap_set_mac_acl(
 		prNetDev,
-		pcExtra,
+		aucOidBuf,
 		i4TotalFixLen);
 	  break;
 	case IOC_AP_SET_CFG:
 	i4BytesWritten =
 		priv_driver_set_ap_set_cfg(
 		prNetDev,
-		pcExtra,
+		aucOidBuf,
 		i4TotalFixLen);
 	  break;
 	case IOC_AP_STA_DISASSOC:
 	i4BytesWritten =
 		priv_driver_set_ap_sta_disassoc(
 		prNetDev,
-		pcExtra,
+		aucOidBuf,
 		i4TotalFixLen);
 	  break;
 	default:
@@ -10432,8 +10434,7 @@ priv_set_ap(IN struct net_device *prNetDev,
 		if ((i4BytesWritten == 0) && (i4TotalFixLen > 0)) {
 			/* reset the command buffer */
 			pcExtra[0] = '\0';
-		}
-		if (i4BytesWritten >= i4TotalFixLen) {
+		} else if (i4BytesWritten >= i4TotalFixLen) {
 			DBGLOG(REQ, INFO,
 				"%s: i4BytesWritten %d > i4TotalFixLen < %d\n",
 				__func__, i4BytesWritten, i4TotalFixLen);
@@ -10455,6 +10456,21 @@ exit:
 		prIwReqData->data.length = i4BytesWritten;
 
 	return 0;
+}
+
+int
+priv_set_ap(IN struct net_device *prNetDev,
+	IN struct iw_request_info *prIwReqInfo,
+	IN union iwreq_data *prIwReqData, IN OUT char *pcExtra)
+{
+	/* kal_show_stack(NULL, NULL); */
+#if 0
+	return compat_priv(prNetDev, prIwReqInfo,
+		prIwReqData, pcExtra, __priv_set_ap);
+#else
+	return __priv_set_ap(prNetDev, prIwReqInfo,
+		prIwReqData, pcExtra);
+#endif
 }
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
