@@ -1449,19 +1449,6 @@ struct CMD_GET_STATISTICS {
 };
 
 struct EVENT_STATISTICS {
-
-	/* DWORD_0 - Common Part*/
-	uint8_t  ucEvtVer;
-	/* if the structure size is changed, the ucEvtVer shall be increased.*/
-	uint8_t  aucPadding0[1];
-	uint16_t u2EvtLen;       /* cmd size including common part and body.*/
-
-	uint8_t  ucType;
-	uint8_t  ucBssIndex;
-	uint8_t  aucPadding1[2];
-	uint8_t  ucBandIdx;
-	uint8_t  aucPadding2[3];
-
 	/* Link quality for customer */
 	union LARGE_INTEGER rTransmittedFragmentCount;
 	union LARGE_INTEGER rMulticastTransmittedFrameCount;
