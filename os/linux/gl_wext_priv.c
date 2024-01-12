@@ -14954,6 +14954,9 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 			   sizeof(struct PARAM_GET_CNM_T),
 			   TRUE, TRUE, TRUE, &u4BufLen);
 
+	if (prGlueInfo->prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_STATIC)
+		prCnmInfo->fgIsDbdcEnable = TRUE;
+
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		kalMemFree(prCnmInfo,
