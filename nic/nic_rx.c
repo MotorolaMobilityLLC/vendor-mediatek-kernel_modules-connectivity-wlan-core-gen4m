@@ -3217,11 +3217,17 @@ void nicRxProcessMgmtPacket(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11W
 	/* BOOL   fgMfgDrop = FALSE; */
 #endif
+#if CFG_WIFI_WORKAROUND_HWITS00010371_PMF_CIPHER_MISMATCH
+	struct WLAN_MAC_HEADER *prWlanHeader = NULL;
+#endif
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
 	nicRxFillRFB(prAdapter, prSwRfb);
 
+#if CFG_WIFI_WORKAROUND_HWITS00010371_PMF_CIPHER_MISMATCH
+	prWlanHeader = (struct WLAN_MAC_HEADER *) prSwRfb->pvHeader;
+#endif
 	ucSubtype = (*(uint8_t *) (prSwRfb->pvHeader) &
 		     MASK_FC_SUBTYPE) >> OFFSET_OF_FC_SUBTYPE;
 
@@ -3286,6 +3292,16 @@ void nicRxProcessMgmtPacket(IN struct ADAPTER *prAdapter,
 		nicRxReturnRFB(prAdapter, prSwRfb);
 		RX_INC_CNT(&prAdapter->rRxCtrl, RX_DROP_TOTAL_COUNT);
 		return;
+	}
+#endif
+
+#if CFG_WIFI_WORKAROUND_HWITS00010371_PMF_CIPHER_MISMATCH
+	if ((rsnCheckBipKeyInstalled(prAdapter, prSwRfb->prStaRec))
+		&& (prSwRfb->prStaRec->ucStaState == STA_STATE_3)
+		&& (!(prWlanHeader->u2FrameCtrl & MASK_FC_PROTECTED_FRAME))
+		&& (prSwRfb->fgIsBC == FALSE)
+		&& (prSwRfb->fgIsMC == FALSE)) {
+		prSwRfb->fgIsCipherMS = TRUE;
 	}
 #endif
 
@@ -4028,7 +4044,11 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 
 		if (prAisSpecBssInfo->fgMgmtProtection
 		    && (!(prActFrame->u2FrameCtrl & MASK_FC_PROTECTED_FRAME)
+#if CFG_WIFI_WORKAROUND_HWITS00010371_PMF_CIPHER_MISMATCH
+			&& (prSwRfb->fgIsCipherMS))) {
+#else
 			&& (prSwRfb->ucSecMode == CIPHER_SUITE_CCMP))) {
+#endif
 			DBGLOG(RSN, INFO,
 			       "[MFP] Not handle and drop un-protected robust action frame!!\n");
 			return WLAN_STATUS_INVALID_PACKET;
