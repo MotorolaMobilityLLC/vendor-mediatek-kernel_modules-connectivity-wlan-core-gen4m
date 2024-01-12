@@ -2888,6 +2888,12 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 		}
 		if (fgHasSCOIE != FALSE)
 			prBssInfo->eBssSCO = eChannelAnnounceSco;
+
+		if (prBssDesc)
+			kalIndicateChannelSwitch(
+				prAdapter->prGlueInfo,
+				prBssInfo->eBssSCO,
+				prBssDesc->ucChannelNum);
 	}
 #endif
 

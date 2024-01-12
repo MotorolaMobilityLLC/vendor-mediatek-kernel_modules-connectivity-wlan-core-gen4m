@@ -7322,6 +7322,58 @@ void kalFbNotifierUnReg(void)
 	wlan_fb_notifier_priv_data = NULL;
 }
 
+#if CFG_SUPPORT_DFS
+void kalIndicateChannelSwitch(IN struct GLUE_INFO *prGlueInfo,
+				IN enum ENUM_CHNL_EXT eSco,
+				IN uint8_t ucChannelNum)
+{
+	struct cfg80211_chan_def chandef;
+	struct ieee80211_channel *prChannel = NULL;
+	enum nl80211_channel_type rChannelType;
+
+	if (ucChannelNum <= 14) {
+		prChannel =
+		    ieee80211_get_channel(priv_to_wiphy(prGlueInfo),
+			ieee80211_channel_to_frequency(ucChannelNum,
+			KAL_BAND_2GHZ));
+	} else {
+		prChannel =
+		    ieee80211_get_channel(priv_to_wiphy(prGlueInfo),
+			ieee80211_channel_to_frequency(ucChannelNum,
+			KAL_BAND_5GHZ));
+	}
+
+	if (!prChannel) {
+		DBGLOG(REQ, ERROR, "ieee80211_get_channel fail!\n");
+		return;
+	}
+
+	switch (eSco) {
+	case CHNL_EXT_SCN:
+		rChannelType = NL80211_CHAN_NO_HT;
+		break;
+
+	case CHNL_EXT_SCA:
+		rChannelType = NL80211_CHAN_HT40MINUS;
+		break;
+
+	case CHNL_EXT_SCB:
+		rChannelType = NL80211_CHAN_HT40PLUS;
+		break;
+
+	case CHNL_EXT_RES:
+	default:
+		rChannelType = NL80211_CHAN_HT20;
+		break;
+	}
+
+	DBGLOG(REQ, STATE, "DFS channel switch to %d\n", ucChannelNum);
+
+	cfg80211_chandef_create(&chandef, prChannel, rChannelType);
+	cfg80211_ch_switch_notify(prGlueInfo->prDevHandler, &chandef);
+}
+#endif
+
 void kalInitDevWakeup(struct ADAPTER *prAdapter, struct device *prDev)
 {
 	/*
