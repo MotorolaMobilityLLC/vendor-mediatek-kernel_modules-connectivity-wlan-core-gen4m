@@ -91,6 +91,7 @@ void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 			       uint32_t size)
 {
+#if KERNEL_VERSION(6, 0, 0) >= LINUX_VERSION_CODE
 	struct emi_region_info_t region_info;
 
 	DBGLOG(INIT, INFO, "emiPhyBase: 0x%x, offset: %u, size: %u\n",
@@ -106,6 +107,7 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 			      FORBIDDEN, FORBIDDEN, FORBIDDEN, NO_PROTECTION,
 			      FORBIDDEN, NO_PROTECTION);
 	emi_mpu_set_protection(&region_info);
+#endif
 }
 #endif
 
