@@ -3297,11 +3297,9 @@ void aisFsmQueryCandidates(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		if (prBssDesc->aucRrmCap[0] &
 		    BIT(RRM_CAP_INFO_NEIGHBOR_REPORT_BIT))
 			aisSendNeighborRequest(prAdapter, ucBssIndex);
-#if CFG_SUPPORT_802_11V_BTM_OFFLOAD
 		else if (prBssDesc->fgSupportBTM)
 			wnmSendBTMQueryFrame(prAdapter,
 				prStaRec, BSS_TRANSITION_BETTER_AP_FOUND);
-#endif
 	}
 #endif
 }

@@ -328,8 +328,6 @@ void wnmTimingMeasUnitTest1(struct ADAPTER *prAdapter, uint8_t ucStaRecIndex)
 
 #endif /* CFG_SUPPORT_802_11V_TIMING_MEASUREMENT */
 
-#if CFG_SUPPORT_802_11V_BTM_OFFLOAD
-
 static uint32_t wnmBTMQueryTxDone(struct ADAPTER *prAdapter,
 				  struct MSDU_INFO *prMsduInfo,
 				  enum ENUM_TX_RESULT_CODE rTxDoneStatus)
@@ -338,6 +336,78 @@ static uint32_t wnmBTMQueryTxDone(struct ADAPTER *prAdapter,
 	       rTxDoneStatus);
 	return WLAN_STATUS_SUCCESS;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function will compose the BTM Query frame.
+ *
+ * @param[in] prAdapter              Pointer to the Adapter structure.
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T.
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void wnmSendBTMQueryFrame(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec, uint8_t ucQueryReason)
+{
+	struct MSDU_INFO *prMsduInfo = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct ACTION_BTM_QUERY_FRAME *prTxFrame = NULL;
+	struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
+	static uint8_t ucToken = 1;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	prBtmParam = aisGetBTMParam(prAdapter, prStaRec->ucBssIndex);
+	prBtmParam->ucQueryDialogToken = ucToken++;
+	prBtmParam->fgWaitBtmRequest = TRUE;
+
+	if (!prBssInfo) {
+		DBGLOG(WNM, INFO, "BTM: invalid BSS_INFO\n");
+		return;
+	}
+
+	/* 1 Allocate MSDU Info */
+	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(
+		prAdapter, MAC_TX_RESERVED_FIELD + PUBLIC_ACTION_MAX_LEN);
+	if (!prMsduInfo)
+		return;
+	prTxFrame = (struct ACTION_BTM_QUERY_FRAME
+			     *)((uintptr_t)(prMsduInfo->prPacket) +
+				MAC_TX_RESERVED_FIELD);
+
+	/* 2 Compose The Mac Header. */
+	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+	COPY_MAC_ADDR(prTxFrame->aucDestAddr, prStaRec->aucMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
+	prTxFrame->ucCategory = CATEGORY_WNM_ACTION;
+	prTxFrame->ucAction = ACTION_WNM_BSS_TRANSITION_MANAGEMENT_QUERY;
+
+	/* 3 Compose the frame body's frame. */
+	prTxFrame->ucDialogToken = prBtmParam->ucQueryDialogToken;
+	prTxFrame->ucQueryReason = ucQueryReason;
+
+	/* 4 Update information of MSDU_INFO_T */
+	TX_SET_MMPDU(prAdapter, prMsduInfo, prStaRec->ucBssIndex,
+		     prStaRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
+		     WLAN_MAC_MGMT_HEADER_LEN + 4,
+		     wnmBTMQueryTxDone, MSDU_RATE_MODE_AUTO);
+
+	DBGLOG(WNM, INFO, "BTM: Query token %d, reason %d\n",
+	       prTxFrame->ucDialogToken, prTxFrame->ucQueryReason);
+
+	/* 5 Enqueue the frame to send this action frame. */
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+
+#if (CFG_SUPPORT_REPORT_LOG == 1)
+	wnmLogBTMQueryReport(
+		prAdapter,
+		prStaRec,
+		prTxFrame);
+#endif
+}				/* end of wnmComposeBTMQueryFrame() */
+
+#if CFG_SUPPORT_802_11V_BTM_OFFLOAD
 
 static uint32_t wnmBTMResponseTxDone(struct ADAPTER *prAdapter,
 				     struct MSDU_INFO *prMsduInfo,
@@ -485,76 +555,6 @@ void wnmSendBTMResponseFrame(struct ADAPTER *adapter,
 		bssid);
 #endif
 }				/* end of wnmComposeBTMResponseFrame() */
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function will compose the BTM Query frame.
- *
- * @param[in] prAdapter              Pointer to the Adapter structure.
- * @param[in] prStaRec               Pointer to the STA_RECORD_T.
- *
- * @return (none)
- */
-/*----------------------------------------------------------------------------*/
-void wnmSendBTMQueryFrame(struct ADAPTER *prAdapter,
-		struct STA_RECORD *prStaRec, uint8_t ucQueryReason)
-{
-	struct MSDU_INFO *prMsduInfo = NULL;
-	struct BSS_INFO *prBssInfo = NULL;
-	struct ACTION_BTM_QUERY_FRAME *prTxFrame = NULL;
-	struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
-	static uint8_t ucToken = 1;
-
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
-	prBtmParam = aisGetBTMParam(prAdapter, prStaRec->ucBssIndex);
-	prBtmParam->ucQueryDialogToken = ucToken++;
-	prBtmParam->fgWaitBtmRequest = TRUE;
-
-	if (!prBssInfo) {
-		DBGLOG(WNM, INFO, "BTM: invalid BSS_INFO\n");
-		return;
-	}
-
-	/* 1 Allocate MSDU Info */
-	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(
-		prAdapter, MAC_TX_RESERVED_FIELD + PUBLIC_ACTION_MAX_LEN);
-	if (!prMsduInfo)
-		return;
-	prTxFrame = (struct ACTION_BTM_QUERY_FRAME
-			     *)((uintptr_t)(prMsduInfo->prPacket) +
-				MAC_TX_RESERVED_FIELD);
-
-	/* 2 Compose The Mac Header. */
-	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
-	COPY_MAC_ADDR(prTxFrame->aucDestAddr, prStaRec->aucMacAddr);
-	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
-	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
-	prTxFrame->ucCategory = CATEGORY_WNM_ACTION;
-	prTxFrame->ucAction = ACTION_WNM_BSS_TRANSITION_MANAGEMENT_QUERY;
-
-	/* 3 Compose the frame body's frame. */
-	prTxFrame->ucDialogToken = prBtmParam->ucQueryDialogToken;
-	prTxFrame->ucQueryReason = ucQueryReason;
-
-	/* 4 Update information of MSDU_INFO_T */
-	TX_SET_MMPDU(prAdapter, prMsduInfo, prStaRec->ucBssIndex,
-		     prStaRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
-		     WLAN_MAC_MGMT_HEADER_LEN + 4,
-		     wnmBTMQueryTxDone, MSDU_RATE_MODE_AUTO);
-
-	DBGLOG(WNM, INFO, "BTM: Query token %d, reason %d\n",
-	       prTxFrame->ucDialogToken, prTxFrame->ucQueryReason);
-
-	/* 5 Enqueue the frame to send this action frame. */
-	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
-
-#if (CFG_SUPPORT_REPORT_LOG == 1)
-	wnmLogBTMQueryReport(
-		prAdapter,
-		prStaRec,
-		prTxFrame);
-#endif
-}				/* end of wnmComposeBTMQueryFrame() */
 
 #if CFG_SUPPORT_MBO
 void wnmMboIeTransReq(struct ADAPTER *adapter, uint8_t wnmMode,
