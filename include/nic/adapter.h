@@ -585,6 +585,7 @@ struct MLD_BSS_INFO {
 	uint8_t ucGroupMldId;
 	uint8_t ucOmRemapIdx;
 	uint8_t aucOwnMldAddr[MAC_ADDR_LEN];
+	uint32_t u4BssBitmap;
 };
 #endif
 
@@ -1614,7 +1615,7 @@ struct ADAPTER {
 	struct QUE rStaPsQueue[CFG_STA_REC_NUM];
 	uint32_t u4StaPsBitmap;
 	struct QUE rBssAbsentQueue[MAX_BSSID_NUM + 1];
-	uint32_t u4BssAbsentBitmap;
+	uint32_t u4BssAbsentTxBufferBitmap;
 	struct QUE rStaPendQueue[CFG_STA_REC_NUM];
 	uint32_t u4StaPendBitmap;
 	/* TX Direct related : END */
@@ -2065,6 +2066,7 @@ struct ADAPTER {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO aprMldBssInfo[MAX_BSSID_NUM];
 	struct MLD_STA_RECORD aprMldStarec[CFG_STA_REC_NUM];
+	uint32_t u4BssAbsentBitmap;
 #endif
 	uint8_t ucCnmTokenID;
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)

@@ -2134,4 +2134,6 @@ uint8_t nicTxGetAcIdxByTc(uint8_t ucTC);
  *******************************************************************************
  */
 
+u_int8_t isNetAbsent(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
+
 #endif /* _NIC_TX_H */
