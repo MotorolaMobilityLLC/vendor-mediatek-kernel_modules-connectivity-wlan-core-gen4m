@@ -10141,6 +10141,9 @@ static void halAddDriverLatencyCount(struct ADAPTER *prAdapter,
 	uint32_t *pMaxDriverDelay = prAdapter->rWifiVar.au4DriverTxDelayMax;
 	uint8_t i;
 
+	if (ucBssIndex >= BSSID_NUM)
+		return;
+
 	prCounting = &prAdapter->rMsduReportStats.rCounting;
 	prCounting->au8AccumulatedDelay[DRIVER_TX_DELAY][ucBssIndex] +=
 					u4DriverLatency;

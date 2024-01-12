@@ -1185,8 +1185,8 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 
 	prTokenInfo->u4UsedCnt++;
 
+	prToken->ucBssIndex = ucBssIndex;
 	if (ucBssIndex < MAX_BSSID_NUM) {
-		prToken->ucBssIndex = ucBssIndex;
 		prTokenInfo->u4TxBssCnt[ucBssIndex]++;
 #if (CFG_TX_HIF_CREDIT_FEATURE == 1)
 		prTokenInfo->u4LastTxBssCnt[ucBssIndex]++;
@@ -1792,6 +1792,9 @@ void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
 	prWifiVar = &prAdapter->rWifiVar;
 	report->fgTxLatencyEnabled = 1;
 	ucBssIndex = prTokenEntry->ucBssIndex;
+
+	if (ucBssIndex >= BSSID_NUM)
+		return;
 
 	/*
 	 * Driver latency counted in wlanTxLifetimeTagPacket,
