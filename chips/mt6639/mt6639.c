@@ -2374,6 +2374,13 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 
 	if (!(dump & BIT(5)))
 		return FALSE;
+
+	/* MalfTLP */
+	if (dump & BIT(8)) {
+		fgIsBusAccessFailed = TRUE;
+		fgTriggerDebugSop = TRUE;
+		return FALSE;
+	}
 #endif
 	/*read pcie cfg.space 0x488 // level1: pcie*/
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -2402,7 +2409,6 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 	}
 
 	/*2. cb_infra/cbtop status*/
-	HAL_MCR_WR(prGlueInfo->prAdapter, 0x1F6558, 0x7000);
 	HAL_MCR_RD(prGlueInfo->prAdapter,
 		0x1E7204,
 		&u4RegValue);
