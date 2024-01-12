@@ -1200,7 +1200,9 @@ void nicRxProcessPktWithoutReorder(IN struct ADAPTER
 	}
 
 #if CFG_SUPPORT_MULTITHREAD
-	if (HAL_IS_RX_DIRECT(prAdapter)) {
+	if (HAL_IS_RX_DIRECT(prAdapter)
+		|| kalRxNapiValidSkb(prAdapter->prGlueInfo, prSwRfb->pvPacket)
+		) {
 		kalRxIndicateOnePkt(prAdapter->prGlueInfo,
 			(void *) GLUE_GET_PKT_DESCRIPTOR(
 				GLUE_GET_PKT_QUEUE_ENTRY(prSwRfb->pvPacket)));

@@ -2436,25 +2436,6 @@ void wlanDebugInit(void)
 
 }
 
-#if CFG_SUPPORT_RX_GRO
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief A method of callback function for napi struct
- *
- * It just return false because driver indicate Rx packet directly.
- *
- * \param[in] napi      Pointer to struct napi_struct.
- * \param[in] budget    Polling time interval.
- *
- * \return false
- */
-/*----------------------------------------------------------------------------*/
-static int kal_napi_poll(struct napi_struct *napi, int budget)
-{
-	return 0;
-}
-#endif
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief A function for prDev->init
@@ -2468,10 +2449,7 @@ static int kal_napi_poll(struct napi_struct *napi, int budget)
 static int wlanInit(struct net_device *prDev)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-#if CFG_SUPPORT_RX_GRO
-	uint8_t ucBssIndex;
-	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
-#endif
+
 	if (!prDev)
 		return -ENXIO;
 
@@ -2488,18 +2466,7 @@ static int wlanInit(struct net_device *prDev)
 #endif
 
 #if CFG_SUPPORT_RX_GRO
-	/* Register GRO function to kernel */
-	ucBssIndex = wlanGetBssIdx(prDev);
-	prDev->features |= NETIF_F_GRO;
-	prDev->hw_features |= NETIF_F_GRO;
-	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
-		netdev_priv(prDev);
-	spin_lock_init(&prNetDevPrivate->napi_spinlock);
-	prNetDevPrivate->napi.dev = prDev;
-	netif_napi_add(prNetDevPrivate->napi.dev,
-		&prNetDevPrivate->napi, kal_napi_poll, 64);
-	DBGLOG(INIT, INFO,
-		"GRO interface added successfully:%p\n", prDev);
+	kalNapiInit(prDev);
 #endif
 	return 0;		/* success */
 }				/* end of wlanInit() */
@@ -2616,6 +2583,12 @@ static int wlanOpen(struct net_device *prDev)
 	ASSERT(prGlueInfo);
 #endif /* fos_change begin */
 
+#if CFG_SUPPORT_RX_GRO
+#if CFG_SUPPORT_RX_NAPI
+	kalNapiEnable(prDev);
+#endif /* CFG_SUPPORT_RX_NAPI */
+#endif /* CFG_SUPPORT_RX_GRO */
+
 	netif_tx_start_all_queues(prDev);
 /* fos_change begin */
 #if CFG_SUPPORT_WAKEUP_STATISTICS
@@ -2685,6 +2658,12 @@ static int wlanStop(struct net_device *prDev)
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	netif_tx_stop_all_queues(prDev);
+
+#if CFG_SUPPORT_RX_GRO
+#if CFG_SUPPORT_RX_NAPI
+	kalNapiDisable(prDev);
+#endif /* CFG_SUPPORT_RX_NAPI */
+#endif /* CFG_SUPPORT_RX_GRO */
 
 	return 0;		/* success */
 }				/* end of wlanStop() */

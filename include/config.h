@@ -380,6 +380,25 @@
  */
 #define CFG_SUPPORT_RX_GRO                      1
 
+/* 0 : direct-GRO mode (without NAPI poll-callback)
+ * 1 : NAPI+GRO mode
+ */
+#define CFG_SUPPORT_RX_NAPI                     1
+#if (CFG_SUPPORT_RX_GRO == 0) && (CFG_SUPPORT_RX_NAPI == 1)
+#error "NAPI should based on GRO in gen4m"
+#endif
+
+/* There is a "budget" concept in original NAPI design. However,
+ * the default budget in Linux is 64 and it's hard to aggreate a 64K packet
+ * within 64-packets in throughput test.
+ * For example, if there are 8 traffic streams in test, the average
+ * packets/stream would be 8 in the 64-packets-budget. We would get
+ * worse performance than idea condition.
+ * 0 : Default policy with budget control
+ * 1 : Skip budget to aggregate as more as possible
+ */
+#define CFG_SUPPORT_RX_GRO_PEAK            1
+
 /* 2 Flags for Driver Parameters */
 /*------------------------------------------------------------------------------
  * Flags for EHPI Interface in Colibri Platform
