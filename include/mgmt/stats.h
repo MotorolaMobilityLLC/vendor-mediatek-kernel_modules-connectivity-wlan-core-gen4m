@@ -46,8 +46,8 @@
 #define STATS_RX_PKT_INFO_DISPLAY			StatsRxPktInfoDisplay
 #define STATS_TX_PKT_INFO_DISPLAY			StatsTxPktInfoDisplay
 #else
-#define STATS_RX_PKT_INFO_DISPLAY(__Pkt__)
-#define STATS_TX_PKT_INFO_DISPLAY(__Pkt__)
+#define STATS_RX_PKT_INFO_DISPLAY
+#define STATS_TX_PKT_INFO_DISPLAY
 #endif /* CFG_SUPPORT_STATISTICS */
 
 /*******************************************************************************

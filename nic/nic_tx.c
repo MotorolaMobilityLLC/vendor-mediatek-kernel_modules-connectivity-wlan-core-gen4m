@@ -2218,8 +2218,9 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 			wlanTxLifetimeTagPacket(prAdapter, prMsduInfo,
 						TX_PROF_TAG_DRV_TX_DONE);
 
+#if (CFG_SUPPORT_STATISTICS == 1)
 		StatsEnvTxTime2Hif(prAdapter, prMsduInfo);
-
+#endif
 		HAL_WRITE_TX_DATA(prAdapter, prMsduInfo);
 	}
 
