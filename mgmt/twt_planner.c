@@ -1262,9 +1262,7 @@ void twtPlannerTearingdown(
 	uint8_t ucAgrtTblIdx;
 	struct _TWT_PARAMS_T rTWTParams;
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
-#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
 	struct _TWT_FLOW_T *prTWTFlow;
-#endif
 
 	if (!prAdapter) {
 		DBGLOG(TWT_PLANNER, ERROR,
@@ -1316,9 +1314,9 @@ void twtPlannerTearingdown(
 	g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
 #endif
 
-#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
 	prTWTFlow = &(prStaRec->arTWTFlow[ucFlowId]);
 
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
 	if (prTWTFlow->fgIsMLTWT == TRUE) {
 		/* MLTWT teardown goes over here */
 		mltwtPlannerDelAgrtTbl(
