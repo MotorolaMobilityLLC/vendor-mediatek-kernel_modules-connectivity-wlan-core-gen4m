@@ -2766,6 +2766,23 @@ struct EVENT_UPDATE_COEX_PHYRATE {
 	uint8_t aucReserved2[2];    /* 4 byte alignment */
 };
 
+enum ENUM_COEX_MODE {
+	COEX_NONE_BT,
+	COEX_TDD_MODE,
+	COEX_HBD_MODE,
+	COEX_FDD_MODE,
+};
+
+struct EVENT_COEX_STATUS {
+	uint8_t ucVersion;       /* default v1.0 = 0x01 */
+	uint8_t ucCoexMode;      /* 0:non-bt 1:TDD 2:Hybrid 3:FDD */
+	uint8_t ucBtOnOff;
+	uint8_t ucBtRssi;
+	uint16_t u2BtProfile;
+	uint8_t fgIsBAND2G4Coex;
+	uint8_t aucReserved1[5]; /* 4 byte alignment */
+};
+
 #if (CFG_SUPPORT_TWT == 1)
 /*
  * Important: Used for Communication between Host and WM-CPU,
@@ -3242,6 +3259,8 @@ void nicEventHifCtrl(IN struct ADAPTER *prAdapter,
 void nicEventRddSendPulse(IN struct ADAPTER *prAdapter,
 			  IN struct WIFI_EVENT *prEvent);
 void nicEventUpdateCoexPhyrate(IN struct ADAPTER *prAdapter,
+			       IN struct WIFI_EVENT *prEvent);
+void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
 			       IN struct WIFI_EVENT *prEvent);
 uint32_t nicEventQueryTxResource_v1(IN struct ADAPTER
 				    *prAdapter, IN uint8_t *pucEventBuf);

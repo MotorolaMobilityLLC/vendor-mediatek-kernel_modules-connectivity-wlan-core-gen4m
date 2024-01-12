@@ -175,15 +175,14 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_HIF_CTRL, nicEventHifCtrl},
 	{EVENT_ID_RDD_SEND_PULSE, nicEventRddSendPulse},
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-	{EVENT_ID_UPDATE_COEX_PHYRATE, nicEventUpdateCoexPhyrate},
 	{EVENT_ID_RDD_REPORT, cnmRadarDetectEvent},
 	{EVENT_ID_CSA_DONE, cnmCsaDoneEvent},
 #if CFG_SUPPORT_IDC_CH_SWITCH
 	{EVENT_ID_LTE_IDC_REPORT, cnmIdcDetectHandler},
 #endif
-#else
-	{EVENT_ID_UPDATE_COEX_PHYRATE,		nicEventUpdateCoexPhyrate},
 #endif
+	{EVENT_ID_UPDATE_COEX_PHYRATE, nicEventUpdateCoexPhyrate},
+	{EVENT_ID_UPDATE_COEX_STATUS, nicEventUpdateCoexStatus},
 	{EVENT_ID_TX_ADDBA, qmHandleEventTxAddBa},
 	{EVENT_ID_GET_CNM, nicEventCnmInfo},
 #if CFG_SUPPORT_SMART_GEAR
