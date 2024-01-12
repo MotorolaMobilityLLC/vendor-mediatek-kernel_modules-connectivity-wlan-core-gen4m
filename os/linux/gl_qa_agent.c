@@ -4443,6 +4443,7 @@ static int32_t HQA_WriteBufferDone(struct net_device
 	if (ret != 0) {
 		DBGLOG(INIT, INFO,
 			"Request FW %s Fail, errno[%d]!!\n", aucEeprom, ret);
+		release_firmware(fw);
 		goto label_exit;
 	}
 
