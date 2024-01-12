@@ -3782,6 +3782,10 @@ uint8_t nicGetChipEcoVer(IN struct ADAPTER *prAdapter)
 			(prEcoInfo->ucHwVer == 0) &&
 			(prEcoInfo->ucFactoryVer == 0)) {
 
+			/* last ECO info */
+			if (ucEcoVer > 0)
+				ucEcoVer--;
+
 			/* End of table */
 			break;
 		}

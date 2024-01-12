@@ -83,7 +83,7 @@ uint8_t *apucConnacFwName[] = {
 struct ECO_INFO connac_eco_table[] = {
 	/* HW version,  ROM version,    Factory version */
 	{0x00, 0x00, 0xA, 0x1}, /* E1 */
-	{0x00, 0x00, 0x0}	/* End of table */
+	{0x00, 0x00, 0x0, 0x0}	/* End of table */
 };
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -131,6 +131,11 @@ struct PCIE_CHIP_CR_MAPPING connac_bus2chip_cr_mapping[] = {
 };
 #endif /* _HIF_PCIE */
 
+int connacGetIpSetVersion(struct GLUE_INFO *prGlueInfo)
+{
+	return 1;
+}
+
 void connacConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo, uint8_t **apucNameTable,
 				 uint8_t **apucName, uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
 {
@@ -138,25 +143,31 @@ void connacConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo, uint8_t **apucNam
 
 	for (ucIdx = 0; apucConnacFwName[ucIdx]; ucIdx++) {
 		if ((*pucNameIdx + 3) < ucMaxNameIdx) {
-			/* Type 1. WIFI_RAM_CODE_P18_Ex */
-			snprintf(*(apucName + (*pucNameIdx)), CFG_FW_NAME_MAX_LEN, "%s_E%u",
+			/* Type 1. WIFI_RAM_CODE_soc1_0_1_1 */
+			snprintf(*(apucName + (*pucNameIdx)),
+					CFG_FW_NAME_MAX_LEN, "%s_%u_%u",
 					apucConnacFwName[ucIdx],
+					connacGetIpSetVersion(prGlueInfo),
 					wlanGetEcoVersion(prGlueInfo->prAdapter));
 			(*pucNameIdx) += 1;
 
-			/* Type 2. WIFI_RAM_CODE_P18_Ex.bin */
-			snprintf(*(apucName + (*pucNameIdx)), CFG_FW_NAME_MAX_LEN, "%s_E%u.bin",
+			/* Type 2. WIFI_RAM_CODE_soc1_0_1_1.bin */
+			snprintf(*(apucName + (*pucNameIdx)),
+					CFG_FW_NAME_MAX_LEN, "%s_%u_%u.bin",
 					apucConnacFwName[ucIdx],
+					connacGetIpSetVersion(prGlueInfo),
 					wlanGetEcoVersion(prGlueInfo->prAdapter));
 			(*pucNameIdx) += 1;
 
-			/* Type 3. WIFI_RAM_CODE_P18 */
-			snprintf(*(apucName + (*pucNameIdx)), CFG_FW_NAME_MAX_LEN, "%s",
+			/* Type 3. WIFI_RAM_CODE_soc1_0 */
+			snprintf(*(apucName + (*pucNameIdx)),
+					CFG_FW_NAME_MAX_LEN, "%s",
 					apucConnacFwName[ucIdx]);
 			(*pucNameIdx) += 1;
 
-			/* Type 4. WIFI_RAM_CODE_P18.bin */
-			snprintf(*(apucName + (*pucNameIdx)), CFG_FW_NAME_MAX_LEN, "%s.bin",
+			/* Type 4. WIFI_RAM_CODE_soc1_0.bin */
+			snprintf(*(apucName + (*pucNameIdx)),
+					CFG_FW_NAME_MAX_LEN, "%s.bin",
 					apucConnacFwName[ucIdx]);
 			(*pucNameIdx) += 1;
 		} else {
@@ -205,7 +216,9 @@ struct BUS_INFO connac_bus_info = {
 struct FWDL_OPS_T connac_fw_dl_ops = {
 	.constructFirmwarePrio = connacConstructFirmwarePrio,
 	.constructPatchName = connacConstructPatchName,
+#if !CFG_MTK_ANDROID_WMT
 	.downloadPatch = wlanDownloadPatch,
+#endif
 	.downloadFirmware = wlanConnacFormatDownload,
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,

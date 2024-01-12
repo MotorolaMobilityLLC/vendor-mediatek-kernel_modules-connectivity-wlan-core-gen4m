@@ -435,34 +435,59 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 u_int8_t glBusInit(void *pvData)
 {
 	struct platform_device *pdev = NULL;
-	u64 required_mask;
-	u64 dma_mask = DMA_BIT_MASK(g_u4DmaMask);
+	const struct dma_map_ops *dma_ops = NULL;
+#ifdef CONFIG_OF
+	struct device_node *node = NULL;
+	u32 u4OffsetLow = 0, u4OffsetHigh = 0;
+#endif
+	u64 required_mask, dma_mask = DMA_BIT_MASK(g_u4DmaMask);
+	u64 u8Offset = 0;
+	u32 u4Size = 0;
 	int ret = 0;
 
 	ASSERT(pvData);
 
 	pdev = (struct platform_device *)pvData;
 	required_mask = dma_get_required_mask(&pdev->dev);
-	DBGLOG(INIT, INFO, "pdev = %x, name = %s, required_mask = %ld, sizeof(dma_addr_t) = %d\n",
+	DBGLOG(INIT, INFO, "pdev=%x, name=%s, mask=%ld, dma_addr_t=%d\n",
 	       pdev, pdev->id_entry->name, required_mask, sizeof(dma_addr_t));
 	pdev->dev.dma_mask = &dma_mask;
 
-	ret = dma_set_mask(&pdev->dev, dma_mask);
-	if (ret != 0)
-		DBGLOG(INIT, INFO, "set DMA mask failed!errno=%d\n", ret);
+	KAL_ARCH_SETUP_DMA_OPS(&pdev->dev, 0, dma_mask, NULL, true);
+	DBGLOG(INIT, INFO, "dma_supported=%d\n",
+		dma_supported(&pdev->dev, DMA_BIT_MASK(g_u4DmaMask)));
+	dma_ops = get_dma_ops(&pdev->dev);
+	DBGLOG(INIT, INFO, "dma_ops->set_dma_mask=%x\n",
+		dma_ops->set_dma_mask);
 
-	request_mem_region(axi_resource_start(pdev, 0), axi_resource_len(pdev, 0), axi_name(pdev));
+	ret = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(g_u4DmaMask));
+	if (ret)
+		DBGLOG(INIT, INFO, "set DMA mask failed! errno=%d\n", ret);
+#ifdef CONFIG_OF
+	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi");
+	if (node) {
+		if (of_property_read_u32_index(node, "reg", 0, &u4OffsetHigh) ||
+		    of_property_read_u32_index(node, "reg", 1, &u4OffsetLow) ||
+		    of_property_read_u32_index(node, "reg", 3, &u4Size))
+			DBGLOG(INIT, ERROR, "Failed to get base addr\n");
+		u8Offset = (((u64)u4OffsetHigh << 16) << 16) | (u64)u4OffsetLow;
+	} else
+		DBGLOG(INIT, ERROR, "WIFI-OF: get wifi device node fail\n");
+#else
+	u8Offset = axi_resource_start(pdev, 0);
+	u4Size = axi_resource_len(pdev, 0);
+#endif
 
+	request_mem_region(u8Offset, u4Size, axi_name(pdev));
 	/* map physical address to virtual address for accessing register */
-	CSRBaseAddress = (uint8_t *)ioremap_nocache(axi_resource_start(pdev, 0), axi_resource_len(pdev, 0));
-	DBGLOG(INIT, INFO, "CSRBaseAddress:0x%lX\n", CSRBaseAddress);
-	DBGLOG(INIT, INFO, "ioremap for device %s, region 0x%lX @ 0x%lX\n",
-		axi_name(pdev), (unsigned long)axi_resource_len(pdev, 0),
-	       (unsigned long)axi_resource_start(pdev, 0));
+	CSRBaseAddress = (uint8_t *)ioremap_nocache(u8Offset, u4Size);
+	DBGLOG(INIT, INFO,
+	       "CSRBaseAddress:0x%lX ioremap region 0x%X @ 0x%lX\n",
+	       CSRBaseAddress, u4Size, u8Offset);
 	if (!CSRBaseAddress) {
-		DBGLOG(INIT, INFO, "ioremap failed for device %s, region 0x%lX @ 0x%lX\n",
-			axi_name(pdev), (unsigned long)axi_resource_len(pdev, 0),
-		       (unsigned long)axi_resource_start(pdev, 0));
+		DBGLOG(INIT, INFO,
+			"ioremap failed for device %s, region 0x%X @ 0x%lX\n",
+			axi_name(pdev), u4Size, u8Offset);
 		goto err_out_free_res;
 	}
 
@@ -504,11 +529,13 @@ void glBusRelease(void *pvData)
 
 int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 {
-	struct device_node *node = NULL;
 	struct net_device *prNetDevice = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct platform_device *pdev = NULL;
+#ifdef CONFIG_OF
+	struct device_node *node = NULL;
+#endif
 	int ret = 0;
 
 	ASSERT(pvData);
@@ -524,18 +551,19 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 	prHifInfo = &prGlueInfo->rHifInfo;
 	pdev = prHifInfo->pdev;
 
-	DBGLOG(INIT, INFO, "glBusSetIrq: request_irq  STATUS(%d)\n", ret);
+	prHifInfo->u4IrqId = AXI_WLAN_IRQ_NUMBER;
+#ifdef CONFIG_OF
 	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi");
 	if (node) {
 		prHifInfo->u4IrqId = irq_of_parse_and_map(node, 0);
 		DBGLOG(INIT, INFO, "WIFI-OF: get wifi irq(%d)\n", prHifInfo->u4IrqId);
-	} else {
-		prHifInfo->u4IrqId = AXI_WLAN_IRQ_NUMBER;
+	} else
 		DBGLOG(INIT, ERROR, "WIFI-OF: get wifi device node fail\n");
-	}
-
-	ret = request_irq(prHifInfo->u4IrqId, mtk_axi_interrupt, IRQF_SHARED, prNetDevice->name, prGlueInfo);
-	DBGLOG(INIT, INFO, "glBusSetIrq: request_irq  STATUS(%d)\n", ret);
+#endif
+	DBGLOG(INIT, INFO, "glBusSetIrq: request_irq num(%d)\n",
+	       prHifInfo->u4IrqId);
+	ret = request_irq(prHifInfo->u4IrqId, mtk_axi_interrupt, IRQF_SHARED,
+			  prNetDevice->name, prGlueInfo);
 	if (ret != 0)
 		DBGLOG(INIT, INFO, "glBusSetIrq: request_irq  ERROR(%d)\n", ret);
 

@@ -241,13 +241,30 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER *prAdapter, IN uint32_t u4Dest
 				IN uint32_t u4Len, IN uint8_t *pucStartPtr)
 {
 #if CFG_MTK_ANDROID_WMT
-	if (gConEmiPhyBase) {
-		kalMemCopy((void *)gConEmiPhyBase + (u4DestAddr & 0xfffff), pucStartPtr, u4Len);
-		DBGLOG(INIT, INFO, "gConEmiPhyBase[%x], u4DestAddr[%x]\n", gConEmiPhyBase, u4DestAddr);
-	} else {
-		DBGLOG(INIT, ERROR, "consys emi memory address gConEmiPhyBase invalid\n");
+	uint8_t __iomem *pucEmiBaseAddr = NULL;
+	uint32_t u4Offset = u4DestAddr & 0xFFFFF;
+
+	DBGLOG(INIT, INFO, "Start EMI Download, EmiPhyBase:0x%x offset:0x%x\n",
+	       gConEmiPhyBase, u4Offset);
+	if (!gConEmiPhyBase) {
+		DBGLOG(INIT, ERROR,
+			"Consys emi memory address gConEmiPhyBase invalid\n");
 		return WLAN_STATUS_FAILURE;
 	}
+
+	request_mem_region(gConEmiPhyBase, gConEmiSize, "WIFI-EMI");
+	pucEmiBaseAddr = ioremap_nocache(gConEmiPhyBase, gConEmiSize);
+	DBGLOG(INIT, INFO, "ioremap for device %s, region 0x%lX @ 0x%lX\n",
+	       "WIFI-EMI", gConEmiSize, pucEmiBaseAddr);
+	if (!pucEmiBaseAddr) {
+		DBGLOG(INIT, ERROR, "ioremap failed\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	kalMemCopy((pucEmiBaseAddr + u4Offset), pucStartPtr, u4Len);
+	KAL_FLUSH_DCACHE();
+	iounmap(pucEmiBaseAddr);
+	release_mem_region(gConEmiPhyBase, gConEmiSize);
 #endif
 	return WLAN_STATUS_SUCCESS;
 }
