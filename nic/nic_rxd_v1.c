@@ -171,23 +171,37 @@ void nic_rxd_v1_fill_rfb(
 			((uint8_t *) prRxStatus + u2RxStatusOffset);
 		u2RxStatusOffset += sizeof(struct HW_MAC_RX_STS_GROUP_4);
 
+		NIC_DUMP_RXD_HEADER(prAdapter, "****** RXD GROUP 4 ******\n");
+		NIC_DUMP_RXD(prAdapter, (uint32_t *) prSwRfb->prRxStatusGroup4,
+			     sizeof(struct HW_MAC_RX_STS_GROUP_4));
 	}
 	if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_1)) {
 		prSwRfb->prRxStatusGroup1 = (struct HW_MAC_RX_STS_GROUP_1 *)
 			((uint8_t *) prRxStatus + u2RxStatusOffset);
 		u2RxStatusOffset += sizeof(struct HW_MAC_RX_STS_GROUP_1);
 
+		NIC_DUMP_RXD_HEADER(prAdapter, "****** RXD GROUP 1 ******\n");
+		NIC_DUMP_RXD(prAdapter, (uint32_t *) prSwRfb->prRxStatusGroup1,
+			     sizeof(struct HW_MAC_RX_STS_GROUP_1));
 	}
 	if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_2)) {
 		prSwRfb->prRxStatusGroup2 = (struct HW_MAC_RX_STS_GROUP_2 *)
 			((uint8_t *) prRxStatus + u2RxStatusOffset);
 		u2RxStatusOffset += sizeof(struct HW_MAC_RX_STS_GROUP_2);
 
+		NIC_DUMP_RXD_HEADER(prAdapter, "****** RXD GROUP 2 ******\n");
+		NIC_DUMP_RXD(prAdapter, (uint32_t *) prSwRfb->prRxStatusGroup2,
+			     sizeof(struct HW_MAC_RX_STS_GROUP_2));
+
 	}
 	if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) {
 		prSwRfb->prRxStatusGroup3 = (struct HW_MAC_RX_STS_GROUP_3 *)
 			((uint8_t *) prRxStatus + u2RxStatusOffset);
 		u2RxStatusOffset += sizeof(struct HW_MAC_RX_STS_GROUP_3);
+
+		NIC_DUMP_RXD_HEADER(prAdapter, "****** RXD GROUP 3 ******\n");
+		NIC_DUMP_RXD(prAdapter, (uint32_t *) prSwRfb->prRxStatusGroup3,
+			     sizeof(struct HW_MAC_RX_STS_GROUP_3));
 	}
 
 	prSwRfb->u2RxStatusOffst = u2RxStatusOffset;
