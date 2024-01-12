@@ -1281,6 +1281,15 @@ void glUnregisterBus(remove_card pfRemove)
 	platform_driver_unregister(&mtk_axi_driver);
 }
 
+static void glUpdateRxCopyMemOps(struct HIF_MEM_OPS *prMemOps)
+{
+	prMemOps->copyRxData = halCopyPathCopyRxData;
+	prMemOps->mapRxBuf = NULL;
+	prMemOps->unmapRxBuf = NULL;
+	prMemOps->freePacket = NULL;
+	prMemOps->dumpRx = halCopyPathDumpRx;
+}
+
 static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 			     struct HIF_MEM_OPS *prMemOps)
 {
@@ -1301,11 +1310,12 @@ static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 	prMemOps->freeDesc = halZeroCopyPathFreeDesc;
 	prMemOps->freeExtBuf = halZeroCopyPathFreeDesc;
 	prMemOps->freeBuf = halZeroCopyPathFreeBuf;
+	prMemOps->allocRxEvtBuf = halZeroCopyPathAllocRxBuf;
 #if CFG_SUPPORT_RX_PAGE_POOL
-	prMemOps->allocRxBuf = halZeroCopyPathAllocPagePoolRxBuf;
+	prMemOps->allocRxDataBuf = halZeroCopyPathAllocPagePoolRxBuf;
 	prMemOps->freePacket = halZeroCopyPathFreePagePoolPacket;
 #else
-	prMemOps->allocRxBuf = halZeroCopyPathAllocRxBuf;
+	prMemOps->allocRxDataBuf = halZeroCopyPathAllocRxBuf;
 	prMemOps->freePacket = halZeroCopyPathFreePacket;
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */
 #if CFG_MTK_WIFI_SW_EMI_RING
@@ -1323,8 +1333,10 @@ static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 		prMemOps->allocExtBuf = halCopyPathAllocExtBuf;
 		prMemOps->allocTxCmdBuf = halCopyPathAllocTxCmdBuf;
 		prMemOps->allocTxDataBuf = halCopyPathAllocTxDataBuf;
+		prMemOps->allocRxEvtBuf = halCopyPathAllocRxBuf;
 		prMemOps->allocRuntimeMem = NULL;
 		prMemOps->copyCmd = halCopyPathCopyCmd;
+		prMemOps->copyEvent = halCopyPathCopyEvent;
 		prMemOps->copyTxData = halCopyPathCopyTxData;
 		prMemOps->mapTxBuf = NULL;
 		prMemOps->unmapTxBuf = NULL;
@@ -1332,27 +1344,14 @@ static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 		prMemOps->freeExtBuf = halCopyPathFreeExtBuf;
 		prMemOps->freeBuf = NULL;
 		prMemOps->dumpTx = halCopyPathDumpTx;
-		prMemOps->dumpRx = halCopyPathDumpRx;
 
-#if (CFG_SUPPORT_RX_ZERO_COPY == 0)
-		prMemOps->allocRxBuf = halCopyPathAllocRxBuf;
-		prMemOps->copyRxData = halCopyPathCopyRxData;
-		prMemOps->copyEvent = halCopyPathCopyEvent;
-		prMemOps->mapRxBuf = NULL;
-		prMemOps->unmapRxBuf = NULL;
-		prMemOps->freePacket = NULL;
+#if (CFG_SUPPORT_RX_ZERO_COPY == 1)
+		prMemOps->dumpRx = halZeroCopyPathDumpRx;
+#else
+		prMemOps->allocRxDataBuf = halCopyPathAllocRxBuf;
+		glUpdateRxCopyMemOps(prMemOps);
 #endif /* CFG_SUPPORT_RX_ZERO_COPY == 1 */
 	}
-}
-
-void glUpdateRxCopyMemOps(struct HIF_MEM_OPS *prMemOps)
-{
-	prMemOps->allocRxBuf = halCopyPathAllocRxBuf;
-	prMemOps->copyRxData = halCopyPathCopyRxData;
-	prMemOps->copyEvent = halCopyPathCopyEvent;
-	prMemOps->mapRxBuf = NULL;
-	prMemOps->unmapRxBuf = NULL;
-	prMemOps->freePacket = NULL;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1392,7 +1391,12 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 	prGlueInfo->u4InfType = MT_DEV_INF_PCIE;
 
+#if (CFG_SUPPORT_RX_ZERO_COPY == 1)
 	prHif->u4RxDataRingSize = prBusInfo->rx_data_ring_size;
+#else
+	/* TODO: Need to check correct value of RxDataRingSize */
+	prHif->u4RxDataRingSize = prBusInfo->rx_data_ring_size;
+#endif
 	prHif->u4RxEvtRingSize = prBusInfo->rx_evt_ring_size;
 
 	glPopulateMemOps(prChipInfo, prMemOps);
