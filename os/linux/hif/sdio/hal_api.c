@@ -201,6 +201,7 @@ halRxWaitResponse(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPortIdx, OUT PUINT_8 puc
 	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
 	UINT_32 u4Time, u4Current;
 	P_RX_CTRL_T prRxCtrl;
+	P_WIFI_EVENT_T prEvent;
 
 	DEBUGFUNC("halRxWaitResponse");
 
@@ -223,14 +224,28 @@ halRxWaitResponse(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPortIdx, OUT PUINT_8 puc
 			i = 1;
 		}
 
+		if (u4PktLen > u4MaxRespBufferLen) {
+			DBGLOG(RX, ERROR, "Packet length over buffer! Dump Response buffer, length = 0x%x\n",
+				*pu4Length);
+			prEvent = (P_WIFI_EVENT_T) pucRspBuffer;
+			DBGLOG(RX, ERROR, "RX EVENT: ID[0x%02X] SEQ[%u] LEN[%u]\n",
+				   prEvent->ucEID, prEvent->ucSeqNum, prEvent->u2PacketLength);
+			DBGLOG_MEM8(RX, ERROR, pucRspBuffer, u4MaxRespBufferLen);
+			return WLAN_STATUS_FAILURE;
+		}
+
 		if (u4PktLen == 0) {
 			/* timeout exceeding check */
 			u4Current = (UINT_32) kalGetTimeTick();
 
-			if ((u4Current > u4Time) && ((u4Current - u4Time) > RX_RESPONSE_TIMEOUT))
+			if ((u4Current > u4Time) && ((u4Current - u4Time) > RX_RESPONSE_TIMEOUT)) {
+				DBGLOG(RX, ERROR, "Timeout! %d - %d = %d\n", u4Current, u4Time, (u4Current-u4Time));
 				return WLAN_STATUS_FAILURE;
-			else if (u4Current < u4Time && ((u4Current + (0xFFFFFFFF - u4Time)) > RX_RESPONSE_TIMEOUT))
+			} else if (u4Current < u4Time && ((u4Current + (0xFFFFFFFF - u4Time)) > RX_RESPONSE_TIMEOUT)) {
+				DBGLOG(RX, ERROR, "Timeout! %d - %d = %d\n",
+					u4Current, u4Time, (u4Current + (0xFFFFFFFF - u4Time)));
 				return WLAN_STATUS_FAILURE;
+			}
 
 			/* Response packet is not ready */
 			kalUdelay(50);
@@ -352,6 +367,7 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 	BOOLEAN fgTimeout;
 	BOOLEAN fgResult;
 	BOOLEAN fgReady = FALSE;
+	UINT_32 u4DriverOwnTime = 0, u4Cr4ReadyTime = 0;
 
 	ASSERT(prAdapter);
 
@@ -360,7 +376,7 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 	if (prAdapter->fgIsFwOwn == FALSE)
 		return fgStatus;
 
-	DBGLOG(INIT, INFO, "DRIVER OWN\n");
+	DBGLOG(INIT, TRACE, "DRIVER OWN\n");
 
 	u4CurrTick = kalGetTimeTick();
 	i = 0;
@@ -440,6 +456,8 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 		kalMsleep(LP_OWN_BACK_LOOP_DELAY_MS);
 		i++;
 	}
+	u4DriverOwnTime = ((kalGetTimeTick() >= u4CurrTick) ?
+			(kalGetTimeTick() - u4CurrTick) : (kalGetTimeTick() + (~u4CurrTick)));
 
 	/* For Low power Test */
 	/* 1. Driver need to polling until CR4 ready, then could do normal Tx/Rx */
@@ -509,8 +527,12 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 			if (prChipInfo->is_support_cr4)
 				prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[TC4_INDEX]--;
 		}
+		u4Cr4ReadyTime = ((kalGetTimeTick() >= u4CurrTick) ?
+				(kalGetTimeTick() - u4CurrTick) : (kalGetTimeTick() + (~u4CurrTick)));
 	}
 #endif
+	DBGLOG(INIT, INFO, "DRIVER OWN %d, %d, DSLP %s\n",
+		u4DriverOwnTime, u4Cr4ReadyTime, ((i == 0x77889901)?"1":"0"));
 
 	return fgStatus;
 }
