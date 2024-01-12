@@ -664,8 +664,9 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 
 			LINK_INITIALIZE(&prStaRec->rMscsMonitorList);
 			LINK_INITIALIZE(&prStaRec->rMscsTcpMonitorList);
-			DBGLOG(MEM, WARN, "LINK_INITIALIZE list: %p\n",
-						&prStaRec->rMscsMonitorList);
+			DBGLOG(MEM, WARN,
+				"LINK_INITIALIZE list=%p, BssIdx=%d, StaRecIdx=%d\n",
+				&prStaRec->rMscsMonitorList, ucBssIndex, i);
 #if CFG_ENABLE_PER_STA_STATISTICS && CFG_ENABLE_PKT_LIFETIME_PROFILE
 			prStaRec->u4TotalTxPktsNumber = 0;
 			prStaRec->u4TotalTxPktsTime = 0;
@@ -741,17 +742,13 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void cnmStaRecFree(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
 {
-	uint8_t ucStaRecIndex, ucBssIndex;
-
 	ASSERT(prAdapter);
 
 	if (!prStaRec)
 		return;
 
-	log_dbg(CNM, INFO, "cnmStaRecFree %d\n", prStaRec->ucIndex);
-
-	ucStaRecIndex = prStaRec->ucIndex;
-	ucBssIndex = prStaRec->ucBssIndex;
+	log_dbg(CNM, INFO, "BssIdx=%d, StaRecIdx=%d, InUse=%d\n",
+		prStaRec->ucBssIndex, prStaRec->ucIndex, prStaRec->fgIsInUse);
 
 	if (prStaRec->fgIsInUse) {
 		nicFreePendingTxMsduInfo(prAdapter, prStaRec->ucWlanIndex,
@@ -760,7 +757,7 @@ void cnmStaRecFree(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
 		cnmStaRoutinesForAbort(prAdapter, prStaRec);
 
 		cnmStaSendRemoveCmd(prAdapter, STA_REC_CMD_ACTION_STA,
-			ucStaRecIndex, ucBssIndex);
+			prStaRec->ucIndex, prStaRec->ucBssIndex);
 	} else {
 		log_dbg(CNM, ERROR, "prStaRec is not in use\n");
 	}
