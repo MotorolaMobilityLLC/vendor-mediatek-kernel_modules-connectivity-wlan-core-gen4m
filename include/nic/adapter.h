@@ -1143,6 +1143,7 @@ struct WIFI_VAR {
 	uint32_t u4ByPassCacTime;
 	uint32_t u4CC2Region;
 	uint32_t u4ApChnlHoldTime;
+	uint32_t u4P2pChnlHoldTime;
 	uint8_t fgAllowSameBandDualSta;
 
 #if CFG_SUPPORT_NAN
