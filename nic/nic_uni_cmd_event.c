@@ -2644,7 +2644,7 @@ uint32_t nicUniCmdBssInfoTagWapi(struct ADAPTER *ad,
 	return tag->u2Length;
 }
 
-#if CFG_SUPPORT_IOT_AP_BLACKLIST
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
 uint32_t nicUniCmdBssInfoTagStaIot(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_SET_BSS_INFO *cmd)
 {
@@ -2712,7 +2712,7 @@ struct UNI_CMD_BSSINFO_TAG_HANDLE arSetBssInfoTable[] = {
 #endif
 	{sizeof(struct UNI_CMD_BSSINFO_11V_MBSSID), nicUniCmdBssInfoTagMBSSID},
 	{sizeof(struct UNI_CMD_BSSINFO_WAPI), nicUniCmdBssInfoTagWapi},
-#if CFG_SUPPORT_IOT_AP_BLACKLIST
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
 	{sizeof(struct UNI_CMD_BSSINFO_IOT), nicUniCmdBssInfoTagStaIot},
 #endif
 	{sizeof(struct UNI_CMD_BSSINFO_MLD), nicUniCmdBssInfoTagMld},
@@ -3867,7 +3867,7 @@ uint32_t nicUniCmdStaRecTagEhtInfo(struct ADAPTER *ad,
 }
 #endif
 
-#if CFG_SUPPORT_RXSMM_WHITELIST
+#if CFG_SUPPORT_RXSMM_ALLOWLIST
 uint32_t nicUniCmdStaRecTagBfee(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_UPDATE_STA_RECORD *cmd)
 {
@@ -4253,7 +4253,7 @@ struct UNI_CMD_STAREC_TAG_HANDLE arUpdateStaRecTable[] = {
 	{sizeof(struct UNI_CMD_STAREC_BA_OFFLOAD_INFO),
 	 nicUniCmdStaRecTagBAOffload},
 	{sizeof(struct UNI_CMD_STAREC_UAPSD_INFO), nicUniCmdStaRecTagUapsd},
-#if CFG_SUPPORT_RXSMM_WHITELIST
+#if CFG_SUPPORT_RXSMM_ALLOWLIST
 	{sizeof(struct UNI_CMD_STAREC_BFEE), nicUniCmdStaRecTagBfee},
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
@@ -12384,9 +12384,9 @@ void nicUniEventEfuseFreeBlock(struct ADAPTER
  *	TRUE: RX header translation uses QoS_TID as VLAN TCI.PCP
  *	FALSE: RX header translation uses firmware assigned VLAN TCI.PCP
  *
- *	UNI_CMD_RX_HDR_TRAN_BLACKLIST_CONFIG : TBD
+ *	UNI_CMD_RX_HDR_TRAN_BLOCKLIST_CONFIG : TBD
  *	- listCnt : max ~7
- *	- list : Ether-type blacklist for RX header translation
+ *	- list : Ether-type blocklist for RX header translation
  *	- en : en/disable for list
  */
 uint32_t nicUniCmdRxHdrTransUpdate(struct ADAPTER *ad,
@@ -12434,7 +12434,7 @@ uint32_t nicUniCmdRxHdrTransUpdate(struct ADAPTER *ad,
 	rx_hdr_tran_vlan->fgUseQosTid = param->fgUseQosTid;
 	pos += sizeof(*rx_hdr_tran_vlan);
 
-	/* 4. TODO: set Ether type black list */
+	/* 4. TODO: set Ether type block list */
 
 	/* 5. Send uni cmd */
 	status = wlanSendSetQueryUniCmd(ad,

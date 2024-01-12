@@ -2620,7 +2620,7 @@ bowValidateAuth(struct ADAPTER *prAdapter,
 	/* TODO(Kevin): Call BoW functions to check ..
 	 *  1. Check we are BoW now.
 	 *  2. Check we can accept connection from thsi peer
-	 *  3. Check Black List here.
+	 *  3. Check Block List here.
 	 */
 
 	prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);

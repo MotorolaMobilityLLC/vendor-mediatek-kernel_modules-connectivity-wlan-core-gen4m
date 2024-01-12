@@ -49,7 +49,7 @@ struct AP_COLLECTION {
 	uint8_t ucTotalCount; /* total BssDesc count */
 	uint8_t fgIsMatchBssid;
 	uint8_t fgIsMatchBssidHint;
-	uint8_t fgIsAllLinkInBlackList;
+	uint8_t fgIsAllLinkInBlockList;
 	uint8_t fgIsAllLinkConnected;
 	uint32_t u4TotalTput;
 	uint32_t u4TotalScore;

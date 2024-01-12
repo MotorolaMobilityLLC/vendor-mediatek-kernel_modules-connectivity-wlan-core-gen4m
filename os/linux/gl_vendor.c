@@ -84,22 +84,22 @@ const struct nla_policy nla_parse_wifi_attribute[
 	[WIFI_ATTRIBUTE_PNO_RANDOM_MAC_OUI] = {.type = NLA_BINARY},
 #endif
 	[WIFI_ATTRIBUTE_COUNTRY_CODE] = {.type = NLA_STRING},
-	[WIFI_ATTRIBUTE_ROAMING_BLACKLIST_NUM] = {.type = NLA_U32},
+	[WIFI_ATTRIBUTE_ROAMING_BLOCKLIST_NUM] = {.type = NLA_U32},
 #if KERNEL_VERSION(5, 9, 0) <= CFG80211_VERSION_CODE
-	[WIFI_ATTRIBUTE_ROAMING_BLACKLIST_BSSID] =
+	[WIFI_ATTRIBUTE_ROAMING_BLOCKLIST_BSSID] =
 		NLA_POLICY_EXACT_LEN_WARN(MAC_ADDR_LEN),
 #else
-	[WIFI_ATTRIBUTE_ROAMING_BLACKLIST_BSSID] = {
+	[WIFI_ATTRIBUTE_ROAMING_BLOCKLIST_BSSID] = {
 		.type = NLA_BINARY, .len = MAC_ADDR_LEN},
 #endif
-	[WIFI_ATTRIBUTE_ROAMING_WHITELIST_NUM] = {.type = NLA_U32},
+	[WIFI_ATTRIBUTE_ROAMING_ALLOWLIST_NUM] = {.type = NLA_U32},
 #if KERNEL_VERSION(5, 9, 0) <= CFG80211_VERSION_CODE
-	[WIFI_ATTRIBUTE_ROAMING_WHITELIST_SSID] = NLA_POLICY_MIN_LEN(0),
+	[WIFI_ATTRIBUTE_ROAMING_ALLOWLIST_SSID] = NLA_POLICY_MIN_LEN(0),
 #elif KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
-	[WIFI_ATTRIBUTE_ROAMING_WHITELIST_SSID] = {
+	[WIFI_ATTRIBUTE_ROAMING_ALLOWLIST_SSID] = {
 		.type = NLA_MIN_LEN, .len = 0 },
 #else
-	[WIFI_ATTRIBUTE_ROAMING_WHITELIST_SSID] = {.type = NLA_BINARY},
+	[WIFI_ATTRIBUTE_ROAMING_ALLOWLIST_SSID] = {.type = NLA_BINARY},
 #endif
 	[WIFI_ATTRIBUTE_ROAMING_STATE] = {.type = NLA_U32},
 	[WIFI_ATTRIBUTE_TX_POWER_SCENARIO] = {.type = NLA_U32},
@@ -758,15 +758,15 @@ fail:
  * \retval TRUE Success.
  *
  * \note we use cfg80211_vendor_cmd_reply to send the max number of our
- *       blacklist and whiltlist directly without receiving any data
+ *       blocklist and whiltlist directly without receiving any data
  *       from the upper layer.
  */
 /*----------------------------------------------------------------------------*/
 int mtk_cfg80211_vendor_get_roaming_capabilities(struct wiphy *wiphy,
 	struct wireless_dev *wdev, const void *data, int data_len)
 {
-	uint32_t maxNumOfList[2] = { MAX_FW_ROAMING_BLACKLIST_SIZE,
-				     MAX_FW_ROAMING_WHITELIST_SIZE };
+	uint32_t maxNumOfList[2] = { MAX_FW_ROAMING_BLOCKLIST_SIZE,
+				     MAX_FW_ROAMING_ALLOWLIST_SIZE };
 	struct sk_buff *skb;
 
 	ASSERT(wiphy);
@@ -781,10 +781,10 @@ int mtk_cfg80211_vendor_get_roaming_capabilities(struct wiphy *wiphy,
 		return -ENOMEM;
 	}
 
-	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_ROAMING_BLACKLIST_NUM,
+	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_ROAMING_BLOCKLIST_NUM,
 				sizeof(uint32_t), &maxNumOfList[0]) < 0))
 		goto nla_put_failure;
-	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_ROAMING_WHITELIST_NUM,
+	if (unlikely(nla_put(skb, WIFI_ATTRIBUTE_ROAMING_ALLOWLIST_NUM,
 				sizeof(uint32_t), &maxNumOfList[1]) < 0))
 		goto nla_put_failure;
 
@@ -798,19 +798,19 @@ nla_put_failure:
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This routine is to receive the black/whiltelist. from FWK.
+ * \brief This routine is to receive the block/allowlist. from FWK.
  *
  * \param[in] wiphy wiphy for AIS STA.
  *
  * \param[in] wdev (not used here).
  *
- * \param[in] data BSSIDs in the FWK blact&whitelist.
+ * \param[in] data BSSIDs in the FWK block&allowlist.
  *
- * \param[in] data_len the byte-length of the FWK blact&whitelist.
+ * \param[in] data_len the byte-length of the FWK block&allowlist.
  *
  * \retval TRUE Success.
  *
- * \note we iterate each BSSID in 'data' and put it into driver blacklist.
+ * \note we iterate each BSSID in 'data' and put it into driver blocklist.
  *       For now, whiltelist doesn't be implemented by the FWK currently.
  */
 /*----------------------------------------------------------------------------*/
@@ -819,7 +819,7 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct nlattr *attrlist;
-	struct AIS_BLACKLIST_ITEM *prBlackList;
+	struct AIS_BLOCKLIST_ITEM *prBlockList;
 	struct BSS_DESC *prBssDesc = NULL;
 	uint32_t len_shift = 0;
 	uint32_t numOfList[2] = { 0 };
@@ -852,26 +852,26 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 
 	attrlist = (struct nlattr *)((uint8_t *) data);
 
-	/* get the number of blacklist and copy those mac addresses from HAL */
+	/* get the number of blocklist and copy those mac addresses from HAL */
 	if (attrlist->nla_type ==
-	    WIFI_ATTRIBUTE_ROAMING_BLACKLIST_NUM) {
+	    WIFI_ATTRIBUTE_ROAMING_BLOCKLIST_NUM) {
 		numOfList[0] = nla_get_u32(attrlist);
 		len_shift += NLA_ALIGN(attrlist->nla_len);
 	}
 	DBGLOG(REQ, INFO, "Get the number of blocklist=%d\n",
 	       numOfList[0]);
 
-	if (numOfList[0] > MAX_FW_ROAMING_BLACKLIST_SIZE)
+	if (numOfList[0] > MAX_FW_ROAMING_BLOCKLIST_SIZE)
 		return -EINVAL;
 
-	/*Refresh all the FWKBlacklist */
+	/*Refresh all the FWKBlocklist */
 	aisRefreshFWKBlocklist(prGlueInfo->prAdapter);
 
-	/* Start to receive blacklist mac addresses and set to FWK blacklist */
+	/* Start to receive blocklist mac addresses and set to FWK blocklist */
 	attrlist = (struct nlattr *)((uint8_t *) data + len_shift);
 	for (i = 0; i < numOfList[0]; i++) {
 		if (attrlist->nla_type ==
-		    WIFI_ATTRIBUTE_ROAMING_BLACKLIST_BSSID) {
+		    WIFI_ATTRIBUTE_ROAMING_BLOCKLIST_BSSID) {
 			aucBSSID = nla_data(attrlist);
 			prBssDesc =
 				scanSearchBssDescByBssid(prGlueInfo->prAdapter,
@@ -887,11 +887,11 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 				continue;
 			}
 
-			prBlackList = aisAddBlocklist(prGlueInfo->prAdapter,
+			prBlockList = aisAddBlocklist(prGlueInfo->prAdapter,
 						      prBssDesc);
 
-			if (prBlackList) {
-				prBlackList->fgIsInFWKBlacklist = TRUE;
+			if (prBlockList) {
+				prBlockList->fgIsInFWKBlocklist = TRUE;
 				DBGLOG(REQ, INFO,
 					"Gets roaming blocklist SSID=%s addr="
 					MACSTR "\n",
@@ -899,7 +899,7 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 					MAC2STR(prBssDesc->aucBSSID));
 			} else {
 				DBGLOG(REQ, ERROR,
-					"prBlackList is NULL, return -EINVAL!");
+					"prBlockList is NULL, return -EINVAL!");
 				return -EINVAL;
 			}
 		}
@@ -2698,16 +2698,16 @@ int mtk_cfg80211_vendor_set_roaming_param(struct wiphy *wiphy,
 	}
 
 	cmd_type = nla_get_u32(tb[QCA_ATTR_ROAMING_SUBCMD]);
-	if (cmd_type == QCA_ATTR_ROAM_SUBCMD_SET_BLACKLIST_BSSID) {
+	if (cmd_type == QCA_ATTR_ROAM_SUBCMD_SET_BLOCKLIST_BSSID) {
 		struct PARAM_BSS_DISALLOWED_LIST request = {};
 
-		/* Parse and fetch number of blacklist BSSID */
+		/* Parse and fetch number of blocklist BSSID */
 		if (!tb[SET_BSSID_PARAMS_NUM_BSSID]) {
 			DBGLOG(REQ, ERROR, "Invlaid num of blocklist bssid\n");
 			goto fail;
 		}
 		count = nla_get_u32(tb[SET_BSSID_PARAMS_NUM_BSSID]);
-		if (count > MAX_FW_ROAMING_BLACKLIST_SIZE) {
+		if (count > MAX_FW_ROAMING_BLOCKLIST_SIZE) {
 			DBGLOG(REQ, ERROR, "Count %u exceeds\n", count);
 			goto fail;
 		}

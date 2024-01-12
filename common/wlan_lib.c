@@ -545,8 +545,8 @@ struct PARAM_CUSTOM_KEY_CFG_STRUCT g_rDefaulteSetting[] = {
 	*   }
 	*/
 	{"AdapScan", "0x0", WLAN_CFG_DEFAULT},
-#if CFG_SUPPORT_IOT_AP_BLACKLIST
-	/*Fill Iot AP blacklist here*/
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
+	/*Fill Iot AP blocklist here*/
 	/*AS AX89X, OUI=0x8CFDF0, NSS=8, PHY=WiFi6, Action=2:Disable SG*/
 	{"IOTAP31", "0:8CFDF0:::::8:6::2"},
 #endif
@@ -6785,7 +6785,7 @@ void wlanSetNicResourceParameters(struct ADAPTER
 }
 
 
-#if CFG_SUPPORT_IOT_AP_BLACKLIST
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
 void wlanCfgDumpIotApRule(struct ADAPTER *prAdapter)
 {
 	uint8_t ucRuleIdx;
@@ -7116,7 +7116,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 
 
 	/* Feature options will be filled by config file */
-#if CFG_SUPPORT_IOT_AP_BLACKLIST
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
 	INIT_UINT(prWifiVar->fgEnDefaultIotApRule,
 		"EnDefaultIotApRule", FEATURE_ENABLED);
 #endif
@@ -12121,7 +12121,7 @@ wlanGetSupportNss(struct ADAPTER *prAdapter,
 		  uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
-#if CFG_SUPPORT_IOT_AP_BLACKLIST
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
 	struct BSS_DESC *prBssDesc;
 #endif
 
@@ -12170,7 +12170,7 @@ wlanGetSupportNss(struct ADAPTER *prAdapter,
 		}
 	}
 #endif /* CFG_ENABLE_WIFI_DIRECT */
-#if CFG_SUPPORT_IOT_AP_BLACKLIST
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
 	else if (IS_BSS_AIS(prBssInfo)) {
 		struct AIS_FSM_INFO *prAisFsmInfo =
 			aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -12365,7 +12365,7 @@ uint32_t wlanSetLowLatencyMode(
 	/* Enable/disable scan management decision:
 	 *
 	 * Enable if it will enable low latency mode.
-	 * Or, enable if it is a white list event.
+	 * Or, enable if it is a allow list event.
 	 */
 	if (fgEnMode != TRUE || (u4Events & GED_EVENT_DOPT_WIFI_SCAN) != 0)
 		fgEnScan = TRUE; /* It will enable scan management */

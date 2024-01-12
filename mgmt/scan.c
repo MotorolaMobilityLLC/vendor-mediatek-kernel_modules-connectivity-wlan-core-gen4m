@@ -2907,7 +2907,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			&& u8Timestamp < prBssDesc->u8TimeStamp.QuadPart
 			&& prBssDesc->fgIsConnecting == FALSE) {
 			u_int8_t fgIsConnected, fgIsConnecting;
-			struct AIS_BLACKLIST_ITEM *prBlack;
+			struct AIS_BLOCKLIST_ITEM *prBlock;
 			uint32_t u4PairwiseCipher = 0;
 			uint32_t u4GroupCipher = 0;
 			uint32_t u4GroupMgmtCipher = 0;
@@ -2927,7 +2927,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			/* backup for APs which reset timestamp unexpectedly */
 			fgIsConnected = prBssDesc->fgIsConnected;
 			fgIsConnecting = prBssDesc->fgIsConnecting;
-			prBlack = prBssDesc->prBlack;
+			prBlock = prBssDesc->prBlock;
 			u4PairwiseCipher
 				= prBssDesc->u4RsnSelectedPairwiseCipher;
 			u4GroupCipher = prBssDesc->u4RsnSelectedGroupCipher;
@@ -2947,7 +2947,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			/* restore */
 			prBssDesc->fgIsConnected = fgIsConnected;
 			prBssDesc->fgIsConnecting = fgIsConnecting;
-			prBssDesc->prBlack = prBlack;
+			prBssDesc->prBlock = prBlock;
 			prBssDesc->u4RsnSelectedPairwiseCipher
 						= u4PairwiseCipher;
 			prBssDesc->u4RsnSelectedGroupCipher = u4GroupCipher;

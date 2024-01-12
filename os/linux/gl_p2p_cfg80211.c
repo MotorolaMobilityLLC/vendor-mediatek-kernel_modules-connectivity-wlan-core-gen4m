@@ -4671,7 +4671,7 @@ int mtk_p2p_cfg80211_testmode_hotspot_block_list_cmd(struct wiphy *wiphy,
 
 	for (i = 0; i < KAL_P2P_NUM; i++)
 		fgIsValid |=
-			kalP2PSetBlackList(prGlueInfo,
+			kalP2PSetBlockList(prGlueInfo,
 				prParams->aucBssid, prParams->ucblocked, i);
 
 	return fgIsValid;

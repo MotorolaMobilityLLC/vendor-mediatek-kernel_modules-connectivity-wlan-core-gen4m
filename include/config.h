@@ -823,7 +823,7 @@
 
 /*------------------------------------------------------------------------------
  * Flags 1: drop all multicast packets when device suspend
- * Flags 0: drop multicast packets except white list when device suspend
+ * Flags 0: drop multicast packets except allow list when device suspend
  *------------------------------------------------------------------------------
  */
 #define CFG_SUPPORT_DROP_ALL_MC_PACKET		0
@@ -1425,8 +1425,8 @@
 #define CFG_SUPPORT_MTK_SYNERGY			1
 #endif
 
-#ifndef CFG_SUPPORT_RXSMM_WHITELIST
-#define CFG_SUPPORT_RXSMM_WHITELIST		1
+#ifndef CFG_SUPPORT_RXSMM_ALLOWLIST
+#define CFG_SUPPORT_RXSMM_ALLOWLIST		1
 #endif
 
 #define CFG_SUPPORT_VHT_IE_IN_2G		1
@@ -1890,14 +1890,14 @@
 #define CFG_SUPPORT_RX_QUOTA_INFO 1
 
 /*-----------------------------------------------------------------------------
-* Flags to support IOT AP blacklist
+* Flags to support IOT AP blocklist
 *------------------------------------------------------------------------------
 */
-#ifndef CFG_SUPPORT_IOT_AP_BLACKLIST
-#define CFG_SUPPORT_IOT_AP_BLACKLIST 1
+#ifndef CFG_SUPPORT_IOT_AP_BLOCKLIST
+#define CFG_SUPPORT_IOT_AP_BLOCKLIST 1
 #endif
 
-#if CFG_SUPPORT_IOT_AP_BLACKLIST
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
 #define CFG_IOT_AP_RULE_MAX_CNT 32
 #define CFG_IOT_AP_DATA_MAX_LEN 16
 #endif

@@ -193,7 +193,7 @@
 #define RX_STATUS_WOL_OFFSET            15
 #define RX_STATUS_CLS_BITMAP_MASK       BITS(20, 29)
 #define RX_STATUS_CLS_BITMAP_OFFSET     20
-#define RX_STATUS_PF_MODE_BLACK_LIST    BIT(30)
+#define RX_STATUS_PF_MODE_BLOCK_LIST    BIT(30)
 #define RX_STATUS_PF_STS_CHECKED        BIT(31)
 
 /* DW 12 */
@@ -1470,9 +1470,9 @@ struct ACTION_FRAME_SIZE_MAP {
 #define HAL_RX_STATUS_GET_CLS_BITMAP(_prHwMacRxDesc)	\
 	(((_prHwMacRxDesc)->u4PatternFilterInfo & RX_STATUS_CLS_BITMAP_MASK) \
 	>> RX_STATUS_CLS_BITMAP_OFFSET)
-#define HAL_RX_STATUS_IS_PF_BLACK_LIST(_prHwMacRxDesc)	\
+#define HAL_RX_STATUS_IS_PF_BLOCK_LIST(_prHwMacRxDesc)	\
 	(((_prHwMacRxDesc)->u4PatternFilterInfo \
-	& RX_STATUS_PF_MODE_BLACK_LIST) ? TRUE : FALSE)
+	& RX_STATUS_PF_MODE_BLOCK_LIST) ? TRUE : FALSE)
 #define HAL_RX_STATUS_IS_PF_CHECKED(_prHwMacRxDesc)	\
 	(((_prHwMacRxDesc)->u4PatternFilterInfo & RX_STATUS_PF_STS_CHECKED) \
 	? TRUE : FALSE)

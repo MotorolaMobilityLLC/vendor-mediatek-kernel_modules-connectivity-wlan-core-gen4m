@@ -920,9 +920,9 @@ int32_t priv_driver_MulAPAgent_sta_measurement_control(
 	struct net_device *prNetDev, char *pcCommand, int i4TotalLen);
 int32_t priv_driver_MulAPAgent_sta_measurement_info(
 	struct net_device *prNetDev, char *pcCommand, int i4TotalLen);
-int32_t priv_driver_MulAPAgent_set_white_sta(
+int32_t priv_driver_MulAPAgent_set_allow_sta(
 	struct net_device *prNetDev, char *pcCommand, int i4TotalLen);
-int32_t priv_driver_MulAPAgent_set_Black_sta(
+int32_t priv_driver_MulAPAgent_set_block_sta(
 	struct net_device *prNetDev, char *pcCommand, int i4TotalLen);
 #endif /* CFG_AP_80211KVR_INTERFACE */
 #if CFG_AP_80211K_SUPPORT

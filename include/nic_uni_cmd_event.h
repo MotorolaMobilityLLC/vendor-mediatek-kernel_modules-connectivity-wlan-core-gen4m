@@ -7675,8 +7675,8 @@ struct UNI_CMD_RX_HDR_TRAN_TAG_HANDLE {
 	uint32_t u4Size;
 };
 
-struct UNI_CMD_RX_HDR_TRAN_BLACKLIST_ENTRY {
-	uint8_t ucBlackListIdx;
+struct UNI_CMD_RX_HDR_TRAN_BLOCKLIST_ENTRY {
+	uint8_t ucBlockListIdx;
 	u_int8_t fgEnable;
 	uint16_t u2EtherType;
 };
@@ -7692,9 +7692,9 @@ struct UNI_CMD_RX_HDR_TRAN_PARM {
 	u_int8_t fgRemoveVlan;
 	u_int8_t fgUseQosTid;
 
-	/* UNI_CMD_RX_HDR_TRAN_BLACKLIST_CONFIG = 2 */
-	uint8_t ucBlackListCnt;
-	struct UNI_CMD_RX_HDR_TRAN_BLACKLIST_ENTRY *list;
+	/* UNI_CMD_RX_HDR_TRAN_BLOCKLIST_CONFIG = 2 */
+	uint8_t ucBlockListCnt;
+	struct UNI_CMD_RX_HDR_TRAN_BLOCKLIST_ENTRY *list;
 };
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -7709,7 +7709,7 @@ struct UNI_CMD_RX_HDR_TRAN {
 enum UNI_CMD_RX_HDR_TRAN_TAG {
 	UNI_CMD_RX_HDR_TRAN_ENABLE = 0,
 	UNI_CMD_RX_HDR_TRAN_VLAN_CONFIG = 1,
-	UNI_CMD_RX_HDR_TRAN_BLACKLIST_CONFIG = 2,
+	UNI_CMD_RX_HDR_TRAN_BLOCKLIST_CONFIG = 2,
 	UNI_CMD_RX_HDR_TRAN_MAX_NUM
 };
 
@@ -7734,10 +7734,10 @@ struct UNI_CMD_RX_HDR_TRAN_VLAN {
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
-struct UNI_CMD_RX_HDR_TRAN_BLACKLIST {
+struct UNI_CMD_RX_HDR_TRAN_BLOCKLIST {
 	uint16_t u2Tag;
 	uint16_t u2Length;
-	uint8_t ucBlackListIdx;
+	uint8_t ucBlockListIdx;
 	u_int8_t fgEnable;
 	uint16_t u2EtherType;
 } __KAL_ATTRIB_PACKED__;

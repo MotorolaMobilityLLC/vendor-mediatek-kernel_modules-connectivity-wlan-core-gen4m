@@ -722,7 +722,7 @@ void aisRemoveTimeoutMldBlocklist(struct ADAPTER *prAdapter)
 
 	LINK_FOR_EACH_ENTRY_SAFE(prEntry, prNextEntry, prBlockList, rLinkEntry,
 				 struct MLD_BLOCKLIST_ITEM) {
-		uint16_t sec = AIS_BLACKLIST_TIMEOUT;
+		uint16_t sec = AIS_BLOCKLIST_TIMEOUT;
 
 		if (!CHECK_FOR_TIMEOUT(rCurrent, prEntry->rAddTime,
 				       SEC_TO_MSEC(sec)))
@@ -965,10 +965,10 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 	prAisSpecificBssInfo->fgBipKeyInstalled = FALSE;
 	prAisSpecificBssInfo->fgBipGmacKeyInstalled = FALSE;
 #endif
-	/* AX blacklist*/
-	LINK_INITIALIZE(&prAisFsmInfo->rAxBlacklist);
-	/* HE HTC blacklist*/
-	LINK_INITIALIZE(&prAisFsmInfo->rHeHtcBlacklist);
+	/* AX blocklist*/
+	LINK_INITIALIZE(&prAisFsmInfo->rAxBlocklist);
+	/* HE HTC blocklist*/
+	LINK_INITIALIZE(&prAisFsmInfo->rHeHtcBlocklist);
 
 	wmmInit(prAdapter, ucBssIndex);
 
@@ -1079,8 +1079,8 @@ void aisFsmUninit(struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 	aisFreeIesMem(prAdapter, ucBssIndex);
 
 	rrmParamInit(prAdapter, ucBssIndex);
-	clearAxBlocklist(prAdapter, ucBssIndex, BLACKLIST_AX_TO_AC);
-	clearAxBlocklist(prAdapter, ucBssIndex, BLACKLIST_DIS_HE_HTC);
+	clearAxBlocklist(prAdapter, ucBssIndex, BLOCKLIST_AX_TO_AC);
+	clearAxBlocklist(prAdapter, ucBssIndex, BLOCKLIST_DIS_HE_HTC);
 
 	wmmUnInit(prAdapter, ucBssIndex);
 
@@ -3636,7 +3636,7 @@ void aisFsmAddBlockList(struct ADAPTER *prAdapter,
 			prAisBssInfo->u2DeauthReason = u2DeauthReason;
 
 		if (prBss) {
-			struct AIS_BLACKLIST_ITEM *blk =
+			struct AIS_BLOCKLIST_ITEM *blk =
 			    aisAddBlocklist(prAdapter, prBss);
 
 			if (blk) {
@@ -4289,8 +4289,8 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 	if (prPmkidEntry)
 		prPmkidEntry->u2StatusCode = prStaRec->u2StatusCode;
 
-	if (prBssDesc->prBlack)
-		prBssDesc->prBlack->u2AuthStatus = prStaRec->u2StatusCode;
+	if (prBssDesc->prBlock)
+		prBssDesc->prBlock->u2AuthStatus = prStaRec->u2StatusCode;
 
 	fgTempReject = aisHandleTemporaryReject(prAdapter, prStaRec);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -4576,7 +4576,7 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 
 			prAisFsmInfo->rJoinReqTime = 0;
 
-			/* remove all deauthing AP from blacklist */
+			/* remove all deauthing AP from blocklist */
 			aisRemoveDeauthBlocklist(prAdapter);
 			prAisFsmInfo->ucJoinFailCntAfterScan = 0;
 
@@ -8180,15 +8180,15 @@ void aisFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
 /* Support AP Selection */
 void aisRefreshFWKBlocklist(struct ADAPTER *prAdapter)
 {
-	struct AIS_BLACKLIST_ITEM *prEntry = NULL;
-	struct LINK *prBlackList = &prAdapter->rWifiVar.rBlackList.rUsingLink;
+	struct AIS_BLOCKLIST_ITEM *prEntry = NULL;
+	struct LINK *prBlockList = &prAdapter->rWifiVar.rBlockList.rUsingLink;
 
 	DBGLOG(AIS, INFO,
 		"Refresh all the BSSes' fgIsInFWKBlocklist to FALSE\n");
 
-	LINK_FOR_EACH_ENTRY(prEntry, prBlackList, rLinkEntry,
-			    struct AIS_BLACKLIST_ITEM) {
-		prEntry->fgIsInFWKBlacklist = FALSE;
+	LINK_FOR_EACH_ENTRY(prEntry, prBlockList, rLinkEntry,
+			    struct AIS_BLOCKLIST_ITEM) {
+		prEntry->fgIsInFWKBlocklist = FALSE;
 	}
 }
 
@@ -8196,7 +8196,7 @@ void aisBssTmpDisallow(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 	uint32_t sec, int32_t rssiThreshold)
 {
 #if CFG_SUPPORT_MBO
-	struct AIS_BLACKLIST_ITEM *blk =
+	struct AIS_BLOCKLIST_ITEM *blk =
 		aisAddBlocklist(prAdapter, prBssDesc);
 
 	if (blk) {
@@ -8212,33 +8212,33 @@ void aisBssTmpDisallow(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 #endif
 }
 
-struct AIS_BLACKLIST_ITEM *aisAddBlocklist(struct ADAPTER *prAdapter,
+struct AIS_BLOCKLIST_ITEM *aisAddBlocklist(struct ADAPTER *prAdapter,
 					   struct BSS_DESC *prBssDesc)
 {
-	struct AIS_BLACKLIST_ITEM *prEntry = NULL;
-	struct LINK_MGMT *prBlackList = &prAdapter->rWifiVar.rBlackList;
+	struct AIS_BLOCKLIST_ITEM *prEntry = NULL;
+	struct LINK_MGMT *prBlockList = &prAdapter->rWifiVar.rBlockList;
 
 	if (!prBssDesc) {
 		DBGLOG(AIS, ERROR, "bss descriptor is NULL\n");
 		return NULL;
 	}
-	if (prBssDesc->prBlack) {
-		GET_CURRENT_SYSTIME(&prBssDesc->prBlack->rAddTime);
-		prBssDesc->prBlack->ucCount++;
-		if (prBssDesc->prBlack->ucCount > 10)
-			prBssDesc->prBlack->ucCount = 10;
+	if (prBssDesc->prBlock) {
+		GET_CURRENT_SYSTIME(&prBssDesc->prBlock->rAddTime);
+		prBssDesc->prBlock->ucCount++;
+		if (prBssDesc->prBlock->ucCount > 10)
+			prBssDesc->prBlock->ucCount = 10;
 		DBGLOG(AIS, INFO, "update blocklist for " MACSTR
 		       ", count %d\n",
 		       MAC2STR(prBssDesc->aucBSSID),
-		       prBssDesc->prBlack->ucCount);
-		return prBssDesc->prBlack;
+		       prBssDesc->prBlock->ucCount);
+		return prBssDesc->prBlock;
 	}
 
 	prEntry = aisQueryBlockList(prAdapter, prBssDesc);
 
 	if (prEntry) {
 		GET_CURRENT_SYSTIME(&prEntry->rAddTime);
-		prBssDesc->prBlack = prEntry;
+		prBssDesc->prBlock = prEntry;
 		prEntry->ucCount++;
 		if (prEntry->ucCount > 10)
 			prEntry->ucCount = 10;
@@ -8247,7 +8247,7 @@ struct AIS_BLACKLIST_ITEM *aisAddBlocklist(struct ADAPTER *prAdapter,
 		       MAC2STR(prBssDesc->aucBSSID), prEntry->ucCount);
 		return prEntry;
 	}
-	LINK_MGMT_GET_ENTRY(prBlackList, prEntry, struct AIS_BLACKLIST_ITEM,
+	LINK_MGMT_GET_ENTRY(prBlockList, prEntry, struct AIS_BLOCKLIST_ITEM,
 			    VIR_MEM_TYPE);
 	if (!prEntry) {
 		DBGLOG(AIS, WARN, "No memory to allocate\n");
@@ -8255,12 +8255,12 @@ struct AIS_BLACKLIST_ITEM *aisAddBlocklist(struct ADAPTER *prAdapter,
 	}
 	prEntry->ucCount = 1;
 	/* Support AP Selection */
-	prEntry->fgIsInFWKBlacklist = FALSE;
+	prEntry->fgIsInFWKBlocklist = FALSE;
 	COPY_MAC_ADDR(prEntry->aucBSSID, prBssDesc->aucBSSID);
 	COPY_SSID(prEntry->aucSSID, prEntry->ucSSIDLen, prBssDesc->aucSSID,
 		  prBssDesc->ucSSIDLen);
 	GET_CURRENT_SYSTIME(&prEntry->rAddTime);
-	prBssDesc->prBlack = prEntry;
+	prBssDesc->prBlock = prEntry;
 
 	DBGLOG(AIS, INFO, "Add " MACSTR " to block List\n",
 	       MAC2STR(prBssDesc->aucBSSID));
@@ -8269,30 +8269,30 @@ struct AIS_BLACKLIST_ITEM *aisAddBlocklist(struct ADAPTER *prAdapter,
 
 void aisRemoveBlockList(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)
 {
-	struct AIS_BLACKLIST_ITEM *prEntry = NULL;
+	struct AIS_BLOCKLIST_ITEM *prEntry = NULL;
 
 	prEntry = aisQueryBlockList(prAdapter, prBssDesc);
 	if (!prEntry)
 		return;
-	LINK_MGMT_RETURN_ENTRY(&prAdapter->rWifiVar.rBlackList, prEntry);
-	prBssDesc->prBlack = NULL;
+	LINK_MGMT_RETURN_ENTRY(&prAdapter->rWifiVar.rBlockList, prEntry);
+	prBssDesc->prBlock = NULL;
 	DBGLOG(AIS, INFO, "Remove " MACSTR " from blocklist\n",
 	       MAC2STR(prBssDesc->aucBSSID));
 }
 
-struct AIS_BLACKLIST_ITEM *aisQueryBlockList(struct ADAPTER *prAdapter,
+struct AIS_BLOCKLIST_ITEM *aisQueryBlockList(struct ADAPTER *prAdapter,
 					     struct BSS_DESC *prBssDesc)
 {
-	struct AIS_BLACKLIST_ITEM *prEntry = NULL;
-	struct LINK *prBlackList = &prAdapter->rWifiVar.rBlackList.rUsingLink;
+	struct AIS_BLOCKLIST_ITEM *prEntry = NULL;
+	struct LINK *prBlockList = &prAdapter->rWifiVar.rBlockList.rUsingLink;
 
 	if (!prBssDesc)
 		return NULL;
-	else if (prBssDesc->prBlack)
-		return prBssDesc->prBlack;
+	else if (prBssDesc->prBlock)
+		return prBssDesc->prBlock;
 
-	LINK_FOR_EACH_ENTRY(prEntry, prBlackList, rLinkEntry,
-			    struct AIS_BLACKLIST_ITEM) {
+	LINK_FOR_EACH_ENTRY(prEntry, prBlockList, rLinkEntry,
+			    struct AIS_BLOCKLIST_ITEM) {
 		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prEntry->aucBSSID) &&
 		    EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
 			       prEntry->aucSSID, prEntry->ucSSIDLen))
@@ -8305,20 +8305,20 @@ struct AIS_BLACKLIST_ITEM *aisQueryBlockList(struct ADAPTER *prAdapter,
 
 void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter)
 {
-	struct AIS_BLACKLIST_ITEM *prEntry = NULL;
-	struct AIS_BLACKLIST_ITEM *prNextEntry = NULL;
-	struct LINK *prBlackList = &prAdapter->rWifiVar.rBlackList.rUsingLink;
+	struct AIS_BLOCKLIST_ITEM *prEntry = NULL;
+	struct AIS_BLOCKLIST_ITEM *prNextEntry = NULL;
+	struct LINK *prBlockList = &prAdapter->rWifiVar.rBlockList.rUsingLink;
 	OS_SYSTIME rCurrent;
 	struct BSS_DESC *prBssDesc = NULL;
 	struct PARAM_SSID rSsid;
 
 	GET_CURRENT_SYSTIME(&rCurrent);
 
-	LINK_FOR_EACH_ENTRY_SAFE(prEntry, prNextEntry, prBlackList, rLinkEntry,
-				 struct AIS_BLACKLIST_ITEM) {
-		uint16_t sec = AIS_BLACKLIST_TIMEOUT;
+	LINK_FOR_EACH_ENTRY_SAFE(prEntry, prNextEntry, prBlockList, rLinkEntry,
+				 struct AIS_BLOCKLIST_ITEM) {
+		uint16_t sec = AIS_BLOCKLIST_TIMEOUT;
 
-		if (prEntry->fgIsInFWKBlacklist == TRUE)
+		if (prEntry->fgIsInFWKBlocklist == TRUE)
 			continue;
 
 #if CFG_SUPPORT_MBO
@@ -8339,28 +8339,28 @@ void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter)
 						prEntry->aucBSSID,
 						TRUE, &rSsid);
 		if (prBssDesc) {
-			prBssDesc->prBlack = NULL;
+			prBssDesc->prBlock = NULL;
 			prBssDesc->ucJoinFailureCount = 0;
 			DBGLOG(AIS, INFO,
 				"Remove Timeout "MACSTR" from blocklist\n",
 			       MAC2STR(prBssDesc->aucBSSID));
 		}
-		LINK_MGMT_RETURN_ENTRY(&prAdapter->rWifiVar.rBlackList,
+		LINK_MGMT_RETURN_ENTRY(&prAdapter->rWifiVar.rBlockList,
 			prEntry);
 	}
 }
 
 static void aisRemoveDeauthBlocklist(struct ADAPTER *prAdapter)
 {
-	struct AIS_BLACKLIST_ITEM *prEntry = NULL;
-	struct AIS_BLACKLIST_ITEM *prNextEntry = NULL;
-	struct LINK *prBlackList = &prAdapter->rWifiVar.rBlackList.rUsingLink;
+	struct AIS_BLOCKLIST_ITEM *prEntry = NULL;
+	struct AIS_BLOCKLIST_ITEM *prNextEntry = NULL;
+	struct LINK *prBlockList = &prAdapter->rWifiVar.rBlockList.rUsingLink;
 	struct BSS_DESC *prBssDesc = NULL;
 	struct PARAM_SSID rSsid;
 
-	LINK_FOR_EACH_ENTRY_SAFE(prEntry, prNextEntry, prBlackList, rLinkEntry,
-				 struct AIS_BLACKLIST_ITEM) {
-		if (prEntry->fgIsInFWKBlacklist ||
+	LINK_FOR_EACH_ENTRY_SAFE(prEntry, prNextEntry, prBlockList, rLinkEntry,
+				 struct AIS_BLOCKLIST_ITEM) {
+		if (prEntry->fgIsInFWKBlocklist ||
 		    !prEntry->fgDeauthLastTime)
 			continue;
 
@@ -8374,13 +8374,13 @@ static void aisRemoveDeauthBlocklist(struct ADAPTER *prAdapter)
 						prEntry->aucBSSID,
 						TRUE, &rSsid);
 		if (prBssDesc) {
-			prBssDesc->prBlack = NULL;
+			prBssDesc->prBlock = NULL;
 			prBssDesc->ucJoinFailureCount = 0;
 			DBGLOG(AIS, INFO,
 			       "Remove deauth "MACSTR" from blocklist\n",
 			       MAC2STR(prBssDesc->aucBSSID));
 		}
-		LINK_MGMT_RETURN_ENTRY(&prAdapter->rWifiVar.rBlackList,
+		LINK_MGMT_RETURN_ENTRY(&prAdapter->rWifiVar.rBlockList,
 			prEntry);
 	}
 }
@@ -9512,27 +9512,27 @@ u_int8_t addAxBlocklist(struct ADAPTER *prAdapter,
 			     uint8_t aucBSSID[], uint8_t ucBssIndex,
 			     uint8_t ucType)
 {
-	struct AX_BLACKLIST_ITEM *prBlacklistItem;
+	struct AX_BLOCKLIST_ITEM *prBlocklistItem;
 	struct AIS_FSM_INFO *prAisFsmInfo;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
-	prBlacklistItem =
-	    (struct AX_BLACKLIST_ITEM *)cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
-					      sizeof(struct AX_BLACKLIST_ITEM));
+	prBlocklistItem =
+	    (struct AX_BLOCKLIST_ITEM *)cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+					      sizeof(struct AX_BLOCKLIST_ITEM));
 
-	if (!prBlacklistItem) {
+	if (!prBlocklistItem) {
 		DBGLOG(AIS, ERROR, "Can't generate new message\n");
 		return FALSE;
 	}
 
-	COPY_MAC_ADDR(prBlacklistItem->aucBSSID, aucBSSID);
-	if (ucType == BLACKLIST_AX_TO_AC) {
-		LINK_INSERT_TAIL(&prAisFsmInfo->rAxBlacklist,
-			&prBlacklistItem->rLinkEntry);
-	} else if (ucType == BLACKLIST_DIS_HE_HTC) {
-		LINK_INSERT_TAIL(&prAisFsmInfo->rHeHtcBlacklist,
-			&prBlacklistItem->rLinkEntry);
+	COPY_MAC_ADDR(prBlocklistItem->aucBSSID, aucBSSID);
+	if (ucType == BLOCKLIST_AX_TO_AC) {
+		LINK_INSERT_TAIL(&prAisFsmInfo->rAxBlocklist,
+			&prBlocklistItem->rLinkEntry);
+	} else if (ucType == BLOCKLIST_DIS_HE_HTC) {
+		LINK_INSERT_TAIL(&prAisFsmInfo->rHeHtcBlocklist,
+			&prBlocklistItem->rLinkEntry);
 	} else {
 		DBGLOG(AIS, ERROR, "Wrong type %d\n", ucType);
 		return FALSE;
@@ -9549,26 +9549,26 @@ u_int8_t queryAxBlocklist(struct ADAPTER *prAdapter,
 			     uint8_t ucType)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct LINK *prBlacklist;
-	struct AX_BLACKLIST_ITEM *prBlacklistItem, *prBlacklistItemNext;
+	struct LINK *prBlocklist;
+	struct AX_BLOCKLIST_ITEM *prBlocklistItem, *prBlocklistItemNext;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
-	if (ucType == BLACKLIST_AX_TO_AC) {
-		prBlacklist = &prAisFsmInfo->rAxBlacklist;
-	} else if (ucType == BLACKLIST_DIS_HE_HTC) {
-		prBlacklist = &prAisFsmInfo->rHeHtcBlacklist;
+	if (ucType == BLOCKLIST_AX_TO_AC) {
+		prBlocklist = &prAisFsmInfo->rAxBlocklist;
+	} else if (ucType == BLOCKLIST_DIS_HE_HTC) {
+		prBlocklist = &prAisFsmInfo->rHeHtcBlocklist;
 	} else {
 		DBGLOG(AIS, ERROR, "Wrong type %d\n", ucType);
 		return FALSE;
 	}
 
-	/* traverse through blacklist */
-	LINK_FOR_EACH_ENTRY_SAFE(prBlacklistItem,
-				 prBlacklistItemNext,
-				 prBlacklist, rLinkEntry,
-				 struct AX_BLACKLIST_ITEM) {
-		if (EQUAL_MAC_ADDR(aucBSSID, prBlacklistItem->aucBSSID))
+	/* traverse through blocklist */
+	LINK_FOR_EACH_ENTRY_SAFE(prBlocklistItem,
+				 prBlocklistItemNext,
+				 prBlocklist, rLinkEntry,
+				 struct AX_BLOCKLIST_ITEM) {
+		if (EQUAL_MAC_ADDR(aucBSSID, prBlocklistItem->aucBSSID))
 			return TRUE;
 	}
 		DBGLOG(AIS, INFO,
@@ -9583,35 +9583,35 @@ u_int8_t clearAxBlocklist(struct ADAPTER *prAdapter,
 			     uint8_t ucType)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct LINK *prBlacklist;
-	struct AX_BLACKLIST_ITEM *prBlacklistItem, *prBlacklistItemNext;
+	struct LINK *prBlocklist;
+	struct AX_BLOCKLIST_ITEM *prBlocklistItem, *prBlocklistItemNext;
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
 		return FALSE;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
-	if (ucType == BLACKLIST_AX_TO_AC) {
-		prBlacklist = &prAisFsmInfo->rAxBlacklist;
-	} else if (ucType == BLACKLIST_DIS_HE_HTC) {
-		prBlacklist = &prAisFsmInfo->rHeHtcBlacklist;
+	if (ucType == BLOCKLIST_AX_TO_AC) {
+		prBlocklist = &prAisFsmInfo->rAxBlocklist;
+	} else if (ucType == BLOCKLIST_DIS_HE_HTC) {
+		prBlocklist = &prAisFsmInfo->rHeHtcBlocklist;
 	} else {
 		DBGLOG(AIS, ERROR, "Wrong type %d\n", ucType);
 		return FALSE;
 	}
 
-	/* traverse through blacklist */
-	LINK_FOR_EACH_ENTRY_SAFE(prBlacklistItem,
-				 prBlacklistItemNext,
-				 prBlacklist, rLinkEntry,
-				 struct AX_BLACKLIST_ITEM) {
+	/* traverse through blocklist */
+	LINK_FOR_EACH_ENTRY_SAFE(prBlocklistItem,
+				 prBlocklistItemNext,
+				 prBlocklist, rLinkEntry,
+				 struct AX_BLOCKLIST_ITEM) {
 		DBGLOG(AIS, INFO,
 			"BSSID " MACSTR " is removed from %s blocklist!\n",
-			MAC2STR(prBlacklistItem->aucBSSID),
+			MAC2STR(prBlocklistItem->aucBSSID),
 			ucType == 0 ? "AX" : "+HTC");
-		LINK_REMOVE_KNOWN_ENTRY(prBlacklist,
-					&prBlacklistItem->rLinkEntry);
-		cnmMemFree(prAdapter, prBlacklistItem);
+		LINK_REMOVE_KNOWN_ENTRY(prBlocklist,
+					&prBlocklistItem->rLinkEntry);
+		cnmMemFree(prAdapter, prBlocklistItem);
 	}
 	return TRUE;
 }

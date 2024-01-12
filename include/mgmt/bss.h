@@ -129,7 +129,7 @@ int8_t bssGetHeRxNss(struct BSS_DESC *prBssDesc);
 int8_t bssGetEhtRxNss(struct BSS_DESC *prBssDesc);
 int8_t bssGetRxNss(struct BSS_DESC *prBssDesc);
 
-#if CFG_SUPPORT_IOT_AP_BLACKLIST
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
 uint32_t bssGetIotApAction(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
 #endif

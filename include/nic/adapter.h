@@ -721,7 +721,7 @@ struct WIFI_VAR {
 	uint8_t uc5GBandwidthMode;	/* 20/40M or 20M only *//* Not used */
 	uint8_t uc6GBandwidthMode;	/* 20/40M or 20M only *//* Not used */
 	/* Support AP Selection */
-	struct LINK_MGMT rBlackList;
+	struct LINK_MGMT rBlockList;
 #if CFG_SUPPORT_MBO
 	struct PARAM_BSS_DISALLOWED_LIST rBssDisallowedList;
 #endif
@@ -1259,7 +1259,7 @@ struct WIFI_VAR {
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
 	uint32_t u4RxHighTputTh;
 
-#if CFG_SUPPORT_IOT_AP_BLACKLIST
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
 	uint8_t fgEnDefaultIotApRule;
 #endif
 	uint32_t u4MsduReportTimeout;
@@ -2589,7 +2589,7 @@ struct ADAPTER {
 #endif
 
 	struct WLAN_DEBUG_INFO rDebugInfo;
-#if CFG_SUPPORT_IOT_AP_BLACKLIST
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
 	struct WLAN_IOT_AP_RULE_T rIotApRule[CFG_IOT_AP_RULE_MAX_CNT];
 #endif
 

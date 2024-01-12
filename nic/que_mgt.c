@@ -6252,7 +6252,7 @@ void mqmProcessAssocRsp(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	uint16_t u2Offset;
 	const uint8_t *pucIEStart;
-#if CFG_SUPPORT_RXSMM_WHITELIST
+#if CFG_SUPPORT_RXSMM_ALLOWLIST
 	uint8_t  fgRxsmmEnable = FALSE;
 #endif
 
@@ -6294,7 +6294,7 @@ void mqmProcessAssocRsp(struct ADAPTER *prAdapter,
 					pucIE, prStaRec);
 #endif
 
-#if CFG_SUPPORT_RXSMM_WHITELIST
+#if CFG_SUPPORT_RXSMM_ALLOWLIST
 				if (rlmParseCheckRxsmmOuiIE(prAdapter,
 					pucIE, &fgRxsmmEnable))
 					prStaRec->fgRxsmmEnable =

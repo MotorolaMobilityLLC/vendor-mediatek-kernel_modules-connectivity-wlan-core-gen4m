@@ -2058,7 +2058,7 @@ struct ieee80211_channel *kalP2pFuncGetChannelEntry(
  * \return
  */
 /*---------------------------------------------------------------------------*/
-u_int8_t kalP2PSetBlackList(struct GLUE_INFO *prGlueInfo,
+u_int8_t kalP2PSetBlockList(struct GLUE_INFO *prGlueInfo,
 		uint8_t rbssid[PARAM_MAC_ADDR_LEN],
 		u_int8_t fgIsblock,
 		uint8_t ucRoleIndex)
@@ -2077,14 +2077,14 @@ u_int8_t kalP2PSetBlackList(struct GLUE_INFO *prGlueInfo,
 		return FALSE;
 
 #if CFG_AP_80211KVR_INTERFACE
-	kalP2PCatBlackList(prGlueInfo, 1);
+	kalP2PCatBlockList(prGlueInfo, 1);
 #endif
 
 	if (fgIsblock) {
 		for (i = 0; i < P2P_MAXIMUM_CLIENT_COUNT; i++) {
 			if (EQUAL_MAC_ADDR(
 				&(prGlueInfo->prP2PInfo[ucRoleIndex]
-				->aucblackMACList[i]), rbssid)) {
+				->aucBlockMACList[i]), rbssid)) {
 				DBGLOG(P2P, WARN, MACSTR
 					" already in block list\n",
 					MAC2STR(rbssid));
@@ -2095,12 +2095,12 @@ u_int8_t kalP2PSetBlackList(struct GLUE_INFO *prGlueInfo,
 			if (EQUAL_MAC_ADDR(
 				&(prGlueInfo->prP2PInfo
 				[ucRoleIndex]
-				->aucblackMACList[i]),
+				->aucBlockMACList[i]),
 				aucNullAddr)) {
 				COPY_MAC_ADDR(
 					&(prGlueInfo->prP2PInfo
 					[ucRoleIndex]
-					->aucblackMACList[i]),
+					->aucBlockMACList[i]),
 					rbssid);
 				if (p2pFuncRoleToBssIdx(
 					prGlueInfo->prAdapter,
@@ -2114,7 +2114,7 @@ u_int8_t kalP2PSetBlackList(struct GLUE_INFO *prGlueInfo,
 						rbssid);
 				}
 #if CFG_AP_80211KVR_INTERFACE
-				kalP2PCatBlackList(
+				kalP2PCatBlockList(
 					prGlueInfo,
 					0);
 #endif
@@ -2125,10 +2125,10 @@ u_int8_t kalP2PSetBlackList(struct GLUE_INFO *prGlueInfo,
 		for (i = 0; i < P2P_MAXIMUM_CLIENT_COUNT; i++) {
 			if (EQUAL_MAC_ADDR(
 					&(prGlueInfo->prP2PInfo[ucRoleIndex]
-					->aucblackMACList[i]), rbssid)) {
+					->aucBlockMACList[i]), rbssid)) {
 				COPY_MAC_ADDR(
 					&(prGlueInfo->prP2PInfo[ucRoleIndex]
-					->aucblackMACList[i]), aucNullAddr);
+					->aucBlockMACList[i]), aucNullAddr);
 				if (p2pFuncRoleToBssIdx(
 					prGlueInfo->prAdapter,
 					ucRoleIndex,
@@ -2141,21 +2141,21 @@ u_int8_t kalP2PSetBlackList(struct GLUE_INFO *prGlueInfo,
 						rbssid);
 				}
 #if CFG_AP_80211KVR_INTERFACE
-				kalP2PCatBlackList(prGlueInfo, 0);
+				kalP2PCatBlockList(prGlueInfo, 0);
 #endif
 				return FALSE;
 			}
 		}
 	}
 #if CFG_AP_80211KVR_INTERFACE
-	kalP2PCatBlackList(prGlueInfo, 0);
+	kalP2PCatBlockList(prGlueInfo, 0);
 #endif
 
 	return FALSE;
 
 }
 
-u_int8_t kalP2PResetBlackList(struct GLUE_INFO *prGlueInfo,
+u_int8_t kalP2PResetBlockList(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucRoleIndex)
 {
 	uint8_t aucNullAddr[] = NULL_MAC_ADDR;
@@ -2168,7 +2168,7 @@ u_int8_t kalP2PResetBlackList(struct GLUE_INFO *prGlueInfo,
 	for (i = 0; i < P2P_MAXIMUM_CLIENT_COUNT; i++) {
 		COPY_MAC_ADDR(
 			&(prGlueInfo->prP2PInfo[ucRoleIndex]
-			->aucblackMACList[i]), aucNullAddr);
+			->aucBlockMACList[i]), aucNullAddr);
 	}
 
 	if (p2pFuncRoleToBssIdx(
@@ -2191,15 +2191,15 @@ u_int8_t kalP2PResetBlackList(struct GLUE_INFO *prGlueInfo,
 }
 
 #if CFG_AP_80211KVR_INTERFACE
-void kalP2PCatBlackList(struct GLUE_INFO *prGlueInfo, bool flag)
+void kalP2PCatBlockList(struct GLUE_INFO *prGlueInfo, bool flag)
 {
 	uint32_t i;
 	uint8_t ucRoleIndex;
 
 	if (flag)
-		DBGLOG(INIT, INFO, "Before Set BlackLis\n");
+		DBGLOG(INIT, INFO, "Before Set BlockLis\n");
 	else
-		DBGLOG(INIT, INFO, "After Set BlackLis\n");
+		DBGLOG(INIT, INFO, "After Set BlockLis\n");
 
 	for (ucRoleIndex = 0; ucRoleIndex < KAL_P2P_NUM; ucRoleIndex++) {
 		for (i = 0; i < P2P_MAXIMUM_CLIENT_COUNT; i++) {
@@ -2207,14 +2207,14 @@ void kalP2PCatBlackList(struct GLUE_INFO *prGlueInfo, bool flag)
 				"ucRoleIndex[%d]-BlockList[%d] MA="MACSTR"\n",
 				ucRoleIndex, i,
 				&(prGlueInfo->prP2PInfo[ucRoleIndex]
-				->aucblackMACList[i]));
+				->aucBlockMACList[i]));
 		}
 	}
 }
 #endif
 /*---------------------------------------------------------------------------*/
 /*!
- * \brief to compare the black list of Hotspot
+ * \brief to compare the block list of Hotspot
  *
  * \param[in]
  *           prGlueInfo
@@ -2222,7 +2222,7 @@ void kalP2PCatBlackList(struct GLUE_INFO *prGlueInfo, bool flag)
  * \return
  */
 /*---------------------------------------------------------------------------*/
-u_int8_t kalP2PCmpBlackList(struct GLUE_INFO *prGlueInfo,
+u_int8_t kalP2PCmpBlockList(struct GLUE_INFO *prGlueInfo,
 		uint8_t rbssid[PARAM_MAC_ADDR_LEN],
 		uint8_t ucRoleIndex)
 {
@@ -2237,7 +2237,7 @@ u_int8_t kalP2PCmpBlackList(struct GLUE_INFO *prGlueInfo,
 		if (UNEQUAL_MAC_ADDR(rbssid, aucNullAddr)) {
 			if (EQUAL_MAC_ADDR(
 				&(prGlueInfo->prP2PInfo
-				[ucRoleIndex]->aucblackMACList[i]),
+				[ucRoleIndex]->aucBlockMACList[i]),
 				rbssid)) {
 				fgIsExsit = TRUE;
 				return fgIsExsit;

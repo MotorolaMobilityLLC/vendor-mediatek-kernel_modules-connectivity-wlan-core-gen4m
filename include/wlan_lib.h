@@ -1467,7 +1467,7 @@ struct WIFI_LINK_QUALITY_INFO {
 };
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
-#if CFG_SUPPORT_IOT_AP_BLACKLIST
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
 enum ENUM_WLAN_IOT_AP_FLAG_T {
 	WLAN_IOT_AP_FG_VERSION = 0,
 	WLAN_IOT_AP_FG_OUI,
@@ -2108,7 +2108,7 @@ uint32_t wlanCfgParseArgumentLong(int8_t *cmdLine, int32_t *argc,
 				  int8_t *argv[]);
 #endif
 
-#if CFG_SUPPORT_IOT_AP_BLACKLIST
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
 void wlanCfgLoadIotApRule(struct ADAPTER *prAdapter);
 void wlanCfgDumpIotApRule(struct ADAPTER *prAdapter);
 #endif

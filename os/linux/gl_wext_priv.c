@@ -20883,7 +20883,7 @@ exit:
 	return i4BytesWritten;
 }
 
-int32_t priv_driver_MulAPAgent_set_white_sta(
+int32_t priv_driver_MulAPAgent_set_allow_sta(
 					struct net_device *prNetDev,
 					char *pcCommand, int i4TotalLen)
 {
@@ -20930,14 +20930,14 @@ int32_t priv_driver_MulAPAgent_set_white_sta(
 			"Removing MAC="MACSTR
 			" from BlockList !! P2P NUM=%d\n",
 			&aucMacAddr[0], i);
-		i4Ret |= kalP2PSetBlackList(prGlueInfo,
+		i4Ret |= kalP2PSetBlockList(prGlueInfo,
 			aucMacAddr, 0, i);
 	}
 exit:
 	return i4Ret;
 }
 
-int32_t priv_driver_MulAPAgent_set_Black_sta(
+int32_t priv_driver_MulAPAgent_set_block_sta(
 					struct net_device *prNetDev,
 					char *pcCommand, int i4TotalLen)
 {
@@ -20984,7 +20984,7 @@ int32_t priv_driver_MulAPAgent_set_Black_sta(
 		DBGLOG(INIT, INFO,
 			"Adding MAC="MACSTR" to BlockList !! P2P NUM=%d\n",
 			&aucMacAddr[0], i);
-		i4Ret |= kalP2PSetBlackList(prGlueInfo, aucMacAddr, 1, i);
+		i4Ret |= kalP2PSetBlockList(prGlueInfo, aucMacAddr, 1, i);
 	}
 exit:
 	return i4Ret;

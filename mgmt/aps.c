@@ -63,7 +63,7 @@
 #define WEIGHT_IDX_BAND_WIDTH                   1
 #define WEIGHT_IDX_STBC                         1
 #define WEIGHT_IDX_DEAUTH_LAST                  1
-#define WEIGHT_IDX_BLACK_LIST                   2
+#define WEIGHT_IDX_BLOCK_LIST                   2
 #define WEIGHT_IDX_SAA                          0
 #define WEIGHT_IDX_CHNL_IDLE                    1
 #define WEIGHT_IDX_OPCHNL                       0
@@ -80,7 +80,7 @@
 #define WEIGHT_IDX_BAND_WIDTH_PER               1
 #define WEIGHT_IDX_STBC_PER                     1
 #define WEIGHT_IDX_DEAUTH_LAST_PER              1
-#define WEIGHT_IDX_BLACK_LIST_PER               4
+#define WEIGHT_IDX_BLOCK_LIST_PER               4
 #define WEIGHT_IDX_SAA_PER                      1
 #define WEIGHT_IDX_CHNL_IDLE_PER                6
 #define WEIGHT_IDX_OPCHNL_PER                   6
@@ -116,7 +116,7 @@ struct WEIGHT_CONFIG {
 	uint8_t ucBandWidthWeight;
 	uint8_t ucStbcWeight;
 	uint8_t ucLastDeauthWeight;
-	uint8_t ucBlackListWeight;
+	uint8_t ucBlockListWeight;
 	uint8_t ucSaaWeight;
 	uint8_t ucChnlIdleWeight;
 	uint8_t ucOpchnlWeight;
@@ -177,7 +177,7 @@ struct WEIGHT_CONFIG gasMtkWeightConfig[ROAM_TYPE_NUM] = {
 		.ucBandWidthWeight = WEIGHT_IDX_BAND_WIDTH,
 		.ucStbcWeight = WEIGHT_IDX_STBC,
 		.ucLastDeauthWeight = WEIGHT_IDX_DEAUTH_LAST,
-		.ucBlackListWeight = WEIGHT_IDX_BLACK_LIST,
+		.ucBlockListWeight = WEIGHT_IDX_BLOCK_LIST,
 		.ucSaaWeight = WEIGHT_IDX_SAA,
 		.ucChnlIdleWeight = WEIGHT_IDX_CHNL_IDLE,
 		.ucOpchnlWeight = WEIGHT_IDX_OPCHNL,
@@ -195,7 +195,7 @@ struct WEIGHT_CONFIG gasMtkWeightConfig[ROAM_TYPE_NUM] = {
 		.ucBandWidthWeight = WEIGHT_IDX_BAND_WIDTH_PER,
 		.ucStbcWeight = WEIGHT_IDX_STBC_PER,
 		.ucLastDeauthWeight = WEIGHT_IDX_DEAUTH_LAST_PER,
-		.ucBlackListWeight = WEIGHT_IDX_BLACK_LIST_PER,
+		.ucBlockListWeight = WEIGHT_IDX_BLOCK_LIST_PER,
 		.ucSaaWeight = WEIGHT_IDX_SAA_PER,
 		.ucChnlIdleWeight = WEIGHT_IDX_CHNL_IDLE_PER,
 		.ucOpchnlWeight = WEIGHT_IDX_OPCHNL_PER,
@@ -271,7 +271,7 @@ enum ENUM_BAND g_aeLinkPlan[][APS_LINK_MAX] = {
 
 #define CALCULATE_SCORE_BY_DEAUTH(prBssDesc, eRoamType) \
 	(gasMtkWeightConfig[eRoamType].ucLastDeauthWeight * \
-	(prBssDesc->prBlack && prBssDesc->prBlack->fgDeauthLastTime ? 0 : \
+	(prBssDesc->prBlock && prBssDesc->prBlock->fgDeauthLastTime ? 0 : \
 	BSS_FULL_SCORE))
 
 /*******************************************************************************
@@ -766,7 +766,7 @@ uint16_t apsUpdateEssApList(struct ADAPTER *ad,
 			bss->eBSSType != BSS_TYPE_INFRASTRUCTURE)
 			continue;
 
-		bss->prBlack = aisQueryBlockList(ad, bss);
+		bss->prBlock = aisQueryBlockList(ad, bss);
 #if CFG_SUPPORT_802_11K
 		/* update neighbor report entry */
 		bss->prNeighbor = aisGetNeighborAPEntry(
@@ -1143,7 +1143,7 @@ done:
 
 }
 
-uint16_t apsCalculateScoreByBlackList(struct ADAPTER *prAdapter,
+uint16_t apsCalculateScoreByBlockList(struct ADAPTER *prAdapter,
 	    struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType)
 {
 	uint16_t u2Score = 0;
@@ -1153,16 +1153,16 @@ uint16_t apsCalculateScoreByBlackList(struct ADAPTER *prAdapter,
 		return 0;
 	}
 
-	if (!prBssDesc->prBlack)
+	if (!prBssDesc->prBlock)
 		u2Score = 100;
-	else if (rsnApOverload(prBssDesc->prBlack->u2AuthStatus,
-		prBssDesc->prBlack->u2DeauthReason) ||
-		 prBssDesc->prBlack->ucCount >= 10)
+	else if (rsnApOverload(prBssDesc->prBlock->u2AuthStatus,
+		prBssDesc->prBlock->u2DeauthReason) ||
+		 prBssDesc->prBlock->ucCount >= 10)
 		u2Score = 0;
 	else
-		u2Score = 100 - prBssDesc->prBlack->ucCount * 10;
+		u2Score = 100 - prBssDesc->prBlock->ucCount * 10;
 
-	return u2Score * gasMtkWeightConfig[eRoamType].ucBlackListWeight;
+	return u2Score * gasMtkWeightConfig[eRoamType].ucBlockListWeight;
 }
 
 uint16_t apsCalculateScoreByTput(struct ADAPTER *prAdapter,
@@ -1220,7 +1220,7 @@ uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
 	uint16_t u2ScoreSaa = 0;
 	uint16_t u2ScoreIdleTime = 0;
 	uint16_t u2ScoreTotal = 0;
-	uint16_t u2BlackListScore = 0;
+	uint16_t u2BlockListScore = 0;
 	uint16_t u2PreferenceScore = 0;
 	uint16_t u2TputScore = 0;
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)
@@ -1260,8 +1260,8 @@ uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
 	u2ScoreIdleTime = apsCalculateScoreByIdleTime(prAdapter,
 		prBssDesc->ucChannelNum, eRoamType, prBssDesc, ucBssIndex,
 		prBssDesc->eBand);
-	u2BlackListScore =
-	       apsCalculateScoreByBlackList(prAdapter, prBssDesc, eRoamType);
+	u2BlockListScore =
+	       apsCalculateScoreByBlockList(prAdapter, prBssDesc, eRoamType);
 	u2PreferenceScore =
 	      apsCalculateScoreByPreference(prAdapter, prBssDesc, eRoamReason);
 
@@ -1269,7 +1269,7 @@ uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
 
 	u2ScoreTotal = u2ScoreBandwidth + u2ScoreChnlInfo +
 		u2ScoreDeauth + u2ScoreSnrRssi + u2ScoreStaCnt + u2ScoreSTBC +
-		u2ScoreBand + u2BlackListScore + u2ScoreSaa +
+		u2ScoreBand + u2BlockListScore + u2ScoreSaa +
 		u2ScoreIdleTime + u2TputScore;
 
 	/* Adjust 2.4G AP's score if BT coex */
@@ -1293,7 +1293,7 @@ uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
 		MAC2STR(prBssDesc->aucBSSID),
 		u2ScoreTotal, apucBandStr[prBssDesc->eBand],
 		cRssi, fgIsGBandCoex, u2ScoreDeauth,
-		u2ScoreSnrRssi, u2ScoreBand, u2BlackListScore,
+		u2ScoreSnrRssi, u2ScoreBand, u2BlockListScore,
 		u2ScoreSaa, u2ScoreBandwidth, u2ScoreStaCnt,
 		u2ScoreSTBC, u2ScoreChnlInfo, u2ScoreIdleTime,
 		prBssDesc->fgExistBssLoadIE,
@@ -1353,18 +1353,18 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
-	if (prBssDesc->prBlack && prBssDesc->prBlack->fgDisallowed &&
-	    !(prBssDesc->prBlack->i4RssiThreshold > 0 &&
+	if (prBssDesc->prBlock && prBssDesc->prBlock->fgDisallowed &&
+	    !(prBssDesc->prBlock->i4RssiThreshold > 0 &&
 	      RCPI_TO_dBm(prBssDesc->ucRCPI) >
-			prBssDesc->prBlack->i4RssiThreshold)) {
+			prBssDesc->prBlock->i4RssiThreshold)) {
 		DBGLOG(APS, WARN, MACSTR" disallowed delay, rssi %d(%d)\n",
 			MAC2STR(prBssDesc->aucBSSID),
 			RCPI_TO_dBm(prBssDesc->ucRCPI),
-			prBssDesc->prBlack->i4RssiThreshold);
+			prBssDesc->prBlock->i4RssiThreshold);
 		return FALSE;
 	}
 
-	if (prBssDesc->prBlack && prBssDesc->prBlack->fgDisallowed) {
+	if (prBssDesc->prBlock && prBssDesc->prBlock->fgDisallowed) {
 		DBGLOG(APS, WARN, MACSTR" disallowed delay\n",
 			MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
@@ -1398,8 +1398,8 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
-	if (prBssDesc->prBlack) {
-		if (prBssDesc->prBlack->fgIsInFWKBlacklist) {
+	if (prBssDesc->prBlock) {
+		if (prBssDesc->prBlock->fgIsInFWKBlocklist) {
 			DBGLOG(APS, WARN, MACSTR" in FWK blocklist\n",
 				MAC2STR(prBssDesc->aucBSSID));
 #if (CFG_SUPPORT_CONN_LOG == 1)
@@ -1410,16 +1410,16 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			return FALSE;
 		}
 
-		if (prBssDesc->prBlack->fgDeauthLastTime) {
+		if (prBssDesc->prBlock->fgDeauthLastTime) {
 			DBGLOG(APS, WARN, MACSTR " is sending deauth.\n",
 				MAC2STR(prBssDesc->aucBSSID));
 			return FALSE;
 		}
 
-		if (prBssDesc->prBlack->ucCount >= 10)  {
+		if (prBssDesc->prBlock->ucCount >= 10)  {
 			DBGLOG(APS, WARN,
 				MACSTR
-				" Skip AP that add toblacklist count >= 10\n",
+				" Skip AP that add toblocklist count >= 10\n",
 				MAC2STR(prBssDesc->aucBSSID));
 			return FALSE;
 		}
@@ -1676,7 +1676,7 @@ try_again:
 		if (bss->fgPicked)
 			continue;
 
-		if (!search_blk && link->u4NumElem > 1 && bss->prBlack)
+		if (!search_blk && link->u4NumElem > 1 && bss->prBlock)
 			continue;
 
 		if (!apsIsBssQualify(ad, bss, reason, min_score,
@@ -1702,7 +1702,7 @@ try_again:
 		goto done;
 	}
 
-	/* if No Candidate BSS is found, try BSSes which are in blacklist */
+	/* if No Candidate BSS is found, try BSSes which are in blocklist */
 	if (!search_blk && link->u4NumElem > 1) {
 		search_blk = TRUE;
 		goto try_again;
@@ -1720,7 +1720,7 @@ static uint8_t apsIsValidBssDesc(struct ADAPTER *ad, struct BSS_DESC *bss,
 	if (!bss || !sta)
 		return FALSE;
 
-	if (bss->prBlack && bss->prBlack->fgDisallowed)
+	if (bss->prBlock && bss->prBlock->fgDisallowed)
 		valid = FALSE;
 
 #if CFG_SUPPORT_ROAMING
@@ -1970,7 +1970,7 @@ struct AP_COLLECTION *apsIntraApSelection(struct ADAPTER *ad,
 			ap->u4TotalTput += cand->u4Tput;
 			ap->u4TotalScore += cand->u2Score;
 
-			if (cand->prBlack)
+			if (cand->prBlock)
 				j++;
 
 			if (cand->fgIsConnected & bmap)
@@ -1997,11 +1997,11 @@ struct AP_COLLECTION *apsIntraApSelection(struct ADAPTER *ad,
 				ap->aprTarget[i]->fgIsConnected,
 				cand->u2Score == BSS_MATCH_BSSID_SCORE,
 				cand->u2Score == BSS_MATCH_BSSID_HINT_SCORE,
-				cand->prBlack != NULL);
+				cand->prBlock != NULL);
 		}
 
 		if (j == ap->ucLinkNum)
-			ap->fgIsAllLinkInBlackList = TRUE;
+			ap->fgIsAllLinkInBlockList = TRUE;
 
 		if (k == ap->ucLinkNum) {
 			ap->fgIsAllLinkConnected = TRUE;
@@ -2015,7 +2015,7 @@ struct AP_COLLECTION *apsIntraApSelection(struct ADAPTER *ad,
 			ap->fgIsMatchBssid ? "(match_bssid)" : "",
 			ap->fgIsMatchBssidHint ? "(match_bssid_hint)" : "",
 			ap->fgIsAllLinkConnected ? "(connected)" : "",
-			ap->fgIsAllLinkInBlackList ? "(in blocklist)" : "");
+			ap->fgIsAllLinkInBlockList ? "(in blocklist)" : "");
 	}
 
 	return current_ap;
@@ -2358,7 +2358,7 @@ done:
 	if (ap) {
 		set->fgIsMatchBssid = ap->fgIsMatchBssid;
 		set->fgIsMatchBssidHint = ap->fgIsMatchBssidHint;
-		set->fgIsAllLinkInBlackList = ap->fgIsAllLinkInBlackList;
+		set->fgIsAllLinkInBlockList = ap->fgIsAllLinkInBlockList;
 		set->fgIsAllLinkConnected = ap->fgIsAllLinkConnected;
 	}
 	DBGLOG(APS, INFO, "Total %d link(s)\n", set->ucLinkNum);
@@ -2384,7 +2384,7 @@ try_again:
 		if (ap->ucLinkNum == 0)
 			continue;
 
-		if (!try_blockList && ap->fgIsAllLinkInBlackList)
+		if (!try_blockList && ap->fgIsAllLinkInBlockList)
 			continue;
 
 		score = apsCalculateTotalScore(ad, ap, reason, bidx);

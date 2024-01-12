@@ -61,7 +61,7 @@
 #endif
 
 /* Support AP Selection*/
-#define AIS_BLACKLIST_TIMEOUT               15 /* seconds */
+#define AIS_BLOCKLIST_TIMEOUT               15 /* seconds */
 #define AIS_AUTORN_MIN_INTERVAL		    20
 
 #define AP_HASH_SIZE	256	/* Size of hash tab must be power of 2. */
@@ -381,7 +381,7 @@ struct AIS_LINK_INFO {
 };
 
 /* Support AP Selection */
-struct AIS_BLACKLIST_ITEM {
+struct AIS_BLOCKLIST_ITEM {
 	struct LINK_ENTRY rLinkEntry;
 
 	uint8_t aucBSSID[MAC_ADDR_LEN];
@@ -392,7 +392,7 @@ struct AIS_BLACKLIST_ITEM {
 	uint8_t aucSSID[32];
 	OS_SYSTIME rAddTime;
 	u_int8_t fgDeauthLastTime;
-	u_int8_t fgIsInFWKBlacklist;
+	u_int8_t fgIsInFWKBlocklist;
 #if CFG_SUPPORT_MBO
 	uint8_t fgDisallowed;
 	uint16_t u2DisallowSec;
@@ -411,7 +411,7 @@ struct MLD_BLOCKLIST_ITEM {
 
 /* end Support AP Selection */
 
-struct AX_BLACKLIST_ITEM {
+struct AX_BLOCKLIST_ITEM {
 	struct LINK_ENTRY rLinkEntry;
 	uint8_t aucBSSID[MAC_ADDR_LEN];
 };
@@ -544,8 +544,8 @@ struct AIS_FSM_INFO {
 	uint8_t ucPerScanChannelCnt;
 	uint8_t ucLatencyCrtDataMode;
 #endif
-	struct LINK rAxBlacklist;
-	struct LINK rHeHtcBlacklist;
+	struct LINK rAxBlocklist;
+	struct LINK rHeHtcBlocklist;
 	/* rssi monitor */
 	struct PARAM_RSSI_MONITOR_T rRSSIMonitor;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -883,11 +883,11 @@ void aisTest(void);
 
 /* Support AP Selection */
 void aisRefreshFWKBlocklist(struct ADAPTER *prAdapter);
-struct AIS_BLACKLIST_ITEM *aisAddBlocklist(struct ADAPTER *prAdapter,
+struct AIS_BLOCKLIST_ITEM *aisAddBlocklist(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
 void aisRemoveBlockList(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc);
 void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter);
-struct AIS_BLACKLIST_ITEM *aisQueryBlockList(struct ADAPTER *prAdapter,
+struct AIS_BLOCKLIST_ITEM *aisQueryBlockList(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
 void aisBssTmpDisallow(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 	uint32_t sec, int32_t rssiThreshold);
