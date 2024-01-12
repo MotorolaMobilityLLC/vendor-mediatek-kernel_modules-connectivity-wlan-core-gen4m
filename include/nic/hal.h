@@ -106,6 +106,14 @@ enum ENUM_RRO_IND_REASON {
 };
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
+#if CFG_PCIE_LTR_UPDATE
+enum ENUM_PCIE_LTR_STATE {
+	PCIE_LTR_STATE_TX_START = 0,
+	PCIE_LTR_STATE_TX_END,
+	PCIE_LTR_STATE_NUM
+};
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

@@ -1257,6 +1257,8 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 {
 #if CFG_SUPPORT_PCIE_ASPM
 	struct GL_HIF_INFO *prHifInfo;
+#endif
+#if (CFG_SUPPORT_PCIE_ASPM == 1) || (CFG_PCIE_LTR_UPDATE == 1)
 	struct BUS_INFO *prBusInfo = NULL;
 #endif
 	struct mt66xx_chip_info *prChipInfo = NULL;
@@ -1268,6 +1270,8 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_PCIE_ASPM
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+#endif
+#if (CFG_SUPPORT_PCIE_ASPM == 1) || (CFG_PCIE_LTR_UPDATE == 1)
 	prBusInfo = prAdapter->chip_info->bus_info;
 #endif
 	prChipInfo = prAdapter->chip_info;
@@ -1288,6 +1292,14 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_PCIE_ASPM
 	if (prBusInfo->updatePcieAspm)
 		prBusInfo->updatePcieAspm(prAdapter->prGlueInfo, FALSE);
+#endif
+#if CFG_PCIE_LTR_UPDATE
+	/* set pcie LTR low latency */
+	if (prTokenInfo->u4UsedCnt == 0) {
+		if (prBusInfo->pcieLTRValue)
+			prBusInfo->pcieLTRValue(prAdapter,
+				PCIE_LTR_STATE_TX_START);
+	}
 #endif
 #endif
 	if (prTokenInfo->u4UsedCnt == 0 && prChipInfo->wifiNappingCtrl)
@@ -1382,7 +1394,7 @@ static void halResetMsduToken(struct ADAPTER *prAdapter)
 void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
-#if CFG_SUPPORT_PCIE_ASPM
+#if (CFG_SUPPORT_PCIE_ASPM == 1) || (CFG_PCIE_LTR_UPDATE == 1)
 	struct BUS_INFO *prBusInfo = NULL;
 #endif
 	struct mt66xx_chip_info *prChipInfo = NULL;
@@ -1392,7 +1404,7 @@ void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 	struct MSDU_TOKEN_ENTRY *prToken;
 	unsigned long flags = 0;
 
-#if CFG_SUPPORT_PCIE_ASPM
+#if (CFG_SUPPORT_PCIE_ASPM == 1) || (CFG_PCIE_LTR_UPDATE == 1)
 	prBusInfo = prAdapter->chip_info->bus_info;
 #endif
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -1429,6 +1441,14 @@ void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 #if CFG_SUPPORT_PCIE_ASPM
 	if (prTokenInfo->u4UsedCnt == 0 && prBusInfo->updatePcieAspm)
 		prBusInfo->updatePcieAspm(prAdapter->prGlueInfo, TRUE);
+#endif
+#if CFG_PCIE_LTR_UPDATE
+	/* set pcie LTR high latency */
+	if (prTokenInfo->u4UsedCnt == 0) {
+		if (prBusInfo->pcieLTRValue)
+			prBusInfo->pcieLTRValue(prAdapter,
+				PCIE_LTR_STATE_TX_END);
+	}
 #endif
 #endif
 	if (prTokenInfo->u4UsedCnt == 0 && prChipInfo->wifiNappingCtrl)

@@ -119,6 +119,9 @@ static void mt7925ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 
 static void mt7925ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
 
+#if CFG_PCIE_LTR_UPDATE
+static void mt7925PcieLTRValue(struct ADAPTER *prAdapter, uint8_t ucState);
+#endif
 #endif
 
 /*******************************************************************************
@@ -406,6 +409,9 @@ struct BUS_INFO mt7925_bus_info = {
 		.u4MaxMsiNum = ARRAY_SIZE(mt7925_pcie_msi_layout),
 	},
 	.showDebugInfo = mt7925ShowPcieDebugInfo,
+#if CFG_PCIE_LTR_UPDATE
+	.pcieLTRValue = mt7925PcieLTRValue,
+#endif
 #endif /* _HIF_PCIE */
 	.processTxInterrupt = mt7925ProcessTxInterrupt,
 	.processRxInterrupt = mt7925ProcessRxInterrupt,
@@ -1519,6 +1525,33 @@ static void mt7925ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 	}
 }
 
+#if CFG_PCIE_LTR_UPDATE
+uint8_t g_ucLTRStat;
+
+static void mt7925PcieLTRValue(struct ADAPTER *prAdapter, uint8_t ucState)
+{
+	if (ucState == PCIE_LTR_STATE_TX_START) {
+		if (g_ucLTRStat == PCIE_LTR_STATE_TX_END) {
+			HAL_MCR_WR(prAdapter,
+				PCIE_MAC_IREG_PCIE_LTR_VALUES_ADDR,
+				PCIE_LOW_LATENCY_LTR_VALUE);
+			g_ucLTRStat = PCIE_LTR_STATE_TX_START;
+			DBGLOG(HAL, LOUD, "LTR val = 0x%x\n",
+				PCIE_LOW_LATENCY_LTR_VALUE);
+		}
+	} else if (ucState == PCIE_LTR_STATE_TX_END) {
+		if (g_ucLTRStat == PCIE_LTR_STATE_TX_START) {
+			HAL_MCR_WR(prAdapter,
+				PCIE_MAC_IREG_PCIE_LTR_VALUES_ADDR,
+				PCIE_HIGH_LATENCY_LTR_VALUE);
+			g_ucLTRStat = PCIE_LTR_STATE_TX_END;
+			DBGLOG(HAL, LOUD, "LTR val = 0x%x\n",
+				PCIE_HIGH_LATENCY_LTR_VALUE);
+		}
+	} else
+		DBGLOG(HAL, LOUD, "input LTR value wrong\n");
+}
+#endif
 #endif /* _HIF_PCIE */
 
 static uint32_t mt7925GetFlavorVer(uint8_t *flavor)
