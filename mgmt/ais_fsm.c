@@ -125,8 +125,6 @@ static uint8_t *apucDebugAisState[AIS_STATE_NUM] = {
  */
 static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter,
 					  unsigned long ulParam);
-static void aisFsmSetOkcTimeout(IN struct ADAPTER *prAdapter,
-				unsigned long ulParam);
 /* Support AP Selection*/
 static void aisRemoveDisappearedBlacklist(struct ADAPTER *prAdapter);
 
@@ -374,11 +372,6 @@ void aisFsmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 			  (unsigned long)ucBssIndex);
 
 	cnmTimerInitTimer(prAdapter,
-			  &prAisFsmInfo->rWaitOkcPMKTimer,
-			  (PFN_MGMT_TIMEOUT_FUNC) aisFsmSetOkcTimeout,
-			  (unsigned long)ucBssIndex);
-
-	cnmTimerInitTimer(prAdapter,
 			  &prAisFsmInfo->rSecModeChangeTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC)
 			  aisFsmRunEventSecModeChangeTimeout,
@@ -509,7 +502,6 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rJoinTimeoutTimer);
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer);
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rChannelTimeoutTimer);
-	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rWaitOkcPMKTimer);
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rSecModeChangeTimer);
 
 	/* 4 <2> flush pending request */
@@ -610,10 +602,6 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 			ENUM_ENCRYPTION4_ENABLED)
 		|| (prConnSettings->eEncStatus ==
 			ENUM_ENCRYPTION4_KEY_ABSENT)
-		|| (prConnSettings->u2WSCAssocInfoIELen)
-#if CFG_SUPPORT_WAPI
-		|| (prConnSettings->u2WapiAssocInfoIESz)
-#endif
 		)) {
 
 		/* Don't trigger SAA FSM */
@@ -659,6 +647,7 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 		case AUTH_MODE_WPA2:
 		case AUTH_MODE_WPA2_PSK:
 		case AUTH_MODE_WPA_OSEN:
+		case AUTH_MODE_WPA3_OWE:
 			prAisFsmInfo->ucAvailableAuthTypes =
 			    (uint8_t) AUTH_TYPE_OPEN_SYSTEM;
 			break;
@@ -674,6 +663,13 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 			prAisFsmInfo->ucAvailableAuthTypes =
 			    (uint8_t) (AUTH_TYPE_OPEN_SYSTEM |
 				       AUTH_TYPE_SHARED_KEY);
+			break;
+
+		case AUTH_MODE_WPA3_SAE:
+			DBGLOG(AIS, LOUD,
+			       "JOIN INIT: eAuthMode == AUTH_MODE_SAE\n");
+			prAisFsmInfo->ucAvailableAuthTypes =
+			    (uint8_t) AUTH_TYPE_SAE;
 			break;
 
 		default:
@@ -729,6 +725,10 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 			    (uint8_t) AUTH_TYPE_FAST_BSS_TRANSITION;
 			DBGLOG(AIS, TRACE, "FT: RSN FT roaming\n");
 			break;
+		case AUTH_MODE_WPA3_SAE:
+			prAisFsmInfo->ucAvailableAuthTypes =
+			    (uint8_t) AUTH_TYPE_SAE;
+			break;
 		default:
 			prAisFsmInfo->ucAvailableAuthTypes =
 			    prAisSpecificBssInfo->ucRoamingAuthTypes;
@@ -774,6 +774,13 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 
 		prStaRec->ucAuthAlgNum =
 		    (uint8_t) AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION;
+	} else if (prAisFsmInfo->ucAvailableAuthTypes & (uint8_t)
+		   AUTH_TYPE_SAE) {
+		DBGLOG(AIS, LOUD,
+		       "JOIN INIT: Try to do Authentication with AuthType == SAE.\n");
+
+		prStaRec->ucAuthAlgNum =
+		    (uint8_t) AUTH_ALGORITHM_NUM_SAE;
 	} else {
 		DBGLOG(AIS, ERROR,
 		       "JOIN INIT: Unsupported auth type %d\n",
@@ -1291,8 +1298,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			prAisReq = aisFsmGetNextRequest(prAdapter, ucBssIndex);
 			cnmTimerStopTimer(prAdapter,
 					  &prAisFsmInfo->rScanDoneTimer);
-			cnmTimerStopTimer(prAdapter,
-					  &prAisFsmInfo->rWaitOkcPMKTimer);
 			if (prAisFsmInfo->ePreviousState ==
 					AIS_STATE_OFF_CHNL_TX)
 				aisFunClearAllTxReq(prAdapter,
@@ -2121,7 +2126,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			prMsgChReq->ucTokenID = ++prAisFsmInfo->ucSeqNumOfChReq;
 			prMsgChReq->eReqType = CH_REQ_TYPE_JOIN;
 			prMsgChReq->u4MaxInterval =
-			    AIS_JOIN_CH_REQUEST_INTERVAL;
+					AIS_JOIN_CH_REQUEST_INTERVAL;
 			prMsgChReq->ucPrimaryChannel =
 			    prAisFsmInfo->prTargetBssDesc->ucChannelNum;
 			prMsgChReq->eRfSco =
@@ -2797,9 +2802,6 @@ void aisFsmStateAbort(IN struct ADAPTER *prAdapter,
 
 		/* in case roaming is triggered */
 		fgIsCheckConnected = TRUE;
-
-		/* stop okc timeout timer */
-		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rWaitOkcPMKTimer);
 		break;
 
 	case AIS_STATE_JOIN:
@@ -6129,23 +6131,6 @@ aisFsmRunEventMgmtFrameTxDone(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 
 }				/* aisFsmRunEventMgmtFrameTxDone */
-
-static void aisFsmSetOkcTimeout(IN struct ADAPTER *prAdapter,
-				unsigned long ulParam)
-{
-	uint8_t ucBssIndex = (uint8_t) ulParam;
-	struct AIS_FSM_INFO *prAisFsmInfo
-		= aisGetAisFsmInfo(prAdapter, ucBssIndex);
-
-	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
-
-	DBGLOG(AIS, WARN,
-	       "Wait OKC PMKID timeout, current state[%d],fgIsChannelGranted=%d\n",
-	       prAisFsmInfo->eCurrentState, prAisFsmInfo->fgIsChannelGranted);
-	if (prAisFsmInfo->eCurrentState == AIS_STATE_REQ_CHANNEL_JOIN
-	    && prAisFsmInfo->fgIsChannelGranted)
-		aisFsmSteps(prAdapter, AIS_STATE_JOIN, ucBssIndex);
-}
 
 uint32_t
 aisFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,

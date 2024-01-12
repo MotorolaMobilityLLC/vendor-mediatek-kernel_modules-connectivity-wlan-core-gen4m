@@ -391,6 +391,8 @@
 			BIT(AUTH_ALGORITHM_NUM_SHARED_KEY)
 #define AUTH_TYPE_FAST_BSS_TRANSITION \
 			BIT(AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION)
+#define AUTH_TYPE_SAE \
+			BIT(AUTH_ALGORITHM_NUM_SAE)
 
 /* Authentication Retry Limit */
 #define TX_AUTH_ASSOCI_RETRY_LIMIT                  2
@@ -931,7 +933,7 @@ enum ENUM_ANTENNA_NUM {
 #define MAX_NUM_SUPPORTED_CIPHER_SUITES 9
 #if CFG_SUPPORT_802_11W
 /* max number of supported AKM suites */
-#define MAX_NUM_SUPPORTED_AKM_SUITES    11
+#define MAX_NUM_SUPPORTED_AKM_SUITES    13
 #else
 /* max number of supported AKM suites */
 #define MAX_NUM_SUPPORTED_AKM_SUITES    9

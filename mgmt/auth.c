@@ -586,9 +586,7 @@ uint32_t authCheckRxAuthFrameTransSeq(IN struct ADAPTER *prAdapter,
 	struct WLAN_AUTH_FRAME *prAuthFrame;
 	uint16_t u2RxTransactionSeqNum;
 	uint16_t u2MinPayloadLen;
-#if CFG_IGNORE_INVALID_AUTH_TSN
 	struct STA_RECORD *prStaRec;
-#endif
 
 	/* 4 <1> locate the Authentication Frame. */
 	prAuthFrame = (struct WLAN_AUTH_FRAME *)prSwRfb->pvHeader;
@@ -606,6 +604,15 @@ uint32_t authCheckRxAuthFrameTransSeq(IN struct ADAPTER *prAdapter,
 		DBGLOG_MEM8(SAA, WARN, prAuthFrame, prSwRfb->u2PacketLen);
 		return WLAN_STATUS_SUCCESS;
 	}
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+	if (prStaRec && IS_STA_IN_AIS(prStaRec)) {
+		if (prStaRec->eAuthAssocState == SAA_STATE_EXTERNAL_AUTH) {
+			saaFsmRunEventRxAuth(prAdapter, prSwRfb);
+			return WLAN_STATUS_SUCCESS;
+		}
+	}
+
 	/* 4 <3> Parse the Fixed Fields of Authentication Frame Body. */
 	/* WLAN_GET_FIELD_16(&prAuthFrame->u2AuthTransSeqNo,
 	 *	&u2RxTransactionSeqNum);

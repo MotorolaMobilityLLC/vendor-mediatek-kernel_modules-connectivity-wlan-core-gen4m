@@ -1286,4 +1286,10 @@ extern void register_file_buf_handler(file_buf_handler handler,
 			void *ctx,
 			uint8_t ucType);
 
+extern const uint8_t *kalFindIeMatchMask(uint8_t eid,
+				const uint8_t *ies, int len,
+				const uint8_t *match,
+				int match_len, int match_offset,
+				const uint8_t *match_mask);
+
 #endif /* _GL_OS_H */

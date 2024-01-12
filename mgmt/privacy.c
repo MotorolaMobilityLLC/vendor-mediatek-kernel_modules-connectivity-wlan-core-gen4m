@@ -213,6 +213,10 @@ void secInit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	    RSN_AKM_SUITE_802_1X_SHA256;
 	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [10].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_PSK_SHA256;
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
+	    [11].dot11RSNAConfigAuthenticationSuite = RSN_CIPHER_SUITE_SAE;
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
+	    [12].dot11RSNAConfigAuthenticationSuite = RSN_CIPHER_SUITE_OWE;
 #endif
 
 	for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++) {
