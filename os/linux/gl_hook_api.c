@@ -4608,7 +4608,7 @@ uint32_t ServiceWlanOid(void *winfos,
 {
 	int32_t i4Status = 0;
 	uint32_t u4BufLen2;
-	uint32_t *resp;
+	uint32_t *resp = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct RECAL_INFO_T *prReCalInfo = NULL;

@@ -1468,7 +1468,7 @@ endif
 # ---------------------------------------------------
 # Service git List
 # ---------------------------------------------------
-SERVICE_DIR  := wlan_service/
+MTK_WLAN_SERVICE_PATH  := wlan_service/
 
 ifneq ($(findstring wlan_service,$(MTK_WLAN_SERVICE_PATH)),)
 MTK_WLAN_SERVICE=yes
