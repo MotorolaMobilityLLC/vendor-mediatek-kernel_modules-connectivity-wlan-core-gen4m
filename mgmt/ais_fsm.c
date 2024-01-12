@@ -4244,28 +4244,31 @@ void aisUpdateAllBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 	struct STA_RECORD *prSetupStaRec)
 {
 	uint8_t i;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct SW_RFB *prSwRfb;
+#endif
 
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		struct STA_RECORD *prStaRec =
 			aisGetLinkStaRec(prAisFsmInfo, i);
 		struct BSS_INFO *prAisBssInfo =
 			aisGetLinkBssInfo(prAisFsmInfo, i);
-		struct SW_RFB *prSwRfb;
 
 		if (!prStaRec)
 			break;
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 		prSwRfb = beDuplicateAssocSwRfb(prAdapter,
 			prAssocRspSwRfb, prStaRec);
 		if (prSwRfb) {
 			aisUpdateBssInfoForJOIN(prAdapter,
 				prStaRec, prSwRfb);
 			nicRxReturnRFB(prAdapter, prSwRfb);
-		} else {
+		} else
+#else
 			aisUpdateBssInfoForJOIN(prAdapter,
 				prStaRec, prAssocRspSwRfb);
-		}
-
+#endif
 		/* 4 <1.3> Activate current AP's STA_RECORD_T
 		 * in Driver.
 		 */
@@ -5823,25 +5826,28 @@ void aisUpdateBssInfoForRoamingAllAP(IN struct ADAPTER *prAdapter,
 				IN struct STA_RECORD *prSetupStaRec)
 {
 	uint8_t i;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct SW_RFB *prSwRfb;
+#endif
 
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		struct STA_RECORD *prStaRec =
 			aisGetLinkStaRec(prAisFsmInfo, i);
-		struct SW_RFB *prSwRfb;
 
 		if (!prStaRec)
 			break;
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 		prSwRfb = beDuplicateAssocSwRfb(prAdapter,
 			prAssocRspSwRfb, prStaRec);
 		if (prSwRfb) {
 			aisUpdateBssInfoForRoamingAP(prAdapter,
 				prStaRec, prSwRfb);
 			nicRxReturnRFB(prAdapter, prSwRfb);
-		} else {
+		} else
+#endif
 			aisUpdateBssInfoForRoamingAP(prAdapter,
 				prStaRec, prAssocRspSwRfb);
-		}
 	}
 }
 
