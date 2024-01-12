@@ -232,6 +232,12 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 	SPIN_LOCK_NET_DEV,
 	SPIN_LOCK_BSSLIST_FW,
 	SPIN_LOCK_BSSLIST_CFG,
+#if CFG_CHIP_RESET_SUPPORT
+	SPIN_LOCK_WFSYS_RESET,
+#endif
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+	SPIN_LOCK_TX_MGMT_DIRECT_Q,
+#endif
 	SPIN_LOCK_NUM
 };
 
@@ -381,6 +387,29 @@ enum ENUM_CMD_TX_RESULT {
 	kalReleaseTxDirectHifQLock(prGlueInfo, ucBssIndex, ucHifTc, \
 		__ulHifQFlags)
 
+#if defined(_HIF_USB)
+#define KAL_HIF_STATE_LOCK(prGlueInfo) \
+	kalAcquiretHifStateLock(prGlueInfo, &__ulFlags)
+
+#define KAL_HIF_STATE_UNLOCK(prGlueInfo) \
+	kalReleaseHifStateLock(prGlueInfo, __ulFlags)
+#endif
+
+#define KAL_ACQUIRE_SPIN_LOCK_BH(_prAdapter, _rLockCategory)   \
+	kalAcquireSpinLockBh(((struct ADAPTER *)_prAdapter)->prGlueInfo,  \
+		_rLockCategory)
+
+#define KAL_RELEASE_SPIN_LOCK_BH(_prAdapter, _rLockCategory)   \
+	kalReleaseSpinLockBh(((struct ADAPTER *)_prAdapter)->prGlueInfo,  \
+		_rLockCategory)
+
+#define KAL_ACQUIRE_SPIN_LOCK_IRQ(_prAdapter, _rLockCategory)   \
+	kalAcquireSpinLockIrq(((struct ADAPTER *)_prAdapter)->prGlueInfo,  \
+		_rLockCategory, &__ulFlags)
+
+#define KAL_RELEASE_SPIN_LOCK_IRQ(_prAdapter, _rLockCategory)   \
+	kalReleaseSpinLockIrq(((struct ADAPTER *)_prAdapter)->prGlueInfo,  \
+		_rLockCategory, __ulFlags)
 /*----------------------------------------------------------------------------*/
 /* Macros of MUTEX operations for using in Driver Layer                   */
 /*----------------------------------------------------------------------------*/
@@ -920,6 +949,43 @@ KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, \
 	_ulHifQFlags) \
 KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, \
 	_ucBssIndex, _ucHifTc, _ulHifQFlags)
+
+#define kalAcquireSpinLockBh(_prGlueInfo, _rLockCategory) \
+KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define	kalReleaseSpinLockBh(_prGlueInfo, _rLockCategory) \
+KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define kalAcquireSpinLockIrq(_pr, _rLockCate, _plFlags) \
+KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr, _rLockCate, _plFlags)
+
+#define kalReleaseSpinLockIrq(_prGlueInfo, _rLockCategory, _ulFlags) \
+KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
+
+#if defined(_HIF_USB)
+#define kalAcquiretHifStateLock(_prGlueInfo, _plFlags) \
+KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, _plFlags)
+
+#define kalReleaseHifStateLock(_prGlueInfo, _ulFlags) \
+KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, _ulFlags)
+#endif
+
+#define TX_DIRECT_LOCK(glue) \
+KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, glue)
+
+
+#define TX_DIRECT_UNLOCK(glue) \
+KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, glue)
+
+
+#define RX_DIRECT_REORDER_LOCK(glue, dbg) \
+KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, glue, \
+	dbg)
+
+
+#define RX_DIRECT_REORDER_UNLOCK(glue, dbg) \
+KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, glue, \
+	dbg)
 
 #define kalUpdateMACAddress(_prGlueInfo, _pucMacAddr) \
 KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, _pucMacAddr)

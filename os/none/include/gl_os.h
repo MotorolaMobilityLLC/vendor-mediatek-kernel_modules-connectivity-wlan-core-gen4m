@@ -446,9 +446,6 @@ struct GLUE_INFO {
 
 	/* OID related */
 	struct QUE rCmdQueue;
-
-	spinlock_t rSpinLock[SPIN_LOCK_NUM];
-
 	/* Number of pending frames, also used for debuging if any frame is
 	 * missing during the process of unloading Driver.
 	 *

@@ -1656,7 +1656,6 @@ struct ADAPTER {
 	/* TX Direct related : END */
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
 	struct QUE rMgmtDirectTxQueue;
-	spinlock_t rMgmtDirectHifQueueLock;
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
 	struct QUE rPendingCmdQueue;
@@ -1773,7 +1772,6 @@ struct ADAPTER {
 
 #if CFG_CHIP_RESET_SUPPORT
 	enum ENUM_WFSYS_RESET_STATE_TYPE_T eWfsysResetState;
-	spinlock_t rWfsysResetLock;
 	u_int8_t fgIsCfgSuspend;
 	/* Records how many times L0.5 reset is triggered. */
 	uint16_t u2WfsysResetCnt;

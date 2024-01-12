@@ -5310,7 +5310,7 @@ u_int8_t nicIsEcoVerEqualOrLaterTo(IN struct ADAPTER
 void nicSerStopTxRx(IN struct ADAPTER *prAdapter)
 {
 #if defined(_HIF_USB)
-	unsigned long ulFlags;
+	KAL_SPIN_LOCK_DECLARATION();
 
 	/*TODO: multiple spinlocks seems risky.
 	* http://www.linuxgrill.com/anonymous/fire/netfilter/
@@ -5332,8 +5332,7 @@ void nicSerStopTxRx(IN struct ADAPTER *prAdapter)
 	*	Then, hif_thread acquires the lock, knows that SER is ongoing,
 	*	and bypass usb_submit_urb.
 	*/
-	spin_lock_irqsave(&prAdapter->prGlueInfo->rHifInfo.rStateLock,
-				ulFlags);
+	KAL_HIF_STATE_LOCK(prAdapter->prGlueInfo);
 #endif
 
 	DBGLOG(NIC, WARN, "[SER] host set STOP_TRX!\n");
@@ -5354,8 +5353,7 @@ void nicSerStopTxRx(IN struct ADAPTER *prAdapter)
 	prAdapter->fgWiFiInSleepyState = TRUE;
 
 #if defined(_HIF_USB)
-	spin_unlock_irqrestore(&prAdapter->prGlueInfo->rHifInfo.rStateLock,
-				ulFlags);
+	KAL_HIF_STATE_UNLOCK(prAdapter->prGlueInfo);
 #endif
 
 }
@@ -5451,7 +5449,6 @@ void nicSerInit(IN struct ADAPTER *prAdapter, IN const u_int8_t bAtResetFlow)
 #if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
 	if (prAdapter->chip_info->fgIsSupportL0p5Reset) {
 		if (!bAtResetFlow) {
-			spin_lock_init(&prAdapter->rWfsysResetLock);
 			glSetWfsysResetState(prAdapter, WFSYS_RESET_STATE_IDLE);
 			INIT_WORK(&prAdapter->prGlueInfo->rWfsysResetWork,
 				  WfsysResetHdlr);

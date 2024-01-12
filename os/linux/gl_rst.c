@@ -769,19 +769,21 @@ void glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 		schedule_work(&(wifi_rst.rst_work));
 	} else if ((u4RstFlag & RST_FLAG_DO_L0P5_RESET) &&
 	      prAdapter->chip_info->fgIsSupportL0p5Reset) {
-		spin_lock_bh(&prAdapter->rWfsysResetLock);
+		KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter,
+			SPIN_LOCK_WFSYS_RESET);
 		fgIsResetting = TRUE;
 		fgIsRstPreventFwOwn = TRUE;
 
 		if (prAdapter->eWfsysResetState == WFSYS_RESET_STATE_IDLE) {
-			spin_unlock_bh(&prAdapter->rWfsysResetLock);
-
+			KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+				SPIN_LOCK_WFSYS_RESET);
 			glSetWfsysResetState(prAdapter,
 					     WFSYS_RESET_STATE_DETECT);
 
 			schedule_work(&prAdapter->prGlueInfo->rWfsysResetWork);
 		} else
-			spin_unlock_bh(&prAdapter->rWfsysResetLock);
+			KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+				SPIN_LOCK_WFSYS_RESET);
 	} else if (u4RstFlag & RST_FLAG_DO_L1_RESET) {
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
 					     SER_SET_L1_RECOVER, 0);
@@ -804,11 +806,11 @@ void glSetWfsysResetState(struct ADAPTER *prAdapter,
 		DBGLOG(INIT, WARN,
 			"[SER][L0.5] unsupported wfsys reset state\n");
 	} else {
-		spin_lock_bh(&prAdapter->rWfsysResetLock);
-
+		KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter,
+			SPIN_LOCK_WFSYS_RESET);
 		prAdapter->eWfsysResetState = state;
-
-		spin_unlock_bh(&prAdapter->rWfsysResetLock);
+		KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+			SPIN_LOCK_WFSYS_RESET);
 	}
 }
 
@@ -826,14 +828,16 @@ u_int8_t glReSchWfsysReset(struct ADAPTER *prAdapter)
 {
 	u_int8_t fgReSch = FALSE;
 
-	spin_lock_bh(&prAdapter->rWfsysResetLock);
+	KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter,
+		SPIN_LOCK_WFSYS_RESET);
 
 	if (prAdapter->eWfsysResetState == WFSYS_RESET_STATE_POSTPONE) {
 		fgReSch = TRUE;
 		schedule_work(&prAdapter->prGlueInfo->rWfsysResetWork);
 	}
 
-	spin_unlock_bh(&prAdapter->rWfsysResetLock);
+	KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+		SPIN_LOCK_WFSYS_RESET);
 
 	return fgReSch;
 }
@@ -861,10 +865,12 @@ void WfsysResetHdlr(struct work_struct *work)
 	DBGLOG(INIT, STATE, "[SER][L0.5] Reset triggered eWfsysResetState=%d\n",
 				prAdapter->eWfsysResetState);
 
-	spin_lock_bh(&prAdapter->rWfsysResetLock);
+	KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter,
+		SPIN_LOCK_WFSYS_RESET);
 
 	if (prAdapter->eWfsysResetState != WFSYS_RESET_STATE_POSTPONE) {
-		spin_unlock_bh(&prAdapter->rWfsysResetLock);
+		KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+			SPIN_LOCK_WFSYS_RESET);
 
 		if (prAdapter->u2WfsysResetCnt < 0xFFFF)
 			prAdapter->u2WfsysResetCnt++;
@@ -882,7 +888,8 @@ void WfsysResetHdlr(struct work_struct *work)
 		if (HAL_TOGGLE_WFSYS_RST(prAdapter) != WLAN_STATUS_SUCCESS)
 			goto FAIL;
 	} else
-		spin_unlock_bh(&prAdapter->rWfsysResetLock);
+		KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+			SPIN_LOCK_WFSYS_RESET);
 
 	if (kalCheckWfsysResetPostpone(prGlueInfo))
 		goto POSTPONE;

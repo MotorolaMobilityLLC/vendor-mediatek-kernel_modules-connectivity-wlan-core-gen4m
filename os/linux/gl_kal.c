@@ -719,6 +719,46 @@ void kalAcquireSpinLock(IN struct GLUE_INFO *prGlueInfo,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is provided by GLUE Layer for internal driver stack to
+ *        acquire OS SPIN_LOCK_BH.
+ *
+ * \param[in] prGlueInfo     Pointer of GLUE Data Structure
+ * \param[in] rLockCategory  Specify which SPIN_LOCK
+ *
+ * \return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void kalAcquireSpinLockBh(struct GLUE_INFO *prGlueInfo,
+			 enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory)
+{
+
+	if (prGlueInfo == NULL)
+		DBGLOG(INIT, ERROR, "prGlueInfo NULL\n");
+	else {
+		if (rLockCategory < SPIN_LOCK_NUM)
+			spin_lock_bh(&prGlueInfo->rSpinLock[rLockCategory]);
+	}
+}
+
+void kalAcquireSpinLockIrq(struct GLUE_INFO *prGlueInfo,
+			enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory,
+			unsigned long *plFlags)
+{
+	unsigned long ulFlags = 0;
+
+	if (prGlueInfo == NULL || plFlags == NULL)
+		DBGLOG(INIT, ERROR, "prGlueInfo/plFlags NULL\n");
+	else {
+		if (rLockCategory < SPIN_LOCK_NUM) {
+			spin_lock_irqsave(&prGlueInfo->rSpinLock[rLockCategory],
+					  ulFlags);
+			*plFlags = ulFlags;
+		}
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is provided by GLUE Layer for internal driver stack to
  *        release OS SPIN_LOCK.
  *
  * \param[in] prGlueInfo     Pointer of GLUE Data Structure
@@ -746,6 +786,43 @@ void kalReleaseSpinLock(IN struct GLUE_INFO *prGlueInfo,
 	}
 
 }				/* end of kalReleaseSpinLock() */
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is provided by GLUE Layer for internal driver stack to
+ *        release OS SPIN_LOCK_BH.
+ *
+ * \param[in] prGlueInfo     Pointer of GLUE Data Structure
+ * \param[in] rLockCategory  Specify which SPIN_LOCK
+ *
+ * \return (none)
+ */
+/*----------------------------------------------------------------------------*/
+
+void kalReleaseSpinLockBh(struct GLUE_INFO *prGlueInfo,
+			 enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory)
+{
+	if (prGlueInfo == NULL)
+		DBGLOG(INIT, ERROR, "prGlueInfo NULL\n");
+	else {
+		if (rLockCategory < SPIN_LOCK_NUM)
+			spin_unlock_bh(&prGlueInfo->rSpinLock[rLockCategory]);
+	}
+}
+
+void kalReleaseSpinLockIrq(struct GLUE_INFO *prGlueInfo,
+			enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory,
+			unsigned long ulFlags)
+{
+	if (prGlueInfo == NULL)
+		DBGLOG(INIT, ERROR, "prGlueInfo NULL\n");
+	else {
+		if (rLockCategory < SPIN_LOCK_NUM)
+			spin_unlock_irqrestore(
+				&prGlueInfo->rSpinLock[rLockCategory], ulFlags);
+	}
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -12759,3 +12836,49 @@ void unregister_thermal_cbs(struct ADAPTER *ad)
 }
 #endif
 
+#if defined(_HIF_USB)
+void kalAcquiretHifStateLock(struct GLUE_INFO *prGlueInfo,
+		unsigned long *plFlags)
+
+{
+	unsigned long ulFlags = 0;
+	struct GL_HIF_INFO *prHifInfo;
+
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
+		return;
+	}
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	if (prHifInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prHifInfo is NULL\n");
+		return;
+	}
+
+	spin_lock_irqsave(&prHifInfo->rStateLock, ulFlags);
+	*plFlags = ulFlags;
+}
+
+void kalReleaseHifStateLock(struct GLUE_INFO *prGlueInfo,
+		unsigned long ulFlags)
+{
+	struct GL_HIF_INFO *prHifInfo;
+
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
+		return;
+	}
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	if (prHifInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prHifInfo is NULL\n");
+		return;
+	}
+
+	spin_unlock_irqrestore(
+		&prHifInfo->rStateLock,
+		ulFlags);
+}
+#endif
