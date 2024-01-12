@@ -1011,13 +1011,16 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 
 			fgIsSameSSID = FALSE;
 			for (j = 0; j < KAL_AIS_NUM; j++) {
-				uint8_t ucBssIndex =
-					AIS_MAIN_BSS_INDEX(prAdapter, j);
-				struct CONNECTION_SETTINGS *prConnSettings =
-					aisGetConnSettings(prAdapter, ucBssIndex);
+				uint8_t ucBssIndex;
+				struct CONNECTION_SETTINGS *prConnSettings;
 
-				if (!wlanGetAisNetDev(prAdapter->prGlueInfo, j)
-				    || !prConnSettings)
+				if (!wlanGetAisNetDev(prAdapter->prGlueInfo, j))
+					continue;
+
+				ucBssIndex = AIS_MAIN_BSS_INDEX(prAdapter, j);
+				prConnSettings =
+				      aisGetConnSettings(prAdapter, ucBssIndex);
+				if (!prConnSettings)
 					continue;
 
 				if ((!prBssDesc->fgIsHiddenSSID) &&
@@ -4938,15 +4941,18 @@ void scanRemoveBssDescFromList(IN struct LINK *prBSSDescList,
 
 		/* Remove this BSS Desc from the Ess Desc List */
 		for (j = 0; j < KAL_AIS_NUM; j++) {
-			struct AIS_SPECIFIC_BSS_INFO *prSpecBssInfo =
-				aisGetAisSpecBssInfo(prAdapter,
-					AIS_MAIN_BSS_INDEX(prAdapter, j));
+			struct AIS_SPECIFIC_BSS_INFO *prSpecBssInfo;
 			struct LINK *prEssList;
 
+			if (!wlanGetAisNetDev(prAdapter->prGlueInfo, j))
+				continue;
+
+			prSpecBssInfo = aisGetAisSpecBssInfo(prAdapter,
+				AIS_MAIN_BSS_INDEX(prAdapter, j));
 			if (!prSpecBssInfo)
 				continue;
-			prEssList =
-				&prSpecBssInfo->rCurEssLink;
+
+			prEssList = &prSpecBssInfo->rCurEssLink;
 			if (!prEssList)
 				continue;
 
