@@ -3981,7 +3981,7 @@ void halRxTasklet(unsigned long data)
 
 	/* do nothing if wifi is not ready */
 	if (prGlueInfo->fgRxTaskReady == FALSE) {
-		DBGLOG(INIT, INFO,
+		DBGLOG_LIMITED(INIT, INFO,
 		       "Not ready yet, ignore pending interrupt\n");
 		return;
 	}
@@ -3994,7 +3994,7 @@ void halRxTasklet(unsigned long data)
 		|| kalIsResetting()
 		) {
 		/* Should stop now... skip pending interrupt */
-		DBGLOG(INIT, INFO,
+		DBGLOG_LIMITED(INIT, INFO,
 		       "ignore pending interrupt\n");
 	} else {
 		/* DBGLOG(INIT, INFO, ("HIF Interrupt!\n")); */
