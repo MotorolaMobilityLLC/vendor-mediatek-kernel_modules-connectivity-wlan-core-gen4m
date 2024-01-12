@@ -652,6 +652,9 @@
 /* Allow connection with no P2P IE device */
 #define CFG_P2P_CONNECT_ALL_BSS            0
 
+/* Allow setting max P2P GO client count */
+#define CFG_P2P_DEFAULT_CLIENT_COUNT 0
+
 /*------------------------------------------------------------------------------
  * Flags for GTK rekey offload
  *------------------------------------------------------------------------------

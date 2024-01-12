@@ -1251,6 +1251,11 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 		}
 	} else {
 		prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_GO;
+#if CFG_P2P_DEFAULT_CLIENT_COUNT
+		kalP2PSetMaxClients(prAdapter->prGlueInfo,
+			P2P_DEFAULT_CLIENT_COUNT,
+			prP2pStartAPMsg->ucRoleIdx);
+#endif
 	}
 
 	/* Clear list to ensure no client staRec */
