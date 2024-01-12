@@ -7883,11 +7883,12 @@ void wlanCfgSetChipSyncTime(IN struct ADAPTER *prAdapter)
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo;
 
-	ktime_get_ts64(&time);
+	ktime_get_real_ts64(&time);
 	/* UTC time second unit */
 	second = (unsigned int)time.tv_sec;
 	/* UTC time microsecond unit */
 	usecond = (unsigned int)NSEC_TO_USEC(time.tv_nsec);
+	prAdapter->u4FWLastUpdateTime = second;
 
 	kalMemZero(aucValue, WLAN_CFG_VALUE_LEN_MAX);
 	kalMemZero(aucKey, WLAN_CFG_VALUE_LEN_MAX);
