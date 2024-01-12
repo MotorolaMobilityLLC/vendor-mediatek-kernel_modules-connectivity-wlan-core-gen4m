@@ -1092,6 +1092,13 @@ struct MIB_INFO_STAT {
 #endif
 };
 
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+struct PARAM_GET_STATS_ONE_CMD {
+	/* unit: ms */
+	uint32_t u4Period;
+};
+#endif
+
 struct PARAM_GET_STA_STATISTICS {
 	/* Per-STA statistic */
 	uint8_t ucInvalid;

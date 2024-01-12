@@ -2189,6 +2189,8 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 	} query = {0};
 
 	uint32_t u4QueryBufLen = sizeof(query);
+#else
+	struct PARAM_GET_STATS_ONE_CMD rParam;
 #endif
 
 	uint8_t *buf = NULL;
@@ -2268,9 +2270,10 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 			break;
 		}
 #else
+		rParam.u4Period = prAdapter->rWifiVar.u4LlsStatsCmdPeriod;
 		rStatus = kalIoctlByBssIdx(prGlueInfo,
-			   wlanoidQueryStatsOneCmd, NULL,
-			   0, &u4QueryInfoLen, ucBssIdx);
+			   wlanoidQueryStatsOneCmd, &rParam,
+			   sizeof(rParam), &u4QueryInfoLen, ucBssIdx);
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(REQ, WARN, "kalIoctl=%x",
 				rStatus);

@@ -4508,6 +4508,9 @@ wlanoidQueryStatsOneCmd(struct ADAPTER *prAdapter,
 	if (prAdapter->fgIsEnableLpdvt)
 		return WLAN_STATUS_NOT_SUPPORTED;
 
+	if (u4QueryBufferLen < sizeof(struct PARAM_GET_STATS_ONE_CMD))
+		return WLAN_STATUS_BUFFER_TOO_SHORT;
+
 	rResult = wlanQueryStatsOneCmd(prAdapter,
 				pvQueryBuffer,
 				u4QueryBufferLen,

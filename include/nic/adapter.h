@@ -1400,6 +1400,9 @@ struct WIFI_VAR {
 
 #if CFG_SUPPORT_LLS
 	u_int8_t fgLinkStatsDump;
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+	uint32_t u4LlsStatsCmdPeriod;
+#endif
 #endif /* CFG_SUPPORT_LLS */
 
 #if (CFG_SUPPORT_APF == 1)
@@ -2298,7 +2301,8 @@ struct ADAPTER {
 	struct STATS_LLS_PEER_AP_REC rPeerApRec[KAL_AIS_NUM];
 #endif
 #if CFG_SUPPORT_REG_STAT_FROM_EMI
-	uint32_t u4RegStatLastUpdateMs;
+	uint32_t u4RegStatLastSyncFwMs;
+	uint32_t u4RegStatLastSyncDrvTick;
 	struct STATS_REG_STAT_FW_REPORT *prStatsAllRegStat;
 #endif
 
