@@ -3614,6 +3614,7 @@ static void wlanRemove(void)
 
 	down(&g_halt_sem);
 	g_u4HaltFlag = 1;
+	up(&g_halt_sem);
 
 	/* 4 <2> Mark HALT, notify main thread to stop, and clean up queued
 	 *       requests
@@ -3703,8 +3704,6 @@ static void wlanRemove(void)
 
 	/* 4 <5> Release the Bus */
 	glBusRelease(prDev);
-
-	up(&g_halt_sem);
 
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 	wlanDebugTC4Uninit();
