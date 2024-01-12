@@ -287,7 +287,7 @@ nanPublishRequest(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
 	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
 	struct NanFWPublishRequest *prPublishReq = NULL;
-	char aucServiceName[NAN_FW_MAX_SERVICE_NAME_LEN];
+	char aucServiceName[NAN_FW_MAX_SERVICE_NAME_LEN + 1];
 	struct nan_rdf_sha256_state r_SHA_256_state;
 	uint8_t auc_tk[32];
 	uint32_t u4Idx;
@@ -590,7 +590,7 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
 	struct NanFWSubscribeRequest *prSubscribeReq = NULL;
 
-	char aucServiceName[NAN_FW_MAX_SERVICE_NAME_LEN];
+	char aucServiceName[NAN_FW_MAX_SERVICE_NAME_LEN + 1];
 	struct nan_rdf_sha256_state r_SHA_256_state;
 	uint8_t auc_tk[32];
 	uint32_t u4Idx;
