@@ -999,7 +999,7 @@ static void ensure_rst_pin_min_wait_time(int8_t state)
 					   RST_PIN_MIN_WAIT_TIME))
 			break;
 
-		DBGLOG_LIMITED(INIT, INFO, "retry: %d.\n", retry);
+		DBGLOG_LIMITED(INIT, LOUD, "retry: %d.\n", retry);
 		retry++;
 		kalMdelay(1);
 	}
