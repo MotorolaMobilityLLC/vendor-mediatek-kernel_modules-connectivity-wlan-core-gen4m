@@ -452,7 +452,9 @@ void nicRxProcessRxv(struct ADAPTER *prAdapter,
 {
 #if (CFG_SUPPORT_MSP == 1)
 	struct mt66xx_chip_info *prChipInfo;
+	void *pvPacket;
 	uint8_t *pucEthDestAddr;
+	struct WIFI_VAR *prWifiVar;
 
 	prChipInfo = prAdapter->chip_info;
 
@@ -467,10 +469,24 @@ void nicRxProcessRxv(struct ADAPTER *prAdapter,
 	if (!pucEthDestAddr)
 		return;
 
+	pvPacket = prSwRfb->pvPacket;
+	if (!pvPacket)
+		return;
+
 	/* Ignore BMC pkt */
 	if (prSwRfb->fgIsBC || prSwRfb->fgIsMC ||
 		IS_BMCAST_MAC_ADDR(pucEthDestAddr))
 		return;
+
+	/* Ignore filtered pkt, such as ARP */
+	prWifiVar = &prAdapter->rWifiVar;
+	if (GLUE_IS_PKT_FLAG_SET(pvPacket) &
+		prWifiVar->u4RxRateProtoFilterMask) {
+		DBGLOG(RX, TEMP, "u4RxRateProtoFilterMask:%u, proto:%u\n",
+			prWifiVar->u4RxRateProtoFilterMask,
+			GLUE_IS_PKT_FLAG_SET(pvPacket));
+		return;
+	}
 
 	prChipInfo->asicRxProcessRxvforMSP(prAdapter, prSwRfb);
 #endif /* CFG_SUPPORT_MSP == 1 */

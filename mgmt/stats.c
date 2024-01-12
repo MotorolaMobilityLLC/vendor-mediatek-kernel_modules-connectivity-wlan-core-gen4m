@@ -309,7 +309,7 @@ void statsParseARPInfo(void *pvPacket,
 	switch (eventType) {
 	case EVENT_RX:
 		GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
-
+		GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_ARP);
 		if (u2OpCode == ARP_PRO_REQ)
 			DBGLOG_LIMITED(RX, INFO,
 				"<RX> Arp Req From IP: " IPV4STR "\n",
@@ -355,6 +355,7 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucEthBody,
 		switch (eventType) {
 		case EVENT_RX:
 			GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
+			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_DHCP);
 			WLAN_GET_FIELD_BE32(&prBootp->aucOptions[0],
 					    &u4DhcpMagicCode);
 			if (u4DhcpMagicCode == DHCP_MAGIC_NUMBER) {
@@ -430,6 +431,7 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucEthBody,
 			(pucBootp[0] << 8) | pucBootp[1];
 		if (eventType == EVENT_RX) {
 			GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
+			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_DNS);
 			DBGLOG_LIMITED(RX, INFO,
 				"<RX> DNS: IPID 0x%02x, TransID 0x%04x\n",
 				u2IpId, u2TransId);
@@ -475,6 +477,7 @@ void statsParseIPV4Info(void *pvPacket,
 		switch (eventType) {
 		case EVENT_RX:
 			GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
+			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_ICMP);
 			DBGLOG_LIMITED(RX, INFO,
 				"<RX> ICMP: Type %d, Id BE 0x%04x, Seq BE 0x%04x\n",
 				ucIcmpType, u2IcmpId, u2IcmpSeq);
@@ -567,6 +570,8 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 						"<RX><IPv6> dns packet\n");
 					GLUE_SET_INDEPENDENT_PKT(
 						pvPacket, TRUE);
+					GLUE_SET_PKT_FLAG(pvPacket,
+						ENUM_PKT_DNS);
 					break;
 				case IPV6_UDP_PORT_DHCPC:
 				case IPV6_UDP_PORT_DHCPS:
@@ -574,6 +579,8 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 						"<RX><IPv6> dhcp packet\n");
 					GLUE_SET_INDEPENDENT_PKT(
 						pvPacket, TRUE);
+					GLUE_SET_PKT_FLAG(pvPacket,
+						ENUM_PKT_DHCP);
 					break;
 				case UDP_PORT_NTP:
 					DBGLOG(RX, INFO,
@@ -602,6 +609,8 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 				/*130 mlti listener query*/
 				/*143 multi listener report v2*/
 				GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
+				GLUE_SET_PKT_FLAG(pvPacket,
+					ENUM_PKT_IPV6_HOP_BY_HOP);
 				DBGLOG_LIMITED(RX, INFO,
 					"<RX><IPv6> hop-by-hop packet\n");
 				break;
@@ -621,6 +630,8 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 				/* IPv6 header without options */
 				ucICMPv6Type = pucEthBody[IPV6_HDR_LEN];
 				GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
+				GLUE_SET_PKT_FLAG(pvPacket,
+					ENUM_PKT_ICMPV6);
 				switch (ucICMPv6Type) {
 				case ICMPV6_TYPE_ROUTER_SOLICITATION:
 					DBGLOG_LIMITED(RX, INFO,
@@ -670,6 +681,9 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 		uint8_t ucEapolType = pucEapol[1];
 		uint16_t u2KeyInfo = 0;
 		uint8_t m = 0;
+
+		if (eventType == EVENT_RX)
+			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_1X);
 
 		statsLogData(eventType, WLAN_WAKE_1X);
 		switch (ucEapolType) {
@@ -747,6 +761,7 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 			DBGLOG(RX, INFO,
 				"<RX> WAPI: subType %d, Len %d, Seq %d\n",
 				ucSubType, u2Length, u2Seq);
+			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_1X);
 			break;
 		case EVENT_TX:
 			DBGLOG(TX, INFO,
@@ -766,6 +781,7 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 				"<RX> TDLS type %d, category %d, Action %d, Token %d\n",
 				pucEthBody[0], pucEthBody[1],
 				pucEthBody[2], pucEthBody[3]);
+			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_TDLS);
 			break;
 		case EVENT_TX:
 			DBGLOG(TX, INFO,
