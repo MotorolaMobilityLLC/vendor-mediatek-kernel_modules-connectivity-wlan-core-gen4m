@@ -95,7 +95,6 @@ static uint8_t *apucDebugRoamingState[ROAMING_STATE_NUM] = {
 	(uint8_t *) DISP_STRING("IDLE"),
 	(uint8_t *) DISP_STRING("DECISION"),
 	(uint8_t *) DISP_STRING("DISCOVERY"),
-	(uint8_t *) DISP_STRING("REQ_CAND_LIST"),
 	(uint8_t *) DISP_STRING("ROAM")
 };
 
@@ -114,19 +113,6 @@ static uint8_t *apucDebugRoamingState[ROAMING_STATE_NUM] = {
  *                              F U N C T I O N S
  *******************************************************************************
  */
-static void roamingWaitCandidateTimeout(IN struct ADAPTER *prAdapter,
-	unsigned long ulParamPtr)
-{
-	uint8_t ucBssIndex = (uint8_t) ulParamPtr;
-	struct ROAMING_INFO *prRoamingFsmInfo;
-
-	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
-	if (prRoamingFsmInfo->eCurrentState == ROAMING_STATE_DECISION) {
-		aisResetNeighborApList(prAdapter, ucBssIndex);
-		aisSendNeighborRequest(prAdapter, ucBssIndex);
-	}
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Initialize the value in ROAMING_FSM_INFO_T for ROAMING FSM operation
@@ -157,9 +143,6 @@ void roamingFsmInit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	prRoamingFsmInfo->eCurrentState = ROAMING_STATE_IDLE;
 	prRoamingFsmInfo->rRoamingDiscoveryUpdateTime = 0;
 	prRoamingFsmInfo->fgDrvRoamingAllow = TRUE;
-	cnmTimerInitTimer(prAdapter, &prRoamingFsmInfo->rWaitCandidateTimer,
-			  (PFN_MGMT_TIMEOUT_FUNC) roamingWaitCandidateTimeout,
-			  (unsigned long) ucBssIndex);
 }				/* end of roamingFsmInit() */
 
 /*----------------------------------------------------------------------------*/
@@ -184,8 +167,7 @@ void roamingFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 		aisGetRoamingInfo(prAdapter, ucBssIndex);
 
 	prRoamingFsmInfo->eCurrentState = ROAMING_STATE_IDLE;
-	cnmTimerStopTimer(prAdapter, &prRoamingFsmInfo->rWaitCandidateTimer);
-}				/* end of roamingFsmUninit() */
+} /* end of roamingFsmUninit() */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -399,9 +381,6 @@ void roamingFsmSteps(IN struct ADAPTER *prAdapter,
 		 *   to speed up state search.
 		 */
 		case ROAMING_STATE_IDLE:
-			cnmTimerStopTimer(
-				prAdapter,
-				&prRoamingFsmInfo->rWaitCandidateTimer);
 			break;
 		case ROAMING_STATE_DECISION:
 #if CFG_SUPPORT_DRIVER_ROAMING
@@ -434,30 +413,6 @@ void roamingFsmSteps(IN struct ADAPTER *prAdapter,
 				prAdapter, fgIsNeedScan, ucBssIndex);
 		}
 		break;
-		case ROAMING_STATE_REQ_CAND_LIST:
-		{
-#if CFG_SUPPORT_802_11K
-			struct BSS_INFO *prBssInfo =
-				aisGetAisBssInfo(prAdapter, ucBssIndex);
-			struct BSS_DESC *prBssDesc =
-				aisGetTargetBssDesc(prAdapter, ucBssIndex);
-			/* if AP supports Neighbor AP report, then it can used
-			 * to assist roaming candicate selection
-			 */
-			if (prBssInfo && prBssInfo->prStaRecOfAP) {
-				if (prBssDesc &&
-				    (prBssDesc->aucRrmCap[0] &
-				     BIT(RRM_CAP_INFO_NEIGHBOR_REPORT_BIT))) {
-					cnmTimerStartTimer(prAdapter,
-					 &prRoamingFsmInfo->rWaitCandidateTimer,
-					 AIS_JOIN_CH_REQUEST_INTERVAL);
-				}
-			}
-#endif
-			fgIsTransition = TRUE;
-			eNextState = ROAMING_STATE_DECISION;
-			break;
-		}
 		case ROAMING_STATE_ROAM:
 			break;
 
@@ -511,7 +466,7 @@ void roamingFsmRunEventStart(IN struct ADAPTER *prAdapter,
 	      || prRoamingFsmInfo->eCurrentState == ROAMING_STATE_ROAM))
 		return;
 
-	eNextState = ROAMING_STATE_REQ_CAND_LIST;
+	eNextState = ROAMING_STATE_DECISION;
 	if (eNextState != prRoamingFsmInfo->eCurrentState) {
 		rTransit.u2Event = ROAMING_EVENT_START;
 		rTransit.u2Data = prAisBssInfo->ucBssIndex;
@@ -846,6 +801,24 @@ uint32_t roamingFsmProcessEvent(IN struct ADAPTER *prAdapter,
 	}
 
 	return WLAN_STATUS_SUCCESS;
+}
+
+uint8_t roamingFsmInDecision(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct ROAMING_INFO *roam;
+	enum ENUM_PARAM_CONNECTION_POLICY policy;
+	struct CONNECTION_SETTINGS *setting;
+
+	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	setting = aisGetConnSettings(prAdapter, ucBssIndex);
+	policy = setting->eConnectionPolicy;
+
+	return IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) &&
+	       roam->fgIsEnableRoaming &&
+	       roam->eCurrentState == ROAMING_STATE_DECISION &&
+	       policy != CONNECT_BY_BSSID ?
+	       TRUE : FALSE;
+
 }
 
 #endif

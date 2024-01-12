@@ -654,7 +654,7 @@ struct ESS_CHNL_INFO {
 };
 /* end Support AP Selection */
 
-struct NEIGHBOR_AP_T {
+struct NEIGHBOR_AP {
 	struct LINK_ENTRY rLinkEntry;
 	uint8_t aucBssid[MAC_ADDR_LEN];
 	u_int8_t fgHT:1;
@@ -736,7 +736,7 @@ struct AIS_SPECIFIC_BSS_INFO {
 	struct LINK rCurEssLink;
 	/* end Support AP Selection */
 
-	struct BSS_TRANSITION_MGT_PARAM_T rBTMParam;
+	struct BSS_TRANSITION_MGT_PARAM rBTMParam;
 	struct LINK_MGMT  rNeighborApList;
 	OS_SYSTIME rNeiApRcvTime;
 	uint32_t u4NeiApValidInterval;
