@@ -8896,7 +8896,6 @@ wlanGetStaIdxByWlanIdx(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_FAILURE;
 }
 
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to query LTE safe channels.
@@ -8915,35 +8914,37 @@ wlanGetStaIdxByWlanIdx(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanoidQueryLteSafeChannel(IN struct ADAPTER *prAdapter,
-			   IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
-			   OUT uint32_t *pu4QueryInfoLen)
+wlanQueryLteSafeChannel(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucRoleIndex)
 {
 	uint32_t rResult = WLAN_STATUS_FAILURE;
 	struct CMD_GET_LTE_SAFE_CHN rQuery_LTE_SAFE_CHN;
+	struct PARAM_GET_CHN_INFO rQueryLteChn;
+
+	DBGLOG(P2P, TRACE, "[ACS] Get safe LTE Channels\n");
 
 	do {
-		/* Sanity test */
-		if ((prAdapter == NULL) || (pu4QueryInfoLen == NULL))
-			break;
-		if ((pvQueryBuffer == NULL) || (u4QueryBufferLen == 0))
+		if (!prAdapter)
 			break;
 
+		kalMemZero(&rQueryLteChn, sizeof(struct PARAM_GET_CHN_INFO));
+		rQueryLteChn.ucRoleIndex = ucRoleIndex;
+
 		/* Get LTE safe channel list */
-		rResult = wlanSendSetQueryCmd(prAdapter,
+		wlanSendSetQueryCmd(prAdapter,
 			CMD_ID_GET_LTE_CHN,
 			FALSE,
 			TRUE,
-			TRUE, /* Query ID */
+			FALSE, /* Query ID */
 			nicCmdEventQueryLteSafeChn, /* The handler to receive
 						     * firmware notification
 						     */
 			nicOidCmdTimeoutCommon,
 			sizeof(struct CMD_GET_LTE_SAFE_CHN),
 			(uint8_t *)&rQuery_LTE_SAFE_CHN,
-			pvQueryBuffer,
-			u4QueryBufferLen);
-		DBGLOG(P2P, INFO, "[ACS] Get safe LTE Channels\n");
+			&rQueryLteChn,
+			0);
+		rResult = WLAN_STATUS_SUCCESS;
 	} while (FALSE);
 
 	return rResult;
@@ -9374,7 +9375,6 @@ wlanSortChannel(IN struct ADAPTER *prAdapter)
 		       prChnLoadInfo->rChnRankList[ucIdx].u4Dirtiness);
 
 }
-#endif
 
 #if ((CFG_SISO_SW_DEVELOP == 1) || (CFG_SUPPORT_SPE_IDX_CONTROL == 1))
 uint8_t

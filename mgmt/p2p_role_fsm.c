@@ -2493,6 +2493,7 @@ void p2pRoleFsmRunEventScanRequest(IN struct ADAPTER *prAdapter,
 		prP2pScanReqMsg->u4IELen);
 
 	prScanReqInfo->u4BufLength = prP2pScanReqMsg->u4IELen;
+	prScanReqInfo->eScanReason = prP2pScanReqMsg->eScanReason;
 
 	p2pRoleFsmStateTransition(prAdapter,
 		prP2pRoleFsmInfo,
@@ -2519,6 +2520,7 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	struct P2P_CHNL_REQ_INFO *prChnlReqInfo =
 		(struct P2P_CHNL_REQ_INFO *) NULL;
+	struct P2P_SCAN_REQ_INFO *prScanInfo;
 
 	if (!prP2pRoleFsmInfo) {
 		DBGLOG(P2P, TRACE, "prP2pRoleFsmInfo is NULL\n");
@@ -2529,6 +2531,7 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 
 	prScanReqInfo = &(prP2pRoleFsmInfo->rScanReqInfo);
 	prScanDoneMsg = (struct MSG_SCN_SCAN_DONE *) prMsgHdr;
+	prScanInfo = &prP2pRoleFsmInfo->rScanReqInfo;
 
 	if (prScanDoneMsg->ucSeqNum != prScanReqInfo->ucSeqNumOfScnMsg) {
 		/* Scan Done message sequence number mismatch.
@@ -2599,6 +2602,24 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 				/* For GC join. */
 				eNextState = P2P_ROLE_STATE_REQING_CHANNEL;
 			}
+		} else if (prScanInfo->eScanReason == SCAN_REASON_ACS) {
+			struct P2P_ACS_REQ_INFO *prAcsReqInfo;
+
+			prAcsReqInfo = &prP2pRoleFsmInfo->rAcsReqInfo;
+			prScanInfo->eScanReason = SCAN_REASON_UNKNOWN;
+			p2pFunCalAcsChnScores(prAdapter);
+			if (wlanQueryLteSafeChannel(prAdapter,
+					prP2pRoleFsmInfo->ucRoleIndex) ==
+					WLAN_STATUS_SUCCESS) {
+				/* do nothing & wait for FW event */
+			} else {
+				DBGLOG(P2P, WARN, "query safe chn fail.\n");
+				p2pFunProcessAcsReport(prAdapter,
+						prP2pRoleFsmInfo->ucRoleIndex,
+						NULL,
+						prAcsReqInfo);
+			}
+			eNextState = P2P_ROLE_STATE_IDLE;
 		} else {
 			eNextState = P2P_ROLE_STATE_IDLE;
 		}
@@ -3675,4 +3696,252 @@ exit:
 	if (prMsgHdr)
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pRoleFsmRunEventTxCancelWait */
+
+static void initAcsParams(IN struct ADAPTER *prAdapter,
+		IN struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest,
+		IN struct P2P_ACS_REQ_INFO *prAcsReqInfo) {
+	struct RF_CHANNEL_INFO *prRfChannelInfo;
+	uint8_t i;
+
+	if (!prAdapter || !prMsgAcsRequest || !prAcsReqInfo)
+		return;
+
+	kalMemSet(prAcsReqInfo, 0, sizeof(struct P2P_ACS_REQ_INFO));
+	prAcsReqInfo->fgIsProcessing = TRUE;
+	prAcsReqInfo->ucRoleIdx = prMsgAcsRequest->ucRoleIdx;
+	prAcsReqInfo->fgIsHtEnable = prMsgAcsRequest->fgIsHtEnable;
+	prAcsReqInfo->fgIsHt40Enable = prMsgAcsRequest->fgIsHt40Enable;
+	prAcsReqInfo->fgIsVhtEnable = prMsgAcsRequest->fgIsVhtEnable;
+	prAcsReqInfo->eChnlBw = prMsgAcsRequest->eChnlBw;
+	prAcsReqInfo->eHwMode = prMsgAcsRequest->eHwMode;
+
+	if (prAcsReqInfo->eChnlBw == MAX_BW_UNKNOWN) {
+		if (prAcsReqInfo->fgIsHtEnable &&
+				prAcsReqInfo->fgIsHt40Enable) {
+			prAcsReqInfo->eChnlBw = MAX_BW_40MHZ;
+		} else {
+			prAcsReqInfo->eChnlBw = MAX_BW_20MHZ;
+		}
+	}
+	if (!prAcsReqInfo->fgIsVhtEnable &&
+			(prAcsReqInfo->eChnlBw == MAX_BW_80MHZ ||
+				prAcsReqInfo->eChnlBw == MAX_BW_160MHZ)) {
+		if (prAcsReqInfo->fgIsHtEnable &&
+				prAcsReqInfo->fgIsHt40Enable) {
+			prAcsReqInfo->eChnlBw = MAX_BW_40MHZ;
+		} else {
+			prAcsReqInfo->eChnlBw = MAX_BW_20MHZ;
+		}
+	}
+
+	DBGLOG(P2P, INFO, "idx=%d, ht=%d, ht40=%d, vht=%d, bw=%d, m=%d, c=%d",
+			prMsgAcsRequest->ucRoleIdx,
+			prMsgAcsRequest->fgIsHtEnable,
+			prMsgAcsRequest->fgIsHt40Enable,
+			prMsgAcsRequest->fgIsVhtEnable,
+			prMsgAcsRequest->eChnlBw,
+			prMsgAcsRequest->eHwMode,
+			prMsgAcsRequest->u4NumChannel);
+	if (prMsgAcsRequest->u4NumChannel) {
+		for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
+			prRfChannelInfo =
+				&(prMsgAcsRequest->arChannelListInfo[i]);
+			DBGLOG(REQ, INFO, "[%d] band=%d, ch=%d\n", i,
+				prRfChannelInfo->eBand,
+				prRfChannelInfo->ucChannelNum);
+			prRfChannelInfo++;
+		}
+	}
+}
+
+static void indicateAcsResultByAisCh(IN struct ADAPTER *prAdapter,
+		IN struct P2P_ACS_REQ_INFO *prAcsReqInfo,
+		IN struct BSS_INFO *prAisBssInfo)
+{
+	if (!prAdapter || !prAcsReqInfo)
+		return;
+
+	prAcsReqInfo->ucPrimaryCh = prAisBssInfo->ucPrimaryChannel;
+	if (prAisBssInfo->ucVhtChannelWidth == VHT_OP_CHANNEL_WIDTH_20_40) {
+		if (prAisBssInfo->eBssSCO == CHNL_EXT_SCN)
+			prAcsReqInfo->eChnlBw = MAX_BW_20MHZ;
+		else
+			prAcsReqInfo->eChnlBw = MAX_BW_40MHZ;
+	} else if (prAisBssInfo->ucVhtChannelWidth == VHT_OP_CHANNEL_WIDTH_80) {
+		prAcsReqInfo->eChnlBw = MAX_BW_80MHZ;
+	} else if (prAisBssInfo->ucVhtChannelWidth ==
+			VHT_OP_CHANNEL_WIDTH_160) {
+		prAcsReqInfo->eChnlBw = MAX_BW_160MHZ;
+	} else if (prAisBssInfo->ucVhtChannelWidth ==
+			VHT_OP_CHANNEL_WIDTH_80P80) {
+		prAcsReqInfo->eChnlBw = MAX_BW_80_80_MHZ;
+	} else {
+		prAcsReqInfo->eChnlBw = MAX_BW_20MHZ;
+	}
+	p2pFunIndicateAcsResult(prAdapter->prGlueInfo,
+			prAcsReqInfo);
+}
+
+static void trimAcsScanList(IN struct ADAPTER *prAdapter,
+		IN struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest,
+		IN struct P2P_ACS_REQ_INFO *prAcsReqInfo,
+		IN enum ENUM_BAND eDesiredBand)
+{
+	uint32_t u4NumChannel = 0;
+	uint8_t i;
+	struct RF_CHANNEL_INFO *prRfChannelInfo1;
+	struct RF_CHANNEL_INFO *prRfChannelInfo2;
+
+	if (!prAdapter || !prAcsReqInfo)
+		return;
+
+	for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
+		prRfChannelInfo1 =
+				&(prMsgAcsRequest->arChannelListInfo[i]);
+		if (eDesiredBand != prRfChannelInfo1->eBand)
+			continue;
+		DBGLOG(P2P, INFO, "acs trim scan list, [%d]=%d %d\n",
+				u4NumChannel,
+				prRfChannelInfo1->eBand,
+				prRfChannelInfo1->ucChannelNum);
+		prRfChannelInfo2 = &(prMsgAcsRequest->arChannelListInfo[
+				u4NumChannel]);
+		prRfChannelInfo2->eBand = prRfChannelInfo1->eBand;
+		prRfChannelInfo2->u4CenterFreq1 =
+				prRfChannelInfo1->u4CenterFreq1;
+		prRfChannelInfo2->u4CenterFreq2 =
+				prRfChannelInfo1->u4CenterFreq2;
+		prRfChannelInfo2->u2PriChnlFreq =
+				prRfChannelInfo1->u2PriChnlFreq;
+		prRfChannelInfo2->ucChnlBw = prRfChannelInfo1->ucChnlBw;
+		prRfChannelInfo2->ucChannelNum =
+				prRfChannelInfo1->ucChannelNum;
+		u4NumChannel++;
+		prRfChannelInfo1++;
+	}
+	prMsgAcsRequest->u4NumChannel = u4NumChannel;
+}
+
+static void initAcsChnlMask(IN struct ADAPTER *prAdapter,
+		IN struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest,
+		IN struct P2P_ACS_REQ_INFO *prAcsReqInfo)
+{
+	uint8_t i;
+	struct RF_CHANNEL_INFO *prRfChannelInfo;
+
+	prAcsReqInfo->u4LteSafeChnMask_2G = 0;
+	prAcsReqInfo->u4LteSafeChnMask_5G_1 = 0;
+	prAcsReqInfo->u4LteSafeChnMask_5G_2 = 0;
+
+	for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
+		prRfChannelInfo = &(prMsgAcsRequest->arChannelListInfo[i]);
+		if (prRfChannelInfo->ucChannelNum <= 14) {
+			prAcsReqInfo->u4LteSafeChnMask_2G |= BIT(
+				prRfChannelInfo->ucChannelNum);
+		} else if (prRfChannelInfo->ucChannelNum >= 36 &&
+				prRfChannelInfo->ucChannelNum <= 144) {
+			prAcsReqInfo->u4LteSafeChnMask_5G_1 |= BIT(
+				(prRfChannelInfo->ucChannelNum - 36) / 4);
+		} else if (prRfChannelInfo->ucChannelNum >= 149 &&
+				prRfChannelInfo->ucChannelNum <= 181) {
+			prAcsReqInfo->u4LteSafeChnMask_5G_2 |= BIT(
+				(prRfChannelInfo->ucChannelNum - 149) / 4);
+		}
+	}
+
+	DBGLOG(P2P, INFO, "acs chnl mask=[0x%08x][0x%08x][0x%08x]\n",
+			prAcsReqInfo->u4LteSafeChnMask_2G,
+			prAcsReqInfo->u4LteSafeChnMask_5G_1,
+			prAcsReqInfo->u4LteSafeChnMask_5G_2);
+}
+
+void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
+{
+	struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
+	struct MSG_P2P_SCAN_REQUEST *prP2pScanReqMsg;
+	struct P2P_ACS_REQ_INFO *prAcsReqInfo;
+	uint32_t u4MsgSize = 0;
+
+	if (!prAdapter || !prMsgHdr)
+		return;
+
+	prMsgAcsRequest = (struct MSG_P2P_ACS_REQUEST *) prMsgHdr;
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prMsgAcsRequest->ucRoleIdx);
+	prAcsReqInfo = &prP2pRoleFsmInfo->rAcsReqInfo;
+
+	initAcsParams(prAdapter, prMsgAcsRequest, prAcsReqInfo);
+
+	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11ANY) {
+		struct BSS_INFO *prAisBssInfo;
+
+		prAisBssInfo = prAdapter->prAisBssInfo;
+		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
+			/* Force SCC, indicate channel directly */
+			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
+					prAisBssInfo);
+			goto exit;
+		} else if (prAdapter->fgEnable5GBand) {
+			/* Prefer 5G band first */
+			trimAcsScanList(prAdapter, prMsgAcsRequest,
+					prAcsReqInfo, BAND_5G);
+			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
+		} else {
+			trimAcsScanList(prAdapter, prMsgAcsRequest,
+					prAcsReqInfo, BAND_2G4);
+			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
+		}
+	}
+
+	initAcsChnlMask(prAdapter, prMsgAcsRequest, prAcsReqInfo);
+
+	u4MsgSize = sizeof(struct MSG_P2P_SCAN_REQUEST) + (
+			prMsgAcsRequest->u4NumChannel *
+				sizeof(struct RF_CHANNEL_INFO));
+
+	prP2pScanReqMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, u4MsgSize);
+	if (prP2pScanReqMsg == NULL) {
+		DBGLOG(P2P, ERROR, "alloc scan req. fail\n");
+		return;
+	}
+	kalMemSet(prP2pScanReqMsg, 0, u4MsgSize);
+	prP2pScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
+	prP2pScanReqMsg->ucBssIdx = prP2pRoleFsmInfo->ucBssIndex;
+	prP2pScanReqMsg->i4SsidNum = 0;
+	prP2pScanReqMsg->u4NumChannel = prMsgAcsRequest->u4NumChannel;
+	prP2pScanReqMsg->u4IELen = 0;
+	prP2pScanReqMsg->eScanReason = SCAN_REASON_ACS;
+	kalMemCopy(&(prP2pScanReqMsg->arChannelListInfo),
+			&(prMsgAcsRequest->arChannelListInfo),
+			(prMsgAcsRequest->u4NumChannel *
+				sizeof(struct RF_CHANNEL_INFO)));
+	p2pRoleFsmRunEventScanRequest(prAdapter,
+			(struct MSG_HDR *) prP2pScanReqMsg);
+
+exit:
+	if (prMsgHdr)
+		cnmMemFree(prAdapter, prMsgHdr);
+}
+
+u_int8_t p2pRoleFsmIsAcsProcessing(IN struct ADAPTER *prAdapter,
+		uint8_t ucRoleIdx) {
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
+	struct P2P_ACS_REQ_INFO *prAcsReqInfo;
+
+	if (!prAdapter)
+		return FALSE;
+
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			ucRoleIdx);
+	if (!prP2pRoleFsmInfo)
+		return FALSE;
+
+	prAcsReqInfo = &prP2pRoleFsmInfo->rAcsReqInfo;
+	if (!prAcsReqInfo)
+		return FALSE;
+
+	return prAcsReqInfo->fgIsProcessing;
+}
 

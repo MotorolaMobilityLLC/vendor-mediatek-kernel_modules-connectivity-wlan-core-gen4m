@@ -1040,22 +1040,9 @@ void cnmCsaDoneEvent(IN struct ADAPTER *prAdapter,
 uint8_t cnmDecideSapNewChannel(
 	IN struct GLUE_INFO *prGlueInfo, uint8_t ucCurrentChannel)
 {
-
-	u_int8_t fgIsReady = FALSE;
-	struct RF_CHANNEL_INFO aucChannelList2G[MAX_2G_BAND_CHN_NUM];
-	struct RF_CHANNEL_INFO aucChannelList5G[MAX_5G_BAND_CHN_NUM];
-	uint8_t ucNumOfChannel, i, ucIdx, ucSwitchMode;
-	uint16_t u2APNumScore = 0, u2UpThreshold = 0,
-		u2LowThreshold = 0, ucInnerIdx = 0;
+	uint8_t ucSwitchMode;
 	uint32_t u4LteSafeChnBitMask_2G  = 0, u4LteSafeChnBitMask_5G_1 = 0,
 		u4LteSafeChnBitMask_5G_2 = 0;
-
-	struct PARAM_GET_CHN_INFO *prGetChnLoad;
-	struct PARAM_PREFER_CHN_INFO rPreferChannel = { 0, 0xFFFF, 0 };
-	struct PARAM_PREFER_CHN_INFO
-		arChannelDirtyScore_2G[MAX_2G_BAND_CHN_NUM];
-	kalMemZero(arChannelDirtyScore_2G,
-		sizeof(struct PARAM_PREFER_CHN_INFO)*MAX_2G_BAND_CHN_NUM);
 
 	if (!prGlueInfo) {
 		DBGLOG(P2P, ERROR, "prGlueInfo is NULL\n");
@@ -1103,126 +1090,12 @@ uint8_t cnmDecideSapNewChannel(
 #endif
 	}
 
-	if (ucSwitchMode == CH_SWITCH_2G) {
-		/*
-		* 1. Get 2.4G Band channel list in current regulatory domain
-		*/
-		rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_2G4, TRUE,
-			MAX_2G_BAND_CHN_NUM, &ucNumOfChannel, aucChannelList2G);
-
-		fgIsReady = prGlueInfo->prAdapter->rWifiVar
-				.rChnLoadInfo.fgDataReadyBit;
-
-		if (fgIsReady == TRUE) {
-			/*
-			* 2. Calculate each channel's dirty score
-			*/
-			prGetChnLoad = &(prGlueInfo->prAdapter->rWifiVar
-				.rChnLoadInfo);
-
-			for (i = 0; i < ucNumOfChannel; i++) {
-				ucIdx = aucChannelList2G[i]
-					.ucChannelNum - 1;
-
-				/* Current channel's dirty score */
-				u2APNumScore =
-					prGetChnLoad->rEachChnLoad[ucIdx]
-					.u2APNum * CHN_DIRTY_WEIGHT_UPPERBOUND;
-				u2LowThreshold = u2UpThreshold = 3;
-
-				if (ucIdx < 3) {
-					u2LowThreshold = ucIdx;
-					u2UpThreshold = 3;
-				} else if (ucIdx >= (ucNumOfChannel - 3)) {
-					u2LowThreshold = 3;
-					u2UpThreshold =
-						ucNumOfChannel - (ucIdx + 1);
-				}
-
-				/* Lower channel's dirty score */
-				for (ucInnerIdx = 0;
-					ucInnerIdx < u2LowThreshold;
-					ucInnerIdx++) {
-					u2APNumScore +=
-					(prGetChnLoad->rEachChnLoad
-					[ucIdx - ucInnerIdx - 1].u2APNum *
-					(CHN_DIRTY_WEIGHT_UPPERBOUND - 1
-					- ucInnerIdx));
-				}
-
-				/* Upper channel's dirty score */
-				for (ucInnerIdx = 0;
-					ucInnerIdx < u2UpThreshold;
-					ucInnerIdx++) {
-					u2APNumScore +=
-					(prGetChnLoad->rEachChnLoad
-					[ucIdx + ucInnerIdx + 1].u2APNum *
-					(CHN_DIRTY_WEIGHT_UPPERBOUND - 1
-					- ucInnerIdx));
-				}
-
-				arChannelDirtyScore_2G[i].ucChannel =
-					aucChannelList2G[i].ucChannelNum;
-				arChannelDirtyScore_2G[i].u2APNumScore
-					= u2APNumScore;
-			}
-		}
-
-		/* 4. Find best channel, skip unsafe*/
-		for (i = 0; i < ucNumOfChannel; i++) {
-			if (!(u4LteSafeChnBitMask_2G
-				& BIT(arChannelDirtyScore_2G[i].ucChannel)))
-				continue;
-
-			if (rPreferChannel.u2APNumScore
-				>= arChannelDirtyScore_2G[i].u2APNumScore) {
-				rPreferChannel.ucChannel =
-					arChannelDirtyScore_2G[i].ucChannel;
-				rPreferChannel.u2APNumScore =
-					arChannelDirtyScore_2G[i].u2APNumScore;
-			}
-		}
-	} else if (ucSwitchMode == CH_SWITCH_5G) {
-
-		rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_5G, TRUE,
-			MAX_5G_BAND_CHN_NUM, &ucNumOfChannel, aucChannelList5G);
-
-		/* 4. Find best channel, skip unsafe*/
-		for (i = 0; i < ucNumOfChannel; i++) {
-			if ((aucChannelList5G[i].ucChannelNum >= 36)
-				&& (aucChannelList5G[i].ucChannelNum <= 144)) {
-				ucIdx = (aucChannelList5G[i]
-					.ucChannelNum - 36) / 4;
-				if (u4LteSafeChnBitMask_5G_1 & BIT(ucIdx)) {
-					rPreferChannel.ucChannel =
-						aucChannelList5G[i]
-						.ucChannelNum;
-					break;
-				}
-			} else if ((aucChannelList5G[i].ucChannelNum >= 149)
-				&& (aucChannelList5G[i].ucChannelNum <= 181)) {
-				ucIdx = (aucChannelList5G[i]
-					.ucChannelNum - 149) / 4;
-				if (u4LteSafeChnBitMask_5G_2 & BIT(ucIdx)) {
-					rPreferChannel.ucChannel =
-						aucChannelList5G[i]
-						.ucChannelNum;
-					break;
-				}
-			}
-		}
-	} else {
-		/* Should not be here */
-		DBGLOG(P2P, ERROR,
-			"ERROR!! ucSwitchMode = %d\n", ucSwitchMode);
-		ASSERT(0);
-	}
-
-	DBGLOG(P2P, INFO, "rPreferChannel = %d, u2APNumScore = %d\n",
-		rPreferChannel.ucChannel, rPreferChannel.u2APNumScore);
-
-	return rPreferChannel.ucChannel;
-
+	return p2pFunGetAcsBestCh(prGlueInfo->prAdapter,
+			ucSwitchMode == CH_SWITCH_2G ? BAND_2G4 : BAND_5G,
+			MAX_BW_20MHZ,
+			u4LteSafeChnBitMask_2G,
+			u4LteSafeChnBitMask_5G_1,
+			u4LteSafeChnBitMask_5G_2);
 }
 
 uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,

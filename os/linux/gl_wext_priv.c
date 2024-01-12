@@ -3026,10 +3026,8 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SETMONITOR		"MONITOR"
 #define CMD_SETBUFMODE		"BUFFER_MODE"
 
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
 #define CMD_GET_CH_RANK_LIST	"GET_CH_RANK_LIST"
 #define CMD_GET_CH_DIRTINESS	"GET_CH_DIRTINESS"
-#endif
 
 #define CMD_EFUSE		"EFUSE"
 #define CMD_CCCR		"CCCR"
@@ -11954,7 +11952,6 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 	return i4BytesWritten;
 }				/* priv_driver_get_sw_ctrl */
 
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
 static int priv_driver_get_ch_rank_list(IN struct net_device *prNetDev,
 					IN char *pcCommand, IN int i4TotalLen)
 {
@@ -12064,7 +12061,6 @@ static int priv_driver_get_ch_dirtiness(IN struct net_device *prNetDev,
 
 	return i4BytesWritten;
 }
-#endif
 
 static int priv_driver_efuse_ops(IN struct net_device *prNetDev,
 				 IN char *pcCommand, IN int i4TotalLen)
@@ -13213,10 +13209,8 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_GET_MEM_INFO, priv_driver_get_mem_info},
 	{CMD_GET_HIF_INFO, priv_driver_get_hif_info},
 	{CMD_GET_TP_INFO, priv_driver_get_tp_info},
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
 	{CMD_GET_CH_RANK_LIST, priv_driver_get_ch_rank_list},
 	{CMD_GET_CH_DIRTINESS, priv_driver_get_ch_dirtiness},
-#endif
 	{CMD_EFUSE, priv_driver_efuse_ops},
 #if defined(_HIF_SDIO) && (MTK_WCN_HIF_SDIO == 0)
 	{CMD_CCCR, priv_driver_cccr_ops},
