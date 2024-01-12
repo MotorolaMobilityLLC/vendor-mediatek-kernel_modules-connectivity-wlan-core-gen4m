@@ -8,6 +8,12 @@
 
 #if CFG_SUPPORT_NAN
 
+#if (CFG_SUPPORT_NAN_DBDC == 1)
+#define NAN_FAW_OFFSET 1 /* slot 0 dedicate for 2.4G DW with single timeline */
+#else
+#define NAN_FAW_OFFSET 2 /* 1 slot for 2.4G/5G switch with single timeline */
+#endif
+
 #define NAN_SEND_PKT_TIME_SLOT 16
 #define NAN_SEND_PKT_TIME_GUARD_TIME 2
 

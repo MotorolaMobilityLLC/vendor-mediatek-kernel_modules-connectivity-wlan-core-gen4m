@@ -11309,6 +11309,8 @@ void kalSetRpsMap(struct GLUE_INFO *glue, unsigned long value)
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		dev = wlanGetNetDev(glue, i);
 		if (dev) {
+			DBGLOG(INIT, INFO, "Set bss %u(%s) RPS 0x%02x\n",
+			       i, dev->name, value);
 			for (j = 0; j < dev->real_num_rx_queues; ++j)
 				wlan_set_rps_map(&dev->_rx[j], value);
 		}

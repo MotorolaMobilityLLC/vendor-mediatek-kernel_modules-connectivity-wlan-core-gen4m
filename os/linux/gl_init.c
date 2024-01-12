@@ -9139,8 +9139,8 @@ struct net_device *wlanGetNetDev(struct GLUE_INFO *prGlueInfo,
 		if (ais && gprWdev[ais->ucAisIndex])
 			return gprWdev[ais->ucAisIndex]->netdev;
 	}
-#if CFG_ENABLE_WIFI_DIRECT
 	else if (IS_BSS_P2P(prBssInfo)) { /* P2P */
+#if CFG_ENABLE_WIFI_DIRECT
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		if (prAdapter->rP2PNetRegState ==
 			ENUM_NET_REG_STATE_REGISTERED) {
@@ -9157,8 +9157,14 @@ struct net_device *wlanGetNetDev(struct GLUE_INFO *prGlueInfo,
 			}
 		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-	}
 #endif
+	} else if (IS_BSS_NAN(prBssInfo)) {
+#if CFG_SUPPORT_NAN
+		prNetDevice = wlanGetNetInterfaceByBssIdx(prGlueInfo,
+							  ucBssIndex);
+#endif
+	}
+
 	if (prNetDevice == NULL)
 		DBGLOG(REQ, LOUD, "bssidx=%d has NULL netdev caller=%pS\n",
 			ucBssIndex, KAL_TRACE);

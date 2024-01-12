@@ -8384,7 +8384,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucDftRangQuotaVal, "NanDftRangQuota", 1,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucDftQuotaStartOffset,
-		"NanDftQuotaStartOffset", 2, FEATURE_TO_CUSTOMER);
+		"NanDftQuotaStartOffset", NAN_FAW_OFFSET, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucDftNdcStartOffset, "NanDftNdcStartOffset", 0,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucNanFixChnl, "NanFixChnl", 0,
