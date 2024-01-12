@@ -3544,6 +3544,14 @@ kalIPv4FrameClassifier(struct GLUE_INFO *prGlueInfo,
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 #endif /* Automation */
 
+#ifdef CFG_IP_FRAG_DISABLE_HW_CHECKSUM
+	if ((pucIpHdr[IPV4_HDR_IP_FRAG_OFFSET] & IPV4_HDR_IP_FLAGS_MF_MASK) ||
+	    (pucIpHdr[IPV4_HDR_IP_FRAG_OFFSET] & IPV4_HDR_IP_FRAG_PART1_MASK) ||
+	    (pucIpHdr[IPV4_HDR_IP_FRAG_OFFSET+1])) {
+		prTxPktInfo->u2Flag |= BIT(ENUM_PKT_IP_FRAG);
+	}
+#endif
+
 	if (ucIpProto == IP_PRO_UDP) {
 		pucUdpHdr = &pucIpHdr[IPV4_HDR_LEN];
 

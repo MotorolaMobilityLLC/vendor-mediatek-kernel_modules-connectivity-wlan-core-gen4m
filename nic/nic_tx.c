@@ -241,6 +241,9 @@ const char *const TXS_PACKET_TYPE[ENUM_PKT_FLAG_NUM] = {
 	DISP_STRING("TCP_ACK"),
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
 	DISP_STRING("ICMPV6"),
+#ifdef CFG_IP_FRAG_DISABLE_HW_CHECKSUM
+	DISP_STRING("IP FRAG"),
+#endif
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
 	DISP_STRING("802_11_MGMT"),
 #endif
@@ -2347,8 +2350,13 @@ nicTxFillDesc(struct ADAPTER *prAdapter,
 
 		if (MLR_CHECK_IF_MSDU_IS_FRAG(prMsduInfo))
 			ucChksumFlag &= ~TX_CS_TCP_UDP_GEN;
+#ifdef CFG_IP_FRAG_DISABLE_HW_CHECKSUM
+		else if (prMsduInfo->ucPktType == ENUM_PKT_IP_FRAG)
+			ucChksumFlag &= ~(TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN);
+		else
+			ucChksumFlag |= TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN;
 #endif
-
+#else
 		/*
 		 * Future:
 		 * Remove this checksum flag twicking and back to
@@ -2366,6 +2374,13 @@ nicTxFillDesc(struct ADAPTER *prAdapter,
 		 *   For IPv6 in connac3, nic_txd_v3_header_format_op(),
 		 *   let CSO respect the ip_summed flag.
 		 */
+#ifdef CFG_IP_FRAG_DISABLE_HW_CHECKSUM
+		if (prMsduInfo->ucPktType == ENUM_PKT_IP_FRAG)
+			ucChksumFlag &= ~(TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN);
+		else
+			ucChksumFlag |= TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN;
+#endif
+#endif
 
 		if (prTxDescOps->nic_txd_chksum_op)
 			prTxDescOps->nic_txd_chksum_op(prTxDesc, ucChksumFlag,
@@ -3412,6 +3427,10 @@ static u_int8_t txsRequired(struct ADAPTER *prAdapter,
 {
 	if (prMsduInfo->ucPktType == 0)
 		return FALSE;
+#ifdef CFG_IP_FRAG_DISABLE_HW_CHECKSUM
+	else if (prMsduInfo->ucPktType == ENUM_PKT_IP_FRAG)
+		return FALSE;
+#endif
 
 	/**
 	 * TXS conflicts with AMSDU since TXS is MPDU based.
@@ -3536,7 +3555,10 @@ u_int8_t nicTxFillMsduInfo(struct ADAPTER *prAdapter,
 #endif
 		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ICMPV6))
 			prMsduInfo->ucPktType = ENUM_PKT_ICMPV6;
-
+#ifdef CFG_IP_FRAG_DISABLE_HW_CHECKSUM
+		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_IP_FRAG))
+			prMsduInfo->ucPktType = ENUM_PKT_IP_FRAG;
+#endif
 #if (CFG_SUPPORT_DMASHDL_SYSDVT)
 		if (prMsduInfo->ucPktType != ENUM_PKT_ICMP) {
 			/* blocking non ICMP packets at DMASHDL DVT items */
