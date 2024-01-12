@@ -2150,12 +2150,6 @@ uint32_t kalGetTxDirectQueueLength(
 int kalExternalAuthRequest(
 	struct GLUE_INFO *prGlueInfo,
 	struct STA_RECORD *prStaRec);
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-int kalVendorExternalAuthRequest(
-		struct GLUE_INFO *prGlueInfo,
-		struct STA_RECORD *prStaRec);
-#endif
 #endif
 
 void kalKfreeSkb(void *pvPacket, u_int8_t fgIsFreeData);

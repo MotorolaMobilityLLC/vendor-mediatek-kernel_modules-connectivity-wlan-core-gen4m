@@ -156,14 +156,6 @@ int kalExternalAuthRequest(
 {
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-int kalVendorExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
-				 struct STA_RECORD *prStaRec)
-{
-	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-#endif
 #endif
 
 void kalKfreeSkb(void *pvPacket, u_int8_t fgIsFreeData)
