@@ -232,6 +232,7 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 			prMsduInfo->prPacket = cnmMemAlloc(prAdapter,
 				RAM_TYPE_BUF, u4Length);
 			prMsduInfo->eSrc = TX_PACKET_MGMT;
+			prMsduInfo->u4Option = 0;
 
 			if (prMsduInfo->prPacket == NULL) {
 				KAL_ACQUIRE_SPIN_LOCK(prAdapter,

@@ -398,6 +398,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
         CONFIG_MTK_PCIE_PROBE_SUPPORT=y
     endif
 endif
+ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 endif
@@ -418,6 +419,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     #CONFIG_MTK_PCIE_PROBE_SUPPORT=y
     #CONFIG_MTK_WIFI_CONNV3_SUPPORT=y
 endif
+ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
 ccflags-y += -DCFG_USB_RX_PADDING_CSO_LEN=12

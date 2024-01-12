@@ -1628,7 +1628,9 @@
  * SW handles WTBL_SEARCH_FAIL
  *------------------------------------------------------------------------------
  */
+#ifndef CFG_WIFI_SW_WTBL_SEARCH_FAIL
 #define CFG_WIFI_SW_WTBL_SEARCH_FAIL 1
+#endif
 
 /*------------------------------------------------------------------------------
  * SW enables CIPHER_MISMATCH

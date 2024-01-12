@@ -279,7 +279,7 @@ void nic_txd_v3_compose(
 	u_int8_t ucWmmQueSet, ucTarQueue, ucTarPort;
 	uint8_t ucEtherTypeOffsetInWord;
 	uint8_t *apucPktType[ENUM_PKT_FLAG_NUM] = {
-		(uint8_t *) DISP_STRING("INVALID"),
+		(uint8_t *) DISP_STRING("802_11"),
 		(uint8_t *) DISP_STRING("802_3"),
 		(uint8_t *) DISP_STRING("1X"),
 		(uint8_t *) DISP_STRING("PROTECTED_1X"),
@@ -497,7 +497,9 @@ void nic_txd_v3_compose(
 		HAL_MAC_CONNAC3X_TXD_SET_TXS_TO_MCU(prTxDesc);
 	}
 
-	// TODO: ADD ForceLink(DW5 BIT15)
+	/* altx set TGID and force link */
+	if (ucTarQueue == MAC_TXQ_ALTX_0_INDEX)
+		HAL_MAC_CONNAC3X_TXD_SET_FORCE_ASSIGN_LINK(prTxDesc);
 
 	/** DW6 **/
 	/* Disable MLD to link address translation */
