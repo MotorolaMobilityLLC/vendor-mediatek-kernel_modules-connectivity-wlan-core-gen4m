@@ -2325,6 +2325,8 @@ void mldBssUpdateBandIdxBitmap(struct ADAPTER *prAdapter,
 	prMldBssInfo->ucHwBandBitmap = 0;
 	LINK_FOR_EACH_ENTRY(prCurrBssInfo, prBssList, rLinkEntryMld,
 			struct BSS_INFO) {
+		if (prCurrBssInfo->eHwBandIdx >= ENUM_BAND_NUM)
+			continue;
 		prMldBssInfo->ucHwBandBitmap |= BIT(prCurrBssInfo->eHwBandIdx);
 	}
 }
@@ -2373,7 +2375,8 @@ void mldBssUnregister(struct ADAPTER *prAdapter,
 		prMldBssInfo->ucGroupMldId, prBss->ucBssIndex);
 
 	prMldBssInfo->ucBssBitmap &= ~BIT(prBss->ucBssIndex);
-	prMldBssInfo->ucHwBandBitmap &= ~BIT(prBss->eHwBandIdx);
+	if (prBss->eHwBandIdx < ENUM_BAND_NUM)
+		prMldBssInfo->ucHwBandBitmap &= ~BIT(prBss->eHwBandIdx);
 	LINK_FOR_EACH_ENTRY_SAFE(prCurrBssInfo, prNextBssInfo, prBssList,
 			rLinkEntryMld,
 			struct BSS_INFO) {
