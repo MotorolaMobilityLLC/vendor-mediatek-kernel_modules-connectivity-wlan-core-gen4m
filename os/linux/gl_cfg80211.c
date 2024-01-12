@@ -4433,7 +4433,7 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 	 */
 	if (gprWdev && (pWiphy != gprWdev->wiphy)) {
 		pWiphy = gprWdev->wiphy;
-		DBGLOG(RLM, ERROR, "Use base wiphy to update (p=0x%x)\n",
+		DBGLOG(RLM, ERROR, "Use base wiphy to update (p=%p)\n",
 			   gprWdev->wiphy);
 	}
 
