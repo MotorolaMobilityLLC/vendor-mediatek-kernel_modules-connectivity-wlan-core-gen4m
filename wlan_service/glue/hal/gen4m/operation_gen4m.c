@@ -1054,18 +1054,18 @@ s_int32 mt_op_read_bulk_mac_bbp_reg(
 		mcr_info.mcr_offset = regs->cr_addr + idx * 4;
 		mcr_info.mcr_data = 0;
 
-	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
-		OP_WLAN_OID_QUERY_MCR_READ,
-		&mcr_info,
-		sizeof(mcr_info),
-		NULL,
-		NULL);
+		ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
+			OP_WLAN_OID_QUERY_MCR_READ,
+			&mcr_info,
+			sizeof(mcr_info),
+			NULL,
+			NULL);
 
-	if (ret == SERV_STATUS_SUCCESS) {
-		*regs->cr_val = mcr_info.mcr_data;
-		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
-			("%s: cr_val=0x%08x\n",
-				__func__, *regs->cr_val));
+		if (ret == SERV_STATUS_SUCCESS) {
+			regs->cr_val[idx] = mcr_info.mcr_data;
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+				("%s: cr_val=0x%08x\n",
+					__func__, *regs->cr_val));
 		} else {
 			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 				("%s: read fail ret = %d\n",
@@ -1104,8 +1104,14 @@ s_int32 mt_op_read_bulk_rf_reg(
 	 * 15: ATOP -> 0x999Fxxxx
 	 */
 
+	/* 1. Correct to 1 byte/step between two continuous CR.
+	 * 2. If access invalid A Die CR, it will get 0x0 for all project
+	 *    without any error.
+	 * 3. 6631 and 6635 A Die CR is 4 bytes/step.
+	 * 4. 6637, 6639 and future project A Die CR is 1 byte/step.
+	 */
 	for (idx = 0; idx < regs->cr_num; idx++) {
-		mcr_info.mcr_offset = regs->cr_addr + idx * 4;
+		mcr_info.mcr_offset = regs->cr_addr + idx;
 		mcr_info.mcr_data = 0;
 
 		ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
@@ -1116,7 +1122,7 @@ s_int32 mt_op_read_bulk_rf_reg(
 			NULL);
 
 		if (ret == SERV_STATUS_SUCCESS) {
-			*regs->cr_val = mcr_info.mcr_data;
+			regs->cr_val[idx] = mcr_info.mcr_data;
 			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 				("%s: cr_val=0x%08x\n",
 				__func__, *regs->cr_val));
