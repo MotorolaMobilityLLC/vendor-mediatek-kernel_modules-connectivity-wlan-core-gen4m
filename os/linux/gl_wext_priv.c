@@ -2419,7 +2419,7 @@ static u_int8_t reqSearchSupportedOidEntry(IN uint32_t rOid,
 	j = NUM_SUPPORTED_OIDS - 1;
 
 	while (i <= j) {
-		k = (i + j) / 2;
+		k = i + (j - i) / 2;
 
 		if (rOid == arWlanOidReqTable[k].rOid) {
 			*ppWlanReqEntry = &arWlanOidReqTable[k];
@@ -3112,7 +3112,7 @@ int priv_driver_get_dbg_level(IN struct net_device
 		    WLAN_STATUS_SUCCESS) {
 			fgIsCmdAccept = TRUE;
 			i4BytesWritten =
-				snprintf(pcCommand, i4TotalLen,
+				kalSnprintf(pcCommand, i4TotalLen,
 					 "Get DBG module[%u] log level => [0x%02x]!",
 					 u4DbgIdx,
 					 (uint8_t) u4DbgMask);
@@ -3120,7 +3120,7 @@ int priv_driver_get_dbg_level(IN struct net_device
 	}
 
 	if (!fgIsCmdAccept)
-		i4BytesWritten = snprintf(pcCommand, i4TotalLen,
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
 					  "Get DBG module log level failed!");
 
 	return i4BytesWritten;
@@ -3223,7 +3223,7 @@ static int priv_driver_set_efuse_buffer_mode(
 			   FALSE, FALSE, TRUE, &u4BufLen);
 
 	i4BytesWritten =
-		snprintf(pcCommand, i4TotalLen, "set buffer mode %s",
+		kalSnprintf(pcCommand, i4TotalLen, "set buffer mode %s",
 			 (rStatus == WLAN_STATUS_SUCCESS) ? "success" : "fail");
 
 out:
@@ -4686,7 +4686,7 @@ static int priv_driver_get_mcr(IN struct net_device *prNetDev,
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			return -1;
 
-		i4BytesWritten = snprintf(pcCommand, i4TotalLen, "0x%08x",
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "0x%08x",
 					  (unsigned int)rCmdAccessReg.u4Data);
 		DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__,
 		       pcCommand);
@@ -4899,8 +4899,8 @@ static int priv_driver_get_test_result(IN struct net_device *prNetDev,
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			return -1;
 		u4Data = (unsigned int)rRfATInfo.u4FuncData;
-		i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%d[0x%08x]",
-					  u4Data, u4Data);
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
+						"%d[0x%08x]", u4Data, u4Data);
 		DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__,
 		       pcCommand);
 	}
@@ -4943,6 +4943,8 @@ static int32_t priv_driver_set_ra_debug_proc(IN struct net_device *prNetDev,
 	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
 
 	i4Recv = sscanf(this_char, "%d:%d", &(u4WCID), &(u4DebugType));
+	if (i4Recv < 0)
+		return -1;
 
 	prSwCtrlInfo =
 		(struct PARAM_CUSTOM_SW_CTRL_STRUCT *)kalMemAlloc(
@@ -5059,7 +5061,7 @@ int priv_driver_set_fixed_fallback(IN struct net_device *prNetDev,
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			return -1;
 	} else if (i4Recv == 2 || i4Recv == 3) {
-		i4BytesWritten = snprintf(pcCommand, i4TotalLen,
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
 			"Update fgIsUseWCID %d\n", fgIsUseWCID);
 	} else if (i4Recv == 11) {
 		rSwCtrlInfo.u4Id = u4Id;
@@ -5068,11 +5070,11 @@ int priv_driver_set_fixed_fallback(IN struct net_device *prNetDev,
 			prAdapter->rWifiVar.arWtbl[u4WCID].ucUsed) {
 			rSwCtrlInfo.u4Id |= u4WCID;
 			rSwCtrlInfo.u4Id |= BIT(8);
-			i4BytesWritten = snprintf(
+			i4BytesWritten = kalSnprintf(
 				pcCommand, i4TotalLen,
 				"Apply WCID %d\n", u4WCID);
 		} else {
-			i4BytesWritten = snprintf(
+			i4BytesWritten = kalSnprintf(
 				pcCommand, i4TotalLen, "Apply All\n");
 		}
 
@@ -5399,6 +5401,8 @@ static int32_t priv_driver_get_txpower_info(IN struct net_device *prNetDev,
 	DBGLOG(REQ, INFO, "string = %s\n", this_char);
 
 	u4ParamNum = sscanf(this_char, "%d:%d", &ucParam, &ucBandIdx);
+	if (u4ParamNum < 0)
+		return -1;
 	DBGLOG(REQ, INFO, "ParamNum=%d,Param=%d,Band=%d\n",
 		u4ParamNum, ucParam, ucBandIdx);
 
@@ -7016,7 +7020,7 @@ static int priv_driver_get_drv_mcr(IN struct net_device *prNetDev,
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			return -1;
 
-		i4BytesWritten = snprintf(pcCommand, i4TotalLen, "0x%08x",
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "0x%08x",
 					  (unsigned int)rCmdAccessReg.u4Data);
 		DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__,
 		       pcCommand);
@@ -7119,7 +7123,7 @@ static int priv_driver_get_sw_ctrl(IN struct net_device *prNetDev,
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			return -1;
 
-		i4BytesWritten = snprintf(pcCommand, i4TotalLen, "0x%08x",
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "0x%08x",
 					  (unsigned int)rSwCtrlInfo.u4Data);
 		DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__,
 		       pcCommand);
@@ -7271,7 +7275,7 @@ int priv_driver_set_fixed_rate(IN struct net_device *prNetDev,
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			return -1;
 	} else if (i4Recv == 2 || i4Recv == 3) {
-		i4BytesWritten = snprintf(pcCommand, i4TotalLen,
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
 			"Update fgIsUseWCID %d\n", fgIsUseWCID);
 	} else if (i4Recv == 10 || i4Recv == 13) {
 		rSwCtrlInfo.u4Id = u4Id;
@@ -7279,11 +7283,11 @@ int priv_driver_set_fixed_rate(IN struct net_device *prNetDev,
 			prAdapter->rWifiVar.arWtbl[u4WCID].ucUsed) {
 			rSwCtrlInfo.u4Id |= u4WCID;
 			rSwCtrlInfo.u4Id |= BIT(8);
-			i4BytesWritten = snprintf(
+			i4BytesWritten = kalSnprintf(
 				pcCommand, i4TotalLen,
 				"Apply WCID %d\n", u4WCID);
 		} else {
-			i4BytesWritten = snprintf(
+			i4BytesWritten = kalSnprintf(
 				pcCommand, i4TotalLen, "Apply All\n");
 		}
 
@@ -7549,7 +7553,7 @@ priv_driver_get_chip_config_16(uint8_t *pucStartAddr, uint32_t u4Length,
 	while (u4Length >= 16) {
 		if (i4TotalLen > i4BytesWritten) {
 			i4BytesWritten +=
-			    snprintf(pcCommand + i4BytesWritten,
+			    kalSnprintf(pcCommand + i4BytesWritten,
 					i4TotalLen - i4BytesWritten,
 					"%04x %02x %02x %02x %02x  %02x %02x %02x %02x - %02x %02x %02x %02x  %02x %02x %02x %02x\n",
 					u4Line, pucStartAddr[0],
@@ -7578,7 +7582,7 @@ priv_driver_get_chip_config_4(uint32_t *pu4StartAddr, uint32_t u4Length,
 	while (u4Length >= 16) {
 		if (i4TotalLen > i4BytesWritten) {
 			i4BytesWritten +=
-			    snprintf(pcCommand + i4BytesWritten,
+			    kalSnprintf(pcCommand + i4BytesWritten,
 				     i4TotalLen - i4BytesWritten,
 				     "%04x %08x %08x %08x %08x\n", u4Line,
 				     pu4StartAddr[0], pu4StartAddr[1],
@@ -7662,7 +7666,7 @@ int priv_driver_get_chip_config(IN struct net_device *prNetDev,
 			if (rChipConfigInfo.ucRespType ==
 			    CHIP_CONFIG_TYPE_ASCII) {
 				i4BytesWritten =
-				    snprintf(pcCommand + i4BytesWritten,
+				    kalSnprintf(pcCommand + i4BytesWritten,
 					     i4TotalLen, "%s",
 					     rChipConfigInfo.aucCmd);
 			} else {
@@ -7794,7 +7798,7 @@ int priv_driver_get_linkspeed(IN struct net_device *prNetDev,
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		return -1;
 	u4Rate = rLinkSpeed.rLq[ucBssIndex].u2LinkSpeed;
-	i4BytesWritten = snprintf(pcCommand, i4TotalLen, "LinkSpeed %u",
+	i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "LinkSpeed %u",
 				  (unsigned int)(u4Rate * 100));
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
 	return i4BytesWritten;
@@ -8323,19 +8327,19 @@ int priv_driver_set_miracast(IN struct net_device *prNetDev,
 
 			if (ucMode == MIRACAST_MODE_OFF) {
 				prWfdCfgSettings->ucWfdEnable = 0;
-				snprintf(pcCommand, i4TotalLen,
+				kalSnprintf(pcCommand, i4TotalLen,
 					 CMD_SET_CHIP " mira 0");
 			} else if (ucMode == MIRACAST_MODE_SOURCE) {
 				prWfdCfgSettings->ucWfdEnable = 1;
-				snprintf(pcCommand, i4TotalLen,
+				kalSnprintf(pcCommand, i4TotalLen,
 					 CMD_SET_CHIP " mira 1");
 			} else if (ucMode == MIRACAST_MODE_SINK) {
 				prWfdCfgSettings->ucWfdEnable = 2;
-				snprintf(pcCommand, i4TotalLen,
+				kalSnprintf(pcCommand, i4TotalLen,
 					 CMD_SET_CHIP " mira 2");
 			} else {
 				prWfdCfgSettings->ucWfdEnable = 0;
-				snprintf(pcCommand, i4TotalLen,
+				kalSnprintf(pcCommand, i4TotalLen,
 					 CMD_SET_CHIP " mira 0");
 			}
 
@@ -9701,7 +9705,7 @@ int priv_driver_set_monitor(IN struct net_device *prNetDev, IN char *pcCommand,
 							   ucPriChannel);
 
 		if (fgIsLegalChannel == FALSE) {
-			i4BytesWritten = snprintf(pcCommand, i4TotalLen,
+			i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
 						  "Illegal primary channel %d",
 						  ucPriChannel);
 			return i4BytesWritten;
@@ -9758,7 +9762,7 @@ int priv_driver_set_monitor(IN struct net_device *prNetDev, IN char *pcCommand,
 
 		if (fgError) {
 			i4BytesWritten =
-			    snprintf(pcCommand, i4TotalLen,
+			    kalSnprintf(pcCommand, i4TotalLen,
 				     "Invalid primary channel %d with bandwidth %d",
 				     ucPriChannel, ucChannelWidth);
 			return i4BytesWritten;
@@ -9785,14 +9789,14 @@ int priv_driver_set_monitor(IN struct net_device *prNetDev, IN char *pcCommand,
 				   FALSE, FALSE, TRUE, &u4BufLen);
 
 		i4BytesWritten =
-		    snprintf(pcCommand, i4TotalLen, "set monitor config %s",
+		    kalSnprintf(pcCommand, i4TotalLen, "set monitor config %s",
 			     (rStatus == WLAN_STATUS_SUCCESS) ?
 			     "success" : "fail");
 
 		return i4BytesWritten;
 	}
 
-	i4BytesWritten = snprintf(pcCommand, i4TotalLen,
+	i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
 				  "monitor [Enable][PriChannel][ChannelWidth][Sco]");
 
 	return i4BytesWritten;
@@ -10772,7 +10776,7 @@ static int priv_driver_get_version(IN struct net_device *prNetDev,
 	prAdapter = prGlueInfo->prAdapter;
 
 	u4Offset += fwDlGetFwdlInfo(prAdapter, pcCommand, i4TotalLen);
-	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 		"WiFi Driver Version %u.%u.%u\n",
 		NIC_DRIVER_MAJOR_VERSION,
 		NIC_DRIVER_MINOR_VERSION,
@@ -11037,10 +11041,10 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		return -1;
 
-	i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 				   i4TotalLen - i4BytesWritten,
 				   "\n[CNM Info]\n");
-	i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 				   i4TotalLen - i4BytesWritten,
 				   "DBDC Mode : %s\n\n",
 				   (prCnmInfo->fgIsDbdcEnable) ?
@@ -11058,7 +11062,7 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 			if (prCnmInfo->ucOpChNum[eDbdcIdx] < 1)
 				prCnmInfo->ucChList[eDbdcIdx][0] = 0;
 		}
-		i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 					   i4TotalLen - i4BytesWritten,
 					   "Band %u OPCH %d [%u, %u, %u]\n",
 					   eDbdcIdx,
@@ -11067,7 +11071,7 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 					   prCnmInfo->ucChList[eDbdcIdx][1],
 					   prCnmInfo->ucChList[eDbdcIdx][2]);
 	}
-	i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 				   i4TotalLen - i4BytesWritten, "\n");
 
 	for (ucBssIdx = BSSID_0; ucBssIdx < (BSSID_NUM+1); ucBssIdx++) {
@@ -11117,7 +11121,7 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 				continue;
 		}
 
-		i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"BSS%u Inuse%u Act%u ConnStat%u [NetType%u][CH%3u][DBDC b%u][WMM%u b%u][OMAC%u b%u][BW%3u][TxNSS%u][RxNss%u]\n",
 			ucBssIdx,
@@ -11135,12 +11139,12 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 			ucOpTxNss,
 			ucOpRxNss);
 #ifdef CONFIG_SUPPORT_OPENWRT
-		i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten, "BW=BW%u\n",
 			20 * (0x01 << rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo))
 			);
 
-		i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten, "[TxNSS%u][RxNss%u]\n",
 			ucOpTxNss, ucOpRxNss);
 
@@ -11152,11 +11156,11 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 		prStaRec = cnmGetStaRecByAddress(prGlueInfo->prAdapter,
 			ucBssIdx, prBssInfo->aucBSSID);
 
-		i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten, "Mcs1=%u\n",
 			(prStaRec->u2HeRxMcsMapBW80) & 0x3);
 
-		i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten, "Mcs2=%u\n",
 			((prStaRec->u2HeRxMcsMapBW80) >> 2) & 0x3);
 	}
@@ -11347,7 +11351,7 @@ static int priv_driver_efuse_ops(IN struct net_device *prNetDev,
 	    prGlueInfo->prAdapter &&
 	    prGlueInfo->prAdapter->chip_info &&
 	    !prGlueInfo->prAdapter->chip_info->is_support_efuse) {
-		u4Offset += snprintf(pcCommand + u4Offset,
+		u4Offset += kalSnprintf(pcCommand + u4Offset,
 				     i4TotalLen - u4Offset,
 				     "efuse ops is invalid\n");
 		return (int32_t)u4Offset;
@@ -11368,7 +11372,7 @@ static int priv_driver_efuse_ops(IN struct net_device *prNetDev,
 				   TRUE, TRUE, TRUE, &u4BufLen);
 
 		if (rStatus == WLAN_STATUS_SUCCESS) {
-			u4Offset += snprintf(pcCommand + u4Offset,
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
 			     i4TotalLen - u4Offset,
 			     "Read success 0x%X = 0x%X\n", u4Efuse_addr,
 			     prGlueInfo->prAdapter->aucEepromVaule[u4Index]);
@@ -11386,7 +11390,7 @@ static int priv_driver_efuse_ops(IN struct net_device *prNetDev,
 				   sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE),
 				   FALSE, FALSE, TRUE, &u4BufLen);
 		if (rStatus == WLAN_STATUS_SUCCESS) {
-			u4Offset += snprintf(pcCommand + u4Offset,
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
 					     i4TotalLen - u4Offset,
 					     "Write success 0x%X = 0x%X\n",
 					     u4Efuse_addr, ucEfuse_value);
@@ -11396,7 +11400,7 @@ static int priv_driver_efuse_ops(IN struct net_device *prNetDev,
 
 		if (prGlueInfo->prAdapter->fgIsSupportGetFreeEfuseBlockCount
 		    == FALSE) {
-			u4Offset += snprintf(pcCommand + u4Offset,
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
 					     i4TotalLen - u4Offset,
 					     "Cannot read free block size\n");
 			return (int32_t)u4Offset;
@@ -11406,14 +11410,14 @@ static int priv_driver_efuse_ops(IN struct net_device *prNetDev,
 				   sizeof(struct PARAM_CUSTOM_EFUSE_FREE_BLOCK),
 				   TRUE, TRUE, TRUE, &u4BufLen);
 		if (rStatus == WLAN_STATUS_SUCCESS) {
-			u4Offset += snprintf(pcCommand + u4Offset,
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
 				     i4TotalLen - u4Offset,
 				     "Free block size 0x%X\n",
 				     prGlueInfo->prAdapter->u4FreeBlockNum);
 		}
 	}
 #else
-	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 					"efuse ops is invalid\n");
 #endif
 
@@ -11421,13 +11425,13 @@ static int priv_driver_efuse_ops(IN struct net_device *prNetDev,
 
 efuse_op_invalid:
 
-	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 				"\nHelp menu\n");
-	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 				"\tRead:\t\"efuse read addr_hex\"\n");
-	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 				"\tWrite:\t\"efuse write addr_hex val_hex\"\n");
-	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 				"\tFree Blocks:\t\"efuse free\"\n");
 	return (int32_t)u4Offset;
 }
@@ -11461,7 +11465,7 @@ static int priv_driver_cccr_ops(IN struct net_device *prNetDev,
 	ASSERT(prGlueInfo);
 
 	if(!IS_SDIO_INF(prGlueInfo)){
-		u4Offset += snprintf(pcCommand + u4Offset,
+		u4Offset += kalSnprintf(pcCommand + u4Offset,
 				     i4TotalLen - u4Offset,
 				     "Not SDIO bus(%d)\n",
 				     prGlueInfo->u4InfType);
@@ -11507,12 +11511,12 @@ static int priv_driver_cccr_ops(IN struct net_device *prNetDev,
 		sdio_release_host(func);
 
 		if (rStatus) /* Fail case */
-			u4Offset += snprintf(pcCommand + u4Offset,
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
 					     i4TotalLen - u4Offset,
 					     "Read Fail 0x%X (ret=%d)\n",
 					     u4CCCR_addr, rStatus);
 		else
-			u4Offset += snprintf(pcCommand + u4Offset,
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
 					     i4TotalLen - u4Offset,
 					     "Read success 0x%X = 0x%X\n",
 					     u4CCCR_addr, ucCCCR_value);
@@ -11528,12 +11532,12 @@ static int priv_driver_cccr_ops(IN struct net_device *prNetDev,
 		sdio_release_host(func);
 
 		if (rStatus) /* Fail case */
-			u4Offset += snprintf(pcCommand + u4Offset,
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
 					     i4TotalLen - u4Offset,
 					     "Write Fail 0x%X (ret=%d)\n",
 					     u4CCCR_addr, rStatus);
 		else
-			u4Offset += snprintf(pcCommand + u4Offset,
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
 					     i4TotalLen - u4Offset,
 					     "Write success 0x%X = 0x%X\n",
 					     u4CCCR_addr, ucCCCR_value);
@@ -11543,11 +11547,11 @@ static int priv_driver_cccr_ops(IN struct net_device *prNetDev,
 
 cccr_op_invalid:
 
-	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 				"\nHelp menu\n");
-	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 				"\tRead:\t\"cccr read addr_hex\"\n");
-	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 				"\tWrite:\t\"cccr write addr_hex val_hex\"\n");
 	return (int32_t)u4Offset;
 }
@@ -11641,7 +11645,7 @@ static int priv_driver_get_noise(IN struct net_device *prNetDev,
 	u2Wf0AvgPwr = rSwCtrlInfo.u4Data & 0xFFFF;
 	u2Wf1AvgPwr = (rSwCtrlInfo.u4Data >> 16) & 0xFFFF;
 
-	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 			     "Noise Idle Avg. Power: WF0:%ddB WF1:%ddB\n",
 			     u2Wf0AvgPwr, u2Wf1AvgPwr);
 
@@ -12327,7 +12331,7 @@ static int priv_driver_set_drv_ser(struct net_device *prNetDev,
 			   (void *)&u4Num, sizeof(uint32_t),
 			   FALSE, FALSE, FALSE, &u4BufLen);
 
-	i4BytesWritten += snprintf(pcCommand, i4TotalLen,
+	i4BytesWritten += kalSnprintf(pcCommand, i4TotalLen,
 				   "trigger driver SER\n");
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%d)\n", rStatus);
@@ -12444,7 +12448,7 @@ static int priv_driver_set_amsdu_num(IN struct net_device *prNetDev,
 			   (void *)&u4Num, sizeof(uint32_t),
 			   FALSE, FALSE, FALSE, &u4BufLen);
 
-	i4BytesWritten += snprintf(pcCommand, i4TotalLen,
+	i4BytesWritten += kalSnprintf(pcCommand, i4TotalLen,
 				   "Set Sw Amsdu Num:%u\n", u4Num);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
@@ -12491,7 +12495,7 @@ static int priv_driver_set_amsdu_size(IN struct net_device *prNetDev,
 			   (void *)&u4Size, sizeof(uint32_t),
 			   FALSE, FALSE, FALSE, &u4BufLen);
 
-	i4BytesWritten += snprintf(pcCommand, i4TotalLen,
+	i4BytesWritten += kalSnprintf(pcCommand, i4TotalLen,
 				   "Set Sw Amsdu Max Size:%u\n", u4Size);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
@@ -12755,21 +12759,26 @@ int32_t priv_driver_rx_stat_parser(
 				"i4tmpContent is %x\n", i4tmpContent);
 
 				if (i4Type == 0) {
-					i4BytesWritten += snprintf(pcCommand +
-					i4BytesWritten, i4TotalLen,
-					RxStatPerBand[i/4], i4tmpContent);
+					i4BytesWritten += kalSnprintf(
+						pcCommand + i4BytesWritten,
+						i4TotalLen, RxStatPerBand[i/4],
+						i4tmpContent);
 				} else if (i4Type == 1) {
-					i4BytesWritten += snprintf(pcCommand +
-					i4BytesWritten, i4TotalLen,
-					RxStatPerAnt[i/4], i4tmpContent);
+					i4BytesWritten += kalSnprintf(
+						pcCommand + i4BytesWritten,
+						i4TotalLen, RxStatPerAnt[i/4],
+						i4tmpContent);
 				} else if (i4Type == 2) {
-					i4BytesWritten += snprintf(pcCommand +
-					i4BytesWritten, i4TotalLen,
-					RxStatPerUser[i/4], i4tmpContent);
+					i4BytesWritten += kalSnprintf(
+						pcCommand + i4BytesWritten,
+						i4TotalLen, RxStatPerUser[i/4],
+						i4tmpContent);
 				} else {
-					i4BytesWritten += snprintf(pcCommand +
-					i4BytesWritten, i4TotalLen,
-					RxStatCommonUser[i/4], i4tmpContent);
+					i4BytesWritten += kalSnprintf(
+						pcCommand + i4BytesWritten,
+						i4TotalLen,
+						RxStatCommonUser[i/4],
+						i4tmpContent);
 				}
 				i += 4;
 				dataptr += 4;
@@ -12845,7 +12854,7 @@ static int priv_driver_run_hqa(
 	/*parsing ret 2 bytes*/
 	if ((dataptr) && (datalen)) {
 		i2tmpVal = dataptr[1] << 8 | dataptr[0];
-		i4BytesWritten = snprintf(pcCommand, i4TotalLen,
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
 		"Return : 0x%04x\n", i2tmpVal);
 
 		datalen -= 2;
@@ -12864,16 +12873,18 @@ static int priv_driver_run_hqa(
 			dataptr[1] << 8 | dataptr[0];
 			if (datalen == 4) {
 				i4BytesWritten +=
-				snprintf(pcCommand + i4BytesWritten, i4TotalLen,
-				"ExtId : 0x%08x\n", i4tmpVal);
+				kalSnprintf(pcCommand + i4BytesWritten,
+				i4TotalLen, "ExtId : 0x%08x\n", i4tmpVal);
 			} else if (datalen == 8) {
 				i4BytesWritten +=
-				snprintf(pcCommand + i4BytesWritten, i4TotalLen,
-				"Band%d TX : 0x%08x\n", i/4, NTOHL(i4tmpVal));
+				kalSnprintf(pcCommand + i4BytesWritten,
+				i4TotalLen, "Band%d TX : 0x%08x\n", i/4,
+				NTOHL(i4tmpVal));
 			} else {
 				i4BytesWritten +=
-				snprintf(pcCommand + i4BytesWritten, i4TotalLen,
-				"id%d : 0x%08x\n", i/4, NTOHL(i4tmpVal));
+				kalSnprintf(pcCommand + i4BytesWritten,
+				i4TotalLen, "id%d : 0x%08x\n", i/4,
+				NTOHL(i4tmpVal));
 			}
 		}
 	}
@@ -12917,7 +12928,7 @@ static int priv_driver_calibration(
 				   "%s: Parsing Fail\n", __func__);
 		} else if (u4GetInput == 0) {
 
-			i4BytesWritten = snprintf(pcCommand,
+			i4BytesWritten = kalSnprintf(pcCommand,
 				i4TotalLen,
 				"reset driver calibration result\n");
 
@@ -12931,11 +12942,11 @@ static int priv_driver_calibration(
 				DBGLOG(RFTEST, INFO,
 					   "%s: Parsing 2 Fail\n", __func__);
 			} else if (u4GetInput2 == 0) {
-				i4BytesWritten = snprintf(pcCommand,
+				i4BytesWritten = kalSnprintf(pcCommand,
 					i4TotalLen,
 					"driver result write back EMI\n");
 			} else {
-				i4BytesWritten = snprintf(pcCommand,
+				i4BytesWritten = kalSnprintf(pcCommand,
 					i4TotalLen,
 					"FW use EMI original data\n");
 			}
@@ -12945,21 +12956,21 @@ static int priv_driver_calibration(
 					u4GetInput2);
 		}
 	} else {
-		i4BytesWritten = snprintf(pcCommand,
+		i4BytesWritten = kalSnprintf(pcCommand,
 			i4TotalLen,
 			"support parameter as below:\n");
 
-		i4BytesWritten += snprintf(
+		i4BytesWritten += kalSnprintf(
 			pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"0: reset driver calibration result\n");
 
-		i4BytesWritten += snprintf(
+		i4BytesWritten += kalSnprintf(
 			pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"1,0: driver result write back EMI\n");
 
-		i4BytesWritten += snprintf(
+		i4BytesWritten += kalSnprintf(
 			pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"1,1: FW use EMI original data\n");
@@ -13604,7 +13615,7 @@ int priv_support_driver_cmd(IN struct net_device *prNetDev,
 		DBGLOG(REQ, INFO, "%s: command %s Written is %d\n", __func__,
 		       pcCommand, i4BytesWritten);
 		if (i4TotalLen >= 3) {
-			snprintf(pcCommand, 3, "OK");
+			kalSnprintf(pcCommand, 3, "OK");
 			i4BytesWritten = strlen("OK");
 		}
 	}
@@ -13748,7 +13759,8 @@ priv_driver_get_ncho_roam_trigger(IN struct net_device *prNetDev,
 	} else {
 		i4Param = RCPI_TO_dBm(i4Param);		/* RCPI to DB */
 		DBGLOG(INIT, TRACE, "NCHO query RoamTrigger is %d\n", i4Param);
-		i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%d", i4Param);
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%d",
+						i4Param);
 	}
 
 	return i4BytesWritten;
@@ -13833,7 +13845,8 @@ int priv_driver_get_ncho_roam_delta(IN struct net_device *prNetDev,
 		       "NCHO wlanoidQueryNchoRoamDelta fail 0x%x\n", rStatus);
 	} else {
 		DBGLOG(REQ, TRACE, "NCHO query ok and ret is %d\n", i4Param);
-		i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%d", i4Param);
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%d",
+						i4Param);
 	}
 	return i4BytesWritten;
 }
@@ -13918,7 +13931,8 @@ int priv_driver_get_ncho_roam_scn_period(IN struct net_device *prNetDev,
 		       rStatus);
 	} else {
 		DBGLOG(REQ, TRACE, "NCHO query ok and ret is %d\n", u4Param);
-		i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%u", u4Param);
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%u",
+						u4Param);
 	}
 	return i4BytesWritten;
 }
@@ -14052,15 +14066,16 @@ int priv_driver_get_ncho_roam_scn_chnl(IN struct net_device *prNetDev,
 		       rRoamScnChnl.ucChannelListNum);
 		u4ChnlInfo = rRoamScnChnl.ucChannelListNum;
 		i4BytesWritten = 0;
-		i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 					   i4TotalLen - i4BytesWritten, "%u",
 					   u4ChnlInfo);
 		for (i = 0; i < rRoamScnChnl.ucChannelListNum; i++) {
 			u4ChnlInfo =
 				rRoamScnChnl.arChnlInfoList[i].ucChannelNum;
-			i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
-					       i4TotalLen - i4BytesWritten,
-					       " %u", u4ChnlInfo);
+			i4BytesWritten += kalSnprintf(
+						pcCommand + i4BytesWritten,
+						i4TotalLen - i4BytesWritten,
+						" %u", u4ChnlInfo);
 		}
 	}
 
@@ -14150,7 +14165,8 @@ int priv_driver_get_ncho_roam_scn_ctrl(IN struct net_device *prNetDev,
 		       "NCHO wlanoidQueryNchoRoamScnCtrl fail 0x%x\n", rStatus);
 	} else {
 		DBGLOG(REQ, TRACE, "NCHO query ok and ret is %d\n", u4Param);
-		i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%u", u4Param);
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%u",
+					u4Param);
 	}
 	return i4BytesWritten;
 }
@@ -14244,8 +14260,8 @@ int priv_driver_get_ncho_scn_chnl_time(IN struct net_device *prNetDev,
 			       i4BytesWritten);
 			i4BytesWritten = -1;
 		} else {
-			i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%u",
-						  u4Param);
+			i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
+						"%u", u4Param);
 		}
 	}
 	return i4BytesWritten;
@@ -14340,8 +14356,8 @@ int priv_driver_get_ncho_scn_home_time(IN struct net_device *prNetDev,
 			       i4BytesWritten);
 			i4BytesWritten = -1;
 		} else {
-			i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%u",
-						  u4Param);
+			i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
+							"%u", u4Param);
 		}
 	}
 	return i4BytesWritten;
@@ -14437,7 +14453,8 @@ int priv_driver_get_ncho_scn_home_away_time(IN struct net_device *prNetDev,
 		       i4BytesWritten);
 		i4BytesWritten = -1;
 	} else {
-		i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%u", u4Param);
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%u",
+						u4Param);
 	}
 
 	return i4BytesWritten;
@@ -14534,7 +14551,8 @@ int priv_driver_get_ncho_scn_nprobes(IN struct net_device *prNetDev,
 		       i4BytesWritten);
 		i4BytesWritten = -1;
 	} else {
-		i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%u", u4Param);
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%u",
+						u4Param);
 	}
 
 	return i4BytesWritten;
@@ -14899,7 +14917,8 @@ int priv_driver_get_ncho_wes_mode(IN struct net_device *prNetDev,
 		       rStatus);
 	} else {
 		DBGLOG(REQ, TRACE, "NCHO query ok and ret is %d\n", u4Param);
-		i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%u", u4Param);
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%u",
+						u4Param);
 	}
 	DBGLOG(REQ, TRACE, "NCHO get result is %s\n", pcCommand);
 	return i4BytesWritten;
@@ -14983,7 +15002,8 @@ int priv_driver_get_ncho_band(IN struct net_device *prNetDev,
 		       rStatus);
 	} else {
 		DBGLOG(REQ, TRACE, "NCHO query ok and ret is %d\n", u4Param);
-		i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%u", u4Param);
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%u",
+						u4Param);
 	}
 	return i4BytesWritten;
 }
@@ -15076,7 +15096,8 @@ priv_driver_get_ncho_dfs_scn_mode(IN struct net_device *prNetDev,
 		       i4BytesWritten);
 		i4BytesWritten = -1;
 	} else {
-		i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%u", u4Param);
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%u",
+						u4Param);
 	}
 
 	return i4BytesWritten;
@@ -15189,7 +15210,8 @@ priv_driver_disable_ncho(IN struct net_device *prNetDev, IN char *pcCommand,
 		       i4BytesWritten);
 		i4BytesWritten = -1;
 	} else {
-		i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%u", u4Param);
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%u",
+						u4Param);
 	}
 
 	return i4BytesWritten;
