@@ -8238,7 +8238,9 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct BSS_INFO *alive2gBss[MAX_BSSID_NUM] = { 0 };
 	struct BSS_INFO *alive5gBss[MAX_BSSID_NUM] = { 0 };
+#if (CFG_SUPPORT_WIFI_6G == 1)
 	struct BSS_INFO *alive6gBss[MAX_BSSID_NUM] = { 0 };
+#endif
 	uint8_t ucNumAlive2gBss, ucNumAlive5gBss, ucNumAlive6gBss = 0;
 
 	/* prepare alive bss info for SCC */
@@ -8256,17 +8258,21 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 
 	/* append 5G/6G channels */
 	if (ucNumAlive5gBss + ucNumAlive6gBss > 0) {
-		*pu4FreqListNum += p2pFuncAppendPrefFreq(alive6gBss,
-		       ucNumAlive6gBss, &pau4FreqList[*pu4FreqListNum]);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (IS_FEATURE_DISABLED(prWifiVar->ucDisallowAcs6G))
+			*pu4FreqListNum += p2pFuncAppendPrefFreq(alive6gBss,
+			    ucNumAlive6gBss, &pau4FreqList[*pu4FreqListNum]);
+#endif
 		*pu4FreqListNum += p2pFuncAppendPrefFreq(alive5gBss,
-		       ucNumAlive5gBss, &pau4FreqList[*pu4FreqListNum]);
+		    ucNumAlive5gBss, &pau4FreqList[*pu4FreqListNum]);
 	} else {
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		*pu4FreqListNum += p2pFunGetTopPreferFreqByBand(
-			prAdapter, BAND_6G,
-			prWifiVar->ucP2p6gBandwidth,
-			MAX_6G_BAND_CHN_NUM,
-			&pau4FreqList[*pu4FreqListNum]);
+		if (IS_FEATURE_DISABLED(prWifiVar->ucDisallowAcs6G))
+			*pu4FreqListNum += p2pFunGetTopPreferFreqByBand(
+				prAdapter, BAND_6G,
+				prWifiVar->ucP2p6gBandwidth,
+				MAX_6G_BAND_CHN_NUM,
+				&pau4FreqList[*pu4FreqListNum]);
 #endif
 		*pu4FreqListNum += p2pFunGetTopPreferFreqByBand(
 			prAdapter, BAND_5G,
