@@ -8484,15 +8484,13 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #if CFG_MTK_WIFI_SW_EMI_RING
 	prWifiVar->fgEnSwEmiDbg = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "EnSwEmiDbg", FEATURE_DISABLED);
-#endif /* CFG_MTK_WIFI_SW_EMI_RING */
-#if CFG_MTK_WIFI_EN_SW_EMI_READ
 	prWifiVar->fgEnSwEmiRead = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "EnSwEmiRead", FEATURE_ENABLED);
 	if (IS_FEATURE_FORCE_ENABLED(prWifiVar->fgEnSwEmiRead))
 		prWifiVar->fgEnSwEmiRead = FEATURE_ENABLED;
 	else if (!prChipInfo->is_en_sw_emi_read)
 		prWifiVar->fgEnSwEmiRead = FEATURE_DISABLED;
-#endif
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 	prWifiVar->u4PrdcIntTime = (uint32_t)wlanCfgGetUint32(
 		prAdapter, "PrdcIntTime", 5); /* unit: 20us */

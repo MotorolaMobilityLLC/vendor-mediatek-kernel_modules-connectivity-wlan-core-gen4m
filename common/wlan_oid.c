@@ -6537,6 +6537,7 @@ uint32_t wlanoidQueryEmiMcrRead(
 	struct BUS_INFO *prBusInfo;
 	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
 	struct PARAM_CUSTOM_MCR_RW_STRUCT *prMcrRdInfo;
+	u_int8_t fgRet = FALSE;
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
@@ -6551,12 +6552,9 @@ uint32_t wlanoidQueryEmiMcrRead(
 	prMcrRdInfo = (struct PARAM_CUSTOM_MCR_RW_STRUCT *)pvQueryBuffer;
 
 	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
-	if (prSwEmiRingInfo->rOps.read) {
-		prSwEmiRingInfo->rOps.read(
-			prAdapter->prGlueInfo,
-			prMcrRdInfo->u4McrOffset & BITS(2, 31),
-			&prMcrRdInfo->u4McrData);
-	}
+	HAL_MCR_EMI_RD(prAdapter,
+		       prMcrRdInfo->u4McrOffset & BITS(2, 31),
+		       &prMcrRdInfo->u4McrData, &fgRet);
 	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 
 	DBGLOG(INIT, TRACE,

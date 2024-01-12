@@ -1047,7 +1047,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.is_en_fix_rro_amsdu_error = TRUE,
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	.is_en_wfdma_no_mmio_read = TRUE,
-#if CFG_MTK_WIFI_EN_SW_EMI_READ
+#if CFG_MTK_WIFI_SW_EMI_RING
 	.is_en_sw_emi_read = TRUE,
 #endif
 #endif /* _HIF_PCIE */
@@ -2315,10 +2315,7 @@ static void mt6639RecoveryMsiStatus(struct ADAPTER *prAdapter)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct pcie_msi_info *prMsiInfo = &prBusInfo->pcie_msi_info;
 	uint32_t u4Addr = 0, u4Val = 0, u4WrVal = 0, u4Cnt = 0;
-#if CFG_MTK_WIFI_EN_SW_EMI_READ
-	struct SW_EMI_RING_INFO *prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
 	u_int8_t fgRet = FALSE;
-#endif
 
 	/* tput < 10mbps */
 	if (perf->u4CurrPerfLevel > 0)
@@ -2340,14 +2337,8 @@ static void mt6639RecoveryMsiStatus(struct ADAPTER *prAdapter)
 
 	/* read PCIe EP MSI status */
 	u4Addr = 0x740310F0;
-#if CFG_MTK_WIFI_EN_SW_EMI_READ
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiRead) &&
-	    prSwEmiRingInfo->rOps.read) {
-		fgRet = prSwEmiRingInfo->rOps.read(
-			prAdapter->prGlueInfo, u4Addr, &u4Val);
-	}
+	HAL_MCR_EMI_RD(prAdapter, u4Addr, &u4Val, &fgRet);
 	if (!fgRet)
-#endif
 		HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
 
 	if ((u4Val & 0xff) == 0)
