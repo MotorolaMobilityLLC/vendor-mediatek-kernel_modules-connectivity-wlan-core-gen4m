@@ -6074,7 +6074,16 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 				prAdapter, "ApAllowHtVhtTkip",
 				FEATURE_DISABLED);
 
-	prWifiVar->ucNSS = (uint8_t) wlanCfgGetUint32(prAdapter, "Nss", 2);
+	prWifiVar->ucNSS = (uint8_t) wlanCfgGetUint32
+				(prAdapter, "Nss", 2);
+	prWifiVar->ucAp5gNSS = (uint8_t)wlanCfgGetUint32
+				(prAdapter, "Ap5gNss", 2);
+	prWifiVar->ucAp2gNSS = (uint8_t) wlanCfgGetUint32
+				(prAdapter, "Ap2gNss", 2);
+	prWifiVar->ucGo5gNSS = (uint8_t) wlanCfgGetUint32
+				(prAdapter, "Go5gNss", 2);
+	prWifiVar->ucGo2gNSS = (uint8_t) wlanCfgGetUint32
+				(prAdapter, "Go2gNss", 2);
 
 	/* Max Rx MPDU length setting
 	 * 0: 3k
@@ -9284,8 +9293,32 @@ uint8_t
 wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 		  IN uint8_t ucBssIndex)
 {
+	struct BSS_INFO *prBssInfo;
 	uint8_t ucRetValNss = prAdapter->rWifiVar.ucNSS;
-#if CFG_SISO_SW_DEVELOP
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (IS_BSS_APGO(prBssInfo)) {
+		if (p2pFuncIsAPMode(
+			prAdapter->rWifiVar.prP2PConnSettings
+			[prBssInfo->u4PrivateData])) {
+			if (prBssInfo->eBand == BAND_2G4)
+				ucRetValNss = prAdapter->rWifiVar.ucAp2gNSS;
+			else if (prBssInfo->eBand == BAND_5G)
+				ucRetValNss = prAdapter->rWifiVar.ucAp5gNSS;
+		} else {
+			if (prBssInfo->eBand == BAND_2G4)
+				ucRetValNss = prAdapter->rWifiVar.ucGo2gNSS;
+			else if (prBssInfo->eBand == BAND_5G)
+				ucRetValNss = prAdapter->rWifiVar.ucGo5gNSS;
+		}
+	}
+
+	if (ucRetValNss > prAdapter->rWifiVar.ucNSS)
+		ucRetValNss = prAdapter->rWifiVar.ucNSS;
+
+	return ucRetValNss;
+
+#if 0 /* CFG_SISO_SW_DEVELOP */
 	struct BSS_INFO *prBssInfo;
 	enum ENUM_BAND eBand = BAND_NULL;
 
