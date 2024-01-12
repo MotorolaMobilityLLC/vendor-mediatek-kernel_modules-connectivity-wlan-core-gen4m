@@ -1341,9 +1341,9 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 		prAisFsmInfo->ePreviousState = prAisFsmInfo->eCurrentState;
 
 		DBGLOG(AIS, STATE, "[AIS%d] TRANSITION: [%s] -> [%s]\n",
-				ucBssIndex,
-		       apucDebugAisState[prAisFsmInfo->eCurrentState],
-		       apucDebugAisState[eNextState]);
+			ucBssIndex,
+			aisGetFsmState(prAisFsmInfo->eCurrentState),
+			aisGetFsmState(eNextState));
 
 		/* NOTE(Kevin): This is the only place to change the
 		 * eCurrentState(except initial)
@@ -2703,7 +2703,7 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 	DBGLOG(AIS, STATE,
 	       "[%d] EVENT-ABORT: Current State %s, ucReasonOfDisconnect:%d\n",
 	       ucBssIndex,
-	       apucDebugAisState[prAisFsmInfo->eCurrentState],
+	       aisGetFsmState(prAisFsmInfo->eCurrentState),
 	       ucReasonOfDisconnect);
 
 	/* record join request time */
@@ -6099,7 +6099,7 @@ void aisFsmRunEventChannelTimeout(IN struct ADAPTER *prAdapter,
 		DBGLOG(AIS, WARN,
 		       "Unexpected remain_on_channel timeout event\n");
 		DBGLOG(AIS, STATE, "CURRENT State: [%s]\n",
-		       apucDebugAisState[prAisFsmInfo->eCurrentState]);
+			aisGetFsmState(prAisFsmInfo->eCurrentState));
 	}
 }
 
@@ -7237,3 +7237,11 @@ struct cfg80211_ft_event_params *
 	return &(prAdapter->rWifiVar.rConnSettings[ucBssIndex].rFtEventParam);
 }
 
+uint8_t *
+	aisGetFsmState(
+	IN enum ENUM_AIS_STATE eCurrentState) {
+	if (eCurrentState >= 0 && eCurrentState < AIS_STATE_NUM)
+		return apucDebugAisState[eCurrentState];
+
+	ASSERT(0);
+}
