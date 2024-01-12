@@ -2914,33 +2914,29 @@ uint32_t soc3_0_wlanAccessCalibrationEMI(
 #if CFG_MTK_ANDROID_EMI
 	uint8_t __iomem *pucEmiBaseAddr = NULL;
 
+	conninfra_get_phy_addr(
+		(unsigned int *)&gConEmiPhyBase,
+		(unsigned int *)&gConEmiSize);
+
 	if (!gConEmiPhyBase) {
-		conninfra_get_phy_addr(
-			(unsigned int *)&gConEmiPhyBase,
-			(unsigned int *)&gConEmiSize);
-
-		if (!gConEmiPhyBase) {
-			DBGLOG(INIT, ERROR,
-			       "Consys emi memory address gConEmiPhyBase invalid\n");
-			return u4Status;
-		}
+		DBGLOG(INIT, ERROR,
+		       "gConEmiPhyBase invalid\n");
+		return u4Status;
 	}
-
-	DBGLOG(INIT, INFO, "backupEMI = 0x%x\n", backupEMI);
 
 	request_mem_region(gConEmiPhyBase, gConEmiSize, "WIFI-EMI");
 	kalSetEmiMpuProtection(gConEmiPhyBase, false);
 	pucEmiBaseAddr = ioremap_nocache(gConEmiPhyBase, gConEmiSize);
 	DBGLOG(INIT, INFO,
-	       "EmiPhyBase:0x%llx, ioremap region 0x%lX @ 0x%lX\n",
-	       (uint64_t)gConEmiPhyBase, gConEmiSize, pucEmiBaseAddr);
-
-	if (!pucEmiBaseAddr) {
-		DBGLOG(INIT, ERROR, "ioremap failed\n");
-		return u4Status;
-	}
+	       "backupEMI(%d),gConEmiPhyBase(0x%x),gConEmiSize(0x%X),pucEmiBaseAddr(0x%x)\n",
+	       backupEMI, gConEmiPhyBase, gConEmiSize, pucEmiBaseAddr);
 
 	do {
+		if (!pucEmiBaseAddr) {
+			DBGLOG(INIT, ERROR, "ioremap_nocache failed\n");
+			break;
+		}
+
 		if (backupEMI == TRUE) {
 			if (gEmiCalResult != NULL) {
 				kalMemFree(gEmiCalResult,
@@ -2952,10 +2948,6 @@ uint32_t soc3_0_wlanAccessCalibrationEMI(
 			gEmiCalOffset = pCalEvent->u4EmiAddress &
 				WIFI_EMI_ADDR_MASK;
 			gEmiCalSize = pCalEvent->u4EmiLength;
-
-			DBGLOG(INIT, INFO,
-					"u4EmiAddress(0x%x), gEmiCalOffset(0x%x)\n",
-					pCalEvent->u4EmiAddress, gEmiCalOffset);
 
 			if (gEmiCalSize == 0) {
 				DBGLOG(INIT, ERROR, "gEmiCalSize 0\n");
@@ -2970,7 +2962,7 @@ uint32_t soc3_0_wlanAccessCalibrationEMI(
 				break;
 			}
 
-			kalMemCopy(gEmiCalResult,
+			memcpy_fromio(gEmiCalResult,
 				(pucEmiBaseAddr + gEmiCalOffset),
 				gEmiCalSize);
 
@@ -2985,7 +2977,7 @@ uint32_t soc3_0_wlanAccessCalibrationEMI(
 			break;
 		}
 
-		kalMemCopy((pucEmiBaseAddr + gEmiCalOffset),
+		memcpy_toio((pucEmiBaseAddr + gEmiCalOffset),
 			gEmiCalResult,
 			gEmiCalSize);
 
@@ -3203,9 +3195,6 @@ uint32_t soc3_0_wlanSendPhyAction(struct ADAPTER *prAdapter,
 
 		break;
 	};
-
-	DBGLOG(INIT, INFO,
-	       "soc3_0_wlanSendPhyAction, waiting for RSP\n");
 
 	u4Status = soc3_0_wlanRcvPhyActionRsp(prAdapter, ucCmdSeqNum);
 
