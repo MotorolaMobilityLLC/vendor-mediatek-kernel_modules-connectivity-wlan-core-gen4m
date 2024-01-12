@@ -2358,9 +2358,6 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 	if ((prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) <
 		(TIMESTAMP_FIELD_LEN + BEACON_INTERVAL_FIELD_LEN
 		+ CAP_INFO_FIELD_LEN)) {
-#ifndef _lint
-		ASSERT(0);
-#endif /* _lint */
 		DBGLOG(SCN, ERROR, "Ignore invalid Beacon Frame\n");
 		return rStatus;
 	}
