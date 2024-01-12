@@ -32,6 +32,7 @@ struct AP_COLLECTION {
 	uint8_t fgIsMatchBssidHint;
 	uint8_t fgIsAllLinkInBlackList;
 	uint8_t fgIsAllLinkConnected;
+	uint32_t u4Tput;
 	uint8_t aucAddr[MAC_ADDR_LEN]; /* mld addr or bssid */
 };
 
@@ -61,7 +62,7 @@ struct AP_COLLECTION {
  */
 
 struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
-	enum ENUM_CONN_ROAM_REASON eRoamReason,
+	enum ENUM_ROAMING_REASON eRoamReason,
 	uint8_t ucBssIndex, struct BSS_DESC_SET *prBssDescSet);
 
 #endif

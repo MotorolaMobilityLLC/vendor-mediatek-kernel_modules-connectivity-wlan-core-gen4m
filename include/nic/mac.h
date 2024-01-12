@@ -1446,8 +1446,12 @@ enum MBO_TRANSITION_REJECT_REASON {
 #define ELEM_RM_TYPE_TSM_REPORT                     9
 
 /* 7.3.2.37 Subelement IDs for Neighbor Report,  Table 7-43b  */
-#define ELEM_ID_NR_BSS_TRANSITION_CAND_PREF			3
-#define ELEM_ID_NR_BSS_TERMINATION_DURATION			4
+#define ELEM_ID_NR_BSS_TRANSITION_CAND_PREF	    3
+#define ELEM_ID_NR_BSS_TERMINATION_DURATION	    4
+#define ELEM_ID_NR_EHT_CAPABILITIES		    198
+#define ELEM_ID_NR_EHT_OPERATION		    199
+#define ELEM_ID_NR_BASIC_MULTI_LINK		    200
+
 
 /*
  * IEEE Std 802.11-2016, Table 9-87 - Measurement Mode definitions for Beacon

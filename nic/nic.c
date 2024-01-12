@@ -1253,6 +1253,9 @@ nicMediaStateChange(struct ADAPTER *prAdapter,
 				aisGetCurrBssId(prAdapter, ucBssIndex);
 			uint8_t ucAuthorized = FALSE;
 
+			/* DISCONNECT_REASON_CODE_ROAMING is triggered by
+			 * supplicant, must indicate the connection status,
+			 */
 			if (prAisFsmInfo->ucReasonOfDisconnect ==
 			    DISCONNECT_REASON_CODE_ROAMING &&
 			    EQUAL_SSID(prCurrBssid->rSsid.aucSsid,
@@ -1266,11 +1269,10 @@ nicMediaStateChange(struct ADAPTER *prAdapter,
 				prBssDesc = scanSearchBssDescByBssidAndSsid(
 					prAdapter, prCurrBssid->arMacAddress,
 					TRUE, &prCurrBssid->rSsid);
-					if (prBssDesc &&
-						prBssDesc->fgIsConnected) {
-						ucAuthorized = TRUE;
-						DBGLOG(TX, INFO,
-							"pre-authorized\n");
+				if (prBssDesc && prBssDesc->fgIsConnected) {
+					ucAuthorized = TRUE;
+					DBGLOG(TX, INFO,
+						"pre-authorized\n");
 				}
 			}
 

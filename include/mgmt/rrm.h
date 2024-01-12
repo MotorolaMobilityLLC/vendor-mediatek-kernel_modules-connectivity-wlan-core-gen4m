@@ -112,6 +112,8 @@ struct RADIO_MEASUREMENT_REQ_PARAMS {
 };
 
 struct RADIO_MEASUREMENT_REPORT_PARAMS {
+	/* bssidx to response */
+	uint8_t ucRspBssIndex;
 	/* the total length of Measurement Report elements */
 	uint16_t u2ReportFrameLen;
 	uint8_t *pucReportFrameBuff;

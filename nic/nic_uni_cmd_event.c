@@ -4077,7 +4077,7 @@ uint32_t nicUniCmdStaRecTagMlrInfo(struct ADAPTER *ad,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prMldStaRec = mldStarecGetByStarec(ad, prStaRec);
-	if (IS_MLD_STAREC_VALID(prMldStaRec)) {
+	if (IS_MLD_STAREC_MULTI(prMldStaRec)) {
 		DBGLOG(REQ, INFO, "MLR unicmd - This is a MLD starec\n");
 		return 0;
 	}

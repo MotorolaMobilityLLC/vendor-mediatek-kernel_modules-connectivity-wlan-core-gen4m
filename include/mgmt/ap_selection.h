@@ -33,7 +33,7 @@ extern const struct WFA_DESENSE_CHANNEL_LIST desenseChList[BAND_NUM];
 #endif
 
 struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
-	enum ENUM_CONN_ROAM_REASON eRoamReason,
+	enum ENUM_ROAMING_REASON eRoamReason,
 	uint8_t ucBssIndex, struct BSS_DESC_SET *prBssDescSet);
 
 #endif

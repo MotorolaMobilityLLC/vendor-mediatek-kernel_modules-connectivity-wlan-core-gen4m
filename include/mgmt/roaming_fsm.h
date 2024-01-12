@@ -66,7 +66,7 @@ struct CMD_ROAMING_TRANSIT {
 	uint16_t u2RcpiLowThreshold;
 	uint8_t ucIsSupport11B;
 	uint8_t ucBssidx;
-	enum ENUM_CONN_ROAM_REASON eReason;
+	enum ENUM_ROAMING_REASON eReason;
 	uint32_t u4RoamingTriggerTime; /*sec in mcu*/
 	uint16_t u2RcpiHighThreshold;
 	uint8_t aucReserved2[6];
@@ -121,7 +121,7 @@ struct ROAMING_INFO {
 #endif
 
 	uint8_t fgDrvRoamingAllow;
-	enum ENUM_CONN_ROAM_REASON eReason;
+	enum ENUM_ROAMING_REASON eReason;
 	uint8_t ucPER;
 	uint8_t ucRcpi;
 	uint8_t ucThreshold;
