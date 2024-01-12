@@ -742,6 +742,12 @@ void cnmStaRecFree(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
 		prStaRec->ucBssIndex, prStaRec->ucIndex, prStaRec->fgIsInUse);
 
 	if (prStaRec->fgIsInUse) {
+#if CFG_SUPPORT_802_11W
+		if (timerPendingTimer(&(prStaRec->rPmfCfg.rSAQueryTimer)))
+			cnmTimerStopTimer(prAdapter,
+				&(prStaRec->rPmfCfg.rSAQueryTimer));
+#endif
+
 		nicFreePendingTxMsduInfo(prAdapter, prStaRec->ucWlanIndex,
 				MSDU_REMOVE_BY_WLAN_INDEX);
 
