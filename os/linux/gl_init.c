@@ -4125,7 +4125,11 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	/* move before reading file
 	 * wlanLoadDefaultCustomerSetting(prAdapter);
 	 */
-	wlanFeatureToFw(prGlueInfo->prAdapter);
+	wlanFeatureToFw(prGlueInfo->prAdapter, WLAN_CFG_DEFAULT);
+
+	/*if driver backup Engineer Mode CFG setting before*/
+	wlanResoreEmCfgSetting(prGlueInfo->prAdapter);
+	wlanFeatureToFw(prGlueInfo->prAdapter, WLAN_CFG_EM);
 #endif
 
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
@@ -4868,6 +4872,8 @@ static void wlanRemove(void)
 	/*reset NVRAM State to ready for the next wifi-no*/
 	if (g_NvramFsm == NVRAM_STATE_SEND_TO_FW)
 		g_NvramFsm = NVRAM_STATE_READY;
+
+
 #if CFG_MTK_MCIF_WIFI_SUPPORT
 	mddpNotifyWifiOffStart();
 #endif
@@ -4941,6 +4947,9 @@ static void wlanRemove(void)
 
 	/* Unregister notifier callback */
 	wlanUnregisterInetAddrNotifier();
+
+	/*backup EM mode cfg setting*/
+	wlanBackupEmCfgSetting(prAdapter);
 
 	/* complete possible pending oid, which may block wlanRemove some time
 	 * and then whole chip reset may failed
