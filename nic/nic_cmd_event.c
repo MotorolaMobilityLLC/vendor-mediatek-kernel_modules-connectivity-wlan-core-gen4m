@@ -5281,14 +5281,7 @@ void nicEventAssertDump(IN struct ADAPTER *prAdapter,
 						"Add FW version in core dump header fail\n");
 			}
 
-			if (kalWriteCorDumpFile(
-					aucVersionBuf, kalStrLen(aucVersionBuf),
-					TRUE) != WLAN_STATUS_SUCCESS) {
-				DBGLOG(NIC, ERROR,
-					"Add FW version in core dump header fail\n");
-			}
-
-			wlanCorDumpTimerInit(prAdapter, TRUE);
+			wlanCorDumpTimerInit(prAdapter);
 		}
 		if (prAdapter->fgN9AssertDumpOngoing) {
 			u2BufSize = prEvent->u2PacketLength

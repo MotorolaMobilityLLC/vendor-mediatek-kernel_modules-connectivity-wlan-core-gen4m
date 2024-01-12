@@ -196,6 +196,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_PKT_OFLD] = nicUniCmdPktOfldOp,
 #endif
 	[CMD_ID_WFC_KEEP_ALIVE] = nicUniCmdKeepAlive,
+#if (CFG_CE_ASSERT_DUMP == 1)
+	[UNI_EVENT_ID_ASSERT_DUMP] = nicUniEventAssertDump,
+#endif
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -6447,6 +6450,88 @@ uint32_t nicUniCmdPktOfldOp(struct ADAPTER *ad,
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
 	return WLAN_STATUS_SUCCESS;
+}
+#endif
+#if (CFG_CE_ASSERT_DUMP == 1)
+void initCECoredump(struct ADAPTER *ad)
+{
+	uint16_t len = 0;
+
+	DBGLOG(NIC, INFO, "##### Start Coredump!\n");
+	DBGLOG(NIC, INFO, "manifest: %s\n", ad->rVerInfo.aucReleaseManifest);
+
+	ad->fgKeepPrintCoreDump = TRUE;
+	ad->fgN9AssertDumpOngoing = TRUE;
+
+	len = kalStrnLen(ad->rVerInfo.aucReleaseManifest,
+		sizeof(ad->rVerInfo.aucReleaseManifest));
+
+	kalEnqCoreDumpLog(ad, ";", kalStrLen(";"));
+	kalEnqCoreDumpLog(ad, ad->rVerInfo.aucReleaseManifest, len);
+	kalEnqCoreDumpLog(ad, "\n\0", kalStrLen("\n\0"));
+
+	wlanCorDumpTimerInit(ad);
+}
+
+void appendCECoredump(struct ADAPTER *ad, uint8_t *buf, uint16_t len)
+{
+	if (!kalStrnCmp(buf, ";;[CONNSYS] coredump start", 26))
+		ad->fgKeepPrintCoreDump = FALSE;
+
+	if (ad->fgKeepPrintCoreDump) {
+		DBGLOG(NIC, INFO, "%s", buf);
+		DBGLOG_MEM32(NIC, TRACE, buf, len);
+	}
+
+	kalEnqCoreDumpLog(ad, buf, len);
+
+	wlanCorDumpTimerReset(ad);
+
+	if (kalStrStr(buf, "; coredump end")) {
+		DBGLOG(NIC, INFO, "##### Finish Coredump!\n");
+		ad->fgN9AssertDumpOngoing = FALSE;
+
+		cnmTimerStopTimer(ad, &ad->rN9CorDumpTimer);
+		GL_DEFAULT_RESET_TRIGGER(ad, RST_FW_ASSERT);
+	}
+}
+
+void nicUniEventAssertDump(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len = 0;
+	uint8_t *tag = NULL;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_ASSERT_DUMP);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint8_t *dump = NULL;
+	uint32_t len = 0;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_ASSERT_DUMP_BASIC:
+			if (!ad->fgN9AssertDumpOngoing) {
+				initCECoredump(ad);
+				/* skip first line (disable cache) */
+				break;
+			}
+
+			len = TAG_LEN(tag) - sizeof(struct TAG_HDR);
+			dump = kalMemAlloc(len, VIR_MEM_TYPE);
+			kalMemCopy(dump, tag + sizeof(struct TAG_HDR), len);
+
+			appendCECoredump(ad, dump, len);
+
+			kalMemFree(dump, VIR_MEM_TYPE, len);
+			break;
+		default:
+			DBGLOG(NIC, WARN, "unimplement tag:%d\n", TAG_ID(tag));
+			break;
+		}
+	}
 }
 #endif
 

@@ -1046,6 +1046,11 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 	if (wlanIsChipAssert(prGlueInfo->prAdapter))
 		return -EBUSY;
 
+#if (CFG_CE_ASSERT_DUMP == 1)
+	if (prGlueInfo->prAdapter->fgN9AssertDumpOngoing)
+		return -EBUSY;
+#endif
+
 #if CFG_SUPPORT_QA_TOOL
 	if (prAdapter->fgTestMode) {
 		DBGLOG(REQ, ERROR,
