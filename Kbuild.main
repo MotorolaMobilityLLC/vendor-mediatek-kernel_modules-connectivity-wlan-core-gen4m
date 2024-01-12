@@ -2440,7 +2440,8 @@ MGMT_OBJS := 	$(MGMT_DIR)ais_fsm.o \
 		$(MGMT_DIR)rtt.o \
 		$(MGMT_DIR)mlr.o \
 		$(MGMT_DIR)wlan_ring.o \
-		$(MGMT_DIR)gcm.o
+		$(MGMT_DIR)gcm.o \
+		$(MGMT_DIR)arp_mon.o
 
 ifeq ($(NEED_CRYPTO), y)
 ccflags-y += -DCFG_SUPPORT_CRYPTO=1

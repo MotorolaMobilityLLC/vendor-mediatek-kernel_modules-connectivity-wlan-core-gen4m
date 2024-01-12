@@ -337,7 +337,7 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 #endif
 #if ARP_MONITER_ENABLE
 #if CFG_QM_ARP_MONITOR_MSG
-	{MID_QM_ARP_MONITOR, qmArpMonitorHandleMsg},
+	{MID_QM_ARP_MONITOR, arpMonHandleMsg},
 #endif /* CFG_QM_ARP_MONITOR_MSG */
 #endif /* ARP_MONITER_ENABLE */
 	{MID_RSN_FW_DUMP, rsnTriggerDumpWTBL},

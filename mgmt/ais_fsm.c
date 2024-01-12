@@ -4493,8 +4493,8 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 			prAisFsmInfo->ucConnTrialCount = 0;
 
 #if ARP_MONITER_ENABLE
-			qmResetArpDetect(prAdapter, prStaRec->ucBssIndex);
-#endif
+			arpMonResetArpDetect(prAdapter, prStaRec->ucBssIndex);
+#endif /* ARP_MONITER_ENABLE */
 
 #if CFG_SUPPORT_ROAMING
 			prAisFsmInfo->ucIsStaRoaming = FALSE;

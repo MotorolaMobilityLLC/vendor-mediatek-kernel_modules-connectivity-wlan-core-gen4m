@@ -1840,14 +1840,8 @@ uint32_t nicRxProcessPacketToHost(struct ADAPTER *prAdapter,
 		goto end;
 
 #if ARP_MONITER_ENABLE
-	if (IS_BSS_INFO_IN_AIS(prBssInfo))
-		qmHandleRxArpPackets(prAdapter, prRetSwRfb);
-
-	/* STA or GC */
-	qmHandleRxDhcpPackets(prAdapter, prRetSwRfb);
-
-	qmArpMonitorGetUnicastPktTime(prAdapter, prRetSwRfb);
-#endif
+	arpMonProcessRxPacket(prAdapter, prBssInfo, prRetSwRfb);
+#endif /* ARP_MONITER_ENABLE */
 
 	if (ucBssIndex < MAX_BSSID_NUM)
 		GET_BOOT_SYSTIME(&prRxCtrl->u4LastRxTime[ucBssIndex]);

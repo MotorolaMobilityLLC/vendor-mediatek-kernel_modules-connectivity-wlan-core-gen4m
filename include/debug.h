@@ -210,6 +210,7 @@ enum ENUM_DBG_MODULE {
 	DBG_SA_IDX,		/* 0x2E *//* standalone log */
 	DBG_MET_IDX,		/* 0x2F *//* Connsys MET log */
 	DBG_FILS_IDX,		/* 0x30 *//* FILS */
+	DBG_AM_IDX,		/* 0x31 *//* ARP Monitor */
 	DBG_MODULE_NUM		/* Notice the XLOG check */
 };
 enum ENUM_DBG_ASSERT_CTRL_LEVEL {

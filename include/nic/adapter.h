@@ -2644,9 +2644,12 @@ struct ADAPTER {
 	OS_SYSTIME tmDataPipReportinterval;
 #endif
 
+#if ARP_MONITER_ENABLE
+	struct ARP_MON arArpMonitor[MAX_BSSID_NUM];
 #if !CFG_QM_ARP_MONITOR_MSG
 	uint8_t ucArpNoRespBitmap;
 #endif /* !CFG_QM_ARP_MONITOR_MSG */
+#endif /* ARP_MONITER_ENABLE */
 
 #if CFG_SUPPORT_ASSURANCE
 	/* Deauth IE from wpa_supplicant */
