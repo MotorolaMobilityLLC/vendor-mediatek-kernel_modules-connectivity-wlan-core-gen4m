@@ -19,7 +19,8 @@
 #define TEST_DBDC_BAND0		0
 #define TEST_DBDC_BAND1		1
 
-#ifdef DBDC_MODE
+/* #ifdef DBDC_MODE  */
+#if 1
 #define IS_TEST_DBDC(_test_winfo)	_test_winfo->dbdc_mode
 #define TEST_DBDC_BAND_NUM		2
 #else
@@ -455,6 +456,7 @@ struct serv_chip_cap {
 	struct serv_mcs_nss_caps mcs_nss;
 	struct serv_qos_caps qos;
 	struct serv_spe_map_list spe_map_list;
+	boolean swq_per_band;
 };
 
 /* Service channel configuration */
@@ -744,7 +746,7 @@ struct GNU_PACKED hqa_comm_rx_stat {
 
 /* Test mps for service */
 struct test_mps_setting {
-	u_int32 phy_mode;
+	u_int32 tx_mode;
 	u_int16 tx_ant;
 	u_int32 mcs;
 	u_int32 pkt_len;
@@ -829,8 +831,8 @@ struct test_band_state {
 
 struct test_ru_info {
 	boolean valid;
-	u_int32 allocation;
 	u_int32 aid;
+	u_int32 allocation;
 	u_int32 ru_index;
 	u_int32 rate;
 	u_int32 ldpc;
@@ -909,16 +911,16 @@ struct test_configuration {
 	void *wdev[2];
 	u_char wdev_idx;
 	u_char wmm_idx;
-	u_short q_id;
+	u_short ac_idx;
 
 	/* Wifi related */
 	u_int8 wcid_ref;
 
 	/* Tx frame */
 	u_char template_frame[32];
-	u_char addr1[SERV_MAC_ADDR_LEN];
-	u_char addr2[SERV_MAC_ADDR_LEN];
-	u_char addr3[SERV_MAC_ADDR_LEN];
+	u_char addr1[MAX_MULTI_TX_STA][SERV_MAC_ADDR_LEN];
+	u_char addr2[MAX_MULTI_TX_STA][SERV_MAC_ADDR_LEN];
+	u_char addr3[MAX_MULTI_TX_STA][SERV_MAC_ADDR_LEN];
 	u_char payload[TEST_MAX_PATTERN_SIZE];
 	u_short dur;
 	u_short seq;
@@ -960,7 +962,7 @@ struct test_configuration {
 	u_char ctrl_ch;
 	u_int8 pri_sel;
 	s_int8 ch_offset;
-	u_char phy_mode;
+	u_char tx_mode;
 	u_char bw;
 	u_char per_pkt_bw;
 	u_char mcs;
@@ -1087,16 +1089,21 @@ struct test_operation {
 	s_int32 (*op_set_tx_stream)(
 		struct test_wlan_info *winfos,
 		u_int32 stream_nums, u_char band_idx);
+	s_int32 (*op_set_tx_path)(
+		struct test_wlan_info *winfos,
+		u_char band_idx,
+		struct test_configuration *configs);
 	s_int32 (*op_set_rx_path)(
 		struct test_wlan_info *winfos,
-		u_int32 rx_path_sel, u_char band_idx);
+		u_char band_idx,
+		struct test_configuration *configs);
 	s_int32 (*op_set_rx_filter)(
 		struct test_wlan_info *winfos,
 		struct rx_filter_ctrl rx_filter);
 	s_int32 (*op_set_clean_persta_txq)(
 		struct test_wlan_info *winfos,
 		boolean sta_pause_enable, u_char wdev_idx, u_char band_idx);
-	s_int32 (*op_log_of_off)(
+	s_int32 (*op_log_on_off)(
 		struct test_wlan_info *winfos,
 		u_char band_idx,
 		u_int32 log_type,

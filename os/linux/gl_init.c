@@ -1081,6 +1081,8 @@ int wlanDoIOCTL(struct net_device *prDev,
 #else
 		ret = priv_support_driver_cmd(prDev, prIfReq, i4Cmd);
 #endif /* CFG_ANDROID_AOSP_PRIV_CMD */
+	}  else if (i4Cmd == SIOCDEVPRIVATE + 2) {
+		ret = priv_support_ioctl(prDev, prIfReq, i4Cmd);
 	} else {
 		DBGLOG(INIT, WARN, "Unexpected ioctl command: 0x%04x\n",
 		       i4Cmd);

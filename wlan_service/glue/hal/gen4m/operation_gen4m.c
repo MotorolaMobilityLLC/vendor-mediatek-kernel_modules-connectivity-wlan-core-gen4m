@@ -315,7 +315,7 @@ enum ENUM_ATE_CAP_TYPE {
 	/* I/Q Type */
 	ATE_CAP_I_TYPE = 0,
 	ATE_CAP_Q_TYPE = 1,
-	ATE_NUM_OF_CAP_TYP
+	ATE_NUM_OF_CAP_TYPE
 };
 /*****************************************************************************
  *	Global Variable
@@ -470,11 +470,48 @@ s_int32 mt_op_set_tx_stream(
 	return SERV_STATUS_SUCCESS;
 }
 
+s_int32 mt_op_set_tx_path(
+	struct test_wlan_info *winfos,
+	u_char band_idx,
+	struct test_configuration *configs)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	ret = tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_TX_PATH,
+			(u_int32)configs->tx_ant);
+
+	return ret;
+}
+
 s_int32 mt_op_set_rx_path(
 	struct test_wlan_info *winfos,
-	u_int32 rx_path_sel, u_char band_idx)
+	u_char band_idx,
+	struct test_configuration *configs)
 {
-	return SERV_STATUS_SUCCESS;
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+	u_int32 rx_ant = (u_int32)configs->rx_ant;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	ret = tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
+
+	rx_ant = ((rx_ant << 16) | (0 & BITS(0, 15)));
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_RX_PATH,
+			rx_ant);
+
+	return ret;
 }
 
 s_int32 mt_op_set_rx_filter(
@@ -531,7 +568,7 @@ s_int32 mt_op_set_cfg_on_off(
 	return ret;
 }
 
-s_int32 mt_op_log_of_off(
+s_int32 mt_op_log_on_off(
 	struct test_wlan_info *winfos,
 	u_char band_idx,
 	u_int32 log_type,
@@ -1114,22 +1151,22 @@ s_int32 mt_op_start_tx(
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_PKTCNT, pkt_cnt);
 
-	if (configs->phy_mode == TEST_MODE_OFDM) {
-		configs->phy_mode = TEST_MODE_CCK;
+	if (configs->tx_mode == TEST_MODE_OFDM) {
+		configs->tx_mode = TEST_MODE_CCK;
 		configs->mcs += 4;
-	} else if ((configs->phy_mode == TEST_MODE_CCK)
+	} else if ((configs->tx_mode == TEST_MODE_CCK)
 	&& ((configs->mcs == 9)
 		|| (configs->mcs == 10) || (configs->mcs == 11)))
-		configs->phy_mode = TEST_MODE_OFDM;
+		configs->tx_mode = TEST_MODE_OFDM;
 
 	tm_rftest_set_auto_test(winfos,
-		RF_AT_FUNCID_PREAMBLE, configs->phy_mode);
+		RF_AT_FUNCID_PREAMBLE, configs->tx_mode);
 
-	if (configs->phy_mode == TEST_MODE_CCK) {
+	if (configs->tx_mode == TEST_MODE_CCK) {
 		configs->mcs |= 0x00000000;
 		tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_RATE, configs->mcs);
-	} else if (configs->phy_mode == TEST_MODE_OFDM) {
+	} else if (configs->tx_mode == TEST_MODE_OFDM) {
 		if (configs->mcs == 9)
 			configs->mcs = 1;
 		else if (configs->mcs == 10)
@@ -1140,10 +1177,10 @@ s_int32 mt_op_start_tx(
 
 		tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_RATE, configs->mcs);
-	} else if (configs->phy_mode >= TEST_MODE_HTMIX &&
-	configs->phy_mode <= TEST_MODE_HE_TB) {
+	} else if (configs->tx_mode >= TEST_MODE_HTMIX &&
+	configs->tx_mode <= TEST_MODE_HE_TB) {
 
-		if (configs->phy_mode == TEST_MODE_HE_TB) {
+		if (configs->tx_mode == TEST_MODE_HE_TB) {
 			/*do ru operation*/
 			if (ru_sta->valid) {
 				/*Calculate HE TB PHY Info*/
@@ -1192,8 +1229,6 @@ s_int32 mt_op_start_tx(
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_NSS, configs->nss);
 	tm_rftest_set_auto_test(winfos,
-		RF_AT_FUNCID_SET_TX_PATH, configs->tx_ant);
-	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_COMMAND, RF_AT_COMMAND_STARTTX);
 
 	return ret;
@@ -1224,12 +1259,11 @@ s_int32 mt_op_start_rx(
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
-	u_int32 rx_path = configs->rx_ant;
 
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
-	if (configs->phy_mode == TEST_MODE_HE_MU) {
+	if (configs->tx_mode == TEST_MODE_HE_MU) {
 		if (configs->mu_rx_aid)
 			ret = tm_rftest_set_auto_test(winfos,
 					RF_AT_FUNCID_SET_RX_MU_AID,
@@ -1242,8 +1276,6 @@ s_int32 mt_op_start_rx(
 
 	ret = tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
-	ret = tm_rftest_set_auto_test(winfos,
-		RF_AT_FUNCID_SET_RX_PATH, (rx_path << 16 | band_idx));
 	ret = tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_COMMAND, RF_AT_COMMAND_STARTRX);
 
@@ -1371,23 +1403,23 @@ s_int32 mt_op_set_tx_content(
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_PKTLEN, tx_len);
 
-	sys_ad_move_mem(&func_data, configs->addr1, 4);
+	sys_ad_move_mem(&func_data, configs->addr1[0], 4);
 
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_MAC_ADDRESS, func_data);
 
 	func_data = 0;
-	sys_ad_move_mem(&func_data, configs->addr1 + 4, 2);
+	sys_ad_move_mem(&func_data, configs->addr1[0] + 4, 2);
 	tm_rftest_set_auto_test(winfos,
 		(RF_AT_FUNCID_SET_MAC_ADDRESS | BIT(18)),
 		func_data);
 
-	sys_ad_move_mem(&func_data, configs->addr2, 4);
+	sys_ad_move_mem(&func_data, configs->addr2[0], 4);
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_TA, func_data);
 
 	func_data = 0;
-	sys_ad_move_mem(&func_data, configs->addr2 + 4, 2);
+	sys_ad_move_mem(&func_data, configs->addr2[0] + 4, 2);
 	tm_rftest_set_auto_test(winfos,
 		(RF_AT_FUNCID_SET_TA | BIT(18)), func_data);
 
@@ -1589,7 +1621,7 @@ s_int32 mt_op_dbdc_continuous_tx(
 	s_int32 SetFreq = 0;
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
-	u_int32 phy_mode = configs->phy_mode;
+	u_int32 tx_mode = configs->tx_mode;
 	u_int32 rate = configs->rate;
 
 	if (pr_oid_funcptr == NULL)
@@ -1608,21 +1640,21 @@ s_int32 mt_op_dbdc_continuous_tx(
 			RF_AT_FUNCID_SET_PRIMARY_CH,
 			configs->pri_sel);
 
-		if (phy_mode == 1) {
-			phy_mode = 0;
+		if (tx_mode == 1) {
+			tx_mode = 0;
 			rate += 4;
-		} else if ((phy_mode == 0) &&
+		} else if ((tx_mode == 0) &&
 			((rate == 9) || (rate == 10) || (rate == 11)))
-			phy_mode = 1;
+			tx_mode = 1;
 
 		ret = tm_rftest_set_auto_test(winfos,
-			RF_AT_FUNCID_PREAMBLE, phy_mode);
+			RF_AT_FUNCID_PREAMBLE, tx_mode);
 
-		if (phy_mode == 0) {
+		if (tx_mode == 0) {
 			rate |= 0x00000000;
 			tm_rftest_set_auto_test(winfos,
 				RF_AT_FUNCID_RATE, rate);
-		} else if (phy_mode == 1) {
+		} else if (tx_mode == 1) {
 			if (rate == 9)
 				rate = 1;
 			else if (rate == 10)
@@ -1633,7 +1665,7 @@ s_int32 mt_op_dbdc_continuous_tx(
 
 			tm_rftest_set_auto_test(winfos,
 				RF_AT_FUNCID_RATE, rate);
-		} else if (phy_mode >= 2 && phy_mode <= 4) {
+		} else if (tx_mode >= 2 && tx_mode <= 4) {
 			rate |= 0x80000000;
 
 			tm_rftest_set_auto_test(winfos,
@@ -1945,7 +1977,6 @@ s_int32 mt_op_set_band_mode(
 s_int32 mt_op_get_chipid(
 	struct test_wlan_info *winfos)
 {
-
 	return SERV_STATUS_SUCCESS;
 }
 
@@ -1966,7 +1997,7 @@ s_int32 mt_op_mps_set_seq_data(
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
 	for (i = 0; i < len; i++) {
-		mode = mps_setting[i].phy_mode;
+		mode = mps_setting[i].tx_mode;
 		mcs = mps_setting[i].mcs;
 		tx_path = mps_setting[i].tx_ant;
 
@@ -2391,7 +2422,7 @@ s_int32 mt_op_get_rx_stat_band(
 s_int32 mt_op_set_mutb_spe(
 	struct test_wlan_info *winfos,
 	u_char band_idx,
-	u_char phy_mode,
+	u_char tx_mode,
 	u_int8 spe_idx)
 {
 	return SERV_STATUS_SUCCESS;

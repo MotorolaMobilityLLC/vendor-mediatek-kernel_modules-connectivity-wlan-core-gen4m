@@ -134,7 +134,7 @@ struct service_test {
 
 	/* TODO: factor out here for log dump */
 	u_int32 en_log;
-/* struct _ATE_LOG_DUMP_CB log_dump[ATE_LOG_TYPE_NUM]; */
+	/* struct _ATE_LOG_DUMP_CB log_dump[ATE_LOG_TYPE_NUM]; */
 };
 
 /*****************************************************************************
@@ -146,8 +146,10 @@ s_int32 mt_serv_start(struct service_test *serv_test);
 s_int32 mt_serv_stop(struct service_test *serv_test);
 s_int32 mt_serv_set_channel(struct service_test *serv_test);
 s_int32 mt_serv_set_tx_content(struct service_test *serv_test);
+s_int32 mt_serv_set_tx_path(struct service_test *serv_test);
+s_int32 mt_serv_set_rx_path(struct service_test *serv_test);
 s_int32 mt_serv_submit_tx(struct service_test *serv_test);
-u_int32 mt_serv_revert_tx(struct service_test *serv_test);
+s_int32 mt_serv_revert_tx(struct service_test *serv_test);
 s_int32 mt_serv_start_tx(struct service_test *serv_test);
 s_int32 mt_serv_stop_tx(struct service_test *serv_test);
 s_int32 mt_serv_start_rx(struct service_test *serv_test);

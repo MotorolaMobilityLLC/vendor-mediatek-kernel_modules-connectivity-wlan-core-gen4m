@@ -84,46 +84,26 @@ s_int32 mt_op_set_tx_stream(
 	return ret;
 }
 
-s_int32 mt_op_set_rx_path(
+s_int32 mt_op_set_tx_path(
 	struct test_wlan_info *winfos,
-	u_int32 rx_path_sel, u_char band_idx)
+	u_char band_idx,
+	struct test_configuration *configs)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
-	RTMP_ADAPTER *ad = NULL;
-#ifdef CONFIG_HW_HAL_OFFLOAD
-	struct _EXT_CMD_ATE_TEST_MODE_T param;
-#endif
-
-	/* Get adapter from jedi driver first */
-	GET_PAD_FROM_NET_DEV(ad, winfos->net_dev);
-	if (ad == NULL)
-		return SERV_STATUS_HAL_OP_INVALID_PAD;
-
-#ifdef CONFIG_HW_HAL_OFFLOAD
-	sys_ad_zero_mem(&param, sizeof(param));
-	param.ucAteTestModeEn = 1;
-	param.ucAteIdx = EXT_ATE_SET_RX_PATH;
-
-	/* Set rx ant 2/3 for band1 */
-	if (band_idx)
-		rx_path_sel = rx_path_sel << 2;
-
-	param.Data.rAteSetRxPath.ucType = rx_path_sel;
-	param.Data.rAteSetRxPath.ucBand = band_idx;
-	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
-		("%s: rx_path_sel=0x%x, band_idx=%u\n",
-		__func__, rx_path_sel, band_idx));
-
-	ret = MtCmdATETest(ad, &param);
-#else
-	ret = MtAsicSetRxPath(ad, rx_path_sel, band_idx);
-#endif
-
-	if (ret)
-		ret = SERV_STATUS_HAL_OP_FAIL_SEND_FWCMD;
 
 	return ret;
 }
+
+s_int32 mt_op_set_rx_path(
+	struct test_wlan_info *winfos,
+	u_char band_idx,
+	struct test_configuration *configs)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+	return ret;
+}
+
 
 s_int32 mt_op_set_rx_filter(
 	struct test_wlan_info *winfos,
@@ -236,7 +216,7 @@ s_int32 mt_op_set_cfg_on_off(
 	return ret;
 }
 
-s_int32 mt_op_log_of_off(
+s_int32 mt_op_log_on_off(
 	struct test_wlan_info *winfos,
 	u_char band_idx,
 	u_int32 log_type,
@@ -737,6 +717,7 @@ s_int32 mt_op_reset_txrx_counter(
 	RTMP_ADAPTER *ad = NULL;
 	RX_STATISTIC_RXV *rx_stat;
 	u_int32 control = 0, user_idx = 0, band_idx = 0;
+	struct _RTMP_CHIP_DBG *chip_dbg = NULL;
 
 	/* Get adapter from jedi driver first */
 	GET_PAD_FROM_NET_DEV(ad, winfos->net_dev);
@@ -745,6 +726,8 @@ s_int32 mt_op_reset_txrx_counter(
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: reset txrx counter\n", __func__));
+
+	chip_dbg = hc_get_chip_dbg(ad->hdev_ctrl);
 
 	for (band_idx = TEST_DBDC_BAND0;
 			band_idx < TEST_DBDC_BAND_NUM; band_idx++) {
@@ -764,6 +747,24 @@ s_int32 mt_op_reset_txrx_counter(
 			rx_stat->fcs_error_cnt[user_idx] = 0;
 			rx_stat->FreqOffsetFromRx[user_idx] = 0;
 			rx_stat->SNR[user_idx] = 0;
+		}
+
+		if (chip_dbg) {
+			chip_dbg->get_tx_mibinfo(ad, band_idx,
+						MODE_CCK,
+						BW_20);
+			chip_dbg->get_tx_mibinfo(ad, band_idx,
+						MODE_CCK,
+						BW_40);
+			chip_dbg->get_tx_mibinfo(ad, band_idx,
+						MODE_CCK,
+						BW_80);
+			chip_dbg->get_tx_mibinfo(ad, band_idx,
+						MODE_CCK,
+						BW_160);
+			chip_dbg->get_tx_mibinfo(ad, band_idx,
+						MODE_HE_MU,
+						BW_20);
 		}
 	}
 
@@ -1011,7 +1012,7 @@ s_int32 mt_op_dbdc_continuous_tx(
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	RTMP_ADAPTER *ad = NULL;
 	u_int8 tx_tone_en = 0;
-	u_int32 ant_mask = 0, phy_mode = 0, bw = 0;
+	u_int32 ant_mask = 0, tx_mode = 0, bw = 0;
 	u_int32 pri_sel = 0, rate = 0, channel = 0;
 	u_int32 tx_fd_mode = 0;
 
@@ -1022,14 +1023,14 @@ s_int32 mt_op_dbdc_continuous_tx(
 
 	tx_tone_en = configs->tx_tone_en;
 	ant_mask = configs->ant_mask;
-	phy_mode = configs->phy_mode;
+	tx_mode = configs->tx_mode;
 	bw = configs->bw;
 	pri_sel = configs->pri_sel;
 	rate = configs->rate;
 	channel = configs->channel;
 	tx_fd_mode = configs->tx_fd_mode;
 
-	ret = MtCmdTxContinous(ad, phy_mode, bw,
+	ret = MtCmdTxContinous(ad, tx_mode, bw,
 		pri_sel, channel, rate, ant_mask,
 		tx_fd_mode, band_idx, tx_tone_en);
 	if (ret)
@@ -1044,6 +1045,31 @@ s_int32 mt_op_get_tx_info(
 	struct test_configuration *test_configs_band1)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_int32 mib_counter = 0;
+	RTMP_ADAPTER *ad = NULL;
+	struct _RTMP_CHIP_DBG *chip_dbg = NULL;
+
+	/* Get adapter from jedi driver first */
+	GET_PAD_FROM_NET_DEV(ad, winfos->net_dev);
+	if (ad == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_PAD;
+
+	chip_dbg = hc_get_chip_dbg(ad->hdev_ctrl);
+
+	if (chip_dbg) {
+		mib_counter = chip_dbg->get_tx_mibinfo(ad, BAND0,
+					test_configs_band0->tx_mode,
+					test_configs_band0->per_pkt_bw);
+
+		test_configs_band0->tx_stat.tx_done_cnt += mib_counter;
+
+		mib_counter = chip_dbg->get_tx_mibinfo(ad, BAND1,
+					test_configs_band1->tx_mode,
+					test_configs_band1->per_pkt_bw);
+
+		test_configs_band1->tx_stat.tx_done_cnt += mib_counter;
+	} else
+		ret = SERV_STATUS_HAL_OP_FAIL;
 
 	return ret;
 }
@@ -1652,6 +1678,7 @@ s_int32 mt_op_get_rdd_cnt(
 	return ret;
 }
 
+
 s_int32 mt_op_get_rdd_content(
 	struct test_wlan_info *winfos,
 	u_int32 *content,
@@ -1720,6 +1747,7 @@ s_int32 mt_op_get_rdd_content(
 	return ret;
 }
 
+
 s_int32 mt_op_set_muru_manual(
 	void *virtual_device,
 	struct test_wlan_info *winfos,
@@ -1749,13 +1777,16 @@ s_int32 mt_op_set_muru_manual(
 	net_ad_get_wmm_idx(virtual_device, &wmm_idx);
 	MuruManCfg.rCfgCmm.u1WmmSet = wmm_idx;
 	MuruManCfg.u4ManCfgBmpCmm |= MURU_FIXED_CMM_WMM_SET;
-	MuruManCfg.rCfgDl.u1Bw = configs->bw;
+	if (configs->per_pkt_bw > TEST_BW_80)
+		MuruManCfg.rCfgDl.u1Bw = 0x3;	/* 0x3 imply 80+80/160 */
+	else
+		MuruManCfg.rCfgDl.u1Bw = configs->per_pkt_bw;
 	MuruManCfg.u4ManCfgBmpDl |= MURU_FIXED_BW;
 	MuruManCfg.rCfgDl.u1SigBMcs = (configs->mcs & 0xf);
 	MuruManCfg.u4ManCfgBmpDl |= MURU_FIXED_SIGB_MCS;
 	MuruManCfg.rCfgDl.u1SigBDcm = ((configs->mcs & BIT5) ? 0x1 : 0);
 	MuruManCfg.u4ManCfgBmpDl |= MURU_FIXED_SIGB_DCM;
-	MuruManCfg.rCfgDl.u1TxMode = configs->phy_mode;
+	MuruManCfg.rCfgDl.u1TxMode = configs->tx_mode;
 	MuruManCfg.u4ManCfgBmpDl |= MURU_FIXED_TX_MODE;
 	MuruManCfg.rCfgDl.u1UserCnt = stack->index;
 	MuruManCfg.u4ManCfgBmpDl |= MURU_FIXED_TOTAL_USER_CNT;
@@ -1799,7 +1830,7 @@ s_int32 mt_op_set_muru_manual(
 				__func__, ru_seq, user_info->u2WlanIdx,
 				user_info->u1RuAllocIdx));
 			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
-				("\t\segment:%d, mcs:%d\n",
+				("\t\tsegment:%d, mcs:%d\n",
 				user_info->u1RuAllocBn,
 				user_info->u1Mcs));
 		}
@@ -2018,7 +2049,7 @@ s_int32 mt_op_hetb_ctrl(
 		else
 			ret = SERV_STATUS_HAL_OP_FAIL;
 	} else {
-		if (chip_dbg->ctrl_manual_hetb_rx)
+		if (chip_dbg->ctrl_manual_hetb_tx)
 			chip_dbg->ctrl_manual_hetb_tx(ad,
 					band_idx,
 					ctrl_type,
@@ -2073,7 +2104,7 @@ s_int32 mt_op_set_ru_aid(
 s_int32 mt_op_set_mutb_spe(
 	struct test_wlan_info *winfos,
 	u_char band_idx,
-	u_char phy_mode,
+	u_char tx_mode,
 	u_int8 spe_idx)
 {
 	RTMP_ADAPTER *ad = NULL;
@@ -2086,7 +2117,7 @@ s_int32 mt_op_set_mutb_spe(
 
 	chip_dbg = hc_get_chip_dbg(ad->hdev_ctrl);
 	if (chip_dbg->chip_ctrl_spe)
-		chip_dbg->chip_ctrl_spe(ad, band_idx, phy_mode, spe_idx);
+		chip_dbg->chip_ctrl_spe(ad, band_idx, tx_mode, spe_idx);
 
 	return SERV_STATUS_SUCCESS;
 }

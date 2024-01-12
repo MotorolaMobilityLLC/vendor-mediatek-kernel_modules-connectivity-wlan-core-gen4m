@@ -105,7 +105,7 @@ struct GNU_PACKED hqa_tx {
 	u_int32 num_param;
 	u_int32 band_idx;
 	u_int32 pkt_cnt;
-	u_int32 phymode;
+	u_int32 tx_mode;
 	u_int32 rate;
 	u_int32 pwr;
 	u_int32 stbc;
@@ -153,7 +153,7 @@ struct GNU_PACKED hqa_continuous_tx {
 	u_int32 band_idx;
 	u_int32 tx_tone_en;
 	u_int32 ant_mask;
-	u_int32 phy_mode;
+	u_int32 tx_mode;
 	u_int32 bw;
 	u_int32 pri_ch;
 	u_int32 rate;
@@ -304,6 +304,29 @@ struct priv_hqa_cmd_id_mapping {
 	u_int8 para_size[AGENT_CFG_ARGV_MAX];
 };
 
+struct agent_cli_act_handler {
+	u_char name[100];
+	s_int32 (*handler)(struct service_test *serv_test);
+};
+
+struct agent_cli_set_w_handler {
+	u_char name[100];
+	s_int32 (*handler)(struct service_test *serv_test,
+				struct hqa_frame *hqa_cmd);
+};
+
+struct agent_cli_set_dw_handler {
+	u_char name[100];
+	s_int32 (*handler)(struct service_test *serv_test,
+				struct hqa_frame *hqa_cmd);
+};
+
+struct agent_cli_set_ext_handler {
+	u_char name[100];
+	s_int32 (*handler)(struct service_test *serv_test,
+				u_char *arg);
+};
+
 /*****************************************************************************
  *	Function declaration
  *****************************************************************************/
@@ -311,7 +334,10 @@ s_int32 mt_agent_hqa_cmd_handler(
 	struct service *serv, struct hqa_frame_ctrl *hqa_frame_ctrl);
 s_int32 mt_agent_init_service(struct service *serv);
 s_int32 mt_agent_exit_service(struct service *serv);
-s_int32 mt_agent_start(struct service *serv);
-s_int32 mt_agent_stop(struct service *serv);
+s_int32 mt_agent_cli_act(u_char *name, struct service *serv);
+s_int32 mt_agent_cli_set_w(u_char *name, struct service *serv, u_char *param);
+s_int32 mt_agent_cli_set_dw(u_char *name, struct service *serv, u_char *param);
+s_int32 mt_agent_cli_set_ext(u_char *name,
+					struct service *serv, u_char *arg);
 
 #endif /* __AGENT_H__ */

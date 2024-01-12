@@ -118,7 +118,7 @@ static s_int32 net_ad_mps_dump_setting(
 		for (idx = 1; idx <= mps_cb->mps_cnt; idx++) {
 			SERV_LOG(SERV_DBG_CAT_ADAPT, SERV_DBG_LVL_OFF,
 				("item_idx=%d, phy_mode=%d, ",
-				idx, mps_setting[idx].phy_mode));
+				idx, mps_setting[idx].tx_mode));
 			SERV_LOG(SERV_DBG_CAT_ADAPT, SERV_DBG_LVL_OFF,
 				("tx_ant=0x%x, mcs=%d, ",
 				mps_setting[idx].tx_ant,
@@ -137,7 +137,7 @@ static s_int32 net_ad_mps_dump_setting(
 	} else {
 		SERV_LOG(SERV_DBG_CAT_ADAPT, SERV_DBG_LVL_OFF,
 			("item_idx=%d, phy_mode=%d, ",
-			idx, mps_setting[idx].phy_mode));
+			idx, mps_setting[idx].tx_mode));
 		SERV_LOG(SERV_DBG_CAT_ADAPT, SERV_DBG_LVL_OFF,
 			("tx_ant=0x%x, mcs=%d, ",
 			mps_setting[idx].tx_ant,
@@ -164,7 +164,7 @@ static s_int32 net_ad_mps_load_setting(
 	struct test_mps_cb *mps_cb;
 	struct test_mps_setting *mps_setting;
 	u_char *test_pkt;
-	u_int32 idx, phy_mode, tx_ant, mcs, pwr;
+	u_int32 idx, tx_mode, tx_ant, mcs, pwr;
 	u_int32 pkt_len, pkt_cnt, nss, pkt_bw;
 
 	/* TODO: factor out here for tx power */
@@ -191,7 +191,7 @@ static s_int32 net_ad_mps_load_setting(
 	if (idx > mps_cb->mps_cnt)
 		goto err2;
 
-	phy_mode = mps_setting[idx].phy_mode;
+	tx_mode = mps_setting[idx].tx_mode;
 	tx_ant = mps_setting[idx].tx_ant;
 	mcs = mps_setting[idx].mcs;
 	pwr = mps_setting[idx].pwr;
@@ -199,7 +199,7 @@ static s_int32 net_ad_mps_load_setting(
 	pkt_cnt = mps_setting[idx].pkt_cnt;
 	nss = mps_setting[idx].nss;
 	pkt_bw = mps_setting[idx].pkt_bw;
-	configs->phy_mode = phy_mode;
+	configs->tx_mode = tx_mode;
 	configs->tx_ant = tx_ant;
 	configs->mcs = mcs;
 	configs->nss = nss;
@@ -311,11 +311,14 @@ static s_int32 net_ad_thread_handler(
 	if (ad == NULL)
 		return SERV_STATUS_OSAL_NET_INVALID_PAD;
 
+	if (winfos->chip_cap.swq_per_band)
 	mgmt_swq = &ad->mgmt_que[band_idx];
+	else
+		mgmt_swq = &ad->mgmt_que[0];
 	test_config = &configs[band_idx];
 	stack = &test_config->stack;
 	op_mode = test_config->op_mode;
-	q_idx = test_config->q_id;
+	q_idx = test_config->ac_idx;
 	txed_cnt = test_config->tx_stat.txed_cnt;
 	tx_cnt = test_config->tx_stat.tx_cnt;
 	ipg_param = &test_config->ipg_param;
@@ -336,7 +339,7 @@ test_thread_dequeue:
 #if 0
 		if (multi_users > 0) {
 			UCHAR *pate_pkt
-			= TESTMODE_GET_PARAM(ate_ctrl, band_idx, pate_pkt);
+			= TESTMODE_GET_PARAM(pAd, band_idx, test_pkt);
 
 			ate_ctrl->wcid_ref = multi_users;
 			ret = MT_ATEGenPkt(pAd, pate_pkt, band_idx);
@@ -604,7 +607,7 @@ static s_int32 net_ad_fill_tmac_info(
 	struct tx_time_param *tx_time_param;
 	struct wifi_dev *wdev = NULL;
 	u_char *addr1 = NULL;
-	u_char phy_mode, mcs, vht_nss, wmm_idx;
+	u_char tx_mode, mcs, vht_nss, wmm_idx;
 	u_int32 ant_sel, pkt_tx_time;
 	u_int8 need_qos, need_amsdu, need_ampdu;
 	boolean fgspe;
@@ -627,9 +630,9 @@ static s_int32 net_ad_fill_tmac_info(
 	}
 
 	configs->hdr_len = LENGTH_802_11;
-	addr1 = &configs->addr1[0];
+	addr1 = configs->addr1[0];
 	ant_sel = configs->tx_ant;
-	phy_mode = configs->phy_mode;
+	tx_mode = configs->tx_mode;
 	mcs = configs->mcs;
 	vht_nss = configs->nss;
 	SERV_LOG(SERV_DBG_CAT_ADAPT, SERV_DBG_LVL_TRACE,
@@ -740,14 +743,14 @@ static s_int32 net_ad_fill_tmac_info(
 
 	/* Fill transmit setting */
 	tmac_info->TxRadioSet.RateCode = mcs;
-	tmac_info->TxRadioSet.PhyMode = phy_mode;
+	tmac_info->TxRadioSet.PhyMode = tx_mode;
 	tmac_info->TxRadioSet.CurrentPerPktBW = configs->per_pkt_bw;
 	tmac_info->TxRadioSet.ShortGI =	configs->sgi;
 	tmac_info->TxRadioSet.Stbc = configs->stbc;
 	tmac_info->TxRadioSet.Ldpc = configs->ldpc;
 
 	tmac_info->QueIdx =
-		asic_get_hwq_from_ac(ad, tmac_info->WmmSet, configs->q_id);
+		asic_get_hwq_from_ac(ad, tmac_info->WmmSet, configs->ac_idx);
 
 	if ((pkt_tx_time > 0) && (need_ampdu)) {
 		tmac_info->Wcid = configs->wcid_ref;
@@ -767,7 +770,7 @@ static s_int32 net_ad_fill_tmac_info(
 		tmac_info->TxSFmt = 1;
 	}
 
-	if (phy_mode == TEST_MODE_CCK) {
+	if (tx_mode == TEST_MODE_CCK) {
 		tmac_info->TxRadioSet.Premable = LONG_PREAMBLE;
 
 		if (mcs == MCS_9) {
@@ -856,15 +859,14 @@ static boolean net_ad_fill_offload_tx_blk(
 	if (RTMP_GET_PACKET_CLEAR_EAP_FRAME(pPacket))
 		TX_BLK_SET_FLAG(txblk, fTX_bClearEAPFrame);
 
-#if 0
-	/* testmode data does not support fTX_HDR_TRANS yet */
+	/* testmode data does not support fTX_HDR_TRANS yet
 	if (IS_ASIC_CAP(pAd, fASIC_CAP_TX_HDR_TRANS)) {
 		if ((txblk->TxFrameType == TX_LEGACY_FRAME)
 			|| (txblk->TxFrameType == TX_AMSDU_FRAME)
 			|| (txblk->TxFrameType == TX_MCAST_FRAME))
 			TX_BLK_SET_FLAG(tx_blk, fTX_HDR_TRANS);
 	}
-#endif
+	*/
 
 	txblk->pSrcBufData = txblk->pSrcBufHeader;
 	txblk->wmm_set = HcGetWmmIdx(ad, wdev);
@@ -886,6 +888,14 @@ static boolean net_ad_fill_offload_tx_blk(
 /*****************************************************************************
  *	Extern functions
  *****************************************************************************/
+struct service_test *net_ad_wrap_service(void *adapter)
+{
+	struct _RTMP_ADAPTER *ad = (struct _RTMP_ADAPTER *)adapter;
+	struct service *serv = &ad->serv;
+
+	return (struct service_test *)serv->serv_handle;
+}
+
 struct wifi_dev_ops serv_wdev_ops = {
 	.open = net_ad_open_inf,
 	.close = net_ad_close_inf,
@@ -1057,12 +1067,12 @@ s_int32 net_ad_tx_v2(
 	}
 
 	/* Fill TX blk for ATE mode */
-	if (configs->phy_mode == TEST_MODE_HE_MU && configs->retry)
+	if (configs->tx_mode == TEST_MODE_HE_MU && configs->retry)
 		ret = net_ad_fill_offload_tx_blk(ad, wdev, tx_blk, TRUE);
 	else
 		ret = net_ad_fill_offload_tx_blk(ad, wdev, tx_blk, FALSE);
 
-	tx_blk->QueIdx = configs->q_id;
+	tx_blk->QueIdx = configs->ac_idx;
 	if (mt_engine_search_stack(configs,
 		   RTMP_GET_PACKET_WCID(tx_blk->pPacket),
 		   (void **)&tx_blk->pMacEntry) != SERV_STATUS_SUCCESS) {
@@ -1537,9 +1547,10 @@ s_int32 net_ad_update_wdev(
 
 	HcReleaseRadioForWdev(ad, wdev);
 
-#if defined(DBDC_MODE) && defined(MT7915)
-	if (IS_MT7915(ad) && IS_ATE_DBDC(ad)) {
-		u_int8 rx_sel = (configs->rx_ant >> 2*band_idx);
+/* #ifdef DBDC_MODE  */
+#if 1
+	if (IS_MT7915(ad) && IS_TEST_DBDC(winfos)) {
+		u_int8 rx_sel = (configs->rx_ant & 0x3);
 
 		if (band_idx == DBDC_BAND0)
 			ad->dbdc_band0_rx_path = rx_sel;
@@ -1572,9 +1583,12 @@ s_int32 net_ad_update_wdev(
 	 */
 	wdev->channel = configs->ctrl_ch;
 	wlan_config_set_ch_band(wdev, ch_band);
+	wlan_config_set_tx_stream(wdev, configs->tx_ant);
+	wlan_config_set_rx_stream(wdev, configs->rx_ant);
 	wlan_config_set_ht_bw(wdev,
 		((configs->bw > TEST_BW_20) ? HT_BW_40 : HT_BW_20));
 	wlan_config_set_ext_cha(wdev, configs->ch_offset);
+	wlan_config_set_cen_ch_2(wdev, configs->channel_2nd);
 	if (configs->bw > TEST_BW_5)
 		wlan_config_set_vht_bw(wdev,
 				(VHT_BW_80+(configs->bw-TEST_BW_5)));
@@ -1606,9 +1620,12 @@ s_int32 net_ad_update_wdev(
 	wdev_txd->channel = configs->ctrl_ch;
 
 	wlan_config_set_ch_band(wdev_txd, ch_band);
+	wlan_config_set_tx_stream(wdev_txd, configs->tx_ant);
+	wlan_config_set_rx_stream(wdev_txd, configs->rx_ant);
 	wlan_config_set_ht_bw(wdev_txd,
 		((configs->bw > TEST_BW_20) ? HT_BW_40 : HT_BW_20));
 	wlan_config_set_ext_cha(wdev_txd, configs->ch_offset);
+	wlan_config_set_cen_ch_2(wdev_txd, configs->channel_2nd);
 	if (configs->bw > TEST_BW_5)
 		wlan_config_set_vht_bw(wdev_txd,
 			(VHT_BW_80+(configs->bw-TEST_BW_5)));
@@ -2062,9 +2079,9 @@ s_int32 net_ad_apply_wtbl(
 			rate_cfg->VhtNss = phy_info->vht_nss;
 			#if 0 /* ToDO */
 			rRaParam.ucShortPreamble =
-						TESTMODE_GET_PARAM(ate_ctrl,
+						TESTMODE_GET_PARAM(pAd,
 						HcGetBandByWdev(virtual_dev),
-						Preamble);
+						preamble);
 			#endif
 			rRaParam.u4Field = RA_PARAM_FIXED_RATE;
 			RAParamUpdate(ad, entry, &rRaParam);
@@ -2315,9 +2332,9 @@ s_int32 net_ad_fill_pkt(
 		return SERV_STATUS_OSAL_NET_INVALID_PAD;
 
 	tx_hw_hdr_len = winfos->chip_cap.tx_wi_size;
-	addr1 = configs->addr1;
-	addr2 = configs->addr2;
-	addr3 = configs->addr3;
+	addr1 = configs->addr1[0];
+	addr2 = configs->addr2[0];
+	addr3 = configs->addr3[0];
 	template = configs->template_frame;
 
 	SERV_LOG(SERV_DBG_CAT_ADAPT, SERV_DBG_LVL_TRACE,
@@ -2347,8 +2364,8 @@ s_int32 net_ad_fill_pkt(
 #if 0
 #ifdef TXBF_SUPPORT
 	{
-		UCHAR iTxBf = TESTMODE_GET_PARAM(ATECtrl, band_idx, iTxBf);
-		UCHAR eTxBf = TESTMODE_GET_PARAM(ATECtrl, band_idx, eTxBf);
+		UCHAR iTxBf = TESTMODE_GET_PARAM(pAd, band_idx, ibf);
+		UCHAR eTxBf = TESTMODE_GET_PARAM(pAd, band_idx, ebf);
 
 		/* Use wcid 1~4 */
 		if (iTxBf || eTxBf) {
@@ -2451,7 +2468,7 @@ s_int32 net_ad_alloc_pkt(
 		return SERV_STATUS_OSAL_NET_INVALID_PAD;
 
 	src_buff = configs->test_pkt;
-	qid = configs->q_id;
+	qid = configs->ac_idx;
 	tx_hw_hdr_len = winfos->chip_cap.tx_hw_hdr_len;
 
 	if (!src_buff) {
@@ -2499,7 +2516,6 @@ s_int32 net_ad_free_pkt(
 
 	RTMPFreeNdisPacket(ad, pkt_skb);
 
-err_out:
 	return ret;
 }
 
@@ -2600,7 +2616,6 @@ s_int32 net_ad_trigger_tx(
 		goto done;
 	}
 
-	txdone_cnt = configs->tx_stat.tx_done_cnt;
 	tx_cnt = configs->tx_stat.tx_cnt;
 	op_mode = configs->op_mode;
 
@@ -2612,7 +2627,6 @@ s_int32 net_ad_trigger_tx(
 	if (pkt) {
 		ad->RalinkCounters.KickTxCount++;
 		txdone_cnt++;
-		configs->tx_stat.tx_done_cnt = txdone_cnt;
 	}
 
 	if (configs->tx_strategy == TEST_TX_STRA_THREAD)
@@ -2620,7 +2634,7 @@ s_int32 net_ad_trigger_tx(
 	else if (configs->tx_strategy == TEST_TX_STRA_TASKLET) {
 		if ((op_mode & OP_MODE_TXFRAME) && (txdone_cnt < tx_cnt))
 			ret = net_ad_enq_pkt(winfos,
-					     configs->q_id,
+					     configs->ac_idx,
 					     configs->stack.virtual_wtbl[0],
 					     configs->stack.virtual_device[0],
 					     configs->stack.pkt_skb[0]);
@@ -2666,8 +2680,6 @@ s_int32 net_ad_trigger_tx(
 				("op_mode:0x%x, tx_cnt:%u, txdone_cnt:%u\n",
 				op_mode, tx_cnt, txdone_cnt));
 		}
-
-		configs->tx_stat.tx_done_cnt = txdone_cnt;
 	} else {
 		ret = SERV_STATUS_OSAL_NET_INVALID_PARAM;
 		SERV_LOG(SERV_DBG_CAT_ADAPT, SERV_DBG_LVL_ERROR,
@@ -2691,7 +2703,8 @@ s_int32 net_ad_rx_done_handle(
 	u_char band_idx;
 	u_int32 chfreq0 = 0, chfreq1 = 0;
 	u_int32 bn0_cr_addr = RMAC_CHFREQ0;
-#ifdef DBDC_MODE
+/* #ifdef DBDC_MODE  */
+#if 1
 	u_int32 bn1_cr_addr = RMAC_CHFREQ1;
 #endif /* DBDC_MODE */
 
@@ -2704,7 +2717,8 @@ s_int32 net_ad_rx_done_handle(
 		band_idx = rxblk->band;
 	else {
 		MAC_IO_READ32(ad->hdev_ctrl, bn0_cr_addr, &chfreq0);
-#ifdef DBDC_MODE
+/* #ifdef DBDC_MODE  */
+#if 1
 		MAC_IO_READ32(ad->hdev_ctrl, bn1_cr_addr, &chfreq1);
 #endif /* DBDC_MODE */
 
@@ -2714,7 +2728,8 @@ s_int32 net_ad_rx_done_handle(
 		/* RX packet counter calculate by chfreq of RXD */
 		if (rxblk->channel_freq == chfreq0)
 			band_idx = TEST_DBDC_BAND0;
-#ifdef DBDC_MODE
+/* #ifdef DBDC_MODE  */
+#if 1
 		else if (rxblk->channel_freq == chfreq1)
 			band_idx = TEST_DBDC_BAND1;
 #endif /* DBDC_MODE */
@@ -2919,7 +2934,7 @@ s_int32 net_ad_cfg_wtbl(
 	P_BA_CAP_T   wtbl_ba_cap;
 	P_RATE_CAP_T wtbl_rate_cap;
 	u_int8 need_qos, need_amsdu, need_ampdu;
-	u_char phy_mode, mcs, nss, bw, sgi, stbc, ldpc, preamble, u4Stbc;
+	u_char tx_mode, mcs, nss, bw, sgi, stbc, ldpc, preamble, u4Stbc;
 	u_int32 ant_sel = 0;
 
 	/* Get adapter from jedi driver first */
@@ -2938,7 +2953,7 @@ s_int32 net_ad_cfg_wtbl(
 	need_qos = tx_time_param->pkt_need_qos;
 	need_amsdu = tx_time_param->pkt_need_amsdu;
 	need_ampdu = tx_time_param->pkt_need_ampdu;
-	phy_mode = configs->phy_mode;
+	tx_mode = configs->tx_mode;
 	mcs = configs->mcs;
 	nss = configs->nss;
 	bw = configs->bw;
@@ -2952,7 +2967,7 @@ s_int32 net_ad_cfg_wtbl(
 	param.ucAteTestModeEn = TRUE;
 	param.ucAteIdx = ENUM_ATE_SET_AMPDU_WTBL;
 
-	switch (phy_mode) {
+	switch (tx_mode) {
 	case TEST_MODE_HTMIX:
 	case TEST_MODE_HTGREENFIELD:
 		wtbl_ht_cap->fgIsHT = TRUE;
@@ -3044,10 +3059,10 @@ s_int32 net_ad_cfg_wtbl(
 		}
 	}
 
-	u4Stbc = raStbcSettingCheck(stbc, phy_mode, mcs, nss, 0, 0);
+	u4Stbc = raStbcSettingCheck(stbc, tx_mode, mcs, nss, 0, 0);
 
 	wtbl_rate_cap->ucStbc = u4Stbc;
-	wtbl_rate_cap->ucMode = phy_mode;
+	wtbl_rate_cap->ucMode = tx_mode;
 	wtbl_rate_cap->ucSgi = sgi;
 	wtbl_rate_cap->ucBw = bw;
 	wtbl_rate_cap->ucNss = nss;
@@ -3172,10 +3187,10 @@ s_int32 net_ad_set_auto_resp(
 		return SERV_STATUS_OSAL_NET_INVALID_PAD;
 
 #ifdef CONFIG_AP_SUPPORT
-	sa = configs->addr3;
+	sa = configs->addr3[0];
 #endif
 #ifdef CONFIG_STA_SUPPORT
-	sa = configs->addr2;
+	sa = configs->addr2[0];
 #endif
 
 	SERV_LOG(SERV_DBG_CAT_ADAPT, SERV_DBG_LVL_TRACE,
@@ -3265,8 +3280,7 @@ s_int32 net_ad_read_bulk_mac_bbp_reg(
 #define REG_BLOCK_SIZE 128
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	RTMP_ADAPTER *ad = NULL;
-	RTMP_REG_PAIR reg_pair[REG_BLOCK_SIZE];
-	u_int32 idx, reg_idx, block_idx = 0, addr, reg_num, value;
+	u_int32 reg_seq, addr, reg_total, value;
 	u_char offset_byte = 0x4;
 
 	/* Get adapter from jedi driver first */
@@ -3275,14 +3289,14 @@ s_int32 net_ad_read_bulk_mac_bbp_reg(
 		return SERV_STATUS_OSAL_NET_INVALID_PAD;
 
 	addr = regs->cr_addr;
-	reg_num = regs->cr_num;
+	reg_total = regs->cr_num;
 
-	for (reg_idx = 0; reg_idx < reg_num; reg_idx++) {
+	for (reg_seq = 0; reg_seq < reg_total; reg_seq++) {
 		RTMP_IO_READ32(ad->hdev_ctrl,
 				addr,
 				&value);
 
-		sys_ad_move_mem(regs->cr_val+reg_idx,
+		sys_ad_move_mem(regs->cr_val+reg_seq,
 				&value, sizeof(value));
 		addr += offset_byte;
 	}
@@ -3449,12 +3463,15 @@ s_int32 net_ad_read_write_bulk_eeprom(
 #endif /* RTMP_FLASH_SUPPORT */
 		{
 			if ((offset + length) <= eeprom_size) {
-				for (offset = 0;
-					offset < (length >> 1);
-					offset++) {
-					value = eprms->value[offset];
+				u_int16 val_seq = 0;
+
+				for (val_seq = 0;
+					val_seq < (length >> 1);
+					val_seq++) {
+					value = eprms->value[offset >> 1];
 					RT28xx_EEPROM_WRITE16(ad,
-						offset + (offset << 1), value);
+								offset,
+								value);
 				}
 			} else {
 				SERV_LOG(SERV_DBG_CAT_ADAPT, SERV_DBG_LVL_ERROR,
