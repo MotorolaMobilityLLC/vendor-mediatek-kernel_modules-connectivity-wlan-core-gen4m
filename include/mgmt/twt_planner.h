@@ -44,6 +44,11 @@ struct _TWT_FLOW_T {
 	uint8_t fgIsMLTWT;
 #endif
 	enum _ENUM_TWT_TYPE_T eTwtType;
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+	enum _ENUM_TWT_REQUESTER_STATE_T eTwtState;
+	struct STA_RECORD *prOwnStaRec;
+	u_int8_t ucTWTFlowId;
+#endif
 };
 
 struct _TWT_AGRT_T {

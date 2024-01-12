@@ -766,6 +766,11 @@ struct STA_RECORD {
 	struct _TWT_HOTSPOT_CTRL_T TWTHotspotCtrl;
 	struct _TWT_HOTSPOT_STA_NODE *prTWTHotspotStaNode;
 #endif
+
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+	/* FSM Timer */
+	struct TIMER rTwtFsmWaitRespTimeoutTimer;
+#endif
 #endif
 	uint32_t au4Timestamp[2];
 #if (CFG_SUPPORT_802_11AX == 1)
