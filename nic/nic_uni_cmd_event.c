@@ -8677,6 +8677,11 @@ void nicUniCmdEventTWTGetCnmGrantedDone(struct ADAPTER *prAdapter,
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 
+		if (prBssInfo == NULL) {
+			DBGLOG(REQ, WARN, "prBssInfo is null\n");
+			return;
+		}
+
 		prStaRec = prBssInfo->prStaRecOfAP;
 
 		/* For teardown we don't need this */

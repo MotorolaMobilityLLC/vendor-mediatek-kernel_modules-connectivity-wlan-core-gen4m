@@ -4601,6 +4601,9 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
+		if (prBssInfo == NULL)
+			continue;
+
 		if (IS_BSS_BOW(prBssInfo))
 			continue;
 
