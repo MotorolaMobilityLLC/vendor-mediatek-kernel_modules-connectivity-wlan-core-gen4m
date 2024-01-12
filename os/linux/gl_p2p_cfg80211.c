@@ -2714,12 +2714,13 @@ int mtk_p2p_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy,
 int _mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		struct wireless_dev *wdev, struct ieee80211_channel *chan,
 		bool offchan, unsigned int wait, const u8 *buf, size_t len,
-		bool no_cck, bool dont_wait_for_ack, u64 *cookie)
+		bool no_cck, bool dont_wait_for_ack, int link_id, u64 *cookie)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
 	struct MSG_MGMT_TX_REQUEST *prMsgTxReq =
 		(struct MSG_MGMT_TX_REQUEST *) NULL;
+	const struct ieee80211_mgmt *mgmt = (void *)buf;
 	struct MSDU_INFO *prMgmtFrame = (struct MSDU_INFO *) NULL;
 	uint8_t *pucFrameBuf = (uint8_t *) NULL;
 	uint64_t *pu8GlCookie = (uint64_t *) NULL;
@@ -2812,17 +2813,18 @@ int _mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 			+ (unsigned long) len
 			+ MAC_TX_RESERVED_FIELD);
 
+		COPY_MAC_ADDR(prMsgTxReq->aucDestMac, mgmt->da);
 		kalMemCopy(pucFrameBuf, buf, len);
 
 		*pu8GlCookie = *cookie;
 
 		prMgmtFrame->u2FrameLength = len;
 
-#define TEMP_LOG_TEMPLATE "netdev: %p, bssIdx: %d, band: %d, chan: %d, " \
+#define TEMP_LOG_TEMPLATE "[%s] bssIdx: %d, band: %d, chan: %d, " \
 		"offchan: %d, wait: %d, len: %d, no_cck: %d, " \
-		"dont_wait_for_ack: %d, cookie: 0x%llx\n"
+		"dont_wait_for_ack: %d, link_id: %d, cookie: 0x%llx\n"
 		DBGLOG(P2P, INFO, TEMP_LOG_TEMPLATE,
-				dev,
+				dev->name,
 				prMsgTxReq->ucBssIdx,
 				prMsgTxReq->rChannelInfo.eBand,
 				prMsgTxReq->rChannelInfo.ucChannelNum,
@@ -2831,6 +2833,7 @@ int _mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 				prMsgTxReq->prMgmtMsduInfo->u2FrameLength,
 				prMsgTxReq->fgNoneCckRate,
 				prMsgTxReq->fgIsWaitRsp,
+				link_id,
 				prMsgTxReq->u8Cookie);
 #undef TEMP_LOG_TEMPLATE
 
@@ -2862,10 +2865,17 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 	if (params == NULL)
 		return -EINVAL;
 
+#if KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE
 	return _mtk_p2p_cfg80211_mgmt_tx(wiphy, wdev, params->chan,
 			params->offchan, params->wait, params->buf,
 			params->len, params->no_cck, params->dont_wait_for_ack,
-			cookie);
+			params->link_id, cookie);
+#else
+	return _mtk_p2p_cfg80211_mgmt_tx(wiphy, wdev, params->chan,
+			params->offchan, params->wait, params->buf,
+			params->len, params->no_cck, params->dont_wait_for_ack,
+			-1, cookie);
+#endif
 }				/* mtk_p2p_cfg80211_mgmt_tx */
 #else
 int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
@@ -2875,7 +2885,7 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		bool no_cck, bool dont_wait_for_ack, u64 *cookie)
 {
 	return _mtk_p2p_cfg80211_mgmt_tx(wiphy, wdev, chan, offchan, wait, buf,
-			len, no_cck, dont_wait_for_ack, cookie);
+			len, no_cck, dont_wait_for_ack, -1, cookie);
 }				/* mtk_p2p_cfg80211_mgmt_tx */
 #endif
 

@@ -1240,6 +1240,39 @@ struct MSDU_INFO *p2pFuncProcessP2pAssocResp(
 	return prMsduInfo;
 }
 
+static void
+p2pFuncMgmtHeaderTranslation(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMgmtTxMsdu,
+	uint8_t ucBssIndex)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct WLAN_MAC_HEADER *prWlanHdr;
+	struct MLD_BSS_INFO *prMldBss;
+	struct BSS_INFO *prBssInfo;
+
+	prWlanHdr = (struct WLAN_MAC_HEADER *)
+		((uintptr_t) prMgmtTxMsdu->prPacket +
+		MAC_TX_RESERVED_FIELD);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		ucBssIndex);
+	prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
+
+	if (prMldBss &&
+	    EQUAL_MAC_ADDR(prMldBss->aucOwnMldAddr, prWlanHdr->aucAddr2)) {
+		DBGLOG(P2P, TRACE,
+			"Change A2/A3 from [" MACSTR " / " MACSTR "] to ["
+			MACSTR " / " MACSTR "]\n",
+			MAC2STR(prWlanHdr->aucAddr2),
+			MAC2STR(prWlanHdr->aucAddr3),
+			MAC2STR(prBssInfo->aucOwnMacAddr),
+			MAC2STR(prBssInfo->aucBSSID));
+		COPY_MAC_ADDR(prWlanHdr->aucAddr2, prBssInfo->aucOwnMacAddr);
+		COPY_MAC_ADDR(prWlanHdr->aucAddr3, prBssInfo->aucBSSID);
+	}
+#endif
+}
+
 uint32_t
 p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 		uint8_t ucBssIndex,
@@ -1399,14 +1432,17 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 			DBGLOG(P2P, TRACE, "[OWE] TX assoc resp Frame\n");
 			if (!prStaRec) {
 				DBGLOG(AAA, WARN,
-					"get sta fail, bss=%d, A1=" MACSTR "\n",
+					"get sta fail, bss=%d, A1=" MACSTR
+					", A2=" MACSTR ", A3=" MACSTR "\n",
 					ucBssIndex,
-					MAC2STR(prWlanHdr->aucAddr1));
+					MAC2STR(prWlanHdr->aucAddr1),
+					MAC2STR(prWlanHdr->aucAddr2),
+					MAC2STR(prWlanHdr->aucAddr3));
 				fgDrop = TRUE;
 				break;
 			}
-			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-				ucBssIndex);
+			p2pFuncMgmtHeaderTranslation(prAdapter, prMgmtTxMsdu,
+						     ucBssIndex);
 			prMgmtTxMsdu->ucStaRecIndex = prStaRec->ucIndex;
 			prMgmtTxMsdu->ucBssIndex = ucBssIndex;
 			DBGLOG(P2P, TRACE,
@@ -1430,14 +1466,17 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 			DBGLOG(P2P, TRACE, "TX auth Frame\n");
 			if (!prStaRec) {
 				DBGLOG(AAA, WARN,
-					"get sta fail, bss=%d, A1=" MACSTR "\n",
+					"get sta fail, bss=%d, A1=" MACSTR
+					", A2=" MACSTR ", A3=" MACSTR "\n",
 					ucBssIndex,
-					MAC2STR(prWlanHdr->aucAddr1));
+					MAC2STR(prWlanHdr->aucAddr1),
+					MAC2STR(prWlanHdr->aucAddr2),
+					MAC2STR(prWlanHdr->aucAddr3));
 				fgDrop = TRUE;
 				break;
 			}
-			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-				ucBssIndex);
+			p2pFuncMgmtHeaderTranslation(prAdapter, prMgmtTxMsdu,
+						     ucBssIndex);
 			prMgmtTxMsdu->ucStaRecIndex = prStaRec->ucIndex;
 			prMgmtTxMsdu->ucBssIndex = ucBssIndex;
 			DBGLOG(P2P, TRACE,
