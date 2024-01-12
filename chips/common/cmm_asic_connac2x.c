@@ -72,9 +72,7 @@
 
 #ifdef MT7961
 #include "coda/mt7961/wf_wfdma_host_dma0.h"
-#endif
-
-#ifdef MT7915
+#else
 #include "coda/mt7915/wf_wfdma_host_dma0.h"
 #endif
 #include "coda/mt7915/wf_wfdma_host_dma1.h"
