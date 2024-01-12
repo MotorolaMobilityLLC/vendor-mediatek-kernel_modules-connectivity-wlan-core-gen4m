@@ -2543,6 +2543,13 @@ struct PARAM_GET_LINK_QUALITY_INFO {
 };
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
+#if CFG_SUPPORT_MBO
+struct PARAM_BSS_DISALLOWED_LIST {
+	uint32_t u4NumBssDisallowed;
+	/* MAX_FW_ROAMING_BLACKLIST_SIZE */
+	uint8_t aucList[MAC_ADDR_LEN * 16];
+};
+#endif
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -3940,6 +3947,15 @@ wlanoidQueryTxPowerInfo(IN struct ADAPTER *prAdapter,
 			IN void *pvSetBuffer,
 			IN uint32_t u4SetBufferLen,
 			OUT uint32_t *pu4SetInfoLen);
+#endif
+
+#if CFG_SUPPORT_MBO
+uint32_t wlanoidBssDisallowedList(IN struct ADAPTER
+				    *prAdapter,
+				    IN void *pvSetBuffer,
+				    IN uint32_t u4SetBufferLen,
+				    OUT uint32_t *pu4SetInfoLen);
+
 #endif
 
 uint32_t wlanoidSetDrvRoamingPolicy(IN struct ADAPTER

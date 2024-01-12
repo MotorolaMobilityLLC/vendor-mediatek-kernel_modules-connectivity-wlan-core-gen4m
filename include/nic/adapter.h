@@ -749,6 +749,9 @@ struct WIFI_VAR {
 	uint8_t uc5GBandwidthMode;	/* 20/40M or 20M only *//* Not used */
 	/* Support AP Selection */
 	struct LINK_MGMT rBlackList;
+#if CFG_SUPPORT_MBO
+	struct PARAM_BSS_DISALLOWED_LIST rBssDisallowedList;
+#endif
 	enum ENUM_PARAM_PHY_CONFIG eDesiredPhyConfig;
 	/* Common connection settings end */
 

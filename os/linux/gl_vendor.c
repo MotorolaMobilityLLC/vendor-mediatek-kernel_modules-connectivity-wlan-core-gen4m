@@ -778,6 +778,130 @@ nla_put_failure:
 	return -1;
 }
 
+#if CFG_SUPPORT_MBO
+static const struct nla_policy
+qca_roaming_param_policy[QCA_ATTR_ROAMING_PARAM_MAX + 1] = {
+	[QCA_ATTR_ROAMING_SUBCMD] = {.type = NLA_U32},
+	[QCA_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS_NUM_BSSID] = {.type = NLA_U32},
+	[QCA_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS] = {.type = NLA_NESTED},
+	[QCA_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS_BSSID] = {
+					.type = NLA_BINARY,
+					.len = MAC_ADDR_LEN},
+};
+
+#define SET_BSSID_PARAMS_NUM_BSSID \
+		QCA_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS_NUM_BSSID
+#define SET_BSSID_PARAMS \
+		QCA_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS
+#define SET_BSSID_PARAMS_BSSID \
+		QCA_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS_BSSID
+
+int mtk_cfg80211_vendor_set_roaming_param(struct wiphy *wiphy,
+				 struct wireless_dev *wdev,
+				 const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct nlattr *tb[QCA_ATTR_ROAMING_PARAM_MAX + 1];
+	struct nlattr *tb2[QCA_ATTR_ROAMING_PARAM_MAX + 1];
+	struct nlattr *attr;
+	uint32_t rStatus, u4BufLen, cmd_type, count, index;
+	int tmp;
+	uint8_t i = 0;
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	if (!prGlueInfo)
+		return -EFAULT;
+
+	if ((data == NULL) || (data_len == 0))
+		goto fail;
+
+	if (NLA_PARSE(tb, QCA_ATTR_ROAMING_PARAM_MAX,
+			data, data_len, qca_roaming_param_policy)) {
+		DBGLOG(REQ, ERROR, "Wrong ROAM ATTR.\n");
+		goto fail;
+	}
+
+	/* Parse and fetch Command Type*/
+	if (!tb[QCA_ATTR_ROAMING_SUBCMD]) {
+		DBGLOG(REQ, ERROR, "Invalid roam cmd type\n");
+		goto fail;
+	}
+
+	cmd_type = nla_get_u32(tb[QCA_ATTR_ROAMING_SUBCMD]);
+	if (cmd_type == QCA_ATTR_ROAM_SUBCMD_SET_BLACKLIST_BSSID) {
+		struct PARAM_BSS_DISALLOWED_LIST request = {};
+
+		/* Parse and fetch number of blacklist BSSID */
+		if (!tb[SET_BSSID_PARAMS_NUM_BSSID]) {
+			DBGLOG(REQ, ERROR, "Invlaid num of blacklist bssid\n");
+			goto fail;
+		}
+		count = nla_get_u32(tb[SET_BSSID_PARAMS_NUM_BSSID]);
+		if (count > MAX_FW_ROAMING_BLACKLIST_SIZE) {
+			DBGLOG(REQ, ERROR, "Count %u exceeds\n", count);
+			goto fail;
+		}
+		request.u4NumBssDisallowed = count;
+		i = 0;
+		if (count && tb[SET_BSSID_PARAMS]) {
+			nla_for_each_nested(attr, tb[SET_BSSID_PARAMS], tmp) {
+				char *bssid = NULL;
+
+				if (i == count) {
+					DBGLOG(REQ, ERROR, "Excess num\n");
+					break;
+				}
+				if (NLA_PARSE(tb2,
+					QCA_ATTR_ROAMING_PARAM_MAX,
+					nla_data(attr), nla_len(attr),
+					qca_roaming_param_policy)) {
+					DBGLOG(REQ, ERROR, "Wrong ROAM ATTR\n");
+					goto fail;
+				}
+				/* Parse and fetch MAC address */
+				if (!tb2[SET_BSSID_PARAMS_BSSID]) {
+					DBGLOG(REQ, ERROR, "addr failed\n");
+					goto fail;
+				}
+				bssid = nla_data(tb2[SET_BSSID_PARAMS_BSSID]);
+				index = i * MAC_ADDR_LEN;
+				COPY_MAC_ADDR(&request.aucList[index], bssid);
+				DBGLOG(REQ, INFO, "disallow #%d " MACSTR "\n",
+					i, MAC2STR(bssid));
+				i++;
+			}
+		}
+		if (i != count)
+			DBGLOG(REQ, ERROR, "Count %u, expected %u\n", i, count);
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidBssDisallowedList,
+				   &request,
+				   sizeof(struct PARAM_BSS_DISALLOWED_LIST),
+				   FALSE, FALSE, TRUE, &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(REQ, ERROR, "disallowed error:%x\n", rStatus);
+			return -EFAULT;
+		}
+	} else {
+		DBGLOG(REQ, INFO, "unhandled cmd_type %d\n", cmd_type);
+		goto fail;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+fail:
+	return -EINVAL;
+}
+
+#undef SET_BSSID_PARAMS_NUM_BSSID
+#undef SET_BSSID_PARAMS
+#undef SET_BSSID_PARAMS_BSSID
+
+#endif
+
 int mtk_cfg80211_vendor_set_roaming_policy(
 	struct wiphy *wiphy, struct wireless_dev *wdev,
 	const void *data, int data_len)

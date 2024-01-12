@@ -4003,17 +4003,8 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 	       prActFrame->ucCategory);
 
 #if CFG_SUPPORT_802_11W
-	if ((prActFrame->ucCategory <=
-	     CATEGORY_PROTECTED_DUAL_OF_PUBLIC_ACTION &&
-	     prActFrame->ucCategory != CATEGORY_PUBLIC_ACTION &&
-	     prActFrame->ucCategory !=
-	     CATEGORY_HT_ACTION) /* At 11W spec Code 7 is reserved */ ||
-	    (prActFrame->ucCategory ==
-	     CATEGORY_VENDOR_SPECIFIC_ACTION_PROTECTED)) {
-		fgRobustAction = TRUE;
-	}
 	/* DBGLOG(RSN, TRACE, ("[Rx] fgRobustAction=%d\n", fgRobustAction)); */
-
+	fgRobustAction = secIsRobustActionFrame(prAdapter, prSwRfb->pvHeader);
 	if (fgRobustAction && prSwRfb->prStaRec &&
 	    GET_BSS_INFO_BY_INDEX(prAdapter,
 				prSwRfb->prStaRec->ucBssIndex)->eNetworkType ==
