@@ -1074,6 +1074,24 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *req
 	return i4RetRslt;
 }				/* mtk_p2p_cfg80211_scan */
 
+void mtk_p2p_cfg80211_abort_scan(struct wiphy *wiphy, struct wireless_dev *wdev)
+{
+	UINT_32 u4SetInfoLen = 0;
+	UINT_32 u4Value = 0;
+	WLAN_STATUS rStatus;
+	P_GLUE_INFO_T prGlueInfo = NULL;
+
+	DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_abort_scan\n");
+
+	prGlueInfo = *((P_GLUE_INFO_T *) wiphy_priv(wiphy));
+
+	rStatus = kalIoctl(prGlueInfo,
+					   wlanoidAbortP2pScan,
+					   &u4Value, sizeof(u4Value), FALSE, FALSE, TRUE, &u4SetInfoLen);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(REQ, ERROR, "mtk_p2p_cfg80211_abort_scan fail 0x%x\n", rStatus);
+}
+
 int mtk_p2p_cfg80211_set_wiphy_params(struct wiphy *wiphy, u32 changed)
 {
 	INT_32 i4Rslt = -EINVAL;
