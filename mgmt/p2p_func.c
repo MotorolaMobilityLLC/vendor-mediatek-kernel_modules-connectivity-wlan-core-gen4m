@@ -4299,7 +4299,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 						PHY_TYPE_SET_802_11AX;
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
-				if (IE_ID_EXT(pucIE) == EID_EXT_EHT_CAPS)
+				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS)
 					prP2pBssInfo->ucPhyTypeSet |=
 						PHY_TYPE_SET_802_11BE;
 #endif

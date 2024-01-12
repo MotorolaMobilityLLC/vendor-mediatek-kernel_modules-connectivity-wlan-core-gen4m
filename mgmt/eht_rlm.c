@@ -162,7 +162,7 @@ uint32_t ehtRlmCalculateOpIELen(
 	struct STA_RECORD *prStaRec)
 {
 	/* struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL; */
-	uint32_t u4OverallLen = OFFSET_OF(struct _IE_EHT_OP_T, aucVarInfo[0]);
+	uint32_t u4OverallLen = OFFSET_OF(struct IE_EHT_OP, aucVarInfo[0]);
 
 	return u4OverallLen;
 }
@@ -227,7 +227,7 @@ static void ehtRlmFillCapIE(
 		(((uint8_t *)prMsduInfo->prPacket)+prMsduInfo->u2FrameLength);
 
 	prEhtCap->ucId = ELEM_ID_RESERVED;
-	prEhtCap->ucExtId = EID_EXT_EHT_CAPS;
+	prEhtCap->ucExtId = ELEM_EXT_ID_EHT_CAPS;
 
 	eht_bw = _ehtGetBssBandBw(prAdapter, prBssInfo, prBssInfo->eBand);
 	ucSupportedNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
@@ -445,18 +445,18 @@ static void ehtRlmFillOpIE(
 	struct BSS_INFO *prBssInfo,
 	struct MSDU_INFO *prMsduInfo)
 {
-	struct _IE_EHT_OP_T *prEhtOp;
-	uint32_t u4OverallLen = OFFSET_OF(struct _IE_EHT_OP_T, aucVarInfo[0]);
+	struct IE_EHT_OP*prEhtOp;
+	uint32_t u4OverallLen = OFFSET_OF(struct IE_EHT_OP, aucVarInfo[0]);
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
 	ASSERT(prMsduInfo);
 
-	prEhtOp = (struct _IE_EHT_OP_T *)
+	prEhtOp = (struct IE_EHT_OP *)
 		(((uint8_t *)prMsduInfo->prPacket)+prMsduInfo->u2FrameLength);
 
 	prEhtOp->ucId = ELEM_ID_RESERVED;
-	prEhtOp->ucExtId = EID_EXT_EHT_CAPS;
+	prEhtOp->ucExtId = ELEM_EXT_ID_EHT_CAPS;
 
 	/* MAC capabilities */
 	EHT_RESET_OP(prEhtOp->ucEhtOpParams);
@@ -582,12 +582,12 @@ void ehtRlmRecOperation(
 	struct BSS_INFO *prBssInfo,
 	uint8_t *pucIE)
 {
-	struct _IE_EHT_OP_T *prEhtOp = (struct _IE_EHT_OP_T *) pucIE;
+	struct IE_EHT_OP *prEhtOp = (struct IE_EHT_OP *) pucIE;
 
 	/* if payload not contain any aucVarInfo,
-	 * IE size = sizeof(struct _IE_EHT_OP_T)
+	 * IE size = sizeof(struct IE_EHT_OP)
 	 */
-	if (IE_SIZE(prEhtOp) < (sizeof(struct _IE_EHT_OP_T))) {
+	if (IE_SIZE(prEhtOp) < (sizeof(struct IE_EHT_OP))) {
 		DBGLOG(SCN, WARN,
 			"HE_OP IE_LEN err(%d)!\n", IE_LEN(prEhtOp));
 		return;
