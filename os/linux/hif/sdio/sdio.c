@@ -477,6 +477,55 @@ int mtk_sdio_resume(struct device *pDev)
 
 	return mtk_sdio_pm_resume(pDev);
 }
+#if (CFG_SDIO_ASYNC_IRQ_AUTO_ENABLE == 1)
+int mtk_sdio_async_irq_enable(struct sdio_func *func)
+{
+#define SDIO_CCCR_IRQ_EXT	0x16
+#define SDIO_IRQ_EXT_SAI	BIT(0)
+#define SDIO_IRQ_EXT_EAI	BIT(1)
+	unsigned char data = 0;
+	unsigned int quirks_bak;
+	int ret;
+
+	/* Read CCCR 0x16 (interrupt extension)*/
+	data = sdio_f0_readb(func, SDIO_CCCR_IRQ_EXT, &ret);
+	if (ret) {
+		DBGLOG(HAL, ERROR, "CCCR 0x%X read fail (%d).\n", SDIO_CCCR_IRQ_EXT, ret);
+		return FALSE;
+	}
+	/* Check CCCR capability status */
+	if (!(data & SDIO_IRQ_EXT_SAI)) {
+		/* SAI = 0 */
+		DBGLOG(HAL, ERROR, "No Async-IRQ capability.\n");
+		return FALSE;
+	} else if (data & SDIO_IRQ_EXT_EAI) {
+		/* EAI = 1 */
+		DBGLOG(INIT, INFO, "Async-IRQ enabled already.\n");
+		return TRUE;
+	}
+
+	/* Set EAI bit */
+	data |= SDIO_IRQ_EXT_EAI;
+
+	/* Enable capability to write CCCR */
+	quirks_bak = func->card->quirks;
+	func->card->quirks |= MMC_QUIRK_LENIENT_FN0;
+	/* Write CCCR into card */
+	sdio_f0_writeb(func, data, SDIO_CCCR_IRQ_EXT, &ret);
+	if (ret) {
+		DBGLOG(HAL, ERROR, "CCCR 0x%X write fail (%d).\n", SDIO_CCCR_IRQ_EXT, ret);
+		return FALSE;
+	}
+	func->card->quirks = quirks_bak;
+
+	data = sdio_f0_readb(func, SDIO_CCCR_IRQ_EXT, &ret);
+	if (ret || !(data & SDIO_IRQ_EXT_EAI)) {
+		DBGLOG(HAL, ERROR, "CCCR 0x%X write fail (%d).\n", SDIO_CCCR_IRQ_EXT, ret);
+		return FALSE;
+	}
+	return TRUE;
+}
+#endif
 #endif
 
 /*----------------------------------------------------------------------------*/
@@ -639,6 +688,14 @@ BOOL glBusInit(PVOID pvData)
 		DBGLOG(HAL, ERROR, "glBusInit() Error at enabling SDIO 1-BIT data mode.\n");
 	else
 		DBGLOG(HAL, INFO, "glBusInit() SDIO 1-BIT data mode is working.\n");
+#endif
+
+#if (CFG_SDIO_ASYNC_IRQ_AUTO_ENABLE == 1)
+	ret = mtk_sdio_async_irq_enable(func);
+	if (ret == FALSE)
+		DBGLOG(HAL, ERROR, "Async-IRQ auto-enable fail.\n");
+	else
+		DBGLOG(INIT, INFO, "Async-IRQ is enabled.\n");
 #endif
 
 	ret = sdio_set_block_size(func, 512);
