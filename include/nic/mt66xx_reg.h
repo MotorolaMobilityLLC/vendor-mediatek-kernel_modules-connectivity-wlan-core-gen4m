@@ -1604,6 +1604,9 @@ struct mt66xx_chip_info {
 	uint8_t ucMaxSwapAntenna;
 	uint32_t workAround;
 	char *prTxPwrLimitFile;
+#if (CFG_SUPPORT_POWER_SKU_ENHANCE == 1)
+	char *prTxPwrLimit1ss1tFile;
+#endif
 #if (CFG_SUPPORT_SINGLE_SKU_6G == 1)
 	char *prTxPwrLimit6GFile;
 #if (CFG_SUPPORT_SINGLE_SKU_6G_1SS1T == 1)
