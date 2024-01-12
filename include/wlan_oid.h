@@ -570,12 +570,12 @@ struct PARAM_BSSID_EX {
 	enum ENUM_PARAM_OP_MODE eOpMode;
 	uint8_t rSupportedRates[PARAM_MAX_LEN_RATES_EX];
 	uint32_t u4IELength;
-	uint8_t aucIEs[1];
+	uint8_t *aucIEs;
 };
 
 struct PARAM_BSSID_LIST_EX {
 	uint32_t u4NumberOfItems;	/*!< at least 1 */
-	struct PARAM_BSSID_EX arBssid[1];
+	struct PARAM_BSSID_EX arBssid[];
 };
 
 struct PARAM_LINK_BSS_INFO {

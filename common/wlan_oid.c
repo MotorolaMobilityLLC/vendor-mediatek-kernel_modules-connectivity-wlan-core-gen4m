@@ -608,6 +608,9 @@ wlanoidQueryBssidList(struct ADAPTER *prAdapter,
 				   &(prAdapter->rWlanInfo.arScanResult[i]),
 				   OFFSET_OF(struct PARAM_BSSID_EX, aucIEs));
 
+			/* assign ie buffer head*/
+			prBssidEx->aucIEs = (uint8_t *)(prBssidEx + 1);
+
 			/* For WHQL test, Rssi should be
 			 * in range -10 ~ -200 dBm
 			 */
