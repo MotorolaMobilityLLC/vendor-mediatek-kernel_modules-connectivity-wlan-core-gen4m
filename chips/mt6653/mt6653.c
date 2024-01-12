@@ -816,7 +816,7 @@ struct test_capability mt6653_toolCapability = {
 		/* BIT[15:8]: Band2 RX path 1*/
 		/* BIT[23:16]: Band3 TX path 0 */
 		/* BIT[31:24]: Band3 RX path 1 */
-		0x01000101,	/* u_int32 band_2_3_wf_path_num; */
+		0x02000101,	/* u_int32 band_2_3_wf_path_num; */
 
 		/* BIT[7:0]: Band0 BW20, 0x1 */
 		/* BIT[15:8]: Band1 BW320, 0x2F */
