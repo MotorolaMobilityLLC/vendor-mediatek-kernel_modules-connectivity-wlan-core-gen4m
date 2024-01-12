@@ -83,7 +83,7 @@ void halSwWfdmaInit(struct GLUE_INFO *prGlueInfo)
 
 	/* update sw wfdma emi offset */
 	if (prSwWfdmaInfo->u4EmiOffsetAddr) {
-		HAL_RMCR_RD(prGlueInfo->prAdapter,
+		HAL_RMCR_RD(HIF_READ, prGlueInfo->prAdapter,
 			   prSwWfdmaInfo->u4EmiOffsetAddr,
 			   &u4Value);
 		u4Value = (u4Value & prSwWfdmaInfo->u4EmiOffsetMask) |
