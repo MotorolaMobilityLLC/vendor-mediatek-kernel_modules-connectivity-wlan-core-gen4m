@@ -2357,7 +2357,7 @@ uint32_t wlanTxCmdMthread(struct ADAPTER *prAdapter)
 	 */
 	uint32_t u4TxDoneQueueSize, u4Ret;
 #if CFG_DBG_MGT_BUF
-	struct MEM_TRACK *prMemTrack = NULL;
+	struct MEM_TRACK *prMemTrack;
 #endif
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -2397,6 +2397,7 @@ uint32_t wlanTxCmdMthread(struct ADAPTER *prAdapter)
 		prCmdInfo = (struct CMD_INFO *) prQueueEntry;
 		prCmdInfo->pfHifTxCmdDoneCb = wlanTxCmdDoneCb;
 #if CFG_DBG_MGT_BUF
+		prMemTrack = NULL;
 		if (prCmdInfo->pucInfoBuffer &&
 				!IS_FROM_BUF(prAdapter,
 					prCmdInfo->pucInfoBuffer))
