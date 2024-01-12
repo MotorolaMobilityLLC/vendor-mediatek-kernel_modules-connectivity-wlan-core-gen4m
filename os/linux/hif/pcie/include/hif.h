@@ -407,6 +407,9 @@ struct BUS_INFO {
 		u_int32_t intrBitMask);
 	void (*hifRst)(struct GLUE_INFO *prGlueInfo);
 	void (*initPcieInt)(struct GLUE_INFO *prGlueInfo);
+#if CFG_SUPPORT_PCIE_ASPM
+	void (*configPcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
+#endif
 	void (*devReadIntStatus)(struct ADAPTER *prAdapter,
 		OUT uint32_t *pu4IntStatus);
 	/* Do DMASDHL init when WIFISYS is initialized at probe, L0.5 reset,
