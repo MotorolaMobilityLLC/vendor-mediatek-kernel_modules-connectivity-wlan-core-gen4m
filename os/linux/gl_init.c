@@ -513,6 +513,7 @@ int kalDcSetWow(void)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct WIFI_VAR *prWifiVar = NULL;
 	uint32_t count = 0;
 	int ret = 0;
@@ -536,7 +537,10 @@ int kalDcSetWow(void)
 
 	if (prGlueInfo && prGlueInfo->prAdapter) {
 		prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
-
+		prHifInfo = &prGlueInfo->rHifInfo;
+#if CFG_DC_USB_WOW_CALLBACK
+		prHifInfo->fgUsbShutdown = TRUE;
+#endif
 #if !CFG_ENABLE_WAKE_LOCK
 		if (IS_FEATURE_ENABLED(prWifiVar->ucWow)) {
 			GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
@@ -620,7 +624,10 @@ int kalDcSetWow(void)
 	 */
 	if (IS_FEATURE_ENABLED(prGlueInfo->prAdapter->rWifiVar.ucWow))
 		wlanReleaseAllTxCmdQueue(prGlueInfo->prAdapter);
-
+#if CFG_DC_USB_WOW_CALLBACK
+	if (prHifInfo->udev->speed > USB_SPEED_HIGH)
+		mtk_usb_shutdown_vnd_cmd(prGlueInfo);
+#endif
 	DBGLOG(HAL, STATE, "mtk_usb_suspend() done!\n");
 	return ret;
 }

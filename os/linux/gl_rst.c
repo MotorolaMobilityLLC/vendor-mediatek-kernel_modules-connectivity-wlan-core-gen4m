@@ -880,7 +880,11 @@ void glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 	u_int8_t fgDrvOwn;
 #endif
 
-	if (kalIsResetting())
+	if (kalIsResetting()
+#if CFG_DC_USB_WOW_CALLBACK
+	|| prAdapter->prGlueInfo->rHifInfo.fgUsbShutdown
+#endif
+	)
 		return;
 	dump_stack();
 

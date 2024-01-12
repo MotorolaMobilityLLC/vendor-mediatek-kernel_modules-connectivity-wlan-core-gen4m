@@ -155,6 +155,9 @@ enum ENUM_USB_END_POINT {
 #define VND_REQ_BUF_SIZE                (16)
 #define VND_REQ_UHW_READ                (0x01)
 #define VND_REQ_UHW_WRITE               (0x02)
+#if CFG_DC_USB_WOW_CALLBACK
+#define VND_REQ_USB_SHUTDOWN            (0x55)
+#endif
 /* When vendor requests keep fail over this TH, bypass subsequent vendor
  * requests since chip may not work and reset is required.
  */
@@ -291,6 +294,9 @@ struct GL_HIF_INFO {
 	u_int8_t fgIntReadClear;
 	u_int8_t fgMbxReadClear;
 	u_int8_t fgEventEpDetected;
+#if CFG_DC_USB_WOW_CALLBACK
+	u_int8_t fgUsbShutdown;
+#endif
 	enum EVENT_EP_TYPE eEventEpType;
 };
 
@@ -414,6 +420,9 @@ int32_t mtk_usb_vendor_request(struct GLUE_INFO *prGlueInfo,
 		uint8_t uEndpointAddress, uint8_t RequestType,
 	    uint8_t Request, uint16_t Value, uint16_t Index,
 	    void *TransferBuffer, uint32_t TransferBufferLength);
+#if CFG_DC_USB_WOW_CALLBACK
+void mtk_usb_shutdown_vnd_cmd(struct GLUE_INFO *prGlueInfo);
+#endif
 
 void glUsbEnqueueReq(struct GL_HIF_INFO *prHifInfo, struct list_head *prHead, struct USB_REQ *prUsbReq,
 		     spinlock_t *prLock, u_int8_t fgHead);
