@@ -340,6 +340,32 @@ void statsParseARPInfo(void *pvPacket,
 	}
 }
 
+static const char *dhcp_msg(uint32_t u4DhcpTypeOpt)
+{
+	uint8_t ucDhcpMessageType;
+	static const char * const dhcp_messages[] = {
+		"DISCOVER",
+		"OFFER",
+		"REQUEST",
+		"DECLINE",
+		"ACK",
+		"NAK",
+		"RELEASE",
+		"INFORM",
+	};
+
+	if (u4DhcpTypeOpt >> 16 != 0x3501) /* Type 53 with 1 byte length */
+		return "";
+
+	ucDhcpMessageType = u4DhcpTypeOpt >> 8 & 0xff;
+
+	if (ucDhcpMessageType >= DHCP_DISCOVER &&
+	    ucDhcpMessageType <= DHCP_INFORM)
+		return dhcp_messages[ucDhcpMessageType - DHCP_DISCOVER];
+
+	return "";
+}
+
 void statsParseUDPInfo(void *pvPacket, uint8_t *pucEthBody,
 		uint8_t eventType, uint16_t u2IpId)
 {
@@ -351,9 +377,9 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucEthBody,
 	uint16_t u2UdpSrcPort;
 	uint32_t u4TransID;
 	uint32_t u4DhcpMagicCode;
-	char *msg_type = " ";
-	uint32_t u4DhcpOpt = 0;
-	uint16_t u2DnsTransId = 0;
+	const char *msg_type;
+	uint32_t u4DhcpOpt;
+	uint16_t u2DnsTransId;
 
 	u2UdpDstPort = NTOHS(pUdp->u2DstPort);
 	u2UdpSrcPort = NTOHS(pUdp->u2SrcPort);
@@ -362,35 +388,19 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucEthBody,
 		u4TransID = NTOHL(prDhcp->u4TransId);
 		u4DhcpMagicCode = NTOHL(prDhcp->u4MagicCookie);
 
-		if (u4DhcpMagicCode != DHCP_MAGIC_NUMBER)
+		if (unlikely(u4DhcpMagicCode != DHCP_MAGIC_NUMBER))
 			return;
 
 		WLAN_GET_FIELD_BE32(&prDhcp->aucDhcpOption[0], &u4DhcpOpt);
+		msg_type = dhcp_msg(u4DhcpOpt);
+
 		switch (eventType) {
 		case EVENT_RX:
 			GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
 			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_DHCP);
 
-			switch (u4DhcpOpt & 0xffffff00) {
-			case 0x35010100:
-				msg_type = "DISCOVER";
-				break;
-			case 0x35010200:
-				msg_type = "OFFER";
-				break;
-			case 0x35010300:
-				msg_type = "REQUEST";
-				break;
-			case 0x35010500:
-				msg_type = "ACK";
-				break;
-			case 0x35010600:
-				msg_type = "NAK";
-				break;
-			}
-
 			DBGLOG_LIMITED(RX, INFO,
-				"<RX> DHCP: Recv %s IPID 0x%02x, MsgType 0x%x, TransID 0x%04x\n",
+				"<RX> DHCP: Recv %s IPID 0x%04x, MsgType 0x%x, TransID 0x%08x\n",
 				msg_type, u2IpId, prDhcp->aucDhcpOption[2],
 				u4TransID);
 #if (CFG_SUPPORT_CONN_LOG == 1)
@@ -401,26 +411,8 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucEthBody,
 			break;
 
 		case EVENT_TX:
-			switch (u4DhcpOpt & 0xffffff00) {
-			case 0x35010100:
-				msg_type = "client DISCOVER";
-				break;
-			case 0x35010200:
-				msg_type = "server OFFER";
-				break;
-			case 0x35010300:
-				msg_type = "client REQUEST";
-				break;
-			case 0x35010500:
-				msg_type = "server ACK";
-				break;
-			case 0x35010600:
-				msg_type = "server NAK";
-				break;
-			}
-
 			DBGLOG_LIMITED(TX, INFO,
-				"<TX> DHCP %s, XID[0x%08x] OPT[0x%08x] TYPE[%u], SeqNo: %d\n",
+				"<TX> DHCP: Send %s, XID[0x%08x] OPT[0x%08x] TYPE[%u], SeqNo: %d\n",
 				msg_type, u4TransID, u4DhcpOpt,
 				prDhcp->aucDhcpOption[2],
 				GLUE_GET_PKT_SEQ_NO(pvPacket));
@@ -511,6 +503,27 @@ void statsLogData(uint8_t eventType, enum WAKE_DATA_TYPE wakeType)
 		wlanLogRxData(wakeType);
 }
 
+static const char *icmpv6_msg(uint8_t ucICMPv6Type)
+{
+	static const char * const icmpv6_messages[] = {
+		"Echo Request",
+		"Echo Reply",
+		"Multicast Listener Query",
+		"Multicast Listener Report",
+		"Multicast Listener Done",
+		"Router Solicitation",
+		"Router Advertisement",
+		"Neighbor Solicitation",
+		"Neighbor Advertisement",
+	};
+
+	if (ucICMPv6Type >= ICMPV6_TYPE_ECHO_REQUEST &&
+	    ucICMPv6Type <= ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT)
+		return icmpv6_messages[ucICMPv6Type - ICMPV6_TYPE_ECHO_REQUEST];
+
+	return NULL;
+}
+
 static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 	uint8_t status, uint8_t eventType)
 
@@ -520,20 +533,23 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 		(pucData[ETH_TYPE_LEN_OFFSET] << 8)
 			| (pucData[ETH_TYPE_LEN_OFFSET + 1]);
 	uint8_t *pucEthBody = &pucData[ETH_HLEN];
+	const char *icmp6msg;
+	uint8_t ucICMPv6Type;
+	uint8_t *pucIcmp6;
+	uint16_t u2IcmpId;
+	uint16_t u2IcmpSeq;
 
 	switch (u2EtherType) {
 	case ETH_P_ARP:
-	{
 		statsLogData(eventType, WLAN_WAKE_ARP);
 		statsParseARPInfo(pvPacket, pucEthBody, eventType);
 		break;
-	}
+
 	case ETH_P_IPV4:
-	{
 		statsLogData(eventType, WLAN_WAKE_IPV4);
 		statsParseIPV4Info(pvPacket, pucEthBody, eventType);
 		break;
-	}
+
 	case ETH_P_IPV6:
 	{
 		/* IPv6 header without options */
@@ -629,47 +645,51 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 			break;
 
 		case IPV6_PROTOCOL_ICMPV6:
+			pucIcmp6 = &pucEthBody[IPV6_HDR_LEN];
+			ucICMPv6Type = pucIcmp6[0];
+			icmp6msg = icmpv6_msg(ucICMPv6Type);
+			u2IcmpId = HTONS(*(uint16_t *)
+					 &pucIcmp6[ICMP_IDENTIFIER_OFFSET]);
+			u2IcmpSeq = HTONS(*(uint16_t *)
+					  &pucIcmp6[ICMP_SEQ_NUM_OFFSET]);
+
 			switch (eventType) {
 			case EVENT_RX:
-			{
-				uint8_t ucICMPv6Type = 0;
-
 				/* IPv6 header without options */
-				ucICMPv6Type = pucEthBody[IPV6_HDR_LEN];
 				GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
-				GLUE_SET_PKT_FLAG(pvPacket,
-					ENUM_PKT_ICMPV6);
-				switch (ucICMPv6Type) {
-				case ICMPV6_TYPE_ROUTER_SOLICITATION:
+				GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_ICMPV6);
+				if (likely(icmp6msg) &&
+				    (ucICMPv6Type == ICMPV6_TYPE_ECHO_REQUEST ||
+				     ucICMPv6Type == ICMPV6_TYPE_ECHO_REPLY))
 					DBGLOG_LIMITED(RX, INFO,
-				"<RX><IPv6> ICMPV6 Router Solicitation\n");
-					break;
-
-				case ICMPV6_TYPE_ROUTER_ADVERTISEMENT:
+						"<RX><IPv6> ICMPv6: %s, Id BE 0x%04x, Seq BE 0x%04x",
+						icmp6msg, u2IcmpId, u2IcmpSeq);
+				else if (icmp6msg)
 					DBGLOG_LIMITED(RX, INFO,
-				"<RX><IPv6> ICMPV6 Router Advertisement\n");
-					break;
-
-				case ICMPV6_TYPE_NEIGHBOR_SOLICITATION:
+						"<RX><IPv6> ICMPv6 %s",
+						icmp6msg);
+				else
 					DBGLOG_LIMITED(RX, INFO,
-				"<RX><IPv6> ICMPV6 Neighbor Solicitation\n");
-					break;
-
-				case ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT:
-					DBGLOG_LIMITED(RX, INFO,
-				"<RX><IPv6> ICMPV6 Neighbor Advertisement\n");
-					break;
-				default:
-					DBGLOG_LIMITED(RX, INFO,
-						"<RX><IPv6> ICMPV6 type=%u\n",
+						"<RX><IPv6> ICMPV6 type=%u",
 						ucICMPv6Type);
-					break;
-				}
-			}
 				break;
+
 			case EVENT_TX:
-				DBGLOG_LIMITED(TX, INFO,
-					"<TX><IPv6> ICMPV6 packet\n");
+				if (likely(icmp6msg) &&
+				    (ucICMPv6Type == ICMPV6_TYPE_ECHO_REQUEST ||
+				     ucICMPv6Type == ICMPV6_TYPE_ECHO_REPLY))
+					DBGLOG_LIMITED(TX, INFO,
+						"<TX><IPv6> ICMPv6: %s, Id 0x%04x, Seq BE 0x%04x, SeqNo: %d",
+						icmp6msg, u2IcmpId, u2IcmpSeq,
+						GLUE_GET_PKT_SEQ_NO(pvPacket));
+				else if (icmp6msg)
+					DBGLOG_LIMITED(TX, INFO,
+						"<TX><IPv6> ICMPv6 %s",
+						icmp6msg);
+				else
+					DBGLOG_LIMITED(TX, INFO,
+						"<TX><IPv6> ICMPV6 type=%u",
+						ucICMPv6Type);
 				break;
 			}
 			break;
