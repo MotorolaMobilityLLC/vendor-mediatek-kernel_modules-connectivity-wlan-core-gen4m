@@ -239,7 +239,7 @@ enum QCA_SET_BAND {
 };
 
 #define MAX_FW_ROAMING_BLACKLIST_SIZE	16
-#define MAX_FW_ROAMING_WHITELIST_SIZE	16
+#define MAX_FW_ROAMING_WHITELIST_SIZE	8
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
