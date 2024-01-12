@@ -21,6 +21,7 @@
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
  */
+#include "bitmap.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -351,6 +352,9 @@
 #define LP_TAG_GET_SLP_CNT_INFO		0
 #define LP_TAG_SET_KEEP_PWR_CTRL	1
 
+#define MAX_MIB_TAG_CNT		74
+/* must >= UNI_CMD_MIB_CNT_MAX_NUM */
+#define MAX_UNI_CMD_MIB_NUM	212
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -2789,6 +2793,25 @@ struct PARAM_HW_WLAN_INFO {
 	struct PARAM_PEER_TX_COUNTER_ALL rWtblTxCounter;
 };
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+struct MIB_INFO {
+	uint32_t u4Counter;
+	uint64_t u8Data;
+};
+
+struct PARAM_HW_MIB_INFO {
+	uint16_t u2Index;
+	uint16_t u2TagCount;
+	/* Declair a bitmap to indicate which mib CR are required
+	 * au4TagBitmap[0]: mibIdx 0~31
+	 * au4TagBitmap[1]: mibIdx 32~63
+	 * au4TagBitmap[2]: mibIdx 64~95
+	 * ...
+	 */
+	DECLARE_BITS(au4TagBitmap, MAX_UNI_CMD_MIB_NUM);
+	struct MIB_INFO arMibInfo[MAX_MIB_TAG_CNT];
+};
+#else
 struct HW_TX_AMPDU_METRICS {
 	uint32_t u4TxSfCnt;
 	uint32_t u4TxAckSfCnt;
@@ -2861,6 +2884,7 @@ struct PARAM_HW_MIB_INFO {
 	struct HW_MIB2_COUNTER	rHwMib2Cnt;
 	struct HW_TX_AMPDU_METRICS	rHwTxAmpduMts;
 };
+#endif
 #endif
 
 #if CFG_WIFI_TXPWR_TBL_DUMP

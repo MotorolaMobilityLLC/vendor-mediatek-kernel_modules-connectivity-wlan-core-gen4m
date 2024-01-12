@@ -49,6 +49,7 @@
 
 #include "link.h"
 #include "queue.h"
+#include "bitmap.h"
 
 /*------------------------------------------------------------------------------
  * .\include\mgmt
