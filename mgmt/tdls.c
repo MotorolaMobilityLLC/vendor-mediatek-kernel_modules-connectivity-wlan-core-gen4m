@@ -317,7 +317,7 @@ void TdlsStateTimer(
 	default:
 		if (TIME_AFTER(
 			kalGetJiffies(),
-			b->ulLastUpdate + 2 * SAMPLING_UT)) {
+			b->ulLastUpdate + 20 * SAMPLING_UT)) {
 			TdlsAutoTeardown(
 				ad,
 				bss,
