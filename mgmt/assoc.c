@@ -2089,7 +2089,8 @@ struct MSDU_INFO *assocComposeReAssocRespFrame(struct ADAPTER *prAdapter,
 
 	for (i = 0;
 	     i <
-	     sizeof(txAssocRespIETable) / sizeof(struct APPEND_VAR_IE_ENTRY);
+	     (uint32_t) sizeof(txAssocRespIETable) /
+	     (uint32_t) sizeof(struct APPEND_VAR_IE_ENTRY);
 	     i++) {
 		if (txAssocRespIETable[i].u2EstimatedFixedIELen != 0) {
 			u2EstimatedExtraIELen +=
