@@ -2997,6 +2997,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #endif
 
 #define CMD_GET_CNM		"GET_CNM"
+#define CMD_GET_CAPAB_RSDB "GET_CAPAB_RSDB"
 
 #ifdef UT_TEST_MODE
 #define CMD_RUN_UT		"UT"
@@ -11078,6 +11079,43 @@ static int priv_driver_get_hif_info(IN struct net_device *prNetDev,
 	return halDumpHifStatus(prGlueInfo->prAdapter, pcCommand, i4TotalLen);
 }
 
+static int priv_driver_get_capab_rsdb(IN struct net_device *prNetDev,
+				 IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	uint32_t u4Offset = 0;
+	u_int8_t fgDbDcModeEn = FALSE;
+
+	prGlueInfo = wlanGetGlueInfo();
+	if (!prGlueInfo) {
+		DBGLOG(REQ, WARN, "prGlueInfo is NULL\n");
+		return -EFAULT;
+	}
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+
+#if CFG_SUPPORT_DBDC
+	if (prGlueInfo->prAdapter->rWifiVar.eDbdcMode !=
+	    ENUM_DBDC_MODE_DISABLED)
+		fgDbDcModeEn = TRUE;
+
+	if (prGlueInfo->prAdapter->rWifiFemCfg.u2WifiPath ==
+	    (WLAN_FLAG_2G4_WF0 | WLAN_FLAG_5G_WF1))
+		fgDbDcModeEn = FALSE;
+#endif
+
+	DBGLOG(REQ, INFO, "RSDB:%d\n", fgDbDcModeEn);
+
+	u4Offset += kalScnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+			     "RSDB:%d",
+			     fgDbDcModeEn);
+
+	i4BytesWritten = (int32_t)u4Offset;
+
+	return i4BytesWritten;
+
+}
+
 static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 			       IN char *pcCommand, IN int i4TotalLen)
 {
@@ -13296,6 +13334,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_GET_CHIP, priv_driver_get_chip_config},
 	{CMD_GET_VERSION, priv_driver_get_version},
 	{CMD_GET_CNM, priv_driver_get_cnm},
+	{CMD_GET_CAPAB_RSDB, priv_driver_get_capab_rsdb},
 #if CFG_SUPPORT_DBDC
 	{CMD_SET_DBDC, priv_driver_set_dbdc},
 #endif /*CFG_SUPPORT_DBDC*/
@@ -13841,6 +13880,20 @@ int priv_support_driver_cmd(IN struct net_device *prNetDev,
 		if (i4TotalLen >= 3) {
 			kalSnprintf(pcCommand, 3, "OK");
 			i4BytesWritten = strlen("OK");
+		}
+	} else {
+		priv_cmd->used_len = i4BytesWritten;
+		if ((i4BytesWritten == 0) && (priv_cmd->total_len > 0))
+			pcCommand[0] = '\0';
+		if (i4BytesWritten >= priv_cmd->total_len)
+			i4BytesWritten = priv_cmd->total_len;
+		else
+			i4BytesWritten++;
+		priv_cmd->used_len = i4BytesWritten;
+		if (copy_to_user(prReq->ifr_data, priv_cmd,
+				sizeof(struct priv_driver_cmd_s))) {
+			ret = -EFAULT;
+			DBGLOG(REQ, INFO, "copy fail");
 		}
 	}
 
