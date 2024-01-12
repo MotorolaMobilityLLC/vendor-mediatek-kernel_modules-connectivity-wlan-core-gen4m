@@ -1474,6 +1474,7 @@ bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 	struct RTMP_TX_RING *pTxRing;
 	struct RTMP_DMABUF *prTxDesc;
 	struct RTMP_DMACB *prTxCell;
+	struct TXD_STRUCT *pTxD;
 	phys_addr_t RingBasePa;
 	void *RingBaseVa;
 	uint32_t u4Idx;
@@ -1530,6 +1531,9 @@ bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 				return false;
 			}
 		}
+
+		pTxD = (struct TXD_STRUCT *)prTxCell->AllocVa;
+		pTxD->DMADONE = 1;
 	}
 
 	DBGLOG(HAL, TRACE, "TxRing[%d]: total %d entry allocated\n",
@@ -2714,7 +2718,9 @@ uint32_t halReleaseIOBuffer(IN struct ADAPTER *prAdapter)
 
 void halProcessAbnormalInterrupt(IN struct ADAPTER *prAdapter)
 {
-
+	prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
+	halPrintHifDbgInfo(prAdapter);
+	halSetDrvSer(prAdapter);
 }
 
 static void halDefaultProcessSoftwareInterrupt(
