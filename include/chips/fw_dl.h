@@ -156,6 +156,7 @@ struct FWDL_OPS_T {
 	unsigned int (*getFwDlInfo)(struct ADAPTER *prAdapter,
 		char *pcBuf, int i4TotalLen);
 	uint32_t (*phyAction)(IN struct ADAPTER *prAdapter);
+	uint32_t (*dlRomCode)(struct ADAPTER *prAdapter);
 };
 
 #if (CFG_UMAC_GENERATION >= 0x20)

@@ -4392,7 +4392,7 @@ static
 void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER *prAdapter,
 	struct REG_INFO **pprRegInfo,
-	struct mt66xx_chip_info **pprChipInfo)
+	struct mt66xx_chip_info *prChipInfo)
 {
 #if CFG_WMT_WIFI_PATH_SUPPORT
 	int32_t i4RetVal = 0;
@@ -4413,9 +4413,8 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 #endif
 
 	/* Init Chip Capability */
-	*pprChipInfo = prAdapter->chip_info;
-	if ((*pprChipInfo)->asicCapInit)
-		(*pprChipInfo)->asicCapInit(prAdapter);
+	if (prChipInfo->asicCapInit)
+		prChipInfo->asicCapInit(prAdapter);
 
 	/* Default support 2.4/5G MIMO */
 	prAdapter->rWifiFemCfg.u2WifiPath = (
@@ -5221,6 +5220,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	enum ENUM_PROBE_FAIL_REASON {
 		BUS_INIT_FAIL,
 		NET_CREATE_FAIL,
+		ROM_DL_FAIL,
 		BUS_SET_IRQ_FAIL,
 		ADAPTER_START_FAIL,
 		NET_REGISTER_FAIL,
@@ -5257,11 +5257,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #endif
 		return i4Status;
 	}
-#endif
-
-#if 0
-	uint8_t *pucConfigBuf = NULL, pucCfgBuf = NULL;
-	uint32_t u4ConfigReadLen = 0;
 #endif
 
 	eFailReason = FAIL_REASON_NUM;
@@ -5308,6 +5303,19 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 		/* 4 <4> Setup IRQ */
 		prWlandevInfo = &arWlanDevInfo[i4DevIdx];
+		prGlueInfo->i4DevIdx = i4DevIdx;
+		prAdapter = prGlueInfo->prAdapter;
+		prWifiVar = &prAdapter->rWifiVar;
+		prChipInfo = prAdapter->chip_info;
+
+		if (prChipInfo->fw_dl_ops->dlRomCode)
+			i4Status = prChipInfo->fw_dl_ops->dlRomCode(prAdapter);
+
+		if (i4Status != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR, "WF ROM DL failed.\n");
+			eFailReason = ROM_DL_FAIL;
+			break;
+		}
 
 		i4Status = glBusSetIrq(prWdev->netdev, NULL, prGlueInfo);
 
@@ -5316,11 +5324,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			eFailReason = BUS_SET_IRQ_FAIL;
 			break;
 		}
-
-		prGlueInfo->i4DevIdx = i4DevIdx;
-
-		prAdapter = prGlueInfo->prAdapter;
-		prWifiVar = &prAdapter->rWifiVar;
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 		prHifDriverData = (struct mt66xx_hif_driver_data *)pvDriverData;
@@ -5336,7 +5339,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		wlanOnPreAdapterStart(prGlueInfo,
 			prAdapter,
 			&prRegInfo,
-			&prChipInfo);
+			prChipInfo);
 
 		if (wlanAdapterStart(prAdapter,
 				     prRegInfo, FALSE) != WLAN_STATUS_SUCCESS)
@@ -5516,6 +5519,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 				*((struct GLUE_INFO **)
 						netdev_priv(prWdev->netdev)));
 		/* fallthrough */
+		case ROM_DL_FAIL:
 		case BUS_SET_IRQ_FAIL:
 			wlanWakeLockUninit(prGlueInfo);
 			wlanNetDestroy(prWdev);

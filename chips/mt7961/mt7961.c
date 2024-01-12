@@ -542,8 +542,9 @@ struct BUS_INFO mt7961_bus_info = {
 	.processSoftwareInterrupt = asicConnac2xProcessSoftwareInterrupt,
 	.softwareInterruptMcu = asicConnac2xSoftwareInterruptMcu,
 	.hifRst = asicConnac2xHifRst,
-
+#if defined(_HIF_PCIE)
 	.initPcieInt = NULL, /* Todo: check if enable INT on driver side */
+#endif
 	.devReadIntStatus = mt7961ReadIntStatus,
 	.DmaShdlInit = mt7961DmashdlInit,
 	.setRxRingHwAddr = mt7961SetRxRingHwAddr,
