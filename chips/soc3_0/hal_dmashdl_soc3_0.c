@@ -176,7 +176,7 @@ struct MT6885_DMASHDL_CFG rMT6885DmashdlCfg = {
 void mt6885HalDmashdlSetPlePktMaxPage(struct ADAPTER *prAdapter,
 				      uint16_t u2MaxPage)
 {
-	uint32_t u4Val;
+	uint32_t u4Val = 0;
 
 	HAL_MCR_RD(prAdapter, WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_ADDR, &u4Val);
 
@@ -191,7 +191,7 @@ void mt6885HalDmashdlSetPlePktMaxPage(struct ADAPTER *prAdapter,
 void mt6885HalDmashdlSetPsePktMaxPage(struct ADAPTER *prAdapter,
 				      uint16_t u2MaxPage)
 {
-	uint32_t u4Val;
+	uint32_t u4Val = 0;
 
 	HAL_MCR_RD(prAdapter, WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_ADDR, &u4Val);
 
@@ -205,7 +205,7 @@ void mt6885HalDmashdlSetPsePktMaxPage(struct ADAPTER *prAdapter,
 
 void mt6885HalDmashdlGetPktMaxPage(struct ADAPTER *prAdapter)
 {
-	uint32_t u4Val;
+	uint32_t u4Val = 0;
 	uint32_t ple_pkt_max_sz;
 	uint32_t pse_pkt_max_sz;
 
@@ -227,7 +227,8 @@ void mt6885HalDmashdlGetPktMaxPage(struct ADAPTER *prAdapter)
 void mt6885HalDmashdlSetRefill(struct ADAPTER *prAdapter, uint8_t ucGroup,
 			       u_int8_t fgEnable)
 {
-	uint32_t u4Val, u4Mask;
+	uint32_t u4Mask;
+	uint32_t u4Val = 0;
 
 	if (ucGroup >= ENUM_MT6885_DMASHDL_GROUP_NUM)
 		ASSERT(0);
@@ -247,7 +248,7 @@ void mt6885HalDmashdlSetRefill(struct ADAPTER *prAdapter, uint8_t ucGroup,
 
 void mt6885HalDmashdlGetRefill(struct ADAPTER *prAdapter)
 {
-	uint32_t u4Val;
+	uint32_t u4Val = 0;
 
 	HAL_MCR_RD(prAdapter, WF_HIF_DMASHDL_TOP_REFILL_CONTROL_ADDR, &u4Val);
 	DBGLOG(HAL, INFO, "DMASHDL ReFill Control (0x%08x): 0x%08x\n",
@@ -257,7 +258,8 @@ void mt6885HalDmashdlGetRefill(struct ADAPTER *prAdapter)
 void mt6885HalDmashdlSetMaxQuota(struct ADAPTER *prAdapter, uint8_t ucGroup,
 				 uint16_t u2MaxQuota)
 {
-	uint32_t u4Addr, u4Val;
+	uint32_t u4Addr;
+	uint32_t u4Val = 0;
 
 	if (ucGroup >= ENUM_MT6885_DMASHDL_GROUP_NUM)
 		ASSERT(0);
@@ -277,7 +279,8 @@ void mt6885HalDmashdlSetMaxQuota(struct ADAPTER *prAdapter, uint8_t ucGroup,
 void mt6885HalDmashdlSetMinQuota(struct ADAPTER *prAdapter, uint8_t ucGroup,
 				 uint16_t u2MinQuota)
 {
-	uint32_t u4Addr, u4Val;
+	uint32_t u4Addr;
+	uint32_t u4Val = 0;
 
 	if (ucGroup >= ENUM_MT6885_DMASHDL_GROUP_NUM)
 		ASSERT(0);
@@ -296,7 +299,8 @@ void mt6885HalDmashdlSetMinQuota(struct ADAPTER *prAdapter, uint8_t ucGroup,
 
 void mt6885HalDmashdlGetGroupControl(struct ADAPTER *prAdapter, uint8_t ucGroup)
 {
-	uint32_t u4Addr, u4Val;
+	uint32_t u4Addr;
+	uint32_t u4Val = 0;
 	uint32_t max_quota;
 	uint32_t min_quota;
 
@@ -315,7 +319,8 @@ void mt6885HalDmashdlGetGroupControl(struct ADAPTER *prAdapter, uint8_t ucGroup)
 void mt6885HalDmashdlSetQueueMapping(struct ADAPTER *prAdapter, uint8_t ucQueue,
 				     uint8_t ucGroup)
 {
-	uint32_t u4Addr, u4Val, u4Mask, u4Shft;
+	uint32_t u4Addr, u4Mask, u4Shft;
+	uint32_t u4Val = 0;
 
 	if (ucQueue >= 32)
 		ASSERT(0);
@@ -340,7 +345,7 @@ void mt6885HalDmashdlSetQueueMapping(struct ADAPTER *prAdapter, uint8_t ucQueue,
 void mt6885HalDmashdlSetSlotArbiter(struct ADAPTER *prAdapter,
 				    u_int8_t fgEnable)
 {
-	uint32_t u4Val;
+	uint32_t u4Val = 0;
 
 	HAL_MCR_RD(prAdapter, WF_HIF_DMASHDL_TOP_PAGE_SETTING_ADDR, &u4Val);
 
@@ -357,7 +362,8 @@ void mt6885HalDmashdlSetSlotArbiter(struct ADAPTER *prAdapter,
 void mt6885HalDmashdlSetUserDefinedPriority(struct ADAPTER *prAdapter,
 					    uint8_t ucPriority, uint8_t ucGroup)
 {
-	uint32_t u4Addr, u4Val, u4Mask, u4Shft;
+	uint32_t u4Addr, u4Mask, u4Shft;
+	uint32_t u4Val = 0;
 
 	ASSERT(ucPriority < 16);
 	ASSERT(ucGroup < ENUM_MT6885_DMASHDL_GROUP_NUM);
@@ -378,7 +384,8 @@ void mt6885HalDmashdlSetUserDefinedPriority(struct ADAPTER *prAdapter,
 
 uint32_t mt6885HalDmashdlGetRsvCount(struct ADAPTER *prAdapter, uint8_t ucGroup)
 {
-	uint32_t u4Addr, u4Val;
+	uint32_t u4Addr;
+	uint32_t u4Val = 0;
 	uint32_t rsv_cnt = 0;
 
 	u4Addr = WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_ADDR + (ucGroup << 2);
@@ -396,7 +403,8 @@ uint32_t mt6885HalDmashdlGetRsvCount(struct ADAPTER *prAdapter, uint8_t ucGroup)
 
 uint32_t mt6885HalDmashdlGetSrcCount(struct ADAPTER *prAdapter, uint8_t ucGroup)
 {
-	uint32_t u4Addr, u4Val;
+	uint32_t u4Addr;
+	uint32_t u4Val = 0;
 	uint32_t src_cnt = 0;
 
 	u4Addr = WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_ADDR + (ucGroup << 2);
@@ -412,7 +420,8 @@ uint32_t mt6885HalDmashdlGetSrcCount(struct ADAPTER *prAdapter, uint8_t ucGroup)
 
 void mt6885HalDmashdlGetPKTCount(struct ADAPTER *prAdapter, uint8_t ucGroup)
 {
-	uint32_t u4Addr, u4Val;
+	uint32_t u4Addr;
+	uint32_t u4Val = 0;
 	uint32_t pktin_cnt = 0;
 	uint32_t ask_cnt = 0;
 
