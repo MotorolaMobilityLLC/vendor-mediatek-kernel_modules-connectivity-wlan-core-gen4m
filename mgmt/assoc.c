@@ -1892,14 +1892,14 @@ uint32_t assocProcessRxAssocReqFrameImpl(
 	}
 #endif
 
-	rlmProcessAssocReq(prAdapter, prSwRfb, pucIEStart, u2IELength);
-
 	prStaRec->ucRCPI = nicRxGetRcpiValueFromRxv(
 			prAdapter, RCPI_MODE_MAX, prSwRfb);
 	prStaRec->u2DesiredNonHTRateSet &=
 		prBssInfo->u2OperationalRateSet;
 	prStaRec->ucDesiredPhyTypeSet =
 		prStaRec->ucPhyTypeSet & prBssInfo->ucPhyTypeSet;
+
+	rlmProcessAssocReq(prAdapter, prSwRfb, pucIEStart, u2IELength);
 
 	*pu2StatusCode = u2StatusCode;
 

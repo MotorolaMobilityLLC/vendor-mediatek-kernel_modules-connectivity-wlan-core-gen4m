@@ -751,6 +751,9 @@ void ehtRlmRecCapInfo(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 {
 	struct IE_EHT_CAP *prEhtCap = (struct IE_EHT_CAP *) pucIE;
 
+	if (!(prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_EHT))
+		return;
+
 	/* if payload not contain any aucVarInfo,
 	 * IE size = sizeof(struct IE_EHT_CAP)
 	 */
@@ -779,6 +782,9 @@ void ehtRlmRecOperation(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	uint8_t  u1PreDscbPresent = 0;
 	uint16_t u2PreDscBitmap = 0;
 #endif
+
+	if (!(prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_EHT))
+		return;
 
 	/* if payload not contain any aucVarInfo,
 	 * IE size = sizeof(struct IE_EHT_OP)
