@@ -151,7 +151,6 @@ void mddpMdStateChangedCb(enum MD_STATE old_state,
 		enum MD_STATE new_state);
 #endif
 void mddpSetMDFwOwn(void);
-u_int8_t mddpIsMDFwOwn(void);
 void mddpEnableMddpSupport(void);
 void mddpDisableMddpSupport(void);
 bool mddpIsSupportMcifWifi(void);
