@@ -1432,5 +1432,6 @@ uint8_t halRingDataSelectByWmmIndex(
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */
 uint32_t halSetSuspendFlagToFw(struct ADAPTER *prAdapter,
 	u_int8_t fgSuspend);
+u_int32_t halTxGetFreeCmdCnt(struct ADAPTER *prAdapter);
 
 #endif /* _HAL_H */
