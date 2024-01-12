@@ -215,6 +215,16 @@ struct CHIP_DBG_OPS {
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 	void (*showHifInfo)(struct ADAPTER *prAdapter);
 	void (*printHifDbgInfo)(struct ADAPTER *prAdapter);
+	int32_t (*show_rx_rate_info)(
+		struct ADAPTER *prAdapter,
+		char *pcCommand,
+		int32_t i4TotalLen,
+		uint8_t ucStaIdx);
+	int32_t (*show_rx_rssi_info)(
+		struct ADAPTER *prAdapter,
+		char *pcCommand,
+		int32_t i4TotalLen,
+		uint8_t ucStaIdx);
 };
 
 enum PKT_PHASE {
@@ -516,6 +526,19 @@ int32_t connac2x_show_umac_wtbl_info(
 	uint32_t u4Index,
 	char *pcCommand,
 	int i4TotalLen);
+
+int32_t connac2x_show_rx_rate_info(
+	struct ADAPTER *prAdapter,
+	char *pcCommand,
+	int32_t i4TotalLen,
+	uint8_t ucStaIdx);
+
+int32_t connac2x_show_rx_rssi_info(
+	struct ADAPTER *prAdapter,
+	char *pcCommand,
+	int32_t i4TotalLen,
+	uint8_t ucStaIdx);
+
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
 /*******************************************************************************

@@ -1524,9 +1524,14 @@ void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 		prAdapter->arStaRec[
 			prRetSwRfb->ucStaRecIdx].u4RxVector0 =
 			CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 0);
+		prAdapter->arStaRec[
+			prRetSwRfb->ucStaRecIdx].u4RxVector4 =
+			CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 1);
 	} else {
 		prAdapter->arStaRec[
 			prRetSwRfb->ucStaRecIdx].u4RxVector0 = 0;
+		prAdapter->arStaRec[
+			prRetSwRfb->ucStaRecIdx].u4RxVector4 = 0;
 	}
 
 	if (prRetSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_5)) {
@@ -1544,11 +1549,6 @@ void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 			prRetSwRfb->ucStaRecIdx].u4RxVector3 =
 			CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(
 			prRetSwRfb->prRxStatusGroup5, 4);
-
-		prAdapter->arStaRec[
-			prRetSwRfb->ucStaRecIdx].u4RxVector4 =
-			CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(
-			prRetSwRfb->prRxStatusGroup5, 6);
 	} else {
 		prAdapter->arStaRec[
 			prRetSwRfb->ucStaRecIdx].u4RxVector1 = 0;
@@ -1556,8 +1556,6 @@ void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 			prRetSwRfb->ucStaRecIdx].u4RxVector2 = 0;
 		prAdapter->arStaRec[
 			prRetSwRfb->ucStaRecIdx].u4RxVector3 = 0;
-		prAdapter->arStaRec[
-			prRetSwRfb->ucStaRecIdx].u4RxVector4 = 0;
 	}
 }
 #endif /* CFG_SUPPORT_MSP == 1 */
