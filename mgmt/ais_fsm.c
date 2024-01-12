@@ -6492,9 +6492,11 @@ void aisFsmRunEventBssTransition(IN struct ADAPTER *prAdapter,
 	ucRcvToken = prMsg->ucToken;
 
 	DBGLOG(AIS, INFO, "Transition Type: %d\n", eTransType);
+#if CFG_SUPPORT_802_11K
 	aisCollectNeighborAP(prAdapter, prMsg->pucCandList,
 			     prMsg->u2CandListLen, prMsg->ucValidityInterval,
 			     ucBssIndex);
+#endif
 	cnmMemFree(prAdapter, prMsgHdr);
 	/* Solicited BTM request: the case we're waiting btm request
 	 ** after send btm query before roaming scan
