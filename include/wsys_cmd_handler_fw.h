@@ -1783,7 +1783,7 @@ enum ENUM_BEACON_TIMEOUT_REASON {
 struct EVENT_BSS_BEACON_TIMEOUT {
 	uint8_t      ucBssIndex;
 	uint8_t      ucReasonCode;
-	uint8_t      aucReserved[2];
+	uint16_t     u2RxDeauthReason;
 };
 
 struct EVENT_STA_AGING_TIMEOUT {
