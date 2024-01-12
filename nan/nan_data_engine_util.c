@@ -3876,9 +3876,11 @@ nanDataEngineAllocStaRec(IN struct ADAPTER *prAdapter,
 		       (*pprStaRec)->aucMacAddr[3], (*pprStaRec)->aucMacAddr[4],
 		       (*pprStaRec)->aucMacAddr[5]);
 		DBGLOG(NAN, INFO,
-		       "[%s] Update STA_REC: Idx:%d, WtblIdx:%d, BssIdx:%d\n",
+		       "[%s] Update STA_REC: Idx:%d, WtblIdx:%d, BssIdx:%d, staType:%d\n",
 		       __func__, (*pprStaRec)->ucIndex,
-		       (*pprStaRec)->ucWlanIndex, ucBssIndex);
+		       (*pprStaRec)->ucWlanIndex,
+		       ucBssIndex,
+		       (*pprStaRec)->eStaType);
 		DBGLOG(NAN, INFO,
 		       "[%s] BSS OwnMac=%02x:%02x:%02x:%02x:%02x:%02x\n",
 		       __func__, prBssInfo->aucOwnMacAddr[0],
@@ -4105,7 +4107,9 @@ nanDataEngineEnrollNMIContext(IN struct ADAPTER *prAdapter,
 	/* Notify scheduler */
 	nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr,
 				NAN_BSS_INDEX_BAND0,
-				prNdpCxt->prNanStaRec->ucIndex, prNdpCxt->ucId);
+				prNdpCxt->prNanStaRec->ucIndex,
+				prNdpCxt->ucId,
+				prNdpCxt->prNanStaRec->ucWlanIndex);
 
 	if (fgSecurityRequired == FALSE)
 		nanSecResetTk(prNdpCxt->prNanStaRec);
@@ -4246,11 +4250,13 @@ nanDataEngineUnrollNMIContext(IN struct ADAPTER *prAdapter,
 	if (prNdpCxt->prNanStaRec == NULL) {
 		nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr, eRole,
 					STA_REC_INDEX_NOT_FOUND,
-					prNdpCxt->ucId);
+					prNdpCxt->ucId,
+					STA_REC_INDEX_NOT_FOUND);
 	} else {
 		nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr, eRole,
 					prNdpCxt->prNanStaRec->ucIndex,
-					prNdpCxt->ucId);
+					prNdpCxt->ucId,
+					prNdpCxt->prNanStaRec->ucWlanIndex);
 	}
 
 	for (; u4Idx < (NAN_MAX_SUPPORT_NDP_NUM - 1); u4Idx++)
@@ -4463,7 +4469,8 @@ nanDataEngineEnrollNDPContext(IN struct ADAPTER *prAdapter,
 	/* Notify scheduler */
 	nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr, eRole,
 				prNdpCxt->prNanStaRec->ucIndex,
-				prNDP->prContext->ucId);
+				prNDP->prContext->ucId,
+				prNdpCxt->prNanStaRec->ucWlanIndex);
 
 	prDataPathInfo = &(prAdapter->rDataPathInfo);
 	if (atomic_inc_return(&(prDataPathInfo->NetDevRefCount[eRole])) == 1) {
@@ -4583,11 +4590,13 @@ nanDataEngineUnrollNDPContext(IN struct ADAPTER *prAdapter,
 	if (prNdpCxt->prNanStaRec == NULL) {
 		nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr, eRole,
 					STA_REC_INDEX_NOT_FOUND,
-					prNdpCxt->ucId);
+					prNdpCxt->ucId,
+					STA_REC_INDEX_NOT_FOUND);
 	} else {
 		nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr, eRole,
 					prNdpCxt->prNanStaRec->ucIndex,
-					prNdpCxt->ucId);
+					prNdpCxt->ucId,
+					prNdpCxt->prNanStaRec->ucWlanIndex);
 	}
 
 	prDataPathInfo = &(prAdapter->rDataPathInfo);

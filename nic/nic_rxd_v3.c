@@ -356,9 +356,14 @@ u_int8_t nic_rxd_v3_sanity_check(
 	struct mt66xx_chip_info *prChipInfo;
 	struct HW_MAC_CONNAC3X_RX_DESC *prRxStatus;
 	u_int8_t fgDrop = FALSE;
+	uint8_t ucBssIndex;
 
 	prChipInfo = prAdapter->chip_info;
 	prRxStatus = (struct HW_MAC_CONNAC3X_RX_DESC *)prSwRfb->prRxStatus;
+
+	ucBssIndex =
+			secGetBssIdxByWlanIdx(prAdapter,
+			HAL_MAC_CONNAC3X_RX_STATUS_GET_MLD_ID(prRxStatus));
 
 	if (!HAL_MAC_CONNAC3X_RX_STATUS_IS_FCS_ERROR(prRxStatus)
 	    && !HAL_MAC_CONNAC3X_RX_STATUS_IS_DAF(prRxStatus)
@@ -374,10 +379,6 @@ u_int8_t nic_rxd_v3_sanity_check(
 		else if (HAL_MAC_CONNAC3X_RX_STATUS_IS_FRAG(prRxStatus))
 			prSwRfb->fgFragFrame = TRUE;
 	} else {
-		uint8_t ucBssIndex =
-			secGetBssIdxByWlanIdx(prAdapter,
-			HAL_MAC_CONNAC3X_RX_STATUS_GET_MLD_ID(prRxStatus));
-
 		DBGLOG(RX, TEMP, "Sanity check to drop\n");
 		fgDrop = TRUE;
 		if (!HAL_MAC_CONNAC3X_RX_STATUS_IS_ICV_ERROR(prRxStatus)
@@ -447,6 +448,15 @@ u_int8_t nic_rxd_v3_sanity_check(
 			fgDrop = FALSE;
 			DBGLOG(RSN, INFO,
 				"Don't drop eapol or wpi packet\n");
+#if CFG_SUPPORT_NAN
+		} else if ((ucBssIndex < MAX_BSSID_NUM)
+			&& (GET_BSS_INFO_BY_INDEX(prAdapter,
+			ucBssIndex)->eNetworkType == NETWORK_TYPE_NAN)
+			&& (prSwRfb->fgIsBC | prSwRfb->fgIsMC)) {
+			fgDrop = FALSE;
+			DBGLOG(RSN, INFO,
+				"Don't drop NAN MC pkt for sec\n");
+#endif
 		} else {
 			nic_rxd_v3_parse_drop_pkt(prSwRfb);
 

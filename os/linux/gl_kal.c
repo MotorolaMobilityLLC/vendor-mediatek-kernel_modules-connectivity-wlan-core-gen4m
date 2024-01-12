@@ -11327,7 +11327,7 @@ void kalNanHandleVendorEvent(IN struct ADAPTER *prAdapter, uint8_t *prBuffer)
 	case UNI_EVENT_NAN_TAG_ID_PEER_AVAILABILITY:
 	case UNI_EVENT_NAN_TAG_ID_PEER_CAPABILITY:
 	case UNI_EVENT_NAN_TAG_ID_CRB_HANDSHAKE_TOKEN:
-		nanSchedulerEventDispatch(prAdapter, u4SubEvent,
+		nanSchedulerUniEventDispatch(prAdapter, u4SubEvent,
 					  prTlvElement->aucbody);
 		break;
 	case UNI_EVENT_NAN_TAG_ID_PEER_SEC_CONTEXT_INFO:
