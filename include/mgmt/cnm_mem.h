@@ -697,6 +697,13 @@ struct STA_RECORD {
 	struct _QOS_MAP_SET *qosMapSet;
 #endif
 	u_int8_t fgSupportBTM; /* Indicates whether to support BTM */
+
+	/*
+	 * Flag used to record the connected status of upper layer.
+	 * Indicate connected status only when disconnected, and only
+	 * indicate disconnected status only when connected.
+	 */
+	u_int8_t fgIsConnected;
 };
 
 #if 0
