@@ -1582,6 +1582,7 @@ ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt6639/mt6639.o
 CHIPS_OBJS += $(CHIPS)mt6639/dbg_mt6639.o
 CHIPS_OBJS += $(CHIPS)mt6639/hal_dmashdl_mt6639.o
+CHIPS_OBJS += $(CHIPS)mt6639/hal_wfsys_reset_mt6639.o
 endif
 
 ifneq ($(filter MT6655,$(MTK_COMBO_CHIP)),)

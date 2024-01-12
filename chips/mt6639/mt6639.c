@@ -37,6 +37,7 @@
 #include "coda/mt6639/wf_top_cfg_on.h"
 #include "coda/mt6639/wf_wtblon_top.h"
 #include "coda/mt6639/wf_uwtbl_top.h"
+#include "hal_wfsys_reset_mt6639.h"
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #include "connv3.h"
 #endif
@@ -520,6 +521,9 @@ struct BUS_INFO mt6639_bus_info = {
 	.asicUsbRxByteCount = asicConnac3xUsbRxByteCount,
 	.asicUdmaRxFlush = asicConnac3xUdmaRxFlush,
 	.updateTxRingMaxQuota = mt6639UpdateDmashdlQuota,
+#if CFG_CHIP_RESET_SUPPORT
+	.asicUsbEpctlRstOpt = mt6639HalUsbEpctlRstOpt,
+#endif
 #endif
 #if defined(_HIF_NONE)
 	/* for compiler need one entry */
@@ -654,6 +658,7 @@ struct thermal_sensor_info mt6639_thermal_sensor_info[] = {
 	{"wifi_ddie_3", THERMAL_TEMP_TYPE_DDIE, 3},
 };
 #endif
+
 
 struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.bus_info = &mt6639_bus_info,
