@@ -2396,8 +2396,7 @@ nanSecGetNdpScidAttr(struct _NAN_NDP_INSTANCE_T *prNdp,
 	/* pu1ScidPtr = &pr1ScidAttrListHdr->u1PublishId + 1; */
 	pu1ScidPtr = pucBuf +
 		sizeof(struct _NAN_SEC_SCID_ATTR_HDR) +
-		sizeof(struct _NAN_SEC_SCID_ATTR_ENTRY) +
-		1;
+		sizeof(struct _NAN_SEC_SCID_ATTR_ENTRY);
 	kalMemCopy(pu1ScidPtr, prNdp->au1Scid, sizeof(prNdp->au1Scid));
 
 	*ppu1ScidAttrBuf = pucBuf;
