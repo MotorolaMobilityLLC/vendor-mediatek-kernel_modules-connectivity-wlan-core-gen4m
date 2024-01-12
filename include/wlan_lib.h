@@ -141,7 +141,7 @@
 /* Support Using Body/Head Proximity for SAR */
 #define WIFI_FEATURE_USE_BODY_HEAD_SAR  (0x8000000)
 /* Support Random P2P MAC */
-#define WIFI_FEATURE_P2P_RAND_MAC  (0x100000000L)
+#define WIFI_FEATURE_P2P_RAND_MAC  (0x80000000)
 
 /* note: WIFI_FEATURE_GSCAN be enabled just for ACTS test item: scanner */
 #define WIFI_HAL_FEATURE_SET ((WIFI_FEATURE_P2P) |\
