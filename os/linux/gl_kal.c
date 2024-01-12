@@ -9894,7 +9894,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 #define RRO_LOG_TEMPLATE \
 	"RRO[%d,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
-	"%lu,%lu] "
+	"%lu,%lu,%lu] "
 #else /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 #define RRO_LOG_TEMPLATE ""
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
@@ -9939,6 +9939,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_NOT_RRO_PKT),
 		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_TIMEOUT_STEP_ONE),
 		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_TIMEOUT_FLUSH_ALL),
+		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_BUF_RUN_OUT),
 		/* used when recv abnormal reason */
 		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_COUNTER_NUM),
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */

@@ -1708,6 +1708,12 @@ static void mt6653WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint32_t u4Addr, u4Val;
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	/* disable delay interrupt if enable rro */
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
+		return;
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
 	/* Enable RX periodic delayed interrupt (unit: 20us) */
 	u4Val = 0xF00000 | prWifiVar->u4PrdcIntTime;
 	u4Addr = WF_WFDMA_HOST_DMA0_HOST_PER_DLY_INT_CFG_ADDR;
