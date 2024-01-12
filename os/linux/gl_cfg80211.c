@@ -6072,6 +6072,7 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 	struct WIFI_VAR *prWifiVar = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen;
+	GLUE_SPIN_LOCK_DECLARATION();
 
 	DBGLOG(REQ, TRACE, "mtk_cfg80211_suspend\n");
 
@@ -6090,6 +6091,14 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 	if (prGlueInfo && prGlueInfo->prAdapter) {
 		prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 		if (IS_FEATURE_ENABLED(prWifiVar->ucWow)) {
+			GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+			if (prGlueInfo->prScanRequest) {
+				kalCfg80211ScanDone(prGlueInfo->prScanRequest,
+					TRUE);
+				prGlueInfo->prScanRequest = NULL;
+			}
+			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+
 			/* AIS flow: disassociation if wow_en=0 */
 			DBGLOG(REQ, INFO, "Enter AIS pre-suspend\n");
 			rStatus = kalIoctl(prGlueInfo, wlanoidAisPreSuspend, NULL, 0,
