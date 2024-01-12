@@ -1272,11 +1272,13 @@ static s_int32 mt_engine_store_tx_info(
 
 		net_ad_apply_wtbl(winfos, virtual_device, virtual_wtbl);
 
-		sta_idx = mt_engine_stack_push(configs,
-					       virtual_device,
-					       da,
-					       virtual_wtbl,
-					       tx_info);
+		if (tx_info) {
+			sta_idx = mt_engine_stack_push(configs,
+						       virtual_device,
+						       da,
+						       virtual_wtbl,
+						       tx_info);
+		}
 
 		if (sta_idx > -1 && sta_idx < MAX_MULTI_TX_STA) {
 			u_int8 *pate_pkt = configs->test_pkt;
@@ -1814,18 +1816,11 @@ static struct test_ru_info *mt_engine_search_dom_ru(
 		}
 	}
 
-	if (dominate_user_idx < MAX_MULTI_TX_STA) {
-		configs->dmnt_ru_idx = dominate_user_idx;
-		ru_info = &configs->ru_info_list[dominate_user_idx];
-		SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_OFF,
-			("%s: dominated by user[%d], RU index:%d\n",
-			__func__, dominate_user_idx, ru_info->ru_index >> 1));
-	} else {
-		ru_info = NULL;
-		SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_ERROR,
-			("%s: invalid user index:%d\n",
-			__func__, dominate_user_idx));
-	}
+	configs->dmnt_ru_idx = dominate_user_idx;
+	ru_info = &configs->ru_info_list[dominate_user_idx];
+	SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_OFF,
+		("%s: dominated by user[%d], RU index:%d\n",
+		__func__, dominate_user_idx, ru_info->ru_index >> 1));
 
 	return ru_info;
 }
@@ -1838,7 +1833,7 @@ static s_int32 mt_engine_apply_spe_antid(
 	u_int8 band_idx = 0;
 	u_int8 ant_pri = 0, spe_idx = 0, stack_idx = 0;
 	s_int32 ret = SERV_STATUS_SUCCESS;
-	u_int16 ant_sel = configs->tx_ant;
+	u_int32 ant_sel = configs->tx_ant;
 	struct test_tx_stack *stack = &configs->stack;
 
 	net_ad_get_band_idx(stack->virtual_device[0], &band_idx);
