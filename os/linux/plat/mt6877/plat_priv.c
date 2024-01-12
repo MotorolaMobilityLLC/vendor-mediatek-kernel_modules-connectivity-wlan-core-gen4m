@@ -176,12 +176,4 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 	mtk_emimpu_free_region(&region);
 }
 
-#if (CFG_MTK_SISO_SUPPORT == 1)
-int32_t kalGetFwFlavor(uint8_t *flavor)
-{
-	*flavor = 'c';
-	return 1;
-}
-#endif
-
 #endif /* CFG_MTK_ANDROID_EMI */

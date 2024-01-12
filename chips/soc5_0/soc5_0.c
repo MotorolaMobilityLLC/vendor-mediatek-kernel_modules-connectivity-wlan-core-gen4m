@@ -669,7 +669,7 @@ static void soc5_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t ucIdx = 0;
 	uint8_t aucFlavor[2] = {0};
 
-	kalGetFwFlavor(&aucFlavor[0]);
+	kalGetFwFlavor(prGlueInfo->prAdapter, &aucFlavor[0]);
 
 	for (ucIdx = 0; apucsoc5_0FwName[ucIdx]; ucIdx++) {
 		if ((*pucNameIdx + 3) >= ucMaxNameIdx) {
@@ -2012,7 +2012,7 @@ soc5_0_kalFirmwareImageMapping(
 
 	*ppvMapFileBuf = NULL;
 	*pu4FileLength = 0;
-	kalGetFwFlavor(&aucFlavor[0]);
+	kalGetFwFlavor(prGlueInfo->prAdapter, &aucFlavor[0]);
 
 	do {
 		/* <0.0> Get FW name prefix table */
