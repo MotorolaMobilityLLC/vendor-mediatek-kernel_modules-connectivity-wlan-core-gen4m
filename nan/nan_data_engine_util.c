@@ -2286,10 +2286,11 @@ nanDataEngineNDLAttrLength(struct ADAPTER *prAdapter,
 				fgGenerateNDL = TRUE;
 			} else
 				fgGenerateNDL = FALSE;
-#ifdef NAN_UNUSED
+
 			/* Sigma 5.3.2 must pass with NDL attr */
-			fgGenerateNDL = TRUE;
-#endif
+			if (nanGetFeatureIsSigma(prAdapter))
+				fgGenerateNDL = TRUE;
+
 			break;
 		case NDP_RESPONDER_TX_DP_RESPONSE:
 			fgGenerateNDL = TRUE;
