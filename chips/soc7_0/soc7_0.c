@@ -1123,6 +1123,12 @@ int soc7_0_Trigger_fw_assert(void)
 	return ret;
 }
 
+#if (CFG_WLAN_ATF_SUPPORT == 1)
+static void soc7_0EnableFwDlMode(struct ADAPTER *prAdapter)
+{
+	kalSendAtfSmcCmd(SMC_WLAN_ENABLE_FWDL_MODE_OPID, 0, 0, 0);
+}
+#else
 static void soc7_0EnableFwDlMode(struct ADAPTER *prAdapter)
 {
 	uint32_t val = 0;
@@ -1131,6 +1137,7 @@ static void soc7_0EnableFwDlMode(struct ADAPTER *prAdapter)
 	val |= BIT(31);
 	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_PDA_CONFG_ADDR, val);
 }
+#endif
 
 static int wake_up_conninfra_off(void)
 {
@@ -1225,7 +1232,7 @@ static int wf_pwr_on_consys_mcu(void)
 #endif
 
 #if (CFG_WLAN_ATF_SUPPORT == 1)
-	kalSendAtfSmcCmd(SMC_WLAN_PWR_ON_CONSYS_MCU_OPID);
+	kalSendAtfSmcCmd(SMC_WLAN_PWR_ON_CONSYS_MCU_OPID, 0, 0, 0);
 #else
 	ret = wake_up_conninfra_off();
 	if (ret)
@@ -1560,7 +1567,7 @@ static int wf_pwr_off_consys_mcu(void)
 	DBGLOG(INIT, INFO, "wmmcu power-off start.\n");
 
 #if (CFG_WLAN_ATF_SUPPORT == 1)
-	kalSendAtfSmcCmd(SMC_WLAN_PWR_OFF_CONSYS_MCU_OPID);
+	kalSendAtfSmcCmd(SMC_WLAN_PWR_OFF_CONSYS_MCU_OPID, 0, 0, 0);
 #else
 	ret = wake_up_conninfra_off();
 	if (ret)
@@ -1852,6 +1859,17 @@ static int wf_pwr_off_consys_mcu(void)
 }
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
+#if (CFG_WLAN_ATF_SUPPORT == 1)
+static int soc7_0_ConnacPccifon(void)
+{
+	return kalSendAtfSmcCmd(SMC_WLAN_PCCIF_ON_OPID, 0, 0, 0);
+}
+
+static int soc7_0_ConnacPccifoff(void)
+{
+	return kalSendAtfSmcCmd(SMC_WLAN_PCCIF_OFF_OPID, 0, 0, 0);
+}
+#else
 static int soc7_0_ConnacPccifon(void)
 {
 	int ret = 0;
@@ -1874,6 +1892,7 @@ static int soc7_0_ConnacPccifoff(void)
 
 	return ret;
 }
+#endif
 #endif
 
 #if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)

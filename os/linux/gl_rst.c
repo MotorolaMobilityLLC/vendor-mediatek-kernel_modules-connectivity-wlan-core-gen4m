@@ -156,7 +156,8 @@ uint8_t *apucRstReason[RST_REASON_MAX] = {
 	(uint8_t *) DISP_STRING("RST_SER_L1_FAIL"),
 	(uint8_t *) DISP_STRING("RST_SER_L0P5_FAIL"),
 	(uint8_t *) DISP_STRING("RST_CMD_EVT_FAIL"),
-	(uint8_t *) DISP_STRING("RST_WDT")
+	(uint8_t *) DISP_STRING("RST_WDT"),
+	(uint8_t *) DISP_STRING("RST_INVALID_REGISTER_ACCESS")
 };
 
 const uint8_t *apucRstAction[] = {
@@ -388,6 +389,7 @@ uint32_t glResetSelectAction(IN struct ADAPTER *prAdapter)
 	case RST_WIFI_ON_DRV_OWN_FAIL:
 	case RST_WHOLE_CHIP_TRIGGER:
 	case RST_FWK_TRIGGER:
+	case RST_INVALID_REGISTER_ACCESS:
 #if (CFG_SUPPORT_CONNINFRA == 0)
 		u4RstFlag = RST_FLAG_CHIP_RESET;
 #else
