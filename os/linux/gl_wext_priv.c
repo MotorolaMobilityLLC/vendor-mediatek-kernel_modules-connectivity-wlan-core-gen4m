@@ -9443,10 +9443,25 @@ int priv_driver_get_channels(IN struct net_device *prNetDev,
 		start_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
 		end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
 				+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
-	} else {
+	}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (i4Argc >= 2 && (apcArgv[1][0] == '6') &&
+	    (apcArgv[1][1] == 'g')) {
+		start_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
+				+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
+		end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
+				+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ)
+				+ rlmDomainGetActiveChannelCount(KAL_BAND_6GHZ);
+	}
+#endif
+	else {
 		start_idx = 0;
 		end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
-				+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
+				+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+				+ rlmDomainGetActiveChannelCount(KAL_BAND_6GHZ)
+#endif
+				;
 		if (i4Argc >= 2)
 			/* Dump only specified channel */
 			u4Ret = kalkStrtou32(apcArgv[1], 0, &ch_num);

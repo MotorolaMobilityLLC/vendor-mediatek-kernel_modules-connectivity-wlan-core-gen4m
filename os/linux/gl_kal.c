@@ -1416,6 +1416,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 	struct net_device *prDevHandler;
 	struct CONNECTION_SETTINGS *prConnSettings = NULL;
 	struct FT_IES *prFtIEs;
+	enum ENUM_BAND eBand;
 
 #if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
 	struct cfg80211_roam_info rRoamInfo = { 0 };
@@ -1490,6 +1491,20 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 				wlanGetChannelNumberByNetwork(
 					prGlueInfo->prAdapter,
 					ucBssIndex);
+			eBand =
+				wlanGetBandIndexByNetwork(
+					prGlueInfo->prAdapter,
+					ucBssIndex);
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (eBand == BAND_6G) {
+				prChannel =
+					ieee80211_get_channel(
+						priv_to_wiphy(prGlueInfo),
+						ieee80211_channel_to_frequency
+						(ucChannelNum, KAL_BAND_6GHZ));
+			} else
+#endif
 			if (ucChannelNum <= 14) {
 				prChannel =
 					ieee80211_get_channel(
@@ -5789,6 +5804,7 @@ void
 kalIndicateBssInfo(IN struct GLUE_INFO *prGlueInfo,
 		   IN uint8_t *pucBeaconProbeResp,
 		   IN uint32_t u4FrameLen, IN uint8_t ucChannelNum,
+		   IN enum ENUM_BAND eBand,
 		   IN int32_t i4SignalStrength)
 {
 	struct wiphy *wiphy;
@@ -5798,6 +5814,15 @@ kalIndicateBssInfo(IN struct GLUE_INFO *prGlueInfo,
 	wiphy = priv_to_wiphy(prGlueInfo);
 
 	/* search through channel entries */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (eBand == BAND_6G) {
+		prChannel =
+			ieee80211_get_channel(
+				priv_to_wiphy(prGlueInfo),
+				ieee80211_channel_to_frequency
+				(ucChannelNum, KAL_BAND_6GHZ));
+	} else
+#endif
 	if (ucChannelNum <= 14) {
 		prChannel = ieee80211_get_channel(wiphy,
 				ieee80211_channel_to_frequency(ucChannelNum,
@@ -5874,6 +5899,15 @@ kalReadyOnChannel(IN struct GLUE_INFO *prGlueInfo,
 		struct net_device *prDevHandler =
 			wlanGetNetDev(prGlueInfo, ucBssIndex);
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (eBand == BAND_6G) {
+			prChannel =
+				ieee80211_get_channel(
+					priv_to_wiphy(prGlueInfo),
+					ieee80211_channel_to_frequency
+					(ucChannelNum, KAL_BAND_6GHZ));
+		} else
+#endif
 		if (ucChannelNum <= 14) {
 			prChannel =
 				ieee80211_get_channel(priv_to_wiphy(prGlueInfo),
@@ -5945,6 +5979,15 @@ kalRemainOnChannelExpired(IN struct GLUE_INFO *prGlueInfo,
 		struct net_device *prDevHandler =
 			wlanGetNetDev(prGlueInfo, ucBssIndex);
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (eBand == BAND_6G) {
+			prChannel =
+				ieee80211_get_channel(
+					priv_to_wiphy(prGlueInfo),
+					ieee80211_channel_to_frequency
+					(ucChannelNum, KAL_BAND_6GHZ));
+		} else
+#endif
 		if (ucChannelNum <= 14) {
 			prChannel =
 				ieee80211_get_channel(priv_to_wiphy(prGlueInfo),
@@ -8299,12 +8342,22 @@ void kalFbNotifierUnReg(void)
 #if CFG_SUPPORT_DFS
 void kalIndicateChannelSwitch(IN struct GLUE_INFO *prGlueInfo,
 				IN enum ENUM_CHNL_EXT eSco,
-				IN uint8_t ucChannelNum)
+				IN uint8_t ucChannelNum,
+				IN enum ENUM_BAND eBand)
 {
 	struct cfg80211_chan_def chandef;
 	struct ieee80211_channel *prChannel = NULL;
 	enum nl80211_channel_type rChannelType;
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (eBand == BAND_6G) {
+		prChannel =
+			ieee80211_get_channel(
+				priv_to_wiphy(prGlueInfo),
+				ieee80211_channel_to_frequency
+				(ucChannelNum, KAL_BAND_6GHZ));
+	} else
+#endif
 	if (ucChannelNum <= 14) {
 		prChannel =
 		    ieee80211_get_channel(priv_to_wiphy(prGlueInfo),
@@ -8632,6 +8685,11 @@ kalChannelFormatSwitch(IN struct cfg80211_chan_def *channel_def,
 			case KAL_BAND_5GHZ:
 				prRfChnlInfo->eBand = BAND_5G;
 				break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			case KAL_BAND_6GHZ:
+				prRfChnlInfo->eBand = BAND_6G;
+				break;
+#endif
 			default:
 				prRfChnlInfo->eBand = BAND_2G4;
 				break;
@@ -8688,6 +8746,15 @@ void kalRemoveBss(struct GLUE_INFO *prGlueInfo,
 	struct cfg80211_bss *bss = NULL;
 	struct ieee80211_channel *prChannel = NULL;
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (eBand == BAND_6G) {
+		prChannel =
+			ieee80211_get_channel(
+				priv_to_wiphy(prGlueInfo),
+				ieee80211_channel_to_frequency
+				(ucChannelNum, KAL_BAND_6GHZ));
+	} else
+#endif
 	if (ucChannelNum <= 14) {
 		prChannel = ieee80211_get_channel(
 			priv_to_wiphy(prGlueInfo),

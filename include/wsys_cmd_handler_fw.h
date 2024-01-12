@@ -1896,7 +1896,8 @@ struct CMD_DOMAIN_CHANNEL {
 struct CMD_DOMAIN_ACTIVE_CHANNEL_LIST {
 	uint8_t u1ActiveChNum2g;
 	uint8_t u1ActiveChNum5g;
-	uint8_t aucPadding[2];
+	uint8_t u1ActiveChNum6g;
+	uint8_t aucPadding[1];
 	struct CMD_DOMAIN_CHANNEL arChannels[0];
 };
 
@@ -1907,7 +1908,8 @@ struct CMD_SET_DOMAIN_INFO_V2 {
 	/* DWORD_1 - 2.4G & 5G BW info*/
 	uint8_t  uc2G4Bandwidth; /* CONFIG_BW_20_40M or CONFIG_BW_20M */
 	uint8_t  uc5GBandwidth;  /* CONFIG_BW_20_40M or CONFIG_BW_20M */
-	uint8_t  aucPadding[2];
+	uint8_t  uc6GBandwidth;  /* CONFIG_BW_20_40M or CONFIG_BW_20M */
+	uint8_t  aucPadding[1];
 
 	/* DWORD_2 ~ - 2.4G & 5G active channel info*/
 	struct CMD_DOMAIN_ACTIVE_CHANNEL_LIST arActiveChannels;

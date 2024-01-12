@@ -283,6 +283,17 @@
 #endif
 
 /*------------------------------------------------------------------------------
+ * Flags of 6G SUPPORT
+ *------------------------------------------------------------------------------
+ */
+#if 0 /* KERNEL_VERSION(5, 4, 0) > LINUX_VERSION_CODE */
+#ifdef CFG_SUPPORT_WIFI_6G
+#undef CFG_SUPPORT_WIFI_6G
+#endif
+#define CFG_SUPPORT_WIFI_6G			0
+#endif
+
+/*------------------------------------------------------------------------------
  * Flags of Buffer mode SUPPORT
  *------------------------------------------------------------------------------
  */
@@ -581,10 +592,23 @@
  *------------------------------------------------------------------------------
  */
 /* ARRAY_SIZE(mtk_5ghz_channels) + ARRAY_SIZE(mtk_2ghz_channels) */
-#define MAX_CHN_NUM			39
 
+#define MAX_CHN_NUM			(MAX_2G_BAND_CHN_NUM + \
+					MAX_5G_BAND_CHN_NUM + \
+					MAX_6G_BAND_CHN_NUM)
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
 #define MAX_2G_BAND_CHN_NUM		14
-#define MAX_5G_BAND_CHN_NUM		(MAX_CHN_NUM - MAX_2G_BAND_CHN_NUM)
+#define MAX_5G_BAND_CHN_NUM		25
+#define MAX_6G_BAND_CHN_NUM		25 /* will be 59 for full channel set */
+#define MAX_PER_BAND_CHN_NUM		25
+#else
+#define MAX_2G_BAND_CHN_NUM		14
+#define MAX_5G_BAND_CHN_NUM		25
+#define MAX_6G_BAND_CHN_NUM		0
+#define MAX_PER_BAND_CHN_NUM		25
+#endif
+
 #define ACS_PRINT_BUFFER_LEN		200
 
 /*------------------------------------------------------------------------------

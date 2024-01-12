@@ -715,6 +715,9 @@ enum ENUM_BAND {
 	BAND_NULL,
 	BAND_2G4,
 	BAND_5G,
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	BAND_6G,
+#endif
 	BAND_NUM
 };
 

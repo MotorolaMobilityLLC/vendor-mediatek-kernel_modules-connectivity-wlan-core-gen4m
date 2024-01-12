@@ -1117,6 +1117,11 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 			case KAL_BAND_5GHZ:
 				prScanRequest->arChannel[j].eBand = BAND_5G;
 				break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			case KAL_BAND_6GHZ:
+				prScanRequest->arChannel[j].eBand = BAND_6G;
+				break;
+#endif
 			default:
 				DBGLOG(REQ, WARN, "UNKNOWN Band %d(chnl=%u)\n",
 				       request->channels[i]->band,
@@ -2411,6 +2416,11 @@ int mtk_cfg80211_remain_on_channel(struct wiphy *wiphy,
 		case KAL_BAND_5GHZ:
 			prMsgChnlReq->eBand = BAND_5G;
 			break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		case KAL_BAND_6GHZ:
+			prMsgChnlReq->eBand = BAND_6G;
+			break;
+#endif
 		default:
 			prMsgChnlReq->eBand = BAND_2G4;
 			break;
