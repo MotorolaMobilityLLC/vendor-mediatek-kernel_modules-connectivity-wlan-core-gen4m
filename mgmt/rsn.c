@@ -1293,7 +1293,7 @@ u_int8_t rsnPerformPolicySelection(
 	uint32_t u4GroupCipher = 0;
 	uint32_t u4GroupMgmtCipher = RSN_CIPHER_SUITE_BIP_CMAC_128;
 	uint32_t u4AkmSuite = 0;
-	uint8_t fgMgmtProtection = FALSE;
+	uint8_t u4MgmtProtection = 0;
 	struct RSN_INFO *prBssRsnInfo;
 #if CFG_SUPPORT_WPS
 	u_int8_t fgIsWpsActive = (u_int8_t) FALSE;
@@ -1590,11 +1590,12 @@ u_int8_t rsnPerformPolicySelection(
 				       "[MFP] Skip RSN IE, No MFP Required\n");
 				return FALSE;
 			}
-			fgMgmtProtection = TRUE;
+			u4MgmtProtection =
+				ELEM_WPA_CAP_MFPR | ELEM_WPA_CAP_MFPC;
 		} else if (kalGetMfpSetting(prAdapter->prGlueInfo,
 			ucBssIndex) == RSN_AUTH_MFP_OPTIONAL) {
-			fgMgmtProtection = !!(prBssRsnInfo->u2RsnCap &
-				(ELEM_WPA_CAP_MFPR | ELEM_WPA_CAP_MFPC));
+			u4MgmtProtection = prBssRsnInfo->u2RsnCap &
+				(ELEM_WPA_CAP_MFPR | ELEM_WPA_CAP_MFPC);
 		} else {
 			if ((prBssRsnInfo->fgRsnCapPresent) &&
 			(prBssRsnInfo->u2RsnCap & ELEM_WPA_CAP_MFPR)) {
@@ -1604,7 +1605,7 @@ u_int8_t rsnPerformPolicySelection(
 			}
 		}
 
-		if (fgMgmtProtection &&
+		if (u4MgmtProtection  &&
 		    prBssRsnInfo->u4GroupMgmtCipherSuite !=
 			RSN_CIPHER_SUITE_BIP_CMAC_128 &&
 		    prBssRsnInfo->u4GroupMgmtCipherSuite !=
@@ -1621,11 +1622,11 @@ u_int8_t rsnPerformPolicySelection(
 		u4GroupMgmtCipher = prBssRsnInfo->u4GroupMgmtCipherSuite;
 
 		DBGLOG(RSN, TRACE,
-		       "[MFP] MFP setting=%d, Cap=%d, CapPresent=%d, MgmtProtection = %d, GroupMgmtCipher = 0x%x\n",
+		       "[MFP] MFP setting=%d, Cap=%d, CapPresent=%d, MgmtProtection = 0x%x, GroupMgmtCipher = 0x%x\n",
 		       kalGetMfpSetting(prAdapter->prGlueInfo, ucBssIndex),
 		       prBssRsnInfo->u2RsnCap,
 		       prBssRsnInfo->fgRsnCapPresent,
-		       fgMgmtProtection, SWAP32(u4GroupMgmtCipher));
+		       u4MgmtProtection, SWAP32(u4GroupMgmtCipher));
 	}
 #endif
 
@@ -1649,7 +1650,7 @@ u_int8_t rsnPerformPolicySelection(
 	prBss->u4RsnSelectedGroupMgmtCipher = u4GroupMgmtCipher;
 	prBss->u4RsnSelectedAKMSuite = u4AkmSuite;
 	prBss->eRsnSelectedAuthMode = eAuthMode;
-	prBss->u4RsnSelectedPmf = fgMgmtProtection;
+	prBss->u4RsnSelectedPmf = u4MgmtProtection;
 
 	if (prBss->u4RsnSelectedProto != IW_AUTH_WPA_VERSION_DISABLED)
 		prBss->u4RsnSelectedProto = rsnAuthModeRsn(eAuthMode) ?
@@ -2085,14 +2086,19 @@ void rsnGenerateRSNIEImpl(struct ADAPTER *prAdapter,
 	WLAN_SET_FIELD_16(cp, prBssInfo->u2RsnSelectedCapInfo);
 	DBGLOG(RSN, TRACE, "Gen RSN IE=%x\n", prBssInfo->u2RsnSelectedCapInfo);
 #if CFG_SUPPORT_802_11W
+
 	if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
+		struct BSS_DESC *prBssDesc =
+			aisGetTargetBssDesc(prAdapter, ucBssIndex);
+
 		if (kalGetMfpSetting(prAdapter->prGlueInfo,
-			ucBssIndex) != RSN_AUTH_MFP_DISABLED) {
+			ucBssIndex) != RSN_AUTH_MFP_DISABLED && prBssDesc) {
 			WLAN_SET_FIELD_16(cp,
-				ELEM_WPA_CAP_MFPC | ELEM_WPA_CAP_MFPR);
+				prBssDesc->u4RsnSelectedPmf);
 				/* Capabilities */
 			DBGLOG(RSN, TRACE,
-				"RSN_AUTH_MFP - MFPC & MFPR\n");
+				"RSN_AUTH_MFP - 0x%x\n",
+				prBssDesc->u4RsnSelectedPmf);
 		} else {
 			DBGLOG(RSN, TRACE,
 				"!RSN_AUTH_MFP - No MFPC!\n");

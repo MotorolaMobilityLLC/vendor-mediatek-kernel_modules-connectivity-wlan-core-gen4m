@@ -2595,7 +2595,7 @@ static uint8_t aisFsmUpdateRsnSetting(struct ADAPTER *prAdapter,
 
 
 #if CFG_SUPPORT_802_11W
-	prAisSpecificBssInfo->fgMgmtProtection = prBss->u4RsnSelectedPmf;
+	prAisSpecificBssInfo->fgMgmtProtection = !!prBss->u4RsnSelectedPmf;
 
 	DBGLOG(AIS, INFO,
 	       "setting=%d, MgmtProtection = %d\n",
@@ -3914,7 +3914,7 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 	prWpaInfo = aisGetWpaInfo(ad, prBssInfo->ucBssIndex);
 
 #if CFG_SUPPORT_802_11W
-	prAisSpecificBssInfo->fgMgmtProtection = prBssDesc->u4RsnSelectedPmf;
+	prAisSpecificBssInfo->fgMgmtProtection = !!prBssDesc->u4RsnSelectedPmf;
 #endif
 	prConnSettings->eAuthMode = prBssDesc->eRsnSelectedAuthMode;
 	prWpaInfo->u4WpaVersion = prBssDesc->u4RsnSelectedProto;
