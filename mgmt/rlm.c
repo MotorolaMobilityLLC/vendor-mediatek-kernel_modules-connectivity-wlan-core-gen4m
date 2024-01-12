@@ -532,16 +532,12 @@ BOOLEAN rlmParseCheckMTKOuiIE(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN PU
 /*----------------------------------------------------------------------------*/
 VOID rlmGenerateCsaIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo)
 {
-	P_BSS_INFO_T prBssInfo;
 	PUINT_8 pucBuffer;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
 
 	if (prAdapter->rWifiVar.fgCsaInProgress) {
-		prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
-		if (!prBssInfo)
-			return;
 
 		pucBuffer = (PUINT_8) ((ULONG) prMsduInfo->prPacket + (ULONG) prMsduInfo->u2FrameLength);
 
