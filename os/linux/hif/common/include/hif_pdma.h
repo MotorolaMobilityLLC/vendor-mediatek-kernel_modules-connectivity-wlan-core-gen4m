@@ -121,8 +121,8 @@
 #define HIF_AMSDU_COUNT				4
 #define HIF_TX_MSDU_TOKEN_NUM \
 	(HIF_PLE_PAGE_SIZE * HIF_AMSDU_COUNT)
-
-#elif defined(CONFIG_MTK_WIFI_HE160)
+/* ToDo fine tune for owl EHT160 */
+#elif defined(CONFIG_MTK_WIFI_HE160) || defined(CONFIG_MTK_WIFI_EHT160)
 #define TX_RING_SIZE				1024
 #define TX_RING_DATA_SIZE			1024
 #define TX_RING_CMD_SIZE			256
