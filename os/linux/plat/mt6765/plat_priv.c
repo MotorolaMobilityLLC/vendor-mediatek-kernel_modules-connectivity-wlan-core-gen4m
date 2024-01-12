@@ -11,6 +11,7 @@
 
 #include <cpu_ctrl.h>
 #include <topo_ctrl.h>
+#include "gl_os.h"
 
 #if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
 #include <linux/soc/mediatek/mtk-pm-qos.h>
