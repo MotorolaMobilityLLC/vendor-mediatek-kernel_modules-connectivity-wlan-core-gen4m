@@ -1877,6 +1877,16 @@ void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 			     IN struct MSDU_INFO *prMsduInfoListHead,
 			     IN enum ENUM_TX_PROFILING_TAG eTag);
 
+#if (CFG_CE_ASSERT_DUMP == 1)
+void wlanCorDumpTimerInit(IN struct ADAPTER *prAdapter);
+
+void wlanCorDumpTimerReset(IN struct ADAPTER *prAdapter);
+
+void wlanN9CorDumpTimeOut(IN struct ADAPTER *prAdapter,
+			  IN unsigned long ulParamPtr);
+
+#endif
+
 u_int8_t wlanGetWlanIdxByAddress(IN struct ADAPTER *prAdapter,
 				 IN uint8_t *pucAddr, OUT uint8_t *pucIndex);
 

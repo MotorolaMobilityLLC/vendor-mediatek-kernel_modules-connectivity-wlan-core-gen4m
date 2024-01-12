@@ -3605,6 +3605,11 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 	prGlueInfo->u4HifThreadPid = 0xffffffff;
 #endif
 
+#if (CFG_CE_ASSERT_DUMP == 1)
+	init_waitqueue_head(&(prGlueInfo->waitq_coredump));
+	skb_queue_head_init(&(prGlueInfo->rCoreDumpSkbQueue));
+#endif
+
 	return prWdev;
 
 netcreate_err:
@@ -3640,6 +3645,10 @@ void wlanNetDestroy(struct wireless_dev *prWdev)
 	/* prGlueInfo is allocated with net_device */
 	WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
+
+#if (CFG_CE_ASSERT_DUMP == 1)
+	skb_queue_purge(&(prGlueInfo->rCoreDumpSkbQueue));
+#endif
 
 	/* prWdev: base AIS dev
 	 * Because the interface dev (ex: usb_device) would be free

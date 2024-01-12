@@ -3975,6 +3975,10 @@ void nicEventRssiMonitor(IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent);
 void nicEventDumpMem(IN struct ADAPTER *prAdapter,
 		     IN struct WIFI_EVENT *prEvent);
+#if (CFG_CE_ASSERT_DUMP == 1)
+void nicEventAssertDump(IN struct ADAPTER *prAdapter,
+			IN struct WIFI_EVENT *prEvent);
+#endif
 void nicEventHifCtrl(IN struct ADAPTER *prAdapter,
 		     IN struct WIFI_EVENT *prEvent);
 void nicEventRddSendPulse(IN struct ADAPTER *prAdapter,

@@ -538,6 +538,10 @@ struct GLUE_INFO {
 #if (CFG_SUPPORT_PERF_IND == 1)
 	struct GL_PERF_IND_INFO PerfIndCache;
 #endif
+#if (CFG_CE_ASSERT_DUMP == 1)
+	wait_queue_head_t waitq_fwdump;
+	struct sk_buff_head rCoreDumpSkbQueue;
+#endif
 #if 0
 
 	/* Device */

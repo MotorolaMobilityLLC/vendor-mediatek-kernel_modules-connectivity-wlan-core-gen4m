@@ -119,6 +119,9 @@
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 #define PROC_CAL_RESULT				"cal_result"
 #endif /*(CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)*/
+#if (CFG_CE_ASSERT_DUMP == 1)
+#define PROC_CORE_DUMP                     "core_dump"
+#endif
 
 #define PROC_MCR_ACCESS_MAX_USER_INPUT_LEN      20
 #define PROC_RX_STATISTICS_MAX_USER_INPUT_LEN   10
@@ -175,6 +178,86 @@ static int32_t g_i4NextDriverReadLen;
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
+
+#if (CFG_CE_ASSERT_DUMP == 1)
+static ssize_t procCoreDumpRead(struct file *file, char __user *buf,
+			size_t count, loff_t *f_pos)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct ADAPTER *prAdapter;
+	struct sk_buff *skb = NULL;
+	int copyLen = 0;
+	unsigned long ret_len = 0;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(gPrDev));
+
+	if (!prGlueInfo) {
+		pr_err("procCfgRead prGlueInfo is  NULL\n");
+		return -EFAULT;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+
+	if (!prAdapter) {
+		pr_err("procCfgRead prAdapter is  NULL\n");
+		return -EFAULT;
+	}
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CORE_DUMP);
+	skb = skb_dequeue(&prGlueInfo->rCoreDumpSkbQueue);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CORE_DUMP);
+
+	if (skb == NULL)
+		return 0;
+
+	if (skb->len <= count) {
+		ret_len = copy_to_user(buf, skb->data, skb->len);
+		if (ret_len) {
+			DBGLOG(INIT, ERROR,
+		"%s: copy_to_user failed, skb->len = %d, ret_len = %ld, count = %zd",
+					__func__, skb->len, ret_len, count);
+			/* copy_to_user failed, add skb to fw log queue */
+			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CORE_DUMP);
+			skb_queue_head(&prGlueInfo->rCoreDumpSkbQueue, skb);
+			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CORE_DUMP);
+			copyLen = -EFAULT;
+			goto out;
+		}
+		copyLen = skb->len;
+	} else
+		DBGLOG(INIT, ERROR,
+			"%s: socket buffer length error(count: %d, skb.len: %d)",
+			__func__, (int)count, skb->len);
+
+	kfree_skb(skb);
+
+out:
+	return copyLen;
+}
+
+static unsigned int procCoreDumpPoll(struct file *file, poll_table *wait)
+{
+	struct GLUE_INFO *prGlueInfo;
+	unsigned int mask = 0;
+
+	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(gPrDev));
+
+	if (!prGlueInfo) {
+		pr_err("procCoreDumpPoll prGlueInfo is  NULL\n");
+		return -EFAULT;
+	}
+
+	poll_wait(file, &prGlueInfo->waitq_coredump, wait);
+	if (skb_queue_len(&prGlueInfo->rCoreDumpSkbQueue) > 0)
+		mask |= POLLIN | POLLRDNORM;
+
+	return mask;
+}
+
+#endif
+
 static ssize_t procDbgLevelRead(struct file *filp, char __user *buf,
 	size_t count, loff_t *f_pos)
 {
@@ -1093,6 +1176,22 @@ static const struct file_operations dbglevel_ops = {
 	.write = procDbgLevelWrite,
 };
 #endif
+
+#if (CFG_CE_ASSERT_DUMP == 1)
+#if KERNEL_VERSION(5, 6, 0) <= CFG80211_VERSION_CODE
+static const struct proc_ops coredump_ops = {
+	.proc_read = procCoreDumpRead,
+	.proc_poll = procCoreDumpPoll
+};
+#else
+static const struct file_operations coredump_ops = {
+	.owner = THIS_MODULE,
+	.read = procCoreDumpRead,
+	.poll = procCoreDumpPoll
+};
+#endif
+#endif
+
 
 #if WLAN_INCLUDE_PROC
 #if	CFG_SUPPORT_EASY_DEBUG
@@ -2070,6 +2169,9 @@ int32_t procUninitProcFs(void)
 /*----------------------------------------------------------------------------*/
 int32_t procRemoveProcfs(void)
 {
+#if (CFG_CE_ASSERT_DUMP == 1)
+	remove_proc_entry(PROC_CORE_DUMP, gprProcRoot);
+#endif
 	remove_proc_entry(PROC_MCR_ACCESS, gprProcRoot);
 	remove_proc_entry(PROC_DRIVER_CMD, gprProcRoot);
 	remove_proc_entry(PROC_CFG, gprProcRoot);
@@ -2164,6 +2266,15 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 		proc_create(PROC_EFUSE_DUMP, 0664, gprProcRoot, &efusedump_ops);
 	if (prEntry == NULL) {
 		pr_err("Unable to create /proc entry efuse\n\r");
+		return -1;
+	}
+#endif
+
+#if (CFG_CE_ASSERT_DUMP == 1)
+	prEntry =
+		proc_create(PROC_CORE_DUMP, 0664, gprProcRoot, &coredump_ops);
+	if (prEntry == NULL) {
+		pr_err("Unable to create /proc entry core_dump\n\r");
 		return -1;
 	}
 #endif

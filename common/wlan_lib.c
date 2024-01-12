@@ -10570,6 +10570,38 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 #endif
 	return WLAN_STATUS_SUCCESS;
 }
+#if (CFG_CE_ASSERT_DUMP == 1)
+void wlanCorDumpTimerInit(IN struct ADAPTER *prAdapter)
+{
+	cnmTimerInitTimer(prAdapter,
+			  &prAdapter->rN9CorDumpTimer,
+			  (PFN_MGMT_TIMEOUT_FUNC) wlanN9CorDumpTimeOut,
+			  (unsigned long) NULL);
+}
+
+void wlanCorDumpTimerReset(IN struct ADAPTER *prAdapter)
+{
+
+	if (prAdapter->fgN9AssertDumpOngoing) {
+		cnmTimerStopTimer(prAdapter,
+				  &prAdapter->rN9CorDumpTimer);
+		cnmTimerStartTimer(prAdapter,
+				   &prAdapter->rN9CorDumpTimer, 5000);
+	} else {
+		DBGLOG(INIT, INFO,
+		       "Cr4, N9 CorDump Is not ongoing, ignore timer reset\n");
+	}
+}
+
+void wlanN9CorDumpTimeOut(IN struct ADAPTER *prAdapter,
+			  IN unsigned long ulParamPtr)
+{
+	/* Trigger RESET */
+	/*GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_FW_ASSERT_TIMEOUT); */
+	DBGLOG(INIT, INFO, "RESET Current didn't work\n");
+}
+
+#endif
 
 u_int8_t
 wlanGetWlanIdxByAddress(IN struct ADAPTER *prAdapter,
