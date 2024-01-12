@@ -6868,10 +6868,10 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 		prGlueInfo->ucBandIdx = 0;
 		prGlueInfo->fgDropFcsErrorFrame = TRUE;
 		prGlueInfo->u2Aid = 0;
-		prGlueInfo->u4AmpduRefNum = 0;
 
 		for (ucBandIdx = 0; ucBandIdx < CFG_MONITOR_BAND_NUM; ucBandIdx++) {
 			prGlueInfo->aucBandIdxEn[ucBandIdx] = 0;
+			prGlueInfo->u4AmpduRefNum[ucBandIdx] = 0;
 		}
 #endif
 	} else {
