@@ -4118,7 +4118,7 @@ nicTxDummyTxDone(IN struct ADAPTER *prAdapter,
 		 IN struct MSDU_INFO *prMsduInfo,
 		 IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
-	struct PERF_MONITOR_T *prPerMonitor = &prAdapter->rPerMonitor;
+	struct PERF_MONITOR *prPerMonitor = &prAdapter->rPerMonitor;
 
 	if (rTxDoneStatus == 0) {
 		prPerMonitor->ulTotalTxSuccessCount++;

@@ -1307,11 +1307,14 @@ struct WIFI_FEM_CFG {
  * -->DISABLE: Screen is off
  * -->RUNNING: Screen is on && Tx/Rx traffic is active
  */
-struct PERF_MONITOR_T {
+struct PERF_MONITOR {
 	struct TIMER rPerfMonTimer;
+	OS_SYSTIME rLastUpdateTime;
 	unsigned long ulPerfMonFlag;
 	unsigned long ulLastTxBytes[BSS_DEFAULT_NUM];
 	unsigned long ulLastRxBytes[BSS_DEFAULT_NUM];
+	unsigned long ulLastTxPackets[BSS_DEFAULT_NUM];
+	unsigned long ulLastRxPackets[BSS_DEFAULT_NUM];
 	uint64_t ulThroughput; /* in bps */
 	unsigned long ulTxTp[BSS_DEFAULT_NUM]; /* in Bps */
 	unsigned long ulRxTp[BSS_DEFAULT_NUM]; /* in Bps */
@@ -1654,7 +1657,7 @@ struct ADAPTER {
 	uint8_t ucSmarGearSupportSisoOnly;
 	uint8_t ucSmartGearWfPathSupport;
 
-	struct PERF_MONITOR_T rPerMonitor;
+	struct PERF_MONITOR rPerMonitor;
 	struct ICAP_INFO_T rIcapInfo;
 	struct RECAL_INFO_T rReCalInfo;
 
