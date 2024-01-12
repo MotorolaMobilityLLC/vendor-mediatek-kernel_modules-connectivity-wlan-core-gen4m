@@ -1204,11 +1204,14 @@ BOOLEAN halTxIsDataBufEnough(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduIn
 	UINT_8 ucTc;
 	struct sk_buff *skb;
 	UINT_32 u4Length;
+	struct mt66xx_chip_info *prChipInfo;
 
 	unsigned long flags;
 
+	prChipInfo = prAdapter->chip_info;
 	skb = (struct sk_buff *)prMsduInfo->prPacket;
 	u4Length = skb->len;
+	u4Length += prChipInfo->u2HifTxdSize;
 	ucTc = USB_TRANS_MSDU_TC(prMsduInfo);
 
 	spin_lock_irqsave(&prHifInfo->rTxDataFreeQLock, flags);
