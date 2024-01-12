@@ -3494,11 +3494,11 @@ nanDataEngineNDPEAttrLength(struct ADAPTER *prAdapter,
 		   prNDP->u2AppInfoLen,
 		   prNDP->fgCarryIPV6);
 
-		if (!nanGetFeatureIsSigma(prAdapter)) {
-			if (prNDP->fgCarryIPV6 == TRUE)
-				u2AttrLength += sizeof(
-				struct _NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T);
+		if (prNDP->fgCarryIPV6 == TRUE)
+			u2AttrLength += sizeof(
+			struct _NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T);
 
+		if (!nanGetFeatureIsSigma(prAdapter)) {
 			if (prNDP->u2AppInfoLen > 0)
 				u2AttrLength += prNDP->u2AppInfoLen;
 		} else {
