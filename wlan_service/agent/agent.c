@@ -700,7 +700,7 @@ static s_int32 hqa_set_freq_offset(
 	CONFIG_SET_PARAM(serv_test, rf_freq_offset,
 			(u_int32)freq_offset, band_idx);
 
-	ret = mt_serv_set_freq_offset(serv_test);
+	ret = mt_serv_set_freq_offset(serv_test, SERV_FREQ_C1);
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: freq offset=%u\n", __func__, freq_offset));
@@ -710,6 +710,37 @@ static s_int32 hqa_set_freq_offset(
 
 	return ret;
 }
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+static s_int32 hqa_set_freq_offset_c2(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_char *data = hqa_frame->data;
+	u_char band_idx = SERV_GET_PARAM(serv_test, ctrl_band_idx);
+	u_int32 freq_offset = 0;
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
+
+	/* Request format type: freq offset (4 bytes) */
+	get_param_and_shift_buf(TRUE, sizeof(freq_offset),
+				&data, (u_char *)&freq_offset);
+
+	/* Set parameters */
+	CONFIG_SET_PARAM(serv_test, rf_freq_offset,
+			(u_int32)freq_offset, band_idx);
+
+	ret = mt_serv_set_freq_offset(serv_test, SERV_FREQ_C2);
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+		("%s: freq offset=%u\n", __func__, freq_offset));
+
+	/* Update hqa_frame with response: status (2 bytes) */
+	update_hqa_frame(hqa_frame, 2, ret);
+
+	return ret;
+}
+#endif
 
 static s_int32 hqa_low_power(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
@@ -806,7 +837,10 @@ static struct hqa_cmd_entry CMD_SET1[] = {
 	{0x9,	legacy_function},
 	{0xb,	hqa_low_power},
 	{0xd,	hqa_get_antswap_capability},
-	{0xe,	hqa_set_antswap}
+	{0xe,	hqa_set_antswap},
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	{0x10,	hqa_set_freq_offset_c2}
+#endif
 };
 
 static s_int32 hqa_reset_txrx_counter(
