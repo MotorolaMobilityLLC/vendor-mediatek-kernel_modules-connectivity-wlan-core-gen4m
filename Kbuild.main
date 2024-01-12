@@ -665,6 +665,7 @@ ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
     ccflags-y += -DCFG_HIF_NUM_OF_QM_RX_PKT_NUM=1024
     ccflags-y += -DCFG_SFD_DYNAMIC_ADJUST_NETIF_TH
 endif
+ccflags-y += -DCFG_MLO_LINK_PLAN_MODE=1
 endif
 
 # ===== Before is project setting =====
