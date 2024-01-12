@@ -6962,6 +6962,8 @@ static int wlanFunOn(void)
 			ret);
 		return ret;
 	}
+	/* Add delay for pcie phy ready */
+	kalMdelay(10);
 #endif
 
 	ret = glBusFunOn();
