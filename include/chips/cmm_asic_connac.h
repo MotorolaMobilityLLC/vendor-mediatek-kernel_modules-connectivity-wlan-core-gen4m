@@ -91,7 +91,7 @@ void fillTxDescTxByteCount(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *pr
 void fillTxDescTxByteCountWithCR4(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
 				  struct HW_MAC_TX_DESC *prTxDesc);
 
-#if defined(_HIF_PCIE)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 /* DMS Scheduler Init */
 void asicPcieDmaShdlInit(IN struct ADAPTER *prAdapter);
 void asicPdmaLoopBackConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);

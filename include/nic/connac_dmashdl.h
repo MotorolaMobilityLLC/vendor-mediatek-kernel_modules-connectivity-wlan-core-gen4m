@@ -80,7 +80,7 @@
 ********************************************************************************
 */
 
-#if defined(_HIF_PCIE)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 #define PCIE_HIF_DMASHDL_BASE                  0x6000
 #endif /* _HIF_PCIE */
 
@@ -333,7 +333,7 @@
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
-#if defined(_HIF_PCIE)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 /* DMASHDL_REFILL_CONTROL */
 union _DMASHDL_REFILL_CONTROL {
 	struct {

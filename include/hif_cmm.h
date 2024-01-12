@@ -89,6 +89,7 @@ enum MT_INF_TYPE {
 	MT_DEV_INF_PCIE = 5,
 	MT_DEV_INF_SDIO = 6,
 	MT_DEV_INF_EHPI = 7,
+	MT_DEV_INF_AXI = 8,
 };
 
 /*******************************************************************************

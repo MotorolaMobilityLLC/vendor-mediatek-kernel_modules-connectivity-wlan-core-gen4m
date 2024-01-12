@@ -823,7 +823,7 @@ struct MSDU_INFO {
 	uint8_t aucTxDescBuffer[NIC_TX_DESC_AND_PADDING_LENGTH];
 #endif
 
-#if defined(_HIF_PCIE)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	struct MSDU_TOKEN_ENTRY *prToken;
 #endif
 	enum ENUM_EAPOL_KEY_TYPE_T eEapolKeyType;

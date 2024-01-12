@@ -307,7 +307,7 @@ do { \
 	kalDevWriteCmd(_prAdapter->prGlueInfo, _prCmdInfo, _ucTC); \
 }
 
-#if defined(_HIF_PCIE)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 #define HAL_READ_RX_PORT(prAdapter, u4PortId, u4Len, pvBuf, _u4ValidBufSize) \
 { \
 	ASSERT(u4PortId < 2); \

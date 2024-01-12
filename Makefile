@@ -88,6 +88,8 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
     ccflags-y += -D_HIF_PCIE=1
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
     ccflags-y += -D_HIF_USB=1
+else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
+    ccflags-y += -D_HIF_AXI=1
 else
     $(error Unsuppoted HIF=$(CONFIG_MTK_COMBO_WIFI_HIF)!!)
 endif
@@ -148,11 +150,16 @@ endif
 ccflags-y += -DDBG=0
 ccflags-y += -I$(src)/os -I$(src)/os/linux/include
 ccflags-y += -I$(src)/include -I$(src)/include/nic -I$(src)/include/mgmt -I$(src)/include/chips
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
+ccflags-y += -I$(KERNEL_DIR)/drivers/misc/mediatek/base/power/include/
+
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
 ccflags-y += -I$(src)/os/linux/hif/sdio/include
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
+ccflags-y += -I$(src)/os/linux/hif/common/include
 ccflags-y += -I$(src)/os/linux/hif/pcie/include
+else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
+ccflags-y += -I$(src)/os/linux/hif/common/include
+ccflags-y += -I$(src)/os/linux/hif/axi/include
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
 ccflags-y += -I$(src)/os/linux/hif/usb/include
 endif
@@ -174,10 +181,13 @@ obj-m += $(MODULE_NAME).o
 # ---------------------------------------------------
 COMMON_DIR  := common/
 OS_DIR      := os/linux/
+HIF_COMMON_DIR := $(OS_DIR)hif/common/
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
 HIF_DIR	    := os/linux/hif/sdio/
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
 HIF_DIR     := os/linux/hif/pcie/
+else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
+HIF_DIR	    := os/linux/hif/axi/
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
 HIF_DIR	    := os/linux/hif/usb/
 endif
@@ -305,16 +315,21 @@ MGMT_OBJS += $(MGMT_DIR)wapi.o
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
 HIF_OBJS :=  $(HIF_DIR)arm.o \
              $(HIF_DIR)sdio.o \
+             $(HIF_DIR)hal_api.o \
              $(HIF_DIR)sdio_test_driver_core.o \
              $(HIF_DIR)sdio_test_driver_ops.o
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
-HIF_OBJS :=  $(HIF_DIR)arm.o \
+HIF_OBJS :=  $(HIF_COMMON_DIR)hal_pdma.o \
+             $(HIF_COMMON_DIR)kal_pdma.o \
              $(HIF_DIR)pcie.o
+else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
+HIF_OBJS :=  $(HIF_COMMON_DIR)hal_pdma.o \
+             $(HIF_COMMON_DIR)kal_pdma.o \
+             $(HIF_DIR)axi.o
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
-HIF_OBJS :=  $(HIF_DIR)usb.o
+HIF_OBJS :=  $(HIF_DIR)usb.o \
+             $(HIF_DIR)hal_api.o
 endif
-
-HIF_OBJS +=  $(HIF_DIR)hal_api.o
 
 # ---------------------------------------------------
 # Platform Objects List
