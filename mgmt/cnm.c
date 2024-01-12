@@ -3078,6 +3078,12 @@ void cnmDbdcPreConnectionEnableDecision(
 		g_rDbdcInfo.eDdbcGuardTimerType
 		== ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME) {
 		log_dbg(CNM, INFO, "[DBDC Debug] Guard Time Return");
+		/* Force enable dbdc to prevent getting into mcc mode */
+		if (cnmDbdcIsAGConcurrent(prAdapter, eRfBand)) {
+			DBDC_SET_WMMBAND_FW_AUTO_BY_CHNL(ucPrimaryChannel,
+				ucWmmQueIdx);
+			cnmUpdateDbdcSetting(prAdapter, TRUE);
+		}
 		return;
 	}
 
