@@ -1162,6 +1162,10 @@
 #define CFG_SW_NVRAM_VERSION_CHECK              1
 #define CFG_SUPPORT_NIC_CAPABILITY              1
 
+#ifndef CFG_QUEUE_DEBUG
+#define CFG_QUEUE_DEBUG                         0
+#endif /* CFG_QUEUE_DEBUG */
+
 /*------------------------------------------------------------------------------
  * CONFIG_TITLE : Stress Test Option
  * OWNER        : Puff Wen

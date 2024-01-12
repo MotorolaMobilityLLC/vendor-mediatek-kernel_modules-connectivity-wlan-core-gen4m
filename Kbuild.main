@@ -1278,6 +1278,7 @@ endif
 ifeq ($(MTK_ANDROID_WMT), y)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
     WMT_SUPPORT := y
+    CONFIG_QUEUE_DEBUG=y
     CONFIG_SUPPORT_FW_DROP_SSN=y
     CONFIG_TX_CMD_SMART_SEQUENCE=y
     CONFIG_AOSP_LINK_LAYER_STATS_SUPPORT=y
@@ -2136,6 +2137,12 @@ ifeq ($(CONFIG_SUPPORT_DHCP_RESET_BA_WINDOW), y)
     ccflags-y += -DCFG_SUPPORT_DHCP_RESET_BA_WINDOW=1
 else
     ccflags-y += -DCFG_SUPPORT_DHCP_RESET_BA_WINDOW=0
+endif
+
+ifeq ($(CONFIG_QUEUE_DEBUG), y)
+    ccflags-y += -DCFG_QUEUE_DEBUG=1
+else
+    ccflags-y += -DCFG_QUEUE_DEBUG=0
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_WFDMA_BK_RS), y)

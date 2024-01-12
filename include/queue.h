@@ -83,6 +83,50 @@ struct QUE {
 #define QUEUE_GET_NEXT_ENTRY(prQueueEntry)  \
 			((void *)((struct QUE_ENTRY *)(prQueueEntry))->prNext)
 
+#if CFG_QUEUE_DEBUG
+#define QUEUE_ADD_VALIDATE(prQue, prEntry) \
+	do { \
+		struct QUE_ENTRY *_prEntry = (struct QUE_ENTRY *)prEntry; \
+		\
+		if ((_prEntry == (prQue)->prHead || \
+			_prEntry == (prQue)->prTail)) { \
+			DBGLOG(QM, ERROR, \
+				"double add: new:%p, head:%p, tail:%p\n", \
+				_prEntry, (prQue)->prHead, \
+				(prQue)->prTail); \
+			ASSERT_QUEUE_DEBUG(); \
+		} \
+	} while (0)
+#define QUEUE_ADD_BEFORE_VALIDATE(prQue, prEntry, prInsertEntry) \
+	do { \
+		if (prEntry == prInsertEntry) { \
+			DBGLOG(QM, ERROR, \
+				"double add before: entry:%p, new:%p\n", \
+				prEntry, prInsertEntry); \
+			ASSERT_QUEUE_DEBUG(); \
+			break; \
+		} \
+		QUEUE_ADD_VALIDATE(prQue, prInsertEntry); \
+	} while (0)
+#define QUEUE_CONCAT_VALIDATE(prDestQue, prSrcQue) \
+	do { \
+		if ((prDestQue)->prHead == (prSrcQue)->prHead || \
+			(prDestQue)->prHead == (prSrcQue)->prTail || \
+			(prDestQue)->prTail == (prSrcQue)->prHead || \
+			(prDestQue)->prTail == (prSrcQue)->prTail) { \
+			DBGLOG(QM, ERROR, \
+				"concat loop: dest(%p,%p) src(%p,%p)\n", \
+				(prDestQue)->prHead, (prDestQue)->prTail, \
+				(prSrcQue)->prHead, (prSrcQue)->prTail); \
+			ASSERT_QUEUE_DEBUG(); \
+		} \
+	} while (0)
+#else /* CFG_QUEUE_DEBUG */
+#define QUEUE_ADD_VALIDATE(prQue, prEntry)
+#define QUEUE_ADD_BEFORE_VALIDATE(prQue, prEntry, prInsertEntry)
+#define QUEUE_CONCAT_VALIDATE(prDestQue, prSrcQue)
+#endif /* CFG_QUEUE_DEBUG */
+
 #define QUEUE_ENTRY_SET_NEXT(_prQueueEntry, _prNextEntry) \
 	do { \
 		((struct QUE_ENTRY *)(_prQueueEntry))->prNext = \
@@ -100,6 +144,7 @@ struct QUE {
 	do { \
 		ASSERT(prQueue); \
 		ASSERT(prQueueEntry); \
+		QUEUE_ADD_VALIDATE(prQueue, prQueueEntry); \
 		((struct QUE_ENTRY *)(prQueueEntry))->prPrev = NULL; \
 		((struct QUE_ENTRY *)(prQueueEntry))->prNext = \
 						(prQueue)->prHead; \
@@ -121,6 +166,7 @@ struct QUE {
 	do { \
 		ASSERT(prQueue); \
 		ASSERT(prQueueEntry); \
+		QUEUE_ADD_VALIDATE(prQueue, prQueueEntry); \
 		((struct QUE_ENTRY *)(prQueueEntry))->prPrev = \
 						(prQueue)->prTail; \
 		((struct QUE_ENTRY *)(prQueueEntry))->prNext = NULL; \
@@ -144,6 +190,8 @@ struct QUE {
  */
 #define QUEUE_INSERT_BEFORE(prQueue, prQueuedEntry, prInsertEntry) \
 	do { \
+		QUEUE_ADD_BEFORE_VALIDATE(prQueue, prQueuedEntry, \
+			prInsertEntry); \
 		((struct QUE_ENTRY *)(prInsertEntry))->prPrev = \
 			((struct QUE_ENTRY *)(prQueuedEntry))->prPrev; \
 		((struct QUE_ENTRY *)(prInsertEntry))->prNext = \
@@ -248,6 +296,7 @@ struct QUE {
 		ASSERT(prDestQueue); \
 		ASSERT(prSrcQueue); \
 		if ((prSrcQueue)->u4NumElem > 0) { \
+			QUEUE_CONCAT_VALIDATE(prDestQueue, prSrcQueue); \
 			if ((prDestQueue)->prTail) { \
 				(prDestQueue)->prTail->prNext = \
 					(prSrcQueue)->prHead; \
@@ -272,6 +321,7 @@ struct QUE {
 		ASSERT(prDestQueue); \
 		ASSERT(prSrcQueue); \
 		if ((prSrcQueue)->u4NumElem > 0 && (prSrcQueue)->prTail) { \
+			QUEUE_CONCAT_VALIDATE(prDestQueue, prSrcQueue); \
 			(prSrcQueue)->prTail->prNext = (prDestQueue)->prHead; \
 			if ((prDestQueue)->prHead) \
 				(prDestQueue)->prHead->prPrev = \
