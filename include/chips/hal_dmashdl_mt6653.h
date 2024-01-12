@@ -104,19 +104,19 @@
 #define MT6653_DMASHDL_QUEUE_16_TO_GROUP               (0x3)   /* ALTX */
 #define MT6653_DMASHDL_QUEUE_17_TO_GROUP               (0x0)   /* BMC */
 #define MT6653_DMASHDL_QUEUE_18_TO_GROUP               (0x0)   /* BCN */
-#define MT6653_DMASHDL_QUEUE_19_TO_GROUP               (0x1)   /* HW Reserved */
-#define MT6653_DMASHDL_QUEUE_20_TO_GROUP               (0x1)   /* HW Reserved */
-#define MT6653_DMASHDL_QUEUE_21_TO_GROUP               (0x1)   /* HW Reserved */
-#define MT6653_DMASHDL_QUEUE_22_TO_GROUP               (0x1)   /* HW Reserved */
-#define MT6653_DMASHDL_QUEUE_23_TO_GROUP               (0x1)   /* HW Reserved */
+#define MT6653_DMASHDL_QUEUE_19_TO_GROUP               (0x0)   /* HW Reserved */
+#define MT6653_DMASHDL_QUEUE_20_TO_GROUP               (0x3)   /* TGID=1 ALTX */
+#define MT6653_DMASHDL_QUEUE_21_TO_GROUP               (0x0)   /* TGID=1 BMC  */
+#define MT6653_DMASHDL_QUEUE_22_TO_GROUP               (0x0)   /* TGID=1 BCN  */
+#define MT6653_DMASHDL_QUEUE_23_TO_GROUP               (0x0)   /* HW Reserved */
 #define MT6653_DMASHDL_QUEUE_24_TO_GROUP               (0x0)   /* NAF */
 #define MT6653_DMASHDL_QUEUE_25_TO_GROUP               (0x0)   /* NBCN */
 #define MT6653_DMASHDL_QUEUE_26_TO_GROUP               (0x0)   /* FIXFID */
-#define MT6653_DMASHDL_QUEUE_27_TO_GROUP               (0x1)   /* Reserved */
-#define MT6653_DMASHDL_QUEUE_28_TO_GROUP               (0x1)   /* Reserved */
-#define MT6653_DMASHDL_QUEUE_29_TO_GROUP               (0x1)   /* Reserved */
-#define MT6653_DMASHDL_QUEUE_30_TO_GROUP               (0x1)   /* Reserved */
-#define MT6653_DMASHDL_QUEUE_31_TO_GROUP               (0x1)   /* Reserved */
+#define MT6653_DMASHDL_QUEUE_27_TO_GROUP               (0x0)   /* Reserved */
+#define MT6653_DMASHDL_QUEUE_28_TO_GROUP               (0x3)   /* TGID=2 ALTX */
+#define MT6653_DMASHDL_QUEUE_29_TO_GROUP               (0x0)   /* TGID=2 BMC  */
+#define MT6653_DMASHDL_QUEUE_30_TO_GROUP               (0x0)   /* TGID=2 BCN  */
+#define MT6653_DMASHDL_QUEUE_31_TO_GROUP               (0x0)   /* HW Reserved */
 #define MT6653_DMASHDL_PRIORITY0_GROUP                 (0x0)
 #define MT6653_DMASHDL_PRIORITY1_GROUP                 (0x1)
 #define MT6653_DMASHDL_PRIORITY2_GROUP                 (0x2)
