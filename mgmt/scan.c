@@ -1647,6 +1647,12 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 	struct SCAN_INFO *prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	struct IE_RNR *prRnr = (struct IE_RNR *) pucIE;
 
+	if (prScanInfo->eCurrentState != SCAN_STATE_SCANNING
+		|| !prScanInfo->rScanParam.fgOobRnrParseEn) {
+		DBGLOG(SCN, INFO, "Skip oob scan Rnr parsing\n");
+		return;
+	}
+
 	while (ucCurrentLength < IE_LEN(pucIE)) {
 		prNeighborAPInfoField =	(struct NEIGHBOR_AP_INFO_FIELD *)
 					(prRnr->aucInfoField + ucCurrentLength);
@@ -1940,6 +1946,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 					MAC2STR(prScanParam->aucBSSID[1]),
 					MAC2STR(prScanParam->aucBSSID[2]),
 					MAC2STR(prScanParam->aucBSSID[3]));
+			prScanParam->fgOobRnrParseEn = FALSE;
 			ucHasBssid = FALSE;
 		}
 		if (ucNewLink)
