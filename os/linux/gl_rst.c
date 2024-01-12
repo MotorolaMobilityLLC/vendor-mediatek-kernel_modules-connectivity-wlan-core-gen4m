@@ -499,14 +499,16 @@ u_int8_t glIsWmtCodeDump(void)
 #if (CFG_SUPPORT_CONNINFRA == 0)
 static void triggerHifDumpIfNeed(void)
 {
+	struct GLUE_INFO *prGlueInfo;
 	struct ADAPTER *prAdapter;
 
-	if (!wifi_rst.prGlueInfo)
-		return;
 	if (fgIsResetting)
 		return;
 
-	prAdapter = wifi_rst.prGlueInfo->prAdapter;
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag || !prGlueInfo->prAdapter)
+		return;
+	prAdapter = prGlueInfo->prAdapter;
 	prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 	kalSetHifDbgEvent(prAdapter->prGlueInfo);
 	/* wait for hif_thread finish dump */
