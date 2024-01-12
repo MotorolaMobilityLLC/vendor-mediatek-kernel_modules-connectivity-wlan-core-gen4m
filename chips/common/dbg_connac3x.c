@@ -2861,7 +2861,9 @@ void connac3x_show_wfdma_info(struct ADAPTER *prAdapter)
 	struct BUS_INFO *prBusInfo;
 	struct mt66xx_chip_info *prChipInfo;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
+#if CFG_MTK_WIFI_SW_EMI_RING
 	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 	struct WIFI_VAR *prWifiVar;
 	uint32_t u4DmaNum = 1;
 	struct GL_HIF_INFO *prHifInfo;
@@ -2875,7 +2877,9 @@ void connac3x_show_wfdma_info(struct ADAPTER *prAdapter)
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+#if CFG_MTK_WIFI_SW_EMI_RING
 	prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 	prWifiVar = &prAdapter->rWifiVar;
 	prRingIdx = &prHifInfo->rRingIdx;
 	prRingIntSta = &prHifInfo->rRingIntSta;
@@ -2888,8 +2892,10 @@ void connac3x_show_wfdma_info(struct ADAPTER *prAdapter)
 	if (prSwWfdmaInfo->rOps.dumpDebugLog)
 		prSwWfdmaInfo->rOps.dumpDebugLog(prAdapter->prGlueInfo);
 
+#if CFG_MTK_WIFI_SW_EMI_RING
 	if (prSwEmiRingInfo->rOps.debug)
 		prSwEmiRingInfo->rOps.debug(prAdapter->prGlueInfo);
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 	if (prChipInfo->is_support_wfdma1)
 		u4DmaNum++;

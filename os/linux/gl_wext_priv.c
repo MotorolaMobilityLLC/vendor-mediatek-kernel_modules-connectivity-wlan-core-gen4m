@@ -8852,6 +8852,7 @@ int priv_driver_set_drv_mcr(struct net_device *prNetDev, char *pcCommand,
 
 }
 
+#if CFG_MTK_WIFI_SW_EMI_RING
 int priv_driver_get_emi_mcr(struct net_device *prNetDev,
 			    char *pcCommand, int i4TotalLen)
 {
@@ -8907,8 +8908,8 @@ int priv_driver_get_emi_mcr(struct net_device *prNetDev,
 	}
 
 	return i4BytesWritten;
-
 }
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 int priv_driver_get_uhw_mcr(struct net_device *prNetDev,
 				   char *pcCommand, int i4TotalLen)

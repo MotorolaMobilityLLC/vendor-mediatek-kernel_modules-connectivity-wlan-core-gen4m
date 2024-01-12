@@ -11,6 +11,7 @@
  *  This file contains the support emi read register
  */
 
+#if CFG_MTK_WIFI_SW_EMI_RING
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
  *******************************************************************************
@@ -228,3 +229,5 @@ void halSwEmiDebug(struct GLUE_INFO *prGlueInfo)
 	DBGLOG(HAL, INFO, "Dump EMI:\n");
 	DBGLOG_MEM32(HAL, INFO, prEmi, sizeof(struct SW_EMI_CTX));
 }
+
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */

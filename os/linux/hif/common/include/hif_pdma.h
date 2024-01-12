@@ -772,6 +772,7 @@ struct SW_EMI_CTX {
 	uint32_t au4Val[SW_EMI_RING_SIZE];
 };
 
+#if CFG_MTK_WIFI_SW_EMI_RING
 struct SW_EMI_RING_INFO;
 
 struct SW_EMI_RING_OPS {
@@ -791,6 +792,7 @@ struct SW_EMI_RING_INFO {
 	uint32_t u4CcifChlNum;
 	spinlock_t rRingLock;
 };
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 enum mtk_queue_attr {
 	Q_TX_DATA,

@@ -338,7 +338,9 @@ struct BUS_INFO {
 #endif
 
 	struct SW_WFDMA_INFO rSwWfdmaInfo;
+#if CFG_MTK_WIFI_SW_EMI_RING
 	struct SW_EMI_RING_INFO rSwEmiRingInfo;
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 #if CFG_SUPPORT_HOST_RX_WM_EVENT_FROM_PSE
 	u_int8_t (*checkPortForRxEventFromPse)(struct ADAPTER *prAdapter,

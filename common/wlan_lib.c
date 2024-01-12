@@ -8466,8 +8466,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	else if (!prChipInfo->is_en_wfdma_no_mmio_read)
 		prWifiVar->fgEnWfdmaNoMmioRead = FEATURE_DISABLED;
 
+#if CFG_MTK_WIFI_SW_EMI_RING
 	prWifiVar->fgEnSwEmiDbg = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "EnSwEmiDbg", FEATURE_DISABLED);
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 #if CFG_MTK_WIFI_EN_SW_EMI_READ
 	prWifiVar->fgEnSwEmiRead = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "EnSwEmiRead", FEATURE_ENABLED);
