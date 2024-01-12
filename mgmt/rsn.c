@@ -57,6 +57,13 @@
  *******************************************************************************
  */
 
+uint8_t rsnKeyMgmtSae(uint32_t akm)
+{
+	return akm == RSN_AKM_SUITE_SAE ||
+	       akm == RSN_AKM_SUITE_SAE_EXT_KEY ||
+	       akm == RSN_AKM_SUITE_FT_OVER_SAE ||
+	       akm == RSN_AKM_SUITE_FT_SAE_EXT_KEY;
+}
 
 u_int8_t rsnParseRsnxIE(struct ADAPTER *prAdapter,
 				   struct RSNX_INFO_ELEM *prInfoElem,
@@ -767,7 +774,7 @@ u_int8_t rsnSearchAKMSuite(struct ADAPTER *prAdapter,
  * \brief refer to wpa_supplicant wpa_key_mgmt_wpa
  */
 
-uint8_t rsnKeyMgmtWpa(struct ADAPTER *prAdapter,
+uint8_t rsnKeyMgmtWpa(struct ADAPTER *ad,
 	enum ENUM_PARAM_AUTH_MODE eAuthMode,
 	uint8_t bssidx)
 {
@@ -779,11 +786,12 @@ uint8_t rsnKeyMgmtWpa(struct ADAPTER *prAdapter,
 	       eAuthMode == AUTH_MODE_WPA2_FT ||
 	       eAuthMode == AUTH_MODE_WPA3_SAE ||
 	       eAuthMode == AUTH_MODE_WPA3_OWE ||
-	       rsnSearchAKMSuite(prAdapter, RSN_AKM_SUITE_OWE, &i, bssidx) ||
-	       rsnSearchAKMSuite(prAdapter, RSN_AKM_SUITE_SAE, &i, bssidx);
+	       rsnSearchAKMSuite(ad, RSN_AKM_SUITE_OWE, &i, bssidx) ||
+	       rsnSearchAKMSuite(ad, RSN_AKM_SUITE_SAE, &i, bssidx) ||
+	       rsnSearchAKMSuite(ad, RSN_AKM_SUITE_SAE_EXT_KEY, &i, bssidx);
 }
 
-uint8_t rsnKeyMgmtWpa3for6g(struct ADAPTER *prAdapter,
+uint8_t rsnKeyMgmtWpa3for6g(struct ADAPTER *ad,
 	enum ENUM_PARAM_AUTH_MODE eAuthMode,
 	uint8_t bssidx,
 	struct BSS_DESC *prBss)
@@ -794,11 +802,13 @@ uint8_t rsnKeyMgmtWpa3for6g(struct ADAPTER *prAdapter,
 	u_int8_t fgIsSAE;
 	u_int8_t fgIsSAEH2E;
 
-	prWpaInfo = aisGetWpaInfo(prAdapter, bssidx);
+	prWpaInfo = aisGetWpaInfo(ad, bssidx);
 	fgIsOWE = eAuthMode == AUTH_MODE_WPA3_OWE ||
-		rsnSearchAKMSuite(prAdapter, RSN_AKM_SUITE_OWE, &i, bssidx);
+		rsnSearchAKMSuite(ad, RSN_AKM_SUITE_OWE, &i, bssidx);
 	fgIsSAE = eAuthMode == AUTH_MODE_WPA3_SAE ||
-		rsnSearchAKMSuite(prAdapter, RSN_AKM_SUITE_SAE, &i, bssidx);
+		rsnSearchAKMSuite(ad, RSN_AKM_SUITE_SAE, &i, bssidx) ||
+		rsnSearchAKMSuite(ad, RSN_AKM_SUITE_SAE_EXT_KEY, &i, bssidx);
+
 	fgIsSAEH2E = fgIsSAE &&
 		(prWpaInfo->u2RSNXCap & BIT(WLAN_RSNX_CAPAB_SAE_H2E)) &&
 		(prBss->fgIERSNX &&
@@ -1720,9 +1730,8 @@ void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 
 		cp += 4;
 
-		if ((prBssInfo->eNetworkType == NETWORK_TYPE_P2P) &&
-			(prBssInfo->u4RsnSelectedAKMSuite ==
-			RSN_AKM_SUITE_SAE)) {
+		if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P &&
+		    rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite)) {
 #if CFG_ENABLE_WIFI_DIRECT
 			struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo =
 				prAdapter->rWifiVar.prP2pSpecificBssInfo
@@ -2022,12 +2031,6 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 	kalMemZero(&rRsnIe, sizeof(struct RSN_INFO));
 
 	if (rsnParseRsnIE(prAdapter, prIe, &rRsnIe)) {
-		if ((rRsnIe.u4PairwiseKeyCipherSuiteCount != 1)
-		    || (rRsnIe.au4PairwiseKeyCipherSuite[0] !=
-			RSN_CIPHER_SUITE_CCMP)) {
-			*pu2StatusCode = STATUS_CODE_INVALID_PAIRWISE_CIPHER;
-			return;
-		}
 		/* When softap's conf support both TKIP&CCMP,
 		 * the Group Cipher Suite would be TKIP
 		 * If we check the Group Cipher Suite == CCMP
@@ -2035,16 +2038,26 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 		 * The connection would be fail
 		 * due to STATUS_CODE_INVALID_GROUP_CIPHER
 		 */
-		if (rRsnIe.u4GroupKeyCipherSuite != RSN_CIPHER_SUITE_CCMP &&
-			!prAdapter->rWifiVar.fgReuseRSNIE) {
-			*pu2StatusCode = STATUS_CODE_INVALID_GROUP_CIPHER;
-			return;
+		if (!prAdapter->rWifiVar.fgReuseRSNIE) {
+			if ((rRsnIe.u4PairwiseKeyCipherSuiteCount != 1)
+			    || (rRsnIe.au4PairwiseKeyCipherSuite[0] !=
+				RSN_CIPHER_SUITE_CCMP)) {
+				*pu2StatusCode =
+					STATUS_CODE_INVALID_PAIRWISE_CIPHER;
+				return;
+			}
+			if (rRsnIe.u4GroupKeyCipherSuite !=
+					RSN_CIPHER_SUITE_CCMP) {
+				*pu2StatusCode =
+					STATUS_CODE_INVALID_GROUP_CIPHER;
+				return;
+			}
 		}
 
 		if ((rRsnIe.u4AuthKeyMgtSuiteCount != 1)
 			|| ((rRsnIe.au4AuthKeyMgtSuite[0] != RSN_AKM_SUITE_PSK)
 #if CFG_SUPPORT_SOFTAP_WPA3
-			&& (rRsnIe.au4AuthKeyMgtSuite[0] != RSN_AKM_SUITE_SAE)
+			&& (!rsnKeyMgmtSae(rRsnIe.au4AuthKeyMgtSuite[0]))
 #endif
 			&& (rRsnIe.au4AuthKeyMgtSuite[0] != RSN_AKM_SUITE_OWE)
 			)) {
@@ -2054,8 +2067,7 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 		}
 
 		if (prAdapter->rWifiVar.fgSapCheckPmkidInDriver
-			&& prBssInfo->u4RsnSelectedAKMSuite
-				== RSN_AKM_SUITE_SAE
+			&& rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite)
 			&& rRsnIe.u2PmkidCount > 0) {
 			struct PMKID_ENTRY *entry;
 
@@ -2138,8 +2150,8 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 				DBGLOG(RSN, INFO, "STA SHA256 support\n");
 				prStaRec->rPmfCfg.fgSha256 = TRUE;
 				break;
-			} else if (rRsnIe.au4AuthKeyMgtSuite[i] ==
-				RSN_AKM_SUITE_SAE) {
+			} else if (rsnKeyMgmtSae(
+					rRsnIe.au4AuthKeyMgtSuite[i])) {
 				DBGLOG(RSN, INFO, "STA SAE support\n");
 				prStaRec->rPmfCfg.fgSaeRequireMfp = TRUE;
 				break;
@@ -3275,8 +3287,7 @@ uint16_t rsnPmfCapableValidation(struct ADAPTER
 			return STATUS_CODE_ROBUST_MGMT_FRAME_POLICY_VIOLATION;
 		}
 
-		if ((prBssInfo->u4RsnSelectedAKMSuite ==
-			RSN_AKM_SUITE_SAE) &&
+		if (rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite) &&
 			prStaRec->rPmfCfg.fgSaeRequireMfp) {
 			DBGLOG(RSN, ERROR,
 				"PMF policy violation for case sae_require_mfp\n");

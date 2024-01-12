@@ -71,6 +71,14 @@
 #ifndef WLAN_AKM_SUITE_OWE
 #define WLAN_AKM_SUITE_OWE              0x000FAC12
 #endif
+
+#ifndef WLAN_AKM_SUITE_8021X_SHA384
+#define WLAN_AKM_SUITE_8021X_SHA384	0x000FAC17
+#endif
+#ifndef WLAN_AKM_SUITE_SAE_EXT_KEY
+#define WLAN_AKM_SUITE_SAE_EXT_KEY	0x000FAC18
+#endif
+
 #if CFG_SUPPORT_802_11W
 #define RSN_AKM_SUITE_802_1X_SHA256     0x05AC0F00
 #define RSN_AKM_SUITE_PSK_SHA256        0x06AC0F00
@@ -86,6 +94,9 @@
 #define RSN_AKM_SUITE_FT_FILS_SHA256    0x10AC0F00
 #define RSN_AKM_SUITE_FT_FILS_SHA384    0x11AC0F00
 #define RSN_AKM_SUITE_OWE               0x12AC0F00
+#define RSN_AKM_SUITE_8021X_SHA384      0x17AC0F00
+#define RSN_AKM_SUITE_SAE_EXT_KEY       0x18AC0F00
+#define RSN_AKM_SUITE_FT_SAE_EXT_KEY    0x19AC0F00
 #define RSN_AKM_SUITE_DPP               0x029A6F50
 #define WPA_AKM_SUITE_NONE              0x00F25000
 #define WPA_AKM_SUITE_802_1X            0x01F25000
@@ -351,6 +362,8 @@ u_int8_t rsnIsFtOverTheAir(struct ADAPTER *prAdapter,
 u_int8_t rsnParseRsnxIE(struct ADAPTER *prAdapter,
 		       struct RSNX_INFO_ELEM *prInfoElem,
 		       struct RSNX_INFO *prRsnxeInfo);
+
+uint8_t rsnKeyMgmtSae(uint32_t akm);
 
 /*******************************************************************************
  *                              F U N C T I O N S

@@ -10997,7 +10997,7 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 	COPY_MAC_ADDR(params.bssid, prBssDesc->aucBSSID);
 	COPY_SSID(params.ssid.ssid, params.ssid.ssid_len,
 		  prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
-	params.key_mgmt_suite = RSN_AKM_SUITE_SAE;
+	params.key_mgmt_suite = prBssDesc->u4RsnSelectedAKMSuite;
 	DBGLOG(AIS, INFO, "[WPA3] "MACSTR" %s %d %d %02x-%02x-%02x-%02x",
 	       MAC2STR(params.bssid), params.ssid.ssid,
 	       params.ssid.ssid_len, params.action,
@@ -11089,7 +11089,7 @@ int kalVendorExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 	COPY_SSID(info->ssid, info->ssid_len,
 		prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
 	info->ssid[info->ssid_len] = '\0';
-	info->key_mgmt_suite = RSN_AKM_SUITE_SAE;
+	info->key_mgmt_suite = prBssDesc->u4RsnSelectedAKMSuite;
 	info->dot11MultiLinkActivated = TRUE;
 	if (prMldBssInfo)
 		COPY_MAC_ADDR(info->own_ml_addr, prMldBssInfo->aucOwnMldAddr);
