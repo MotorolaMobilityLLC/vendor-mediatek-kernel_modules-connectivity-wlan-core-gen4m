@@ -3803,7 +3803,8 @@ int mtk_cfg80211_vendor_comb_matrix(
 
 	if (prGlueInfo->u4ReadyFlag == 0) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
-		return -EFAULT;
+		i4Status = -EFAULT;
+		goto end;
 	}
 
 	pr_comb_matrix->comb_mtx[0].band_0 = 2;
