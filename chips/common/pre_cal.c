@@ -168,9 +168,10 @@ uint32_t wlanRcvPhyActionRsp(struct ADAPTER *prAdapter,
 			break;
 		}
 
-		if (nicRxWaitResponse(prAdapter, ucPortIdx,
-					     aucBuffer, u4EventSize,
-					     &u4RxPktLength) !=
+		if (nicRxWaitResponseByWaitingInterval(prAdapter, ucPortIdx,
+					aucBuffer, u4EventSize,
+					&u4RxPktLength,
+					CFG_PRE_CAL_SLEEP_WAITING_INTERVAL) !=
 			   WLAN_STATUS_SUCCESS) {
 			DBGLOG(INIT, ERROR, "nicRxWaitResponse failed\n");
 			break;
