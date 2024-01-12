@@ -2091,6 +2091,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 	DEBUGFUNC("aisFsmSteps()");
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	ucBssIndex = aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
@@ -2101,8 +2102,8 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 		/* Do entering Next State */
 		prAisFsmInfo->ePreviousState = prAisFsmInfo->eCurrentState;
 
-		DBGLOG(AIS, STATE, "[AIS%d] TRANSITION: [%s] -> [%s]\n",
-			ucBssIndex,
+		DBGLOG(AIS, STATE, "[AIS%d][%d] TRANSITION: [%s] -> [%s]\n",
+			prAisFsmInfo->ucAisIndex, ucBssIndex,
 			aisGetFsmState(prAisFsmInfo->eCurrentState),
 			aisGetFsmState(eNextState));
 

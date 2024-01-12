@@ -4324,6 +4324,9 @@ wext_indicate_wext_event(IN struct GLUE_INFO *prGlueInfo,
 	prDevHandler =
 		wlanGetNetDev(prGlueInfo, ucBssIndex);
 
+	if (!prDevHandler)
+		goto skip_indicate_event;
+
 	switch (u4Cmd) {
 	case SIOCGIWTXPOW:
 		memcpy(&wrqu.power, pucData, u4dataLen);
