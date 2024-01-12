@@ -18,6 +18,9 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 	const struct NON_HT_ADHOC_MODE_ATTRIBUTE *prLegacyModeAttr;
 	uint8_t ucLegacyPhyTp;
 	struct WIFI_VAR *prWifiVar;
+#if CFG_SUPPORT_DBDC
+	struct DBDC_DECISION_INFO rDbdcDecisionInfo = {0};
+#endif
 
 	if (prAdapter == NULL) {
 		DBGLOG(NAN, ERROR,
@@ -182,12 +185,15 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 
 #if (CFG_SUPPORT_DBDC == 1)
 			/* Check if DBDC is required to be enabled first */
-			cnmDbdcPreConnectionEnableDecision(
-				prAdapter,
+			CNM_DBDC_ADD_DECISION_INFO(rDbdcDecisionInfo,
 				prnanBssInfo->ucBssIndex,
 				prnanBssInfo->eBand,
 				prnanBssInfo->ucPrimaryChannel,
 				prnanBssInfo->ucWmmQueSet);
+
+			cnmDbdcPreConnectionEnableDecision(
+				prAdapter,
+				&rDbdcDecisionInfo);
 #endif
 
 			/* DBDC decsion may change OpNss */

@@ -218,6 +218,15 @@ enum ENUM_CNM_OPMODE_REQ_T {
 	& VHT_OP_MODE_RX_NSS) >> VHT_OP_MODE_RX_NSS_OFFSET) > 0)))
 #endif
 
+#define CNM_DBDC_ADD_DECISION_INFO(rDeciInfo, \
+		_ucBId, _eBand, _ucCh, _ucWmmQId) {\
+	rDeciInfo.dbdcElem[rDeciInfo.ucLinkNum].ucBssIndex = _ucBId;\
+	rDeciInfo.dbdcElem[rDeciInfo.ucLinkNum].eRfBand = _eBand;\
+	rDeciInfo.dbdcElem[rDeciInfo.ucLinkNum].ucPrimaryChannel = _ucCh;\
+	rDeciInfo.dbdcElem[rDeciInfo.ucLinkNum].ucWmmQueIndex = _ucWmmQId;\
+	rDeciInfo.ucLinkNum++;\
+}
+
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -322,11 +331,7 @@ uint32_t cnmUpdateDbdcSetting(
 
 void cnmDbdcPreConnectionEnableDecision(
 	struct ADAPTER *prAdapter,
-	uint8_t ucChangedBssIndex,
-	enum ENUM_BAND eRfBand,
-	uint8_t ucPrimaryChannel,
-	uint8_t ucWmmQueIdx
-);
+	struct DBDC_DECISION_INFO *prDbdcDecisionInfo);
 
 void cnmDbdcRuntimeCheckDecision(struct ADAPTER *prAdapter,
 	uint8_t ucChangedBssIndex,

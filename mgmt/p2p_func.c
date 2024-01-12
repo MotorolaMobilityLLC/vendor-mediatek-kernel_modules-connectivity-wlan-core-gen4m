@@ -7201,6 +7201,9 @@ void p2pFuncSwitchGcChannel(
 	struct RF_CHANNEL_INFO rRfChnlInfo;
 	uint8_t role_idx = 0;
 	uint8_t ucMaxBw = 0;
+#if CFG_SUPPORT_DBDC
+	struct DBDC_DECISION_INFO rDbdcDecisionInfo = {0};
+#endif
 
 #if CFG_SUPPORT_DFS_MASTER
 	fgEnable = TRUE;
@@ -7270,11 +7273,14 @@ void p2pFuncSwitchGcChannel(
 			FALSE);
 
 #if CFG_SUPPORT_DBDC
-		cnmDbdcPreConnectionEnableDecision(prAdapter,
+		CNM_DBDC_ADD_DECISION_INFO(rDbdcDecisionInfo,
 			prP2pBssInfo->ucBssIndex,
 			prP2pBssInfo->eBand,
 			prP2pBssInfo->ucPrimaryChannel,
 			prP2pBssInfo->ucWmmQueSet);
+
+		cnmDbdcPreConnectionEnableDecision(prAdapter,
+			&rDbdcDecisionInfo);
 #endif
 	}
 

@@ -146,6 +146,9 @@ p2pDevStateInit_REQING_CHANNEL(struct ADAPTER *prAdapter,
 
 		if (prP2pDevFsmInfo &&
 			prAdapter->rWifiVar.ucDbdcP2pLisEn) {
+#if CFG_SUPPORT_DBDC
+			struct DBDC_DECISION_INFO rDbdcDecisionInfo = {0};
+#endif
 			prP2pDevFsmInfo->fgIsP2pListening = TRUE;
 			prP2pDevFsmInfo->ucReqChannelNum =
 				prP2pMsgChnlReq->rChannelInfo.ucChannelNum;
@@ -154,13 +157,17 @@ p2pDevStateInit_REQING_CHANNEL(struct ADAPTER *prAdapter,
 
 			cnmTimerStopTimer(prAdapter,
 				&(prP2pDevFsmInfo->rP2pListenDbdcTimer));
-
-			cnmDbdcPreConnectionEnableDecision(
-				prAdapter,
+#if CFG_SUPPORT_DBDC
+			CNM_DBDC_ADD_DECISION_INFO(rDbdcDecisionInfo,
 				prBssInfo->ucBssIndex,
 				prP2pMsgChnlReq->rChannelInfo.eBand,
 				prP2pMsgChnlReq->rChannelInfo.ucChannelNum,
 				prBssInfo->ucWmmQueSet);
+
+			cnmDbdcPreConnectionEnableDecision(
+				prAdapter,
+				&rDbdcDecisionInfo);
+#endif
 		}
 #endif
 		cnmOpModeGetTRxNss(
