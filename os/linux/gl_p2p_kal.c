@@ -1715,6 +1715,11 @@ kalP2PGOStationUpdate(struct GLUE_INFO *prGlueInfo,
 					/* struct net_device * dev, */
 					aucBssid, GFP_KERNEL);
 			}
+#if CFG_STAINFO_FEATURE
+			kalMemCopy(&prGlueInfo->prAdapter->rSapLastStaRec,
+				prCliStaRec, sizeof(struct STA_RECORD));
+			prGlueInfo->prAdapter->fgSapLastStaRecSet = 1;
+#endif
 		}
 
 	} while (FALSE);

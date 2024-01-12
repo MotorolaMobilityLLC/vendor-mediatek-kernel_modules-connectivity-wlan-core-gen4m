@@ -8056,7 +8056,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	}
 #endif
 
-	INIT_UINT(prWifiVar->fgReuseRSNIE, "ReuseRSNIE", FEATURE_DISABLED);
+#ifdef CFG_EXT_FEATURE
+	INIT_UINT(prWifiVar->fgReuseRSNIE, "ReuseRSNIE", (FEATURE_ENABLED));
+#else
+	INIT_UINT(prWifiVar->fgReuseRSNIE, "ReuseRSNIE", (FEATURE_DISABLED));
+#endif
 
 #if CFG_COALESCING_INTERRUPT
 	INIT_UINT(prWifiVar->u2CoalescingIntMaxPk,

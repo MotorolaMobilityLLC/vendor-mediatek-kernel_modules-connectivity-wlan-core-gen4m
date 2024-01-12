@@ -4925,6 +4925,9 @@ aisIndicationOfMediaStateToHost(struct ADAPTER *prAdapter,
 		rEventConnStatus.ucMediaStatus = (uint8_t) eConnectionState;
 
 		if (eConnectionState == MEDIA_STATE_CONNECTED) {
+#if (CFG_STAINFO_FEATURE == 1)
+			prAisFsmInfo->u2ConnectedCount++;
+#endif
 			rEventConnStatus.ucReasonOfDisconnect =
 			    DISCONNECT_REASON_CODE_RESERVED;
 
@@ -5000,8 +5003,12 @@ aisIndicationOfMediaStateToHost(struct ADAPTER *prAdapter,
 
 		prAisBssInfo->eConnectionStateIndicated = eConnectionState;
 
-		if (eConnectionState == MEDIA_STATE_DISCONNECTED)
+		if (eConnectionState == MEDIA_STATE_DISCONNECTED) {
+#if (CFG_STAINFO_FEATURE == 1)
+			prAisFsmInfo->u2ConnectedCount = 0;
+#endif
 			aisFsmDisconnectedAction(prAdapter, ucBssIndex);
+		}
 	} else {
 		DBGLOG(AIS, INFO,
 		       "Postpone the indication of Disconnect for %d seconds\n",

@@ -6793,6 +6793,29 @@ void mqmProcessScanResult(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_TDLS
 			TdlsBssExtCapParse(prStaRec, pucIE);
 #endif /* CFG_SUPPORT_TDLS */
+
+#if CFG_STAINFO_FEATURE
+			prStaRec->fgSupportProxyARP =
+				!!((*(uint32_t *)(pucIE + 2)) &
+			BIT(ELEM_EXT_CAP_PROXY_ARP_BIT));
+
+			prStaRec->fgSupportTFS =
+				!!((*(uint32_t *)(pucIE + 2)) &
+			BIT(ELEM_EXT_CAP_TFS_BIT));
+
+			prStaRec->fgSupportWNMSleep =
+				!!((*(uint32_t *)(pucIE + 2)) &
+			BIT(ELEM_EXT_CAP_WNM_SLEEP_BIT));
+
+			prStaRec->fgSupportTIMBcast =
+				!!((*(uint32_t *)(pucIE + 2)) &
+			BIT(ELEM_EXT_CAP_TIM_BCAST_BIT));
+
+			prStaRec->fgSupportDMS =
+				!!((*(uint32_t *)(pucIE + 2)) &
+			BIT(ELEM_EXT_CAP_DMS_BIT));
+#endif
+
 			prStaRec->fgIsMscsSupported = wlanCheckExtCapBit(
 				prStaRec, pucIE, ELEM_EXT_CAP_MSCS_BIT);
 			if (IS_FEATURE_DISABLED(

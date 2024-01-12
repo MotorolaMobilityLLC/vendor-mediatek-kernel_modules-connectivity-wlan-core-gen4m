@@ -1491,6 +1491,10 @@ uint32_t assocProcessRxAssocReqFrameImpl(
 		return WLAN_STATUS_FAILURE;
 	}
 
+#if CFG_STAINFO_FEATURE
+	prStaRec->ucSupportedBand = 0;
+#endif
+
 	/* 4 <1> locate the Association Req Frame. */
 	prAssocReqFrame = (struct WLAN_ASSOC_REQ_FRAME *)prSwRfb->pvHeader;
 
@@ -1593,6 +1597,35 @@ uint32_t assocProcessRxAssocReqFrameImpl(
 				prIeSupportedRate = SUP_RATES_IOT_IE(pucIE);
 
 			break;
+
+#if CFG_STAINFO_FEATURE
+		case ELEM_ID_SUP_OPERATING_CLASS:
+			if (IE_LEN(pucIE) >= 2 &&
+				IE_LEN(pucIE) <= 256) {
+				uint8_t ucIdx;
+				uint8_t ucIs2gSupport = 0;
+				uint8_t ucIs5gSupport = 0;
+				uint8_t ucIs6gSupport = 0;
+
+				for (ucIdx = 0;
+					ucIdx < (IE_LEN(pucIE)-1);
+					ucIdx++) {
+					if (SUP_OPERATING_CLASS_IE(pucIE)->
+						ucSup[ucIdx] <= 87)
+						ucIs2gSupport = 1;
+					else if (SUP_OPERATING_CLASS_IE(pucIE)->
+						ucSup[ucIdx] <= 130)
+						ucIs5gSupport = 2;
+					else if (SUP_OPERATING_CLASS_IE(pucIE)->
+						ucSup[ucIdx] <= 179)
+						ucIs6gSupport = 4;
+					}
+				prStaRec->ucSupportedBand =
+					ucIs2gSupport + ucIs5gSupport +
+					ucIs6gSupport;
+			}
+			break;
+#endif
 
 		case ELEM_ID_EXTENDED_SUP_RATES:
 			if (!prIeExtSupportedRate)

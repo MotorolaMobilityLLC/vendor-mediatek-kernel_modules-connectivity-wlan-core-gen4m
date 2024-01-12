@@ -38,6 +38,9 @@
 #define SET_EHT_BW80_MCS_MAP 4
 
 #define REG_STATS_STA_MAX_NUM 3
+
+#define MAX_STA_INFO_MCS_NUM 32
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -583,6 +586,24 @@ struct MLD_BSS_INFO {
 	uint8_t ucMaxSimuLinks;
 	uint8_t ucEmlEnabled;
 	uint16_t u2EMLCap;
+};
+#endif
+
+#if CFG_STAINFO_FEATURE
+/* Support get sta info */
+struct QUERY_STA_INFO {
+	uint32_t u4RxRetryPkts;
+	uint32_t u4RxBcMcPkts;
+	int32_t  rRssi;
+	uint32_t u2TxRate[MAX_STA_INFO_MCS_NUM];
+	uint32_t u2TxPkts;
+	uint32_t u2TxFailPkts;
+	uint32_t u2TxRetryPkts;
+	uint32_t u2RxRate[MAX_STA_INFO_MCS_NUM];
+	uint32_t u2RxPkts;
+	uint32_t u2RxFailPkts;
+	uint32_t u2RxRetryPkts;
+	uint8_t  aucMacAddr[MAC_ADDR_LEN];
 };
 #endif
 
@@ -2574,6 +2595,12 @@ struct ADAPTER {
 	uint64_t u8MdRingStaBase;
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 #endif /* CFG_MTK_MDDP_SUPPORT */
+
+#if CFG_STAINFO_FEATURE
+	struct QUERY_STA_INFO rQueryStaInfo;
+	struct STA_RECORD rSapLastStaRec;
+	u_int8_t fgSapLastStaRecSet;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
