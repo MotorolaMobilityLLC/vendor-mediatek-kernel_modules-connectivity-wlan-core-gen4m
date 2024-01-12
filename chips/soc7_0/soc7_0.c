@@ -2028,10 +2028,13 @@ static uint32_t soc7_0_SetupRomEmi(struct ADAPTER *prAdapter)
 		goto exit;
 	}
 
-	u4Status = wlanImageSectionDownloadStage(
-		prAdapter, prFwBuffer, u4FwSize, 1,
-		IMG_DL_IDX_MCU_ROM_EMI,
-		&fgIsDynamicMemMap);
+	u4Status = wlanImageSectionDownloadStage(prAdapter,
+						 NULL,
+						 prFwBuffer,
+						 u4FwSize,
+						 1,
+						 IMG_DL_IDX_MCU_ROM_EMI,
+						 &fgIsDynamicMemMap);
 
 	kalFirmwareImageUnmapping(
 		prAdapter->prGlueInfo, NULL, prFwBuffer);

@@ -56,6 +56,9 @@ static void mt7990_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 static void mt7990_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx);
 
+static void mt7990_ConstructDspName(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucName, uint8_t *pucNameIdx);
+
 static uint8_t mt7990SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo, uint32_t u4SwRingIdx);
 
@@ -355,6 +358,10 @@ struct FWDL_OPS_T mt7990_fw_dl_ops = {
 #endif
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
+#if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
+	.constructDspName = mt7990_ConstructDspName,
+	.downloadDspFw = wlanDownloadDspFw,
+#endif
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 
@@ -502,6 +509,26 @@ static void mt7990_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 		DBGLOG(INIT, ERROR,
 			"[%u] kalSnprintf failed, ret: %d\n",
 			__LINE__, ret);
+}
+
+static void mt7990_ConstructDspName(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucName, uint8_t *pucNameIdx)
+{
+	int ret = 0;
+
+	/* Type 1. WIFI_MT7990_PHY_RAM_CODE_1_1_hdr.bin */
+	ret = kalSnprintf(apucName[(*pucNameIdx)],
+			  CFG_FW_NAME_MAX_LEN,
+			  "WIFI_MT%x_PHY_RAM_CODE_%x_%u.bin",
+			  MT7990_CHIP_ID,
+			  MT7990_FLAVOR_VERSION,
+			  MT7990_ROM_VERSION);
+	if (ret < 0 || ret >= CFG_FW_NAME_MAX_LEN)
+		DBGLOG(INIT, ERROR,
+			"[%u] kalSnprintf failed, ret: %d\n",
+			__LINE__, ret);
+	else
+		(*pucNameIdx) += 1;
 }
 
 static uint8_t mt7990SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,

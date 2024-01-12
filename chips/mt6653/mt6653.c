@@ -95,6 +95,11 @@ static void mt6653_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 static void mt6653_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx);
 
+#if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
+static void mt6653_ConstructDspName(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucName, uint8_t *pucNameIdx);
+#endif
+
 #if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
 static void mt6653_ConstructIdxLogBinName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName);
@@ -648,6 +653,10 @@ struct FWDL_OPS_T mt6653_fw_dl_ops = {
 #endif
 #endif
 	.getFwVerInfo = wlanParseRamCodeReleaseManifest,
+#if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
+	.constructDspName = mt6653_ConstructDspName,
+	.downloadDspFw = wlanDownloadDspFw,
+#endif
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 
@@ -1074,6 +1083,32 @@ static void mt6653_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 			"[%u] kalSnprintf failed, ret: %d\n",
 			__LINE__, ret);
 }
+
+#if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
+static void mt6653_ConstructDspName(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucName, uint8_t *pucNameIdx)
+{
+	int ret = 0;
+	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
+
+	kalMemZero(aucFlavor, sizeof(aucFlavor));
+	mt6653GetFlavorVer(&aucFlavor[0]);
+
+	/* Type 1. WIFI_MT6653_PHY_RAM_CODE_1_1_hdr.bin */
+	ret = kalSnprintf(apucName[(*pucNameIdx)],
+			  CFG_FW_NAME_MAX_LEN,
+			  "WIFI_MT%x_PHY_RAM_CODE_%s_%u.bin",
+			  MT6653_CHIP_ID,
+			  aucFlavor,
+			  MT6653_ROM_VERSION);
+	if (ret < 0 || ret >= CFG_FW_NAME_MAX_LEN)
+		DBGLOG(INIT, ERROR,
+			"[%u] kalSnprintf failed, ret: %d\n",
+			__LINE__, ret);
+	else
+		(*pucNameIdx) += 1;
+}
+#endif
 
 #if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
 static void mt6653_ConstructIdxLogBinName(struct GLUE_INFO *prGlueInfo,

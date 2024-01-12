@@ -80,6 +80,9 @@ static void mt6655_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 static void mt6655_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx);
 
+static void mt6655_ConstructDspName(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucName, uint8_t *pucNameIdx);
+
 #if defined(_HIF_PCIE)
 static uint8_t mt6655SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo, uint32_t u4SwRingIdx);
@@ -510,6 +513,10 @@ struct FWDL_OPS_T mt6655_fw_dl_ops = {
 #else
 	.phyAction = NULL,
 #endif
+#if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
+	.constructDspName = mt6655_ConstructDspName,
+	.downloadDspFw = wlanDownloadDspFw,
+#endif
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 
@@ -841,6 +848,26 @@ static void mt6655_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 		DBGLOG(INIT, ERROR,
 			"[%u] kalSnprintf failed, ret: %d\n",
 			__LINE__, ret);
+}
+
+static void mt6655_ConstructDspName(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucName, uint8_t *pucNameIdx)
+{
+	int ret = 0;
+
+	/* Type 1. WIFI_MT6655_PHY_RAM_CODE_1_1_hdr.bin */
+	ret = kalSnprintf(apucName[(*pucNameIdx)],
+			  CFG_FW_NAME_MAX_LEN,
+			  "WIFI_MT%x_PHY_RAM_CODE_%x_%u.bin",
+			  MT6655_CHIP_ID,
+			  mt6655GetFlavorVer(prGlueInfo->prAdapter),
+			  MT6655_ROM_VERSION);
+	if (ret < 0 || ret >= CFG_FW_NAME_MAX_LEN)
+		DBGLOG(INIT, ERROR,
+			"[%u] kalSnprintf failed, ret: %d\n",
+			__LINE__, ret);
+	else
+		(*pucNameIdx) += 1;
 }
 
 #if defined(_HIF_PCIE)
