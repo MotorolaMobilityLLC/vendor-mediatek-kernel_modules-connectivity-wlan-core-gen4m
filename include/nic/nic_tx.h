@@ -215,8 +215,8 @@
 #define TX_DESC_ETHER_TYPE_OFFSET_OFFSET        0
 #define TX_DESC_IP_CHKSUM_OFFLOAD               BIT(7)
 #define TX_DESC_TCP_UDP_CHKSUM_OFFLOAD          BIT(0)
-#define TX_DESC_USB_NEXT_VLD                    BIT(1)
-#define TX_DESC_USB_TX_BURST                    BIT(2)
+/*#define TX_DESC_USB_NEXT_VLD                    BIT(1)*//* USB HIF doesn't use this field. */
+/*#define TX_DESC_USB_TX_BURST                    BIT(2)*//* USB TX Burst is defined in DW1[20] */
 #define TX_DESC_QUEUE_INDEX_MASK                BITS(2, 6)
 #define TX_DESC_QUEUE_INDEX_OFFSET              2
 #define TX_DESC_PORT_INDEX                      BIT(7)
@@ -361,6 +361,10 @@
 /* DW 7 */
 #define TX_DESC_SPE_EXT_IDX_MASK                BITS(11, 15)
 #define TX_DESC_SPE_EXT_IDX_OFFSET              11
+#define TX_DESC_PSE_FID_MASK                    BITS(0, 13)
+#define TX_DESC_PSE_FID_OFFSET                  0
+#define TX_DESC_HW_AMSDU                        BIT(14)
+#define TX_DESC_HIF_ERR                         BIT(15)
 
 #if CFG_ENABLE_PKT_LIFETIME_PROFILE
 #define NIC_TX_TIME_THRESHOLD                       100	/* in unit of ms */
@@ -961,11 +965,13 @@ do { \
 #define HAL_MAC_TX_DESC_UNSET_TCP_UDP_CHKSUM(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->ucPortIdx_QueueIdx &= ~TX_DESC_TCP_UDP_CHKSUM_OFFLOAD)
 
+#if 0 /* USB HIF doesn't use this field. */
 #define HAL_MAC_TX_DESC_IS_USB_NEXT_VLD_ENABLED(_prHwMacTxDesc) \
 	(((_prHwMacTxDesc)->ucPortIdx_QueueIdx & TX_DESC_USB_NEXT_VLD)?TRUE:FALSE)
 #define HAL_MAC_TX_DESC_SET_USB_NEXT_VLD(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucPortIdx_QueueIdx |= TX_DESC_USB_NEXT_VLD)
 #define HAL_MAC_TX_DESC_UNSET_USB_NEXT_VLD(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->ucPortIdx_QueueIdx &= ~TX_DESC_USB_NEXT_VLD)
+#endif /* if 0 */
 
 #define HAL_MAC_TX_DESC_GET_QUEUE_INDEX(_prHwMacTxDesc) \
 	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucPortIdx_QueueIdx, TX_DESC_QUEUE_INDEX_MASK, TX_DESC_QUEUE_INDEX_OFFSET)
@@ -1348,6 +1354,14 @@ do { \
 #define HAL_MAC_TX_DESC_SET_SPE_IDX(_prHwMacTxDesc, _ucSpeIdx) \
 	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2SwTxTime), ((UINT_16)_ucSpeIdx), \
 		TX_DESC_SPE_EXT_IDX_MASK, TX_DESC_SPE_EXT_IDX_OFFSET)
+
+#define HAL_MAC_TX_DESC_IS_HW_AMSDU(_prHwMacTxDesc) (((_prHwMacTxDesc)->u2PseFid & TX_DESC_HW_AMSDU)?TRUE:FALSE)
+#define HAL_MAC_TX_DESC_SET_HW_AMSDU(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2PseFid |= TX_DESC_HW_AMSDU)
+#define HAL_MAC_TX_DESC_UNSET_HW_AMSDU(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2PseFid &= ~TX_DESC_HW_AMSDU)
+
+#define HAL_MAC_TX_DESC_IS_HIF_ERR(_prHwMacTxDesc) (((_prHwMacTxDesc)->u2PseFid & TX_DESC_HIF_ERR)?TRUE:FALSE)
+#define HAL_MAC_TX_DESC_SET_HIF_ERR(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2PseFid |= TX_DESC_HIF_ERR)
+#define HAL_MAC_TX_DESC_UNSET_HIF_ERR(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2PseFid &= ~TX_DESC_HIF_ERR)
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
