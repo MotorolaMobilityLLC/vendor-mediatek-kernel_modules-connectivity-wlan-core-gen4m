@@ -8294,6 +8294,24 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4TxDataDelayCnt = wlanCfgGetUint32(prAdapter,
 			"TxDataDelayCnt", 32);
 #endif /* CFG_SUPPORT_TX_DATA_DELAY == 1 */
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+	prWifiVar->i4ThrmCtrlTemp = wlanCfgGetInt32(
+		prAdapter, "ThrmCtrlTemp", THRM_PROT_DUTY_CTRL_TEMP);
+	prWifiVar->i4ThrmRadioOffTemp = wlanCfgGetInt32(
+		prAdapter, "ThrmRadioOffTemp", THRM_PROT_RADIO_OFF_TEMP);
+	prWifiVar->aucThrmLvTxDuty[0] = (uint8_t) wlanCfgGetInt32(
+		prAdapter, "ThrmLv0TxDuty", THRM_PROT_DEFAULT_LV0_DUTY);
+	prWifiVar->aucThrmLvTxDuty[1] = (uint8_t) wlanCfgGetInt32(
+		prAdapter, "ThrmLv1TxDuty", THRM_PROT_DEFAULT_LV1_DUTY);
+	prWifiVar->aucThrmLvTxDuty[2] = (uint8_t) wlanCfgGetInt32(
+		prAdapter, "ThrmLv2TxDuty", THRM_PROT_DEFAULT_LV2_DUTY);
+	prWifiVar->aucThrmLvTxDuty[3] = (uint8_t) wlanCfgGetInt32(
+		prAdapter, "ThrmLv3TxDuty", THRM_PROT_DEFAULT_LV3_DUTY);
+	prWifiVar->aucThrmLvTxDuty[4] = (uint8_t) wlanCfgGetInt32(
+		prAdapter, "ThrmLv4TxDuty", THRM_PROT_DEFAULT_LV4_DUTY);
+	prWifiVar->aucThrmLvTxDuty[5] = (uint8_t) wlanCfgGetInt32(
+		prAdapter, "ThrmLv5TxDuty", THRM_PROT_DEFAULT_LV5_DUTY);
+#endif
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)

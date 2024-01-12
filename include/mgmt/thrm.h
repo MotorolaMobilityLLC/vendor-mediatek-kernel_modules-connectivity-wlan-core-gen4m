@@ -6,8 +6,6 @@
 #ifndef _THRM_H
 #define _THRM_H
 
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
-
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -22,6 +20,16 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
+#define THRM_PROT_DUTY_CTRL_TEMP	110
+#define THRM_PROT_RADIO_OFF_TEMP	120
+#define THRM_PROT_RESTORE_TEMP_OFFSET	10
+
+#define THRM_PROT_DEFAULT_LV0_DUTY	100
+#define THRM_PROT_DEFAULT_LV1_DUTY	100
+#define THRM_PROT_DEFAULT_LV2_DUTY	100
+#define THRM_PROT_DEFAULT_LV3_DUTY	100
+#define THRM_PROT_DEFAULT_LV4_DUTY	100
+#define THRM_PROT_DEFAULT_LV5_DUTY	50
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -171,8 +179,9 @@ struct EXT_CMD_THERMAL_PROTECT_STATE_ACT {
 };
 
 struct THRM_PROT_CFG_CONTEXT {
-	uint8_t ucLevel;
 	uint8_t ucMode;
+	uint8_t ucLevel;
+	uint8_t ucCurrDutyCfg;
 	int32_t i4TrigTemp;
 	int32_t i4RestoreTemp;
 };
@@ -196,8 +205,8 @@ struct THRM_PROT_CFG_CONTEXT {
 *                              F U N C T I O N S
 ********************************************************************************
 */
-uint32_t thrmProtTempConfig(IN struct ADAPTER *prAdapter,
-	IN int32_t i4TrigTemp, IN int32_t i4RestoreTemp);
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+
 void thrmProtEventHandler(IN struct ADAPTER *prAdapter, IN uint8_t *prEventBuf);
 int thrmProtLvHandler(IN struct ADAPTER *prAdapter, IN uint8_t ucLevel);
 void thrmInit(IN struct ADAPTER *prAdapter);

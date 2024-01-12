@@ -3893,11 +3893,14 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 #define CMD_SET_PWR_LEVEL	"SET_PWR_LEVEL"
 #define CMD_SET_PWR_TEMP	"SET_PWR_TEMP"
+#endif
+
 #define CMD_THERMAL_PROTECT_ENABLE	"thermal_protect_enable"
 #define CMD_THERMAL_PROTECT_DISABLE	"thermal_protect_disable"
 #define CMD_THERMAL_PROTECT_DUTY_CFG	"thermal_protect_duty_cfg"
+#define CMD_THERMAL_PROTECT_INFO	"thermal_protect_info"
+#define CMD_THERMAL_PROTECT_DUTY_INFO	"thermal_protect_duty_info"
 #define CMD_THERMAL_PROTECT_STATE_ACT	"thermal_protect_state_act"
-#endif
 
 #define CMD_SET_USE_CASE	"SET_USE_CASE"
 
@@ -19272,7 +19275,6 @@ int priv_driver_support_nvram(
 	return (int32_t)u4Offset;
 }
 
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
 int priv_driver_thermal_protect_enable(IN struct net_device *prNetDev,
 		IN char *pcCommand, IN int i4TotalLen)
 {
@@ -19415,6 +19417,89 @@ int priv_driver_thermal_protect_duty_cfg(IN struct net_device *prNetDev,
 	return 1;
 }
 
+int priv_driver_thermal_protect_info(IN struct net_device *prNetDev,
+		IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	uint8_t uParse = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Ret;
+	struct EXT_CMD_THERMAL_PROTECT_INFO *ext_cmd_buf;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc != 2)
+		return 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	ext_cmd_buf = kalMemAlloc(
+			sizeof(struct EXT_CMD_THERMAL_PROTECT_INFO),
+			VIR_MEM_TYPE);
+
+	if (!ext_cmd_buf)
+		return 0;
+
+	u4Ret = kalkStrtou8(apcArgv[1], 0, &uParse);
+	ext_cmd_buf->band_idx = uParse;
+
+	ext_cmd_buf->sub_cmd_id = THERMAL_PROTECT_MECH_INFO;
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidThermalProtectAct, ext_cmd_buf,
+				sizeof(struct EXT_CMD_THERMAL_PROTECT_INFO),
+				&u4BufLen);
+
+	kalMemFree(ext_cmd_buf, VIR_MEM_TYPE,
+			sizeof(struct EXT_CMD_THERMAL_PROTECT_INFO));
+	return 1;
+}
+
+int priv_driver_thermal_protect_duty_info(IN struct net_device *prNetDev,
+		IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	uint8_t uParse = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Ret;
+	struct EXT_CMD_THERMAL_PROTECT_DUTY_INFO *ext_cmd_buf;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc %d\n", i4Argc);
+
+	if (i4Argc != 2)
+		return 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	ext_cmd_buf = kalMemAlloc(
+			sizeof(struct EXT_CMD_THERMAL_PROTECT_DUTY_INFO),
+			VIR_MEM_TYPE);
+
+	if (!ext_cmd_buf)
+		return 0;
+
+	u4Ret = kalkStrtou8(apcArgv[1], 0, &uParse);
+	ext_cmd_buf->band_idx = uParse;
+
+	ext_cmd_buf->sub_cmd_id = THERMAL_PROTECT_DUTY_INFO;
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidThermalProtectAct, ext_cmd_buf,
+			sizeof(struct EXT_CMD_THERMAL_PROTECT_DUTY_INFO),
+			&u4BufLen);
+
+	kalMemFree(ext_cmd_buf, VIR_MEM_TYPE,
+			sizeof(struct EXT_CMD_THERMAL_PROTECT_DUTY_INFO));
+	return 1;
+}
+
 int priv_driver_thermal_protect_state_act(IN struct net_device *prNetDev,
 		IN char *pcCommand, IN int i4TotalLen)
 {
@@ -19462,7 +19547,6 @@ int priv_driver_thermal_protect_state_act(IN struct net_device *prNetDev,
 			sizeof(struct EXT_CMD_THERMAL_PROTECT_STATE_ACT));
 	return 1;
 }
-#endif
 
 static int priv_driver_get_hapd_channel(
 	IN struct net_device *prNetDev,
@@ -19729,11 +19813,13 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	{CMD_SET_PWR_LEVEL, priv_driver_set_pwr_level},
 	{CMD_SET_PWR_TEMP, priv_driver_set_pwr_temp},
+#endif
 	{CMD_THERMAL_PROTECT_ENABLE, priv_driver_thermal_protect_enable},
 	{CMD_THERMAL_PROTECT_DISABLE, priv_driver_thermal_protect_disable},
+	{CMD_THERMAL_PROTECT_INFO, priv_driver_thermal_protect_info},
+	{CMD_THERMAL_PROTECT_DUTY_INFO, priv_driver_thermal_protect_duty_info},
 	{CMD_THERMAL_PROTECT_DUTY_CFG, priv_driver_thermal_protect_duty_cfg},
 	{CMD_THERMAL_PROTECT_STATE_ACT, priv_driver_thermal_protect_state_act},
-#endif
 	{CMD_SET_MDVT, priv_driver_set_mdvt},
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	{CMD_DBG_SHOW_MLD, priv_driver_dump_mld},

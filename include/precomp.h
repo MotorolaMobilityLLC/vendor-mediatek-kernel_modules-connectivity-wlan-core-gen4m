@@ -328,9 +328,7 @@
 /* Support AP Selection */
 #include "ap_selection.h"
 
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
 #include "thrm.h"
-#endif
 
 /*------------------------------------------------------------------------------
  * NVRAM structure
