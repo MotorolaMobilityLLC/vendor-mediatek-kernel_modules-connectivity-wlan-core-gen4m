@@ -2762,11 +2762,11 @@ struct UNI_CMD_FRM_IND_FROM_HOST_PARM {
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_TESTMODE_CTRL {
-    /* fix field*/
-    uint8_t aucPadding[4];
+	/* fix field*/
+	uint8_t aucPadding[4];
 
-    /* tlv */
-    uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
 	*
 	*   TAG                            | ID  | structure
 	*   -------------------------------|-----|--------------
@@ -2776,15 +2776,16 @@ struct UNI_CMD_TESTMODE_CTRL {
 
 /** testmode RF test command TLV List */
 enum ENUM_UNI_CMD_TESTMODE_CTRL_TAG {
-    UNI_CMD_TESTMODE_TAG_RF_CTRL = 0,
-    UNI_CMD_TESTMODE_TAG_NUM
+	UNI_CMD_TESTMODE_TAG_RF_CTRL = 0,
+	UNI_CMD_TESTMODE_TAG_NUM
 };
 
 /** @addtogroup UNI_CMD_ID_TESTMODE_CTRL
  * @{
  */
 /**
- * This structure is used for UNI_CMD_TESTMODE_TAG_RF_CTRL(0x00) of UNI_CMD_ID_TESTMODE_CTRL command (0x46)
+ * This structure is used for UNI_CMD_TESTMODE_TAG_RF_CTRL(0x00)
+ * of UNI_CMD_ID_TESTMODE_CTRL command (0x46)
  * to set testmode RF parameter.
  * @version Supported from ver:1.0.0.0
  *
@@ -2800,8 +2801,8 @@ enum ENUM_UNI_CMD_TESTMODE_CTRL_TAG {
  */
 /* Set testmode RF parameter cmd struct (Tag 0x00) */
 struct UNI_CMD_TESTMODE_RF_CTRL {
-    uint16_t u2Tag;
-    uint16_t u2Length;
+	uint16_t u2Tag;
+	uint16_t u2Length;
 
 	uint8_t ucAction;
 	uint8_t aucReserved[3];
@@ -2813,17 +2814,17 @@ struct UNI_CMD_TESTMODE_RF_CTRL {
 }__KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_TESTMODE_RX_STAT {
-    /* fix field*/
-    uint8_t aucPadding[4];
+	/* fix field*/
+	uint8_t aucPadding[4];
 
-    /* tlv */
-    uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
-            *
-            *   TAG                                | ID  | structure
-            *   -----------------------------------|-----|--------------
-            *   UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL | 0x8 | UNI_CMD_TESTMODE_RX_GET_STAT_ALL_T
-            */
-}__KAL_ATTRIB_PACKED__; 
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	*
+	*TAG                                 |ID |structure
+	*------------------------------------|---|--------------
+	*UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL|0x8|UNI_CMD_TESTMODE_RX_GET_STAT_ALL_T
+	*/
+}__KAL_ATTRIB_PACKED__;
 
 /** @} */
 
@@ -2837,7 +2838,8 @@ enum ENUM_UNI_CMD_TESTMODE_RX_TAG {
  * @{
  */
 /**
- * This structure is used for UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL(0x08) of UNI_CMD_ID_TESTMODE_RX_STAT command (0x32)
+ * This structure is used for UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL(0x08)
+ * of UNI_CMD_ID_TESTMODE_RX_STAT command (0x32)
  * to set user of band.
  * @version Supported from ver:1.0.0.0
  *
@@ -2848,10 +2850,10 @@ enum ENUM_UNI_CMD_TESTMODE_RX_TAG {
  */
 /* Get rx info all cmd struct (Tag 0x08) */
 struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL {
-    uint16_t u2Tag;
-    uint16_t u2Length;
-    uint8_t u1DbdcIdx;
-    uint8_t aucReserved[3];
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t u1DbdcIdx;
+	uint8_t aucReserved[3];
 }__KAL_ATTRIB_PACKED__;
 /** @} */
 
@@ -3921,40 +3923,40 @@ struct UNI_EVENT_UPDATE_COEX_PHYRATE
  *     This event is for testmode RF test. <br/>
  */
 /**
- * This structure is used for UNI_EVENT_ID_TESTMODE_CTRL event (0x46) for testmode RF test
+ * This structure is used for UNI_EVENT_ID_TESTMODE_CTRL event (0x46)
+ * for testmode RF test
  * @version Supported from ver:1.0.0.0
  *
  * @param[in] ucReserved       Reserved
  * @param[in] aucTlvBuffer     TLVs
  *
  */
-struct UNI_EVENT_TESTMODE_CTRL
-{
-    /*fix field*/
-    uint8_t au1Reserved[4];
+struct UNI_EVENT_TESTMODE_CTRL {
+	/*fix field*/
+	uint8_t au1Reserved[4];
 
-    /*tlv */
-    uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
-        *
-        *   TAG                          | ID  | structure
-        *   -----------------------------|-----|--------------
-        *   UNI_EVENT_RF_TEST_RESULT_TAG     | 0x0 | UNI_EVENT_TESTMODE_CTRL
-        */
+	/*tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	*
+	*   TAG                          | ID  | structure
+	*   -----------------------------|-----|--------------
+	*   UNI_EVENT_RF_TEST_RESULT_TAG | 0x0 | UNI_EVENT_TESTMODE_CTRL
+	*/
 } __KAL_ATTRIB_PACKED__;
 /** @} */
 
 /* testmode RF test event tag */
-enum UNI_EVENT_TESTMODE_CTRL_TAG
-{
-    UNI_EVENT_RF_TEST_RESULT_TAG,
-    UNI_EVENT_TESTMODE_CTRL_NUM
+enum UNI_EVENT_TESTMODE_CTRL_TAG {
+	UNI_EVENT_RF_TEST_RESULT_TAG,
+	UNI_EVENT_TESTMODE_CTRL_NUM
 };
 
 /** @addtogroup UNI_EVENT_ID_TESTMODE_CTRL
  * @{
  */
 /**
- * This structure is used for UNI_EVENT_RF_TEST_RESULT tag(0x0) of UNI_EVENT_ID_TESTMODE_CTRL event (0x46)
+ * This structure is used for UNI_EVENT_RF_TEST_RESULT tag(0x0) of
+ * UNI_EVENT_ID_TESTMODE_CTRL event (0x46)
  * to report testmode RF status.
  * @version Supported from ver:1.0.0.0
  *
@@ -3963,8 +3965,7 @@ enum UNI_EVENT_TESTMODE_CTRL_TAG
  * @param[in] aucBuffer            Icap , recal event
  */
 /* Testmode RF status (Tag0) */
-struct UNI_EVENT_RF_TEST_RESULT
-{
+struct UNI_EVENT_RF_TEST_RESULT {
     uint16_t u2Tag;
     uint16_t u2Length;
 
@@ -3980,39 +3981,40 @@ struct UNI_EVENT_RF_TEST_RESULT
  *     This event is for testmode rx statistic related operation. <br/>
  */
 /**
- * This structure is used for UNI_EVENT_ID_TESTMODE_RX_STAT_INFO event (0x32) for testmode rx statistic related operation
+ * This structure is used for UNI_EVENT_ID_TESTMODE_RX_STAT_INFO event (0x32)
+ * for testmode rx statistic related operation
  * @version Supported from ver:1.0.0.0
  *
  * @param[in] ucReserved       Reserved
  * @param[in] aucTlvBuffer     TLVs
  *
  */
-struct UNI_EVENT_TESTMODE_RX_STAT
-{
-    /* fix field */
-    uint8_t au1Reserved[4];
+struct UNI_EVENT_TESTMODE_RX_STAT {
+	/* fix field */
+	uint8_t au1Reserved[4];
 
-    /* tlv */
-    uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
-        *
-        *   TAG                                     | ID  | structure
-        *   ----------------------------------------|-----|--------------
-        *   UNI_EVENT_TESTMODE_RX_STAT_TAG_GET_ALL  | 0x6 | UNI_EVENT_TESTMODE_RX_STAT_ALL
-        */
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	*
+	* TAG                                   |ID |structure
+	* --------------------------------------|---|-------------
+	* UNI_EVENT_TESTMODE_RX_STAT_TAG_GET_ALL|0x6|UNI_EVENT_TESTMODE_RX_STAT_ALL
+	*/
 } __KAL_ATTRIB_PACKED__;
 /** @} */
 
 /* testmode rx statistic event tag */
 enum UNI_EVENT_TESTMODE_RX_STAT_TAG {
 	UNI_EVENT_TESTMODE_RX_STAT_TAG_GET_ALL = 0x6,
-    UNI_EVENT_TESTMODE_RX_STAT_TAG_NUM
+	UNI_EVENT_TESTMODE_RX_STAT_TAG_NUM
 };
 
 /** @addtogroup UNI_EVENT_ID_TESTMODE_RX_STAT_ALL
  * @{
  */
 /**
- * This structure is used for UNI_EVENT_TESTMODE_RX_STAT_TAG_GET_ALL(0x06) of UNI_EVENT_ID_TESTMODE_RX_STAT_INFO command (0x32)
+ * This structure is used for UNI_EVENT_TESTMODE_RX_STAT_TAG_GET_ALL(0x06)
+ * of UNI_EVENT_ID_TESTMODE_RX_STAT_INFO command (0x32)
  * to update common part of testmode rx statistic related information.
  * @version Supported from ver:1.0.0.0
  *
@@ -4025,9 +4027,9 @@ enum UNI_EVENT_TESTMODE_RX_STAT_TAG {
 #define UNI_EVENT_TESTMODE_RX_STAT_ALL_ITEM	76
 
 struct UNI_EVENT_TESTMODE_STAT_ALL {
-    uint16_t u2Tag;
-    uint16_t u2Length;   
-    uint32_t u4Buffer[UNI_EVENT_TESTMODE_RX_STAT_ALL_ITEM];
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint32_t u4Buffer[UNI_EVENT_TESTMODE_RX_STAT_ALL_ITEM];
 } __KAL_ATTRIB_PACKED__;
 
 /*******************************************************************************

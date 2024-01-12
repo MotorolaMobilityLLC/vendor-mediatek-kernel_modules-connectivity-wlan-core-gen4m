@@ -4451,14 +4451,16 @@ uint32_t nicUniCmdTestmodeCtrl(struct ADAPTER *ad,
 			break;
 
 		case CMD_TEST_CTRL_ACT_SET_AT:
-			cmd->ucAction = CMD_TEST_CTRL_ACT_SET_AT_ENG; /* convert for unify cmd */
+			/* convert for unify cmd */
+			cmd->ucAction = CMD_TEST_CTRL_ACT_SET_AT_ENG;
 			entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_TESTMODE_CTRL,
 					max_cmd_len, nicUniCmdEventSetCommon,
 					nicUniCmdTimeoutCommon);
 			break;
 
 		case CMD_TEST_CTRL_ACT_GET_AT:
-			cmd->ucAction = CMD_TEST_CTRL_ACT_GET_AT_ENG; /* convert for unify cmd */
+			/* convert for unify cmd */
+			cmd->ucAction = CMD_TEST_CTRL_ACT_GET_AT_ENG;
 			entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_TESTMODE_CTRL,
 					max_cmd_len, nicUniEventQueryRfTestATInfo,
 					nicUniCmdTimeoutCommon);
