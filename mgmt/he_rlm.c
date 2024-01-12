@@ -1666,6 +1666,7 @@ uint8_t heRlmRecHeSRParams(
 void heRlmInitHeHtcACtrlOMAndUPH(
 	struct ADAPTER *prAdapter)
 {
+	prAdapter->u4HeHtcOM = 0;
 	HE_SET_HTC_HE_VARIANT(prAdapter->u4HeHtcOM);
 	HE_SET_HTC_1ST_A_CTRL_ID(prAdapter->u4HeHtcOM, HTC_HE_A_CTRL_OM);
 	HE_SET_HTC_HE_OM_RX_NSS(prAdapter->u4HeHtcOM, 1);
