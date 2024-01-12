@@ -227,6 +227,9 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 		uint16_t u2PacketLen, struct STA_RECORD *prStaRec,
 		uint8_t ucBssIndex);
 
+int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
+	char *pcCommand, int i4TotalLen);
+
 void mldBssDump(struct ADAPTER *prAdapter);
 
 void mldBssUpdateMldAddrByMainBss(
@@ -271,6 +274,7 @@ void mldStarecUnregister(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStarec);
 
 int8_t mldStarecAlloc(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
 	struct MLD_STA_RECORD **pprMldStarec,
 	uint8_t *aucMacAddr);
 
@@ -281,6 +285,7 @@ struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
 
 struct MLD_STA_RECORD *mldStarecGetByAddr(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
 	uint8_t aucMacAddr[]);
 
 int8_t mldStarecSetSetupIdx(struct ADAPTER *prAdapter,

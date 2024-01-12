@@ -840,6 +840,7 @@ struct STA_RECORD {
 struct MLD_STA_RECORD {
 	u_int8_t fgIsInUse;
 	uint8_t ucIdx;
+	uint8_t ucGroupMldId; /* id from mld bss */
 	uint8_t aucPeerMldAddr[MAC_ADDR_LEN];
 	uint16_t u2PrimaryMldId;
 	uint16_t u2SecondMldId;
@@ -1063,6 +1064,11 @@ struct STA_RECORD *cnmGetStaRecByAddress(struct ADAPTER *prAdapter,
 
 void cnmStaRecChangeState(IN struct ADAPTER *prAdapter,
 	IN OUT struct STA_RECORD *prStaRec, IN uint8_t ucNewState);
+
+int cnmShowBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
+	char *pcCommand, int i4TotalLen);
+int cnmShowStaRec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
+	char *pcCommand, int i4TotalLen);
 
 void cnmDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx);
 void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx);

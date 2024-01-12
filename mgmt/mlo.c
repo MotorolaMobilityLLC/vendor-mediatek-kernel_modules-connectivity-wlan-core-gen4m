@@ -277,7 +277,7 @@ uint8_t mldGenerateExternalAuthIE(
 		/* Allocate a MSDU_INFO_T */
 		prMsduInfo = cnmMgtPktAlloc(prAdapter, MAX_LEN_OF_MLIE);
 		if (prMsduInfo == NULL) {
-			DBGLOG(SAA, WARN,
+			DBGLOG(ML, WARN,
 			       "No PKT_INFO_T for sending external auth.\n");
 			return 0;
 		}
@@ -502,17 +502,18 @@ struct IE_MULTI_LINK_CONTROL *mldGenerateBasicCommonInfo(
 	COPY_MAC_ADDR(cp, mld_bssinfo->aucOwnMldAddr);
 	cp += MAC_ADDR_LEN;
 
-	DBGLOG(ML, INFO, "\tML common Info MAC addr = "MACSTR"",
+	DBGLOG(ML, TRACE, "\tML common Info MAC addr = "MACSTR"",
 		MAC2STR(mld_bssinfo->aucOwnMldAddr));
 
 	if (BE_IS_ML_CTRL_PRESENCE_LINK_ID(common->u2Ctrl)) {
-		DBGLOG(ML, INFO, "\tML common Info LinkID = %d ("MACSTR")",
+		DBGLOG(ML, TRACE, "\tML common Info LinkID = %d ("MACSTR")",
 			bss->ucLinkIndex, MAC2STR(bss->aucOwnMacAddr));
 		*cp++ = bss->ucLinkIndex;
 	}
 
 	if (BE_IS_ML_CTRL_PRESENCE_BSS_PARA_CHANGE_COUNT(common->u2Ctrl)) {
-		DBGLOG(ML, INFO, "\tML common Info BssParaChangeCount = %d", 0);
+		DBGLOG(ML, TRACE,
+			"\tML common Info BssParaChangeCount = %d", 0);
 		*cp++ = 0;
 	}
 
@@ -522,7 +523,7 @@ struct IE_MULTI_LINK_CONTROL *mldGenerateBasicCommonInfo(
 		 * frames minus 1. For an AP MLD, set to the number of
 		 * affiliated APs minus 1
 		 */
-		DBGLOG(ML, INFO, "\tML common Info MLD capa = 0x%x",
+		DBGLOG(ML, TRACE, "\tML common Info MLD capa = 0x%x",
 			prAdapter->rWifiVar.ucMldLinkMax - 1);
 		WLAN_SET_FIELD_16(cp, prAdapter->rWifiVar.ucMldLinkMax - 1);
 		cp += 2;
@@ -533,8 +534,8 @@ struct IE_MULTI_LINK_CONTROL *mldGenerateBasicCommonInfo(
 	common->ucLength = cp - (uint8_t *) common - ELEM_HDR_LEN;
 	prMsduInfo->u2FrameLength += IE_SIZE(common);
 
-	DBGLOG(ML, INFO, "Bss%d dump ML common IE\n", bss->ucBssIndex);
-	DBGLOG_MEM8(ML, INFO, common, IE_SIZE(common));
+	DBGLOG(ML, LOUD, "Bss%d dump ML common IE\n", bss->ucBssIndex);
+	DBGLOG_MEM8(ML, LOUD, common, IE_SIZE(common));
 
 	return common;
 }
@@ -563,8 +564,8 @@ void mldGenerateMlProbeReqIE(uint8_t *pucIE,
 
 	*u4IELength += IE_SIZE(common);
 
-	DBGLOG(ML, INFO, "Dump ML probe req IE\n");
-	DBGLOG_MEM8(ML, INFO, common, IE_SIZE(common));
+	DBGLOG(ML, LOUD, "Dump ML probe req IE\n");
+	DBGLOG_MEM8(ML, LOUD, common, IE_SIZE(common));
 }
 
 uint8_t mldIsMlProbeReq(const uint8_t *pucIE)
@@ -576,8 +577,8 @@ uint8_t mldIsMlProbeReq(const uint8_t *pucIE)
 
 	common = (struct IE_MULTI_LINK_CONTROL *)pucIE;
 
-	DBGLOG(ML, INFO, "Dump ML probe req IE\n");
-	DBGLOG_MEM8(ML, INFO, common, IE_SIZE(common));
+	DBGLOG(ML, LOUD, "Dump ML probe req IE\n");
+	DBGLOG_MEM8(ML, LOUD, common, IE_SIZE(common));
 
 	return BE_GET_ML_CTRL_TYPE(common->u2Ctrl) == ML_ELEMENT_TYPE_PROBE_REQ;
 }
@@ -605,17 +606,17 @@ void mldDumpIE(uint8_t *pucBuf, uint16_t u2IEsBufLen, uint8_t *pucDesc)
 	uint16_t u2Offset = 0;
 
 	if (pucDesc)
-		DBGLOG(ML, INFO, "%s  === BEGIN ===\n", pucDesc);
+		DBGLOG(ML, LOUD, "%s  === BEGIN ===\n", pucDesc);
 
 	IE_FOR_EACH(pucBuf, u2IEsBufLen, u2Offset) {
-		DBGLOG(ML, INFO, "IE(%d, %d) size=%d",
+		DBGLOG(ML, LOUD, "IE(%d, %d) size=%d",
 			IE_ID(pucBuf), IE_ID(pucBuf) == ELEM_ID_RESERVED ?
 			IE_ID_EXT(pucBuf) : 0, IE_SIZE(pucBuf));
-		dumpMemory8(pucBuf, IE_SIZE(pucBuf));
+		DBGLOG_MEM8(ML, LOUD, pucBuf, IE_SIZE(pucBuf));
 	}
 
 	if (pucDesc)
-		DBGLOG(ML, INFO, "%s  === END ===\n", pucDesc);
+		DBGLOG(ML, LOUD, "%s  === END ===\n", pucDesc);
 }
 
 uint8_t mldIsValidForCompleteProfile(
@@ -713,31 +714,31 @@ void mldGenerateBasicCompleteProfile(
 	cp = sta_ctrl->aucStaInfo;
 	cp++; /* reserved for sta info length */
 
-	DBGLOG(ML, INFO, "\tLinkID=%d Ctrl=0x%x(COMPLETE)", link, control);
+	DBGLOG(ML, TRACE, "\tLinkID=%d Ctrl=0x%x(COMPLETE)", link, control);
 
 	if (BE_IS_ML_STA_CTRL_PRESENCE_MAC(sta_ctrl->u2StaCtrl)) {
-		DBGLOG(ML, INFO, "\tLinkID=%d, LinkAddr="MACSTR"",
+		DBGLOG(ML, TRACE, "\tLinkID=%d, LinkAddr="MACSTR"",
 			link, MAC2STR(bss->aucOwnMacAddr));
 		COPY_MAC_ADDR(cp, bss->aucOwnMacAddr);
 		cp += MAC_ADDR_LEN;
 	}
 
 	if (BE_IS_ML_STA_CTRL_PRESENCE_BCN_INTV(sta_ctrl->u2StaCtrl)) {
-		DBGLOG(ML, INFO, "\tLinkID=%d, BCN_INTV = %d",
+		DBGLOG(ML, TRACE, "\tLinkID=%d, BCN_INTV = %d",
 			link, bss->u2BeaconInterval);
 		WLAN_SET_FIELD_16(cp, bss->u2BeaconInterval);
 		cp += 2;
 	}
 
 	if (BE_IS_ML_STA_CTRL_PRESENCE_DTIM(sta_ctrl->u2StaCtrl)) {
-		DBGLOG(ML, INFO, "\tLinkID=%d, DTIM_INFO = 0x%x%x",
+		DBGLOG(ML, TRACE, "\tLinkID=%d, DTIM_INFO = 0x%x%x",
 			link, bss->ucDTIMCount, bss->ucDTIMPeriod);
 		*cp++ = bss->ucDTIMCount;
 		*cp++ = bss->ucDTIMPeriod;
 	}
 
 	if (BE_IS_ML_STA_CTRL_PRESENCE_NSTR(sta_ctrl->u2StaCtrl)) {
-		DBGLOG(ML, INFO, "\tLinkID=%d, NSTR=0x%x", link, 0);
+		DBGLOG(ML, TRACE, "\tLinkID=%d, NSTR=0x%x", link, 0);
 		/* 1 octet for nstr bmp */
 		*cp++ = 0;
 	}
@@ -755,14 +756,14 @@ void mldGenerateBasicCompleteProfile(
 		cap = bss->u2CapInfo;
 	else
 		cap = assocBuildCapabilityInfo(prAdapter, starec);
-	DBGLOG(ML, INFO, "\tLinkID=%d, CAP_INFO = 0x%x", link, cap);
+	DBGLOG(ML, TRACE, "\tLinkID=%d, CAP_INFO = 0x%x", link, cap);
 	WLAN_SET_FIELD_16(cp, cap);
 	cp += 2;
 
 	/* Fill the Status Code field */
 	if (fctrl == MAC_FRAME_ASSOC_RSP || fctrl == MAC_FRAME_REASSOC_RSP) {
 		if (starec) {
-			DBGLOG(ML, INFO, "\tLinkID=%d, Status = 0x%x",
+			DBGLOG(ML, TRACE, "\tLinkID=%d, Status = 0x%x",
 					link, starec->u2StatusCode);
 			/* Fill the Status Code field. */
 			WLAN_SET_FIELD_16(cp, starec->u2StatusCode);
@@ -785,7 +786,7 @@ void mldGenerateBasicCompleteProfile(
 	mldDumpIE((uint8_t *)start, u4PrimaryLength, "Primary");
 	mldDumpIE((uint8_t *)pucBuf, u2IEsBufLen, "Secondary");
 
-	DBGLOG(ML, INFO, "Bss%d compose ML Link%d profile\n", ucBssIndex, link);
+	DBGLOG(ML, LOUD, "Bss%d compose ML Link%d profile\n", ucBssIndex, link);
 	IE_FOR_EACH(pucBuf, u2IEsBufLen, u2Offset) {
 		if (mldDupStaProfileSkipIE(pucBuf))
 			continue;
@@ -819,7 +820,7 @@ void mldGenerateBasicCompleteProfile(
 			/* primary not found, copy it */
 			kalMemCopy(cp, pucBuf, IE_SIZE(pucBuf));
 			cp += IE_SIZE(pucBuf);
-			DBGLOG_MEM8(ML, INFO, pucBuf, IE_SIZE(pucBuf));
+			DBGLOG_MEM8(ML, LOUD, pucBuf, IE_SIZE(pucBuf));
 		} else if (IE_ID(pucBuf) != ELEM_ID_VENDOR) {
 			/* found same ie, move to next primary */
 			start = primary + IE_SIZE(primary);
@@ -874,9 +875,9 @@ NONIH:
 		*cp++ = nexid;
 		for (i = 0; i < nexid; i++)
 			*cp++ = nexid_arr[i];
-		DBGLOG(ML, INFO, "Bss%d compose ML Link%d non inheritance IE\n",
+		DBGLOG(ML, LOUD, "Bss%d compose ML Link%d non inheritance IE\n",
 			ucBssIndex, link);
-		DBGLOG_MEM8(ML, INFO, non_inh, IE_SIZE(non_inh));
+		DBGLOG_MEM8(ML, LOUD, non_inh, IE_SIZE(non_inh));
 	}
 
 DONE:
@@ -884,8 +885,8 @@ DONE:
 	prMultiLinkControlIE->ucLength += cp - pos;
 	prMsduInfo->u2FrameLength += cp - pos;
 
-	DBGLOG(ML, INFO, "Bss%d dump ML Link%d IE\n", ucBssIndex, link);
-	DBGLOG_MEM8(ML, INFO, sta_ctrl, IE_SIZE(sta_ctrl));
+	DBGLOG(ML, LOUD, "Bss%d dump ML Link%d IE\n", ucBssIndex, link);
+	DBGLOG_MEM8(ML, LOUD, sta_ctrl, IE_SIZE(sta_ctrl));
 }
 
 uint32_t mldCalculateRnrIELen(
@@ -989,9 +990,9 @@ void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
 	uint8_t show_info = pucDesc != NULL;
 
 	if (show_info) {
-		DBGLOG(ML, INFO, "[%s] ML IE, IE_LEN = %d\n",
+		DBGLOG(ML, TRACE, "[%s] ML IE, IE_LEN = %d\n",
 			pucDesc, IE_LEN(pucIE));
-		DBGLOG_MEM8(ML, INFO, (uint8_t *)pucIE, IE_SIZE(pucIE));
+		DBGLOG_MEM8(ML, TRACE, (uint8_t *)pucIE, IE_SIZE(pucIE));
 	}
 
 	end = pucIE + IE_SIZE(pucIE);
@@ -1015,20 +1016,20 @@ void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
 	prMlInfo->ucCommonInfoLength = *pos++;
 
 	if (show_info)
-		DBGLOG(ML, INFO, "\tML common Info Len = %d",
+		DBGLOG(ML, TRACE, "\tML common Info Len = %d",
 			prMlInfo->ucCommonInfoLength);
 
 	/* Check ML control that which common info exist */
 	COPY_MAC_ADDR(prMlInfo->aucMldAddr, pos);
 	if (show_info)
-		DBGLOG(ML, INFO, "\tML common Info MAC addr = "MACSTR"",
+		DBGLOG(ML, TRACE, "\tML common Info MAC addr = "MACSTR"",
 			MAC2STR(prMlInfo->aucMldAddr));
 	pos += MAC_ADDR_LEN;
 
 	if (ucMlCtrlPreBmp & ML_CTRL_LINK_ID_INFO_PRESENT) {
 		prMlInfo->ucLinkId = *pos;
 		if (show_info)
-			DBGLOG(ML, INFO,
+			DBGLOG(ML, TRACE,
 				"\tML common Info LinkID = %d ("MACSTR")",
 				*pos, MAC2STR(paucBssId));
 		pos += 1;
@@ -1036,7 +1037,7 @@ void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
 	if (ucMlCtrlPreBmp & ML_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT) {
 		prMlInfo->ucBssParaChangeCount = *pos;
 		if (show_info)
-			DBGLOG(ML, INFO,
+			DBGLOG(ML, TRACE,
 				"\tML common Info BssParaChangeCount = %d",
 				*pos);
 		pos += 1;
@@ -1045,7 +1046,7 @@ void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
 		/* todo: handle 2byte MEDIUM_SYN_DELAY_INFO_PRESENT */
  		kalMemCopy(&prMlInfo->u2MediumSynDelayInfo, pos, 2);
 		if (show_info)
-			DBGLOG(ML, INFO,
+			DBGLOG(ML, TRACE,
 				"\tML common Info MediumSynDelayInfo = 0x%x",
 				prMlInfo->u2MediumSynDelayInfo);
 		pos += 2;
@@ -1053,14 +1054,14 @@ void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
 	if (ucMlCtrlPreBmp & ML_CTRL_EML_CAPA_PRESENT) {
 		kalMemCopy(&prMlInfo->u2EmlCap, pos, 2);
 		if (show_info)
-			DBGLOG(ML, INFO, "\tML common Info EML capa = 0x%x",
+			DBGLOG(ML, TRACE, "\tML common Info EML capa = 0x%x",
 				prMlInfo->u2EmlCap);
 		pos += 2;
 	}
 	if (ucMlCtrlPreBmp & ML_CTRL_MLD_CAPA_PRESENT) {
 		kalMemCopy(&prMlInfo->u2MldCap, pos, 2);
 		if (show_info)
-			DBGLOG(ML, INFO, "\tML common Info MLD capa = 0x%x",
+			DBGLOG(ML, TRACE, "\tML common Info MLD capa = 0x%x",
 				prMlInfo->u2MldCap);
 		pos += 2;
 	}
@@ -1106,7 +1107,7 @@ void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
 			u2StaControl & ML_STA_CTRL_COMPLETE_PROFILE;
 
 		if (show_info)
-			DBGLOG(ML, INFO, "\tLinkID=%d Ctrl=0x%x(%s) Total=%d",
+			DBGLOG(ML, TRACE, "\tLinkID=%d Ctrl=0x%x(%s) Total=%d",
 				ucLinkId, u2StaControl,
 				prStaProfile->ucComplete ?
 				"COMPLETE" : "PARTIAL",
@@ -1118,7 +1119,7 @@ void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
 		if (u2StaControl & ML_STA_CTRL_MAC_ADDR_PRESENT) {
  			COPY_MAC_ADDR(prStaProfile->aucLinkAddr, pos);
 			if (show_info)
-				DBGLOG(ML, INFO,
+				DBGLOG(ML, TRACE,
 					"\tLinkID=%d, LinkAddr="MACSTR"",
 					ucLinkId,
 					MAC2STR(prStaProfile->aucLinkAddr));
@@ -1127,7 +1128,7 @@ void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
 		if (u2StaControl & ML_STA_CTRL_BCN_INTV_PRESENT) {
 			kalMemCopy(&prStaProfile->u2BcnIntv, pos, 2);
 			if (show_info)
-				DBGLOG(ML, INFO,
+				DBGLOG(ML, TRACE,
 					"\tLinkID=%d, BCN_INTV = %d",
 					ucLinkId, prStaProfile->u2BcnIntv);
 			pos += 2;
@@ -1135,7 +1136,7 @@ void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
 		if (u2StaControl & ML_STA_CTRL_DTIM_INFO_PRESENT) {
 			kalMemCopy(&prStaProfile->u2DtimInfo, pos, 2);
 			if (show_info)
-				DBGLOG(ML, INFO,
+				DBGLOG(ML, TRACE,
 					"\tLinkID=%d, DTIM_INFO = 0x%x",
 					ucLinkId, prStaProfile->u2DtimInfo);
 			pos += 2;
@@ -1153,14 +1154,14 @@ void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
 				ML_STA_CTRL_NSTR_BMP_SIZE_SHIFT) == 0) {
 				prStaProfile->u2NstrBmp = *pos;
 				if (show_info)
-					DBGLOG(ML, INFO,
+					DBGLOG(ML, TRACE,
 					     "\tLinkID=%d, NSTR_BMP0=0x%x",
 					     ucLinkId, prStaProfile->u2NstrBmp);
 				pos += 1;
 			} else {
 				kalMemCopy(&prStaProfile->u2NstrBmp, pos, 2);
 				if (show_info)
-					DBGLOG(ML, INFO,
+					DBGLOG(ML, TRACE,
 					     "\tLinkID=%d, NSTR_BMP1=0x%x",
 					     ucLinkId, prStaProfile->u2NstrBmp);
 				pos += 2;
@@ -1197,7 +1198,7 @@ void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
 		if (prStaProfile->ucComplete) {
 			WLAN_GET_FIELD_16(pos, &prStaProfile->u2CapInfo);
 			if (show_info)
-				DBGLOG(ML, INFO,
+				DBGLOG(ML, TRACE,
 					"\tLinkID=%d, CAP_INFO = 0x%x",
 					ucLinkId, prStaProfile->u2CapInfo);
 			pos += 2;
@@ -1207,7 +1208,7 @@ void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
 				WLAN_GET_FIELD_16(pos,
 					&prStaProfile->u2StatusCode);
 				if (show_info)
-					DBGLOG(ML, INFO,
+					DBGLOG(ML, TRACE,
 					  "\tLinkID=%d, Status = 0x%x",
 					  ucLinkId, prStaProfile->u2StatusCode);
 				pos += 2;
@@ -1219,7 +1220,7 @@ void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
 		prStaProfile->ucIEbufLen = 0;
 		if (tail - pos < sizeof(prStaProfile->aucIEbuf)) {
 			if (show_info)
-				DBGLOG(ML, INFO, "\tcopy sta profile len=%d\n",
+				DBGLOG(ML, TRACE, "\tcopy sta profile len=%d\n",
 					tail - pos);
 			kalMemCopy(prStaProfile->aucIEbuf,
 				pos, tail - pos);
@@ -1284,7 +1285,7 @@ uint8_t mldNonInheritElement(uint8_t *ie, struct IE_NON_INHERITANCE *ninh_elem)
 	if (IE_ID(ie) == ELEM_ID_RESERVED) {
 		for (i = 0; i < ninh_ext_num; i++) {
 			if (ninh_ext[i] == IE_ID_EXT(ie)) {
-				DBGLOG(ML, INFO, "IE(%d, %d) non inh\n",
+				DBGLOG(ML, LOUD, "IE(%d, %d) non inh\n",
 					IE_ID(ie), IE_ID_EXT(ie));
 				return TRUE;
 			}
@@ -1292,7 +1293,7 @@ uint8_t mldNonInheritElement(uint8_t *ie, struct IE_NON_INHERITANCE *ninh_elem)
 	} else {
 		for (i = 0; i < ninh_num; i++) {
 			if (ninh[i] == IE_ID(ie)) {
-				DBGLOG(ML, INFO, "IE(%d, %d) non inh\n",
+				DBGLOG(ML, LOUD, "IE(%d, %d) non inh\n",
 					IE_ID(ie), 0);
 				return TRUE;
 			}
@@ -1317,7 +1318,7 @@ int mldParseProfile(uint8_t *ie, uint32_t len, uint8_t *prof,
 
 	prof_ies = kalMemAlloc(sizeof(uint8_t *) * max_num, VIR_MEM_TYPE);
 	if (!prof_ies) {
-		DBGLOG(ML, INFO, "no mem\n");
+		DBGLOG(ML, WARN, "no mem\n");
 		ret = -1;
 		goto done;
 	}
@@ -1335,8 +1336,6 @@ int mldParseProfile(uint8_t *ie, uint32_t len, uint8_t *prof,
 		case ELEM_ID_RESERVED:
 			if (IE_ID_EXT(prof) == ELEM_EXT_ID_NON_INHERITANCE) {
 				ninh = NON_INHERITANCE_IE(prof);
-				DBGLOG(ML, INFO, "Non Inheritance IE\n");
-				dumpMemory8(prof, IE_SIZE(prof));
 				break;
 			}
 			/* fallthrough */
@@ -1349,7 +1348,7 @@ int mldParseProfile(uint8_t *ie, uint32_t len, uint8_t *prof,
 	/*not a valid profile*/
 	if (fgParseMbss &&
 	   (cap == NULL || idx == NULL || idx->ucBSSIDIndex == 0)) {
-		DBGLOG(ML, INFO, "mbss but with cap=%p, idx=%p\n", cap, idx);
+		DBGLOG(ML, WARN, "mbss but with cap=%p, idx=%p\n", cap, idx);
 		ret = -1;
 	        goto done;
 	}
@@ -1486,7 +1485,7 @@ int mldDupMbssNonTxProfileImpl(struct ADAPTER *prAdapter,
 	new_bssid[5] |= (lsb + idx->ucBSSIDIndex) &
 	              ((1 << mbss->ucMaxBSSIDIndicator) - 1);
 
-	DBGLOG(ML, INFO, "MBSS new mac: "MACSTR "\n", MAC2STR(new_bssid));
+	DBGLOG(ML, TRACE, "MBSS new mac: "MACSTR "\n", MAC2STR(new_bssid));
 
 	/* compose RXD, mac header, payload(fixed field)*/
 	nicRxCopyRFB(prAdapter, prDst, prSrc);
@@ -1501,7 +1500,7 @@ int mldDupMbssNonTxProfileImpl(struct ADAPTER *prAdapter,
 	for (i = 0; i < ie_count; i++) {
 		len = IE_SIZE(ies[i]);
 		if (pos + padding + len > end) {
-			DBGLOG(ML, INFO, "no rx packet space left");
+			DBGLOG(ML, WARN, "no rx packet space left");
 			break;
 		}
 
@@ -1590,8 +1589,8 @@ uint8_t *mldHandleRnrMlParam(IN uint8_t *ie,
 				TBTT_INFO_HDR_LENGTH)
 				>> TBTT_INFO_HDR_LENGTH_OFFSET;
 
-	DBGLOG(ML, INFO, "dump RNR AP info field\n");
-	dumpMemory8(ie, 4 + u2TbttInfoCount * u2TbttInfoLength);
+	DBGLOG(ML, LOUD, "dump RNR AP info field\n");
+	DBGLOG_MEM8(ML, LOUD, ie, 4 + u2TbttInfoCount * u2TbttInfoLength);
 
 	for (i = 0; i < u2TbttInfoCount; i++) {
 		j = i * u2TbttInfoLength;
@@ -1613,7 +1612,7 @@ uint8_t *mldHandleRnrMlParam(IN uint8_t *ie,
 				continue;
 		}
 
-		DBGLOG(ML, INFO, "RnrIe[%x][" MACSTR "]\n", i,
+		DBGLOG(ML, LOUD, "RnrIe[%x][" MACSTR "]\n", i,
 			MAC2STR(&prNeighborAPInfoField->aucTbttInfoSet[j + 1]));
 
 		/* Directly copy 4 bytes content, but MLD param is only 3 bytes
@@ -1629,7 +1628,7 @@ uint8_t *mldHandleRnrMlParam(IN uint8_t *ie,
 			(u4MldParam & MLD_PARAM_BSS_PARAM_CHANGE_COUNT_MASK) >>
 			MLD_PARAM_BSS_PARAM_CHANGE_COUNT_SHIFT;
 
-		DBGLOG(ML, INFO,
+		DBGLOG(ML, TRACE,
 			"MldId=%d, MldLinkId=%d, BssParChangeCount=%d\n",
 			ucMldId, ucMldLinkId, ucBssParamChangeCount);
 
@@ -1670,7 +1669,7 @@ uint8_t *mldHandleRnrMlParam(IN uint8_t *ie,
 
 		prProfile->rChnlInfo.u4CenterFreq1 = 0;
 		prProfile->rChnlInfo.u4CenterFreq2 = 0;
-		DBGLOG(ML, INFO,
+		DBGLOG(ML, TRACE,
 			"link_id:%d, op:%d, rfband:%d, ch:%d, bw:%d, s1:%d, s2:%d\n",
 			prProfile->ucLinkId,
 			prNeighborAPInfoField->ucOpClass,
@@ -1736,17 +1735,17 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
 		prDst->prStaRec = prStaRec;
 	}
 
-	DBGLOG(ML, INFO, "header total %d ies\n", ie_count);
-	DBGLOG_MEM8(ML, INFO, pos, padding);
+	DBGLOG(ML, LOUD, "header total %d ies\n", ie_count);
+	DBGLOG_MEM8(ML, LOUD, pos, padding);
 
 	/* compose IE */
 	for (i = 0; i < ie_count; i++) {
-		DBGLOG_MEM8(ML, INFO, ies[i], IE_SIZE(ies[i]));
+		DBGLOG_MEM8(ML, LOUD, ies[i], IE_SIZE(ies[i]));
 		kalMemCopy(pos + padding, ies[i], IE_SIZE(ies[i]));
 		padding += IE_SIZE(ies[i]);
 	}
 
-	DBGLOG(ML, INFO, "total len=%d\n", padding);
+	DBGLOG(ML, LOUD, "total len=%d\n", padding);
 
 	/* copy common info for scan result, don't include per sta profile other
 	 * scanProcessBeaconAndProbeResp will enter infinite loop
@@ -1799,8 +1798,8 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
 		dst->ucLength = offset + sizeof(struct IE_MULTI_LINK_CONTROL) -
 				ELEM_HDR_LEN;
 
- 		DBGLOG(ML, INFO, "dst ml len=%d\n", IE_SIZE(dst));
-		DBGLOG_MEM8(ML, INFO, (uint8_t *)dst, IE_SIZE(dst));
+		DBGLOG(ML, LOUD, "dst ml len=%d\n", IE_SIZE(dst));
+		DBGLOG_MEM8(ML, LOUD, (uint8_t *)dst, IE_SIZE(dst));
 
 		padding += IE_SIZE(dst);
 	}
@@ -1812,7 +1811,10 @@ done:
 	prDst->ucChnlNum = prSta->rChnlInfo.ucChannelNum;
 	prDst->eRfBand = prSta->rChnlInfo.eBand;
 
-	DBGLOG(ML, INFO, "dump duplicated SwRFB, len=%d, chnl=%d, band=%d\n",
+	DBGLOG(ML, INFO,
+		"Dump duplicated SwRFB for id=%d addr="
+		MACSTR " len=%d, chnl=%d, band=%d\n",
+		prSta->ucLinkId, MAC2STR(prSta->aucLinkAddr),
 		padding, prDst->ucChnlNum, prDst->eRfBand);
 	DBGLOG_MEM8(ML, INFO, pos, padding);
 
@@ -1851,7 +1853,7 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 		mgmt->u2FrameCtrl & MASK_FRAME_TYPE, NULL);
 
 	if (info->ucLinkNum == 0) {
-		DBGLOG(ML, INFO, "beacon but no per sta profile\n");
+		DBGLOG(ML, LOUD, "no per sta profile\n");
 		return NULL;
 	}
 
@@ -1886,8 +1888,6 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 		if (!rfb)
 			break;
 
-		DBGLOG(ML, INFO, "Dup SwRfb for id=%d addr=" MACSTR "\n",
-			sta->ucLinkId, MAC2STR(sta->aucLinkAddr));
 		ret = mldDupByMlStaProfile(prAdapter, rfb, prSrc,
 			sta, NULL);
 		if (ret == 0) {
@@ -1988,6 +1988,145 @@ struct SW_RFB *mldDupAssocSwRfb(struct ADAPTER *prAdapter,
 fail:
 	nicRxReturnRFB(prAdapter, rfb);
 	return NULL;
+}
+
+int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
+	char *pcCommand, int i4TotalLen)
+{
+	int32_t i4BytesWritten = 0;
+	uint8_t i = 0, j = 0;
+
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"\nMldLinkMax:%d\nEnableMlo:%d\nNonApMlo:%d\nApMlo:%d\nApMldAddrByLink:%d\n\n",
+		prAdapter->rWifiVar.ucMldLinkMax,
+		prAdapter->rWifiVar.ucEnableMlo,
+		mldIsMloFeatureEnabled(prAdapter, FALSE),
+		mldIsMloFeatureEnabled(prAdapter, TRUE),
+		prAdapter->rWifiVar.ucApMldAddrByLink);
+
+	for (i = 0; i < ARRAY_SIZE(prAdapter->aprMldBssInfo); i++) {
+		struct MLD_BSS_INFO *prMldBssInfo;
+		struct BSS_INFO *prBssInfo;
+		struct LINK *prBssList;
+
+		prMldBssInfo = &prAdapter->aprMldBssInfo[i];
+
+		/* only dump specefic mld bssinfo */
+		if (!prMldBssInfo->fgIsInUse ||
+		    (ucIndex != MLD_GROUP_NONE &&
+		     ucIndex != prMldBssInfo->ucGroupMldId))
+			continue;
+
+		i4BytesWritten += kalSnprintf(
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"MldBssInfo[%d]:\n", i);
+
+		i4BytesWritten += kalSnprintf(
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"OM_ID/GRP_MLD_ID/OM_REMAP_ID:%u/%u/%u\n",
+			prMldBssInfo->ucOmacIdx,
+			prMldBssInfo->ucGroupMldId,
+			prMldBssInfo->ucOmRemapIdx);
+		i4BytesWritten += kalSnprintf(
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"BSS_BITMAP/OWN_MLD_ADDR:0x%x/" MACSTR "\n{\n",
+			prMldBssInfo->u4BssBitmap,
+			MAC2STR(prMldBssInfo->aucOwnMldAddr));
+
+		prBssList = &prMldBssInfo->rBssList;
+		LINK_FOR_EACH_ENTRY(prBssInfo, prBssList, rLinkEntryMld,
+		    struct BSS_INFO) {
+			cnmDumpBssInfo(prAdapter, prBssInfo->ucBssIndex);
+			i4BytesWritten += cnmShowBssInfo(prAdapter,
+				prBssInfo, pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten);
+			if (prBssInfo != LINK_PEEK_TAIL(
+				prBssList, struct BSS_INFO, rLinkEntryMld))
+				i4BytesWritten += kalSnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"\n");
+		}
+
+		i4BytesWritten += kalSnprintf(
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"}\n\n");
+	}
+
+	if (ucIndex == MLD_GROUP_NONE) {
+		i4BytesWritten += kalSnprintf(
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"Skip showing MldStaRec ...\n");
+		goto done;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(prAdapter->aprMldStarec); i++) {
+		struct MLD_STA_RECORD *prMldStarec =
+			&prAdapter->aprMldStarec[i];
+		struct STA_RECORD *prCurrStarec;
+		struct LINK *prStarecList;
+
+		/* only dump specefic mld starec */
+		if (!prMldStarec->fgIsInUse ||
+		    (ucIndex != MLD_GROUP_NONE &&
+		     ucIndex != prMldStarec->ucGroupMldId))
+			continue;
+
+		i4BytesWritten += kalSnprintf(
+		       pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		       "MldStaRec[%d]:\n", prMldStarec->ucIdx);
+
+		i4BytesWritten += kalSnprintf(
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"PRI/SEC/SETUP/PEER_MLD_ADDR:%d/%d/%d/"MACSTR"\n",
+			prMldStarec->u2PrimaryMldId,
+			prMldStarec->u2SecondMldId,
+			prMldStarec->u2SetupWlanId,
+			MAC2STR(prMldStarec->aucPeerMldAddr));
+		i4BytesWritten += kalSnprintf(
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"EML/STR:0x%02x%04x/0x%02x%04x\n",
+			*(uint8_t *)(prMldStarec->aucEmlCap + 2),
+			*(uint16_t *)(prMldStarec->aucEmlCap),
+			*(uint8_t *)(prMldStarec->aucStrBitmap + 2),
+			*(uint16_t *)(prMldStarec->aucStrBitmap));
+		i4BytesWritten += kalSnprintf(
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"RX_PKT_COUNT:\n");
+		for (j = 0; j < ARRAY_SIZE(prMldStarec->aucRxPktCnt); j++)
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"   BAND%d:0x%llx\n",
+				j, prMldStarec->aucRxPktCnt[j]);
+
+		i4BytesWritten += kalSnprintf(
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"{\n");
+
+		prStarecList = &prMldStarec->rStarecList;
+		LINK_FOR_EACH_ENTRY(prCurrStarec, prStarecList, rLinkEntryMld,
+		    struct STA_RECORD) {
+			cnmDumpStaRec(prAdapter, prCurrStarec->ucIndex);
+			i4BytesWritten += cnmShowStaRec(prAdapter,
+				prCurrStarec, pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten);
+			if (prCurrStarec != LINK_PEEK_TAIL(
+				prStarecList, struct STA_RECORD, rLinkEntryMld))
+				i4BytesWritten += kalSnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"\n");
+		}
+
+		i4BytesWritten += kalSnprintf(
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"}\n\n");
+	}
+
+done:
+	return i4BytesWritten;
 }
 
 void mldBssDump(struct ADAPTER *prAdapter)
@@ -2107,8 +2246,12 @@ int8_t mldBssRegister(struct ADAPTER *prAdapter,
 
 	prBssList = &prMldBssInfo->rBssList;
 
-	DBGLOG(ML, INFO, "prMldBssInfo: %d, prBssInfo: %d\n",
-		prMldBssInfo->ucGroupMldId, prBssInfo->ucBssIndex);
+	DBGLOG(ML, INFO, "bss=%d,type=%d,omac=%d,OwnMldId=%d,GrpMlId=%d\n",
+		prBssInfo->ucBssIndex,
+		prBssInfo->eNetworkType,
+		prBssInfo->ucOwnMacIndex,
+		prBssInfo->ucOwnMldId,
+		prMldBssInfo->ucGroupMldId);
 
 	prBssInfo->ucGroupMldId = prMldBssInfo->ucGroupMldId;
 	prMldBssInfo->u4BssBitmap |= BIT(prBssInfo->ucBssIndex);
@@ -2295,10 +2438,14 @@ void mldStarecDump(struct ADAPTER *prAdapter)
 }
 
 struct MLD_STA_RECORD *mldStarecGetByAddr(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
 	uint8_t aucMacAddr[])
 {
 	const uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
 	uint8_t i = 0;
+
+	if (!prMldBssInfo)
+		return NULL;
 
 	if (EQUAL_MAC_ADDR(aucZeroMacAddr, aucMacAddr))
 		return NULL;
@@ -2308,8 +2455,8 @@ struct MLD_STA_RECORD *mldStarecGetByAddr(struct ADAPTER *prAdapter,
 			&prAdapter->aprMldStarec[i];
 
 		if (prMldStarec->fgIsInUse &&
-				EQUAL_MAC_ADDR(prMldStarec->aucPeerMldAddr,
-				aucMacAddr))
+		    prMldStarec->ucGroupMldId == prMldBssInfo->ucGroupMldId &&
+		    EQUAL_MAC_ADDR(prMldStarec->aucPeerMldAddr,	aucMacAddr))
 			return prMldStarec;
 	}
 
@@ -2320,7 +2467,9 @@ int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStarec, uint8_t aucMacAddr[], uint8_t ucLinkId)
 {
 	int8_t rStatus = 0;
+	struct BSS_INFO *prBssInfo;
 	struct MLD_STA_RECORD *prMldStarec = NULL;
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
 	struct STA_RECORD *prCurrStarec;
 	struct LINK *prStarecList = NULL;
 
@@ -2330,15 +2479,32 @@ int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 		return -EINVAL;
 	}
 
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStarec->ucBssIndex);
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	if (!prMldBssInfo) {
+		DBGLOG(ML, WARN, "Bss%d can't find MldBssInfo",
+			prStarec->ucBssIndex);
+		return -EINVAL;
+	}
+
 	/* fill link info */
 	prStarec->ucLinkIndex = ucLinkId;
 	COPY_MAC_ADDR(prStarec->aucMldAddr, aucMacAddr);
 
-	prMldStarec = mldStarecGetByAddr(prAdapter, prStarec->aucMldAddr);
+	prMldStarec = mldStarecGetByAddr(prAdapter,
+		prMldBssInfo, prStarec->aucMldAddr);
 	if (!prMldStarec) {
-		rStatus = mldStarecAlloc(prAdapter, &prMldStarec, prStarec->aucMldAddr);
+		rStatus = mldStarecAlloc(prAdapter, prMldBssInfo,
+			&prMldStarec, prStarec->aucMldAddr);
 		if (rStatus)
 			goto exit;
+	}
+
+	if (prMldBssInfo->ucGroupMldId != prMldStarec->ucGroupMldId) {
+		DBGLOG(ML, WARN,
+			"MldStaRec with GroupMldId=%d but input=%d",
+			prMldStarec->ucGroupMldId, prMldBssInfo->ucGroupMldId);
+		return -EINVAL;
 	}
 
 	prStarecList = &prMldStarec->rStarecList;
@@ -2420,6 +2586,7 @@ void mldStarecUnregister(struct ADAPTER *prAdapter,
 }
 
 int8_t mldStarecAlloc(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
 	struct MLD_STA_RECORD **pprMldStarec,
 	uint8_t *aucMacAddr)
 {
@@ -2435,6 +2602,7 @@ int8_t mldStarecAlloc(struct ADAPTER *prAdapter,
 		LINK_INITIALIZE(&prMldStarec->rStarecList);
 		prMldStarec->fgIsInUse = TRUE;
 		prMldStarec->ucIdx = i;
+		prMldStarec->ucGroupMldId = prMldBssInfo->ucGroupMldId;
 
 		/* TODO */
 		prMldStarec->fgNSEP = FALSE;

@@ -2212,11 +2212,11 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 		prBssInfo->ucBssIndex = prAdapter->ucP2PDevBssIdx;
 		prBssInfo->eNetworkType = eNetworkType;
 		prBssInfo->ucOwnMacIndex = prAdapter->ucHwBssIdNum;
-
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 		prBssInfo->ucOwnMldId = prBssInfo->ucBssIndex +
 			MAT_OWN_MLD_ID_BASE;
 		prBssInfo->ucGroupMldId = MLD_GROUP_NONE;
-
+#endif
 		/* initialize wlan id and status for keys */
 		prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
 		prBssInfo->wepkeyWlanIdx = WTBL_RESERVED_ENTRY;
@@ -2276,9 +2276,11 @@ omac_choosed:
 			prBssInfo->ucBssIndex = ucBssIndex;
 			prBssInfo->ucOwnMacIndex = ucOwnMacIdx;
 			prBssInfo->eBandIdx = ENUM_BAND_AUTO;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 			prBssInfo->ucOwnMldId = ucBssIndex +
 				MAT_OWN_MLD_ID_BASE;
 			prBssInfo->ucGroupMldId = MLD_GROUP_NONE;
+#endif
 #if (CFG_HW_WMM_BY_BSS == 1)
 			prBssInfo->ucWmmQueSet = DEFAULT_HW_WMM_INDEX;
 			prBssInfo->fgIsWmmInited = FALSE;
@@ -2302,11 +2304,11 @@ omac_choosed:
 			prBssInfo->u4PowerSaveFlag = 0;
 			prBssInfo->ePwrMode = Param_PowerModeCAM;
 
-			log_dbg(CNM, INFO, "bss=%d,type=%d,omac=%d,omld=%d\n",
+			log_dbg(CNM, INFO, "bss=%d,type=%d,omac=%d\n",
 				prBssInfo->ucBssIndex,
 				prBssInfo->eNetworkType,
-				prBssInfo->ucOwnMacIndex,
-				prBssInfo->ucOwnMldId);
+				prBssInfo->ucOwnMacIndex);
+
 			prOutBssInfo = prBssInfo;
 			break;
 		}
