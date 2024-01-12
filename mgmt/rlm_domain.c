@@ -1449,6 +1449,52 @@ void rlmDomainSendCmd(struct ADAPTER *prAdapter)
 #endif
 }
 
+#if (CFG_SUPPORT_DYNAMIC_EDCCA == 1)
+static bool isEUCountry(struct ADAPTER *prAdapter, uint32_t u4CountryCode)
+{
+	uint16_t i;
+	uint16_t u2TargetCountryCode = 0;
+
+	u2TargetCountryCode =
+	    ((u4CountryCode & 0xff) << 8) | ((u4CountryCode & 0xff00) >> 8);
+
+	DBGLOG(RLM, INFO, " Target country code='%c%c'(0x%4x)\n",
+	    ((u4CountryCode & 0xff) - 'A'),
+		(((u4CountryCode & 0xff00) >> 8) - 'A'),
+		u2TargetCountryCode);
+
+	for (i = 0; i < (sizeof(g_u2CountryGroup4) / sizeof(uint16_t)); i++) {
+		if (g_u2CountryGroup4[i] == u2TargetCountryCode)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+static void rlmSetEd_EU(struct ADAPTER *prAdapter, uint32_t u4CountryCode)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	if (isEUCountry(prAdapter, u4CountryCode)) {
+		if ((prWifiVar->i4Ed2GEU != 0) && (prWifiVar->i4Ed5GEU != 0)) {
+			wlanSetEd(prAdapter, prWifiVar->i4Ed2GEU,
+			    prWifiVar->i4Ed5GEU, 1);
+			DBGLOG(RLM, INFO, "Set Ed for EU: 2G=%d, 5G=%d\n",
+				prWifiVar->i4Ed2GEU, prWifiVar->i4Ed5GEU);
+		}
+	} else {
+		if ((prWifiVar->i4Ed2GNonEU != 0) &&
+			(prWifiVar->i4Ed5GNonEU != 0)) {
+			wlanSetEd(prAdapter, prWifiVar->i4Ed2GNonEU,
+				prWifiVar->i4Ed5GNonEU, 1);
+			DBGLOG(RLM, INFO,
+				"Set Ed for non EU: 2G=%d, 5G=%d\n",
+				prWifiVar->i4Ed2GNonEU, prWifiVar->i4Ed5GNonEU);
+		}
+	}
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief
@@ -1528,6 +1574,10 @@ void rlmDomainSendDomainInfoCmd_V2(struct ADAPTER *prAdapter)
 			    0      /* u4SetQueryBufferLen */
 	    );
 
+#if (CFG_SUPPORT_DYNAMIC_EDCCA == 1)
+	rlmSetEd_EU(prAdapter, prCmd->u4CountryCode);
+#endif
+
 	cnmMemFree(prAdapter, prCmd);
 #endif
 }
@@ -1603,6 +1653,10 @@ void rlmDomainSendDomainInfoCmd(struct ADAPTER *prAdapter)
 		NULL,  /* pvSetQueryBuffer */
 		0      /* u4SetQueryBufferLen */
 	    );
+
+#if (CFG_SUPPORT_DYNAMIC_EDCCA == 1)
+	rlmSetEd_EU(prAdapter, prCmd->u2CountryCode);
+#endif
 
 	cnmMemFree(prAdapter, prCmd);
 }
@@ -1697,6 +1751,10 @@ void rlmDomainSendPassiveScanInfoCmd(struct ADAPTER *prAdapter)
 		NULL,  /* pvSetQueryBuffer */
 		0      /* u4SetQueryBufferLen */
 	    );
+
+#if (CFG_SUPPORT_DYNAMIC_EDCCA == 1)
+	rlmSetEd_EU(prAdapter, prCmd->u2CountryCode);
+#endif
 
 	cnmMemFree(prAdapter, prCmd);
 }
