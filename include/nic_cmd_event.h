@@ -2671,6 +2671,9 @@ struct CMD_DBDC_SETTING {
 	uint8_t ucPrimaryChannel;
 	uint8_t ucWmmQueIdx;
 	uint8_t ucRfBand;
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	uint8_t ucNoResp;
+#endif
 	uint8_t aucPadding2[1];
 	uint8_t aucPadding3[24];
 };

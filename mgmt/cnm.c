@@ -3571,6 +3571,14 @@ uint32_t cnmUpdateDbdcSetting(struct ADAPTER *prAdapter,
 	/* FW uses ucWmmBandBitmap from driver if it does not support ver 1*/
 	prCmdBody->ucCmdVer = 0x1;
 	prCmdBody->u2CmdLen = sizeof(struct CMD_DBDC_SETTING);
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	/* FW need driver to notify EMLSR disconnect after concurrent */
+	/* In this case, FW won't respond event back to driver */
+	if (!fgDbdcEn && !prAdapter->rWifiVar.fgDbDcModeEn)
+		prCmdBody->ucNoResp = TRUE;
+	else
+		prCmdBody->ucNoResp = FALSE;
+#endif
 	DBDC_UPDATE_CMD_WMMBAND_FW_AUTO(prCmdBody);
 
 	if (g_rDbdcInfo.fgHasSentCmd == TRUE)
@@ -4497,6 +4505,51 @@ void cnmDbdcPreConnectionEnableDecision(
 	}
 }
 
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+static bool IsLastDisconnectBssInMlo(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex
+)
+{
+	struct BSS_INFO *prBssInfo;
+	struct MLD_BSS_INFO *mld_bssinfo = NULL;
+	uint8_t ucOtherBssIndex = 0;
+	uint8_t ucWmmCompare = HW_WMM_NUM;
+	uint8_t ucWmmQueSet = HW_WMM_NUM;
+	uint8_t ucBssNum;
+
+	ASSERT(prAdapter);
+	ucBssNum = prAdapter->ucHwBssIdNum;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return false;
+
+	mld_bssinfo = mldBssGetByBss(prAdapter, prBssInfo);
+	if (!IS_MLD_BSSINFO_MULTI(mld_bssinfo))
+		return false;
+
+	ucWmmCompare = prBssInfo->ucWmmQueSet;
+
+	for (ucOtherBssIndex = 0;
+		ucOtherBssIndex < ucBssNum; ucOtherBssIndex++) {
+
+		if (ucOtherBssIndex == ucBssIndex)
+			continue;
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucOtherBssIndex);
+
+		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
+			continue;
+
+		ucWmmQueSet = prBssInfo->ucWmmQueSet;
+
+		if (ucWmmCompare == ucWmmQueSet)
+			return false;
+	}
+	return true;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief    Run-time check if we need enable/disable DBDC or update guard time.
@@ -4512,6 +4565,9 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 			    u_int8_t ucForceLeaveEnGuard)
 {
 	bool fgIsAgConcurrent, fgIsWmmConcurrent;
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	bool fgLastBss = IsLastDisconnectBssInMlo(prAdapter, ucChangedBssIndex);
+#endif
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 				prAdapter->rWifiVar.prP2pDevFsmInfo;
@@ -4586,6 +4642,16 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 		if (fgIsWmmConcurrent !=
 			prAdapter->rWifiVar.fgWmmConcurrent)
 			cnmUpdateDbdcQuota(prAdapter, fgIsWmmConcurrent);
+
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+		/* EMLSR disconnect after concurrent */
+		/* Notify FW EMLSR is leaving and should band swap */
+		if (!fgIsAgConcurrent && fgLastBss) {
+			log_dbg(CNM, INFO,
+				"[DBDC] Force send DBDC disable cmd\n");
+			cnmUpdateDbdcSetting(prAdapter, FALSE);
+		}
+#endif
 		return;
 	}
 
