@@ -1210,6 +1210,12 @@ struct WIFI_VAR {
 	u_int8_t fgBoostCpuEn;
 	u_int8_t fgBoostCpuByPPSEn;
 	u_int8_t fgBoostCpuPolicyEn;
+	uint8_t ucBoostCpuPolicyPERTh;
+	uint8_t ucBCPPerTh;
+	uint32_t u4BCPBigCPUIncrementHz;
+	uint32_t u4BCPBigCPUDecrementHz;
+	uint32_t u4BCPLitCPUIncrementHz;
+	uint32_t u4BCPLitCPUDecrementHz;
 	uint32_t u4BoostCpuTh;
 #if CFG_SUPPORT_LITTLE_CPU_BOOST
 	uint32_t u4BoostLittleCpuTh;
