@@ -4439,6 +4439,12 @@ int hif_thread(void *data)
 			if (test_and_clear_bit(GLUE_FLAG_HIF_TX_CMD_BIT,
 					       &prGlueInfo->ulFlag))
 				TRACE(wlanTxCmdMthread(prAdapter), "TX_CMD");
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+			if (test_and_clear_bit(GLUE_FLAG_MGMT_DIRECT_HIF_TX_BIT,
+					       &prGlueInfo->ulFlag))
+				TRACE(nicTxMgmtDirectTxMsduMthread(prAdapter),
+					"Mgmt-DirectTx");
+#endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
 #if CFG_TX_DIRECT_VIA_HIF_THREAD
 			/* Process TX-direct data packet to HIF */
@@ -5712,6 +5718,25 @@ void kalSetTxDirectEvent2Hif(struct GLUE_INFO *pr)
 	wake_up_interruptible(&pr->waitq_hif);
 }
 #endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
+
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+void kalSetMgmtDirectTxEvent2Hif(struct GLUE_INFO *pr)
+{
+	uint32_t u4ThreadWakeUp = 0;
+
+	if (!pr->hif_thread)
+		return;
+
+	u4ThreadWakeUp = wlanGetThreadWakeUp(pr->prAdapter);
+
+	KAL_WAKE_LOCK_TIMEOUT(pr->prAdapter, pr->rTimeoutWakeLock,
+			      MSEC_TO_JIFFIES(u4ThreadWakeUp));
+
+	set_bit(GLUE_FLAG_MGMT_DIRECT_HIF_TX_BIT, &pr->ulFlag);
+
+	wake_up_interruptible(&pr->waitq_hif);
+}
+#endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
 void kalSetTxEvent2Hif(struct GLUE_INFO *pr)
 {

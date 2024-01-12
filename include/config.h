@@ -1198,6 +1198,12 @@
 
 #define CFG_CHANGE_CRITICAL_PACKET_PRIORITY	1
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+#define CFG_TX_MGMT_BY_DATA_Q		1
+#else
+#define CFG_TX_MGMT_BY_DATA_Q		0
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags of bus error tolerance
  *------------------------------------------------------------------------------

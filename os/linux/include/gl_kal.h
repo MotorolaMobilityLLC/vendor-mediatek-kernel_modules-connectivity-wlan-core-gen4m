@@ -152,7 +152,8 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 	GLUE_FLAG_UPDATE_WMM_QUOTA | \
 	GLUE_FLAG_NOTIFY_MD_CRASH | \
 	GLUE_FLAG_DRV_INT | \
-	GLUE_FLAG_TX_DIRECT_HIF_TX)
+	GLUE_FLAG_TX_DIRECT_HIF_TX | \
+	GLUE_FLAG_MGMT_DIRECT_HIF_TX)
 
 #define GLUE_FLAG_RX_PROCESS (GLUE_FLAG_HALT | GLUE_FLAG_RX_TO_OS)
 #else
@@ -1646,6 +1647,10 @@ void kalSetHifDbgEvent(struct GLUE_INFO *pr);
 #if CFG_TX_DIRECT_VIA_HIF_THREAD
 void kalSetTxDirectEvent2Hif(struct GLUE_INFO *pr);
 #endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
+
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+void kalSetMgmtDirectTxEvent2Hif(struct GLUE_INFO *pr);
+#endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
 void kalSetTxEvent2Hif(struct GLUE_INFO *pr);
 

@@ -278,6 +278,7 @@ void nic_txd_v3_compose(
 	u_int32_t u4TxDescAndPaddingLength;
 	u_int8_t ucWmmQueSet, ucTarQueue, ucTarPort;
 	uint8_t ucEtherTypeOffsetInWord;
+	uint8_t fgIsALTXQueue = FALSE;
 	uint8_t *apucPktType[ENUM_PKT_FLAG_NUM] = {
 		(uint8_t *) DISP_STRING("802_11"),
 		(uint8_t *) DISP_STRING("802_3"),
@@ -318,12 +319,23 @@ void nic_txd_v3_compose(
 	}
 
 #if (CFG_SUPPORT_FORCE_ALTX == 1)
-	if (ucTarPort == PORT_INDEX_MCU &&
-		prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_FORCE_TX) {
-		/* To MCU packet with always tx flag */
+	fgIsALTXQueue |=
+		(ucTarPort == PORT_INDEX_MCU &&
+		prMsduInfo->ucControlFlag &
+		MSDU_CONTROL_FLAG_FORCE_TX);
+#endif /* CFG_SUPPORT_FORCE_ALTX == 1 */
+
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+	fgIsALTXQueue |=
+		(prMsduInfo->fgMgmtUseDataQ &&
+		prMsduInfo->ucControlFlag &
+		MSDU_CONTROL_FLAG_FORCE_TX);
+#endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
+
+	if (fgIsALTXQueue)
+		/* packet with always tx flag */
 		ucTarQueue = MAC_TXQ_ALTX_0_INDEX;
-	} else
-#endif
+	else
 	{
 		ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
 		if (ucTarPort == PORT_INDEX_LMAC)

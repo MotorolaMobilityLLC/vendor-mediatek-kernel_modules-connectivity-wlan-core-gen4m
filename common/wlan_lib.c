@@ -835,6 +835,10 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 	QUEUE_INITIALIZE(&prAdapter->rTxDataDoneQueue);
 #endif
 
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+	QUEUE_INITIALIZE(&prAdapter->rMgmtDirectTxQueue);
+#endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
+
 	/* 4 <0.1> reset fgIsBusAccessFailed */
 	fgIsBusAccessFailed = FALSE;
 }
@@ -2664,6 +2668,9 @@ void wlanClearDataQueue(IN struct ADAPTER *prAdapter)
 		int32_t i, j;
 
 		KAL_SPIN_LOCK_DECLARATION();
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+		nicTxClearMgmtDirectTxQ(prAdapter);
+#endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
 		for (i = 0; i < BSS_DEFAULT_NUM; i++) {
 			for (j = 0; j < TX_PORT_NUM; j++) {
@@ -2875,6 +2882,17 @@ void wlanReleaseCommand(IN struct ADAPTER *prAdapter,
 	}
 
 }				/* end of wlanReleaseCommand() */
+
+uint32_t wlanGetThreadWakeUp(IN struct ADAPTER *prAdapter)
+{
+	return prAdapter->rWifiVar.u4WakeLockThreadWakeup;
+}
+
+uint32_t wlanGetTxdAppendSize(IN struct ADAPTER *prAdapter)
+{
+	return prAdapter->chip_info->txd_append_size;
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*!

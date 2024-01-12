@@ -1489,7 +1489,7 @@ uint32_t heRlmSendHtcNullFrame(
 		     pfTxDoneHandler,
 		     MSDU_RATE_MODE_AUTO);
 
-	prMsduInfo->fgMgmtUseDataQ = TRUE;
+	prMsduInfo->fgNullUseDataQ = TRUE;
 	/* prMsduInfo->ucUserPriority = 0;*/
 	prMsduInfo->u4Option |= MSDU_OPT_NO_AGGREGATE;
 	prMsduInfo->u4Option |= MSDU_OPT_SW_HTC;

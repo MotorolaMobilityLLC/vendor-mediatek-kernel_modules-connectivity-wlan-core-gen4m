@@ -216,6 +216,7 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 {
 	struct MSDU_INFO *prMsduInfo;
 	struct QUE *prQueList;
+	uint32_t u4TxHeadRoomSize = 0;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -229,12 +230,20 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 
 	if (prMsduInfo) {
 		if (u4Length) {
-			prMsduInfo->prPacket = cnmMemAlloc(prAdapter,
-				RAM_TYPE_BUF, u4Length);
+			u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
+				prAdapter->chip_info->txd_append_size;
+			prMsduInfo->prHead = cnmMemAlloc(prAdapter,
+				RAM_TYPE_BUF,
+				u4Length + u4TxHeadRoomSize);
+			prMsduInfo->prPacket = prMsduInfo->prHead +
+				u4TxHeadRoomSize;
+			prMsduInfo->aucTxDescBuffer = prMsduInfo->prHead;
 			prMsduInfo->eSrc = TX_PACKET_MGMT;
 			prMsduInfo->u4Option = 0;
+			prMsduInfo->fgMgmtUseDataQ = FALSE;
+			prMsduInfo->fgIsPacketSkb = FALSE;
 
-			if (prMsduInfo->prPacket == NULL) {
+			if (prMsduInfo->prHead == NULL) {
 				KAL_ACQUIRE_SPIN_LOCK(prAdapter,
 					SPIN_LOCK_TX_MSDU_INFO_LIST);
 				QUEUE_INSERT_TAIL(prQueList,
@@ -244,8 +253,10 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 				prMsduInfo = NULL;
 			}
 		} else {
+			prMsduInfo->prHead = NULL;
 			prMsduInfo->prPacket = NULL;
 		}
+		prMsduInfo->prTxP = NULL;
 	}
 #if DBG
 	if (prMsduInfo == NULL) {
@@ -288,9 +299,9 @@ void cnmPktFree(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 
 	prQueList = &prAdapter->rTxCtrl.rFreeMsduInfoList;
 
-	/* ASSERT(prMsduInfo->prPacket); */
-	if (prMsduInfo->prPacket) {
-		cnmMemFree(prAdapter, prMsduInfo->prPacket);
+	if (prMsduInfo->prHead) {
+		cnmMemFree(prAdapter, prMsduInfo->prHead);
+		prMsduInfo->prHead = NULL;
 		prMsduInfo->prPacket = NULL;
 	}
 

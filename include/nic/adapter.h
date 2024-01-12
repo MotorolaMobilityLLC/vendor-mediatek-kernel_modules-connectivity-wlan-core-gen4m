@@ -1618,6 +1618,10 @@ struct ADAPTER {
 	struct QUE rStaPendQueue[CFG_STA_REC_NUM];
 	uint32_t u4StaPendBitmap;
 	/* TX Direct related : END */
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+	struct QUE rMgmtDirectTxQueue;
+	spinlock_t rMgmtDirectHifQueueLock;
+#endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
 	struct QUE rPendingCmdQueue;
 
