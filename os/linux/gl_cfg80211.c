@@ -1457,6 +1457,7 @@ int wlanParseAkmSuites(uint32_t *au4AkmSuites, uint32_t u4AkmSuitesCount,
 		}
 	}
 
+#if (CFG_TC10_FEATURE == 1)
 	if (*prAuthMode == AUTH_MODE_WPA_PSK ||
 	    *prAuthMode == AUTH_MODE_WPA2_PSK) {
 		/* support cross wpa/wpa2 psk */
@@ -1474,6 +1475,7 @@ int wlanParseAkmSuites(uint32_t *au4AkmSuites, uint32_t u4AkmSuitesCount,
 				TRUE;
 		}
 	}
+#endif
 
 	if (*prAuthMode == AUTH_MODE_WPA2_PSK ||
 		*prAuthMode == AUTH_MODE_WPA3_SAE) {
@@ -1663,18 +1665,22 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 			break;
 		case WLAN_CIPHER_SUITE_TKIP:
 			prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_TKIP;
+#if (CFG_TC10_FEATURE == 1)
 			if (eAuthMode == AUTH_MODE_WPA_PSK ||
 			    eAuthMode == AUTH_MODE_WPA2_PSK)
 				prWpaInfo->u4CipherPairwise |=
 					IW_AUTH_CIPHER_CCMP;
+#endif
 			break;
 		case WLAN_CIPHER_SUITE_CCMP:
 		case WLAN_CIPHER_SUITE_AES_CMAC:
 			prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_CCMP;
+#if (CFG_TC10_FEATURE == 1)
 			if (eAuthMode == AUTH_MODE_WPA_PSK ||
 			    eAuthMode == AUTH_MODE_WPA2_PSK)
 				prWpaInfo->u4CipherPairwise |=
 					IW_AUTH_CIPHER_TKIP;
+#endif
 			break;
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 		case WLAN_CIPHER_SUITE_GCMP_256:
@@ -1706,18 +1712,22 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 			break;
 		case WLAN_CIPHER_SUITE_TKIP:
 			prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_TKIP;
+#if (CFG_TC10_FEATURE == 1)
 			if (eAuthMode == AUTH_MODE_WPA_PSK ||
 			    eAuthMode == AUTH_MODE_WPA2_PSK)
 				prWpaInfo->u4CipherGroup |=
 					IW_AUTH_CIPHER_CCMP;
+#endif
 			break;
 		case WLAN_CIPHER_SUITE_CCMP:
 		case WLAN_CIPHER_SUITE_AES_CMAC:
 			prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_CCMP;
+#if (CFG_TC10_FEATURE == 1)
 			if (eAuthMode == AUTH_MODE_WPA_PSK ||
 			    eAuthMode == AUTH_MODE_WPA2_PSK)
 				prWpaInfo->u4CipherGroup |=
 					IW_AUTH_CIPHER_TKIP;
+#endif
 			break;
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 		case WLAN_CIPHER_SUITE_GCMP_256:
