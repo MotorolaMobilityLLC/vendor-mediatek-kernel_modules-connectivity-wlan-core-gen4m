@@ -3785,6 +3785,11 @@ static void wlanNvramUpdateOnTestMode(void)
 			   "prGlueInfo invalid!!\n");
 		return;
 	}
+	if (!wlanIsDriverReady(prGlueInfo,
+	WLAN_DRV_READY_CHECK_WLAN_ON | WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return;
+	}
 	prAdapter = prGlueInfo->prAdapter;
 	if (prAdapter == NULL) {
 		DBGLOG(INIT, WARN,
@@ -3840,6 +3845,7 @@ static uint8_t wlanNvramBufHandler(void *ctx,
 	}
 
 	g_NvramFsm = NVRAM_STATE_READY;
+	DBGLOG(INIT, INFO, "Set NVRAM state[%d]\n", g_NvramFsm);
 
 	/*do nvram update on test mode then driver sent new NVRAM to FW*/
 	wlanNvramUpdateOnTestMode();
