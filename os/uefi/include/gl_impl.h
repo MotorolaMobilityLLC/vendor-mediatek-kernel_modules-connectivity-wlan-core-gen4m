@@ -95,6 +95,11 @@ void __KAL_INLINE__ kalGetPlatDev(void **dev)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
+/*----------------------------------------------------------------------------*/
+/* SCAN                                                                      */
+/*----------------------------------------------------------------------------*/
+void *kalGetGlueSchedScanReq(struct GLUE_INFO *prGlueInfo);
+void kalClearGlueSchedScanReq(struct GLUE_INFO *prGlueInfo);
 
 /*----------------------------------------------------------------------------*/
 /* RX                                                                         */

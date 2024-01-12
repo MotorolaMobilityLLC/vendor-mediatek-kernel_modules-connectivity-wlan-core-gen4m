@@ -477,6 +477,17 @@ void *kalGetGlueScanReq(struct GLUE_INFO *prGlueInfo)
 	return (void *)NULL;
 }
 
+void *kalGetGlueSchedScanReq(struct GLUE_INFO *prGlueInfo)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return (void *)NULL;
+}
+
+void kalClearGlueSchedScanReq(struct GLUE_INFO *prGlueInfo)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
 void kalGetFtIeParam(void *pvftie,
 	uint16_t *pu2MDID, uint32_t *pu4IeLength,
 	const uint8_t **pucIe)
