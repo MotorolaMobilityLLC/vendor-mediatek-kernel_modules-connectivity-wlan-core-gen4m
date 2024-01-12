@@ -1189,6 +1189,7 @@ void scanFillSecondaryLink(struct ADAPTER *prAdapter,
 		&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
 	struct BSS_DESC *prBssDesc = NULL;
 	struct BSS_DESC *prMainBssDesc = prBssDescSet->prMainBssDesc;
+	uint8_t i, j;
 
 	if (!prMainBssDesc || !prMainBssDesc->rMlInfo.fgValid)
 		return;
@@ -1212,6 +1213,22 @@ void scanFillSecondaryLink(struct ADAPTER *prAdapter,
 		prBssDescSet->aprBssDesc[prBssDescSet->ucLinkNum] = prBssDesc;
 		prBssDescSet->ucLinkNum++;
 	}
+
+	for (i = 0; i < prBssDescSet->ucLinkNum - 1; i++) {
+		for (j = i + 1; j < prBssDescSet->ucLinkNum; j++) {
+			if (prBssDescSet->aprBssDesc[j]->rMlInfo.ucLinkIndex <
+				prBssDescSet->aprBssDesc[i]->rMlInfo.ucLinkIndex) {
+				prBssDesc = prBssDescSet->aprBssDesc[j];
+				prBssDescSet->aprBssDesc[j] =
+					prBssDescSet->aprBssDesc[i];
+				prBssDescSet->aprBssDesc[i] =
+					prBssDesc;
+			}
+		}
+	}
+
+	/* first bss desc is main bss */
+	prBssDescSet->prMainBssDesc = prBssDescSet->aprBssDesc[0];
 }
 #endif
 
