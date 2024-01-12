@@ -102,7 +102,7 @@
 
 #define TX_AUTHENTICATION_RESPONSE_TIMEOUT_TU        512 /* TU. */
 
-#define TX_ASSOCIATE_TIMEOUT_TU        512 /* TU. */
+#define TX_ASSOCIATE_TIMEOUT_TU        2048 /* TU. */
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
