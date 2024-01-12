@@ -1108,6 +1108,60 @@ int wf_pwr_off_consys_mcu(void)
 	int value;
 	int ret = 0;
 	unsigned int polling_count;
+
+	DBGLOG(INIT, INFO, "wmmcu power-off start.\n");
+	/* Wakeup conn_infra off write 0x180601A4[0] = 1'b1 */
+	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
+	value |= 0x00000001;
+	wf_ioremap_write(CONN_INFRA_WAKEUP_WF_ADDR, value);
+
+	/* Check AP2CONN slpprot ready
+	 * (polling "10 times" and each polling interval is "1ms")
+	 * Address: 0x1806_0184[5]
+	 * Data: 1'b0
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_INFRA_ON2OFF_SLP_PROT_ACK_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while ((value & 0x00000020) != 0) {
+		if (polling_count > 10) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(1000);
+		wf_ioremap_read(CONN_INFRA_ON2OFF_SLP_PROT_ACK_ADDR, &value);
+		polling_count++;
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR, "Polling  AP2CONN slpprot ready fail.\n");
+		return ret;
+	}
+
+	/* Check CONNSYS version ID
+	 * (polling "10 times" and each polling interval is "1ms")
+	 * Address: 0x1800_1000[31:0]
+	 * Data: 0x2001_0000
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_HW_VER_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while (value != CONNSYS_VERSION_ID) {
+		if (polling_count > 10) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(1000);
+		wf_ioremap_read(CONN_HW_VER_ADDR, &value);
+		polling_count++;
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR, "Polling CONNSYS version ID fail.\n");
+		return ret;
+	}
 	/* Turn on "conn_infra to wfsys"/ wfsys to conn_infra" bus sleep protect
 	 * 0x18001620[0] = 1'b1
 	 */
@@ -1214,6 +1268,10 @@ int wf_pwr_off_consys_mcu(void)
 			value);
 		return ret;
 	}
+	/* Disable conn_infra off domain force on 0x180601A4[0] = 1'b0 */
+	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
+	value &= 0xFFFFFFFE;
+	wf_ioremap_write(CONN_INFRA_WAKEUP_WF_ADDR, value);
 	return ret;
 }
 
