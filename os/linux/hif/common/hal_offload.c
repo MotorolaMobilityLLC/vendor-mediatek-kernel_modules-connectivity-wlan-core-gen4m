@@ -429,6 +429,21 @@ static void halRroSetupAddressElement(struct GLUE_INFO *prGlueInfo)
 	u4Val = prAddrArray->AllocPa >> 32 | BIT(30);
 	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
 
+#ifdef WF_RRO_TOP_PARTICULAR_CFG_0_ADDR
+	u4Addr = WF_RRO_TOP_PARTICULAR_CFG_0_ADDR;
+	u4Val = prAddrArray->AllocPa +
+		(RRO_ADDR_ELEM_SIZE *
+		 RRO_TOTAL_ADDR_ELEM_NUM *
+		 RRO_MAX_WINDOW_NUM);
+	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+#endif /* WF_RRO_TOP_PARTICULAR_CFG_0_ADDR */
+
+#ifdef WF_RRO_TOP_PARTICULAR_CFG_1_ADDR
+	u4Addr = WF_RRO_TOP_PARTICULAR_CFG_1_ADDR;
+	u4Val = (prAddrArray->AllocPa >> 32) | (0x400 << 16) | BIT(31);
+	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+#endif /* WF_RRO_TOP_PARTICULAR_CFG_1_ADDR */
+
 	u4Addr = WF_RRO_TOP_BA_STA_CFG_ADDR;
 	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
 	u4Val = (u4Val & BITS(16, 31)) |
