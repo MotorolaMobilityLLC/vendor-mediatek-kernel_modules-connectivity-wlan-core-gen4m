@@ -5,6 +5,8 @@
 #include "agent.h"
 
 u_char *agnt_rstrtok;
+int8_t g_hqa_frame_ctrl;
+
 u_char *agent_trtok(u_char *s, const u_char *ct)
 {
 	u_char *sbegin, *send;
@@ -3255,6 +3257,9 @@ static s_int32 hqa_icap_ctrl(
 			icap_info.src_addr_msb |= ((src_addr[i+4]) << (i << 3));
 		icap_info.src_addr_msb |= ((0x1) << 16);
 
+		/* capture source select */
+		icap_info.cap_src = 0; /* ICAP0_data (128bit) for WF PHY used */
+
 		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: trig = 0x%08x, ring_cap_en = 0x%08x\n"
 		, __func__, icap_info.trig, icap_info.ring_cap_en));
@@ -3355,28 +3360,35 @@ static s_int32 hqa_icap_ctrl(
 				goto error1;
 			}
 
-			value = SERV_OS_HTONL(control);
-			sys_ad_move_mem(hqa_frame->data + resp_len,
-				&value, sizeof(value));
-			resp_len += sizeof(value);
-			value = SERV_OS_HTONL(wf_num);
-			sys_ad_move_mem(hqa_frame->data + resp_len,
-				&value, sizeof(value));
-			resp_len += sizeof(value);
-			value = SERV_OS_HTONL(iq_type);
-			sys_ad_move_mem(hqa_frame->data + resp_len,
-				&value, sizeof(value));
-			resp_len += sizeof(value);
-			value = SERV_OS_HTONL(*icap_data_cnt);
-			sys_ad_move_mem(hqa_frame->data + resp_len,
-				&value, sizeof(value));
-			resp_len += sizeof(value);
-
-			for (i = 0; i < *icap_data_cnt; i++) {
-				value = SERV_OS_HTONL(icap_data[i]);
+			if (g_hqa_frame_ctrl == 1) {
+				sys_ad_move_mem(hqa_frame->data + resp_len,
+					&ret, sizeof(ret));
+				resp_len += sizeof(ret);
+			} else {
+				value = SERV_OS_HTONL(control);
 				sys_ad_move_mem(hqa_frame->data + resp_len,
 					&value, sizeof(value));
 				resp_len += sizeof(value);
+				value = SERV_OS_HTONL(wf_num);
+				sys_ad_move_mem(hqa_frame->data + resp_len,
+					&value, sizeof(value));
+				resp_len += sizeof(value);
+				value = SERV_OS_HTONL(iq_type);
+				sys_ad_move_mem(hqa_frame->data + resp_len,
+					&value, sizeof(value));
+				resp_len += sizeof(value);
+				value = SERV_OS_HTONL(*icap_data_cnt);
+				sys_ad_move_mem(hqa_frame->data + resp_len,
+					&value, sizeof(value));
+				resp_len += sizeof(value);
+
+				for (i = 0; i < *icap_data_cnt; i++) {
+					value = SERV_OS_HTONL(icap_data[i]);
+					sys_ad_move_mem(hqa_frame->data
+						+ resp_len,
+						&value, sizeof(value));
+					resp_len += sizeof(value);
+				}
 			}
 		}
 		break;
@@ -4733,6 +4745,7 @@ s_int32 mt_agent_hqa_cmd_handler(
 	struct hqa_frame *hqa_frame = NULL;
 
 	if (hqa_frame_ctrl->type == 1) {
+		g_hqa_frame_ctrl = hqa_frame_ctrl->type;
 		ret = mt_agent_hqa_cmd_string_parser(
 		hqa_frame_ctrl->hqa_frame_comm.hqa_frame_string,
 		hqa_frame_ctrl->hqa_frame_comm.hqa_frame_eth);
