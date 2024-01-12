@@ -827,12 +827,16 @@ void glResetSubsysRstProcedure(
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 			if (eResetReason >= RST_REASON_MAX)
 				eResetReason = 0;
+			if (g_fgRstRecover == TRUE)
+				g_fgRstRecover = FALSE;
+			else {
 			if (g_eWfRstSource == WF_RST_SOURCE_FW)
 				fw_log_connsys_coredump_start(-1, NULL);
 			else
 				fw_log_connsys_coredump_start(
 						CONNDRV_TYPE_WIFI,
 						apucRstReason[eResetReason]);
+			}
 #endif
 			glResetMsgHandler(WMTMSG_TYPE_RESET,
 					  WMTRSTMSG_0P5RESET_START);
@@ -855,12 +859,12 @@ void glResetSubsysRstProcedure(
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 		if (eResetReason >= RST_REASON_MAX)
 			eResetReason = 0;
-		if (g_eWfRstSource == WF_RST_SOURCE_FW) {
-			if (g_fgRstRecover == FALSE)
+		if (g_fgRstRecover == TRUE)
+			g_fgRstRecover = FALSE;
+		else {
+			if (g_eWfRstSource == WF_RST_SOURCE_FW)
 				fw_log_connsys_coredump_start(-1, NULL);
 			else
-				g_fgRstRecover = FALSE;
-		} else {
 			fw_log_connsys_coredump_start(
 					CONNDRV_TYPE_WIFI,
 					apucRstReason[eResetReason]);
@@ -909,9 +913,6 @@ int wlan_reset_thread_main(void *data)
 
 	glReset_timeinit(&rNowTs, &rLastTs);
 
-
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
-
 	DBGLOG(INIT, INFO, "%s:%u starts running...\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
 
@@ -936,6 +937,7 @@ int wlan_reset_thread_main(void *data)
 			KAL_WAKE_LOCK(NULL,
 				      prWlanRstThreadWakeLock);
 #endif
+		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
 		if (test_and_clear_bit(GLUE_FLAG_RST_START_BIT, &g_ulFlag) &&
 			 ((prGlueInfo) && (prGlueInfo->u4ReadyFlag))) {
 			if (KAL_WAKE_LOCK_ACTIVE(NULL, g_IntrWakeLock))
