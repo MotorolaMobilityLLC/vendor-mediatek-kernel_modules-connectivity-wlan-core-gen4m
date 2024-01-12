@@ -7372,7 +7372,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 
 	/* SW Test Mode: Mainly used for Sigma */
 	prWifiVar->u4SwTestMode = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "Sigma",
+					prAdapter, "SwTestMode",
 					ENUM_SW_TEST_MODE_NONE);
 	prWifiVar->ucCtrlFlagAssertPath = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "AssertPath",
