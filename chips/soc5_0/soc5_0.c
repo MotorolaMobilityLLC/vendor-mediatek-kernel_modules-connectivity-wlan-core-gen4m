@@ -1243,11 +1243,11 @@ int wf_pwr_on_consys_mcu(void)
 	}
 
 	/* set wfsys bus timeout value (ahb apb timeout)
-	 * 0x184F_0440[7:0] = 8'h02
+	 * 0x184F_0440[7:0] = 8'h03
 	 */
 	wf_ioremap_read(BUSHANGCR_BUS_HANG, &value);
 	value &= 0xFFFFFF00;
-	value |= 0x00000002;
+	value |= 0x00000003;
 	wf_ioremap_write(BUSHANGCR_BUS_HANG, value);
 
 	/* enable wfsys bus timeout (ahb apb timeout)
@@ -1283,11 +1283,11 @@ int wf_pwr_on_consys_mcu(void)
 	wf_ioremap_write(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, value);
 
 	/* set wfsys bus timeout value (debug ctrl ao)
-	 * 0x1850_0000[31:16] = 16'h03AA
+	 * 0x1850_0000[31:16] = 16'h04F5
 	 */
 	wf_ioremap_read(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, &value);
 	value &= 0x0000FFFF;
-	value |= 0x03AA0000;
+	value |= 0x04F50000;
 	wf_ioremap_write(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, value);
 
 	/* mask wfdma+umac busy signal (debug ctrl ao)
