@@ -759,7 +759,6 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 
 	prAdapter->u4OwnFailedCount = 0;
 	prAdapter->u4OwnFailedLogCount = 0;
-	prAdapter->fgEnHifDbgInfo = true;
 	prAdapter->ucCmdSeqNum = 0;
 	prAdapter->u4PwrCtrlBlockCnt = 0;
 
@@ -1785,9 +1784,8 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER
 					break;
 			} else if (rStatus == WLAN_STATUS_PENDING) {
 				/* Do nothing */
-				/* Do nothing */
 			} else if (rStatus == WLAN_STATUS_SUCCESS) {
-				prAdapter->fgEnHifDbgInfo = true;
+				/* Do nothing */
 			} else {
 				struct CMD_INFO *prCmdInfo = (struct CMD_INFO *)
 							     prQueueEntry;
