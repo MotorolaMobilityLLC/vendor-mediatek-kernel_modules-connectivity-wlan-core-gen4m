@@ -1212,12 +1212,21 @@ static void set_wf_monflg_on_mailbox_wf(void)
 static int wf_pwr_on_consys_mcu(void)
 {
 	int ret = 0;
+#if (CFG_WLAN_ATF_SUPPORT != 1)
 	int check;
 	uint32_t value = 0;
 	uint32_t polling_count;
-
+#endif
 	DBGLOG(INIT, INFO, "wmmcu power-on start.\n");
 
+	/* Setup CONNSYS firmware in EMI */
+#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
+	soc7_0_wlanPowerOnInit();
+#endif
+
+#if (CFG_WLAN_ATF_SUPPORT == 1)
+	kalSendAtfSmcCmd(SMC_WLAN_PWR_ON_CONSYS_MCU_OPID);
+#else
 	ret = wake_up_conninfra_off();
 	if (ret)
 		return ret;
@@ -1462,11 +1471,6 @@ static int wf_pwr_on_consys_mcu(void)
 		WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_DEBUG_CTRL_AO_WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_CTRL0_debug_en_debugtop_MASK);
 	wf_ioremap_write(DEBUG_CTRL_AO_WFMCU_PWA_CTRL0, value);
 
-	/* Setup CONNSYS firmware in EMI */
-#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
-	soc7_0_wlanPowerOnInit();
-#endif
-
 	set_wf_monflg_on_mailbox_wf();
 
 	/* De-assert WFSYS CPU SW reset
@@ -1521,6 +1525,7 @@ static int wf_pwr_on_consys_mcu(void)
 	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
 	value &= ~CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
 	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
+#endif
 
 	DBGLOG(INIT, INFO, "wmmcu power-on done.\n");
 	return ret;
@@ -1530,10 +1535,12 @@ static int wf_pwr_off_consys_mcu(void)
 {
 #define MAX_WAIT_COREDUMP_COUNT 10
 
+	int ret = 0;
+#if (CFG_WLAN_ATF_SUPPORT == 0)
 	int check;
 	int value = 0;
-	int ret = 0;
 	int polling_count;
+#endif
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 	int retryCount = 0;
 #endif
@@ -1552,6 +1559,9 @@ static int wf_pwr_off_consys_mcu(void)
 
 	DBGLOG(INIT, INFO, "wmmcu power-off start.\n");
 
+#if (CFG_WLAN_ATF_SUPPORT == 1)
+	kalSendAtfSmcCmd(SMC_WLAN_PWR_OFF_CONSYS_MCU_OPID);
+#else
 	ret = wake_up_conninfra_off();
 	if (ret)
 		return ret;
@@ -1836,6 +1846,7 @@ static int wf_pwr_off_consys_mcu(void)
 	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
 	value &= ~CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_CONN_INFRA_WAKEPU_WF_MASK;
 	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
+#endif
 
 	return ret;
 }

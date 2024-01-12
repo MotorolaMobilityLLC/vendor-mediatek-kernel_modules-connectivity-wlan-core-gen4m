@@ -112,6 +112,12 @@
 #include <linux/ratelimit.h>
 #include <linux/rtc.h>
 
+/* for ATF smc call */
+#if (CFG_WLAN_ATF_SUPPORT == 1)
+#include <linux/arm-smccc.h>
+#include <linux/soc/mediatek/mtk_sip_svc.h>
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -11490,6 +11496,17 @@ uint8_t kalRxNapiValidSkb(struct GLUE_INFO *prGlueInfo,
 	return kal_is_skb_gro(prGlueInfo->prAdapter, ucBssIdx);
 #endif
 }
+
+#if (CFG_WLAN_ATF_SUPPORT == 1)
+uint32_t kalSendAtfSmcCmd(uint32_t u4Opid)
+{
+	struct arm_smccc_res res;
+
+	arm_smccc_smc(MTK_SIP_KERNEL_WLAN_CONTROL, u4Opid,
+			0, 0, 0, 0, 0, 0, &res);
+	return res.a0;
+}
+#endif
 
 void kalSetLogTooMuch(uint32_t u4DriverLevel,
 	uint32_t u4FwLevel)
