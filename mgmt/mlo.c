@@ -1115,7 +1115,8 @@ uint8_t *mldGenerateBasicCompleteProfile(
 	 */
 	if (IS_BSS_APGO(bss))
 		control |= (ML_STA_CTRL_BCN_INTV_PRESENT |
-			    ML_STA_CTRL_DTIM_INFO_PRESENT);
+			    ML_STA_CTRL_DTIM_INFO_PRESENT |
+			    ML_STA_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT);
 
 	sta_ctrl->ucSubID = SUB_IE_MLD_PER_STA_PROFILE;
 	sta_ctrl->ucLength = 0;
@@ -1156,6 +1157,13 @@ uint8_t *mldGenerateBasicCompleteProfile(
 			link, bss->ucDTIMCount, bss->ucDTIMPeriod);
 		*cp++ = bss->ucDTIMCount;
 		*cp++ = bss->ucDTIMPeriod;
+	}
+
+	if (BE_IS_ML_STA_CTRL_PRESENCE_BSS_PARA_CHANGE_COUNT(
+		sta_ctrl->u2StaCtrl)) {
+		DBGLOG(ML, TRACE, "\tLinkID=%d, BSS_PARA_CHANGE_COUNT = 0x%x",
+			link, 0x0);
+		*cp++ = 0x0;
 	}
 
 	if (BE_IS_ML_STA_CTRL_PRESENCE_NSTR(sta_ctrl->u2StaCtrl)) {

@@ -289,6 +289,7 @@ u_int8_t p2pFuncIsDualGOMode(struct ADAPTER *prAdapter);
 void
 p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prP2pBssInfo,
+		uint8_t aucBSSID[],
 		uint8_t *pucIEInfo, uint32_t u4IELen);
 
 struct BSS_DESC *
