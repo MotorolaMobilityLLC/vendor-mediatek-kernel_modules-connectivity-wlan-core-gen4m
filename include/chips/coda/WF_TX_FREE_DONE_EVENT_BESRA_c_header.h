@@ -69,12 +69,12 @@ static __KAL_INLINE__ uint32_t _READ_FIELD(uint32_t reg,
 #define WF_TX_FREE_DONE_EVENT_AIR_DELAY_SHIFT                                    12
 #define WF_TX_FREE_DONE_EVENT_TX_COUNT_DW                                        3
 #define WF_TX_FREE_DONE_EVENT_TX_COUNT_ADDR                                      12
-#define WF_TX_FREE_DONE_EVENT_TX_COUNT_MASK                                      0x1f000000 // 28-24
+#define WF_TX_FREE_DONE_EVENT_TX_COUNT_MASK                                      0x0f000000 // 27-24
 #define WF_TX_FREE_DONE_EVENT_TX_COUNT_SHIFT                                     24
 #define WF_TX_FREE_DONE_EVENT_STAT_DW                                            3
 #define WF_TX_FREE_DONE_EVENT_STAT_ADDR                                          12
-#define WF_TX_FREE_DONE_EVENT_STAT_MASK                                          0x20000000 // 29-29
-#define WF_TX_FREE_DONE_EVENT_STAT_SHIFT                                         29
+#define WF_TX_FREE_DONE_EVENT_STAT_MASK                                          0x30000000 // 29-28
+#define WF_TX_FREE_DONE_EVENT_STAT_SHIFT                                         28
 #define WF_TX_FREE_DONE_EVENT_H3_DW                                              3
 #define WF_TX_FREE_DONE_EVENT_H3_ADDR                                            12
 #define WF_TX_FREE_DONE_EVENT_H3_MASK                                            0x40000000 // 30-30
