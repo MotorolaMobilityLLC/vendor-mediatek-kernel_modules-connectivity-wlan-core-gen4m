@@ -2729,7 +2729,7 @@ void p2pRoleFsmRunEventConnectionAbort(struct ADAPTER *prAdapter,
 		goto error;
 	}
 
-#if CFG_SUPPORT_TDLS
+#if CFG_SUPPORT_TDLS_P2P
 	prStaRec = cnmGetStaRecByAddress(
 		prAdapter,
 		prP2pBssInfo->ucBssIndex,
@@ -2747,7 +2747,7 @@ void p2pRoleFsmRunEventConnectionAbort(struct ADAPTER *prAdapter,
 		/* cnmStaRecFree(prAdapter, prStaRec); */
 		goto error;
 	}
-#endif
+#endif /* CFG_SUPPORT_TDLS_P2P */
 
 	switch (prP2pBssInfo->eCurrentOPMode) {
 	case OP_MODE_INFRASTRUCTURE:
