@@ -7190,6 +7190,8 @@ void kalWowInit(IN struct GLUE_INFO *prGlueInfo)
 {
 	kalMemZero(&prGlueInfo->prAdapter->rWowCtrl.stWowPort,
 		   sizeof(struct WOW_PORT));
+	prGlueInfo->prAdapter->rWowCtrl.ucReason = INVALID_WOW_WAKE_UP_REASON;
+	prGlueInfo->prAdapter->fgWowLinkDownPendFlag = FALSE;
 }
 
 void kalWowCmdEventSetCb(IN struct ADAPTER *prAdapter,
@@ -7221,6 +7223,7 @@ void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t ii, wait = 0;
 	struct BSS_INFO *prAisBssInfo = NULL;
+	uint8_t fgWake = TRUE;
 
 	kalMemZero(&rCmdWowlanParam,
 		   sizeof(struct CMD_WOWLAN_PARAM));
@@ -7230,6 +7233,9 @@ void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
 
 	prGlueInfo->prAdapter->fgSetPfCapabilityDone = FALSE;
 	prGlueInfo->prAdapter->fgSetWowDone = FALSE;
+	if (prGlueInfo->prAdapter->rWifiVar.ucAdvPws == 1
+		&& prGlueInfo->prAdapter->rWowCtrl.fgWowEnable == 0)
+		fgWake = FALSE;
 
 	prAisBssInfo = aisGetConnectedBssInfo(
 		prGlueInfo->prAdapter);
@@ -7286,10 +7292,14 @@ void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
 	kalMemCopy(&rCmdWowlanParam.astWakeHif[0],
 		   &pWOW_CTRL->astWakeHif[0], sizeof(struct WOW_WAKE_HIF));
 
-	/* copy UDP/TCP port setting */
-	kalMemCopy(&rCmdWowlanParam.stWowPort,
-		   &prGlueInfo->prAdapter->rWowCtrl.stWowPort,
-		   sizeof(struct WOW_PORT));
+	if (fgWake) {
+		/* copy UDP/TCP port setting */
+		kalMemCopy(&rCmdWowlanParam.stWowPort,
+				&prGlueInfo->prAdapter->rWowCtrl.stWowPort,
+				sizeof(struct WOW_PORT));
+	} else
+		kalMemZero(&rCmdWowlanParam.stWowPort,
+			sizeof(struct WOW_PORT));
 
 	DBGLOG(PF, INFO,
 	       "Cmd: IPV4/UDP=%d, IPV4/TCP=%d, IPV6/UDP=%d, IPV6/TCP=%d\n",
@@ -7322,12 +7332,13 @@ void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
 	/* GPIO parameter is necessary in suspend/resume */
 	if (enable == 1) {
 		rCmdWowlanParam.ucCmd = PM_WOWLAN_REQ_START;
-		rCmdWowlanParam.ucDetectType = WOWLAN_DETECT_TYPE_MAGIC |
-				       WOWLAN_DETECT_TYPE_ONLY_PHONE_SUSPEND;
+		rCmdWowlanParam.ucDetectType = WOWLAN_DETECT_TYPE_MAGIC;
 		rCmdWowlanParam.u2FilterFlag = WOWLAN_FF_DROP_ALL |
 				       WOWLAN_FF_SEND_MAGIC_TO_HOST |
 				       WOWLAN_FF_ALLOW_1X |
 				       WOWLAN_FF_ALLOW_ARP_REQ2ME;
+		if (!fgWake)
+			rCmdWowlanParam.ucDetectType = WOWLAN_DETECT_TYPE_NONE;
 	} else {
 		rCmdWowlanParam.ucCmd = PM_WOWLAN_REQ_STOP;
 	}

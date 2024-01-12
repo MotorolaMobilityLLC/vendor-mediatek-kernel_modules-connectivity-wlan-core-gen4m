@@ -519,4 +519,8 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 void p2pRoleFsmRunEventScanAbort(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucBssIdx);
 
+#if (CFG_WOW_SUPPORT == 1)
+void p2pRoleProcessPreSuspendFlow(IN struct ADAPTER *prAdapter);
+#endif
+
 #endif

@@ -451,10 +451,11 @@ enum {
 #define WOWLAN_FF_ALLOW_ARP_REQ2ME              BIT(6)
 
 /* wow detect type */
+#define WOWLAN_DETECT_TYPE_NONE                 0
 #define WOWLAN_DETECT_TYPE_MAGIC                BIT(0)
-#define WOWLAN_DETECT_TYPE_ALLOW_NORMAL         BIT(1)
-#define WOWLAN_DETECT_TYPE_ONLY_PHONE_SUSPEND   BIT(2)
-#define WOWLAN_DETECT_TYPE_DISASSOCIATION       BIT(3)
+#define WOWLAN_DETECT_TYPE_ANY                  BIT(1)
+#define WOWLAN_DETECT_TYPE_DISCONNECT           BIT(2)
+#define WOWLAN_DETECT_TYPE_GTK_REKEY_FAILURE    BIT(3)
 #define WOWLAN_DETECT_TYPE_BCN_LOST             BIT(4)
 
 /* Wakeup command bit define */
@@ -2830,7 +2831,7 @@ struct CMD_SUSPEND_MODE_SETTING {
 	uint8_t ucBssIndex;
 	uint8_t ucEnableSuspendMode;
 	uint8_t ucMdtim; /* LP parameter */
-	uint8_t ucReserved1[1];
+	uint8_t ucWowSuspend;
 	uint8_t ucReserved2[64];
 };
 
@@ -3467,6 +3468,11 @@ void nicNanVendorEventHandler(IN struct ADAPTER *prAdapter,
 
 void nicEventReportUEvent(IN struct ADAPTER *prAdapter,
 		     IN struct WIFI_EVENT *prEvent);
+
+#if (CFG_WOW_SUPPORT == 1)
+void nicEventWowWakeUpReason(IN struct ADAPTER *prAdapter,
+	IN struct WIFI_EVENT *prEvent);
+#endif
 
 /*******************************************************************************
  *                              F U N C T I O N S

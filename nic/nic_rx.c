@@ -187,6 +187,9 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 #if CFG_SUPPORT_SMART_GEAR
 	{EVENT_ID_SG_STATUS, cnmEventSGStatus},
 #endif
+#if (CFG_WOW_SUPPORT == 1)
+	{EVENT_ID_WOW_WAKEUP_REASON, nicEventWowWakeUpReason},
+#endif
 	{EVENT_ID_OPMODE_CHANGE, cnmOpmodeEventHandler},
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	{EVENT_ID_LOW_LATENCY_INFO, nicEventUpdateLowLatencyInfoStatus},

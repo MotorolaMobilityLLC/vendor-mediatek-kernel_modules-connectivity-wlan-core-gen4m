@@ -306,8 +306,13 @@ static int mtk_usb_resume(struct usb_interface *intf)
 		}
 	}
 
+	prGlueInfo->fgIsInSuspendMode = FALSE;
+
 	/* Allow upper layers to call the device hard_start_xmit routine. */
 	netif_tx_start_all_queues(prGlueInfo->prDevHandler);
+
+	/* allow cfg80211 ops */
+	prGlueInfo->u4ReadyFlag = 1;
 
 	DBGLOG(HAL, STATE, "mtk_usb_resume() done ret=%d!\n", ret);
 
@@ -324,11 +329,20 @@ static int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 
 	DBGLOG(HAL, STATE, "mtk_usb_suspend()\n");
 
+	prGlueInfo->fgIsInSuspendMode = TRUE;
+
 	/* Stop upper layers calling the device hard_start_xmit routine. */
 	netif_tx_stop_all_queues(prGlueInfo->prDevHandler);
 
-	/* change to non-READY state to block cfg80211 ops */
-	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_PRE_SUSPEND_START);
+	/* wait wiphy device do cfg80211 suspend done, then start hif suspend */
+	if (IS_FEATURE_ENABLED(prGlueInfo->prAdapter->rWifiVar.ucWow))
+		wlanWaitCfg80211SuspendDone(prGlueInfo);
+
+	/* change to pre-Suspend state */
+	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_PRE_SUSPEND);
+
+	/* block cfg80211 ops */
+	prGlueInfo->u4ReadyFlag = 0;
 
 	wlanSuspendPmHandle(prGlueInfo);
 
@@ -342,7 +356,7 @@ static int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 
 	halUSBPreSuspendCmd(prGlueInfo->prAdapter);
 
-	while (prGlueInfo->rHifInfo.state != USB_STATE_PRE_SUSPEND_DONE) {
+	while (prGlueInfo->rHifInfo.state != USB_STATE_SUSPEND) {
 		if (count > 25) {
 			DBGLOG(HAL, ERROR, "pre_suspend timeout\n");
 			ret = -EFAULT;
@@ -352,9 +366,14 @@ static int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 		count++;
 	}
 
-	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_SUSPEND);
 	halDisableInterrupt(prGlueInfo->prAdapter);
 	halTxCancelAllSending(prGlueInfo->prAdapter);
+
+	/* pending cmd will be kept in queue and no one to handle it after HIF resume.
+	 * In STR, it will result in cmd buf full and then cmd buf alloc fail .
+	 */
+	if (IS_FEATURE_ENABLED(prGlueInfo->prAdapter->rWifiVar.ucWow))
+		wlanReleaseAllTxCmdQueue(prGlueInfo->prAdapter);
 
 	DBGLOG(HAL, STATE, "mtk_usb_suspend() done!\n");
 
@@ -808,8 +827,7 @@ int glUsbSubmitUrb(struct GL_HIF_INFO *prHifInfo, struct urb *urb,
 	if (type == SUBMIT_TYPE_TX_CMD) {
 		if (!(prHifInfo->state == USB_STATE_LINK_UP ||
 			prHifInfo->state == USB_STATE_PRE_RESUME ||
-			prHifInfo->state == USB_STATE_PRE_SUSPEND_START ||
-			prHifInfo->state == USB_STATE_READY)) {
+			prHifInfo->state == USB_STATE_PRE_SUSPEND)) {
 			spin_unlock_irqrestore(&prHifInfo->rStateLock, flags);
 			DBGLOG(HAL, INFO,
 				"not allowed to transmit CMD packet. (%d)\n",
@@ -817,8 +835,7 @@ int glUsbSubmitUrb(struct GL_HIF_INFO *prHifInfo, struct urb *urb,
 			return -ESHUTDOWN;
 		}
 	} else if (type == SUBMIT_TYPE_TX_DATA) {
-		if (prHifInfo->state != USB_STATE_LINK_UP ||
-			prHifInfo->state == USB_STATE_READY) {
+		if (!(prHifInfo->state == USB_STATE_LINK_UP)) {
 			spin_unlock_irqrestore(&prHifInfo->rStateLock, flags);
 			DBGLOG(HAL, INFO,
 				"not allowed to transmit DATA packet. (%d)\n",

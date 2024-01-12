@@ -142,6 +142,7 @@ enum POWER_SAVE_CALLER {
 	PS_CALLER_GPU,
 	PS_CALLER_TP,
 	PS_CALLER_NO_TIM,
+	PS_CALLER_WOW,
 	PS_CALLER_MAX_NUM = 24
 };
 
@@ -190,6 +191,10 @@ struct WAKEUP_STATISTIC {
 #define TEST_MODE_SIGMA_AC_N_PMF \
 		(TEST_MODE_DISABLE_ONLINE_SCAN | TEST_MODE_FIXED_CAM_MODE)
 #define TEST_MODE_SIGMA_WMM_PS (TEST_MODE_DISABLE_ONLINE_SCAN)
+
+#define PS_CALLER_ACTIVE \
+		(BITS(0, (PS_CALLER_MAX_NUM - 1)) & (~BIT(PS_CALLER_WOW)))
+
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************

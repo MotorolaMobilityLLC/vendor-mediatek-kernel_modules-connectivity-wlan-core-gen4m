@@ -90,6 +90,14 @@ const uint8_t aucPriorityParam2TC[] = {
 	TC3_INDEX
 };
 
+#if (CFG_WOW_SUPPORT == 1)
+/* HIF suspend should wait for cfg80211 suspend done.
+ * by experience, 5ms is enough, and worst case ~= 250ms.
+ * if > 250 ms --> treat as no cfg80211 suspend
+ */
+#define HIF_SUSPEND_MAX_WAIT_TIME 50 /* unit: 5ms */
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -10233,11 +10241,13 @@ wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
 	rSuspendCmd.ucBssIndex = prNetDevPrivate->ucBssIdx;
 	rSuspendCmd.ucEnableSuspendMode = fgSuspend;
 
+#if CFG_WOW_SUPPORT
 	if (prGlueInfo->prAdapter->rWifiVar.ucWow
 	    && prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
 		/* cfg enable + wow enable => Wow On mdtim*/
 		rSuspendCmd.ucMdtim =
 			prGlueInfo->prAdapter->rWifiVar.ucWowOnMdtim;
+		rSuspendCmd.ucWowSuspend = TRUE;
 		DBGLOG(REQ, INFO, "mdtim [1]\n");
 	} else if (prGlueInfo->prAdapter->rWifiVar.ucWow
 		   && !prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
@@ -10247,6 +10257,7 @@ wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
 			 */
 			rSuspendCmd.ucMdtim =
 				prGlueInfo->prAdapter->rWifiVar.ucWowOffMdtim;
+			rSuspendCmd.ucWowSuspend = TRUE;
 			DBGLOG(REQ, INFO, "mdtim [2]\n");
 		}
 	} else if (!prGlueInfo->prAdapter->rWifiVar.ucWow) {
@@ -10256,8 +10267,14 @@ wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
 			 */
 			rSuspendCmd.ucMdtim =
 				prGlueInfo->prAdapter->rWifiVar.ucWowOffMdtim;
+			rSuspendCmd.ucWowSuspend = FALSE;
 			DBGLOG(REQ, INFO, "mdtim [3]\n");
 		}
+	} else
+#endif
+	{
+		rSuspendCmd.ucMdtim = 1;
+		rSuspendCmd.ucWowSuspend = FALSE;
 	}
 
 	/* When FW receive command, it check connection state to decide apply
@@ -11891,22 +11908,66 @@ uint64_t wlanGetSupportedFeatureSet(IN struct GLUE_INFO *prGlueInfo)
 /*----------------------------------------------------------------------------*/
 void wlanSuspendPmHandle(struct GLUE_INFO *prGlueInfo)
 {
+	uint8_t idx, i;
+	struct STA_RECORD *prStaRec;
+	struct RX_BA_ENTRY *prRxBaEntry;
+	enum PARAM_POWER_MODE ePwrMode;
+	struct BSS_INFO *prAisBssInfo = NULL;
+	struct WIFI_VAR *prWifiVar = NULL;
+
+	if (prGlueInfo == NULL || prGlueInfo->prAdapter == NULL)
+		return;
+
+	prAisBssInfo = aisGetConnectedBssInfo(
+		prGlueInfo->prAdapter);
+	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
+
 #if CFG_WOW_SUPPORT
 	/* 1) wifi cfg "Wow" is true              */
-    /* 2) wow is enable                       */
-    /* 3) WIfI connected => execute WOW flow  */
-	if (prGlueInfo->prAdapter->rWifiVar.ucWow &&
-		prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
-		if (kalGetMediaStateIndicated(prGlueInfo,
-			AIS_DEFAULT_INDEX) ==
-			MEDIA_STATE_CONNECTED) {
-			DBGLOG(HAL, EVENT, "enter WOW flow\n");
-			kalWowProcess(prGlueInfo, TRUE);
-		}
+	/* 2) wow is enable                       */
+	/* 3) WIfI connected => execute WOW flow  */
+	if (IS_FEATURE_ENABLED(prWifiVar->ucWow)) {
+		/* Pending Timer related to CNM need to check and
+		 * perform corresponding timeout handler. Without it,
+		 * Might happen CNM abnormal after resume or during suspend.
+		 */
+		cnmStopPendingJoinTimerForSuspend(prGlueInfo->prAdapter);
 
-		/* else: do nothing, and FW enter LMAC sleep */
+		if (IS_FEATURE_ENABLED(prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) ||
+			IS_FEATURE_ENABLED(prWifiVar->ucAdvPws)) {
+			if (prAisBssInfo) {
+				/* AIS bss enter wow power mode, default fast pws */
+				ePwrMode = Param_PowerModeFast_PSP;
+				idx = prAisBssInfo->ucBssIndex;
+				nicConfigPowerSaveProfile(prGlueInfo->prAdapter, idx,
+					ePwrMode, FALSE, PS_CALLER_WOW);
+				DBGLOG(HAL, STATE, "Wow AIS_idx:%d, pwr mode:%d\n",
+					idx, ePwrMode);
+
+				DBGLOG(HAL, EVENT, "enter WOW flow\n");
+				kalWowProcess(prGlueInfo, TRUE);
+			}
+		}
 	}
 #endif
+
+	/* After resuming, WinStart will unsync with AP's SN.
+	 * Set fgFirstSnToWinStart for all valid BA entry before suspend.
+	 */
+	for (idx = 0; idx < CFG_STA_REC_NUM; idx++) {
+		prStaRec = cnmGetStaRecByIndex(prGlueInfo->prAdapter, idx);
+		if (!prStaRec)
+			continue;
+
+		for (i = 0; i < CFG_RX_MAX_BA_TID_NUM; i++) {
+			prRxBaEntry = prStaRec->aprRxReorderParamRefTbl[i];
+			if (!prRxBaEntry || !(prRxBaEntry->fgIsValid))
+				continue;
+
+			prRxBaEntry->fgFirstSnToWinStart = TRUE;
+		}
+	}
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -11922,9 +11983,30 @@ void wlanSuspendPmHandle(struct GLUE_INFO *prGlueInfo)
 void wlanResumePmHandle(struct GLUE_INFO *prGlueInfo)
 {
 #if CFG_WOW_SUPPORT
-	if (prGlueInfo->prAdapter->rWifiVar.ucWow) {
-		DBGLOG(HAL, EVENT, "leave WOW flow\n");
-		kalWowProcess(prGlueInfo, FALSE);
+	struct BSS_INFO *prAisBssInfo = NULL;
+	struct WIFI_VAR *prWifiVar = NULL;
+
+	if (prGlueInfo == NULL || prGlueInfo->prAdapter == NULL)
+		return;
+
+	prAisBssInfo = aisGetConnectedBssInfo(
+		prGlueInfo->prAdapter);
+
+	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
+
+	if (IS_FEATURE_ENABLED(prWifiVar->ucWow) &&
+		(IS_FEATURE_ENABLED(prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) ||
+		IS_FEATURE_ENABLED(prWifiVar->ucAdvPws))) {
+		if (prAisBssInfo) {
+			DBGLOG(HAL, EVENT, "leave WOW flow\n");
+			kalWowProcess(prGlueInfo, FALSE);
+
+			/* Restore AIS pws when leave wow, ignore ePwrMode */
+			nicConfigPowerSaveProfile(prGlueInfo->prAdapter,
+				prAisBssInfo->ucBssIndex,
+				Param_PowerModeCAM,
+				FALSE, PS_CALLER_WOW);
+		}
 	}
 #endif
 }
@@ -13123,3 +13205,68 @@ TpeEndFlush:
 	return WLAN_STATUS_PENDING;
 }
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
+
+#if (CFG_WOW_SUPPORT == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This is a routine, which is used to release tx cmd after bus suspend
+ *
+ * \param prAdapter      Pointer of Adapter Data Structure
+ */
+/*----------------------------------------------------------------------------*/
+void wlanReleaseAllTxCmdQueue(struct ADAPTER *prAdapter)
+{
+	if (prAdapter == NULL)
+		return;
+
+	/* dump queue info before release for debug */
+	cmdBufDumpCmdQueue(&prAdapter->rPendingCmdQueue,
+				   "waiting response CMD queue");
+	cmdBufDumpCmdQueue(&prAdapter->rTxCmdQueue,
+				   "Tx CMD queue");
+
+	DBGLOG(OID, INFO, "Remove all pending Cmd\n");
+	/* 1: Clear Pending OID */
+	wlanReleasePendingOid(prAdapter, 1);
+
+	/* Release all CMD/MGMT/SEC frame in command queue */
+	kalClearCommandQueue(prAdapter->prGlueInfo);
+
+	/* Release all CMD in pending command queue */
+	wlanClearPendingCommandQueue(prAdapter);
+
+#if CFG_SUPPORT_MULTITHREAD
+
+	/* Flush all items in queues for multi-thread */
+	wlanClearTxCommandQueue(prAdapter);
+
+	wlanClearTxCommandDoneQueue(prAdapter);
+
+#endif
+
+}
+
+void
+wlanWaitCfg80211SuspendDone(struct GLUE_INFO *prGlueInfo)
+{
+	uint8_t u1Count = 0;
+
+	if (prGlueInfo->prAdapter == NULL)
+		return;
+
+	while (!(test_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
+		&prGlueInfo->prAdapter->ulSuspendFlag))) {
+		if (u1Count > HIF_SUSPEND_MAX_WAIT_TIME) {
+			DBGLOG(HAL, ERROR, "cfg80211 not suspend\n");
+			/* no cfg80211 suspend called, do pre-suspend flow here */
+			aisPreSuspendFlow(prGlueInfo->prAdapter);
+			p2pRoleProcessPreSuspendFlow(prGlueInfo->prAdapter);
+			break;
+		}
+		kalUsleep_range(5000, 6000);
+		u1Count++;
+		DBGLOG(HAL, TRACE, "wait cfg80211 suspend %d\n", u1Count);
+	}
+}
+#endif /* #if (CFG_WOW_SUPPORT == 1) */
+

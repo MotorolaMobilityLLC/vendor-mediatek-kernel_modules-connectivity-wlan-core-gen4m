@@ -260,8 +260,7 @@ uint32_t halTxUSBSendCmd(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucTc, IN st
 
 	if (!(prHifInfo->state == USB_STATE_LINK_UP ||
 		prHifInfo->state == USB_STATE_PRE_RESUME ||
-		prHifInfo->state == USB_STATE_PRE_SUSPEND_START ||
-		prHifInfo->state == USB_STATE_READY))
+		prHifInfo->state == USB_STATE_PRE_SUSPEND))
 		return WLAN_STATUS_FAILURE;
 
 	prUsbReq = glUsbDequeueReq(prHifInfo, &prHifInfo->rTxCmdFreeQ, &prHifInfo->rTxCmdQLock);
@@ -448,8 +447,7 @@ uint32_t halTxUSBSendAggData(IN struct GL_HIF_INFO *prHifInfo, IN uint8_t ucTc, 
 	memset(prBufCtrl->pucBuf + prBufCtrl->u4WrIdx, 0, LEN_USB_UDMA_TX_TERMINATOR);
 	prBufCtrl->u4WrIdx += LEN_USB_UDMA_TX_TERMINATOR;
 
-	if (!(prHifInfo->state == USB_STATE_LINK_UP ||
-		prHifInfo->state == USB_STATE_READY)) {
+	if (prHifInfo->state != USB_STATE_LINK_UP) {
 		/* No need to dequeue prUsbReq because LINK is not up */
 		prBufCtrl->u4WrIdx = 0;
 		return WLAN_STATUS_FAILURE;
@@ -940,9 +938,8 @@ void halRxUSBReceiveEventComplete(struct urb *urb)
 	struct GLUE_INFO *prGlueInfo = prHifInfo->prGlueInfo;
 
 	if (!(prHifInfo->state == USB_STATE_LINK_UP ||
-			prHifInfo->state == USB_STATE_READY ||
 			prHifInfo->state == USB_STATE_PRE_RESUME ||
-			prHifInfo->state == USB_STATE_PRE_SUSPEND_START)) {
+			prHifInfo->state == USB_STATE_PRE_SUSPEND)) {
 		glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxEventFreeQ, prUsbReq, &prHifInfo->rRxEventQLock, FALSE);
 		return;
 	}
@@ -1024,7 +1021,8 @@ void halRxUSBReceiveDataComplete(struct urb *urb)
 	struct GLUE_INFO *prGlueInfo = prHifInfo->prGlueInfo;
 
 	if (!(prHifInfo->state == USB_STATE_LINK_UP ||
-			prHifInfo->state == USB_STATE_READY)) {
+			prHifInfo->state == USB_STATE_PRE_RESUME ||
+			prHifInfo->state == USB_STATE_PRE_SUSPEND)) {
 		glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxDataFreeQ, prUsbReq, &prHifInfo->rRxDataQLock, FALSE);
 		return;
 	}
@@ -1622,8 +1620,8 @@ void halUSBPreSuspendDone(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCm
 	spin_lock_irqsave(&prHifInfo->rStateLock, flags);
 
 	if (prHifInfo->state == USB_STATE_LINK_UP
-		|| prHifInfo->state == USB_STATE_PRE_SUSPEND_START)
-		prHifInfo->state = USB_STATE_PRE_SUSPEND_DONE;
+		|| prHifInfo->state == USB_STATE_PRE_SUSPEND)
+		prHifInfo->state = USB_STATE_SUSPEND;
 	else
 		DBGLOG(HAL, ERROR, "Previous USB state (%d)!\n",
 			prHifInfo->state);
@@ -1642,7 +1640,7 @@ void halUSBPreSuspendTimeout(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *p
 	spin_lock_irqsave(&prHifInfo->rStateLock, flags);
 
 	if (prHifInfo->state == USB_STATE_LINK_UP
-		|| prHifInfo->state == USB_STATE_PRE_SUSPEND_START)
+		|| prHifInfo->state == USB_STATE_PRE_SUSPEND)
 		prHifInfo->state = USB_STATE_PRE_SUSPEND_FAIL;
 	else
 		DBGLOG(HAL, ERROR, "Previous USB state (%d)!\n",
@@ -1865,35 +1863,6 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief Check if HIF state is READY for upper layer cfg80211
-*
-* @param prAdapter      Pointer to the Adapter structure.
-*
-* @return (TRUE: ready, FALSE: not ready)
-*/
-/*----------------------------------------------------------------------------*/
-bool halIsHifStateReady(IN struct ADAPTER *prAdapter, uint8_t *pucState)
-{
-	if (!prAdapter)
-		return FALSE;
-
-	if (!prAdapter->prGlueInfo)
-		return FALSE;
-
-	if (prAdapter->prGlueInfo->u4ReadyFlag == 0)
-		return FALSE;
-
-	if (pucState)
-		*pucState = prAdapter->prGlueInfo->rHifInfo.state;
-
-	if (prAdapter->prGlueInfo->rHifInfo.state != USB_STATE_READY)
-		return FALSE;
-
-	return TRUE;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
 * @brief Check if HIF state is LINK_UP or READY for USB TX/RX
 *
 * @param prAdapter      Pointer to the Adapter structure.
@@ -1909,8 +1878,7 @@ bool halIsHifStateLinkup(IN struct ADAPTER *prAdapter)
 	if (!prAdapter->prGlueInfo)
 		return FALSE;
 
-	if ((prAdapter->prGlueInfo->rHifInfo.state != USB_STATE_LINK_UP) &&
-		(prAdapter->prGlueInfo->rHifInfo.state != USB_STATE_READY))
+	if (prAdapter->prGlueInfo->rHifInfo.state != USB_STATE_LINK_UP)
 		return FALSE;
 
 	return TRUE;
