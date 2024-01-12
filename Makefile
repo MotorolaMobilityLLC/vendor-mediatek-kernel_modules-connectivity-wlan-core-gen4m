@@ -31,7 +31,7 @@ ccflags-y += -DDRIVER_BUILD_DATE='"$(DRIVER_BUILD_DATE)"'
 # ---------------------------------------------------
 # Compile Options
 # ---------------------------------------------------
-WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -UCONNAC2X2 -UUT_TEST_MODE -UMT7915
+WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -UCONNAC2X2 -UUT_TEST_MODE -UMT7915 -USOC3_0
 # '-D' and '-U' options are processed in the order they are given on the command line.
 # All '-imacros file' and '-include file' options are processed after all '-D' and '-U' options.
 ccflags-y += $(WLAN_CHIP_LIST)
@@ -87,6 +87,14 @@ endif
 ifneq ($(findstring MT7915,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT7915,$(ccflags-y))
 ccflags-y += -DMT7915
+CONFIG_MTK_WIFI_CONNAC2X=y
+CONFIG_MTK_WIFI_11AX_SUPPORT=y
+CONFIG_MTK_WIFI_TWT_SUPPORT=y
+endif
+
+ifneq ($(findstring 3_0,$(MTK_COMBO_CHIP)),)
+ccflags-y:=$(filter-out -USOC3_0,$(ccflags-y))
+ccflags-y += -DSOC3_0
 CONFIG_MTK_WIFI_CONNAC2X=y
 CONFIG_MTK_WIFI_11AX_SUPPORT=y
 CONFIG_MTK_WIFI_TWT_SUPPORT=y
@@ -426,6 +434,9 @@ CHIPS_OBJS += $(CHIPS)connac2x2/connac2x2.o
 endif
 ifneq ($(findstring MT7915,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt7915/mt7915.o
+endif
+ifneq ($(findstring 3_0,$(MTK_COMBO_CHIP)),)
+CHIPS_OBJS += $(CHIPS)soc3_0/soc3_0.o
 endif
 
 # ---------------------------------------------------
