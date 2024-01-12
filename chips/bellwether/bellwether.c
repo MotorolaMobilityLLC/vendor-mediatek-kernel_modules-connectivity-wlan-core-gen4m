@@ -73,7 +73,9 @@ static void bellwetherConfigIntMask(struct GLUE_INFO *prGlueInfo,
 static void bellwetherWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable, bool fgResetHif);
 
-static void bellwetherEnableFwDlMode(struct ADAPTER *prAdapter);
+static void bellwetherWfdmaRxRingExtCtrl(struct GLUE_INFO *prGlueInfo,
+	struct RTMP_RX_RING *rx_ring,
+	u_int32_t index);
 
 #if defined(_HIF_PCIE)
 static void bellwetherInitPcieInt(struct GLUE_INFO *prGlueInfo);
@@ -307,7 +309,7 @@ struct BUS_INFO bellwether_bus_info = {
 	.processTxInterrupt = bellwetherProcessTxInterrupt,
 	.processRxInterrupt = bellwetherProcessRxInterrupt,
 	.tx_ring_ext_ctrl = asicConnac3xWfdmaTxRingExtCtrl,
-	.rx_ring_ext_ctrl = asicConnac3xWfdmaRxRingExtCtrl,
+	.rx_ring_ext_ctrl = bellwetherWfdmaRxRingExtCtrl,
 	/* null wfdmaManualPrefetch if want to disable manual mode */
 	.wfdmaManualPrefetch = bellwetherWfdmaManualPrefetch,
 	.lowPowerOwnRead = asicConnac3xLowPowerOwnRead,
@@ -321,7 +323,6 @@ struct BUS_INFO bellwether_bus_info = {
 	.DmaShdlInit = bellwetherDmashdlInit,
 	.setRxRingHwAddr = bellwetherSetRxRingHwAddr,
 	.wfdmaAllocRxRing = bellwetherWfdmaAllocRxRing,
-	//.enablefwdlmode = bellwetherEnableFwDlMode,
 #endif /*_HIF_PCIE || _HIF_AXI */
 };
 
@@ -747,6 +748,53 @@ static void bellwetherWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		GloCfg.field_conn3x.rx_dma_en = 1;
 		HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg.word);
 	}
+}
+
+static void bellwetherWfdmaRxRingExtCtrl(struct GLUE_INFO *prGlueInfo,
+	struct RTMP_RX_RING *rx_ring,
+	u_int32_t index)
+{
+	struct ADAPTER *prAdapter;
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+	uint32_t ext_offset;
+
+	prAdapter = prGlueInfo->prAdapter;
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+
+	switch (index) {
+	case RX_RING_DATA_IDX_0:
+		ext_offset = 4 * 4;
+		break;
+	case RX_RING_EVT_IDX_1:
+		ext_offset = 0 * 4;
+		break;
+	case RX_RING_DATA1_IDX_2:
+		ext_offset = 5 * 4;
+		break;
+	case RX_RING_TXDONE0_IDX_3:
+		ext_offset = 6 * 4;
+		break;
+	case RX_RING_TXDONE1_IDX_4:
+		ext_offset = 7 * 4;
+		break;
+	case RX_RING_DATA2_IDX_5:
+		ext_offset = 8 * 4;
+		break;
+	case RX_RING_TXDONE2_IDX_6:
+		ext_offset = 9 * 4;
+		break;
+	default:
+		DBGLOG(RX, ERROR, "Error index=%d\n", index);
+		return;
+	}
+
+	rx_ring->hw_desc_base_ext =
+		prBusInfo->host_rx_ring_ext_ctrl_base + ext_offset;
+
+	HAL_MCR_WR(prAdapter, rx_ring->hw_desc_base_ext,
+		   CONNAC3X_RX_RING_DISP_MAX_CNT);
 }
 
 #if defined(_HIF_PCIE)
