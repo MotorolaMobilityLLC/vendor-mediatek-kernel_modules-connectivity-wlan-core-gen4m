@@ -4021,7 +4021,7 @@ static void wlanDestroyAllWdev(void)
 
 void wlanWakeLockInit(struct GLUE_INFO *prGlueInfo)
 {
-#ifdef CONFIG_ANDROID
+#if CFG_ENABLE_WAKE_LOCK
 	KAL_WAKE_LOCK_INIT(NULL, prGlueInfo->rIntrWakeLock,
 			   "WLAN interrupt");
 	KAL_WAKE_LOCK_INIT(NULL, prGlueInfo->rTimeoutWakeLock,
@@ -4031,7 +4031,7 @@ void wlanWakeLockInit(struct GLUE_INFO *prGlueInfo)
 
 void wlanWakeLockUninit(struct GLUE_INFO *prGlueInfo)
 {
-#if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
+#if CFG_ENABLE_WAKE_LOCK
 	if (KAL_WAKE_LOCK_ACTIVE(NULL, prGlueInfo->rIntrWakeLock))
 		KAL_WAKE_UNLOCK(NULL, prGlueInfo->rIntrWakeLock);
 	KAL_WAKE_LOCK_DESTROY(NULL, prGlueInfo->rIntrWakeLock);
