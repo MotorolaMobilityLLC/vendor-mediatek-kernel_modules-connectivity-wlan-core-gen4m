@@ -3367,6 +3367,9 @@ s_int32 mt_op_get_rx_stat_band(
 	rx_st_band->phy_rx_pd_alr =
 		SERV_OS_NTOHL(
 		test_hqa_rx_stat.rInfoBandExt1[band_idx].u4PhyRxPdAlr);
+	rx_st_band->mac_rx_u2m_mpdu_cnt =
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoBandExt1[band_idx].u4RxU2MMpduCnt);
 
 #else
 
