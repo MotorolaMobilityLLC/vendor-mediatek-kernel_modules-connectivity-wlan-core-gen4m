@@ -1800,7 +1800,8 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 	struct SCAN_INFO *prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	struct IE_RNR *prRnr = (struct IE_RNR *) pucIE;
 
-	if (prScanInfo->eCurrentState != SCAN_STATE_SCANNING
+	if (prAdapter->rWifiVar.u4SwTestMode == ENUM_SW_TEST_MODE_SIGMA_OCE
+		|| prScanInfo->eCurrentState != SCAN_STATE_SCANNING
 		|| !prScanInfo->rScanParam.fgOobRnrParseEn) {
 		DBGLOG(SCN, TRACE, "Skip oob scan Rnr parsing\n");
 		return;
