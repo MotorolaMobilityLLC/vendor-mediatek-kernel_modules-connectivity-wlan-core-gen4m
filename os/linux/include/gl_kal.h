@@ -457,8 +457,9 @@ struct PWR_LEVEL_HANDLER_ELEMENT {
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 #define KAL_BAND_6GHZ NL80211_BAND_6GHZ
 #else
-#pragma message("WARNING!! Kernel version " \
-	STR(CFG80211_VERSION_CODE) " is too old to support 6GHZ.")
+/*#pragma message("WARNING!! Kernel version " \
+ *	STR(CFG80211_VERSION_CODE) " is too old to support 6GHZ.")
+ */
 #define KAL_BAND_6GHZ NL80211_BAND_60GHZ /* for build pass only */
 #endif
 #endif
