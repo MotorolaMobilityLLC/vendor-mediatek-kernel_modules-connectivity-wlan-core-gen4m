@@ -31,7 +31,7 @@
 #include "coda/mt7925/wf_top_cfg_on.h"
 #include "coda/mt7925/wf_wtblon_top.h"
 #include "coda/mt7925/wf_uwtbl_top.h"
-
+#include "hal_wfsys_reset_mt7925.h"
 #define CFG_SUPPORT_VCODE_VDFS 0
 
 #if (CFG_SUPPORT_VCODE_VDFS == 1)
@@ -195,6 +195,7 @@ struct PCIE_CHIP_CR_MAPPING mt7925_bus2chip_cr_mapping[] = {
 	{0x7c020000, 0xd0000, 0x10000}, /* CONN_INFRA, wfdma */
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
+	{0x70020000, 0x1f0000, 0x10000}, /* Reserved for CBTOP, can't switch */
 	{0x7c500000, MT7925_PCIE2AP_REMAP_BASE_ADDR, 0x2000000}, /* remap */
 	{0x0, 0x0, 0x0} /* End */
 };
@@ -429,10 +430,14 @@ struct BUS_INFO mt7925_bus_info = {
 	.u4device_vender_request_in = DEVICE_VENDOR_REQUEST_IN_CONNAC2,
 	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT_CONNAC2,
 	.u4SuspendVer = SUSPEND_V2,
+	.fgIsSupportWdtEp = TRUE,
 	.asicUsbResume = asicConnac3xUsbResume,
 	.asicUsbEventEpDetected = asicConnac3xUsbEventEpDetected,
 	.asicUsbRxByteCount = asicConnac3xUsbRxByteCount,
 	.asicUdmaRxFlush = asicConnac3xUdmaRxFlush,
+#if CFG_CHIP_RESET_SUPPORT
+	.asicUsbEpctlRstOpt = mt7925HalUsbEpctlRstOpt,
+#endif
 #endif
 #if defined(_HIF_NONE)
 	/* for compiler need one entry */
@@ -617,7 +622,19 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7925 = {
 		BIT(CHIP_CAPA_XTAL_TRIM),
 	.custom_oid_interface_version = MTK_CUSTOM_OID_INTERFACE_VERSION,
 	.em_interface_version = MTK_EM_INTERFACE_VERSION,
-
+#if CFG_CHIP_RESET_SUPPORT
+	.asicWfsysRst = mt7925HalCbInfraRguWfRst,
+	.asicPollWfsysSwInitDone = mt7925HalPollWfsysSwInitDone,
+#endif
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	/* owner set true when feature is ready. */
+	.fgIsSupportL0p5Reset = TRUE,
+#elif defined(_HIF_USB)
+	.fgIsSupportL0p5Reset = TRUE,
+#elif defined(_HIF_SDIO)
+	/* owner set true when feature is ready. */
+	.fgIsSupportL0p5Reset = FALSE,
+#endif
 	.u4MinTxLen = 2,
 };
 

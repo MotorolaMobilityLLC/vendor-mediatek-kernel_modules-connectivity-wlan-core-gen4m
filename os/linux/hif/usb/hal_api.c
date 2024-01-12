@@ -445,6 +445,11 @@ uint32_t halToggleWfsysRst(struct ADAPTER *prAdapter)
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 	struct CHIP_DBG_OPS *prChipDbg;
+	uint32_t u4CrVal;
+	u_int8_t fgStatus;
+
+#define CONN_SEMA00_M0_OWN_STA        0x18070000
+#define CONN_SEMA_OWN_BY_M0_STA_REP_1 0x18070400
 
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
@@ -467,12 +472,15 @@ uint32_t halToggleWfsysRst(struct ADAPTER *prAdapter)
 	if (prBusInfo->asicUsbEpctlRstOpt)
 		prBusInfo->asicUsbEpctlRstOpt(prAdapter, FALSE);
 
+	HAL_UHW_RD(prAdapter, CONN_SEMA00_M0_OWN_STA, &u4CrVal, &fgStatus);
+	DBGLOG(HAL, INFO, "Read CONN_SEMA00_M0_OWN_STA: 0x%x\n", u4CrVal);
+
 	/* assert WF L0.5 reset */
 	if (prChipInfo->asicWfsysRst)
 		prChipInfo->asicWfsysRst(prAdapter, TRUE);
 
 	/* wait 2 ticks of 32K */
-	kalUdelay(64);
+	kalMdelay(1);
 
 	/* de-assert WF L0.5 reset */
 	if (prChipInfo->asicWfsysRst)
@@ -484,6 +492,11 @@ uint32_t halToggleWfsysRst(struct ADAPTER *prAdapter)
 			       "L0.5 reset polling sw init done fail\n");
 			return WLAN_STATUS_FAILURE;
 		}
+
+	HAL_UHW_RD(prAdapter, CONN_SEMA_OWN_BY_M0_STA_REP_1,
+		&u4CrVal, &fgStatus);
+	DBGLOG(HAL, INFO, "Read CONN_SEMA_OWN_BY_M0_STA_REP_1: 0x%x\n",
+		u4CrVal);
 
 	return WLAN_STATUS_SUCCESS;
 }

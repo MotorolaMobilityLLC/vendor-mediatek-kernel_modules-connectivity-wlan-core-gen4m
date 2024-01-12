@@ -6500,6 +6500,14 @@ int32_t wlanOnAtReset(void)
 		/* Trigger the action of switching Pwr state to drv_own */
 		prAdapter->fgIsFwOwn = TRUE;
 
+		/* Need re-init rPendComp.done = 0, due to racing issue
+		 * between main_thread & kernel thread(kalIoctlByBssIdx)
+		 * when process pending OID CMD, duplicate call completion
+		 * result rPendComp.done = 1 in the next round begin
+		 * ==> next round 1st OID cmd fail.
+		 */
+		kal_reinit_completion(&prGlueInfo->rPendComp);
+
 		/* wlanAdapterStart Section Start */
 		rStatus = wlanAdapterStart(prAdapter,
 					   &prGlueInfo->rRegInfo,

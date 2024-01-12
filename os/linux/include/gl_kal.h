@@ -1093,6 +1093,9 @@ int8_t atoi(uint8_t ch);
 #define kal_completion_done(rComp) \
 	completion_done(rComp)
 
+#define kal_reinit_completion(rComp) \
+	reinit_completion(rComp)
+
 #define kal_completion struct completion
 
 #define kal_timer_list struct timer_list

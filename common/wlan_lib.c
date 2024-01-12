@@ -1651,7 +1651,16 @@ uint32_t wlanAdapterStop(struct ADAPTER *prAdapter,
 	}
 
 	fw_log_deinit(prAdapter);
+
+#if !CFG_WMT_RESET_API_SUPPORT
+	/* Not free WFDMA related mem when running reset flow,
+	 * in reset flow will not allocate again, just do this when rmmod.
+	 */
+	if (!bAtResetFlow)
+		halHifSwInfoUnInit(prAdapter->prGlueInfo);
+#else
 	halHifSwInfoUnInit(prAdapter->prGlueInfo);
+#endif
 	wlanOffUninitNicModule(prAdapter, bAtResetFlow);
 
 #if CFG_SUPPORT_CUSTOM_NETLINK

@@ -1,16 +1,62 @@
-/* SPDX-License-Identifier: BSD-2-Clause */
-/*
- * Copyright (c) 2021 MediaTek Inc.
- */
-
-/*! \file   hal_wfsys_reset_mt6639.c
-*    \brief  WFSYS reset HAL API for MT6639
+/******************************************************************************
+ *
+ * This file is provided under a dual license.  When you use or
+ * distribute this software, you may choose to be licensed under
+ * version 2 of the GNU General Public License ("GPLv2 License")
+ * or BSD License.
+ *
+ * GPLv2 License
+ *
+ * Copyright(C) 2019 MediaTek Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of version 2 of the GNU General Public License as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
+ *
+ * BSD LICENSE
+ *
+ * Copyright(C) 2019 MediaTek Inc. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *  * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ *  * Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *****************************************************************************/
+/*! \file   hal_wfsys_reset_mt7925.c
+*    \brief  WFSYS reset HAL API for MT7925
 *
 *    This file contains all routines which are exported
      from MediaTek 802.11 Wireless LAN driver stack to GLUE Layer.
 */
 
-#ifdef MT6639
+#ifdef MT7925
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -22,12 +68,12 @@
 ********************************************************************************
 */
 #include "precomp.h"
-#include "mt6639.h"
-#include "coda/mt6639/ssusb_epctl_csr.h"
-#include "hal_wfsys_reset_mt6639.h"
-#include "coda/mt6639/cb_infra_rgu.h"
-#include "coda/mt6639/wf_top_cfg_on.h"
-#include "coda/mt6639/wf_wfdma_host_dma0.h"
+#include "mt7925.h"
+#include "coda/mt7925/ssusb_epctl_csr.h"
+#include "hal_wfsys_reset_mt7925.h"
+#include "coda/mt7925/cb_infra_rgu.h"
+#include "coda/mt7925/wf_top_cfg_on.h"
+#include "coda/mt7925/wf_wfdma_host_dma0.h"
 
 #if CFG_CHIP_RESET_SUPPORT
 /*******************************************************************************
@@ -76,26 +122,23 @@
 * @return TRUE means operation successfully and FALSE means fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t mt6639HalCbInfraRguWfRst(struct ADAPTER *prAdapter,
+u_int8_t mt7925HalCbInfraRguWfRst(struct ADAPTER *prAdapter,
 				u_int8_t fgAssertRst)
 {
 	uint32_t u4AddrVal;
 	uint32_t u4CrVal = 0;
 
 	if (fgAssertRst) {
-		mt6639GetSemaphore(prAdapter);
+		mt7925GetSemaphore(prAdapter);
 		/*A.1*/
 		u4AddrVal = CBTOP_RGU_BASE;
-		/* Falcon can't reset with WF_WHOLE_PATH_RST[0],
-		 * reset with WF_SUBSYS_RST[4].
-		 */
 		HAL_MCR_RD(prAdapter, u4AddrVal, &u4CrVal);
 		DBGLOG(HAL, INFO, "Read cr_bus_rst 0x%x: 0x%x\n",
 			u4AddrVal, u4CrVal);
-		u4CrVal |= BIT(4);
+		u4CrVal |= CB_INFRA_RGU_WF_SUBSYS_RST_WF_WHOLE_PATH_RST_MASK;
 		HAL_MCR_WR(prAdapter, u4AddrVal, u4CrVal);
 		DBGLOG(HAL, INFO,
-			"A.1 - Write assert cr_bus_rst 0x%x[4]: 0x%x\n",
+			"A.1 - Write assert cr_bus_rst 0x%x: 0x%x\n",
 			u4AddrVal, u4CrVal);
 	} else {
 		/*e.1*/
@@ -103,7 +146,7 @@ u_int8_t mt6639HalCbInfraRguWfRst(struct ADAPTER *prAdapter,
 		HAL_MCR_RD(prAdapter, u4AddrVal, &u4CrVal);
 		DBGLOG(HAL, INFO, "E. Read 0x%x: 0x%x\n", u4AddrVal, u4CrVal);
 
-		u4CrVal &= ~BIT(4);
+		u4CrVal &= ~CB_INFRA_RGU_WF_SUBSYS_RST_WF_WHOLE_PATH_RST_MASK;
 
 		HAL_MCR_WR(prAdapter, u4AddrVal, u4CrVal);
 	}
@@ -121,7 +164,7 @@ u_int8_t mt6639HalCbInfraRguWfRst(struct ADAPTER *prAdapter,
 *         procedure; otherwise, return FALSE
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t mt6639HalPollWfsysSwInitDone(struct ADAPTER *prAdapter)
+u_int8_t mt7925HalPollWfsysSwInitDone(struct ADAPTER *prAdapter)
 {
 	uint32_t u4CrValue = 0;
 	uint32_t u4ResetTimeCnt = 0, u4ResetTimeTmout = 2;
@@ -134,7 +177,7 @@ u_int8_t mt6639HalPollWfsysSwInitDone(struct ADAPTER *prAdapter)
 	while (TRUE) {
 		HAL_MCR_RD(prAdapter, WF_TOP_CFG_ON_ROMCODE_INDEX_REMAP_ADDR,
 			&u4CrValue);
-		DBGLOG(HAL, INFO, "Poll ROM_INDEX, 0X81021604: 0x%x\n",
+		DBGLOG(HAL, INFO, "Poll ROM_INDEX, 0x81021604: 0x%x\n",
 			u4CrValue);
 		if (u4CrValue == MMIO_READ_FAIL)
 			DBGLOG(HAL, ERROR, "[SER][L0.5] MMIO read CR fail\n");
@@ -152,11 +195,11 @@ u_int8_t mt6639HalPollWfsysSwInitDone(struct ADAPTER *prAdapter)
 		u4ResetTimeCnt++;
 	}
 
-	mt6639GetSemaReport(prAdapter);
+	mt7925GetSemaReport(prAdapter);
 	return fgSwInitDone;
 }
 
-void mt6639GetSemaphore(struct ADAPTER *prAdapter)
+void mt7925GetSemaphore(struct ADAPTER *prAdapter)
 {
 	uint32_t u4RemapVal;
 	uint32_t u4Val;
@@ -170,7 +213,8 @@ void mt6639GetSemaphore(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "Write Remap val: 0x%x\n", u4Val);
 	kalUdelay(10);
 
-	HAL_MCR_RD(prAdapter, 0x40000, &u4Val);
+	HAL_MCR_RD(prAdapter,
+		R_PCIE2AP_PUBLIC_REMAPPING_4_BUS_ADDR, &u4Val);
 	DBGLOG(HAL, INFO, "Read CONN_SEMA00_M0_OWN_STA: 0x%x\n",
 		u4Val);
 
@@ -180,7 +224,7 @@ void mt6639GetSemaphore(struct ADAPTER *prAdapter)
 	kalUdelay(10);
 }
 
-void mt6639GetSemaReport(struct ADAPTER *prAdapter)
+void mt7925GetSemaReport(struct ADAPTER *prAdapter)
 {
 	uint32_t u4RemapVal;
 	uint32_t u4Val;
@@ -218,7 +262,7 @@ void mt6639GetSemaReport(struct ADAPTER *prAdapter)
 * @return TRUE means operation successfully and FALSE means fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t mt6639HalCbInfraRguWfRst(struct ADAPTER *prAdapter,
+u_int8_t mt7925HalCbInfraRguWfRst(struct ADAPTER *prAdapter,
 				u_int8_t fgAssertRst)
 {
 	uint32_t u4CrVal;
@@ -283,7 +327,7 @@ end:
 * @return TRUE means operation successfully and FALSE means fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t mt6639HalUsbEpctlRstOpt(struct ADAPTER *prAdapter,
+u_int8_t mt7925HalUsbEpctlRstOpt(struct ADAPTER *prAdapter,
 			     u_int8_t fgIsRstScopeIncludeToggleBit)
 {
 	uint32_t u4CrVal;
@@ -330,7 +374,7 @@ u_int8_t mt6639HalUsbEpctlRstOpt(struct ADAPTER *prAdapter,
 *         procedure; otherwise, return FALSE
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t mt6639HalPollWfsysSwInitDone(struct ADAPTER *prAdapter)
+u_int8_t mt7925HalPollWfsysSwInitDone(struct ADAPTER *prAdapter)
 {
 	uint32_t u4CrValue = 0;
 	uint32_t u4ResetTimeCnt = 0, u4ResetTimeTmout = 2;
@@ -381,7 +425,7 @@ u_int8_t mt6639HalPollWfsysSwInitDone(struct ADAPTER *prAdapter)
 * @return TRUE means operation successfully and FALSE means fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t mt6639HalCbInfraRguWfRst(struct ADAPTER *prAdapter,
+u_int8_t mt7925HalCbInfraRguWfRst(struct ADAPTER *prAdapter,
 				u_int8_t fgAssertRst)
 {
 	/* TODO */
@@ -399,7 +443,7 @@ u_int8_t mt6639HalCbInfraRguWfRst(struct ADAPTER *prAdapter,
 *         procedure; otherwise, return FALSE
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t mt6639HalPollWfsysSwInitDone(struct ADAPTER *prAdapter)
+u_int8_t mt7925HalPollWfsysSwInitDone(struct ADAPTER *prAdapter)
 {
 	/* TODO */
 
@@ -409,4 +453,4 @@ u_int8_t mt6639HalPollWfsysSwInitDone(struct ADAPTER *prAdapter)
 #endif /* defined(_HIF_SDIO) */
 
 #endif /* CFG_CHIP_RESET_SUPPORT */
-#endif /* MT6639 */
+#endif /* MT7925 */

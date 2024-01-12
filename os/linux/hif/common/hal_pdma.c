@@ -664,7 +664,11 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 	if (p2pFuncNeedForceSleep(prAdapter))
 		DBGLOG(INIT, LOUD, "SAP: Skip fgWiFiInSleepyState check\n");
 	else if (!(prAdapter->fgWiFiInSleepyState &&
-		(prAdapter->u4PwrCtrlBlockCnt == 0)))
+		(prAdapter->u4PwrCtrlBlockCnt == 0))
+#if CFG_CHIP_RESET_SUPPORT
+		&& (prAdapter->eWfsysResetState == WFSYS_RESET_STATE_IDLE)
+#endif
+		)
 		goto unlock;
 
 	if (prAdapter->fgIsFwOwn == TRUE)
@@ -1360,11 +1364,26 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	if (prBusInfo->DmaShdlInit)
 		prBusInfo->DmaShdlInit(prAdapter);
 
-	if (!halWpdmaAllocRing(prAdapter->prGlueInfo, true))
-		return false;
+#if CFG_CHIP_RESET_SUPPORT
+	if (prAdapter->eWfsysResetState != WFSYS_RESET_STATE_IDLE) {
+		DBGLOG(INIT, INFO, "[SER][L0.5] Host re-initialize WFDMA\n");
 
-	halWpdmaInitRing(prAdapter->prGlueInfo, true);
-	halInitMsduTokenInfo(prAdapter);
+		/*only reset TXD & RXD*/
+		if (!halWpdmaAllocRing(prAdapter->prGlueInfo, false))
+			return false;
+
+		halResetMsduToken(prAdapter);
+		DBGLOG(INIT, INFO, "[SER][L0.5] Host enable WFDMA\n");
+		halWpdmaInitRing(prAdapter->prGlueInfo, false);
+	} else
+#endif
+	{
+		if (!halWpdmaAllocRing(prAdapter->prGlueInfo, true))
+			return false;
+
+		halWpdmaInitRing(prAdapter->prGlueInfo, true);
+		halInitMsduTokenInfo(prAdapter);
+	}
 	/* Initialize wfdma reInit handshake parameters */
 	if ((prChipInfo->asicWfdmaReInit)
 	    && (prChipInfo->asicWfdmaReInit_handshakeInit))
@@ -4696,12 +4715,33 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 #if CFG_CHIP_RESET_SUPPORT
 uint32_t halToggleWfsysRst(struct ADAPTER *prAdapter)
 {
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+
 	if (!prAdapter) {
 		DBGLOG(HAL, ERROR, "ADAPTER is NULL\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
-	/* TODO */
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+
+	/* assert WF L0.5 reset */
+	if (prChipInfo->asicWfsysRst)
+		prChipInfo->asicWfsysRst(prAdapter, TRUE);
+
+	/* wait 1ms */
+	kalMdelay(1);
+
+	/* de-assert WF L0.5 reset */
+	if (prChipInfo->asicWfsysRst)
+		prChipInfo->asicWfsysRst(prAdapter, FALSE);
+
+	if (prChipInfo->asicPollWfsysSwInitDone &&
+		!prChipInfo->asicPollWfsysSwInitDone(prAdapter))
+		DBGLOG(INIT, ERROR, "[SER][L0.5] WF L0.5 Reset FAIL!\n");
+
+	halSetFWOwn(prAdapter, FALSE);
 
 	return WLAN_STATUS_SUCCESS;
 }

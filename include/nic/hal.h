@@ -638,9 +638,15 @@ do { \
 
 #define HAL_UHW_WR(_prAdapter, _u4Offset, _u4Value, _pucSts)
 
+#if !CFG_WMT_RESET_API_SUPPORT
+#define HAL_CANCEL_TX_RX(_prAdapter) nicSerStopTxRx(_prAdapter)
+
+#define HAL_RESUME_TX_RX(_prAdapter) nicSerStartTxRx(_prAdapter)
+#else
 #define HAL_CANCEL_TX_RX(_prAdapter)
 
 #define HAL_RESUME_TX_RX(_prAdapter)
+#endif
 
 #define HAL_TOGGLE_WFSYS_RST(_prAdapter)    \
 	halToggleWfsysRst(_prAdapter)
