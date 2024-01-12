@@ -255,6 +255,7 @@ static int32_t __fwLogMmioHandler(u_int8_t fgForceRead)
 		DBGLOG(INIT, WARN,
 			"Skip due to driver own failed.\n");
 		prStats->skipped++;
+		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 		KAL_RELEASE_MUTEX(prAdapter, MUTEX_FW_LOG);
 		goto exit;
 	}
@@ -265,7 +266,7 @@ static int32_t __fwLogMmioHandler(u_int8_t fgForceRead)
 		fwLogCtrlSubHandler(prAdapter, prCtrl, prSubCtrl,
 				    fgForceRead);
 	}
-	wlanReleasePowerControl(prAdapter);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_FW_LOG);
 
 	prStats->handled++;

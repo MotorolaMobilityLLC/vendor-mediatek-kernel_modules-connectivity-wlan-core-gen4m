@@ -56,23 +56,19 @@ static void fw_log_emi_update_rp(struct ADAPTER *ad,
 	uint32_t rp)
 {
 	ACQUIRE_POWER_CONTROL_FROM_PM(ad);
-	if (ad->fgIsFwOwn == TRUE) {
-		DBGLOG(INIT, WARN,
-			"Skip due to driver own failed.\n");
-		return;
+
+	if (ad->fgIsFwOwn == FALSE) {
+		DBGLOG(INIT, LOUD,
+			"[%d %s] rp: 0x%x\n",
+			sub_ctrl->type,
+			fw_log_type_to_str(sub_ctrl->type),
+			rp);
+		ccif_set_fw_log_read_pointer(ad,
+					     sub_ctrl->type,
+					     rp);
 	}
 
-	DBGLOG(INIT, LOUD,
-		"[%d %s] rp: 0x%x\n",
-		sub_ctrl->type,
-		fw_log_type_to_str(sub_ctrl->type),
-		rp);
-
-	ccif_set_fw_log_read_pointer(ad,
-				     sub_ctrl->type,
-				     rp);
-
-	wlanReleasePowerControl(ad);
+	RECLAIM_POWER_CONTROL_TO_PM(ad, FALSE);
 }
 
 static u_int8_t fw_log_emi_is_empty(struct FW_LOG_EMI_SUB_CTRL *sub_ctrl)
