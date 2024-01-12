@@ -10492,19 +10492,7 @@ void aisUpdateParamsForCSA(struct ADAPTER *prAdapter,
 	/* <1> Update information from BSS_DESC to current P_STA_RECORD */
 	bssUpdateStaRecFromBssDesc(prAdapter, prBssDesc, prStaRec);
 
-	/* <2> Decide if this BSS 20/40M bandwidth is allowed */
-	if ((prAdapter->rWifiVar.ucAvailablePhyTypeSet &
-	     PHY_TYPE_SET_802_11N) &&
-	    (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N)) {
-		prBssInfo->fgAssoc40mBwAllowed =
-			cnmBss40mBwPermitted(prAdapter, prStaRec->ucIndex);
-	} else {
-		prBssInfo->fgAssoc40mBwAllowed = FALSE;
-	}
-	DBGLOG(AIS, TRACE, "STA 40mAllowed=%d\n",
-	       prBssInfo->fgAssoc40mBwAllowed);
-
-	/* <3> Setup PHY Attributes and Basic Rate Set/Operational
+	/* <2> Setup PHY Attributes and Basic Rate Set/Operational
 	 * Rate Set
 	 */
 	prBssInfo->ucPhyTypeSet = prStaRec->ucDesiredPhyTypeSet;

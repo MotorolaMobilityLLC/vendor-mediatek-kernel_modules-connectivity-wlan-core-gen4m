@@ -136,7 +136,8 @@ static void rlmChangeOperationModeAfterCSA(
 static void rlmRecOpModeBwForClient(uint8_t ucVhtOpModeChannelWidth,
 				    struct BSS_INFO *prBssInfo);
 
-static void rlmRecHtOpForClient(struct IE_HT_OP *prHtOp,
+static void rlmRecHtOpForClient(struct ADAPTER *prAdapter,
+			struct IE_HT_OP *prHtOp,
 			struct BSS_INFO *prBssInfo,
 			uint8_t *pucPrimaryChannel);
 
@@ -3047,7 +3048,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				break;
 
 			prHtOp = (struct IE_HT_OP *)pucIE;
-			rlmRecHtOpForClient(prHtOp,
+			rlmRecHtOpForClient(prAdapter, prHtOp,
 				prBssInfo, &ucPrimaryChannel);
 
 			break;
@@ -3843,11 +3844,6 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 		if (IS_BSS_AIS(prBssInfo)) {
 			aisUpdateParamsForCSA(prAdapter, prBssInfo);
-			/* ucHtOpInfo1 depends on fg40mBwAllowed, which may be
-			 * updated after CSA. Thus, should update HtOp again.
-			 */
-			rlmRecHtOpForClient(prHtOp, prBssInfo,
-						&ucPrimaryChannel);
 			rlmChangeOperationModeAfterCSA(prAdapter, prBssInfo);
 		}
 
@@ -4518,11 +4514,13 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 	return fgNewParameter;
 }
 
-static void rlmRecHtOpForClient(struct IE_HT_OP *prHtOp,
+static void rlmRecHtOpForClient(struct ADAPTER *prAdapter,
+				struct IE_HT_OP *prHtOp,
 				struct BSS_INFO *prBssInfo,
 				uint8_t *pucPrimaryChannel)
 {
 	struct STA_RECORD *prStaRec;
+	uint8_t ucBssIndex;
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (prBssInfo->eBand == BAND_6G) {
@@ -4536,6 +4534,7 @@ static void rlmRecHtOpForClient(struct IE_HT_OP *prHtOp,
 	prStaRec = prBssInfo->prStaRecOfAP;
 	if (!prStaRec)
 		return;
+	ucBssIndex = prStaRec->ucBssIndex;
 
 	/* Workaround that some APs fill primary channel field
 	 * by its
@@ -4551,8 +4550,9 @@ static void rlmRecHtOpForClient(struct IE_HT_OP *prHtOp,
 	prStaRec->ucHtPeerOpInfo1 = prHtOp->ucInfo1;
 	prStaRec->u2HtPeerOpInfo2 = prHtOp->u2Info2;
 
-	if (!prBssInfo->fg40mBwAllowed) {
-		DBGLOG(RLM, TRACE, "ucHtOpInfo1 reset\n");
+	if (!cnmBss40mBwPermitted(prAdapter, ucBssIndex)) {
+		DBGLOG(RLM, TRACE, "ucHtOpInfo1 0x%x reset\n",
+			prBssInfo->ucHtOpInfo1);
 		prBssInfo->ucHtOpInfo1 &=
 			~(HT_OP_INFO1_SCO |
 			  HT_OP_INFO1_STA_CHNL_WIDTH);
