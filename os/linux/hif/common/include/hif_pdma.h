@@ -64,10 +64,8 @@
  */
 #if defined(MT7925)
 #define TX_RING_CMD_SIZE			512
-#elif defined(MT7990)
-#define TX_RING_CMD_SIZE			320
 #else
-#define TX_RING_CMD_SIZE			256
+#define TX_RING_CMD_SIZE			320
 #endif
 
 #if CFG_SUPPORT_RX_PAGE_POOL
