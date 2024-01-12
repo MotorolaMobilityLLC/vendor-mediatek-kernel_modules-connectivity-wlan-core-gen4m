@@ -931,6 +931,12 @@ ifeq ($(CONFIG_MTK_DBDC_SW_FOR_P2P_LISTEN), y)
     ccflags-y += -DCFG_DBDC_SW_FOR_P2P_LISTEN=1
 endif
 
+ifeq ($(CONFIG_P2P_UAPSD_SUPPORT), n)
+    ccflags-y += -DCFG_P2P_UAPSD_SUPPORT=0
+else
+    ccflags-y += -DCFG_P2P_UAPSD_SUPPORT=1
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_TWT_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_TWT=1
     ifeq ($(CONFIG_MTK_WIFI_TWT_HOTSPOT_SUPPORT), y)
