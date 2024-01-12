@@ -2700,7 +2700,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 #endif
 			if (IE_LEN(pucIE) != (sizeof(struct IE_HT_CAP) - 2)) {
 				DBGLOG(SCN, WARN,
-					"HT_CAP wrong length(%d)->(%d)\n",
+					"HT_CAP wrong length(%lu)->(%d)\n",
 					(sizeof(struct IE_HT_CAP) - 2),
 					IE_LEN(prHtCap));
 				break;
