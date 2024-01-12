@@ -538,6 +538,9 @@ enum ENUM_VENDOR_DRIVER_EVENT {
 #define kalCfg80211VendorEventAlloc(wiphy, wdev, approxlen, event_idx, gfp) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
+#define kalCfg80211VendorEvent(pvPacket) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
 /* Consider on some Android platform, using request_firmware_direct()
  * may cause system failed to load firmware. So we still use
  * request_firmware().
@@ -2210,4 +2213,11 @@ void kalSetPacketDev(struct GLUE_INFO *prGlueInfo,
 void *kalGetPacketDev(void *pvPacket);
 
 void kalWlanHardStartXmit(void *pvPacket, void *pvDev);
+
+uint8_t kalNlaPut(void *pvPacket, uint32_t attrType,
+		uint32_t attrLen, const void *data);
+
+void *
+kalProcessRttReportDone(struct GLUE_INFO *prGlueInfo,
+		uint32_t u4DataLen, uint32_t u4Count);
 #endif /* _GL_KAL_H */

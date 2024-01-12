@@ -1345,6 +1345,7 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 	uint16_t u2IeLen;
 	enum ENUM_BAND ePreferedChnl = BAND_NULL;
 	struct BSS_INFO *prAisBssInfo;
+	uint8_t active;
 
 	ASSERT(prAdapter);
 	ASSERT(prRequest);
@@ -1391,10 +1392,12 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 	prSchedScanParam->fgStopAfterIndication = FALSE;
 
 	prSchedScanCmd->ucBssIndex = prSchedScanParam->ucBssIndex;
-	if (!IS_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex))
+	active = IS_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex);
+	if (!active) {
+		SET_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex);
 		/* sync with firmware */
 		nicActivateNetwork(prAdapter, prAisBssInfo->ucBssIndex);
-
+	}
 	/* 2.1 Prepare command. Set FW struct SSID_MATCH_SETS */
 	/* ssid in ssid list will be send in probe request in advance */
 	prSchedScanCmd->ucSsidNum = prRequest->u4SsidNum;
@@ -1495,9 +1498,12 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 		prScanInfo->fgSchedScanning = TRUE;
 	} while (0);
 
-	if (!prScanInfo->fgSchedScanning)
+	if (!prScanInfo->fgSchedScanning && !active) {
+		UNSET_NET_ACTIVE(prAdapter,
+			prAisBssInfo->ucBssIndex);
 		nicDeactivateNetwork(prAdapter,
 			prAisBssInfo->ucBssIndex);
+	}
 
 	cnmMemFree(prAdapter, (void *) prSchedScanCmd);
 

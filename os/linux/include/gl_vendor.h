@@ -294,9 +294,7 @@ enum STRING_ATTRIBUTE {
 };
 
 enum RTT_ATTRIBUTE {
-	RTT_ATTRIBUTE_CAPABILITIES = 1,
-
-	RTT_ATTRIBUTE_TARGET_CNT = 10,
+	RTT_ATTRIBUTE_TARGET_CNT = 1,
 	RTT_ATTRIBUTE_TARGET_INFO,
 	RTT_ATTRIBUTE_TARGET_MAC,
 	RTT_ATTRIBUTE_TARGET_TYPE,
@@ -312,10 +310,13 @@ enum RTT_ATTRIBUTE {
 	RTT_ATTRIBUTE_TARGET_BURST_DURATION,
 	RTT_ATTRIBUTE_TARGET_PREAMBLE,
 	RTT_ATTRIBUTE_TARGET_BW,
-	RTT_ATTRIBUTE_RESULTS_COMPLETE = 30,
-	RTT_ATTRIBUTE_RESULTS_PER_TARGET,
-	RTT_ATTRIBUTE_RESULT_CNT,
-	RTT_ATTRIBUTE_RESULT
+	RTT_ATTRIBUTE_RESULTS_COMPLETE			= 30,
+	RTT_ATTRIBUTE_RESULTS_PER_TARGET		= 31,
+	RTT_ATTRIBUTE_RESULT_CNT				= 32,
+	RTT_ATTRIBUTE_RESULT					= 33,
+	RTT_ATTRIBUTE_RESUTL_DETAIL				= 34,
+	/* Add any new RTT_ATTRIBUTE prior to RTT_ATTRIBUTE_MAX */
+	RTT_ATTRIBUTE_MAX
 };
 
 enum LSTATS_ATTRIBUTE {
@@ -537,6 +538,9 @@ extern const struct nla_policy qca_roaming_param_policy[
 
 extern const struct nla_policy nla_get_apf_policy[
 		APF_ATTRIBUTE_MAX + 1];
+
+extern const struct nla_policy nla_set_rtt_config_policy[
+		RTT_ATTRIBUTE_TARGET_BW + 1];
 
 /*******************************************************************************
  *                           MACROS
@@ -1160,6 +1164,14 @@ int mtk_cfg80211_vendor_set_country_code(struct wiphy
 		const void *data, int data_len);
 
 int mtk_cfg80211_vendor_get_rtt_capabilities(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len);
+
+int mtk_cfg80211_vendor_set_rtt_config(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len);
+
+int mtk_cfg80211_vendor_cancel_rtt_config(
 	struct wiphy *wiphy, struct wireless_dev *wdev,
 	const void *data, int data_len);
 
