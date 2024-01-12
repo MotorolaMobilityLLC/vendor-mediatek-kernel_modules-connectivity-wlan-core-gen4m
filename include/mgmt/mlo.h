@@ -450,6 +450,9 @@ uint8_t mldGetBssIndexByHwBand(struct ADAPTER *prAdapter,
 uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
 
+uint8_t mldGetMloLinkNum(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec);
+
 uint8_t mldIsMultiLinkEnabled(
 	struct ADAPTER *prAdapter,
 	enum ENUM_NETWORK_TYPE eNetworkType,
