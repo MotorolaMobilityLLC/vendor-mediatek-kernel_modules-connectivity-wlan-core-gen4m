@@ -1101,9 +1101,10 @@ uint32_t authProcessRxDeauthFrame(IN struct SW_RFB *prSwRfb,
 	struct WLAN_DEAUTH_FRAME *prDeauthFrame;
 	uint16_t u2RxReasonCode;
 
-	ASSERT(prSwRfb);
-	ASSERT(aucBSSID);
-	ASSERT(pu2ReasonCode);
+	if (!prSwRfb || !aucBSSID || !pu2ReasonCode) {
+		DBGLOG(SAA, WARN, "Invalid parameters, ignore pkt!\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	/* 4 <1> locate the Deauthentication Frame. */
 	prDeauthFrame = (struct WLAN_DEAUTH_FRAME *)prSwRfb->pvHeader;

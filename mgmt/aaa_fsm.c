@@ -827,6 +827,26 @@ uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 				 * and use class error to handle sta
 				 */
 				prStaRec->eAuthAssocState = AA_STATE_IDLE;
+				/* Remove from client list if it was previously
+				 * associated
+				 */
+				if ((prStaRec->ucStaState > STA_STATE_1) &&
+				     prAdapter->fgIsP2PRegistered &&
+				     (IS_STA_IN_P2P(prStaRec))) {
+					struct BSS_INFO *prBssInfo = NULL;
+
+					prBssInfo = GET_BSS_INFO_BY_INDEX(
+					    prAdapter,
+					    prStaRec->ucBssIndex);
+					if (prBssInfo) {
+						DBGLOG(AAA, INFO,
+						    "Remove client\n");
+						bssRemoveClient(
+						    prAdapter,
+						    prBssInfo,
+						    prStaRec);
+					}
+				}
 
 				/* NOTE(Kevin):
 				 * Better to change state here, not at TX Done
