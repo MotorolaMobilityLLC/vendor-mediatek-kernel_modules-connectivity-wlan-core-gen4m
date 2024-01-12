@@ -1602,6 +1602,10 @@ void fillConnac3xNicTxDescAppendWithSdo(
 		prHwTxDescAppend->CR4_APPEND.u2PktFlags =
 			HIF_PKT_FLAGS_CT_INFO_APPLY_TXD;
 #endif
+#if CFG_SUPPORT_WED_PROXY
+	prHwTxDescAppend->CR4_APPEND.u2PktFlags =
+		HIF_PKT_FLAGS_CT_INFO_APPLY_TXD;
+#endif
 	prHwTxDescAppend->CR4_APPEND.ucBssIndex =
 		prMsduInfo->ucBssIndex;
 	prHwTxDescAppend->CR4_APPEND.ucWtblIndex =
