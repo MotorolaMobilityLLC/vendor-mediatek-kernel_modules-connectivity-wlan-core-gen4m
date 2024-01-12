@@ -2442,6 +2442,31 @@ wlanoidSetRemoveWep(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_PENDING;
 } /* wlanoidSetRemoveWep */
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint32_t
+wlanoidSetLinkIdForKey(IN struct ADAPTER *prAdapter,
+		     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen) {
+	uint32_t *pParam = NULL;
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+	ASSERT(pvSetBuffer);
+
+	*pu4SetInfoLen = sizeof(uint32_t);
+
+	if (u4SetBufferLen < sizeof(uint32_t))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	pParam = (uint32_t *) pvSetBuffer;
+	prAdapter->rWifiVar.ucLinkIdForKey = *pParam;
+
+	DBGLOG(ML, INFO, "Set link id 0x%x for set_key cmd\n", *pParam);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to set a key to the driver.
@@ -2463,8 +2488,9 @@ wlanoidSetRemoveWep(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
-		 IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen)
+wlanoidSetAddKeyImpl(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
+		IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen,
+		IN uint8_t fgIsOID)
 {
 	struct PARAM_KEY *prNewKey;
 	struct CMD_802_11_KEY rCmdKey;
@@ -2476,13 +2502,11 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 #if CFG_SUPPORT_TDLS
 	struct STA_RECORD *prTmpStaRec;
 #endif
-
 	DBGLOG_LIMITED(RSN, TRACE, "wlanoidSetAddKey\n");
 	DBGLOG(REQ, LOUD, "\n");
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
 	ASSERT(pu4SetInfoLen);
-
 	DBGLOG_LIMITED(RSN, TRACE, "wlanoidSetAddKey\n");
 	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
 		DBGLOG(RSN, WARN,
@@ -2507,6 +2531,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 		*pu4SetInfoLen = u4SetBufferLen;
 		return WLAN_STATUS_INVALID_DATA;
 	}
+
 	/* Exception check */
 	if (prNewKey->u4KeyIndex & 0x0fffff00)
 		return WLAN_STATUS_INVALID_DATA;
@@ -2973,7 +2998,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 				  CMD_ID_ADD_REMOVE_KEY,
 				  TRUE,
 				  FALSE,
-				  TRUE,
+				  fgIsOID,
 #if CFG_SUPPORT_REPLAY_DETECTION
 				  nicCmdEventSetAddKey,
 				  nicOidCmdTimeoutSetAddKey,
@@ -2986,6 +3011,114 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 				  pvSetBuffer,
 				  u4SetBufferLen);
 } /* wlanoidSetAddKey */
+
+uint32_t
+wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
+		 IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_KEY *prNewKey;
+	struct BSS_INFO *prBssInfo;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	uint32_t ret = WLAN_STATUS_SUCCESS;
+	struct MLD_STA_RECORD *prMldStaRec = NULL;
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+#endif
+
+	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
+		DBGLOG(RSN, WARN,
+			"Fail in set add key! (Adapter not ready). ACPI=D%d, Radio=%d\n",
+			prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	}
+	prNewKey = (struct PARAM_KEY *) pvSetBuffer;
+	/* Verify the key structure length. */
+	if (prNewKey->u4Length > u4SetBufferLen) {
+		DBGLOG_LIMITED(RSN, WARN,
+		       "Invalid key structure length (%d) greater than total buffer length (%d)\n",
+		       (uint8_t) prNewKey->u4Length, (uint8_t) u4SetBufferLen);
+		*pu4SetInfoLen = u4SetBufferLen;
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+	/* Verify the key material length for key material buffer */
+	if (prNewKey->u4KeyLength > prNewKey->u4Length -
+	    OFFSET_OF(struct PARAM_KEY, aucKeyMaterial)) {
+		DBGLOG_LIMITED(RSN, WARN, "Invalid key material length (%d)\n",
+			(uint8_t) prNewKey->u4KeyLength);
+		*pu4SetInfoLen = u4SetBufferLen;
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prNewKey->ucBssIdx);
+	if (!prBssInfo) {
+		DBGLOG_LIMITED(REQ, INFO, "BSS Info not exist !!\n");
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	/* Dump PARAM_KEY content. */
+	DBGLOG(RSN, TRACE,
+		"Set: Dump PARAM_KEY content, Len: 0x%08x, BSSID: "
+		MACSTR
+		", KeyIdx: 0x%08x, KeyLen: 0x%08x, Cipher: %d, Material:\n",
+		prNewKey->u4Length, MAC2STR(prNewKey->arBSSID),
+		prNewKey->u4KeyIndex, prNewKey->u4KeyLength,
+		prNewKey->ucCipher);
+	DBGLOG_MEM8(RSN, TRACE, prNewKey->aucKeyMaterial,
+		    prNewKey->u4KeyLength);
+	DBGLOG(RSN, TRACE, "Key RSC:\n");
+	DBGLOG_MEM8(RSN, TRACE, &prNewKey->rKeyRSC, sizeof(uint64_t));
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldStaRec = mldStarecGetByAddr(prAdapter, prNewKey->arBSSID);
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	if (prMldStaRec && prNewKey->u4KeyIndex & IS_UNICAST_KEY) {
+		struct STA_RECORD *sta;
+
+		LINK_FOR_EACH_ENTRY(sta, &prMldStaRec->rStarecList,
+					rLinkEntryMld, struct STA_RECORD) {
+			/* overwrite key info by link */
+			prNewKey->ucBssIdx = sta->ucBssIndex;
+			COPY_MAC_ADDR(prNewKey->arBSSID, sta->aucMacAddr);
+
+			/* set oid is true only for the last cmd
+			 * otherwise oid may complete wrongly */
+			ret = wlanoidSetAddKeyImpl(prAdapter, pvSetBuffer,
+				u4SetBufferLen, pu4SetInfoLen,
+				sta == LINK_PEEK_TAIL(&prMldStaRec->rStarecList,
+				struct STA_RECORD, rLinkEntryMld));
+			if (ret != WLAN_STATUS_SUCCESS &&
+			    ret != WLAN_STATUS_PENDING)
+				return ret;
+		}
+	} else if (prMldBssInfo && prAdapter->rWifiVar.ucLinkIdForKey != 0xff) {
+		struct BSS_INFO *bss;
+
+		LINK_FOR_EACH_ENTRY(bss, &prMldBssInfo->rBssList,
+					rLinkEntryMld, struct BSS_INFO) {
+			if (bss->ucLinkIndex ==
+			    prAdapter->rWifiVar.ucLinkIdForKey) {
+				/* overwrite key info by link */
+				prNewKey->ucBssIdx = bss->ucBssIndex;
+
+				ret = wlanoidSetAddKeyImpl(prAdapter,
+					pvSetBuffer, u4SetBufferLen,
+					pu4SetInfoLen, TRUE);
+				if (ret != WLAN_STATUS_SUCCESS &&
+			   	    ret != WLAN_STATUS_PENDING)
+					return ret;
+			}
+		}
+		prAdapter->rWifiVar.ucLinkIdForKey = 0xff;
+	} else {
+		ret = wlanoidSetAddKeyImpl(prAdapter, pvSetBuffer,
+				u4SetBufferLen, pu4SetInfoLen, TRUE);
+	}
+	return ret;
+#else
+	return wlanoidSetAddKeyImpl(prAdapter, pvSetBuffer,
+				u4SetBufferLen, pu4SetInfoLen, TRUE);
+#endif
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

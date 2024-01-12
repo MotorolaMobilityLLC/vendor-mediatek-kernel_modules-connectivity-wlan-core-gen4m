@@ -285,6 +285,8 @@ struct ML_INFO {
 	uint8_t fgValid;
 	uint8_t aucMldAddr[MAC_ADDR_LEN];
 	uint8_t ucLinkIndex;
+	uint8_t ucLinkNum;
+	uint8_t aucLinkAddrs[MLD_LINK_MAX][MAC_ADDR_LEN];
 };
 #endif
 

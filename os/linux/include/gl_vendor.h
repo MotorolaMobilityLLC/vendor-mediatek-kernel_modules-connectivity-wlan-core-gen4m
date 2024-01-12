@@ -720,6 +720,25 @@ struct PARAM_BSS_MAC_OUI {
 	uint8_t ucMacOui[MAC_OUI_LEN];
 };
 
+enum PARAM_GENERIC_RESPONSE_ID {
+	GRID_MANAGE_CHANNEL_LIST,			/* 0 */
+	GRID_HANG_INFO,					/* 1 */
+	GRID_SWPIS_BCN_INFO,				/* 2 */
+	GRID_SWPIS_BCN_INFO_ABORT,			/* 3 */
+	GRID_EXTERNAL_AUTH,				/* 4 */
+};
+
+struct PARAM_EXTERNAL_AUTH_INFO {
+	uint8_t id;
+	uint8_t len;
+	uint8_t ssid[ELEM_MAX_LEN_SSID + 1];
+	uint8_t ssid_len;
+	uint8_t bssid[PARAM_MAC_ADDR_LEN];
+	uint32_t key_mgmt_suite;
+	uint32_t action;
+	uint8_t da[PARAM_MAC_ADDR_LEN];
+} __KAL_ATTRIB_PACKED__;
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************

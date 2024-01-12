@@ -3884,12 +3884,14 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct STA_RECORD *prStaRec;
 
 	DEBUGFUNC("aisIndicationOfMediaStateToHost()");
 
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
 
 	DBGLOG(AIS, LOUD,
 	       "AIS%d indicate Media State to Host Current State [%d]\n",
@@ -3951,7 +3953,13 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 				  prConnSettings->aucSSID,
 				  prConnSettings->ucSSIDLen);
 
-			COPY_MAC_ADDR(rEventConnStatus.aucBssid,
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			if (prStaRec->ucMldStaIndex != MLD_GROUP_NONE)
+				COPY_MAC_ADDR(rEventConnStatus.aucBssid,
+					      prStaRec->aucMldAddr);
+			else
+#endif
+				COPY_MAC_ADDR(rEventConnStatus.aucBssid,
 				      prAisBssInfo->aucBSSID);
 
 			rEventConnStatus.u2BeaconPeriod =

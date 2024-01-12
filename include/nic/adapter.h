@@ -737,6 +737,10 @@ struct WIFI_VAR {
 	uint8_t ucApEht;
 	uint8_t ucP2pGoEht;
 	uint8_t ucP2pGcEht;
+	uint8_t ucEhtAmsduInAmpduTx;
+	uint8_t ucEhtAmsduInAmpduRx;
+	uint8_t ucStaEhtBfee;
+	uint8_t ucLinkIdForKey;
 #endif
 	uint8_t ucApHt;
 	uint8_t ucApVht;
@@ -763,11 +767,6 @@ struct WIFI_VAR {
 	uint8_t ucTrigMacPadDur;
 	uint8_t ucStaHeBfee;
 	uint8_t ucStaHeSuBfer;
-#endif
-#if (CFG_SUPPORT_802_11BE == 1)
-	uint8_t ucEhtAmsduInAmpduTx;
-	uint8_t ucEhtAmsduInAmpduRx;
-	uint8_t ucStaEhtBfee;
 #endif
 #if (CFG_SUPPORT_TWT == 1)
 	uint8_t ucTWTRequester;
