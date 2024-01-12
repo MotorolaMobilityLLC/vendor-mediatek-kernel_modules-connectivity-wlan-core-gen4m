@@ -2203,6 +2203,50 @@ static u_int8_t cnmDbdcIsAGConcurrent(
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief This utility function is used to check MCC
+ *
+ * @param prAdapter          Pointer of ADAPTER_T
+ *
+ * @retval current network is MCC mode
+ */
+
+bool cnmIsMccMode(IN struct ADAPTER *prAdapter)
+{
+	struct BSS_INFO *prBssInfo;
+	uint32_t u4Idx;
+	uint8_t ucLast2GChNum = 0, ucLast5GChNum = 0;
+	bool fgIs2GMcc = false, fgIs5GMcc = false;
+
+	ASSERT(prAdapter);
+
+	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
+		prBssInfo = prAdapter->aprBssInfo[u4Idx];
+		if (!prBssInfo->fgIsNetActive ||
+		    prBssInfo->eConnectionState != MEDIA_STATE_CONNECTED)
+			continue;
+
+		if (prBssInfo->eBand == BAND_2G4) {
+			if (ucLast2GChNum != 0 &&
+			    ucLast2GChNum != prBssInfo->ucPrimaryChannel)
+				fgIs2GMcc = true;
+			ucLast2GChNum = prBssInfo->ucPrimaryChannel;
+		} else if (prBssInfo->eBand == BAND_5G) {
+			if (ucLast5GChNum != 0 &&
+			    ucLast5GChNum != prBssInfo->ucPrimaryChannel)
+				fgIs5GMcc = true;
+			ucLast5GChNum = prBssInfo->ucPrimaryChannel;
+		}
+	}
+
+	if (fgIs2GMcc || fgIs5GMcc)
+		return true;
+
+	return !prAdapter->rWifiVar.fgDbDcModeEn &&
+		(ucLast2GChNum != 0 && ucLast5GChNum != 0);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief    MT6632 HW capability will change between BW160+NSS2 and BW80+NSS1
  *
  * @param (none)

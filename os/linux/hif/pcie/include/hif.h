@@ -179,6 +179,7 @@ struct GL_HIF_INFO {
 
 	bool fgIsPowerOff;
 	bool fgIsDumpLog;
+	bool fgIsEnTxRingSizeCtrl;
 };
 
 struct BUS_INFO {
