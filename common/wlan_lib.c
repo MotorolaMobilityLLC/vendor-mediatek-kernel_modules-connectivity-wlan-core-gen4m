@@ -3379,7 +3379,7 @@ wlanQueryInformation(struct ADAPTER *prAdapter,
 		     void *pvInfoBuf, uint32_t u4InfoBufLen,
 		     uint32_t *pu4QryInfoLen)
 {
-	uint32_t status = WLAN_STATUS_FAILURE;
+	uint32_t status;
 
 	ASSERT(prAdapter);
 	ASSERT(pu4QryInfoLen);
@@ -3435,7 +3435,7 @@ wlanSetInformation(struct ADAPTER *prAdapter,
 		   void *pvInfoBuf, uint32_t u4InfoBufLen,
 		   uint32_t *pu4SetInfoLen)
 {
-	uint32_t status = WLAN_STATUS_FAILURE;
+	uint32_t status;
 
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
@@ -9678,7 +9678,7 @@ uint32_t wlanCfgParse(struct ADAPTER *prAdapter,
 	int32_t i4Nargs;
 	int8_t   arcArgv_size[WLAN_CFG_ARGV_MAX];
 	uint8_t  ucTimes = 0;
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 	struct CMD_HEADER rCmdV1Header;
 	int8_t ucTmp[WLAN_CFG_VALUE_LEN_MAX];
 	uint8_t i;
