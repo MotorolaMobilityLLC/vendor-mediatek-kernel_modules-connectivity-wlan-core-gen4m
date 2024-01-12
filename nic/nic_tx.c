@@ -4443,6 +4443,10 @@ static void nicTxDirectCheckStaPsQ(IN struct ADAPTER
 					&prAdapter->rStaPsQueue[ucStaRecIndex],
 					prQueueEntry, struct QUE_ENTRY *);
 				prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
+				if (prMsduInfo == NULL) {
+					DBGLOG(TX, INFO, "prMsduInfo null\n");
+					break;
+				}
 			} else {
 				break;
 			}
