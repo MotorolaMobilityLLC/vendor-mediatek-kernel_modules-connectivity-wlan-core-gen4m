@@ -642,7 +642,9 @@ void nic_txd_v3_compose(
 		HAL_MAC_CONNAC3X_TXD_SET_FIXED_RATE_IDX(prTxDesc,
 						prMsduInfo->u4FixedRateOption);
 		HAL_MAC_CONNAC3X_TXD_SET_FR_BW(prTxDesc, 0x8);
-		HAL_MAC_CONNAC3X_TXD_SET_FORCE_RTS_CTS(prTxDesc);
+
+		if (prMsduInfo->ucPacketType != TX_PACKET_TYPE_MGMT)
+			HAL_MAC_CONNAC3X_TXD_SET_FORCE_RTS_CTS(prTxDesc);
 		break;
 	case MSDU_RATE_MODE_MANUAL_CR:
 	case MSDU_RATE_MODE_AUTO:
