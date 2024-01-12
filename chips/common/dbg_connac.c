@@ -1780,7 +1780,7 @@ int32_t halShowStatInfo(struct ADAPTER *prAdapter,
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"%-20s%s%s\n", "NonSpState", " = ",
-				prQueryStaStatistics->ucDynamicSGIState <
+				prQueryStaStatistics->ucVhtNonSpRateState <
 				(ucRaSgiUnSpStateNum - 1) ?
 				SGI_UNSP_STATE_TBLE[prQueryStaStatistics->
 				ucVhtNonSpRateState] :
