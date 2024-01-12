@@ -616,12 +616,12 @@ u_int8_t secIsProtectedFrame(IN struct ADAPTER *prAdapter,
 {
 #if CFG_SUPPORT_802_11W
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec) &&
-	    secIsRobustActionFrame(prAdapter, prMsdu->prPacket))
+	    (secIsRobustActionFrame(prAdapter, prMsdu->prPacket)
+	    || secIsRobustMgmtFrame(prAdapter, prMsdu->prPacket)))
 		return TRUE;
-#else
+#endif
 	if (prMsdu->ucPacketType == TX_PACKET_TYPE_MGMT)
 		return FALSE;
-#endif
 
 	return secIsProtectedBss(prAdapter,
 				 GET_BSS_INFO_BY_INDEX(prAdapter,
@@ -651,6 +651,23 @@ u_int8_t secIsProtectedBss(IN struct ADAPTER *prAdapter,
 	else if (prBssInfo->eNetworkType == NETWORK_TYPE_BOW)
 		return TRUE;
 
+	return FALSE;
+}
+
+u_int8_t secIsRobustMgmtFrame(IN struct ADAPTER *prAdapter, IN void *prPacket)
+{
+	struct WLAN_MAC_HEADER *prWlanHeader = NULL;
+	uint16_t u2TxFrameCtrl;
+
+	if (!prPacket)
+		return FALSE;
+
+	prWlanHeader = (struct WLAN_MAC_HEADER *)
+		((unsigned long) prPacket + MAC_TX_RESERVED_FIELD);
+	u2TxFrameCtrl = prWlanHeader->u2FrameCtrl & MASK_FRAME_TYPE;
+	if (u2TxFrameCtrl == MAC_FRAME_DISASSOC
+	    || u2TxFrameCtrl == MAC_FRAME_DEAUTH)
+		return TRUE;
 	return FALSE;
 }
 
