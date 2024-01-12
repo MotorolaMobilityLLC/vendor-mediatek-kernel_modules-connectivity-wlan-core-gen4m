@@ -3559,7 +3559,7 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 		if (prAisBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE &&
 		    (prAisFsmInfo->ucReasonOfDisconnect ==
 		     DISCONNECT_REASON_CODE_NEW_CONNECTION ||
-#if IS_CE_SEGMENT
+#if CFG_RADIO_LOST_DISCONNECT
 		     prAisFsmInfo->ucReasonOfDisconnect ==
 		     DISCONNECT_REASON_CODE_RADIO_LOST ||
 #endif
