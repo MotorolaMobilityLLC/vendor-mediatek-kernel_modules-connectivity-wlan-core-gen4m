@@ -565,6 +565,96 @@ enum WTBL_LMAC_CIPHER_SUIT {
 	WTBL_CIPHER_GCMP_WPI_128 = 13,
 };
 
+#ifdef MT6653
+union WTBL_LMAC_DW2 {
+	struct {
+		uint32_t aid12:12;
+		uint32_t gid_su:1;
+		uint32_t dual_ptec_en:1;
+		uint32_t dual_cts_cap:1;
+		uint32_t rsvd:1;
+		uint32_t cipher_suit_pgkt:5;
+		uint32_t fd:1;
+		uint32_t td:1;
+		uint32_t sw:1;
+		uint32_t ul:1;
+		uint32_t tx_ps:1;
+		uint32_t qos:1;
+		uint32_t ht:1;
+		uint32_t vht:1;
+		uint32_t he:1;
+		uint32_t eht:1;
+		uint32_t mesh:1;
+	} field;
+	uint32_t word;
+};
+
+union WTBL_LMAC_DW3 {
+	struct {
+		uint32_t wmm_q:2;
+		uint32_t eht_sig_mcs:2;
+		uint32_t hdrt_mode:1;
+		uint32_t beam_chg:1;
+		uint32_t eht_ltf_sym_num_opt:2;
+		uint32_t pfmu_index:8;
+		uint32_t ulpf_index:8;
+		uint32_t ribf:1;
+		uint32_t ulpf:1;
+		uint32_t bypass_txSMM:1;
+		uint32_t tbf_ht:1;
+		uint32_t tbf_vht:1;
+		uint32_t tbf_he:1;
+		uint32_t tbf_eht:1;
+		uint32_t ign_fbk:1;
+	} field;
+	uint32_t word;
+};
+
+union WTBL_LMAC_DW4 {
+	struct {
+		uint32_t nego_winsize0:3;
+		uint32_t nego_winsize1:3;
+		uint32_t nego_winsize2:3;
+		uint32_t nego_winsize3:3;
+		uint32_t nego_winsize4:3;
+		uint32_t nego_winsize5:3;
+		uint32_t nego_winsize6:3;
+		uint32_t nego_winsize7:3;
+		uint32_t pe:2;
+		uint32_t dis_rhtr:1;
+		uint32_t ldpc_ht:1;
+		uint32_t ldpc_vht:1;
+		uint32_t ldpc_he:1;
+		uint32_t ldpc_eht:1;
+		uint32_t ba_mode:1;
+	} field;
+	uint32_t word;
+};
+
+union WTBL_LMAC_DW5 {
+	struct {
+		uint32_t af:4;
+		uint32_t bsa_en:1;
+		uint32_t rts:1;
+		uint32_t smps:1;
+		uint32_t dyn_bw:1;
+		uint32_t mmss:3;
+		uint32_t usr:1;
+		uint32_t sr_r:3;
+		uint32_t sr_abort:1;
+		uint32_t tx_power_offset:6;
+		uint32_t ltf_eht:2;
+		uint32_t gi_eht:2;
+		uint32_t doppl:1;
+		uint32_t txop_ps_cap:1;
+		uint32_t du_i_psm:1;
+		uint32_t i_psm:1;
+		uint32_t psm:1;
+		uint32_t skip_tx:1;
+	} field;
+	uint32_t word;
+};
+#else
 union WTBL_LMAC_DW2 {
 	struct {
 		uint32_t aid12:12;
@@ -653,6 +743,7 @@ union WTBL_LMAC_DW5 {
 	} field;
 	uint32_t word;
 };
+#endif
 
 union WTBL_LMAC_DW6 {
 	struct {
@@ -705,6 +796,23 @@ union WTBL_LMAC_DW8 {
 	uint32_t word;
 };
 
+#ifdef MT6653
+union WTBL_LMAC_DW9 {
+	struct {
+		uint32_t rx_avg_mpdu_size:14;
+		uint32_t pritx_sw_mode:1;
+		uint32_t pritx_ersu:1;
+		uint32_t pritx_plr:2;
+		uint32_t pritx_dcm:1;
+		uint32_t pritx_er106t:1;
+		uint32_t fcap:3;
+		uint32_t mpdu_fail_cnt:3;
+		uint32_t mpdu_ok_cnt:3;
+		uint32_t rate_idx:3;
+	} field;
+	uint32_t word;
+};
+#else
 union WTBL_LMAC_DW9 {
 	struct {
 		uint32_t rx_avg_mpdu_size:14;
@@ -721,6 +829,7 @@ union WTBL_LMAC_DW9 {
 	} field;
 	uint32_t word;
 };
+#endif
 
 union WTBL_LMAC_DW10 {
 	struct {
@@ -762,6 +871,23 @@ union WTBL_LMAC_DW13 {
 	uint32_t word;
 };
 
+#ifdef MT6653
+union WTBL_LMAC_DW14 {
+	struct {
+		uint32_t rate_1_tx_cnt:16;
+		uint32_t rate_1_fail_cnt:16;
+	} field;
+
+	struct {
+		uint32_t pad:8;
+		uint32_t cipher_suit_igtk:3;
+		uint32_t pad1:1;
+		uint32_t cipher_suit_bigtk:3;
+		uint32_t pad2:17;
+	} field_v2;
+	uint32_t word;
+};
+#else
 union WTBL_LMAC_DW14 {
 	struct {
 		uint32_t rate_1_tx_cnt:16;
@@ -776,6 +902,7 @@ union WTBL_LMAC_DW14 {
 	} field_v2;
 	uint32_t word;
 };
+#endif
 
 union WTBL_LMAC_DW15 {
 	struct {
@@ -883,7 +1010,42 @@ union WTBL_LMAC_DW29 {
 	} field;
 	uint32_t word;
 };
+#ifdef MT6653
+union WTBL_LMAC_DW30 {
+	struct {
+		uint32_t dispatch_order:7;
+		uint32_t dispatch_ratio:7;
+		uint32_t emlsr_trans_dly_idx:2;
+		uint32_t link_mgf:16;
+	} field;
+	uint32_t word;
+};
 
+union WTBL_LMAC_DW31 {
+	struct {
+		uint32_t pad:23;
+		uint32_t bftx_tb:1;
+		uint32_t drop:1;
+		uint32_t cascad:1;
+		uint32_t all_ack:1;
+		uint32_t mpdu_size:2;
+		uint32_t rxd_dup_mode:2;
+		uint32_t ack_en:1;
+	} field;
+	uint32_t word;
+};
+
+union WTBL_LMAC_DW32 {
+	struct {
+		uint32_t om_info:12;
+		uint32_t om_info_eht:4;
+		uint32_t rxd_dup_from_om_chg:1;
+		uint32_t rxd_dup_white_list:12;
+		uint32_t pad:3;
+	} field;
+	uint32_t word;
+};
+#else
 union WTBL_LMAC_DW30 {
 	struct {
 		uint32_t dispatch_order:7;
@@ -924,6 +1086,7 @@ union WTBL_LMAC_DW32 {
 	} field;
 	uint32_t word;
 };
+#endif
 
 union WTBL_LMAC_DW33 {
 	struct {
@@ -948,6 +1111,17 @@ union WTBL_LMAC_DW34 {
 	uint32_t word;
 };
 
+#ifdef MT6653
+union WTBL_LMAC_DW35 {
+	struct {
+		uint32_t snr_rx0:8;
+		uint32_t snr_rx1:8;
+		uint32_t snr_rx2:8;
+		uint32_t snr_rx3:8;
+	} field;
+	uint32_t word;
+};
+#else
 union WTBL_LMAC_DW35 {
 	struct {
 		uint32_t snr_rx0:6;
@@ -958,6 +1132,7 @@ union WTBL_LMAC_DW35 {
 	} field;
 	uint32_t word;
 };
+#endif
 
 struct wtbl_rx_stat {
 	union WTBL_LMAC_DW33 wtbl_d33;
@@ -1122,6 +1297,29 @@ union WTBL_UMAC_DW7 {
 	uint32_t word;
 };
 
+#ifdef MT6653
+union WTBL_UMAC_DW8 {
+	struct {
+		/* hw_amsdu_cfg */
+		uint32_t amsdu_len:6;
+		uint32_t amsdu_num:5;
+		uint32_t amsdu_en:1;
+		uint32_t pad:8;
+		uint32_t sec_addr_mode:2;
+		uint32_t spp_en:1;
+		uint32_t wpi_even:1;
+		uint32_t aad_om:1;
+		uint32_t wmm_q:2;
+		uint32_t qos:1;
+		uint32_t ht:1;
+		uint32_t hdrt_mode:1;
+		uint32_t bypass_rro:1;
+		uint32_t pad2:1;
+	} field;
+	uint32_t word;
+};
+
+#else
 union WTBL_UMAC_DW8 {
 	struct {
 		/* hw_amsdu_cfg */
@@ -1137,6 +1335,7 @@ union WTBL_UMAC_DW8 {
 	} field;
 	uint32_t word;
 };
+#endif
 
 union WTBL_UMAC_DW9 {
 	struct {

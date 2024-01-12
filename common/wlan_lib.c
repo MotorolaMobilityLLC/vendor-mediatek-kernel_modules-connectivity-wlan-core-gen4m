@@ -5846,14 +5846,12 @@ wlanoidQueryStaStatistics(struct ADAPTER *prAdapter,
 {
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	uint8_t ucBssIndex ;
-	struct PERF_MONITOR *perf = &prAdapter->rPerMonitor;
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-	if (perf->fgIdle ||
-		(ucBssIndex == aisGetDefaultLinkBssIndex(prAdapter) &&
+	if (ucBssIndex == aisGetDefaultLinkBssIndex(prAdapter) &&
 			!CHECK_FOR_TIMEOUT(kalGetTimeTick(),
 			prAdapter->u4LastLinkQuality,
-			SEC_TO_MSEC(CFG_LQ_MONITOR_FREQUENCY)))
+			MSEC_TO_SYSTIME(SEC_TO_MSEC(CFG_LQ_MONITOR_FREQUENCY)))
 	) {
 		kalMemCopy((struct PARAM_GET_STA_STATISTICS *)pvQueryBuffer,
 			   &prAdapter->rQueryStaStatistics,

@@ -369,6 +369,14 @@ static int32_t connac3x_dump_helper_wtbl_info(
 
 	/* DW2~4 */
 	DBGLOG(REQ, INFO, "====DW2~4====\n");
+#ifdef MT6653
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tAID12/GID_SU/DUAL_PTEC_EN/DUAL_CTS_EN:%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d2.field.aid12,
+		pWtbl->trx_cap.wtbl_d2.field.gid_su,
+		pWtbl->trx_cap.wtbl_d2.field.dual_ptec_en,
+		pWtbl->trx_cap.wtbl_d2.field.dual_cts_cap);
+#else
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
 		"\tAID12/GID_SU/SPP_EN/WPI_EVEN/AAD_OM:%d/%d/%d/%d/%d\n",
 		pWtbl->trx_cap.wtbl_d2.field.aid12,
@@ -376,6 +384,7 @@ static int32_t connac3x_dump_helper_wtbl_info(
 		pWtbl->trx_cap.wtbl_d2.field.spp_en,
 		pWtbl->trx_cap.wtbl_d2.field.wpi_even,
 		pWtbl->trx_cap.wtbl_d2.field.aad_om);
+#endif
 
 	/* DUMP DW14 for BMC entry only */
 	if (pWtbl->peer_basic_info.wtbl_d0.field.muar_idx
@@ -439,6 +448,31 @@ static int32_t connac3x_dump_helper_wtbl_info(
 		pWtbl->trx_cap.wtbl_d3.field.tbf_vht,
 		pWtbl->trx_cap.wtbl_d3.field.tbf_he,
 		pWtbl->trx_cap.wtbl_d3.field.tbf_eht);
+#ifdef MT6653
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tRIBF/ULPF/BYPASS_TXSMM:%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d3.field.ribf,
+		pWtbl->trx_cap.wtbl_d3.field.ulpf,
+		pWtbl->trx_cap.wtbl_d3.field.bypass_txSMM);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tNEGO_WINSZ [0~7]:%d/%d/%d/%d/%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d4.field.nego_winsize0,
+		pWtbl->trx_cap.wtbl_d4.field.nego_winsize1,
+		pWtbl->trx_cap.wtbl_d4.field.nego_winsize2,
+		pWtbl->trx_cap.wtbl_d4.field.nego_winsize3,
+		pWtbl->trx_cap.wtbl_d4.field.nego_winsize4,
+		pWtbl->trx_cap.wtbl_d4.field.nego_winsize5,
+		pWtbl->trx_cap.wtbl_d4.field.nego_winsize6,
+		pWtbl->trx_cap.wtbl_d4.field.nego_winsize7);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tPE/DIS_RHTR/BA_MODE:%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d4.field.pe,
+		pWtbl->trx_cap.wtbl_d4.field.dis_rhtr,
+		pWtbl->trx_cap.wtbl_d4.field.ba_mode);
+#else
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
 		i4BytesWritten,
 		"\tANT_ID[0~7]:%d/%d/%d/%d/%d/%d/%d/%d\n",
@@ -455,9 +489,20 @@ static int32_t connac3x_dump_helper_wtbl_info(
 		"\tPE/DIS_RHTR:%d/%d\n",
 		pWtbl->trx_cap.wtbl_d4.field.pe,
 		pWtbl->trx_cap.wtbl_d4.field.dis_rhtr);
-
+#endif
 	/* DW5 */
 	DBGLOG(REQ, INFO, "====DW5====\n");
+#ifdef MT6653
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tAF/BSA_EN/RTS/SMPS/DYNBW/MMSS:%d/%d/%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d5.field.af,
+		pWtbl->trx_cap.wtbl_d5.field.bsa_en,
+		pWtbl->trx_cap.wtbl_d5.field.rts,
+		pWtbl->trx_cap.wtbl_d5.field.smps,
+		pWtbl->trx_cap.wtbl_d5.field.dyn_bw,
+		pWtbl->trx_cap.wtbl_d5.field.mmss);
+#else
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
 		i4BytesWritten,
 		"\tAF/AFHE/RTS/SMPS/DYNBW/MMSS:%d/%d/%d/%d/%d/%d\n",
@@ -467,6 +512,7 @@ static int32_t connac3x_dump_helper_wtbl_info(
 		pWtbl->trx_cap.wtbl_d5.field.smps,
 		pWtbl->trx_cap.wtbl_d5.field.dyn_bw,
 		pWtbl->trx_cap.wtbl_d5.field.mmss);
+#endif
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
 		i4BytesWritten,
 		"\tUSR/SR_R/SR_A/TXPWR_OFST:%d/%d/%d/%d\n",
@@ -667,6 +713,29 @@ static void connac3x_print_wtbl_info(
 		pWtbl->ppdu_counters.wtbl_d19.field.mgnt_retry_cnt
 	);
 
+#ifdef MT6653
+	LOG_FUNC(
+	"====DW31====\n"
+	"\tBFTX_TB/CASCAD/ALL_ACK/DROP/MPDU_SZ:%d/%d/%d/%d/%d\n"
+	"\tRXD_DUP_MODE/ACK_EN:%d/%d\n",
+		pWtbl->resp_info.wtbl_d31.field.bftx_tb,
+		pWtbl->resp_info.wtbl_d31.field.cascad,
+		pWtbl->resp_info.wtbl_d31.field.all_ack,
+		pWtbl->resp_info.wtbl_d31.field.drop,
+		pWtbl->resp_info.wtbl_d31.field.mpdu_size,
+		pWtbl->resp_info.wtbl_d31.field.rxd_dup_mode,
+		pWtbl->resp_info.wtbl_d31.field.ack_en
+	);
+	LOG_FUNC(
+	"====DW32====\n"
+	"\tOM_INFO_HE:%d OM_INFO_EHT:%d\n"
+	"\tRXD_DUP[W_LIST/FROM_OM_CHG]:%d/%d\n",
+		pWtbl->rx_dup_info.wtbl_d32.field.om_info,
+		pWtbl->rx_dup_info.wtbl_d32.field.om_info_eht,
+		pWtbl->rx_dup_info.wtbl_d32.field.rxd_dup_white_list,
+		pWtbl->rx_dup_info.wtbl_d32.field.rxd_dup_from_om_chg
+	);
+#else
 	LOG_FUNC(
 	"====DW31====\n"
 	"\tCASCAD/ALL_ACK/DROP/BA_MODE/MPDU_SZ:%d/%d/%d/%d/%d\n"
@@ -697,6 +766,7 @@ static void connac3x_print_wtbl_info(
 		pWtbl->rx_dup_info.wtbl_d32.field.rxd_dup_white_list,
 		pWtbl->rx_dup_info.wtbl_d32.field.rxd_dup_from_om_chg
 	);
+#endif
 
 	LOG_FUNC(
 	"====DW33====\n"
@@ -1109,6 +1179,15 @@ int32_t connac3x_show_umac_wtbl_info(
 			256 * amsdu_len,
 			256 * (amsdu_len + 1) - 1,
 			amsdu_len);
+#ifdef MT6653
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tSEC_ADDR_MODE:%d SPP_EN:%d WPI_EVEN:%d AAD_OM:%d\n",
+			puwtbl->key_msdu_mlo.wtbl_d8.field.sec_addr_mode,
+			puwtbl->key_msdu_mlo.wtbl_d8.field.spp_en,
+			puwtbl->key_msdu_mlo.wtbl_d8.field.wpi_even,
+			puwtbl->key_msdu_mlo.wtbl_d8.field.aad_om);
+#endif
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
 			i4BytesWritten,
 			"\tWMM_Q:%d QoS:%d HT:%d HDRT_MODE:%d\n",
