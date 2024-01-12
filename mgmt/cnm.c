@@ -2884,8 +2884,35 @@ cnmDbdcFsmEventHandler_DISABLE_GUARD(
 {
 	switch (eEvent) {
 	case DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG:
-	case DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG:
 		/* IGNORE */
+		break;
+
+	case DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG:
+		/* Enable DBDC */
+		switch (cnmDbdcOpmodeChangeAndWait(prAdapter, TRUE)) {
+		case ENUM_DBDC_PROTOCOL_STATUS_WAIT:
+			g_rDbdcInfo.eDbdcFsmNextState =
+			ENUM_DBDC_FSM_STATE_WAIT_PROTOCOL_ENABLE;
+			break;
+
+		case ENUM_DBDC_PROTOCOL_STATUS_DONE_SUCCESS:
+			g_rDbdcInfo.eDbdcFsmNextState =
+			ENUM_DBDC_FSM_STATE_WAIT_HW_ENABLE;
+			break;
+
+		case ENUM_DBDC_PROTOCOL_STATUS_DONE_FAIL:
+#if (CFG_SUPPORT_DBDC_NO_BLOCKING_OPMODE)
+			log_dbg(CNM, WARN,
+				"[DBDC] OPMode Fail, ForceEn at state %d\n",
+				g_rDbdcInfo.eDbdcFsmCurrState);
+			g_rDbdcInfo.eDbdcFsmNextState =
+			ENUM_DBDC_FSM_STATE_WAIT_HW_ENABLE;
+			break;
+#endif
+
+		default:
+			break;
+		}
 		break;
 
 	case DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO:
