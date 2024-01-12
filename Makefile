@@ -1,3 +1,12 @@
+# Support GKI mixed build
+ifeq ($(DEVICE_MODULES_PATH),)
+DEVICE_MODULES_PATH = $(srctree)
+else
+LINUXINCLUDE := $(DEVCIE_MODULES_INCLUDE) $(LINUXINCLUDE)
+TOP := $(srctree)/..
+endif
+KO_PATH := $(if $(filter /%,$(src)),,$(srctree)/)$(src)
+
 ccflags-y :=
 CFG_DIR ?= $(src)/configs
 
@@ -946,7 +955,7 @@ endif
 
 ifeq ($(CONFIG_MTK_WIFI_POWER_THROTTLING), y)
 ccflags-y += -DCFG_SUPPORT_POWER_THROTTLING=1
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/power_throttling
+ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/connectivity/power_throttling
 else
 ccflags-y += -DCFG_SUPPORT_POWER_THROTTLING=0
 endif
@@ -1098,7 +1107,7 @@ else
 endif
 
 ifeq ($(CONFIG_MTK_TC1_FEATURE), y)
-    ccflags-y += -I$(srctree)/drivers/misc/mediatek/tc1_interface
+    ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/tc1_interface
     ccflags-y += -DCFG_TC1_FEATURE=1
 else
     ccflags-y += -DCFG_TC1_FEATURE=0
@@ -1257,20 +1266,20 @@ endif
 ifeq ($(CFG_SUPPORT_WIFI_SYSDVT), 1)
 ccflags-y += -I$(src)/include/dvt
 endif
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/performance/include/
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/emi/$(MTK_PLATFORM)
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/emi/submodule
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/pmic/include/
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/power_throttling/
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/common
-ccflags-y += -I$(srctree)/drivers/devfreq/
+ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/base/power/include/
+ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/include/mt-plat/
+ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/performance/include/
+ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/emi/$(MTK_PLATFORM)
+ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/emi/submodule
+ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/pmic/include/
+ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/power_throttling/
+ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/connectivity/common
+ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/devfreq/
 ccflags-y += -I$(srctree)/net
 ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/connfem/include/
 
 ifneq ($(CONFIG_MTK_MDDP_SUPPORT),)
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/mddp/include/
+ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/mddp/include/
 ccflags-y += -DCFG_MTK_MDDP_SUPPORT=1
 else
 ccflags-y += -DCFG_MTK_MDDP_SUPPORT=0
