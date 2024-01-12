@@ -648,12 +648,11 @@ void radiotapFillRadiotap(IN struct ADAPTER *prAdapter,
 		if (!timerPendingTimer(
 			    &prAdapter->rPacketDelaySetupTimer)) {
 			DBGLOG(RX, WARN,
-				"Start ReturnIndicatedRfb Timer (%u)\n",
-			  RX_RETURN_INDICATED_RFB_TIMEOUT_SEC);
+				"Start ReturnIndicatedRfb Timer (%ums)\n",
+			  RX_RETURN_INDICATED_RFB_TIMEOUT_MSEC);
 			cnmTimerStartTimer(prAdapter,
 				&prAdapter->rPacketDelaySetupTimer,
-				SEC_TO_MSEC(
-					RX_RETURN_INDICATED_RFB_TIMEOUT_SEC));
+					RX_RETURN_INDICATED_RFB_TIMEOUT_MSEC);
 		}
 	}
 #endif
