@@ -1256,6 +1256,7 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 	prGlueInfo = prAdapter->prGlueInfo;
 	kalMemZero(prConnSettings->aucSSID,
 		   sizeof(prConnSettings->aucSSID));
+	prConnSettings->ucSSIDLen = 0;
 	kalMemZero(prConnSettings->aucBSSID,
 		   sizeof(prConnSettings->aucBSSID));
 	prConnSettings->eConnectionPolicy = CONNECT_BY_SSID_ANY;
