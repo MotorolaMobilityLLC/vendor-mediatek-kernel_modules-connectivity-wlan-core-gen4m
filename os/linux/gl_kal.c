@@ -10603,7 +10603,14 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 	enum nl80211_channel_type rChannelType;
 	uint8_t band = 0;
 #if (CFG_ADVANCED_80211_MLO == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct BSS_INFO *prBssInfo;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
+		ucBssIndex);
+#else
 	uint8_t linkIdx = 0;
+#endif
 #endif
 
 	if (eBand > BAND_NULL && eBand < BAND_NUM)
@@ -10651,7 +10658,13 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 
 	cfg80211_chandef_create(&chandef, prChannel, rChannelType);
 #if (CFG_ADVANCED_80211_MLO == 1)
-	cfg80211_ch_switch_notify(prDevHandler, &chandef, linkIdx);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	cfg80211_ch_switch_notify(prDevHandler, &chandef,
+		prBssInfo->ucLinkIndex);
+#else
+	cfg80211_ch_switch_notify(prDevHandler, &chandef,
+		linkIdx);
+#endif
 #else
 	cfg80211_ch_switch_notify(prDevHandler, &chandef);
 #endif
