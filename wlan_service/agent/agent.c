@@ -4827,24 +4827,26 @@ static struct agent_cli_set_w_handler cli_set_w_cmds[] = {
 s_int32 mt_agent_cli_set_w(u_char *name, struct service *serv, u_char *param)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_long str2value = 0;
 	struct agent_cli_set_w_handler *entry = cli_set_w_cmds;
 	struct hqa_frame *hqa_cmd = &hqa_cmd_frame;
 	u_int16 value = 0;
 
 	sys_ad_zero_mem(hqa_cmd, sizeof(*hqa_cmd));
 
-	kstrtol(param, 10, (long *)&value);
-	value = SERV_OS_HTONS(value);
-	sys_ad_move_mem(hqa_cmd->data, &value, sizeof(u_int16));
-
-	while (strlen(entry->name)) {
-		if (strcmp(name, entry->name) == 0)
-			ret = entry->handler(
+	if (kstrtol(param, 10, &str2value) == 0) {
+		value = str2value;
+		value = SERV_OS_HTONS(value);
+		sys_ad_move_mem(hqa_cmd->data, &value, sizeof(u_int16));
+		while (strlen(entry->name)) {
+			if (strcmp(name, entry->name) == 0)
+				ret = entry->handler(
 				(struct service_test *)serv->serv_handle,
-				hqa_cmd);
-
-		entry++;
-	}
+					hqa_cmd);
+			entry++;
+		}
+	} else
+		ret = SERV_STATUS_AGENT_INVALID_PARAM;
 
 	return ret;
 }
@@ -4862,23 +4864,25 @@ static struct agent_cli_set_dw_handler cli_set_dw_cmds[] = {
 s_int32 mt_agent_cli_set_dw(u_char *name, struct service *serv, u_char *param)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_long str2value = 0;
 	struct agent_cli_set_dw_handler *entry = cli_set_dw_cmds;
 	struct hqa_frame *hqa_cmd = &hqa_cmd_frame;
 	u_int32 value = 0;
 
 	sys_ad_zero_mem(hqa_cmd, sizeof(*hqa_cmd));
-	kstrtol(param, 10, (long *)&value);
-	value = SERV_OS_HTONL(value);
-	sys_ad_move_mem(hqa_cmd->data, &value, sizeof(u_int32));
-
-	while (strlen(entry->name)) {
-		if (strcmp(name, entry->name) == 0)
-			ret = entry->handler(
+	if (kstrtol(param, 10, &str2value) == 0) {
+		value = str2value;
+		value = SERV_OS_HTONL(value);
+		sys_ad_move_mem(hqa_cmd->data, &value, sizeof(u_int32));
+		while (strlen(entry->name)) {
+			if (strcmp(name, entry->name) == 0)
+				ret = entry->handler(
 				(struct service_test *)serv->serv_handle,
-				hqa_cmd);
-
-		entry++;
-	}
+					hqa_cmd);
+			entry++;
+		}
+	} else
+		ret = SERV_STATUS_AGENT_INVALID_PARAM;
 
 	return ret;
 }
@@ -4920,11 +4924,14 @@ s_int32 mt_agent_set_ctrl_band(
 	struct service_test *serv_test, u_char *arg)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_long str2value = 0;
 	u_int32 value = 0;
 
-	kstrtol(arg, 10, (long *)&value);
-
-	SERV_SET_PARAM(serv_test, ctrl_band_idx, value);
+	if (kstrtol(arg, 10, &str2value) == 0) {
+		value = str2value;
+		SERV_SET_PARAM(serv_test, ctrl_band_idx, value);
+	} else
+		ret = SERV_STATUS_AGENT_INVALID_PARAM;
 
 	return ret;
 }
@@ -4934,34 +4941,38 @@ s_int32 mt_agent_set_pwr(
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_int32 value = 0;
-	u_int32 input = 0;
+	u_long input = 0;
 	struct hqa_frame *hqa_cmd = &hqa_cmd_frame;
 	u_char *data = hqa_cmd->data;
 
-	kstrtol(arg, 10, (long *)&input);
-
-	/* power */
-	value = input;
-	set_param_and_shift_buf(TRUE, sizeof(u_int32),
-				(u_char *)&value, &data);
-	/* band index */
-	value = serv_test->ctrl_band_idx;
-	set_param_and_shift_buf(TRUE, sizeof(u_int32),
-				(u_char *)&value, &data);
-	/* channel */
-	value = CONFIG_GET_PARAM(serv_test, channel, serv_test->ctrl_band_idx);
-	set_param_and_shift_buf(TRUE, sizeof(u_int32),
-				(u_char *)&value, &data);
-	/* channel band */
-	value = CONFIG_GET_PARAM(serv_test, ch_band, serv_test->ctrl_band_idx);
-	set_param_and_shift_buf(TRUE, sizeof(u_int32),
-				(u_char *)&value, &data);
-	/* ant index */
-	value = 0;
-	set_param_and_shift_buf(TRUE, sizeof(u_int32),
-				(u_char *)&value, &data);
-
-	hqa_set_tx_power_ext(serv_test, hqa_cmd);
+	if (kstrtol(arg, 10, (long *)&input) == 0) {
+		/* power */
+		value = input;
+		set_param_and_shift_buf(TRUE, sizeof(u_int32),
+					(u_char *)&value, &data);
+		/* band index */
+		value = serv_test->ctrl_band_idx;
+		set_param_and_shift_buf(TRUE, sizeof(u_int32),
+					(u_char *)&value, &data);
+		/* channel */
+		value = CONFIG_GET_PARAM(serv_test, channel,
+					SERV_GET_PARAM(serv_test,
+							ctrl_band_idx));
+		set_param_and_shift_buf(TRUE, sizeof(u_int32),
+					(u_char *)&value, &data);
+		/* channel band */
+		value = CONFIG_GET_PARAM(serv_test, ch_band,
+					SERV_GET_PARAM(serv_test,
+					ctrl_band_idx));
+		set_param_and_shift_buf(TRUE, sizeof(u_int32),
+					(u_char *)&value, &data);
+		/* ant index */
+		value = 0;
+		set_param_and_shift_buf(TRUE, sizeof(u_int32),
+					(u_char *)&value, &data);
+		hqa_set_tx_power_ext(serv_test, hqa_cmd);
+	} else
+		ret = SERV_STATUS_AGENT_INVALID_PARAM;
 
 	return ret;
 }
@@ -5133,6 +5144,7 @@ s_int32 mt_agent_set_txant(struct service_test *serv_test, u_char *arg)
 	u_int32 value = 0;
 	struct hqa_frame *hqa_cmd = &hqa_cmd_frame;
 	u_char *data = hqa_cmd->data;
+	u_long str2value = 0;
 
 	sys_ad_zero_mem(hqa_cmd, sizeof(*hqa_cmd));
 
@@ -5141,13 +5153,16 @@ s_int32 mt_agent_set_txant(struct service_test *serv_test, u_char *arg)
 
 	hqa_cmd->length = 2*sizeof(u_int32);
 
-	kstrtol(arg, 10, (long *)&value);
-	set_param_and_shift_buf(TRUE, sizeof(u_int32),
-				(u_char *)&value, &data);
-	value = serv_test->ctrl_band_idx;
-	set_param_and_shift_buf(TRUE, sizeof(u_int32),
-				(u_char *)&value, &data);
-	hqa_set_tx_path(serv_test, hqa_cmd);
+	if (kstrtol(arg, 10, &str2value) == 0) {
+		value = str2value;
+		set_param_and_shift_buf(TRUE, sizeof(u_int32),
+					(u_char *)&value, &data);
+		value = SERV_GET_PARAM(serv_test, ctrl_band_idx);
+		set_param_and_shift_buf(TRUE, sizeof(u_int32),
+					(u_char *)&value, &data);
+		hqa_set_tx_path(serv_test, hqa_cmd);
+	} else
+		ret = SERV_STATUS_AGENT_INVALID_PARAM;
 
 	return ret;
 }
@@ -5156,6 +5171,7 @@ s_int32 mt_agent_set_rxant(struct service_test *serv_test, u_char *arg)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_int32 value = 0;
+	u_long str2value = 0;
 	struct hqa_frame *hqa_cmd = &hqa_cmd_frame;
 	u_char *data = hqa_cmd->data;
 
@@ -5166,14 +5182,16 @@ s_int32 mt_agent_set_rxant(struct service_test *serv_test, u_char *arg)
 
 	hqa_cmd->length = 2*sizeof(u_int32);
 
-	kstrtol(arg, 10, (long *)&value);
-	set_param_and_shift_buf(TRUE, sizeof(u_int32),
-				(u_char *)&value, &data);
-	value = serv_test->ctrl_band_idx;
-	set_param_and_shift_buf(TRUE, sizeof(u_int32),
-				(u_char *)&value, &data);
-
-	hqa_set_rx_path(serv_test, hqa_cmd);
+	if (kstrtol(arg, 10, (long *)&str2value) == 0) {
+		value = str2value;
+		set_param_and_shift_buf(TRUE, sizeof(u_int32),
+					(u_char *)&value, &data);
+		value = SERV_GET_PARAM(serv_test, ctrl_band_idx);
+		set_param_and_shift_buf(TRUE, sizeof(u_int32),
+					(u_char *)&value, &data);
+		hqa_set_rx_path(serv_test, hqa_cmd);
+	} else
+		ret = SERV_STATUS_AGENT_INVALID_PARAM;
 
 	return ret;
 }
