@@ -1863,7 +1863,10 @@ s_int32 mt_serv_get_band_mode(
 #endif /*(CFG_SUPPORT_CONNAC3X == 1)*/
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
-		("%s: band_type=%u\n", __func__, band_type));
+		("%s: band_idx=%d, band_type=%u\n",
+			__func__,
+			ctrl_band_idx,
+			band_type));
 
 	BSTATE_SET_PARAM(serv_test, band_type, band_type);
 

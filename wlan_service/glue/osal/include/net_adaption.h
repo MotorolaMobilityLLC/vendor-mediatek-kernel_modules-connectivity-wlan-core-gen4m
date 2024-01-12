@@ -899,8 +899,10 @@ struct GNU_PACKED hqa_comm_rx_stat {
 /* VER 0x0001: Init version */
 /* VER 0x0002: Add hw_tx support, channel_band_dbdc */
 /* VER 0x0003: CFG_SUPPORT_CONNAC3X: Add little core support, channel_band_dbdc_ext  */
+/* VER 0x0004: Add DBDC/MIMO switch support or not  */
 
-#define GET_CAPABILITY_VER		0x0003
+
+#define GET_CAPABILITY_VER		0x0004
 #define GET_CAPABILITY_TAG_NUM	2
 
 /* phy capability */
@@ -960,6 +962,7 @@ struct test_capability_ext_cap {
 	/* BIT1: HW TX support */
 	/* BIT2: Little core support */
 	/* BIT3: XTAL trim support */
+	/* BIT4: DBDC/MIMO switch support */
 	u_int32 feature1;
 	u_int32 reserved[15];
 };
