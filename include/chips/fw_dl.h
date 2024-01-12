@@ -471,8 +471,13 @@ uint32_t wlanDownloadPatch(IN struct ADAPTER *prAdapter);
 uint32_t wlanHarvardFormatDownload(IN struct ADAPTER *prAdapter,
 	IN enum ENUM_IMG_DL_IDX_T eDlIdx);
 
+#if CFG_WLAN_IMG_SUPPORT
+uint32_t wlanFwImageDownload(IN struct ADAPTER *prAdapter,
+	IN enum ENUM_IMG_DL_IDX_T eDlIdx);
+#else
 uint32_t wlanConnacFormatDownload(IN struct ADAPTER *prAdapter,
 	IN enum ENUM_IMG_DL_IDX_T eDlIdx);
+#endif
 
 uint32_t wlanGetPatchInfo(IN struct ADAPTER *prAdapter);
 

@@ -357,6 +357,10 @@ CONFIG_MTK_WIFI_NAN=y
 CONFIG_MTK_WIFI_CONNFEM_SUPPORT=y
 ifeq ($(WLAN_CONNAC3_DEV), yes)
 CONFIG_MTK_WIFI_TRX_DIRECT=y
+else
+    ifneq ($(filter 6983, $(WLAN_CHIP_ID)),)
+        ccflags-y += -DCFG_WLAN_IMG_SUPPORT=1
+    endif
 endif
 
 ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
