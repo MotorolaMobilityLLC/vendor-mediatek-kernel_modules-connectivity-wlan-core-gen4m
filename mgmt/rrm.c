@@ -155,7 +155,7 @@ void rrmTxNeighborReportRequest(struct ADAPTER *prAdapter,
 	if (!prMsduInfo)
 		return;
 	prTxFrame = (struct ACTION_NEIGHBOR_REPORT_FRAME
-			     *)((unsigned long)(prMsduInfo->prPacket) +
+			     *)((uintptr_t)(prMsduInfo->prPacket) +
 				MAC_TX_RESERVED_FIELD);
 
 	/* 2 Compose The Mac Header. */
@@ -557,7 +557,7 @@ schedule_next:
 		}
 		if (!prTsmReqIE->u2RandomInterval) {
 			wmmStartTsmMeasurement(prAdapter,
-				(unsigned long)prTsmReq);
+				(uintptr_t)prTsmReq);
 			break;
 		}
 		get_random_bytes(&u2RandomTime, 2);
@@ -566,7 +566,7 @@ schedule_next:
 		u2RandomTime = TU_TO_MSEC(u2RandomTime);
 		cnmTimerStopTimer(prAdapter, &rTSMReqTimer);
 		cnmTimerInitTimer(prAdapter, &rTSMReqTimer,
-			wmmStartTsmMeasurement, (unsigned long)prTsmReq);
+			wmmStartTsmMeasurement, (uintptr_t)prTsmReq);
 		cnmTimerStartTimer(prAdapter, &rTSMReqTimer, u2RandomTime);
 		break;
 	}
@@ -817,7 +817,7 @@ u_int8_t rrmFillScanMsg(struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
-void rrmDoBeaconMeasurement(struct ADAPTER *prAdapter, unsigned long ulParam)
+void rrmDoBeaconMeasurement(struct ADAPTER *prAdapter, uintptr_t ulParam)
 {
 	uint8_t ucBssIndex = (uint8_t) ulParam;
 	struct CONNECTION_SETTINGS *prConnSettings =

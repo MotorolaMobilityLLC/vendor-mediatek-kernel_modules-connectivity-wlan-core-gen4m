@@ -1117,7 +1117,7 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 			    OUT struct QUE *prReturnedQue);
 
 void qmHandleReorderBubbleTimeout(IN struct ADAPTER
-				  *prAdapter, IN unsigned long ulParamPtr);
+				  *prAdapter, IN uintptr_t ulParamPtr);
 
 void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 				     struct RX_BA_ENTRY *prReorderQueParm);
@@ -1256,7 +1256,7 @@ mqmCallbackAddBaRspSent(IN struct ADAPTER *prAdapter,
 			IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
 void mqmTimeoutCheckIdleRxBa(IN struct ADAPTER *prAdapter,
-			     IN unsigned long ulParamPtr);
+			     IN uintptr_t ulParamPtr);
 
 void
 mqmRxModifyBaEntryStatus(IN struct ADAPTER *prAdapter,

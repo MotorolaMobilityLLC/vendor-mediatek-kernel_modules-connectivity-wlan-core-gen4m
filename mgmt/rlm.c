@@ -654,8 +654,8 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return;
 
-	pucBuffer = (uint8_t *)((unsigned long)prMsduInfo->prPacket +
-				(unsigned long)prMsduInfo->u2FrameLength);
+	pucBuffer = (uint8_t *)((uintptr_t)prMsduInfo->prPacket +
+				(uintptr_t)prMsduInfo->u2FrameLength);
 
 	MTK_OUI_IE(pucBuffer)->ucId = ELEM_ID_VENDOR;
 	MTK_OUI_IE(pucBuffer)->ucLength = ELEM_MIN_LEN_MTK_OUI;
@@ -777,8 +777,8 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 			return;
 
 		pucBuffer =
-			(uint8_t *)((unsigned long)prMsduInfo->prPacket +
-				    (unsigned long)prMsduInfo->u2FrameLength);
+			(uint8_t *)((uintptr_t)prMsduInfo->prPacket +
+				    (uintptr_t)prMsduInfo->u2FrameLength);
 
 		/* Fill Channel Switch Announcement IE */
 		CSA_IE(pucBuffer)->ucId = ELEM_ID_CH_SW_ANNOUNCEMENT;
@@ -5898,7 +5898,7 @@ static void tpcComposeReportFrame(IN struct ADAPTER *prAdapter,
 		return;
 
 	prTxFrame = (struct ACTION_TPC_REPORT_FRAME
-			     *)((unsigned long)(prMsduInfo->prPacket) +
+			     *)((uintptr_t)(prMsduInfo->prPacket) +
 				MAC_TX_RESERVED_FIELD);
 
 	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
@@ -5976,7 +5976,7 @@ static void msmtComposeReportFrame(IN struct ADAPTER *prAdapter,
 		return;
 
 	prTxFrame = (struct ACTION_SM_REQ_FRAME
-			     *)((unsigned long)(prMsduInfo->prPacket) +
+			     *)((uintptr_t)(prMsduInfo->prPacket) +
 				MAC_TX_RESERVED_FIELD);
 	pucIE = prTxFrame->aucInfoElem;
 	prMeasurementRepIE = SM_MEASUREMENT_REP_IE(pucIE);
@@ -6291,7 +6291,7 @@ void rlmResetCSAParams(struct BSS_INFO *prBssInfo)
 }
 
 void rlmCsaTimeout(IN struct ADAPTER *prAdapter,
-				   unsigned long ulParamPtr)
+				   uintptr_t ulParamPtr)
 {
 	uint8_t ucBssIndex = (uint8_t) ulParamPtr;
 	struct BSS_INFO *prBssInfo;
@@ -9134,7 +9134,7 @@ void rlmMulAPAgentTxMeasurementRequest(
 	if (!prMsduInfo)
 		return;
 	prTxFrame = (struct ACTION_RM_REQ_FRAME
-			     *)((unsigned long)(prMsduInfo->prPacket) +
+			     *)((uintptr_t)(prMsduInfo->prPacket) +
 				MAC_TX_RESERVED_FIELD);
 
 	/* 2 Compose The Mac Header. */

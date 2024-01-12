@@ -265,7 +265,7 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 					   &prStaRec->rTxReqDoneOrRxRespTimer,
 					   (PFN_MGMT_TIMEOUT_FUNC)
 					   saaFsmRunEventTxReqTimeOut,
-					   (unsigned long) prStaRec);
+					   (uintptr_t) prStaRec);
 
 					cnmTimerStartTimer(prAdapter,
 					   &prStaRec->rTxReqDoneOrRxRespTimer,
@@ -313,7 +313,7 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 					   &prStaRec->rTxReqDoneOrRxRespTimer,
 					   (PFN_MGMT_TIMEOUT_FUNC)
 					   saaFsmRunEventTxReqTimeOut,
-					   (unsigned long) prStaRec);
+					   (uintptr_t) prStaRec);
 
 					cnmTimerStartTimer(prAdapter,
 					   &prStaRec->rTxReqDoneOrRxRespTimer,
@@ -364,7 +364,7 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 					    &prStaRec->rTxReqDoneOrRxRespTimer,
 					    (PFN_MGMT_TIMEOUT_FUNC)
 					    saaFsmRunEventTxReqTimeOut,
-					    (unsigned long) prStaRec);
+					    (uintptr_t) prStaRec);
 
 					cnmTimerStartTimer(prAdapter,
 					    &prStaRec->rTxReqDoneOrRxRespTimer,
@@ -740,7 +740,7 @@ saaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
 				    &prStaRec->rTxReqDoneOrRxRespTimer,
 				    (PFN_MGMT_TIMEOUT_FUNC)
 				    saaFsmRunEventRxRespTimeOut,
-				    (unsigned long) prStaRec);
+				    (uintptr_t) prStaRec);
 
 				cnmTimerStartTimer(prAdapter,
 				    &prStaRec->rTxReqDoneOrRxRespTimer,
@@ -776,7 +776,7 @@ saaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
 				      &prStaRec->rTxReqDoneOrRxRespTimer,
 				      (PFN_MGMT_TIMEOUT_FUNC)
 				      saaFsmRunEventRxRespTimeOut,
-				      (unsigned long) prStaRec);
+				      (uintptr_t) prStaRec);
 
 				cnmTimerStartTimer(prAdapter,
 				    &prStaRec->rTxReqDoneOrRxRespTimer,
@@ -812,7 +812,7 @@ saaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
 				      &prStaRec->rTxReqDoneOrRxRespTimer,
 				      (PFN_MGMT_TIMEOUT_FUNC)
 					saaFsmRunEventRxRespTimeOut,
-				      (unsigned long) prStaRec);
+				      (uintptr_t) prStaRec);
 
 				cnmTimerStartTimer(prAdapter,
 				      &(prStaRec->rTxReqDoneOrRxRespTimer),
@@ -846,7 +846,7 @@ saaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void saaFsmRunEventTxReqTimeOut(IN struct ADAPTER *prAdapter,
-				IN unsigned long plParamPtr)
+				IN uintptr_t plParamPtr)
 {
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) plParamPtr;
 
@@ -883,7 +883,7 @@ void saaFsmRunEventTxReqTimeOut(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void saaFsmRunEventRxRespTimeOut(IN struct ADAPTER *prAdapter,
-				 IN unsigned long ulParamPtr)
+				 IN uintptr_t ulParamPtr)
 {
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) ulParamPtr;
 	enum ENUM_AA_STATE eNextState;

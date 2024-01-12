@@ -522,11 +522,13 @@ uint32_t bowCmdSetupConnection(IN struct ADAPTER *prAdapter, IN struct BT_OVER_W
 
 		cnmTimerInitTimer(prAdapter,
 				  &prBowFsmInfo->rStartingBeaconTimer,
-				  (PFN_MGMT_TIMEOUT_FUNC) bowSendBeacon, (unsigned long) NULL);
+				  (PFN_MGMT_TIMEOUT_FUNC) bowSendBeacon,
+				  (uintptr_t) NULL);
 
 		cnmTimerInitTimer(prAdapter,
 				  &prBowFsmInfo->rChGrantedTimer,
-				  (PFN_MGMT_TIMEOUT_FUNC) bowChGrantedTimeout, (unsigned long) NULL);
+				  (PFN_MGMT_TIMEOUT_FUNC) bowChGrantedTimeout,
+				  (uintptr_t) NULL);
 
 		/* Reset Global Variable */
 		g_u4Beaconing = 0;
@@ -1722,7 +1724,8 @@ u_int8_t bowValidateProbeReq(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prS
 	prMgtHdr = (struct WLAN_MAC_MGMT_HEADER *) prSwRfb->pvHeader;
 
 	u2IELength = prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen;
-	pucIE = (uint8_t *) (((unsigned long) prSwRfb->pvHeader) + prSwRfb->u2HeaderLen);
+	pucIE = (uint8_t *) (((uintptr_t) prSwRfb->pvHeader) +
+		prSwRfb->u2HeaderLen);
 
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
 		if (IE_ID(pucIE) == ELEM_ID_SSID) {
@@ -1772,7 +1775,7 @@ u_int8_t bowValidateProbeReq(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prS
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-void bowSendBeacon(IN struct ADAPTER *prAdapter, IN unsigned long ulParamPtr)
+void bowSendBeacon(IN struct ADAPTER *prAdapter, IN uintptr_t ulParamPtr)
 {
 	struct BOW_FSM_INFO *prBowFsmInfo;
 
@@ -2913,7 +2916,7 @@ void bowReleaseCh(IN struct ADAPTER *prAdapter)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-void bowChGrantedTimeout(IN struct ADAPTER *prAdapter, IN unsigned long ulParamPtr)
+void bowChGrantedTimeout(IN struct ADAPTER *prAdapter, IN uintptr_t ulParamPtr)
 {
 	struct BOW_FSM_INFO *prBowFsmInfo;
 	enum ENUM_BOW_DEVICE_STATE eFsmState;

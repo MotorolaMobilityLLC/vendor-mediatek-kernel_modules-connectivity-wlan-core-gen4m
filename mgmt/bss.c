@@ -828,7 +828,7 @@ bssSendNullFrame(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec,
 	}
 	/* 4 <2> Compose Null frame in MSDU_INfO_T. */
 	bssComposeNullFrame(prAdapter,
-			    (uint8_t *) ((unsigned long)prMsduInfo->prPacket +
+			    (uint8_t *) ((uintptr_t)prMsduInfo->prPacket +
 					 MAC_TX_RESERVED_FIELD), prStaRec);
 	TX_SET_MMPDU(prAdapter,
 		     prMsduInfo,
@@ -876,7 +876,7 @@ bssSendQoSNullFrame(IN struct ADAPTER *prAdapter,
 	/* 4 <2> Compose Null frame in MSDU_INfO_T. */
 	bssComposeQoSNullFrame(prAdapter,
 			       (uint8_t
-				*) ((unsigned long)(prMsduInfo->prPacket) +
+				*) ((uintptr_t)(prMsduInfo->prPacket) +
 				    MAC_TX_RESERVED_FIELD), prStaRec, ucUP,
 			       FALSE);
 
@@ -922,8 +922,8 @@ void bssGenerateExtSuppRate_IE(IN struct ADAPTER *prAdapter,
 		return;
 	}
 	pucBuffer =
-	    (uint8_t *) ((unsigned long)prMsduInfo->prPacket +
-			 (unsigned long)prMsduInfo->u2FrameLength);
+	    (uint8_t *) ((uintptr_t)prMsduInfo->prPacket +
+			 (uintptr_t)prMsduInfo->u2FrameLength);
 
 	if (prBssInfo->ucAllSupportedRatesLen > ELEM_MAX_LEN_SUP_RATES)
 
@@ -968,8 +968,8 @@ bssBuildBeaconProbeRespFrameCommonIEs(IN struct MSDU_INFO *prMsduInfo,
 	uint8_t ucSupRatesLen;
 
 	pucBuffer =
-	    (uint8_t *) ((unsigned long)prMsduInfo->prPacket +
-			 (unsigned long)prMsduInfo->u2FrameLength);
+	    (uint8_t *) ((uintptr_t)prMsduInfo->prPacket +
+			 (uintptr_t)prMsduInfo->u2FrameLength);
 	/* 4 <1> Fill the SSID element. */
 	SSID_IE(pucBuffer)->ucId = ELEM_ID_SSID;
 
@@ -1382,7 +1382,7 @@ bssSendBeaconProbeResponse(IN struct ADAPTER *prAdapter,
 	if (u4ControlFlags & BSS_PROBE_RESP_USE_P2P_DEV_ADDR) {
 		if (prAdapter->fgIsP2PRegistered) {
 			bssComposeBeaconProbeRespFrameHeaderAndFF((uint8_t *)
-				((unsigned long)
+				((uintptr_t)
 				(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD),
 				pucDestAddr,
 				prAdapter->rWifiVar.aucDeviceAddress,
@@ -1395,7 +1395,7 @@ bssSendBeaconProbeResponse(IN struct ADAPTER *prAdapter,
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 	{
 		bssComposeBeaconProbeRespFrameHeaderAndFF((uint8_t *)
-			  ((unsigned long)
+			  ((uintptr_t)
 			   (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD),
 			   pucDestAddr, prBssInfo->aucOwnMacAddr,
 			   prBssInfo->aucBSSID,

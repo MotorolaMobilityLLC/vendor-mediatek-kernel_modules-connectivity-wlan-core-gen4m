@@ -267,7 +267,7 @@ void p2pFuncRequestScan(IN struct ADAPTER *prAdapter,
 		prScanReqV2->eScanChannel = prScanReqInfo->eChannelSet;
 		prScanReqV2->u2IELen = 0;
 		prScanReqV2->prSsid = (struct PARAM_SSID *)
-			((unsigned long) prScanReqV2 +
+			((uintptr_t) prScanReqV2 +
 			sizeof(struct MSG_SCN_SCAN_REQ_V2));
 
 		/* Copy IE for Probe Request. */
@@ -1047,7 +1047,7 @@ p2pFuncTagMgmtFrame(IN struct MSDU_INFO *prMgmtTxMsdu,
 	enum ENUM_P2P_CONNECT_STATE eCNNState = P2P_CNN_NORMAL;
 
 	prWlanHdr = (struct WLAN_MAC_HEADER *)
-		((unsigned long) prMgmtTxMsdu->prPacket +
+		((uintptr_t) prMgmtTxMsdu->prPacket +
 		MAC_TX_RESERVED_FIELD);
 	/*
 	 * mgmt frame MASK_FC_TYPE = 0
@@ -1113,7 +1113,7 @@ struct MSDU_INFO *p2pFuncProcessAuth(
 	}
 
 	kalMemCopy((uint8_t *)
-		((unsigned long) prRetMsduInfo->prPacket),
+		((uintptr_t) prRetMsduInfo->prPacket),
 		prMgmtTxMsdu->prPacket,
 		prMgmtTxMsdu->u2FrameLength);
 
@@ -1157,7 +1157,7 @@ struct MSDU_INFO *p2pFuncProcessP2pAssocResp(
 	}
 
 	prAssocRspFrame = (struct WLAN_ASSOC_RSP_FRAME *)
-		((unsigned long) prMgmtTxMsdu->prPacket +
+		((uintptr_t) prMgmtTxMsdu->prPacket +
 		MAC_TX_RESERVED_FIELD);
 
 	u2RspHdrLen =
@@ -1207,7 +1207,7 @@ struct MSDU_INFO *p2pFuncProcessP2pAssocResp(
 	}
 
 	kalMemCopy((uint8_t *)
-		((unsigned long) prRetMsduInfo->prPacket),
+		((uintptr_t) prRetMsduInfo->prPacket),
 		prMsduInfo->prPacket,
 		prMsduInfo->u2FrameLength);
 
@@ -1217,8 +1217,8 @@ struct MSDU_INFO *p2pFuncProcessP2pAssocResp(
 	cnmMgtPktFree(prAdapter, prMsduInfo);
 
 	kalMemCopy((uint8_t *)
-		((unsigned long) prRetMsduInfo->prPacket +
-		(unsigned long) prRetMsduInfo->u2FrameLength),
+		((uintptr_t) prRetMsduInfo->prPacket +
+		(uintptr_t) prRetMsduInfo->u2FrameLength),
 		aucExtDHIE,
 		u2ExtDHIELen);
 
@@ -1271,14 +1271,14 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			break;
 		}
 		pu8GlCookie =
-			(uint64_t *) ((unsigned long) prMgmtTxMsdu->prPacket +
-				(unsigned long) prMgmtTxMsdu->u2FrameLength +
+			(uint64_t *) ((uintptr_t) prMgmtTxMsdu->prPacket +
+				(uintptr_t) prMgmtTxMsdu->u2FrameLength +
 				MAC_TX_RESERVED_FIELD);
 
 		u8GlCookie = *pu8GlCookie;
 
 		prWlanHdr = (struct WLAN_MAC_HEADER *)
-			((unsigned long) prMgmtTxMsdu->prPacket +
+			((uintptr_t) prMgmtTxMsdu->prPacket +
 			MAC_TX_RESERVED_FIELD);
 		prStaRec = cnmGetStaRecByAddress(prAdapter,
 			ucBssIndex, prWlanHdr->aucAddr1);
@@ -1350,9 +1350,9 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			 * return a MsduInfo
 			 */
 			pu8GlCookie =
-				(uint64_t *) ((unsigned long)
+				(uint64_t *) ((uintptr_t)
 					prMgmtTxMsdu->prPacket +
-					(unsigned long)
+					(uintptr_t)
 					prMgmtTxMsdu->u2FrameLength +
 					MAC_TX_RESERVED_FIELD);
 			/* Restore cookie as it will be corrupted
@@ -1385,9 +1385,9 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			prMgmtTxMsdu = p2pFuncProcessP2pAssocResp(prAdapter,
 				prStaRec, ucBssIndex, prMgmtTxMsdu);
 			pu8GlCookie =
-				(uint64_t *) ((unsigned long)
+				(uint64_t *) ((uintptr_t)
 					prMgmtTxMsdu->prPacket +
-					(unsigned long)
+					(uintptr_t)
 					prMgmtTxMsdu->u2FrameLength +
 					MAC_TX_RESERVED_FIELD);
 			*pu8GlCookie = u8GlCookie;
@@ -1413,9 +1413,9 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			prMgmtTxMsdu = p2pFuncProcessAuth(prAdapter,
 				prStaRec, ucBssIndex, prMgmtTxMsdu);
 			pu8GlCookie =
-				(uint64_t *) ((unsigned long)
+				(uint64_t *) ((uintptr_t)
 					prMgmtTxMsdu->prPacket +
-					(unsigned long)
+					(uintptr_t)
 					prMgmtTxMsdu->u2FrameLength +
 					MAC_TX_RESERVED_FIELD);
 			*pu8GlCookie = u8GlCookie;
@@ -2890,7 +2890,7 @@ p2pFuncBeaconUpdate(IN struct ADAPTER *prAdapter,
 		}
 #endif
 		prBcnFrame = (struct WLAN_BEACON_FRAME *)
-			((unsigned long) prBcnMsduInfo->prPacket +
+			((uintptr_t) prBcnMsduInfo->prPacket +
 			MAC_TX_RESERVED_FIELD);
 
 		if (!pucNewBcnBody) {
@@ -2912,8 +2912,8 @@ p2pFuncBeaconUpdate(IN struct ADAPTER *prAdapter,
 		}
 
 		pucIEBuf = (uint8_t *)
-			((unsigned long) prBcnUpdateInfo->pucBcnHdr +
-			(unsigned long) prBcnUpdateInfo->u4BcnHdrLen);
+			((uintptr_t) prBcnUpdateInfo->pucBcnHdr +
+			(uintptr_t) prBcnUpdateInfo->u4BcnHdrLen);
 		kalMemCopy(pucIEBuf, aucIEBuf, u4NewBodyLen);
 		prBcnUpdateInfo->pucBcnBody = pucIEBuf;
 
@@ -5423,8 +5423,8 @@ p2pFuncGetAttriListAction(IN struct ADAPTER *prAdapter,
 
 			if (u2CopyLen) {
 				kalMemCopy((uint8_t *)
-					((unsigned long) (*pucAttriListStart) +
-					(unsigned long) (*u2AttriListLen)),
+					((uintptr_t) (*pucAttriListStart) +
+					(uintptr_t) (*u2AttriListLen)),
 					&prIe->aucP2PAttributes[0], u2CopyLen);
 				*u2AttriListLen += u2CopyLen;
 			}
@@ -5456,8 +5456,8 @@ void p2pGenerateWSCIE(IN struct ADAPTER *prAdapter,
 	kalP2PGenWSC_IE(prAdapter->prGlueInfo,
 		2,
 		(uint8_t *)
-		((unsigned long) prMsduInfo->prPacket +
-		(unsigned long) prMsduInfo->u2FrameLength),
+		((uintptr_t) prMsduInfo->prPacket +
+		(uintptr_t) prMsduInfo->u2FrameLength),
 		(uint8_t) prP2pBssInfo->u4PrivateData);
 	prMsduInfo->u2FrameLength += (uint16_t)
 		kalP2PCalWSC_IELen(prAdapter->prGlueInfo,
@@ -5484,8 +5484,8 @@ void p2pGenerateWFDIE(IN struct ADAPTER *prAdapter,
 		GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 
 	kalMemCopy((uint8_t *)
-		((unsigned long) prMsduInfo->prPacket +
-		(unsigned long) prMsduInfo->u2FrameLength),
+		((uintptr_t) prMsduInfo->prPacket +
+		(uintptr_t) prMsduInfo->u2FrameLength),
 		prAdapter->prGlueInfo->prP2PInfo
 			[prP2pBssInfo->u4PrivateData]->aucWFDIE,
 		prAdapter->prGlueInfo->prP2PInfo
@@ -5533,9 +5533,9 @@ void p2pGenerateP2PIE(IN struct ADAPTER *prAdapter,
 		kalP2PGenP2P_IE(prAdapter->prGlueInfo,
 			u4Idx,
 			(uint8_t *)
-			((unsigned long)
+			((uintptr_t)
 			prMsduInfo->prPacket +
-			(unsigned long)
+			(uintptr_t)
 			prMsduInfo->u2FrameLength),
 			(uint8_t) prP2pBssInfo->u4PrivateData);
 
@@ -5569,8 +5569,8 @@ void p2pGenerateVendorIE(IN struct ADAPTER *prAdapter,
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 
 	kalMemCopy((uint8_t *)
-		((unsigned long) prMsduInfo->prPacket +
-		(unsigned long) prMsduInfo->u2FrameLength),
+		((uintptr_t) prMsduInfo->prPacket +
+		(uintptr_t) prMsduInfo->u2FrameLength),
 		prAdapter->prGlueInfo->prP2PInfo
 			[prP2pBssInfo->u4PrivateData]
 			->aucVenderIE,
@@ -5650,7 +5650,7 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 	if (prProbeRspFrame)
 		/* 3 Compose / Re-compose probe response frame. */
 		bssComposeBeaconProbeRespFrameHeaderAndFF((uint8_t *)
-			((unsigned long) (prRetMsduInfo->prPacket) +
+			((uintptr_t) (prRetMsduInfo->prPacket) +
 			MAC_TX_RESERVED_FIELD),
 			prProbeRspFrame->aucDestAddr,
 			prProbeRspFrame->aucSrcAddr,
@@ -5659,7 +5659,7 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 			prProbeRspFrame->u2CapInfo);
 	else
 		bssComposeBeaconProbeRespFrameHeaderAndFF((uint8_t *)
-			((unsigned long)(prRetMsduInfo->prPacket)
+			((uintptr_t)(prRetMsduInfo->prPacket)
 			+ MAC_TX_RESERVED_FIELD),
 			NULL,
 			prP2pBssInfo->aucOwnMacAddr,
@@ -5835,7 +5835,7 @@ p2pFuncProcessP2pProbeRspAction(IN struct ADAPTER *prAdapter,
 
 	/* 3 Make sure this is probe response frame. */
 	prProbeRspFrame = (struct WLAN_BEACON_FRAME *)
-		((unsigned long) prMgmtTxMsdu->prPacket +
+		((uintptr_t) prMgmtTxMsdu->prPacket +
 		MAC_TX_RESERVED_FIELD);
 
 	if ((prProbeRspFrame->u2FrameCtrl & MASK_FRAME_TYPE) !=
@@ -6015,8 +6015,8 @@ void p2pFuncGenerateP2p_IEForBeacon(IN struct ADAPTER *prAdapter,
 			[prBssInfo->u4PrivateData]))
 			break;
 
-		pucIEBuf = (uint8_t *) ((unsigned long) prMsduInfo->prPacket +
-			(unsigned long) prMsduInfo->u2FrameLength);
+		pucIEBuf = (uint8_t *) ((uintptr_t) prMsduInfo->prPacket +
+			(uintptr_t) prMsduInfo->u2FrameLength);
 
 		kalMemCopy(pucIEBuf,
 			prP2pSpeBssInfo->aucAttributesCache,
@@ -6059,8 +6059,8 @@ void p2pFuncGenerateWSC_IEForBeacon(IN struct ADAPTER *prAdapter,
 	u2IELen = (uint16_t) kalP2PCalWSC_IELen(prAdapter->prGlueInfo,
 		0, (uint8_t) prP2pBssInfo->u4PrivateData);
 
-	pucBuffer = (uint8_t *) ((unsigned long) prMsduInfo->prPacket +
-		(unsigned long) prMsduInfo->u2FrameLength);
+	pucBuffer = (uint8_t *) ((uintptr_t) prMsduInfo->prPacket +
+		(uintptr_t) prMsduInfo->u2FrameLength);
 
 	ASSERT(pucBuffer);
 
@@ -6205,7 +6205,7 @@ p2pFuncGenerateP2P_IE(IN struct ADAPTER *prAdapter,
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (pucBuf != NULL));
 
-		pucBuffer = (uint8_t *) ((unsigned long) pucBuf + (*pu2Offset));
+		pucBuffer = (uint8_t *) ((uintptr_t) pucBuf + (*pu2Offset));
 
 		ASSERT_BREAK(pucBuffer != NULL);
 
@@ -6247,13 +6247,13 @@ p2pFuncGenerateP2P_IE(IN struct ADAPTER *prAdapter,
 						P2P_MAXIMUM_ATTRIBUTE_LEN);
 
 					pucBuffer = (uint8_t *)
-						((unsigned long)
+						((uintptr_t)
 						prIeP2P +
 						(VENDOR_OUI_TYPE_LEN +
 						P2P_MAXIMUM_ATTRIBUTE_LEN));
 
 					prIeP2P = (struct IE_P2P *)
-						((unsigned long) prIeP2P +
+						((uintptr_t) prIeP2P +
 						(ELEM_HDR_LEN +
 						(VENDOR_OUI_TYPE_LEN +
 						P2P_MAXIMUM_ATTRIBUTE_LEN)));
@@ -6308,8 +6308,8 @@ p2pFuncAppendAttriStatusForAssocRsp(IN struct ADAPTER *prAdapter,
 	 */
 
 	pucBuffer = (uint8_t *)
-		((unsigned long) pucBuf +
-		(unsigned long) (*pu2Offset));
+		((uintptr_t) pucBuf +
+		(uintptr_t) (*pu2Offset));
 
 	ASSERT(pucBuffer);
 	prAttriStatus = (struct P2P_ATTRI_STATUS *) pucBuffer;
@@ -6363,8 +6363,8 @@ p2pFuncAppendAttriExtListenTiming(IN struct ADAPTER *prAdapter,
 	ASSERT(u2BufSize >= ((*pu2Offset) + (uint16_t) u4AttriLen));
 
 	pucBuffer = (uint8_t *)
-		((unsigned long) pucBuf +
-		(unsigned long) (*pu2Offset));
+		((uintptr_t) pucBuf +
+		(uintptr_t) (*pu2Offset));
 
 	ASSERT(pucBuffer);
 
@@ -6453,11 +6453,11 @@ p2pFuncGetSpecAttri(IN struct ADAPTER *prAdapter,
 				pucIE, u2BufferLenLeft,
 				ELEM_ID_VENDOR, &fgIsMore);
 			if (prP2pIE) {
-				ASSERT((unsigned long) prP2pIE
-					>= (unsigned long) pucIE);
+				ASSERT((uintptr_t) prP2pIE
+					>= (uintptr_t) pucIE);
 				u2BufferLenLeft = u2BufferLen -
-					(uint16_t) (((unsigned long) prP2pIE) -
-					((unsigned long) pucIEBuf));
+					(uint16_t) (((uintptr_t) prP2pIE) -
+					((uintptr_t) pucIEBuf));
 
 				DBGLOG(P2P, INFO,
 					"Find vendor id %u len %u oui %u more %u LeftLen %u\n",
@@ -6471,7 +6471,7 @@ p2pFuncGetSpecAttri(IN struct ADAPTER *prAdapter,
 						&prTargetAttri);
 				/* P2P_OUI_TYPE_LEN */
 				pucIE = (uint8_t *)
-					(((unsigned long) prP2pIE) +
+					(((uintptr_t) prP2pIE) +
 					IE_SIZE(prP2pIE));
 			}
 			/* prP2pIE */
@@ -6681,7 +6681,7 @@ p2pFuncComposeBeaconProbeRspTemplate(IN struct ADAPTER *prAdapter,
 		}
 
 		pucBuffer = (uint8_t *)
-			((unsigned long) (prMsduInfo->prPacket) +
+			((uintptr_t) (prMsduInfo->prPacket) +
 			MAC_TX_RESERVED_FIELD);
 
 		kalMemCopy(pucBuffer, pucBcnBuffer, u4BcnBufLen);
@@ -6891,7 +6891,7 @@ void p2pFuncGenerateP2P_IE_NoA(IN struct ADAPTER *prAdapter,
 		return;
 
 	prIeP2P = (struct IE_P2P *)
-		((unsigned long) prMsduInfo->prPacket +
+		((uintptr_t) prMsduInfo->prPacket +
 		(uint32_t) prMsduInfo->u2FrameLength);
 
 	prIeP2P->ucId = ELEM_ID_P2P;
@@ -7629,7 +7629,7 @@ p2pFuncGetP2pActionFrameType(IN struct MSDU_INFO *prMgmtMsdu)
 	uint8_t *pucVendor = NULL;
 
 	prWlanHdr = (struct WLAN_MAC_HEADER *)
-			((unsigned long) prMgmtMsdu->prPacket +
+			((uintptr_t) prMgmtMsdu->prPacket +
 					MAC_TX_RESERVED_FIELD);
 	if ((prWlanHdr->u2FrameCtrl & MASK_FRAME_TYPE) != MAC_FRAME_ACTION)
 		return P2P_CNN_NORMAL;
@@ -8353,7 +8353,7 @@ p2pFunNotifyChnlSwitch(IN struct ADAPTER *prAdapter,
 						prTimer,
 						(PFN_MGMT_TIMEOUT_FUNC)
 						p2pRoleFsmDeauthTimeout,
-						(unsigned long) prCurrStaRec);
+						(uintptr_t) prCurrStaRec);
 					cnmTimerStartTimer(prAdapter,
 						prTimer,
 						P2P_DEAUTH_TIMEOUT_TIME_MS);
@@ -8467,7 +8467,7 @@ uint8_t p2pFuncIsBufferableMMPDU(IN struct ADAPTER *prAdapter,
 	uint8_t fgIsBufferableMMPDU = FALSE;
 
 	prWlanHdr = (struct WLAN_MAC_HEADER *)
-		((unsigned long) prMgmtTxMsdu->prPacket +
+		((uintptr_t) prMgmtTxMsdu->prPacket +
 		MAC_TX_RESERVED_FIELD);
 
 	if (!prWlanHdr) {

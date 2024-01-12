@@ -245,7 +245,7 @@ void authAddIEChallengeText(IN struct ADAPTER *prAdapter,
 		(prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_SHARED_KEY)
 		&& (prStaRec->prChallengeText != NULL)) {
 
-		COPY_IE(((unsigned long)(prMsduInfo->prPacket) +
+		COPY_IE(((uintptr_t)(prMsduInfo->prPacket) +
 			 prMsduInfo->u2FrameLength),
 			(prStaRec->prChallengeText));
 
@@ -461,7 +461,7 @@ struct MSDU_INFO* authComposeAuthFrame(IN struct ADAPTER *prAdapter,
 
 	/* Compose Header and some Fixed Fields */
 	authComposeAuthFrameHeaderAndFF((uint8_t *)
-					((unsigned long)(prMsduInfo->prPacket) +
+					((uintptr_t)(prMsduInfo->prPacket) +
 					 MAC_TX_RESERVED_FIELD), pucReceiveAddr,
 					pucTransmitAddr, ucAuthAlgNum,
 					u2TransactionSeqNum, u2StatusCode);
@@ -1133,7 +1133,7 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 	}
 	/* 4 <6> compose Deauthentication frame header and some fixed fields */
 	authComposeDeauthFrameHeaderAndFF((uint8_t *)
-					  ((unsigned long)(prMsduInfo->prPacket)
+					  ((uintptr_t)(prMsduInfo->prPacket)
 					   + MAC_TX_RESERVED_FIELD),
 					  pucReceiveAddr, pucTransmitAddr,
 					  pucBssid, u2ReasonCode);
@@ -1159,7 +1159,7 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 			struct WLAN_DEAUTH_FRAME *prDeauthFrame;
 
 			prDeauthFrame = (struct WLAN_DEAUTH_FRAME *)(uint8_t *)
-			    ((unsigned long)(prMsduInfo->prPacket)
+			    ((uintptr_t)(prMsduInfo->prPacket)
 			     + MAC_TX_RESERVED_FIELD);
 
 			prDeauthFrame->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;

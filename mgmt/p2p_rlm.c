@@ -999,9 +999,9 @@ void rlmFuncInitialChannelList(IN struct ADAPTER *prAdapter)
 
 			prChannelEntryField =
 				(struct CHANNEL_ENTRY_FIELD *)
-				((unsigned long) prChannelEntryField +
+				((uintptr_t) prChannelEntryField +
 				P2P_ATTRI_LEN_CHANNEL_ENTRY +
-				(unsigned long)
+				(uintptr_t)
 				prChannelEntryField->ucNumberOfChannels);
 
 		}
@@ -1156,10 +1156,10 @@ rlmFuncCommonChannelList(IN struct ADAPTER *prAdapter,
 
 					prChannelEntryIII =
 						(struct CHANNEL_ENTRY_FIELD *)
-						((unsigned long)
+						((uintptr_t)
 						prChannelEntryIII +
 						P2P_ATTRI_LEN_CHANNEL_ENTRY +
-						(unsigned long)
+						(uintptr_t)
 						prChannelEntryIII
 						->ucNumberOfChannels);
 				}
@@ -1169,9 +1169,9 @@ rlmFuncCommonChannelList(IN struct ADAPTER *prAdapter,
 
 				prChannelEntryI =
 					(struct CHANNEL_ENTRY_FIELD *)
-					((unsigned long) prChannelEntryI +
+					((uintptr_t) prChannelEntryI +
 					P2P_ATTRI_LEN_CHANNEL_ENTRY +
-					(unsigned long)
+					(uintptr_t)
 					prChannelEntryI->ucNumberOfChannels);
 
 			}
@@ -1181,9 +1181,9 @@ rlmFuncCommonChannelList(IN struct ADAPTER *prAdapter,
 				+ prChannelEntryII->ucNumberOfChannels);
 
 			prChannelEntryII = (struct CHANNEL_ENTRY_FIELD *)
-				((unsigned long) prChannelEntryII +
+				((uintptr_t) prChannelEntryII +
 				P2P_ATTRI_LEN_CHANNEL_ENTRY +
-				(unsigned long)
+				(uintptr_t)
 				prChannelEntryII->ucNumberOfChannels);
 
 		}
@@ -1244,9 +1244,9 @@ uint8_t rlmFuncFindOperatingClass(IN struct ADAPTER *prAdapter,
 
 			prChannelEntryField =
 				(struct CHANNEL_ENTRY_FIELD *)
-				((unsigned long) prChannelEntryField +
+				((uintptr_t) prChannelEntryField +
 				P2P_ATTRI_LEN_CHANNEL_ENTRY +
-				(unsigned long)
+				(uintptr_t)
 				prChannelEntryField->ucNumberOfChannels);
 
 			ucBufferSize -=
@@ -1342,9 +1342,9 @@ rlmFuncFindAvailableChannel(IN struct ADAPTER *prAdapter,
 
 			prChannelEntry =
 				(struct CHANNEL_ENTRY_FIELD *)
-				((unsigned long) prChannelEntry +
+				((uintptr_t) prChannelEntry +
 				P2P_ATTRI_LEN_CHANNEL_ENTRY +
-				(unsigned long)
+				(uintptr_t)
 				prChannelEntry->ucNumberOfChannels);
 
 		}

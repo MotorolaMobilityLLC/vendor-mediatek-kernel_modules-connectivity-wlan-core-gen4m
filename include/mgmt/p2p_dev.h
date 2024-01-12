@@ -240,11 +240,11 @@ void p2pDevFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 		IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo);
 
 void p2pDevFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
-		IN unsigned long ulParamPtr);
+		IN uintptr_t ulParamPtr);
 
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 void p2pDevDbdcSwDelayTimeout(IN struct ADAPTER *prAdapter,
-		IN unsigned long ulParamPtr);
+		IN uintptr_t ulParamPtr);
 #endif
 
 /*================ Message Event =================*/

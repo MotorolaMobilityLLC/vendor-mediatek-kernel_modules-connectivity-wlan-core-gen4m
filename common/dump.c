@@ -363,9 +363,9 @@ void dumpMemory32(IN uint32_t *pu4StartAddr,
 	LOG_FUNC("DUMP32 ADDRESS: 0x%x, Length: %d\n", pu4StartAddr,
 		 u4Length);
 
-	if (IS_NOT_ALIGN_4((unsigned long)pu4StartAddr)) {
+	if (IS_NOT_ALIGN_4((uintptr_t)pu4StartAddr)) {
 		uint32_t u4ProtrudeLen =
-			sizeof(uint32_t) - ((unsigned long)pu4StartAddr % 4);
+			sizeof(uint32_t) - ((uintptr_t)pu4StartAddr % 4);
 
 		u4ProtrudeLen =
 			((u4Length < u4ProtrudeLen) ? u4Length : u4ProtrudeLen);
@@ -391,7 +391,7 @@ void dumpMemory32(IN uint32_t *pu4StartAddr,
 
 		u4Length -= u4ProtrudeLen;
 		pu4StartAddr = (uint32_t *)
-			       ((unsigned long)pu4StartAddr + u4ProtrudeLen);
+			       ((uintptr_t)pu4StartAddr + u4ProtrudeLen);
 	}
 
 	while (u4Length > 0) {
@@ -529,9 +529,9 @@ void dumpMemory128(IN uint32_t *pu4StartAddr,
 	LOG_FUNC("DUMP32 ADDRESS: 0x%x, Length: %d ", pu4StartAddr,
 		 u4Length);
 
-	if (IS_NOT_ALIGN_4((unsigned long)pu4StartAddr)) {
+	if (IS_NOT_ALIGN_4((uintptr_t)pu4StartAddr)) {
 		uint32_t u4ProtrudeLen =
-			sizeof(uint32_t) - ((unsigned long)pu4StartAddr % 4);
+			sizeof(uint32_t) - ((uintptr_t)pu4StartAddr % 4);
 
 		u4ProtrudeLen =
 			((u4Length < u4ProtrudeLen) ? u4Length : u4ProtrudeLen);
@@ -557,7 +557,7 @@ void dumpMemory128(IN uint32_t *pu4StartAddr,
 
 		u4Length -= u4ProtrudeLen;
 		pu4StartAddr = (uint32_t *)
-			       ((unsigned long)pu4StartAddr + u4ProtrudeLen);
+			       ((uintptr_t)pu4StartAddr + u4ProtrudeLen);
 	}
 
 	while (u4Length > 0) {

@@ -840,12 +840,12 @@ struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter,
 
 	/* retrieve Rx payload */
 	prSWRfb->pucPayload = (uint8_t *) ((
-		(unsigned long) prSWRfb->pvHeader) +
+		(uintptr_t) prSWRfb->pvHeader) +
 		prSWRfb->u2HeaderLen);
 	prSWRfb->u2PayloadLength =
 		(uint16_t) (prSWRfb->u2RxByteCount - ((
-		unsigned long) prSWRfb->pucPayload -
-		(unsigned long) prRxStatus));
+		uintptr_t) prSWRfb->pucPayload -
+		(uintptr_t) prRxStatus));
 
 	if (fgFirst) {
 		DBGLOG(RX, LOUD, "rxDefragMPDU first\n");

@@ -495,8 +495,8 @@ wlanoidSetP2pNetworkAddress(IN struct ADAPTER *prAdapter,
 		}
 
 		prNWAddress = (struct PARAM_NETWORK_ADDRESS *)
-			((unsigned long) prNWAddress +
-			(unsigned long) (prNWAddress->u2AddressLength +
+			((uintptr_t) prNWAddress +
+			(uintptr_t) (prNWAddress->u2AddressLength +
 			OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress)));
 	}
 
@@ -531,8 +531,8 @@ wlanoidSetP2pNetworkAddress(IN struct ADAPTER *prAdapter,
 		}
 
 		prNWAddress = (struct PARAM_NETWORK_ADDRESS *)
-			((unsigned long) prNWAddress +
-			(unsigned long) (prNWAddress->u2AddressLength +
+			((uintptr_t) prNWAddress +
+			(uintptr_t) (prNWAddress->u2AddressLength +
 			OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress)));
 	}
 
@@ -720,8 +720,8 @@ wlanoidSetP2pSetNetworkAddress(IN struct ADAPTER *prAdapter,
 		}
 
 		prNWAddress = (struct PARAM_NETWORK_ADDRESS *)
-			((unsigned long) prNWAddress +
-			(unsigned long) (prNWAddress->u2AddressLength +
+			((uintptr_t) prNWAddress +
+			(uintptr_t) (prNWAddress->u2AddressLength +
 			OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress)));
 	}
 
@@ -779,8 +779,8 @@ wlanoidSetP2pSetNetworkAddress(IN struct ADAPTER *prAdapter,
 			}
 
 			prNWAddress = (struct PARAM_NETWORK_ADDRESS *)
-				((unsigned long) prNWAddress +
-				(unsigned long) (prNWAddress->u2AddressLength +
+				((uintptr_t) prNWAddress +
+				(uintptr_t) (prNWAddress->u2AddressLength +
 				OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
 					aucAddress)));
 		}

@@ -444,7 +444,7 @@ void wnmSendBTMResponseFrame(IN struct ADAPTER *adapter,
 	if (!prMsduInfo)
 		return;
 	prTxFrame = (struct ACTION_BTM_RSP_FRAME *)
-		((unsigned long)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+		((uintptr_t)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
 	/* 2 Compose The Mac Header. */
 	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
@@ -546,7 +546,7 @@ void wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
 	if (!prMsduInfo)
 		return;
 	prTxFrame = (struct ACTION_BTM_QUERY_FRAME
-			     *)((unsigned long)(prMsduInfo->prPacket) +
+			     *)((uintptr_t)(prMsduInfo->prPacket) +
 				MAC_TX_RESERVED_FIELD);
 
 	/* 2 Compose The Mac Header. */
@@ -867,7 +867,7 @@ uint8_t wnmSendBTMResponse(IN struct ADAPTER *prAdapter,
 
 #if CFG_AP_80211V_SUPPORT
 static void wnmMulAPAgentBTMRequestDisassocTimerFunc(
-		IN struct ADAPTER *prAdapter, unsigned long ulParamPtr)
+		IN struct ADAPTER *prAdapter, uintptr_t ulParamPtr)
 {
 	struct STA_RECORD *prStaRec = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
@@ -898,7 +898,7 @@ static uint32_t wnmMulAPAgentBTMRequestTxDone(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 
 	prTxFrame = (struct ACTION_BTM_REQ_FRAME *)
-		((unsigned long)(prMsduInfo->prPacket) +
+		((uintptr_t)(prMsduInfo->prPacket) +
 				MAC_TX_RESERVED_FIELD);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
@@ -915,7 +915,7 @@ static uint32_t wnmMulAPAgentBTMRequestTxDone(IN struct ADAPTER *prAdapter,
 		cnmTimerInitTimer(prAdapter, &prStaRec->rBTMReqDisassocTimer,
 				(PFN_MGMT_TIMEOUT_FUNC)
 				wnmMulAPAgentBTMRequestDisassocTimerFunc,
-				(unsigned long) prStaRec);
+				(uintptr_t) prStaRec);
 		cnmTimerStartTimer(prAdapter,
 			&prStaRec->rBTMReqDisassocTimer, u4DisassocTime);
 		DBGLOG(WNM, INFO,
@@ -976,7 +976,7 @@ void wnmMulAPAgentSendBTMRequestFrame(
 	if (!prMsduInfo)
 		return;
 	prTxFrame = (struct ACTION_BTM_REQ_FRAME *)
-		((unsigned long)(prMsduInfo->prPacket) +
+		((uintptr_t)(prMsduInfo->prPacket) +
 				MAC_TX_RESERVED_FIELD);
 
 	/* 2 Compose The Mac Header. */

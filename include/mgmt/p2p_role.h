@@ -437,11 +437,11 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr);
 
 void p2pRoleFsmRunEventDfsShutDownTimeout(IN struct ADAPTER *prAdapter,
-		IN unsigned long ulParamPtr);
+		IN uintptr_t ulParamPtr);
 #endif
 
 void p2pRoleFsmRunEventWaitNextReqChnlTimeout(IN struct ADAPTER *prAdapter,
-		IN unsigned long ulParamPtr);
+		IN uintptr_t ulParamPtr);
 
 void p2pRoleFsmRunEventScanRequest(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr);
@@ -455,10 +455,10 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr);
 
 void p2pRoleFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
-		IN unsigned long ulParamPtr);
+		IN uintptr_t ulParamPtr);
 
 void p2pRoleFsmDeauthTimeout(IN struct ADAPTER *prAdapter,
-		IN unsigned long ulParamPtr);
+		IN uintptr_t ulParamPtr);
 
 void p2pRoleFsmRunEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prP2pBssInfo);
@@ -536,7 +536,7 @@ p2pProcessEvent_UpdateNOAParam(IN struct ADAPTER *prAdapter,
 
 #if	CFG_ENABLE_PER_STA_STATISTICS_LOG
 void p2pRoleFsmGetStaStatistics(IN struct ADAPTER *prAdapter,
-		IN unsigned long ulParamPtr);
+		IN uintptr_t ulParamPtr);
 #endif
 
 void p2pRoleFsmNotifyEapolTxStatus(IN struct ADAPTER *prAdapter,

@@ -238,7 +238,7 @@ void bowAssignSsid(IN uint8_t *pucSsid, IN uint8_t *pucSsidLen);
 
 u_int8_t bowValidateProbeReq(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb, OUT uint32_t *pu4ControlFlags);
 
-void bowSendBeacon(IN struct ADAPTER *prAdapter, unsigned long ulParamPtr);
+void bowSendBeacon(IN struct ADAPTER *prAdapter, uintptr_t ulParamPtr);
 
 void bowResponderScan(IN struct ADAPTER *prAdapter);
 
@@ -274,7 +274,7 @@ void bowRequestCh(IN struct ADAPTER *prAdapter);
 
 void bowReleaseCh(IN struct ADAPTER *prAdapter);
 
-void bowChGrantedTimeout(IN struct ADAPTER *prAdapter, IN unsigned long ulParamPtr);
+void bowChGrantedTimeout(IN struct ADAPTER *prAdapter, IN uintptr_t ulParamPtr);
 
 u_int8_t bowNotifyAllLinkDisconnected(IN struct ADAPTER *prAdapter);
 

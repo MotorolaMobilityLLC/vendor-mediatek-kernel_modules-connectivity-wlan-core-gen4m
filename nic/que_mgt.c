@@ -316,7 +316,7 @@ void qmInit(IN struct ADAPTER *prAdapter,
 		cnmTimerInitTimer(prAdapter,
 			&(prQM->arRxBaTable[u4Idx].rReorderBubbleTimer),
 			(PFN_MGMT_TIMEOUT_FUNC) qmHandleReorderBubbleTimeout,
-			(unsigned long) (&prQM->arRxBaTable[u4Idx]));
+			(uintptr_t) (&prQM->arRxBaTable[u4Idx]));
 
 	}
 	prQM->ucRxBaCount = 0;
@@ -5182,7 +5182,7 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 }
 
 void qmHandleReorderBubbleTimeout(IN struct ADAPTER *prAdapter,
-	IN unsigned long ulParamPtr)
+	IN uintptr_t ulParamPtr)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct RX_BA_ENTRY *prReorderQueParm = (struct RX_BA_ENTRY *)ulParamPtr;
@@ -7094,7 +7094,7 @@ u_int8_t isProbeResponse(IN struct MSDU_INFO *prMgmtTxMsdu)
 		(struct WLAN_MAC_HEADER *) NULL;
 
 	prWlanHdr =
-		(struct WLAN_MAC_HEADER *) ((unsigned long)
+		(struct WLAN_MAC_HEADER *) ((uintptr_t)
 		prMgmtTxMsdu->prPacket + MAC_TX_RESERVED_FIELD);
 
 	return (prWlanHdr->u2FrameCtrl & MASK_FRAME_TYPE) ==
@@ -7999,7 +7999,7 @@ mqmCallbackAddBaRspSent(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void mqmTimeoutCheckIdleRxBa(IN struct ADAPTER *prAdapter,
-	IN unsigned long ulParamPtr)
+	IN uintptr_t ulParamPtr)
 {
 	int8_t i;
 	struct RX_BA_ENTRY *prRxBa;
@@ -8205,7 +8205,7 @@ mqmRxModifyBaEntryStatus(IN struct ADAPTER *prAdapter,
 			cnmTimerInitTimer(prAdapter,
 				&prAdapter->rMqmIdleRxBaDetectionTimer,
 				(PFN_MGMT_TIMEOUT_FUNC) mqmTimeoutCheckIdleRxBa,
-				(unsigned long) NULL);
+				(uintptr_t) NULL);
 			/* No parameter */
 
 			cnmTimerStopTimer(prAdapter,

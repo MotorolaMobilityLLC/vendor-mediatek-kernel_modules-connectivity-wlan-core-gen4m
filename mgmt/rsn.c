@@ -1344,8 +1344,8 @@ void rsnGenerateWpaNoneIE(IN struct ADAPTER *prAdapter,
 	if (aisGetAuthMode(prAdapter, ucBssIndex) != AUTH_MODE_WPA_NONE)
 		return;
 
-	pucBuffer = (uint8_t *) ((unsigned long)
-				 prMsduInfo->prPacket + (unsigned long)
+	pucBuffer = (uint8_t *) ((uintptr_t)
+				 prMsduInfo->prPacket + (uintptr_t)
 				 prMsduInfo->u2FrameLength);
 	prWpaIE = (struct WPA_INFO_ELEM *)(pucBuffer);
 
@@ -1471,8 +1471,8 @@ uint32_t _addWPAIE_impl(IN struct ADAPTER *prAdapter,
 	if (prP2pSpecBssInfo &&
 		(prP2pSpecBssInfo->u2WpaIeLen != 0)) {
 		uint8_t *pucBuffer =
-			(uint8_t *) ((unsigned long)
-			prMsduInfo->prPacket + (unsigned long)
+			(uint8_t *) ((uintptr_t)
+			prMsduInfo->prPacket + (uintptr_t)
 			prMsduInfo->u2FrameLength);
 
 		kalMemCopy(pucBuffer,
@@ -1523,8 +1523,8 @@ uint32_t _addRSNIE_impl(IN struct ADAPTER *prAdapter,
 	if (prP2pSpecBssInfo &&
 		(prP2pSpecBssInfo->u2RsnIeLen != 0)) {
 		uint8_t *pucBuffer =
-			(uint8_t *) ((unsigned long)
-			prMsduInfo->prPacket + (unsigned long)
+			(uint8_t *) ((uintptr_t)
+			prMsduInfo->prPacket + (uintptr_t)
 			prMsduInfo->u2FrameLength);
 
 		kalMemCopy(pucBuffer,
@@ -1576,8 +1576,8 @@ void rsnGenerateWPAIE(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("rsnGenerateWPAIE");
 
-	pucBuffer = (uint8_t *) ((unsigned long)
-				 prMsduInfo->prPacket + (unsigned long)
+	pucBuffer = (uint8_t *) ((uintptr_t)
+				 prMsduInfo->prPacket + (uintptr_t)
 				 prMsduInfo->u2FrameLength);
 	ucBssIndex = prMsduInfo->ucBssIndex;
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
@@ -1695,8 +1695,8 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("rsnGenerateRSNIE");
 
-	pucBuffer = (uint8_t *) ((unsigned long)
-				 prMsduInfo->prPacket + (unsigned long)
+	pucBuffer = (uint8_t *) ((uintptr_t)
+				 prMsduInfo->prPacket + (uintptr_t)
 				 prMsduInfo->u2FrameLength);
 	/* Todo:: network id */
 	ucBssIndex = prMsduInfo->ucBssIndex;
@@ -1912,8 +1912,8 @@ void rsnGenerateRSNXIE(IN struct ADAPTER *prAdapter,
 	if (prP2pSpecBssInfo &&
 		(prP2pSpecBssInfo->u2RsnxIeLen != 0)) {
 		uint8_t *pucBuffer =
-			(uint8_t *) ((unsigned long)
-			prMsduInfo->prPacket + (unsigned long)
+			(uint8_t *) ((uintptr_t)
+			prMsduInfo->prPacket + (uintptr_t)
 			prMsduInfo->u2FrameLength);
 
 		kalMemCopy(pucBuffer,
@@ -1951,8 +1951,8 @@ void rsnGenerateOWEIE(IN struct ADAPTER *prAdapter,
 	if (prP2pSpecBssInfo &&
 		(prP2pSpecBssInfo->u2OweIeLen != 0)) {
 		uint8_t *pucBuffer =
-			(uint8_t *) ((unsigned long)
-			prMsduInfo->prPacket + (unsigned long)
+			(uint8_t *) ((uintptr_t)
+			prMsduInfo->prPacket + (uintptr_t)
 			prMsduInfo->u2FrameLength);
 
 		kalMemCopy(pucBuffer,
@@ -2660,7 +2660,7 @@ uint8_t rsnCheckSaQueryTimeout(
  */
 /*----------------------------------------------------------------------------*/
 void rsnStartSaQueryTimer(IN struct ADAPTER *prAdapter,
-			  IN unsigned long ulParamPtr)
+			  IN uintptr_t ulParamPtr)
 {
 	struct BSS_INFO *prBssInfo;
 	struct AIS_SPECIFIC_BSS_INFO *prBssSpecInfo;
@@ -2698,7 +2698,7 @@ void rsnStartSaQueryTimer(IN struct ADAPTER *prAdapter,
 		return;
 
 	prTxFrame = (struct ACTION_SA_QUERY_FRAME *)
-	    ((unsigned long)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+	    ((uintptr_t)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
 	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
 	if (rsnCheckBipKeyInstalled(prAdapter, prBssInfo->prStaRecOfAP))
@@ -2806,7 +2806,7 @@ void rsnStartSaQuery(IN struct ADAPTER *prAdapter,
 	prBssSpecInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIdx);
 
 	if (prBssSpecInfo->u4SaQueryCount == 0)
-		rsnStartSaQueryTimer(prAdapter, (unsigned long) ucBssIdx);
+		rsnStartSaQueryTimer(prAdapter, (uintptr_t) ucBssIdx);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2899,7 +2899,7 @@ void rsnSaQueryRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 		return;
 
 	prTxFrame = (struct ACTION_SA_QUERY_FRAME *)
-	    ((unsigned long)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+	    ((uintptr_t)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
 	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec))
@@ -2976,7 +2976,7 @@ void rsnSaQueryAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	if (prSwRfb->u2PacketLen < ACTION_SA_QUERY_TR_ID_LEN) {
 		DBGLOG(RSN, INFO,
 		       "IEEE 802.11: Too short SA Query Action frame (len=%lu)\n",
-		       (unsigned long)prSwRfb->u2PacketLen);
+		       (uintptr_t)prSwRfb->u2PacketLen);
 		return;
 	}
 
@@ -3179,8 +3179,8 @@ void rsnGenerateWSCIEForAssocRsp(struct ADAPTER *prAdapter,
 
 	kalP2PGenWSC_IE(prAdapter->prGlueInfo,
 			ucType,
-			(uint8_t *) ((unsigned long) prMsduInfo->prPacket +
-				  (unsigned long) prMsduInfo->u2FrameLength),
+			(uint8_t *) ((uintptr_t) prMsduInfo->prPacket +
+				  (uintptr_t) prMsduInfo->u2FrameLength),
 			(uint8_t) prP2pBssInfo->u4PrivateData);
 	prMsduInfo->u2FrameLength += (uint16_t) kalP2PCalWSC_IELen(
 					prAdapter->prGlueInfo, ucType,
@@ -3364,7 +3364,7 @@ uint8_t rsnApCheckSaQueryTimeout(IN struct ADAPTER
  */
 /*----------------------------------------------------------------------------*/
 void rsnApStartSaQueryTimer(IN struct ADAPTER *prAdapter,
-			    IN unsigned long ulParamPtr)
+			    IN uintptr_t ulParamPtr)
 {
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) ulParamPtr;
 	struct BSS_INFO *prBssInfo;
@@ -3399,7 +3399,7 @@ void rsnApStartSaQueryTimer(IN struct ADAPTER *prAdapter,
 		return;
 
 	prTxFrame = (struct ACTION_SA_QUERY_FRAME *)
-	    ((unsigned long)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+	    ((uintptr_t)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
 	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec))
@@ -3477,11 +3477,11 @@ void rsnApStartSaQuery(IN struct ADAPTER *prAdapter,
 		cnmTimerInitTimer(prAdapter,
 			  &prStaRec->rPmfCfg.rSAQueryTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC)rsnApStartSaQueryTimer,
-			  (unsigned long) prStaRec);
+			  (uintptr_t) prStaRec);
 
 		if (prStaRec->rPmfCfg.u4SAQueryCount == 0)
 			rsnApStartSaQueryTimer(prAdapter,
-						(unsigned long)prStaRec);
+						(uintptr_t)prStaRec);
 	}
 }
 
@@ -3579,7 +3579,7 @@ void rsnApSaQueryRequest(IN struct ADAPTER *prAdapter,
 	}
 
 	prTxFrame = (struct ACTION_SA_QUERY_FRAME *)
-	    ((unsigned long)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+	    ((uintptr_t)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
 	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
@@ -3643,7 +3643,7 @@ void rsnApSaQueryAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	if (prSwRfb->u2PacketLen < ACTION_SA_QUERY_TR_ID_LEN) {
 		DBGLOG(RSN, INFO,
 		       "IEEE 802.11: Too short SA Query Action frame (len=%lu)\n",
-		       (unsigned long)prSwRfb->u2PacketLen);
+		       (uintptr_t)prSwRfb->u2PacketLen);
 		return;
 	}
 
