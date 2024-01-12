@@ -173,8 +173,7 @@ void beGenerateAuthMldIE(
 	struct STA_RECORD *prStaRec,
 	uint8_t ucBssIndex,
 	struct SW_RFB *prRecvAuthSwRfb,
-	struct MSDU_INFO *prMsduInfo,
-	PFN_COMPOSE_AUTH_IE_FUNC pfnComposeIE);
+	struct MSDU_INFO *prMsduInfo);
 
 uint8_t beGenerateExternalAuthMldIE(
 	struct ADAPTER *prAdapter,
