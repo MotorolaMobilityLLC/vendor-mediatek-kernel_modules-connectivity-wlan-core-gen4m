@@ -666,6 +666,9 @@ struct BUS_INFO mt6639_bus_info = {
 		.prMsiLayout = mt6639_pcie_msi_layout,
 		.u4MaxMsiNum = ARRAY_SIZE(mt6639_pcie_msi_layout),
 	},
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+	.is_en_drv_unmask_pci_msi_irq = TRUE,
+#endif
 	.showDebugInfo = mt6639ShowPcieDebugInfo,
 	.disableDevice = mtk_pci_disable_device,
 #if CFG_SUPPORT_PCIE_GEN_SWITCH
@@ -2351,15 +2354,13 @@ static void mt6639WfdmaRxRingExtCtrl(
 }
 
 #if defined(_HIF_PCIE)
-static unsigned long g_ulRecoveryMsiCheckTime;
 static void mt6639RecoveryMsiStatus(struct ADAPTER *prAdapter)
 {
 	struct PERF_MONITOR *perf = &prAdapter->rPerMonitor;
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct pcie_msi_info *prMsiInfo = &prBusInfo->pcie_msi_info;
-	uint32_t u4Addr = 0, u4Val = 0, u4WrVal = 0, u4Cnt = 0;
-	u_int8_t fgRet = FALSE;
+	uint32_t u4Val = 0, u4Cnt = 0;
 
 	/* tput < 10mbps */
 	if (perf->u4CurrPerfLevel > 0)
@@ -2369,10 +2370,10 @@ static void mt6639RecoveryMsiStatus(struct ADAPTER *prAdapter)
 	if (prMsiInfo->ulEnBits & 0xff)
 		return;
 
-	if (time_before(jiffies, g_ulRecoveryMsiCheckTime))
+	if (time_before(jiffies, prBusInfo->ulRecoveryMsiCheckTime))
 		return;
 
-	g_ulRecoveryMsiCheckTime = jiffies +
+	prBusInfo->ulRecoveryMsiCheckTime = jiffies +
 		prAdapter->rWifiVar.u4RecoveryMsiTime * HZ / 1000;
 
 	u4Cnt = halGetWfdmaRxCnt(prAdapter);
@@ -2380,18 +2381,13 @@ static void mt6639RecoveryMsiStatus(struct ADAPTER *prAdapter)
 		return;
 
 	/* read PCIe EP MSI status */
-	u4Addr = 0x740310F0;
-	HAL_MCR_EMI_RD(prAdapter, u4Addr, &u4Val, &fgRet);
-	if (!fgRet)
-		HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
-
+	u4Val = mtk_pci_read_msi_mask(prAdapter->prGlueInfo);
 	if ((u4Val & 0xff) == 0)
 		return;
 
-	u4WrVal = u4Val & 0xffffff00;
-	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
-	DBGLOG(HAL, WARN, "Rx[%u] CR[0x%08x]=[0x%08x] WR[0x%08x]",
-	       u4Cnt, u4Addr, u4Val, u4WrVal);
+	mtk_pci_msi_unmask_all_irq(prAdapter->prGlueInfo);
+	DBGLOG(HAL, WARN, "Rx[%u] MSI_MASK=[0x%08x], unmask all msi irq",
+	       u4Cnt, u4Val);
 }
 
 static void mt6639CheckFwOwnMsiStatus(struct ADAPTER *prAdapter)

@@ -436,6 +436,7 @@ struct BUS_INFO {
 	struct pse_group_info *prPseGroup;
 	const uint32_t u4PseGroupLen;
 	struct pcie_msi_info pcie_msi_info;
+	const u_int8_t is_en_drv_unmask_pci_msi_irq;
 
 	void (*pdmaSetup)(struct GLUE_INFO *prGlueInfo, u_int8_t enable,
 		bool fgResetHif);
@@ -552,6 +553,7 @@ struct BUS_INFO {
 
 	u_int8_t fgUpdateWfdmaTh;
 	uint32_t u4WfdmaTh;
+	unsigned long ulRecoveryMsiCheckTime;
 };
 
 /*******************************************************************************
@@ -621,6 +623,8 @@ void mtk_pci_disable_device(struct GLUE_INFO *prGlueInfo);
 struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int idx);
 irqreturn_t mtk_pci_isr(int irq, void *dev_instance);
 irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance);
+uint32_t mtk_pci_read_msi_mask(struct GLUE_INFO *prGlueInfo);
+void mtk_pci_msi_unmask_all_irq(struct GLUE_INFO *prGlueInfo);
 void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo);
 void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo);
 irqreturn_t pcie_sw_int_top_handler(int irq, void *dev_instance);
