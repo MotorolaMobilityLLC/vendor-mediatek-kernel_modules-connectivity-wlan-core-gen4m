@@ -573,6 +573,10 @@ ifeq ($(CONFIG_UPDATE_STATIC_DBDC_QUOTA), y)
     endif
 endif
 
+ifeq ($(CONFIG_TX_MGMT_BY_DATA_Q), n)
+        ccflags-y += -DCFG_TX_MGMT_BY_DATA_Q=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO), y)
     ccflags-y += -DCFG_VOLT_INFO=1
 else
