@@ -3664,6 +3664,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 				prCurrSwRfb->eDst =
 					RX_PKT_DESTINATION_NULL;
 				QUEUE_INSERT_TAIL(prReturnedQue, prCurrSwRfb);
+				continue;
 			}
 		}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
