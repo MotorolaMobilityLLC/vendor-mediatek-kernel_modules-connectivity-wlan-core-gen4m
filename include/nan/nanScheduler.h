@@ -250,6 +250,10 @@ uint8_t nanGetPeerMinBw(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr);
 
 uint8_t nanGetPeerMaxBw(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr);
 
+uint8_t
+nanGetNdpCntByBand(struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand);
+
 uint32_t nanSchedDbgDumpPeerAvailability(struct ADAPTER *prAdapter,
 					 uint8_t *pucNmiAddr);
 

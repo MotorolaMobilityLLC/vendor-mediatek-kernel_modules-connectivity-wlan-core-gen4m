@@ -587,6 +587,7 @@ struct _NAN_SPECIFIC_BSS_INFO_T {
 	uint32_t u4ModuleUsed;
 	uint8_t aucClusterId[MAC_ADDR_LEN];
 	struct _NAN_ATTR_MASTER_INDICATION_T rMasterIndAttr;
+	uint8_t fgIsNdp;
 
 	/* struct NAN_CRB_NEGO_CTRL_T rNanSchNegoCtrl;
 	 * struct NAN_PEER_SCHEDULE_RECORD_T

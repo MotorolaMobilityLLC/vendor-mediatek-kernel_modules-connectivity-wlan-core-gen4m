@@ -29,9 +29,9 @@ void nanDevFsmUninit(struct ADAPTER *prAdapter, uint8_t ucIdx);
 struct _NAN_SPECIFIC_BSS_INFO_T *
 nanGetSpecificBssInfo(struct ADAPTER *prAdapter,
 		      uint8_t eIndex);
-uint8_t
-nanGetBssIdxbyBand(struct ADAPTER *prAdapter,
-		      enum ENUM_BAND eBand);
+struct _NAN_SPECIFIC_BSS_INFO_T *
+nanGetSpecificBssInfobyBand(struct ADAPTER *prAdapter,
+				enum ENUM_BAND eBand);
 
 void nanDevSetMasterPreference(struct ADAPTER *prAdapter,
 			       uint8_t ucMasterPreference);
