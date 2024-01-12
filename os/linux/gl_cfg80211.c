@@ -1717,30 +1717,9 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 #endif
 	rNewSsid.pucSsid = (uint8_t *)sme->ssid;
 	rNewSsid.u4SsidLen = sme->ssid_len;
+	rNewSsid.pucIEs = (uint8_t *)sme->ie;
+	rNewSsid.u4IesLen = sme->ie_len;
 	rNewSsid.ucBssIdx = ucBssIndex;
-
-	/* Check former assocIE to prevent memory leakage in situations like
-	 * upper layer requests connection without disconnecting first, ...
-	 */
-	if (prConnSettings->assocIeLen > 0) {
-		kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
-			   prConnSettings->assocIeLen);
-		prConnSettings->assocIeLen = 0;
-	}
-
-	if (sme->ie_len > 0) {
-		prConnSettings->assocIeLen = sme->ie_len;
-		prConnSettings->pucAssocIEs =
-			kalMemAlloc(prConnSettings->assocIeLen, VIR_MEM_TYPE);
-		if (prConnSettings->pucAssocIEs) {
-			kalMemCopy(prConnSettings->pucAssocIEs,
-				   sme->ie, prConnSettings->assocIeLen);
-		} else {
-			DBGLOG(INIT, INFO,
-			       "allocate memory for prConnSettings->pucAssocIEs failed!\n");
-			prConnSettings->assocIeLen = 0;
-		}
-	}
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetConnect,
 			   (void *)&rNewSsid, sizeof(struct PARAM_CONNECT),
