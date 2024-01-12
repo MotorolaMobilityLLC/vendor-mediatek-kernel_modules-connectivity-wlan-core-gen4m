@@ -4563,6 +4563,11 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 			}
 
 #if CFG_SUPPORT_ROAMING
+			if (prConnSettings->eConnectionPolicy !=
+							CONNECT_BY_BSSID)
+				prConnSettings->eConnectionPolicy =
+						CONNECT_BY_SSID_BEST_RSSI;
+
 			/* always start roaming fsm for user space roaming */
 			roamingFsmRunEventStart(prAdapter, ucBssIndex);
 #endif /* CFG_SUPPORT_ROAMING */
@@ -6853,9 +6858,6 @@ void aisFsmRunEventRoamingDiscovery(struct ADAPTER *prAdapter,
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
-
-	/* search candidates by best rssi */
-	prConnSettings->eConnectionPolicy = CONNECT_BY_SSID_BEST_RSSI;
 
 	/* TODO: Stop roaming event in FW */
 #if CFG_SUPPORT_WFD

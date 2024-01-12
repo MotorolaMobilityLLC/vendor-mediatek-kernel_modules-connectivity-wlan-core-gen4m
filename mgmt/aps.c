@@ -675,7 +675,8 @@ uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 		else
 			airTime += pucIEs[1];
 		airTime = airTime >> 1;
-		ppduDuration = pucIEs[2];
+		if (pucIEs[2])
+			ppduDuration = pucIEs[2];
 	} else {
 		if (bss->fgExistBssLoadIE) {
 			airTime = 255 - bss->ucChnlUtilization;
@@ -735,7 +736,7 @@ uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 		a = 0;
 		b = 0;
 	}
-	tput = ideal * (a * rcpi + b) / 60000;
+	tput = (uint32_t)((uint64_t)ideal * (a * rcpi + b) / 60000);
 	est = PERCENTAGE(airTime, 255) * tput / 100;
 
 	if (aps->ucConsiderEsp) {
