@@ -88,6 +88,7 @@
 #define HIF_TX_MSDU_TOKEN_NUM \
 	(HIF_PLE_PAGE_SIZE * HIF_AMSDU_COUNT)
 #endif
+#define HIF_TX_MSDU_TOKEN_NUM_MIN	(1024 * 4)
 /* ToDo fine tune for owl EHT160 */
 #elif defined(CONFIG_MTK_WIFI_HE160) || defined(CONFIG_MTK_WIFI_EHT160)
 #define TX_RING_SIZE				1024
@@ -323,7 +324,7 @@ enum WIFI_MEM_OPER_SETS {
 	/* TX DATA */
 	WF_MEM_OP_TX_DATA_ZERO_COPY_PATH,
 	WF_MEM_OP_TX_DATA_COPY_PATH,
-	WF_MEM_OP_TX_DATA_ZERO_COPY_PATH_TX_DYN_CMA,
+	WF_MEM_OP_TX_DATA_COPY_PATH_TX_DYN_CMA,
 
 	/* TX CMD */
 	WF_MEM_OP_TX_CMD_ZERO_COPY_PATH,
@@ -757,6 +758,9 @@ struct MSDU_TOKEN_ENTRY {
 	uint16_t u2Port; /* tx ring number */
 	uint8_t ucWlanIndex;
 	uint8_t ucBssIndex;
+	uint32_t key;
+	struct hlist_node node; /* htbl node */
+	struct list_head msdu_list;
 };
 
 struct TOKEN_HISTORY {
@@ -778,10 +782,13 @@ struct WFD_LLS_TX_BIT_RATE {
 
 struct MSDU_TOKEN_INFO {
 	uint32_t u4UsedCnt;
-	struct MSDU_TOKEN_ENTRY *aprTokenStack[HIF_TX_MSDU_TOKEN_NUM];
 	spinlock_t rTokenLock;
 	struct MSDU_TOKEN_ENTRY arToken[HIF_TX_MSDU_TOKEN_NUM];
 	uint32_t u4TokenNum;
+	struct list_head init_msdu_list; /* msdu w/o data */
+	struct list_head free_msdu_list; /* msdu w/ data */
+	struct list_head used_msdu_list; /* msdu wait tx done */
+	struct hlist_head used_msdu_htbl[HIF_TX_MSDU_TOKEN_NUM];
 
 	/* control bss index packet number */
 	uint32_t u4TxBssCnt[MAX_BSSID_NUM];
@@ -1156,6 +1163,10 @@ u_int8_t halIsWfdmaRxRingReady(struct GLUE_INFO *prGlueInfo, uint8_t ucRingNum);
 uint32_t halWpdmaGetRxDmaDoneCnt(struct GLUE_INFO *prGlueInfo,
 				 uint8_t ucRingNum);
 uint32_t halGetWfdmaRxCnt(struct ADAPTER *prAdapter);
+bool halInitOneMsduTokenInfo(struct ADAPTER *prAdapter,
+	struct MSDU_TOKEN_ENTRY *prToken, uint32_t u4Idx);
+void halUninitOneMsduTokenInfo(struct ADAPTER *prAdapter,
+	struct MSDU_TOKEN_ENTRY *prToken);
 void halInitMsduTokenInfo(struct ADAPTER *prAdapter);
 void halUninitMsduTokenInfo(struct ADAPTER *prAdapter);
 uint32_t halGetMsduTokenFreeCnt(struct ADAPTER *prAdapter);
@@ -1353,6 +1364,23 @@ static inline void halMawdPwrOff(void) {}
 
 int halInitResvMem(struct platform_device *pdev,
 		enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx);
+#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
+int halInitTxCmaMem(struct platform_device *pdev);
+void halFreeTxCmaMem(struct platform_device *pdev);
+bool halTxDataCmaIsCmaMem(void);
+void wifi_tx_cma_set_mem_data_num(struct ADAPTER *prAdapter,
+	uint32_t size);
+uint32_t wifi_tx_cma_get_mem_size(void);
+uint32_t wifi_tx_cma_get_mem_data_num(void);
+void halCopyPathAllocTxCmaTxDataBuf(
+	struct MSDU_TOKEN_ENTRY *prToken, uint32_t u4Idx);
+bool halCopyPathCopyTxCmaTxData(struct MSDU_TOKEN_ENTRY *prToken,
+			  void *pucSrc, uint32_t u4Len);
+phys_addr_t halCopyPathTxCmaMapTxBuf(struct GL_HIF_INFO *prHifInfo,
+			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len);
+void halCopyPathTxCmaUnmapTxBuf(struct GL_HIF_INFO *prHifInfo,
+			   phys_addr_t rDmaAddr, uint32_t u4Len);
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM */
 void halCopyPathAllocTxDesc(struct GL_HIF_INFO *prHifInfo,
 			    struct RTMP_DMABUF *prDescRing,
 			    uint32_t u4Num);
@@ -1425,17 +1453,22 @@ bool halZeroCopyPathCopyRxData(struct GL_HIF_INFO *prHifInfo,
 			   struct RTMP_DMACB *pRxCell,
 			   struct RTMP_DMABUF *prDmaBuf,
 			   struct SW_RFB *prSwRfb);
-phys_addr_t halZeroCopyPathMapTxBuf(struct GL_HIF_INFO *prHifInfo,
+phys_addr_t halZeroCopyPathMapTxDataBuf(struct GL_HIF_INFO *prHifInfo,
+			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len);
+phys_addr_t halZeroCopyPathMapTxCmdBuf(struct GL_HIF_INFO *prHifInfo,
 			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len);
 phys_addr_t halZeroCopyPathMapRxBuf(struct GL_HIF_INFO *prHifInfo,
 			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len);
-void halZeroCopyPathUnmapTxBuf(struct GL_HIF_INFO *prHifInfo,
+void halZeroCopyPathUnmapTxDataBuf(struct GL_HIF_INFO *prHifInfo,
+			   phys_addr_t rDmaAddr, uint32_t u4Len);
+void halZeroCopyPathUnmapTxCmdBuf(struct GL_HIF_INFO *prHifInfo,
 			   phys_addr_t rDmaAddr, uint32_t u4Len);
 void halZeroCopyPathUnmapRxBuf(struct GL_HIF_INFO *prHifInfo,
 			   phys_addr_t rDmaAddr, uint32_t u4Len);
 void halZeroCopyPathFreeDesc(struct GL_HIF_INFO *prHifInfo,
 			 struct RTMP_DMABUF *prDescRing);
-void halZeroCopyPathFreeBuf(void *pucSrc, uint32_t u4Len);
+void halZeroCopyPathFreeDataBuf(void *pucSrc, uint32_t u4Len);
+void halZeroCopyPathFreeCmdBuf(void *pucSrc, uint32_t u4Len);
 void halZeroCopyPathFreePacket(struct GL_HIF_INFO *prHifInfo,
 			   void *pvPacket, uint32_t u4Num);
 void halZeroCopyPathDumpTx(struct GL_HIF_INFO *prHifInfo,

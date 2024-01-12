@@ -227,6 +227,13 @@ const struct of_device_id mtk_wifi_misc_of_ids[] = {
 	{}
 };
 #endif
+
+#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
+const struct of_device_id mtk_wifi_tx_cma_of_ids[] = {
+	{.compatible = "mediatek,wifi_tx_cma",},
+	{}
+};
+#endif
 #endif
 
 #define HIF_WFDMA_INT_BIT	0
@@ -285,6 +292,21 @@ static struct platform_driver mtk_wifi_misc_driver = {
 };
 #endif
 
+#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
+static struct platform_driver mtk_wifi_tx_cma_driver = {
+	.driver = {
+		.name = "wlan_tx_cma",
+		.owner = THIS_MODULE,
+#ifdef CONFIG_OF
+		.of_match_table = mtk_wifi_tx_cma_of_ids,
+#endif
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
+	},
+	.id_table = mtk_wifi_ids,
+	.probe = NULL,
+	.remove = NULL,
+};
+#endif
 
 #if CFG_MTK_WIFI_AER_RESET
 static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
@@ -1219,6 +1241,52 @@ static int mtk_pcie_setup_msi(struct pci_dev *pdev,
 	return 0;
 }
 
+#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
+static int wifiTxCmaSetup(struct platform_device *pdev)
+{
+#ifdef CONFIG_OF
+	uint32_t ret = 0;
+
+	ret = halInitTxCmaMem(pdev);
+#else
+	DBGLOG(INIT, ERROR, "%s: kernel option CONFIG_OF not enabled.");
+#endif
+
+	return ret;
+}
+
+static int mtk_wifi_tx_cma_probe(struct platform_device *pdev)
+{
+	struct device_node *node = NULL;
+	int ret = 0;
+
+	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi_tx_cma");
+	if (!node) {
+		DBGLOG(INIT, ERROR,
+		       "WIFI-OF: get wifi_tx_cma device node fail\n");
+		return false;
+	}
+	of_node_put(node);
+
+	ret = wifiTxCmaSetup(pdev);
+
+	if (ret == 0)
+		DBGLOG(INIT, INFO, "%s() done, ret: %d\n", __func__, ret);
+	else
+		DBGLOG(INIT, INFO, "%s() fail, ret: %d\n", __func__, ret);
+
+	return 0;
+}
+
+static int mtk_wifi_tx_cma_remove(struct platform_device *pdev)
+{
+	halFreeTxCmaMem(pdev);
+	platform_set_drvdata(pdev, NULL);
+	return 0;
+}
+
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is a PCIE probe function
@@ -1585,6 +1653,15 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 		DBGLOG(HAL, ERROR, "page pool platform_driver_register fail\n");
 #endif
 
+#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
+	mtk_wifi_tx_cma_driver.probe = mtk_wifi_tx_cma_probe;
+	mtk_wifi_tx_cma_driver.remove = mtk_wifi_tx_cma_remove;
+
+	if (platform_driver_register(&mtk_wifi_tx_cma_driver))
+		DBGLOG(HAL, ERROR,
+			"Wi-Fi tx cma platform_driver_register fail\n");
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM */
+
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
 	mtk_pcie_remove_port(0);
 #endif
@@ -1611,6 +1688,9 @@ void glUnregisterBus(remove_card pfRemove)
 #if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
 	platform_driver_unregister(&mtk_wifi_misc_driver);
 #endif
+#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
+	platform_driver_unregister(&mtk_wifi_tx_cma_driver);
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM */
 }
 
 static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
