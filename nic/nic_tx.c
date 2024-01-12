@@ -2109,6 +2109,8 @@ nicTxFillDataDesc(IN struct ADAPTER *prAdapter,
 				prMsduInfo->prPacket,
 				NIC_TX_DESC_AND_PADDING_LENGTH +
 				prChipInfo->txd_append_size);
+	if (pucOutputBuf == NULL)
+		return;
 
 	nicTxFillDesc(prAdapter, prMsduInfo, pucOutputBuf, NULL);
 	/* dump TXD to debug TX issue */

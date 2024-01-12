@@ -338,7 +338,7 @@ int32_t StaRecCmmUpdate(struct net_device *prNetDev,
 		       );
 
 int32_t StaRecBfUpdate(struct net_device *prNetDev,
-		       struct STA_REC_BF_UPD_ARGUMENT rStaRecBfUpdArg,
+		       struct STA_REC_BF_UPD_ARGUMENT *prStaRecBfUpdArg,
 		       uint8_t aucMemRow[4], uint8_t aucMemCol[4]
 		      );
 
