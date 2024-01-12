@@ -3882,20 +3882,26 @@ void scanReportBss2Cfg80211(struct ADAPTER *prAdapter,
 #if CFG_ENABLE_WIFI_DIRECT
 #define TEMP_LOG_TEMPLATE "Report " MACSTR " SSID[%s %u] eBSSType[%d] " \
 		"u2RawLength[%d] fgIsP2PReport[%d]\n"
+
+			log_dbg(SCN, TRACE, TEMP_LOG_TEMPLATE,
+					MAC2STR(prBssDesc->aucBSSID),
+					HIDE(prBssDesc->aucSSID),
+					prBssDesc->ucChannelNum,
+					prBssDesc->eBSSType,
+					prBssDesc->u2RawLength,
+					prBssDesc->fgIsP2PReport);
 #else
 #define TEMP_LOG_TEMPLATE "Report " MACSTR " SSID[%s %u] eBSSType[%d] " \
 		"u2RawLength[%d]\n"
+
+			log_dbg(SCN, TRACE, TEMP_LOG_TEMPLATE,
+					MAC2STR(prBssDesc->aucBSSID),
+					HIDE(prBssDesc->aucSSID),
+					prBssDesc->ucChannelNum,
+					prBssDesc->eBSSType,
+					prBssDesc->u2RawLength);
 #endif
-				log_dbg(SCN, TRACE, TEMP_LOG_TEMPLATE,
-						MAC2STR(prBssDesc->aucBSSID),
-						HIDE(prBssDesc->aucSSID),
-						prBssDesc->ucChannelNum,
-						prBssDesc->eBSSType,
-						prBssDesc->u2RawLength
-#if CFG_ENABLE_WIFI_DIRECT
-						, prBssDesc->fgIsP2PReport
-#endif
-						);
+
 #undef TEMP_LOG_TEMPLATE
 
 				if (eBSSType == BSS_TYPE_INFRASTRUCTURE) {
