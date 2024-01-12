@@ -305,6 +305,12 @@ static void mt7961Connac2xProcessTxInterrupt(
 			prAdapter->prGlueInfo, TX_RING_DATA0_IDX_0);
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 	}
+
+	if (rIntrStatus.field_conn2x_single.wfdma0_tx_done_1) {
+		halWpdmaProcessDataDmaDone(
+			prAdapter->prGlueInfo, TX_RING_DATA1_IDX_1);
+		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
+	}
 }
 
 static void mt7961Connac2xProcessRxInterrupt(
