@@ -1177,7 +1177,7 @@ u_int8_t halProcessToken(IN struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
-void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
+static void halDefaultProcessMsduReport(IN struct ADAPTER *prAdapter,
 	IN OUT struct SW_RFB *prSwRfb,
 	IN OUT struct QUE *prFreeQueue)
 {
@@ -1244,6 +1244,33 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 
 		halProcessToken(prAdapter, u4Token, prFreeQueue);
 	}
+}
+
+void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
+	IN OUT struct SW_RFB *prSwRfb)
+{
+	struct RX_DESC_OPS_T *prRxDescOps;
+	struct QUE rFreeQueue;
+
+	prRxDescOps = prAdapter->chip_info->prRxDescOps;
+	QUEUE_INITIALIZE(&rFreeQueue);
+
+	if (prRxDescOps->nic_rxd_handle_host_rpt)
+		prRxDescOps->nic_rxd_handle_host_rpt(
+			prAdapter, prSwRfb, &rFreeQueue);
+	else
+		halDefaultProcessMsduReport(
+			prAdapter, prSwRfb, &rFreeQueue);
+
+#if !HIF_TX_PREALLOC_DATA_BUFFER
+	nicTxMsduDoneCb(prAdapter->prGlueInfo, &rFreeQueue);
+#endif
+
+	/* Indicate Service Thread */
+	if (wlanGetTxPendingFrameCount(prAdapter) > 0)
+		kalSetEvent(prAdapter->prGlueInfo);
+
+	kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 }
 
 void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,

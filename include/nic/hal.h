@@ -1232,8 +1232,7 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter);
 bool halHifSwInfoInit(IN struct ADAPTER *prAdapter);
 void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo);
 void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prSwRfb,
-	IN OUT struct QUE *prFreeQueue);
+	IN OUT struct SW_RFB *prSwRfb);
 u_int8_t halProcessToken(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4Token,
 	IN struct QUE *prFreeQueue);
