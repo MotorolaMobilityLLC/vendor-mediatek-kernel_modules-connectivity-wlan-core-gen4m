@@ -1138,6 +1138,7 @@ static u_int8_t kalDevRegWriteStatic(struct GLUE_INFO *prGlueInfo,
  * \retval FALSE         operation fail
  */
 /*----------------------------------------------------------------------------*/
+__no_kcsan
 u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Register, uint32_t u4Value)
 {

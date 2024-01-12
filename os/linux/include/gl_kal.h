@@ -2521,6 +2521,10 @@ void *kalProcessRttReportDone(
 #define __has_attribute(x) 0
 #endif
 
+#ifndef __no_kcsan
+#define __no_kcsan
+#endif
+
 #if !defined(__GCC4_has_attribute___fallthrough__)
 #define __GCC4_has_attribute___fallthrough__ 0
 #endif
