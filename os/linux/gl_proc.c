@@ -383,6 +383,12 @@ static ssize_t procCSIDataRead(struct file *filp,
 
 		wait_event_interruptible(g_prGlueInfo_proc->waitq_csi,
 			prCSIInfo->u4CSIBufferUsed != 0);
+		if (kalIsHalted() || kalIsResetting()) {
+			DBGLOG(INIT, WARN,
+				"[CSI] kalIsHalted=%u kalIsResetting=%u\n",
+				kalIsHalted(), kalIsResetting());
+			return -EFAULT;
+		}
 
 		prTempCSIData = glCsiGetCSIData();
 		if (!prTempCSIData) {
@@ -2028,10 +2034,15 @@ int32_t procUninitProcFs(void)
 int32_t procRemoveProcfs(void)
 {
 #if (!CFG_MTK_ANDROID_WMT) || (BUILD_QA_DBG)
-	remove_proc_entry(PROC_DRIVER_CMD, gprProcRoot);
 #if CFG_SUPPORT_CSI
+	struct CSI_INFO_T *prCSIInfo = NULL;
+
+	prCSIInfo = glCsiGetCSIInfo();
+	prCSIInfo->u4CSIBufferUsed = 1;
+	wake_up_interruptible(&(g_prGlueInfo_proc->waitq_csi));
 	remove_proc_entry(PROC_CSI_DATA_NAME, gprProcRoot);
 #endif
+	remove_proc_entry(PROC_DRIVER_CMD, gprProcRoot);
 #endif /* (!CFG_MTK_ANDROID_WMT) || (BUILD_QA_DBG) */
 
 #if (!CFG_MTK_ANDROID_WMT)
