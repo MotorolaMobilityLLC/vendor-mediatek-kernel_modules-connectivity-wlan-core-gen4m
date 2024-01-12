@@ -133,8 +133,20 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 			wlanGetDriverDbgLevel(DBG_TX_IDX, &u4DebugLevel);
 			if (u4DebugLevel & DBG_CLASS_TRACE)
 				prAdapter->u4HifDbgFlag |= DEG_HIF_ALL;
-			else
-				halShowLitePleInfo(prAdapter);
+			else {
+				struct CHIP_DBG_OPS *prDbgOps;
+
+				prDbgOps = prAdapter->chip_info->prDebugOps;
+				DBGLOG(HAL, ERROR, "Dump debug info\n");
+				if (prDbgOps && prDbgOps->showPleInfo)
+					prDbgOps->showPleInfo(prAdapter, FALSE);
+
+				if (prDbgOps && prDbgOps->showPseInfo)
+					prDbgOps->showPseInfo(prAdapter);
+
+				if (prDbgOps && prDbgOps->showPdmaInfo)
+					prDbgOps->showPdmaInfo(prAdapter);
+			}
 		}
 	}
 
@@ -150,6 +162,7 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	uint32_t u4Value = 0;
 	bool fgIsClkEn = false;
+	struct CHIP_DBG_OPS *prDbgOps;
 
 	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
@@ -183,17 +196,27 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 	if (!fgIsClkEn)
 		return;
 
-	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PDMA))
-		halShowPdmaInfo(prAdapter);
+	prDbgOps = prAdapter->chip_info->prDebugOps;
 
-	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_DMASCH))
-		halShowDmaschInfo(prAdapter);
+	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PDMA)) {
+		if (prDbgOps && prDbgOps->showPleInfo)
+			prDbgOps->showPleInfo(prAdapter, FALSE);
+	}
 
-	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PSE))
-		halShowPseInfo(prAdapter);
+	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PSE)) {
+		if (prDbgOps && prDbgOps->showPseInfo)
+			prDbgOps->showPseInfo(prAdapter);
+	}
 
-	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PLE))
-		halShowPleInfo(prAdapter, TRUE);
+	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_DMASCH)) {
+		if (prDbgOps && prDbgOps->showDmaschInfo)
+			prDbgOps->showDmaschInfo(prAdapter);
+	}
+
+	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PLE)) {
+		if (prDbgOps && prDbgOps->showPdmaInfo)
+			prDbgOps->showPdmaInfo(prAdapter);
+	}
 
 	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_MAC))
 		haldumpMacInfo(prAdapter);
