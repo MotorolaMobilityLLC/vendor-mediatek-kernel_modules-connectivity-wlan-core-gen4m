@@ -200,6 +200,7 @@ enum ENUM_DBG_MODULE {
 	DBG_ICS_IDX,		/* 0x2B *//* In-chip sniffer */
 	DBG_HIF_WMM_ENHANCE_IDX,/* 0x2C */
 	DBG_APS_IDX,		/* 0x2D *//* AP selection */
+	DBG_SA_IDX,		/* 0x2E *//* standalone log */
 	DBG_MODULE_NUM		/* Notice the XLOG check */
 };
 enum ENUM_DBG_ASSERT_CTRL_LEVEL {
