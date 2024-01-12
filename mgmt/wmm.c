@@ -855,8 +855,8 @@ void wmmStartTsmMeasurement(struct ADAPTER *prAdapter, unsigned long ulParam,
 	}
 	prStaRec = prAisBssInfo->prStaRecOfAP;
 	if (!prStaRec) {
-		DBGLOG(WMM, INFO, "No station record found for %pM\n",
-		       prTsmReq->aucPeerAddr);
+		DBGLOG(WMM, INFO, "No station record found for "MACSTR"\n",
+			MAC2STR(prTsmReq->aucPeerAddr));
 		cnmMemFree(prAdapter, prTsmReq);
 		rrmScheduleNextRm(prAdapter,
 			ucBssIndex);
@@ -1455,8 +1455,9 @@ uint32_t wmmDumpActiveTspecs(struct ADAPTER *prAdapter, uint8_t *pucBuffer,
 		if (prStaRec) {
 			i4BytesWritten += kalSnprintf(
 				pucBuffer + i4BytesWritten, u2BufferLen,
-				"\nACM status for AP %pM:\nBE %d; BK %d; VI %d; VO %d\n",
-				prStaRec->aucMacAddr,
+				"\nACM status for AP "MACSTR
+				":\nBE %d; BK %d; VI %d; VO %d\n",
+				MAC2STR(prStaRec->aucMacAddr),
 				prStaRec->afgAcmRequired[ACI_BE],
 				prStaRec->afgAcmRequired[ACI_BK],
 				prStaRec->afgAcmRequired[ACI_VI],

@@ -6200,8 +6200,9 @@ void aisRemoveTimeoutBlacklist(struct ADAPTER *prAdapter)
 		if (prBssDesc) {
 			prBssDesc->prBlack = NULL;
 			prBssDesc->ucJoinFailureCount = 0;
-			DBGLOG(AIS, INFO, "Remove Timeout %pM from blacklist\n",
-			       prBssDesc->aucBSSID);
+			DBGLOG(AIS, INFO,
+				"Remove Timeout "MACSTR" from blacklist\n",
+			       MAC2STR(prBssDesc->aucBSSID));
 		}
 		LINK_MGMT_RETURN_ENTRY(&prAdapter->rWifiVar.rBlackList,
 			prEntry);
@@ -6226,8 +6227,9 @@ static void aisRemoveDeauthBlacklist(struct ADAPTER *prAdapter)
 		if (prBssDesc) {
 			prBssDesc->prBlack = NULL;
 			prBssDesc->ucJoinFailureCount = 0;
-			DBGLOG(AIS, INFO, "Remove deauth %pM from blacklist\n",
-			       prBssDesc->aucBSSID);
+			DBGLOG(AIS, INFO,
+			       "Remove deauth "MACSTR" from blacklist\n",
+			       MAC2STR(prBssDesc->aucBSSID));
 		}
 		LINK_MGMT_RETURN_ENTRY(&prAdapter->rWifiVar.rBlackList,
 			prEntry);

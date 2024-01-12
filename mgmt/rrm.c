@@ -906,8 +906,9 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 		DBGLOG(RRM, INFO, "StaRec is NULL, ignore request\n");
 		return;
 	}
-	DBGLOG(RRM, INFO, "RM Request From %pM, DialogToken %d\n",
-			prRmReqFrame->aucSrcAddr, prRmReqFrame->ucDialogToken);
+	DBGLOG(RRM, INFO, "RM Request From "MACSTR", DialogToken %d\n",
+			MAC2STR(prRmReqFrame->aucSrcAddr),
+			prRmReqFrame->ucDialogToken);
 	eNewPriority = rrmGetRmRequestPriority(prRmReqFrame->aucDestAddr);
 	if (prRmReqParam->ePriority > eNewPriority) {
 		DBGLOG(RRM, INFO, "ignore lower precedence rm request\n");
@@ -1546,8 +1547,8 @@ static void rrmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 	if (!EQUAL_MAC_ADDR(bcnReq->aucBssid, "\xff\xff\xff\xff\xff\xff") &&
 		!EQUAL_MAC_ADDR(bcnReq->aucBssid, bssid)) {
 		DBGLOG(RRM, INFO,
-		       "bssid mismatch, req %pM, actual %pM\n",
-		       bcnReq->aucBssid, bssid);
+		       "bssid mismatch, req "MACSTR", actual "MACSTR"\n",
+		       MAC2STR(bcnReq->aucBssid), MAC2STR(bssid));
 		return;
 	}
 
@@ -1566,8 +1567,9 @@ static void rrmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 	}
 	if (!validChannel &&
 	    bcnReq->ucChannel > 0 && bcnReq->ucChannel < 255) {
-		DBGLOG(RRM, INFO, "%pM chnl %d invalid, req %d\n",
-			bssid, prBssDesc->ucChannelNum, bcnReq->ucChannel);
+		DBGLOG(RRM, INFO, ""MACSTR" chnl %d invalid, req %d\n",
+			MAC2STR(bssid), prBssDesc->ucChannelNum,
+			bcnReq->ucChannel);
 		return;
 	}
 
@@ -1583,8 +1585,8 @@ static void rrmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 		kalMemCopy(bcnSsid, prBssDesc->aucSSID,
 		       min_t(uint8_t, prBssDesc->ucSSIDLen, ELEM_MAX_LEN_SSID));
 		DBGLOG(RRM, TRACE,
-		       "%pM SSID mismatch, req(%d, %s), bcn(%d, %s)\n",
-		       bssid, data->ssidLen, HIDE(reqSsid),
+		       ""MACSTR" SSID mismatch, req(%d, %s), bcn(%d, %s)\n",
+		       MAC2STR(bssid), data->ssidLen, HIDE(reqSsid),
 		       prBssDesc->ucSSIDLen, HIDE(bcnSsid));
 		return;
 	}
@@ -1613,8 +1615,8 @@ static void rrmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 		reportEntry->u2MeasReportLen = 0;
 		reportEntry->pucMeasReport = NULL;
 		DBGLOG(RRM, TRACE,
-		       "allocate entry for Bss %pM, total entry %u\n",
-			bssid, rmRep->rReportLink.u4NumElem);
+		       "allocate entry for Bss "MACSTR", total entry %u\n",
+			MAC2STR(bssid), rmRep->rReportLink.u4NumElem);
 		LINK_INSERT_TAIL(&rmRep->rReportLink,
 				 &reportEntry->rLinkEntry);
 	} else {
@@ -1659,8 +1661,8 @@ static void rrmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 		 ies_len >= 2);
 
 	DBGLOG(RRM, TRACE,
-	       "Bss %pM, ReportDeail %d, IncludeIE Num %d, chnl %d\n",
-	       bssid, data->reportDetail, data->reportIeIdsLen,
+	       "Bss "MACSTR", ReportDeail %d, IncludeIE Num %d, chnl %d\n",
+	       MAC2STR(bssid), data->reportDetail, data->reportIeIdsLen,
 	       prBssDesc->ucChannelNum);
 }
 
