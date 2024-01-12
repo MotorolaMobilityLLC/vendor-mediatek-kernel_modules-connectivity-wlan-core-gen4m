@@ -7554,7 +7554,7 @@ kalReadyOnChannel(struct GLUE_INFO *prGlueInfo,
 		struct net_device *prDevHandler =
 			wlanGetNetDev(prGlueInfo, ucBssIndex);
 
-		if (prDevHandler) {
+		if (prDevHandler == NULL) {
 			DBGLOG(REQ, WARN, "prDevHandler is null\n");
 			return;
 		}
