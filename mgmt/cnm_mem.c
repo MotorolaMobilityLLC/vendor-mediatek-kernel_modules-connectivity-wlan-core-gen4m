@@ -1158,10 +1158,10 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 			= prAdapter->rWifiVar.ucTxBaSize;
 
 		if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AC)
-			prCmdContent->rBaSize.rHtVhtBaSize.ucTxBaSize
+			prCmdContent->rBaSize.rHtVhtBaSize.ucRxBaSize
 				= prAdapter->rWifiVar.ucRxVhtBaSize;
 		else
-			prCmdContent->rBaSize.rHeBaSize.u2TxBaSize
+			prCmdContent->rBaSize.rHtVhtBaSize.u2RxBaSize
 				= prAdapter->rWifiVar.ucRxHtBaSize;
 	}
 
