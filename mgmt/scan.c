@@ -2014,10 +2014,9 @@ P_BSS_DESC_T scanSearchBssDescByPolicy(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBss
 		prConnSettings->aucSSID[prConnSettings->ucSSIDLen] = '\0';
 #endif
 
-#if 0
-	DBGLOG(SCN, INFO, "SEARCH: Num Of BSS_DESC_T = %d, Look for SSID: %s\n",
-	       prBSSDescList->u4NumElem, prConnSettings->aucSSID);
-#endif
+	DBGLOG(SCN, INFO, "SEARCH: Bss Num: %d, Look for SSID: %s, %pM Band=%d, channel=%d\n",
+		   (UINT_32) prBSSDescList->u4NumElem, prConnSettings->aucSSID,
+		   (prConnSettings->aucBSSID), eBand, ucChannel);
 
 	/* 4 <1> The outer loop to search for a candidate. */
 	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry, BSS_DESC_T) {
