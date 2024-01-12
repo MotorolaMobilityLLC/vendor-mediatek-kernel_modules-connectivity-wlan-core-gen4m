@@ -241,6 +241,7 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 			prMsduInfo->aucTxDescBuffer = prMsduInfo->prHead;
 			prMsduInfo->eSrc = TX_PACKET_MGMT;
 			prMsduInfo->u4Option = 0;
+			prMsduInfo->ucControlFlag = 0;
 			prMsduInfo->fgMgmtUseDataQ = FALSE;
 			prMsduInfo->fgIsPacketSkb = FALSE;
 
