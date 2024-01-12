@@ -828,8 +828,11 @@ void asicWakeUpWiFi(IN struct ADAPTER *prAdapter)
 
 	HAL_LP_OWN_RD(prAdapter, &fgResult);
 
-	if (fgResult)
+	if (fgResult) {
 		prAdapter->fgIsFwOwn = FALSE;
+		DBGLOG(HAL, WARN,
+			"Already DriverOwn, set flag only\n");
+	}
 	else
 		HAL_LP_OWN_CLR(prAdapter, &fgResult);
 }
