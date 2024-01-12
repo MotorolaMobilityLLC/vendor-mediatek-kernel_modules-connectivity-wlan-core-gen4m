@@ -957,20 +957,21 @@ void wlanApplyCSIToneMask(
 	kalMemZero(&ai2QData[start], sizeof(int16_t) * (end - start + 1));\
 }
 
+	/*Mask the NULL TONE*/
 	if (ucRxMode == RX_VT_LEGACY_OFDM) {
-		if (ucCBW == RX_VT_FR_MODE_20) {
+		if (ucDBW == RX_VT_FR_MODE_20) {
 			ZERO(0);
-		} else if (ucCBW == RX_VT_FR_MODE_40) {
+		} else if (ucDBW == RX_VT_FR_MODE_40) {
 			ZERO(32); ZERO(96);
-		} else if (ucCBW == RX_VT_FR_MODE_80) {
+		} else if (ucDBW == RX_VT_FR_MODE_80) {
 			ZERO(32); ZERO(96);
 			ZERO(160); ZERO(224);
-		} else if (ucCBW == RX_VT_FR_MODE_160) {
+		} else if (ucDBW == RX_VT_FR_MODE_160) {
 			ZERO(32); ZERO(96);
 			ZERO(160); ZERO(224);
 			ZERO(288); ZERO(352);
 			ZERO(416); ZERO(480);
-		} else if (ucCBW == RX_VT_FR_MODE_320) {
+		} else if (ucDBW == RX_VT_FR_MODE_320) {
 			ZERO(32); ZERO(96);
 			ZERO(160); ZERO(224);
 			ZERO(288); ZERO(352);
@@ -983,19 +984,38 @@ void wlanApplyCSIToneMask(
 		ucRxMode == RX_VT_GREEN_MODE ||
 		ucRxMode == RX_VT_VHT_MODE) {
 
-		if (ucCBW == RX_VT_FR_MODE_20) {
+		if (ucDBW == RX_VT_FR_MODE_20) {
 			ZERO(0);
-		} else if (ucCBW == RX_VT_FR_MODE_40) {
+		} else if (ucDBW == RX_VT_FR_MODE_40) {
 			ZERO(0); ZERO(1);
 			ZERO(127);
-		} else if (ucCBW == RX_VT_FR_MODE_80) {
+		} else if (ucDBW == RX_VT_FR_MODE_80) {
 			ZERO(0); ZERO(1);
 			ZERO(255);
-		} else if (ucCBW == RX_VT_FR_MODE_160) {
+		} else if (ucDBW == RX_VT_FR_MODE_160) {
 			ZERO(5); ZERO(127);
 			ZERO(128); ZERO(129);
 			ZERO(261); ZERO(383);
 			ZERO(384); ZERO(385);
+		}
+	} else if (ucRxMode == RX_VT_HE_MODE)
+		ZERO(0);
+
+	/*Mask the VHT Pilots*/
+	if (ucRxMode == RX_VT_VHT_MODE) {
+		if (ucDBW == RX_VT_FR_MODE_20) {
+			ZERO(7); ZERO(21); ZERO(43); ZERO(57);
+		} else if (ucDBW == RX_VT_FR_MODE_40) {
+			ZERO(11); ZERO(25); ZERO(53);
+			ZERO(75); ZERO(103); ZERO(117);
+		} else if (ucDBW == RX_VT_FR_MODE_80) {
+			ZERO(11); ZERO(39); ZERO(75); ZERO(103);
+			ZERO(153); ZERO(181); ZERO(217); ZERO(245);
+		} else if (ucDBW == RX_VT_FR_MODE_160) {
+			ZERO(25); ZERO(53); ZERO(89); ZERO(117);
+			ZERO(139); ZERO(167); ZERO(203); ZERO(231);
+			ZERO(281); ZERO(309); ZERO(345); ZERO(373);
+			ZERO(395); ZERO(423); ZERO(459); ZERO(487);
 		}
 	}
 }
