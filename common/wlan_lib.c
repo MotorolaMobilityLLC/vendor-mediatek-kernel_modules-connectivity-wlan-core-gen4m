@@ -8261,6 +8261,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4TputThresholdMbps, "TputThresholdMbps", 50);
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
 
+	INIT_UINT(prWifiVar->u4RxHighTputTh, "RxHighTputTh", 2000);
+
 	INIT_UINT(prWifiVar->u4RxRateProtoFilterMask, "RxRateProtoFilterMask",
 			BIT(ENUM_PKT_ARP));
 

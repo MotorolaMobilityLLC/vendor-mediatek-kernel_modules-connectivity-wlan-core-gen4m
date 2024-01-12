@@ -4592,12 +4592,9 @@ void halRxTasklet(unsigned long data)
 void halRxWork(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter;
-	struct BUS_INFO *prBusInfo;
 	bool fgEnInt = FALSE;
 
 	prAdapter = prGlueInfo->prAdapter;
-	prBusInfo = prAdapter->chip_info->bus_info;
-
 	if (!HAL_IS_RX_DIRECT(prAdapter)) {
 		DBGLOG(INIT, ERROR,
 		       "Valid in RX-direct mode only\n");
@@ -4644,18 +4641,17 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 	prGlueInfo->TaskIsrCnt++;
 	wlanIST(prAdapter, FALSE);
 
+#if CFG_SUPPORT_RX_WORK
 	/* Read data again if wfdma rx ring is non-empty and
 	 * wfdma th > 0 (high tput)
 	 */
 	while (!halIsWfdmaRxRingsEmpty(prGlueInfo)) {
-		if (prAdapter->ulNoMoreRfb ||
-		    prBusInfo->u4WfdmaTh == 0)
+		if (prAdapter->ulNoMoreRfb || !kalIsRxHighTput(prAdapter))
 			break;
 
 		wlanIST(prAdapter, FALSE);
 	}
 
-#if CFG_SUPPORT_RX_WORK
 	RX_INC_CNT(&prAdapter->rRxCtrl, RX_WORK_COUNT);
 #else /* CFG_SUPPORT_RX_WORK */
 	RX_INC_CNT(&prAdapter->rRxCtrl, RX_TASKLET_COUNT);

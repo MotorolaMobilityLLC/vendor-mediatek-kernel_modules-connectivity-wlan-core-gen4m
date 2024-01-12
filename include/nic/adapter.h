@@ -1247,6 +1247,7 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
 	uint32_t u4TputThresholdMbps;
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
+	uint32_t u4RxHighTputTh;
 
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
 	uint8_t fgEnDefaultIotApRule;
