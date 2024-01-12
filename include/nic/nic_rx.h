@@ -81,10 +81,9 @@
 
 #define MAX_SEQ_NO                  4095
 #define MAX_SEQ_NO_COUNT            4096
-#define HALF_SEQ_NO_CNOUT           2048
-
 #define HALF_SEQ_NO_COUNT           2048
 #define QUARTER_SEQ_NO_COUNT        1024
+#define HALF_SEQ_MASK               (HALF_SEQ_NO_COUNT - 1)
 
 #define MT6620_FIXED_WIN_SIZE         64
 #define CFG_RX_MAX_BA_ENTRY            4

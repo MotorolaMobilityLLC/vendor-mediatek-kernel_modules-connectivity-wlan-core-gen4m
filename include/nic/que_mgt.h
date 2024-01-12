@@ -430,7 +430,7 @@ struct RX_BA_ENTRY {
 #endif
 
 #if CFG_SUPPORT_RX_CACHE_INDEX
-	struct SW_RFB *prCacheIndex[MAX_SEQ_NO_COUNT];
+	struct SW_RFB *prCacheIndex[HALF_SEQ_NO_COUNT];
 #endif
 };
 
