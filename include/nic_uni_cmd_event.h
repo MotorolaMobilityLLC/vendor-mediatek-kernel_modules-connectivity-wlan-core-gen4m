@@ -3964,6 +3964,17 @@ enum ENUM_UNI_CMD_PERF_IND_TAG {
 	UNI_CMD_PERF_IND_TAG_PARM = 0,
 	UNI_CMD_PERF_IND_TAG_NUM
 };
+__KAL_ATTRIB_PACKED_FRONT__
+struct STRU_UNI_CMD_PERF_IND_PARM {
+	uint32_t u4CurTxBytes;    /* in Bps */
+	uint32_t u4CurRxBytes;    /* in Bps */
+	uint16_t u2CurRxRate;    /* Unit 500 Kbps */
+	uint8_t ucCurRxRCPI0;
+	uint8_t ucCurRxRCPI1;
+	uint8_t ucCurRxNss;
+	uint8_t ucCurRxNss2;
+	uint16_t u2Reserve;
+} __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_PERF_IND_PARM {
@@ -3973,14 +3984,10 @@ struct UNI_CMD_PERF_IND_PARM {
 	uint8_t aucPadding0[1];
 	uint16_t u2CmdLen;       // cmd size including common part and body.
 	uint32_t u4VaildPeriod;   /* in ms */
-	uint32_t ulCurTxBytes[4];   /* in Bps */
-	uint32_t ulCurRxBytes[4];   /* in Bps */
-	uint16_t u2CurRxRate[4];     /* Unit 500 Kbps */
-	uint8_t ucCurRxRCPI0[4];
-	uint8_t ucCurRxRCPI1[4];
-	uint8_t ucCurRxNss[4];
-	uint8_t ucCurRxNss2[4];
-	uint32_t au4Padding[62]; /* reserve for future*/
+	uint8_t ucBssNum;
+	uint8_t  ucReserve[3];
+	struct STRU_UNI_CMD_PERF_IND_PARM rUniCmdParm[MAX_BSSID_NUM];
+	//uint32_t au4Padding[62]; /* reserve for future*/
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__

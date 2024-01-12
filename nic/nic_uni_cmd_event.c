@@ -5211,21 +5211,10 @@ uint32_t nicUniCmdPerfInd(struct ADAPTER *ad,
 	tag->ucCmdVer = cmd->ucCmdVer;
 	tag->u2CmdLen = cmd->u2CmdLen;
 	tag->u4VaildPeriod = cmd->u4VaildPeriod;
+	tag->ucBssNum = MAX_BSSID_NUM;
 
-	kalMemCopy(tag->ulCurTxBytes, cmd->ulCurTxBytes,
-				sizeof(tag->ulCurTxBytes));
-	kalMemCopy(tag->ulCurRxBytes, cmd->ulCurRxBytes,
-				sizeof(tag->ulCurRxBytes));
-	kalMemCopy(tag->u2CurRxRate, cmd->u2CurRxRate,
-				sizeof(tag->u2CurRxRate));
-	kalMemCopy(tag->ucCurRxRCPI0, cmd->ucCurRxRCPI0,
-				sizeof(tag->ucCurRxRCPI0));
-	kalMemCopy(tag->ucCurRxRCPI1, cmd->ucCurRxRCPI1,
-				sizeof(tag->ucCurRxRCPI1));
-	kalMemCopy(tag->ucCurRxNss, cmd->ucCurRxNss,
-				sizeof(tag->ucCurRxNss));
-	kalMemCopy(tag->ucCurRxNss2, cmd->ucCurRxNss2,
-				sizeof(tag->ucCurRxNss2));
+	kalMemCopy(tag->rUniCmdParm, cmd->rUniCmdParm,
+				sizeof(tag->rUniCmdParm));
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
