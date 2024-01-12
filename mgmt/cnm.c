@@ -2504,6 +2504,10 @@ cnmDbdcFsmEntryFunc_DISABLE_IDLE(IN struct ADAPTER *prAdapter)
 {
 	uint8_t ucWmmIndex;
 
+	if (cnmDBDCIsReqPeivilegeLock()) {
+		cnmDBDCFsmActionReqPeivilegeUnLock(prAdapter);
+	}
+
 	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
 		ucWmmIndex++) {
 		cnmWmmQuotaSetMaxQuota(
@@ -2655,6 +2659,11 @@ cnmDbdcFsmEventHandler_WAIT_PROTOCOL_ENABLE(
 {
 	switch (eEvent) {
 	case DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG:
+		/* Stop Enabling DBDC */
+		g_rDbdcInfo.eDbdcFsmNextState =
+			ENUM_DBDC_FSM_STATE_DISABLE_IDLE;
+		break;
+
 	case DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG:
 		/* IGNORE */
 		break;
