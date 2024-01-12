@@ -1283,6 +1283,8 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 			ucBssIndex, prWlanHdr->aucAddr1);
 		/* prMgmtTxMsdu->ucBssIndex = ucBssIndex; */
 
+		ucRetryLimit = prAdapter->rWifiVar.ucP2pMgmtTxRetryLimit;
+
 		switch (prWlanHdr->u2FrameCtrl & MASK_FRAME_TYPE) {
 		case MAC_FRAME_PROBE_RSP: {
 			struct WLAN_BEACON_FRAME rProbeRspFrame;
@@ -1379,8 +1381,11 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 			 * in p2pFuncProcessP2pProbeRsp
 			 */
 			*pu8GlCookie = u8GlCookie;
-			ucRetryLimit =
-				prAdapter->rWifiVar.u4ProbeRspRetryLimit;
+			if (ucRetryLimit == 0 ||
+			    prAdapter->rWifiVar.ucProbeRspRetryLimit <
+			    ucRetryLimit)
+				ucRetryLimit =
+				prAdapter->rWifiVar.ucProbeRspRetryLimit;
 			u4TxLifeTimeInMs = DEFAULT_P2P_PROBERESP_LIFE_TIME;
 			DBGLOG(P2P, TRACE,
 				"Dump probe response content to FW.\n");

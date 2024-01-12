@@ -1339,7 +1339,11 @@ struct WIFI_VAR {
 #endif
 	uint32_t u4ApChnlHoldTime;
 	uint32_t u4P2pChnlHoldTime;
-	uint32_t u4ProbeRspRetryLimit;
+
+	/* used to limit the retry times for p2p/sap mgmt packet */
+	uint8_t ucP2pMgmtTxRetryLimit;
+	uint8_t ucProbeRspRetryLimit;
+
 	uint8_t fgAllowSameBandDualSta;
 	uint8_t ucApForceSleep;
 
