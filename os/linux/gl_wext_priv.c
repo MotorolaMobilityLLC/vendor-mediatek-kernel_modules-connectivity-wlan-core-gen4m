@@ -7185,8 +7185,8 @@ static int32_t priv_driver_dump_stat2_info(struct ADAPTER *prAdapter,
 
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%-26s%s%d\n", "Pending Sec", " = ",
-			prQueryDrvStatistics->i4TxPendingSecurityFrameNum);
+			"%-26s%s%d\n", "Pending CmdData", " = ",
+			prQueryDrvStatistics->i4TxPendingCmdDataFrameNum);
 #if 0
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
@@ -7287,9 +7287,9 @@ static int priv_driver_get_sta_stat2(IN struct net_device *prNetDev,
 
 	prQueryDrvStatistics->i4TxPendingFrameNum =
 		(uint32_t) GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum);
-	prQueryDrvStatistics->i4TxPendingSecurityFrameNum =
+	prQueryDrvStatistics->i4TxPendingCmdDataFrameNum =
 		(uint32_t) GLUE_GET_REF_CNT(
-				prGlueInfo->i4TxPendingSecurityFrameNum);
+				prGlueInfo->i4TxPendingCmdDataFrameNum);
 #if 0
 	prQueryDrvStatistics->i4TxPendingCmdNum =
 		(uint32_t) GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingCmdNum);

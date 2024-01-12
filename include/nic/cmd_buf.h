@@ -92,7 +92,6 @@ enum EUNM_CMD_SEND_METHOD {
 
 enum COMMAND_TYPE {
 	COMMAND_TYPE_NETWORK_IOCTL,
-	COMMAND_TYPE_SECURITY_FRAME,
 	COMMAND_TYPE_MANAGEMENT_FRAME,
 	COMMAND_TYPE_DATA_FRAME,
 	COMMAND_TYPE_NUM
@@ -115,9 +114,9 @@ struct CMD_INFO {
 
 	uint16_t u2InfoBufLen;	/* This is actual CMD buffer length */
 	uint8_t *pucInfoBuffer;	/* May pointer to structure in prAdapter */
-	struct MSDU_INFO
-		*prMsduInfo;	/* only valid when it's a security/MGMT frame */
-	void *prPacket;	/* only valid when it's a security frame */
+	struct MSDU_INFO *prMsduInfo;
+				/* only valid when it's a CmdData/MGMT frame */
+	void *prPacket;	/* only valid when it's a CmdData frame */
 
 	PFN_CMD_DONE_HANDLER pfCmdDoneHandler;
 	PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler;

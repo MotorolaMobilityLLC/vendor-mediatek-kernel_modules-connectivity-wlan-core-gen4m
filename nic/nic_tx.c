@@ -1161,7 +1161,6 @@ uint8_t nicTxGetCmdResourceType(IN struct CMD_INFO
 		ucTC = TC4_INDEX;
 		break;
 
-	case COMMAND_TYPE_SECURITY_FRAME:
 	case COMMAND_TYPE_DATA_FRAME:
 		ucTC = nicTxGetFrameResourceType(FRAME_TYPE_802_1X, NULL);
 		break;
@@ -1951,26 +1950,6 @@ nicTxComposeDesc(
 }
 
 void
-nicTxComposeSecurityFrameDesc(
-	IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo,
-	OUT uint8_t *prTxDescBuffer,
-	OUT uint8_t *pucTxDescLength)
-{
-	struct TX_DESC_OPS_T *prTxDescOps = prAdapter->chip_info->prTxDescOps;
-
-	if (prTxDescOps->nic_txd_compose_security_frame)
-		prTxDescOps->nic_txd_compose_security_frame(
-			prAdapter,
-			prCmdInfo,
-			prTxDescBuffer,
-			pucTxDescLength);
-	else
-		DBGLOG(TX, ERROR, "%s:: no nic_txd_compose_security_frame??\n",
-			__func__);
-}
-
-void
 nicTxForceAmsduForCert(
 	struct ADAPTER *prAdapter,
 	u_int8_t *prTxDescBuffer)
@@ -2712,8 +2691,7 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 	if (!halTxIsCmdBufEnough(prAdapter))
 		return WLAN_STATUS_RESOURCES;
 
-	if (prCmdInfo->eCmdType == COMMAND_TYPE_SECURITY_FRAME ||
-		prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME) {
+	if (prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME) {
 		prMsduInfo = prCmdInfo->prMsduInfo;
 
 		/* dump TXD to debug TX issue */
@@ -2757,7 +2735,7 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 		} else {
 			/* Only return MSDU_INFO */
 			/* NativePacket will be freed at
-			 * SEC frame CMD callback
+			 * CmdData frame CMD callback
 			 */
 			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
 		}
@@ -3252,7 +3230,7 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 				return FALSE;
 		}
 #endif
-		if (prMsduInfo->ucPktType != 0) {
+		if (prMsduInfo->ucPktType != 0) { /* Recognized special types */
 			prMsduInfo->u4Option |= MSDU_OPT_NO_AGGREGATE;
 #if CFG_SUPPORT_LIMITED_PKT_PID
 			if (!nicTxPktPIDIsLimited(prAdapter, prMsduInfo)) {
@@ -3301,13 +3279,11 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_WIFI_SYSDVT || CFG_SUPPORT_TX_MGMT_USE_DATAQ
 		if (fgIsHighPrioQ)
 			/* Set higher priority */
-			prMsduInfo->ucUserPriority =
-					NIC_TX_CRITICAL_DATA_TID;
+			prMsduInfo->ucUserPriority = NIC_TX_CRITICAL_DATA_TID;
 #endif
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
 		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_802_11_MGMT))
-			prMsduInfo->u8Cookie =
-				GLUE_GET_PKT_COOKIE(prPacket);
+			prMsduInfo->u8Cookie = GLUE_GET_PKT_COOKIE(prPacket);
 #endif
 	}
 
@@ -4513,7 +4489,6 @@ uint32_t nicTxGetCmdPageCount(IN struct ADAPTER *prAdapter,
 						prCmdInfo->u2InfoBufLen, TRUE);
 		break;
 
-	case COMMAND_TYPE_SECURITY_FRAME:
 	case COMMAND_TYPE_MANAGEMENT_FRAME:
 	case COMMAND_TYPE_DATA_FRAME:
 		/* No TxD append field for management packet */

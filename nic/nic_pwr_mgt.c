@@ -407,8 +407,8 @@ u_int8_t nicpmSetAcpiPowerD3(IN struct ADAPTER *prAdapter)
 	/* 5. Remove pending TX */
 	nicTxRelease(prAdapter, TRUE);
 
-	/* 5.1 clear pending Security / Management Frames */
-	kalClearSecurityFrames(prAdapter->prGlueInfo);
+	/* 5.1 clear pending CmdData / Management Frames */
+	kalClearCmdDataFrames(prAdapter->prGlueInfo);
 	kalClearMgmtFrames(prAdapter->prGlueInfo);
 
 	/* 5.2 clear pending TX packet queued in glue layer */

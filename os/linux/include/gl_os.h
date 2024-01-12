@@ -478,7 +478,6 @@ enum ENUM_PKT_FLAG {
 	ENUM_PKT_802_11,	/* 802.11 or non-802.11 */
 	ENUM_PKT_802_3,		/* 802.3 or ethernetII */
 	ENUM_PKT_1X,		/* 1x frame or not */
-	ENUM_PKT_PROTECTED_1X,	/* protected 1x frame */
 	ENUM_PKT_NON_PROTECTED_1X,	/* Non protected 1x frame */
 	ENUM_PKT_VLAN_EXIST,	/* VLAN tag exist */
 	ENUM_PKT_DHCP,		/* DHCP frame */
@@ -487,7 +486,7 @@ enum ENUM_PKT_FLAG {
 	ENUM_PKT_TDLS,		/* TDLS */
 	ENUM_PKT_DNS,		/* DNS */
 #if CFG_SUPPORT_TPENHANCE_MODE
-	ENUM_PKT_TCP_ACK,
+	ENUM_PKT_TCP_ACK,	/* TCP ACK */
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
 
 	ENUM_PKT_FLAG_NUM
@@ -654,7 +653,7 @@ struct GLUE_INFO {
 	 */
 	int32_t ai4TxPendingFrameNumPerQueue[MAX_BSSID_NUM][CFG_MAX_TXQ_NUM];
 	int32_t i4TxPendingFrameNum;
-	int32_t i4TxPendingSecurityFrameNum;
+	int32_t i4TxPendingCmdDataFrameNum;
 	int32_t i4TxPendingCmdNum;
 
 	/* Tx: for NetDev to BSS index mapping */

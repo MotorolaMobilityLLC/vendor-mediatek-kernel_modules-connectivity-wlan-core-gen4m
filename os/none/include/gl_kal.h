@@ -1353,26 +1353,26 @@ u_int8_t kalUninitBowDevice(IN struct GLUE_INFO
 #endif /* CFG_ENABLE_BT_OVER_WIFI */
 
 /*----------------------------------------------------------------------------*/
-/* Security Frame Clearance                                                   */
+/* Command Data Frame Clearance                                               */
 /*----------------------------------------------------------------------------*/
 #ifdef CFG_REMIND_IMPLEMENT
-#define kalClearSecurityFrames(_prGlueInfo) \
+#define kalClearCmdDataFrames(_prGlueInfo) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
-#define kalClearSecurityFramesByBssIdx(_prGlueInfo, _ucBssIndex) \
+#define kalClearCmdDataFramesByBssIdx(_prGlueInfo, _ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
-#define kalSecurityFrameSendComplete(_prGlueInfo, _pvPacket, _rStatus) \
+#define kalCmdDataFrameSendComplete(_prGlueInfo, _pvPacket, _rStatus) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 #else
-void kalClearSecurityFrames(IN struct GLUE_INFO
+void kalClearCmdDataFrames(IN struct GLUE_INFO
 			    *prGlueInfo);
 
-void kalClearSecurityFramesByBssIdx(IN struct GLUE_INFO
+void kalClearCmdDataFramesByBssIdx(IN struct GLUE_INFO
 				    *prGlueInfo,
 				    IN uint8_t ucBssIndex);
 
-void kalSecurityFrameSendComplete(IN struct GLUE_INFO
+void kalCmdDataFrameSendComplete(IN struct GLUE_INFO
 				  *prGlueInfo,
 				  IN void *pvPacket, IN uint32_t rStatus);
 #endif

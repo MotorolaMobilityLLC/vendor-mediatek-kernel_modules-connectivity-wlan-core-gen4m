@@ -269,9 +269,6 @@ void secPrivacyDumpWTBL(IN struct ADAPTER *prAdapter);
 
 u_int8_t secCheckWTBLAssign(IN struct ADAPTER *prAdapter);
 
-u_int8_t secIsProtected1xFrame(IN struct ADAPTER *prAdapter,
-			       IN struct STA_RECORD *prStaRec);
-
 u_int8_t secIsProtectedBss(IN struct ADAPTER *prAdapter,
 			   IN struct BSS_INFO *prBssInfo);
 
