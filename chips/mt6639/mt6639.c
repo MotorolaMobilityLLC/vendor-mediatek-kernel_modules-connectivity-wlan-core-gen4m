@@ -2183,19 +2183,6 @@ void *pcie_vir_addr;
 
 static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
-	uint32_t value = 0;
-
-	HAL_MCR_RD(prGlueInfo->prAdapter,
-		PCIE_MAC_IREG_IMASK_HOST_ADDR,
-		&value);
-	value |= PCIE_MAC_IREG_IMASK_HOST_INT_REQUEST_EN_MASK |
-		PCIE_MAC_IREG_IMASK_HOST_P_ATR_EVT_EN_MASK |
-		PCIE_MAC_IREG_IMASK_HOST_A_ATR_EVT_EN_MASK |
-		PCIE_MAC_IREG_IMASK_HOST_DMA_ERROR_EN_MASK |
-		PCIE_MAC_IREG_IMASK_HOST_DMA_END_EN_MASK;
-	HAL_MCR_WR(prGlueInfo->prAdapter,
-		PCIE_MAC_IREG_IMASK_HOST_ADDR,
-		value);
 #if CFG_SUPPORT_PCIE_ASPM
 	HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030074, 0x08021000);
 	if (pcie_vir_addr) {
