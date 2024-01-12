@@ -1241,6 +1241,13 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 		prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_GO;
 	}
 
+	/* Clear list to ensure no client staRec */
+	if (bssGetClientCount(prAdapter, prP2pBssInfo) != 0) {
+		DBGLOG(P2P, WARN,
+			"Clear list to ensure no empty/client staRec\n");
+		bssInitializeClientList(prAdapter, prP2pBssInfo);
+	}
+
 	/* The supplicant may start AP
 	 * before rP2pRoleFsmTimeoutTimer is time out
 	 */
