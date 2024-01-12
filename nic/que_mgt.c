@@ -7827,6 +7827,9 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 	prGlueInfo = prAdapter->prGlueInfo;
 	prWpaInfo = &prGlueInfo->rWpaInfo;
 
+	DBGLOG_LIMITED(QM, TRACE, "ucSecMode = [%u], ChiperGroup = [%u]\n",
+			ucSecMode, prWpaInfo->u4CipherGroup);
+
 	if (ucSecMode != CIPHER_SUITE_CCMP
 	    && ucSecMode != CIPHER_SUITE_TKIP) {
 		DBGLOG_LIMITED(QM, TRACE,

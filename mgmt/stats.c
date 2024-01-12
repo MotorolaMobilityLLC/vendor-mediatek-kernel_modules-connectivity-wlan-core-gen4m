@@ -279,24 +279,24 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 		switch (eventType) {
 		case EVENT_RX:
 			if (u2OpCode == ARP_PRO_REQ)
-				DBGLOG(RX, TRACE,
+				DBGLOG_LIMITED(RX, TRACE,
 					"<RX> Arp Req From IP: %d.%d.%d.%d\n",
 					pucEthBody[14], pucEthBody[15],
 					pucEthBody[16], pucEthBody[17]);
 			else if (u2OpCode == ARP_PRO_RSP)
-				DBGLOG(RX, TRACE,
+				DBGLOG_LIMITED(RX, TRACE,
 					"<RX> Arp Rsp from IP: %d.%d.%d.%d\n",
 					pucEthBody[14], pucEthBody[15],
 					pucEthBody[16], pucEthBody[17]);
 			break;
 		case EVENT_TX:
 			if (u2OpCode == ARP_PRO_REQ)
-				DBGLOG(TX, TRACE,
+				DBGLOG_LIMITED(TX, TRACE,
 					"<TX> Arp Req to IP: %d.%d.%d.%d\n",
 					pucEthBody[24], pucEthBody[25],
 					pucEthBody[26], pucEthBody[27]);
 			else if (u2OpCode == ARP_PRO_RSP)
-				DBGLOG(TX, TRACE,
+				DBGLOG_LIMITED(TX, TRACE,
 					"<TX> Arp Rsp to IP: %d.%d.%d.%d\n",
 					pucEthBody[24], pucEthBody[25],
 					pucEthBody[26], pucEthBody[27]);
@@ -333,12 +333,12 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 			u2IcmpSeq = *(uint16_t *) &pucIcmp[6];
 			switch (eventType) {
 			case EVENT_RX:
-				DBGLOG(RX, TRACE,
+				DBGLOG_LIMITED(RX, TRACE,
 					"<RX> ICMP: Type %d, Id BE 0x%04x, Seq BE 0x%04x\n",
 					ucIcmpType, u2IcmpId, u2IcmpSeq);
 				break;
 			case EVENT_TX:
-				DBGLOG(TX, TRACE,
+				DBGLOG_LIMITED(TX, TRACE,
 					"<TX> ICMP: Type %d, Id 0x%04x, Seq BE 0x%04x\n",
 					ucIcmpType, u2IcmpId, u2IcmpSeq);
 				break;
@@ -367,13 +367,13 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 					&prBootp->u4TransId, &u4TransID);
 				switch (eventType) {
 				case EVENT_RX:
-					DBGLOG(RX, INFO,
+					DBGLOG_LIMITED(RX, INFO,
 						"<RX> DHCP: IPID 0x%02x, MsgType 0x%x, TransID 0x%04x\n",
 						u2IpId, prBootp->aucOptions[6],
 						u4TransID);
 					break;
 				case EVENT_TX:
-					DBGLOG(TX, INFO,
+					DBGLOG_LIMITED(TX, INFO,
 						"<TX> DHCP: IPID 0x%02x, MsgType 0x%x, TransID 0x%04x\n",
 						u2IpId, prBootp->aucOptions[6],
 						u4TransID);
@@ -384,7 +384,7 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 					(pucBootp[0] << 8) | pucBootp[1];
 
 				if (eventType == EVENT_RX)
-					DBGLOG(RX, INFO,
+					DBGLOG_LIMITED(RX, INFO,
 						"<RX> DNS: IPID 0x%02x, TransID 0x%04x\n",
 						u2IpId, u2TransId);
 			}
@@ -408,11 +408,11 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 		case 0x85:
 			switch (eventType) {
 			case EVENT_RX:
-				DBGLOG(RX, INFO,
+				DBGLOG_LIMITED(RX, INFO,
 					"<RX><IPv6> Router Solicitation\n");
 				break;
 			case EVENT_TX:
-				DBGLOG(TX, INFO,
+				DBGLOG_LIMITED(TX, INFO,
 					"<TX><IPv6> Router Solicitation\n");
 				break;
 			}
@@ -420,11 +420,11 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 		case 0x86:
 			switch (eventType) {
 			case EVENT_RX:
-				DBGLOG(RX, INFO,
+				DBGLOG_LIMITED(RX, INFO,
 					"<RX><IPv6> Router Advertisement\n");
 				break;
 			case EVENT_TX:
-				DBGLOG(TX, INFO,
+				DBGLOG_LIMITED(TX, INFO,
 					"<TX><IPv6> Router Advertisement\n");
 				break;
 			}
@@ -465,12 +465,12 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 		case 0: /* eap packet */
 			switch (eventType) {
 			case EVENT_RX:
-				DBGLOG(RX, INFO,
+				DBGLOG_LIMITED(RX, INFO,
 					"<RX> EAP Packet: code %d, id %d, type %d\n",
 					pucEapol[4], pucEapol[5], pucEapol[7]);
 				break;
 			case EVENT_TX:
-				DBGLOG(TX, INFO,
+				DBGLOG_LIMITED(TX, INFO,
 					"<TX> EAP Packet: code %d, id %d, type %d\n",
 					pucEapol[4], pucEapol[5],
 					pucEapol[7]);
@@ -480,22 +480,22 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 		case 1: /* eapol start */
 			switch (eventType) {
 			case EVENT_RX:
-				DBGLOG(RX, INFO, "<RX> EAPOL: start\n");
+				DBGLOG_LIMITED(RX, INFO, "<RX> EAPOL: start\n");
 				break;
 			case EVENT_TX:
-				DBGLOG(TX, INFO, "<TX> EAPOL: start\n");
+				DBGLOG_LIMITED(TX, INFO, "<TX> EAPOL: start\n");
 				break;
 			}
 			break;
 		case 3: /* key */
 			switch (eventType) {
 			case EVENT_RX:
-				DBGLOG(RX, INFO,
+				DBGLOG_LIMITED(RX, INFO,
 					"<RX> EAPOL: key, KeyInfo 0x%04x\n",
 					*((uint16_t *)(&pucEapol[5])));
 				break;
 			case EVENT_TX:
-				DBGLOG(TX, INFO,
+				DBGLOG_LIMITED(TX, INFO,
 					"<TX> EAPOL: key, KeyInfo 0x%04x\n",
 					*((uint16_t *)(&pucEapol[5])));
 				break;
@@ -514,12 +514,12 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 
 		switch (eventType) {
 		case EVENT_RX:
-			DBGLOG(RX, INFO,
+			DBGLOG_LIMITED(RX, INFO,
 				"<RX> WAPI: subType %d, Len %d, Seq %d\n",
 				ucSubType, u2Length, u2Seq);
 			break;
 		case EVENT_TX:
-			DBGLOG(TX, INFO,
+			DBGLOG_LIMITED(TX, INFO,
 				"<TX> WAPI: subType %d, Len %d, Seq %d\n",
 				ucSubType, u2Length, u2Seq);
 			break;
@@ -530,13 +530,13 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 	case ETH_PRO_TDLS:
 		switch (eventType) {
 		case EVENT_RX:
-			DBGLOG(RX, INFO,
+			DBGLOG_LIMITED(RX, INFO,
 				"<RX> TDLS type %d, category %d, Action %d, Token %d\n",
 				pucEthBody[0], pucEthBody[1],
 				pucEthBody[2], pucEthBody[3]);
 			break;
 		case EVENT_TX:
-			DBGLOG(TX, INFO,
+			DBGLOG_LIMITED(TX, INFO,
 				"<TX> TDLS type %d, category %d, Action %d, Token %d\n",
 				pucEthBody[0], pucEthBody[1],
 				pucEthBody[2], pucEthBody[3]);
