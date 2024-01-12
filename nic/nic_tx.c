@@ -5872,8 +5872,9 @@ static void nicTxDirectCheckStaAcmQ(struct ADAPTER *prAdapter,
 	struct QUE *prTmpQue;
 
 	if (ucTC >= TC_NUM || ucStaIdx >= CFG_STA_REC_NUM) {
-		DBGLOG(NIC, ERROR, "ucTc:%u ucStaIdx:%u\n",
-			ucTC, ucStaIdx);
+		if (ucStaIdx != STA_REC_INDEX_BMCAST)
+			DBGLOG(NIC, ERROR, "ucTc:%u ucStaIdx:%u\n",
+				ucTC, ucStaIdx);
 		return;
 	}
 
