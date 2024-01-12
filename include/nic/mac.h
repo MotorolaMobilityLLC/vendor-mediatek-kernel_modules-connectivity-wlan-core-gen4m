@@ -947,129 +947,235 @@
 #define ELEM_HDR_LEN                                2
 
 #define ELEM_ID_SSID \
-	0	/* SSID */
+	0 /* SSID */
 #define ELEM_ID_SUP_RATES \
-	1	/* Supported rates */
+	1 /* Supported rates */
 #define ELEM_ID_FH_PARAM_SET \
-	2	/* FH parameter set */
+	2 /* FH parameter set */
 #define ELEM_ID_DS_PARAM_SET \
-	3	/* DS parameter set */
+	3 /* DS parameter set */
 #define ELEM_ID_CF_PARAM_SET \
-	4	/* CF parameter set */
+	4 /* CF parameter set */
 #define ELEM_ID_TIM \
-	5	/* TIM */
+	5 /* TIM */
 #define ELEM_ID_IBSS_PARAM_SET \
-	6	/* IBSS parameter set */
+	6 /* IBSS parameter set */
 #define ELEM_ID_COUNTRY_INFO \
-	7	/* Country information */
+	7 /* Country information */
 #define ELEM_ID_HOPPING_PATTERN_PARAM \
-	8	/* Hopping pattern parameters */
+	8 /* Hopping pattern parameters */
 #define ELEM_ID_HOPPING_PATTERN_TABLE \
-	9	/* Hopping pattern table */
+	9 /* Hopping pattern table */
 #define ELEM_ID_REQUEST \
-	10	/* Request */
+	10 /* Request */
 #define ELEM_ID_BSS_LOAD \
-	11	/* BSS load */
+	11 /* BSS load */
 #define ELEM_ID_EDCA_PARAM_SET \
-	12	/* EDCA parameter set */
+	12 /* EDCA parameter set */
 #define ELEM_ID_TSPEC \
-	13	/* Traffic specification (TSPEC) */
+	13 /* Traffic specification (TSPEC) */
 #define ELEM_ID_TCLAS \
-	14	/* Traffic classification (TCLAS) */
+	14 /* Traffic classification (TCLAS) */
 #define ELEM_ID_SCHEDULE \
-	15	/* Schedule */
+	15 /* Schedule */
 #define ELEM_ID_CHALLENGE_TEXT \
-	16	/* Challenge text */
-
+	16 /* Challenge text */
 #define ELEM_ID_PWR_CONSTRAINT \
-	32	/* Power constraint */
+	32 /* Power constraint */
 #define ELEM_ID_PWR_CAP \
-	33	/* Power capability */
+	33 /* Power capability */
 #define ELEM_ID_TPC_REQ \
-	34	/* TPC request */
+	34 /* TPC request */
 #define ELEM_ID_TPC_REPORT \
-	35	/* TPC report */
+	35 /* TPC report */
 #define ELEM_ID_SUP_CHS \
-	36	/* Supported channels */
+	36 /* Supported channels */
 #define ELEM_ID_CH_SW_ANNOUNCEMENT \
-	37	/* Channel switch announcement */
+	37 /* Channel switch announcement */
 #define ELEM_ID_MEASUREMENT_REQ \
-	38	/* Measurement request */
+	38 /* Measurement request */
 #define ELEM_ID_MEASUREMENT_REPORT \
-	39	/* Measurement report */
+	39 /* Measurement report */
 #define ELEM_ID_QUIET \
-	40	/* Quiet */
+	40 /* Quiet */
 #define ELEM_ID_IBSS_DFS \
-	41	/* IBSS DFS */
+	41 /* IBSS DFS */
 #define ELEM_ID_ERP_INFO \
-	42	/* ERP information */
+	42 /* ERP information */
 #define ELEM_ID_TS_DELAY \
-	43	/* TS delay */
+	43 /* TS delay */
 #define ELEM_ID_TCLAS_PROCESSING \
-	44	/* TCLAS processing */
+	44 /* TCLAS processing */
 #define ELEM_ID_HT_CAP \
-	45	/* HT Capabilities subelement */
+	45 /* HT Capabilities subelement */
 #define ELEM_ID_QOS_CAP \
-	46	/* QoS capability */
+	46 /* QoS capability */
 #define ELEM_ID_RSN \
-	48	/* RSN IE */
+	48 /* RSN IE */
 #define ELEM_ID_EXTENDED_SUP_RATES \
-	50	/* Extended supported rates */
+	50 /* Extended supported rates */
 #define ELEM_ID_AP_CHANNEL_REPORT \
-	51	/* AP Channel Report Element */
+	51 /* AP Channel Report Element */
 #define ELEM_ID_NEIGHBOR_REPORT \
-	52	/* Neighbor Report */
+	52 /* Neighbor Report */
+#define ELEM_ID_RCPI \
+	53 /* RCPI */
 #define ELEM_ID_MOBILITY_DOMAIN \
-	54  /* Mobility Domain for 802.11R */
+	54 /* Mobility Domain for 802.11R */
 #define ELEM_ID_FAST_TRANSITION \
-	55  /* Fast Bss Transition for 802.11 R */
-#if CFG_SUPPORT_802_11W
+	55 /* Fast Bss Transition for 802.11 R */
 #define ELEM_ID_TIMEOUT_INTERVAL \
-	56	/* 802.11w SA Timeout interval */
-#endif
+	56 /* 802.11w SA Timeout interval */
 #define ELEM_ID_RESOURCE_INFO_CONTAINER \
-	57  /* Resource Information Container for 802.11 R */
+	57 /* Resource Information Container for 802.11 R */
+#define ELEM_ID_DSE_REG_LOC \
+	58 /* DSE Registered Location */
 #define ELEM_ID_SUP_OPERATING_CLASS \
-	59	/* Supported Operating Classes */
-
+	59 /* Supported Operating Classes */
+#define ELEM_ID_EX_CH_SW_ANNOUNCEMENT \
+	60 /* Extended Channel Switch Announcement */
 #define ELEM_ID_HT_OP \
-	61	/* HT Operation */
+	61 /* HT Operation */
 #define ELEM_ID_SCO \
-	62	/* Secondary Channel Offset */
+	62 /* Secondary Channel Offset */
+#define ELEM_ID_BSS_AVG_ACCESS_DELAY \
+	63 /* BSS Average Access Delay */
+#define	ELEM_ID_ANTENNA \
+	64 /* Antenna */
+#define	ELEM_ID_RSNI \
+	65 /* RSNI */
+#define	ELEM_ID_MPT \
+	66 /* Measurement Pilot Transmission */
+#define	ELEM_ID_BSS_AVAILABLE_ADMIN_CAP \
+	67 /* BSS Available Admission Capacity */
+#define	ELEM_ID_BSS_AC_ACCESS_DELAY \
+	68 /* BSS AC Access Delay */
+#define	ELEM_ID_TIME_AD \
+	69 /* Time Advertisement */
 #define ELEM_ID_RRM_ENABLED_CAP \
-	70	/* Radio Resource Management Enabled Capabilities */
+	70 /* Radio Resource Management Enabled Capabilities */
 #define ELEM_ID_MBSSID  \
-	71	/* Multiple BSSID element */
+	71 /* Multiple BSSID element */
 #define ELEM_ID_20_40_BSS_COEXISTENCE \
-	72	/* 20/40 BSS Coexistence */
+	72 /* 20/40 BSS Coexistence */
 #define ELEM_ID_20_40_INTOLERANT_CHNL_REPORT \
-	73	/* 20/40 BSS Intolerant Channel Report */
+	73 /* 20/40 BSS Intolerant Channel Report */
 #define ELEM_ID_OBSS_SCAN_PARAMS \
-	74	/* Overlapping BSS Scan Parameters */
+	74 /* Overlapping BSS Scan Parameters */
 #define ELEM_ID_MBSSID_INDEX \
-	85	/* Multiple BSSID-Index element */
-#define ELEM_ID_EXTENDED_CAP \
-	127	/* Extended capabilities */
-#define ELEM_ID_RNR \
-	201	/* Reduced Neighbor Report */
+	85 /* Multiple BSSID-Index element */
+#define ELEM_ID_FMS_DESC \
+	86 /* FMS Descriptor */
+#define ELEM_ID_FMS_REQ \
+	87 /* FMS Request */
+#define ELEM_ID_FMS_RSP \
+	88 /* FMS Response */
+#define ELEM_ID_QOS_TRAFFIC_CAP \
+	89  /* QoS Traffic Capability */
+#define ELEM_ID_BSS_MAX_IDLE_PERIOD \
+	90 /* BSS Max Idle Period */
+#define ELEM_ID_TIM_BROADCAST_REQ \
+	94 /* TIM Broadcast Request */
+#define ELEM_ID_TIM_BROADCAST_RESP \
+	95 /* TIM Broadcast Response */
+#define ELEM_ID_CHNNEL_USAGE \
+	97 /* Channel Usage */
+#define ELEM_ID_TIME_ZONE \
+	98 /* Time Zone */
+#define ELEM_ID_DMS_REQ \
+	99 /* DMS Request */
+#define ELEM_ID_DMS_RSP \
+	100 /* DMS Response */
+#define ELEM_ID_CH_SWITCH_TIMING \
+	104 /* Channel Switch Timing */
 #define ELEM_ID_INTERWORKING \
-	107	/* Interworking with External Network */
+	107 /* Interworking with External Network */
 #define ELEM_ID_ADVERTISEMENT_PROTOCOL \
-	108	/* Advertisement Protocol */
+	108 /* Advertisement Protocol */
 #define ELEM_ID_QOS_MAP_SET \
 	110 /* QoS Map Set */
 #define ELEM_ID_ROAMING_CONSORTIUM \
-	111	/* Roaming Consortium */
+	111 /* Roaming Consortium */
+#define ELEM_ID_EAI \
+	112 /* Emergency Alert Identifier */
+#define ELEM_ID_MESH_CONFIG \
+	113 /* Mesh Configuration */
+#define ELEM_ID_MESH_ID \
+	114 /* Mesh ID */
+#define ELEM_ID_MESH_CH_SW_PARAM \
+	118 /* Mesh Channel Switch Parameters */
+#define ELEM_ID_MESH_AWAKE_WINDOW \
+	119 /* Mesh Awake Window */
+#define ELEM_ID_BEACON_TIMING \
+	120 /* Beacon Timing */
+#define ELEM_ID_MCCAOP_AD \
+	123 /* MCCAOP Advertisement */
 #define ELEM_ID_EXTENDED_CAP \
-	127	/* Extended capabilities */
-
-#if (CFG_SUPPORT_TWT == 1)
+	127 /* Extended capabilities */
+#define ELEM_ID_DMG_CAP \
+	148 /* DMG Capabilities */
+#define ELEM_ID_DMG_OP \
+	151 /* DMG Operation */
+#define ELEM_ID_MULTI_BAND \
+	158 /* Multi-band */
+#define ELEM_ID_ADDBA_EXT \
+	159 /* ADDBA Extension */
+#define ELEM_ID_RELAY_CAP \
+	167 /* Relay Capabilities */
+#define ELEM_ID_MULTI_MAC_SUBLAYERS \
+	170 /* Multiple MAC Sublayers */
+#define ELEM_ID_MCCAOP_AD_OVERVIEW \
+	123 /* MCCAOP Advertisement Overview */
+#define ELEM_ID_QMF_POLICY \
+	181 /* QMF Policy */
+#define ELEM_ID_QLOAD_REPORT \
+	186 /* QLoad Report */
+#define ELEM_ID_HCCA_TXOP_UPDATE_COUNT \
+	187 /* HCCA TXOP Update Count */
+#define ELEM_ID_ANT_SECTOR_ID_PATTERN \
+	190 /* Antenna Sector ID Pattern */
+#define ELEM_ID_VHT_CAP \
+	191 /* VHT Capabilities subelement */
+#define ELEM_ID_VHT_OP \
+	192 /* VHT Operation information */
+#define ELEM_ID_EX_BSS_LOAD \
+	193 /* Extended BSS Load */
+#define ELEM_ID_WIDE_BAND_CHANNEL_SWITCH \
+	194 /* Wide Bandwidth Channel Switch */
+#define ELEM_ID_TX_PWR_ENVELOPE \
+	195 /* Transmit Power Envelope */
+#define ELEM_ID_CH_SW_WRAPPER \
+	196 /* Channel Switch Wrapper */
+#define ELEM_ID_QUIET_CHANNEL \
+	198 /* Quiet Channel */
+#define ELEM_ID_OP_MODE \
+	199 /* Operation Mode Notification */
+#define ELEM_ID_RNR \
+	201 /* Reduced Neighbor Report */
+#define ELEM_ID_TVHT_OP \
+	202 /* TVHT Operation */
+#define ELEM_ID_S1G_OLLM_INDEX \
+	207 /* S1G Open-Loop Link Margin Index */
+#define ELEM_ID_RPS \
+	208 /* RPS */
+#define ELEM_ID_PAGE_SLICE \
+	209	/* Page Slice */
+#define ELEM_ID_AID_REQ \
+	210 /* AID Request */
+#define ELEM_ID_AID_RESP \
+	211 /* AID Response */
+#define ELEM_ID_S1G_SECTOR_OP \
+	212 /* S1G Sector Operation */
+#define ELEM_ID_SHORT_BEACON_INTERVAL \
+	214 /* Short Beacon Interval */
+#define ELEM_ID_CHANGE_SEQ \
+	215 /* Change Sequence */
 #define ELEM_ID_TWT \
 	216 /* Target Wake Time (TWT) @11ah/11ax */
-#endif
-
+#define ELEM_ID_S1G_CAP \
+	217 /* S1G Capabilities */
 #define ELEM_ID_VENDOR \
-	221	/* Vendor specific IE */
+	221 /* Vendor specific IE */
 #define ELEM_ID_WPA \
 	ELEM_ID_VENDOR	/* WPA IE */
 #define ELEM_ID_WMM \
@@ -1078,30 +1184,128 @@
 	ELEM_ID_VENDOR	/* WiFi Direct */
 #define ELEM_ID_WSC \
 	ELEM_ID_VENDOR	/* WSC IE */
-
-#define ELEM_ID_VHT_CAP \
-	191	/* VHT Capabilities subelement */
-#define ELEM_ID_VHT_OP \
-	192	/* VHT Operation information */
-#define ELEM_ID_WIDE_BAND_CHANNEL_SWITCH \
-	194	/*Wide Bandwidth Channel Switch */
-#define ELEM_ID_OP_MODE \
-	199	/* Operation Mode Notification */
+#define ELEM_ID_TSF_TIMER_ACCURACY \
+	223 /* TSF Timer Accuracy */
+#define ELEM_ID_S1G_RELAY \
+	224 /* S1G Relay */
+#define ELEM_ID_REACHABLE_ADDR \
+	225 /* Reachable Address */
+#define ELEM_ID_S1G_RELAY_DISCOVERY \
+	226 /* S1G Relay Discovery */
+#define ELEM_ID_EL_OP \
+	230 /* EL Operation */
+#define ELEM_ID_SECTORIZED_GRP_ID_LIST \
+	231 /* Sectorized Group ID List */
+#define ELEM_ID_S1G_OP \
+	232 /* S1G Operation */
+#define ELEM_ID_HEADER_COMPRESSION \
+	233 /* Header Compression */
+#define ELEM_ID_SST_OP \
+	234 /* SST Operation */
+#define ELEM_ID_MAD \
+	235 /* MAD */
+#define ELEM_ID_S1G_RELAY_ACTIVATION \
+	236 /* S1G Relay Activation */
+#define ELEM_ID_CAG_NUM \
+	237 /* CAG Number */
+#define ELEM_ID_AP_CSN \
+	239 /* AP-CSN */
+#define ELEM_ID_FILS_INDICATION \
+	240 /* FILS Indication */
+#define ELEM_ID_DILS \
+	241 /* DILS */
 #define ELEM_ID_RSNX \
-	244
+	244 /* RSN Extension */
 #define ELEM_ID_RESERVED \
-	255	/* Reserved */
+	255 /* Reserved */
 #define ELEM_ID_MAX_NUM \
-	256
+	256 /* EID: 0-255 */
 
-#define ELEM_EXT_ID_ESP	\
-	11 /* Estimated Service Parameters */
-
-#define ELEM_EXT_ID_MLD \
-	255	/* TEST: Multi-Link element */
-
+#define ELEM_EXT_ID_ASSOC_DELAY_INFO \
+	1 /* Association Delay Info */
 #define ELEM_EXT_ID_FILS_REQUEST_PARA \
 	2 /* FILS Request Parameters */
+#define ELEM_EXT_ID_FILS_KEY_CONFIRM \
+	3 /* FILS Key Confirmation */
+#define ELEM_EXT_ID_FILS_SESSION \
+	4 /* FILS Session */
+#define ELEM_EXT_ID_FILS_HLP_CONTAINER \
+	5 /* FILS HLP Container */
+#define ELEM_EXT_ID_FILS_IP_ADDR_ASSIGN \
+	6 /* FILS IP Address Assignment */
+#define ELEM_EXT_ID_KEY_DELIVERY \
+	7 /* Key Delivery */
+#define ELEM_EXT_ID_FILS_WRAPPED_DATA \
+	8 /* FILS Wrapped Data */
+#define ELEM_EXT_ID_FILS_SYNC_INFO \
+	9 /* FTM Synchronization Information */
+#define ELEM_EXT_ID_ESP	\
+	11 /* Estimated Service Parameters */
+#define ELEM_EXT_ID_FILS_PUBLIC_KEY \
+	12 /* FILS Public Key */
+#define ELEM_EXT_ID_FILS_NONCE \
+	13 /* FILS Nonce */
+#define ELEM_EXT_ID_FUTURE_CHNL_GUIDE \
+	14 /* Future Channel Guidance */
+#define ELEM_EXT_ID_SERVICE_HINT \
+	15 /* Service Hint */
+#define ELEM_EXT_ID_SERVICE_HASH \
+	16 /* Service Hash */
+#define ELEM_EXT_ID_CDMG_CAP \
+	17 /* CDMG Capabilities */
+#define ELEM_EXT_ID_EX_CLUSTER_REPORT \
+	22 /* Extended Cluster Report */
+#define ELEM_EXT_ID_CMMG_CAP \
+	27 /* CMMG Capabilities */
+#define ELEM_EXT_ID_CMMG_OP \
+	28 /* CMMG Operation */
+#define ELEM_EXT_ID_DIFFIE_HELLMAN_PARAM \
+	32 /* OWE: Diffie-Hellman Parameter */
+#define ELEM_EXT_ID_GLK_GCR_PARAM_SET \
+	34 /* GLK-GCR Parameter Set */
+#define ELEM_EXT_ID_HE_CAP \
+	35 /* HE Capabilities */
+#define ELEM_EXT_ID_HE_OP \
+	36 /* HE Operation */
+#define ELEM_EXT_ID_UORA_PARAM \
+	37 /* UL OFDMA-based Random Access (UORA) Parameter Set element */
+#define ELEM_EXT_ID_MU_EDCA_PARAM \
+	38 /* MU EDCA Parameter Set element */
+#define ELEM_EXT_ID_SR_PARAM \
+	39 /* Spatial Reuse Parameter Set element */
+#define ELEM_EXT_ID_NDP_FEEDBACK \
+	41 /* NDP Feedback Report Parameter Set  */
+#define ELEM_EXT_ID_BSS_COLOR_CHANGE \
+	42 /* BSS Color Change Announcement */
+#define ELEM_EXT_ID_ESS_REPORT \
+	45 /* ESS Report */
+#define ELEM_EXT_ID_HE_BSS_LOAD \
+	47 /* HE BSS Load */
+#define ELEM_EXT_ID_MAX_CH_SW_TIME \
+	52 /* Max Channel Switch Time */
+#define ELEM_EXT_ID_ESP_OUTBOUND \
+	53 /* Estimated Service Parameters Outbound */
+#define ELEM_EXT_ID_OCI \
+	54 /* Operating Channel Information */
+#define ELEM_EXT_ID_MBSS_CONFIG \
+	55 /* Multiple BSSD Configuration */
+#define ELEM_EXT_ID_HE_6G_BAND_CAP \
+	59 /* HE 6G Band Capabilities */
+#define ELEM_EXT_ID_UL_MU_Power_CAP \
+	60 /* UL MU Power Capabilities */
+#define ELEM_EXT_ID_MSCS_DESCRIPTOR \
+	88 /* MSCS Descriptor */
+#define ELEM_EXT_ID_SUPPLEMENTAL_CLASS2_CAP \
+	90 /* Supplemental Class 2 Capabilities */
+#define ELEM_EXT_ID_REJECTED_GROUPS \
+	92 /* Rejected Groups */
+#define ELEM_EXT_ID_ACTC \
+	93 /* Anti-Clogging Token Container */
+
+#define ELEM_EXT_ID_MLD \
+	255 /* TEST: Multi-Link element */
+#define ELEM_EXT_ID_MAX_NUM \
+	256 /* EXT_ID: 0-255 */
 
 #if CFG_SUPPORT_MBO
 

@@ -506,6 +506,8 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 			txAuthIETable[i].pfnAppendIE(prAdapter, prMsduInfo);
 	}
 
+	sortMgmtFrameIE(prAdapter, prMsduInfo);
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (IS_STA_IN_AIS(prStaRec)) {
 		beReqGenerateMLIE(prAdapter, prMsduInfo, TYPE_AUTH,
