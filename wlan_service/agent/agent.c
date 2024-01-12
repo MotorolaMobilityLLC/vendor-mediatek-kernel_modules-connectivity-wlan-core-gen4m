@@ -1624,6 +1624,83 @@ static s_int32 hqa_get_tx_power(
 	return ret;
 }
 
+static s_int32 hqa_get_default_power(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_char *data = hqa_frame->data;
+	u_int32 ext_id = 0, channel = 0, band_idx = 0;
+	u_int32 ch_band = 0, ant_idx = 0, preamble = 0, mcs_rate = 0;
+	u_int32 power = 0, efuse_offset = 0, resp_len = 2;
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
+
+	/* Request format type */
+	get_param_and_shift_buf(TRUE, sizeof(u_int32),
+				&data, (u_char *)&ext_id);
+	get_param_and_shift_buf(TRUE, sizeof(channel),
+				&data, (u_char *)&channel);
+	get_param_and_shift_buf(TRUE, sizeof(band_idx),
+				&data, (u_char *)&band_idx);
+
+	if (band_idx >= TEST_DBDC_BAND_NUM)
+		band_idx = 0;
+
+	get_param_and_shift_buf(TRUE, sizeof(ch_band),
+				&data, (u_char *)&ch_band);
+	get_param_and_shift_buf(TRUE, sizeof(ant_idx),
+				&data, (u_char *)&ant_idx);
+	get_param_and_shift_buf(TRUE, sizeof(preamble),
+				&data, (u_char *)&preamble);
+	get_param_and_shift_buf(TRUE, sizeof(mcs_rate),
+				&data, (u_char *)&mcs_rate);
+
+	/* set parameters */
+	SERV_SET_PARAM(serv_test, ctrl_band_idx, (u_char)band_idx);
+	CONFIG_SET_PARAM(serv_test, pwr_param.ant_idx,
+			(u_int32)ant_idx, band_idx);
+	CONFIG_SET_PARAM(serv_test, pwr_param.channel,
+			(u_int32)channel, band_idx);
+	CONFIG_SET_PARAM(serv_test, pwr_param.band_idx,
+			(u_int32)band_idx, band_idx);
+	CONFIG_SET_PARAM(serv_test, pwr_param.ch_band,
+			(u_int32)ch_band, band_idx);
+	CONFIG_SET_PARAM(serv_test, tx_mode,
+			(u_char)preamble, band_idx);
+	CONFIG_SET_PARAM(serv_test, mcs,
+			(u_char)mcs_rate, band_idx);
+
+	ret = mt_serv_tx_power_operation(serv_test,
+		SERV_TEST_TXPWR_GET_DEFAULT_PWR);
+
+	power = CONFIG_GET_PARAM(serv_test, pwr_param.power, band_idx);
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+		("%s: power=%u, band_idx=%u, channel=%u\n",
+		__func__, power, band_idx, channel));
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+		("%s: ch_band=%u, ant_idx=%u\n",
+		__func__, ch_band, ant_idx));
+
+	/* update hqa_frame with response: status (2 bytes) */
+	sys_ad_move_mem(hqa_frame->data + resp_len, (u_char *) &ext_id,
+			sizeof(ext_id));
+	resp_len += sizeof(ext_id);
+
+	efuse_offset = SERV_OS_HTONL(efuse_offset);
+	sys_ad_move_mem(hqa_frame->data + resp_len, &efuse_offset,
+			sizeof(efuse_offset));
+	resp_len += sizeof(efuse_offset);
+
+	power = SERV_OS_HTONL(power);
+	sys_ad_move_mem(hqa_frame->data + resp_len, &power, sizeof(power));
+	resp_len += sizeof(power);
+
+	update_hqa_frame(hqa_frame, resp_len, ret);
+
+	return ret;
+}
+
 static s_int32 hqa_set_cfg_on_off(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
@@ -6301,6 +6378,7 @@ static struct hqa_cmd_entry CMD_SET6[] = {
 #if CFG_SUPPORT_XONVRAM
 	{0x2d,	hqa_do_xo_calibration},
 #endif /* CFG_SUPPORT_XONVRAM */
+	{0x2e,  hqa_get_default_power}
 };
 
 static struct hqa_cmd_table CMD_TABLES[] = {

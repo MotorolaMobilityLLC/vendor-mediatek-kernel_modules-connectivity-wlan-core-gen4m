@@ -78,6 +78,7 @@ static s_int32 mt_serv_init_op(struct test_operation *ops)
 	ops->op_mps_set_power_gain = mt_op_mps_set_power_gain;
 	ops->op_mps_set_seq_data = mt_op_mps_set_seq_data;
 	ops->op_get_tx_pwr = mt_op_get_tx_pwr;
+	ops->op_get_tx_default_pwr = mt_op_get_tx_default_pwr;
 	ops->op_set_tx_pwr = mt_op_set_tx_pwr;
 	ops->op_get_freq_offset = mt_op_get_freq_offset;
 #if (CFG_SUPPORT_CONNAC3X == 1)
@@ -1047,6 +1048,13 @@ s_int32 mt_serv_tx_power_operation(
 
 	case SERV_TEST_TXPWR_SET_PWR_MAN:
 		/* TODO: */
+		break;
+
+	case SERV_TEST_TXPWR_GET_DEFAULT_PWR:
+		ret = ops->op_get_tx_default_pwr(
+				winfos, configs, ctrl_band_idx,
+				configs->channel, (u_char)pwr_param->ant_idx,
+				&(pwr_param->power));
 		break;
 
 	default:

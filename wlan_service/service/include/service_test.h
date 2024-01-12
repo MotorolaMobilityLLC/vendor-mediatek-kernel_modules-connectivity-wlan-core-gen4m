@@ -89,6 +89,7 @@ enum {
 	SERV_TEST_TXPWR_GET_PWR,
 	SERV_TEST_TXPWR_SET_PWR_INIT,
 	SERV_TEST_TXPWR_SET_PWR_MAN,
+	SERV_TEST_TXPWR_GET_DEFAULT_PWR
 };
 
 /* Service test frequency offset type */
