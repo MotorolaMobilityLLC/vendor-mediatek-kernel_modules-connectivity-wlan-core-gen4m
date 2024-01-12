@@ -282,7 +282,7 @@
 
 #define RRO_HASH_TABLE_SIZE      (RX_RING_MAX_SIZE * 3)
 #define RRO_BA_BITMAP_SIZE       128
-#if (CFG_MTK_FPGA_PLATFORM == 1)
+#if CFG_MTK_FPGA_PLATFORM
 #define RRO_MAX_STA_NUM          8
 #else
 #define RRO_MAX_STA_NUM          16

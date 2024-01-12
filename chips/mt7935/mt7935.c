@@ -231,7 +231,7 @@ struct PCIE_CHIP_CR_MAPPING mt7935_bus2chip_cr_mapping[] = {
 	{0x820c8000, 0x0c000, 0xA000},  /* WF_UMAC_TOP (PSE) */
 	{0x820cc000, 0x0e000, 0xE000},  /* WF_UMAC_TOP (PP) */
 	{0x83000000, 0x10000, 0x10000},  /* WF_PHY_MAP3 */
-#if (CFG_MTK_FPGA_PLATFORM == 1)
+#if CFG_MTK_FPGA_PLATFORM == 1
 	{0x74030000, 0x10000, 0x2000}, /* PCIe MAC (conninfra remap) */
 #else
 	{0x74030000, 0x1d0000, 0x2000}, /* PCIe MAC (cbtop remap) */
@@ -287,7 +287,7 @@ struct PCIE_CHIP_CR_MAPPING mt7935_bus2chip_cr_mapping[] = {
 	{0x7c010000, 0x100000, 0x10000}, /* CONN_INFRA */
 	{0x7c030000, 0x160000, 0x10000}, /* CONN_INFRA_CCIF */
 	{0x7c050000, 0x1a0000, 0x10000}, /* CONN_INFRA PCIE2AP REM */
-#if (CFG_MTK_FPGA_PLATFORM == 0)
+#if CFG_MTK_FPGA_PLATFORM != 1
 	{0x70010000, 0x1c0000, 0x10000},
 	{0x70000000, 0x1e0000, 0x9000},
 	{0x70020000, 0x1f0000, 0x10000}, /* Reserved for CBTOP, can't switch */
@@ -3041,7 +3041,7 @@ static uint32_t mt7935_mcu_reset(struct ADAPTER *ad)
 }
 #endif
 
-#if (CFG_MTK_FPGA_PLATFORM == 0)
+#if CFG_MTK_FPGA_PLATFORM != 1
 static void set_cbinfra_remap(struct ADAPTER *ad)
 {
 	DBGLOG(INIT, INFO, "set_cbinfra_remap.\n");
@@ -3069,7 +3069,7 @@ static uint32_t mt7935_mcu_init(struct ADAPTER *ad)
 		goto exit;
 	}
 
-#if (CFG_MTK_FPGA_PLATFORM == 0)
+#if CFG_MTK_FPGA_PLATFORM != 1
 	set_cbinfra_remap(ad);
 #endif
 

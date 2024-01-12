@@ -610,7 +610,8 @@ ifeq ($(WLAN_CONNAC3_DEV), yes)
 ccflags-y += -DCFG_STA_NUM=3
 endif
 CONFIG_MTK_WIFI_SUPPORT_DSP_FWDL=n
-ifneq ($(CONFIG_MTK_FPGA_PLATFORM), y)
+
+ifeq ($(filter 1 2 y,$(CONFIG_MTK_FPGA_PLATFORM)),)
     CONFIG_SUPPORT_PRE_ON_PHY_ACTION=y
 endif
 CONFIG_IFACE_CONCURRENT_MODE=2
@@ -755,7 +756,7 @@ ifeq ($(WLAN_CONNAC3_DEV), yes)
 ccflags-y += -DCFG_STA_NUM=3
 endif
 CONFIG_MTK_WIFI_SUPPORT_DSP_FWDL=n
-ifneq ($(CONFIG_MTK_FPGA_PLATFORM), y)
+ifeq ($(filter 1 2 y,$(CONFIG_MTK_FPGA_PLATFORM)),)
     CONFIG_SUPPORT_PRE_ON_PHY_ACTION=y
 endif
 endif
@@ -1363,8 +1364,14 @@ ifeq ($(CONFIG_MTK_WIFI_UNIFIED_COMMND_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_UNIFIED_COMMAND
 endif
 
-ifeq ($(CONFIG_MTK_FPGA_PLATFORM), y)
-    ccflags-y += -DCFG_MTK_FPGA_PLATFORM=1
+ifneq ($(CONFIG_MTK_FPGA_PLATFORM),)
+    ifeq ($(CONFIG_MTK_FPGA_PLATFORM), y)
+        ccflags-y += -DCFG_MTK_FPGA_PLATFORM=1
+    else ifeq ($(CONFIG_MTK_FPGA_PLATFORM), n)
+        ccflags-y += -DCFG_MTK_FPGA_PLATFORM=0
+    else
+        ccflags-y += -DCFG_MTK_FPGA_PLATFORM=$(CONFIG_MTK_FPGA_PLATFORM)
+    endif
 else
     ccflags-y += -DCFG_MTK_FPGA_PLATFORM=0
 endif

@@ -11044,7 +11044,7 @@ int32_t __weak kalPlatOpsInit(void)
 }
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-#if (CFG_MTK_FPGA_PLATFORM == 1)
+#if CFG_MTK_FPGA_PLATFORM
 u_int8_t __weak kalIsSupportMawd(void)
 {
 	return TRUE;
