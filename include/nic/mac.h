@@ -1165,6 +1165,68 @@ enum MBO_ATTR_ID {
 #define ELEM_ID_NR_BSS_TRANSITION_CAND_PREF			3
 #define ELEM_ID_NR_BSS_TERMINATION_DURATION			4
 
+/*
+ * IEEE Std 802.11-2016, Table 9-87 - Measurement Mode definitions for Beacon
+ * request
+ */
+enum BEACON_REPORT_MODE {
+	BEACON_REPORT_MODE_PASSIVE = 0,
+	BEACON_REPORT_MODE_ACTIVE = 1,
+	BEACON_REPORT_MODE_TABLE = 2,
+};
+
+/* IEEE Std 802.11-2016, Table 9-88 - Beacon Request subelement IDs
+ * IEEE P802.11-REVmd/D2.0, Table 9-106 - Optional subelement IDs for
+ * Beacon request
+ */
+#define BEACON_REQUEST_SUBELEM_SSID	0
+#define BEACON_REQUEST_SUBELEM_INFO	1 /* Beacon Reporting */
+#define BEACON_REQUEST_SUBELEM_DETAIL	2 /* Reporting Detail */
+#define BEACON_REQUEST_SUBELEM_REQUEST	10
+#define BEACON_REQUEST_SUBELEM_AP_CHANNEL	51 /* AP Channel Report */
+#define BEACON_REQUEST_SUBELEM_LAST_INDICATION	164
+#define BEACON_REQUEST_SUBELEM_VENDOR	221
+
+/*
+ * IEEE Std 802.11-2016, Table 9-90 - Reporting Detail values
+ */
+enum BEACON_REPORT_DETAIL {
+	/* No fixed-length fields or elements */
+	BEACON_REPORT_DETAIL_NONE = 0,
+	/* All fixed-length fields and any requested elements in the Request
+	 * element if resent
+	 */
+	BEACON_REPORT_DETAIL_REQUESTED_ONLY = 1,
+	/* All fixed-length fields and elements (default, used when Reporting
+	 * Detail subelement is not included in a Beacon request)
+	 */
+	BEACON_REPORT_DETAIL_ALL_FIELDS_AND_ELEMENTS = 2,
+};
+
+/* IEEE Std 802.11-2016, Table 9-112 - Beacon report Subelement IDs
+ * IEEE P802.11-REVmd/D2.0, Table 9-130 - Optional subelement IDs for
+ * Beacon report
+ */
+#define BEACON_REPORT_SUBELEM_FRAME_BODY	1
+#define BEACON_REPORT_SUBELEM_FRAME_BODY_FRAGMENT_ID	2
+#define BEACON_REPORT_SUBELEM_LAST_INDICATION	164
+#define BEACON_REPORT_SUBELEM_VENDOR	221
+
+/* IEEE P802.11-REVmd/D2.0, Table 9-232 - Data field format of the
+ * Reported Frame Body Fragment ID subelement
+ */
+#define REPORTED_FRAME_BODY_SUBELEM_LEN		4
+#define REPORTED_FRAME_BODY_MORE_FRAGMENTS	BIT(7)
+
+/* IEEE P802.11-REVmd/D2.0, 9.4.2.21.7 - Beacon report  */
+#define BEACON_REPORT_LAST_INDICATION_SUBELEM_LEN	3
+
+/* IEEE Std 802.11-2016, Figure 9-192 - Measurement Report Mode field */
+#define MEASUREMENT_REPORT_MODE_ACCEPT 0
+#define MEASUREMENT_REPORT_MODE_REJECT_LATE BIT(0)
+#define MEASUREMENT_REPORT_MODE_REJECT_INCAPABLE BIT(1)
+#define MEASUREMENT_REPORT_MODE_REJECT_REFUSED BIT(2)
+
 /* 7.3.2.25 RSN information element */
 /* one pairwise, one AKM suite, one PMKID */
 #define ELEM_MAX_LEN_WPA                            34
@@ -2264,7 +2326,7 @@ struct IE_MEASUREMENT_REQ {
 	uint8_t ucToken;
 	uint8_t ucRequestMode;
 	uint8_t ucMeasurementType;
-	uint8_t aucRequestFields[1];
+	uint8_t aucRequestFields[0];
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.60 20/40 BSS Coexistence element */
@@ -2400,7 +2462,7 @@ struct IE_MEASUREMENT_REPORT {
 	uint8_t ucToken;
 	uint8_t ucReportMode;
 	uint8_t ucMeasurementType;
-	uint8_t aucReportFields[1];
+	uint8_t aucReportFields[0];
 } __KAL_ATTRIB_PACKED__;
 
 struct SM_BASIC_REPORT {
@@ -2947,7 +3009,7 @@ struct ACTION_RM_REPORT_FRAME {
 	uint8_t ucCategory;	/* Category */
 	uint8_t ucAction;	/* Action Value */
 	uint8_t ucDialogToken;	/* Dialog Token */
-	uint8_t aucInfoElem[1];	/* Measurement Report elements, such as */
+	uint8_t aucInfoElem[0];	/* Measurement Report elements, such as */
 				/* channel load report, and etc. */
 } __KAL_ATTRIB_PACKED__;
 

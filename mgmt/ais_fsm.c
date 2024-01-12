@@ -499,6 +499,8 @@ void aisFsmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	kalMemZero(&prAisSpecificBssInfo->rBTMParam,
 		   sizeof(prAisSpecificBssInfo->rBTMParam));
 
+	rrmParamInit(prAdapter, ucBssIndex);
+
 	/* DBGPRINTF("[2] ucBmpDeliveryAC:0x%x,
 	 * ucBmpTriggerAC:0x%x, ucUapsdSp:0x%x",
 	 */
@@ -579,6 +581,8 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 
 	/* make sure pmkid cached is empty after uninit*/
 	rsnFlushPmkid(prAdapter, ucBssIndex);
+
+	rrmParamInit(prAdapter, ucBssIndex);
 } /* end of aisFsmUninit() */
 
 /*----------------------------------------------------------------------------*/
@@ -1852,7 +1856,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			prScanReqMsg->ucBssIndex =
 			    prAisBssInfo->ucBssIndex;
 #if CFG_SUPPORT_802_11K
-			if (rlmFillScanMsg(prAdapter, prScanReqMsg)) {
+			if (rrmFillScanMsg(prAdapter, prScanReqMsg)) {
 				mboxSendMsg(prAdapter, MBOX_ID_0,
 					    (struct MSG_HDR *)prScanReqMsg,
 					    MSG_SEND_METHOD_BUF);
@@ -2612,7 +2616,7 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 	 ** schedule to do measurement
 	 */
 	if (prBcnRmParam->eState == RM_WAITING) {
-		rlmDoBeaconMeasurement(prAdapter, ucBssIndex);
+		rrmDoBeaconMeasurement(prAdapter, ucBssIndex);
 		/* pending normal scan here, should schedule it on time */
 	} else if (prBcnRmParam->rNormalScan.fgExist) {
 		struct NORMAL_SCAN_PARAMS *prParam = &prBcnRmParam->rNormalScan;
@@ -2629,7 +2633,7 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 		 ** Element
 		 */
 	} else
-		rlmStartNextMeasurement(prAdapter, FALSE, ucBssIndex);
+		rrmStartNextMeasurement(prAdapter, FALSE, ucBssIndex);
 
 }				/* end of aisFsmRunEventScanDone() */
 
@@ -2929,7 +2933,7 @@ void aisFsmStateAbort(IN struct ADAPTER *prAdapter,
 		/* Do abort NORMAL_TR */
 		aisFsmStateAbort_NORMAL_TR(prAdapter, ucBssIndex);
 	}
-	rlmFreeMeasurementResources(prAdapter, ucBssIndex);
+	rrmFreeMeasurementResources(prAdapter, ucBssIndex);
 	aisFsmDisconnect(prAdapter, fgDelayIndication, ucBssIndex);
 
 	return;
@@ -6587,7 +6591,7 @@ void aisSendNeighborRequest(struct ADAPTER *prAdapter,
 	prSSIDIE->rSubIE.ucSubID = ELEM_ID_SSID;
 	COPY_SSID(&prSSIDIE->rSubIE.aucOptInfo[0], prSSIDIE->rSubIE.ucLength,
 		  prBssInfo->aucSSID, prBssInfo->ucSSIDLen);
-	rlmTxNeighborReportRequest(prAdapter, prBssInfo->prStaRecOfAP,
+	rrmTxNeighborReportRequest(prAdapter, prBssInfo->prStaRecOfAP,
 				   prSSIDIE);
 }
 

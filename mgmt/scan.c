@@ -2264,7 +2264,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_802_11K
 	if (prBssDesc->fgIsConnected)
-		rlmUpdateBssTimeTsf(prAdapter, prBssDesc);
+		rrmUpdateBssTimeTsf(prAdapter, prBssDesc);
 #endif
 
 	return prBssDesc;
@@ -2565,17 +2565,6 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
-#if CFG_SUPPORT_802_11K
-	/* if beacon request measurement is on-going,  collect Beacon Report */
-	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-		if (rlmBcnRmRunning(prAdapter, u4Idx)) {
-			rlmProcessBeaconAndProbeResp(prAdapter,
-				prSwRfb, u4Idx);
-			return WLAN_STATUS_SUCCESS;
-		}
-	}
-#endif
-
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 
 	/* 4 <0> Ignore invalid Beacon Frame */
@@ -2811,10 +2800,20 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 				&rStatus, prBssDesc, prWlanBeaconFrame);
 		}
 #endif
+
+#if CFG_SUPPORT_802_11K
+		/* collect when running beacon request measurement */
+		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+			if (rrmBcnRmRunning(prAdapter, u4Idx)) {
+				rrmProcessBeaconAndProbeResp(prAdapter,
+					prBssDesc, u4Idx);
+			}
+		}
+#endif
+
 	}
 
 	return rStatus;
-
 }	/* end of scanProcessBeaconAndProbeResp() */
 
 /*----------------------------------------------------------------------------*/
