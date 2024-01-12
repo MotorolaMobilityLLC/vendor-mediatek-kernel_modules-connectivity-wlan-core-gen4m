@@ -795,22 +795,17 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 
 	DBGLOG(REQ, TRACE, "mtk_cfg80211_scan\n");
 
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	if (prGlueInfo->prAdapter == NULL) {
+		DBGLOG(REQ, ERROR, "prGlueInfo->prAdapter is NULL");
+		return -EINVAL;
+	}
+#endif
+
 	/* check if there is any pending scan/sched_scan not yet finished */
 	if (prGlueInfo->prScanRequest != NULL) {
 		DBGLOG(REQ, ERROR, "prGlueInfo->prScanRequest != NULL\n");
 		return -EBUSY;
-	}
-
-	prScanRequest = kalMemAlloc(sizeof(struct PARAM_SCAN_REQUEST_ADV), VIR_MEM_TYPE);
-	if (prScanRequest == NULL) {
-		DBGLOG(REQ, ERROR, "alloc scan request fail\n");
-		return -ENOMEM;
-
-	}
-
-	if (prGlueInfo->prAdapter == NULL) {
-		DBGLOG(REQ, ERROR, "prGlueInfo->prAdapter is NULL");
-		return -EINVAL;
 	}
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
@@ -823,6 +818,13 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 	}
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
+	prScanRequest = kalMemAlloc(sizeof(struct PARAM_SCAN_REQUEST_ADV),
+			VIR_MEM_TYPE);
+	if (prScanRequest == NULL) {
+		DBGLOG(REQ, ERROR, "alloc scan request fail\n");
+		return -ENOMEM;
+
+	}
 	kalMemZero(prScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV));
 
 	if (request->n_ssids == 0) {
