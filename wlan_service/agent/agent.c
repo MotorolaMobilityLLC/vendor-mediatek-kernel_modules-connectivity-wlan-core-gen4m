@@ -4098,13 +4098,18 @@ static s_int32 hqa_set_txcontent_ext(
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
 		("%s: addr1=%02x:%02x:%02x:%02x:%02x:%02x\n",
-		__func__, SERV_PRINT_MAC(param.addr1)));
+		__func__, param.addr1[0], param.addr1[1], param.addr1[2],
+		param.addr1[3], param.addr1[4], param.addr1[5]));
+
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
 		("%s: addr2=%02x:%02x:%02x:%02x:%02x:%02x\n",
-		__func__, SERV_PRINT_MAC(param.addr2)));
+		__func__, param.addr2[0], param.addr2[1], param.addr2[2],
+		param.addr2[3], param.addr2[4], param.addr2[5]));
+
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
 		("%s: addr3=%02x:%02x:%02x:%02x:%02x:%02x\n",
-		__func__, SERV_PRINT_MAC(param.addr3)));
+		__func__, param.addr3[0], param.addr3[1], param.addr3[2],
+		param.addr3[3], param.addr3[4], param.addr3[5]));
 
 	/* Update hqa_frame with response: status (2 bytes) */
 	sys_ad_move_mem(hqa_frame->data + 2, (u_char *) &param.ext_id,
@@ -4282,7 +4287,8 @@ static s_int32 hqa_start_rx_ext(
 		__func__, param_num, band_idx));
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
 		("%s: mac=%02x:%02x:%02x:%02x:%02x:%02x\n",
-		__func__, SERV_PRINT_MAC(own_mac)));
+		__func__, own_mac[0], own_mac[1], own_mac[2],
+		own_mac[3], own_mac[4], own_mac[5]));
 
 	/* Update hqa_frame with response: status (2 bytes) */
 	sys_ad_move_mem(hqa_frame->data + 2, (u_char *) &ext_id,
@@ -4612,6 +4618,7 @@ s_int32 mt_agent_hqa_cmd_string_parser(
 	s_int8 tmp_mac[SERV_MAC_ADDR_LEN] = { 0 };
 	u_int16 tmp_length = 0;
 	u_int32 tmp_value = 0;
+	u_int16 tmp_value2 = 0;
 	u_char *data = NULL;
 	u_int16 ret = 0;
 	u_int8 parasize = 0;
@@ -4674,7 +4681,7 @@ s_int32 mt_agent_hqa_cmd_string_parser(
 					(u_char *)&tmp_value, &data);
 				} else if (parasize == 2) {
 					ret = kstrtou16(apc_argv[j], 0,
-					(u_int16 *)&tmp_value);
+					&tmp_value2);
 					set_param_and_shift_buf(TRUE, parasize,
 					(u_char *)&tmp_value, &data);
 				} else {
