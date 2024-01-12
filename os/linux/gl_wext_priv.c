@@ -2352,6 +2352,8 @@ priv_set_driver(IN struct net_device *prNetDev,
 			       __func__, prIwReqData->data.length);
 			return -EFAULT;
 		}
+		/* prIwReqData->data.length include the terminate '\0' */
+		pcExtra[prIwReqData->data.length - 1] = 0;
 	}
 
 	if (pcExtra) {
