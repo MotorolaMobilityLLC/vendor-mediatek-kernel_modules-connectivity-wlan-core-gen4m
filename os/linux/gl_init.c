@@ -757,7 +757,8 @@ static const struct wiphy_vendor_command
 		.doit = mtk_cfg80211_vendor_set_rssi_monitoring
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 		,
-		.policy = VENDOR_CMD_RAW_DATA
+		.policy = nla_parse_wifi_rssi_monitor,
+		.maxattr = WIFI_ATTRIBUTE_RSSI_MONITOR_ATTRIBUTE_MAX
 #endif
 	},
 	/* Packet Keep Alive */
