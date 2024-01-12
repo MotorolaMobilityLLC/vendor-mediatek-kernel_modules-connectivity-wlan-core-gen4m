@@ -519,7 +519,9 @@ assocComposeReAssocReqFrameHeaderAndFF(struct ADAPTER *prAdapter,
 			    (struct WLAN_REASSOC_REQ_FRAME *)prAssocFrame;
 
 			COPY_MAC_ADDR(prReAssocFrame->aucCurrentAPAddr,
-				      cnmStaRecAuthAddr(prAdapter, prStaRec));
+			  aisGetCurrentApAddr(prAdapter, prStaRec->ucBssIndex));
+			DBGLOG(APS, INFO, "CurrentAP["MACSTR"]\n",
+				MAC2STR(prReAssocFrame->aucCurrentAPAddr));
 		} else {
 			ASSERT(0);
 			/* We don't support ReAssociation for other network */

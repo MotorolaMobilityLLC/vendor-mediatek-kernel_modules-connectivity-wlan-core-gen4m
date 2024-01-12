@@ -1396,6 +1396,7 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 	    MEDIA_STATE_CONNECTED) {
 		if (fgEqualSsid) {
 			DBGLOG(INIT, INFO, "Same ssid\n");
+			roam->eReason = ROAMING_REASON_UPPER_LAYER_TRIGGER;
 			prAisAbortMsg->ucReasonOfDisconnect =
 				pParamConn->fgTestMode ?
 				DISCONNECT_REASON_CODE_TEST_MODE :
