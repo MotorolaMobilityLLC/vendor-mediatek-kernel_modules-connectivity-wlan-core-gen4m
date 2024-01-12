@@ -1500,6 +1500,7 @@ void p2pFuncStopComplete(IN struct ADAPTER *prAdapter,
 
 		/* Reset current OPMode */
 		prP2pBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
+		prP2pBssInfo->fgBcDefaultKeyExist = FALSE;
 
 		/* Point StaRecOfAP to NULL when GC role stop Complete */
 		prP2pBssInfo->prStaRecOfAP = NULL;
