@@ -5747,12 +5747,7 @@ int mtk_cfg_sched_scan_stop(IN struct wiphy *wiphy,
 
 	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
-		return -EFAULT;
-	}
-
-	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
-		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
-		return -EFAULT;
+		return 0;
 	}
 
 	return mtk_cfg80211_sched_scan_stop(wiphy, ndev);
