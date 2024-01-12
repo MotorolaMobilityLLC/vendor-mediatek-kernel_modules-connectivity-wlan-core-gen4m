@@ -239,6 +239,7 @@ struct BOOST_INFO {
 	uint32_t u4RpsMap;
 	uint32_t u4ISRMask;
 	u_int8_t fgDramBoost;
+	uint32_t u4WfdmaThNum;
 };
 
 enum ENUM_SPIN_LOCK_CATEGORY_E {
@@ -2436,6 +2437,10 @@ void kalTdlsOpReq(
 	uint16_t u2ReasonCode
 	);
 #endif
+
+#if defined(_HIF_PCIE)
+void kalConfigWfdmaTh(struct GLUE_INFO *prGlueInfo, uint32_t u4Num);
+#endif /* defined(_HIF_PCIE) */
 
 void kalSetISRMask(struct ADAPTER *prAdapter, uint32_t set_mask);
 

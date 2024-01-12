@@ -2499,6 +2499,10 @@ bool halIsHifStateSuspend(struct ADAPTER *prAdapter)
 	return FALSE;
 }
 
+void halUpdateHifConfig(struct ADAPTER *prAdapter)
+{
+}
+
 void halDumpHifStats(struct ADAPTER *prAdapter)
 {
 }
