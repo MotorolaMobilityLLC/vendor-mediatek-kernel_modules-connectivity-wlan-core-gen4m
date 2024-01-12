@@ -85,7 +85,12 @@
 
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
-#define NUM_OF_TX_RING				(4+NUM_OF_WFDMA1_TX_RING)
+/*
+ * 3 data ring (ring0 + ring1[DBDC] + ring2[priority])
+ * fwdl ring
+ * cmd ring
+ */
+#define NUM_OF_TX_RING				(5+NUM_OF_WFDMA1_TX_RING)
 #define NUM_OF_RX_RING				(2+NUM_OF_WFDMA1_RX_RING)
 
 #if (CFG_SUPPORT_CONNAC2X_2x2 == 1)
@@ -151,7 +156,7 @@
 #define HIF_CR4_FWDL_SECTION_NUM			1
 #define HIF_IMG_DL_STATUS_PORT_IDX			1
 
-#define HIF_TX_INIT_CMD_PORT				TX_RING_FWDL_IDX_3
+#define HIF_TX_INIT_CMD_PORT				TX_RING_FWDL_IDX_4
 
 #if defined(SOC2_1X1) || defined(SOC2_2X2)
 #define HIF_TX_MSDU_TOKEN_NUM				(TX_RING_SIZE * 3)
@@ -246,9 +251,10 @@
 enum ENUM_TX_RING_IDX {
 	TX_RING_DATA0_IDX_0 = 0,
 	TX_RING_DATA1_IDX_1,
-	TX_RING_CMD_IDX_2,
-	TX_RING_FWDL_IDX_3,
-	TX_RING_WA_CMD_IDX_4,
+	TX_RING_DATA2_IDX_2,
+	TX_RING_CMD_IDX_3,
+	TX_RING_FWDL_IDX_4,
+	TX_RING_WA_CMD_IDX_5,
 };
 
 enum ENUM_RX_RING_IDX {

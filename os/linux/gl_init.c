@@ -4514,10 +4514,6 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	}
 	DBGLOG(INIT, STATE, "[SER][L0] PASS!!\n");
 #endif
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
-	if (mddpIsSupportMcifWifi())
-		mddpNotifyDrvMac(prGlueInfo->prAdapter);
-#endif
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	wlanProbeSuccessForLowLatency(prAdapter);
