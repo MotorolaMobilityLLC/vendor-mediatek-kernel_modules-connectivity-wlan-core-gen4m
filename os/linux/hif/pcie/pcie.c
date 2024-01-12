@@ -2063,7 +2063,7 @@ void halPcieHwControlVote(
 			BIT(u4WifiUser);
 	}
 
-	DBGLOG(HAL, TRACE,
+	DBGLOG(HAL, INFO,
 		"enable[%d], user[%d], Vote state[0x%08X]\n",
 		enable, u4WifiUser,
 		prAdapter->prGlueInfo->rHifInfo.u4VoteState);
@@ -2077,7 +2077,10 @@ void halPcieHwControlVote(
 		voteResult = FALSE;
 
 	/* vote to enable/disable hw mode */
-	err = mtk_pcie_hw_control_vote(0, voteResult, 1);
+	if (test_and_clear_bit(SUSPEND_FLAG_FOR_WAKEUP_REASON,
+			       &prAdapter->prGlueInfo->fgIsInSuspend))
+		err = mtk_pcie_hw_control_vote(0, voteResult, 1);
+
 	if (err) {
 		DBGLOG(HAL, ERROR,
 			"hw control mode err[%d]\n", err);

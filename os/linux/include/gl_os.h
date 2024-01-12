@@ -926,6 +926,7 @@ struct GLUE_INFO {
 #if CFG_SUPPORT_CSI
 	wait_queue_head_t waitq_csi;
 #endif
+	unsigned long fgIsInSuspend;
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id,

@@ -4204,6 +4204,7 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 	/* 4 <3.1.3> co-relate net device & prDev */
 	SET_NETDEV_DEV(prDevHandler,
 			wiphy_dev(prWdev->wiphy));
+	prGlueInfo->fgIsInSuspend = 0;
 
 	/* 4 <3.1.4> set device to glue */
 	prGlueInfo->prDev = prDev;
