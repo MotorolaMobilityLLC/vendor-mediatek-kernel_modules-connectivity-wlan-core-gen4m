@@ -212,7 +212,7 @@ struct PCIE_CHIP_CR_MAPPING soc3_0_bus2chip_cr_mapping[] = {
 	{0x820b0000, 0xae000, 0x1000}, /* [APB2] WFSYS_ON */
 	{0x80020000, 0xb0000, 0x10000}, /* WF_TOP_MISC_OFF */
 	{0x81020000, 0xc0000, 0x10000}, /* WF_TOP_MISC_ON */
-	{0x7c500000, 0x50000, 0x10000}, /* CONN_INFRA, dyn mem map */
+	{0x7c500000, SOC3_0_PCIE2AP_REMAP_BASE_ADDR, 0x2000000}, /* remap */
 	{0x7c020000, 0xd0000, 0x10000}, /* CONN_INFRA, wfdma */
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
@@ -265,7 +265,7 @@ struct PCIE_CHIP_CR_MAPPING soc3_0_bus2chip_cr_mapping[] = {
 	{0x820b0000, 0x4ae000, 0x1000}, /* [APB2] WFSYS_ON */
 	{0x80020000, 0x4b0000, 0x10000}, /* WF_TOP_MISC_OFF */
 	{0x81020000, 0x4c0000, 0x10000}, /* WF_TOP_MISC_ON */
-	{0x7c500000, 0x500000, 0x10000}, /* CONN_INFRA, dyn mem map */
+	{0x7c500000, 0x500000, 0x2000000}, /* remap */
 	{0x7c000000, 0x00000,  0x10000}, /* CONN_INFRA, conn_infra_on */
 	{0x7c020000, 0x20000,  0x10000}, /* CONN_INFRA, wfdma */
 	{0x7c050000, 0x50000,  0x10000}, /* CONN_INFRA, conn infra sysram */
@@ -278,7 +278,7 @@ struct pcie2ap_remap soc3_0_pcie2ap_remap = {
 	.reg_base = CONN_INFRA_CFG_PCIE2AP_REMAP_2_R_PCIE2AP_PUBLIC_REMAPPING_5_ADDR,
 	.reg_mask = CONN_INFRA_CFG_PCIE2AP_REMAP_2_R_PCIE2AP_PUBLIC_REMAPPING_5_MASK,
 	.reg_shift = CONN_INFRA_CFG_PCIE2AP_REMAP_2_R_PCIE2AP_PUBLIC_REMAPPING_5_SHFT,
-	.base_addr = SOC3_0_REMAP_BASE_ADDR
+	.base_addr = SOC3_0_PCIE2AP_REMAP_BASE_ADDR
 };
 
 struct ap2wf_remap soc3_0_ap2wf_remap = {
@@ -907,7 +907,7 @@ struct BUS_INFO soc3_0_bus_info = {
 	.bus2chip = soc3_0_bus2chip_cr_mapping,
 	.bus2chip_remap = &soc3_0_bus2chip_cr_remapping,
 #if defined(_HIF_PCIE)
-	.max_static_map_addr = 0x000f0000,
+	.max_static_map_addr = 0x00100000,
 #elif defined(_HIF_AXI)
 	.max_static_map_addr = 0x00700000,
 #endif
