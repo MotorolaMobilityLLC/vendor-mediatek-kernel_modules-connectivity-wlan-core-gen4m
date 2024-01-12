@@ -183,6 +183,9 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 #endif
 	{EVENT_ID_TX_ADDBA, qmHandleEventTxAddBa},
 	{EVENT_ID_GET_CNM, nicEventCnmInfo},
+#if CFG_SUPPORT_SMART_GEAR
+	{EVENT_ID_SG_STATUS, cnmEventSGStatus},
+#endif
 	{EVENT_ID_OPMODE_CHANGE, cnmOpmodeEventHandler}
 };
 

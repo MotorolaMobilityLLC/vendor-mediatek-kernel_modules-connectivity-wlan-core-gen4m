@@ -350,6 +350,12 @@ void cnmOpModeGetTRxNss(
 	OUT uint8_t *pucOpRxNss,
 	OUT uint8_t *pucOpTxNss
 );
+#if CFG_SUPPORT_SMART_GEAR
+void cnmEventSGStatus(
+	IN struct ADAPTER *prAdapter,
+	IN struct WIFI_EVENT *prEvent
+);
+#endif
 
 void cnmOpmodeEventHandler(
 	IN struct ADAPTER *prAdapter,

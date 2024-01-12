@@ -1717,6 +1717,42 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 			prBssInfo->prStaRecOfAP->ucIndex;
 
 		cnmAisInfraConnectNotify(prAdapter);
+#if CFG_SUPPORT_SMART_GEAR
+		DBGLOG(SW4, INFO,
+				"[SG]cnmAisInfraConnectNotify,%d\n",
+				prBssInfo->eConnectionState);
+		if (prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
+			uint8_t ucSGEnable = TRUE;
+			#if CFG_SUPPORT_IOT_AP_BLACKLIST
+			struct BSS_DESC *prBssDesc;
+			struct AIS_FSM_INFO *prAisFsmInfo;
+
+			prAisFsmInfo = aisGetAisFsmInfo(prAdapter,
+							ucBssIndex);
+			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+							ucBssIndex);
+
+			if (IS_BSS_AIS(prBssInfo)) {
+				prBssDesc = prAisFsmInfo->prTargetBssDesc;
+				if (prBssDesc != NULL && bssGetIotApAction
+					(prAdapter, prBssDesc) ==
+					WLAN_IOT_AP_DIS_SG) {
+					DBGLOG(SW4, INFO,
+						"[SG]Hit SG blacklist, Invoke Event to disable SG\n");
+					ucSGEnable = FALSE;
+				}
+			/*Send Event  to Enable/Disable SG*/
+			/*Here is SG REAL TRIGGER POINT!*/
+				wlandioSetSGStatus(prAdapter,
+				ucSGEnable, 0xFF);
+			}
+			#else
+			/*Here is SG REAL TRIGGER POINT!!*/
+			wlandioSetSGStatus(prAdapter,
+			ucSGEnable, 0xFF);
+			#endif
+		}
+#endif
 	}
 #if CFG_ENABLE_WIFI_DIRECT
 	else if ((prAdapter->fgIsP2PRegistered) &&
