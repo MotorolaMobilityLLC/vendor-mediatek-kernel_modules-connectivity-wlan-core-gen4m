@@ -2262,16 +2262,16 @@ void kalP2pUnlinkBss(struct GLUE_INFO *prGlueInfo, uint8_t aucBSSID[])
 	ASSERT(prGlueInfo);
 	ASSERT(aucBSSID);
 
-	DBGLOG(P2P, INFO, "bssid: " MACSTR "\n", MAC2STR(aucBSSID));
-
 	prGlueP2pInfo = prGlueInfo->prP2PInfo[0];
 
-	if (prGlueP2pInfo == NULL)
+	if (prGlueP2pInfo == NULL) {
+		DBGLOG(P2P, ERROR, "NULL prP2PInfo[0]");
 		return;
+	}
 
-	if (scanSearchBssDescByBssidAndSsid(prGlueInfo->prAdapter,
-			aucBSSID, FALSE, NULL) != NULL)
-		scanRemoveBssDescByBssid(prGlueInfo->prAdapter, aucBSSID);
+	DBGLOG(P2P, INFO, "bssid: " MACSTR "\n", MAC2STR(aucBSSID));
+
+	scanRemoveBssDescByBssid(prGlueInfo->prAdapter, aucBSSID);
 }
 
 void kalP2pIndicateQueuedMgmtFrame(struct GLUE_INFO *prGlueInfo,

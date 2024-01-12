@@ -56,6 +56,9 @@ p2pRoleP2pLisStopDbdcDecision(
 		enum ENUM_P2P_CONNECTION_TYPE eConnRequest);
 #endif
 
+static void p2pRoleFsmHandleBssUnlink(struct ADAPTER *prAdapter,
+	uint8_t ucRoleIdx);
+
 u_int8_t p2pRoleFsmNeedMlo(
 	struct ADAPTER *prAdapter,
 	uint8_t ucRoleIdx)
@@ -1833,8 +1836,6 @@ void p2pRoleFsmDelIface(
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	struct GL_P2P_INFO *prP2pInfo = (struct GL_P2P_INFO *) NULL;
-	struct P2P_CONNECTION_REQ_INFO *prConnReqInfo = NULL;
-	const uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
 	uint32_t u4ConnType;
 
 	prGlueInfo = prAdapter->prGlueInfo;
@@ -1854,7 +1855,6 @@ void p2pRoleFsmDelIface(
 	}
 
 	prP2pBssInfo = prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
-	prConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 	u4ConnType = bssInfoConnType(prAdapter, prP2pBssInfo);
 
 	DBGLOG(P2P, INFO,
@@ -1956,9 +1956,7 @@ void p2pRoleFsmDelIface(
 			prAdapter->rWifiVar.prP2PConnSettings[ucRoleIdx],
 			FALSE);
 
-		if (!EQUAL_MAC_ADDR(aucZeroMacAddr, prConnReqInfo->aucBssid))
-			kalP2pUnlinkBss(prAdapter->prGlueInfo,
-					prConnReqInfo->aucBssid);
+		p2pRoleFsmHandleBssUnlink(prAdapter, ucRoleIdx);
 
 		p2pRoleFsmDelIfaceDone(prAdapter, ucRoleIdx);
 	}
@@ -4091,8 +4089,6 @@ void p2pRoleFsmRunEventSwitchOPMode(struct ADAPTER *prAdapter,
 		(struct MSG_P2P_SWITCH_OP_MODE *) prMsgHdr;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
-	struct P2P_CONNECTION_REQ_INFO *prConnReqInfo =
-		(struct P2P_CONNECTION_REQ_INFO *) NULL;
 
 	ASSERT(prSwitchOpMode->ucRoleIdx < BSS_P2P_NUM);
 	if (!(prSwitchOpMode->ucRoleIdx < BSS_P2P_NUM)) {
@@ -4111,8 +4107,6 @@ void p2pRoleFsmRunEventSwitchOPMode(struct ADAPTER *prAdapter,
 			prSwitchOpMode->ucRoleIdx);
 		goto error;
 	}
-
-	prConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 
 	ASSERT(prP2pRoleFsmInfo->ucBssIndex < prAdapter->ucP2PDevBssIdx);
 	if (!(prP2pRoleFsmInfo->ucBssIndex < prAdapter->ucP2PDevBssIdx)) {
@@ -4146,8 +4140,8 @@ void p2pRoleFsmRunEventSwitchOPMode(struct ADAPTER *prAdapter,
 
 	if (prP2pBssInfo->eIftype == IFTYPE_P2P_CLIENT &&
 		prSwitchOpMode->eIftype == IFTYPE_STATION) {
-		kalP2pUnlinkBss(prAdapter->prGlueInfo,
-			prConnReqInfo->aucBssid);
+		p2pRoleFsmHandleBssUnlink(prAdapter,
+			prP2pRoleFsmInfo->ucRoleIndex);
 	}
 	prP2pBssInfo->eIftype = prSwitchOpMode->eIftype;
 
@@ -5494,4 +5488,48 @@ p2pRoleP2pLisStopDbdcDecision(
 	}
 }
 #endif
+
+static void p2pRoleFsmHandleBssUnlink(struct ADAPTER *prAdapter,
+	uint8_t ucRoleIdx)
+{
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
+	struct P2P_CONNECTION_REQ_INFO *prConnReqInfo = NULL;
+	const uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
+	struct BSS_DESC *bss_desc;
+
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, ucRoleIdx);
+	prConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+
+	if (EQUAL_MAC_ADDR(aucZeroMacAddr, prConnReqInfo->aucBssid))
+		return;
+
+	bss_desc = scanSearchBssDescByBssidAndSsid(prAdapter,
+		prConnReqInfo->aucBssid, FALSE, NULL);
+
+	if (!bss_desc)
+		return;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (bss_desc->rMlInfo.fgValid) {
+		uint8_t i;
+
+		for (i = 0; i < MLD_LINK_MAX; i++) {
+			struct BSS_DESC *__bss_desc;
+
+			__bss_desc = scanSearchBssDescByLinkIdMldAddrSsid(
+				prAdapter, i, bss_desc->rMlInfo.aucMldAddr,
+				FALSE, NULL);
+			if (!__bss_desc)
+				continue;
+
+			kalP2pUnlinkBss(prAdapter->prGlueInfo,
+					__bss_desc->aucBSSID);
+		}
+	} else
+#endif
+	{
+		kalP2pUnlinkBss(prAdapter->prGlueInfo, bss_desc->aucBSSID);
+	}
+}
+
 #endif /* CFG_ENABLE_WIFI_DIRECT */
