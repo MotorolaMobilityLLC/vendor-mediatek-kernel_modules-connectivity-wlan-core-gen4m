@@ -3393,16 +3393,28 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 				prTxDone->ucTxCount, prTxDone->ucFlushReason);
 
 		if (prTxDone->ucFlag & BIT(TXS_IS_EXIST)) {
+			struct TX_DESC_OPS_T *prTxDescOps =
+				prAdapter->chip_info->prTxDescOps;
 			uint8_t ucNss, ucStbc;
 			int8_t icTxPwr;
 			uint32_t *pu4RawTxs =
 				(uint32_t *)&prTxDone->aucRawTxS[0];
 
-			ucNss = (prTxDone->u2TxRate & TX_DESC_NSTS_MASK) >>
-				TX_DESC_NSTS_OFFSET;
+			if (prTxDescOps) {
+				ucNss = (prTxDone->u2TxRate &
+					prTxDescOps->u2TxdFrNstsMask) >>
+					prTxDescOps->ucTxdFrNstsOffset;
+				ucStbc = (prTxDone->u2TxRate &
+					prTxDescOps->u2TxdFrStbcMask) ?
+					TRUE : FALSE;
+			} else {
+				ucNss = (prTxDone->u2TxRate &
+					TX_DESC_NSTS_MASK) >>
+					TX_DESC_NSTS_OFFSET;
+				ucStbc = (prTxDone->u2TxRate & TX_DESC_STBC) ?
+					TRUE : FALSE;
+			}
 			ucNss += 1;
-			ucStbc = (prTxDone->u2TxRate & TX_DESC_STBC) ?
-								TRUE : FALSE;
 
 			if (ucStbc)
 				ucNss /= 2;

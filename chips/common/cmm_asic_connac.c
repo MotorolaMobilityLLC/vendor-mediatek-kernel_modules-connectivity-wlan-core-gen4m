@@ -1601,6 +1601,9 @@ void asicInitTxdHook(
 		nic_txd_v1_set_hw_amsdu_template;
 	prTxDescOps->nic_txd_change_data_port_by_ac =
 		nic_txd_v1_change_data_port_by_ac;
+	prTxDescOps->u2TxdFrNstsMask = TX_DESC_NSTS_MASK;
+	prTxDescOps->ucTxdFrNstsOffset = TX_DESC_NSTS_OFFSET;
+	prTxDescOps->u2TxdFrStbcMask = TX_DESC_STBC;
 }
 
 void asicInitRxdHook(

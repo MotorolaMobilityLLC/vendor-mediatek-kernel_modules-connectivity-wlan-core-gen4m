@@ -1067,6 +1067,10 @@ struct TX_DESC_OPS_T {
 		struct STA_RECORD *prStaRec,
 		uint8_t ucAci,
 		u_int8_t fgToMcu);
+	/* TXD: Rate to be Fixed */
+	uint8_t  ucTxdFrNstsOffset;
+	uint16_t u2TxdFrNstsMask;
+	uint16_t u2TxdFrStbcMask;
 };
 
 /*******************************************************************************
