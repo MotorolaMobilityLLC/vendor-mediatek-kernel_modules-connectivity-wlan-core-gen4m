@@ -4898,66 +4898,68 @@ uint8_t kalGetRsnIeMfpCap(IN struct GLUE_INFO *prGlueInfo)
 }
 #endif
 
-struct file *kalFileOpen(const char *path, int flags,
-			 int rights)
+struct file *kalFileOpen(const char *filePath, int openModes,
+			 int createModes)
 {
-	struct file *filp = NULL;
-	mm_segment_t oldfs;
-	int err = 0;
+	struct file *prFile = NULL;
+	mm_segment_t oldFs;
+	long errval = 0;
 
-	oldfs = get_fs();
+	oldFs = get_fs();
 	set_fs(get_ds());
-	filp = filp_open(path, flags, rights);
-	set_fs(oldfs);
-	if (IS_ERR(filp)) {
-		err = PTR_ERR(filp);
+	prFile = filp_open(filePath, openModes, createModes);
+	set_fs(oldFs);
+	if (IS_ERR(prFile)) {
+		errval = PTR_ERR(prFile);
+		DBGLOG(INIT, TRACE, "kalFileOpen() fail: %ld\n", errval);
 		return NULL;
 	}
-	return filp;
+	return prFile;
 }
 
-void kalFileClose(struct file *file)
+void kalFileClose(struct file *prFile)
 {
-	filp_close(file, NULL);
+	filp_close(prFile, NULL);
 }
 
-uint32_t kalFileRead(struct file *file,
-		     unsigned long long offset, unsigned char *data,
-		     unsigned int size)
+uint32_t kalFileRead(struct file *prFile,
+		     unsigned long long pos, unsigned char *buffer,
+		     unsigned int len)
 {
-	mm_segment_t oldfs;
-	int ret;
+	mm_segment_t oldFs;
+	int retval;
 
-	oldfs = get_fs();
+	oldFs = get_fs();
 	set_fs(get_ds());
 
 #if KERNEL_VERSION(4, 13, 0) <= CFG80211_VERSION_CODE
-	ret = kernel_read(file, data, size, &offset);
+	retval = kernel_read(prFile, buffer, len, &pos);
 #else
-	ret = vfs_read(file, data, size, &offset);
+	retval = vfs_read(prFile, buffer, len, &pos);
 #endif
-	set_fs(oldfs);
-	return ret;
+
+	set_fs(oldFs);
+	return retval;
 }
 
-uint32_t kalFileWrite(struct file *file,
-		      unsigned long long offset, unsigned char *data,
-		      unsigned int size)
+uint32_t kalFileWrite(struct file *prFile,
+		      unsigned long long pos, unsigned char *buffer,
+		      unsigned int len)
 {
-	mm_segment_t oldfs;
-	int ret;
+	mm_segment_t oldFs;
+	int retval;
 
-	oldfs = get_fs();
+	oldFs = get_fs();
 	set_fs(get_ds());
 
 #if KERNEL_VERSION(4, 13, 0) <= CFG80211_VERSION_CODE
-	ret = kernel_write(file, data, size, &offset);
+	retval = kernel_write(prFile, buffer, len, &pos);
 #else
-	ret = vfs_write(file, data, size, &offset);
+	retval = vfs_write(prFile, buffer, len, &pos);
 #endif
 
-	set_fs(oldfs);
-	return ret;
+	set_fs(oldFs);
+	return retval;
 }
 
 uint32_t kalWriteToFile(const uint8_t *pucPath,
