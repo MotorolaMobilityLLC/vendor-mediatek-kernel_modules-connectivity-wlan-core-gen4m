@@ -20,6 +20,7 @@
  *******************************************************************************
  */
 #define DEFAULT_LOG_READ_POINTER_PATH		ENUM_LOG_READ_POINTER_PATH_CCIF
+#define FW_LOG_STATS_UPDATE_PERIOD		1000
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -39,6 +40,8 @@ struct FW_LOG_MMIO_CTRL g_ctx;
 static void fwLogCtrlRefreshSubHeader(struct ADAPTER *prAdapter,
 	struct FW_LOG_MMIO_CTRL *prCtrl,
 	struct FW_LOG_MMIO_SUB_CTRL *prSubCtrl);
+static void fwLogMmioStatsDump(struct ADAPTER *prAdapter,
+	struct FW_LOG_MMIO_CTRL *prCtrl);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -171,40 +174,55 @@ static void fwLogCtrlSubHandler(struct ADAPTER *prAdapter,
 	struct FW_LOG_MMIO_CTRL *prCtrl,
 	struct FW_LOG_MMIO_SUB_CTRL *prSubCtrl)
 {
-	uint32_t u4Offset = 0;
+	struct FW_LOG_MMIO_STATS *prStats = &prCtrl->stats;
+	struct FW_LOG_MMIO_SUB_STATS *prSubStats =
+		&prStats->sub_stats[prSubCtrl->type];
+	uint32_t u4Offset = 0, u4Rp = 0, u4Recv = 0, u4Handled = 0;
 
 	fwLogCtrlRefreshSubHeader(prAdapter, prCtrl, prSubCtrl);
 
-	while (!fwLogCtrlIsBufEmpty(prSubCtrl)) {
+	if (fwLogCtrlIsBufEmpty(prSubCtrl))
+		return;
+
+	if (prSubCtrl->wp > prSubCtrl->irp)
+		u4Recv = prSubCtrl->wp - prSubCtrl->irp;
+	else
+		u4Recv = prSubCtrl->length - prSubCtrl->irp + prSubCtrl->wp;
+	u4Handled = u4Recv;
+
+	u4Rp = prSubCtrl->irp;
+	while (u4Recv) {
 		uint32_t u4Size = 0;
 
-		u4Size = prSubCtrl->wp > prSubCtrl->irp ?
-			prSubCtrl->wp - prSubCtrl->irp :
-			prSubCtrl->length - prSubCtrl->irp;
+		if (u4Rp + u4Recv > prSubCtrl->length)
+			u4Size = prSubCtrl->length - u4Rp;
+		else
+			u4Size = u4Recv;
 
 		DBGLOG(INIT, LOUD,
 			"[%d %s] Read data from 0x%x, size: 0x%x\n",
 			prSubCtrl->type,
 			fwLogCtrlType2String(prSubCtrl->type),
-			prSubCtrl->irp,
+			u4Rp,
 			u4Size);
 
 		kalDevRegReadRange(prAdapter->prGlueInfo,
-			prSubCtrl->buf_base_addr + prSubCtrl->irp,
+			prSubCtrl->buf_base_addr + u4Rp,
 			prSubCtrl->buffer + u4Offset,
 			u4Size);
 
 		u4Offset += u4Size;
-		prSubCtrl->irp = (prSubCtrl->irp + u4Size) % prSubCtrl->length;
+		u4Rp += u4Size;
+		u4Rp %= prSubCtrl->length;
+		u4Recv -= u4Size;
 	}
 
-	if (u4Offset == 0)
-		return;
+	u4Handled = fw_log_notify_rcv(prSubCtrl->type,
+		prSubCtrl->buffer, u4Handled);
+	prSubStats->handle_size += u4Handled;
 
-	u4Offset -= fw_log_notify_rcv(prSubCtrl->type,
-		prSubCtrl->buffer, u4Offset);
-	prSubCtrl->irp = (prSubCtrl->irp - u4Offset) %
-		prSubCtrl->length;
+	prSubCtrl->irp += u4Handled;
+	prSubCtrl->irp %= prSubCtrl->length;
 	fwLogCtrlUpdateRp(prAdapter, prCtrl, prSubCtrl,
 		prSubCtrl->irp);
 }
@@ -212,31 +230,46 @@ static void fwLogCtrlSubHandler(struct ADAPTER *prAdapter,
 int32_t fwLogMmioHandler(void)
 {
 	struct FW_LOG_MMIO_CTRL *prCtrl = &g_ctx;
+	struct FW_LOG_MMIO_STATS *prStats = &prCtrl->stats;
 	struct ADAPTER *prAdapter = NULL;
 	uint8_t i = 0;
 
-	KAL_SPIN_LOCK_DECLARATION();
+	prStats->request++;
 
 	if (!prCtrl->initialized) {
+		prStats->skipped++;
 		return 0;
 	} else if (!prCtrl->started) {
 		prCtrl->defered = TRUE;
+		prStats->skipped++;
 		return 0;
 	}
 
 	prAdapter = (struct ADAPTER *)prCtrl->priv;
-	if (!prAdapter)
+	if (!prAdapter) {
+		prStats->skipped++;
 		return 0;
+	}
 
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_FW_LOG);
-	wlanAcquirePowerControl(prAdapter);
+	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_FW_LOG);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	if (prAdapter->fgIsFwOwn == TRUE) {
+		DBGLOG(INIT, WARN,
+			"Skip due to driver own failed.\n");
+		prStats->skipped++;
+		return 0;
+	}
+
 	for (i = 0; i < ENUM_FW_LOG_CTRL_TYPE_NUM; i++) {
 		struct FW_LOG_MMIO_SUB_CTRL *prSubCtrl = &prCtrl->sub_ctrls[i];
 
 		fwLogCtrlSubHandler(prAdapter, prCtrl, prSubCtrl);
 	}
 	wlanReleasePowerControl(prAdapter);
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_FW_LOG);
+	fwLogMmioStatsDump(prAdapter, prCtrl);
+	KAL_RELEASE_MUTEX(prAdapter, MUTEX_FW_LOG);
+
+	prStats->handled++;
 
 	return 0;
 }
@@ -422,5 +455,42 @@ void fwLogMmioDeInitMcu(void)
 		fwLogCtrlDeInitSubCtrl(prCtrl->priv, prCtrl, i);
 
 	prCtrl->priv = NULL;
+}
+
+static void fwLogMmioStatsDump(struct ADAPTER *prAdapter,
+	struct FW_LOG_MMIO_CTRL *prCtrl)
+{
+	struct FW_LOG_MMIO_STATS *prStats = &prCtrl->stats;
+	uint8_t buf[512];
+	uint32_t written = 0;
+	uint8_t i = 0;
+
+	if (time_before(jiffies, prStats->update_period))
+		return;
+
+	prStats->update_period = jiffies +
+		FW_LOG_STATS_UPDATE_PERIOD * HZ / 1000;
+
+	kalMemZero(&buf, sizeof(buf));
+	written += kalSnprintf(buf + written,
+			       sizeof(buf) - written,
+			       "fw log stats[0x%x 0x%x 0x%x]",
+			       prStats->request,
+			       prStats->skipped,
+			       prStats->handled);
+	for (i = 0; i < ENUM_FW_LOG_CTRL_TYPE_NUM; i++) {
+		struct FW_LOG_MMIO_SUB_CTRL *prSubCtrl = &prCtrl->sub_ctrls[i];
+
+		written += kalSnprintf(buf + written,
+				       sizeof(buf) - written,
+				       " [%s][0x%x][0x%x 0x%x 0x%x 0x%x]",
+				       fwLogCtrlType2String(i),
+				       prStats->sub_stats[i].handle_size,
+				       prSubCtrl->rp,
+				       prSubCtrl->irp,
+				       prSubCtrl->wp,
+				       prSubCtrl->iwp);
+	}
+	DBGLOG(INIT, INFO, "%s\n", buf);
 }
 
