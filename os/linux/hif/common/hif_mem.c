@@ -53,7 +53,7 @@
 
 #if CFG_SUPPORT_RX_PAGE_POOL
 #define HAL_PAGE_POOL_PAGE_INC_NUM              512
-#define HAL_PAGE_POOL_PAGE_DEC_NUM              32
+#define HAL_PAGE_POOL_PAGE_DEC_NUM              256
 #define HAL_PAGE_POOL_PAGE_UPDATE_MIN_INTERVAL  500
 #endif
 
@@ -114,6 +114,7 @@ static uint32_t g_u4CurPageNum;
 static uint32_t g_u4MinPageNum;
 static uint32_t g_u4MaxPageNum;
 static unsigned long g_ulUpdatePagePoolPagePeriod;
+static u_int8_t g_fgPagePoolDelayAlloc;
 static struct mutex g_rPageLock;
 #endif
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */
@@ -1038,6 +1039,13 @@ u_int8_t kalIncPagePoolPageNum(void)
 		return FALSE;
 	}
 
+	if (g_fgPagePoolDelayAlloc &&
+	    time_before(jiffies, g_ulUpdatePagePoolPagePeriod)) {
+		mutex_unlock(&g_rPageLock);
+		return FALSE;
+	}
+	g_fgPagePoolDelayAlloc = FALSE;
+
 	u4Num = (g_u4CurPageNum - g_u4HifRsvNum) +
 		HAL_PAGE_POOL_PAGE_INC_NUM;
 	if (u4Num > g_u4MaxPageNum)
@@ -1102,6 +1110,9 @@ u_int8_t kalSetPagePoolPageNum(uint32_t u4Num)
 		DBGLOG(HAL, ERROR, "page pool alloc fail[req:%u alloc:%u->%u]",
 		       u4SetNum, u4CurPageNum, g_u4CurPageNum);
 		fgRet = FALSE;
+		/* enable delay alloc if page alloc fail */
+		if (u4CurPageNum == g_u4CurPageNum)
+			g_fgPagePoolDelayAlloc = TRUE;
 	} else {
 		DBGLOG(HAL, INFO, "set page pool[req:%u alloc:%u->%u]",
 		       u4SetNum, u4CurPageNum, g_u4CurPageNum);
