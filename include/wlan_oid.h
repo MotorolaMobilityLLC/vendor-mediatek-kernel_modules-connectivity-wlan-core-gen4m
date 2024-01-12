@@ -769,6 +769,14 @@ struct PARAM_GTK_REKEY_DATA {
 	uint32_t u4MgmtGroupCipher;
 };
 
+#if CFG_SUPPORT_WIFI_ICCM
+struct PARAM_CUSTOM_ICCM_STRUCT {
+	uint8_t u4Enable;
+	uint8_t u4EnablePrintFw;
+	uint32_t u4Value;
+};
+#endif
+
 #if CFG_SUPPORT_WIFI_POWER_METRICS
 struct PARAM_CUSTOM_POWER_METRICS_STRUCT {
 	uint32_t u4Enable;
@@ -4275,6 +4283,13 @@ wlanoidSetMcrWrite(struct ADAPTER *prAdapter,
 		   void *pvSetBuffer,
 		   uint32_t u4SetBufferLen,
 		   uint32_t *pu4SetInfoLen);
+
+#if CFG_SUPPORT_WIFI_ICCM
+uint32_t
+wlanoidSetIccm(struct ADAPTER *prAdapter,
+		   void *pvSetBuffer, uint32_t u4SetBufferLen,
+		   uint32_t *pu4SetInfoLen);
+#endif
 
 #if CFG_SUPPORT_WIFI_POWER_METRICS
 uint32_t

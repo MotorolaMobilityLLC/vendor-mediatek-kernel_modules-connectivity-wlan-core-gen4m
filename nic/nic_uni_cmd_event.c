@@ -180,6 +180,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_SET_MDNS_RECORD] = nicUniCmdMdnsRecorde,
 #endif
 	[CMD_ID_LP_DBG_CTRL] = nicUniCmdLpDbgCtrl,
+#if CFG_SUPPORT_WIFI_ICCM
+	[CMD_ID_SET_ICCM] = nicUniCmdIccmSetParam,
+#endif
 #if CFG_SUPPORT_WIFI_POWER_METRICS
 	[CMD_ID_POWER_METRICS] = nicUniCmdPowerMetricsStatSetParam,
 #endif
@@ -5024,6 +5027,41 @@ uint32_t nicUniCmdSetSGParam(struct ADAPTER *ad,
 	return WLAN_STATUS_NOT_SUPPORTED;
 #endif
 }
+
+#if CFG_SUPPORT_WIFI_ICCM
+uint32_t nicUniCmdIccmSetParam(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_ICCM_INFO_T *cmd;
+	struct UNI_CMD_POWER_METRICS *uni_cmd;
+	struct UNI_CMD_ICCM_PARAM *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_POWER_METRICS) +
+			sizeof(struct UNI_CMD_ICCM_PARAM);
+
+	if (info->ucCID != CMD_ID_SET_ICCM ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_ICCM_INFO_T *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_POWER_METRICS,
+		max_cmd_len, NULL, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_POWER_METRICS *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_ICCM_PARAM *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_ICCM_TAG_PARAM;
+	tag->u2Length = sizeof(*tag);
+	tag->u4Enable = cmd->u4Enable;
+	tag->u4EnablePrintFw = cmd->u4EnablePrintFw
+	tag->u4Value = cmd->u4Value;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
 
 #if CFG_SUPPORT_WIFI_POWER_METRICS
 uint32_t nicUniCmdPowerMetricsStatSetParam(struct ADAPTER *ad,
@@ -11863,6 +11901,21 @@ void nicUniEventPowerMetricsStatGetInfo(struct ADAPTER *ad,
 			}
 
 			RUN_RX_EVENT_HANDLER(EVENT_ID_POWER_METRICS, &legacy);
+		}
+			break;
+		case UNI_EVENT_ICCM_TAG: {
+			struct UNI_EVENT_ID_PWR_MET_ICCM_INFO *pm_info =
+				(struct UNI_EVENT_ID_PWR_MET_ICCM_INFO *)tag;
+
+			for (i = 0; i < 5; i++) {
+				DBGLOG(NIC, INFO,
+					"Totaltime =%d Txtime =%d Rxtime =%d Rxlistentime =%d Sleeptime =%d\n",
+					pm_info->u4TotalTime,
+					pm_info->u4BandRatio[i].u4TxTime,
+					pm_info->u4BandRatio[i].u4RxTime,
+					pm_info->u4BandRatio[i].u4RxListenTime,
+					pm_info->u4BandRatio[i].u4SleepTime);
+			}
 		}
 			break;
 		default:
