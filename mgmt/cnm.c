@@ -2554,6 +2554,9 @@ static u_int8_t cnmDbdcIsConcurrent(
 	uint8_t ucBssNum = prAdapter->ucHwBssIdNum;
 #endif
 	u_int8_t fgDbdcP2pListening = FALSE;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *mld_bssinfo;
+#endif
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 	if (prAdapter->fgPowerForceOneNss) {
@@ -2594,10 +2597,17 @@ static u_int8_t cnmDbdcIsConcurrent(
 			&& !fgDbdcP2pListening)
 			)
 			continue;
+#else /* CFG_DBDC_SW_FOR_P2P_LISTEN */
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		mld_bssinfo = mldBssGetByBss(prAdapter, prBssInfo);
+		if (!IS_MLD_BSSINFO_MULTI(mld_bssinfo)
+			&& IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
+			continue;
 #else
 		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
 			continue;
 #endif
+#endif /* CFG_DBDC_SW_FOR_P2P_LISTEN */
 
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 
