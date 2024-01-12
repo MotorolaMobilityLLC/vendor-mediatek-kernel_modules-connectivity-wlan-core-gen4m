@@ -11612,7 +11612,8 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 		u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
 		u4RxVector1 = prAdapter->arStaRec[ucStaIdx].u4RxVector1;
 		if ((u4RxVector0 == 0) || (u4RxVector1 == 0)) {
-			DBGLOG(SW4, ERROR, "u4RxVector0 or u4RxVector1 is 0\n");
+			/* soc3_0 known issue */
+			DBGLOG(SW4, TRACE, "u4RxVector0 or u4RxVector1 is 0\n");
 			goto errhandle;
 		}
 	} else {
@@ -11651,7 +11652,8 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 	return 0;
 
 errhandle:
-	DBGLOG(SW4, ERROR,
+	/* soc3_0 known issue */
+	DBGLOG(SW4, TRACE,
 		"u4RxVector0=[%x], u4RxVector1=[%x], rxmode=[%u], rate=[%u], frmode=[%u], sgi=[%u], nsts=[%u]\n",
 		u4RxVector0, u4RxVector1, rxmode, rate, frmode, sgi, nsts
 	);
@@ -11789,7 +11791,7 @@ void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo)
 
 	/* get current rx rate */
 	if (wlanGetRxRate(prGlueInfo, &u4CurRxRate, &u4MaxRxRate) < 0)
-		DBGLOG(NIC, ERROR, "wlanGetRxRate error\n");
+		prLinkQualityInfo->u4CurRxRate = 0;
 	else
 		prLinkQualityInfo->u4CurRxRate = u4CurRxRate;
 
