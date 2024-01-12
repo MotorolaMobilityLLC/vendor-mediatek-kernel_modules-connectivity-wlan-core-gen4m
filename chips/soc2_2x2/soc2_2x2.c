@@ -205,7 +205,7 @@ void soc2_2x2wlanCalDebugCmd(uint32_t cmd, uint32_t para)
 	DBGLOG(RFTEST, INFO, "Cal CMD: (%d, %d) -> WMT reset\n", cmd, para);
 	mtk_wcn_wmt_do_reset_only(WMTDRV_TYPE_WIFI);
 	/* wait for reset done */
-	fgIsResetting = TRUE;
+	glResetUpdateFlag(TRUE);
 	do {
 		kalMsleep(500);
 	} while (kalIsResetting());

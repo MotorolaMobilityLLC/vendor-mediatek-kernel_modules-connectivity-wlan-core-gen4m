@@ -250,6 +250,15 @@ u_int8_t kalIsResetting(void)
 #endif
 }
 
+void glResetUpdateFlag(u_int8_t reset)
+{
+	DBGLOG(INIT, TRACE, "reset: %d\n", reset);
+	fgIsResetting = reset;
+#if CFG_MTK_ANDROID_WMT && !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+	update_driver_reset_status(fgIsResetting);
+#endif
+}
+
 #if CFG_CHIP_RESET_SUPPORT
 /*----------------------------------------------------------------------------*/
 /*!
@@ -274,14 +283,11 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 	INIT_WORK(&(wifi_rst.rst_work), mtk_wifi_reset);
 #endif
 #endif
-	fgIsResetting = FALSE;
+	glResetUpdateFlag(FALSE);
 	fgIsRstPreventFwOwn = FALSE;
 	wifi_rst.prGlueInfo = prGlueInfo;
 
 #if CFG_WMT_RESET_API_SUPPORT
-#if CFG_MTK_ANDROID_WMT && !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
-	update_driver_reset_status(fgIsResetting);
-#endif
 	KAL_WAKE_LOCK_INIT(NULL, g_IntrWakeLock, "WLAN Reset");
 	init_waitqueue_head(&g_waitq_rst);
 	init_completion(&g_RstOffComp);
@@ -449,10 +455,7 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 	mddpNotifyWifiReset();
 #endif
 
-	fgIsResetting = TRUE;
-#if CFG_MTK_ANDROID_WMT && !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
-	update_driver_reset_status(fgIsResetting);
-#endif
+	glResetUpdateFlag(TRUE);
 
 #if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 	if (eResetReason != RST_BT_TRIGGER)
@@ -929,9 +932,6 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst,
 		ret = wlanFuncOn();
 #endif
 #if !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
-#if CFG_MTK_ANDROID_WMT
-	update_driver_reset_status(fgIsResetting);
-#endif
 	if (g_IsWholeChipRst == TRUE) {
 		g_IsWholeChipRst = FALSE;
 		g_IsWfsysBusHang = FALSE;
@@ -1038,7 +1038,7 @@ static void mtk_wifi_trigger_reset(struct work_struct *work)
 	struct RESET_STRUCT *rst = container_of(work,
 					struct RESET_STRUCT, rst_trigger_work);
 
-	fgIsResetting = TRUE;
+	glResetUpdateFlag(TRUE);
 	/* Set the power off flag to FALSE in WMT to prevent chip power off
 	 * after wlanProbe return failure, because we need to do core dump
 	 * afterward.
@@ -1150,7 +1150,7 @@ static void glResetCallback(enum _ENUM_WMTDRV_TYPE_T eSrcType,
 				DBGLOG(INIT, WARN, "Whole chip reset start!\n");
 				dumpWlanThreadsIfNeed();
 				triggerHifDumpIfNeed();
-				fgIsResetting = TRUE;
+				glResetUpdateFlag(TRUE);
 				fgSimplifyResetFlow = TRUE;
 #if CFG_MTK_ANDROID_WMT
 				wifi_reset_start();
@@ -1160,13 +1160,13 @@ static void glResetCallback(enum _ENUM_WMTDRV_TYPE_T eSrcType,
 			case WMTRSTMSG_RESET_END:
 				DBGLOG(INIT, WARN, "Whole chip reset end!\n");
 				wifi_rst.rst_data = RESET_SUCCESS;
-				fgIsResetting = FALSE;
+				glResetUpdateFlag(FALSE);
 				mtk_wifi_reset_main(&wifi_rst, TRUE);
 				break;
 
 			case WMTRSTMSG_RESET_END_FAIL:
 				DBGLOG(INIT, WARN, "Whole chip reset fail!\n");
-				fgIsResetting = FALSE;
+				glResetUpdateFlag(FALSE);
 				wifi_rst.rst_data = RESET_FAIL;
 				mtk_wifi_reset_main(&wifi_rst, TRUE);
 				break;
@@ -1196,7 +1196,7 @@ static u_int8_t glResetMsgHandler(enum ENUM_RST_MSG MsgBody)
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 		fw_log_wifi_irq_handler();
 #endif
-		fgIsResetting = TRUE;
+		glResetUpdateFlag(TRUE);
 #if (CFG_SUPPORT_CONNINFRA == 1)
 		fgSimplifyResetFlow = TRUE;
 #endif
@@ -1209,7 +1209,7 @@ static u_int8_t glResetMsgHandler(enum ENUM_RST_MSG MsgBody)
 
 	case ENUM_RST_MSG_L0_END:
 		DBGLOG(INIT, INFO, "Whole chip reset end!\n");
-		fgIsResetting = FALSE;
+		glResetUpdateFlag(FALSE);
 		wifi_rst.rst_data = RESET_SUCCESS;
 		mtk_wifi_reset_main(&wifi_rst, TRUE);
 		break;
@@ -1220,7 +1220,7 @@ static u_int8_t glResetMsgHandler(enum ENUM_RST_MSG MsgBody)
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 		fw_log_wifi_irq_handler();
 #endif
-		fgIsResetting = TRUE;
+		glResetUpdateFlag(TRUE);
 #if (CFG_SUPPORT_CONNINFRA == 1)
 		fgSimplifyResetFlow = TRUE;
 #endif
@@ -1233,7 +1233,7 @@ static u_int8_t glResetMsgHandler(enum ENUM_RST_MSG MsgBody)
 	case ENUM_RST_MSG_L04_END:
 	case ENUM_RST_MSG_L05_END:
 		DBGLOG(INIT, WARN, "WF chip reset end!\n");
-		fgIsResetting = FALSE;
+		glResetUpdateFlag(FALSE);
 		wifi_rst.rst_data = RESET_SUCCESS;
 		mtk_wifi_reset_main(&wifi_rst, FALSE);
 		break;
@@ -1508,10 +1508,7 @@ void glResetSubsysRstProcedure(struct GLUE_INFO *prGlueInfo,
 				glResetMsgHandler(ENUM_RST_MSG_L04_START);
 				glResetMsgHandler(ENUM_RST_MSG_L04_END);
 			} else {
-				fgIsResetting = FALSE;
-#if CFG_MTK_ANDROID_WMT && !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
-				update_driver_reset_status(fgIsResetting);
-#endif
+				glResetUpdateFlag(FALSE);
 				DBGLOG(INIT, INFO,
 					"Don't trigger subsys reset due to driver is not ready\n");
 			}
@@ -1550,10 +1547,7 @@ void glResetSubsysRstProcedure(struct GLUE_INFO *prGlueInfo,
 			glResetMsgHandler(ENUM_RST_MSG_L04_START);
 			glResetMsgHandler(ENUM_RST_MSG_L04_END);
 		} else {
-			fgIsResetting = FALSE;
-#if CFG_MTK_ANDROID_WMT && !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
-			update_driver_reset_status(fgIsResetting);
-#endif
+			glResetUpdateFlag(FALSE);
 			DBGLOG(INIT, INFO,
 				"Don't trigger subsys reset due to driver is not ready\n");
 		}
