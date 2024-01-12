@@ -1,4 +1,4 @@
-/******************************************************************************
+/*******************************************************************************
  *
  * This file is provided under a dual license.  When you use or
  * distribute this software, you may choose to be licensed under
@@ -48,14 +48,15 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *****************************************************************************/
+ ******************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/os/linux/include/gl_wext.h#1
-*/
+ * Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/os/linux/include
+ *     /gl_wext.h#1
+ */
 
 /*! \file   gl_wext.h
-*    \brief  This file is for Portable Driver linux wireless extension support.
-*/
+ *    \brief  This file is for Portable Driver linux wireless extension support.
+ */
 
 
 #ifndef _GL_WEXT_H
@@ -63,44 +64,49 @@
 
 #ifdef WIRELESS_EXT
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
-extern void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo);
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
+extern void wlanUpdateChannelTable(struct GLUE_INFO
+				   *prGlueInfo);
 
 #if CFG_SUPPORT_WAPI
-extern uint8_t keyStructBuf[1024];	/* add/remove key shared buffer */
+extern uint8_t
+keyStructBuf[1024];	/* add/remove key shared buffer */
 #else
-extern uint8_t keyStructBuf[100];	/* add/remove key shared buffer */
+extern uint8_t
+keyStructBuf[100];	/* add/remove key shared buffer */
 #endif
 
 /* for IE Searching */
 extern u_int8_t
 wextSrchDesiredWPAIE(IN uint8_t *pucIEStart,
-		     IN int32_t i4TotalIeLen, IN uint8_t ucDesiredElemId, OUT uint8_t **ppucDesiredIE);
+		     IN int32_t i4TotalIeLen, IN uint8_t ucDesiredElemId,
+		     OUT uint8_t **ppucDesiredIE);
 
 #if CFG_SUPPORT_WPS
 extern u_int8_t
 wextSrchDesiredWPSIE(IN uint8_t *pucIEStart,
-		     IN int32_t i4TotalIeLen, IN uint8_t ucDesiredElemId, OUT uint8_t **ppucDesiredIE);
+		     IN int32_t i4TotalIeLen, IN uint8_t ucDesiredElemId,
+		     OUT uint8_t **ppucDesiredIE);
 #endif
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 #define KILO          1000
 #define RATE_5_5M     11	/* 5.5M */
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 struct PARAM_FIXED_IEs {
 	uint8_t aucTimestamp[8];
 	uint16_t u2BeaconInterval;
@@ -115,7 +121,7 @@ struct PARAM_VARIABLE_IE {
 
 #if WIRELESS_EXT < 18
 
-#define SIOCSIWMLME 0x8B16	/* request MLME operation; uses struct iw_mlme */
+#define SIOCSIWMLME 0x8B16 /* request MLME operation; uses struct iw_mlme */
 /* MLME requests (SIOCSIWMLME / struct iw_mlme) */
 #define IW_MLME_DEAUTH      0
 #define IW_MLME_DISASSOC    1
@@ -179,8 +185,10 @@ struct iw_mlme {
 #define IW_AUTH_ALG_LEAP        0x00000004
 
 /* IW_AUTH_ROAMING_CONTROL values */
-#define IW_AUTH_ROAMING_ENABLE  0	/* driver/firmware based roaming */
-#define IW_AUTH_ROAMING_DISABLE 1	/* user space program used for roaming control */
+#define IW_AUTH_ROAMING_ENABLE  0 /* driver/firmware based roaming */
+#define IW_AUTH_ROAMING_DISABLE 1 /* user space program used for roaming
+				   * control
+				   */
 
 #define SIOCSIWENCODEEXT 0x8B34	/* set encoding token & mode */
 #define SIOCGIWENCODEEXT 0x8B35	/* get encoding token & mode */
@@ -205,7 +213,7 @@ struct iw_encode_ext {
 	__u32 ext_flags;	/*!< IW_ENCODE_EXT_* */
 	__u8 tx_seq[IW_ENCODE_SEQ_MAX_SIZE];	/*!< LSB first */
 	__u8 rx_seq[IW_ENCODE_SEQ_MAX_SIZE];	/*!< LSB first */
-	struct sockaddr addr;	/*!< ff:ff:ff:ff:ff:ff for broadcast/multicast
+	struct sockaddr	addr;	/*!< ff:ff:ff:ff:ff:ff for broadcast/multicast
 				 *   (group) keys or unicast address for
 				 *   individual keys
 				 */
@@ -281,7 +289,8 @@ enum {
 	IEEE80211_FILTER_TYPE_AUTH = 1 << 5,
 	IEEE80211_FILTER_TYPE_DEAUTH = 1 << 6,
 	IEEE80211_FILTER_TYPE_DISASSOC = 1 << 7,
-	IEEE80211_FILTER_TYPE_ALL = 0xFF	/* used to check the valid filter bits */
+	/* used to check the valid filter bits */
+	IEEE80211_FILTER_TYPE_ALL = 0xFF
 };
 
 #if CFG_SUPPORT_WAPI
@@ -301,67 +310,88 @@ enum {
 #endif
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 extern const struct iw_handler_def wext_handler_def;
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 /* wireless extensions' ioctls */
-int wext_support_ioctl(IN struct net_device *prDev, IN struct ifreq *prIfReq, IN int i4Cmd);
+int wext_support_ioctl(IN struct net_device *prDev,
+		       IN struct ifreq *prIfReq, IN int i4Cmd);
 
 int
 wext_set_rate(IN struct net_device *prNetDev,
-	      IN struct iw_request_info *prIwReqInfo, IN struct iw_param *prRate, IN char *pcExtra);
+	      IN struct iw_request_info *prIwReqInfo,
+	      IN struct iw_param *prRate, IN char *pcExtra);
 
 void
 wext_indicate_wext_event(IN struct GLUE_INFO *prGlueInfo,
-			 IN unsigned int u4Cmd, IN unsigned char *pucData, IN unsigned int u4DataLen);
+			 IN unsigned int u4Cmd, IN unsigned char *pucData,
+			 IN unsigned int u4DataLen);
 
-struct iw_statistics *wext_get_wireless_stats(struct net_device *prDev);
+struct iw_statistics *wext_get_wireless_stats(
+	struct net_device *prDev);
 
 
 u_int8_t
 wextSrchDesiredWPAIE(IN uint8_t *pucIEStart,
-		     IN int32_t i4TotalIeLen, IN uint8_t ucDesiredElemId, OUT uint8_t **ppucDesiredIE);
+		     IN int32_t i4TotalIeLen, IN uint8_t ucDesiredElemId,
+		     OUT uint8_t **ppucDesiredIE);
 
 #if CFG_SUPPORT_WPS
 u_int8_t
 wextSrchDesiredWPSIE(IN uint8_t *pucIEStart,
-		     IN int32_t i4TotalIeLen, IN uint8_t ucDesiredElemId, OUT uint8_t **ppucDesiredIE);
+		     IN int32_t i4TotalIeLen, IN uint8_t ucDesiredElemId,
+		     OUT uint8_t **ppucDesiredIE);
 #endif
 
 #if CFG_SUPPORT_PASSPOINT
-u_int8_t wextSrchDesiredHS20IE(IN uint8_t *pucIEStart, IN int32_t i4TotalIeLen, OUT uint8_t **ppucDesiredIE);
+u_int8_t wextSrchDesiredHS20IE(IN uint8_t *pucIEStart,
+			       IN int32_t i4TotalIeLen,
+			       OUT uint8_t **ppucDesiredIE);
 
-u_int8_t wextSrchDesiredInterworkingIE(IN uint8_t *pucIEStart, IN int32_t i4TotalIeLen, OUT uint8_t **ppucDesiredIE);
+u_int8_t wextSrchDesiredInterworkingIE(IN uint8_t
+				       *pucIEStart, IN int32_t i4TotalIeLen,
+				       OUT uint8_t **ppucDesiredIE);
 
-u_int8_t wextSrchDesiredAdvProtocolIE(IN uint8_t *pucIEStart, IN int32_t i4TotalIeLen, OUT uint8_t **ppucDesiredIE);
+u_int8_t wextSrchDesiredAdvProtocolIE(IN uint8_t
+				      *pucIEStart, IN int32_t i4TotalIeLen,
+				      OUT uint8_t **ppucDesiredIE);
 
-u_int8_t wextSrchDesiredRoamingConsortiumIE(IN uint8_t *pucIEStart, IN int32_t i4TotalIeLen, OUT uint8_t **ppucDesiredIE);
-u_int8_t wextSrchDesiredOsenIE(IN uint8_t *pucIEStart, IN int32_t i4TotalIeLen, OUT uint8_t **ppucDesiredIE);
+u_int8_t wextSrchDesiredRoamingConsortiumIE(
+	IN uint8_t *pucIEStart, IN int32_t i4TotalIeLen,
+	OUT uint8_t **ppucDesiredIE);
+u_int8_t wextSrchDesiredOsenIE(IN uint8_t *pucIEStart,
+			       IN int32_t i4TotalIeLen,
+			       OUT uint8_t **ppucDesiredIE);
 #endif /* CFG_SUPPORT_PASSPOINT */
 
-u_int8_t wextSrchDesiredWAPIIE(IN uint8_t *pucIEStart, IN int32_t i4TotalIeLen, OUT uint8_t **ppucDesiredIE);
+u_int8_t wextSrchDesiredWAPIIE(IN uint8_t *pucIEStart,
+			       IN int32_t i4TotalIeLen,
+			       OUT uint8_t **ppucDesiredIE);
 
-u_int8_t wextSrchOkcAndPMKID(IN uint8_t *pucIEStart, IN int32_t i4TotalIeLen, OUT uint8_t **ppucPMKID, OUT uint8_t *okc);
+u_int8_t wextSrchOkcAndPMKID(IN uint8_t *pucIEStart,
+			     IN int32_t i4TotalIeLen,
+			     OUT uint8_t **ppucPMKID,
+			     OUT uint8_t *okc);
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 #endif /* WIRELESS_EXT */
 
