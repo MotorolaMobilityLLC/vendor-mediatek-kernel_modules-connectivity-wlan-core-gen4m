@@ -373,6 +373,9 @@ static s_int32 hqa_set_tx_path(
 				&data, (u_char *)&value);
 		band_idx = value;
 
+		/* Set Band idx */
+		SERV_SET_PARAM(serv_test, ctrl_band_idx, (u_char)band_idx);
+
 		if (band_idx && tx_ant > 0x3)
 			tx_ant >>= 2;
 
@@ -3783,6 +3786,7 @@ static s_int32 hqa_set_ru_info(
 		ru_info[sta_seq].nss = value;
 		if (ru_info[sta_seq].nss == 0)
 			ru_info[sta_seq].nss = 1;
+
 		get_param_and_shift_buf(TRUE,
 					   sizeof(u_int32),
 					   &data,
@@ -4138,6 +4142,8 @@ static s_int32 hqa_start_tx_ext(
 				&data, (u_char *)&param.tx_path);
 	get_param_and_shift_buf(TRUE, sizeof(param.nss),
 				&data, (u_char *)&param.nss);
+	get_param_and_shift_buf(TRUE, sizeof(param.hw_tx_enable),
+				&data, (u_char *)&param.hw_tx_enable);
 
 	if (!param.pkt_cnt)
 		param.pkt_cnt = 0x8fffffff;
@@ -4171,6 +4177,7 @@ static s_int32 hqa_start_tx_ext(
 	for (ant_idx = 0; ant_idx < TEST_ANT_NUM; ant_idx++)
 		CONFIG_SET_PARAM(serv_test, tx_pwr[ant_idx],
 			(u_int32)param.pwr, param.band_idx);
+	WINFO_SET_PARAM(serv_test, hw_tx_enable, param.hw_tx_enable);
 	if (mt_serv_submit_tx(serv_test) != SERV_STATUS_SUCCESS)
 		goto err_out;
 
@@ -4186,8 +4193,8 @@ static s_int32 hqa_start_tx_ext(
 		("%s: ibf=%u, ebf=%u, wlan_id=%u, aifs=%u\n",
 		__func__, param.ibf, param.ebf, param.wlan_id, param.aifs));
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
-		("%s: gi=%u, nss=%u\n",
-		__func__, param.gi, param.nss));
+		("%s: gi=%u, nss=%u hwtx=%u\n",
+		__func__, param.gi, param.nss, param.hw_tx_enable));
 
 	/* Update hqa_frame with response: status (2 bytes) */
 	sys_ad_move_mem(hqa_frame->data + 2, &param.ext_id,
@@ -4555,7 +4562,7 @@ static struct priv_hqa_cmd_id_mapping priv_hqa_cmd_mapping[] = {
 	{"GetTxInfo", 0x1313,
 	{0} },
 	{"DBDCStartTX", 0x1600,
-	{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4} },
+	{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4} },
 	{"DBDCStartRX", 0x1600,
 	{4, 4, 4, 6, 4, 4, 4, 4, 4} },
 	{"DBDCStopTX", 0x1600,

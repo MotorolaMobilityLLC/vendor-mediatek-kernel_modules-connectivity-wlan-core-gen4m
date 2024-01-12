@@ -117,6 +117,7 @@ struct GNU_PACKED hqa_tx {
 	u_int32 gi;
 	u_int32 tx_path;
 	u_int32 nss;
+	u_int32 hw_tx_enable;
 };
 
 struct GNU_PACKED hqa_frame {
