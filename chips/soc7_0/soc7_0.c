@@ -33,7 +33,7 @@
 #include "coda/soc7_0/conn_semaphore.h"
 #include "hal_dmashdl_soc7_0.h"
 
-#define CFG_SUPPORT_VCODE_VDFS 1
+#define CFG_SUPPORT_VCODE_VDFS 0
 
 #if (CFG_SUPPORT_VCODE_VDFS == 1)
 #include <linux/pm_qos.h>
