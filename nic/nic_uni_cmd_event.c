@@ -277,6 +277,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 #if CFG_SUPPORT_WIFI_POWER_METRICS
 	[UNI_EVENT_ID_POWER_METRICS] = nicUniEventPowerMetricsStatGetInfo,
 #endif
+#if CFG_MTK_MDDP_SUPPORT
+	[UNI_EVENT_ID_MDDP] = nicUniEventMddp,
+#endif /* CFG_MTK_MDDP_SUPPORT */
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -12238,3 +12241,47 @@ void nicUniEventUpdateLp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 	}
 }
+
+#if CFG_MTK_MDDP_SUPPORT
+void nicUniEventMddp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+#define MDDP_EXP_RST_STR	"RST_MDDP_EXCEPTION:%u"
+#define MDDP_EXP_RSN_SIZE	50
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_MDDP);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	static char aucMddpRsn[MDDP_EXP_RSN_SIZE];
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_MDDP_EXCEPTION: {
+			struct UNI_EVENT_MDDP_EXCEPTION *exp =
+				(struct UNI_EVENT_MDDP_EXCEPTION *) tag;
+
+			kalScnprintf(aucMddpRsn,
+				     MDDP_EXP_RSN_SIZE,
+				     MDDP_EXP_RST_STR,
+				     exp->u4ExceptionIdx);
+			DBGLOG(NIC, INFO,
+			       "mddp execption tag[%u] len[%u] idx[%u]\n",
+			       exp->u2Tag,
+			       exp->u2Length,
+			       exp->u4ExceptionIdx);
+
+			glSetRstReasonString(aucMddpRsn);
+			glResetWholeChipResetTrigger(aucMddpRsn);
+		}
+			break;
+		default:
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+#endif /* CFG_MTK_MDDP_SUPPORT */
