@@ -349,6 +349,7 @@ enum ENUM_UNI_CMD_BSSINFO_TAG {
 	UNI_CMD_BSSINFO_TAG_MLD = 0x1A,
 	UNI_CMD_BSSINFO_TAG_PM_DISABLE = 0x1B,
 	UNI_CMD_BSSINFO_TAG_MAX_IDLE_PERIOD = 0x1D,
+	UNI_CMD_BSSINFO_TAG_EHT = 0x1E,
 	UNI_CMD_BSSINFO_NUM
 };
 
@@ -728,6 +729,20 @@ struct UNI_CMD_BSSINFO_MAX_IDLE_PERIOD {
 	uint16_t u2MaxIdlePeriod;
 	uint8_t  ucIdleOptions;
 	uint8_t  ucReserved;
+} __KAL_ATTRIB_PACKED__;
+
+/* BssInfo EHT information (Tag 0x1E) */
+struct UNI_CMD_BSSINFO_EHT {
+	uint16_t u2Tag;  /* Tag = 0x1E */
+	uint16_t u2Length;
+	uint8_t  fgIsEhtOpPresent;
+	uint8_t  fgIsEhtDscbPresent;
+	uint8_t  ucEhtCtrl;
+	uint8_t  ucEhtCcfs0;
+	uint8_t  ucEhtCcfs1;
+	uint8_t  ucPadding1;
+	uint16_t u2EhtDisSubChanBitmap;
+	uint8_t  aucPadding2[4];
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo STA PM disable (Tag 0x1B) */
@@ -4519,6 +4534,7 @@ struct UNI_EVENT_SAP {
 enum ENUM_UNI_EVENT_SAP_TAG {
 	UNI_EVENT_SAP_TAG_AGING_TIMEOUT = 0,
 	UNI_EVENT_SAP_TAG_UPDATE_STA_FREE_QUOTA = 1,
+	UNI_EVENT_SAP_TAG_SAP_DCSB_IE = 2,
 	UNI_EVENT_SAP_TAG_NUM
 };
 
@@ -4535,6 +4551,15 @@ struct UNI_EVENT_UPDATE_STA_FREE_QUOTA {
 	uint16_t u2StaRecIdx;
 	uint8_t  ucUpdateMode;
 	uint8_t  ucFreeQuota;
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_SAP_DCSB_IE {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  ucBssIndex;
+	uint8_t  fgIsDscbEnable;
+	uint16_t u2DscbBitmap;
+	uint8_t  aucReserved[4];
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_EVENT_RSSI_MONITOR {

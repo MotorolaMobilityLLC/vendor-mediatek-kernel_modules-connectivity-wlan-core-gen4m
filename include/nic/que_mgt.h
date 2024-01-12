@@ -632,6 +632,14 @@ struct EVENT_STA_UPDATE_FREE_QUOTA {
 	uint8_t aucReserved[1];
 };
 
+struct EVENT_STA_SAP_DCSB_IE {
+	/* Event Body */
+	uint8_t  ucBssIndex;
+	uint8_t  fgIsDscbEnable;
+	uint16_t u2DscbBitmap;
+	uint8_t  aucReserved[4];
+};
+
 struct EVENT_CHECK_REORDER_BUBBLE {
 	/* Event Body */
 	uint8_t ucStaRecIdx;

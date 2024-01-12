@@ -446,6 +446,9 @@ static void ehtRlmFillOpIE(
 	struct MSDU_INFO *prMsduInfo)
 {
 	struct IE_EHT_OP *prEhtOp;
+	struct EHT_OP_INFO *prEhtOperInfo = NULL;
+	struct EHT_DSCP_INFO *prEhtDscpInfo = NULL;
+
 	uint32_t u4OverallLen = OFFSET_OF(struct IE_EHT_OP, aucVarInfo[0]);
 	uint8_t eht_bw = 0;
 	struct EHT_OP_INFO *prEhtOpInfo;
@@ -481,6 +484,31 @@ static void ehtRlmFillOpIE(
 
 	DBGLOG(RLM, INFO, "EHT channel width: %d\n",
 		prEhtOpInfo->ucControl);
+
+	if (IS_BSS_APGO(prBssInfo) &&
+		(prBssInfo->fgIsEhtOpPresent)) {
+
+		prEhtOperInfo =
+			(struct EHT_OP_INFO *)
+			(((uint8_t *) prEhtOp)+
+				u4OverallLen);
+
+		kalMemCopy(prEhtOperInfo, &prBssInfo->rEhtOpInfo,
+			sizeof(struct EHT_OP_INFO));
+
+		u4OverallLen += sizeof(struct EHT_OP_INFO);
+
+		if ((prBssInfo->fgIsEhtDscbPresent)) {
+			prEhtDscpInfo =
+				(struct EHT_DSCP_INFO *)
+				(((uint8_t *) prEhtOp)+
+				u4OverallLen);
+			kalMemCopy(prEhtDscpInfo, &prBssInfo->rEhtDscpInfo,
+				sizeof(struct EHT_DSCP_INFO));
+
+			u4OverallLen += sizeof(struct EHT_DSCP_INFO);
+		}
+	}
 
 	prEhtOp->ucLength = u4OverallLen - ELEM_HDR_LEN;
 
@@ -641,6 +669,19 @@ void ehtRlmRecOperation(
 			prBssInfo->ucVhtChannelFrequencyS1,
 			prBssInfo->ucVhtChannelFrequencyS2);
 	}
+
+	DBGLOG(RLM, LOUD, "RlmEHTOpInfo-0x:%x\n",
+		prBssInfo->ucEhtOpParams);
+
+	if (EHT_IS_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams))
+		prBssInfo->fgIsEhtOpPresent = TRUE;
+	else
+		prBssInfo->fgIsEhtOpPresent = FALSE;
+
+	if (EHT_IS_OP_PARAM_DIS_SUBCHANNEL_PRESENT(prEhtOp->ucEhtOpParams))
+		prBssInfo->fgIsEhtDscbPresent = TRUE;
+	else
+		prBssInfo->fgIsEhtDscbPresent = FALSE;
 
 }
 void ehtRlmInit(

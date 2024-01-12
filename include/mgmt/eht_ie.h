@@ -40,6 +40,10 @@ struct IE_EHT_CAP {
 	((_aucEhtOpParams & EHT_OP_PARAM_DIS_SUBCHANNEL_PRESENT) \
 	== EHT_OP_PARAM_DIS_SUBCHANNEL_PRESENT)
 
+struct EHT_DSCP_INFO {
+	u_int16_t u2DisSubChannelBitmap;
+} __KAL_ATTRIB_PACKED__;
+
 struct IE_EHT_OP {
 	u_int8_t  ucId;
 	u_int8_t  ucLength;
@@ -250,7 +254,6 @@ struct EHT_OP_INFO {
 (_u4HTC) |= (((_tx_nsts) << (HTC_EHT_OM_TX_NSTS_EXT_SHFT)) \
 	& (HTC_EHT_OM_TX_NSTS_EXT)); \
 }
-
 
 /* EHT PHY Capabilities Information field */
 

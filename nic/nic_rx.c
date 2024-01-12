@@ -226,6 +226,9 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 #if CFG_SUPPORT_CSI
 	{EVENT_ID_CSI_DATA, nicEventCSIData},
 #endif
+#if CFG_SUPPORT_802_11BE
+	{EVENT_ID_STATIC_PP_DSCB, nicEventUpdateStaticPPDscb},
+#endif
 	{EVENT_ID_REPORT_U_EVENT, nicEventReportUEvent},
 #if (CFG_COALESCING_INTERRUPT == 1)
 	{EVENT_ID_PF_CF_COALESCING_INT_DONE, nicEventCoalescingIntDone},

@@ -554,6 +554,9 @@ enum ENUM_EVENT_ID {
 #if (CFG_SUPPORT_TSF_SYNC == 1)
 	EVENT_ID_BEACON_TSF_SYNC = 0x94,		/* 0x94 (Set / Query) */
 #endif
+#if CFG_SUPPORT_802_11BE
+	EVENT_ID_STATIC_PP_DSCB = 0x95,
+#endif
 	EVENT_ID_RSSI_MONITOR = 0xA1,       /* Event ID for Rssi monitoring */
 #if (CFG_SUPPORT_PKT_OFLD == 1)
 	EVENT_ID_PKT_OFLD = 0xA2,
@@ -1855,6 +1858,13 @@ struct EVENT_UPDATE_NOA_PARAMS {
 	uint8_t              ucNoAIndex;
 	uint8_t              ucNoATimingCount; /* Number of NoA Timing */
 	struct EVENT_NOA_TIMING  arEventNoaTiming[8/*P2P_MAXIMUM_NOA_COUNT*/];
+};
+
+struct EVENT_UPDATE_PP_DCSB {
+	uint8_t      ucBssIndex;
+	uint8_t      fgIsDscbEnable;
+	uint16_t     u2DscbBitmap;
+	uint8_t      aucReserved[4];
 };
 
 struct EVENT_AP_OBSS_STATUS {

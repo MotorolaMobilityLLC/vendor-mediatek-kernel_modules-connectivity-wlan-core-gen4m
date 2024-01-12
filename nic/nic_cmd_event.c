@@ -5916,6 +5916,35 @@ out:
 }
 #endif
 
+#if CFG_SUPPORT_802_11BE
+void nicEventUpdateStaticPPDscb(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent)
+{
+	struct EVENT_UPDATE_PP_DCSB *prEvtStaticPPDscb;
+	struct BSS_INFO *prBssInfo;
+
+	if (!prAdapter)
+		return;
+
+	prEvtStaticPPDscb =
+			(struct EVENT_UPDATE_PP_DCSB *) (prEvent->aucBuffer);
+
+	prBssInfo = prAdapter->aprBssInfo[prEvtStaticPPDscb->ucBssIndex];
+
+	if ((!prBssInfo) || (!IS_BSS_ACTIVE(prBssInfo)))
+		return;
+
+	DBGLOG(NIC, INFO,
+		"[STATIC_PP_DCSB][EVENT] ucBssIndex=%d, fgIsDscbEnable=%d, u2DscbBitmap=%d\n",
+				prEvtStaticPPDscb->ucBssIndex,
+				prEvtStaticPPDscb->fgIsDscbEnable,
+				prEvtStaticPPDscb->u2DscbBitmap);
+
+	prBssInfo->fgIsEhtDscbPresent = prEvtStaticPPDscb->fgIsDscbEnable;
+	prBssInfo->u2EhtDisSubChanBitmap = prEvtStaticPPDscb->u2DscbBitmap;
+}
+#endif
+
 #if CFG_SUPPORT_LOWLATENCY_MODE
 /*----------------------------------------------------------------------------*/
 /*!
