@@ -2341,6 +2341,9 @@
 #ifndef CONFIG_SUPPORT_OS_IND_RETAINED
 #define CONFIG_SUPPORT_OS_IND_RETAINED 0
 #endif
+
+#define CFG_SUPPORT_SW_BIP_GMAC		1
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

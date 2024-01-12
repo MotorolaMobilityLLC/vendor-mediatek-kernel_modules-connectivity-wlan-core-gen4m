@@ -103,6 +103,7 @@
 #define CIPHER_SUITE_CCMP               4
 #define CIPHER_SUITE_WEP104             5
 #define CIPHER_SUITE_BIP                6
+#define CIPHER_SUITE_BIP_CMAC_128       CIPHER_SUITE_BIP
 #define CIPHER_SUITE_WEP128             7
 #define CIPHER_SUITE_WPI                8
 #define CIPHER_SUITE_CCMP_W_CCX         9 /* CCMP-128 for DFP or CCX MFP */
@@ -110,6 +111,10 @@
 #define CIPHER_SUITE_GCMP_128           11
 #define CIPHER_SUITE_GCMP_256           12
 #define CIPHER_SUITE_GCM_WPI_128        13
+#define CIPHER_SUITE_BIP_CMAC_256       14
+#define CIPHER_SUITE_BCN_PROT_CMAC_128  15
+#define CIPHER_SUITE_BCN_PROT_CMAC_256  16
+#define CIPHER_SUITE_BIP_GMAC_256       17
 
 /* Todo:: Move to register */
 #if defined(MT6630)
