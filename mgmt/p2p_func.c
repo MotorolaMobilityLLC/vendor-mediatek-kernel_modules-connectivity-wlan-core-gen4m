@@ -28,7 +28,7 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_OP), NULL,
 			rlmRspGenerateHtOpIE}	/* 61 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_TPE), NULL,
-			rlmGenerateHtTPEIE}	/* 34 */
+			rlmGeneratePwrConstraintIE}	/* 32 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL,
 			rsnGenerateRSNIE}	/* 48 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_OBSS_SCAN), NULL,
@@ -4530,570 +4530,468 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 
 	kalMemZero(&rRsnIe, sizeof(struct RSN_INFO));
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prP2pBssInfo != NULL));
+	ASSERT((prAdapter != NULL) && (prP2pBssInfo != NULL));
 
-		if (u4IELen == 0)
-			break;
+	if (u4IELen == 0) {
+		DBGLOG(P2P, ERROR, "Zero beacon length.");
+		return;
+	}
 
-		prP2pSpecificBssInfo =
-			prAdapter->rWifiVar.prP2pSpecificBssInfo
-				[prP2pBssInfo->u4PrivateData];
-		prP2pSpecificBssInfo->u2AttributeLen = 0;
-		prP2pSpecificBssInfo->u2WpaIeLen = 0;
-		prP2pSpecificBssInfo->u2RsnIeLen = 0;
-		prP2pSpecificBssInfo->u2RsnxIeLen = 0;
-		prP2pSpecificBssInfo->u2OweIeLen = 0;
-		fgIsApMode = p2pFuncIsAPMode(
-			prAdapter->rWifiVar.prP2PConnSettings
-			[prP2pBssInfo->u4PrivateData]);
+	prP2pSpecificBssInfo =
+		prAdapter->rWifiVar.prP2pSpecificBssInfo
+			[prP2pBssInfo->u4PrivateData];
+	prP2pSpecificBssInfo->u2AttributeLen = 0;
+	prP2pSpecificBssInfo->u2WpaIeLen = 0;
+	prP2pSpecificBssInfo->u2RsnIeLen = 0;
+	prP2pSpecificBssInfo->u2RsnxIeLen = 0;
+	prP2pSpecificBssInfo->u2OweIeLen = 0;
+	prP2pSpecificBssInfo->u2TpeIeLen = 0;
+	fgIsApMode = p2pFuncIsAPMode(
+		prAdapter->rWifiVar.prP2PConnSettings
+		[prP2pBssInfo->u4PrivateData]);
 
-		ASSERT_BREAK(pucIEInfo != NULL);
+	ASSERT_BREAK(pucIEInfo != NULL);
 
-		pucIE = pucIEInfo;
+	pucIE = pucIEInfo;
 
-		if (prP2pBssInfo->u2CapInfo & CAP_INFO_PRIVACY)
-			kalP2PSetCipher(prAdapter->prGlueInfo,
-				IW_AUTH_CIPHER_WEP40,
-				(uint8_t) prP2pBssInfo->u4PrivateData);
-		else
-			kalP2PSetCipher(prAdapter->prGlueInfo,
-				IW_AUTH_CIPHER_NONE,
-				(uint8_t) prP2pBssInfo->u4PrivateData);
+	if (prP2pBssInfo->u2CapInfo & CAP_INFO_PRIVACY)
+		kalP2PSetCipher(prAdapter->prGlueInfo,
+			IW_AUTH_CIPHER_WEP40,
+			(uint8_t) prP2pBssInfo->u4PrivateData);
+	else
+		kalP2PSetCipher(prAdapter->prGlueInfo,
+			IW_AUTH_CIPHER_NONE,
+			(uint8_t) prP2pBssInfo->u4PrivateData);
 
-		prP2pBssInfo->ucCountryIELen = 0;
+	prP2pBssInfo->ucCountryIELen = 0;
 #if (CFG_SUPPORT_802_11AX == 1)
-		if (fgIsApMode)
-			ucHe = prAdapter->rWifiVar.ucApHe;
-		else
-			ucHe = prAdapter->rWifiVar.ucP2pGoHe;
+	if (fgIsApMode)
+		ucHe = prAdapter->rWifiVar.ucApHe;
+	else
+		ucHe = prAdapter->rWifiVar.ucP2pGoHe;
 
-		if (!IS_FEATURE_FORCE_ENABLED(ucHe))
-			prP2pBssInfo->ucPhyTypeSet &= ~PHY_TYPE_SET_802_11AX;
+	if (!IS_FEATURE_FORCE_ENABLED(ucHe))
+		prP2pBssInfo->ucPhyTypeSet &= ~PHY_TYPE_SET_802_11AX;
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
-		if (fgIsApMode)
-			ucEht = prAdapter->rWifiVar.ucApEht;
-		else
-			ucEht = prAdapter->rWifiVar.ucP2pGoEht;
+	if (fgIsApMode)
+		ucEht = prAdapter->rWifiVar.ucApEht;
+	else
+		ucEht = prAdapter->rWifiVar.ucP2pGoEht;
 
-		if (!IS_FEATURE_FORCE_ENABLED(ucEht))
-			prP2pBssInfo->ucPhyTypeSet &= ~PHY_TYPE_SET_802_11BE;
+	if (!IS_FEATURE_FORCE_ENABLED(ucEht))
+		prP2pBssInfo->ucPhyTypeSet &= ~PHY_TYPE_SET_802_11BE;
 #endif
 
-		IE_FOR_EACH(pucIE, u4IELen, u4Offset) {
-			switch (IE_ID(pucIE)) {
-			case ELEM_ID_SSID:	/* 0 *//* V *//* Done */
-				{
+	IE_FOR_EACH(pucIE, u4IELen, u4Offset) {
+		switch (IE_ID(pucIE)) {
+		case ELEM_ID_SSID:	/* 0 *//* V *//* Done */
+			{
 
-				/* DBGLOG(P2P, TRACE, ("SSID update\n")); */
-				/* SSID is saved when start AP/GO */
-				/* SSID IE set in beacon from supplicant
-				 * will not always be
-				 * the true since hidden SSID case
-				 */
+			/* DBGLOG(P2P, TRACE, ("SSID update\n")); */
+			/* SSID is saved when start AP/GO */
+			/* SSID IE set in beacon from supplicant
+			 * will not always be
+			 * the true since hidden SSID case
+			 */
 #if CFG_SUPPORT_HIDDEN_SW_AP
-					COPY_SSID(
-					prP2pBssInfo->aucSSID,
-					prP2pBssInfo->ucSSIDLen,
-					SSID_IE(pucIE)->aucSSID,
-					SSID_IE(pucIE)->ucLength);
+				COPY_SSID(
+				prP2pBssInfo->aucSSID,
+				prP2pBssInfo->ucSSIDLen,
+				SSID_IE(pucIE)->aucSSID,
+				SSID_IE(pucIE)->ucLength);
 
-					COPY_SSID(
-					prP2pSpecificBssInfo->aucGroupSsid,
-					prP2pSpecificBssInfo->u2GroupSsidLen,
-					SSID_IE(pucIE)->aucSSID,
-					SSID_IE(pucIE)->ucLength);
+				COPY_SSID(
+				prP2pSpecificBssInfo->aucGroupSsid,
+				prP2pSpecificBssInfo->u2GroupSsidLen,
+				SSID_IE(pucIE)->aucSSID,
+				SSID_IE(pucIE)->ucLength);
 #endif
 
-				}
-				break;
-			case ELEM_ID_SUP_RATES:	/* 1 *//* V *//* Done */
+			}
+			break;
+		case ELEM_ID_SUP_RATES:	/* 1 *//* V *//* Done */
 #ifndef CFG_SUPPORT_P2P_GO_KEEP_RATE_SETTING
-				{
-					DBGLOG(P2P, TRACE, "Support Rate IE\n");
-					if ((SUP_RATES_IE(pucIE)->ucLength)
-						> ELEM_MAX_LEN_SUP_RATES)
-						SUP_RATES_IE(pucIE)->ucLength =
-							ELEM_MAX_LEN_SUP_RATES;
-					kalMemCopy(
-					prP2pBssInfo->aucAllSupportedRates,
-					SUP_RATES_IE(pucIE)->aucSupportedRates,
-					SUP_RATES_IE(pucIE)->ucLength);
-					prP2pBssInfo->ucAllSupportedRatesLen =
-					SUP_RATES_IE(pucIE)->ucLength;
-					DBGLOG_MEM8(P2P, TRACE,
-					SUP_RATES_IE(pucIE)->aucSupportedRates,
-					SUP_RATES_IE(pucIE)->ucLength);
-				}
+			{
+				DBGLOG(P2P, TRACE, "Support Rate IE\n");
+				if ((SUP_RATES_IE(pucIE)->ucLength)
+					> ELEM_MAX_LEN_SUP_RATES)
+					SUP_RATES_IE(pucIE)->ucLength =
+						ELEM_MAX_LEN_SUP_RATES;
+				kalMemCopy(
+				prP2pBssInfo->aucAllSupportedRates,
+				SUP_RATES_IE(pucIE)->aucSupportedRates,
+				SUP_RATES_IE(pucIE)->ucLength);
+				prP2pBssInfo->ucAllSupportedRatesLen =
+				SUP_RATES_IE(pucIE)->ucLength;
+				DBGLOG_MEM8(P2P, TRACE,
+				SUP_RATES_IE(pucIE)->aucSupportedRates,
+				SUP_RATES_IE(pucIE)->ucLength);
+			}
 #endif
-				break;
-			case ELEM_ID_DS_PARAM_SET:	/* 3 *//* V *//* Done */
-				{
-					DBGLOG(P2P, TRACE,
-						"DS PARAM IE: %d.\n",
-						DS_PARAM_IE(pucIE)->ucCurrChnl);
-
-					/* prP2pBssInfo->ucPrimaryChannel =
-					 * DS_PARAM_IE(pucIE)->ucCurrChnl;
-					 */
-
-					/* prP2pBssInfo->eBand = BAND_2G4; */
-				}
-				break;
-			case ELEM_ID_TIM:	/* 5 *//* V */
-				TIM_IE(pucIE)->ucDTIMPeriod =
-					prP2pBssInfo->ucDTIMPeriod;
+			break;
+		case ELEM_ID_DS_PARAM_SET:	/* 3 *//* V *//* Done */
+			{
 				DBGLOG(P2P, TRACE,
-					"TIM IE, Len:%u, DTIM:%u\n",
-					IE_LEN(pucIE),
-					TIM_IE(pucIE)->ucDTIMPeriod);
-				break;
+					"DS PARAM IE: %d.\n",
+					DS_PARAM_IE(pucIE)->ucCurrChnl);
+
+				/* prP2pBssInfo->ucPrimaryChannel =
+				 * DS_PARAM_IE(pucIE)->ucCurrChnl;
+				 */
+
+				/* prP2pBssInfo->eBand = BAND_2G4; */
+			}
+			break;
+		case ELEM_ID_TIM:	/* 5 *//* V */
+			TIM_IE(pucIE)->ucDTIMPeriod =
+				prP2pBssInfo->ucDTIMPeriod;
+			DBGLOG(P2P, TRACE,
+				"TIM IE, Len:%u, DTIM:%u\n",
+				IE_LEN(pucIE),
+				TIM_IE(pucIE)->ucDTIMPeriod);
+			break;
 #if CFG_SUPPORT_802_11D
-			case ELEM_ID_COUNTRY_INFO: /* 7 */
-				if (COUNTRY_IE(pucIE)->ucLength
-					>= ELEM_MIN_LEN_COUNTRY_INFO &&
-					COUNTRY_IE(pucIE)->ucLength
-					<= ELEM_MAX_LEN_COUNTRY_INFO) {
-					prP2pBssInfo->ucCountryIELen =
-						COUNTRY_IE(pucIE)->ucLength;
-					kalMemCopy(
-					prP2pBssInfo->aucCountryStr,
-					COUNTRY_IE(pucIE)->aucCountryStr, 3);
-					kalMemCopy(
-					prP2pBssInfo->aucSubbandTriplet,
-					COUNTRY_IE(pucIE)->arCountryStr,
-					COUNTRY_IE(pucIE)->ucLength - 3);
-				}
-				break;
+		case ELEM_ID_COUNTRY_INFO: /* 7 */
+			if (COUNTRY_IE(pucIE)->ucLength
+				>= ELEM_MIN_LEN_COUNTRY_INFO &&
+				COUNTRY_IE(pucIE)->ucLength
+				<= ELEM_MAX_LEN_COUNTRY_INFO) {
+				prP2pBssInfo->ucCountryIELen =
+					COUNTRY_IE(pucIE)->ucLength;
+				kalMemCopy(
+				prP2pBssInfo->aucCountryStr,
+				COUNTRY_IE(pucIE)->aucCountryStr, 3);
+				kalMemCopy(
+				prP2pBssInfo->aucSubbandTriplet,
+				COUNTRY_IE(pucIE)->arCountryStr,
+				COUNTRY_IE(pucIE)->ucLength - 3);
+			}
+			break;
 #endif
-			case ELEM_ID_ERP_INFO:	/* 42 *//* V */
-				{
+		case ELEM_ID_ERP_INFO:	/* 42 *//* V */
+			{
 #if 1
-					/* This IE would dynamic change due to
-					 * FW detection change is required.
-					 */
-					DBGLOG(P2P, TRACE,
-						"ERP IE will be over write by driver\n");
-					DBGLOG(P2P, TRACE,
-						"    ucERP: %x.\n",
-						ERP_INFO_IE(pucIE)->ucERP);
+				/* This IE would dynamic change due to
+				 * FW detection change is required.
+				 */
+				DBGLOG(P2P, TRACE,
+					"ERP IE will be over write by driver\n");
+				DBGLOG(P2P, TRACE,
+					"    ucERP: %x.\n",
+					ERP_INFO_IE(pucIE)->ucERP);
 
-					prP2pBssInfo->ucPhyTypeSet |=
-							PHY_TYPE_SET_802_11G;
+				prP2pBssInfo->ucPhyTypeSet |=
+						PHY_TYPE_SET_802_11G;
 #else
-					/* This IE would dynamic change due to
-					 * FW detection change is required.
-					 */
-					DBGLOG(P2P, TRACE, "ERP IE.\n");
+				/* This IE would dynamic change due to
+				 * FW detection change is required.
+				 */
+				DBGLOG(P2P, TRACE, "ERP IE.\n");
 
-					prP2pBssInfo->ucPhyTypeSet |=
-						PHY_TYPE_SET_802_11GN;
+				prP2pBssInfo->ucPhyTypeSet |=
+					PHY_TYPE_SET_802_11GN;
 
-					ASSERT(prP2pBssInfo->eBand == BAND_2G4);
+				ASSERT(prP2pBssInfo->eBand == BAND_2G4);
 
-					prP2pBssInfo->fgObssErpProtectMode =
-					    ((ERP_INFO_IE(pucIE)->ucERP
-					    & ERP_INFO_USE_PROTECTION)
-					    ? TRUE : FALSE);
+				prP2pBssInfo->fgObssErpProtectMode =
+				    ((ERP_INFO_IE(pucIE)->ucERP
+				    & ERP_INFO_USE_PROTECTION)
+				    ? TRUE : FALSE);
 
-					prP2pBssInfo->fgErpProtectMode =
-					    ((ERP_INFO_IE(pucIE)->ucERP
-					    & (ERP_INFO_USE_PROTECTION |
-						ERP_INFO_NON_ERP_PRESENT))
-						? TRUE : FALSE);
+				prP2pBssInfo->fgErpProtectMode =
+				    ((ERP_INFO_IE(pucIE)->ucERP
+				    & (ERP_INFO_USE_PROTECTION |
+					ERP_INFO_NON_ERP_PRESENT))
+					? TRUE : FALSE);
 #endif
 
-				}
-				break;
-			case ELEM_ID_HT_CAP:	/* 45 *//* V */
-				{
-#if 1
-					DBGLOG(P2P, TRACE,
-						"HT CAP IE would be overwritten by driver\n");
+			}
+			break;
+		case ELEM_ID_HT_CAP:	/* 45 *//* V */
+			{
+				DBGLOG(P2P, TRACE,
+					"HT CAP IE would be overwritten by driver\n");
 
-					DBGLOG(P2P, TRACE,
-						"HT Cap Info:%x, AMPDU Param:%x\n",
-						HT_CAP_IE(pucIE)->u2HtCapInfo,
-						HT_CAP_IE(pucIE)->ucAmpduParam);
+				DBGLOG(P2P, TRACE,
+					"HT Cap Info:%x, AMPDU Param:%x\n",
+					HT_CAP_IE(pucIE)->u2HtCapInfo,
+					HT_CAP_IE(pucIE)->ucAmpduParam);
 
-					DBGLOG(P2P, TRACE,
-						"HT Extended Cap:%u, TX Beamforming Cap:%u, Ant Selection Cap:%u\n",
-						HT_CAP_IE(pucIE)
-							->u2HtExtendedCap,
-						HT_CAP_IE(pucIE)
-							->u4TxBeamformingCap,
-						HT_CAP_IE(pucIE)->ucAselCap);
+				DBGLOG(P2P, TRACE,
+					"HT Extended Cap:%u, TX Beamforming Cap:%u, Ant Selection Cap:%u\n",
+					HT_CAP_IE(pucIE)
+						->u2HtExtendedCap,
+					HT_CAP_IE(pucIE)
+						->u4TxBeamformingCap,
+					HT_CAP_IE(pucIE)->ucAselCap);
 
-					prP2pBssInfo->ucPhyTypeSet |=
-							PHY_TYPE_SET_802_11N;
-#else
-					prP2pBssInfo->ucPhyTypeSet |=
-						PHY_TYPE_SET_802_11N;
+				prP2pBssInfo->ucPhyTypeSet |=
+					PHY_TYPE_SET_802_11N;
+			}
+			break;
+		case ELEM_ID_RSN:	/* 48 *//* V */
 
-					/* u2HtCapInfo */
-					if ((HT_CAP_IE(pucIE)->u2HtCapInfo &
-						(HT_CAP_INFO_SUP_CHNL_WIDTH |
-						HT_CAP_INFO_SHORT_GI_40M |
-						HT_CAP_INFO_DSSS_CCK_IN_40M))
-						== 0) {
-						prP2pBssInfo
-							->fgAssoc40mBwAllowed =
-								FALSE;
-					} else {
-						prP2pBssInfo
-							->fgAssoc40mBwAllowed =
-								TRUE;
-					}
-
-					if ((HT_CAP_IE(pucIE)->u2HtCapInfo &
-						(HT_CAP_INFO_SHORT_GI_20M |
-						HT_CAP_INFO_SHORT_GI_40M))
-						== 0) {
-						prAdapter->rWifiVar
-							.rConnSettings
-							.fgRxShortGIDisabled =
-								TRUE;
-					} else {
-						prAdapter->rWifiVar
-							.rConnSettings
-							.fgRxShortGIDisabled =
-								FALSE;
-					}
-
-					/* ucAmpduParam */
-					DBGLOG(P2P, TRACE,
-						"AMPDU setting from supplicant:0x%x, & default value:0x%x\n",
-						(uint8_t)
-						HT_CAP_IE(pucIE)->ucAmpduParam,
-						(uint8_t)
-						AMPDU_PARAM_DEFAULT_VAL);
-
-					/* rSupMcsSet */
-					/* Can do nothing.
-					 * the field is default value
-					 * from other configuration.
-					 */
-					/* HT_CAP_IE(pucIE)->rSupMcsSet; */
-
-					/* u2HtExtendedCap */
-					ASSERT(
-					HT_CAP_IE(pucIE)->u2HtExtendedCap ==
-				    (HT_EXT_CAP_DEFAULT_VAL &
-					~(HT_EXT_CAP_PCO |
-					HT_EXT_CAP_PCO_TRANS_TIME_NONE)));
-
-					/* u4TxBeamformingCap */
-					ASSERT(
-					HT_CAP_IE(pucIE)->u4TxBeamformingCap
-					== TX_BEAMFORMING_CAP_DEFAULT_VAL);
-
-					/* ucAselCap */
-					ASSERT(
-					HT_CAP_IE(pucIE)->ucAselCap
-					== ASEL_CAP_DEFAULT_VAL);
-#endif
-				}
-				break;
-			case ELEM_ID_RSN:	/* 48 *//* V */
-
-				DBGLOG(P2P, TRACE, "RSN IE\n");
-				kalP2PSetCipher(prAdapter->prGlueInfo,
-					IW_AUTH_CIPHER_CCMP,
-					(uint8_t) prP2pBssInfo->u4PrivateData);
-				if (IE_LEN(pucIE) > ELEM_MAX_LEN_RSN) {
-					DBGLOG(P2P, ERROR,
-						"RSN IE length is unexpected !!\n");
-					return;
-				}
-				kalMemCopy(prP2pSpecificBssInfo->aucRsnIeBuffer,
-					pucIE, IE_SIZE(pucIE));
-				prP2pSpecificBssInfo->u2RsnIeLen
-					= IE_SIZE(pucIE);
-				if (rsnParseRsnIE(prAdapter,
-					RSN_IE(pucIE), &rRsnIe)) {
-					prP2pBssInfo->u4RsnSelectedGroupCipher =
+			DBGLOG(P2P, TRACE, "RSN IE\n");
+			kalP2PSetCipher(prAdapter->prGlueInfo,
+				IW_AUTH_CIPHER_CCMP,
+				(uint8_t) prP2pBssInfo->u4PrivateData);
+			if (IE_LEN(pucIE) > ELEM_MAX_LEN_RSN) {
+				DBGLOG(P2P, ERROR,
+					"RSN IE length is unexpected !!\n");
+				return;
+			}
+			kalMemCopy(prP2pSpecificBssInfo->aucRsnIeBuffer,
+				pucIE, IE_SIZE(pucIE));
+			prP2pSpecificBssInfo->u2RsnIeLen
+				= IE_SIZE(pucIE);
+			if (rsnParseRsnIE(prAdapter,
+				RSN_IE(pucIE), &rRsnIe)) {
+				prP2pBssInfo->u4RsnSelectedGroupCipher =
+					RSN_CIPHER_SUITE_CCMP;
+				prP2pBssInfo
+					->u4RsnSelectedPairwiseCipher =
 						RSN_CIPHER_SUITE_CCMP;
-					prP2pBssInfo
-						->u4RsnSelectedPairwiseCipher =
-							RSN_CIPHER_SUITE_CCMP;
-					prP2pBssInfo->u4RsnSelectedAKMSuite =
-						RSN_AKM_SUITE_PSK;
-					prP2pBssInfo->u2RsnSelectedCapInfo =
-						rRsnIe.u2RsnCap;
-					DBGLOG(RSN, TRACE,
-						"RsnIe CAP:0x%x\n",
-						rRsnIe.u2RsnCap);
-				}
+				prP2pBssInfo->u4RsnSelectedAKMSuite =
+					RSN_AKM_SUITE_PSK;
+				prP2pBssInfo->u2RsnSelectedCapInfo =
+					rRsnIe.u2RsnCap;
+				DBGLOG(RSN, TRACE,
+					"RsnIe CAP:0x%x\n",
+					rRsnIe.u2RsnCap);
+			}
 
 #if CFG_SUPPORT_802_11W
-				/* AP PMF */
-				prP2pBssInfo->rApPmfCfg.fgMfpc =
-					(rRsnIe.u2RsnCap
-						& ELEM_WPA_CAP_MFPC) ? 1 : 0;
-				prP2pBssInfo->rApPmfCfg.fgMfpr =
-					(rRsnIe.u2RsnCap
-						& ELEM_WPA_CAP_MFPR) ? 1 : 0;
-				prP2pSpecificBssInfo->u4KeyMgtSuiteCount
-					= (rRsnIe.u4AuthKeyMgtSuiteCount
-					< P2P_MAX_AKM_SUITES)
-					? rRsnIe.u4AuthKeyMgtSuiteCount
-					: P2P_MAX_AKM_SUITES;
-				for (i = 0;
-					i < rRsnIe.u4AuthKeyMgtSuiteCount;
-					i++) {
-					if ((rRsnIe.au4AuthKeyMgtSuite[i]
-					== RSN_AKM_SUITE_PSK_SHA256) ||
-					(rRsnIe.au4AuthKeyMgtSuite[i]
-					== RSN_AKM_SUITE_802_1X_SHA256)) {
-						DBGLOG(RSN, INFO,
-							"SHA256 support\n");
-						/* over-write
-						 * u4RsnSelectedAKMSuite
-						 * by SHA256 AKM
-						 */
-						prP2pBssInfo
-						->u4RsnSelectedAKMSuite
-						= rRsnIe.au4AuthKeyMgtSuite[i];
-						prP2pBssInfo
-						->rApPmfCfg.fgSha256
-						= TRUE;
-						break;
-					} else if (rsnKeyMgmtSae(
-						rRsnIe.au4AuthKeyMgtSuite[i]))
-						prP2pBssInfo
-						->u4RsnSelectedAKMSuite
-						= rRsnIe.au4AuthKeyMgtSuite[i];
-					else if (rRsnIe.au4AuthKeyMgtSuite[i]
-					== RSN_AKM_SUITE_OWE)
-						prP2pBssInfo
-						->u4RsnSelectedAKMSuite
-						= rRsnIe.au4AuthKeyMgtSuite[i];
-
-					if (i < P2P_MAX_AKM_SUITES) {
-						prP2pSpecificBssInfo
-						->au4KeyMgtSuite[i]
-						= rRsnIe.au4AuthKeyMgtSuite[i];
-					}
-				}
-				DBGLOG(RSN, ERROR,
-					"bcn mfpc:%d, mfpr:%d, sha256:%d, 0x%04x\n",
-					prP2pBssInfo->rApPmfCfg.fgMfpc,
-					prP2pBssInfo->rApPmfCfg.fgMfpr,
-					prP2pBssInfo->rApPmfCfg.fgSha256,
-					prP2pBssInfo->u4RsnSelectedAKMSuite);
-#endif
-
-				break;
-			case ELEM_ID_EXTENDED_SUP_RATES:	/* 50 *//* V */
-			{
-#ifndef CFG_SUPPORT_P2P_GO_KEEP_RATE_SETTING
-				uint8_t ucCurrLen =
-					prP2pBssInfo->ucAllSupportedRatesLen;
-				uint8_t ucIeLen =
-					EXT_SUP_RATES_IE(pucIE)->ucLength;
-				/* ELEM_ID_SUP_RATES should be placed
-				 * before ELEM_ID_EXTENDED_SUP_RATES.
-				 */
-				DBGLOG(P2P, TRACE, "Ex Support Rate IE\n");
-				if (ucIeLen < (RATE_NUM_SW - ucCurrLen)) {
-					kalMemCopy(&
-						(prP2pBssInfo
-						->aucAllSupportedRates
-						[ucCurrLen]),
-						EXT_SUP_RATES_IE(pucIE)
-						->aucExtSupportedRates,
-						ucIeLen);
-
-					DBGLOG_MEM8(P2P, TRACE,
-						EXT_SUP_RATES_IE(pucIE)
-						->aucExtSupportedRates,
-						EXT_SUP_RATES_IE(pucIE)
-						->ucLength);
-
-					prP2pBssInfo->ucAllSupportedRatesLen +=
-						ucIeLen;
-				}
-#endif
-				break;
-			}
-			case ELEM_ID_HT_OP:
-				/* 61 *//* V *//* TODO: */
-				{
-#if 1
-					DBGLOG(P2P, TRACE,
-						"HT OP IE would be overwritten by driver\n");
-
-					DBGLOG(P2P, TRACE,
-						"    Primary Channel: %x, Info1: %x, Info2: %x, Info3: %x\n",
-						HT_OP_IE(pucIE)
-							->ucPrimaryChannel,
-						HT_OP_IE(pucIE)->ucInfo1,
-						HT_OP_IE(pucIE)->u2Info2,
-						HT_OP_IE(pucIE)->u2Info3);
-
-					prP2pBssInfo->ucPhyTypeSet |=
-							PHY_TYPE_SET_802_11N;
-#else
-					uint16_t u2Info2 = 0;
-
-					prP2pBssInfo->ucPhyTypeSet |=
-						PHY_TYPE_SET_802_11N;
-
-					DBGLOG(P2P, TRACE, "HT OP IE\n");
-
-					/* ucPrimaryChannel. */
-					ASSERT(
-					HT_OP_IE(pucIE)->ucPrimaryChannel
-					== prP2pBssInfo->ucPrimaryChannel);
-
-					/* ucInfo1 */
-					prP2pBssInfo->ucHtOpInfo1 =
-						HT_OP_IE(pucIE)->ucInfo1;
-
-					/* u2Info2 */
-					u2Info2 = HT_OP_IE(pucIE)->u2Info2;
-
-					if (u2Info2
-					& HT_OP_INFO2_NON_GF_HT_STA_PRESENT) {
-					ASSERT(
-					prP2pBssInfo->eGfOperationMode
-					!= GF_MODE_NORMAL);
-					u2Info2 &=
-					~HT_OP_INFO2_NON_GF_HT_STA_PRESENT;
-					}
-
-					if (u2Info2
-					& HT_OP_INFO2_OBSS_NON_HT_STA_PRESENT) {
-					prP2pBssInfo->eObssHtProtectMode =
-					HT_PROTECT_MODE_NON_MEMBER;
-					u2Info2 &=
-					~HT_OP_INFO2_OBSS_NON_HT_STA_PRESENT;
-					}
-
-					switch (u2Info2
-						& HT_OP_INFO2_HT_PROTECTION) {
-					case HT_PROTECT_MODE_NON_HT:
-						prP2pBssInfo->eHtProtectMode =
-							HT_PROTECT_MODE_NON_HT;
-						break;
-					case HT_PROTECT_MODE_NON_MEMBER:
-						prP2pBssInfo->eHtProtectMode =
-							HT_PROTECT_MODE_NONE;
-						prP2pBssInfo
-						->eObssHtProtectMode =
-						HT_PROTECT_MODE_NON_MEMBER;
-						break;
-					default:
-						prP2pBssInfo->eHtProtectMode =
-						HT_OP_IE(pucIE)->u2Info2;
-						break;
-					}
-
-					/* u2Info3 */
-					prP2pBssInfo->u2HtOpInfo3 =
-						HT_OP_IE(pucIE)->u2Info3;
-
-					/* aucBasicMcsSet */
-					DBGLOG_MEM8(P2P, TRACE,
-					HT_OP_IE(pucIE)->aucBasicMcsSet, 16);
-#endif
-				}
-				break;
-			case ELEM_ID_OBSS_SCAN_PARAMS:	/* 74 *//* V */
-				{
-					DBGLOG(P2P, TRACE,
-						"ELEM_ID_OBSS_SCAN_PARAMS IE would be replaced by driver\n");
-				}
-				break;
-			case ELEM_ID_EXTENDED_CAP:	/* 127 *//* V */
-				{
-					DBGLOG(P2P, TRACE,
-						"ELEM_ID_EXTENDED_CAP IE would be replaced by driver\n");
-				}
-				break;
-			case ELEM_ID_VENDOR:	/* 221 *//* V */
-				DBGLOG(P2P, TRACE, "Vender Specific IE\n");
-				{
-					p2pFuncParseBeaconVenderId(prAdapter,
-						pucIE, prP2pSpecificBssInfo,
-						(uint8_t)
-						prP2pBssInfo->u4PrivateData);
-					/* TODO: Store other Vender IE
-					 * except for WMM Param.
+			/* AP PMF */
+			prP2pBssInfo->rApPmfCfg.fgMfpc =
+				(rRsnIe.u2RsnCap
+					& ELEM_WPA_CAP_MFPC) ? 1 : 0;
+			prP2pBssInfo->rApPmfCfg.fgMfpr =
+				(rRsnIe.u2RsnCap
+					& ELEM_WPA_CAP_MFPR) ? 1 : 0;
+			prP2pSpecificBssInfo->u4KeyMgtSuiteCount
+				= (rRsnIe.u4AuthKeyMgtSuiteCount
+				< P2P_MAX_AKM_SUITES)
+				? rRsnIe.u4AuthKeyMgtSuiteCount
+				: P2P_MAX_AKM_SUITES;
+			for (i = 0;
+				i < rRsnIe.u4AuthKeyMgtSuiteCount;
+				i++) {
+				if ((rRsnIe.au4AuthKeyMgtSuite[i]
+				== RSN_AKM_SUITE_PSK_SHA256) ||
+				(rRsnIe.au4AuthKeyMgtSuite[i]
+				== RSN_AKM_SUITE_802_1X_SHA256)) {
+					DBGLOG(RSN, INFO,
+						"SHA256 support\n");
+					/* over-write
+					 * u4RsnSelectedAKMSuite
+					 * by SHA256 AKM
 					 */
+					prP2pBssInfo
+					->u4RsnSelectedAKMSuite
+					= rRsnIe.au4AuthKeyMgtSuite[i];
+					prP2pBssInfo
+					->rApPmfCfg.fgSha256
+					= TRUE;
+					break;
+				} else if (rsnKeyMgmtSae(
+					rRsnIe.au4AuthKeyMgtSuite[i]))
+					prP2pBssInfo
+					->u4RsnSelectedAKMSuite
+					= rRsnIe.au4AuthKeyMgtSuite[i];
+				else if (rRsnIe.au4AuthKeyMgtSuite[i]
+				== RSN_AKM_SUITE_OWE)
+					prP2pBssInfo
+					->u4RsnSelectedAKMSuite
+					= rRsnIe.au4AuthKeyMgtSuite[i];
+
+				if (i < P2P_MAX_AKM_SUITES) {
+					prP2pSpecificBssInfo
+					->au4KeyMgtSuite[i]
+					= rRsnIe.au4AuthKeyMgtSuite[i];
 				}
-				break;
-			case ELEM_ID_VHT_CAP:
-				DBGLOG(P2P, TRACE, "VHT CAP IE\n");
+			}
+			DBGLOG(RSN, ERROR,
+				"bcn mfpc:%d, mfpr:%d, sha256:%d, 0x%04x\n",
+				prP2pBssInfo->rApPmfCfg.fgMfpc,
+				prP2pBssInfo->rApPmfCfg.fgMfpr,
+				prP2pBssInfo->rApPmfCfg.fgSha256,
+				prP2pBssInfo->u4RsnSelectedAKMSuite);
+#endif
+
+			break;
+		case ELEM_ID_EXTENDED_SUP_RATES:	/* 50 *//* V */
+		{
+#ifndef CFG_SUPPORT_P2P_GO_KEEP_RATE_SETTING
+			uint8_t ucCurrLen =
+				prP2pBssInfo->ucAllSupportedRatesLen;
+			uint8_t ucIeLen =
+				EXT_SUP_RATES_IE(pucIE)->ucLength;
+			/* ELEM_ID_SUP_RATES should be placed
+			 * before ELEM_ID_EXTENDED_SUP_RATES.
+			 */
+			DBGLOG(P2P, TRACE, "Ex Support Rate IE\n");
+			if (ucIeLen < (RATE_NUM_SW - ucCurrLen)) {
+				kalMemCopy(&
+					(prP2pBssInfo
+					->aucAllSupportedRates
+					[ucCurrLen]),
+					EXT_SUP_RATES_IE(pucIE)
+					->aucExtSupportedRates,
+					ucIeLen);
+
+				DBGLOG_MEM8(P2P, TRACE,
+					EXT_SUP_RATES_IE(pucIE)
+					->aucExtSupportedRates,
+					EXT_SUP_RATES_IE(pucIE)
+					->ucLength);
+
+				prP2pBssInfo->ucAllSupportedRatesLen +=
+					ucIeLen;
+			}
+#endif
+			break;
+		}
+		case ELEM_ID_HT_OP:
+			/* 61 *//* V *//* TODO: */
+			{
+				DBGLOG(P2P, TRACE,
+					"HT OP IE would be overwritten by driver\n");
+
+				DBGLOG(P2P, TRACE,
+					"    Primary Channel: %x, Info1: %x, Info2: %x, Info3: %x\n",
+					HT_OP_IE(pucIE)
+						->ucPrimaryChannel,
+					HT_OP_IE(pucIE)->ucInfo1,
+					HT_OP_IE(pucIE)->u2Info2,
+					HT_OP_IE(pucIE)->u2Info3);
+
 				prP2pBssInfo->ucPhyTypeSet |=
-						PHY_TYPE_SET_802_11AC;
-				break;
-			case ELEM_ID_VHT_OP:
-				DBGLOG(P2P, TRACE, "VHT OP IE\n");
+						PHY_TYPE_SET_802_11N;
+			}
+			break;
+		case ELEM_ID_OBSS_SCAN_PARAMS:	/* 74 *//* V */
+			{
+				DBGLOG(P2P, TRACE,
+					"ELEM_ID_OBSS_SCAN_PARAMS IE would be replaced by driver\n");
+			}
+			break;
+		case ELEM_ID_EXTENDED_CAP:	/* 127 *//* V */
+			{
+				DBGLOG(P2P, TRACE,
+					"ELEM_ID_EXTENDED_CAP IE would be replaced by driver\n");
+			}
+			break;
+		case ELEM_ID_VENDOR:	/* 221 *//* V */
+			DBGLOG(P2P, TRACE, "Vender Specific IE\n");
+			{
+				p2pFuncParseBeaconVenderId(prAdapter,
+					pucIE, prP2pSpecificBssInfo,
+					(uint8_t)
+					prP2pBssInfo->u4PrivateData);
+				/* TODO: Store other Vender IE
+				 * except for WMM Param.
+				 */
+			}
+			break;
+		case ELEM_ID_VHT_CAP:
+			DBGLOG(P2P, TRACE, "VHT CAP IE\n");
+			prP2pBssInfo->ucPhyTypeSet |=
+					PHY_TYPE_SET_802_11AC;
+			break;
+		case ELEM_ID_VHT_OP:
+			DBGLOG(P2P, TRACE, "VHT OP IE\n");
+			prP2pBssInfo->ucPhyTypeSet |=
+					PHY_TYPE_SET_802_11AC;
+			break;
+		case ELEM_ID_RSNX:
+			DBGLOG(P2P, TRACE, "RSNXIE\n");
+			if (IE_LEN(pucIE) > ELEM_MAX_LEN_RSN) {
+				DBGLOG(P2P, ERROR,
+					"RSN IE length is unexpected !!\n");
+				return;
+			}
+			kalMemCopy(
+				prP2pSpecificBssInfo->aucRsnxIeBuffer,
+				pucIE, IE_SIZE(pucIE));
+			prP2pSpecificBssInfo->u2RsnxIeLen
+				= IE_SIZE(pucIE);
+			break;
+		case ELEM_ID_RESERVED:
+			DBGLOG(P2P, TRACE, "IE_ID_EXT=%d\n",
+				IE_ID_EXT(pucIE));
+#if (CFG_SUPPORT_802_11AX == 1)
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP ||
+			    IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP) {
+				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP) {
+					struct _IE_HE_OP_T *prHeOp;
+
+					prHeOp = (struct _IE_HE_OP_T *) pucIE;
+					if (!prAdapter->rWifiVar.fgSapAddTPEIE)
+						prP2pBssInfo->ucBssColorInfo =
+							prHeOp->ucBssColorInfo;
+				}
+
 				prP2pBssInfo->ucPhyTypeSet |=
-						PHY_TYPE_SET_802_11AC;
-				break;
-			case ELEM_ID_RSNX:
-				DBGLOG(P2P, TRACE, "RSNXIE\n");
-				if (IE_LEN(pucIE) > ELEM_MAX_LEN_RSN) {
+					PHY_TYPE_SET_802_11AX;
+			}
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS ||
+				IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_OP)
+				prP2pBssInfo->ucPhyTypeSet |=
+					PHY_TYPE_SET_802_11BE;
+#endif
+			break;
+
+			case ELEM_ID_TX_PWR_ENVELOPE:
+				if (prP2pSpecificBssInfo->u2TpeIeLen +
+				    IE_SIZE(pucIE) > MAX_TPE_IE_LENGTH) {
 					DBGLOG(P2P, ERROR,
-						"RSN IE length is unexpected !!\n");
+					"TPE IE length %d %d exceeds %d\n",
+					prP2pSpecificBssInfo->u2TpeIeLen,
+					IE_SIZE(pucIE),
+					MAX_TPE_IE_LENGTH);
+
+					prP2pSpecificBssInfo->u2TpeIeLen = 0;
 					return;
 				}
 				kalMemCopy(
-					prP2pSpecificBssInfo->aucRsnxIeBuffer,
+					prP2pSpecificBssInfo->aucTpeIeBuffer +
+					prP2pSpecificBssInfo->u2TpeIeLen,
 					pucIE, IE_SIZE(pucIE));
-				prP2pSpecificBssInfo->u2RsnxIeLen
-					= IE_SIZE(pucIE);
-				break;
-			case ELEM_ID_RESERVED:
-				DBGLOG(P2P, TRACE, "IE_ID_EXT=%d\n",
-					IE_ID_EXT(pucIE));
-#if (CFG_SUPPORT_802_11AX == 1)
-				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP ||
-					IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP)
-					prP2pBssInfo->ucPhyTypeSet |=
-						PHY_TYPE_SET_802_11AX;
-#endif
-#if (CFG_SUPPORT_802_11BE == 1)
-				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS ||
-					IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_OP)
-					prP2pBssInfo->ucPhyTypeSet |=
-						PHY_TYPE_SET_802_11BE;
-#endif
+				prP2pSpecificBssInfo->u2TpeIeLen
+					+= IE_SIZE(pucIE);
 				break;
 
-				case ELEM_ID_RNR:
+		case ELEM_ID_RNR:
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-				/* rnr is composed in driver for mlo case */
-				if (p2pRoleFsmNeedMlo(prAdapter,
-					prP2pBssInfo->u4PrivateData))
-					break;
+			/* rnr is composed in driver for mlo case */
+			if (p2pRoleFsmNeedMlo(prAdapter,
+					      prP2pBssInfo->u4PrivateData))
+				break;
 #endif
-				kalMemCopy(prP2pSpecificBssInfo->aucRnrIeBuffer,
-					   pucIE, IE_SIZE(pucIE));
-				prP2pSpecificBssInfo->u2RnrIeLen =
-					IE_SIZE(pucIE);
-				rnr = (struct IE_RNR *)pucIE;
-				info = (struct NEIGHBOR_AP_INFO_FIELD *)
-					rnr->aucInfoField;
-				DBGLOG(P2P, INFO,
-					"(RNR IE length,op,ch) = (%u,%u,%u)\n",
-					IE_LEN(pucIE),
-					info->ucOpClass,
-					info->ucChannelNum);
+			kalMemCopy(prP2pSpecificBssInfo->aucRnrIeBuffer,
+				   pucIE, IE_SIZE(pucIE));
+			prP2pSpecificBssInfo->u2RnrIeLen = IE_SIZE(pucIE);
+			rnr = (struct IE_RNR *)pucIE;
+			info = (struct NEIGHBOR_AP_INFO_FIELD *)
+				rnr->aucInfoField;
+			DBGLOG(P2P, INFO,
+				"(RNR IE length,op,ch) = (%u,%u,%u)\n",
+				IE_LEN(pucIE),
+				info->ucOpClass,
+				info->ucChannelNum);
 
-				break;
+			break;
 
-			default:
-				DBGLOG(P2P, TRACE,
-					"Unprocessed element ID:%d\n",
-					IE_ID(pucIE));
-				break;
-			}
+		default:
+			DBGLOG(P2P, TRACE,
+				"Unprocessed element ID:%d LEN:%d\n",
+				IE_ID(pucIE), IE_LEN(pucIE));
+			break;
 		}
-	} while (FALSE);
+	}
 
 	bssDetermineApBssInfoPhyTypeSet(prAdapter, fgIsApMode, prP2pBssInfo);
 }				/* p2pFuncParseBeaconContent */
