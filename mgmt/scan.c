@@ -1671,8 +1671,7 @@ void scanHandleRnrMldParam(IN struct ADAPTER *prAdapter,
 	struct STA_PROFILE *prProfile;
 
 	/* get channel number for this neighborAPInfo */
-	ieee80211_operating_class_to_band(prNeighborAPInfoField->ucOpClass,
-					&band);
+	scanOpClassToBand(prNeighborAPInfoField->ucOpClass, &band);
 	u2TbttInfoCount = ((prNeighborAPInfoField->u2TbttInfoHdr &
 				TBTT_INFO_HDR_COUNT)
 				>> TBTT_INFO_HDR_COUNT_OFFSET)
@@ -1737,14 +1736,14 @@ void scanHandleRnrMldParam(IN struct ADAPTER *prAdapter,
 		}
 
 		switch (band) {
-			case NL80211_BAND_2GHZ:
+			case KAL_BAND_2GHZ:
 				prProfile->rChnlInfo.eBand = BAND_2G4;
 				break;
-			case NL80211_BAND_5GHZ:
+			case KAL_BAND_5GHZ:
 				prProfile->rChnlInfo.eBand = BAND_5G;
 				break;
 #if 0
-			case NL80211_BAND_6GHZ:
+			case KAL_BAND_6GHZ:
 				prProfile->rChnlInfo.eBand = BAND_6G;
 				break;
 #endif
@@ -1814,8 +1813,7 @@ uint8_t scanGetRnrChannel(IN struct NEIGHBOR_AP_INFO_FIELD
 	enum nl80211_band band;
 
 	/* get channel number for this neighborAPInfo */
-	ieee80211_operating_class_to_band(
-			prNeighborAPInfoField->ucOpClass, &band);
+	scanOpClassToBand(prNeighborAPInfoField->ucOpClass, &band);
 
 	prChannel = ieee80211_get_channel(wlanGetWiphy(),
 					ieee80211_channel_to_frequency
@@ -2068,6 +2066,8 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 		if (ucRnrChNum == 0 || IS_6G_PSC_CHANNEL(ucRnrChNum)) {
 			DBGLOG(SCN, INFO, "Not handle RNR channel(%d)!\n",
 					ucRnrChNum);
+			if (LINK_IS_EMPTY(&prAdapter->rNeighborAPInfoList))
+				cnmMemFree(prAdapter, prNeighborAPInfo);
 			/* Calculate next NeighborAPInfo's index if exists */
 			ucCurrentLength += 4 +
 				(u2TbttInfoCount * u2TbttInfoLength);
@@ -2149,6 +2149,10 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 				ucBssidNum))
 				ucScanEnable = FALSE;
 
+			if (EQUAL_MAC_ADDR(&prNeighborAPInfoField->
+				aucTbttInfoSet[j + 1], aucNullAddr))
+				ucScanEnable = FALSE;
+
 			if (!ucScanEnable)
 				continue;
 
@@ -2205,7 +2209,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 		ucCurrentLength += 4 + (u2TbttInfoCount * u2TbttInfoLength);
 
 		/* Only handle RnR with BSSID */
-		if (ucHasBssid == TRUE) {
+		if ((ucHasBssid && ucScanEnable)) {
 			scanProcessRnrChannel(ucRnrChNum,
 				prNeighborAPInfoField->ucOpClass,
 				prScanRequest);
@@ -2232,6 +2236,8 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 				    prAdapter->rNeighborAPInfoList.u4NumElem);
 			ucHasBssid = FALSE;
 		}
+		if (LINK_IS_EMPTY(&prAdapter->rNeighborAPInfoList))
+			cnmMemFree(prAdapter, prNeighborAPInfo);
 	}
 }
 #endif
@@ -5576,3 +5582,31 @@ void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
 }
 #endif
 
+void scanOpClassToBand(uint8_t ucOpClass, enum nl80211_band *band)
+{
+	switch (ucOpClass) {
+	case 112:
+	case 115 ... 127:
+	case 128 ... 130:
+		*band = KAL_BAND_5GHZ;
+		break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case 131 ... 135:
+		*band = KAL_BAND_6GHZ;
+		break;
+#endif
+	case 81:
+	case 82:
+	case 83:
+	case 84:
+		*band = KAL_BAND_2GHZ;
+		break;
+	/* not support 60Ghz */
+	case 180:
+		*band = KAL_NUM_BANDS;
+		break;
+	default:
+		*band = KAL_NUM_BANDS;
+		break;
+	}
+}

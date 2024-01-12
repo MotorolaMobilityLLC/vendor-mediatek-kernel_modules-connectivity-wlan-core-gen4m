@@ -1066,4 +1066,6 @@ void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
 	IN enum ENUM_BAND eHwBand);
 #endif
 
+void scanOpClassToBand(uint8_t ucOpClass, enum nl80211_band *band);
+
 #endif /* _SCAN_H */
