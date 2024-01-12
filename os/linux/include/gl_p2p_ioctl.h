@@ -322,7 +322,7 @@ typedef enum _ENUM_TESTMODE_AVAILABLE_CHAN_ATTR {
 extern struct ieee80211_supported_band mtk_band_2ghz;
 extern struct ieee80211_supported_band mtk_band_5ghz;
 
-extern const UINT_32 mtk_cipher_suites[5];
+extern const UINT_32 mtk_cipher_suites[6];
 
 
 /*******************************************************************************

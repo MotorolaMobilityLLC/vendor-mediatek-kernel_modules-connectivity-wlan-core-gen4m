@@ -298,8 +298,9 @@ struct _BSS_DESC_T {
 	WAPI_INFO_T rIEWAPI;
 	BOOL fgIEWAPI;
 #endif
-	BOOL fgIERSN;
-	BOOL fgIEWPA;
+	BOOLEAN fgIERSN;
+	BOOLEAN fgIEWPA;
+	BOOLEAN fgIEOsen;
 
 	/*! \brief RSN parameters selected for connection */
 	/*! \brief The Select score for final AP selection,

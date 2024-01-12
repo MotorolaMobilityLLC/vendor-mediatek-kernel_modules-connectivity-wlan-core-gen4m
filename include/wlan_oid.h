@@ -255,6 +255,7 @@
 /*----------------------------------------------------------------------------*/
 /* NDIS_802_11_AUTHENTICATION_MODE */
 typedef enum _ENUM_PARAM_AUTH_MODE_T {
+	AUTH_MODE_NON_RSN_FT, /* Fast Bss Transition in a Non FT */
 	AUTH_MODE_OPEN,		/*!< Open system */
 	AUTH_MODE_SHARED,	/*!< Shared key */
 	AUTH_MODE_AUTO_SWITCH,	/*!< Either open system or shared key */
@@ -263,6 +264,9 @@ typedef enum _ENUM_PARAM_AUTH_MODE_T {
 	AUTH_MODE_WPA_NONE,	/*!< For Ad hoc */
 	AUTH_MODE_WPA2,
 	AUTH_MODE_WPA2_PSK,
+	AUTH_MODE_WPA2_FT, /* Fast Bss Transition for 802.1x */
+	AUTH_MODE_WPA2_FT_PSK, /* Fast Bss Transition for WPA2 PSK */
+	AUTH_MODE_WPA_OSEN,
 	AUTH_MODE_NUM		/*!< Upper bound, not real case */
 } ENUM_PARAM_AUTH_MODE_T, *P_ENUM_PARAM_AUTH_MODE_T;
 
