@@ -3829,10 +3829,12 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 			struct BSS_INFO *prBssInfo;
 			struct WLAN_MAC_HEADER *prWlanHeader;
 			uint16_t u2FrameCtrl;
+			uint8_t ucBssIndex;
 
+			ucBssIndex = secGetBssIdxByWlanIdx(prAdapter,
+					prCurrSwRfb->ucWlanIdx);
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-				secGetBssIdxByWlanIdx(prAdapter,
-					prCurrSwRfb->ucWlanIdx));
+					ucBssIndex);
 			prWlanHeader = prCurrSwRfb->pvHeader;
 			u2FrameCtrl = prWlanHeader->u2FrameCtrl;
 			prCurrSwRfb->u2SequenceControl =
