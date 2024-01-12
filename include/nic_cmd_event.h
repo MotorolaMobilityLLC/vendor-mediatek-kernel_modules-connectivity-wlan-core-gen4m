@@ -1124,6 +1124,7 @@ enum NIC_CAPABILITY_V2_TAG {
 	TAG_CAP_RF_TEST_CAP = 0x21,
 #endif
 #endif
+	TAG_CAP_MLO_CAP = 0x22,
 	TAG_CAP_TOTAL
 };
 
@@ -1335,6 +1336,17 @@ struct CAP_6G_CAP {
 	/* Minimum Frequency Interval require for DBDC A+A */
 	uint8_t ucWifiDBDCAwithAMinimumFrqInterval;
 
+};
+#endif
+
+#if CFG_SUPPORT_802_11BE_MLO
+struct CAP_MLO_CAP {
+	uint8_t ucNonApMldEMLSupport; /* Non-AP Mld EML 1:support, 0:not*/
+	uint8_t ucApMldEMLSupport; /* AP Mld EML 1:support, 0:not*/
+	uint8_t ucMaxSimuLinks; /* num of max simultaneous links */
+	uint8_t ucReserved;
+	uint16_t u2NonApMldEMLCap; /* Non-AP Mld EML cap */
+	uint16_t u2ApMldEMLCap; /* AP Mld EML cap */
 };
 #endif
 
@@ -4351,6 +4363,10 @@ uint32_t nicCfgChipCap6GCap(struct ADAPTER *prAdapter,
 		uint8_t *pucEventBuf);
 #endif
 
+#if CFG_SUPPORT_802_11BE_MLO
+uint32_t nicCfgChipCapMLO(struct ADAPTER *prAdapter,
+	uint8_t *pucEventBuf);
+#endif
 
 #if CFG_SUPPORT_LLS
 uint32_t nicCmdEventLinkStatsEmiOffset(struct ADAPTER *prAdapter,

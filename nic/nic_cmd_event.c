@@ -122,6 +122,11 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 				nicCmdEventTestmodeCap),
 #endif
 #endif
+#if CFG_SUPPORT_802_11BE_MLO
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_MLO_CAP,
+				nicCfgChipCapMLO),
+#endif
+
 };
 
 /*******************************************************************************
@@ -3156,6 +3161,43 @@ struct nicTxRsrcEvtHdlr nicTxRsrcEvtHdlrTbl[] = {
 	nicTxResourceUpdate_v2},
 #endif
 };
+
+#if CFG_SUPPORT_802_11BE_MLO
+uint32_t nicCfgChipCapMLO(struct ADAPTER *prAdapter,
+	uint8_t *pucEventBuf)
+{
+	struct CAP_MLO_CAP *cap = (struct CAP_MLO_CAP *)pucEventBuf;
+
+	if (prAdapter->rWifiVar.ucNonApMldEMLSupport != FEATURE_FORCE_ENABLED) {
+		prAdapter->rWifiVar.ucNonApMldEMLSupport &=
+			cap->ucNonApMldEMLSupport;
+		wlanCfgSetUint32(prAdapter, "NonApMldEML",
+			prAdapter->rWifiVar.ucNonApMldEMLSupport);
+	}
+	if (prAdapter->rWifiVar.ucApMldEMLSupport != FEATURE_FORCE_ENABLED) {
+		prAdapter->rWifiVar.ucApMldEMLSupport &=
+			cap->ucApMldEMLSupport;
+		wlanCfgSetUint32(prAdapter, "ApMldEML",
+			prAdapter->rWifiVar.ucApMldEMLSupport);
+	}
+	if (prAdapter->rWifiVar.ucMaxSimuLinks > cap->ucMaxSimuLinks) {
+		prAdapter->rWifiVar.ucMaxSimuLinks =
+			cap->ucMaxSimuLinks;
+		wlanCfgSetUint32(prAdapter, "MaxSimultaneousLinks",
+			prAdapter->rWifiVar.ucMaxSimuLinks);
+	}
+	prAdapter->rWifiVar.u2NonApMldEMLCap = cap->u2NonApMldEMLCap;
+	prAdapter->rWifiVar.u2ApMldEMLCap = cap->u2ApMldEMLCap;
+	DBGLOG(INIT, INFO,
+		"EML cap - Non-AP=(%d, 0x%x), AP=(%d, 0x%x), MaxSimuLinks=%d\n",
+		prAdapter->rWifiVar.ucNonApMldEMLSupport,
+		prAdapter->rWifiVar.u2NonApMldEMLCap,
+		prAdapter->rWifiVar.ucApMldEMLSupport,
+		prAdapter->rWifiVar.u2ApMldEMLCap,
+		prAdapter->rWifiVar.ucMaxSimuLinks);
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
 
 uint32_t nicEventQueryTxResource(struct ADAPTER
 				 *prAdapter, uint8_t *pucEventBuf)
