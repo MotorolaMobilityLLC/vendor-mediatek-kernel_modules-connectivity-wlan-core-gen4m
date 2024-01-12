@@ -571,4 +571,7 @@ void nicUpdateWakeupStatistics(IN struct ADAPTER *prAdapter,
 void nicDumpMsduInfo(IN struct MSDU_INFO *prMsduInfo);
 #endif /* CFG_SUPPORT_DROP_INVALID_MSDUINFO */
 
+uint8_t nicGetActiveTspec(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+
 #endif /* _NIC_H */

@@ -5714,9 +5714,8 @@ uint32_t nicTxDirectStartXmitMain(struct sk_buff
 			wlanProcessQueuedMsduInfo(prAdapter, prMsduInfo);
 			return WLAN_STATUS_FAILURE;
 		default:
-			ucActivedTspec =
-				wmmHasActiveTspec(aisGetWMMInfo(prAdapter,
-						prMsduInfo->ucBssIndex));
+			ucActivedTspec = nicGetActiveTspec(prAdapter,
+				prMsduInfo->ucBssIndex);
 
 			prTxQue = qmDetermineStaTxQueue(prAdapter, prMsduInfo,
 							ucActivedTspec, &ucTC);
