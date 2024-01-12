@@ -2521,6 +2521,24 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_6E
 	}
 };
 
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY_6G
+	g_rRlmPowerLimitConfigurationLegacy6G[] = {
+	/*Default*/
+	{	{0, 0}
+		, 36, {64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64}
+	}
+};
+#else
+struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY_6G
+	g_rRlmPowerLimitConfigurationLegacy6G[] = {
+	/*Default*/
+	{	{0, 0}
+		, 36, {64, 64, 64, 64, 64, 64, 64, 64, 64}
+	}
+};
+#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING */
+
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 /* For EHT 6G setting */
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT_6G
