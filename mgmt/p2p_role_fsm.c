@@ -241,12 +241,6 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 		prP2pBssInfo->eBssSCO = CHNL_EXT_SCN;
 		prP2pBssInfo->ucOpRxNss = prP2pBssInfo->ucOpTxNss =
 			wlanGetSupportNss(prAdapter, prP2pBssInfo->ucBssIndex);
-#if (CFG_HW_WMM_BY_BSS == 0)
-		prP2pBssInfo->ucWmmQueSet = (prAdapter->rWifiVar.eDbdcMode ==
-			ENUM_DBDC_MODE_DISABLED)
-			? DBDC_5G_WMM_INDEX
-			: DBDC_2G_WMM_INDEX;
-#endif
 		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucQoS))
 			prP2pBssInfo->fgIsQBSS = TRUE;
 		else

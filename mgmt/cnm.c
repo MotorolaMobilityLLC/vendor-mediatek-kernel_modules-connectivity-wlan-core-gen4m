@@ -2249,10 +2249,9 @@ omac_choosed:
 			prBssInfo->ucGroupMldId = MLD_GROUP_NONE;
 			prBssInfo->ucLinkIndex = 0;
 #endif
-#if (CFG_HW_WMM_BY_BSS == 1)
 			prBssInfo->ucWmmQueSet = DEFAULT_HW_WMM_INDEX;
 			prBssInfo->fgIsWmmInited = FALSE;
-#endif
+
 			/* initialize wlan id and status for keys */
 			prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
 			prBssInfo->wepkeyWlanIdx = WTBL_RESERVED_ENTRY;
@@ -2937,8 +2936,7 @@ uint32_t cnmUpdateDbdcSetting(struct ADAPTER *prAdapter,
 
 	prCmdBody->ucDbdcEn = fgDbdcEn;
 
-		/* Parameter decision */
-#if (CFG_HW_WMM_BY_BSS == 1)
+	/* Parameter decision */
 	if (fgDbdcEn) {
 		u_int8_t ucWmmSetBitmapPerBSS;
 		struct BSS_INFO *prBssInfo;
@@ -2967,10 +2965,6 @@ uint32_t cnmUpdateDbdcSetting(struct ADAPTER *prAdapter,
 		if (prBssInfo->eBand == BAND_2G4)
 			prCmdBody->ucWmmBandBitmap |= BIT(MAX_HW_WMM_INDEX);
 	}
-#else
-	if (fgDbdcEn)
-		prCmdBody->ucWmmBandBitmap |= BIT(DBDC_2G_WMM_INDEX);
-#endif
 
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 	if (fgDbdcEn) {
@@ -4379,7 +4373,7 @@ void cnmWmmIndexDecision(
 
 	prBssInfo->ucWmmQueSet = ucWmmIdx;
 
-#elif (CFG_HW_WMM_BY_BSS == 1)
+#else /* (CFG_TX_RSRC_WMM_ENHANCE == 1) */
 	uint8_t ucWmmIndex = 0;
 
 	if (!prAdapter || !prBssInfo || !prBssInfo->fgIsInUse) {
@@ -4439,7 +4433,7 @@ void cnmWmmIndexDecision(
 			return;
 		}
 	}
-#endif
+#endif /* CFG_SUPPORT_NAN */
 	for (ucWmmIndex = 0; ucWmmIndex < HW_WMM_NUM; ucWmmIndex++) {
 		if (!(prAdapter->ucHwWmmEnBit & BIT(ucWmmIndex))) {
 			prAdapter->ucHwWmmEnBit |= BIT(ucWmmIndex);
@@ -4451,24 +4445,7 @@ void cnmWmmIndexDecision(
 			return;
 		}
 	}
-#else
-	if (!prAdapter || !prBssInfo) {
-		DBGLOG(CNM, ERROR, "Set WMM fail\n");
-		return;
-	}
-
-	/* Follow the same rule with cnmUpdateDbdcSetting */
-	if (prBssInfo->eBand == BAND_5G
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		|| prBssInfo->eBand == BAND_6G
-#endif
-	)
-		prBssInfo->ucWmmQueSet = DBDC_5G_WMM_INDEX;
-	else
-		prBssInfo->ucWmmQueSet = (prAdapter->rWifiVar.eDbdcMode ==
-			 ENUM_DBDC_MODE_DISABLED) ?
-			DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
-#endif
+#endif /* (CFG_TX_RSRC_WMM_ENHANCE == 1) */
 }
 /*----------------------------------------------------------------------------*/
 /*!
@@ -4485,9 +4462,7 @@ void cnmFreeWmmIndex(
 {
 	DBGLOG(CNM, INFO, "[Free] ucWmmQueSet: %d\n", prBssInfo->ucWmmQueSet);
 
-#if (CFG_HW_WMM_BY_BSS == 1)
 	prAdapter->ucHwWmmEnBit &= (~BIT(prBssInfo->ucWmmQueSet));
-#endif
 	prBssInfo->ucWmmQueSet = DEFAULT_HW_WMM_INDEX;
 	prBssInfo->fgIsWmmInited = FALSE;
 }

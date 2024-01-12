@@ -353,9 +353,7 @@ struct BSS_INFO {
 #endif
 #endif
 
-#if (CFG_HW_WMM_BY_BSS == 1)
 	u_int8_t fgIsWmmInited;
-#endif
 
 	/*-------------------------------------------------------------------*/
 	/* 802.11n HT operation IE when (prStaRec->ucPhyTypeSet              */
@@ -2054,9 +2052,8 @@ struct ADAPTER {
 	/* SER related info */
 	uint8_t ucSerState;
 
-#if (CFG_HW_WMM_BY_BSS == 1)
 	uint8_t ucHwWmmEnBit;
-#endif
+
 	unsigned long ulSuspendFlag;
 	struct WIFI_FEM_CFG rWifiFemCfg;
 

@@ -404,11 +404,6 @@ void aisInitBssInfo(struct ADAPTER *prAdapter,
 	prAisBssInfo->prStaRecOfAP = (struct STA_RECORD *) NULL;
 	prAisBssInfo->ucOpRxNss = prAisBssInfo->ucOpTxNss =
 		wlanGetSupportNss(prAdapter, prAisBssInfo->ucBssIndex);
-#if (CFG_HW_WMM_BY_BSS == 0)
-	prAisBssInfo->ucWmmQueSet =
-		(prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED) ?
-			DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
-#endif
 	/* 4 <4> Allocate MSDU_INFO_T for Beacon */
 	prAisBssInfo->prBeacon = cnmMgtPktAlloc(prAdapter,
 		OFFSET_OF(struct WLAN_BEACON_FRAME,

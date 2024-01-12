@@ -70,15 +70,7 @@ uint8_t p2pDevFsmInit(struct ADAPTER *prAdapter)
 			prP2pBssInfo->u2HwDefaultFixedRateCode = RATE_OFDM_6M;
 
 			prP2pBssInfo->eBand = BAND_2G4;
-#if (CFG_HW_WMM_BY_BSS == 1)
 			prP2pBssInfo->ucWmmQueSet = MAX_HW_WMM_INDEX;
-#else
-			if (prAdapter->rWifiVar.eDbdcMode
-				== ENUM_DBDC_MODE_DISABLED)
-				prP2pBssInfo->ucWmmQueSet = DBDC_5G_WMM_INDEX;
-			else
-				prP2pBssInfo->ucWmmQueSet = DBDC_2G_WMM_INDEX;
-#endif
 
 #if CFG_SUPPORT_VHT_IE_IN_2G
 			if (prAdapter->rWifiVar.ucVhtIeIn2g)
