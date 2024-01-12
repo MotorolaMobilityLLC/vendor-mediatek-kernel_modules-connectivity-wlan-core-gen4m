@@ -1292,6 +1292,8 @@ endif
 
 ifeq ($(CONFIG_SUPPORT_BTM_OFFLOAD), y)
     ccflags-y += -DCFG_SUPPORT_BTM_OFFLOAD=1
+else ifeq ($(CONFIG_MTK_TC10_FEATURE), y)
+    ccflags-y += -DCFG_SUPPORT_BTM_OFFLOAD=1
 else
     ccflags-y += -DCFG_SUPPORT_BTM_OFFLOAD=0
 endif
@@ -1441,7 +1443,6 @@ endif
 
 ifeq ($(CONFIG_MTK_TC10_FEATURE), y)
     ccflags-y += -DCFG_TC10_FEATURE=1
-    ccflags-y += -DCFG_SUPPORT_BTM_OFFLOAD=1
 else
     ccflags-y += -DCFG_TC10_FEATURE=0
 endif
