@@ -1488,9 +1488,6 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 				 prMsduInfo->u2FrameLength);
 	/* Todo:: network id */
 	ucBssIndex = prMsduInfo->ucBssIndex;
-	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
-	eAuthMode = aisGetAuthMode(prAdapter, ucBssIndex);
-
 	/* For FT, we reuse the RSN Element composed in userspace */
 	if (authAddRSNIE_impl(prAdapter, prMsduInfo))
 		return;
@@ -3407,16 +3404,10 @@ u_int8_t rsnParseOsenIE(struct ADAPTER *prAdapter,
 uint32_t rsnCalculateFTIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 			     struct STA_RECORD *prStaRec)
 {
-	enum ENUM_PARAM_AUTH_MODE eAuthMode;
 	struct FT_IES *prFtIEs = aisGetFtIe(prAdapter, ucBssIdx);
 
-	eAuthMode = aisGetAuthMode(prAdapter,
-		ucBssIdx);
-
-	if (!IS_BSS_INDEX_VALID(ucBssIdx) ||
-	    !IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx)) ||
-	    !prFtIEs->prFTIE || (eAuthMode != AUTH_MODE_WPA2_FT &&
-				 eAuthMode != AUTH_MODE_WPA2_FT_PSK))
+	if (!prFtIEs->prFTIE ||
+	    !rsnIsFtOverTheAir(prAdapter, ucBssIdx, prStaRec->ucIndex))
 		return 0;
 	return IE_SIZE(prFtIEs->prFTIE);
 }
@@ -3424,22 +3415,31 @@ uint32_t rsnCalculateFTIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 void rsnGenerateFTIE(IN struct ADAPTER *prAdapter,
 		     IN OUT struct MSDU_INFO *prMsduInfo)
 {
-	enum ENUM_PARAM_AUTH_MODE eAuthMode;
 	uint8_t *pucBuffer =
 		(uint8_t *)prMsduInfo->prPacket + prMsduInfo->u2FrameLength;
 	uint32_t ucFtIeSize = 0;
 	uint8_t ucBssIdx = prMsduInfo->ucBssIndex;
 	struct FT_IES *prFtIEs = aisGetFtIe(prAdapter, ucBssIdx);
 
-	eAuthMode = aisGetAuthMode(prAdapter,
-		ucBssIdx);
-
-	if (!IS_BSS_INDEX_VALID(ucBssIdx) ||
-	    !IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx)) ||
-	    !prFtIEs->prFTIE || (eAuthMode != AUTH_MODE_WPA2_FT &&
-				 eAuthMode != AUTH_MODE_WPA2_FT_PSK))
+	if (!prFtIEs->prFTIE ||
+	    !rsnIsFtOverTheAir(prAdapter, ucBssIdx, prMsduInfo->ucStaRecIndex))
 		return;
 	ucFtIeSize = IE_SIZE(prFtIEs->prFTIE);
 	prMsduInfo->u2FrameLength += ucFtIeSize;
 	kalMemCopy(pucBuffer, prFtIEs->prFTIE, ucFtIeSize);
+}
+
+u_int8_t rsnIsFtOverTheAir(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx,
+	IN uint8_t ucStaRecIdx)
+{
+	struct STA_RECORD *prStaRec;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIdx);
+	if (IS_BSS_INDEX_VALID(ucBssIdx) &&
+	    IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx)) &&
+	    prStaRec && prStaRec->ucAuthAlgNum ==
+	    (uint8_t) AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION)
+		return TRUE;
+
+	return FALSE;
 }

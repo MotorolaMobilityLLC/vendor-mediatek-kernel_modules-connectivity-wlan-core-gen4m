@@ -1275,9 +1275,8 @@ void authAddMDIE(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIdx = prMsduInfo->ucBssIndex;
 	struct FT_IES *prFtIEs = aisGetFtIe(prAdapter, ucBssIdx);
 
-	if (!IS_BSS_INDEX_VALID(ucBssIdx) ||
-	    !IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx)) ||
-	    !prFtIEs->prMDIE)
+	if (!prFtIEs->prMDIE ||
+	    !rsnIsFtOverTheAir(prAdapter, ucBssIdx, prMsduInfo->ucStaRecIndex))
 		return;
 	prMsduInfo->u2FrameLength +=
 		5; /* IE size for MD IE is fixed, it is 5 */
@@ -1287,14 +1286,10 @@ void authAddMDIE(IN struct ADAPTER *prAdapter,
 uint32_t authCalculateRSNIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 			       struct STA_RECORD *prStaRec)
 {
-	enum ENUM_PARAM_AUTH_MODE eAuthMode =
-	    aisGetAuthMode(prAdapter, ucBssIdx);
 	struct FT_IES *prFtIEs = aisGetFtIe(prAdapter, ucBssIdx);
 
-	if (!IS_BSS_INDEX_VALID(ucBssIdx) ||
-	    !IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx)) ||
-	    !prFtIEs->prRsnIE || (eAuthMode != AUTH_MODE_WPA2_FT &&
-				  eAuthMode != AUTH_MODE_WPA2_FT_PSK))
+	if (!prFtIEs->prRsnIE ||
+	    !rsnIsFtOverTheAir(prAdapter, ucBssIdx, prStaRec->ucIndex))
 		return 0;
 	return IE_SIZE(prFtIEs->prRsnIE);
 }
@@ -1316,10 +1311,8 @@ uint32_t authAddRSNIE_impl(IN struct ADAPTER *prAdapter,
 	    aisGetAuthMode(prAdapter, ucBssIdx);
 	struct FT_IES *prFtIEs = aisGetFtIe(prAdapter, ucBssIdx);
 
-	if (!IS_BSS_INDEX_VALID(ucBssIdx) ||
-	    !IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx)) ||
-	    !prFtIEs->prRsnIE || (eAuthMode != AUTH_MODE_WPA2_FT &&
-				  eAuthMode != AUTH_MODE_WPA2_FT_PSK))
+	if (!prFtIEs->prRsnIE ||
+	    !rsnIsFtOverTheAir(prAdapter, ucBssIdx, prMsduInfo->ucStaRecIndex))
 		return FALSE;
 
 	ucRSNIeSize = IE_SIZE(prFtIEs->prRsnIE);
