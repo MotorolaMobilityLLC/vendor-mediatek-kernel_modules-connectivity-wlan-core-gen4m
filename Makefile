@@ -173,7 +173,9 @@ NIC_DIR     := nic/
 MGMT_DIR    := mgmt/
 CHIPS       := chips/
 CHIPS_CMM   := $(CHIPS)common/
-
+ifeq ($(MTK_PLATFORM), mt6799)
+PLAT_DIR    := os/linux/plat/$(MTK_PLATFORM)/
+endif
 
 # ---------------------------------------------------
 # Objects List
@@ -301,6 +303,16 @@ HIF_OBJS :=  $(HIF_DIR)usb.o
 endif
 
 HIF_OBJS +=  $(HIF_DIR)hal_api.o
+
+# ---------------------------------------------------
+# Platform Objects List
+# ---------------------------------------------------
+ifeq ($(MTK_PLATFORM), mt6799)
+PLAT_OBJS := $(PLAT_DIR)plat_priv.o
+$(MODULE_NAME)-objs  += $(PLAT_OBJS)
+endif
+
+# ---------------------------------------------------
 
 $(MODULE_NAME)-objs  += $(COMMON_OBJS)
 $(MODULE_NAME)-objs  += $(NIC_OBJS)
