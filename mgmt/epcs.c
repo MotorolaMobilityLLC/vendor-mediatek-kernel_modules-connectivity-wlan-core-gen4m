@@ -207,13 +207,13 @@ void epcsComposeReq(struct MSDU_INFO *prMsduInfo, uint8_t ucDialogToken)
 }
 
 void epcsComposeRsp(struct MSDU_INFO *prMsduInfo, uint8_t ucDialogToken,
-		uint8_t ucStatusCode)
+		uint16_t u2StatusCode)
 {
 	struct ACTION_EPCS_RSP_FRAME *prTxFrame;
 
 	prTxFrame = prMsduInfo->prPacket;
 	prTxFrame->ucDialogToken = ucDialogToken;
-	prTxFrame->ucStatusCode = ucStatusCode;
+	WLAN_SET_FIELD_16(&prTxFrame->u2StatusCode, u2StatusCode);
 }
 /*---------------------------------------------------------------------------*/
 /*!
@@ -345,7 +345,7 @@ void epcsProcessRsp(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	DBGLOG_MEM8(RX, TRACE, prRxFrame, prSwRfb->u2PacketLen);
 	DBGLOG(RX, TRACE, "[EPCS] !=======================================!\n");
 
-	if (prRxFrame->ucStatusCode != STATUS_CODE_SUCCESSFUL ||
+	if (prRxFrame->u2StatusCode != STATUS_CODE_SUCCESSFUL ||
 		prRxFrame->ucDialogToken != prAdapter->ucEpcsTxDialogToken)
 		return;
 
@@ -547,9 +547,14 @@ void epcsProcessAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	struct STA_RECORD *prStaRec;
 	struct MLD_STA_RECORD *prMldStaRec;
 	struct MLD_BSS_INFO *prMldBssInfo;
+	struct WIFI_VAR *prWifiVar;
 	uint32_t rStatus;
 
 	if (!prAdapter || !prSwRfb)
+		return;
+
+	prWifiVar = &prAdapter->rWifiVar;
+	if (IS_FEATURE_DISABLED(prWifiVar->fgEnEpcs))
 		return;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);

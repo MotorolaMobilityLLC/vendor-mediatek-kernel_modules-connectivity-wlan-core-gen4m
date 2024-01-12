@@ -226,7 +226,7 @@ void ehtRlmFillCapIE(
 
 #if (CFG_SUPPORT_802_11BE_EPCS == 1)
 	/* EPCS: (previously called NSEP) supported for STA */
-	if (IS_BSS_AIS(prBssInfo))
+	if (IS_BSS_AIS(prBssInfo) && IS_FEATURE_ENABLED(prWifiVar->fgEnEpcs))
 		SET_EHT_MAC_CAP_EPCS_PRI_ACCESS(prEhtCap->ucEhtMacCap);
 #endif
 	/* OM_CTRL: default support for both STA and AP; */

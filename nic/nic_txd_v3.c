@@ -148,7 +148,7 @@ void nic_txd_v3_fill_by_pkt_option(
 		HAL_MAC_CONNAC3X_TXD_SET_NO_ACK(prTxDesc);
 
 	if (u4PktOption & MSDU_OPT_PROTECTED_FRAME) {
-		/* DBGLOG(RSN, INFO, "MSDU_OPT_PROTECTED_FRAME\n"); */
+		DBGLOG_LIMITED(RSN, TRACE, "MSDU_OPT_PROTECTED_FRAME\n");
 		HAL_MAC_CONNAC3X_TXD_SET_PROTECTION(prTxDesc);
 		fgProtected = TRUE;
 	}

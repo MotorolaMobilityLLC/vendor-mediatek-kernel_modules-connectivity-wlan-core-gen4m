@@ -77,7 +77,7 @@ void epcsProcessAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 void epcsComposeReq(struct MSDU_INFO *prMsduInfo, uint8_t ucDialogToken);
 
 void epcsComposeRsp(struct MSDU_INFO *prMsduInfo, uint8_t ucDialogToken,
-		uint8_t ucStatusCode);
+		uint16_t u2StatusCode);
 
 void epcsMldMUnEdcaBackupRestore(struct MLD_BSS_INFO *prMldBssInfo,
 		u_int8_t fgBackup);

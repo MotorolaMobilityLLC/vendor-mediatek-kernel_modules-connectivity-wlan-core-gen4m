@@ -3913,7 +3913,7 @@ struct ACTION_EPCS_RSP_FRAME {
 	/* Protected EHT Action Value: [4]: EPCS Response  */
 	uint8_t ucAction;
 	uint8_t ucDialogToken;	/* Dialog Token */
-	uint8_t ucStatusCode;	/* Status code */
+	uint16_t u2StatusCode;	/* Status code */
 	uint8_t aucMultiLink[]; /* Priority Access Element */
 } __KAL_ATTRIB_PACKED__;
 

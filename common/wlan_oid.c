@@ -15084,11 +15084,16 @@ uint32_t wlanoidSendEpcs(struct ADAPTER *prAdapter,
 			uint32_t *pu4SetInfoLen)
 {
 	struct BSS_INFO *prBssInfo = NULL;
+	struct WIFI_VAR *prWifiVar;
 	uint8_t ucBssIndex = 0;
 	uint8_t ucAction = 0;
 
 	if (!prAdapter)
 		return WLAN_STATUS_INVALID_DATA;
+
+	prWifiVar = &prAdapter->rWifiVar;
+	if (IS_FEATURE_DISABLED(prWifiVar->fgEnEpcs))
+		return WLAN_STATUS_FAILURE;
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
