@@ -945,7 +945,8 @@ endif
 # System Dvt Objects List
 # ---------------------------------------------------
 ifeq ($(CFG_SUPPORT_WIFI_SYSDVT), 1)
-SYSDVT_OBJS += $(SYSDVT_DIR)dvt_common.o
+SYSDVT_OBJS += $(SYSDVT_DIR)dvt_common.o \
+               $(SYSDVT_DIR)dvt_phtput.o
 
 ifeq ($(CFG_SUPPORT_DMASHDL_SYSDVT), 1)
 SYSDVT_OBJS += $(SYSDVT_DIR)dvt_dmashdl.o

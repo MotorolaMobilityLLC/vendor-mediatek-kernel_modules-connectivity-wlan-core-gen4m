@@ -343,6 +343,7 @@
 
 #if CFG_SUPPORT_WIFI_SYSDVT
 #include "dvt_common.h"
+#include "dvt_phtput.h"
 #if (CFG_SUPPORT_DMASHDL_SYSDVT)
 #include "dvt_dmashdl.h"
 #endif
