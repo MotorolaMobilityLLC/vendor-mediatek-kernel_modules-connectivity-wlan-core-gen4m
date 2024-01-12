@@ -40,6 +40,9 @@ struct FW_LOG_EMI_CTRL {
 	KAL_WAKE_LOCK_T *wakelock;
 #endif
 	struct FW_LOG_EMI_STATS stats;
+
+	struct workqueue_struct *wq;
+	struct work_struct work;
 };
 
 int32_t fw_log_emi_handler(void);
