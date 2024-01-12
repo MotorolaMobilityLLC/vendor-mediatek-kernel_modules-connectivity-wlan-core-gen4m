@@ -514,6 +514,36 @@ static void triggerHifDumpIfNeed(void)
 	kalMsleep(100);
 }
 
+static void dumpWlanThreadsIfNeed(void)
+{
+	struct GLUE_INFO *prGlueInfo;
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag || !prGlueInfo->prAdapter)
+		return;
+
+	if (fgIsResetting)
+		return;
+
+	DBGLOG(INIT, INFO, "prGlueInfo->ulFlag: 0x%lx\n", prGlueInfo->ulFlag);
+
+	if (prGlueInfo->main_thread) {
+		DBGLOG(INIT, INFO, "Show backtrace of main_thread.\n");
+		kal_show_stack(prGlueInfo->prAdapter, prGlueInfo->main_thread,
+				NULL);
+	}
+	if (prGlueInfo->rx_thread) {
+		DBGLOG(INIT, INFO, "Show backtrace of rx_thread.\n");
+		kal_show_stack(prGlueInfo->prAdapter, prGlueInfo->rx_thread,
+				NULL);
+	}
+	if (prGlueInfo->hif_thread) {
+		DBGLOG(INIT, INFO, "Show backtrace of hif_thread.\n");
+		kal_show_stack(prGlueInfo->prAdapter, prGlueInfo->hif_thread,
+				NULL);
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is invoked when there is reset messages indicated
@@ -541,6 +571,7 @@ static void glResetCallback(enum _ENUM_WMTDRV_TYPE_T eSrcType,
 			switch (*prRstMsg) {
 			case WMTRSTMSG_RESET_START:
 				DBGLOG(INIT, WARN, "Whole chip reset start!\n");
+				dumpWlanThreadsIfNeed();
 				triggerHifDumpIfNeed();
 				fgIsResetting = TRUE;
 				fgSimplifyResetFlow = TRUE;
