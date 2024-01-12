@@ -4231,14 +4231,15 @@ bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter)
 	uint32_t	u4MonitorWindow;
 
 	ASSERT(prAdapter);
+	u4MonitorWindow = prAdapter->rWifiVar.u4BeaconTimoutFilterDurationMs;
+	if (u4MonitorWindow == 0) /* Check if disable the filter */
+		return true;
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 	ASSERT(prRxCtrl);
 
 	prTxCtrl = &prAdapter->rTxCtrl;
 	ASSERT(prTxCtrl);
-
-	u4MonitorWindow = prAdapter->rWifiVar.u4BeaconTimoutFilterDurationMs;
 
 	GET_CURRENT_SYSTIME(&u4CurrentTime);
 
