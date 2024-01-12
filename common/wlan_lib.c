@@ -6307,8 +6307,14 @@ void wlanCfgLoadIotApRule(IN struct ADAPTER *prAdapter)
 
 		for (ucTokId = 0; ucTokId < WLAN_IOT_AP_FG_MAX; ucTokId++) {
 			pCurTok = kalStrSep((char **)&pNexTok, ":");
-			ucStatus = wlanHexToArrayR(pCurTok, pOffset,
-				aucEleSize[ucTokId]);
+			if (pCurTok)
+				ucStatus = wlanHexToArrayR(pCurTok, pOffset,
+							   aucEleSize[ucTokId]);
+			else {
+				DBGLOG(INIT, TRACE,
+				       "Invalid Tok IOTAP%d\n", ucCnt);
+				continue;
+			}
 			DBGLOG(INIT, TRACE,
 				"IOTAP%d tok:%d Str:%s status:%d len:%d flag:0x%x\n",
 				ucCnt, ucTokId, pCurTok, ucStatus,
