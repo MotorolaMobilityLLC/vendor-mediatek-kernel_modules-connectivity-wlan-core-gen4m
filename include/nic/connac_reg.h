@@ -223,6 +223,18 @@
 #define ERROR_DETECT_RESET_DONE BIT(3)
 #define ERROR_DETECT_RECOVERY_DONE BIT(4)
 #define ERROR_DETECT_MCU_NORMAL_STATE  BIT(5)
+/*
+ * BIT(6) is 1 means L1 reset is triggered when HIF is suspend.
+ *           0 means no L1 reset is triggered when HIF is suspend.
+ */
+#define ERROR_DETECT_SER_TRIGGER_IN_SUSPEND BIT(6)
+/*
+ * BIT(7) is only meaningful when BIT(6) is 1.
+ *           1 means L1 reset is done after being triggered in HIF is
+ *             suspend.
+ *           0 means L1 reset is still on-going.
+ */
+#define ERROR_DETECT_SER_DONE_IN_SUSPEND BIT(7)
 #define CP_LMAC_HANG_WORKAROUND_STEP1 BIT(8)
 #define CP_LMAC_HANG_WORKAROUND_STEP2 BIT(9)
 #define ERROR_DETECT_LMAC_ERROR BIT(24)

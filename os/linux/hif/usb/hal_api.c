@@ -1741,6 +1741,13 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 	if (prBusInfo->asicUdmaRxFlush)
 		prBusInfo->asicUdmaRxFlush(prAdapter, FALSE);
 
+	/* set USB EP_RST_OPT as reset scope excludes toggle
+	 * bit,sequence number, etc.
+	 */
+	if (prBusInfo->asicUsbEpctlRstOpt)
+		prBusInfo->asicUsbEpctlRstOpt(prAdapter,
+					      FALSE);
+
 	return true;
 }
 
@@ -2208,6 +2215,38 @@ uint32_t halGetHifTxDataPageSize(IN struct ADAPTER *prAdapter)
 	return halGetHifTxPageSize(prAdapter);
 }
 
+uint32_t halSerGetMcuEvent(IN struct ADAPTER *prAdapter, IN u_int8_t fgClear)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	uint32_t u4SerAction;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prChipInfo = prAdapter->chip_info;
+
+	/* get MCU SER event */
+	if (!kalDevRegRead(prGlueInfo,
+			   prChipInfo->u4SerUsbMcuEventAddr,
+			   &u4SerAction)) {
+		DBGLOG(NIC, WARN, "get MCU SER event fail\n");
+
+		u4SerAction = 0;
+
+		goto out;
+	}
+
+	if (u4SerAction && fgClear) {
+		DBGLOG(NIC, INFO, "u4SerAction=0x%08X\n", u4SerAction);
+
+		/* clear MCU SER event */
+		kalDevRegWrite(prGlueInfo,
+			       prChipInfo->u4SerUsbMcuEventAddr, 0);
+	}
+
+out:
+	return u4SerAction;
+}
+
 void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 {
 	static u_int8_t ucSerState = ERR_RECOV_STOP_IDLE;
@@ -2222,34 +2261,21 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 	prBusInfo = prChipInfo->bus_info;
 
 	/* get MCU SER event */
-	if (!kalDevRegRead(prAdapter->prGlueInfo,
-			   prChipInfo->u4SerUsbMcuEventAddr,
-			   &u4SerAction)) {
-		DBGLOG(NIC, WARN, "get MCU SER event fail\n");
+	u4SerAction = halSerGetMcuEvent(prAdapter, TRUE);
+	if (u4SerAction == 0)
+		return;
+
+	if (prAdapter->rWifiVar.eEnableSerL1 !=
+	     FEATURE_OPT_SER_ENABLE) {
+		if (prChipInfo->asicDumpSerDummyCR)
+			prChipInfo->asicDumpSerDummyCR(prAdapter);
+
+		DBGLOG(HAL, WARN,
+		       "[SER][L1] Bypass L1 reset due to wifi.cfg\n");
+
+		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_SER_L1_FAIL);
 
 		return;
-	}
-
-	if (u4SerAction) {
-		DBGLOG(NIC, INFO, "%s u4SerAction=0x%08X\n", __func__,
-			 u4SerAction);
-
-		/* clear MCU SER event */
-		kalDevRegWrite(prAdapter->prGlueInfo,
-				prChipInfo->u4SerUsbMcuEventAddr, 0);
-
-		if (prAdapter->rWifiVar.eEnableSerL1 !=
-		     FEATURE_OPT_SER_ENABLE) {
-			if (prChipInfo->asicDumpSerDummyCR)
-				prChipInfo->asicDumpSerDummyCR(prAdapter);
-
-			DBGLOG(HAL, WARN,
-			       "[SER][L1] Bypass L1 reset due to wifi.cfg\n");
-
-			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_SER_L1_FAIL);
-
-			return;
-		}
 	}
 
 	switch (ucSerState) {
@@ -2260,13 +2286,6 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 
 			DBGLOG(HAL, INFO,
 				"SER(E) Host stop HIF tx/rx operation\n");
-
-			/* set USB EP_RST_OPT as reset scope excludes toggle
-			 * bit,sequence number, etc.
-			 */
-			if (prBusInfo->asicUsbEpctlRstOpt)
-				prBusInfo->asicUsbEpctlRstOpt(prAdapter,
-							      FALSE);
 
 			/* change SER FSM to SER_STOP_HOST_TX_RX */
 			nicSerStopTxRx(prAdapter);
