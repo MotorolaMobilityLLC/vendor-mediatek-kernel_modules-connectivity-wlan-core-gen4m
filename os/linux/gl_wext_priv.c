@@ -15797,8 +15797,13 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 			prCnmInfo->ucBssOMACSet[ucBssIdx],
 			prCnmInfo->ucBssOMACDBDCBand[ucBssIdx],
 			_getStrFromBssOpBw(prBssInfo),
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+			prCnmInfo->ucBssOpTxNss[ucBssIdx],
+			prCnmInfo->ucBssOpRxNss[ucBssIdx]);
+#else
 			ucOpTxNss,
 			ucOpRxNss);
+#endif
 
 #if (CFG_SUPPORT_802_11AX == 1)
 		prStaRec = cnmGetStaRecByAddress(prGlueInfo->prAdapter,
