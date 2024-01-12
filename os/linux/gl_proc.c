@@ -580,6 +580,16 @@ static ssize_t procDbgLevelWrite(struct file *file, const char __user *buffer,
 	}
 	g_aucProcBuf[u4CopySize] = '\0';
 
+	/*add chip reset cmd for manual test*/
+#if CFG_CHIP_RESET_SUPPORT
+	if (temp[0] == 'R') {
+		DBGLOG(INIT, INFO, "WIFI trigger reset!!\n");
+		GL_USER_DEFINE_RESET_TRIGGER(g_prGlueInfo_proc->prAdapter,
+			RST_CMD_TRIGGER, RST_FLAG_DO_WHOLE_RESET);
+		temp[0] = 'X';
+	}
+#endif
+
 	while (temp) {
 		if (sscanf(temp,
 			"0x%x:0x%x", &u4NewDbgModule, &u4NewDbgLevel) != 2) {
