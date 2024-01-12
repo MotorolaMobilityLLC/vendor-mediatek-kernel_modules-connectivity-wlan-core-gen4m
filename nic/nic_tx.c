@@ -2360,61 +2360,6 @@ static u_int8_t isEapolBeforeKeyReady(struct ADAPTER *prAdapter,
 }
 #endif
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-static void nicTxMacAddrTranslation(struct ADAPTER *prAdapter,
-	struct MSDU_INFO *prMsduInfo)
-{
-	struct STA_RECORD *prStaRec;
-	struct BSS_INFO *prBssInfo;
-	struct ETH_FRAME *prFrameHeader;
-	uint8_t *prSrcMac, *prDestMac;
-
-	if ((prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_FORCE_LINK) == 0) {
-		DBGLOG(TX, WARN, "Only support force link packets.\n");
-		return;
-	}
-
-	if (prMsduInfo->u2ForceTxWlanId == WTBL_SIZE) {
-		DBGLOG(TX, WARN, "Force TX link NOT specified\n");
-		return;
-	}
-
-	prStaRec = cnmGetStaRecByIndex(prAdapter,
-		secGetStaIdxByWlanIdx(prAdapter,
-			prMsduInfo->u2ForceTxWlanId));
-	if (!prStaRec)
-		return;
-
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-		prStaRec->ucBssIndex);
-	if (!prBssInfo)
-		return;
-
-	kalGetPacketBuf(prMsduInfo->prPacket,
-			(uint8_t **)&prFrameHeader);
-	prSrcMac = prFrameHeader->aucSrcAddr;
-	prDestMac = prFrameHeader->aucDestAddr;
-
-	if (UNEQUAL_MAC_ADDR(prSrcMac, prBssInfo->aucOwnMacAddr)) {
-		DBGLOG(TX, TRACE,
-			"Change Src addr from [" MACSTR " to " MACSTR "]\n",
-			MAC2STR(prSrcMac),
-			MAC2STR(prBssInfo->aucOwnMacAddr));
-		prMsduInfo->ucBssIndex = prBssInfo->ucBssIndex;
-		COPY_MAC_ADDR(prSrcMac, prBssInfo->aucOwnMacAddr);
-	}
-
-	if (UNEQUAL_MAC_ADDR(prDestMac, prStaRec->aucMacAddr)) {
-		DBGLOG(TX, TRACE,
-			"Change Dest addr from [" MACSTR " to " MACSTR "]\n",
-			MAC2STR(prDestMac),
-			MAC2STR(prStaRec->aucMacAddr));
-		prMsduInfo->ucStaRecIndex = prStaRec->ucIndex;
-		COPY_MAC_ADDR(prDestMac, prStaRec->aucMacAddr);
-	}
-}
-#endif /* CFG_SUPPORT_802_11BE_MLO */
-
 void
 nicTxFillDataDesc(struct ADAPTER *prAdapter,
 		  struct MSDU_INFO *prMsduInfo)
@@ -2440,10 +2385,9 @@ nicTxFillDataDesc(struct ADAPTER *prAdapter,
 			prStaRec);
 
 		/* Use setup link as force link */
-		if (prMldSta) {
-			prMsduInfo->u2ForceTxWlanId = prMldSta->u2SetupWlanId;
-			nicTxMacAddrTranslation(prAdapter, prMsduInfo);
-		}
+		if (prMldSta)
+			nicEtherMAT_M2L(prAdapter, prMsduInfo,
+					prMldSta->u2SetupWlanId);
 	}
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 

@@ -176,8 +176,9 @@ void aaaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 		}
 
 		DBGLOG(AAA, INFO,
-			"Rx Auth, SA: " MACSTR ", bssid: " MACSTR
-			", Seq:%d, Alg:%d, Sta:%d\n",
+			"Rx Auth, DA: " MACSTR ", SA: " MACSTR ", bssid: "
+			MACSTR", Seq:%d, Alg:%d, Sta:%d\n",
+			MAC2STR(prAuthFrame->aucDestAddr),
 			MAC2STR(prAuthFrame->aucSrcAddr),
 			MAC2STR(prAuthFrame->aucBSSID),
 			prAuthFrame->u2AuthTransSeqNo,
@@ -392,7 +393,8 @@ bow_proc:
 				prAdapter->prGlueInfo,
 				prSwRfb,
 				FALSE,
-				(uint8_t)prBssInfo->u4PrivateData);
+				(uint8_t)prBssInfo->u4PrivateData,
+				(uint32_t)prBssInfo->ucLinkIndex);
 			DBGLOG(AAA, INFO, "Forward RxAuth\n");
 			if (prStaRec && prStaRec->fgIsInUse) {
 				cnmTimerStopTimer(prAdapter,
@@ -813,7 +815,8 @@ uint32_t aaaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 				prAdapter->prGlueInfo,
 				prSwRfb,
 				FALSE,
-				(uint8_t)prBssInfo->u4PrivateData);
+				(uint8_t)prBssInfo->u4PrivateData,
+				(uint32_t)prBssInfo->ucLinkIndex);
 			DBGLOG(AAA, INFO, "[OWE] Forward RxAssoc\n");
 		} else
 			assocSendReAssocRespFrame(prAdapter, prStaRec);

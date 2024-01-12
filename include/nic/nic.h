@@ -704,6 +704,15 @@ uint8_t nicGetActiveTspec(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
+void nicEtherMAT_M2L(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	uint16_t u2ForceTxWlanId);
+
+void nicMgmtMAT_M2L(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	uint8_t ucGroupMldId,
+	uint8_t ucForceTxWlanId);
+
 void nicMgmtMAT_L2M(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb);
 #endif
