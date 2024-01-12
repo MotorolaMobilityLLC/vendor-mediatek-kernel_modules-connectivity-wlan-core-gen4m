@@ -3353,7 +3353,7 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 	struct WIFI_VAR *prWifiVar;
 	struct RTMP_TX_RING *prTxRing;
 	struct RTMP_DMACB *pTxCell;
-	struct TXD_STRUCT *pTxD;
+	struct TXD_STRUCT rTxD, *pTxD;
 	uint16_t u2Port = TX_RING_DATA0;
 	struct ADAPTER *prAdapter;
 
@@ -3373,7 +3373,9 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 	prToken->u2Port = u2Port;
 	pTxCell->prToken = prToken;
 
-	pTxD = (struct TXD_STRUCT *)pTxCell->AllocVa;
+	pTxD = &rTxD;
+	kalMemZero(pTxD, sizeof(struct TXD_STRUCT));
+
 	pTxD->SDPtr0 = (uint64_t)prToken->rDmaAddr & DMA_LOWER_32BITS_MASK;
 #ifdef CONFIG_PHYS_ADDR_T_64BIT
 	pTxD->SDPtr0Ext = ((uint64_t)prToken->rDmaAddr >> DMA_BITS_OFFSET) &
@@ -3395,6 +3397,8 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 	pTxD->LastSec1 = 0;
 	pTxD->Burst = 0;
 	pTxD->DMADONE = 0;
+
+	kalMemCopyToIo(pTxCell->AllocVa, pTxD, sizeof(struct TXD_STRUCT));
 
 	NIC_DUMP_TXDMAD_HEADER(prAdapter, "Dump TXDMAD:\n");
 	NIC_DUMP_TXDMAD(prAdapter, (uint8_t *)pTxD, sizeof(struct TXD_STRUCT));

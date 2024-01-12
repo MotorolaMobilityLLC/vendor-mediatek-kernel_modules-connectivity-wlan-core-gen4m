@@ -2368,7 +2368,7 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 	struct ADAPTER *prAdapter = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct HIF_MEM_OPS *prMemOps;
-	struct RXD_STRUCT *pRxD;
+	struct RXD_STRUCT rRxD, *pRxD;
 	struct RTMP_RX_RING *prRxRing;
 	struct RTMP_DMACB *pRxCell;
 	struct RTMP_DMABUF *prDmaBuf;
@@ -2404,6 +2404,9 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 		prRxRing->fgIsDumpLog = true;
 		return false;
 	}
+
+	pRxD = &rRxD;
+	kalMemCopyFromIo(pRxD, pRxCell->AllocVa, sizeof(struct RXD_STRUCT));
 
 #if HIF_INT_TIME_DEBUG
 	kalTrackRxReadyTime(prGlueInfo, u2Port);
@@ -2537,6 +2540,9 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 skip:
 	pRxD->SDLen0 = prRxRing->u4BufSize;
 	pRxD->DMADONE = 0;
+
+	/* update rxdmad */
+	kalMemCopyToIo(pRxCell->AllocVa, pRxD, sizeof(struct RXD_STRUCT));
 
 	prRxRing->RxCpuIdx = u4CpuIdx;
 	prRxRing->fgIsDumpLog = false;
