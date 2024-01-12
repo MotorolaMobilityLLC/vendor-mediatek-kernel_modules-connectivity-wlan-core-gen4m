@@ -101,6 +101,9 @@ char *g_au1TxPwrOperationLabel[] = {
 	"power offset"
 };
 #endif
+
+#define PWR_BUF_LEN 200
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -113,7 +116,7 @@ char *g_au1TxPwrOperationLabel[] = {
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
 /* dynamic tx power control */
 char *g_au1TxPwrDefaultSetting[] = {
-#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING == 1)
 	"_SAR_PwrLevel;1;2;1;[2G4,,,,,,,,,,,][5G,,,,,,,,,,,]",
 	"_G_Scenario;1;2;1;[ALL,,,,,,,,,,,]",
 	"_G_Scenario;2;2;1;[ALL,,,,,,,,,,,]",
@@ -2711,139 +2714,184 @@ uint16_t rlmDomainPwrLimitDefaultTableDecision(struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
+void
+rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 				*prCmd,
 				uint16_t u2DefaultTableIndex)
 {
 	uint16_t i, k;
 	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *prPwrLimitSubBand;
-	struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit;
+	struct CMD_CHANNEL_POWER_LIMIT *prPwrLimit;
+	struct CMD_CHANNEL_POWER_LIMIT_HE *prPwrLmtHE;
+	enum ENUM_PWR_LIMIT_TYPE eType;
 
-	prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
+	int8_t cLmtBand = 0;
+
+	ASSERT(prCmd);
+
 	prPwrLimitSubBand = &g_rRlmPowerLimitDefault[u2DefaultTableIndex];
+	eType = prCmd->ucLimitType;
+
+	if (eType == PWR_LIMIT_TYPE_COMP_11AX)
+		prPwrLmtHE = &prCmd->u.rChPwrLimtHE[0];
+	else
+		prPwrLimit = &prCmd->u.rChannelPowerLimit[0];
+
 
 	/*Build power limit cmd by default table information */
 
 	for (i = POWER_LIMIT_2G4; i < POWER_LIMIT_SUBAND_NUM; i++) {
-		if (prPwrLimitSubBand->aucPwrLimitSubBand[i] <= MAX_TX_POWER) {
-			for (k = g_rRlmSubBand[i].ucStartCh;
-			     k <= g_rRlmSubBand[i].ucEndCh;
-			     k += g_rRlmSubBand[i].ucInterval) {
-				if ((prPwrLimitSubBand->ucPwrUnit
-							& BIT(i)) == 0) {
-					prCmdPwrLimit->ucCentralCh = k;
-					kalMemSet(&prCmdPwrLimit->cPwrLimitCCK,
-						  prPwrLimitSubBand->
-							aucPwrLimitSubBand[i],
-						  PWR_LIMIT_V2_NUM);
-				} else {
+
+		cLmtBand = prPwrLimitSubBand->aucPwrLimitSubBand[i];
+
+		if (prPwrLimitSubBand->aucPwrLimitSubBand[i] > MAX_TX_POWER) {
+			DBGLOG(RLM, WARN, "SubBand[%d] Pwr(%d) > Max (%d)",
+				prPwrLimitSubBand->aucPwrLimitSubBand[i],
+				MAX_TX_POWER);
+			cLmtBand = MAX_TX_POWER;
+		}
+
+		for (k = g_rRlmSubBand[i].ucStartCh;
+		     k <= g_rRlmSubBand[i].ucEndCh;
+		     k += g_rRlmSubBand[i].ucInterval) {
+
+			if (eType == PWR_LIMIT_TYPE_COMP_11AX)
+				prPwrLmtHE->ucCentralCh = k;
+			else
+				prPwrLimit->ucCentralCh = k;
+
+			if ((prPwrLimitSubBand->ucPwrUnit
+						& BIT(i)) == 0) {
+
+				if (eType == PWR_LIMIT_TYPE_COMP_11AX)
+					kalMemSet(&prPwrLmtHE->cPwrLimitRU26L,
+						cLmtBand,
+						PWR_LIMIT_HE_NUM);
+				else
+					kalMemSet(&prPwrLimit->cPwrLimitCCK,
+					cLmtBand,
+					PWR_LIMIT_NUM);
+			} else {
 					/* ex: 40MHz power limit(mW\MHz)
 					 *	= 20MHz power limit(mW\MHz) * 2
 					 * ---> 40MHz power limit(dBm)
 					 *	= 20MHz power limit(dBm) + 6;
 					 */
-					prCmdPwrLimit->ucCentralCh = k;
+
+				if (eType == PWR_LIMIT_TYPE_COMP_11AX) {
 					/* BW20 */
-					prCmdPwrLimit->cPwrLimitCCK =
-							prPwrLimitSubBand->
-							  aucPwrLimitSubBand[i];
-#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
-					prCmdPwrLimit->cPwrLimitOFDM_L =
-							prPwrLimitSubBand->
-							  aucPwrLimitSubBand[i];
-					prCmdPwrLimit->cPwrLimitOFDM_H =
-							prPwrLimitSubBand->
-							  aucPwrLimitSubBand[i];
+					prPwrLmtHE->cPwrLimitRU26L = cLmtBand;
+					prPwrLmtHE->cPwrLimitRU26H = cLmtBand;
+					prPwrLmtHE->cPwrLimitRU26U = cLmtBand;
+
+					prPwrLmtHE->cPwrLimitRU52L = cLmtBand;
+					prPwrLmtHE->cPwrLimitRU52H = cLmtBand;
+					prPwrLmtHE->cPwrLimitRU52U = cLmtBand;
+
+					prPwrLmtHE->cPwrLimitRU106L = cLmtBand;
+					prPwrLmtHE->cPwrLimitRU106H = cLmtBand;
+					prPwrLmtHE->cPwrLimitRU106U = cLmtBand;
+
+					prPwrLmtHE->cPwrLimitRU242L = cLmtBand;
+					prPwrLmtHE->cPwrLimitRU242H = cLmtBand;
+					prPwrLmtHE->cPwrLimitRU242U = cLmtBand;
+
+				} else {
+					/* BW20 */
+					prPwrLimit->cPwrLimitCCK = cLmtBand;
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING == 1)
+					prPwrLimit->cPwrLimitOFDM_L = cLmtBand;
+					prPwrLimit->cPwrLimitOFDM_H = cLmtBand;
 #endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
-					prCmdPwrLimit->cPwrLimit20L =
-							prPwrLimitSubBand->
-							  aucPwrLimitSubBand[i];
-					prCmdPwrLimit->cPwrLimit20H =
-							prPwrLimitSubBand->
-							  aucPwrLimitSubBand[i];
+					prPwrLimit->cPwrLimit20L = cLmtBand;
+					prPwrLimit->cPwrLimit20H = cLmtBand;
+				}
 
-					/* BW40 */
-					if (prPwrLimitSubBand->
-						aucPwrLimitSubBand[i] + 6 >
-								MAX_TX_POWER) {
-						prCmdPwrLimit->cPwrLimit40L =
-								   MAX_TX_POWER;
-						prCmdPwrLimit->cPwrLimit40H =
-								   MAX_TX_POWER;
-					} else {
-						prCmdPwrLimit->cPwrLimit40L =
-							prPwrLimitSubBand->
-							aucPwrLimitSubBand[i]
-							+ 6;
-						prCmdPwrLimit->cPwrLimit40H =
-							prPwrLimitSubBand->
-							aucPwrLimitSubBand[i]
-							+ 6;
-					}
+				/* BW40 */
+				cLmtBand += 6;
 
-					/* BW80 */
-					if (prPwrLimitSubBand->
-						aucPwrLimitSubBand[i] + 12 >
-								MAX_TX_POWER) {
-						prCmdPwrLimit->cPwrLimit80L =
-								MAX_TX_POWER;
-						prCmdPwrLimit->cPwrLimit80H =
-								MAX_TX_POWER;
-					} else {
-						prCmdPwrLimit->cPwrLimit80L =
-							prPwrLimitSubBand->
-							aucPwrLimitSubBand[i]
-							+ 12;
-						prCmdPwrLimit->cPwrLimit80H =
-							prPwrLimitSubBand->
-							aucPwrLimitSubBand[i]
-							+ 12;
-					}
+				if (cLmtBand > MAX_TX_POWER)
+					cLmtBand = MAX_TX_POWER;
+
+				if (eType == PWR_LIMIT_TYPE_COMP_11AX) {
+					prPwrLmtHE->cPwrLimitRU484L = cLmtBand;
+					prPwrLmtHE->cPwrLimitRU484H = cLmtBand;
+					prPwrLmtHE->cPwrLimitRU484U = cLmtBand;
+				} else {
+					prPwrLimit->cPwrLimit40L = cLmtBand;
+					prPwrLimit->cPwrLimit40H = cLmtBand;
+				}
+
+				/* BW80 */
+				cLmtBand += 6;
+				if (cLmtBand > MAX_TX_POWER)
+					cLmtBand = MAX_TX_POWER;
+
+				if (eType == PWR_LIMIT_TYPE_COMP_11AX) {
+					prPwrLmtHE->cPwrLimitRU996L = cLmtBand;
+					prPwrLmtHE->cPwrLimitRU996H = cLmtBand;
+					prPwrLmtHE->cPwrLimitRU996U = cLmtBand;
+
+				} else {
+					prPwrLimit->cPwrLimit80L = cLmtBand;
+					prPwrLimit->cPwrLimit80H = cLmtBand;
+				}
 
 					/* BW160 */
-					if (prPwrLimitSubBand->
-						aucPwrLimitSubBand[i] + 18 >
-								MAX_TX_POWER) {
-						prCmdPwrLimit->cPwrLimit160L =
-								MAX_TX_POWER;
-						prCmdPwrLimit->cPwrLimit160H =
-								MAX_TX_POWER;
-					} else {
-						prCmdPwrLimit->cPwrLimit160L =
-							prPwrLimitSubBand->
-							aucPwrLimitSubBand[i]
-							+ 18;
-						prCmdPwrLimit->cPwrLimit160H =
-							prPwrLimitSubBand->
-							aucPwrLimitSubBand[i]
-							+ 18;
-					}
+				cLmtBand += 6;
+				if (cLmtBand > MAX_TX_POWER)
+					cLmtBand = MAX_TX_POWER;
+				prPwrLimit->cPwrLimit160L = cLmtBand;
+				prPwrLimit->cPwrLimit160H = cLmtBand;
 
-				}
+
+
+			}
 				/* save to power limit array per
 				 * subband channel
 				 */
-				prCmdPwrLimit++;
-				prCmd->u1ChPwrTblColNum++;
-			}
+			if (eType == PWR_LIMIT_TYPE_COMP_11AX)
+				prPwrLmtHE++;
+			else
+				prPwrLimit++;
+
+			prCmd->ucNum++;
 		}
 	}
+
+	DBGLOG(RLM, STATE, "Build Default Limit(%c%c)ChNum=%d,typde=%d\n",
+				((prCmd->u2CountryCode &
+				0xff00) >> 8),
+				(prCmd->u2CountryCode &
+				0x00ff),
+				prCmd->ucNum,
+				eType);
+
 }
 
 void rlmDomainCopyFromConfigTable(struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit,
 	struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION *prPwrLimitConfig)
 {
+
+
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING == 1)
+	/*remapping from old setting to new setting*/
 	prCmdPwrLimit->cPwrLimitCCK =
 				prPwrLimitConfig->aucPwrLimit[PWR_LIMIT_CCK];
+	prCmdPwrLimit->cPwrLimitOFDM_L =
+				prPwrLimitConfig->aucPwrLimit[PWR_LIMIT_OFDM_L];
+	prCmdPwrLimit->cPwrLimitOFDM_H =
+				prPwrLimitConfig->aucPwrLimit[PWR_LIMIT_OFDM_H];
 	kalMemCopy(&prCmdPwrLimit->cPwrLimit20L,
-		   &prPwrLimitConfig->aucPwrLimit[1],
-		   PWR_LIMIT_NUM - 1);
-
-#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
-	prCmdPwrLimit->cPwrLimitOFDM_L = prCmdPwrLimit->cPwrLimit20L;
-	prCmdPwrLimit->cPwrLimitOFDM_H = prCmdPwrLimit->cPwrLimit20H;
+		   &prPwrLimitConfig->aucPwrLimit[PWR_LIMIT_OFDM_L],
+		   PWR_LIMIT_NUM - 5);
+#else
+	kalMemCopy(&prCmdPwrLimit->cPwrLimitCCK,
+		   &prPwrLimitConfig->aucPwrLimit[0],
+		   PWR_LIMIT_NUM);
 #endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
 }
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2859,190 +2907,113 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 			struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd)
 {
 #define PwrLmtConf g_rRlmPowerLimitConfiguration
+#define PwrLmtConfHE g_rRlmPowerLimitConfigurationHE
 	uint16_t i, k;
 	uint16_t u2CountryCodeTable = COUNTRY_CODE_NULL;
+	enum ENUM_PWR_LIMIT_TYPE eType;
 	struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit;
+	struct CMD_CHANNEL_POWER_LIMIT_HE *prCmdPwrLimtHE;
 	u_int8_t fgChannelValid;
+	uint8_t ucCentCh;
+	uint8_t ucPwrLmitConfSize = sizeof(PwrLmtConf) /
+		sizeof(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION);
 
+	uint8_t ucPwrLmitConfSizeHE = sizeof(PwrLmtConfHE) /
+		sizeof(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE);
+
+	eType = prCmd->ucLimitType;
 	/*Build power limit cmd by configuration table information */
 
-	for (i = 0; i < sizeof(PwrLmtConf) /
-			sizeof(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION);
-	     i++) {
+	for (k = 0; k < prCmd->ucNum; k++) {
 
-		WLAN_GET_FIELD_BE16(&PwrLmtConf[i].aucCountryCode[0],
-				    &u2CountryCodeTable);
+		if (eType == PWR_LIMIT_TYPE_COMP_11AX) {
+			prCmdPwrLimtHE = &prCmd->u.rChPwrLimtHE[k];
+			ucCentCh = prCmdPwrLimtHE->ucCentralCh;
 
-		fgChannelValid =
-		    rlmDomainCheckChannelEntryValid(prAdapter,
-						    PwrLmtConf[i].ucCentralCh);
+			for (i = 0; i < ucPwrLmitConfSizeHE ; i++) {
 
-		if (u2CountryCodeTable == COUNTRY_CODE_NULL) {
-			break;	/*end of configuration table */
-		} else if ((u2CountryCodeTable == prCmd->u2CountryCode)
-				&& (fgChannelValid == TRUE)) {
+				WLAN_GET_FIELD_BE16(
+					&PwrLmtConfHE[i].aucCountryCode[0],
+					&u2CountryCodeTable);
 
-			prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
+				fgChannelValid =
+				    rlmDomainCheckChannelEntryValid(prAdapter,
+					PwrLmtConfHE[i].ucCentralCh);
 
-			if (prCmd->u1ChPwrTblColNum != 0) {
-				for (k = 0; k < prCmd->u1ChPwrTblColNum; k++) {
-					if (prCmdPwrLimit->ucCentralCh ==
-						PwrLmtConf[i].ucCentralCh) {
+				if (u2CountryCodeTable == COUNTRY_CODE_NULL)
+					break;	/*end of configuration table */
+				else if (u2CountryCodeTable
+					!= prCmd->u2CountryCode)
+					continue;
+				else if (fgChannelValid == FALSE)
+					continue;
+				else if (ucCentCh
+					!= PwrLmtConfHE[i].ucCentralCh)
+					continue;
 
-						/* Cmd setting (Default table
-						 * information) and Conf table
-						 * has repetition channel entry,
-						 * ex : Default table (ex: 2.4G,
-						 *      limit = 20dBm) -->
-						 *      ch1~14 limit =20dBm,
-						 * Conf table (ex: ch1, limit =
-						 *      22dBm) --> ch 1 = 22 dBm
-						 * Cmd final setting --> ch1 =
-						 *      22dBm, ch2~14 = 20dBm
-						 */
-						rlmDomainCopyFromConfigTable(
-							prCmdPwrLimit,
-							&PwrLmtConf[i]);
-
-						DBGLOG(RLM, LOUD,
-#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
-						       "Domain: CC=%c%c,ReplaceCh=%d,Limit=%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,Fg=%d\n",
-#else
-						       "Domain: CC=%c%c,ReplaceCh=%d,Limit=%d,%d,%d,%d,%d,%d,%d,%d,%d,Fg=%d\n",
-#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
-						       ((prCmd->u2CountryCode &
-								0xff00) >> 8),
-						       (prCmd->u2CountryCode &
-									0x00ff),
-						       prCmdPwrLimit->
-								ucCentralCh,
-						       prCmdPwrLimit->
-								cPwrLimitCCK,
-#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
-						       prCmdPwrLimit->
-								cPwrLimitOFDM_L,
-						       prCmdPwrLimit->
-								cPwrLimitOFDM_H,
-#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
-						       prCmdPwrLimit->
-								cPwrLimit20L,
-						       prCmdPwrLimit->
-								cPwrLimit20H,
-						       prCmdPwrLimit->
-								cPwrLimit40L,
-						       prCmdPwrLimit->
-								cPwrLimit40H,
-						       prCmdPwrLimit->
-								cPwrLimit80L,
-						       prCmdPwrLimit->
-								cPwrLimit80H,
-						       prCmdPwrLimit->
-								cPwrLimit160L,
-						       prCmdPwrLimit->
-								cPwrLimit160H,
-						       prCmdPwrLimit->ucFlag);
-
-						break;
-					}
-					/* To search next entry in
-					 * rChannelPowerLimit[k]
-					 */
-					prCmdPwrLimit++;
-				}
-				if (k == prCmd->u1ChPwrTblColNum) {
-
-					/* Full search cmd(Default table
-					 * setting) no match channel,
-					 *  ex : Default table (ex: 2.4G, limit
-					 *       =20dBm) -->ch1~14 limit =20dBm,
-					 *  Configuration table(ex: ch36, limit
-					 *       =22dBm) -->ch 36 = 22 dBm
-					 *  Cmd final setting -->
-					 *       ch1~14 = 20dBm, ch36 = 22dBm
-					 */
-					prCmdPwrLimit->ucCentralCh =
-						PwrLmtConf[i].ucCentralCh;
-					rlmDomainCopyFromConfigTable(
-						prCmdPwrLimit, &PwrLmtConf[i]);
-					/* Add this channel setting in
-					 * rChannelPowerLimit[k]
-					 */
-					prCmd->u1ChPwrTblColNum++;
-
-					DBGLOG(RLM, LOUD,
-#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
-					       "Domain: CC=%c%c,AddCh=%d,Limit=%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,Fg=%d\n",
-#else
-					       "Domain: CC=%c%c,AddCh=%d,Limit=%d,%d,%d,%d,%d,%d,%d,%d,%d,Fg=%d\n",
-#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
-					       ((prCmd->u2CountryCode & 0xff00)
-									>> 8),
-					       (prCmd->u2CountryCode & 0x00ff),
-					       prCmdPwrLimit->ucCentralCh,
-					       prCmdPwrLimit->cPwrLimitCCK,
-#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
-					       prCmdPwrLimit->cPwrLimitOFDM_L,
-					       prCmdPwrLimit->cPwrLimitOFDM_H,
-#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
-					       prCmdPwrLimit->cPwrLimit20L,
-					       prCmdPwrLimit->cPwrLimit20H,
-					       prCmdPwrLimit->cPwrLimit40L,
-					       prCmdPwrLimit->cPwrLimit40H,
-					       prCmdPwrLimit->cPwrLimit80L,
-					       prCmdPwrLimit->cPwrLimit80H,
-					       prCmdPwrLimit->cPwrLimit160L,
-					       prCmdPwrLimit->cPwrLimit160H,
-					       prCmdPwrLimit->ucFlag);
-
-				}
-			} else {
-
-				/* Default table power limit value are max on
-				 * all subbands --> cmd table no channel entry
-				 *  ex : Default table (ex: 2.4G, limit = 63dBm)
-				 *  --> no channel entry in cmd,
-				 *  Configuration table(ex: ch36, limit = 22dBm)
-				 *  --> ch 36 = 22 dBm
-				 *  Cmd final setting -->  ch36 = 22dBm
+				/* Cmd setting (Default table
+				 * information) and Conf table
+				 * has repetition channel entry,
+				 * ex : Default table (ex: 2.4G,
+				 *      limit = 20dBm) -->
+				 *      ch1~14 limit =20dBm,
+				 * Conf table (ex: ch1, limit =
+				 *      22dBm) --> ch 1 = 22 dBm
+				 * Cmd final setting --> ch1 =
+				 *      22dBm, ch2~14 = 20dBm
 				 */
-				prCmdPwrLimit->ucCentralCh =
-						PwrLmtConf[i].ucCentralCh;
+				kalMemCopy(&prCmdPwrLimtHE->cPwrLimitRU26L,
+					   &PwrLmtConfHE[i].aucPwrLimit,
+					   PWR_LIMIT_HE_NUM);
+			}
+
+
+		} else {
+			prCmdPwrLimit = &prCmd->u.rChannelPowerLimit[k];
+			ucCentCh = prCmdPwrLimit->ucCentralCh;
+
+			for (i = 0; i < ucPwrLmitConfSize ; i++) {
+
+				WLAN_GET_FIELD_BE16(
+					&PwrLmtConf[i].aucCountryCode[0],
+					&u2CountryCodeTable);
+
+				fgChannelValid =
+				    rlmDomainCheckChannelEntryValid(
+				    prAdapter,
+					PwrLmtConf[i].ucCentralCh);
+
+				if (u2CountryCodeTable == COUNTRY_CODE_NULL)
+					break;	/*end of configuration table */
+				else if (u2CountryCodeTable
+					!= prCmd->u2CountryCode)
+					continue;
+				else if (fgChannelValid == FALSE)
+					continue;
+				else if (ucCentCh != PwrLmtConf[i].ucCentralCh)
+					continue;
+
+				/* Cmd setting (Default table
+				 * information) and Conf table
+				 * has repetition channel entry,
+				 * ex : Default table (ex: 2.4G,
+				 *      limit = 20dBm) -->
+				 *      ch1~14 limit =20dBm,
+				 * Conf table (ex: ch1, limit =
+				 *      22dBm) --> ch 1 = 22 dBm
+				 * Cmd final setting --> ch1 =
+				 *      22dBm, ch2~14 = 20dBm
+				 */
 				rlmDomainCopyFromConfigTable(
-						prCmdPwrLimit, &PwrLmtConf[i]);
-				/* Add this channel setting in
-				 * rChannelPowerLimit[k]
-				 */
-				prCmd->u1ChPwrTblColNum++;
-
-				DBGLOG(RLM, LOUD,
-				       "Domain: Default table power limit value are max on all subbands.\n");
-				DBGLOG(RLM, LOUD,
-#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
-				       "Domain: CC=%c%c,AddCh=%d,Limit=%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,Fg=%d\n",
-#else
-				       "Domain: CC=%c%c,AddCh=%d,Limit=%d,%d,%d,%d,%d,%d,%d,%d,%d,Fg=%d\n",
-#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
-				       ((prCmd->u2CountryCode & 0xff00) >> 8),
-				       (prCmd->u2CountryCode & 0x00ff),
-				       prCmdPwrLimit->ucCentralCh,
-				       prCmdPwrLimit->cPwrLimitCCK,
-#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
-				       prCmdPwrLimit->cPwrLimitOFDM_L,
-				       prCmdPwrLimit->cPwrLimitOFDM_H,
-#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
-				       prCmdPwrLimit->cPwrLimit20L,
-				       prCmdPwrLimit->cPwrLimit20H,
-				       prCmdPwrLimit->cPwrLimit40L,
-				       prCmdPwrLimit->cPwrLimit40H,
-				       prCmdPwrLimit->cPwrLimit80L,
-				       prCmdPwrLimit->cPwrLimit80H,
-				       prCmdPwrLimit->cPwrLimit160L,
-				       prCmdPwrLimit->cPwrLimit160H,
-				       prCmdPwrLimit->ucFlag);
+					prCmdPwrLimit,
+					&PwrLmtConf[i]
+				);
 			}
 		}
 	}
 #undef PwrLmtConf
+#undef PwrLmtConfHE
+
 }
 
 struct TX_PWR_LIMIT_DATA *
@@ -3711,54 +3682,43 @@ void txPwrOperate(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
 }
 
 uint32_t txPwrArbitrator(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
-			 struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit,
-			 struct TX_PWR_CTRL_CHANNEL_SETTING *prChlSetting)
+			 void *pvBuf,
+			 struct TX_PWR_CTRL_CHANNEL_SETTING *prChlSetting,
+			 enum ENUM_PWR_LIMIT_TYPE eType)
 {
-	if (prChlSetting->op[PWR_LIMIT_V2_CCK] != PWR_CTRL_TYPE_NO_ACTION) {
-		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimitCCK,
-			     &prChlSetting->i8PwrLimit[PWR_LIMIT_V2_CCK]);
-	}
-#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
-	if (prChlSetting->op[PWR_LIMIT_V2_OFDM_L] != PWR_CTRL_TYPE_NO_ACTION) {
-		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimitOFDM_L,
-			     &prChlSetting->i8PwrLimit[PWR_LIMIT_V2_OFDM_L]);
-	}
-	if (prChlSetting->op[PWR_LIMIT_V2_OFDM_H] != PWR_CTRL_TYPE_NO_ACTION) {
-		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimitOFDM_H,
-			     &prChlSetting->i8PwrLimit[PWR_LIMIT_V2_OFDM_H]);
-	}
-#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
-	if (prChlSetting->op[PWR_LIMIT_V2_20M_L] != PWR_CTRL_TYPE_NO_ACTION) {
-		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimit20L,
-			     &prChlSetting->i8PwrLimit[PWR_LIMIT_V2_20M_L]);
-	}
-	if (prChlSetting->op[PWR_LIMIT_V2_20M_H] != PWR_CTRL_TYPE_NO_ACTION) {
-		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimit20H,
-			     &prChlSetting->i8PwrLimit[PWR_LIMIT_V2_20M_H]);
-	}
-	if (prChlSetting->op[PWR_LIMIT_V2_40M_L] != PWR_CTRL_TYPE_NO_ACTION) {
-		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimit40L,
-			     &prChlSetting->i8PwrLimit[PWR_LIMIT_V2_40M_L]);
-	}
-	if (prChlSetting->op[PWR_LIMIT_V2_40M_H] != PWR_CTRL_TYPE_NO_ACTION) {
-		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimit40H,
-			     &prChlSetting->i8PwrLimit[PWR_LIMIT_V2_40M_H]);
-	}
-	if (prChlSetting->op[PWR_LIMIT_V2_80M_L] != PWR_CTRL_TYPE_NO_ACTION) {
-		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimit80L,
-			     &prChlSetting->i8PwrLimit[PWR_LIMIT_V2_80M_L]);
-	}
-	if (prChlSetting->op[PWR_LIMIT_V2_80M_H] != PWR_CTRL_TYPE_NO_ACTION) {
-		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimit80H,
-			     &prChlSetting->i8PwrLimit[PWR_LIMIT_V2_80M_H]);
-	}
-	if (prChlSetting->op[PWR_LIMIT_V2_160M_L] != PWR_CTRL_TYPE_NO_ACTION) {
-		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimit160L,
-			     &prChlSetting->i8PwrLimit[PWR_LIMIT_V2_160M_L]);
-	}
-	if (prChlSetting->op[PWR_LIMIT_V2_160M_H] != PWR_CTRL_TYPE_NO_ACTION) {
-		txPwrOperate(eCtrlType, &prCmdPwrLimit->cPwrLimit160H,
-			     &prChlSetting->i8PwrLimit[PWR_LIMIT_V2_160M_H]);
+	struct CMD_CHANNEL_POWER_LIMIT *prPwrLimit;
+	struct CMD_CHANNEL_POWER_LIMIT_HE *prPwrLimitHE;
+	uint8_t rateIdx;
+	int8_t *prRateOfs;
+
+
+
+	if (eType == PWR_LIMIT_TYPE_COMP_11AX) {
+		prPwrLimitHE = (struct CMD_CHANNEL_POWER_LIMIT_HE *) pvBuf;
+		prRateOfs = &prPwrLimitHE->cPwrLimitRU26L;
+
+		for (rateIdx = PWR_LIMIT_RU26_L;
+			rateIdx < PWR_LIMIT_HE_NUM ; rateIdx++) {
+			if (prChlSetting->opHE[rateIdx]
+				!= PWR_CTRL_TYPE_NO_ACTION) {
+				txPwrOperate(eCtrlType, prRateOfs + rateIdx,
+				&prChlSetting->i8PwrLimitHE[rateIdx]);
+			}
+		}
+
+	} else {
+		prPwrLimit = (struct CMD_CHANNEL_POWER_LIMIT *) pvBuf;
+		prRateOfs = &prPwrLimit->cPwrLimitCCK;
+
+		for (rateIdx = PWR_LIMIT_CCK;
+			rateIdx < PWR_LIMIT_NUM ; rateIdx++) {
+			if (prChlSetting->op[rateIdx]
+				!= PWR_CTRL_TYPE_NO_ACTION) {
+				txPwrOperate(eCtrlType, prRateOfs + rateIdx,
+				&prChlSetting->i8PwrLimit[rateIdx]);
+			}
+		}
+
 	}
 
 	return 0;
@@ -3769,13 +3729,28 @@ uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 			      uint8_t *bandedgeParam)
 {
 	struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit;
+	struct CMD_CHANNEL_POWER_LIMIT_HE *prCmdPwrLimitHE;
 	struct TX_PWR_CTRL_CHANNEL_SETTING *prChlSetting;
 	uint8_t i, j, channel, channel2, channel3;
 	u_int8_t fgDoArbitrator;
+	enum ENUM_PWR_LIMIT_TYPE eType;
 
-	prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
-	for (i = 0; i < prCmd->u1ChPwrTblColNum; i++) {
-		channel = prCmdPwrLimit->ucCentralCh;
+	ASSERT(prCmd);
+	eType = prCmd->ucLimitType;
+
+	for (i = 0; i < prCmd->ucNum; i++) {
+
+		if (eType == PWR_LIMIT_TYPE_COMP_11AX) {
+			prCmdPwrLimitHE = &prCmd->u.rChPwrLimtHE[i];
+			channel = prCmdPwrLimitHE->ucCentralCh;
+
+		} else {
+			prCmdPwrLimit = &prCmd->u.rChannelPowerLimit[i];
+			channel = prCmdPwrLimit->ucCentralCh;
+		}
+
+
+
 		for (j = 0; j < prCurElement->settingCount; j++) {
 			prChlSetting = &prCurElement->rChlSettingList[j];
 			channel2 = prChlSetting->channelParam[0];
@@ -3841,12 +3816,21 @@ uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 					break;
 				}
 			}
-			if (fgDoArbitrator)
-				txPwrArbitrator(prCurElement->eCtrlType,
-						prCmdPwrLimit, prChlSetting);
+
+			if (fgDoArbitrator) {
+				if (eType == PWR_LIMIT_TYPE_COMP_11AX)
+					txPwrArbitrator(prCurElement->eCtrlType,
+							prCmdPwrLimitHE,
+							prChlSetting,
+							eType);
+				else
+					txPwrArbitrator(prCurElement->eCtrlType,
+							prCmdPwrLimit,
+							prChlSetting,
+							eType);
+			}
 		}
 
-		prCmdPwrLimit++;
 	}
 
 	return 0;
@@ -3903,13 +3887,48 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 	char acTmpName[MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE];
 	char *pcContCur = NULL, *pcContCur2 = NULL, *pcContEnd = NULL;
 	char *pcContTmp = NULL, *pcContNext = NULL, *pcContOld = NULL;
-	char carySeperator[2] = { 0, 0 };
 	uint32_t u4MemSize = sizeof(struct TX_PWR_CTRL_ELEMENT);
 	uint32_t copySize = 0;
 	uint8_t i, j, op, ucSettingCount = 0;
 	uint8_t value, value2, count = 0;
 	uint8_t ucAppliedWay, ucOperation = 0;
-	uint8_t ucCommaCount;
+	char carySeperator[2] = { 0, 0 };
+
+	char *pacParsePwrAC[PWR_CFG_PRAM_NUM_AC] = {
+		"CCK",
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING == 1)
+		"OFDML",
+		"OFDMH",
+#endif
+		"HT20L",
+		"HT20H",
+		"HT40L",
+		"HT40H",
+		"HT80L",
+		"HT80H",
+		"HT160L",
+		"HT160H"
+		};
+	char *pacParsePwrAX[PWR_CFG_PRAM_NUM_AX] = {
+		"RU26L",
+		"RU26H",
+		"RU26U",
+		"RU52L",
+		"RU52H",
+		"RU52U",
+		"RU106L",
+		"RU106H",
+		"RU106U",
+		"RU242L",
+		"RU242H",
+		"RU242U",
+		"RU484L",
+		"RU484H",
+		"RU484U",
+		"RU996L",
+		"RU996H",
+		"RU996U"
+		};
 
 	if (!pcContent) {
 		DBGLOG(RLM, ERROR, "pcContent is null\n");
@@ -4056,7 +4075,7 @@ skipLabel:
 			goto clearLabel;
 		}
 
-		/* verify the setting is PWR_LIMIT_V2_NUM segments */
+		/* verify this setting has 9 segment */
 		pcContTmp = pcContCur;
 		count = 0;
 		while (pcContTmp < pcContNext) {
@@ -4064,17 +4083,14 @@ skipLabel:
 				count++;
 			pcContTmp++;
 		}
-		if ((count != 1) && (count != PWR_LIMIT_V2_NUM)) {
+
+		if ((count != PWR_CFG_PRAM_NUM_AC) &&
+			(count != PWR_CFG_PRAM_NUM_AX) &&
+			(count != PWR_CFG_PRAM_NUM_ALL_RATE)) {
 			DBGLOG(RLM, ERROR,
-			       "parse error: segments num error, %s, %d\n",
-			       pcContCur, PWR_LIMIT_V2_NUM);
+			       "parse error: not segments, %s\n",
+			       pcContCur);
 			goto clearLabel;
-		} else {
-			ucCommaCount = count;
-			if (ucCommaCount == 1)
-				carySeperator[0] = ']';
-			else
-				carySeperator[0] = ',';
 		}
 
 		/* parse channel setting type */
@@ -4133,12 +4149,6 @@ skipLabel:
 		else {
 			pcContCur2 = pcContOld;
 			pcContTmp = txPwrGetString(&pcContCur2, "-");
-			if (!pcContTmp) {
-				DBGLOG(RLM, ERROR,
-					"parse channel setting type error, %s\n",
-					pcContOld);
-				goto clearLabel;
-			}
 			if (pcContCur2 == NULL) { /* case: normal channel */
 				if (kalkStrtou8(pcContOld, 0, &value) != 0) {
 					DBGLOG(RLM, ERROR,
@@ -4169,238 +4179,94 @@ skipLabel:
 			}
 		}
 
-		/* parse cck setting */
-		pcContOld = pcContCur;
-		if (txPwrParseNumber(&pcContCur, carySeperator, &op, &value)) {
-			DBGLOG(RLM, ERROR, "parse CCK error, %s\n",
-			       pcContOld);
-			goto clearLabel;
-		}
-		prTmpSetting->op[PWR_LIMIT_V2_CCK] =
-					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
-		prTmpSetting->i8PwrLimit[PWR_LIMIT_V2_CCK] =
-					(op != 2) ? value : (0 - value);
-		if ((prTmpSetting->op[PWR_LIMIT_V2_CCK] ==
-		     PWR_CTRL_TYPE_POSITIVE) &&
-		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
-			DBGLOG(RLM, ERROR,
-				"parse CCK error, Power_Offset value cannot be positive: %u\n",
-				value);
-			goto clearLabel;
-		}
-		if (ucCommaCount == 1) {
-			for (j = 1; j < PWR_LIMIT_V2_NUM; j++) {
+		if (count == PWR_CFG_PRAM_NUM_ALL_RATE) {
+			/* parse all rate setting */
+			pcContOld = pcContCur;
+			if (txPwrParseNumber(&pcContCur, "]", &op, &value)) {
+				DBGLOG(RLM, ERROR, "parse CCK error, %s\n",
+					   pcContOld);
+				goto clearLabel;
+			}
+
+			for (j = 0; j < PWR_CFG_PRAM_NUM_AC; j++) {
 				prTmpSetting->op[j] = op;
 				prTmpSetting->i8PwrLimit[j] = (op != 2) ?
 							value : (0 - value);
 			}
+
+			for (j = 0; j < PWR_CFG_PRAM_NUM_AX; j++) {
+				prTmpSetting->opHE[j] = op;
+				prTmpSetting->i8PwrLimitHE[j] = (op != 2) ?
+							value : (0 - value);
+			}
 			goto skipLabel2;
-		}
+		} else  if (count == PWR_CFG_PRAM_NUM_AC) {
+			for (j = 0; j < PWR_CFG_PRAM_NUM_AC; j++) {
+				/* parse cck/20L/20H .. 160L/160H setting */
+				if (j == PWR_CFG_PRAM_NUM_AC - 1)
+					carySeperator[0] = ']';
+				else
+					carySeperator[0] = ',';
 
-#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
-		/* parse cPwrLimitOFDM_L setting */
-		pcContOld = pcContCur;
-		if (txPwrParseNumber(&pcContCur, ",", &op, &value)) {
-			DBGLOG(RLM, ERROR, "parse OFDM_L error, %s\n",
-			       pcContOld);
-			goto clearLabel;
-		}
-		prTmpSetting->op[PWR_LIMIT_V2_OFDM_L] =
+				pcContOld = pcContCur;
+				if (txPwrParseNumber(&pcContCur, carySeperator,
+					&op, &value)) {
+					DBGLOG(RLM, ERROR,
+						"parse %s error, %s\n",
+						pacParsePwrAC[j], pcContOld);
+					goto clearLabel;
+				}
+				prTmpSetting->op[j] =
 					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
-		prTmpSetting->i8PwrLimit[PWR_LIMIT_V2_OFDM_L] =
+				prTmpSetting->i8PwrLimit[j] =
 					(op != 2) ? value : (0 - value);
-		if ((prTmpSetting->op[PWR_LIMIT_V2_OFDM_L] ==
-						PWR_CTRL_TYPE_POSITIVE) &&
-		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
-			DBGLOG(RLM, ERROR,
-			       "parse OFDM_L error, Power_Offset value cannot be positive: %u\n",
-			       value);
-			goto clearLabel;
-		}
+				if ((prTmpSetting->op[j]
+					== PWR_CTRL_TYPE_POSITIVE) &&
+					(ucOperation
+					== PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)
+					) {
+					DBGLOG(RLM, ERROR,
+						"parse %s error, Power_Offset value cannot be positive: %u\n",
+						pacParsePwrAC[j],
+						value);
+					goto clearLabel;
+				}
+			}
 
-		/* parse cPwrLimitOFDM_H setting */
-		pcContOld = pcContCur;
-		if (txPwrParseNumber(&pcContCur, ",", &op, &value)) {
-			DBGLOG(RLM, ERROR, "parse OFDM_H error, %s\n",
-			       pcContOld);
-			goto clearLabel;
-		}
-		prTmpSetting->op[PWR_LIMIT_V2_OFDM_H] =
-					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
-		prTmpSetting->i8PwrLimit[PWR_LIMIT_V2_OFDM_H] =
-					(op != 2) ? value : (0 - value);
-		if ((prTmpSetting->op[PWR_LIMIT_V2_OFDM_H] ==
-						PWR_CTRL_TYPE_POSITIVE) &&
-		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
-			DBGLOG(RLM, ERROR,
-			       "parse OFDM_H error, Power_Offset value cannot be positive: %u\n",
-			       value);
-			goto clearLabel;
-		}
-#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
+		} else if (count == PWR_CFG_PRAM_NUM_AX) {
+			for (j = 0; j < PWR_CFG_PRAM_NUM_AX; j++) {
+				/* parse RU26L ...  RU996U setting */
+				if (j == PWR_CFG_PRAM_NUM_AX - 1)
+					carySeperator[0] = ']';
+				else
+					carySeperator[0] = ',';
 
-		/* parse cPwrLimit20L setting */
-		pcContOld = pcContCur;
-		if (txPwrParseNumber(&pcContCur, ",", &op, &value)) {
-			DBGLOG(RLM, ERROR, "parse HT20L error, %s\n",
-			       pcContOld);
-			goto clearLabel;
-		}
-		prTmpSetting->op[PWR_LIMIT_V2_20M_L] =
+				pcContOld = pcContCur;
+				if (txPwrParseNumber(&pcContCur, carySeperator,
+					&op, &value)) {
+					DBGLOG(RLM, ERROR,
+						"parse %s error, %s\n",
+						pacParsePwrAX[j],
+						pcContOld);
+					goto clearLabel;
+				}
+				prTmpSetting->opHE[j] =
 					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
-		prTmpSetting->i8PwrLimit[PWR_LIMIT_V2_20M_L] =
+				prTmpSetting->i8PwrLimitHE[j] =
 					(op != 2) ? value : (0 - value);
-		if ((prTmpSetting->op[PWR_LIMIT_V2_20M_L] ==
-						PWR_CTRL_TYPE_POSITIVE) &&
-		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
-			DBGLOG(RLM, ERROR,
-				"parse HT20L error, Power_Offset value cannot be positive: %u\n",
-				value);
-			goto clearLabel;
-		}
+				if ((prTmpSetting->opHE[j]
+					== PWR_CTRL_TYPE_POSITIVE) &&
+					(ucOperation
+					== PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)
+					) {
+					DBGLOG(RLM, ERROR,
+						"parse %s error, Power_Offset value cannot be positive: %u\n",
+						pacParsePwrAX[j],
+						value);
+					goto clearLabel;
+				}
+			}
 
-		/* parse cPwrLimit20H setting */
-		pcContOld = pcContCur;
-		if (txPwrParseNumber(&pcContCur, ",", &op, &value)) {
-			DBGLOG(RLM, ERROR, "parse HT20H error, %s\n",
-			       pcContOld);
-			goto clearLabel;
-		}
-		prTmpSetting->op[PWR_LIMIT_V2_20M_H] =
-					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
-		prTmpSetting->i8PwrLimit[PWR_LIMIT_V2_20M_H] =
-					(op != 2) ? value : (0 - value);
-		if ((prTmpSetting->op[PWR_LIMIT_V2_20M_H] ==
-						PWR_CTRL_TYPE_POSITIVE) &&
-		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
-			DBGLOG(RLM, ERROR,
-				"parse HT20H error, Power_Offset value cannot be positive: %u\n",
-				value);
-			goto clearLabel;
-		}
-
-		/* parse cPwrLimit40L setting */
-		pcContOld = pcContCur;
-		if (txPwrParseNumber(&pcContCur, ",", &op, &value)) {
-			DBGLOG(RLM, ERROR, "parse HT40L error, %s\n",
-			       pcContOld);
-			goto clearLabel;
-		}
-		prTmpSetting->op[PWR_LIMIT_V2_40M_L] =
-					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
-		prTmpSetting->i8PwrLimit[PWR_LIMIT_V2_40M_L] =
-					(op != 2) ? value : (0 - value);
-		if ((prTmpSetting->op[PWR_LIMIT_V2_40M_L] ==
-						PWR_CTRL_TYPE_POSITIVE) &&
-		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
-			DBGLOG(RLM, ERROR,
-				"parse HT40L error, Power_Offset value cannot be positive: %u\n",
-				value);
-			goto clearLabel;
-		}
-
-		/* parse cPwrLimit40H setting */
-		pcContOld = pcContCur;
-		if (txPwrParseNumber(&pcContCur, ",", &op, &value)) {
-			DBGLOG(RLM, ERROR, "parse HT40H error, %s\n",
-			       pcContOld);
-			goto clearLabel;
-		}
-		prTmpSetting->op[PWR_LIMIT_V2_40M_H] =
-					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
-		prTmpSetting->i8PwrLimit[PWR_LIMIT_V2_40M_H] =
-					(op != 2) ? value : (0 - value);
-		if ((prTmpSetting->op[PWR_LIMIT_V2_40M_H] ==
-						PWR_CTRL_TYPE_POSITIVE) &&
-		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
-			DBGLOG(RLM, ERROR,
-				"parse HT40H error, Power_Offset value cannot be positive: %u\n",
-				value);
-			goto clearLabel;
-		}
-
-		/* parse cPwrLimit80L setting */
-		pcContOld = pcContCur;
-		if (txPwrParseNumber(&pcContCur, ",", &op, &value)) {
-			DBGLOG(RLM, ERROR,
-			       "parse HT80L error, %s\n",
-			       pcContOld);
-			goto clearLabel;
-		}
-		prTmpSetting->op[PWR_LIMIT_V2_80M_L] =
-					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
-		prTmpSetting->i8PwrLimit[PWR_LIMIT_V2_80M_L] =
-					(op != 2) ? value : (0 - value);
-		if ((prTmpSetting->op[PWR_LIMIT_V2_80M_L] ==
-						PWR_CTRL_TYPE_POSITIVE) &&
-		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
-			DBGLOG(RLM, ERROR,
-				"parse HT80L error, Power_Offset value cannot be positive: %u\n",
-				value);
-			goto clearLabel;
-		}
-
-		/* parse cPwrLimit80H setting */
-		pcContOld = pcContCur;
-		if (txPwrParseNumber(&pcContCur, ",", &op, &value)) {
-			DBGLOG(RLM, ERROR,
-			       "parse HT80H error, %s\n",
-			       pcContOld);
-			goto clearLabel;
-		}
-		prTmpSetting->op[PWR_LIMIT_V2_80M_H] =
-					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
-		prTmpSetting->i8PwrLimit[PWR_LIMIT_V2_80M_H] =
-					(op != 2) ? value : (0 - value);
-		if ((prTmpSetting->op[PWR_LIMIT_V2_80M_H] ==
-						PWR_CTRL_TYPE_POSITIVE) &&
-		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
-			DBGLOG(RLM, ERROR,
-				"parse HT80H error, Power_Offset value cannot be positive: %u\n",
-				value);
-			goto clearLabel;
-		}
-
-		/* parse cPwrLimit160L setting */
-		pcContOld = pcContCur;
-		if (txPwrParseNumber(&pcContCur, ",", &op, &value)) {
-			DBGLOG(RLM, ERROR,
-			       "parse HT160L error, %s\n",
-			       pcContOld);
-			goto clearLabel;
-		}
-		prTmpSetting->op[PWR_LIMIT_V2_160M_L] =
-					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
-		prTmpSetting->i8PwrLimit[PWR_LIMIT_V2_160M_L] =
-					(op != 2) ? value : (0 - value);
-		if ((prTmpSetting->op[PWR_LIMIT_V2_160M_L] ==
-						PWR_CTRL_TYPE_POSITIVE) &&
-		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
-			DBGLOG(RLM, ERROR,
-				"parse HT160L error, Power_Offset value cannot be positive: %u\n",
-				value);
-			goto clearLabel;
-		}
-
-		/* parse cPwrLimit160H setting */
-		pcContOld = pcContCur;
-		if (txPwrParseNumber(&pcContCur, "]", &op, &value)) {
-			DBGLOG(RLM, ERROR,
-			       "parse HT160H error, %s\n",
-			       pcContOld);
-			goto clearLabel;
-		}
-		prTmpSetting->op[PWR_LIMIT_V2_160M_H] =
-					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
-		prTmpSetting->i8PwrLimit[PWR_LIMIT_V2_160M_H] =
-					(op != 2) ? value : (0 - value);
-		if ((prTmpSetting->op[PWR_LIMIT_V2_160M_H] ==
-						PWR_CTRL_TYPE_POSITIVE) &&
-		    (ucOperation == PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)) {
-			DBGLOG(RLM, ERROR,
-				"parse HT160H error, Power_Offset value cannot be positive: %u\n",
-				value);
-			goto clearLabel;
 		}
 
 skipLabel2:
@@ -4453,7 +4319,9 @@ void txPwrCtrlShowList(struct ADAPTER *prAdapter, uint8_t filterType,
 		&prAdapter->rTxPwr_DynamicList
 	};
 	uint8_t ucAppliedWay, ucOperation;
-	int i, j, count = 0;
+	int i, j, k, count = 0;
+	char msgLimit[PWR_BUF_LEN];
+	int msgOfs = 0;
 
 	if (filterType == 1)
 		DBGLOG(RLM, TRACE, "Tx Power Ctrl List=[%s], Size=[%d]",
@@ -4509,40 +4377,45 @@ void txPwrCtrlShowList(struct ADAPTER *prAdapter, uint8_t filterType,
 			       ucOperation,
 			       g_au1TxPwrOperationLabel[ucOperation - 1],
 			       prCurElement->settingCount);
-			prChlSettingList = &(prCurElement->rChlSettingList[0]);
+
 			for (j = 0; j < prCurElement->settingCount; j++) {
-				/* Coverity check */
-				if (prChlSettingList->eChnlType >= 0) {
-					DBGLOG(RLM, TRACE,
-						"Setting-%u:[%s:%u,%u],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d]\n",
-						(j + 1),
-						g_au1TxPwrChlTypeLabel[
-						prChlSettingList->eChnlType],
-						prChlSettingList->
-						channelParam[0],
-						prChlSettingList->
-						channelParam[1],
-						prChlSettingList->op[0],
-						prChlSettingList->i8PwrLimit[0],
-						prChlSettingList->op[1],
-						prChlSettingList->i8PwrLimit[1],
-						prChlSettingList->op[2],
-						prChlSettingList->i8PwrLimit[2],
-						prChlSettingList->op[3],
-						prChlSettingList->i8PwrLimit[3],
-						prChlSettingList->op[4],
-						prChlSettingList->i8PwrLimit[4],
-						prChlSettingList->op[5],
-						prChlSettingList->i8PwrLimit[5],
-						prChlSettingList->op[6],
-						prChlSettingList->i8PwrLimit[6],
-						prChlSettingList->op[7],
-						prChlSettingList->i8PwrLimit[7],
-						prChlSettingList->op[8],
-						prChlSettingList->i8PwrLimit[8]
-					);
-				}
-				prChlSettingList++;
+				prChlSettingList =
+					&(prCurElement->rChlSettingList[j]);
+				msgOfs = 0;
+
+				/*message head*/
+				msgOfs += snprintf(msgLimit + msgOfs,
+					PWR_BUF_LEN - msgOfs,
+					"Setting-%u:[%s:%u,%u],Legcy:",
+					(j + 1),
+					g_au1TxPwrChlTypeLabel[
+					prChlSettingList->eChnlType],
+					prChlSettingList->channelParam[0],
+					prChlSettingList->channelParam[1]);
+
+				/*print legacy cfg*/
+				for (k = 0; k < PWR_LIMIT_NUM ; k++)
+					msgOfs += snprintf(msgLimit + msgOfs,
+						PWR_BUF_LEN - msgOfs,
+						"[%u,%d]",
+						prChlSettingList->op[k],
+					    prChlSettingList->i8PwrLimit[k]);
+
+				/*print HE cfg*/
+				msgOfs += snprintf(msgLimit + msgOfs,
+					PWR_BUF_LEN - msgOfs,
+					"HE:");
+				for (k = 0; k < PWR_LIMIT_HE_NUM ; k++)
+					msgOfs += snprintf(msgLimit + msgOfs,
+						PWR_BUF_LEN - msgOfs,
+						"[%u,%d]",
+						prChlSettingList->opHE[k],
+					    prChlSettingList->i8PwrLimitHE[k]);
+
+				/*message tail*/
+				msgLimit[msgOfs-1] = '\0';
+
+				DBGLOG(RLM, TRACE, "%s\n", msgLimit);
 			}
 		}
 	}
@@ -4609,7 +4482,7 @@ void txPwrCtrlDeleteElement(struct ADAPTER *prAdapter,
 
 struct TX_PWR_CTRL_ELEMENT *_txPwrCtrlFindElement(struct ADAPTER *prAdapter,
 				 uint8_t *name, uint32_t index,
-				 bool bFgCheckIsApplied,
+				 u_int8_t fgCheckIsApplied,
 				 struct LINK *prTxPwrCtrlList)
 {
 	struct LINK_ENTRY *prCur, *prNext;
@@ -4617,13 +4490,13 @@ struct TX_PWR_CTRL_ELEMENT *_txPwrCtrlFindElement(struct ADAPTER *prAdapter,
 
 
 	LINK_FOR_EACH_SAFE(prCur, prNext, prTxPwrCtrlList) {
-		bool fgFind = FALSE;
+		u_int8_t fgFind = FALSE;
 
 		prCurElement = LINK_ENTRY(
 			prCur, struct TX_PWR_CTRL_ELEMENT, node);
 		if (kalStrCmp(prCurElement->name, name) == 0) {
-			if ((!bFgCheckIsApplied) ||
-			    (bFgCheckIsApplied &&
+			if ((!fgCheckIsApplied) ||
+			    (fgCheckIsApplied &&
 			    (prCurElement->fgApplied == TRUE))) {
 				if (index == 0)
 					fgFind = TRUE;
@@ -4832,15 +4705,84 @@ void txPwrCtrlUninit(struct ADAPTER *prAdapter)
 /* dynamic tx power control: end **********************************************/
 #endif /* CFG_SUPPORT_DYNAMIC_PWR_LIMIT */
 
+void rlmDomainShowPwrLimitPerCh(char *message,
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd)
+{
+	struct CMD_CHANNEL_POWER_LIMIT *prPwrLmt;	/* for print usage */
+	struct CMD_CHANNEL_POWER_LIMIT_HE *prPwrLmtHE;	/* for print usage */
+	enum ENUM_PWR_LIMIT_TYPE eType;
+	uint8_t i, j;
+	char msgLimit[PWR_BUF_LEN];
+	int msgOfs = 0;
+	int8_t *prcRatePwr;
+
+
+	ASSERT(prCmd);
+
+	eType = prCmd->ucLimitType;
+
+	for (i = 0; i < prCmd->ucNum; i++) {
+
+		kalMemZero(msgLimit, sizeof(char)*PWR_BUF_LEN);
+		msgOfs = 0;
+		if (eType == PWR_LIMIT_TYPE_COMP_11AX) {
+			prPwrLmtHE = &prCmd->u.rChPwrLimtHE[i];
+			prcRatePwr = &prPwrLmtHE->cPwrLimitRU26L;
+
+			/*message head*/
+			msgOfs += snprintf(msgLimit + msgOfs,
+				PWR_BUF_LEN - msgOfs,
+				"HE ch=%d,Limit=",
+				prPwrLmtHE->ucCentralCh);
+
+			/*message body*/
+			for (j = PWR_LIMIT_RU26_L; j < PWR_LIMIT_HE_NUM ; j++)
+				msgOfs += snprintf(msgLimit + msgOfs,
+					PWR_BUF_LEN - msgOfs,
+					"%d,",
+					*(prcRatePwr + j));
+
+			/*message tail*/
+			msgLimit[msgOfs-1] = '\0';
+
+			DBGLOG(RLM, TRACE, "%s:%s\n", message, msgLimit);
+
+		} else {
+			prPwrLmt = &prCmd->u.rChannelPowerLimit[i];
+			prcRatePwr = &prPwrLmt->cPwrLimitCCK;
+
+			/*message head*/
+			msgOfs += snprintf(msgLimit + msgOfs,
+				PWR_BUF_LEN - msgOfs,
+				"legacy ch=%d,Limit=",
+				prPwrLmt->ucCentralCh);
+
+			/*message body*/
+			for (j = PWR_LIMIT_CCK; j < PWR_LIMIT_NUM ; j++)
+				msgOfs += snprintf(msgLimit + msgOfs,
+					PWR_BUF_LEN - msgOfs,
+					"%d,",
+					*(prcRatePwr + j));
+
+			/*message tail*/
+			msgLimit[msgOfs-1] = '\0';
+
+			DBGLOG(RLM, TRACE, "%s:%s\n", message, msgLimit);
+		}
+	}
+
+}
+
 void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 {
 	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd = NULL;
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmdHE = NULL;
 	uint32_t rStatus;
-	uint8_t i;
 	uint16_t u2DefaultTableIndex;
 	uint32_t u4SetCmdTableMaxSize;
+	uint32_t u4SetCmdTableMaxSizeHE;
 	uint32_t u4SetQueryInfoLen;
-	struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit;	/* for print usage */
+	uint32_t u4SetQueryInfoLenHE;
 	uint8_t bandedgeParam[4] = { 0, 0, 0, 0 };
 	struct DOMAIN_INFO_ENTRY *prDomainInfo;
 	/* TODO : 5G band edge */
@@ -4860,53 +4802,92 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	    MAX_CMD_SUPPORT_CHANNEL_NUM *
 	    sizeof(struct CMD_CHANNEL_POWER_LIMIT);
 
+	u4SetCmdTableMaxSizeHE =
+	    sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT) +
+	    MAX_CMD_SUPPORT_CHANNEL_NUM *
+	    sizeof(struct CMD_CHANNEL_POWER_LIMIT_HE);
+
+
 	prCmd = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4SetCmdTableMaxSize);
-	if (!prCmd) {
+	prCmdHE = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4SetCmdTableMaxSizeHE);
+
+	if (!prCmd || !prCmdHE) {
 		DBGLOG(RLM, ERROR, "Domain: Alloc cmd buffer failed\n");
 		return;
 	}
 	kalMemZero(prCmd, u4SetCmdTableMaxSize);
-
-#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
-	prCmd->u1LimitType =
-		(uint8_t)COUNTRY_CHANNEL_TXPOWER_LIMIT_TYPE_COMP_11AG_11N;
-#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
-
-	/* construct power table by domain index */
+	kalMemZero(prCmdHE, u4SetCmdTableMaxSize);
 
 	u2DefaultTableIndex =
 	    rlmDomainPwrLimitDefaultTableDecision(prAdapter,
 		prAdapter->rWifiVar.u2CountryCode);
 
-	if (u2DefaultTableIndex != POWER_LIMIT_TABLE_NULL) {
-
-		WLAN_GET_FIELD_BE16(&g_rRlmPowerLimitDefault
-				    [u2DefaultTableIndex]
-				    .aucCountryCode[0],
-				    &prCmd->u2CountryCode);
-
-		/* Initialize channel number */
-		prCmd->u1ChPwrTblColNum = 0;
-
-		if (prCmd->u2CountryCode == COUNTRY_CODE_NULL)
-			DBGLOG(RLM, WARN,
-				   "CC={0x00,0x00},Power Limit use Default setting!");
-
-		/*<1>Command - default table information,
-		 *fill all subband
-		 */
-		rlmDomainBuildCmdByDefaultTable(prCmd,
-			u2DefaultTableIndex);
-
-		/*<2>Command - configuration table information,
-		 * replace specified channel
-		 */
-		rlmDomainBuildCmdByConfigTable(prAdapter, prCmd);
-
-	} else {
-		DBGLOG(RLM, WARN,
-			   "Can't find any table index!\n");
+	if (u2DefaultTableIndex == POWER_LIMIT_TABLE_NULL) {
+		DBGLOG(RLM, ERROR,
+					   "Can't find any table index!\n");
+		return;
 	}
+
+	WLAN_GET_FIELD_BE16(&g_rRlmPowerLimitDefault
+			    [u2DefaultTableIndex]
+			    .aucCountryCode[0],
+			    &prCmd->u2CountryCode);
+	WLAN_GET_FIELD_BE16(&g_rRlmPowerLimitDefault
+			    [u2DefaultTableIndex]
+			    .aucCountryCode[0],
+			    &prCmdHE->u2CountryCode);
+
+	if (prCmd->u2CountryCode == COUNTRY_CODE_NULL)
+		DBGLOG(RLM, WARN,
+			   "CC={0x00,0x00},Power Limit use Default setting!");
+
+	/*<1>Command - default table information,
+	 *fill all subband
+	 */
+	rlmDomainBuildCmdByDefaultTable(prCmd,
+		u2DefaultTableIndex);
+
+	/*<2>Command - configuration table information,
+	 * replace specified channel
+	 */
+	rlmDomainBuildCmdByConfigTable(prAdapter, prCmd);
+
+
+
+	/* Initialize channel number */
+	prCmd->ucNum = 0;
+	prCmd->ucLimitType = PWR_LIMIT_TYPE_COMP_11AC;
+
+	prCmdHE->ucNum = 0;
+	prCmdHE->fgPwrTblKeep = TRUE;
+	prCmdHE->ucLimitType = PWR_LIMIT_TYPE_COMP_11AX;
+
+
+	/*<1>Command - default table information,
+	 *fill all subband
+	 */
+	rlmDomainBuildCmdByDefaultTable(prCmd,
+		u2DefaultTableIndex);
+
+	/*<2>Command - configuration table information,
+	 * replace specified channel
+	 */
+	rlmDomainBuildCmdByConfigTable(prAdapter,
+	prCmd);
+
+#if (CFG_SUPPORT_PWR_LIMIT_HE == 1)
+	/*<1>Command - default table information,
+	 *fill all subband
+	 */
+	rlmDomainBuildCmdByDefaultTable(prCmdHE,
+		u2DefaultTableIndex);
+
+	/*<2>Command - configuration table information,
+	 * replace specified channel
+	 */
+	rlmDomainBuildCmdByConfigTable(prAdapter,
+	prCmdHE);
+#endif
 
 	DBGLOG(RLM, INFO,
 	       "Domain: ValidCC=%c%c, PwrLimitCC=%c%c, PwrLimitChNum=%d\n",
@@ -4914,74 +4895,34 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	       (prAdapter->rWifiVar.u2CountryCode & 0x00ff),
 	       ((prCmd->u2CountryCode & 0xff00) >> 8),
 	       (prCmd->u2CountryCode & 0x00ff),
-	       prCmd->u1ChPwrTblColNum);
+	       prCmd->ucNum);
 
-	prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
-
-	for (i = 0; i < prCmd->u1ChPwrTblColNum; i++) {
-
-		DBGLOG(RLM, TRACE,
-#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
-		       "Old Domain: Idx=%d,Ch=%d,Limit=%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,Fg=%d\n",
-#else
-		       "Old Domain: Idx=%d,Ch=%d,Limit=%d,%d,%d,%d,%d,%d,%d,%d,%d,Fg=%d\n",
-#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
-		       i, prCmdPwrLimit->ucCentralCh,
-		       prCmdPwrLimit->cPwrLimitCCK,
-#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
-		       prCmdPwrLimit->cPwrLimitOFDM_L,
-		       prCmdPwrLimit->cPwrLimitOFDM_H,
-#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
-		       prCmdPwrLimit->cPwrLimit20L,
-		       prCmdPwrLimit->cPwrLimit20H,
-		       prCmdPwrLimit->cPwrLimit40L,
-		       prCmdPwrLimit->cPwrLimit40H,
-		       prCmdPwrLimit->cPwrLimit80L,
-		       prCmdPwrLimit->cPwrLimit80H,
-		       prCmdPwrLimit->cPwrLimit160L,
-		       prCmdPwrLimit->cPwrLimit160H,
-		       prCmdPwrLimit->ucFlag);
-		prCmdPwrLimit++;
-	}
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
+	rlmDomainShowPwrLimitPerCh("Old", prCmd);
 	/* apply each setting into country channel power table */
 	txPwrCtrlApplySettings(prAdapter, prCmd, bandedgeParam);
-#endif
 	/* show tx power table after applying setting */
-	prCmdPwrLimit = &prCmd->rChannelPowerLimit[0];
-	for (i = 0; i < prCmd->u1ChPwrTblColNum; i++) {
-		DBGLOG(RLM, TRACE,
-#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
-		       "New Domain: Idx=%d,Ch=%d,Limit=%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,Fg=%d\n",
-#else
-		       "New Domain: Idx=%d,Ch=%d,Limit=%d,%d,%d,%d,%d,%d,%d,%d,%d,Fg=%d\n",
-#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
-		       i, prCmdPwrLimit->ucCentralCh,
-		       prCmdPwrLimit->cPwrLimitCCK,
-#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
-		       prCmdPwrLimit->cPwrLimitOFDM_L,
-		       prCmdPwrLimit->cPwrLimitOFDM_H,
-#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
-		       prCmdPwrLimit->cPwrLimit20L,
-		       prCmdPwrLimit->cPwrLimit20H,
-		       prCmdPwrLimit->cPwrLimit40L,
-		       prCmdPwrLimit->cPwrLimit40H,
-		       prCmdPwrLimit->cPwrLimit80L,
-		       prCmdPwrLimit->cPwrLimit80H,
-		       prCmdPwrLimit->cPwrLimit160L,
-		       prCmdPwrLimit->cPwrLimit160H,
-		       prCmdPwrLimit->ucFlag);
+	rlmDomainShowPwrLimitPerCh("Final", prCmd);
 
-		prCmdPwrLimit++;
-	}
+#if (CFG_SUPPORT_PWR_LIMIT_HE == 1)
+	rlmDomainShowPwrLimitPerCh("Old", prCmdHE);
+	txPwrCtrlApplySettings(prAdapter, prCmdHE, bandedgeParam);
+	rlmDomainShowPwrLimitPerCh("Final", prCmdHE);
+#endif /*#if (CFG_SUPPORT_PWR_LIMIT_HE == 1)*/
+#endif
+
 
 	u4SetQueryInfoLen =
-	    (sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT) +
-	    (prCmd->u1ChPwrTblColNum) * sizeof(struct CMD_CHANNEL_POWER_LIMIT));
+		(sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT) +
+		(prCmd->ucNum) * sizeof(struct CMD_CHANNEL_POWER_LIMIT));
+
+	u4SetQueryInfoLenHE =
+		(sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT) +
+		(prCmd->ucNum) * sizeof(struct CMD_CHANNEL_POWER_LIMIT_HE));
 
 
 	/* Update domain info to chip */
-	if (prCmd->u1ChPwrTblColNum <= MAX_CMD_SUPPORT_CHANNEL_NUM) {
+	if (prCmd->ucNum <= MAX_CMD_SUPPORT_CHANNEL_NUM) {
 		rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
 				CMD_ID_SET_COUNTRY_POWER_LIMIT,	/* ucCID */
 				TRUE,	/* fgSetQuery */
@@ -4994,6 +4935,20 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 				NULL,	/* pvSetQueryBuffer */
 				0	/* u4SetQueryBufferLen */
 		    );
+#if (CFG_SUPPORT_PWR_LIMIT_HE == 1)
+		rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+				CMD_ID_SET_COUNTRY_POWER_LIMIT,	/* ucCID */
+				TRUE,	/* fgSetQuery */
+				FALSE,	/* fgNeedResp */
+				FALSE,	/* fgIsOid */
+				NULL,	/* pfCmdDoneHandler */
+				NULL,	/* pfCmdTimeoutHandler */
+				u4SetQueryInfoLenHE,	/* u4SetQueryInfoLen */
+				(uint8_t *) prCmdHE,	/* pucInfoBuffer */
+				NULL,	/* pvSetQueryBuffer */
+				0	/* u4SetQueryBufferLen */
+		    );
+#endif
 	} else {
 		DBGLOG(RLM, ERROR, "Domain: illegal power limit table\n");
 	}
@@ -5001,6 +4956,7 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	/* ASSERT(rStatus == WLAN_STATUS_PENDING); */
 
 	cnmMemFree(prAdapter, prCmd);
+	cnmMemFree(prAdapter, prCmdHE);
 
 }
 #endif
