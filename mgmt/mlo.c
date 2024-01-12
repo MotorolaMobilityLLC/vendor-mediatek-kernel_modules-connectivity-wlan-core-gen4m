@@ -181,6 +181,47 @@ void beGenerateAuthMldIE(
 	}
 }
 
+void beGenerateExternalAuthMldIE(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct MSDU_INFO *prMsduInfo)
+{
+	struct IE_MULTI_LINK_CONTROL *common = NULL;
+	struct MLD_STA_RECORD *mld_starec;
+	struct LINK *links;
+	struct BSS_INFO *bss;
+	struct STA_RECORD *starec;
+	uint32_t offset, len;
+
+	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
+	offset = sortMsduPayloadOffset(prAdapter, prMsduInfo);
+	len = prMsduInfo->u2FrameLength;
+
+	if (mld_starec && mld_starec->rStarecList.u4NumElem >= 1) {
+		common = beGenerateMldCommonInfo(prAdapter, prMsduInfo);
+		if (!common)
+			return;
+
+		links =  &mld_starec->rStarecList;
+		LINK_FOR_EACH_ENTRY(starec, links, rLinkEntryMld,
+			struct STA_RECORD) {
+			bss = GET_BSS_INFO_BY_INDEX(prAdapter,
+				starec->ucBssIndex);
+
+			DBGLOG(INIT, INFO,
+				"\tsta=%d, widx=%d, bss=%d, mac: " MACSTR "\n",
+				starec->ucIndex,
+				starec->ucWlanIndex,
+				starec->ucBssIndex,
+				MAC2STR(bss->aucOwnMacAddr));
+
+				beGenerateMldSTAInfo(prAdapter, common,
+					prMsduInfo, offset, len,
+					prMsduInfo, bss->ucBssIndex);
+		}
+	}
+}
+
 void beGenerateAssocMldIE(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,

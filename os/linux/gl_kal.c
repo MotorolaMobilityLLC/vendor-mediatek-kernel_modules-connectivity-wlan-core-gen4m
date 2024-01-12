@@ -9002,59 +9002,79 @@ int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
 int kalVendorExternalAuthRequest(IN struct ADAPTER *prAdapter,
 			   IN uint8_t ucBssIndex)
 {
-	struct PARAM_EXTERNAL_AUTH_INFO params;
-	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
-	struct BSS_DESC *prBssDesc = NULL;
-	struct STA_RECORD *prStaRec;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
+	struct STA_RECORD *prStaRec;
+	struct MSDU_INFO *prMsduInfo = NULL;
+	struct BSS_INFO *prBssInfo;
+	struct WLAN_AUTH_FRAME *prAuthFrame;
+	struct PARAM_EXTERNAL_AUTH_INFO *info;
+	struct CONNECTION_SETTINGS *conn;
+	uint8_t size = 0;
 
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	if (!prAisFsmInfo) {
-		DBGLOG(SAA, WARN,
-		       "SAE auth failed with NULL prAisFsmInfo\n");
-		return WLAN_STATUS_INVALID_DATA;
-	}
-
-	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
-	if (!prBssDesc) {
-		DBGLOG(SAA, WARN,
-		       "SAE auth failed without prTargetBssDesc\n");
-		return WLAN_STATUS_INVALID_DATA;
-	}
-
-	prStaRec = aisGetTargetStaRec(prAdapter, ucBssIndex);
-	if (!prStaRec) {
-		DBGLOG(SAA, WARN,
-		       "SAE auth failed without StaRec\n");
-		return WLAN_STATUS_INVALID_DATA;
-	}
-
+	wiphy = prAdapter->prGlueInfo->prDevHandler->ieee80211_ptr->wiphy;
 	wdev = wlanGetNetDev(prAdapter->prGlueInfo, ucBssIndex)->ieee80211_ptr;
-	wiphy = wdev->wiphy;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	prStaRec = prBssInfo->prStaRecOfAP;
+	conn = aisGetConnSettings(prAdapter, ucBssIndex);
 
-	params.id = GRID_EXTERNAL_AUTH;
-	params.len = sizeof(params) - 2;
-	params.action = NL80211_EXTERNAL_AUTH_START;
-	COPY_MAC_ADDR(params.bssid, prStaRec->aucMldAddr);
-	COPY_SSID(params.ssid, params.ssid_len,
-		  prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
-	params.key_mgmt_suite = RSN_AKM_SUITE_SAE;
-	COPY_MAC_ADDR(params.da, prBssDesc->aucBSSID);
+	/* Allocate a MSDU_INFO_T */
+	prMsduInfo = cnmMgtPktAlloc(prAdapter, MAX_LEN_OF_MLIE);
+	if (prMsduInfo == NULL) {
+		DBGLOG(SAA, WARN,
+		       "No PKT_INFO_T for sending external auth.\n");
+		return -1;
+	}
+
+	prAuthFrame = (struct WLAN_AUTH_FRAME *)prMsduInfo->prPacket;
+	prAuthFrame->u2FrameCtrl = MAC_FRAME_AUTH;
+	prMsduInfo->u2FrameLength =
+		sortMsduPayloadOffset(prAdapter, prMsduInfo);
+
+	beGenerateExternalAuthMldIE(prAdapter, prStaRec, prMsduInfo);
+
+	size = sizeof(struct PARAM_EXTERNAL_AUTH_INFO) +
+		prMsduInfo->u2FrameLength -
+		sortMsduPayloadOffset(prAdapter, prMsduInfo);
+	info = kalMemAlloc(size, VIR_MEM_TYPE);
+	if (!info) {
+		DBGLOG(AIS, ERROR, "alloc vendor external auth event fail\n");
+		cnmMgtPktFree(prAdapter, prMsduInfo);
+		return -1;
+	}
+	kalMemZero(info, size);
+	info->id = GRID_EXTERNAL_AUTH;
+	info->len = size - 2;
+	info->action = NL80211_EXTERNAL_AUTH_START;
+	COPY_MAC_ADDR(info->bssid, prStaRec->aucMldAddr);
+	COPY_SSID(info->ssid, info->ssid_len, conn->aucSSID, conn->ucSSIDLen);
+	info->ssid[info->ssid_len] = '\0';
+	info->key_mgmt_suite = RSN_AKM_SUITE_SAE;
+	COPY_MAC_ADDR(info->da, prStaRec->aucMacAddr);
+	kalMemCopy(info->ext_ie, prAuthFrame->aucInfoElem,
+		prMsduInfo->u2FrameLength -
+		sortMsduPayloadOffset(prAdapter, prMsduInfo));
+
 	DBGLOG(SAA, INFO,
-		"[WPA3] "MACSTR" (da="MACSTR") %s %d %d %02x-%02x-%02x-%02x",
-		MAC2STR(params.bssid), params.da, params.ssid,
-		params.ssid_len, params.action,
-		(uint8_t) (params.key_mgmt_suite & 0xFF),
-		(uint8_t) ((params.key_mgmt_suite >> 8) & 0xFF),
-		(uint8_t) ((params.key_mgmt_suite >> 16) & 0xFF),
-		(uint8_t) ((params.key_mgmt_suite >> 24) & 0xFF));
+		"[WPA3] "MACSTR" (link="MACSTR") %s %d %d %02x-%02x-%02x-%02x",
+		MAC2STR(info->bssid), info->da, info->ssid,
+		info->ssid_len, info->action,
+		(uint8_t) (info->key_mgmt_suite & 0xFF),
+		(uint8_t) ((info->key_mgmt_suite >> 8) & 0xFF),
+		(uint8_t) ((info->key_mgmt_suite >> 16) & 0xFF),
+		(uint8_t) ((info->key_mgmt_suite >> 24) & 0xFF));
+	DBGLOG_MEM8(SAA, INFO, info, IE_SIZE(info));
 
-	return mtk_cfg80211_vendor_event_generic_response(
-		wiphy, wdev, sizeof(params), (uint8_t *)&params);
+	mtk_cfg80211_vendor_event_generic_response(
+		wiphy, wdev, size, (uint8_t *)info);
+
+	cnmMgtPktFree(prAdapter, prMsduInfo);
+	kalMemFree(info, VIR_MEM_TYPE, size);
+
+	return 0;
 }
-
 #endif /* CFG_SUPPORT_802_11BE_MLO */
+
 #endif /* CFG_SUPPORT_WPA3 */
 
 const uint8_t *kalFindIeMatchMask(uint8_t eid,
