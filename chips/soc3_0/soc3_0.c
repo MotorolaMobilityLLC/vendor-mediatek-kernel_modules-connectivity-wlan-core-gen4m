@@ -2949,7 +2949,6 @@ uint32_t soc3_0_wlanImageSectionDownloadStage(
 	u_int8_t fgIsNotDownload = FALSE;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
-	struct patch_dl_target target;
 	struct PATCH_FORMAT_T *prPatchHeader;
 	struct ROM_EMI_HEADER *prRomEmiHeader;
 	struct FWDL_OPS_T *prFwDlOps;
@@ -2962,14 +2961,11 @@ uint32_t soc3_0_wlanImageSectionDownloadStage(
 	if (eDlIdx == IMG_DL_IDX_PATCH) {
 		prPatchHeader = pvFwImageMapFile;
 		if (prPatchHeader->u4PatchVersion == PATCH_VERSION_MAGIC_NUM) {
-			wlanImageSectionGetPatchInfoV2(prAdapter,
+			u4Status = wlanGetPatchInfoAndDownloadV2(prAdapter,
 				pvFwImageMapFile,
 				u4FwImageFileLength,
-				&u4DataMode,
-				&target);
-			DBGLOG(INIT, INFO,
-				"FormatV2 num_of_regoin[%d] datamode[0x%08x]\n",
-				target.num_of_region, u4DataMode);
+				eDlIdx,
+				u4DataMode);
 		} else {
 			wlanImageSectionGetPatchInfo(prAdapter,
 				pvFwImageMapFile,
@@ -2979,12 +2975,6 @@ uint32_t soc3_0_wlanImageSectionDownloadStage(
 			DBGLOG(INIT, INFO,
 		"FormatV1 DL Offset[%u] addr[0x%08x] len[%u] datamode[0x%08x]\n",
 		       u4Offset, u4Addr, u4Len, u4DataMode);
-		}
-
-		if (prPatchHeader->u4PatchVersion == PATCH_VERSION_MAGIC_NUM)
-			u4Status = wlanDownloadSectionV2(prAdapter,
-				u4DataMode, eDlIdx, &target);
-		else
 /* For dynamic memory map::Begin */
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
 			u4Status = prFwDlOps->downloadByDynMemMap(
@@ -3002,6 +2992,7 @@ uint32_t soc3_0_wlanImageSectionDownloadStage(
 								+ u4Offset,
 						       eDlIdx);
 #endif
+		}
 /* For dynamic memory map::End */
 #if (CFG_SUPPORT_CONNINFRA == 1)
 		/* Set datecode to EMI */
