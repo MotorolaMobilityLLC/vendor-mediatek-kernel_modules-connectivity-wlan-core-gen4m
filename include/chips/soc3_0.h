@@ -238,6 +238,8 @@ int wf_ioremap_read(size_t addr, unsigned int *val);
 int wf_ioremap_write(phys_addr_t addr, unsigned int val);
 int soc3_0_Trigger_fw_assert(void);
 #if (CFG_SUPPORT_CONNINFRA == 1)
+int wlanConnacPccifon(void);
+int wlanConnacPccifoff(void);
 int soc3_0_Trigger_whole_chip_rst(char *reason);
 void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter);
 void soc3_0_Conninfra_cb_register(void);

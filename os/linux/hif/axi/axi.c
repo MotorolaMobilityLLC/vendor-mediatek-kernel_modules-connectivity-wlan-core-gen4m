@@ -280,6 +280,13 @@ int hifAxiRemove(void)
 #endif
 #endif
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	if (prChipInfo->coexpccifoff) {
+		prChipInfo->coexpccifoff();
+		DBGLOG(INIT, TRACE, "pccif off fail\n");
+	}
+#endif
+
 	DBGLOG(INIT, TRACE, "pfWlanRemove done\n");
 	DBGLOG(INIT, TRACE, "hifAxiRemove() done\n");
 	return 0;

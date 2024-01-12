@@ -649,6 +649,8 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.triggerfwassert = soc3_0_Trigger_fw_assert,
 	.dumpwfsyscpupcr = soc3_0_DumpWfsysCpupcr,
 #if (CFG_SUPPORT_CONNINFRA == 1)
+	.coexpccifon = wlanConnacPccifon,
+	.coexpccifoff = wlanConnacPccifoff,
 	.trigger_wholechiprst = soc3_0_Trigger_whole_chip_rst,
 	.sw_interrupt_handler = soc3_0_Sw_interrupt_handler,
 	.conninra_cb_register = soc3_0_Conninfra_cb_register
@@ -1347,6 +1349,62 @@ int hifWmmcuPwrOn(void)
 
 	return ret;
 }
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+int wlanConnacPccifon(void)
+{
+	int ret = 0;
+
+	/*reset WiFi power on status to MD*/
+	wf_ioremap_write(0x10003314, 0x00);
+	/*set WiFi power on status to MD*/
+	wf_ioremap_write(0x10003314, 0x01);
+       /*
+	*Ccif4 (ccif_md2conn_wf):
+	*write cg gate 0x1000_10C0[28] & [29] (write 1 set)
+	*write cg gate 0x1000_10C4[28] & [29] (write 1 clear)
+	*Connsys/AP is used bit 28,md is used bit 29
+	*default value is 0,clk enable
+	*Set cg must set both bit[28] [29], and clk turn off
+	*Clr cg set either bit[28][29], and clk turn on
+
+       *Enable PCCIF4 clock
+       *HW auto control, so no need to turn on or turn off
+	*wf_ioremap_read(0x100010c4, &reg);
+	*reg |= BIT(28);
+	*ret = wf_ioremap_write(0x100010c4,reg);
+	*/
+	return ret;
+}
+
+int wlanConnacPccifoff(void)
+{
+	int ret = 0;
+
+	/*reset WiFi power on status to MD*/
+	ret = wf_ioremap_write(0x10003314, 0x00);
+	/*reset WiFi power on status to MD*/
+	ret = wf_ioremap_write(0x1024c014, 0x0ff);
+
+	/*
+	*Ccif4 (ccif_md2conn_wf):
+	*write cg gate 0x1000_10C0[28] & [29] (write 1 set)
+	*write cg gate 0x1000_10C4[28] & [29] (write 1 clear)
+	*Connsys/AP is used bit 28, md is used bit 29
+	*default value is 0, clk enable
+	*Set cg must set both bit[28] [29], and clk turn off
+	*Clr cg set either bit[28][29], and clk turn on
+
+       *Disable PCCIF4 clock
+	*HW auto control, so no need to turn on or turn off
+	*wf_ioremap_read(0x100010c0, &reg);
+	*reg |= BIT(28);
+	*ret = wf_ioremap_write(0x100010c0,reg);
+	*/
+	return ret;
+}
+#endif
+
 int hifWmmcuPwrOff(void)
 {
 	int ret = 0;

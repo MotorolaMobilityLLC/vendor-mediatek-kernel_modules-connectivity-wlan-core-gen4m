@@ -1363,6 +1363,8 @@ struct mt66xx_chip_info {
 	uint32_t (*pwrondownload)(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucDownloadItem);
 	int (*triggerfwassert)(void);
+	int (*coexpccifon)(void);
+	int (*coexpccifoff)(void);
 	int (*trigger_wholechiprst)(char *reason);
 	void (*sw_interrupt_handler)(IN struct ADAPTER *prAdapter);
 	void (*conninra_cb_register)(void);
