@@ -378,7 +378,6 @@ void asicConnac2xWfdmaReInit(
 		prBusInfo->setDummyReg(prAdapter->prGlueInfo);
 
 #endif /* _HIF_PCIE */
-		nicEnableInterrupt(prAdapter);
 		asicConnac2xWfdmaDummyCrWrite(prAdapter);
 	}
 }
