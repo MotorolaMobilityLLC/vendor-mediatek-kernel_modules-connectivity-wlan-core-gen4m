@@ -2561,6 +2561,11 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 		connsys_power_event_notification(CONN_PWR_EVENT_LEVEL,
 							&u4Level);
 #endif
+
+#if (CFG_SUPPORT_TWT == 1)
+		/* 7. Disable TWT under CTIA mode */
+		prAdapter->rWifiVar.ucTWTRequester = 0;
+#endif
 	} else {
 		/* 1. Enaable On-Lin Scan */
 		prAdapter->fgEnOnlineScan = TRUE;
@@ -2605,6 +2610,11 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 		prAdapter->u4PwrLevel = u4Level;
 		connsys_power_event_notification(CONN_PWR_EVENT_LEVEL,
 						&(prAdapter->u4PwrLevel));
+#endif
+
+#if (CFG_SUPPORT_TWT == 1)
+		/* 7. Enable TWT support after CTIA mode */
+		prAdapter->rWifiVar.ucTWTRequester = 1;
 #endif
 	}
 
