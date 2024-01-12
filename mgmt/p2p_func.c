@@ -91,7 +91,8 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL,
 			rlmGenerateMTKOuiIE}	/* 221 */
 #endif
-
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL,
+			rsnGenerateWPAIE}	/* 221 */
 };
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -3687,6 +3688,8 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 			prAdapter->rWifiVar.prP2pSpecificBssInfo
 				[prP2pBssInfo->u4PrivateData];
 		prP2pSpecificBssInfo->u2AttributeLen = 0;
+		prP2pSpecificBssInfo->u2WpaIeLen = 0;
+		prP2pSpecificBssInfo->u2RsnIeLen = 0;
 
 		ASSERT_BREAK(pucIEInfo != NULL);
 
@@ -3917,7 +3920,15 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 				kalP2PSetCipher(prAdapter->prGlueInfo,
 					IW_AUTH_CIPHER_CCMP,
 					(uint8_t) prP2pBssInfo->u4PrivateData);
-
+				if (IE_LEN(pucIE) > ELEM_MAX_LEN_RSN) {
+					DBGLOG(P2P, ERROR,
+						"RSN IE length is unexpected !!\n");
+					return;
+				}
+				kalMemCopy(prP2pSpecificBssInfo->aucRsnIeBuffer,
+					pucIE, IE_SIZE(pucIE));
+				prP2pSpecificBssInfo->u2RsnIeLen
+					= IE_SIZE(pucIE);
 				if (rsnParseRsnIE(prAdapter,
 					RSN_IE(pucIE), &rRsnIe)) {
 					prP2pBssInfo->u4RsnSelectedGroupCipher =
@@ -4141,6 +4152,11 @@ p2pFuncParseBeaconVenderId(IN struct ADAPTER *prAdapter,
 					kalP2PSetCipher(prAdapter->prGlueInfo,
 						IW_AUTH_CIPHER_TKIP,
 						ucRoleIndex);
+				if (IE_LEN(pucIE) > ELEM_MAX_LEN_WPA) {
+					DBGLOG(P2P, ERROR,
+						"WPA IE length is unexpected !!\n");
+					return;
+				}
 				kalMemCopy(
 					prP2pSpecificBssInfo
 						->aucWpaIeBuffer,
