@@ -3126,8 +3126,12 @@ struct WAPI_INFO_ELEM {
 	uint8_t ucElemId;
 	uint8_t ucLength;
 	uint16_t u2Version;
-	uint16_t u2AuthKeyMgtSuiteCount;
-	uint8_t aucAuthKeyMgtSuite1[4];
+	uint16_t u2AKMSuiteCount;
+	uint32_t u4AKMSuite;
+	uint16_t u2PairSuiteCount;
+	uint32_t u4PairSuite;
+	uint32_t u4GroupSuite;
+	uint16_t u2WapiCap;
 } __KAL_ATTRIB_PACKED__;
 
 /* Information Elements from MTK Synergies.*/
