@@ -99,7 +99,8 @@ const uint8_t *apucNetworkOpMode[] = {
 	(uint8_t *) "IBSS",
 	(uint8_t *) "ACCESS_POINT",
 	(uint8_t *) "P2P_DEVICE",
-	(uint8_t *) "BOW"
+	(uint8_t *) "BOW",
+	(uint8_t *) "NAN"
 };
 
 #if (CFG_SUPPORT_ADHOC) || (CFG_SUPPORT_AAA)
