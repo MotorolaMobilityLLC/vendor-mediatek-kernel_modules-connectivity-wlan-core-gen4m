@@ -1640,6 +1640,12 @@ void halRxSDIOAggReceiveRFBs(IN struct ADAPTER *prAdapter)
 		QUEUE_REMOVE_HEAD(&prHifInfo->rRxFreeBufQueue, prRxBuf, struct SDIO_RX_COALESCING_BUF *);
 		mutex_unlock(&prHifInfo->rRxFreeBufQueMutex);
 
+		if (prRxBuf == NULL) {
+			DBGLOG(RX, ERROR,
+			  "prRxBuf get from rRxFreeBufQueue is NULL!!!\n");
+			continue;
+		}
+
 		prRxBuf->u4PktCount = u4RxAggCount;
 
 		u4RxAggLength = (HIF_RX_COALESCING_BUFFER_SIZE - u4RxAvailAggLen);
@@ -2718,7 +2724,6 @@ void halDeAggRxPktWorker(struct work_struct *work)
 		return;
 
 	prGlueInfo = ENTRY_OF(work, struct GLUE_INFO, rRxPktDeAggWork);
-	prHifInfo = &prGlueInfo->rHifInfo;
 	prAdapter = prGlueInfo->prAdapter;
 
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT)
