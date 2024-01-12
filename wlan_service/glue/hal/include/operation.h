@@ -273,7 +273,8 @@ s_int32 mt_op_dbdc_continuous_tx(
 s_int32 mt_op_get_tx_info(
 	struct test_wlan_info *winfos,
 	struct test_configuration *test_configs_band0,
-	struct test_configuration *test_configs_band1);
+	struct test_configuration *test_configs_band1,
+	struct test_configuration *test_configs_band2);
 s_int32 mt_op_get_rx_statistics_all(
 	struct test_wlan_info *winfos,
 	struct hqa_comm_rx_stat *hqa_rx_stat);
