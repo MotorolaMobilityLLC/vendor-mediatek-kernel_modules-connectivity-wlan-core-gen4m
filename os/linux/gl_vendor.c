@@ -2535,6 +2535,7 @@ int mtk_cfg80211_vendor_packet_keep_alive_start(
 			     nla_parse_offloading_policy) < 0) {
 		DBGLOG(REQ, ERROR, "%s nla_parse_nested failed\n",
 		       __func__);
+		i4Status = -EFAULT;
 		goto nla_put_failure;
 	}
 
@@ -2598,7 +2599,8 @@ int mtk_cfg80211_vendor_packet_keep_alive_start(
 
 	if (prGlueInfo->u4ReadyFlag == 0) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
-		return -EFAULT;
+		i4Status = -EFAULT;
+		goto nla_put_failure;
 	}
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidPacketKeepAlive,

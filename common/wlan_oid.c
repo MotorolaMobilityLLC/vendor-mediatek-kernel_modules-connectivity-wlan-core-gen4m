@@ -7049,6 +7049,12 @@ wlanoidSetSwCtrlWrite(struct ADAPTER *prAdapter,
 			prAdapter->rWifiVar.ucUapsd = (u_int8_t) u4Data;
 		else if (u2SubId == 0x3) {
 			prAdapter->u4UapsdAcBmp = u4Data & BITS(0, 15);
+
+			if (!IS_BSS_INDEX_VALID(u4Data >> 16)) {
+				DBGLOG(OID, ERROR,
+					"Invalid bssidx:%d\n", u4Data >> 16);
+				break;
+			}
 			GET_BSS_INFO_BY_INDEX(prAdapter,
 			      u4Data >> 16)->rPmProfSetupInfo.ucBmpDeliveryAC =
 					      (uint8_t) prAdapter->u4UapsdAcBmp;
@@ -8387,7 +8393,7 @@ wlanoidSetNANMulticastList(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 
 	/* The data must be a multiple of the Ethernet address size. */
 	if ((u4SetBufferLen % MAC_ADDR_LEN)) {
-		DBGLOG(REQ, WARN, "Invalid MC list length %ld\n",
+		DBGLOG(REQ, WARN, "Invalid MC list length %u\n",
 		       u4SetBufferLen);
 
 		*pu4SetInfoLen =
@@ -10337,7 +10343,7 @@ wlanoidRftestQueryAutoTest(struct ADAPTER *prAdapter,
 				  PARAM_MTK_WIFI_TEST_STRUCT);
 
 	if (u4QueryBufferLen < sizeof(struct PARAM_MTK_WIFI_TEST_STRUCT)) {
-		DBGLOG(REQ, ERROR, "Invalid data. QueryBufferLen: %ld.\n",
+		DBGLOG(REQ, ERROR, "Invalid data. QueryBufferLen: %u.\n",
 		       u4QueryBufferLen);
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
@@ -10390,7 +10396,7 @@ wlanoidRftestSetAutoTest(struct ADAPTER *prAdapter,
 	*pu4SetInfoLen = sizeof(struct PARAM_MTK_WIFI_TEST_STRUCT);
 
 	if (u4SetBufferLen < sizeof(struct PARAM_MTK_WIFI_TEST_STRUCT)) {
-		DBGLOG(REQ, ERROR, "Invalid data. SetBufferLen: %ld.\n",
+		DBGLOG(REQ, ERROR, "Invalid data. SetBufferLen: %u.\n",
 		       u4SetBufferLen);
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
@@ -13383,13 +13389,13 @@ wlanoidSetNANMode(struct ADAPTER *prAdapter, void *pvSetBuffer,
 
 	*pu4SetInfoLen = sizeof(uint32_t);
 	if (u4SetBufferLen < sizeof(uint32_t)) {
-		DBGLOG(REQ, WARN, "Invalid length %ld\n", u4SetBufferLen);
+		DBGLOG(REQ, WARN, "Invalid length %u\n", u4SetBufferLen);
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
 
 	prEnable = (uint32_t *)pvSetBuffer;
 
-	DBGLOG(INIT, INFO, "Set nan enable[%ld]\n", *prEnable);
+	DBGLOG(INIT, INFO, "Set nan enable[%u]\n", *prEnable);
 
 	if (*prEnable) {
 		if (nanLaunch(prAdapter->prGlueInfo)) {
@@ -17175,7 +17181,7 @@ uint32_t wlanoidQueryAntennaSwap(struct ADAPTER *prAdapter,
 
 	/* Check for query buffer length */
 	if (u4QueryBufferLen != sizeof(uint32_t)) {
-		DBGLOG(REQ, WARN, "Invalid length %lu\n", u4QueryBufferLen);
+		DBGLOG(REQ, WARN, "Invalid length %u\n", u4QueryBufferLen);
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
 
@@ -17184,7 +17190,7 @@ uint32_t wlanoidQueryAntennaSwap(struct ADAPTER *prAdapter,
 	puSupportSwpAntenn = (uint32_t *) pvQueryBuffer;
 
 	*puSupportSwpAntenn = !!(prAdapter->fgIsSupportAntSwp);
-	DBGLOG(REQ, WARN, "*puSupportSwpAntenn : %lu\n",
+	DBGLOG(REQ, WARN, "*puSupportSwpAntenn : %u\n",
 			*puSupportSwpAntenn);
 	return WLAN_STATUS_SUCCESS;
 }
@@ -18229,7 +18235,7 @@ uint32_t wlanoidGetSleepCntInfo(
 	}
 
 	if (u4GetBufferLen < sizeof(struct PARAM_SLEEP_CNT_INFO)) {
-		DBGLOG(REQ, ERROR, "Invalid length %lu\n", u4GetBufferLen);
+		DBGLOG(REQ, ERROR, "Invalid length %u\n", u4GetBufferLen);
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
 
@@ -18278,7 +18284,7 @@ uint32_t wlanoidSetLpKeepPwrCtrl(
 	}
 
 	if (u4SetBufferLen < sizeof(struct CMD_LP_DBG_CTRL)) {
-		DBGLOG(REQ, ERROR, "Invalid length %lu\n", u4SetBufferLen);
+		DBGLOG(REQ, ERROR, "Invalid length %u\n", u4SetBufferLen);
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
 

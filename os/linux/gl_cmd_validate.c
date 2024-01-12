@@ -2557,7 +2557,7 @@ struct STR_CMD_HANDLER str_cmd_handlers[] = {
  *                              F U N C T I O N S
  *******************************************************************************
  */
-uint8_t cmd_validate(int8_t *pcCmd, enum ARG_NUM_POLICY argPolicy,
+uint32_t cmd_validate(int8_t *pcCmd, enum ARG_NUM_POLICY argPolicy,
 	uint8_t ucArgNum, struct CMD_VALIDATE_POLICY *policy,
 	uint32_t u4PolicySize)
 {
@@ -2670,7 +2670,7 @@ uint8_t cmd_validate(int8_t *pcCmd, enum ARG_NUM_POLICY argPolicy,
 PRIV_CMD_FUNCTION get_priv_cmd_handler(uint8_t *cmd, int32_t len)
 {
 	uint8_t ucIdx = 0;
-	uint32_t ret = WLAN_STATUS_FAILURE;
+	uint32_t ret;
 	int8_t *pcCmd;
 	int32_t i4CmdSize;
 
@@ -2679,7 +2679,8 @@ PRIV_CMD_FUNCTION get_priv_cmd_handler(uint8_t *cmd, int32_t len)
 		if (strnicmp(cmd, priv_cmd_handlers[ucIdx].pcCmdStr,
 			     strlen(priv_cmd_handlers[ucIdx].pcCmdStr)) == 0) {
 
-			i4CmdSize = len;
+			/* add one for null-terminated */
+			i4CmdSize = len + 1;
 			pcCmd = (int8_t *) kalMemAlloc(i4CmdSize, VIR_MEM_TYPE);
 			if (!pcCmd) {
 				DBGLOG(REQ, WARN,
@@ -2688,6 +2689,7 @@ PRIV_CMD_FUNCTION get_priv_cmd_handler(uint8_t *cmd, int32_t len)
 			}
 			kalMemZero(pcCmd, i4CmdSize);
 			kalMemCopy(pcCmd, cmd, len);
+			pcCmd[len] = '\0';
 
 			DBGLOG(REQ, LOUD,
 				"ioctl priv command is [%s], argPolicy[%d] argNum[%d] u4PolicySize[%d]\n",
@@ -2730,7 +2732,7 @@ PRIV_CMD_FUNCTION get_priv_cmd_handler(uint8_t *cmd, int32_t len)
 STR_CMD_FUNCTION get_str_cmd_handler(uint8_t *cmd, int32_t len)
 {
 	uint8_t ucIdx = 0;
-	uint32_t ret = WLAN_STATUS_FAILURE;
+	uint32_t ret;
 	int8_t *pcCmd;
 	int32_t i4CmdSize;
 
@@ -2750,6 +2752,7 @@ STR_CMD_FUNCTION get_str_cmd_handler(uint8_t *cmd, int32_t len)
 			}
 			kalMemZero(pcCmd, i4CmdSize);
 			kalMemCopy(pcCmd, cmd, len);
+			pcCmd[len] = '\0';
 
 			DBGLOG(REQ, LOUD,
 				"vendor str command is [%s], argPolicy[%d] argNum[%d] u4PolicySize[%d]\n",
