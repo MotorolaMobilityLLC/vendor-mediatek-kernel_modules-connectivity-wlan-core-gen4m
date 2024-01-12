@@ -645,9 +645,7 @@ void asicConnac2xWfdmaControl(
 
 	if (!enable) {
 		asicConnac2xWfdmaWaitIdle(prGlueInfo, ucDmaIdx, 100, 1000);
-		/* Reset DMA Index */
-		HAL_MCR_WR(prAdapter, u4DmaRstDtxPtrCr, 0xFFFFFFFF);
-		HAL_MCR_WR(prAdapter, u4DmaRstDrxPtrCr, 0xFFFFFFFF);
+		/* remove Reset DMA Index */
 	}
 }
 
