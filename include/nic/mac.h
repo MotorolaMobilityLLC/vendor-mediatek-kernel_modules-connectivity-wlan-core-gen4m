@@ -267,6 +267,7 @@
 /* In unit of AP's DTIM interval, */
 #define DEFAULT_LISTEN_INTERVAL_BY_DTIM_PERIOD  2
 #define DEFAULT_LISTEN_INTERVAL                 10
+#define INVALID_LISTEN_INTERVAL                 0
 
 /* 7.3.2.1 Broadcast(Wildcard) SSID */
 #define BC_SSID                                 ""

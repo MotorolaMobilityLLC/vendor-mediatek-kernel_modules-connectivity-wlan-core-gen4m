@@ -7824,6 +7824,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucSmartRTS, "SmartRTS", 0);
 	INIT_UINT(prWifiVar->ePowerMode, "PowerSave", Param_PowerModeMax);
 
+	INIT_UINT(prWifiVar->u2ListenInterval,
+		"ListenInterval", INVALID_LISTEN_INTERVAL);
+
 	/* add more cfg from RegInfo */
 	INIT_UINT(prWifiVar->u4UapsdAcBmp, "UapsdAcBmp", 0);
 	INIT_UINT(prWifiVar->u4MaxSpLen, "MaxSpLen", 0);
