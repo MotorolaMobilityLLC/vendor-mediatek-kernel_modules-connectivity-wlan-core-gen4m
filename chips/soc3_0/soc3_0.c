@@ -283,12 +283,14 @@ struct PCIE_CHIP_CR_MAPPING soc3_0_bus2chip_cr_mapping[] = {
 };
 #endif
 
+#if defined(_HIF_PCIE)
 struct pcie2ap_remap soc3_0_pcie2ap_remap = {
 	.reg_base = CONN_INFRA_CFG_PCIE2AP_REMAP_2_R_PCIE2AP_PUBLIC_REMAPPING_5_ADDR,
 	.reg_mask = CONN_INFRA_CFG_PCIE2AP_REMAP_2_R_PCIE2AP_PUBLIC_REMAPPING_5_MASK,
 	.reg_shift = CONN_INFRA_CFG_PCIE2AP_REMAP_2_R_PCIE2AP_PUBLIC_REMAPPING_5_SHFT,
 	.base_addr = SOC3_0_PCIE2AP_REMAP_BASE_ADDR
 };
+#endif
 
 struct ap2wf_remap soc3_0_ap2wf_remap = {
 	.reg_base = CONN_INFRA_CFG_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_ADDR,
@@ -298,7 +300,9 @@ struct ap2wf_remap soc3_0_ap2wf_remap = {
 };
 
 struct PCIE_CHIP_CR_REMAPPING soc3_0_bus2chip_cr_remapping = {
+#if defined(_HIF_PCIE)
 	.pcie2ap = &soc3_0_pcie2ap_remap,
+#endif
 	.ap2wf = &soc3_0_ap2wf_remap,
 };
 
@@ -971,10 +975,8 @@ struct BUS_INFO soc3_0_bus_info = {
 
 	.bus2chip = soc3_0_bus2chip_cr_mapping,
 	.bus2chip_remap = &soc3_0_bus2chip_cr_remapping,
-#if defined(_HIF_PCIE)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.max_static_map_addr = 0x00100000,
-#elif defined(_HIF_AXI)
-	.max_static_map_addr = 0x00700000,
 #endif
 	.tx_ring_fwdl_idx = CONNAC2X_FWDL_TX_RING_IDX,
 	.tx_ring_cmd_idx = CONNAC2X_CMD_TX_RING_IDX,
@@ -2601,7 +2603,6 @@ static void soc3_0_McuDeInit(struct ADAPTER *prAdapter)
 void wlanCoAntVFE28En(IN struct ADAPTER *prAdapter)
 {
 	struct WIFI_CFG_PARAM_STRUCT *prNvramSettings;
-	struct REG_INFO *prRegInfo;
 	u_int8_t fgCoAnt;
 
 	if (g_NvramFsm != NVRAM_STATE_READY) {
@@ -2610,10 +2611,8 @@ void wlanCoAntVFE28En(IN struct ADAPTER *prAdapter)
 	}
 
 	ASSERT(prAdapter);
-	prRegInfo = &prAdapter->prGlueInfo->rRegInfo;
-	ASSERT(prRegInfo);
-	prNvramSettings = prRegInfo->prNvramSettings;
-	ASSERT(prNvramSettings);
+	prNvramSettings =
+		(struct WIFI_CFG_PARAM_STRUCT *)&g_aucNvram[0];
 
 	fgCoAnt = prNvramSettings->ucSupportCoAnt;
 

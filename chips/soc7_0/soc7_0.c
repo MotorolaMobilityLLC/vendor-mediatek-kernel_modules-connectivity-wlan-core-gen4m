@@ -271,6 +271,7 @@ struct PCIE_CHIP_CR_MAPPING soc7_0_bus2chip_cr_mapping[] = {
 	{0x83010000, 0x4e0000, 0x10000},   /* WF_PHY_MAP4 */
 	{0x88000000, 0x4f0000, 0x10000},   /* WF_MCU_CFG_LS */
 	{0x7c000000, 0x000000, 0x1000000}, /* CONN_INFRA */
+	{0x7c500000, 0x500000, 0x2000000}, /* remap */
 	{0x0, 0x0, 0x0} /* End */
 };
 #endif

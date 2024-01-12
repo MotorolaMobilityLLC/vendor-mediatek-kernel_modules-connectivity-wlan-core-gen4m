@@ -268,7 +268,7 @@ int wifi_coredump_init(void *priv)
 	kalMemZero(&cb, sizeof(cb));
 	kalSnprintf(cb.dev_node, CONNV3_EMI_MAP_DEV_NODE_SIZE,
 		"%s%s", "/dev/", COREDUMP_WIFI_INF_NAME);
-	cb.emi_size = MCU_WF_EMI_SIZE;
+	cb.emi_size = chip_info->rEmiInfo.coredump_size;
 	cb.mcif_emi_size = 0;
 	ctx->handler = connv3_coredump_init(CONNV3_DEBUG_TYPE_WIFI,
 		&cb);
