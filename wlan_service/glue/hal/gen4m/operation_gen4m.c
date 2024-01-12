@@ -1683,6 +1683,8 @@ s_int32 mt_op_start_rx(
 	ret = tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
 
+	ret = tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_PREAMBLE, configs->tx_mode);
 
 	if ((configs->tx_mode == TEST_MODE_HE_MU)
 #if (CFG_SUPPORT_CONNAC3X == 1)
