@@ -205,8 +205,8 @@ struct GL_HIF_INFO {
 	u_int8_t fgIsMawdSuspend;
 
 	/* RRO */
-	struct RTMP_DMABUF RxBlkDescRing;
-	struct RTMP_RX_RING RxBlkRing;
+	struct RTMP_DMABUF RxBlkDescRing[MAWD_NUM_OF_RX_BLK_RING];
+	struct RTMP_RX_RING RxBlkRing[MAWD_NUM_OF_RX_BLK_RING];
 	struct RTMP_DMABUF BaBitmapCache;
 	struct RTMP_DMABUF AddrArray;
 	struct RTMP_DMABUF IndCmdRing;
@@ -343,6 +343,9 @@ struct BUS_INFO {
 	const uint32_t mawd_rx_blk_ctrl0;
 	const uint32_t mawd_rx_blk_ctrl1;
 	const uint32_t mawd_rx_blk_ctrl2;
+	const uint32_t mawd_md_rx_blk_ctrl0;
+	const uint32_t mawd_md_rx_blk_ctrl1;
+	const uint32_t mawd_md_rx_blk_ctrl2;
 	const uint32_t mawd_ring_ctrl0;
 	const uint32_t mawd_ring_ctrl1;
 	const uint32_t mawd_ring_ctrl2;

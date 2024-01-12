@@ -257,8 +257,14 @@
 #define MAWD_POWER_UP_WAIT_TIME  10
 #define MAWD_MAX_PATCH_NUM       19
 #define MAWD_MD_TX_RING_NUM      2
-#define MAWD_CR_BACKUP_VALID     88
-#define MAWD_CR_BACKUP_OFFSET    89
+
+#if CFG_ENABLE_MAWD_MD_RING
+#define MAWD_TX_RING_OFFSET      2
+#define MAWD_NUM_OF_RX_BLK_RING  2
+#else
+#define MAWD_NUM_OF_RX_BLK_RING  1
+#endif /* CFG_ENABLE_MAWD_MD_TX_RING */
+
 #define RRO_HASH_TABLE_SIZE      (RX_RING_MAX_SIZE * 3)
 #define RRO_BA_BITMAP_SIZE       128
 #if (CFG_MTK_FPGA_PLATFORM == 1)
@@ -1092,12 +1098,13 @@ int halMawdPwrOn(void);
 void halMawdPwrOff(void);
 u_int8_t halMawdCheckInfra(struct ADAPTER *prAdapter);
 u_int8_t halMawdAllocTxRing(struct GLUE_INFO *prGlueInfo, u_int8_t fgAllocMem);
-void halMawdAllocRxBlkRing(struct GLUE_INFO *prGlueInfo, u_int8_t fgAllocMem);
+void halMawdAllocRxBlkRing(struct GLUE_INFO *prGlueInfo,
+			   u_int8_t fgAllocMem, uint32_t u4Num);
 void halMawdInitRxBlkRing(struct GLUE_INFO *prGlueInfo);
 void halMawdInitTxRing(struct GLUE_INFO *prGlueInfo);
 u_int8_t halMawdFillTxRing(struct GLUE_INFO *prGlueInfo,
 		       struct MSDU_TOKEN_ENTRY *prToken);
-uint32_t halMawdGetRxBlkDoneCnt(struct GLUE_INFO *prGlueInfo);
+uint32_t halMawdGetRxBlkDoneCnt(struct GLUE_INFO *prGlueInfo, uint32_t u4Num);
 u_int8_t halMawdWakeup(struct GLUE_INFO *prGlueInfo);
 u_int8_t halMawdSleep(struct GLUE_INFO *prGlueInfo);
 void halMawdReset(struct GLUE_INFO *prGlueInfo);

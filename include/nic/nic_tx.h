@@ -1067,6 +1067,11 @@ struct TX_DESC_OPS_T {
 	void (*fillTxByteCount)(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo,
 		void *prTxDesc);
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	void (*fillNicSdoAppend)(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo,
+		uint8_t *prTxDescBuffer);
+#endif
 
 	/* TXD Handle APIs */
 	uint8_t (*nic_txd_long_format_op)(

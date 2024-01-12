@@ -2544,7 +2544,7 @@ void connac3x_show_mawd_info(struct ADAPTER *prAdapter)
 	for (u4Idx = MAWD_HIF_TXD_MD_CTRL0;
 	     u4Idx <= MAWD_SETTING3; u4Idx += 4) {
 		HAL_MCR_RD(prAdapter, u4Idx, &u4Val);
-		DBGLOG(HAL, TRACE, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+		DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
 	}
 
 	for (u4Num = 0; u4Num < MAWD_MD_TX_RING_NUM; u4Num++) {
@@ -2574,7 +2574,7 @@ void connac3x_show_rro_info(struct ADAPTER *prAdapter)
 	prChipInfo = prAdapter->chip_info;
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prWifiVar = &prAdapter->rWifiVar;
-	prRxDesc = &prHifInfo->RxBlkDescRing;
+	prRxDesc = &prHifInfo->RxBlkDescRing[0];
 	prAddrArray = &prHifInfo->AddrArray;
 	prIndCmd = &prHifInfo->IndCmdRing;
 
@@ -2605,6 +2605,12 @@ void connac3x_show_rro_info(struct ADAPTER *prAdapter)
 
 		for (u4Idx = MAWD_MD_INTERRUPT_SETTING0;
 		     u4Idx <= MAWD_AP_INTERRUPT_SETTING1; u4Idx += 4) {
+			HAL_MCR_RD(prAdapter, u4Idx, &u4Val);
+			DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+		}
+
+		for (u4Idx = MAWD_AXI_SLEEP_PROT_SETTING;
+		     u4Idx <= MAWD_INDEX_DBG_REG3; u4Idx += 4) {
 			HAL_MCR_RD(prAdapter, u4Idx, &u4Val);
 			DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
 		}
@@ -2681,9 +2687,10 @@ void connac3x_show_rro_info(struct ADAPTER *prAdapter)
 	}
 
 	DBGLOG(HAL, INFO,
-	       "BLK Used[%u][%u] Free[%u] Err[%u] Skip[%u] Fix[%u] Head[%u]",
+	       "BLK Used[%u][%u][%u] Free[%u] Err[%u] Skip[%u] Fix[%u] Head[%u]",
 	       prHifInfo->u4RcbUsedListCnt[RX_RING_DATA0],
 	       prHifInfo->u4RcbUsedListCnt[RX_RING_DATA1],
+	       prHifInfo->u4RcbUsedListCnt[RX_RING_DATA2],
 	       prHifInfo->u4RcbFreeListCnt,
 	       prHifInfo->u4RcbErrorCnt,
 	       prHifInfo->u4RcbSkipCnt,
