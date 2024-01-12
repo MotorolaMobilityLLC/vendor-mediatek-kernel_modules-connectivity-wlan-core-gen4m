@@ -4010,7 +4010,7 @@ static int priv_driver_get_wtbl_info(IN struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4Argc = 0;
 	int32_t u4Ret = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint32_t u4Index = 0;
 	struct CHIP_DBG_OPS *prDbgOps;
 
@@ -4049,7 +4049,7 @@ static int priv_driver_get_sta_info(IN struct net_device *prNetDev,
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint8_t aucMacAddr[MAC_ADDR_LEN];
-	uint8_t ucWlanIndex;
+	uint8_t ucWlanIndex = 0;
 	uint8_t *pucMacAddr = NULL;
 	struct PARAM_HW_WLAN_INFO *prHwWlanInfo;
 	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
@@ -4637,7 +4637,7 @@ static int priv_driver_get_mcr(IN struct net_device *prNetDev,
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	if (i4Argc >= i4ArgNum) {
-
+		rCmdAccessReg.u4Address = 0;
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rCmdAccessReg.u4Address));
 		if (u4Ret)
 			DBGLOG(REQ, LOUD,
@@ -4793,12 +4793,13 @@ static int priv_driver_set_test_cmd(IN struct net_device *prNetDev,
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	if (i4Argc >= i4ArgNum) {
-
+		rRfATInfo.u4FuncIndex = 0;
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rRfATInfo.u4FuncIndex));
 		if (u4Ret)
 			DBGLOG(REQ, LOUD,
 			       "Parse Test CMD Index error u4Ret=%d\n", u4Ret);
 
+		rRfATInfo.u4FuncData = 0;
 		u4Ret = kalkStrtou32(apcArgv[2], 0, &(rRfATInfo.u4FuncData));
 		if (u4Ret)
 			DBGLOG(REQ, LOUD,
@@ -4845,16 +4846,17 @@ static int priv_driver_get_test_result(IN struct net_device *prNetDev,
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	if (i4Argc >= i4ArgNum) {
+		rRfATInfo.u4FuncIndex = 0;
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rRfATInfo.u4FuncIndex));
 		if (u4Ret)
 			DBGLOG(REQ, LOUD,
 			       "Parse Test CMD Index error u4Ret=%d\n", u4Ret);
 
+		rRfATInfo.u4FuncData = 0;
 		u4Ret = kalkStrtou32(apcArgv[2], 0, &(rRfATInfo.u4FuncData));
 		if (u4Ret)
 			DBGLOG(REQ, LOUD,
-			       "Parse Test CMD Data error u4Ret=%d\n",
-			       u4Ret);
+			       "Parse Test CMD Data error u4Ret=%d\n", u4Ret);
 
 		DBGLOG(REQ, LOUD,
 		       "Get Test CMD FuncIndex = %d, FuncData = %d\n",
@@ -5417,7 +5419,7 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev,
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint8_t aucMacAddr[MAC_ADDR_LEN];
-	uint8_t ucWlanIndex;
+	uint8_t ucWlanIndex = 0;
 	uint8_t *pucMacAddr = NULL;
 	struct PARAM_HW_WLAN_INFO *prHwWlanInfo = NULL;
 	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics = NULL;
@@ -6015,7 +6017,7 @@ static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 	int32_t i4BytesWritten = 0;
 	uint32_t u4RxVector0 = 0, u4RxVector2 = 0, u4RxVector3 = 0,
 		 u4RxVector4 = 0;
-	uint8_t ucStaIdx, ucWlanIndex, cbw;
+	uint8_t ucStaIdx, ucWlanIndex = 0, cbw;
 	u_int8_t fgWlanIdxFound = TRUE, fgSkipRxV = FALSE;
 	uint32_t u4FAGCRssiWBR0, u4FAGCRssiIBR0;
 	uint32_t u4Value, u4Foe, foe_const;
@@ -6963,7 +6965,7 @@ static int priv_driver_get_drv_mcr(IN struct net_device *prNetDev,
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	if (i4Argc >= i4ArgNum) {
-
+		rCmdAccessReg.u4Address = 0;
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rCmdAccessReg.u4Address));
 		if (u4Ret)
 			DBGLOG(REQ, LOUD,
@@ -8361,7 +8363,7 @@ int priv_driver_set_ap_set_mac_acl(IN struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
-	uint8_t aucValue[WLAN_CFG_ARGV_MAX];
+	uint8_t aucValue[WLAN_CFG_ARGV_MAX] = {0};
 	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
 	int32_t i4BytesWritten = 0;
 	int32_t i4Count = 0, i4Mode = 0;
@@ -8470,7 +8472,7 @@ int priv_driver_set_ap_set_cfg(IN struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct WIFI_VAR *prWifiVar = NULL;
-	uint8_t aucValue[WLAN_CFG_ARGV_MAX];
+	uint8_t aucValue[WLAN_CFG_ARGV_MAX] = {0};
 	uint8_t ucRoleIdx = 0;
 	int32_t i4BytesWritten = 0;
 	int32_t i4MaxCount = 0, i4Channel = 0;
@@ -8613,7 +8615,7 @@ int priv_driver_set_ap_sta_disassoc(IN struct net_device *prNetDev,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
-	uint8_t aucValue[WLAN_CFG_ARGV_MAX];
+	uint8_t aucValue[WLAN_CFG_ARGV_MAX] = {0};
 	uint8_t ucRoleIdx = 0;
 	int32_t i4BytesWritten = 0;
 	struct MSG_P2P_CONNECTION_ABORT *prDisconnectMsg =
@@ -9759,7 +9761,7 @@ int priv_driver_set_bf(IN struct net_device *prNetDev, IN char *pcCommand,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	uint8_t ucBfEnable;
 	/*UINT_8 ucBssIndex;*/
 	/*P_BSS_INFO_T prBssInfo;*/
@@ -9804,7 +9806,7 @@ int priv_driver_set_nss(IN struct net_device *prNetDev, IN char *pcCommand,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	uint8_t ucNSS;
 
 	ASSERT(prNetDev);
@@ -9841,7 +9843,7 @@ int priv_driver_set_amsdu_tx(IN struct net_device *prNetDev, IN char *pcCommand,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	uint8_t ucAmsduTx;
 
 	ASSERT(prNetDev);
@@ -9883,7 +9885,7 @@ int priv_driver_set_amsdu_rx(IN struct net_device *prNetDev, IN char *pcCommand,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	uint8_t ucAmsduRx;
 
 	ASSERT(prNetDev);
@@ -9924,7 +9926,7 @@ int priv_driver_set_ampdu_tx(IN struct net_device *prNetDev, IN char *pcCommand,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	uint8_t ucAmpduEnable;
 	/*UINT_8 ucBssIndex;*/
 	/*P_BSS_INFO_T prBssInfo;*/
@@ -9967,7 +9969,7 @@ int priv_driver_set_ampdu_rx(IN struct net_device *prNetDev, IN char *pcCommand,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	uint8_t ucAmpduEnable;
 	/*UINT_8 ucBssIndex;*/
 	/*P_BSS_INFO_T prBssInfo;*/
@@ -10011,7 +10013,7 @@ int priv_driver_set_qos(IN struct net_device *prNetDev, IN char *pcCommand,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	uint8_t ucQoSEnable;
 	/*UINT_8 ucBssIndex;*/
 	/*P_BSS_INFO_T prBssInfo;*/
@@ -10058,7 +10060,7 @@ int priv_driver_muedca_override(
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	uint8_t ucMuEdcaOverride;
 
 	ASSERT(prNetDev);
@@ -10097,7 +10099,7 @@ int priv_driver_set_mcsmap(IN struct net_device *prNetDev, IN char *pcCommand,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	uint8_t ucTxMcsMap;
 	struct ADAPTER *prAdapter = NULL;
 	/*UINT_8 ucBssIndex;*/
@@ -10152,7 +10154,7 @@ int priv_driver_set_ba_size(IN struct net_device *prNetDev, IN char *pcCommand,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	uint16_t u2HeBaSize;
 	/*UINT_8 ucBssIndex;*/
 	/*P_BSS_INFO_T prBssInfo;*/
@@ -10197,7 +10199,7 @@ int priv_driver_set_tp_test_mode(IN struct net_device *prNetDev,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	uint8_t ucTpTestMode;
 	/*UINT_8 ucBssIndex;*/
 	/*P_BSS_INFO_T prBssInfo;*/
@@ -10241,7 +10243,7 @@ int priv_driver_set_tx_ppdu(IN struct net_device *prNetDev, IN char *pcCommand,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	struct ADAPTER *prAdapter = NULL;
 	struct STA_RECORD *prStaRec;
 
@@ -10292,7 +10294,7 @@ int priv_driver_set_ldpc(IN struct net_device *prNetDev, IN char *pcCommand,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	struct ADAPTER *prAdapter = NULL;
 
 	ASSERT(prNetDev);
@@ -10343,7 +10345,7 @@ int priv_driver_set_tx_force_amsdu(IN struct net_device *prNetDev,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	struct ADAPTER *prAdapter = NULL;
 
 	ASSERT(prNetDev);
@@ -10393,7 +10395,7 @@ int priv_driver_set_om_ch_bw(IN struct net_device *prNetDev, IN char *pcCommand,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	struct ADAPTER *prAdapter = NULL;
 
 	ASSERT(prNetDev);
@@ -10439,7 +10441,7 @@ int priv_driver_set_om_rx_nss(
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	struct ADAPTER *prAdapter = NULL;
 
 	ASSERT(prNetDev);
@@ -10481,7 +10483,7 @@ int priv_driver_set_om_tx_nss(
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	struct ADAPTER *prAdapter = NULL;
 
 	ASSERT(prNetDev);
@@ -10523,7 +10525,7 @@ int priv_driver_set_om_mu_dis(
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	struct ADAPTER *prAdapter = NULL;
 
 	ASSERT(prNetDev);
@@ -10565,7 +10567,7 @@ int priv_driver_set_tx_om_packet(
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	struct ADAPTER *prAdapter = NULL;
 	int32_t index;
 	struct STA_RECORD *prStaRec = NULL;
@@ -10618,7 +10620,7 @@ int priv_driver_set_tx_cck_1m_pwr(
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	struct ADAPTER *prAdapter = NULL;
 	uint8_t pwr;
 
@@ -10676,7 +10678,7 @@ static int priv_driver_get_sta_index(IN struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter;
 	int32_t i4BytesWritten = 0, i4Argc = 0;
-	uint8_t ucStaIdx, ucWlanIndex;
+	uint8_t ucStaIdx, ucWlanIndex = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint8_t aucMacAddr[MAC_ADDR_LEN];
 
@@ -10742,7 +10744,7 @@ static int priv_driver_set_rst_hang(IN struct net_device *prNetDev,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4Argc = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint32_t u4Ret;
 
 
@@ -11970,7 +11972,7 @@ int priv_driver_set_pad_dur(IN struct net_device *prNetDev, IN char *pcCommand,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	uint8_t u1HePadDur;
 
 	ASSERT(prNetDev);
@@ -12425,7 +12427,7 @@ static int priv_driver_get_wfdma_info(
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	struct CHIP_DBG_OPS *prDbgOps;
 
 	ASSERT(prNetDev);
@@ -12452,7 +12454,7 @@ static int priv_driver_get_ple_info(
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	struct CHIP_DBG_OPS *prDbgOps;
 	uint8_t fgDumpTxd = FALSE;
 	int32_t u4Ret = 0, u4Val = 0;
@@ -12487,7 +12489,7 @@ static int priv_driver_get_pse_info(
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	struct CHIP_DBG_OPS *prDbgOps;
 
 	ASSERT(prNetDev);
@@ -12515,7 +12517,7 @@ static int priv_driver_get_dmasch_info(
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	struct CHIP_DBG_OPS *prDbgOps;
 
 	ASSERT(prNetDev);
@@ -12544,7 +12546,7 @@ static int priv_driver_trigger_whole_chip_reset(
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -12570,7 +12572,7 @@ static int priv_driver_trigger_wfsys_reset(
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -12596,7 +12598,7 @@ static int priv_driver_get_umac_fwtbl(
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4Argc = 0;
 	int32_t u4Ret = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint32_t u4Index = 0;
 	struct CHIP_DBG_OPS *prDbgOps;
 
@@ -12636,7 +12638,7 @@ static int priv_driver_show_txd_info(
 	int32_t u4Ret = -1;
 	int32_t idx = 0;
 	int32_t i4Argc = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	struct CHIP_DBG_OPS *prDbgOps;
 
 	ASSERT(prNetDev);
@@ -14657,7 +14659,7 @@ priv_driver_set_ncho_wes_mode(IN struct net_device *prNetDev,
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	int32_t i4Ret = -1;
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
-	uint8_t puCommondBuf[WLAN_CFG_ARGV_MAX];
+	uint8_t puCommondBuf[WLAN_CFG_ARGV_MAX] = {0};
 
 
 	ASSERT(prNetDev);
@@ -15042,7 +15044,7 @@ priv_driver_disable_ncho(IN struct net_device *prNetDev, IN char *pcCommand,
 u_int8_t
 priv_driver_auto_enable_ncho(IN struct net_device *prNetDev)
 {
-	uint8_t puCommondBuf[WLAN_CFG_ARGV_MAX];
+	uint8_t puCommondBuf[WLAN_CFG_ARGV_MAX] = {0};
 	struct GLUE_INFO *prGlueInfo = NULL;
 
 	ASSERT(prNetDev);
