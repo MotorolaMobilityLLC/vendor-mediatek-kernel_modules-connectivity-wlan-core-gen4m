@@ -8335,7 +8335,7 @@ p2pFunNotifyChnlSwitch(IN struct ADAPTER *prAdapter,
 					rLinkEntry, struct STA_RECORD) {
 				struct TIMER *prTimer;
 
-				if (!prCurrStaRec)
+				if (!prCurrStaRec || !prCurrStaRec->fgIsInUse)
 					break;
 
 				prTimer = &(prCurrStaRec->rDeauthTxDoneTimer);

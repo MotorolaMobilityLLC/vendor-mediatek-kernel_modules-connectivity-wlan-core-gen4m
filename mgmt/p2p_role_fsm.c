@@ -1851,7 +1851,7 @@ SKIP_END_RDD:
 
 		LINK_FOR_EACH_ENTRY(prCurrStaRec,
 			prClientList, rLinkEntry, struct STA_RECORD) {
-			if (!prCurrStaRec)
+			if (!prCurrStaRec || !prCurrStaRec->fgIsInUse)
 				break;
 			/* Do not restart timer if the timer is pending, */
 			/* (start in p2pRoleFsmRunEventConnectionAbort()) */
@@ -2682,26 +2682,27 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 			}
 
 			prStaRec = prP2pBssInfo->prStaRecOfAP;
-			/* Stop rejoin timer if it is started. */
-			/* TODO: If it has. */
 
-			p2pFuncDisconnect(prAdapter, prP2pBssInfo,
-				prStaRec,
-				prDisconnMsg->fgSendDeauth,
-				prDisconnMsg->u2ReasonCode,
-				TRUE);
+			if (prStaRec && prStaRec->fgIsInUse) {
+				p2pFuncDisconnect(prAdapter, prP2pBssInfo,
+					prStaRec,
+					prDisconnMsg->fgSendDeauth,
+					prDisconnMsg->u2ReasonCode,
+					TRUE);
 
-			cnmTimerStopTimer(prAdapter,
-				&(prStaRec->rDeauthTxDoneTimer));
+				cnmTimerStopTimer(prAdapter,
+					&(prStaRec->rDeauthTxDoneTimer));
 
-			cnmTimerInitTimer(prAdapter,
-				&(prStaRec->rDeauthTxDoneTimer),
-				(PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmDeauthTimeout,
-				(unsigned long) prStaRec);
+				cnmTimerInitTimer(prAdapter,
+					&(prStaRec->rDeauthTxDoneTimer),
+					(PFN_MGMT_TIMEOUT_FUNC)
+						p2pRoleFsmDeauthTimeout,
+					(unsigned long) prStaRec);
 
-			cnmTimerStartTimer(prAdapter,
-				&(prStaRec->rDeauthTxDoneTimer),
-				P2P_DEAUTH_TIMEOUT_TIME_MS);
+				cnmTimerStartTimer(prAdapter,
+					&(prStaRec->rDeauthTxDoneTimer),
+					P2P_DEAUTH_TIMEOUT_TIME_MS);
+			}
 
 			SET_NET_PWR_STATE_IDLE(prAdapter,
 				prP2pBssInfo->ucBssIndex);
@@ -2727,7 +2728,7 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 				prP2pBssInfo,
 				prDisconnMsg->aucTargetID);
 
-			if (prCurrStaRec) {
+			if (prCurrStaRec && prCurrStaRec->fgIsInUse) {
 				DBGLOG(P2P, TRACE,
 					"Disconnecting: " MACSTR "\n",
 					MAC2STR(prCurrStaRec->aucMacAddr));
