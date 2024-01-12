@@ -1376,6 +1376,13 @@
 #define CFG_WIFI_SW_CIPHER_MISMATCH 1
 
 /*------------------------------------------------------------------------------
+ * Flags of enabling check if TX ethernet-II frame has empty payload. If yes,
+ * then driver drops it.
+ *------------------------------------------------------------------------------
+ */
+#define CFG_WIFI_TX_ETH_CHK_EMPTY_PAYLOAD 1
+
+/*------------------------------------------------------------------------------
  * CONNINFRA SUPPORT (Without WMT)
  * CFG_SUPPORT_CONNINFRA: 1 : conninfra driver exist
  *                        0 : conninfra driver doesn't exist

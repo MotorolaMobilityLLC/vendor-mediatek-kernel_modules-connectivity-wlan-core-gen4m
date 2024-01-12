@@ -222,6 +222,7 @@
 #define ETHER_MAX_PKT_SZ                        1514
 
 #define ETHER_TYPE_LEN_OFFSET                   12
+#define ETHER_TYPE_MIN                          0x0600
 
 /* 802.1Q (VLAN) */
 #define ETH_802_1Q_HEADER_LEN                   4
