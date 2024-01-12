@@ -3936,10 +3936,11 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 		break;
 
 	case CATEGORY_PUBLIC_ACTION:
-		aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
+		if (IS_BSS_AIS(prBssInfo)) {
+			aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
+		}
 #if CFG_ENABLE_WIFI_DIRECT
-		if (prAdapter->fgIsP2PRegistered) {
-			rlmProcessPublicAction(prAdapter, prSwRfb);
+		else if (prAdapter->fgIsP2PRegistered) {
 			if (prBssInfo)
 				p2pFuncValidateRxActionFrame(prAdapter, prSwRfb,
 					(prBssInfo->ucBssIndex ==
@@ -3950,6 +3951,8 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 					prSwRfb, TRUE, 0);
 		}
 #endif
+		rlmProcessPublicAction(prAdapter, prSwRfb);
+
 #if CFG_SUPPORT_NAN
 		if (prAdapter->fgIsNANRegistered)
 			nicRxProcessNanPubActionFrame(prAdapter, prSwRfb);

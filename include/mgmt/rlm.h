@@ -437,7 +437,16 @@ void rlmGenerateCountryIE(struct ADAPTER *prAdapter,
 			  struct MSDU_INFO *prMsduInfo);
 #endif
 #if CFG_SUPPORT_DFS
+void rlmProcessExCsaIE(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct SWITCH_CH_AND_BAND_PARAMS *prCSAParams,
+	uint8_t ucChannelSwitchMode, uint8_t ucNewOperatingClass,
+	uint8_t ucNewChannelNum, uint8_t ucChannelSwitchCount);
+
 void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter,
+			     struct SW_RFB *prSwRfb);
+
+void rlmProcessPublicAction(struct ADAPTER *prAdapter,
 			     struct SW_RFB *prSwRfb);
 
 void rlmResetCSAParams(struct BSS_INFO *prBssInfo, uint8_t fgClearStopTx);

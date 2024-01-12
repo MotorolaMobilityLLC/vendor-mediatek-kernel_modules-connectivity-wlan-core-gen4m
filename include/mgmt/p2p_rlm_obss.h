@@ -53,8 +53,6 @@
 void rlmRspGenerateObssScanIE(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo);
 
-void rlmProcessPublicAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
-
 void rlmHandleObssStatusEventPkt(struct ADAPTER *prAdapter,
 		struct EVENT_AP_OBSS_STATUS *prObssStatus);
 
