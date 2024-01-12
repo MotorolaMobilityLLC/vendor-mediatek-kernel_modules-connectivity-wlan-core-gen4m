@@ -4172,6 +4172,12 @@ uint32_t halReleaseIOBuffer(struct ADAPTER *prAdapter)
 
 void halProcessAbnormalInterrupt(struct ADAPTER *prAdapter)
 {
+	if (prAdapter->u4IntStatus & WHISR_WDT_INT) {
+		DBGLOG(INIT, ERROR, "[SER][L0.5] mcu watch dog timeout!!\n");
+		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_WDT);
+		return;
+	}
+
 	prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 	halPrintHifDbgInfo(prAdapter);
 	halSetDrvSer(prAdapter);

@@ -1119,18 +1119,17 @@ void asicConnac3xProcessSoftwareInterrupt(
 		kalDevRegRead(prGlueInfo, u4Addr, &u4Status);
 
 	prErrRecoveryCtrl->u4BackupStatus = u4Status;
-	if (u4Status & ERROR_DETECT_MASK) {
+	if (u4Status & ERROR_DETECT_SUBSYS_BUS_TIMEOUT) {
+		DBGLOG(INIT, ERROR, "[SER][L0.5] wfsys timeout!!\n");
+		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_SUBSYS_BUS_HANG);
+	} else if (u4Status & ERROR_DETECT_MASK) {
 		prErrRecoveryCtrl->u4Status = u4Status;
-		kalDevRegWrite(prGlueInfo,
-			CONNAC3X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase),
-			u4Status);
 		halHwRecoveryFromError(prAdapter);
-	} else {
-		kalDevRegWrite(prGlueInfo,
+	} else
+		DBGLOG(HAL, TRACE, "undefined SER status[0x%x].\n", u4Status);
+	kalDevRegWrite(prGlueInfo,
 			CONNAC3X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase),
 			u4Status);
-		DBGLOG(HAL, TRACE, "undefined SER status[0x%x].\n", u4Status);
-	}
 }
 
 void asicConnac3xSoftwareInterruptMcu(

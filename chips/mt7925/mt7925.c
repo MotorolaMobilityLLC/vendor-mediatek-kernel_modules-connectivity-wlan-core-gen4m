@@ -1099,7 +1099,9 @@ static void mt7925ReadIntStatus(struct ADAPTER *prAdapter,
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct BUS_INFO *prBusInfo = prChipInfo->bus_info;
 	uint32_t u4RegValue, u4WrValue = 0, u4Addr;
-
+#if CFG_CHIP_RESET_SUPPORT
+	uint32_t u4IntSta = 0;
+#endif
 	*pu4IntStatus = 0;
 
 	u4Addr = WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR;
@@ -1133,6 +1135,18 @@ static void mt7925ReadIntStatus(struct ADAPTER *prAdapter,
 
 	/* clear interrupt */
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrValue);
+#if CFG_CHIP_RESET_SUPPORT
+	/* WF WDT interrupt to host via PCIE */
+	HAL_MCR_RD(prAdapter, PCIE_MAC_IREG_ISTATUS_HOST_ADDR,
+		&u4IntSta);
+	if (prAdapter->eWfsysResetState == WFSYS_RESET_STATE_IDLE &&
+			prAdapter->chip_info->fgIsSupportL0p5Reset == TRUE) {
+		if (u4IntSta & PCIE_MAC_IREG_ISTATUS_HOST_WDT_INT_MASK)
+			*pu4IntStatus |= WHISR_WDT_INT;
+	}
+	HAL_MCR_WR(prAdapter, PCIE_MAC_IREG_ISTATUS_HOST_ADDR,
+		u4IntSta);
+#endif
 }
 
 static void mt7925ConfigIntMask(struct GLUE_INFO *prGlueInfo,

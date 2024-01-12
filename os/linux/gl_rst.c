@@ -778,6 +778,7 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 	case RST_SER_L1_FAIL:
 	case RST_CMD_EVT_FAIL:
 	case RST_WDT:
+	case RST_SUBSYS_BUS_HANG:
 		if (prChipInfo->fgIsSupportL0p5Reset)
 			u4RstFlag = RST_FLAG_DO_L0P5_RESET;
 		else
