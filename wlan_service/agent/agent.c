@@ -3,8 +3,8 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
-#include "agent.h"
 #include "precomp.h"
+#include "agent.h"
 
 u_char *agnt_rstrtok;
 int8_t g_hqa_frame_ctrl;
@@ -23,7 +23,6 @@ struct test_ru_info_host {
 	s_int32 alpha;
 	u_int32 ru_mu_nss;
 };
-
 
 u_char *agent_trtok(u_char *s, const u_char *ct)
 {
@@ -6172,6 +6171,109 @@ static s_int32 hqa_off_ch_scan(
 	return ret;
 }
 
+#if CFG_SUPPORT_XONVRAM
+static s_int32 hqa_do_xo_calibration(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_char *data = hqa_frame->data;
+	u_int32 resp_len = 2, ext_id = 0, value = 0;
+	struct TEST_MODE_XO_CAL xo_data = {0};
+	struct GLUE_INFO *glue = wlanGetGlueInfo();
+	struct ADAPTER *ad = NULL;
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF, ("%s\n", __func__));
+
+	do {
+		if (glue == NULL)
+			break;
+
+		ad = glue->prAdapter;
+
+		/* Get parameters from command frame */
+		/*  ext_id (4 bytes), cal_type (4 bytes), clk_src (4 bytes) */
+		/*  mode (4 bytes), target_freq (4 bytes) */
+		get_param_and_shift_buf(TRUE, sizeof(u_int32),
+				&data, (u_char *)&ext_id);
+		get_param_and_shift_buf(TRUE, sizeof(u_int32),
+				&data, (u_char *)&xo_data.u4CalType);
+		get_param_and_shift_buf(TRUE, sizeof(u_int32),
+				&data, (u_char *)&xo_data.u4ClkSrc);
+		get_param_and_shift_buf(TRUE, sizeof(u_int32),
+				&data, (u_char *)&xo_data.u4Mode);
+		get_param_and_shift_buf(TRUE, sizeof(u_int32),
+				&data, (u_char *)&xo_data.u4TargetReq);
+
+		if (wlanTestModeXoCal(ad, &xo_data) != WLAN_STATUS_SUCCESS)
+			break;
+
+		sys_ad_move_mem(hqa_frame->data + 2, (u_char *)&ext_id,
+				sizeof(ext_id));
+		resp_len += sizeof(ext_id);
+
+		value = SERV_OS_HTONL(xo_data.u4AxmFreq);
+		sys_ad_move_mem(hqa_frame->data + resp_len,
+			&value, sizeof(value));
+		resp_len += sizeof(value);
+
+		value = SERV_OS_HTONL(xo_data.u4AxmC1Freq);
+		sys_ad_move_mem(hqa_frame->data + resp_len,
+			&value, sizeof(value));
+		resp_len += sizeof(value);
+
+		value = SERV_OS_HTONL(xo_data.u4AxmC2Freq);
+		sys_ad_move_mem(hqa_frame->data + resp_len,
+			&value, sizeof(value));
+		resp_len += sizeof(value);
+
+		value = SERV_OS_HTONL(xo_data.u4AxmC1Comp);
+		sys_ad_move_mem(hqa_frame->data + resp_len,
+			&value, sizeof(value));
+		resp_len += sizeof(value);
+
+		value = SERV_OS_HTONL(xo_data.u4AxmC2Comp);
+		sys_ad_move_mem(hqa_frame->data + resp_len,
+			&value, sizeof(value));
+		resp_len += sizeof(value);
+
+		value = SERV_OS_HTONL(xo_data.u4BtmFreq);
+		sys_ad_move_mem(hqa_frame->data + resp_len,
+			&value, sizeof(value));
+		resp_len += sizeof(value);
+
+		value = SERV_OS_HTONL(xo_data.u4BtmC1Freq);
+		sys_ad_move_mem(hqa_frame->data + resp_len,
+			&value, sizeof(value));
+		resp_len += sizeof(value);
+
+		value = SERV_OS_HTONL(xo_data.u4BtmC2Freq);
+		sys_ad_move_mem(hqa_frame->data + resp_len,
+			&value, sizeof(value));
+		resp_len += sizeof(value);
+
+		value = SERV_OS_HTONL(xo_data.u4BtmC1Comp);
+		sys_ad_move_mem(hqa_frame->data + resp_len,
+			&value, sizeof(value));
+		resp_len += sizeof(value);
+
+		value = SERV_OS_HTONL(xo_data.u4BtmC2Comp);
+		sys_ad_move_mem(hqa_frame->data + resp_len,
+			&value, sizeof(value));
+		resp_len += sizeof(value);
+
+		update_hqa_frame(hqa_frame, resp_len, ret);
+		return ret;
+	} while (0);
+
+	/* Update hqa_frame with response: status (2 bytes) */
+	sys_ad_move_mem(hqa_frame->data + 2, (u_char *) &ext_id,
+			sizeof(ext_id));
+	update_hqa_frame(hqa_frame, 2 + sizeof(ext_id), ret);
+
+	return ret;
+}
+#endif /* CFG_SUPPORT_XONVRAM */
+
 static struct hqa_cmd_entry CMD_SET6[] = {
 	/* cmd id start from 0x1600 */
 	{0x1,	hqa_set_channel_ext},
@@ -6195,7 +6297,10 @@ static struct hqa_cmd_entry CMD_SET6[] = {
 	{0x16,	hqa_listmode_rx_get_status},
 	{0x17,	hqa_listmode_rx_cmd},
 	{0x26,	hqa_set_tx_time},
-	{0x27,	hqa_off_ch_scan}
+	{0x27,	hqa_off_ch_scan},
+#if CFG_SUPPORT_XONVRAM
+	{0x2d,	hqa_do_xo_calibration},
+#endif /* CFG_SUPPORT_XONVRAM */
 };
 
 static struct hqa_cmd_table CMD_TABLES[] = {

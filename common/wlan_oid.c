@@ -10144,6 +10144,24 @@ wlanoidRftestSetTestMode(struct ADAPTER *prAdapter,
 	return rStatus;
 }
 
+#if CFG_SUPPORT_XONVRAM
+uint32_t
+wlanoidRftestDoXOCal(struct ADAPTER *prAdapter,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen,
+	uint32_t *pu4QueryInfoLen)
+{
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	return nicUniCmdTestmodeXOCal(prAdapter,
+		pvQueryBuffer,
+		u4QueryBufferLen);
+#else
+	DBGLOG(OID, WARN, "NOT supported.\n");
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+}
+#endif /* CFG_SUPPORT_XONVRAM */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set driver to switch into RF test ICAP mode

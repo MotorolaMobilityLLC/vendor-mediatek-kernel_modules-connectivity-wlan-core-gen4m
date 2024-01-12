@@ -1681,6 +1681,25 @@ enum ENUM_AVERAGE_TX_DELAY_TYPE {
 	MAX_AVERAGE_TX_DELAY_TYPE,
 };
 
+struct TEST_MODE_XO_CAL {
+	uint32_t u4CalType;
+	uint32_t u4ClkSrc;
+	uint32_t u4Mode;
+	uint32_t u4TargetReq;
+
+	uint32_t u4AxmFreq;
+	uint32_t u4AxmC1Freq;
+	uint32_t u4AxmC2Freq;
+	uint32_t u4AxmC1Comp;
+	uint32_t u4AxmC2Comp;
+
+	uint32_t u4BtmFreq;
+	uint32_t u4BtmC1Freq;
+	uint32_t u4BtmC2Freq;
+	uint32_t u4BtmC1Comp;
+	uint32_t u4BtmC2Comp;
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -2357,5 +2376,10 @@ int8_t hexDigitToInt(uint8_t ch);
 
 int wlanChipConfigWithType(struct ADAPTER *prAdapter,
 	char *pcCommand, int i4TotalLen, uint8_t type);
+
+#if CFG_SUPPORT_XONVRAM
+uint32_t wlanTestModeXoCal(struct ADAPTER *ad,
+	struct TEST_MODE_XO_CAL *data);
+#endif /* CFG_SUPPORT_XONVRAM */
 
 #endif /* _WLAN_LIB_H */

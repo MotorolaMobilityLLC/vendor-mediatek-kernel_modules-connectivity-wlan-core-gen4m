@@ -14432,3 +14432,23 @@ int8_t hexDigitToInt(uint8_t ch)
 	return 0;
 }
 
+#if CFG_SUPPORT_XONVRAM
+uint32_t wlanTestModeXoCal(struct ADAPTER *ad,
+	struct TEST_MODE_XO_CAL *data)
+{
+	struct GLUE_INFO *glue = ad->prGlueInfo;
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	uint32_t len = 0;
+
+	if (!data)
+		return WLAN_STATUS_FAILURE;
+
+	status = kalIoctl(glue,
+				wlanoidRftestDoXOCal,
+				data,
+				sizeof(*data),
+				&len);
+
+	return status;
+}
+#endif /* CFG_SUPPORT_XONVRAM */
