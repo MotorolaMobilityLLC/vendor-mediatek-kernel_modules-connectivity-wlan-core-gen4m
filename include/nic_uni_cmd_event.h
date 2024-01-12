@@ -2059,6 +2059,48 @@ struct UNI_CMD_SET_TDLS_CH_SW {
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
+/* P2P command (0x20) */
+struct UNI_CMD_P2P {
+	/* fixed field */
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+        *
+        *   TAG                        |  ID  | structure
+        *   ---------------------------|------|--------------
+        *   UNI_CMD_SET_NOA_PARAM      | 0x00 | UNI_CMD_SET_NOA_PARAM_T
+        *   UNI_CMD_SET_OPPPS_PARAM    | 0x01 | UNI_CMD_SET_OPPPS_PARAM_T
+        */
+} __KAL_ATTRIB_PACKED__;
+
+/* P2P command TLV List */
+enum ENUM_UNI_CMD_P2P_TAG {
+	UNI_CMD_P2P_TAG_SET_NOA_PARAM = 0,
+	UNI_CMD_P2P_TAG_SET_OPPPS_PARAM = 1,
+	UNI_CMD_P2P_TAG_NUM
+};
+
+/* Set NOA parameters (Tag0) */
+struct UNI_CMD_SET_NOA_PARAM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint32_t u4NoaDurationMs;
+	uint32_t u4NoaIntervalMs;
+	uint32_t u4NoaCount;
+	uint8_t  ucBssIdx;
+	uint8_t  aucReserved[3];
+} __KAL_ATTRIB_PACKED__;
+
+/* Set OPPPS parameters (Tag1) */
+struct UNI_CMD_SET_OPPPS_PARAM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint32_t u4CTwindowMs;
+	uint8_t  ucBssIdx;
+	uint8_t  aucReserved[3];
+} __KAL_ATTRIB_PACKED__;
+
 /* Smart gear command (0x21) */
 struct UNI_CMD_SMART_GEAR {
 	/* fixed field */
@@ -3150,15 +3192,13 @@ struct UNI_EVENT_LINK_QUALITY
 	struct UNI_LINK_QUALITY rLq[4];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_EVENT_STA_STATISTICS
-{
+struct UNI_EVENT_STA_STATISTICS {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t  aucBuffer[0];
-};
+} __KAL_ATTRIB_PACKED__;
 
-struct UNI_EVENT_SAP
-{
+struct UNI_EVENT_SAP {
 	/* fixed field */
 	uint8_t aucPadding[4];
 
@@ -3167,28 +3207,69 @@ struct UNI_EVENT_SAP
 } __KAL_ATTRIB_PACKED__;
 
 /* SAP event Tag */
-enum ENUM_UNI_EVENT_SAP_TAG
-{
+enum ENUM_UNI_EVENT_SAP_TAG {
 	UNI_EVENT_SAP_TAG_AGING_TIMEOUT = 0,
 	UNI_EVENT_SAP_TAG_UPDATE_STA_FREE_QUOTA = 1,
 	UNI_EVENT_SAP_TAG_NUM
 };
 
-struct UNI_EVENT_SAP_AGING_TIMEOUT
-{
+struct UNI_EVENT_SAP_AGING_TIMEOUT {
 	uint16_t u2Tag;    // Tag = 0x00
 	uint16_t u2Length;
 	uint16_t u2StaRecIdx;
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_EVENT_UPDATE_STA_FREE_QUOTA
-{
+struct UNI_EVENT_UPDATE_STA_FREE_QUOTA {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint16_t u2StaRecIdx;
 	uint8_t  ucUpdateMode;
 	uint8_t  ucFreeQuota;
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_P2P {
+	/*fixed field*/
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+        *
+        *                TAG              | ID  | structure
+        *   ------------------------------| ----| -------------
+        *   UNI_EVENT_UPDATE_NOA_PARAM    | 0x00 | UNI_EVENT_UPDATE_NOA_PARAM_T
+        */
+} __KAL_ATTRIB_PACKED__;
+
+/* P2P event Tag */
+enum ENUM_UNI_EVENT_P2P_TAG {
+	UNI_EVENT_P2P_TAG_UPDATE_NOA_PARAM = 0,
+	UNI_EVENT_P2P_TAG_NUM
+};
+
+struct UNI_NOA_TIMING {
+	uint8_t ucIsInUse;              /* Indicate if this entry is in use or not */
+	uint8_t ucCount;                /* Count */
+	uint8_t aucReserved[2];
+
+	uint32_t u4Duration;             /* Duration */
+	uint32_t u4Interval;             /* Interval */
+	uint32_t u4StartTime;            /* Start Time */
+} __KAL_ATTRIB_PACKED__;
+
+/* UPDATE_NOA_PARAM (Tag0) */
+struct UNI_EVENT_UPDATE_NOA_PARAM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t  ucBssIndex;
+	uint8_t  ucEnableOppPS;
+	uint16_t u2CTWindow;
+
+	uint8_t  ucNoAIndex;
+	uint8_t  ucNoATimingCount;
+	uint8_t  aucReserved[2];
+	struct UNI_NOA_TIMING  arEventNoaTiming[8/*P2P_MAXIMUM_NOA_COUNT*/];
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_EVENT_CNM {
@@ -3789,6 +3870,10 @@ uint32_t nicUniCmdRddOnOffCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdTdls(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetP2pNoa(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetP2pOppps(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdGetStaStatistics(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdGetStatistics(struct ADAPTER *ad,
@@ -3878,8 +3963,8 @@ void nicUniEventAddKeyDone(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventFwLog2Host(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
-
-
+void nicUniEventP2p(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
