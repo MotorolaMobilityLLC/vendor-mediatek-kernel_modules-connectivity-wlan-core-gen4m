@@ -168,6 +168,11 @@ ATE_PRIV_CMD rAtePrivCmdTable[] = {
 	{"MUSetGID_UP", Set_MUSetGID_UP},
 	{"MUTriggerTx", Set_MUTriggerTx},
 #endif
+
+#if CFG_SUPPORT_TX_BF_FPGA
+	{"TxBfProfileSwTagWrite", Set_TxBfProfileSwTagWrite},
+#endif
+
 #endif
 
 	{"WriteEfuse", WriteEfuse},
@@ -1933,6 +1938,33 @@ int Set_MUTriggerTx(struct net_device *prNetDev, UINT_8 *prInBuf)
 	} else {
 		return -EINVAL;
 	}
+
+	return i4Status;
+}
+#endif
+
+#if CFG_SUPPORT_TX_BF_FPGA
+int Set_TxBfProfileSwTagWrite(struct net_device *prNetDev, UINT_8 *prInBuf)
+{
+	INT_32 i4Status = 0;
+	INT_32 rv;
+	UINT32 u4Lm, u4Nc, u4Nr, u4Bw, u4Codebook, u4Group;
+
+	DBGLOG(RFTEST, ERROR, "MT6632 Set_TxBfProfileSwTagWrite\n");
+
+	rv = sscanf(prInBuf, "%d-%d-%d-%d-%d-%d", &u4Lm, &u4Nr, &u4Nc, &u4Bw, &u4Codebook, &u4Group);
+
+	if (rv == 6) {
+		if ((u4Lm > 0) && (u4Group < 3) && (u4Nr < 4) && (u4Nc < 4) && (u4Codebook < 4)) {
+			DBGLOG(RFTEST, ERROR,
+				"MT6632 Set_TxBfProfileSwTagWrite prInBuf = %s, u4Lm = %d, u4Nr = %d, u4Nc = %d, u4BW = %d, u4CodeBook = %d, u4Group=%d\n",
+				prInBuf, u4Lm, u4Nr, u4Nc, u4Bw, u4Codebook, u4Group);
+
+			i4Status = TxBfPseudoTagUpdate(prNetDev, u4Lm, u4Nr, u4Nc, u4Bw, u4Codebook, u4Group);
+		} else
+			return -EINVAL;
+	} else
+		return -EINVAL;
 
 	return i4Status;
 }

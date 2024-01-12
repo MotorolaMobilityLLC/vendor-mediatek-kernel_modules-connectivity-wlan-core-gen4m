@@ -181,6 +181,10 @@ int Set_MUSetEnable(struct net_device *prNetDev, UINT_8 *prInBuf);
 int Set_MUSetGID_UP(struct net_device *prNetDev, UINT_8 *prInBuf);
 int Set_MUTriggerTx(struct net_device *prNetDev, UINT_8 *prInBuf);
 #endif
+
+#if CFG_SUPPORT_TX_BF_FPGA
+int Set_TxBfProfileSwTagWrite(struct net_device *prNetDev, UINT_8 *prInBuf);
+#endif
 #endif
 
 
