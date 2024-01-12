@@ -312,6 +312,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.u4PolicySize = ARRAY_SIZE(ap_start_policy)
 	},
 	{
+		.pcCmdStr  = CMD_PROC_AP_START,
+		.pfHandler = priv_driver_proc_set_ap_start,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = ap_start_policy,
+		.u4PolicySize = ARRAY_SIZE(ap_start_policy)
+	},
+	{
 		.pcCmdStr  = CMD_LINKSPEED,
 		.pfHandler = priv_driver_get_linkspeed,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,

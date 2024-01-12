@@ -10556,14 +10556,13 @@ int priv_driver_get_chip_config(struct net_device *prNetDev,
 
 
 #if CFG_ENABLE_WIFI_DIRECT
-int priv_driver_set_ap_start(struct net_device *prNetDev, char *pcCommand,
-			     int i4TotalLen)
+int priv_driver_set_ap_start_impl(struct net_device *prNetDev, char *pcCommand,
+	int i4TotalLen, uint8_t fgIsRtnlLockAcquired)
 {
-
 	struct PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT rSetP2P;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
-	uint32_t u4Ret;
+	uint32_t u4Ret = 0;
 	int32_t i4ArgNum = 2;
 
 	ASSERT(prNetDev);
@@ -10574,10 +10573,12 @@ int priv_driver_set_ap_start(struct net_device *prNetDev, char *pcCommand,
 
 	if (i4Argc >= i4ArgNum) {
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rSetP2P.u4Mode));
-		if (u4Ret)
-			DBGLOG(REQ, LOUD,
+		if (u4Ret) {
+			DBGLOG(REQ, ERROR,
 			       "parse ap-start error (u4Enable) u4Ret=%d\n",
 			       u4Ret);
+			return -EINVAL;
+		}
 
 		if (rSetP2P.u4Mode >= RUNNING_P2P_MODE_NUM) {
 			rSetP2P.u4Mode = 0;
@@ -10585,12 +10586,26 @@ int priv_driver_set_ap_start(struct net_device *prNetDev, char *pcCommand,
 		} else
 			rSetP2P.u4Enable = 1;
 
-		rSetP2P.fgIsRtnlLockAcquired = TRUE;
+		rSetP2P.fgIsRtnlLockAcquired = fgIsRtnlLockAcquired;
 
 		set_p2p_mode_handler(prNetDev, rSetP2P);
 	}
 
-	return 0;
+	return u4Ret;
+}
+
+int priv_driver_set_ap_start(struct net_device *prNetDev, char *pcCommand,
+	int i4TotalLen)
+{
+	return priv_driver_set_ap_start_impl(prNetDev, pcCommand, i4TotalLen,
+		TRUE);
+}
+
+int priv_driver_proc_set_ap_start(struct net_device *prNetDev, char *pcCommand,
+	int i4TotalLen)
+{
+	return priv_driver_set_ap_start_impl(prNetDev, pcCommand, i4TotalLen,
+		FALSE);
 }
 #endif
 
