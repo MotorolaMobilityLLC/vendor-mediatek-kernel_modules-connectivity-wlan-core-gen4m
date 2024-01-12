@@ -140,4 +140,14 @@ void __KAL_INLINE__ kalGetPlatDev(void **dev)
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
+/*----------------------------------------------------------------------------*/
+/* RX                                                                         */
+/*----------------------------------------------------------------------------*/
+#ifdef CFG_REMIND_IMPLEMENT
+#define kalScheduleFlushRxBaEntry(_prGlueInfo) \
+		KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
+#else
+uint32_t kalScheduleFlushRxBaEntry(struct GLUE_INFO *prGlueInfo);
+#endif
+
 #endif /* _GL_IMPL_H */
