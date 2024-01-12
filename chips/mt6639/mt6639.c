@@ -2058,6 +2058,20 @@ static void mt6639WpdmaConfigExt1(struct ADAPTER *prAdapter)
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 }
 
+static void mt6639WpdmaConfigExt2(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Addr = 0, u4Val = 0;
+
+	/* enable performance monitor */
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT2_ADDR;
+	u4Val = 0x44;
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+
+	u4Addr = WF_WFDMA_EXT_WRAP_CSR_WFDMA_HIF_PERF_MAVG_DIV_ADDR;
+	u4Val = 0x36;
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+}
+
 static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable, bool fgResetHif)
 {
@@ -2088,6 +2102,7 @@ static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 
 	mt6639WpdmaConfigExt0(prAdapter);
 	mt6639WpdmaConfigExt1(prAdapter);
+	mt6639WpdmaConfigExt2(prAdapter);
 
 	mt6639WpdmaDlyInt(prGlueInfo);
 }
