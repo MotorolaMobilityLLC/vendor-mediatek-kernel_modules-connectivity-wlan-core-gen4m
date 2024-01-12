@@ -1554,6 +1554,7 @@ void kal_skb_reserve(void *pvPacket, uint8_t ucLength);
 void kal_skb_split(void *pvPacket, void *pvPacket1, const uint32_t u4Length);
 uint8_t *kal_skb_push(void *pvPacket, uint32_t u4Length);
 uint8_t *kal_skb_pull(void *pvPacket, uint32_t u4Length);
+uint32_t kalDuplicateSwRfbSanity(struct SW_RFB *prSwRfb);
 #if CFG_SUPPORT_RX_PAGE_POOL
 void kalSkbReuseCheck(struct SW_RFB *prSwRfb);
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */

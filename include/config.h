@@ -2174,6 +2174,13 @@
 #define CFG_RFB_TRACK 0
 #endif /* CFG_RFB_TRACK */
 
+/* Check the buffer pointer in SWRFB, and attempt to correct from skb->data
+ * if the skb->head recognized as a valid address.
+ */
+#ifndef CFG_FIX_INCONSISTENT_RFB_POINTER
+#define CFG_FIX_INCONSISTENT_RFB_POINTER 0
+#endif
+
 /*------------------------------------------------------------------------------
  * Support FreeMsdu tasklet.
  * Linux version only. Force remove for other platform
