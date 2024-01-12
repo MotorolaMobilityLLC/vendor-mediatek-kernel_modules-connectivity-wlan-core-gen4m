@@ -3476,7 +3476,9 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 #endif
 }
 
-uint32_t nicExtTsfRawData2IqFmt(struct EXT_EVENT_RBIST_DUMP_DATA_T *prEventDumpMem, struct ICAP_INFO_T *prIcap)
+uint32_t nicExtTsfRawData2IqFmt(
+	struct EXT_EVENT_RBIST_DUMP_DATA_T *prEventDumpMem,
+	struct ICAP_INFO_T *prIcap)
 {
 	static uint8_t
 	aucPathWF0[40];	/* the path for iq data dump out */

@@ -325,12 +325,11 @@ void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter,
 	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
 	struct TXD_PTR_LEN *prPtrLen;
 
-	prHwTxDescAppend = (union HW_MAC_TX_DESC_APPEND *) (
-				   pucBuffer + NIC_TX_DESC_LONG_FORMAT_LENGTH);
+	prHwTxDescAppend = (union HW_MAC_TX_DESC_APPEND *)
+		(pucBuffer + NIC_TX_DESC_LONG_FORMAT_LENGTH);
 	prHwTxDescAppend->CONNAC_APPEND.au2MsduId[u4Idx] = u4MsduId
 			| TXD_MSDU_ID_VLD;
-	prPtrLen = &prHwTxDescAppend->CONNAC_APPEND.arPtrLen[u4Idx
-			>> 1];
+	prPtrLen = &prHwTxDescAppend->CONNAC_APPEND.arPtrLen[u4Idx >> 1];
 	if ((u4Idx & 1) == 0) {
 		prPtrLen->u4Ptr0 = rDmaAddr;
 		prPtrLen->u2Len0 = (prMsduInfo->u2FrameLength &
@@ -356,8 +355,8 @@ void fillTxDescAppendByCR4(IN struct ADAPTER *prAdapter,
 {
 	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
 
-	prHwTxDescAppend = (union HW_MAC_TX_DESC_APPEND *) (
-				   pucBuffer + NIC_TX_DESC_LONG_FORMAT_LENGTH);
+	prHwTxDescAppend = (union HW_MAC_TX_DESC_APPEND *)
+		(pucBuffer + NIC_TX_DESC_LONG_FORMAT_LENGTH);
 	prHwTxDescAppend->CR4_APPEND.u2MsduToken = u4MsduId;
 	prHwTxDescAppend->CR4_APPEND.ucBufNum = u4Idx + 1;
 	prHwTxDescAppend->CR4_APPEND.au4BufPtr[u4Idx] = rDmaAddr;
@@ -420,8 +419,7 @@ void asicPcieDmaShdlInit(IN struct ADAPTER *prAdapter)
 
 	HAL_MCR_RD(prAdapter,
 		   CONN_HIF_DMASHDL_PACKET_MAX_SIZE(u4BaseAddr), &u4MacVal);
-	u4MacVal &= ~(PLE_PKT_MAX_SIZE_MASK |
-		      PSE_PKT_MAX_SIZE_MASK);
+	u4MacVal &= ~(PLE_PKT_MAX_SIZE_MASK | PSE_PKT_MAX_SIZE_MASK);
 	u4MacVal |= PLE_PKT_MAX_SIZE_NUM(0x1);
 	u4MacVal |= PSE_PKT_MAX_SIZE_NUM(0x8);
 	HAL_MCR_WR(prAdapter,
@@ -575,10 +573,10 @@ void asicEnableInterrupt(IN struct ADAPTER *prAdapter)
 
 	IntMask.field_conn.rx_done_0 = 1;
 	IntMask.field_conn.rx_done_1 = 1;
-	IntMask.field_conn.tx_done = BIT(
-					     prBusInfo->tx_ring_fwdl_idx) |
-				     BIT(prBusInfo->tx_ring_cmd_idx) | BIT(
-					     prBusInfo->tx_ring_data_idx);
+	IntMask.field_conn.tx_done =
+		BIT(prBusInfo->tx_ring_fwdl_idx) |
+		BIT(prBusInfo->tx_ring_cmd_idx) |
+		BIT(prBusInfo->tx_ring_data_idx);
 	IntMask.field_conn.tx_coherent = 0;
 	IntMask.field_conn.rx_coherent = 0;
 	IntMask.field_conn.tx_dly_int = 0;
@@ -649,8 +647,7 @@ void asicUsbDmaShdlGroupInit(IN struct ADAPTER *prAdapter,
 
 	HAL_MCR_RD(prAdapter,
 		   CONN_HIF_DMASHDL_PACKET_MAX_SIZE(u4BaseAddr), &u4MacVal);
-	u4MacVal &= ~(PLE_PKT_MAX_SIZE_MASK |
-		      PSE_PKT_MAX_SIZE_MASK);
+	u4MacVal &= ~(PLE_PKT_MAX_SIZE_MASK | PSE_PKT_MAX_SIZE_MASK);
 	u4MacVal |= PLE_PKT_MAX_SIZE_NUM(0x1);
 	u4MacVal |= PSE_PKT_MAX_SIZE_NUM(0x8);
 	HAL_MCR_WR(prAdapter,

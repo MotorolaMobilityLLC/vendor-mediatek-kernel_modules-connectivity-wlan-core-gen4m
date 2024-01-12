@@ -3485,7 +3485,9 @@ void nicCmdEventQueryRxStatistics(IN struct ADAPTER
 
 uint32_t nicTsfRawData2IqFmt(struct EVENT_DUMP_MEM *prEventDumpMem,
 	struct ICAP_INFO_T *prIcap);
-uint32_t nicExtTsfRawData2IqFmt(struct EXT_EVENT_RBIST_DUMP_DATA_T *prEventDumpMem, struct ICAP_INFO_T *prIcap);
+uint32_t nicExtTsfRawData2IqFmt(
+	struct EXT_EVENT_RBIST_DUMP_DATA_T *prEventDumpMem,
+	struct ICAP_INFO_T *prIcap);
 
 int32_t GetIQData(struct ADAPTER *prAdapter,
 		  int32_t **prIQAry, uint32_t *prDataLen, uint32_t u4IQ,

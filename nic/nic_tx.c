@@ -319,35 +319,41 @@ u_int8_t nicTxSanityCheckResource(IN struct ADAPTER
 
 			if (prTxCtrl->rTc.au4FreePageCount[ucTC] >
 			    prTxCtrl->u4TotalPageNum) {
-				DBGLOG(TX, ERROR, "%s:%u\n error\n", __func__, __LINE__);
+				DBGLOG(TX, ERROR,
+					"%s:%u\n error\n", __func__, __LINE__);
 				fgError = TRUE;
 			}
 
 			if (prTxCtrl->rTc.au4MaxNumOfPage[ucTC] >
 			    prTxCtrl->u4TotalPageNum) {
-				DBGLOG(TX, ERROR, "%s:%u\n error\n", __func__, __LINE__);
+				DBGLOG(TX, ERROR,
+					"%s:%u\n error\n", __func__, __LINE__);
 				fgError = TRUE;
 			}
 
 			if (prTxCtrl->rTc.au4FreePageCount[ucTC] >
 			    prTxCtrl->rTc.au4MaxNumOfPage[ucTC]) {
-				DBGLOG(TX, ERROR, "%s:%u\n error\n", __func__, __LINE__);
+				DBGLOG(TX, ERROR,
+					"%s:%u\n error\n", __func__, __LINE__);
 				fgError = TRUE;
 			}
 		}
 
 		if (ucTotalMaxResource != prTxCtrl->u4TotalPageNum) {
-			DBGLOG(TX, ERROR, "%s:%u\n error\n", __func__, __LINE__);
+			DBGLOG(TX, ERROR,
+				"%s:%u\n error\n", __func__, __LINE__);
 			fgError = TRUE;
 		}
 
 		if (ucTotalMaxResource < ucTotalFreeResource) {
-			DBGLOG(TX, ERROR, "%s:%u\n error\n", __func__, __LINE__);
+			DBGLOG(TX, ERROR,
+				"%s:%u\n error\n", __func__, __LINE__);
 			fgError = TRUE;
 		}
 
 		if (ucTotalFreeResource > prTxCtrl->u4TotalPageNum) {
-			DBGLOG(TX, ERROR, "%s:%u\n error\n", __func__, __LINE__);
+			DBGLOG(TX, ERROR,
+				"%s:%u\n error\n", __func__, __LINE__);
 			fgError = TRUE;
 		}
 
@@ -630,7 +636,8 @@ uint32_t nicTxPollingResource(IN struct ADAPTER *prAdapter,
 		if (i4Times) {
 			DBGLOG(TX, TRACE,
 				"Polling MCR_WTSR delay %ld times, %ld msec\n",
-			  i4Times, (i4Times * NIC_TX_RESOURCE_POLLING_DELAY_MSEC));
+				i4Times,
+				(i4Times * NIC_TX_RESOURCE_POLLING_DELAY_MSEC));
 		}
 	}
 #endif /* DBG */
@@ -1547,7 +1554,8 @@ nicTxComposeDesc(IN struct ADAPTER *prAdapter,
 				nicTxConfigPktOption(
 					prMsduInfo, MSDU_OPT_PROTECTED_FRAME,
 					FALSE);
-				DBGLOG(RSN, LOUD, "Pairwise EAPoL not protect!\n");
+				DBGLOG(RSN, LOUD,
+					"Pairwise EAPoL not protect!\n");
 			}
 		} else if (prMsduInfo->ucStaRecIndex ==
 			   STA_REC_INDEX_BMCAST) {/* BMC packet */
@@ -3150,9 +3158,10 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 
 			DBGLOG(NIC, INFO,
 				"||RATE[0x%04x] BW[%s] NSS[%u] ArIdx[%u] RspRate[0x%02x]\n",
-			  prTxDone->u2TxRate, apucBandwidt[prTxDone->ucBandwidth],
-			  ucNss,
-			  prTxDone->ucRateTableIdx, prTxDone->ucRspRate);
+				prTxDone->u2TxRate,
+				apucBandwidt[prTxDone->ucBandwidth],
+				ucNss,
+				prTxDone->ucRateTableIdx, prTxDone->ucRspRate);
 
 			icTxPwr = (int8_t)prTxDone->ucTxPower;
 			if (icTxPwr & BIT(6))
@@ -3160,16 +3169,16 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 
 			DBGLOG(NIC, INFO,
 				"||AMPDU[%u] PS[%u] IBF[%u] EBF[%u] TxPwr[%d%sdBm] TSF[%u] TxDelay[%uus]\n",
-			  prTxDone->u4AppliedFlag & BIT(TX_FRAME_IN_AMPDU_FORMAT) ?
-			  TRUE : FALSE,
-			  prTxDone->u4AppliedFlag & BIT(TX_FRAME_PS_BIT) ? TRUE :
-			  FALSE,
-			  prTxDone->u4AppliedFlag & BIT(TX_FRAME_IMP_BF) ? TRUE :
-			  FALSE,
-			  prTxDone->u4AppliedFlag & BIT(TX_FRAME_EXP_BF) ? TRUE :
-			  FALSE,
-			  icTxPwr / 2, icTxPwr & BIT(0) ? ".5" : "",
-			  prTxDone->u4Timestamp, prTxDone->u4TxDelay);
+				prTxDone->u4AppliedFlag &
+				BIT(TX_FRAME_IN_AMPDU_FORMAT) ? TRUE : FALSE,
+				prTxDone->u4AppliedFlag &
+				BIT(TX_FRAME_PS_BIT) ? TRUE : FALSE,
+				prTxDone->u4AppliedFlag &
+				BIT(TX_FRAME_IMP_BF) ? TRUE : FALSE,
+				prTxDone->u4AppliedFlag &
+				BIT(TX_FRAME_EXP_BF) ? TRUE : FALSE,
+				icTxPwr / 2, icTxPwr & BIT(0) ? ".5" : "",
+				prTxDone->u4Timestamp, prTxDone->u4TxDelay);
 
 			DBGLOG(NIC, INFO,
 				"TxS[%08x %08x %08x %08x %08x %08x %08x]\n",
@@ -4381,7 +4390,8 @@ static void nicTxDirectCheckBssAbsentQ(IN struct ADAPTER
 				prBssInfo->ucBssFreeQuota--;
 				QUEUE_INSERT_TAIL(
 					prQue, (struct QUE_ENTRY *) prMsduInfo);
-				DBGLOG(TX, INFO, "fgIsNetAbsent Quota Availalbe\n");
+				DBGLOG(TX, INFO,
+					"fgIsNetAbsent Quota Availalbe\n");
 			} else {
 				fgReturnBssAbsentQ = TRUE;
 				DBGLOG(TX, INFO, "fgIsNetAbsent NoQuota\n");
@@ -4497,8 +4507,9 @@ static uint32_t nicTxDirectStartXmitMain(struct sk_buff
 		}
 
 		if (fgDropPacket) {
-			DBGLOG(QM, TRACE, "Drop the Packet for inactive Bss %u\n",
-			       prMsduInfo->ucBssIndex);
+			DBGLOG(QM, TRACE,
+				"Drop the Packet for inactive Bss %u\n",
+				prMsduInfo->ucBssIndex);
 			QM_DBG_CNT_INC(prQM, QM_DBG_CNT_31);
 			TX_INC_CNT(&prAdapter->rTxCtrl, TX_INACTIVE_BSS_DROP);
 
@@ -4668,7 +4679,8 @@ static uint32_t nicTxDirectStartXmitMain(struct sk_buff
 			if (QUEUE_IS_EMPTY(
 				    &prAdapter->rTxDirectHifQueue[ucHifTc])) {
 				DBGLOG(TX, INFO,
-					"ERROR: no rTxDirectHifQueue (%u)\n", ucHifTc);
+					"ERROR: no rTxDirectHifQueue (%u)\n",
+					ucHifTc);
 				return WLAN_STATUS_FAILURE;
 			}
 			QUEUE_REMOVE_HEAD(
@@ -4773,7 +4785,8 @@ void nicTxDirectTimerCheckHifQ(unsigned long data)
 				nicTxDirectStartXmitMain(NULL, NULL, prAdapter,
 					0xff, ucStaRecIndex, 0xff);
 				u4StaPsBitmap &= ~BIT(ucStaRecIndex);
-				DBGLOG(TX, INFO, "ucStaRecIndex: %u\n", ucStaRecIndex);
+				DBGLOG(TX, INFO,
+					"ucStaRecIndex: %u\n", ucStaRecIndex);
 			}
 			if (u4StaPsBitmap == 0)
 				break;
@@ -4787,7 +4800,8 @@ void nicTxDirectTimerCheckHifQ(unsigned long data)
 				nicTxDirectStartXmitMain(NULL, NULL, prAdapter,
 					0xff, 0xff, ucBssIndex);
 				u4BssAbsentBitmap &= ~BIT(ucBssIndex);
-				DBGLOG(TX, INFO, "ucBssIndex: %u\n", ucBssIndex);
+				DBGLOG(TX, INFO,
+					"ucBssIndex: %u\n", ucBssIndex);
 			}
 			if (u4BssAbsentBitmap == 0)
 				break;
@@ -4844,7 +4858,8 @@ uint32_t nicTxDirectStartXmit(struct sk_buff *prSkb,
 		if (prMsduInfo != NULL) {
 			prSkb = skb_dequeue(&prAdapter->rTxDirectSkbQueue);
 			if (prSkb == NULL) {
-				DBGLOG(TX, INFO, "ERROR: no rTxDirectSkbQueue\n");
+				DBGLOG(TX, INFO,
+					"ERROR: no rTxDirectSkbQueue\n");
 				nicTxReturnMsduInfo(prAdapter, prMsduInfo);
 				ret = WLAN_STATUS_FAILURE;
 				goto end;
