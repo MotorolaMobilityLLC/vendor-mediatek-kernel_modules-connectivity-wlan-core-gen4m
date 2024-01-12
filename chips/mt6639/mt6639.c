@@ -40,6 +40,9 @@
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #include "connv3.h"
 #endif
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+#include "dbg_mt6639.h"
+#endif
 
 #if CFG_MTK_MDDP_SUPPORT
 #include "mddp_export.h"
@@ -227,6 +230,7 @@ struct PCIE_CHIP_CR_MAPPING mt6639_bus2chip_cr_mapping[] = {
 	{0x7c020000, 0xd0000, 0x10000}, /* CONN_INFRA, wfdma */
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
+	{0x70020000, 0x1f0000, 0x10000}, /* Reserved for CBTOP, can't switch */
 	{0x7c500000, MT6639_PCIE2AP_REMAP_BASE_ADDR, 0x2000000}, /* remap */
 	{0x0, 0x0, 0x0} /* End */
 };
@@ -598,7 +602,12 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 	.show_wfdma_dbg_probe_info = mt6639_show_wfdma_dbg_probe_info,
 	.show_wfdma_wrapper_info = mt6639_show_wfdma_wrapper_info,
 	.dumpwfsyscpupcr = mt6639_dumpWfsyscpupcr,
+#if (CFG_SUPPORT_DEBUG_SOP == 0)
 	.dumpBusHangCr = mt6639_DumpBusHangCr,
+#endif
+#endif
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+	.show_debug_sop_info = mt6639_show_debug_sop_info,
 #endif
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	.get_rx_rate_info = mt6639_get_rx_rate_info,

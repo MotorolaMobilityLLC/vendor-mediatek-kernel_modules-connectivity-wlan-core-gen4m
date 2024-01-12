@@ -416,6 +416,12 @@ do { \
 	HAL_MCR_WR(_prAdapter, _u4Offset, u4CrValue); \
 }
 
+#define HAL_MCR_RD_FIELD(_prAdapter, _u4Offset, _ucShft, _u4Mask, pu4Val) \
+{ \
+	HAL_MCR_RD(_prAdapter, _u4Offset, pu4Val); \
+	*pu4Val = ((*pu4Val & _u4Mask) >> _ucShft); \
+}
+
 #define HAL_WRITE_TX_DATA(_prAdapter, _prMsduInfo) \
 { \
 	if (_prAdapter->rAcpiState == ACPI_STATE_D3) { \
@@ -1230,6 +1236,21 @@ do { \
 	} \
 	*_pucSts = kalDevUhwRegWrite(_prAdapter->prGlueInfo, _u4Offset, \
 				     _u4Value); \
+}
+
+#define HAL_UHW_WR_FIELD(_prAdapter, _u4Offset, _u4FieldVal, _ucShft, _u4Mask) \
+{ \
+	uint32_t u4CrValue = 0; \
+	kalDevUhwRegRead(_prAdapter->prGlueInfo, _u4Offset, &u4CrValue); \
+	u4CrValue &= (~_u4Mask); \
+	u4CrValue |= ((_u4FieldVal << _ucShft) & _u4Mask); \
+	kalDevUhwRegWrite(_prAdapter->prGlueInfo, _u4Offset, u4CrValue); \
+}
+
+#define HAL_UHW_RD_FIELD(_prAdapter, _u4Offset, _ucShft, _u4Mask, pu4Val) \
+{ \
+	kalDevUhwRegRead(_prAdapter->prGlueInfo, _u4Offset, pu4Val); \
+	*pu4Val = ((*pu4Val & _u4Mask) >> _ucShft); \
 }
 
 #define HAL_CANCEL_TX_RX(_prAdapter)    \
