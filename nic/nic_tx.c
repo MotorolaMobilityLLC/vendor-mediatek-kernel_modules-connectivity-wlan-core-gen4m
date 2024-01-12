@@ -3557,7 +3557,7 @@ u_int8_t nicTxFillMsduInfo(struct ADAPTER *prAdapter,
 			fgIsHighPrioQ = TRUE;
 		}
 #endif
-#if CFG_SUPPORT_WIFI_SYSDVT
+#if CFG_SUPPORT_WIFI_SYSDVT && CFG_SUPPORT_TX_MGMT_USE_DATAQ
 		/* must be the last check action */
 		if (prAdapter->ucTxTestUP != TX_TEST_UP_UNDEF) {
 			fgIsLowestRate = FALSE;
@@ -3575,7 +3575,7 @@ u_int8_t nicTxFillMsduInfo(struct ADAPTER *prAdapter,
 			/* Set BSS/STA lowest basic rate */
 			prMsduInfo->ucRateMode = MSDU_RATE_MODE_LOWEST_RATE;
 
-#if CFG_SUPPORT_WIFI_SYSDVT || CFG_SUPPORT_TX_MGMT_USE_DATAQ
+#if CFG_SUPPORT_WIFI_SYSDVT && CFG_SUPPORT_TX_MGMT_USE_DATAQ
 		if (fgIsHighPrioQ)
 			/* Set higher priority */
 			prMsduInfo->ucUserPriority = NIC_TX_CRITICAL_DATA_TID;
