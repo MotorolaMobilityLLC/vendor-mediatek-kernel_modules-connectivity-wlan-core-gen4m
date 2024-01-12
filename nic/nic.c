@@ -2067,7 +2067,7 @@ void nicMldUpdateNetifTxTh(struct ADAPTER *prAdapter,
 	}
 
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
-		if (prMldBssInfo->ucBssBitmap & i == 0)
+		if ((prMldBssInfo->ucBssBitmap & i) == 0)
 			continue;
 
 		nicUpdateNetifTxThByBssId(prAdapter, i,
