@@ -205,7 +205,8 @@ void ehtRlmFillCapIE(
 	uint32_t phy_cap_2 = 0;
 	uint32_t u4OverallLen = OFFSET_OF(struct IE_EHT_CAP, aucVarInfo[0]);
 	uint8_t eht_mcs15_mru = EHT_MCS15_MRU_106_or_52_w_26_tone;
-	uint8_t eht_bw = 0, ucSupportedNss = 0;
+	uint8_t ucSupportedNss = 0;
+	int8_t eht_bw = 0;
 	u_int8_t fgBfEn = TRUE;
 
 	ASSERT(prAdapter);
