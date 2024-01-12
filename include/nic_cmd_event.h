@@ -1365,9 +1365,11 @@ struct CAP_MLO_CAP {
 	uint8_t ucNonApMldEMLSupport; /* Non-AP Mld EML 1:support, 0:not*/
 	uint8_t ucApMldEMLSupport; /* AP Mld EML 1:support, 0:not*/
 	uint8_t ucMaxSimuLinks; /* num of max simultaneous links */
-	uint8_t ucReserved;
+	uint8_t  ucLink3BandLimitBitmap;
 	uint16_t u2NonApMldEMLCap; /* Non-AP Mld EML cap */
 	uint16_t u2ApMldEMLCap; /* AP Mld EML cap */
+	uint8_t ucNonApHyMloSupport; /* Hybrid MLo 1:support, 0 :not */
+	uint8_t ucReserved[3];
 };
 #endif
 
