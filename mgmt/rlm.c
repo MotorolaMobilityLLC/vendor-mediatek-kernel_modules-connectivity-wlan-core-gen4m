@@ -1496,18 +1496,25 @@ static void rlmFillVhtOpNotificationIE(struct ADAPTER *prAdapter,
 						    prBssInfo->ucBssIndex);
 
 		/*handle 80P80 case*/
-		if (ucOpModeBw >= MAX_BW_160MHZ)
-			ucOpModeBw = VHT_OP_MODE_CHANNEL_WIDTH_160_80P80;
+		if (ucOpModeBw >= MAX_BW_160MHZ) {
+			ucOpModeBw = VHT_OP_MODE_CHANNEL_WIDTH_80;
+			prVhtOpMode->ucOperatingMode |=
+				VHT_OP_MODE_CHANNEL_WIDTH_80P80_160;
+		}
 
 		prVhtOpMode->ucOperatingMode |= ucOpModeBw;
 		prVhtOpMode->ucOperatingMode |=
 			(((prBssInfo->ucOpRxNss - 1)
 				<< VHT_OP_MODE_RX_NSS_OFFSET) &
 			 VHT_OP_MODE_RX_NSS);
-
 	} else {
 
 		ucOpModeBw = rlmGetOpModeBwByVhtAndHtOpInfo(prBssInfo);
+		if (ucOpModeBw == VHT_OP_MODE_CHANNEL_WIDTH_160_80P80) {
+			ucOpModeBw = VHT_OP_MODE_CHANNEL_WIDTH_80;
+			prVhtOpMode->ucOperatingMode |=
+				VHT_OP_MODE_CHANNEL_WIDTH_80P80_160;
+		}
 
 		prVhtOpMode->ucOperatingMode |= ucOpModeBw;
 		prVhtOpMode->ucOperatingMode |=
@@ -2740,6 +2747,19 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			}
 			fgHasOPModeIE = TRUE;
 
+			/* Check BIT(2) is BW80P80_160.
+			 * Refactor ucOpMode with ucVhtOpMode format.
+			 */
+			if (prOPNotif->ucOpMode &
+				VHT_OP_MODE_CHANNEL_WIDTH_80P80_160) {
+				prOPNotif->ucOpMode &=
+					~(VHT_OP_MODE_CHANNEL_WIDTH |
+					VHT_OP_MODE_CHANNEL_WIDTH_80P80_160);
+				prOPNotif->ucOpMode |=
+					(VHT_OP_MODE_CHANNEL_WIDTH_160_80P80 &
+					VHT_OP_MODE_CHANNEL_WIDTH);
+			}
+
 			/* Same OP mode, no need to update.
 			 * Let the further flow not to update VhtOpMode.
 			 */
@@ -2752,7 +2772,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			prStaRec->ucVhtOpMode = prOPNotif->ucOpMode;
 			ucVhtOpModeChannelWidth =
 				(prOPNotif->ucOpMode &
-				 VHT_OP_MODE_CHANNEL_WIDTH);
+				VHT_OP_MODE_CHANNEL_WIDTH);
+
 			ucVhtOpModeRxNss =
 				(prOPNotif->ucOpMode & VHT_OP_MODE_RX_NSS)
 				>> VHT_OP_MODE_RX_NSS_OFFSET;
@@ -4610,6 +4631,20 @@ void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 			     VHT_OP_MODE_RX_NSS_TYPE) !=
 			    VHT_OP_MODE_RX_NSS_TYPE) {
 				fgHasOPModeIE = TRUE;
+
+				/* Check BIT(2) is BW80P80_160.
+				 * Refactor ucOpMode with ucVhtOpMode format.
+				 */
+				if (prOPModeNotification->ucOpMode &
+					VHT_OP_MODE_CHANNEL_WIDTH_80P80_160) {
+					prOPModeNotification->ucOpMode &=
+					~(VHT_OP_MODE_CHANNEL_WIDTH |
+					VHT_OP_MODE_CHANNEL_WIDTH_80P80_160);
+
+					prOPModeNotification->ucOpMode |=
+					(VHT_OP_MODE_CHANNEL_WIDTH_160_80P80 &
+					VHT_OP_MODE_CHANNEL_WIDTH);
+				}
 			}
 
 			break;

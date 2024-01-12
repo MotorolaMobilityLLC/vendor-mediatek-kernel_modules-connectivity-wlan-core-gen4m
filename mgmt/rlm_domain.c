@@ -292,6 +292,12 @@ struct mtk_regd_control g_mtk_regd_control = {
 	.state = REGD_STATE_UNDEFINED
 };
 
+#if CFG_SUPPORT_BW160
+#define BW_5G 160
+#else
+#define BW_5G 80
+#endif
+
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 #if (CFG_SUPPORT_WIFI_6G == 1)
 const struct ieee80211_regdomain default_regdom_ww = {
@@ -303,11 +309,11 @@ const struct ieee80211_regdomain default_regdom_ww = {
 	/* channels 14 */
 	REG_RULE_LIGHT(2484-10, 2484+10, 20, 0),
 	/* channel 36..64 */
-	REG_RULE_LIGHT(5150-10, 5350+10, 80, 0),
+	REG_RULE_LIGHT(5150-10, 5350+10, BW_5G, 0),
 	/* channel 100..165 */
-	REG_RULE_LIGHT(5470-10, 5850+10, 80, 0),
+	REG_RULE_LIGHT(5470-10, 5850+10, BW_5G, 0),
 	/* 6G channel 1..17 */
-	REG_RULE_LIGHT(5935-10, 7135+10, 80, 0),
+	REG_RULE_LIGHT(5935-10, 7135+10, BW_5G, 0),
 	}
 };
 #else
@@ -320,9 +326,9 @@ const struct ieee80211_regdomain default_regdom_ww = {
 	/* channels 14 */
 	REG_RULE_LIGHT(2484-10, 2484+10, 20, 0),
 	/* channel 36..64 */
-	REG_RULE_LIGHT(5150-10, 5350+10, 80, 0),
+	REG_RULE_LIGHT(5150-10, 5350+10, BW_5G, 0),
 	/* channel 100..165 */
-	REG_RULE_LIGHT(5470-10, 5850+10, 80, 0),
+	REG_RULE_LIGHT(5470-10, 5850+10, BW_5G, 0),
 	}
 };
 #endif
