@@ -478,6 +478,9 @@
 #define RADIOTAP_VHT_BAND_GROUP_ID_KNOWN	BIT(7)
 #define RADIOTAP_VHT_BAND_PARTIAL_AID_KNOWN	BIT(8)
 
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+#define NIC_RX_ROOM_SIZE (32 + 32)
+#endif
 
 /*******************************************************************************
  *                             D A T A   T Y P E S

@@ -69,7 +69,9 @@
  *******************************************************************************
  */
 #include "precomp.h"
-
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+#include "mddp.h"
+#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -2664,6 +2666,9 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 	u_int8_t fgDelayIndication;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	uint8_t ucBssIndex = 0;
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	struct STA_RECORD *prStaRec;
+#endif
 
 	DEBUGFUNC("aisFsmRunEventAbort()");
 
@@ -2675,6 +2680,18 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	prStaRec = prAdapter->prAisBssInfo[ucBssIndex]->prStaRecOfAP;
+	if (prStaRec != NULL) {
+		DBGLOG(AIS, ERROR, "mddpNotifyStaTxd Disconnect AP: %d.\n",
+				prAdapter->fgMddpActivated);
+		mddpNotifyDrvTxd(prAdapter, prStaRec, FALSE);
+	} else {
+		DBGLOG(AIS, ERROR, "mddpNotifyStaTxd Disconnect AP,");
+		DBGLOG(AIS, ERROR, "prStaRec is NULL.\n");
+	}
+#endif
 
 	cnmMemFree(prAdapter, prMsgHdr);
 
@@ -3121,6 +3138,17 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 					 ENUM_TP_TEST_MODE_SIGMA_WMM_PS)
 					nicEnterTPTestMode(prAdapter,
 						TEST_MODE_SIGMA_WMM_PS);
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+				if (prStaRec != NULL) {
+					DBGLOG(AIS, INFO,
+						"mddpNotifyStaTxd : %d.\n",
+						prAdapter->fgMddpActivated);
+					nicTxGenerateDescTemplate(prAdapter,
+						prStaRec);
+					mddpNotifyDrvTxd(prAdapter, prStaRec,
+						prAdapter->fgMddpActivated);
+				}
+#endif
 			}
 
 #if CFG_SUPPORT_ROAMING

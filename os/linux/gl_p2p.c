@@ -87,7 +87,9 @@
 #include "precomp.h"
 #include "gl_vendor.h"
 #include "gl_cfg80211.h"
-
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+#include "mddp.h"
+#endif
 /******************************************************************************
  *                              C O N S T A N T S
  ******************************************************************************
@@ -1795,6 +1797,19 @@ static int p2pStop(IN struct net_device *prDev)
 /*---------------------------------------------------------------------------*/
 struct net_device_stats *p2pGetStats(IN struct net_device *prDev)
 {
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	prGlueInfo = (prDev != NULL)
+		? *((struct GLUE_INFO **) netdev_priv(prDev))
+		: NULL;
+
+	if (prGlueInfo && prGlueInfo->prAdapter
+		&& prGlueInfo->prAdapter->fgMddpActivated) {
+		mddpGetMdStats(prDev);
+	}
+#endif
+
 	return (struct net_device_stats *)kalGetStats(prDev);
 }				/* end of p2pGetStats() */
 
