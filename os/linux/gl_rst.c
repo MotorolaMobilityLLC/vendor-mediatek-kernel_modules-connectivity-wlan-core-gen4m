@@ -442,7 +442,13 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst)
 
 	wait_core_dump_end();
 
-	fgResult = rst->prGlueInfo->prAdapter->chip_info->rst_L0_notify_step2();
+	if (rst != NULL && rst->prGlueInfo != NULL &&
+		rst->prGlueInfo->prAdapter != NULL &&
+		rst->prGlueInfo->prAdapter->chip_info != NULL &&
+		rst->prGlueInfo->prAdapter->chip_info
+			->rst_L0_notify_step2 != NULL)
+		fgResult = rst->prGlueInfo->prAdapter
+			->chip_info->rst_L0_notify_step2();
 
 #if CFG_CHIP_RESET_HANG
 	if (fgIsResetHangState == SER_L0_HANG_RST_NONE)
