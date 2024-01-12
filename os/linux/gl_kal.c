@@ -12958,7 +12958,8 @@ void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
 
 uint32_t kalGetSKBSharedInfoSize(void)
 {
-	return SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+	return SKB_RESERVED_SIZE +
+		SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
 }
 
 uint32_t kalGetChannelFrequency(
