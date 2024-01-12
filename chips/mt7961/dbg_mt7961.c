@@ -1316,17 +1316,37 @@ u_int8_t usb_show_mcu_debug_info(IN struct ADAPTER *prAdapter,
 
 	if (ucFlag != DBG_MCU_DBG_CURRENT_PC) {
 		usb_read_wifi_mcu_pc(prAdapter, PC_LOG_IDX, &u4Val);
-		DBGLOG(INIT, INFO, "PC LOG Index: 0x%08x\n", u4Val);
+		DBGLOG(INIT, INFO, "PC log contorl=0x%08x\n", u4Val);
 		if (pucBuf)
 			LOGBUF(pucBuf, u4Max, *pu4Length,
-			"PC LOG Index: 0x%08x\n", u4Val);
+			"PC log contorl=0x%08x\n", u4Val);
 
 		for (i = 0; i < PC_LOG_NUM; i++) {
 			usb_read_wifi_mcu_pc(prAdapter, i, &u4Val);
-			DBGLOG(INIT, INFO, "PC LOG %d: 0x%08x\n", i, u4Val);
+			DBGLOG(INIT, INFO, "PC log(%d)=0x%08x\n", i, u4Val);
 			if (pucBuf)
 				LOGBUF(pucBuf, u4Max, *pu4Length,
-				"PC LOG %d: 0x%08x\n", i, u4Val);
+				"PC log(%d)=0x%08x\n", i, u4Val);
+		}
+		/* Switch to LR. */
+		HAL_UHW_RD(prAdapter, CONNAC2X_UDMA_CONDBGCR_SEL, &u4Val,
+			&fgStatus);
+		u4Val |= CONNAC2X_UDMA_LR_MONITER_SEL;
+		HAL_UHW_WR(prAdapter, CONNAC2X_UDMA_CONDBGCR_SEL, u4Val,
+			&fgStatus);
+
+		usb_read_wifi_mcu_pc(prAdapter, PC_LOG_IDX, &u4Val);
+		DBGLOG(INIT, INFO, "LR log contorl=0x%08x\n", u4Val);
+		if (pucBuf)
+			LOGBUF(pucBuf, u4Max, *pu4Length,
+			"LR log contorl=0x%08x\n", u4Val);
+
+		for (i = 0; i < PC_LOG_NUM; i++) {
+			usb_read_wifi_mcu_pc(prAdapter, i, &u4Val);
+			DBGLOG(INIT, INFO, "LR log(%d)=0x%08x\n", i, u4Val);
+			if (pucBuf)
+				LOGBUF(pucBuf, u4Max, *pu4Length,
+				"LR log(%d)=0x%08x\n", i, u4Val);
 		}
 	}
 
@@ -1359,6 +1379,23 @@ u_int8_t pcie_read_wifi_mcu_pc(IN struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
+u_int8_t pcie_read_wifi_mcu_lr(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucPcLogSel, OUT uint32_t *pu4RetVal)
+{
+	uint32_t u4Val = 0;
+
+	if (pu4RetVal == NULL)
+		return FALSE;
+
+	HAL_MCR_RD(prAdapter, CONNAC2X_PCIE_CONDBGCR_SEL, &u4Val);
+	u4Val = PC_IDX_SWH(u4Val, ucPcLogSel, CONNAC2X_PCIE_MCU_LR_LOG_MASK,
+		CONNAC2X_PCIE_MCU_LR_LOG_SHIFT);
+	HAL_MCR_WR(prAdapter, CONNAC2X_PCIE_CONDBGCR_SEL, u4Val);
+	HAL_MCR_RD(prAdapter, CONNAC2X_PCIE_CONDBGCR_LR_DATA, pu4RetVal);
+
+	return TRUE;
+}
+
 u_int8_t pcie_show_mcu_debug_info(IN struct ADAPTER *prAdapter,
 	IN uint8_t *pucBuf, IN uint32_t u4Max, IN uint8_t ucFlag,
 	OUT uint32_t *pu4Length)
@@ -1385,17 +1422,31 @@ u_int8_t pcie_show_mcu_debug_info(IN struct ADAPTER *prAdapter,
 
 	if (ucFlag != DBG_MCU_DBG_CURRENT_PC) {
 		pcie_read_wifi_mcu_pc(prAdapter, PC_LOG_IDX, &u4Val);
-		DBGLOG(INIT, INFO, "PC LOG Index: 0x%08x\n", u4Val);
+		DBGLOG(INIT, INFO, "PC log contorl=0x%08x\n", u4Val);
 		if (pucBuf)
 			LOGBUF(pucBuf, u4Max, *pu4Length,
-			"PC LOG Index: 0x%08x\n", u4Val);
+			"PC log contorl=0x%08x\n", u4Val);
 
 		for (i = 0; i < PC_LOG_NUM; i++) {
 			pcie_read_wifi_mcu_pc(prAdapter, i, &u4Val);
-			DBGLOG(INIT, INFO, "PC LOG %d: 0x%08x\n", i, u4Val);
+			DBGLOG(INIT, INFO, "PC log(%d)=0x%08x\n", i, u4Val);
 			if (pucBuf)
 				LOGBUF(pucBuf, u4Max, *pu4Length,
-				"PC LOG %d: 0x%08x\n", i, u4Val);
+				"PC log(%d)=0x%08x\n", i, u4Val);
+		}
+		/* Read LR log. */
+		pcie_read_wifi_mcu_lr(prAdapter, PC_LOG_IDX, &u4Val);
+		DBGLOG(INIT, INFO, "LR log contorl=0x%08x\n", u4Val);
+		if (pucBuf)
+			LOGBUF(pucBuf, u4Max, *pu4Length,
+			"LR log contorl=0x%08x\n", u4Val);
+
+		for (i = 0; i < PC_LOG_NUM; i++) {
+			pcie_read_wifi_mcu_lr(prAdapter, i, &u4Val);
+			DBGLOG(INIT, INFO, "LR log(%d)=0x%08x\n", i, u4Val);
+			if (pucBuf)
+				LOGBUF(pucBuf, u4Max, *pu4Length,
+				"LR log(%d)=0x%08x\n", i, u4Val);
 		}
 	}
 
