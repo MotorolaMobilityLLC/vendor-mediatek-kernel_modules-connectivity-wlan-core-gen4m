@@ -1400,10 +1400,10 @@ static void connac2x_print_wtbl_info(
 			"\tFCAP_20_TO_80_MHZ:%d\n",
 			pwtbl->trx_cap.wtbl_d9.field.fcap,
 			((pwtbl->trx_cap.wtbl_d9.field.fcap) &
-			(0x1)),
+			(BIT(0))),
 			pwtbl->trx_cap.wtbl_d9.field.fcap,
 			(((pwtbl->trx_cap.wtbl_d9.field.fcap) &
-			(0x10)) >> 1));
+			(BIT(1))) >> 1));
 
 		/* Rate Info (DW10~13) */
 		LOG_FUNC("Rate Info (DW10~13):");
