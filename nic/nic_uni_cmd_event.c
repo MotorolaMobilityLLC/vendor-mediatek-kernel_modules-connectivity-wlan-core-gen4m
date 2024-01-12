@@ -148,6 +148,8 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_SET_TDLS_CH_SW] = nicUniCmdTdls,
 	[CMD_ID_SET_NOA_PARAM] = nicUniCmdSetP2pNoa,
 	[CMD_ID_SET_OPPPS_PARAM] = nicUniCmdSetP2pOppps,
+	[CMD_ID_SET_AP_CONSTRAINT_PWR_LIMIT] = nicUniCmdSetApConstraintPwrLimit,
+	[CMD_ID_SET_RRM_CAPABILITY] = nicUniCmdSetRrmCapability,
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -4017,6 +4019,83 @@ uint32_t nicUniCmdSetP2pOppps(struct ADAPTER *ad,
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
 	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdSetApConstraintPwrLimit(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+#if CFG_SUPPORT_802_11K
+	struct CMD_SET_AP_CONSTRAINT_PWR_LIMIT *cmd;
+	struct UNI_CMD_RRM_11K *uni_cmd;
+	struct UNI_CMD_SET_AP_CONSTRAINT_PWR_LIMIT_PARAM *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_RRM_11K) +
+		sizeof(struct UNI_CMD_SET_AP_CONSTRAINT_PWR_LIMIT_PARAM);
+
+	if (info->ucCID != CMD_ID_SET_AP_CONSTRAINT_PWR_LIMIT ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_SET_AP_CONSTRAINT_PWR_LIMIT *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_RRM_11K,
+		max_cmd_len, NULL, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_RRM_11K *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_SET_AP_CONSTRAINT_PWR_LIMIT_PARAM *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_SET_AP_CONSTRAINT_PWR_LIMIT;
+	tag->u2Length = sizeof(*tag);
+	tag->ucPwrSetEnable = cmd->ucPwrSetEnable;
+	tag->cMaxTxPwr = cmd->cMaxTxPwr;
+	tag->cMinTxPwr = cmd->cMinTxPwr;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+#else
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+}
+
+uint32_t nicUniCmdSetRrmCapability(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+#if CFG_SUPPORT_802_11K
+	struct CMD_SET_RRM_CAPABILITY *cmd;
+	struct UNI_CMD_RRM_11K *uni_cmd;
+	struct UNI_CMD_SET_RRM_CAPABILITY_PARAM *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_RRM_11K) +
+		sizeof(struct UNI_CMD_SET_RRM_CAPABILITY_PARAM);
+
+	if (info->ucCID != CMD_ID_SET_RRM_CAPABILITY ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_SET_RRM_CAPABILITY *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_RRM_11K,
+		max_cmd_len, NULL, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_RRM_11K *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_SET_RRM_CAPABILITY_PARAM *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_SET_RRM_CAPABILITY;
+	tag->u2Length = sizeof(*tag);
+	tag->ucRrmEnable = cmd->ucRrmEnable;
+	kalMemCopy(tag->ucCapabilities, cmd->ucCapabilities,
+		sizeof(tag->ucCapabilities));
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+#else
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+
 }
 
 uint32_t nicUniCmdGetStaStatistics(struct ADAPTER *ad,
