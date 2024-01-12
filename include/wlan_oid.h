@@ -3383,6 +3383,12 @@ struct PARAM_AX_BLACKLIST {
 	uint8_t aucList[MAX_AX_BLOCKLIST_ENTRIES][MAC_ADDR_LEN];
 };
 
+struct PARAM_STBC_MRC {
+	uint8_t ucType; /* 0: STBC, 1: MRC */
+	uint8_t ucBssIndex;
+	uint8_t fgEnable;
+};
+
 enum ENUM_AX_BLACKLIST_TYPE {
 	BLACKLIST_AX_TO_AC = 0,
 	BLACKLIST_DIS_HE_HTC = 1,
@@ -5346,6 +5352,12 @@ wlanoidIndicateBssInfo(struct ADAPTER *prAdapter,
 
 uint32_t
 wlanoidSetAxBlocklist(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidForceStbcMrc(struct ADAPTER *prAdapter,
 		void *pvSetBuffer,
 		uint32_t u4SetBufferLen,
 		uint32_t *pu4SetInfoLen);

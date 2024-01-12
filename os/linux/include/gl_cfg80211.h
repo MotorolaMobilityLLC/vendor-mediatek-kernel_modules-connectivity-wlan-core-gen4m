@@ -812,6 +812,10 @@ int testmode_rtt_test(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
 int testmode_set_report_vendor_specified(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
+int testmode_force_stbc(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
+int testmode_force_mrc(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
 
 /*******************************************************************************
  *                              F U N C T I O N S
