@@ -1816,7 +1816,7 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 
 	if (g_prPlatDev) {
 		synchronize_irq(prHifInfo->u4IrqId_1);
-		free_irq(prHifInfo->u4IrqId_1, prGlueInfo->prAdapter);
+		free_irq(prHifInfo->u4IrqId_1, prGlueInfo);
 	}
 }
 
