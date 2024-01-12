@@ -2621,6 +2621,12 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	uint8_t fgBtwtIeFound = FALSE;
 #endif
 
+#if (CFG_SUPPORT_802_11BE == 1)
+	uint32_t u4EhtOffset;
+	struct EHT_OP_INFO *prEhtOperInfo = NULL;
+	struct EHT_DSCP_INFO *prEhtDscpInfo = NULL;
+#endif
+
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
 	ASSERT(pucIE);
@@ -3330,6 +3336,42 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				prStaRec->ucVhtOpChannelWidth =
 					prBssInfo->ucVhtChannelWidth;
 
+				u4EhtOffset = OFFSET_OF(
+					struct IE_EHT_OP,
+					aucVarInfo[0]);
+
+				if (prBssInfo->fgIsEhtOpPresent) {
+					prEhtOperInfo =
+						(struct EHT_OP_INFO *)
+						(((uint8_t *) pucIE)+
+							u4EhtOffset);
+
+					prBssInfo->ucEhtCtrl =
+						prEhtOperInfo->ucControl;
+
+					prBssInfo->ucEhtCcfs0 =
+						prEhtOperInfo->ucCCFS0;
+
+					prBssInfo->ucEhtCcfs1 =
+						prEhtOperInfo->ucCCFS1;
+
+					if (prBssInfo->fgIsEhtDscbPresent) {
+
+						u4EhtOffset += OFFSET_OF(
+							struct EHT_OP_INFO,
+							aucVarInfo[0]);
+
+						prEhtDscpInfo =
+							(struct EHT_DSCP_INFO *)
+							(((uint8_t *) pucIE)+
+								u4EhtOffset);
+						prBssInfo->
+							u2EhtDisSubChanBitmap =
+						prEhtDscpInfo->
+							u2DisSubChannelBitmap;
+					}
+				}
+				nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 			}
 #endif
 			break;
