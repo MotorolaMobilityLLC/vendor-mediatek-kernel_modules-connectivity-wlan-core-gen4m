@@ -1492,7 +1492,8 @@ void halRxSDIOAggReceiveRFBs(IN struct ADAPTER *prAdapter)
 			DBGLOG(RX, TRACE, "[%s] No free Rx buffer\n", __func__);
 			prHifInfo->rStatCounter.u4RxBufUnderFlowCnt++;
 
-			if (prAdapter->prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+			if (test_bit(GLUE_FLAG_HALT_BIT,
+					&prAdapter->prGlueInfo->ulFlag)) {
 				struct QUE rTempQue;
 				struct QUE *prTempQue = &rTempQue;
 
@@ -2359,7 +2360,7 @@ void halDeAggRxPktWorker(struct work_struct *work)
 	ASSERT(prRxDescOps->nic_rxd_get_rx_byte_count);
 	ASSERT(prRxDescOps->nic_rxd_get_pkt_type);
 
-	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT)
+	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag))
 		return;
 
 	prRxCtrl = &prAdapter->rRxCtrl;
@@ -2392,7 +2393,8 @@ void halDeAggRxPktWorker(struct work_struct *work)
 			mutex_unlock(&prHifInfo->rRxDeAggQueMutex);
 
 			/* Reschedule this work */
-			if ((prGlueInfo->ulFlag & GLUE_FLAG_HALT) == 0)
+			if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)
+				== 0)
 				schedule_delayed_work(&prAdapter->prGlueInfo->rRxPktDeAggWork, 0);
 
 			return;
@@ -2479,7 +2481,7 @@ void halDeAggRxPktWorker(struct work_struct *work)
 		QUEUE_INSERT_TAIL(&prHifInfo->rRxFreeBufQueue, (struct QUE_ENTRY *)prRxBuf);
 		mutex_unlock(&prHifInfo->rRxFreeBufQueMutex);
 
-		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT)
+		if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag))
 			return;
 
 		mutex_lock(&prHifInfo->rRxDeAggQueMutex);
@@ -2495,7 +2497,7 @@ void halDeAggRxPkt(struct ADAPTER *prAdapter, struct SDIO_RX_COALESCING_BUF *prR
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	/* Avoid to schedule DeAggWorker during uninit flow */
-	if (prAdapter->prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+	if (test_bit(GLUE_FLAG_HALT_BIT, &prAdapter->prGlueInfo->ulFlag)) {
 		mutex_lock(&prHifInfo->rRxFreeBufQueMutex);
 		QUEUE_INSERT_TAIL(&prHifInfo->rRxFreeBufQueue, (struct QUE_ENTRY *)prRxBuf);
 		mutex_unlock(&prHifInfo->rRxFreeBufQueMutex);

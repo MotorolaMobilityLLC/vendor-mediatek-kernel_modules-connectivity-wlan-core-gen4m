@@ -797,7 +797,7 @@ static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
 	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4HwIsrCount);
 	halDisableInterrupt(prGlueInfo->prAdapter);
 
-	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
 #if AXI_ISR_DEBUG_LOG
 		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip INT\n");
 #endif
