@@ -3691,6 +3691,205 @@ void nicExtEventReCalData(struct ADAPTER *prAdapter, uint8_t *pucEventBuf)
 }
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+
+#if ((CFG_SUPPORT_PHY_ICS_V3 == 1) || (CFG_SUPPORT_PHY_ICS_V4 == 1))
+void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
+			   uint8_t *pucEventBuf)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct ICS_BIN_LOG_HDR *prIcsBinLogHeader;
+
+	uint32_t u4EmiBaseAddr = 0;
+	uint32_t u4EmiDataSize = 0;
+	uint32_t *u4PhyIcsEventBuf = NULL;
+	uint32_t u4TmpRawData[4];
+	uint32_t u4Size = 0, u4EmiAddr = 0;
+	uint32_t u4TotalCnt = 0;
+	uint16_t u2DataOffset = 0, u2Idxi = 0;
+	uint8_t  ucRawDataIdx = 0;
+
+	uint8_t *pucBuf = NULL;
+	uint32_t *pu4Data = NULL;
+	ssize_t ret;
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	struct UNI_EVENT_PHY_ICS_DUMP_RAW_DATA *prPhyIcsEvent;
+#else
+	struct EXT_EVENT_PHY_ICS_DUMP_DATA_T *prPhyIcsEvent;
+#endif
+
+	if (!prAdapter) {
+		DBGLOG(RFTEST, ERROR, "prAdapter is null\n");
+		return;
+	}
+
+	if (pucEventBuf == NULL) {
+		DBGLOG(RFTEST, ERROR, "pucEventBuf is null\n");
+		return;
+	}
+
+	if (!prChipInfo->u4PhyIcsEmiBaseAddr) {
+		DBGLOG(RFTEST, ERROR, "u4PhyIcsEmiBaseAddr is null\n");
+		return;
+	}
+
+	if (!prChipInfo->u4PhyIcsEmiDataSize) {
+		DBGLOG(RFTEST, ERROR, "u4PhyIcsEmiDataSize is null\n");
+		return;
+	}
+
+	prChipInfo = prAdapter->chip_info;
+	u4EmiBaseAddr = prChipInfo->u4PhyIcsEmiBaseAddr;
+	u4EmiDataSize = prChipInfo->u4PhyIcsEmiDataSize;
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	prPhyIcsEvent = (struct UNI_EVENT_PHY_ICS_DUMP_RAW_DATA *)
+				pucEventBuf;
+#else
+	prPhyIcsEvent = (struct EXT_EVENT_PHY_ICS_DUMP_DATA_T *)
+				pucEventBuf;
+#endif
+
+	DBGLOG(RFTEST, TRACE,
+		"u4WifiSysTimestamp = [0x%08x]\n",
+		prPhyIcsEvent->u4PhyTimestamp);
+
+	u4PhyIcsEventBuf = kalMemAlloc(u4EmiDataSize, VIR_MEM_TYPE);
+	if (!u4PhyIcsEventBuf) {
+		DBGLOG(RFTEST, ERROR, "u4PhyIcsEventBuf is null\n");
+		goto exit;
+	}
+
+	kalMemZero(u4PhyIcsEventBuf, u4EmiDataSize);
+
+	if (emi_mem_read(prChipInfo, u4EmiBaseAddr,
+			u4PhyIcsEventBuf, u4EmiDataSize)) {
+		DBGLOG(REQ, ERROR, "emi_mem_read fail.\n");
+		goto exit;
+	}
+
+	/* phy ics packet + fw parser header */
+	u4Size = PHYICS_BUF_SIZE + sizeof(struct ICS_BIN_LOG_HDR);
+
+	pucBuf = kalMemAlloc(u4Size, VIR_MEM_TYPE);
+	if (!pucBuf) {
+		DBGLOG_LIMITED(NIC, INFO, "pucBuf NULL\n");
+		RX_INC_CNT(&prAdapter->rRxCtrl, RX_ICS_DROP_COUNT);
+		goto exit;
+	}
+
+	kalMemZero(pucBuf, u4Size);
+
+	/* Print EMI data for debugging purpose */
+	DBGLOG_MEM32(REQ, LOUD, u4PhyIcsEventBuf, u4Size);
+
+	pu4Data = (uint32_t *)(pucBuf + sizeof(struct ICS_BIN_LOG_HDR));
+
+	if (prAdapter->uPhyICSBandIdx == ENUM_BAND_0)
+		u4TotalCnt = PHYICS_TOTAL_CNT / 2;
+	else
+		u4TotalCnt = PHYICS_TOTAL_CNT;
+
+#if (CFG_SUPPORT_PHY_ICS_V4 == 1)
+
+	DBGLOG(RFTEST, LOUD, "Memory Part = %d\n",
+		prPhyIcsEvent->u4Reserved[0]);
+
+	if (prPhyIcsEvent->u4Reserved[0] == WIFI_MCU_MEMORY_PART_2)
+		u4EmiAddr += 2048;
+#endif
+
+	/* MCU sysram data parsing and reorder */
+	for (u2DataOffset = 0; u2DataOffset < (u4TotalCnt - 1);) {
+
+		for (ucRawDataIdx = 0; ucRawDataIdx < 4; ucRawDataIdx++) {
+
+			u4TmpRawData[3 - ucRawDataIdx]
+				= *(u4PhyIcsEventBuf +
+					u4EmiAddr + ucRawDataIdx);
+
+			if (u4EmiAddr > 4096)
+				break;
+
+			/* Print ICap data to console for debugging purpose */
+			DBGLOG(RFTEST, LOUD, "DataOfs[%d], rawDataIdx[%d]\t"
+				"RawData[%d]: %08x\n",
+				u2DataOffset, ucRawDataIdx,
+				ucRawDataIdx,
+				*(u4PhyIcsEventBuf + u4EmiAddr + ucRawDataIdx));
+
+		}
+
+		if (prAdapter->uPhyICSBandIdx == ENUM_BAND_0) {
+			/* TmpRawData[2]=phytimestamp_band
+			 *              or payload+checksum
+			 * TmpRawData[3]=mac_timestamp or payload
+			 */
+			pu4Data[u2DataOffset + 0] = u4TmpRawData[2];
+			pu4Data[u2DataOffset + 1] = u4TmpRawData[3];
+
+			u2DataOffset += 2; /* 64 bit mode */
+		} else {
+			/* TmpRawData[0] = payload+checksum
+			 * TmpRawData[1] = payload
+			 * TmpRawData[2] = phytimestamp_band
+			 * TmpRawData[3] = mac_timestamp
+			 */
+			pu4Data[u2DataOffset + 0] = u4TmpRawData[0];
+			pu4Data[u2DataOffset + 1] = u4TmpRawData[1];
+			pu4Data[u2DataOffset + 2] = u4TmpRawData[2];
+			pu4Data[u2DataOffset + 3] = u4TmpRawData[3];
+
+			u2DataOffset += 4; /* 128 bit mode */
+		}
+		u4EmiAddr += 4;
+	}
+
+	/* endian swap */
+	for (u2Idxi = 0; u2Idxi < PHYICS_TOTAL_CNT; u2Idxi++) {
+		pu4Data[u2Idxi] =
+			((pu4Data[u2Idxi] & 0x000000FF) << 24)
+			| ((pu4Data[u2Idxi] & 0x0000FF00) << 8)
+			| ((pu4Data[u2Idxi] & 0x00FF0000) >> 8)
+			| ((pu4Data[u2Idxi] & 0xFF000000) >> 24);
+	}
+
+	/* prepare ICS header */
+	prIcsBinLogHeader = (struct ICS_BIN_LOG_HDR *)pucBuf;
+	prIcsBinLogHeader->u4MagicNum = ICS_BIN_LOG_MAGIC_NUM;
+	prIcsBinLogHeader->u4Timestamp = prPhyIcsEvent->u4PhyTimestamp;
+	prIcsBinLogHeader->u2MsgID = RX_PKT_TYPE_PHY_ICS;
+	prIcsBinLogHeader->u2Length = PHYICS_BUF_SIZE;
+
+	/* prepare ICS frame
+	 * pucBuf = ICS Header + PHY ICS payload length
+	 * skip ICS header of pucBuf, start to next address copy
+	 */
+	kalMemCopy(pucBuf + sizeof(struct ICS_BIN_LOG_HDR),
+			pu4Data,
+			PHYICS_BUF_SIZE);
+
+	/* write to ring, ret: written */
+	ret = kalIcsWrite(pucBuf, u4Size);
+	if (ret != u4Size) {
+		DBGLOG_LIMITED(NIC, ERROR,
+			"dropped written:%d write\t"
+			"PHY ICS log into file fail\n",
+			ret);
+		goto exit;
+	}
+exit:
+
+	if (u4PhyIcsEventBuf)
+		kalMemFree(u4PhyIcsEventBuf, VIR_MEM_TYPE, u4EmiDataSize);
+	if (pucBuf)
+		kalMemFree(pucBuf, VIR_MEM_TYPE, u4Size);
+
+	return;
+
+}
+#endif/* #if (CFG_SUPPORT_PHY_ICS_SW_FLOW_VER3 == 1) */
+
 void nicExtEventPhyIcsRawData(struct ADAPTER *prAdapter,
 			   uint8_t *pucEventBuf)
 {

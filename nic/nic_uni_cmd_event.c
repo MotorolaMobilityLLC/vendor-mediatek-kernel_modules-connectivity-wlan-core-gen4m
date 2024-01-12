@@ -8863,7 +8863,12 @@ void nicUniEventPhyIcsRawData(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 		switch (TAG_ID(tag)) {
 		case UNI_EVENT_SPECTRUM_TAG_PHY_ICS_DATA:{
+
+#if ((CFG_SUPPORT_PHY_ICS_V3 == 1) || (CFG_SUPPORT_PHY_ICS_V4 == 1))
+			nicExtEventPhyIcsDumpEmiRawData(ad, tag);
+#else
 			nicExtEventPhyIcsRawData(ad, tag);
+#endif
 		}
 			break;
 		default:

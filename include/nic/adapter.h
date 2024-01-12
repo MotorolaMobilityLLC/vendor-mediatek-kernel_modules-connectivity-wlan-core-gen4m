@@ -2766,6 +2766,7 @@ struct ADAPTER {
 
 #if CFG_SUPPORT_PHY_ICS
 	u_int8_t fgEnPhyICS;
+	u_int8_t uPhyICSBandIdx;
 #endif
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)

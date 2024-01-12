@@ -7931,6 +7931,7 @@ wlanoidSetIcsSniffer(struct ADAPTER *prAdapter,
 			break;
 		case 3:
 			prAdapter->fgEnPhyICS = rCmdSniffer.ucAction;
+			prAdapter->uPhyICSBandIdx = rCmdSniffer.ucCondition[1];
 			break;
 		default:
 			DBGLOG(INIT, ERROR, "ICS Action ERROR\n");

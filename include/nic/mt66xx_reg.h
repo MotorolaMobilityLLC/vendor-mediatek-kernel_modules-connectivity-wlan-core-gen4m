@@ -1712,6 +1712,10 @@ struct mt66xx_chip_info {
 	uint32_t u4DefaultMaxQuota;
 	uint32_t au4DmaMaxQuotaBand[ENUM_BAND_NUM];
 #endif
+#if ((CFG_SUPPORT_PHY_ICS_V3 == 1) || (CFG_SUPPORT_PHY_ICS_V4 == 1))
+	uint32_t u4PhyIcsEmiBaseAddr;
+	uint32_t u4PhyIcsEmiDataSize;
+#endif
 };
 
 struct mt66xx_hif_driver_data {
