@@ -363,7 +363,6 @@
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 #define MAX_SUPPORTED_CH_COUNT (53) /*ARRAY_SIZE(mtk_2ghz_channels) + ARRAY_SIZE(mtk_5ghz_channels)*/
 #define REG_RULE_LIGHT(start, end, bw, reg_flags) REG_RULE(start, end, bw, 0, 0, reg_flags)
-#define TX_PWR_LIMIT_CMD_CH_NUM_THRESHOLD 32
 #endif
 
 /*******************************************************************************
@@ -484,8 +483,6 @@ struct DOMAIN_INFO_ENTRY {
 #define VERSION (0x00000001)
 #define SIZE_OF_VERSION 4
 #define WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE 204800
-#define WLAN_TX_PWR_LIMIT_FILE_NAME "TxPwrLimit_MT76x8.dat"
-
 
 struct tx_pwr_element {
 	uint16_t prefix;

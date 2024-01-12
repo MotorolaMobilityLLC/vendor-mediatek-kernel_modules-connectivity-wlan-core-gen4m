@@ -504,6 +504,8 @@ enum ENUM_CMD_ID {
 #endif
 	CMD_ID_SET_SUSPEND_MODE = 0x58,	/* 0x58 (Set) */
 
+	CMD_ID_SET_COUNTRY_POWER_LIMIT_PER_RATE = 0x5d, /* 0x5d (Set) */
+
 #if CFG_WOW_SUPPORT
 	CMD_ID_SET_PF_CAPABILITY = 0x59,	/* 0x59 (Set) */
 #endif
@@ -2135,10 +2137,30 @@ struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2 {
 	struct CMD_CHANNEL_POWER_LIMIT_V2 rChannelPowerLimit[0];
 };
 
-#define TX_PWR_LIMIT_SECTION_NUM 5
-#define TX_PWR_LIMIT_ELEMENT_NUM 7
+#define BF_TX_PWR_LIMIT_SECTION_NUM 17
+#define BF_TX_PWR_LIMIT_ELEMENT_NUM 10
+#define TX_PWR_LIMIT_SECTION_NUM 8
+#define TX_PWR_LIMIT_ELEMENT_NUM 10
 #define TX_PWR_LIMIT_COUNTRY_STR_MAX_LEN 4
 #define TX_PWR_LIMIT_MAX_VAL 63
+
+#define POWER_LIMIT_SKU_CCK_NUM 4
+#define POWER_LIMIT_SKU_OFDM_NUM 8
+#define POWER_LIMIT_SKU_HT20_NUM 8
+#define POWER_LIMIT_SKU_HT40_NUM 9
+#define POWER_LIMIT_SKU_VHT20_NUM 10
+#define POWER_LIMIT_SKU_VHT40_NUM 10
+#define POWER_LIMIT_SKU_VHT80_NUM 10
+#define POWER_LIMIT_SKU_VHT160_NUM 10
+#define SINGLE_SKU_PARAM_NUM \
+	(POWER_LIMIT_SKU_CCK_NUM + \
+	 POWER_LIMIT_SKU_OFDM_NUM + \
+	 POWER_LIMIT_SKU_HT20_NUM + \
+	 POWER_LIMIT_SKU_HT40_NUM + \
+	 POWER_LIMIT_SKU_VHT20_NUM + \
+	 POWER_LIMIT_SKU_VHT40_NUM + \
+	 POWER_LIMIT_SKU_VHT80_NUM + \
+	 POWER_LIMIT_SKU_VHT160_NUM)
 
 struct CHANNEL_TX_PWR_LIMIT {
 	uint8_t ucChannel;
@@ -2150,6 +2172,28 @@ struct TX_PWR_LIMIT_DATA {
 	uint32_t countryCode;
 	uint32_t ucChNum;
 	struct CHANNEL_TX_PWR_LIMIT *rChannelTxPwrLimit;
+};
+
+struct SKU_TABLE_TYPE {
+	int8_t i1PwrLimit[SINGLE_SKU_PARAM_NUM];
+};
+
+struct CHANNEL_POWER_LIMIT_PER_RATE {
+	uint8_t ucCentralCh;
+	struct SKU_TABLE_TYPE aucTxPwrLimit;
+};
+
+struct CMD_SET_COUNTRY_TX_POWER_LIMIT_PER_RATE {
+	uint8_t ucCmdVer;
+	uint8_t aucPadding0[1];
+	uint16_t u2CmdLen;
+	uint8_t ucNum;
+	uint8_t eBand;
+	uint8_t bCmdFinished;
+	uint8_t aucPadding1[1];
+	uint32_t countryCode;
+	uint8_t aucPadding2[32];
+	struct CHANNEL_POWER_LIMIT_PER_RATE rChannelPowerLimit[0];
 };
 
 #endif
