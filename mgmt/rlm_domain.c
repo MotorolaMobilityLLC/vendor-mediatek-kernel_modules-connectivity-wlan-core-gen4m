@@ -5428,8 +5428,13 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 		}
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #endif /* CFG_SUPPORT_WIFI_6G */
-		else if (eType == PWR_LIMIT_TYPE_COMP_11AC ||
-			eType == PWR_LIMIT_TYPE_COMP_11AC_V2) {
+		else if (
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+			eType == PWR_LIMIT_TYPE_COMP_11AC_V2
+#else
+			eType == PWR_LIMIT_TYPE_COMP_11AC
+#endif  /*#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)*/
+			) {
 			prCmdPwrLimit = &prCmd->u.rChannelPowerLimit[k];
 			ucCentCh = prCmdPwrLimit->ucCentralCh;
 
