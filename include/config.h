@@ -288,6 +288,13 @@
 #define CFG_USB_TX_HANDLE_IN_HIF_THREAD             0
 #define CFG_USB_RX_HANDLE_IN_HIF_THREAD             0
 
+#ifndef CFG_TX_DIRECT_USB
+#define CFG_TX_DIRECT_USB                           1
+#endif
+#ifndef CFG_RX_DIRECT_USB
+#define CFG_RX_DIRECT_USB                           1
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Integration
  *------------------------------------------------------------------------------

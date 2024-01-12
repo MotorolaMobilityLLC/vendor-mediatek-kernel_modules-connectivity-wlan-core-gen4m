@@ -860,6 +860,10 @@ VOID qmInitRxQueues(IN P_ADAPTER_T prAdapter);
 
 P_SW_RFB_T qmFlushRxQueues(IN P_ADAPTER_T prAdapter);
 
+P_QUE_T qmDetermineStaTxQueue(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, OUT PUINT_8 pucTC);
+
+VOID qmSetTxPacketDescTemplate(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo);
+
 P_SW_RFB_T qmHandleRxPackets(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfbListHead);
 
 VOID qmProcessPktWithReordering(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT P_QUE_T prReturnedQue);

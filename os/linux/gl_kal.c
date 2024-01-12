@@ -712,7 +712,11 @@ PVOID kalPacketAlloc(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Size, OUT PUINT_8
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
-	prSkb = __dev_alloc_skb(u4Size + u4TxHeadRoomSize, GFP_KERNEL);
+
+	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter) && in_interrupt())
+		prSkb = __dev_alloc_skb(u4Size + u4TxHeadRoomSize, GFP_ATOMIC);
+	else
+		prSkb = __dev_alloc_skb(u4Size + u4TxHeadRoomSize, GFP_KERNEL);
 
 	if (prSkb) {
 		skb_reserve(prSkb, u4TxHeadRoomSize);
@@ -1474,8 +1478,6 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, P_GLUE_I
 	struct mt66xx_chip_info *prChipInfo;
 	UINT_32 u4TxHeadRoomSize = 0;
 
-	GLUE_SPIN_LOCK_DECLARATION();
-
 	ASSERT(prOrgSkb);
 	ASSERT(prGlueInfo);
 
@@ -1527,9 +1529,13 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, P_GLUE_I
 		return WLAN_STATUS_INVALID_PACKET;
 	}
 
-	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
-	QUEUE_INSERT_TAIL(prTxQueue, prQueueEntry);
-	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
+	if (!HAL_IS_TX_DIRECT(prGlueInfo->prAdapter)) {
+		GLUE_SPIN_LOCK_DECLARATION();
+
+		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
+		QUEUE_INSERT_TAIL(prTxQueue, prQueueEntry);
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
+	}
 
 	GLUE_INC_REF_CNT(prGlueInfo->i4TxPendingFrameNum);
 	GLUE_INC_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex][u2QueueIdx]);
@@ -1555,6 +1561,9 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, P_GLUE_I
 	       ucBssIndex, u2QueueIdx, prSkb->len,
 	       GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
 	       GLUE_GET_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex][u2QueueIdx]));
+
+	if (HAL_IS_TX_DIRECT(prGlueInfo->prAdapter))
+		return nicTxDirectStartXmit(prSkb, prGlueInfo);
 
 	kalSetEvent(prGlueInfo);
 
@@ -3128,13 +3137,18 @@ VOID kalFlushPendingTxPackets(IN P_GLUE_INFO_T prGlueInfo)
 	P_QUE_ENTRY_T prQueueEntry;
 	PVOID prPacket;
 
-	GLUE_SPIN_LOCK_DECLARATION();
-
 	ASSERT(prGlueInfo);
 
 	prTxQue = &(prGlueInfo->rTxQueue);
 
-	if (GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum)) {
+	if (GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum) == 0)
+		return;
+
+	if (HAL_IS_TX_DIRECT()) {
+		nicTxDirectClearSkbQ(prGlueInfo->prAdapter);
+	} else {
+		GLUE_SPIN_LOCK_DECLARATION();
+
 		while (TRUE) {
 			GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
 			QUEUE_REMOVE_HEAD(prTxQue, prQueueEntry, P_QUE_ENTRY_T);
@@ -3375,10 +3389,15 @@ VOID kalOsTimerInitialize(IN P_GLUE_INFO_T prGlueInfo, IN PVOID prTimerHandler)
 BOOLEAN kalSetTimer(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Interval)
 {
 	ASSERT(prGlueInfo);
-	del_timer_sync(&(prGlueInfo->tickfn));
 
-	prGlueInfo->tickfn.expires = jiffies + u4Interval * HZ / MSEC_PER_SEC;
-	add_timer(&(prGlueInfo->tickfn));
+	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
+		mod_timer(&prGlueInfo->tickfn, jiffies + u4Interval * HZ / MSEC_PER_SEC);
+	} else {
+		del_timer_sync(&(prGlueInfo->tickfn));
+
+		prGlueInfo->tickfn.expires = jiffies + u4Interval * HZ / MSEC_PER_SEC;
+		add_timer(&(prGlueInfo->tickfn));
+	}
 
 	return TRUE;		/* success */
 }

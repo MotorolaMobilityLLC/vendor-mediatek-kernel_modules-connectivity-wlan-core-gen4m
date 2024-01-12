@@ -993,6 +993,22 @@ struct _ADAPTER_T {
 
 	UINT_32 u4PwrCtrlBlockCnt;
 
+	/* TX Direct related : BEGIN */
+	BOOLEAN fgTxDirectInited;
+
+	#define TX_DIRECT_CHECK_INTERVAL	(1000 * HZ / USEC_PER_SEC)
+	struct timer_list rTxDirectSkbTimer; /* check if an empty MsduInfo is available */
+	struct timer_list rTxDirectHifTimer; /* check if HIF port is ready to accept a new Msdu */
+
+	struct sk_buff_head rTxDirectSkbQueue;
+	QUE_T rTxDirectHifQueue[TX_PORT_NUM];
+
+	QUE_T rStaPsQueue[CFG_STA_REC_NUM];
+	UINT_32 u4StaPsBitmap;
+	QUE_T rBssAbsentQueue[MAX_BSSID_NUM + 1];
+	UINT_32 u4BssAbsentBitmap;
+	/* TX Direct related : END */
+
 	QUE_T rPendingCmdQueue;
 
 #if CFG_SUPPORT_MULTITHREAD

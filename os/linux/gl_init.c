@@ -2250,6 +2250,22 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		if (wlanAdapterStart(prAdapter, prRegInfo) != WLAN_STATUS_SUCCESS)
 			i4Status = -EIO;
 
+		if (HAL_IS_TX_DIRECT(prAdapter)) {
+			if (!prAdapter->fgTxDirectInited) {
+				skb_queue_head_init(&prAdapter->rTxDirectSkbQueue);
+
+				init_timer(&prAdapter->rTxDirectSkbTimer);
+				prAdapter->rTxDirectSkbTimer.data = (unsigned long)prGlueInfo;
+				prAdapter->rTxDirectSkbTimer.function = nicTxDirectTimerCheckSkbQ;
+
+				init_timer(&prAdapter->rTxDirectHifTimer);
+				prAdapter->rTxDirectHifTimer.data = (unsigned long)prGlueInfo;
+				prAdapter->rTxDirectHifTimer.function = nicTxDirectTimerCheckHifQ;
+
+				prAdapter->fgTxDirectInited = TRUE;
+			}
+		}
+
 		/* kfree(prRegInfo); */
 
 		if (i4Status < 0)
@@ -2573,6 +2589,13 @@ static VOID wlanRemove(VOID)
 	prGlueInfo->u4TxThreadPid = 0xffffffff;
 	prGlueInfo->u4HifThreadPid = 0xffffffff;
 #endif
+
+	if (HAL_IS_TX_DIRECT(prAdapter)) {
+		if (prAdapter->fgTxDirectInited) {
+			del_timer_sync(&prAdapter->rTxDirectSkbTimer);
+			del_timer_sync(&prAdapter->rTxDirectHifTimer);
+		}
+	}
 
 	/* Destroy wakelock */
 	wlanWakeLockUninit(prGlueInfo);
