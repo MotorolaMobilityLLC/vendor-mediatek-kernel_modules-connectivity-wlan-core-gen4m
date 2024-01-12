@@ -210,11 +210,9 @@ static void halCheckRxPollingMode(struct ADAPTER *prAdapter,
 				  uint32_t u4Timeout,
 				  uint32_t u4Cnt)
 {
-	uint32_t u4CheckPoint1 = u4Timeout / 2;
-	uint32_t u4CheckPoint2 = u4Timeout * 3 / 4;
+	uint32_t u4CheckPoint = u4Timeout * 3 / 4;
 
-	if (halIsTimeout(u4StartTime, u4CheckPoint1) ||
-	    halIsTimeout(u4StartTime, u4CheckPoint2) ||
+	if (halIsTimeout(u4StartTime, u4CheckPoint) ||
 	    halIsTimeout(u4StartTime, u4Timeout)) {
 		DBGLOG(INIT, INFO, "Time:%u, Timeout:%u, Cnt:%u\n",
 		       u4StartTime, u4Timeout, u4Cnt);
@@ -229,10 +227,11 @@ uint32_t halRxWaitResponse(struct ADAPTER *prAdapter, uint8_t ucPortIdx,
 	uint32_t u4TimeoutValue)
 {
 	struct GLUE_INFO *prGlueInfo;
+	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4PktLen = 0, u4Time = 0, u4Cnt = 0;
 	u_int8_t fgStatus;
-	struct mt66xx_chip_info *prChipInfo;
-	u_int8_t	ucNewPort;
+	u_int8_t ucNewPort;
+	u_int8_t fgIsTimeout = FALSE;
 #if CFG_SUPPORT_HOST_RX_WM_EVENT_FROM_PSE
 	struct BUS_INFO *prBusInfo;
 #endif
@@ -273,16 +272,19 @@ uint32_t halRxWaitResponse(struct ADAPTER *prAdapter, uint8_t ucPortIdx,
 			halCheckRxPollingMode(prAdapter, u4Time,
 					      u4TimeoutValue, u4Cnt);
 
+		fgIsTimeout = halIsTimeout(u4Time, u4TimeoutValue) ?
+			TRUE : FALSE;
 		fgStatus = kalDevPortRead(
 			prGlueInfo, ucNewPort, u4PktLen,
-			pucRspBuffer, HIF_RX_COALESCING_BUFFER_SIZE);
+			pucRspBuffer, HIF_RX_COALESCING_BUFFER_SIZE,
+			!fgIsTimeout && !prAdapter->fgIsFwDownloaded);
 
 		if (fgStatus) {
 			*pu4Length = u4PktLen;
 			break;
 		}
 
-		if (halIsTimeout(u4Time, u4TimeoutValue)) {
+		if (fgIsTimeout) {
 #if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 			uint32_t u4Value = 0;
 			struct GL_HIF_INFO *prHifInfo = NULL;
@@ -2199,7 +2201,8 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 
 			fgStatus = kalDevPortRead(prGlueInfo,
 				u4Port, CFG_RX_MAX_PKT_SIZE,
-				pucBuf, CFG_RX_MAX_PKT_SIZE);
+				pucBuf, CFG_RX_MAX_PKT_SIZE,
+				FALSE);
 		}
 		if (!fgStatus) {
 			QUEUE_INSERT_TAIL(prFreeSwRfbList, &prSwRfb->rQueEntry);

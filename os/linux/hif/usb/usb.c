@@ -1735,7 +1735,7 @@ u_int8_t kalDevUhwRegWrite(struct GLUE_INFO *prGlueInfo,
 /*----------------------------------------------------------------------------*/
 u_int8_t
 kalDevPortRead(struct GLUE_INFO *prGlueInfo, uint16_t u2Port, uint32_t u4Len,
-		uint8_t *pucBuf, uint32_t u4ValidOutBufSize)
+	       uint8_t *pucBuf, uint32_t u4ValidOutBufSize, u_int8_t isPollMode)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	uint8_t *pucDst = NULL;

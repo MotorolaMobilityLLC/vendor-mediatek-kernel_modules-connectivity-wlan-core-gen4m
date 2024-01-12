@@ -170,7 +170,9 @@ halRxWaitResponse(struct ADAPTER *prAdapter,
 				ucPortIdx = USB_DATA_EP_IN;
 				ret = kalDevPortRead(prAdapter->prGlueInfo, ucPortIdx,
 					ALIGN_4(u4MaxRespBufferLen) + LEN_USB_RX_PADDING_CSO,
-					prRxCtrl->pucRxCoalescingBufPtr, HIF_RX_COALESCING_BUFFER_SIZE);
+					prRxCtrl->pucRxCoalescingBufPtr,
+					HIF_RX_COALESCING_BUFFER_SIZE,
+					FALSE);
 
 				if (ret == TRUE) {
 					prHifInfo->eEventEpType = EVENT_EP_TYPE_DATA_EP;
@@ -178,7 +180,9 @@ halRxWaitResponse(struct ADAPTER *prAdapter,
 					ucPortIdx = USB_EVENT_EP_IN;
 					ret = kalDevPortRead(prAdapter->prGlueInfo, ucPortIdx,
 						ALIGN_4(u4MaxRespBufferLen) + LEN_USB_RX_PADDING_CSO,
-						prRxCtrl->pucRxCoalescingBufPtr, HIF_RX_COALESCING_BUFFER_SIZE);
+						prRxCtrl->pucRxCoalescingBufPtr,
+						HIF_RX_COALESCING_BUFFER_SIZE,
+						FALSE);
 				}
 				prHifInfo->fgEventEpDetected = TRUE;
 
@@ -203,7 +207,8 @@ halRxWaitResponse(struct ADAPTER *prAdapter,
 	}
 	ret = kalDevPortRead(prAdapter->prGlueInfo, ucPortIdx,
 		ALIGN_4(u4MaxRespBufferLen) + LEN_USB_RX_PADDING_CSO,
-		prRxCtrl->pucRxCoalescingBufPtr, HIF_RX_COALESCING_BUFFER_SIZE);
+		prRxCtrl->pucRxCoalescingBufPtr, HIF_RX_COALESCING_BUFFER_SIZE,
+		FALSE);
 
 	kalMemCopy(pucRspBuffer, prRxCtrl->pucRxCoalescingBufPtr, u4MaxRespBufferLen);
 	*pu4Length = u4MaxRespBufferLen;
