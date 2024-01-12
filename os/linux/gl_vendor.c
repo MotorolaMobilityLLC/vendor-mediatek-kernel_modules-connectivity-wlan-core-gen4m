@@ -262,6 +262,11 @@ const struct nla_policy nla_get_csi_policy[
 };
 #endif
 
+const struct nla_policy mtk_wfd_tx_br_montr_policy[
+		WIFI_ATTR_WFD_TX_BR_MONTR_MAX + 1] = {
+	[WIFI_ATTR_WFD_TX_BR_MONTR_EN] = {.type = NLA_U8},
+};
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -1909,25 +1914,27 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 	return rStatus;
 }
 
-#if CFG_SUPPORT_LLS
-#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
-int mtk_cfg80211_vendor_get_wfd_pred_tx_br(struct wiphy *wiphy,
+int mtk_cfg80211_vendor_set_wfd_tx_br_montr(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len)
 {
 	int32_t rStatus = -EOPNOTSUPP;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter;
-	struct sk_buff *skb;
+	struct nlattr *attr[WIFI_ATTR_WFD_TX_BR_MONTR_MAX];
+#if CFG_SUPPORT_LLS
+	uint8_t uEnabled;
 	union {
 		struct CMD_GET_STATS_LLS cmd;
-		struct EVENT_STATS_LLS_TX_BIT_RATE bitrate;
+		struct EVENT_STATS_LLS_DATA data;
 	} query = {0};
-	uint32_t u4QueryBufLen = sizeof(query);
+	uint32_t u4QueryBufLen = sizeof(query.data);
 	uint32_t u4QueryInfoLen = sizeof(query.cmd);
+#endif
+
+	DBGLOG(REQ, INFO, "%s data_len=%d\n", __func__, data_len);
 
 	if ((wiphy == NULL) || (wdev == NULL))
 		return -EINVAL;
-
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
 	if (!prGlueInfo)
@@ -1936,6 +1943,85 @@ int mtk_cfg80211_vendor_get_wfd_pred_tx_br(struct wiphy *wiphy,
 	if (!prAdapter)
 		return -EFAULT;
 
+	if ((data == NULL) || (data_len == 0))
+		return -EINVAL;
+
+	kalMemZero(attr, sizeof(struct nlattr *) *
+			   (WIFI_ATTR_WFD_TX_BR_MONTR_MAX));
+	if (NLA_PARSE_NESTED(attr,
+			     WIFI_ATTR_WFD_TX_BR_MONTR_EN,
+			     (struct nlattr *)(data - NLA_HDRLEN),
+			     mtk_wfd_tx_br_montr_policy) < 0) {
+		DBGLOG(REQ, ERROR, "%s nla_parse_nested failed\n",
+		       __func__);
+		return -EINVAL;
+	}
+
+	if (!attr[WIFI_ATTR_WFD_TX_BR_MONTR_EN]) {
+		DBGLOG(REQ, ERROR, "missing param enabled.");
+		return -EINVAL;
+	}
+
+#if CFG_SUPPORT_LLS
+	uEnabled = nla_get_u8(attr[WIFI_ATTR_WFD_TX_BR_MONTR_EN]);
+	DBGLOG(REQ, INFO, "enabled:%u\n", uEnabled);
+	if (unlikely(uEnabled > 1)) {
+		DBGLOG(REQ, ERROR, "invalid param: enabled=%u", uEnabled);
+		return -EINVAL;
+	}
+
+	query.cmd.u4Tag = STATS_LLS_TAG_SET_WFD_TX_BITRATE_MONTR;
+	query.cmd.ucArg0 = uEnabled;
+	rStatus = kalIoctl(prGlueInfo,
+			wlanQueryLinkStats,
+			&query,
+			u4QueryBufLen,
+			&u4QueryInfoLen);
+	DBGLOG(REQ, TRACE, "kalIoctl=%x, %u bytes, status=%u",
+				rStatus, u4QueryInfoLen,
+				query.data.eUpdateStatus);
+
+	if (rStatus != WLAN_STATUS_SUCCESS ||
+		u4QueryBufLen !=
+			sizeof(struct EVENT_STATS_LLS_DATA) ||
+		query.data.eUpdateStatus !=
+			STATS_LLS_UPDATE_STATUS_SUCCESS) {
+		DBGLOG(REQ, WARN, "kalIoctl=%x, %u bytes, status=%u",
+				rStatus, u4QueryBufLen,
+				query.data.eUpdateStatus);
+		rStatus = -EFAULT;
+	}
+#endif
+	return rStatus;
+}
+
+int mtk_cfg80211_vendor_get_wfd_pred_tx_br(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len)
+{
+	int32_t rStatus = -EOPNOTSUPP;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter;
+#if CFG_SUPPORT_LLS
+	struct sk_buff *skb;
+	union {
+		struct CMD_GET_STATS_LLS cmd;
+		struct EVENT_STATS_LLS_TX_BIT_RATE bitrate;
+	} query = {0};
+	uint32_t u4QueryBufLen = sizeof(query);
+	uint32_t u4QueryInfoLen = sizeof(query.cmd);
+#endif
+
+	if ((wiphy == NULL) || (wdev == NULL))
+		return -EINVAL;
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if (!prGlueInfo)
+		return -EFAULT;
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter)
+		return -EFAULT;
+
+#if CFG_SUPPORT_LLS
 	query.cmd.u4Tag = STATS_LLS_TAG_GET_WFD_PRED_TX_BITRATE;
 	rStatus = kalIoctl(prGlueInfo,
 			wlanQueryLinkStats,
@@ -1948,11 +2034,18 @@ int mtk_cfg80211_vendor_get_wfd_pred_tx_br(struct wiphy *wiphy,
 		u4QueryInfoLen != sizeof(struct EVENT_STATS_LLS_TX_BIT_RATE)) {
 		DBGLOG(REQ, WARN, "kalIoctl=%x, %u bytes",
 				rStatus, u4QueryBufLen);
-		rStatus = -EFAULT;
+		return -EFAULT;
 	}
-	DBGLOG(REQ, TRACE, "u4CurBitRate=%u u4PredBitRate=%u",
+
+	DBGLOG(REQ, TRACE, "CurBitRate=%u/%u/%u/%u PredBitRate=%u/%u/%u/%u",
 		query.bitrate.au4CurrentBitrate[0],
-		query.bitrate.au4PredictBitrate[0]);
+		query.bitrate.au4CurrentBitrate[1],
+		query.bitrate.au4CurrentBitrate[2],
+		query.bitrate.au4CurrentBitrate[3],
+		query.bitrate.au4PredictBitrate[0],
+		query.bitrate.au4PredictBitrate[1],
+		query.bitrate.au4PredictBitrate[2],
+		query.bitrate.au4PredictBitrate[3]);
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
 			sizeof(struct EVENT_STATS_LLS_TX_BIT_RATE));
@@ -1960,20 +2053,24 @@ int mtk_cfg80211_vendor_get_wfd_pred_tx_br(struct wiphy *wiphy,
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
 		return -ENOMEM;
 	}
-	if (unlikely(nla_put_u32(skb, WIFI_ATTR_WFD_CUR_TX_BR,
-				query.bitrate.au4CurrentBitrate[0])))
+	if (unlikely(nla_put(skb, WIFI_ATTR_WFD_CUR_TX_BR,
+			     sizeof(query.bitrate.au4CurrentBitrate),
+			     query.bitrate.au4CurrentBitrate)))
 		goto nla_put_failure;
-	if (unlikely(nla_put_u32(skb, WIFI_ATTR_WFD_PRED_TX_BR,
-				query.bitrate.au4PredictBitrate[0])))
+	if (unlikely(nla_put(skb, WIFI_ATTR_WFD_PRED_TX_BR,
+			     sizeof(query.bitrate.au4PredictBitrate),
+			     query.bitrate.au4PredictBitrate)))
 		goto nla_put_failure;
 	return cfg80211_vendor_cmd_reply(skb);
 
 nla_put_failure:
 	kfree_skb(skb);
 	return -EFAULT;
+
+#else
+	return rStatus;
+#endif
 }
-#endif
-#endif
 
 int mtk_cfg80211_vendor_set_band(struct wiphy *wiphy,
 				 struct wireless_dev *wdev,

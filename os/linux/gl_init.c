@@ -1762,6 +1762,33 @@ static const struct wiphy_vendor_command
 #endif
 	},
 #endif /* CFG_SUPPORT_P2P_LISTEN_OFFLOAD */
+	/* Set WFD Tx Bitrate Monitor */
+	{
+		{
+			.vendor_id = OUI_MTK,
+			.subcmd = NL80211_VENDOR_SUBCMD_SET_WFD_TX_BR_MONTR
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_set_wfd_tx_br_montr,
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		.policy = mtk_wfd_tx_br_montr_policy,
+		.maxattr = WIFI_ATTR_WFD_TX_BR_MONTR_MAX
+#endif
+	},
+	/* Get WFD Predicted Tx Bitrate  */
+	{
+		{
+			.vendor_id = OUI_MTK,
+			.subcmd = NL80211_VENDOR_SUBCMD_GET_WFD_PRED_TX_BR
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_get_wfd_pred_tx_br,
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		.policy = VENDOR_CMD_RAW_DATA,
+#endif
+	},
 };
 
 static const struct nl80211_vendor_cmd_info
