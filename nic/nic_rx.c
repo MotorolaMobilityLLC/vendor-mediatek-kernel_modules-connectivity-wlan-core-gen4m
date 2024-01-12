@@ -4023,7 +4023,7 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 		return WLAN_STATUS_INVALID_PACKET;
 	prActFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
 
-	DBGLOG(RSN, INFO, "Action frame category=%d\n",
+	DBGLOG(RSN, TRACE, "Action frame category=%d\n",
 	       prActFrame->ucCategory);
 
 #if CFG_SUPPORT_802_11W
