@@ -2976,7 +2976,8 @@ struct UNI_CMD_PP_ALG_CTRL {
 	uint32_t u4ThrX8_Shift;
 	uint8_t u1DbdcIdx;
 	uint8_t u1PpAction;
-	uint8_t u1Reserved[2];
+	uint8_t u1Reset;
+	uint8_t u1Reserved[1];
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_PP_EN_CTRL_T {
