@@ -1389,6 +1389,9 @@ void twtPlannerGetTsfDone(
 #if (CFG_SUPPORT_RTWT == 1)
 	uint8_t ucFlowID = TWT_INCORRECT_FLOW_ID;
 #endif
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+	enum _ENUM_TWT_TYPE_T eTwtType;
+#endif
 
 	if (!prAdapter) {
 		DBGLOG(TWT_PLANNER, ERROR,
@@ -1547,6 +1550,20 @@ void twtPlannerGetTsfDone(
 
 		kalMemCopy(prTWTParams, &(prGetTsfCtxt->rTWTParams),
 			sizeof(struct _TWT_PARAMS_T));
+
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+		/*
+		 * To setup CNM abort timer in case AP no resp
+		 */
+		eTwtType = ENUM_TWT_TYPE_ITWT;
+
+		twtReqFsmWaitRspTimeoutInit(
+			prAdapter,
+			prStaRec,
+			TWT_REQ_STATE_IDLE,
+			prGetTsfCtxt->ucTWTFlowId,
+			&eTwtType);
+#endif
 
 		/* Start the process to nego for a new agreement */
 		twtPlannerSendReqStart(prAdapter,
@@ -2833,6 +2850,26 @@ void twtPlannerRxNegoResult(
 
 	case TWT_SETUP_CMD_ID_REJECT:
 		/* Clear TWT flow in StaRec */
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+		DBGLOG(TWT_PLANNER, WARN,
+			"Reject, abort CNM channel grant!!\n");
+
+		twtPlannerAbortCnmGranted(
+			prAdapter,
+			prBssInfo,
+			prStaRec,
+			ucTWTFlowId,
+			FALSE,
+			NULL,
+			NULL);
+
+		if (timerPendingTimer(
+			&(prStaRec->rTwtFsmWaitRespTimeoutTimer)))
+			cnmTimerStopTimer(
+			prAdapter,
+			&(prStaRec->rTwtFsmWaitRespTimeoutTimer));
+#endif
+
 		break;
 
 	default:

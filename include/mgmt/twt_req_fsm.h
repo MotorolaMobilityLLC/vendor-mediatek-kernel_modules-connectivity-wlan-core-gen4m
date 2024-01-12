@@ -197,9 +197,26 @@ void mltwtReqFsmSync(
 	enum _ENUM_TWT_REQUESTER_STATE_T eNextState,
 	u_int8_t ucTWTFlowId);
 #endif
-/*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+void twtReqFsmWaitRspTimeoutInit(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	enum _ENUM_TWT_REQUESTER_STATE_T eCurState,
+	u_int8_t ucTWTFlowId,
+	enum _ENUM_TWT_TYPE_T *preTwtType);
+
+void twtReqFsmWaitRspTimeoutDeInit(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	enum _ENUM_TWT_REQUESTER_STATE_T ePreState,
+	enum _ENUM_TWT_REQUESTER_STATE_T eNextState,
+	u_int8_t ucTWTFlowId,
+	enum _ENUM_TWT_TYPE_T *preTwtType);
+
+void twtReqFsmWaitRspEventTimeout(
+	struct ADAPTER *prAdapter,
+	uintptr_t ulParamPtr);
+#endif /* #if (CFG_SUPPORT_TWT_STA_CNM == 1) */
 
 #endif /* _TWT_REQ_FSM_H */

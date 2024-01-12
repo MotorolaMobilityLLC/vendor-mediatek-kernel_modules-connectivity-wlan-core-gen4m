@@ -944,6 +944,9 @@ struct WIFI_VAR {
 	uint8_t ucTWTRequester;
 	uint8_t ucTWTResponder;
 	uint8_t ucTWTStaBandBitmap;
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+	uint32_t u4TwtCnmAbortTimeoutMs;
+#endif
 #endif
 #if (CFG_SUPPORT_TWT_HOTSPOT == 1)
 	uint8_t ucTWTHotSpotSupport;
