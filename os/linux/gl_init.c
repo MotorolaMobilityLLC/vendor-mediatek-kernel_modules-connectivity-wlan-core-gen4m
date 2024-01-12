@@ -3436,8 +3436,10 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 		lockdep_set_class(&prGlueInfo->rSpinLock[i], &rSpinKey[i]);
 	}
 
-	for (i = 0; i < MUTEX_NUM; i++)
+	for (i = 0; i < MUTEX_NUM; i++) {
 		mutex_init(&prGlueInfo->arMutex[i]);
+		lockdep_set_subclass(&prGlueInfo->arMutex[i], i);
+	}
 
 	/* initialize semaphore for ioctl */
 	sema_init(&prGlueInfo->ioctl_sem, 1);
