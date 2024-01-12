@@ -528,38 +528,11 @@ void nicEventCSIData(IN struct ADAPTER *prAdapter,
 			prBuf += (u2Offset + prCSITlvData->body_len);
 	}
 
-#if (CFG_SUPPORT_CONNAC3X == 0)
-	/*mask the null tone && pilot tone*/
-	if ((prCSIInfo->ucValue1[CSI_CONFIG_OUTPUT_FORMAT] ==
-		CSI_OUTPUT_TONE_MASKED ||
-		prCSIInfo->ucValue1[CSI_CONFIG_OUTPUT_FORMAT] ==
-		CSI_OUTPUT_TONE_MASKED_SHIFTED) &&
-		!prCSIData->bIsCck) {
-		wlanApplyCSIToneMask(prCSIData->ucRxMode,
-			prCSIData->ucBw, prCSIData->ucDataBw,
-			prCSIData->ucPrimaryChIdx,
-			prCSIData->ac2IData, prCSIData->ac2QData);
-	}
-
-	/*reoder the tone */
-	if (prCSIInfo->ucValue1[CSI_CONFIG_OUTPUT_FORMAT] ==
-		CSI_OUTPUT_TONE_MASKED_SHIFTED &&
-		!prCSIData->bIsCck) {
-		kalMemCopy(prCSIInfo->ai2TempIData,
-			prCSIData->ac2IData,
-			sizeof(int16_t) * prCSIData->u2DataCount);
-		kalMemCopy(prCSIInfo->ai2TempQData,
-			prCSIData->ac2QData,
-			sizeof(int16_t) * prCSIData->u2DataCount);
-		wlanShiftCSI(prCSIData->ucRxMode,
-			prCSIData->ucBw, prCSIData->ucDataBw,
-			prCSIData->ucPrimaryChIdx,
-			prCSIInfo->ai2TempIData,
-			prCSIInfo->ai2TempQData,
-			prCSIData->ac2IData,
-			prCSIData->ac2QData);
-	}
-#endif
+	/* mask the null tone */
+	wlanApplyCSIToneMask(prCSIData->ucRxMode,
+		prCSIData->ucBw, prCSIData->ucDataBw,
+		prCSIData->ucPrimaryChIdx,
+		prCSIData->ac2IData, prCSIData->ac2QData);
 
 	DBGLOG(NIC, INFO, "[CSI] u2DataCount=%d\n",
 				prCSIData->u2DataCount);
@@ -853,288 +826,56 @@ void wlanApplyCSIToneMask(
 	int16_t *ai2IData,
 	int16_t *ai2QData)
 {
-	uint8_t ucSize = sizeof(int16_t);
-
 #define ZERO(index) \
 { ai2IData[index] = 0; ai2QData[index] = 0; }
 
 #define ZERO_RANGE(start, end) \
 {\
-	kalMemZero(&ai2IData[start], ucSize * (end - start + 1));\
-	kalMemZero(&ai2QData[start], ucSize * (end - start + 1));\
+	kalMemZero(&ai2IData[start], sizeof(int16_t) * (end - start + 1));\
+	kalMemZero(&ai2QData[start], sizeof(int16_t) * (end - start + 1));\
 }
 
-	/*Mask the NULL TONE*/
 	if (ucRxMode == RX_VT_LEGACY_OFDM) {
 		if (ucCBW == RX_VT_FR_MODE_20) {
 			ZERO(0);
-			ZERO_RANGE(27, 37);
 		} else if (ucCBW == RX_VT_FR_MODE_40) {
-			if (ucDBW == RX_VT_FR_MODE_40) {
-				ZERO(32); ZERO(96);
-				ZERO_RANGE(0, 5);
-				ZERO_RANGE(59, 69);
-				ZERO_RANGE(123, 127);
-			} else if (ucDBW == RX_VT_FR_MODE_20) {
-				if (ucPrimaryChIdx == 0) {
-					ZERO(96);
-					ZERO_RANGE(0, 69);
-					ZERO_RANGE(123, 127);
-				} else {
-					ZERO(32);
-					ZERO_RANGE(0, 5);
-					ZERO_RANGE(59, 127);
-				}
-			}
+			ZERO(32); ZERO(96);
 		} else if (ucCBW == RX_VT_FR_MODE_80) {
-			if (ucDBW == RX_VT_FR_MODE_80) {
-				ZERO(32); ZERO(96);
-				ZERO(160); ZERO(224);
-				ZERO_RANGE(0, 5);
-				ZERO_RANGE(59, 69);
-				ZERO_RANGE(123, 133);
-				ZERO_RANGE(187, 197);
-				ZERO_RANGE(251, 255);
-			} else if (ucDBW == RX_VT_FR_MODE_40) {
-				if (ucPrimaryChIdx <= 1) {
-					ZERO(160); ZERO(224);
-					ZERO_RANGE(0, 133);
-					ZERO_RANGE(187, 197);
-					ZERO_RANGE(251, 255);
-				} else {
-					ZERO(32); ZERO(96);
-					ZERO_RANGE(0, 5);
-					ZERO_RANGE(59, 69);
-					ZERO_RANGE(123, 255);
-				}
-			} else if (ucDBW == RX_VT_FR_MODE_20) {
-				if (ucPrimaryChIdx == 0) {
-					ZERO(160);
-					ZERO_RANGE(0, 133);
-					ZERO_RANGE(187, 255);
-				} else if (ucPrimaryChIdx == 1) {
-					ZERO(224);
-					ZERO_RANGE(0, 197);
-					ZERO_RANGE(251, 255);
-				} else if (ucPrimaryChIdx == 2) {
-					ZERO(32);
-					ZERO_RANGE(0, 5);
-					ZERO_RANGE(59, 255);
-				} else {
-					ZERO(96);
-					ZERO_RANGE(0, 69);
-					ZERO_RANGE(123, 255);
-				}
-			}
+			ZERO(32); ZERO(96);
+			ZERO(160); ZERO(224);
+		} else if (ucCBW == RX_VT_FR_MODE_160) {
+			ZERO(32); ZERO(96);
+			ZERO(160); ZERO(224);
+			ZERO(288); ZERO(352);
+			ZERO(416); ZERO(480);
+		} else if (ucCBW == RX_VT_FR_MODE_320) {
+			ZERO(32); ZERO(96);
+			ZERO(160); ZERO(224);
+			ZERO(288); ZERO(352);
+			ZERO(416); ZERO(480);
+			ZERO(672); ZERO(736);
+			ZERO(800); ZERO(864);
+			ZERO(928); ZERO(992);
 		}
 	} else if (ucRxMode == RX_VT_MIXED_MODE ||
 		ucRxMode == RX_VT_GREEN_MODE ||
 		ucRxMode == RX_VT_VHT_MODE) {
+
 		if (ucCBW == RX_VT_FR_MODE_20) {
 			ZERO(0);
-			ZERO_RANGE(29, 35);
 		} else if (ucCBW == RX_VT_FR_MODE_40) {
-			if (ucDBW == RX_VT_FR_MODE_40) {
-				ZERO(0); ZERO(1); ZERO(127);
-				ZERO_RANGE(59, 69);
-			} else if (ucDBW == RX_VT_FR_MODE_20) {
-				if (ucPrimaryChIdx == 0) {
-					ZERO(96);
-					ZERO_RANGE(0, 67);
-					ZERO_RANGE(125, 127);
-				} else {
-					ZERO(32);
-					ZERO_RANGE(0, 3);
-					ZERO_RANGE(61, 127);
-				}
-			}
+			ZERO(0); ZERO(1);
+			ZERO(127);
 		} else if (ucCBW == RX_VT_FR_MODE_80) {
-			if (ucDBW == RX_VT_FR_MODE_80) {
-				ZERO(0); ZERO(1); ZERO(255);
-				ZERO_RANGE(123, 133);
-			} else if (ucDBW == RX_VT_FR_MODE_40) {
-				if (ucPrimaryChIdx <= 1) {
-					ZERO_RANGE(0, 133);
-					ZERO_RANGE(191, 193);
-					ZERO_RANGE(251, 255);
-				} else {
-					ZERO_RANGE(0, 5);
-					ZERO_RANGE(63, 65);
-					ZERO_RANGE(123, 127);
-				}
-			} else if (ucDBW == RX_VT_FR_MODE_20) {
-				if (ucPrimaryChIdx == 0) {
-					ZERO(160);
-					ZERO_RANGE(0, 131);
-					ZERO_RANGE(189, 255);
-				} else if (ucPrimaryChIdx == 1) {
-					ZERO(224);
-					ZERO_RANGE(0, 195);
-					ZERO_RANGE(253, 255);
-				} else if (ucPrimaryChIdx == 2) {
-					ZERO(32);
-					ZERO_RANGE(0, 3);
-					ZERO_RANGE(61, 255);
-				} else {
-					ZERO(96);
-					ZERO_RANGE(0, 67);
-					ZERO_RANGE(125, 255);
-				}
-			}
-		}
-	} else if (ucRxMode == RX_VT_HE_MODE) {		/*11ax support*/
-		if (ucCBW == RX_VT_FR_MODE_20) {
-			ZERO(0);
-			ZERO_RANGE(31, 33);
-		} else if (ucCBW == RX_VT_FR_MODE_40) {
-			if (ucDBW == RX_VT_FR_MODE_40) {
-				ZERO(0);
-				ZERO_RANGE(62, 66);
-			} else if (ucDBW == RX_VT_FR_MODE_20) {
-				if (ucPrimaryChIdx == 0) {
-					ZERO(96); ZERO(127);
-					ZERO_RANGE(0, 65);
-				} else {
-					ZERO(0);
-					ZERO(1); ZERO(32);
-					ZERO_RANGE(63, 127);
-				}
-			}
-		} else if (ucCBW == RX_VT_FR_MODE_80) {
-			if (ucDBW == RX_VT_FR_MODE_80) {
-				ZERO(0);
-				ZERO_RANGE(126, 130);
-			} else if (ucDBW == RX_VT_FR_MODE_40) {
-				if (ucPrimaryChIdx <= 1) {
-					ZERO_RANGE(0, 130);
-					ZERO(192);
-					ZERO_RANGE(254, 255);
-				} else {
-					ZERO_RANGE(0, 2);
-					ZERO(64);
-					ZERO_RANGE(126, 255);
-				}
-			} else if (ucDBW == RX_VT_FR_MODE_20) {
-				if (ucPrimaryChIdx == 0) {
-					ZERO_RANGE(0, 129);
-					ZERO(160);
-					ZERO_RANGE(191, 255);
-				} else if (ucPrimaryChIdx == 1) {
-					ZERO_RANGE(0, 193);
-					ZERO(224);
-					ZERO(255);
-				} else if (ucPrimaryChIdx == 2) {
-					ZERO_RANGE(0, 1);
-					ZERO(32);
-					ZERO_RANGE(63, 255);
-				} else {
-					ZERO_RANGE(0, 65);
-					ZERO(96);
-					ZERO_RANGE(127, 255);
-				}
-			}
+			ZERO(0); ZERO(1);
+			ZERO(255);
+		} else if (ucCBW == RX_VT_FR_MODE_160) {
+			ZERO(5); ZERO(127);
+			ZERO(128); ZERO(129);
+			ZERO(261); ZERO(383);
+			ZERO(384); ZERO(385);
 		}
 	}
-
-	/*Mask the VHT Pilots*/
-	if (ucRxMode == RX_VT_VHT_MODE) {
-		if (ucCBW == RX_VT_FR_MODE_20) {
-			ZERO(7); ZERO(21); ZERO(43); ZERO(57);
-		} else if (ucCBW == RX_VT_FR_MODE_40) {
-			if (ucDBW == RX_VT_FR_MODE_40) {
-				ZERO(11); ZERO(25); ZERO(53);
-				ZERO(75); ZERO(103); ZERO(117);
-			} else if (ucDBW == RX_VT_FR_MODE_20) {
-				if (ucPrimaryChIdx == 0) {
-					ZERO(75); ZERO(89);
-					ZERO(103); ZERO(117);
-				} else {
-					ZERO(11); ZERO(25);
-					ZERO(39); ZERO(53);
-				}
-			}
-		} else if (ucCBW == RX_VT_FR_MODE_80) {
-			if (ucDBW == RX_VT_FR_MODE_80) {
-				ZERO(11); ZERO(39); ZERO(75); ZERO(103);
-				ZERO(153); ZERO(181); ZERO(217); ZERO(245);
-			} else if (ucDBW == RX_VT_FR_MODE_40) {
-				if (ucPrimaryChIdx <= 1) {
-					ZERO(139); ZERO(167); ZERO(181);
-					ZERO(203); ZERO(217); ZERO(245);
-				} else {
-					ZERO(11); ZERO(39); ZERO(53);
-					ZERO(75); ZERO(89); ZERO(117);
-				}
-			} else if (ucDBW == RX_VT_FR_MODE_20) {
-				if (ucPrimaryChIdx == 0) {
-					ZERO(139); ZERO(153);
-					ZERO(167); ZERO(181);
-				} else if (ucPrimaryChIdx == 1) {
-					ZERO(203); ZERO(217);
-					ZERO(231); ZERO(245);
-				} else if (ucPrimaryChIdx == 2) {
-					ZERO(11); ZERO(25);
-					ZERO(39); ZERO(53);
-				} else {
-					ZERO(75); ZERO(89);
-					ZERO(103); ZERO(117);
-				}
-			}
-		}
-	} else if (ucRxMode == RX_VT_HE_MODE) {			/*11ax support*/
-		if (ucCBW == RX_VT_FR_MODE_20) {
-			ZERO(12); ZERO(29);
-			ZERO(52); ZERO(35);
-		} else if (ucCBW == RX_VT_FR_MODE_40) {
-			if (ucDBW == RX_VT_FR_MODE_40) {
-				ZERO(9); ZERO(26);
-				ZERO(36); ZERO(53);
-				ZERO(119); ZERO(102);
-				ZERO(92); ZERO(75);
-			} else if (ucDBW == RX_VT_FR_MODE_20) {
-				if (ucPrimaryChIdx == 0) {
-					ZERO(67); ZERO(84);
-					ZERO(108); ZERO(125);
-				} else {
-					ZERO(3); ZERO(20);
-					ZERO(61); ZERO(44);
-				}
-			}
-		} else if (ucCBW == RX_VT_FR_MODE_80) {
-			if (ucDBW == RX_VT_FR_MODE_80) {
-				ZERO(6); ZERO(23);
-				ZERO(100); ZERO(117);
-				ZERO(250); ZERO(233);
-				ZERO(156); ZERO(139);
-			} else if (ucDBW == RX_VT_FR_MODE_40) {
-				if (ucPrimaryChIdx <= 1) {
-					ZERO(201); ZERO(218);
-					ZERO(228); ZERO(245);
-					ZERO(183); ZERO(166);
-					ZERO(156); ZERO(139);
-				} else {
-					ZERO(73); ZERO(90);
-					ZERO(100); ZERO(117);
-					ZERO(55); ZERO(38);
-					ZERO(28); ZERO(11);
-				}
-			} else if (ucDBW == RX_VT_FR_MODE_20) {
-				if (ucPrimaryChIdx == 0) {
-					ZERO(172); ZERO(189);
-					ZERO(148); ZERO(131);
-				} else if (ucPrimaryChIdx == 1) {
-					ZERO(236); ZERO(253);
-					ZERO(212); ZERO(195);
-				} else if (ucPrimaryChIdx == 2) {
-					ZERO(44); ZERO(61);
-					ZERO(20); ZERO(3);
-				} else {
-					ZERO(108); ZERO(125);
-					ZERO(84); ZERO(67);
-				}
-			}
-		}
-		}
 }
 
 void
