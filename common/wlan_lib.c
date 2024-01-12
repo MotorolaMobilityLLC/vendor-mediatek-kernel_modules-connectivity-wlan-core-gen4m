@@ -3355,61 +3355,11 @@ void wlanReturnPacket(struct ADAPTER *prAdapter,
 	nicRxReturnRFB(prAdapter, prSwRfb);
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This function is a required function that returns information about
- *        the capabilities and status of the driver and/or its network adapter.
- *
- * \param[IN] prAdapter		Pointer to the Adapter structure.
- * \param[IN] pfnOidQryHandler	Function pointer for the OID query handler.
- * \param[IN] pvInfoBuf		Points to a buffer for return the query
- *				information.
- * \param[IN] u4QueryBufferLen Specifies the number of bytes at pvInfoBuf.
- * \param[OUT] pu4QueryInfoLen	Points to the number of bytes it written or is
- *				needed.
- *
- * \retval WLAN_STATUS_xxx Different WLAN_STATUS code returned by different
- *				handlers.
- *
+/*
+ * Note:
+ * This API can only called in main_thread,
+ * please do not use this unless you actually know what you are doing.
  */
-/*----------------------------------------------------------------------------*/
-uint32_t
-wlanQueryInformation(struct ADAPTER *prAdapter,
-		     PFN_OID_HANDLER_FUNC pfnOidQryHandler,
-		     void *pvInfoBuf, uint32_t u4InfoBufLen,
-		     uint32_t *pu4QryInfoLen)
-{
-	uint32_t status;
-
-	ASSERT(prAdapter);
-	ASSERT(pu4QryInfoLen);
-
-	/* ignore any OID request after connected, under PS current measurement
-	 * mode
-	 */
-	DBGLOG(NIC, TRACE, "u4PsCurrentMeasureEn=%u, aisGetConnectedBssInfo=%p",
-		prAdapter->u4PsCurrentMeasureEn,
-		aisGetConnectedBssInfo(prAdapter));
-	if (prAdapter->u4PsCurrentMeasureEn &&
-	    aisGetConnectedBssInfo(prAdapter)) {
-		/* note: return WLAN_STATUS_FAILURE or
-		 * WLAN_STATUS_SUCCESS for blocking OIDs during current
-		 * measurement ??
-		 */
-		return WLAN_STATUS_SUCCESS;
-	}
-	/* most OID handler will just queue a command packet
-	 * for power state transition OIDs, handler will acquire power control
-	 * by itself
-	 */
-	status = pfnOidQryHandler(prAdapter, pvInfoBuf,
-				  u4InfoBufLen, pu4QryInfoLen);
-	DBGLOG(NIC, TRACE, "%ps returns %u", pfnOidQryHandler, status);
-
-	return status;
-
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is a required function that allows bound protocol
