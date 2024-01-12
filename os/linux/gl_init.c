@@ -66,6 +66,10 @@
 #include "gl_csi.h"
 #endif
 
+#if ARP_MONITER_ENABLE
+#include "que_mgt.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -2011,6 +2015,10 @@ static bool is_critical_packet(struct net_device *dev,
 	case ETH_P_ARP:
 		if (__netif_subqueue_stopped(dev, orig_queue_index))
 			is_critical = TRUE;
+#if ARP_MONITER_ENABLE
+		if (qmArpMonitorIsCritical())
+			is_critical = true;
+#endif
 		break;
 	case ETH_P_1X:
 	case ETH_P_PRE_1X:

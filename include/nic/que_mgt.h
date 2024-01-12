@@ -1256,6 +1256,7 @@ void qmAdjustTcQuotaPle(struct ADAPTER *prAdapter,
 #if ARP_MONITER_ENABLE
 void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 			   struct MSDU_INFO *prMsduInfo);
+u_int8_t qmArpMonitorIsCritical(void);
 void qmResetArpDetect(void);
 void qmHandleRxArpPackets(struct ADAPTER *prAdapter,
 			  struct SW_RFB *prSwRfb);
