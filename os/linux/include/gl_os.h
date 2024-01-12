@@ -709,6 +709,11 @@ struct GLUE_INFO {
 #if (CFG_SUPPORT_RETURN_TASK == 1)
 	struct tasklet_struct rRxRfbRetTask;
 #endif
+#if CFG_SUPPORT_RETURN_WORK
+	struct workqueue_struct *prRxRfbRetWorkQueue;
+	struct work_struct rRxRfbRetWork;
+	int32_t i4RxRfbRetCpu;
+#endif
 #if CFG_SUPPORT_TASKLET_FREE_MSDU
 	struct tasklet_struct rTxMsduRetTask;
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */

@@ -236,10 +236,11 @@ struct BOOST_INFO {
 	struct THREAD_INFO rRxThreadInfo;
 	uint32_t u4RpsMap;
 	uint32_t u4ISRMask;
+	int32_t i4RxRfbRetWorkCpu;
 	int32_t i4RxWorkCpu;
 	u_int8_t fgDramBoost;
 	u_int8_t fgKeepPcieWakeup;
-	uint32_t u4WfdmaThNum;
+	uint32_t u4WfdmaTh;
 };
 
 #define WORK_ALL_CPU_OK 999
@@ -2462,7 +2463,7 @@ void kalTdlsOpReq(
 #if defined(_HIF_PCIE)
 void kalSetPcieKeepWakeup(struct GLUE_INFO *prGlueInfo,
 			  u_int8_t fgKeepPcieWakeup);
-void kalConfigWfdmaTh(struct GLUE_INFO *prGlueInfo, uint32_t u4Num);
+void kalConfigWfdmaTh(struct GLUE_INFO *prGlueInfo, uint32_t u4Th);
 #endif /* defined(_HIF_PCIE) */
 
 void kalSetISRMask(struct ADAPTER *prAdapter, uint32_t set_mask);
@@ -2527,6 +2528,14 @@ void kalVnfUninit(void);
 void kalVnfInit(struct ADAPTER *prAdapter);
 void kalVnfEventHandler(struct ADAPTER *prAdapter);
 #endif /* CFG_VOLT_INFO */
+
+#if CFG_SUPPORT_RETURN_WORK
+void kalRxRfbReturnWorkSetCpu(struct GLUE_INFO *pr, int32_t cpu);
+void kalRxRfbReturnWork(struct work_struct *work);
+void kalRxRfbReturnWorkInit(struct GLUE_INFO *pr);
+void kalRxRfbReturnWorkUninit(struct GLUE_INFO *pr);
+void kalRxRfbReturnWorkSchedule(struct GLUE_INFO *pr);
+#endif /* CFG_SUPPORT_RETURN_WORK */
 
 #if CFG_SUPPORT_RX_WORK
 void kalRxWork(struct work_struct *work);

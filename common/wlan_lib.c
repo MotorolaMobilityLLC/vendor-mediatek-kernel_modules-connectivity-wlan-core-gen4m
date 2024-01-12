@@ -3248,7 +3248,7 @@ void wlanReturnPacketDelaySetup(struct ADAPTER *prAdapter)
 	}
 }
 
-#if (CFG_SUPPORT_RETURN_TASK == 1)
+#if (CFG_SUPPORT_RETURN_TASK == 1) || (CFG_SUPPORT_RETURN_WORK == 1)
 void wlanReturnPacketDelaySetupTasklet(uintptr_t data)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
@@ -3262,6 +3262,8 @@ void wlanReturnPacketDelaySetupTimeout(struct ADAPTER
 {
 #if (CFG_SUPPORT_RETURN_TASK == 1)
 	kal_tasklet_hi_schedule(&prAdapter->prGlueInfo->rRxRfbRetTask);
+#elif CFG_SUPPORT_RETURN_WORK
+	kalRxRfbReturnWorkSchedule(prAdapter->prGlueInfo);
 #else
 	wlanReturnPacketDelaySetup(prAdapter);
 #endif /* CFG_SUPPORT_RETURN_TASK */
@@ -8258,6 +8260,15 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		prAdapter, "DlyIntTime", 2); /* unit: 20us */
 	prWifiVar->u4DlyIntCnt = (uint32_t)wlanCfgGetUint32(
 		prAdapter, "DlyIntCnt", 0); /* 0: No check by count */
+
+#if CFG_SUPPORT_DYNAMIC_PAGE_POOL
+	prWifiVar->u4PagePoolMinCnt = (uint32_t)wlanCfgGetUint32(
+		prAdapter, "PagePoolMinCnt", CFG_RX_MAX_PKT_NUM);
+	prWifiVar->u4PagePoolMaxCnt = (uint32_t)wlanCfgGetUint32(
+		prAdapter, "PagePoolMaxCnt", CFG_RX_MAX_PKT_NUM * 3);
+	kalSetupPagePoolPageMaxMinNum(prWifiVar->u4PagePoolMinCnt,
+				      prWifiVar->u4PagePoolMaxCnt);
+#endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)
