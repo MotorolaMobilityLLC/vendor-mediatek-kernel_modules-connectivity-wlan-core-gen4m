@@ -128,7 +128,6 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_GET_STA_STATISTICS] = nicUniCmdNotSupport,
 	[CMD_ID_GET_STATISTICS] = nicUniCmdNotSupport,
 	[CMD_ID_PERF_IND] = nicUniCmdNotSupport,
-	[CMD_ID_SET_MONITOR] = nicUniCmdSetMonitor,
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -2898,54 +2897,6 @@ uint32_t nicUniCmdGetIdcChnl(struct ADAPTER *ad,
 	tag = (struct UNI_CMD_GET_IDC_CHN *) uni_cmd->aucTlvBuffer;
 	tag->u2Tag = UNI_CMD_IDC_TAG_GET_IDC_CHN;
 	tag->u2Length = sizeof(*tag);
-
-	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
-
-	return WLAN_STATUS_SUCCESS;
-}
-
-uint32_t nicUniCmdSetMonitor(struct ADAPTER *ad,
-		struct WIFI_UNI_SETQUERY_INFO *info)
-{
-	struct CMD_MONITOR_SET_INFO *cmd;
-	struct UNI_CMD_SNIFFER_MODE *uni_cmd;
-	struct UNI_CMD_SNIFFER_MODE_ENABLE *tag0;
-	struct UNI_CMD_SNIFFER_MODE_CONFIG *tag1;
-	struct WIFI_UNI_CMD_ENTRY *entry;
-	uint32_t max_cmd_len;
-
-	cmd = (struct CMD_MONITOR_SET_INFO *) info->pucInfoBuffer;
-	max_cmd_len = sizeof(struct UNI_CMD_SNIFFER_MODE) +
-		sizeof(struct UNI_CMD_SNIFFER_MODE_ENABLE) +
-		sizeof(struct UNI_CMD_SNIFFER_MODE_CONFIG);
-
-	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SNIFFER_MODE,
-					max_cmd_len, nicUniCmdEventSetCommon,
-					nicUniCmdTimeoutCommon);
-
-	if (!entry)
-		return WLAN_STATUS_RESOURCES;
-
-	uni_cmd = (struct UNI_CMD_SNIFFER_MODE *) entry->pucInfoBuffer;
-	uni_cmd->ucBandIdx = cmd->ucBandIdx;
-
-	tag0 = (struct UNI_CMD_SNIFFER_MODE_ENABLE *) uni_cmd->aucTlvBuffer;
-	tag0->u2Tag = UNI_CMD_SNIFFER_MODE_TAG_ENABLE;
-	tag0->u2Length = sizeof(*tag0);
-	tag0->ucSNEnable = cmd->ucEnable;
-
-	tag1 = (struct UNI_CMD_SNIFFER_MODE_CONFIG *)
-		(uni_cmd->aucTlvBuffer + tag0->u2Length);
-	tag1->u2Tag = UNI_CMD_SNIFFER_MODE_TAG_CONFIG;
-	tag1->u2Length = sizeof(*tag1);
-	tag1->ucBand = cmd->ucBand;
-	tag1->ucPriChannel = cmd->ucPriChannel;
-	tag1->ucSco = cmd->ucSco;
-	tag1->ucChannelWidth = cmd->ucChannelWidth;
-	tag1->ucChannelS1 = cmd->ucChannelS1;
-	tag1->ucChannelS2 = cmd->ucChannelS2;
-	tag1->u2Aid = cmd->u2Aid;
-	tag1->fgDropFcsErrorFrame = cmd->fgDropFcsErrorFrame;
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 

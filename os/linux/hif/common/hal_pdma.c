@@ -1629,8 +1629,6 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 	pRxRing->u4BufSize = u4BufSize;
 	pRxRing->u4RingSize = u4Size;
 	pRxRing->fgRxSegPkt = FALSE;
-	pRxRing->pvPacket = NULL;
-	pRxRing->u4PacketLen = 0;
 
 	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
 		/* Init RX Ring Size, Va, Pa variables */
@@ -1731,7 +1729,7 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem)
 	/* Data Rx path */
 	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_DATA_IDX_0,
 				 RX_RING0_SIZE, RXD_SIZE,
-				 CFG_RX_MAX_MPDU_SIZE, fgAllocMem)) {
+				 CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[0] fail\n");
 		return false;
 	}

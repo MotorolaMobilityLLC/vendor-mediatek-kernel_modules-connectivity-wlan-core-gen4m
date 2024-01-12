@@ -11144,6 +11144,170 @@ int priv_driver_set_suspend_mode(IN struct net_device *prNetDev,
 	return 0;
 }
 
+#if CFG_SUPPORT_SNIFFER
+int priv_driver_set_monitor(IN struct net_device *prNetDev, IN char *pcCommand,
+			    IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4Argc = 0;
+	int32_t i4BytesWritten = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	struct PARAM_CUSTOM_MONITOR_SET_STRUCT rMonitorSetInfo;
+	uint8_t ucEnable = 0;
+	uint8_t ucPriChannel = 0;
+	uint8_t ucChannelWidth = 0;
+	uint8_t ucExt = 0;
+	uint8_t ucSco = 0;
+	uint8_t ucChannelS1 = 0;
+	uint8_t ucChannelS2 = 0;
+	u_int8_t fgIsLegalChannel = FALSE;
+	u_int8_t fgError = FALSE;
+	u_int8_t fgEnable = FALSE;
+	enum ENUM_BAND eBand = BAND_NULL;
+	uint32_t u4Parse = 0;
+	int32_t u4Ret = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc >= 5) {
+		/* ucEnable = (uint8_t) (kalStrtoul(apcArgv[1], NULL, 0));
+		 * ucPriChannel = (uint8_t) (kalStrtoul(apcArgv[2], NULL, 0));
+		 * ucChannelWidth = (uint8_t) (kalStrtoul(apcArgv[3], NULL, 0));
+		 * ucExt = (uint8_t) (kalStrtoul(apcArgv[4], NULL, 0));
+		 */
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+		ucEnable = (uint8_t) u4Parse;
+		u4Ret = kalkStrtou32(apcArgv[2], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+		ucPriChannel = (uint8_t) u4Parse;
+		u4Ret = kalkStrtou32(apcArgv[3], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+		ucChannelWidth = (uint8_t) u4Parse;
+		u4Ret = kalkStrtou32(apcArgv[4], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+		ucExt = (uint8_t) u4Parse;
+
+		eBand = (ucPriChannel <= 14) ? BAND_2G4 : BAND_5G;
+		fgIsLegalChannel = rlmDomainIsLegalChannel(prAdapter, eBand,
+							   ucPriChannel);
+
+		if (fgIsLegalChannel == FALSE) {
+			i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
+						  "Illegal primary channel %d",
+						  ucPriChannel);
+			return i4BytesWritten;
+		}
+
+		switch (ucChannelWidth) {
+		case 160:
+			ucChannelWidth = (uint8_t) CW_160MHZ;
+			ucSco = (uint8_t) CHNL_EXT_SCN;
+
+			if (ucPriChannel >= 36 && ucPriChannel <= 64)
+				ucChannelS2 = 50;
+			else if (ucPriChannel >= 100 && ucPriChannel <= 128)
+				ucChannelS2 = 114;
+			else
+				fgError = TRUE;
+			break;
+
+		case 80:
+			ucChannelWidth = (uint8_t) CW_80MHZ;
+			ucSco = (uint8_t) CHNL_EXT_SCN;
+
+			if (ucPriChannel >= 36 && ucPriChannel <= 48)
+				ucChannelS1 = 42;
+			else if (ucPriChannel >= 52 && ucPriChannel <= 64)
+				ucChannelS1 = 58;
+			else if (ucPriChannel >= 100 && ucPriChannel <= 112)
+				ucChannelS1 = 106;
+			else if (ucPriChannel >= 116 && ucPriChannel <= 128)
+				ucChannelS1 = 122;
+			else if (ucPriChannel >= 132 && ucPriChannel <= 144)
+				ucChannelS1 = 138;
+			else if (ucPriChannel >= 149 && ucPriChannel <= 161)
+				ucChannelS1 = 155;
+			else
+				fgError = TRUE;
+			break;
+
+		case 40:
+			ucChannelWidth = (uint8_t) CW_20_40MHZ;
+			ucSco = (ucExt) ? (uint8_t) CHNL_EXT_SCA :
+				(uint8_t) CHNL_EXT_SCB;
+			break;
+
+		case 20:
+			ucChannelWidth = (uint8_t) CW_20_40MHZ;
+			ucSco = (uint8_t) CHNL_EXT_SCN;
+			break;
+
+		default:
+			fgError = TRUE;
+			break;
+		}
+
+		if (fgError) {
+			i4BytesWritten =
+			    kalSnprintf(pcCommand, i4TotalLen,
+				     "Invalid primary channel %d with bandwidth %d",
+				     ucPriChannel, ucChannelWidth);
+			return i4BytesWritten;
+		}
+
+		fgEnable = (ucEnable) ? TRUE : FALSE;
+
+		if (prGlueInfo->fgIsEnableMon != fgEnable) {
+			prGlueInfo->fgIsEnableMon = fgEnable;
+			schedule_work(&prGlueInfo->monWork);
+		}
+
+		kalMemZero(&rMonitorSetInfo, sizeof(rMonitorSetInfo));
+
+		rMonitorSetInfo.ucEnable = ucEnable;
+		rMonitorSetInfo.ucPriChannel = ucPriChannel;
+		rMonitorSetInfo.ucSco = ucSco;
+		rMonitorSetInfo.ucChannelWidth = ucChannelWidth;
+		rMonitorSetInfo.ucChannelS1 = ucChannelS1;
+		rMonitorSetInfo.ucChannelS2 = ucChannelS2;
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetMonitor,
+				   &rMonitorSetInfo, sizeof(rMonitorSetInfo),
+				   FALSE, FALSE, TRUE, &u4BufLen);
+
+		i4BytesWritten =
+		    kalSnprintf(pcCommand, i4TotalLen, "set monitor config %s",
+			     (rStatus == WLAN_STATUS_SUCCESS) ?
+			     "success" : "fail");
+
+		return i4BytesWritten;
+	}
+
+	i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
+				  "monitor [Enable][PriChannel][ChannelWidth][Sco]");
+
+	return i4BytesWritten;
+}
+#endif
+
 int priv_driver_set_bf(IN struct net_device *prNetDev, IN char *pcCommand,
 			 IN int i4TotalLen)
 {
@@ -15016,6 +15180,9 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #if CFG_SUPPORT_DBDC
 	{CMD_SET_DBDC, priv_driver_set_dbdc},
 #endif /*CFG_SUPPORT_DBDC*/
+#if CFG_SUPPORT_SNIFFER
+	{CMD_SETMONITOR, priv_driver_set_monitor},
+#endif
 	{CMD_GET_QUE_INFO, priv_driver_get_que_info},
 	{CMD_GET_MEM_INFO, priv_driver_get_mem_info},
 	{CMD_GET_HIF_INFO, priv_driver_get_hif_info},
