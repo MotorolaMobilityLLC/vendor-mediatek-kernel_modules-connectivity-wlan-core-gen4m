@@ -14,6 +14,7 @@
 
 #include "precomp.h"
 #include "mt6639.h"
+#include "coda/mt6639/wf_wfdma_ext_wrap_csr.h"
 #include "coda/mt6639/wf_wfdma_host_dma0.h"
 #include "coda/mt6639/wf_pse_top.h"
 #include "coda/mt6639/pcie_mac_ireg.h"
@@ -81,8 +82,6 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 
 static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable, bool fgResetHif);
-
-static void mt6639EnableFwDlMode(struct ADAPTER *prAdapter);
 
 static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter);
 
@@ -233,6 +232,22 @@ struct pse_group_info mt6639_pse_group[] = {
 			WF_PSE_TOP_MDP_PG_INFO_ADDR},
 };
 
+#if defined(_HIF_PCIE)
+struct pcie_msi_layout mt6639_pcie_msi_layout[] = {
+	[0 ... 7] = {"conn_hif_host_int", mtk_pci_interrupt, NULL},
+	[8 ... 15] = {"conn_hif_host_int", NULL, NULL},
+	[16] = {"wm_conn2ap_wdt_irq", NULL, NULL},
+	[17] = {"wf_mcu_jtag_det_eint", NULL, NULL},
+	[18] = {"pmic_eint", NULL, NULL},
+	[19] = {"ccif_bgf2ap_sw_irq", NULL, NULL},
+	[20] = {"ccif_wf2ap_sw_irq", pcie_sw_int_top_handler,
+		pcie_sw_int_thread_handler},
+	[21] = {"ccif_bgf2ap_irq_0", NULL, NULL},
+	[22] = {"ccif_bgf2ap_irq_1", NULL, NULL},
+	[23 ... 31] = {"reserved", NULL, NULL},
+};
+#endif
+
 struct BUS_INFO mt6639_bus_info = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.top_cfg_base = MT6639_TOP_CFG_BASE,
@@ -327,6 +342,10 @@ struct BUS_INFO mt6639_bus_info = {
 	.initPcieInt = mt6639InitPcieInt,
 	.pdmaStop = asicConnac3xWfdmaStop,
 	.pdmaPollingIdle = asicConnac3xWfdmaPollingAllIdle,
+	.pcie_msi_info = {
+		.prMsiLayout = mt6639_pcie_msi_layout,
+		.u4MaxMsiNum = ARRAY_SIZE(mt6639_pcie_msi_layout),
+	},
 #endif
 	.processTxInterrupt = mt6639ProcessTxInterrupt,
 	.processRxInterrupt = mt6639ProcessRxInterrupt,
@@ -345,7 +364,6 @@ struct BUS_INFO mt6639_bus_info = {
 	.DmaShdlInit = mt6639DmashdlInit,
 	.setRxRingHwAddr = mt6639SetRxRingHwAddr,
 	.wfdmaAllocRxRing = mt6639WfdmaAllocRxRing,
-	//.enablefwdlmode = mt6639EnableFwDlMode,
 	.setupMcuEmiAddr = mt6639SetupMcuEmiAddr,
 #endif /*_HIF_PCIE || _HIF_AXI */
 };
@@ -874,25 +892,24 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	uint32_t u4Addr = 0, u4WrVal = 0, u4Val = 0;
 
-	u4Addr = WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR;
-	if (enable) {
-		u4WrVal =
-			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA4_MASK |
-			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA5_MASK |
-			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA6_MASK |
-			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA7_MASK |
-			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA0_MASK |
-			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA1_MASK |
-			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA2_MASK |
-			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA15_MASK |
-			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA16_MASK |
-			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_mcu2host_sw_int_ena_MASK;
+	u4Addr = enable ? WF_WFDMA_HOST_DMA0_HOST_INT_ENA_SET_ADDR :
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_CLR_ADDR;
+	u4WrVal =
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA4_MASK |
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA5_MASK |
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA6_MASK |
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA7_MASK |
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA0_MASK |
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA1_MASK |
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA2_MASK |
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA15_MASK |
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA16_MASK |
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_mcu2host_sw_int_ena_MASK;
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-		if (prAdapter->chip_info->is_en_rro_int)
-			u4WrVal |=
-			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_subsys_int_ena_MASK;
+	if (prAdapter->chip_info->is_en_rro_int)
+		u4WrVal |=
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_subsys_int_ena_MASK;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
-	}
 
 	HAL_MCR_WR(prGlueInfo->prAdapter, u4Addr, u4WrVal);
 
@@ -906,6 +923,76 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 	       enable,
 	       u4WrVal);
 }
+
+#if defined(_HIF_PCIE)
+static void mt6639WpdmaMsiConfig(struct ADAPTER *prAdapter)
+{
+#define WFDMA_AP_MSI_NUM		8
+#if CFG_MTK_MDDP_SUPPORT
+#define WFDMA_MD_MSI_NUM		8
+#endif
+
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
+	struct pcie_msi_info *prMsiInfo = NULL;
+	uint32_t u4Value = 0;
+
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+	prMsiInfo = &prBusInfo->pcie_msi_info;
+
+	if (!prMsiInfo->fgMsiEnabled)
+		return;
+
+	/* configure MSI number */
+	HAL_MCR_RD(prAdapter, WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_ADDR,
+		&u4Value);
+	u4Value |= ((ilog2(WFDMA_AP_MSI_NUM) <<
+		WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie0_msi_num_SHFT) &
+		WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie0_msi_num_MASK);
+#if CFG_MTK_MDDP_SUPPORT
+	u4Value |= ((ilog2(WFDMA_MD_MSI_NUM) <<
+		WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie0_md_msi_num_SHFT) &
+		WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie0_md_msi_num_MASK);
+#endif
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_ADDR,
+		u4Value);
+
+	/* Set WFDMA MSI_Ring Mapping */
+	u4Value = 0x00660077;
+#if CFG_MTK_MDDP_SUPPORT
+	u4Value |= 0xAA00BB00;
+#endif
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_EXT_WRAP_CSR_MSI_INT_CFG0_ADDR,
+		u4Value);
+
+	u4Value = 0x00001100;
+#if CFG_MTK_MDDP_SUPPORT
+	u4Value |= 0x99880000;
+#endif
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_EXT_WRAP_CSR_MSI_INT_CFG1_ADDR,
+		u4Value);
+
+	u4Value = 0x0030004F;
+#if CFG_MTK_MDDP_SUPPORT
+	u4Value |= 0x00005E00;
+#endif
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_EXT_WRAP_CSR_MSI_INT_CFG2_ADDR,
+		u4Value);
+
+	u4Value = 0x00542200;
+#if CFG_MTK_MDDP_SUPPORT
+	u4Value |= 0x98000800;
+#endif
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_EXT_WRAP_CSR_MSI_INT_CFG3_ADDR,
+		u4Value);
+}
+#endif
 
 static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable, bool fgResetHif)
@@ -922,6 +1009,9 @@ static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 	mt6639ConfigIntMask(prGlueInfo, enable);
 
 	if (enable) {
+#if defined(_HIF_PCIE)
+		mt6639WpdmaMsiConfig(prGlueInfo->prAdapter);
+#endif
 		u4DmaCfgCr = asicConnac3xWfdmaCfgAddrGet(prGlueInfo, idx);
 		GloCfg.field_conn3x.tx_dma_en = 1;
 		GloCfg.field_conn3x.rx_dma_en = 1;
@@ -994,9 +1084,19 @@ static void mt6639WfdmaRxRingExtCtrl(
 #if defined(_HIF_PCIE)
 static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
+	uint32_t value = 0;
+
+	HAL_MCR_RD(prGlueInfo->prAdapter,
+		PCIE_MAC_IREG_IMASK_HOST_ADDR,
+		&value);
+	value |= PCIE_MAC_IREG_IMASK_HOST_INT_REQUEST_EN_MASK |
+		PCIE_MAC_IREG_IMASK_HOST_P_ATR_EVT_EN_MASK |
+		PCIE_MAC_IREG_IMASK_HOST_A_ATR_EVT_EN_MASK |
+		PCIE_MAC_IREG_IMASK_HOST_DMA_ERROR_EN_MASK |
+		PCIE_MAC_IREG_IMASK_HOST_DMA_END_EN_MASK;
 	HAL_MCR_WR(prGlueInfo->prAdapter,
 		PCIE_MAC_IREG_IMASK_HOST_ADDR,
-		PCIE_MAC_IREG_IMASK_HOST_DMA_END_EN_MASK);
+		value);
 }
 #endif
 

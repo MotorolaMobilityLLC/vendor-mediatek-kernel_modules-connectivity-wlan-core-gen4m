@@ -338,6 +338,7 @@ CONFIG_MTK_WIFI_NAN=y
 endif
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
+#CONFIG_MTK_WIFI_PCIE_MSI_SUPPORT=y
 endif
 
 ifneq ($(filter MT7990,$(MTK_COMBO_CHIP)),)
@@ -649,6 +650,9 @@ ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
     ccflags-y += -D_HIF_SDIO=1
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
     ccflags-y += -D_HIF_PCIE=1
+    ifeq ($(CONFIG_MTK_WIFI_PCIE_MSI_SUPPORT), y)
+        ccflags-y += -DCFG_MTK_WIFI_PCIE_MSI_SUPPORT=1
+    endif
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
     ccflags-y += -D_HIF_USB=1
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)

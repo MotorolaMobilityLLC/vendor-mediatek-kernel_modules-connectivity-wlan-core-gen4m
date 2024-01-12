@@ -7016,9 +7016,16 @@ static void exitWlan(void)
 		wlanPowerOffWifi(prGlueInfo->prAdapter);
 #endif
 
-#if (CFG_MTK_ANDROID_WMT == 0)
+#if CFG_MTK_ANDROID_WMT
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+	mtk_wcn_wmt_wlan_unreg();
+#else
+	mtk_wcn_wlan_unreg();
+#endif /* CFG_SUPPORT_CONNAC1X */
+#else
 	glBusFunOff();
-#endif
+#endif /* CFG_MTK_ANDROID_WMT */
+
 	glUnregisterBus(wlanRemove);
 #if CFG_SUPPORT_PERSIST_NETDEV
 
