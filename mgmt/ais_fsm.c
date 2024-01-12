@@ -1924,7 +1924,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 
 				/* Scan for determined SSID */
 				prScanReqMsg->ucSSIDType =
-				    SCAN_REQ_SSID_SPECIFIED;
+				    SCAN_REQ_SSID_SPECIFIED_ONLY;
 				prScanReqMsg->ucSSIDNum = 1;
 				prScanReqMsg->prSsid =
 				    &(prAisFsmInfo->rRoamingSSID);
