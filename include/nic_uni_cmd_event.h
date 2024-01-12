@@ -2707,7 +2707,7 @@ struct UNI_CMD_SET_PWR_LIMIT_PARAM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 
-	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2 config;
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT config;
 } __KAL_ATTRIB_PACKED__;
 
 /* Power limit per rate table (Tag1) */
