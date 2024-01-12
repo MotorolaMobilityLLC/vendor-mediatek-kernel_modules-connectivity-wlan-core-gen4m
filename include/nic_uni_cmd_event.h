@@ -127,6 +127,9 @@
 /* UNI_CMD for PH_TPUT */
 #define MDVT_MODULE_PH_TPUT 64
 
+/* UNI_CMD_ID_EFUSE_CONTROL usage */
+#define BUFFER_MODE_CONTENT_MAX 1024
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -3065,6 +3068,129 @@ struct UNI_CMD_ICS_SNIFFER {
 	uint8_t aucPadding1[62];
 } __KAL_ATTRIB_PACKED__;
 
+/** This structure is used for UNI_CMD_ID_EFUSE_CONTROL command (0x2D) to access EFUSE
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] aucReserved    Fixed field
+ * @param[in] aucTlvBuffer   TLVs
+ *
+ */
+struct UNI_CMD_EFUSE {
+	/* fixed field */
+	uint8_t aucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+	/**< the TLVs included in this field:
+	 *
+	 *TAG                               |ID  |structure
+	 *----------------------------------|----|-------------
+	 *UNI_CMD_EFUSE_CTRL_TAG_ACCESS     |0x01|UNI_CMD_ACCESS_EFUSE
+	 *UNI_CMD_EFUSE_CTRL_TAG_BUFFER_MODE|0x02|UNI_CMD_EFUSE_BUFFER_MODE
+	 *UNI_CMD_EFUSE_CTRL_TAG_FREE_BLOCK |0x03|UNI_CMD_EFUSE_FREE_BLOCK
+	 *UNI_CMD_EFUSE_CTRL_TAG_BUFFER_RD  |0x04|UNI_CMD_EFUSE_BUFFER_MODE_READ
+	 */
+}__KAL_ATTRIB_PACKED__;
+
+enum UNI_CMD_EFUSE_CTRL_TAG {
+	UNI_CMD_EFUSE_CTRL_TAG_ACCESS                     = 1,
+	UNI_CMD_EFUSE_CTRL_TAG_BUFFER_MODE,
+	UNI_CMD_EFUSE_CTRL_TAG_FREE_BLOCK,
+	UNI_CMD_EFUSE_CTRL_TAG_BUFFER_RD,
+	UNI_CMD_EFUSE_CTRL_TAG_MAX_NUM
+};
+
+/** This structure is used for UNI_CMD_ID_EFUSE_CONTROL command (0x2D)
+ * to do EFUSE eFuse or Buffer mode operation
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag
+ * @param[in] u2Length
+ * @param[in] ucSourceMode       0: eFuse mode; 1: Buffer mode
+ * @param[in] ucContentFormat    0: Bin Content;
+ *                               1: Whole Content;
+ *                               2: Multiple Sections
+ * @param[in] u2Count            Total number of aBinContent elements
+ *
+ */
+struct UNI_CMD_EFUSE_BUFFER_MODE {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  ucSourceMode;       /* 0: eFuse mode; 1: Buffer mode */
+	uint8_t  ucContentFormat;    /* 0: Bin Content;
+                                    1: Whole Content;
+                                    2: Multiple Sections */
+	uint16_t u2Count;            /* Total number of aBinContent elements */
+	uint8_t aucBinContent[BUFFER_MODE_CONTENT_MAX];
+}__KAL_ATTRIB_PACKED__;
+
+/** This structure is used for UNI_CMD_ID_EFUSE_CONTROL command (0x2D)
+ * to do EFUSE ACCESS operation
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag
+ * @param[in] u2Length
+ * @param[in] u4Address     for access address
+ * @param[in] u4Valid       Compatible to original CMD field.
+ *                          Currently only use bit 0
+ *                          [0]:1 -> valid, [0]:0 -> invalid
+ * @param[in] aucData[16]   get address value
+ *
+ */
+struct UNI_CMD_ACCESS_EFUSE {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint32_t u4Address; /* for access address */
+	uint32_t u4Valid;   /* Compatible to original CMD field.
+                           Currently only use bit 0
+                           [0]:1 -> valid, [0]:0 -> invalid */
+	uint8_t aucData[16];
+}__KAL_ATTRIB_PACKED__;
+
+/** This structure is used for UNI_CMD_ID_EFUSE_CONTROL command (0x2D)
+ * to do EFUSE free block operation
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag
+ * @param[in] u2Length
+ * @param[in] ucGetFreeBlock   the get free block number
+ * @param[in] ucVersion        0: original format ; 1: modified format
+ * @param[in] ucDieIndex       for 7663, 0: D die ; 1: A die
+ * @param[in] ucReserved
+ *
+ */
+struct UNI_CMD_EFUSE_FREE_BLOCK {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  ucGetFreeBlock; /* the get free block number */
+	uint8_t  ucVersion; /* 0: original format ; 1: modified format */
+	uint8_t  ucDieIndex; /* for 7663, 0: D die ; 1: A die */
+	uint8_t  ucReserved;
+}__KAL_ATTRIB_PACKED__;
+
+/** This structure is used for UNI_CMD_ID_EFUSE_CONTROL command (0x2D)
+ * to do EFUSE or Buffer mode read data operation
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag
+ * @param[in] u2Length
+ * @param[in] u1SourceMode      0: eFuse mode; 1: Buffer mode
+ * @param[in] u1ContentFormat   0: Bin Content;
+ *                              1: Whole Content; 2: Multiple Sections
+ * @param[in] u2Offset          Read Offset
+ * @param[in] u2Count           Read Total Counts
+ *
+ */
+struct UNI_CMD_EFUSE_BUFFER_MODE_READ {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  u1SourceMode;       /* 0: eFuse mode; 1: Buffer mode */
+	uint8_t  u1ContentFormat;    /* 0: Bin Content; 1: Whole Content;
+                                    2: Multiple Sections */
+	uint16_t u2Offset;           /* Read Offset */
+	uint32_t u2Count;            /* Read Total Counts */
+}__KAL_ATTRIB_PACKED__;
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -4494,6 +4620,118 @@ struct UNI_EVENT_BSS_ER_TX_MODE {
 	uint8_t aucPadding2[16];
 };
 
+/* EFUSE event Tag */
+enum ENUM_UNI_EVENT_EFUSE_TAG {
+	UNI_EVENT_EFUSE_BUFFER_MODE_READ = 0,
+	UNI_EVENT_EFUSE_FREE_BLOCK = 1,
+	UNI_EVENT_EFUSE_ACCESS = 2,
+	UNI_EVENT_EFUSE_MAX_NUM
+};
+
+/** This structure is used for UNI_EVENT_ID_EFUSE event (0x48)
+ * to do EFUSE related operation
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] aucReserved[4]
+ * @param[in] aucTlvBuffer
+ *
+ */
+struct UNI_EVENT_EFUSE_CONTROL {
+	/* fixed field */
+	uint8_t aucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	*TAG                             | ID  |structure
+	*-------------                   | --- |-------------
+	*UNI_EVENT_EFUSE_BUFFER_MODE_READ| 0x0 |UNI_EVENT_EFUSE_BUFFER_MODE_READ_T
+	*UNI_EVENT_EFUSE_FREE_BLOCK      | 0x1 |UNI_EVENT_EFUSE_FREE_BLOCK_T
+	*UNI_EVENT_EFUSE_ACCESS          | 0x2 |UNI_EVENT_EFUSE_ACCESS_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+/**
+ * This structure is used for UNI_EVENT_EFUSE_BUFFER_MODE_READ tag(0x00)
+ * of UNI_EVENT_ID_EFUSE_CONTROL Event (0x48)
+ * to get Buffer mode read data
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag                should be 0x00
+ * @param[in] u2Length             the length of this TLV
+ * @param[in] u1SourceMode         0: eFuse mode; 1: Buffer mode
+ * @param[in] u1ContentFormat      0: Bin Content; 1: Whole Content;
+ *                                 2: Multiple Sections
+ * @param[in] u2Offset             Read Offset
+ * @param[in] u2Count              Read Total Counts
+ * @param[out] BinContent[];       the content of read
+ */
+struct UNI_EVENT_EFUSE_BUFFER_MODE_READ {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  u1SourceMode;       /* 0: eFuse mode; 1: Buffer mode */
+	uint8_t  u1ContentFormat;    /* 0: Bin Content;
+                                    1: Whole Content;
+                                    2: Multiple Sections */
+	uint16_t u2Offset;           /* Read Offset */
+	uint32_t u2Count;            /* Read Total Counts */
+	uint8_t  BinContent[];       /* The content of read */
+} __KAL_ATTRIB_PACKED__;
+
+/**
+ * This structure is used for UNI_EVENT_EFUSE_FREE_BLOCK
+ * tag(0x01) of UNI_EVENT_ID_EFUSE_CONTROL Event (0x48)
+ * to free EFUSE memory.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag                should be 0x01
+ * @param[in] u2Length             the length of this TLV
+ * @param[in] ucGetFreeBlock       the get back free block
+ * @param[in] ucVersion            0: original format;
+ *                                 1: modified format
+ * @param[in] ucTotalBlockNum      Total Block
+ * @param[in] ucReserved
+ */
+struct UNI_EVENT_EFUSE_FREE_BLOCK {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  ucGetFreeBlock;
+	uint8_t  ucVersion;        /* 0: original format ; 1: modified format */
+	uint8_t  ucTotalBlockNum;  /* Total Block */
+	uint8_t  ucReserved;
+} __KAL_ATTRIB_PACKED__;
+
+/**
+ * This structure is used for UNI_EVENT_EFUSE_ACCESS tag(0x02) of
+ * UNI_EVENT_ID_EFUSE_CONTROL Event (0x48)
+ * to access EFUSE info.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag                should be 0x01
+ * @param[in] u2Length             the length of this TLV
+ * @param[in] u4EventVer           event version
+ * @param[in] u4Address            read address
+ * @param[in] u4Valid              [0]:1 -> valid, [0]:0 -> invalid
+ * @param[in] u4Size               get size
+ * @param[in] u4MagicNum           magic number
+ * @param[in] u4Type               Reserved
+ * @param[in] u4Reserved[4]        Reserved
+ * @param[in] aucData[32]          get data
+ */
+struct UNI_EVENT_EFUSE_ACCESS {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint32_t u4EventVer;
+	uint32_t u4Address;
+	uint32_t u4Valid;       /* Compatible to original CMD field.
+                              Currently only use bit 0
+                              [0]:1 -> valid, [0]:0 -> invalid */
+	uint32_t u4Size;
+	uint32_t u4MagicNum;
+	uint32_t u4Type;        /* Reserved */
+	uint32_t u4Reserved[4]; /* Reserved */
+	uint8_t aucData[32];
+} __KAL_ATTRIB_PACKED__;
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -4773,6 +5011,8 @@ uint32_t nicUniCmdTxPowerCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdThermalProtect(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdEfuseBufferMode(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************
  *                   Event
@@ -4829,6 +5069,8 @@ void nicUniEventBugReport(IN struct ADAPTER
 void nicUniEventRfTestHandler(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventTxPowerInfo(IN struct ADAPTER
+	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniEventEfuseControl(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
 /*******************************************************************************

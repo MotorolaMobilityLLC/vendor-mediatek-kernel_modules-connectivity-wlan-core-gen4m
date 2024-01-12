@@ -179,6 +179,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
 	[EXT_CMD_ID_TX_POWER_FEATURE_CTRL] = nicUniCmdTxPowerCtrl,
 	[EXT_CMD_ID_THERMAL_PROTECT] = nicUniCmdThermalProtect,
 	[EXT_CMD_ID_RF_TEST] = nicUniExtCmdTestmodeCtrl,
+	[EXT_CMD_ID_EFUSE_BUFFER_MODE] = nicUniCmdEfuseBufferMode,
 };
 
 static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
@@ -4976,6 +4977,44 @@ uint32_t nicUniCmdThermalProtect(struct ADAPTER *ad,
 #endif
 }
 
+uint32_t nicUniCmdEfuseBufferMode(struct ADAPTER *ad,
+	struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_EFUSE_BUFFER_MODE_CONNAC_T *cmd;
+	struct UNI_CMD_EFUSE *uni_cmd;
+	struct UNI_CMD_EFUSE_BUFFER_MODE *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_EFUSE) +
+		sizeof(struct UNI_CMD_EFUSE_BUFFER_MODE);
+
+	if (info->ucCID != CMD_ID_LAYER_0_EXT_MAGIC_NUM ||
+		info->ucExtCID != EXT_CMD_ID_EFUSE_BUFFER_MODE)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	info->fgSetQuery = TRUE;
+	info->fgNeedResp = TRUE;
+
+	cmd = (struct CMD_EFUSE_BUFFER_MODE_CONNAC_T *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_EFUSE_CONTROL, max_cmd_len,
+		nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_EFUSE *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_EFUSE_BUFFER_MODE *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_EFUSE_CTRL_TAG_BUFFER_MODE;
+	tag->u2Length = sizeof(*tag);
+	tag->ucSourceMode = cmd->ucSourceMode;
+	tag->ucContentFormat = cmd->ucContentFormat;
+	tag->u2Count = cmd->u2Count;
+	kalMemCopy(tag->aucBinContent, cmd->aBinContent,
+		BUFFER_MODE_CONTENT_MAX);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+	return WLAN_STATUS_SUCCESS;
+}
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -5669,6 +5708,12 @@ void nicUniEventTxPowerInfo(IN struct ADAPTER
 
 	nicCmdEventQueryTxPowerInfo(prAdapter, prCmdInfo, tag->aucBuffer);
 #endif
+}
+
+void nicUniEventEfuseControl(IN struct ADAPTER
+	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	//TODO: Support Unify command
 }
 
 /*******************************************************************************

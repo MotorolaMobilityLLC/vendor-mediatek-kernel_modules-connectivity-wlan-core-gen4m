@@ -375,6 +375,11 @@ extern void update_driver_loaded_status(uint8_t loaded);
 #define IW_AUTH_CIPHER_GCMP128  0x00000040
 #define IW_AUTH_CIPHER_GCMP256  0x00000080
 
+/* EFUSE Support */
+#define LOAD_EFUSE 0
+#define LOAD_EEPROM_BIN 1
+#define LOAD_AUTO 2
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -1389,7 +1394,9 @@ uint32_t wlanDownloadBufferBin(struct ADAPTER *prAdapter);
 
 uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 				     *prAdapter);
-
+#if (CFG_SUPPORT_CONNAC3X == 1)
+uint32_t wlanConnac3XDownloadBufferBin(struct ADAPTER *prAdapter);
+#endif
 /*******************************************************************************
  *			 E X T E R N A L   F U N C T I O N S / V A R I A B L E
  *******************************************************************************

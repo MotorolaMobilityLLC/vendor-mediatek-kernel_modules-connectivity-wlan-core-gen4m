@@ -407,7 +407,7 @@ struct mt66xx_chip_info mt66xx_chip_info_bellwether = {
 #if CFG_ENABLE_FW_DOWNLOAD
 	.asicEnableFWDownload = NULL,
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
-	.downloadBufferBin = NULL,
+	.downloadBufferBin = wlanConnac3XDownloadBufferBin,
 	.is_support_hw_amsdu = TRUE,
 	.is_support_asic_lp = TRUE,
 	.asicWfdmaReInit = asicConnac3xWfdmaReInit,
