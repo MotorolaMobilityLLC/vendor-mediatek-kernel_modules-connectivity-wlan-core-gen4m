@@ -485,8 +485,8 @@ int32_t mddpGetMdLlsStats(struct ADAPTER *prAdapter)
 		return 0;
 	}
 
-	for (i = 0; i < MAX_BSSID_NUM; ++i) {
-		for (j = 0; j < STATS_LLS_WIFI_AC_MAX; ++j) {
+	for (i = 0; i < BSS_NUM; ++i) {
+		for (j = 0; j < AC_NUM; ++j) {
 			prAdapter->aprBssInfo[i]->u4RxMpduAc[j] +=
 				isMdResetSinceLastQuery ?
 				(cur_lls_stats.wmm_ac_stat_rx_mpdu[i][j] +
@@ -498,7 +498,7 @@ int32_t mddpGetMdLlsStats(struct ADAPTER *prAdapter)
 		}
 	}
 
-	for (i = 0; i < CFG_STA_REC_NUM; ++i) {
+	for (i = 0; i < STA_NUM; ++i) {
 		struct rate_stat_rx_mpdu_t *cur, *base, *todo;
 
 		cur = &cur_lls_stats.rate_stat_rx_mpdu[i];
@@ -626,8 +626,8 @@ static void save_mddp_lls_stats(void)
 		return;
 	}
 
-	for (i = 0; i < MAX_BSSID_NUM; ++i) {
-		for (j = 0; j < STATS_LLS_WIFI_AC_MAX; ++j) {
+	for (i = 0; i < BSS_NUM; ++i) {
+		for (j = 0; j < AC_NUM; ++j) {
 			todo_lls_stats.wmm_ac_stat_rx_mpdu[i][j] +=
 				isMdResetSinceLastQuery ?
 				cur_lls_stats.wmm_ac_stat_rx_mpdu[i][j] :
@@ -636,7 +636,7 @@ static void save_mddp_lls_stats(void)
 		}
 	}
 
-	for (i = 0; i < CFG_STA_REC_NUM; ++i) {
+	for (i = 0; i < STA_NUM; ++i) {
 		struct rate_stat_rx_mpdu_t *cur, *base, *todo;
 
 		cur = &cur_lls_stats.rate_stat_rx_mpdu[i];
