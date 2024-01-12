@@ -492,6 +492,9 @@ u_int8_t
 p2pFuncNeedWaitRsp(IN struct ADAPTER *prAdapter,
 		IN enum ENUM_P2P_CONNECT_STATE eConnState);
 
+u_int8_t
+p2pFuncNeedForceSleep(IN struct ADAPTER *prAdapter);
+
 void
 p2pFunClearAllTxReq(IN struct ADAPTER *prAdapter,
 		IN struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxInfo);
