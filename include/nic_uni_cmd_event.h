@@ -755,7 +755,15 @@ struct UNI_CMD_BSSINFO_MLD {
 	 * Max simultaneous links
 	 */
 	uint8_t  ucMaxSimuLinks;
+	/*
+	 * hybrid mlo enabled
+	 */
+	uint8_t  ucHmloEnabled;
 
+	/*
+	 * for 4 byte alignment
+	 */
+	uint8_t  aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo Max Idle Period element (Tag 0x1D) */
