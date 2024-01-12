@@ -10784,6 +10784,11 @@ wlanPktTxDone(struct ADAPTER *prAdapter,
 			rTxDoneStatus,
 			prMsduInfo->ucTxSeqNum);
 
+#if (CFG_SUPPORT_CONN_LOG == 1)
+	connLogPkt(prAdapter,
+		prMsduInfo,
+		rTxDoneStatus);
+#endif
 #if CFG_ENABLE_WIFI_DIRECT
 	if (prMsduInfo->ucPktType == ENUM_PKT_1X)
 		p2pRoleFsmNotifyEapolTxStatus(prAdapter,
