@@ -1414,9 +1414,8 @@ nanElemContainerAttrHandler(
 				* for STA-REC params
 				*/
 			}
-#endif
-
 			break;
+#endif
 		default:
 			break;
 		}
