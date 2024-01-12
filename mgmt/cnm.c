@@ -2264,11 +2264,11 @@ void cnmDbdcOpModeChangeDoneCallback(
 	     ucBssLoopIndex <= prAdapter->ucHwBssIdNum;
 	     ucBssLoopIndex++) {
 
-		if (g_rDbdcInfo.eBssOpModeState[ucBssIndex] ==
+		if (g_rDbdcInfo.eBssOpModeState[ucBssLoopIndex] ==
 		    ENUM_OPMODE_STATE_WAIT)
 			return;
 
-		if (g_rDbdcInfo.eBssOpModeState[ucBssIndex] ==
+		if (g_rDbdcInfo.eBssOpModeState[ucBssLoopIndex] ==
 		    ENUM_OPMODE_STATE_FAIL &&
 		    fgIsAllActionFrameSuccess == TRUE) {
 			/* Some OP mode change FAIL */
@@ -2472,7 +2472,8 @@ cnmDbdcFsmEntryFunc_DISABLE_IDLE(IN struct ADAPTER *prAdapter)
 static void
 cnmDbdcFsmEntryFunc_WAIT_PROTOCOL_ENABLE(IN struct ADAPTER *prAdapter)
 {
-	cnmDBDCFsmActionReqPeivilegeLock();
+	if (!cnmDBDCIsReqPeivilegeLock())
+		cnmDBDCFsmActionReqPeivilegeLock();
 }
 
 static void
@@ -2502,6 +2503,11 @@ cnmDbdcFsmEntryFunc_ENABLE_GUARD(IN struct ADAPTER *prAdapter)
 static void
 cnmDbdcFsmEntryFunc_WAIT_HW_DISABLE(IN struct ADAPTER *prAdapter)
 {
+#if (CFG_SUPPORT_DBDC_NO_BLOCKING_OPMODE)
+	if (!cnmDBDCIsReqPeivilegeLock())
+		cnmDBDCFsmActionReqPeivilegeLock();
+#endif
+
 	cnmUpdateDbdcSetting(prAdapter, FALSE);
 }
 
@@ -2546,10 +2552,15 @@ cnmDbdcFsmEventHandler_DISABLE_IDLE(
 			break;
 
 		case ENUM_DBDC_PROTOCOL_STATUS_DONE_FAIL:
-			/* Should NOT FAIL, not recover anything now.
-			 * Stop enable DBDC
-			 */
+#if (CFG_SUPPORT_DBDC_NO_BLOCKING_OPMODE)
+			log_dbg(CNM, WARN,
+				"[DBDC] OPMode Fail, ForceEn at state %d\n",
+				g_rDbdcInfo.eDbdcFsmCurrState);
+			g_rDbdcInfo.eDbdcFsmNextState =
+			ENUM_DBDC_FSM_STATE_WAIT_HW_ENABLE;
 			break;
+#endif
+
 		default:
 			break;
 		}
@@ -2595,9 +2606,18 @@ cnmDbdcFsmEventHandler_WAIT_PROTOCOL_ENABLE(
 		break;
 
 	case DBDC_FSM_EVENT_ACTION_FRAME_SOME_FAIL:
+#if (CFG_SUPPORT_DBDC_NO_BLOCKING_OPMODE)
+		g_rDbdcInfo.eDbdcFsmNextState =
+		ENUM_DBDC_FSM_STATE_WAIT_HW_ENABLE;
+		log_dbg(CNM, WARN,
+			"[DBDC] OPMode Fail, ForceEn at state %d\n",
+			g_rDbdcInfo.eDbdcFsmCurrState);
+#else
 		/* Not recover anything. Stop Enable DBDC */
 		g_rDbdcInfo.eDbdcFsmNextState =
 		ENUM_DBDC_FSM_STATE_DISABLE_IDLE;
+#endif
+
 		break;
 
 	case DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE:
@@ -2809,6 +2829,13 @@ cnmDbdcFsmEventHandler_DISABLE_GUARD(
 						__HW_ENABLE__;
 					break;
 				case ENUM_DBDC_PROTOCOL_STATUS_DONE_FAIL:
+#if (CFG_SUPPORT_DBDC_NO_BLOCKING_OPMODE)
+					g_rDbdcInfo.eDbdcFsmNextState =
+						__HW_ENABLE__;
+					log_dbg(CNM, WARN,
+						"[DBDC] OPMode Fail, ForceEn at state %d\n",
+						g_rDbdcInfo.eDbdcFsmCurrState);
+#else
 					if (cnmDbdcOpmodeChangeAndWait(
 						prAdapter, FALSE)
 						== __STAT_WAIT__)
@@ -2817,6 +2844,7 @@ cnmDbdcFsmEventHandler_DISABLE_GUARD(
 					else
 						g_rDbdcInfo.eDbdcFsmNextState =
 							__DISABLE__;
+#endif
 					break;
 				default:
 					break;
@@ -2881,11 +2909,41 @@ cnmDbdcFsmEventHandler_WAIT_PROTOCOL_DISABLE(
 		DBDC_FSM_MSG_WRONG_EVT(eEvent);
 		break;
 
+#define __PRO_ENABLE__	ENUM_DBDC_FSM_STATE_WAIT_PROTOCOL_ENABLE
+
 	case DBDC_FSM_EVENT_ACTION_FRAME_ALL_SUCCESS:
 	case DBDC_FSM_EVENT_ACTION_FRAME_SOME_FAIL:
-		g_rDbdcInfo.eDbdcFsmNextState =
-		ENUM_DBDC_FSM_STATE_DISABLE_IDLE;
+		if (cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL)) {
+			switch (cnmDbdcOpmodeChangeAndWait(prAdapter, TRUE)) {
+			case ENUM_DBDC_PROTOCOL_STATUS_WAIT:
+				g_rDbdcInfo.eDbdcFsmNextState =
+					__PRO_ENABLE__;
+				break;
+			case ENUM_DBDC_PROTOCOL_STATUS_DONE_SUCCESS:
+				g_rDbdcInfo.eDbdcFsmNextState =
+					ENUM_DBDC_FSM_STATE_WAIT_HW_ENABLE;
+				break;
+			case ENUM_DBDC_PROTOCOL_STATUS_DONE_FAIL:
+#if (CFG_SUPPORT_DBDC_NO_BLOCKING_OPMODE)
+				g_rDbdcInfo.eDbdcFsmNextState =
+					ENUM_DBDC_FSM_STATE_WAIT_HW_ENABLE;
+				log_dbg(CNM, WARN,
+					"[DBDC] OPMode Fail, ForceEn at state %d\n",
+					g_rDbdcInfo.eDbdcFsmCurrState);
+#else
+				g_rDbdcInfo.eDbdcFsmNextState =
+					ENUM_DBDC_FSM_STATE_DISABLE_IDLE;
+#endif
+				break;
+			default:
+				break;
+			}
+		} else
+			g_rDbdcInfo.eDbdcFsmNextState =
+				ENUM_DBDC_FSM_STATE_DISABLE_IDLE;
 		break;
+
+#undef __PRO_ENABLE__
 
 	case DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE:
 		/* ABNORMAL CASE*/
@@ -2939,13 +2997,15 @@ uint8_t cnmGetDbdcBwCapability(IN struct ADAPTER
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief    Run-time check if DBDC Need enable or update guard time.
+ *           The WmmQ is set to the correct DBDC band before connetcting.
+ *           It could make sure the TxPath is correct after connected.
  *
  * @param (none)
  *
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void cnmDbdcEnableDecision(
+void cnmDbdcPreConnectionEnableDecision(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t		ucChangedBssIndex,
 	IN enum ENUM_BAND	eRfBand,
@@ -3000,20 +3060,23 @@ void cnmDbdcEnableDecision(
 
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief    Run-time check if DBDC Need disable or update guard time.
+ * @brief    Run-time check if we need enable/disable DBDC or update guard time.
  *
  * @param (none)
  *
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void cnmDbdcDisableDecision(IN struct ADAPTER
+void cnmDbdcRuntimeCheckDecision(IN struct ADAPTER
 			    *prAdapter,
 			    IN uint8_t ucChangedBssIndex)
 {
+	bool fgIsAgConcurrent;
+
 	log_dbg(CNM, INFO, "[DBDC Debug] BSS %u",
 	       ucChangedBssIndex);
 
+	/* Only allow runtime switch for dynamic DBDC */
 	if (prAdapter->rWifiVar.eDbdcMode !=
 	    ENUM_DBDC_MODE_DYNAMIC) {
 		log_dbg(CNM, INFO, "[DBDC Debug] DBDC Mode %u Return",
@@ -3021,37 +3084,54 @@ void cnmDbdcDisableDecision(IN struct ADAPTER
 		return;
 	}
 
-	if (!prAdapter->rWifiVar.fgDbDcModeEn) {
-		if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer) &&
-		    g_rDbdcInfo.eDdbcGuardTimerType ==
-		    ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME) {
-			/* update timer for connection retry */
-			log_dbg(CNM, INFO, "[DBDC] DBDC guard time extend\n");
+	/* AGConcurrent status sync with DBDC satus. Do nothing. */
+	fgIsAgConcurrent = cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL);
+	if (fgIsAgConcurrent == prAdapter->rWifiVar.fgDbDcModeEn)
+		return;
+
+	/* Only need to extend in DISABLE_GUARD for connection retry.
+	 * If AGConcurrent status changes in ENABLE_GUARD, the FSM
+	 * will go through DISABLE_GUARD state. It could make sure
+	 * the interval of successive OPChange is larger than 4 sec
+	 * (DBDC_SWITCH_GUARD_TIME).
+	 */
+	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer) &&
+		g_rDbdcInfo.eDdbcGuardTimerType ==
+		ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME) {
+
+		if (g_rDbdcInfo.eDbdcFsmCurrState ==
+		ENUM_DBDC_FSM_STATE_DISABLE_GUARD) {
+			log_dbg(CNM, INFO,
+				"[DBDC] DBDC guard time extend, state %d\n",
+				g_rDbdcInfo.eDbdcFsmCurrState);
 			cnmTimerStopTimer(prAdapter,
 					  &g_rDbdcInfo.rDbdcGuardTimer);
 			cnmTimerStartTimer(prAdapter,
 					   &g_rDbdcInfo.rDbdcGuardTimer,
 					   DBDC_SWITCH_GUARD_TIME);
-		}
+		} else
+			log_dbg(CNM, INFO,
+				"[DBDC] DBDC guard time, state %d\n",
+				g_rDbdcInfo.eDbdcFsmCurrState);
 		return;
 	}
 
+	/* After COUNT_DOWN timeout in ENABLE_IDLE state, FSM will check
+	 * AGConcurrent status agin.
+	 */
 	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer) &&
 	    g_rDbdcInfo.eDdbcGuardTimerType ==
 	    ENUM_DBDC_GUARD_TIMER_DISABLE_COUNT_DOWN) {
 		log_dbg(CNM, INFO,
-		       "[DBDC Debug] Disable Countdown Return");
+		       "[DBDC Debug] Disable Countdown Return, state %d\n",
+		       g_rDbdcInfo.eDbdcFsmCurrState);
 		return;
 	}
 
-	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer) &&
-	    g_rDbdcInfo.eDdbcGuardTimerType ==
-	    ENUM_DBDC_GUARD_TIMER_SWITCH_GUARD_TIME) {
-		log_dbg(CNM, INFO, "[DBDC Debug] Guard Time Return");
-		return;
-	}
-
-	if (!cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL))
+	if (cnmDbdcIsAGConcurrent(prAdapter, BAND_NULL)) {
+		DBDC_FSM_EVENT_HANDLER(prAdapter,
+				       DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG);
+	} else
 		DBDC_FSM_EVENT_HANDLER(prAdapter,
 				       DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG);
 }
@@ -3114,8 +3194,6 @@ void cnmDbdcEventHwSwitchDone(IN struct ADAPTER
 			      IN struct WIFI_EVENT *prEvent)
 {
 	struct CMD_INFO *prCmdInfo;
-	uint8_t ucBssIndex;
-	struct BSS_INFO *prBssInfo;
 	u_int8_t fgDbdcEn;
 
 	/* command response handling */
@@ -3142,6 +3220,7 @@ void cnmDbdcEventHwSwitchDone(IN struct ADAPTER
 		   ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE) {
 		fgDbdcEn = FALSE;
 	} else if (g_rDbdcInfo.fgHasSentCmd == TRUE) {
+		/* The "set_dbdc" test cmd may confuse original FSM */
 		log_dbg(CNM, INFO,
 				"[DBDC] switch event from cmd happen in state %u\n",
 				g_rDbdcInfo.eDbdcFsmCurrState);
@@ -3157,12 +3236,6 @@ void cnmDbdcEventHwSwitchDone(IN struct ADAPTER
 
 	/* Change DBDC state */
 	prAdapter->rWifiVar.fgDbDcModeEn = fgDbdcEn;
-	for (ucBssIndex = 0;
-	     ucBssIndex <= prAdapter->ucHwBssIdNum;
-	     ucBssIndex++) {
-		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
-	}
-
 	DBDC_FSM_EVENT_HANDLER(prAdapter,
 			       DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE);
 }

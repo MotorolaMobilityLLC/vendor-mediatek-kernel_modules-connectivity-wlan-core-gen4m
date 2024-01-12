@@ -2040,6 +2040,9 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 			prGlueInfo->prP2PInfo[role_idx]->chandef);
 		prGlueInfo->prP2PInfo[role_idx]->chandef = NULL;
 	}
+
+	/* Check DBDC status */
+	cnmDbdcRuntimeCheckDecision(prAdapter, prBssInfo->ucBssIndex);
 } /* p2pFuncDfsSwitchCh */
 
 u_int8_t p2pFuncCheckWeatherRadarBand(
