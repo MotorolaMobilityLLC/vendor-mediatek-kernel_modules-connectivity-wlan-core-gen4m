@@ -108,6 +108,7 @@ ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/defconfig),)
     include $(CFG_DIR)/${MTK_COMBO_CHIP}/defconfig
 endif
 
+
 ifneq ($(CONFIG_MTK_EMI),)
 ccflags-y += -DCONFIG_WLAN_MTK_EMI=1
 endif
@@ -121,10 +122,26 @@ WLAN_CHIP_ID=$(word 1, $(MTK_COMBO_CHIP))
 endif
 
 ccflags-y += -DCFG_SUPPORT_DEBUG_FS=0
-ccflags-y += -DWLAN_INCLUDE_PROC
 ccflags-y += -DCFG_SUPPORT_AGPS_ASSIST=0
+ifneq ($(CONFIG_BUILD_NONE_STA), y)
+ccflags-y += -DWLAN_INCLUDE_PROC
 ccflags-y += -DCFG_SUPPORT_TSF_USING_BOOTTIME=1
 ccflags-y += -DARP_MONITER_ENABLE=1
+ccflags-y += -DCFG_SUPPORT_PASSPOINT=1
+ccflags-y += -DCFG_HS20_DEBUG=1
+endif
+
+# ---------------------------------------------------
+# none_sta disable unused Configs
+# ---------------------------------------------------
+ifeq ($(CONFIG_BUILD_NONE_STA), y)
+CONFIG_MTK_WIFI_11BE_MLO_SUPPORT=n
+CONFIG_MTK_WIFI_TWT_SUPPORT=n
+ccflags-y += -DCFGDBG_DISABLE_ALL_LOG=1
+ccflags-y += -DCFG_SUPPORT_HE_ER=0
+TARGET_BUILD_VARIANT = user
+endif
+
 ccflags-y += -Werror $(call cc-disable-warning, unused-but-set-variable)
 #ccflags-y:=$(filter-out -U$(WLAN_CHIP_ID),$(ccflags-y))
 #ccflags-y += -DLINUX -D$(WLAN_CHIP_ID)
@@ -921,10 +938,14 @@ else
 endif
 
 # Disable ASSERT() for user load, enable for others
-ifneq ($(TARGET_BUILD_VARIANT),user)
-    ccflags-y += -DBUILD_QA_DBG=1
+ifneq ($(CONFIG_BUILD_NONE_STA), y)
+    ifneq ($(TARGET_BUILD_VARIANT),user)
+        ccflags-y += -DBUILD_QA_DBG=1
+    else
+        ccflags-y += -DBUILD_QA_DBG=0
+    endif
 else
-    ccflags-y += -DBUILD_QA_DBG=0
+     ccflags-y += -DBUILD_QA_DBG=0
 endif
 
 ifeq ($(CONFIG_MTK_COMBO_WIFI),y)
@@ -981,9 +1002,6 @@ VERSION := $(shell echo "$$(( $X * 65536 + $Y * 256 + $Z))" )
 ccflags-y += -DCFG_CFG80211_VERSION=$(VERSION)
 $(info DCFG_CFG80211_VERSION=$(VERSION))
 endif
-
-ccflags-y += -DCFG_SUPPORT_PASSPOINT=1
-ccflags-y += -DCFG_HS20_DEBUG=1
 
 MTK_MET_PROFILING_SUPPORT = yes
 ifeq ($(MTK_MET_PROFILING_SUPPORT), yes)

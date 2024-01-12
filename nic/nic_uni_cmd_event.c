@@ -814,8 +814,9 @@ uint32_t nicUniCmdBssInfoMld(struct ADAPTER *ad,
 {
 	struct UNI_CMD_BSSINFO_MLD *tag = (struct UNI_CMD_BSSINFO_MLD *)buf;
 	struct BSS_INFO *bss = GET_BSS_INFO_BY_INDEX(ad, ucBssIndex);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prMldBssInfo = mldBssGetByBss(ad, bss);
-
+#endif
 	if (!bss) {
 		DBGLOG(INIT, WARN, "Bss=%d not found", ucBssIndex);
 		return 0;
@@ -3703,12 +3704,15 @@ uint32_t nicUniCmdStaRecTagMlrInfo(struct ADAPTER *ad,
 	struct STA_RECORD *prStaRec = cnmGetStaRecByIndex(ad, cmd->ucStaIndex);
 	struct UNI_CMD_STAREC_MLR_INFO *tag =
 		(struct UNI_CMD_STAREC_MLR_INFO *)buf;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_STA_RECORD *mld_starec = mldStarecGetByStarec(ad, prStaRec);
+
 
 	if (mld_starec && mld_starec->rStarecList.u4NumElem > 1) {
 		DBGLOG(REQ, INFO, "MLR unicmd - This is a MLD starec\n");
 		return 0;
 	}
+#endif
 
 	tag->u2Tag = UNI_CMD_STAREC_TAG_MLR_INFO;
 	tag->u2Length = sizeof(struct UNI_CMD_STAREC_MLR_INFO);

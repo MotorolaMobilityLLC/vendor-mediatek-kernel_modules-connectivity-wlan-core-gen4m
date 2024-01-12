@@ -1068,7 +1068,7 @@ struct QUE *qmDetermineStaTxQueue(IN struct ADAPTER *prAdapter,
 	}
 
 	*pucTC = ucTC;
-#if CFG_ENABLE_PER_STA_STATISTICS
+#if CFG_ENABLE_PKT_LIFETIME_PROFILE && CFG_ENABLE_PER_STA_STATISTICS
 	/*
 	 * Record how many packages enqueue this STA
 	 * to TX during statistic intervals
@@ -1892,7 +1892,7 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 				QUEUE_INSERT_TAIL(prQue,
 					(struct QUE_ENTRY *)
 					prDequeuedPkt);
-#if CFG_ENABLE_PER_STA_STATISTICS
+#if CFG_ENABLE_PER_STA_STATISTICS && CFG_ENABLE_PKT_LIFETIME_PROFILE
 				prStaRec->u4DeqeueuCounter++;
 #endif
 				prQM->u4DequeueCounter++;

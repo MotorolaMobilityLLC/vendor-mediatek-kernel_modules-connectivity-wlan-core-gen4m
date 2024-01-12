@@ -6085,7 +6085,7 @@ wlanQueryStaStatistics(IN struct ADAPTER *prAdapter,
 
 		prQueryStaStatistics->u4Flag |= BIT(0);
 
-#if CFG_ENABLE_PER_STA_STATISTICS
+#if CFG_ENABLE_PER_STA_STATISTICS && CFG_ENABLE_PKT_LIFETIME_PROFILE
 		/* 4 3. Get driver statistics */
 		prQueryStaStatistics->u4TxTotalCount =
 			prStaRec->u4TotalTxPktsNumber;
@@ -6139,16 +6139,16 @@ wlanQueryStaStatistics(IN struct ADAPTER *prAdapter,
 				ucIdx] = prQM->au4QmTcWantedPageCounter[ucIdx];
 			prQM->au4QmTcWantedPageCounter[ucIdx] = 0;
 		}
-
+#if CFG_ENABLE_PER_STA_STATISTICS && CFG_ENABLE_PKT_LIFETIME_PROFILE
 		prQueryStaStatistics->u4EnqueueCounter =
 			prQM->u4EnqueueCounter;
 		prQueryStaStatistics->u4EnqueueStaCounter =
 			prStaRec->u4EnqueueCounter;
-
-		prQueryStaStatistics->u4DequeueCounter =
-			prQM->u4DequeueCounter;
 		prQueryStaStatistics->u4DequeueStaCounter =
 			prStaRec->u4DeqeueuCounter;
+#endif
+		prQueryStaStatistics->u4DequeueCounter =
+			prQM->u4DequeueCounter;
 
 		prQueryStaStatistics->IsrCnt =
 			prAdapter->prGlueInfo->IsrCnt;
@@ -6168,18 +6168,20 @@ wlanQueryStaStatistics(IN struct ADAPTER *prAdapter,
 
 		/* 4 4.1 Reset statistics */
 		if (prQueryStaStatistics->ucReadClear) {
+#if CFG_ENABLE_PER_STA_STATISTICS && CFG_ENABLE_PKT_LIFETIME_PROFILE
 			prStaRec->u4ThresholdCounter = 0;
 			prStaRec->u4TotalTxPktsNumber = 0;
 			prStaRec->u4TotalTxPktsHifTxTime = 0;
-
 			prStaRec->u4TotalTxPktsTime = 0;
 			prStaRec->u4TotalRxPktsNumber = 0;
 			prStaRec->u4MaxTxPktsTime = 0;
 			prStaRec->u4MaxTxPktsHifTime = 0;
-			prQM->u4EnqueueCounter = 0;
-			prQM->u4DequeueCounter = 0;
+
 			prStaRec->u4EnqueueCounter = 0;
 			prStaRec->u4DeqeueuCounter = 0;
+#endif
+			prQM->u4EnqueueCounter = 0;
+			prQM->u4DequeueCounter = 0;
 
 			prAdapter->prGlueInfo->IsrCnt = 0;
 			prAdapter->prGlueInfo->IsrPassCnt = 0;
@@ -10246,7 +10248,7 @@ static void halAddDriverLatencyCount(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-#if CFG_ENABLE_PER_STA_STATISTICS
+#if CFG_ENABLE_PKT_LIFETIME_PROFILE && CFG_ENABLE_PER_STA_STATISTICS
 void wlanTxLifetimeUpdateStaStats(IN struct ADAPTER
 				  *prAdapter, IN struct MSDU_INFO *prMsduInfo)
 {
@@ -10307,6 +10309,7 @@ void wlanTxLifetimeUpdateStaStats(IN struct ADAPTER
 }
 #endif
 
+#if CFG_ENABLE_PKT_LIFETIME_PROFILE
 u_int8_t wlanTxLifetimeIsProfilingEnabled(
 	IN struct ADAPTER *prAdapter)
 {
@@ -10445,7 +10448,7 @@ void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 				USEC_PER_SEC);
 #endif
 
-#if CFG_ENABLE_PER_STA_STATISTICS
+#if CFG_ENABLE_PKT_LIFETIME_PROFILE && CFG_ENABLE_PER_STA_STATISTICS
 			wlanTxLifetimeUpdateStaStats(prAdapter, prMsduInfo);
 #endif
 		}
@@ -10454,6 +10457,7 @@ void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 		break;
 	}
 }
+#endif
 
 void wlanTxProfilingTagPacket(IN struct ADAPTER *prAdapter,
 			      IN void *prPacket,
@@ -10500,8 +10504,9 @@ void wlanTxProfilingTagMsdu(IN struct ADAPTER *prAdapter,
 			    IN struct MSDU_INFO *prMsduInfo,
 			    IN enum ENUM_TX_PROFILING_TAG eTag)
 {
+#if CFG_ENABLE_PKT_LIFETIME_PROFILE
 	wlanTxLifetimeTagPacket(prAdapter, prMsduInfo, eTag);
-
+#endif
 	if (prMsduInfo->eSrc == TX_PACKET_OS) {
 		/* only profile packets from OS */
 		wlanTxProfilingTagPacket(prAdapter, prMsduInfo->prPacket, eTag);
@@ -10591,7 +10596,9 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 	      IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	OS_SYSTIME rCurrent = kalGetTimeTick();
+#if CFG_ENABLE_PKT_LIFETIME_PROFILE
 	struct PKT_PROFILE *prPktProfile = &prMsduInfo->rPktProfile;
+#endif
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
 	struct WLAN_MAC_HEADER *prWlanHeader = NULL;
 	void *pvPacket = NULL;
@@ -10622,6 +10629,7 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 	if (prMsduInfo->ucPktType >= ENUM_PKT_FLAG_NUM)
 		prMsduInfo->ucPktType = 0;
 
+#if CFG_ENABLE_PKT_LIFETIME_PROFILE
 	if (prPktProfile->fgIsValid &&
 		((prMsduInfo->ucPktType == ENUM_PKT_ARP) ||
 		(prMsduInfo->ucPktType == ENUM_PKT_DHCP))) {
@@ -10649,7 +10657,7 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 			prAdapter->prGlueInfo->u8CurrTime = kalGetTimeTickNs();
 		}
 	}
-
+#endif
 #if CFG_SUPPORT_MLR
 	if (MLR_CHECK_IF_ENABLE_DEBUG(prAdapter))
 		DBGLOG(TX, INFO,

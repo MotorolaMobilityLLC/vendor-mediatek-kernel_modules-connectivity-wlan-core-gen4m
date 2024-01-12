@@ -1179,7 +1179,7 @@ void nicRxProcessPktWithoutReorder(IN struct ADAPTER
 #endif
 
 	/* DBGLOG(RX, INFO, ("fgIsRetained = %d\n", fgIsRetained)); */
-#if CFG_ENABLE_PER_STA_STATISTICS
+#if CFG_ENABLE_PER_STA_STATISTICS && CFG_ENABLE_PKT_LIFETIME_PROFILE
 #if CFG_SUPPORT_WFD
 	if (prSwRfb->prStaRec
 	    && (prAdapter->rWifiVar.rWfdConfigureSettings.ucWfdEnable >

@@ -1159,10 +1159,10 @@ void mlrGenerateMTKOuiIEforMlr(struct ADAPTER *prAdapter,
 		DBGLOG(TX, WARN, "MLR assoc - prMsduInfo is NULL");
 		return;
 	}
-
+#if CFG_SUPPORT_MTK_SYNERGY
 	if (prAdapter->rWifiVar.ucMtkOui == FEATURE_DISABLED)
 		return;
-
+#endif
 	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
 	if (!prBssInfo)
 		return;

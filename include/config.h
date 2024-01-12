@@ -185,10 +185,14 @@
 /* 802.11n RX HT green-field capability */
 #define CFG_SUPPORT_RX_HT_GF	1
 
+#ifndef CFG_SUPPORT_WAPI
 #define CFG_SUPPORT_WAPI	1
+#endif
 
 /* Enable QA Tool Support */
+#ifndef CFG_SUPPORT_QA_TOOL
 #define CFG_SUPPORT_QA_TOOL	1
+#endif
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
 #define CFG_SUPPORT_ICAP_SOLICITED_EVENT	1
@@ -203,9 +207,13 @@
 #endif
 
 /* Enable TX BF Support */
+#ifndef CFG_SUPPORT_TX_BF
 #define CFG_SUPPORT_TX_BF	1
+#endif
 
+#ifndef CFG_SUPPORT_TX_BF_FPGA
 #define CFG_SUPPORT_TX_BF_FPGA	1
+#endif
 
 #if CFG_SUPPORT_TX_BF
 #define CFG_SUPPORT_BFER	1
@@ -223,7 +231,9 @@
 #define CFG_SUPPORT_MU_MIMO	1
 
 /* Enable WOW Support */
+#ifndef CFG_WOW_SUPPORT
 #define CFG_WOW_SUPPORT		1
+#endif
 
 /* Disable WOW EINT mode */
 #ifndef CFG_SUPPORT_WOW_EINT
@@ -267,9 +277,13 @@
 #define CFG_ENABLE_WAKE_LOCK	0
 #endif
 
+#ifndef CFG_SUPPORT_OSHARE
 #define CFG_SUPPORT_OSHARE	1
+#endif
 
+#ifndef CFG_SUPPORT_LOWLATENCY_MODE
 #define CFG_SUPPORT_LOWLATENCY_MODE	1
+#endif
 
 #define CFG_SUPPORT_ANT_SWAP		1
 
@@ -295,14 +309,22 @@
 #define TEST_CODE_FOR_MDNS			0
 #endif
 
+#ifndef CFG_SUPPORT_HE_ER
 #define CFG_SUPPORT_HE_ER               1
+#endif
 
 #ifdef CFG_COMBO_SLT_GOLDEN
 #define CFG_SUPPORT_ICS                 0
 #define CFG_SUPPORT_PHY_ICS             0
 #else
+
+#ifndef CFG_SUPPORT_ICS
 #define CFG_SUPPORT_ICS                 1
+#endif
+
+#ifndef CFG_SUPPORT_PHY_ICS
 #define CFG_SUPPORT_PHY_ICS             1
+#endif
 #endif
 
 #define CFG_SUPPORT_BAR_DELAY_INDICATION	1
@@ -343,14 +365,18 @@
 #define CFG_TCP_IP_CHKSUM_OFFLOAD_NDIS_60       0
 
 /* 0: Disable */
+#ifndef CFG_TCP_IP_CHKSUM_OFFLOAD
 #define CFG_TCP_IP_CHKSUM_OFFLOAD               0
+#endif
 #define CFG_WHQL_DOT11_STATISTICS               1
 #define CFG_WHQL_ADD_REMOVE_KEY                 1
 #define CFG_WHQL_CUSTOM_IE                      1
 #define CFG_WHQL_SAFE_MODE_ENABLED              1
 
 #else
+#ifndef CFG_TCP_IP_CHKSUM_OFFLOAD
 #define CFG_TCP_IP_CHKSUM_OFFLOAD               1
+#endif
 #define CFG_TCP_IP_CHKSUM_OFFLOAD_NDIS_60       0
 #define CFG_TX_MAX_PKT_SIZE                     1600
 #define CFG_NATIVE_802_11                       0
@@ -361,12 +387,15 @@
  * the next functions in the receive stack do much less processing.
  * The GRO feature could enhance "Rx" tput.
  */
+#ifndef CFG_SUPPORT_RX_GRO
 #define CFG_SUPPORT_RX_GRO                      1
-
+#endif
 /* 0 : direct-GRO mode (without NAPI poll-callback)
  * 1 : NAPI+GRO mode
  */
+#ifndef CFG_SUPPORT_RX_NAPI
 #define CFG_SUPPORT_RX_NAPI                     1
+#endif
 #if (CFG_SUPPORT_RX_GRO == 0) && (CFG_SUPPORT_RX_NAPI == 1)
 #error "NAPI should based on GRO in gen4m"
 #endif
@@ -658,7 +687,9 @@
 #define CFG_ENABLE_WAKEUP_ON_LAN                0
 
 /* debug which packet wake up host */
+#ifndef CFG_SUPPORT_WAKEUP_REASON_DEBUG
 #define CFG_SUPPORT_WAKEUP_REASON_DEBUG         1
+#endif
 
 #if CFG_MTK_ANDROID_WMT
 #define CFG_MODIFY_TX_POWER_BY_BAT_VOLT         1
@@ -674,8 +705,13 @@
 #define CFG_INIT_UAPSD_AC_BMP			0
 
 /* #define CFG_SUPPORT_WAPI			0 */
+#ifndef CFG_SUPPORT_WPS
 #define CFG_SUPPORT_WPS				1
+#endif
+
+#ifndef CFG_SUPPORT_WPS2
 #define CFG_SUPPORT_WPS2			1
+#endif
 
 /*------------------------------------------------------------------------------
  * Flags 1: drop all multicast packets when device suspend
@@ -766,7 +802,9 @@
  */
 /*!< 1: Debug statistics usage of MGMT Buffer */
 /* 0: Disable */
+#ifndef CFG_DBG_MGT_BUF
 #define CFG_DBG_MGT_BUF                         1
+#endif
 
 #define CFG_HIF_STATISTICS                      0
 
@@ -774,7 +812,9 @@
 
 #define CFG_RX_PKTS_DUMP                        0
 
+#ifndef CFG_SUPPORT_STATISTICS
 #define CFG_SUPPORT_STATISTICS			1
+#endif
 
 #define CFG_SUPPORT_TRACE_TC4			0
 
@@ -850,19 +890,31 @@
 
 #ifdef LINUX
 #ifdef CONFIG_X86
+#ifndef CFG_ENABLE_WIFI_DIRECT
 #define CFG_ENABLE_WIFI_DIRECT          1
+#endif
 #define CFG_SUPPORT_802_11W             1
+#ifndef CONFIG_SUPPORT_GTK_REKEY
 #define CONFIG_SUPPORT_GTK_REKEY        1
+#endif
 #else
+#ifndef CFG_ENABLE_WIFI_DIRECT
 #define CFG_ENABLE_WIFI_DIRECT          1
+#endif
 
 /*!< 0(default): Disable 802.11W */
 #define CFG_SUPPORT_802_11W             1
 
+#ifndef CONFIG_SUPPORT_GTK_REKEY
 #define CONFIG_SUPPORT_GTK_REKEY        1
 #endif
+
+#endif
 #else /* !LINUX */
-#define CFG_ENABLE_WIFI_DIRECT           1
+#ifndef CFG_ENABLE_WIFI_DIRECT
+#define CFG_ENABLE_WIFI_DIRECT          1
+#endif
+
 #define CFG_SUPPORT_802_11W              1	/* Not support at WinXP */
 #endif /* LINUX */
 
@@ -882,7 +934,9 @@
  * Enable cfg80211 option after Android 2.2(Froyo) is suggested,
  * cfg80211 on linux 2.6.29 is not mature yet
  */
+#ifndef CFG_ENABLE_WIFI_DIRECT_CFG_80211
 #define CFG_ENABLE_WIFI_DIRECT_CFG_80211        1
+#endif
 
 #define CFG_SUPPORT_HOTSPOT_OPTIMIZATION        0
 #define CFG_HOTSPOT_OPTIMIZATION_BEACON_INTERVAL 300
@@ -930,7 +984,9 @@
  *------------------------------------------------------------------------------
  */
 #define CFG_SUPPORT_ADHOC                       0
+#ifndef CFG_SUPPORT_AAA
 #define CFG_SUPPORT_AAA                         1
+#endif
 
 #define CFG_SUPPORT_BCM                         0
 #define CFG_SUPPORT_BCM_BWCS                    0
@@ -940,7 +996,9 @@
 
 #define CFG_SUPPORT_PWR_MGT                     1
 
+#ifndef CFG_ENABLE_HOTSPOT_PRIVACY_CHECK
 #define CFG_ENABLE_HOTSPOT_PRIVACY_CHECK        1
+#endif
 
 #define CFG_MGMT_FRAME_HANDLING                 1
 
@@ -959,7 +1017,9 @@
  * Option for NVRAM and Version Checking
  *------------------------------------------------------------------------------
  */
+#ifndef CFG_SUPPORT_NVRAM
 #define CFG_SUPPORT_NVRAM                       1
+#endif
 #define CFG_NVRAM_EXISTENCE_CHECK               1
 #define CFG_SW_NVRAM_VERSION_CHECK              1
 #define CFG_SUPPORT_NIC_CAPABILITY              1
@@ -988,8 +1048,9 @@
  * Flags of Features
  *------------------------------------------------------------------------------
  */
-
+#ifndef CFG_SUPPORT_TDLS
 #define CFG_SUPPORT_TDLS		1
+#endif
 
 /* Enable/disable QoS TX, AMPDU */
 #define CFG_SUPPORT_QOS			1
@@ -1074,7 +1135,9 @@
 
 #define CFG_SUPPORT_SUPPLICANT_SME              0
 
+#ifndef CFG_SUPPORT_DPP
 #define CFG_SUPPORT_DPP                     1
+#endif
 
 #if (CFG_SUPPORT_802_11K == 1) && (CFG_SUPPORT_SUPPLICANT_SME == 1)
 /* Enable to do beacon reports by supplicant.
@@ -1153,8 +1216,13 @@
 #define CFG_SUPPORT_802_11AC			1
 #define CFG_STRICT_CHECK_CAPINFO_PRIVACY	0
 
+#ifndef CFG_SUPPORT_WFD
 #define CFG_SUPPORT_WFD				1
+#endif
+
+#ifndef CFG_SUPPORT_WFD_COMPOSE_IE
 #define CFG_SUPPORT_WFD_COMPOSE_IE		1
+#endif
 
 /* Support Customer vendor IE */
 #define CFG_SUPPORT_CUSTOM_VENDOR_IE		1
@@ -1177,7 +1245,9 @@
 #error "TX_DIRECT_VIA_HIF_THREAD is invalid without MULTITHREAD support"
 #endif
 
+#ifndef CFG_SUPPORT_MTK_SYNERGY
 #define CFG_SUPPORT_MTK_SYNERGY			1
+#endif
 
 #ifndef CFG_SUPPORT_RXSMM_WHITELIST
 #define CFG_SUPPORT_RXSMM_WHITELIST		0
@@ -1242,7 +1312,9 @@
  * Flags of SDIO test pattern support
  *------------------------------------------------------------------------------
  */
+#ifndef CFG_SUPPORT_SDIO_READ_WRITE_PATTERN
 #define CFG_SUPPORT_SDIO_READ_WRITE_PATTERN 1
+#endif
 
 /*------------------------------------------------------------------------------
  * Flags of Workaround
@@ -1257,12 +1329,18 @@
  * Flags of Packet Lifetime Profiling Mechanism
  *------------------------------------------------------------------------------
  */
+#ifndef CFG_ENABLE_PKT_LIFETIME_PROFILE
 #define CFG_ENABLE_PKT_LIFETIME_PROFILE     1
+#endif
 #define CFG_PRINT_PKT_LIFETIME_PROFILE      0
 
+#ifndef CFG_ENABLE_PER_STA_STATISTICS
 #define CFG_ENABLE_PER_STA_STATISTICS       1
+#endif
 
+#ifndef CFG_ENABLE_PER_STA_STATISTICS_LOG
 #define CFG_ENABLE_PER_STA_STATISTICS_LOG 1
+#endif
 
 #ifndef CFG_SUPPORT_TX_LATENCY_STATS
 #define CFG_SUPPORT_TX_LATENCY_STATS 0
@@ -1308,7 +1386,9 @@
 /* During a full2partial scan period, all online full scan requests would be
  * changed to partial scan. The unit of this value is second
  */
+#ifndef CFG_SUPPORT_FULL2PARTIAL_SCAN
 #define CFG_SUPPORT_FULL2PARTIAL_SCAN      (1)
+#endif
 #define CFG_SCAN_FULL2PARTIAL_PERIOD       (60)
 
 /*------------------------------------------------------------------------------
@@ -1341,9 +1421,13 @@
  * Flags of Random MAC support
  *------------------------------------------------------------------------------
  */
+#ifndef CFG_SUPPORT_SCAN_RANDOM_MAC
 #define CFG_SUPPORT_SCAN_RANDOM_MAC        (1)
+#endif
 
+#ifndef WLAN_INCLUDE_PROC
 #define WLAN_INCLUDE_PROC                   1
+#endif
 
 #if CFG_TC10_FEATURE
 #define WLAN_INCLUDE_SYS                   1
@@ -1383,9 +1467,9 @@
  * Flags of driver fw customization
  *------------------------------------------------------------------------------
  */
-
+#ifndef CFG_SUPPORT_EASY_DEBUG
 #define CFG_SUPPORT_EASY_DEBUG               1
-
+#endif
 
 /*------------------------------------------------------------------------------
  * Flags of driver delay calibration atfer efuse buffer mode CMD
@@ -1404,15 +1488,17 @@
  * Flags of driver EEPROM pages for QA tool
  *------------------------------------------------------------------------------
  */
-
+#ifndef CFG_EEPROM_PAGE_ACCESS
 #define CFG_EEPROM_PAGE_ACCESS         1
+#endif
 
 /*------------------------------------------------------------------------------
  * Flags for HOST_OFFLOAD
  *------------------------------------------------------------------------------
  */
-
+#ifndef CFG_SUPPORT_WIFI_HOST_OFFLOAD
 #define CFG_SUPPORT_WIFI_HOST_OFFLOAD	1
+#endif
 
 /*------------------------------------------------------------------------------
  * Flags for DBDC Feature
@@ -1421,8 +1507,14 @@
 #ifndef CFG_SUPPORT_DBDC
 #define CFG_SUPPORT_DBDC	1
 #endif
+
+#ifndef CFG_SUPPORT_DBDC_NO_BLOCKING_OPMODE
 #define CFG_SUPPORT_DBDC_NO_BLOCKING_OPMODE 1
+#endif
+
+#ifndef CFG_SUPPORT_SAP_DFS_CHANNEL
 #define CFG_SUPPORT_SAP_DFS_CHANNEL 1
+#endif
 
 #if (CFG_SUPPORT_DBDC == 1)
 #ifndef CFG_DBDC_SW_FOR_P2P_LISTEN
@@ -1477,7 +1569,9 @@
  * Support spatial extension control
  *------------------------------------------------------------------------------
  */
+#ifndef CFG_SUPPORT_SPE_IDX_CONTROL
 #define CFG_SUPPORT_SPE_IDX_CONTROL		1
+#endif
 
 /*------------------------------------------------------------------------------
  * Flags for a Goal for MT6632 : Cal Result Backup in Host or NVRam when Android
@@ -1528,8 +1622,9 @@
  * Direct Control for RF/PHY/BB/MAC for Manual Configuration via command/api
  *------------------------------------------------------------------------------
  */
+#ifndef CFG_SUPPORT_ADVANCE_CONTROL
 #define CFG_SUPPORT_ADVANCE_CONTROL 1
-
+#endif
 
 /*------------------------------------------------------------------------------
  * Driver pre-allocate total size of memory in one time
