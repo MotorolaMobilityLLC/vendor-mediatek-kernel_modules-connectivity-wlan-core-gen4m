@@ -79,6 +79,10 @@
 #include "wlan_oid.h"
 #include <linux/rtc.h>
 
+#if (CFG_TWT_SMART_STA == 1)
+#include "twt.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -102,7 +106,9 @@
 #define PROC_SET_CAM				"setCAM"
 #endif
 #define PROC_AUTO_PERF_CFG			"autoPerfCfg"
-
+#if (CFG_TWT_SMART_STA == 1)
+#define PROC_TWT_SMART            "twt_smart_sta"
+#endif
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 #define PROC_CAL_RESULT				"cal_result"
 #endif /*(CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)*/
@@ -128,6 +134,9 @@
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
+#if (CFG_TWT_SMART_STA == 1)
+struct _TWT_SMART_STA_T g_TwtSmartStaCtrl;
+#endif
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
@@ -1196,6 +1205,105 @@ static const struct file_operations auto_perf_ops = {
 	.write = procAutoPerfCfgWrite,
 };
 
+#if (CFG_TWT_SMART_STA == 1)
+static ssize_t procTwtSmartRead(struct file *filp, char __user *buf,
+	size_t count, loff_t *f_pos)
+{
+	uint32_t u4CopySize;
+
+	/* if *f_pos > 0, it means has read successed last time */
+	if (*f_pos > 0)
+		return 0;
+
+	kalMemZero(g_aucProcBuf, sizeof(g_aucProcBuf));
+
+	kalSnprintf(g_aucProcBuf, sizeof(g_aucProcBuf),
+		"Twt Smart Req:%d, TDReq:%d, Act:%d, State:%d\n",
+		g_TwtSmartStaCtrl.fgTwtSmartStaReq,
+		g_TwtSmartStaCtrl.fgTwtSmartStaTeardownReq,
+		g_TwtSmartStaCtrl.fgTwtSmartStaActivated,
+		g_TwtSmartStaCtrl.eState);
+
+	u4CopySize = kalStrLen(g_aucProcBuf);
+	if (copy_to_user(buf, g_aucProcBuf, u4CopySize)) {
+		pr_err("copy to user failed\n");
+		return -EFAULT;
+	}
+	*f_pos += u4CopySize;
+
+	return (int32_t) u4CopySize;
+
+}
+
+static ssize_t procTwtSmartWrite(struct file *file, const char *buffer,
+	size_t count, loff_t *data)
+{
+	size_t len = count;
+	char buf[256];
+	char *pBuf;
+	int32_t x = 0;
+	char *pToken = NULL;
+	char *pDelimiter = " \t";
+	int32_t res;
+
+	if (len >= sizeof(buf))
+		len = sizeof(buf) - 1;
+
+	if (copy_from_user(buf, buffer, len)) {
+		DBGLOG(INIT, WARN, "copy_from_user error\n");
+		return -EFAULT;
+	}
+
+	buf[len] = '\0';
+	DBGLOG(INIT, INFO, "%s: write parameter data = %s", __func__, buf);
+	pBuf = buf;
+	pToken = strsep(&pBuf, pDelimiter);
+
+	if (pToken != NULL) {
+		kalkStrtos32(pToken, 16, &res);
+		x = (int)res;
+	} else {
+		DBGLOG(INIT, ERROR,
+			"%s:%s input parameter fail![0]", __func__, buf);
+		return -1;
+	}
+
+	switch (x) {
+	case 0:
+		break;
+
+	case 1:
+		g_TwtSmartStaCtrl.fgTwtSmartStaReq = TRUE;
+		DBGLOG(INIT, INFO,
+			"twt landing stareq %d",
+			g_TwtSmartStaCtrl.fgTwtSmartStaReq);
+		break;
+
+	case 2:
+		g_TwtSmartStaCtrl.u4TwtSwitch = 0;
+		if (g_TwtSmartStaCtrl.fgTwtSmartStaActivated == TRUE)
+			g_TwtSmartStaCtrl.fgTwtSmartStaTeardownReq = TRUE;
+
+		g_TwtSmartStaCtrl.fgTwtSmartStaReq = FALSE;
+		g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
+		DBGLOG(INIT, INFO,
+			"twt landing tdreq %d",
+			g_TwtSmartStaCtrl.fgTwtSmartStaTeardownReq);
+		break;
+	}
+
+	return len;
+
+}
+
+static const struct file_operations auto_twt_smart_ops = {
+	.owner = THIS_MODULE,
+	.read = procTwtSmartRead,
+	.write = procTwtSmartWrite,
+};
+
+#endif
+
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 static ssize_t procCalResultRead(struct file *filp, char __user *buf,
 	size_t count, loff_t *f_pos)
@@ -1309,6 +1417,29 @@ int32_t procInitFs(void)
 	proc_set_user(prEntry, KUIDT_INIT(PROC_UID_SHELL),
 		      KGIDT_INIT(PROC_GID_WIFI));
 
+#if (CFG_TWT_SMART_STA == 1)
+	prEntry =
+	    proc_create(PROC_TWT_SMART, 0664, gprProcRoot, &auto_twt_smart_ops);
+	if (prEntry == NULL) {
+		DBGLOG(INIT, ERROR, "Unable to create /twt smart entry %s/n",
+		       PROC_TWT_SMART);
+		return -1;
+	}
+	proc_set_user(prEntry, KUIDT_INIT(PROC_UID_SHELL),
+		      KGIDT_INIT(PROC_GID_WIFI));
+
+
+	g_TwtSmartStaCtrl.fgTwtSmartStaActivated = FALSE;
+	g_TwtSmartStaCtrl.fgTwtSmartStaReq = FALSE;
+	g_TwtSmartStaCtrl.fgTwtSmartStaTeardownReq = FALSE;
+	g_TwtSmartStaCtrl.ucBssIndex = 0;
+	g_TwtSmartStaCtrl.ucFlowId = 0;
+	g_TwtSmartStaCtrl.u4CurTp = 0;
+	g_TwtSmartStaCtrl.u4LastTp = 0;
+	g_TwtSmartStaCtrl.u4TwtSwitch == 0;
+	g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
+#endif
+
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 	prEntry = proc_create(PROC_CAL_RESULT,
 							0664,
@@ -1329,6 +1460,20 @@ int32_t procInitFs(void)
 int32_t procUninitProcFs(void)
 {
 #if KERNEL_VERSION(3, 9, 0) <= LINUX_VERSION_CODE
+
+#if (CFG_TWT_SMART_STA == 1)
+	remove_proc_subtree(PROC_TWT_SMART, gprProcRoot);
+
+	g_TwtSmartStaCtrl.fgTwtSmartStaActivated = FALSE;
+	g_TwtSmartStaCtrl.fgTwtSmartStaReq = FALSE;
+	g_TwtSmartStaCtrl.fgTwtSmartStaTeardownReq = FALSE;
+	g_TwtSmartStaCtrl.ucBssIndex = 0;
+	g_TwtSmartStaCtrl.ucFlowId = 0;
+	g_TwtSmartStaCtrl.u4CurTp = 0;
+	g_TwtSmartStaCtrl.u4LastTp = 0;
+	g_TwtSmartStaCtrl.u4TwtSwitch == 0;
+	g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
+#endif
 
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 	remove_proc_subtree(PROC_CAL_RESULT, gprProcRoot);
