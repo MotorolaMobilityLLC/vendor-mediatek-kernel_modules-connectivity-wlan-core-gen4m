@@ -98,6 +98,7 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 	{TAG_CAP_BEAMFORM_CAP, nicCfgChipCapBeamformCap},
 	{TAG_CAP_LOCATION_CAP, nicCfgChipCapLocationCap},
 	{TAG_CAP_MUMIMO_CAP, nicCfgChipCapMuMimoCap},
+	{TAG_CAP_HW_ADIE_VERSION, nicCfgChipAdieHwVersion},
 };
 
 /*******************************************************************************
@@ -2924,6 +2925,23 @@ uint32_t nicCfgChipCapHwVersion(IN struct ADAPTER *prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+uint32_t nicCfgChipAdieHwVersion(IN struct ADAPTER *prAdapter,
+	IN uint8_t *pucEventBuf)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct CAP_HW_ADIE_VERSION *prAdieHwVer =
+		(struct CAP_HW_ADIE_VERSION *)pucEventBuf;
+
+	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
+	ASSERT(prChipInfo);
+
+	prChipInfo->u2ADieChipVersion = prAdieHwVer->u2ProductID;
+	DBGLOG(INIT, INFO, "A DieID = 0x%x\n", prAdieHwVer->u2ProductID);
+	return WLAN_STATUS_SUCCESS;
+}
+
 
 uint32_t nicCfgChipCapSwVersion(IN struct ADAPTER *prAdapter,
 				IN uint8_t *pucEventBuf)

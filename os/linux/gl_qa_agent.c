@@ -88,7 +88,7 @@ u_int8_t g_DBDCEnable = FALSE;
 /* For SA Buffer Mode Temp Solution */
 u_int8_t	g_BufferDownload = FALSE;
 uint32_t	u4EepromMode = 4;
-/* uint32_t g_u4Chip_ID; */
+uint32_t g_u4Chip_ID;
 
 #if CFG_SUPPORT_BUFFER_MODE
 uint8_t	uacEEPROMImage[MAX_EEPROM_BUFFER_SIZE] = {
@@ -3119,6 +3119,36 @@ static int32_t HQA_DBDCTXTone(struct net_device *prNetDev,
 	return i4Ret;
 }
 
+static uint8_t _whPhyGetPrimChOffset(uint32_t u4BW,
+						   uint32_t u4Pri_Ch,
+						   uint32_t u4Cen_ch)
+{
+	 uint8_t ucPrimChOffset = 0;
+
+	/* BW Mapping in QA Tool
+	 * 0: BW20
+	 * 1: BW40
+	 * 2: BW80
+	 * 3: BW10
+	 * 4: BW5
+	 * 5: BW160C
+	 * 6: BW160NC
+	 */
+	u4Pri_Ch &= 0xFF;
+	u4Cen_ch &= 0xFF;
+	switch (u4BW) {
+	case 1:
+		ucPrimChOffset = (u4Pri_Ch < u4Cen_ch) ? 0 : 1;
+		break;
+	case 2:
+		ucPrimChOffset = (((u4Pri_Ch - u4Cen_ch) + 6) >> 2);
+		break;
+	default:
+		break;
+	}
+	return ucPrimChOffset;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  QA Agent For
@@ -3142,6 +3172,7 @@ static int32_t HQA_DBDCContinuousTX(struct net_device
 	uint32_t u4Pri_Ch = 0, u4Rate = 0, u4Central_Ch = 0,
 		 u4TxfdMode = 0, u4Freq = 0;
 	uint32_t u4BufLen = 0;
+	uint8_t ucPriChOffset = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
@@ -3198,7 +3229,13 @@ static int32_t HQA_DBDCContinuousTX(struct net_device
 		MT_ATESetDBDCBandIndex(prNetDev, u4Band);
 		u4Freq = nicChannelNum2Freq(u4Central_Ch);
 		MT_ATESetChannel(prNetDev, 0, u4Freq);
-		MT_ATEPrimarySetting(prNetDev, u4Pri_Ch);
+		ucPriChOffset = _whPhyGetPrimChOffset(u4BW,
+						      u4Pri_Ch,
+						      u4Central_Ch);
+		DBGLOG(RFTEST, INFO,
+		       "QA_AGENT HQA_DBDCContinuousTX ucPriChOffset : %d\n",
+		       ucPriChOffset);	/* ok */
+		MT_ATEPrimarySetting(prNetDev, ucPriChOffset);
 
 		if (u4Phymode == 1) {
 			u4Phymode = 0;
@@ -4266,11 +4303,24 @@ static int32_t HQA_GetChipID(struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 	prChipInfo = prAdapter->chip_info;
-	/* g_u4Chip_ID = prChipInfo->chip_id; */
-	if (prChipInfo->u4ChipIpVersion == CONNAC_CHIP_IP_VERSION)
-		u4ChipId = 0x00066310;
-	else
-		u4ChipId = 0x00006632;
+	g_u4Chip_ID = prChipInfo->chip_id;
+	DBGLOG(RFTEST, INFO,
+	       "QA_AGENT IPVer= 0x%08x, Adie = 0x%08x\n",
+		prChipInfo->u4ChipIpVersion,
+		prChipInfo->u2ADieChipVersion);
+
+	/* Check A-Die information for mobile solution */
+	switch (prChipInfo->u2ADieChipVersion) {
+	case 0x6631:
+		u4ChipId = 0x00066310;	/* use 66310 to diff from gen3 6631 */
+		break;
+	case 0x6635:
+		u4ChipId = 0x0006635;	/* return A die directly */
+		break;
+	default:
+		u4ChipId = g_u4Chip_ID;
+		break;
+	}
 
 	DBGLOG(RFTEST, INFO,
 	       "QA_AGENT HQA_GetChipID ChipId = 0x%08x\n", u4ChipId);
