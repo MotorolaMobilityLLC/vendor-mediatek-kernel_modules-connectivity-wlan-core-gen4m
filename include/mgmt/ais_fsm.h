@@ -287,6 +287,9 @@ struct AIS_FSM_INFO {
 	/* Support AP Selection */
 	uint8_t ucJoinFailCntAfterScan;
 	/* end Support AP Selection */
+
+	/* Scan target channel when device roaming */
+	uint8_t fgTargetChnlScanIssued;
 };
 
 /*******************************************************************************
