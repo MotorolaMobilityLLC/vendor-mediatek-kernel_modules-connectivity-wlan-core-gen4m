@@ -1193,7 +1193,7 @@ extern u_int8_t g_IsWfsysBusHang;
 extern struct completion g_triggerComp;
 extern u_int8_t fgIsResetting;
 extern u_int8_t g_fgRstRecover;
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+#if (CFG_WIFI_COREDUMP_SUPPORT == 1)
 extern u_int8_t g_IsNeedWaitCoredump;
 #endif
 #endif

@@ -79,9 +79,7 @@
 
 #include "precomp.h"
 #include "wlan_lib.h"
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 #include "gl_coredump.h"
-#endif
 #include "gl_fw_log.h"
 
 /*******************************************************************************
@@ -2780,8 +2778,8 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 		chip_info->prDebugOps : NULL;
 
 	if (kalIsResetting()) {
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-		g_eWfRstSource = WF_RST_SOURCE_DRIVER;
+#if (CFG_WIFI_COREDUMP_SUPPORT == 1)
+		g_ucWfRstSource = RST_SOURCE_WIFI_DRIVER;
 		if (!prAdapter->prGlueInfo->u4ReadyFlag)
 			g_IsNeedWaitCoredump = TRUE;
 #endif
@@ -2789,8 +2787,8 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 			"Wi-Fi Driver trigger, need do complete.\n");
 		complete(&g_triggerComp);
 	} else {
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-		g_eWfRstSource = WF_RST_SOURCE_FW;
+#if (CFG_WIFI_COREDUMP_SUPPORT == 1)
+		g_ucWfRstSource = RST_SOURCE_WIFI_FW;
 		if (!prAdapter->prGlueInfo->u4ReadyFlag)
 			g_IsNeedWaitCoredump = TRUE;
 #endif
@@ -2806,8 +2804,8 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 			fw_log_wifi_irq_handler();
 #endif
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-			fw_log_connsys_coredump_start(-1, NULL);
+#if (CFG_WIFI_COREDUMP_SUPPORT == 1)
+			wifi_coredump_start(g_ucWfRstSource, NULL);
 			g_IsNeedWaitCoredump = FALSE;
 #endif
 			if (debug_ops && debug_ops->dumpwfsyscpupcr)
@@ -2815,7 +2813,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 
 			fgIsResetting = FALSE;
 			update_driver_reset_status(fgIsResetting);
-			g_eWfRstSource = WF_RST_SOURCE_NONE;
+			g_ucWfRstSource = RST_SOURCE_WIFI_NONE;
 		} else {
 			kalSetRstEvent();
 		}
@@ -2827,8 +2825,8 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, ERROR,
 		"FW trigger whole chip reset.\n");
 
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-	g_eWfRstSource = WF_RST_SOURCE_FW;
+#if (CFG_WIFI_COREDUMP_SUPPORT == 1)
+	g_ucWfRstSource = RST_SOURCE_WIFI_FW;
 	if (!prAdapter->prGlueInfo->u4ReadyFlag)
 		g_IsNeedWaitCoredump = TRUE;
 #endif
@@ -2874,8 +2872,8 @@ bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
 
 	ret = prChipInfo->get_sw_interrupt_status(prAdapter, &status);
 	if (ret == false) {
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-		g_eWfRstSource = WF_RST_SOURCE_FW;
+#if (CFG_WIFI_COREDUMP_SUPPORT == 1)
+		g_ucWfRstSource = RST_SOURCE_WIFI_FW;
 		if (!prAdapter->prGlueInfo->u4ReadyFlag)
 			g_IsNeedWaitCoredump = TRUE;
 #endif

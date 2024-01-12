@@ -436,6 +436,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     ifeq ($(call kver_ge,5,15),1)
         CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
     endif
+    CONFIG_WIFI_COREDUMP_SUPPORT=y
     ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
 endif
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
@@ -788,34 +789,34 @@ ifeq ($(CONFIG_MTK_WIFI_CONNV3_SUPPORT), y)
 
     ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
 else ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
+    CONFIG_WIFI_COREDUMP_SUPPORT=y
     ccflags-y += -DCFG_SUPPORT_CONNINFRA=1
     ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=1
     ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
     ccflags-y += -DCFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT=1
-    ifeq ($(CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH), y)
-        ccflags-y += -DCFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
-        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/platform/include
-        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/base/include
+    ccflags-y += -DCFG_MTK_CONNSYS_DEDICATED_LOG_PATH
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/platform/include
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/base/include
 
-        # conninfra path
-        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility
-        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/include
-        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/connsyslog
-        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/coredump
-        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/coredump/platform/include
-        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/metlog
+    # conninfra path
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/include
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/connsyslog
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/coredump
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/coredump/platform/include
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/metlog
 
-        # connv2 path
-        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/conn_drv/connv2/debug_utility
-        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/conn_drv/connv2/debug_utility/include
-        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/conn_drv/connv2/debug_utility/connsyslog
-        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/conn_drv/connv2/debug_utility/coredump
-        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/conn_drv/connv2/debug_utility/coredump/platform/include
-        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/conn_drv/connv2/debug_utility/metlog
-        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/wlan/adaptor
-    endif
+    # connv2 path
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/conn_drv/connv2/debug_utility
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/conn_drv/connv2/debug_utility/include
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/conn_drv/connv2/debug_utility/connsyslog
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/conn_drv/connv2/debug_utility/coredump
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/conn_drv/connv2/debug_utility/coredump/platform/include
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/conn_drv/connv2/debug_utility/metlog
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/wlan/adaptor
 else
+    CONFIG_WIFI_COREDUMP_SUPPORT=n
     ccflags-y += -DCFG_SUPPORT_CONNINFRA=0
     ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=0
     ccflags-y += -DCFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT=0
@@ -829,6 +830,12 @@ else
         endif
         ccflags-y += -DMTK_WCN_WMT_STP_EXP_SYMBOL_ABSTRACT
     endif
+endif
+
+ifeq ($(CONFIG_WIFI_COREDUMP_SUPPORT), y)
+    ccflags-y += -DCFG_WIFI_COREDUMP_SUPPORT=1
+else
+    ccflags-y += -DCFG_WIFI_COREDUMP_SUPPORT=0
 endif
 
 ifeq ($(CONFIG_SUPPORT_THERMAL_QUERY), y)
@@ -1267,7 +1274,7 @@ OS_OBJS := 	$(OS_DIR)gl_init.o \
         ccflags-y += -DCFG_MTK_CONNSYS_DEDICATED_LOG_PATH
         OS_OBJS += $(OS_DIR)gl_fw_log.o
     endif
-    ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
+    ifeq ($(CONFIG_WIFI_COREDUMP_SUPPORT), y)
         OS_OBJS += $(OS_DIR)gl_coredump.o
     endif
 endif
