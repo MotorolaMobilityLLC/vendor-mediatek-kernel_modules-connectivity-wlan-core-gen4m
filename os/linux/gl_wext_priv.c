@@ -12025,7 +12025,249 @@ int priv_driver_set_idc_ril_bridge(
 
 	return 0;
 }
+#endif
 
+#if CFG_SUPPORT_UWB_COEX
+static uint32_t g_uwbcx_enable;
+static uint32_t g_uwbcx_startch;
+static uint32_t g_uwbcx_endch;
+static uint32_t g_uwbcx_prepare = 10;
+
+static void _setUwbCoexEnable(
+	struct ADAPTER *prAdapter,
+	uint32_t u4Enable,
+	uint32_t u4StartCh,
+	uint32_t u4EndCh)
+{
+	struct CMD_SET_UWB_COEX_ENABLE *prCmd;
+	uint16_t u2CmdBufLen = 0;
+
+	do {
+		if (!prAdapter)
+			break;
+
+		u2CmdBufLen =
+			sizeof(struct CMD_SET_UWB_COEX_ENABLE);
+
+		prCmd = (struct CMD_SET_UWB_COEX_ENABLE *)
+			cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+			u2CmdBufLen);
+		if (!prCmd) {
+			DBGLOG(P2P, ERROR,
+				"cnmMemAlloc for prCmd failed!\n");
+			break;
+		}
+
+		g_uwbcx_enable = u4Enable;
+		g_uwbcx_startch = u4StartCh;
+		g_uwbcx_endch = u4EndCh;
+
+		prCmd->u4Enable = u4Enable;
+		prCmd->u4StartCh = u4StartCh;
+		prCmd->u4EndCh = u4EndCh;
+
+		DBGLOG(REQ, INFO,
+			"Enable, startch, endch = [%d,%d,%d]\n",
+			u4Enable,
+			u4StartCh,
+			u4EndCh);
+
+		wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_SET_UWB_COEX_ENABLE,
+			TRUE,
+			FALSE,
+			FALSE,
+			NULL,
+			NULL,
+			u2CmdBufLen,
+			(uint8_t *) prCmd,
+			NULL,
+			0);
+
+		cnmMemFree(prAdapter, prCmd);
+	} while (FALSE);
+}
+
+static void _setUwbCoexPrepare(
+	struct ADAPTER *prAdapter,
+	uint32_t u4Time)
+{
+	struct CMD_SET_UWB_COEX_PREPARE *prCmd;
+	uint16_t u2CmdBufLen = 0;
+
+	do {
+		if (!prAdapter)
+			break;
+
+		u2CmdBufLen =
+			sizeof(struct CMD_SET_UWB_COEX_PREPARE);
+
+		prCmd = (struct CMD_SET_UWB_COEX_PREPARE *)
+			cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+			u2CmdBufLen);
+		if (!prCmd) {
+			DBGLOG(P2P, ERROR,
+				"cnmMemAlloc for prCmd failed!\n");
+			break;
+		}
+
+		g_uwbcx_prepare = u4Time;
+
+		prCmd->u4Time = u4Time;
+
+		DBGLOG(REQ, INFO, "Prepare time = %d\n", u4Time);
+
+		wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_SET_UWB_COEX_PREPARE,
+			TRUE,
+			FALSE,
+			FALSE,
+			NULL,
+			NULL,
+			u2CmdBufLen,
+			(uint8_t *) prCmd,
+			NULL,
+			0);
+
+		cnmMemFree(prAdapter, prCmd);
+	} while (FALSE);
+
+}
+
+int priv_driver_set_uwbcx_enable(
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t enable = 0;
+	uint32_t startch = 0;
+	uint32_t endch = 0;
+	uint32_t u4Ret = 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo)
+		return -1;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= 4) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &enable);
+		u4Ret = kalkStrtou32(apcArgv[2], 0, &startch);
+		u4Ret = kalkStrtou32(apcArgv[3], 0, &endch);
+
+		DBGLOG(REQ, LOUD, "u4Ret is %d\n", u4Ret);
+
+		_setUwbCoexEnable(
+			prGlueInfo->prAdapter,
+			enable,
+			startch,
+			endch);
+	} else {
+		DBGLOG(REQ, INFO, "Input insufficent\n");
+	}
+
+	return 0;
+}
+
+int priv_driver_set_uwbcx_prepare(
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t t = 0;
+	uint32_t u4Ret = 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo)
+		return -1;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= 2) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &t);
+
+		DBGLOG(REQ, LOUD, "u4Ret is %d\n", u4Ret);
+
+		_setUwbCoexPrepare(
+			prGlueInfo->prAdapter, t);
+	} else {
+		DBGLOG(REQ, INFO, "Input insufficent\n");
+	}
+
+	return 0;
+}
+
+int priv_driver_get_uwbcx_enable(
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t i4BytesWritten = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+
+	if (!prGlueInfo) {
+		LOGBUF(pcCommand, i4TotalLen,
+			i4BytesWritten, "Not Supported.");
+		return i4BytesWritten;
+	}
+
+	LOGBUF(pcCommand,
+		i4TotalLen,
+		i4BytesWritten,
+		"\n%d %d %d",
+		g_uwbcx_enable,
+		g_uwbcx_startch,
+		g_uwbcx_endch);
+
+	return	i4BytesWritten;
+}
+
+int priv_driver_get_uwbcx_prepare(
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t i4BytesWritten = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+
+	if (!prGlueInfo) {
+		LOGBUF(pcCommand, i4TotalLen,
+			i4BytesWritten, "Not Supported.");
+		return i4BytesWritten;
+	}
+
+	LOGBUF(pcCommand,
+		i4TotalLen,
+		i4BytesWritten,
+		"\n%d",
+		g_uwbcx_prepare);
+
+	return	i4BytesWritten;
+}
 #endif
 
 #if CFG_SUPPORT_WFD

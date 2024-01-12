@@ -91,6 +91,10 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #if CFG_SUPPORT_IDC_RIL_BRIDGE
 	[CMD_ID_SET_IDC_RIL] = nicUniCmdSetIdcRilBridge,
 #endif
+#if CFG_SUPPORT_UWB_COEX
+	[CMD_ID_SET_UWB_COEX_ENABLE] = nicUniCmdSetUwbCoexEnable,
+	[CMD_ID_SET_UWB_COEX_PREPARE] = nicUniCmdSetUwbCoexPrepare,
+#endif
 #if CFG_SUPPORT_ROAMING
 	[CMD_ID_ROAMING_TRANSIT] = nicUniCmdRoaming,
 #endif
@@ -4538,6 +4542,99 @@ uint32_t nicUniCmdSetIdcRilBridge(struct ADAPTER *ad,
 
 	return WLAN_STATUS_SUCCESS;
 }
+#endif
+
+#if CFG_SUPPORT_UWB_COEX
+uint32_t nicUniCmdSetUwbCoexEnable(
+	struct ADAPTER *ad,
+	struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_SET_UWB_COEX_ENABLE *cmd;
+	struct UNI_CMD_UWB_COEX *uni_cmd;
+	struct UNI_CMD_UWB_COEX_ENABLE *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len =
+		sizeof(struct UNI_CMD_UWB_COEX) +
+		sizeof(struct UNI_CMD_UWB_COEX_ENABLE);
+
+	if (info->ucCID != CMD_ID_SET_UWB_COEX_ENABLE ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_SET_UWB_COEX_ENABLE *)
+		info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad,
+		UNI_CMD_ID_UWB_COEX,
+		max_cmd_len,
+		NULL,
+		NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_UWB_COEX *)
+		entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_UWB_COEX_ENABLE *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_UWB_COEX_TAG_ENABLE;
+	tag->u2Length = sizeof(*tag);
+
+	tag->u4Enable = cmd->u4Enable;
+	tag->u4StartCh = cmd->u4StartCh;
+	tag->u4EndCh = cmd->u4EndCh;
+
+	DBGLOG(INIT, INFO,
+		"Enable, startch, endch = [%d,%d,%d]\n",
+		tag->u4Enable,
+		tag->u4StartCh,
+		tag->u4EndCh);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdSetUwbCoexPrepare(
+	struct ADAPTER *ad,
+	struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_SET_UWB_COEX_PREPARE *cmd;
+	struct UNI_CMD_UWB_COEX *uni_cmd;
+	struct UNI_CMD_UWB_COEX_PREPARE *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len =
+		sizeof(struct UNI_CMD_UWB_COEX) +
+		sizeof(struct UNI_CMD_UWB_COEX_PREPARE);
+
+	if (info->ucCID != CMD_ID_SET_UWB_COEX_PREPARE ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_SET_UWB_COEX_PREPARE *)
+		info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad,
+		UNI_CMD_ID_UWB_COEX,
+		max_cmd_len,
+		NULL,
+		NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_UWB_COEX *)
+		entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_UWB_COEX_PREPARE *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_UWB_COEX_TAG_SET_PREPARE_TIME;
+	tag->u2Length = sizeof(*tag);
+
+	tag->u4Time = cmd->u4Time;
+
+	DBGLOG(INIT, INFO, "Prepare time = %d\n", tag->u4Time);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 #endif
 
 uint32_t nicUniCmdSetSGParam(struct ADAPTER *ad,

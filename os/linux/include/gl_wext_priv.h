@@ -660,6 +660,20 @@ int priv_driver_set_idc_bmp(struct net_device *prNetDev,
 int priv_driver_set_idc_ril_bridge(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_IDC_CH_SWITCH */
+#if CFG_SUPPORT_UWB_COEX
+int priv_driver_set_uwbcx_enable(
+	struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_set_uwbcx_prepare(
+	struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_get_uwbcx_enable(
+	struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_get_uwbcx_prepare(
+	struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+#endif
 #if CFG_WOW_SUPPORT
 int priv_driver_set_wow(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);

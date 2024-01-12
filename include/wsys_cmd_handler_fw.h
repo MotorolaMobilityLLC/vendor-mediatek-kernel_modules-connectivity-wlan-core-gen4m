@@ -393,6 +393,10 @@ enum ENUM_CMD_ID {
 #if CFG_SUPPORT_IDC_RIL_BRIDGE
 	CMD_ID_SET_IDC_RIL         = 0xE4, /* 0xE4 (Set) */
 #endif
+#if CFG_SUPPORT_UWB_COEX
+	CMD_ID_SET_UWB_COEX_ENABLE   = 0xE5, /* 0xE5 (Set) */
+	CMD_ID_SET_UWB_COEX_PREPARE  = 0xE6, /* 0xE6 (Set) */
+#endif
 	CMD_ID_NAN_EXT_CMD = 0XEB,
 
 	CMD_ID_LAYER_0_EXT_MAGIC_NUM    = 0xED,
@@ -1196,6 +1200,18 @@ struct CMD_SET_IDC_RIL_BRIDGE {
 	uint8_t ucRat; /* LTE or NR */
 	uint32_t u4Band;
 	uint32_t u4Channel;
+};
+#endif
+
+#if CFG_SUPPORT_UWB_COEX
+struct CMD_SET_UWB_COEX_ENABLE {
+	uint32_t u4Enable;
+	uint32_t u4StartCh;
+	uint32_t u4EndCh;
+};
+
+struct CMD_SET_UWB_COEX_PREPARE {
+	uint32_t u4Time;
 };
 #endif
 
