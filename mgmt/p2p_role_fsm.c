@@ -478,56 +478,58 @@ p2pRoleFsmDeauhComplete(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec)
 	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
 	ENUM_PARAM_MEDIA_STATE_T eOriMediaStatus;
 
-	do {
-		ASSERT_BREAK(prAdapter != NULL);
+	if (!prAdapter) {
+		DBGLOG(P2P, ERROR, "prAdapter shouldn't be NULL!\n");
+		return;
+	}
 
-		DBGLOG(P2P, INFO, "Deauth TX Complete!\n");
+	if (!prStaRec) {
+		DBGLOG(P2P, ERROR, "prStaRec shouldn't be NULL!\n");
+		return;
+	}
 
-		if (prStaRec == NULL) {
-			DBGLOG(P2P, TRACE, "Station Record NULL, Index:%d\n", prStaRec->ucIndex);
-			break;
-		}
+	DBGLOG(P2P, INFO, "Deauth TX Complete!\n");
 
-		prP2pBssInfo = prAdapter->aprBssInfo[prStaRec->ucBssIndex];
-		ASSERT_BREAK(prP2pBssInfo != NULL);
-		eOriMediaStatus = prP2pBssInfo->eConnectionState;
-		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
+	prP2pBssInfo = prAdapter->aprBssInfo[prStaRec->ucBssIndex];
+	ASSERT_BREAK(prP2pBssInfo != NULL);
+	eOriMediaStatus = prP2pBssInfo->eConnectionState;
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
 
-		ASSERT_BREAK(prP2pRoleFsmInfo != NULL);
+	ASSERT_BREAK(prP2pRoleFsmInfo != NULL);
 
-		/* Change station state. */
-		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
+	/* Change station state. */
+	cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
 
-		/* Reset Station Record Status. */
-		p2pFuncResetStaRecStatus(prAdapter, prStaRec);
+	/* Reset Station Record Status. */
+	p2pFuncResetStaRecStatus(prAdapter, prStaRec);
 
-		/* Try to remove StaRec in BSS client list before free it */
-		bssRemoveClient(prAdapter, prP2pBssInfo, prStaRec);
+	/* Try to remove StaRec in BSS client list before free it */
+	bssRemoveClient(prAdapter, prP2pBssInfo, prStaRec);
 
-		/* STA_RECORD free */
-		cnmStaRecFree(prAdapter, prStaRec);
+	/* STA_RECORD free */
+	cnmStaRecFree(prAdapter, prStaRec);
 
-		if ((prP2pBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) ||
+	if ((prP2pBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) ||
+		(bssGetClientCount(prAdapter, prP2pBssInfo) == 0)) {
+		if (prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
+			DBGLOG(P2P, TRACE, "No More Client, Media Status DISCONNECTED\n");
+		else
+			DBGLOG(P2P, TRACE, "Deauth done, Media Status DISCONNECTED\n");
+		p2pChangeMediaState(prAdapter, prP2pBssInfo, PARAM_MEDIA_STATE_DISCONNECTED);
+	}
+
+	/* STOP BSS if power is IDLE */
+	if (prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
+		if (IS_NET_PWR_STATE_IDLE(prAdapter, prP2pRoleFsmInfo->ucBssIndex) &&
 			(bssGetClientCount(prAdapter, prP2pBssInfo) == 0)) {
-			if (prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
-				DBGLOG(P2P, TRACE, "No More Client, Media Status DISCONNECTED\n");
-			else
-				DBGLOG(P2P, TRACE, "Deauth done, Media Status DISCONNECTED\n");
-			p2pChangeMediaState(prAdapter, prP2pBssInfo, PARAM_MEDIA_STATE_DISCONNECTED);
-		}
+			/* All Peer disconnected !! Stop BSS now!! */
+			p2pFuncStopComplete(prAdapter, prP2pBssInfo);
+		} else if (eOriMediaStatus != prP2pBssInfo->eConnectionState)
+			/* Update the Media State if necessary */
+			nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
+	} else
+		p2pFuncStopComplete(prAdapter, prP2pBssInfo);/* GC : Stop BSS when Deauth done */
 
-		/* STOP BSS if power is IDLE */
-		if (prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
-			if (IS_NET_PWR_STATE_IDLE(prAdapter, prP2pRoleFsmInfo->ucBssIndex) &&
-				(bssGetClientCount(prAdapter, prP2pBssInfo) == 0)) {
-				/* All Peer disconnected !! Stop BSS now!! */
-				p2pFuncStopComplete(prAdapter, prP2pBssInfo);
-			} else if (eOriMediaStatus != prP2pBssInfo->eConnectionState)
-				/* Update the Media State if necessary */
-				nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
-		} else
-			p2pFuncStopComplete(prAdapter, prP2pBssInfo);/* GC : Stop BSS when Deauth done */
-	} while (FALSE);
 }
 
 VOID p2pRoleFsmDeauthTimeout(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
