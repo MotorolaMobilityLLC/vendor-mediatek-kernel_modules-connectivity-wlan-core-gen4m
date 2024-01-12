@@ -308,6 +308,7 @@ nanNdpInitiatorRspEvent(struct ADAPTER *prAdapter,
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
 	uint16_t u2InitiatorRspLen;
+	uint32_t u4Id = 0;
 
 	if (prAdapter == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prAdapter is NULL\n", __func__);
@@ -349,8 +350,13 @@ nanNdpInitiatorRspEvent(struct ADAPTER *prAdapter,
 		return -EFAULT;
 	}
 
+	if (nanGetFeatureIsSigma(prAdapter))
+		u4Id = prNDP->ucNDPID;
+	else
+		u4Id = prNDP->ndp_instance_id;
+
 	if (unlikely(nla_put_u32(skb, MTK_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID,
-				 prNDP->ucNDPID) < 0)) {
+				 u4Id) < 0)) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 		kfree_skb(skb);
 		return -EFAULT;
@@ -1090,6 +1096,7 @@ nanNdpDataIndEvent(struct ADAPTER *prAdapter,
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
 	uint16_t u2IndiEventLen;
+	uint32_t u4Id = 0;
 
 	if (prNDP == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prNDP is NULL\n", __func__);
@@ -1155,8 +1162,13 @@ nanNdpDataIndEvent(struct ADAPTER *prAdapter,
 		return -EFAULT;
 	}
 
+	if (nanGetFeatureIsSigma(prAdapter))
+		u4Id = prNDP->ucNDPID;
+	else
+		u4Id = prNDP->ndp_instance_id;
+
 	if (unlikely(nla_put_u32(skb, MTK_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID,
-				 prNDP->ucNDPID) < 0)) {
+				 u4Id) < 0)) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 		kfree_skb(skb);
 		return -EFAULT;
@@ -1219,6 +1231,7 @@ nanNdpDataConfirmEvent(struct ADAPTER *prAdapter,
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
 	uint32_t u2ConfirmEventLen;
+	uint32_t u4Id = 0;
 
 	if (prNDP == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prNDP is NULL\n", __func__);
@@ -1255,8 +1268,13 @@ nanNdpDataConfirmEvent(struct ADAPTER *prAdapter,
 		return -EFAULT;
 	}
 
+	if (nanGetFeatureIsSigma(prAdapter))
+		u4Id = prNDP->ucNDPID;
+	else
+		u4Id = prNDP->ndp_instance_id;
+
 	if (unlikely(nla_put_u32(skb, MTK_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID,
-				 prNDP->ucNDPID) < 0)) {
+				 u4Id) < 0)) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 		kfree_skb(skb);
 		return -EFAULT;
@@ -1309,7 +1327,7 @@ nanNdpDataConfirmEvent(struct ADAPTER *prAdapter,
 	}
 
 	DBGLOG(NAN, INFO, "NDP Data Confirm event, ndp instance: %d,",
-		prNDP->ucNDPID);
+		u4Id);
 	DBGLOG(NAN, INFO, "peer MAC addr : "MACSTR "rsp reason code: %d,",
 		prNDP->aucPeerNDIAddr, prNDP->ucReasonCode);
 	DBGLOG(NAN, INFO, "protocol reason code: %d\n ",
@@ -1337,6 +1355,7 @@ nanNdpDataTerminationEvent(struct ADAPTER *prAdapter,
 	struct wireless_dev *wdev;
 	uint32_t u2ConfirmEventLen;
 	uint32_t *pu2NDPInstance;
+	uint32_t u4Id = 0;
 
 	if (prNDP == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prNDP is NULL\n", __func__);
@@ -1377,7 +1396,11 @@ nanNdpDataTerminationEvent(struct ADAPTER *prAdapter,
 		return -EFAULT;
 	}
 
-	*pu2NDPInstance = (uint32_t)prNDP->ucNDPID;
+	if (nanGetFeatureIsSigma(prAdapter))
+		u4Id = prNDP->ucNDPID;
+	else
+		u4Id = prNDP->ndp_instance_id;
+	*pu2NDPInstance = (uint32_t)u4Id;
 
 	if (unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID_ARRAY,
 			     1 * sizeof(*pu2NDPInstance),
@@ -1391,7 +1414,7 @@ nanNdpDataTerminationEvent(struct ADAPTER *prAdapter,
 	}
 
 	DBGLOG(NAN, INFO, "NDP Data Termination event, ndp instance: %d\n",
-	       prNDP->ucNDPID);
+	       u4Id);
 
 	cfg80211_vendor_event(skb, GFP_KERNEL);
 

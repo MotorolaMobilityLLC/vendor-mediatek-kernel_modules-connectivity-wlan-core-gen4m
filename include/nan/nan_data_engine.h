@@ -276,6 +276,8 @@ struct _NAN_NDP_INSTANCE_T {
 	uint8_t au1RmtScid[NAN_SCID_DEFAULT_LEN];
 	uint8_t u1RmtScidPId;
 
+	uint32_t ndp_instance_id;
+
 	struct TIMER rNDPUserSpaceResponseTimer;
 
 	struct _NAN_NDP_CONTEXT_T *prContext;
@@ -438,6 +440,7 @@ struct _NAN_CMD_DATA_RESPONSE {
 	uint8_t ucServiceProtocolType;
 	uint8_t ucMinTimeSlot;
 	uint16_t u2MaxLatency;
+	uint32_t ndp_instance_id;
 };
 
 struct _NAN_CMD_DATA_END {
@@ -448,6 +451,7 @@ struct _NAN_CMD_DATA_END {
 	uint16_t u2NdpTransactionId;
 	uint8_t aucInitiatorDataAddress[6];
 	uint8_t aucReserved[2];
+	uint32_t ndp_instance_id;
 };
 
 struct _NAN_PARAMETER_NDL_SCH {
@@ -1053,6 +1057,11 @@ nanDataUtilSearchNdlByMac(struct ADAPTER *prAdapter, uint8_t *pucAddr);
 
 unsigned char
 nanGetFeatureIsSigma(struct ADAPTER *prAdapter);
+
+struct _NAN_NDP_INSTANCE_T *
+nanDataUtilSearchNdpByNdpInstanceId(
+	struct ADAPTER *prAdapter,
+	uint32_t u4NdpInstanceId);
 
 #endif
 #endif
