@@ -163,7 +163,7 @@ uint32_t fw_log_notify_rcv(enum ENUM_FW_LOG_CTRL_TYPE type,
 	uint8_t *buffer,
 	uint32_t size)
 {
-	int32_t ret = 0;
+	uint32_t written = 0;
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	enum connv3_log_type eType = CONNV3_LOG_TYPE_PRIMARY;
 #endif
@@ -181,15 +181,15 @@ uint32_t fw_log_notify_rcv(enum ENUM_FW_LOG_CTRL_TYPE type,
 			type);
 		break;
 	}
-	ret = connv3_log_handler(CONNV3_DEBUG_TYPE_WIFI, eType,
+	written = connv3_log_handler(CONNV3_DEBUG_TYPE_WIFI, eType,
 		buffer, size);
 	DBGLOG(INIT, TRACE,
-		"[%d] connv3_log_handler ret=%d\n",
+		"[%d] connv3_log_handler written=%d\n",
 		type,
-		ret);
+		written);
 #endif
 
-	return ret >= 0 ? ret : 0;
+	return written;
 }
 
 int fw_log_wifi_inf_init(void)

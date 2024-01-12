@@ -57,6 +57,18 @@ enum ENUM_LOG_READ_POINTER_PATH {
 	ENUM_LOG_READ_POINTER_PATH_NUM,
 };
 
+struct FW_LOG_MMIO_SUB_STATS {
+	uint32_t handle_size;
+};
+
+struct FW_LOG_MMIO_STATS {
+	unsigned long update_period; /* in ms */
+	uint32_t request;
+	uint32_t skipped;
+	uint32_t handled;
+	struct FW_LOG_MMIO_SUB_STATS sub_stats[ENUM_FW_LOG_CTRL_TYPE_NUM];
+};
+
 struct FW_LOG_MMIO_CTRL {
 	enum ENUM_LOG_READ_POINTER_PATH ePath;
 	u_int8_t initialized;
@@ -65,6 +77,7 @@ struct FW_LOG_MMIO_CTRL {
 	uint32_t base_addr;
 	struct FW_LOG_MMIO_SUB_CTRL sub_ctrls[ENUM_FW_LOG_CTRL_TYPE_NUM];
 	void *priv;
+	struct FW_LOG_MMIO_STATS stats;
 };
 
 #if IS_ENABLED(CFG_MTK_WIFI_FW_LOG_MMIO)
