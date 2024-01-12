@@ -7757,14 +7757,12 @@ p2pFuncNeedForceSleep(struct ADAPTER *prAdapter)
 {
 	if (!prAdapter ||
 		!prAdapter->rWifiVar.ucApForceSleep ||
-		!cnmSapIsActive(prAdapter))
+		(prAdapter->rPerMonitor.u4CurrPerfLevel > 1))
 		return FALSE;
-
-	if (prAdapter->rPerMonitor.u4CurrPerfLevel >
-		prAdapter->rWifiVar.u4PerfMonTpTh[0])
+	else if (!cnmSapIsActive(prAdapter))
 		return FALSE;
-
-	return TRUE;
+	else
+		return TRUE;
 }
 
 void
