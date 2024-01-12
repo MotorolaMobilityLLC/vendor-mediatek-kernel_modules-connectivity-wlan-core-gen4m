@@ -234,8 +234,7 @@ void ehtRlmFillCapIE(
 		/* phy_cap_2 |= DOT11BE_PHY_CAP_PPE_THRLD_PRESENT; */
 	}
 
-	if (eht_bw >= MAX_BW_40MHZ) {
-		eht_mcs15_mru |= EHT_MCS15_MRU_484_w_242_tone_80M;
+	if (eht_bw >= MAX_BW_20MHZ) {
 		/* set 3 to support AP NSS 4 */
 		SET_DOT11BE_PHY_CAP_BFEE_SS_LE_EQ_80M(phy_cap_1,
 			prWifiVar->ucEhtBfeeSSLeEq80m);
@@ -244,6 +243,10 @@ void ehtRlmFillCapIE(
 			SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_LE_EQ_80M(
 				phy_cap_1, (uint32_t)(ucSupportedNss - 1));
 	}
+
+	if (eht_bw >= MAX_BW_80MHZ)
+		eht_mcs15_mru |= EHT_MCS15_MRU_484_w_242_tone_80M;
+
 	if (eht_bw >= MAX_BW_160MHZ) {
 		eht_mcs15_mru |= EHT_MCS15_MRU_996_to_242_tone_160M;
 		/* set 3 to support AP NSS 4 */
