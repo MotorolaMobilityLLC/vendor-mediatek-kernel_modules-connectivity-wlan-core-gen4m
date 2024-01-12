@@ -117,8 +117,10 @@ void wapiGenerateWAPIIE(IN struct ADAPTER *prAdapter,
 u_int8_t wapiParseWapiIE(IN struct WAPI_INFO_ELEM
 			 *prInfoElem, OUT struct WAPI_INFO *prWapiInfo);
 
-u_int8_t wapiPerformPolicySelection(IN struct ADAPTER
-				    *prAdapter, IN struct BSS_DESC *prBss);
+u_int8_t wapiPerformPolicySelection(
+			IN struct ADAPTER *prAdapter,
+			IN struct BSS_DESC *prBss,
+			IN uint8_t ucBssIndex);
 
 /* BOOLEAN */
 /* wapiUpdateTxKeyIdx ( */

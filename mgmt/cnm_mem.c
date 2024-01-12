@@ -1463,7 +1463,7 @@ cnmPeerAdd(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
 {
 	struct CMD_PEER_ADD *prCmd;
-	struct BSS_INFO *prAisBssInfo;
+	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
 
 	/* sanity check */
@@ -1476,38 +1476,42 @@ cnmPeerAdd(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	*pu4SetInfoLen = sizeof(struct CMD_PEER_ADD);
 	prCmd = (struct CMD_PEER_ADD *) pvSetBuffer;
 
-	prAisBssInfo = prAdapter->prAisBssInfo;	/* for AIS only test */
-	if (!prAisBssInfo)
+	prBssInfo
+		= GET_BSS_INFO_BY_INDEX(prAdapter, prCmd->ucBssIdx);
+	if (prBssInfo == NULL) {
+		log_dbg(MEM, ERROR, "prBssInfo %d is NULL!\n"
+				, prCmd->ucBssIdx);
 		return TDLS_STATUS_FAIL;
+	}
 
 	prStaRec = cnmGetStaRecByAddress(prAdapter,
-		(uint8_t) prAdapter->prAisBssInfo->ucBssIndex,
+		(uint8_t) prBssInfo->ucBssIndex,
 		prCmd->aucPeerMac);
 
 	if (prStaRec == NULL) {
 		prStaRec =
 		cnmStaRecAlloc(prAdapter, STA_TYPE_DLS_PEER,
-			(uint8_t) prAdapter->prAisBssInfo->ucBssIndex,
+			(uint8_t) prBssInfo->ucBssIndex,
 			prCmd->aucPeerMac);
 
 		if (prStaRec == NULL)
 			return TDLS_STATUS_RESOURCES;
 
-		if (prAisBssInfo->ucBssIndex)
-			prStaRec->ucBssIndex = prAisBssInfo->ucBssIndex;
+		if (prBssInfo->ucBssIndex)
+			prStaRec->ucBssIndex = prBssInfo->ucBssIndex;
 
 		/* init the prStaRec */
 		/* prStaRec will be zero first in cnmStaRecAlloc() */
 		COPY_MAC_ADDR(prStaRec->aucMacAddr, prCmd->aucPeerMac);
 
-		prStaRec->u2BSSBasicRateSet = prAisBssInfo->u2BSSBasicRateSet;
+		prStaRec->u2BSSBasicRateSet = prBssInfo->u2BSSBasicRateSet;
 
 		prStaRec->u2DesiredNonHTRateSet
 			= prAdapter->rWifiVar.ucAvailablePhyTypeSet;
 
 		prStaRec->u2OperationalRateSet
-			= prAisBssInfo->u2OperationalRateSet;
-		prStaRec->ucPhyTypeSet = prAisBssInfo->ucPhyTypeSet;
+			= prBssInfo->u2OperationalRateSet;
+		prStaRec->ucPhyTypeSet = prBssInfo->ucPhyTypeSet;
 		prStaRec->eStaType = prCmd->eStaType;
 
 		/* Init lowest rate to prevent CCK in 5G band */
@@ -1549,7 +1553,7 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 {
 
 	struct CMD_PEER_UPDATE *prCmd;
-	struct BSS_INFO *prAisBssInfo;
+	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
 	uint8_t ucNonHTPhyTypeSet;
 
@@ -1566,14 +1570,16 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	*pu4SetInfoLen = sizeof(struct CMD_PEER_ADD);
 	prCmd = (struct CMD_PEER_UPDATE *) pvSetBuffer;
 
-	prAisBssInfo = prAdapter->prAisBssInfo;
-	if (prAisBssInfo == NULL) {
-		log_dbg(MEM, ERROR, "%s: prAisBssInfo is NULL!\n"
-				, __func__);
+	prBssInfo
+		= GET_BSS_INFO_BY_INDEX(prAdapter, prCmd->ucBssIdx);
+
+	if (prBssInfo == NULL) {
+		log_dbg(MEM, ERROR, "prBssInfo %d is NULL!\n"
+				, prCmd->ucBssIdx);
 		return TDLS_STATUS_FAIL;
 	}
 	prStaRec = cnmGetStaRecByAddress(prAdapter,
-		(uint8_t) prAisBssInfo->ucBssIndex,
+		(uint8_t) prBssInfo->ucBssIndex,
 		prCmd->aucPeerMac);
 
 	if ((!prStaRec) || !(prStaRec->fgIsInUse))
@@ -1582,9 +1588,9 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	if (!IS_DLS_STA(prStaRec))
 		return TDLS_STATUS_FAIL;
 
-	if (prAisBssInfo) {
-		if (prAisBssInfo->ucBssIndex)
-			prStaRec->ucBssIndex = prAisBssInfo->ucBssIndex;
+	if (prBssInfo) {
+		if (prBssInfo->ucBssIndex)
+			prStaRec->ucBssIndex = prBssInfo->ucBssIndex;
 	}
 
 	/* update the record join time. */
@@ -1622,13 +1628,13 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		}
 
 		prStaRec->u2OperationalRateSet = u2OperationalRateSet;
-		prStaRec->u2BSSBasicRateSet = prAisBssInfo->u2BSSBasicRateSet;
+		prStaRec->u2BSSBasicRateSet = prBssInfo->u2BSSBasicRateSet;
 
 		/* 4     <5> PHY type setting */
 
 		prStaRec->ucPhyTypeSet = 0;
 
-		if (prAisBssInfo->eBand == BAND_2G4) {
+		if (prBssInfo->eBand == BAND_2G4) {
 			if (prCmd->fgIsSupHt)
 				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
 
@@ -1669,15 +1675,21 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		}
 
 		if (IS_STA_IN_AIS(prStaRec)) {
-			if (!((prAdapter->rWifiVar.rConnSettings
-				.eEncStatus == ENUM_ENCRYPTION3_ENABLED)
-				|| (prAdapter->rWifiVar.rConnSettings
-				.eEncStatus == ENUM_ENCRYPTION3_KEY_ABSENT)
-				|| (prAdapter->rWifiVar.rConnSettings
-				.eEncStatus == ENUM_ENCRYPTION_DISABLED)
-				|| (prAdapter->prGlueInfo->u2WSCAssocInfoIELen)
+			struct CONNECTION_SETTINGS *prConnSettings;
+			enum ENUM_WEP_STATUS eEncStatus;
+
+			prConnSettings =
+				aisGetConnSettings(prAdapter,
+				prStaRec->ucBssIndex);
+
+			eEncStatus = prConnSettings->eEncStatus;
+
+			if (!((eEncStatus == ENUM_ENCRYPTION3_ENABLED)
+				|| (eEncStatus == ENUM_ENCRYPTION3_KEY_ABSENT)
+				|| (eEncStatus == ENUM_ENCRYPTION_DISABLED)
+				|| (prConnSettings->u2WSCAssocInfoIELen)
 #if CFG_SUPPORT_WAPI
-				|| (prAdapter->prGlueInfo->u2WapiAssocInfoIESz)
+				|| (prConnSettings->u2WapiAssocInfoIESz)
 #endif
 			    )) {
 

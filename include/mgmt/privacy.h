@@ -199,7 +199,8 @@ u_int8_t secRxPortControlCheck(IN struct ADAPTER *prAdapter,
 			       IN struct SW_RFB *prSWRfb);
 
 void secSetCipherSuite(IN struct ADAPTER *prAdapter,
-		       IN uint32_t u4CipherSuitesFlags);
+		       IN uint32_t u4CipherSuitesFlags,
+		       IN uint8_t ucBssIndex);
 
 u_int8_t secIsProtectedFrame(IN struct ADAPTER *prAdapter,
 			     IN struct MSDU_INFO *prMsdu,
@@ -215,7 +216,8 @@ uint8_t secGetBmcWlanIndex(IN struct ADAPTER *prAdapter,
 u_int8_t secTransmitKeyExist(IN struct ADAPTER *prAdapter,
 			     IN struct STA_RECORD *prSta);
 
-u_int8_t secEnabledInAis(IN struct ADAPTER *prAdapter);
+u_int8_t secEnabledInAis(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIndex);
 
 u_int8_t secPrivacySeekForEntry(IN struct ADAPTER
 				*prAdapter, IN struct STA_RECORD *prSta);
@@ -240,6 +242,9 @@ uint8_t secGetStaIdxByWlanIdx(IN struct ADAPTER *prAdapter,
 
 uint8_t secGetBssIdxByWlanIdx(IN struct ADAPTER *prAdapter,
 			      IN uint8_t ucWlanIdx);
+
+uint8_t secGetBssIdxByRfb(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb);
 
 uint8_t secLookupStaRecIndexFromTA(struct ADAPTER
 				   *prAdapter, uint8_t *pucMacAddress);

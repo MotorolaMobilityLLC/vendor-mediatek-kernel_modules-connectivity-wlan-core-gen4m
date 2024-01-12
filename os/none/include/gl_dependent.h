@@ -213,6 +213,10 @@ enum {
 
 /* needed by nic/nic_cmd_event.c */
 struct wireless_dev {
+
+	struct wiphy *wiphy;
+	struct net_device *netdev;
+
 };
 /* needed by
  * common/wlan_lib.c & wlan_lib.h

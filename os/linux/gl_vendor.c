@@ -231,18 +231,7 @@ int mtk_cfg80211_vendor_get_channel_list(struct wiphy *wiphy,
 
 	DBGLOG(REQ, TRACE, "Get channel list for band: %d\n", band);
 
-#if CFG_ENABLE_UNIFY_WIPHY
-	if (wdev->iftype == NL80211_IFTYPE_AP)
-		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
-	else
-		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-#else	/* CFG_ENABLE_UNIFY_WIPHY */
-	if (wdev == gprWdev)	/* wlan0 */
-		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-	else
-		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
-#endif	/* CFG_ENABLE_UNIFY_WIPHY */
-
+	prGlueInfo = wlanGetGlueInfo();
 	if (!prGlueInfo)
 		return -EFAULT;
 
@@ -276,8 +265,7 @@ int mtk_cfg80211_vendor_get_channel_list(struct wiphy *wiphy,
 	}
 
 	kalMemZero(channels, sizeof(channels));
-	u2CountryCode = prGlueInfo->prAdapter->
-			rWifiVar.rConnSettings.u2CountryCode;
+	u2CountryCode = prGlueInfo->prAdapter->rWifiVar.u2CountryCode;
 	for (i = 0, j = 0; i < ucNumOfChannel; i++) {
 		/* We need to report frequency list to HAL */
 		channels[j] =
@@ -356,15 +344,7 @@ int mtk_cfg80211_vendor_set_country_code(struct wiphy
 	DBGLOG(REQ, INFO, "Set country code: %c%c\n", country[0],
 	       country[1]);
 
-#if CFG_ENABLE_UNIFY_WIPHY
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-#else	/* CFG_ENABLE_UNIFY_WIPHY */
-	if (wdev == gprWdev)	/* wlan0 */
-		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-	else
-		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
-#endif	/* CFG_ENABLE_UNIFY_WIPHY */
-
+	prGlueInfo = wlanGetGlueInfo();
 	if (!prGlueInfo)
 		return -EFAULT;
 
@@ -397,14 +377,7 @@ int mtk_cfg80211_vendor_set_scan_mac_oui(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-#if CFG_ENABLE_UNIFY_WIPHY
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-#else	/* CFG_ENABLE_UNIFY_WIPHY */
-	if (wdev == gprWdev)
-		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-	else
-		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
-#endif	/* CFG_ENABLE_UNIFY_WIPHY */
+	prGlueInfo = wlanGetGlueInfo();
 	if (!prGlueInfo) {
 		log_dbg(REQ, ERROR, "Invalid glue info\n");
 		return -EFAULT;
@@ -1204,6 +1177,7 @@ int mtk_cfg80211_vendor_event_rssi_beyond_range(
 	struct BSS_INFO *prAisBssInfo;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter;
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
@@ -1231,8 +1205,7 @@ int mtk_cfg80211_vendor_event_rssi_beyond_range(
 	}
 
 	prAdapter = prGlueInfo->prAdapter;
-	prAisBssInfo =
-		&(prAdapter->rWifiVar.arBssInfoPool[NETWORK_TYPE_AIS]);
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	kalMemCopy(rRSSIEvt.BSSID, prAisBssInfo->aucBSSID,
 		   sizeof(uint8_t) * MAC_ADDR_LEN);
 
@@ -1372,15 +1345,7 @@ int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 	if ((data == NULL) || !data_len)
 		return -EINVAL;
 
-#if CFG_ENABLE_UNIFY_WIPHY
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-#else	/* CFG_ENABLE_UNIFY_WIPHY */
-	if (wdev == gprWdev)	/* wlan0 */
-		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-	else
-		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
-#endif	/* CFG_ENABLE_UNIFY_WIPHY */
-
+	prGlueInfo = wlanGetGlueInfo();
 	if (!prGlueInfo)
 		return -EFAULT;
 

@@ -804,6 +804,8 @@ static ssize_t procSetCamCfgWrite(struct file *file, const char __user *buffer,
 	}
 
 	if (fgParamValue) {
+		uint8_t i;
+
 		prGlueInfo = wlanGetGlueInfo();
 		if (!prGlueInfo)
 			return count;
@@ -812,7 +814,11 @@ static ssize_t procSetCamCfgWrite(struct file *file, const char __user *buffer,
 		if (!prAdapter)
 			return count;
 
-		nicConfigProcSetCamCfgWrite(prAdapter, fgSetCamCfg);
+		for (i = 0; i < KAL_AIS_NUM; i++) {
+			nicConfigProcSetCamCfgWrite(prAdapter,
+				fgSetCamCfg,
+				i);
+		}
 	}
 
 	return count;

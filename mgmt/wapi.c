@@ -126,25 +126,29 @@ void wapiGenerateWAPIIE(IN struct ADAPTER *prAdapter,
 			IN struct MSDU_INFO *prMsduInfo)
 {
 	uint8_t *pucBuffer;
+	struct CONNECTION_SETTINGS *prConnSettings;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
 
-	if (prMsduInfo->ucBssIndex != prAdapter->prAisBssInfo->ucBssIndex)
+	if (!IS_BSS_INDEX_AIS(prAdapter, prMsduInfo->ucBssIndex))
 		return;
+
+	prConnSettings =
+		aisGetConnSettings(prAdapter, prMsduInfo->ucBssIndex);
 
 	pucBuffer =
 	    (uint8_t *) ((unsigned long)prMsduInfo->prPacket +
 			 (unsigned long)prMsduInfo->u2FrameLength);
 
 	/* ASSOC INFO IE ID: 68 :0x44 */
-	if (/* prWlanInfo->fgWapiMode && */ prAdapter->prGlueInfo->
-	    u2WapiAssocInfoIESz) {
+	if (/* prConnSettings->fgWapiMode && */
+		prConnSettings->u2WapiAssocInfoIESz) {
 		kalMemCopy(pucBuffer,
-			   &prAdapter->prGlueInfo->aucWapiAssocInfoIEs,
-			   prAdapter->prGlueInfo->u2WapiAssocInfoIESz);
+			   &prConnSettings->aucWapiAssocInfoIEs,
+			   prConnSettings->u2WapiAssocInfoIESz);
 		prMsduInfo->u2FrameLength +=
-		    prAdapter->prGlueInfo->u2WapiAssocInfoIESz;
+		    prConnSettings->u2WapiAssocInfoIESz;
 	}
 
 }
@@ -431,7 +435,7 @@ u_int8_t wapiParseWapiIE(IN struct WAPI_INFO_ELEM *prInfoElem,
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t wapiPerformPolicySelection(IN struct ADAPTER *prAdapter,
-				    IN struct BSS_DESC *prBss)
+	IN struct BSS_DESC *prBss, IN uint8_t ucBssIndex)
 {
 	uint32_t i;
 	uint32_t u4PairwiseCipher = 0;
@@ -439,6 +443,7 @@ u_int8_t wapiPerformPolicySelection(IN struct ADAPTER *prAdapter,
 	uint32_t u4AkmSuite = 0;
 	struct WAPI_INFO *prBssWapiInfo;
 	struct WLAN_INFO *prWlanInfo;
+	struct CONNECTION_SETTINGS *prConnSettings;
 
 	DEBUGFUNC("wapiPerformPolicySelection");
 
@@ -449,10 +454,13 @@ u_int8_t wapiPerformPolicySelection(IN struct ADAPTER *prAdapter,
 	 */
 	prWlanInfo = &prAdapter->rWlanInfo;
 
+	prConnSettings =
+		aisGetConnSettings(prAdapter, ucBssIndex);
+
 	if (prBss->fgIEWAPI) {
 		prBssWapiInfo = &prBss->rIEWAPI;
 	} else {
-		if (prAdapter->rWifiVar.rConnSettings.fgWapiMode == FALSE) {
+		if (prConnSettings->fgWapiMode == FALSE) {
 			DBGLOG(SEC, TRACE, "-- No Protected BSS\n");
 			return TRUE;
 		}
@@ -464,14 +472,13 @@ u_int8_t wapiPerformPolicySelection(IN struct ADAPTER *prAdapter,
 	/* Select pairwise/group ciphers */
 	for (i = 0; i < prBssWapiInfo->u4PairwiseKeyCipherSuiteCount; i++) {
 		if (prBssWapiInfo->au4PairwiseKeyCipherSuite[i] ==
-		    prAdapter->rWifiVar.
-		    rConnSettings.u4WapiSelectedPairwiseCipher) {
+		    prConnSettings->u4WapiSelectedPairwiseCipher) {
 			u4PairwiseCipher =
 			    prBssWapiInfo->au4PairwiseKeyCipherSuite[i];
 		}
 	}
 	if (prBssWapiInfo->u4GroupKeyCipherSuite ==
-	    prAdapter->rWifiVar.rConnSettings.u4WapiSelectedGroupCipher)
+	    prConnSettings->u4WapiSelectedGroupCipher)
 		u4GroupCipher = prBssWapiInfo->u4GroupKeyCipherSuite;
 
 	/* Exception handler */
@@ -492,7 +499,7 @@ u_int8_t wapiPerformPolicySelection(IN struct ADAPTER *prAdapter,
 	/* Attempt to find any overlapping supported AKM suite. */
 	for (i = 0; i < prBssWapiInfo->u4AuthKeyMgtSuiteCount; i++) {
 		if (prBssWapiInfo->au4AuthKeyMgtSuite[i] ==
-		    prAdapter->rWifiVar.rConnSettings.u4WapiSelectedAKMSuite) {
+		    prConnSettings->u4WapiSelectedAKMSuite) {
 			u4AkmSuite = prBssWapiInfo->au4AuthKeyMgtSuite[i];
 			break;
 		}
