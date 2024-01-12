@@ -10584,7 +10584,7 @@ static uint8_t rlmDomain6GPwrModeSupportStatusGet(
 	enum ENUM_PWR_MODE_6G_TYPE eMode
 )
 {
-	struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE prSupportTbl =
+	struct COUNTRY_PWR_MODE_6G_SUPPORT_TABLE *prSupportTbl =
 			&g_rCountryPwrMode6GSupport[u1CountryIdx];
 
 	return prSupportTbl->rSubBand[u1Band].fgPwrMode6GSupport[eMode];
