@@ -2441,6 +2441,12 @@ int wf_pwr_off_consys_mcu(void)
 		soc3_0_DumpWfsysInfo();
 		soc3_0_DumpWfsysdebugflag();
 	}
+
+	/* Reset WFSYS semaphore 0x18000018[0] = 1'b0 */
+	wf_ioremap_read(WFSYS_SW_RST_B_ADDR, &value);
+	value &= 0xFFFFFFFE;
+	wf_ioremap_write(WFSYS_SW_RST_B_ADDR, value);
+
 	/* bus clock ctrl */
 	conninfra_bus_clock_ctrl(CONNDRV_TYPE_WIFI, CONNINFRA_BUS_CLOCK_ALL, 0);
 
@@ -2485,11 +2491,6 @@ int wf_pwr_off_consys_mcu(void)
 	wf_ioremap_write(CONN_INFRA_WFSYS_EMI_REQ_ADDR, value);
 	value &= 0xFFFFFFFE;
 	wf_ioremap_write(CONN_INFRA_WFSYS_EMI_REQ_ADDR, value);
-
-	/* Reset WFSYS semaphore 0x18000018[0] = 1'b0 */
-	wf_ioremap_read(WFSYS_SW_RST_B_ADDR, &value);
-	value &= 0xFFFFFFFE;
-	wf_ioremap_write(WFSYS_SW_RST_B_ADDR, value);
 
 	/*Disable A-die top_ck_en (use common API)(clear driver & FW resource)*/
 	conninfra_adie_top_ck_en_off(CONNSYS_ADIE_CTL_FW_WIFI);
