@@ -204,6 +204,8 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 	/* fill some buffered information into prHif */
 	prHif->mcr_addr_base = mt5931_mcr_base + EHPI_OFFSET_ADDR;
 	prHif->mcr_data_base = mt5931_mcr_base + EHPI_OFFSET_DATA;
+
+	prGlueInfo->u4InfType = MT_DEV_INF_EHPI;
 }				/* end of glSetHifInfo() */
 
 /*----------------------------------------------------------------------------*/

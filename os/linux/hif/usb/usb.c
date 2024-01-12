@@ -870,7 +870,7 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 #endif
 
 	prHifInfo->state = USB_STATE_LINK_UP;
-
+	prGlueInfo->u4InfType = MT_DEV_INF_USB;
 	return;
 
 error:

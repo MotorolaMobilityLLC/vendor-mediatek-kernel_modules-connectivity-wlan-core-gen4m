@@ -107,6 +107,14 @@
 #define CONN_CFG_ON_CONN_ON_MISC_HOST_LPCR_FW_OWN_MASK         0x00000001/*HOST_LPCR_FW_OWN[0]*/
 #define CONN_CFG_ON_CONN_ON_MISC_HOST_LPCR_FW_OWN_SHFT         0
 
+#if defined(_HIF_USB)
+#define CONNAC_UDMA_BASE                         0x7C000000
+#define CONNAC_UDMA_TX_QSEL                      (CONNAC_UDMA_BASE + 0x8)
+#define CONNAC_UDMA_RESET                        (CONNAC_UDMA_BASE + 0x14)
+#define CONNAC_UDMA_WLCFG_1                      (CONNAC_UDMA_BASE + 0xc)
+#define CONNAC_UDMA_WLCFG_0                      (CONNAC_UDMA_BASE + 0x18)
+#endif /* _HIF_USB */
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************

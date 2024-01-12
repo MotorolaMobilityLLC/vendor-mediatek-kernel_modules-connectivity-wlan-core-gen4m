@@ -78,6 +78,7 @@
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
 */
+#include "hif_cmm.h"
 #include "gl_os.h"		/* Include "config.h" */
 
 #if CFG_ENABLE_WIFI_DIRECT
@@ -164,6 +165,7 @@
 
 #ifdef CONNAC_MAC
 #include "connac_reg.h"
+#include "cmm_asic_connac.h"
 #endif /* CONNAC_MAC */
 
 #include "rlm.h"
