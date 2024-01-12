@@ -193,6 +193,8 @@ endif
 ifeq ($(CONFIG_MTK_COMBO_SLT), golden)
 PLATFORM_FLAGS += -DCFG_COMBO_SLT_GOLDEN
 slt_postfix = _mc
+else ifeq ($(CONFIG_MTK_COMBO_SLT), dut)
+PLATFORM_FLAGS += -DCFG_COMBO_SLT_DUT
 endif
 
 ifeq ($(USB_AUTO_SUSPEND), y)

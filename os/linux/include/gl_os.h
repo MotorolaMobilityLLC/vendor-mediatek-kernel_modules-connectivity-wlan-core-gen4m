@@ -1708,6 +1708,10 @@ extern const uint8_t *kalFindVendorIe(uint32_t oui, int type,
 void wlanNvramSetState(enum ENUM_NVRAM_STATE state);
 enum ENUM_NVRAM_STATE wlanNvramGetState(void);
 
+#if (CFG_SUPPORT_CONNFEM == 1 && CFG_CONNFEM_DEFAULT == 1)
+uint32_t wlanConnFemGetId(void);
+#endif
+
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 int connsys_power_event_notification(enum conn_pwr_event_type type,
 	void *data);

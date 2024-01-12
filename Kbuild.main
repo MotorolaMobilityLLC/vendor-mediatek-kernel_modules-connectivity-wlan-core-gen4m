@@ -559,7 +559,6 @@ ccflags-y:=$(filter-out -UMT6653,$(ccflags-y))
 ccflags-y += -DMT6653
 CONFIG_NEW_HIF_DEV_REG_IF=y
 ifeq ($(MTK_ANDROID_WMT), y)
-    CONFIG_MTK_WIFI_CONNFEM_SUPPORT=y
     CONFIG_MTK_WIFI_POWER_THROTTLING=y
     CONFIG_MTK_WIFI_ON_READ_BY_CFG_SPACE=y
     CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
@@ -628,6 +627,15 @@ endif
 
 ifeq ($(filter 1 2 y,$(CONFIG_MTK_FPGA_PLATFORM)),)
     CONFIG_SUPPORT_PRE_ON_PHY_ACTION=y
+    CONFIG_MTK_WIFI_CONNFEM_SUPPORT=y
+    ifneq ($(MTK_ANDROID_WMT), y)
+        ifeq ($(wildcard $(KO_CODE_PATH)/../connfem/include),)
+            $(warning Missing $(KO_CODE_PATH)/../connfem/include)
+            $(warning Use SKU1-1 default setting.)
+            $(warning To use another SKU or eFEM parts, please sync & build ConnFem according to Wiki)
+            CONFIG_MTK_WIFI_CONNFEM_DEFAULT=y
+        endif
+    endif
 endif
 CONFIG_IFACE_CONCURRENT_MODE=2
 endif
@@ -1421,10 +1429,18 @@ else
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNFEM_SUPPORT), y)
-ccflags-y += -DCFG_SUPPORT_CONNFEM=1
-ccflags-y += -I$(KO_CODE_PATH)/../connfem/include
+    ccflags-y += -DCFG_SUPPORT_CONNFEM=1
+    ifeq ($(CONFIG_MTK_WIFI_CONNFEM_DEFAULT), y)
+        ccflags-y += -DCFG_CONNFEM_DEFAULT=1
+        ccflags-y += -I$(KO_CODE_PATH)/include/chips/connfem
+    else
+        ccflags-y += -DCFG_CONNFEM_DEFAULT=0
+        ccflags-y += -I$(KO_CODE_PATH)/../connfem/include
+    endif
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/connfem/include/
 else
-ccflags-y += -DCFG_SUPPORT_CONNFEM=0
+    ccflags-y += -DCFG_SUPPORT_CONNFEM=0
+    ccflags-y += -DCFG_CONNFEM_DEFAULT=0
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_XONVRAM_SUPPORT), y)
@@ -2001,7 +2017,6 @@ ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/connectivity/common
 ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/gpu/drm/mediatek/mediatek_v2/
 ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/devfreq/
 ccflags-y += -I$(srctree)/net
-ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/connfem/include/
 
 ifeq ($(CONFIG_MTK_WIFI_CCCI_SUPPORT), y)
 CONFIG_MTK_ECCCI_DRIVER := y
@@ -2607,6 +2622,9 @@ ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt6653/mt6653.o
 CHIPS_OBJS += $(CHIPS)mt6653/dbg_mt6653.o
 CHIPS_OBJS += $(CHIPS)mt6653/hal_dmashdl_mt6653.o
+ifeq ($(CONFIG_MTK_WIFI_CONNFEM_DEFAULT), y)
+CHIPS_OBJS += $(CHIPS)mt6653/connfem_mt6653.o
+endif
 endif
 
 ifneq ($(filter MT6655,$(MTK_COMBO_CHIP)),)
