@@ -4016,12 +4016,17 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		ucBssIndex);
-	if (!prBssInfo)
+	if (!prBssInfo || !params || !mac)
 		return -EINVAL;
 
-	if (params == NULL)
-		return 0;
-	else if (params->supported_rates == NULL)
+	if ((params->sta_flags_set & BIT(
+		     NL80211_STA_FLAG_AUTHORIZED))) {
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetAuthorized,
+			(void *) mac, MAC_ADDR_LEN, FALSE,
+			FALSE, FALSE, &u4BufLen);
+	}
+
+	if (params->supported_rates == NULL)
 		return 0;
 
 	/* init */
@@ -4142,12 +4147,17 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 	prAdapter = prGlueInfo->prAdapter;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		ucBssIndex);
-	if (!prBssInfo)
+	if (!prBssInfo || !params || !mac)
 		return -EINVAL;
 
-	if (params == NULL)
-		return 0;
-	else if (params->supported_rates == NULL)
+	if ((params->sta_flags_set & BIT(
+		     NL80211_STA_FLAG_AUTHORIZED))) {
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetAuthorized,
+			(void *) mac, MAC_ADDR_LEN, FALSE,
+			FALSE, FALSE, &u4BufLen);
+	}
+
+	if (params->supported_rates == NULL)
 		return 0;
 
 	/* init */
@@ -4223,6 +4233,7 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		return -EINVAL;
+
 	/* for Ch Sw AP prohibit case */
 	if (prBssInfo->fgTdlsIsChSwProhibited) {
 		/* disable TDLS ch sw function */
