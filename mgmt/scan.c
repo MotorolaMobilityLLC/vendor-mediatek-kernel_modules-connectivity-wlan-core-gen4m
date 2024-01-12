@@ -4321,11 +4321,12 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 				 * BSS descriptor
 				 */
 				log_dbg(SCN, TRACE, "BSS%d DTIMPeriod[%u] Present[%u] BSSID["
-					MACSTR "]\n",
+					MACSTR "] BeaconInterval[%u]\n",
 				       prAisBssInfo->ucBssIndex,
 				       prAisBssInfo->ucDTIMPeriod,
 				       prAisBssInfo->fgTIMPresent,
-				       MAC2STR(prBssDesc->aucBSSID));
+				       MAC2STR(prBssDesc->aucBSSID),
+					   prAisBssInfo->u2BeaconInterval);
 				if ((!prAisBssInfo->ucDTIMPeriod) &&
 					prAisBssInfo->fgTIMPresent &&
 					EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
@@ -4339,6 +4340,14 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 						= prBssDesc->ucDTIMPeriod;
 					prAisBssInfo->fgTIMPresent
 						= prBssDesc->fgTIMPresent;
+#if CFG_SUPPORT_BALANCE_MLR
+					prAisBssInfo->u2BeaconInterval
+						= prBssDesc->u2BeaconInterval;
+
+					log_dbg(SCN, WARN,
+						"Update Beacon interval [%u]\n",
+						prAisBssInfo->u2BeaconInterval);
+#endif /* CFG_SUPPORT_BALANCE_MLR */
 
 					/* Handle No TIM IE information case */
 					if (!prAisBssInfo->fgTIMPresent) {
