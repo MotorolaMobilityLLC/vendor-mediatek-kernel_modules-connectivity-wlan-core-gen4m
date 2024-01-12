@@ -4464,9 +4464,9 @@ wlanoidQueryProcessAccessEfuseRead(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffe
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
 
-	*pu4SetInfoLen = sizeof(P_PARAM_CUSTOM_ACCESS_EFUSE_T);
+	*pu4SetInfoLen = sizeof(PARAM_CUSTOM_ACCESS_EFUSE_T);
 
-	if (u4SetBufferLen < sizeof(P_PARAM_CUSTOM_ACCESS_EFUSE_T))
+	if (u4SetBufferLen < sizeof(PARAM_CUSTOM_ACCESS_EFUSE_T))
 		return WLAN_STATUS_INVALID_LENGTH;
 
 	ASSERT(pvSetBuffer);
@@ -4530,9 +4530,9 @@ wlanoidQueryProcessAccessEfuseWrite(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuff
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
 
-	*pu4SetInfoLen = sizeof(P_PARAM_CUSTOM_ACCESS_EFUSE_T);
+	*pu4SetInfoLen = sizeof(PARAM_CUSTOM_ACCESS_EFUSE_T);
 
-	if (u4SetBufferLen < sizeof(P_PARAM_CUSTOM_ACCESS_EFUSE_T))
+	if (u4SetBufferLen < sizeof(PARAM_CUSTOM_ACCESS_EFUSE_T))
 		return WLAN_STATUS_INVALID_LENGTH;
 
 	ASSERT(pvSetBuffer);
@@ -4580,9 +4580,9 @@ wlanoidQueryEfuseFreeBlock(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UI
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
 
-	*pu4SetInfoLen = sizeof(P_PARAM_CUSTOM_EFUSE_FREE_BLOCK_T);
+	*pu4SetInfoLen = sizeof(PARAM_CUSTOM_EFUSE_FREE_BLOCK_T);
 
-	if (u4SetBufferLen < sizeof(P_PARAM_CUSTOM_EFUSE_FREE_BLOCK_T))
+	if (u4SetBufferLen < sizeof(PARAM_CUSTOM_EFUSE_FREE_BLOCK_T))
 		return WLAN_STATUS_INVALID_LENGTH;
 
 	ASSERT(pvSetBuffer);
