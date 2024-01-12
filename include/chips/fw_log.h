@@ -46,6 +46,7 @@ struct FW_LOG_OPS {
 	void (*deinit)(struct ADAPTER *ad);
 	uint32_t (*start)(struct ADAPTER *ad);
 	void (*stop)(struct ADAPTER *ad);
+	void (*set_enabled)(struct ADAPTER *ad, u_int8_t enabled);
 	int32_t (*handler)(void);
 };
 
@@ -60,6 +61,7 @@ uint32_t fw_log_init(struct ADAPTER *ad);
 void fw_log_deinit(struct ADAPTER *ad);
 uint32_t fw_log_start(struct ADAPTER *ad);
 void fw_log_stop(struct ADAPTER *ad);
+void fw_log_set_enabled(struct ADAPTER *ad, u_int8_t enabled);
 int32_t fw_log_handler(void);
 
 #endif /* _FW_LOG_H */

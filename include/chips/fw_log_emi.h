@@ -42,6 +42,7 @@ struct FW_LOG_EMI_CTRL {
 int32_t fw_log_emi_handler(void);
 uint32_t fw_log_emi_start(struct ADAPTER *ad);
 void fw_log_emi_stop(struct ADAPTER *ad);
+void fw_log_emi_set_enabled(struct ADAPTER *ad, u_int8_t enabled);
 uint32_t fw_log_emi_init(struct ADAPTER *ad);
 void fw_log_emi_deinit(struct ADAPTER *ad);
 

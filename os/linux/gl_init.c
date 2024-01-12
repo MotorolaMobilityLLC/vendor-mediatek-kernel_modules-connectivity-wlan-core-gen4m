@@ -5787,6 +5787,10 @@ static void consys_log_event_notification(int cmd, int value)
 	rStatus = kalIoctl(prGlueInfo, connsysFwLogControl, &rFwLogCmd,
 			sizeof(struct CMD_CONNSYS_FW_LOG), &u4BufLen);
 
+	if (cmd == FW_LOG_CMD_ON_OFF)
+		fw_log_set_enabled(prAdapter,
+				   value == 1 ? TRUE : FALSE);
+
 	if (fgRetrieveLog)
 		fw_log_handler();
 }
