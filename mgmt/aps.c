@@ -852,7 +852,7 @@ uint16_t apsCalculateScoreByBlackList(struct ADAPTER *prAdapter,
 
 	if (!prBssDesc->prBlack)
 		u2Score = 100;
-	else if (scanApOverload(prBssDesc->prBlack->u2AuthStatus,
+	else if (rsnApOverload(prBssDesc->prBlack->u2AuthStatus,
 		prBssDesc->prBlack->u2DeauthReason) ||
 		 prBssDesc->prBlack->ucCount >= 10)
 		u2Score = 0;

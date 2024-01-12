@@ -80,6 +80,7 @@
 #define IW_AUTH_WPA_VERSION_WPA2        0x00000004
 
 #define IW_AUTH_ALG_FT			0x00000008
+#define IW_AUTH_ALG_SAE			0x00000010
 
 #define IW_PMKID_LEN        16
 

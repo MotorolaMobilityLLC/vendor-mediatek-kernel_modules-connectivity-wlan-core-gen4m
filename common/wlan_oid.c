@@ -1961,8 +1961,7 @@ wlanoidSetAuthMode(struct ADAPTER *prAdapter,
 
 	DBGLOG(REQ, LOUD, "ucBssIndex %d\n", ucBssIndex);
 
-	prConnSettings =
-		aisGetConnSettings(prAdapter, ucBssIndex);
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
 	*pu4SetInfoLen = sizeof(enum ENUM_PARAM_AUTH_MODE);
 
@@ -2000,8 +1999,7 @@ wlanoidSetAuthMode(struct ADAPTER *prAdapter,
 	case AUTH_MODE_WPA3_SAE:
 	case AUTH_MODE_WPA3_OWE:
 		/* infrastructure mode only */
-		if (prConnSettings->eOPMode !=
-		    NET_TYPE_INFRA)
+		if (prConnSettings->eOPMode != NET_TYPE_INFRA)
 			return WLAN_STATUS_NOT_ACCEPTED;
 		break;
 
@@ -2017,10 +2015,8 @@ wlanoidSetAuthMode(struct ADAPTER *prAdapter,
 	}
 
 	/* Save the new authentication mode. */
-	prConnSettings->eAuthMode = *
-			(enum ENUM_PARAM_AUTH_MODE *) pvSetBuffer;
+	prConnSettings->eAuthMode = *(enum ENUM_PARAM_AUTH_MODE *) pvSetBuffer;
 
-#if 1				/* DBG */
 	switch (prConnSettings->eAuthMode) {
 	case AUTH_MODE_OPEN:
 		DBGLOG(RSN, TRACE, "New auth mode: open\n");
@@ -2062,80 +2058,8 @@ wlanoidSetAuthMode(struct ADAPTER *prAdapter,
 		DBGLOG(RSN, TRACE, "New auth mode: unknown (%d)\n",
 		       prConnSettings->eAuthMode);
 	}
-#endif
-
-#if 0
-	if (prConnSettings->eAuthMode >=
-	    AUTH_MODE_WPA) {
-		switch (prConnSettings->eAuthMode) {
-		case AUTH_MODE_WPA:
-			u4AkmSuite = WPA_AKM_SUITE_802_1X;
-			break;
-
-		case AUTH_MODE_WPA_PSK:
-			u4AkmSuite = WPA_AKM_SUITE_PSK;
-			break;
-
-		case AUTH_MODE_WPA_NONE:
-			u4AkmSuite = WPA_AKM_SUITE_NONE;
-			break;
-
-		case AUTH_MODE_WPA2:
-			u4AkmSuite = RSN_AKM_SUITE_802_1X;
-			break;
-
-		case AUTH_MODE_WPA2_PSK:
-			u4AkmSuite = RSN_AKM_SUITE_PSK;
-			break;
-
-		default:
-			u4AkmSuite = 0;
-		}
-	} else {
-		u4AkmSuite = 0;
-	}
-
-	/* Enable the specific AKM suite only. */
-	for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++) {
-		prEntry = &prAdapter->rMib
-				.dot11RSNAConfigAuthenticationSuitesTable[i];
-
-		if (prEntry->dot11RSNAConfigAuthenticationSuite ==
-		    u4AkmSuite)
-			prEntry->dot11RSNAConfigAuthenticationSuiteEnabled =
-									TRUE;
-		else
-			prEntry->dot11RSNAConfigAuthenticationSuiteEnabled =
-									FALSE;
-#if CFG_SUPPORT_802_11W
-		if (kalGetMfpSetting(prAdapter->prGlueInfo) !=
-		    RSN_AUTH_MFP_DISABLED) {
-			if ((u4AkmSuite == RSN_AKM_SUITE_PSK) &&
-			    prEntry->dot11RSNAConfigAuthenticationSuite ==
-			    RSN_AKM_SUITE_PSK_SHA256) {
-				DBGLOG(RSN, TRACE,
-				       "Enable RSN_AKM_SUITE_PSK_SHA256 AKM support\n");
-				prEntry->
-				dot11RSNAConfigAuthenticationSuiteEnabled =
-									TRUE;
-
-			}
-			if ((u4AkmSuite == RSN_AKM_SUITE_802_1X) &&
-			    prEntry->dot11RSNAConfigAuthenticationSuite ==
-			    RSN_AKM_SUITE_802_1X_SHA256) {
-				DBGLOG(RSN, TRACE,
-				       "Enable RSN_AKM_SUITE_802_1X_SHA256 AKM support\n");
-				prEntry->
-				dot11RSNAConfigAuthenticationSuiteEnabled =
-									TRUE;
-			}
-		}
-#endif
-	}
-#endif
 
 	return WLAN_STATUS_SUCCESS;
-
 } /* wlanoidSetAuthMode */
 
 uint32_t

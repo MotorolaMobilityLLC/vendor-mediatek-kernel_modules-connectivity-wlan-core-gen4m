@@ -1314,6 +1314,121 @@ void mtk_cfg80211_abort_scan(struct wiphy *wiphy,
 		DBGLOG(REQ, ERROR, "wlanoidAbortScan fail 0x%x\n", rStatus);
 }
 
+int wlanParseAkmSuites(uint32_t *au4AkmSuites, uint32_t u4AkmSuitesCount,
+	uint32_t u4WpaVersion, enum ENUM_PARAM_AUTH_MODE *prAuthMode,
+	uint32_t *pu4AkmSuite, struct IEEE_802_11_MIB *prMib)
+{
+	enum ENUM_PARAM_AUTH_MODE eOriAuthMode = *prAuthMode;
+	uint8_t i, j;
+	struct DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY *prEntry;
+
+	for (i = 0; i < u4AkmSuitesCount; i++) {
+		uint32_t u4AkmSuite = 0;
+		enum ENUM_PARAM_AUTH_MODE eAuthMode;
+
+		if (u4WpaVersion == IW_AUTH_WPA_VERSION_DISABLED) {
+			switch (au4AkmSuites[i]) {
+			case WLAN_AKM_SUITE_OSEN:
+				u4AkmSuite = RSN_AKM_SUITE_OSEN;
+				break;
+			default:
+				break;
+			}
+		} else if (u4WpaVersion == IW_AUTH_WPA_VERSION_WPA) {
+			switch (au4AkmSuites[i]) {
+			case WLAN_AKM_SUITE_8021X:
+				u4AkmSuite = WPA_AKM_SUITE_802_1X;
+				break;
+			case WLAN_AKM_SUITE_PSK:
+				u4AkmSuite = WPA_AKM_SUITE_PSK;
+				break;
+			default:
+				DBGLOG(REQ, WARN, "invalid Akm Suite (%08x)\n",
+				       au4AkmSuites[i]);
+				return -EINVAL;
+			}
+		} else if (u4WpaVersion == IW_AUTH_WPA_VERSION_WPA2) {
+			switch (au4AkmSuites[i]) {
+			case WLAN_AKM_SUITE_8021X:
+				u4AkmSuite = RSN_AKM_SUITE_802_1X;
+				break;
+			case WLAN_AKM_SUITE_PSK:
+				u4AkmSuite = RSN_AKM_SUITE_PSK;
+				break;
+#if CFG_SUPPORT_802_11R
+			case WLAN_AKM_SUITE_FT_8021X:
+				u4AkmSuite = RSN_AKM_SUITE_FT_802_1X;
+				break;
+			case WLAN_AKM_SUITE_FT_PSK:
+				u4AkmSuite = RSN_AKM_SUITE_FT_PSK;
+				break;
+			case WLAN_AKM_SUITE_FT_OVER_SAE:
+				u4AkmSuite = RSN_AKM_SUITE_FT_OVER_SAE;
+				break;
+#endif
+#if CFG_SUPPORT_802_11W
+			/* Notice:: Need kernel patch!! */
+			case WLAN_AKM_SUITE_8021X_SHA256:
+				u4AkmSuite = RSN_AKM_SUITE_802_1X_SHA256;
+				break;
+			case WLAN_AKM_SUITE_PSK_SHA256:
+				u4AkmSuite = RSN_AKM_SUITE_PSK_SHA256;
+				break;
+#endif
+#if CFG_SUPPORT_PASSPOINT
+			case WLAN_AKM_SUITE_OSEN:
+				u4AkmSuite = RSN_AKM_SUITE_OSEN;
+				break;
+#endif
+			case WLAN_AKM_SUITE_SAE:
+				u4AkmSuite = RSN_AKM_SUITE_SAE;
+				break;
+			case WLAN_AKM_SUITE_SAE_EXT_KEY:
+				u4AkmSuite = RSN_AKM_SUITE_SAE_EXT_KEY;
+				break;
+			case WLAN_AKM_SUITE_OWE:
+				u4AkmSuite = RSN_AKM_SUITE_OWE;
+				break;
+#if CFG_SUPPORT_DPP
+			case WLAN_AKM_SUITE_DPP:
+				u4AkmSuite = RSN_AKM_SUITE_DPP;
+				break;
+#endif
+			case WLAN_AKM_SUITE_8021X_SUITE_B_192:
+				u4AkmSuite = RSN_AKM_SUITE_8021X_SUITE_B_192;
+				break;
+			default:
+				DBGLOG(REQ, WARN, "invalid Akm Suite (%d)\n",
+				       au4AkmSuites[i]);
+				return -EINVAL;
+			}
+		}
+
+		eAuthMode = rsnKeyMgmtToAuthMode(
+			eOriAuthMode, u4WpaVersion, u4AkmSuite);
+
+		/* Enable the specific AKM suite only. */
+		for (j = 0; j < MAX_NUM_SUPPORTED_AKM_SUITES; j++) {
+			prEntry =
+			    &prMib->dot11RSNAConfigAuthenticationSuitesTable[j];
+
+			if (prEntry->dot11RSNAConfigAuthenticationSuite !=
+				u4AkmSuite)
+				continue;
+
+			prEntry->dot11RSNAConfigAuthenticationSuiteEnabled =
+				TRUE;
+		}
+
+		if (i == 0) {
+			*prAuthMode = eAuthMode;
+			*pu4AkmSuite = u4AkmSuite;
+		}
+	}
+
+	return 0;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is responsible for requesting to connect to
@@ -1337,9 +1452,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	uint32_t cipher;
 	struct PARAM_CONNECT rNewSsid;
 	struct PARAM_OP_MODE rOpMode;
-	uint32_t i, u4AkmSuite = 0;
-	struct DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY
-		*prEntry;
+	uint32_t u4AkmSuite = 0;
 	struct CONNECTION_SETTINGS *prConnSettings = NULL;
 #if CFG_SUPPORT_REPLAY_DETECTION
 	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
@@ -1405,15 +1518,14 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	prWpaInfo->u4CipherGroupMgmt = RSN_CIPHER_SUITE_BIP_CMAC_128;
 #endif
 	aisInitializeConnectionRsnInfo(prGlueInfo->prAdapter, ucBssIndex);
+	prMib = aisGetMib(prGlueInfo->prAdapter, ucBssIndex);
 
 	if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_1)
 		prWpaInfo->u4WpaVersion = IW_AUTH_WPA_VERSION_WPA;
 	else if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_2)
-		prWpaInfo->u4WpaVersion =
-			IW_AUTH_WPA_VERSION_WPA2;
+		prWpaInfo->u4WpaVersion = IW_AUTH_WPA_VERSION_WPA2;
 	else
-		prWpaInfo->u4WpaVersion =
-			IW_AUTH_WPA_VERSION_DISABLED;
+		prWpaInfo->u4WpaVersion = IW_AUTH_WPA_VERSION_DISABLED;
 
 	DBGLOG(REQ, INFO,
 	       "sme->auth_type=%x, sme->crypto.wpa_versions=%x",
@@ -1422,12 +1534,15 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	switch (sme->auth_type) {
 	case NL80211_AUTHTYPE_OPEN_SYSTEM:
 		prWpaInfo->u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
+		eAuthMode = AUTH_MODE_OPEN;
 		break;
 	case NL80211_AUTHTYPE_SHARED_KEY:
 		prWpaInfo->u4AuthAlg = IW_AUTH_ALG_SHARED_KEY;
+		eAuthMode = AUTH_MODE_SHARED;
 		break;
 	case NL80211_AUTHTYPE_FT:
 		prWpaInfo->u4AuthAlg = IW_AUTH_ALG_FT;
+		eAuthMode = AUTH_MODE_OPEN;
 		break;
 	case NL80211_AUTHTYPE_SAE:
 		prWpaInfo->u4AuthAlg = IW_AUTH_ALG_SAE;
@@ -1437,50 +1552,43 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		break;
 	default:
 		/* NL80211 only set the Tx wep key while connect */
-		if (sme->key_len != 0)
+		if (sme->key_len != 0) {
 			prWpaInfo->u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM |
-				IW_AUTH_ALG_SHARED_KEY;
-		else
+					       IW_AUTH_ALG_SHARED_KEY;
+			eAuthMode = AUTH_MODE_AUTO_SWITCH;
+		} else {
 			prWpaInfo->u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
+			eAuthMode = AUTH_MODE_OPEN;
+		}
 		break;
 	}
 
 	if (sme->crypto.n_ciphers_pairwise) {
-		DBGLOG(RSN, INFO, "[wlan] cipher pairwise (%x)\n",
+		DBGLOG(RSN, INFO, "cipher pairwise (0x%x)\n",
 		       sme->crypto.ciphers_pairwise[0]);
-
-		prConnSettings->rRsnInfo
-		.au4PairwiseKeyCipherSuite[0] = sme->crypto.ciphers_pairwise[0];
 		switch (sme->crypto.ciphers_pairwise[0]) {
 		case WLAN_CIPHER_SUITE_WEP40:
-			prWpaInfo->u4CipherPairwise =
-							IW_AUTH_CIPHER_WEP40;
+			prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_WEP40;
 			break;
 		case WLAN_CIPHER_SUITE_WEP104:
-			prWpaInfo->u4CipherPairwise =
-							IW_AUTH_CIPHER_WEP104;
+			prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_WEP104;
 			break;
 		case WLAN_CIPHER_SUITE_TKIP:
-			prWpaInfo->u4CipherPairwise =
-							IW_AUTH_CIPHER_TKIP;
+			prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_TKIP;
 			break;
 		case WLAN_CIPHER_SUITE_CCMP:
-			prWpaInfo->u4CipherPairwise =
-							IW_AUTH_CIPHER_CCMP;
+			prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_CCMP;
 			break;
 		case WLAN_CIPHER_SUITE_AES_CMAC:
-			prWpaInfo->u4CipherPairwise =
-							IW_AUTH_CIPHER_CCMP;
+			prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_CCMP;
 			break;
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 		case WLAN_CIPHER_SUITE_GCMP_256:
-			prWpaInfo->u4CipherPairwise =
-							IW_AUTH_CIPHER_GCMP256;
+			prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_GCMP256;
 			break;
 #endif
 		case WLAN_CIPHER_SUITE_GCMP:
-			prWpaInfo->u4CipherPairwise =
-							IW_AUTH_CIPHER_GCMP128;
+			prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_GCMP128;
 			break;
 		case WLAN_CIPHER_SUITE_NO_GROUP_ADDR:
 			DBGLOG(REQ, INFO, "WLAN_CIPHER_SUITE_NO_GROUP_ADDR\n");
@@ -1493,38 +1601,31 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	}
 
 	if (sme->crypto.cipher_group) {
-		prConnSettings->rRsnInfo
-		.u4GroupKeyCipherSuite = sme->crypto.cipher_group;
+		DBGLOG(RSN, INFO, "cipher group (0x%x)\n",
+		       sme->crypto.cipher_group);
 		switch (sme->crypto.cipher_group) {
 		case WLAN_CIPHER_SUITE_WEP40:
-			prWpaInfo->u4CipherGroup =
-							IW_AUTH_CIPHER_WEP40;
+			prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_WEP40;
 			break;
 		case WLAN_CIPHER_SUITE_WEP104:
-			prWpaInfo->u4CipherGroup =
-							IW_AUTH_CIPHER_WEP104;
+			prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_WEP104;
 			break;
 		case WLAN_CIPHER_SUITE_TKIP:
-			prWpaInfo->u4CipherGroup =
-							IW_AUTH_CIPHER_TKIP;
+			prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_TKIP;
 			break;
 		case WLAN_CIPHER_SUITE_CCMP:
-			prWpaInfo->u4CipherGroup =
-							IW_AUTH_CIPHER_CCMP;
+			prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_CCMP;
 			break;
 		case WLAN_CIPHER_SUITE_AES_CMAC:
-			prWpaInfo->u4CipherGroup =
-							IW_AUTH_CIPHER_CCMP;
+			prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_CCMP;
 			break;
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 		case WLAN_CIPHER_SUITE_GCMP_256:
-			prWpaInfo->u4CipherGroup =
-							IW_AUTH_CIPHER_GCMP256;
+			prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_GCMP256;
 			break;
 #endif
 		case WLAN_CIPHER_SUITE_GCMP:
-			prWpaInfo->u4CipherGroup =
-							IW_AUTH_CIPHER_GCMP128;
+			prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_GCMP128;
 			break;
 		case WLAN_CIPHER_SUITE_NO_GROUP_ADDR:
 			break;
@@ -1539,124 +1640,18 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		DBGLOG(REQ, INFO, "n_akm_suites=%x, akm_suites=%x",
 			sme->crypto.n_akm_suites,
 			sme->crypto.akm_suites[0]);
-		prConnSettings->rRsnInfo
-		.au4AuthKeyMgtSuite[0] = sme->crypto.akm_suites[0];
-		if (prWpaInfo->u4WpaVersion ==
-		    IW_AUTH_WPA_VERSION_WPA) {
-			switch (sme->crypto.akm_suites[0]) {
-			case WLAN_AKM_SUITE_8021X:
-				eAuthMode = AUTH_MODE_WPA;
-				u4AkmSuite = WPA_AKM_SUITE_802_1X;
-				break;
-			case WLAN_AKM_SUITE_PSK:
-				eAuthMode = AUTH_MODE_WPA_PSK;
-				u4AkmSuite = WPA_AKM_SUITE_PSK;
-				break;
-			default:
-				DBGLOG(REQ, WARN, "invalid Akm Suite (%08x)\n",
-				       sme->crypto.akm_suites[0]);
-				return -EINVAL;
-			}
-		} else if (prWpaInfo->u4WpaVersion ==
-			   IW_AUTH_WPA_VERSION_WPA2) {
-			switch (sme->crypto.akm_suites[0]) {
-			case WLAN_AKM_SUITE_8021X:
-				eAuthMode = AUTH_MODE_WPA2;
-				u4AkmSuite = RSN_AKM_SUITE_802_1X;
-				break;
-			case WLAN_AKM_SUITE_PSK:
-				eAuthMode = AUTH_MODE_WPA2_PSK;
-				u4AkmSuite = RSN_AKM_SUITE_PSK;
-				break;
-#if CFG_SUPPORT_802_11R
-			case WLAN_AKM_SUITE_FT_8021X:
-				eAuthMode = AUTH_MODE_WPA2_FT;
-				u4AkmSuite = RSN_AKM_SUITE_FT_802_1X;
-				break;
-			case WLAN_AKM_SUITE_FT_PSK:
-				eAuthMode = AUTH_MODE_WPA2_FT_PSK;
-				u4AkmSuite = RSN_AKM_SUITE_FT_PSK;
-				break;
-#endif
-#if CFG_SUPPORT_802_11W
-			/* Notice:: Need kernel patch!! */
-			case WLAN_AKM_SUITE_8021X_SHA256:
-				eAuthMode = AUTH_MODE_WPA2;
-				u4AkmSuite = RSN_AKM_SUITE_802_1X_SHA256;
-				break;
-			case WLAN_AKM_SUITE_PSK_SHA256:
-				eAuthMode = AUTH_MODE_WPA2_PSK;
-				u4AkmSuite = RSN_AKM_SUITE_PSK_SHA256;
-				break;
-#endif
-#if CFG_SUPPORT_PASSPOINT
-			case WLAN_AKM_SUITE_OSEN:
-				eAuthMode = AUTH_MODE_WPA_OSEN;
-				u4AkmSuite = WFA_AKM_SUITE_OSEN;
-				break;
-#endif
-			case WLAN_AKM_SUITE_SAE:
-				if (sme->auth_type == NL80211_AUTHTYPE_SAE)
-					eAuthMode = AUTH_MODE_WPA3_SAE;
-				else
-					eAuthMode = AUTH_MODE_OPEN;
-				u4AkmSuite = RSN_AKM_SUITE_SAE;
-				break;
-			case WLAN_AKM_SUITE_SAE_EXT_KEY:
-				if (sme->auth_type == NL80211_AUTHTYPE_SAE)
-					eAuthMode = AUTH_MODE_WPA3_SAE;
-				else
-					eAuthMode = AUTH_MODE_OPEN;
-				u4AkmSuite = RSN_AKM_SUITE_SAE_EXT_KEY;
-				break;
-			case WLAN_AKM_SUITE_OWE:
-				eAuthMode = AUTH_MODE_WPA3_OWE;
-				u4AkmSuite = RSN_AKM_SUITE_OWE;
-				break;
-
-#if CFG_SUPPORT_DPP
-			case WLAN_AKM_SUITE_DPP:
-				eAuthMode = AUTH_MODE_WPA2_PSK;
-				u4AkmSuite = RSN_AKM_SUITE_DPP;
-				break;
-#endif
-			case WLAN_AKM_SUITE_8021X_SUITE_B_192:
-				eAuthMode = AUTH_MODE_WPA2;
-				u4AkmSuite = RSN_AKM_SUITE_8021X_SUITE_B_192;
-				break;
-			default:
-				DBGLOG(REQ, WARN, "invalid Akm Suite (%d)\n",
-				       sme->crypto.akm_suites[0]);
-				return -EINVAL;
-			}
+		if (wlanParseAkmSuites(sme->crypto.akm_suites,
+			sme->crypto.n_akm_suites, prWpaInfo->u4WpaVersion,
+			&eAuthMode, &u4AkmSuite, prMib) < 0) {
+			return -EINVAL;
 		}
 	}
 
-	DBGLOG(REQ, INFO, "u4WpaVersion=%d, u4AuthAlg=%d",
-		prWpaInfo->u4WpaVersion,
-		prWpaInfo->u4AuthAlg);
-	if (prWpaInfo->u4WpaVersion ==
-	    IW_AUTH_WPA_VERSION_DISABLED) {
-		switch (prWpaInfo->u4AuthAlg) {
-		case IW_AUTH_ALG_FT:
-			DBGLOG(REQ, INFO, "FT: Non-RSN FT connect\n");
-			eAuthMode = AUTH_MODE_OPEN;
-			break;
-		case IW_AUTH_ALG_OPEN_SYSTEM:
-			if (sme->crypto.n_akm_suites &&
-				sme->crypto.akm_suites[0] ==
-				WLAN_AKM_SUITE_OSEN) {
-				eAuthMode = AUTH_MODE_WPA_OSEN;
-				u4AkmSuite = WFA_AKM_SUITE_OSEN;
-			} else {
-				eAuthMode = AUTH_MODE_OPEN;
-			}
-			break;
-		default:
-			eAuthMode = AUTH_MODE_AUTO_SWITCH;
-			break;
-		}
-	}
+	DBGLOG(REQ, INFO,
+		"u4WpaVersion=%d, u4AuthAlg=%d, eAuthMode=%d, u4AkmSuite=0x%x, u4CipherGroup=0x%x, u4CipherPairwise=0x%x\n",
+		prWpaInfo->u4WpaVersion, prWpaInfo->u4AuthAlg,
+		eAuthMode, u4AkmSuite, prWpaInfo->u4CipherGroup,
+		prWpaInfo->u4CipherPairwise);
 
 	prWpaInfo->fgPrivacyInvoke = sme->privacy;
 	prConnSettings->fgWpsActive = FALSE;
@@ -1780,25 +1775,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(REQ, WARN, "set auth mode error:%x\n", rStatus);
 
-	prMib = aisGetMib(prGlueInfo->prAdapter, ucBssIndex);
-
-	/* Enable the specific AKM suite only. */
-	for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++) {
-		prEntry = &prMib->
-				dot11RSNAConfigAuthenticationSuitesTable[i];
-
-		if (prEntry->dot11RSNAConfigAuthenticationSuite ==
-		    u4AkmSuite) {
-			prEntry->dot11RSNAConfigAuthenticationSuiteEnabled =
-									TRUE;
-		} else {
-			prEntry->dot11RSNAConfigAuthenticationSuiteEnabled =
-									FALSE;
-		}
-	}
-
-	cipher = prWpaInfo->u4CipherGroup |
-		 prWpaInfo->u4CipherPairwise;
+	cipher = prWpaInfo->u4CipherGroup | prWpaInfo->u4CipherPairwise;
 
 	if (1 /* prWpaInfo->fgPrivacyInvoke */) {
 		if (cipher & (IW_AUTH_CIPHER_GCMP256 |
@@ -1897,43 +1874,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "set SSID:%x\n", rStatus);
 		return -EINVAL;
 	}
-#if 0
-	if (sme->bssid != NULL
-	    && 1 /* prGlueInfo->fgIsBSSIDSet */) {
-		/* connect by BSSID */
-		if (sme->ssid_len > 0) {
-			struct CONNECTION_SETTINGS *prConnSettings = NULL;
 
-			prConnSettings = &
-			 (prGlueInfo->prAdapter->rWifiVar.rConnSettings);
-			/* prGlueInfo->fgIsSSIDandBSSIDSet = TRUE; */
-			COPY_SSID(prConnSettings->aucSSID,
-				  prConnSettings->ucSSIDLen,
-				  sme->ssid, sme->ssid_len);
-		}
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetBssid,
-				(void *) sme->bssid, MAC_ADDR_LEN,
-				&u4BufLen);
-
-		if (rStatus != WLAN_STATUS_SUCCESS) {
-			DBGLOG(REQ, WARN, "set BSSID:%x\n", rStatus);
-			return -EINVAL;
-		}
-	} else if (sme->ssid_len > 0) {
-		/* connect by SSID */
-		COPY_SSID(rNewSsid.aucSsid, rNewSsid.u4SsidLen, sme->ssid,
-			  sme->ssid_len);
-		rNewSsid.ucBssIdx = ucBssIndex;
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetSsid,
-				(void *)&rNewSsid, sizeof(struct PARAM_SSID),
-				&u4BufLen);
-
-		if (rStatus != WLAN_STATUS_SUCCESS) {
-			DBGLOG(REQ, WARN, "set SSID:%x\n", rStatus);
-			return -EINVAL;
-		}
-	}
-#endif
 	return 0;
 }
 #if CFG_SUPPORT_WPA3

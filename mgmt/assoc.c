@@ -178,15 +178,6 @@ struct APPEND_VAR_IE_ENTRY txAssocRespIETable[] = {
 #endif /* CFG_SUPPORT_AAA */
 
 /*******************************************************************************
- *                           P R I V A T E   D A T A
- *******************************************************************************
- */
-static uint8_t g_assocSkipIEs[] = {
-	ELEM_ID_RSN,
-	ELEM_ID_EXTENDED_CAP
-};
-
-/*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
  */
@@ -196,10 +187,25 @@ static uint8_t g_assocSkipIEs[] = {
  *******************************************************************************
  */
 
+uint8_t assocSkipRSNXIe(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec, struct IE_HDR *prIe);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
  */
+
+/*******************************************************************************
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
+static struct SKIP_IE_ENTRY g_assocSkipIEs[] = {
+	{ELEM_ID_RSN, NULL},
+	{ELEM_ID_EXTENDED_CAP, NULL},
+	{ELEM_ID_MOBILITY_DOMAIN, NULL},
+	{ELEM_ID_RSNX, assocSkipRSNXIe},
+};
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is used to compose the Capability Info Field.
@@ -766,6 +772,22 @@ uint32_t assocSendReAssocReqFrame(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }				/* end of assocSendReAssocReqFrame() */
 
+uint8_t assocSkipRSNXIe(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec, struct IE_HDR *prIe)
+{
+	uint8_t ucBssIndex = prStaRec->ucBssIndex;
+
+	if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
+		struct BSS_DESC *prTargetBss =
+			aisGetTargetBssDesc(prAdapter, ucBssIndex);
+
+		/* skip rsnxe if target ap doesn't support rsnxe */
+		if (prTargetBss && !prTargetBss->fgIERSNX)
+			return TRUE;
+	}
+
+	return FALSE;
+}
 
 uint32_t assocCalculateConnIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 			     struct STA_RECORD *prStaRec)
@@ -784,14 +806,20 @@ uint32_t assocCalculateConnIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 		u2RetLen = prConnSettings->assocIeLen;
 
 		for (i = 0; i < ARRAY_SIZE(g_assocSkipIEs); i++) {
-			ie = NULL;
-			ie = kalFindIeMatchMask(g_assocSkipIEs[i],
+			ie = kalFindIeMatchMask(g_assocSkipIEs[i].ucElemID,
 				       prConnSettings->pucAssocIEs,
 				       prConnSettings->assocIeLen,
 				       NULL, 0, 0, NULL);
 			/* cut out IE */
-			if (ie)
+			if (ie) {
+				if (g_assocSkipIEs[i].pfnSkipIE &&
+					!g_assocSkipIEs[i].pfnSkipIE(
+					prAdapter, prStaRec,
+					(struct IE_HDR *)ie))
+					continue;
+
 				u2RetLen -= IE_SIZE(ie);
+			}
 		}
 	}
 
@@ -829,12 +857,17 @@ void assocGenerateConnIE(struct ADAPTER *prAdapter,
 		cp += prConnSettings->assocIeLen;
 
 		for (i = 0; i < ARRAY_SIZE(g_assocSkipIEs); i++) {
-			ie = NULL;
-			ie = kalFindIeMatchMask(g_assocSkipIEs[i],
+			ie = kalFindIeMatchMask(g_assocSkipIEs[i].ucElemID,
 				       pucBuffer,
 				       cp - pucBuffer,
 				       NULL, 0, 0, NULL);
 			if (ie) {
+				if (g_assocSkipIEs[i].pfnSkipIE &&
+					!g_assocSkipIEs[i].pfnSkipIE(
+					prAdapter, prStaRec,
+					(struct IE_HDR *)ie))
+					continue;
+
 				ieLen = IE_SIZE(ie);
 
 				len = cp - ie - ieLen;
@@ -2150,6 +2183,7 @@ void assocGenerateMDIE(struct ADAPTER *prAdapter,
 	struct FT_IES *prFtIEs;
 	struct GL_WPA_INFO *prWpaInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
+	struct BSS_INFO *prBssInfo;
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
 		return;
@@ -2157,18 +2191,18 @@ void assocGenerateMDIE(struct ADAPTER *prAdapter,
 	eAuthMode = aisGetAuthMode(prAdapter, ucBssIndex);
 	prFtIEs = aisGetFtIe(prAdapter, ucBssIndex);
 	prWpaInfo = aisGetWpaInfo(prAdapter, ucBssIndex);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
 	/* don't include MDIE in assoc request frame if auth mode is not FT
 	 * related
 	 */
-	if (eAuthMode != AUTH_MODE_WPA2_FT &&
-		eAuthMode != AUTH_MODE_WPA2_FT_PSK &&
-		!(eAuthMode == AUTH_MODE_OPEN &&
-		prWpaInfo->u4WpaVersion ==
-		IW_AUTH_WPA_VERSION_DISABLED &&
-		prWpaInfo->u4AuthAlg ==
-		IW_AUTH_ALG_FT)) /* Non-RSN FT */
+	if (!rsnKeyMgmtFT(prBssInfo->u4RsnSelectedAKMSuite) &&
+	    !(eAuthMode == AUTH_MODE_OPEN &&
+	      prWpaInfo->u4WpaVersion == IW_AUTH_WPA_VERSION_DISABLED &&
+	      prWpaInfo->u4AuthAlg == IW_AUTH_ALG_FT)) { /* Non-RSN FT */
+		DBGLOG(SAA, ERROR, "Don't gen MDIE\n");
 		return;
+	}
 
 	if (!prFtIEs) {
 		DBGLOG(SAA, ERROR, "prFtIEs is null\n");

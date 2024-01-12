@@ -24,6 +24,14 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+/**/
+
+/* Indicates maximum number of AKM suites allowed for NL80211_CMD_CONNECT,
+ * NL80211_CMD_ASSOCIATE and NL80211_CMD_START_AP in NL80211_CMD_GET_WIPHY
+ * response.
+ */
+#define RSN_MAX_NR_AKN_SUITES		3
+
 /* ----- Definitions for Cipher Suite Selectors ----- */
 #define RSN_CIPHER_SUITE_USE_GROUP_KEY  0x00AC0F00
 #define RSN_CIPHER_SUITE_WEP40          0x01AC0F00
@@ -49,11 +57,9 @@
 #define WPA_CIPHER_SUITE_WEP104         0x05F25000
 
 /* Definitions for Authentication and Key Management Suite Selectors */
-#define RSN_AKM_SUITE_NONE              0x00AC0F00
-#define RSN_AKM_SUITE_802_1X            0x01AC0F00
-#define RSN_AKM_SUITE_PSK               0x02AC0F00
-#define RSN_AKM_SUITE_FT_802_1X         0x03AC0F00
-#define RSN_AKM_SUITE_FT_PSK            0x04AC0F00
+#define WPA_AKM_SUITE_NONE              0x00F25000
+#define WPA_AKM_SUITE_802_1X            0x01F25000
+#define WPA_AKM_SUITE_PSK               0x02F25000
 #ifndef WLAN_AKM_SUITE_FT_8021X
 #define WLAN_AKM_SUITE_FT_8021X         0x000FAC03
 #endif
@@ -63,10 +69,12 @@
 #ifndef WLAN_AKM_SUITE_8021X_SUITE_B
 #define WLAN_AKM_SUITE_8021X_SUITE_B    0x000FAC0B
 #endif
+#ifndef WLAN_AKM_SUITE_FT_OVER_SAE
+#define WLAN_AKM_SUITE_FT_OVER_SAE      0x000FAC09
+#endif
 #ifndef WLAN_AKM_SUITE_8021X_SUITE_B_192
 #define WLAN_AKM_SUITE_8021X_SUITE_B_192 0x000FAC0C
 #endif
-
 /* Add AKM SUITE for OWE since kernel haven't defined it. */
 #ifndef WLAN_AKM_SUITE_OWE
 #define WLAN_AKM_SUITE_OWE              0x000FAC12
@@ -79,30 +87,34 @@
 #define WLAN_AKM_SUITE_SAE_EXT_KEY	0x000FAC18
 #endif
 
-#if CFG_SUPPORT_802_11W
+#define RSN_AKM_SUITE_NONE              0x00AC0F00
+#define RSN_AKM_SUITE_802_1X            0x01AC0F00
+#define RSN_AKM_SUITE_PSK               0x02AC0F00
+#define RSN_AKM_SUITE_FT_802_1X         0x03AC0F00
+#define RSN_AKM_SUITE_FT_PSK            0x04AC0F00
 #define RSN_AKM_SUITE_802_1X_SHA256     0x05AC0F00
 #define RSN_AKM_SUITE_PSK_SHA256        0x06AC0F00
-#endif
-
 #define RSN_AKM_SUITE_TDLS              0x07AC0F00
 #define RSN_AKM_SUITE_SAE               0x08AC0F00
 #define RSN_AKM_SUITE_FT_OVER_SAE       0x09AC0F00
 #define RSN_AKM_SUITE_8021X_SUITE_B     0x0BAC0F00
 #define RSN_AKM_SUITE_8021X_SUITE_B_192 0x0CAC0F00
+#define RSN_AKM_SUITE_FT_802_1X_SHA384  0x0DAC0F00
 #define RSN_AKM_SUITE_FILS_SHA256       0x0EAC0F00
 #define RSN_AKM_SUITE_FILS_SHA384       0x0FAC0F00
 #define RSN_AKM_SUITE_FT_FILS_SHA256    0x10AC0F00
 #define RSN_AKM_SUITE_FT_FILS_SHA384    0x11AC0F00
 #define RSN_AKM_SUITE_OWE               0x12AC0F00
+#define RSN_AKM_SUITE_FT_PSK_SHA384     0x13AC0F00
+#define RSN_AKM_SUITE_PSK_SHA384        0x14AC0F00
+#define RSN_AKM_SUITE_PASN              0x15AC0F00
+#define RSN_AKM_SUITE_FT_802_1X_SHA384_UNRESTRICTED      0x16AC0F00
 #define RSN_AKM_SUITE_8021X_SHA384      0x17AC0F00
 #define RSN_AKM_SUITE_SAE_EXT_KEY       0x18AC0F00
 #define RSN_AKM_SUITE_FT_SAE_EXT_KEY    0x19AC0F00
+#define RSN_AKM_SUITE_OSEN              0x019A6F50
 #define RSN_AKM_SUITE_DPP               0x029A6F50
-#define WPA_AKM_SUITE_NONE              0x00F25000
-#define WPA_AKM_SUITE_802_1X            0x01F25000
-#define WPA_AKM_SUITE_PSK               0x02F25000
 
-#define WFA_AKM_SUITE_OSEN              0x019A6F50
 /* this define should be in ieee80211.h, but kernel didn't update it.
  * so we define here temporary
  */
@@ -226,6 +238,8 @@ u_int8_t rsnSearchSupportedCipher(struct ADAPTER
 				  uint32_t u4Cipher, uint32_t *pu4Index,
 				  uint8_t ucBssIndex);
 
+void rsnDumpSupportedCipher(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+
 u_int8_t rsnIsSuitableBSS(struct ADAPTER *prAdapter,
 			  struct BSS_DESC *prBss,
 			  struct RSN_INFO *prBssRsnInfo,
@@ -235,9 +249,11 @@ u_int8_t rsnSearchAKMSuite(struct ADAPTER *prAdapter,
 			   uint32_t u4AkmSuite, uint32_t *pu4Index,
 			   uint8_t ucBssIndex);
 
-uint8_t rsnKeyMgmtWpa(struct ADAPTER *ad,
-	enum ENUM_PARAM_AUTH_MODE eAuthMode,
-	uint8_t bssidx);
+void rsnDumpSupportedAKMSuite(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+
+uint8_t rsnSearchFTSuite(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+
+uint8_t rsnKeyMgmtRsn(enum ENUM_PARAM_AUTH_MODE eAuthMode);
 
 u_int8_t rsnPerformPolicySelection(struct ADAPTER
 				   *prAdapter,
@@ -368,6 +384,11 @@ u_int8_t rsnParseRsnxIE(struct ADAPTER *prAdapter,
 		       struct RSNX_INFO *prRsnxeInfo);
 
 uint8_t rsnKeyMgmtSae(uint32_t akm);
+uint8_t rsnKeyMgmtFT(uint32_t akm);
+uint32_t rsnKeyMgmtToAuthMode(enum ENUM_PARAM_AUTH_MODE eOriAuthMode,
+	uint32_t version, uint32_t akm);
+uint8_t rsnApOverload(uint16_t status, uint16_t reason);
+uint8_t rsnApInvalidPMK(uint16_t status);
 
 /*******************************************************************************
  *                              F U N C T I O N S

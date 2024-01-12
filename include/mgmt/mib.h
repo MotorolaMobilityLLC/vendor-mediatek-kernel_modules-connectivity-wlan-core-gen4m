@@ -77,15 +77,6 @@ struct IEEE_802_11_MIB {
 	/* dot11RSNAConfigAuthenticationSuitesTable     (dot11smt 10) */
 	struct DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY
 	 dot11RSNAConfigAuthenticationSuitesTable[MAX_NUM_SUPPORTED_AKM_SUITES];
-
-#if 0				/* SUPPORT_WAPI */
-	u_int8_t fgWapiKeyInstalled;
-	struct PARAM_WPI_KEY rWapiPairwiseKey[2];
-	u_int8_t fgPairwiseKeyUsed[2];
-	uint8_t ucWpiActivedPWKey;	/* Must be 0 or 1, by wapi spec */
-	struct PARAM_WPI_KEY rWapiGroupKey[2];
-	u_int8_t fgGroupKeyUsed[2];
-#endif
 };
 
 /* ------------------ IEEE 802.11 non HT PHY characteristics ---------------- */

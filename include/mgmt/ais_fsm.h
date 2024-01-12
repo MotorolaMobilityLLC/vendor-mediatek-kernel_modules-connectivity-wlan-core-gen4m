@@ -354,9 +354,6 @@ struct CONNECTION_SETTINGS {
 	/* b0~3: trigger-en AC0~3. b4~7: delivery-en AC0~3 */
 	uint8_t bmfgApsdEnAc;
 
-	/* for RSN info store, when upper layer set rsn info */
-	struct RSN_INFO rRsnInfo;
-
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 	u_int8_t fgSecModeChangeStartTimer;
 #endif
