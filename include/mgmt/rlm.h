@@ -357,11 +357,20 @@ void rlmGenerateHtTPEIE(
 void rlmRspGenerateErpIE(struct ADAPTER *prAdapter,
 			 struct MSDU_INFO *prMsduInfo);
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint8_t rlmCheckMtkOuiChipCap(uint8_t *pucIe, uint64_t u8ChipCap);
+uint8_t rlmCheckIsSupportedMld(struct ADAPTER *prAdapter,
+	uint8_t *pucIe, uint16_t u2Len);
+#endif
+
+uint32_t rlmCalculateMTKOuiIELen(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, struct STA_RECORD *prStaRec);
+
 void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 			 struct MSDU_INFO *prMsduInfo);
 
 u_int8_t rlmParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
-			       uint8_t *pucBuf, uint32_t *pu4Cap);
+			       uint8_t *pucBuf,  struct STA_RECORD *prStaRec);
 
 #if CFG_SUPPORT_RXSMM_WHITELIST
 u_int8_t rlmParseCheckRxsmmOuiIE(struct ADAPTER *prAdapter, uint8_t *pucBuf,

@@ -300,6 +300,7 @@ struct STA_RECORD {
 	 */
 	uint8_t ucTidBitmap;
 	uint8_t aucMldAddr[MAC_ADDR_LEN];
+	uint8_t fgMtkMld;
 #endif
 
 	uint8_t ucStaState;	/* STATE_1,2,3 */
