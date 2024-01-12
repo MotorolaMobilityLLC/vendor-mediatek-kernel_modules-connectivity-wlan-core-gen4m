@@ -1,7 +1,7 @@
 # ---------------------------------------------------
 # Compile Options
 # ---------------------------------------------------
-WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663
+WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC
 # '-D' and '-U' options are processed in the order they are given on the command line.
 # All '-imacros file' and '-include file' options are processed after all '-D' and '-U' options.
 ccflags-y += $(WLAN_CHIP_LIST)
@@ -38,6 +38,12 @@ endif
 ifneq ($(findstring 7663,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT7663,$(ccflags-y))
 ccflags-y += -DMT7663
+CONFIG_CONNAC_MAC=y
+endif
+
+ifneq ($(findstring CONNAC,$(MTK_COMBO_CHIP)),)
+ccflags-y:=$(filter-out -UCONNAC,$(ccflags-y))
+ccflags-y += -DCONNAC
 CONFIG_CONNAC_MAC=y
 endif
 
@@ -223,10 +229,17 @@ MGMT_OBJS := $(MGMT_DIR)ais_fsm.o \
              $(MGMT_DIR)hs20.o \
              $(MGMT_DIR)tdls.o
 
-CHIPS_OBJS := $(CHIPS)mt6632.o \
-			  $(CHIPS)mt7668.o
+ifneq ($(findstring 6632,$(MTK_COMBO_CHIP)),)
+CHIPS_OBJS += $(CHIPS)mt6632.o
+endif
+ifneq ($(findstring 7668,$(MTK_COMBO_CHIP)),)
+CHIPS_OBJS += $(CHIPS)mt7668.o
+endif
 ifneq ($(findstring 7663,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt7663.o
+endif
+ifneq ($(findstring CONNAC,$(MTK_COMBO_CHIP)),)
+CHIPS_OBJS += $(CHIPS)connac.o
 endif
 
 

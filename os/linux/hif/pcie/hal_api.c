@@ -102,44 +102,6 @@
 ********************************************************************************
 */
 
-static PCIE_CHIP_CR_MAPPING arBus2ChipCrMapping[] = {
-	/* chip addr, bus addr, range */
-	{0x82060000, 0x00008000, 0x00000450}, /* WF_PLE */
-	{0x82068000, 0x0000c000, 0x00000450}, /* WF_PSE */
-	{0x8206c000, 0x0000e000, 0x00000300}, /* PP */
-	{0x820d0000, 0x00020000, 0x00000200}, /* WF_AON */
-	{0x820f0000, 0x00020200, 0x00000400}, /* WF_CFG */
-	{0x820f0800, 0x00020600, 0x00000200}, /* WF_CFGOFF */
-	{0x820f1000, 0x00020800, 0x00000200}, /* WF_TRB */
-	{0x820f2000, 0x00020a00, 0x00000200}, /* WF_AGG */
-	{0x820f3000, 0x00020c00, 0x00000400}, /* WF_ARB */
-	{0x820f4000, 0x00021000, 0x00000200}, /* WF_TMAC */
-	{0x820f5000, 0x00021200, 0x00000400}, /* WF_RMAC */
-	{0x820f6000, 0x00021600, 0x00000200}, /* WF_SEC */
-	{0x820f7000, 0x00021800, 0x00000200}, /* WF_DMA */
-
-	{0x820f8000, 0x00022000, 0x00001000}, /* WF_PF */
-	{0x820f9000, 0x00023000, 0x00000400}, /* WF_WTBLON */
-	{0x820f9800, 0x00023400, 0x00000200}, /* WF_WTBLOFF */
-
-	{0x820fa000, 0x00024000, 0x00000200}, /* WF_ETBF */
-	{0x820fb000, 0x00024200, 0x00000400}, /* WF_LPON */
-	{0x820fc000, 0x00024600, 0x00000200}, /* WF_INT */
-	{0x820fd000, 0x00024800, 0x00000400}, /* WF_MIB */
-
-	{0x820fe000, 0x00025000, 0x00002000}, /* WF_MU */
-
-	{0x820e0000, 0x00030000, 0x00010000}, /* WF_WTBL */
-
-	{0x80020000, 0x00000000, 0x00002000}, /* TOP_CFG */
-	{0x80000000, 0x00002000, 0x00002000}, /* MCU_CFG */
-	{0x50000000, 0x00004000, 0x00004000}, /* PDMA_CFG */
-	{0xA0000000, 0x00008000, 0x00008000}, /* PSE_CFG */
-	{0x82070000, 0x00010000, 0x00010000}, /* WF_PHY */
-
-	{0x0, 0x0, 0x0}
-};
-
 /*******************************************************************************
 *                                 M A C R O S
 ********************************************************************************
@@ -168,22 +130,27 @@ static PCIE_CHIP_CR_MAPPING arBus2ChipCrMapping[] = {
 /*----------------------------------------------------------------------------*/
 BOOL halVerifyChipID(IN P_ADAPTER_T prAdapter)
 {
-	UINT_32 u4CIR = 0;
 	struct mt66xx_chip_info *prChipInfo;
+	P_BUS_INFO prBusInfo;
+	UINT_32 u4CIR = 0;
 
 	ASSERT(prAdapter);
 
 	if (prAdapter->fgIsReadRevID)
 		return TRUE;
 
-	HAL_MCR_RD(prAdapter, TOP_HW_CONTROL, &u4CIR);
-
 	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+
+	HAL_MCR_RD(prAdapter, prBusInfo->top_cfg_base + TOP_HW_CONTROL, &u4CIR);
+
+	DBGLOG(INIT, INFO, "WCIR_CHIP_ID = 0x%x, chip_id = 0x%x\n",
+		(u4CIR & WCIR_CHIP_ID), prChipInfo->chip_id);
 
 	if ((u4CIR & WCIR_CHIP_ID) != prChipInfo->chip_id)
 		return FALSE;
 
-	HAL_MCR_RD(prAdapter, TOP_HW_VERSION, &u4CIR);
+	HAL_MCR_RD(prAdapter, prBusInfo->top_cfg_base + TOP_HW_VERSION, &u4CIR);
 
 	prAdapter->ucRevID = (UINT_8)(u4CIR & 0xF);
 	prAdapter->fgIsReadRevID = TRUE;
@@ -248,12 +215,8 @@ WLAN_STATUS halRxWaitResponse(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPortIdx,
 /*----------------------------------------------------------------------------*/
 VOID halEnableInterrupt(IN P_ADAPTER_T prAdapter)
 {
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_GL_HIF_INFO_T prHifInfo = NULL;
+	P_BUS_INFO prBusInfo = prAdapter->chip_info->bus_info;
 	WPMDA_INT_MASK IntMask;
-
-	prGlueInfo = prAdapter->prGlueInfo;
-	prHifInfo = &prGlueInfo->rHifInfo;
 
 	prAdapter->fgIsIntEnable = TRUE;
 
@@ -261,10 +224,8 @@ VOID halEnableInterrupt(IN P_ADAPTER_T prAdapter)
 
 	IntMask.field.rx_done_0 = 1;
 	IntMask.field.rx_done_1 = 1;
-	IntMask.field.tx_done_0 = 1;
-	IntMask.field.tx_done_1 = 1;
-	IntMask.field.tx_done_2 = 1;
-	IntMask.field.tx_done_3 = 1;
+	IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) &
+		BIT(prBusInfo->tx_ring_cmd_idx) & BIT(prBusInfo->tx_ring_data_idx);
 	IntMask.field.tx_coherent = 0;
 	IntMask.field.rx_coherent = 0;
 	IntMask.field.tx_dly_int = 0;
@@ -544,18 +505,19 @@ BOOLEAN halTxIsDataBufEnough(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduIn
 
 VOID halProcessTxInterrupt(IN P_ADAPTER_T prAdapter)
 {
+	P_BUS_INFO prBusInfo = prAdapter->chip_info->bus_info;
 	P_GL_HIF_INFO_T prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	WPDMA_INT_STA_STRUCT rIntrStatus;
 
 	rIntrStatus = (WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
 
-	if (rIntrStatus.field.tx_done_3 == 1)
+	if (rIntrStatus.field.tx_done & BIT(prBusInfo->tx_ring_fwdl_idx))
 		halWpdmaProcessCmdDmaDone(prAdapter->prGlueInfo, TX_RING_FWDL_IDX_3);
 
-	if (rIntrStatus.field.tx_done_2 == 1)
+	if (rIntrStatus.field.tx_done & BIT(prBusInfo->tx_ring_cmd_idx))
 		halWpdmaProcessCmdDmaDone(prAdapter->prGlueInfo, TX_RING_CMD_IDX_2);
 
-	if (rIntrStatus.field.tx_done_0 == 1) {
+	if (rIntrStatus.field.tx_done & BIT(prBusInfo->tx_ring_data_idx)) {
 		halWpdmaProcessDataDmaDone(prAdapter->prGlueInfo, TX_RING_DATA0_IDX_0);
 
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
@@ -1174,9 +1136,9 @@ VOID halWpdmaFreeRing(P_GLUE_INFO_T prGlueInfo)
 
 static VOID halWpdmaSetup(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 {
-	struct mt66xx_chip_info *chip_info = prGlueInfo->prAdapter->chip_info;
+	P_BUS_INFO prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
-	if (chip_info->is_pcie_32dw_read)
+	if (prBusInfo->is_pcie_32dw_read)
 		halWpdmaConfig(prGlueInfo, enable);
 	else
 		halEnhancedWpdmaConfig(prGlueInfo, enable);
@@ -1184,6 +1146,7 @@ static VOID halWpdmaSetup(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 
 VOID halEnhancedWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 {
+	P_BUS_INFO prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	WPDMA_GLO_CFG_STRUCT GloCfg;
 	WPMDA_INT_MASK IntMask;
 
@@ -1210,9 +1173,8 @@ VOID halEnhancedWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 
 		IntMask.field.rx_done_0 = 1;
 		IntMask.field.rx_done_1 = 1;
-		IntMask.field.tx_done_0 = 1;
-		IntMask.field.tx_done_1 = 0;
-		IntMask.field.tx_done_2 = 1;
+		IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) &
+			BIT(prBusInfo->tx_ring_cmd_idx) & BIT(prBusInfo->tx_ring_data_idx);
 		IntMask.field.tx_dly_int = 0;
 	} else {
 		GloCfg.field_1.EnableRxDMA = 0;
@@ -1220,9 +1182,7 @@ VOID halEnhancedWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 
 		IntMask.field.rx_done_0 = 0;
 		IntMask.field.rx_done_1 = 0;
-		IntMask.field.tx_done_0 = 0;
-		IntMask.field.tx_done_1 = 0;
-		IntMask.field.tx_done_2 = 0;
+		IntMask.field.tx_done = 0;
 		IntMask.field.tx_dly_int = 0;
 	}
 
@@ -1253,6 +1213,7 @@ VOID halEnhancedWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 
 VOID halWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 {
+	P_BUS_INFO prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	WPDMA_GLO_CFG_STRUCT GloCfg;
 	WPMDA_INT_MASK IntMask;
 
@@ -1272,9 +1233,8 @@ VOID halWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 
 		IntMask.field.rx_done_0 = 1;
 		IntMask.field.rx_done_1 = 1;
-		IntMask.field.tx_done_0 = 1;
-		IntMask.field.tx_done_1 = 1;
-		IntMask.field.tx_done_2 = 1;
+		IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) &
+			BIT(prBusInfo->tx_ring_cmd_idx) & BIT(prBusInfo->tx_ring_data_idx);
 	} else {
 		GloCfg.field.EnableRxDMA = 0;
 		GloCfg.field.EnableTxDMA = 0;
@@ -1282,14 +1242,29 @@ VOID halWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 
 		IntMask.field.rx_done_0 = 0;
 		IntMask.field.rx_done_1 = 0;
-		IntMask.field.tx_done_0 = 0;
-		IntMask.field.tx_done_1 = 0;
-		IntMask.field.tx_done_2 = 0;
+		IntMask.field.tx_done = 0;
 	}
 
 	kalDevRegWrite(prGlueInfo, WPDMA_INT_MSK, IntMask.word);
 
 	kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief enable firmware download.
+*
+* @param[in] fgEnable 1 for fw download, 0 for normal data operation.
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
+VOID halEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable)
+{
+	P_BUS_INFO prBusInfo = prAdapter->chip_info->bus_info;
+
+	if (prBusInfo->enableFWDownload)
+		prBusInfo->enableFWDownload(prAdapter, fgEnable);
 }
 
 static BOOLEAN halWpdmaWaitIdle(P_GLUE_INFO_T prGlueInfo, INT_32 round, INT_32 wait_us)
@@ -1313,6 +1288,7 @@ static BOOLEAN halWpdmaWaitIdle(P_GLUE_INFO_T prGlueInfo, INT_32 round, INT_32 w
 
 VOID halWpdmaInitRing(P_GLUE_INFO_T prGlueInfo)
 {
+	P_BUS_INFO prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	UINT_32 phy_addr, offset;
 	INT_32 i;
 	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo;
@@ -1329,7 +1305,10 @@ VOID halWpdmaInitRing(P_GLUE_INFO_T prGlueInfo)
 
 	for (i = 0; i < NUM_OF_TX_RING; i++) {
 		tx_ring = &prHifInfo->TxRing[i];
-		offset = i * MT_RINGREG_DIFF;
+		if (i == TX_RING_CMD_IDX_2)
+			offset = prBusInfo->tx_ring_cmd_idx * MT_RINGREG_DIFF;
+		else
+			offset = i * MT_RINGREG_DIFF;
 		phy_addr = prHifInfo->TxRing[i].Cell[0].AllocPa;
 		tx_ring->TxSwUsedIdx = 0;
 		tx_ring->u4UsedCnt = 0;
