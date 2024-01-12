@@ -951,14 +951,14 @@ static void handle_host_rpt_v5(struct ADAPTER *prAdapter,
 
 			if (msdu0 != WF_TX_FREE_DONE_EVENT_MSDU_ID0_MASK) {
 				halMsduReportStats(prAdapter, msdu0,
-						tx_delay, stat);
+						tx_delay, air_delay, stat);
 				halProcessToken(prAdapter, msdu0, prFreeQueue);
 				msdu_cnt_handled++;
 			}
 
 			if (msdu1 != WF_TX_FREE_DONE_EVENT_MSDU_ID0_MASK) {
 				halMsduReportStats(prAdapter, msdu1,
-						tx_delay, stat);
+						tx_delay, air_delay, stat);
 				halProcessToken(prAdapter, msdu1, prFreeQueue);
 				msdu_cnt_handled++;
 			}
