@@ -216,6 +216,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.is_support_cr4 = FALSE,
 	.txd_append_size = MT7663_TX_DESC_APPEND_LENGTH,
 	.eco_info = mt7663_eco_table,
+	.isNicCapV1 = FALSE,
 
 	.asicCapInit = asicCapInit,
 	.asicEnableFWDownload = asicEnableFWDownload,

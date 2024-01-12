@@ -78,13 +78,22 @@
 ********************************************************************************
 */
 const NIC_CAPABILITY_V2_REF_TABLE_T gNicCapabilityV2InfoTable[] = {
-	{TAG_CAP_TX_RESOURCE, nicEventQueryTxResourceEntry},
+	/* {TAG_CAP_TX_RESOURCE, nicEventQueryTxResourceEntry}, */
 	{TAG_CAP_TX_EFUSEADDRESS, nicCmdEventQueryNicEfuseAddr},
 	{TAG_CAP_COEX_FEATURE, nicCmdEventQueryNicCoexFeature},
 	{TAG_CAP_SINGLE_SKU, rlmDomainExtractSingleSkuInfoFromFirmware},
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	{TAG_CAP_CSUM_OFFLOAD, nicCmdEventQueryNicCsumOffload},
 #endif
+	{TAG_CAP_HW_VERSION, nicCfgChipCapHwVersion},
+	{TAG_CAP_SW_VERSION, nicCfgChipCapSwVersion},
+	{TAG_CAP_MAC_ADDR, nicCfgChipCapMacAddr},
+	{TAG_CAP_PHY_CAP, nicCfgChipCapPhyCap},
+	{TAG_CAP_MAC_CAP, nicCfgChipCapMacCap},
+	{TAG_CAP_FRAME_BUF_CAP, nicCfgChipCapFrameBufCap},
+	{TAG_CAP_BEAMFORM_CAP, nicCfgChipCapBeamformCap},
+	{TAG_CAP_LOCATION_CAP, nicCfgChipCapLocationCap},
+	{TAG_CAP_MUMIMO_CAP, nicCfgChipCapMuMimoCap},
 };
 
 /*******************************************************************************
@@ -2435,47 +2444,6 @@ VOID nicCmdEventQueryMibInfo(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo
 }
 #endif
 
-#if CFG_TCP_IP_CHKSUM_OFFLOAD
-WLAN_STATUS nicCmdEventQueryNicCsumOffload(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
-{
-	P_NIC_CSUM_OFFLOAD_T prChecksumOffload = (P_NIC_CSUM_OFFLOAD_T)pucEventBuf;
-
-	prAdapter->fgIsSupportCsumOffload = prChecksumOffload->ucIsSupportCsumOffload;
-
-	DBGLOG(INIT, INFO, "nicCmdEventQueryNicCsumOffload: ucIsSupportCsumOffload = %x\n",
-						prAdapter->fgIsSupportCsumOffload);
-
-	return WLAN_STATUS_SUCCESS;
-}
-#endif
-
-WLAN_STATUS nicCmdEventQueryNicCoexFeature(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
-{
-	P_NIC_COEX_FEATURE_T prCoexFeature = (P_NIC_COEX_FEATURE_T)pucEventBuf;
-
-	prAdapter->u4FddMode = prCoexFeature->u4FddMode;
-
-	DBGLOG(INIT, INFO, "nicCmdEventQueryNicCoexFeature: u4FddMode = %x\n",
-						prAdapter->u4FddMode);
-
-	return WLAN_STATUS_SUCCESS;
-}
-
-WLAN_STATUS nicCmdEventQueryNicEfuseAddr(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
-{
-	P_NIC_EFUSE_ADDRESS_T prTxResource = (P_NIC_EFUSE_ADDRESS_T)pucEventBuf;
-
-	prAdapter->u4EfuseStartAddress = prTxResource->u4EfuseStartAddress;
-	prAdapter->u4EfuseEndAddress = prTxResource->u4EfuseEndAddress;
-
-	DBGLOG(INIT, INFO, "nicCmdEventQueryNicEfuseAddr: u4EfuseStartAddress = %x\n",
-						prAdapter->u4EfuseStartAddress);
-	DBGLOG(INIT, INFO, "nicCmdEventQueryNicEfuseAddr: u4EfuseEndAddress = %x\n",
-						prAdapter->u4EfuseEndAddress);
-
-	return WLAN_STATUS_SUCCESS;
-}
-
 WLAN_STATUS nicEventQueryTxResourceEntry(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
 {
 	P_NIC_TX_RESOURCE_T prTxResource;
@@ -2504,6 +2472,141 @@ WLAN_STATUS nicEventQueryTxResourceEntry(IN P_ADAPTER_T prAdapter, IN PUINT_8 pu
 						prAdapter->nicTxReousrce.u4DataTotalResource);
 	DBGLOG(INIT, INFO, "nicCmdEventQueryNicTxResource: u4DataResourceUnit = %x\n",
 						prAdapter->nicTxReousrce.u4DataResourceUnit);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+WLAN_STATUS nicCmdEventQueryNicEfuseAddr(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+{
+	P_NIC_EFUSE_ADDRESS_T prTxResource = (P_NIC_EFUSE_ADDRESS_T)pucEventBuf;
+
+	prAdapter->u4EfuseStartAddress = prTxResource->u4EfuseStartAddress;
+	prAdapter->u4EfuseEndAddress = prTxResource->u4EfuseEndAddress;
+
+	DBGLOG(INIT, INFO, "nicCmdEventQueryNicEfuseAddr: u4EfuseStartAddress = %x\n",
+						prAdapter->u4EfuseStartAddress);
+	DBGLOG(INIT, INFO, "nicCmdEventQueryNicEfuseAddr: u4EfuseEndAddress = %x\n",
+						prAdapter->u4EfuseEndAddress);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+WLAN_STATUS nicCmdEventQueryNicCoexFeature(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+{
+	P_NIC_COEX_FEATURE_T prCoexFeature = (P_NIC_COEX_FEATURE_T)pucEventBuf;
+
+	prAdapter->u4FddMode = prCoexFeature->u4FddMode;
+
+	DBGLOG(INIT, INFO, "nicCmdEventQueryNicCoexFeature: u4FddMode = %x\n",
+						prAdapter->u4FddMode);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+WLAN_STATUS nicCmdEventQueryNicCsumOffload(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+{
+	P_NIC_CSUM_OFFLOAD_T prChecksumOffload = (P_NIC_CSUM_OFFLOAD_T)pucEventBuf;
+
+	prAdapter->fgIsSupportCsumOffload = prChecksumOffload->ucIsSupportCsumOffload;
+
+	DBGLOG(INIT, INFO, "nicCmdEventQueryNicCsumOffload: ucIsSupportCsumOffload = %x\n",
+						prAdapter->fgIsSupportCsumOffload);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
+WLAN_STATUS nicCfgChipCapHwVersion(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+{
+	struct CAP_HW_VERSION_T *prHwVer = (struct CAP_HW_VERSION_T *)pucEventBuf;
+
+	prAdapter->rVerInfo.u2FwProductID = prHwVer->u2ProductID;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+WLAN_STATUS nicCfgChipCapSwVersion(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+{
+	struct CAP_SW_VERSION_T *prSwVer = (struct CAP_SW_VERSION_T *)pucEventBuf;
+
+	prAdapter->rVerInfo.u2FwOwnVersion = prSwVer->u2FwVersion;
+	prAdapter->rVerInfo.ucFwBuildNumber = prSwVer->u2FwBuildNumber;
+	kalMemCopy(prAdapter->rVerInfo.aucFwBranchInfo, prSwVer->aucBranchInfo, 4);
+	kalMemCopy(prAdapter->rVerInfo.aucFwDateCode, prSwVer->aucDateCode, 16);
+
+return WLAN_STATUS_SUCCESS;
+}
+
+WLAN_STATUS nicCfgChipCapMacAddr(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+{
+	struct CAP_MAC_ADDR_T *prMacAddr = (struct CAP_MAC_ADDR_T *)pucEventBuf;
+	UINT_8 aucZeroMacAddr[] = NULL_MAC_ADDR;
+
+	COPY_MAC_ADDR(prAdapter->rWifiVar.aucPermanentAddress, prMacAddr->aucMacAddr);
+	COPY_MAC_ADDR(prAdapter->rWifiVar.aucMacAddress, prMacAddr->aucMacAddr);
+	prAdapter->fgIsEmbbededMacAddrValid = (BOOLEAN) (!IS_BMCAST_MAC_ADDR(prMacAddr->aucMacAddr) &&
+						 !EQUAL_MAC_ADDR(aucZeroMacAddr, prMacAddr->aucMacAddr));
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+WLAN_STATUS nicCfgChipCapPhyCap(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+{
+	struct CAP_PHY_CAP_T *prPhyCap = (struct CAP_PHY_CAP_T *)pucEventBuf;
+
+	prAdapter->rWifiVar.ucStaVht &= prPhyCap->ucVht;
+	prAdapter->rWifiVar.ucApVht &= prPhyCap->ucVht;
+	prAdapter->rWifiVar.ucP2pGoVht &= prPhyCap->ucVht;
+	prAdapter->rWifiVar.ucP2pGcVht &= prPhyCap->ucVht;
+	prAdapter->fgIsHw5GBandDisabled = !prPhyCap->uc5gBand;
+	prAdapter->rWifiVar.ucNSS = prPhyCap->ucNss;
+#if CFG_SUPPORT_DBDC
+	if (!prPhyCap->ucDbdc)
+		prAdapter->rWifiVar.ucDbdcMode = DBDC_MODE_DISABLED;
+#endif
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+WLAN_STATUS nicCfgChipCapMacCap(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+{
+	struct CAP_MAC_CAP_T *prMacCap = (struct CAP_MAC_CAP_T *)pucEventBuf;
+
+	if (prMacCap->ucHwBssIdNum > 0 && prMacCap->ucHwBssIdNum <= MAX_BSSID_NUM) {
+		prAdapter->ucHwBssIdNum = prMacCap->ucHwBssIdNum;
+		prAdapter->ucP2PDevBssIdx = prAdapter->ucHwBssIdNum;
+		prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx] = &prAdapter->rWifiVar.rP2pDevInfo;
+	}
+	DBGLOG(INIT, INFO, "ucHwBssIdNum: %d.\n", prMacCap->ucHwBssIdNum);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+WLAN_STATUS nicCfgChipCapFrameBufCap(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+{
+	/* struct CAP_FRAME_BUF_CAP_T *prFrameBuf = (struct CAP_FRAME_BUF_CAP_T *)pucEventBuf; */
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+WLAN_STATUS nicCfgChipCapBeamformCap(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+{
+	/* struct CAP_BEAMFORM_CAP_T *prBeamform = (struct CAP_BEAMFORM_CAP_T *)pucEventBuf; */
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+WLAN_STATUS nicCfgChipCapLocationCap(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+{
+	/* struct CAP_LOCATION_CAP_T *prLocation = (struct CAP_LOCATION_CAP_T *)pucEventBuf; */
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+WLAN_STATUS nicCfgChipCapMuMimoCap(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+{
+	/* struct CAP_MUMIMO_CAP_T *prMuMimo = (struct CAP_HW_VERSION_T *)pucEventBuf; */
 
 	return WLAN_STATUS_SUCCESS;
 }
