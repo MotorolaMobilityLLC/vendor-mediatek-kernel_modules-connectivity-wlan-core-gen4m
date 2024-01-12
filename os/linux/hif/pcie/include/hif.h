@@ -80,6 +80,10 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+#define AXI_CFG_PREALLOC_MEMORY_BUFFER    1
+#define AXI_TX_MAX_SIZE_PER_FRAME         (NIC_TX_MAX_SIZE_PER_FRAME +      \
+					   NIC_TX_DESC_AND_PADDING_LENGTH)
+#define AXI_TX_CMD_BUFF_SIZE              4096
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -323,6 +327,43 @@ struct BUS_INFO {
 	struct SW_WFDMA_INFO rSwWfdmaInfo;
 };
 
+struct HIF_MEM {
+	phys_addr_t pa;
+	void *va;
+};
+
+struct HIF_PREALLOC_MEM {
+	struct HIF_MEM rTxDesc[NUM_OF_TX_RING];
+	struct HIF_MEM rRxDesc[NUM_OF_RX_RING];
+	/* Tx Command */
+	struct HIF_MEM rTxCmdBuf[TX_RING_SIZE];
+	/* Rx Data */
+	struct HIF_MEM rRxDataBuf[RX_RING0_SIZE];
+	/* Rx Event */
+	struct HIF_MEM rRxEventBuf[RX_RING1_SIZE];
+
+#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
+	/* Connac1.0 = RX Event, Connac2.0 = Rx Data band1 */
+	struct HIF_MEM rRxData1Buf[RX_RING0_SIZE];
+	struct HIF_MEM rRxData2Buf[RX_RING0_SIZE];
+	/* Band 0 TxFreeDoneEvent */
+	struct HIF_MEM rTxFreeDoneEvent0Buf[RX_RING1_SIZE];
+	/* Band 1 TxFreeDoneEvent */
+	struct HIF_MEM rTxFreeDoneEvent1Buf[RX_RING1_SIZE];
+	struct HIF_MEM rTxFreeDoneEvent2Buf[RX_RING1_SIZE];
+#else
+	/* Connac1.0 = RX Event, Connac2.0 = Rx Data band1 */
+#endif /* CFG_SUPPORT_CONNAC2X == 1 */
+
+#if HIF_TX_PREALLOC_DATA_BUFFER
+	/* Tx Data */
+	struct HIF_MEM rMsduBuf[HIF_TX_MSDU_TOKEN_NUM];
+#endif
+	phys_addr_t pucRsvMemBase;
+	void *pucRsvMemVirBase;
+	uint64_t u4RsvMemSize;
+	uint32_t u4Offset;
+};
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
