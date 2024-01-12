@@ -3623,7 +3623,7 @@ void p2pRoleFsmRunEventTxCancelWait(IN struct ADAPTER *prAdapter,
 			rLinkEntry,
 			struct P2P_OFF_CHNL_TX_REQ_INFO) {
 		if (!prOffChnlTxPkt)
-			continue;
+			break;
 		if (prOffChnlTxPkt->u8Cookie == prCancelTxWaitMsg->u8Cookie) {
 			fgIsCookieFound = TRUE;
 			break;
