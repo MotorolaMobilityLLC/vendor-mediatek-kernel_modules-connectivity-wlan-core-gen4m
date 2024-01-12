@@ -1216,9 +1216,10 @@ struct MSDU_INFO *p2pFuncProcessAuth(
 	}
 
 	prRetMsduInfo = cnmMgtPktAlloc(prAdapter,
-		(int32_t) (prMgmtTxMsdu->u2FrameLength + /* incl. cookie */
+		(int32_t) (prMgmtTxMsdu->u2FrameLength +
 		ELEM_HDR_LEN + MAX_LEN_OF_MLIE +
-		MAC_TX_RESERVED_FIELD));
+		MAC_TX_RESERVED_FIELD) +
+		sizeof(uint64_t));
 	if (!prRetMsduInfo) {
 		DBGLOG(P2P, WARN, "alloc fail\n");
 		return prMgmtTxMsdu;
@@ -1526,14 +1527,14 @@ uint32_t p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 				"[OWE] Dump assoc resp from supplicant.\n");
 			DBGLOG_MEM8(P2P, TRACE, prMgmtTxMsdu->prPacket,
 					(uint32_t) prMgmtTxMsdu->u2FrameLength);
+			prMgmtTxMsdu = p2pFuncProcessP2pAssocResp(prAdapter,
+				prStaRec, ucBssIndex, prMgmtTxMsdu);
 			pu8GlCookie =
 				(uint64_t *) ((uintptr_t)
 					prMgmtTxMsdu->prPacket +
 					(uintptr_t)
 					prMgmtTxMsdu->u2FrameLength +
 					MAC_TX_RESERVED_FIELD);
-			prMgmtTxMsdu = p2pFuncProcessP2pAssocResp(prAdapter,
-				prStaRec, ucBssIndex, prMgmtTxMsdu);
 			*pu8GlCookie = u8GlCookie;
 			DBGLOG(P2P, TRACE, "[OWE] Dump assoc resp to FW.\n");
 			DBGLOG_MEM8(P2P, TRACE, prMgmtTxMsdu->prPacket,
