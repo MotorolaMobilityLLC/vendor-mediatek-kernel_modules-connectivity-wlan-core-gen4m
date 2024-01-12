@@ -644,6 +644,12 @@ else
     ccflags-y += -DCFG_MTK_WIFI_WFDMA_TX_RING_BK_RS=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_WIFI_SW_EMI_RING), y)
+    ccflags-y += -DCFG_MTK_WIFI_SW_EMI_RING=1
+else
+    ccflags-y += -DCFG_MTK_WIFI_SW_EMI_RING=0
+endif
+
 ifeq ($(CONFIG_SUPPORT_WIFI_MCIF_NO_MMIO_READ), y)
     ccflags-y += -DCFG_SUPPORT_WIFI_MCIF_NO_MMIO_READ=1
 else
@@ -1986,6 +1992,7 @@ HIF_OBJS :=  $(HIF_COMMON_DIR)hal_pdma.o \
              $(HIF_COMMON_DIR)kal_pdma.o \
              $(HIF_COMMON_DIR)dbg_pdma.o \
              $(HIF_COMMON_DIR)hif_mem.o \
+             $(HIF_COMMON_DIR)sw_emi_ring.o \
              $(HIF_DIR)pcie.o \
              $(HIF_DIR)pcie_msi.o
 ifeq ($(CONFIG_MTK_HOST_OFFLOAD_SUPPORT), y)

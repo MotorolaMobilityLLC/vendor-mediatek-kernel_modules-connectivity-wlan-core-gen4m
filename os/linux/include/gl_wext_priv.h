@@ -594,6 +594,8 @@ int priv_driver_set_drv_mcr(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_get_drv_mcr(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+int priv_driver_get_emi_mcr(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
 int priv_driver_set_uhw_mcr(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_get_uhw_mcr(struct net_device *prNetDev,
