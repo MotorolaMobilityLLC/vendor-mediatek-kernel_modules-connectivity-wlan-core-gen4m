@@ -1298,10 +1298,10 @@ void kalHandleAssocInfo(struct GLUE_INFO *prGlueInfo,
 			struct EVENT_ASSOC_INFO *prAssocInfo);
 
 #ifdef CFG_REMIND_IMPLEMENT
-#define kalGetFwVerOffsetAddr(void) \
+#define kalGetFwVerOffset(void) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
-uint32_t kalGetFwVerOffsetAddr(void);
+uint32_t kalGetFwVerOffset(void);
 #endif
 
 #if CFG_ENABLE_FW_DOWNLOAD

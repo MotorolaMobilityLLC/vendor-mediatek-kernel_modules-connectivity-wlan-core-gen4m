@@ -10244,7 +10244,7 @@ uint32_t __weak kalGetLittleCpuBoostThreshold(void)
 }
 #endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
 
-uint32_t __weak kalGetFwVerOffsetAddr(void)
+uint32_t __weak kalGetFwVerOffset(void)
 {
 	DBGLOG(SW4, WARN, "NO firmware version build.\n");
 	return 0;
