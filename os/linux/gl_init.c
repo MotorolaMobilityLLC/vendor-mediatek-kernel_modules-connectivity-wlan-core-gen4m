@@ -2380,8 +2380,9 @@ static void glTaskletUninit(struct GLUE_INFO *prGlueInfo)
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 }
 
-static void glRxInit(struct GLUE_INFO *prGlueInfo)
+static void glTxRxInit(struct GLUE_INFO *prGlueInfo)
 {
+	kalTxDirectInit(prGlueInfo);
 #if CFG_SUPPORT_RX_GRO
 	kalNapiInit(prGlueInfo);
 #if CFG_SUPPORT_RX_NAPI
@@ -2392,7 +2393,7 @@ static void glRxInit(struct GLUE_INFO *prGlueInfo)
 	glTaskletInit(prGlueInfo);
 }
 
-static void glRxUninit(struct GLUE_INFO *prGlueInfo)
+static void glTxRxUninit(struct GLUE_INFO *prGlueInfo)
 {
 	glTaskletUninit(prGlueInfo);
 #if CFG_SUPPORT_RX_GRO
@@ -2402,6 +2403,7 @@ static void glRxUninit(struct GLUE_INFO *prGlueInfo)
 #endif /* CFG_SUPPORT_RX_NAPI */
 	kalNapiUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_RX_GRO */
+	kalTxDirectUninit(prGlueInfo);
 }
 
 static void wlanFreeNetDev(void)
@@ -6085,31 +6087,6 @@ void wlanOnPostAdapterStart(struct ADAPTER *prAdapter,
 	struct GLUE_INFO *prGlueInfo)
 {
 	DBGLOG(INIT, TRACE, "start.\n");
-	if (HAL_IS_TX_DIRECT(prAdapter)) {
-		if (!prAdapter->fgTxDirectInited) {
-			skb_queue_head_init(
-					&prGlueInfo->rTxDirectSkbQueue);
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
-			timer_setup(&prGlueInfo->rTxDirectSkbTimer,
-					kalTxDirectTimerCheckSkbQ, 0);
-			timer_setup(&prGlueInfo->rTxDirectHifTimer,
-					kalTxDirectTimerCheckHifQ, 0);
-#else
-			init_timer(&prGlueInfo->rTxDirectSkbTimer);
-			prGlueInfo->rTxDirectSkbTimer.data =
-					(unsigned long)prGlueInfo;
-			prGlueInfo->rTxDirectSkbTimer.function =
-					kalTxDirectTimerCheckSkbQ;
-
-			init_timer(&prGlueInfo->rTxDirectHifTimer);
-			prGlueInfo->rTxDirectHifTimer.data =
-					(unsigned long)prGlueInfo;
-			prGlueInfo->rTxDirectHifTimer.function =
-				kalTxDirectTimerCheckHifQ;
-#endif
-			prAdapter->fgTxDirectInited = TRUE;
-		}
-	}
 }
 
 static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
@@ -6580,14 +6557,7 @@ int32_t wlanOffAtReset(void)
 #endif
 	wlanOffStopWlanThreads(prGlueInfo);
 
-	glRxUninit(prGlueInfo);
-
-	if (HAL_IS_TX_DIRECT(prAdapter)) {
-		if (prAdapter->fgTxDirectInited) {
-			del_timer_sync(&prGlueInfo->rTxDirectSkbTimer);
-			del_timer_sync(&prGlueInfo->rTxDirectHifTimer);
-		}
-	}
+	glTxRxUninit(prGlueInfo);
 
 	wlanAdapterStop(prAdapter, TRUE);
 
@@ -6702,7 +6672,7 @@ int32_t wlanOnAtReset(void)
 		 * interrupt may come in after setup irq
 		 * we need to make sure that rx is ready before it
 		 */
-		glRxInit(prGlueInfo);
+		glTxRxInit(prGlueInfo);
 
 		rStatus = glBusSetIrq(prDev, NULL, prGlueInfo);
 		if (rStatus != WLAN_STATUS_SUCCESS) {
@@ -6956,7 +6926,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		 * interrupt may come in after setup irq
 		 * we need to make sure that rx is ready before it
 		 */
-		glRxInit(prGlueInfo);
+		glTxRxInit(prGlueInfo);
 
 		i4Status = glBusSetIrq(prWdev->netdev, NULL, prGlueInfo);
 
@@ -7175,7 +7145,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 						netdev_priv(prWdev->netdev)));
 		kal_fallthrough;
 		case BUS_SET_IRQ_FAIL:
-			glRxUninit(prGlueInfo);
+			glTxRxUninit(prGlueInfo);
 			if (prChipInfo && prChipInfo->fw_dl_ops->mcu_deinit)
 				prChipInfo->fw_dl_ops->mcu_deinit(prAdapter);
 		kal_fallthrough;
@@ -7435,19 +7405,12 @@ static void wlanRemove(void)
 
 	wlanOffStopWlanThreads(prGlueInfo);
 
-	glRxUninit(prGlueInfo);
+	glTxRxUninit(prGlueInfo);
 
 #if (CFG_VOLT_INFO == 1)
 	/* Uninit volt info mechanis */
 	kalVnfUninit();
 #endif
-
-	if (HAL_IS_TX_DIRECT(prAdapter)) {
-		if (prAdapter->fgTxDirectInited) {
-			del_timer_sync(&prGlueInfo->rTxDirectSkbTimer);
-			del_timer_sync(&prGlueInfo->rTxDirectHifTimer);
-		}
-	}
 
 	/* Destroy wakelock */
 	wlanWakeLockUninit(prGlueInfo);
