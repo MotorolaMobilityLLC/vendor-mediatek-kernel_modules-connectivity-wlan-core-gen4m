@@ -886,7 +886,11 @@
 
 #define CFG_SHOW_MACADDR_SOURCE			1
 
+#ifdef BUILD_QA_DBG
 #define CFG_SHOW_FULL_MACADDR     1
+#else
+#define CFG_SHOW_FULL_MACADDR     0
+#endif
 
 #ifndef CFG_SUPPORT_VO_ENTERPRISE
 #define CFG_SUPPORT_VO_ENTERPRISE               1
