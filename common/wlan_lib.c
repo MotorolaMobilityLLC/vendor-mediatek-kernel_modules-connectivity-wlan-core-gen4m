@@ -7248,10 +7248,17 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 
 	prWifiVar->ucNSS = (uint8_t) wlanCfgGetUint32
 				(prAdapter, "Nss", 2);
+#ifdef CFG_FORCE_AP1NSS
+	prWifiVar->ucAp5gNSS = (uint8_t)wlanCfgGetUint32
+				(prAdapter, "Ap5gNss", 1);
+	prWifiVar->ucAp2gNSS = (uint8_t) wlanCfgGetUint32
+				(prAdapter, "Ap2gNss", 1);
+#else
 	prWifiVar->ucAp5gNSS = (uint8_t)wlanCfgGetUint32
 				(prAdapter, "Ap5gNss", 2);
 	prWifiVar->ucAp2gNSS = (uint8_t) wlanCfgGetUint32
 				(prAdapter, "Ap2gNss", 2);
+#endif
 	prWifiVar->ucGo5gNSS = (uint8_t) wlanCfgGetUint32
 				(prAdapter, "Go5gNss", 2);
 	prWifiVar->ucGo2gNSS = (uint8_t) wlanCfgGetUint32
