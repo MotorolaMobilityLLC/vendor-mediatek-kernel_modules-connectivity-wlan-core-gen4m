@@ -3537,12 +3537,20 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		       prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex]
 		       [u2QueueIdx]));
 
+#if CFG_SUPPORT_CPU_STAT
+	CPU_STAT_INC_CNT(prGlueInfo, CPU_TX_IN);
+#endif /* CFG_SUPPORT_CPU_STAT */
+
 	if (HAL_IS_TX_DIRECT(prGlueInfo->prAdapter)) {
 #if defined(_HIF_PCIE) && (HIF_TX_PREALLOC_DATA_BUFFER == 0)
 		/* To reduce L3 buffer usage, release original owner ASAP */
 		skb_orphan(prSkb);
 #endif
+#if CFG_SUPPORT_TX_WORK
+		return kalTxWorkSchedule(prSkb, prGlueInfo);
+#else /* CFG_SUPPORT_TX_WORK */
 		return kalTxDirectStartXmit(prSkb, prGlueInfo);
+#endif /* CFG_SUPPORT_TX_WORK */
 	}
 
 	kalSetEvent(prGlueInfo);
@@ -6529,6 +6537,10 @@ void kalRxTaskSchedule(struct GLUE_INFO *pr)
 	/* do nothing if wifi is not ready */
 	if (pr->fgRxTaskReady == FALSE)
 		return;
+
+#if CFG_SUPPORT_CPU_STAT
+	CPU_STAT_INC_CNT(pr, CPU_RX_IN);
+#endif /* CFG_SUPPORT_CPU_STAT */
 
 	/* prevent multiple tasklet schedule in ISR */
 	u4Cnt = GLUE_INC_REF_CNT(pr->u4RxTaskScheduleCnt);
@@ -9833,6 +9845,31 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		}
 	}
 
+#if CFG_SUPPORT_CPU_STAT
+#define FORMAT_INT_8 \
+	"%d,%d,%d,%d,%d,%d,%d,%d"
+
+#if CFG_SUPPORT_TX_WORK
+#define TX_WORK_CNT_TEMPLATE \
+	" TxWork[%d]["FORMAT_INT_8"]"
+#else /* CFG_SUPPORT_TX_WORK */
+#define TX_WORK_CNT_TEMPLATE ""
+#endif /* CFG_SUPPORT_TX_WORK */
+
+#if CFG_SUPPORT_RX_WORK
+#define RX_WORK_CNT_TEMPLATE \
+	" RxWork[%d]["FORMAT_INT_8"]"
+#else /* CFG_SUPPORT_RX_WORK */
+#define RX_WORK_CNT_TEMPLATE ""
+#endif /* CFG_SUPPORT_RX_WORK */
+
+#define CPU_STAT_CNT_TEMPLATE \
+	" TxCpu["FORMAT_INT_8"]" TX_WORK_CNT_TEMPLATE \
+	" RxCpu["FORMAT_INT_8"]" RX_WORK_CNT_TEMPLATE
+#else /* CFG_SUPPORT_CPU_STAT */
+#define CPU_STAT_CNT_TEMPLATE ""
+#endif /* CFG_SUPPORT_CPU_STAT */
+
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 #define LINK_QUALITY_MONITOR_TEMPLATE \
 	"LQ[%llu:%llu:%llu]"
@@ -9851,6 +9888,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	RADIOTAP_LOG_TEMPLATE \
 	LINK_QUALITY_MONITOR_TEMPLATE \
 	" idle:%u lv:%u th:%u fg:0x%lx" \
+	CPU_STAT_CNT_TEMPLATE \
 	" TxDp[ST:BS:FO:QM:DP]:%u:%u:%u:%u:%u" \
 	" Tx[SQ:TI:TM:TDD:TDM]:%u:%u:%u:%u:%u" \
 	"\n"
@@ -9877,6 +9915,46 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		perf->u4CurrPerfLevel,
 		prAdapter->rWifiVar.u4BoostCpuTh,
 		perf->ulPerfMonFlag,
+#if CFG_SUPPORT_CPU_STAT
+		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 0),
+		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 1),
+		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 2),
+		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 3),
+		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 4),
+		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 5),
+		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 6),
+		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 7),
+#if CFG_SUPPORT_TX_WORK
+		glue->i4TxWorkCpu,
+		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 0),
+		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 1),
+		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 2),
+		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 3),
+		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 4),
+		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 5),
+		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 6),
+		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 7),
+#endif /* CFG_SUPPORT_TX_WORK */
+		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 0),
+		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 1),
+		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 2),
+		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 3),
+		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 4),
+		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 5),
+		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 6),
+		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 7),
+#if CFG_SUPPORT_RX_WORK
+		glue->i4RxWorkCpu,
+		CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 0),
+		CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 1),
+		CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 2),
+		CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 3),
+		CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 4),
+		CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 5),
+		CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 6),
+		CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 7),
+#endif /* CFG_SUPPORT_RX_WORK */
+#endif /* CFG_SUPPORT_CPU_STAT */
 		TX_GET_CNT(&prAdapter->rTxCtrl, TX_INACTIVE_STA_DROP),
 		TX_GET_CNT(&prAdapter->rTxCtrl, TX_INACTIVE_BSS_DROP),
 		TX_GET_CNT(&prAdapter->rTxCtrl, TX_FORWARD_OVERFLOW_DROP),
@@ -9890,6 +9968,11 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		);
 #undef TEMP_LOG_TEMPLATE
 #undef LINK_QUALITY_MONITOR_TEMPLATE
+#if CFG_SUPPORT_CPU_STAT
+#undef TX_WORK_CNT_TEMPLATE
+#undef RX_WORK_CNT_TEMPLATE
+#endif /* CFG_SUPPORT_CPU_STAT */
+#undef CPU_STAT_CNT_TEMPLATE
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 #define RRO_LOG_TEMPLATE \
@@ -10532,6 +10615,11 @@ u_int8_t __weak kalIsSupportRro(void)
 	return FALSE;
 }
 #endif
+
+uint32_t __weak kalGetBigCpuMask(void)
+{
+	return 0xFF;
+}
 
 /* mimic store_rps_map as net-sysfs.c does */
 int wlan_set_rps_map(struct netdev_rx_queue *queue, unsigned long rps_value)
@@ -13256,7 +13344,6 @@ void kalTxDirectClearSkbQ(struct GLUE_INFO *prGlueInfo)
 	}
 }
 
-
 void kalTxDirectStartCheckQTimer(struct GLUE_INFO *prGlueInfo,
 				uint8_t offset)
 {
@@ -13266,6 +13353,17 @@ void kalTxDirectStartCheckQTimer(struct GLUE_INFO *prGlueInfo,
 	}
 
 	mod_timer(&prGlueInfo->rTxDirectHifTimer, jiffies + offset);
+}
+
+void kalTxDirectStartCheckSkbQTimer(struct GLUE_INFO *prGlueInfo,
+				uint8_t offset)
+{
+	if (prGlueInfo == NULL) {
+		DBGLOG(TX, ERROR, "prGlueInfo NULL\n");
+		return;
+	}
+
+	mod_timer(&prGlueInfo->rTxDirectSkbTimer, jiffies + offset);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -13293,8 +13391,6 @@ void kalTxDirectTimerCheckSkbQ(unsigned long data)
 
 	if (skb_queue_len(&prGlueInfo->rTxDirectSkbQueue))
 		kalTxDirectStartXmit(NULL, prGlueInfo);
-	else
-		DBGLOG(TX, INFO, "fgHasNoMsdu FALSE\n");
 }
 
 
@@ -13355,19 +13451,22 @@ uint32_t kalTxDirectStartXmit(struct sk_buff *prSkb,
 		if (prSkb)
 			skb_queue_tail(prTxDirectSkbQ, prSkb);
 
-		mod_timer(&prGlueInfo->rTxDirectSkbTimer,
-			  jiffies + TX_DIRECT_CHECK_INTERVAL);
+		kalTxDirectStartCheckSkbQTimer(prGlueInfo,
+				TX_DIRECT_CHECK_INTERVAL);
 		return ret;
 	}
 
 	if (skb_queue_len(prTxDirectSkbQ)) {
 		spin_lock_irqsave(&prTxDirectSkbQ->lock, u4Flags);
 		skb_queue_splice_init(prTxDirectSkbQ, prLocalSkbQ);
+		/* do enqueue before unlock to prevent ooo */
+		if (prSkb)
+			__skb_queue_tail(prLocalSkbQ, prSkb);
 		spin_unlock_irqrestore(&prTxDirectSkbQ->lock, u4Flags);
+	} else {
+		if (prSkb)
+			__skb_queue_tail(prLocalSkbQ, prSkb);
 	}
-
-	if (prSkb)
-		__skb_queue_tail(prLocalSkbQ, prSkb);
 
 	while (skb_queue_len(prLocalSkbQ)) {
 		prMsduInfo = cnmPktAlloc(prAdapter, 0);
@@ -13397,11 +13496,12 @@ uint32_t kalTxDirectStartXmit(struct sk_buff *prSkb,
 		spin_unlock_irqrestore(&prTxDirectSkbQ->lock, u4Flags);
 	}
 
-	if (skb_queue_len(prTxDirectSkbQ))
-		mod_timer(&prGlueInfo->rTxDirectSkbTimer,
-			  jiffies + TX_DIRECT_CHECK_INTERVAL);
-
 	spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+
+	if (skb_queue_len(prTxDirectSkbQ))
+		kalTxDirectStartCheckSkbQTimer(prGlueInfo,
+				TX_DIRECT_CHECK_INTERVAL);
+
 	return ret;
 }
 
@@ -15003,6 +15103,10 @@ void kalRxWork(struct work_struct *work)
 	struct GLUE_INFO *prGlueInfo = container_of(work,
 					struct GLUE_INFO, rRxWork);
 	halRxWork(prGlueInfo);
+
+#if CFG_SUPPORT_CPU_STAT
+	CPU_STAT_INC_CNT(prGlueInfo, CPU_RX_WORK_DONE);
+#endif /* CFG_SUPPORT_CPU_STAT */
 }
 
 void kalRxWorkSetCpu(struct GLUE_INFO *pr, int32_t i4CpuIdx)
@@ -15053,6 +15157,92 @@ void kalRxWorkSchedule(struct GLUE_INFO *pr)
 	queue_work_on(i4RxWorkCpu, pr->prRxWorkQueue, &pr->rRxWork);
 }
 #endif /* CFG_SUPPORT_RX_WORK */
+
+#if CFG_SUPPORT_TX_WORK
+void kalTxWork(struct work_struct *work)
+{
+	struct GLUE_INFO *prGlueInfo = container_of(work,
+					struct GLUE_INFO, rTxWork);
+
+	if (skb_queue_len(&prGlueInfo->rTxDirectSkbQueue))
+		kalTxDirectStartXmit(NULL, prGlueInfo);
+
+#if CFG_SUPPORT_CPU_STAT
+	CPU_STAT_INC_CNT(prGlueInfo, CPU_TX_WORK_DONE);
+#endif /* CFG_SUPPORT_CPU_STAT */
+}
+
+void kalTxWorkSetCpu(struct GLUE_INFO *pr, int32_t i4CpuIdx)
+{
+	if ((i4CpuIdx != -1 && i4CpuIdx != WORK_ALL_CPU_OK) &&
+		i4CpuIdx > num_possible_cpus()) {
+		DBGLOG(INIT, INFO, "Invalid CpuIdx:%d\n", i4CpuIdx);
+		return;
+	}
+
+	pr->i4TxWorkCpu = i4CpuIdx;
+}
+
+void kalTxWorkInit(struct GLUE_INFO *pr)
+{
+	/* init cpu idx as free run */
+	pr->i4TxWorkCpu = -1;
+	INIT_WORK(&pr->rTxWork, kalTxWork);
+	pr->prTxWorkQueue = create_workqueue("wifi_rx_work");
+	if (!pr->prTxWorkQueue)
+		DBGLOG(INIT, ERROR, "prTxWorkQueue is NULL\n");
+}
+
+void kalTxWorkUninit(struct GLUE_INFO *pr)
+{
+	struct workqueue_struct *prWq;
+
+	prWq = pr->prTxWorkQueue;
+	pr->prTxWorkQueue = NULL;
+	if (prWq) {
+		flush_workqueue(prWq);
+		destroy_workqueue(prWq);
+	}
+}
+
+uint32_t kalTxWorkSchedule(struct sk_buff *prSkb, struct GLUE_INFO *pr)
+{
+	int32_t i4TxWorkCpu, i4Cpu;
+
+	if (!pr->prTxWorkQueue) {
+		DBGLOG_LIMITED(INIT, INFO, "prTxWorkQueue is NULL\n");
+		return kalTxDirectStartXmit(prSkb, pr);
+	}
+
+	i4TxWorkCpu = pr->i4TxWorkCpu;
+	if (i4TxWorkCpu == -1) {
+		/* no BoostCpu, just go through tx direct path */
+		return kalTxDirectStartXmit(prSkb, pr);
+	}
+
+	i4Cpu = get_cpu();
+	put_cpu();
+
+	if ((0x1 << i4Cpu) & kalGetBigCpuMask()) {
+		/* The running cpu is BigCpu */
+		return kalTxDirectStartXmit(prSkb, pr);
+	}
+
+	/* The running cpu is not BigCpu */
+	if (prSkb)
+		skb_queue_tail(&pr->rTxDirectSkbQueue, prSkb);
+
+	/* magic code 99 will not do schedule on specific cpu */
+	if (i4TxWorkCpu == WORK_ALL_CPU_OK) {
+		queue_work(pr->prTxWorkQueue, &pr->rTxWork);
+		goto end;
+	}
+
+	queue_work_on(i4TxWorkCpu, pr->prTxWorkQueue, &pr->rTxWork);
+end:
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_TX_WORK */
 
 #if CFG_SUPPORT_RETURN_WORK
 void kalRxRfbReturnWorkSetCpu(struct GLUE_INFO *pr, int32_t cpu)

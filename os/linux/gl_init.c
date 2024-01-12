@@ -2395,6 +2395,12 @@ static void glTaskletUninit(struct GLUE_INFO *prGlueInfo)
 static void glTxRxInit(struct GLUE_INFO *prGlueInfo)
 {
 	kalTxDirectInit(prGlueInfo);
+#if CFG_SUPPORT_CPU_STAT
+	CPU_STAT_RESET_ALL_CNTS(prGlueInfo);
+#endif /* CFG_SUPPORT_CPU_STAT */
+#if CFG_SUPPORT_TX_WORK
+	kalTxWorkInit(prGlueInfo);
+#endif /* CFG_SUPPORT_TX_WORK */
 #if CFG_SUPPORT_RX_WORK
 	kalRxWorkInit(prGlueInfo);
 #endif /* CFG_SUPPORT_RX_WORK */
@@ -2416,6 +2422,9 @@ static void glTxRxInit(struct GLUE_INFO *prGlueInfo)
 
 static void glTxRxUninit(struct GLUE_INFO *prGlueInfo)
 {
+#if CFG_SUPPORT_TX_WORK
+	kalTxWorkUninit(prGlueInfo);
+#endif /* CFG_SUPPORT_TX_WORK */
 #if CFG_SUPPORT_RX_WORK
 	kalRxWorkUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_RX_WORK */
