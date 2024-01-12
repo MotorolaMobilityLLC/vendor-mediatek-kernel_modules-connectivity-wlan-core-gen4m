@@ -2926,6 +2926,11 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 	 */
 	if (prBssInfo->eConnectionState ==
 	    MEDIA_STATE_DISCONNECTED && fgClearStaRec) {
+
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+		prBssInfo->ucMLSRPausedLink = FALSE;
+#endif
+
 #if CFG_ENABLE_WIFI_DIRECT
 		/* clear client list */
 		bssInitializeClientList(prAdapter, prBssInfo);

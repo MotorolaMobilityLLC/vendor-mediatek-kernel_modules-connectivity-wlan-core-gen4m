@@ -3518,6 +3518,7 @@ enum ENUM_UNI_CMD_MLO_TAG {
 	UNI_CMD_MLO_TAG_MLD_REC_LINK = 0x3,
 	UNI_CMD_MLO_TAG_MLD_REC_LINK_AGC_TX = 0x4,
 	UNI_CMD_MLO_TAG_MLD_REC_LINK_AGC_TRIG = 0x5,
+	UNI_CMD_MLO_TAG_MLD_MLSR_CONCURENT_PRECONNECT = 0x7,
 };
 
 /* UNI_CMD_MLO_TAG_MLD_REC(Tag=0x2) */
@@ -3553,6 +3554,16 @@ struct UNI_EVENT_GET_MLD_REC {
 
 	struct PARAM_MLD_REC rMldRec;
 };
+
+/*UNI_CMD_MLO_TAG_MLD_MLSR_CONCURENT_PRECONNECT(Tag=0x7)*/
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_MLD_MLSR_CONCURENT_PRECONNECT {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t ucMlsrRemainBssIndex;
+	uint8_t aucReserved[3];
+} __KAL_ATTRIB_PACKED__;
 
 #endif
 
@@ -8035,6 +8046,25 @@ struct UNI_EVENT_UPDATE_LP_TX_DELAY_T {
 	uint32_t u4PktCnt;
 } __KAL_ATTRIB_PACKED__;
 
+/* Update MLO event tags */
+enum ENUM_UNI_EVENT_MLO {
+	UNI_EVENT_MLD_MLSR_CONCURRENT_DONE = 0x7,
+	UNI_EVENT_UPDATE_MLO_NUM
+};
+
+/**
+ * This structure is used for UNI_CMD_MLO_TAG_MLD_MLSR_CONCURRENT_PRECONNECT
+ * tag(0x07) of UNI_EVENT_ID_MLO event (0x59) to response driver MLSR ready.
+ *
+ * @param[in] u2Tag         Tag id
+ * @param[in] u2Length      The length of this TLV
+ */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_MLSR_CONCURRENT_PRECONNECT {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+} __KAL_ATTRIB_PACKED__;
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -8584,6 +8614,12 @@ void nicUniCmdEventLpDbgCtrl(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 void nicUniEventEmlInfo(struct ADAPTER *ad,
 	struct CMD_INFO *cmd, uint8_t *event);
+
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+void nicUniEventMLSRSwitchDone(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+#endif
+
 #endif
 #if CFG_SUPPORT_RTT
 void nicUniEventRttCapabilities(struct ADAPTER	*prAdapter,

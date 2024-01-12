@@ -10,6 +10,17 @@
 #ifndef _MLO_H
 #define _MLO_H
 
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+#define MLSR_REMAIN_RSSI_TH                -50 /*dbm*/
+
+enum NEW_CONNECION_TYPE {
+	LEGACY_TYPE,
+	STR_MLO_TYPE,
+	MLSR_MLO_TYPE, /*This type include MLSR/EMLSR/HYBRID*/
+	MAX_TYPE_NUM
+};
+#endif
+
 #define IS_MLD_BSSINFO_MULTI(__prMldBssInfo) \
 	(__prMldBssInfo && __prMldBssInfo->rBssList.u4NumElem > 1)
 
@@ -477,5 +488,22 @@ struct STA_RECORD *mldGetStaRecByBandIdx(struct ADAPTER *prAdapter,
 
 void mldCheckApRemoval(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec, const uint8_t *pucIE);
+
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+uint8_t mldHasMLSRMLOBss(struct ADAPTER *prAdapter);
+
+uint8_t mldHasSingleLinkBss(struct ADAPTER *prAdapter);
+
+enum NEW_CONNECION_TYPE mldNewConnectionType(struct ADAPTER *prAdapter,
+	struct DBDC_DECISION_INFO *prDbdcDecisionInfo);
+
+void mldClearMLSRPausedLinkFlag(struct ADAPTER *prAdapter);
+
+void mldMLSRDecisionLinkRemain(struct ADAPTER *prAdapter,
+	struct DBDC_DECISION_INFO *prDbdcDecisionInfo);
+
+uint32_t mldSetRemainMLSRBssIndex(struct ADAPTER *prAdapter,
+	uint8_t ucRemainBssIndex);
+#endif
 
 #endif /* !_MLO_H */

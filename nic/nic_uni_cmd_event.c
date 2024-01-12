@@ -4472,10 +4472,7 @@ static uint32_t nicUniCmdChAbortPrivilege(struct ADAPTER *ad,
 	tag->u2Length = sizeof(*tag);
 	tag->ucBssIndex = msg->ucBssIndex;
 	tag->ucTokenID = msg->ucTokenID;
-	if (msg->ucExtraChReqNum >= 1)
-		tag->ucDBDCBand = nicUniCmdChReqBandType(ENUM_BAND_ALL);
-	else
-		tag->ucDBDCBand = nicUniCmdChReqBandType(msg->eDBDCBand);
+	tag->ucDBDCBand = nicUniCmdChReqBandType(msg->eDBDCBand);
 
 	DBGLOG(INIT, INFO, "bss=%d,token=%d,dbdc=%d\n",
 		tag->ucBssIndex,
@@ -9947,6 +9944,34 @@ void nicUniEventEmlInfo(struct ADAPTER *ad,
 	kalOidComplete(ad->prGlueInfo, cmd, cmd->u4InformationBufferLength,
 		WLAN_STATUS_SUCCESS);
 }
+
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+void nicUniEventMLSRSwitchDone(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt)
+{
+	uint8_t *tag;
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_MLO);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint16_t tags_len = data_len - fixed_len;
+	uint16_t offset = 0;
+
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_MLD_MLSR_CONCURRENT_DONE: {
+			/*MLSR Switch done*/
+			DBGLOG(NIC, WARN, "MLSR Switch Done\n");
+			ad->ucNeedWaitFWMlsrSWDone = FALSE;
+		}
+			break;
+		default:
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+#endif
 #endif
 /*******************************************************************************
  *                   Unsolicited Event

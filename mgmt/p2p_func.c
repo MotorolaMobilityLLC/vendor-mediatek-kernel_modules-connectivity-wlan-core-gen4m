@@ -2334,7 +2334,10 @@ void p2pFuncReleaseCh(struct ADAPTER *prAdapter,
 		prMsgChRelease->ucTokenID = prChnlReqInfo->ucSeqNumOfChReq++;
 		prMsgChRelease->ucExtraChReqNum = prChnlReqInfo->ucChReqNum - 1;
 #if CFG_SUPPORT_DBDC
-		prMsgChRelease->eDBDCBand = ENUM_BAND_AUTO;
+		if (prMsgChRelease->ucExtraChReqNum >= 1)
+			prMsgChRelease->eDBDCBand = ENUM_BAND_ALL;
+		else
+			prMsgChRelease->eDBDCBand = ENUM_BAND_AUTO;
 
 		DBGLOG(P2P, INFO,
 			"P2P abort channel on band %u. ucExtraChReqNum: %d\n",

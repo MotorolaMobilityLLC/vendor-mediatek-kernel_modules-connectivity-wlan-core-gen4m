@@ -607,6 +607,10 @@ struct BSS_INFO {
 #endif
 
 	struct TIMER rP2pCsaDoneTimer;
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	uint8_t ucMLSRPausedLink;
+#endif
+
 };
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -2868,6 +2872,10 @@ struct ADAPTER {
 		rTxpwrEmiInfo[PWR_LIMIT_RF_BAND_NUM][PWR_LIMIT_PROTOCOL_NUM];
 	bool fgPwrLmtCacheExist;
 	u_int32_t u4PwrLmtLockCounter;
+#endif
+
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	uint8_t ucNeedWaitFWMlsrSWDone;
 #endif
 };				/* end of _ADAPTER_T */
 /*******************************************************************************
