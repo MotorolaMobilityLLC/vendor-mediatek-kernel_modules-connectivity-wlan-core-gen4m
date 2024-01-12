@@ -71,13 +71,8 @@ enum ENUM_USB_END_POINT {
 #define HIF_TX_RESOURCE_CTRL_PLE         0 /* enable/disable TX resource control PLE */
 
 
-#if CFG_USB_TX_AGG
 #define HIF_TX_PAGE_SIZE_IN_POWER_OF_2   0
 #define HIF_TX_PAGE_SIZE                 1	/* in unit of bytes */
-#else
-#define HIF_TX_PAGE_SIZE_IN_POWER_OF_2   11
-#define HIF_TX_PAGE_SIZE                 2048	/* in unit of bytes */
-#endif
 
 #define USB_EVENT_TYPE                  (EVENT_EP_TYPE_UNKONW)
 
@@ -97,11 +92,7 @@ enum ENUM_USB_END_POINT {
 #ifdef CFG_USB_REQ_TX_DATA_CNT
 #define USB_REQ_TX_DATA_CNT             (CFG_USB_REQ_TX_DATA_CNT)	/* platform specific USB_REQ_TX_DATA_CNT */
 #else
-#if CFG_USB_TX_AGG
 #define USB_REQ_TX_DATA_CNT             (2)	/* must be >= 2 */
-#else
-#define USB_REQ_TX_DATA_CNT             (CFG_TX_MAX_PKT_NUM)
-#endif
 #endif
 
 #define USB_REQ_TX_CMD_CNT              (CFG_TX_MAX_CMD_PKT_NUM)
@@ -118,12 +109,7 @@ enum ENUM_USB_END_POINT {
 #define USB_RX_AGGREGTAION_PKT_LIMIT    (30)
 
 #define USB_TX_CMD_BUF_SIZE             (1600)
-#if CFG_USB_TX_AGG
 #define USB_TX_DATA_BUFF_SIZE           (32*1024)
-#else
-#define USB_TX_DATA_BUF_SIZE            (NIC_TX_DESC_AND_PADDING_LENGTH + NIC_TX_DESC_HEADER_PADDING_LENGTH + \
-					 NIC_TX_MAX_SIZE_PER_FRAME + LEN_USB_UDMA_TX_TERMINATOR)
-#endif
 #define USB_RX_EVENT_BUF_SIZE           (CFG_RX_MAX_PKT_SIZE + 3 + LEN_USB_RX_PADDING_CSO + 4)
 #define USB_RX_WDT_BUF_SIZE             (1)
 #define USB_RX_DATA_BUF_SIZE            (CFG_RX_MAX_PKT_SIZE + \
@@ -264,14 +250,9 @@ struct GL_HIF_INFO {
 	struct list_head rTxCmdSendingQ;
 	spinlock_t rTxCmdSendingQLock;
 	struct list_head rTxDataFfaQ;
-#if CFG_USB_TX_AGG
 	uint32_t u4AggRsvSize[USB_TC_NUM];
 	struct list_head rTxDataFreeQ[USB_TC_NUM];
 	struct usb_anchor rTxDataAnchor[USB_TC_NUM];
-#else
-	struct list_head rTxDataFreeQ;
-	struct usb_anchor rTxDataAnchor;
-#endif
 	/*spinlock_t rTxDataFreeQLock;*/
 	struct list_head rRxEventFreeQ;
 	/*spinlock_t rRxEventFreeQLock;*/
@@ -293,11 +274,7 @@ struct GL_HIF_INFO {
 
 	struct BUF_CTRL rTxCmdBufCtrl[USB_REQ_TX_CMD_CNT];
 	struct BUF_CTRL rTxDataFfaBufCtrl[USB_REQ_TX_DATA_FFA_CNT];
-#if CFG_USB_TX_AGG
 	struct BUF_CTRL rTxDataBufCtrl[USB_TC_NUM][USB_REQ_TX_DATA_CNT];
-#else
-	struct BUF_CTRL rTxDataBufCtrl[USB_REQ_TX_DATA_CNT];
-#endif
 	struct BUF_CTRL rRxEventBufCtrl[USB_REQ_RX_EVENT_CNT];
 	struct BUF_CTRL rRxDataBufCtrl[USB_REQ_RX_DATA_CNT];
 #if CFG_CHIP_RESET_SUPPORT

@@ -931,9 +931,7 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct USB_REQ *prUsbReq, *prUsbReqNext;
 	uint32_t i;
-#if CFG_USB_TX_AGG
 	uint8_t ucTc;
-#endif
 #if CFG_CHIP_RESET_SUPPORT
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
@@ -996,14 +994,10 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	}
 	prHifInfo->vendor_req_buf_sz = VND_REQ_BUF_SIZE;
 
-#if CFG_USB_TX_AGG
 	for (ucTc = 0; ucTc < USB_TC_NUM; ++ucTc) {
 		prHifInfo->u4AggRsvSize[ucTc] = 0;
 		init_usb_anchor(&prHifInfo->rTxDataAnchor[ucTc]);
 	}
-#else
-	init_usb_anchor(&prHifInfo->rTxDataAnchor);
-#endif
 	init_usb_anchor(&prHifInfo->rRxDataAnchor);
 	init_usb_anchor(&prHifInfo->rRxEventAnchor);
 #if CFG_CHIP_RESET_SUPPORT
@@ -1016,15 +1010,10 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	i = 0;
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxCmdFreeQ, list) {
 		prUsbReq->prBufCtrl = &prHifInfo->rTxCmdBufCtrl[i];
-#if CFG_USB_CONSISTENT_DMA
-		prUsbReq->prBufCtrl->pucBuf = usb_alloc_coherent(prHifInfo->udev, USB_TX_CMD_BUF_SIZE, GFP_ATOMIC,
-								 &prUsbReq->prUrb->transfer_dma);
-#else
 #ifdef CFG_PREALLOC_MEMORY
 		prUsbReq->prBufCtrl->pucBuf = preallocGetMem(MEM_ID_TX_CMD);
 #else
 		prUsbReq->prBufCtrl->pucBuf = kmalloc(USB_TX_CMD_BUF_SIZE, GFP_ATOMIC);
-#endif
 #endif
 		if (prUsbReq->prBufCtrl->pucBuf == NULL) {
 			DBGLOG(HAL, ERROR, "kmalloc() reports error\n");
@@ -1044,17 +1033,11 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 		QUEUE_INITIALIZE(&prUsbReq->rSendingDataMsduInfoList);
 		*((uint8_t *)&prUsbReq->prPriv) = FFA_MASK;
 		prUsbReq->prBufCtrl = &prHifInfo->rTxDataFfaBufCtrl[i];
-#if CFG_USB_CONSISTENT_DMA
-		prUsbReq->prBufCtrl->pucBuf =
-		    usb_alloc_coherent(prHifInfo->udev, USB_TX_DATA_BUFF_SIZE, GFP_ATOMIC,
-				       &prUsbReq->prUrb->transfer_dma);
-#else
 #ifdef CFG_PREALLOC_MEMORY
 		prUsbReq->prBufCtrl->pucBuf =
 			preallocGetMem(MEM_ID_TX_DATA_FFA);
 #else
 		prUsbReq->prBufCtrl->pucBuf = kmalloc(USB_TX_DATA_BUFF_SIZE, GFP_ATOMIC);
-#endif
 #endif
 		if (prUsbReq->prBufCtrl->pucBuf == NULL) {
 			DBGLOG(HAL, ERROR, "kmalloc() reports error\n");
@@ -1066,7 +1049,6 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	}
 
 	/* TX Data */
-#if CFG_USB_TX_AGG
 	for (ucTc = 0; ucTc < USB_TC_NUM; ++ucTc) {
 		/* Only for TC0 ~ TC3 and DBDC1_TC */
 		if (ucTc >= TC4_INDEX && ucTc < USB_DBDC1_TC)
@@ -1079,17 +1061,11 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 			/* TODO: every endpoint should has an unique and only TC */
 			*((uint8_t *)&prUsbReq->prPriv) = ucTc;
 			prUsbReq->prBufCtrl = &prHifInfo->rTxDataBufCtrl[ucTc][i];
-#if CFG_USB_CONSISTENT_DMA
-			prUsbReq->prBufCtrl->pucBuf =
-			    usb_alloc_coherent(prHifInfo->udev, USB_TX_DATA_BUFF_SIZE, GFP_ATOMIC,
-					       &prUsbReq->prUrb->transfer_dma);
-#else
 #ifdef CFG_PREALLOC_MEMORY
 			prUsbReq->prBufCtrl->pucBuf =
 				preallocGetMem(MEM_ID_TX_DATA);
 #else
 			prUsbReq->prBufCtrl->pucBuf = kmalloc(USB_TX_DATA_BUFF_SIZE, GFP_ATOMIC);
-#endif
 #endif
 			if (prUsbReq->prBufCtrl->pucBuf == NULL) {
 				DBGLOG(HAL, ERROR, "kmalloc() reports error\n");
@@ -1103,31 +1079,6 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 		DBGLOG(INIT, INFO, "USB Tx URB INIT Tc[%u] cnt[%u] len[%u]\n", ucTc, i,
 		       prHifInfo->rTxDataBufCtrl[ucTc][0].u4BufSize);
 	}
-#else
-	glUsbInitQ(prHifInfo, &prHifInfo->rTxDataFreeQ, USB_REQ_TX_DATA_CNT);
-	i = 0;
-	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxDataFreeQ, list) {
-		QUEUE_INITIALIZE(&prUsbReq->rSendingDataMsduInfoList);
-		prUsbReq->prBufCtrl = &prHifInfo->rTxDataBufCtrl[i];
-#if CFG_USB_CONSISTENT_DMA
-		prUsbReq->prBufCtrl->pucBuf =
-		    usb_alloc_coherent(prHifInfo->udev, USB_TX_DATA_BUF_SIZE, GFP_ATOMIC,
-				       &prUsbReq->prUrb->transfer_dma);
-#else
-#ifdef CFG_PREALLOC_MEMORY
-		prUsbReq->prBufCtrl->pucBuf = preallocGetMem(MEM_ID_TX_DATA);
-#else
-		prUsbReq->prBufCtrl->pucBuf = kmalloc(USB_TX_DATA_BUF_SIZE, GFP_ATOMIC);
-#endif
-#endif
-		if (prUsbReq->prBufCtrl->pucBuf == NULL) {
-			DBGLOG(HAL, ERROR, "kmalloc() reports error\n");
-			goto error;
-		}
-		prUsbReq->prBufCtrl->u4BufSize = USB_TX_DATA_BUF_SIZE;
-		++i;
-	}
-#endif
 
 	glUsbInitQ(prHifInfo, &prHifInfo->rTxCmdCompleteQ, 0);
 	glUsbInitQ(prHifInfo, &prHifInfo->rTxDataCompleteQ, 0);
@@ -1227,9 +1178,7 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 	/* struct GL_HIF_INFO *prHifInfo = NULL; */
 	/* ASSERT(prGlueInfo); */
 	/* prHifInfo = &prGlueInfo->rHifInfo; */
-#if CFG_USB_TX_AGG
 	uint8_t ucTc;
-#endif
 	struct USB_REQ *prUsbReq, *prUsbReqNext;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 #if CFG_CHIP_RESET_SUPPORT
@@ -1244,77 +1193,38 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 	prBusInfo = prChipInfo->bus_info;
 #endif
 
-#if CFG_USB_TX_AGG
 	for (ucTc = 0; ucTc < USB_TC_NUM; ++ucTc) {
 		if (ucTc >= TC4_INDEX && ucTc < USB_DBDC1_TC)
 			continue;
 		list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxDataFreeQ[ucTc], list) {
-#if CFG_USB_CONSISTENT_DMA
-			usb_free_coherent(prHifInfo->udev, USB_TX_DATA_BUFF_SIZE,
-				prUsbReq->prBufCtrl->pucBuf, prUsbReq->prUrb->transfer_dma);
-#else
 #ifndef CFG_PREALLOC_MEMORY
 			kfree(prUsbReq->prBufCtrl->pucBuf);
-#endif
 #endif
 			usb_free_urb(prUsbReq->prUrb);
 		}
 	}
-#else
-	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxDataFreeQ, list) {
-#if CFG_USB_CONSISTENT_DMA
-		usb_free_coherent(prHifInfo->udev, USB_TX_DATA_BUFF_SIZE,
-			prUsbReq->prBufCtrl->pucBuf, prUsbReq->prUrb->transfer_dma);
-#else
-#ifndef CFG_PREALLOC_MEMORY
-		kfree(prUsbReq->prBufCtrl->pucBuf);
-#endif
-#endif
-		usb_free_urb(prUsbReq->prUrb);
-	}
-#endif
 
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxDataFfaQ, list) {
-#if CFG_USB_CONSISTENT_DMA
-		usb_free_coherent(prHifInfo->udev, USB_TX_DATA_BUFF_SIZE,
-			prUsbReq->prBufCtrl->pucBuf, prUsbReq->prUrb->transfer_dma);
-#else
 #ifndef CFG_PREALLOC_MEMORY
 		kfree(prUsbReq->prBufCtrl->pucBuf);
-#endif
 #endif
 		usb_free_urb(prUsbReq->prUrb);
 	}
 
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxCmdFreeQ, list) {
-#if CFG_USB_CONSISTENT_DMA
-		usb_free_coherent(prHifInfo->udev, USB_TX_CMD_BUF_SIZE,
-			prUsbReq->prBufCtrl->pucBuf, prUsbReq->prUrb->transfer_dma);
-#else
 #ifndef CFG_PREALLOC_MEMORY
 		kfree(prUsbReq->prBufCtrl->pucBuf);
-#endif
 #endif
 		usb_free_urb(prUsbReq->prUrb);
 	}
 
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxCmdCompleteQ, list) {
-#if CFG_USB_CONSISTENT_DMA
-		usb_free_coherent(prHifInfo->udev, USB_TX_CMD_BUF_SIZE,
-			prUsbReq->prBufCtrl->pucBuf, prUsbReq->prUrb->transfer_dma);
-#else
 		kfree(prUsbReq->prBufCtrl->pucBuf);
-#endif
 		usb_free_urb(prUsbReq->prUrb);
 	}
 
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxDataCompleteQ, list) {
-#if CFG_USB_CONSISTENT_DMA
-		usb_free_coherent(prHifInfo->udev, USB_TX_CMD_BUF_SIZE,
-			prUsbReq->prBufCtrl->pucBuf, prUsbReq->prUrb->transfer_dma);
-#else
 		kfree(prUsbReq->prBufCtrl->pucBuf);
-#endif
 		usb_free_urb(prUsbReq->prUrb);
 	}
 

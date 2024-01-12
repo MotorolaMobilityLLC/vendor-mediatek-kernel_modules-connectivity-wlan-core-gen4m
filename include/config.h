@@ -447,8 +447,6 @@
 #define CFG_SDIO_ACCESS_N9_REGISTER_BY_MAILBOX      0
 #define CFG_MAX_RX_ENHANCE_LOOP_COUNT               3
 
-#define CFG_USB_TX_AGG                              1
-#define CFG_USB_CONSISTENT_DMA                      0
 #define CFG_USB_TX_HANDLE_IN_HIF_THREAD             0
 #define CFG_USB_RX_HANDLE_IN_HIF_THREAD             0
 
