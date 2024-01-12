@@ -3075,7 +3075,12 @@ u_int8_t rsnCheckSecurityModeChanged(
 	case AUTH_MODE_OPEN: /* original is open system */
 		if ((prBssDesc->u2CapInfo & CAP_INFO_PRIVACY) &&
 		    !prWpaInfo->fgPrivacyInvoke &&
-		    !secIsWepBss(prAdapter, prBssInfo)) {
+		    !secIsWepBss(prAdapter, prBssInfo)
+#if CFG_SUPPORT_WPS2
+		    /* Don't check while WPS is in process */
+		    && !aisGetConnSettings(prAdapter, ucBssIdx)->fgWpsActive
+#endif
+		) {
 			DBGLOG(RSN, INFO, "security change, open->privacy\n");
 			return TRUE;
 		}
