@@ -107,6 +107,7 @@
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 #define CONNAC2X_CONN_HIF_ON_ADDR_REMAP23              0x7010
 #define CONNAC2X_HOST_EXT_CONN_HIF_WRAP                0x7c027000
+#define CONNAC2X_MCU_INT_CONN_HIF_WRAP                 0x57000000
 #define CONNAC2X_WFDMA_COUNT                           2
 
 /*******************************************************************************
