@@ -400,6 +400,10 @@ struct P2P_ROLE_FSM_INFO {
 
 uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx);
 
+u_int8_t p2pRoleFsmNeedMlo(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucRoleIdx);
+
 void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx);
 
 /*================== Message Event ==================*/
