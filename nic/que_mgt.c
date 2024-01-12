@@ -637,7 +637,7 @@ void qmDeactivateStaRec(struct ADAPTER *prAdapter,
 	if (mddpIsSupportMcifWifi())
 		mddpNotifyDrvTxd(prAdapter, prStaRec, FALSE);
 #endif
-#if CFG_MSCS_SUPPORT
+#if CFG_FAST_PATH_SUPPORT
 	mscsDeactivate(prAdapter, prStaRec);
 #endif
 	DBGLOG(QM, INFO, "QM: -STA[%u]\n", prStaRec->ucIndex);

@@ -13,7 +13,7 @@
 #ifndef _MSCS_H
 #define _MSCS_H
 
-#if CFG_MSCS_SUPPORT
+#if CFG_FAST_PATH_SUPPORT
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S

@@ -148,7 +148,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #if (CFG_VOLT_INFO == 1)
 	[CMD_ID_SEND_VOLT_INFO] = nicUniCmdSendVnf,
 #endif
-#if CFG_MSCS_SUPPORT
+#if CFG_FAST_PATH_SUPPORT
 	[CMD_ID_FAST_PATH] = nicUniCmdFastPath,
 #endif
 #if CFG_SUPPORT_PKT_OFLD
@@ -6789,7 +6789,7 @@ uint32_t nicUniCmdSendVnf(struct ADAPTER *ad,
 }
 #endif /* CFG_VOLT_INFO */
 
-#if CFG_MSCS_SUPPORT
+#if CFG_FAST_PATH_SUPPORT
 uint32_t nicUniCmdFastPath(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
@@ -10262,7 +10262,7 @@ void nicUniEventDelayBar(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventFastPath(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-#if CFG_MSCS_SUPPORT
+#if CFG_FAST_PATH_SUPPORT
 	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
