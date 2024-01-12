@@ -141,7 +141,7 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_LAYER_0_EXT_MAGIC_NUM, nicEventLayer0ExtMagic},
 	{EVENT_ID_MIC_ERR_INFO,	nicEventMicErrorInfo},
 	{EVENT_ID_SCAN_DONE, nicEventScanDone},
-	{EVENT_ID_NLO_DONE, nicEventNloDone},
+	{EVENT_ID_SCHED_SCAN_DONE, nicEventSchedScanDone},
 	{EVENT_ID_TX_DONE, nicTxProcessTxDoneEvent},
 	{EVENT_ID_SLEEPY_INFO, nicEventSleepyNotify},
 #if CFG_ENABLE_BT_OVER_WIFI
