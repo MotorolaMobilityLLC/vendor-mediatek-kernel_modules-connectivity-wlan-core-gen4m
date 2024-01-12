@@ -159,7 +159,7 @@ void halSwWfdmaUninit(struct GLUE_INFO *prGlueInfo)
 		       prSwWfdmaInfo->pucIoremapAddr);
 	iounmap(prSwWfdmaInfo->pucIoremapAddr);
 	release_mem_region(
-		gConEmiPhyBase + prSwWfdmaInfo->u4EmiOffset,
+		gConEmiPhyBaseFinal + prSwWfdmaInfo->u4EmiOffset,
 		SW_WFDMA_EMI_SIZE);
 #endif /* CFG_MTK_ANDROID_EMI */
 	prSwWfdmaInfo->pucIoremapAddr = NULL;

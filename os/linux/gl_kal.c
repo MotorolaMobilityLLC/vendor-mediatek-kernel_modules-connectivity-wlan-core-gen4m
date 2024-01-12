@@ -10363,39 +10363,6 @@ int _kalSprintf(char *buf, const char *fmt, ...)
 	return (retval < 0)?(0):(retval);
 }
 
-uint32_t kalSetSuspendFlagToEMI(IN struct ADAPTER
-					*prAdapter, IN u_int8_t fgSuspend)
-{
-#if CFG_MTK_ANDROID_EMI
-	uint32_t u4Offset = prAdapter->u4HostStatusEmiOffset
-				& WIFI_EMI_ADDR_MASK;
-	uint32_t suspendFlag = 0;
-
-	if (!gConEmiPhyBase) {
-#if (CFG_SUPPORT_CONNINFRA == 1)
-		conninfra_get_phy_addr(
-			&gConEmiPhyBase,
-			(unsigned int *)&gConEmiSize);
-#endif
-
-		if (!gConEmiPhyBase) {
-			DBGLOG(INIT, ERROR,
-				"[EMI_Suspend] gConEmiPhyBase invalid\n");
-			return WLAN_STATUS_FAILURE;
-		}
-	}
-	suspendFlag = (fgSuspend == TRUE) ? 0x11111111 : 0x22222222;
-
-	DBGLOG(INIT, TRACE,
-		"[EMI_Suspend] EmiPhyBase:0x%llx offset:0x%x set 0x%x",
-		(uint64_t)gConEmiPhyBase, u4Offset, suspendFlag);
-
-	wf_ioremap_write((gConEmiPhyBase + u4Offset), suspendFlag);
-
-#endif /* CFG_MTK_ANDROID_EMI */
-	return WLAN_STATUS_SUCCESS;
-}
-
 void setTimeParameter(
 		struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT *prChipConfigInfo,
 		int chipConfigInfoSize, unsigned int second,

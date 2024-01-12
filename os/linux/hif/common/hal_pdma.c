@@ -4289,3 +4289,58 @@ void halWpdmaStopRecycleDmad(IN struct GLUE_INFO *prGlueInfo,
 
 	prTxRing->fgStopRecycleDmad = TRUE;
 }
+
+uint32_t halSetSuspendFlagToFw(IN struct ADAPTER *prAdapter,
+	IN u_int8_t fgSuspend)
+{
+	struct HOST_SUSPEND_NOTIFY_INFO *prNotifyInfo =
+			&prAdapter->rHostSuspendInfo;
+	uint32_t u4Value = 0;
+
+	DBGLOG(HAL, TRACE,
+		"fgSuspend: %d, type: %d, addr: 0x%x 0x%x, mask: 0x%x, shift: %d\n",
+		fgSuspend,
+		prNotifyInfo->eType,
+		prNotifyInfo->u4SetAddr,
+		prNotifyInfo->u4ClrAddr,
+		prNotifyInfo->u4Mask,
+		prNotifyInfo->u4Shift);
+
+	if (prNotifyInfo->eType == ENUM_HOST_SUSPEND_ADDR_TYPE_EMI) {
+#if CFG_MTK_ANDROID_EMI
+		uint32_t u4Offset = prNotifyInfo->u4SetAddr &
+			WIFI_EMI_ADDR_MASK;
+		uint32_t u4SuspendFlag = (fgSuspend == TRUE) ?
+			0x11111111 : 0x22222222;
+
+		wf_ioremap_read((gConEmiPhyBaseFinal + u4Offset), &u4Value);
+		u4Value &= ~prNotifyInfo->u4Mask;
+		u4Value |= ((u4SuspendFlag << prNotifyInfo->u4Shift) &
+			prNotifyInfo->u4Mask);
+		wf_ioremap_write((gConEmiPhyBaseFinal + u4Offset),
+			u4SuspendFlag);
+#endif
+	} else if (prNotifyInfo->eType ==
+		   ENUM_HOST_SUSPEND_ADDR_TYPE_CONN_W_R_REG) {
+
+		HAL_MCR_RD(prAdapter, prNotifyInfo->u4SetAddr, &u4Value);
+		if (fgSuspend)
+			u4Value |= prNotifyInfo->u4Mask;
+		else
+			u4Value &= ~prNotifyInfo->u4Mask;
+		HAL_MCR_WR(prAdapter, prNotifyInfo->u4SetAddr, u4Value);
+	} else if (prNotifyInfo->eType ==
+		   ENUM_HOST_SUSPEND_ADDR_TYPE_CONN_SET_CLR_REG) {
+		if (fgSuspend) {
+			HAL_MCR_WR(prAdapter,
+				prNotifyInfo->u4SetAddr,
+				prNotifyInfo->u4Mask);
+		} else {
+			HAL_MCR_WR(prAdapter,
+				prNotifyInfo->u4ClrAddr,
+				prNotifyInfo->u4Mask);
+		}
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}

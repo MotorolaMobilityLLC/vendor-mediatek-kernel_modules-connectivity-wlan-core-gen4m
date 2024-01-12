@@ -2024,9 +2024,6 @@ int _kalSprintf(char *buf, const char *fmt, ...);
 void tracing_mark_write(const char *fmt, ...);
 #endif
 
-uint32_t kalSetSuspendFlagToEMI(IN struct ADAPTER
-	*prAdapter, IN u_int8_t fgSuspend);
-
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 extern uint32_t getFWLogOnOff(void);
 #endif
