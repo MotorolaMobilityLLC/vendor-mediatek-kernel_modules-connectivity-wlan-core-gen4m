@@ -3497,6 +3497,27 @@ rlmDomainGetStartEndIdx(enum ENUM_PWR_LIMIT_TYPE eType,
 		*pu1EndIdx = PWR_LMT_SUBBAND_UNII8;
 	}
 		break;
+	case PWR_LIMIT_TYPE_COMP_LEGACY_6G_1:
+		/* fallthrough */
+	case PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_1: {
+		*pu1StartIdx = PWR_LMT_SUBBAND_UNII5A;
+		*pu1EndIdx = PWR_LMT_SUBBAND_UNII5B;
+	}
+		break;
+	case PWR_LIMIT_TYPE_COMP_LEGACY_6G_2:
+		/* fallthrough */
+	case PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_2: {
+		*pu1StartIdx = PWR_LMT_SUBBAND_UNII6;
+		*pu1EndIdx = PWR_LMT_SUBBAND_UNII7B;
+	}
+		break;
+	case PWR_LIMIT_TYPE_COMP_LEGACY_6G_3:
+		/* fallthrough */
+	case PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3: {
+		*pu1StartIdx = PWR_LMT_SUBBAND_UNII8;
+		*pu1EndIdx = PWR_LMT_SUBBAND_UNII8;
+	}
+		break;
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	case PWR_LIMIT_TYPE_COMP_11BE_6G_1: {
 		*pu1StartIdx = PWR_LMT_SUBBAND_UNII5A;
@@ -3616,6 +3637,7 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	struct CMD_CHANNEL_POWER_LIMIT_6E *prPwrLmt6E = NULL;
+	struct CMD_CHANNEL_POWER_LIMIT_LEGACY_6G *prPwrLmtLegacy6G = NULL;
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	struct CMD_CHANNEL_POWER_LIMIT_EHT_6G *prPwrLmtEHT_6G = NULL;
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
@@ -3644,6 +3666,9 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 				eType == PWR_LIMIT_TYPE_COMP_6E_2 ||
 				eType == PWR_LIMIT_TYPE_COMP_6E_3)
 		prPwrLmt6E = &prCmd->u.rChPwrLimt6E[0];
+	else if (eType >= PWR_LIMIT_TYPE_COMP_LEGACY_6G_1 &&
+		eType <= PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3)
+		prPwrLmtLegacy6G = &prCmd->u.rChPwrLimtLegacy_6G[0];
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	else if (eType >=
 				PWR_LIMIT_TYPE_COMP_11BE_6G_1 &&
@@ -3697,6 +3722,10 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 					eType == PWR_LIMIT_TYPE_COMP_6E_2 ||
 					eType == PWR_LIMIT_TYPE_COMP_6E_3)
 				prPwrLmt6E->ucCentralCh = k;
+
+			else if (eType >= PWR_LIMIT_TYPE_COMP_LEGACY_6G_1 &&
+				eType <= PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3)
+				prPwrLmtLegacy6G->ucCentralCh = k;
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 			else if (eType >=
 					PWR_LIMIT_TYPE_COMP_11BE_6G_1 &&
@@ -3735,6 +3764,22 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 					kalMemSet(&prPwrLmt6E->cPwrLimitRU26L,
 						cLmtBand,
 						PWR_LIMIT_6E_NUM);
+
+				else if (eType >=
+					PWR_LIMIT_TYPE_COMP_LEGACY_6G_1 &&
+					eType <=
+					PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3)
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+					kalMemSet(
+					&prPwrLmtLegacy6G->cPwrLimitCCK_L,
+					cLmtBand,
+					PWR_LIMIT_LEGACY_6G_NUM);
+#else
+					kalMemSet(
+					&prPwrLmtLegacy6G->cPwrLimitCCK,
+					cLmtBand,
+					PWR_LIMIT_LEGACY_6G_NUM);
+#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING */
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 				else if (eType >=
 					PWR_LIMIT_TYPE_COMP_11BE_6G_1 &&
@@ -3878,6 +3923,27 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 					prPwrLmt6E->cPwrLimitRU242L = cLmtBand;
 					prPwrLmt6E->cPwrLimitRU242H = cLmtBand;
 					prPwrLmt6E->cPwrLimitRU242U = cLmtBand;
+				} else if (eType >=
+				PWR_LIMIT_TYPE_COMP_LEGACY_6G_1 &&
+				eType <= PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3) {
+					/* BW20 */
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+					prPwrLmtLegacy6G->cPwrLimitCCK_L
+						= cLmtBand;
+					prPwrLmtLegacy6G->cPwrLimitCCK_H
+						= cLmtBand;
+					prPwrLmtLegacy6G->cPwrLimitOFDM_L
+						= cLmtBand;
+					prPwrLmtLegacy6G->cPwrLimitOFDM_H
+						= cLmtBand;
+#else
+					prPwrLmtLegacy6G->cPwrLimitCCK
+						= cLmtBand;
+#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING */
+					prPwrLmtLegacy6G->cPwrLimit20L
+						= cLmtBand;
+					prPwrLmtLegacy6G->cPwrLimit20H
+						= cLmtBand;
 				}
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 				else if (eType >=
@@ -3988,6 +4054,13 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 					prPwrLmt6E->cPwrLimitRU484L = cLmtBand;
 					prPwrLmt6E->cPwrLimitRU484H = cLmtBand;
 					prPwrLmt6E->cPwrLimitRU484U = cLmtBand;
+				} else if (eType >=
+				PWR_LIMIT_TYPE_COMP_LEGACY_6G_1 &&
+				eType <= PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3) {
+					prPwrLmtLegacy6G->cPwrLimit40L
+						= cLmtBand;
+					prPwrLmtLegacy6G->cPwrLimit40H
+						= cLmtBand;
 				}
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 				else if (eType >=
@@ -4066,6 +4139,13 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 					prPwrLmt6E->cPwrLimitRU996L = cLmtBand;
 					prPwrLmt6E->cPwrLimitRU996H = cLmtBand;
 					prPwrLmt6E->cPwrLimitRU996U = cLmtBand;
+				} else if (eType >=
+				PWR_LIMIT_TYPE_COMP_LEGACY_6G_1 &&
+				eType <= PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3) {
+					prPwrLmtLegacy6G->cPwrLimit80L
+						= cLmtBand;
+					prPwrLmtLegacy6G->cPwrLimit80H
+						= cLmtBand;
 				}
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 				else if (eType >=
@@ -4132,6 +4212,13 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 					prPwrLmt6E->cPwrLimitRU1992L = cLmtBand;
 					prPwrLmt6E->cPwrLimitRU1992H = cLmtBand;
 					prPwrLmt6E->cPwrLimitRU1992U = cLmtBand;
+				} else if (eType >=
+				PWR_LIMIT_TYPE_COMP_LEGACY_6G_1 &&
+				eType <= PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3) {
+					prPwrLmtLegacy6G->cPwrLimit160L
+						= cLmtBand;
+					prPwrLmtLegacy6G->cPwrLimit160H
+						= cLmtBand;
 				}
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 				else if (eType >=
@@ -4212,6 +4299,9 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 					eType == PWR_LIMIT_TYPE_COMP_6E_2 ||
 					eType == PWR_LIMIT_TYPE_COMP_6E_3)
 				prPwrLmt6E++;
+			else if (eType >= PWR_LIMIT_TYPE_COMP_LEGACY_6G_1 &&
+				eType <= PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3)
+				prPwrLmtLegacy6G++;
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 			else if (eType >=
 					PWR_LIMIT_TYPE_COMP_11BE_6G_1 &&
@@ -4317,6 +4407,19 @@ static void rlmDomainCompareFromConfigTable(int8_t *prPwrLmt,
 	case PWR_LIMIT_TYPE_COMP_6E_3:
 		size = PWR_LIMIT_6E_NUM;
 		break;
+	case PWR_LIMIT_TYPE_COMP_LEGACY_6G_1:
+		/* fallthrough */
+	case PWR_LIMIT_TYPE_COMP_LEGACY_6G_2:
+		/* fallthrough */
+	case PWR_LIMIT_TYPE_COMP_LEGACY_6G_3:
+		/* fallthrough */
+	case PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_1:
+		/* fallthrough */
+	case PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_2:
+		/* fallthrough */
+	case PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3:
+		size = PWR_LIMIT_LEGACY_6G_NUM;
+		break;
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	case PWR_LIMIT_TYPE_COMP_11BE_6G_1:
 		/* fallthrough */
@@ -4364,6 +4467,7 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 #define PwrLmtConf6E g_rRlmPowerLimitConfiguration6E
+#define PwrLmtConfLegacy_6G g_rRlmPowerLimitConfigurationLegacy6G
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 #define PwrLmtConfEHT_6G g_rRlmPowerLimitConfigurationEHT_6G
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
@@ -4380,6 +4484,7 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	struct CMD_CHANNEL_POWER_LIMIT_6E *prCmdPwrLimt6E;
+	struct CMD_CHANNEL_POWER_LIMIT_LEGACY_6G *prCmdPwrLimtLegacy_6G;
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	struct CMD_CHANNEL_POWER_LIMIT_EHT_6G *prCmdPwrLimtEHT_6G;
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
@@ -4400,6 +4505,9 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	uint8_t ucPwrLmitConfSize6E = sizeof(PwrLmtConf6E) /
 		sizeof(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_6E);
+	uint8_t ucPwrLmitConfSizeLegacy_6G = sizeof(PwrLmtConfLegacy_6G) /
+		sizeof(
+		struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_LEGACY_6G);
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	uint8_t ucPwrLmitConfSizeEHT_6G = sizeof(PwrLmtConfEHT_6G) /
 		sizeof(struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT_6G);
@@ -4594,6 +4702,62 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 					&PwrLmtConf6E[i].aucPwrLimit[0],
 					eType);
 			}
+		} else if (eType >= PWR_LIMIT_TYPE_COMP_LEGACY_6G_1 &&
+				eType <=  PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3) {
+			prCmdPwrLimtLegacy_6G =
+				&prCmd->u.rChPwrLimtLegacy_6G[k];
+			ucCentCh = prCmdPwrLimtLegacy_6G->ucCentralCh;
+			for (i = 0; i < ucPwrLmitConfSizeLegacy_6G; i++) {
+
+				WLAN_GET_FIELD_BE16(
+					&PwrLmtConfLegacy_6G[i]
+					.aucCountryCode[0],
+					&u2CountryCodeTable);
+
+				fgChannelValid =
+				    rlmDomainCheckChannelEntryValid(
+					prAdapter,
+					BAND_6G,
+					PwrLmtConfLegacy_6G[i].ucCentralCh);
+
+				if (u2CountryCodeTable == COUNTRY_CODE_NULL)
+					break;	/*end of configuration table */
+				else if (u2CountryCodeTable
+					!= prCmd->u2CountryCode)
+					continue;
+				else if (fgChannelValid == FALSE)
+					continue;
+				else if (ucCentCh
+					!= PwrLmtConfLegacy_6G[i].ucCentralCh)
+					continue;
+
+				/* Choose MINIMUN value from
+				 * Default table & Conf table
+				 * Cmd setting (Default table
+				 * information) and Conf table
+				 * has repetition channel entry,
+				 * ex : Default table (ex: 6G,
+				 *      limit = 20dBm) -->
+				 *      ch1~14 limit =20dBm,
+				 * Conf table (ex: ch1, limit =
+				 *      22 dBm) --> ch 1 = 22 dBm
+				 * Conf table (ex: ch2, limit =
+				 *      18 dBm) --> ch 2 = 18 dBm
+				 * Cmd final setting --> ch1 =
+				 *      20dBm, ch2 = 18dBm ch3~14 = 20dBm
+				 */
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+				rlmDomainCompareFromConfigTable(
+					&prCmdPwrLimtLegacy_6G->cPwrLimitCCK_L,
+					&PwrLmtConfLegacy_6G[i].aucPwrLimit[0],
+					eType);
+#else
+				rlmDomainCompareFromConfigTable(
+					&prCmdPwrLimtLegacy_6G->cPwrLimitCCK,
+					&PwrLmtConfLegacy_6G[i].aucPwrLimit[0],
+					eType);
+#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING */
+			}
 		}
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 		else if (eType >=
@@ -4633,7 +4797,8 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 		}
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #endif /* CFG_SUPPORT_WIFI_6G */
-		else {
+		else if (eType == PWR_LIMIT_TYPE_COMP_11AC ||
+			eType == PWR_LIMIT_TYPE_COMP_11AC_V2) {
 			prCmdPwrLimit = &prCmd->u.rChannelPowerLimit[k];
 			ucCentCh = prCmdPwrLimit->ucCentralCh;
 
@@ -4698,6 +4863,7 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 #undef PwrLmtConf6E
+#undef PwrLmtConfLegacy_6G
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 #undef PwrLmtConfEHT_6G
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
@@ -5949,7 +6115,7 @@ int32_t txPwrOnPreParseAppendTag(
 		return -1;
 
 	/* init aiPwrAnt to 0 for tag :
-	  * MIMO_1T/MIMO_2T/ALL_T
+	  * MIMO_1T/MIMO_2T/ALL_T/ALL_T_6G
 	  */
 	kalMemSet(&(pRecord->aiPwrAnt[0]), 0,
 		POWER_ANT_TAG_NUM *
@@ -5994,6 +6160,7 @@ int32_t txPwrParseAppendTag(char *pcStart,
 		return -1;
 	}
 
+	/* No tag need parsing */
 	if (ucTagCount1 == 0)
 		return 0;
 
@@ -6031,7 +6198,7 @@ int32_t txPwrParseAppendTag(char *pcStart,
 		}
 
 		DBGLOG(RLM, TRACE,
-			   "Pase tag (%u/%u) success!\n", i + 1, ucTagCount1);
+			   "Parse tag (%u/%u) success!\n", i + 1, ucTagCount1);
 	}
 
 	return 0;
@@ -6074,11 +6241,13 @@ uint32_t txPwrArbitrator(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
 	uint8_t rateIdxHe, rateIdx;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	struct CMD_CHANNEL_POWER_LIMIT_6E *prPwrLimit6E;
+	struct CMD_CHANNEL_POWER_LIMIT_LEGACY_6G *prCmdPwrLimtLegacy_6G;
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	struct CMD_CHANNEL_POWER_LIMIT_EHT_6G *prPwrLimitEHT_6G;
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #endif /* CFG_SUPPORT_WIFI_6G */
 	int8_t *prRateOfs;
+	uint8_t u1Idx;
 
 	if (eType == PWR_LIMIT_TYPE_COMP_11AX) {
 		prPwrLimitHE = (struct CMD_CHANNEL_POWER_LIMIT_HE *) pvBuf;
@@ -6135,6 +6304,25 @@ uint32_t txPwrArbitrator(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
 					&prChlSetting->i8PwrLimit6E[rateIdx]);
 			}
 		}
+	} else if (eType >= PWR_LIMIT_TYPE_COMP_LEGACY_6G_1 &&
+		eType <= PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3) {
+		prCmdPwrLimtLegacy_6G =
+			(struct CMD_CHANNEL_POWER_LIMIT_LEGACY_6G *) pvBuf;
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+		prRateOfs = &prCmdPwrLimtLegacy_6G->cPwrLimitCCK_L;
+		u1Idx = PWR_LIMIT_CCK_L;
+#else
+		prRateOfs = &prCmdPwrLimtLegacy_6G->cPwrLimitCCK;
+		u1Idx = PWR_LIMIT_CCK;
+#endif
+		for (rateIdx = u1Idx;
+			rateIdx < PWR_LIMIT_LEGACY_6G_NUM; rateIdx++) {
+			if (prChlSetting->opLegacy_6G[rateIdx]
+				!= PWR_CTRL_TYPE_NO_ACTION) {
+				txPwrOperate(eCtrlType, prRateOfs + rateIdx,
+				&prChlSetting->i8PwrLimitLegacy_6G[rateIdx]);
+			}
+		}
 	}
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	else if (eType >=
@@ -6155,16 +6343,17 @@ uint32_t txPwrArbitrator(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
 	}
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #endif /* CFG_SUPPORT_WIFI_6G */
-	else {
+	else if (eType == PWR_LIMIT_TYPE_COMP_11AC ||
+		eType == PWR_LIMIT_TYPE_COMP_11AC_V2) {
 		prPwrLimit = (struct CMD_CHANNEL_POWER_LIMIT *) pvBuf;
 #if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
 		prRateOfs = &prPwrLimit->cPwrLimitCCK_L;
-		for (rateIdx = PWR_LIMIT_CCK_L;
+		u1Idx = PWR_LIMIT_CCK_L;
 #else
 		prRateOfs = &prPwrLimit->cPwrLimitCCK;
-
-		for (rateIdx = PWR_LIMIT_CCK;
+		u1Idx = PWR_LIMIT_CCK;
 #endif
+		for (rateIdx = u1Idx;
 			rateIdx < PWR_LIMIT_NUM ; rateIdx++) {
 			if (prChlSetting->op[rateIdx]
 				!= PWR_CTRL_TYPE_NO_ACTION) {
@@ -6172,9 +6361,7 @@ uint32_t txPwrArbitrator(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
 				&prChlSetting->i8PwrLimit[rateIdx]);
 			}
 		}
-
 	}
-
 	return 0;
 }
 
@@ -6210,7 +6397,8 @@ uint8_t txPwrIsAntTagSet(
 }
 
 uint8_t txPwrIsAntTagNeedApply(
-	struct TX_PWR_CTRL_ELEMENT *prCurElement) {
+	struct TX_PWR_CTRL_ELEMENT *prCurElement)
+{
 	uint8_t fgAllTSet = 0, fg1TSet = 0, fg2TSet = 0;
 
 	if (!prCurElement)
@@ -6401,13 +6589,14 @@ uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	struct CMD_CHANNEL_POWER_LIMIT_6E *prCmdPwrLimit6E = NULL;
+	struct CMD_CHANNEL_POWER_LIMIT_LEGACY_6G *prCmdPwrLimtLegacy_6G = NULL;
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	struct CMD_CHANNEL_POWER_LIMIT_EHT_6G *prCmdPwrLimitEHT_6G = NULL;
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 	u_int8_t fgDoArbitrator6E;
 #endif /* CFG_SUPPORT_WIFI_6G */
 	struct TX_PWR_CTRL_CHANNEL_SETTING *prChlSetting = NULL;
-	uint8_t i, j, channel, channel2, channel3;
+	uint8_t i = 0, j = 0, channel = 0, channel2 = 0, channel3 = 0;
 	u_int8_t fgDoArbitrator;
 	enum ENUM_PWR_LIMIT_TYPE eType;
 
@@ -6444,6 +6633,11 @@ uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 					eType == PWR_LIMIT_TYPE_COMP_6E_3) {
 			prCmdPwrLimit6E = &prCmd->u.rChPwrLimt6E[i];
 			channel = prCmdPwrLimit6E->ucCentralCh;
+		} else if (eType >= PWR_LIMIT_TYPE_COMP_LEGACY_6G_1 &&
+			eType <= PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3) {
+			prCmdPwrLimtLegacy_6G =
+				&prCmd->u.rChPwrLimtLegacy_6G[i];
+			channel = prCmdPwrLimtLegacy_6G->ucCentralCh;
 		}
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 		else if (eType >=
@@ -6455,12 +6649,11 @@ uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 		}
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #endif /* CFG_SUPPORT_WIFI_6G */
-		else {
+		else if (eType == PWR_LIMIT_TYPE_COMP_11AC ||
+			eType == PWR_LIMIT_TYPE_COMP_11AC_V2) {
 			prCmdPwrLimit = &prCmd->u.rChannelPowerLimit[i];
 			channel = prCmdPwrLimit->ucCentralCh;
 		}
-
-
 
 		for (j = 0; j < prCurElement->settingCount; j++) {
 			prChlSetting = &prCurElement->rChlSettingList[j];
@@ -6487,6 +6680,7 @@ uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 					if ((channel >= channel2) &&
 					    (channel <= channel3))
 						fgDoArbitrator = TRUE;
+
 					break;
 				}
 				case PWR_CTRL_CHNL_TYPE_2G4: {
@@ -6585,6 +6779,13 @@ uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 						fgDoArbitrator6E = TRUE;
 					break;
 				}
+				case PWR_CTRL_CHNL_TYPE_6G_RANGE: {
+					if ((channel >= channel2) &&
+					    (channel <= channel3))
+						fgDoArbitrator6E = TRUE;
+
+					break;
+				}
 #endif
 			}
 
@@ -6623,6 +6824,14 @@ uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 					eType == PWR_LIMIT_TYPE_COMP_6E_3)
 					txPwrArbitrator(prCurElement->eCtrlType,
 							prCmdPwrLimit6E,
+							prChlSetting,
+							eType);
+				else if (eType >=
+					PWR_LIMIT_TYPE_COMP_LEGACY_6G_1 &&
+					eType <=
+					PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3)
+					txPwrArbitrator(prCurElement->eCtrlType,
+							prCmdPwrLimtLegacy_6G,
 							prChlSetting,
 							eType);
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
@@ -6670,6 +6879,52 @@ uint32_t txPwrCtrlApplySettings(struct ADAPTER *prAdapter,
 	return 0;
 }
 
+uint32_t txPwrCfgParsingRateTag(char *pcContTmp, uint8_t count)
+{
+	uint8_t u1Result;
+
+	/* Sanity check */
+	if (pcContTmp == NULL)
+		return PWR_CFG_RATE_TAG_MISS;
+
+	/* Remove rate tag num */
+	count = count - 1;
+
+	if (kalStrCmp(pcContTmp, PWR_CTRL_RATE_TAG_KEY_LEGACY) == 0 &&
+		count == PWR_LIMIT_NUM)
+		u1Result = PWR_CFG_RATE_TAG_HIT_LEGACY;
+	else if (kalStrCmp(pcContTmp, PWR_CTRL_RATE_TAG_KEY_AX160) == 0 &&
+		count == PWR_LIMIT_HE_BW160_NUM)
+		u1Result = PWR_CFG_RATE_TAG_HIT_HE;
+	else if (kalStrCmp(pcContTmp, PWR_CTRL_RATE_TAG_KEY_HE) == 0 &&
+		count == PWR_LIMIT_HE_BW160_NUM)
+		u1Result = PWR_CFG_RATE_TAG_HIT_HE;
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+	else if (kalStrCmp(pcContTmp, PWR_CTRL_RATE_TAG_KEY_EHT) == 0 &&
+		count == PWR_LIMIT_EHT_NUM)
+		u1Result = PWR_CFG_RATE_TAG_HIT_EHT;
+#endif
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (kalStrCmp(pcContTmp,
+			PWR_CTRL_RATE_TAG_KEY_LEGACY6G) == 0 &&
+		count == PWR_LIMIT_LEGACY_6G_NUM)
+		u1Result = PWR_CFG_RATE_TAG_HIT_LEGACY6G;
+	else if (kalStrCmp(pcContTmp, PWR_CTRL_RATE_TAG_KEY_HE6G) == 0 &&
+		count == PWR_LIMIT_6E_NUM)
+		u1Result = PWR_CFG_RATE_TAG_HIT_HE6G;
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+	else if (kalStrCmp(pcContTmp, PWR_CTRL_RATE_TAG_KEY_EHT6G) == 0 &&
+		count == PWR_LIMIT_EHT_6G_NUM)
+		u1Result = PWR_CFG_RATE_TAG_HIT_EHT6G;
+#endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
+#endif /* CFG_SUPPORT_WIFI_6G  */
+	else
+		u1Result = PWR_CFG_RATE_TAG_MISS;
+
+	DBGLOG(RLM, TRACE, "Parse rate tag result[%d]\n", u1Result);
+	return u1Result;
+}
+
 struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 						    u_int8_t fgSkipHeader)
 {
@@ -6678,13 +6933,15 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 	char acTmpName[MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE];
 	char *pcContCur = NULL, *pcContCur2 = NULL, *pcContEnd = NULL;
 	char *pcContTmp = NULL, *pcContNext = NULL, *pcContOld = NULL;
+	char *pcContTag = NULL;
 	uint32_t u4MemSize = sizeof(struct TX_PWR_CTRL_ELEMENT);
 	uint32_t copySize = 0;
 	uint8_t i, j, op, ucSettingCount = 0;
 	uint8_t value, value2, count = 0;
 	uint8_t ucAppliedWay, ucOperation = 0;
+	uint32_t u4RollBackStep = 0;
 	char carySeperator[2] = { 0, 0 };
-
+	enum ENUM_PWR_CFG_RATE_TAG u1RateTag = 0;
 	char *pacParsePwrAC[PWR_CFG_PRAM_NUM_AC] = {
 #if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
 		"CCKL",
@@ -6827,6 +7084,8 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 	pcContCur = pcContent;
 	pcContEnd = pcContent + kalStrLen(pcContent);
 
+	DBGLOG(RLM, TRACE, "parse config:%s\n", pcContCur);
+
 	if (fgSkipHeader == TRUE)
 		goto skipLabel;
 
@@ -6840,6 +7099,7 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 		       pcContOld);
 		return NULL;
 	}
+
 	copySize = kalStrLen(pcContTmp);
 	if (copySize >= MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE)
 		copySize = MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE - 1;
@@ -6963,8 +7223,7 @@ skipLabel:
 			       pcContCur);
 			goto clearLabel;
 		}
-
-		/* verify this setting has 9 segment */
+		/* Calculate config element in this segment*/
 		pcContTmp = pcContCur;
 		count = 0;
 		while (pcContTmp < pcContNext) {
@@ -6973,22 +7232,26 @@ skipLabel:
 			pcContTmp++;
 		}
 
-		if ((count != PWR_CFG_PRAM_NUM_AC) &&
-			(count != PWR_CFG_PRAM_NUM_AX) &&
+		if ((count != PWR_LIMIT_NUM) &&
+			/* include keyword : LEGACY */
+			(count != PWR_LIMIT_NUM + 1) &&
+			(count != PWR_LIMIT_HE_NUM) &&
+			/* include keyword : HE or AX160 */
+			(count != PWR_LIMIT_HE_BW160_NUM + 1) &&
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+			/* include keyword : EHT */
+			(count != PWR_LIMIT_EHT_NUM + 1) &&
+#endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			(count != PWR_LIMIT_6E_NUM) &&
+			/* include keyword : LEGACY6G */
+			(count != PWR_LIMIT_LEGACY_6G_NUM + 1) &&
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 			/* include keyword : EHT6G */
 			(count != PWR_LIMIT_EHT_6G_NUM + 1) &&
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #endif /* CFG_SUPPORT_WIFI_6G */
-			(count != PWR_CFG_PRAM_NUM_ALL_RATE) &&
-#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
-			/* include keyword : EHT */
-			(count != PWR_LIMIT_EHT_NUM + 1) &&
-#endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
-			/* include keyword : AX160 */
-			(count != PWR_LIMIT_HE_BW160_NUM + 1)) {
+			(count != PWR_CFG_PRAM_NUM_ALL_RATE)) {
 			DBGLOG(RLM, ERROR,
 			       "parse error: not segments, %s\n",
 			       pcContCur);
@@ -7003,8 +7266,47 @@ skipLabel:
 			       "parse channel setting type error, %s\n",
 			       pcContOld);
 			goto clearLabel;
+		}
+
+		if (!pcContCur) {
+			DBGLOG(RLM, ERROR,
+			       "parse rate tag error\n");
+			goto clearLabel;
+		}
+		/* If cfg parameter only one,
+		 * no need to parse rate tag
+		 */
+		if (count != PWR_CFG_PRAM_NUM_ALL_RATE) {
+			/* Start Parsing Rate Tag */
+			pcContTag = txPwrGetString(&pcContCur, ",");
+			if (!pcContCur) {
+				DBGLOG(RLM, ERROR,
+					"parse rate tag error\n");
+				goto clearLabel;
+			}
+			if (pcContTag == NULL)
+				u4RollBackStep = 0;
+			else
+				u4RollBackStep = kalStrLen(pcContTag);
+			u1RateTag = txPwrCfgParsingRateTag(pcContTag, count);
+			if (u1RateTag == PWR_CFG_RATE_TAG_MISS) {
+				/* 1. Miss Rate Tag, string roll back
+				 * 2. strsep will switch the the token which is
+				 * ',' here to '\0'
+				 */
+				pcContCur = pcContCur - 1;
+				*pcContCur = ',';
+				pcContCur = pcContCur - u4RollBackStep;
+			}
+		}
+		DBGLOG(RLM, TRACE,
+			"RateTag[%d]RollBack[%d]After parse rate tag:%s\n",
+			u1RateTag,
+			u4RollBackStep,
+			pcContCur);
+
 		/* "ALL" */
-		} else if (kalStrCmp(pcContTmp,
+		if (kalStrCmp(pcContTmp,
 				     PWR_CTRL_CHNL_TYPE_KEY_ALL) == 0)
 			prTmpSetting->eChnlType =
 				PWR_CTRL_CHNL_TYPE_ALL;
@@ -7080,9 +7382,11 @@ skipLabel:
 			pcContTmp = txPwrGetString(&pcContCur2, "-");
 			if (!pcContTmp) {
 				DBGLOG(RLM, ERROR,
-					"parse channel range error: %s\n");
+					"parse channel range error: %s\n",
+					pcContOld);
 				goto clearLabel;
 			}
+
 			if (pcContCur2 == NULL) { /* case: normal channel */
 				if (kalkStrtou8(pcContOld, 0, &value) != 0) {
 					DBGLOG(RLM, ERROR,
@@ -7093,8 +7397,13 @@ skipLabel:
 				prTmpSetting->channelParam[0] = value;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 				if (count == PWR_LIMIT_6E_NUM
+					|| (u1RateTag ==
+						PWR_CFG_RATE_TAG_HIT_LEGACY6G)
+					|| (u1RateTag ==
+						PWR_CFG_RATE_TAG_HIT_HE6G)
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
-					|| count == PWR_LIMIT_EHT_6G_NUM + 1
+					|| (u1RateTag ==
+						PWR_CFG_RATE_TAG_HIT_EHT6G)
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 					)
 					prTmpSetting->eChnlType =
@@ -7118,6 +7427,21 @@ skipLabel:
 				}
 				prTmpSetting->channelParam[0] = value;
 				prTmpSetting->channelParam[1] =	value2;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+				if (count == PWR_LIMIT_6E_NUM
+					|| (u1RateTag ==
+						PWR_CFG_RATE_TAG_HIT_LEGACY6G)
+					|| (u1RateTag ==
+						PWR_CFG_RATE_TAG_HIT_HE6G)
+#if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
+					|| (u1RateTag ==
+						PWR_CFG_RATE_TAG_HIT_EHT6G)
+#endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
+					)
+					prTmpSetting->eChnlType =
+						PWR_CTRL_CHNL_TYPE_6G_RANGE;
+				else
+#endif /* CFG_SUPPORT_WIFI_6G */
 				prTmpSetting->eChnlType =
 						PWR_CTRL_CHNL_TYPE_RANGE;
 			}
@@ -7156,6 +7480,11 @@ skipLabel:
 				prTmpSetting->i8PwrLimit6E[j] = (op != 2) ?
 							value : (0 - value);
 			}
+			for (j = 0; j < PWR_LIMIT_LEGACY_6G_NUM; j++) {
+				prTmpSetting->opLegacy_6G[j] = op;
+				prTmpSetting->i8PwrLimitLegacy_6G[j]
+					= (op != 2) ? value : (0 - value);
+			}
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 			for (j = 0; j < PWR_LIMIT_EHT_6G_NUM; j++) {
 				prTmpSetting->opEHT_6G[j] = op;
@@ -7165,7 +7494,8 @@ skipLabel:
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #endif /* CFG_SUPPORT_WIFI_6G */
 			goto skipLabel2;
-		} else  if (count == PWR_CFG_PRAM_NUM_AC) {
+		} else  if (count == PWR_LIMIT_NUM ||
+			u1RateTag == PWR_CFG_RATE_TAG_HIT_LEGACY) {
 			for (j = 0; j < PWR_CFG_PRAM_NUM_AC; j++) {
 				/* parse cck/20L/20H .. 160L/160H setting */
 				if (j == PWR_CFG_PRAM_NUM_AC - 1)
@@ -7198,10 +7528,10 @@ skipLabel:
 				}
 			}
 			goto skipLabel2;
-		} else if (count == PWR_CFG_PRAM_NUM_AX) {
-			for (j = 0; j < PWR_CFG_PRAM_NUM_AX; j++) {
+		} else if (count == PWR_LIMIT_HE_NUM) {
+			for (j = 0; j < PWR_LIMIT_HE_NUM; j++) {
 				/* parse RU26L ...  RU996U setting */
-				if (j == PWR_CFG_PRAM_NUM_AX - 1)
+				if (j == PWR_LIMIT_HE_NUM - 1)
 					carySeperator[0] = ']';
 				else
 					carySeperator[0] = ',';
@@ -7234,16 +7564,7 @@ skipLabel:
 			goto skipLabel2;
 		}
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
-		else if (count == PWR_LIMIT_EHT_NUM + 1) {
-
-			/* first tag should be EHT */
-			pcContTmp = txPwrGetString(&pcContCur, ",");
-			if (!pcContTmp || !kalStrCmp(pcContTmp,
-				     PWR_CTRL_CHNL_TYPE_KEY_EHT) == 0) {
-				DBGLOG(RLM, ERROR,
-					"parse EHT error, %s\n", pcContTmp);
-				goto clearLabel;
-			}
+		else if (u1RateTag == PWR_CFG_RATE_TAG_HIT_EHT) {
 			for (j = 0; j < PWR_LIMIT_EHT_NUM; j++) {
 				/* parse EHT26L ...  EHT996_484_242U setting */
 				if (j == PWR_LIMIT_EHT_NUM - 1)
@@ -7280,7 +7601,8 @@ skipLabel:
 		}
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (count == PWR_LIMIT_6E_NUM) {
+		else if (count == PWR_LIMIT_6E_NUM ||
+			u1RateTag == PWR_CFG_RATE_TAG_HIT_HE6G) {
 			for (j = 0; j < PWR_LIMIT_6E_NUM; j++) {
 				/* parse RU26L ...  RU996U setting */
 				if (j == PWR_LIMIT_6E_NUM - 1)
@@ -7314,18 +7636,43 @@ skipLabel:
 				}
 			}
 			goto skipLabel2;
+		} else if (u1RateTag == PWR_CFG_RATE_TAG_HIT_LEGACY6G) {
+			for (j = 0; j < PWR_LIMIT_LEGACY_6G_NUM; j++) {
+				/* parse cck/20L/20H .. 160L/160H setting */
+				if (j == PWR_LIMIT_LEGACY_6G_NUM - 1)
+					carySeperator[0] = ']';
+				else
+					carySeperator[0] = ',';
+
+				pcContOld = pcContCur;
+				if (txPwrParseNumber(&pcContCur, carySeperator,
+					&op, &value)) {
+					DBGLOG(RLM, ERROR,
+						"parse LEGACY6G %s error, %s\n",
+						pacParsePwrAC[j],
+						pcContOld);
+					goto clearLabel;
+				}
+				prTmpSetting->opLegacy_6G[j] =
+					(enum ENUM_TX_POWER_CTRL_VALUE_SIGN)op;
+				prTmpSetting->i8PwrLimitLegacy_6G[j] =
+					(op != 2) ? value : (0 - value);
+				if ((prTmpSetting->opLegacy_6G[j]
+					== PWR_CTRL_TYPE_POSITIVE) &&
+					(ucOperation
+					== PWR_CTRL_TYPE_OPERATION_POWER_OFFSET)
+					) {
+					DBGLOG(RLM, ERROR,
+						"parse LEGACY6G %s error, Power_Offset value cannot be positive: %u\n",
+						pacParsePwrAC[j],
+						value);
+					goto clearLabel;
+				}
+			}
+			goto skipLabel2;
 		}
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
-		else if (count == PWR_LIMIT_EHT_6G_NUM + 1) {
-
-			/* first tag should be EHT6G */
-			pcContTmp = txPwrGetString(&pcContCur, ",");
-			if (!pcContTmp || !kalStrCmp(pcContTmp,
-				     PWR_CTRL_CHNL_TYPE_KEY_6G_EHT_6G) == 0) {
-				DBGLOG(RLM, ERROR,
-					"parse EHT_6G error, %s\n", pcContTmp);
-				goto clearLabel;
-			}
+		else if (u1RateTag == PWR_CFG_RATE_TAG_HIT_EHT6G) {
 			for (j = 0; j < PWR_LIMIT_EHT_6G_NUM; j++) {
 				/* parse EHT26L ...  EHT996X3_484U setting */
 				if (j == PWR_LIMIT_EHT_6G_NUM - 1)
@@ -7362,16 +7709,7 @@ skipLabel:
 		}
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #endif /* CFG_SUPPORT_WIFI_6G */
-		else if (count == PWR_LIMIT_HE_BW160_NUM + 1) {
-
-			/* first tag should be AX160 */
-			pcContTmp = txPwrGetString(&pcContCur, ",");
-			if (!pcContTmp || !kalStrCmp(pcContTmp,
-				     PWR_CTRL_CHNL_TYPE_KEY_5G_AX160) == 0) {
-				DBGLOG(RLM, ERROR,
-					"parse AX160 error, %s\n", pcContTmp);
-				goto clearLabel;
-			}
+		else if (u1RateTag == PWR_CFG_RATE_TAG_HIT_HE) {
 			for (j = 0; j < PWR_LIMIT_HE_BW160_NUM; j++) {
 				/* parse RU26L ...  RU996U setting */
 				if (j == PWR_LIMIT_HE_BW160_NUM - 1)
@@ -7408,12 +7746,18 @@ skipLabel:
 		}
 
 skipLabel2:
-		pcContCur = pcContNext + 2;
+		if (i + 1  < ucSettingCount) {
+			/* Skip ']' and '[' */
+			pcContCur = pcContNext + 2;
+		} else {
+			/* Last setting */
+			pcContCur = pcContNext + 1;
+		}
+		pcContEnd = pcContCur + kalStrLen(pcContCur);
 	}
 
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
 	/* parse power limit append tag to list. */
-	pcContCur -= 1;
 
 	if (txPwrOnPreParseAppendTag(prCurElement)) {
 		DBGLOG(RLM, INFO,
@@ -7428,7 +7772,7 @@ skipLabel2:
 clearLabel:
 	if (prCurElement != NULL)
 		kalMemFree(prCurElement, VIR_MEM_TYPE, u4MemSize);
-
+	/* pcCurElement will be free on wifi off */
 	return NULL;
 }
 
@@ -7815,12 +8159,13 @@ void rlmDomainShowPwrLimitPerCh(char *message,
 #endif
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	struct CMD_CHANNEL_POWER_LIMIT_6E *prPwrLmt6E = NULL;
+	struct CMD_CHANNEL_POWER_LIMIT_LEGACY_6G *prCmdPwrLimtLegacy_6G = NULL;
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	struct CMD_CHANNEL_POWER_LIMIT_EHT_6G *prPwrLmtEHT_6G = NULL;
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #endif /* CFG_SUPPORT_WIFI_6G */
 	enum ENUM_PWR_LIMIT_TYPE eType;
-	uint8_t i, j, k;
+	uint8_t i = 0, j = 0, k = 0;
 	char msgLimit[PWR_BUF_LEN];
 	int msgOfs = 0;
 	int8_t *prcRatePwr;
@@ -7963,6 +8308,42 @@ void rlmDomainShowPwrLimitPerCh(char *message,
 
 			DBGLOG(RLM, TRACE, "%s:%s\n", message, msgLimit);
 
+		} else if (eType >= PWR_LIMIT_TYPE_COMP_LEGACY_6G_1 &&
+			eType <= PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3) {
+			prCmdPwrLimtLegacy_6G =
+				&prCmd->u.rChPwrLimtLegacy_6G[i];
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+			prcRatePwr =
+				&prCmdPwrLimtLegacy_6G->cPwrLimitCCK_L;
+#else
+			prcRatePwr =
+				&prCmdPwrLimtLegacy_6G->cPwrLimitCCK;
+#endif
+			/*message head*/
+			msgOfs += snprintf(msgLimit + msgOfs,
+				PWR_BUF_LEN - msgOfs,
+				"Legacy_6G ch=%d,Limit=",
+				prCmdPwrLimtLegacy_6G->ucCentralCh);
+
+			/*message body*/
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+			for (j = PWR_LIMIT_CCK_L;
+				j < PWR_LIMIT_LEGACY_6G_NUM ; j++)
+#else
+			for (j = PWR_LIMIT_CCK;
+				j < PWR_LIMIT_LEGACY_6G_NUM ; j++)
+#endif
+				msgOfs += snprintf(msgLimit + msgOfs,
+					PWR_BUF_LEN - msgOfs,
+					"%d,",
+					*(prcRatePwr + j));
+			/*message tail*/
+			if (msgOfs >= 1)
+				msgLimit[msgOfs-1] = '\0';
+			else
+				msgLimit[0] = '\0';
+
+			DBGLOG(RLM, TRACE, "%s:%s\n", message, msgLimit);
 		}
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 		else if (eType >=
@@ -7992,11 +8373,11 @@ void rlmDomainShowPwrLimitPerCh(char *message,
 				msgLimit[0] = '\0';
 
 			DBGLOG(RLM, TRACE, "%s:%s\n", message, msgLimit);
-
 		}
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #endif /* CFG_SUPPORT_WIFI_6G */
-		else {
+		else if (eType == PWR_LIMIT_TYPE_COMP_11AC ||
+			eType == PWR_LIMIT_TYPE_COMP_11AC_V2) {
 			prPwrLmt = &prCmd->u.rChannelPowerLimit[i];
 #if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
 			prcRatePwr = &prPwrLmt->cPwrLimitCCK_L;
@@ -8029,7 +8410,6 @@ void rlmDomainShowPwrLimitPerCh(char *message,
 			DBGLOG(RLM, TRACE, "%s:%s\n", message, msgLimit);
 		}
 	}
-
 }
 
 void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
@@ -8049,6 +8429,10 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd6E_1 = NULL;
 	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd6E_2 = NULL;
 	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd6E_3 = NULL;
+
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmdLegacy_6G_1 = NULL;
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmdLegacy_6G_2 = NULL;
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmdLegacy_6G_3 = NULL;
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmdEHT_6G_1 = NULL;
 	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmdEHT_6G_2 = NULL;
@@ -8151,6 +8535,33 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 		goto err;
 	}
 	kalMemZero(prCmd6E_3, u4SetCmdTableMaxSize);
+
+	prCmdLegacy_6G_1 =
+		cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4SetCmdTableMaxSize);
+
+	if (!prCmdLegacy_6G_1) {
+		DBGLOG(RLM, ERROR, "Domain: Alloc cmd buffer failed\n");
+		goto err;
+	}
+	kalMemZero(prCmdLegacy_6G_1, u4SetCmdTableMaxSize);
+
+	prCmdLegacy_6G_2 =
+		cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4SetCmdTableMaxSize);
+
+	if (!prCmdLegacy_6G_2) {
+		DBGLOG(RLM, ERROR, "Domain: Alloc cmd buffer failed\n");
+		goto err;
+	}
+	kalMemZero(prCmdLegacy_6G_2, u4SetCmdTableMaxSize);
+
+	prCmdLegacy_6G_3 =
+		cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4SetCmdTableMaxSize);
+
+	if (!prCmdLegacy_6G_3) {
+		DBGLOG(RLM, ERROR, "Domain: Alloc cmd buffer failed\n");
+		goto err;
+	}
+	kalMemZero(prCmdLegacy_6G_3, u4SetCmdTableMaxSize);
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	prCmdEHT_6G_1 =
 		cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4SetCmdTableMaxSize);
@@ -8239,6 +8650,12 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 		&prCmd6E_2->u2CountryCode);
 	WLAN_GET_FIELD_BE16(pu1PwrLmtCountryCode,
 		&prCmd6E_3->u2CountryCode);
+	WLAN_GET_FIELD_BE16(pu1PwrLmtCountryCode,
+		&prCmdLegacy_6G_1->u2CountryCode);
+	WLAN_GET_FIELD_BE16(pu1PwrLmtCountryCode,
+		&prCmdLegacy_6G_2->u2CountryCode);
+	WLAN_GET_FIELD_BE16(pu1PwrLmtCountryCode,
+		&prCmdLegacy_6G_3->u2CountryCode);
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	WLAN_GET_FIELD_BE16(pu1PwrLmtCountryCode,
 		&prCmdEHT_6G_1->u2CountryCode);
@@ -8309,6 +8726,30 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	prCmd6E_3->ucNum = 0;
 	prCmd6E_3->fgPwrTblKeep = TRUE;
 	prCmd6E_3->ucLimitType = PWR_LIMIT_TYPE_COMP_6E_3;
+
+	prCmdLegacy_6G_1->ucNum = 0;
+	prCmdLegacy_6G_1->fgPwrTblKeep = TRUE;
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+	prCmdLegacy_6G_1->ucLimitType = PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_1;
+#else
+	prCmdLegacy_6G_1->ucLimitType = PWR_LIMIT_TYPE_COMP_LEGACY_6G_1;
+#endif
+
+	prCmdLegacy_6G_2->ucNum = 0;
+	prCmdLegacy_6G_2->fgPwrTblKeep = TRUE;
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+	prCmdLegacy_6G_2->ucLimitType = PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_2;
+#else
+	prCmdLegacy_6G_2->ucLimitType = PWR_LIMIT_TYPE_COMP_LEGACY_6G_2;
+#endif
+
+	prCmdLegacy_6G_3->ucNum = 0;
+	prCmdLegacy_6G_3->fgPwrTblKeep = TRUE;
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+	prCmdLegacy_6G_3->ucLimitType = PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3;
+#else
+	prCmdLegacy_6G_3->ucLimitType = PWR_LIMIT_TYPE_COMP_LEGACY_6G_3;
+#endif
 
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	prCmdEHT_6G_1->ucNum = 0;
@@ -8432,6 +8873,42 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 		 */
 		rlmDomainBuildCmdByConfigTable(prAdapter,
 			prCmd6E_3);
+
+		/*<1>Command - default table information,
+		 *fill all subband
+		 */
+		rlmDomainBuildCmdByDefaultTable(prCmdLegacy_6G_1,
+			u2DefaultTableIndex);
+
+		/*<2>Command - configuration table information,
+		 * replace specified channel
+		 */
+		rlmDomainBuildCmdByConfigTable(prAdapter,
+			prCmdLegacy_6G_1);
+
+		/*<1>Command - default table information,
+		 *fill all subband
+		 */
+		rlmDomainBuildCmdByDefaultTable(prCmdLegacy_6G_2,
+			u2DefaultTableIndex);
+
+		/*<2>Command - configuration table information,
+		 * replace specified channel
+		 */
+		rlmDomainBuildCmdByConfigTable(prAdapter,
+			prCmdLegacy_6G_2);
+
+		/*<1>Command - default table information,
+		 *fill all subband
+		 */
+		rlmDomainBuildCmdByDefaultTable(prCmdLegacy_6G_3,
+			u2DefaultTableIndex);
+
+		/*<2>Command - configuration table information,
+		 * replace specified channel
+		 */
+		rlmDomainBuildCmdByConfigTable(prAdapter,
+			prCmdLegacy_6G_3);
 
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 		/*<1>Command - default table information,
@@ -8557,6 +9034,18 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	rlmDomainShowPwrLimitPerCh("Old", prCmd6E_3);
 	txPwrCtrlApplySettings(prAdapter, prCmd6E_3, bandedgeParam);
 	rlmDomainShowPwrLimitPerCh("Final", prCmd6E_3);
+
+	rlmDomainShowPwrLimitPerCh("Old", prCmdLegacy_6G_1);
+	txPwrCtrlApplySettings(prAdapter, prCmdLegacy_6G_1, bandedgeParam);
+	rlmDomainShowPwrLimitPerCh("Final", prCmdLegacy_6G_1);
+
+	rlmDomainShowPwrLimitPerCh("Old", prCmdLegacy_6G_2);
+	txPwrCtrlApplySettings(prAdapter, prCmdLegacy_6G_2, bandedgeParam);
+	rlmDomainShowPwrLimitPerCh("Final", prCmdLegacy_6G_2);
+
+	rlmDomainShowPwrLimitPerCh("Old", prCmdLegacy_6G_3);
+	txPwrCtrlApplySettings(prAdapter, prCmdLegacy_6G_3, bandedgeParam);
+	rlmDomainShowPwrLimitPerCh("Final", prCmdLegacy_6G_3);
 
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	rlmDomainShowPwrLimitPerCh("Old", prCmdEHT_6G_1);
@@ -8691,6 +9180,46 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 			NULL,	/* pvSetQueryBuffer */
 			0	/* u4SetQueryBufferLen */
 	    );
+
+		rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+			CMD_ID_SET_COUNTRY_POWER_LIMIT,	/* ucCID */
+			TRUE,	/* fgSetQuery */
+			FALSE,	/* fgNeedResp */
+			FALSE,	/* fgIsOid */
+			NULL,	/* pfCmdDoneHandler */
+			NULL,	/* pfCmdTimeoutHandler */
+			u4SetQueryInfoLen,	/* u4SetQueryInfoLen */
+			(uint8_t *) prCmdLegacy_6G_1,	/* pucInfoBuffer */
+			NULL,	/* pvSetQueryBuffer */
+			0	/* u4SetQueryBufferLen */
+	    );
+
+		rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+			CMD_ID_SET_COUNTRY_POWER_LIMIT,	/* ucCID */
+			TRUE,	/* fgSetQuery */
+			FALSE,	/* fgNeedResp */
+			FALSE,	/* fgIsOid */
+			NULL,	/* pfCmdDoneHandler */
+			NULL,	/* pfCmdTimeoutHandler */
+			u4SetQueryInfoLen,	/* u4SetQueryInfoLen */
+			(uint8_t *) prCmdLegacy_6G_2,	/* pucInfoBuffer */
+			NULL,	/* pvSetQueryBuffer */
+			0	/* u4SetQueryBufferLen */
+	    );
+
+		rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+			CMD_ID_SET_COUNTRY_POWER_LIMIT,	/* ucCID */
+			TRUE,	/* fgSetQuery */
+			FALSE,	/* fgNeedResp */
+			FALSE,	/* fgIsOid */
+			NULL,	/* pfCmdDoneHandler */
+			NULL,	/* pfCmdTimeoutHandler */
+			u4SetQueryInfoLen,	/* u4SetQueryInfoLen */
+			(uint8_t *) prCmdLegacy_6G_3,	/* pucInfoBuffer */
+			NULL,	/* pvSetQueryBuffer */
+			0	/* u4SetQueryBufferLen */
+	    );
+
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 		rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
 			CMD_ID_SET_COUNTRY_POWER_LIMIT,	/* ucCID */
@@ -8811,6 +9340,9 @@ err:
 	cnmMemFree(prAdapter, prCmd6E_1);
 	cnmMemFree(prAdapter, prCmd6E_2);
 	cnmMemFree(prAdapter, prCmd6E_3);
+	cnmMemFree(prAdapter, prCmdLegacy_6G_1);
+	cnmMemFree(prAdapter, prCmdLegacy_6G_2);
+	cnmMemFree(prAdapter, prCmdLegacy_6G_3);
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	cnmMemFree(prAdapter, prCmdEHT_6G_1);
 	cnmMemFree(prAdapter, prCmdEHT_6G_2);
