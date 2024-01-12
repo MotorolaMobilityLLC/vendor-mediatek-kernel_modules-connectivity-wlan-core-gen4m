@@ -1006,9 +1006,11 @@
  * can customize
  *        1. by project's requirement in this default value
  *        2. or by define in wifi.cfg directly (BeaconTimoutFilterDurationMs)
+ * if the value set to 0, it means disable the filter.
+ * if the value set to 2000, it means the duration of fitler is 2000 ms
  *------------------------------------------------------------------------------
  */
-#define CFG_BEACON_TIMEOUT_FILTER_DURATION_DEFAULT_VALUE	2000
+#define CFG_BEACON_TIMEOUT_FILTER_DURATION_DEFAULT_VALUE	0
 
 /*------------------------------------------------------------------------------
  * Flags of Random MAC support
