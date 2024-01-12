@@ -3583,7 +3583,7 @@ static void nicRxProcessIcsLog(IN struct ADAPTER *prAdapter,
 				prIcsAggHeader->rxByteCount);
 
 		/* write to ring, ret: written */
-		ret = wifi_ics_fwlog_write(pucRecvBuff, u4Size);
+		ret = kalIcsWrite(pucRecvBuff, u4Size);
 		if (ret != u4Size)
 			DBGLOG_LIMITED(NIC, INFO,
 				"dropped written:%d rxByteCount:%d\n",
@@ -4016,10 +4016,7 @@ void nicRxReturnRFB(IN struct ADAPTER *prAdapter,
 		if (prAdapter->ulNoMoreRfb != 0) {
 			DBGLOG_LIMITED(RX, INFO,
 				"Free rfb and set IntEvent!!!!!\n");
-			if (HAL_IS_RX_DIRECT(prAdapter))
-				tasklet_hi_schedule(&prGlueInfo->rRxTask);
-			else
-				kalSetDrvIntEvent(prGlueInfo);
+			kalSetDrvIntEvent(prGlueInfo);
 		}
 	} else {
 		/* QUEUE_INSERT_TAIL */

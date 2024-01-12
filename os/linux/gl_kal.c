@@ -5641,11 +5641,15 @@ void kalSetDrvIntEvent(struct GLUE_INFO *pr)
 {
 	KAL_WAKE_LOCK(pr->prAdapter, pr->rIntrWakeLock);
 
-	set_bit(GLUE_FLAG_DRV_INT_BIT, &pr->ulFlag);
+	if (!HAL_IS_RX_DIRECT(pr->prAdapter))
+		set_bit(GLUE_FLAG_DRV_INT_BIT, &pr->ulFlag);
 
 	/* when we got interrupt, we wake up servie thread */
 #if CFG_SUPPORT_MULTITHREAD
-	wake_up_interruptible(&pr->waitq_hif);
+	if (HAL_IS_RX_DIRECT(pr->prAdapter))
+		tasklet_hi_schedule(&pr->rRxTask);
+	else
+		wake_up_interruptible(&pr->waitq_hif);
 #else
 	wake_up_interruptible(&pr->waitq);
 #endif

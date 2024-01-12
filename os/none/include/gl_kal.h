@@ -521,7 +521,7 @@ enum ENUM_CMD_TX_RESULT {
 ({ \
 	/* Avoid memory barrier problem  */ \
 	/* TODO: OS-dependent */ \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__); \
 })
 
 #if DBG
@@ -1954,5 +1954,8 @@ kalApplyCustomRegulatory(IN struct wiphy *pWiphy,
 				_ucRxNss) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #endif
+
+#define kalIcsWrite(buf, size) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #endif /* _GL_KAL_H */
 
