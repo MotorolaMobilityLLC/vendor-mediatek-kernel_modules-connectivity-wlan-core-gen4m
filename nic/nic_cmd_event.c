@@ -3253,6 +3253,11 @@ uint32_t nicCfgChipCapMacCap(IN struct ADAPTER *prAdapter,
 	DBGLOG(INIT, INFO, "ucWtblEntryNum: %d.\n",
 	       prMacCap->ucWtblEntryNum);
 
+	prAdapter->ucWmmSetNum = prMacCap->ucWmmSet > 0 ?
+		prMacCap->ucWmmSet : 1;
+	DBGLOG(INIT, INFO, "ucWmmSetNum: %d.\n",
+	       prMacCap->ucWmmSet);
+
 	return WLAN_STATUS_SUCCESS;
 }
 
