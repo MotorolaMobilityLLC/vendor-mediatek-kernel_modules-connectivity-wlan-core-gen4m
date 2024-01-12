@@ -252,9 +252,19 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 #if (CFG_SUPPORT_802_11AX == 1)
 	uint8_t ucHeOption = FEATURE_ENABLED;
-#endif
 
-	prStaRec->ucPhyTypeSet = prBssDesc->ucPhyTypeSet;
+	/* 802.11 AX blacklist */
+	if (queryAxBlacklist(prAdapter, prBssDesc->aucBSSID,
+			     prStaRec->ucBssIndex, BLACKLIST_AX_TO_AC)) {
+		DBGLOG(BSS, INFO,
+		    "BSSID " MACSTR " is in AX blacklist!\n",
+		    MAC2STR(prBssDesc->aucBSSID));
+		prStaRec->ucPhyTypeSet =
+			prBssDesc->ucPhyTypeSet &= ~PHY_TYPE_BIT_HE;
+	} else
+#endif
+		prStaRec->ucPhyTypeSet = prBssDesc->ucPhyTypeSet;
+
 #if CFG_SUPPORT_BFEE
 	prStaRec->ucVhtCapNumSoundingDimensions =
 	    prBssDesc->ucVhtCapNumSoundingDimensions;

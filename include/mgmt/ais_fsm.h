@@ -208,6 +208,11 @@ struct AIS_BLACKLIST_ITEM {
 };
 /* end Support AP Selection */
 
+struct AX_BLACKLIST_ITEM {
+	struct LINK_ENTRY rLinkEntry;
+	uint8_t aucBSSID[MAC_ADDR_LEN];
+};
+
 struct AIS_FSM_INFO {
 	enum ENUM_AIS_STATE ePreviousState;
 	enum ENUM_AIS_STATE eCurrentState;
@@ -288,6 +293,9 @@ struct AIS_FSM_INFO {
 
 	/* Scan target channel when device roaming */
 	uint8_t fgTargetChnlScanIssued;
+
+	struct LINK rAxBlacklist;
+	struct LINK rHeHtcBlacklist;
 };
 
 struct AIS_OFF_CHNL_TX_REQ_INFO {
@@ -761,5 +769,19 @@ struct cfg80211_ft_event_params *
 	aisGetFtEventParam(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex);
+
+u_int8_t addAxBlacklist(IN struct ADAPTER *prAdapter,
+	IN uint8_t aucBSSID[],
+	IN uint8_t ucBssIndex,
+	IN uint8_t ucType);
+
+u_int8_t queryAxBlacklist(IN struct ADAPTER *prAdapter,
+	IN uint8_t aucBSSID[],
+	IN uint8_t ucBssIndex,
+	IN uint8_t ucType);
+
+u_int8_t clearAxBlacklist(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex,
+	IN uint8_t ucType);
 
 #endif /* _AIS_FSM_H */

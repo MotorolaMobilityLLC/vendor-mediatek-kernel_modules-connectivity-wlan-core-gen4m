@@ -5331,6 +5331,59 @@ label_exit:
 	return rStatus;
 }
 
+#define CMD_SET_AX_BLACKLIST                    "SET_AX_BLACKLIST"
+
+int testmode_set_ax_blacklist(IN struct wiphy *wiphy, IN char *pcCommand,
+				IN int i4TotalLen)
+{
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)wiphy_priv(wiphy);
+	uint32_t rStatus;
+	uint32_t u4BufLen;
+	struct PARAM_AX_BLACKLIST rBlacklist;
+	int32_t i4BytesWritten = -1;
+	uint8_t ucType = 0;
+	uint8_t i = 0;
+	uint8_t aucMacAddr[MAC_ADDR_LEN];
+	uint8_t index = 0;
+
+	DBGLOG(INIT, TRACE, "command is %s\n", pcCommand);
+	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 2) {
+		DBGLOG(REQ, TRACE, "argc %i, cmd [%s]\n", i4Argc, apcArgv[1]);
+		i4BytesWritten = kalkStrtou8(apcArgv[1], 0, &ucType);
+		if (i4BytesWritten)
+			DBGLOG(REQ, ERROR, "parse ucType error %d\n",
+					i4BytesWritten);
+
+
+		kalMemZero(&rBlacklist, sizeof(rBlacklist));
+		rBlacklist.ucType = ucType;
+		rBlacklist.ucCount = (i4Argc - 2);
+		for (i = 2; i < i4Argc; i++) {
+			DBGLOG(REQ, TRACE,
+				"argc %i, cmd [%s]\n", i4Argc, apcArgv[i]);
+				wlanHwAddrToBin(apcArgv[i], &aucMacAddr[0]);
+			index = (i - 2) * MAC_ADDR_LEN;
+			COPY_MAC_ADDR(&rBlacklist.aucList[index],
+					aucMacAddr);
+		}
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetAxBlacklist,
+			(void *)&rBlacklist, sizeof(struct PARAM_AX_BLACKLIST),
+			FALSE, FALSE, FALSE, &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(INIT, ERROR, "fail 0x%x\n", rStatus);
+
+	} else {
+		DBGLOG(REQ, ERROR, "fail invalid data\n");
+		rStatus = WLAN_STATUS_INVALID_DATA;
+	}
+	return rStatus;
+}
+
 int32_t mtk_cfg80211_process_str_cmd_reply(
 	IN struct wiphy *wiphy, IN char *data, IN int len)
 {
@@ -5487,6 +5540,9 @@ int32_t mtk_cfg80211_process_str_cmd(IN struct wiphy *wiphy,
 			    strlen(CMD_NCHO_MODE_GET)) == 0) {
 		return testmode_get_ncho_mode(wiphy, cmd, len);
 #endif
+	} else if (strnicmp(cmd, CMD_SET_AX_BLACKLIST,
+			    strlen(CMD_SET_AX_BLACKLIST)) == 0) {
+		return testmode_set_ax_blacklist(wiphy, cmd, len);
 	} else
 		return -EOPNOTSUPP;
 
