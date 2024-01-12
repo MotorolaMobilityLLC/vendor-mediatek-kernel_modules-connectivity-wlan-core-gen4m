@@ -274,6 +274,7 @@ void nic_txd_v3_compose(
 	struct BSS_INFO *prBssInfo;
 	u_int32_t u4TxDescAndPaddingLength;
 	u_int8_t ucWmmQueSet, ucTarQueue, ucTarPort;
+	uint8_t ucEtherTypeOffsetInWord;
 	uint8_t *apucPktType[ENUM_PKT_FLAG_NUM] = {
 		(uint8_t *) DISP_STRING("INVALID"),
 		(uint8_t *) DISP_STRING("802_3"),
@@ -320,6 +321,15 @@ void nic_txd_v3_compose(
 	/* Packet Format */
 	HAL_MAC_CONNAC3X_TXD_SET_PKT_FORMAT(
 		prTxDesc, prMsduInfo->ucPacketFormat);
+
+	/* Ether-type offset */
+	if (prMsduInfo->fgIs802_3) {
+		ucEtherTypeOffsetInWord = ((ETHER_HEADER_LEN - ETHER_TYPE_LEN)
+				+ prAdapter->chip_info->pse_header_length) >> 1;
+
+		HAL_MAC_CONNAC3X_TXD_SET_ETHER_TYPE_OFFSET(
+			prTxDesc, ucEtherTypeOffsetInWord);
+	}
 
 	/** DW1 **/
 	/* MLDID-legacy */
