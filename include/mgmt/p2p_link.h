@@ -51,7 +51,7 @@ struct BSS_INFO *p2pGetLinkBssInfo(
 	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 	IN uint8_t ucLinkIdx);
 
-uint8_t p2pGetLinkWmmQueSet(
+void p2pGetLinkWmmQueSet(
 	IN struct ADAPTER *prAdapter,
 	IN struct BSS_INFO *prBssInfo);
 

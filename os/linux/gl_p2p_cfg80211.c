@@ -424,7 +424,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 
 		/* Switch OP MOde. */
 		prSwitchModeMsg->rMsgHdr.eMsgId = MID_MNY_P2P_FUN_SWITCH;
-		prSwitchModeMsg->ucRoleIdx = 0;
+		prSwitchModeMsg->ucRoleIdx = u4Idx;
 		switch (type) {
 		case NL80211_IFTYPE_P2P_CLIENT:
 			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_CLIENT.\n");
