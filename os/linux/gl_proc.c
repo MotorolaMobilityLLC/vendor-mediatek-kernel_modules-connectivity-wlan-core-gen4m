@@ -2412,7 +2412,7 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 
 #if CFG_SUPPORT_CSI
 	prEntry =
-		proc_create(PROC_CSI_DATA_NAME, 0664,
+		proc_create(PROC_CSI_DATA_NAME, 0600,
 					gprProcRoot, &csidata_ops);
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR,
