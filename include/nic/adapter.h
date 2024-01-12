@@ -1245,8 +1245,9 @@ struct WIFI_VAR {
 
 #define LATENCY_STATS_MAX_SLOTS 5
 #if CFG_SUPPORT_TX_LATENCY_STATS
-	bool fgPacketLatencyLog;
-	bool fgTxLatencyKeepCounting;
+	u_int8_t fgPacketLatencyLog;
+	u_int8_t fgTxLatencyKeepCounting;
+	u_int8_t fgTxLatencyPerBss;
 	uint32_t u4MsduStatsUpdateInterval; /* in ms */
 	uint32_t u4ContinuousTxFailThreshold;
 
@@ -1524,10 +1525,10 @@ struct OID_HANDLER_RECORD {
  * @u4TxFail: Number of TX failed count
  */
 struct TX_LATENCY_STATS {
-	uint32_t au4DriverLatency[LATENCY_STATS_MAX_SLOTS];
-	uint32_t au4ConnsysLatency[LATENCY_STATS_MAX_SLOTS];
-	uint32_t au4MacLatency[LATENCY_STATS_MAX_SLOTS];
-	uint32_t au4FailConnsysLatency[LATENCY_STATS_MAX_SLOTS];
+	uint32_t au4DriverLatency[BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
+	uint32_t au4ConnsysLatency[BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
+	uint32_t au4MacLatency[BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
+	uint32_t au4FailConnsysLatency[BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
 	uint32_t u4TxFail;
 };
 
