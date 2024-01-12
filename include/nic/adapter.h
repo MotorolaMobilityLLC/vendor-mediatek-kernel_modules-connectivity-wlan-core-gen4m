@@ -1116,6 +1116,7 @@ struct WIFI_VAR {
 #if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
 	uint32_t u4WfdSccBalanceEnable;
 	uint32_t u4WfdSccBalanceMode; /* 0: auto mode, 1: force mode */
+	uint32_t u4WfdSccBalanceRatio;
 	int32_t i4BssCount[MAX_BSSID_NUM];
 #endif
 	uint32_t u4DrvOwnMode; /* 0: default, 1: delay 10ms */
