@@ -4622,6 +4622,11 @@ bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter,
 	uint32_t	u4MonitorWindow;
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 
+	if (ucBssIdx >= MAX_BSSID_NUM) {
+		DBGLOG(NIC, ERROR, "ucBssIdx out of range!\n");
+		return FALSE;
+	}
+
 	ASSERT(prAdapter);
 	u4MonitorWindow = CFG_BEACON_TIMEOUT_FILTER_DURATION_DEFAULT_VALUE;
 
@@ -4640,6 +4645,10 @@ bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter,
 			prTxCtrl->u4LastTxTime[ucBssIdx]);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	if (!prBssInfo) {
+		DBGLOG(RSN, ERROR, "prBssInfo is null\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	if (IS_BSS_AIS(prBssInfo)) {
 		if (ucBcnTimeoutReason == BEACON_TIMEOUT_REASON_HIGH_PER) {
@@ -4689,8 +4698,12 @@ void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 					   *) (prEvent->aucBuffer);
 
 		if (prEventBssBeaconTimeout->ucBssIndex >=
-		    prAdapter->ucHwBssIdNum)
+		    prAdapter->ucHwBssIdNum ||
+		    prEventBssBeaconTimeout->ucBssIndex >=
+		    MAX_BSSID_NUM) {
+			DBGLOG(NIC, ERROR, "ucBssIndex out of range!\n");
 			return;
+		}
 
 		DBGLOG(NIC, INFO, "Reason code: %d\n",
 		       prEventBssBeaconTimeout->ucReasonCode);
@@ -4713,6 +4726,10 @@ void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 			prEventBssBeaconTimeout->ucBssIndex);
+		if (!prBssInfo) {
+			DBGLOG(RSN, ERROR, "prBssInfo is null\n");
+			return;
+		}
 
 		if (IS_BSS_AIS(prBssInfo)) {
 			uint8_t ucDisconnectReason =
@@ -4804,6 +4821,10 @@ void nicEventStaAgingTimeout(IN struct ADAPTER *prAdapter,
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 						  prStaRec->ucBssIndex);
+		if (!prBssInfo) {
+			DBGLOG(RSN, ERROR, "prBssInfo is null\n");
+			return;
+		}
 
 		bssRemoveClient(prAdapter, prBssInfo, prStaRec);
 

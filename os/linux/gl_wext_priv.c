@@ -7582,6 +7582,10 @@ static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRecOfAP;
 
 	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
+	if (ucBssIndex >= MAX_BSSID_NUM) {
+		DBGLOG(REQ, ERROR, "ucBssIndex out of range!\n");
+		return -1;
+	}
 
 	prStaRecOfAP =
 		aisGetStaRecOfAP(prAdapter, ucBssIndex);
@@ -8026,6 +8030,10 @@ static int32_t priv_driver_dump_rx_stat_info_con3(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRecOfAP;
 
 	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
+	if (ucBssIndex >= MAX_BSSID_NUM) {
+		DBGLOG(REQ, ERROR, "ucBssIndex out of range!\n");
+		return -1;
+	}
 
 	prStaRecOfAP =
 		aisGetStaRecOfAP(prAdapter, ucBssIndex);
@@ -9111,10 +9119,10 @@ static int priv_driver_get_uhw_mcr(IN struct net_device *prNetDev,
 		DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
-			i4BytesWritten = snprintf(pcCommand, i4TotalLen,
+			i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
 						  "IO FAIL");
 		else
-			i4BytesWritten = snprintf(pcCommand, i4TotalLen,
+			i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
 						  "0x%08x",
 					    (unsigned int)rCmdAccessReg.u4Data);
 
@@ -9171,7 +9179,7 @@ int priv_driver_set_uhw_mcr(IN struct net_device *prNetDev, IN char *pcCommand,
 				   &u4BufLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
-			i4BytesWritten = snprintf(pcCommand, i4TotalLen,
+			i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
 						  "IO FAIL");
 	}
 
@@ -11309,8 +11317,8 @@ int priv_driver_set_csa_ex(IN struct net_device *prNetDev,
 	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
 
 	if (i4Argc >= 3) {
-		kalkStrtou32(apcArgv[1], 0, &eBand);
-		kalkStrtou32(apcArgv[2], 0, &ch_num);
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &eBand);
+		u4Ret = kalkStrtou32(apcArgv[2], 0, &ch_num);
 		u4Ret = cnmIdcCsaReq(prGlueInfo->prAdapter,
 			eBand, ch_num, ucRoleIdx);
 		DBGLOG(REQ, INFO, "u4Ret is %d\n", u4Ret);
@@ -11472,7 +11480,7 @@ int priv_driver_get_channels(IN struct net_device *prNetDev,
 int priv_driver_set_rdd_op_mode(IN struct net_device *prNetDev,
 				IN char *pcCommand, IN int i4TotalLen)
 {
-	struct WIFI_EVENT *pEvent;
+	struct WIFI_EVENT *pEvent = NULL;
 	struct EVENT_RDD_OPMODE_CHANGE *prEventBody;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4BytesWritten = 0;
@@ -11539,7 +11547,11 @@ int priv_driver_set_rdd_op_mode(IN struct net_device *prNetDev,
 
 	return i4BytesWritten;
 error:
-
+	if (pEvent) {
+		kalMemFree(pEvent,
+			VIR_MEM_TYPE, sizeof(struct WIFI_EVENT)+
+			sizeof(struct EVENT_RDD_OPMODE_CHANGE));
+	}
 	return -1;
 }
 
@@ -15881,6 +15893,7 @@ static int priv_driver_get_emi_info(struct net_device *prNetDev,
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	int32_t i4ArgNum = 3;
+	uint32_t u4Ret = 0;
 
 	if (!prNetDev)
 		goto exit;
@@ -15899,8 +15912,12 @@ static int priv_driver_get_emi_info(struct net_device *prNetDev,
 		goto exit;
 	}
 
-	kalkStrtou32(apcArgv[1], 0, &offset);
-	kalkStrtou32(apcArgv[2], 0, &size);
+	u4Ret = kalkStrtou32(apcArgv[1], 0, &offset);
+	if (u4Ret)
+		DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n", u4Ret);
+	u4Ret = kalkStrtou32(apcArgv[2], 0, &size);
+	if (u4Ret)
+		DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n", u4Ret);
 
 	DBGLOG(REQ, INFO, "offset: 0x%x, size: 0x%x\n",
 		offset, size);
