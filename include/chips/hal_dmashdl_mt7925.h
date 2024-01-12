@@ -139,7 +139,10 @@
 #define MT7925_DMASHDL_HIF_ACK_CNT_TH                  (0x5)
 /* Ring 0/1/2/3/15 are used */
 #define MT7925_DMASHDL_HIF_GUP_ACT_MAP                 (0x800F)
-
+/* TODO: DBDC Quota need to tune for PCIE */
+#define MT7925_DMASHDL_DBDC_5G_MAX_QUOTA               (0xFF)
+#define MT7925_DMASHDL_DBDC_2G_MAX_QUOTA               (0xFF)
+#define MT7925_DMASHDL_DBDC_5G_6G_MAX_QUOTA            (0xFF)
 #elif defined(_HIF_USB)
 
 /* 1: 3rd arbitration makes decision based on group priority in current slot.
@@ -247,13 +250,18 @@
 #define MT7925_DMASHDL_PRIORITY14_GROUP                (0xE)
 #define MT7925_DMASHDL_PRIORITY15_GROUP                (0xF)
 #if (CFG_WIFI_FWDL_UMAC_RESERVE_SIZE_PARA == 128)
-/* PSE quota 169*/
-#define MT7925_DMASHDL_DBDC_5G_MAX_QUOTA               (0x38)
-#define MT7925_DMASHDL_DBDC_2G_MAX_QUOTA               (0x1C)
+/* TODO: Need to check PSE Quota when page size = 128 bytes */
+/* Currently Owl page size is 256 bytes */
+/* so in the future if a project page size is 128 bytes, */
+/* we need to check its PSE Quota */
+#define MT7925_DMASHDL_DBDC_5G_MAX_QUOTA               (0xFF)
+#define MT7925_DMASHDL_DBDC_2G_MAX_QUOTA               (0xFF)
+#define MT7925_DMASHDL_DBDC_5G_6G_MAX_QUOTA            (0xFF)
 #else
-/* PSE quota 212*/
-#define MT7925_DMASHDL_DBDC_5G_MAX_QUOTA               (0x46)
-#define MT7925_DMASHDL_DBDC_2G_MAX_QUOTA               (0x24)
+/* PSE quota 261*/
+#define MT7925_DMASHDL_DBDC_5G_MAX_QUOTA               (0x68)
+#define MT7925_DMASHDL_DBDC_2G_MAX_QUOTA               (0x1A)
+#define MT7925_DMASHDL_DBDC_5G_6G_MAX_QUOTA            (0x41)
 #endif
 
 #define MT7925_DMASHDL_HIF_ACK_CNT_TH                  (0x6)
@@ -293,5 +301,13 @@ extern struct DMASHDL_CFG rMt7925DmashdlCfg;
 */
 
 void mt7925DmashdlInit(struct ADAPTER *prAdapter);
+
+#if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
+uint32_t mt7925UpdateDmashdlQuota(struct ADAPTER *prAdapter,
+			uint8_t ucWmmIndex, uint32_t u4MaxQuota);
+
+uint32_t mt7925dmashdlQuotaDecision(struct ADAPTER *prAdapter,
+			uint8_t ucWmmIndex);
+#endif
 
 #endif /* _HAL_DMASHDL_MT7925_H */

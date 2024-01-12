@@ -432,6 +432,7 @@ struct BUS_INFO mt7925_bus_info = {
 #endif /*_HIF_PCIE || _HIF_AXI */
 #if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
 	.DmaShdlInit = mt7925DmashdlInit,
+	.updateTxRingMaxQuota = mt7925UpdateDmashdlQuota,
 #endif
 #if defined(_HIF_USB)
 	.prDmashdlCfg = &rMt7925DmashdlCfg,
@@ -746,6 +747,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7925 = {
 	.fgIsSupportL0p5Reset = TRUE,
 #elif defined(_HIF_USB)
 	.fgIsSupportL0p5Reset = TRUE,
+	.dmashdlQuotaDecision = mt7925dmashdlQuotaDecision,
 #elif defined(_HIF_SDIO)
 	/* owner set true when feature is ready. */
 	.fgIsSupportL0p5Reset = FALSE,
