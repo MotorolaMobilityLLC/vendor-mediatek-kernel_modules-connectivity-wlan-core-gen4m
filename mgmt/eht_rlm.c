@@ -233,7 +233,7 @@ static void ehtRlmFillCapIE(
 		SET_DOT11BE_PHY_CAP_BFEE_SS_LE_EQ_80M(phy_cap_1, 3);
 		/* set 1 to support 2 TX NSS */
 		SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_LE_EQ_80M(
-			phy_cap_1, ucSupportedNss - 1);
+			phy_cap_1, (uint32_t)(ucSupportedNss - 1));
 	}
 	if (eht_bw >= MAX_BW_160MHZ) {
 		eht_mcs15_mru |= EHT_MCS15_MRU_996_to_242_tone_160M;
@@ -241,7 +241,7 @@ static void ehtRlmFillCapIE(
 		SET_DOT11BE_PHY_CAP_BFEE_160M(phy_cap_1, 3);
 		/* set 1 to support TX NSS 2 */
 		SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_160M(
-			phy_cap_1, ucSupportedNss - 1);
+			phy_cap_1, (uint32_t)(ucSupportedNss - 1));
 	}
 	if (eht_bw >= MAX_BW_320MHZ) {
 		eht_mcs15_mru |= EHT_MCS15_MRU_3x996_tone_320M;
@@ -249,7 +249,7 @@ static void ehtRlmFillCapIE(
 		SET_DOT11BE_PHY_CAP_BFEE_320M(phy_cap_1, 3);
 		/* set 1 to support TX NSS 2 */
 		SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_320M(
-			phy_cap_1, ucSupportedNss - 1);
+			phy_cap_1, (uint32_t)(ucSupportedNss - 1));
 	}
 
 	phy_cap_1 |= DOT11BE_PHY_CAP_NDP_4X_EHT_LTF_3DOT2US_GI;
@@ -266,7 +266,7 @@ static void ehtRlmFillCapIE(
 	/* phy_cap_2 &= ~DOT11BE_PHY_CAP_PSR_BASED_SR; */
 	/* phy_cap_2 &= ~DOT11BE_PHY_CAP_POWER_BOOST_FACTOR; */
 	phy_cap_2 |= DOT11BE_PHY_CAP_EHT_MU_PPDU_4X_EHT_LTF_DOT8US_GI;
-	SET_DOT11BE_PHY_CAP_MAX_NC(phy_cap_2, ucSupportedNss - 1);
+	SET_DOT11BE_PHY_CAP_MAX_NC(phy_cap_2, (uint32_t)(ucSupportedNss - 1));
         phy_cap_2 |= DOT11BE_PHY_CAP_NON_TRIGED_CQI_FEEDBACK;
 	phy_cap_2 |= DOT11BE_PHY_CAP_TX_1024QAM_4096QAM_LE_242_TONE_RU;
 	phy_cap_2 |= DOT11BE_PHY_CAP_RX_1024QAM_4096QAM_LE_242_TONE_RU;

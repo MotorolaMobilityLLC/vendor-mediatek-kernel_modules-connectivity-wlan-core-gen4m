@@ -2673,7 +2673,7 @@ void qmAdjustTcQuotaPle(IN struct ADAPTER *prAdapter,
 			if (prTcqStatus->au4FreePageCount_PLE[i] < (-i4pages)) {
 				/* not enough to give */
 				i4pages =
-					-(prTcqStatus->au4FreePageCount_PLE[i]);
+				(-1) * (prTcqStatus->au4FreePageCount_PLE[i]);
 			}
 			i4TotalExtraQuota += -i4pages;
 
@@ -3612,12 +3612,14 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 					prCurrSwRfb->u2RxByteCount);
 				prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
 				QUEUE_INSERT_TAIL(prReturnedQue,
-					(struct QUE_ENTRY *)
-					prCurrSwRfb);
+					(struct QUE_ENTRY *)prCurrSwRfb);
 				DBGLOG(RX, WARN,
 				       "rxStatusGroup4 for data packet is NULL, drop this packet, and dump RXD and Packet\n");
+				/* prRxStatus is claimed as void *
+				 * *prRxStatus deference is void
+				 */
 				DBGLOG_MEM8(RX, WARN, (uint8_t *) prRxStatus,
-					sizeof(*prRxStatus));
+					prAdapter->chip_info->rxd_size);
 				if (prCurrSwRfb->pvHeader)
 					DBGLOG_MEM8(RX, WARN,
 						prCurrSwRfb->pvHeader,

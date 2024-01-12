@@ -129,7 +129,7 @@ void rttInit(IN struct ADAPTER *prAdapter)
 	cnmTimerInitTimer(prAdapter,
 		  &rttInfo->rRttDoneTimer,
 		  (PFN_MGMT_TIMEOUT_FUNC) rttRequestDoneTimeOut,
-		  (unsigned long)NULL);
+		  (uintptr_t)NULL);
 
 	LINK_INITIALIZE(&rttInfo->rResultList);
 
@@ -162,7 +162,7 @@ void rttFreeAllResults(IN struct RTT_INFO *prRttInfo)
 			entry, struct RTT_RESULT_ENTRY*);
 		kalMemFree(entry, VIR_MEM_TYPE,
 			sizeof(struct RTT_RESULT_ENTRY) +
-			entry->rResult.u2IELen);
+			entry->u2IELen);
 	}
 }
 

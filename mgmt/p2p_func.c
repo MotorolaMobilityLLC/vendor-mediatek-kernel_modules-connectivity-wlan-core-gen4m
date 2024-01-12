@@ -2880,14 +2880,14 @@ p2pFuncBeaconUpdate(IN struct ADAPTER *prAdapter,
 
 #if DBG
 		if (prBcnUpdateInfo->pucBcnHdr != NULL) {
-			ASSERT((uint32_t) prBcnUpdateInfo->pucBcnHdr ==
-				((uint32_t) prBcnMsduInfo->prPacket +
+			ASSERT((uintptr_t) prBcnUpdateInfo->pucBcnHdr ==
+				((uintptr_t) prBcnMsduInfo->prPacket +
 				MAC_TX_RESERVED_FIELD));
 		}
 
 		if (prBcnUpdateInfo->pucBcnBody != NULL) {
-			ASSERT((uint32_t) prBcnUpdateInfo->pucBcnBody ==
-				((uint32_t) prBcnUpdateInfo->pucBcnHdr +
+			ASSERT((uintptr_t) prBcnUpdateInfo->pucBcnBody ==
+				((uintptr_t) prBcnUpdateInfo->pucBcnHdr +
 				(uint32_t) prBcnUpdateInfo->u4BcnHdrLen));
 		}
 #endif
@@ -4993,7 +4993,7 @@ p2pFuncKeepOnConnection(IN struct ADAPTER *prAdapter,
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prBssInfo != NULL) &&
-			(prConnReqInfo != NULL) && (prChnlReqInfo != NULL) &&
+			(prConnReqInfo != NULL) &&
 			(prScanReqInfo != NULL));
 
 		if (prBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE)
