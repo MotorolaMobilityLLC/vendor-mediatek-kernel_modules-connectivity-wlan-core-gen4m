@@ -2162,8 +2162,10 @@ static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
 #define IS_BSS_CLIENT(_prBssInfo) \
 (_prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE)
 
+	/* Always there are only up to 4 (BSSID_NUM) connected BSS. */
 	for (ucBssIndex = 0;
-		ucBssIndex <= prAdapter->ucHwBssIdNum; ucBssIndex++) {
+		ucBssIndex < prAdapter->ucHwBssIdNum && ucBssIndex < BSSID_NUM;
+		ucBssIndex++) {
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 		ucTRxNss = fgDbdcEn ?
 			1 : wlanGetSupportNss(prAdapter, ucBssIndex);
