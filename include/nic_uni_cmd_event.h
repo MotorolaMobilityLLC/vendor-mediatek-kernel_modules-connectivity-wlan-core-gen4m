@@ -3053,6 +3053,7 @@ struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL {
 }__KAL_ATTRIB_PACKED__;
 /** @} */
 
+#if (CFG_SUPPORT_ICS == 1)
 struct UNI_CMD_ICS {
 	/*fixed field*/
 	uint8_t aucReserved[4];
@@ -3086,6 +3087,7 @@ struct UNI_CMD_ICS_SNIFFER {
 	uint16_t ucCondition[7];
 	uint8_t aucPadding1[62];
 } __KAL_ATTRIB_PACKED__;
+#endif
 
 /** This structure is used for UNI_CMD_ID_EFUSE_CONTROL command (0x2D) to access EFUSE
  * @version Supported from ver:1.0.0.0
