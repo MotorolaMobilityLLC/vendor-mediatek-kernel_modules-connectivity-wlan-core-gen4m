@@ -2360,6 +2360,7 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 	mt6639_dumpCbtopReg(ad);
 	mt6639_dumpWfsyscpupcr(ad);
 	mt6639_dumpPcGprLog(ad);
+	mt6639_dumpHostVdnrTimeoutInfo(ad);
 	mt6639_dumpN45CoreReg(ad);
 	mt6639_dumpWfTopReg(ad);
 	mt6639_dumpWfBusReg(ad);
