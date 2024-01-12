@@ -95,9 +95,6 @@
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
-struct TIMER rSerSyncTimer = {
-	.rLinkEntry = {0}
-};
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -1670,8 +1667,7 @@ uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter)
 	return HIF_TX_PAGE_SIZE;
 }
 
-void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter,
-	IN unsigned long plParamPtr)
+void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 {
 	static u_int8_t ucSerState = ERR_RECOV_STOP_IDLE;
 	uint32_t u4SerAction;
@@ -1695,6 +1691,9 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter,
 	switch (ucSerState) {
 	case ERR_RECOV_STOP_IDLE:
 		if (u4SerAction == ERROR_DETECT_STOP_PDMA) {
+			if (prChipInfo->asicDumpSerDummyCR)
+				prChipInfo->asicDumpSerDummyCR(prAdapter);
+
 			DBGLOG(HAL, INFO,
 				"SER(E) Host stop HIF tx/rx operation\n");
 
@@ -1768,10 +1767,6 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter,
 		}
 		break;
 	}
-
-	cnmTimerStartTimer(prAdapter,
-		&rSerSyncTimer,
-		WIFI_SER_SYNC_TIMER_TIMEOUT_IN_MS);
 }
 
 void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info)
