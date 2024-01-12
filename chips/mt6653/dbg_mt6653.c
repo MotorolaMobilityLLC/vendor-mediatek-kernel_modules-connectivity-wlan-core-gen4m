@@ -1263,8 +1263,14 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 	for (i = 0; i < dump_list->dump_size; i++) {
 
 		if (pCmdList[i].write) {
-			HAL_MCR_WR(prAdapter, pCmdList[i].w_addr,
-				((pCmdList[i].value & pCmdList[i].mask)));
+			if (pCmdList[i].mask) {
+				HAL_RMCR_RD(PLAT_DBG, prAdapter,
+					pCmdList[i].w_addr, &u4ReadVal);
+				HAL_MCR_WR(prAdapter, pCmdList[i].w_addr,
+					(pCmdList[i].value & pCmdList[i].mask));
+			} else
+				HAL_MCR_WR(prAdapter, pCmdList[i].w_addr,
+					pCmdList[i].value);
 		}
 		if (pCmdList[i].read) {
 			if (u4ReadCount % MAX_REG_DUMP_NUM == 0) {
@@ -1456,46 +1462,17 @@ void mt6653_dumpWfsyscpupcr(struct ADAPTER *ad)
 
 void mt6653_dumpPcGprLog(struct ADAPTER *ad)
 {
-#define PC_LOG_NUM			35
-#define GPR_LOG_NUM			35
+	/* SectionA - Dump WFMCU PC_log */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_mcu_hostcsr_a);
 
-	uint32_t i = 0;
-	uint32_t pc_dump[PC_LOG_NUM];
-	uint32_t gpr_dump[GPR_LOG_NUM];
+	/* SectionB - Dump WFMCU GPR_log */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_mcu_hostcsr_b);
 
-	DBGLOG(HAL, INFO, "Dump PC log / GPR log\n");
+	/* SectionC - Dump WFMCU GPR */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_mcu_hostcsr_c);
 
-	HAL_MCR_WR_FIELD(PLAT_DBG, ad,
-		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_ADDR,
-		0x0,
-		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_SHFT,
-		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_MASK);
-
-	kalMemZero(pc_dump, sizeof(pc_dump));
-	for (i = 0; i < PC_LOG_NUM; i++) {
-		HAL_MCR_WR_FIELD(PLAT_DBG, ad,
-			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_ADDR,
-			i,
-			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_SHFT,
-			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_MASK);
-		HAL_RMCR_RD(PLAT_DBG, ad,
-			   CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
-			   &pc_dump[i]);
-	}
-	connac3x_dump_format_memory32(pc_dump, PC_LOG_NUM, "PC log");
-
-	kalMemZero(gpr_dump, sizeof(gpr_dump));
-	for (i = 0; i < GPR_LOG_NUM; i++) {
-		HAL_MCR_WR_FIELD(PLAT_DBG, ad,
-			CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_ADDR,
-			i,
-			CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_SHFT,
-			CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_MASK);
-		HAL_RMCR_RD(PLAT_DBG, ad,
-			   CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR,
-			   &gpr_dump[i]);
-	}
-	connac3x_dump_format_memory32(gpr_dump, GPR_LOG_NUM, "GPR log");
+	/* SectionD - Dump WFMCU CSR */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_mcu_hostcsr_d);
 }
 
 void mt6653_dumpRV55CoreReg(struct ADAPTER *ad)
@@ -1599,11 +1576,11 @@ void mt6653_DumpBusHangCr(struct ADAPTER *ad)
 	DBGLOG(HAL, INFO, "[PSOP_9_1] version=%s\n",
 			MT6653_WIFI_DEBUGSOP_DUMP_VERSION);
 	mt6653_dumpCbInfraReg(ad);
-	mt6653_dumpWfsyscpupcr(ad);
-	mt6653_dumpPcGprLog(ad);
-	mt6653_dumpRV55CoreReg(ad);
 	mt6653_dumpWfTopReg(ad);
 	mt6653_dumpWfBusReg(ad);
+	mt6653_dumpPcGprLog(ad);
+	mt6653_dumpWfsyscpupcr(ad);
+	mt6653_dumpRV55CoreReg(ad);
 }
 #endif
 
