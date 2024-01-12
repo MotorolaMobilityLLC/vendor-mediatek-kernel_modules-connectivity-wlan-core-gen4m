@@ -2444,6 +2444,397 @@ static u_int8_t reqSearchSupportedOidEntry(IN uint32_t rOid,
 
 	return FALSE;
 }				/* reqSearchSupportedOidEntry */
+/* fos_change begin */
+int
+priv_get_string(IN struct net_device *prNetDev,
+		IN struct iw_request_info *prIwReqInfo,
+		IN union iwreq_data *prIwReqData, IN OUT char *pcExtra)
+{
+	uint32_t u4SubCmd = 0;
+	uint32_t u4TotalLen = 2000;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t u4BufLen = 0;
+	int32_t i, pos = 0;
+	char *buf = pcExtra;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	if (!prNetDev || !prIwReqData) {
+		DBGLOG(REQ, INFO,
+			"priv_get_string(): invalid param(0x%p, 0x%p)\n",
+			prNetDev, prIwReqData);
+		return -EINVAL;
+	}
+
+
+	u4SubCmd = (uint32_t) prIwReqData->data.flags;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo) {
+		DBGLOG(REQ, INFO,
+			"priv_get_string(): invalid prGlueInfo(0x%p, 0x%p)\n",
+			prNetDev,
+			*((struct GLUE_INFO **) netdev_priv(prNetDev)));
+		return -EINVAL;
+	}
+
+	if (pcExtra)
+		pcExtra[u4TotalLen] = '\0';
+
+	pos += kalScnprintf(buf + pos, u4TotalLen - pos, "\n");
+
+	switch (u4SubCmd) {
+	case PRIV_CMD_CONNSTATUS:
+	{
+		uint8_t arBssid[PARAM_MAC_ADDR_LEN];
+		struct PARAM_SSID rSsid;
+
+		kalMemZero(arBssid, PARAM_MAC_ADDR_LEN);
+		rStatus = kalIoctl(prGlueInfo, wlanoidQueryBssid,
+				   &arBssid[0], sizeof(arBssid),
+				   TRUE, FALSE, FALSE,
+				   &u4BufLen);
+		if (rStatus == WLAN_STATUS_SUCCESS) {
+			kalIoctl(prGlueInfo, wlanoidQuerySsid,
+				 &rSsid, sizeof(rSsid),
+				 TRUE, FALSE, FALSE,
+				 &u4BufLen);
+
+			pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"connStatus: Connected (AP: %s ",
+				rSsid.aucSsid);
+
+			for (i = 0; i < PARAM_MAC_ADDR_LEN; i++) {
+				pos += kalScnprintf(buf + pos,
+					u4TotalLen - pos, "%02x", arBssid[i]);
+				if (i != PARAM_MAC_ADDR_LEN - 1)
+					pos += kalScnprintf(buf + pos,
+						u4TotalLen - pos, ":");
+			}
+			pos += kalScnprintf(buf + pos, u4TotalLen - pos, ")");
+		} else {
+			pos += kalScnprintf(buf + pos,
+				u4TotalLen - pos,
+				"connStatus: Not connected");
+		}
+	}
+	break;
+#if CFG_SUPPORT_STAT_STATISTICS
+	case PRIV_CMD_STAT:
+	{
+		static uint8_t aucBuffer[512];
+		struct CMD_SW_DBG_CTRL *pSwDbgCtrl = NULL;
+		int32_t i4Rssi = -127;
+		uint32_t u4Rate = 0;
+		int8_t ucAvgNoise = 0;
+		uint8_t arBssid[PARAM_MAC_ADDR_LEN];
+		struct BSS_INFO *prBssInfo = NULL;
+		struct STA_RECORD *prStaRec = NULL;
+		struct RX_CTRL *prRxCtrl = NULL;
+		struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
+		struct PARAM_HW_MIB_INFO *prHwMibInfo;
+
+		pSwDbgCtrl = (struct CMD_SW_DBG_CTRL *)aucBuffer;
+		prRxCtrl = &prGlueInfo->prAdapter->rRxCtrl;
+
+		prHwMibInfo = (struct PARAM_HW_MIB_INFO *)kalMemAlloc(
+			sizeof(struct PARAM_HW_MIB_INFO), VIR_MEM_TYPE);
+		if (!prHwMibInfo)
+			return -1;
+		prHwMibInfo->u4Index = 0;
+
+		kalMemZero(arBssid, MAC_ADDR_LEN);
+		kalMemZero(&rQueryStaStatistics, sizeof(rQueryStaStatistics));
+
+		if (kalIoctl(prGlueInfo, wlanoidQueryBssid,
+				 &arBssid[0], sizeof(arBssid),
+				 TRUE, TRUE, TRUE,
+				 &u4BufLen) == WLAN_STATUS_SUCCESS) {
+
+			COPY_MAC_ADDR(rQueryStaStatistics.aucMacAddr, arBssid);
+			rQueryStaStatistics.ucReadClear = TRUE;
+
+			rStatus = kalIoctl(prGlueInfo,
+				wlanoidQueryStaStatistics,
+				&rQueryStaStatistics,
+				sizeof(rQueryStaStatistics),
+				TRUE, FALSE, TRUE, &u4BufLen);
+		}
+
+		if (kalIoctl(prGlueInfo, wlanoidQueryMibInfo, prHwMibInfo,
+			sizeof(struct PARAM_HW_MIB_INFO),
+			TRUE, TRUE, TRUE, &u4BufLen) == WLAN_STATUS_SUCCESS) {
+			if (prHwMibInfo != NULL && prRxCtrl != NULL) {
+				if (pSwDbgCtrl->u4Data == SWCR_DBG_TYPE_ALL) {
+					pos += kalScnprintf(buf + pos,
+					u4TotalLen - pos,
+					"Tx success = %d\n",
+					rQueryStaStatistics
+					.u4TransmitCount);
+
+					pos += kalScnprintf(buf + pos,
+					u4TotalLen - pos,
+					"Tx retry count = %d\n",
+					prHwMibInfo->rHwMibCnt
+					.au4FrameRetryCnt[BSSID_1]);
+
+					pos += kalScnprintf(buf + pos,
+					u4TotalLen - pos,
+					"Tx fail to Rcv ACK after retry = %d\n",
+					rQueryStaStatistics
+					.u4TxFailCount +
+					rQueryStaStatistics
+					.u4TxLifeTimeoutCount);
+
+					pos += kalScnprintf(buf + pos,
+					u4TotalLen - pos,
+					"Rx success = %d\n",
+					RX_GET_CNT(prRxCtrl,
+					RX_MPDU_TOTAL_COUNT));
+
+					pos += kalScnprintf(buf + pos,
+					u4TotalLen - pos,
+					"Rx with CRC = %d\n",
+					prHwMibInfo->rHwMibCnt
+					.u4RxFcsErrCnt);
+
+					pos += kalScnprintf(buf + pos,
+					u4TotalLen - pos,
+					"Rx drop due to out of resource = %d\n",
+					prHwMibInfo->rHwMibCnt
+					.u4RxFifoFullCnt);
+
+					pos += kalScnprintf(buf + pos,
+					u4TotalLen - pos,
+					"Rx duplicate frame = %d\n",
+					RX_GET_CNT(prRxCtrl,
+					SWCR_DBG_ALL_RX_DUP_DROP_CNT));
+
+					pos += kalScnprintf(buf + pos,
+					u4TotalLen - pos,
+					"False CCA(total) =%d\n",
+					prHwMibInfo->rHwMibCnt
+					.u4PCcaTime);
+
+					pos += kalScnprintf(buf + pos,
+					u4TotalLen - pos,
+					"False CCA(one-second) =%d\n",
+					prHwMibInfo->rHwMibCnt
+					.u4SCcaTime);
+				}
+			}
+		}
+
+		if (kalIoctl(prGlueInfo, wlanoidQueryRssi,
+			&i4Rssi, sizeof(i4Rssi),
+			TRUE, TRUE, TRUE, &u4BufLen) == WLAN_STATUS_SUCCESS) {
+			prStaRec = cnmGetStaRecByAddress(prGlueInfo->prAdapter,
+				prGlueInfo->prAdapter->prAisBssInfo[0]
+				->ucBssIndex,
+				prGlueInfo->prAdapter->rWlanInfo
+				.rCurrBssId[0].arMacAddress);
+			if (prStaRec)
+				ucAvgNoise = prStaRec->ucNoise_avg - 127;
+
+			pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"RSSI = %d\n", i4Rssi);
+
+			pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"P2P GO RSSI =\n");
+
+			pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"SNR-A =\n");
+
+			pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"SNR-B (if available) =\n");
+
+			pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"NoiseLevel-A = %d\n", ucAvgNoise);
+
+			pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"NoiseLevel-B =\n");
+		}
+
+		kalIoctl(prGlueInfo, wlanoidQueryLinkSpeed, &u4Rate,
+				sizeof(u4Rate), TRUE, TRUE, TRUE, &u4BufLen);
+
+		/* STA stats */
+		if (kalIoctl(prGlueInfo, wlanoidQueryBssid,
+				 &arBssid[0], sizeof(arBssid),
+				 TRUE, TRUE, TRUE,
+				 &u4BufLen) == WLAN_STATUS_SUCCESS) {
+
+			prBssInfo =
+				&(prGlueInfo->prAdapter->rWifiVar
+				.arBssInfoPool[KAL_NETWORK_TYPE_AIS_INDEX]);
+
+			pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"\n(STA) connected AP MAC Address = ");
+
+			for (i = 0; i < PARAM_MAC_ADDR_LEN; i++) {
+
+				pos += kalScnprintf(buf + pos,
+					u4TotalLen - pos, "%02x", arBssid[i]);
+				if (i != PARAM_MAC_ADDR_LEN - 1)
+					pos += kalScnprintf(buf + pos,
+						u4TotalLen - pos, ":");
+			}
+			pos += kalScnprintf(buf + pos, u4TotalLen - pos, "\n");
+
+			pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"PhyMode:");
+			switch (prBssInfo->ucPhyTypeSet) {
+			case PHY_TYPE_SET_802_11B:
+				pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+					"802.11b\n");
+				break;
+			case PHY_TYPE_SET_802_11ABG:
+			case PHY_TYPE_SET_802_11BG:
+				pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+					"802.11g\n");
+				break;
+			case PHY_TYPE_SET_802_11A:
+				pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+					"802.11a\n");
+				break;
+			case PHY_TYPE_SET_802_11ABGN:
+			case PHY_TYPE_SET_802_11BGN:
+			case PHY_TYPE_SET_802_11AN:
+			case PHY_TYPE_SET_802_11GN:
+				pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+					"802.11n\n");
+				break;
+			case PHY_TYPE_SET_802_11ABGNAC:
+			case PHY_TYPE_SET_802_11ANAC:
+			case PHY_TYPE_SET_802_11AC:
+				pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+					"802.11ac\n");
+				break;
+			default:
+				break;
+			}
+
+			pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"RSSI =\n");
+
+			pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"Last TX Rate = %d\n", u4Rate*100);
+
+
+			if (prStaRec) {
+				pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+					"Last RX Rate = %d\n",
+					prStaRec->u4LastPhyRate * 100000);
+			} else {
+				pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+					"Last RX Rate =\n");
+			}
+		} else {
+			pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"\n(STA) Not connected\n");
+		}
+	}
+	break;
+#endif
+#if CFG_SUPPORT_WAKEUP_STATISTICS
+	case PRIV_CMD_INT_STAT:
+	{
+		struct WAKEUP_STATISTIC *prWakeupSta = NULL;
+
+		prWakeupSta = prGlueInfo->prAdapter->arWakeupStatistic;
+		pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"Abnormal Interrupt:%d\n"
+				"Software Interrupt:%d\n"
+				"TX Interrupt:%d\n"
+				"RX data:%d\n"
+				"RX Event:%d\n"
+				"RX mgmt:%d\n"
+				"RX others:%d\n",
+				prWakeupSta[0].u2Count,
+				prWakeupSta[1].u2Count,
+				prWakeupSta[2].u2Count,
+				prWakeupSta[3].u2Count,
+				prWakeupSta[4].u2Count,
+				prWakeupSta[5].u2Count,
+				prWakeupSta[6].u2Count);
+		for (i = 0; i < EVENT_ID_END; i++) {
+			if (prGlueInfo->prAdapter->wake_event_count[i] > 0)
+				pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+						"RX EVENT(0x%0x):%d\n", i,
+						prGlueInfo->prAdapter
+						->wake_event_count[i]);
+		}
+	}
+	break;
+#endif
+#if CFG_SUPPORT_EXCEPTION_STATISTICS
+	case PRIV_CMD_EXCEPTION_STAT:
+	{
+		pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"TotalBeaconTimeout:%d\n",
+				prGlueInfo->prAdapter
+				->total_beacon_timeout_count);
+		for (i = 0; i < BEACON_TIMEOUT_DUE_2_NUM; i++) {
+			if (prGlueInfo->prAdapter->beacon_timeout_count[i] > 0)
+				pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+					"BeaconTimeout Reason(0x%0x):%d\n", i,
+					prGlueInfo->prAdapter
+					->beacon_timeout_count[i]);
+		}
+		pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"TotalTxDoneFail:%d\n",
+				prGlueInfo->prAdapter
+				->total_tx_done_fail_count);
+		for (i = 0; i < TX_RESULT_NUM; i++) {
+			if (prGlueInfo->prAdapter->tx_done_fail_count[i] > 0)
+				pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+					"TxDoneFail Reason(0x%0x):%d\n", i,
+					prGlueInfo->prAdapter
+					->tx_done_fail_count[i]);
+		}
+		pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"TotalRxDeauth:%d\n",
+				prGlueInfo->prAdapter->total_deauth_rx_count);
+		for (i = 0; i < (REASON_CODE_BEACON_TIMEOUT + 1); i++) {
+			if (prGlueInfo->prAdapter->deauth_rx_count[i] > 0)
+				pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+					"RxDeauth Reason(0x%0x):%d\n", i,
+					prGlueInfo->prAdapter
+					->deauth_rx_count[i]);
+		}
+		pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"TotalScanDoneTimeout:%d\n",
+				prGlueInfo->prAdapter
+				->total_scandone_timeout_count);
+		pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"TotalTxMgmtTimeout:%d\n",
+				prGlueInfo->prAdapter
+				->total_mgmtTX_timeout_count);
+		pos += kalScnprintf(buf + pos, u4TotalLen - pos,
+				"TotalRxMgmtTimeout:%d\n",
+				prGlueInfo->prAdapter
+				->total_mgmtRX_timeout_count);
+	}
+	break;
+#endif
+	default:
+		DBGLOG(REQ, WARN, "get string cmd:0x%x\n", u4SubCmd);
+		break;
+	}
+
+	DBGLOG(REQ, INFO, "%s i4BytesWritten = %d\n", __func__, pos);
+	if (pos > 0) {
+
+		if (pos > 2000)
+			pos = 2000;
+		prIwReqData->data.length = pos;
+
+	} else if (pos == 0) {
+		prIwReqData->data.length = pos;
+	}
+	return 0;
+
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*!

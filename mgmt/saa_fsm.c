@@ -849,6 +849,10 @@ void saaFsmRunEventTxReqTimeOut(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(SAA, LOUD, "EVENT-TIMER: TX REQ TIMEOUT, Current Time = %d\n",
 	       kalGetTimeTick());
+/* fos_change begin */
+#if CFG_SUPPORT_EXCEPTION_STATISTICS
+		prAdapter->total_mgmtTX_timeout_count++;
+#endif /* fos_change end */
 
 	/* Trigger statistics log if Auth/Assoc Tx timeout */
 	wlanTriggerStatsLog(prAdapter, prAdapter->rWifiVar.u4StatsLogDuration);
@@ -886,6 +890,11 @@ void saaFsmRunEventRxRespTimeOut(IN struct ADAPTER *prAdapter,
 
 	if (!prStaRec)
 		return;
+
+/* fos_change begin */
+#if CFG_SUPPORT_EXCEPTION_STATISTICS
+		prAdapter->total_mgmtRX_timeout_count++;
+#endif /* fos_change end */
 
 	eNextState = prStaRec->eAuthAssocState;
 
@@ -1558,6 +1567,14 @@ uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER *prAdapter,
 						return WLAN_STATUS_SUCCESS;
 					}
 #endif
+					/* fos_change begin */
+#if CFG_SUPPORT_EXCEPTION_STATISTICS
+					prAdapter->total_deauth_rx_count++;
+					if (prStaRec->u2ReasonCode <=
+						REASON_CODE_BEACON_TIMEOUT)
+						prAdapter->deauth_rx_count
+						[prStaRec->u2ReasonCode]++;
+#endif /* fos_change end */
 					saaSendDisconnectMsgHandler(prAdapter,
 					      prStaRec,
 					      prAisBssInfo,

@@ -2603,6 +2603,15 @@ void nicProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
+	/* fos_change begin */
+#if CFG_SUPPORT_WAKEUP_REASON_DEBUG
+#if CFG_SUPPORT_WAKEUP_STATISTICS
+	if (kalIsWakeupByWlan(prAdapter))
+		nicUpdateWakeupStatistics(prAdapter, TX_INT);
+#endif
+#endif /* fos_change end */
+
+
 	prAdapter->prGlueInfo->IsrTxCnt++;
 	halProcessTxInterrupt(prAdapter);
 
@@ -3325,6 +3334,15 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 	char *prBw = "INVALID";
 
 	prTxDone = (struct EVENT_TX_DONE *) (prEvent->aucBuffer);
+
+/* fos_change begin */
+#if CFG_SUPPORT_EXCEPTION_STATISTICS
+	if (prTxDone->ucStatus != WLAN_STATUS_SUCCESS) {
+		prAdapter->total_tx_done_fail_count++;
+		if (prTxDone->ucStatus < TX_RESULT_NUM)
+			prAdapter->tx_done_fail_count[prTxDone->ucStatus]++;
+	}
+#endif /* fos_change end */
 
 	if (prTxDone->ucFlag & BIT(TXS_WITH_ADVANCED_INFO)) {
 		/* Tx Done with advanced info */

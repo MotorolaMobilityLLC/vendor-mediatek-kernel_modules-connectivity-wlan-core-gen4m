@@ -1883,6 +1883,67 @@ static void nicRxProcessDropPacket(IN struct ADAPTER *prAdapter,
 				prWlanHeader->aucAddr3);
 	}
 }
+/* fos_change begin */
+#if CFG_SUPPORT_STAT_STATISTICS
+void nicRxGetNoiseLevelAndLastRate(IN struct ADAPTER *prAdapter,
+			       IN struct SW_RFB *prSwRfb)
+{
+	struct STA_RECORD *prStaRec;
+	uint8_t noise_level = 0;
+	uint8_t ucRxRate;
+	uint8_t ucRxMode;
+	uint8_t ucMcs;
+	uint8_t ucFrMode;
+	uint8_t ucShortGI;
+
+	if (prAdapter == NULL || prSwRfb == NULL)
+		return;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+	if (prStaRec == NULL)
+		return;
+
+	noise_level = ((prSwRfb->prRxStatusGroup3->u4RxVector[5] &
+		RX_VT_NF0_MASK) >> 1);
+
+	if (noise_level == 0) {
+		DBGLOG(RX, TRACE, "Invalid noise level\n");
+	} else if (prStaRec->ucNoise_avg) {
+		prStaRec->ucNoise_avg = (((prStaRec->ucNoise_avg << 3) -
+			  prStaRec->ucNoise_avg) >> 3) + (noise_level >> 3);
+	} else {
+		prStaRec->ucNoise_avg = noise_level;
+	}
+
+	DBGLOG(RX, TRACE, "Noise_level avg:%d latest:%d\n",
+		prStaRec->ucNoise_avg, noise_level);
+
+	/* Rx rate */
+	ucRxMode = ((prSwRfb->prRxStatusGroup3->u4RxVector[0] &
+				RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET);
+
+	/* Bit Number 2 RATE */
+	if (ucRxMode == RX_VT_LEGACY_CCK || ucRxMode == RX_VT_LEGACY_OFDM) {
+		/* Bit[2:0] for Legacy CCK, Bit[3:0] for Legacy OFDM */
+		ucRxRate =
+		(prSwRfb->prRxStatusGroup3->u4RxVector[0] & BITS(0, 3));
+		prStaRec->u4LastPhyRate = nicGetHwRateByPhyRate(ucRxRate) * 5;
+	} else {
+		ucMcs = (prSwRfb->prRxStatusGroup3->u4RxVector[0] &
+			RX_VT_RX_RATE_AC_MASK);
+		/* VHTA1 B0-B1 */
+		ucFrMode = ((prSwRfb->prRxStatusGroup3->u4RxVector[0] &
+			RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET);
+		ucShortGI = (prSwRfb->prRxStatusGroup3->u4RxVector[0] &
+			RX_VT_SHORT_GI) ? 1 : 0;
+
+		/* ucRate(500kbs) = u4PhyRate(100kbps) / 5,max ucRate = 0xFF */
+		prStaRec->u4LastPhyRate = nicGetPhyRateByMcsRate(ucMcs,
+				ucFrMode, ucShortGI);
+	}
+}
+#endif /* fos_change end */
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2015,6 +2076,12 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 					prChipInfo->asicRxProcessRxvforMSP(
 						prAdapter, prRetSwRfb);
 #endif /* CFG_SUPPORT_MSP == 1 */
+/* fos_change begin */
+#if CFG_SUPPORT_STAT_STATISTICS
+					nicRxGetNoiseLevelAndLastRate(
+					prAdapter, prRetSwRfb);
+#endif /* fos_change end */
+
 #if CFG_SUPPORT_PERF_IND
 				nicRxPerfIndProcessRXV(
 					prAdapter,

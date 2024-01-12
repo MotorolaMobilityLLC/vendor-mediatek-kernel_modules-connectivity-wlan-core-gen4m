@@ -724,6 +724,12 @@ void nicProcessAbnormalInterrupt(IN struct ADAPTER
 		DBGLOG(RX, WARN, "suspend Abnormal\n");
 
 	prAdapter->prGlueInfo->IsrAbnormalCnt++;
+#if CFG_SUPPORT_WAKEUP_REASON_DEBUG
+#if CFG_SUPPORT_WAKEUP_STATISTICS
+	if (kalIsWakeupByWlan(prAdapter))
+		nicUpdateWakeupStatistics(prAdapter, ABNORMAL_INT);
+#endif
+#endif /* fos_change end */
 
 	halProcessAbnormalInterrupt(prAdapter);
 	glSetRstReason(RST_PROCESS_ABNORMAL_INT);
@@ -760,6 +766,13 @@ void nicProcessSoftwareInterrupt(IN struct ADAPTER
 	prAdapter->prGlueInfo->IsrSoftWareCnt++;
 	if (halIsHifStateSuspend(prAdapter))
 		DBGLOG(RX, WARN, "suspend SW INT\n");
+/* fos_change begin */
+#if CFG_SUPPORT_WAKEUP_REASON_DEBUG
+#if CFG_SUPPORT_WAKEUP_STATISTICS
+		if (kalIsWakeupByWlan(prAdapter))
+			nicUpdateWakeupStatistics(prAdapter, SOFTWARE_INT);
+#endif
+#endif /* fos_change end */
 	halProcessSoftwareInterrupt(prAdapter);
 }				/* end of nicProcessSoftwareInterrupt() */
 
@@ -4985,4 +4998,27 @@ void nicSerDeInit(IN struct ADAPTER *prAdapter)
 	cnmTimerStopTimer(prAdapter, &rSerSyncTimer);
 #endif
 }
+/* fos_change begin */
+#if CFG_SUPPORT_WAKEUP_STATISTICS
+void nicUpdateWakeupStatistics(IN struct ADAPTER *prAdapter,
+	IN enum WAKEUP_TYPE intType)
+{
+	struct WAKEUP_STATISTIC *prWakeupSta =
+		&prAdapter->arWakeupStatistic[intType];
+	OS_SYSTIME rCurrent = 0;
+
+	prWakeupSta->u2Count++;
+	if (prWakeupSta->u2Count % 100 == 0) {
+		if (prWakeupSta->u2Count > 0) {
+			GET_CURRENT_SYSTIME(&rCurrent);
+			prWakeupSta->u2TimePerHundred =
+				rCurrent-prWakeupSta->rStartTime;
+		}
+		GET_CURRENT_SYSTIME(&prWakeupSta->rStartTime);
+		DBGLOG(RX, INFO, "wakeup frequency: %d",
+			prWakeupSta->u2TimePerHundred);
+	}
+}
+#endif /* fos_change end */
+
 

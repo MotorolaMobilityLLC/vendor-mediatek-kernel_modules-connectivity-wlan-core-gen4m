@@ -1463,6 +1463,14 @@
 #define CFG_SUPPORT_PWR_LIMIT_HE		    0
 #endif
 
+#define CFG_SUPPORT_STAT_STATISTICS	1 /* fos_change oneline */
+#define CFG_SUPPORT_WAKEUP_STATISTICS 1 /* fos_change oneline */
+#define CFG_SUPPORT_EXCEPTION_STATISTICS 1 /* fos_change oneline */
+
+
+
+
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

@@ -733,6 +733,11 @@ struct STA_RECORD {
 #if CFG_SUPPORT_HE_ER
 	u_int8_t fgIsExtendedRange;
 #endif
+/* fos_change begin*/
+#if CFG_SUPPORT_STAT_STATISTICS
+	uint32_t u4LastPhyRate;
+	uint8_t ucNoise_avg;
+#endif /* fos_change end*/
 };
 
 #if 0
