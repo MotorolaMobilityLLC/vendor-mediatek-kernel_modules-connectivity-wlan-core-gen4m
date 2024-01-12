@@ -1249,6 +1249,8 @@ void wlanClearDataQueue(IN struct ADAPTER *prAdapter);
 void wlanClearRxToOsQueue(IN struct ADAPTER *prAdapter);
 #endif
 
+void wlanClearPendingCommandQueue(IN struct ADAPTER *prAdapter);
+
 void wlanReleaseCommand(IN struct ADAPTER *prAdapter,
 			IN struct CMD_INFO *prCmdInfo,
 			IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
