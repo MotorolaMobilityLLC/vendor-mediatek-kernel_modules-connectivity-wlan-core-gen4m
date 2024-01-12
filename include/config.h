@@ -1041,6 +1041,11 @@
 /* Enable/disable QoS TX, AMPDU */
 #define CFG_SUPPORT_QOS			1
 
+/* Storing DSCP-to-UP mapping in legacy full size table */
+#ifndef QOS_MAP_LEGACY_DSCP_TABLE
+#define QOS_MAP_LEGACY_DSCP_TABLE 0
+#endif
+
 #define CFG_SUPPORT_AMPDU_TX		1
 #define CFG_SUPPORT_AMPDU_RX		1
 

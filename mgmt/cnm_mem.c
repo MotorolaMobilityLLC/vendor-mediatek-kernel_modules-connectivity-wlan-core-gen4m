@@ -688,9 +688,8 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 			prStaRec->u4MaxMpduLen = 0;
 			prStaRec->u4MinMpduLen = 0;
 
-#if DSCP_SUPPORT
 			qosMapSetInit(prStaRec);
-#endif
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			prStaRec->ucMldStaIndex = MLD_GROUP_NONE;
 			prStaRec->ucTidBitmap = 0xFF;

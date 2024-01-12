@@ -6266,13 +6266,13 @@ void mqmProcessAssocRsp(struct ADAPTER *prAdapter,
 					(sizeof(struct IE_HT_CAP) - 2))
 					prStaRec->fgIsQoS = TRUE;
 				break;
-#if DSCP_SUPPORT
+
 			case ELEM_ID_QOS_MAP_SET:
 				DBGLOG(QM, WARN,
 					"QM: received assoc resp qosmapset ie\n");
 				qosParseQosMapSet(prAdapter, prStaRec, pucIE);
 				break;
-#endif
+
 			default:
 				break;
 			}

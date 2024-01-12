@@ -49,7 +49,7 @@
  *                                 M A C R O S
  *******************************************************************************
  */
-#define DSCP_SUPPORT 1
+
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -64,9 +64,6 @@ void qosMapSetInit(struct STA_RECORD *prStaRec);
 
 void qosParseQosMapSet(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec, uint8_t *qosMapSet);
-
-uint8_t getUpFromDscp(struct GLUE_INFO *prGlueInfo,
-		      uint8_t ucBssIndex, int dscp);
 
 /*******************************************************************************
  *                              F U N C T I O N S

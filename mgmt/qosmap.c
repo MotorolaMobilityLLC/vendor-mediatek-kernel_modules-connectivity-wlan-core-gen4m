@@ -29,6 +29,81 @@
  *******************************************************************************
  */
 
+/**
+ * RFC 8325:
+ * All unused codepoints are RECOMMENDED to be mapped to UP 0.
+ *
+ * DSCP PHB, UP, WMM, AC
+ * 0    DF,   0, BE, AC_BE
+ * 8    CS1,  1, BK, AC_BK
+ * 10   AF11, 0, BE, AC_BE
+ * 12   AF12, 0, BE, AC_BE
+ * 14   AF13, 0, BE, AC_BE
+ * 16   CS2,  0, BE, AC_BE
+ * 18   AF21, 3, EE, AC_BE
+ * 20   AF22, 3, EE, AC_BE
+ * 22   AF23, 3, EE, AC_BE
+ * 24   CS3,  4, CL, AC_VI
+ * 26   AF31, 4, CL, AC_VI
+ * 28   AF32, 4, CL, AC_VI
+ * 30   AF33, 4, CL, AC_VI
+ * 32   CS4,  4, CL, AC_VI
+ * 34   AF41, 4, CL, AC_VI
+ * 36   AF42, 4, CL, AC_VI
+ * 38   AF43, 4, CL, AC_VI
+ * 40   CS5,  5, VI, AC_VI
+ * 44   VA,   6, VO, AC_VO
+ * 46   EF,   6, VO, AC_VO
+ * 48   CS6,  6, VO, AC_VO (NOTE)
+ * 56   CS7,  7, NC, AC_VO (NOTE)
+ *
+ * NOTE:
+ * RFC 8325 8.2 Security Recommendations for WLAN QoS:
+ * it is RECOMMENDED that CS6 and CS7 DSCP be mapped to UP 0 in
+ * these Wi-Fi-at-the-edge deployment models.
+ *
+ */
+
+#if QOS_MAP_LEGACY_DSCP_TABLE
+/* a legacy QoS Map for DSCP to TID */
+static const uint8_t dscp2up[64] = {
+	[0] = WMM_UP_BE_INDEX,
+	[8] = WMM_UP_BK_INDEX,
+	[10] = WMM_UP_BE_INDEX,
+	[12] = WMM_UP_BE_INDEX,
+	[14] = WMM_UP_BE_INDEX,
+	[16] = WMM_UP_BE_INDEX,
+	[18] = WMM_UP_EE_INDEX,
+	[20] = WMM_UP_EE_INDEX,
+	[22] = WMM_UP_EE_INDEX,
+	[24] = WMM_UP_CL_INDEX,
+	[26] = WMM_UP_CL_INDEX,
+	[28] = WMM_UP_CL_INDEX,
+	[30] = WMM_UP_CL_INDEX,
+	[32] = WMM_UP_CL_INDEX,
+	[34] = WMM_UP_CL_INDEX,
+	[36] = WMM_UP_CL_INDEX,
+	[38] = WMM_UP_CL_INDEX,
+	[40] = WMM_UP_VI_INDEX,
+	[44] = WMM_UP_VO_INDEX,
+	[46] = WMM_UP_VO_INDEX,
+};
+#endif
+
+/* a structure for cfg80211_classify8021d */
+static const struct QOS_MAP defaultQosMap = {
+	15, {
+		{8, 1},
+		{18, 3}, {20, 3}, {22, 3}, {24, 4}, {26, 4}, {28, 4},
+		{30, 4}, {32, 4},
+		{34, 4}, {36, 4}, {38, 4},
+		{40, 5},
+		{44, 6}, {46, 6},
+	}, {
+		{0, 63},
+	}
+};
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -84,16 +159,18 @@ void handleQosMapConf(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	case ACTION_ADDTS_REQ:
 	case ACTION_ADDTS_RSP:
 	case ACTION_SCHEDULE:
-		log_dbg(INIT, INFO, "qos action frame received, action: %d\n",
+		DBGLOG(INIT, INFO, "qos action frame received, action: %d\n",
 			prRxFrame->ucAction);
 		break;
 	case ACTION_QOS_MAP_CONFIGURE:
 		qosHandleQosMapConfigure(prAdapter, prSwRfb);
-		log_dbg(INIT, INFO, "qos map configure frame received, action: %d\n",
+		DBGLOG(INIT, INFO,
+			"qos map configure frame received, action: %d\n",
 			prRxFrame->ucAction);
 		break;
 	default:
-		log_dbg(INIT, INFO, "qos action frame: %d, try to send to supplicant\n",
+		DBGLOG(INIT, INFO,
+			"qos action frame: %d, try to send to supplicant\n",
 			prRxFrame->ucAction);
 		break;
 	}
@@ -115,8 +192,9 @@ int qosHandleQosMapConfigure(struct ADAPTER *prAdapter,
 	if ((!prStaRec) || (!prStaRec->fgIsInUse))
 		return -1;
 
-	log_dbg(INIT, INFO,
-	"IEEE 802.11: Received Qos Map Configure Frame from " MACSTR "\n",
+	DBGLOG(INIT, INFO,
+		"IEEE 802.11: Received Qos Map Configure Frame from "
+		MACSTR "\n",
 		MAC2STR(prStaRec->aucMacAddr));
 
 	u2IELength = (prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) -
@@ -136,154 +214,105 @@ int qosHandleQosMapConfigure(struct ADAPTER *prAdapter,
 	return 0;
 }
 
-void qosParseQosMapSet(struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStaRec,
-	uint8_t *qosMapSet)
+/**
+ * Copy received QoS Map request frame to cached structure in struct QOS_MAP.
+ */
+static void updateCachedQosMap(struct STA_RECORD *prStaRec, uint8_t ucDscpExNum,
+		uint8_t *dscp_exception, uint8_t *dscp_range)
 {
-	uint8_t dscpExcNum = 0;
-	int i = 0;
-	uint8_t *tempq = qosMapSet + 2;
-	uint8_t *qosmapping = prStaRec->qosMapSet;
-	uint8_t excTable[64];
+	prStaRec->rQosMap.ucDscpExNum = ucDscpExNum;
+	kalMemCopy(&prStaRec->rQosMap.arDscpException, dscp_exception,
+			dscp_range - dscp_exception);
+	kalMemCopy(&prStaRec->rQosMap.arDscpRange, dscp_range,
+			sizeof(prStaRec->rQosMap.arDscpRange));
+}
+
+static void qosBuildQosMapTable(struct STA_RECORD *prStaRec,
+	uint8_t *dscp_exception,
+	uint8_t *dscp_range)
+{
+#if QOS_MAP_LEGACY_DSCP_TABLE
+	uint8_t *qosmapping = prStaRec->qosMapTable;
+	uint8_t *p;
+	uint8_t dscp;
+	uint8_t up;
+	uint8_t lDscp;
+	uint8_t hDscp;
+
+	qosMapSetInit(prStaRec);
+
+	/* DSCP range */
+	for (p = dscp_range, up = 0; up < WMM_UP_INDEX_NUM; up++) {
+		lDscp = *p++;
+		hDscp = *p++;
+
+		if (lDscp == 255 && hDscp == 255) {
+			DBGLOG(INIT, INFO, "UP %d is not specified\n", up);
+			continue;
+		}
+
+		if (hDscp < lDscp) {
+			DBGLOG(INIT, WARN, "CHECK: UP %d, l %d, h %d\n",
+				up, lDscp, hDscp);
+			continue;
+		}
+
+		for (dscp = lDscp; dscp < 64 && dscp <= hDscp; dscp++)
+			qosmapping[dscp] = up;
+	}
+
+	/* DSCP exception, overwrite the table to be used first */
+	for (p = dscp_exception; p < dscp_range; ) {
+		dscp = *p++;
+		up = *p++;
+
+		if (dscp < 64 && up < WMM_UP_INDEX_NUM)
+			qosmapping[dscp] = up;
+	}
+#endif
+}
+
+void qosParseQosMapSet(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
+			uint8_t *qosMapSet)
+{
+	uint8_t *dscp_exception = qosMapSet + 2;
+	uint8_t *dscp_range = qosMapSet + 2 + IE_LEN(qosMapSet)
+				- WMM_UP_INDEX_NUM * 2;
+	uint8_t ie_len;
 
 	if (IE_ID(qosMapSet) != ELEM_ID_QOS_MAP_SET) {
 		DBGLOG(INIT, WARN,
 			"Wrong QosMapSet IE ID: %d\n", IE_ID(qosMapSet));
 		return;
 	}
-	if ((IE_LEN(qosMapSet) < 16) || (IE_LEN(qosMapSet) > 58)) {
+
+	ie_len = IE_LEN(qosMapSet);
+	if (ie_len < 16 || ie_len > 58 || ie_len % 2 != 0) {
 		DBGLOG(INIT, WARN,
 			"Error in QosMapSet IE len: %d\n", IE_LEN(qosMapSet));
 		return;
 	}
 
-	qosMapSetInit(prStaRec);
-	kalMemSet(excTable, 0, 64);
+	qosBuildQosMapTable(prStaRec, dscp_exception, dscp_range);
 
-	dscpExcNum = (IE_LEN(qosMapSet) - WMM_UP_INDEX_NUM * 2) / 2;
-	for (i = 0; i < dscpExcNum; i++) {
-		uint8_t dscp = *tempq++;
-		uint8_t up = *tempq++;
-
-		if (dscp < 64 && up < WMM_UP_INDEX_NUM) {
-			qosmapping[dscp] = up;
-			excTable[dscp] = TRUE;
-		}
-	}
-
-	for (i = 0; i < WMM_UP_INDEX_NUM; i++) {
-		uint8_t lDscp = *tempq++;
-		uint8_t hDscp = *tempq++;
-		uint8_t dscp;
-
-		if (lDscp == 255 && hDscp == 255) {
-			log_dbg(INIT, WARN, "UP %d is not used\n", i);
-			continue;
-		}
-
-		if (hDscp < lDscp) {
-			log_dbg(INIT, WARN, "CHECK: UP %d, h %d, l %d\n",
-				i, hDscp, lDscp);
-			continue;
-		}
-
-		for (dscp = lDscp; dscp < 64 && dscp <= hDscp; dscp++) {
-			if (!excTable[dscp])
-				qosmapping[dscp] = i;
-		}
-	}
-
-	DBGLOG(INIT, INFO, "QosMapSet DSCP Exception number: %d\n", dscpExcNum);
+	/* Copy for struct QOS_MAP */
+	updateCachedQosMap(prStaRec, (dscp_range - dscp_exception) / 2,
+			dscp_exception, dscp_range);
+	DBGLOG(INIT, INFO, "QosMapSet DSCP Exception number: %d\n",
+			(dscp_range - dscp_exception) / 2);
 }
 
+/* Prepare a DSCP-to-UP table lookup in driver to be queried from kernel
+ * protocol thread context on calling ndo_select_queue() to mark user priority
+ * according to DSCP field in IP header.
+ */
 void qosMapSetInit(struct STA_RECORD *prStaRec)
 {
-	/* DSCP to UP maaping based on RFC8325 in the range 0 to 63 */
-	static uint8_t dscp2up[64] = {
-		[0] = WMM_UP_BE_INDEX,
-		[1] = 0xFF,
-		[2] = 0xFF,
-		[3] = 0xFF,
-		[4] = 0xFF,
-		[5] = 0xFF,
-		[6] = 0xFF,
-		[7] = 0xFF,
-		[8] = WMM_UP_BK_INDEX,
-		[9] = 0xFF,
-		[10] = WMM_UP_BE_INDEX,
-		[11] = 0xFF,
-		[12] = WMM_UP_BE_INDEX,
-		[13] = 0xFF,
-		[14] = WMM_UP_BE_INDEX,
-		[15] = 0xFF,
-		[16] = WMM_UP_BE_INDEX,
-		[17] = 0xFF,
-		[18] = WMM_UP_EE_INDEX,
-		[19] = 0xFF,
-		[20] = WMM_UP_EE_INDEX,
-		[21] = 0xFF,
-		[22] = WMM_UP_EE_INDEX,
-		[23] = 0xFF,
-		[24] = WMM_UP_CL_INDEX,
-		[25] = 0xFF,
-		[26] = WMM_UP_CL_INDEX,
-		[27] = 0xFF,
-		[28] = WMM_UP_CL_INDEX,
-		[29] = 0xFF,
-		[30] = WMM_UP_CL_INDEX,
-		[31] = 0xFF,
-		[32] = WMM_UP_CL_INDEX,
-		[33] = 0xFF,
-		[34] = WMM_UP_CL_INDEX,
-		[35] = 0xFF,
-		[36] = WMM_UP_CL_INDEX,
-		[37] = 0xFF,
-		[38] = WMM_UP_CL_INDEX,
-		[39] = 0xFF,
-		[40] = WMM_UP_VI_INDEX,
-		[41] = 0xFF,
-		[42] = 0xFF,
-		[43] = 0xFF,
-		[44] = WMM_UP_VO_INDEX,
-		[45] = 0xFF,
-		[46] = WMM_UP_VO_INDEX,
-		[47] = 0xFF,
-		[48] = WMM_UP_VO_INDEX,
-		[49] = 0xFF,
-		[50] = 0xFF,
-		[51] = 0xFF,
-		[52] = 0xFF,
-		[53] = 0xFF,
-		[54] = 0xFF,
-		[55] = 0xFF,
-		[56] = WMM_UP_NC_INDEX,
-		[57] = 0xFF,
-		[58] = 0xFF,
-		[59] = 0xFF,
-		[60] = 0xFF,
-		[61] = 0xFF,
-		[62] = 0xFF,
-		[63] = 0xFF,
-	};
+#if QOS_MAP_LEGACY_DSCP_TABLE
+	kalMemCopy(prStaRec->qosMapTable, dscp2up, 64);
+#endif
 
-	kalMemCopy(prStaRec->qosMapSet, dscp2up, 64);
-}
-
-uint8_t getUpFromDscp(struct GLUE_INFO *prGlueInfo,
-		uint8_t ucBssIndex, int dscp)
-{
-	struct BSS_INFO *prBssInfo;
-	struct STA_RECORD *prStaRec;
-
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
-	if (prBssInfo)
-		prStaRec = prBssInfo->prStaRecOfAP;
-	else
-		return 0xFF;
-
-	if (prStaRec && dscp >= 0 && dscp < 64)
-		return prStaRec->qosMapSet[dscp];
-
-	return 0xFF;
+	/* Copy for struct QOS_MAP, used by cfg80211_classify8021d() */
+	kalMemCopy(&prStaRec->rQosMap, &defaultQosMap, sizeof(struct QOS_MAP));
 }
 #endif

@@ -3848,7 +3848,6 @@ void kalIPv6ChecksumHelp(struct sk_buff *prSkb, const uint8_t *pucIpv6Hdr,
 	}
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This inline function is to extract some packet information, including
@@ -3869,14 +3868,11 @@ kalQoSFrameClassifierAndPacketInfo(struct GLUE_INFO *prGlueInfo,
 {
 	uint32_t u4PacketLen;
 	uint16_t u2EtherTypeLen;
-	struct sk_buff *prSkb = (struct sk_buff *)prPacket;
+	struct sk_buff *prSkb = prPacket;
 	uint8_t *aucLookAheadBuf = NULL;
 	uint8_t ucEthTypeLenOffset = ETHER_HEADER_LEN - ETHER_TYPE_LEN;
-	uint8_t *pucNextProtocol = NULL;
+	void *pucNextProtocol = NULL;
 	uint32_t u4MinTxLen;
-#if DSCP_SUPPORT
-	uint8_t ucUserPriority;
-#endif
 
 	u4PacketLen = prSkb->len;
 
@@ -3930,16 +3926,6 @@ kalQoSFrameClassifierAndPacketInfo(struct GLUE_INFO *prGlueInfo,
 			       u4PacketLen);
 			break;
 		}
-#if DSCP_SUPPORT
-		if (GLUE_GET_PKT_BSS_IDX(prSkb) != P2P_DEV_BSS_INDEX) {
-			ucUserPriority = getUpFromDscp(
-				prGlueInfo,
-				GLUE_GET_PKT_BSS_IDX(prSkb),
-				(pucNextProtocol[1] >> 2) & 0x3F);
-			if (ucUserPriority != 0xFF)
-				prSkb->priority = ucUserPriority;
-		}
-#endif
 		kalIPv4FrameClassifier(prGlueInfo, prPacket,
 				       pucNextProtocol, prTxPktInfo);
 		break;
@@ -3969,23 +3955,6 @@ kalQoSFrameClassifierAndPacketInfo(struct GLUE_INFO *prGlueInfo,
 				       pucNextProtocol, prTxPktInfo);
 		kalIPv6ChecksumHelp(prSkb, pucNextProtocol,
 			u4PacketLen - (ucEthTypeLenOffset + ETHER_TYPE_LEN));
-
-#if DSCP_SUPPORT
-		if (GLUE_GET_PKT_BSS_IDX(prSkb) != P2P_DEV_BSS_INDEX) {
-			uint16_t u2Tmp;
-			uint8_t ucIpTos;
-
-			WLAN_GET_FIELD_BE16(pucNextProtocol, &u2Tmp);
-			ucIpTos = u2Tmp >> 4;
-
-			ucUserPriority = getUpFromDscp(
-				prGlueInfo,
-				GLUE_GET_PKT_BSS_IDX(prSkb),
-				(ucIpTos >> 2) & 0x3F);
-			if (ucUserPriority != 0xFF)
-				prSkb->priority = ucUserPriority;
-		}
-#endif
 		break;
 
 	default:
