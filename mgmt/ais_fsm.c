@@ -5750,9 +5750,9 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 				aisGetTargetStaRec(prAdapter, ucBssIndex),
 				NULL, ucBssIndex);
 
+#if 0
 		/* 1. Do abort JOIN */
 		aisFsmStateAbort_JOIN(prAdapter, ucBssIndex);
-#if 0
 
 		/* 2. Increase Join Failure Count */
 		/* Support AP Selection */
