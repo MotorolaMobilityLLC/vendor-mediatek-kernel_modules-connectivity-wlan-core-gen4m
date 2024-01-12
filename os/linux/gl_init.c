@@ -94,7 +94,11 @@ struct sock *nl_sk;
 
 /* Default QoS Map for BSS other than AIS */
 static struct cfg80211_qos_map default_qos_map = {
+#if CFG_WIFI_AT_THE_EDGE_QOS
 	.num_des = 15,
+#else
+	.num_des = 17,
+#endif
 	.dscp_exception = { /* dscp, up */
 		{8, 1},
 		{18, 3}, {20, 3}, {22, 3},
@@ -102,6 +106,13 @@ static struct cfg80211_qos_map default_qos_map = {
 		{32, 4}, {34, 4}, {36, 4}, {38, 4},
 		{40, 5},
 		{44, 6}, {46, 6},
+#if !CFG_WIFI_AT_THE_EDGE_QOS
+		/* Extend for backward compatibility traffic generation.
+		 * Allow to set 48, 56 to UP 6, 7, intended to now following
+		 * RECOMMENDATION in RFC 8325 Sec 8.2.
+		 */
+		{48, 6}, {56, 7},
+#endif
 	},
 	.up = {{0, 63}, },/* low, high */
 };

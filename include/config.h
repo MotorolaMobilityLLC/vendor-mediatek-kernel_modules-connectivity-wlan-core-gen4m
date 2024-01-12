@@ -2362,6 +2362,30 @@
 #define CFG_SUPPORT_PERMON 1
 #endif
 
+/* Disable this option by default to make sigma tool compatible both
+ * with legacy driver and new driver with QoS R2 support.
+ * For projects intended to enable
+ * CONFIG_WIFI_AT_THE_EDGE_QOS_SUPPORT for security consideration,
+ * the sigma test packet generator need to be modified to set
+ * TOS=0xB0 or 0xB8 to generate VO traffic.
+ *
+ * Background:
+ * In legacy Sigma tool, it sets VO with ToS = 0xD0, though
+ * the available ToS for VO ranges from 0xC0 to 0xFF.
+ *
+ * QoS R2 w/ CONFIG_WIFI_AT_THE_EDGE_QOS_SUPPORT only allows
+ * VO w/ ToS = 0xB0 and 0xB8.
+ *
+ * By disabling QoS R2 w/ CONFIG_WIFI_AT_THE_EDGE_QOS_SUPPORT,
+ * two additional ToS 0xC0 and 0xE0 are allowed to map to UP 6, 7.
+ * Along with the change in sigma tool by setting VO to ToS=0xCo,
+ * this makes the intersection values available for QoS R2 and
+ * sigma tool for legacy programs.
+ */
+#ifndef CFG_WIFI_AT_THE_EDGE_QOS
+#define CFG_WIFI_AT_THE_EDGE_QOS 0
+#endif
+
 /*------------------------------------------------------------------------------
 * Driver supports TX resource ctrl for Per-BSS mode
 * Note1:
