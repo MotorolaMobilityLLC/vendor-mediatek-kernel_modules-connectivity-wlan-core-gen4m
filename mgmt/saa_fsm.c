@@ -1504,14 +1504,20 @@ void saaChkDeauthfrmParamHandler(struct ADAPTER *prAdapter,
 				 struct STA_RECORD *prStaRec)
 {
 	struct WLAN_DEAUTH_FRAME *prDeauthFrame;
+	struct AIS_SPECIFIC_BSS_INFO *prBssSpecInfo;
+
+	prBssSpecInfo = aisGetAisSpecBssInfo(prAdapter, prStaRec->ucBssIndex);
 
 	do {
 		prDeauthFrame = (struct WLAN_DEAUTH_FRAME *) prSwRfb->pvHeader;
 		if (!IS_BMCAST_MAC_ADDR(prDeauthFrame->aucDestAddr)) {
+			/* MFP test plan 5.3.3.5 */
 			DBGLOG(RSN, INFO,
 				"[%d] QM RX MGT: rsnStartSaQuery\n",
 				prStaRec->ucBssIndex);
-			/* MFP test plan 5.3.3.5 */
+
+			COPY_MAC_ADDR(prBssSpecInfo->aucSaQueryBSSID,
+					prDeauthFrame->aucBSSID);
 			rsnStartSaQuery(prAdapter, prStaRec->ucBssIndex);
 		} else {
 			DBGLOG(RSN, INFO, "RXM: Drop unprotected Mgmt frame\n");
@@ -1813,11 +1819,18 @@ saaChkDisassocfrmParamHandler(struct ADAPTER *prAdapter,
 			      struct STA_RECORD *prStaRec,
 			      struct SW_RFB *prSwRfb)
 {
+	struct AIS_SPECIFIC_BSS_INFO *prBssSpecInfo;
+
+	prBssSpecInfo = aisGetAisSpecBssInfo(prAdapter, prStaRec->ucBssIndex);
+
 	if (!IS_BMCAST_MAC_ADDR(prDisassocFrame->aucDestAddr)) {
 		/* MFP test plan 5.3.3.5 */
 		DBGLOG(RSN, INFO,
 			"[%d] QM RX MGT: rsnStartSaQuery\n",
 			prStaRec->ucBssIndex);
+
+		COPY_MAC_ADDR(prBssSpecInfo->aucSaQueryBSSID,
+					prDisassocFrame->aucBSSID);
 		rsnStartSaQuery(prAdapter, prStaRec->ucBssIndex);
 	} else {
 		DBGLOG(RSN, INFO, "RXM: Drop unprotected Mgmt frame\n");
