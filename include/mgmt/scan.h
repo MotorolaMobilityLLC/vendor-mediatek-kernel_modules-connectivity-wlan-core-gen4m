@@ -96,6 +96,10 @@
 /* dwell time setting for VOE certification */
 #define SCAN_CHANNEL_DWELL_TIME_VOE         (42 + 8)
 
+#if (CFG_SUPPORT_WIFI_RNR == 1)
+#define SCAN_TBTT_INFO_SET_OFFSET		(4)
+#endif
+
 /*----------------------------------------------------------------------------*/
 /* MSG_SCN_SCAN_REQ                                                           */
 /*----------------------------------------------------------------------------*/
@@ -569,6 +573,12 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 	uint8_t ucBssidMatchSsidInd[CFG_SCAN_OOB_MAX_NUM];
 	u_int8_t fgOobRnrParseEn;
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	/* Short SSID */
+	uint8_t aucShortSSID[CFG_SCAN_OOB_MAX_NUM][MAX_SHORT_SSID_LEN];
+	uint8_t ucBssidMatchShortSsidInd[CFG_SCAN_OOB_MAX_NUM];
+#endif
+
 	/* Information Element */
 	uint16_t u2IELen;
 	uint8_t aucIE[MAX_IE_LENGTH];
@@ -845,6 +855,12 @@ struct NEIGHBOR_AP_PARAM {
 	/* For 6G OOB discovery*/
 	uint8_t ucBssidMatchCh[CFG_SCAN_OOB_MAX_NUM];
 	uint8_t ucBssidMatchSsidInd[CFG_SCAN_OOB_MAX_NUM];
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	/* short SSID */
+	uint8_t aucShortSSID[CFG_SCAN_OOB_MAX_NUM][MAX_SHORT_SSID_LEN];
+	uint8_t ucBssidMatchShortSsidInd[CFG_SCAN_OOB_MAX_NUM];
+#endif
 
 	/* Information Element */
 	uint16_t u2IELen;
