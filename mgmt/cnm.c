@@ -5465,7 +5465,8 @@ int cnmPowerControl(
 	if (isNeedBecomeOneNss(level))
 		prAdapter->fgPowerForceOneNss = TRUE;
 
-	if (isNeedForceOneNss(level))
+	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DYNAMIC &&
+		isNeedForceOneNss(level))
 		prAdapter->fgPowerNeedDisconnect = TRUE;
 
 	DBGLOG(CNM, INFO, "ForceOneNss=%d, NeedDisconnect=%d, dbdc=%d",
@@ -5474,7 +5475,8 @@ int cnmPowerControl(
 		prAdapter->rWifiVar.fgDbDcModeEn);
 
 	/* DBDC enabled need to disconnect STA */
-	if (prAdapter->rWifiVar.fgDbDcModeEn && prAdapter->fgPowerForceOneNss) {
+	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DYNAMIC &&
+	    prAdapter->rWifiVar.fgDbDcModeEn && prAdapter->fgPowerForceOneNss) {
 		/* check if dual sta */
 		prSta0BssInfo = aisGetAisBssInfo(prAdapter, 0);
 		prSta1BssInfo = aisGetAisBssInfo(prAdapter, 1);
