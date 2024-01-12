@@ -305,9 +305,6 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		)
 		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_DBDC_SCAN_DIS;
 
-	if (scnEnableSplitScan(prAdapter, prScanParam->ucBssIndex))
-		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_SPLIT_SCAN_EN;
-
 	/* Set SSID to scan request */
 	if (prScanParam->ucSSIDNum <= SCAN_CMD_SSID_NUM) {
 		prCmdScanReq->ucSSIDNum = prScanParam->ucSSIDNum;
@@ -400,6 +397,21 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	if (prAdapter->rWifiVar.u4SwTestMode == ENUM_SW_TEST_MODE_SIGMA_OCE) {
 		scanHandleOceIE(prScanParam, prCmdScanReq);
 		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_OCE_SCAN_EN;
+	}
+
+	/* enable split scan when (not in roam) && (WFD || 1s TRX pkt > 30) */
+	if (scnEnableSplitScan(prAdapter, prScanParam->ucBssIndex)) {
+		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_SPLIT_SCAN_EN;
+		/* if WFD enable, not do dbdc scan and reduce dwell time to
+		 * enhance latency
+		 */
+		if (wlanWfdEnabled(prAdapter)) {
+			prCmdScanReq->ucScnFuncMask |= ENUM_SCN_DBDC_SCAN_DIS;
+			prCmdScanReq->u2ChannelDwellTime =
+				SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
+			prCmdScanReq->u2ChannelMinDwellTime =
+				SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
+		}
 	}
 
 	if (prScanParam->u2IELen <= MAX_IE_LENGTH)
