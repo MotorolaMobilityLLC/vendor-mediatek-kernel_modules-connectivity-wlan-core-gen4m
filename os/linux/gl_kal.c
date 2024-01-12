@@ -14375,9 +14375,6 @@ void kalConfigWiFiSnappingForceDisable(
 }
 
 #if CFG_SUPPORT_THERMAL_QUERY
-#define MAX_REFRESH_TIME		(5 * 60) /* sec */
-#define MAX_TEMP_THRESHOLD		(60 * 1000)
-
 #if (KERNEL_VERSION(6, 1, 0) <= LINUX_VERSION_CODE)
 static int get_connsys_thermal_temp(struct thermal_zone_device *tz, int *temp)
 #else
@@ -14391,8 +14388,10 @@ static int get_connsys_thermal_temp(void *data, int *temp)
 #endif
 	struct GLUE_INFO *glue = wlanGetGlueInfo();
 	struct ADAPTER *ad = NULL;
+	struct WIFI_VAR *wifi_var = NULL;
 	struct THERMAL_TEMP_DATA temp_data;
 	uint32_t status = WLAN_STATUS_SUCCESS;
+	u_int8_t fgCache = FALSE;
 
 	if (!wlanIsDriverReady(glue,
 			       WLAN_DRV_READY_CHECK_WLAN_ON)) {
@@ -14402,14 +14401,13 @@ static int get_connsys_thermal_temp(void *data, int *temp)
 	}
 
 	ad = glue->prAdapter;
+	wifi_var = &ad->rWifiVar;
 
-	if (sensor->last_query_temp <= MAX_TEMP_THRESHOLD &&
-	    sensor->last_query_time != 0 &&
-	    !CHECK_FOR_TIMEOUT(kalGetTimeTick(),
-			       sensor->last_query_time,
-			       SEC_TO_SYSTIME(MAX_REFRESH_TIME))) {
+	if (sensor->last_query_temp <= wifi_var->i4MaxTempLimit &&
+	    time_before(jiffies, sensor->updated_period)) {
 		status = WLAN_STATUS_SUCCESS;
 		*temp = sensor->last_query_temp;
+		fgCache = TRUE;
 		goto exit;
 	}
 
@@ -14424,13 +14422,16 @@ static int get_connsys_thermal_temp(void *data, int *temp)
 	}
 
 	*temp = temp_data.u4Temperature;
-	GET_CURRENT_SYSTIME(&(sensor->last_query_time));
+	sensor->updated_period = jiffies +
+		wifi_var->u4MinTempQueryTime * HZ / 1000;
 	sensor->last_query_temp = *temp;
 
 exit:
-	DBGLOG(REQ, TRACE, "[%s][%ul] temp: %d\n",
+	DBGLOG(REQ, TRACE, "idx[%d] type[%d] name[%s], temp[%d][%d]\n",
+		sensor->sendor_idx,
+		sensor->type,
 		sensor->name,
-		sensor->last_query_time,
+		fgCache,
 		*temp);
 
 	return 0;
@@ -14538,7 +14539,7 @@ void thermal_state_reset(struct ADAPTER *ad)
 		if (!sensor->tzd)
 			continue;
 
-		sensor->last_query_time = 0;
+		sensor->updated_period = 0;
 		sensor->last_query_temp = 0;
 	}
 }
