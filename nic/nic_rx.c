@@ -342,7 +342,6 @@ static void nicRxReturnUnUseRFB(struct ADAPTER *prAdapter,
 void nicRxInitialize(struct ADAPTER *prAdapter)
 {
 	struct RX_CTRL *prRxCtrl;
-	uint8_t *pucMemHandle;
 	struct SW_RFB *prSwRfb = (struct SW_RFB *) NULL;
 	uint32_t i;
 
@@ -350,8 +349,8 @@ void nicRxInitialize(struct ADAPTER *prAdapter)
 	prRxCtrl = &prAdapter->rRxCtrl;
 
 	/* 4 <0> Clear allocated memory. */
-	kalMemZero((void *) prRxCtrl->pucRxCached,
-		   prRxCtrl->u4RxCachedSize);
+	kalMemZero(prRxCtrl->prRxCached,
+		   sizeof(struct SW_RFB[CFG_RX_MAX_PKT_NUM]));
 
 	/* 4 <1> Initialize the RFB lists */
 	QUEUE_INITIALIZE(&prRxCtrl->rFreeSwRfbList);
@@ -361,35 +360,27 @@ void nicRxInitialize(struct ADAPTER *prAdapter)
 	QUEUE_INITIALIZE(&prRxCtrl->rUnUseRfbList);
 #endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 
-	pucMemHandle = prRxCtrl->pucRxCached;
 #if CFG_SUPPORT_DYNAMIC_PAGE_POOL
 	kalSetPagePoolPageNum(CFG_RX_MAX_PKT_NUM - nicRxGetUnUseCnt(prAdapter));
 #endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
-	for (i = CFG_RX_MAX_PKT_NUM; i != 0; i--) {
-		prSwRfb = (struct SW_RFB *) pucMemHandle;
+	for (i = 0; i < CFG_RX_MAX_PKT_NUM; i++) {
+		prSwRfb = &prRxCtrl->prRxCached[i];
 #if CFG_RFB_TRACK
-		RX_RFB_TRACK_INIT(prAdapter, prSwRfb, (i-1));
+		RX_RFB_TRACK_INIT(prAdapter, prSwRfb, i);
 #endif /* CFG_RFB_TRACK */
-		if ((RX_GET_UNUSE_RFB_CNT(prRxCtrl) ==
-		     nicRxGetUnUseCnt(prAdapter))
-			&& nicRxSetupRFB(prAdapter, prSwRfb)) {
+		if (RX_GET_UNUSE_RFB_CNT(prRxCtrl) ==
+		    nicRxGetUnUseCnt(prAdapter) &&
+		    nicRxSetupRFB(prAdapter, prSwRfb)) {
 			DBGLOG(RX, ERROR,
 			       "nicRxInitialize failed: Cannot allocate packet buffer for SwRfb!\n");
 			return;
 		}
 		nicRxReturnRFB(prAdapter, prSwRfb);
-
-		pucMemHandle += ALIGN_4(sizeof(struct SW_RFB));
 	}
 
 	if (RX_GET_FREE_RFB_CNT(prRxCtrl) !=
 		(CFG_RX_MAX_PKT_NUM - nicRxGetUnUseCnt(prAdapter)))
 		ASSERT_NOMEM();
-	/* Check if the memory allocation consist with this
-	 * initialization function
-	 */
-	ASSERT((uint32_t) (pucMemHandle - prRxCtrl->pucRxCached) ==
-	       prRxCtrl->u4RxCachedSize);
 
 	/* 4 <2> Clear all RX counters */
 	RX_RESET_ALL_CNTS(prRxCtrl);
@@ -3104,9 +3095,8 @@ uint32_t nicRxCopyRFB(struct ADAPTER *prAdapter,
 
 u_int8_t isRfbFromSpared(struct RX_CTRL *prRxCtrl, struct SW_RFB *prSwRfb)
 {
-	return (uint8_t *)prSwRfb < prRxCtrl->pucRxCached ||
-		(uint8_t *)prSwRfb >
-			prRxCtrl->pucRxCached + prRxCtrl->u4RxCachedSize;
+	return prSwRfb < prRxCtrl->prRxCached ||
+		prSwRfb > prRxCtrl->prRxCached + CFG_RX_MAX_PKT_NUM;
 }
 
 /*----------------------------------------------------------------------------*/

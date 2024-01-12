@@ -103,8 +103,8 @@ struct TIMER rSerSyncTimer = {
  */
 #define LOCAL_NIC_ALLOCATE_MEMORY(pucMem, u4Size, eMemType, pucComment) \
 { \
-	pucMem = (uint8_t *)kalMemAlloc(u4Size, eMemType); \
-	if (pucMem == (uint8_t *)NULL) { \
+	pucMem = kalMemAlloc(u4Size, eMemType); \
+	if (pucMem == NULL) { \
 		DBGLOG(INIT, ERROR, \
 			"Could not allocate %u bytes for %s.\n", \
 			u4Size, (char *) pucComment); \
@@ -156,7 +156,7 @@ uint32_t nicAllocateAdapterMemory(struct ADAPTER
 		prAdapter->u4MemAllocDynamicCount = 0;
 #endif
 		prAdapter->pucMgtBufCached = (uint8_t *) NULL;
-		prRxCtrl->pucRxCached = (uint8_t *) NULL;
+		prRxCtrl->prRxCached = NULL;
 
 		/* 4 <1> Memory for Management Memory Pool and CMD_INFO_T */
 		/* Allocate memory for the struct CMD_INFO
@@ -178,11 +178,8 @@ uint32_t nicAllocateAdapterMemory(struct ADAPTER
 		 * and using this variable directly.
 		 */
 		/* Allocate memory for the SW receive structures. */
-		prRxCtrl->u4RxCachedSize = CFG_RX_MAX_PKT_NUM * ALIGN_4(
-						   sizeof(struct SW_RFB));
-
-		LOCAL_NIC_ALLOCATE_MEMORY(prRxCtrl->pucRxCached,
-			prRxCtrl->u4RxCachedSize,
+		LOCAL_NIC_ALLOCATE_MEMORY(prRxCtrl->prRxCached,
+			sizeof(struct SW_RFB[CFG_RX_MAX_PKT_NUM]),
 			VIR_MEM_TYPE, "struct SW_RFB");
 
 		/* 4 <3> Memory for TX DEscriptor */
@@ -363,10 +360,10 @@ void nicReleaseAdapterMemory(struct ADAPTER *prAdapter)
 		prTxCtrl->pucTxCached = NULL;
 	}
 	/* 4 <2> Memory for RX Descriptor */
-	if (prRxCtrl->pucRxCached) {
-		kalMemFree(prRxCtrl->pucRxCached, VIR_MEM_TYPE,
-			   prRxCtrl->u4RxCachedSize);
-		prRxCtrl->pucRxCached = NULL;
+	if (prRxCtrl->prRxCached) {
+		kalMemFree(prRxCtrl->prRxCached, VIR_MEM_TYPE,
+			   sizeof(struct SW_RFB[CFG_RX_MAX_PKT_NUM]));
+		prRxCtrl->prRxCached = NULL;
 	}
 	/* 4 <1> Memory for Management Memory Pool */
 	if (prAdapter->pucMgtBufCached) {
