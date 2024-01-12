@@ -529,7 +529,6 @@ enum ENUM_RX_STATISTIC_COUNTER {
 	RX_CSUM_UNKNOWN_L3_PKT_COUNT,
 	RX_IP_V6_PKT_CCOUNT,
 #endif
-	RX_FATAL_ERR_CNT,
 	RX_STATISTIC_COUNTER_NUM
 };
 
@@ -1029,9 +1028,6 @@ struct RX_DESC_OPS_T {
 
 #define RX_GET_CNT(prRxCtrl, eCounter)              \
 	(((struct RX_CTRL *)prRxCtrl)->au8Statistics[eCounter])
-
-#define RX_RESET_CNT(prRxCtrl, eCounter)                 \
-	{((struct RX_CTRL *)prRxCtrl)->au8Statistics[eCounter] = 0; }
 
 #define RX_RESET_ALL_CNTS(prRxCtrl)                 \
 	{kalMemZero(&prRxCtrl->au8Statistics[0], \
