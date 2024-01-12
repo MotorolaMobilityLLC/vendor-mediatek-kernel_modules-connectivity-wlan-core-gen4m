@@ -3735,17 +3735,12 @@ static u_int8_t rlmRecBcnFromNeighborForClient(struct ADAPTER *prAdapter,
 	 * update procedure. We should give it the entry pointer of desired
 	 * channel list.
 	 */
-	RX_STATUS_GET(prRxDescOps, eBand, get_rf_band, prSwRfb->prRxStatus);
+	eBand = prSwRfb->eRfBand;
 	if (eBand != BAND_2G4)
 		return FALSE;
 
-	if (ucPriChannel == 0 || ucPriChannel > 14) {
-		RX_STATUS_GET(
-			prRxDescOps,
-			ucPriChannel,
-			get_ch_num,
-			prSwRfb->prRxStatus);
-	}
+	if (ucPriChannel == 0 || ucPriChannel > 14)
+		ucPriChannel = prSwRfb->ucChnlNum;
 
 	if (fgHtBss) {
 		ASSERT(prBssInfo->auc2G_PriChnlList[0] <= CHNL_LIST_SZ_2G);

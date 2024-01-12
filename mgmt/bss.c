@@ -521,6 +521,10 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
 	}
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (prBssDesc->rMlInfo.fgValid) {
+		struct BSS_INFO *prBssInfo;
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+		prBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
 		prStaRec->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
 		COPY_MAC_ADDR(prStaRec->aucMldAddr, prBssDesc->rMlInfo.aucMldAddr);
 		mldStarecRegister(prAdapter, prStaRec);
@@ -1461,17 +1465,8 @@ uint32_t bssProcessProbeRequest(IN struct ADAPTER *prAdapter,
 					prMgtHdr->aucBSSID))
 			continue;
 
-		RX_STATUS_GET(
-			prRxDescOps,
-			eBand,
-			get_rf_band,
-			prSwRfb->prRxStatus);
-
-		RX_STATUS_GET(
-			prRxDescOps,
-			ucHwChannelNum,
-			get_ch_num,
-			prSwRfb->prRxStatus);
+		eBand = prSwRfb->eRfBand;
+		ucHwChannelNum = prSwRfb->ucChnlNum;
 
 		nicRxdChNumTranslate(eBand, &ucHwChannelNum);
 

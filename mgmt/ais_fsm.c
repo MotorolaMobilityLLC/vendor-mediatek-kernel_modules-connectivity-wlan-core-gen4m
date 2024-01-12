@@ -4094,6 +4094,7 @@ void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 	uint16_t u2IELength;
 	uint8_t *pucIE;
 	uint8_t ucBssIndex = 0;
+	uint16_t u2RxAssocId;
 
 	DEBUGFUNC("aisUpdateBssInfoForJOIN()");
 
@@ -4109,6 +4110,24 @@ void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 	DBGLOG(AIS, INFO,
 		"[%d] Update AIS_BSS_INFO_T and apply settings to MAC\n",
 		ucBssIndex);
+
+	u2RxAssocId = prAssocRspFrame->u2AssocId;
+	if ((u2RxAssocId & BIT(6)) && (u2RxAssocId & BIT(7))
+	    && !(u2RxAssocId & BITS(8, 15))) {
+		prStaRec->u2AssocId = u2RxAssocId & ~BITS(6, 7);
+	} else {
+		prStaRec->u2AssocId = u2RxAssocId & ~AID_MSB;
+#if CFG_SUPPORT_802_11W
+		if (prStaRec->eStaType == STA_TYPE_LEGACY_AP) {
+			struct AIS_SPECIFIC_BSS_INFO *prBssSpecInfo;
+
+			prBssSpecInfo =
+				aisGetAisSpecBssInfo(prAdapter,
+				prStaRec->ucBssIndex);
+			prBssSpecInfo->ucSaQueryTimedOut = 0;
+		}
+#endif
+	}
 
 	/* 3 <1> Update BSS_INFO_T from AIS_FSM_INFO_T or User Settings */
 	/* 4 <1.1> Setup Operation Mode */
@@ -4227,30 +4246,34 @@ void aisUpdateAllBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 	uint8_t i;
 
 	for (i = 0; i < MLD_LINK_MAX; i++) {
-		struct STA_RECORD *prTargetStaRec =
+		struct STA_RECORD *prStaRec =
 			aisGetLinkStaRec(prAisFsmInfo, i);
 		struct BSS_INFO *prAisBssInfo =
 			aisGetLinkBssInfo(prAisFsmInfo, i);
+		struct SW_RFB *prSwRfb;
 
-		if (!prTargetStaRec)
+		if (!prStaRec)
 			break;
 
-		/* TODO: mlo, get AID from assoc resp frame */
-		prTargetStaRec->u2AssocId = prSetupStaRec->u2AssocId;
-		aisUpdateBssInfoForJOIN(prAdapter,
-			prTargetStaRec, prAssocRspSwRfb);
+		prSwRfb = beDuplicateAssocSwRfb(prAdapter,
+			prAssocRspSwRfb, prStaRec);
+		if (prSwRfb) {
+			aisUpdateBssInfoForJOIN(prAdapter,
+				prStaRec, prSwRfb);
+			nicRxReturnRFB(prAdapter, prSwRfb);
+		} else {
+			aisUpdateBssInfoForJOIN(prAdapter,
+				prStaRec, prAssocRspSwRfb);
+		}
 
 		/* 4 <1.3> Activate current AP's STA_RECORD_T
 		 * in Driver.
 		 */
-		cnmStaRecChangeState(prAdapter, prTargetStaRec,
-				     STA_STATE_3);
+		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_3);
 
 		/* 4 <1.5> Update RSSI if necessary */
-		nicUpdateRSSI(prAdapter,
-			      prAisBssInfo->ucBssIndex,
-			      (int8_t) (RCPI_TO_dBm
-					(prTargetStaRec->ucRCPI)), 0);
+		nicUpdateRSSI(prAdapter, prAisBssInfo->ucBssIndex,
+			      (int8_t) (RCPI_TO_dBm(prStaRec->ucRCPI)), 0);
 	}
 }
 
@@ -5802,17 +5825,23 @@ void aisUpdateBssInfoForRoamingAllAP(IN struct ADAPTER *prAdapter,
 	uint8_t i;
 
 	for (i = 0; i < MLD_LINK_MAX; i++) {
-		struct STA_RECORD *prTargetStaRec =
+		struct STA_RECORD *prStaRec =
 			aisGetLinkStaRec(prAisFsmInfo, i);
+		struct SW_RFB *prSwRfb;
 
-		if (!prTargetStaRec)
+		if (!prStaRec)
 			break;
 
-		/* TODO: mlo, get AID from assoc resp frame */
-		prTargetStaRec->u2AssocId = prSetupStaRec->u2AssocId;
-
-		aisUpdateBssInfoForRoamingAP(prAdapter,
-			prTargetStaRec, prAssocRspSwRfb);
+		prSwRfb = beDuplicateAssocSwRfb(prAdapter,
+			prAssocRspSwRfb, prStaRec);
+		if (prSwRfb) {
+			aisUpdateBssInfoForRoamingAP(prAdapter,
+				prStaRec, prSwRfb);
+			nicRxReturnRFB(prAdapter, prSwRfb);
+		} else {
+			aisUpdateBssInfoForRoamingAP(prAdapter,
+				prStaRec, prAssocRspSwRfb);
+		}
 	}
 }
 

@@ -287,6 +287,10 @@ void nic_rxd_v2_fill_rfb(
 		HAL_MAC_CONNAC2X_RX_STATUS_GET_CHNL_NUM(prRxStatus);
 	prSwRfb->ucHwBandIdx =
 		HAL_MAC_CONNAC2X_RX_STATUS_GET_BAND_IDX(prRxStatus);
+	prSwRfb->eRfBand =
+		HAL_MAC_CONNAC2X_RX_STATUS_GET_RF_BAND(prRxStatus);
+	prSwRfb->ucTcl =
+		HAL_MAC_CONNAC2X_RX_STATUS_GET_TCL(prRxStatus);
 #if 0
 	if (prHifRxHdr->ucReorder &
 	    HIF_RX_HDR_80211_HEADER_FORMAT) {
