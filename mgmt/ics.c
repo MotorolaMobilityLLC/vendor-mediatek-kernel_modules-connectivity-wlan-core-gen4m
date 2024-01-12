@@ -338,6 +338,18 @@ int IcsInit(void)
 		goto class_destroy;
 	}
 
+	err = ics_ring_init(&gIcsDev->iRing, ICS_LOG_SIZE);
+	if (err) {
+		result = -ENOMEM;
+		DBGLOG(ICS, ERROR,
+			"Error %d ics_ring_init.\n", err);
+		goto device_destroy;
+	}
+
+	init_waitqueue_head(&gIcsDev->wq);
+	sema_init(&gIcsDev->ioctl_mtx, 1);
+	gIcsDev->pfFwEventFuncCB = NULL;
+
 	cdev_init(&gIcsDev->cdev, &fw_log_ics_fops);
 
 	gIcsDev->cdev.owner = THIS_MODULE;
@@ -348,25 +360,15 @@ int IcsInit(void)
 		result = -ENOMEM;
 		DBGLOG(ICS, ERROR,
 			"Error %d adding fw_log_ics dev.\n", err);
-		goto cdev_del;
+		goto ics_ring_deinit;
 	}
-
-	err = ics_ring_init(&gIcsDev->iRing, ICS_LOG_SIZE);
-	if (err) {
-		result = -ENOMEM;
-		DBGLOG(ICS, ERROR,
-			"Error %d ics_ring_init.\n", err);
-		goto cdev_del;
-	}
-
-	init_waitqueue_head(&gIcsDev->wq);
-	sema_init(&gIcsDev->ioctl_mtx, 1);
-	gIcsDev->pfFwEventFuncCB = NULL;
 
 	goto return_fn;
 
-cdev_del:
-	cdev_del(&gIcsDev->cdev);
+ics_ring_deinit:
+	ics_ring_deinit(&gIcsDev->iRing);
+device_destroy:
+	device_destroy(gIcsDev->driver_class, gIcsDev->devno);
 class_destroy:
 	class_destroy(gIcsDev->driver_class);
 unregister_chrdev_region:
