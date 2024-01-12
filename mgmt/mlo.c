@@ -481,6 +481,9 @@ void mldGenerateProbeRspIE(
 	mgmt = (struct WLAN_MAC_MGMT_HEADER *)(prMsduInfo->prPacket);
 	frame_ctrl = mgmt->u2FrameCtrl & MASK_FRAME_TYPE;
 
+	if (prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_HIDE_INFO)
+		return;
+
 	if (IS_MLD_BSSINFO_VALID(mld_bssinfo) ||
 	    mldSingleLink(prAdapter, NULL, ucBssIdx)) {
 		cur = common = mldGenerateBasicCommonInfo(
@@ -488,9 +491,6 @@ void mldGenerateProbeRspIE(
 	}
 
 	if (!common || !mld_bssinfo)
-		return;
-
-	if (prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_HIDE_INFO)
 		return;
 
 	links = &mld_bssinfo->rBssList;
