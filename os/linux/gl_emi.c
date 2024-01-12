@@ -44,7 +44,7 @@ static int32_t emi_init_type_lk(void *dev,
 
 	if (phy_addr == 0 && phy_size <= 0) {
 		DBGLOG(INIT, ERROR,
-			"init failed, phy_addr: 0x%x phy_size: 0x%x.\n",
+			"init failed, phy_addr: 0x%llx phy_size: %u\n",
 			phy_addr, phy_size);
 		return -1;
 	}
