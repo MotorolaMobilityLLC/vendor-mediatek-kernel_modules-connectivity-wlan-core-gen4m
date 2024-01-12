@@ -6536,7 +6536,14 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (fgEfuseCtrlAxOn == 1) {
 		prWifiVar->ucStaHe = (uint8_t)
-			wlanCfgGetUint32(prAdapter, "StaHE", FEATURE_ENABLED);
+		wlanCfgGetUint32(prAdapter, "StaHE", FEATURE_ENABLED);
+
+		prWifiVar->ucApSelAxWeight = (uint8_t)
+		wlanCfgGetUint32(prAdapter, "ApSelAxWeight", AX_SEL_DEF_WEIGHT);
+
+		prWifiVar->ucApSelAxScoreDiv = (uint8_t)
+		wlanCfgGetUint32(prAdapter, "ApSelAxScoreDiv",
+			AX_SEL_DEF_DIVIDER);
 	}
 #endif
 
@@ -7624,7 +7631,6 @@ uint32_t wlanCfgSet(IN struct ADAPTER *prAdapter,
 	uint8_t ucExist;
 	u_int8_t fgGetCfgRec = FALSE;
 
-
 	fgGetCfgRec = u4Flags & WLAN_CFG_REC_FLAG_BIT;
 
 	ASSERT(pucKey);
@@ -7677,7 +7683,6 @@ uint32_t wlanCfgSet(IN struct ADAPTER *prAdapter,
 				   WLAN_CFG_KEY_LEN_MAX - 1);
 			prWlanCfgEntry->aucKey[WLAN_CFG_KEY_LEN_MAX - 1] = '\0';
 		}
-
 		if (pucValue && pucValue[0] != '\0') {
 			kalStrnCpy(prWlanCfgEntry->aucValue, pucValue,
 				   WLAN_CFG_VALUE_LEN_MAX - 1);
@@ -11163,4 +11168,5 @@ void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
 	}
 }
 #endif
+
 
