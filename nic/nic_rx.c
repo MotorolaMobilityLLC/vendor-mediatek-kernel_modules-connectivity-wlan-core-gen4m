@@ -1714,7 +1714,7 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 		GLUE_SET_PKT_BSS_IDX(prSwRfb->pvPacket, ucBssIndex);
 		STATS_RX_PKT_INFO_DISPLAY(prSwRfb);
 
-#if (CFG_SUPPORT_802_11AX == 1)
+#if ((CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_WIFI_SYSDVT == 1))
 		if (fgEfuseCtrlAxOn == 1) {
 		if (prAdapter->fgEnShowHETrigger) {
 			uint16_t u2TxFrameCtrl;
@@ -3228,7 +3228,7 @@ void nicRxProcessMgmtPacket(IN struct ADAPTER *prAdapter,
 		u2TxFrameCtrl = (*(uint8_t *) (prSwRfb->pvHeader) &
 				 MASK_FRAME_TYPE);
 
-#if (CFG_SUPPORT_802_11AX == 1)
+#if ((CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_WIFI_SYSDVT == 1))
 	if (fgEfuseCtrlAxOn == 1) {
 		if (RXM_IS_TRIGGER_FRAME(u2TxFrameCtrl)) {
 			if (prAdapter->fgEnShowHETrigger) {
