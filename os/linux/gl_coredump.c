@@ -332,6 +332,8 @@ static int __coredump_init_ctrl_blk(struct coredump_ctx *ctx,
 		mem->print_buff_len = COREDUMP_MAX_BLOCK_SZ_PRINT_BUFF;
 	else
 		mem->print_buff_len = ctrl_blk.print_buff_len;
+	if (mem->print_buff_len)
+		mem->print_buff_len += 1;
 
 	mem->dump_buff_offset = mem->print_buff_offset +
 		COREDUMP_MAX_BLOCK_SZ_PRINT_BUFF;
@@ -339,14 +341,16 @@ static int __coredump_init_ctrl_blk(struct coredump_ctx *ctx,
 		mem->dump_buff_len = COREDUMP_MAX_BLOCK_SZ_PRINT_BUFF;
 	else
 		mem->dump_buff_len = ctrl_blk.dump_buff_len;
+	if (mem->dump_buff_len)
+		mem->dump_buff_len += 1;
 
 	mem->cr_region_offset = mem->dump_buff_offset +
 		COREDUMP_MAX_BLOCK_SZ_DUMP_BUFF;
 	if (ctrl_blk.cr_region_len > COREDUMP_MAX_BLOCK_SZ_CR_REGION)
-		mem->cr_region_num = COREDUMP_MAX_BLOCK_SZ_CR_REGION >> 3;
+		mem->cr_region_num = COREDUMP_MAX_BLOCK_SZ_CR_REGION;
 	else
-		mem->cr_region_num = ctrl_blk.cr_region_len >> 3;
-	mem->cr_region_num = mem->cr_region_num;
+		mem->cr_region_num = ctrl_blk.cr_region_len;
+	mem->cr_region_num = mem->cr_region_num >> 3;
 
 	mem->mem_region_offset = COREDUMP_OFFSET_CTRL_BLOCK +
 		sizeof(struct ctrl_blk_layout);
@@ -418,19 +422,21 @@ static int __coredump_init_mem_region(struct coredump_ctx *ctx,
 {
 	struct coredump_mem *mem = &ctx->mem;
 	struct mem_region *region;
-	uint32_t idx = 0;
+	uint32_t idx = 0, total_sz = 0;
 	int ret = 0;
 
 	if (mem->mem_region_num == 0)
 		goto exit;
 
+	total_sz = mem->mem_region_num * sizeof(struct mem_region);
 	mem->mem_regions = kalMemAlloc(
-		mem->mem_region_num * sizeof(struct mem_region),
+		total_sz,
 		VIR_MEM_TYPE);
 	if (!mem->mem_regions) {
 		ret = -ENOMEM;
 		goto exit;
 	}
+	kalMemZero(mem->mem_regions, total_sz);
 
 	for (idx = 0, region = mem->mem_regions;
 	     idx < mem->mem_region_num;
@@ -482,19 +488,23 @@ static void __coredump_deinit_mem_region(struct coredump_ctx *ctx)
 	struct mem_region *region;
 	uint32_t idx = 0;
 
-	if (mem->mem_regions && mem->mem_region_num) {
-		for (idx = 0, region = mem->mem_regions;
-		     idx < mem->mem_region_num;
-		     idx++, region++) {
-			if (region->buf)
-				kalMemFree(region->buf,
-					VIR_MEM_TYPE,
-					region->size);
+	if (!mem->mem_regions || mem->mem_region_num == 0)
+		return;
+
+	for (idx = 0, region = mem->mem_regions;
+	     idx < mem->mem_region_num;
+	     idx++, region++) {
+		if (region->buf) {
+			kalMemFree(region->buf,
+				VIR_MEM_TYPE,
+				region->size);
+			region->buf = NULL;
 		}
-		kalMemFree(mem->mem_regions,
-			VIR_MEM_TYPE,
-			mem->mem_region_num * sizeof(struct mem_region));
 	}
+	kalMemFree(mem->mem_regions,
+		VIR_MEM_TYPE,
+		mem->mem_region_num * sizeof(struct mem_region));
+	mem->mem_regions = NULL;
 }
 
 static int __coredump_init_cr_region(struct coredump_ctx *ctx,
@@ -502,19 +512,21 @@ static int __coredump_init_cr_region(struct coredump_ctx *ctx,
 {
 	struct coredump_mem *mem = &ctx->mem;
 	struct cr_region *region;
-	uint32_t idx = 0;
+	uint32_t idx = 0, total_sz = 0;
 	int ret = 0;
 
 	if (mem->cr_region_num == 0)
 		goto exit;
 
+	total_sz = mem->cr_region_num * sizeof(struct cr_region);
 	mem->cr_regions = kalMemAlloc(
-		mem->cr_region_num * sizeof(struct cr_region),
+		total_sz,
 		VIR_MEM_TYPE);
 	if (!mem->cr_regions) {
 		ret = -ENOMEM;
 		goto exit;
 	}
+	kalMemZero(mem->cr_regions, total_sz);
 
 	for (idx = 0, region = mem->cr_regions;
 	     idx < mem->cr_region_num;
@@ -538,15 +550,17 @@ static int __coredump_init_cr_region(struct coredump_ctx *ctx,
 		region->base = layout.base;
 		region->size = layout.size;
 
-		if (region->base == 0xFFFFFFFF || region->size == 0)
+		if (region->base == 0xFFFFFFFF || region->size == 0) {
+			region->buf = NULL;
 			break;
+		}
 
-		region->buf = kalMemAlloc(layout.size, VIR_MEM_TYPE);
+		region->buf = kalMemAlloc(region->size, VIR_MEM_TYPE);
 		if (!region->buf) {
 			DBGLOG(INIT, ERROR,
 				"[%d] Alloc buffer failed, size: 0x%x\n",
 				idx,
-				layout.size);
+				region->size);
 			ret = -ENOMEM;
 			goto exit;
 		}
@@ -562,19 +576,23 @@ static void __coredump_deinit_cr_region(struct coredump_ctx *ctx)
 	struct cr_region *region;
 	uint32_t idx = 0;
 
-	if (mem->cr_regions && mem->cr_region_num) {
-		for (idx = 0, region = mem->cr_regions;
-		     idx < mem->cr_region_num;
-		     idx++, region++) {
-			if (region->buf)
-				kalMemFree(region->buf,
-					VIR_MEM_TYPE,
-					region->size);
+	if (!mem->cr_regions || mem->cr_region_num == 0)
+		return;
+
+	for (idx = 0, region = mem->cr_regions;
+	     idx < mem->cr_region_num;
+	     idx++, region++) {
+		if (region->buf) {
+			kalMemFree(region->buf,
+				VIR_MEM_TYPE,
+				region->size);
+			region->buf = NULL;
 		}
-		kalMemFree(mem->cr_regions,
-			VIR_MEM_TYPE,
-			mem->cr_region_num * sizeof(struct cr_region));
 	}
+	kalMemFree(mem->cr_regions,
+		VIR_MEM_TYPE,
+		mem->cr_region_num * sizeof(struct cr_region));
+	mem->cr_regions = NULL;
 }
 
 static int __coredump_init(struct coredump_ctx *ctx,
@@ -618,15 +636,19 @@ exit:
 
 	__coredump_deinit_cr_region(ctx);
 
-	if (mem->dump_buff && mem->dump_buff_len)
+	if (mem->dump_buff && mem->dump_buff_len) {
 		kalMemFree(mem->dump_buff,
 			VIR_MEM_TYPE,
 			mem->dump_buff_len);
+		mem->dump_buff = NULL;
+	}
 
-	if (mem->print_buff && mem->print_buff_len)
+	if (mem->print_buff && mem->print_buff_len) {
 		kalMemFree(mem->print_buff,
 			VIR_MEM_TYPE,
 			mem->print_buff_len);
+		mem->print_buff = NULL;
+	}
 
 	return ret;
 }
@@ -635,19 +657,23 @@ static void __coredump_deinit(struct coredump_ctx *ctx)
 {
 	struct coredump_mem *mem = &ctx->mem;
 
-	if (mem->print_buff && mem->print_buff_len)
-		kalMemFree(mem->print_buff,
-			VIR_MEM_TYPE,
-			mem->print_buff_len);
-
-	if (mem->dump_buff && mem->dump_buff_len)
-		kalMemFree(mem->dump_buff,
-			VIR_MEM_TYPE,
-			mem->dump_buff_len);
+	__coredump_deinit_mem_region(ctx);
 
 	__coredump_deinit_cr_region(ctx);
 
-	__coredump_deinit_mem_region(ctx);
+	if (mem->dump_buff && mem->dump_buff_len) {
+		kalMemFree(mem->dump_buff,
+			VIR_MEM_TYPE,
+			mem->dump_buff_len);
+		mem->dump_buff = NULL;
+	}
+
+	if (mem->print_buff && mem->print_buff_len) {
+		kalMemFree(mem->print_buff,
+			VIR_MEM_TYPE,
+			mem->print_buff_len);
+		mem->print_buff = NULL;
+	}
 }
 
 static int __coredump_handle_print_buff(struct coredump_ctx *ctx,
@@ -665,6 +691,7 @@ static int __coredump_handle_print_buff(struct coredump_ctx *ctx,
 		mem->print_buff_len);
 	if (ret)
 		goto exit;
+	mem->print_buff[mem->print_buff_len] = '\0';
 
 exit:
 	return ret;
@@ -689,6 +716,7 @@ static int __coredump_handle_dump_buff(struct coredump_ctx *ctx,
 		mem->dump_buff_len);
 	if (ret)
 		goto exit;
+	mem->dump_buff[mem->dump_buff_len] = '\0';
 
 	pos = kalStrStr(mem->dump_buff, PRINT_MSG_END);
 	if (!pos) {

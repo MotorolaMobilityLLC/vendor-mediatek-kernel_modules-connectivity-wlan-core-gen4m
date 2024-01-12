@@ -113,8 +113,9 @@ static long fw_log_wifi_unlocked_ioctl(struct file *filp, unsigned int cmd,
 		schedule_work(&prInf->getFwVerQ);
 		flush_work(&prInf->getFwVerQ);
 
-		copy_to_user((char *) arg, prInf->ver_name,
-			prInf->ver_length);
+		if (copy_to_user((char *) arg, prInf->ver_name,
+				 prInf->ver_length))
+			ret = -EFAULT;
 		break;
 	}
 	default:
@@ -154,7 +155,7 @@ static void fw_log_get_version_workQ(struct work_struct *work)
 	struct mt66xx_chip_info *prChipInfo;
 
 	glGetChipInfo((void **)&prChipInfo);
-	if (prChipInfo->fw_dl_ops->getFwVerInfo)
+	if (prChipInfo && prChipInfo->fw_dl_ops->getFwVerInfo)
 		prChipInfo->fw_dl_ops->getFwVerInfo(prInf->ver_name,
 			&prInf->ver_length, MANIFEST_BUFFER_SIZE);
 }
