@@ -2157,6 +2157,10 @@ uint8_t aisNeedTargetScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		issued = TRUE;
 #endif
 
+	/* For OCE certification, we need to perform full scan in all cases*/
+	if (prAdapter->rWifiVar.u4SwTestMode == ENUM_SW_TEST_MODE_SIGMA_OCE)
+		return FALSE;
+
 	return (discovering && issued) ||
 		(postponing && trial < AIS_ROAMING_CONNECTION_TRIAL_LIMIT);
 }
@@ -2246,9 +2250,10 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_DBDC
 	/* DBDC decsion.may change OpNss */
-	cnmDbdcPreConnectionEnableDecision(
-			prAdapter,
-			&rDbdcDecisionInfo);
+	if (prAdapter->rWifiVar.fgDbDcModeEn == FALSE)
+		cnmDbdcPreConnectionEnableDecision(
+				prAdapter,
+				&rDbdcDecisionInfo);
 #endif /*CFG_SUPPORT_DBDC*/
 }
 
@@ -4482,6 +4487,12 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 							     prAssocRspSwRfb,
 							     prStaRec);
 
+				/* 3.1 Update DBDC mode */
+#if CFG_SUPPORT_DBDC
+				cnmDbdcRuntimeCheckDecision(prAdapter,
+							    ucBssIndex,
+							    FALSE);
+#endif
 
 				/* 4 <1.6> Indicate Connected Event to Host
 				 * immediately.

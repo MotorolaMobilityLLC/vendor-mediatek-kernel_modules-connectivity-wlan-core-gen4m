@@ -461,7 +461,6 @@ struct BSS_DESC {
 	struct NEIGHBOR_AP *prNeighbor;
 	uint8_t fgQueriedCandidates;
 #endif
-#if CFG_SUPPORT_MBO
 	uint8_t fgIsDisallowed;
 	uint8_t fgExistEspIE;
 	uint32_t u4EspInfo[ESP_AC_NUM];
@@ -469,7 +468,8 @@ struct BSS_DESC {
 	uint8_t ucEspOutInfo[ESP_AC_NUM];
 	uint8_t fgIsRWMValid;
 	uint16_t u2ReducedWanMetrics;
-#endif
+	u_int8_t fgExistTxPwr;
+	int8_t cTransmitPwr;
 	uint16_t u2StaCnt;
 	uint16_t u2AvaliableAC; /* Available Admission Capacity */
 	uint8_t ucJoinFailureCount;
