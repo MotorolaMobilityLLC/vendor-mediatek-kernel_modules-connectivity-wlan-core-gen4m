@@ -1103,7 +1103,6 @@ void *kalPacketAllocWithHeadroom(IN struct GLUE_INFO
  * \param[in] pvPacket       Pointer of the packet descriptor
  * \param[in] pucPacketStart The starting address of the buffer of Rx packet.
  * \param[in] u4PacketLen    The packet length.
- * \param[in] pfgIsRetain    Is the packet to be retained.
  * \param[in] aerCSUM        The result of TCP/ IP checksum offload.
  *
  * \retval WLAN_STATUS_SUCCESS.
@@ -1115,8 +1114,7 @@ uint32_t
 kalProcessRxPacket(IN struct GLUE_INFO *prGlueInfo,
 		   IN void *pvPacket, IN uint8_t *pucPacketStart,
 		   IN uint32_t u4PacketLen,
-		   /* IN PBOOLEAN           pfgIsRetain, */
-		   IN u_int8_t fgIsRetain, IN enum ENUM_CSUM_RESULT aerCSUM[])
+		   IN enum ENUM_CSUM_RESULT aerCSUM[])
 {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct sk_buff *skb = (struct sk_buff *)pvPacket;
