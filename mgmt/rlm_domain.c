@@ -9172,7 +9172,7 @@ void rlmDomainOidSetCountry(IN struct ADAPTER *prAdapter, char *country,
 		DBGLOG(RLM, INFO,
 		       "%s(): Using driver hint to query CRDA getting regd.\n",
 		       __func__);
-		regulatory_hint(wlanGetWiphy(), country);
+		kalRegulatoryHint(country);
 	}
 #endif
 }
@@ -9193,7 +9193,7 @@ void rlmDomainAssert(u_int8_t cond)
 		return;
 
 	if (!cond) {
-		WARN_ON(1);
+		KAL_WARN_ON(1);
 		DBGLOG(RLM, ERROR, "[WARNING!!] RLM unexpected case.\n");
 	}
 

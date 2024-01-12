@@ -181,15 +181,6 @@ enum {
 	DUMP_PREFIX_OFFSET
 };
 
-/* needed by
- * common/wlan_lib.c
- * include/mgmt/rsn.h
- */
-#ifndef LINUX_VERSION_CODE
-#define LINUX_VERSION_CODE 199947
-#endif
-#define CFG80211_VERSION_CODE LINUX_VERSION_CODE
-#define KERNEL_VERSION(a, b, c) (((a) << 16) + ((b) << 8) + (c))
 /*
  * needed by
  * include/mgmt/rlm_domain.h
@@ -360,104 +351,7 @@ struct work_struct {
  * @line: at which line
  */
 long KAL_NEED_IMPLEMENT(const char *file, const char *func, int line, ...);
-
-/*
- * kal_dbg_print: print debug message to screen
- *
- * needed by common/debug.c
- * source/include/linux/printk.h
- */
-int kal_dbg_print(const char *s, ...);
 #define pr_info(fmt, ...) printf(fmt)
-
-/*
- * kal_hex_dump_to_buffer: convert a blob of data to "hex ASCII" in memory
- * @buf: data blob to dump
- * @len: number of bytes in the @buf
- * @rowsize: number of bytes to print per line; must be 16 or 32
- * @groupsize: number of bytes to print at a time (1, 2, 4, 8; default = 1)
- * @linebuf: where to put the converted data
- * @linebuflen: total size of @linebuf, including space for terminating NUL
- * @ascii: include ASCII after the hex output
- *
- * needed by common/debug.c
- * source/include/linux/printk.h
- */
-int kal_hex_dump_to_buffer(const void *buf, size_t len, int rowsize,
-	int groupsize, char *linebuf, size_t linebuflen,
-	bool ascii);
-#define hex_dump_to_buffer(_buf, _len, _rowsize, _groupsize, _linebuf, \
-	_linebuflen, _ascii) \
-	kal_hex_dump_to_buffer(_buf, _len, _rowsize, _groupsize, _linebuf, \
-	_linebuflen, _ascii)
-
-/*
- * purpose:
- * polite version of BUG_ON() - WARN_ON() which doesn't
- * kill the machine, replace panic() to dump_stack()
- * needed by mgmt/rlm_domain.c
- */
-bool kal_warn_on(uint8_t condition);
-#define WARN_ON(_condition) kal_warn_on(_condition)
-/*
- * kstrto* - convert a string to an *
- * @s: The start of the string. The string must be null-terminated, and may also
- * include a single newline before its terminating null. The first character
- * may also be a plus sign or a minus sign.
- * @base: The number base to use. The maximum supported base is 16. If base is
- * given as 0, then the base of the string is automatically detected with the
- * conventional semantics - If it begins with 0x the number will be parsed as a
- * hexadecimal (case insensitive), if it otherwise begins with 0, it will be
- * parsed as an octal number. Otherwise it will be parsed as a decimal.
- * @res: Where to write the result of the conversion on success.
- *
- * Returns 0 on success, -ERANGE on overflow and -EINVAL on parsing error.
- * Used as a replacement for the obsolete simple_strtoull. Return code must
- * be checked.
- */
-int kal_strtoint(const char *s, unsigned int base, int *res);
-/*
- * kstrtoul - convert a string to an unsigned long
- * @s: The start of the string. The string must be null-terminated, and may also
- * include a single newline before its terminating null. The first character
- * may also be a plus sign, but not a minus sign.
- * @base: The number base to use. The maximum supported base is 16. If base is
- * given as 0, then the base of the string is automatically detected with the
- * conventional semantics - If it begins with 0x the number will be parsed as a
- * hexadecimal (case insensitive), if it otherwise begins with 0, it will be
- * parsed as an octal number. Otherwise it will be parsed as a decimal.
- * @res: Where to write the result of the conversion on success.
- *
- * Returns 0 on success, -ERANGE on overflow and -EINVAL on parsing error.
- * Used as a replacement for the obsolete simple_strtoull. Return code must
- * be checked.
- */
-int kal_strtoul(const char *s, unsigned int base, unsigned long *res);
-
-/*
- * scnprintf - Format a string and place it in a buffer
- * @buf: The buffer to place the result into
- * @size: The size of the buffer, including the trailing null space
- * @fmt: The format string to use
- * @...: Arguments for the format string
- *
- * The return value is the number of characters written into @buf not including
- * the trailing '\0'. If @size is == 0 the function returns 0.
- */
-int kal_scnprintf(char *buf, size_t size, const char *fmt, ...);
-
-void *kal_kmalloc(size_t size, enum gfp_t type);
-void *kal_vmalloc(size_t size);
-
-void kal_kfree(void *addr);
-void kal_vfree(void *addr);
-/* looks like min/max not in C
- * https://stackoverflow.com/questions/3437404/min-and-max-in-c
- * needed by:
- * common/debug.c
- * mgmt/scan.c
- */
-#define min(_a, _b) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 /*	implemented: os/linux/gl_wext.c
  *	used: common/wlan_oid.c, wlanoidSetWapiAssocInfo
@@ -468,29 +362,4 @@ void kal_vfree(void *addr);
 #define wextSrchDesiredWAPIIE(_pucIEStart, _i4TotalIeLen, \
 	_ppucDesiredIE) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #endif
-
-/* needed by mgmt/rlm_domain.c
- * implementation in linux is in gl_cfg80211.c
- * while other operating system may also need to notify reg change
- */
-#define mtk_reg_notify(_pWiphy, _pRequest) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
-/* needed by mgmt/rlm_domain.c */
-#define regulatory_hint(_wiphy, _alpha2) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
-/*
- * needed by: nic/nic_cmd_event.c
- * 0: no error !0: error
- * defeined in include/linux/err.h
- */
-#define IS_ERR(_ptr) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
-#define div_u64(_val, _div) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
-#define iounmap(_vir_addr) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #endif

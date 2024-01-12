@@ -40,8 +40,8 @@ unsigned int wlan_ring_overwrite_prepare(unsigned int sz,
 #define WLAN_RING_INIT(...) wlan_ring_init(__VA_ARGS__)
 #define WLAN_RING_READ_PREPARE(...) wlan_ring_read_prepare(__VA_ARGS__)
 /* making sure max_size is power of 2 */
-#define WLAN_RING_VALIDATE_SIZE(max_size) WARN_ON(!max_size || (max_size & (max_size - 1)))
-
+#define WLAN_RING_VALIDATE_SIZE(max_size) \
+	KAL_WARN_ON(!max_size || (max_size & (max_size - 1)))
 #define WLAN_RING_EMPTY(ring) ((ring)->read == (ring)->write)
 /* equation works even when write overflow */
 #define WLAN_RING_SIZE(ring) ((ring)->write - (ring)->read)

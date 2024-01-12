@@ -574,8 +574,8 @@ uint32_t nicUniCmdScanTagSsid(struct ADAPTER *ad, uint8_t *buf,
 	struct UNI_CMD_SCAN_SSID *tag = (struct UNI_CMD_SCAN_SSID *)buf;
 	uint8_t i;
 	uint8_t *pos = tag->aucSsidBuffer;
-	uint8_t ssid_num = min((int)cmd->ucSSIDNum, 4);
-	uint8_t ssid_ext_num = min((int)cmd->ucSSIDExtNum, 6);
+	uint8_t ssid_num = KAL_MIN((int)cmd->ucSSIDNum, 4);
+	uint8_t ssid_ext_num = KAL_MIN((int)cmd->ucSSIDExtNum, 6);
 	uint16_t len = sizeof(*tag) +
 		(ssid_num + ssid_ext_num) * sizeof(struct PARAM_SSID);
 
@@ -636,8 +636,8 @@ uint32_t nicUniCmdScanTagChnlInfo(struct ADAPTER *ad, uint8_t *buf,
 		(struct UNI_CMD_SCAN_CHANNEL_INFO *)buf;
 	uint8_t i;
 	uint8_t *pos = tag->aucChnlInfoBuffer;
-	uint8_t chnl_num = min((int)cmd->ucChannelListNum, 32);
-	uint8_t chnl_ext_num = min((int)cmd->ucChannelListExtNum, 32);
+	uint8_t chnl_num = KAL_MIN((int)cmd->ucChannelListNum, 32);
+	uint8_t chnl_ext_num = KAL_MIN((int)cmd->ucChannelListExtNum, 32);
 	uint16_t len = sizeof(*tag) +
 	       ALIGN_4((chnl_num + chnl_ext_num) * sizeof(struct CHANNEL_INFO));
 
@@ -1417,7 +1417,7 @@ uint32_t nicUniCmdSchedScanTagSsid(struct ADAPTER *ad, uint8_t *buf,
 	struct UNI_CMD_SCAN_SSID *tag = (struct UNI_CMD_SCAN_SSID *)buf;
 	uint8_t i;
 	uint8_t *pos = tag->aucSsidBuffer;
-	uint8_t num = min((int)cmd->ucSsidNum, 10);
+	uint8_t num = KAL_MIN((int)cmd->ucSsidNum, 10);
 	uint16_t len = sizeof(*tag) + num * sizeof(struct PARAM_SSID);
 
 	if (num == 0)
@@ -1442,7 +1442,7 @@ uint32_t nicUniCmdSchedScanTagChnlInfo(struct ADAPTER *ad, uint8_t *buf,
 		(struct UNI_CMD_SCAN_CHANNEL_INFO *)buf;
 	uint8_t i;
 	uint8_t *pos = tag->aucChnlInfoBuffer;
-	uint8_t num = min((int)cmd->ucChnlNum, 64);
+	uint8_t num = KAL_MIN((int)cmd->ucChnlNum, 64);
 	uint16_t len = sizeof(*tag) + num * sizeof(struct CHANNEL_INFO);
 
 	if (num == 0)
@@ -1484,7 +1484,7 @@ uint32_t nicUniCmdSchedScanTagSsidMatchSets(struct ADAPTER *ad, uint8_t *buf,
 		(struct UNI_CMD_SCAN_SSID_MATCH_SETS *)buf;
 	uint8_t i;
 	uint8_t *pos = tag->aucMatchSsidBuffer;
-	uint8_t num = min((int)cmd->ucMatchSsidNum, 16);
+	uint8_t num = KAL_MIN((int)cmd->ucMatchSsidNum, 16);
 	uint16_t len = sizeof(*tag) + num * sizeof(struct SSID_MATCH_SETS);
 
 	if (num == 0)
@@ -6219,7 +6219,7 @@ void nicRxProcessUniEventPacket(IN struct ADAPTER *prAdapter,
 	if (prAdapter->fgIsChipNoAck) {
 		DBGLOG_LIMITED(RX, WARN,
 		       "Got response from chip, clear NoAck flag!\n");
-		WARN_ON(TRUE);
+		KAL_WARN_ON(TRUE);
 	}
 	prAdapter->ucOidTimeoutCount = 0;
 	prAdapter->fgIsChipNoAck = FALSE;

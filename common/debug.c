@@ -777,13 +777,11 @@ firmwareHexDump(const uint8_t *pucPreFix,
 		i4RowSize = 16;
 
 	for (i = 0; i < len; i += i4RowSize) {
-		i4LineLen = min(i4Remaining, i4RowSize);
+		i4LineLen = KAL_MIN(i4Remaining, i4RowSize);
 		i4Remaining -= i4RowSize;
 
-		/* use kernel API */
-		hex_dump_to_buffer(pucPtr + i, i4LineLen, i4RowSize,
-				   i4GroupSize,
-				   ucLineBuf, sizeof(ucLineBuf), fgAscii);
+		KAL_HEX_DUMP_TO_BUFFER(pucPtr + i, i4LineLen, i4RowSize,
+			i4GroupSize, ucLineBuf, sizeof(ucLineBuf), fgAscii);
 
 		switch (i4PreFixType) {
 		case DUMP_PREFIX_ADDRESS:

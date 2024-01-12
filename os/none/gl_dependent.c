@@ -121,10 +121,6 @@ long KAL_NEED_IMPLEMENT(const char *f, const char *func, int line, ...)
 	return 0;
 }
 
-int test(struct net_device *a)
-{
-	return 0;
-}
 /*
  * for GCC to build under user space, please remove/keep it
  * dependent to the OS
@@ -135,73 +131,4 @@ int main(int argc, char *argv[])
 			      DBG_LOG_LEVEL_DEFAULT);
 	DBGLOG(INIT, ERROR, "test run\n");
 	return 0;
-}
-#if 0
-int kal_dbg_print(const char *s, ...)
-{
-	printf((s), ...);
-	return 0;
-}
-#endif
-int kal_hex_dump_to_buffer(const void *buf, size_t len, int rowsize,
-	int groupsize, char *linebuf, size_t linebuflen, bool ascii)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	return 0;
-}
-
-bool kal_warn_on(uint8_t condition)
-{
-	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
-int kal_strtoint(const char *s, unsigned int base, int *res)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	return 0;
-}
-
-int kal_strtoul(const char *s, unsigned int base, unsigned long *res)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	return 0;
-}
-
-int kal_scnprintf(char *buf, size_t size, const char *fmt, ...)
-{
-	va_list args;
-	int i = 0;
-
-	va_start(args, fmt);
-	/* i = vscnprintf(buf, size, fmt, args); */
-	va_end(args);
-
-	return i;
-}
-
-void *kal_kmalloc(size_t size, enum gfp_t type)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	return NULL;
-}
-
-void *kal_vmalloc(size_t size)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	return NULL;
-}
-
-void kal_kfree(void *addr)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
-void kal_vfree(void *addr)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
-u_int8_t halTxIsCmdBufEnough(IN struct ADAPTER *prAdapter)
-{
-	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
