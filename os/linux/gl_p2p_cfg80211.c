@@ -1521,14 +1521,13 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 		}
 
 		if (settings->beacon.tail_len != 0) {
-			uint8_t ucLen = settings->beacon.tail_len;
-
 			prP2pBcnUpdateMsg->pucBcnBody = pucBuffer;
 			kalMemCopy(pucBuffer,
 				settings->beacon.tail,
 				settings->beacon.tail_len);
 
-			prP2pBcnUpdateMsg->u4BcnBodyLen = ucLen;
+			prP2pBcnUpdateMsg->u4BcnBodyLen =
+				settings->beacon.tail_len;
 
 			pucBuffer += settings->beacon.tail_len;
 		} else {
@@ -1970,14 +1969,13 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 			}
 
 			if (params->beacon_csa.tail_len != 0) {
-				uint8_t ucLen = params->beacon_csa.tail_len;
-
 				prP2pBcnUpdateMsg->pucBcnBody = pucBuffer;
 				kalMemCopy(pucBuffer,
 					params->beacon_csa.tail,
 					params->beacon_csa.tail_len);
 
-				prP2pBcnUpdateMsg->u4BcnBodyLen = ucLen;
+				prP2pBcnUpdateMsg->u4BcnBodyLen =
+					params->beacon_csa.tail_len;
 			} else {
 				prP2pBcnUpdateMsg->u4BcnBodyLen = 0;
 				prP2pBcnUpdateMsg->pucBcnBody = NULL;
