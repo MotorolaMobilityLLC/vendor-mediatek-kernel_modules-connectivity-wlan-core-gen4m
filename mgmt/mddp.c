@@ -888,6 +888,13 @@ static void notifyMdCrash2FW(void)
 		DBGLOG(INIT, ERROR, "Invalid drv state.\n");
 		return;
 	}
+
+	/*
+	 * Set MD FW Own before Notify FW MD crash
+	 * Reason: MD cannt set FW own itself when MD crash
+	 */
+	mddpSetMDFwOwn();
+
 	kalSetMdCrashEvent(prGlueInfo);
 }
 
