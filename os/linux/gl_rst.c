@@ -1064,7 +1064,7 @@ static void triggerHifDumpIfNeed(void)
 	debug_ops = prAdapter->chip_info->prDebugOps;
 
 	if (debug_ops && debug_ops->dumpBusHangCr)
-		debug_ops->dumpBusHangCr(NULL);
+		debug_ops->dumpBusHangCr(prAdapter);
 
 	kalSetHifDbgEvent(prAdapter->prGlueInfo);
 	/* wait for hif_thread finish dump */
@@ -1379,7 +1379,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		}
 	}
 
-	if (!fgIsBusAccessFailed)
+	if (!fgIsBusAccessFailed && drv != CONNV3_DRV_TYPE_WIFI)
 		triggerHifDumpIfNeed();
 
 	g_WholeChipRstType = drv;

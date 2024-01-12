@@ -32,6 +32,8 @@
 #define MT6639_RX_DESC_LENGTH               32
 #define MT6639_CHIP_ID                      0x6639
 #define MT6639_CONNINFRA_VERSION_ID         0x03010001
+#define MT6639_CONNINFRA_VERSION_ID_E2      0x03010002
+#define MT6639_WF_VERSION_ID                0x03010001
 #define USB_VND_PWR_ON_ADDR                 (MCU_SW_CR_BASE + 0x20)
 #define USB_VND_PWR_ON_ACK_BIT              BIT(0)
 #if defined(_HIF_USB) /* TODO */
@@ -142,7 +144,10 @@ void mt6639_dumpN45CoreReg(struct ADAPTER *ad);
 void mt6639_dumpWfTopReg(struct ADAPTER *ad);
 void mt6639_dumpWfBusReg(struct ADAPTER *ad);
 void mt6639_dumpCbtopReg(struct ADAPTER *ad);
+u_int8_t mt6639_is_ap2conn_off_readable(struct ADAPTER *ad);
+u_int8_t mt6639_is_conn2wf_readable(struct ADAPTER *ad);
 #endif
+
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 int mt6639_get_rx_rate_info(const uint32_t *prRxV,
 		struct RxRateInfo *prRxRateInfo);

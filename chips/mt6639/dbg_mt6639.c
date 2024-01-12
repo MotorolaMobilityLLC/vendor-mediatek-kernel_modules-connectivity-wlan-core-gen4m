@@ -54,121 +54,6 @@
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
-
-struct dump_cr_set cbtop_dump_list[] = {
-{
-	TRUE,
-	CB_INFRA_MISC0_AP2CONN_GALS_MST_DBG_ADDR,
-	CB_INFRA_MISC0_AP2CONN_GALS_MST_DBG_AP2CONN_GALS_MST_DBG_OUT_MASK,
-	CB_INFRA_MISC0_AP2CONN_GALS_MST_DBG_AP2CONN_GALS_MST_DBG_OUT_SHFT
-},
-{
-	TRUE,
-	CONN_BUS_CR_ON_ADDR_AP2CONN_AHB_GALS_DBG_ADDR,
-	0xFFFFFFFF,
-	0
-},
-{
-	FALSE,
-	CB_INFRA_SLP_CTRL_CB_INFRA_SLP_DBG_SEL_ADDR,
-	0xFF,
-	0,
-	0x10
-},
-{
-	FALSE,
-	CB_INFRA_SLP_CTRL_CB_INFRA_SLP_DBG_SEL_ADDR,
-	0xFF00,
-	8,
-	0x11
-},
-{
-	TRUE,
-	0x70025304,
-	0xFFFFFFFF,
-	0
-},
-{
-	FALSE,
-	CB_INFRA_SLP_CTRL_CB_INFRA_SLP_DBG_SEL_ADDR,
-	0xFF,
-	0,
-	0xF
-},
-{
-	FALSE,
-	CB_INFRA_SLP_CTRL_CB_INFRA_SLP_DBG_SEL_ADDR,
-	0xFF00,
-	0x8,
-	0xE
-},
-{
-	TRUE,
-	0x70025304,
-	0xFFFFFFFF,
-	0
-},
-{
-	FALSE,
-	CB_INFRA_SLP_CTRL_CB_INFRA_SLP_DBG_SEL_ADDR,
-	0xFF,
-	0,
-	0xD
-},
-{
-	FALSE,
-	CB_INFRA_SLP_CTRL_CB_INFRA_SLP_DBG_SEL_ADDR,
-	0xFF00,
-	0x8,
-	0xC
-},
-{
-	TRUE,
-	0x70025304,
-	0xFFFFFFFF,
-	0
-},
-{
-	FALSE,
-	CB_INFRA_RGU_HIF_MEM_CTL_PD_ADDR,
-	BIT(28),
-	28,
-	0x1
-},
-{
-	FALSE,
-	CB_INFRA_SLP_CTRL_CB_INFRA_SLP_DBG_SEL_ADDR,
-	0xFF,
-	0,
-	0x1
-},
-{
-	FALSE,
-	TOP_MISC_DEBUG_TOP_SEL_ADDR,
-	TOP_MISC_DEBUG_TOP_SEL_DEBUG_TOP_SEL_MASK,
-	TOP_MISC_DEBUG_TOP_SEL_DEBUG_TOP_SEL_SHFT,
-	0x2
-},
-{
-	TRUE,
-	CONN_CFG_CONN_INFRA_CONN2AP_SLP_STATUS_ADDR,
-	0xFFFFFFFF,
-	0
-},
-{
-	TRUE,
-	CB_INFRA_MISC0_CONN2AP_GALS_SLV_DBG_ADDR,
-	CB_INFRA_MISC0_CONN2AP_GALS_SLV_DBG_CONN2AP_GALS_SLV_DBG_OUT_MASK,
-	CB_INFRA_MISC0_CONN2AP_GALS_SLV_DBG_CONN2AP_GALS_SLV_DBG_OUT_SHFT
-},
-{
-	TRUE,
-	TOP_MISC_DEBUG_TOP_RG_ADDR,
-	TOP_MISC_DEBUG_TOP_RG_DEBUG_TOP_RG_MASK,
-	TOP_MISC_DEBUG_TOP_RG_DEBUG_TOP_RG_SHFT
-},
-};
-
 struct dump_cr_set n45_general_dump_list[] = {
 {
 	FALSE,
@@ -1413,36 +1298,6 @@ void mt6639_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 #if defined(_HIF_PCIE)
 void mt6639_dumpCbtopReg(struct ADAPTER *ad)
 {
-	struct dump_cr_set *dump = NULL;
-	uint32_t size = 0;
-	uint32_t i = 0;
-	uint32_t val = 0;
-
-	dump = cbtop_dump_list;
-	size = ARRAY_SIZE(cbtop_dump_list);
-	for (i = 0; i < size; i++) {
-		if (dump[i].read) {
-			HAL_MCR_RD(ad,
-				   dump[i].addr,
-				   &val);
-			DBGLOG(HAL, INFO, "RD 0x%08x=0x%08x\n",
-				dump[i].addr,
-				val);
-		} else {
-			HAL_MCR_RD(ad,
-				   dump[i].addr,
-				   &val);
-			val &= ~dump[i].mask;
-			val |= ((dump[i].value << dump[i].shift) &
-				dump[i].mask);
-			HAL_MCR_WR(ad,
-				   dump[i].addr,
-				   val);
-			DBGLOG(HAL, INFO, "WR 0x%08x=0x%08x\n",
-				dump[i].addr,
-				val);
-		}
-	}
 }
 
 void mt6639_dumpWfsyscpupcr(struct ADAPTER *ad)
@@ -1567,6 +1422,10 @@ void mt6639_dumpN45CoreReg(struct ADAPTER *ad)
 	uint32_t val = 0;
 	uint32_t general_dump[GENERAL_LOG_NUM];
 	uint32_t ctl_status_dump[CTRL_LOG_NUM];
+
+	if (!mt6639_is_ap2conn_off_readable(ad) ||
+	    !mt6639_is_conn2wf_readable(ad))
+		return;
 
 	kalMemZero(ctl_status_dump, sizeof(ctl_status_dump));
 	for (i = 0, idx = 0; i < ARRAY_SIZE(n45_general_dump_list); i++) {
