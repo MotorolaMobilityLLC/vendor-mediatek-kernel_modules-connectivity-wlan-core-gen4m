@@ -9379,6 +9379,7 @@ uint32_t rftestSetATInfo(IN struct ADAPTER *prAdapter,
 	if ((u4FuncIndex == RF_AT_FUNCID_COMMAND)
 	    && (u4FuncData == RF_AT_COMMAND_RESET_DUMP_NAME))
 		prAdapter->rIcapInfo.u2DumpIndex = 0;
+
 	/* insert into prCmdQueue */
 	kalEnqueueCommand(prGlueInfo,
 			  (struct QUE_ENTRY *) prCmdInfo);

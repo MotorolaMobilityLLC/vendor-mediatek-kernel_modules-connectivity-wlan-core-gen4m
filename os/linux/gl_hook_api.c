@@ -75,7 +75,6 @@
  *						C O N S T A N T S
  *******************************************************************************
  */
-
 enum {
 	ATE_LOG_RXV = 1,
 	ATE_LOG_RDD,
@@ -4156,11 +4155,11 @@ uint32_t ServiceWlanOid(void *winfos,
 	 enum op_wlan_oid oidType,
 	 void *param,
 	 uint32_t paramLen,
-	 void *rsp)
+	 uint32_t *u4BufLen)
 {
 	int32_t i4Status = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
-	uint32_t u4BufLen = 0;
+	boolean fgRead, fgWaitResp, fgCmd;
 	PFN_OID_HANDLER_FUNC pfnOidHandler = NULL;
 	struct test_wlan_info *prTestWinfo;
 
@@ -4174,22 +4173,58 @@ uint32_t ServiceWlanOid(void *winfos,
 		return WLAN_STATUS_FAILURE;
 	}
 
+	/* Normal set */
+	fgRead = FALSE;
+	fgWaitResp = FALSE;
+	fgCmd = TRUE;
+
 	switch (oidType) {
 	case OP_WLAN_OID_SET_TEST_MODE_START:
 		pfnOidHandler = wlanoidRftestSetTestMode;
 		break;
-
 	case OP_WLAN_OID_SET_TEST_MODE_ABORT:
 		pfnOidHandler = wlanoidRftestSetAbortTestMode;
-
+		break;
+	case OP_WLAN_OID_RFTEST_SET_AUTO_TEST:
+		pfnOidHandler = wlanoidRftestSetAutoTest;
+		break;
+	case OP_WLAN_OID_QUERY_RX_STATISTICS:
+		pfnOidHandler = wlanoidQueryRxStatistics;
+		fgRead = TRUE;
+		fgWaitResp = TRUE;
+		fgCmd = TRUE;
+		break;
+	case OP_WLAN_OID_SET_TEST_ICAP_MODE:
+		pfnOidHandler = wlanoidRftestSetTestIcapMode;
+		break;
+	case OP_WLAN_OID_RFTEST_QUERY_AUTO_TEST:
+		pfnOidHandler = wlanoidRftestQueryAutoTest;
+		fgRead = TRUE;
+		fgWaitResp = TRUE;
+		fgCmd = TRUE;
+		break;
+	case OP_WLAN_OID_SET_MCR_WRITE:
+		pfnOidHandler = wlanoidSetMcrWrite;
+		fgRead = TRUE;
+		fgWaitResp = TRUE;
+		fgCmd = TRUE;
+		break;
+	case OP_WLAN_OID_QUERY_MCR_READ:
+		pfnOidHandler = wlanoidQueryMcrRead;
+		break;
 	case OP_WLAN_OID_NUM:
 	default:
 		return WLAN_STATUS_FAILURE;
 	}
 
-	i4Status = kalIoctl(prGlueInfo,
-			    pfnOidHandler,
-			    param, paramLen, FALSE, FALSE, TRUE, &u4BufLen);
+	i4Status = kalIoctl(prGlueInfo, /* prGlueInfo */
+		pfnOidHandler,  /* pfnOidHandler */
+		param, /* pvInfoBuf */
+		paramLen, /* u4InfoBufLen */
+		fgRead, /* fgRead */
+		fgWaitResp, /* fgWaitResp */
+		fgCmd, /* fgCmd */
+		u4BufLen); /* pu4QryInfoLen */
 
 	return i4Status;
 }
