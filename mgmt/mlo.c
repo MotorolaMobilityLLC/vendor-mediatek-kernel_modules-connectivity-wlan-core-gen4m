@@ -1134,7 +1134,7 @@ int beDupMbssNonTxProfileImpl(struct ADAPTER *prAdapter,
 	struct IE_MBSSID_INDEX *idx = NULL;
 	struct IE_MBSSID *mbss = NULL;
 	struct IE_NON_TX_CAP *cap = NULL;
-	uint8_t i, ie_count, *ie, *ies[MAX_DUP_IE_COUNT];
+	uint8_t i, ie_count, *ie, *ies[MAX_DUP_IE_COUNT], *pos;
 	size_t len;
 
 	padding = sortGetPayloadOffset(prAdapter, prSrc->pvHeader);
@@ -1148,7 +1148,7 @@ int beDupMbssNonTxProfileImpl(struct ADAPTER *prAdapter,
 
 	mbss = (struct IE_MBSSID *) kalFindIeExtIE(ELEM_ID_MBSSID, 0,
 		ie, len);
-	idx = (struct IE_MBSSID_INDEX *) kalFindIeExtIE(ELEM_ID_MBSSID, 0,
+	idx = (struct IE_MBSSID_INDEX *) kalFindIeExtIE(ELEM_ID_MBSSID_INDEX, 0,
 		pucProf, u2ProfLen);
 	cap = (struct IE_NON_TX_CAP *) kalFindIeExtIE(ELEM_ID_NON_TX_CAP, 0,
 		pucProf, u2ProfLen);
@@ -1160,10 +1160,11 @@ int beDupMbssNonTxProfileImpl(struct ADAPTER *prAdapter,
 	new_bssid[5] |= (lsb + idx->ucBSSIDIndex) &
 	              ((1 << mbss->ucMaxBSSIDIndicator) - 1);
 
-    	DBGLOG(ML, INFO, "MBSS new mac: "MACSTR "\n", MAC2STR(new_bssid));
+	DBGLOG(ML, INFO, "MBSS new mac: "MACSTR "\n", MAC2STR(new_bssid));
 
 	/* compose RXD, mac header, payload(fixed field)*/
 	nicRxCopyRFB(prAdapter, prDst, prSrc);
+	pos = (uint8_t *)prDst->pvHeader;
 	mgmt = (struct WLAN_BEACON_FRAME *)prDst->pvHeader;
 	COPY_MAC_ADDR(mgmt->aucSrcAddr, new_bssid);
 	COPY_MAC_ADDR(mgmt->aucBSSID, new_bssid);
@@ -1172,11 +1173,11 @@ int beDupMbssNonTxProfileImpl(struct ADAPTER *prAdapter,
 	/* compose IE */
 	for (i = 0; i < ie_count; i++) {
 		len = IE_SIZE(ies[i]);
-		kalMemCopy(mgmt + padding, ies[i], len);
+		kalMemCopy(pos + padding, ies[i], len);
 
 		/* replace dtim count and dtim period of the MBSS to the TIM */
 		if (IE_ID(ies[i]) == ELEM_ID_TIM && IE_LEN(idx) == 3) {
-			struct IE_TIM *tmp = (struct IE_TIM *)(mgmt + padding);
+			struct IE_TIM *tmp = (struct IE_TIM *)(pos + padding);
 
 			tmp->ucDTIMCount = idx->ucDtimCount;
 			tmp->ucDTIMPeriod = idx->ucDtimPeriod;
@@ -1195,7 +1196,8 @@ struct SW_RFB * beDupMbssNonTxProfile(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSrc)
 {
 	struct QUE tmp, *que = &tmp;
-	uint8_t *ie, len;
+	uint8_t *pucSubIE, *pucIE;
+	uint16_t u2IELen, u2SubIElen, u2SubOffset;
 	struct IE_MBSSID *mbss;
 	struct SW_RFB *rfb;
 	uint8_t ret;
@@ -1205,28 +1207,29 @@ struct SW_RFB * beDupMbssNonTxProfile(struct ADAPTER *prAdapter,
 		return NULL;
 
 	QUEUE_INITIALIZE(que);
-
-	mbss = (struct IE_MBSSID *) kalFindIeExtIE(ELEM_ID_MBSSID, 0,
-			prSrc->pvHeader + offset, prSrc->u2PacketLen - offset);
-	if (!mbss)
-		return NULL;
-
-	ie = mbss->ucSubelements;
-	len = IE_SIZE(mbss) - sizeof(struct IE_MBSSID);
-	IE_FOR_EACH(ie, len, offset) {
-		if (IE_ID(ie) != NON_TX_BSSID_PROFILE)
+	pucIE = prSrc->pvHeader + offset;
+	u2IELen = prSrc->u2PacketLen - offset;
+	IE_FOR_EACH(pucIE, u2IELen, offset) {
+		if (IE_ID(pucIE) != ELEM_ID_MBSSID)
 			continue;
 
-		rfb = nicRxAcquireRFB(prAdapter, 1);
-		if (!rfb)
-			break;
+		mbss = (struct IE_MBSSID *)pucIE;
+		pucSubIE = mbss->ucSubelements;
+		u2SubIElen = IE_SIZE(mbss) - sizeof(struct IE_MBSSID);
+		IE_FOR_EACH(pucSubIE, u2SubIElen, u2SubOffset) {
+			if (IE_ID(pucSubIE) != NON_TX_BSSID_PROFILE)
+				continue;
 
-		ret = beDupMbssNonTxProfileImpl(prAdapter,
-			prSrc, ie + 2, IE_LEN(ie), rfb);
-		if (ret == WLAN_STATUS_SUCCESS) {
-			QUEUE_INSERT_TAIL(que, &rfb->rQueEntry);
-		} else {
-			nicRxReturnRFB(prAdapter, rfb);
+			rfb = nicRxAcquireRFB(prAdapter, 1);
+			if (!rfb)
+				break;
+
+			ret = beDupMbssNonTxProfileImpl(prAdapter,
+				prSrc, pucSubIE + 2, IE_LEN(pucSubIE), rfb);
+			if (ret == WLAN_STATUS_SUCCESS) {
+				QUEUE_INSERT_TAIL(que, &rfb->rQueEntry);
+			} else
+				nicRxReturnRFB(prAdapter, rfb);
 		}
 	}
 

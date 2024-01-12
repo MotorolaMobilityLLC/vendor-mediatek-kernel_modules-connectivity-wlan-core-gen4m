@@ -615,10 +615,10 @@
 #define CFG_MAX_COMMON_IE_BUF_LEN         ((1500 * CFG_MAX_NUM_BSS_LIST) / 3)
 
 /*! Maximum size of Header buffer of each SCAN record */
-#define CFG_RAW_BUFFER_SIZE                      1024
+#define CFG_RAW_BUFFER_SIZE                     1024
 
 /*! Maximum size of IE buffer of each SCAN record */
-#define CFG_IE_BUFFER_SIZE                      512
+#define CFG_IE_BUFFER_SIZE                      640
 
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Power management
@@ -1080,7 +1080,7 @@
 #define WNM_UNIT_TEST CFG_SUPPORT_802_11V
 
 #define CFG_SUPPORT_802_11V_MBSSID		0
-#define CFG_SUPPORT_802_11V_MBSSID_OFFLOAD	1
+#define CFG_SUPPORT_802_11V_MBSSID_OFFLOAD	0
 
 #if (CFG_SUPPORT_802_11AX == 1)
 /*11v MBSSID is mandatory for 11ax*/
