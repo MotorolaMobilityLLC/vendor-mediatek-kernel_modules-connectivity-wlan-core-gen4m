@@ -676,8 +676,9 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 			DBGLOG(INIT, INFO, "Reach subsys reset threshold!!!\n");
 		else if (g_IsWfsysBusHang)
 			DBGLOG(INIT, INFO, "WFSYS bus hang!!!\n");
-		g_IsWholeChipRst = TRUE;
-		kalSetRstEvent();
+			g_IsWholeChipRst = TRUE;
+			g_IsWfsysBusHang = FALSE;
+			kalSetRstEvent();
 	}
 	wait_for_completion(&g_RstOffComp);
 	DBGLOG(INIT, INFO, "Wi-Fi is off successfully.\n");
@@ -763,6 +764,15 @@ void glResetSubsysRstProcedure(
 	struct mt66xx_chip_info *prChipInfo;
 
 	fgIsTimeout = IsOverRstTimeThreshold(rNowTs, rLastTs);
+	if (g_IsWfsysBusHang == TRUE) {
+		glSetRstReasonString(
+			"fw detect bus hang");
+		prChipInfo = prAdapter->chip_info;
+		if (prChipInfo->trigger_wholechiprst)
+			prChipInfo->trigger_wholechiprst(g_reason);
+		g_IsTriggerTimeout = FALSE;
+		return;
+	}
 	if (g_SubsysRstCnt > 3) {
 		if (fgIsTimeout == TRUE) {
 		/*
