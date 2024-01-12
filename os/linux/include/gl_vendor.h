@@ -117,6 +117,8 @@
 	(uint32_t)((((bssIdx) << 24) + ((channelBw) << 16) + \
 		((TxNss) << 8) + (RxNss)) & 0xffff)
 
+#define LLS_RADIO_STAT_MAX_TX_LEVELS 256
+
 enum NL80211_VENDOR_FEATURES {
 	VENDOR_FEATURE_KEY_MGMT_OFFLOAD        = 0,
 	VENDOR_FEATURE_SUPPORT_HW_MODE_ANY     = 1,
@@ -1045,10 +1047,15 @@ struct WIFI_RADIO_CHANNEL_STAT {
 	struct STATS_LLS_CHANNEL_STAT channel[STATS_LLS_CH_NUM];
 };
 
-struct HAL_LLS_FULL_REPORT {
+struct HAL_LLS_FW_REPORT {
 	struct STATS_LLS_WIFI_IFACE_STAT iface;
 	struct PEER_INFO_RATE_STAT peer_info[CFG_STA_REC_NUM];
 	struct WIFI_RADIO_CHANNEL_STAT radio[ENUM_BAND_NUM];
+};
+
+struct HAL_LLS_FULL_REPORT {
+	struct HAL_LLS_FW_REPORT fw_report;
+	uint32_t tx_levels[ENUM_BAND_NUM][LLS_RADIO_STAT_MAX_TX_LEVELS];
 };
 
 struct STATS_LLS_PEER_AP_REC {

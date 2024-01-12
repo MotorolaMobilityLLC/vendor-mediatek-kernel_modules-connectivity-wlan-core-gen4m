@@ -1349,11 +1349,11 @@ struct CAP_6G_CAP {
  * EMI shared memory and the offset of key structure fields.
  *
  * @u4DataEmiOffset: pointer to shared EMI memory, in the structure of
- *                   HAL_LLS_FULL_REPORT
+ *                   HAL_LLS_FW_REPORT
  * @u4OffsetInfo: info in STATS_LLS_WIFI_IFACE_STAT
  * @u4OffsetAc: ac in STATS_LLS_WIFI_IFACE_STAT
- * @u4OffsetPeerInfo: peer_info in HAL_LLS_FULL_REPORT
- * @u4OffsetRadioStat: radio in HAL_LLS_FULL_REPORT
+ * @u4OffsetPeerInfo: peer_info in HAL_LLS_FW_REPORT
+ * @u4OffsetRadioStat: radio in HAL_LLS_FW_REPORT
  * @u4OffsetTxTimerPerLevels: tx_time_per_levels in STATS_LLS_WIFI_RADIO_STAT
  * @u4OffsetRxTime: rx_time in STATS_LLS_WIFI_RADIO_STAT
  * @u4OffsetChannel: channel in WIFI_RADIO_CHANNEL_STAT
