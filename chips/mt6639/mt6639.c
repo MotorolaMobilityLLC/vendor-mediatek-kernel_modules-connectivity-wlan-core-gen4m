@@ -14,8 +14,10 @@
 
 #include "precomp.h"
 #include "mt6639.h"
+#include "coda/mt6639/cb_ckgen_top.h"
 #include "coda/mt6639/cb_infra_misc0.h"
 #include "coda/mt6639/cb_infra_rgu.h"
+#include "coda/mt6639/cb_infra_slp_ctrl.h"
 #include "coda/mt6639/cbtop_gpio_sw_def.h"
 #include "coda/mt6639/conn_cfg.h"
 #include "coda/mt6639/conn_host_csr_top.h"
@@ -29,6 +31,7 @@
 #include "coda/mt6639/conn_mcu_bus_cr.h"
 #include "coda/mt6639/conn_bus_cr_von.h"
 #include "coda/mt6639/conn_host_csr_top.h"
+#include "coda/mt6639/vlp_uds_ctrl.h"
 #include "coda/mt6639/mawd_reg.h"
 #include "coda/mt6639/wf_rro_top.h"
 #include "coda/mt6639/wf_top_cfg_on.h"
@@ -2005,7 +2008,40 @@ exit:
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, ERROR, "u4Value: 0x%x\n",
 			u4Value);
-		mt6639_DumpBusHangCr(ad);
+		mt6639_dumpWfsyscpupcr(ad);
+		mt6639_dumpPcGprLog(ad);
+		mt6639_dumpN45CoreReg(ad);
+		mt6639_dumpWfTopReg(ad);
+		mt6639_dumpWfBusReg(ad);
+
+		/* Clock detection for ULPOSC */
+		HAL_MCR_WR(ad,
+			   VLP_UDS_CTRL_CBTOP_ULPOSC_CTRL1_ADDR,
+			   0x06030138);
+		HAL_MCR_WR(ad,
+			   CB_CKGEN_TOP_CBTOP_ULPOSC_1_ADDR,
+			   0x000f0000);
+		HAL_MCR_WR(ad,
+			   CB_CKGEN_TOP_CBTOP_ULPOSC_1_ADDR,
+			   0x001f0000);
+		HAL_MCR_WR(ad,
+			   CB_CKGEN_TOP_CBTOP_ULPOSC_1_ADDR,
+			   0x011f0000);
+		kalUdelay(1);
+		HAL_MCR_RD(ad,
+			   CB_CKGEN_TOP_CBTOP_ULPOSC_2_ADDR,
+			   &u4Value);
+		DBGLOG(INIT, INFO,
+			"0x%08x=0x%08x\n",
+			CB_CKGEN_TOP_CBTOP_ULPOSC_2_ADDR,
+			u4Value);
+		HAL_MCR_RD(ad,
+			   CB_INFRA_SLP_CTRL_CB_INFRA_CRYPTO_TOP_MCU_OWN_ADDR,
+			   &u4Value);
+		DBGLOG(INIT, INFO,
+			"0x%08x=0x%08x\n",
+			CB_INFRA_SLP_CTRL_CB_INFRA_CRYPTO_TOP_MCU_OWN_ADDR,
+			u4Value);
 	}
 
 	return rStatus;
