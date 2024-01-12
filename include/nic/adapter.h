@@ -871,6 +871,7 @@ struct WIFI_VAR {
 	uint16_t u2ApMldEMLCap;
 	uint32_t u4AisEHTNumber;
 	uint8_t fgForceRrmMloScan;
+	u_int8_t fgEnTuao;
 #if (CFG_SUPPORT_802_11BE_EPCS == 1)
 	u_int8_t fgEnEpcs;
 #endif

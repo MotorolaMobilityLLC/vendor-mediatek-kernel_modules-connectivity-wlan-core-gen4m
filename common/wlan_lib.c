@@ -7253,6 +7253,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"NonApMldEML", FEATURE_DISABLED);
 	INIT_UINT(prWifiVar->ucApMldEMLSupport,
 		"ApMldEML", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgEnTuao, "EnableTuao", FEATURE_ENABLED);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldBssUpdateCapAll(prAdapter);

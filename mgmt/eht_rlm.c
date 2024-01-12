@@ -237,7 +237,7 @@ void ehtRlmFillCapIE(
 	/* SET_EHT_MAC_CAP_TXOP_SHARING(prEhtCap->ucEhtMacCap); */
 
 	/* SCS: default support for STA */
-	if (IS_BSS_AIS(prBssInfo))
+	if (IS_BSS_AIS(prBssInfo) && IS_FEATURE_ENABLED(prWifiVar->fgEnTuao))
 		SET_EHT_MAC_CAP_SCS(prEhtCap->ucEhtMacCap);
 
 	/*
