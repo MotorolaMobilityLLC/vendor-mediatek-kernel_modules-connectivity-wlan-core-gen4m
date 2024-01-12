@@ -4979,12 +4979,8 @@ void wlanOnP2pRegistration(struct GLUE_INFO *prGlueInfo,
 		struct PARAM_CUSTOM_P2P_SET_STRUCT rSetP2P;
 
 		rSetP2P.u4Enable = 1;
+		rSetP2P.u4Mode = prAdapter->rWifiVar.ucRegP2pMode;
 
-#ifdef CFG_DRIVER_INITIAL_RUNNING_MODE
-		rSetP2P.u4Mode = CFG_DRIVER_INITIAL_RUNNING_MODE;
-#else
-		rSetP2P.u4Mode = RUNNING_P2P_MODE;
-#endif /* CFG_DRIVER_RUNNING_MODE */
 		if (set_p2p_mode_handler(prWdev->netdev, rSetP2P) == 0)
 			DBGLOG(INIT, INFO,
 				"%s: p2p device registered\n",
