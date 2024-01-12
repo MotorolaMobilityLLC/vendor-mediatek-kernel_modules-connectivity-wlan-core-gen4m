@@ -137,7 +137,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_GET_STA_STATISTICS] = nicUniCmdGetStaStatistics,
 	[CMD_ID_GET_STATISTICS] = nicUniCmdGetStatistics,
 	[CMD_ID_GET_LINK_QUALITY] = nicUniCmdGetLinkQuality,
-	[CMD_ID_PERF_IND] = nicUniCmdNotSupport,
+	[CMD_ID_PERF_IND] = nicUniCmdPerfInd,
 	[CMD_ID_SG_PARAM] = nicUniCmdSetSGParam,
 	[CMD_ID_SET_MONITOR] = nicUniCmdSetMonitor,
 	[CMD_ID_ADD_REMOVE_KEY] = nicUniCmdInstallKey,
@@ -3720,6 +3720,53 @@ uint32_t nicUniCmdRoaming(struct ADAPTER *ad,
 	tag->u4RoamingTriggerTime = cmd->u4RoamingTriggerTime;
 	tag->u2RcpiLowThreshold = cmd->u2RcpiLowThreshold;
 	tag->ucIsSupport11B = cmd->ucIsSupport11B;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdPerfInd(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_PERF_IND *cmd;
+	struct UNI_CMD_PERF_IND *uni_cmd;
+	struct UNI_CMD_PERF_IND_PARM *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_PERF_IND) +
+	     		       sizeof(struct UNI_CMD_PERF_IND_PARM);
+
+	if (info->ucCID != CMD_ID_PERF_IND ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_PERF_IND *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_PERF_IND,
+		max_cmd_len, NULL, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	// TODO: uni cmd
+	uni_cmd = (struct UNI_CMD_PERF_IND *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_PERF_IND_PARM *) uni_cmd->aucTlvBuffer;
+	/* tag->u2Tag = UNI_CMD_PERF_IND_TAG_PARM; */
+	/* tag->u2Length = sizeof(*tag); */
+	tag->ucCmdVer = cmd->ucCmdVer;
+	tag->u2CmdLen = cmd->u2CmdLen;
+	tag->u4VaildPeriod = cmd->u4VaildPeriod;
+
+	kalMemCopy(tag->ulCurTxBytes, cmd->ulCurTxBytes,
+				sizeof(tag->ulCurTxBytes));
+	kalMemCopy(tag->ulCurRxBytes, cmd->ulCurRxBytes,
+				sizeof(tag->ulCurRxBytes));
+	kalMemCopy(tag->u2CurRxRate, cmd->u2CurRxRate,
+				sizeof(tag->u2CurRxRate));
+	kalMemCopy(tag->ucCurRxRCPI0, cmd->ucCurRxRCPI0,
+				sizeof(tag->ucCurRxRCPI0));
+	kalMemCopy(tag->ucCurRxRCPI1, cmd->ucCurRxRCPI1,
+				sizeof(tag->ucCurRxRCPI1));
+	kalMemCopy(tag->ucCurRxNss, cmd->ucCurRxNss,
+				sizeof(tag->ucCurRxNss));
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 

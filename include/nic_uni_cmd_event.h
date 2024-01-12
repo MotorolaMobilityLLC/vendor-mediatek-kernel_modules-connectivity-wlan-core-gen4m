@@ -83,7 +83,7 @@
 #define CMD_FLAG_UNI_CMD_OFFSET                 (6)
 
 #define UNI_CMD_OPT_BIT_0_ACK        BIT(0) /* for SET command */
-#define UNI_CMD_OPT_BIT_1_UNI_CMD    BIT(1) /* 1: unified command, 0:original cmd */
+#define UNI_CMD_OPT_BIT_1_UNI_CMD    BIT(1) /* 1: unified cmd, 0:original cmd */
 #define UNI_CMD_OPT_BIT_2_SET_QUERY  BIT(2) /* 1: set, 0:query */
 #define UNI_CMD_OPT_BIT_1_UNI_EVENT  BIT(1)
 #define UNI_CMD_OPT_BIT_2_UNSOLICIT_EVENT  BIT(2)
@@ -255,9 +255,10 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_MEC			= 0x3A, /* MEC */
 	UNI_CMD_ID_FR_TABLE		= 0x40, /* Set Fixed Rate TBL */
 	UNI_CMD_ID_RSSI_MONITOR 	= 0x41, /* Set monitoring RSSI range */
-	UNI_CMD_ID_TEST_TR_PARAM	= 0x42, /* Set/Get testmode tx/rx parameter */
+	UNI_CMD_ID_TEST_TR_PARAM 	= 0x42, /* Set/Get testmode t4x param */
 	UNI_CMD_ID_MQM_UPDATE_MU_EDCA_PARMS = 0x43, /* MU */
-	UNI_CMD_ID_FRM_IND_FROM_HOST = 0x45, /* Support Host connect indicate*/
+	UNI_CMD_ID_PERF_IND		= 0x44, /* Performance indicate*/
+	UNI_CMD_ID_FRM_IND_FROM_HOST 	= 0x45, /* Host connect indicate*/
 };
 
 struct UNI_CMD_DEVINFO {
@@ -2301,8 +2302,7 @@ struct UNI_CMD_SNIFFER_MODE_CONFIG {
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_SR
-{
+struct UNI_CMD_SR {
 	/*Fixed Fields*/
 	uint8_t u1BandIdx;
 	uint8_t au1Padding[3];
@@ -2311,60 +2311,58 @@ struct UNI_CMD_SR
 };
 
 /* SR Command Tag ID */
-enum ENUM_UNI_CMD_SR_TAG
-{
-    UNI_CMD_SR_TAG_RSV = 0x0,
-    UNI_CMD_SR_TAG_CFG_SR_ENABLE = 0x1,
-    UNI_CMD_SR_TAG_CFG_SR_SD_ENABLE = 0x2,
-    UNI_CMD_SR_TAG_CFG_SR_MODE = 0x3,
-    UNI_CMD_SR_TAG_CFG_DISRT_ENABLE = 0x4,
-    UNI_CMD_SR_TAG_CFG_DISRT_MIN_RSSI = 0x5,
-    UNI_CMD_SR_TAG_CFG_SR_BF = 0x6,
-    UNI_CMD_SR_TAG_CFG_SR_ATF = 0x7,
-    UNI_CMD_SR_TAG_CFG_TXC_QUEUE = 0x8,
-    UNI_CMD_SR_TAG_CFG_TXC_QID = 0x9,
-    UNI_CMD_SR_TAG_CFG_TXC_PATH = 0xA,
-    UNI_CMD_SR_TAG_CFG_AC_METHOD = 0xB,
-    UNI_CMD_SR_TAG_CFG_SR_PERIOD_THR = 0xC,
-    UNI_CMD_SR_TAG_CFG_QUERY_TXD_METHOD = 0xD,
-    UNI_CMD_SR_TAG_CFG_SR_SD_CG_RATIO = 0xE,
-    UNI_CMD_SR_TAG_CFG_SR_SD_OBSS_RATIO = 0xF,
-    UNI_CMD_SR_TAG_CFG_PROFILE = 0x10,
-    UNI_CMD_SR_TAG_CFG_FNQ_ENABLE = 0x11,
-    UNI_CMD_SR_TAG_CFG_DPD_ENABLE = 0x12,
-    UNI_CMD_SR_TAG_CFG_SR_TX_ENABLE = 0x13,
-    UNI_CMD_SR_TAG_CFG_SR_SD_OM_ENABLE = 0x14,
-    UNI_CMD_SR_TAG_CFG_SR_DABS_MODE = 0x15,
-    UNI_CMD_SR_TAG_SW_SRG_BITMAP = 0x80,
-    UNI_CMD_SR_TAG_SW_MESH_SRG_BITMAP = 0x81,
-    UNI_CMD_SR_TAG_SW_SRG_BITMAP_REFRESH = 0x82,
-    UNI_CMD_SR_TAG_SW_CNT = 0x83,
-    UNI_CMD_SR_TAG_SW_SD = 0x84,
-    UNI_CMD_SR_TAG_SW_GLOVAR_DROPTA_INFO = 0x85,
-    UNI_CMD_SR_TAG_SW_GLOVAR_STA_INFO = 0x86,
-    UNI_CMD_SR_TAG_UPDATE_SR_PARAMS = 0x87,
-    UNI_CMD_SR_TAG_HW_CAP = 0xC0,
-    UNI_CMD_SR_TAG_HW_PARA = 0xC1,
-    UNI_CMD_SR_TAG_HW_COND = 0xC2,
-    UNI_CMD_SR_TAG_HW_RCPI_TBL = 0xC3,
-    UNI_CMD_SR_TAG_HW_RCPI_TBL_OFST = 0xC4,
-    UNI_CMD_SR_TAG_HW_Q_CTRL = 0xC5,
-    UNI_CMD_SR_TAG_HW_IBPD = 0xC6,
-    UNI_CMD_SR_TAG_HW_NRT = 0xC7,
-    UNI_CMD_SR_TAG_HW_NRT_CTRL = 0xC8,
-    UNI_CMD_SR_TAG_HW_NRT_RESET = 0xC9,
-    UNI_CMD_SR_TAG_HW_CAP_SREN = 0xCA,
-    UNI_CMD_SR_TAG_HW_IND = 0xCB,
-    UNI_CMD_SR_TAG_HW_FNQ = 0xCC,
-    UNI_CMD_SR_TAG_HW_FRMFILT = 0xCD,
-    UNI_CMD_SR_TAG_HW_INTERPS_CTRL = 0xCE,
-    UNI_CMD_SR_TAG_HW_INTERPS_DBG = 0xCF,
-    UNI_CMD_SR_TAG_HW_SIGA_FLAG = 0xD0,
-    UNI_CMD_SR_TAG_NUM,
+enum ENUM_UNI_CMD_SR_TAG {
+	UNI_CMD_SR_TAG_RSV = 0x0,
+	UNI_CMD_SR_TAG_CFG_SR_ENABLE = 0x1,
+	UNI_CMD_SR_TAG_CFG_SR_SD_ENABLE = 0x2,
+	UNI_CMD_SR_TAG_CFG_SR_MODE = 0x3,
+	UNI_CMD_SR_TAG_CFG_DISRT_ENABLE = 0x4,
+	UNI_CMD_SR_TAG_CFG_DISRT_MIN_RSSI = 0x5,
+	UNI_CMD_SR_TAG_CFG_SR_BF = 0x6,
+	UNI_CMD_SR_TAG_CFG_SR_ATF = 0x7,
+	UNI_CMD_SR_TAG_CFG_TXC_QUEUE = 0x8,
+	UNI_CMD_SR_TAG_CFG_TXC_QID = 0x9,
+	UNI_CMD_SR_TAG_CFG_TXC_PATH = 0xA,
+	UNI_CMD_SR_TAG_CFG_AC_METHOD = 0xB,
+	UNI_CMD_SR_TAG_CFG_SR_PERIOD_THR = 0xC,
+	UNI_CMD_SR_TAG_CFG_QUERY_TXD_METHOD = 0xD,
+	UNI_CMD_SR_TAG_CFG_SR_SD_CG_RATIO = 0xE,
+	UNI_CMD_SR_TAG_CFG_SR_SD_OBSS_RATIO = 0xF,
+	UNI_CMD_SR_TAG_CFG_PROFILE = 0x10,
+	UNI_CMD_SR_TAG_CFG_FNQ_ENABLE = 0x11,
+	UNI_CMD_SR_TAG_CFG_DPD_ENABLE = 0x12,
+	UNI_CMD_SR_TAG_CFG_SR_TX_ENABLE = 0x13,
+	UNI_CMD_SR_TAG_CFG_SR_SD_OM_ENABLE = 0x14,
+	UNI_CMD_SR_TAG_CFG_SR_DABS_MODE = 0x15,
+	UNI_CMD_SR_TAG_SW_SRG_BITMAP = 0x80,
+	UNI_CMD_SR_TAG_SW_MESH_SRG_BITMAP = 0x81,
+	UNI_CMD_SR_TAG_SW_SRG_BITMAP_REFRESH = 0x82,
+	UNI_CMD_SR_TAG_SW_CNT = 0x83,
+	UNI_CMD_SR_TAG_SW_SD = 0x84,
+	UNI_CMD_SR_TAG_SW_GLOVAR_DROPTA_INFO = 0x85,
+	UNI_CMD_SR_TAG_SW_GLOVAR_STA_INFO = 0x86,
+	UNI_CMD_SR_TAG_UPDATE_SR_PARAMS = 0x87,
+	UNI_CMD_SR_TAG_HW_CAP = 0xC0,
+	UNI_CMD_SR_TAG_HW_PARA = 0xC1,
+	UNI_CMD_SR_TAG_HW_COND = 0xC2,
+	UNI_CMD_SR_TAG_HW_RCPI_TBL = 0xC3,
+	UNI_CMD_SR_TAG_HW_RCPI_TBL_OFST = 0xC4,
+	UNI_CMD_SR_TAG_HW_Q_CTRL = 0xC5,
+	UNI_CMD_SR_TAG_HW_IBPD = 0xC6,
+	UNI_CMD_SR_TAG_HW_NRT = 0xC7,
+	UNI_CMD_SR_TAG_HW_NRT_CTRL = 0xC8,
+	UNI_CMD_SR_TAG_HW_NRT_RESET = 0xC9,
+	UNI_CMD_SR_TAG_HW_CAP_SREN = 0xCA,
+	UNI_CMD_SR_TAG_HW_IND = 0xCB,
+	UNI_CMD_SR_TAG_HW_FNQ = 0xCC,
+	UNI_CMD_SR_TAG_HW_FRMFILT = 0xCD,
+	UNI_CMD_SR_TAG_HW_INTERPS_CTRL = 0xCE,
+	UNI_CMD_SR_TAG_HW_INTERPS_DBG = 0xCF,
+	UNI_CMD_SR_TAG_HW_SIGA_FLAG = 0xD0,
+	UNI_CMD_SR_TAG_NUM,
 };
 
-struct UNI_CMD_SR_UPDATE_SR_PARMS
-{
+struct UNI_CMD_SR_UPDATE_SR_PARMS {
 	/* DW_0 */
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2465,8 +2463,7 @@ enum ENUM_UNI_CMD_MBMC_TAG {
 	UNI_CMD_MBMC_TAG_MAX_NUM
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_MBMC_SETTING
-{
+struct UNI_CMD_MBMC_SETTING {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t ucMbmcEn;
@@ -2569,107 +2566,68 @@ struct UNI_CMD_RA_SET_AUTO_RATE {
 } __KAL_ATTRIB_PACKED__;
 
 /* BF command (0x33) */
-struct UNI_CMD_BF
-{
+struct UNI_CMD_BF {
     /* fixed field */
     uint8_t aucReserved[4];
 
     /* tlv */
-    uint8_t aucTlvBuffer[0]; /**<the TLVs includer in this field:
-        *
-        *  TAG                                 | ID   | structure
-        *  ------------------------------------| -----| -------------
-        *  UNI_CMD_BF_SOUNDING_OFF             | 0x0  | N/A
-        *  UNI_CMD_BF_SOUNDING_ON              | 0x1  | UNI_CMD_BF_SND_T
-        *  UNI_CMD_BF_DATA_PACKET_APPLY        | 0x2  | UNI_CMD_BF_APPLY_CTRL_T
-        *  UNI_CMD_BF_PFMU_MEM_ALLOCATE        | 0x3  | UNI_CMD_BF_MEM_ALLOC_CTRL_T
-        *  UNI_CMD_BF_PFMU_MEM_RELEASE         | 0x4  | UNI_CMD_BF_MEM_ALLOC_CTRL_T
-        *  UNI_CMD_BF_PFMU_TAG_READ            | 0x5  | UNI_CMD_BF_PFMU_TAG_RW_T
-        *  UNI_CMD_BF_PFMU_TAG_WRITE           | 0x6  | UNI_CMD_BF_PFMU_TAG_RW_T
-        *  UNI_CMD_BF_PROFILE_READ             | 0x7  | UNI_CMD_BF_PFMU_DATA_R_T
-        *  UNI_CMD_BF_PROFILE_WRITE            | 0x8  | UNI_CMD_BF_PFMU_DATA_W_T
-        *  UNI_CMD_BF_PFMU_MEM_ALLOC_MAP_READ  | 0x9  | N/A
-        *  UNI_CMD_BF_AID_SET                  | 0xA  | UNI_CMD_PEER_AID_T
-        *  UNI_CMD_BF_STA_REC_READ             | 0xB  | UNI_CMD_BF_STAREC_READ_T
-        *  UNI_CMD_BF_PHASE_CALIBRATION        | 0xC  | UNI_CMD_IBF_PHASE_CAL_CTRL_T
-        *  UNI_CMD_BF_IBF_PHASE_COMP           | 0xD  | UNI_CMD_IBF_PHASE_COMP_T
-        *  UNI_CMD_BF_LNA_GAIN_CONFIG          | 0xE  | UNI_CMD_IBF_LNA_GAIN_T
-        *  UNI_CMD_BF_PROFILE_WRITE_20M_ALL    | 0xF  | UNI_CMD_BF_PFMU_DATA_ALL_W_T
-        *  UNI_CMD_BF_APCLIENT_CLUSTER         | 0x10 | UNI_CMD_APCLIENT_BF_T
-        *  UNI_CMD_BF_HW_ENABLE_STATUS_UPDATE  | 0x11 | UNI_CMD_BF_HW_ENABLE_STATUS_UPDATE_T
-        *  UNI_CMD_BF_BFEE_HW_CTRL             | 0x12 | UNI_CMD_BF_BFEE_CTRL_T
-        *  UNI_CMD_BF_PFMU_SW_TAG_WRITE        | 0x13 | UNI_CMD_ETXBF_PFMU_SW_TAG_T
-        *  UNI_CMD_BF_MOD_EN_CTRL              | 0x14 | UNI_CMD_BF_MOD_EN_CTRL_T
-        *  UNI_CMD_BF_CONFIG                   | 0x15 | UNI_CMD_BF_CONFIG_T
-        *  UNI_CMD_BF_PFMU_DATA_WRITE          | 0x16 | UNI_CMD_ETXBf_PFMU_FULL_DIM_DATA_W_T
-        *  UNI_CMD_BF_FBRPT_DBG_INFO_READ      | 0x17 | UNI_CMD_TXBF_FBRPT_DBG_INFO_T
-        *  UNI_CMD_BF_CMD_TXSND_INFO           | 0x18 | UNI_CMD_BF_SND_CMD_T
-        *  UNI_CMD_BF_CMD_PLY_INFO             | 0x19 | UNI_CMD_BF_PLY_CMD_T
-        *  UNI_CMD_BF_CMD_MU_METRIC            | 0x1A | UNI_CMD_HERA_MU_METRIC_T
-        *  UNI_CMD_BF_CMD_TXCMD                | 0x1B | UNI_CMD_BF_TXCMD_CMD_T
-        *  UNI_CMD_BF_CMD_CFG_PHY              | 0x1C | UNI_CMD_BF_CFG_BF_PHY_T
-        *  UNI_CMD_BF_CMD_SND_CNT              | 0x1D | UNI_CMD_BF_SND_CNT_CMD_T
-        */
+    uint8_t aucTlvBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
 /* BF cmd tags */
-enum ENUM_UNI_CMD_BF_TAG
-{
-    UNI_CMD_BF_TAG_SOUNDING_OFF = 0x00,
-    UNI_CMD_BF_TAG_SOUNDING_ON = 0x01,
-    UNI_CMD_BF_TAG_DATA_PACKET_APPLY = 0x02,
-    UNI_CMD_BF_TAG_PFMU_MEM_ALLOCATE = 0x03,
-    UNI_CMD_BF_TAG_PFMU_MEM_RELEASE = 0x04,
-    UNI_CMD_BF_TAG_PFMU_TAG_READ = 0x05,
-    UNI_CMD_BF_TAG_PFMU_TAG_WRITE = 0x06,
-    UNI_CMD_BF_TAG_PROFILE_READ = 0x7,
-    UNI_CMD_BF_TAG_PROFILE_WRITE = 0x8,
-    UNI_CMD_BF_TAG_PFMU_MEM_ALLOC_MAP_READ = 0x09,
-    UNI_CMD_BF_TAG_AID_SET = 0x0a,
-    UNI_CMD_BF_TAG_STA_REC_READ = 0x0b,
-    UNI_CMD_BF_TAG_PHASE_CALIBRATION = 0x0c,
-    UNI_CMD_BF_TAG_IBF_PHASE_COMP = 0x0d,
-    UNI_CMD_BF_TAG_LNA_GAIN_CONFIG = 0x0e,
-    UNI_CMD_BF_TAG_PROFILE_WRITE_20M_ALL = 0x0f,
-    UNI_CMD_BF_TAG_APCLIENT_CLUSTER = 0x10,
-    UNI_CMD_BF_TAG_HW_ENABLE_STATUS_UPDATE = 0x11,
-    UNI_CMD_BF_TAG_BFEE_HW_CTRL = 0x12,
-    UNI_CMD_BF_TAG_PFMU_SW_TAG_WRITE = 0x13,
-    UNI_CMD_BF_TAG_MOD_EN_CTRL = 0x14,
-    UNI_CMD_BF_TAG_CONFIG = 0x15,
-    UNI_CMD_BF_TAG_PFMU_DATA_WRITE = 0x16,
-    UNI_CMD_BF_TAG_FBRPT_DBG_INFO_READ = 0x17,
-    UNI_CMD_BF_TAG_CMD_TXSND_INFO = 0x18,
-    UNI_CMD_BF_TAG_CMD_PLY_INFO = 0x19,
-    UNI_CMD_BF_TAG_CMD_MU_METRIC = 0x1a,
-    UNI_CMD_BF_TAG_CMD_TXCMD = 0x1b,
-    UNI_CMD_BF_TAG_CMD_CFG_PHY = 0x1c,
-    UNI_CMD_BF_TAG_CMD_SND_CNT = 0x1d,
-    UNI_CMD_BF_TAG_CMD_NUM
+enum ENUM_UNI_CMD_BF_TAG {
+	UNI_CMD_BF_TAG_SOUNDING_OFF = 0x00,
+	UNI_CMD_BF_TAG_SOUNDING_ON = 0x01,
+	UNI_CMD_BF_TAG_DATA_PACKET_APPLY = 0x02,
+	UNI_CMD_BF_TAG_PFMU_MEM_ALLOCATE = 0x03,
+	UNI_CMD_BF_TAG_PFMU_MEM_RELEASE = 0x04,
+	UNI_CMD_BF_TAG_PFMU_TAG_READ = 0x05,
+	UNI_CMD_BF_TAG_PFMU_TAG_WRITE = 0x06,
+	UNI_CMD_BF_TAG_PROFILE_READ = 0x7,
+	UNI_CMD_BF_TAG_PROFILE_WRITE = 0x8,
+	UNI_CMD_BF_TAG_PFMU_MEM_ALLOC_MAP_READ = 0x09,
+	UNI_CMD_BF_TAG_AID_SET = 0x0a,
+	UNI_CMD_BF_TAG_STA_REC_READ = 0x0b,
+	UNI_CMD_BF_TAG_PHASE_CALIBRATION = 0x0c,
+	UNI_CMD_BF_TAG_IBF_PHASE_COMP = 0x0d,
+	UNI_CMD_BF_TAG_LNA_GAIN_CONFIG = 0x0e,
+	UNI_CMD_BF_TAG_PROFILE_WRITE_20M_ALL = 0x0f,
+	UNI_CMD_BF_TAG_APCLIENT_CLUSTER = 0x10,
+	UNI_CMD_BF_TAG_HW_ENABLE_STATUS_UPDATE = 0x11,
+	UNI_CMD_BF_TAG_BFEE_HW_CTRL = 0x12,
+	UNI_CMD_BF_TAG_PFMU_SW_TAG_WRITE = 0x13,
+	UNI_CMD_BF_TAG_MOD_EN_CTRL = 0x14,
+	UNI_CMD_BF_TAG_CONFIG = 0x15,
+	UNI_CMD_BF_TAG_PFMU_DATA_WRITE = 0x16,
+	UNI_CMD_BF_TAG_FBRPT_DBG_INFO_READ = 0x17,
+	UNI_CMD_BF_TAG_CMD_TXSND_INFO = 0x18,
+	UNI_CMD_BF_TAG_CMD_PLY_INFO = 0x19,
+	UNI_CMD_BF_TAG_CMD_MU_METRIC = 0x1a,
+	UNI_CMD_BF_TAG_CMD_TXCMD = 0x1b,
+	UNI_CMD_BF_TAG_CMD_CFG_PHY = 0x1c,
+	UNI_CMD_BF_TAG_CMD_SND_CNT = 0x1d,
+	UNI_CMD_BF_TAG_CMD_NUM
 };
 
-struct UNI_CMD_BF_SND
-{
-    uint16_t u2Tag;
-    uint16_t u2Length;
-    uint8_t u1SuMuSndMode;
-    uint8_t u1StaNum;
-    uint8_t au1Reserved[2];
-    uint16_t u2WlanId[4];
-    uint32_t u4SndIntv;
+struct UNI_CMD_BF_SND {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t u1SuMuSndMode;
+	uint8_t u1StaNum;
+	uint8_t au1Reserved[2];
+	uint16_t u2WlanId[4];
+	uint32_t u4SndIntv;
 } __KAL_ATTRIB_PACKED__;
 
 /* BF read BF StaRec (Tag11) */
-struct UNI_CMD_BF_STAREC_READ
-{
-    uint16_t u2Tag;
-    uint16_t u2Length;
-    uint16_t u2WlanIdx;
-    uint8_t  au1Reserved[2];
+struct UNI_CMD_BF_STAREC_READ {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint16_t u2WlanIdx;
+	uint8_t  au1Reserved[2];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_MQM_UPDATE_MU_EDCA
-{
+struct UNI_CMD_MQM_UPDATE_MU_EDCA {
 	/*fixed field*/
 	uint8_t aucReserved[4];
 
@@ -2682,14 +2640,12 @@ struct UNI_CMD_MQM_UPDATE_MU_EDCA
 	*/
 } __KAL_ATTRIB_PACKED__;
 
-enum ENUM_UNI_CMD_MQM_UPDATE_MU_EDCA_TAG
-{
+enum ENUM_UNI_CMD_MQM_UPDATE_MU_EDCA_TAG {
 	UNI_CMD_MQM_UPDATE_MU_EDCA_TAG_PARMS = 0x0,
 	UNI_CMD_MQM_UPDATE_MU_EDCA_TAG_NUM
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_MU_EDCA_PARAMS
-{
+struct UNI_CMD_MU_EDCA_PARAMS {
 	uint8_t ucECWmin;
 	uint8_t ucECWmax;
 	uint8_t ucAifsn;
@@ -2698,8 +2654,7 @@ struct UNI_CMD_MU_EDCA_PARAMS
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_UPDATE_MU_EDCA
-{
+struct UNI_CMD_UPDATE_MU_EDCA {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 
@@ -2711,8 +2666,38 @@ struct UNI_CMD_UPDATE_MU_EDCA
 	struct UNI_CMD_MU_EDCA_PARAMS arMUEdcaParams[4];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_ID_FRM_IND_FROM_HOST
-{
+struct UNI_CMD_PERF_IND {
+	/*fixed field*/
+	uint8_t aucPadding[4];
+	/* tlv */
+	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	*
+	*  TAG                          | ID   | structure
+	*  -------------                | -----| -------------
+	*  UNI_CMD_ID_PERF_IND          | 0x0  | UNI_CMD_ID_PERF_IND_PARM_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+enum ENUM_UNI_CMD_PERF_IND_TAG {
+	UNI_CMD_PERF_IND_TAG_PARM = 0,
+	UNI_CMD_PERF_IND_TAG_NUM
+};
+
+struct UNI_CMD_PERF_IND_PARM {
+	uint8_t ucCmdVer;
+	uint8_t aucPadding0[1];
+	uint16_t u2CmdLen;       // cmd size including common part and body.
+	uint32_t u4VaildPeriod;   /* in ms */
+	uint32_t ulCurTxBytes[4];   /* in Bps */
+	uint32_t ulCurRxBytes[4];   /* in Bps */
+	uint16_t u2CurRxRate[4];     /* Unit 500 Kbps */
+	uint8_t ucCurRxRCPI0[4];
+	uint8_t ucCurRxRCPI1[4];
+	uint8_t ucCurRxNss[4];
+	uint32_t au4Padding[63]; /* reserve for future*/
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_CMD_ID_FRM_IND_FROM_HOST {
     /*fixed field*/
     uint8_t aucPadding[4];
     /* tlv */
@@ -2725,14 +2710,12 @@ struct UNI_CMD_ID_FRM_IND_FROM_HOST
 } __KAL_ATTRIB_PACKED__;
 
 /* RDD set command Tag */
-enum ENUM_UNI_CMD_FRM_IND_FROM_HOST_TAG
-{
+enum ENUM_UNI_CMD_FRM_IND_FROM_HOST_TAG {
     UNI_CMD_FRM_IND_FROM_HOST_TAG_PARM = 0,
     UNI_CMD_FRM_IND_FROM_HOST_TAG_NUM
 };
 
-struct UNI_CMD_FRM_IND_FROM_HOST_PARM
-{
+struct UNI_CMD_FRM_IND_FROM_HOST_PARM {
     uint8_t  ucCmdVer;
     uint8_t  aucPadding0[1];
     uint16_t u2CmdLen;       // cmd size including common part and body.
@@ -4025,6 +4008,8 @@ uint32_t nicUniCmdSetSGParam(struct ADAPTER *ad,
 uint32_t nicUniCmdSetMonitor(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdRoaming(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdPerfInd(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdInstallKey(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
