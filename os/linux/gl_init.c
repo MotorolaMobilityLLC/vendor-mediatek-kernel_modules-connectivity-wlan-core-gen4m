@@ -4890,10 +4890,6 @@ uint32_t wlanConnac3XDownloadBufferBin(struct ADAPTER *prAdapter)
 		goto label_exit;
 	kalMemZero(prSetEfuseBufModeInfo,
 		sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T));
-	prAdapter->rWifiVar.ucEfuseBufferModeCal
-		= LOAD_EEPROM_BIN;
-
-	DBGLOG(INIT, STATE, "[EFUSE AUTO] Buffer Mode\n");
 
 	if (prAdapter->rWifiVar.ucEfuseBufferModeCal
 		== LOAD_EEPROM_BIN) {
