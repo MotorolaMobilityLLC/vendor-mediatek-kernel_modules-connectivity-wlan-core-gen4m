@@ -156,13 +156,12 @@ void wlanGetEpaElnaFromNvram(
 #define MAX_NVRAM_FEM_MAX 512
 
 	/* ePA /eLNA */
-	uint8_t u1TypeID;
-	uint8_t u1LenLSB;
-	uint8_t u1LenMSB;
+	uint8_t u1TypeID, u1LenLSB, u1LenMSB;
+	uint8_t cnt1, u1NeedAdd;
 	uint8_t u1Total_Size_LSB, u1Total_Size_MSB;
-	uint32_t u4Tag7_9_data_len = 0, u46GCOMM_len = 0;
+	uint32_t u4Tag_len = 0;
 	uint16_t u2NVRAM_Toal_Size = 0;
-	uint32_t u4NvramStartOffset = 0, u4NvramOffset = 0;
+	uint32_t u4NvramOffset = 0;
 	uint8_t *pu1Addr;
 	struct WIFI_NVRAM_TAG_FORMAT *prTagDataCurr;
 	int retryCount = 0;
@@ -191,6 +190,9 @@ void wlanGetEpaElnaFromNvram(
 		NVRAM_TAG_6G_COMMON = 21,
 		NVRAM_TAG_NUMBER
 	};
+
+	uint8_t au1NeedTags[] = {NVRAM_TAG_2G4_COMMON, NVRAM_TAG_5G_COMMON,
+		NVRAM_TAG_6G_COMMON, NVRAM_TAG_SYSTEM};
 
 	while (g_NvramFsm != NVRAM_STATE_READY) {
 		kalMsleep(100);
@@ -237,37 +239,31 @@ void wlanGetEpaElnaFromNvram(
 			break;
 		}
 
-		/*check Type ID is exist on NVRAM*/
-		if (u1TypeID == NVRAM_TAG_2G4_COMMON) {
-			u4NvramStartOffset = u4NvramOffset;
+		//check if the tag needs to be added in phy action
+		u1NeedAdd = 0;
+		//rule1 : predefined need tags
+		for (cnt1 = 0; cnt1 < ARRAY_SIZE(au1NeedTags); ++cnt1)
+			if (u1TypeID == au1NeedTags[cnt1]) {
+				u1NeedAdd = 1;
+				break;
+			}
+
+
+		// rule2 : if tag id with valid bit , add in phy action
+		if (u1TypeID & 0x80)
+			u1NeedAdd = 1;
+
+		if (u1NeedAdd) {
+			u4Tag_len = sizeof(struct WIFI_NVRAM_TAG_FORMAT);
+			u4Tag_len += (u1LenMSB << 8) | (u1LenLSB);
+			kalMemCopy(&g_aucNvram_OnlyPreCal[*pu4DataLen],
+			 &g_aucNvram[u4NvramOffset], u4Tag_len);
+			*pu4DataLen += u4Tag_len;
 			DBGLOG(INIT, TRACE,
-			"NVRAM tag(%d) exist! ofst %x\n",
-			u1TypeID, u4NvramStartOffset);
+			"Add tag(%d),len(%d),Offset(%d),PhyActLen(%d)\n",
+			u1TypeID, u4Tag_len, u4NvramOffset, *pu4DataLen);
 		}
 
-		if (u1TypeID == NVRAM_TAG_CO_ANT) {
-			*pu1DataPointer = pu1Addr + u4NvramStartOffset;
-			*pu4DataLen = u4NvramOffset - u4NvramStartOffset;
-			DBGLOG(INIT, TRACE,
-			"NVRAM tag7 ofst %x tag7-9 Len %x\n",
-			u4NvramStartOffset, *pu4DataLen);
-			kalMemCopy(&g_aucNvram_OnlyPreCal[0],
-				&g_aucNvram[u4NvramStartOffset], *pu4DataLen);
-			u4Tag7_9_data_len = *pu4DataLen;
-		}
-
-		if (u1TypeID == NVRAM_TAG_6G_COMMON) {
-			/* Only to get 6G COMMON TLV */
-			*pu1DataPointer = pu1Addr + u4NvramOffset;
-			u46GCOMM_len = sizeof(struct WIFI_NVRAM_TAG_FORMAT);
-			u46GCOMM_len += (u1LenMSB << 8) | (u1LenLSB);
-			kalMemCopy(&g_aucNvram_OnlyPreCal[u4Tag7_9_data_len],
-			 &g_aucNvram[u4NvramOffset], u46GCOMM_len);
-			*pu4DataLen += u46GCOMM_len;
-			DBGLOG(INIT, TRACE,
-				"NVRAM tag(%x) u46GCOMM_len %x, pu4DataLen %u\n",
-				u1TypeID, u46GCOMM_len, pu4DataLen);
-		}
 		u4NvramOffset += sizeof(struct WIFI_NVRAM_TAG_FORMAT);
 		u4NvramOffset += (u1LenMSB << 8) | (u1LenLSB);
 
