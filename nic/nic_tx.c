@@ -1940,6 +1940,13 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucWmmQueSet;
 
+	/* This is to lock the process to preventing */
+	/* nicTxFreeDescTemplate while Filling it */
+#if defined(_HIF_USB)
+	KAL_SPIN_LOCK_DECLARATION();
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
+#endif
+
 	/*
 	 * -------------------------------------------------------------------
 	 * Fill up common fileds
@@ -1949,7 +1956,11 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 
 	/* Get TXD from pre-allocated template */
 	if (nicTxIsTXDTemplateAllowed(prAdapter, prMsduInfo,
-				      prStaRec)) {
+				      prStaRec)
+#if defined(_HIF_USB)
+		&& prStaRec->aprTxDescTemplate[prMsduInfo->ucUserPriority]
+#endif
+		) {
 		prTxDescTemplate =
 			prStaRec->aprTxDescTemplate[prMsduInfo->ucUserPriority];
 	}
@@ -2052,6 +2063,10 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 
 	if (pu4TxDescLength)
 		*pu4TxDescLength = u4TxDescLength;
+
+#if defined(_HIF_USB)
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
+#endif
 }
 
 void
@@ -2265,8 +2280,18 @@ void nicTxFreeDescTemplate(IN struct ADAPTER *prAdapter,
 	uint8_t ucTxDescSize;
 	void *prTxDesc;
 
+#if defined(_HIF_USB)
+	KAL_SPIN_LOCK_DECLARATION();
+#endif
+
 	DBGLOG(QM, TRACE, "Free TXD template for STA[%u] QoS[%u]\n",
 	       prStaRec->ucIndex, prStaRec->fgIsQoS);
+
+	/* This is to lock the process to preventing */
+	/* nicTxFreeDescTemplate while Filling it */
+#if defined(_HIF_USB)
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
+#endif
 
 	prTxDescOps = prAdapter->chip_info->prTxDescOps;
 	if (prStaRec->fgIsQoS) {
@@ -2305,6 +2330,10 @@ void nicTxFreeDescTemplate(IN struct ADAPTER *prAdapter,
 		for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++)
 			prStaRec->aprTxDescTemplate[ucTid] = NULL;
 	}
+
+#if defined(_HIF_USB)
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
