@@ -826,12 +826,16 @@ bool aisFsmIsBeaconTimeout(IN struct ADAPTER *prAdapter,
 bool aisFsmIsReassociation(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
-	struct BSS_INFO *prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct BSS_INFO *prAisBssInfo;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 
 	/* to support user space triggered reassociation */
 	return (prAisBssInfo->u2DeauthReason ==
 			REASON_CODE_RESERVED &&
-		prAisBssInfo->ucReasonOfDisconnect ==
+		prAisFsmInfo->ucReasonOfDisconnect ==
 			DISCONNECT_REASON_CODE_RADIO_LOST);
 }
 /*----------------------------------------------------------------------------*/
