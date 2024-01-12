@@ -374,6 +374,9 @@ void ehtRlmFillCapIE(
 		phy_cap_2 |= DOT11BE_PHY_CAP_EHT_DUP_6G;
 	if (IS_FEATURE_ENABLED(prWifiVar->ucEht20MRxNDPWiderBW))
 		phy_cap_2 |= DOT11BE_PHY_CAP_20M_RX_NDP_W_WIDER_BW;
+	if (IS_FEATURE_ENABLED(prWifiVar->ucEhtTbSndFBRateLimit))
+		phy_cap_2 |= DOT11BE_PHY_CAP_TB_SND_FB_RATE_LIMIT;
+
 	/* phy_cap_2 &= ~DOT11BE_PHY_CAP_NON_OFDMA_UL_MU_MIMO_80M; */
 	/* phy_cap_2 &= ~DOT11BE_PHY_CAP_NON_OFDMA_UL_MU_MIMO_160M; */
 	/* phy_cap_2 &= ~DOT11BE_PHY_CAP_NON_OFDMA_UL_MU_MIMO_320M; */
