@@ -1070,6 +1070,8 @@ struct WIFI_VAR {
 	u_int8_t fgPerfIndicatorEn;
 #endif
 
+	u_int8_t fgSwRxReordering;
+
 	/* Tx Msdu Queue method */
 	uint8_t ucTxMsduQueue;
 	uint8_t ucTxMsduQueueInit;
