@@ -71,6 +71,17 @@ struct BSS_DESC_SET {
 	struct BSS_DESC *aprBssDesc[MLD_LINK_MAX];
 };
 
+typedef uint8_t(*PFN_SELECTION_POLICY_FUNC) (
+	enum ENUM_BAND eCurrentBand,
+	int8_t cCandidateRssi,
+	int8_t cCurrentRssi
+);
+
+struct NETWORK_SELECTION_POLICY_BY_BAND {
+	enum ENUM_BAND eCandidateBand;
+	PFN_SELECTION_POLICY_FUNC pfnNetworkSelection;
+};
+
 struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
 	enum ENUM_ROAMING_REASON eRoamReason,
 	uint8_t ucBssIndex, struct BSS_DESC_SET *prBssDescSet);
@@ -80,6 +91,13 @@ uint8_t scanCheckNeedDriverRoaming(
 uint8_t scanBeaconTimeoutFilterPolicyForAis(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 u_int8_t scanApOverload(uint16_t status, uint16_t reason);
-
+uint8_t scanNetworkReplaceHandler2G4(enum ENUM_BAND eCurrentBand,
+	int8_t cCandidateRssi, int8_t cCurrentRssi);
+uint8_t scanNetworkReplaceHandler5G(enum ENUM_BAND eCurrentBand,
+	int8_t cCandidateRssi, int8_t cCurrentRssi);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+uint8_t scanNetworkReplaceHandler6G(enum ENUM_BAND eCurrentBand,
+	int8_t cCandidateRssi, int8_t cCurrentRssi);
+#endif
 #endif
 

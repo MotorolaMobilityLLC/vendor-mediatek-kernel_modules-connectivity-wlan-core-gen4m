@@ -2115,8 +2115,16 @@ void rlmModifyVhtBwPara(uint8_t *pucVhtChannelFrequencyS1,
 				else
 					ucTempS = *pucVhtChannelFrequencyS2;
 
-				if ((ucTempS == 50) || (ucTempS == 82) ||
-				    (ucTempS == 114) || (ucTempS == 163))
+				if ((ucTempS == 50) || (ucTempS == 82)
+				   || (ucTempS == 114) || (ucTempS == 163)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+				   || (ucTempS == 15) || (ucTempS == 47)
+				   || (ucTempS == 79) || (ucTempS == 111)
+				   || (ucTempS == 143) || (ucTempS == 175)
+				   || (ucTempS == 207)
+#endif
+				   )
+
 					break;
 			}
 
