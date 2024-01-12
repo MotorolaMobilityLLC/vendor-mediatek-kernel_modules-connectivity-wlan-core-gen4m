@@ -8187,11 +8187,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"DiscoverTimeout", ROAMING_DISCOVER_TIMEOUT_SEC);
 #endif
 
-#if CFG_MTK_MDDP_SUPPORT
+#if (CFG_MTK_MDDP_SUPPORT == 0) || (CFG_SUPPORT_MDDP_DYNAMIC_DISABLE == 1)
+	wlanCfgSetUint32(prAdapter, "MddpSupport", FEATURE_DISABLED);
+#else
 	INIT_UINT(prWifiVar->fgMddpSupport, "MddpSupport", FEATURE_ENABLED);
 	wlanCfgSetUint32(prAdapter, "MddpSupport", prWifiVar->fgMddpSupport);
-#else
-	wlanCfgSetUint32(prAdapter, "MddpSupport", FEATURE_DISABLED);
 #endif
 
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
