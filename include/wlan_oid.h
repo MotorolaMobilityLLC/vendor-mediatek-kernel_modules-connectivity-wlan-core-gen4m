@@ -5495,4 +5495,11 @@ uint32_t wlanoidHandleRttRequest(IN struct ADAPTER *prAdapter,
 			 IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 			 OUT uint32_t *pu4SetInfoLen);
 
+#if (CONFIG_WLAN_SERVICE == 1)
+uint32_t
+wlanoidListMode(IN struct ADAPTER *prAdapter,
+			 IN void *pvQueryBuffer,
+			 IN uint32_t u4QueryBufferLen,
+			 OUT uint32_t *pu4QueryInfoLen);
+#endif
 #endif /* _WLAN_OID_H */

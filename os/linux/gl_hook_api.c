@@ -4719,6 +4719,26 @@ uint32_t ServiceWlanOid(void *winfos,
 
 		return WLAN_STATUS_SUCCESS;
 
+	case OP_WLAN_OID_LIST_MODE:
+
+		kalIoctl(prGlueInfo,
+					wlanoidListMode,
+					param, /* pvInfoBuf */
+					paramLen, /* u4InfoBufLen */
+					u4BufLen); /* pu4QryInfoLen */
+
+		DBGLOG_MEM8(RFTEST,
+					TRACE,
+					&g_HqaListModeStatus,
+					sizeof(g_HqaListModeStatus));
+
+		kalMemCopy(rsp_data,
+					&g_HqaListModeStatus,
+					sizeof(g_HqaListModeStatus));
+		*u4BufLen = paramLen;
+
+		return WLAN_STATUS_SUCCESS;
+
 	case OP_WLAN_OID_NUM:
 	default:
 		return WLAN_STATUS_FAILURE;

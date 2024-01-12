@@ -96,6 +96,10 @@ uint32_t u4RxStatSeqNum;
 #else
 uint16_t u2RxStatSeqNum;
 #endif
+
+#if (CONFIG_WLAN_SERVICE == 1)
+struct list_mode_event g_HqaListModeStatus;
+#endif
 /*****************************************************************************
  *                           P R I V A T E   D A T A
  *****************************************************************************
