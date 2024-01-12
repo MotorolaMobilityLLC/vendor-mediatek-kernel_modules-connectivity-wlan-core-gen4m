@@ -4603,8 +4603,7 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 
 			/* then fill buffer */
 			prAdapter->rWlanInfo.arScanResult[i].u4Length =
-				OFFSET_OF(struct PARAM_BSSID_EX, aucIEs)
-					+ u2IELength;
+				sizeof(struct PARAM_BSSID_EX) + u2IELength;
 			COPY_MAC_ADDR(
 				prAdapter->rWlanInfo.arScanResult[i].
 				arMacAddress,
@@ -4685,8 +4684,7 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 
 			/* then fill buffer */
 			prAdapter->rWlanInfo.arScanResult[i].u4Length =
-				OFFSET_OF(struct PARAM_BSSID_EX, aucIEs)
-					+ u2IELength;
+				sizeof(struct PARAM_BSSID_EX) + u2IELength;
 			COPY_MAC_ADDR(
 				prAdapter->rWlanInfo.arScanResult[i].
 				arMacAddress,
@@ -4764,8 +4762,7 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 
 			/* then fill buffer */
 			prAdapter->rWlanInfo.arScanResult[i].u4Length =
-				OFFSET_OF(struct PARAM_BSSID_EX, aucIEs)
-					+ u2IELength;
+				sizeof(struct PARAM_BSSID_EX) + u2IELength;
 			COPY_MAC_ADDR(
 				prAdapter->rWlanInfo.arScanResult[i].
 				arMacAddress,
