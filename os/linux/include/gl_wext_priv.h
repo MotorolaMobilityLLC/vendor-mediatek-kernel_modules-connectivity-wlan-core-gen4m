@@ -236,6 +236,11 @@
 #define OID_802_11_WSC_ASSOC_INFO                       0xFFA0CB00
 #endif
 
+#if CFG_SUPPORT_NCHO
+#define CMD_NCHO_COMP_TIMEOUT			1500	/* ms */
+#define CMD_NCHO_AF_DATA_LENGTH			1040
+#endif
+
 /* Define magic key of test mode (Don't change it for future compatibity) */
 #define PRIV_CMD_TEST_MAGIC_KEY                         2011
 #define PRIV_CMD_TEST_MAGIC_KEY_ICAP                         2013
@@ -347,6 +352,10 @@ priv_set_struct(IN struct net_device *prNetDev,
 int
 priv_get_struct(IN struct net_device *prNetDev,
 		IN struct iw_request_info *prIwReqInfo, IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
+
+#if CFG_SUPPORT_NCHO
+UINT_8 CmdString2HexParse(IN UINT_8 *InStr, OUT UINT_8 **OutStr, OUT UINT_8 *OutLen);
+#endif
 
 int
 priv_set_driver(IN struct net_device *prNetDev,

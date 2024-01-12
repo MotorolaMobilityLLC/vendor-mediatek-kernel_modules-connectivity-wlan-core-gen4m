@@ -1310,6 +1310,30 @@ VOID aisFsmSteps(IN P_ADAPTER_T prAdapter, ENUM_AIS_STATE_T eNextState)
 				prScanReqMsg->eScanChannel = SCAN_CHANNEL_2G4;
 			} else if (prAdapter->aePreferBand[prAdapter->prAisBssInfo->ucBssIndex] == BAND_5G) {
 				prScanReqMsg->eScanChannel = SCAN_CHANNEL_5G;
+#if CFG_SUPPORT_NCHO
+			} else if (prAdapter->rNchoInfo.fgECHOEnabled &&
+				prAdapter->rNchoInfo.u4RoamScanControl == TRUE &&
+				prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED &&
+				prAdapter->rWifiVar.rRoamingInfo.eCurrentState == ROAMING_STATE_DISCOVERY) {
+				/* handle NCHO scan channel info */
+				UINT_32	u4size = 0;
+				struct _CFG_NCHO_SCAN_CHNL_T *prRoamScnChnl = NULL;
+
+				prRoamScnChnl = &prAdapter->rNchoInfo.rRoamScnChnl;
+				/* set partial scan */
+				prScanReqMsg->ucChannelListNum = prRoamScnChnl->ucChannelListNum;
+				u4size = sizeof(prRoamScnChnl->arChnlInfoList);
+
+				DBGLOG(AIS, TRACE,
+					"NCHO SCAN channel num = %d, total size=%d\n",
+					prScanReqMsg->ucChannelListNum, u4size);
+
+				kalMemCopy(&(prScanReqMsg->arChnlInfoList), &(prRoamScnChnl->arChnlInfoList),
+					u4size);
+
+				/* set scan channel type for NCHO scan */
+				prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
+#endif
 			} else {
 				prScanReqMsg->eScanChannel = SCAN_CHANNEL_FULL;
 				ASSERT(0);
@@ -3568,6 +3592,15 @@ VOID aisFsmRunEventChGrant(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 		/* 2. channel privilege has been approved */
 		prAisFsmInfo->u4ChGrantedInterval = u4GrantInterval;
 
+#if CFG_SUPPORT_NCHO
+		if (prAdapter->rNchoInfo.fgECHOEnabled == TRUE &&
+			prAdapter->rNchoInfo.fgIsSendingAF == TRUE &&
+			prAdapter->rNchoInfo.fgChGranted == FALSE) {
+			DBGLOG(INIT, TRACE, "NCHO complete rAisChGrntComp trace time is %u\n", kalGetTimeTick());
+			prAdapter->rNchoInfo.fgChGranted = TRUE;
+			complete(&prAdapter->prGlueInfo->rAisChGrntComp);
+		}
+#endif
 		/* 3.1 set timeout timer in cases upper layer cancel_remain_on_channel never comes */
 		cnmTimerStartTimer(prAdapter, &prAisFsmInfo->rChannelTimeoutTimer, prAisFsmInfo->u4ChGrantedInterval);
 
@@ -4178,6 +4211,67 @@ VOID aisFsmRunEventMgmtFrameTx(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/* aisFsmRunEventMgmtFrameTx */
 
+#if CFG_SUPPORT_NCHO
+VOID aisFsmRunEventNchoActionFrameTx(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+{
+	P_AIS_FSM_INFO_T prAisFsmInfo;
+	P_BSS_INFO_T prAisBssInfo = (P_BSS_INFO_T) NULL;
+	P_MSG_MGMT_TX_REQUEST_T prMgmtTxMsg = (P_MSG_MGMT_TX_REQUEST_T) NULL;
+	P_MSDU_INFO_T prMgmtFrame = (P_MSDU_INFO_T) NULL;
+	struct _ACTION_VENDOR_SPEC_FRAME_T *prVendorSpec = NULL;
+	PUINT_8 pucFrameBuf = (PUINT_8) NULL;
+	struct _NCHO_INFO_T *prNchoInfo = NULL;
+	UINT_16 u2PktLen = 0;
+
+	do {
+		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
+		DBGLOG(REQ, TRACE, "NCHO in aisFsmRunEventNchoActionFrameTx\n");
+
+		prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
+		prNchoInfo = &(prAdapter->rNchoInfo);
+		prAisBssInfo = &(prAdapter->rWifiVar.arBssInfo[NETWORK_TYPE_AIS]);
+
+		if (prAisFsmInfo == NULL)
+			break;
+
+		prMgmtTxMsg = (P_MSG_MGMT_TX_REQUEST_T) prMsgHdr;
+		u2PktLen = (UINT_16) OFFSET_OF(struct _ACTION_VENDOR_SPEC_FRAME_T, aucElemInfo[0]) +
+				  prNchoInfo->rParamActionFrame.i4len +
+				  MAC_TX_RESERVED_FIELD;
+		prMgmtFrame = cnmMgtPktAlloc(prAdapter, u2PktLen);
+		if (prMgmtFrame == NULL) {
+			ASSERT(FALSE);
+			DBGLOG(REQ, ERROR, "NCHO there is no memory for prMgmtFrame\n");
+			break;
+		}
+		prMgmtTxMsg->prMgmtMsduInfo = prMgmtFrame;
+
+		pucFrameBuf = (PUINT_8) ((ULONG) prMgmtFrame->prPacket + MAC_TX_RESERVED_FIELD);
+		prVendorSpec = (struct _ACTION_VENDOR_SPEC_FRAME_T *)pucFrameBuf;
+		prVendorSpec->u2FrameCtrl = MAC_FRAME_ACTION;
+		prVendorSpec->u2Duration = 0;
+		prVendorSpec->u2SeqCtrl = 0;
+		COPY_MAC_ADDR(prVendorSpec->aucDestAddr, prNchoInfo->rParamActionFrame.aucBssid);
+		COPY_MAC_ADDR(prVendorSpec->aucSrcAddr, prAisBssInfo->aucOwnMacAddr);
+		COPY_MAC_ADDR(prVendorSpec->aucBSSID, prAisBssInfo->aucBSSID);
+
+		kalMemCopy(prVendorSpec->aucElemInfo,
+			   prNchoInfo->rParamActionFrame.aucData,
+			   prNchoInfo->rParamActionFrame.i4len);
+
+		prMgmtFrame->u2FrameLength = u2PktLen;
+
+		aisFuncTxMgmtFrame(prAdapter,
+				   &prAisFsmInfo->rMgmtTxInfo, prMgmtTxMsg->prMgmtMsduInfo, prMgmtTxMsg->u8Cookie);
+
+	} while (FALSE);
+
+	if (prMsgHdr)
+		cnmMemFree(prAdapter, prMsgHdr);
+
+}				/* aisFsmRunEventNchoActionFrameTx */
+#endif
+
 VOID aisFsmRunEventChannelTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr)
 {
 	P_AIS_FSM_INFO_T prAisFsmInfo;
@@ -4228,8 +4322,19 @@ aisFsmRunEventMgmtFrameTxDone(IN P_ADAPTER_T prAdapter,
 		prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
 		prMgmtTxReqInfo = &(prAisFsmInfo->rMgmtTxInfo);
 
-		if (rTxDoneStatus == TX_RESULT_SUCCESS)
+		if (rTxDoneStatus != TX_RESULT_SUCCESS) {
+			DBGLOG(AIS, ERROR, "Mgmt Frame TX Fail, Status:%d.\n", rTxDoneStatus);
+		} else {
 			fgIsSuccess = TRUE;
+#if CFG_SUPPORT_NCHO
+			if (prAdapter->rNchoInfo.fgECHOEnabled == TRUE &&
+				prAdapter->rNchoInfo.fgIsSendingAF == TRUE &&
+				prAdapter->rNchoInfo.fgChGranted == TRUE) {
+				prAdapter->rNchoInfo.fgIsSendingAF = FALSE;
+				DBGLOG(AIS, TRACE, "NCHO action frame tx done");
+			}
+#endif
+		}
 
 		if (prMgmtTxReqInfo->prMgmtTxMsdu == prMsduInfo) {
 			kalIndicateMgmtTxStatus(prAdapter->prGlueInfo,
