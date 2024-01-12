@@ -747,6 +747,97 @@ struct CHIP_DBG_OPS mt6653_DebugOps = {
 #endif /* DBG_DISABLE_ALL_INFO */
 
 #if CFG_SUPPORT_QA_TOOL
+#if (CONFIG_WLAN_SERVICE == 1)
+struct test_capability mt6653_toolCapability = {
+	/* u_int32 version; */
+	6,
+	/* u_int32 tag_num; */
+	2,
+	/* struct test_capability_ph_cap ph_cap; */
+	{
+		/* GET_CAPABILITY_TAG_PHY */
+		1,	/* u_int32 tag; */
+
+		/* GET_CAPABILITY_TAG_PHY_LEN */
+		16,	/* u_int32 tag_len; */
+
+		/* BIT0: 11 a/b/g, BIT1: 11n, BIT2: 11ac, BIT3: 11ax */
+		0x1F,	/* u_int32 protocol; */
+
+		/* 1:1x1, 2:2x2, ... */
+		2,	/* u_int32 max_ant_num; */
+
+		/* BIT0: DBDC support */
+		1,	/* u_int32 dbdc; */
+
+		/* BIT0: TxLDPC, BTI1: RxLDPC, BIT2: TxSTBC, BIT3: RxSTBC */
+		0xF,	/* u_int32 coding; */
+
+		/* BIT0: 2.4G, BIT1: 5G, BIT2: 6G */
+		0x7,	/* u_int32 channel_band; */
+
+		/* BIT0: BW20, BIT1: BW40, BIT2: BW80 */
+		/* BIT3: BW160C, BIT4: BW80+80(BW160NC) */
+		/* BIT5: BW320*/
+		0x2F,	/* u_int32 bandwidth; */
+
+		/* BIT[15:0]: Band0 2.4G, 0x1 */
+		/* BIT[31:16]: Band1 5G, 6G, 0x6 */
+		0x00060001,	/* u_int32 channel_band_dbdc;*/
+
+		/* BIT[15:0]: Band2 5G, 6G, 0x6 */
+		/* BIT[31:16]: Band3 2.4G, 5G, 6G, 0x7 */
+		0x00070006,	/* u_int32 channel_band_dbdc_ext */
+
+		/* BIT[7:0]: Support phy 3 */
+		/* BIT[15:8]: Support Adie 1 */
+		0x0103,	/* u_int32 phy_adie_quantities; CFG_SUPPORT_CONNAC3X */
+
+		/* BIT[7:0]: Band0 TX path 2 */
+		/* BIT[15:8]: Band0 RX path 2 */
+		/* BIT[23:16]: Band1 TX path 2 */
+		/* BIT[31:24]: Band1 RX path 2 */
+		0x02020202,	/* u_int32 band_0_1_wf_path_num; */
+
+		/* BIT[7:0]: Band2 TX path 1 */
+		/* BIT[15:8]: Band2 RX path 1*/
+		/* BIT[23:16]: Band3 TX path 0 */
+		/* BIT[31:24]: Band3 RX path 1 */
+		0x01000101,	/* u_int32 band_2_3_wf_path_num; */
+
+		/* BIT[7:0]: Band0 BW20, 0x1 */
+		/* BIT[15:8]: Band1 BW320, 0x2F */
+		/* BIT[23:16]: Band2 BW160, 0xF */
+		/* BIT[31:24]: Band3 BW20, 0x1 */
+		0x010F2F01,	/* u_int32 band_bandwidth; */
+
+		{ 0, 0, 0, 0 }	/* u_int32 reserved[4]; */
+	},
+
+	/* struct test_capability_ext_cap ext_cap; */
+	{
+		/* GET_CAPABILITY_TAG_PHY_EXT */
+		2,	/* u_int32 tag; */
+		/* GET_CAPABILITY_TAG_PHY_EXT_LEN */
+		16,	/* u_int32 tag_len; */
+
+		/* BIT0: AntSwap 0 */
+		/* BIT1: HW TX support 0*/
+		/* BIT2: Little core support 1 */
+		/* BIT3: XTAL trim support 1 */
+		/* BIT4: DBDC/MIMO switch support 0 */
+		/* BIT5: eMLSR support 1 */
+		/* BIT6: MLR+, ALR support 0 */
+		/* BIT7: Bandwidth duplcate debug support 0 */
+		0x2C,	/*u_int32 feature1; */
+
+		/* u_int32 reserved[15]; */
+		{ 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0 }
+	}
+};
+#endif
+
 struct ATE_OPS_T mt6653_AteOps = {
 	/* ICapStart phase out , wlan_service instead */
 	.setICapStart = connacSetICapStart,
@@ -760,6 +851,9 @@ struct ATE_OPS_T mt6653_AteOps = {
 #endif
 	.icapRiseVcoreClockRate = mt6653_icapRiseVcoreClockRate,
 	.icapDownVcoreClockRate = mt6653_icapDownVcoreClockRate,
+#if (CONFIG_WLAN_SERVICE == 1)
+	.tool_capability = &mt6653_toolCapability,
+#endif
 };
 #endif /* CFG_SUPPORT_QA_TOOL */
 

@@ -218,8 +218,10 @@ enum {
 /* Test DBDC band mode for QA */
 enum test_band_mode {
 	TEST_BAND_MODE_UNUSE = 0,
-	TEST_BAND_MODE_SINGLE,
-	TEST_BAND_MODE_DUAL
+	TEST_BAND_MODE_SINGLE = 0x01,
+	TEST_BAND_MODE_DUAL = 0x02,
+	TEST_BAND_MODE_SINGLE_BAND0 = 0x01000001,	/* BIT[31:24]: 0x01*/
+	TEST_BAND_MODE_SINGLE_BAND1 = 0x02000001,	/* BIT[31:24]: 0x02*/
 };
 
 /* Test DBDC band type for QA */
@@ -901,22 +903,27 @@ struct GNU_PACKED hqa_comm_rx_stat {
 	} u;
 };
 
-/* Test capability */
-/* VER 0x0001: Init version */
-/* VER 0x0002: Add hw_tx support, channel_band_dbdc */
-/* VER 0x0003: CFG_SUPPORT_CONNAC3X: Add little core support, channel_band_dbdc_ext  */
-/* VER 0x0004: Add DBDC/MIMO switch support or not  */
+/*****************************************************************************
+ * Test capability
+ * VER 0x0001: Init version
+ * VER 0x0002: Add hw_tx support, channel_band_dbdc
+ * VER 0x0003: CFG_SUPPORT_CONNAC3X: Add little core support,
+ *             channel_band_dbdc_ext
+ * VER 0x0004: Add DBDC/MIMO switch support or not
+ * VER 0x0005: Add eMLSR, PHY num, Adie num
+ * VER 0x0006: Add WiFi path by band, bandwidth by band, MRL+/ALR,
+ *             Bandwidth duplicated debug
+ *****************************************************************************/
 
-
-#define GET_CAPABILITY_VER		0x0005
+#define GET_CAPABILITY_VER	0x0006
 #define GET_CAPABILITY_TAG_NUM	2
 
 /* phy capability */
-#define GET_CAPABILITY_TAG_PHY			1
-#define GET_CAPABILITY_TAG_PHY_LEN		16
+#define GET_CAPABILITY_TAG_PHY	1
+#define GET_CAPABILITY_TAG_PHY_LEN	16
 
 /* phy capability ext */
-#define GET_CAPABILITY_TAG_PHY_EXT		2
+#define GET_CAPABILITY_TAG_PHY_EXT	2
 #define GET_CAPABILITY_TAG_PHY_EXT_LEN	16
 
 struct test_capability_ph_cap {
@@ -930,7 +937,7 @@ struct test_capability_ph_cap {
 	u_int32 protocol;
 
 	/* 1:1x1, 2:2x2, ... */
-	u_int32 ant_num;
+	u_int32 max_ant_num;
 
 	/* BIT0: DBDC support */
 	u_int32 dbdc;
@@ -943,8 +950,8 @@ struct test_capability_ph_cap {
 
 	/* BIT0: BW20, BIT1: BW40, BIT2: BW80 */
 	/* BIT3: BW160C, BIT4: BW80+80(BW160NC) */
-	/* BIT5: BW320*/
-	u_int32 bandwidth;
+	/* BIT5: BW320 */
+	u_int32 max_bandwidth;
 
 	/* BIT0: Band0 2.4G, BIT1: Band0 5G, BIT2: Band0 6G */
 	/* BIT16: Band1 2.4G, BIT17: Band1 5G, BIT18: Band1 6G */
@@ -958,7 +965,25 @@ struct test_capability_ph_cap {
 	/* BIT[15:8]: Support Adie quantities */
 	u_int32 phy_adie_quantities; /* CFG_SUPPORT_CONNAC3X */
 
-	u_int32 reserved[7];
+	/* BIT[7:0]: Band0 TX path num */
+	/* BIT[15:8]: Band0 RX path num */
+	/* BIT[23:16]: Band1 TX path num */
+	/* BIT[31:24]: Band1 RX path num */
+	u_int32 band_0_1_wf_path_num;
+
+	/* BIT[7:0]: Band2 TX path num */
+	/* BIT[15:8]: Band2 RX path num */
+	/* BIT[23:16]: Band3 TX path num */
+	/* BIT[31:24]: Band3 RX path num */
+	u_int32 band_2_3_wf_path_num;
+
+	/* BIT[7:0]: Band0 system bandwidth */
+	/* BIT[15:8]: Band1 system bandwidth */
+	/* BIT[23:16]: Band2 system bandwidth */
+	/* BIT[31:24]: Band3 system bandwidth */
+	u_int32 band_bandwidth;
+
+	u_int32 reserved[4];
 };
 
 struct test_capability_ext_cap {
@@ -974,6 +999,9 @@ struct test_capability_ext_cap {
 	/* BIT3: XTAL trim support */
 	/* BIT4: DBDC/MIMO switch support */
 	/* BIT5: eMLSR support */
+	/* BIT6: MLR+, ALR support */
+	/* BIT7: Bandwidth duplicated debug support */
+
 	u_int32 feature1;
 	u_int32 reserved[15];
 };

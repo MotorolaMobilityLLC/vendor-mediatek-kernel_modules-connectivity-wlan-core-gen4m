@@ -116,8 +116,10 @@ struct ATE_OPS_T {
 	uint32_t u4EmiEndAddress;
 	uint32_t u4EmiMsbAddress;
 	uint32_t u4CapSource;
+#if (CONFIG_WLAN_SERVICE == 1)
+	struct test_capability *tool_capability;
+#endif
 };
-
 
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
