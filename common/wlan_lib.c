@@ -639,8 +639,7 @@ void wlanOnPostFirmwareReady(IN struct ADAPTER *prAdapter,
 
 #endif
 	/* QA_TOOL and ICAP info struct */
-	prAdapter->rIcapInfo.fgCaptureDone = FALSE;
-	prAdapter->rIcapInfo.fgIcapEnable = FALSE;
+	prAdapter->rIcapInfo.eIcapState = ICAP_STATE_INIT;
 	prAdapter->rIcapInfo.u2DumpIndex = 0;
 	prAdapter->rIcapInfo.u4CapNode = 0;
 

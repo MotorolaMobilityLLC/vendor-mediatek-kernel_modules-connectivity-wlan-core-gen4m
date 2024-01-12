@@ -7,6 +7,7 @@
 #include "gl_kal.h"
 #include "gl_wext.h"
 #include "precomp.h"
+#include "debug.h"
 
 #define UNUSED(x) ((void)(x))
 /*****************************************************************************
@@ -87,4 +88,11 @@ boolean sys_ad_wait_os_task(
 void sys_ad_wakeup_os_task(struct serv_os_task *task)
 {
 	UNUSED(task);
+}
+/*****************************************************************************
+ *	OS debug functions
+ *****************************************************************************/
+void sys_ad_mem_dump32(void *ptr, u_long length)
+{
+	dumpMemory32((s_int32 *)ptr, length);
 }

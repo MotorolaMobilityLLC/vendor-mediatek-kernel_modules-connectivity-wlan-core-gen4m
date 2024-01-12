@@ -122,6 +122,7 @@
 #define WF_ROM_CODE_INDEX_ADDR 0x184C1604
 
 #define WF_TRIGGER_AP2CONN_EINT 0x10001F00
+#define WF_CONN_INFA_BUS_CLOCK_RATE 0x1000123C
 
 
 /*******************************************************************************
@@ -295,6 +296,9 @@ int soc3_0_wlanPreCal(void);
 #endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
 
 #endif
+
+void soc3_0_icapRiseVcoreClockRate(void);
+void soc3_0_icapDownVcoreClockRate(void);
 
 #endif /* _SOC3_0_H */
 

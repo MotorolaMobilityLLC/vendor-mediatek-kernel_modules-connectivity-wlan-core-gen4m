@@ -45,6 +45,14 @@ union hetb_tx_usr {
 	u_int32 usr_info;
 };
 
+struct icap_dump_iq {
+	u_int32 wf_num;
+	u_int32 iq_type;
+	u_int32 icap_cnt; /*IQ Data Simple Count*/
+	u_int32 icap_data_len;
+	u_int8 *picap_data;
+};
+
 /*****************************************************************************
  *	Enum value definition
  *****************************************************************************/
@@ -303,6 +311,12 @@ enum {
 	ATE_LOG_CTRL_NUM,
 };
 
+enum ENUM_ATE_CAP_TYPE {
+	/* I/Q Type */
+	ATE_CAP_I_TYPE = 0,
+	ATE_CAP_Q_TYPE = 1,
+	ATE_NUM_OF_CAP_TYP
+};
 /*****************************************************************************
  *	Global Variable
  *****************************************************************************/
@@ -1735,11 +1749,71 @@ s_int32 mt_op_set_icap_start(
 	u_int8 *data)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+	struct test_struct_ext r_test_info;
+	struct hqa_rbist_cap_start *pr_rbist_info;
 
-	if (ret)
-		ret = SERV_STATUS_HAL_OP_FAIL_SEND_FWCMD;
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
-	return ret;
+	pr_rbist_info = &(r_test_info.data.icap_info);
+
+	/*copy icap start parameters*/
+	sys_ad_move_mem(pr_rbist_info,
+		data,
+		sizeof(struct hqa_rbist_cap_start));
+
+	/*over write parameters for mobile setting*/
+	pr_rbist_info->en_bit_width = 0; /* 0:32bit, 1:96bit, 2:128bit */
+	pr_rbist_info->arch = 1; /*0:Support on-chip, 1:Support on-the fly*/
+	pr_rbist_info->phy_idx = 0;
+
+	SERV_LOG(SERV_DBG_CAT_MISC, SERV_DBG_LVL_WARN,
+		("%s: en_bit_width = 0x%08x, arch = 0x%08x, phy_idx = 0x%08x\n",
+		__func__,
+		pr_rbist_info->en_bit_width,
+		pr_rbist_info->arch,
+		pr_rbist_info->phy_idx));
+
+	pr_rbist_info->emi_start_addr =
+		(u_int32) (winfos->emi_phy_base & 0xFFFFFFFF);
+	pr_rbist_info->emi_end_addr =
+		(u_int32) ((winfos->emi_phy_base +
+			winfos->emi_phy_size) & 0xFFFFFFFF);
+	pr_rbist_info->emi_msb_addr =
+		(u_int32) ((((u_int64) winfos->emi_phy_base) >> 32) &
+			0xFFFFFFFF);
+
+	SERV_LOG(SERV_DBG_CAT_MISC, SERV_DBG_LVL_WARN,
+		("%s: StartAddr=0x%08x,EndAddr=0x%08x,MsbAddr=0x%08x\n",
+		__func__,
+		pr_rbist_info->emi_start_addr,
+		pr_rbist_info->emi_end_addr,
+		pr_rbist_info->emi_msb_addr));
+
+	if (pr_rbist_info->trig == 1) { /*Start Capture data*/
+		ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
+			OP_WLAN_OID_SET_TEST_ICAP_START,
+			&r_test_info,
+			sizeof(r_test_info),
+			NULL,
+			NULL);
+	} else if (pr_rbist_info->trig == 0) { /*don't Capture data*/
+		ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
+			OP_WLAN_OID_SET_TEST_ICAP_ABORT,
+			NULL,
+			0,
+			NULL,
+			NULL);
+	}
+
+	SERV_LOG(SERV_DBG_CAT_MISC, SERV_DBG_LVL_WARN,
+		("Start ICAP trig:%d,node=0x%08x,ret=0x%08x\n",
+		pr_rbist_info->trig,
+		pr_rbist_info->cap_node,
+		ret));
+
+	return SERV_STATUS_SUCCESS;
 }
 
 s_int32 mt_op_get_icap_status(
@@ -1747,9 +1821,21 @@ s_int32 mt_op_get_icap_status(
 	s_int32 *icap_stat)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+	struct test_struct_ext r_test_info;
+
+	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
+		OP_WLAN_OID_SET_TEST_ICAP_STATUS,
+		&r_test_info,
+		sizeof(r_test_info),
+		NULL,
+		icap_stat);
 
 	if (ret)
 		ret = SERV_STATUS_HAL_OP_FAIL_SEND_FWCMD;
+
+	SERV_LOG(SERV_DBG_CAT_MISC, SERV_DBG_LVL_WARN,
+		("Status ICAP %d\n", *icap_stat)); /*0:OK,1:WAITING,2:FAIL*/
 
 	return ret;
 }
@@ -1758,6 +1844,21 @@ s_int32 mt_op_get_icap_max_data_len(
 	struct test_wlan_info *winfos,
 	u_long *max_data_len)
 {
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+
+	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
+		OP_WLAN_OID_GET_TEST_ICAP_MAX_DATA_LEN,
+		NULL,
+		0,
+		NULL,
+		max_data_len);
+
+	SERV_LOG(SERV_DBG_CAT_MISC, SERV_DBG_LVL_WARN,
+		("ICAP max data len %lu", *max_data_len));
+
+
 	return SERV_STATUS_SUCCESS;
 }
 
@@ -1769,9 +1870,36 @@ s_int32 mt_op_get_icap_data(
 	u_int32 iq_type)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
+	struct icap_dump_iq r_dump_iq;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
 
-	if (ret)
-		ret = SERV_STATUS_HAL_OP_FAIL_SEND_FWCMD;
+	r_dump_iq.wf_num = wf_num;
+	r_dump_iq.iq_type = iq_type;
+	r_dump_iq.icap_cnt = 0;
+	r_dump_iq.icap_data_len = 0;
+	r_dump_iq.picap_data = (s_int8 *)icap_data;
+
+	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
+		OP_WLAN_OID_GET_TEST_ICAP_DATA,
+		&r_dump_iq,
+		sizeof(r_dump_iq),
+		NULL,
+		NULL);
+
+	if (ret == SERV_STATUS_SUCCESS) {
+		*icap_cnt = r_dump_iq.icap_cnt;
+		sys_ad_mem_dump32(icap_data, r_dump_iq.icap_data_len);
+	}
+
+	SERV_LOG(SERV_DBG_CAT_MISC, SERV_DBG_LVL_WARN,
+		("ICAP:wf[%d][%c],cnt:%d,len:%d,data:0x%p,ret:0x%X\n",
+		r_dump_iq.wf_num,
+		(r_dump_iq.iq_type == ATE_CAP_I_TYPE)?'I':'Q',
+		*icap_cnt,
+		r_dump_iq.icap_data_len,
+		icap_data,
+		ret));
+
 
 	return ret;
 }

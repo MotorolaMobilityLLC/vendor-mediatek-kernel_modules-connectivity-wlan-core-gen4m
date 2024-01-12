@@ -24,6 +24,11 @@ enum op_wlan_oid {
 	OP_WLAN_OID_GET_RECAL_COUNT = 8,
 	OP_WLAN_OID_GET_RECAL_CONTENT = 9,
 	OP_WLAN_OID_GET_ANTSWAP_CAPBILITY = 10,
+	OP_WLAN_OID_SET_TEST_ICAP_START = 11,
+	OP_WLAN_OID_SET_TEST_ICAP_ABORT = 12,
+	OP_WLAN_OID_SET_TEST_ICAP_STATUS = 13,
+	OP_WLAN_OID_GET_TEST_ICAP_MAX_DATA_LEN = 14,
+	OP_WLAN_OID_GET_TEST_ICAP_DATA = 15,
 	OP_WLAN_OID_NUM
 };
 
@@ -77,6 +82,38 @@ struct test_ch_cfg {
 	u_int8 band_idx;
 	u_int8 ch_band;
 	u_int32 out_band_freq;
+};
+
+/* Test rbist status for hqa command usage*/
+struct GNU_PACKED hqa_rbist_cap_start {
+	u_int32 trig;
+	u_int32 ring_cap_en;
+	u_int32 trig_event;
+	u_int32 cap_node;
+	u_int32 cap_len;
+	u_int32 cap_stop_cycle;
+	u_int32 mac_trig_event;
+	u_int32 src_addr_lsb;
+	u_int32 src_addr_msb;
+	u_int32 band_idx;
+	u_int32 bw;
+	u_int32 en_bit_width; /* 0:32bit, 1:96bit, 2:128bit */
+	u_int32 arch; /* 0:on-chip, 1:on-the-fly */
+	u_int32 phy_idx;
+	u_int32 emi_start_addr;
+	u_int32 emi_end_addr;
+	u_int32 emi_msb_addr;
+	u_int32 cap_src;
+	u_int32 resv[2];
+};
+
+struct test_struct_ext {
+	u_int32 func_idx;
+	union {
+		u_int32 func_data;
+		u_int32 cal_dump;
+		struct hqa_rbist_cap_start icap_info;
+	} data;
 };
 
 /*****************************************************************************

@@ -1579,6 +1579,17 @@ enum ENUM_EEPROM_TYPE {
 	EEPROM_TYPE_NUM
 };
 
+enum ENUM_ICAP_STATE {
+	ICAP_STATE_INIT = 0,
+	ICAP_STATE_START = 1,
+	ICAP_STATE_QUERY_STATUS = 2,
+	ICAP_STATE_FW_DUMPING = 3,
+	ICAP_STATE_FW_DUMP_DONE = 4,
+	ICAP_STATE_QA_TOOL_CAPTURE = 5,
+	ICAP_STATE_NUM
+};
+
+
 struct PARAM_QOS_TSINFO {
 	uint8_t ucTrafficType;	/* Traffic Type: 1 for isochronous 0 for
 				 *               asynchronous
@@ -1684,9 +1695,7 @@ struct RECAL_INFO_T {
 };
 
 struct ICAP_INFO_T {
-	u_int8_t fgCaptureDone;
-	u_int8_t fgIcapEnable;
-	u_int8_t fgICapStartDump;
+	enum ENUM_ICAP_STATE eIcapState;
 	uint32_t u4CapNode;
 
 #if CFG_SUPPORT_QA_TOOL
@@ -1798,8 +1807,18 @@ struct RBIST_CAP_START_T {
 	uint32_t u4EmiStartAddress;
 	uint32_t u4EmiEndAddress;
 	uint32_t u4EmiMsbAddress;
-	uint32_t u4Reserved[3];
+	uint32_t u4CapSource;
+	uint32_t u4Reserved[2];
 };
+
+struct RBIST_DUMP_IQ_T {
+	uint32_t u4WfNum;
+	uint32_t u4IQType;
+	uint32_t u4IcapCnt; /*IQ Sample Count*/
+	uint32_t u4IcapDataLen;
+	uint8_t *pucIcapData;
+};
+
 
 struct RBIST_DUMP_RAW_DATA_T {
 	uint32_t u4Address;
@@ -4021,6 +4040,12 @@ uint32_t wlanoidGetWifiType(IN struct ADAPTER *prAdapter,
 			    IN void *pvSetBuffer,
 			    IN uint32_t u4SetBufferLen,
 			    OUT uint32_t *pu4SetInfoLen);
+
+uint32_t wlanoidRfTestICapGetIQData(IN struct ADAPTER *prAdapter,
+				    OUT void *pvSetBuffer,
+				    IN uint32_t u4SetBufferLen,
+				    OUT uint32_t *pu4SetInfoLen);
+
 
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 uint32_t wlanoidGetLinkQualityInfo(IN struct ADAPTER *prAdapter,

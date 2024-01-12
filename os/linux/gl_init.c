@@ -3263,6 +3263,13 @@ uint32_t wlanServiceInit(struct GLUE_INFO *prGlueInfo)
 			"%s chip_id = 0x%x\n", __func__,
 			prServiceTest->test_winfo->chip_id);
 
+#if (CFG_MTK_ANDROID_EMI == 1)
+	prServiceTest->test_winfo->emi_phy_base = gConEmiPhyBase;
+	prServiceTest->test_winfo->emi_phy_size = gConEmiSize;
+#else
+	DBGLOG(RFTEST, WARN, "Platform doesn't support EMI address\n");
+#endif
+
 	prServiceTest->test_op
 		= kalMemAlloc(sizeof(struct test_operation), VIR_MEM_TYPE);
 	if (prServiceTest->test_op == NULL) {
