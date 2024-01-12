@@ -693,7 +693,8 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 	bss = GET_BSS_INFO_BY_INDEX(ad, cmd->ucBssIndex);
 
 	if (info->ucCID != CMD_ID_BSS_ACTIVATE_CTRL ||
-	    info->u4SetQueryInfoLen != sizeof(*cmd))
+	    info->u4SetQueryInfoLen != sizeof(*cmd) ||
+	    bss->eNetworkType != NETWORK_TYPE_AIS)
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	/* update devinfo */
@@ -1453,9 +1454,8 @@ uint32_t nicUniCmdRemoveStaRec(struct ADAPTER *ad,
 		else
 			return WLAN_STATUS_INVALID_DATA;
 	} else {
-		/* remove by bss, because widx indicates excluded starec,
-		   widx = WTBL_SIZE means no one will be excluded */
-		widx = WTBL_SIZE;
+		/* remove by bss, widx is not checked */
+		widx = 0;
 	}
 
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_STAREC_INFO,
