@@ -1848,7 +1848,7 @@ uint32_t heRlmSendHtcNullFrame(
 	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
 	if (prMsduInfo == NULL) {
 		DBGLOG(RLM, WARN, "No PKT_INFO_T for sending Null Frame.\n");
-		return WLAN_STATUS_RESOURCES;
+		return WLAN_STATUS_FAILURE;
 	}
 	/* 4 <2> Compose Null frame in MSDU_INfO_T. */
 	heRlmComposeHtcNullFrame(prAdapter,
