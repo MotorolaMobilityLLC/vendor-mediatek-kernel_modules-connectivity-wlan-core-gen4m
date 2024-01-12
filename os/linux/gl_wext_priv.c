@@ -10998,6 +10998,126 @@ priv_driver_set_faw_apply(struct net_device *prNetDev, char *pcCommand,
 
 	return 0;
 }
+
+int priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
+				int i4TotalLen)
+{
+	struct ADAPTER *prAdapter = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
+		(struct _NAN_SPECIFIC_BSS_INFO_T *)NULL;
+	struct BSS_INFO *prBssInfo = (struct BSS_INFO *)NULL;
+	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
+	struct _NAN_NDL_INSTANCE_T *prNDL = NULL;
+	struct _NAN_NDP_INSTANCE_T *prNDP = NULL;
+	struct dl_list *ranging_list = NULL;
+	struct _NAN_RANGING_INSTANCE_T *prRng = NULL;
+	struct _NAN_RANGING_CTRL_T *prRngCtrl = NULL;
+	int32_t i4Argc = 0, i4BytesWritten = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint8_t i = 0, j = 0;
+
+	if (!prNetDev) {
+		DBGLOG(NAN, ERROR, "prNetDev error!\n");
+		return -1;
+	}
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	if (!prAdapter) {
+		DBGLOG(REQ, ERROR, "prAdapter error\n");
+		return -1;
+	}
+
+	prNANSpecInfo = nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0);
+
+	if (prNANSpecInfo == NULL) {
+		DBGLOG(NAN, ERROR, "prNANSpecInfo is NULL\n");
+		return 0;
+	}
+	prBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter, prNANSpecInfo->ucBssIndex);
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\n[NAN Info]\n");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"Cluster["MACSTR"] [NSS:%d] %s %s %s\n",
+		MAC2STR(prNANSpecInfo->aucClusterId),
+		prAdapter->rWifiVar.ucNSS,
+		prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_HT ? "[HT]" : "",
+		prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_VHT ? "[VHT]" : "");
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\nMaster Preference %u, Random Factor %u\n",
+		prNANSpecInfo->rMasterIndAttr.ucMasterPreference,
+		prNANSpecInfo->rMasterIndAttr.ucRandomFactor);
+
+	/* Data Path */
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\n[NDL Info]\n");
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"Maximum NDL Cache Size : %d\n", NAN_MAX_SUPPORT_NDL_NUM);
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"Maximum NDP Cache Size : %d\n", NAN_MAX_SUPPORT_NDP_NUM);
+
+	prDataPathInfo = &(prAdapter->rDataPathInfo);
+	for (i = 0; i < NAN_MAX_SUPPORT_NDL_NUM; i++) {
+		prNDL = &(prDataPathInfo->arNDL[i]);
+		if (prNDL->fgNDLValid == FALSE)
+			continue;
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"Peer[" MACSTR "], Idx:%d, %s\n",
+			MAC2STR(prNDL->aucPeerMacAddr), i,
+			prNDL->eNDLRole == NAN_PROTOCOL_INITIATOR ?
+				"[INITIATOR]" : "[RESPONDER]");
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+				"--- [NDP Info]\n");
+		for (j = 0; j < NAN_MAX_SUPPORT_NDP_NUM; j++) {
+			prNDP  = &(prNDL->arNDP[j]);
+			if (prNDP->fgNDPValid == FALSE)
+				continue;
+			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+				"--- Peer[" MACSTR "], Idx:%d, %s %s State:[%u]->[%u], NdpID:%u, PubID:%u\n",
+				MAC2STR(prNDP->aucPeerNDIAddr), j,
+				prNDP->fgNDPActive ? "[ACTIVE]" : "[INACTIVE]",
+				prNDP->eNDPRole == NAN_PROTOCOL_INITIATOR ?
+					"[INITIATOR]" : "[RESPONDER]",
+				prNDP->eLastNDPProtocolState,
+				prNDP->eCurrentNDPProtocolState,
+				prNDP->ucNDPID,
+				prNDP->ucPublishId);
+		}
+	}
+
+	/* Raging */
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"\n[RANGING Info]\n");
+
+	ranging_list = &prAdapter->rRangingInfo.ranging_list;
+	dl_list_for_each(prRng, ranging_list,
+			struct _NAN_RANGING_INSTANCE_T, list) {
+		if (prRng) {
+			prRngCtrl = &prRng->ranging_ctrl;
+			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+				"\nPeer[" MACSTR "] %s State:[%u] Range: %u cm\n",
+				MAC2STR(prRng->ranging_ctrl.aucPeerAddr),
+				prRngCtrl->ucRole == NAN_PROTOCOL_INITIATOR ?
+					"[INITIATOR]" : "[RESPONDER]",
+				prRngCtrl->eCurrentState,
+				prRngCtrl->range_measurement_cm ?
+					prRngCtrl->range_measurement_cm : 0);
+		}
+	}
+
+	return i4BytesWritten;
+}
 #endif
 
 int priv_driver_get_linkspeed(struct net_device *prNetDev,
