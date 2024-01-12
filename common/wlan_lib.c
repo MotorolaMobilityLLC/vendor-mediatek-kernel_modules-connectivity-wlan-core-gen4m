@@ -8241,11 +8241,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 
 #if (CFG_MTK_MDDP_SUPPORT == 0) || (CFG_SUPPORT_MDDP_DYNAMIC_DISABLE == 1)
-	wlanCfgSetUint32(prAdapter, "MddpSupport", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgMddpSupport, "MddpSupport", FEATURE_DISABLED);
 #else
 	INIT_UINT(prWifiVar->fgMddpSupport, "MddpSupport", FEATURE_ENABLED);
-	wlanCfgSetUint32(prAdapter, "MddpSupport", prWifiVar->fgMddpSupport);
 #endif
+	wlanCfgSetUint32(prAdapter, "MddpSupport", prWifiVar->fgMddpSupport);
 
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 	INIT_UINT(prWifiVar->ucDbdcP2pLisEn,
