@@ -532,6 +532,50 @@ void aisFreeAllBssInfo(struct ADAPTER *prAdapter,
 	}
 }
 
+void aisFreeIesMem(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct CONNECTION_SETTINGS *prConnSettings;
+	struct FT_IES *prFtIEs;
+
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+
+	if (prConnSettings && prConnSettings->assocIeLen > 0) {
+		kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
+			prConnSettings->assocIeLen);
+		prConnSettings->assocIeLen = 0;
+		prConnSettings->pucAssocIEs = NULL;
+	}
+
+	if (prConnSettings && prConnSettings->u4RspIeLength > 0) {
+		kalMemFree(prConnSettings->aucRspIe, VIR_MEM_TYPE,
+			prConnSettings->u4RspIeLength);
+		prConnSettings->u4RspIeLength = 0;
+		prConnSettings->aucRspIe = NULL;
+	}
+
+	if (prConnSettings && prConnSettings->u4ReqIeLength > 0) {
+		kalMemFree(prConnSettings->aucReqIe, VIR_MEM_TYPE,
+			prConnSettings->u4ReqIeLength);
+		prConnSettings->u4ReqIeLength = 0;
+		prConnSettings->aucReqIe = NULL;
+	}
+
+	prFtIEs = aisGetFtIe(prAdapter, ucBssIndex, AIS_FT_R0);
+	if (prFtIEs && prFtIEs->u4IeLength > 0) {
+		kalMemFree(prFtIEs->pucIEBuf, VIR_MEM_TYPE,
+			prFtIEs->u4IeLength);
+		kalMemZero(prFtIEs, sizeof(*prFtIEs));
+	}
+
+	prFtIEs = aisGetFtIe(prAdapter, ucBssIndex, AIS_FT_R1);
+	if (prFtIEs && prFtIEs->u4IeLength > 0) {
+		kalMemFree(prFtIEs->pucIEBuf,
+			VIR_MEM_TYPE,
+			prFtIEs->u4IeLength);
+		kalMemZero(prFtIEs, sizeof(*prFtIEs));
+	}
+}
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 struct MLD_BLOCKLIST_ITEM *aisAddMldBlocklist(struct ADAPTER *prAdapter,
 					   struct BSS_DESC *prBssDesc)
@@ -1027,6 +1071,9 @@ void aisFsmUninit(struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 
 	/* make sure pmkid cached is empty after uninit*/
 	rsnFlushPmkid(prAdapter, ucBssIndex);
+
+	/* make sure allocated buffer for IEs is free after uninit*/
+	aisFreeIesMem(prAdapter, ucBssIndex);
 
 	rrmParamInit(prAdapter, ucBssIndex);
 	clearAxBlocklist(prAdapter, ucBssIndex, BLACKLIST_AX_TO_AC);
@@ -4272,7 +4319,7 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 		eNextState = AIS_STATE_JOIN_FAILURE;
 	} else {
 		/* 4.b send reconnect request */
-		aisFsmInsertRequest(prAdapter,
+		aisFsmInsertRequestToHead(prAdapter,
 			AIS_REQUEST_RECONNECT, ucBssIndex);
 		eNextState = AIS_STATE_IDLE;
 	}
@@ -4864,7 +4911,6 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 #endif
 	struct BSS_INFO *prAisBssInfo;
 	struct PARAM_BSSID_EX *prCurrBssid;
-	struct FT_IES *prFtIEs;
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -4919,43 +4965,8 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rApRemovalTimer);
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
-	if (prConnSettings && prConnSettings->assocIeLen > 0) {
-		kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
-			   prConnSettings->assocIeLen);
-		prConnSettings->assocIeLen = 0;
-		prConnSettings->pucAssocIEs = NULL;
-	}
-
-	if (prConnSettings && prConnSettings->u4RspIeLength > 0) {
-		kalMemFree(prConnSettings->aucRspIe, VIR_MEM_TYPE,
-			prConnSettings->u4RspIeLength);
-		prConnSettings->u4RspIeLength = 0;
-		prConnSettings->aucRspIe = NULL;
-	}
-
-	if (prConnSettings && prConnSettings->u4ReqIeLength > 0) {
-		kalMemFree(prConnSettings->aucReqIe, VIR_MEM_TYPE,
-			prConnSettings->u4ReqIeLength);
-		prConnSettings->u4ReqIeLength = 0;
-		prConnSettings->aucReqIe = NULL;
-	}
-
-	prFtIEs = aisGetFtIe(prAdapter, ucBssIndex, AIS_FT_R0);
-	if (prFtIEs) {
-		kalMemFree(prFtIEs->pucIEBuf,
-			VIR_MEM_TYPE,
-			prFtIEs->u4IeLength);
-		kalMemZero(prFtIEs,
-			sizeof(*prFtIEs));
-	}
-	prFtIEs = aisGetFtIe(prAdapter, ucBssIndex, AIS_FT_R1);
-	if (prFtIEs) {
-		kalMemFree(prFtIEs->pucIEBuf,
-			VIR_MEM_TYPE,
-			prFtIEs->u4IeLength);
-		kalMemZero(prFtIEs,
-			sizeof(*prFtIEs));
-	}
+	/* free allocated memory for assoc IE and FT IE */
+	aisFreeIesMem(prAdapter, ucBssIndex);
 
 #if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
 	if (prConnSettings)
