@@ -361,6 +361,12 @@ void cnmDbdcEventHwSwitchDone(IN struct ADAPTER *prAdapter,
 
 enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(struct BSS_INFO *prBssInfo);
 
+u_int8_t cnmSapIsActive(IN struct ADAPTER *prAdapter);
+
+u_int8_t cnmSapIsConcurrent(IN struct ADAPTER *prAdapter);
+
+struct BSS_INFO *cnmGetSapBssInfo(IN struct ADAPTER *prAdapter);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

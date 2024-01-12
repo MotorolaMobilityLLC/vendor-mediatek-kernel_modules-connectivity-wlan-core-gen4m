@@ -1318,6 +1318,10 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 					WLAN_STATUS_SUCCESS,
 					GFP_KERNEL);
 			}
+
+			/* Check SAP channel */
+			p2pFuncSwitchSapChannel(prGlueInfo->prAdapter);
+
 		}
 
 		break;

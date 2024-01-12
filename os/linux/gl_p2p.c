@@ -1192,7 +1192,8 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 		}
 
 		prP2pWdev = gprP2pRoleWdev[i];
-		DBGLOG(INIT, INFO, "glRegisterP2P(%d)\n", i);
+		DBGLOG(INIT, INFO, "glRegisterP2P(%d), fgIsApMode(%d)\n",
+			i, fgIsApMode);
 
 		/* Reset prP2pWdev for the issue that the prP2pWdev doesn't
 		 * reset when the usb unplug/plug.
