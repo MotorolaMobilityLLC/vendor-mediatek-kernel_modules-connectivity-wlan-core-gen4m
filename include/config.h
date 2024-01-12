@@ -2661,7 +2661,7 @@
  * 0: Disable.
  *------------------------------------------------------------------------------
  */
-#if CFG_MTK_ANDROID_WMT
+#if CFG_EXT_FEATURE
 #define CFG_SUPPORT_SA_LOG 1
 #else
 #define CFG_SUPPORT_SA_LOG 0
