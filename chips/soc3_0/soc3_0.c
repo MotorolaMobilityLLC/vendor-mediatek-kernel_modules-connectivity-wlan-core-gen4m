@@ -3931,8 +3931,7 @@ uint32_t soc3_0_wlanAccessCalibrationEMI(
 
 	request_mem_region(gConEmiPhyBaseFinal, gConEmiSizeFinal, "WIFI-EMI");
 	kalSetEmiMpuProtection(gConEmiPhyBaseFinal, false);
-	pucEmiBaseAddr =
-		ioremap_nocache(gConEmiPhyBaseFinal, gConEmiSizeFinal);
+	pucEmiBaseAddr = ioremap(gConEmiPhyBaseFinal, gConEmiSizeFinal);
 	DBGLOG(INIT, INFO,
 	       "backupEMI(%d),gConEmiPhyBaseFinal(0x%x),gConEmiSizeFinal(0x%X),pucEmiBaseAddr(0x%x)\n",
 	       backupEMI, gConEmiPhyBaseFinal, gConEmiSizeFinal,

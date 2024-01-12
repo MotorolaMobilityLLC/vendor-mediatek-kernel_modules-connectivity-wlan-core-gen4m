@@ -776,56 +776,57 @@ u_int8_t kalIsWholeChipResetting(void)
 	return FALSE;
 #endif
 }
-void glReset_timeinit(struct timeval *rNowTs, struct timeval *rLastTs)
+void glReset_timeinit(struct timespec64 *rNowTs, struct timespec64 *rLastTs)
 {
 	rNowTs->tv_sec = 0;
-	rNowTs->tv_usec = 0;
+	rNowTs->tv_nsec = 0;
 	rLastTs->tv_sec = 0;
-	rLastTs->tv_usec = 0;
+	rLastTs->tv_nsec = 0;
 }
 
-bool IsOverRstTimeThreshold(struct timeval *rNowTs, struct timeval *rLastTs)
+bool IsOverRstTimeThreshold(
+	struct timespec64 *rNowTs, struct timespec64 *rLastTs)
 {
-	struct timeval rTimeout, rTime = {0};
+	struct timespec64 rTimeout, rTime = {0};
 	bool fgIsTimeout = FALSE;
 
 	rTimeout.tv_sec = 30;
-	rTimeout.tv_usec = 0;
-	do_gettimeofday(rNowTs);
+	rTimeout.tv_nsec = 0;
+	ktime_get_ts64(rNowTs);
 	DBGLOG(INIT, INFO,
 		"Reset happen time :%d.%d, last happen time :%d.%d\n",
 		rNowTs->tv_sec,
-		rNowTs->tv_usec,
+		rNowTs->tv_nsec,
 		rLastTs->tv_sec,
-		rLastTs->tv_usec);
+		rLastTs->tv_nsec);
 	if (rLastTs->tv_sec != 0) {
 		/* Ignore now time < token time */
 		if (halTimeCompare(rNowTs, rLastTs) > 0) {
 			rTime.tv_sec = rNowTs->tv_sec - rLastTs->tv_sec;
-			rTime.tv_usec = rNowTs->tv_usec;
-			if (rLastTs->tv_usec > rNowTs->tv_usec) {
+			rTime.tv_nsec = rNowTs->tv_nsec;
+			if (rLastTs->tv_nsec > rNowTs->tv_nsec) {
 				rTime.tv_sec -= 1;
-				rTime.tv_usec += SEC_TO_USEC(1);
+				rTime.tv_nsec += SEC_TO_NSEC(1);
 			}
-			rTime.tv_usec -= rLastTs->tv_usec;
+			rTime.tv_nsec -= rLastTs->tv_nsec;
 			if (halTimeCompare(&rTime, &rTimeout) >= 0)
 				fgIsTimeout = TRUE;
 			else
 				fgIsTimeout = FALSE;
 		}
 		DBGLOG(INIT, INFO,
-			"Reset rTimeout :%d.%d, calculate time :%d.%d\n",
+			"Reset rTimeout :%d.%ld, calculate time :%d.%ld\n",
 			rTimeout.tv_sec,
-			rTimeout.tv_usec,
+			rTimeout.tv_nsec,
 			rTime.tv_sec,
-			rTime.tv_usec);
+			rTime.tv_nsec);
 	}
 	return fgIsTimeout;
 }
 void glResetSubsysRstProcedure(
 	struct ADAPTER *prAdapter,
-	struct timeval *rNowTs,
-	struct timeval *rLastTs)
+	struct timespec64 *rNowTs,
+	struct timespec64 *rLastTs)
 {
 	bool fgIsTimeout;
 	struct mt66xx_chip_info *prChipInfo;
@@ -914,7 +915,7 @@ void glResetSubsysRstProcedure(
 	}
 	if (g_SubsysRstCnt == 1) {
 		rLastTs->tv_sec = rNowTs->tv_sec;
-		rLastTs->tv_usec = rNowTs->tv_usec;
+		rLastTs->tv_nsec = rNowTs->tv_nsec;
 	}
 	g_IsTriggerTimeout = FALSE;
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
@@ -925,7 +926,7 @@ int wlan_reset_thread_main(void *data)
 {
 	int ret = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct timeval rNowTs, rLastTs;
+	struct timespec64 rNowTs, rLastTs;
 
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 	KAL_WAKE_LOCK_T *prWlanRstThreadWakeLock;
