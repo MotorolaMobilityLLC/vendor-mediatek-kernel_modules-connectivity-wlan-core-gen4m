@@ -858,6 +858,18 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		goto err_free_irq_vectors;
 	}
 
+#if CFG_CONTROL_ASPM_BY_FW
+#if CFG_SUPPORT_PCIE_ASPM
+	glBusConfigASPM(pdev,
+			DISABLE_ASPM_L1);
+	glBusConfigASPML1SS(pdev,
+		PCI_L1PM_CTR1_ASPM_L12_EN |
+		PCI_L1PM_CTR1_ASPM_L11_EN);
+	glBusConfigASPM(pdev,
+			ENABLE_ASPM_L1);
+#endif
+#endif
+
 	g_fgDriverProbed = TRUE;
 	goto out;
 
