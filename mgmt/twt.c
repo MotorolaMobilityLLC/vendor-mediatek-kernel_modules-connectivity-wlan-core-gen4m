@@ -157,7 +157,9 @@ uint32_t twtSendSetupFrame(
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	nicTxConfigPktControlFlag(prMsduInfo,
-			MSDU_CONTROL_FLAG_FORCE_LINK, TRUE);
+			MSDU_CONTROL_FLAG_FORCE_LINK |
+			MSDU_CONTROL_FLAG_DIS_MAT,
+			TRUE);
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
 	/* Enqueue the frame to send this action frame */
@@ -241,7 +243,9 @@ uint32_t twtSendTeardownFrame(
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	nicTxConfigPktControlFlag(prMsduInfo,
-			MSDU_CONTROL_FLAG_FORCE_LINK, TRUE);
+			MSDU_CONTROL_FLAG_FORCE_LINK |
+			MSDU_CONTROL_FLAG_DIS_MAT,
+			TRUE);
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
 	/* Enqueue the frame to send this action frame */
@@ -385,7 +389,9 @@ uint32_t twtSendInfoFrame(
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	nicTxConfigPktControlFlag(prMsduInfo,
-			MSDU_CONTROL_FLAG_FORCE_LINK, TRUE);
+			MSDU_CONTROL_FLAG_FORCE_LINK |
+			MSDU_CONTROL_FLAG_DIS_MAT,
+			TRUE);
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
 	/* Enqueue the frame to send this action frame */
@@ -2058,7 +2064,9 @@ uint32_t btwtSendSetupFrame(
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	nicTxConfigPktControlFlag(prMsduInfo,
-			MSDU_CONTROL_FLAG_FORCE_LINK, TRUE);
+			MSDU_CONTROL_FLAG_FORCE_LINK |
+			MSDU_CONTROL_FLAG_DIS_MAT,
+			TRUE);
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
 	/* Enqueue the frame to send this action frame */
@@ -2145,7 +2153,9 @@ uint32_t btwtSendTeardownFrame(
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	nicTxConfigPktControlFlag(prMsduInfo,
-			MSDU_CONTROL_FLAG_FORCE_LINK, TRUE);
+			MSDU_CONTROL_FLAG_FORCE_LINK |
+			MSDU_CONTROL_FLAG_DIS_MAT,
+			TRUE);
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
 	/* Enqueue the frame to send this action frame */
@@ -2352,7 +2362,9 @@ uint32_t rtwtSendSetupFrame(
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	nicTxConfigPktControlFlag(prMsduInfo,
-			MSDU_CONTROL_FLAG_FORCE_LINK, TRUE);
+			MSDU_CONTROL_FLAG_FORCE_LINK |
+			MSDU_CONTROL_FLAG_DIS_MAT,
+			TRUE);
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
 	/* Enqueue the frame to send this action frame */
@@ -2441,7 +2453,9 @@ uint32_t rtwtSendTeardownFrame(
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	nicTxConfigPktControlFlag(prMsduInfo,
-			MSDU_CONTROL_FLAG_FORCE_LINK, TRUE);
+			MSDU_CONTROL_FLAG_FORCE_LINK |
+			MSDU_CONTROL_FLAG_DIS_MAT,
+			TRUE);
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
 	/* Enqueue the frame to send this action frame */

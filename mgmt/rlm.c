@@ -8993,7 +8993,9 @@ static void __rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	nicTxConfigPktControlFlag(prMsduInfo,
-			MSDU_CONTROL_FLAG_FORCE_LINK, TRUE);
+			MSDU_CONTROL_FLAG_FORCE_LINK |
+			MSDU_CONTROL_FLAG_DIS_MAT,
+			TRUE);
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
 	/* 4 Enqueue the frame to send this action frame. */
@@ -9089,7 +9091,9 @@ static void __rlmSendExChannelSwitchFrame(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	nicTxConfigPktControlFlag(prMsduInfo,
-			MSDU_CONTROL_FLAG_FORCE_LINK, TRUE);
+			MSDU_CONTROL_FLAG_FORCE_LINK |
+			MSDU_CONTROL_FLAG_DIS_MAT,
+			TRUE);
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
 	/* 4 Enqueue the frame to send this action frame. */

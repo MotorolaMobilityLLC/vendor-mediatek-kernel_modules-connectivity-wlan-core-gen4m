@@ -2372,22 +2372,24 @@ nicTxFillDataDesc(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (isEapolBeforeKeyReady(prAdapter, prMsduInfo)) {
-		struct STA_RECORD *prStaRec;
 		struct MLD_STA_RECORD *prMldSta;
+		struct STA_RECORD *prStaRec;
 
 		nicTxConfigPktControlFlag(prMsduInfo,
 					  MSDU_CONTROL_FLAG_FORCE_LINK,
 					  TRUE);
-
-		prStaRec = cnmGetStaRecByIndex(prAdapter,
-			prMsduInfo->ucStaRecIndex);
 		prMldSta = mldStarecGetByStarec(prAdapter,
-			prStaRec);
-
-		/* Use setup link as force link */
-		if (prMldSta)
-			nicEtherMAT_M2L(prAdapter, prMsduInfo,
-					prMldSta->u2SetupWlanId);
+			cnmGetStaRecByIndex(prAdapter,
+				prMsduInfo->ucStaRecIndex));
+		if (prMldSta) {
+			prStaRec = cnmGetStaRecByIndex(prAdapter,
+				secGetStaIdxByWlanIdx(prAdapter,
+					prMldSta->u2SetupWlanId));
+			if (prStaRec) {
+				prMsduInfo->ucBssIndex = prStaRec->ucBssIndex;
+				prMsduInfo->ucStaRecIndex = prStaRec->ucIndex;
+			}
+		}
 	}
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 

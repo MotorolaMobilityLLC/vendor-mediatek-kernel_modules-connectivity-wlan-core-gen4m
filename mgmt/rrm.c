@@ -1152,7 +1152,9 @@ void rrmTxRadioMeasurementReport(struct ADAPTER *prAdapter,
 		     prRmRepParam->u2ReportFrameLen, NULL, MSDU_RATE_MODE_AUTO);
 
 	nicTxConfigPktControlFlag(prMsduInfo,
-			MSDU_CONTROL_FLAG_FORCE_LINK, TRUE);
+			MSDU_CONTROL_FLAG_FORCE_LINK |
+			MSDU_CONTROL_FLAG_DIS_MAT,
+			TRUE);
 
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 

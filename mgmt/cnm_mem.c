@@ -225,9 +225,6 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 		prMsduInfo->ucControlFlag = 0;
 		prMsduInfo->fgMgmtUseDataQ = FALSE;
 		prMsduInfo->fgIsPacketSkb = FALSE;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		prMsduInfo->u2ForceTxWlanId = WTBL_SIZE;
-#endif
 	}
 
 

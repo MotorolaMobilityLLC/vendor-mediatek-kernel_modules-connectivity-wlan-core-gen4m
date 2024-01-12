@@ -463,7 +463,9 @@ void wnmSendBTMResponseFrame(struct ADAPTER *adapter,
 		     pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
 
 	nicTxConfigPktControlFlag(prMsduInfo,
-			MSDU_CONTROL_FLAG_FORCE_LINK, TRUE);
+			MSDU_CONTROL_FLAG_FORCE_LINK |
+			MSDU_CONTROL_FLAG_DIS_MAT,
+			TRUE);
 
 	/* 5 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(adapter, prMsduInfo);
