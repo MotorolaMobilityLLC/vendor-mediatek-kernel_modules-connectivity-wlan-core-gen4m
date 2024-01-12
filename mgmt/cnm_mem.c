@@ -190,7 +190,7 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_MSDU_INFO_LIST);
 
 	if (!prMsduInfo)
-		return NULL;
+		goto exit;
 
 	kalMemZero(prMsduInfo, sizeof(struct MSDU_INFO));
 
@@ -212,7 +212,8 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 				&prMsduInfo->rQueEntry);
 			KAL_RELEASE_SPIN_LOCK(prAdapter,
 				SPIN_LOCK_TX_MSDU_INFO_LIST);
-			return NULL;
+			prMsduInfo = NULL;
+			goto exit;
 		}
 		prMsduInfo->prHead = prHead;
 		prMsduInfo->prPacket = (uint8_t *)
@@ -227,9 +228,8 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 	}
 
 
-#if DBG
+exit:
 	if (prMsduInfo == NULL) {
-		log_dbg(MEM, WARN, "\n");
 		log_dbg(MEM, WARN, "MgtDesc#=%ld\n", prQueList->u4NumElem);
 
 #if CFG_DBG_MGT_BUF
@@ -238,10 +238,7 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 			prAdapter->rMgtBufInfo.u4FreeCount,
 			prAdapter->rMgtBufInfo.u4AllocNullCount);
 #endif
-
-		log_dbg(MEM, WARN, "\n");
 	}
-#endif
 
 	return prMsduInfo;
 }
@@ -441,11 +438,19 @@ void *cnmMemAlloc(struct ADAPTER *prAdapter, enum ENUM_RAM_TYPE eRamType,
 		prMemTrack->pucFileAndLine = fileAndLine;
 		prMemTrack->u2CmdIdAndWhere = 0x0000;
 		pvMemory = (void *)(prMemTrack + 1);
+	} else {
+		DBGLOG(MEM, WARN,
+			"kalMemAlloc fail, type: %d sz: %u\n",
+			eRamType,
+			u4Length + sizeof(struct MEM_TRACK));
 	}
 #else
 	pvMemory = (void *) kalMemAlloc(u4Length, PHY_MEM_TYPE);
 	if (!pvMemory)
-		DBGLOG(MEM, WARN, "kmalloc fail: %u\n", u4Length);
+		DBGLOG(MEM, WARN,
+			"kalMemAlloc fail, type: %d sz: %u\n",
+			eRamType,
+			u4Length);
 #endif
 #else
 	/*
@@ -454,7 +459,10 @@ void *cnmMemAlloc(struct ADAPTER *prAdapter, enum ENUM_RAM_TYPE eRamType,
 	 */
 	pvMemory = (void *) kalMemAlloc(u4Length, PHY_MEM_TYPE);
 	if (!pvMemory)
-		DBGLOG(MEM, WARN, "kalMemAlloc FAILED: %u\n", u4Length);
+		DBGLOG(MEM, WARN,
+			"kalMemAlloc fail, type: %d sz: %u\n",
+			eRamType,
+			u4Length);
 #endif
 
 #if CFG_DBG_MGT_BUF
@@ -465,8 +473,8 @@ void *cnmMemAlloc(struct ADAPTER *prAdapter, enum ENUM_RAM_TYPE eRamType,
 exit:
 	if (pvMemory)
 		kalMemZero(pvMemory, u4Length);
-	return pvMemory;
 
+	return pvMemory;
 }	/* end of cnmMemAlloc() */
 
 /*----------------------------------------------------------------------------*/
