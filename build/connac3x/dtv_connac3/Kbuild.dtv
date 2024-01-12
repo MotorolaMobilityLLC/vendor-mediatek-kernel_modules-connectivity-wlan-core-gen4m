@@ -75,7 +75,7 @@ PLATFORM_FLAGS += -DCHIP_RESET_DTS_COMPATIBLE_NAME='"mediatek,mtk-wifi-reset"'
 PLATFORM_FLAGS += -DCHIP_RESET_GPIO_PROPERTY_NAME='"reset-gpio-num"'
 PLATFORM_FLAGS += -DCHIP_RESET_INVERT_PROPERTY_NAME='"invert-ms"'
 PLATFORM_FLAGS += -DCHIP_RESET_DEFAULT_VAL_PROPERTY_NAME='"default-gpio-val"'
-
+PLATFORM_FLAGS += -DWPA_TYPES_DEFINED=1
 #/***** Special Settings for DTV stop ******/
 
 ##############################################################
