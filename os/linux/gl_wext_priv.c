@@ -3020,6 +3020,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 
 #define CMD_SET_DRV_SER           "SET_DRV_SER"
 
+#define CMD_GET_WFDMA_INFO      "GET_WFDMA_INFO"
 #define CMD_GET_PLE_INFO        "GET_PLE_INFO"
 #define CMD_GET_PSE_INFO        "GET_PSE_INFO"
 #define CMD_GET_DMASCH_INFO     "GET_DMASCH_INFO"
@@ -14032,6 +14033,33 @@ static int priv_driver_set_amsdu_size(IN struct net_device *prNetDev,
 
 }
 
+static int priv_driver_get_wfdma_info(
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
+	struct CHIP_DBG_OPS *prDbgOps;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prDbgOps = prGlueInfo->prAdapter->chip_info->prDebugOps;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+
+	if (prDbgOps && prDbgOps->showPdmaInfo)
+		prDbgOps->showPdmaInfo(prGlueInfo->prAdapter);
+	return i4BytesWritten;
+
+}
 static int priv_driver_get_ple_info(
 	struct net_device *prNetDev,
 	char *pcCommand,
@@ -14506,6 +14534,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_GET_PLE_INFO, priv_driver_get_ple_info},
 	{CMD_GET_PSE_INFO, priv_driver_get_pse_info},
 	{CMD_GET_DMASCH_INFO, priv_driver_get_dmasch_info},
+	{CMD_GET_WFDMA_INFO, priv_driver_get_wfdma_info},
 #if (CFG_SUPPORT_CONNAC2X == 1)
 	{CMD_GET_FWTBL_UMAC, priv_driver_get_umac_fwtbl},
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */

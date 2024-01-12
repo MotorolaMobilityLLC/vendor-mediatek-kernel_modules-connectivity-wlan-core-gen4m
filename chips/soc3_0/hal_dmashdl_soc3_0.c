@@ -26,6 +26,7 @@
 #include "soc3_0.h"
 #include "coda/soc3_0/wf_hif_dmashdl_top.h"
 #include "hal_dmashdl_soc3_0.h"
+#include "dma_sch.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -202,6 +203,27 @@ void mt6885HalDmashdlSetPsePktMaxPage(struct ADAPTER *prAdapter,
 	HAL_MCR_WR(prAdapter, WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_ADDR, u4Val);
 }
 
+void mt6885HalDmashdlGetPktMaxPage(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Val;
+	uint32_t ple_pkt_max_sz;
+	uint32_t pse_pkt_max_sz;
+
+	HAL_MCR_RD(prAdapter, WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_ADDR, &u4Val);
+
+	ple_pkt_max_sz = (u4Val &
+		WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_PLE_PACKET_MAX_SIZE_MASK)>>
+		WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_PLE_PACKET_MAX_SIZE_SHFT;
+	pse_pkt_max_sz = (u4Val &
+		WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_PSE_PACKET_MAX_SIZE_MASK)>>
+		WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_PSE_PACKET_MAX_SIZE_SHFT;
+
+	DBGLOG(HAL, INFO, "DMASHDL PLE_PACKET_MAX_SIZE (0x%08x): 0x%08x\n",
+		WF_HIF_DMASHDL_TOP_PACKET_MAX_SIZE_ADDR, u4Val);
+	DBGLOG(HAL, INFO, "PLE/PSE packet max size=0x%03x/0x%03x\n",
+		ple_pkt_max_sz, pse_pkt_max_sz);
+
+}
 void mt6885HalDmashdlSetRefill(struct ADAPTER *prAdapter, uint8_t ucGroup,
 			       u_int8_t fgEnable)
 {
@@ -221,6 +243,15 @@ void mt6885HalDmashdlSetRefill(struct ADAPTER *prAdapter, uint8_t ucGroup,
 		u4Val |= u4Mask;
 
 	HAL_MCR_WR(prAdapter, WF_HIF_DMASHDL_TOP_REFILL_CONTROL_ADDR, u4Val);
+}
+
+void mt6885HalDmashdlGetRefill(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Val;
+
+	HAL_MCR_RD(prAdapter, WF_HIF_DMASHDL_TOP_REFILL_CONTROL_ADDR, &u4Val);
+	DBGLOG(HAL, INFO, "DMASHDL ReFill Control (0x%08x): 0x%08x\n",
+		WF_HIF_DMASHDL_TOP_REFILL_CONTROL_ADDR, u4Val);
 }
 
 void mt6885HalDmashdlSetMaxQuota(struct ADAPTER *prAdapter, uint8_t ucGroup,
@@ -263,6 +294,24 @@ void mt6885HalDmashdlSetMinQuota(struct ADAPTER *prAdapter, uint8_t ucGroup,
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 }
 
+void mt6885HalDmashdlGetGroupControl(struct ADAPTER *prAdapter, uint8_t ucGroup)
+{
+	uint32_t u4Addr, u4Val;
+	uint32_t max_quota;
+	uint32_t min_quota;
+
+	u4Addr = WF_HIF_DMASHDL_TOP_GROUP0_CONTROL_ADDR + (ucGroup << 2);
+
+	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
+
+	max_quota = GET_DMASHDL_MAX_QUOTA_NUM(u4Val);
+	min_quota = GET_DMASHDL_MIN_QUOTA_NUM(u4Val);
+	DBGLOG(HAL, INFO, "\tDMASHDL Group%d control(0x%08x): 0x%08x\n",
+		ucGroup, u4Addr, u4Val);
+	DBGLOG(HAL, INFO, "\tmax/min quota = 0x%03x/ 0x%03x\n",
+		max_quota, min_quota);
+
+}
 void mt6885HalDmashdlSetQueueMapping(struct ADAPTER *prAdapter, uint8_t ucQueue,
 				     uint8_t ucGroup)
 {
@@ -325,6 +374,62 @@ void mt6885HalDmashdlSetUserDefinedPriority(struct ADAPTER *prAdapter,
 	u4Val |= (ucGroup << u4Shft) & u4Mask;
 
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+}
+
+uint32_t mt6885HalDmashdlGetRsvCount(struct ADAPTER *prAdapter, uint8_t ucGroup)
+{
+	uint32_t u4Addr, u4Val;
+	uint32_t rsv_cnt = 0;
+
+	u4Addr = WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_ADDR + (ucGroup << 2);
+
+	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
+
+	rsv_cnt = (u4Val & WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_G0_RSV_CNT_MASK) >>
+			WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_G0_RSV_CNT_SHFT;
+
+	DBGLOG(HAL, INFO, "\tDMASHDL Status_RD_GP%d(0x%08x): 0x%08x\n",
+		ucGroup, u4Addr, u4Val);
+	DBGLOG(HAL, INFO, "\trsv_cnt = 0x%03x\n", rsv_cnt);
+	return rsv_cnt;
+}
+
+uint32_t mt6885HalDmashdlGetSrcCount(struct ADAPTER *prAdapter, uint8_t ucGroup)
+{
+	uint32_t u4Addr, u4Val;
+	uint32_t src_cnt = 0;
+
+	u4Addr = WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_ADDR + (ucGroup << 2);
+
+	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
+
+	src_cnt = (u4Val & WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_G0_SRC_CNT_MASK) >>
+			WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_G0_SRC_CNT_SHFT;
+
+	DBGLOG(HAL, INFO, "\tsrc_cnt = 0x%03x\n", src_cnt);
+	return src_cnt;
+}
+
+void mt6885HalDmashdlGetPKTCount(struct ADAPTER *prAdapter, uint8_t ucGroup)
+{
+	uint32_t u4Addr, u4Val;
+	uint32_t pktin_cnt = 0;
+	uint32_t ask_cnt = 0;
+
+	u4Addr = WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_ADDR + (ucGroup << 2);
+
+	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, INFO, "\tDMASHDL RD_group_pkt_cnt_%d(0x%08x): 0x%08x\n",
+		ucGroup / 2, u4Addr, u4Val);
+	if ((ucGroup & 0x1) == 0) {
+		pktin_cnt = GET_EVEN_GROUP_PKT_IN_CNT(u4Val);
+		ask_cnt = GET_EVEN_GROUP_ASK_CNT(u4Val);
+	} else {
+		pktin_cnt = GET_ODD_GROUP_PKT_IN_CNT(u4Val);
+		ask_cnt = GET_ODD_GROUP_ASK_CNT(u4Val);
+	}
+	DBGLOG(HAL, INFO, "\tpktin_cnt = 0x%02x, ask_cnt = 0x%02x",
+		pktin_cnt, ask_cnt);
 }
 
 void mt6885DmashdlInit(struct ADAPTER *prAdapter)

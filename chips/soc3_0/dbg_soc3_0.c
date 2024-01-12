@@ -74,9 +74,11 @@
 #include "coda/soc3_0/wf_pse_top.h"
 #include "coda/soc3_0/wf_wfdma_host_dma0.h"
 #include "coda/soc3_0/wf_wfdma_host_dma1.h"
+#include "coda/soc3_0/wf_hif_dmashdl_top.h"
 #include "precomp.h"
 #include "mt_dmac.h"
 #include "wf_ple.h"
+#include "hal_dmashdl_soc3_0.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -282,8 +284,8 @@ struct wfdma_group_info wfmda_host_tx_group[] = {
 };
 
 struct wfdma_group_info wfmda_host_rx_group[] = {
-	{"R1:DATA(B1)", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING1_CTRL0_ADDR},
 	{"R0:DATA(B0)", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL0_ADDR},
+	{"R1:DATA(B1)", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING1_CTRL0_ADDR},
 	{"R2:TXDONE(B0)", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING2_CTRL0_ADDR},
 	{"R3:TXDONE(B1)", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING3_CTRL0_ADDR},
 	{"R0:EVENT", WF_WFDMA_HOST_DMA1_WPDMA_RX_RING0_CTRL0_ADDR},
@@ -1068,7 +1070,7 @@ void show_wfdma_ring_info(
 
 	/* Dump All Ring Info */
 	DBGLOG(HAL, INFO, "TRX Ring Configuration\n");
-	DBGLOG(HAL, INFO, "%4s %12s %8s %10s %6s %6s %6s %6s\n",
+	DBGLOG(HAL, INFO, "%4s %13s %8s %10s %6s %6s %6s %6s\n",
 		"Idx", "Attr", "Reg", "Base", "Cnt", "CIDX", "DIDX", "QCnt");
 
 
@@ -1097,7 +1099,7 @@ void show_wfdma_ring_info(
 			(u4_hw_cidx_value - u4_hw_didx_value) :
 			(u4_hw_cidx_value - u4_hw_didx_value + u4_hw_cnt_value);
 
-		DBGLOG(HAL, INFO, "%4d %12s %8x %10x %6x %6x %6x %6x\n",
+		DBGLOG(HAL, INFO, "%4d %13s %8x %10x %6x %6x %6x %6x\n",
 					idx,
 					group->name,
 					u4DmaCfgCrAddr, u4_hw_desc_base_value,
@@ -1133,7 +1135,7 @@ void show_wfdma_ring_info(
 			(u4_hw_didx_value - u4_hw_cidx_value
 			+ u4_hw_cnt_value - 1);
 
-		DBGLOG(HAL, INFO, "%4d %12s %8x %10x %6x %6x %6x %6x\n",
+		DBGLOG(HAL, INFO, "%4d %13s %8x %10x %6x %6x %6x %6x\n",
 					idx,
 					group->name,
 					u4DmaCfgCrAddr, u4_hw_desc_base_value,
@@ -1165,6 +1167,94 @@ void soc3_0_show_wfdma_info(
 
 }
 
+void soc3_0_show_dmashdl_info(IN struct ADAPTER *prAdapter)
+{
+	uint32_t value;
+	uint8_t idx;
+	uint32_t rsv_cnt = 0;
+	uint32_t src_cnt = 0;
+	uint32_t total_src_cnt = 0;
+	uint32_t total_rsv_cnt = 0;
+	uint32_t ffa_cnt = 0;
+	uint32_t free_pg_cnt = 0;
+	uint32_t ple_rpg_hif;
+	uint32_t ple_upg_hif;
+	uint8_t is_mismatch = FALSE;
 
+	DBGLOG(HAL, INFO, "==============================\n");
+	DBGLOG(HAL, INFO, "DMASHDL info:\n");
+	DBGLOG(HAL, INFO, "==============================\n");
 
+	mt6885HalDmashdlGetRefill(prAdapter);
+	mt6885HalDmashdlGetPktMaxPage(prAdapter);
+
+	HAL_MCR_RD(prAdapter, WF_HIF_DMASHDL_TOP_ERROR_FLAG_CTRL_ADDR, &value);
+	DBGLOG(HAL, INFO, "DMASHDL ERR FLAG CTRL(0x%08x): 0x%08x\n",
+		WF_HIF_DMASHDL_TOP_ERROR_FLAG_CTRL_ADDR, value);
+
+	for (idx = 0; idx < ENUM_MT6885_DMASHDL_GROUP_NUM; idx++) {
+		DBGLOG(HAL, INFO, "Group %d info:", idx);
+		mt6885HalDmashdlGetGroupControl(prAdapter, idx);
+		rsv_cnt = mt6885HalDmashdlGetRsvCount(prAdapter, idx);
+		src_cnt = mt6885HalDmashdlGetSrcCount(prAdapter, idx);
+		mt6885HalDmashdlGetPKTCount(prAdapter, idx);
+		total_src_cnt += src_cnt;
+		total_rsv_cnt += rsv_cnt;
+	}
+	HAL_MCR_RD(prAdapter, WF_HIF_DMASHDL_TOP_STATUS_RD_ADDR, &value);
+	ffa_cnt = (value & WF_HIF_DMASHDL_TOP_STATUS_RD_FFA_CNT_MASK) >>
+		WF_HIF_DMASHDL_TOP_STATUS_RD_FFA_CNT_SHFT;
+	free_pg_cnt = (value &
+		WF_HIF_DMASHDL_TOP_STATUS_RD_FREE_PAGE_CNT_MASK) >>
+		WF_HIF_DMASHDL_TOP_STATUS_RD_FREE_PAGE_CNT_SHFT;
+	DBGLOG(HAL, INFO, "\tDMASHDL Status_RD(0x%08x): 0x%08x\n",
+		WF_HIF_DMASHDL_TOP_STATUS_RD_ADDR, value);
+	DBGLOG(HAL, INFO, "\tfree page cnt = 0x%03x, ffa cnt = 0x%03x\n",
+		free_pg_cnt, ffa_cnt);
+
+	DBGLOG(HAL, INFO, "\nCounter Check:\n");
+	HAL_MCR_RD(prAdapter, WF_PLE_TOP_HIF_PG_INFO_ADDR, &value);
+	ple_rpg_hif = (value & WF_PLE_TOP_HIF_PG_INFO_HIF_RSV_CNT_MASK) >>
+		  WF_PLE_TOP_HIF_PG_INFO_HIF_RSV_CNT_SHFT;
+	ple_upg_hif = (value & WF_PLE_TOP_HIF_PG_INFO_HIF_SRC_CNT_MASK) >>
+		  WF_PLE_TOP_HIF_PG_INFO_HIF_SRC_CNT_SHFT;
+	DBGLOG(HAL, INFO,
+		"PLE:\n\tThe used/reserved pages of PLE HIF group=0x%03x/0x%03x\n",
+		 ple_upg_hif, ple_rpg_hif);
+	DBGLOG(HAL, INFO,
+		"DMASHDL:\n\tThe total used pages of group0~14=0x%03x",
+		total_src_cnt);
+
+	if (ple_upg_hif != total_src_cnt) {
+		DBGLOG(HAL, INFO, ", mismatch!");
+		is_mismatch = TRUE;
+	}
+
+	DBGLOG(HAL, INFO, "\n");
+	DBGLOG(HAL, INFO,
+		"\tThe total reserved pages of group0~14=0x%03x\n",
+		total_rsv_cnt);
+	DBGLOG(HAL, INFO,
+		"\tThe total ffa pages of group0~14=0x%03x\n",
+		ffa_cnt);
+	DBGLOG(HAL, INFO,
+		"\tThe total free pages of group0~14=0x%03x",
+		free_pg_cnt);
+
+	if (free_pg_cnt != total_rsv_cnt + ffa_cnt) {
+		DBGLOG(HAL, INFO,
+			", mismatch(total_rsv_cnt + ffa_cnt in DMASHDL)");
+		is_mismatch = TRUE;
+	}
+
+	if (free_pg_cnt != ple_rpg_hif) {
+		DBGLOG(HAL, INFO, ", mismatch(reserved pages in PLE)");
+		is_mismatch = TRUE;
+	}
+
+	DBGLOG(HAL, INFO, "\n");
+
+	if (!is_mismatch)
+		DBGLOG(HAL, INFO, "DMASHDL: no counter mismatch\n");
+}
 #endif /* SOC3_0 */
