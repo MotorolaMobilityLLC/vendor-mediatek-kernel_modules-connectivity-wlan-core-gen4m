@@ -1683,8 +1683,38 @@ static void save_mddp_stats(void)
 
 void mddpSetMDFwOwn(void)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
+		DBGLOG(INIT, ERROR, "Invalid drv state.\n");
+		return;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		return;
+	}
+
+	prChipInfo = prAdapter->chip_info;
+
+#if defined(_HIF_PCIE)
+	if (prChipInfo->bus_info->hwControlVote)
+		prChipInfo->bus_info->hwControlVote(prAdapter,
+			FALSE, PCIE_VOTE_USER_MDDP);
+#endif
+
 	kalDevRegWrite(NULL, MD_LPCTL_ADDR, MDDP_LPCR_MD_SET_FW_OWN);
 	DBGLOG(INIT, INFO, "Set MD Fw Own.\n");
+
+#if defined(_HIF_PCIE)
+	if (prChipInfo->bus_info->hwControlVote)
+		prChipInfo->bus_info->hwControlVote(prAdapter,
+			TRUE, PCIE_VOTE_USER_MDDP);
+#endif
 }
 
 u_int8_t mddpIsMDFwOwn(void)

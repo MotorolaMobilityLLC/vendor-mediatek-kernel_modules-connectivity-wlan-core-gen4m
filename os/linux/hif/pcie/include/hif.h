@@ -151,6 +151,7 @@ enum pcie_suspend_state {
 enum pcie_vote_user {
 	PCIE_VOTE_USER_DRVOWN = 0,
 	PCIE_VOTE_USER_LOG_RESET,
+	PCIE_VOTE_USER_MDDP,
 	PCIE_VOTE_USER_NUM
 };
 
