@@ -5199,7 +5199,7 @@ int priv_driver_set_mdvt(struct net_device *prNetDev, char *pcCommand,
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
 	uint32_t u4Ret;
-	int32_t i4ArgNum = 3;
+	int32_t i4ArgNum = 4;
 	struct CMD_MDVT_CFG rCmdMdvtCfg;
 #if (CFG_SUPPORT_WIFI_SYSDVT == 1)
 	uint16_t u2ModuleNum;
@@ -5218,13 +5218,18 @@ int priv_driver_set_mdvt(struct net_device *prNetDev, char *pcCommand,
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rCmdMdvtCfg.u4ModuleId));
 		if (u4Ret)
 			DBGLOG(REQ, LOUD,
-			       "parse get_mcr error (Address) u4Ret=%d\n",
+			       "parse u4ModuleId error u4Ret=%d\n",
 			       u4Ret);
 
 		u4Ret = kalkStrtou32(apcArgv[2], 0, &(rCmdMdvtCfg.u4CaseId));
 		if (u4Ret)
 			DBGLOG(REQ, LOUD,
-			       "parse get_mcr error (Data) u4Ret=%d\n", u4Ret);
+			       "parse u4CaseId error u4Ret=%d\n", u4Ret);
+
+		u4Ret = kalkStrtou8(apcArgv[3], 0, &(rCmdMdvtCfg.ucCapId));
+		if (u4Ret)
+			DBGLOG(REQ, LOUD,
+			       "parse ucCapId error u4Ret=%d\n", u4Ret);
 
 #if (CFG_SUPPORT_WIFI_SYSDVT == 1)
 		if (rCmdMdvtCfg.u4ModuleId == MDVT_MODULE_PH_TPUT)

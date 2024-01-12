@@ -792,6 +792,8 @@ struct PARAM_CUSTOM_MCR_RW_STRUCT {
 struct PARAM_MDVT_STRUCT {
 	uint32_t u4ModuleId;
 	uint32_t u4CaseId;
+	uint8_t ucCapId;
+	uint8_t ucReseved[3];
 };
 
 struct STAREC_COMMON {

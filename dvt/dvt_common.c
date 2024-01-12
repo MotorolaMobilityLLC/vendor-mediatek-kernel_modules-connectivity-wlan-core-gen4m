@@ -104,6 +104,22 @@ const struct _MDVT_MODULE_T arMdvtModuleTable[] = {
 	{MDVT_MODULE_LIT_WFRMAC,                "lit_rmac"},
 	{MDVT_MODULE_PTA_IDC_COEX,              "pta_idc_coex"},
 	{MDVT_MODULE_MUMIMO,                    "mumimo"},
+	{MDVT_MODULE_PRMBPUNC,                  "prmbpunc"},
+	{MDVT_MODULE_CERT,                      "cert"},
+	{MDVT_MODULE_SR,                        "sr"},
+	{MDVT_MODULE_ARB_COEX,                  "arb_coex"},
+	{MDVT_MODULE_BF,                        "bf"},
+	{MDVT_MODULE_CMD_DECODER,               "cmd_decoder"},
+	{MDVT_MODULE_COSIM,                     "cosim"},
+	{MDVT_MODULE_RLM_CMM,                   "rlm_cmm"},
+	{MDVT_MODULE_WFDMA,                     "wfdma"},
+	{MDVT_MODULE_SDO,                       "sdo"},
+	{MDVT_MODULE_RRO,                       "rro"},
+	{MDVT_MODULE_AIRTIME,                   "airtime"},
+	{MDVT_MODULE_BFTXD,                     "bftxd"},
+	{MDVT_MODULE_PRMBPUNC_TXD,              "prmbpunc_txd"},
+	{MDVT_MODULE_UMAC_CFG,                  "umac_cfg"},
+	{MDVT_MODULE_FDD_COEX,                  "fdd_coex"},
 	{MDVT_MODULE_MAX,                       "all"}
 };
 

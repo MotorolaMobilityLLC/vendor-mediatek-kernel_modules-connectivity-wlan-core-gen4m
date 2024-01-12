@@ -1333,6 +1333,7 @@ uint32_t nicUniCmdSetMdvt(struct ADAPTER *ad,
 	mdvt->u2Length = sizeof(*mdvt);
 	mdvt->u2ModuleId = cmd->u4ModuleId;
 	mdvt->u2CaseId = cmd->u4CaseId;
+	mdvt->ucCapId = cmd->ucCapId;
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 	return WLAN_STATUS_SUCCESS;
