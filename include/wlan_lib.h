@@ -917,7 +917,7 @@ struct PARAM_GET_STA_STATISTICS {
 	uint32_t u4AggRangeCtrl_0;
 	uint32_t u4AggRangeCtrl_1;
 	uint8_t ucRangeType;
-#if (CFG_SUPPORT_CONNAC2X == 0)
+#if (CFG_SUPPORT_CONNAC2X == 0 && CFG_SUPPORT_CONNAC3X == 0)
 	uint8_t aucReserved5[24];
 #else
 	uint32_t u4AggRangeCtrl_2;

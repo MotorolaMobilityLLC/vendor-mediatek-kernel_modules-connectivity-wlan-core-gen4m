@@ -9350,8 +9350,10 @@ void kalPrintLog(const char *fmt, ...)
 	if (ret < 0) {
 		kalPrintLog("[%u] vsnprintf failed, ret: %d",
 			__LINE__, ret);
+#if CFG_MTK_ANDROID_WMT
 	} else if (get_wifi_standalone_log_mode() == 1) {
 		kalPrintTrace(buffer, strlen(buffer));
+#endif
 	} else {
 		pr_info("%s%s", WLAN_TAG, buffer);
 	}
@@ -9378,8 +9380,10 @@ void kalPrintLogLimited(const char *fmt, ...)
 		if (ret < 0) {
 			kalPrintLog("[%u] vsnprintf failed, ret: %d",
 				__LINE__, ret);
+#if CFG_MTK_ANDROID_WMT
 		} else if (get_wifi_standalone_log_mode() == 1) {
 			kalPrintTrace(buffer, strlen(buffer));
+#endif
 		} else {
 			pr_info("%s%s", WLAN_TAG, buffer);
 		}

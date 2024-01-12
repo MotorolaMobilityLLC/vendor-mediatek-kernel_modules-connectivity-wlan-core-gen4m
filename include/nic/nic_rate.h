@@ -179,16 +179,22 @@ enum HE_LTF {
  *                                 M A C R O S
  *******************************************************************************
  */
-#if (CFG_SUPPORT_CONNAC2X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1)
+#define HW_TX_RATE_TO_MODE(_x)		CONNAC3X_HW_TX_RATE_TO_MODE(_x)
+#define HW_TX_RATE_TO_NSS(_x)		CONNAC3X_HW_TX_RATE_TO_NSS(_x)
+#define HW_TX_RATE_TO_STBC(_x)		CONNAC3X_HW_TX_RATE_TO_STBC(_x)
+#define HW_TX_RATE_TO_MCS(_x)		CONNAC3X_HW_TX_RATE_TO_MCS(_x)
+#elif (CFG_SUPPORT_CONNAC2X == 1)
 #define HW_TX_RATE_TO_MODE(_x)		CONNAC2X_HW_TX_RATE_TO_MODE(_x)
 #define HW_TX_RATE_TO_NSS(_x)		CONNAC2X_HW_TX_RATE_TO_NSS(_x)
 #define HW_TX_RATE_TO_STBC(_x)		CONNAC2X_HW_TX_RATE_TO_STBC(_x)
+#define HW_TX_RATE_TO_MCS(_x)		((_x) & (0x3f))
 #else
 #define HW_TX_RATE_TO_MODE(_x)		(((_x) & (0x7 << 6)) >> 6)
 #define HW_TX_RATE_TO_NSS(_x)		(((_x) & (0x3 << 9)) >> 9)
 #define HW_TX_RATE_TO_STBC(_x)		(((_x) & (0x1 << 11)) >> 11)
-#endif
 #define HW_TX_RATE_TO_MCS(_x)		((_x) & (0x3f))
+#endif
 
 #if (CFG_SUPPORT_CONNAC2X == 1)
 #define TX_VECTOR_GET_TX_RATE(_txv)	CONNAC2X_TXV_GET_TX_RATE(_txv)

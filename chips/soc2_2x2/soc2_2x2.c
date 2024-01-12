@@ -337,6 +337,7 @@ struct CHIP_DBG_OPS soc2_2x2_debug_ops = {
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 	.get_rx_rate_info = connac_get_rx_rate_info,
 #endif
+	.dumpPhyInfo = haldumpPhyInfo
 };
 
 struct mt66xx_chip_info mt66xx_chip_info_soc2_2x2 = {
