@@ -4647,9 +4647,7 @@ int mtk_cfg80211_tdls_oper(struct wiphy *wiphy,
 	kalMemZero(&rCmdOper, sizeof(rCmdOper));
 	kalMemCopy(rCmdOper.aucPeerMac, peer, 6);
 
-#if 0
-	rCmdOper.oper = oper;
-#endif
+	rCmdOper.oper = (enum ENUM_TDLS_LINK_OPER)oper;
 	rCmdOper.ucBssIdx = ucBssIndex;
 	rStatus = kalIoctl(prGlueInfo, TdlsexLinkOper, &rCmdOper,
 			sizeof(struct TDLS_CMD_LINK_OPER), FALSE, FALSE, FALSE,
