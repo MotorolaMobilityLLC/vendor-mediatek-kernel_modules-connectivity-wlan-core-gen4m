@@ -9495,7 +9495,7 @@ wlanoidSetCSUMOffload(IN struct ADAPTER *prAdapter,
 			    CMD_ID_BASIC_CONFIG,
 			    TRUE,
 			    FALSE,
-			    TRUE,
+			    FALSE,
 			    NULL,
 			    nicOidCmdTimeoutCommon,
 			    sizeof(struct CMD_BASIC_CONFIG),
@@ -11349,7 +11349,7 @@ wlanoidSetTxAmpdu(IN struct ADAPTER *prAdapter,
 
 	/* return value of wlanSendSetQueryCmd is WLAN_STATUS_PENDING */
 	wlanSendSetQueryCmd(prAdapter, CMD_ID_TX_AMPDU,
-				      TRUE, FALSE, TRUE, NULL, NULL,
+				      TRUE, FALSE, FALSE, NULL, NULL,
 				      u2CmdBufLen,
 				      (uint8_t *) &rTxAmpdu, NULL, 0);
 
@@ -11396,7 +11396,7 @@ wlanoidSetAddbaReject(IN struct ADAPTER *prAdapter,
 
 	/* return value of wlanSendSetQueryCmd is WLAN_STATUS_PENDING */
 	wlanSendSetQueryCmd(prAdapter, CMD_ID_ADDBA_REJECT,
-				      TRUE, FALSE, TRUE, NULL, NULL,
+				      TRUE, FALSE, FALSE, NULL, NULL,
 				      u2CmdBufLen,
 				      (uint8_t *) &rAddbaReject, NULL, 0);
 
