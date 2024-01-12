@@ -1325,6 +1325,117 @@ void rsnGenerateWpaNoneIE(IN struct ADAPTER *prAdapter,
 
 }				/* rsnGenerateWpaNoneIE */
 
+uint32_t _addWPAIE_impl(IN struct ADAPTER *prAdapter,
+	IN OUT struct MSDU_INFO *prMsduInfo)
+{
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIndex;
+
+	ucBssIndex = prMsduInfo->ucBssIndex;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+	if (!prAdapter->rWifiVar.fgReuseRSNIE)
+		return FALSE;
+
+	if (!prBssInfo)
+		return FALSE;
+
+	/* AP + GO */
+	if (!IS_BSS_APGO(prBssInfo))
+		return FALSE;
+
+	/* AP only */
+	if (!p2pFuncIsAPMode(
+		prAdapter->rWifiVar.
+		prP2PConnSettings[prBssInfo->u4PrivateData]))
+		return FALSE;
+
+	/* PMF only */
+	if (!prBssInfo->rApPmfCfg.fgMfpc)
+		return FALSE;
+
+	prP2pSpecBssInfo =
+		prAdapter->rWifiVar.
+		prP2pSpecificBssInfo[prBssInfo->u4PrivateData];
+
+	if (prP2pSpecBssInfo &&
+		(prP2pSpecBssInfo->u2WpaIeLen != 0)) {
+		uint8_t *pucBuffer =
+			(uint8_t *) ((unsigned long)
+			prMsduInfo->prPacket + (unsigned long)
+			prMsduInfo->u2FrameLength);
+
+		kalMemCopy(pucBuffer,
+			prP2pSpecBssInfo->aucWpaIeBuffer,
+			prP2pSpecBssInfo->u2WpaIeLen);
+		prMsduInfo->u2FrameLength += prP2pSpecBssInfo->u2WpaIeLen;
+
+		DBGLOG(RSN, INFO,
+			"Keep supplicant WPA IE content w/o update\n");
+
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+
+uint32_t _addRSNIE_impl(IN struct ADAPTER *prAdapter,
+	IN OUT struct MSDU_INFO *prMsduInfo)
+{
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIndex;
+
+	ucBssIndex = prMsduInfo->ucBssIndex;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+	if (!prAdapter->rWifiVar.fgReuseRSNIE)
+		return FALSE;
+
+	if (!prBssInfo)
+		return FALSE;
+
+	/* AP + GO */
+	if (!IS_BSS_APGO(prBssInfo))
+		return FALSE;
+
+	/* AP only */
+	if (!p2pFuncIsAPMode(
+		prAdapter->rWifiVar.
+		prP2PConnSettings[prBssInfo->u4PrivateData]))
+		return FALSE;
+
+	/* PMF only */
+	if (!prBssInfo->rApPmfCfg.fgMfpc)
+		return FALSE;
+
+	prP2pSpecBssInfo =
+		prAdapter->rWifiVar.
+		prP2pSpecificBssInfo[prBssInfo->u4PrivateData];
+
+	if (prP2pSpecBssInfo &&
+		(prP2pSpecBssInfo->u2RsnIeLen != 0)) {
+		uint8_t *pucBuffer =
+			(uint8_t *) ((unsigned long)
+			prMsduInfo->prPacket + (unsigned long)
+			prMsduInfo->u2FrameLength);
+
+		kalMemCopy(pucBuffer,
+			prP2pSpecBssInfo->aucRsnIeBuffer,
+			prP2pSpecBssInfo->u2RsnIeLen);
+		prMsduInfo->u2FrameLength += prP2pSpecBssInfo->u2RsnIeLen;
+
+		DBGLOG(RSN, INFO,
+			"Keep supplicant RSN IE content w/o update\n");
+
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  *
@@ -1364,6 +1475,8 @@ void rsnGenerateWPAIE(IN struct ADAPTER *prAdapter,
 
 	/* if (eNetworkId != NETWORK_TYPE_AIS_INDEX) */
 	/* return; */
+	if (_addWPAIE_impl(prAdapter, prMsduInfo))
+		return;
 
 #if CFG_ENABLE_WIFI_DIRECT
 	if ((prAdapter->fgIsP2PRegistered &&
@@ -1493,6 +1606,9 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 
 	/* For FT, we reuse the RSN Element composed in userspace */
 	if (authAddRSNIE_impl(prAdapter, prMsduInfo))
+		return;
+
+	if (_addRSNIE_impl(prAdapter, prMsduInfo))
 		return;
 
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
@@ -1715,10 +1831,19 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 			*pu2StatusCode = STATUS_CODE_INVALID_PAIRWISE_CIPHER;
 			return;
 		}
-		if (rRsnIe.u4GroupKeyCipherSuite != RSN_CIPHER_SUITE_CCMP) {
+		/* When softap's conf support both TKIP&CCMP,
+		 * the Group Cipher Suite would be TKIP
+		 * If we check the Group Cipher Suite == CCMP
+		 * about peer's Asso Req
+		 * The connection would be fail
+		 * due to STATUS_CODE_INVALID_GROUP_CIPHER
+		 */
+		if (rRsnIe.u4GroupKeyCipherSuite != RSN_CIPHER_SUITE_CCMP &&
+			!prAdapter->rWifiVar.fgReuseRSNIE) {
 			*pu2StatusCode = STATUS_CODE_INVALID_GROUP_CIPHER;
 			return;
 		}
+
 		if ((rRsnIe.u4AuthKeyMgtSuiteCount != 1)
 		    || (rRsnIe.au4AuthKeyMgtSuite[0] != RSN_AKM_SUITE_PSK)) {
 			*pu2StatusCode = STATUS_CODE_INVALID_AKMP;

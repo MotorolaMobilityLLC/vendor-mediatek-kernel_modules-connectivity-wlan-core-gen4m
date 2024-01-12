@@ -7590,7 +7590,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 
 #endif
 
-
+	prWifiVar->fgReuseRSNIE = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "ReuseRSNIE",
+			FEATURE_DISABLED);
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
