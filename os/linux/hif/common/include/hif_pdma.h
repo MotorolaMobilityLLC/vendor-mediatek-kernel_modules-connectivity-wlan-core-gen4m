@@ -67,7 +67,7 @@
 #define NUM_OF_WFDMA1_TX_RING			0
 #define NUM_OF_WFDMA1_RX_RING			0
 
-#if (CFG_SUPPORT_CONNAC2X == 1)
+#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
 
 #undef NUM_OF_WFDMA1_TX_RING
 #ifdef CONFIG_NUM_OF_WFDMA_TX_RING
@@ -93,7 +93,7 @@
 #define NUM_OF_TX_RING				(5+NUM_OF_WFDMA1_TX_RING)
 #define NUM_OF_RX_RING				(2+NUM_OF_WFDMA1_RX_RING)
 
-#if (CFG_SUPPORT_CONNAC2X_2x2 == 1)
+#if (CFG_SUPPORT_CONNAC2X_2x2 == 1 || CFG_SUPPORT_CONNAC3X == 1)
 #define TX_RING_SIZE				1024
 #define RX_RING_SIZE				1024 /* Max Rx ring size */
 /* Data Rx ring */
@@ -123,6 +123,10 @@
 #define RX_BUFFER_AGGRESIZE			3840
 #define RX_BUFFER_NORMSIZE			3840
 #define TX_BUFFER_NORMSIZE			3840
+
+
+#define HIF_TX_MAX_SIZE_PER_FRAME         (NIC_TX_MAX_SIZE_PER_FRAME +      \
+					   NIC_TX_DESC_AND_PADDING_LENGTH)
 
 #define HIF_TX_PREALLOC_DATA_BUFFER			1
 
@@ -185,6 +189,10 @@
 #define MT_RX_RING_CNT		WPDMA_RX_RING0_CTRL1
 #define MT_RX_RING_CIDX		WPDMA_RX_RING0_CTRL2
 #define MT_RX_RING_DIDX		WPDMA_RX_RING0_CTRL3
+
+#define MT_RING_CIDX_MASK	0x00000FFF
+#define MT_RING_DIDX_MASK	0x00000FFF
+#define MT_RING_CNT_MASK	0x00000FFF
 
 #define DMA_LOWER_32BITS_MASK   0x00000000FFFFFFFF
 #define DMA_HIGHER_4BITS_MASK   0x0000000F
@@ -265,6 +273,8 @@ enum ENUM_RX_RING_IDX {
 	RX_RING_DATA1_IDX_2,
 	RX_RING_TXDONE0_IDX_3,
 	RX_RING_TXDONE1_IDX_4,
+	RX_RING_DATA2_IDX_5,
+	RX_RING_TXDONE2_IDX_6,
 	RX_RING_WAEVT0_IDX_5,
 	RX_RING_WAEVT1_IDX_6,
 };
@@ -517,6 +527,46 @@ struct SW_WFDMA_INFO {
 	uint32_t u4DmaIdx;
 	uint32_t u4MaxCnt;
 	uint8_t aucCID[SW_WFDMA_CMD_NUM];
+};
+
+enum mtk_queue_attr {
+	Q_TX_DATA,
+	Q_TX_CMD,
+	Q_TX_CMD_WM,
+	Q_TX_FWDL,
+	Q_RX_DATA,
+	Q_RX_EVENT_WM,
+	Q_RX_EVENT_WA,
+	Q_ATTR_NUM
+};
+
+struct pci_queue_desc {
+	enum mtk_queue_attr q_attr;
+	u32 hw_desc_base;
+	u32 hw_int_mask;
+	u32 desc_size;
+	u16 q_size;
+	u8 band_idx;
+	char *const q_info;
+};
+
+struct pci_tx_queue_desc {
+	struct pci_queue_desc cmm;
+	/*tx specific*/
+};
+
+struct pci_rx_queue_desc {
+	struct pci_queue_desc cmm;
+	u32 event_type;
+	u16 max_rx_process_cnt;
+	u16 max_sw_read_idx_inc;
+	u16 rx_buf_size;
+	u8 buf_type;
+};
+
+struct pci_queue_layout {
+	const struct pci_tx_queue_desc *tx_queue_layout;
+	const struct pci_rx_queue_desc *rx_queue_layout;
 };
 
 /*******************************************************************************

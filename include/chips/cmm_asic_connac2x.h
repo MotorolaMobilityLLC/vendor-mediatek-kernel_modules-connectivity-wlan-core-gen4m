@@ -1224,13 +1224,6 @@ uint32_t asic_connac2x_show_raw_wtbl_info(
 	int32_t i4Argc,
 	int32_t idx);
 
-uint32_t dump_key_table(
-	struct GLUE_INFO *prGlueInfo,
-	int8_t *pcCommand,
-	int32_t i4TotalLen,
-	int16_t key_loc0,
-	int16_t key_loc1);
-
 char *asic_connac2x_hw_rate_ofdm_str(
 	u_int16_t ofdm_idx);
 

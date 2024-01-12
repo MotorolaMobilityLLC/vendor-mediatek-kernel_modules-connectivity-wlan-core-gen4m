@@ -674,7 +674,7 @@ static int axiAllocHifMem(struct platform_device *pdev,
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
 	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
-		if (!axiAllocRsvMem(AXI_TX_MAX_SIZE_PER_FRAME +
+		if (!axiAllocRsvMem(HIF_TX_MAX_SIZE_PER_FRAME +
 				    prChipInfo->txd_append_size,
 				    &grMem.rMsduBuf[u4Idx]))
 			DBGLOG(INIT, ERROR, "MsduBuf[%u] alloc fail\n", u4Idx);

@@ -1110,7 +1110,11 @@
  * Value of scan cache result
  *------------------------------------------------------------------------------
  */
+#if CFG_MTK_ANDROID_WMT
 #define CFG_SUPPORT_SCAN_CACHE_RESULT      (1)
+#else
+#define CFG_SUPPORT_SCAN_CACHE_RESULT      (0)
+#endif
 #define CFG_SCAN_CACHE_RESULT_PERIOD       (7000)	/* Unit: ms */
 #define CFG_SCAN_CACHE_MIN_CHANNEL_NUM     (10)
 
@@ -1409,7 +1413,11 @@
  * Flags of using wlan_assistant to read/write NVRAM
  *------------------------------------------------------------------------------
  */
+#if CFG_MTK_ANDROID_WMT
 #define CFG_WLAN_ASSISTANT_NVRAM		1
+#else
+#define CFG_WLAN_ASSISTANT_NVRAM		0
+#endif
 
 /*------------------------------------------------------------------------------
  * SW handles WTBL_SEARCH_FAIL

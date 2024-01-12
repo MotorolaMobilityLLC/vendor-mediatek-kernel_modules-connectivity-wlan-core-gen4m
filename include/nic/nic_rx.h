@@ -613,7 +613,7 @@ enum ENUM_MAC_RX_GROUP_VLD {
 	RX_GROUP_VLD_2,
 	RX_GROUP_VLD_3,
 	RX_GROUP_VLD_4,
-#if (CFG_SUPPORT_CONNAC2X == 1)
+#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
 	RX_GROUP_VLD_5,
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 	RX_GROUP_VLD_NUM
@@ -670,6 +670,8 @@ enum {
 	TFD_EVT_VER_1,
 	TFD_EVT_VER_2,
 	TFD_EVT_VER_3,
+	TFD_EVT_VER_4,
+	TFD_EVT_VER_5,
 };
 
 #define RX_TFD_EVT_V3_PAIR_SHIFT 31
@@ -748,7 +750,7 @@ struct HW_MAC_RX_STS_GROUP_3 {
 	uint32_t u4RxVector[6];	/* DW 14~19 */
 };
 
-#if (CFG_SUPPORT_CONNAC2X == 1)
+#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
 struct HW_MAC_RX_STS_GROUP_3_V2 {
 	/*  PRXVector Info */
 	uint32_t u4RxVector[2];	/* FALCON: DW 16~17 */
@@ -806,6 +808,24 @@ struct HW_RX_VECTOR_DESC {
 
 };
 
+// DW4
+#define WF_TX_FREE_DONE_EVENT_MSDU_ID0_DW               4
+#define WF_TX_FREE_DONE_EVENT_MSDU_ID0_ADDR             16
+#define WF_TX_FREE_DONE_EVENT_MSDU_ID0_MASK             0x00007fff // 14- 0
+#define WF_TX_FREE_DONE_EVENT_MSDU_ID0_SHIFT            0
+#define WF_TX_FREE_DONE_EVENT_MSDU_ID1_DW               4
+#define WF_TX_FREE_DONE_EVENT_MSDU_ID1_ADDR             16
+#define WF_TX_FREE_DONE_EVENT_MSDU_ID1_MASK             0x3fff8000 // 29-15
+#define WF_TX_FREE_DONE_EVENT_MSDU_ID1_SHIFT            15
+#define WF_TX_FREE_DONE_EVENT_H4_DW                     4
+#define WF_TX_FREE_DONE_EVENT_H4_ADDR                   16
+#define WF_TX_FREE_DONE_EVENT_H4_MASK                   0x40000000 // 30-30
+#define WF_TX_FREE_DONE_EVENT_H4_SHIFT                  30
+#define WF_TX_FREE_DONE_EVENT_P4_DW                     4
+#define WF_TX_FREE_DONE_EVENT_P4_ADDR                   16
+#define WF_TX_FREE_DONE_EVENT_P4_MASK                   0x80000000 // 31-31
+#define WF_TX_FREE_DONE_EVENT_P4_SHIFT                  31
+
 union HW_MAC_MSDU_TOKEN_T {
 	struct {
 		uint16_t         u2MsduID[2];
@@ -841,6 +861,23 @@ union HW_MAC_MSDU_TOKEN_T {
 			uint32_t         u4Pair:1;
 		} rP1;
 	} rFormatV3;
+	struct {
+		struct {
+			uint32_t         u4TransmitDelay:12;
+			uint32_t         u4AirDelay:12;
+			uint32_t         u4TxCount:4;
+			uint32_t         u4Stat:2;
+			uint32_t         u4H:1;
+			uint32_t         u4Pair:1;
+		} rP0;
+		struct {
+			uint32_t         u4MsduId0:15;
+			uint32_t         u4MsduId1:15;
+			uint32_t         u4H:1;
+			uint32_t         u4Pair:1;
+		} rP1;
+	} rFormatV5;
+
 };
 
 struct HW_MAC_MSDU_REPORT {
@@ -874,7 +911,15 @@ struct HW_MAC_MSDU_REPORT {
 		uint32_t word;
 	} DW1;
 
-	/* DW 2 */
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	struct {
+		uint32_t	 u4Rsv:12;
+		uint32_t	 u4MldId:12;
+		uint32_t	 u4QID:7;
+		uint32_t	 u4Pair:1;
+	} DW2;
+#endif /* CFG_SUPPORT_CONNAC3X == 1 */
+
 	/* MSDU token array */
 	union HW_MAC_MSDU_TOKEN_T au4MsduToken[0];
 };
@@ -910,7 +955,7 @@ struct SW_RFB {
 	struct HW_MAC_RX_STS_GROUP_2 *prRxStatusGroup2;
 	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3;
 	struct HW_MAC_RX_STS_GROUP_4 *prRxStatusGroup4;
-#if (CFG_SUPPORT_CONNAC2X == 1)
+#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
 	struct HW_MAC_RX_STS_GROUP_5 *prRxStatusGroup5;
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
@@ -1371,7 +1416,7 @@ struct ACTION_FRAME_SIZE_MAP {
 	(((_prHwMacRxStsGroup3)->u4RxVector[0] & RX_VT_NUM_RX_MASK) >> \
 	RX_VT_NUM_RX_OFFSET)
 
-#if (CFG_SUPPORT_CONNAC2X == 1)
+#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
 #define HAL_RX_STATUS_GET_RCPI0(_prHwMacRxStsGroup3)	\
 	(((_prHwMacRxStsGroup3)->u4RxVector[1] & RX_VT_RCPI0_MASK) >> \
 	RX_VT_RCPI0_OFFSET)

@@ -522,6 +522,11 @@ struct CHIP_DBG_OPS {
 		uint32_t *pu4Sgi);
 #endif
 #endif
+	void (*dumpPhyInfo)(struct ADAPTER *prAdapter);
+	int32_t (*showMibInfo)(struct ADAPTER *prAdapter,
+		uint32_t u4Index,
+		char *pcCommand,
+		int32_t i4TotalLen);
 };
 
 enum PKT_PHASE {
@@ -937,8 +942,92 @@ int connac2x_get_rx_rate_info(
 	uint32_t *pu4FrMode,
 	uint32_t *pu4Sgi);
 #endif
-
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+void connac3x_show_txd_Info(
+	struct ADAPTER *prAdapter,
+	u_int32_t fid);
+int32_t connac3x_show_wtbl_info(
+	struct ADAPTER *prAdapter,
+	uint32_t u4Index,
+	char *pcCommand,
+	int i4TotalLen);
+int32_t connac3x_show_mib_info(
+	struct ADAPTER *prAdapter,
+	uint32_t u4Index,
+	char *pcCommand,
+	int i4TotalLen);
+int32_t connac3x_show_rx_rate_info(
+	struct ADAPTER *prAdapter,
+	char *pcCommand,
+	int32_t i4TotalLen,
+	uint8_t ucStaIdx);
+
+int32_t connac3x_show_rx_rssi_info(
+	struct ADAPTER *prAdapter,
+	char *pcCommand,
+	int32_t i4TotalLen,
+	uint8_t ucStaIdx);
+
+int32_t connac3x_show_stat_info(
+	struct ADAPTER *prAdapter,
+	char *pcCommand,
+	int32_t i4TotalLen,
+	struct PARAM_HW_WLAN_INFO *prHwWlanInfo,
+	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
+	uint8_t fgResetCnt,
+	uint32_t u4StatGroup);
+
+void connac3x_show_wfdma_interrupt_info(
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
+	uint32_t u4DmaNum);
+
+void connac3x_show_wfdma_glo_info(
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
+	uint32_t u4DmaNum);
+
+void connac3x_show_wfdma_ring_info(
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+
+void connac3x_show_wfdma_dbg_flag_log(
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
+	uint32_t u4DmaNum);
+
+void connac3x_show_wfdma_info_by_type(
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
+	uint32_t u4DmaNum);
+
+void connac3x_show_wfdma_info(IN struct ADAPTER *prAdapter);
+void connac3x_show_dmashdl_info(IN struct ADAPTER *prAdapter);
+void connac3x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd);
+void connac3x_show_pse_info(struct ADAPTER *prAdapter);
+void connac3x_DumpWfsyscpupcr(struct ADAPTER *prAdapter);
+void connac3x_DbgCrRead(
+	struct ADAPTER *prAdapter, uint32_t addr, unsigned int *val);
+void connac3x_DbgCrWrite(
+	struct ADAPTER *prAdapter, uint32_t addr, unsigned int val);
+void connac3x_dump_format_memory32(
+	uint32_t *pu4StartAddr, uint32_t u4Count, char *aucInfo);
+void connac3x_DumpCrRange(
+	struct ADAPTER *prAdapter,
+	uint32_t cr_start, uint32_t word_count, char *str);
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+int connac3x_get_rx_rate_info(
+	struct ADAPTER *prAdapter,
+	uint32_t *pu4Rate,
+	uint32_t *pu4Nss,
+	uint32_t *pu4RxMode,
+	uint32_t *pu4FrMode,
+	uint32_t *pu4Sgi);
+#endif
+
+#endif /* CFG_SUPPORT_CONNAC3X == 1 */
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 void fw_log_bug_hang_register(void *);

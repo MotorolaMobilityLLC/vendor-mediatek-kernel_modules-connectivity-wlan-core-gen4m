@@ -17,6 +17,10 @@ ccflags-y += -Wno-unused-result
 ccflags-y += -Wno-format
 ccflags-y += -Wno-parentheses
 
+ccflags-y += -Wno-implicit-fallthrough
+ccflags-y += -Wframe-larger-than=2048
+ccflags-y += -Wno-unused-function
+
 ifeq ($(os), none)
 ccflags-y += -I/usr/include/
 ccflags-y += -DCFG_VIRTUAL_OS
@@ -44,7 +48,7 @@ ccflags-y += -DDRIVER_BUILD_DATE='"$(DRIVER_BUILD_DATE)"'
 # ---------------------------------------------------
 # Compile Options
 # ---------------------------------------------------
-WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -USOC2_1X1 -USOC2_2X2 -UUT_TEST_MODE -UMT7915 -USOC3_0 -UMT7961 -USOC5_0 -USOC7_0
+WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -USOC2_1X1 -USOC2_2X2 -UUT_TEST_MODE -UMT7915 -USOC3_0 -UMT7961 -USOC5_0 -USOC7_0 -UBELLWETHER -UMT6639
 # '-D' and '-U' options are processed in the order they are given on the command line.
 # All '-imacros file' and '-include file' options are processed after all '-D' and '-U' options.
 ccflags-y += $(WLAN_CHIP_LIST)
@@ -192,6 +196,29 @@ ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
 ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
 endif
 
+ifneq ($(filter BELLWETHER,$(MTK_COMBO_CHIP)),)
+ccflags-y:=$(filter-out -UBELLWETHER,$(ccflags-y))
+ccflags-y += -DBELLWETHER
+CONFIG_MTK_WIFI_11AX_SUPPORT=y
+CONFIG_MTK_WIFI_11BE_SUPPORT=y
+CONFIG_MTK_WIFI_CONNAC3X=y
+CONFIG_NUM_OF_WFDMA_RX_RING=5
+CONFIG_NUM_OF_WFDMA_TX_RING=0
+CONFIG_MTK_WIFI_TWT_SUPPORT=y
+endif
+
+ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
+ccflags-y:=$(filter-out -UMT6639,$(ccflags-y))
+ccflags-y += -DMT6639
+CONFIG_MTK_WIFI_11AX_SUPPORT=y
+CONFIG_MTK_WIFI_11BE_SUPPORT=y
+CONFIG_MTK_WIFI_CONNAC3X=y
+CONFIG_NUM_OF_WFDMA_RX_RING=2
+CONFIG_NUM_OF_WFDMA_TX_RING=0
+CONFIG_MTK_WIFI_TWT_SUPPORT=y
+endif
+
+
 ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
 ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=1
 else
@@ -210,13 +237,23 @@ else
     ccflags-y += -DCFG_SUPPORT_CONNAC2X_2x2=0
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
+    ccflags-y += -DCFG_SUPPORT_CONNAC3X=1
+else
+    ccflags-y += -DCFG_SUPPORT_CONNAC3X=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_802_11AX=1
 else
     ccflags-y += -DCFG_SUPPORT_802_11AX=0
 endif
 
-ccflags-y += -DCFG_SUPPORT_802_11BE=0
+ifeq ($(CONFIG_MTK_WIFI_11BE_SUPPORT), y)
+    ccflags-y += -DCFG_SUPPORT_802_11BE=1
+else
+    ccflags-y += -DCFG_SUPPORT_802_11BE=0
+endif
 
 ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT), y)
     ifeq ($(CONFIG_MTK_WIFI_6G_SUPPORT), y)
@@ -279,6 +316,7 @@ endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_CONNINFRA=1
+    ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=1
     ccflags-y += -DCFG_SUPPORT_PRE_ON_PHY_ACTION=1
     ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
     ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/power_throttling
@@ -297,6 +335,7 @@ ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
     endif
 else
     ccflags-y += -DCFG_SUPPORT_CONNINFRA=0
+    ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=0
     ccflags-y += -DCFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT=0
     ccflags-y += -DCFG_SUPPORT_PRE_ON_PHY_ACTION=0
     ifeq ($(WMT_SUPPORT), y)
@@ -637,20 +676,30 @@ MGMT_OBJS := 	$(MGMT_DIR)ais_fsm.o \
 # ---------------------------------------------------
 MGMT_OBJS += $(MGMT_DIR)stats.o
 
-
 CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac.o
 CHIPS_OBJS +=  $(CHIPS_CMM)dbg_connac.o
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
-CHIPS_OBJS +=  $(CHIPS_CMM)dbg_connac2x.o
+CHIPS_OBJS += $(CHIPS_CMM)dbg_connac2x.o
+CHIPS_OBJS += $(CHIPS_CMM)pre_cal.o
+endif
+ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
+CHIPS_OBJS +=  $(CHIPS_CMM)dbg_connac3x.o
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
 CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac2x.o
-CHIPS_OBJS += $(CHIPS_CMM)pre_cal.o
 NIC_OBJS += $(NIC_DIR)nic_ext_cmd_event.o \
 			$(NIC_DIR)nic_txd_v2.o \
 			$(NIC_DIR)nic_rxd_v2.o
 endif
+
+ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
+CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac3x.o
+NIC_OBJS += $(NIC_DIR)nic_ext_cmd_event.o \
+			$(NIC_DIR)nic_txd_v3.o \
+			$(NIC_DIR)nic_rxd_v3.o
+endif
+
 CHIPS_OBJS += $(CHIPS_CMM)fw_dl.o
 
 ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
@@ -694,6 +743,18 @@ ifneq ($(findstring 7_0,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)soc7_0/soc7_0.o
 CHIPS_OBJS += $(CHIPS)soc7_0/dbg_soc7_0.o
 CHIPS_OBJS += $(CHIPS)soc7_0/hal_dmashdl_soc7_0.o
+endif
+
+ifneq ($(filter BELLWETHER,$(MTK_COMBO_CHIP)),)
+CHIPS_OBJS += $(CHIPS)bellwether/bellwether.o
+CHIPS_OBJS += $(CHIPS)bellwether/dbg_bellwether.o
+CHIPS_OBJS += $(CHIPS)bellwether/hal_dmashdl_bellwether.o
+endif
+
+ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
+CHIPS_OBJS += $(CHIPS)mt6639/mt6639.o
+CHIPS_OBJS += $(CHIPS)mt6639/dbg_mt6639.o
+CHIPS_OBJS += $(CHIPS)mt6639/hal_dmashdl_mt6639.o
 endif
 
 # ---------------------------------------------------

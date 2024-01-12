@@ -174,6 +174,7 @@ struct GL_HIF_INFO {
 
 	struct ERR_RECOVERY_CTRL_T rErrRecoveryCtl;
 	struct timer_list rSerTimer;
+	u_int64_t rSerTimerData;
 	struct list_head rTxCmdQ;
 	struct list_head rTxDataQ;
 	uint32_t u4TxDataQLen;
@@ -189,6 +190,7 @@ struct GL_HIF_INFO {
 struct BUS_INFO {
 	const uint32_t top_cfg_base;	/* TOP_CFG_BASE address */
 	const struct PCIE_CHIP_CR_MAPPING *bus2chip;
+	const struct pci_queue_layout queue_layout;
 	const uint32_t tx_ring_cmd_idx;
 	const uint32_t tx_ring_wa_cmd_idx;
 	const uint32_t tx_ring_fwdl_idx;

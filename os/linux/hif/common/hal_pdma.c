@@ -859,7 +859,7 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter,
 
 	spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
 
-	DBGLOG_LIMITED(HAL, TRACE,
+	DBGLOG(HAL, INFO,
 		       "Acquire Entry[0x%p] Tok[%u] Buf[%p] Len[%u]\n",
 		       prToken, prToken->u4Token,
 		       prToken->prPacket, prToken->u4DmaLength);
@@ -1106,36 +1106,99 @@ void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
 #endif
 }
 
-void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
-			    IN OUT struct SW_RFB *prSwRfb)
+uint8_t halProcessToken(IN struct ADAPTER *prAdapter, IN uint8_t ucVer,
+		IN uint32_t u4Token, IN struct HW_MAC_MSDU_REPORT *prMsduReport,
+		IN struct QUE *prFreeQueue, IN uint16_t u2TokenCnt)
 {
 	struct GL_HIF_INFO *prHifInfo;
-	struct HIF_MEM_OPS *prMemOps;
-	struct RTMP_DMACB *prTxCell;
-	struct RTMP_TX_RING *prTxRing;
-	struct HW_MAC_MSDU_REPORT *prMsduReport;
 	struct MSDU_TOKEN_ENTRY *prTokenEntry;
 #if !HIF_TX_PREALLOC_DATA_BUFFER
 	struct MSDU_INFO *prMsduInfo;
 #endif
+	struct HIF_MEM_OPS *prMemOps;
+	struct RTMP_DMACB *prTxCell;
+	struct RTMP_TX_RING *prTxRing;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prMemOps = &prHifInfo->rMemOps;
+
+	/* reserved token id, not needed to handle */
+	if (ucVer == TFD_EVT_VER_5 &&
+	    u4Token == WF_TX_FREE_DONE_EVENT_MSDU_ID0_MASK)
+		return TRUE;
+
+	if (u4Token >= HIF_TX_MSDU_TOKEN_NUM) {
+		DBGLOG(HAL, ERROR, "Error MSDU report[%u]\n", u4Token);
+		DBGLOG_MEM32(HAL, ERROR, prMsduReport, 64);
+		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
+		halPrintHifDbgInfo(prAdapter);
+		return FALSE;
+	}
+
+	prTokenEntry = halGetMsduTokenEntry(prAdapter, u4Token);
+
+#if HIF_TX_PREALLOC_DATA_BUFFER
+	DBGLOG(HAL, INFO,
+		       "MsduRpt: Cnt[%u] Tok[%u] Free[%u]\n",
+		       u2TokenCnt, u4Token,
+		       halGetMsduTokenFreeCnt(prAdapter));
+#else
+	prMsduInfo = prTokenEntry->prMsduInfo;
+	prMsduInfo->prToken = NULL;
+	if (!prMsduInfo->pfTxDoneHandler)
+		QUEUE_INSERT_TAIL(prFreeQueue,
+			(struct QUE_ENTRY *) prMsduInfo);
+
+	DBGLOG_LIMITED(HAL, TRACE,
+		       "MsduRpt: Cnt[%u] Tok[%u] Msdu[0x%p] TxDone[%u] Free[%u]\n",
+		       u2TokenCnt, u4Token, prMsduInfo,
+		       (prMsduInfo->pfTxDoneHandler ? TRUE : FALSE),
+		       halGetMsduTokenFreeCnt(prAdapter));
+#endif
+	if (prMemOps->unmapTxBuf) {
+		prMemOps->unmapTxBuf(prHifInfo,
+				     prTokenEntry->rPktDmaAddr,
+				     prTokenEntry->u4PktDmaLength);
+		prMemOps->unmapTxBuf(prHifInfo,
+				     prTokenEntry->rDmaAddr,
+				     prTokenEntry->u4DmaLength);
+	}
+
+	if (prTokenEntry->u4CpuIdx < TX_RING_SIZE) {
+		prTxRing = &prHifInfo->TxRing[prTokenEntry->u2Port];
+		prTxCell = &prTxRing->Cell[prTokenEntry->u4CpuIdx];
+		prTxCell->prToken = NULL;
+	}
+	prTokenEntry->u4CpuIdx = TX_RING_SIZE;
+	halReturnMsduToken(prAdapter, u4Token);
+	GLUE_INC_REF_CNT(prAdapter->rHifStats.u4DataMsduRptCount);
+
+	return TRUE;
+}
+
+void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
+			    IN OUT struct SW_RFB *prSwRfb)
+{
+	struct HW_MAC_MSDU_REPORT *prMsduReport;
 	struct QUE rFreeQueue;
 	struct QUE *prFreeQueue;
 	uint16_t u2TokenCnt, u2TotalTokenCnt;
-	uint32_t u4Idx, u4Token;
+	uint32_t u4Idx, u4Token0 = 0, u4Token1= 0;
 	uint8_t ucVer;
 
 	ASSERT(prAdapter);
 	ASSERT(prAdapter->prGlueInfo);
 
-	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	prMemOps = &prHifInfo->rMemOps;
-
 	prFreeQueue = &rFreeQueue;
 	QUEUE_INITIALIZE(prFreeQueue);
 
 	prMsduReport = (struct HW_MAC_MSDU_REPORT *)prSwRfb->pucRecvBuff;
+#if (CFG_DUMP_RXD == 1)
+	DBGLOG(HAL, INFO, "****** MSDU REPORT ******\n");
+	DBGLOG_MEM8(HAL, INFO, prMsduReport, 20);
+#endif
 	ucVer = prMsduReport->DW1.field.u4Ver;
-	if (ucVer == TFD_EVT_VER_3)
+	if (ucVer == TFD_EVT_VER_3 || ucVer == TFD_EVT_VER_5)
 		u2TotalTokenCnt = prMsduReport->DW0.field_v3.u2MsduCount;
 	else
 		u2TotalTokenCnt = prMsduReport->DW0.field.u2MsduCount;
@@ -1149,18 +1212,25 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 		 *      3: MT7915 E2/Buzzard
 		 */
 		if (ucVer == TFD_EVT_VER_0)
-			u4Token = prMsduReport->au4MsduToken[u4Idx >> 1].
+			u4Token0 = prMsduReport->au4MsduToken[u4Idx >> 1].
 				rFormatV0.u2MsduID[u4Idx & 1];
 		else if (ucVer == TFD_EVT_VER_1)
-			u4Token = prMsduReport->au4MsduToken[u4Idx].
+			u4Token0 = prMsduReport->au4MsduToken[u4Idx].
 				rFormatV1.u2MsduID;
 		else if (ucVer == TFD_EVT_VER_2)
-			u4Token = prMsduReport->au4MsduToken[u4Idx].
+			u4Token0 = prMsduReport->au4MsduToken[u4Idx].
 				rFormatV2.u2MsduID;
-		else {
+		else if (ucVer == TFD_EVT_VER_5) {
+			u4Token0 = prMsduReport->au4MsduToken[
+					u4Idx].rFormatV5.rP1.u4MsduId0;
+			u4Token1 = prMsduReport->au4MsduToken[
+					u4Idx].rFormatV5.rP1.u4MsduId1;
+			DBGLOG(HAL, INFO, "u4Token0[%d] u4Token1[%d]\n",
+				u4Token0, u4Token1);
+		} else {
 			if (!prMsduReport->au4MsduToken[u4Idx].
 				rFormatV3.rP0.u4Pair)
-				u4Token = prMsduReport->au4MsduToken[u4Idx].
+				u4Token0 = prMsduReport->au4MsduToken[u4Idx].
 						rFormatV3.rP0.u4MsduID;
 			else {
 				u4Idx++;
@@ -1169,52 +1239,12 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 		}
 		u4Idx++;
 		u2TokenCnt++;
+		halProcessToken(prAdapter, ucVer, u4Token0, prMsduReport,
+			prFreeQueue, u2TokenCnt);
 
-		if (u4Token >= HIF_TX_MSDU_TOKEN_NUM) {
-			DBGLOG(HAL, ERROR, "Error MSDU report[%u]\n", u4Token);
-			DBGLOG_MEM32(HAL, ERROR, prMsduReport, 64);
-			prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
-			halPrintHifDbgInfo(prAdapter);
-			return;
-		}
-
-		prTokenEntry = halGetMsduTokenEntry(prAdapter, u4Token);
-
-#if HIF_TX_PREALLOC_DATA_BUFFER
-		DBGLOG_LIMITED(HAL, TRACE,
-			       "MsduRpt: Cnt[%u] Tok[%u] Free[%u]\n",
-			       u2TokenCnt, u4Token,
-			       halGetMsduTokenFreeCnt(prAdapter));
-#else
-		prMsduInfo = prTokenEntry->prMsduInfo;
-		prMsduInfo->prToken = NULL;
-		if (!prMsduInfo->pfTxDoneHandler)
-			QUEUE_INSERT_TAIL(prFreeQueue,
-				(struct QUE_ENTRY *) prMsduInfo);
-
-		DBGLOG_LIMITED(HAL, TRACE,
-			       "MsduRpt: Cnt[%u] Tok[%u] Msdu[0x%p] TxDone[%u] Free[%u]\n",
-			       u2TokenCnt, u4Token, prMsduInfo,
-			       (prMsduInfo->pfTxDoneHandler ? TRUE : FALSE),
-			       halGetMsduTokenFreeCnt(prAdapter));
-#endif
-		if (prMemOps->unmapTxBuf) {
-			prMemOps->unmapTxBuf(prHifInfo,
-					     prTokenEntry->rPktDmaAddr,
-					     prTokenEntry->u4PktDmaLength);
-			prMemOps->unmapTxBuf(prHifInfo,
-					     prTokenEntry->rDmaAddr,
-					     prTokenEntry->u4DmaLength);
-		}
-
-		if (prTokenEntry->u4CpuIdx < TX_RING_SIZE) {
-			prTxRing = &prHifInfo->TxRing[prTokenEntry->u2Port];
-			prTxCell = &prTxRing->Cell[prTokenEntry->u4CpuIdx];
-			prTxCell->prToken = NULL;
-		}
-		prTokenEntry->u4CpuIdx = TX_RING_SIZE;
-		halReturnMsduToken(prAdapter, u4Token);
-		GLUE_INC_REF_CNT(prAdapter->rHifStats.u4DataMsduRptCount);
+		if (ucVer == TFD_EVT_VER_5)
+			halProcessToken(prAdapter, ucVer, u4Token1,
+				prMsduReport, prFreeQueue, u2TokenCnt);
 	}
 
 #if !HIF_TX_PREALLOC_DATA_BUFFER
@@ -1696,13 +1726,12 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem)
 		return false;
 	}
 
-#if (CFG_SUPPORT_CONNAC2X == 1)
-	if (prBusInfo->wfdmaAllocRxRing)
+	if (prBusInfo->wfdmaAllocRxRing) {
 		if (!prBusInfo->wfdmaAllocRxRing(prGlueInfo, fgAllocMem)) {
 			DBGLOG(HAL, ERROR, "wfdmaAllocRxRing fail\n");
 			return false;
 		}
-#endif /* CFG_SUPPORT_CONNAC2X == 1 */
+	}
 
 	/* Initialize all transmit related software queues */
 
@@ -2095,6 +2124,10 @@ uint32_t halWpdmaGetRxDmaDoneCnt(IN struct GLUE_INFO *prGlueInfo,
 	kalDevRegRead(prGlueInfo, prRxRing->hw_cidx_addr, &u4CpuIdx);
 	kalDevRegRead(prGlueInfo, prRxRing->hw_didx_addr, &u4DmaIdx);
 
+	u4MaxCnt &= MT_RING_CNT_MASK;
+	u4CpuIdx &= MT_RING_CIDX_MASK;
+	u4DmaIdx &= MT_RING_DIDX_MASK;
+
 	if (u4MaxCnt == 0 || u4MaxCnt > RX_RING_SIZE)
 		return 0;
 
@@ -2138,7 +2171,7 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
 	u4TotalLen = prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen;
-#if (CFG_SUPPORT_CONNAC2X == 1)
+#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
 	if (u4TotalLen > prChipInfo->cmd_max_pkt_size) {
 		DBGLOG(HAL, ERROR,
 			"type: %u, cid: 0x%x, seq: %u, txd: %u, txp: %u\n",
@@ -2443,7 +2476,7 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 		return false;
 	}
 
-	if (u4TotalLen <= (AXI_TX_MAX_SIZE_PER_FRAME + u4TxDescAppendSize)) {
+	if (u4TotalLen <= (HIF_TX_MAX_SIZE_PER_FRAME + u4TxDescAppendSize)) {
 
 		/* Acquire MSDU token */
 		prToken = halAcquireMsduToken(prGlueInfo->prAdapter,

@@ -132,6 +132,9 @@
 
 #define PLE_PAYLOAD_BASE 0xA0000000
 
+#define CR_NUM_OF_AC 4
+#define ALL_CR_NUM_OF_ALL_AC (CR_NUM_OF_AC * 4)
+
 enum ENUM_UMAC_PORT {
 	ENUM_UMAC_HIF_PORT_0         = 0,
 	ENUM_UMAC_CPU_PORT_1         = 1,
@@ -197,14 +200,12 @@ enum ENUM_UMAC_PLE_CTRL_P3_QUEUE {
 	ENUM_UMAC_PLE_CTRL_P3_TOTAL_NUM         = 2
 };
 
-
-
 struct EMPTY_QUEUE_INFO {
 	int8_t *QueueName;
 	uint32_t Portid;
 	uint32_t Queueid;
+	uint32_t Tgid;
 };
-
 
 #endif /* __WF_PLE_H__ */
 

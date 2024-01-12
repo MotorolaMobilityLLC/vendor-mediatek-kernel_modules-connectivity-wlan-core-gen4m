@@ -101,6 +101,8 @@
 #define NIC7961_PCIe_DEVICE_ID	0x7961
 #define NICSOC5_0_PCIe_DEVICE_ID  0x0789
 #define NICSOC7_0_PCIe_DEVICE_ID  0x0789
+#define NICBELLWETHER_PCIe_DEVICE_ID 0x3107
+#define NIC6639_PCIe_DEVICE_ID 0x3107
 
 static const struct pci_device_id mtk_pci_ids[] = {
 #ifdef MT6632
@@ -148,6 +150,14 @@ static const struct pci_device_id mtk_pci_ids[] = {
 	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NICSOC7_0_PCIe_DEVICE_ID),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_soc7_0},
 #endif /* SOC7_0 */
+#ifdef BELLWETHER
+	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NICBELLWETHER_PCIe_DEVICE_ID),
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_bellwether},
+#endif /* BELLWETHER */
+#ifdef MT6639
+	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC6639_PCIe_DEVICE_ID),
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt6639},
+#endif /* MT6639 */
 	{ /* end: all zeroes */ },
 };
 
@@ -301,7 +311,7 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	ASSERT(pdev);
 	ASSERT(id);
 
-	ret = pci_enable_device(pdev);
+	ret = pcim_enable_device(pdev);
 
 	if (ret) {
 		DBGLOG(INIT, INFO, "pci_enable_device failed!\n");
@@ -310,12 +320,39 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	DBGLOG(INIT, INFO, "pci_enable_device done!\n");
 
+	ret = pcim_iomap_regions(pdev, BIT(0), pci_name(pdev));
+	if (ret != 0) {
+		DBGLOG(INIT, INFO, "pcim iomap failed!errno=%d\n", ret);
+		return FALSE;
+	}
+
+	pci_set_master(pdev);
+
+	ret = pci_set_dma_mask(pdev, DMA_BIT_MASK(g_u4DmaMask));
+	if (ret != 0) {
+		DBGLOG(INIT, INFO, "set DMA mask failed!errno=%d\n", ret);
+		return FALSE;
+	}
+
 	prChipInfo = ((struct mt66xx_hif_driver_data *)
 				id->driver_data)->chip_info;
 	g_prDev = pdev;
 	prChipInfo->pdev = (void *)pdev;
 
-	pci_set_drvdata(pdev, (void *)id->driver_data)
+	/* map physical address to virtual address for accessing register */
+	CSRBaseAddress = pcim_iomap_table(pdev)[0];
+	if (!CSRBaseAddress) {
+		DBGLOG(INIT, INFO, "ioremap failed\n");
+		goto out;
+	}
+
+	prChipInfo->CSRBaseAddress = CSRBaseAddress;
+
+	DBGLOG(INIT, INFO, "ioremap for device %s, region 0x%lX @ 0x%lX\n",
+		pci_name(pdev), (unsigned long) pci_resource_len(pdev, 0),
+		(unsigned long) pci_resource_start(pdev, 0));
+
+	pci_set_drvdata(pdev, (void *)id->driver_data);
 
 #if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
 		g_fgDriverProbed = TRUE;
@@ -345,16 +382,6 @@ static void mtk_pci_remove(struct pci_dev *pdev)
 	if (g_fgDriverProbed)
 		pfWlanRemove();
 	DBGLOG(INIT, INFO, "pfWlanRemove done\n");
-
-	/* Unmap CSR base address */
-	iounmap(CSRBaseAddress);
-
-	pci_set_drvdata(pdev, NULL)
-
-	/* release memory region */
-	pci_release_regions(pdev);
-
-	pci_disable_device(pdev);
 	DBGLOG(INIT, INFO, "mtk_pci_remove() done\n");
 }
 
@@ -441,8 +468,6 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 	prHif->CSRBaseAddress = CSRBaseAddress;
 
-	pci_set_drvdata(prHif->pdev, prGlueInfo);
-
 	SET_NETDEV_DEV(prGlueInfo->prDevHandler, &prHif->pdev->dev);
 
 	prGlueInfo->u4InfType = MT_DEV_INF_PCIE;
@@ -495,51 +520,7 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 /*----------------------------------------------------------------------------*/
 u_int8_t glBusInit(void *pvData)
 {
-	int ret = 0;
-	struct pci_dev *pdev = NULL;
-
-	ASSERT(pvData);
-
-	pdev = (struct pci_dev *)pvData;
-
-	ret = pci_set_dma_mask(pdev, DMA_BIT_MASK(g_u4DmaMask));
-	if (ret != 0) {
-		DBGLOG(INIT, INFO, "set DMA mask failed!errno=%d\n", ret);
-		return FALSE;
-	}
-
-	ret = pci_request_regions(pdev, pci_name(pdev));
-	if (ret != 0) {
-		DBGLOG(INIT, INFO,
-			"Request PCI resource failed, errno=%d!\n", ret);
-	}
-
-	/* map physical address to virtual address for accessing register */
-	CSRBaseAddress = ioremap(pci_resource_start(pdev, 0),
-		pci_resource_len(pdev, 0));
-	DBGLOG(INIT, INFO, "ioremap for device %s, region 0x%lX @ 0x%lX\n",
-		pci_name(pdev), (unsigned long) pci_resource_len(pdev, 0),
-		(unsigned long) pci_resource_start(pdev, 0));
-	if (!CSRBaseAddress) {
-		DBGLOG(INIT, INFO,
-			"ioremap failed for device %s, region 0x%lX @ 0x%lX\n",
-			pci_name(pdev),
-			(unsigned long) pci_resource_len(pdev, 0),
-			(unsigned long) pci_resource_start(pdev, 0));
-		goto err_out_free_res;
-	}
-
-	/* Set DMA master */
-	pci_set_master(pdev);
-
 	return TRUE;
-
-err_out_free_res:
-	pci_release_regions(pdev);
-
-	pci_disable_device(pdev);
-
-	return FALSE;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -915,7 +896,7 @@ static void pcieDumpRx(struct GL_HIF_INFO *prHifInfo,
 	prRxCell = &prRxRing->Cell[u4Idx];
 	prDmaBuf = &prRxCell->DmaBuf;
 
-	if (!prRxCell->pPacket)
+	if (!prRxCell->pPacket || !prDmaBuf)
 		return;
 
 	pcieUnmapRxBuf(prHifInfo, prDmaBuf->AllocPa, prDmaBuf->AllocSize);
