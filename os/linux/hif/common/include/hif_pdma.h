@@ -296,6 +296,7 @@
 
 #define WFDMA_MEMORY_ALIGNMENT      8
 #define WFDMA_WB_MEMORY_ALIGNMENT   256
+#define WFDMA_WB_MEMORY_SIZE   256
 
 #define HIF_INT_TIME_DEBUG              0
 
@@ -361,6 +362,7 @@ do { \
 	*_V = (*_V & _R->hw_cidx_mask) >> _R->hw_cidx_shift; \
 } while (0)
 
+#if CFG_MTK_WIFI_WFDMA_WB
 #define HAL_GET_RING_DIDX(_G, _R, _V) \
 do { \
 	if (_R->fgEnEmiIdx) { \
@@ -370,6 +372,13 @@ do { \
 		*_V = (*_V & _R->hw_didx_mask) >> _R->hw_didx_shift; \
 	} \
 } while (0)
+#else
+#define HAL_GET_RING_DIDX(_G, _R, _V) \
+do { \
+	kalDevRegRead(_G, _R->hw_didx_addr, _V); \
+	*_V = (*_V & _R->hw_didx_mask) >> _R->hw_didx_shift; \
+} while (0)
+#endif /* CFG_ENABLE_MAWD_MD_RING */
 
 #define HAL_GET_RING_MCNT(_G, _R, _V) \
 do { \
@@ -563,8 +572,10 @@ struct RTMP_TX_RING {
 	uint32_t hw_cnt_shift;
 	spinlock_t rTxDmaQLock;
 	u_int8_t fgStopRecycleDmad;
+#if CFG_MTK_WIFI_WFDMA_WB
 	u_int8_t fgEnEmiIdx;
 	uint16_t *pu2EmiIdx;
+#endif /* CFG_ENABLE_MAWD_MD_RING */
 };
 
 struct RTMP_RX_RING {
@@ -592,8 +603,10 @@ struct RTMP_RX_RING {
 	void *pvPacket;
 	uint32_t u4PacketLen;
 	uint32_t u4MagicCnt;
+#if CFG_MTK_WIFI_WFDMA_WB
 	u_int8_t fgEnEmiIdx;
 	uint16_t *pu2EmiIdx;
+#endif /* CFG_ENABLE_MAWD_MD_RING */
 };
 
 struct PCIE_CHIP_CR_MAPPING {
@@ -940,16 +953,18 @@ enum pcie_msi_wfdma_ring {
 	PCIE_MSI_NUM
 };
 
-struct WFDMA_EMI_RING_IDX {
+#if CFG_MTK_WIFI_WFDMA_WB
+struct WFDMA_EMI_RING_IDX_0 {
 	uint16_t u2TxRing[11];
 	uint16_t u2RxRing[5];
 };
 
-struct WFDMA_EMI_MD_RING_IDX {
+struct WFDMA_EMI_RING_IDX_1 {
 	uint16_t u2TxRing[8];
 	uint16_t u2RxRing[5];
 	uint16_t Rsv[3];
 };
+#endif /* CFG_MTK_WIFI_WFDMA_WB */
 
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S

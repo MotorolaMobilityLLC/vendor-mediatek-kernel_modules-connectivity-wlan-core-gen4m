@@ -1379,8 +1379,10 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 	struct RTMP_DMABUF *prDmaBuf;
 	uint32_t u4Size = 0;
 
+#if CFG_MTK_WIFI_WFDMA_WB
 	if (prRxRing->fgEnEmiIdx)
 		return true;
+#endif /* CFG_ENABLE_MAWD_MD_RING */
 
 	for (u4Count = 0; pRxD->DMADONE == 0; u4Count++) {
 		if (u4Count > DMA_DONE_WAITING_COUNT) {

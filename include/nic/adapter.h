@@ -2499,6 +2499,12 @@ struct ADAPTER {
 #if CFG_SUPPORT_MANIPULATE_TID
 	struct MANIPULATE_TID_INFO rManipulateTidInfo;
 #endif
+#if CFG_MTK_MDDP_SUPPORT
+#if CFG_MTK_WIFI_WFDMA_WB
+	uint64_t u8MdRingIdxBase;
+	uint64_t u8MdRingStaBase;
+#endif /* CFG_MTK_WIFI_WFDMA_WB */
+#endif /* CFG_MTK_MDDP_SUPPORT */
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
