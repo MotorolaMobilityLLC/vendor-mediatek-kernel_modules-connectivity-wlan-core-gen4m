@@ -4663,7 +4663,7 @@ static void clearReorderingIndexCache(IN struct RX_BA_ENTRY *prReorderQueParm,
 				IN const struct SW_RFB *prSwRfb)
 {
 #if CFG_SUPPORT_RX_CACHE_INDEX
-	prReorderQueParm->prCacheIndex[prSwRfb->u2SSN] = NULL;
+	prReorderQueParm->prCacheIndex[prSwRfb->u2SSN & HALF_SEQ_MASK] = NULL;
 #endif
 }
 
@@ -4671,7 +4671,8 @@ static void setReorderingIndexCache(IN struct RX_BA_ENTRY *prReorderQueParm,
 				IN struct SW_RFB *prSwRfb)
 {
 #if CFG_SUPPORT_RX_CACHE_INDEX
-	prReorderQueParm->prCacheIndex[prSwRfb->u2SSN] = prSwRfb;
+	prReorderQueParm->prCacheIndex[prSwRfb->u2SSN & HALF_SEQ_MASK] =
+									prSwRfb;
 #endif
 }
 
@@ -4692,8 +4693,8 @@ static struct SW_RFB *getReorderingIndexCache(
 
 	for (i = prSwRfb->u2SSN;
 	     SEQ_SMALLER(u2WinStart, i) || u2WinStart == i; SEQ_ADD(i, -1)) {
-		if (prCacheIndex[i])
-			return prCacheIndex[i];
+		if (prCacheIndex[i & HALF_SEQ_MASK])
+			return prCacheIndex[i & HALF_SEQ_MASK];
 	}
 #endif
 	/* Not found, fallback */
