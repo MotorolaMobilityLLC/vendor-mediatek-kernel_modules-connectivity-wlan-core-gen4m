@@ -7149,8 +7149,8 @@ uint8_t wlanGetBssIdxByNetInterface(struct GLUE_INFO *prGlueInfo,
  * @return PVOID                         pointer of network interface structure
  */
 /*----------------------------------------------------------------------------*/
-void *wlanGetNetInterfaceByBssIdx(struct GLUE_INFO
-				  *prGlueInfo, uint8_t ucBssIndex)
+void *wlanGetNetInterfaceByBssIdx(struct GLUE_INFO *prGlueInfo,
+				uint8_t ucBssIndex)
 {
 	return prGlueInfo->arNetInterfaceInfo[ucBssIndex].pvNetInterface;
 }

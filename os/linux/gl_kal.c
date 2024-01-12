@@ -9585,6 +9585,20 @@ end:
 	return 0;
 }
 
+static u_int8_t wlanIsFirstNetInterfaceByNetdev(struct GLUE_INFO *prGlueInfo,
+				struct net_device *ndev, uint8_t ucBssIndex)
+{
+	uint8_t i;
+	struct NET_INTERFACE_INFO *prNetInterfaceInfo =
+			prGlueInfo->arNetInterfaceInfo;
+
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		if (ndev == prNetInterfaceInfo[i].pvNetInterface)
+			break;
+	}
+	return i == ucBssIndex;
+}
+
 static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 {
 	struct PERF_MONITOR *perf = &prAdapter->rPerMonitor;
@@ -9640,6 +9654,8 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		ndev = wlanGetNetInterfaceByBssIdx(glue, i);
+		if (ndev && !wlanIsFirstNetInterfaceByNetdev(glue, ndev, i))
+			continue;
 		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
 		GLUE_ACQUIRE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
