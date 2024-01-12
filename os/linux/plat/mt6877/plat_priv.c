@@ -213,6 +213,7 @@ void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 			       uint32_t size)
 {
+#if KERNEL_VERSION(6, 0, 0) >= LINUX_VERSION_CODE
 	struct emimpu_region_t region;
 	unsigned long long start = emiPhyBase + offset;
 	unsigned long long end = emiPhyBase + offset + size - 1;
@@ -237,6 +238,7 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 			"mtk_emimpu_set_protection failed, ret: %d\n",
 			ret);
 	mtk_emimpu_free_region(&region);
+#endif
 }
 
 #endif /* CFG_MTK_ANDROID_EMI */
