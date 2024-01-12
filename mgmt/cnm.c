@@ -113,6 +113,10 @@ struct DBDC_INFO_T {
 	bool fgIsDBDCAAMode;
 	uint8_t ucBssIdx;
 	u_int8_t fgIsDBDCEnByP2pLis;
+#if (CFG_MLO_EMLSR_CONCURRENT_ENHANCEMENT == 1)
+	/*Used to indicated that MLD & legacy mode current*/
+	uint8_t ucMldConcurrent;
+#endif
 };
 
 enum ENUM_DBDC_FSM_EVENT_T {
@@ -2566,6 +2570,12 @@ static u_int8_t cnmDbdcIsConcurrent(
 #endif
 	u_int8_t fgDbdcP2pListening = FALSE;
 	u_int8_t i;
+#if (CFG_MLO_EMLSR_CONCURRENT_ENHANCEMENT == 1)
+	uint8_t ucMldLinkNum = 0;
+	uint8_t canSupportEMLSR = 0;
+	struct MLD_BSS_INFO *mld_bssinfo;
+	uint8_t ucConcurrentBssCnt = 0;
+#endif
 
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
@@ -2575,13 +2585,35 @@ static u_int8_t cnmDbdcIsConcurrent(
 	}
 #endif
 
+#if (CFG_MLO_EMLSR_CONCURRENT_ENHANCEMENT == 1)
+	g_rDbdcInfo.ucMldConcurrent = FALSE;
+#endif
+
 	if (!prDbdcDecisionInfo)
 		goto next;
 
 	for (i = 0; i < prDbdcDecisionInfo->ucLinkNum; i++) {
 		if (prDbdcDecisionInfo->dbdcElem[i].eRfBand > BAND_NULL
-			&& prDbdcDecisionInfo->dbdcElem[i].eRfBand < BAND_NUM)
+			&& prDbdcDecisionInfo->dbdcElem[i].eRfBand < BAND_NUM) {
+
 			ucBandCount[prDbdcDecisionInfo->dbdcElem[i].eRfBand]++;
+			ucBssIndex = prDbdcDecisionInfo->dbdcElem[i].ucBssIndex;
+			prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+#if (CFG_MLO_EMLSR_CONCURRENT_ENHANCEMENT == 1)
+			mld_bssinfo = mldBssGetByBss(
+					prAdapter, prBssInfo);
+			if (IS_MLD_BSSINFO_MULTI(mld_bssinfo)) {
+				ucMldLinkNum =
+					mld_bssinfo->rBssList.u4NumElem;
+
+				if (mld_bssinfo->ucEmlEnabled &&
+				    BE_IS_EML_CAP_SUPPORT_EMLSR(
+					mld_bssinfo->u2EMLCap))
+					canSupportEMLSR = 1;
+			}
+
+#endif
+		}
 
 #if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
 		if (prDbdcDecisionInfo->dbdcElem[i].eRfBand == BAND_5G
@@ -2643,6 +2675,21 @@ next:
 			if (IS_BSS_AIS(prBssInfo)) {
 				struct BSS_DESC *prBssDesc =
 				     aisGetTargetBssDesc(prAdapter, ucBssIndex);
+#if (CFG_MLO_EMLSR_CONCURRENT_ENHANCEMENT == 1)
+
+				mld_bssinfo = mldBssGetByBss(
+						prAdapter, prBssInfo);
+
+				if (IS_MLD_BSSINFO_MULTI(mld_bssinfo)) {
+					ucMldLinkNum =
+					mld_bssinfo->rBssList.u4NumElem;
+
+					if (mld_bssinfo->ucEmlEnabled &&
+						BE_IS_EML_CAP_SUPPORT_EMLSR(
+						mld_bssinfo->u2EMLCap))
+						canSupportEMLSR = 1;
+				}
+#endif
 
 				if (prBssDesc) {
 					eBandBss = prBssDesc->eBand;
@@ -2683,6 +2730,22 @@ next:
 	g_rDbdcInfo.fgIsDBDCAAMode = 0;
 #endif
 
+#if (CFG_MLO_EMLSR_CONCURRENT_ENHANCEMENT == 1)
+
+		ucConcurrentBssCnt = ucBandCount[BAND_2G4]
+			+ ucBandCount[BAND_5G]
+			+ ucBandCount[BAND_6G];
+		/* mld concurrent has two situation:
+		 *	1 mld  is connected,  then a new sta comes
+		 *	2 legency sta is connected, then a mld sta comes
+		 */
+		if (ucMldLinkNum > 1 && ucConcurrentBssCnt > ucMldLinkNum) {
+			g_rDbdcInfo.ucMldConcurrent = TRUE;
+			log_dbg(CNM, INFO, "mld concurrent ucConcurrentBssCnt %d MldLinkNum %d\n",
+				ucConcurrentBssCnt, ucMldLinkNum);
+		}
+#endif
+
 	/* DBDC decision */
 	if (ucBandCount[BAND_2G4] > 0) {
 		/* 2.4G + 5G / 6G => enable DBDC */
@@ -2697,10 +2760,17 @@ next:
 			fgDBDCConcurrent = FALSE;
 	} else {
 #if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
-		/* Check DBDC A+A when HW support */
+		/* Check DBDC A+A when HW support
+		 * If HW not support A+A, but EMLSR MLO also can use A+A
+		 */
 		if (ucBandCount[BAND_5G] > 0 && uc5gCH > 0 &&
 		    ucBandCount[BAND_6G] > 0 && uc6gCH > 0 &&
-		    cnmDbdcDecideIsAAConcurrent(prAdapter, uc5gCH, uc6gCH)) {
+		    (cnmDbdcDecideIsAAConcurrent(prAdapter, uc5gCH, uc6gCH)
+#if (CFG_MLO_EMLSR_CONCURRENT_ENHANCEMENT == 1)
+			|| (canSupportEMLSR &&
+			g_rDbdcInfo.ucMldConcurrent == FALSE)
+#endif
+			)) {
 			fgDBDCConcurrent = TRUE;
 			g_rDbdcInfo.fgIsDBDCAAMode = 1;
 		} else {
@@ -2741,8 +2811,29 @@ next:
 uint8_t cnmGetDbdcNss(struct ADAPTER *prAdapter,
 		uint8_t ucBssIndex, u_int8_t fgDbdcEn)
 {
+#if (CFG_MLO_EMLSR_CONCURRENT_ENHANCEMENT == 1)
+		struct BSS_INFO *prBssInfo;
+		struct MLD_BSS_INFO *mld_bssinfo;
+
+		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+		mld_bssinfo = mldBssGetByBss(
+				prAdapter, prBssInfo);
+#endif
+
 #if (CFG_SUPPORT_DBDC_DOWNGRADE_NSS == 1)
-	if (fgDbdcEn)
+	if (fgDbdcEn
+#if (CFG_MLO_EMLSR_CONCURRENT_ENHANCEMENT == 1)
+	/*
+	 * 1 not mlo
+	 * 2 mlo but not emlsr
+	 * 3 emlsr mlo, but mlo concurrent
+	 */
+	&& (!IS_MLD_BSSINFO_MULTI(mld_bssinfo) ||
+	!prAdapter->rWifiVar.ucNonApMldEMLSupport ||
+	(prAdapter->rWifiVar.ucNonApMldEMLSupport &&
+	 g_rDbdcInfo.ucMldConcurrent))
+#endif
+	)
 		return 1;
 #endif
 
