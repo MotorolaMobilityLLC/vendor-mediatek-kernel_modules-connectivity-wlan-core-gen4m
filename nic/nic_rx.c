@@ -136,7 +136,9 @@ apfnProcessRxMgtFrame[MAX_NUM_OF_FC_SUBTYPES] = {
 
 struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_RX_ADDBA,	qmHandleEventRxAddBa},
+#if CFG_SUPPORT_DBDC
 	{EVENT_ID_DBDC_SWITCH_DONE, cnmDbdcEventHwSwitchDone},
+#endif
 	{EVENT_ID_RX_DELBA,	qmHandleEventRxDelBa},
 	{EVENT_ID_LINK_QUALITY, nicEventLinkQuality},
 	{EVENT_ID_LAYER_0_EXT_MAGIC_NUM, nicEventLayer0ExtMagic},

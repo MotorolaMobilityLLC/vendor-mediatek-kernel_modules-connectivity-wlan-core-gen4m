@@ -206,9 +206,13 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 		prBssInfo->u2VhtBasicMcsSet &=
 			(VHT_CAP_INFO_MCS_MAP_MCS9
 				<< VHT_CAP_INFO_MCS_1SS_OFFSET);
-
+#if CFG_SUPPORT_DBDC
 		ucMaxBw = cnmGetDbdcBwCapability(prAdapter,
 			prBssInfo->ucBssIndex);
+#else
+		ucMaxBw = cnmGetBssMaxBw(prAdapter,
+			prBssInfo->ucBssIndex);
+#endif
 		rlmFillVhtOpInfoByBssOpBw(prBssInfo, ucMaxBw);
 
 		/* If the S1 is invalid, force to change bandwidth */

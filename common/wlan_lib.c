@@ -6991,11 +6991,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
 
 	/* Feature options will be filled by config file */
-
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
 	prWifiVar->fgEnDefaultIotApRule = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"EnDefaultIotApRule",
 					FEATURE_ENABLED);
-
+#endif
 	prWifiVar->ucQoS = (uint8_t) wlanCfgGetUint32(prAdapter, "Qos",
 					FEATURE_ENABLED);
 
@@ -7568,7 +7568,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->eDbdcMode = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "DbdcMode",
 					DEFAULT_DBDC_MODE);
+#else
+	prWifiVar->eDbdcMode = ENUM_DBDC_MODE_DISABLED;
+	prWifiVar->fgDbDcModeEn = false;
 #endif /*CFG_SUPPORT_DBDC*/
+
 #if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
 	prWifiVar->ucEfuseBufferModeCal = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "EfuseBufferModeCal", 0);

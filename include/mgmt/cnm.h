@@ -77,10 +77,8 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-#if CFG_SUPPORT_DBDC
 #define DBDC_5G_WMM_INDEX	0
 #define DBDC_2G_WMM_INDEX	1
-#endif
 #define HW_WMM_NUM		(prAdapter->ucWmmSetNum)
 #define MAX_HW_WMM_INDEX	(HW_WMM_NUM - 1)
 #define DEFAULT_HW_WMM_INDEX	MAX_HW_WMM_INDEX
@@ -175,7 +173,6 @@ struct DEVICE_TYPE {
 } __KAL_ATTRIB_PACKED__;
 #endif
 
-#if CFG_SUPPORT_DBDC
 enum ENUM_CNM_DBDC_MODE {
 	/* A/G traffic separate by WMM, but both
 	 * TRX on band 0, CANNOT enable DBDC
@@ -195,6 +192,7 @@ enum ENUM_CNM_DBDC_MODE {
 	ENUM_DBDC_MODE_NUM
 };
 
+#if CFG_SUPPORT_DBDC
 enum ENUM_CNM_DBDC_SWITCH_MECHANISM { /* When DBDC available in dynamic DBDC */
 	/* Switch to DBDC when available (less latency) */
 	ENUM_DBDC_SWITCH_MECHANISM_LATENCY_MODE,
