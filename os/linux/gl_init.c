@@ -4094,10 +4094,11 @@ int set_p2p_mode_handler(struct net_device *netdev,
 			FALSE, FALSE, TRUE, &u4BufLen);
 
 	DBGLOG(INIT, INFO,
-			"ret = 0x%08x, p2p reg = %d, resetting = %d\n",
-			(uint32_t) rWlanStatus,
-			prGlueInfo->prAdapter->fgIsP2PRegistered,
-			kalIsResetting());
+		"Mode%d: ret = 0x%08x, p2p reg = %d, resetting = %d\n",
+		rSetP2P.u4Mode,
+		(uint32_t) rWlanStatus,
+		prGlueInfo->prAdapter->fgIsP2PRegistered,
+		kalIsResetting());
 
 
 	/* Need to check fgIsP2PRegistered, in case of whole chip reset.
