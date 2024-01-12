@@ -536,8 +536,8 @@ struct BSS_INFO {
 #if (CFG_SUPPORT_802_11BE_MLO == 1) || defined(CFG_SUPPORT_UNIFIED_COMMAND)
 	uint8_t ucGroupMldId;
 	uint8_t ucOwnMldId;
-	uint8_t ucLinkIndex;
 #endif
+	uint8_t ucLinkIndex;
 
 	uint8_t ucVhtChannelWidthBackup;
 
