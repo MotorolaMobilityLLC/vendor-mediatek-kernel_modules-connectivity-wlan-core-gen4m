@@ -4845,28 +4845,18 @@ u_int8_t indicateApAcsOverwrite(
 	if (eBand == BAND_NULL)
 		return FALSE;
 
-	if (eBand == BAND_2G4) {
-		if (prAdapter->rWifiVar.ucApAcsChannel[0]) {
-			ucPrimaryCh = prAdapter->rWifiVar.ucApAcsChannel[0];
-			eChnlBw = prAdapter->rWifiVar.ucAp2gBandwidth;
-		} else if (p2pFuncIsDualAPMode(prAdapter)) {
-			struct BSS_INFO *bss =
-				aisGetConnectedBssInfo(prAdapter);
-
-			if (!bss)
-				ucPrimaryCh = AP_DEFAULT_CHANNEL_2G;
-			else if (bss->eBand == BAND_2G4)
-				ucPrimaryCh = bss->ucPrimaryChannel;
-			eChnlBw = prAdapter->rWifiVar.ucAp2gBandwidth;
-		}
-	} else if ((eBand == BAND_5G) &&
-		prAdapter->rWifiVar.ucApAcsChannel[1]) {
+	if (eBand == BAND_2G4 &&
+	    prAdapter->rWifiVar.ucApAcsChannel[0]) {
+		ucPrimaryCh = prAdapter->rWifiVar.ucApAcsChannel[0];
+		eChnlBw = prAdapter->rWifiVar.ucAp2gBandwidth;
+	} else if (eBand == BAND_5G &&
+		   prAdapter->rWifiVar.ucApAcsChannel[1]) {
 		ucPrimaryCh = prAdapter->rWifiVar.ucApAcsChannel[1];
 		eChnlBw = prAdapter->rWifiVar.ucAp5gBandwidth;
 	}
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	else if ((eBand == BAND_6G) &&
-		prAdapter->rWifiVar.ucApAcsChannel[2]) {
+	else if (eBand == BAND_6G &&
+		 prAdapter->rWifiVar.ucApAcsChannel[2]) {
 		ucPrimaryCh = prAdapter->rWifiVar.ucApAcsChannel[2];
 		eChnlBw = prAdapter->rWifiVar.ucAp6gBandwidth;
 	}
