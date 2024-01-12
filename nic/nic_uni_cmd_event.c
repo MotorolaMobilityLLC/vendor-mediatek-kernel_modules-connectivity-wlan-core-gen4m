@@ -2337,10 +2337,7 @@ uint32_t nicUniCmdBssInfoTagBssColor(struct ADAPTER *ad,
 
 #endif
 
-/* TODO: Fix PP eht ie parsing for performance degrade
- * It is commom part but add "CFG_SUPPORT_802_PP_DSCB" option only for debug
- */
-#if ((CFG_SUPPORT_802_11BE == 1) && (CFG_SUPPORT_802_PP_DSCB == 1))
+#if (CFG_SUPPORT_802_11BE == 1)
 uint32_t nicUniCmdBssInfoTagEht(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_SET_BSS_INFO *cmd)
 {
@@ -2439,10 +2436,7 @@ struct UNI_CMD_BSSINFO_TAG_HANDLE arSetBssInfoTable[] = {
 	{sizeof(struct UNI_CMD_BSSINFO_BSS_COLOR), nicUniCmdBssInfoTagBssColor},
 #endif
 
-/* TODO: Fix PP eht ie parsing for performance degrade
- * It is commom part but add "CFG_SUPPORT_802_PP_DSCB" option only for debug
- */
-#if ((CFG_SUPPORT_802_11BE == 1) && (CFG_SUPPORT_802_PP_DSCB == 1))
+#if (CFG_SUPPORT_802_11BE == 1)
 	{sizeof(struct UNI_CMD_BSSINFO_EHT),
 					nicUniCmdBssInfoTagEht},
 #endif

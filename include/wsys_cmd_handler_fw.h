@@ -560,7 +560,7 @@ enum ENUM_EVENT_ID {
 #if (CFG_SUPPORT_TSF_SYNC == 1)
 	EVENT_ID_BEACON_TSF_SYNC = 0x94,		/* 0x94 (Set / Query) */
 #endif
-#if CFG_SUPPORT_802_11BE
+#if CFG_SUPPORT_802_PP_DSCB
 	EVENT_ID_STATIC_PP_DSCB = 0x95,
 #endif
 	EVENT_ID_RSSI_MONITOR = 0xA1,       /* Event ID for Rssi monitoring */

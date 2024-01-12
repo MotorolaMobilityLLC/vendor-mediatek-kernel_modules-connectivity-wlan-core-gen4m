@@ -1108,11 +1108,12 @@
 #define CFG_SUPPORT_802_11BE                     0
 #endif
 
-/* TODO: Fix PP eht ie parsing for performance degrade
- * It is commom part but add "CFG_SUPPORT_802_PP_DSCB" option only for debug
- */
 #ifndef CFG_SUPPORT_802_PP_DSCB
+#if CFG_SUPPORT_802_11BE
+#define CFG_SUPPORT_802_PP_DSCB                  1
+#else
 #define CFG_SUPPORT_802_PP_DSCB                  0
+#endif
 #endif
 
 #ifndef CFG_SUPPORT_802_11BE_MLO
