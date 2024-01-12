@@ -1272,7 +1272,7 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 			RAM_TYPE_MSG, u4MsgSize);
 
 		if (prMsgScanRequest == NULL) {
-			DBGLOG(P2P, ERROR, "Alloc msg failed, size: %lu\n",
+			DBGLOG(P2P, ERROR, "Alloc msg failed, size: %u\n",
 				u4MsgSize);
 			i4RetRslt = -ENOMEM;
 			break;
@@ -1321,7 +1321,7 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 			}
 
 			DBGLOG(P2P, TRACE,
-				"band: %u, channel: %u, freq: %lu\n",
+				"band: %u, channel: %u, freq: %u\n",
 				prChannel->band,
 				prChannel->hw_value,
 				prChannel->center_freq);
