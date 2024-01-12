@@ -1978,6 +1978,7 @@
 
 #define CFG_SUPPORT_LITTLE_CPU_BOOST 0
 
+
 #define CFG_SUPPORT_ANDROID_DUAL_STA 0
 
 /*------------------------------------------------------------------------------
@@ -2216,6 +2217,10 @@
 #ifndef CFG_MSCS_SUPPORT
 #define CFG_MSCS_SUPPORT 0
 #endif
+
+#define CFG_SUPPORT_RTT			(1)
+#define CFG_RTT_TEST_MODE		(0)
+#define CFG_RTT_MAX_CANDIDATES	10
 
 /*******************************************************************************
  *                             D A T A   T Y P E S

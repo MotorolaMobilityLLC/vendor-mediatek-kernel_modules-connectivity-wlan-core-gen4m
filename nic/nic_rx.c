@@ -240,6 +240,8 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 #if (CFG_COALESCING_INTERRUPT == 1)
 	{EVENT_ID_PF_CF_COALESCING_INT_DONE, nicEventCoalescingIntDone},
 #endif
+	{EVENT_ID_RTT_RESULT, nicEventRttResult},
+	{EVENT_ID_RTT_DONE, nicEventRttDone},
 };
 
 uint32_t arEventTableSize = ARRAY_SIZE(arEventTable);

@@ -264,8 +264,8 @@ enum ENUM_CMD_ID {
 	CMD_ID_SET_CHANNEL_PWR_OFFSET,          /* 0x41 (Set) */
 	CMD_ID_SET_80211AC_TX_PWR,          /* 0x42 (Set) */
 	CMD_ID_SET_PATH_COMPASATION,        /* 0x43 (Set) */
-	CMD_ID_SET_RTT_REQ = 0x44,          /* 0x44 (Set) */
-	CMD_ID_SET_RTT_CALIBR,              /* 0x45 (Set) */
+	CMD_ID_RTT_GET_CAPABILITIES = 0x44, /* 0x44 (Set) */
+	CMD_ID_RTT_RANGE_REQUEST,           /* 0x45 (Set) */
 	CMD_ID_GET_RTT_RANGE_UPDATE,        /* 0x46 (Set) */
 	CMD_ID_SET_BATCH_REQ,               /* 0x47 (Set), NO USE */
 	CMD_ID_SET_NVRAM_SETTINGS,          /* 0x48 (Set) */
@@ -462,12 +462,12 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_RESOURCE_CONFIG = 0x26,
 	/* 0x26 (Query - CMD_ID_RESOURCE_CONFIG) */
 	EVENT_ID_DEBUG_MSG = 0x27,          /* 0x27 (Unsoiicited) */
-	EVENT_ID_RTT_DISCOVER_PEER = 0x28,    /* 0x28 (Unsoiicited) */
-	EVENT_ID_RTT_UPDATE_RANGE = 0x29,          /* 0x29 (Unsoiicited) */
+	EVENT_ID_RTT_RESULT = 0x28,    /* 0x28 (Unsoiicited) */
+	EVENT_ID_RTT_DONE = 0x29,          /* 0x29 (Unsoiicited) */
 	EVENT_ID_CHECK_REORDER_BUBBLE = 0x2a,      /* 0x2a (Unsoiicited) */
 	EVENT_ID_BATCH_RESULT = 0x2b,              /* 0x2b (Query) */
 	EVENT_ID_STA_ABSENCE_TX = 0x2c,     /* 0x2c (Unsoiicited) */
-	EVENT_ID_RTT_UPDATE_LOCATION = 0x2d,       /* 0x2c (Unsoiicited) */
+	EVENT_ID_RTT_CAPABILITIES = 0x2d,       /* 0x2d (Unsoiicited) */
 	EVENT_ID_TX_ADDBA = 0x2e,
 	EVENT_ID_LTE_SAFE_CHN = 0x2f,       /* 0x2f (Query ) */
 

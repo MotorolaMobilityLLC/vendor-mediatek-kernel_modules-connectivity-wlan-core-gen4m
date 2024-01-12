@@ -408,6 +408,19 @@ void kalWlanHardStartXmit(void *pvPacket, void *pvDev)
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
+uint8_t kalNlaPut(void *pvPacket, uint32_t attrType,
+		uint32_t attrLen, const void *data)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void *
+kalProcessRttReportDone(struct GLUE_INFO *prGlueInfo,
+		uint32_t u4DataLen, uint32_t u4Count)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
 const uint8_t *kalFindIeExtIE(uint8_t eid,
 				uint8_t exteid,
 				const uint8_t *ies, int len)

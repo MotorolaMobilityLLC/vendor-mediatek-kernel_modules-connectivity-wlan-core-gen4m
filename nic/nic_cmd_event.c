@@ -6616,3 +6616,48 @@ void nicEventTxMcsInfo(IN struct ADAPTER *prAdapter,
 	}
 }
 #endif /* CFG_WIFI_GET_MCS_INFO */
+
+void nicCmdEventRttCapabilities(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	uint32_t u4QueryInfoLen;
+	struct RTT_CAPABILITIES *capa =
+		 (struct RTT_CAPABILITIES *)prCmdInfo->pvInformationBuffer;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+
+	if (prCmdInfo->fgIsOid) {
+		u4QueryInfoLen = sizeof(struct RTT_CAPABILITIES);
+		kalMemCopy(prCmdInfo->pvInformationBuffer,
+			pucEventBuf, u4QueryInfoLen);
+
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
+			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+	DBGLOG(RTT, INFO,
+			"one_sided=%hhu, ftm=%hhu, lci=%hhu, lcr=%hhu, preamble=%hhu, bw=%hhu, responder=%hhu, ver=%hhu",
+			capa->fgRttOneSidedSupported,
+			capa->fgRttFtmSupported,
+			capa->fgLciSupported,
+			capa->fgLcrSupported,
+			capa->ucPreambleSupport,
+			capa->ucBwSupport,
+			capa->fgResponderSupported,
+			capa->fgMcVersion);
+}
+
+void nicEventRttDone(IN struct ADAPTER *prAdapter,
+		      IN struct WIFI_EVENT *prEvent)
+{
+	rttEventDone(prAdapter,
+		 (struct EVENT_RTT_DONE *) (prEvent->aucBuffer));
+}
+
+void nicEventRttResult(IN struct ADAPTER *prAdapter,
+		      IN struct WIFI_EVENT *prEvent)
+{
+	rttEventResult(prAdapter,
+		 (struct EVENT_RTT_RESULT *) (prEvent->aucBuffer));
+}
+

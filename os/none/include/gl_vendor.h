@@ -413,26 +413,6 @@ struct PARAM_AP_THRESHOLD {
 	uint32_t channel;	/* channel hint */
 };
 
-/* channel operating width */
-enum WIFI_CHANNEL_WIDTH {
-	WIFI_CHAN_WIDTH_20 = 0,
-	WIFI_CHAN_WIDTH_40 = 1,
-	WIFI_CHAN_WIDTH_80 = 2,
-	WIFI_CHAN_WIDTH_160 = 3,
-	WIFI_CHAN_WIDTH_80P80 = 4,
-	WIFI_CHAN_WIDTH_5 = 5,
-	WIFI_CHAN_WIDTH_10 = 6,
-	WIFI_CHAN_WIDTH_INVALID = -1
-};
-
-/* channel information */
-struct WIFI_CHANNEL_INFO {
-	enum WIFI_CHANNEL_WIDTH width;
-	uint32_t center_freq;
-	uint32_t center_freq0;
-	uint32_t center_freq1;
-};
-
 /* channel statistics */
 struct WIFI_CHANNEL_STAT {
 	struct WIFI_CHANNEL_INFO channel;
@@ -454,17 +434,6 @@ struct WIFI_RADIO_STAT {
 	uint32_t on_time_hs20;
 	uint32_t num_channels;
 	struct WIFI_CHANNEL_STAT channels[];
-};
-
-/* wifi rate */
-struct WIFI_RATE {
-	uint32_t preamble: 3;
-	uint32_t nss: 2;
-	uint32_t bw: 3;
-	uint32_t rateMcsIdx: 8;
-
-	uint32_t reserved: 16;
-	uint32_t bitrate;
 };
 
 /* per rate statistics */

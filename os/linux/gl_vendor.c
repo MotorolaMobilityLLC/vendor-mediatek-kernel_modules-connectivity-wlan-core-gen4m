@@ -242,6 +242,38 @@ const struct nla_policy nla_get_apf_policy[
 	[APF_ATTRIBUTE_PROGRAM_LEN] = {.type = NLA_U32},
 };
 
+const struct nla_policy nla_set_rtt_config_policy[
+		RTT_ATTRIBUTE_TARGET_BW + 1] = {
+	[RTT_ATTRIBUTE_TARGET_CNT] = {.type = NLA_U8},
+	[RTT_ATTRIBUTE_TARGET_INFO] = {.type = NLA_NESTED},
+#if KERNEL_VERSION(5, 9, 0) <= CFG80211_VERSION_CODE
+	[RTT_ATTRIBUTE_TARGET_MAC] = NLA_POLICY_MIN_LEN(0),
+#elif KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	[RTT_ATTRIBUTE_TARGET_MAC] = { .type = NLA_MIN_LEN, .len = 0 },
+#else
+	[RTT_ATTRIBUTE_TARGET_MAC] = {.type = NLA_UNSPEC},
+#endif
+	[RTT_ATTRIBUTE_TARGET_TYPE] = {.type = NLA_U8},
+	[RTT_ATTRIBUTE_TARGET_PEER] = {.type = NLA_U8},
+#if KERNEL_VERSION(5, 9, 0) <= CFG80211_VERSION_CODE
+	[RTT_ATTRIBUTE_TARGET_CHAN] = NLA_POLICY_MIN_LEN(0),
+#elif KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	[RTT_ATTRIBUTE_TARGET_CHAN] = { .type = NLA_MIN_LEN, .len = 0 },
+#else
+	[RTT_ATTRIBUTE_TARGET_CHAN] = {.type = NLA_UNSPEC},
+#endif
+	[RTT_ATTRIBUTE_TARGET_PERIOD] = {.type = NLA_U32},
+	[RTT_ATTRIBUTE_TARGET_NUM_BURST] = {.type = NLA_U32},
+	[RTT_ATTRIBUTE_TARGET_NUM_FTM_BURST] = {.type = NLA_U32},
+	[RTT_ATTRIBUTE_TARGET_NUM_RETRY_FTM] = {.type = NLA_U32},
+	[RTT_ATTRIBUTE_TARGET_NUM_RETRY_FTMR] = {.type = NLA_U32},
+	[RTT_ATTRIBUTE_TARGET_LCI] = {.type = NLA_U8},
+	[RTT_ATTRIBUTE_TARGET_LCR] = {.type = NLA_U8},
+	[RTT_ATTRIBUTE_TARGET_BURST_DURATION] = {.type = NLA_U32},
+	[RTT_ATTRIBUTE_TARGET_PREAMBLE] = {.type = NLA_U8},
+	[RTT_ATTRIBUTE_TARGET_BW] = {.type = NLA_U8},
+};
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -868,11 +900,11 @@ int mtk_cfg80211_vendor_get_rtt_capabilities(
 	const void *data, int data_len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	int32_t i4Status = -EINVAL;
-	struct PARAM_WIFI_RTT_CAPABILITIES rRttCapabilities;
+	uint32_t rStatus, u4BufLen;
+	struct RTT_CAPABILITIES rRttCapabilities;
 	struct sk_buff *skb;
 
-	DBGLOG(REQ, TRACE, "vendor command\r\n");
+	DBGLOG(REQ, INFO, "vendor command\r\n");
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
@@ -881,31 +913,266 @@ int mtk_cfg80211_vendor_get_rtt_capabilities(
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
 			sizeof(rRttCapabilities));
 	if (!skb) {
-		DBGLOG(REQ, ERROR, "%s allocate skb failed:%x\n",
-		       __func__, i4Status);
+		DBGLOG(REQ, ERROR, "%s allocate skb failed:\n", __func__);
 		return -ENOMEM;
 	}
 
 	kalMemZero(&rRttCapabilities, sizeof(rRttCapabilities));
 
-	/* RTT Capabilities return from driver not firmware */
-	rRttCapabilities.rtt_one_sided_supported = 0;
-	rRttCapabilities.rtt_ftm_supported = 1;
-	rRttCapabilities.lci_support = 1;
-	rRttCapabilities.lcr_support = 1;
-	rRttCapabilities.preamble_support = 0x07;
-	rRttCapabilities.bw_support = 0x1c;
+	rStatus = kalIoctl(prGlueInfo, wlanoidGetRttCapabilities,
+			   &rRttCapabilities,
+			   sizeof(struct RTT_CAPABILITIES),
+			   &u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, WARN, "RTT get capabilities error:%x\n", rStatus);
+		goto failure;
+	}
 
-	if (unlikely(nla_put(skb, RTT_ATTRIBUTE_CAPABILITIES,
-			     sizeof(rRttCapabilities), &rRttCapabilities) < 0))
-		goto nla_put_failure;
+		DBGLOG(RTT, INFO,
+			"one_sided=%hhu, ftm=%hhu, lci=%hhu, lcr=%hhu, preamble=%hhu, bw=%hhu, responder=%hhu, ver=%hhu",
+			rRttCapabilities.fgRttOneSidedSupported,
+			rRttCapabilities.fgRttFtmSupported,
+			rRttCapabilities.fgLciSupported,
+			rRttCapabilities.fgLcrSupported,
+			rRttCapabilities.ucPreambleSupport,
+			rRttCapabilities.ucBwSupport,
+			rRttCapabilities.fgResponderSupported,
+			rRttCapabilities.fgMcVersion);
 
-	i4Status = cfg80211_vendor_cmd_reply(skb);
-	return i4Status;
 
-nla_put_failure:
+	if (unlikely(nla_put_nohdr(skb,
+		sizeof(rRttCapabilities), &rRttCapabilities) < 0)) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		goto failure;
+	}
+
+	return cfg80211_vendor_cmd_reply(skb);
+failure:
 	kfree_skb(skb);
-	return i4Status;
+	return -EFAULT;
+}
+
+int mtk_cfg80211_vendor_set_rtt_config(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct nlattr *attrs[RTT_ATTRIBUTE_TARGET_INFO + 1];
+	struct nlattr *tb[RTT_ATTRIBUTE_TARGET_BW + 1];
+	struct nlattr *attr;
+	uint32_t rStatus, u4BufLen;
+	int tmp, err;
+	uint8_t i = 0;
+	struct PARAM_RTT_REQUEST request;
+
+	DBGLOG(REQ, INFO, "vendor command\r\n");
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+	if ((data == NULL) || (data_len == 0))
+		return -EINVAL;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (!prGlueInfo)
+		return -EFAULT;
+
+	if (NLA_PARSE(attrs, RTT_ATTRIBUTE_TARGET_INFO,
+			data, data_len, nla_set_rtt_config_policy)) {
+		DBGLOG(RTT, ERROR, "Invalid ATTR.\n");
+		return -EINVAL;
+	}
+
+	request.fgEnable = true;
+
+	if (attrs[RTT_ATTRIBUTE_TARGET_CNT]) {
+		request.ucConfigNum =
+			nla_get_u8(attrs[RTT_ATTRIBUTE_TARGET_CNT]);
+		DBGLOG(RTT, INFO, "TARGET_CNT = %u\n", request.ucConfigNum);
+	} else {
+		DBGLOG(RTT, ERROR, "No RTT_ATTRIBUTE_TARGET_CNT\n");
+		return -EINVAL;
+	}
+
+	if (!attrs[RTT_ATTRIBUTE_TARGET_INFO]) {
+		DBGLOG(RTT, ERROR, "No RTT_ATTRIBUTE_TARGET_INFO\n");
+		return -EINVAL;
+	}
+
+	nla_for_each_nested(attr, attrs[RTT_ATTRIBUTE_TARGET_INFO], tmp) {
+		struct RTT_CONFIG *config = NULL;
+
+		if (i >= request.ucConfigNum || i >= CFG_RTT_MAX_CANDIDATES) {
+			DBGLOG(RTT, ERROR, "Wrong num %hhu/%hhu/%d\n",
+				i, request.ucConfigNum, CFG_RTT_MAX_CANDIDATES);
+			return -EINVAL;
+		}
+
+		err = NLA_PARSE(tb, RTT_ATTRIBUTE_TARGET_BW,
+				nla_data(attr), nla_len(attr),
+				nla_set_rtt_config_policy);
+		if (err) {
+			DBGLOG(RTT, WARN, "Wrong RTT ATTR, %d\n", err);
+			return err;
+		}
+
+		config = &request.arRttConfigs[i++];
+		if (tb[RTT_ATTRIBUTE_TARGET_MAC]) {
+			COPY_MAC_ADDR(config->aucAddr,
+				nla_data(tb[RTT_ATTRIBUTE_TARGET_MAC]));
+		}
+		if (tb[RTT_ATTRIBUTE_TARGET_TYPE]) {
+			config->eType =
+				nla_get_u8(tb[RTT_ATTRIBUTE_TARGET_TYPE]);
+		}
+		if (tb[RTT_ATTRIBUTE_TARGET_PEER]) {
+			config->ePeer =
+				nla_get_u8(tb[RTT_ATTRIBUTE_TARGET_PEER]);
+		}
+		if (tb[RTT_ATTRIBUTE_TARGET_CHAN]) {
+			kalMemCopy(&config->rChannel,
+				nla_data(tb[RTT_ATTRIBUTE_TARGET_CHAN]),
+				sizeof(config->rChannel));
+		}
+		if (tb[RTT_ATTRIBUTE_TARGET_PERIOD]) {
+			config->ucBurstPeriod =
+				nla_get_u32(tb[RTT_ATTRIBUTE_TARGET_PERIOD]);
+		}
+		if (tb[RTT_ATTRIBUTE_TARGET_NUM_BURST]) {
+			config->ucNumBurst =
+				nla_get_u32(tb[RTT_ATTRIBUTE_TARGET_NUM_BURST]);
+		}
+		if (tb[RTT_ATTRIBUTE_TARGET_NUM_FTM_BURST]) {
+			config->ucNumFramesPerBurst =
+			    nla_get_u32(tb[RTT_ATTRIBUTE_TARGET_NUM_FTM_BURST]);
+		}
+		if (tb[RTT_ATTRIBUTE_TARGET_NUM_RETRY_FTM]) {
+			config->ucNumRetriesPerRttFrame =
+			    nla_get_u32(tb[RTT_ATTRIBUTE_TARGET_NUM_RETRY_FTM]);
+
+		}
+		if (tb[RTT_ATTRIBUTE_TARGET_NUM_RETRY_FTMR]) {
+			config->ucNumRetriesPerFtmr =
+			   nla_get_u32(tb[RTT_ATTRIBUTE_TARGET_NUM_RETRY_FTMR]);
+		}
+		if (tb[RTT_ATTRIBUTE_TARGET_LCI]) {
+			config->ucLciRequest =
+				nla_get_u8(tb[RTT_ATTRIBUTE_TARGET_LCI]);
+		}
+		if (tb[RTT_ATTRIBUTE_TARGET_LCR]) {
+			config->ucLcrRequest =
+				nla_get_u8(tb[RTT_ATTRIBUTE_TARGET_LCR]);
+		}
+		if (tb[RTT_ATTRIBUTE_TARGET_BURST_DURATION]) {
+			config->ucBurstDuration =
+			   nla_get_u32(tb[RTT_ATTRIBUTE_TARGET_BURST_DURATION]);
+		}
+		if (tb[RTT_ATTRIBUTE_TARGET_PREAMBLE]) {
+			config->ePreamble =
+				nla_get_u8(tb[RTT_ATTRIBUTE_TARGET_PREAMBLE]);
+		}
+		if (tb[RTT_ATTRIBUTE_TARGET_BW])
+			config->eBw = nla_get_u8(tb[RTT_ATTRIBUTE_TARGET_BW]);
+
+		DBGLOG(RTT, INFO,
+			"#%d: MAC=" MACSTR
+			" TYPE=%hhu,PEER=%hhu, PRD=%hhu,CHL=(%d,%d),BRST=%hhu,NFTM=%hhu,RFTM=%hhu, RFTMR=%hhu,LCI=%hhu,LCR=%hhu,DUR=%hhu,PRB=%hhu,BW=%hhu\n",
+			i - 1, MAC2STR(config->aucAddr), config->eType,
+			config->ePeer, config->ucBurstPeriod,
+			config->rChannel.width, config->rChannel.center_freq,
+			config->ucNumBurst, config->ucNumFramesPerBurst,
+			config->ucNumRetriesPerRttFrame,
+			config->ucNumRetriesPerFtmr, config->ucLciRequest,
+			config->ucLcrRequest, config->ucBurstDuration,
+			config->ePreamble, config->eBw);
+	}
+
+	if (i != request.ucConfigNum) {
+		DBGLOG(RTT, ERROR, "Config Num not match %hhu/%hhu\n",
+			i, request.ucConfigNum);
+		return -EINVAL;
+	}
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidHandleRttRequest,
+			   &request,
+			   sizeof(struct PARAM_RTT_REQUEST),
+			   &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(RTT, ERROR, "RTT request error:%x\n", rStatus);
+		return -EFAULT;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+int mtk_cfg80211_vendor_cancel_rtt_config(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_RTT_REQUEST request;
+	struct nlattr *attr;
+	struct nlattr *attrs = (struct nlattr *) data;
+	int tmp;
+	uint8_t i = 0;
+	uint32_t rStatus, u4BufLen;
+
+	DBGLOG(REQ, INFO, "vendor command\r\n");
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+
+	if ((data == NULL) || (data_len == 0))
+		return -EINVAL;
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	if (!prGlueInfo)
+		return -EINVAL;
+
+	request.fgEnable = false;
+
+	attr = nla_find(attrs, data_len, RTT_ATTRIBUTE_TARGET_CNT);
+	if (attr) {
+		request.ucConfigNum = nla_get_u8(attr);
+		DBGLOG(RTT, INFO, "TARGET_CNT = %u\n", request.ucConfigNum);
+	} else {
+		DBGLOG(RTT, ERROR, "No RTT_ATTRIBUTE_TARGET_CNT\n");
+		return -EINVAL;
+	}
+
+	DBGLOG(RTT, INFO, "Cancel RTT=%u\n", request.ucConfigNum);
+
+	nla_for_each_attr(attr, attrs, data_len, tmp) {
+		if (attr->nla_type == RTT_ATTRIBUTE_TARGET_MAC) {
+			struct RTT_CONFIG *config = NULL;
+
+			if (i >= request.ucConfigNum ||
+				i >= CFG_RTT_MAX_CANDIDATES)
+				return -EINVAL;
+
+			config = &request.arRttConfigs[i++];
+			COPY_MAC_ADDR(config->aucAddr, nla_data(attr));
+			DBGLOG(RTT, TRACE, "MAC=" MACSTR "\n",
+				MAC2STR(config->aucAddr));
+		}
+	}
+
+	if (i != request.ucConfigNum)
+		return -EINVAL;
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidHandleRttRequest,
+			   &request,
+			   sizeof(struct PARAM_RTT_REQUEST),
+			   &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(RTT, WARN, "RTT request error:%x\n", rStatus);
+		return -EFAULT;
+	}
+
+	return WLAN_STATUS_SUCCESS;
 }
 
 

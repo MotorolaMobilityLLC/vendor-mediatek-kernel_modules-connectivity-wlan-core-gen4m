@@ -3589,6 +3589,7 @@ void nicInitMGMT(IN struct ADAPTER *prAdapter,
 	swCrDebugInit(prAdapter);
 #endif /* CFG_SUPPORT_SWCR */
 
+	rttInit(prAdapter);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3636,6 +3637,8 @@ void nicUninitMGMT(IN struct ADAPTER *prAdapter)
 	mldStarecUninit(prAdapter);
 	mldBssUninit(prAdapter);
 #endif
+
+	rttUninit(prAdapter);
 }
 
 /*----------------------------------------------------------------------------*/
