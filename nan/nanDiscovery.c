@@ -805,11 +805,9 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 	kalMemCopy(aucServiceName,
 			msg->service_name,
 			NAN_FW_MAX_SERVICE_NAME_LEN);
-	for (u4Idx = 0; u4Idx < kalStrLen(aucServiceName); u4Idx++) {
-		if ((aucServiceName[u4Idx] >= 'A') &&
-		    (aucServiceName[u4Idx] <= 'Z'))
-			aucServiceName[u4Idx] = aucServiceName[u4Idx] + 32;
-	}
+	for (u4Idx = 0; u4Idx < kalStrLen(aucServiceName); u4Idx++)
+		aucServiceName[u4Idx] = tolower(aucServiceName[u4Idx]);
+
 	nan_rdf_sha256_init(&r_SHA_256_state);
 	sha256_process(&r_SHA_256_state, aucServiceName,
 		       kalStrLen(aucServiceName));
