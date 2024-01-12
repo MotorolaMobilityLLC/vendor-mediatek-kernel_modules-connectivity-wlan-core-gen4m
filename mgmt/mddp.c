@@ -68,7 +68,9 @@ struct mddp_drv_handle_t gMddpFunc = {
 #define MD_STATUS_OFF_SYNC_BIT BIT(1)
 #define MD_STATUS_ON_SYNC_BIT BIT(2)
 
-#define MD_AOR_CR_ADDR 0x10001BF4
+#define MD_AOR_SET_CR_ADDR 0x10001BEC
+#define MD_AOR_CLR_CR_ADDR 0x10001BF0
+#define MD_AOR_RD_CR_ADDR 0x10001BF4
 #define MD_AOR_MD_INIT_BIT BIT(8)
 #define MD_AOR_MD_OFF_BIT BIT(9)
 #define MD_AOR_MD_RDY_BIT BIT(10)
@@ -475,16 +477,12 @@ void mddpNotifyWifiOnStart(void)
 int32_t mddpNotifyWifiOnEnd(void)
 {
 	int32_t ret = 0;
-	uint32_t u4Value = 0;
 
 	if (!mddpIsSupportMcifWifi())
 		return ret;
 
-	if (g_fgIsSupportAOR) {
-		wf_ioremap_read(MD_AOR_CR_ADDR, &u4Value);
-		u4Value |= MD_AOR_WIFI_ON_BIT;
-		wf_ioremap_write(MD_AOR_CR_ADDR, u4Value);
-	}
+	if (g_fgIsSupportAOR)
+		wf_ioremap_write(MD_AOR_SET_CR_ADDR, MD_AOR_WIFI_ON_BIT);
 
 	clear_md_wifi_on_bit();
 #if (CFG_SUPPORT_CONNAC2X == 0)
@@ -502,15 +500,13 @@ int32_t mddpNotifyWifiOnEnd(void)
 void mddpNotifyWifiOffStart(void)
 {
 	int32_t ret;
-	uint32_t u4Value = 0;
 
 	if (!mddpIsSupportMcifWifi())
 		return;
 
 	if (g_fgIsSupportAOR) {
-		wf_ioremap_read(MD_AOR_CR_ADDR, &u4Value);
-		u4Value &= ~(MD_AOR_WIFI_ON_BIT | MD_AOR_MD_INIT_BIT);
-		wf_ioremap_write(MD_AOR_CR_ADDR, u4Value);
+		wf_ioremap_write(MD_AOR_CLR_CR_ADDR,
+				 MD_AOR_WIFI_ON_BIT | MD_AOR_MD_INIT_BIT);
 	}
 
 	mddpSetMDFwOwn();
@@ -532,16 +528,11 @@ void mddpNotifyWifiOffEnd(void)
 
 void mddpNotifyWifiReset(void)
 {
-	uint32_t u4Value = 0;
-
 	if (!mddpIsSupportMcifWifi())
 		return;
 
-	if (g_fgIsSupportAOR) {
-		wf_ioremap_read(MD_AOR_CR_ADDR, &u4Value);
-		u4Value &= ~MD_AOR_WIFI_ON_BIT;
-		wf_ioremap_write(MD_AOR_CR_ADDR, u4Value);
-	}
+	if (g_fgIsSupportAOR)
+		wf_ioremap_write(MD_AOR_CLR_CR_ADDR, MD_AOR_WIFI_ON_BIT);
 }
 
 int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
