@@ -4605,11 +4605,11 @@ u_int8_t qmAddRxBaEntry(IN struct ADAPTER *prAdapter,
 
 	ASSERT(ucStaRecIdx < CFG_STA_REC_NUM);
 
-	if (ucStaRecIdx >= CFG_STA_REC_NUM) {
+	if (ucStaRecIdx >= CFG_STA_REC_NUM || ucTid >= CFG_RX_MAX_BA_TID_NUM) {
 		/* Invalid STA_REC index, discard the event packet */
 		DBGLOG(QM, WARN,
-			"QM: (WARNING) RX ADDBA Event for a invalid ucStaRecIdx = %d\n",
-			ucStaRecIdx);
+			"QM: (WARNING) RX ADDBA Event for a invalid ucStaRecIdx = %d, ucTID=%d\n",
+			ucStaRecIdx, ucTid);
 		return FALSE;
 	}
 
