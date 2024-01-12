@@ -4862,6 +4862,7 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11W
 	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	prAisSpecificBssInfo->prTargetComebackBssDesc = NULL;
+	rsnStopSaQuery(prAdapter, ucBssIndex);
 #endif
 
 #if CFG_SUPPORT_802_11K

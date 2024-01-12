@@ -3021,6 +3021,8 @@ void rsnStopSaQuery(struct ADAPTER *prAdapter,
 
 	prBssSpecInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIdx);
 
+	DBGLOG(RSN, INFO, "MFP: Stop Sa Query\n");
+
 	cnmTimerStopTimer(prAdapter, &prBssSpecInfo->rSaQueryTimer);
 
 	if (prBssSpecInfo->pucSaQueryTransId) {
