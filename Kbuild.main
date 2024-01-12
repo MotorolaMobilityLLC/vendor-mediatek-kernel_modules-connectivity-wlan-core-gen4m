@@ -171,8 +171,16 @@ ccflags-y:=$(filter-out -USOC2_1X1,$(ccflags-y))
 ccflags-y += -DSOC2_1X1
 ccflags-y += -DCONFIG_MTK_WIFI_VHT80
 ifneq ($(filter 6835, $(WLAN_CHIP_ID)),)
-	ccflags-y += -DCFG_WLAN_LK_FWDL_SUPPORT=1
-	ccflags-y += -DCFG_WLAN_ATF_SUPPORT=0
+    ccflags-y += -DCFG_WLAN_LK_FWDL_SUPPORT=1
+    ccflags-y += -DCFG_WLAN_ATF_SUPPORT=0
+    ccflags-y += -DCFG_SUPPORT_MDDP_AOR=0
+    ccflags-y += -DCFG_SUPPORT_MDDP_SHM=1
+else ifneq ($(filter 6855, $(WLAN_CHIP_ID)),)
+    ccflags-y += -DCFG_SUPPORT_MDDP_AOR=1
+    ccflags-y += -DCFG_SUPPORT_MDDP_SHM=0
+else
+    ccflags-y += -DCFG_SUPPORT_MDDP_AOR=0
+    ccflags-y += -DCFG_SUPPORT_MDDP_SHM=0
 endif
 endif
 
@@ -180,6 +188,16 @@ ifneq ($(filter SOC2_2X2,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -USOC2_2X2,$(ccflags-y))
 ccflags-y += -DSOC2_2X2
 ccflags-y += -DCONFIG_MTK_WIFI_VHT80
+ifneq ($(filter 6835, $(WLAN_CHIP_ID)),)
+    ccflags-y += -DCFG_SUPPORT_MDDP_AOR=0
+    ccflags-y += -DCFG_SUPPORT_MDDP_SHM=1
+else ifneq ($(filter 6855, $(WLAN_CHIP_ID)),)
+    ccflags-y += -DCFG_SUPPORT_MDDP_AOR=1
+    ccflags-y += -DCFG_SUPPORT_MDDP_SHM=0
+else
+    ccflags-y += -DCFG_SUPPORT_MDDP_AOR=0
+    ccflags-y += -DCFG_SUPPORT_MDDP_SHM=0
+endif
 endif
 
 ifneq ($(findstring MT7915,$(MTK_COMBO_CHIP)),)
@@ -305,12 +323,6 @@ else
     ccflags-y += -DCFG_ENABLE_HOST_BUS_TIMEOUT=0
 endif
 
-ifneq ($(filter 6855, $(WLAN_CHIP_ID)),)
-    ccflags-y += -DCFG_SUPPORT_MDDP_AOR=1
-else
-    ccflags-y += -DCFG_SUPPORT_MDDP_AOR=0
-endif
-
 ifneq ($(findstring 5_0,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -USOC5_0,$(ccflags-y))
 ccflags-y += -DSOC5_0
@@ -358,6 +370,22 @@ CONFIG_MTK_WIFI_APF_SUPPORT=y
 CONFIG_MTK_WIFI_NAN=y
 CONFIG_MTK_WIFI_CONNFEM_SUPPORT=y
 
+ifneq ($(filter 6983, $(WLAN_CHIP_ID)),)
+    ccflags-y += -DCFG_SUPPORT_MDDP_AOR=1
+    ccflags-y += -DCFG_SUPPORT_MDDP_SHM=0
+else ifneq ($(filter 6879, $(WLAN_CHIP_ID)),)
+    ccflags-y += -DCFG_SUPPORT_MDDP_AOR=1
+    ccflags-y += -DCFG_SUPPORT_MDDP_SHM=0
+else ifneq ($(filter 6895, $(WLAN_CHIP_ID)),)
+    ccflags-y += -DCFG_SUPPORT_MDDP_AOR=1
+    ccflags-y += -DCFG_SUPPORT_MDDP_SHM=0
+else ifneq ($(filter 6886, $(WLAN_CHIP_ID)),)
+    ccflags-y += -DCFG_SUPPORT_MDDP_AOR=1
+    ccflags-y += -DCFG_SUPPORT_MDDP_SHM=0
+else
+    ccflags-y += -DCFG_SUPPORT_MDDP_AOR=0
+    ccflags-y += -DCFG_SUPPORT_MDDP_SHM=1
+endif
 ifeq ($(WLAN_CONNAC3_DEV), yes)
 CONFIG_MTK_WIFI_TRX_DIRECT=y
 CONFIG_NOT_CLR_FREE_MSDU_IN_DEACTIVE_NETWORK=y

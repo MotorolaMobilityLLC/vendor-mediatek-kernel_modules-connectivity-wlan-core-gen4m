@@ -401,7 +401,10 @@ struct mt66xx_chip_info mt66xx_chip_info_soc2_2x2 = {
 
 	.calDebugCmd = soc2_2x2wlanCalDebugCmd,
 #if CFG_SUPPORT_MDDP_AOR
-	.isSupportMddpAOR = true,
+	.isSupportMddpAOR = TRUE,
+#endif
+#if CFG_SUPPORT_MDDP_SHM
+	.isSupportMddpSHM = TRUE,
 #endif
 #if CFG_MTK_ANDROID_WMT
 	.rEmiInfo = {

@@ -602,8 +602,12 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 	.calDebugCmd = wlanCalDebugCmd,
 #endif
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
-	.isSupportMddpAOR = true,
-	.isSupportMddpSHM = false,
+#if CFG_SUPPORT_MDDP_AOR
+	.isSupportMddpAOR = TRUE,
+#endif
+#if CFG_SUPPORT_MDDP_SHM
+	.isSupportMddpSHM = TRUE,
+#endif
 	.ccif_ops = &soc7_0_ccif_ops,
 #if CFG_MTK_ANDROID_WMT
 	.rEmiInfo = {
