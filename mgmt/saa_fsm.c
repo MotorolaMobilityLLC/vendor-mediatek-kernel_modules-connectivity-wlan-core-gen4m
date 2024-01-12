@@ -994,7 +994,7 @@ uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter, IN struct SW_RFB *
 					DBGLOG(RSN, INFO,
 					       "QM RX MGT: Deauth frame, P=%d Sec=%d CM=%d BC=%d fc=%02x\n",
 					       prAisSpecBssInfo->fgMgmtProtection,
-					       HAL_RX_STATUS_GET_SEC_MODE(prSwRfb->prRxStatus),
+					       (uint8_t) HAL_RX_STATUS_GET_SEC_MODE(prSwRfb->prRxStatus),
 					       HAL_RX_STATUS_IS_CIPHER_MISMATCH(prSwRfb->prRxStatus),
 					       IS_BMCAST_MAC_ADDR(prDeauthFrame->aucDestAddr),
 					       prDeauthFrame->u2FrameCtrl);
@@ -1178,7 +1178,7 @@ uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER *prAdapter, IN struct SW_RFB
 					DBGLOG(RSN, INFO,
 					       "QM RX MGT: Disassoc frame, P=%d Sec=%d CM=%d BC=%d fc=%02x\n",
 					       prAisSpecBssInfo->fgMgmtProtection,
-					       HAL_RX_STATUS_GET_SEC_MODE(prSwRfb->prRxStatus),
+					       (uint8_t) HAL_RX_STATUS_GET_SEC_MODE(prSwRfb->prRxStatus),
 					       HAL_RX_STATUS_IS_CIPHER_MISMATCH(prSwRfb->prRxStatus),
 					       IS_BMCAST_MAC_ADDR(prDisassocFrame->aucDestAddr),
 					       prDisassocFrame->u2FrameCtrl);
