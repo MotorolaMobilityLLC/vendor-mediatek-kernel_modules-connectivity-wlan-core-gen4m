@@ -2936,9 +2936,35 @@ struct UNI_CMD_PP {
 
 enum UNI_CMD_ID_PP_TAG {
     /** SET **/
-	UNI_CMD_PP_EN_CTRL = 0x0,
+	UNI_CMD_PP_TAG_EN_CTRL = 0x0,
+	UNI_CMD_PP_TAG_ALG_CTRL = 0x1,
 	UNI_CMD_PP_MAX_NUM
 };
+
+enum UNI_CMD_PP_ALG_CMD_ACTION {
+	UNI_CMD_PP_ALG_SET_TIMER = 0,
+	UNI_CMD_PP_ALG_SET_THR = 1,
+	UNI_CMD_PP_ALG_GET_STATISTICS = 2,
+	UNI_CMD_PP_ALG_MAX_NUM
+};
+
+struct UNI_CMD_PP_ALG_CTRL {
+	uint16_t  u2Tag;
+	uint16_t  u2Length;
+
+    /* tag specific part */
+	uint32_t   u4PpTimerIntv;
+	uint32_t   u4PpThrX2;
+	uint32_t   u4PpThrX3;
+	uint32_t   u4PpThrX4;
+	uint32_t   u4PpThrX5;
+	uint32_t   u4PpThrX6;
+	uint32_t   u4PpThrX7;
+	uint32_t   u4PpThrX8;
+	uint8_t    u1DbdcIdx;
+	uint8_t    u1PpAction;
+	uint8_t    u1Reserved[2];
+} __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_PP_EN_CTRL_T {
 	uint16_t  u2Tag;
@@ -3709,6 +3735,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_FAST_PATH	     = 0x54,
 	UNI_EVENT_ID_NAN	     = 0x56,
 	UNI_EVENT_ID_MLO	     = 0x59,
+	UNI_EVENT_ID_PP          = 0x5A,
 	UNI_EVENT_ID_NUM
 };
 
@@ -3773,6 +3800,38 @@ struct UNI_EVENT_FW_LOG_FORMAT {
 	uint8_t ucReserved[3];
 	uint8_t acMsg[0];
 };
+
+struct UNI_EVENT_PP {
+	/* fixed field */
+	uint8_t au1Reserved[4];
+
+	/* tlv */
+	uint8_t au1TlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+enum ENUM_UNI_EVENT_PP_TAG {
+	UNI_EVENT_PP_TAG_ALG_CTRL = 0x1,
+	UNI_EVENT_PP_TAG_MAX_NUM
+};
+
+struct UNI_EVENT_PP_ALG_CTRL {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint32_t u4PpTimerIntv;
+	uint32_t u4PpThrX2;
+	uint32_t u4PpThrX3;
+	uint32_t u4PpThrX4;
+	uint32_t u4PpThrX5;
+	uint32_t u4PpThrX6;
+	uint32_t u4PpThrX7;
+	uint32_t u4PpThrX8;
+	uint32_t u4SwPpTime;
+	uint32_t u4HwPpTime;
+	uint32_t u4NoPpTime;
+	uint8_t  u1DbdcIdx;
+	uint8_t  u1Reserved[3];
+} __KAL_ATTRIB_PACKED__;
 
 struct UNI_EVENT_ROAMING {
 	/* fixed field */
@@ -5813,6 +5872,8 @@ void nicUniEventOBSS(struct ADAPTER *ad,
 void nicUniEventRoaming(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventAddKeyDone(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventPpCb(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventFwLog2Host(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
