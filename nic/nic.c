@@ -3578,7 +3578,7 @@ nicAddScanResult(IN struct ADAPTER *prAdapter,
 		for (j = 0; j < KAL_AIS_NUM; j++) {
 			struct PARAM_BSSID_EX *prCurrBssid;
 
-			if (!wlanGetAisNetDev(prAdapter->prGlueInfo, j))
+			if (!AIS_MAIN_BSS_INFO(prAdapter, j))
 				continue;
 
 			prCurrBssid = aisGetCurrBssId(prAdapter,
