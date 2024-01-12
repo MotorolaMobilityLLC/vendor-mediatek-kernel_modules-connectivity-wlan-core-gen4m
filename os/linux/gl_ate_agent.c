@@ -2147,14 +2147,14 @@ int Set_MUSetGID_UP(struct net_device *prNetDev,
 	ASSERT(prNetDev);
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	if (sscanf(prInBuf, "%x:%x:%x:%x:%x:%x",
+	if (sscanf(prInBuf, "%d:%d:%d:%d:%d:%d",
 		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Gid[0],
 		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Gid[1],
 		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[0],
 		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[1],
 		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[2],
-		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[3]) ==
-	    6) {
+		   &rMuMimoActionInfo.unMuMimoParam.rMuSetGidUp.au4Up[3]) == 6
+	    ) {
 		DBGLOG(RFTEST, ERROR,
 		       "Set_MUSetGID_UP prInBuf = %s, au4Gid[0] = %x, au4Gid[1] = %x, au4Up[0] = %x, au4Up[1] = %x, au4Up[2] = %x, au4Up[3] = %x",
 		       prInBuf,
