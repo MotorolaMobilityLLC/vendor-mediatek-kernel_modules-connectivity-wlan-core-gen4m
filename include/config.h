@@ -465,7 +465,7 @@
  */
 #define CFG_DRV_OWN_VERSION	((uint16_t)((NIC_DRIVER_MAJOR_VERSION << 8) | \
 				(NIC_DRIVER_MINOR_VERSION)))
-#define CFG_DRV_PEER_VERSION	((uint16_t)0x0000)
+#define CFG_DRV_PEER_VERSION	0x0000U
 
 /*------------------------------------------------------------------------------
  * Flags and Parameters for TX path
