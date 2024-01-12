@@ -2670,8 +2670,10 @@ void twtPlannerRxNegoResult(
 			prStaRec,
 			ucTWTFlowId);
 
+#if (CFG_SUPPORT_TWT_STA_CNM == 0)
 		/* Disable SCAN during TWT activity */
 		prAdapter->fgEnOnlineScan = FALSE;
+#endif
 
 		return;
 	}
@@ -2690,8 +2692,10 @@ void twtPlannerRxNegoResult(
 			prTWTResult, ucTWTFlowId, eTwtType, FALSE,
 			NULL, NULL /* handle TWT cmd timeout? */);
 
+#if (CFG_SUPPORT_TWT_STA_CNM == 0)
 		/* Disable SCAN during TWT activity */
 		prAdapter->fgEnOnlineScan = FALSE;
+#endif
 
 		break;
 #else
@@ -3023,8 +3027,10 @@ void twtPlannerTeardownDone(
 			prStaRec,
 			ucTWTFlowId);
 
+#if (CFG_SUPPORT_TWT_STA_CNM == 0)
 		/* Enable SCAN after TWT agrt has been tear down */
 		prAdapter->fgEnOnlineScan = TRUE;
+#endif
 
 		return;
 	}
@@ -3041,8 +3047,10 @@ void twtPlannerTeardownDone(
 	twtPlannerTeardownAgrtTbl(prAdapter, prStaRec,
 		FALSE, NULL, NULL /* handle TWT cmd timeout? */);
 
+#if (CFG_SUPPORT_TWT_STA_CNM == 0)
 	/* Enable SCAN after TWT agrt has been tear down */
 	prAdapter->fgEnOnlineScan = TRUE;
+#endif
 }
 
 void twtPlannerRxInfoFrm(
