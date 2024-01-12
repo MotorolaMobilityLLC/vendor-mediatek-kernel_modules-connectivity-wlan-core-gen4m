@@ -99,6 +99,8 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 #endif
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL,
 			rsnGenerateWPAIE}	/* 221 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL,
+			rsnGenerateRSNXIE}	/* 244 */
 };
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -4041,6 +4043,19 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 			case ELEM_ID_VHT_OP:
 				prP2pBssInfo->ucPhyTypeSet |=
 						PHY_TYPE_SET_802_11AC;
+				break;
+			case ELEM_ID_RSNX:
+				DBGLOG(P2P, TRACE, "RSNXIE\n");
+				if (IE_LEN(pucIE) > ELEM_MAX_LEN_RSN) {
+					DBGLOG(P2P, ERROR,
+						"RSN IE length is unexpected !!\n");
+					return;
+				}
+				kalMemCopy(
+					prP2pSpecificBssInfo->aucRsnxIeBuffer,
+					pucIE, IE_SIZE(pucIE));
+				prP2pSpecificBssInfo->u2RsnxIeLen
+					= IE_SIZE(pucIE);
 				break;
 #if (CFG_SUPPORT_802_11AX == 1)
 			case ELEM_ID_RESERVED:
